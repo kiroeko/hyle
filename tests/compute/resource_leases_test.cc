@@ -8,6 +8,7 @@
 #include <type_traits>
 
 #include "completion_internal.h"
+#include "hyle/compute/detail/append_lease.h"
 #include "hyle/compute/detail/completion_access.h"
 #include "hyle/compute/detail/lease_access.h"
 #include "hyle/compute/leased_operation.h"
@@ -52,6 +53,190 @@ const hyle::compute::detail::CompletionVTable kPending{
       static_cast<PendingUse *>(opaque)->done = true;
       return hyle::Status::Ok();
     }};
+
+static_assert(!std::is_copy_constructible_v<detail::AppendLease>);
+static_assert(!std::is_copy_assignable_v<detail::AppendLease>);
+static_assert(std::is_nothrow_move_constructible_v<detail::AppendLease>);
+
+TEST(AppendLeases, BoundedPrefixCannotWidenOrPromoteAndFullPageHasNoTail) {
+  auto pool = LeasePool::create(mem::system_resource(), 1024, {.max_blocks = 3}).value();
+  auto writer = pool.allocate(256).value();
+  ASSERT_TRUE(writer.view()->fill(std::byte{37}).ok());
+  const auto generation = writer.generation();
+  EXPECT_FALSE(detail::LeaseAccess::publish_appendable(writer, 257).has_value());
+  ASSERT_TRUE(writer.valid()); // rejected publication cannot consume its owner
+  auto page = detail::LeaseAccess::publish_appendable(writer, 64).value();
+  EXPECT_FALSE(writer.valid());
+  EXPECT_EQ(page.prefix.size(), 64u);
+  EXPECT_EQ(page.prefix.generation(), generation);
+  EXPECT_EQ(page.appender.generation(), generation);
+  EXPECT_EQ(page.appender.committed_bytes(), 64u);
+  EXPECT_EQ(page.appender.capacity_bytes(), 256u);
+  EXPECT_TRUE(detail::LeaseAccess::is_appendable_prefix(page.prefix));
+  EXPECT_TRUE(detail::LeaseAccess::validate_prefix(page.appender, page.prefix).ok());
+  auto retained = page.prefix;
+  EXPECT_FALSE(retained.subview(0, 65).has_value());
+  EXPECT_FALSE(retained.subview(63, 2).has_value());
+  EXPECT_FALSE(retained.try_write().has_value());
+  page.prefix.reset();
+  page.appender.reset();
+  EXPECT_FALSE(retained.try_write().has_value()); // sole reader still cannot widen authority
+
+  auto full_writer = pool.allocate(256).value();
+  auto full = detail::LeaseAccess::publish_appendable(full_writer, 256).value();
+  EXPECT_EQ(full.prefix.size(), 256u);
+  EXPECT_FALSE(full.appender.valid());
+  EXPECT_TRUE(detail::LeaseAccess::is_appendable_prefix(full.prefix));
+  EXPECT_FALSE(full.prefix.try_write().has_value());
+
+  auto legacy_writer = pool.allocate(256).value();
+  auto legacy = legacy_writer.publish().value();
+  EXPECT_FALSE(detail::LeaseAccess::is_appendable_prefix(legacy));
+  auto legacy_piece = legacy.subview(0, 64).value();
+  EXPECT_FALSE(detail::LeaseAccess::is_appendable_prefix(legacy_piece));
+}
+
+TEST(AppendLeases, ReservedSuffixRequiresQualifiedUseAndKeepsOldReaderBounded) {
+  auto pool = LeasePool::create(mem::system_resource(), 256, {.max_blocks = 1}).value();
+  auto writer = pool.allocate(256).value();
+  ASSERT_TRUE(writer.view()->fill(std::byte{37}).ok());
+  auto page = detail::LeaseAccess::publish_appendable(writer, 64).value();
+  auto uses = LeaseUsePool::create({.max_batches = 2, .max_resources_per_batch = 1}).value();
+  auto prior = uses.begin().value();
+  ASSERT_TRUE(prior.read(page.prefix).ok());
+  EXPECT_TRUE(page.appender.reserve(32).IsUnavailable());
+  auto prior_done = Completion::completed();
+  ASSERT_TRUE(prior.attach(prior_done).ok());
+  EXPECT_TRUE(page.appender.reserve(0).IsOutOfRange());
+  EXPECT_TRUE(page.appender.reserve(193).IsOutOfRange());
+  EXPECT_EQ(page.appender.epoch(), 0u);
+  ASSERT_TRUE(page.appender.reserve(32).ok());
+  const auto suffix = page.appender.view().value(); // view before F1 native admission
+  EXPECT_EQ(suffix.size(), 32u);
+  EXPECT_EQ(suffix.offset(), page.prefix.view()->offset() + 64);
+  EXPECT_EQ(suffix.native_handle(), page.prefix.view()->native_handle());
+  ASSERT_TRUE(suffix.fill(std::byte{9}).ok());
+  auto rejected = uses.begin().value();
+  EXPECT_TRUE(rejected.read(page.prefix).IsUnavailable());
+  EXPECT_TRUE(detail::LeaseAccess::read_unique(rejected, page.prefix).IsUnavailable());
+  auto qualified = uses.begin().value();
+  ASSERT_TRUE(detail::LeaseAccess::append_unique(qualified, page.appender).ok());
+  EXPECT_TRUE(page.appender.rollback().IsUnavailable());
+  EXPECT_FALSE(page.appender.view().has_value());
+  EXPECT_FALSE(page.appender.publish().has_value());
+  PendingUse pending;
+  auto completion = detail::CompletionAccess::make(&kPending, &pending);
+  ASSERT_TRUE(qualified.attach(completion).ok());
+  EXPECT_EQ(completion.poll().value(), CompletionPoll::kPending);
+  ASSERT_TRUE(completion.wait().ok());
+  auto widened = page.appender.publish().value();
+  EXPECT_EQ(widened.size(), 96u);
+  EXPECT_EQ(page.prefix.size(), 64u);
+  EXPECT_FALSE(page.prefix.subview(0, 96).has_value());
+  EXPECT_EQ(widened.generation(), page.prefix.generation());
+  EXPECT_EQ(page.appender.epoch(), 1u);
+  std::array<std::byte, 96> actual{};
+  ASSERT_TRUE(widened.view()->read(actual).ok());
+  for (std::size_t i = 0; i < actual.size(); ++i)
+    EXPECT_EQ(actual[i], i < 64 ? std::byte{37} : std::byte{9});
+  EXPECT_TRUE(rejected.read(page.prefix).ok()); // reservation ended only after successful publish
+}
+
+TEST(AppendLeases, FailedEpochWaitsForActualReleaseThenRollbackCanRetryAndClose) {
+  auto pool = LeasePool::create(mem::system_resource(), 256, {.max_blocks = 1}).value();
+  auto writer = pool.allocate(256).value();
+  ASSERT_TRUE(writer.view()->fill(std::byte{19}).ok());
+  auto page = detail::LeaseAccess::publish_appendable(writer, 64).value();
+  const auto generation = page.prefix.generation();
+  auto uses = LeaseUsePool::create({.max_batches = 1, .max_resources_per_batch = 1}).value();
+  ASSERT_TRUE(page.appender.reserve(32).ok());
+  ASSERT_TRUE(page.appender.view()->fill(std::byte{47}).ok());
+  PendingUse pending;
+  {
+    auto batch = uses.begin().value();
+    ASSERT_TRUE(detail::LeaseAccess::append_unique(batch, page.appender).ok());
+    auto completion = detail::CompletionAccess::make(&kPending, &pending);
+    ASSERT_TRUE(batch.attach(completion).ok());
+    detail::CompletionAccess::append_terminal(completion, hyle::Status::Cancelled("later graph node failed"));
+    // Dropping a failed public handle transfers its original retention, not retirement.
+  }
+  ASSERT_TRUE(pending.retained.valid());
+  EXPECT_TRUE(pending.hint.IsCancelled());
+  EXPECT_EQ(uses.active_batches(), 1u);
+  EXPECT_EQ(pool.stats().active_uses, 1u);
+  EXPECT_TRUE(page.appender.rollback().IsUnavailable());
+  EXPECT_EQ(page.appender.committed_bytes(), 64u);
+  std::array<std::byte, 64> prefix{};
+  EXPECT_TRUE(page.prefix.view()->read(prefix).ok());
+  for (auto value : prefix) EXPECT_EQ(value, std::byte{19});
+  pending.done = true;
+  pending.retained.terminal(pending.retained.state, pending.hint);
+  // Even terminal failure notification alone cannot release the admitted use.
+  EXPECT_TRUE(page.appender.rollback().IsUnavailable());
+  pending.retained.release(pending.retained.state);
+  pending.retained = {};
+  EXPECT_EQ(uses.active_batches(), 0u);
+  EXPECT_EQ(pool.stats().active_uses, 0u);
+  auto poisoned = page.appender.publish();
+  ASSERT_FALSE(poisoned.has_value());
+  EXPECT_TRUE(poisoned.error().IsCancelled());
+  ASSERT_TRUE(page.appender.rollback().ok());
+  auto prefix_use = uses.begin().value();
+  ASSERT_TRUE(prefix_use.read(page.prefix).ok()); // failed tail did not poison the committed root
+  auto prefix_done = Completion::completed();
+  ASSERT_TRUE(prefix_use.attach(prefix_done).ok());
+  ASSERT_TRUE(page.appender.reserve(32).ok());
+  EXPECT_EQ(page.appender.epoch(), 2u);
+  ASSERT_TRUE(page.appender.view()->fill(std::byte{71}).ok());
+  auto retry = uses.begin().value();
+  ASSERT_TRUE(detail::LeaseAccess::append_unique(retry, page.appender).ok());
+  auto retry_done = Completion::completed();
+  ASSERT_TRUE(retry.attach(retry_done).ok());
+  auto committed = page.appender.publish().value();
+  EXPECT_EQ(committed.size(), 96u);
+  EXPECT_EQ(committed.generation(), generation);
+  EXPECT_EQ(page.prefix.size(), 64u);
+  std::array<std::byte, 96> actual{};
+  ASSERT_TRUE(committed.view()->read(actual).ok());
+  for (std::size_t i = 0; i < actual.size(); ++i)
+    EXPECT_EQ(actual[i], i < 64 ? std::byte{19} : std::byte{71});
+  ASSERT_TRUE(page.appender.reserve(16).ok());
+  ASSERT_TRUE(pool.close().ok());
+  EXPECT_FALSE(page.appender.view().has_value());
+  EXPECT_FALSE(page.appender.publish().has_value());
+  ASSERT_TRUE(page.appender.rollback().ok()); // closed domain permits only retired cleanup
+  EXPECT_TRUE(page.appender.reserve(16).IsFailedPrecondition());
+  EXPECT_TRUE(page.prefix.view().has_value());
+}
+
+TEST(AppendLeases, AbandonedTailWaitsForOriginalNativeRetirement) {
+  auto pool = LeasePool::create(mem::system_resource(), 256, {.max_blocks = 1}).value();
+  auto writer = pool.allocate(256).value();
+  auto page = detail::LeaseAccess::publish_appendable(writer, 64).value();
+  auto uses = LeaseUsePool::create({.max_batches = 2, .max_resources_per_batch = 1}).value();
+  ASSERT_TRUE(page.appender.reserve(32).ok());
+  PendingUse pending;
+  {
+    auto batch = uses.begin().value();
+    ASSERT_TRUE(detail::LeaseAccess::append_unique(batch, page.appender).ok());
+    auto completion = detail::CompletionAccess::make(&kPending, &pending);
+    ASSERT_TRUE(batch.attach(completion).ok());
+    page.appender.reset();
+  }
+  ASSERT_TRUE(pending.retained.valid());
+  auto reader = uses.begin().value();
+  EXPECT_TRUE(reader.read(page.prefix).IsUnavailable());
+  EXPECT_EQ(pool.stats().live_blocks, 1u);
+  EXPECT_EQ(pool.stats().active_uses, 1u);
+  pending.done = true;
+  pending.retained.terminal(pending.retained.state, hyle::Status::Ok());
+  pending.retained.release(pending.retained.state);
+  pending.retained = {};
+  EXPECT_EQ(pool.stats().active_uses, 0u);
+  EXPECT_TRUE(reader.read(page.prefix).ok());
+  EXPECT_EQ(page.prefix.size(), 64u);
+  EXPECT_FALSE(page.prefix.try_write().has_value());
+}
 
 // F2 control protocol only. These tests do not certify native ordering; the
 // copy owner must separately prove the original device/phase dependency.

@@ -11,10 +11,13 @@
 #include "context_state.h"
 #include "hyle/compute/detail/backend_extension.h"
 #include "hyle/compute/detail/completion_access.h"
+#include "hyle/compute/detail/command_capture.h"
 #include "hyle/compute/detail/context_ref.h"
 #include "hyle/compute/detail/provider_extension.h"
+#include "hyle/compute/detail/queue_ref.h"
 #include "hyle/compute/detail/queue_sequence.h"
 #include "provider_internal.h"
+#include "hyle/core/assert.h"
 
 namespace hyle::compute::detail {
 namespace {
@@ -229,6 +232,13 @@ detail::BackendExtensionRef::~BackendExtensionRef() { detail::release(owner_); }
 Result<detail::BackendExtensionRef>
 detail::BackendExtensionAccess::query(const Context &context,
                                       BackendExtensionId id) noexcept {
+  HYLE_ASSIGN_OR_RETURN(auto retained, detail::ContextRef::acquire(context));
+  return query(retained, id);
+}
+
+Result<detail::BackendExtensionRef>
+detail::BackendExtensionAccess::query(const detail::ContextRef &context,
+                                      BackendExtensionId id) noexcept {
   detail::ContextState *state = detail::ContextAccess::state(context);
   if (state == nullptr)
     return std::unexpected(Status::FailedPrecondition("context is invalid"));
@@ -253,18 +263,38 @@ detail::BackendExtensionAccess::query(const Context &context,
 Result<detail::BackendExtensionRef>
 detail::BackendExtensionAccess::query(const Queue &queue,
                                       BackendExtensionId id) noexcept {
-  detail::QueueState *state = detail::ContextAccess::state(queue);
+  return query_queue(ContextAccess::state(queue), id, false);
+}
+
+Result<detail::BackendExtensionRef>
+detail::BackendExtensionAccess::query(const QueueRef &queue,
+                                      BackendExtensionId id) noexcept {
+  return query_queue(ContextAccess::state(queue), id, false);
+}
+
+Result<detail::BackendExtensionRef>
+detail::BackendExtensionAccess::query_admitted(const QueueSequence &sequence,
+                                              BackendExtensionId id) noexcept {
+  return query_queue(ContextAccess::state(sequence), id, true);
+}
+
+Result<detail::BackendExtensionRef>
+detail::BackendExtensionAccess::query_queue(QueueState *state,
+                                            BackendExtensionId id,
+                                            bool admitted) noexcept {
   if (state == nullptr)
     return std::unexpected(Status::FailedPrecondition("queue is invalid"));
   if (!id.valid()) {
     return std::unexpected(
         Status::InvalidArgument("compute backend extension id is invalid"));
   }
-  if (!state->context->admission.try_enter())
-    return std::unexpected(Status::FailedPrecondition("context is closed"));
-  if (!state->admission.try_enter()) {
-    state->context->admission.leave();
-    return std::unexpected(Status::FailedPrecondition("queue is closed"));
+  if (!admitted) {
+    if (!state->context->admission.try_enter())
+      return std::unexpected(Status::FailedPrecondition("context is closed"));
+    if (!state->admission.try_enter()) {
+      state->context->admission.leave();
+      return std::unexpected(Status::FailedPrecondition("queue is closed"));
+    }
   }
   const void *interface_value = state->context->backend_vtable->query_extension(
       state->context->backend_state, id);
@@ -275,8 +305,10 @@ detail::BackendExtensionAccess::query(const Queue &queue,
                                     state->context->backend_vtable->id))
           : Result<BackendExtensionRef>(std::unexpected(Status::Unimplemented(
                 "compute backend does not implement this extension")));
-  state->admission.leave();
-  state->context->admission.leave();
+  if (!admitted) {
+    state->admission.leave();
+    state->context->admission.leave();
+  }
   return result;
 }
 
@@ -317,16 +349,7 @@ detail::EnqueueResult detail::BackendExtensionAccess::enqueue_admitted(
     return EnqueueResult::rejected(
         Status::FailedPrecondition("compute queue sequence is invalid"));
   }
-  return enqueue_borrowed(extension, sequence.queue(), function, call_context);
-}
-
-detail::EnqueueResult detail::BackendExtensionAccess::enqueue_borrowed(
-    const BackendExtensionRef &extension, Queue &queue,
-    BackendExtensionEnqueueFn function, void *call_context) noexcept {
-  if (!extension.valid() || function == nullptr)
-    return EnqueueResult::rejected(
-        Status::InvalidArgument("compute backend extension submit is invalid"));
-  detail::QueueState *state = detail::ContextAccess::state(queue);
+  detail::QueueState *state = detail::ContextAccess::state(sequence);
   if (state == nullptr || state->context != extension.owner_) {
     return EnqueueResult::rejected(Status::InvalidArgument(
         "queue and backend extension belong to different contexts"));
@@ -409,6 +432,14 @@ Result<detail::ProviderExtensionRef>
 detail::ProviderExtensionAccess::query(const Context &context,
                                        std::size_t provider_index,
                                        ProviderExtensionId id) noexcept {
+  HYLE_ASSIGN_OR_RETURN(auto retained, ContextRef::acquire(context));
+  return query(retained, provider_index, id);
+}
+
+Result<detail::ProviderExtensionRef>
+detail::ProviderExtensionAccess::query(const ContextRef &context,
+                                       std::size_t provider_index,
+                                       ProviderExtensionId id) noexcept {
   detail::ContextState *state = detail::ContextAccess::state(context);
   if (state == nullptr)
     return std::unexpected(Status::FailedPrecondition("context is invalid"));
@@ -439,6 +470,31 @@ detail::ProviderExtensionAccess::query(const Context &context,
                     "compute provider does not implement this extension")));
   state->admission.leave();
   return result;
+}
+
+Result<detail::ProviderExtensionRef>
+detail::ProviderExtensionAccess::query(const ProviderExtensionRef &source,
+                                      ProviderExtensionId id) noexcept {
+  if (!source.valid() || !id.valid())
+    return std::unexpected(Status::InvalidArgument("provider capability source/id is invalid"));
+  auto *state = source.owner_;
+  if (!state->admission.try_enter())
+    return std::unexpected(Status::FailedPrecondition("context is closed"));
+  struct Leave final { ContextState *state; ~Leave(){state->admission.leave();} } leave{state};
+  for (std::size_t i = 0; i < state->provider_count; ++i) {
+    const auto &slot = state->providers()[i];
+    if (slot.instance != source.instance_) continue;
+    if (slot.state != source.provider_context_)
+      return std::unexpected(Status::Internal("retained provider instance changed its context"));
+    const auto *table = ProviderAccess::vtable(slot.provider);
+    const auto *interface_value = table->query_extension
+        ? table->query_extension(slot.state, id) : nullptr;
+    if (!interface_value)
+      return std::unexpected(Status::Unimplemented("selected provider has no requested capability"));
+    return ProviderExtensionRef(state, slot.state, interface_value, id,
+                                table->identity, slot.instance);
+  }
+  return std::unexpected(Status::Internal("retained provider instance disappeared"));
 }
 
 Status detail::ProviderExtensionAccess::call(
@@ -482,8 +538,7 @@ detail::EnqueueResult detail::ProviderExtensionAccess::enqueue_admitted(
     return EnqueueResult::rejected(
         Status::FailedPrecondition("compute queue sequence is invalid"));
   }
-  Queue &queue = sequence.queue();
-  detail::QueueState *queue_state = detail::ContextAccess::state(queue);
+  detail::QueueState *queue_state = detail::ContextAccess::state(sequence);
   if (queue_state == nullptr || queue_state->context != extension.owner_) {
     return EnqueueResult::rejected(Status::InvalidArgument(
         "queue and provider extension belong to different contexts"));
@@ -509,7 +564,7 @@ detail::EnqueueResult detail::ProviderExtensionAccess::enqueue_admitted(
       return EnqueueResult::rejected(std::move(status));
   }
   return function(extension.provider_context_, extension.interface_,
-                  call_context, queue);
+                  call_context, sequence);
 }
 
 BackendId Backend::id() const noexcept {
@@ -731,10 +786,66 @@ bool detail::ContextRef::is_open() const noexcept {
   return state_ != nullptr && state_->admission.is_open();
 }
 
+mem::AllocatorRef detail::ContextRef::metadata_allocator() const noexcept {
+  return state_ != nullptr ? state_->allocator : mem::AllocatorRef{};
+}
+
+std::size_t detail::ContextRef::provider_count() const noexcept {
+  return state_ != nullptr ? state_->provider_count : 0;
+}
+
+Result<ProviderIdentity>
+detail::ContextRef::provider_identity(std::size_t index) const noexcept {
+  if (!state_)
+    return std::unexpected(Status::FailedPrecondition("context lease is invalid"));
+  if (index >= state_->provider_count)
+    return std::unexpected(Status::OutOfRange("compute provider index is out of range"));
+  return ProviderAccess::vtable(state_->providers()[index].provider)->identity;
+}
+
+Result<std::uint32_t>
+detail::ContextRef::provider_preference(std::size_t index) const noexcept {
+  if (!state_)
+    return std::unexpected(Status::FailedPrecondition("context lease is invalid"));
+  if (index >= state_->provider_count)
+    return std::unexpected(Status::OutOfRange("compute provider index is out of range"));
+  return state_->providers()[index].preference;
+}
+
+Result<ProviderInstanceId>
+detail::ContextRef::provider_instance_id(std::size_t index) const noexcept {
+  if (!state_)
+    return std::unexpected(Status::FailedPrecondition("context lease is invalid"));
+  if (index >= state_->provider_count)
+    return std::unexpected(Status::OutOfRange("compute provider index is out of range"));
+  return state_->providers()[index].instance;
+}
+
+Status detail::ContextRef::call(Status (*function)(void *) noexcept,
+                               void *opaque) const noexcept {
+  if (!state_ || !function)
+    return Status::InvalidArgument("retained context call is invalid");
+  if (!state_->admission.try_enter())
+    return Status::FailedPrecondition("context is closed");
+  const auto status = function(opaque);
+  state_->admission.leave();
+  return status;
+}
+
 bool detail::ContextRef::owns(const Queue &queue) const noexcept {
   QueueState *queue_state = ContextAccess::state(queue);
   return state_ != nullptr && queue_state != nullptr &&
          queue_state->context == state_;
+}
+
+bool detail::ContextRef::owns(const QueueRef &queue) const noexcept {
+  QueueState *queue_state = ContextAccess::state(queue);
+  return state_ != nullptr && queue_state != nullptr &&
+         queue_state->context == state_;
+}
+
+bool detail::ContextRef::owns(const ProviderExtensionRef &extension) const noexcept {
+  return state_ != nullptr && extension.valid() && extension.owner_ == state_;
 }
 
 Result<bool> detail::ContextRef::has_backend_extension(
@@ -764,6 +875,17 @@ Status detail::ContextRef::validate_resource(
 }
 
 Result<Queue> Context::create_queue(QueueOptions options) const noexcept {
+  HYLE_ASSIGN_OR_RETURN(auto retained, detail::ContextRef::acquire(*this));
+  return retained.create_queue(options);
+}
+
+Result<Queue> detail::ContextRef::create_queue(QueueOptions options) const noexcept {
+  return ContextAccess::create_queue(*this, options);
+}
+
+Result<Queue> detail::ContextAccess::create_queue(const ContextRef &context,
+                                                QueueOptions options) noexcept {
+  auto *state_ = state(context);
   if (state_ == nullptr)
     return std::unexpected(Status::FailedPrecondition("context is invalid"));
   if (!state_->admission.try_enter())
@@ -850,6 +972,74 @@ Status Context::drain() noexcept {
   return terminal;
 }
 
+detail::QueueRef::QueueRef(const QueueRef &other) noexcept : state_(other.state_) {
+  detail::retain(state_);
+}
+
+detail::QueueRef &detail::QueueRef::operator=(const QueueRef &other) noexcept {
+  if (state_ != other.state_) {
+    detail::retain(other.state_);
+    detail::release(state_);
+    state_ = other.state_;
+  }
+  return *this;
+}
+
+detail::QueueRef::QueueRef(QueueRef &&other) noexcept
+    : state_(std::exchange(other.state_, nullptr)) {}
+
+detail::QueueRef &detail::QueueRef::operator=(QueueRef &&other) noexcept {
+  if (this != &other) {
+    detail::release(state_);
+    state_ = std::exchange(other.state_, nullptr);
+  }
+  return *this;
+}
+
+detail::QueueRef::~QueueRef() { detail::release(state_); }
+
+Result<detail::QueueRef> detail::QueueRef::acquire(const Queue &queue) noexcept {
+  auto *state = ContextAccess::state(queue);
+  if (!state)
+    return std::unexpected(Status::FailedPrecondition("queue is invalid"));
+  if (!state->context->admission.is_open())
+    return std::unexpected(Status::FailedPrecondition("context is closed"));
+  if (!state->admission.is_open())
+    return std::unexpected(Status::FailedPrecondition("queue is closed"));
+  detail::retain(state);
+  return QueueRef(state);
+}
+
+bool detail::QueueRef::is_open() const noexcept {
+  return state_ && state_->admission.is_open() &&
+         state_->context->admission.is_open();
+}
+
+Device detail::QueueRef::device() const noexcept {
+  return state_ ? state_->context->device : Device{};
+}
+
+bool detail::QueueRef::same_owner(const QueueRef &other) const noexcept {
+  return state_ && state_ == other.state_;
+}
+
+bool detail::QueueRef::same_owner(const Queue &other) const noexcept {
+  return state_ && state_ == ContextAccess::state(other);
+}
+
+bool detail::QueueRef::same_owner(const QueueSequence &other) const noexcept {
+  return state_ && state_ == ContextAccess::state(other);
+}
+
+Status detail::QueueRef::reserve_completions(std::size_t minimum) const noexcept {
+  return state_ ? state_->reserve_completions(minimum)
+                : Status::FailedPrecondition("queue is invalid");
+}
+
+void detail::QueueRef::reset() noexcept {
+  detail::release(std::exchange(state_, nullptr));
+}
+
 Queue::Queue(Queue &&other) noexcept : state_(other.state_) {
   other.state_ = nullptr;
 }
@@ -899,64 +1089,70 @@ Status Queue::drain() noexcept {
 Status Queue::reserve_completions(std::size_t minimum) noexcept {
   if (state_ == nullptr)
     return Status::FailedPrecondition("queue is invalid");
-  if (!state_->context->admission.try_enter())
+  return state_->reserve_completions(minimum);
+}
+
+Status detail::QueueState::reserve_completions(std::size_t minimum) noexcept {
+  if (!context->admission.try_enter())
     return Status::FailedPrecondition("context is closed");
-  if (!state_->admission.try_enter()) {
-    state_->context->admission.leave();
+  if (!admission.try_enter()) {
+    context->admission.leave();
     return Status::FailedPrecondition("queue is closed");
   }
-  const Status result = state_->context->backend_vtable->reserve_completions(
-      state_->backend_state, minimum);
-  state_->admission.leave();
-  state_->context->admission.leave();
+  const Status result = context->backend_vtable->reserve_completions(
+      backend_state, minimum);
+  admission.leave();
+  context->admission.leave();
   return result;
 }
 
-Status Queue::begin_submission() noexcept {
-  if (state_ == nullptr)
-    return Status::FailedPrecondition("queue is invalid");
-  if (!state_->context->admission.try_enter())
+Status detail::QueueState::begin_submission() noexcept {
+  if (!context->admission.try_enter())
     return Status::FailedPrecondition("context is closed");
-  if (!state_->admission.try_enter()) {
-    state_->context->admission.leave();
+  if (!admission.try_enter()) {
+    context->admission.leave();
     return Status::FailedPrecondition("queue is closed");
   }
-  if (state_->submitting.test_and_set(std::memory_order_acquire)) {
-    state_->admission.leave();
-    state_->context->admission.leave();
+  if (submitting.test_and_set(std::memory_order_acquire)) {
+    admission.leave();
+    context->admission.leave();
     return Status::FailedPrecondition(
         "ordered queue already has an active submission sequence");
   }
   return Status::Ok();
 }
 
-void Queue::end_submission() noexcept {
-  state_->submitting.clear(std::memory_order_release);
-  state_->admission.leave();
-  state_->context->admission.leave();
+void detail::QueueState::end_submission() noexcept {
+  submitting.clear(std::memory_order_release);
+  admission.leave();
+  context->admission.leave();
 }
 
 detail::QueueSequence::QueueSequence(QueueSequence &&other) noexcept
-    : queue_(other.queue_), backend_sequence_(other.backend_sequence_),
-      terminal_(std::move(other.terminal_)), accepted_(other.accepted_) {
-  other.queue_ = nullptr;
+    : state_(other.state_), backend_sequence_(other.backend_sequence_),
+      terminal_(std::move(other.terminal_)), accepted_(other.accepted_),
+      recording_(other.recording_) {
+  other.state_ = nullptr;
   other.backend_sequence_ = nullptr;
   other.terminal_ = Status::Ok();
   other.accepted_ = false;
+  other.recording_ = false;
 }
 
 detail::QueueSequence &
 detail::QueueSequence::operator=(QueueSequence &&other) noexcept {
   if (this != &other) {
     reset();
-    queue_ = other.queue_;
+    state_ = other.state_;
     backend_sequence_ = other.backend_sequence_;
     terminal_ = std::move(other.terminal_);
     accepted_ = other.accepted_;
-    other.queue_ = nullptr;
+    recording_ = other.recording_;
+    other.state_ = nullptr;
     other.backend_sequence_ = nullptr;
     other.terminal_ = Status::Ok();
     other.accepted_ = false;
+    other.recording_ = false;
   }
   return *this;
 }
@@ -965,31 +1161,59 @@ detail::QueueSequence::~QueueSequence() { reset(); }
 
 Result<detail::QueueSequence>
 detail::QueueSequence::begin(Queue &queue) noexcept {
-  Status status = queue.begin_submission();
-  if (!status.ok())
-    return std::unexpected(std::move(status));
-  detail::QueueState *state = detail::ContextAccess::state(queue);
-  void *backend_sequence = nullptr;
-  status = state->context->backend_vtable->begin_sequence(state->backend_state,
-                                                          &backend_sequence);
+  return begin(ContextAccess::state(queue));
+}
+
+Result<detail::QueueSequence>
+detail::QueueSequence::begin(const QueueRef &queue) noexcept {
+  return begin(ContextAccess::state(queue));
+}
+
+Result<detail::QueueSequence>
+detail::QueueSequence::begin(QueueState *state) noexcept {
+  if (!state)
+    return std::unexpected(Status::FailedPrecondition("queue is invalid"));
+  // Hold the actual state through admission, command recording and finish.
+  // A public Queue may move or close without replacing this sequence's owner.
+  detail::retain(state);
+  Status status = state->begin_submission();
   if (!status.ok()) {
-    queue.end_submission();
+    detail::release(state);
     return std::unexpected(std::move(status));
   }
-  return QueueSequence(&queue, backend_sequence);
+  void *backend_sequence = nullptr;
+  status = state->context->backend_vtable->begin_sequence(state->backend_state,
+                                                        &backend_sequence);
+  if (!status.ok()) {
+    state->end_submission();
+    detail::release(state);
+    return std::unexpected(std::move(status));
+  }
+  return QueueSequence(state, backend_sequence);
 }
 
 Result<detail::QueueDependencyRoute>
 detail::QueueSequence::dependency_route(const Queue &destination,
                                         const Queue &source) noexcept {
-  detail::QueueState *destination_state =
-      detail::ContextAccess::state(destination);
-  detail::QueueState *source_state = detail::ContextAccess::state(source);
+  return dependency_route(ContextAccess::state(destination), ContextAccess::state(source));
+}
+
+Result<detail::QueueDependencyRoute>
+detail::QueueSequence::dependency_route(const QueueRef &destination,
+                                        const QueueRef &source) noexcept {
+  return dependency_route(ContextAccess::state(destination), ContextAccess::state(source));
+}
+
+Result<detail::QueueDependencyRoute>
+detail::QueueSequence::dependency_route(QueueState *destination_state,
+                                        QueueState *source_state) noexcept {
   if (destination_state == nullptr || source_state == nullptr) {
     return std::unexpected(
         Status::FailedPrecondition("compute dependency queue is invalid"));
   }
-  if (!destination.is_open() || !source.is_open()) {
+  if (!destination_state->admission.is_open() ||
+      !destination_state->context->admission.is_open() ||
+      !source_state->admission.is_open() || !source_state->context->admission.is_open()) {
     return std::unexpected(
         Status::FailedPrecondition("compute dependency queue is closed"));
   }
@@ -1016,8 +1240,18 @@ detail::QueueSequence::dependency_route(const Queue &destination,
 
 Result<detail::CompletionEndpoint>
 detail::QueueSequence::completion_endpoint(const Queue &queue) noexcept {
-  detail::QueueState *state = detail::ContextAccess::state(queue);
-  if (state == nullptr || !queue.is_open()) {
+  return completion_endpoint(ContextAccess::state(queue));
+}
+
+Result<detail::CompletionEndpoint>
+detail::QueueSequence::completion_endpoint(const QueueRef &queue) noexcept {
+  return completion_endpoint(ContextAccess::state(queue));
+}
+
+Result<detail::CompletionEndpoint>
+detail::QueueSequence::completion_endpoint(QueueState *state) noexcept {
+  if (state == nullptr || !state->admission.is_open() ||
+      !state->context->admission.is_open()) {
     return std::unexpected(
         Status::FailedPrecondition("compute dependency queue is invalid"));
   }
@@ -1036,8 +1270,20 @@ detail::QueueSequence::completion_endpoint(const Queue &queue) noexcept {
 Result<bool>
 detail::QueueSequence::can_import_endpoint(const Queue &destination,
                                            CompletionEndpoint source) noexcept {
-  detail::QueueState *state = detail::ContextAccess::state(destination);
-  if (state == nullptr || !destination.is_open()) {
+  return can_import_endpoint(ContextAccess::state(destination), source);
+}
+
+Result<bool>
+detail::QueueSequence::can_import_endpoint(const QueueRef &destination,
+                                           CompletionEndpoint source) noexcept {
+  return can_import_endpoint(ContextAccess::state(destination), source);
+}
+
+Result<bool>
+detail::QueueSequence::can_import_endpoint(QueueState *state,
+                                           CompletionEndpoint source) noexcept {
+  if (state == nullptr || !state->admission.is_open() ||
+      !state->context->admission.is_open()) {
     return std::unexpected(
         Status::FailedPrecondition("compute dependency queue is invalid"));
   }
@@ -1048,7 +1294,7 @@ detail::QueueSequence::can_import_endpoint(const Queue &destination,
 }
 
 void detail::QueueSequence::record(EnqueueResult result) noexcept {
-  if (queue_ == nullptr)
+  if (state_ == nullptr)
     return;
   accepted_ = accepted_ || result.accepted;
   if (terminal_.ok() && !result.status.ok())
@@ -1057,7 +1303,7 @@ void detail::QueueSequence::record(EnqueueResult result) noexcept {
 
 detail::EnqueueResult
 detail::QueueSequence::enqueue_wait(const Completion &source) noexcept {
-  if (queue_ == nullptr) {
+  if (state_ == nullptr) {
     return EnqueueResult::rejected(
         Status::FailedPrecondition("compute queue sequence is invalid"));
   }
@@ -1071,7 +1317,7 @@ detail::QueueSequence::enqueue_wait(const Completion &source) noexcept {
                ? EnqueueResult::no_op()
                : EnqueueResult::rejected(*dependency.terminal_hint);
   }
-  detail::QueueState *state = detail::ContextAccess::state(*queue_);
+  detail::QueueState *state = state_;
   EnqueueResult result = state->context->backend_vtable->wait_completion(
       state->backend_state, dependency.vtable, dependency.state);
   if (result.accepted && result.status.ok() &&
@@ -1082,30 +1328,36 @@ detail::QueueSequence::enqueue_wait(const Completion &source) noexcept {
 }
 
 detail::EnqueueResult detail::QueueSequence::enqueue_resolved_wait(CompletionDependency source) noexcept {
-  if (queue_ == nullptr || source.terminal_hint == nullptr)
+  if (state_ == nullptr || source.terminal_hint == nullptr)
     return EnqueueResult::rejected(Status::FailedPrecondition("copy dependency or sequence is invalid"));
   if (!source.terminal_hint->ok()) return EnqueueResult::rejected(*source.terminal_hint);
   if (!source.pending()) return EnqueueResult::no_op();
-  auto *state = detail::ContextAccess::state(*queue_);
+  auto *state = state_;
   return state->context->backend_vtable->wait_completion(state->backend_state, source.vtable, source.state);
 }
 
 Result<Completion> detail::QueueSequence::finish() noexcept {
-  if (queue_ == nullptr) {
+  if (state_ == nullptr) {
     return std::unexpected(
         Status::FailedPrecondition("compute queue sequence is invalid"));
   }
-  Queue *queue = queue_;
-  detail::QueueState *state = detail::ContextAccess::state(*queue);
+  // End/abort owns recording termination. Keep this admitted guard intact so
+  // the caller can abort before any backend tries to record a terminal event.
+  if (recording_)
+    return std::unexpected(Status::FailedPrecondition(
+        "compute capture must end or abort before finishing its sequence"));
+  detail::QueueState *state = state_;
   const bool accepted = accepted_;
   Status terminal = std::move(terminal_);
   Completion completion = state->context->backend_vtable->finish_sequence(
       state->backend_state, backend_sequence_, accepted, terminal);
-  queue_ = nullptr;
+  state_ = nullptr;
   backend_sequence_ = nullptr;
   accepted_ = false;
+  recording_ = false;
   terminal_ = Status::Ok();
-  queue->end_submission();
+  state->end_submission();
+  detail::release(state);
   if (!completion.valid()) {
     return std::unexpected(
         Status::Internal("compute backend returned an invalid completion"));
@@ -1117,7 +1369,15 @@ Result<Completion> detail::QueueSequence::finish() noexcept {
 }
 
 void detail::QueueSequence::reset() noexcept {
-  if (queue_ != nullptr) {
+  if (state_ != nullptr) {
+    if (recording_) {
+      auto extension = BackendExtensionAccess::query_admitted(*this, kCommandCaptureExtensionId);
+      HYLE_FATAL_ASSERT(extension.has_value());
+      const Status aborted = CommandCaptureAccess::abort(*extension, *this);
+      HYLE_FATAL_ASSERT(!recording_);
+      record(EnqueueResult::rejected(aborted.ok()
+          ? Status::Internal("compute command capture was abandoned") : aborted));
+    }
     if (accepted_ && terminal_.ok()) {
       terminal_ = Status::Internal(
           "accepted compute queue sequence was abandoned before finish");

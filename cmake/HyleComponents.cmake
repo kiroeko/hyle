@@ -262,7 +262,7 @@ _hyle_declare_component(io_transfer
 # implementations remain independent factors.
 _hyle_declare_component(compute
   TRACE
-  PRIVATE_DEPS util_core
+  PRIVATE_DEPS container util_core
   PUBLIC_DEPS core error mem compute_ops)
 # Graph owns logical tensor-DAG publication, provider-region partition and
 # compiled/invocation lifetimes. Its public values name Compute and Error
@@ -273,6 +273,14 @@ _hyle_declare_component(graph
   TRACE
   PRIVATE_DEPS container util_core math
   PUBLIC_DEPS core error compute_ops compute mem)
+# Optional host progress over the original Graph slot. Graph itself retains no
+# scheduling dependency; the explicit graph_progress product assembles it.
+_hyle_declare_component(graph_progress
+  PRIVATE_DEPS compute mem time util_core
+  PUBLIC_DEPS core error graph sched
+  PUBLIC_TYPE_DEPS graph sched
+  TEST_DEPS compute_backend_cpu compute_provider_native
+  SPLIT_PUBLIC_HEADERS hyle/graph/progress.h)
 # Container's consumer-facing product remains one facade, while independent
 # factors own concurrency, handoff and text dependencies. Public include paths
 # intentionally remain hyle/container/*: these identities are maintenance and
@@ -393,12 +401,12 @@ _hyle_declare_component(compute_provider_native
 # Compute never acquires a reverse dependency on Graph or its region providers.
 _hyle_declare_component(compute_route_cpu
   PRIVATE_DEPS compute_provider_native compute_provider_onednn compute_provider_ggml
-  PUBLIC_DEPS core compute compute_backend_cpu compute_stream io_core mem
-  PUBLIC_TYPE_DEPS compute_stream io_core mem
+  PUBLIC_DEPS core compute compute_backend_cpu mem
+  PUBLIC_TYPE_DEPS mem
   SPLIT_PUBLIC_HEADERS hyle/compute/cpu.h)
 _hyle_declare_component(graph_route_cpu
-  PRIVATE_DEPS compute_provider_native compute_provider_onednn
-               graph_provider_onednn compute_provider_ggml
+  PRIVATE_DEPS compute compute_provider_native compute_provider_onednn
+               graph_provider_onednn compute_provider_ggml graph_batch
   PUBLIC_DEPS core compute_route_cpu graph
   TEST_DEPS sched
   SPLIT_PUBLIC_HEADERS hyle/graph/cpu.h)
@@ -406,7 +414,7 @@ _hyle_declare_component(graph_route_cpu
 # Audited native cuBLASLt implementation. The expert factory has no CUDA SDK
 # types; only the implementation consumes the backend's private context seam.
 _hyle_declare_component(compute_provider_cublas
-  PRIVATE_DEPS compute_backend_cuda compute_ops error mem
+  PRIVATE_DEPS compute_backend_cuda compute_ops container error mem
   PUBLIC_DEPS core compute
   SPLIT_PUBLIC_HEADERS hyle/compute/providers/cublas.h)
 # Append-only identity tombstone.  The Marlin implementation, public carrier
@@ -416,16 +424,16 @@ _hyle_declare_component(compute_provider_marlin)
 _hyle_declare_component(compute_provider_cuda
   PRIVATE_DEPS compute_backend_cuda compute_ops error mem
   PUBLIC_DEPS core compute
+  TEST_DEPS graph compute_batch compute_route_cuda
   SPLIT_PUBLIC_HEADERS hyle/compute/providers/cuda.h)
 # Compiled CUDA defaults compose native implementations without a CPU route.
 _hyle_declare_component(compute_route_cuda
   PRIVATE_DEPS platform platform_thread compute_ops container util_core compute_provider_cublas compute_provider_cuda
                compute_provider_ggml_cuda compute_provider_torch_cuda
-  PUBLIC_DEPS core compute compute_backend_cuda compute_provider_flashinfer mem compute_stream io_core
-  PUBLIC_TYPE_DEPS compute_stream io_core
+  PUBLIC_DEPS core compute compute_backend_cuda compute_provider_flashinfer mem
   SPLIT_PUBLIC_HEADERS hyle/compute/cuda.h hyle/compute/cuda_weights.h)
 _hyle_declare_component(graph_route_cuda
-  PRIVATE_DEPS compute_backend_cuda graph_provider_ggml_cuda
+  PRIVATE_DEPS compute compute_backend_cuda compute_provider_cuda compute_provider_torch_cuda container graph_provider_ggml_cuda graph_batch
   PUBLIC_DEPS core compute_route_cuda graph
   SPLIT_PUBLIC_HEADERS hyle/graph/cuda.h)
 
@@ -433,28 +441,30 @@ _hyle_declare_component(graph_route_cuda
 _hyle_declare_component(compute_route_apple
   TRACE
   PRIVATE_DEPS container platform_thread util_core compute_provider_ggml_metal
-  PUBLIC_DEPS core compute compute_ops error mem compute_stream io_core compute_batch
-  PUBLIC_TYPE_DEPS compute_stream io_core compute_batch
-  SPLIT_PUBLIC_HEADERS hyle/compute/apple.h hyle/compute/apple_memory.h hyle/compute/apple_weights.h hyle/compute/apple_batch.h hyle/compute/detail/apple_plan.h hyle/compute/detail/apple_batch_access.h)
+  PUBLIC_DEPS core compute compute_ops error mem compute_batch
+  PUBLIC_TYPE_DEPS compute_batch
+  SPLIT_PUBLIC_HEADERS hyle/compute/apple.h hyle/compute/apple_memory.h hyle/compute/apple_weights.h hyle/compute/apple_batch.h hyle/compute/apple_row_cache.h hyle/compute/detail/apple_plan.h hyle/compute/detail/apple_batch_access.h)
 _hyle_declare_component(graph_route_apple
   TRACE
-  PRIVATE_DEPS graph_batch
+  PRIVATE_DEPS graph_batch compute container mem util_core
   PUBLIC_DEPS core compute_ops compute_route_apple compute_batch error graph
   PUBLIC_TYPE_DEPS compute_batch compute_route_apple
+  TEST_DEPS graph_progress
   SPLIT_PUBLIC_HEADERS hyle/graph/apple.h)
 
 # Native Vulkan owners, independent of the CPU/CUDA/Apple executors.
 _hyle_declare_component(compute_route_vulkan
   TRACE
   PRIVATE_DEPS time util_core compute_provider_ggml_vulkan compute_provider_iree_vulkan
-  PUBLIC_DEPS core compute compute_ops error mem compute_stream io_core compute_batch
-  PUBLIC_TYPE_DEPS compute_stream io_core compute_batch
-  SPLIT_PUBLIC_HEADERS hyle/compute/vulkan.h hyle/compute/vulkan_memory.h hyle/compute/vulkan_weights.h hyle/compute/vulkan_batch.h hyle/compute/detail/vulkan_plan.h hyle/compute/detail/vulkan_batch_access.h)
+  PUBLIC_DEPS core compute compute_ops error mem compute_batch
+  PUBLIC_TYPE_DEPS compute_batch
+  SPLIT_PUBLIC_HEADERS hyle/compute/vulkan.h hyle/compute/vulkan_memory.h hyle/compute/vulkan_weights.h hyle/compute/vulkan_batch.h hyle/compute/vulkan_row_cache.h hyle/compute/detail/vulkan_plan.h hyle/compute/detail/vulkan_batch_access.h)
 _hyle_declare_component(graph_route_vulkan
   TRACE
-  PRIVATE_DEPS graph_batch
+  PRIVATE_DEPS graph_batch compute util_core
   PUBLIC_DEPS core compute_ops compute_route_vulkan compute_batch error graph
   PUBLIC_TYPE_DEPS compute_batch compute_route_vulkan
+  TEST_DEPS graph_progress
   SPLIT_PUBLIC_HEADERS hyle/graph/vulkan.h)
 
 # The Vulkan implementation factor owns its native adapters.
@@ -468,8 +478,9 @@ _hyle_declare_component(compute_ggml_runtime
 
 # Native provider dependencies and public headers follow their implementations.
 _hyle_declare_component(compute_provider_ggml_cuda
-  PRIVATE_DEPS compute_backend_cuda compute_ops compute_ggml_runtime error mem
+  PRIVATE_DEPS compute_backend_cuda compute_ops compute_ggml_runtime container error mem
   PUBLIC_DEPS core compute
+  TEST_DEPS compute_route_cuda graph_route_cuda
   SPLIT_PUBLIC_HEADERS hyle/compute/providers/ggml_cuda.h)
 _hyle_declare_component(graph_provider_ggml_cuda
   PRIVATE_DEPS compute_provider_ggml_cuda compute_ops error mem graph
@@ -478,7 +489,7 @@ _hyle_declare_component(graph_provider_ggml_cuda
 _hyle_declare_component(compute_provider_flashinfer
     PRIVATE_DEPS compute_backend_cuda compute_batch compute_ops error mem
   PUBLIC_DEPS core compute
-  TEST_DEPS simd
+  TEST_DEPS simd graph_batch compute_route_cuda
   SPLIT_PUBLIC_HEADERS hyle/compute/providers/flashinfer.h)
 
 # M1-A: independent original Metal program and native resource boundary.
@@ -496,26 +507,14 @@ _hyle_declare_component(compute_provider_torch_cuda
   TEST_DEPS graph
   SPLIT_PUBLIC_HEADERS hyle/compute/providers/torch_cuda.h)
 
-# Optional coarse CPU+CUDA composition has its own native progress/slot owner.
-# A single route never acquires its CPU or Sched closure.
+# Cold CPU+CUDA environment assembly uses the original Graph runtime.
+# Progress is an independent Graph service, never a second hybrid slot owner.
 _hyle_declare_component(graph_route_cpu_cuda
-  PRIVATE_DEPS util_core error mem container compute_backend_cpu graph_route_cpu graph_route_cuda
-  PUBLIC_DEPS core graph compute compute_backend_cuda compute_route_cuda sched
+  PRIVATE_DEPS error compute_backend_cpu graph_batch
+  PUBLIC_DEPS core graph compute mem compute_backend_cuda
+  PUBLIC_TYPE_DEPS compute mem
+  TEST_DEPS graph_progress
   SPLIT_PUBLIC_HEADERS hyle/graph/cpu_cuda.h)
-
-# Native coarse CPU+MLX/Metal composition. A single Apple route has no Sched/CPU edge.
-_hyle_declare_component(graph_route_cpu_apple
-  PRIVATE_DEPS util_core error mem compute_backend_cpu graph_route_cpu
-  PUBLIC_DEPS core compute graph graph_batch graph_route_apple compute_route_apple sched
-  PUBLIC_TYPE_DEPS sched
-  SPLIT_PUBLIC_HEADERS hyle/graph/cpu_apple.h)
-
-# Native CPU+Vulkan coarse composition.
-_hyle_declare_component(graph_route_cpu_vulkan
-  PRIVATE_DEPS util_core error mem compute_backend_cpu graph_route_cpu
-  PUBLIC_DEPS core compute graph graph_batch graph_route_vulkan compute_route_vulkan sched
-  PUBLIC_TYPE_DEPS sched
-  SPLIT_PUBLIC_HEADERS hyle/graph/cpu_vulkan.h)
 
 # F3 composite control borrows the original IO/Scheduler and native copy owners.
 # Compute core never acquires a reverse edge to this factor.
@@ -523,9 +522,28 @@ _hyle_declare_component(compute_stream
   PRIVATE_DEPS core sched time util_core
   PUBLIC_DEPS compute error io_core mem mem_vm
   PUBLIC_TYPE_DEPS compute error io_core mem mem_vm
-  TEST_DEPS compute_route_cpu
+  TEST_DEPS compute_stream_cpu
   SPLIT_PUBLIC_HEADERS hyle/compute/file_stream.h
     hyle/compute/detail/file_stream_access.h hyle/compute/detail/file_stream_copy.h)
+
+# Optional file service: the common pipeline owns IO; each bridge depends only
+# on the actual copy endpoint it uses. Default math routes never depend on it.
+_hyle_declare_component(compute_stream_cpu
+  PRIVATE_DEPS compute
+  PUBLIC_DEPS core compute_stream compute_backend_cpu
+  SPLIT_PUBLIC_HEADERS hyle/compute/cpu_file_stream.h)
+_hyle_declare_component(compute_stream_cuda
+  PRIVATE_DEPS compute
+  PUBLIC_DEPS core compute_stream compute_backend_cuda
+  SPLIT_PUBLIC_HEADERS hyle/compute/cuda_file_stream.h)
+_hyle_declare_component(compute_stream_apple
+  PRIVATE_DEPS compute
+  PUBLIC_DEPS core compute_stream compute_route_apple
+  SPLIT_PUBLIC_HEADERS hyle/compute/apple_file_stream.h)
+_hyle_declare_component(compute_stream_vulkan
+  PRIVATE_DEPS compute
+  PUBLIC_DEPS core compute_stream compute_route_vulkan
+  SPLIT_PUBLIC_HEADERS hyle/compute/vulkan_file_stream.h)
 
 # F4 collection ownership sits above the original lease/copy mechanisms.
 # Compute core and native routes never acquire a reverse dependency here.
@@ -545,12 +563,14 @@ _hyle_declare_component(compute_state
     TEST_DEPS compute_state compute_backend_cpu
     SPLIT_PUBLIC_HEADERS hyle/compute/batch_layout.h hyle/compute/batch_ops.h
       hyle/compute/batch_execution.h hyle/compute/detail/batch_provider.h
+      hyle/compute/detail/batch_output_extent.h
       hyle/compute/detail/batch_graph_access.h hyle/compute/batch_materialize.h
       hyle/compute/batch_paged_native.h
+      hyle/compute/row_cache_paged.h
         hyle/compute/paged_arena.h hyle/compute/detail/paged_arena_access.h
         hyle/compute/detail/materialized_native_controller.h)
   _hyle_declare_component(graph_batch
-    PRIVATE_DEPS core util_core
+    PRIVATE_DEPS core util_core compute_ops
     PUBLIC_DEPS graph compute_batch compute error mem
     PUBLIC_TYPE_DEPS graph compute_batch compute error mem
     SPLIT_PUBLIC_HEADERS hyle/graph/batch.h)
@@ -606,6 +626,7 @@ _hyle_declare_product(container FACTORS
   container_intrusive container container_concurrent container_queue container_text)
 _hyle_declare_product(util FACTORS util_core util_runtime)
 _hyle_declare_product(sched FACTORS sched)
+_hyle_declare_product(graph_progress FACTORS graph_progress)
 _hyle_declare_product(io FACTORS
   io_core io_tls io_http io_http2 io_transfer io_watch io_websocket)
 _hyle_declare_product(process FACTORS process)
@@ -613,7 +634,7 @@ include("${CMAKE_CURRENT_LIST_DIR}/HyleComputeRoutes.cmake")
 # Metadata scripts see the complete candidate catalog. Real product builds
 # replace these roots with the selected routes before traversing the DAG.
 _hyle_compute_route_names(_hyle_catalog_routes)
-foreach(_product IN ITEMS compute graph)
+foreach(_product IN ITEMS compute graph compute_stream)
   hyle_compute_product_roots("${_product}" "${_hyle_catalog_routes}" _roots)
   _hyle_declare_product("${_product}" FACTORS ${_roots})
 endforeach()
@@ -729,7 +750,7 @@ endif()
 # work happens here; expert factories and CPU+GPU bridges share route metadata.
 if(NOT CMAKE_SCRIPT_MODE_FILE AND _hyle_selection_mode STREQUAL "product")
   hyle_resolve_compute_product_routes("${_hyle_requested_products}")
-  foreach(_product IN ITEMS compute graph)
+  foreach(_product IN ITEMS compute graph compute_stream)
     string(TOUPPER "${_product}" _product_upper)
     hyle_compute_product_roots("${_product}" "${HYLE_COMPUTE_ROUTE_LIST}"
       _HYLE_PRODUCT_FACTORS_${_product_upper})

@@ -1,0 +1,142 @@
+{
+  "completed_utc": "2026-10-21T08:58:05.9276229Z",
+  "deleted_logical_bytes": 787600212,
+  "unique_payload_bytes_with_all_links_targeted": 787600212,
+  "deleted": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\symbolic-rows\\cpu-link1\\cpu.exe",
+      "bytes": 139299840,
+      "sha256": "59fdf20549efc3fbf020fa1b3ad185b56f85bee9e288d94f5ff477f254eed316",
+      "file_id": "49715911566842052:2251799817455740",
+      "hard_links_before": 1
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\symbolic-rows\\cpu-link1\\cpu.exp",
+      "bytes": 24980,
+      "sha256": "95777ad3b6aa205a47fad165bf22b0e22c46db70f2a942ca356e6384701d32f1",
+      "file_id": "49715911566842052:1970324840745086",
+      "hard_links_before": 1
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\symbolic-rows\\cpu-link1\\cpu.lib",
+      "bytes": 41298,
+      "sha256": "1a72c22d3a6dec39cca5118fd99aa738ff5f4202c029fc8a48afb6c3d20e909d",
+      "file_id": "49715911566842052:1688849864034431",
+      "hard_links_before": 1
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\symbolic-rows\\cpu-link1\\cpu.map",
+      "bytes": 57348225,
+      "sha256": "0f74cbe05f752947e5364a932919c7239d2b6bd462d64a5c16f550ff3ea9db23",
+      "file_id": "49715911566842052:1688849864034432",
+      "hard_links_before": 1
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\symbolic-rows\\cpu-link2\\cpu.exp",
+      "bytes": 24980,
+      "sha256": "473b41e8ef300aa5c5af9408021dc821e7b4f11661d23d894ca7d4c57d962ba3",
+      "file_id": "49715911566842052:1688849864034486",
+      "hard_links_before": 1
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\symbolic-rows\\cpu-link2\\cpu.lib",
+      "bytes": 41298,
+      "sha256": "1a72c22d3a6dec39cca5118fd99aa738ff5f4202c029fc8a48afb6c3d20e909d",
+      "file_id": "49715911566842052:1688849864034487",
+      "hard_links_before": 1
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\symbolic-rows\\cpu-link2\\cpu.map",
+      "bytes": 57348365,
+      "sha256": "88cc0f5cd41298fb8f41a8dab2563608295e242f052f612e3bf4194ffc86bdfa",
+      "file_id": "49715911566842052:1688849864034488",
+      "hard_links_before": 1
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\symbolic-rows\\cuda-link1\\cuda.exp",
+      "bytes": 24984,
+      "sha256": "7c6b70f5baf9521c90126c31c62498d4dc86aefdcd2beeeda2123b96e86a0e4f",
+      "file_id": "49715911566842052:1688849864034519",
+      "hard_links_before": 1
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\symbolic-rows\\cuda-link1\\cuda.lib",
+      "bytes": 41384,
+      "sha256": "097299e17e955c077a99f65f363d3484d564c016359baeb643f4e47c6b737d59",
+      "file_id": "49715911566842052:1688849864034520",
+      "hard_links_before": 1
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\symbolic-rows\\cuda-link1\\cuda.map",
+      "bytes": 57309718,
+      "sha256": "5dd8c31d0e81c8418c624971b3d662727f62d950145a8c41760c190b0fda8653",
+      "file_id": "49715911566842052:1688849864034521",
+      "hard_links_before": 1
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\symbolic-rows\\qwen-link1\\qwen.exp",
+      "bytes": 24984,
+      "sha256": "c11af7d2d58354591db2b15175b2964f009dea1c04b18229e1d3bf64848fd00e",
+      "file_id": "49715911566842052:1688849864034534",
+      "hard_links_before": 1
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\symbolic-rows\\qwen-link1\\qwen.lib",
+      "bytes": 41384,
+      "sha256": "339d3ce297534ebac8825c27a011f2f4f9dfe366c657ebfc45dbbfdc8412a2cb",
+      "file_id": "49715911566842052:1688849864034535",
+      "hard_links_before": 1
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\symbolic-rows\\qwen-link1\\qwen.map",
+      "bytes": 57976676,
+      "sha256": "d8a971d8fe60d5f4b3f75e8cb29d96e14d6aec86f16dcf8f8ade0f6c58ae771d",
+      "file_id": "49715911566842052:1688849864034536",
+      "hard_links_before": 1
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\viewspec-cpu1\\cpu.exe",
+      "bytes": 139256320,
+      "sha256": "3604d67040f1c93824eb69bbf76913a7b185c72d729bd315ccd8be52503510fd",
+      "file_id": "49715911566842052:1688849864034034",
+      "hard_links_before": 1
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\viewspec-cuda1\\cuda.exe",
+      "bytes": 139240448,
+      "sha256": "71c476f4b4fc657d4589726a4d9769a0de9ad3d60309fd919dcf77b92d74ab7a",
+      "file_id": "49715911566842052:1688849864034051",
+      "hard_links_before": 1
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\viewspec-qwen1\\qwen.exe",
+      "bytes": 139555328,
+      "sha256": "d095b067e75d78a27fd6cf47f388dc793686ace160e152a3a47458c0b948c849",
+      "file_id": "49715911566842052:1688849864034020",
+      "hard_links_before": 1
+    }
+  ],
+  "retained_current_images": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\symbolic-rows\\cpu-link2\\cpu.exe",
+      "bytes": 139300352,
+      "sha256": "6a89650018459d9f71d85ba80e3f7362313cf593f0061dd77b79977cba7a6394"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\symbolic-rows\\cuda-link1\\cuda.exe",
+      "bytes": 139241472,
+      "sha256": "f010c99f434840f6a176e5b082a8b447d0b2dfcbbdb132f688fb1ef9413ccf1c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\symbolic-rows\\qwen-link1\\qwen.exe",
+      "bytes": 139556864,
+      "sha256": "7a5c20d25ff0bcdef635ef52f18d2c7417b8edfa5bbf1f5ea750fb3413f98d01"
+    }
+  ],
+  "retained": "Keep final CPU/CUDA/model images, all objects, source/diff/inputs/commands/results, native caches/DLLs, canonical decision vectors and full-performance baseline. Remove only superseded exes and reproducible maps/import-library output.",
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\paged-append-symbolic-2026-10-21.zip",
+    "bytes": 372811,
+    "sha256": "8eefe5c40e880118a22a99b48e58b5f567f944cf2d2460babe4a72ef06298bcf"
+  }
+}

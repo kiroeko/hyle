@@ -1,0 +1,2833 @@
+{
+  "kind": "correctness",
+  "date": "2026-10-23",
+  "status": "passed",
+  "scope": "Shared Qwen projection/source integration regression: existing S01 original draft paired with MAIN target63/head on CPU/CUDA, plus existing B02 original BF16 CPU. Finite upstream/history fixtures; no whole-model quality or TPS claim.",
+  "tests": 3,
+  "failures": 0,
+  "errors": 0,
+  "skips": 0,
+  "actual_graph_submissions": 69,
+  "cases": {
+    "QwenMtpStateConsumer.CpuQ27SidecarOriginalNextNAndMainTargetFullVocabularyVerifierPublishesRepairedPrefix": {
+      "summary": {
+        "path": ".scratch/qwen-bfloat-selected-20261023/derived/integration/checks1/summary.json",
+        "bytes": 15592,
+        "sha256": "cbf96a6e53b517546c246317c95732cdc64c4e9c461ca3f24c02476d0469ae55"
+      },
+      "xml": {
+        "path": ".scratch/qwen-bfloat-selected-20261023/derived/integration/checks1/results.xml",
+        "bytes": 5601,
+        "sha256": "b7a2d7d7ef10e1f227e36577c6ee383abb674afb234044b80f6d5a9a3e2bfbcb"
+      },
+      "process": {
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-bfloat-selected-20261023\\derived\\integration\\tests-link1\\qwen-gguf-checks.exe",
+          "--gtest_filter=QwenMtpStateConsumer.CpuQ27SidecarOriginalNextNAndMainTargetFullVocabularyVerifierPublishesRepairedPrefix",
+          "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\qwen-bfloat-selected-20261023\\derived\\integration\\checks1\\results.xml"
+        ],
+        "cwd": "C:\\public\\project-hyle\\hyle",
+        "started": 1792766899.622389,
+        "timeout_seconds": 600,
+        "throughput_evidence": false,
+        "memory_evidence": false,
+        "trace": false,
+        "profiler": false,
+        "pid": 10688,
+        "exit": 0,
+        "timed_out": false,
+        "finished": 1792766946.9284406,
+        "process_wall_seconds": 47.304890999992494
+      },
+      "environment": {
+        "PATH": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-bfloat-selected-20261023\\derived\\integration\\tests-link1;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64;C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin;C:\\public\\project-hyle\\hyle\\.scratch\\build-cpu-final-mixed-probe\\ggml\\src;C:\\Users\\kiro\\AppData\\Local\\hyle\\dependencies\\v1\\sdks\\torch-cpu\\Windows-bf0079104e068dcbd60b2f8de589dc725282cbe865a85016cc5b8aa46cab519d\\libtorch\\lib;C:\\public\\tools\\hyle-dependencies\\v1\\sdks\\torch-cuda-leaf\\Windows-2bc729898e422b9f3da54349eed98f2f0b5dd415434508ee2ab2a13fb021815d\\torch\\lib;C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\lib\\x64;C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cuda-final-u3-delivery\\reference-windows\\lib;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\Llvm\\x64\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\Llvm\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\HostX64\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\VC\\VCPackages;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\TestWindow;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\TeamFoundation\\Team Explorer;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\MSBuild\\Current\\bin\\Roslyn;C:\\Program Files (x86)\\Microsoft SDKs\\Windows\\v10.0A\\bin\\NETFX 4.8 Tools\\x64\\;C:\\Program Files (x86)\\HTML Help Workshop;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\FSharp\\Tools;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Team Tools\\DiagnosticsHub\\Collector;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\Extensions\\Microsoft\\CodeCoverage.Console;C:\\Program Files (x86)\\Windows Kits\\10\\bin\\10.0.26100.0\\\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\bin\\\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\\\MSBuild\\Current\\Bin\\amd64;C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\Tools\\;C:\\Program Files\\PowerShell\\7;C:\\Users\\kiro\\.codex\\tmp\\arg0-windows\\codex-arg0Ie9odC;C:\\Program Files\\nvm\\v24.12.0\\node_modules\\@openai\\codex\\node_modules\\@openai\\codex-win32-x64\\vendor\\x86_64-pc-windows-msvc\\codex-path;C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\bin\\x64;C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\bin;C:\\Program Files\\Python312\\Scripts;C:\\Program Files\\Python312;C:\\Program Files\\Common Files\\Oracle\\Java\\javapath;C:\\Program Files (x86)\\Common Files\\Intel\\Shared Libraries\\redist\\intel64\\compiler;C:\\Program Files (x86)\\Razer Chroma SDK\\bin;C:\\Program Files\\Razer Chroma SDK\\bin;C:\\Program Files (x86)\\Razer\\ChromaBroadcast\\bin;C:\\Program Files\\Razer\\ChromaBroadcast\\bin;C:\\Windows\\system32;C:\\Windows;C:\\Windows\\System32\\Wbem;C:\\Windows\\System32\\WindowsPowerShell\\v1.0;C:\\Windows\\System32\\OpenSSH;C:\\Program Files\\dotnet;C:\\Program Files\\Microsoft SQL Server\\Client SDK\\ODBC\\170\\Tools\\Binn;C:\\Program Files\\Microsoft SQL Server\\150\\Tools\\Binn;C:\\Program Files\\Microsoft VS Code\\bin;C:\\Program Files (x86)\\NVIDIA Corporation\\PhysX\\Common;C:\\Program Files\\PuTTY;C:\\Program Files\\Git LFS;C:\\Windows\\system32\\config\\systemprofile\\AppData\\Local\\Microsoft\\WindowsApps;C:\\Program Files\\NVIDIA Corporation\\NVIDIA app\\NvDLISR;C:\\public\\tools\\glslang;C:\\Program Files (x86)\\Incredibuild;C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance Toolkit;C:\\Program Files\\Tailscale;C:\\Program Files\\Sunshine;C:\\Program Files\\Sunshine\\tools;C:\\public\\tools\\cmd;C:\\Program Files\\cursor\\resources\\app\\bin;C:\\Program Files\\Git\\cmd;C:\\Program Files\\TortoiseGit\\bin;C:\\Program Files\\nvm;C:\\Program Files\\nodejs;C:\\Users\\kiro\\.local;C:\\Program Files\\NVIDIA Corporation\\Nsight Compute 2025.1.1;C:\\Program Files\\Microsoft SQL Server\\170\\Tools\\Binn;C:\\Program Files\\GitHub CLI;C:\\public\\tools\\axiomate;C:\\Program Files\\NVIDIA Corporation\\Nsight Compute 2026.2.1\\;C:\\Program Files\\dotnet\\;C:\\Program Files\\CMake\\bin;C:\\Program Files\\Amazon\\AWSCLIV2\\;C:\\Program Files (x86)\\Microsoft SQL Server\\160\\Tools\\Binn\\;C:\\Program Files\\Microsoft SQL Server\\160\\Tools\\Binn\\;C:\\Program Files\\Microsoft SQL Server\\Client SDK\\ODBC\\170\\Tools\\Binn\\;C:\\Program Files\\Microsoft SQL Server\\160\\DTS\\Binn\\;C:\\Program Files (x86)\\Windows Kits\\8.1\\Windows Performance Toolkit\\;C:\\Users\\kiro\\AppData\\Local\\Programs\\OpenAI\\Codex\\bin;C:\\Users\\kiro\\.grok\\bin;C:\\Users\\kiro\\.cargo\\bin;C:\\Program Files\\MySQL\\MySQL Shell 8.0\\bin\\;C:\\Users\\kiro\\AppData\\Local\\Microsoft\\WindowsApps;C:\\Users\\kiro\\.dotnet\\tools;C:\\Program Files\\OpenCppCoverage;C:\\Users\\kiro\\.local\\bin;C:\\Users\\kiro\\.bun\\bin;C:\\Users\\kiro\\AppData\\Local\\Microsoft\\WinGet\\Links;C:\\Program Files\\NVIDIA\\CUDNN\\v9.24\\bin\\13.3\\x64;C:\\public\\TensorRT-11.1.0.106\\bin;C:\\Program Files\\lceda-pro;C:\\Program Files\\WSL\\;C:\\Program Files\\PowerShell\\7\\;C:\\Users\\kiro\\.espressif\\eim_gui;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\Ninja;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\VC\\Linux\\bin\\ConnectionManagerExe;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\vcpkg",
+        "TMP": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-bfloat-selected-20261023\\derived\\integration\\runtime-tmp",
+        "TEMP": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-bfloat-selected-20261023\\derived\\integration\\runtime-tmp",
+        "HYLE_QWEN27_ORIGINAL_TARGET_DIR": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen27-target-verifier-20261023\\original-target63",
+        "HYLE_QWEN27_MTP_INPUT_DIR": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-original-mtp-20261022\\original-q27",
+        "HYLE_QWEN27_ORIGINAL_NEXTN_DIR": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-next-original-20261023\\original-q27-nextn",
+        "HYLE_QWEN27_ORIGINAL_SIDECAR_DIR": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-gguf-selected-20261023\\S01\\original-roles"
+      },
+      "properties": {
+        "draft_manifest_receipt_sha256": "e76fe68789595b2af2820fd7eb136f3ff9297e0c6d2e8ab594cfe433089826ee",
+        "original_draft_roles": "18",
+        "original_draft_source_bytes": "1358645248",
+        "draft_artifact": "MTP/mtp-Qwen3.8-27B-Q4_0.gguf",
+        "target_vocabulary_artifact": "Qwen3.8-27B-UD-Q4_K_M.gguf",
+        "draft_head_codec": "11",
+        "target_head_codec": "14",
+        "draft_head_norm_source": "blk.64.nextn.shared_head_norm.weight",
+        "draft_independent_output_norm_bytes": "20480",
+        "full_head_provider": "ggml-cpu",
+        "full_head_encoded_bytes": "546304000",
+        "original_provider_blk.64.nextn.eh_proj.weight": "ggml-cpu",
+        "original_provider_blk.64.attn_q.weight": "ggml-cpu",
+        "original_provider_blk.64.attn_k.weight": "ggml-cpu",
+        "original_provider_blk.64.attn_v.weight": "ggml-cpu",
+        "original_provider_blk.64.attn_output.weight": "ggml-cpu",
+        "original_provider_blk.64.ffn_gate.weight": "ggml-cpu",
+        "original_provider_blk.64.ffn_up.weight": "ggml-cpu",
+        "original_provider_blk.64.ffn_down.weight": "ggml-cpu",
+        "original_provider_output.weight": "ggml-cpu",
+        "target_provider_blk.63.attn_q.weight": "ggml-cpu",
+        "target_provider_blk.63.attn_k.weight": "ggml-cpu",
+        "target_provider_blk.63.attn_v.weight": "ggml-cpu",
+        "target_provider_blk.63.attn_output.weight": "ggml-cpu",
+        "target_provider_blk.63.ffn_gate.weight": "ggml-cpu",
+        "target_provider_blk.63.ffn_up.weight": "ggml-cpu",
+        "target_provider_blk.63.ffn_down.weight": "ggml-cpu",
+        "actual_submissions": "23",
+        "target_submissions": "10",
+        "nextn_submissions": "10",
+        "target_verifier_submissions": "3",
+        "accepted_target_conditioned_repairs": "1",
+        "actual_accepted_kv_repair_submissions": "1",
+        "accepted_zero_drafts": "2",
+        "accepted_one_draft": "1",
+        "actual_pending_embedding_feedback_checks": "10",
+        "whole_state_publications": "6",
+        "cancelled_unpublished_drafts": "3",
+        "rejected_stale_publishes": "3",
+        "actual_target_reseed_checks": "7",
+        "original_native_reference_submissions": "0",
+        "natural_k1_trials": "1",
+        "controlled_matching_trials": "1",
+        "controlled_rejection_trials": "1",
+        "natural_accepted_drafts": "0",
+        "natural_proposal": "16",
+        "complete_target_draft_resources": "12",
+        "original_target_roles": "12",
+        "original_target_source_bytes": "282318848",
+        "first_full_target_projection_values": "59392",
+        "first_full_target_verifier_values": "496640",
+        "target_verifier_full_vocabulary": "248320",
+        "target_verifier_matmuls": "1",
+        "target_verifier_rows": "2",
+        "target_verifier_provider": "ggml-cpu",
+        "first_full_nextn_head_values": "248320",
+        "state_budget_bytes": "25354496",
+        "peak_state_backing_bytes": "25242628",
+        "scope": "original Q27 MAIN target63 and explicitly selected complete NextN64 retain distinct authenticated source/vocabulary contracts; layer62 input/history fixture,not64-layer target; draft/target use their explicitly supplied original vocabulary contracts; targettap follows globalnorm and shifts to next-token NextN input; one M2 verifier,natural K1 and separate actualTop1/Top2 controls; accept0 keeps aftercurrent,accept1 repairs recursive draft KV with actualtargettap before12member sameHead publication; no full-model quality,natural acceptance-rate or TPS claim"
+      },
+      "actual_graph_submissions": 23,
+      "driver": null
+    },
+    "QwenMtpStateConsumer.CudaQ27SidecarOriginalNextNAndMainTargetFullVocabularyVerifierPublishesRepairedPrefix": {
+      "summary": {
+        "path": ".scratch/qwen-bfloat-selected-20261023/derived/integration/checks2/summary.json",
+        "bytes": 15611,
+        "sha256": "2157dd8c5590dec07073a5921453a319c9a78c4d1b9b947bc7095c11b2d31ad5"
+      },
+      "xml": {
+        "path": ".scratch/qwen-bfloat-selected-20261023/derived/integration/checks2/results.xml",
+        "bytes": 5620,
+        "sha256": "617fb04c18b8ad9ff2eb72fb543d9e451a3075cb8313dd08a5facdff48137eff"
+      },
+      "process": {
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-bfloat-selected-20261023\\derived\\integration\\tests-link1\\qwen-gguf-checks.exe",
+          "--gtest_filter=QwenMtpStateConsumer.CudaQ27SidecarOriginalNextNAndMainTargetFullVocabularyVerifierPublishesRepairedPrefix",
+          "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\qwen-bfloat-selected-20261023\\derived\\integration\\checks2\\results.xml"
+        ],
+        "cwd": "C:\\public\\project-hyle\\hyle",
+        "started": 1792767052.910464,
+        "timeout_seconds": 600,
+        "throughput_evidence": false,
+        "memory_evidence": false,
+        "trace": false,
+        "profiler": false,
+        "pid": 24484,
+        "exit": 0,
+        "timed_out": false,
+        "finished": 1792767097.1721907,
+        "process_wall_seconds": 44.2606070000038
+      },
+      "environment": {
+        "PATH": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-bfloat-selected-20261023\\derived\\integration\\tests-link1;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64;C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin;C:\\public\\project-hyle\\hyle\\.scratch\\build-cpu-final-mixed-probe\\ggml\\src;C:\\Users\\kiro\\AppData\\Local\\hyle\\dependencies\\v1\\sdks\\torch-cpu\\Windows-bf0079104e068dcbd60b2f8de589dc725282cbe865a85016cc5b8aa46cab519d\\libtorch\\lib;C:\\public\\tools\\hyle-dependencies\\v1\\sdks\\torch-cuda-leaf\\Windows-2bc729898e422b9f3da54349eed98f2f0b5dd415434508ee2ab2a13fb021815d\\torch\\lib;C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\lib\\x64;C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cuda-final-u3-delivery\\reference-windows\\lib;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\Llvm\\x64\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\Llvm\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\HostX64\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\VC\\VCPackages;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\TestWindow;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\TeamFoundation\\Team Explorer;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\MSBuild\\Current\\bin\\Roslyn;C:\\Program Files (x86)\\Microsoft SDKs\\Windows\\v10.0A\\bin\\NETFX 4.8 Tools\\x64\\;C:\\Program Files (x86)\\HTML Help Workshop;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\FSharp\\Tools;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Team Tools\\DiagnosticsHub\\Collector;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\Extensions\\Microsoft\\CodeCoverage.Console;C:\\Program Files (x86)\\Windows Kits\\10\\bin\\10.0.26100.0\\\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\bin\\\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\\\MSBuild\\Current\\Bin\\amd64;C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\Tools\\;C:\\Program Files\\PowerShell\\7;C:\\Users\\kiro\\.codex\\tmp\\arg0-windows\\codex-arg0Ie9odC;C:\\Program Files\\nvm\\v24.12.0\\node_modules\\@openai\\codex\\node_modules\\@openai\\codex-win32-x64\\vendor\\x86_64-pc-windows-msvc\\codex-path;C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\bin\\x64;C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\bin;C:\\Program Files\\Python312\\Scripts;C:\\Program Files\\Python312;C:\\Program Files\\Common Files\\Oracle\\Java\\javapath;C:\\Program Files (x86)\\Common Files\\Intel\\Shared Libraries\\redist\\intel64\\compiler;C:\\Program Files (x86)\\Razer Chroma SDK\\bin;C:\\Program Files\\Razer Chroma SDK\\bin;C:\\Program Files (x86)\\Razer\\ChromaBroadcast\\bin;C:\\Program Files\\Razer\\ChromaBroadcast\\bin;C:\\Windows\\system32;C:\\Windows;C:\\Windows\\System32\\Wbem;C:\\Windows\\System32\\WindowsPowerShell\\v1.0;C:\\Windows\\System32\\OpenSSH;C:\\Program Files\\dotnet;C:\\Program Files\\Microsoft SQL Server\\Client SDK\\ODBC\\170\\Tools\\Binn;C:\\Program Files\\Microsoft SQL Server\\150\\Tools\\Binn;C:\\Program Files\\Microsoft VS Code\\bin;C:\\Program Files (x86)\\NVIDIA Corporation\\PhysX\\Common;C:\\Program Files\\PuTTY;C:\\Program Files\\Git LFS;C:\\Windows\\system32\\config\\systemprofile\\AppData\\Local\\Microsoft\\WindowsApps;C:\\Program Files\\NVIDIA Corporation\\NVIDIA app\\NvDLISR;C:\\public\\tools\\glslang;C:\\Program Files (x86)\\Incredibuild;C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance Toolkit;C:\\Program Files\\Tailscale;C:\\Program Files\\Sunshine;C:\\Program Files\\Sunshine\\tools;C:\\public\\tools\\cmd;C:\\Program Files\\cursor\\resources\\app\\bin;C:\\Program Files\\Git\\cmd;C:\\Program Files\\TortoiseGit\\bin;C:\\Program Files\\nvm;C:\\Program Files\\nodejs;C:\\Users\\kiro\\.local;C:\\Program Files\\NVIDIA Corporation\\Nsight Compute 2025.1.1;C:\\Program Files\\Microsoft SQL Server\\170\\Tools\\Binn;C:\\Program Files\\GitHub CLI;C:\\public\\tools\\axiomate;C:\\Program Files\\NVIDIA Corporation\\Nsight Compute 2026.2.1\\;C:\\Program Files\\dotnet\\;C:\\Program Files\\CMake\\bin;C:\\Program Files\\Amazon\\AWSCLIV2\\;C:\\Program Files (x86)\\Microsoft SQL Server\\160\\Tools\\Binn\\;C:\\Program Files\\Microsoft SQL Server\\160\\Tools\\Binn\\;C:\\Program Files\\Microsoft SQL Server\\Client SDK\\ODBC\\170\\Tools\\Binn\\;C:\\Program Files\\Microsoft SQL Server\\160\\DTS\\Binn\\;C:\\Program Files (x86)\\Windows Kits\\8.1\\Windows Performance Toolkit\\;C:\\Users\\kiro\\AppData\\Local\\Programs\\OpenAI\\Codex\\bin;C:\\Users\\kiro\\.grok\\bin;C:\\Users\\kiro\\.cargo\\bin;C:\\Program Files\\MySQL\\MySQL Shell 8.0\\bin\\;C:\\Users\\kiro\\AppData\\Local\\Microsoft\\WindowsApps;C:\\Users\\kiro\\.dotnet\\tools;C:\\Program Files\\OpenCppCoverage;C:\\Users\\kiro\\.local\\bin;C:\\Users\\kiro\\.bun\\bin;C:\\Users\\kiro\\AppData\\Local\\Microsoft\\WinGet\\Links;C:\\Program Files\\NVIDIA\\CUDNN\\v9.24\\bin\\13.3\\x64;C:\\public\\TensorRT-11.1.0.106\\bin;C:\\Program Files\\lceda-pro;C:\\Program Files\\WSL\\;C:\\Program Files\\PowerShell\\7\\;C:\\Users\\kiro\\.espressif\\eim_gui;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\Ninja;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\VC\\Linux\\bin\\ConnectionManagerExe;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\vcpkg",
+        "TMP": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-bfloat-selected-20261023\\derived\\integration\\runtime-tmp",
+        "TEMP": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-bfloat-selected-20261023\\derived\\integration\\runtime-tmp",
+        "HYLE_QWEN27_ORIGINAL_TARGET_DIR": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen27-target-verifier-20261023\\original-target63",
+        "HYLE_QWEN27_MTP_INPUT_DIR": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-original-mtp-20261022\\original-q27",
+        "HYLE_QWEN27_ORIGINAL_NEXTN_DIR": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-next-original-20261023\\original-q27-nextn",
+        "HYLE_QWEN27_ORIGINAL_SIDECAR_DIR": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-gguf-selected-20261023\\S01\\original-roles"
+      },
+      "properties": {
+        "draft_manifest_receipt_sha256": "e76fe68789595b2af2820fd7eb136f3ff9297e0c6d2e8ab594cfe433089826ee",
+        "original_draft_roles": "18",
+        "original_draft_source_bytes": "1358645248",
+        "draft_artifact": "MTP/mtp-Qwen3.8-27B-Q4_0.gguf",
+        "target_vocabulary_artifact": "Qwen3.8-27B-UD-Q4_K_M.gguf",
+        "draft_head_codec": "11",
+        "target_head_codec": "14",
+        "draft_head_norm_source": "blk.64.nextn.shared_head_norm.weight",
+        "draft_independent_output_norm_bytes": "20480",
+        "full_head_provider": "ggml-cuda",
+        "full_head_encoded_bytes": "546304000",
+        "original_provider_blk.64.nextn.eh_proj.weight": "ggml-cuda",
+        "original_provider_blk.64.attn_q.weight": "ggml-cuda",
+        "original_provider_blk.64.attn_k.weight": "ggml-cuda",
+        "original_provider_blk.64.attn_v.weight": "ggml-cuda",
+        "original_provider_blk.64.attn_output.weight": "ggml-cuda",
+        "original_provider_blk.64.ffn_gate.weight": "ggml-cuda",
+        "original_provider_blk.64.ffn_up.weight": "ggml-cuda",
+        "original_provider_blk.64.ffn_down.weight": "ggml-cuda",
+        "original_provider_output.weight": "ggml-cuda",
+        "target_provider_blk.63.attn_q.weight": "ggml-cuda",
+        "target_provider_blk.63.attn_k.weight": "ggml-cuda",
+        "target_provider_blk.63.attn_v.weight": "ggml-cuda",
+        "target_provider_blk.63.attn_output.weight": "ggml-cuda",
+        "target_provider_blk.63.ffn_gate.weight": "ggml-cuda",
+        "target_provider_blk.63.ffn_up.weight": "ggml-cuda",
+        "target_provider_blk.63.ffn_down.weight": "ggml-cuda",
+        "actual_submissions": "23",
+        "target_submissions": "10",
+        "nextn_submissions": "10",
+        "target_verifier_submissions": "3",
+        "accepted_target_conditioned_repairs": "1",
+        "actual_accepted_kv_repair_submissions": "1",
+        "accepted_zero_drafts": "2",
+        "accepted_one_draft": "1",
+        "actual_pending_embedding_feedback_checks": "10",
+        "whole_state_publications": "6",
+        "cancelled_unpublished_drafts": "3",
+        "rejected_stale_publishes": "3",
+        "actual_target_reseed_checks": "7",
+        "original_native_reference_submissions": "0",
+        "natural_k1_trials": "1",
+        "controlled_matching_trials": "1",
+        "controlled_rejection_trials": "1",
+        "natural_accepted_drafts": "0",
+        "natural_proposal": "16",
+        "complete_target_draft_resources": "12",
+        "original_target_roles": "12",
+        "original_target_source_bytes": "282318848",
+        "first_full_target_projection_values": "59392",
+        "first_full_target_verifier_values": "496640",
+        "target_verifier_full_vocabulary": "248320",
+        "target_verifier_matmuls": "1",
+        "target_verifier_rows": "2",
+        "target_verifier_provider": "ggml-cuda",
+        "first_full_nextn_head_values": "248320",
+        "state_budget_bytes": "25354496",
+        "peak_state_backing_bytes": "25242628",
+        "scope": "original Q27 MAIN target63 and explicitly selected complete NextN64 retain distinct authenticated source/vocabulary contracts; layer62 input/history fixture,not64-layer target; draft/target use their explicitly supplied original vocabulary contracts; targettap follows globalnorm and shifts to next-token NextN input; one M2 verifier,natural K1 and separate actualTop1/Top2 controls; accept0 keeps aftercurrent,accept1 repairs recursive draft KV with actualtargettap before12member sameHead publication; no full-model quality,natural acceptance-rate or TPS claim"
+      },
+      "actual_graph_submissions": 23,
+      "driver": null
+    },
+    "QwenMtpStateConsumer.CpuQ27OriginalBFloatTargetAndNextNFullVocabularyVerifierPublishesRepairedPrefix": {
+      "summary": {
+        "path": ".scratch/qwen-bfloat-selected-20261023/derived/integration/checks3/summary.json",
+        "bytes": 14733,
+        "sha256": "9da0d2482de65e70e835487abe87e112914e4974c905f785523dfbc90eafb259"
+      },
+      "xml": {
+        "path": ".scratch/qwen-bfloat-selected-20261023/derived/integration/checks3/results.xml",
+        "bytes": 4109,
+        "sha256": "72935a1ddace48e3103e2c6279ad5c7956b0a4d1225ab27fab648b5be7f54038"
+      },
+      "process": {
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-bfloat-selected-20261023\\derived\\integration\\tests-link1\\qwen-gguf-checks.exe",
+          "--gtest_filter=QwenMtpStateConsumer.CpuQ27OriginalBFloatTargetAndNextNFullVocabularyVerifierPublishesRepairedPrefix",
+          "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\qwen-bfloat-selected-20261023\\derived\\integration\\checks3\\results.xml"
+        ],
+        "cwd": "C:\\public\\project-hyle\\hyle",
+        "started": 1792767292.0848255,
+        "timeout_seconds": 600,
+        "throughput_evidence": false,
+        "memory_evidence": false,
+        "trace": false,
+        "profiler": false,
+        "pid": 50012,
+        "exit": 0,
+        "timed_out": false,
+        "finished": 1792767333.5303555,
+        "process_wall_seconds": 41.445761399998446
+      },
+      "environment": {
+        "PATH": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-bfloat-selected-20261023\\derived\\integration\\tests-link1;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64;C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin;C:\\public\\project-hyle\\hyle\\.scratch\\build-cpu-final-mixed-probe\\ggml\\src;C:\\Users\\kiro\\AppData\\Local\\hyle\\dependencies\\v1\\sdks\\torch-cpu\\Windows-bf0079104e068dcbd60b2f8de589dc725282cbe865a85016cc5b8aa46cab519d\\libtorch\\lib;C:\\public\\tools\\hyle-dependencies\\v1\\sdks\\torch-cuda-leaf\\Windows-2bc729898e422b9f3da54349eed98f2f0b5dd415434508ee2ab2a13fb021815d\\torch\\lib;C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\lib\\x64;C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cuda-final-u3-delivery\\reference-windows\\lib;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\Llvm\\x64\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\Llvm\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\HostX64\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\VC\\VCPackages;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\TestWindow;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\TeamFoundation\\Team Explorer;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\MSBuild\\Current\\bin\\Roslyn;C:\\Program Files (x86)\\Microsoft SDKs\\Windows\\v10.0A\\bin\\NETFX 4.8 Tools\\x64\\;C:\\Program Files (x86)\\HTML Help Workshop;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\FSharp\\Tools;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Team Tools\\DiagnosticsHub\\Collector;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\Extensions\\Microsoft\\CodeCoverage.Console;C:\\Program Files (x86)\\Windows Kits\\10\\bin\\10.0.26100.0\\\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\bin\\\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\\\MSBuild\\Current\\Bin\\amd64;C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\Tools\\;C:\\Program Files\\PowerShell\\7;C:\\Users\\kiro\\.codex\\tmp\\arg0-windows\\codex-arg0Ie9odC;C:\\Program Files\\nvm\\v24.12.0\\node_modules\\@openai\\codex\\node_modules\\@openai\\codex-win32-x64\\vendor\\x86_64-pc-windows-msvc\\codex-path;C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\bin\\x64;C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\bin;C:\\Program Files\\Python312\\Scripts;C:\\Program Files\\Python312;C:\\Program Files\\Common Files\\Oracle\\Java\\javapath;C:\\Program Files (x86)\\Common Files\\Intel\\Shared Libraries\\redist\\intel64\\compiler;C:\\Program Files (x86)\\Razer Chroma SDK\\bin;C:\\Program Files\\Razer Chroma SDK\\bin;C:\\Program Files (x86)\\Razer\\ChromaBroadcast\\bin;C:\\Program Files\\Razer\\ChromaBroadcast\\bin;C:\\Windows\\system32;C:\\Windows;C:\\Windows\\System32\\Wbem;C:\\Windows\\System32\\WindowsPowerShell\\v1.0;C:\\Windows\\System32\\OpenSSH;C:\\Program Files\\dotnet;C:\\Program Files\\Microsoft SQL Server\\Client SDK\\ODBC\\170\\Tools\\Binn;C:\\Program Files\\Microsoft SQL Server\\150\\Tools\\Binn;C:\\Program Files\\Microsoft VS Code\\bin;C:\\Program Files (x86)\\NVIDIA Corporation\\PhysX\\Common;C:\\Program Files\\PuTTY;C:\\Program Files\\Git LFS;C:\\Windows\\system32\\config\\systemprofile\\AppData\\Local\\Microsoft\\WindowsApps;C:\\Program Files\\NVIDIA Corporation\\NVIDIA app\\NvDLISR;C:\\public\\tools\\glslang;C:\\Program Files (x86)\\Incredibuild;C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance Toolkit;C:\\Program Files\\Tailscale;C:\\Program Files\\Sunshine;C:\\Program Files\\Sunshine\\tools;C:\\public\\tools\\cmd;C:\\Program Files\\cursor\\resources\\app\\bin;C:\\Program Files\\Git\\cmd;C:\\Program Files\\TortoiseGit\\bin;C:\\Program Files\\nvm;C:\\Program Files\\nodejs;C:\\Users\\kiro\\.local;C:\\Program Files\\NVIDIA Corporation\\Nsight Compute 2025.1.1;C:\\Program Files\\Microsoft SQL Server\\170\\Tools\\Binn;C:\\Program Files\\GitHub CLI;C:\\public\\tools\\axiomate;C:\\Program Files\\NVIDIA Corporation\\Nsight Compute 2026.2.1\\;C:\\Program Files\\dotnet\\;C:\\Program Files\\CMake\\bin;C:\\Program Files\\Amazon\\AWSCLIV2\\;C:\\Program Files (x86)\\Microsoft SQL Server\\160\\Tools\\Binn\\;C:\\Program Files\\Microsoft SQL Server\\160\\Tools\\Binn\\;C:\\Program Files\\Microsoft SQL Server\\Client SDK\\ODBC\\170\\Tools\\Binn\\;C:\\Program Files\\Microsoft SQL Server\\160\\DTS\\Binn\\;C:\\Program Files (x86)\\Windows Kits\\8.1\\Windows Performance Toolkit\\;C:\\Users\\kiro\\AppData\\Local\\Programs\\OpenAI\\Codex\\bin;C:\\Users\\kiro\\.grok\\bin;C:\\Users\\kiro\\.cargo\\bin;C:\\Program Files\\MySQL\\MySQL Shell 8.0\\bin\\;C:\\Users\\kiro\\AppData\\Local\\Microsoft\\WindowsApps;C:\\Users\\kiro\\.dotnet\\tools;C:\\Program Files\\OpenCppCoverage;C:\\Users\\kiro\\.local\\bin;C:\\Users\\kiro\\.bun\\bin;C:\\Users\\kiro\\AppData\\Local\\Microsoft\\WinGet\\Links;C:\\Program Files\\NVIDIA\\CUDNN\\v9.24\\bin\\13.3\\x64;C:\\public\\TensorRT-11.1.0.106\\bin;C:\\Program Files\\lceda-pro;C:\\Program Files\\WSL\\;C:\\Program Files\\PowerShell\\7\\;C:\\Users\\kiro\\.espressif\\eim_gui;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\Ninja;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\VC\\Linux\\bin\\ConnectionManagerExe;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\vcpkg",
+        "TMP": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-bfloat-selected-20261023\\derived\\integration\\runtime-tmp",
+        "TEMP": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-bfloat-selected-20261023\\derived\\integration\\runtime-tmp",
+        "HYLE_QWEN_BFLOAT_27_DIR": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-bfloat-selected-20261023\\B02\\original-roles"
+      },
+      "properties": {
+        "original_bfloat_manifest_sha256": "0c81c7c18e2ac7cf21308a0cd07d3e34d8b24896b2af80028e7b77b24ace1008",
+        "artifact_repository": "Qwen/Qwen3.8-27B",
+        "artifact_revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+        "artifact_variant": "official-bf16",
+        "original_role_count": "29",
+        "original_role_bytes": "6679513088",
+        "full_head_provider": "ggml-cpu",
+        "full_head_encoded_bytes": "2542796800",
+        "actual_submissions": "23",
+        "target_submissions": "10",
+        "nextn_submissions": "10",
+        "target_verifier_submissions": "3",
+        "accepted_target_conditioned_repairs": "1",
+        "actual_accepted_kv_repair_submissions": "1",
+        "accepted_zero_drafts": "2",
+        "accepted_one_draft": "1",
+        "actual_pending_embedding_feedback_checks": "10",
+        "whole_state_publications": "6",
+        "cancelled_unpublished_drafts": "3",
+        "rejected_stale_publishes": "3",
+        "actual_target_reseed_checks": "7",
+        "original_native_reference_submissions": "0",
+        "natural_k1_trials": "1",
+        "controlled_matching_trials": "1",
+        "controlled_rejection_trials": "1",
+        "natural_accepted_drafts": "0",
+        "natural_proposal": "15",
+        "complete_target_draft_resources": "12",
+        "original_target_roles": "12",
+        "original_target_source_bytes": "744520704",
+        "first_full_target_projection_values": "59392",
+        "first_full_target_verifier_values": "496640",
+        "target_verifier_full_vocabulary": "248320",
+        "target_verifier_matmuls": "1",
+        "target_verifier_rows": "2",
+        "target_verifier_provider": "ggml-cpu",
+        "first_full_nextn_head_values": "248320",
+        "state_budget_bytes": "29673728",
+        "peak_state_backing_bytes": "29617156",
+        "scope": "original BF16 Qwen target layer and complete original BF16 NextN retain their distinct actual source roles; upstream target input/history remain explicit fixtures,not a full trained trunk; F32-fused RoPE with BF16 output is not HF eager intermediate-bit equivalence; draft/target use their explicitly supplied original vocabulary contracts; targettap follows globalnorm and shifts to next-token NextN input; one M2 verifier,natural K1 and separate actualTop1/Top2 controls; accept0 keeps aftercurrent,accept1 repairs recursive draft KV with actualtargettap before12member sameHead publication; no full-model quality,natural acceptance-rate or TPS claim"
+      },
+      "actual_graph_submissions": 23,
+      "driver": null
+    }
+  },
+  "compiled_and_linked": {
+    "compile_record": {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/integration/compile4/qwen-state/identity.json",
+      "bytes": 112401,
+      "sha256": "f973db5fd7014a68fe4a7b75ce884b13ae0e244f26e8f6ab564ccdf03728674f"
+    },
+    "source": {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\qwen_mtp_state_consumer_test.cc",
+      "bytes": 246586,
+      "sha256": "08e39a18a6132fc2c76555ee4109d35a6e073521b096cb06e90fa4eafd369141"
+    },
+    "object": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-bfloat-selected-20261023\\derived\\integration\\compile4\\qwen-state\\qwen-state.obj",
+      "bytes": 12242428,
+      "sha256": "13ab0f498e691097212783de36ea1470979630814b998a99bc6c273befa0a88c"
+    },
+    "source_closure": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\qwen_mtp_state_consumer_test.cc",
+        "bytes": 246586,
+        "sha256": "08e39a18a6132fc2c76555ee4109d35a6e073521b096cb06e90fa4eafd369141"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\resource_leases.h",
+        "bytes": 8660,
+        "sha256": "4e5681ebfa7c2f2ad51e5788c8316f4b993883f595c04b33fe594d7294dab85b"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\completion.h",
+        "bytes": 1959,
+        "sha256": "98b34b9ee4665e9aedac719504c029a509f304b0a4f566bf6b7f76d88dc2ef34"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\visibility.h",
+        "bytes": 43,
+        "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\visibility.h",
+        "bytes": 11701,
+        "sha256": "893fa73589b6e46f00474c2258af74c28d662b52176b57012290c820812ed486"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\error\\result.h",
+        "bytes": 30856,
+        "sha256": "7718409ab2854eb76959215b356bf8077007134d87db1a24f9384a9b5deff2b5"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\core\\compiler.h",
+        "bytes": 4287,
+        "sha256": "e31151f0ed73c532e464c6568483acecd80a2da9c1ee7afc7e081db87d6fb687"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\core\\detail\\compiler_attributes.h",
+        "bytes": 1913,
+        "sha256": "263c7691f9984073e198b69328092330bf572195113d3994d1ab54fe4564d88a"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\core\\environment.h",
+        "bytes": 6712,
+        "sha256": "3d289765b1b677499a444b38d1dbe366bb5e99f89fcb7670af2d08106fd958fa"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\core\\assert.h",
+        "bytes": 16114,
+        "sha256": "5596728bc220ea27696be4f25e2f9eb9cf2705930f8eb0461747c4a862615790"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\core\\detail\\preprocessor.h",
+        "bytes": 409,
+        "sha256": "1d9872ef98db007dcbed7e0128771244640e1de4092830d52a7a83537f98eb84"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\error\\status.h",
+        "bytes": 18122,
+        "sha256": "4d6b4b0bfa5628947aad5449320513d4b071e0c84debfac47f7a7d264cecb7f4"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\resource_budget.h",
+        "bytes": 4622,
+        "sha256": "578d440b6fc3f5b58809837506165de27ac0866ae39b2d132763f5dd1786b1ce"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\mem\\quota_allocator.h",
+        "bytes": 7124,
+        "sha256": "a88fe230dc5358ddde6209de96cc61a59e3f6e60d30b9e7534e986fab10224c9"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\mem\\allocator.h",
+        "bytes": 11090,
+        "sha256": "0369680d4769a0187bfb77ee8b565b5e8fb53a03909fabf233458d9c1cbcd011"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\mem\\visibility.h",
+        "bytes": 43,
+        "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\mem\\resource.h",
+        "bytes": 7717,
+        "sha256": "84b0366e658ec63f999b4c9719cf8584ad758f4ff5340baf37f1c3ebd17145cd"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\tensor.h",
+        "bytes": 1980,
+        "sha256": "ac00f221a66d0f9044a2b49a1123a6b99a6c425568790898129c31d81519c538"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\tensor_desc.h",
+        "bytes": 8700,
+        "sha256": "e5496e00c643bcce2efbb42666773f4172243d10458b756d6f9881b0e677eb9a"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\ops_visibility.h",
+        "bytes": 43,
+        "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\mem\\buffer.h",
+        "bytes": 19273,
+        "sha256": "346a4f810babb8c5dacba49faaf57903d998a3cbb49af12b8c62acc85f7be72c"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\state_versions.h",
+        "bytes": 8553,
+        "sha256": "a09cb66a216b56a0651f515f18d8a97772b0e6d281c171a82b8a6630b3e1c7d7"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\batch_transfer.h",
+        "bytes": 11416,
+        "sha256": "7bec296577c0439b0e0b48639ccff6b3bd95d137dba085c608f650dbb69fcd1b"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\graph\\batch.h",
+        "bytes": 18453,
+        "sha256": "1cf89548b6544889419045c54d859153d5fdb21e49cdac8357e0f653dbdf04a0"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\graph\\executable.h",
+        "bytes": 50386,
+        "sha256": "aa3a55ed1869f84149ad0a6a558d6541880d71ba0bf4c6789480724564cdc0b0"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\device.h",
+        "bytes": 7702,
+        "sha256": "f966803f2293e03db1cde9b1327f847a92162f21adb53f69ef37f0c19b16a84a"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\provider.h",
+        "bytes": 10281,
+        "sha256": "a9737ca3cf64eec23ce768e20b1112407fc7816a32f8031f0b668b16c49f816a"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\prepared_operation.h",
+        "bytes": 20281,
+        "sha256": "03895c56e8665daf2482f66fecf205fd8aacf92046e13c169d9d8ff86fff52d7"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\operation.h",
+        "bytes": 28394,
+        "sha256": "01730da295dde06e2982685b98176c2bdfcebbb0963515b8fbce6e63ad4fe025"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\workload.h",
+        "bytes": 5017,
+        "sha256": "2e7509d99d986e71b06788e4dd1dcb9595799e2ad972df48449ff0b58f0815ad"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\storage_owner.h",
+        "bytes": 8058,
+        "sha256": "549d881d8d4f96eedbb03c8ef9bd6892ede776e5da90a39025538bc50a0530d9"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\detail\\context_ref.h",
+        "bytes": 2563,
+        "sha256": "b1295a6d21d452b2730e3907891ca49993e512a741f8f3a9689976e56f5af3f1"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\detail\\lease_access.h",
+        "bytes": 6794,
+        "sha256": "1b0ab7b4b05faf25d5e6a87e4638504b47f38a54fcbce5ffeb7e50ff2148c8bc"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\detail\\append_lease.h",
+        "bytes": 1944,
+        "sha256": "67b6e87fb0bfbc179d781174c2dc414f1e7487445925cb4c2a4faea579cb7ec5"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\detail\\resource_budget_access.h",
+        "bytes": 2741,
+        "sha256": "f5cfd7955fed71cf08b9a08e0ddacf70191495a61883dac4224e02ef3cba4871"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\graph\\compile_report.h",
+        "bytes": 577,
+        "sha256": "c42c30527d581975c49ddfebb182b0ae7928d799eed91172cb631779a2ad5b4f"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\graph\\execution_source.h",
+        "bytes": 1859,
+        "sha256": "b89de5c6fe8b84192c9618a6a4e4dcee8ac45393e04a9e335f17b5a2d3ecac3f"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\graph\\visibility.h",
+        "bytes": 43,
+        "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\graph\\graph.h",
+        "bytes": 19988,
+        "sha256": "c7a93ccf9fd1c86fb9dec286e7d3345aabcb1810c2fb6793a66093480a5a2136"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\graph\\resources.h",
+        "bytes": 430,
+        "sha256": "c9d3075babb4d863f3543c76576d093fe59f9868df67d50fc492db0aebe7015d"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\graph\\result.h",
+        "bytes": 2146,
+        "sha256": "dc576aa9e523321df6d69ced5717cd9a8e92a9261245a42a431ecc8039a3dd46"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\batch_execution.h",
+        "bytes": 10247,
+        "sha256": "4efe41eead34949a75dbb6fbae4ea7c3013b33e413b540d9d5e3b0d5396542c8"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\batch_ops.h",
+        "bytes": 6114,
+        "sha256": "d6dcf9e7c8559280a762d191bc41c4f7b56b0097844d0b31091b4fda361ea077"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\batch_layout.h",
+        "bytes": 10506,
+        "sha256": "db6c552379051f9b8132fc8dce775dd0826c9a8d1d0d7fd10eecd1f10b159921"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\low_precision.h",
+        "bytes": 10406,
+        "sha256": "0920a5a2faecb2991da60ecede680c496bab73411a305e559461ea41cea309cb"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\batch_materialize.h",
+        "bytes": 7245,
+        "sha256": "9f57cfe9748faf89faae485b604a4b14d6f222bc3ce475bc40a1a265b405b50b"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\paged_arena.h",
+        "bytes": 14088,
+        "sha256": "24d54cdae3a2c46f28126fffbfce06fc28ee6acb44c677324ce4f8fbaf67d458"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\batch_paged_native.h",
+        "bytes": 4723,
+        "sha256": "b42b17bd38435422f06cd830f0b35f6c7deca256916d9d99bff52b9ec0d9f1ce"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\graph\\cpu_cuda.h",
+        "bytes": 1682,
+        "sha256": "ecd0664c4eb77dd97aae87bcc64741482f91c6c30f383525fb9bebb62ba06cd8"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\backends\\cuda.h",
+        "bytes": 9030,
+        "sha256": "8b1eeec880b852f5d35a98464c55a20abb8de0b1db447421dff4b90ba4a13748"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\providers\\ggml_cuda.h",
+        "bytes": 1154,
+        "sha256": "0a98c283bb0201254cbbc0bc04562e4d3b92c212a84c1747a3c69314f91af259"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\graph\\cuda.h",
+        "bytes": 2663,
+        "sha256": "658f3dab4eb1a0a90f2dc472652e0c0fa5e694373544abc21331f116adee1373"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\cuda.h",
+        "bytes": 1457,
+        "sha256": "308beb0703f01239c106d23792f8ef68a57880630b209d1e772a6cd9958918e7"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\cuda_weights.h",
+        "bytes": 5065,
+        "sha256": "1e3ca02148c67fc2d6d6744beb5a03ee93dcb7f7a61ffed16aa5b5e49d5a8079"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\weight_assembly.h",
+        "bytes": 2095,
+        "sha256": "c085186c2751371d8e642f29d1b338e53962236e50c9935ea1858a4b188ca3ac"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\graph\\weight_binding.h",
+        "bytes": 422,
+        "sha256": "ebcc3eea951953966a3b10b2951872e74d04921af6f0cc8de45ab52ab1ba32bd"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\cuda_sidecar_quant_reference.h",
+        "bytes": 7639,
+        "sha256": "cd865999a598c06f2ce13b4353cbe061cab14bfdf84c5050cece6ebf3c3f9221"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\d5_gguf_test_support.h",
+        "bytes": 13405,
+        "sha256": "4742b35f873bc892213e8721f44a4bde0cfeea9d30da036c454a4d3042bd7898"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\providers\\ggml_cpu.h",
+        "bytes": 1054,
+        "sha256": "9a4255d47bb85235d9f1fa66228367017cd6ae2e61c0edebcc63f65ade0e1e58"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\graph\\cpu.h",
+        "bytes": 919,
+        "sha256": "01165b3d6fe8276d4275495d8cb52186d9a81b11749db49a2684856bfbe088e8"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\cpu.h",
+        "bytes": 3070,
+        "sha256": "5573eb9618c4ef2a0db299dfb3bc3f2bf93f0e7005ec31aa7ccd95e25efac21f"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\backends\\cpu.h",
+        "bytes": 1814,
+        "sha256": "a0b99762a3620c1b44b6856263c172d12fa6e482282fe9c2fcc06aa7d82a1d4d"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\detail\\queue_sequence.h",
+        "bytes": 9214,
+        "sha256": "d8cc25b000e655468f3de3b1da3f5b17c388329f21d3f9d6f1d06d9e54de8a26"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\detail\\completion_access.h",
+        "bytes": 4164,
+        "sha256": "8699638e39a1a7d5708cbb6a5e41f191228b3ac571b16b026eadcc1aa6765e34"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\detail\\operation_access.h",
+        "bytes": 992,
+        "sha256": "4bdd60939dea229e91907768308155716b7cd8b78d92150391edc771f2089f34"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\detail\\queue_ref.h",
+        "bytes": 1551,
+        "sha256": "a50579827a0b1554ffa4595c3b2fff68cfcbcc9b75caba25c60f78028d49961b"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\qwen_mtp_state_consumer.h",
+        "bytes": 37966,
+        "sha256": "99e97810e7e1111ca2a6d1adc8a880bd9874e32e7d6f3242af19efb31b527014"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\cpu_c5_qwen_nextn.h",
+        "bytes": 17901,
+        "sha256": "8f7c52ccf22eeb6e17f135664d2c1bcfb3115ba201cbbb01309b14ec048e90bb"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\cpu_c5_qwen_attention.h",
+        "bytes": 10075,
+        "sha256": "24b1428ffefbe46f10b9c6dc168020af603e207ad796963fb9c8764af093c5ae"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\cpu_c5_parameter_fragments.h",
+        "bytes": 7080,
+        "sha256": "16de6e8f2c70b32557073966aed4e5a51cc53d38a86df93a4ff09e45f8c21575"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\cpu_c5_gguf_fixture.h",
+        "bytes": 12070,
+        "sha256": "15d62432a075667b52084c1b646f9c181a8b0b3474331f15ff142b033e544609"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\cpu_expanded_gguf_fixture.h",
+        "bytes": 5708,
+        "sha256": "169fb6b22159dd6cc82b61f87d358d7934fd6a6fdb28cc4724355ab227fd7ca7"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\cpu_c4_model_branches.h",
+        "bytes": 53346,
+        "sha256": "41e3860c11bcda5b0137ce49139f758aa883c10488d52be752f6762dc9de6a89"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\d5_deepseek_official_attention.h",
+        "bytes": 52641,
+        "sha256": "28810d78250c6a8d70432467462a1e7c2996231b8c92c9b2c768d5453e398d6a"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\d5_deepseek_official_fragments.h",
+        "bytes": 22366,
+        "sha256": "6cc0360a0c06c63316116419c56240d7b62abbddac873d228138a06f22c1c9d2"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\d5_quantization_roundtrip.h",
+        "bytes": 3170,
+        "sha256": "64096613c76fb2fb5fa1d2f63bdcd4fd0abf576f7e126decc3ab10ed5dccd3a8"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\d5_fp8_weight_preparation.h",
+        "bytes": 4214,
+        "sha256": "2e9936b89899495588bd701455ba2a371f1833bb6bdef10b008f043f904200fc"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\d5_dynamic_fp8_fragments.h",
+        "bytes": 16239,
+        "sha256": "6e6d323a06331a70666a6ce2a8e26984932d7fbf5732f71ced728a3bc0b68040"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\d5_official_fp8_fragments.h",
+        "bytes": 5606,
+        "sha256": "c132fe5588268de6ce57506025f754aeda0c6e7698703db77932711bcfb4dd56"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\d5_moe_execution_cases.h",
+        "bytes": 4217,
+        "sha256": "8d3dedc2d98d2ba3cd72c1cec165bc53f6472b274da4215509f623511f4321cf"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\d5_moe_profile_cases.h",
+        "bytes": 11520,
+        "sha256": "c21f3e73aba1a7ce161b71c9eec135af9b6352e8aba255c3229c9b82f4d93a6d"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\d5_qwen_gguf_vocabulary_cases.h",
+        "bytes": 2928,
+        "sha256": "8db378b333614ddc594a3ae9364fcbfdded76a2c1226d5cb19b44b24968af655"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\d5_qwen35_fixture.h",
+        "bytes": 9558,
+        "sha256": "b80a27f10ce671ab5fa3953a0862dd387fd85bb0aa2cfd31670593303b8ab393"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\compute\\workload_fixture.h",
+        "bytes": 1211,
+        "sha256": "d451c816f7362313b73758d60fc68c49acbaf0e31735db3039d72e80d39b6a5e"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\d5_qwen38_24t_fixture.h",
+        "bytes": 7313,
+        "sha256": "b5b12c7030e2fbf2f14e8b8d0be9569ef47c64a49d58e98bc7b333b4256e050f"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\d5_qwen38_official_fixture.h",
+        "bytes": 5967,
+        "sha256": "61cacc3d6251c1ef2cfc9a9f724412f9ca4615f4692dcbf777a81e790e7a1ff0"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\d5_qwen38_gdn_fixture.h",
+        "bytes": 8553,
+        "sha256": "9a0fb6af064c85209fa478a7021eb399bf1451fff67d43538a655936343bf2ed"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_native\\half_test_support.h",
+        "bytes": 4399,
+        "sha256": "5f6d8f7b70d07e44600bb6d6d592f66af5dac9970a730695956a1afcfc3cd0b8"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\simd\\dtype.h",
+        "bytes": 12143,
+        "sha256": "04dc8a2e0a654250413a0edc4bdc667f98c8aa40d85da25264b6bb2054dd51e5"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\simd\\types.h",
+        "bytes": 1658,
+        "sha256": "e79863029c8036f918f36f93dd0267b8d42857516e0d74678584d75f8926abbd"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\d5_qwen38_24t_semantic_fragments.h",
+        "bytes": 35712,
+        "sha256": "090b13d99fad2f7def7f3a861823033827d70681683989b4ffa4b8b7ceefd320"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\d5_qwen35_gguf_fragment_support.h",
+        "bytes": 6939,
+        "sha256": "24d8ae62cbb2ed362c4e949db02fdce18505e03ff06adb23cdcfe8b358b61cb1"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\d5_qwen38_24t_full_router.h",
+        "bytes": 22959,
+        "sha256": "7bff099e41ecee6f6dd4dc85a91db2b13a1737bee46699befe27e4d867b6fd04"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\model_ops.h",
+        "bytes": 79485,
+        "sha256": "351978e0a82a28cf9d4f7fbe9b75bf34bb65e03522de6e4f89a395a1975abbda"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\d5_qwen38_24t_moe_profiles.h",
+        "bytes": 11480,
+        "sha256": "ea93064fca5e64b4db7bfb5ded1062d83baf6ab3794f52f962beee2b0fd8a9ee"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\d5_moe_execution_fragments.h",
+        "bytes": 29763,
+        "sha256": "ab7857f47f82b87bf2b39b56d2f637a9d3d3068256abfcbd2a69d94ab1b08f3c"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\d5_moe_semantic_fragments.h",
+        "bytes": 17811,
+        "sha256": "75b094320cc81125cfdf7b8ab473be5b51238b66b6403e8f142b14fbe00b5131"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\d5_kda_projection_cases.h",
+        "bytes": 5583,
+        "sha256": "489e42c858140847b89f4932a5519572aa132f515d96cb9927392ce0266c0feb"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\d5_official_fp4_storage.h",
+        "bytes": 4623,
+        "sha256": "3f9d8a651e2d79dcf5f9ab2ac09cca4439a0d5ef2d4a2ea948c1768966e38846"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_stored_projection_fragment.h",
+        "bytes": 4575,
+        "sha256": "fc1489160e4ff4c61aba0c28f0f628557887737a185f7933079a1a1ac819ee4e"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\d5_deepseek_remaining_fragments.h",
+        "bytes": 39907,
+        "sha256": "5174d4fedabd5b719c7acb91fe2abb523a768c7ec9685878e9b1efaed3241a2b"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\d5_kda_full_fragments.h",
+        "bytes": 12967,
+        "sha256": "8af401a0982f99b0283199c53f44ec15f6524a35eb0590b850a3c403f4d7e76e"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\d5_glm_mtp_head_test.h",
+        "bytes": 475,
+        "sha256": "d8267206827f0399423e5500f45492f70ce51e2bb52bad38bbc1b10b9c33b668"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\d5_glm_remaining_fragments.h",
+        "bytes": 54263,
+        "sha256": "12dbf546cb1050470dd6db65fe4d1f0a70364781a22d9df466699e7b10cde742"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\d5_kimi_remaining_fragments.h",
+        "bytes": 18043,
+        "sha256": "edc6aaeb8d05c1f848447849b45bf3f908b77a737823ce6dfbf737feedeb2218"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\d5_grouped_fp8_fragments.h",
+        "bytes": 8697,
+        "sha256": "100afd9e17c00798ffa5b6f1cb7201dcea93981937321eac4a5afbaa269f2717"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_vocabulary_fragment.h",
+        "bytes": 3292,
+        "sha256": "a96019dc985d5b584bd65b0ad3e56a87177d16a65bda76fb4ed8e0b8e9c2e4fc"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\cpu_c5_gguf_inputs.h",
+        "bytes": 93837,
+        "sha256": "050f5c2b3dc9f84cc681e3e039aeed5978e692d64e60e27b0cd88d49afd1b8fd"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\qwen_nextn_input_fragment.h",
+        "bytes": 1794,
+        "sha256": "94ef3a7f43bd469d6249940a00a58e9c89e0f9b1e8151eb292838be7558ece87"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\qwen_original_mtp_roles.h",
+        "bytes": 12336,
+        "sha256": "da0090bed51b96c6737b115235cf3503b9b90b45e5255e0ad779e37b1ef90a73"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\original_role_input.h",
+        "bytes": 7051,
+        "sha256": "ef769dc0479128b1ab6d727abe76b47fc96023e80ff6592e7442c40703932617"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\qwen27_original_nextn_roles.h",
+        "bytes": 19079,
+        "sha256": "b6dbb39c3dd179de14cb7f5b08000f51184f41adc4d20e6a051b0d96231d8edc"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\mem\\mapping.h",
+        "bytes": 7139,
+        "sha256": "98b1a1ea8c4d85eff4fb8ddeb0fd7a425e7619128c468ae29e11c5e3fbfd05c3"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\platform\\fs.h",
+        "bytes": 24891,
+        "sha256": "2af351149fc82762267b89303439ef71626a2eb541d1922ff6f66014136a9ffa"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\platform\\fs_visibility.h",
+        "bytes": 43,
+        "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\time\\unix_timestamp.h",
+        "bytes": 11791,
+        "sha256": "bcd6bdc860d6ee1e73004ebd15e3b2b2a60ca3dff7a0818deecf9420f95b4496"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\platform\\virtual_memory.h",
+        "bytes": 10485,
+        "sha256": "1b01086d44f330a592a5d3b4946fb213e485095dce904db99bb71103e2a578b8"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\platform\\numa.h",
+        "bytes": 8400,
+        "sha256": "e154f229dc7f6f5ceb1c44f20f769204b48bd422e57c5fed1e53c490607b8fde"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\platform\\visibility.h",
+        "bytes": 43,
+        "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\qwen24_original_nextn_roles.h",
+        "bytes": 14151,
+        "sha256": "879781ed80bca285d14de2313b2cfbdd72499ed002d9ffb93e760f6f07404ba6"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\qwen24_original_moe_fragment.h",
+        "bytes": 13983,
+        "sha256": "f9453a5e1b1b527af73250a10dabeae931f2919bb84beeab8d4e869cd4d9aaf7"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\qwen_full_attention_fragment.h",
+        "bytes": 18883,
+        "sha256": "38a40b13fc1da9482715db3f93cb58d8d20e50953907268e2462bfa6b133356b"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\qwen_bfloat_original_roles.h",
+        "bytes": 34169,
+        "sha256": "0323fb6d6fe5db09530f3a067c8a1aac2bd8b001e59bf47eed968d79d6fd2f32"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\qwen27_original_nextn_reference.h",
+        "bytes": 16096,
+        "sha256": "d1b97c968b672a36ea01db6ca3801967d46c53da4c04e129591baae3d9d794ad"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_original_shared_reference.h",
+        "bytes": 16279,
+        "sha256": "f3a68f4bf5758818585c0e6e9e640137f88a751486036a7fd884889994252dff"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\qwen24_original_nextn_reference.h",
+        "bytes": 20862,
+        "sha256": "48dff1e582917bf84ab9f3bff2b67707a9b31e902a94f5cea1ed4ab30d424c1e"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\qwen24_original_resident_weights.h",
+        "bytes": 15500,
+        "sha256": "2cfff435e80b8a7e7b23015e1261a76d471be55a495aa425f1847875cd60d8b4"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\model_resident_fragment.h",
+        "bytes": 8672,
+        "sha256": "138deaba975edb57d7c29622fef0df737b22f924db43846d3c5bd6d1001fe0cd"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\qwen27_original_target_reference.h",
+        "bytes": 4856,
+        "sha256": "030e61490473e8dbd74c17055783acda8efaa32bca96af25bbec9aad5f503a4c"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\qwen27_original_target_roles.h",
+        "bytes": 8147,
+        "sha256": "dbb3e918ace2bc290d7b23b798334eb2eba34d71175990e7de29db3444f42e02"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\qwen_full_attention_reference.h",
+        "bytes": 7358,
+        "sha256": "20303955b698b2afd4006849ff8a7bcce2ca909aa51c2ad5472670ec77ccff81"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\qwen_bfloat_original_reference.h",
+        "bytes": 13945,
+        "sha256": "9d39fdfba504ef4f01431f9b326e3c499d5c899edd37e07f404a69b462da64d7"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\qwen24_original_target_roles.h",
+        "bytes": 12866,
+        "sha256": "9109d99a3aa2630a13a343d8d271d8beb682332cc8437f87d38b10991b048669"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\qwen24_original_target_fragment.h",
+        "bytes": 1856,
+        "sha256": "7597d3d3077f0a0bdc905767167d0a64fb269a719237596ef8ae35168cab7014"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\qwen24_original_target_reference.h",
+        "bytes": 2970,
+        "sha256": "6174962d137b4fa6e7aca6186cbd5fce7535e33ac3276af9e49b24cbea1fab5e"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\qwen24_moe_reference.h",
+        "bytes": 4283,
+        "sha256": "516a33d7bf0c470517c8e06139623c5e49d1fe6f907491239e5e6219d7e0c6f4"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\qwen_nvfp4_target_fragment.h",
+        "bytes": 3955,
+        "sha256": "7025e1d25f30e742551e7887ba4ed2863591923f24fda9c3a5df69a6189c8735"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\qwen_nvfp4_original_reference.h",
+        "bytes": 5681,
+        "sha256": "2e5e5fd3f1e4bc44534bba1ad51a3a1198dc2fad3480116f1125d60737d6aab5"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\nvfp4_reference_fixture.h",
+        "bytes": 22482,
+        "sha256": "cc94ec1f443511722ff4fc227b065af27b82573443735250951cdce934faa4d3"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\qwen_bfloat_original_artifacts.h",
+        "bytes": 6798,
+        "sha256": "5d4f008e9a4bfe536e84a423db16489b12a3ba78f39bbe60f02a6865f2ab24ee"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\qwen_bfloat_moe_reference.h",
+        "bytes": 17002,
+        "sha256": "ad6071dbebf473b312b90a7145c68b4787a85b496b4961c84e91f52592e5d27a"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\qwen_bfloat_moe_target_fragment.h",
+        "bytes": 5626,
+        "sha256": "ef4eda315c8eafd85d9ac872e8dbfb7eb9f05faaa4bf2dc3f52ee76f0c425b5f"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\qwen_bfloat_selected_experts.h",
+        "bytes": 16095,
+        "sha256": "f9d16dcccf22ea7c79aa81a238e7685c641935d2c323a12031cd42bf4b3d8032"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\qwen_bfloat_q24_artifacts.h",
+        "bytes": 11492,
+        "sha256": "bc2688627d122d043dc8c42595dec4ca25ed24d8872e61ffb7ef4f8a0baf9089"
+      }
+    ],
+    "actual_macros": [
+      "/DHYLE_TEST_QWEN_GGUF_ARTIFACTS_HEADER=\"C:/public/project-hyle/hyle/.scratch/qwen-gguf-selected-20261023/S01/generated/qwen_gguf_original_artifacts.h\"",
+      "/DHYLE_IO_HAS_COROUTINE_TRANSPORT=1",
+      "/DNDEBUG",
+      "/DHYLE_STATIC",
+      "/DNOMINMAX",
+      "/DGGML_USE_CUDA",
+      "/DHYLE_COMPUTE_CUDA=1",
+      "/DHYLE_COMPUTE_GGML_CUDA=1",
+      "/DHYLE_TEST_QWEN_STATE_CPU=1",
+      "/DHYLE_TEST_QWEN_STATE_CUDA=1",
+      "/DHYLE_GGML_CPU_IQ1_EXTENSIONS=1",
+      "/DHYLE_GGML_CUDA_IQ1_EXTENSIONS=1"
+    ],
+    "linked_image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-bfloat-selected-20261023\\derived\\integration\\tests-link1\\qwen-gguf-checks.exe",
+      "bytes": 141250560,
+      "sha256": "63542b0c0b4e96b2d276b976bf5c34f904bcaa00a1401c3841da8922195b77d9"
+    },
+    "link_plan": {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/integration/tests-link1/link-plan.json",
+      "bytes": 93215,
+      "sha256": "2dc80a7031a681151157299dfc22c6365ffb6a6687905407226ca93c493d6636"
+    },
+    "cached_product_objects": [
+      {
+        "record": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-original-target-tail-20261023\\compile4\\fp4-provider\\identity.json",
+          "bytes": 43400,
+          "sha256": "7c6ca980df59164e796fabb2c5f897904abd9469ddaa39d5b16243a451c0fb41"
+        },
+        "source": {
+          "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_cuda\\deepseek_grouped_fp4_provider.cc",
+          "bytes": 10061,
+          "sha256": "4d2fd57433fdce6ff5d7d6285743437593ad04c08f3bc4043febe749ad469dfb"
+        },
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-original-target-tail-20261023\\compile4\\fp4-provider\\fp4-provider.obj",
+          "bytes": 624157,
+          "sha256": "8f39d69c97a0d52b8ec673c93db610a30d2896a263e7ac506ee33bc1222a87e9"
+        }
+      },
+      {
+        "record": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-original-target-tail-20261023\\compile4\\fp4-kernel\\identity.json",
+          "bytes": 31187,
+          "sha256": "63d84c2062f516cdaba4da6d8dce7ae88a5f97283465826fd1c91a2df3e22fd8"
+        },
+        "source": {
+          "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_cuda\\grouped_fp4_f32_kernel.cu",
+          "bytes": 7276,
+          "sha256": "fb24190efadefc988f0103397b1765001168d665899852642eccc6cc7dfca57f"
+        },
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-original-target-tail-20261023\\compile4\\fp4-kernel\\fp4-kernel.obj",
+          "bytes": 38657,
+          "sha256": "9b5e08c9f593c0fbd36d8febbd7ff501508e3f3a52a34871ad036d5b0935b3fb"
+        }
+      },
+      {
+        "record": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-m2-20261023\\compile1\\tensor-program\\identity.json",
+          "bytes": 42177,
+          "sha256": "d69b5db3b51c204a3c15ad611734da16403b7b40a4d6ce2ceaec38f5a2609d17"
+        },
+        "source": {
+          "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_ggml_cuda\\tensor_program.cc",
+          "bytes": 59177,
+          "sha256": "ad7a2e5ba5f92a68bd3c05ee43aa2d9c63663ca78e11745ace103896b57ba9ca"
+        },
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-m2-20261023\\compile1\\tensor-program\\tensor-program.obj",
+          "bytes": 808291,
+          "sha256": "f6e35da6f2e01889f9525eb6b15f6f48e01162ccb86c147514d4e151657862e9"
+        }
+      },
+      {
+        "record": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-m2-20261023\\compile1\\ggml-provider\\identity.json",
+          "bytes": 52469,
+          "sha256": "ecedd056b8e7e961a254f3d15c86c281f4186d6d976d860f7f064feb49460bc3"
+        },
+        "source": {
+          "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_ggml_cuda\\ggml_cuda_provider.cc",
+          "bytes": 77069,
+          "sha256": "d6f1c77a2abaa7aad5d5f68feae6cb769a96abe26146a8ffb2e8ff9a5a85cbe5"
+        },
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-m2-20261023\\compile1\\ggml-provider\\ggml-provider.obj",
+          "bytes": 2267227,
+          "sha256": "e510a4875f52969558dcbc788608cceeb3aed92ae01c2c8862a84f3c94392311"
+        }
+      },
+      {
+        "record": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-original-experts-20261023\\compile3\\mapping-view\\identity.json",
+          "bytes": 46316,
+          "sha256": "a58f5965bb3403678eab1a8eb41f19328a27bf5f5a09e05d2ccd69cf42f57bc5"
+        },
+        "source": {
+          "path": "C:\\public\\project-hyle\\hyle\\src\\mem_vm\\mapping.cc",
+          "bytes": 3395,
+          "sha256": "725496e5d62a7798d93c2616c674e6f46181b26a1c44bfda1c4f9a56f606197c"
+        },
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-original-experts-20261023\\compile3\\mapping-view\\mapping-view.obj",
+          "bytes": 74881,
+          "sha256": "d358aa12e1d24c3270360ba30051295d1782c2265bb773e55c65a906078d44e5"
+        }
+      },
+      {
+        "record": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-encoded-state-20261023\\compile4\\tensor-provider\\identity.json",
+          "bytes": 42571,
+          "sha256": "47728a20607104de68719324c4de3d822344af5b3f803c773d6f873d4cf7c927"
+        },
+        "source": {
+          "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_cuda\\tensor_provider.cc",
+          "bytes": 15051,
+          "sha256": "3d9ca2e84d60050639309db8eb0656a7ad1c96948f9c8dfab2bf72af8d012820"
+        },
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-encoded-state-20261023\\compile4\\tensor-provider\\tensor-provider.obj",
+          "bytes": 605881,
+          "sha256": "c2a89aa7541826c695e33888ee03456e69b9f48225ff42d4be0ac29fe5537f7e"
+        }
+      },
+      {
+        "record": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-encoded-state-20261023\\compile4\\tensor-kernel\\identity.json",
+          "bytes": 3439,
+          "sha256": "03da87de545dfcf6f4cda1fec5d877082756e951cef022aad0618b43152a4944"
+        },
+        "source": {
+          "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_cuda\\tensor_kernel.cu",
+          "bytes": 16609,
+          "sha256": "aa9af0acbbb0f01bd804fa32500d47bd9fd454cdd4241f6eb226884bce1ffd21"
+        },
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-encoded-state-20261023\\compile4\\tensor-kernel\\tensor-kernel.obj",
+          "bytes": 2489677,
+          "sha256": "773bce8801df7bdc41cbd7bf3c1745139e874060e3a18ac920cd309c9f1688eb"
+        }
+      },
+      {
+        "record": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\fp8-quant-output-20261023\\compile1\\torch-cpu\\identity.json",
+          "bytes": 1490184,
+          "sha256": "75df3cb0023324e19f38c60689c16607021c739de3103e7183798fafd390eddd"
+        },
+        "source": {
+          "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_native\\torch_cpu_program.cc",
+          "bytes": 44776,
+          "sha256": "6ad77ec9c79d711bbc4ee63ec894ce7a8504d1c8e4c12f7a1eb143dd47eaaf3d"
+        },
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\fp8-quant-output-20261023\\compile1\\torch-cpu\\torch-cpu.obj",
+          "bytes": 1931998,
+          "sha256": "f8862b4c27f3d42cf7f2fd599a33db1db53dfd8613b43576ca9290c6ea3c18b3"
+        }
+      },
+      {
+        "record": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\fp8-quant-output-20261023\\compile1\\cuda-provider\\identity.json",
+          "bytes": 47448,
+          "sha256": "5e7015229ae941531b1b69518de8965608af82ff70f30b5f14448f263db42dc2"
+        },
+        "source": {
+          "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_cuda\\cuda_provider.cc",
+          "bytes": 22060,
+          "sha256": "c41b8e2809bab626271a1ecf6f8796e26e2f855b5d48fe89c415fb2bfb2357f4"
+        },
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\fp8-quant-output-20261023\\compile1\\cuda-provider\\cuda-provider.obj",
+          "bytes": 708856,
+          "sha256": "6444eda87e167a531fb261e5cb31018deffd3af370dff06ef5e3829e1fcd8e09"
+        }
+      },
+      {
+        "record": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\fp8-quant-output-20261023\\compile1\\quant-provider\\identity.json",
+          "bytes": 42953,
+          "sha256": "164f1ae19f856c4c76806ca2658c1f74536446e188ffedb1a8d8dc30d40eee5c"
+        },
+        "source": {
+          "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_cuda\\float8_quantize_provider.cc",
+          "bytes": 8284,
+          "sha256": "116587eb8e16cb9276439eaaeec0a56b4c2a0d8fede15cb80168a112e52ce3f6"
+        },
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\fp8-quant-output-20261023\\compile1\\quant-provider\\quant-provider.obj",
+          "bytes": 613197,
+          "sha256": "5d2c6fd97d37bc02fd9c6def0778fba16f4d3ee88e4abfb84c55e95bc4c265a5"
+        }
+      },
+      {
+        "record": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\fp8-quant-output-20261023\\compile1\\quant-kernel\\identity.json",
+          "bytes": 3354,
+          "sha256": "feef1c6653a9ae3dd2e2f6301444dde8f85ba90187d5c62c1b0aa956e80ac46a"
+        },
+        "source": {
+          "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_cuda\\float8_quantize_kernel.cu",
+          "bytes": 3871,
+          "sha256": "4369a0a280099ef83f3682a9835b3e59eda1f1ee3d9590340a85ed76cc7f8841"
+        },
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\fp8-quant-output-20261023\\compile1\\quant-kernel\\quant-kernel.obj",
+          "bytes": 64928,
+          "sha256": "fd7cfd34c9bdb47106a4b9f82bcf59ee911668182ca634f12a2c4fba5175f137"
+        }
+      },
+      {
+        "record": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-bfloat-selected-20261023\\B05\\mixed\\compile1\\graph-executable\\identity.json",
+          "bytes": 54338,
+          "sha256": "eadcf4dee594c4a041f396da9ca2e9c09c6367e7901f4dc0d090d99f71c4ecd8"
+        },
+        "source": {
+          "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\executable.cc",
+          "bytes": 477966,
+          "sha256": "eaebb7945041c37c8cac252289e3bb1c181c5560cd8729d1ec97dc1dcbbd95ad"
+        },
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-bfloat-selected-20261023\\B05\\mixed\\compile1\\graph-executable\\graph-executable.obj",
+          "bytes": 5130371,
+          "sha256": "f73f7d5b3016cd6602bf4be83a5e8b485373ba414cb4499538af8f7fdf7fc719"
+        }
+      },
+      {
+        "record": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-bfloat-selected-20261023\\B05\\mixed\\compile1\\graph-submission\\identity.json",
+          "bytes": 52914,
+          "sha256": "a7d29afbeb032d6b66218beb919fffb6348b46e2c46a220314a2980070ad221f"
+        },
+        "source": {
+          "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\submission.cc",
+          "bytes": 50109,
+          "sha256": "6a4d92d0b2fac1776d71d2f4242ecca361916988dc8c13c070c13999caf20dc4"
+        },
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-bfloat-selected-20261023\\B05\\mixed\\compile1\\graph-submission\\graph-submission.obj",
+          "bytes": 628082,
+          "sha256": "a4a52628c5497af9bb83caab2c3e9419e83de649af2ad35c7b58044973221934"
+        }
+      }
+    ],
+    "SDK_built": false,
+    "NVCC_invoked": false,
+    "worker_built": false,
+    "SDK_or_weight_bodies_archived": false
+  },
+  "artifact_pins": {
+    "S01": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-gguf-selected-20261023\\S01\\generated\\qwen_gguf_original_artifacts.h",
+        "bytes": 2802,
+        "sha256": "ec50c94aa9eb547ea1946c086805a2c89c62dd28baafa6c753c257b1bf6d6baa"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-gguf-selected-20261023\\S01\\roles-plan.json",
+        "bytes": 10659,
+        "sha256": "135700f6cf253e6e3384a21dfd4baa40b11b6fb9571cbb07d03dc1218c47fe61"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-gguf-selected-20261023\\S01\\original-roles\\acquisition.json",
+        "bytes": 42705,
+        "sha256": "e76fe68789595b2af2820fd7eb136f3ff9297e0c6d2e8ab594cfe433089826ee"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-gguf-selected-20261023\\S01\\original-roles\\manifest.json",
+        "bytes": 8983,
+        "sha256": "d969bb6b15ec157f67c9acc2725f527843026191fceaabb6dbc36b96aa3be7d3"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-gguf-selected-20261023\\S01\\original-roles\\sidecar-files.json",
+        "bytes": 7376,
+        "sha256": "e7205fc80be3b322a29ead7d3c24d43e520875c45b191c0748282a87c47dd546"
+      }
+    ],
+    "B02": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-bfloat-selected-20261023\\B02\\original-roles\\acquisition.json",
+        "bytes": 91749,
+        "sha256": "4ddafdace06489943bdb2f14276b837352a3ba4f4bc1f5c4732339c303ab7dc0"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-bfloat-selected-20261023\\B02\\original-roles\\manifest.json",
+        "bytes": 10454,
+        "sha256": "0c81c7c18e2ac7cf21308a0cd07d3e34d8b24896b2af80028e7b77b24ace1008"
+      }
+    ],
+    "exact_comment_header_equivalence": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-gguf-selected-20261023\\integration\\retained-header-equivalence.json",
+      "bytes": 4911,
+      "sha256": "a04fd27d8ad3b009d011e41d41a87711b50610d0411236c343cf18d5b3550055"
+    },
+    "previous_evidence": [
+      {
+        "path": "docs/evidence/correctness/mtp-qwen27-sidecar-target-verifier-2026-10-23.json",
+        "bytes": 74104,
+        "sha256": "1298123871ae3c54ac4530b1244f366fa853455d5d52dc5a9286061576a2d877"
+      },
+      {
+        "path": "docs/evidence/correctness/mtp-qwen-bfloat-target-verifier-2026-10-23.json",
+        "bytes": 57298,
+        "sha256": "e7ce4c78e4154de5b70f2c75dd4b8248786be26bd30aa28bbbce6f3b4fb4d83b"
+      }
+    ],
+    "new_weight_acquisition": false,
+    "body_rehashed": false
+  },
+  "history": {
+    "compile_failures": [
+      {
+        "attempt": 1,
+        "kind": "compile_failure_not_a_native_failure",
+        "result": {
+          "path": ".scratch/qwen-bfloat-selected-20261023/derived/integration/compile1/qwen-state/compile.result.json",
+          "bytes": 2999,
+          "sha256": "400185d03e0a93817b8abdf4fcd96dc4b8b0475882315b962a75b4ac6feec898"
+        },
+        "source": {
+          "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\qwen_mtp_state_consumer_test.cc",
+          "bytes": 246546,
+          "sha256": "f8700449b5bf9ffa9472ffb1b587db688a4eaee37193f16c3eb6355108d1fae1"
+        },
+        "snapshot": {
+          "path": ".scratch/qwen-bfloat-selected-20261023/derived/integration/compile1/qwen-state/source/tests/compute_models/qwen_mtp_state_consumer_test.cc",
+          "bytes": 246546,
+          "sha256": "f8700449b5bf9ffa9472ffb1b587db688a4eaee37193f16c3eb6355108d1fae1"
+        }
+      },
+      {
+        "attempt": 2,
+        "kind": "compile_failure_not_a_native_failure",
+        "result": {
+          "path": ".scratch/qwen-bfloat-selected-20261023/derived/integration/compile2/qwen-state/compile.result.json",
+          "bytes": 2997,
+          "sha256": "01b95bf8c18846b7bee25d38dc21f198e52ace2b33d140b732be6cf7e5701510"
+        },
+        "source": {
+          "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\qwen_mtp_state_consumer_test.cc",
+          "bytes": 246546,
+          "sha256": "f8700449b5bf9ffa9472ffb1b587db688a4eaee37193f16c3eb6355108d1fae1"
+        },
+        "snapshot": {
+          "path": ".scratch/qwen-bfloat-selected-20261023/derived/integration/compile2/qwen-state/source/tests/compute_models/qwen_mtp_state_consumer_test.cc",
+          "bytes": 246546,
+          "sha256": "f8700449b5bf9ffa9472ffb1b587db688a4eaee37193f16c3eb6355108d1fae1"
+        }
+      },
+      {
+        "attempt": 3,
+        "kind": "compile_failure_not_a_native_failure",
+        "result": {
+          "path": ".scratch/qwen-bfloat-selected-20261023/derived/integration/compile3/qwen-state/compile.result.json",
+          "bytes": 2999,
+          "sha256": "a3102292afd92d13f36bc1db4074998c7b21889ed2b64921f1a7052cc36fe2b8"
+        },
+        "source": {
+          "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\qwen_mtp_state_consumer_test.cc",
+          "bytes": 246586,
+          "sha256": "08e39a18a6132fc2c76555ee4109d35a6e073521b096cb06e90fa4eafd369141"
+        },
+        "snapshot": {
+          "path": ".scratch/qwen-bfloat-selected-20261023/derived/integration/compile3/qwen-state/source/tests/compute_models/qwen_mtp_state_consumer_test.cc",
+          "bytes": 246586,
+          "sha256": "08e39a18a6132fc2c76555ee4109d35a6e073521b096cb06e90fa4eafd369141"
+        }
+      }
+    ],
+    "pre_native_runner_assertion": {
+      "record": {
+        "path": ".scratch/qwen-bfloat-selected-20261023/derived/integration/runner-path-fix/fix.json",
+        "bytes": 444,
+        "sha256": "c8d27aaf7bd7708e34fd178700536c837569cf882dff2c7c310cf5354559cd61"
+      },
+      "explanation": {
+        "problem": "Output stage relocation incorrectly relocated immutable S01 source directory before native launch; no test had run.",
+        "fix": "Source data path captured independently of output S; existing product/source/object records unchanged.",
+        "support_after_sha256": "c7d66b79c345206a89bce7aec369f488e0cfb62d514b15006ebced426aecdd4b",
+        "adapter_after_sha256": "663d88b0e0c896df0d9f8fdd5e58fe6eaa2c1d8256e18da60394a1f575675331"
+      },
+      "native_test_executed": false,
+      "counted_as_model_failure": false
+    },
+    "historical_runner_sources": {
+      "GQ_before": {
+        "path": ".scratch/qwen-bfloat-selected-20261023/derived/integration/runner-path-fix/gq-before.py",
+        "bytes": 20877,
+        "sha256": "b4ac1fdff678dfe91290a9b3d42ccbcdc37249131cdb46879d156968242847fe"
+      },
+      "adapter_before": {
+        "path": ".scratch/qwen-bfloat-selected-20261023/derived/integration/runner-path-fix/adapter-before.py",
+        "bytes": 10083,
+        "sha256": "0a2b261113293d9725d150f6df03b322166a0d85231ab40b780d4d2f70071a00"
+      },
+      "GQ_after": {
+        "path": ".scratch/qwen-gguf-selected-20261023/build.py",
+        "bytes": 20907,
+        "sha256": "c7d66b79c345206a89bce7aec369f488e0cfb62d514b15006ebced426aecdd4b"
+      },
+      "adapter_after": {
+        "path": ".scratch/qwen-bfloat-selected-20261023/derived/integration/build.py",
+        "bytes": 10291,
+        "sha256": "663d88b0e0c896df0d9f8fdd5e58fe6eaa2c1d8256e18da60394a1f575675331"
+      }
+    },
+    "resolution": "ValueId comparison syntax uses explicit ordinals; runner source directory is independent of output stage. No numerical gate was relaxed."
+  },
+  "Q03_B04": {
+    "entry_source_retained": true,
+    "generated_macros_enabled": false,
+    "cases_registered": false,
+    "artifacts_executed": false,
+    "new_pins_inferred": false
+  },
+  "identity_completion_delta": 0,
+  "identity_ledger_modified": false,
+  "throughput_evidence": false,
+  "whole_original_model": false,
+  "archive": "docs/evidence/correctness/mtp-qwen-projection-source-integration-2026-10-23.zip",
+  "supporting_files": [
+    {
+      "path": ".scratch/dspark-original-experts-20261023/compile3/mapping-view/identity.json",
+      "bytes": 46316,
+      "sha256": "a58f5965bb3403678eab1a8eb41f19328a27bf5f5a09e05d2ccd69cf42f57bc5"
+    },
+    {
+      "path": ".scratch/dspark-original-target-tail-20261023/compile4/fp4-kernel/identity.json",
+      "bytes": 31187,
+      "sha256": "63d84c2062f516cdaba4da6d8dce7ae88a5f97283465826fd1c91a2df3e22fd8"
+    },
+    {
+      "path": ".scratch/dspark-original-target-tail-20261023/compile4/fp4-provider/identity.json",
+      "bytes": 43400,
+      "sha256": "7c6ca980df59164e796fabb2c5f897904abd9469ddaa39d5b16243a451c0fb41"
+    },
+    {
+      "path": ".scratch/dspark-original-target-tail-20261023/numeric-contract-source/before/include/hyle/compute/providers/cuda.h",
+      "bytes": 7236,
+      "sha256": "e28f0f8b2d790aafd5556908d8f1359d218691b43ea3a13bc2c647a4503907ea"
+    },
+    {
+      "path": ".scratch/fp8-quant-output-20261023/compile1/cuda-provider/identity.json",
+      "bytes": 47448,
+      "sha256": "5e7015229ae941531b1b69518de8965608af82ff70f30b5f14448f263db42dc2"
+    },
+    {
+      "path": ".scratch/fp8-quant-output-20261023/compile1/quant-kernel/identity.json",
+      "bytes": 3354,
+      "sha256": "feef1c6653a9ae3dd2e2f6301444dde8f85ba90187d5c62c1b0aa956e80ac46a"
+    },
+    {
+      "path": ".scratch/fp8-quant-output-20261023/compile1/quant-provider/identity.json",
+      "bytes": 42953,
+      "sha256": "164f1ae19f856c4c76806ca2658c1f74536446e188ffedb1a8d8dc30d40eee5c"
+    },
+    {
+      "path": ".scratch/fp8-quant-output-20261023/compile1/torch-cpu/identity.json",
+      "bytes": 1490184,
+      "sha256": "75df3cb0023324e19f38c60689c16607021c739de3103e7183798fafd390eddd"
+    },
+    {
+      "path": ".scratch/glm-encoded-state-20261023/compile4/tensor-kernel/identity.json",
+      "bytes": 3439,
+      "sha256": "03da87de545dfcf6f4cda1fec5d877082756e951cef022aad0618b43152a4944"
+    },
+    {
+      "path": ".scratch/glm-encoded-state-20261023/compile4/tensor-provider/identity.json",
+      "bytes": 42571,
+      "sha256": "47728a20607104de68719324c4de3d822344af5b3f803c773d6f873d4cf7c927"
+    },
+    {
+      "path": ".scratch/mtp-packed-head-m2-20261023/compile1/ggml-provider/identity.json",
+      "bytes": 52469,
+      "sha256": "ecedd056b8e7e961a254f3d15c86c281f4186d6d976d860f7f064feb49460bc3"
+    },
+    {
+      "path": ".scratch/mtp-packed-head-m2-20261023/compile1/tensor-program/identity.json",
+      "bytes": 42177,
+      "sha256": "d69b5db3b51c204a3c15ad611734da16403b7b40a4d6ce2ceaec38f5a2609d17"
+    },
+    {
+      "path": ".scratch/mtp-packed-head-m2-20261023/source-final/source/include/hyle/compute/model_ops.h",
+      "bytes": 78969,
+      "sha256": "9654a9973b1c5ae56ed9295e348d2706b60cc9ebc1708e169fb5eba62a597b1b"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/B02/original-roles/acquisition.json",
+      "bytes": 91749,
+      "sha256": "4ddafdace06489943bdb2f14276b837352a3ba4f4bc1f5c4732339c303ab7dc0"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/B02/original-roles/manifest.json",
+      "bytes": 10454,
+      "sha256": "0c81c7c18e2ac7cf21308a0cd07d3e34d8b24896b2af80028e7b77b24ace1008"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/B05/mixed/compile1/graph-executable/identity.json",
+      "bytes": 54338,
+      "sha256": "eadcf4dee594c4a041f396da9ca2e9c09c6367e7901f4dc0d090d99f71c4ecd8"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/B05/mixed/compile1/graph-submission/identity.json",
+      "bytes": 52914,
+      "sha256": "a7d29afbeb032d6b66218beb919fffb6348b46e2c46a220314a2980070ad221f"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/integration/build.py",
+      "bytes": 10291,
+      "sha256": "663d88b0e0c896df0d9f8fdd5e58fe6eaa2c1d8256e18da60394a1f575675331"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/integration/checks1/command.json",
+      "bytes": 642,
+      "sha256": "2ac88ccba9b7d6c71d8da7afadf25b90ebb0b59a5ae50b3e8e022def1566f12e"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/integration/checks1/environment.json",
+      "bytes": 6732,
+      "sha256": "e548c8a3dafd5320a308c1aecb05134c9246338c3f80d5c9a15ee9227bb1e85f"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/integration/checks1/live.json",
+      "bytes": 659,
+      "sha256": "fcfc675114cdca0c5fc4614c69ee3480c0c433b4896d793de85785371b4169bd"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/integration/checks1/process.json",
+      "bytes": 778,
+      "sha256": "aa76eff199a47ea6e7012582d9f948472c964ca0a858d38c939c669d4dc6c408"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/integration/checks1/results.xml",
+      "bytes": 5601,
+      "sha256": "b7a2d7d7ef10e1f227e36577c6ee383abb674afb234044b80f6d5a9a3e2bfbcb"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/integration/checks1/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/integration/checks1/stdout.log",
+      "bytes": 30503,
+      "sha256": "72794986366ea86d46b1d8b65e39dc018dc3741f4ea83e86857664e411e11bcd"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/integration/checks1/summary.json",
+      "bytes": 15592,
+      "sha256": "cbf96a6e53b517546c246317c95732cdc64c4e9c461ca3f24c02476d0469ae55"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/integration/checks2/command.json",
+      "bytes": 643,
+      "sha256": "3b0897ed81a5eb828de28f51bc32aff0d5a271555e783f9857ba9d92daf541f6"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/integration/checks2/environment.json",
+      "bytes": 6732,
+      "sha256": "e548c8a3dafd5320a308c1aecb05134c9246338c3f80d5c9a15ee9227bb1e85f"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/integration/checks2/live.json",
+      "bytes": 660,
+      "sha256": "03d1918120b0288b4558dc35c455048115f2ac55e13894c35592cccc5920de00"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/integration/checks2/process.json",
+      "bytes": 777,
+      "sha256": "efb2fe05a73f3d6df7bb1e97e2a7501a5dce919cd30751606d2266d8301c2fdd"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/integration/checks2/results.xml",
+      "bytes": 5620,
+      "sha256": "617fb04c18b8ad9ff2eb72fb543d9e451a3075cb8313dd08a5facdff48137eff"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/integration/checks2/stderr.log",
+      "bytes": 5545,
+      "sha256": "b4f53c4965930bdee986c975aa7a5e3491358593028f870a14631baa6734e582"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/integration/checks2/stdout.log",
+      "bytes": 30357,
+      "sha256": "6c5ac5d3e8a1131b01c297c6e31330081689c62b32fade936c094e9f684c39a7"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/integration/checks2/summary.json",
+      "bytes": 15611,
+      "sha256": "2157dd8c5590dec07073a5921453a319c9a78c4d1b9b947bc7095c11b2d31ad5"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/integration/checks3/command.json",
+      "bytes": 638,
+      "sha256": "1ba6346bcf6fddfbd20d2b0af29d8f4d5465b0b9b14b762278b890fb717626b6"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/integration/checks3/environment.json",
+      "bytes": 6344,
+      "sha256": "c3ba5982f74052c970042881eb66b3fac0c75f9f19810dfd823bf6280c779fc6"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/integration/checks3/live.json",
+      "bytes": 655,
+      "sha256": "f23f2ef15032d58e85f299bd218e660dd8383bb91ce60341c909c203be53eb47"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/integration/checks3/process.json",
+      "bytes": 774,
+      "sha256": "3b76fe08734a89775b25aa3eb76082517e430befb08e1c80120be39e1feff66f"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/integration/checks3/results.xml",
+      "bytes": 4109,
+      "sha256": "72935a1ddace48e3103e2c6279ad5c7956b0a4d1225ab27fab648b5be7f54038"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/integration/checks3/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/integration/checks3/stdout.log",
+      "bytes": 852,
+      "sha256": "7fe5bc4a3522f373020ec24f46876f1694aa11786794e97a06d3976ec2d3e8b5"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/integration/checks3/summary.json",
+      "bytes": 14733,
+      "sha256": "9da0d2482de65e70e835487abe87e112914e4974c905f785523dfbc90eafb259"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/integration/compile-fixes/qwen_full_attention_fragment-before.h",
+      "bytes": 18863,
+      "sha256": "9494a7534e18819842075850b1ef0883a18c0ade1134a5973fb10590c7c726db"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/integration/compile-fixes/qwen_full_attention_reference.h.before-ordinal-fix",
+      "bytes": 7318,
+      "sha256": "561e12372c41aa54a08af96c9dccc49fdce2098dc91bc41f3db50742ea9ff29e"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/integration/compile-fixes/qwen_mtp_state_consumer.h.before-ordinal-fix",
+      "bytes": 37946,
+      "sha256": "ae28cc685822b1605487a298433c719ac0b10ac912bd9ff1ab7571d9247e955e"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/integration/compile-fixes/qwen_mtp_state_consumer_test.cc.before-ordinal-fix",
+      "bytes": 246546,
+      "sha256": "f8700449b5bf9ffa9472ffb1b587db688a4eaee37193f16c3eb6355108d1fae1"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/integration/compile1/qwen-state/artifacts-header.h",
+      "bytes": 2802,
+      "sha256": "ec50c94aa9eb547ea1946c086805a2c89c62dd28baafa6c753c257b1bf6d6baa"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/integration/compile1/qwen-state/compile.command.json",
+      "bytes": 2929,
+      "sha256": "138c07ba4dfbfe06da61c543fbe6a1dc925d1add63221b10124625377c86d6af"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/integration/compile1/qwen-state/compile.result.json",
+      "bytes": 2999,
+      "sha256": "400185d03e0a93817b8abdf4fcd96dc4b8b0475882315b962a75b4ac6feec898"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/integration/compile1/qwen-state/compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/integration/compile1/qwen-state/compile.stdout.log",
+      "bytes": 2039,
+      "sha256": "a60255aeebe243e8f1c4145a9df48c4b58d97d56a46706337183281a72ab0c3f"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/integration/compile1/qwen-state/live.json",
+      "bytes": 2999,
+      "sha256": "400185d03e0a93817b8abdf4fcd96dc4b8b0475882315b962a75b4ac6feec898"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/integration/compile1/qwen-state/plan.json",
+      "bytes": 4871,
+      "sha256": "ac4f0eb526caf3753eae2b64d44e2db8d072b0d75a0f2cb212ffc70bb55481dd"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/integration/compile1/qwen-state/qwen-state-deps.json",
+      "bytes": 53709,
+      "sha256": "67fa403e06caa4a9d25742a5c12148342fa538fbdceef60680be27535db7c628"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/integration/compile1/qwen-state/source/tests/compute_models/qwen_mtp_state_consumer_test.cc",
+      "bytes": 246546,
+      "sha256": "f8700449b5bf9ffa9472ffb1b587db688a4eaee37193f16c3eb6355108d1fae1"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/integration/compile2/qwen-state/artifacts-header.h",
+      "bytes": 2802,
+      "sha256": "ec50c94aa9eb547ea1946c086805a2c89c62dd28baafa6c753c257b1bf6d6baa"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/integration/compile2/qwen-state/compile.command.json",
+      "bytes": 2928,
+      "sha256": "594d2348d2c992dd6a355eef3b4c565bc60079546e8ca7e41bb188d67beabc70"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/integration/compile2/qwen-state/compile.result.json",
+      "bytes": 2997,
+      "sha256": "01b95bf8c18846b7bee25d38dc21f198e52ace2b33d140b732be6cf7e5701510"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/integration/compile2/qwen-state/compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/integration/compile2/qwen-state/compile.stdout.log",
+      "bytes": 11121,
+      "sha256": "b69e92cfa31571a525ecaa5b82372d8755b106e4688865a405d4eb934471aefd"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/integration/compile2/qwen-state/live.json",
+      "bytes": 2997,
+      "sha256": "01b95bf8c18846b7bee25d38dc21f198e52ace2b33d140b732be6cf7e5701510"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/integration/compile2/qwen-state/plan.json",
+      "bytes": 4871,
+      "sha256": "6e9ed8dbeee8dabef647f56d699a64cbc00d9cb3ed9f95f41144da6766c07488"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/integration/compile2/qwen-state/qwen-state-deps.json",
+      "bytes": 53709,
+      "sha256": "67fa403e06caa4a9d25742a5c12148342fa538fbdceef60680be27535db7c628"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/integration/compile2/qwen-state/source/tests/compute_models/qwen_mtp_state_consumer_test.cc",
+      "bytes": 246546,
+      "sha256": "f8700449b5bf9ffa9472ffb1b587db688a4eaee37193f16c3eb6355108d1fae1"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/integration/compile3/qwen-state/artifacts-header.h",
+      "bytes": 2802,
+      "sha256": "ec50c94aa9eb547ea1946c086805a2c89c62dd28baafa6c753c257b1bf6d6baa"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/integration/compile3/qwen-state/compile.command.json",
+      "bytes": 2929,
+      "sha256": "b17a9cd4c2c9007b8d78851470752f554e3c5d1cfb991a80e6af93b7bfd9a384"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/integration/compile3/qwen-state/compile.result.json",
+      "bytes": 2999,
+      "sha256": "a3102292afd92d13f36bc1db4074998c7b21889ed2b64921f1a7052cc36fe2b8"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/integration/compile3/qwen-state/compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/integration/compile3/qwen-state/compile.stdout.log",
+      "bytes": 8021,
+      "sha256": "84ced9c35653990e6e3984670274fbeaabeda0b315e953749e658dbfeea04b25"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/integration/compile3/qwen-state/live.json",
+      "bytes": 2999,
+      "sha256": "a3102292afd92d13f36bc1db4074998c7b21889ed2b64921f1a7052cc36fe2b8"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/integration/compile3/qwen-state/plan.json",
+      "bytes": 4871,
+      "sha256": "ad20d817e5aa8762cedf7ac2b06eb72a71eec33aadc15e68b10a52ebf9f89e84"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/integration/compile3/qwen-state/qwen-state-deps.json",
+      "bytes": 53709,
+      "sha256": "67fa403e06caa4a9d25742a5c12148342fa538fbdceef60680be27535db7c628"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/integration/compile3/qwen-state/source/tests/compute_models/qwen_mtp_state_consumer_test.cc",
+      "bytes": 246586,
+      "sha256": "08e39a18a6132fc2c76555ee4109d35a6e073521b096cb06e90fa4eafd369141"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/integration/compile4/qwen-state/artifacts-header.h",
+      "bytes": 2802,
+      "sha256": "ec50c94aa9eb547ea1946c086805a2c89c62dd28baafa6c753c257b1bf6d6baa"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/integration/compile4/qwen-state/compile.command.json",
+      "bytes": 2929,
+      "sha256": "b852b4479a2be9fda55f2f8c696a2e76ed3ac320ab3a34eaf708eaf2bd7fbb19"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/integration/compile4/qwen-state/compile.result.json",
+      "bytes": 2999,
+      "sha256": "bb1589745bceb1aeb1906ddce12c258fe93f140ce177ad547cc4e18ef6eee8db"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/integration/compile4/qwen-state/compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/integration/compile4/qwen-state/compile.stdout.log",
+      "bytes": 33,
+      "sha256": "95f8dde4cd2e9efa4fa596dd1f890fbe428a512f2211c37d9e38af5428bd0787"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/integration/compile4/qwen-state/identity.json",
+      "bytes": 112401,
+      "sha256": "f973db5fd7014a68fe4a7b75ce884b13ae0e244f26e8f6ab564ccdf03728674f"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/integration/compile4/qwen-state/live.json",
+      "bytes": 2999,
+      "sha256": "bb1589745bceb1aeb1906ddce12c258fe93f140ce177ad547cc4e18ef6eee8db"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/integration/compile4/qwen-state/plan.json",
+      "bytes": 5834,
+      "sha256": "50c264e1259ede14d0f1b7666d1140221aefb69479f42a2071c76d55ed8591f6"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/integration/compile4/qwen-state/qwen-state-deps.json",
+      "bytes": 53709,
+      "sha256": "67fa403e06caa4a9d25742a5c12148342fa538fbdceef60680be27535db7c628"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/integration/compile4/qwen-state/source/tests/compute_models/qwen_mtp_state_consumer_test.cc",
+      "bytes": 246586,
+      "sha256": "08e39a18a6132fc2c76555ee4109d35a6e073521b096cb06e90fa4eafd369141"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/integration/prepared.json",
+      "bytes": 3500,
+      "sha256": "09cb760c4b934dcf827c0dc5e914227a8027787538c32dfc07bbcec485529aee"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/integration/publish.py",
+      "bytes": 14986,
+      "sha256": "dc274d6bc82c6230054de99367dd3dd6e62792ba8f8b9192c36a2d0856e14a38"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/integration/run-plans/checks1.json",
+      "bytes": 9643,
+      "sha256": "edffa00192a79b8a5001f4c139467be3d62614a2418110f98d8624577f864827"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/integration/run-plans/checks2.json",
+      "bytes": 9645,
+      "sha256": "48ecce0c5b8efbee2269268273bd9adca88fb342c4ea4bfcba8618f08967cc89"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/integration/run-plans/checks3.json",
+      "bytes": 9239,
+      "sha256": "1c17afaf01c440df101fb7b38049065fe3c04a52e34b12e7127af8cd044d6bb6"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/integration/runner-path-fix/adapter-before.py",
+      "bytes": 10083,
+      "sha256": "0a2b261113293d9725d150f6df03b322166a0d85231ab40b780d4d2f70071a00"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/integration/runner-path-fix/fix.json",
+      "bytes": 444,
+      "sha256": "c8d27aaf7bd7708e34fd178700536c837569cf882dff2c7c310cf5354559cd61"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/integration/runner-path-fix/gq-before.py",
+      "bytes": 20877,
+      "sha256": "b4ac1fdff678dfe91290a9b3d42ccbcdc37249131cdb46879d156968242847fe"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/integration/tests-link1/link-plan.json",
+      "bytes": 93215,
+      "sha256": "2dc80a7031a681151157299dfc22c6365ffb6a6687905407226ca93c493d6636"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/integration/tests-link1/link.command.json",
+      "bytes": 29685,
+      "sha256": "54fd2f278a606da515c8c7f8ad939670460e9fc33f2e1058d32016880ddc56a3"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/integration/tests-link1/link.result.json",
+      "bytes": 29754,
+      "sha256": "6ca2fdee3e2e5de30ccb6e93cc1fda600e5b15aa310ee9554a3044ec5cdc6494"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/integration/tests-link1/link.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/integration/tests-link1/link.stdout.log",
+      "bytes": 272,
+      "sha256": "d3af66852fc20b338d394df5057bfdcc8f26c5e6075c815ed3ce171f8c8a1ac2"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/integration/tests-link1/ready.json",
+      "bytes": 3047,
+      "sha256": "7ebc0e2b47bbe0651f1f28724e76eb3fed4b3c04f2fc91a24b3202d72fca8125"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/integration/tests-link1/runtime-environment.json",
+      "bytes": 8199,
+      "sha256": "2d92f9f0fd8a307dd253678f832c97580ae9a9dd3a85e1b8d76630649027caa8"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q03/nvfp4-target-proposal/combined/applied.json",
+      "bytes": 2788,
+      "sha256": "914a90a0ba5b37251b03dd5b2d0a4338fe9bbce1d068be7ccd801d6cf185fe46"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q03/nvfp4-target-proposal/combined/combined.json",
+      "bytes": 15351,
+      "sha256": "f10d2d8586c5beaa48f4e4331d6b5e382934c25630239e58a55baafbfce8357a"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q03/nvfp4-target-proposal/combined/combined.patch",
+      "bytes": 89643,
+      "sha256": "633758824bdffcb4aa16c7fa25d620ae09f8945fa3067764f00cc615f4b822ae"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q03/nvfp4-target-proposal/entries-combined/applied.json",
+      "bytes": 2357,
+      "sha256": "cf97618361875e415069f1098bb42bc3339249d2d1821404e3659426d720983b"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q03/nvfp4-target-proposal/entries-combined/entries.json",
+      "bytes": 5307,
+      "sha256": "46ff4176fa41e68adb9dd8e89eb5399f6c6f3852bf2443e969d8565c686b54c7"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q03/nvfp4-target-proposal/entries-combined/entries.patch",
+      "bytes": 20008,
+      "sha256": "922bd9a18ef04d1cbedbac10d3fe0c6654a0f4997f608fb909fc320b96a6198e"
+    },
+    {
+      "path": ".scratch/qwen-gguf-selected-20261023/B04/q8-embedding-reference-proposal/applied.json",
+      "bytes": 602,
+      "sha256": "52c90651595f83a3eb8a26bc0cd392f7cb5f21dbb6852af0303c04cbbdf38838"
+    },
+    {
+      "path": ".scratch/qwen-gguf-selected-20261023/B04/q8-embedding-reference-proposal/proposal.json",
+      "bytes": 1531,
+      "sha256": "d2918d18bcc7deae9076bff98a95b5ec6233aa7ae700d3e7b457820853bdbbb5"
+    },
+    {
+      "path": ".scratch/qwen-gguf-selected-20261023/B04/q8-embedding-reference-proposal/source.patch",
+      "bytes": 2429,
+      "sha256": "a0ad266b83b8ec15e8d2a6267305b3bf06754f60f51d7f1463cc4d29c0143a81"
+    },
+    {
+      "path": ".scratch/qwen-gguf-selected-20261023/build.py",
+      "bytes": 20907,
+      "sha256": "c7d66b79c345206a89bce7aec369f488e0cfb62d514b15006ebced426aecdd4b"
+    },
+    {
+      "path": ".scratch/qwen-gguf-selected-20261023/integration/retained-header-equivalence.json",
+      "bytes": 4911,
+      "sha256": "a04fd27d8ad3b009d011e41d41a87711b50610d0411236c343cf18d5b3550055"
+    },
+    {
+      "path": ".scratch/qwen-gguf-selected-20261023/S01/generated/qwen_gguf_original_artifacts.h",
+      "bytes": 2802,
+      "sha256": "ec50c94aa9eb547ea1946c086805a2c89c62dd28baafa6c753c257b1bf6d6baa"
+    },
+    {
+      "path": ".scratch/qwen-gguf-selected-20261023/S01/original-roles/acquisition.json",
+      "bytes": 42705,
+      "sha256": "e76fe68789595b2af2820fd7eb136f3ff9297e0c6d2e8ab594cfe433089826ee"
+    },
+    {
+      "path": ".scratch/qwen-gguf-selected-20261023/S01/original-roles/manifest.json",
+      "bytes": 8983,
+      "sha256": "d969bb6b15ec157f67c9acc2725f527843026191fceaabb6dbc36b96aa3be7d3"
+    },
+    {
+      "path": ".scratch/qwen-gguf-selected-20261023/S01/original-roles/sidecar-files.json",
+      "bytes": 7376,
+      "sha256": "e7205fc80be3b322a29ead7d3c24d43e520875c45b191c0748282a87c47dd546"
+    },
+    {
+      "path": ".scratch/qwen-gguf-selected-20261023/S01/roles-plan.json",
+      "bytes": 10659,
+      "sha256": "135700f6cf253e6e3384a21dfd4baa40b11b6fb9571cbb07d03dc1218c47fe61"
+    },
+    {
+      "path": "docs/evidence/correctness/mtp-qwen-bfloat-target-verifier-2026-10-23.json",
+      "bytes": 57298,
+      "sha256": "e7ce4c78e4154de5b70f2c75dd4b8248786be26bd30aa28bbbce6f3b4fb4d83b"
+    },
+    {
+      "path": "docs/evidence/correctness/mtp-qwen27-sidecar-target-verifier-2026-10-23.json",
+      "bytes": 74104,
+      "sha256": "1298123871ae3c54ac4530b1244f366fa853455d5d52dc5a9286061576a2d877"
+    },
+    {
+      "path": "include/hyle/compute/backends/cpu.h",
+      "bytes": 1814,
+      "sha256": "a0b99762a3620c1b44b6856263c172d12fa6e482282fe9c2fcc06aa7d82a1d4d"
+    },
+    {
+      "path": "include/hyle/compute/backends/cuda.h",
+      "bytes": 9030,
+      "sha256": "8b1eeec880b852f5d35a98464c55a20abb8de0b1db447421dff4b90ba4a13748"
+    },
+    {
+      "path": "include/hyle/compute/batch_execution.h",
+      "bytes": 10247,
+      "sha256": "4efe41eead34949a75dbb6fbae4ea7c3013b33e413b540d9d5e3b0d5396542c8"
+    },
+    {
+      "path": "include/hyle/compute/batch_layout.h",
+      "bytes": 10506,
+      "sha256": "db6c552379051f9b8132fc8dce775dd0826c9a8d1d0d7fd10eecd1f10b159921"
+    },
+    {
+      "path": "include/hyle/compute/batch_materialize.h",
+      "bytes": 7245,
+      "sha256": "9f57cfe9748faf89faae485b604a4b14d6f222bc3ce475bc40a1a265b405b50b"
+    },
+    {
+      "path": "include/hyle/compute/batch_ops.h",
+      "bytes": 6114,
+      "sha256": "d6dcf9e7c8559280a762d191bc41c4f7b56b0097844d0b31091b4fda361ea077"
+    },
+    {
+      "path": "include/hyle/compute/batch_paged_native.h",
+      "bytes": 4723,
+      "sha256": "b42b17bd38435422f06cd830f0b35f6c7deca256916d9d99bff52b9ec0d9f1ce"
+    },
+    {
+      "path": "include/hyle/compute/batch_transfer.h",
+      "bytes": 11416,
+      "sha256": "7bec296577c0439b0e0b48639ccff6b3bd95d137dba085c608f650dbb69fcd1b"
+    },
+    {
+      "path": "include/hyle/compute/completion.h",
+      "bytes": 1959,
+      "sha256": "98b34b9ee4665e9aedac719504c029a509f304b0a4f566bf6b7f76d88dc2ef34"
+    },
+    {
+      "path": "include/hyle/compute/cpu.h",
+      "bytes": 3070,
+      "sha256": "5573eb9618c4ef2a0db299dfb3bc3f2bf93f0e7005ec31aa7ccd95e25efac21f"
+    },
+    {
+      "path": "include/hyle/compute/cuda.h",
+      "bytes": 1457,
+      "sha256": "308beb0703f01239c106d23792f8ef68a57880630b209d1e772a6cd9958918e7"
+    },
+    {
+      "path": "include/hyle/compute/cuda_weights.h",
+      "bytes": 5065,
+      "sha256": "1e3ca02148c67fc2d6d6744beb5a03ee93dcb7f7a61ffed16aa5b5e49d5a8079"
+    },
+    {
+      "path": "include/hyle/compute/detail/append_lease.h",
+      "bytes": 1944,
+      "sha256": "67b6e87fb0bfbc179d781174c2dc414f1e7487445925cb4c2a4faea579cb7ec5"
+    },
+    {
+      "path": "include/hyle/compute/detail/completion_access.h",
+      "bytes": 4164,
+      "sha256": "8699638e39a1a7d5708cbb6a5e41f191228b3ac571b16b026eadcc1aa6765e34"
+    },
+    {
+      "path": "include/hyle/compute/detail/context_ref.h",
+      "bytes": 2563,
+      "sha256": "b1295a6d21d452b2730e3907891ca49993e512a741f8f3a9689976e56f5af3f1"
+    },
+    {
+      "path": "include/hyle/compute/detail/lease_access.h",
+      "bytes": 6794,
+      "sha256": "1b0ab7b4b05faf25d5e6a87e4638504b47f38a54fcbce5ffeb7e50ff2148c8bc"
+    },
+    {
+      "path": "include/hyle/compute/detail/operation_access.h",
+      "bytes": 992,
+      "sha256": "4bdd60939dea229e91907768308155716b7cd8b78d92150391edc771f2089f34"
+    },
+    {
+      "path": "include/hyle/compute/detail/queue_ref.h",
+      "bytes": 1551,
+      "sha256": "a50579827a0b1554ffa4595c3b2fff68cfcbcc9b75caba25c60f78028d49961b"
+    },
+    {
+      "path": "include/hyle/compute/detail/queue_sequence.h",
+      "bytes": 9214,
+      "sha256": "d8cc25b000e655468f3de3b1da3f5b17c388329f21d3f9d6f1d06d9e54de8a26"
+    },
+    {
+      "path": "include/hyle/compute/detail/resource_budget_access.h",
+      "bytes": 2741,
+      "sha256": "f5cfd7955fed71cf08b9a08e0ddacf70191495a61883dac4224e02ef3cba4871"
+    },
+    {
+      "path": "include/hyle/compute/device.h",
+      "bytes": 7702,
+      "sha256": "f966803f2293e03db1cde9b1327f847a92162f21adb53f69ef37f0c19b16a84a"
+    },
+    {
+      "path": "include/hyle/compute/low_precision.h",
+      "bytes": 10406,
+      "sha256": "0920a5a2faecb2991da60ecede680c496bab73411a305e559461ea41cea309cb"
+    },
+    {
+      "path": "include/hyle/compute/model_ops.h",
+      "bytes": 79485,
+      "sha256": "351978e0a82a28cf9d4f7fbe9b75bf34bb65e03522de6e4f89a395a1975abbda"
+    },
+    {
+      "path": "include/hyle/compute/operation.h",
+      "bytes": 28394,
+      "sha256": "01730da295dde06e2982685b98176c2bdfcebbb0963515b8fbce6e63ad4fe025"
+    },
+    {
+      "path": "include/hyle/compute/ops_visibility.h",
+      "bytes": 43,
+      "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+    },
+    {
+      "path": "include/hyle/compute/paged_arena.h",
+      "bytes": 14088,
+      "sha256": "24d54cdae3a2c46f28126fffbfce06fc28ee6acb44c677324ce4f8fbaf67d458"
+    },
+    {
+      "path": "include/hyle/compute/prepared_operation.h",
+      "bytes": 20281,
+      "sha256": "03895c56e8665daf2482f66fecf205fd8aacf92046e13c169d9d8ff86fff52d7"
+    },
+    {
+      "path": "include/hyle/compute/provider.h",
+      "bytes": 10281,
+      "sha256": "a9737ca3cf64eec23ce768e20b1112407fc7816a32f8031f0b668b16c49f816a"
+    },
+    {
+      "path": "include/hyle/compute/providers/cuda.h",
+      "bytes": 7424,
+      "sha256": "fe16eb6930251b2a95261fa89be3baf8f3d546bc06e46f8eb2a672322dfd8997"
+    },
+    {
+      "path": "include/hyle/compute/providers/ggml_cpu.h",
+      "bytes": 1054,
+      "sha256": "9a4255d47bb85235d9f1fa66228367017cd6ae2e61c0edebcc63f65ade0e1e58"
+    },
+    {
+      "path": "include/hyle/compute/providers/ggml_cuda.h",
+      "bytes": 1154,
+      "sha256": "0a98c283bb0201254cbbc0bc04562e4d3b92c212a84c1747a3c69314f91af259"
+    },
+    {
+      "path": "include/hyle/compute/resource_budget.h",
+      "bytes": 4622,
+      "sha256": "578d440b6fc3f5b58809837506165de27ac0866ae39b2d132763f5dd1786b1ce"
+    },
+    {
+      "path": "include/hyle/compute/resource_leases.h",
+      "bytes": 8660,
+      "sha256": "4e5681ebfa7c2f2ad51e5788c8316f4b993883f595c04b33fe594d7294dab85b"
+    },
+    {
+      "path": "include/hyle/compute/state_versions.h",
+      "bytes": 8553,
+      "sha256": "a09cb66a216b56a0651f515f18d8a97772b0e6d281c171a82b8a6630b3e1c7d7"
+    },
+    {
+      "path": "include/hyle/compute/storage_owner.h",
+      "bytes": 8058,
+      "sha256": "549d881d8d4f96eedbb03c8ef9bd6892ede776e5da90a39025538bc50a0530d9"
+    },
+    {
+      "path": "include/hyle/compute/tensor.h",
+      "bytes": 1980,
+      "sha256": "ac00f221a66d0f9044a2b49a1123a6b99a6c425568790898129c31d81519c538"
+    },
+    {
+      "path": "include/hyle/compute/tensor_desc.h",
+      "bytes": 8700,
+      "sha256": "e5496e00c643bcce2efbb42666773f4172243d10458b756d6f9881b0e677eb9a"
+    },
+    {
+      "path": "include/hyle/compute/visibility.h",
+      "bytes": 43,
+      "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+    },
+    {
+      "path": "include/hyle/compute/weight_assembly.h",
+      "bytes": 2095,
+      "sha256": "c085186c2751371d8e642f29d1b338e53962236e50c9935ea1858a4b188ca3ac"
+    },
+    {
+      "path": "include/hyle/compute/workload.h",
+      "bytes": 5017,
+      "sha256": "2e7509d99d986e71b06788e4dd1dcb9595799e2ad972df48449ff0b58f0815ad"
+    },
+    {
+      "path": "include/hyle/core/assert.h",
+      "bytes": 16114,
+      "sha256": "5596728bc220ea27696be4f25e2f9eb9cf2705930f8eb0461747c4a862615790"
+    },
+    {
+      "path": "include/hyle/core/compiler.h",
+      "bytes": 4287,
+      "sha256": "e31151f0ed73c532e464c6568483acecd80a2da9c1ee7afc7e081db87d6fb687"
+    },
+    {
+      "path": "include/hyle/core/detail/compiler_attributes.h",
+      "bytes": 1913,
+      "sha256": "263c7691f9984073e198b69328092330bf572195113d3994d1ab54fe4564d88a"
+    },
+    {
+      "path": "include/hyle/core/detail/preprocessor.h",
+      "bytes": 409,
+      "sha256": "1d9872ef98db007dcbed7e0128771244640e1de4092830d52a7a83537f98eb84"
+    },
+    {
+      "path": "include/hyle/core/environment.h",
+      "bytes": 6712,
+      "sha256": "3d289765b1b677499a444b38d1dbe366bb5e99f89fcb7670af2d08106fd958fa"
+    },
+    {
+      "path": "include/hyle/error/result.h",
+      "bytes": 30856,
+      "sha256": "7718409ab2854eb76959215b356bf8077007134d87db1a24f9384a9b5deff2b5"
+    },
+    {
+      "path": "include/hyle/error/status.h",
+      "bytes": 18122,
+      "sha256": "4d6b4b0bfa5628947aad5449320513d4b071e0c84debfac47f7a7d264cecb7f4"
+    },
+    {
+      "path": "include/hyle/graph/batch.h",
+      "bytes": 18453,
+      "sha256": "1cf89548b6544889419045c54d859153d5fdb21e49cdac8357e0f653dbdf04a0"
+    },
+    {
+      "path": "include/hyle/graph/compile_report.h",
+      "bytes": 577,
+      "sha256": "c42c30527d581975c49ddfebb182b0ae7928d799eed91172cb631779a2ad5b4f"
+    },
+    {
+      "path": "include/hyle/graph/cpu.h",
+      "bytes": 919,
+      "sha256": "01165b3d6fe8276d4275495d8cb52186d9a81b11749db49a2684856bfbe088e8"
+    },
+    {
+      "path": "include/hyle/graph/cpu_cuda.h",
+      "bytes": 1682,
+      "sha256": "ecd0664c4eb77dd97aae87bcc64741482f91c6c30f383525fb9bebb62ba06cd8"
+    },
+    {
+      "path": "include/hyle/graph/cuda.h",
+      "bytes": 2663,
+      "sha256": "658f3dab4eb1a0a90f2dc472652e0c0fa5e694373544abc21331f116adee1373"
+    },
+    {
+      "path": "include/hyle/graph/executable.h",
+      "bytes": 50386,
+      "sha256": "aa3a55ed1869f84149ad0a6a558d6541880d71ba0bf4c6789480724564cdc0b0"
+    },
+    {
+      "path": "include/hyle/graph/execution_source.h",
+      "bytes": 1859,
+      "sha256": "b89de5c6fe8b84192c9618a6a4e4dcee8ac45393e04a9e335f17b5a2d3ecac3f"
+    },
+    {
+      "path": "include/hyle/graph/graph.h",
+      "bytes": 19988,
+      "sha256": "c7a93ccf9fd1c86fb9dec286e7d3345aabcb1810c2fb6793a66093480a5a2136"
+    },
+    {
+      "path": "include/hyle/graph/resources.h",
+      "bytes": 430,
+      "sha256": "c9d3075babb4d863f3543c76576d093fe59f9868df67d50fc492db0aebe7015d"
+    },
+    {
+      "path": "include/hyle/graph/result.h",
+      "bytes": 2146,
+      "sha256": "dc576aa9e523321df6d69ced5717cd9a8e92a9261245a42a431ecc8039a3dd46"
+    },
+    {
+      "path": "include/hyle/graph/visibility.h",
+      "bytes": 43,
+      "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+    },
+    {
+      "path": "include/hyle/graph/weight_binding.h",
+      "bytes": 422,
+      "sha256": "ebcc3eea951953966a3b10b2951872e74d04921af6f0cc8de45ab52ab1ba32bd"
+    },
+    {
+      "path": "include/hyle/mem/allocator.h",
+      "bytes": 11090,
+      "sha256": "0369680d4769a0187bfb77ee8b565b5e8fb53a03909fabf233458d9c1cbcd011"
+    },
+    {
+      "path": "include/hyle/mem/buffer.h",
+      "bytes": 19273,
+      "sha256": "346a4f810babb8c5dacba49faaf57903d998a3cbb49af12b8c62acc85f7be72c"
+    },
+    {
+      "path": "include/hyle/mem/mapping.h",
+      "bytes": 7139,
+      "sha256": "98b1a1ea8c4d85eff4fb8ddeb0fd7a425e7619128c468ae29e11c5e3fbfd05c3"
+    },
+    {
+      "path": "include/hyle/mem/quota_allocator.h",
+      "bytes": 7124,
+      "sha256": "a88fe230dc5358ddde6209de96cc61a59e3f6e60d30b9e7534e986fab10224c9"
+    },
+    {
+      "path": "include/hyle/mem/resource.h",
+      "bytes": 7717,
+      "sha256": "84b0366e658ec63f999b4c9719cf8584ad758f4ff5340baf37f1c3ebd17145cd"
+    },
+    {
+      "path": "include/hyle/mem/visibility.h",
+      "bytes": 43,
+      "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+    },
+    {
+      "path": "include/hyle/platform/fs.h",
+      "bytes": 24891,
+      "sha256": "2af351149fc82762267b89303439ef71626a2eb541d1922ff6f66014136a9ffa"
+    },
+    {
+      "path": "include/hyle/platform/fs_visibility.h",
+      "bytes": 43,
+      "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+    },
+    {
+      "path": "include/hyle/platform/numa.h",
+      "bytes": 8400,
+      "sha256": "e154f229dc7f6f5ceb1c44f20f769204b48bd422e57c5fed1e53c490607b8fde"
+    },
+    {
+      "path": "include/hyle/platform/virtual_memory.h",
+      "bytes": 10485,
+      "sha256": "1b01086d44f330a592a5d3b4946fb213e485095dce904db99bb71103e2a578b8"
+    },
+    {
+      "path": "include/hyle/platform/visibility.h",
+      "bytes": 43,
+      "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+    },
+    {
+      "path": "include/hyle/simd/dtype.h",
+      "bytes": 12143,
+      "sha256": "04dc8a2e0a654250413a0edc4bdc667f98c8aa40d85da25264b6bb2054dd51e5"
+    },
+    {
+      "path": "include/hyle/simd/types.h",
+      "bytes": 1658,
+      "sha256": "e79863029c8036f918f36f93dd0267b8d42857516e0d74678584d75f8926abbd"
+    },
+    {
+      "path": "include/hyle/time/unix_timestamp.h",
+      "bytes": 11791,
+      "sha256": "bcd6bdc860d6ee1e73004ebd15e3b2b2a60ca3dff7a0818deecf9420f95b4496"
+    },
+    {
+      "path": "include/hyle/visibility.h",
+      "bytes": 11701,
+      "sha256": "893fa73589b6e46f00474c2258af74c28d662b52176b57012290c820812ed486"
+    },
+    {
+      "path": "src/compute_provider_cuda/cuda_provider.cc",
+      "bytes": 22060,
+      "sha256": "c41b8e2809bab626271a1ecf6f8796e26e2f855b5d48fe89c415fb2bfb2357f4"
+    },
+    {
+      "path": "src/compute_provider_cuda/deepseek_grouped_fp4_provider.cc",
+      "bytes": 10061,
+      "sha256": "4d2fd57433fdce6ff5d7d6285743437593ad04c08f3bc4043febe749ad469dfb"
+    },
+    {
+      "path": "src/compute_provider_cuda/float8_quantize_kernel.cu",
+      "bytes": 3871,
+      "sha256": "4369a0a280099ef83f3682a9835b3e59eda1f1ee3d9590340a85ed76cc7f8841"
+    },
+    {
+      "path": "src/compute_provider_cuda/float8_quantize_provider.cc",
+      "bytes": 8284,
+      "sha256": "116587eb8e16cb9276439eaaeec0a56b4c2a0d8fede15cb80168a112e52ce3f6"
+    },
+    {
+      "path": "src/compute_provider_cuda/grouped_fp4_f32_kernel.cu",
+      "bytes": 7276,
+      "sha256": "fb24190efadefc988f0103397b1765001168d665899852642eccc6cc7dfca57f"
+    },
+    {
+      "path": "src/compute_provider_cuda/tensor_kernel.cu",
+      "bytes": 16609,
+      "sha256": "aa9af0acbbb0f01bd804fa32500d47bd9fd454cdd4241f6eb226884bce1ffd21"
+    },
+    {
+      "path": "src/compute_provider_cuda/tensor_provider.cc",
+      "bytes": 15051,
+      "sha256": "3d9ca2e84d60050639309db8eb0656a7ad1c96948f9c8dfab2bf72af8d012820"
+    },
+    {
+      "path": "src/compute_provider_ggml_cuda/ggml_cuda_provider.cc",
+      "bytes": 77069,
+      "sha256": "d6f1c77a2abaa7aad5d5f68feae6cb769a96abe26146a8ffb2e8ff9a5a85cbe5"
+    },
+    {
+      "path": "src/compute_provider_ggml_cuda/tensor_program.cc",
+      "bytes": 59177,
+      "sha256": "ad7a2e5ba5f92a68bd3c05ee43aa2d9c63663ca78e11745ace103896b57ba9ca"
+    },
+    {
+      "path": "src/compute_provider_native/torch_cpu_program.cc",
+      "bytes": 44776,
+      "sha256": "6ad77ec9c79d711bbc4ee63ec894ce7a8504d1c8e4c12f7a1eb143dd47eaaf3d"
+    },
+    {
+      "path": "src/graph/executable.cc",
+      "bytes": 477966,
+      "sha256": "eaebb7945041c37c8cac252289e3bb1c181c5560cd8729d1ec97dc1dcbbd95ad"
+    },
+    {
+      "path": "src/graph/submission.cc",
+      "bytes": 50109,
+      "sha256": "6a4d92d0b2fac1776d71d2f4242ecca361916988dc8c13c070c13999caf20dc4"
+    },
+    {
+      "path": "src/mem_vm/mapping.cc",
+      "bytes": 3395,
+      "sha256": "725496e5d62a7798d93c2616c674e6f46181b26a1c44bfda1c4f9a56f606197c"
+    },
+    {
+      "path": "tests/compute/workload_fixture.h",
+      "bytes": 1211,
+      "sha256": "d451c816f7362313b73758d60fc68c49acbaf0e31735db3039d72e80d39b6a5e"
+    },
+    {
+      "path": "tests/compute_models/cpu_c4_model_branches.h",
+      "bytes": 53346,
+      "sha256": "41e3860c11bcda5b0137ce49139f758aa883c10488d52be752f6762dc9de6a89"
+    },
+    {
+      "path": "tests/compute_models/cpu_c5_gguf_fixture.h",
+      "bytes": 12070,
+      "sha256": "15d62432a075667b52084c1b646f9c181a8b0b3474331f15ff142b033e544609"
+    },
+    {
+      "path": "tests/compute_models/cpu_c5_gguf_inputs.h",
+      "bytes": 93837,
+      "sha256": "050f5c2b3dc9f84cc681e3e039aeed5978e692d64e60e27b0cd88d49afd1b8fd"
+    },
+    {
+      "path": "tests/compute_models/cpu_c5_parameter_fragments.h",
+      "bytes": 7080,
+      "sha256": "16de6e8f2c70b32557073966aed4e5a51cc53d38a86df93a4ff09e45f8c21575"
+    },
+    {
+      "path": "tests/compute_models/cpu_c5_qwen_attention.h",
+      "bytes": 10075,
+      "sha256": "24b1428ffefbe46f10b9c6dc168020af603e207ad796963fb9c8764af093c5ae"
+    },
+    {
+      "path": "tests/compute_models/cpu_c5_qwen_nextn.h",
+      "bytes": 17901,
+      "sha256": "8f7c52ccf22eeb6e17f135664d2c1bcfb3115ba201cbbb01309b14ec048e90bb"
+    },
+    {
+      "path": "tests/compute_models/cpu_expanded_gguf_fixture.h",
+      "bytes": 5708,
+      "sha256": "169fb6b22159dd6cc82b61f87d358d7934fd6a6fdb28cc4724355ab227fd7ca7"
+    },
+    {
+      "path": "tests/compute_models/cuda_sidecar_quant_reference.h",
+      "bytes": 7639,
+      "sha256": "cd865999a598c06f2ce13b4353cbe061cab14bfdf84c5050cece6ebf3c3f9221"
+    },
+    {
+      "path": "tests/compute_models/d5_deepseek_official_attention.h",
+      "bytes": 52641,
+      "sha256": "28810d78250c6a8d70432467462a1e7c2996231b8c92c9b2c768d5453e398d6a"
+    },
+    {
+      "path": "tests/compute_models/d5_deepseek_official_fragments.h",
+      "bytes": 22366,
+      "sha256": "6cc0360a0c06c63316116419c56240d7b62abbddac873d228138a06f22c1c9d2"
+    },
+    {
+      "path": "tests/compute_models/d5_deepseek_remaining_fragments.h",
+      "bytes": 39907,
+      "sha256": "5174d4fedabd5b719c7acb91fe2abb523a768c7ec9685878e9b1efaed3241a2b"
+    },
+    {
+      "path": "tests/compute_models/d5_dynamic_fp8_fragments.h",
+      "bytes": 16239,
+      "sha256": "6e6d323a06331a70666a6ce2a8e26984932d7fbf5732f71ced728a3bc0b68040"
+    },
+    {
+      "path": "tests/compute_models/d5_fp8_weight_preparation.h",
+      "bytes": 4214,
+      "sha256": "2e9936b89899495588bd701455ba2a371f1833bb6bdef10b008f043f904200fc"
+    },
+    {
+      "path": "tests/compute_models/d5_gguf_test_support.h",
+      "bytes": 13405,
+      "sha256": "4742b35f873bc892213e8721f44a4bde0cfeea9d30da036c454a4d3042bd7898"
+    },
+    {
+      "path": "tests/compute_models/d5_glm_mtp_head_test.h",
+      "bytes": 475,
+      "sha256": "d8267206827f0399423e5500f45492f70ce51e2bb52bad38bbc1b10b9c33b668"
+    },
+    {
+      "path": "tests/compute_models/d5_glm_remaining_fragments.h",
+      "bytes": 54263,
+      "sha256": "12dbf546cb1050470dd6db65fe4d1f0a70364781a22d9df466699e7b10cde742"
+    },
+    {
+      "path": "tests/compute_models/d5_grouped_fp8_fragments.h",
+      "bytes": 8697,
+      "sha256": "100afd9e17c00798ffa5b6f1cb7201dcea93981937321eac4a5afbaa269f2717"
+    },
+    {
+      "path": "tests/compute_models/d5_kda_full_fragments.h",
+      "bytes": 12967,
+      "sha256": "8af401a0982f99b0283199c53f44ec15f6524a35eb0590b850a3c403f4d7e76e"
+    },
+    {
+      "path": "tests/compute_models/d5_kda_projection_cases.h",
+      "bytes": 5583,
+      "sha256": "489e42c858140847b89f4932a5519572aa132f515d96cb9927392ce0266c0feb"
+    },
+    {
+      "path": "tests/compute_models/d5_kimi_remaining_fragments.h",
+      "bytes": 18043,
+      "sha256": "edc6aaeb8d05c1f848447849b45bf3f908b77a737823ce6dfbf737feedeb2218"
+    },
+    {
+      "path": "tests/compute_models/d5_moe_execution_cases.h",
+      "bytes": 4217,
+      "sha256": "8d3dedc2d98d2ba3cd72c1cec165bc53f6472b274da4215509f623511f4321cf"
+    },
+    {
+      "path": "tests/compute_models/d5_moe_execution_fragments.h",
+      "bytes": 29763,
+      "sha256": "ab7857f47f82b87bf2b39b56d2f637a9d3d3068256abfcbd2a69d94ab1b08f3c"
+    },
+    {
+      "path": "tests/compute_models/d5_moe_profile_cases.h",
+      "bytes": 11520,
+      "sha256": "c21f3e73aba1a7ce161b71c9eec135af9b6352e8aba255c3229c9b82f4d93a6d"
+    },
+    {
+      "path": "tests/compute_models/d5_moe_semantic_fragments.h",
+      "bytes": 17811,
+      "sha256": "75b094320cc81125cfdf7b8ab473be5b51238b66b6403e8f142b14fbe00b5131"
+    },
+    {
+      "path": "tests/compute_models/d5_official_fp4_storage.h",
+      "bytes": 4623,
+      "sha256": "3f9d8a651e2d79dcf5f9ab2ac09cca4439a0d5ef2d4a2ea948c1768966e38846"
+    },
+    {
+      "path": "tests/compute_models/d5_official_fp8_fragments.h",
+      "bytes": 5606,
+      "sha256": "c132fe5588268de6ce57506025f754aeda0c6e7698703db77932711bcfb4dd56"
+    },
+    {
+      "path": "tests/compute_models/d5_quantization_roundtrip.h",
+      "bytes": 3170,
+      "sha256": "64096613c76fb2fb5fa1d2f63bdcd4fd0abf576f7e126decc3ab10ed5dccd3a8"
+    },
+    {
+      "path": "tests/compute_models/d5_qwen35_fixture.h",
+      "bytes": 9558,
+      "sha256": "b80a27f10ce671ab5fa3953a0862dd387fd85bb0aa2cfd31670593303b8ab393"
+    },
+    {
+      "path": "tests/compute_models/d5_qwen35_gguf_fragment_support.h",
+      "bytes": 6939,
+      "sha256": "24d8ae62cbb2ed362c4e949db02fdce18505e03ff06adb23cdcfe8b358b61cb1"
+    },
+    {
+      "path": "tests/compute_models/d5_qwen38_24t_fixture.h",
+      "bytes": 7313,
+      "sha256": "b5b12c7030e2fbf2f14e8b8d0be9569ef47c64a49d58e98bc7b333b4256e050f"
+    },
+    {
+      "path": "tests/compute_models/d5_qwen38_24t_full_router.h",
+      "bytes": 22959,
+      "sha256": "7bff099e41ecee6f6dd4dc85a91db2b13a1737bee46699befe27e4d867b6fd04"
+    },
+    {
+      "path": "tests/compute_models/d5_qwen38_24t_moe_profiles.h",
+      "bytes": 11480,
+      "sha256": "ea93064fca5e64b4db7bfb5ded1062d83baf6ab3794f52f962beee2b0fd8a9ee"
+    },
+    {
+      "path": "tests/compute_models/d5_qwen38_24t_semantic_fragments.h",
+      "bytes": 35712,
+      "sha256": "090b13d99fad2f7def7f3a861823033827d70681683989b4ffa4b8b7ceefd320"
+    },
+    {
+      "path": "tests/compute_models/d5_qwen38_gdn_fixture.h",
+      "bytes": 8553,
+      "sha256": "9a0fb6af064c85209fa478a7021eb399bf1451fff67d43538a655936343bf2ed"
+    },
+    {
+      "path": "tests/compute_models/d5_qwen38_official_fixture.h",
+      "bytes": 5967,
+      "sha256": "61cacc3d6251c1ef2cfc9a9f724412f9ca4615f4692dcbf777a81e790e7a1ff0"
+    },
+    {
+      "path": "tests/compute_models/d5_qwen_gguf_vocabulary_cases.h",
+      "bytes": 2928,
+      "sha256": "8db378b333614ddc594a3ae9364fcbfdded76a2c1226d5cb19b44b24968af655"
+    },
+    {
+      "path": "tests/compute_models/dspark_original_shared_reference.h",
+      "bytes": 16279,
+      "sha256": "f3a68f4bf5758818585c0e6e9e640137f88a751486036a7fd884889994252dff"
+    },
+    {
+      "path": "tests/compute_models/dspark_stored_projection_fragment.h",
+      "bytes": 4575,
+      "sha256": "fc1489160e4ff4c61aba0c28f0f628557887737a185f7933079a1a1ac819ee4e"
+    },
+    {
+      "path": "tests/compute_models/dspark_vocabulary_fragment.h",
+      "bytes": 3292,
+      "sha256": "a96019dc985d5b584bd65b0ad3e56a87177d16a65bda76fb4ed8e0b8e9c2e4fc"
+    },
+    {
+      "path": "tests/compute_models/model_resident_fragment.h",
+      "bytes": 8672,
+      "sha256": "138deaba975edb57d7c29622fef0df737b22f924db43846d3c5bd6d1001fe0cd"
+    },
+    {
+      "path": "tests/compute_models/nvfp4_reference_fixture.h",
+      "bytes": 22482,
+      "sha256": "cc94ec1f443511722ff4fc227b065af27b82573443735250951cdce934faa4d3"
+    },
+    {
+      "path": "tests/compute_models/original_role_input.h",
+      "bytes": 7051,
+      "sha256": "ef769dc0479128b1ab6d727abe76b47fc96023e80ff6592e7442c40703932617"
+    },
+    {
+      "path": "tests/compute_models/qwen24_moe_reference.h",
+      "bytes": 4283,
+      "sha256": "516a33d7bf0c470517c8e06139623c5e49d1fe6f907491239e5e6219d7e0c6f4"
+    },
+    {
+      "path": "tests/compute_models/qwen24_original_moe_fragment.h",
+      "bytes": 13983,
+      "sha256": "f9453a5e1b1b527af73250a10dabeae931f2919bb84beeab8d4e869cd4d9aaf7"
+    },
+    {
+      "path": "tests/compute_models/qwen24_original_nextn_reference.h",
+      "bytes": 20862,
+      "sha256": "48dff1e582917bf84ab9f3bff2b67707a9b31e902a94f5cea1ed4ab30d424c1e"
+    },
+    {
+      "path": "tests/compute_models/qwen24_original_nextn_roles.h",
+      "bytes": 14151,
+      "sha256": "879781ed80bca285d14de2313b2cfbdd72499ed002d9ffb93e760f6f07404ba6"
+    },
+    {
+      "path": "tests/compute_models/qwen24_original_resident_weights.h",
+      "bytes": 15500,
+      "sha256": "2cfff435e80b8a7e7b23015e1261a76d471be55a495aa425f1847875cd60d8b4"
+    },
+    {
+      "path": "tests/compute_models/qwen24_original_target_fragment.h",
+      "bytes": 1856,
+      "sha256": "7597d3d3077f0a0bdc905767167d0a64fb269a719237596ef8ae35168cab7014"
+    },
+    {
+      "path": "tests/compute_models/qwen24_original_target_reference.h",
+      "bytes": 2970,
+      "sha256": "6174962d137b4fa6e7aca6186cbd5fce7535e33ac3276af9e49b24cbea1fab5e"
+    },
+    {
+      "path": "tests/compute_models/qwen24_original_target_roles.h",
+      "bytes": 12866,
+      "sha256": "9109d99a3aa2630a13a343d8d271d8beb682332cc8437f87d38b10991b048669"
+    },
+    {
+      "path": "tests/compute_models/qwen27_original_nextn_reference.h",
+      "bytes": 16096,
+      "sha256": "d1b97c968b672a36ea01db6ca3801967d46c53da4c04e129591baae3d9d794ad"
+    },
+    {
+      "path": "tests/compute_models/qwen27_original_nextn_roles.h",
+      "bytes": 19079,
+      "sha256": "b6dbb39c3dd179de14cb7f5b08000f51184f41adc4d20e6a051b0d96231d8edc"
+    },
+    {
+      "path": "tests/compute_models/qwen27_original_target_reference.h",
+      "bytes": 4856,
+      "sha256": "030e61490473e8dbd74c17055783acda8efaa32bca96af25bbec9aad5f503a4c"
+    },
+    {
+      "path": "tests/compute_models/qwen27_original_target_roles.h",
+      "bytes": 8147,
+      "sha256": "dbb3e918ace2bc290d7b23b798334eb2eba34d71175990e7de29db3444f42e02"
+    },
+    {
+      "path": "tests/compute_models/qwen_bfloat_moe_reference.h",
+      "bytes": 17002,
+      "sha256": "ad6071dbebf473b312b90a7145c68b4787a85b496b4961c84e91f52592e5d27a"
+    },
+    {
+      "path": "tests/compute_models/qwen_bfloat_moe_target_fragment.h",
+      "bytes": 5626,
+      "sha256": "ef4eda315c8eafd85d9ac872e8dbfb7eb9f05faaa4bf2dc3f52ee76f0c425b5f"
+    },
+    {
+      "path": "tests/compute_models/qwen_bfloat_original_artifacts.h",
+      "bytes": 6798,
+      "sha256": "5d4f008e9a4bfe536e84a423db16489b12a3ba78f39bbe60f02a6865f2ab24ee"
+    },
+    {
+      "path": "tests/compute_models/qwen_bfloat_original_reference.h",
+      "bytes": 13945,
+      "sha256": "9d39fdfba504ef4f01431f9b326e3c499d5c899edd37e07f404a69b462da64d7"
+    },
+    {
+      "path": "tests/compute_models/qwen_bfloat_original_roles.h",
+      "bytes": 34169,
+      "sha256": "0323fb6d6fe5db09530f3a067c8a1aac2bd8b001e59bf47eed968d79d6fd2f32"
+    },
+    {
+      "path": "tests/compute_models/qwen_bfloat_q24_artifacts.h",
+      "bytes": 11492,
+      "sha256": "bc2688627d122d043dc8c42595dec4ca25ed24d8872e61ffb7ef4f8a0baf9089"
+    },
+    {
+      "path": "tests/compute_models/qwen_bfloat_selected_experts.h",
+      "bytes": 16095,
+      "sha256": "f9d16dcccf22ea7c79aa81a238e7685c641935d2c323a12031cd42bf4b3d8032"
+    },
+    {
+      "path": "tests/compute_models/qwen_full_attention_fragment.h",
+      "bytes": 18883,
+      "sha256": "38a40b13fc1da9482715db3f93cb58d8d20e50953907268e2462bfa6b133356b"
+    },
+    {
+      "path": "tests/compute_models/qwen_full_attention_reference.h",
+      "bytes": 7358,
+      "sha256": "20303955b698b2afd4006849ff8a7bcce2ca909aa51c2ad5472670ec77ccff81"
+    },
+    {
+      "path": "tests/compute_models/qwen_mtp_state_consumer.h",
+      "bytes": 37966,
+      "sha256": "99e97810e7e1111ca2a6d1adc8a880bd9874e32e7d6f3242af19efb31b527014"
+    },
+    {
+      "path": "tests/compute_models/qwen_mtp_state_consumer_test.cc",
+      "bytes": 246586,
+      "sha256": "08e39a18a6132fc2c76555ee4109d35a6e073521b096cb06e90fa4eafd369141"
+    },
+    {
+      "path": "tests/compute_models/qwen_nextn_input_fragment.h",
+      "bytes": 1794,
+      "sha256": "94ef3a7f43bd469d6249940a00a58e9c89e0f9b1e8151eb292838be7558ece87"
+    },
+    {
+      "path": "tests/compute_models/qwen_nvfp4_original_reference.h",
+      "bytes": 5681,
+      "sha256": "2e5e5fd3f1e4bc44534bba1ad51a3a1198dc2fad3480116f1125d60737d6aab5"
+    },
+    {
+      "path": "tests/compute_models/qwen_nvfp4_target_fragment.h",
+      "bytes": 3955,
+      "sha256": "7025e1d25f30e742551e7887ba4ed2863591923f24fda9c3a5df69a6189c8735"
+    },
+    {
+      "path": "tests/compute_models/qwen_original_mtp_roles.h",
+      "bytes": 12336,
+      "sha256": "da0090bed51b96c6737b115235cf3503b9b90b45e5255e0ad779e37b1ef90a73"
+    },
+    {
+      "path": "tests/compute_provider_native/half_test_support.h",
+      "bytes": 4399,
+      "sha256": "5f6d8f7b70d07e44600bb6d6d592f66af5dac9970a730695956a1afcfc3cd0b8"
+    }
+  ]
+}

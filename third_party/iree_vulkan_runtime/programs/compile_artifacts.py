@@ -12,7 +12,9 @@ import os
 from pathlib import Path
 import re
 import subprocess
+import sys
 
+sys.dont_write_bytecode = True
 from generate_artifacts import generate
 
 
@@ -56,7 +58,7 @@ def main():
     pattern = re.compile(r"attributes \{translation_info = #iree_codegen.translation_info<"
                          r"pipeline = #iree_gpu.spirv_pipeline<BaseDistribute> workgroup_size = \[64, 1, 1\]>")
     if len(pattern.findall(text)) != len(exports):
-        raise ValueError("original artifact schedule differs from the admitted 16 entries")
+        raise ValueError(f"original artifact schedule differs from the admitted {len(exports)} entries")
     annotation = ("attributes {spirv.entry_point_abi = #spirv.entry_point_abi<"
                   "workgroup_size = [64, 1, 1], target_width = 32>, translation_info")
     annotated = output / "annotated.mlir"

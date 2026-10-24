@@ -1,0 +1,86 @@
+{
+  "completed": true,
+  "exact_plan": {
+    "allowed": [
+      "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\multiturn",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\peer-continuation\\multiround"
+    ],
+    "remove": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\peer-continuation\\multiround\\checks\\attempt1\\peer.exe",
+        "bytes": 35865088,
+        "sha256": "a567d13578a7b1f196e0bb6bc7210d98ac5d1402255f75fbb5686be505dc2ec1"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\peer-continuation\\multiround\\checks\\attempt1\\peer.map",
+        "bytes": 22926008,
+        "sha256": "0fef72e223233bd3a5e62deabb0018b87e7f20d4929f3b799b3c5b71688dc7c5"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\peer-continuation\\multiround\\checks\\attempt2\\peer.exe",
+        "bytes": 35865088,
+        "sha256": "a8312704505728365165f267e65be2cea29b6130edddbf76506fd28f7daa67c8"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\peer-continuation\\multiround\\checks\\attempt2\\peer.map",
+        "bytes": 22926442,
+        "sha256": "2cac45e1654697e9c385200c1318f28f74cda0c2fd8abd96f0f379543a1e5321"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\peer-continuation\\multiround\\checks\\attempt3\\peer.map",
+        "bytes": 22926442,
+        "sha256": "cca63c84ab865d6f5c6db51a5c7f50a56b8158613bdfe7b98d7b21ef76eae733"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\multiturn\\hyle\\checks\\attempt1\\qwen.map",
+        "bytes": 57868918,
+        "sha256": "2c20b44b8c1ecf2cde8f870117c2ed226369ed5b971a1659e3c32ce88b5346a2"
+      }
+    ],
+    "keep": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\peer-continuation\\multiround\\checks\\attempt3\\peer.exe",
+        "bytes": 35865088,
+        "sha256": "9b2591375f2abc320af17f2df530dfd6f4cccfd79211ba12c3f2551a3c79e699"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\multiturn\\hyle\\checks\\attempt1\\qwen.exe",
+        "bytes": 139500544,
+        "sha256": "8e01f4e50b70fc908b7f8b99732c76226e5cdda695b1dd5fd167e70a9edafba5"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\peer-continuation\\multiround\\checks\\attempt1\\peer.obj",
+        "bytes": 4875287,
+        "sha256": "97451e1f6df581bcaa0a4b63139ceee7ae8670481a3c72a742c982acc9c523d3"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\peer-continuation\\multiround\\checks\\attempt2\\peer.obj",
+        "bytes": 4875951,
+        "sha256": "798787822fd17c1f82a29fdee2d8ad71f26daa21351bc8eb21e5079900bf4316"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\peer-continuation\\multiround\\checks\\attempt3\\peer.obj",
+        "bytes": 4876011,
+        "sha256": "36e4c21df115c8964089113885655af0b47374fbfd4170e0e6f0eda6a1cde938"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\multiturn\\hyle\\checks\\attempt1\\main.obj",
+        "bytes": 3261051,
+        "sha256": "1d5c09b48994b9ad29c4e6e4e1b20e44f6b40370d291db27f04f7f2910d51386"
+      }
+    ],
+    "evidence": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\qwen-multiturn-current-2026-10-21.json",
+      "bytes": 41590,
+      "sha256": "6027b474f13649585d71766d02d0173c602d2985e86ca52005cc0c02378e06dd"
+    },
+    "archive": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\qwen-multiturn-current-2026-10-21.zip",
+      "bytes": 830031,
+      "sha256": "5ce8dd632c109fbd36da93e2f8846827bfde25fc07090a642608167fb5a17369"
+    }
+  },
+  "removed": 6,
+  "bytes": 198377986.0,
+  "source_script": "# Exact completed multi-turn consumer intermediate-image/map cleanup.\r\n$ErrorActionPreference = 'Stop'\r\n$root = 'C:\\public\\project-hyle\\hyle'\r\n$stage = Join-Path $root '.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\multiturn'\r\n$plan = Get-Content -LiteralPath (Join-Path $stage 'cleanup-plan.json') -Raw | ConvertFrom-Json\r\n$allowed = @($plan.allowed | ForEach-Object { [IO.Path]::GetFullPath($_).TrimEnd([IO.Path]::DirectorySeparatorChar) + [IO.Path]::DirectorySeparatorChar })\r\nfunction Assert-Identity($row) {\r\n  $file = Get-Item -LiteralPath $row.path -ErrorAction Stop\r\n  if ($file.PSIsContainer -or ($file.Attributes -band [IO.FileAttributes]::ReparsePoint)) { throw \"Not a regular file: $($row.path)\" }\r\n  if ($file.Length -ne $row.bytes -or (Get-FileHash -LiteralPath $row.path -Algorithm SHA256).Hash.ToLowerInvariant() -ne $row.sha256) { throw \"Identity changed: $($row.path)\" }\r\n}\r\nAssert-Identity $plan.evidence\r\nAssert-Identity $plan.archive\r\nforeach ($row in $plan.remove) {\r\n  $full = [IO.Path]::GetFullPath($row.path)\r\n  $inside = @($allowed | Where-Object { $full.StartsWith($_, [StringComparison]::OrdinalIgnoreCase) }).Count\r\n  if (-not $inside -or [IO.Path]::GetExtension($full) -notin '.exe','.map') { throw \"Outside exact artifact scope: $full\" }\r\n  Assert-Identity $row\r\n}\r\nforeach ($row in $plan.keep) { Assert-Identity $row }\r\n$active = @(Get-CimInstance Win32_Process | Where-Object { $file=$_.ExecutablePath; $file -and @($allowed | Where-Object { $file.StartsWith($_, [StringComparison]::OrdinalIgnoreCase) }).Count })\r\nif ($active.Count) { throw 'A multi-turn consumer is still running' }\r\nforeach ($row in $plan.remove) { Remove-Item -LiteralPath $row.path -Force }\r\nforeach ($row in $plan.keep) { Assert-Identity $row }\r\n$result=[ordered]@{completed=$true;exact_plan=$plan;removed=@($plan.remove).Count;bytes=[double]($plan.remove | Measure-Object -Property bytes -Sum).Sum;source_script=[IO.File]::ReadAllText($PSCommandPath)}\r\n$result | ConvertTo-Json -Depth 14 | Set-Content -LiteralPath (Join-Path $root 'docs\\evidence\\performance\\qwen-multiturn-current-2026-10-21.cleanup.json') -Encoding utf8\r\n[pscustomobject]$result | Select-Object completed,removed,bytes | ConvertTo-Json\r\n"
+}

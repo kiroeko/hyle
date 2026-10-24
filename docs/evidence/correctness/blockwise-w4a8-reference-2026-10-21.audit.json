@@ -1,0 +1,539 @@
+{
+  "status": "PASS",
+  "research": {
+    "report": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\research\\fixed-role-binding-2026-10-21.json",
+      "bytes": 238331,
+      "sha256": "50ee808e875a536024e3437e5203783d8b2b3d690817c4a336c3e3be0fd71871"
+    },
+    "archive": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\research\\fixed-role-binding-2026-10-21.zip",
+      "bytes": 3235093,
+      "sha256": "afc43569ab74af8b94fbba9a1f93265e687498cbc943c92f43804d56533268fd"
+    },
+    "members": 603,
+    "all_member_SHA": true,
+    "CRC": true,
+    "safe_unique_paths": true
+  },
+  "correctness": {
+    "report": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\blockwise-w4a8-reference-2026-10-21.json",
+      "bytes": 168366,
+      "sha256": "542dce109d0d050c4f1f6726679823d27de47389325b7c60733078d5edac200b"
+    },
+    "archive": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\blockwise-w4a8-reference-2026-10-21.zip",
+      "bytes": 2580605,
+      "sha256": "d3428d29038f18c554356bc1a8f524b834f086f2ebf71d32a6e9cd175626db75"
+    },
+    "members": 450,
+    "all_member_SHA": true,
+    "CRC": true,
+    "safe_unique_paths": true
+  },
+  "current_sources": 35,
+  "all_current_source_SHA_and_archive_members_match": true,
+  "current_source_proofs": [
+    {
+      "source": {
+        "path": "include/hyle/compute/model_ops.h",
+        "bytes": 73352,
+        "sha256": "de8070c76e074b1c37d022f59ed98b2afef1c10dbced6c24d3c0aa696eafd6e6"
+      },
+      "matching_archive_entries": [
+        "source/include/hyle/compute/model_ops.h"
+      ]
+    },
+    {
+      "source": {
+        "path": "src/compute_ops/blockwise_w4a8.cc",
+        "bytes": 2999,
+        "sha256": "3003b41ed9fb46901235f6c4ce5eab681df6d0326895ca98b408a7fb6d6c4c91"
+      },
+      "matching_archive_entries": [
+        "source/src/compute_ops/blockwise_w4a8.cc"
+      ]
+    },
+    {
+      "source": {
+        "path": "src/compute_ops/CMakeLists.txt",
+        "bytes": 705,
+        "sha256": "541e663702d14ee649b61741ad00adb4e015bf6b786500cd7815161ef64d8252"
+      },
+      "matching_archive_entries": [
+        "source/src/compute_ops/CMakeLists.txt"
+      ]
+    },
+    {
+      "source": {
+        "path": "src/compute_provider_native/blockwise_w4a8.cc",
+        "bytes": 11188,
+        "sha256": "d0393cd14a6a470feabf0bd9326dfb3221d10f3ad15c248e0432b24b56e2b30d"
+      },
+      "matching_archive_entries": [
+        "source/src/compute_provider_native/blockwise_w4a8.cc"
+      ]
+    },
+    {
+      "source": {
+        "path": "src/compute_provider_native/native_plan.h",
+        "bytes": 10966,
+        "sha256": "dd9b7d8254cac0d9357bb29f0164803c330c8f8b5c87be0718415ee9066486ef"
+      },
+      "matching_archive_entries": [
+        "source/src/compute_provider_native/native_plan.h"
+      ]
+    },
+    {
+      "source": {
+        "path": "src/compute_provider_native/native_provider.cc",
+        "bytes": 40915,
+        "sha256": "5e52894af3a1e1325a4b4a84b9ef44b89a89c327912b76b2d764f605b71d233d"
+      },
+      "matching_archive_entries": [
+        "source/src/compute_provider_native/native_provider.cc"
+      ]
+    },
+    {
+      "source": {
+        "path": "src/compute_provider_native/CMakeLists.txt",
+        "bytes": 4861,
+        "sha256": "ebddd061fc975feb8411ec6f9238042e87108db9916103dad79cab4c686da64e"
+      },
+      "matching_archive_entries": [
+        "source/src/compute_provider_native/CMakeLists.txt"
+      ]
+    },
+    {
+      "source": {
+        "path": "src/compute_provider_cuda/blockwise_w4a8_kernel.h",
+        "bytes": 669,
+        "sha256": "28af571fac71af60de2f19860af189ee54536aea0dd93b7de513e54f1f238282"
+      },
+      "matching_archive_entries": [
+        "source/src/compute_provider_cuda/blockwise_w4a8_kernel.h",
+        "windows/cuda/after/src/compute_provider_cuda/blockwise_w4a8_kernel.h"
+      ]
+    },
+    {
+      "source": {
+        "path": "src/compute_provider_cuda/blockwise_w4a8_kernel.cu",
+        "bytes": 7689,
+        "sha256": "93abdca3cee06612294fbaa59118aa00bcaccada3c5e7961eebea710411e0515"
+      },
+      "matching_archive_entries": [
+        "source/src/compute_provider_cuda/blockwise_w4a8_kernel.cu",
+        "windows/cuda/after/src/compute_provider_cuda/blockwise_w4a8_kernel.cu"
+      ]
+    },
+    {
+      "source": {
+        "path": "src/compute_provider_cuda/blockwise_w4a8_provider.h",
+        "bytes": 624,
+        "sha256": "2b1e40ccbfb473033917480d9d5636a3edc6f9faea0cd07a2cab0ba96310d75e"
+      },
+      "matching_archive_entries": [
+        "source/src/compute_provider_cuda/blockwise_w4a8_provider.h",
+        "windows/cuda/after/src/compute_provider_cuda/blockwise_w4a8_provider.h"
+      ]
+    },
+    {
+      "source": {
+        "path": "src/compute_provider_cuda/blockwise_w4a8_provider.cc",
+        "bytes": 9381,
+        "sha256": "b0dfb7762949aebcbd7135c6c533212724dda3d23103e05657fe2e08ab5542a5"
+      },
+      "matching_archive_entries": [
+        "source/src/compute_provider_cuda/blockwise_w4a8_provider.cc",
+        "windows/cuda/after/src/compute_provider_cuda/blockwise_w4a8_provider.cc"
+      ]
+    },
+    {
+      "source": {
+        "path": "src/compute_provider_cuda/cuda_provider.cc",
+        "bytes": 21752,
+        "sha256": "9f333dacfe1d57d6df5ccd380df10133985878b3c882453b99a6f683ce5a7845"
+      },
+      "matching_archive_entries": [
+        "source/src/compute_provider_cuda/cuda_provider.cc",
+        "windows/cuda/after/src/compute_provider_cuda/cuda_provider.cc"
+      ]
+    },
+    {
+      "source": {
+        "path": "src/compute_provider_cuda/CMakeLists.txt",
+        "bytes": 6628,
+        "sha256": "2a5890fc9de9874640cb1370f3f8fc7d1a3bfa5411c45c9392919ab31de6337a"
+      },
+      "matching_archive_entries": [
+        "source/src/compute_provider_cuda/CMakeLists.txt",
+        "windows/cuda/after/src/compute_provider_cuda/CMakeLists.txt"
+      ]
+    },
+    {
+      "source": {
+        "path": "src/compute_route_apple/apple_blockwise_w4a8.h",
+        "bytes": 329,
+        "sha256": "c8bc5fdfbc414e5327039243bd0a02a3136dd84620ed837e7e983a15f2b70a4f"
+      },
+      "matching_archive_entries": [
+        "apple/after/src/compute_route_apple/apple_blockwise_w4a8.h",
+        "source/src/compute_route_apple/apple_blockwise_w4a8.h"
+      ]
+    },
+    {
+      "source": {
+        "path": "src/compute_route_apple/apple_blockwise_w4a8.cc",
+        "bytes": 11061,
+        "sha256": "0bbd73e2714cdca3d5a8c07726677eae344a0e265d3b755845c183ac8b13a65a"
+      },
+      "matching_archive_entries": [
+        "apple/after/src/compute_route_apple/apple_blockwise_w4a8.cc",
+        "source/src/compute_route_apple/apple_blockwise_w4a8.cc"
+      ]
+    },
+    {
+      "source": {
+        "path": "src/compute_route_apple/apple_mature_float.cc",
+        "bytes": 36362,
+        "sha256": "2abf83d7c7476a9ff1f1ff0f9f47a0eb48e7d978aef457729751f382b7b6cf9a"
+      },
+      "matching_archive_entries": [
+        "apple/after/src/compute_route_apple/apple_mature_float.cc",
+        "source/src/compute_route_apple/apple_mature_float.cc"
+      ]
+    },
+    {
+      "source": {
+        "path": "src/compute_route_apple/CMakeLists.txt",
+        "bytes": 6024,
+        "sha256": "e132a88f2312a0863fda459824c13f12dba8a68fdc7816ec5769a48dd24cb101"
+      },
+      "matching_archive_entries": [
+        "apple/after/src/compute_route_apple/CMakeLists.txt",
+        "source/src/compute_route_apple/CMakeLists.txt"
+      ]
+    },
+    {
+      "source": {
+        "path": "src/compute_route_vulkan/vulkan_blockwise_w4a8.cc",
+        "bytes": 6193,
+        "sha256": "74e4a41eb0accad71f73b9bc9c089c31edfb376a3a526a4e1371f4e184f0a2a0"
+      },
+      "matching_archive_entries": [
+        "source/src/compute_route_vulkan/vulkan_blockwise_w4a8.cc",
+        "windows/vulkan/after/src/compute_route_vulkan/vulkan_blockwise_w4a8.cc"
+      ]
+    },
+    {
+      "source": {
+        "path": "src/compute_route_vulkan/vulkan_operations.cc",
+        "bytes": 5903,
+        "sha256": "da273c09f75778929f68970a5c3e41723f3092d63b301fa093e986cbefeb738b"
+      },
+      "matching_archive_entries": [
+        "source/src/compute_route_vulkan/vulkan_operations.cc",
+        "windows/vulkan/after/src/compute_route_vulkan/vulkan_operations.cc",
+        "windows/vulkan/revisions/first-attempt/after/src/compute_route_vulkan/vulkan_operations.cc"
+      ]
+    },
+    {
+      "source": {
+        "path": "src/compute_route_vulkan/vulkan_tensor.h",
+        "bytes": 1838,
+        "sha256": "061204ab279632cc577c44bebb794090d847948fb772a2e71d5f11bd71d2a8cd"
+      },
+      "matching_archive_entries": [
+        "source/src/compute_route_vulkan/vulkan_tensor.h",
+        "windows/vulkan/after/src/compute_route_vulkan/vulkan_tensor.h",
+        "windows/vulkan/revisions/first-attempt/after/src/compute_route_vulkan/vulkan_tensor.h"
+      ]
+    },
+    {
+      "source": {
+        "path": "src/compute_route_vulkan/build_shaders.py",
+        "bytes": 7843,
+        "sha256": "3b58a38a42705201f3460c58817e7934b0db81304b32c1448bbc5b75364154e3"
+      },
+      "matching_archive_entries": [
+        "source/src/compute_route_vulkan/build_shaders.py",
+        "windows/vulkan/after/src/compute_route_vulkan/build_shaders.py",
+        "windows/vulkan/revisions/first-attempt/after/src/compute_route_vulkan/build_shaders.py"
+      ]
+    },
+    {
+      "source": {
+        "path": "src/compute_route_vulkan/shaders/blockwise_w4a8.comp",
+        "bytes": 5994,
+        "sha256": "100bd33f5a3c8b6db14b4c9b6302a75f2d552f9be4aff2f4ee7036da0855fe95"
+      },
+      "matching_archive_entries": [
+        "source/src/compute_route_vulkan/shaders/blockwise_w4a8.comp",
+        "windows/vulkan/after/src/compute_route_vulkan/shaders/blockwise_w4a8.comp"
+      ]
+    },
+    {
+      "source": {
+        "path": "src/compute_route_vulkan/CMakeLists.txt",
+        "bytes": 3250,
+        "sha256": "4210fd65dc1d3410057a0e56246e3dab8e5faaeda0b39f466fc0f678f79d7c3a"
+      },
+      "matching_archive_entries": [
+        "source/src/compute_route_vulkan/CMakeLists.txt",
+        "windows/vulkan/after/src/compute_route_vulkan/CMakeLists.txt",
+        "windows/vulkan/revisions/first-attempt/after/src/compute_route_vulkan/CMakeLists.txt"
+      ]
+    },
+    {
+      "source": {
+        "path": "src/compute_shader_shared/nvfp4_f32.h",
+        "bytes": 4845,
+        "sha256": "bcb1534ec5072993166944e8a6085a10078a61ec85fe2d88fc1e7dd659822c43"
+      },
+      "matching_archive_entries": [
+        "source/src/compute_shader_shared/nvfp4_f32.h"
+      ]
+    },
+    {
+      "source": {
+        "path": "src/compute_shader_shared/ct_packed.h",
+        "bytes": 2374,
+        "sha256": "33a6001ae830c9649e5ab15ee2b6335456438b41486cf7965ce3e9bcc55d5459"
+      },
+      "matching_archive_entries": [
+        "source/src/compute_shader_shared/ct_packed.h"
+      ]
+    },
+    {
+      "source": {
+        "path": "tests/compute_models/nvfp4_reference_fixture.h",
+        "bytes": 22482,
+        "sha256": "cc94ec1f443511722ff4fc227b065af27b82573443735250951cdce934faa4d3"
+      },
+      "matching_archive_entries": [
+        "source/tests/compute_models/nvfp4_reference_fixture.h"
+      ]
+    },
+    {
+      "source": {
+        "path": "tests/compute_models/blockwise_w4a8_fixture.h",
+        "bytes": 17350,
+        "sha256": "bb0e5d6a6c2581e19bf81a55b895ba0d7ed611b3f90281243095e6620c4427ac"
+      },
+      "matching_archive_entries": [
+        "source/tests/compute_models/blockwise_w4a8_fixture.h",
+        "windows/cuda/shared-tested-source/tests/compute_models/blockwise_w4a8_fixture.h"
+      ]
+    },
+    {
+      "source": {
+        "path": "tests/graph_route_cpu/blockwise_w4a8_test.cc",
+        "bytes": 6150,
+        "sha256": "e80d9d116bf3cae4c1540b2a9b5e38bfd08f8754964f4cb3a083ddd31681cb1d"
+      },
+      "matching_archive_entries": [
+        "source/tests/graph_route_cpu/blockwise_w4a8_test.cc"
+      ]
+    },
+    {
+      "source": {
+        "path": "tests/graph_route_cpu/CMakeLists.txt",
+        "bytes": 3371,
+        "sha256": "94515958c7b60af404efbca57e5dd141546b14cdc4bf75afcb124dfc2e792242"
+      },
+      "matching_archive_entries": [
+        "source/tests/graph_route_cpu/CMakeLists.txt"
+      ]
+    },
+    {
+      "source": {
+        "path": "tests/graph_route_cuda/blockwise_w4a8_test.cc",
+        "bytes": 2047,
+        "sha256": "be8e9134e95f74bb3a2c55f17fbc2670facb487abefa20ee1043fdf164065c67"
+      },
+      "matching_archive_entries": [
+        "source/tests/graph_route_cuda/blockwise_w4a8_test.cc",
+        "windows/cuda/shared-tested-source/tests/graph_route_cuda/blockwise_w4a8_test.cc"
+      ]
+    },
+    {
+      "source": {
+        "path": "tests/graph_route_cuda/CMakeLists.txt",
+        "bytes": 2490,
+        "sha256": "d4368a6caf8e3a266fbe17791f21a2af1a671d3ed6c4a65e130c60733020c21a"
+      },
+      "matching_archive_entries": [
+        "source/tests/graph_route_cuda/CMakeLists.txt"
+      ]
+    },
+    {
+      "source": {
+        "path": "tests/graph_route_vulkan/blockwise_w4a8_test.cc",
+        "bytes": 3962,
+        "sha256": "a7f641ced5f485eef7fb31c5ec0719c9b1b6bfbaac55478f77d319d66d06cb75"
+      },
+      "matching_archive_entries": [
+        "source/tests/graph_route_vulkan/blockwise_w4a8_test.cc",
+        "windows/vulkan/after/tests/graph_route_vulkan/blockwise_w4a8_test.cc",
+        "windows/vulkan/revisions/first-attempt/after/tests/graph_route_vulkan/blockwise_w4a8_test.cc"
+      ]
+    },
+    {
+      "source": {
+        "path": "tests/graph_route_vulkan/CMakeLists.txt",
+        "bytes": 5672,
+        "sha256": "241d57382ebb77024fe432ab31c270c36ad0c2f1b05abd7790c7813eebd2181f"
+      },
+      "matching_archive_entries": [
+        "source/tests/graph_route_vulkan/CMakeLists.txt",
+        "windows/vulkan/after/tests/graph_route_vulkan/CMakeLists.txt",
+        "windows/vulkan/revisions/first-attempt/after/tests/graph_route_vulkan/CMakeLists.txt"
+      ]
+    },
+    {
+      "source": {
+        "path": "tests/graph_route_apple/blockwise_w4a8_test.cc",
+        "bytes": 1925,
+        "sha256": "56ec97c18b9d02fd240aaf81782b13bbea696381a9e66dcd406256e53084fa28"
+      },
+      "matching_archive_entries": [
+        "apple/after/tests/graph_route_apple/blockwise_w4a8_test.cc",
+        "source/tests/graph_route_apple/blockwise_w4a8_test.cc"
+      ]
+    },
+    {
+      "source": {
+        "path": "tests/graph_route_apple/CMakeLists.txt",
+        "bytes": 6222,
+        "sha256": "bce04c30740096061112da7e59379150c132b23eb7869a322875cf3f9854dd1f"
+      },
+      "matching_archive_entries": [
+        "apple/after/tests/graph_route_apple/CMakeLists.txt",
+        "source/tests/graph_route_apple/CMakeLists.txt"
+      ]
+    }
+  ],
+  "cases": {
+    "distinct": 24,
+    "new": 10,
+    "neighbors": 14,
+    "graph_success": 248,
+    "expected_failed_Completions": 80
+  },
+  "windows": [
+    {
+      "label": "CPU neighbors",
+      "passed_count": 5,
+      "actual_XML_total": 7,
+      "original_failed_count": 1,
+      "declared_partial": true
+    },
+    {
+      "label": "CPU new graph",
+      "passed_count": 2,
+      "actual_XML_total": 2,
+      "original_failed_count": 0,
+      "declared_partial": false
+    },
+    {
+      "label": "CPU direct/schema",
+      "passed_count": 2,
+      "actual_XML_total": 2,
+      "original_failed_count": 0,
+      "declared_partial": false
+    },
+    {
+      "label": "CUDA new+neighbors",
+      "passed_count": 7,
+      "actual_XML_total": 7,
+      "original_failed_count": 0,
+      "declared_partial": false
+    },
+    {
+      "label": "Vulkan neighbors",
+      "passed_count": 4,
+      "actual_XML_total": 6,
+      "original_failed_count": 2,
+      "declared_partial": true
+    },
+    {
+      "label": "Vulkan new",
+      "passed_count": 2,
+      "actual_XML_total": 2,
+      "original_failed_count": 0,
+      "declared_partial": false
+    }
+  ],
+  "Apple_receipt_names": [
+    "AppleBlockwiseW4A8ReferenceGraph.DenseGroupedGroup512RoundingRetainsSlotsAndResults",
+    "AppleBlockwiseW4A8ReferenceGraph.RuntimeQuantizationIndexFailuresAndIeeeReconstruction"
+  ],
+  "catalog": {
+    "fixed_sources": 16,
+    "artifact_execution_false": 33
+  },
+  "backend_math": [
+    {
+      "window": "CPU new graph",
+      "success": 62,
+      "expected_failed": 20
+    },
+    {
+      "window": "CUDA new+neighbors",
+      "success": 62,
+      "expected_failed": 20
+    },
+    {
+      "window": "Vulkan new",
+      "success": 62,
+      "expected_failed": 20
+    },
+    {
+      "window": "Apple final",
+      "success": 62,
+      "expected_failed": 20
+    }
+  ],
+  "original_red_preserved": {
+    "Apple": {
+      "entry": "apple/attempt1-fixture-classification/results/tests.xml",
+      "cases": 2,
+      "failed": 1
+    },
+    "CPU_and_Vulkan": "See partial-window XML counts above; original failed XML remained in archive.",
+    "CUDA_precompiler_planning": [
+      "windows/cuda/revisions/native-arch-planner/failure.json",
+      "windows/cuda/revisions/native-env-planner/failure.json"
+    ]
+  },
+  "literal_weight_payload_members": 0,
+  "local_links": [
+    {
+      "document": "docs/implementation/model-operators.md",
+      "target": "../evidence/research/fixed-role-binding-2026-10-21.json"
+    },
+    {
+      "document": "docs/implementation/model-operators.md",
+      "target": "../evidence/correctness/blockwise-w4a8-reference-2026-10-21.json"
+    },
+    {
+      "document": "docs/developer/current-work.md",
+      "target": "../evidence/research/fixed-role-binding-2026-10-21.json"
+    },
+    {
+      "document": "docs/developer/current-work.md",
+      "target": "../evidence/correctness/blockwise-w4a8-reference-2026-10-21.json"
+    },
+    {
+      "document": "docs/developer/current-work.md",
+      "target": "../evidence/correctness/blockwise-w4a8-reference-2026-10-21.json"
+    },
+    {
+      "document": "docs/developer/current-work.md",
+      "target": "../evidence/correctness/blockwise-w4a8-reference-2026-10-21.cleanup.json"
+    }
+  ],
+  "no_builds_or_GPU": true,
+  "no_sealed_source_edits": true
+}

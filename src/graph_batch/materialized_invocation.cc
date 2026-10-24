@@ -3,6 +3,7 @@
 #include "hyle/compute/detail/paged_arena_access.h"
 #include "hyle/compute/detail/lease_access.h"
 #include "hyle/util/ref_counted.h"
+#include "materialized_projection.h"
 
 namespace hyle::graph::batch {
 namespace c=compute;namespace cd=c::detail;
@@ -18,7 +19,7 @@ struct MaterializedInvocationData final {
   c::MaterializedBatchProgram program;MaterializedGraph logical;
   c::ReadLease output_ready;c::WriteLease output_writer;
   c::MaterializedBatchVersion version;c::PagedArenaRead keys,values;
-  LeasedInvocation original;
+  Invocation original;
   bool prepared=false,bound=false,closed=false;
 };
 void destroy(MaterializedInvocationData*p)noexcept{if(p){const auto a=p->allocator;a.destroy(p);}}
@@ -28,29 +29,30 @@ MaterializedInvocation&MaterializedInvocation::operator=(MaterializedInvocation&
 MaterializedInvocation::~MaterializedInvocation(){detail::destroy(data_);}
 Result<MaterializedInvocation> MaterializedInvocation::create(const c::Context&context,
     c::MaterializedBatchProgram program,c::Queue&queue,MaterializedInvocationOptions options)noexcept{
-  if(!program.valid() || !context.valid() || !queue.valid() || !options.leases.allocator.valid())
+  if(!program.valid() || !context.valid() || !queue.valid() || !options.resources.allocator.valid())
     return std::unexpected(Status::InvalidArgument("host materialized invocation needs a program/context/queue/allocator"));
   HYLE_ASSIGN_OR_RETURN(auto bytes,program.descriptions()[program.output_value()].required_bytes());
   if(bytes>SIZE_MAX-63 || bytes+63>options.max_output_bytes)
     return std::unexpected(Status::ResourceExhausted("host materialized output backing byte cap"));
   const auto cap=program.schema().capacity();if(cap.max_page_refs>(UINT32_MAX-1)/2)
     return std::unexpected(Status::ResourceExhausted("host materialized page permission capacity"));
-  auto allocator=options.leases.allocator;if(options.leases.resource_budget.valid()){
-    HYLE_ASSIGN_OR_RETURN(allocator,options.leases.resource_budget.metadata_allocator());
+  auto allocator=options.resources.allocator;if(options.resources.resource_budget.valid()){
+    HYLE_ASSIGN_OR_RETURN(allocator,options.resources.resource_budget.metadata_allocator());
   }
   auto*p=allocator.construct<detail::MaterializedInvocationData>(allocator);
   if(!p)return std::unexpected(Status::ResourceExhausted("host materialized coordinator metadata"));
   MaterializedInvocation result(p);p->program=std::move(program);p->queue=&queue;
   HYLE_ASSIGN_OR_RETURN(p->logical,materialized_graph(p->program,{.metadata_allocator=allocator}));
   const std::array domains{StorageDomain{mem::system_resource()}};
-  const std::array targets{ExecutionTarget{&context,StorageDomainId{0}}};
-  HYLE_ASSIGN_OR_RETURN(auto compiled,compile(p->logical.graph,{domains,targets,{}},options.compile));
-  HYLE_ASSIGN_OR_RETURN(p->original,LeasedInvocation::create(compiled.executable,options.leases));
-  if(cap.max_page_refs)HYLE_RETURN_IF_ERROR(graph::detail::RegionAccess::reserve_reads(p->original,2*cap.max_page_refs,options.leases));
+  HYLE_ASSIGN_OR_RETURN(auto source,ExecutionSource::acquire(context));
+  const std::array targets{ExecutionTarget{std::move(source),StorageDomainId{0}}};
+  HYLE_ASSIGN_OR_RETURN(auto compiled,graph::compile(p->logical.graph,{domains,targets,{}},options.compile));
+  HYLE_ASSIGN_OR_RETURN(p->original,compiled.executable.create_invocation({.resources = options.resources}));
+  if(cap.max_page_refs)HYLE_RETURN_IF_ERROR(graph::detail::RegionAccess::reserve_reads(p->original,2*cap.max_page_refs,options.resources));
   HYLE_ASSIGN_OR_RETURN(auto pool,c::LeasePool::create(mem::system_resource(),bytes+63,
-      {.max_blocks=1,.allocator=allocator,.resource_budget=options.leases.resource_budget}));
+      {.max_blocks=1,.allocator=allocator,.resource_budget=options.resources.resource_budget}));
   HYLE_ASSIGN_OR_RETURN(p->output_writer,pool.allocate(bytes,64));
-  auto*owner=allocator.construct<detail::OutputOwner>(p->program,allocator,options.leases.resource_budget);
+  auto*owner=allocator.construct<detail::OutputOwner>(p->program,allocator,options.resources.resource_budget);
   if(!owner)return std::unexpected(Status::ResourceExhausted("host materialized output owner"));
   cd::LeaseAccess::retain_resource_owner(pool,owner,[](void*p)noexcept{static_cast<detail::OutputOwner*>(p)->decref();});
   cd::LeaseAccess::detach_pool_root(pool);return result;
@@ -71,7 +73,8 @@ Status MaterializedInvocation::prepare_batch(c::BatchLayoutVersion layout)noexce
   const auto bind=[&]()noexcept->Status{
     HYLE_RETURN_IF_ERROR(data_->original.bind(data_->logical.inputs[3],descriptions[3],std::move(indices)));
     HYLE_RETURN_IF_ERROR(data_->original.bind(data_->logical.inputs[4],descriptions[4],std::move(mask)));
-    return data_->original.bind(data_->logical.output,descriptions[0],std::move(data_->output_writer));
+    return data_->original.bind(data_->logical.output,
+        descriptions[data_->program.output_value()],std::move(data_->output_writer));
   };
   const auto status=bind();if(!status.ok())return status;
   data_->version=std::move(version);data_->prepared=true;return Status::Ok();
@@ -84,8 +87,8 @@ Status MaterializedInvocation::bind(c::ReadLease query,c::PagedArenaRead keys,c:
   HYLE_ASSIGN_OR_RETURN(auto kt,cd::PagedArenaAccess::tensor(keys));HYLE_ASSIGN_OR_RETURN(auto vt,cd::PagedArenaAccess::tensor(values));
   const auto bind=[&]()noexcept->Status{
     HYLE_RETURN_IF_ERROR(data_->original.bind(data_->logical.inputs[0],data_->program.descriptions()[0],std::move(query)));
-    HYLE_RETURN_IF_ERROR(graph::detail::RegionAccess::bind_gather(data_->original,data_->logical.graph,data_->logical.inputs[1],data_->logical.inputs[3],kt,cd::PagedArenaAccess::pages(keys)));
-    return graph::detail::RegionAccess::bind_gather(data_->original,data_->logical.graph,data_->logical.inputs[2],data_->logical.inputs[3],vt,cd::PagedArenaAccess::pages(values));
+    HYLE_RETURN_IF_ERROR(detail::bind_materialized_pages(data_->original,data_->logical.graph,data_->logical.inputs[1],data_->logical.inputs[3],kt,cd::PagedArenaAccess::pages(keys)));
+    return detail::bind_materialized_pages(data_->original,data_->logical.graph,data_->logical.inputs[2],data_->logical.inputs[3],vt,cd::PagedArenaAccess::pages(values));
   };
   const auto status=bind();if(!status.ok()){data_->prepared=false;return status;}
   data_->keys=std::move(keys);data_->values=std::move(values);data_->bound=true;return Status::Ok();
@@ -104,9 +107,9 @@ Result<c::Completion> MaterializedInvocation::submit()noexcept{
     return std::unexpected(Status::FailedPrecondition("host materialized batch is not prepared/bound/open"));
   auto completion=data_->original.submit(*data_->queue);data_->prepared=false;data_->bound=false;return completion;
 }
-Result<LeasedGraphOutput> MaterializedInvocation::output()noexcept{
+Result<GraphOutput> MaterializedInvocation::output()noexcept{
   if(!data_)return std::unexpected(Status::FailedPrecondition("host materialized invocation is empty"));
-  HYLE_ASSIGN_OR_RETURN(auto output,data_->original.output(data_->logical.output));
+  HYLE_ASSIGN_OR_RETURN(auto output,data_->original.result(data_->logical.output));
   if(!data_->output_ready.valid()){HYLE_ASSIGN_OR_RETURN(data_->output_ready,output.storage_lease());}
   return output;
 }

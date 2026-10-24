@@ -29,7 +29,8 @@ Status episode(bool cancelled) {
   HYLE_ASSIGN_OR_RETURN(auto program,n::detail::PagedBatchAccess::prepare_program(
       context,state.data.recipe,state.data.layout,{}));
   HYLE_ASSIGN_OR_RETURN(auto invocation,program.create_invocation());
-  HYLE_ASSIGN_OR_RETURN(auto q,device.binding(state.data.query,state.data.recipe.descriptions()[0]));
+  HYLE_ASSIGN_OR_RETURN(auto query_description,state.data.recipe.input_description(state.data.layout,0));
+  HYLE_ASSIGN_OR_RETURN(auto q,device.binding(state.data.query,query_description));
   HYLE_ASSIGN_OR_RETURN(auto k,n::detail::PagedBatchAccess::binding(device,unchanged));
   HYLE_ASSIGN_OR_RETURN(auto v,n::detail::PagedBatchAccess::binding(device,value_frame));
   HYLE_ASSIGN_OR_RETURN(auto version,state.data.recipe.version(state.data.layout));
@@ -53,7 +54,8 @@ Status episode(bool cancelled) {
   HYLE_ASSIGN_OR_RETURN(auto uploaded,metadata.submit());
   HYLE_RETURN_IF_ERROR(uploaded.wait()); // Cold metadata prepare, before pending producer.
   HYLE_ASSIGN_OR_RETURN(auto metadata_read,uploaded.output({0},{1},0,ids.view()->size()));
-  HYLE_ASSIGN_OR_RETURN(auto table,device.binding(metadata_read,state.data.recipe.descriptions()[3]));
+  HYLE_ASSIGN_OR_RETURN(auto table_description,state.data.recipe.input_description(state.data.layout,3));
+  HYLE_ASSIGN_OR_RETURN(auto table,device.binding(metadata_read,table_description));
   const std::array native_inputs{q,k,v,table};
   HYLE_RETURN_IF_ERROR(invocation.bind(native_inputs));
   HYLE_ASSIGN_OR_RETURN(auto uses,c::LeaseUsePool::create());
@@ -115,7 +117,9 @@ Status episode(bool cancelled) {
       (cancelled ? source.IsCancelled() : source.ok()) && uses.active_batches()==0,
       "receiver counterexample did not observe the expected original source/suffix statuses"));
   const auto result=*outcome;
-  HYLE_RETURN_IF_ERROR(r::require(result->tensors()[0].description()==state.data.recipe.descriptions()[0],"receiver used a different numerical shape"));
+  HYLE_ASSIGN_OR_RETURN(auto output_description,c::batch_output_description(
+      state.data.schema.capacity(),state.data.layout.facts().query_rows));
+  HYLE_RETURN_IF_ERROR(r::require(result->tensors()[0].description()==output_description,"receiver used a different numerical shape"));
 #if defined(HYLE_PENDING_ADMISSION_QUALIFICATION)
   std::fprintf(stderr,"Vulkan original Run success remains successful after late cancel request; "
       "same Runtime/queue + exact guards, final attention shape2x8x64 PASS\n");

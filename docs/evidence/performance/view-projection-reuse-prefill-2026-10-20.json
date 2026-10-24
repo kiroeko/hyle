@@ -1,0 +1,104 @@
+{
+  "rows": [
+    {
+      "arm": "baseline",
+      "tag": "01-baseline",
+      "total_ms": 62.9392,
+      "cold_prepare_ms": 43.7445,
+      "submit_to_token_ms": 19.1647,
+      "submit_call_ms": 0.3837,
+      "residual_upload_and_clock_ms": 0.029999999999997584
+    },
+    {
+      "arm": "current",
+      "tag": "02-current",
+      "total_ms": 62.5607,
+      "cold_prepare_ms": 43.6785,
+      "submit_to_token_ms": 18.8491,
+      "submit_call_ms": 0.5017,
+      "residual_upload_and_clock_ms": 0.033099999999997465
+    },
+    {
+      "arm": "baseline",
+      "tag": "05-baseline",
+      "total_ms": 62.754000000000005,
+      "cold_prepare_ms": 44.559000000000005,
+      "submit_to_token_ms": 18.1584,
+      "submit_call_ms": 0.4437,
+      "residual_upload_and_clock_ms": 0.036599999999999966
+    },
+    {
+      "arm": "current",
+      "tag": "06-current",
+      "total_ms": 66.1982,
+      "cold_prepare_ms": 47.1097,
+      "submit_to_token_ms": 19.0529,
+      "submit_call_ms": 0.433,
+      "residual_upload_and_clock_ms": 0.035600000000002296
+    },
+    {
+      "arm": "current",
+      "tag": "07-current",
+      "total_ms": 64.3468,
+      "cold_prepare_ms": 45.4649,
+      "submit_to_token_ms": 18.8501,
+      "submit_call_ms": 0.4218,
+      "residual_upload_and_clock_ms": 0.031800000000000495
+    },
+    {
+      "arm": "baseline",
+      "tag": "09-baseline",
+      "total_ms": 62.5372,
+      "cold_prepare_ms": 43.6599,
+      "submit_to_token_ms": 18.8456,
+      "submit_call_ms": 0.3852,
+      "residual_upload_and_clock_ms": 0.031699999999997175
+    }
+  ],
+  "medians": {
+    "baseline": {
+      "total_ms": 62.754000000000005,
+      "cold_prepare_ms": 43.7445,
+      "submit_to_token_ms": 18.8456,
+      "submit_call_ms": 0.3852,
+      "residual_upload_and_clock_ms": 0.031699999999997175
+    },
+    "current": {
+      "total_ms": 64.3468,
+      "cold_prepare_ms": 45.4649,
+      "submit_to_token_ms": 18.8501,
+      "submit_call_ms": 0.433,
+      "residual_upload_and_clock_ms": 0.033099999999997465
+    }
+  },
+  "next_measurement": "First prefill submission/native execution portion; no attribution to a core function, driver or GPU kernel from these aggregate logs.",
+  "note": "Already recorded consumer clocks only. Median components do not sum to a median total; submit_call is a subset of submit_to_token. No extra model/profile/build and no causal regression claim.",
+  "source_archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\view-projection-reuse-2026-10-20.zip",
+    "bytes": 1149581,
+    "sha256": "0c976e475c542e168ae2a8be1865d08f33b5c833b992d18e9cf4c90d489063f5",
+    "entries": 273,
+    "payload_bytes": 5841039,
+    "CRC_and_every_payload_SHA_verified": true,
+    "crc_verified": true,
+    "payload_sha256_verified": true,
+    "verification_passes": 1,
+    "build_plan": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\view-projection-reuse\\checks\\20261019T191627\\plan.json",
+      "bytes": 135344,
+      "sha256": "66925a44ba68022688fe4af31a7c4919e44247fe328e0a153b30a8797f8885c7"
+    },
+    "host_TUs": 2,
+    "native_TUs": 0,
+    "CPU_cases": 14,
+    "equal_finite_vectors": 64,
+    "diagnostic_processes": 6,
+    "model_rotation_processes": 9,
+    "native_profile_run": false,
+    "total_prepare_speedup_claim": false,
+    "cleanup_executed": false,
+    "archive_scope": "archive-scope.json",
+    "payload_manifest": "payload-sha256.json"
+  },
+  "source_log_contract": "For each run, prepared T=128 cold_batch_seconds is cold preparation; prefill seconds is submit-to-token; step_seconds includes upload+prepare+submit-to-token. Values converted to ms. All6 raw stderr logs are in the source archive."
+}

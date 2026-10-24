@@ -1,0 +1,1177 @@
+{
+  "date": "2026-10-23",
+  "stage": "BW",
+  "goal_complete": false,
+  "conclusion": "The stated Windows CPU/CUDA Q27/Q24 original consumers passed single-full-packed-M2 head and actual pending-to-embedding feedback; the focused CUDA descriptor bounds also passed.",
+  "implementation": {
+    "qualification": "Provider cold-caches its existing actual device Environment: current non-Orin NVIDIA MMVQ common domain M1..4, Orin M1. The default internal caller remains M1. No model/MTP whitelist, new user configuration or hot device query.",
+    "bounds": "Canonical rank2 recognized GGUF logicalF32 RHS, denseF32 activation/output, K%512, retained signed logical/block/byte/stride limits; new M>1 also requires even N for two-row native reads. Other operand limits remain unchanged.",
+    "native": "Admitted new batches reach fixed MMVQ before MMQ/cuBLAS; one original packed bank is reused, with bounded per-row Q8_1 activation scratch and no full F32 weight expansion. The proof is fixed-source and not an all-device native test.",
+    "consumers": "Two actual M1 normalized-hidden leases are concatenated in an ordinary Graph. One full MatMul reads the original Q27Q6_K or Q24Q4_K head, stable TopK1 yields two separately owned row IDs, and a second ordinary Graph feeds both actual ID leases to the original full embedding. Original six-resource acceptance/continuation and old result leases remain checked.",
+    "reference": "Each listed consumer checks all 2*248320 logits against original bytes and the existing independent actual-F32 activation-codec certificate. No new native reference batches, generated vocabulary or full F32 weight shadow.",
+    "builds": "Four host TUs (two provider implementation TUs and two test TUs), one link, shared cached native inputs. The changed private tensor header is included in frozen compile dependencies. No SDK, CPU worker, NVCC or shader rebuild."
+  },
+  "validation": {
+    "tests": 7,
+    "failures": 0,
+    "errors": 0,
+    "skips": 0,
+    "graph_submissions": 38,
+    "graph_submissions_by_case": {
+      "CpuQ27OriginalNextNAndVocabularyPublishesAndContinues": 7,
+      "CpuQ24OriginalNextNAndVocabularyPublishesAndContinues": 12,
+      "CudaQ27OriginalNextNAndVocabularyPublishesAndContinues": 7,
+      "CudaQ24OriginalNextNAndVocabularyPublishesAndContinues": 12
+    },
+    "M2_additional_graph_submissions": 8,
+    "M2_full_reference_values_by_case": 496640,
+    "M2_total_full_reference_values": 1986560,
+    "actual_native_summary": {
+      "path": ".scratch/mtp-packed-head-m2-20261023/checks1/summary.json",
+      "bytes": 15511,
+      "sha256": "0b65b662fbe2843a5ed2c409d885765f2b90004e92782ceb2deba5508bc205d3"
+    },
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-m2-20261023\\tests-link1\\packed-head-small-batch-checks.exe",
+      "bytes": 140878336,
+      "sha256": "537528b256fb1457e5aa2eea1f61455c90e82b7d933a2b5e60029a598c92a58a"
+    },
+    "cases": [
+      {
+        "attributes": {
+          "name": "CpuQ27OriginalNextNAndVocabularyPublishesAndContinues",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\qwen_mtp_state_consumer_test.cc",
+          "line": "1194",
+          "status": "run",
+          "result": "completed",
+          "time": "28.379",
+          "timestamp": "2026-10-23T10:59:30.216",
+          "classname": "QwenMtpStateConsumer"
+        },
+        "properties": {
+          "full_head_provider": "ggml-cpu",
+          "full_head_encoded_bytes": "1042944000",
+          "original_provider_blk.64.nextn.eh_proj.weight": "ggml-cpu",
+          "original_provider_blk.64.attn_q.weight": "ggml-cpu",
+          "original_provider_blk.64.attn_k.weight": "ggml-cpu",
+          "original_provider_blk.64.attn_v.weight": "ggml-cpu",
+          "original_provider_blk.64.attn_output.weight": "ggml-cpu",
+          "original_provider_blk.64.ffn_gate.weight": "ggml-cpu",
+          "original_provider_blk.64.ffn_up.weight": "ggml-cpu",
+          "original_provider_blk.64.ffn_down.weight": "ggml-cpu",
+          "original_provider_output.weight": "ggml-cpu",
+          "packed_head_m2_rows": "2",
+          "packed_head_m2_matmuls": "1",
+          "packed_head_m2_full_reference_values": "496640",
+          "packed_head_m2_pending_feedback_rows": "2",
+          "packed_head_m2_submissions": "2",
+          "packed_head_m2_provider": "ggml-cpu",
+          "packed_head_m2_scope": "one full packed M2 projection of two actual M1 normalized hidden leases; both actual row-ID leases feed original embedding Gather; no two-token NextN/target equivalence or TPS claim",
+          "backend": "ordinary CPU Graph",
+          "actual_submissions": "7",
+          "logical_nextn_steps": "5",
+          "quantized_reference": "independent original Q4_K/Q6_K/Q8_0 bytes with actual F32 input and fixed native AVX2 Q8_K/Q8_0 codec; no native reference submissions",
+          "original_role_count": "17",
+          "original_role_bytes": "2109114368",
+          "original_first_full_projection_values": "312832",
+          "original_first_full_head_values": "248320",
+          "original_prediction_embedding_observations": "5",
+          "original_shared_bank_capacity_bytes": "2109114368",
+          "original_feedback": "3,299,3,299,3",
+          "complete_draft_resources": "6",
+          "full_vocabulary": "248320",
+          "head_matmuls": "1",
+          "scope": "Q27 MAIN UD-Q4_K_M all15 original blk64 NextN roles plus original untied fullV embedding/head; actual pending/normalized hidden/fullKV/cursor/position prefix0/1/2 and eachhead continuation; fixture initial target hidden/history and explicit acceptance lengths remain external; no complete64-layer target, natural acceptance, quality or TPS claim",
+          "original_native_reference_submissions": "0"
+        }
+      },
+      {
+        "attributes": {
+          "name": "CpuQ24OriginalNextNAndVocabularyPublishesAndContinues",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\qwen_mtp_state_consumer_test.cc",
+          "line": "1208",
+          "status": "run",
+          "result": "completed",
+          "time": "130.482",
+          "timestamp": "2026-10-23T10:59:58.596",
+          "classname": "QwenMtpStateConsumer"
+        },
+        "properties": {
+          "original24_provider_blk.92.nextn.eh_proj.weight": "ggml-cpu",
+          "original24_provider_blk.92.attn_q.weight": "ggml-cpu",
+          "original24_provider_blk.92.attn_k.weight": "ggml-cpu",
+          "original24_provider_blk.92.attn_v.weight": "ggml-cpu",
+          "original24_provider_blk.92.attn_output.weight": "ggml-cpu",
+          "original24_provider_output.weight": "ggml-cpu",
+          "full_head_provider": "ggml-cpu",
+          "original24_provider_blk.92.ffn_gate_inp.weight": "ggml-cpu",
+          "original24_provider_blk.92.ffn_gate_inp_shexp.weight": "ggml-cpu",
+          "original24_provider_blk.92.ffn_gate_shexp.weight": "ggml-cpu",
+          "original24_provider_blk.92.ffn_up_shexp.weight": "ggml-cpu",
+          "original24_provider_blk.92.ffn_down_shexp.weight": "ggml-cpu",
+          "original24_provider_expert_0": "ggml-cpu",
+          "original24_provider_expert_1": "ggml-cpu",
+          "original24_provider_expert_2": "ggml-cpu",
+          "full_head_encoded_bytes": "1144258560",
+          "packed_head_m2_rows": "2",
+          "packed_head_m2_matmuls": "1",
+          "packed_head_m2_full_reference_values": "496640",
+          "packed_head_m2_pending_feedback_rows": "2",
+          "packed_head_m2_submissions": "2",
+          "packed_head_m2_provider": "ggml-cpu",
+          "packed_head_m2_scope": "one full packed M2 projection of two actual M1 normalized hidden leases; both actual row-ID leases feed original embedding Gather; no two-token NextN/target equivalence or TPS claim",
+          "backend": "ordinary CPU Graph",
+          "actual_submissions": "12",
+          "logical_nextn_steps": "5",
+          "quantized_reference": "independent original Q4_K/Q5_K/Q6_K/Q8_0 bytes with actual F32 input and fixed native AVX2 activation codecs; no native reference submissions",
+          "original_role_count": "22",
+          "original_role_bytes": "17268803584",
+          "original_first_full_projection_values": "435201",
+          "original_first_full_head_values": "248320",
+          "original_prediction_embedding_observations": "5",
+          "original_shared_bank_capacity_bytes": "2773288960",
+          "original_feedback": "3,321,3,321,328",
+          "complete_draft_resources": "6",
+          "full_vocabulary": "248320",
+          "head_matmuls": "1",
+          "resident_expert_capacity": "10",
+          "expert_domain": "512",
+          "resident_slots": "2",
+          "resident_slot_bytes": "283117568",
+          "expert_supply_scope": "original compressed bytes plus I32 generation map; slot capacities/API upload accounting are not measured physical VRAM or bus traffic",
+          "scope": "Q24 MAIN UD-IQ4_XS all20 original blk92 NextN roles plus independent original fullV embedding/head; full512 expert domain/actual Top10 original selected experts supplied as compressed E10 banks; two ordinary Graph phases keep actual activations/state leases; complete prefix0/1/2 and eachhead continuation; fixture initial target hidden/history and explicit acceptance remain external, no92-layer target/natural acceptance/quality/TPS claim",
+          "original_native_reference_submissions": "0"
+        }
+      },
+      {
+        "attributes": {
+          "name": "CudaQ27OriginalNextNAndVocabularyPublishesAndContinues",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\qwen_mtp_state_consumer_test.cc",
+          "line": "1227",
+          "status": "run",
+          "result": "completed",
+          "time": "27.671",
+          "timestamp": "2026-10-23T11:02:09.079",
+          "classname": "QwenMtpStateConsumer"
+        },
+        "properties": {
+          "full_head_provider": "ggml-cuda",
+          "full_head_encoded_bytes": "1042944000",
+          "original_provider_blk.64.nextn.eh_proj.weight": "ggml-cuda",
+          "original_provider_blk.64.attn_q.weight": "ggml-cuda",
+          "original_provider_blk.64.attn_k.weight": "ggml-cuda",
+          "original_provider_blk.64.attn_v.weight": "ggml-cuda",
+          "original_provider_blk.64.attn_output.weight": "ggml-cuda",
+          "original_provider_blk.64.ffn_gate.weight": "ggml-cuda",
+          "original_provider_blk.64.ffn_up.weight": "ggml-cuda",
+          "original_provider_blk.64.ffn_down.weight": "ggml-cuda",
+          "original_provider_output.weight": "ggml-cuda",
+          "packed_head_m2_rows": "2",
+          "packed_head_m2_matmuls": "1",
+          "packed_head_m2_full_reference_values": "496640",
+          "packed_head_m2_pending_feedback_rows": "2",
+          "packed_head_m2_submissions": "2",
+          "packed_head_m2_provider": "ggml-cuda",
+          "packed_head_m2_scope": "one full packed M2 projection of two actual M1 normalized hidden leases; both actual row-ID leases feed original embedding Gather; no two-token NextN/target equivalence or TPS claim",
+          "backend": "ordinary CUDA Graph",
+          "actual_submissions": "7",
+          "logical_nextn_steps": "5",
+          "quantized_reference": "independent original Q4_K/Q6_K/Q8_0 bytes with actual F32 input and bounded native MMVQ Q8_1 codec/strict-fast division envelope; no native reference submissions",
+          "original_role_count": "17",
+          "original_role_bytes": "2109114368",
+          "original_first_full_projection_values": "312832",
+          "original_first_full_head_values": "248320",
+          "original_prediction_embedding_observations": "5",
+          "original_shared_bank_capacity_bytes": "2109114368",
+          "original_feedback": "3,299,3,299,3",
+          "complete_draft_resources": "6",
+          "full_vocabulary": "248320",
+          "head_matmuls": "1",
+          "scope": "Q27 MAIN UD-Q4_K_M all15 original blk64 NextN roles plus original untied fullV embedding/head; actual pending/normalized hidden/fullKV/cursor/position prefix0/1/2 and eachhead continuation; fixture initial target hidden/history and explicit acceptance lengths remain external; no complete64-layer target, natural acceptance, quality or TPS claim",
+          "original_native_reference_submissions": "0"
+        }
+      },
+      {
+        "attributes": {
+          "name": "CudaQ24OriginalNextNAndVocabularyPublishesAndContinues",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\qwen_mtp_state_consumer_test.cc",
+          "line": "1245",
+          "status": "run",
+          "result": "completed",
+          "time": "73.625",
+          "timestamp": "2026-10-23T11:02:36.750",
+          "classname": "QwenMtpStateConsumer"
+        },
+        "properties": {
+          "original24_provider_blk.92.nextn.eh_proj.weight": "ggml-cuda",
+          "original24_provider_blk.92.attn_q.weight": "ggml-cuda",
+          "original24_provider_blk.92.attn_k.weight": "ggml-cuda",
+          "original24_provider_blk.92.attn_v.weight": "ggml-cuda",
+          "original24_provider_blk.92.attn_output.weight": "ggml-cuda",
+          "original24_provider_output.weight": "ggml-cuda",
+          "full_head_provider": "ggml-cuda",
+          "original24_provider_blk.92.ffn_gate_inp.weight": "cublasLt",
+          "original24_provider_blk.92.ffn_gate_inp_shexp.weight": "cublasLt",
+          "original24_provider_blk.92.ffn_gate_shexp.weight": "ggml-cuda",
+          "original24_provider_blk.92.ffn_up_shexp.weight": "ggml-cuda",
+          "original24_provider_blk.92.ffn_down_shexp.weight": "ggml-cuda",
+          "original24_provider_expert_0": "ggml-cuda",
+          "original24_provider_expert_1": "ggml-cuda",
+          "original24_provider_expert_2": "ggml-cuda",
+          "full_head_encoded_bytes": "1144258560",
+          "packed_head_m2_rows": "2",
+          "packed_head_m2_matmuls": "1",
+          "packed_head_m2_full_reference_values": "496640",
+          "packed_head_m2_pending_feedback_rows": "2",
+          "packed_head_m2_submissions": "2",
+          "packed_head_m2_provider": "ggml-cuda",
+          "packed_head_m2_scope": "one full packed M2 projection of two actual M1 normalized hidden leases; both actual row-ID leases feed original embedding Gather; no two-token NextN/target equivalence or TPS claim",
+          "backend": "ordinary CUDA Graph",
+          "actual_submissions": "12",
+          "logical_nextn_steps": "5",
+          "quantized_reference": "independent original Q4_K/Q5_K/Q6_K/Q8_0 bytes with actual F32 input and fixed native MMVQ Q8_1 integer-minimum correction; no MMQ or native reference submissions",
+          "original_role_count": "22",
+          "original_role_bytes": "17268803584",
+          "original_first_full_projection_values": "435201",
+          "original_first_full_head_values": "248320",
+          "original_prediction_embedding_observations": "5",
+          "original_shared_bank_capacity_bytes": "2773288960",
+          "original_feedback": "3,321,3,321,328",
+          "complete_draft_resources": "6",
+          "full_vocabulary": "248320",
+          "head_matmuls": "1",
+          "resident_expert_capacity": "10",
+          "expert_domain": "512",
+          "resident_slots": "2",
+          "resident_slot_bytes": "283117568",
+          "expert_supply_scope": "original compressed bytes plus I32 generation map; slot capacities/API upload accounting are not measured physical VRAM or bus traffic",
+          "scope": "Q24 MAIN UD-IQ4_XS all20 original blk92 NextN roles plus independent original fullV embedding/head; full512 expert domain/actual Top10 original selected experts supplied as compressed E10 banks; two ordinary Graph phases keep actual activations/state leases; complete prefix0/1/2 and eachhead continuation; fixture initial target hidden/history and explicit acceptance remain external, no92-layer target/natural acceptance/quality/TPS claim",
+          "original_native_reference_submissions": "0"
+        }
+      },
+      {
+        "attributes": {
+          "name": "FullVocabularySmallBatchPreparesWithoutWeightStorage",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_ggml_cuda\\packed_matmul_bounds_test.cc",
+          "line": "28",
+          "status": "run",
+          "result": "completed",
+          "time": "0.002",
+          "timestamp": "2026-10-23T11:03:52.087",
+          "classname": "GgmlCudaPackedBounds"
+        },
+        "properties": {}
+      },
+      {
+        "attributes": {
+          "name": "LargeHeadsDeclineFallbackAndPaddedLayouts",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_ggml_cuda\\packed_matmul_bounds_test.cc",
+          "line": "67",
+          "status": "run",
+          "result": "completed",
+          "time": "0.002",
+          "timestamp": "2026-10-23T11:03:52.090",
+          "classname": "GgmlCudaPackedBounds"
+        },
+        "properties": {}
+      },
+      {
+        "attributes": {
+          "name": "EncodedAndLogicalLimitsKeepOtherPortsBounded",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_ggml_cuda\\packed_matmul_bounds_test.cc",
+          "line": "115",
+          "status": "run",
+          "result": "completed",
+          "time": "0.002",
+          "timestamp": "2026-10-23T11:03:52.092",
+          "classname": "GgmlCudaPackedBounds"
+        },
+        "properties": {}
+      }
+    ],
+    "process": {
+      "command": [
+        "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-m2-20261023\\tests-link1\\packed-head-small-batch-checks.exe",
+        "--gtest_filter=GgmlCudaPackedBounds.*:QwenMtpStateConsumer.*OriginalNextNAndVocabularyPublishesAndContinues",
+        "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-m2-20261023\\checks1\\results.xml"
+      ],
+      "cwd": "C:\\public\\project-hyle\\hyle",
+      "started": 1792724363.1696455,
+      "timeout_seconds": 900,
+      "throughput_evidence": false,
+      "memory_evidence": false,
+      "trace": false,
+      "profiler": false,
+      "pid": 18472,
+      "exit": 0,
+      "timed_out": false,
+      "finished": 1792724632.3032558,
+      "process_wall_seconds": 269.133499399999
+    },
+    "source_freeze": {
+      "path": ".scratch/mtp-packed-head-m2-20261023/source-final/freeze.json",
+      "bytes": 42205,
+      "sha256": "c4369e07f6852e9b4b28576e04c841d788dc1bdaa9e5896712601f84bad6f47a"
+    },
+    "host_translation_units": 4,
+    "host_compile_records": [
+      {
+        "path": ".scratch/mtp-packed-head-m2-20261023/compile1/qwen-state/identity.json",
+        "bytes": 84655,
+        "sha256": "56d903a760a705b3b7471c7b3dd8cddcb5fcbfd3fc478ed7e7804d6b1b3df485"
+      },
+      {
+        "path": ".scratch/mtp-packed-head-m2-20261023/compile1/bounds/identity.json",
+        "bytes": 61055,
+        "sha256": "27f091e3dddf89c9131a45aec014d567452314253a31e6016ae327efc0058594"
+      },
+      {
+        "path": ".scratch/mtp-packed-head-m2-20261023/compile1/tensor-program/identity.json",
+        "bytes": 42177,
+        "sha256": "d69b5db3b51c204a3c15ad611734da16403b7b40a4d6ce2ceaec38f5a2609d17"
+      },
+      {
+        "path": ".scratch/mtp-packed-head-m2-20261023/compile1/ggml-provider/identity.json",
+        "bytes": 52469,
+        "sha256": "ecedd056b8e7e961a254f3d15c86c281f4186d6d976d860f7f064feb49460bc3"
+      }
+    ],
+    "linked_input_identity_cache": {
+      "path": ".scratch/mtp-packed-head-m2-20261023/tests-link1/link-plan.json",
+      "bytes": 88849,
+      "sha256": "0b5a538c2d2aadb0f4372275a21299b6b1bae250cba40a0f5be7e6712861f274"
+    },
+    "runtime_identity_cache": {
+      "path": ".scratch/mtp-packed-head-m2-20261023/tests-link1/runtime-environment.json",
+      "bytes": 8314,
+      "sha256": "0ed6a1a04998c47ce03a0a04319a726aab89e3f9f43ca974cf8ce1126ca5dbc8"
+    },
+    "cache_identity_scope": "Repository source/dependency snapshots and active executable identities are authenticated here. Reused native inputs and external headers retain recorded build identities with current byte extents; their bodies are not swept or archived.",
+    "SDK_builds": 0,
+    "native_CPU_builds": 0,
+    "NVCC_builds": 0,
+    "shaders": 0
+  },
+  "limitations": [
+    "Native numeric coverage is the listed Windows CPU/CUDA Q27Q6_K and Q24Q4_K M2 workloads. Descriptor prepare M4 and fixed-source mapped-codec proof are not M4/all-codec/all-GPU numeric execution.",
+    "Orin large-packed M2 and larger batches needing MMQ qualification remain unsupported by this narrow admission. Two M1 calls do not close that gap.",
+    "Inputs are two actual M1 NextN normalized-hidden results; this does not establish two-token NextN or target equivalence. Actual target blocks/full verifier and finite external target hidden/history remain separate remaining work.",
+    "No prompt-to-output trained-model quality, natural acceptance rate, loading/TPS speedup or measured physical memory/VRAM result. Protected AV performance and the Q35 executable remain unchanged."
+  ],
+  "remaining": "Actual Q27/Q24 target/verifier wiring, other confirmed applicable MTP artifact gaps, and final ordinary/MTP performance comparison. Broader goal remains incomplete.",
+  "changed_sources": [
+    {
+      "before": {
+        "path": "src/compute_provider_ggml_cuda/tensor_program.cc",
+        "bytes": 58386,
+        "sha256": "d3f710fa6ee7fc99af3bcb6b9ab9c0c2dbea05e14abca3e967906490e8495238",
+        "snapshot": ".scratch/mtp-packed-head-m2-20261023/before/src/compute_provider_ggml_cuda/tensor_program.cc"
+      },
+      "after": {
+        "path": "src/compute_provider_ggml_cuda/tensor_program.cc",
+        "bytes": 59177,
+        "sha256": "ad7a2e5ba5f92a68bd3c05ee43aa2d9c63663ca78e11745ace103896b57ba9ca",
+        "snapshot": ".scratch/mtp-packed-head-m2-20261023/source-final/source/src/compute_provider_ggml_cuda/tensor_program.cc"
+      }
+    },
+    {
+      "before": {
+        "path": "tests/compute_provider_ggml_cuda/packed_matmul_bounds_test.cc",
+        "bytes": 6005,
+        "sha256": "926149a9c3ca309ca17615cdbc86cef002e76c83ba2ba04775a6115e858e5c03",
+        "snapshot": ".scratch/mtp-packed-head-m2-20261023/before/tests/compute_provider_ggml_cuda/packed_matmul_bounds_test.cc"
+      },
+      "after": {
+        "path": "tests/compute_provider_ggml_cuda/packed_matmul_bounds_test.cc",
+        "bytes": 7205,
+        "sha256": "8cf8010ef11cb4e43c9feb9d856437c557f391eff6beb1ccbcec3337b1366072",
+        "snapshot": ".scratch/mtp-packed-head-m2-20261023/source-final/source/tests/compute_provider_ggml_cuda/packed_matmul_bounds_test.cc"
+      }
+    },
+    {
+      "before": {
+        "path": "tests/compute_models/qwen_mtp_state_consumer_test.cc",
+        "bytes": 85244,
+        "sha256": "1643e7a5bfb13a629e2f263d8e4d9b61910c298af873d20e5125d98c8593f0c7",
+        "snapshot": ".scratch/mtp-packed-head-m2-20261023/before/tests/compute_models/qwen_mtp_state_consumer_test.cc"
+      },
+      "after": {
+        "path": "tests/compute_models/qwen_mtp_state_consumer_test.cc",
+        "bytes": 95904,
+        "sha256": "60310884c0e569fbe9f92ff3ef2773690de184297b320061c9ff7c6df9e3f52e",
+        "snapshot": ".scratch/mtp-packed-head-m2-20261023/source-final/source/tests/compute_models/qwen_mtp_state_consumer_test.cc"
+      }
+    },
+    {
+      "before": {
+        "path": "src/compute_provider_ggml_cuda/tensor_program.h",
+        "bytes": 2773,
+        "sha256": "90298a14f2f07b0d88f34440d13eb8e561426fb34bebd2a7bdca9e15314206f1",
+        "snapshot": ".scratch\\mtp-packed-head-m2-20261023\\before\\src\\compute_provider_ggml_cuda\\tensor_program.h"
+      },
+      "after": {
+        "path": "src/compute_provider_ggml_cuda/tensor_program.h",
+        "bytes": 2839,
+        "sha256": "d3f86aa523de7c968965ee6cf04deda522e0677185350e9ab9a00be3001faf45",
+        "snapshot": ".scratch/mtp-packed-head-m2-20261023/source-final/source/src/compute_provider_ggml_cuda/tensor_program.h"
+      }
+    },
+    {
+      "before": {
+        "path": "src/compute_provider_ggml_cuda/ggml_cuda_provider.cc",
+        "bytes": 76522,
+        "sha256": "45ab5bed53a01ba78c1728c4c8ee8ea9314c88c971aaf940d64725cb6f0f7d4c",
+        "snapshot": ".scratch\\mtp-packed-head-m2-20261023\\before\\src\\compute_provider_ggml_cuda\\ggml_cuda_provider.cc"
+      },
+      "after": {
+        "path": "src/compute_provider_ggml_cuda/ggml_cuda_provider.cc",
+        "bytes": 77069,
+        "sha256": "d6f1c77a2abaa7aad5d5f68feae6cb769a96abe26146a8ffb2e8ff9a5a85cbe5",
+        "snapshot": ".scratch/mtp-packed-head-m2-20261023/source-final/source/src/compute_provider_ggml_cuda/ggml_cuda_provider.cc"
+      }
+    }
+  ],
+  "sources": [
+    {
+      "path": "include/hyle/compute/backends/cpu.h",
+      "bytes": 1814,
+      "sha256": "a0b99762a3620c1b44b6856263c172d12fa6e482282fe9c2fcc06aa7d82a1d4d"
+    },
+    {
+      "path": "include/hyle/compute/backends/cuda.h",
+      "bytes": 9030,
+      "sha256": "8b1eeec880b852f5d35a98464c55a20abb8de0b1db447421dff4b90ba4a13748"
+    },
+    {
+      "path": "include/hyle/compute/batch_transfer.h",
+      "bytes": 11416,
+      "sha256": "7bec296577c0439b0e0b48639ccff6b3bd95d137dba085c608f650dbb69fcd1b"
+    },
+    {
+      "path": "include/hyle/compute/completion.h",
+      "bytes": 1959,
+      "sha256": "98b34b9ee4665e9aedac719504c029a509f304b0a4f566bf6b7f76d88dc2ef34"
+    },
+    {
+      "path": "include/hyle/compute/cpu.h",
+      "bytes": 3070,
+      "sha256": "5573eb9618c4ef2a0db299dfb3bc3f2bf93f0e7005ec31aa7ccd95e25efac21f"
+    },
+    {
+      "path": "include/hyle/compute/cuda.h",
+      "bytes": 1457,
+      "sha256": "308beb0703f01239c106d23792f8ef68a57880630b209d1e772a6cd9958918e7"
+    },
+    {
+      "path": "include/hyle/compute/cuda_weights.h",
+      "bytes": 5065,
+      "sha256": "1e3ca02148c67fc2d6d6744beb5a03ee93dcb7f7a61ffed16aa5b5e49d5a8079"
+    },
+    {
+      "path": "include/hyle/compute/detail/append_lease.h",
+      "bytes": 1944,
+      "sha256": "67b6e87fb0bfbc179d781174c2dc414f1e7487445925cb4c2a4faea579cb7ec5"
+    },
+    {
+      "path": "include/hyle/compute/detail/capture_bindings.h",
+      "bytes": 1124,
+      "sha256": "099f8d5983df77fc70e93e3f9c8fc336af7fef83bac7a6268a5f95dd25e53474"
+    },
+    {
+      "path": "include/hyle/compute/detail/completion_access.h",
+      "bytes": 4164,
+      "sha256": "8699638e39a1a7d5708cbb6a5e41f191228b3ac571b16b026eadcc1aa6765e34"
+    },
+    {
+      "path": "include/hyle/compute/detail/context_ref.h",
+      "bytes": 2563,
+      "sha256": "b1295a6d21d452b2730e3907891ca49993e512a741f8f3a9689976e56f5af3f1"
+    },
+    {
+      "path": "include/hyle/compute/detail/lease_access.h",
+      "bytes": 6794,
+      "sha256": "1b0ab7b4b05faf25d5e6a87e4638504b47f38a54fcbce5ffeb7e50ff2148c8bc"
+    },
+    {
+      "path": "include/hyle/compute/detail/operation_access.h",
+      "bytes": 992,
+      "sha256": "4bdd60939dea229e91907768308155716b7cd8b78d92150391edc771f2089f34"
+    },
+    {
+      "path": "include/hyle/compute/detail/prepared_callbacks.h",
+      "bytes": 3012,
+      "sha256": "a721592ad0985c92ec0a427973dd63ca20cf3d870cb8c1162b57f86afde514ae"
+    },
+    {
+      "path": "include/hyle/compute/detail/queue_ref.h",
+      "bytes": 1551,
+      "sha256": "a50579827a0b1554ffa4595c3b2fff68cfcbcc9b75caba25c60f78028d49961b"
+    },
+    {
+      "path": "include/hyle/compute/detail/queue_sequence.h",
+      "bytes": 9214,
+      "sha256": "d8cc25b000e655468f3de3b1da3f5b17c388329f21d3f9d6f1d06d9e54de8a26"
+    },
+    {
+      "path": "include/hyle/compute/detail/resource_binding.h",
+      "bytes": 333,
+      "sha256": "5728b7fc8d0b9e6faf413dd5f8e5ba13e7ddf4d86354a722770f554c1591c6e5"
+    },
+    {
+      "path": "include/hyle/compute/detail/resource_budget_access.h",
+      "bytes": 2741,
+      "sha256": "f5cfd7955fed71cf08b9a08e0ddacf70191495a61883dac4224e02ef3cba4871"
+    },
+    {
+      "path": "include/hyle/compute/device.h",
+      "bytes": 7702,
+      "sha256": "f966803f2293e03db1cde9b1327f847a92162f21adb53f69ef37f0c19b16a84a"
+    },
+    {
+      "path": "include/hyle/compute/low_precision.h",
+      "bytes": 10406,
+      "sha256": "0920a5a2faecb2991da60ecede680c496bab73411a305e559461ea41cea309cb"
+    },
+    {
+      "path": "include/hyle/compute/model_ops.h",
+      "bytes": 78969,
+      "sha256": "9654a9973b1c5ae56ed9295e348d2706b60cc9ebc1708e169fb5eba62a597b1b"
+    },
+    {
+      "path": "include/hyle/compute/operation.h",
+      "bytes": 28394,
+      "sha256": "01730da295dde06e2982685b98176c2bdfcebbb0963515b8fbce6e63ad4fe025"
+    },
+    {
+      "path": "include/hyle/compute/ops_visibility.h",
+      "bytes": 43,
+      "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+    },
+    {
+      "path": "include/hyle/compute/prepared_operation.h",
+      "bytes": 20281,
+      "sha256": "03895c56e8665daf2482f66fecf205fd8aacf92046e13c169d9d8ff86fff52d7"
+    },
+    {
+      "path": "include/hyle/compute/provider.h",
+      "bytes": 10281,
+      "sha256": "a9737ca3cf64eec23ce768e20b1112407fc7816a32f8031f0b668b16c49f816a"
+    },
+    {
+      "path": "include/hyle/compute/providers/ggml_cpu.h",
+      "bytes": 1054,
+      "sha256": "9a4255d47bb85235d9f1fa66228367017cd6ae2e61c0edebcc63f65ade0e1e58"
+    },
+    {
+      "path": "include/hyle/compute/providers/ggml_cuda.h",
+      "bytes": 1154,
+      "sha256": "0a98c283bb0201254cbbc0bc04562e4d3b92c212a84c1747a3c69314f91af259"
+    },
+    {
+      "path": "include/hyle/compute/resource_budget.h",
+      "bytes": 4622,
+      "sha256": "578d440b6fc3f5b58809837506165de27ac0866ae39b2d132763f5dd1786b1ce"
+    },
+    {
+      "path": "include/hyle/compute/resource_leases.h",
+      "bytes": 8660,
+      "sha256": "4e5681ebfa7c2f2ad51e5788c8316f4b993883f595c04b33fe594d7294dab85b"
+    },
+    {
+      "path": "include/hyle/compute/resource_requirement.h",
+      "bytes": 749,
+      "sha256": "0a1260090ba84ed86cf26b27ec5d187c8ed5d39b1acda641b632a3b84d3acf76"
+    },
+    {
+      "path": "include/hyle/compute/route_policy.h",
+      "bytes": 10464,
+      "sha256": "71a4fd38cb6702769cf9879e9c02a631797986f6c1f18417f014b65bb8d70926"
+    },
+    {
+      "path": "include/hyle/compute/state_versions.h",
+      "bytes": 8553,
+      "sha256": "a09cb66a216b56a0651f515f18d8a97772b0e6d281c171a82b8a6630b3e1c7d7"
+    },
+    {
+      "path": "include/hyle/compute/storage_owner.h",
+      "bytes": 8058,
+      "sha256": "549d881d8d4f96eedbb03c8ef9bd6892ede776e5da90a39025538bc50a0530d9"
+    },
+    {
+      "path": "include/hyle/compute/tensor.h",
+      "bytes": 1980,
+      "sha256": "ac00f221a66d0f9044a2b49a1123a6b99a6c425568790898129c31d81519c538"
+    },
+    {
+      "path": "include/hyle/compute/tensor_desc.h",
+      "bytes": 8700,
+      "sha256": "e5496e00c643bcce2efbb42666773f4172243d10458b756d6f9881b0e677eb9a"
+    },
+    {
+      "path": "include/hyle/compute/visibility.h",
+      "bytes": 43,
+      "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+    },
+    {
+      "path": "include/hyle/compute/weight_assembly.h",
+      "bytes": 2095,
+      "sha256": "c085186c2751371d8e642f29d1b338e53962236e50c9935ea1858a4b188ca3ac"
+    },
+    {
+      "path": "include/hyle/compute/workload.h",
+      "bytes": 5017,
+      "sha256": "2e7509d99d986e71b06788e4dd1dcb9595799e2ad972df48449ff0b58f0815ad"
+    },
+    {
+      "path": "include/hyle/container/small_vector.h",
+      "bytes": 30022,
+      "sha256": "cd04f94cac8c7be603600dfeb2a343a88a576bb5230c914d6d38ae5676b99cee"
+    },
+    {
+      "path": "include/hyle/core/assert.h",
+      "bytes": 16114,
+      "sha256": "5596728bc220ea27696be4f25e2f9eb9cf2705930f8eb0461747c4a862615790"
+    },
+    {
+      "path": "include/hyle/core/compiler.h",
+      "bytes": 4287,
+      "sha256": "e31151f0ed73c532e464c6568483acecd80a2da9c1ee7afc7e081db87d6fb687"
+    },
+    {
+      "path": "include/hyle/core/detail/compiler_attributes.h",
+      "bytes": 1913,
+      "sha256": "263c7691f9984073e198b69328092330bf572195113d3994d1ab54fe4564d88a"
+    },
+    {
+      "path": "include/hyle/core/detail/preprocessor.h",
+      "bytes": 409,
+      "sha256": "1d9872ef98db007dcbed7e0128771244640e1de4092830d52a7a83537f98eb84"
+    },
+    {
+      "path": "include/hyle/core/environment.h",
+      "bytes": 6712,
+      "sha256": "3d289765b1b677499a444b38d1dbe366bb5e99f89fcb7670af2d08106fd958fa"
+    },
+    {
+      "path": "include/hyle/error/result.h",
+      "bytes": 30856,
+      "sha256": "7718409ab2854eb76959215b356bf8077007134d87db1a24f9384a9b5deff2b5"
+    },
+    {
+      "path": "include/hyle/error/status.h",
+      "bytes": 18122,
+      "sha256": "4d6b4b0bfa5628947aad5449320513d4b071e0c84debfac47f7a7d264cecb7f4"
+    },
+    {
+      "path": "include/hyle/graph/compile_report.h",
+      "bytes": 577,
+      "sha256": "c42c30527d581975c49ddfebb182b0ae7928d799eed91172cb631779a2ad5b4f"
+    },
+    {
+      "path": "include/hyle/graph/cpu.h",
+      "bytes": 919,
+      "sha256": "01165b3d6fe8276d4275495d8cb52186d9a81b11749db49a2684856bfbe088e8"
+    },
+    {
+      "path": "include/hyle/graph/cuda.h",
+      "bytes": 2663,
+      "sha256": "658f3dab4eb1a0a90f2dc472652e0c0fa5e694373544abc21331f116adee1373"
+    },
+    {
+      "path": "include/hyle/graph/executable.h",
+      "bytes": 50386,
+      "sha256": "aa3a55ed1869f84149ad0a6a558d6541880d71ba0bf4c6789480724564cdc0b0"
+    },
+    {
+      "path": "include/hyle/graph/execution_source.h",
+      "bytes": 1859,
+      "sha256": "b89de5c6fe8b84192c9618a6a4e4dcee8ac45393e04a9e335f17b5a2d3ecac3f"
+    },
+    {
+      "path": "include/hyle/graph/graph.h",
+      "bytes": 19988,
+      "sha256": "c7a93ccf9fd1c86fb9dec286e7d3345aabcb1810c2fb6793a66093480a5a2136"
+    },
+    {
+      "path": "include/hyle/graph/resources.h",
+      "bytes": 430,
+      "sha256": "c9d3075babb4d863f3543c76576d093fe59f9868df67d50fc492db0aebe7015d"
+    },
+    {
+      "path": "include/hyle/graph/result.h",
+      "bytes": 2146,
+      "sha256": "dc576aa9e523321df6d69ced5717cd9a8e92a9261245a42a431ecc8039a3dd46"
+    },
+    {
+      "path": "include/hyle/graph/visibility.h",
+      "bytes": 43,
+      "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+    },
+    {
+      "path": "include/hyle/graph/weight_binding.h",
+      "bytes": 422,
+      "sha256": "ebcc3eea951953966a3b10b2951872e74d04921af6f0cc8de45ab52ab1ba32bd"
+    },
+    {
+      "path": "include/hyle/mem/alignment.h",
+      "bytes": 3499,
+      "sha256": "75388cd67ecb0f6d9bd48a85ea9994e97d8e1db6658a57a3aa24fc89690c76a8"
+    },
+    {
+      "path": "include/hyle/mem/allocator.h",
+      "bytes": 11090,
+      "sha256": "0369680d4769a0187bfb77ee8b565b5e8fb53a03909fabf233458d9c1cbcd011"
+    },
+    {
+      "path": "include/hyle/mem/buffer.h",
+      "bytes": 19273,
+      "sha256": "346a4f810babb8c5dacba49faaf57903d998a3cbb49af12b8c62acc85f7be72c"
+    },
+    {
+      "path": "include/hyle/mem/mapping.h",
+      "bytes": 7139,
+      "sha256": "98b1a1ea8c4d85eff4fb8ddeb0fd7a425e7619128c468ae29e11c5e3fbfd05c3"
+    },
+    {
+      "path": "include/hyle/mem/quota_allocator.h",
+      "bytes": 7124,
+      "sha256": "a88fe230dc5358ddde6209de96cc61a59e3f6e60d30b9e7534e986fab10224c9"
+    },
+    {
+      "path": "include/hyle/mem/resource.h",
+      "bytes": 7717,
+      "sha256": "84b0366e658ec63f999b4c9719cf8584ad758f4ff5340baf37f1c3ebd17145cd"
+    },
+    {
+      "path": "include/hyle/mem/std_allocator.h",
+      "bytes": 5150,
+      "sha256": "adee9ae71753fa27e001b7b71b1d57b61e14f7ebcfdea57bb3993d2a3e9550e4"
+    },
+    {
+      "path": "include/hyle/mem/system_inline.h",
+      "bytes": 8762,
+      "sha256": "d890fe66b1a83a5f1a8f2b22c368276e7b3fadcfd0946df5279692ce055164f1"
+    },
+    {
+      "path": "include/hyle/mem/visibility.h",
+      "bytes": 43,
+      "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+    },
+    {
+      "path": "include/hyle/obs/trace.h",
+      "bytes": 8554,
+      "sha256": "be0df49a044a0888d46c6c2411a292fdd04908b7bdc393557b87d68a70cf1f6f"
+    },
+    {
+      "path": "include/hyle/platform/fs.h",
+      "bytes": 24891,
+      "sha256": "2af351149fc82762267b89303439ef71626a2eb541d1922ff6f66014136a9ffa"
+    },
+    {
+      "path": "include/hyle/platform/fs_visibility.h",
+      "bytes": 43,
+      "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+    },
+    {
+      "path": "include/hyle/platform/numa.h",
+      "bytes": 8400,
+      "sha256": "e154f229dc7f6f5ceb1c44f20f769204b48bd422e57c5fed1e53c490607b8fde"
+    },
+    {
+      "path": "include/hyle/platform/virtual_memory.h",
+      "bytes": 10485,
+      "sha256": "1b01086d44f330a592a5d3b4946fb213e485095dce904db99bb71103e2a578b8"
+    },
+    {
+      "path": "include/hyle/platform/visibility.h",
+      "bytes": 43,
+      "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+    },
+    {
+      "path": "include/hyle/simd/dtype.h",
+      "bytes": 12143,
+      "sha256": "04dc8a2e0a654250413a0edc4bdc667f98c8aa40d85da25264b6bb2054dd51e5"
+    },
+    {
+      "path": "include/hyle/simd/types.h",
+      "bytes": 1658,
+      "sha256": "e79863029c8036f918f36f93dd0267b8d42857516e0d74678584d75f8926abbd"
+    },
+    {
+      "path": "include/hyle/time/unix_timestamp.h",
+      "bytes": 11791,
+      "sha256": "bcd6bdc860d6ee1e73004ebd15e3b2b2a60ca3dff7a0818deecf9420f95b4496"
+    },
+    {
+      "path": "include/hyle/visibility.h",
+      "bytes": 11701,
+      "sha256": "893fa73589b6e46f00474c2258af74c28d662b52176b57012290c820812ed486"
+    },
+    {
+      "path": "src/compute/provider_internal.h",
+      "bytes": 11628,
+      "sha256": "e62b1e842d95f3bd4ac720b26e716d0be85ac8e84d3bffce7ce13f8cc910641d"
+    },
+    {
+      "path": "src/compute/shape_domain.h",
+      "bytes": 4715,
+      "sha256": "2c50da6b169b550e737a4dd95d5be66ab5803ac1843ba628ebc5cc37f2507846"
+    },
+    {
+      "path": "src/compute/shape_program.h",
+      "bytes": 3883,
+      "sha256": "1d58ee387d7c7bb21e14c7f9e6330ffa544aaf5eca91d3182b2c08f2927169f1"
+    },
+    {
+      "path": "src/compute_backend_cuda/device_status_kernel.h",
+      "bytes": 582,
+      "sha256": "ef331996915f9881e62d2f4fb2c4a3aa77440463ddd13320a7f34461fee70304"
+    },
+    {
+      "path": "src/compute_backend_cuda/native_context.h",
+      "bytes": 4925,
+      "sha256": "fe5cf9b378abb5cb8feb60533f3eb4ac40115284aacee9e6f431898f301376ec"
+    },
+    {
+      "path": "src/compute_ggml_runtime/metadata_arena.h",
+      "bytes": 1843,
+      "sha256": "27d9639094db0f0fc72a7dd9c8b767d6e5b63f5bfd4cafe849cf0f97ec719dfb"
+    },
+    {
+      "path": "src/compute_ggml_runtime/sink_mask.h",
+      "bytes": 1599,
+      "sha256": "a9d5deab9a2f5017c28b7e84e7e49c207096b523ad4ef8cd8bfd294957e800ef"
+    },
+    {
+      "path": "src/compute_provider_ggml_cuda/ggml_cuda_provider.cc",
+      "bytes": 77069,
+      "sha256": "d6f1c77a2abaa7aad5d5f68feae6cb769a96abe26146a8ffb2e8ff9a5a85cbe5"
+    },
+    {
+      "path": "src/compute_provider_ggml_cuda/index_guard.h",
+      "bytes": 750,
+      "sha256": "b37582fce7e7fe4fc2168b8c473d345b2830579b9e236ffc6adc17d164172968"
+    },
+    {
+      "path": "src/compute_provider_ggml_cuda/native_bridge.h",
+      "bytes": 3810,
+      "sha256": "1391fe90f6e47baa229ab475caca045bebb529be6894f19c618e771cf2718286"
+    },
+    {
+      "path": "src/compute_provider_ggml_cuda/numerical_contract.h",
+      "bytes": 869,
+      "sha256": "60a90737cf10d75f076ee140b5f68a5250efd647b7b9c77560b95bf52ea23039"
+    },
+    {
+      "path": "src/compute_provider_ggml_cuda/program.h",
+      "bytes": 4726,
+      "sha256": "36f93bf98562d352a32e14db7ad6de03a369a3173dd3f9558c0ce306b90c1869"
+    },
+    {
+      "path": "src/compute_provider_ggml_cuda/tensor_program.cc",
+      "bytes": 59177,
+      "sha256": "ad7a2e5ba5f92a68bd3c05ee43aa2d9c63663ca78e11745ace103896b57ba9ca"
+    },
+    {
+      "path": "src/compute_provider_ggml_cuda/tensor_program.h",
+      "bytes": 2839,
+      "sha256": "d3f86aa523de7c968965ee6cf04deda522e0677185350e9ab9a00be3001faf45"
+    },
+    {
+      "path": "tests/compute/workload_fixture.h",
+      "bytes": 1211,
+      "sha256": "d451c816f7362313b73758d60fc68c49acbaf0e31735db3039d72e80d39b6a5e"
+    },
+    {
+      "path": "tests/compute_models/cpu_c4_model_branches.h",
+      "bytes": 53008,
+      "sha256": "8af3aeea3be2a5763e3f8344475ba135bc151fded90eb4f363736bc9c72a0960"
+    },
+    {
+      "path": "tests/compute_models/cpu_c5_gguf_fixture.h",
+      "bytes": 12070,
+      "sha256": "15d62432a075667b52084c1b646f9c181a8b0b3474331f15ff142b033e544609"
+    },
+    {
+      "path": "tests/compute_models/cpu_c5_gguf_inputs.h",
+      "bytes": 93837,
+      "sha256": "050f5c2b3dc9f84cc681e3e039aeed5978e692d64e60e27b0cd88d49afd1b8fd"
+    },
+    {
+      "path": "tests/compute_models/cpu_c5_parameter_fragments.h",
+      "bytes": 7080,
+      "sha256": "16de6e8f2c70b32557073966aed4e5a51cc53d38a86df93a4ff09e45f8c21575"
+    },
+    {
+      "path": "tests/compute_models/cpu_c5_qwen_attention.h",
+      "bytes": 10075,
+      "sha256": "24b1428ffefbe46f10b9c6dc168020af603e207ad796963fb9c8764af093c5ae"
+    },
+    {
+      "path": "tests/compute_models/cpu_c5_qwen_nextn.h",
+      "bytes": 18271,
+      "sha256": "b4f646571ef3a38ff6c7a5a7750659e943b80eeb9063ccb11ba12d2c503cfb03"
+    },
+    {
+      "path": "tests/compute_models/cpu_expanded_gguf_fixture.h",
+      "bytes": 5708,
+      "sha256": "169fb6b22159dd6cc82b61f87d358d7934fd6a6fdb28cc4724355ab227fd7ca7"
+    },
+    {
+      "path": "tests/compute_models/cuda_sidecar_quant_reference.h",
+      "bytes": 7639,
+      "sha256": "cd865999a598c06f2ce13b4353cbe061cab14bfdf84c5050cece6ebf3c3f9221"
+    },
+    {
+      "path": "tests/compute_models/d5_deepseek_official_attention.h",
+      "bytes": 51605,
+      "sha256": "4f5429427469ad34758e9d57fc95a1744368fb05fe0a3e195756b0b1982be44e"
+    },
+    {
+      "path": "tests/compute_models/d5_deepseek_official_fragments.h",
+      "bytes": 21297,
+      "sha256": "5807c46057cb63bfb7691c82dba92c0a63a467e1ab90a7e9486183c1c17c2c30"
+    },
+    {
+      "path": "tests/compute_models/d5_deepseek_remaining_fragments.h",
+      "bytes": 39907,
+      "sha256": "5174d4fedabd5b719c7acb91fe2abb523a768c7ec9685878e9b1efaed3241a2b"
+    },
+    {
+      "path": "tests/compute_models/d5_dynamic_fp8_fragments.h",
+      "bytes": 16239,
+      "sha256": "6e6d323a06331a70666a6ce2a8e26984932d7fbf5732f71ced728a3bc0b68040"
+    },
+    {
+      "path": "tests/compute_models/d5_fp8_weight_preparation.h",
+      "bytes": 4214,
+      "sha256": "2e9936b89899495588bd701455ba2a371f1833bb6bdef10b008f043f904200fc"
+    },
+    {
+      "path": "tests/compute_models/d5_gguf_test_support.h",
+      "bytes": 13405,
+      "sha256": "4742b35f873bc892213e8721f44a4bde0cfeea9d30da036c454a4d3042bd7898"
+    },
+    {
+      "path": "tests/compute_models/d5_glm_mtp_head_test.h",
+      "bytes": 475,
+      "sha256": "d8267206827f0399423e5500f45492f70ce51e2bb52bad38bbc1b10b9c33b668"
+    },
+    {
+      "path": "tests/compute_models/d5_glm_remaining_fragments.h",
+      "bytes": 54263,
+      "sha256": "12dbf546cb1050470dd6db65fe4d1f0a70364781a22d9df466699e7b10cde742"
+    },
+    {
+      "path": "tests/compute_models/d5_grouped_fp8_fragments.h",
+      "bytes": 8697,
+      "sha256": "100afd9e17c00798ffa5b6f1cb7201dcea93981937321eac4a5afbaa269f2717"
+    },
+    {
+      "path": "tests/compute_models/d5_kda_full_fragments.h",
+      "bytes": 12967,
+      "sha256": "8af401a0982f99b0283199c53f44ec15f6524a35eb0590b850a3c403f4d7e76e"
+    },
+    {
+      "path": "tests/compute_models/d5_kda_projection_cases.h",
+      "bytes": 5583,
+      "sha256": "489e42c858140847b89f4932a5519572aa132f515d96cb9927392ce0266c0feb"
+    },
+    {
+      "path": "tests/compute_models/d5_kimi_remaining_fragments.h",
+      "bytes": 18043,
+      "sha256": "edc6aaeb8d05c1f848447849b45bf3f908b77a737823ce6dfbf737feedeb2218"
+    },
+    {
+      "path": "tests/compute_models/d5_moe_execution_cases.h",
+      "bytes": 4217,
+      "sha256": "8d3dedc2d98d2ba3cd72c1cec165bc53f6472b274da4215509f623511f4321cf"
+    },
+    {
+      "path": "tests/compute_models/d5_moe_execution_fragments.h",
+      "bytes": 29763,
+      "sha256": "ab7857f47f82b87bf2b39b56d2f637a9d3d3068256abfcbd2a69d94ab1b08f3c"
+    },
+    {
+      "path": "tests/compute_models/d5_moe_profile_cases.h",
+      "bytes": 11520,
+      "sha256": "c21f3e73aba1a7ce161b71c9eec135af9b6352e8aba255c3229c9b82f4d93a6d"
+    },
+    {
+      "path": "tests/compute_models/d5_moe_semantic_fragments.h",
+      "bytes": 17811,
+      "sha256": "75b094320cc81125cfdf7b8ab473be5b51238b66b6403e8f142b14fbe00b5131"
+    },
+    {
+      "path": "tests/compute_models/d5_official_fp4_storage.h",
+      "bytes": 4623,
+      "sha256": "3f9d8a651e2d79dcf5f9ab2ac09cca4439a0d5ef2d4a2ea948c1768966e38846"
+    },
+    {
+      "path": "tests/compute_models/d5_official_fp8_fragments.h",
+      "bytes": 5606,
+      "sha256": "c132fe5588268de6ce57506025f754aeda0c6e7698703db77932711bcfb4dd56"
+    },
+    {
+      "path": "tests/compute_models/d5_quantization_roundtrip.h",
+      "bytes": 3170,
+      "sha256": "64096613c76fb2fb5fa1d2f63bdcd4fd0abf576f7e126decc3ab10ed5dccd3a8"
+    },
+    {
+      "path": "tests/compute_models/d5_qwen35_fixture.h",
+      "bytes": 9558,
+      "sha256": "b80a27f10ce671ab5fa3953a0862dd387fd85bb0aa2cfd31670593303b8ab393"
+    },
+    {
+      "path": "tests/compute_models/d5_qwen35_gguf_fragment_support.h",
+      "bytes": 6939,
+      "sha256": "24d8ae62cbb2ed362c4e949db02fdce18505e03ff06adb23cdcfe8b358b61cb1"
+    },
+    {
+      "path": "tests/compute_models/d5_qwen38_24t_fixture.h",
+      "bytes": 7313,
+      "sha256": "b5b12c7030e2fbf2f14e8b8d0be9569ef47c64a49d58e98bc7b333b4256e050f"
+    },
+    {
+      "path": "tests/compute_models/d5_qwen38_24t_full_router.h",
+      "bytes": 22959,
+      "sha256": "7bff099e41ecee6f6dd4dc85a91db2b13a1737bee46699befe27e4d867b6fd04"
+    },
+    {
+      "path": "tests/compute_models/d5_qwen38_24t_moe_profiles.h",
+      "bytes": 11480,
+      "sha256": "ea93064fca5e64b4db7bfb5ded1062d83baf6ab3794f52f962beee2b0fd8a9ee"
+    },
+    {
+      "path": "tests/compute_models/d5_qwen38_24t_semantic_fragments.h",
+      "bytes": 34939,
+      "sha256": "b419ccdab0d23da5ff1db51d6e2c9c504bcae02f83666885cb5bb457b62d2736"
+    },
+    {
+      "path": "tests/compute_models/d5_qwen38_gdn_fixture.h",
+      "bytes": 8553,
+      "sha256": "9a0fb6af064c85209fa478a7021eb399bf1451fff67d43538a655936343bf2ed"
+    },
+    {
+      "path": "tests/compute_models/d5_qwen38_official_fixture.h",
+      "bytes": 5967,
+      "sha256": "61cacc3d6251c1ef2cfc9a9f724412f9ca4615f4692dcbf777a81e790e7a1ff0"
+    },
+    {
+      "path": "tests/compute_models/d5_qwen_gguf_vocabulary_cases.h",
+      "bytes": 2928,
+      "sha256": "8db378b333614ddc594a3ae9364fcbfdded76a2c1226d5cb19b44b24968af655"
+    },
+    {
+      "path": "tests/compute_models/dspark_original_shared_reference.h",
+      "bytes": 16279,
+      "sha256": "f3a68f4bf5758818585c0e6e9e640137f88a751486036a7fd884889994252dff"
+    },
+    {
+      "path": "tests/compute_models/model_resident_fragment.h",
+      "bytes": 8672,
+      "sha256": "138deaba975edb57d7c29622fef0df737b22f924db43846d3c5bd6d1001fe0cd"
+    },
+    {
+      "path": "tests/compute_models/original_role_input.h",
+      "bytes": 7051,
+      "sha256": "ef769dc0479128b1ab6d727abe76b47fc96023e80ff6592e7442c40703932617"
+    },
+    {
+      "path": "tests/compute_models/qwen24_original_moe_fragment.h",
+      "bytes": 6178,
+      "sha256": "a7a63d9ab435737260d4a21c048dff4bbb20c522b5790cbe64a9f8620f33bd9c"
+    },
+    {
+      "path": "tests/compute_models/qwen24_original_nextn_reference.h",
+      "bytes": 19283,
+      "sha256": "d0d9ae2638ef7cba60f25c7d1290c1d8f5cb9bd48faf1858916fa587fa4056ac"
+    },
+    {
+      "path": "tests/compute_models/qwen24_original_nextn_roles.h",
+      "bytes": 13147,
+      "sha256": "06b401c50ca97f3cfe0d48082b0d7042ab511ba4c5061d29c3bad3963767112f"
+    },
+    {
+      "path": "tests/compute_models/qwen24_original_resident_weights.h",
+      "bytes": 7968,
+      "sha256": "41b211247c92938e28cd9032cb0c6f847b97daa922b65eaa50e066b52b77edfd"
+    },
+    {
+      "path": "tests/compute_models/qwen27_original_nextn_reference.h",
+      "bytes": 13219,
+      "sha256": "08265a95da0f0eab736d1e52640c8c940be71de5d7b96a2b978835072e855524"
+    },
+    {
+      "path": "tests/compute_models/qwen27_original_nextn_roles.h",
+      "bytes": 8917,
+      "sha256": "1440619767d2cdcb957005e9da3a1b425678b5ecc837fd64ce9bc3c0b6544efd"
+    },
+    {
+      "path": "tests/compute_models/qwen_mtp_state_consumer.h",
+      "bytes": 28037,
+      "sha256": "be2e585d51c6e9bd27d874cd5a5250d84e4f029b29bfded90b579144ff9b8c55"
+    },
+    {
+      "path": "tests/compute_models/qwen_mtp_state_consumer_test.cc",
+      "bytes": 95904,
+      "sha256": "60310884c0e569fbe9f92ff3ef2773690de184297b320061c9ff7c6df9e3f52e"
+    },
+    {
+      "path": "tests/compute_models/qwen_original_mtp_roles.h",
+      "bytes": 12336,
+      "sha256": "da0090bed51b96c6737b115235cf3503b9b90b45e5255e0ad779e37b1ef90a73"
+    },
+    {
+      "path": "tests/compute_provider_ggml_cuda/packed_matmul_bounds_test.cc",
+      "bytes": 7205,
+      "sha256": "8cf8010ef11cb4e43c9feb9d856437c557f391eff6beb1ccbcec3337b1366072"
+    },
+    {
+      "path": "tests/compute_provider_native/half_test_support.h",
+      "bytes": 4399,
+      "sha256": "5f6d8f7b70d07e44600bb6d6d592f66af5dac9970a730695956a1afcfc3cd0b8"
+    },
+    {
+      "path": "docs/developer/current-work.md",
+      "bytes": 22997,
+      "sha256": "3a155597ad6e6dec4954bc1b863684e0afcdd42c50bbbc41eaa1171c83fb14d6"
+    },
+    {
+      "path": "docs/implementation/model-operators.md",
+      "bytes": 103245,
+      "sha256": "75b5e97c6c0fbd40228efd4d1a7a5571e8d2ab93ccfcbb388dcee73e307027b5"
+    }
+  ],
+  "source_proof": {
+    "path": ".scratch/mtp-packed-head-m2-20261023/review/native-small-batch.json",
+    "bytes": 13895,
+    "sha256": "645594fffd3d5230a517f4a94c0fbf57734b5b56fcd7c782265944c0a6744e08"
+  },
+  "reused_publication": {
+    "evidence": {
+      "path": "docs/evidence/correctness/mtp-glm-pro-nextn-2026-10-23.json",
+      "bytes": 236252,
+      "sha256": "e2d357ab828b39afecd6d24d5e04c8672fba2b32a5c8bf01d7404c57cde0a16a"
+    },
+    "archive": {
+      "path": "docs/evidence/correctness/mtp-glm-pro-nextn-2026-10-23.zip",
+      "bytes": 3588400,
+      "sha256": "3a8c9905bff129698fbd52033a86c0c02f6faadf4799d98439294422785cd22a"
+    }
+  },
+  "protected_performance_tail_sha256": "80b8672315911a74039a14cd137659bc67289273dc9c3707cd267b2d06de2551",
+  "protected_qwen_image": {
+    "path": ".scratch/qwen-mtp-next-20261022/hyle-link4/qwen.exe",
+    "bytes": 140411392,
+    "sha256": "9dce4f40d2edb8004c0d79c58e20de6ca6cdc5d1477db3773d26b40d7a05d883"
+  },
+  "archive": {
+    "path": "docs/evidence/correctness/mtp-packed-head-m2-2026-10-23.zip",
+    "bytes": 1684687,
+    "sha256": "b8f4ce083c7865cc7ada4d6dbc186e84096f3997369d9b58c1a750adbb84598b"
+  },
+  "archive_items": 369,
+  "original_weight_acquisition": false,
+  "original_payload_bodies_archived": false
+}

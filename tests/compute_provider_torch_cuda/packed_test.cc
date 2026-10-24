@@ -12,6 +12,7 @@
 #include <c10/cuda/CUDACachingAllocator.h>
 
 #include "../compute_provider_native/half_test_support.h"
+#include "../compute_models/mlx_affine_bitstream.h"
 #include "hyle/compute/backends/cuda.h"
 #include "hyle/compute/model_ops.h"
 #include "hyle/compute/prepared_operation.h"
@@ -79,7 +80,7 @@ TEST(CudaPackedWeights, Grouped64StepsObserveChangedWordsAndIdsWithoutTorchTempo
       dense(c::DataType::kFloat32,{experts,n,k/group}),
       dense(c::DataType::kInt32,{2,2})},
       {bytes(activation),bytes(words),bytes(scales),bytes(biases),bytes(ids)});
-  const auto op=c::model_ops::mlx_grouped_matmul(c::model_ops::MlxWeightFormat::kAffine4,group);
+  const auto op=c::model_ops::mlx_grouped_matmul(c::model_ops::MlxWeightFormat::kAffine,4,group);
   std::array<c::TensorDesc,1> output_desc;
   ASSERT_TRUE(c::infer_output_descriptions(op,data.descriptions,output_desc).ok());
   // A real original allocator limit catches any return to per-group ATen
@@ -148,7 +149,7 @@ TEST(CudaPackedWeights, Mxfp8CoversAllCodesWithIndependentScalarOracle) {
   for(unsigned code=0;code<256;++code)words[code*(k/4)]=code;
   InputSet data({dense(c::DataType::kFloat32,{rows,k}),dense(c::DataType::kUInt32,{n,k/4}),
       dense(c::DataType::kUInt8,{n,1})},{bytes(a),bytes(words),bytes(std::vector<std::uint8_t>(n,127))});
-  const auto op=c::model_ops::mlx_quantized_matmul(c::model_ops::MlxWeightFormat::kMxfp8,32);
+  const auto op=c::model_ops::mlx_quantized_matmul(c::model_ops::MlxWeightFormat::kMxfp8,8,32);
   std::array<c::TensorDesc,1> output_desc;
   ASSERT_TRUE(c::infer_output_descriptions(op,data.descriptions,output_desc).ok());
   auto prepared=c::prepare(data.context,op,data.descriptions,output_desc,data.resource.ref()).value();
@@ -169,8 +170,11 @@ TEST(CudaPackedWeights, Mxfp8CoversAllCodesWithIndependentScalarOracle) {
 TEST(CudaPackedWeights, EmbeddingPreservesStorageRoundingBeforeBiasAndCheckedOutput) {
   using Half=hyle::simd::float16_t;
   using Bfloat=hyle::simd::bfloat16_t;
-  for(const auto type:{c::DataType::kFloat16,c::DataType::kBFloat16}) {
-    SCOPED_TRACE(int(type));
+  const std::array domains{
+      std::pair{c::DataType::kFloat16,4U},std::pair{c::DataType::kFloat16,5U},
+      std::pair{c::DataType::kBFloat16,6U},std::pair{c::DataType::kBFloat16,8U}};
+  for(const auto [type,bits]:domains) {
+    SCOPED_TRACE(::testing::Message()<<int(type)<<","<<bits);
     constexpr std::int64_t n=3,k=128,group=32;
     auto rounded=[&](float x) { return float(type==c::DataType::kFloat16
         ? half_test::decode(half_test::encode<Half>(x))
@@ -181,13 +185,16 @@ TEST(CudaPackedWeights, EmbeddingPreservesStorageRoundingBeforeBiasAndCheckedOut
           ? half_test::encode<Half>(x).bits : half_test::encode<Bfloat>(x).bits);
       return bytes(result);
     };
-    std::vector<std::uint32_t> words(n*k/8,0x76543210U);
+    std::vector<std::uint32_t> codes(n*k);
+    for(std::int64_t row=0;row<n;++row)for(std::int64_t j=0;j<k;++j)
+      codes[row*k+j]=unsigned(row*7+j*3)&((1U<<bits)-1U);
+    const auto words=mlx_affine_test::pack(codes,n,k,bits);
     std::vector<float> scales(n*k/group,.1F),biases(scales.size(),-.03F);
     std::vector<std::int32_t> ids{2,0,2};
-    InputSet data({dense(c::DataType::kUInt32,{n,k/8}),dense(type,{n,k/group}),
+    InputSet data({dense(c::DataType::kUInt32,{n,(k/32)*bits}),dense(type,{n,k/group}),
         dense(type,{n,k/group}),dense(c::DataType::kInt32,{3})},
         {bytes(words),floating(scales),floating(biases),bytes(ids)});
-    const auto op=c::model_ops::mlx_quantized_embedding(group);
+    const auto op=c::model_ops::mlx_quantized_embedding(bits,group);
     std::array<c::TensorDesc,1> desc;
     ASSERT_TRUE(c::infer_output_descriptions(op,data.descriptions,desc).ok());
     NoTorchAllocation no_torch;
@@ -199,7 +206,7 @@ TEST(CudaPackedWeights, EmbeddingPreservesStorageRoundingBeforeBiasAndCheckedOut
     ASSERT_TRUE(completion.wait().ok());
     std::vector<float> expected(3*k);
     for(int row=0;row<3;++row)for(int j=0;j<k;++j)
-      expected[row*k+j]=rounded(rounded(float(j%8)*rounded(.1F))+rounded(-.03F));
+      expected[row*k+j]=rounded(rounded(float(codes[ids[row]*k+j])*rounded(.1F))+rounded(-.03F));
     std::vector<std::byte> actual(output.size());ASSERT_TRUE(output.view().read(actual).ok());
     EXPECT_EQ(actual,floating(expected));
     ids[2]=-1;ASSERT_TRUE(data.buffers[3].view().write(bytes(ids)).ok());
@@ -214,19 +221,23 @@ TEST(CudaPackedWeights, MixedAffinePromotesWithoutRoundingDecodedWeights) {
   using Half=hyle::simd::float16_t;
   using Bfloat=hyle::simd::bfloat16_t;
   constexpr std::int64_t n=7,k=256;
-  for(const unsigned group:{32U,64U,128U}) {
-    SCOPED_TRACE(group);
+  for(const auto [bits,group]:{std::pair{4U,32U},std::pair{5U,64U},
+                               std::pair{6U,128U},std::pair{8U,32U}}) {
+    SCOPED_TRACE(::testing::Message()<<bits<<","<<group);
     std::vector<Half> activation(k);
     activation[0]=half_test::encode<Half>(1);
     activation[1]=half_test::encode<Half>(-1.375);
     activation[129]=half_test::encode<Half>(.75);
     std::vector<Bfloat> scales(n*k/group,half_test::encode<Bfloat>(.1));
     std::vector<Bfloat> biases(scales.size(),half_test::encode<Bfloat>(.03));
-    const std::vector<std::uint32_t> words(n*k/8,0x76543210U);
-    InputSet data({dense(c::DataType::kFloat16,{1,k}),dense(c::DataType::kUInt32,{n,k/8}),
+    std::vector<std::uint32_t> codes(n*k);
+    for(std::int64_t row=0;row<n;++row)for(std::int64_t j=0;j<k;++j)
+      codes[row*k+j]=unsigned(j%8);
+    const auto words=mlx_affine_test::pack(codes,n,k,bits);
+    InputSet data({dense(c::DataType::kFloat16,{1,k}),dense(c::DataType::kUInt32,{n,(k/32)*bits}),
         dense(c::DataType::kBFloat16,{n,k/group}),dense(c::DataType::kBFloat16,{n,k/group})},
         {bytes(activation),bytes(words),bytes(scales),bytes(biases)});
-    const auto op=c::model_ops::mlx_quantized_matmul(c::model_ops::MlxWeightFormat::kAffine4,group);
+    const auto op=c::model_ops::mlx_quantized_matmul(c::model_ops::MlxWeightFormat::kAffine,bits,group);
     std::array<c::TensorDesc,1> desc;
     ASSERT_TRUE(c::infer_output_descriptions(op,data.descriptions,desc).ok());
     ASSERT_EQ(desc[0].data_type(),c::DataType::kFloat32);
@@ -245,4 +256,111 @@ TEST(CudaPackedWeights, MixedAffinePromotesWithoutRoundingDecodedWeights) {
     for(float value:actual)EXPECT_NEAR(value,expected,8*std::numeric_limits<float>::epsilon()*magnitude);
   }
 }
+TEST(CudaPackedWeights, AffineWidthsKeepCrossWordCodesGroupsAndCheckedSlotRecovery) {
+  constexpr std::int64_t rows=4,n=9,experts=2;
+  std::array<c::ProviderImplementationId,4> routes{};
+  std::size_t domain=0;
+  for(const auto [bits,group]:{std::pair{4U,32U},std::pair{5U,64U},
+                               std::pair{6U,128U},std::pair{8U,32U}}) {
+    SCOPED_TRACE(::testing::Message()<<bits<<","<<group);
+    const std::int64_t k=2*group,words_per_row=(k/32)*bits;
+    std::vector<float> activation(rows*k);
+    for(std::int64_t row=0;row<rows;++row)for(std::int64_t j=0;j<k;++j)
+      activation[row*k+j]=float(int((j+row)%5)-2)*.125F;
+    std::vector<float> scales(experts*n*2),biases(scales.size());
+    for(std::size_t i=0;i<scales.size();++i) {
+      scales[i]=float(1+i%3)*.03125F;
+      biases[i]=float(int(i%5)-2)*.125F;
+    }
+    std::vector<std::int32_t> ids{1,1,0,1};
+    std::vector<std::uint32_t> codes(experts*n*k);
+    const auto fill_codes=[&](unsigned seed) {
+      for(std::int64_t wr=0;wr<experts*n;++wr)for(std::int64_t j=0;j<k;++j)
+        codes[wr*k+j]=j%17==0?(1U<<bits)-1U:unsigned(j*13+wr*7+seed*3)&((1U<<bits)-1U);
+    };
+    fill_codes(0);
+    auto words=mlx_affine_test::pack(codes,experts*n,k,bits);
+    InputSet data({dense(c::DataType::kFloat32,{2,2,k}),
+        dense(c::DataType::kUInt32,{experts,n,words_per_row}),
+        dense(c::DataType::kFloat32,{experts,n,2}),
+        dense(c::DataType::kFloat32,{experts,n,2}),
+        dense(c::DataType::kInt32,{2,2})},
+        {bytes(activation),bytes(words),bytes(scales),bytes(biases),bytes(ids)});
+    auto alternate=mem::Buffer::create(data.resource.ref(),words.size()*sizeof(std::uint32_t),256).value();
+    const auto operation=c::model_ops::mlx_grouped_matmul(
+        c::model_ops::MlxWeightFormat::kAffine,bits,group);
+    std::array<c::TensorDesc,1> desc;
+    ASSERT_TRUE(c::infer_output_descriptions(operation,data.descriptions,desc).ok());
+    NoTorchAllocation no_torch;
+    auto prepared_result=c::prepare(data.context,operation,data.descriptions,desc,data.resource.ref());
+    ASSERT_TRUE(prepared_result)<<prepared_result.error().message();
+    auto prepared=std::move(*prepared_result);
+    ASSERT_EQ(prepared.provider().id,c::torch_cuda::kProviderId);
+    routes[domain]=prepared.implementation();
+    for(std::size_t prior=0;prior<domain;++prior)EXPECT_NE(routes[domain],routes[prior]);
+    ++domain;
+    auto first=prepared.create_invocation().value(),second=prepared.create_invocation().value();
+    std::array<mem::Buffer,3> outputs;
+    for(auto &out:outputs)out=mem::Buffer::create(data.resource.ref(),rows*n*sizeof(float),256).value();
+    const auto oracle=[&](const std::vector<float> &actual) {
+      for(std::int64_t row=0;row<rows;++row)for(std::int64_t col=0;col<n;++col) {
+        double expected=0;
+        const auto wr=ids[row]*n+col;
+        for(std::int64_t j=0;j<k;++j) {
+          const auto g=wr*2+j/group;
+          expected+=double(activation[row*k+j])*(double(codes[wr*k+j])*scales[g]+biases[g]);
+        }
+        // Dyadic terms stay exactly representable: no tolerance can hide a
+        // missing cross-word bit, wrong max code, or selected group/expert.
+        EXPECT_EQ(actual[row*n+col],float(expected));
+      }
+    };
+    std::vector<float> retained;
+    for(unsigned seed=0;seed<4;++seed) {
+      SCOPED_TRACE(seed);
+      fill_codes(seed);words=mlx_affine_test::pack(codes,experts*n,k,bits);
+      auto &backing=seed%2?alternate:data.buffers[1];
+      ASSERT_TRUE(backing.view().write(bytes(words)).ok());
+      ids=seed%2?std::vector<std::int32_t>{0,1,1,0}:std::vector<std::int32_t>{1,1,0,1};
+      ASSERT_TRUE(data.buffers[4].view().write(bytes(ids)).ok());
+      auto views=data.views;
+      views[1]=c::ConstTensorView::create(data.descriptions[1],backing.view()).value();
+      const auto bank=seed==0?0U:1U+seed%2;
+      const std::array target{c::TensorView::create(desc[0],outputs[bank].view()).value()};
+      auto submitted=(seed%2?second:first).submit(data.queue,views,target);
+      ASSERT_TRUE(submitted)<<submitted.error().message();
+      ASSERT_TRUE(submitted->wait().ok());
+      std::vector<float> actual(rows*n);
+      ASSERT_TRUE(outputs[bank].view().read(std::as_writable_bytes(std::span(actual))).ok());
+      oracle(actual);
+      if(seed==0)retained=actual;
+    }
+    std::vector<float> old(rows*n);
+    ASSERT_TRUE(outputs[0].view().read(std::as_writable_bytes(std::span(old))).ok());
+    EXPECT_EQ(old,retained);
+    ids[1]=experts;
+    ASSERT_TRUE(data.buffers[4].view().write(bytes(ids)).ok());
+    const auto sentinel=std::vector<float>(rows*n,-37.25F);
+    ASSERT_TRUE(outputs[1].view().write(bytes(sentinel)).ok());
+    const std::array target{c::TensorView::create(desc[0],outputs[1].view()).value()};
+    auto failed=prepared.create_invocation().value();
+    auto rejected=failed.submit(data.queue,data.views,target);
+    ASSERT_TRUE(rejected)<<rejected.error().message();
+    EXPECT_TRUE(rejected->wait().IsOutOfRange());
+    ASSERT_TRUE(outputs[1].view().read(std::as_writable_bytes(std::span(old))).ok());
+    EXPECT_EQ(old,sentinel);
+    ids[1]=1;
+    ASSERT_TRUE(data.buffers[4].view().write(bytes(ids)).ok());
+    // A failed slot is terminal. Recovery uses the public fresh-slot path.
+    auto recovered=prepared.create_invocation().value();
+    auto fresh_queue=data.context.create_queue().value();
+    ASSERT_TRUE(data.buffers[1].view().write(bytes(words)).ok());
+    auto resumed=recovered.submit(fresh_queue,data.views,target);
+    ASSERT_TRUE(resumed)<<resumed.error().message();
+    ASSERT_TRUE(resumed->wait().ok());
+    ASSERT_TRUE(outputs[1].view().read(std::as_writable_bytes(std::span(old))).ok());
+    oracle(old);
+  }
+}
+
 } // namespace

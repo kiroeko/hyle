@@ -1,0 +1,285 @@
+{
+  "at": "2026-10-23T17:30:54.061905+00:00",
+  "scope": "Shared GLM K1/StateHead runtime parameterization for actual converted F32 caches; affected existing original consumers only in this batch",
+  "actual_B09_original_identity_executed": false,
+  "implementation": [
+    "One existing run<Runtime> and accepted-prefix/repair/catchup controller; no second executor",
+    "Plain10-resource F32 state has no fake scale tensor; existing encoded11-resource state retains real E4 codes/scales and BF16 boundaries",
+    "Static47 original roles, full expert banks are metadata only; selected source accepts per-ID three-leg typed bundles, explicit attach/missing/frontier without lookup I/O",
+    "Generic original packed Layout extracted once; Qwen retains its actual capacity and upload/retirement path"
+  ],
+  "validation": {
+    "tests": 2,
+    "failures": 0,
+    "errors": 0,
+    "skips": 0,
+    "total_graphs": 89,
+    "cases": [
+      {
+        "name": "CpuOriginalTarget77AndNextNFullVocabularyVerifier",
+        "graphs": 46
+      },
+      {
+        "name": "CpuQ24OriginalBFloatTargetAndNextNFullVocabularyVerifierPublishesRepairedPrefix",
+        "graphs": 43
+      }
+    ],
+    "summary": {
+      "path": ".scratch/glm-gguf-selected-20261023/B09/integration/checks1/summary.json",
+      "bytes": 10219,
+      "sha256": "9dd49e265c07ca1d7311b08c30294e078aff3808a381e1f7cb89935a877f8088"
+    },
+    "host_TUs": 2,
+    "SDK_builds": 0,
+    "NVCC_builds": 0
+  },
+  "root_adjustments": {
+    "caller": "Both Qwen adapter calls now pass resident24::kCapacity to the extracted cold Layout::create.",
+    "ADL": "Rename expert bank descriptor builder to expert_bank_description to avoid ADL with static-role description; reject unsupported codec/rank explicitly.",
+    "original_B09_executed": false,
+    "changed_files": [
+      {
+        "path": "tests/compute_models/glm_gguf_compute_fragment.h",
+        "bytes": 7819,
+        "sha256": "a6bdb37577a503b1070dbb66eef4ca64030e977ef91e3efdcbd02d85d1de4d98"
+      },
+      {
+        "path": "tests/compute_models/glm_gguf_expert_frontier.h",
+        "bytes": 7038,
+        "sha256": "a3ad240e8478f345abd52d41830262658ce8074f7621d44f81fee06123c97811"
+      },
+      {
+        "path": "tests/compute_models/glm_gguf_f32_cache_fragment.h",
+        "bytes": 12140,
+        "sha256": "88db91c4067d03a2cab98037e238f46660fe319daabca00e170a6fbcff697fdb"
+      },
+      {
+        "path": "tests/compute_models/glm_gguf_model_types.h",
+        "bytes": 2112,
+        "sha256": "f992828eeee77e73c4d6d945bdd28042f1d8fbd51028f2e1ff0afc9f457c44a5"
+      },
+      {
+        "path": "tests/compute_models/glm_gguf_mtp_fragment.h",
+        "bytes": 12721,
+        "sha256": "f19e2bd377c32effbebcc2e38d5f40c74e5b5dea26e122c410b64f99b2d854ab"
+      },
+      {
+        "path": "tests/compute_models/glm_gguf_mtp_reference.h",
+        "bytes": 15962,
+        "sha256": "3f4f4df3dbd7eeed153c26f4fca5a8cfa051df2122715acc245686432bad6f08"
+      },
+      {
+        "path": "tests/compute_models/glm_gguf_named_parameters.h",
+        "bytes": 11985,
+        "sha256": "f7633419b74bd269c2d30c7a363e7ed0ca9e88b68b2d2281539f2d3648b8803c"
+      },
+      {
+        "path": "tests/compute_models/glm_gguf_projection_fragment.h",
+        "bytes": 5503,
+        "sha256": "40896a17a25674420980661d6ac82d5ed66461d500822ed453af0806648d4b95"
+      },
+      {
+        "path": "tests/compute_models/glm_gguf_runtime_source.h",
+        "bytes": 10221,
+        "sha256": "7190362ae39acb0ff261dd61c37a1ae71f140b0e98da8dd215869fc968f4c1af"
+      },
+      {
+        "path": "tests/compute_models/glm_pro_mtp_state_consumer_test.cc",
+        "bytes": 129650,
+        "sha256": "8a519adba9c44115ed72ea200b55ac5ee0736a483bbafe0869da829e6bcfe7eb"
+      },
+      {
+        "path": "tests/compute_models/model_packed_expert_layout.h",
+        "bytes": 7641,
+        "sha256": "fd9b93166b70c068b12c26051d0f28b45e7c197679ce7d8112595f4bf959e01b"
+      },
+      {
+        "path": "tests/compute_models/qwen24_original_resident_weights.h",
+        "bytes": 9028,
+        "sha256": "022b6fc186465f20cc080d4c9a9c12e3faebd1b615d046e6c1936119ea663e02"
+      },
+      {
+        "path": "tests/compute_models/qwen_mtp_state_consumer_test.cc",
+        "bytes": 272609,
+        "sha256": "5a62af8f88ea199b283f38f522e0bd592b0518ce36f6bc2d469412d0d5a4d9ca"
+      }
+    ]
+  },
+  "not_verified": [
+    "Actual B09 static47 payloads and selected expert supply are not yet acquired or executed",
+    "Other converted GLM identities, MLX full consumer, GPU/Apple/Linux execution of these new F32-state recipes",
+    "No full-model task quality, natural acceptance-rate, throughput or physical-memory comparison"
+  ],
+  "archive": {
+    "path": "docs/evidence/correctness/mtp-glm-gguf-shared-runtime-2026-10-24.zip",
+    "bytes": 259792,
+    "sha256": "f986da43c20ad7723f25496c033081b0e74dcfbb8e59f26a91348f825793d519"
+  },
+  "files": [
+    {
+      "path": ".scratch/glm-gguf-selected-20261023/B09/consumer-proposal/source.patch",
+      "bytes": 180321,
+      "sha256": "e081e33c1c7267b65d661228c71f3886d002619d8526ef6827f6a13cdadadd1d"
+    },
+    {
+      "path": ".scratch/glm-gguf-selected-20261023/B09/consumer-proposal/proposal.json",
+      "bytes": 7989,
+      "sha256": "88f11ec558edf7bf8ab97e5fb4b94ced84dc7dee5eda2862953a22eda782678f"
+    },
+    {
+      "path": ".scratch/glm-gguf-selected-20261023/B09/consumer-proposal/applied.json",
+      "bytes": 3477,
+      "sha256": "c8b8bce0527f8928d19d17c04ca325602aa9d10bc69c71286533d7147acf47a1"
+    },
+    {
+      "path": ".scratch/glm-gguf-selected-20261023/B09/integration/root-adjustments.json",
+      "bytes": 2801,
+      "sha256": "c774399627bcf14fff5d4cb76d7a010564bfc5ab8e7516b7021fd59171a0f529"
+    },
+    {
+      "path": ".scratch/glm-gguf-selected-20261023/B09/integration/checks1/summary.json",
+      "bytes": 10219,
+      "sha256": "9dd49e265c07ca1d7311b08c30294e078aff3808a381e1f7cb89935a877f8088"
+    },
+    {
+      "path": ".scratch/glm-gguf-selected-20261023/B09/integration/checks1/results.xml",
+      "bytes": 10428,
+      "sha256": "8f53396917076c17b0419809b635bc4517168e490f368fa991253b8b8d85017f"
+    },
+    {
+      "path": ".scratch/glm-gguf-selected-20261023/B09/integration/checks1/environment.json",
+      "bytes": 1100,
+      "sha256": "782846633cf6411412d70d721d0421df5f2717cb31fb54645c53ef26ff012803"
+    },
+    {
+      "path": ".scratch/glm-gguf-selected-20261023/B09/integration/checks1/process/stdout.log",
+      "bytes": 103052,
+      "sha256": "a4741069a2fb850fd34cfd3a54d09ad9720380a777a4acef1a3f73347e1d576a"
+    },
+    {
+      "path": ".scratch/glm-gguf-selected-20261023/B09/integration/checks1/process/stderr.log",
+      "bytes": 708,
+      "sha256": "24b348004738e9c5b75de5250786f830aa7a0198509edcaa9e59ede6e4ff734d"
+    },
+    {
+      "path": ".scratch/glm-gguf-selected-20261023/B09/integration/tests-link1/link-plan.json",
+      "bytes": 34607,
+      "sha256": "2894bf0f62ea59e767e96f3c44ca39db1eede2bff181df0efbe2f1ab7f9d1d40"
+    },
+    {
+      "path": ".scratch/glm-gguf-selected-20261023/B09/integration/tests-link1/link.result.json",
+      "bytes": 29954,
+      "sha256": "1eee7ee330d40a585a599868df41ef2f35396fc559739d4fc4e09a2b10edf949"
+    },
+    {
+      "path": ".scratch/glm-gguf-selected-20261023/B09/integration/compile1/glm-pro/compile.stdout.log",
+      "bytes": 3601,
+      "sha256": "ade13d4daa4849644dcb736356bb0d668b47679c14ca5b5ac169d735a19bcb32"
+    },
+    {
+      "path": "tests/compute_models/glm_gguf_compute_fragment.h",
+      "bytes": 7819,
+      "sha256": "a6bdb37577a503b1070dbb66eef4ca64030e977ef91e3efdcbd02d85d1de4d98"
+    },
+    {
+      "path": "tests/compute_models/glm_gguf_expert_frontier.h",
+      "bytes": 7038,
+      "sha256": "a3ad240e8478f345abd52d41830262658ce8074f7621d44f81fee06123c97811"
+    },
+    {
+      "path": "tests/compute_models/glm_gguf_f32_cache_fragment.h",
+      "bytes": 12140,
+      "sha256": "88db91c4067d03a2cab98037e238f46660fe319daabca00e170a6fbcff697fdb"
+    },
+    {
+      "path": "tests/compute_models/glm_gguf_model_types.h",
+      "bytes": 2112,
+      "sha256": "f992828eeee77e73c4d6d945bdd28042f1d8fbd51028f2e1ff0afc9f457c44a5"
+    },
+    {
+      "path": "tests/compute_models/glm_gguf_mtp_fragment.h",
+      "bytes": 12721,
+      "sha256": "f19e2bd377c32effbebcc2e38d5f40c74e5b5dea26e122c410b64f99b2d854ab"
+    },
+    {
+      "path": "tests/compute_models/glm_gguf_mtp_reference.h",
+      "bytes": 15962,
+      "sha256": "3f4f4df3dbd7eeed153c26f4fca5a8cfa051df2122715acc245686432bad6f08"
+    },
+    {
+      "path": "tests/compute_models/glm_gguf_named_parameters.h",
+      "bytes": 11985,
+      "sha256": "f7633419b74bd269c2d30c7a363e7ed0ca9e88b68b2d2281539f2d3648b8803c"
+    },
+    {
+      "path": "tests/compute_models/glm_gguf_projection_fragment.h",
+      "bytes": 5503,
+      "sha256": "40896a17a25674420980661d6ac82d5ed66461d500822ed453af0806648d4b95"
+    },
+    {
+      "path": "tests/compute_models/glm_gguf_runtime_source.h",
+      "bytes": 10221,
+      "sha256": "7190362ae39acb0ff261dd61c37a1ae71f140b0e98da8dd215869fc968f4c1af"
+    },
+    {
+      "path": "tests/compute_models/glm_pro_mtp_state_consumer_test.cc",
+      "bytes": 129650,
+      "sha256": "8a519adba9c44115ed72ea200b55ac5ee0736a483bbafe0869da829e6bcfe7eb"
+    },
+    {
+      "path": "tests/compute_models/model_packed_expert_layout.h",
+      "bytes": 7641,
+      "sha256": "fd9b93166b70c068b12c26051d0f28b45e7c197679ce7d8112595f4bf959e01b"
+    },
+    {
+      "path": "tests/compute_models/qwen24_original_resident_weights.h",
+      "bytes": 9028,
+      "sha256": "022b6fc186465f20cc080d4c9a9c12e3faebd1b615d046e6c1936119ea663e02"
+    },
+    {
+      "path": "tests/compute_models/qwen_mtp_state_consumer_test.cc",
+      "bytes": 272609,
+      "sha256": "5a62af8f88ea199b283f38f522e0bd592b0518ce36f6bc2d469412d0d5a4d9ca"
+    },
+    {
+      "path": ".scratch/glm-gguf-selected-20261023/B09/integration/compile2/glm-pro/identity.json",
+      "bytes": 117171,
+      "sha256": "e0322bdfe791eac92de9e0a324f739168ee5132f03e275e9aabe6b615617abf1"
+    },
+    {
+      "path": ".scratch/glm-gguf-selected-20261023/B09/integration/compile2/glm-pro/plan.json",
+      "bytes": 3055,
+      "sha256": "0aa9805f12c340493e1652eea4143226f3b28c16469fb438b7549986d3e9a577"
+    },
+    {
+      "path": ".scratch/glm-gguf-selected-20261023/B09/integration/compile2/glm-pro/compile.stdout.log",
+      "bytes": 36,
+      "sha256": "748790204796f043af0e4f28e04cf1cc18bb15aeb0b38a40dc224145fbd4d0d0"
+    },
+    {
+      "path": ".scratch/glm-gguf-selected-20261023/B09/integration/compile2/glm-pro/compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".scratch/glm-gguf-selected-20261023/B09/integration/compile1/qwen-state/identity.json",
+      "bytes": 111784,
+      "sha256": "76796dad2b85ca124804f7ae652b2bcf73865525f6002abdb1274d2cefd01eae"
+    },
+    {
+      "path": ".scratch/glm-gguf-selected-20261023/B09/integration/compile1/qwen-state/plan.json",
+      "bytes": 3358,
+      "sha256": "c8b2f443c3b8662d11c3fe7ab0cb9decc2c13bdb8f1c0503dd8fffbc045ccd86"
+    },
+    {
+      "path": ".scratch/glm-gguf-selected-20261023/B09/integration/compile1/qwen-state/compile.stdout.log",
+      "bytes": 33,
+      "sha256": "95f8dde4cd2e9efa4fa596dd1f890fbe428a512f2211c37d9e38af5428bd0787"
+    },
+    {
+      "path": ".scratch/glm-gguf-selected-20261023/B09/integration/compile1/qwen-state/compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ]
+}

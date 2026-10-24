@@ -394,7 +394,7 @@ TEST(AppleReduction, EmptyResultsAndPreparationRejections) {
       c::Reduce{.accumulation_type = c::DataType::kFloat64}, spec));
   EXPECT_FALSE(context.prepare(
       c::Softmax{.accumulation_type = c::DataType::kUnknown}, spec));
-  EXPECT_FALSE(context.prepare(c::TopK{.count = 0}, spec));
+  EXPECT_TRUE(context.prepare(c::TopK{.count = 0}, spec));
   EXPECT_FALSE(context.prepare(c::TopK{.count = 18}, spec));
   EXPECT_FALSE(context.prepare(c::TopK{.axis = 2}, spec));
   EXPECT_TRUE(

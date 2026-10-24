@@ -1,0 +1,63 @@
+{
+  "completed": true,
+  "windows_removed": 3,
+  "windows_bytes": 198289120.0,
+  "windows_kept_objects": 3,
+  "evidence_sha256": "be4e97180ac836149b1599aae803ebdee6d146fb188ead83d8b679fe5ddd65fd",
+  "archive_sha256": "73923e9bf49fad55e2508e2d2169fbc04c186c2bd8d869b1a4f91f6d74714559",
+  "exact_plan": {
+    "allowed_windows": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\outer-fp8-default-routing-2026-10-21\\tail-diagnostic",
+    "remove_windows": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\outer-fp8-default-routing-2026-10-21\\tail-diagnostic\\checks\\link1\\cuda-role-diag.exe",
+        "bytes": 139249152,
+        "sha256": "cd152d938a61722f47d4d6aea43a675e25007d982f46eaff474118035f625d98"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\outer-fp8-default-routing-2026-10-21\\tail-diagnostic\\checks\\link1\\cuda-role-diag.map",
+        "bytes": 57681632,
+        "sha256": "0f5f388099a1bb9d057d928c9046b813f47c215ed9b68cc343cd767bd2dab2c3"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\outer-fp8-default-routing-2026-10-21\\tail-diagnostic\\checks\\link1\\hyle_ggml_cpu_avx2_ffa4e8b8_e74fc9bb8964d04f.dll",
+        "bytes": 1358336,
+        "sha256": "09828878dd44d62eb6ae844827e20382ee2b457d0dbd76594b6577bea3ad5434"
+      }
+    ],
+    "keep_windows": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\outer-fp8-default-routing-2026-10-21\\tail-diagnostic\\checks\\attempt1\\cuda-role-diag.obj",
+        "bytes": 1821883,
+        "sha256": "2895bf325905a8b974adbc396b459de11636404f64c19b956cf92e22e39dd334"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\outer-fp8-default-routing-2026-10-21\\cpu\\checks\\attempt1\\cpu-outer-route-bench.obj",
+        "bytes": 1725423,
+        "sha256": "a64f7b39daaa54f34647f48fae1c161c4a3b4ba2785a537ab2d15d89fc06e54a"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\outer-fp8-default-routing-2026-10-21\\cuda\\checks\\attempt1\\cuda-outer-route-bench.obj",
+        "bytes": 1814694,
+        "sha256": "3f6566babf1ba9374b51ad82257961f946a9e675c8953631ea4ffe75576b393f"
+      }
+    ],
+    "keep_runtime_cache": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_ggml_cpu_avx2_ffa4e8b8_e74fc9bb8964d04f.dll",
+        "bytes": 1358336,
+        "sha256": "09828878dd44d62eb6ae844827e20382ee2b457d0dbd76594b6577bea3ad5434"
+      }
+    ],
+    "evidence": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\outer-fp8-submit-tail-2026-10-21.json",
+      "bytes": 35948,
+      "sha256": "be4e97180ac836149b1599aae803ebdee6d146fb188ead83d8b679fe5ddd65fd"
+    },
+    "archive": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\outer-fp8-submit-tail-2026-10-21.zip",
+      "bytes": 1173119,
+      "sha256": "73923e9bf49fad55e2508e2d2169fbc04c186c2bd8d869b1a4f91f6d74714559"
+    }
+  },
+  "source_script": "# Exact Outer FP8 submit diagnostic test-artifact cleanup. No recursive directory removal.\n$ErrorActionPreference = 'Stop'\n$plan = Get-Content -LiteralPath 'C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\outer-fp8-default-routing-2026-10-21\\tail-diagnostic\\root-cleanup-plan.json' -Raw | ConvertFrom-Json\n$separator = [IO.Path]::DirectorySeparatorChar\n$allowed = [IO.Path]::GetFullPath($plan.allowed_windows).TrimEnd($separator) + $separator\nfunction Assert-Identity($row) {\n  $file = Get-Item -LiteralPath $row.path -ErrorAction Stop\n  if ($file.PSIsContainer -or ($file.Attributes -band [IO.FileAttributes]::ReparsePoint)) { throw \"Not a regular file: $($row.path)\" }\n  if ($file.Length -ne $row.bytes -or (Get-FileHash -LiteralPath $row.path -Algorithm SHA256).Hash.ToLowerInvariant() -ne $row.sha256) { throw \"Identity changed: $($row.path)\" }\n}\nAssert-Identity $plan.evidence\nAssert-Identity $plan.archive\nforeach ($row in $plan.remove_windows) {\n  $full = [IO.Path]::GetFullPath($row.path)\n  if (-not $full.StartsWith($allowed, [StringComparison]::OrdinalIgnoreCase) -or [IO.Path]::GetExtension($full) -notin '.exe','.map','.dll') { throw \"Outside exact artifact scope: $full\" }\n  Assert-Identity $row\n}\nforeach ($row in $plan.keep_windows) { Assert-Identity $row }\nforeach ($row in $plan.keep_runtime_cache) { Assert-Identity $row }\n$active = @(Get-CimInstance Win32_Process | Where-Object { $_.ExecutablePath -and $_.ExecutablePath.StartsWith($allowed, [StringComparison]::OrdinalIgnoreCase) })\nif ($active.Count) { throw 'A test executable in this exact workspace is still running' }\nforeach ($row in $plan.remove_windows) { Remove-Item -LiteralPath $row.path -Force }\nforeach ($row in $plan.keep_windows) { Assert-Identity $row }\nforeach ($row in $plan.keep_runtime_cache) { Assert-Identity $row }\n$result = [ordered]@{\n  completed = $true\n  windows_removed = @($plan.remove_windows).Count\n  windows_bytes = [double]($plan.remove_windows | Measure-Object -Property bytes -Sum).Sum\n  windows_kept_objects = @($plan.keep_windows).Count\n  evidence_sha256 = $plan.evidence.sha256\n  archive_sha256 = $plan.archive.sha256\n  exact_plan = $plan\n  source_script = [IO.File]::ReadAllText($PSCommandPath)\n}\n$result | ConvertTo-Json -Depth 18 | Set-Content -LiteralPath 'C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\outer-fp8-submit-tail-2026-10-21.cleanup.json' -Encoding utf8\n[pscustomobject]$result | Select-Object completed,windows_removed,windows_bytes,windows_kept_objects | ConvertTo-Json\n"
+}

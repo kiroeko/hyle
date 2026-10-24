@@ -1,0 +1,293 @@
+{
+  "at": "2026-10-23T17:21:54.125423+00:00",
+  "scope": "Shared explicit F32 activation times original BF16 weights with F32 products/accumulation/output, required by selected MLX consumer; no whole F32 weight shadow",
+  "API": "model_ops::bfloat_linear_f32(), A[T,K]:BF16/F32, W[N,K]:BF16, Y[T,N]:F32; ordinary MatMul type rules unchanged",
+  "implementation": {
+    "CPU": "existing mixed SIMD dot under ordinary workers",
+    "CUDA": "one existing native mul_mat, A[K,1,M], W[K,N,1], result[N,1,M]; no new kernel/SDK",
+    "Metal": "same native batch metadata; actual I16 ratio/I32 indices and native paired-row bounds checked; not built or run in this batch",
+    "Vulkan": "same existing native matvec with batch metadata; not built or run in this batch",
+    "cublas": "new F32A/BF16W port explicitly declined; old BF16A path retained"
+  },
+  "validation": {
+    "tests": 4,
+    "failures": 0,
+    "errors": 0,
+    "skips": 0,
+    "actual_execution": "CPU/CUDA M1/M2/M17 cancellation checks and listed existing BF16 cases",
+    "large_original_BF16_head": "cold descriptor/workspace preparation only; no full bank allocated/submitted for that test",
+    "summary": {
+      "path": ".scratch/glm-mlx-flash-original-20261024/f32-bfloat-linear-validation/checks1/summary.json",
+      "bytes": 3297,
+      "sha256": "634c5d205409473df736af5417b52b75e6aa3821cd2ef294dfa25db35acb5185"
+    },
+    "host_translation_units": 5,
+    "SDK_builds": 0,
+    "NVCC_builds": 0
+  },
+  "not_verified": [
+    "Metal/Vulkan compilation and native execution",
+    "Actual Q32 original-weight/state/full-vocabulary consumer",
+    "Full model quality, throughput and physical-memory comparison",
+    "Automatic Cast(W)+MatMul graph fusion is a separate remaining feature"
+  ],
+  "review": {
+    "metal_pair_bound": "K>=32 with odd N is rejected on new F32-A path because fixed native paired matvec reads the second weight row before output clipping; K<32 short kernel differs.",
+    "metal_native_executed": false,
+    "inline_infer_reuse": "Independent dumpbin symbol review of222 explicit integration obj/lib inputs found old BFloatLinearF32 infer/vtable only in the old Qwen consumer TU. New image omits that old TU, recompiles both new test constructors and three changed host providers. No semantic header change was certified as comment equivalence.",
+    "root_source_after": [
+      {
+        "path": "include/hyle/compute/model_ops.h",
+        "bytes": 79690,
+        "sha256": "8e903d20600d03af9b22437b4cdbf6160bd64b89f11fb1d34c33f5f8111a7d69"
+      },
+      {
+        "path": "src/compute_provider_ggml/ggml_cpu_provider.cc",
+        "bytes": 116111,
+        "sha256": "07ef7861e268fcc5754da231cc7b135358e158df80999afcfb4d5dd9e8aee2b3"
+      },
+      {
+        "path": "src/compute_provider_ggml_cuda/tensor_program.cc",
+        "bytes": 61055,
+        "sha256": "99fa985afeaade5d287d1fb86aea16f8c243fd14efd852edc4def7f2c0cac43c"
+      },
+      {
+        "path": "src/compute_provider_cublas/cublas_provider.cc",
+        "bytes": 31615,
+        "sha256": "a798f047198105c58adb4f9d8b27d09a2990b43b6740f8817065245caffbffc7"
+      },
+      {
+        "path": "src/compute_provider_ggml_metal/native_program.cc",
+        "bytes": 30915,
+        "sha256": "636255ce56ed86d7557fea3e4045ef697f2a33c4216960e02f037ca765fc95ee"
+      },
+      {
+        "path": "src/compute_provider_ggml_vulkan/region.cc",
+        "bytes": 107020,
+        "sha256": "b612c2db95afa0b38e32435d3ea0dbac02a50f6a980c2f034d017fc55ad39e1f"
+      },
+      {
+        "path": "tests/compute_provider_ggml/cpu_provider_test.cc",
+        "bytes": 114269,
+        "sha256": "27f44af7f8ef9262bc1f43ee75a7f5d1be4e7864a06665357bcbef0275c0fc7f"
+      },
+      {
+        "path": "tests/compute_provider_ggml_cuda/bfloat_matvec_test.cc",
+        "bytes": 10894,
+        "sha256": "47929fa6c4b8eb7cc9bccdc20a74dedd99c9b280b36138d881b95b2e675e9600"
+      }
+    ]
+  },
+  "archive": {
+    "path": "docs/evidence/correctness/mtp-f32-bfloat-linear-2026-10-24.zip",
+    "bytes": 317889,
+    "sha256": "da0bfd6ce3b74054d11c3dfc40a1410d28af267150e59bd24b2b135a2c748ac7"
+  },
+  "files": [
+    {
+      "path": ".scratch/glm-mlx-flash-original-20261024/f32-bfloat-linear-proposal/source.patch",
+      "bytes": 21846,
+      "sha256": "768c14fa915f4bd324269e9fb843c50edaf249ace6b2e650b0e959870994dbd1"
+    },
+    {
+      "path": ".scratch/glm-mlx-flash-original-20261024/f32-bfloat-linear-proposal/ready.json",
+      "bytes": 4359,
+      "sha256": "2dc7411f2143e4f2973f92a8859c4c3b2cb0a121520b307b6b42deae1a8cdb6f"
+    },
+    {
+      "path": ".scratch/glm-mlx-flash-original-20261024/f32-bfloat-linear-proposal/source-facts.json",
+      "bytes": 9888,
+      "sha256": "5fde57a495da0ecd72fd4f366795eefe7ebea307fa86c7ba63c9989a7df4c33f"
+    },
+    {
+      "path": ".scratch/glm-mlx-flash-original-20261024/f32-bfloat-linear-proposal/applied.json",
+      "bytes": 2300,
+      "sha256": "027df357e372a518d57c3844e1bb7a0b576e7946d97a8b998274be6cab08a36b"
+    },
+    {
+      "path": ".scratch/glm-mlx-flash-original-20261024/f32-bfloat-linear-validation/root-adjustments.json",
+      "bytes": 2096,
+      "sha256": "30768298d407bc930bb7f9feb6eb33a47c661aac6b76a057d99fa163dd2fafc9"
+    },
+    {
+      "path": ".scratch/glm-mlx-flash-original-20261024/f32-bfloat-linear-validation/checks1/summary.json",
+      "bytes": 3297,
+      "sha256": "634c5d205409473df736af5417b52b75e6aa3821cd2ef294dfa25db35acb5185"
+    },
+    {
+      "path": ".scratch/glm-mlx-flash-original-20261024/f32-bfloat-linear-validation/checks1/results.xml",
+      "bytes": 1641,
+      "sha256": "39dd2c7d4bc5c3e3380c425b59327197df1469d2ff8d70388319f4439f617511"
+    },
+    {
+      "path": ".scratch/glm-mlx-flash-original-20261024/f32-bfloat-linear-validation/checks1/process/stdout.log",
+      "bytes": 1563,
+      "sha256": "958020068a4f61e39f62cd7b573edb208c0f192ff0a397c68658abe6124eb19b"
+    },
+    {
+      "path": ".scratch/glm-mlx-flash-original-20261024/f32-bfloat-linear-validation/checks1/process/stderr.log",
+      "bytes": 151,
+      "sha256": "88dd5e35d67fb5c0c371390a98a66a5e061e4c0bef2d890a7b74781363216092"
+    },
+    {
+      "path": ".scratch/glm-mlx-flash-original-20261024/f32-bfloat-linear-validation/tests-link1/link-plan.json",
+      "bytes": 34862,
+      "sha256": "9e7ccfb4e780aed8080d71769610ebcf44672d0f571a4b01824844b61d2c24e8"
+    },
+    {
+      "path": ".scratch/glm-mlx-flash-original-20261024/f32-bfloat-linear-validation/tests-link1/link.result.json",
+      "bytes": 30039,
+      "sha256": "73d0f4d23b5063fd6221c82e77e1114b4ae39fb461c608a5e685cf3dd3c87341"
+    },
+    {
+      "path": "include/hyle/compute/model_ops.h",
+      "bytes": 79690,
+      "sha256": "8e903d20600d03af9b22437b4cdbf6160bd64b89f11fb1d34c33f5f8111a7d69"
+    },
+    {
+      "path": "src/compute_provider_ggml/ggml_cpu_provider.cc",
+      "bytes": 116111,
+      "sha256": "07ef7861e268fcc5754da231cc7b135358e158df80999afcfb4d5dd9e8aee2b3"
+    },
+    {
+      "path": "src/compute_provider_ggml_cuda/tensor_program.cc",
+      "bytes": 61055,
+      "sha256": "99fa985afeaade5d287d1fb86aea16f8c243fd14efd852edc4def7f2c0cac43c"
+    },
+    {
+      "path": "src/compute_provider_cublas/cublas_provider.cc",
+      "bytes": 31615,
+      "sha256": "a798f047198105c58adb4f9d8b27d09a2990b43b6740f8817065245caffbffc7"
+    },
+    {
+      "path": "src/compute_provider_ggml_metal/native_program.cc",
+      "bytes": 30915,
+      "sha256": "636255ce56ed86d7557fea3e4045ef697f2a33c4216960e02f037ca765fc95ee"
+    },
+    {
+      "path": "src/compute_provider_ggml_vulkan/region.cc",
+      "bytes": 107020,
+      "sha256": "b612c2db95afa0b38e32435d3ea0dbac02a50f6a980c2f034d017fc55ad39e1f"
+    },
+    {
+      "path": "tests/compute_provider_ggml/cpu_provider_test.cc",
+      "bytes": 114269,
+      "sha256": "27f44af7f8ef9262bc1f43ee75a7f5d1be4e7864a06665357bcbef0275c0fc7f"
+    },
+    {
+      "path": "tests/compute_provider_ggml_cuda/bfloat_matvec_test.cc",
+      "bytes": 10894,
+      "sha256": "47929fa6c4b8eb7cc9bccdc20a74dedd99c9b280b36138d881b95b2e675e9600"
+    },
+    {
+      "path": "docs/user/compute.md",
+      "bytes": 122222,
+      "sha256": "afb263b5b45633c417bce812be87940e1a835b12f04bdffa28e2dc73e9cea42d"
+    },
+    {
+      "path": "docs/architecture/compute-design.md",
+      "bytes": 117944,
+      "sha256": "d7ae9002c76f4a3bfbd5bb1bd32b594456089b64b018f026c5bdcb6dc4957166"
+    },
+    {
+      "path": ".scratch/glm-mlx-flash-original-20261024/f32-bfloat-linear-validation/compile1/cpu-provider/identity.json",
+      "bytes": 47074,
+      "sha256": "98c18fba6de08e99f2b7e7e78b3db01fa981a6b495c4a3093380704b5e945e02"
+    },
+    {
+      "path": ".scratch/glm-mlx-flash-original-20261024/f32-bfloat-linear-validation/compile1/cpu-provider/plan.json",
+      "bytes": 2739,
+      "sha256": "a4191f5daaba889c68effd745b5d84ce7dd0dd27245ae1a61aa90029c984bfe5"
+    },
+    {
+      "path": ".scratch/glm-mlx-flash-original-20261024/f32-bfloat-linear-validation/compile1/cpu-provider/compile.stdout.log",
+      "bytes": 22,
+      "sha256": "499c89cc6de41dac3b35be72a370ae4d6eb6947b56d8cf9e204c94b9458fc1cb"
+    },
+    {
+      "path": ".scratch/glm-mlx-flash-original-20261024/f32-bfloat-linear-validation/compile1/cpu-provider/compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".scratch/glm-mlx-flash-original-20261024/f32-bfloat-linear-validation/compile1/tensor-program/identity.json",
+      "bytes": 42316,
+      "sha256": "e51fae2ea02840e4beda4f03db31c396186bb12e58b34453887a5b8bc4f4f442"
+    },
+    {
+      "path": ".scratch/glm-mlx-flash-original-20261024/f32-bfloat-linear-validation/compile1/tensor-program/plan.json",
+      "bytes": 3290,
+      "sha256": "0f8d4d307a8e7c8e1a66c0df58eccf6f39f1a17d4356e135b47439ca76cd85d4"
+    },
+    {
+      "path": ".scratch/glm-mlx-flash-original-20261024/f32-bfloat-linear-validation/compile1/tensor-program/compile.stdout.log",
+      "bytes": 19,
+      "sha256": "af0441dbee37064a856a700771d091789232bba62895a6d69a27732cb5b7db99"
+    },
+    {
+      "path": ".scratch/glm-mlx-flash-original-20261024/f32-bfloat-linear-validation/compile1/tensor-program/compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".scratch/glm-mlx-flash-original-20261024/f32-bfloat-linear-validation/compile1/cublas/identity.json",
+      "bytes": 47397,
+      "sha256": "5450cd8f43aed31663f357b4c2ad128a7740dbf1966b09c7e8b3f6a052356368"
+    },
+    {
+      "path": ".scratch/glm-mlx-flash-original-20261024/f32-bfloat-linear-validation/compile1/cublas/plan.json",
+      "bytes": 2585,
+      "sha256": "8ebea08f1364ea6b57f83ec6cc309191059d146813a61395bf17e5d33485551c"
+    },
+    {
+      "path": ".scratch/glm-mlx-flash-original-20261024/f32-bfloat-linear-validation/compile1/cublas/compile.stdout.log",
+      "bytes": 20,
+      "sha256": "f7845226180f9631fce92f0ef9a55488d3fdbe376934515e102b14530a911877"
+    },
+    {
+      "path": ".scratch/glm-mlx-flash-original-20261024/f32-bfloat-linear-validation/compile1/cublas/compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".scratch/glm-mlx-flash-original-20261024/f32-bfloat-linear-validation/compile1/cpu-test/identity.json",
+      "bytes": 62694,
+      "sha256": "d6c1f91cf2caa716a475de777e3d075c2f166e2ae9b0427abec170e6cad09c75"
+    },
+    {
+      "path": ".scratch/glm-mlx-flash-original-20261024/f32-bfloat-linear-validation/compile1/cpu-test/plan.json",
+      "bytes": 2719,
+      "sha256": "d321bef008074d66d6b1728ed7a147a45d81b339d56865182e1f3980f62d5bf5"
+    },
+    {
+      "path": ".scratch/glm-mlx-flash-original-20261024/f32-bfloat-linear-validation/compile1/cpu-test/compile.stdout.log",
+      "bytes": 22,
+      "sha256": "f1cdb1db320ad1796968e538cbc6bc33d12d5a8821d8aebd1f86ce892e6b5abd"
+    },
+    {
+      "path": ".scratch/glm-mlx-flash-original-20261024/f32-bfloat-linear-validation/compile1/cpu-test/compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".scratch/glm-mlx-flash-original-20261024/f32-bfloat-linear-validation/compile1/cuda-test/identity.json",
+      "bytes": 63576,
+      "sha256": "bb8f322039ca3cd452f771640182739a60c6f714dd471fda198c1471ef45b2ab"
+    },
+    {
+      "path": ".scratch/glm-mlx-flash-original-20261024/f32-bfloat-linear-validation/compile1/cuda-test/plan.json",
+      "bytes": 3272,
+      "sha256": "b0b1f69dfaa7ce86fef6686b35fed439e2e9c64af768dc0767ed8ae788dfd048"
+    },
+    {
+      "path": ".scratch/glm-mlx-flash-original-20261024/f32-bfloat-linear-validation/compile1/cuda-test/compile.stdout.log",
+      "bytes": 23,
+      "sha256": "9727eb82fc535bb85316d40ae01007fb61ff5edfc11af1c0878c4963f41049fc"
+    },
+    {
+      "path": ".scratch/glm-mlx-flash-original-20261024/f32-bfloat-linear-validation/compile1/cuda-test/compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ]
+}

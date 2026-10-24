@@ -1,0 +1,78 @@
+{
+  "executed": true,
+  "removed_count": 18,
+  "removed_bytes": 479714509,
+  "paths": [
+    "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-affine-widths\\cuda\\checks\\20261019T135721\\cuda.exp",
+    "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-affine-widths\\cuda\\checks\\20261019T135721\\cuda.lib",
+    "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-affine-widths\\cuda\\checks\\20261019T135721\\direct-consumer.exe",
+    "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-affine-widths\\cuda\\checks\\20261019T135721\\direct-consumer.exp",
+    "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-affine-widths\\cuda\\checks\\20261019T135721\\direct-consumer.lib",
+    "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-affine-widths\\cuda\\checks\\20261019T135721\\graph-consumer.exe",
+    "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-affine-widths\\cuda\\checks\\20261019T135721\\graph-consumer.exp",
+    "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-affine-widths\\cuda\\checks\\20261019T135721\\graph-consumer.lib",
+    "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-affine-widths\\cuda\\checks\\20261019T135721\\qwen.exp",
+    "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-affine-widths\\cuda\\checks\\20261019T135721\\qwen.lib",
+    "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-affine-widths\\vulkan\\checks-20261019T141537\\mlx-vulkan.exe",
+    "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-affine-widths\\vulkan\\checks-20261019T141537\\mlx-vulkan.map",
+    "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-affine-widths\\vulkan\\checks-20261019T141537\\mlx-vulkan.lib",
+    "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-affine-widths\\vulkan\\checks-20261019T141537\\mlx-vulkan.exp",
+    "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-latest-comparison\\prepared\\baseline.exe",
+    "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-latest-comparison\\prepared\\baseline.map",
+    "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-latest-comparison\\prepared\\baseline.lib",
+    "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-latest-comparison\\prepared\\baseline.exp"
+  ],
+  "retained_images": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-affine-widths\\cuda\\checks\\20261019T135721\\cuda.exe",
+      "bytes": 118483456,
+      "sha256": "b5257df1e083354bb7d33bd77b67c1603307728730d16456a0ef5b18fc43a18e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-affine-widths\\cuda\\checks\\20261019T135721\\qwen.exe",
+      "bytes": 116006400,
+      "sha256": "8e96963710e1fea795bd9f1fb727ab3b27468a1cff5d1444cef400797efc5dfc"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-explicit-rope\\performance-prepared\\peer.exe",
+      "bytes": 35814400,
+      "sha256": "fb169f0282f2a834a61b3e887edaba92d8699814558b0c5f1a13aaf07e0de969"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-affine-widths\\common\\checks\\current\\cpu.exe",
+      "bytes": 21571584,
+      "sha256": "dc4f7c3fdedfd407f3cf089a427d43b423cacd1a57438244bab705b12a454c78"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cold-capture-topology\\checks\\20261019T142405\\cpu.exe",
+      "bytes": 24979968,
+      "sha256": "8c50b6a082ba493c1f3024aefdae872bff7123bbcf0e0e2caaa86b2933bb826e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cold-capture-topology\\checks\\20261019T142405\\qwen.exe",
+      "bytes": 116004864,
+      "sha256": "6cbb3bf5bda36f2eec9ea6a6b940041690be5522d93fe52ad4aeb8bc9df3fb7c"
+    }
+  ],
+  "evidence_archives": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\mlx-affine-widths-cuda-2026-10-19.zip",
+      "bytes": 2063725,
+      "sha256": "70ab5f70ea3be4bfdf2c95708658667393097218b5ef75ab9187269389a2563c",
+      "verified_receipt": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\mlx-affine-widths-cuda-2026-10-19-archive.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\mlx-affine-widths-vulkan-2026-10-19.zip",
+      "bytes": 1390207,
+      "sha256": "3e9d8c5d810da339a351fe2fe67d0a9823f6de5b72b4055845ba7ca8fd64b592",
+      "verified_receipt": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\mlx-affine-widths-vulkan-2026-10-19.zip.receipt.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\qwen35-full-cuda-2026-10-19\\decode-latest-comparison.zip",
+      "bytes": 106006,
+      "sha256": "e3215a1f3e626e98b14a9418dffb2cadbc138595cfcc1baee1b7d486a03c7e60",
+      "verified_receipt": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\qwen35-full-cuda-2026-10-19\\decode-latest-comparison-archive.json"
+    }
+  ],
+  "finished": "2026-10-19T22:31:01.7636544+08:00"
+}

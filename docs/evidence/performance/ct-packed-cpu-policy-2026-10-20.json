@@ -1,0 +1,479 @@
+{
+  "date": "2026-10-20",
+  "status": "default_multirow_regression_fixed_with_packed_capability_retained",
+  "scope": "CPU CT packed vs original decomposition on one unchanged public Graph and original packed constants. Correctness/performance follow-up to ct-packed-cpu; not a Qwen model throughput comparison.",
+  "cause": "The bounded scalar row implementation decodes W independently for every activation row. Its memory savings did not justify unconditionally preferring it for matrix prefill.",
+  "decision": "Cold native proposal leaves single-row rank unchanged and assigns multi-row CT rank1001, after ordinary facade native binding1000. The common region forwards an explicit backend rank, retaining its old200 default for the sentinel. Other operations and CUDA policy remain unchanged. Multirow packed capability stays available under hard admission constraints; RequirePrepared selection is actually tested.",
+  "architecture": "Use existing backend policy preference, not fake dispatch/byte cost or new Graph scoring/configuration. No model/quantized-artifact whitelist, public API fields, hot routing, new executor or numerical changes.",
+  "windows": {
+    "before": {
+      "status": "measurement_complete_no_product_changes",
+      "scope": "one Windows CPU Graph CT packed vs undecorated-provider consumer, two representative geometries; no model/GPU/throughput acceptance",
+      "hardware": {
+        "processor": "13th Gen Intel(R) Core(TM) i9-13900K",
+        "physical_cores": 24,
+        "logical_processors": 32
+      },
+      "threads": {
+        "native_threads": 1,
+        "executor": "empty borrowed executor in both arms",
+        "runtime_configure_intra_op_threads": 1,
+        "observed_intra_op_limit": 1,
+        "observed_inter_op_limit": 24,
+        "scope": "same original runtime boundary and single graph shared lane; not an aggregate process-wide worker quota"
+      },
+      "fairness": {
+        "two_contexts": "ordinary graph::cpu::create_context vs exact same private CPU Graph factory with only ct_packed_regions removed",
+        "private_factory_source_recipe": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cross-platform\\checks\\src--graph_route_cpu--cpu_context-identity.json",
+          "bytes": 42525,
+          "sha256": "914187430edfbbdabdca26172ab9415120e948ff361576d13d60147428040fab"
+        },
+        "same_input_lease_and_constants": "one original asymmetric CT group32 I32 codes/zeros plus BF16 scales, borrowed identically by both Graph compiles; same BF16 A",
+        "logical_graph": "common ct_packed_graph_fixture::build with constants=true, Escape::kNone, exactly one published Y; no additionally published W/intermediate",
+        "precision": "BF16 scale product -> BF16 decode -> BF16 MatMul operand and output; F32 declared accumulation and backend reduction",
+        "actual_original_plan": "ArtifactWeightDecode at warm execution -> exact transpose View -> ggml-cpu MatMul. No assertion that this measures GEMM alone or a separately predecoded constant.",
+        "cold_boundary": "Graph compile only, after Context and input creation; a single observation per arm, not process-cold repetitions",
+        "warm_boundary": "Invocation::submit through successful Completion::wait; reset/bind/output-pool allocation/prepare_replay/input upload/cold compile/oracle/readback/Completion destruction excluded identically",
+        "execution_order": "two warmups each; four interleaved pairs AB,BA,AB,BA; one process",
+        "oracle": "existing independent staged F64 scalar reference and bounded F32 reduction then BF16 RNE, checked separately on both final arm outputs outside timing"
+      },
+      "measurements": [
+        {
+          "M": 1,
+          "N": 512,
+          "K": 1024,
+          "packed_median_us": 1364.4,
+          "undecorated_median_us": 3100.3,
+          "packed_over_undecorated_median": 0.4400864432474277,
+          "paired_ratios": [
+            0.4889176090468498,
+            0.44004379185986603,
+            0.41965495995070856,
+            0.43644412616776795
+          ],
+          "packed_range_us": [
+            1340.8,
+            1513.2
+          ],
+          "undecorated_range_us": [
+            3072.1,
+            3246
+          ],
+          "oracle_passed": true
+        },
+        {
+          "M": 128,
+          "N": 512,
+          "K": 1024,
+          "packed_median_us": 174009.1,
+          "undecorated_median_us": 40982.8,
+          "packed_over_undecorated_median": 4.245905599422197,
+          "paired_ratios": [
+            4.2820711569014485,
+            4.207218604561156,
+            4.287152095430882,
+            4.253197522719889
+          ],
+          "packed_range_us": [
+            172787,
+            177885.8
+          ],
+          "undecorated_range_us": [
+            40607.4,
+            41542
+          ],
+          "oracle_passed": true
+        }
+      ],
+      "storage_boundary": "compiled_known and invocation workspace from actual CompileReport, excluding borrowed input backing, test oracle/source memory, control/allocator overhead, and unknown provider-private storage. Packed known376B and workspace0; undecorated known1464B, 1048576B invocation workspace and one opaque ggml provider; no total RSS/peak claim.",
+      "instrument": {
+        "clock": "std::chrono::steady_clock",
+        "minimum_observed_positive_delta_us": 0.1,
+        "timings_us": "raw data included; both differences are many orders above the minimum observed clock delta"
+      },
+      "compile_counts": {
+        "scratch_CXX_attempts": 1,
+        "scratch_CXX_success": 1,
+        "links": 1,
+        "CPU_benchmark_processes": 1,
+        "GPU_processes": 0,
+        "SDK_compilations": 0,
+        "product_source_changes": 0
+      },
+      "artifacts": {
+        "consumer": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cpu-benchmark\\main.cc",
+          "bytes": 9316,
+          "sha256": "b8d7d2eaf5b32fd3388e9d52016579b6b65481dc95eaf44df43ba00722a84e10"
+        },
+        "source_freeze": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cpu-benchmark\\source-freeze.json",
+          "bytes": 2498,
+          "sha256": "1e9487161121a854cfacc75526ae92171418a830bdd53d282db2637860397b4a"
+        },
+        "consumer_receipt": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cpu-benchmark\\checks\\main-identity.json",
+          "bytes": 66573,
+          "sha256": "2ebe4a077eabfa5148af393d6717e2693e21d9a1de804ea9820b155ad6625f82"
+        },
+        "link_plan": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cpu-benchmark\\checks\\link-plan.json",
+          "bytes": 57419,
+          "sha256": "760a0367a6fb0ecfeef47ae995d55b0f46c76f9fcb303b1c3db9edea1955cbf3"
+        },
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cpu-benchmark\\checks\\cpu-bench.exe",
+          "bytes": 27171328,
+          "sha256": "61ab8a5effe0678235ddf82b9f67bb6e1dea9ed3b26d5b3e624344748c0f4643"
+        },
+        "raw_measurements": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cpu-benchmark\\validation\\measurements.json",
+          "bytes": 5207,
+          "sha256": "bfebddc921c055301742f7b09d7c62cf5f22c181a843246fcd764c1b437c55ac"
+        },
+        "run_result": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cpu-benchmark\\validation\\result.json",
+          "bytes": 57,
+          "sha256": "f427dc32ae82a4cd13462420b988196e82953ec424511928f2518d73025c80ef"
+        },
+        "project_dep_reuse": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cpu-benchmark\\current-project-dependencies.json",
+          "bytes": 12162,
+          "sha256": "3f588352d55c4c01801c5349387e307dcf3a7172bcd6b03eeebf421c539a5532"
+        }
+      },
+      "interpretation": "M128 is a confirmed large prefill regression of this default region in this ordinary graph (about4.25x); M1 is faster here (about0.44x). Two geometries do not locate a universal crossover or qualify other precision/shape defaults. Product selection/tiling remains unchanged for parent decision."
+    },
+    "after": {
+      "status": "ranking_fix_verified_in_two_original_geometries",
+      "scope": "Windows CPU native CT proposal default rank and same-Graph consumer; not a universal crossover/performance qualification",
+      "product_change": {
+        "source": {
+          "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_native\\native_provider.cc",
+          "bytes": 38683,
+          "sha256": "1f8c4f0c1e87ced606ae8e1e73d28bd174f06042162d1ab400048506eb8f559a"
+        },
+        "owner_receipt": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cross-platform\\ranking\\native\\identity.json",
+          "bytes": 43776,
+          "sha256": "bd7c75ff960b91e3d47cedd7b8ed88a4c2346c9ba8672836645bd70770678042"
+        },
+        "rule": "Only CtPackedLinear M>1 gets explicit preference1001; M1 retains unset rank for common200 fallback. No capability/runtime/cost/math change or NativePlan layout change. Parent common region forwards actual preference.",
+        "source_diff": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cross-platform\\ranking\\native\\source.diff",
+          "bytes": 582,
+          "sha256": "52fbbaa7e3438edc821f6cf7dd518a97852191f25524a9b606ec865c075f4b8f"
+        }
+      },
+      "measurements": [
+        {
+          "M": 1,
+          "N": 512,
+          "K": 1024,
+          "default_ct_region_count": 1,
+          "original_ct_region_count": 0,
+          "default_median_us": 1421.2,
+          "original_median_us": 3233.15,
+          "default_over_original_median": 0.4395713158993551,
+          "paired_ratios": [
+            0.41174168297455965,
+            0.4572100177021968,
+            0.4632091070974307,
+            0.44831602445889546
+          ],
+          "oracle_passed": true
+        },
+        {
+          "M": 128,
+          "N": 512,
+          "K": 1024,
+          "default_ct_region_count": 0,
+          "original_ct_region_count": 0,
+          "default_median_us": 41381.25,
+          "original_median_us": 41457.5,
+          "default_over_original_median": 0.998160767050594,
+          "paired_ratios": [
+            1.0075309747543382,
+            0.9792015168060673,
+            0.9995636215532163,
+            1.001103984226042
+          ],
+          "oracle_passed": true
+        }
+      ],
+      "original_window": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cpu-benchmark\\final-validation.json",
+        "bytes": 6944,
+        "sha256": "9142a21cb0b1c96a2364dda2c489e5bd258ef29c339a22080ead9b4a28f7496b"
+      },
+      "raw_measurements": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cpu-benchmark\\ranking\\validation\\measurements.json",
+        "bytes": 5844,
+        "sha256": "5fe053f80de013b5fa9006a99d74772ece05399019c804a5a7546acd5c9ea9ef"
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cpu-benchmark\\ranking\\checks\\cpu-bench.exe",
+        "bytes": 27176448,
+        "sha256": "8b19de30fcada3feb9ed0d31a5cca72ad29545050bf860e28638124d319a9cc9"
+      },
+      "consumer_receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cpu-benchmark\\ranking\\checks\\identity.json",
+        "bytes": 66633,
+        "sha256": "8644f31b4e73ff5728ab736f382274a05d135aed45f78c357acdfcd73eacc01d"
+      },
+      "link_plan": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cpu-benchmark\\ranking\\checks\\link-plan.json",
+        "bytes": 57448,
+        "sha256": "aff1201d626d0ab30a8637158407589812f2a9575ef21aeb1aac176b6e219b7e"
+      },
+      "source_freeze": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cpu-benchmark\\ranking\\source-freeze.json",
+        "bytes": 2717,
+        "sha256": "8d57693b36a2384405939e1666e1614b4f44d4b741552aad2582aa111915353e"
+      },
+      "consumer_diff": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cpu-benchmark\\ranking\\consumer.diff",
+        "bytes": 1934,
+        "sha256": "9686d96be41dbd1bc3d2169c4ed01f9c3586af552bdd3a6f5a0d60f2b59067fe"
+      },
+      "current_project_deps": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cpu-benchmark\\ranking\\current-project-dependencies.json",
+        "bytes": 12030,
+        "sha256": "f24f67a0afd1dd170ddc99d4cac64b6da76284dc1bf213ef4da1ebf4fac0a0bd"
+      },
+      "retained_old_artifacts": {
+        "source": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cpu-benchmark\\main.cc",
+          "bytes": 9316,
+          "sha256": "b8d7d2eaf5b32fd3388e9d52016579b6b65481dc95eaf44df43ba00722a84e10"
+        },
+        "original_main_object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cpu-benchmark\\checks\\main.obj",
+          "bytes": 2065382,
+          "sha256": "ceeb09997a1db360613070f0b941441723c4abe494c65948bfa4fd501f743dc5"
+        },
+        "original_measurements": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cpu-benchmark\\validation\\measurements.json",
+          "bytes": 5207,
+          "sha256": "bfebddc921c055301742f7b09d7c62cf5f22c181a843246fcd764c1b437c55ac"
+        }
+      },
+      "fairness": "same original Graph with exactly one Y output, original borrowed packed codes/zeros/scales and same A; contexts only differ CT decoration; configure_runtime_threads1/native_threads1; original private factory source unchanged;2warmups and4AB/BA pairs each; warm submit through Completion.wait excludes identical reset/bind/replay preparation and oracle.",
+      "threads": {
+        "native_threads": 1,
+        "runtime_intra_op_limit": 1,
+        "runtime_inter_op_limit": 24,
+        "aggregate_process_quota_claim": false
+      },
+      "storage": "M1 default known376B/workspace0, original known1464B/workspace1MiB and one unknown ggml provider. M128 both arms use Decode/View/ggml, known1464B/workspace1MiB/unknown provider1. No claim that current default M128 avoids the dense intermediate or that totals equal RSS/peak.",
+      "interpretation": "M128 no longer selects the CT scalar repeat-decode route; actual same original plan and timings agree within this small window. The roughly0.18percent median difference is noise, not a speedup claim. M1 retains packed and this local improvement. No third geometry or crossover search. M>1 packed capability remains present; separate parent CPU10 regression includes prepared selection.",
+      "counts": {
+        "this_ranking_consumer_CXX": 1,
+        "this_ranking_consumer_links": 1,
+        "this_ranking_benchmark_processes": 1,
+        "native_ranking_product_CXX": 1,
+        "cumulative_benchmark_consumer_CXX": 2,
+        "cumulative_benchmark_links": 2,
+        "cumulative_benchmark_processes": 2,
+        "GPU": 0,
+        "SDK_CXX": 0,
+        "all_attempts_exit_zero": true
+      }
+    }
+  },
+  "observation": {
+    "before": "M1 packed1364.4us vs original3100.3us (0.440x); M128 packed174009.1us vs original40982.8us (4.246x), all pairs4.207..4.287x. Original includes hot ArtifactDecode/View/ggml MatMul.",
+    "after": "M1 actual CT count1:1421.2us vs original3233.15us. M128 actual CT count0:41381.25us vs original41457.5us, identical decomposition,0.998x is noise rather than a speedup.",
+    "memory": "M1 packed known compiled storage376B/workspace0. Multirow default/original each1MiB workspace plus unknown ggml private storage; no claim that current multirow execution removes dense W.",
+    "boundary": "N512/K1024/group32/asymmetric BF16 scales/decode/operand. Same input Graph publishes onlyY, original constants/A, original Context/provider assembly except CT decoration, two warmups and four AB/BA pairs. Intra-op/native limits1; observed inter-op24 in same shared runtime, not a claim that the whole process has only one thread. Cold compile is a separate single observation per arm."
+  },
+  "validation": {
+    "cpu": {
+      "tests": 10,
+      "failures": 0,
+      "skip": 0,
+      "xml": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cross-platform\\ranking\\cpu\\tests.xml",
+        "bytes": 4272,
+        "sha256": "3b64aec33ddd9f0e740910047b26bb249ab079bd93851a7a22e4611251dfdd84"
+      },
+      "cases": [
+        [
+          "CpuNvfp4ReferenceGraph",
+          "OriginalPackedBanksAndBfloatBoundariesSurviveSlotsAndUpdates"
+        ],
+        [
+          "CpuNvfp4ReferenceGraph",
+          "RuntimeDomainFailuresRecoverWithoutChangingTheReferenceTree"
+        ],
+        [
+          "CpuCtPackedLinear",
+          "PublicChainsKeepSourceRoundsAndTypedCastWitnesses"
+        ],
+        [
+          "CpuCtPackedLinear",
+          "CapturedDynamicInputsRebindAcrossOwnedSlotsAndRetainResults"
+        ],
+        [
+          "CpuCtPackedLinear",
+          "PublishedViewAndControlEscapesExecuteTheOriginalDecomposition"
+        ],
+        [
+          "CpuCtPackedLinear",
+          "OriginalPackedConstantsDoNotRetainOrWorkspaceADenseWeightBank"
+        ],
+        [
+          "CpuCtPackedLinear",
+          "DefaultMultirowKeepsOriginalRouteAndPreparedCanSelectPacked"
+        ],
+        [
+          "NativeCtPackedLinear",
+          "SourceDecodeAndOperandRoundsWithPackedOutputAxisZeroTail"
+        ],
+        [
+          "NativeCtPackedLinear",
+          "DynamicInputsUseIndependentSlotsAndRejectReadWriteAlias"
+        ],
+        [
+          "NativeCtPackedLinear",
+          "RealQ27GeometryPreparesWithoutADenseWeightWorkspace"
+        ]
+      ]
+    },
+    "cuda": {
+      "tests": 8,
+      "failures": 0,
+      "skip": 0,
+      "xml": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cross-platform\\ranking\\cuda\\tests.xml",
+        "bytes": 3880,
+        "sha256": "7eeebeb83704598ae6c2e03774126e5524e98907cc2f23359ba0211e55affce2"
+      },
+      "cases": [
+        [
+          "CudaCtPackedLinear",
+          "PublicChainsKeepSourceRoundsAndTypedCastWitnesses"
+        ],
+        [
+          "CudaCtPackedLinear",
+          "CapturedDynamicInputsRebindAcrossOwnedSlotsAndRetainResults"
+        ],
+        [
+          "CudaCtPackedLinear",
+          "PublishedViewAndControlEscapesExecuteTheOriginalDecomposition"
+        ],
+        [
+          "CudaCtPackedLinear",
+          "OriginalPackedConstantsDoNotRetainOrWorkspaceADenseWeightBank"
+        ],
+        [
+          "CudaMlxMoeGraph",
+          "MixedBitMoeKeepsTypedMetadataAndIndependentSlots"
+        ],
+        [
+          "CudaMlxSharedActivation",
+          "OriginalPayloadStridesAndCheckedIdsSurviveReuse"
+        ],
+        [
+          "CudaNvfp4ReferenceGraph",
+          "OriginalPackedBanksAndBfloatBoundariesSurviveSlotsAndUpdates"
+        ],
+        [
+          "CudaNvfp4ReferenceGraph",
+          "RuntimeDomainFailuresRecoverWithoutChangingTheReferenceTree"
+        ]
+      ]
+    }
+  },
+  "builds": {
+    "policy_native_CXX": 1,
+    "common_region_CXX": 2,
+    "test_CXX": 2,
+    "benchmark_CXX": 2,
+    "total_CXX": 7,
+    "NVCC": 0,
+    "SDK": 0,
+    "links": 4,
+    "correctness_processes": 2,
+    "benchmark_processes": 2,
+    "all_terminal_zero": true,
+    "whole_suite": false
+  },
+  "source_freeze": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_native\\native_provider.cc",
+      "bytes": 38683,
+      "sha256": "1f8c4f0c1e87ced606ae8e1e73d28bd174f06042162d1ab400048506eb8f559a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\ct_packed_region.h",
+      "bytes": 17335,
+      "sha256": "a09b22e02c751ca5d5a062a2e7b297811ee076247d747ab6d8196409ff040943"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_native\\ct_packed.cc",
+      "bytes": 8700,
+      "sha256": "79d85696fafec5d7b0f25fe795bfcf4ff9ee0b32334cadd151656ef660c3f906"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_packed_shared\\ct_packed_linear.h",
+      "bytes": 2459,
+      "sha256": "8c18cb714ffa23e629f16b163b7dafabc3ece8947a740b6e98154cac9056cdfe"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph_route_cpu\\ct_packed_linear_region.cc",
+      "bytes": 518,
+      "sha256": "7140afb0e6a5186dae3763aaaaaa5e47de59dbef239772e46c452378e3dc3c3c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph_route_cuda\\ct_packed_linear_region.cc",
+      "bytes": 725,
+      "sha256": "8e0803ff50b2087bfdd53e2891126111aa2edf5021508c686e83a2bfe8ee2880"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\ct_packed_graph_fixture.h",
+      "bytes": 24416,
+      "sha256": "c5161cf8423e096a80b1324e8360680010dc002e010ae4f19ddfe45d1f695bb7"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_cpu\\ct_packed_linear_test.cc",
+      "bytes": 3903,
+      "sha256": "71584d8928c390f696819130592816acee8a006269ee950c6e7474e65928935d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_cuda\\ct_packed_linear_test.cc",
+      "bytes": 2281,
+      "sha256": "78ba87643b77ed458d66d6d52a0a49bdaa0d7715a215e5424386afadadaff68b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\user\\compute.md",
+      "bytes": 101492,
+      "sha256": "36473c0b89ec01ef07e38731e1d33760313df7ed37d4cc576e1eac3c3c5e422e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\developer\\current-work.md",
+      "bytes": 42943,
+      "sha256": "a4c9324024bec36ffc514636889468fe2aee33e55e6ebb657402562d7dcdd255"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\implementation\\model-quantizations.json",
+      "bytes": 344177,
+      "sha256": "d901a66a10ff47364bb44ee6f6adeb166b8db51740b2bf2c2cfaeb5c1c4ffdd5"
+    }
+  ],
+  "limits": [
+    "Two synthetic geometries and one CPU/runtime configuration do not establish a universal crossover, fastest policy on every machine or full-model quality/speed.",
+    "All current numerical and resource capability remains; this ranks existing candidates during cold discovery only.",
+    "Prepared admission fallback is executed; generic memory-budget search must not be described as complete RSS/opaque-provider control.",
+    "No new Linux/macOS run, whole-artifact payload, model peak-memory measurement or CUDA Qwen benchmark."
+  ],
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\ct-packed-cpu-policy-2026-10-20.zip",
+    "bytes": 523427,
+    "sha256": "d6930b8080ea048dc86da2a96e516410b1fe40abdd63aeb940f7359a35311e08",
+    "payloads": 171,
+    "CRC_checked": true,
+    "all_payload_SHA256_checked": true
+  }
+}

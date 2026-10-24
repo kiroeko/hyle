@@ -1,0 +1,3088 @@
+{
+  "observed_on": "2026-10-21",
+  "status": "four_backend_bounded_grouped_power2_reference_passed",
+  "producer_research_evidence": "../research/fixed-role-binding-2026-10-21.json",
+  "producer_contract": {
+    "source_identity": "25/26/27 fixedmodel.py equal SHA c0c19e6c9fa439bac7fbb1c5bc1868232dfd5aa2f439a548d0e33dcc2a9edd3f; fixedkernel.py equal SHA59b325083d7103975cba025bd0d60ea343bb82d8fff53088afb7c04bd380c0c2.",
+    "source_lines": {
+      "kernel.py": "22-37 fast_log2_ceil/fast_pow2;41-102act_quant_kernel;105-124act_quant",
+      "model.py": "114-124linear;881-886resolvedruntime scale_fmt/scale_dtype"
+    },
+    "activation_group": 128,
+    "absmax_floor_f32": 0.0001,
+    "input_for_fixed_GA": "BF16. act_quant_kernel default in_dtype=BF16; all internal compute_dtype=FP32. Input BF16 values widen exactly before absmax/normalization.",
+    "scale_steps": [
+      "amax_F32=max(absmax(widen_F32(A)),F32(1e-4))",
+      "r=F32(amax_F32*F32(1/448)); this is multiply by rounded reciprocal, not a BF16 multiply and not a substituted F32 division.",
+      "power2scale=bit_cast_F32((biased_exponent(r)+(mantissa(r)!=0))<<23); floor guarantees positive normal r; exact powers retained.",
+      "normalized_F32=clamp(F32(widen_F32(A)/power2scale),-448,448); E4M3FN saturated RNE encoding. No extra BF16 cast between divide and FP8 encoding.",
+      "Selected original E4 weight codes and F32 macroblock128 weight scales remain unchanged. Native group-dot accumulatesF32 and casts final output to declared activation dtype."
+    ],
+    "storage": "scale_dtype controls stored source S (F32 or E8M0), not internal quantizer arithmetic. Existing canonical grouped carrier already usesF32 macroblock128 scales; exact cold E8M0→F32 widening is separate import work. Never reinterpret this as UE8M0group32.",
+    "runtime_mode_resolution": "scale_fmt is ue8m0 when resolved args.scale_dtype==fp8, otherwise args.scale_fmt; artifacts/ModelArgs defaults alone do not prove selected runtime args. mode must be bound explicitly by caller.",
+    "different_contracts": [
+      "CT block128 BF16 multiply/divide/round paths are separate ordinary-graph producer contracts and must not be substituted here.",
+      "Existing kNone grouped quantization uses F32 amax/floor and division448; leave it unchanged. Fixed GA round_scale=False uses multiply reciprocal; if supporting that exact nonpower producer path, assess separately instead of changing current kNone semantics silently.",
+      "In-place GA quant-dequant includes an additional cast/multiply/storage journey; ordinary grouped linear consumes returned E4 codes/scales and does not use inplace=True."
+    ]
+  },
+  "fixed_sources": [
+    {
+      "path": "primary/25/model.py",
+      "url": "https://huggingface.co/nvidia/DeepSeek-V4-Pro-0813-NVFP4/resolve/949138637e8e8fe190335be2396af62187dc8a83/inference/model.py",
+      "http_status": 200,
+      "bytes": 45118,
+      "cap": 131072,
+      "sha256": "c0c19e6c9fa439bac7fbb1c5bc1868232dfd5aa2f439a548d0e33dcc2a9edd3f",
+      "headers": {
+        "Content-Type": "text/plain; charset=utf-8",
+        "ETag": "\"76122da98a9abd3ecab9e3e6d6ed181abcba3bee\"",
+        "X-Repo-Commit": "949138637e8e8fe190335be2396af62187dc8a83"
+      },
+      "seconds": 3.061627149581909,
+      "model_tensor_payload_bytes": 0,
+      "local_path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/fp8-kv/primary/25/model.py"
+    },
+    {
+      "path": "primary/25/kernel.py",
+      "url": "https://huggingface.co/nvidia/DeepSeek-V4-Pro-0813-NVFP4/resolve/949138637e8e8fe190335be2396af62187dc8a83/inference/kernel.py",
+      "http_status": 200,
+      "bytes": 22198,
+      "cap": 131072,
+      "sha256": "59b325083d7103975cba025bd0d60ea343bb82d8fff53088afb7c04bd380c0c2",
+      "headers": {
+        "Content-Type": "text/plain; charset=utf-8",
+        "ETag": "\"ad550ce13382a964ec5613acddcd96315b662f9a\"",
+        "X-Repo-Commit": "949138637e8e8fe190335be2396af62187dc8a83"
+      },
+      "seconds": 1.7010273933410645,
+      "model_tensor_payload_bytes": 0,
+      "local_path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/fp8-kv/primary/25/kernel.py"
+    },
+    {
+      "path": "primary/26/model.py",
+      "url": "https://huggingface.co/nvidia/DeepSeek-V4-Flash-0731-NVFP4/resolve/f1caa71142bd0be02f728c79f75042ac1e461579/inference/model.py",
+      "http_status": 200,
+      "bytes": 45118,
+      "cap": 131072,
+      "sha256": "c0c19e6c9fa439bac7fbb1c5bc1868232dfd5aa2f439a548d0e33dcc2a9edd3f",
+      "headers": {
+        "Content-Type": "text/plain; charset=utf-8",
+        "ETag": "\"76122da98a9abd3ecab9e3e6d6ed181abcba3bee\"",
+        "X-Repo-Commit": "f1caa71142bd0be02f728c79f75042ac1e461579"
+      },
+      "seconds": 2.692929267883301,
+      "model_tensor_payload_bytes": 0,
+      "local_path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/fp8-kv/primary/26/model.py"
+    },
+    {
+      "path": "primary/26/kernel.py",
+      "url": "https://huggingface.co/nvidia/DeepSeek-V4-Flash-0731-NVFP4/resolve/f1caa71142bd0be02f728c79f75042ac1e461579/inference/kernel.py",
+      "http_status": 200,
+      "bytes": 22198,
+      "cap": 131072,
+      "sha256": "59b325083d7103975cba025bd0d60ea343bb82d8fff53088afb7c04bd380c0c2",
+      "headers": {
+        "Content-Type": "text/plain; charset=utf-8",
+        "ETag": "\"ad550ce13382a964ec5613acddcd96315b662f9a\"",
+        "X-Repo-Commit": "f1caa71142bd0be02f728c79f75042ac1e461579"
+      },
+      "seconds": 1.5745618343353271,
+      "model_tensor_payload_bytes": 0,
+      "local_path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/fp8-kv/primary/26/kernel.py"
+    },
+    {
+      "path": "primary/27/model.py",
+      "url": "https://huggingface.co/AtlasCloud/DeepSeek-V4-Flash-0731-FP8-DSpark/resolve/7eb21d27aee405755da5251f4458e9fff87c047b/inference/model.py",
+      "http_status": 200,
+      "bytes": 45118,
+      "cap": 131072,
+      "sha256": "c0c19e6c9fa439bac7fbb1c5bc1868232dfd5aa2f439a548d0e33dcc2a9edd3f",
+      "headers": {
+        "Content-Type": "text/plain; charset=utf-8",
+        "ETag": "\"76122da98a9abd3ecab9e3e6d6ed181abcba3bee\"",
+        "X-Repo-Commit": "7eb21d27aee405755da5251f4458e9fff87c047b"
+      },
+      "seconds": 2.8414599895477295,
+      "model_tensor_payload_bytes": 0,
+      "local_path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/fp8-kv/primary/27/model.py"
+    },
+    {
+      "path": "primary/27/kernel.py",
+      "url": "https://huggingface.co/AtlasCloud/DeepSeek-V4-Flash-0731-FP8-DSpark/resolve/7eb21d27aee405755da5251f4458e9fff87c047b/inference/kernel.py",
+      "http_status": 200,
+      "bytes": 22198,
+      "cap": 131072,
+      "sha256": "59b325083d7103975cba025bd0d60ea343bb82d8fff53088afb7c04bd380c0c2",
+      "headers": {
+        "Content-Type": "text/plain; charset=utf-8",
+        "ETag": "\"ad550ce13382a964ec5613acddcd96315b662f9a\"",
+        "X-Repo-Commit": "7eb21d27aee405755da5251f4458e9fff87c047b"
+      },
+      "seconds": 5.935193300247192,
+      "model_tensor_payload_bytes": 0,
+      "local_path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/fp8-kv/primary/27/kernel.py"
+    }
+  ],
+  "math": "F32 absmax max floor, F32 multiply rounded1/448, ceil power2, F32 normalize and E4 SATFINITE RNE; original E4 W/F32 macroblock128 SF, F32 per-group dot then As then Ws and accumulation, final BF16. No BF16 quantization intermediates.",
+  "public_api": "GroupedFloat8Linear{Float8ScaleRounding,floatfloor}8bytes, operation_id suffix0002, factory(enum=kNone,floatfloor=1e-10). No old4byte parsing or float-only overload. kNone default semantics retained.",
+  "architecture": "Original backend plans/Invocation/Completion/checked-ID path. Shared A quantizes once per token; selected encoded experts remain compressed. CUDA reuses existing BF16 colmajor AOT with As strides(1,quant_rows), original workspace size. Vulkan appends private kind without ProgramSpecV4 expansion and reuses existing IREE quantizer; no SDK rebuild.",
+  "tests": {
+    "distinct_total": 19,
+    "new_cases": 9,
+    "neighbors": 10,
+    "new_names": [
+      "AppleGroupedFp8Power2.CheckedIdsFailAndFreshInvocationRecovers",
+      "AppleGroupedFp8Power2.SharedAndPerSlotBfloatMathRetainsOldResults",
+      "CpuGroupedFp8Power2Graph.CheckedIdsFailAndFreshInvocationRecovers",
+      "CpuGroupedFp8Power2Graph.SharedAndPerSlotBfloatMathRetainsOldResults",
+      "CudaGroupedFp8Power2Graph.CheckedIdsFailBeforeSelectionAndFreshSlotRecovers",
+      "CudaGroupedFp8Power2Graph.Float32PowerShapeInfersButNativePrepareDeclines",
+      "CudaGroupedFp8Power2Graph.OriginalCodesAndPowerScalesSurviveSlotsAndUpdates",
+      "VulkanGroupedFp8Power2Graph.CheckedIdsFailAndFreshInvocationRecovers",
+      "VulkanGroupedFp8Power2Graph.SharedAndPerSlotBfloatMathRetainsOldResults"
+    ],
+    "neighbor_names": [
+      "AppleGroupedFp8Power2.DefaultNoneKeepsItsOriginalQuantizer",
+      "CpuGroupedFp8Power2Graph.DefaultNoneKeepsItsOriginalQuantizer",
+      "CudaFp8SharedPrologue.PowerOfTwoBfloatSiblingsKeepTheirOriginalScaleLayoutAcrossCapturedSlots",
+      "CudaGroupedFp8.CheckedIdsFailCompletionAndFreshInvocationRecovers",
+      "CudaGroupedFp8.RuntimeSlotsAndExactRowsDirect",
+      "CudaGroupedFp8.RuntimeSlotsAndExactRowsGraph",
+      "CudaGroupedFp8.ZeroCodesAndFiniteScalesKeepZeroProducts",
+      "CudaGroupedFp8ScaleOrder.ZeroCodesAndFiniteScalesKeepZeroProducts",
+      "ModelFloat8Linear.GroupedSharedAndSlotInputsRequireExactLayout",
+      "VulkanGroupedFp8Power2Graph.DefaultNoneKeepsItsOriginalQuantizer"
+    ],
+    "windows": [
+      {
+        "label": "CPU new, None and schema",
+        "receipt": {
+          "path": ".scratch/architecture-refactor-2026-10-18/grouped-fp8-power2-reference/cpu/validation/attempt1/receipt.json",
+          "bytes": 2261,
+          "sha256": "a8d1ed00bd74a77bfb5c073870c15be6cd73e53651ccfe49c2513b15fc765386"
+        },
+        "green_names": [
+          "CpuGroupedFp8Power2Graph.SharedAndPerSlotBfloatMathRetainsOldResults",
+          "CpuGroupedFp8Power2Graph.CheckedIdsFailAndFreshInvocationRecovers",
+          "CpuGroupedFp8Power2Graph.DefaultNoneKeepsItsOriginalQuantizer",
+          "ModelFloat8Linear.GroupedSharedAndSlotInputsRequireExactLayout"
+        ],
+        "original_failed_names": []
+      },
+      {
+        "label": "CUDA original neighbors",
+        "receipt": {
+          "path": ".scratch/architecture-refactor-2026-10-18/grouped-fp8-power2-reference/cuda/validation/attempt1/receipt.json",
+          "bytes": 4967,
+          "sha256": "d5231cd8a9c1c2eaa98511c94ca91e6bb4e16fae1e3718be449f1d8d46925685"
+        },
+        "green_names": [
+          "CudaGroupedFp8.RuntimeSlotsAndExactRowsDirect",
+          "CudaGroupedFp8.RuntimeSlotsAndExactRowsGraph",
+          "CudaGroupedFp8.CheckedIdsFailCompletionAndFreshInvocationRecovers",
+          "CudaGroupedFp8.ZeroCodesAndFiniteScalesKeepZeroProducts",
+          "CudaGroupedFp8ScaleOrder.ZeroCodesAndFiniteScalesKeepZeroProducts",
+          "CudaFp8SharedPrologue.PowerOfTwoBfloatSiblingsKeepTheirOriginalScaleLayoutAcrossCapturedSlots"
+        ],
+        "original_failed_names": [
+          "CudaGroupedFp8Power2Graph.CheckedIdsFailBeforeSelectionAndFreshSlotRecovers",
+          "CudaGroupedFp8Power2Graph.OriginalCodesAndPowerScalesSurviveSlotsAndUpdates"
+        ]
+      },
+      {
+        "label": "CUDA new power2",
+        "receipt": {
+          "path": ".scratch/architecture-refactor-2026-10-18/grouped-fp8-power2-reference/cuda/validation/attempt2/receipt.json",
+          "bytes": 1788,
+          "sha256": "0e0b7afce3d71bd4c7bcb9e84ab8ba912ec0fa1bad45adb34a9a861109494b64"
+        },
+        "green_names": [
+          "CudaGroupedFp8Power2Graph.OriginalCodesAndPowerScalesSurviveSlotsAndUpdates",
+          "CudaGroupedFp8Power2Graph.CheckedIdsFailBeforeSelectionAndFreshSlotRecovers"
+        ],
+        "original_failed_names": []
+      },
+      {
+        "label": "CUDA F32 power prepare decline",
+        "receipt": {
+          "path": ".scratch/architecture-refactor-2026-10-18/grouped-fp8-power2-reference/cuda/validation/attempt3/receipt.json",
+          "bytes": 1420,
+          "sha256": "c03e5de32818ed4cf40d819c99ead7dda9c7219bf6a5da08d28a4aad757b4533"
+        },
+        "green_names": [
+          "CudaGroupedFp8Power2Graph.Float32PowerShapeInfersButNativePrepareDeclines"
+        ],
+        "original_failed_names": []
+      },
+      {
+        "label": "Vulkan new and None after scale fix",
+        "receipt": {
+          "path": ".scratch/architecture-refactor-2026-10-18/grouped-fp8-power2-reference/vulkan/validation/attempt2/receipt.json",
+          "bytes": 2345,
+          "sha256": "d0d0311a0f0bc1ccd162dd91f94a58c86def16424a55fafe29640767e89fbd4c"
+        },
+        "green_names": [
+          "VulkanGroupedFp8Power2Graph.SharedAndPerSlotBfloatMathRetainsOldResults",
+          "VulkanGroupedFp8Power2Graph.CheckedIdsFailAndFreshInvocationRecovers",
+          "VulkanGroupedFp8Power2Graph.DefaultNoneKeepsItsOriginalQuantizer"
+        ],
+        "original_failed_names": []
+      }
+    ],
+    "apple": {
+      "path": ".scratch/architecture-refactor-2026-10-18/grouped-fp8-power2-reference/apple/final-validation.json",
+      "bytes": 6278,
+      "sha256": "b078ce258c23d2c4afc1e419519773be06e168e1861305017771a726b137fa31"
+    },
+    "new_graph_successes": 44,
+    "new_graph_expected_failed_completions": 8,
+    "counting": "Each backend power lifetime8 plus ID recovery3success/2failed; CUDA F32-negative performs zero submissions. None neighbors/schema separate. Temporary diagnostic probes are excluded from19 distinct permanent cases."
+  },
+  "failures_retained": [
+    "First shared fixture omitted factory.resources for caller-owned result bind; CUDA failed before arithmetic. Four resource setup sites corrected, data/oracle/tolerance unchanged; Apple originally green unaffected.",
+    "CPU build helper used path-sensitive identity equality on lower-case compiler dependency paths, then resumed the successful schema object with canonical content checks; no product compile failure.",
+    "Vulkan ordinary None neighbor exposed pre-existing FDiv scale450/448 one-F32-ULP error; F32 sparse probe located first error and final normal scale computation uses RN integer /7 decomposition. No tolerance widening."
+  ],
+  "limits": [
+    "Fixed GA producer BF16 activation reference; no publisher numeric tensor payload, whole artifact/model, Linux, quality or performance acceptance.",
+    "CUDA power F32 shape is mathematically inferable but native prepare returns Unimplemented; BF16 evidence does not qualify F32 CUDA AOT.",
+    "Canonical weight scales are F32 macroblock128; stored E8M0 block128 import is a separate scale-only resource conversion, not UE8M0 group32.",
+    "Independent expert working sets, paged E4 KV/compact MLA and unresolved Inferact producer contract remain open."
+  ],
+  "current_sources": [
+    {
+      "path": "include/hyle/compute/model_ops.h",
+      "bytes": 73746,
+      "sha256": "9b756a476355de744b48cad12b72bbcd4239870d7243dc1efdef22fc06204a18"
+    },
+    {
+      "path": "src/compute_provider_native/torch_cpu_program.cc",
+      "bytes": 42454,
+      "sha256": "9526a9c7bb651b73e3f90ea96850a291f8260d15ec2301d570bd70c6a5ffefb2"
+    },
+    {
+      "path": "src/compute_provider_cuda/grouped_fp8_provider.cc",
+      "bytes": 15248,
+      "sha256": "e72b9fe5632688384c1b38ffccfbc81ade9d245177141a084974e714c626763e"
+    },
+    {
+      "path": "src/compute_provider_cuda/cuda_provider.cc",
+      "bytes": 21752,
+      "sha256": "9f333dacfe1d57d6df5ccd380df10133985878b3c882453b99a6f683ce5a7845"
+    },
+    {
+      "path": "src/compute_route_apple/apple_mature_float.cc",
+      "bytes": 36463,
+      "sha256": "47470bbdfecaa4d01234013218adb8539d118eaed0a7333b8a790245091720cb"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_official.cc",
+      "bytes": 10297,
+      "sha256": "a5a432eaa55db2cec8f6225a1ce2223822422a50b92c5ca9c0ca31da5b0f68f6"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_program.cc",
+      "bytes": 55681,
+      "sha256": "06e9ec34669f36c20575f67bc2242ca28dee143dc3a282941c2ccf50b9bdda92"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_iree.cc",
+      "bytes": 31057,
+      "sha256": "cccf570d016409f412d58423f3f7943d689071ce96417efadfdb47a9ccbf9888"
+    },
+    {
+      "path": "src/compute_provider_iree_vulkan/native_program.h",
+      "bytes": 7881,
+      "sha256": "22fbcc99f57a7d86ae10d9d1c9494fac3a63e7106b1c8b7d21b61cb863007565"
+    },
+    {
+      "path": "src/compute_provider_iree_vulkan/native_program.cc",
+      "bytes": 55702,
+      "sha256": "f22ffc75ae7b1bb2ac3668a811f1b62323937265944b485e8465f3da76735fd3"
+    },
+    {
+      "path": "third_party/iree_vulkan_runtime/programs/generate_official.py",
+      "bytes": 32153,
+      "sha256": "4bdfb3d3f2b571dd9c87c0c74d1ac7fcf4369fd2d0059c09d6fd89be89b41349"
+    },
+    {
+      "path": "third_party/iree_vulkan_runtime/programs/compile_official.py",
+      "bytes": 4202,
+      "sha256": "e922d5ea8b47d59bd80613de2a7873e1d7e13c59052c22614f8978953a3dd811"
+    },
+    {
+      "path": "third_party/iree_vulkan_runtime/programs/official.mlir",
+      "bytes": 58996,
+      "sha256": "546bb9b3330e47a5fe3a554a85551336b20f4b21eb315b6fb3dc92ee4377b624"
+    },
+    {
+      "path": "third_party/iree_vulkan_runtime/programs/official.vmfb.b64",
+      "bytes": 209919,
+      "sha256": "263f9cc3b0fa3be529695845be21db9c8572e755df3288f851ac4c359ce0abd6"
+    },
+    {
+      "path": "third_party/iree_vulkan_runtime/programs/manifest.json",
+      "bytes": 7447,
+      "sha256": "5936e7426b781a19540b849c81fb1ca5dd5ffc8dffb8c0a2fd2f282e782bbdfd"
+    },
+    {
+      "path": "cmake/HyleDependencyLock.json",
+      "bytes": 77554,
+      "sha256": "8c5458705e8814ae4560169a8832b140deb3ce7df42dfb04139b9aaaa6db0dab"
+    },
+    {
+      "path": "tests/compute_models/grouped_fp8_power2_fixture.h",
+      "bytes": 14266,
+      "sha256": "81d863ce324a4f42f8046bae3fb3d2e17dc6d7870558a7ae8c3347c7de46e0e2"
+    },
+    {
+      "path": "tests/compute_models/nvfp4_reference_fixture.h",
+      "bytes": 22482,
+      "sha256": "cc94ec1f443511722ff4fc227b065af27b82573443735250951cdce934faa4d3"
+    },
+    {
+      "path": "tests/compute_ops/operation_test.cc",
+      "bytes": 90235,
+      "sha256": "ec987a2d51c2500bf9bb9a9002f26987436bcc41e43a4118ed97d81631555cfa"
+    },
+    {
+      "path": "tests/compute_provider_native/torch_cpu_test.cc",
+      "bytes": 27159,
+      "sha256": "aba4c38ce9c0b994ae2439958d96e488a3046c3ae52b53c4599e1b66e6a18465"
+    },
+    {
+      "path": "tests/compute_provider_cuda/grouped_fp8_test.cc",
+      "bytes": 19587,
+      "sha256": "2525d7bd6008ccdf0357488d0ffc72f1274c0ced4f21af6e02481aae327cfdcb"
+    },
+    {
+      "path": "tests/graph_route_cpu/grouped_fp8_power2_test.cc",
+      "bytes": 1296,
+      "sha256": "6fd4fe3c32025eb1ad0e896c79a0f5605d966450bceff431a421b44ce50a62e1"
+    },
+    {
+      "path": "tests/graph_route_cpu/CMakeLists.txt",
+      "bytes": 3459,
+      "sha256": "838d7eee5722eeeb6baa693a9530ae53504374a406e0246d86ec0eb1a3933eea"
+    },
+    {
+      "path": "tests/graph_route_cuda/grouped_fp8_power2_test.cc",
+      "bytes": 3420,
+      "sha256": "270ff0b89289264b4f4ed968ed1d73be7709457144f9e90253c9f2422cbdb559"
+    },
+    {
+      "path": "tests/graph_route_cuda/CMakeLists.txt",
+      "bytes": 2578,
+      "sha256": "7f0376322f4fc0154424c5b940727dafbd45a61a5749df0e4678c9ff9a42d7ee"
+    },
+    {
+      "path": "tests/graph_route_vulkan/grouped_fp8_power2_test.cc",
+      "bytes": 4241,
+      "sha256": "5a1465dbfdcca397b542ce13b4d320e4d03a795d3c034a7aba139e0484c1e738"
+    },
+    {
+      "path": "tests/graph_route_vulkan/CMakeLists.txt",
+      "bytes": 5783,
+      "sha256": "bcf18d4a66a8b90eada5967b347f6120bbfa956209154f687f09dc65594f8b97"
+    },
+    {
+      "path": "tests/graph_route_apple/grouped_fp8_power2_test.cc",
+      "bytes": 2048,
+      "sha256": "e14a2ac9ecafdf5d7d88893fab1f1e77dd4b81e4f6dacb3d4c2a0f173a05368c"
+    },
+    {
+      "path": "tests/graph_route_apple/CMakeLists.txt",
+      "bytes": 6310,
+      "sha256": "c0631c3b0418c1fa5e6d00d3f954b2154b773c3b9093867ee111d2bfe581d784"
+    }
+  ],
+  "archive": {
+    "path": "docs/evidence/correctness/grouped-fp8-power2-reference-2026-10-21.zip",
+    "bytes": 4180084,
+    "sha256": "e8cf3ac970cf5688358fdff300d4a764ab35976c49f303a3a11c34658063a87b",
+    "members": 536
+  },
+  "archive_entries": [
+    {
+      "entry": "records/apple/after/src/compute_route_apple/apple_mature_float.cc",
+      "bytes": 36463,
+      "sha256": "47470bbdfecaa4d01234013218adb8539d118eaed0a7333b8a790245091720cb"
+    },
+    {
+      "entry": "records/apple/after/tests/graph_route_apple/CMakeLists.txt",
+      "bytes": 6310,
+      "sha256": "c0631c3b0418c1fa5e6d00d3f954b2154b773c3b9093867ee111d2bfe581d784"
+    },
+    {
+      "entry": "records/apple/after/tests/graph_route_apple/grouped_fp8_power2_test.cc",
+      "bytes": 2048,
+      "sha256": "e14a2ac9ecafdf5d7d88893fab1f1e77dd4b81e4f6dacb3d4c2a0f173a05368c"
+    },
+    {
+      "entry": "records/apple/apple_mature_float.diff",
+      "bytes": 756,
+      "sha256": "882b1458047d3ec78d60a21e96a6a2089bc9858937147046010742d4fd394cb1"
+    },
+    {
+      "entry": "records/apple/before/src/compute_route_apple/apple_mature_float.cc",
+      "bytes": 36347,
+      "sha256": "fa4ac0f69e8b476397106428506d60e6d374722a42590968821bf789f596a9e1"
+    },
+    {
+      "entry": "records/apple/before/tests/graph_route_apple/CMakeLists.txt",
+      "bytes": 6283,
+      "sha256": "3b1c76aa07756ca95af5a66325d14e67038146243167ba4aeb3541c0838fcfdc"
+    },
+    {
+      "entry": "records/apple/build_mac.py",
+      "bytes": 5385,
+      "sha256": "ccca2289a8e72915c0b7dc9adcb27f26995c132bae8f3d55e92ac2049ceabbb3"
+    },
+    {
+      "entry": "records/apple/cleanup-readonly-inventory.json",
+      "bytes": 2796,
+      "sha256": "9c30e2aa5535dcc7c79d54fb8714c60e4a68d635f29ebff94e59a823113b319b"
+    },
+    {
+      "entry": "records/apple/collect_mac.py",
+      "bytes": 1984,
+      "sha256": "0dde17c0e0cbe4a96071b8e7ce60ec2febc527adede00bb557458e218c38ca4d"
+    },
+    {
+      "entry": "records/apple/final-validation.json",
+      "bytes": 6278,
+      "sha256": "b078ce258c23d2c4afc1e419519773be06e168e1861305017771a726b137fa31"
+    },
+    {
+      "entry": "records/apple/finalize.py",
+      "bytes": 5998,
+      "sha256": "a744bc4ca64f54244109ea9b57abdcae06925c9bc5163a3c28ea5eaa5e435c89"
+    },
+    {
+      "entry": "records/apple/first-pass-fc8b/grouped_fp8_power2_fixture.h",
+      "bytes": 14134,
+      "sha256": "fc8b71d58565ff7ae6caaa9a967a4683f2f0e59c637be8b0331e33b7ad7e27e3"
+    },
+    {
+      "entry": "records/apple/first-pass-fc8b/link.command.json",
+      "bytes": 27084,
+      "sha256": "6e6f3c2ca117d9ac8a2018e4ccec31b8d7e994ea1a06eba44ccb6bd2776df303"
+    },
+    {
+      "entry": "records/apple/first-pass-fc8b/run.result.json",
+      "bytes": 471,
+      "sha256": "b38b2cba8b3de42bbb08381393bdb7df5184eef26dd8099b696d5f368437ac2e"
+    },
+    {
+      "entry": "records/apple/first-pass-fc8b/run.stdout.log",
+      "bytes": 1008,
+      "sha256": "148cc9d8497497dedb7d7fe4a9a85f5ce532b8c30eb2de527e9d354c30b3b38b"
+    },
+    {
+      "entry": "records/apple/first-pass-fc8b/source-manifest.json",
+      "bytes": 14678,
+      "sha256": "8051883fc640eeab39b512887fac4f5f5a6e33c919194287251686906aea6297"
+    },
+    {
+      "entry": "records/apple/first-pass-fc8b/tests--graph_route_apple--grouped_fp8_power2_test.cc-identity.json",
+      "bytes": 304867,
+      "sha256": "c4be246a72c4de178789114edd9d9d25494c5d045d0a1895645cf85271ecb7cb"
+    },
+    {
+      "entry": "records/apple/first-pass-fc8b/tests.xml",
+      "bytes": 2022,
+      "sha256": "c475228ccec2ab0562b9bcc14bc3d4f1dfe4d0c3179a667e22540383f3d0c662"
+    },
+    {
+      "entry": "records/apple/first-pass-fc8b/validation.json",
+      "bytes": 868,
+      "sha256": "0c26c389e4ec9dd96dea1a4efe45599bf1f24fd75699171f1099cc129fbd75ec"
+    },
+    {
+      "entry": "records/apple/fixture-mechanical-proof.json",
+      "bytes": 689,
+      "sha256": "25c45a55c1c72d898191e3a55d9e36370ba6fadc82662b47da62cd4d14bf7586"
+    },
+    {
+      "entry": "records/apple/mac/collected.json",
+      "bytes": 5510,
+      "sha256": "15beaa4e3e344fb7cd84cb2db97a9b35f6322e470ed4627e3b61c2f8a7e106f7"
+    },
+    {
+      "entry": "records/apple/mac/plan.json",
+      "bytes": 137489,
+      "sha256": "5bad15aaec36327f9afa998ea195f859569c258b001ce94fef0fdb5451862eb1"
+    },
+    {
+      "entry": "records/apple/mac/remote/hardware.json",
+      "bytes": 516,
+      "sha256": "137744c87ad0d26cf40a9dd2943a659663608cd6bc9fb0af412c031ff8902f62"
+    },
+    {
+      "entry": "records/apple/mac/remote/plan.json",
+      "bytes": 135784,
+      "sha256": "4f7d74d427581ec27e59f0ea3da81488842e33c78489380a224db25832ae28dc"
+    },
+    {
+      "entry": "records/apple/mac/remote/results/compile-summary.json",
+      "bytes": 2424129,
+      "sha256": "6ae3eae0256ade32819b829ced6092a96b3852ac47d98301cf8d0aa7550e7b80"
+    },
+    {
+      "entry": "records/apple/mac/remote/results/link-inputs.json",
+      "bytes": 46096,
+      "sha256": "1f20812064a57ea3c622386def01120d473dd74464cc952cbeae6dfb6e1c2a27"
+    },
+    {
+      "entry": "records/apple/mac/remote/results/link.command.json",
+      "bytes": 27083,
+      "sha256": "46b467d5e5bda1c46a61c9665f34f8bb6551005a26c386999d3e01155dc9a5d4"
+    },
+    {
+      "entry": "records/apple/mac/remote/results/link.result.json",
+      "bytes": 27130,
+      "sha256": "78dbab4cb6beefc45419d32f21f152d61043abc20bc91da9a42eb3849610e691"
+    },
+    {
+      "entry": "records/apple/mac/remote/results/link.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/mac/remote/results/link.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/mac/remote/results/run.command.json",
+      "bytes": 425,
+      "sha256": "22648c1b6c09ee5c8da8e2399905dae65854d26893e8151304dfa852ca811681"
+    },
+    {
+      "entry": "records/apple/mac/remote/results/run.result.json",
+      "bytes": 471,
+      "sha256": "51c5b256ff3fdfd1717c07acb62da80b2bcd11e624c86668b96f516900e9ee08"
+    },
+    {
+      "entry": "records/apple/mac/remote/results/run.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/mac/remote/results/run.stdout.log",
+      "bytes": 1001,
+      "sha256": "f55648ffd73d236d31c9798a013f374430174931614da3f10562829cc4291cff"
+    },
+    {
+      "entry": "records/apple/mac/remote/results/src--compute_provider_native--torch_cpu_program.cc-compile.command.json",
+      "bytes": 27543,
+      "sha256": "49b2d848ffcfc7ccc0e013024c3b6896b25692e531e9768c41b5ccc191598785"
+    },
+    {
+      "entry": "records/apple/mac/remote/results/src--compute_provider_native--torch_cpu_program.cc-compile.result.json",
+      "bytes": 27588,
+      "sha256": "bd58c852d9154c9e927fdf5a169505db3c0529669517daa90d3bd8ae32bddfd8"
+    },
+    {
+      "entry": "records/apple/mac/remote/results/src--compute_provider_native--torch_cpu_program.cc-compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/mac/remote/results/src--compute_provider_native--torch_cpu_program.cc-compile.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/mac/remote/results/src--compute_provider_native--torch_cpu_program.cc-identity.json",
+      "bytes": 1686958,
+      "sha256": "246e0ab73798bacfa2b525dcaaadadec257799b1ae47c011b217ac3ae90cf869"
+    },
+    {
+      "entry": "records/apple/mac/remote/results/src--compute_route_apple--apple_mature_float.cc-compile.command.json",
+      "bytes": 37984,
+      "sha256": "4843a7b988c6000311fa6277517e7c615d581056e790184902352f755c56b1a9"
+    },
+    {
+      "entry": "records/apple/mac/remote/results/src--compute_route_apple--apple_mature_float.cc-compile.result.json",
+      "bytes": 38030,
+      "sha256": "33189ed626b6201056ea6f6741b1cb047c6241d386121e257eb8bff939028142"
+    },
+    {
+      "entry": "records/apple/mac/remote/results/src--compute_route_apple--apple_mature_float.cc-compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/mac/remote/results/src--compute_route_apple--apple_mature_float.cc-compile.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/mac/remote/results/src--compute_route_apple--apple_mature_float.cc-identity.json",
+      "bytes": 274534,
+      "sha256": "f7a080903e728e801e029c64265bae74d714340368232ae92a37ad79f9b97003"
+    },
+    {
+      "entry": "records/apple/mac/remote/results/tests--graph_route_apple--grouped_fp8_power2_test.cc-compile.command.json",
+      "bytes": 42947,
+      "sha256": "61d0ca5e5fa99f25e84d8166d913c5212aeb880d1b0c2c581b88805169ddc12f"
+    },
+    {
+      "entry": "records/apple/mac/remote/results/tests--graph_route_apple--grouped_fp8_power2_test.cc-compile.result.json",
+      "bytes": 42993,
+      "sha256": "6739027adbaa2988b7061662447c3930d12c172bdedde2e1fd9e3e8355354c13"
+    },
+    {
+      "entry": "records/apple/mac/remote/results/tests--graph_route_apple--grouped_fp8_power2_test.cc-compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/mac/remote/results/tests--graph_route_apple--grouped_fp8_power2_test.cc-compile.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/mac/remote/results/tests--graph_route_apple--grouped_fp8_power2_test.cc-identity.json",
+      "bytes": 304868,
+      "sha256": "dde1c76afcfb92d8cf1287b337143e4a1388f38401b510456683365d57227c38"
+    },
+    {
+      "entry": "records/apple/mac/remote/results/tests.xml",
+      "bytes": 2021,
+      "sha256": "aa98cae73c4280cfd8051f053c8ae113bf61b0b570ebdd92740530f05be39d8a"
+    },
+    {
+      "entry": "records/apple/mac/remote/results/validation.json",
+      "bytes": 868,
+      "sha256": "c54d267013ecffbb1979b6e0230f2aea79162ccf6be3acaf0a8cfc6041a2169a"
+    },
+    {
+      "entry": "records/apple/mac/remote/runtime-identity.json",
+      "bytes": 262,
+      "sha256": "5f3bc7bf88a958af3a82f4410c63a8d3fc54a4205273f06dcb6af4babdd4e3e5"
+    },
+    {
+      "entry": "records/apple/mac/remote/source-manifest.json",
+      "bytes": 14236,
+      "sha256": "48d2cf21c7648ab0dff6283a7f125fc0190cfd1e41aca823b54b1d5a10bb47c4"
+    },
+    {
+      "entry": "records/apple/mac/source-manifest.json",
+      "bytes": 14678,
+      "sha256": "6784dda5e0e5ce44ab046bc41f18f47eff64f132a0bb71d741955c8d31383596"
+    },
+    {
+      "entry": "records/apple/mac/sync.command.json",
+      "bytes": 1955,
+      "sha256": "af28f20fccc2588fa3b2685f72369e2b0fa491de29198b954396422c401edf40"
+    },
+    {
+      "entry": "records/apple/mac/sync.result.json",
+      "bytes": 19,
+      "sha256": "3bed2591497b89b762fbdeca5fc4da005cc8cb3bdede1fcb6de0d5e2c45f98d3"
+    },
+    {
+      "entry": "records/apple/mac/sync.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/mac/sync.stdout.log",
+      "bytes": 733,
+      "sha256": "d370d1a90c8f44bd17b4eb7137fe596b56b594c1207361b5a459fdd94943bb10"
+    },
+    {
+      "entry": "records/apple/minimal-closure-plan.json",
+      "bytes": 2595,
+      "sha256": "b98afc69108f9960f955bd1cecf8403eb3b293b7f1366bfb22463685eeddf5dc"
+    },
+    {
+      "entry": "records/apple/prepare_mac.py",
+      "bytes": 6207,
+      "sha256": "985c62700d4bf52d52156a2dd0fd9993ffafabfd3fa6dbc2d40f0f486cf46a2d"
+    },
+    {
+      "entry": "records/apple/source-freeze.json",
+      "bytes": 1978,
+      "sha256": "47ae4957c6385642e55c7342464ef295e13a0576fb642c8e8d94f010f9cf8284"
+    },
+    {
+      "entry": "records/before/include/hyle/compute/model_ops.h",
+      "bytes": 73352,
+      "sha256": "de8070c76e074b1c37d022f59ed98b2afef1c10dbced6c24d3c0aa696eafd6e6"
+    },
+    {
+      "entry": "records/before/src/compute_provider_native/torch_cpu_program.cc",
+      "bytes": 42371,
+      "sha256": "9570f9faf0a5c54e3a114912c85784fd1ec2b2205e7c16f6645ca68bec20b281"
+    },
+    {
+      "entry": "records/before/tests/compute_ops/operation_test.cc",
+      "bytes": 89848,
+      "sha256": "fc33354dc916fdcb753810bd5e4945765aada52c925f54835e56ee5ba9f7d760"
+    },
+    {
+      "entry": "records/before/tests/compute_provider_native/torch_cpu_test.cc",
+      "bytes": 27076,
+      "sha256": "7c162e65365e5c71a804b12463877864a0a0a867bf71c19dc0fa5a60c1eaabfa"
+    },
+    {
+      "entry": "records/cpu/checks/attempt1/affected0-deps.json",
+      "bytes": 26993,
+      "sha256": "f26f1aa82f344f22a97559886b3f9a15e2ded3ecb1e3d0d6a8e99fcd5605c259"
+    },
+    {
+      "entry": "records/cpu/checks/attempt1/affected0-identity.json",
+      "bytes": 56655,
+      "sha256": "704bc8d0bf30990b481674e71a4f82c198b2edc5277e53bafc1745bd191cf40e"
+    },
+    {
+      "entry": "records/cpu/checks/attempt1/affected0-plan.json",
+      "bytes": 2529,
+      "sha256": "ef3e3eff4568b50304416c376f8bdab1998bbe4d5c7b45d9d8d5d24bff1a11c1"
+    },
+    {
+      "entry": "records/cpu/checks/attempt1/affected0.command.json",
+      "bytes": 2134,
+      "sha256": "3e0bb5043e9efc35828c4087184a654584092f0dcfcce3a6a05797a25049bdff"
+    },
+    {
+      "entry": "records/cpu/checks/attempt1/affected0.result.json",
+      "bytes": 2205,
+      "sha256": "b1d0ff25f09e60c3b914b20303dd173ee6475cd942de448a3efcb15f36d47bb9"
+    },
+    {
+      "entry": "records/cpu/checks/attempt1/affected0.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/cpu/checks/attempt1/affected0.stdout.log",
+      "bytes": 19,
+      "sha256": "861c17a205abd76d41e264524bfb107900198650ffe05e7984aa5f096b2e1236"
+    },
+    {
+      "entry": "records/cpu/checks/attempt1/image.json",
+      "bytes": 259,
+      "sha256": "c1fa126de08b7794dc0f694cbe43b1f62756dbe32f275d7d5b5bff0e145d861c"
+    },
+    {
+      "entry": "records/cpu/checks/attempt1/link-plan.json",
+      "bytes": 63725,
+      "sha256": "2e0d78ee558b245efdfc384668a22d091d9b2b73d02ce5d17c53c75288728d3e"
+    },
+    {
+      "entry": "records/cpu/checks/attempt1/link.command.json",
+      "bytes": 22313,
+      "sha256": "eb89cde62980c9a68e3add685eb7333c2e0547922ac2903565ead7a923a9b87f"
+    },
+    {
+      "entry": "records/cpu/checks/attempt1/link.result.json",
+      "bytes": 22384,
+      "sha256": "6ec90474323940a3d6927f823ebd89187ce27def5ed4d59617b1d26d4fbe00e7"
+    },
+    {
+      "entry": "records/cpu/checks/attempt1/link.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/cpu/checks/attempt1/link.stdout.log",
+      "bytes": 286,
+      "sha256": "2a6f7e67c994c5b6825d0f6d2b48519d68e88b9f558eb9a66bca611e570b106c"
+    },
+    {
+      "entry": "records/cpu/checks/attempt1/live.json",
+      "bytes": 22384,
+      "sha256": "6ec90474323940a3d6927f823ebd89187ce27def5ed4d59617b1d26d4fbe00e7"
+    },
+    {
+      "entry": "records/cpu/checks/attempt1/old-descriptor-owner-audit.json",
+      "bytes": 1713066,
+      "sha256": "4e557b1e8f6715eeaccf087fe1ba8fb08714e712580b58fde53e42d688b622f9"
+    },
+    {
+      "entry": "records/cpu/checks/attempt1/power-test-deps.json",
+      "bytes": 29796,
+      "sha256": "8fbc33e1edf3bff82e2dab0687ff44c612ef5389a24aeb675a855da35450a3cd"
+    },
+    {
+      "entry": "records/cpu/checks/attempt1/power-test-identity.json",
+      "bytes": 63184,
+      "sha256": "8f45ef6e69ed4e3d3f2076e4d12cc2068177d4a5be6a0984b26b711852a3178f"
+    },
+    {
+      "entry": "records/cpu/checks/attempt1/power-test-plan.json",
+      "bytes": 2589,
+      "sha256": "2a4f09d580e30b466c273ca1c4db989f333142a8bea24e50ad3a7343c97b699b"
+    },
+    {
+      "entry": "records/cpu/checks/attempt1/power-test.command.json",
+      "bytes": 2189,
+      "sha256": "5f6a539119ce98d4e5e122f6fc18cfab173c7aaa4843e0b1f7eea988c1f43b39"
+    },
+    {
+      "entry": "records/cpu/checks/attempt1/power-test.result.json",
+      "bytes": 2259,
+      "sha256": "f275e007c70c3560bd216ac0aab3172035f67b94c1f7e85ec3bcabab4d4e61ef"
+    },
+    {
+      "entry": "records/cpu/checks/attempt1/power-test.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/cpu/checks/attempt1/power-test.stdout.log",
+      "bytes": 28,
+      "sha256": "2f591346447905e645c958530ebebbdac58a32628243b93a7eaa28a7db03da31"
+    },
+    {
+      "entry": "records/cpu/checks/attempt1/reused-torch.json",
+      "bytes": 1009,
+      "sha256": "baf0f0f4ce39526da1cfaeeae90a4a9bf993af24771b6c7f8d1d9c7955c4b222"
+    },
+    {
+      "entry": "records/cpu/checks/attempt1/runtime-environment.json",
+      "bytes": 8168,
+      "sha256": "0d6c2a4b1a37637f38e620d06cdf1c16aa9e603fea74bbb2c4ef57aa8c532b17"
+    },
+    {
+      "entry": "records/cpu/checks/attempt1/summary.json",
+      "bytes": 150,
+      "sha256": "bedb85fd7942d9f3810dbb5733ca5d185ef6ae827ef0b3a4e1b5c847b411e512"
+    },
+    {
+      "entry": "records/cpu/validation/attempt1/image-before.json",
+      "bytes": 259,
+      "sha256": "c1fa126de08b7794dc0f694cbe43b1f62756dbe32f275d7d5b5bff0e145d861c"
+    },
+    {
+      "entry": "records/cpu/validation/attempt1/live.json",
+      "bytes": 639,
+      "sha256": "26a30585e2d4531cb9b6e3c5b082080ad33f56e71f15b2b58d7e4f949a23763a"
+    },
+    {
+      "entry": "records/cpu/validation/attempt1/receipt.json",
+      "bytes": 2261,
+      "sha256": "a8d1ed00bd74a77bfb5c073870c15be6cd73e53651ccfe49c2513b15fc765386"
+    },
+    {
+      "entry": "records/cpu/validation/attempt1/runtime-environment.json",
+      "bytes": 8168,
+      "sha256": "0d6c2a4b1a37637f38e620d06cdf1c16aa9e603fea74bbb2c4ef57aa8c532b17"
+    },
+    {
+      "entry": "records/cpu/validation/attempt1/tests.command.json",
+      "bytes": 568,
+      "sha256": "68ce4f4a8c05c88a1f2a7e228d3a0bb4cefd9c58b1c36d6a1c3a799b49ca0ae6"
+    },
+    {
+      "entry": "records/cpu/validation/attempt1/tests.result.json",
+      "bytes": 639,
+      "sha256": "26a30585e2d4531cb9b6e3c5b082080ad33f56e71f15b2b58d7e4f949a23763a"
+    },
+    {
+      "entry": "records/cpu/validation/attempt1/tests.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/cpu/validation/attempt1/tests.stdout.log",
+      "bytes": 1374,
+      "sha256": "aebf628b2b49e4c0ab847c3a7a680992354dbe6ce7704ec733edc5bc69aa640c"
+    },
+    {
+      "entry": "records/cpu/validation/attempt1/tests.xml",
+      "bytes": 2015,
+      "sha256": "6df9ab1ee6fd56dffe4fff31dceb8bef336a0346fd20c33d8ce824215218545a"
+    },
+    {
+      "entry": "records/cuda/after/src/compute_provider_cuda/cuda_provider.cc",
+      "bytes": 21752,
+      "sha256": "9f333dacfe1d57d6df5ccd380df10133985878b3c882453b99a6f683ce5a7845"
+    },
+    {
+      "entry": "records/cuda/after/src/compute_provider_cuda/grouped_fp8_provider.cc",
+      "bytes": 15248,
+      "sha256": "e72b9fe5632688384c1b38ffccfbc81ade9d245177141a084974e714c626763e"
+    },
+    {
+      "entry": "records/cuda/after/tests/graph_route_cuda/CMakeLists.txt",
+      "bytes": 2578,
+      "sha256": "7f0376322f4fc0154424c5b940727dafbd45a61a5749df0e4678c9ff9a42d7ee"
+    },
+    {
+      "entry": "records/cuda/after/tests/graph_route_cuda/grouped_fp8_power2_test.cc",
+      "bytes": 3420,
+      "sha256": "270ff0b89289264b4f4ed968ed1d73be7709457144f9e90253c9f2422cbdb559"
+    },
+    {
+      "entry": "records/cuda/before.json",
+      "bytes": 426,
+      "sha256": "b8cbacbc294b3dd2680910bd8c4fccd672ea0e10b5c193d7a7bbad65a80d71a2"
+    },
+    {
+      "entry": "records/cuda/before/src/compute_provider_cuda/cuda_provider.cc",
+      "bytes": 21752,
+      "sha256": "9f333dacfe1d57d6df5ccd380df10133985878b3c882453b99a6f683ce5a7845"
+    },
+    {
+      "entry": "records/cuda/before/src/compute_provider_cuda/grouped_fp8_provider.cc",
+      "bytes": 14436,
+      "sha256": "45a5bfd478dfaa4fc4a56304ec058721700154f5851900ed9205d29d0e3de30c"
+    },
+    {
+      "entry": "records/cuda/before/tests/graph_route_cuda/CMakeLists.txt",
+      "bytes": 2551,
+      "sha256": "8a874a82e91a8e6dc972387fc60c2e480ac4fc66647added615edccbd1038e34"
+    },
+    {
+      "entry": "records/cuda/build.py",
+      "bytes": 6573,
+      "sha256": "2e4d601ebdff17a1a1546c7ee2f1faf9cda8908f43bb03099eaff9c246679034"
+    },
+    {
+      "entry": "records/cuda/checks/cuda-provider/attempt1/compile-command.json",
+      "bytes": 3227,
+      "sha256": "937e613962e48319b16583d49fd096f200280d87a394aff73cf6d0b5da534608"
+    },
+    {
+      "entry": "records/cuda/checks/cuda-provider/attempt1/compile-result.json",
+      "bytes": 3275,
+      "sha256": "cd68ae394225fbda9ca45f6ee819207e67386af6956b3ccd07aa6c2fdbfc5d86"
+    },
+    {
+      "entry": "records/cuda/checks/cuda-provider/attempt1/identity.json",
+      "bytes": 48856,
+      "sha256": "4d03b1a8c10ebd84146821f15526e34d277bd7219bfdc1472facc0af3eaf6fe5"
+    },
+    {
+      "entry": "records/cuda/checks/cuda-provider/attempt1/source-dependencies.json",
+      "bytes": 21953,
+      "sha256": "6dfa16724522e8094d82837db3e13a90592c0efc5008d55c23951d1960bd8822"
+    },
+    {
+      "entry": "records/cuda/checks/cuda-provider/attempt1/source.cc",
+      "bytes": 21752,
+      "sha256": "9f333dacfe1d57d6df5ccd380df10133985878b3c882453b99a6f683ce5a7845"
+    },
+    {
+      "entry": "records/cuda/checks/cuda-provider/attempt1/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/cuda/checks/cuda-provider/attempt1/stdout.log",
+      "bytes": 18,
+      "sha256": "f6fdd3811bcd90b4b12e0d5c425476b4ba8907e2020b5cc8841c61b349e67ec2"
+    },
+    {
+      "entry": "records/cuda/checks/grouped-provider/attempt1/compile-command.json",
+      "bytes": 3073,
+      "sha256": "2e1fffea755ca0741de16a0310f0aa7dcb6e458f2f391de37fe6250a3e4cdcb6"
+    },
+    {
+      "entry": "records/cuda/checks/grouped-provider/attempt1/compile-result.json",
+      "bytes": 3121,
+      "sha256": "a50cdb9497341806bc30a4f36907763df2ce270afa4d69661ad78b3e41e470b7"
+    },
+    {
+      "entry": "records/cuda/checks/grouped-provider/attempt1/identity.json",
+      "bytes": 45071,
+      "sha256": "1c1d6fa3f6aee0a03c18601553bf94fb981f9b0bfe2036259df3187467e454fb"
+    },
+    {
+      "entry": "records/cuda/checks/grouped-provider/attempt1/source-dependencies.json",
+      "bytes": 20325,
+      "sha256": "2fe85f65751860c24cf8569172c86748a8a4f9f91374a14737599042d2a4a170"
+    },
+    {
+      "entry": "records/cuda/checks/grouped-provider/attempt1/source.cc",
+      "bytes": 15248,
+      "sha256": "e72b9fe5632688384c1b38ffccfbc81ade9d245177141a084974e714c626763e"
+    },
+    {
+      "entry": "records/cuda/checks/grouped-provider/attempt1/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/cuda/checks/grouped-provider/attempt1/stdout.log",
+      "bytes": 25,
+      "sha256": "a4a14504b537867cd07645d4d0c719b3786609fbc0c3541ccb51adc22558ed15"
+    },
+    {
+      "entry": "records/cuda/checks/grouped-test/attempt1/compile-command.json",
+      "bytes": 5253,
+      "sha256": "323bd429f7f814c29ceaf349d6312bf3888e2c070d163447775f63bef1462027"
+    },
+    {
+      "entry": "records/cuda/checks/grouped-test/attempt1/compile-result.json",
+      "bytes": 5302,
+      "sha256": "aa85c22d28498107c9bc122620b329244bcb55a5d4747384b43a21157d32bc5b"
+    },
+    {
+      "entry": "records/cuda/checks/grouped-test/attempt1/identity.json",
+      "bytes": 68092,
+      "sha256": "79f1ccbc8d2fee567d7fdd1b03cdc2af91272d0afab408dec0efcb246103e033"
+    },
+    {
+      "entry": "records/cuda/checks/grouped-test/attempt1/source-dependencies.json",
+      "bytes": 31166,
+      "sha256": "bc531d945780a57c0e67a2769438f3566fe64ee3ff2c461836f036cbd02e1e04"
+    },
+    {
+      "entry": "records/cuda/checks/grouped-test/attempt1/source.cc",
+      "bytes": 19587,
+      "sha256": "2525d7bd6008ccdf0357488d0ffc72f1274c0ced4f21af6e02481aae327cfdcb"
+    },
+    {
+      "entry": "records/cuda/checks/grouped-test/attempt1/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/cuda/checks/grouped-test/attempt1/stdout.log",
+      "bytes": 21,
+      "sha256": "968bb6877c471ade411bd38050644b25e61dc34362ae03c033418409914cb7fd"
+    },
+    {
+      "entry": "records/cuda/checks/new-wrapper/attempt1/compile-command.json",
+      "bytes": 4232,
+      "sha256": "be627bf1321ed6702498160cb14e828129b129380e9aea7047465b111efa8a7e"
+    },
+    {
+      "entry": "records/cuda/checks/new-wrapper/attempt1/compile-result.json",
+      "bytes": 4280,
+      "sha256": "1618ab8d186f1c861efd5fdb6f871f62c2774a6e7d1e04906b8676af1904cc5b"
+    },
+    {
+      "entry": "records/cuda/checks/new-wrapper/attempt1/compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/cuda/checks/new-wrapper/attempt1/compile.stdout.log",
+      "bytes": 28,
+      "sha256": "2f591346447905e645c958530ebebbdac58a32628243b93a7eaa28a7db03da31"
+    },
+    {
+      "entry": "records/cuda/checks/new-wrapper/attempt1/identity.json",
+      "bytes": 67066,
+      "sha256": "5ea0063eae0df92cdcfad0fb1947cda16442f01bb8c9b6f56eadce7b272a7549"
+    },
+    {
+      "entry": "records/cuda/checks/new-wrapper/attempt1/link-command.json",
+      "bytes": 27276,
+      "sha256": "cceae12e1b5f88081f0833e9487df619856cadc0fadfa44a5c5ffa87dd4959bd"
+    },
+    {
+      "entry": "records/cuda/checks/new-wrapper/attempt1/link-plan.json",
+      "bytes": 81949,
+      "sha256": "d10dcc92f4bf5800f6fe00807ef60902ee927e29b91d2787ea4d12a8fd0bd42a"
+    },
+    {
+      "entry": "records/cuda/checks/new-wrapper/attempt1/link-result.json",
+      "bytes": 27324,
+      "sha256": "83924928f59df56f9fd89398d44e2485e7eea83fa1445b8357ce3318f81e72f0"
+    },
+    {
+      "entry": "records/cuda/checks/new-wrapper/attempt1/link.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/cuda/checks/new-wrapper/attempt1/link.stdout.log",
+      "bytes": 314,
+      "sha256": "7e406cb004fc7c301e4c6eb7790a1c0aebd696adeeeab0428a6aa82c452899c6"
+    },
+    {
+      "entry": "records/cuda/checks/new-wrapper/attempt1/new-owner-command-origin.json",
+      "bytes": 989,
+      "sha256": "254a3e3050f8bff4405f4139846e6377f7170479e4d949a63c1f007c0e411782"
+    },
+    {
+      "entry": "records/cuda/checks/new-wrapper/attempt1/source-dependencies.json",
+      "bytes": 31161,
+      "sha256": "4db1172bd5786a24ec3074ece30f8d19a0ae6cb2914e6fefa869bbe7ea19f9d9"
+    },
+    {
+      "entry": "records/cuda/checks/new-wrapper/attempt1/summary.json",
+      "bytes": 1070,
+      "sha256": "5a3232397d624940740ecdae95c6d583df0c9628fe55efee39e41166624ed65d"
+    },
+    {
+      "entry": "records/cuda/checks/new-wrapper/attempt2/compile-command.json",
+      "bytes": 4232,
+      "sha256": "36f65c471daf2d3a43263b55edc86ec3078d348bbac670d55c432674ad775cd1"
+    },
+    {
+      "entry": "records/cuda/checks/new-wrapper/attempt2/compile-result.json",
+      "bytes": 4281,
+      "sha256": "de5cd841bb186efcee9b6d2ce7f3fca667773723e10162bb3a8e0af2d07f6f09"
+    },
+    {
+      "entry": "records/cuda/checks/new-wrapper/attempt2/compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/cuda/checks/new-wrapper/attempt2/compile.stdout.log",
+      "bytes": 28,
+      "sha256": "2f591346447905e645c958530ebebbdac58a32628243b93a7eaa28a7db03da31"
+    },
+    {
+      "entry": "records/cuda/checks/new-wrapper/attempt2/identity.json",
+      "bytes": 67066,
+      "sha256": "e17e52b1fba599dd3bd0dd8f13b6c08d8caab41e1e643f3939d937ef4a725763"
+    },
+    {
+      "entry": "records/cuda/checks/new-wrapper/attempt2/link-command.json",
+      "bytes": 27276,
+      "sha256": "6558480b9470a50eff804d167c56225b5ebd550ffb2621110c9aade678c86406"
+    },
+    {
+      "entry": "records/cuda/checks/new-wrapper/attempt2/link-plan.json",
+      "bytes": 81949,
+      "sha256": "00d70032c4cdc3c6a6c2d38dc77b856b0621fa0ec7012fbfe88c35564f4a8843"
+    },
+    {
+      "entry": "records/cuda/checks/new-wrapper/attempt2/link-result.json",
+      "bytes": 27324,
+      "sha256": "7da5e14bc6d91b22fb06aa0598fb2e35c2d29f98e027ce1b4859715ee2af1e59"
+    },
+    {
+      "entry": "records/cuda/checks/new-wrapper/attempt2/link.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/cuda/checks/new-wrapper/attempt2/link.stdout.log",
+      "bytes": 314,
+      "sha256": "480387ca5ca1386dd174d7c815ec00eb8f1b4d68fa9a0632a515e10442bdafee"
+    },
+    {
+      "entry": "records/cuda/checks/new-wrapper/attempt2/new-owner-command-origin.json",
+      "bytes": 989,
+      "sha256": "254a3e3050f8bff4405f4139846e6377f7170479e4d949a63c1f007c0e411782"
+    },
+    {
+      "entry": "records/cuda/checks/new-wrapper/attempt2/source-dependencies.json",
+      "bytes": 31161,
+      "sha256": "4db1172bd5786a24ec3074ece30f8d19a0ae6cb2914e6fefa869bbe7ea19f9d9"
+    },
+    {
+      "entry": "records/cuda/checks/new-wrapper/attempt2/summary.json",
+      "bytes": 1113,
+      "sha256": "b96db9b00050c033f6e16e3dad988ee09c987668ce612363f910d9438e09174f"
+    },
+    {
+      "entry": "records/cuda/checks/new-wrapper/attempt3/compile-command.json",
+      "bytes": 4232,
+      "sha256": "df0cda07727133f2572572904ec9c63912f863b9831112f8f2a7c17d514ba7b3"
+    },
+    {
+      "entry": "records/cuda/checks/new-wrapper/attempt3/compile-result.json",
+      "bytes": 4281,
+      "sha256": "460e10f739440c496711eabfd9b5e3af913d4634f54827d4a4efd1d5c8208171"
+    },
+    {
+      "entry": "records/cuda/checks/new-wrapper/attempt3/compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/cuda/checks/new-wrapper/attempt3/compile.stdout.log",
+      "bytes": 28,
+      "sha256": "2f591346447905e645c958530ebebbdac58a32628243b93a7eaa28a7db03da31"
+    },
+    {
+      "entry": "records/cuda/checks/new-wrapper/attempt3/identity.json",
+      "bytes": 67504,
+      "sha256": "37cabbc35751f926f883a168e47be9fd3e9fede8d9579fd6445fe0c8034d04dc"
+    },
+    {
+      "entry": "records/cuda/checks/new-wrapper/attempt3/link-command.json",
+      "bytes": 27276,
+      "sha256": "34d138644ea5447e99605b02f3333cc88a4ba1020a8ede37a03b5234a779029c"
+    },
+    {
+      "entry": "records/cuda/checks/new-wrapper/attempt3/link-plan.json",
+      "bytes": 81949,
+      "sha256": "e50de7ae174b4d26bb917adc718deab77f8ce97bcb54ed4e5dc52f382f6887bc"
+    },
+    {
+      "entry": "records/cuda/checks/new-wrapper/attempt3/link-result.json",
+      "bytes": 27325,
+      "sha256": "9639f101cfefe9ed30ca2f953d0fd6c4955430e42b1c79718d81afa9f10a25d8"
+    },
+    {
+      "entry": "records/cuda/checks/new-wrapper/attempt3/link.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/cuda/checks/new-wrapper/attempt3/link.stdout.log",
+      "bytes": 314,
+      "sha256": "2bf7d2b09d14069159fe380831d099af08e7a8ef18f5c265b24df75e308faf1e"
+    },
+    {
+      "entry": "records/cuda/checks/new-wrapper/attempt3/new-owner-command-origin.json",
+      "bytes": 989,
+      "sha256": "0c37632af029960d7934c10b2aeeb9094143210b72943a0a154e6776df84bd28"
+    },
+    {
+      "entry": "records/cuda/checks/new-wrapper/attempt3/source-dependencies.json",
+      "bytes": 31354,
+      "sha256": "e8190f6e8b117543a92eecb87f2ae676eeb92ebd87ae888e362335f9755ec174"
+    },
+    {
+      "entry": "records/cuda/checks/new-wrapper/attempt3/summary.json",
+      "bytes": 1113,
+      "sha256": "f87f6ea601add4b5d88d875d31df3a69d5e607b032d441d0271f74bd3febd6a0"
+    },
+    {
+      "entry": "records/cuda/checks/old-tests-summary.json",
+      "bytes": 1328,
+      "sha256": "daa9f114a841526738e64b851f9857a12e8df20eefb25ae58eec7acd80e3d7fa"
+    },
+    {
+      "entry": "records/cuda/checks/products-summary.json",
+      "bytes": 1348,
+      "sha256": "7dc09b5ffa142755091bd0eb301b2afea78e1300bc7999ad73a8fef4579a97f3"
+    },
+    {
+      "entry": "records/cuda/checks/scale-test/attempt1/compile-command.json",
+      "bytes": 5297,
+      "sha256": "72dcc80cfe272bfca7367520d7f7ce7c3689ac51ea669315a0c5940d1c1bc4d9"
+    },
+    {
+      "entry": "records/cuda/checks/scale-test/attempt1/compile-result.json",
+      "bytes": 5346,
+      "sha256": "326da480201cb0f7b22493a9045297e4d3bf5951b65edea3587ef21682fef614"
+    },
+    {
+      "entry": "records/cuda/checks/scale-test/attempt1/identity.json",
+      "bytes": 65223,
+      "sha256": "f048ca852bc61ae7702c4dd01e2732046c2b9630f29fcd39bb36f3e7f311d7d1"
+    },
+    {
+      "entry": "records/cuda/checks/scale-test/attempt1/source-dependencies.json",
+      "bytes": 29976,
+      "sha256": "d781adc8bfa819c0bb0f92b985140da6535451c661fc927f43d1c4b9fae63e95"
+    },
+    {
+      "entry": "records/cuda/checks/scale-test/attempt1/source.cc",
+      "bytes": 6528,
+      "sha256": "2111bfc7e5d93c9a23c0e8e52b04fbc69eb8b13cf8f52ba2cd0df852df3b6287"
+    },
+    {
+      "entry": "records/cuda/checks/scale-test/attempt1/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/cuda/checks/scale-test/attempt1/stdout.log",
+      "bytes": 9,
+      "sha256": "3a8fa41d266c392e141829f3bc86de689ee9025a9da5c81c4552aa9f3ff25bfa"
+    },
+    {
+      "entry": "records/cuda/design.json",
+      "bytes": 1290,
+      "sha256": "d4b80b9f10e8c0108e3bfa9298ab505a817d59f19ab4624c4f5b66067f188de2"
+    },
+    {
+      "entry": "records/cuda/final-source-freeze.json",
+      "bytes": 2997,
+      "sha256": "2ee4ff225452031fb47367e91a3f5c7e8fefa1ddd6f07298c8b38b8a0e803b67"
+    },
+    {
+      "entry": "records/cuda/final-validation.json",
+      "bytes": 7140,
+      "sha256": "9289a99d2086d6ae377c855ed90635c7dab8ee93aa42524897a55e20b1a9e4dc"
+    },
+    {
+      "entry": "records/cuda/finish.py",
+      "bytes": 8374,
+      "sha256": "9ec370c1ca46e64345c629b0ba05d6595d1fd608ee2d5cb277078ac18c440c49"
+    },
+    {
+      "entry": "records/cuda/fixture-source-review.json",
+      "bytes": 3951,
+      "sha256": "7cbb3531992d3b1729e4847438b2f5993214cbc8f9489849d301e7b6aeb1b374"
+    },
+    {
+      "entry": "records/cuda/implementation.diff",
+      "bytes": 3927,
+      "sha256": "ee170b11bdf149d82bf26c8005d3c68ae6708f67541e432bfa049b8740190841"
+    },
+    {
+      "entry": "records/cuda/owner-inventory.json",
+      "bytes": 5017,
+      "sha256": "db01eae21630957d3d23934204dc38d017fd40f17e4d9ad277f0184e96f5e458"
+    },
+    {
+      "entry": "records/cuda/prepare.py",
+      "bytes": 6036,
+      "sha256": "d1bd93903941978da08f78f1f4f106fc8af7ffd0e5fcf9ff717648a8fd69f74a"
+    },
+    {
+      "entry": "records/cuda/revisions/f32-power-boundary/final-source-freeze.json",
+      "bytes": 2997,
+      "sha256": "f518ad8c5c2ebf16e8524f519cd2fbf463614858c53e05310a4ad51f241fd7a4"
+    },
+    {
+      "entry": "records/cuda/revisions/f32-power-boundary/finish.py",
+      "bytes": 8338,
+      "sha256": "bd33abc063b9ee778ff030faa0f299cadedd49ef6f1c81501d9997208d1f79e9"
+    },
+    {
+      "entry": "records/cuda/revisions/f32-power-boundary/grouped_fp8_power2_test.cc",
+      "bytes": 2090,
+      "sha256": "9a726a5d392ce915312e7358922287822c7cc248d4902f5dcbf403b01ad45862"
+    },
+    {
+      "entry": "records/cuda/revisions/f32-power-boundary/source-audit.json",
+      "bytes": 4026,
+      "sha256": "f24d6658a4908e41d4b2d3833c339eb63ac47de5de3d606eb10cc392f9c9a319"
+    },
+    {
+      "entry": "records/cuda/revisions/factory-resources/before-final-source-freeze.json",
+      "bytes": 2997,
+      "sha256": "7984c62f7cb0b4936df03f9a4e4eb29d027d9729e207151a5da55239d0dcb895"
+    },
+    {
+      "entry": "records/cuda/revisions/factory-resources/before-finish.py",
+      "bytes": 8338,
+      "sha256": "bd33abc063b9ee778ff030faa0f299cadedd49ef6f1c81501d9997208d1f79e9"
+    },
+    {
+      "entry": "records/cuda/revisions/factory-resources/before-fixture-source-review.json",
+      "bytes": 3486,
+      "sha256": "bc1d2cfaf547bae60c9f403b00b86dfb8412ad5b3c3060d26961f111e8cb5527"
+    },
+    {
+      "entry": "records/cuda/revisions/factory-resources/change.json",
+      "bytes": 510,
+      "sha256": "66ae88eca0cd8e1965afdbb113401b781f3a4214f92dd7e7eebd7f0440c43560"
+    },
+    {
+      "entry": "records/cuda/revisions/factory-resources/fixture-after.h",
+      "bytes": 14266,
+      "sha256": "81d863ce324a4f42f8046bae3fb3d2e17dc6d7870558a7ae8c3347c7de46e0e2"
+    },
+    {
+      "entry": "records/cuda/revisions/factory-resources/fixture-before.h",
+      "bytes": 14134,
+      "sha256": "fc8b71d58565ff7ae6caaa9a967a4683f2f0e59c637be8b0331e33b7ad7e27e3"
+    },
+    {
+      "entry": "records/cuda/source-audit.json",
+      "bytes": 4443,
+      "sha256": "ef246f49aed778a9ec7e0b9ae7bdc9f00c9fc4b907b4e9f88611aa54f30bbed3"
+    },
+    {
+      "entry": "records/cuda/source-freeze.json",
+      "bytes": 1915,
+      "sha256": "8929068597e35b6f95a69b8a5f3b456d2f1ea1e3da22865bfb0fccd31165035b"
+    },
+    {
+      "entry": "records/cuda/validation/attempt1/image-before.json",
+      "bytes": 275,
+      "sha256": "bc3fd7ce59a9a480e86e2552088f40e22e8b50dd3b251ca566e63ec3731b72cb"
+    },
+    {
+      "entry": "records/cuda/validation/attempt1/live.json",
+      "bytes": 730,
+      "sha256": "c5a03742804c000694cfdca2e099e5526a365ce84e033d9ace4c5b8e84a6a6a2"
+    },
+    {
+      "entry": "records/cuda/validation/attempt1/receipt.json",
+      "bytes": 4967,
+      "sha256": "d5231cd8a9c1c2eaa98511c94ca91e6bb4e16fae1e3718be449f1d8d46925685"
+    },
+    {
+      "entry": "records/cuda/validation/attempt1/runtime-environment.json",
+      "bytes": 6546,
+      "sha256": "03641062d6490cedf2c812c5d526dbe08275e31bab4769f50853930ee4cf5ed5"
+    },
+    {
+      "entry": "records/cuda/validation/attempt1/tests.command.json",
+      "bytes": 660,
+      "sha256": "6438c0851e3bf8cf46309244112d7b9a72f3128a2c607926c7f22006fd9335a7"
+    },
+    {
+      "entry": "records/cuda/validation/attempt1/tests.result.json",
+      "bytes": 730,
+      "sha256": "c5a03742804c000694cfdca2e099e5526a365ce84e033d9ace4c5b8e84a6a6a2"
+    },
+    {
+      "entry": "records/cuda/validation/attempt1/tests.stderr.log",
+      "bytes": 151,
+      "sha256": "88dd5e35d67fb5c0c371390a98a66a5e061e4c0bef2d890a7b74781363216092"
+    },
+    {
+      "entry": "records/cuda/validation/attempt1/tests.stdout.log",
+      "bytes": 2915,
+      "sha256": "fbd4d34b17e23583a657679ae96c66e72f3e1a106ebfdc4d4fed62339f6c53e8"
+    },
+    {
+      "entry": "records/cuda/validation/attempt1/tests.xml",
+      "bytes": 4942,
+      "sha256": "0b718501163e491285ad0a9738606b557ba0b913b57903078dbf6a1576b3d43e"
+    },
+    {
+      "entry": "records/cuda/validation/attempt2/image-before.json",
+      "bytes": 275,
+      "sha256": "48d57a19879e0123c6316a16e94050587910021d90b0bd0f4439320c5865bdef"
+    },
+    {
+      "entry": "records/cuda/validation/attempt2/live.json",
+      "bytes": 593,
+      "sha256": "82180be6872f050fe54eaf0e34d49b7a2d8949ab779581f42869445d6b123f82"
+    },
+    {
+      "entry": "records/cuda/validation/attempt2/receipt.json",
+      "bytes": 1788,
+      "sha256": "0e0b7afce3d71bd4c7bcb9e84ab8ba912ec0fa1bad45adb34a9a861109494b64"
+    },
+    {
+      "entry": "records/cuda/validation/attempt2/runtime-environment.json",
+      "bytes": 6546,
+      "sha256": "03641062d6490cedf2c812c5d526dbe08275e31bab4769f50853930ee4cf5ed5"
+    },
+    {
+      "entry": "records/cuda/validation/attempt2/tests.command.json",
+      "bytes": 522,
+      "sha256": "bc667f281a848a2c4d6d7dd2cd53a427d86e9e3537aec22d16b06fb86858672c"
+    },
+    {
+      "entry": "records/cuda/validation/attempt2/tests.result.json",
+      "bytes": 593,
+      "sha256": "82180be6872f050fe54eaf0e34d49b7a2d8949ab779581f42869445d6b123f82"
+    },
+    {
+      "entry": "records/cuda/validation/attempt2/tests.stderr.log",
+      "bytes": 151,
+      "sha256": "88dd5e35d67fb5c0c371390a98a66a5e061e4c0bef2d890a7b74781363216092"
+    },
+    {
+      "entry": "records/cuda/validation/attempt2/tests.stdout.log",
+      "bytes": 926,
+      "sha256": "d23f9175db38509c7674016ae2cc93c25e61a2f5c0f95e234bc67e592e76f8a5"
+    },
+    {
+      "entry": "records/cuda/validation/attempt2/tests.xml",
+      "bytes": 1226,
+      "sha256": "4b53ab124835449390f70032eb1a903c443f235da57e8ff4b4f83ba56d8d0d3e"
+    },
+    {
+      "entry": "records/cuda/validation/attempt3/image-before.json",
+      "bytes": 275,
+      "sha256": "ea89752873a8e45c507841893b487e278856e11f466fe16262458a4b474e5311"
+    },
+    {
+      "entry": "records/cuda/validation/attempt3/live.json",
+      "bytes": 637,
+      "sha256": "83eda5cf35050e108bbe68e0f194a6570e29b8c214ff4e8777e5317e48c4b67e"
+    },
+    {
+      "entry": "records/cuda/validation/attempt3/receipt.json",
+      "bytes": 1420,
+      "sha256": "c03e5de32818ed4cf40d819c99ead7dda9c7219bf6a5da08d28a4aad757b4533"
+    },
+    {
+      "entry": "records/cuda/validation/attempt3/runtime-environment.json",
+      "bytes": 6546,
+      "sha256": "03641062d6490cedf2c812c5d526dbe08275e31bab4769f50853930ee4cf5ed5"
+    },
+    {
+      "entry": "records/cuda/validation/attempt3/tests.command.json",
+      "bytes": 568,
+      "sha256": "253bfbe7768cb56f365b043c0171eb35f4cfcf3a09161ac52ce2dae8ab02ef6a"
+    },
+    {
+      "entry": "records/cuda/validation/attempt3/tests.result.json",
+      "bytes": 637,
+      "sha256": "83eda5cf35050e108bbe68e0f194a6570e29b8c214ff4e8777e5317e48c4b67e"
+    },
+    {
+      "entry": "records/cuda/validation/attempt3/tests.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/cuda/validation/attempt3/tests.stdout.log",
+      "bytes": 772,
+      "sha256": "1aae7f9f6b9f51f7bafe9af0f1ee89bd76ff51e2c0a3c5c2ed8a6875c31dafa3"
+    },
+    {
+      "entry": "records/cuda/validation/attempt3/tests.xml",
+      "bytes": 757,
+      "sha256": "2b8c095ca8dfc0128652b05b148a28e02a7426e33a2de5ed6249501a8fa182f8"
+    },
+    {
+      "entry": "records/cuda/wrapper-and-cmake.diff",
+      "bytes": 1262,
+      "sha256": "18aa05210ff972f7e7a07742c62a46697ab958209e3e80cc173e3b868005a3ae"
+    },
+    {
+      "entry": "records/none-scale-review/final-source-review.json",
+      "bytes": 3211,
+      "sha256": "016bf8303067d1cf4f0d3ca0c295bd755ae9150276c388934cb657eed9003527"
+    },
+    {
+      "entry": "records/none-scale-review/fraction-review.json",
+      "bytes": 9182,
+      "sha256": "cb48f1e419e49605c966808d78c68e2fa04d14c5fc29c376ea05e67e156f1ff6"
+    },
+    {
+      "entry": "records/none-scale-review/scalar_review.py",
+      "bytes": 4993,
+      "sha256": "2dfd976b635d00021914037e4e4fe269e4517149bfa3c30e847123e5fcf1349b"
+    },
+    {
+      "entry": "records/root/before.json",
+      "bytes": 607,
+      "sha256": "925da57e9103ab98a22d69c5cb59c2174e3814037c8fa25ad01985b039130eab"
+    },
+    {
+      "entry": "records/root/build_cpu.py",
+      "bytes": 5300,
+      "sha256": "8aafbc5e9f062418aa6ce830128a0117b1332f0873b006ec21a8e7f581b6ca24"
+    },
+    {
+      "entry": "records/root/create_cleanup.py",
+      "bytes": 871,
+      "sha256": "74da02c091426a8113f23633df4cd7ba8e72e5c65bf05a2b55ca74c39d03ea67"
+    },
+    {
+      "entry": "records/root/independent-final-review.json",
+      "bytes": 5342,
+      "sha256": "bbee2d1a8b3e9abb024b9b54dd2c297c1013223a2515b72d6c6ac4014bcd37a3"
+    },
+    {
+      "entry": "records/root/model-quantizations-before.json",
+      "bytes": 498128,
+      "sha256": "13733f0137e846cb683e6f4c66fa4b4649e4f2d9dcabb48fadde69bf3c7722af"
+    },
+    {
+      "entry": "records/root/package.py",
+      "bytes": 7589,
+      "sha256": "32d0696bdfbfbc57e636fd5e06bc1fcf7c008ce3ea0c022ff37996f3a2513db3"
+    },
+    {
+      "entry": "records/root/prepare_cleanup.py",
+      "bytes": 5455,
+      "sha256": "e406852980bbe9f7f7eb7209f99557d016b0e2620f0f0eb2640f555789236710"
+    },
+    {
+      "entry": "records/root/run_windows.py",
+      "bytes": 1993,
+      "sha256": "433cfbdbc3bdac043d2a35ad9a75dee4ce7b6e1065a739dbb4cd994ea3f7a9a4"
+    },
+    {
+      "entry": "records/root/update_catalog.py",
+      "bytes": 3801,
+      "sha256": "a57a9f130edd5f26c1c49d7e596a4dda085f129a2325afbb80323aeaadbccae1"
+    },
+    {
+      "entry": "records/vulkan/after/cmake/HyleDependencyLock.json",
+      "bytes": 77554,
+      "sha256": "ba4f6de10ecaa4a89f48fa9429ca5879748dbf5f599c623db261143f64536a90"
+    },
+    {
+      "entry": "records/vulkan/after/src/compute_provider_iree_vulkan/native_program.cc",
+      "bytes": 55702,
+      "sha256": "f22ffc75ae7b1bb2ac3668a811f1b62323937265944b485e8465f3da76735fd3"
+    },
+    {
+      "entry": "records/vulkan/after/src/compute_provider_iree_vulkan/native_program.h",
+      "bytes": 7881,
+      "sha256": "22fbcc99f57a7d86ae10d9d1c9494fac3a63e7106b1c8b7d21b61cb863007565"
+    },
+    {
+      "entry": "records/vulkan/after/src/compute_route_vulkan/vulkan_iree.cc",
+      "bytes": 31057,
+      "sha256": "cccf570d016409f412d58423f3f7943d689071ce96417efadfdb47a9ccbf9888"
+    },
+    {
+      "entry": "records/vulkan/after/src/compute_route_vulkan/vulkan_official.cc",
+      "bytes": 10297,
+      "sha256": "a5a432eaa55db2cec8f6225a1ce2223822422a50b92c5ca9c0ca31da5b0f68f6"
+    },
+    {
+      "entry": "records/vulkan/after/src/compute_route_vulkan/vulkan_program.cc",
+      "bytes": 55681,
+      "sha256": "06e9ec34669f36c20575f67bc2242ca28dee143dc3a282941c2ccf50b9bdda92"
+    },
+    {
+      "entry": "records/vulkan/after/tests/graph_route_vulkan/CMakeLists.txt",
+      "bytes": 5783,
+      "sha256": "bcf18d4a66a8b90eada5967b347f6120bbfa956209154f687f09dc65594f8b97"
+    },
+    {
+      "entry": "records/vulkan/after/tests/graph_route_vulkan/grouped_fp8_power2_test.cc",
+      "bytes": 4241,
+      "sha256": "5a1465dbfdcca397b542ce13b4d320e4d03a795d3c034a7aba139e0484c1e738"
+    },
+    {
+      "entry": "records/vulkan/after/third_party/iree_vulkan_runtime/programs/compilation.json",
+      "bytes": 77029,
+      "sha256": "d50a672166289aacb915ff87b0c254d1ca6985434262c6a071e827df94859bd8"
+    },
+    {
+      "entry": "records/vulkan/after/third_party/iree_vulkan_runtime/programs/compile_official.py",
+      "bytes": 4202,
+      "sha256": "e922d5ea8b47d59bd80613de2a7873e1d7e13c59052c22614f8978953a3dd811"
+    },
+    {
+      "entry": "records/vulkan/after/third_party/iree_vulkan_runtime/programs/generate_official.py",
+      "bytes": 30341,
+      "sha256": "bfec7fe696d4d3b3d22386c48350d23c6de6b8cba6687ec8b097221a2e00fc65"
+    },
+    {
+      "entry": "records/vulkan/after/third_party/iree_vulkan_runtime/programs/manifest.json",
+      "bytes": 7447,
+      "sha256": "59b525acbf33447f0999770292e89779190af0db511a8fa6690c4231210b178f"
+    },
+    {
+      "entry": "records/vulkan/after/third_party/iree_vulkan_runtime/programs/official.mlir",
+      "bytes": 57537,
+      "sha256": "2282272791fafc299828cdb998227dae53a55e84f5964e1ed3607080c8cd1c95"
+    },
+    {
+      "entry": "records/vulkan/after/third_party/iree_vulkan_runtime/programs/official.vmfb.b64",
+      "bytes": 209007,
+      "sha256": "540f7e1a7f097c54080779af41db6f4108dbab6d05179be9ae97d828af010c93"
+    },
+    {
+      "entry": "records/vulkan/before/cmake/HyleDependencyLock.json",
+      "bytes": 77554,
+      "sha256": "d07cb17124179a0b51cba712cc01530de8c5e15b084efdf9949402ef117f7c6b"
+    },
+    {
+      "entry": "records/vulkan/before/src/compute_provider_iree_vulkan/native_program.cc",
+      "bytes": 55561,
+      "sha256": "cfb589afa02124f0c9753986502f66a46964ad4646b5f94ee46962660a515a0e"
+    },
+    {
+      "entry": "records/vulkan/before/src/compute_provider_iree_vulkan/native_program.h",
+      "bytes": 7734,
+      "sha256": "a957a6ba7fef8a2de5e40a5f8ff6e9330dddeafa62ac698dfa544f2f96685207"
+    },
+    {
+      "entry": "records/vulkan/before/src/compute_route_vulkan/vulkan_iree.cc",
+      "bytes": 31057,
+      "sha256": "cccf570d016409f412d58423f3f7943d689071ce96417efadfdb47a9ccbf9888"
+    },
+    {
+      "entry": "records/vulkan/before/src/compute_route_vulkan/vulkan_official.cc",
+      "bytes": 10141,
+      "sha256": "af06ef55d93333e081ab77a6a4e2ce9cda6d0af3d2a32d25ad1e3f77c2c1b9f7"
+    },
+    {
+      "entry": "records/vulkan/before/src/compute_route_vulkan/vulkan_program.cc",
+      "bytes": 55681,
+      "sha256": "06e9ec34669f36c20575f67bc2242ca28dee143dc3a282941c2ccf50b9bdda92"
+    },
+    {
+      "entry": "records/vulkan/before/tests/graph_route_vulkan/CMakeLists.txt",
+      "bytes": 5756,
+      "sha256": "c92d41be3b26de6cf0bae548b4cdf5ab3d57afc5ea311e371881c4d83edace52"
+    },
+    {
+      "entry": "records/vulkan/before/third_party/iree_vulkan_runtime/programs/compilation.json",
+      "bytes": 67879,
+      "sha256": "e5ece3cf78a9b47685572a9cf0151431e63f77ece0ab8e0c43376f8b026c72aa"
+    },
+    {
+      "entry": "records/vulkan/before/third_party/iree_vulkan_runtime/programs/compile_official.py",
+      "bytes": 4172,
+      "sha256": "e45d983051740902950b3299c5dbe9042bd01e57ab7f1d283b6d49dba2a3c569"
+    },
+    {
+      "entry": "records/vulkan/before/third_party/iree_vulkan_runtime/programs/generate_official.py",
+      "bytes": 30241,
+      "sha256": "6de911a58ac38c71d47d82323eed9521c0ab4c7936c6dc5e3b29ceb22141fbd6"
+    },
+    {
+      "entry": "records/vulkan/before/third_party/iree_vulkan_runtime/programs/manifest.json",
+      "bytes": 7248,
+      "sha256": "cac1011fcef692308783ea001acc9275e200fdadfb9e698cbebb3548e794a2a8"
+    },
+    {
+      "entry": "records/vulkan/before/third_party/iree_vulkan_runtime/programs/official.mlir",
+      "bytes": 51552,
+      "sha256": "01d104f58caa2661fedf9398f2f5dd4b0db23d673bad72f89e6e1890c917e905"
+    },
+    {
+      "entry": "records/vulkan/before/third_party/iree_vulkan_runtime/programs/official.vmfb.b64",
+      "bytes": 200629,
+      "sha256": "1d99c61c379233b961eeb57d7d4eb7bfee7dfe8c5e0284ad185b625538445138"
+    },
+    {
+      "entry": "records/vulkan/build.py",
+      "bytes": 8275,
+      "sha256": "f1e439c0a3f559e6b6f687608fb003074fd63a95b0e2f4ec4ea0d1630566b731"
+    },
+    {
+      "entry": "records/vulkan/check-lock-none-rne.command.json",
+      "bytes": 295,
+      "sha256": "3bade4678279e71c71556a92100956372cb35110ca0f716ba004a3aefad21bbb"
+    },
+    {
+      "entry": "records/vulkan/check-lock-none-rne.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/vulkan/check-lock-none-rne.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/vulkan/check-lock.cmake",
+      "bytes": 137,
+      "sha256": "21bbe545d3e634d96043dba831a968b934b06eb77b4b28f03dae455a840107fd"
+    },
+    {
+      "entry": "records/vulkan/check-lock.command.json",
+      "bytes": 209,
+      "sha256": "508f621f157f82d34fa59c1394cd7cae0e50cee47fad6ecee9b3a0335df43acd"
+    },
+    {
+      "entry": "records/vulkan/check-lock.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/vulkan/check-lock.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/vulkan/checks/final/link-plan.json",
+      "bytes": 81052,
+      "sha256": "996f6324d64fffd8ecbf705df86cccd4567b42fa04bcdc63b8dbd074cc38c4e6"
+    },
+    {
+      "entry": "records/vulkan/checks/final/link.command.json",
+      "bytes": 27835,
+      "sha256": "25e4eab16a490c874de1bf7977d3861ea095ab846f128b8905fa125e982afa65"
+    },
+    {
+      "entry": "records/vulkan/checks/final/link.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/vulkan/checks/final/link.stdout.txt",
+      "bytes": 316,
+      "sha256": "885b14f4bb6b2b9e1bf86ade4debbac68123f3c3c47c9111aa85f81a42d2ae56"
+    },
+    {
+      "entry": "records/vulkan/checks/final/proposed-link-plan.json",
+      "bytes": 80753,
+      "sha256": "fc4ed05a9f6b912d7f33b80bb29bd424a834e89b0f42290c64846e9360a95ad5"
+    },
+    {
+      "entry": "records/vulkan/checks/final2/link-plan.json",
+      "bytes": 81058,
+      "sha256": "e87867880db4b2d0beef73ebb09121f0c1b4a156713ae12803df79131725f7ae"
+    },
+    {
+      "entry": "records/vulkan/checks/final2/link.command.json",
+      "bytes": 27840,
+      "sha256": "78d6548ad5033f1d541b9e3d08a5f1bca190d82901517b83dc579594ab00c895"
+    },
+    {
+      "entry": "records/vulkan/checks/final2/link.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/vulkan/checks/final2/link.stdout.txt",
+      "bytes": 318,
+      "sha256": "2be31369ae728358ea42ee6795244d6b8ba3cb33c08acb214ff8ab862c3a7643"
+    },
+    {
+      "entry": "records/vulkan/checks/final2/proposed-link-plan.json",
+      "bytes": 80758,
+      "sha256": "33805fbf5aa7c29c70e6402348648fa69be60e9c89bf6480ab453cdc433d1d04"
+    },
+    {
+      "entry": "records/vulkan/checks/none-rne/embedded-compile.command.json",
+      "bytes": 2635,
+      "sha256": "6d3945bece4440af34811ad6e69b73d322eb53b3a83f9e9357075a00f8c43cc0"
+    },
+    {
+      "entry": "records/vulkan/checks/none-rne/embedded-compile.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/vulkan/checks/none-rne/embedded-compile.stdout.txt",
+      "bytes": 13,
+      "sha256": "ab3d7f12d3706a9cea283282ebdaece42eaf2043c0abd39d862f68f8993844a8"
+    },
+    {
+      "entry": "records/vulkan/checks/none-rne/embedded-deps.json",
+      "bytes": 8847,
+      "sha256": "70248ff05ceff83429576034b817e0bcb05bb62b74a04a2a9a149d5ad36a1fb1"
+    },
+    {
+      "entry": "records/vulkan/checks/none-rne/embedded-identity.json",
+      "bytes": 21507,
+      "sha256": "104bd9e0cc9824ee59ec86372df88f21f3ca6aab23c2f4b1fd1b9caf9d6e7cc5"
+    },
+    {
+      "entry": "records/vulkan/checks/none-rne/link-plan.json",
+      "bytes": 79549,
+      "sha256": "b1390dfa68ad6302494acb62ce6090d4cf678ff52b208f8ed51ee80a5e125836"
+    },
+    {
+      "entry": "records/vulkan/checks/none-rne/link.command.json",
+      "bytes": 27846,
+      "sha256": "ed1f7b9b4f35a3d9d2e4a2524e027090f0965a9dbd72a9a1b789bb87c9418b24"
+    },
+    {
+      "entry": "records/vulkan/checks/none-rne/link.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/vulkan/checks/none-rne/link.stdout.txt",
+      "bytes": 322,
+      "sha256": "c086b51a1ca0122e28f9191062c6e7c947c169f4090abec6827363316b97a721"
+    },
+    {
+      "entry": "records/vulkan/checks/none-rne/proposed-link-plan.json",
+      "bytes": 79247,
+      "sha256": "9ed036f4167014015b6a6805d7266440002fac548ca0005a8dd699e526ab2870"
+    },
+    {
+      "entry": "records/vulkan/checks/products/embedded-compile.command.json",
+      "bytes": 2625,
+      "sha256": "ff9b7210ccec357235f6680586bcee4e0fc0c1dda3915e5b7985da589d028808"
+    },
+    {
+      "entry": "records/vulkan/checks/products/embedded-compile.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/vulkan/checks/products/embedded-compile.stdout.txt",
+      "bytes": 13,
+      "sha256": "ab3d7f12d3706a9cea283282ebdaece42eaf2043c0abd39d862f68f8993844a8"
+    },
+    {
+      "entry": "records/vulkan/checks/products/embedded-deps.json",
+      "bytes": 8837,
+      "sha256": "53aaf9330310ef02a410da773bd10dcdce9a91652be23ebb54b12ed8d8f3b38d"
+    },
+    {
+      "entry": "records/vulkan/checks/products/embedded-identity.json",
+      "bytes": 21477,
+      "sha256": "df9fe34569c9a90ebf1b3f87f5a7280cdcaf62bee9f61fb52514876463ffa2f4"
+    },
+    {
+      "entry": "records/vulkan/checks/products/iree-compile.command.json",
+      "bytes": 2898,
+      "sha256": "35fa09a674f15ff45f3a154b3e2f1c0a8bfffeb09e9726132cee35415409bdfc"
+    },
+    {
+      "entry": "records/vulkan/checks/products/iree-compile.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/vulkan/checks/products/iree-compile.stdout.txt",
+      "bytes": 16,
+      "sha256": "280673cc3e0a267e547413c99db8ebf1d06ff5a32df99239bd727e224e7e54d0"
+    },
+    {
+      "entry": "records/vulkan/checks/products/iree-deps.json",
+      "bytes": 23823,
+      "sha256": "cf1d368ccd4792b911ea1161f03844d4d59e7a056168bce8783381b8d7fdf20d"
+    },
+    {
+      "entry": "records/vulkan/checks/products/iree-identity.json",
+      "bytes": 52833,
+      "sha256": "4846d805a9b042209dd78b798148f697280028791fb9dd90590819ad6386ad23"
+    },
+    {
+      "entry": "records/vulkan/checks/products/native-program-compile.command.json",
+      "bytes": 2591,
+      "sha256": "b56e5d1ce1d5b0ecf59e3a8c586ddaaf9e22a06a6918e181f13674bcde322f38"
+    },
+    {
+      "entry": "records/vulkan/checks/products/native-program-compile.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/vulkan/checks/products/native-program-compile.stdout.txt",
+      "bytes": 19,
+      "sha256": "5e66734928525120fcea31b723f65b35b210254a69da1e854e7813c53b2ca450"
+    },
+    {
+      "entry": "records/vulkan/checks/products/native-program-deps.json",
+      "bytes": 59707,
+      "sha256": "3bcf6a45525c1837451c77d472ef9990d52843fdfe5a35c89113dfd1e9a7afed"
+    },
+    {
+      "entry": "records/vulkan/checks/products/native-program-identity.json",
+      "bytes": 101225,
+      "sha256": "5059432b0479c1f2ad67109d901e531ddeb8cbe7b3167967c6a113d353ca4478"
+    },
+    {
+      "entry": "records/vulkan/checks/products/official-compile.command.json",
+      "bytes": 2772,
+      "sha256": "6131de4a3d5b4c23cc6b02e932a225fb812daa82484f457bb8210ab05a4c52dc"
+    },
+    {
+      "entry": "records/vulkan/checks/products/official-compile.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/vulkan/checks/products/official-compile.stdout.txt",
+      "bytes": 20,
+      "sha256": "e8f50528c2f86c5f2b15c9bfe316cbeb07146c0a2995fc6d14cefb8a614daed6"
+    },
+    {
+      "entry": "records/vulkan/checks/products/official-deps.json",
+      "bytes": 23284,
+      "sha256": "884fa07006161a6ac3d1c0f767d400434a2fdea50ff1720e83eee8ad677bf07c"
+    },
+    {
+      "entry": "records/vulkan/checks/products/official-identity.json",
+      "bytes": 51496,
+      "sha256": "93d8cbc835b1ed6c42135f22ccd35db44c3b09ff10b2cef097504bc4d71288eb"
+    },
+    {
+      "entry": "records/vulkan/checks/products/program-compile.command.json",
+      "bytes": 3350,
+      "sha256": "ef19f66eb76c28c16d8bce0119f7af7b9115ab0e460ec3a6ad2dc9ec2e52f8a4"
+    },
+    {
+      "entry": "records/vulkan/checks/products/program-compile.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/vulkan/checks/products/program-compile.stdout.txt",
+      "bytes": 19,
+      "sha256": "85c70ef5af29eab3f1f445537df3d5f74367b1c0d4a13fec0bd395950cead9f0"
+    },
+    {
+      "entry": "records/vulkan/checks/products/program-deps.json",
+      "bytes": 25123,
+      "sha256": "c3ddd38581632316f653fda35ac4f57654a8e559557aeadce0606f5c42d950f5"
+    },
+    {
+      "entry": "records/vulkan/checks/products/program-identity.json",
+      "bytes": 56365,
+      "sha256": "ee3147ac4580a26ea2f6b9583c27bd71703446f61b0445ea11552048a38a2bb4"
+    },
+    {
+      "entry": "records/vulkan/checks/products/summary.json",
+      "bytes": 1814,
+      "sha256": "eb87a4740138a204923584c4dcff854a6d64e4c58cc575e9071201a5e00e031f"
+    },
+    {
+      "entry": "records/vulkan/checks/products/torch-cpu-compile.command.json",
+      "bytes": 2933,
+      "sha256": "9f98f44c5c6b0ea2fec643f7dea39547a05cf97aca81c084fb2f0cac747829c0"
+    },
+    {
+      "entry": "records/vulkan/checks/products/torch-cpu-compile.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/vulkan/checks/products/torch-cpu-compile.stdout.txt",
+      "bytes": 22,
+      "sha256": "cb28b2d8e1bca782cbd9348364378afab26fdfb9a7fa76c5b6cab3238069dbb0"
+    },
+    {
+      "entry": "records/vulkan/checks/products/torch-cpu-deps.json",
+      "bytes": 915485,
+      "sha256": "890c6a17d183efa8dde80f7eda9b1e06f22a671b9a1c2fdd8ea13772aba0f8f3"
+    },
+    {
+      "entry": "records/vulkan/checks/products/torch-cpu-identity.json",
+      "bytes": 1490685,
+      "sha256": "a6a2a31cf58c63dbe35a48e377df60d2504e9438d9e98f859aa8c95a281a9452"
+    },
+    {
+      "entry": "records/vulkan/checks/test/grouped-power-compile.command.json",
+      "bytes": 4581,
+      "sha256": "be3d69e4c47525f32b898075805d1498def56a880e0b5b7af0cd083769e680ad"
+    },
+    {
+      "entry": "records/vulkan/checks/test/grouped-power-compile.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/vulkan/checks/test/grouped-power-compile.stdout.txt",
+      "bytes": 28,
+      "sha256": "2f591346447905e645c958530ebebbdac58a32628243b93a7eaa28a7db03da31"
+    },
+    {
+      "entry": "records/vulkan/checks/test/grouped-power-deps.json",
+      "bytes": 34002,
+      "sha256": "09a07c1fc8657e1ec1319abcab0750df6e3cc98ec4097fefe73b17fd7fc5b66f"
+    },
+    {
+      "entry": "records/vulkan/checks/test/grouped-power-identity.json",
+      "bytes": 74239,
+      "sha256": "6cba85904ff5e696f58cbb02b67abf7987b46e91ed1374751148b2e7fd009563"
+    },
+    {
+      "entry": "records/vulkan/checks/test2/grouped-power-compile.command.json",
+      "bytes": 4585,
+      "sha256": "e8eee961f22eec45ca382b52e8106ef539a9dde3e8233da1ecb464f3eaa15b1b"
+    },
+    {
+      "entry": "records/vulkan/checks/test2/grouped-power-compile.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/vulkan/checks/test2/grouped-power-compile.stdout.txt",
+      "bytes": 28,
+      "sha256": "2f591346447905e645c958530ebebbdac58a32628243b93a7eaa28a7db03da31"
+    },
+    {
+      "entry": "records/vulkan/checks/test2/grouped-power-deps.json",
+      "bytes": 34002,
+      "sha256": "09a07c1fc8657e1ec1319abcab0750df6e3cc98ec4097fefe73b17fd7fc5b66f"
+    },
+    {
+      "entry": "records/vulkan/checks/test2/grouped-power-identity.json",
+      "bytes": 74243,
+      "sha256": "b75901905f2c53ef5539fdbcb62a950ae234ee51f82f13172a80e62ca8d70d38"
+    },
+    {
+      "entry": "records/vulkan/cleanup-proposal.json",
+      "bytes": 8174,
+      "sha256": "caa0c0ab512192193a6319d8ff36f2b3221f755e378b8fdcd98c06925e605763"
+    },
+    {
+      "entry": "records/vulkan/current-owner-link-review.json",
+      "bytes": 5537,
+      "sha256": "bc5c4fa9fce1e3df2824b7fbf569daa2c0c715aa0f5fd501245163636d0c9173"
+    },
+    {
+      "entry": "records/vulkan/final-implementation.diff",
+      "bytes": 42044,
+      "sha256": "5b503e1230b841e1a86904a35a720b1b0c13ffbbd3493ee0f2a632f5964c923b"
+    },
+    {
+      "entry": "records/vulkan/final-source-freeze.json",
+      "bytes": 18244,
+      "sha256": "8e7cb2f9a640cb14b6767287e3074bafb0d96176b8ac1bba5d6f5f6bb86a0d5c"
+    },
+    {
+      "entry": "records/vulkan/final-source/cmake/HyleDependencyLock.json",
+      "bytes": 77554,
+      "sha256": "8c5458705e8814ae4560169a8832b140deb3ce7df42dfb04139b9aaaa6db0dab"
+    },
+    {
+      "entry": "records/vulkan/final-source/src/compute_provider_iree_vulkan/native_program.cc",
+      "bytes": 55702,
+      "sha256": "f22ffc75ae7b1bb2ac3668a811f1b62323937265944b485e8465f3da76735fd3"
+    },
+    {
+      "entry": "records/vulkan/final-source/src/compute_provider_iree_vulkan/native_program.h",
+      "bytes": 7881,
+      "sha256": "22fbcc99f57a7d86ae10d9d1c9494fac3a63e7106b1c8b7d21b61cb863007565"
+    },
+    {
+      "entry": "records/vulkan/final-source/src/compute_route_vulkan/vulkan_iree.cc",
+      "bytes": 31057,
+      "sha256": "cccf570d016409f412d58423f3f7943d689071ce96417efadfdb47a9ccbf9888"
+    },
+    {
+      "entry": "records/vulkan/final-source/src/compute_route_vulkan/vulkan_official.cc",
+      "bytes": 10297,
+      "sha256": "a5a432eaa55db2cec8f6225a1ce2223822422a50b92c5ca9c0ca31da5b0f68f6"
+    },
+    {
+      "entry": "records/vulkan/final-source/src/compute_route_vulkan/vulkan_program.cc",
+      "bytes": 55681,
+      "sha256": "06e9ec34669f36c20575f67bc2242ca28dee143dc3a282941c2ccf50b9bdda92"
+    },
+    {
+      "entry": "records/vulkan/final-source/tests/graph_route_vulkan/CMakeLists.txt",
+      "bytes": 5783,
+      "sha256": "bcf18d4a66a8b90eada5967b347f6120bbfa956209154f687f09dc65594f8b97"
+    },
+    {
+      "entry": "records/vulkan/final-source/tests/graph_route_vulkan/grouped_fp8_power2_test.cc",
+      "bytes": 4241,
+      "sha256": "5a1465dbfdcca397b542ce13b4d320e4d03a795d3c034a7aba139e0484c1e738"
+    },
+    {
+      "entry": "records/vulkan/final-source/third_party/iree_vulkan_runtime/programs/compilation.json",
+      "bytes": 84950,
+      "sha256": "801562355e03386a21efcb2f22339673f3b17665b8fbf6d0e1fc639dcaaaea7d"
+    },
+    {
+      "entry": "records/vulkan/final-source/third_party/iree_vulkan_runtime/programs/compile_official.py",
+      "bytes": 4202,
+      "sha256": "e922d5ea8b47d59bd80613de2a7873e1d7e13c59052c22614f8978953a3dd811"
+    },
+    {
+      "entry": "records/vulkan/final-source/third_party/iree_vulkan_runtime/programs/generate_official.py",
+      "bytes": 32153,
+      "sha256": "4bdfb3d3f2b571dd9c87c0c74d1ac7fcf4369fd2d0059c09d6fd89be89b41349"
+    },
+    {
+      "entry": "records/vulkan/final-source/third_party/iree_vulkan_runtime/programs/manifest.json",
+      "bytes": 7447,
+      "sha256": "5936e7426b781a19540b849c81fb1ca5dd5ffc8dffb8c0a2fd2f282e782bbdfd"
+    },
+    {
+      "entry": "records/vulkan/final-source/third_party/iree_vulkan_runtime/programs/official.mlir",
+      "bytes": 58996,
+      "sha256": "546bb9b3330e47a5fe3a554a85551336b20f4b21eb315b6fb3dc92ee4377b624"
+    },
+    {
+      "entry": "records/vulkan/final-source/third_party/iree_vulkan_runtime/programs/official.vmfb.b64",
+      "bytes": 209919,
+      "sha256": "263f9cc3b0fa3be529695845be21db9c8572e755df3288f851ac4c359ce0abd6"
+    },
+    {
+      "entry": "records/vulkan/final-validation.json",
+      "bytes": 7031,
+      "sha256": "cae836de82eaa1eef7112058733c098292e875b33571c3d31f3c54bf62d39fd9"
+    },
+    {
+      "entry": "records/vulkan/fixture-resource-revision.json",
+      "bytes": 803,
+      "sha256": "0ae63c00b8e89958def99864908ebe19aaa27d6d01ca2fa14e1f8da76cbf1845"
+    },
+    {
+      "entry": "records/vulkan/generated/none-rne/programs.cc",
+      "bytes": 3519642,
+      "sha256": "3c9cd6f2369ad3a02ead4ea4ea806543dfaaf188197286230c984dda1b2ee370"
+    },
+    {
+      "entry": "records/vulkan/generated/programs-identity.json",
+      "bytes": 1533,
+      "sha256": "551657c1a468665db89873181f60b0003ddcebf9e00edd0b82b3293c4cb9c684"
+    },
+    {
+      "entry": "records/vulkan/generated/programs.cc",
+      "bytes": 3516234,
+      "sha256": "ab78e0493b59efb3a49cc61ccce535242e3fe0c9a8198a08f9e217ee1f435c8f"
+    },
+    {
+      "entry": "records/vulkan/implementation.diff",
+      "bytes": 27888,
+      "sha256": "69271dc8f9fdb72ea7cc7fdcbac071b746cf96e4c2961983fe40173440981cb1"
+    },
+    {
+      "entry": "records/vulkan/lock-update.json",
+      "bytes": 256,
+      "sha256": "97592f2432c858dddebf454af67a30b4ed1b30719860dd57136b61b5004e1b9c"
+    },
+    {
+      "entry": "records/vulkan/official/attempt1/annotated.mlir",
+      "bytes": 389552,
+      "sha256": "0d5734e568809d19c3772d2189b08b3a9dd9accdb8153801a3ea4803e55a01b2"
+    },
+    {
+      "entry": "records/vulkan/official/attempt1/compilation.json",
+      "bytes": 7699,
+      "sha256": "7d4cf0f986daa0fe3cd507117c352f4e6573a3fdfb51c120efdca0d08476fd96"
+    },
+    {
+      "entry": "records/vulkan/official/attempt1/compile.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/vulkan/official/attempt1/compiler-version.txt",
+      "bytes": 152,
+      "sha256": "afc0d254b2555330caf79d6eb859e01fb59dc86c098fda257d76ac1943a6d446"
+    },
+    {
+      "entry": "records/vulkan/official/attempt1/configure.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/vulkan/official/attempt1/configured.mlir",
+      "bytes": 387248,
+      "sha256": "fe98ab1199c41cf70caa472c8afd8533e90130858a4f7ff596bc7e3004195382"
+    },
+    {
+      "entry": "records/vulkan/official/attempt1/spirv/module_encoded_block128_dispatch_3_encoded_block128_dispatch_3_elementwise_broadcast_D_f32.spirv.mlir",
+      "bytes": 10045,
+      "sha256": "2ece6ab4f2eb2038b5281a69e973d6891b1c2e6d0030e88d7df69a47938ce046"
+    },
+    {
+      "entry": "records/vulkan/official/attempt1/spirv/module_fp4_roundtrip_32_dispatch_1_fp4_roundtrip_32_dispatch_1_reduction_DxD_i16xi32.spirv.mlir",
+      "bytes": 7145,
+      "sha256": "bf6bdac4ebd50ee3b92804ce211b4665c3e0ff9bbb653b938ef3b5633032f5c7"
+    },
+    {
+      "entry": "records/vulkan/official/attempt1/spirv/module_fp4_roundtrip_32_dispatch_2_fp4_roundtrip_32_dispatch_2_elementwise_broadcast_D_i16.spirv.mlir",
+      "bytes": 12866,
+      "sha256": "31519718d55284cf36139dd2f64ce0c9d9fe0b444e7f26ecb6a3a7ca881f3e05"
+    },
+    {
+      "entry": "records/vulkan/official/attempt1/spirv/module_fp8_roundtrip_128_dispatch_1_fp8_roundtrip_128_dispatch_1_reduction_Dx128_i16xf32.spirv.mlir",
+      "bytes": 7401,
+      "sha256": "2465cb62830891f82a490e408034286b8d93ee311f1d6810d0d164bcc21d75e5"
+    },
+    {
+      "entry": "records/vulkan/official/attempt1/spirv/module_fp8_roundtrip_128_dispatch_2_fp8_roundtrip_128_dispatch_2_elementwise_broadcast_D_i8.spirv.mlir",
+      "bytes": 12145,
+      "sha256": "b5ffa833396b8a8e03804a6911e5c2a050db7a211830c6b9ddce0bbec58785eb"
+    },
+    {
+      "entry": "records/vulkan/official/attempt1/spirv/module_fp8_roundtrip_128_dispatch_3_fp8_roundtrip_128_dispatch_3_elementwise_broadcast_D_i16.spirv.mlir",
+      "bytes": 10497,
+      "sha256": "c8eedee01b3dab5bd07f15fb138f1e93095167eabbfc287e9c413b2e8ba1ca6c"
+    },
+    {
+      "entry": "records/vulkan/official/attempt1/spirv/module_fp8_roundtrip_64_dispatch_0_fp8_roundtrip_64_dispatch_0_reduction_D_i16xi32.spirv.mlir",
+      "bytes": 3528,
+      "sha256": "482580b54591089e0e79216f7f38c84025e91ac8193ea9b18e1a46c161a99447"
+    },
+    {
+      "entry": "records/vulkan/official/attempt1/spirv/module_fp8_roundtrip_64_dispatch_1_fp8_roundtrip_64_dispatch_1_reduction_Dx64_i16xf32.spirv.mlir",
+      "bytes": 7347,
+      "sha256": "19ac266fe92c2b2453d662b7d831f90da3a9d94b2f98d3b65d9c5f60f91b76b0"
+    },
+    {
+      "entry": "records/vulkan/official/attempt1/spirv/module_fp8_roundtrip_64_dispatch_2_fp8_roundtrip_64_dispatch_2_elementwise_broadcast_D_i8.spirv.mlir",
+      "bytes": 12140,
+      "sha256": "b8ede2b13324ad6e34e76212ed1382b93d4a6ad52d9c7b64018aa5733567db84"
+    },
+    {
+      "entry": "records/vulkan/official/attempt1/spirv/module_fp8_roundtrip_64_dispatch_3_fp8_roundtrip_64_dispatch_3_elementwise_broadcast_D_i16.spirv.mlir",
+      "bytes": 10449,
+      "sha256": "f19d5b13e18f38957a69cc645d325715ebe6ba82f747935dcc874fd7e9a0ebb4"
+    },
+    {
+      "entry": "records/vulkan/official/attempt1/spirv/module_grouped4_f32_dispatch_3_grouped4_f32_dispatch_3_elementwise_broadcast_D_f32.spirv.mlir",
+      "bytes": 9902,
+      "sha256": "7031c85db6ee3ef77e032eb4d1efb0c5a12012ae19a96342abedb4d5730d9ecb"
+    },
+    {
+      "entry": "records/vulkan/official/attempt1/spirv/module_grouped4_f32_dispatch_4_grouped4_f32_dispatch_4_reduction_DxDxD_f32.spirv.mlir",
+      "bytes": 10434,
+      "sha256": "099e493ee9d65d1d85d303b25d6ec0fe1de8a6557bc2809114957dc8678a9cb2"
+    },
+    {
+      "entry": "records/vulkan/official/attempt1/spirv/module_grouped4_f32_dispatch_5_grouped4_f32_dispatch_5_elementwise_broadcast_D_f32.spirv.mlir",
+      "bytes": 11499,
+      "sha256": "b74beb07e2eb547fc2c2b46193043029866106c50397046ad1032a7516a43287"
+    },
+    {
+      "entry": "records/vulkan/official/attempt1/spirv/module_grouped8_f32_dispatch_3_grouped8_f32_dispatch_3_elementwise_broadcast_D_f32.spirv.mlir",
+      "bytes": 9906,
+      "sha256": "59ff6d4326b9c759be8d61c5dae7e2801ae27b23151014a3b200125697016d8e"
+    },
+    {
+      "entry": "records/vulkan/official/attempt1/spirv/module_grouped8_f32_dispatch_4_grouped8_f32_dispatch_4_reduction_DxDxD_f32.spirv.mlir",
+      "bytes": 11892,
+      "sha256": "2de2a2028edf0cc19173f93bc57b192d004c7a1a6def3c3abb8fddb55d2efcc9"
+    },
+    {
+      "entry": "records/vulkan/official/attempt1/spirv/module_grouped8_f32_dispatch_5_grouped8_f32_dispatch_5_elementwise_broadcast_D_f32.spirv.mlir",
+      "bytes": 11544,
+      "sha256": "3cfc11d0e7aaaa41491fb3bae136c02874136f9a3f644de25a6ca143a8138887"
+    },
+    {
+      "entry": "records/vulkan/official/attempt1/spirv/module_linear_normal_f32_dispatch_0_linear_normal_f32_dispatch_0_reduction_D_f32xi32.spirv.mlir",
+      "bytes": 3494,
+      "sha256": "6181978d1ccc8e7352de242a7eaa2b197559d8a49883c1a4ae9fdd7d1c005426"
+    },
+    {
+      "entry": "records/vulkan/official/attempt1/spirv/module_linear_normal_f32_dispatch_1_linear_normal_f32_dispatch_1_reduction_DxD_f32.spirv.mlir",
+      "bytes": 6871,
+      "sha256": "6370bc396a71310b1dfa6c9ac493a4dcbe374e4424cde79b93471f7ebce96e67"
+    },
+    {
+      "entry": "records/vulkan/official/attempt1/spirv/module_linear_normal_f32_dispatch_2_linear_normal_f32_dispatch_2_elementwise_broadcast_D_i8.spirv.mlir",
+      "bytes": 11882,
+      "sha256": "40064e37c06d573d162933cebc29e9084479b3dacdd86a8af361b7f4dd21696a"
+    },
+    {
+      "entry": "records/vulkan/official/attempt1/spirv/module_linear_normal_f32_dispatch_3_linear_normal_f32_dispatch_3_elementwise_broadcast_D_f32.spirv.mlir",
+      "bytes": 9029,
+      "sha256": "9f5d48ad43566617319de0a08f550fb622b57c0fb3c1cc3441582b6f85ed48e8"
+    },
+    {
+      "entry": "records/vulkan/official/attempt1/spirv/module_linear_normal_f32_dispatch_4_linear_normal_f32_dispatch_4_elementwise_broadcast_D_f32.spirv.mlir",
+      "bytes": 9636,
+      "sha256": "05924eed61915497926fd7d9233183c496d8fc18754e0e2641f2cc3ddc542a49"
+    },
+    {
+      "entry": "records/vulkan/official/attempt1/spirv/module_linear_normal_f32_dispatch_5_linear_normal_f32_dispatch_5_matmul_DxDxD_f32.spirv.mlir",
+      "bytes": 8106,
+      "sha256": "4e19a5d212070cc3f61d70fa67a1b559face0de6c9755b10c9c42fd180312578"
+    },
+    {
+      "entry": "records/vulkan/official/attempt1/spirv/module_linear_normal_f32_dispatch_6_linear_normal_f32_dispatch_6_elementwise_broadcast_D_f32.spirv.mlir",
+      "bytes": 9751,
+      "sha256": "6ebe3eeb7b1a85a2656efc20b4253ad608df2f3568f4930112c62184fda2d4ff"
+    },
+    {
+      "entry": "records/vulkan/official/attempt1/spirv/module_linear_power_f32_dispatch_1_linear_power_f32_dispatch_1_reduction_DxD_f32.spirv.mlir",
+      "bytes": 7391,
+      "sha256": "9960ab767d354027c6105b783c2c2222d33e33210996e52c5e6e8c4080135597"
+    },
+    {
+      "entry": "records/vulkan/official/attempt1/spirv/module_weight_decode_bf16_dispatch_0_weight_decode_bf16_dispatch_0_elementwise_broadcast_D_i16.spirv.mlir",
+      "bytes": 10394,
+      "sha256": "212b58d5e1e1ab0d131e49fdcbd1329b7ecc3e428ead967ab2d47a2b214d6485"
+    },
+    {
+      "entry": "records/vulkan/official/attempt1/spirv/module_weight_decode_f32_dispatch_0_weight_decode_f32_dispatch_0_elementwise_broadcast_D_f32.spirv.mlir",
+      "bytes": 9686,
+      "sha256": "b0f5311e55154aeff1d2b4cba43149527ab35dd2854cbf592d8abdcd3706b23f"
+    },
+    {
+      "entry": "records/vulkan/official/final/annotated.mlir",
+      "bytes": 389552,
+      "sha256": "0d5734e568809d19c3772d2189b08b3a9dd9accdb8153801a3ea4803e55a01b2"
+    },
+    {
+      "entry": "records/vulkan/official/final/compilation.json",
+      "bytes": 7714,
+      "sha256": "b87adb59e272234f0295aeeab76758a4ae7d2948b0db073217a3fe79d71e4a80"
+    },
+    {
+      "entry": "records/vulkan/official/final/compile.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/vulkan/official/final/compiler-version.txt",
+      "bytes": 152,
+      "sha256": "afc0d254b2555330caf79d6eb859e01fb59dc86c098fda257d76ac1943a6d446"
+    },
+    {
+      "entry": "records/vulkan/official/final/configure.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/vulkan/official/final/configured.mlir",
+      "bytes": 387248,
+      "sha256": "fe98ab1199c41cf70caa472c8afd8533e90130858a4f7ff596bc7e3004195382"
+    },
+    {
+      "entry": "records/vulkan/official/final/spirv/module_encoded_block128_dispatch_3_encoded_block128_dispatch_3_elementwise_broadcast_D_f32.spirv.mlir",
+      "bytes": 10045,
+      "sha256": "2ece6ab4f2eb2038b5281a69e973d6891b1c2e6d0030e88d7df69a47938ce046"
+    },
+    {
+      "entry": "records/vulkan/official/final/spirv/module_fp4_roundtrip_32_dispatch_1_fp4_roundtrip_32_dispatch_1_reduction_DxD_i16xi32.spirv.mlir",
+      "bytes": 7145,
+      "sha256": "bf6bdac4ebd50ee3b92804ce211b4665c3e0ff9bbb653b938ef3b5633032f5c7"
+    },
+    {
+      "entry": "records/vulkan/official/final/spirv/module_fp4_roundtrip_32_dispatch_2_fp4_roundtrip_32_dispatch_2_elementwise_broadcast_D_i16.spirv.mlir",
+      "bytes": 12866,
+      "sha256": "31519718d55284cf36139dd2f64ce0c9d9fe0b444e7f26ecb6a3a7ca881f3e05"
+    },
+    {
+      "entry": "records/vulkan/official/final/spirv/module_fp8_roundtrip_128_dispatch_1_fp8_roundtrip_128_dispatch_1_reduction_Dx128_i16xf32.spirv.mlir",
+      "bytes": 7401,
+      "sha256": "2465cb62830891f82a490e408034286b8d93ee311f1d6810d0d164bcc21d75e5"
+    },
+    {
+      "entry": "records/vulkan/official/final/spirv/module_fp8_roundtrip_128_dispatch_2_fp8_roundtrip_128_dispatch_2_elementwise_broadcast_D_i8.spirv.mlir",
+      "bytes": 12145,
+      "sha256": "b5ffa833396b8a8e03804a6911e5c2a050db7a211830c6b9ddce0bbec58785eb"
+    },
+    {
+      "entry": "records/vulkan/official/final/spirv/module_fp8_roundtrip_128_dispatch_3_fp8_roundtrip_128_dispatch_3_elementwise_broadcast_D_i16.spirv.mlir",
+      "bytes": 10497,
+      "sha256": "c8eedee01b3dab5bd07f15fb138f1e93095167eabbfc287e9c413b2e8ba1ca6c"
+    },
+    {
+      "entry": "records/vulkan/official/final/spirv/module_fp8_roundtrip_64_dispatch_0_fp8_roundtrip_64_dispatch_0_reduction_D_i16xi32.spirv.mlir",
+      "bytes": 3528,
+      "sha256": "482580b54591089e0e79216f7f38c84025e91ac8193ea9b18e1a46c161a99447"
+    },
+    {
+      "entry": "records/vulkan/official/final/spirv/module_fp8_roundtrip_64_dispatch_1_fp8_roundtrip_64_dispatch_1_reduction_Dx64_i16xf32.spirv.mlir",
+      "bytes": 7347,
+      "sha256": "19ac266fe92c2b2453d662b7d831f90da3a9d94b2f98d3b65d9c5f60f91b76b0"
+    },
+    {
+      "entry": "records/vulkan/official/final/spirv/module_fp8_roundtrip_64_dispatch_2_fp8_roundtrip_64_dispatch_2_elementwise_broadcast_D_i8.spirv.mlir",
+      "bytes": 12140,
+      "sha256": "b8ede2b13324ad6e34e76212ed1382b93d4a6ad52d9c7b64018aa5733567db84"
+    },
+    {
+      "entry": "records/vulkan/official/final/spirv/module_fp8_roundtrip_64_dispatch_3_fp8_roundtrip_64_dispatch_3_elementwise_broadcast_D_i16.spirv.mlir",
+      "bytes": 10449,
+      "sha256": "f19d5b13e18f38957a69cc645d325715ebe6ba82f747935dcc874fd7e9a0ebb4"
+    },
+    {
+      "entry": "records/vulkan/official/final/spirv/module_grouped4_f32_dispatch_3_grouped4_f32_dispatch_3_elementwise_broadcast_D_f32.spirv.mlir",
+      "bytes": 9902,
+      "sha256": "7031c85db6ee3ef77e032eb4d1efb0c5a12012ae19a96342abedb4d5730d9ecb"
+    },
+    {
+      "entry": "records/vulkan/official/final/spirv/module_grouped4_f32_dispatch_4_grouped4_f32_dispatch_4_reduction_DxDxD_f32.spirv.mlir",
+      "bytes": 10434,
+      "sha256": "099e493ee9d65d1d85d303b25d6ec0fe1de8a6557bc2809114957dc8678a9cb2"
+    },
+    {
+      "entry": "records/vulkan/official/final/spirv/module_grouped4_f32_dispatch_5_grouped4_f32_dispatch_5_elementwise_broadcast_D_f32.spirv.mlir",
+      "bytes": 11499,
+      "sha256": "b74beb07e2eb547fc2c2b46193043029866106c50397046ad1032a7516a43287"
+    },
+    {
+      "entry": "records/vulkan/official/final/spirv/module_grouped8_f32_dispatch_3_grouped8_f32_dispatch_3_elementwise_broadcast_D_f32.spirv.mlir",
+      "bytes": 9906,
+      "sha256": "59ff6d4326b9c759be8d61c5dae7e2801ae27b23151014a3b200125697016d8e"
+    },
+    {
+      "entry": "records/vulkan/official/final/spirv/module_grouped8_f32_dispatch_4_grouped8_f32_dispatch_4_reduction_DxDxD_f32.spirv.mlir",
+      "bytes": 11892,
+      "sha256": "2de2a2028edf0cc19173f93bc57b192d004c7a1a6def3c3abb8fddb55d2efcc9"
+    },
+    {
+      "entry": "records/vulkan/official/final/spirv/module_grouped8_f32_dispatch_5_grouped8_f32_dispatch_5_elementwise_broadcast_D_f32.spirv.mlir",
+      "bytes": 11544,
+      "sha256": "3cfc11d0e7aaaa41491fb3bae136c02874136f9a3f644de25a6ca143a8138887"
+    },
+    {
+      "entry": "records/vulkan/official/final/spirv/module_linear_normal_f32_dispatch_0_linear_normal_f32_dispatch_0_reduction_D_f32xi32.spirv.mlir",
+      "bytes": 3494,
+      "sha256": "6181978d1ccc8e7352de242a7eaa2b197559d8a49883c1a4ae9fdd7d1c005426"
+    },
+    {
+      "entry": "records/vulkan/official/final/spirv/module_linear_normal_f32_dispatch_1_linear_normal_f32_dispatch_1_reduction_DxD_f32.spirv.mlir",
+      "bytes": 6871,
+      "sha256": "6370bc396a71310b1dfa6c9ac493a4dcbe374e4424cde79b93471f7ebce96e67"
+    },
+    {
+      "entry": "records/vulkan/official/final/spirv/module_linear_normal_f32_dispatch_2_linear_normal_f32_dispatch_2_elementwise_broadcast_D_i8.spirv.mlir",
+      "bytes": 11882,
+      "sha256": "40064e37c06d573d162933cebc29e9084479b3dacdd86a8af361b7f4dd21696a"
+    },
+    {
+      "entry": "records/vulkan/official/final/spirv/module_linear_normal_f32_dispatch_3_linear_normal_f32_dispatch_3_elementwise_broadcast_D_f32.spirv.mlir",
+      "bytes": 9029,
+      "sha256": "9f5d48ad43566617319de0a08f550fb622b57c0fb3c1cc3441582b6f85ed48e8"
+    },
+    {
+      "entry": "records/vulkan/official/final/spirv/module_linear_normal_f32_dispatch_4_linear_normal_f32_dispatch_4_elementwise_broadcast_D_f32.spirv.mlir",
+      "bytes": 9636,
+      "sha256": "05924eed61915497926fd7d9233183c496d8fc18754e0e2641f2cc3ddc542a49"
+    },
+    {
+      "entry": "records/vulkan/official/final/spirv/module_linear_normal_f32_dispatch_5_linear_normal_f32_dispatch_5_matmul_DxDxD_f32.spirv.mlir",
+      "bytes": 8106,
+      "sha256": "4e19a5d212070cc3f61d70fa67a1b559face0de6c9755b10c9c42fd180312578"
+    },
+    {
+      "entry": "records/vulkan/official/final/spirv/module_linear_normal_f32_dispatch_6_linear_normal_f32_dispatch_6_elementwise_broadcast_D_f32.spirv.mlir",
+      "bytes": 9751,
+      "sha256": "6ebe3eeb7b1a85a2656efc20b4253ad608df2f3568f4930112c62184fda2d4ff"
+    },
+    {
+      "entry": "records/vulkan/official/final/spirv/module_linear_power_f32_dispatch_1_linear_power_f32_dispatch_1_reduction_DxD_f32.spirv.mlir",
+      "bytes": 7391,
+      "sha256": "9960ab767d354027c6105b783c2c2222d33e33210996e52c5e6e8c4080135597"
+    },
+    {
+      "entry": "records/vulkan/official/final/spirv/module_weight_decode_bf16_dispatch_0_weight_decode_bf16_dispatch_0_elementwise_broadcast_D_i16.spirv.mlir",
+      "bytes": 10394,
+      "sha256": "212b58d5e1e1ab0d131e49fdcbd1329b7ecc3e428ead967ab2d47a2b214d6485"
+    },
+    {
+      "entry": "records/vulkan/official/final/spirv/module_weight_decode_f32_dispatch_0_weight_decode_f32_dispatch_0_elementwise_broadcast_D_f32.spirv.mlir",
+      "bytes": 9686,
+      "sha256": "b0f5311e55154aeff1d2b4cba43149527ab35dd2854cbf592d8abdcd3706b23f"
+    },
+    {
+      "entry": "records/vulkan/official/none-rne-spirv-comparison.json",
+      "bytes": 24310,
+      "sha256": "94aa48a14c812d74c215760acba07a0748843c05fb24fbab8c06e5d1cc9240ac"
+    },
+    {
+      "entry": "records/vulkan/official/none-rne/annotated.mlir",
+      "bytes": 391036,
+      "sha256": "05567f6a7dc5da860a16add43742e576a599c0a9d0587c458672af8a9dc16111"
+    },
+    {
+      "entry": "records/vulkan/official/none-rne/compilation.json",
+      "bytes": 7726,
+      "sha256": "8a215982983b6722af79554c4d2e68bda913904f9e49880abcc57bf94b1bd3d7"
+    },
+    {
+      "entry": "records/vulkan/official/none-rne/compile.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/vulkan/official/none-rne/compiler-version.txt",
+      "bytes": 152,
+      "sha256": "afc0d254b2555330caf79d6eb859e01fb59dc86c098fda257d76ac1943a6d446"
+    },
+    {
+      "entry": "records/vulkan/official/none-rne/configure.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/vulkan/official/none-rne/configured.mlir",
+      "bytes": 388732,
+      "sha256": "217cd53acdf1b997f54a32a855d914970cf334bdd8b96a3abc5cebe9579fb25f"
+    },
+    {
+      "entry": "records/vulkan/official/none-rne/spirv/module_encoded_block128_dispatch_3_encoded_block128_dispatch_3_elementwise_broadcast_D_f32.spirv.mlir",
+      "bytes": 10045,
+      "sha256": "2ece6ab4f2eb2038b5281a69e973d6891b1c2e6d0030e88d7df69a47938ce046"
+    },
+    {
+      "entry": "records/vulkan/official/none-rne/spirv/module_fp4_roundtrip_32_dispatch_1_fp4_roundtrip_32_dispatch_1_reduction_DxD_i16xi32.spirv.mlir",
+      "bytes": 7145,
+      "sha256": "bf6bdac4ebd50ee3b92804ce211b4665c3e0ff9bbb653b938ef3b5633032f5c7"
+    },
+    {
+      "entry": "records/vulkan/official/none-rne/spirv/module_fp4_roundtrip_32_dispatch_2_fp4_roundtrip_32_dispatch_2_elementwise_broadcast_D_i16.spirv.mlir",
+      "bytes": 12866,
+      "sha256": "31519718d55284cf36139dd2f64ce0c9d9fe0b444e7f26ecb6a3a7ca881f3e05"
+    },
+    {
+      "entry": "records/vulkan/official/none-rne/spirv/module_fp8_roundtrip_128_dispatch_1_fp8_roundtrip_128_dispatch_1_reduction_Dx128_i16xf32.spirv.mlir",
+      "bytes": 7401,
+      "sha256": "2465cb62830891f82a490e408034286b8d93ee311f1d6810d0d164bcc21d75e5"
+    },
+    {
+      "entry": "records/vulkan/official/none-rne/spirv/module_fp8_roundtrip_128_dispatch_2_fp8_roundtrip_128_dispatch_2_elementwise_broadcast_D_i8.spirv.mlir",
+      "bytes": 12145,
+      "sha256": "b5ffa833396b8a8e03804a6911e5c2a050db7a211830c6b9ddce0bbec58785eb"
+    },
+    {
+      "entry": "records/vulkan/official/none-rne/spirv/module_fp8_roundtrip_128_dispatch_3_fp8_roundtrip_128_dispatch_3_elementwise_broadcast_D_i16.spirv.mlir",
+      "bytes": 10497,
+      "sha256": "c8eedee01b3dab5bd07f15fb138f1e93095167eabbfc287e9c413b2e8ba1ca6c"
+    },
+    {
+      "entry": "records/vulkan/official/none-rne/spirv/module_fp8_roundtrip_64_dispatch_0_fp8_roundtrip_64_dispatch_0_reduction_D_i16xi32.spirv.mlir",
+      "bytes": 3528,
+      "sha256": "482580b54591089e0e79216f7f38c84025e91ac8193ea9b18e1a46c161a99447"
+    },
+    {
+      "entry": "records/vulkan/official/none-rne/spirv/module_fp8_roundtrip_64_dispatch_1_fp8_roundtrip_64_dispatch_1_reduction_Dx64_i16xf32.spirv.mlir",
+      "bytes": 7347,
+      "sha256": "19ac266fe92c2b2453d662b7d831f90da3a9d94b2f98d3b65d9c5f60f91b76b0"
+    },
+    {
+      "entry": "records/vulkan/official/none-rne/spirv/module_fp8_roundtrip_64_dispatch_2_fp8_roundtrip_64_dispatch_2_elementwise_broadcast_D_i8.spirv.mlir",
+      "bytes": 12140,
+      "sha256": "b8ede2b13324ad6e34e76212ed1382b93d4a6ad52d9c7b64018aa5733567db84"
+    },
+    {
+      "entry": "records/vulkan/official/none-rne/spirv/module_fp8_roundtrip_64_dispatch_3_fp8_roundtrip_64_dispatch_3_elementwise_broadcast_D_i16.spirv.mlir",
+      "bytes": 10449,
+      "sha256": "f19d5b13e18f38957a69cc645d325715ebe6ba82f747935dcc874fd7e9a0ebb4"
+    },
+    {
+      "entry": "records/vulkan/official/none-rne/spirv/module_grouped4_f32_dispatch_3_grouped4_f32_dispatch_3_elementwise_broadcast_D_f32.spirv.mlir",
+      "bytes": 9902,
+      "sha256": "7031c85db6ee3ef77e032eb4d1efb0c5a12012ae19a96342abedb4d5730d9ecb"
+    },
+    {
+      "entry": "records/vulkan/official/none-rne/spirv/module_grouped4_f32_dispatch_4_grouped4_f32_dispatch_4_reduction_DxDxD_f32.spirv.mlir",
+      "bytes": 10434,
+      "sha256": "099e493ee9d65d1d85d303b25d6ec0fe1de8a6557bc2809114957dc8678a9cb2"
+    },
+    {
+      "entry": "records/vulkan/official/none-rne/spirv/module_grouped4_f32_dispatch_5_grouped4_f32_dispatch_5_elementwise_broadcast_D_f32.spirv.mlir",
+      "bytes": 11499,
+      "sha256": "b74beb07e2eb547fc2c2b46193043029866106c50397046ad1032a7516a43287"
+    },
+    {
+      "entry": "records/vulkan/official/none-rne/spirv/module_grouped8_f32_dispatch_3_grouped8_f32_dispatch_3_elementwise_broadcast_D_f32.spirv.mlir",
+      "bytes": 9906,
+      "sha256": "59ff6d4326b9c759be8d61c5dae7e2801ae27b23151014a3b200125697016d8e"
+    },
+    {
+      "entry": "records/vulkan/official/none-rne/spirv/module_grouped8_f32_dispatch_4_grouped8_f32_dispatch_4_reduction_DxDxD_f32.spirv.mlir",
+      "bytes": 11892,
+      "sha256": "2de2a2028edf0cc19173f93bc57b192d004c7a1a6def3c3abb8fddb55d2efcc9"
+    },
+    {
+      "entry": "records/vulkan/official/none-rne/spirv/module_grouped8_f32_dispatch_5_grouped8_f32_dispatch_5_elementwise_broadcast_D_f32.spirv.mlir",
+      "bytes": 11544,
+      "sha256": "3cfc11d0e7aaaa41491fb3bae136c02874136f9a3f644de25a6ca143a8138887"
+    },
+    {
+      "entry": "records/vulkan/official/none-rne/spirv/module_linear_normal_f32_dispatch_0_linear_normal_f32_dispatch_0_reduction_D_f32xi32.spirv.mlir",
+      "bytes": 3494,
+      "sha256": "6181978d1ccc8e7352de242a7eaa2b197559d8a49883c1a4ae9fdd7d1c005426"
+    },
+    {
+      "entry": "records/vulkan/official/none-rne/spirv/module_linear_normal_f32_dispatch_1_linear_normal_f32_dispatch_1_reduction_DxD_f32.spirv.mlir",
+      "bytes": 8346,
+      "sha256": "252a451482904654c361e2b05a1492efff93f04951b726b0a38c283fc03e5402"
+    },
+    {
+      "entry": "records/vulkan/official/none-rne/spirv/module_linear_normal_f32_dispatch_2_linear_normal_f32_dispatch_2_elementwise_broadcast_D_i8.spirv.mlir",
+      "bytes": 11882,
+      "sha256": "40064e37c06d573d162933cebc29e9084479b3dacdd86a8af361b7f4dd21696a"
+    },
+    {
+      "entry": "records/vulkan/official/none-rne/spirv/module_linear_normal_f32_dispatch_3_linear_normal_f32_dispatch_3_elementwise_broadcast_D_f32.spirv.mlir",
+      "bytes": 9029,
+      "sha256": "9f5d48ad43566617319de0a08f550fb622b57c0fb3c1cc3441582b6f85ed48e8"
+    },
+    {
+      "entry": "records/vulkan/official/none-rne/spirv/module_linear_normal_f32_dispatch_4_linear_normal_f32_dispatch_4_elementwise_broadcast_D_f32.spirv.mlir",
+      "bytes": 9636,
+      "sha256": "05924eed61915497926fd7d9233183c496d8fc18754e0e2641f2cc3ddc542a49"
+    },
+    {
+      "entry": "records/vulkan/official/none-rne/spirv/module_linear_normal_f32_dispatch_5_linear_normal_f32_dispatch_5_matmul_DxDxD_f32.spirv.mlir",
+      "bytes": 8106,
+      "sha256": "4e19a5d212070cc3f61d70fa67a1b559face0de6c9755b10c9c42fd180312578"
+    },
+    {
+      "entry": "records/vulkan/official/none-rne/spirv/module_linear_normal_f32_dispatch_6_linear_normal_f32_dispatch_6_elementwise_broadcast_D_f32.spirv.mlir",
+      "bytes": 9751,
+      "sha256": "6ebe3eeb7b1a85a2656efc20b4253ad608df2f3568f4930112c62184fda2d4ff"
+    },
+    {
+      "entry": "records/vulkan/official/none-rne/spirv/module_linear_power_f32_dispatch_1_linear_power_f32_dispatch_1_reduction_DxD_f32.spirv.mlir",
+      "bytes": 7391,
+      "sha256": "9960ab767d354027c6105b783c2c2222d33e33210996e52c5e6e8c4080135597"
+    },
+    {
+      "entry": "records/vulkan/official/none-rne/spirv/module_weight_decode_bf16_dispatch_0_weight_decode_bf16_dispatch_0_elementwise_broadcast_D_i16.spirv.mlir",
+      "bytes": 10394,
+      "sha256": "212b58d5e1e1ab0d131e49fdcbd1329b7ecc3e428ead967ab2d47a2b214d6485"
+    },
+    {
+      "entry": "records/vulkan/official/none-rne/spirv/module_weight_decode_f32_dispatch_0_weight_decode_f32_dispatch_0_elementwise_broadcast_D_f32.spirv.mlir",
+      "bytes": 9686,
+      "sha256": "b0f5311e55154aeff1d2b4cba43149527ab35dd2854cbf592d8abdcd3706b23f"
+    },
+    {
+      "entry": "records/vulkan/official/program-proof.json",
+      "bytes": 1129,
+      "sha256": "a90c14f7bf3296b2768ba5bdb5ad9890309c03c67e7a8c08f4b504a9a60e96ff"
+    },
+    {
+      "entry": "records/vulkan/old-descriptor-owner-audit.json",
+      "bytes": 18330,
+      "sha256": "2f6cb9fd39655c3964750c23a6bd21db247b453c427129413064e16e2b17d478"
+    },
+    {
+      "entry": "records/vulkan/private-abi-review.json",
+      "bytes": 543,
+      "sha256": "8ba73ecdcf3c07ab1695e97945a9eafe35d0025b025cdcdc4f1ceb5341d81553"
+    },
+    {
+      "entry": "records/vulkan/probe/checks/link-plan.json",
+      "bytes": 79639,
+      "sha256": "7a3440e64a31c12b12d0cec174d9887e9b1d5c5cac3912ea3cd3e1dddc4b52c1"
+    },
+    {
+      "entry": "records/vulkan/probe/checks/link.command.json",
+      "bytes": 27983,
+      "sha256": "9cf24edb08e4ebe262826970940f771713581c0ede58d639e0fdcc9fe49b76a1"
+    },
+    {
+      "entry": "records/vulkan/probe/checks/link.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/vulkan/probe/checks/link.stdout.txt",
+      "bytes": 312,
+      "sha256": "3dcce1e4bc4e50def49b3427879d9da426aadf1d932526ea059701f2e8983c88"
+    },
+    {
+      "entry": "records/vulkan/probe/checks/none-probe-compile.command.json",
+      "bytes": 4676,
+      "sha256": "b04f695cd5af0b7b4eed1bf5a192d072cdaa06222d629b484c3d50ed5d886d53"
+    },
+    {
+      "entry": "records/vulkan/probe/checks/none-probe-compile.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/vulkan/probe/checks/none-probe-compile.stdout.txt",
+      "bytes": 26,
+      "sha256": "91a9ac2473a0f3e7c9328500529d3ec6e236ded2ffbffcf2ffab796ae36b7471"
+    },
+    {
+      "entry": "records/vulkan/probe/checks/none-probe-deps.json",
+      "bytes": 30745,
+      "sha256": "13205dbf9a61ef04981f4f9a7bf40e93d6468003045bc0edb1e5a67c712a6d3f"
+    },
+    {
+      "entry": "records/vulkan/probe/checks/none-probe-identity.json",
+      "bytes": 66578,
+      "sha256": "1e7edd296ab574939643bf8a98ed7cb6c549a4e06202ef0345349cc24124e25c"
+    },
+    {
+      "entry": "records/vulkan/probe/checks/proposed-link-plan.json",
+      "bytes": 79342,
+      "sha256": "b5bcf65c6e25b3ea21a5d9dd47dc6d73270a9e276bf938f09c03e6c3b3359b89"
+    },
+    {
+      "entry": "records/vulkan/probe/none_scale_probe_test.cc",
+      "bytes": 1889,
+      "sha256": "ae3020e9d607e18cc4b948fbc8cb6397d241cff92f17ffb13d1683417867526d"
+    },
+    {
+      "entry": "records/vulkan/revisions/initial-products/source-freeze.json",
+      "bytes": 8295,
+      "sha256": "ba2897716e79e47ec88ef8f38a6e0d4d37294ad5c2b5718231befe481137a8de"
+    },
+    {
+      "entry": "records/vulkan/revisions/none-scale-before/cmake/HyleDependencyLock.json",
+      "bytes": 77554,
+      "sha256": "ba4f6de10ecaa4a89f48fa9429ca5879748dbf5f599c623db261143f64536a90"
+    },
+    {
+      "entry": "records/vulkan/revisions/none-scale-before/implementation.diff",
+      "bytes": 27888,
+      "sha256": "69271dc8f9fdb72ea7cc7fdcbac071b746cf96e4c2961983fe40173440981cb1"
+    },
+    {
+      "entry": "records/vulkan/revisions/none-scale-before/source-freeze.json",
+      "bytes": 9938,
+      "sha256": "98602ecf32c88558bb3f902aceb4c08d9f8cefaf0e7498c07d86427cb9820ecb"
+    },
+    {
+      "entry": "records/vulkan/revisions/none-scale-before/third_party/iree_vulkan_runtime/programs/compilation.json",
+      "bytes": 77029,
+      "sha256": "d50a672166289aacb915ff87b0c254d1ca6985434262c6a071e827df94859bd8"
+    },
+    {
+      "entry": "records/vulkan/revisions/none-scale-before/third_party/iree_vulkan_runtime/programs/generate_official.py",
+      "bytes": 30341,
+      "sha256": "bfec7fe696d4d3b3d22386c48350d23c6de6b8cba6687ec8b097221a2e00fc65"
+    },
+    {
+      "entry": "records/vulkan/revisions/none-scale-before/third_party/iree_vulkan_runtime/programs/manifest.json",
+      "bytes": 7447,
+      "sha256": "59b525acbf33447f0999770292e89779190af0db511a8fa6690c4231210b178f"
+    },
+    {
+      "entry": "records/vulkan/revisions/none-scale-before/third_party/iree_vulkan_runtime/programs/official.mlir",
+      "bytes": 57537,
+      "sha256": "2282272791fafc299828cdb998227dae53a55e84f5964e1ed3607080c8cd1c95"
+    },
+    {
+      "entry": "records/vulkan/revisions/none-scale-before/third_party/iree_vulkan_runtime/programs/official.vmfb.b64",
+      "bytes": 209007,
+      "sha256": "540f7e1a7f097c54080779af41db6f4108dbab6d05179be9ae97d828af010c93"
+    },
+    {
+      "entry": "records/vulkan/source-freeze.json",
+      "bytes": 9938,
+      "sha256": "98602ecf32c88558bb3f902aceb4c08d9f8cefaf0e7498c07d86427cb9820ecb"
+    },
+    {
+      "entry": "records/vulkan/validation/attempt1/image-before.json",
+      "bytes": 275,
+      "sha256": "7903007c960fd2de805f3ac5e3835a0206c809eae4095a76dfbde659186e3334"
+    },
+    {
+      "entry": "records/vulkan/validation/attempt1/live.json",
+      "bytes": 597,
+      "sha256": "8703a397bca52962009b86e708e52c6f36fd30c8a82ae5eb5f7d8a1ca7ad9df6"
+    },
+    {
+      "entry": "records/vulkan/validation/attempt1/receipt.json",
+      "bytes": 2717,
+      "sha256": "73fc5a369abc486cb90975896639302a7958edd5eddc87f6d73e8b9555274612"
+    },
+    {
+      "entry": "records/vulkan/validation/attempt1/runtime-environment.json",
+      "bytes": 8168,
+      "sha256": "1aa2abd4e47acb9619357b1f5ae4706989f3fd36515133996fb310250fb6abf3"
+    },
+    {
+      "entry": "records/vulkan/validation/attempt1/tests.command.json",
+      "bytes": 527,
+      "sha256": "2c61c4ff2d870f3122667dfcca8c0262323c97b4daf0f6f998a68d810f8f038c"
+    },
+    {
+      "entry": "records/vulkan/validation/attempt1/tests.result.json",
+      "bytes": 597,
+      "sha256": "8703a397bca52962009b86e708e52c6f36fd30c8a82ae5eb5f7d8a1ca7ad9df6"
+    },
+    {
+      "entry": "records/vulkan/validation/attempt1/tests.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/vulkan/validation/attempt1/tests.stdout.log",
+      "bytes": 164753,
+      "sha256": "6bb8fa48968515a521feff2707791081b1058b7d251231b4ce362167898bc39f"
+    },
+    {
+      "entry": "records/vulkan/validation/attempt1/tests.xml",
+      "bytes": 363088,
+      "sha256": "2821f63474ef4041f230bdb2871410b06cd206bd0a9fd26e542fe85ee658d4cc"
+    },
+    {
+      "entry": "records/vulkan/validation/attempt2/image-before.json",
+      "bytes": 277,
+      "sha256": "ecc7ab88698d9cc1f2974964ac94285e86ab56e02a00180e8195aca3d9046be1"
+    },
+    {
+      "entry": "records/vulkan/validation/attempt2/live.json",
+      "bytes": 598,
+      "sha256": "f7fbd0f422acf861f28366fee3ac63fbab558074c06302862a24f5389dc3496b"
+    },
+    {
+      "entry": "records/vulkan/validation/attempt2/receipt.json",
+      "bytes": 2345,
+      "sha256": "d0d0311a0f0bc1ccd162dd91f94a58c86def16424a55fafe29640767e89fbd4c"
+    },
+    {
+      "entry": "records/vulkan/validation/attempt2/runtime-environment.json",
+      "bytes": 8168,
+      "sha256": "1aa2abd4e47acb9619357b1f5ae4706989f3fd36515133996fb310250fb6abf3"
+    },
+    {
+      "entry": "records/vulkan/validation/attempt2/tests.command.json",
+      "bytes": 529,
+      "sha256": "8d41603dfa8e8035191ae5a73e80e297d88fb2a2459f977367bb9ff1c074ea3f"
+    },
+    {
+      "entry": "records/vulkan/validation/attempt2/tests.result.json",
+      "bytes": 598,
+      "sha256": "f7fbd0f422acf861f28366fee3ac63fbab558074c06302862a24f5389dc3496b"
+    },
+    {
+      "entry": "records/vulkan/validation/attempt2/tests.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/vulkan/validation/attempt2/tests.stdout.log",
+      "bytes": 1078,
+      "sha256": "d9518a9bf7abc9c9a214470b503095ad09415aa07da086f2e2127e28ffaaa0da"
+    },
+    {
+      "entry": "records/vulkan/validation/attempt2/tests.xml",
+      "bytes": 1814,
+      "sha256": "b28b7acd31dc2f6b358d12c1467479d07213bd3a20aa59fdd9fd2846bf479bf0"
+    },
+    {
+      "entry": "records/vulkan/validation/none-probe1/image-before.json",
+      "bytes": 272,
+      "sha256": "b18b494b0dfa5319e8e8c0c021a169ece5521510b4d4653d11ffe5874b51ef8e"
+    },
+    {
+      "entry": "records/vulkan/validation/none-probe1/live.json",
+      "bytes": 594,
+      "sha256": "03949b00c2e066c3534554e3b68060a96d75fb4e0c0f91bf3cf612d9cdfb88cb"
+    },
+    {
+      "entry": "records/vulkan/validation/none-probe1/receipt.json",
+      "bytes": 1638,
+      "sha256": "b7743d05f44b4f9e3d713a23296d4a16ae561cc7e07f2e081732e7510902ef9b"
+    },
+    {
+      "entry": "records/vulkan/validation/none-probe1/runtime-environment.json",
+      "bytes": 8168,
+      "sha256": "1aa2abd4e47acb9619357b1f5ae4706989f3fd36515133996fb310250fb6abf3"
+    },
+    {
+      "entry": "records/vulkan/validation/none-probe1/tests.command.json",
+      "bytes": 525,
+      "sha256": "a07a91fd1bfd0020ec935ff792282ccacfa425c3d6aa3c4fa694cef0fdee3788"
+    },
+    {
+      "entry": "records/vulkan/validation/none-probe1/tests.result.json",
+      "bytes": 594,
+      "sha256": "03949b00c2e066c3534554e3b68060a96d75fb4e0c0f91bf3cf612d9cdfb88cb"
+    },
+    {
+      "entry": "records/vulkan/validation/none-probe1/tests.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/vulkan/validation/none-probe1/tests.stdout.log",
+      "bytes": 713,
+      "sha256": "c8c6384deb3d31838f596d76f29a835abfc7d1d428be6714c215d78a3dea0996"
+    },
+    {
+      "entry": "records/vulkan/validation/none-probe1/tests.xml",
+      "bytes": 1005,
+      "sha256": "7b5a841cb3217ccc7d5aa146ba6a1ff99b6c3674438f6e41bf3be4c51db97426"
+    },
+    {
+      "entry": "research/design.json",
+      "bytes": 21510,
+      "sha256": "abd2f77c1ada7a26acc8899d2f2169fe826857b31311b18d0b3d3134df3f6d77"
+    },
+    {
+      "entry": "source/cmake/HyleDependencyLock.json",
+      "bytes": 77554,
+      "sha256": "8c5458705e8814ae4560169a8832b140deb3ce7df42dfb04139b9aaaa6db0dab"
+    },
+    {
+      "entry": "source/include/hyle/compute/model_ops.h",
+      "bytes": 73746,
+      "sha256": "9b756a476355de744b48cad12b72bbcd4239870d7243dc1efdef22fc06204a18"
+    },
+    {
+      "entry": "source/src/compute_provider_cuda/cuda_provider.cc",
+      "bytes": 21752,
+      "sha256": "9f333dacfe1d57d6df5ccd380df10133985878b3c882453b99a6f683ce5a7845"
+    },
+    {
+      "entry": "source/src/compute_provider_cuda/grouped_fp8_provider.cc",
+      "bytes": 15248,
+      "sha256": "e72b9fe5632688384c1b38ffccfbc81ade9d245177141a084974e714c626763e"
+    },
+    {
+      "entry": "source/src/compute_provider_iree_vulkan/native_program.cc",
+      "bytes": 55702,
+      "sha256": "f22ffc75ae7b1bb2ac3668a811f1b62323937265944b485e8465f3da76735fd3"
+    },
+    {
+      "entry": "source/src/compute_provider_iree_vulkan/native_program.h",
+      "bytes": 7881,
+      "sha256": "22fbcc99f57a7d86ae10d9d1c9494fac3a63e7106b1c8b7d21b61cb863007565"
+    },
+    {
+      "entry": "source/src/compute_provider_native/torch_cpu_program.cc",
+      "bytes": 42454,
+      "sha256": "9526a9c7bb651b73e3f90ea96850a291f8260d15ec2301d570bd70c6a5ffefb2"
+    },
+    {
+      "entry": "source/src/compute_route_apple/apple_mature_float.cc",
+      "bytes": 36463,
+      "sha256": "47470bbdfecaa4d01234013218adb8539d118eaed0a7333b8a790245091720cb"
+    },
+    {
+      "entry": "source/src/compute_route_vulkan/vulkan_iree.cc",
+      "bytes": 31057,
+      "sha256": "cccf570d016409f412d58423f3f7943d689071ce96417efadfdb47a9ccbf9888"
+    },
+    {
+      "entry": "source/src/compute_route_vulkan/vulkan_official.cc",
+      "bytes": 10297,
+      "sha256": "a5a432eaa55db2cec8f6225a1ce2223822422a50b92c5ca9c0ca31da5b0f68f6"
+    },
+    {
+      "entry": "source/src/compute_route_vulkan/vulkan_program.cc",
+      "bytes": 55681,
+      "sha256": "06e9ec34669f36c20575f67bc2242ca28dee143dc3a282941c2ccf50b9bdda92"
+    },
+    {
+      "entry": "source/tests/compute_models/grouped_fp8_power2_fixture.h",
+      "bytes": 14266,
+      "sha256": "81d863ce324a4f42f8046bae3fb3d2e17dc6d7870558a7ae8c3347c7de46e0e2"
+    },
+    {
+      "entry": "source/tests/compute_models/nvfp4_reference_fixture.h",
+      "bytes": 22482,
+      "sha256": "cc94ec1f443511722ff4fc227b065af27b82573443735250951cdce934faa4d3"
+    },
+    {
+      "entry": "source/tests/compute_ops/operation_test.cc",
+      "bytes": 90235,
+      "sha256": "ec987a2d51c2500bf9bb9a9002f26987436bcc41e43a4118ed97d81631555cfa"
+    },
+    {
+      "entry": "source/tests/compute_provider_cuda/grouped_fp8_test.cc",
+      "bytes": 19587,
+      "sha256": "2525d7bd6008ccdf0357488d0ffc72f1274c0ced4f21af6e02481aae327cfdcb"
+    },
+    {
+      "entry": "source/tests/compute_provider_native/torch_cpu_test.cc",
+      "bytes": 27159,
+      "sha256": "aba4c38ce9c0b994ae2439958d96e488a3046c3ae52b53c4599e1b66e6a18465"
+    },
+    {
+      "entry": "source/tests/graph_route_apple/CMakeLists.txt",
+      "bytes": 6310,
+      "sha256": "c0631c3b0418c1fa5e6d00d3f954b2154b773c3b9093867ee111d2bfe581d784"
+    },
+    {
+      "entry": "source/tests/graph_route_apple/grouped_fp8_power2_test.cc",
+      "bytes": 2048,
+      "sha256": "e14a2ac9ecafdf5d7d88893fab1f1e77dd4b81e4f6dacb3d4c2a0f173a05368c"
+    },
+    {
+      "entry": "source/tests/graph_route_cpu/CMakeLists.txt",
+      "bytes": 3459,
+      "sha256": "838d7eee5722eeeb6baa693a9530ae53504374a406e0246d86ec0eb1a3933eea"
+    },
+    {
+      "entry": "source/tests/graph_route_cpu/grouped_fp8_power2_test.cc",
+      "bytes": 1296,
+      "sha256": "6fd4fe3c32025eb1ad0e896c79a0f5605d966450bceff431a421b44ce50a62e1"
+    },
+    {
+      "entry": "source/tests/graph_route_cuda/CMakeLists.txt",
+      "bytes": 2578,
+      "sha256": "7f0376322f4fc0154424c5b940727dafbd45a61a5749df0e4678c9ff9a42d7ee"
+    },
+    {
+      "entry": "source/tests/graph_route_cuda/grouped_fp8_power2_test.cc",
+      "bytes": 3420,
+      "sha256": "270ff0b89289264b4f4ed968ed1d73be7709457144f9e90253c9f2422cbdb559"
+    },
+    {
+      "entry": "source/tests/graph_route_vulkan/CMakeLists.txt",
+      "bytes": 5783,
+      "sha256": "bcf18d4a66a8b90eada5967b347f6120bbfa956209154f687f09dc65594f8b97"
+    },
+    {
+      "entry": "source/tests/graph_route_vulkan/grouped_fp8_power2_test.cc",
+      "bytes": 4241,
+      "sha256": "5a1465dbfdcca397b542ce13b4d320e4d03a795d3c034a7aba139e0484c1e738"
+    },
+    {
+      "entry": "source/third_party/iree_vulkan_runtime/programs/compile_official.py",
+      "bytes": 4202,
+      "sha256": "e922d5ea8b47d59bd80613de2a7873e1d7e13c59052c22614f8978953a3dd811"
+    },
+    {
+      "entry": "source/third_party/iree_vulkan_runtime/programs/generate_official.py",
+      "bytes": 32153,
+      "sha256": "4bdfb3d3f2b571dd9c87c0c74d1ac7fcf4369fd2d0059c09d6fd89be89b41349"
+    },
+    {
+      "entry": "source/third_party/iree_vulkan_runtime/programs/manifest.json",
+      "bytes": 7447,
+      "sha256": "5936e7426b781a19540b849c81fb1ca5dd5ffc8dffb8c0a2fd2f282e782bbdfd"
+    },
+    {
+      "entry": "source/third_party/iree_vulkan_runtime/programs/official.mlir",
+      "bytes": 58996,
+      "sha256": "546bb9b3330e47a5fe3a554a85551336b20f4b21eb315b6fb3dc92ee4377b624"
+    },
+    {
+      "entry": "source/third_party/iree_vulkan_runtime/programs/official.vmfb.b64",
+      "bytes": 209919,
+      "sha256": "263f9cc3b0fa3be529695845be21db9c8572e755df3288f851ac4c359ce0abd6"
+    }
+  ]
+}

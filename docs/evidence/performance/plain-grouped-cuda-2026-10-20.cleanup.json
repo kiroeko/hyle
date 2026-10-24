@@ -1,0 +1,89 @@
+{
+  "passed": true,
+  "recorded_utc": "2026-10-19T22:56:37.9359305Z",
+  "script": {
+    "path": "C:\\public\\project-hyle\\hyle\\test.ps1",
+    "sha256": "9ec30dd594485c04cecf60e19e8964a7b5b16897d81fa2a1896ac434e18ef8f4",
+    "source": "param([switch]$Execute)\r\n$ErrorActionPreference = 'Stop'\r\n$projectRoot = (Resolve-Path -LiteralPath 'C:\\public\\project-hyle\\hyle').Path\r\n$taskStage = Join-Path $projectRoot '.scratch\\architecture-refactor-2026-10-18\\plain-grouped-cuda'\r\n$planPath = Join-Path $taskStage 'cleanup-plan.json'\r\n$cleanupPlan = Get-Content -LiteralPath $planPath -Raw | ConvertFrom-Json\r\n$linkPlan = Get-Content -LiteralPath $cleanupPlan.current_link_plan.path -Raw | ConvertFrom-Json\r\n$protectedFiles = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)\r\nforeach ($inputFile in $linkPlan.inputs) { [void]$protectedFiles.Add([IO.Path]::GetFullPath($inputFile.path)) }\r\n[void]$protectedFiles.Add([IO.Path]::GetFullPath($cleanupPlan.final_image.path))\r\n\r\nforeach ($required in @($cleanupPlan.archive, $cleanupPlan.final_image, $cleanupPlan.final_test_image, $cleanupPlan.current_link_plan)) {\r\n    $item = Get-Item -LiteralPath $required.path\r\n    if ($item.Length -ne $required.bytes -or (Get-FileHash -LiteralPath $required.path -Algorithm SHA256).Hash -ine $required.sha256) {\r\n        throw \"Retained evidence or current build changed: $($required.path)\"\r\n    }\r\n}\r\n$checkedTargets = @()\r\nforeach ($target in $cleanupPlan.targets) {\r\n    $resolved = (Resolve-Path -LiteralPath $target.path).Path\r\n    $allowedRoot = $taskStage + [IO.Path]::DirectorySeparatorChar\r\n    if (-not $resolved.StartsWith($allowedRoot, [StringComparison]::OrdinalIgnoreCase)) {\r\n        throw \"Cleanup target escaped the intended task directory: $resolved\"\r\n    }\r\n    if ($protectedFiles.Contains($resolved)) { throw \"Cleanup target is a current link input/image: $resolved\" }\r\n    $item = Get-Item -LiteralPath $resolved\r\n    if ($item.PSIsContainer -or ($item.Attributes -band [IO.FileAttributes]::ReparsePoint)) {\r\n        throw \"Only exact ordinary files can be deleted: $resolved\"\r\n    }\r\n    if ($item.Length -ne $target.bytes -or (Get-FileHash -LiteralPath $resolved -Algorithm SHA256).Hash -ine $target.sha256) {\r\n        throw \"Cleanup target changed: $resolved\"\r\n    }\r\n    $checkedTargets += $target\r\n}\r\nif (-not $Execute) {\r\n    $checkedTargets | Select-Object path, bytes\r\n    Write-Output \"Verified $($checkedTargets.Count) exact files; reclaimable bytes $($cleanupPlan.reclaimable_bytes). Use -Execute to delete.\"\r\n    return\r\n}\r\n$removed = @()\r\nforeach ($target in $checkedTargets) {\r\n    Remove-Item -LiteralPath $target.path -Force\r\n    if (Test-Path -LiteralPath $target.path) { throw \"Deletion did not complete: $($target.path)\" }\r\n    $removed += $target\r\n}\r\nif (-not (Test-Path -LiteralPath $cleanupPlan.final_image.path) -or -not (Test-Path -LiteralPath $cleanupPlan.final_test_image.path)) { throw 'Current benchmark/test image was removed' }\r\n$receipt = [ordered]@{\r\n    passed = $true\r\n    recorded_utc = [DateTime]::UtcNow.ToString('o')\r\n    script = [ordered]@{ path = $PSCommandPath; sha256 = (Get-FileHash -LiteralPath $PSCommandPath -Algorithm SHA256).Hash.ToLowerInvariant(); source = (Get-Content -LiteralPath $PSCommandPath -Raw) }\r\n    archive_sha256 = $cleanupPlan.archive.sha256\r\n    removed = $removed\r\n    reclaimed_bytes = ($removed | Measure-Object -Property bytes -Sum).Sum\r\n    current_image_and_objects_retained = $true\r\n}\r\n$receiptPath = Join-Path $projectRoot 'docs\\evidence\\performance\\plain-grouped-cuda-2026-10-20.cleanup.json'\r\n$receipt | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath $receiptPath -Encoding utf8NoBOM\r\nWrite-Output \"Removed $($removed.Count) files; reclaimed $($receipt.reclaimed_bytes) bytes. Current image and linked objects retained.\"\r\n"
+  },
+  "archive_sha256": "7d873e4e8063d50bec265f6b2757f357467c78442d5e844b425ee61e2f97eee6",
+  "removed": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\plain-grouped-cuda\\checks\\before\\grouped-bench.exe",
+      "bytes": 116723712,
+      "sha256": "da6ff932ed8547cdde158c6c60e7b510a7709c7953047fe3d239c55dfcb39752"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\plain-grouped-cuda\\checks\\before\\grouped-bench.map",
+      "bytes": 33594294,
+      "sha256": "5b069c128e47e7a9d5bf0ed667234c5713855ab2b94a6480fbbcc417ab21cb41"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\plain-grouped-cuda\\checks\\before\\grouped-bench.lib",
+      "bytes": 42256,
+      "sha256": "dbce0ff59919d4faefac40ae1f84aae2ab8e075636200a6b55a36ebe2908ee32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\plain-grouped-cuda\\checks\\before\\grouped-bench.exp",
+      "bytes": 25020,
+      "sha256": "2322f1f3b8e7f1460c35d1e5b786b500ef8e1fcf6e641ebe3dfb47321b29737e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\plain-grouped-cuda\\checks\\native1\\control.exe",
+      "bytes": 116753920,
+      "sha256": "c851152584bec269e5dfcf2b745a759b1cdd3a0a8e779af51b893895288e8795"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\plain-grouped-cuda\\checks\\native1\\control.map",
+      "bytes": 33597073,
+      "sha256": "b21c1d56b0d04a48c99efb90ace076db09c24387142219d29bb3873446f063fa"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\plain-grouped-cuda\\checks\\native1\\control.lib",
+      "bytes": 41650,
+      "sha256": "6e6021240d599850ba1dccf0341a4d8a81278adfcfef859a93c118a266481a09"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\plain-grouped-cuda\\checks\\native1\\control.exp",
+      "bytes": 25009,
+      "sha256": "7eb8e0008e6a3ba5d346d8d8fa8efe15eaf8a59d7fa9c5b2c8e350bac9c32293"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\plain-grouped-cuda\\checks\\native1\\new.map",
+      "bytes": 33592137,
+      "sha256": "f6088b6a2feb429b55d5773def0c295a8b1c3afd57de0c398278267211b8d8ba"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\plain-grouped-cuda\\checks\\native1\\new.lib",
+      "bytes": 41298,
+      "sha256": "ff599a1e2d38a703595037bc03d26501290cb1137416884558125aa8e747bf7a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\plain-grouped-cuda\\checks\\native1\\new.exp",
+      "bytes": 25001,
+      "sha256": "017168e03cb43e62bb725d6556c9e0ee2bd8be667be6ed28a8627c283d23bf52"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\plain-grouped-cuda\\checks\\native1\\tests.map",
+      "bytes": 34600554,
+      "sha256": "77b3928bc24402258906b65e1c444a416fb56852ddb9c6feb3f3584f4dab75df"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\plain-grouped-cuda\\checks\\native1\\tests.lib",
+      "bytes": 41474,
+      "sha256": "eb94a4b61486dd914abc7fea7de972f2f36d30506b483ec4765f2d276d689b15"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\plain-grouped-cuda\\checks\\native1\\tests.exp",
+      "bytes": 25005,
+      "sha256": "18865c4671a94159d4bc1ac4bc5a1b03937df2bdb1d365c2fbc9811805d4ec1e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\plain-grouped-cuda\\checks\\native1\\mmvf.sass.txt",
+      "bytes": 47231252,
+      "sha256": "9bd6ace2c554f69209d87cda0d6916a5e2c4f68097c7970620fcc92040fb67bb"
+    }
+  ],
+  "reclaimed_bytes": 416359655.0,
+  "current_image_and_objects_retained": true
+}

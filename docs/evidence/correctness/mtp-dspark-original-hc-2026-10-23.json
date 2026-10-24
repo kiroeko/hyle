@@ -1,0 +1,1810 @@
+{
+  "date": "2026-10-23",
+  "stage": "BJ",
+  "goal_complete": false,
+  "conclusion": "34 original F32 norm/sink/HC parameters now join the existing original11 sidecar and formal BF16 shared vocabulary in the same complete three-stage DSpark accepted-state journey on CPU and CUDA.",
+  "artifact": {
+    "original_roles": 47,
+    "original_payload_bytes": 2320527260,
+    "sidecar_original_roles": 45,
+    "sidecar_total_roles": 81,
+    "additional_formal_vocabulary_roles": 2,
+    "acquisition": {
+      "repository": "unsloth/DeepSeek-V4-Flash-0731-GGUF",
+      "revision": "fbbb5b93fb787c21338159b0af3318bb3f4d9768",
+      "file": "dspark-DeepSeek-V4-Flash-0731-Q8_0.gguf",
+      "url": "https://huggingface.co/unsloth/DeepSeek-V4-Flash-0731-GGUF/resolve/fbbb5b93fb787c21338159b0af3318bb3f4d9768/dspark-DeepSeek-V4-Flash-0731-Q8_0.gguf",
+      "whole_file_bytes": 10896057440,
+      "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+      "tensor_table_sha256": "44f30d92e3be1e3737b92dddcb737e6d85944b60804a7a7a810a2ac60c79de5f",
+      "tensor_data_offset": 5253152,
+      "source_header": {
+        "path": ".scratch\\validation\\cpu-quant-mtp-c1\\headers.json",
+        "bytes": 26636221,
+        "sha256": "bded8af0909a524f3516e3a53ba77996ba664793fe815c58c16e4fbbe18460d0"
+      },
+      "complete": true,
+      "requests": [
+        {
+          "first": 10272909344,
+          "last": 10272909599,
+          "requested_bytes": 256,
+          "complete": true,
+          "started_utc": "2026-10-22T19:20:54.189867+00:00",
+          "http_status": 206,
+          "content_range": "bytes 10272909344-10272909599/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "bytes": 256,
+          "sha256": "dc60662d5641f55fe255aeca254e1c9833c45031a3b2298f5f25adb1e29bb60c",
+          "finished_utc": "2026-10-22T19:20:55.992722+00:00"
+        },
+        {
+          "first": 10272911648,
+          "last": 10272915743,
+          "requested_bytes": 4096,
+          "complete": true,
+          "started_utc": "2026-10-22T19:20:55.993239+00:00",
+          "http_status": 206,
+          "content_range": "bytes 10272911648-10272915743/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "bytes": 4096,
+          "sha256": "7f0b93f9e600ee455e8d92e19eb3096f7d6515a2c7d9ea946fae445c3eb27d98",
+          "finished_utc": "2026-10-22T19:20:57.313362+00:00"
+        },
+        {
+          "first": 10386555168,
+          "last": 10386571551,
+          "requested_bytes": 16384,
+          "complete": true,
+          "started_utc": "2026-10-22T19:20:57.313886+00:00",
+          "http_status": 206,
+          "content_range": "bytes 10386555168-10386571551/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "bytes": 16384,
+          "sha256": "396a12e43a9f52abd1559782a8ff9e56ecc64be27d8ca5adfbb306a0c3bf8383",
+          "finished_utc": "2026-10-22T19:20:58.588019+00:00"
+        },
+        {
+          "first": 10415408416,
+          "last": 10418570763,
+          "requested_bytes": 3162348,
+          "complete": true,
+          "started_utc": "2026-10-22T19:20:58.588385+00:00",
+          "http_status": 206,
+          "content_range": "bytes 10415408416-10418570763/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "bytes": 3162348,
+          "sha256": "37458042400920a2771c7895d03f85cd28de93aa0b94c47322d9c5110d6d364a",
+          "finished_utc": "2026-10-22T19:21:01.283315+00:00"
+        },
+        {
+          "first": 10472064544,
+          "last": 10472064799,
+          "requested_bytes": 256,
+          "complete": true,
+          "started_utc": "2026-10-22T19:21:01.283315+00:00",
+          "http_status": 206,
+          "content_range": "bytes 10472064544-10472064799/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "bytes": 256,
+          "sha256": "45cfa7493ee060bad19775720b1cbff6fdcfa2e4badd10192a4948bae7faf56f",
+          "finished_utc": "2026-10-22T19:21:02.638092+00:00"
+        },
+        {
+          "first": 10472066848,
+          "last": 10472070943,
+          "requested_bytes": 4096,
+          "complete": true,
+          "started_utc": "2026-10-22T19:21:02.638602+00:00",
+          "http_status": 206,
+          "content_range": "bytes 10472066848-10472070943/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "bytes": 4096,
+          "sha256": "73f77ae8a5126548d7ca1381b31367c391739a50e2cfcdb4ccd9f0450820e734",
+          "finished_utc": "2026-10-22T19:21:03.876815+00:00"
+        },
+        {
+          "first": 10585710368,
+          "last": 10585726751,
+          "requested_bytes": 16384,
+          "complete": true,
+          "started_utc": "2026-10-22T19:21:03.877455+00:00",
+          "http_status": 206,
+          "content_range": "bytes 10585710368-10585726751/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "bytes": 16384,
+          "sha256": "48ebda5d30a703e9fb9f09356841b1215058bba1453f8a7b425f798f9f645b8f",
+          "finished_utc": "2026-10-22T19:21:05.264005+00:00"
+        },
+        {
+          "first": 10614563616,
+          "last": 10617726239,
+          "requested_bytes": 3162624,
+          "complete": true,
+          "started_utc": "2026-10-22T19:21:05.264518+00:00",
+          "http_status": 206,
+          "content_range": "bytes 10614563616-10617726239/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "bytes": 3162624,
+          "sha256": "28c56158725f83091d9b74e3bff7cd43ab4f780191057a3a94c24bd810bfb00f",
+          "finished_utc": "2026-10-22T19:21:07.877265+00:00"
+        },
+        {
+          "first": 10617728288,
+          "last": 10617732383,
+          "requested_bytes": 4096,
+          "complete": true,
+          "started_utc": "2026-10-22T19:21:07.877873+00:00",
+          "http_status": 206,
+          "content_range": "bytes 10617728288-10617732383/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "bytes": 4096,
+          "sha256": "47b11cc973464af7f43922817a1ded49d6327a5efe3b16ffe6e97b0b811cec5e",
+          "finished_utc": "2026-10-22T19:21:09.168311+00:00"
+        },
+        {
+          "first": 10731371808,
+          "last": 10731388191,
+          "requested_bytes": 16384,
+          "complete": true,
+          "started_utc": "2026-10-22T19:21:09.168651+00:00",
+          "http_status": 206,
+          "content_range": "bytes 10731371808-10731388191/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "bytes": 16384,
+          "sha256": "d97f7b34ce8be7a6beb6250cc9625d217e2068d12da45fed856d2742cf0c50f3",
+          "finished_utc": "2026-10-22T19:21:10.646507+00:00"
+        },
+        {
+          "first": 10760233760,
+          "last": 10763658307,
+          "requested_bytes": 3424548,
+          "complete": true,
+          "started_utc": "2026-10-22T19:21:10.647029+00:00",
+          "http_status": 206,
+          "content_range": "bytes 10760233760-10763658307/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "bytes": 3424548,
+          "sha256": "ce13abbf8586d471e23ba40a53ce756e8f632e70504812cb82aa6a8f79657737",
+          "finished_utc": "2026-10-22T19:21:13.391736+00:00"
+        },
+        {
+          "first": 10896041056,
+          "last": 10896057439,
+          "requested_bytes": 16384,
+          "complete": true,
+          "started_utc": "2026-10-22T19:21:13.392239+00:00",
+          "http_status": 206,
+          "content_range": "bytes 10896041056-10896057439/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "bytes": 16384,
+          "sha256": "014657de94dfad9981299e368ae326c9c02948499f17f427ee9c4b2743d23b87",
+          "finished_utc": "2026-10-22T19:21:14.805527+00:00"
+        }
+      ],
+      "roles": [
+        {
+          "name": "blk.0.attn_sinks.weight",
+          "codec": "F32",
+          "gguf_dimensions": [
+            64
+          ],
+          "payload_bytes": 256,
+          "absolute_range_inclusive": [
+            10272909344,
+            10272909599
+          ],
+          "payload": {
+            "path": ".scratch\\dspark-original-hc-20261023\\original-parameters\\blk.0.attn_sinks.weight.f32",
+            "bytes": 256,
+            "sha256": "dc60662d5641f55fe255aeca254e1c9833c45031a3b2298f5f25adb1e29bb60c"
+          }
+        },
+        {
+          "name": "blk.0.attn_q_a_norm.weight",
+          "codec": "F32",
+          "gguf_dimensions": [
+            1024
+          ],
+          "payload_bytes": 4096,
+          "absolute_range_inclusive": [
+            10272911648,
+            10272915743
+          ],
+          "payload": {
+            "path": ".scratch\\dspark-original-hc-20261023\\original-parameters\\blk.0.attn_q_a_norm.weight.f32",
+            "bytes": 4096,
+            "sha256": "7f0b93f9e600ee455e8d92e19eb3096f7d6515a2c7d9ea946fae445c3eb27d98"
+          }
+        },
+        {
+          "name": "blk.0.attn_norm.weight",
+          "codec": "F32",
+          "gguf_dimensions": [
+            4096
+          ],
+          "payload_bytes": 16384,
+          "absolute_range_inclusive": [
+            10386555168,
+            10386571551
+          ],
+          "payload": {
+            "path": ".scratch\\dspark-original-hc-20261023\\original-parameters\\blk.0.attn_norm.weight.f32",
+            "bytes": 16384,
+            "sha256": "396a12e43a9f52abd1559782a8ff9e56ecc64be27d8ca5adfbb306a0c3bf8383"
+          }
+        },
+        {
+          "name": "blk.0.ffn_norm.weight",
+          "codec": "F32",
+          "gguf_dimensions": [
+            4096
+          ],
+          "payload_bytes": 16384,
+          "absolute_range_inclusive": [
+            10415408416,
+            10415424799
+          ],
+          "payload": {
+            "path": ".scratch\\dspark-original-hc-20261023\\original-parameters\\blk.0.ffn_norm.weight.f32",
+            "bytes": 16384,
+            "sha256": "4a9ba6b7f09bc524eff7bdefccdd15ce017d01dde5c12a30deccc744345d5353"
+          }
+        },
+        {
+          "name": "blk.0.hc_attn_base.weight",
+          "codec": "F32",
+          "gguf_dimensions": [
+            24
+          ],
+          "payload_bytes": 96,
+          "absolute_range_inclusive": [
+            10415424800,
+            10415424895
+          ],
+          "payload": {
+            "path": ".scratch\\dspark-original-hc-20261023\\original-parameters\\blk.0.hc_attn_base.weight.f32",
+            "bytes": 96,
+            "sha256": "385b7df6b621441668980435b404bb88afe7fa0cfbb5633a8cf422ba3636b33a"
+          }
+        },
+        {
+          "name": "blk.0.hc_attn_fn.weight",
+          "codec": "F32",
+          "gguf_dimensions": [
+            16384,
+            24
+          ],
+          "payload_bytes": 1572864,
+          "absolute_range_inclusive": [
+            10415424896,
+            10416997759
+          ],
+          "payload": {
+            "path": ".scratch\\dspark-original-hc-20261023\\original-parameters\\blk.0.hc_attn_fn.weight.f32",
+            "bytes": 1572864,
+            "sha256": "1e8c65edb07d24ea1bd64fc6ae5ca7a664f7a51c7b1f51176089c9099e747e1b"
+          }
+        },
+        {
+          "name": "blk.0.hc_attn_scale.weight",
+          "codec": "F32",
+          "gguf_dimensions": [
+            3
+          ],
+          "payload_bytes": 12,
+          "absolute_range_inclusive": [
+            10416997760,
+            10416997771
+          ],
+          "payload": {
+            "path": ".scratch\\dspark-original-hc-20261023\\original-parameters\\blk.0.hc_attn_scale.weight.f32",
+            "bytes": 12,
+            "sha256": "0e74710a3eb16a4cb2bef752dec1eaf5ce8ecc8b87ae69a2f6d11bb8bacfe2c9"
+          }
+        },
+        {
+          "name": "blk.0.hc_ffn_base.weight",
+          "codec": "F32",
+          "gguf_dimensions": [
+            24
+          ],
+          "payload_bytes": 96,
+          "absolute_range_inclusive": [
+            10416997792,
+            10416997887
+          ],
+          "payload": {
+            "path": ".scratch\\dspark-original-hc-20261023\\original-parameters\\blk.0.hc_ffn_base.weight.f32",
+            "bytes": 96,
+            "sha256": "989b3ee507d35c56717d9b1a1326e519e05cbd227a4d7a8e095f2f83d6c97874"
+          }
+        },
+        {
+          "name": "blk.0.hc_ffn_fn.weight",
+          "codec": "F32",
+          "gguf_dimensions": [
+            16384,
+            24
+          ],
+          "payload_bytes": 1572864,
+          "absolute_range_inclusive": [
+            10416997888,
+            10418570751
+          ],
+          "payload": {
+            "path": ".scratch\\dspark-original-hc-20261023\\original-parameters\\blk.0.hc_ffn_fn.weight.f32",
+            "bytes": 1572864,
+            "sha256": "bcfbd07fef36881bd8545af66c10d178cd7bd413fbd9ca004d480ff37b52e71d"
+          }
+        },
+        {
+          "name": "blk.0.hc_ffn_scale.weight",
+          "codec": "F32",
+          "gguf_dimensions": [
+            3
+          ],
+          "payload_bytes": 12,
+          "absolute_range_inclusive": [
+            10418570752,
+            10418570763
+          ],
+          "payload": {
+            "path": ".scratch\\dspark-original-hc-20261023\\original-parameters\\blk.0.hc_ffn_scale.weight.f32",
+            "bytes": 12,
+            "sha256": "aa79a2ca028960d269a0157a53f154838ca479874563334dbef2850d6d87a3fc"
+          }
+        },
+        {
+          "name": "blk.1.attn_sinks.weight",
+          "codec": "F32",
+          "gguf_dimensions": [
+            64
+          ],
+          "payload_bytes": 256,
+          "absolute_range_inclusive": [
+            10472064544,
+            10472064799
+          ],
+          "payload": {
+            "path": ".scratch\\dspark-original-hc-20261023\\original-parameters\\blk.1.attn_sinks.weight.f32",
+            "bytes": 256,
+            "sha256": "45cfa7493ee060bad19775720b1cbff6fdcfa2e4badd10192a4948bae7faf56f"
+          }
+        },
+        {
+          "name": "blk.1.attn_q_a_norm.weight",
+          "codec": "F32",
+          "gguf_dimensions": [
+            1024
+          ],
+          "payload_bytes": 4096,
+          "absolute_range_inclusive": [
+            10472066848,
+            10472070943
+          ],
+          "payload": {
+            "path": ".scratch\\dspark-original-hc-20261023\\original-parameters\\blk.1.attn_q_a_norm.weight.f32",
+            "bytes": 4096,
+            "sha256": "73f77ae8a5126548d7ca1381b31367c391739a50e2cfcdb4ccd9f0450820e734"
+          }
+        },
+        {
+          "name": "blk.1.attn_norm.weight",
+          "codec": "F32",
+          "gguf_dimensions": [
+            4096
+          ],
+          "payload_bytes": 16384,
+          "absolute_range_inclusive": [
+            10585710368,
+            10585726751
+          ],
+          "payload": {
+            "path": ".scratch\\dspark-original-hc-20261023\\original-parameters\\blk.1.attn_norm.weight.f32",
+            "bytes": 16384,
+            "sha256": "48ebda5d30a703e9fb9f09356841b1215058bba1453f8a7b425f798f9f645b8f"
+          }
+        },
+        {
+          "name": "blk.1.ffn_norm.weight",
+          "codec": "F32",
+          "gguf_dimensions": [
+            4096
+          ],
+          "payload_bytes": 16384,
+          "absolute_range_inclusive": [
+            10614563616,
+            10614579999
+          ],
+          "payload": {
+            "path": ".scratch\\dspark-original-hc-20261023\\original-parameters\\blk.1.ffn_norm.weight.f32",
+            "bytes": 16384,
+            "sha256": "086662abac6dff19d070ebc05df0c3031044d49a6987a170b14885fed1a17075"
+          }
+        },
+        {
+          "name": "blk.1.hc_attn_base.weight",
+          "codec": "F32",
+          "gguf_dimensions": [
+            24
+          ],
+          "payload_bytes": 96,
+          "absolute_range_inclusive": [
+            10614580000,
+            10614580095
+          ],
+          "payload": {
+            "path": ".scratch\\dspark-original-hc-20261023\\original-parameters\\blk.1.hc_attn_base.weight.f32",
+            "bytes": 96,
+            "sha256": "f0f0a1bd42b1e477d1ca9350516cb122171c973bd9d909d593a7a051b5c14f7a"
+          }
+        },
+        {
+          "name": "blk.1.hc_attn_fn.weight",
+          "codec": "F32",
+          "gguf_dimensions": [
+            16384,
+            24
+          ],
+          "payload_bytes": 1572864,
+          "absolute_range_inclusive": [
+            10614580096,
+            10616152959
+          ],
+          "payload": {
+            "path": ".scratch\\dspark-original-hc-20261023\\original-parameters\\blk.1.hc_attn_fn.weight.f32",
+            "bytes": 1572864,
+            "sha256": "36db97bf157625436cde8ef5d664cc75a5200ad0703b1e45e3f1cb014c8ee4d9"
+          }
+        },
+        {
+          "name": "blk.1.hc_attn_scale.weight",
+          "codec": "F32",
+          "gguf_dimensions": [
+            3
+          ],
+          "payload_bytes": 12,
+          "absolute_range_inclusive": [
+            10616152960,
+            10616152971
+          ],
+          "payload": {
+            "path": ".scratch\\dspark-original-hc-20261023\\original-parameters\\blk.1.hc_attn_scale.weight.f32",
+            "bytes": 12,
+            "sha256": "0d005a43144192ae70ab0f5c76f920a83e90d50e119fe1f5e44e4f80709ef539"
+          }
+        },
+        {
+          "name": "blk.1.hc_ffn_base.weight",
+          "codec": "F32",
+          "gguf_dimensions": [
+            24
+          ],
+          "payload_bytes": 96,
+          "absolute_range_inclusive": [
+            10616152992,
+            10616153087
+          ],
+          "payload": {
+            "path": ".scratch\\dspark-original-hc-20261023\\original-parameters\\blk.1.hc_ffn_base.weight.f32",
+            "bytes": 96,
+            "sha256": "c60c0d4de5e5f2120f78c0e2b4d8f24c40e79eab67a2a97860f11a2b4d10b4dd"
+          }
+        },
+        {
+          "name": "blk.1.hc_ffn_fn.weight",
+          "codec": "F32",
+          "gguf_dimensions": [
+            16384,
+            24
+          ],
+          "payload_bytes": 1572864,
+          "absolute_range_inclusive": [
+            10616153088,
+            10617725951
+          ],
+          "payload": {
+            "path": ".scratch\\dspark-original-hc-20261023\\original-parameters\\blk.1.hc_ffn_fn.weight.f32",
+            "bytes": 1572864,
+            "sha256": "5b3c567304f9d7c265eaae38269402eda8ceb33cdf26dea1937cfc7bc48b6531"
+          }
+        },
+        {
+          "name": "blk.1.hc_ffn_scale.weight",
+          "codec": "F32",
+          "gguf_dimensions": [
+            3
+          ],
+          "payload_bytes": 12,
+          "absolute_range_inclusive": [
+            10617725952,
+            10617725963
+          ],
+          "payload": {
+            "path": ".scratch\\dspark-original-hc-20261023\\original-parameters\\blk.1.hc_ffn_scale.weight.f32",
+            "bytes": 12,
+            "sha256": "7563f05bc705670f285c9b51742b695ab18456421a0f587dc3d17ffbdd12fb2b"
+          }
+        },
+        {
+          "name": "blk.2.attn_sinks.weight",
+          "codec": "F32",
+          "gguf_dimensions": [
+            64
+          ],
+          "payload_bytes": 256,
+          "absolute_range_inclusive": [
+            10617725984,
+            10617726239
+          ],
+          "payload": {
+            "path": ".scratch\\dspark-original-hc-20261023\\original-parameters\\blk.2.attn_sinks.weight.f32",
+            "bytes": 256,
+            "sha256": "6969251b319b8ee73981eb3065741216f0b76a32428bdd3c90cfb84d07008bb8"
+          }
+        },
+        {
+          "name": "blk.2.attn_q_a_norm.weight",
+          "codec": "F32",
+          "gguf_dimensions": [
+            1024
+          ],
+          "payload_bytes": 4096,
+          "absolute_range_inclusive": [
+            10617728288,
+            10617732383
+          ],
+          "payload": {
+            "path": ".scratch\\dspark-original-hc-20261023\\original-parameters\\blk.2.attn_q_a_norm.weight.f32",
+            "bytes": 4096,
+            "sha256": "47b11cc973464af7f43922817a1ded49d6327a5efe3b16ffe6e97b0b811cec5e"
+          }
+        },
+        {
+          "name": "blk.2.attn_norm.weight",
+          "codec": "F32",
+          "gguf_dimensions": [
+            4096
+          ],
+          "payload_bytes": 16384,
+          "absolute_range_inclusive": [
+            10731371808,
+            10731388191
+          ],
+          "payload": {
+            "path": ".scratch\\dspark-original-hc-20261023\\original-parameters\\blk.2.attn_norm.weight.f32",
+            "bytes": 16384,
+            "sha256": "d97f7b34ce8be7a6beb6250cc9625d217e2068d12da45fed856d2742cf0c50f3"
+          }
+        },
+        {
+          "name": "blk.2.ffn_norm.weight",
+          "codec": "F32",
+          "gguf_dimensions": [
+            4096
+          ],
+          "payload_bytes": 16384,
+          "absolute_range_inclusive": [
+            10760233760,
+            10760250143
+          ],
+          "payload": {
+            "path": ".scratch\\dspark-original-hc-20261023\\original-parameters\\blk.2.ffn_norm.weight.f32",
+            "bytes": 16384,
+            "sha256": "fdfd11f38ab60126ad31e0a05b38ddfdfe36cd50aa74f72911573853ee8b31a7"
+          }
+        },
+        {
+          "name": "blk.2.hc_attn_base.weight",
+          "codec": "F32",
+          "gguf_dimensions": [
+            24
+          ],
+          "payload_bytes": 96,
+          "absolute_range_inclusive": [
+            10760250144,
+            10760250239
+          ],
+          "payload": {
+            "path": ".scratch\\dspark-original-hc-20261023\\original-parameters\\blk.2.hc_attn_base.weight.f32",
+            "bytes": 96,
+            "sha256": "fd1d75a55d767ec1dce0871a11b374886ac51d85efff280e0ca135d31ed654d2"
+          }
+        },
+        {
+          "name": "blk.2.hc_attn_fn.weight",
+          "codec": "F32",
+          "gguf_dimensions": [
+            16384,
+            24
+          ],
+          "payload_bytes": 1572864,
+          "absolute_range_inclusive": [
+            10760250240,
+            10761823103
+          ],
+          "payload": {
+            "path": ".scratch\\dspark-original-hc-20261023\\original-parameters\\blk.2.hc_attn_fn.weight.f32",
+            "bytes": 1572864,
+            "sha256": "23570d806e81e2e9686d68a79c118666cc0e8aec6b03b5260c4daa66454c7553"
+          }
+        },
+        {
+          "name": "blk.2.hc_attn_scale.weight",
+          "codec": "F32",
+          "gguf_dimensions": [
+            3
+          ],
+          "payload_bytes": 12,
+          "absolute_range_inclusive": [
+            10761823104,
+            10761823115
+          ],
+          "payload": {
+            "path": ".scratch\\dspark-original-hc-20261023\\original-parameters\\blk.2.hc_attn_scale.weight.f32",
+            "bytes": 12,
+            "sha256": "b7c0ff61287e13c717a836032bc538b55afab27a2ff133c582412ffaef219f0b"
+          }
+        },
+        {
+          "name": "blk.2.hc_ffn_base.weight",
+          "codec": "F32",
+          "gguf_dimensions": [
+            24
+          ],
+          "payload_bytes": 96,
+          "absolute_range_inclusive": [
+            10761823136,
+            10761823231
+          ],
+          "payload": {
+            "path": ".scratch\\dspark-original-hc-20261023\\original-parameters\\blk.2.hc_ffn_base.weight.f32",
+            "bytes": 96,
+            "sha256": "0dd7c6e80b26d6995747380d75b931b33eb0c9c57483599be1ca60ca22feb97c"
+          }
+        },
+        {
+          "name": "blk.2.hc_ffn_fn.weight",
+          "codec": "F32",
+          "gguf_dimensions": [
+            16384,
+            24
+          ],
+          "payload_bytes": 1572864,
+          "absolute_range_inclusive": [
+            10761823232,
+            10763396095
+          ],
+          "payload": {
+            "path": ".scratch\\dspark-original-hc-20261023\\original-parameters\\blk.2.hc_ffn_fn.weight.f32",
+            "bytes": 1572864,
+            "sha256": "5924e62360949028b71892d86054d36c3c90ea78864711ebdc70b281db38ab3c"
+          }
+        },
+        {
+          "name": "blk.2.hc_ffn_scale.weight",
+          "codec": "F32",
+          "gguf_dimensions": [
+            3
+          ],
+          "payload_bytes": 12,
+          "absolute_range_inclusive": [
+            10763396096,
+            10763396107
+          ],
+          "payload": {
+            "path": ".scratch\\dspark-original-hc-20261023\\original-parameters\\blk.2.hc_ffn_scale.weight.f32",
+            "bytes": 12,
+            "sha256": "58d30d528c8f1a7a2e32eb9e0beea282e02b2417ebac6f44d5b09512a06487ab"
+          }
+        },
+        {
+          "name": "output_hc_base.weight",
+          "codec": "F32",
+          "gguf_dimensions": [
+            4
+          ],
+          "payload_bytes": 16,
+          "absolute_range_inclusive": [
+            10763396128,
+            10763396143
+          ],
+          "payload": {
+            "path": ".scratch\\dspark-original-hc-20261023\\original-parameters\\output_hc_base.weight.f32",
+            "bytes": 16,
+            "sha256": "feae4c4530df67ba8b01555ad528ad0b5452463828ebb6dbd44b99fae81048fb"
+          }
+        },
+        {
+          "name": "output_hc_fn.weight",
+          "codec": "F32",
+          "gguf_dimensions": [
+            16384,
+            4
+          ],
+          "payload_bytes": 262144,
+          "absolute_range_inclusive": [
+            10763396160,
+            10763658303
+          ],
+          "payload": {
+            "path": ".scratch\\dspark-original-hc-20261023\\original-parameters\\output_hc_fn.weight.f32",
+            "bytes": 262144,
+            "sha256": "2f6395f102ce551931d54e46bc85ac54dff63f00ce4e90266fc70ccdb5795e9b"
+          }
+        },
+        {
+          "name": "output_hc_scale.weight",
+          "codec": "F32",
+          "gguf_dimensions": [
+            1
+          ],
+          "payload_bytes": 4,
+          "absolute_range_inclusive": [
+            10763658304,
+            10763658307
+          ],
+          "payload": {
+            "path": ".scratch\\dspark-original-hc-20261023\\original-parameters\\output_hc_scale.weight.f32",
+            "bytes": 4,
+            "sha256": "47243371b69eabf3b1251a81710fbf577c470f7331d98bef369877defb16e0c5"
+          }
+        },
+        {
+          "name": "output_norm.weight",
+          "codec": "F32",
+          "gguf_dimensions": [
+            4096
+          ],
+          "payload_bytes": 16384,
+          "absolute_range_inclusive": [
+            10896041056,
+            10896057439
+          ],
+          "payload": {
+            "path": ".scratch\\dspark-original-hc-20261023\\original-parameters\\output_norm.weight.f32",
+            "bytes": 16384,
+            "sha256": "014657de94dfad9981299e368ae326c9c02948499f17f427ee9c4b2743d23b87"
+          }
+        }
+      ],
+      "whole_file_downloaded": false,
+      "role_payload_bytes": 9827740,
+      "successful_request_body_bytes": 9827856
+    },
+    "original_payloads_archived": false,
+    "byte_scope": "Checkpoint payload extents only, not a physical memory or VRAM measurement."
+  },
+  "implementation": {
+    "bank_lifetime": "Original F32 coefficients uploaded once through existing readonly StorageOwner/ReadLease; shared immutable host source remains alive for graph assembly and local checks. Full BF16 embedding/head reused without a dense F32 weight shadow.",
+    "mathematics": "Six stage HC matrices retain24 outputs with original3 scales/24 bases and20 Sinkhorn iterations. Final head independently retains4 projections/one scale/four bases. Learned attention/FFN/query/output RMS and per-head sinks use original F32 values.",
+    "state": "Same25-Graph journey per case: encoded main-ring bootstrap, complete three-stage draft, accepted prefixes0/1/2, wrap, independent nominated-Head continuation, rejection/cancellation/stale publication, retained results and collection. Proposal KV remains temporary.",
+    "observations": "137 logical observation fields deduplicate to materialized semantic outputs or independent Copy outputs;133 additional boundary outputs in each new case. No caller-bound required View and no host oracle re-upload.",
+    "product": "No new public API, executor, provider or dispatcher. Existing public Graph, immutable constant, resource and state mechanisms are reused."
+  },
+  "validation": {
+    "unique_tests": 6,
+    "failures": 0,
+    "errors": 0,
+    "skips": 0,
+    "model_graph_submissions": 150,
+    "new_original_model_graph_submissions": 50,
+    "related_regression_graph_submissions": 100,
+    "cases": [
+      {
+        "attributes": {
+          "name": "CpuOriginalHyperConnectionsFeedFullDraftAndAtomicAcceptedState",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_original_state_consumer_test.cc",
+          "line": "750",
+          "status": "run",
+          "result": "completed",
+          "time": "39.025",
+          "timestamp": "2026-10-23T03:39:26.540",
+          "classname": "DSparkOriginalState"
+        },
+        "properties": {
+          "stage0_attention_fn_provider": "ggml-cpu",
+          "stage0_ffn_fn_provider": "ggml-cpu",
+          "stage1_attention_fn_provider": "ggml-cpu",
+          "stage1_ffn_fn_provider": "ggml-cpu",
+          "stage2_attention_fn_provider": "ggml-cpu",
+          "stage2_ffn_fn_provider": "ggml-cpu",
+          "output_hc_fn_provider": "ggml-cpu",
+          "actual_submissions": "25",
+          "original_role_count": "47",
+          "original_role_bytes": "2320527260",
+          "encoded_draft_inputs": "6",
+          "semantic_draft_outputs": "7",
+          "test_boundary_outputs": "133",
+          "proposal_numerics": "all3 original M5 wkv/norm independent Q8 decode + compensated F64 dot/norm gate on actual activation; actual postnorm BF16 then independent RoPE gate; exact actual-F32->BF16 bits; exact actual-BF16->584B codes/scales; independent actual committed/proposal carrier reader equals prepared attention F32 keys byte-for-byte",
+          "full_vocabulary_lm_values_checked": "646400",
+          "lm_reference_episodes": "1",
+          "confidence_numerics": "every-episode independent original BF16 coefficients and actual widened-BF16 rawhidden/actualBF16 Markov dot; exact-F32-product/nonFTZ/overflow preconditions; analytic gamma4352(F32)+F64 absolute-product bound; old relative-gate exceedances/error/sumabs/maxratio in stdout, generated gate unchanged",
+          "shared_vocabulary": "formal Flash0731 BF16 full embedding/head, target-owned immutable banks; no dense F32 LM weight shadow",
+          "original_hc_numerics": "every-episode seven actual widened-BF16 x original-F32 dense HC projections with independent F64/product+accum bound; actual inverse RMS, original scale/base Sinkhorn20 and head gates, actual 4-stream collapse/expansion; actual learned RMS/sink inputs and exact local BF16 stores. Seven fn providers recorded from actual CompileReport.",
+          "scope": "47 original roles: formal Flash0731 BF16 full-V shared embedding/head plus Q8 DSpark original fc/mainnorm, 3 wkv/kvnorm, Markov/confidence, 13 norm/sink and21 HC parameters. Same complete three-stage encoded state and all-V head journey; remaining attention/MoE coefficients and target-capture/verifier boundary generated. All-V greedy, exact embedding, independent full-V LM and actual4352-term confidence bounds, old Markov cancellation/IDs gates; prefix0/1/2, wrap, continuation, retained results and collection. Not main UD-Q4 vocabulary, full original target/stages, natural acceptance or throughput."
+        }
+      },
+      {
+        "attributes": {
+          "name": "CudaOriginalHyperConnectionsFeedFullDraftAndAtomicAcceptedState",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_original_state_consumer_test.cc",
+          "line": "768",
+          "status": "run",
+          "result": "completed",
+          "time": "9.709",
+          "timestamp": "2026-10-23T03:40:05.566",
+          "classname": "DSparkOriginalState"
+        },
+        "properties": {
+          "stage0_attention_fn_provider": "cublasLt",
+          "stage0_ffn_fn_provider": "cublasLt",
+          "stage1_attention_fn_provider": "cublasLt",
+          "stage1_ffn_fn_provider": "cublasLt",
+          "stage2_attention_fn_provider": "cublasLt",
+          "stage2_ffn_fn_provider": "cublasLt",
+          "output_hc_fn_provider": "cublasLt",
+          "actual_submissions": "25",
+          "original_role_count": "47",
+          "original_role_bytes": "2320527260",
+          "encoded_draft_inputs": "6",
+          "semantic_draft_outputs": "7",
+          "test_boundary_outputs": "133",
+          "proposal_numerics": "all3 original M5 wkv/norm independent Q8 decode + compensated F64 dot/norm gate on actual activation; actual postnorm BF16 then independent RoPE gate; exact actual-F32->BF16 bits; exact actual-BF16->584B codes/scales; independent actual committed/proposal carrier reader equals prepared attention F32 keys byte-for-byte",
+          "full_vocabulary_lm_values_checked": "646400",
+          "lm_reference_episodes": "1",
+          "confidence_numerics": "every-episode independent original BF16 coefficients and actual widened-BF16 rawhidden/actualBF16 Markov dot; exact-F32-product/nonFTZ/overflow preconditions; analytic gamma4352(F32)+F64 absolute-product bound; old relative-gate exceedances/error/sumabs/maxratio in stdout, generated gate unchanged",
+          "shared_vocabulary": "formal Flash0731 BF16 full embedding/head, target-owned immutable banks; no dense F32 LM weight shadow",
+          "original_hc_numerics": "every-episode seven actual widened-BF16 x original-F32 dense HC projections with independent F64/product+accum bound; actual inverse RMS, original scale/base Sinkhorn20 and head gates, actual 4-stream collapse/expansion; actual learned RMS/sink inputs and exact local BF16 stores. Seven fn providers recorded from actual CompileReport.",
+          "scope": "47 original roles: formal Flash0731 BF16 full-V shared embedding/head plus Q8 DSpark original fc/mainnorm, 3 wkv/kvnorm, Markov/confidence, 13 norm/sink and21 HC parameters. Same complete three-stage encoded state and all-V head journey; remaining attention/MoE coefficients and target-capture/verifier boundary generated. All-V greedy, exact embedding, independent full-V LM and actual4352-term confidence bounds, old Markov cancellation/IDs gates; prefix0/1/2, wrap, continuation, retained results and collection. Not main UD-Q4 vocabulary, full original target/stages, natural acceptance or throughput."
+        }
+      },
+      {
+        "attributes": {
+          "name": "CpuEncodedMainHistoryFeedsFullDraftAndAtomicAcceptedState",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_original_state_consumer_test.cc",
+          "line": "740",
+          "status": "run",
+          "result": "completed",
+          "time": "56.43",
+          "timestamp": "2026-10-23T03:41:04.265",
+          "classname": "DSparkOriginalState"
+        },
+        "properties": {
+          "actual_submissions": "25",
+          "original_role_count": "11",
+          "original_role_bytes": "192576000",
+          "encoded_draft_inputs": "6",
+          "semantic_draft_outputs": "7",
+          "test_boundary_outputs": "18",
+          "proposal_numerics": "all3 original M5 wkv/norm independent Q8 decode + compensated F64 dot/norm gate on actual activation; actual postnorm BF16 then independent RoPE gate; exact actual-F32->BF16 bits; exact actual-BF16->584B codes/scales; independent actual committed/proposal carrier reader equals prepared attention F32 keys byte-for-byte",
+          "scope": "full three-stage draft HC/attention/MoE plus natural original Markov/confidence; original fc/norm and three original wkv/norm share readonly roles with accepted encoded history; prefix0/1/2, wrap, rejection, own-head continuation and retained results. Generated shared LM/embedding/other stage parameters and generated target-capture/verifier boundary, not trained target/full model or measured natural acceptance."
+        }
+      },
+      {
+        "attributes": {
+          "name": "CpuOriginalSharedVocabularyFeedsFullDraftAndAtomicAcceptedState",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_original_state_consumer_test.cc",
+          "line": "744",
+          "status": "run",
+          "result": "completed",
+          "time": "38.566",
+          "timestamp": "2026-10-23T03:42:00.696",
+          "classname": "DSparkOriginalState"
+        },
+        "properties": {
+          "actual_submissions": "25",
+          "original_role_count": "13",
+          "original_role_bytes": "2310699520",
+          "encoded_draft_inputs": "6",
+          "semantic_draft_outputs": "7",
+          "test_boundary_outputs": "23",
+          "proposal_numerics": "all3 original M5 wkv/norm independent Q8 decode + compensated F64 dot/norm gate on actual activation; actual postnorm BF16 then independent RoPE gate; exact actual-F32->BF16 bits; exact actual-BF16->584B codes/scales; independent actual committed/proposal carrier reader equals prepared attention F32 keys byte-for-byte",
+          "full_vocabulary_lm_values_checked": "646400",
+          "lm_reference_episodes": "1",
+          "confidence_numerics": "every-episode independent original BF16 coefficients and actual widened-BF16 rawhidden/actualBF16 Markov dot; exact-F32-product/nonFTZ/overflow preconditions; analytic gamma4352(F32)+F64 absolute-product bound; old relative-gate exceedances/error/sumabs/maxratio in stdout, generated gate unchanged",
+          "shared_vocabulary": "formal Flash0731 BF16 full embedding/head, target-owned immutable banks; no dense F32 LM weight shadow",
+          "scope": "original shared BF16 full-V embedding/head plus original Q8 DSpark eleven roles, complete three-stage generated remainder and generated target-capture/verifier boundary; all-V greedy and exact actual embedding rows, first-episode independent full-V F64 LM/error propagation, unchanged Markov cancellation/IDs gates, independent actual-input4352-term confidence error bound; prefix0/1/2, wrap, own-head continuation, old results and collection. Not main UD-Q4 vocabulary, full official BF16 target/stages, natural acceptance or throughput."
+        }
+      },
+      {
+        "attributes": {
+          "name": "CudaEncodedMainHistoryFeedsFullDraftAndAtomicAcceptedState",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_original_state_consumer_test.cc",
+          "line": "758",
+          "status": "run",
+          "result": "completed",
+          "time": "4.808",
+          "timestamp": "2026-10-23T03:42:39.262",
+          "classname": "DSparkOriginalState"
+        },
+        "properties": {
+          "actual_submissions": "25",
+          "original_role_count": "11",
+          "original_role_bytes": "192576000",
+          "encoded_draft_inputs": "6",
+          "semantic_draft_outputs": "7",
+          "test_boundary_outputs": "18",
+          "proposal_numerics": "all3 original M5 wkv/norm independent Q8 decode + compensated F64 dot/norm gate on actual activation; actual postnorm BF16 then independent RoPE gate; exact actual-F32->BF16 bits; exact actual-BF16->584B codes/scales; independent actual committed/proposal carrier reader equals prepared attention F32 keys byte-for-byte",
+          "scope": "full three-stage draft HC/attention/MoE plus natural original Markov/confidence; original fc/norm and three original wkv/norm share readonly roles with accepted encoded history; prefix0/1/2, wrap, rejection, own-head continuation and retained results. Generated shared LM/embedding/other stage parameters and generated target-capture/verifier boundary, not trained target/full model or measured natural acceptance."
+        }
+      },
+      {
+        "attributes": {
+          "name": "CudaOriginalSharedVocabularyFeedsFullDraftAndAtomicAcceptedState",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_original_state_consumer_test.cc",
+          "line": "762",
+          "status": "run",
+          "result": "completed",
+          "time": "8.936",
+          "timestamp": "2026-10-23T03:42:44.071",
+          "classname": "DSparkOriginalState"
+        },
+        "properties": {
+          "actual_submissions": "25",
+          "original_role_count": "13",
+          "original_role_bytes": "2310699520",
+          "encoded_draft_inputs": "6",
+          "semantic_draft_outputs": "7",
+          "test_boundary_outputs": "23",
+          "proposal_numerics": "all3 original M5 wkv/norm independent Q8 decode + compensated F64 dot/norm gate on actual activation; actual postnorm BF16 then independent RoPE gate; exact actual-F32->BF16 bits; exact actual-BF16->584B codes/scales; independent actual committed/proposal carrier reader equals prepared attention F32 keys byte-for-byte",
+          "full_vocabulary_lm_values_checked": "646400",
+          "lm_reference_episodes": "1",
+          "confidence_numerics": "every-episode independent original BF16 coefficients and actual widened-BF16 rawhidden/actualBF16 Markov dot; exact-F32-product/nonFTZ/overflow preconditions; analytic gamma4352(F32)+F64 absolute-product bound; old relative-gate exceedances/error/sumabs/maxratio in stdout, generated gate unchanged",
+          "shared_vocabulary": "formal Flash0731 BF16 full embedding/head, target-owned immutable banks; no dense F32 LM weight shadow",
+          "scope": "original shared BF16 full-V embedding/head plus original Q8 DSpark eleven roles, complete three-stage generated remainder and generated target-capture/verifier boundary; all-V greedy and exact actual embedding rows, first-episode independent full-V F64 LM/error propagation, unchanged Markov cancellation/IDs gates, independent actual-input4352-term confidence error bound; prefix0/1/2, wrap, own-head continuation, old results and collection. Not main UD-Q4 vocabulary, full official BF16 target/stages, natural acceptance or throughput."
+        }
+      }
+    ],
+    "precision": "Actual CompileReport identifies all seven CPU fn MatMuls as ggml-cpu and all seven CUDA fn MatMuls as cublasLt. Public F32 operands/accumulation are checked; linked Hyle cuBLAS implementation selects CUBLAS_COMPUTE_32F_PEDANTIC for actual F32 operands. Original coefficients are not narrowed to BF16/TF32.",
+    "numerical": "Every episode uses independent compensated F64 dots from actual BF16-representable inputs and original F32 coefficients, with separate F32 multiplication/reduction and F64-oracle bounds. Actual inverseRMS/mix/gates/Sinkhorn/pre/post/head and sink attention are checked locally; actual F32-to-BF16 stores checked exactly. Original full-V LM,4352-term confidence,embedding/greedy and Markov checks retained; generated gates unchanged.",
+    "numerical_observations": {
+      "DSparkOriginalState.CpuOriginalHyperConnectionsFeedFullDraftAndAtomicAcceptedState": [
+        "DSpark original HC blk.0.hc_attn K=16384 maxAbs=4.3038063743949814e-06 maxBoundRatio=9.685093051524157e-05",
+        "DSpark original HC blk.0.hc_ffn K=16384 maxAbs=1.4717889484927584e-05 maxBoundRatio=9.5543122992089159e-05",
+        "DSpark original HC blk.1.hc_attn K=16384 maxAbs=1.3313621607835559e-05 maxBoundRatio=8.6293928604439093e-05",
+        "DSpark original HC blk.1.hc_ffn K=16384 maxAbs=1.2486777450249066e-05 maxBoundRatio=8.8512956800560028e-05",
+        "DSpark original HC blk.2.hc_attn K=16384 maxAbs=5.875085548723292e-06 maxBoundRatio=4.0185553370631438e-05",
+        "DSpark original HC blk.2.hc_ffn K=16384 maxAbs=3.6031956511806133e-06 maxBoundRatio=3.1403021035707414e-05",
+        "DSpark original HC output_hc_fn K=16384 maxAbs=4.515114043757152e-08 maxBoundRatio=1.8601707790270238e-05",
+        "DSpark original confidence F32 dot: K=4352 prior_single_projection_gate_exceedances=1 maxAbs=2.4420369300059974e-06 maxSumAbs=13.874821585246536 maxBoundRatio=0.00067833333222470384",
+        "DSpark original full-V LM: values=646400 maxAbs=2.3494940251111984e-06 maxBoundRatio=5.3515090612010928e-05",
+        "DSpark original HC blk.0.hc_attn K=16384 maxAbs=4.3038063743949814e-06 maxBoundRatio=9.685093051524157e-05",
+        "DSpark original HC blk.0.hc_ffn K=16384 maxAbs=1.4717889484927584e-05 maxBoundRatio=9.5543122992089159e-05",
+        "DSpark original HC blk.1.hc_attn K=16384 maxAbs=1.3313621607835559e-05 maxBoundRatio=8.6293928604439093e-05",
+        "DSpark original HC blk.1.hc_ffn K=16384 maxAbs=1.2486777450249066e-05 maxBoundRatio=8.8512956800560028e-05",
+        "DSpark original HC blk.2.hc_attn K=16384 maxAbs=5.875085548723292e-06 maxBoundRatio=4.0185553370631438e-05",
+        "DSpark original HC blk.2.hc_ffn K=16384 maxAbs=3.6031956511806133e-06 maxBoundRatio=3.1403021035707414e-05",
+        "DSpark original HC output_hc_fn K=16384 maxAbs=4.515114043757152e-08 maxBoundRatio=1.8601707790270238e-05",
+        "DSpark original confidence F32 dot: K=4352 prior_single_projection_gate_exceedances=1 maxAbs=2.4420369300059974e-06 maxSumAbs=13.874821585246536 maxBoundRatio=0.00067833333222470384",
+        "DSpark original HC blk.0.hc_attn K=16384 maxAbs=4.3038063743949814e-06 maxBoundRatio=9.685093051524157e-05",
+        "DSpark original HC blk.0.hc_ffn K=16384 maxAbs=1.4900150461016894e-05 maxBoundRatio=8.756560194928258e-05",
+        "DSpark original HC blk.1.hc_attn K=16384 maxAbs=1.5795668090845542e-05 maxBoundRatio=0.00010333548945880611",
+        "DSpark original HC blk.1.hc_ffn K=16384 maxAbs=1.1235441490953237e-05 maxBoundRatio=7.3985581074406125e-05",
+        "DSpark original HC blk.2.hc_attn K=16384 maxAbs=8.589292285421381e-06 maxBoundRatio=5.636915281022073e-05",
+        "DSpark original HC blk.2.hc_ffn K=16384 maxAbs=7.1740059439662227e-06 maxBoundRatio=4.6477589940840518e-05",
+        "DSpark original HC output_hc_fn K=16384 maxAbs=4.0929765854347273e-08 maxBoundRatio=1.6880469529692532e-05",
+        "DSpark original confidence F32 dot: K=4352 prior_single_projection_gate_exceedances=0 maxAbs=2.0608349586836994e-06 maxSumAbs=13.867534217128195 maxBoundRatio=0.00060283251178751144",
+        "DSpark original HC blk.0.hc_attn K=16384 maxAbs=4.3038063743949814e-06 maxBoundRatio=9.685093051524157e-05",
+        "DSpark original HC blk.0.hc_ffn K=16384 maxAbs=9.4953064859737441e-06 maxBoundRatio=8.9512964635355636e-05",
+        "DSpark original HC blk.1.hc_attn K=16384 maxAbs=1.8830760168953024e-05 maxBoundRatio=0.00011646021630862063",
+        "DSpark original HC blk.1.hc_ffn K=16384 maxAbs=1.2124994093198895e-05 maxBoundRatio=8.7953894727118813e-05",
+        "DSpark original HC blk.2.hc_attn K=16384 maxAbs=5.8233315840539043e-06 maxBoundRatio=4.3291579814018103e-05",
+        "DSpark original HC blk.2.hc_ffn K=16384 maxAbs=4.2575095378083469e-06 maxBoundRatio=3.7103963160103987e-05",
+        "DSpark original HC output_hc_fn K=16384 maxAbs=4.59217962545111e-08 maxBoundRatio=1.9666703801956833e-05",
+        "DSpark original confidence F32 dot: K=4352 prior_single_projection_gate_exceedances=0 maxAbs=2.3586571842315607e-06 maxSumAbs=13.862586069117242 maxBoundRatio=0.00073276760844662148"
+      ],
+      "DSparkOriginalState.CudaOriginalHyperConnectionsFeedFullDraftAndAtomicAcceptedState": [
+        "DSpark original HC blk.0.hc_attn K=16384 maxAbs=7.6759118741165383e-06 maxBoundRatio=0.00013189493762010845",
+        "DSpark original HC blk.0.hc_ffn K=16384 maxAbs=2.9976678547427585e-05 maxBoundRatio=0.00017616696865715333",
+        "DSpark original HC blk.1.hc_attn K=16384 maxAbs=1.9966673221460954e-05 maxBoundRatio=0.00013748294539269189",
+        "DSpark original HC blk.1.hc_ffn K=16384 maxAbs=3.1881770908626102e-05 maxBoundRatio=0.00022026492235573122",
+        "DSpark original HC blk.2.hc_attn K=16384 maxAbs=1.3233374545507106e-05 maxBoundRatio=9.8417672228514271e-05",
+        "DSpark original HC blk.2.hc_ffn K=16384 maxAbs=1.3436960877299954e-05 maxBoundRatio=9.7513412587144326e-05",
+        "DSpark original HC output_hc_fn K=16384 maxAbs=9.0164067434450614e-08 maxBoundRatio=3.715601180304832e-05",
+        "DSpark original confidence F32 dot: K=4352 prior_single_projection_gate_exceedances=0 maxAbs=9.8261807579547167e-08 maxSumAbs=13.874736336918431 maxBoundRatio=3.0504929845326307e-05",
+        "DSpark original full-V LM: values=646400 maxAbs=0.00013421167386695743 maxBoundRatio=0.0033636448598660523",
+        "DSpark original HC blk.0.hc_attn K=16384 maxAbs=7.6759118741165383e-06 maxBoundRatio=0.00013189493762010845",
+        "DSpark original HC blk.0.hc_ffn K=16384 maxAbs=2.9976678547427585e-05 maxBoundRatio=0.00017616696865715333",
+        "DSpark original HC blk.1.hc_attn K=16384 maxAbs=1.9966673221460954e-05 maxBoundRatio=0.00013748294539269189",
+        "DSpark original HC blk.1.hc_ffn K=16384 maxAbs=3.1881770908626102e-05 maxBoundRatio=0.00022026492235573122",
+        "DSpark original HC blk.2.hc_attn K=16384 maxAbs=1.3233374545507106e-05 maxBoundRatio=9.8417672228514271e-05",
+        "DSpark original HC blk.2.hc_ffn K=16384 maxAbs=1.3436960877299954e-05 maxBoundRatio=9.7513412587144326e-05",
+        "DSpark original HC output_hc_fn K=16384 maxAbs=9.0164067434450614e-08 maxBoundRatio=3.715601180304832e-05",
+        "DSpark original confidence F32 dot: K=4352 prior_single_projection_gate_exceedances=0 maxAbs=9.8261807579547167e-08 maxSumAbs=13.874736336918431 maxBoundRatio=3.0504929845326307e-05",
+        "DSpark original HC blk.0.hc_attn K=16384 maxAbs=7.6759118741165383e-06 maxBoundRatio=0.00013189493762010845",
+        "DSpark original HC blk.0.hc_ffn K=16384 maxAbs=2.7543003966457039e-05 maxBoundRatio=0.000161865660914917",
+        "DSpark original HC blk.1.hc_attn K=16384 maxAbs=2.7030760520574407e-05 maxBoundRatio=0.00017683525702548938",
+        "DSpark original HC blk.1.hc_ffn K=16384 maxAbs=2.4563666585208924e-05 maxBoundRatio=0.00016472332103506374",
+        "DSpark original HC blk.2.hc_attn K=16384 maxAbs=1.8097092954860731e-05 maxBoundRatio=0.00013313268628527318",
+        "DSpark original HC blk.2.hc_ffn K=16384 maxAbs=1.0567191090160579e-05 maxBoundRatio=7.6654475864206426e-05",
+        "DSpark original HC output_hc_fn K=16384 maxAbs=6.4350704362392554e-08 maxBoundRatio=2.7733386529953847e-05",
+        "DSpark original confidence F32 dot: K=4352 prior_single_projection_gate_exceedances=0 maxAbs=6.524351192638278e-08 maxSumAbs=13.867668681185023 maxBoundRatio=2.0261018163017786e-05",
+        "DSpark original HC blk.0.hc_attn K=16384 maxAbs=7.6759118741165383e-06 maxBoundRatio=0.00013189493762010845",
+        "DSpark original HC blk.0.hc_ffn K=16384 maxAbs=3.0717548497705145e-05 maxBoundRatio=0.00018052170074045991",
+        "DSpark original HC blk.1.hc_attn K=16384 maxAbs=1.8847899482921097e-05 maxBoundRatio=0.00012330332739341488",
+        "DSpark original HC blk.1.hc_ffn K=16384 maxAbs=2.7756819420687865e-05 maxBoundRatio=0.00019176025013392954",
+        "DSpark original HC blk.2.hc_attn K=16384 maxAbs=1.0429268378686631e-05 maxBoundRatio=7.7533679323157627e-05",
+        "DSpark original HC blk.2.hc_ffn K=16384 maxAbs=9.0406227073458484e-06 maxBoundRatio=7.6096106510496235e-05",
+        "DSpark original HC output_hc_fn K=16384 maxAbs=4.3034158181409772e-08 maxBoundRatio=3.978107789593584e-05",
+        "DSpark original confidence F32 dot: K=4352 prior_single_projection_gate_exceedances=0 maxAbs=8.5732608567923307e-08 maxSumAbs=13.862074050870433 maxBoundRatio=2.7656043515358283e-05"
+      ]
+    },
+    "commands_and_results": [
+      {
+        "path": ".scratch\\dspark-original-hc-20261023\\checks1\\summary.json",
+        "bytes": 7194,
+        "sha256": "d9d7dea053d93f23669e2e00a2f471c89207bb41ad80cf9067c4b06119d82d11"
+      },
+      {
+        "path": ".scratch\\dspark-original-hc-20261023\\checks2\\summary.json",
+        "bytes": 8700,
+        "sha256": "2f124d94e0c5b416a220718947888a6053a44436d3fdab87cdfb4acf5384b7af"
+      }
+    ],
+    "compiled_host_translation_units": 1,
+    "SDK_builds": 0,
+    "native_CPU_builds": 0,
+    "NVCC_builds": 0,
+    "shaders": 0,
+    "first_native_run_failures": 0
+  },
+  "source_reviews": [
+    {
+      "path": ".scratch\\dspark-original-hc-20261023\\source\\freeze.json",
+      "bytes": 4088,
+      "sha256": "06c297231d74c7d9aa939c9bba1d29d2dc3b5003c8f110d74de05cf6f1cedccd"
+    },
+    {
+      "path": ".scratch\\dspark-original-hc-20261023\\hooks-source\\freeze.json",
+      "bytes": 4653,
+      "sha256": "d220c0cb09803ea3511a228366065d3bffd282d663540c465c9d2d458ebc6536"
+    },
+    {
+      "path": ".scratch\\dspark-original-hc-20261023\\reference-source\\freeze.json",
+      "bytes": 359,
+      "sha256": "d0bfa490646ca8ea7a702a7b7ef6f0702706432c948cce2bc4bde93354035730"
+    },
+    {
+      "path": ".scratch\\dspark-original-hc-20261023\\review\\dspark-hc-hooks-independent.json",
+      "bytes": 4933,
+      "sha256": "9eff304ea44cd3009e8e141f08aba13b686038907c7495d84908d88bcccca963"
+    },
+    {
+      "path": ".scratch\\dspark-original-hc-20261023\\review\\hc-reference-cross-review.json",
+      "bytes": 2106,
+      "sha256": "13dc4ea10bb23304ba8d1cc7fedb51101cb9f75de6fd90eb70777999d6fd2362"
+    },
+    {
+      "path": ".scratch\\dspark-original-hc-20261023\\review\\dspark-original-hc-state-independent.json",
+      "bytes": 6467,
+      "sha256": "76dd2d5c23ea3cf78764f2f4bdbb4f7b21b2de5e549a0674ddbc666e65d2db80"
+    },
+    {
+      "path": ".scratch\\dspark-original-hc-20261023\\review\\original-f32-payload-stats.json",
+      "bytes": 14316,
+      "sha256": "ed638b6bcb1de304c07eca3e0164076e20e7d2661018c851f01376b70f06ea76"
+    }
+  ],
+  "remaining_original_roles": {
+    "source_only": true,
+    "download_build_run_ssh": false,
+    "source_edits": false,
+    "current": {
+      "sidecar_roles_supplied": 45,
+      "sidecar_total": 81,
+      "additional_formal_BF16_vocabulary_roles": 2,
+      "combined_original_roles": 47,
+      "combined_original_payload_bytes": 2320527260,
+      "new34_payload_bytes": 9827740,
+      "new34_receipt": ".scratch/dspark-original-hc-20261023/original-parameters/acquisition.json",
+      "new34_source_freeze": ".scratch/dspark-original-hc-20261023/source/freeze.json",
+      "native_status": "Root-owned checks1 completed with exit0: new originalHC CPU/CUDA cases both passed,0fail/skip; CPU39.025s,CUDA9.709s,25Graph per backend,47 roles. Existing4case regressions remain separate root work; no throughput claim.",
+      "native_evidence": [
+        ".scratch/dspark-original-hc-20261023/checks1/process.json",
+        ".scratch/dspark-original-hc-20261023/checks1/results.xml",
+        ".scratch/dspark-original-hc-20261023/checks1/summary.json"
+      ],
+      "actual_seven_fn_providers": {
+        "CPU": "ggml-cpu",
+        "CUDA": "cublasLt"
+      }
+    },
+    "remaining": {
+      "count": 36,
+      "payload_bytes": 10688400384,
+      "groups": {
+        "attention_projection": {
+          "count": 12,
+          "bytes": 334233600,
+          "roles": [
+            {
+              "name": "blk.0.attn_output_a.weight",
+              "codec": "Q8_0",
+              "gguf_dimensions": [
+                4096,
+                8192
+              ],
+              "payload_bytes": 35651584,
+              "absolute_range_inclusive": [
+                10275143968,
+                10310795551
+              ]
+            },
+            {
+              "name": "blk.0.attn_output_b.weight",
+              "codec": "Q8_0",
+              "gguf_dimensions": [
+                8192,
+                4096
+              ],
+              "payload_bytes": 35651584,
+              "absolute_range_inclusive": [
+                10310795552,
+                10346447135
+              ]
+            },
+            {
+              "name": "blk.0.attn_q_a.weight",
+              "codec": "Q8_0",
+              "gguf_dimensions": [
+                4096,
+                1024
+              ],
+              "payload_bytes": 4456448,
+              "absolute_range_inclusive": [
+                10346447136,
+                10350903583
+              ]
+            },
+            {
+              "name": "blk.0.attn_q_b.weight",
+              "codec": "Q8_0",
+              "gguf_dimensions": [
+                1024,
+                32768
+              ],
+              "payload_bytes": 35651584,
+              "absolute_range_inclusive": [
+                10350903584,
+                10386555167
+              ]
+            },
+            {
+              "name": "blk.1.attn_output_a.weight",
+              "codec": "Q8_0",
+              "gguf_dimensions": [
+                4096,
+                8192
+              ],
+              "payload_bytes": 35651584,
+              "absolute_range_inclusive": [
+                10474299168,
+                10509950751
+              ]
+            },
+            {
+              "name": "blk.1.attn_output_b.weight",
+              "codec": "Q8_0",
+              "gguf_dimensions": [
+                8192,
+                4096
+              ],
+              "payload_bytes": 35651584,
+              "absolute_range_inclusive": [
+                10509950752,
+                10545602335
+              ]
+            },
+            {
+              "name": "blk.1.attn_q_a.weight",
+              "codec": "Q8_0",
+              "gguf_dimensions": [
+                4096,
+                1024
+              ],
+              "payload_bytes": 4456448,
+              "absolute_range_inclusive": [
+                10545602336,
+                10550058783
+              ]
+            },
+            {
+              "name": "blk.1.attn_q_b.weight",
+              "codec": "Q8_0",
+              "gguf_dimensions": [
+                1024,
+                32768
+              ],
+              "payload_bytes": 35651584,
+              "absolute_range_inclusive": [
+                10550058784,
+                10585710367
+              ]
+            },
+            {
+              "name": "blk.2.attn_output_a.weight",
+              "codec": "Q8_0",
+              "gguf_dimensions": [
+                4096,
+                8192
+              ],
+              "payload_bytes": 35651584,
+              "absolute_range_inclusive": [
+                10619960608,
+                10655612191
+              ]
+            },
+            {
+              "name": "blk.2.attn_output_b.weight",
+              "codec": "Q8_0",
+              "gguf_dimensions": [
+                8192,
+                4096
+              ],
+              "payload_bytes": 35651584,
+              "absolute_range_inclusive": [
+                10655612192,
+                10691263775
+              ]
+            },
+            {
+              "name": "blk.2.attn_q_a.weight",
+              "codec": "Q8_0",
+              "gguf_dimensions": [
+                4096,
+                1024
+              ],
+              "payload_bytes": 4456448,
+              "absolute_range_inclusive": [
+                10691263776,
+                10695720223
+              ]
+            },
+            {
+              "name": "blk.2.attn_q_b.weight",
+              "codec": "Q8_0",
+              "gguf_dimensions": [
+                1024,
+                32768
+              ],
+              "payload_bytes": 35651584,
+              "absolute_range_inclusive": [
+                10695720224,
+                10731371807
+              ]
+            }
+          ]
+        },
+        "shared_expert": {
+          "count": 9,
+          "bytes": 80216064,
+          "roles": [
+            {
+              "name": "blk.0.ffn_gate_shexp.weight",
+              "codec": "Q8_0",
+              "gguf_dimensions": [
+                4096,
+                2048
+              ],
+              "payload_bytes": 8912896,
+              "absolute_range_inclusive": [
+                10388669728,
+                10397582623
+              ]
+            },
+            {
+              "name": "blk.0.ffn_down_shexp.weight",
+              "codec": "Q8_0",
+              "gguf_dimensions": [
+                2048,
+                4096
+              ],
+              "payload_bytes": 8912896,
+              "absolute_range_inclusive": [
+                10397582624,
+                10406495519
+              ]
+            },
+            {
+              "name": "blk.0.ffn_up_shexp.weight",
+              "codec": "Q8_0",
+              "gguf_dimensions": [
+                4096,
+                2048
+              ],
+              "payload_bytes": 8912896,
+              "absolute_range_inclusive": [
+                10406495520,
+                10415408415
+              ]
+            },
+            {
+              "name": "blk.1.ffn_gate_shexp.weight",
+              "codec": "Q8_0",
+              "gguf_dimensions": [
+                4096,
+                2048
+              ],
+              "payload_bytes": 8912896,
+              "absolute_range_inclusive": [
+                10587824928,
+                10596737823
+              ]
+            },
+            {
+              "name": "blk.1.ffn_down_shexp.weight",
+              "codec": "Q8_0",
+              "gguf_dimensions": [
+                2048,
+                4096
+              ],
+              "payload_bytes": 8912896,
+              "absolute_range_inclusive": [
+                10596737824,
+                10605650719
+              ]
+            },
+            {
+              "name": "blk.1.ffn_up_shexp.weight",
+              "codec": "Q8_0",
+              "gguf_dimensions": [
+                4096,
+                2048
+              ],
+              "payload_bytes": 8912896,
+              "absolute_range_inclusive": [
+                10605650720,
+                10614563615
+              ]
+            },
+            {
+              "name": "blk.2.ffn_gate_shexp.weight",
+              "codec": "Q8_0",
+              "gguf_dimensions": [
+                4096,
+                2048
+              ],
+              "payload_bytes": 8912896,
+              "absolute_range_inclusive": [
+                10733495072,
+                10742407967
+              ]
+            },
+            {
+              "name": "blk.2.ffn_down_shexp.weight",
+              "codec": "Q8_0",
+              "gguf_dimensions": [
+                2048,
+                4096
+              ],
+              "payload_bytes": 8912896,
+              "absolute_range_inclusive": [
+                10742407968,
+                10751320863
+              ]
+            },
+            {
+              "name": "blk.2.ffn_up_shexp.weight",
+              "codec": "Q8_0",
+              "gguf_dimensions": [
+                4096,
+                2048
+              ],
+              "payload_bytes": 8912896,
+              "absolute_range_inclusive": [
+                10751320864,
+                10760233759
+              ]
+            }
+          ]
+        },
+        "router": {
+          "count": 3,
+          "bytes": 6291456,
+          "roles": [
+            {
+              "name": "blk.0.ffn_gate_inp.weight",
+              "codec": "BF16",
+              "gguf_dimensions": [
+                4096,
+                256
+              ],
+              "payload_bytes": 2097152,
+              "absolute_range_inclusive": [
+                10386572576,
+                10388669727
+              ]
+            },
+            {
+              "name": "blk.1.ffn_gate_inp.weight",
+              "codec": "BF16",
+              "gguf_dimensions": [
+                4096,
+                256
+              ],
+              "payload_bytes": 2097152,
+              "absolute_range_inclusive": [
+                10585727776,
+                10587824927
+              ]
+            },
+            {
+              "name": "blk.2.ffn_gate_inp.weight",
+              "codec": "BF16",
+              "gguf_dimensions": [
+                4096,
+                256
+              ],
+              "payload_bytes": 2097152,
+              "absolute_range_inclusive": [
+                10731397920,
+                10733495071
+              ]
+            }
+          ]
+        },
+        "router_bias": {
+          "count": 3,
+          "bytes": 3072,
+          "roles": [
+            {
+              "name": "blk.0.exp_probs_b.bias",
+              "codec": "F32",
+              "gguf_dimensions": [
+                256
+              ],
+              "payload_bytes": 1024,
+              "absolute_range_inclusive": [
+                10386571552,
+                10386572575
+              ]
+            },
+            {
+              "name": "blk.1.exp_probs_b.bias",
+              "codec": "F32",
+              "gguf_dimensions": [
+                256
+              ],
+              "payload_bytes": 1024,
+              "absolute_range_inclusive": [
+                10585726752,
+                10585727775
+              ]
+            },
+            {
+              "name": "blk.2.exp_probs_b.bias",
+              "codec": "F32",
+              "gguf_dimensions": [
+                256
+              ],
+              "payload_bytes": 1024,
+              "absolute_range_inclusive": [
+                10731396896,
+                10731397919
+              ]
+            }
+          ]
+        },
+        "expert": {
+          "count": 9,
+          "bytes": 10267656192,
+          "roles": [
+            {
+              "name": "blk.0.ffn_gate_exps.weight",
+              "codec": "MXFP4",
+              "gguf_dimensions": [
+                4096,
+                2048,
+                256
+              ],
+              "payload_bytes": 1140850688,
+              "absolute_range_inclusive": [
+                5253152,
+                1146103839
+              ]
+            },
+            {
+              "name": "blk.0.ffn_down_exps.weight",
+              "codec": "MXFP4",
+              "gguf_dimensions": [
+                2048,
+                4096,
+                256
+              ],
+              "payload_bytes": 1140850688,
+              "absolute_range_inclusive": [
+                1146103840,
+                2286954527
+              ]
+            },
+            {
+              "name": "blk.0.ffn_up_exps.weight",
+              "codec": "MXFP4",
+              "gguf_dimensions": [
+                4096,
+                2048,
+                256
+              ],
+              "payload_bytes": 1140850688,
+              "absolute_range_inclusive": [
+                2286954528,
+                3427805215
+              ]
+            },
+            {
+              "name": "blk.1.ffn_gate_exps.weight",
+              "codec": "MXFP4",
+              "gguf_dimensions": [
+                4096,
+                2048,
+                256
+              ],
+              "payload_bytes": 1140850688,
+              "absolute_range_inclusive": [
+                3427805216,
+                4568655903
+              ]
+            },
+            {
+              "name": "blk.1.ffn_down_exps.weight",
+              "codec": "MXFP4",
+              "gguf_dimensions": [
+                2048,
+                4096,
+                256
+              ],
+              "payload_bytes": 1140850688,
+              "absolute_range_inclusive": [
+                4568655904,
+                5709506591
+              ]
+            },
+            {
+              "name": "blk.1.ffn_up_exps.weight",
+              "codec": "MXFP4",
+              "gguf_dimensions": [
+                4096,
+                2048,
+                256
+              ],
+              "payload_bytes": 1140850688,
+              "absolute_range_inclusive": [
+                5709506592,
+                6850357279
+              ]
+            },
+            {
+              "name": "blk.2.ffn_gate_exps.weight",
+              "codec": "MXFP4",
+              "gguf_dimensions": [
+                4096,
+                2048,
+                256
+              ],
+              "payload_bytes": 1140850688,
+              "absolute_range_inclusive": [
+                6850357280,
+                7991207967
+              ]
+            },
+            {
+              "name": "blk.2.ffn_down_exps.weight",
+              "codec": "MXFP4",
+              "gguf_dimensions": [
+                2048,
+                4096,
+                256
+              ],
+              "payload_bytes": 1140850688,
+              "absolute_range_inclusive": [
+                7991207968,
+                9132058655
+              ]
+            },
+            {
+              "name": "blk.2.ffn_up_exps.weight",
+              "codec": "MXFP4",
+              "gguf_dimensions": [
+                4096,
+                2048,
+                256
+              ],
+              "payload_bytes": 1140850688,
+              "absolute_range_inclusive": [
+                9132058656,
+                10272909343
+              ]
+            }
+          ]
+        }
+      },
+      "source_identity": {
+        "repository": "unsloth/DeepSeek-V4-Flash-0731-GGUF",
+        "revision": "fbbb5b93fb787c21338159b0af3318bb3f4d9768",
+        "file": "dspark-DeepSeek-V4-Flash-0731-Q8_0.gguf",
+        "tensor_count": 81,
+        "tensor_data_offset": "5253152",
+        "tensor_table_sha256": "44f30d92e3be1e3737b92dddcb737e6d85944b60804a7a7a810a2ac60c79de5f"
+      },
+      "original_inventory": {
+        "path": ".scratch/qwen-mtp-state-20261023/review/remaining-original-roles.json",
+        "bytes": 35528,
+        "sha256": "6af0670a8971f6db3b2efb77732bd9e3080d65afcacbe74180f3fd713673253f"
+      }
+    },
+    "source_map": {
+      "attention_projection": {
+        "bytes": 334233600,
+        "current": "cpu_c4_model_branches.h::draft_attention qa439/qb449, ds::prepare_output_weight and ob457 are generated; original wkv/norm, queryNorm and learned sinks are already real.",
+        "natural_insert": "Four readonly roles per stage: qa MatMul -> actualBF16 -> existing original q_a RMS; qb MatMul -> actualBF16 -> existing queryNorm/RoPE; output_a reinterpret original Q8_0 [8192,4096] rows as canonical grouped[8,1024,4096] -> GroupedMatMul on actual[5,8,4096]; output_b MatMul [8192,4096] logical RHS. Keep BF16 stores and actual row positions.",
+        "full_geometry": "qa Q8_0[N1024,K4096]; qb Q8_0[N32768,K1024]; output_a Q8_0[E8,N1024,K4096], payload35651584B with original contiguous row order; output_b Q8_0[N4096,K8192].",
+        "reference": "Actual original-Q8 decoded rows/F64 local projection with selected-artifact/provider quantization contract; use real predecessor and retain exact BF16 stores. Do not leave current generatedFP8 sparse ModelLinear reference behind. Existing output_a source intentionally uses BF16-einsum for official BF16 checkpoint; Q8 GGUF selected artifact must be named separately.",
+        "smallest_complete_three_stage_batch": "12 roles334233600B, replaces the remaining generated attention coefficients on the same complete state journey; no target main capture claim."
+      },
+      "shared_expert": {
+        "bytes": 80216064,
+        "current": "d5_deepseek_official_fragments.h::moe_chain sg113/su127/sd139 generated block128FP8 shared experts.",
+        "natural_insert": "Three readonly Q8_0 banks per stage, gate/up [N2048,K4096], down[N4096,K2048]; use existing MatMul plus actualBF16 boundaries and model SwiGLU/clamp, then current final add to routed result. Router and selected expert IDs are unchanged.",
+        "smallest_complete_three_stage_batch": "9 roles80216064B; useful next independent parameter-supply batch, no new executor. All3 stages shared branch become original selected-Q8 while routed experts remain generated.",
+        "reference": "Original Q8 row decode/F64 at actual gate/up/down predecessors plus actual BF16 stores, actual clamp/SwiGLU; do not call the generated FP8 ModelLinear reference for supplied weights."
+      },
+      "router_and_bias": {
+        "bytes": 6294528,
+        "current": "d5_moe_execution_fragments.h::routing allocates full256way BF16/F32 router but generates only first7 nonzero rows; nonresident bias-4 keeps selected IDs in first7. Current official MoE allocates resident=top_k+1=7 weights.",
+        "actual": "Each original router BF16[256,4096] plus originalF32bias[256]; source Gate.forward promotes x and originalBF16 router toF32, sqrt(softplus(logits)), bias affects TopK IDs only, routing weights gather original unbiased scores/divide sum*route_scale.",
+        "dependency": "Original router OR bias can select any ID0..255, including >=7. They must join complete actual expert addressing for that same stage. Do not clamp/filter IDs, change256model dimension or silently map globalID modulo7. Router-only diagnostics cannot claim usable complete stage."
+      },
+      "expert_codecs": {
+        "bytes": 10267656192,
+        "current": "d5_deepseek_official_fragments.h::moe_chain uses generated GroupedFloat4Linear weights, BF16 activations quantized E4M3FN A-group128/powerOfTwo floor1e-4, original E2M1/F32group32 weight storage; per-token route weight is applied BEFORE down activation quantization.",
+        "acquired_format": "Actual sidecar nine GGUF_MXFP4 banks, each1140850688B: E256,N2048,K4096 gate/up and E256,N4096,K2048 down, 17B per32 values. Canonical gguf_grouped_weight_description(kMxfp4,F32,E,N,K) and GroupedMatMul are the natural native GGUF weights/ID boundary.",
+        "provider_path": "tensor_program.cc native_type maps kMxfp4->GGML_TYPE_MXFP4; native_grouped_bank accepts canonical rank3 with per-expert/stride/block signedI32 bounds; lower GroupedMatMul to ggml_mul_mat_id preserving actual bank type and global IDs. Actualfullbank67,108,864 encodedblocks and4,456,448B/expert fit these current descriptor predicates.",
+        "activation_math": "Cached fixed native ggml-cuda.cu::ggml_cuda_mul_mat_id chooses quantized MMVQ/MMQ for MXFP4; mmvq.cu1523-1528 allocates/quantizes actual F32 activations to Q8_1; vec_dot_mxfp4_q8_1 is in actual device switch. GGML_PREC_F32 accumulation/src flags do NOT change that path to official E4-A128. Thus native GGUF GroupedMatMul is a distinct activation arithmetic contract from current GroupedFloat4Linear.",
+        "not_drop_in": "Do not bind GGUF_MXFP4 bytes as official float4-group32 description, call it the same arithmetic, or reuse officialE4 quantization oracle unchanged. d5_official_fp4_storage.h::repack proves the separate GGUF nibble layout versus official packed-nibbles+F32 scales. A future explicit lossless codec conversion would still need original finite scale/nibble verification and would preserve officialE4 math, not nativeGGUFQ8 math; not implemented here.",
+        "reference": "Choose and name selected nativeGGUFQ8_1 arithmetic with actual per-leg activation quantizer/decoded-weight oracle, or explicit official-layout conversion plus existing E4-A128 contract. Preserve source weighting-before-down quantization and model clamp; current generic gguf_moe helper weights after down and is not an automatic equivalent replacement."
+      },
+      "residency": {
+        "full_banks": "Nine original experts total10267656192B, already larger than9.56GiB. Combined47currentroles+remaining36 would be13008927644B encoded/original parameters alone, before scratch/diagnostic outputs; do not assume fits the validation GPU.",
+        "current_api": "cuda::WeightSlots has two preallocated pinned/device slots and catalog IDs; upload_slices preserves exact registered encoded bank and explicitly performs NO global/local expert-ID remap. Engine owns placement/cache/eviction; ordinary graph::cuda::bind retains immutable WeightBatch owner to final reader/reset.",
+        "gap": "Existing fullE256 GroupedMatMul uses IDs as direct indices into the supplied bank. A compact resident subset cannot be passed with untouched globalIDs. Correct selected-expert streaming requires explicit originalID-to-resident-slot mapping and availability/ownership through all readers, retaining original IDs for routing/semantics. No such integrated DSpark compact-resident path is claimed by this source map.",
+        "smallest_complete_MoE_batch": "One stage all3 E256 original MXFP4 banks3422552064B +original router2097152B+bias1024B =3424650240B, optionally its3shared Q8 banks26738688B. Complete model dimensions and arbitrary actualIDs; other2 stages remain explicitly generated. CPU full3stage originals are a separate memory-capacity decision; do not reduce model or download all10GB by default."
+      },
+      "target_boundary": {
+        "remaining_outside_81": "Actual main target block40/41/42 capture producers and trained verifier/main continuation are still generated test inputs. Supplying all81 sidecar parameters would not itself establish original full target quality, natural MTP acceptance or throughput."
+      }
+    },
+    "next": "After BJ native results, prefer complete9shared Q8 bank injection80.2MB or complete12attention projection334.2MB into the existing state journey. Keep router+bias coupled to a complete arbitrary-ID expert supply; choose GGUF versus officialE4 activation arithmetic explicitly before expert integration. No new public loader/executor, no10GB acquisition initiated.",
+    "sources": [
+      {
+        "path": "tests/compute_models/cpu_c4_model_branches.h",
+        "bytes": 43292,
+        "sha256": "51a02256e1c3e3e6e1b1e63b708c2016645782b118461963c16092516087f2a0"
+      },
+      {
+        "path": "tests/compute_models/d5_deepseek_official_fragments.h",
+        "bytes": 10048,
+        "sha256": "8498de64d8d3ce030de151aa7a63f248808921825b7bcd0aead59021653aa00d"
+      },
+      {
+        "path": "tests/compute_models/d5_moe_execution_fragments.h",
+        "bytes": 29763,
+        "sha256": "ab7857f47f82b87bf2b39b56d2f637a9d3d3068256abfcbd2a69d94ab1b08f3c"
+      },
+      {
+        "path": "tests/compute_models/d5_official_fp4_storage.h",
+        "bytes": 4623,
+        "sha256": "3f9d8a651e2d79dcf5f9ab2ac09cca4439a0d5ef2d4a2ea948c1768966e38846"
+      },
+      {
+        "path": "src/compute_provider_ggml_cuda/tensor_program.cc",
+        "bytes": 58386,
+        "sha256": "d3f710fa6ee7fc99af3bcb6b9ab9c0c2dbea05e14abca3e967906490e8495238"
+      },
+      {
+        "path": "include/hyle/compute/model_ops.h",
+        "bytes": 78969,
+        "sha256": "9654a9973b1c5ae56ed9295e348d2706b60cc9ebc1708e169fb5eba62a597b1b"
+      },
+      {
+        "path": "include/hyle/compute/cuda_weights.h",
+        "bytes": 5065,
+        "sha256": "1e3ca02148c67fc2d6d6744beb5a03ee93dcb7f7a61ffed16aa5b5e49d5a8079"
+      },
+      {
+        "path": ".scratch/qwen-mtp-state-20261023/review/native-bound-source/src/ggml-cuda/ggml-cuda.cu",
+        "bytes": 324367,
+        "sha256": "e4b2cd325b2390c8aaed56c50fd2037a13a537210c01fc7adda7e1f5580f9dc8"
+      },
+      {
+        "path": ".scratch/qwen-mtp-state-20261023/review/native-bound-source/src/ggml-cuda/mmvq.cu",
+        "bytes": 75417,
+        "sha256": "0ddc6e55fd041d001f103a1486e5de64cdb4d9fcf7b6b31c76bbd456f6b40e91"
+      },
+      {
+        "path": ".scratch/model-scope-2026-10-19/flash-0731/inference-model.py",
+        "bytes": 45118,
+        "sha256": "c0c19e6c9fa439bac7fbb1c5bc1868232dfd5aa2f439a548d0e33dcc2a9edd3f"
+      }
+    ]
+  },
+  "limitations": [
+    "WindowsCPU/CUDA only; no new Linux/Apple/Vulkan model run.",
+    "Remaining36 sidecar roles, other attention/MoE coefficients, target captures and verifier are not a complete trained model. No full original target/stages, Pro geometry, primaryUD-Q4 vocabulary, natural acceptance or full generation quality claim.",
+    "Original router/bias requires actual selected expert IDs resident; never filter IDs to fit generated smallbanks. GGUF MXFP4 expert weights with Q8_1 activation are not numerically equivalent to official FP4/E4-A128.",
+    "No new TPS, loading or physical memory/VRAM peak measurement. Latest AV performance table retained.",
+    "Full MTP and broader architecture/performance/image goal remain incomplete."
+  ],
+  "next": "Remaining actual roles/sharedLM/targettap/Pro/confirmedquant work, then necessary final ordinary/MTP performance comparison before image chain.",
+  "final_image": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-original-hc-20261023\\tests-link1\\dspark-original-hc-checks.exe",
+    "bytes": 140896768,
+    "sha256": "e559ff1d541dc172d17ec08e6303f8e57024d806b3b94a838ff5bbec490cf02e"
+  },
+  "sources": [
+    {
+      "path": "tests\\compute_models\\cpu_c4_model_branches.h",
+      "bytes": 43292,
+      "sha256": "51a02256e1c3e3e6e1b1e63b708c2016645782b118461963c16092516087f2a0"
+    },
+    {
+      "path": "tests\\compute_models\\d5_deepseek_official_attention.h",
+      "bytes": 50611,
+      "sha256": "fbd9fe635b1cfa832cf66ddc7b74963b6af37195822b1fd4a3b0be3f8472a836"
+    },
+    {
+      "path": "tests\\compute_models\\dspark_complete_graph_fixture.h",
+      "bytes": 11104,
+      "sha256": "6d0f84255127375f089e343815b6ad321b36a08bd37a2096ee6fd1b1200617f6"
+    },
+    {
+      "path": "tests\\compute_models\\dspark_original_hc_roles.h",
+      "bytes": 9114,
+      "sha256": "a67144154067b6a71f6a3b5c455892396229777a077364730ffa5ea220aa13f0"
+    },
+    {
+      "path": "tests\\compute_models\\dspark_original_hc_reference.h",
+      "bytes": 16933,
+      "sha256": "1a2977eb36146b5c16fef78fefc75c2b90afa3daa113f85eb8d779cc79a424fe"
+    },
+    {
+      "path": "tests\\compute_models\\dspark_original_state_consumer.h",
+      "bytes": 11909,
+      "sha256": "43665f09c56c019cf710bbbdba7a7877fed4e70ae066bc397a5c3a2dbefcfd7f"
+    },
+    {
+      "path": "tests\\compute_models\\dspark_original_state_consumer_test.cc",
+      "bytes": 53426,
+      "sha256": "7db7523bc77826b4acca4af7c8b017768d02222dfd6539afec71eb86ffb327a3"
+    },
+    {
+      "path": "tests\\compute_models\\dspark_original_lm_reference.h",
+      "bytes": 8875,
+      "sha256": "1ceb67951e514404e8c5670f54c88d026d1a7be8ed31b285c74077cc6242805c"
+    },
+    {
+      "path": "src\\compute_provider_cublas\\cublas_provider.cc",
+      "bytes": 31417,
+      "sha256": "2191a1818c5bf136ea23444f7ca20ddb4a76f91cec1544ed82179cc3412dd051"
+    },
+    {
+      "path": "docs\\developer\\current-work.md",
+      "bytes": 24473,
+      "sha256": "3c0b18d97bfd5b55dbafea552a47ae88444afc2067c82cf5d54359da2c236801"
+    },
+    {
+      "path": "docs\\implementation\\model-operators.md",
+      "bytes": 93752,
+      "sha256": "28df8aad6edb13b26258c19bea1b20211edc4b4f61e99229a79f9aa775054f38"
+    }
+  ],
+  "performance_tail_sha256": "80b8672315911a74039a14cd137659bc67289273dc9c3707cd267b2d06de2551",
+  "cleanup": "One new executable/map and one host object retained for replay and subsequent incremental linking; no superseded BJ image, whole shard or SDK copy was produced. No deletion required.",
+  "archive": {
+    "path": "docs\\evidence\\correctness\\mtp-dspark-original-hc-2026-10-23.zip",
+    "bytes": 399233,
+    "sha256": "1c1395eac7c8247177006cc3149d2edcec8114caca3042bdf88969327f0c113d"
+  },
+  "archive_items": 79
+}

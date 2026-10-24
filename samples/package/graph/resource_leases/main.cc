@@ -1,5 +1,5 @@
 #include <hyle/compute/leased_operation.h>
-#include <hyle/graph/leased_invocation.h>
+#include <hyle/graph/executable.h>
 #include <hyle/mem/stats.h>
 
 #if defined(HYLE_COMPUTE_CPU)
@@ -147,8 +147,8 @@ Status common(c::Context &context, m::MemoryResourceRef resource,
   HYLE_ASSIGN_OR_RETURN(auto graph, definition(desc));
   HYLE_ASSIGN_OR_RETURN(auto compiled, compile(graph.graph));
   HYLE_ASSIGN_OR_RETURN(
-      auto run, g::LeasedInvocation::create(compiled.executable,
-                                            {.allocator = stats.get()}));
+      auto run, compiled.executable.create_invocation(
+          {.resources = g::ResourceOptions{.allocator = stats.get()}}));
   HYLE_RETURN_IF_ERROR(run.bind(graph.left, desc, left));
   HYLE_RETURN_IF_ERROR(run.bind(graph.right, desc, right));
   HYLE_RETURN_IF_ERROR(run.bind(graph.product, desc, std::move(output)));
@@ -164,7 +164,7 @@ Status common(c::Context &context, m::MemoryResourceRef resource,
   for (int i = 0; i < 8; ++i) {
     HYLE_ASSIGN_OR_RETURN(auto done, run.submit(queue));
     HYLE_RETURN_IF_ERROR(done.wait());
-    HYLE_ASSIGN_OR_RETURN(auto result, run.output(graph.product));
+    HYLE_ASSIGN_OR_RETURN(auto result, run.result(graph.product));
     HYLE_ASSIGN_OR_RETURN(auto lease, result.storage_lease());
     HYLE_RETURN_IF_ERROR(read(lease));
     if (run.submit(queue) || run.reset().ok())
@@ -175,7 +175,7 @@ Status common(c::Context &context, m::MemoryResourceRef resource,
   HYLE_ASSIGN_OR_RETURN(auto held, run.submit(queue));
   HYLE_RETURN_IF_ERROR(run.drain());
   HYLE_RETURN_IF_ERROR(held.wait());
-  HYLE_ASSIGN_OR_RETURN(auto alias, run.output(graph.alias));
+  HYLE_ASSIGN_OR_RETURN(auto alias, run.result(graph.alias));
   HYLE_ASSIGN_OR_RETURN(auto retained, alias.storage_lease());
   alias.reset();
   run = {};

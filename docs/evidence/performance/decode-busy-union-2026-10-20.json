@@ -1,0 +1,706 @@
+{
+  "date": "2026-10-20",
+  "status": "offline_attribution_no_new_execution",
+  "scope": "Only existing Hyle596-kernel GPU timestamp traces. Two profiles analyzed independently, no peerabsolute-speedcomparison and no productchange.",
+  "method": {
+    "warm_phases": "decode7..31, previous4B tokenD2H end -> current4B tokenD2H end",
+    "activity_scope": "Recorded kernels, copies and memsets from this process. Union is elapsed recordedactivity, not DRAM occupancy or SMutilization.",
+    "decomposition": "Sweep line exactmutuallyexclusive projection/nonprojection/copy intersections; no subtraction of kernel_sum fromwall. First-to-lastgraphnode span is not a reconstructed DAGcriticalpath.",
+    "primary": "latest_retained_596 gdn-directstate trace10:25; prior09:30 major-hotspots is independent crosscheck, not pairedspeedcomparison",
+    "source_mapping": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-major-hotspots\\trace-analysis.json",
+      "bytes": 540137,
+      "sha256": "0ffc239b2efe7712d219c11cb279d565df1b8c5f0c08126aa4bf34a02a3dede7"
+    },
+    "logical_projection_weight_bytes": 3762552832
+  },
+  "traces": {
+    "latest_retained_596": {
+      "trace": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gdn-direct-state-output\\profile\\capture.sqlite",
+        "bytes": 6324224,
+        "sha256": "91ccf90b618c19840b20352648efc5a17a025732a3412fa213e750cf9d27a1ae"
+      },
+      "diagnostics": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gdn-direct-state-output\\profile\\diagnostics.json",
+        "bytes": 2722,
+        "sha256": "c58e31991ba2d8880ed05605824452dfc32f4ca78cde45cfa04dd94dce914164"
+      },
+      "warm_phases": 25,
+      "phase_range": [
+        7,
+        31
+      ],
+      "kernel_counts": {
+        "total": 596,
+        "projection": 145,
+        "nonprojection": 451,
+        "graph": 591,
+        "eager": 5
+      },
+      "stats": {
+        "wall_us": {
+          "mean": 12535.03576,
+          "median": 12691.65,
+          "min": 9752.415,
+          "max": 15671.909
+        },
+        "kernel_union_us": {
+          "mean": 10797.77364,
+          "median": 11020.509,
+          "min": 8749.881,
+          "max": 14025.991
+        },
+        "projection_union_us": {
+          "mean": 9959.24452,
+          "median": 9989.083,
+          "min": 8097.71,
+          "max": 12794.587
+        },
+        "nonprojection_union_us": {
+          "mean": 842.79788,
+          "median": 757.522,
+          "min": 653.168,
+          "max": 1712.026
+        },
+        "projection_nonprojection_overlap_us": {
+          "mean": 4.26876,
+          "median": 2.24,
+          "min": 1.632,
+          "max": 12.768
+        },
+        "device_union_us": {
+          "mean": 10861.88204,
+          "median": 11077.597,
+          "min": 8794.456,
+          "max": 14071.303
+        },
+        "graph_span_us": {
+          "mean": 11024.54448,
+          "median": 11142.002,
+          "min": 8815.145,
+          "max": 14092.756
+        },
+        "graph_device_union_us": {
+          "mean": 10837.81568,
+          "median": 11043.453,
+          "min": 8774.744,
+          "max": 14050.791
+        },
+        "graph_internal_no_device_us": {
+          "mean": 186.7288,
+          "median": 41.608,
+          "min": 40.401,
+          "max": 809.351
+        },
+        "graph_internal_max_gap_us": {
+          "mean": 145.30288,
+          "median": 0.512,
+          "min": 0.384,
+          "max": 767.16
+        },
+        "graph_startup_gap_us": {
+          "mean": 679.30976,
+          "median": 667.322,
+          "min": 201.886,
+          "max": 1255.156
+        },
+        "graph_startup_overlap_GraphLaunch_us": {
+          "mean": 617.31788,
+          "median": 613.503,
+          "min": 0.0,
+          "max": 1022.07
+        },
+        "prefix_until_first_graph_kernel_us": {
+          "mean": 1304.15348,
+          "median": 1126.165,
+          "min": 853.88,
+          "max": 4088.247
+        },
+        "post_graph_tail_us": {
+          "mean": 206.33780000000002,
+          "median": 69.952,
+          "min": 39.743,
+          "max": 2001.932
+        },
+        "adjacent_projection_gap_span_us": {
+          "mean": 1057.6354000000001,
+          "median": 885.495,
+          "min": 711.8,
+          "max": 2079.658
+        },
+        "adjacent_projection_gap_no_device_us": {
+          "mean": 186.59824,
+          "median": 41.48,
+          "min": 40.305,
+          "max": 809.287
+        },
+        "adjacent_projection_gap_nonprojection_union_us": {
+          "mean": 810.9812,
+          "median": 730.227,
+          "min": 628.624,
+          "max": 1685.308
+        },
+        "whole_step_logical_GB_s": {
+          "mean": 306.15569159842744,
+          "median": 296.4589184227425,
+          "min": 240.0826109952527,
+          "max": 385.8072930653587
+        },
+        "projection_interval_logical_GB_s": {
+          "mean": 385.0606186507901,
+          "median": 376.6664900071408,
+          "min": 294.07380105352365,
+          "max": 464.6440576409874
+        },
+        "projection_interval_duty_fraction": {
+          "mean": 0.7958958728817702,
+          "median": 0.8074850145235268,
+          "min": 0.6444134553777882,
+          "max": 0.8387011656267589
+        }
+      },
+      "exclusive_all25_fraction": {
+        "copy_or_memset": 0.005114337224674978,
+        "no_recorded_device_activity": 0.1334781768504504,
+        "nonprojection": 0.06683775108751665,
+        "nonprojection+copy_or_memset": 5.708160819798093e-05,
+        "projection": 0.794170881567553,
+        "projection+copy_or_memset": 1.2253654711552257e-06,
+        "projection+nonprojection": 0.00034054629613597534
+      },
+      "representative_exact_single_phase": {
+        "index": 13,
+        "wall_us": 12691.65,
+        "mutually_exclusive_us": {
+          "no_recorded_device_activity": 1117.598,
+          "copy_or_memset": 54.944,
+          "nonprojection": 1047.437,
+          "projection": 10466.487,
+          "projection+nonprojection": 5.184
+        },
+        "projection_interval_logical_GB_s": 359.30777733563247,
+        "projection_duty_fraction": 0.8250834997813523,
+        "whole_step_logical_GB_s": 296.4589184227425
+      },
+      "long_graph_gaps": [
+        {
+          "phase": 7,
+          "gaps": [
+            {
+              "gap_us": 488.027,
+              "previous_family": "projection_cublas",
+              "next_family": "elementwise_other",
+              "start_after_graph_us": 1646.543
+            }
+          ]
+        },
+        {
+          "phase": 9,
+          "gaps": [
+            {
+              "gap_us": 755.545,
+              "previous_family": "GDN_core",
+              "next_family": "copy",
+              "start_after_graph_us": 7815.25
+            }
+          ]
+        },
+        {
+          "phase": 14,
+          "gaps": [
+            {
+              "gap_us": 287.229,
+              "previous_family": "GDN_L2",
+              "next_family": "GDN_L2",
+              "start_after_graph_us": 386.813
+            }
+          ]
+        },
+        {
+          "phase": 19,
+          "gaps": [
+            {
+              "gap_us": 767.16,
+              "previous_family": "projection_cublas",
+              "next_family": "concat",
+              "start_after_graph_us": 387.452
+            }
+          ]
+        },
+        {
+          "phase": 23,
+          "gaps": [
+            {
+              "gap_us": 231.838,
+              "previous_family": "projection_cublas",
+              "next_family": "elementwise_other",
+              "start_after_graph_us": 4128.15
+            }
+          ]
+        },
+        {
+          "phase": 24,
+          "gaps": [
+            {
+              "gap_us": 504.827,
+              "previous_family": "copy",
+              "next_family": "copy_cast_contiguous",
+              "start_after_graph_us": 388.092
+            }
+          ]
+        },
+        {
+          "phase": 26,
+          "gaps": [
+            {
+              "gap_us": 587.546,
+              "previous_family": "elementwise_other",
+              "next_family": "elementwise_other",
+              "start_after_graph_us": 1483.697
+            }
+          ]
+        }
+      ],
+      "nonprojection_family_sum_us": {
+        "GDN_L2": {
+          "mean": 61.64636,
+          "median": 54.911,
+          "min": 54.397,
+          "max": 81.47
+        },
+        "GDN_core": {
+          "mean": 113.18512,
+          "median": 68.927,
+          "min": 59.198,
+          "max": 633.626
+        },
+        "KV_update": {
+          "mean": 15.785639999999999,
+          "median": 15.104,
+          "min": 14.943,
+          "max": 22.174
+        },
+        "RMSNorm": {
+          "mean": 194.08071999999999,
+          "median": 162.076,
+          "min": 143.838,
+          "max": 1030.771
+        },
+        "RoPE": {
+          "mean": 19.586399999999998,
+          "median": 18.624,
+          "min": 18.496,
+          "max": 27.871
+        },
+        "argmax": {
+          "mean": 12.42104,
+          "median": 11.232,
+          "min": 11.136,
+          "max": 40.832
+        },
+        "causal_conv": {
+          "mean": 26.0258,
+          "median": 22.144,
+          "min": 21.439,
+          "max": 37.408
+        },
+        "concat": {
+          "mean": 28.11592,
+          "median": 24.32,
+          "min": 23.774,
+          "max": 40.735
+        },
+        "copy_cast_contiguous": {
+          "mean": 53.44732,
+          "median": 48.8,
+          "min": 44.51,
+          "max": 74.173
+        },
+        "dense_attention": {
+          "mean": 53.35192,
+          "median": 51.966,
+          "min": 51.616,
+          "max": 61.472
+        },
+        "elementwise_other": {
+          "mean": 260.07268,
+          "median": 212.375,
+          "min": 200.727,
+          "max": 1008.883
+        },
+        "gather": {
+          "mean": 7.59288,
+          "median": 5.92,
+          "min": 5.696,
+          "max": 20.991
+        }
+      },
+      "D2D_payload_bytes_per_step": 888832
+    },
+    "prior_major_hotspots_596": {
+      "trace": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\paired-projection-route\\profile\\capture.sqlite",
+        "bytes": 6389760,
+        "sha256": "d4717157d882245a06eaf9663f0ecd2dc0d1666eabdda3325c226b07cb8a0c3f"
+      },
+      "diagnostics": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\paired-projection-route\\profile\\diagnostics.json",
+        "bytes": 2723,
+        "sha256": "9e594d4b3f6693970517299ae5d2b004af3681865660a2e4ac40b67fb7dac571"
+      },
+      "warm_phases": 25,
+      "phase_range": [
+        7,
+        31
+      ],
+      "kernel_counts": {
+        "total": 596,
+        "projection": 145,
+        "nonprojection": 451,
+        "graph": 591,
+        "eager": 5
+      },
+      "stats": {
+        "wall_us": {
+          "mean": 11068.38,
+          "median": 10953.812,
+          "min": 10153.724,
+          "max": 13988.822
+        },
+        "kernel_union_us": {
+          "mean": 9733.27088,
+          "median": 9468.476,
+          "min": 8808.635,
+          "max": 12640.465
+        },
+        "projection_union_us": {
+          "mean": 8997.59264,
+          "median": 8807.94,
+          "min": 8159.147,
+          "max": 11038.607
+        },
+        "nonprojection_union_us": {
+          "mean": 737.64172,
+          "median": 653.682,
+          "min": 651.216,
+          "max": 1809.695
+        },
+        "projection_nonprojection_overlap_us": {
+          "mean": 1.9634800000000001,
+          "median": 1.824,
+          "min": 1.536,
+          "max": 5.376
+        },
+        "device_union_us": {
+          "mean": 9809.45452,
+          "median": 9547.259,
+          "min": 8883.067,
+          "max": 12738.417
+        },
+        "graph_span_us": {
+          "mean": 9836.81324,
+          "median": 9571.17,
+          "min": 8910.313,
+          "max": 12767.683
+        },
+        "graph_device_union_us": {
+          "mean": 9788.88244,
+          "median": 9523.355,
+          "min": 8863.259,
+          "max": 12717.009
+        },
+        "graph_internal_no_device_us": {
+          "mean": 47.9308,
+          "median": 47.753,
+          "min": 46.668,
+          "max": 50.674
+        },
+        "graph_internal_max_gap_us": {
+          "mean": 0.61056,
+          "median": 0.512,
+          "min": 0.448,
+          "max": 2.4
+        },
+        "graph_startup_gap_us": {
+          "mean": 691.62968,
+          "median": 678.01,
+          "min": 557.019,
+          "max": 860.695
+        },
+        "graph_startup_overlap_GraphLaunch_us": {
+          "mean": 650.1424,
+          "median": 653.048,
+          "min": 529.679,
+          "max": 768.778
+        },
+        "prefix_until_first_graph_kernel_us": {
+          "mean": 1126.5374,
+          "median": 1098.325,
+          "min": 941.367,
+          "max": 1713.423
+        },
+        "post_graph_tail_us": {
+          "mean": 105.02936,
+          "median": 64.799,
+          "min": 45.6,
+          "max": 942.615
+        },
+        "adjacent_projection_gap_span_us": {
+          "mean": 832.78996,
+          "median": 748.318,
+          "min": 745.822,
+          "max": 1925.041
+        },
+        "adjacent_projection_gap_no_device_us": {
+          "mean": 47.79128,
+          "median": 47.623,
+          "min": 46.476,
+          "max": 50.482
+        },
+        "adjacent_projection_gap_nonprojection_union_us": {
+          "mean": 712.31072,
+          "median": 628.561,
+          "min": 627.156,
+          "max": 1780.767
+        },
+        "whole_step_logical_GB_s": {
+          "mean": 342.166074977511,
+          "median": 343.4925514514947,
+          "min": 268.9685258701555,
+          "max": 370.5589035116574
+        },
+        "projection_interval_logical_GB_s": {
+          "mean": 420.70446368268574,
+          "median": 427.1773913082968,
+          "min": 340.8539530395457,
+          "max": 461.1453662987075
+        },
+        "projection_interval_duty_fraction": {
+          "mean": 0.8133985163901115,
+          "median": 0.8148049637242099,
+          "min": 0.7699696544383683,
+          "max": 0.8479658104304116
+        }
+      },
+      "exclusive_all25_fraction": {
+        "copy_or_memset": 0.0068829982346106655,
+        "no_recorded_device_activity": 0.1137407172504016,
+        "nonprojection": 0.06646133941913812,
+        "nonprojection+copy_or_memset": 5.319658342051863e-06,
+        "projection": 0.8127322300101731,
+        "projection+nonprojection": 0.00017739542733444282
+      },
+      "representative_exact_single_phase": {
+        "index": 24,
+        "wall_us": 10953.812,
+        "mutually_exclusive_us": {
+          "no_recorded_device_activity": 1436.738,
+          "copy_or_memset": 75.231,
+          "nonprojection": 652.11,
+          "projection": 8787.749,
+          "projection+nonprojection": 1.984
+        },
+        "projection_interval_logical_GB_s": 428.0622439839754,
+        "projection_duty_fraction": 0.8024359921459305,
+        "whole_step_logical_GB_s": 343.4925514514947
+      },
+      "long_graph_gaps": [],
+      "nonprojection_family_sum_us": {
+        "GDN_L2": {
+          "mean": 61.84008,
+          "median": 54.495,
+          "min": 54.207,
+          "max": 230.747
+        },
+        "GDN_core": {
+          "mean": 68.29184,
+          "median": 60.382,
+          "min": 58.974,
+          "max": 245.404
+        },
+        "KV_update": {
+          "mean": 14.99104,
+          "median": 15.007,
+          "min": 14.848,
+          "max": 15.2
+        },
+        "RMSNorm": {
+          "mean": 192.7722,
+          "median": 144.383,
+          "min": 143.807,
+          "max": 1014.42
+        },
+        "RoPE": {
+          "mean": 18.591839999999998,
+          "median": 18.592,
+          "min": 18.464,
+          "max": 18.72
+        },
+        "argmax": {
+          "mean": 11.187159999999999,
+          "median": 11.199,
+          "min": 11.104,
+          "max": 11.328
+        },
+        "causal_conv": {
+          "mean": 22.00668,
+          "median": 21.664,
+          "min": 21.536,
+          "max": 28.0
+        },
+        "concat": {
+          "mean": 24.25552,
+          "median": 24.063,
+          "min": 23.68,
+          "max": 28.736
+        },
+        "copy_cast_contiguous": {
+          "mean": 55.56612,
+          "median": 45.215,
+          "min": 44.254,
+          "max": 291.518
+        },
+        "dense_attention": {
+          "mean": 52.08224,
+          "median": 52.095,
+          "min": 51.775,
+          "max": 52.319
+        },
+        "elementwise_other": {
+          "mean": 210.16776,
+          "median": 200.439,
+          "min": 199.354,
+          "max": 444.435
+        },
+        "gather": {
+          "mean": 5.88924,
+          "median": 5.919,
+          "min": 5.632,
+          "max": 6.048
+        }
+      },
+      "D2D_payload_bytes_per_step": 19763200
+    }
+  },
+  "conclusions": [
+    {
+      "fact": "Graph interior is usually densely occupied by recordedwork",
+      "evidence": "Originalmajortrace graphspan median9571.170us; recordedkernel/copy union9523.355us; internalgap47.753us, largestindividualgap median.512us. LaterGDNdestinationtrace internalgapmedian41.608us.",
+      "meaning": "The huge apparent internalidle in a tokenwall view largely sits before actualcapturedgraph work. Smallkernel count is not evidence of hundreds of microseconds of actual interiorlaunchholes."
+    },
+    {
+      "fact": "Between adjacent projection kernels, most elapsedtime performs real othermath/copies",
+      "evidence": "Originaltrace median adjacentprojectiongap sum748.318us; nonprojectionunion628.561us; noGPUactivity47.623us. Remaining includes copies/overlaps; medians are separate distributions and must not be added as exactonephase.",
+      "meaning": "RMSNorm,gating,residuals,GDN,L2,causalconv,attention,KVupdates and BF16rounding/conversions produce requiredmodelvalues. Fusion can merge their physicalcarriers, but cannot erase their mathematicalwork. No newlysource-proven highshare fusion omission asserted."
+    },
+    {
+      "fact": "Software GraphLaunch interval is not recoverablelaunchwall",
+      "evidence": "Latertrace startupgap median667.322us overlaps GraphLaunch median613.503us; original678.010/653.048us. Bothdiagnostics state legacysoftwaretracing and unsupporteddriverfallback.",
+      "meaning": "Do not subtract thoseintervals from unprofiled tokens/s. They mix driver/profiler/host work and change observedGPUstart timing."
+    },
+    {
+      "fact": "A few long interiorgaps remain unattributed",
+      "evidence": "Latertrace7/25warmphases have isolated231.838–767.160us gaps at varyingboundaries; originaltrace has nointernalgap>=10us.",
+      "meaning": "NoCPUcontextswitch trace or wholeGPU ownership in thiscapture. The current evidence does not identify a deterministicHyle hostloop, occupancyfailure or sourcefix for thoseoutliers. Independentprofiles cannot establish regression."
+    },
+    {
+      "fact": "Whole-step logicalbytes/sec is lower than headkernel peak for different denominators and data",
+      "evidence": "Oneexact originalphase24: projectionlogicalrate428.062GB/s × projectionintervalduty0.802436 = whole-step343.493GB/s. Additionalnorm/GDN/etc, copies and host/readbackintervals are outsideprojectiontime.",
+      "meaning": "The isolatedhead~97.55%DRAMpeak /491.223GB/s is from a separatecounterrun and actualDRAMbytes. Logical3,762,552,832B/step is tensorgeometry, not actualDRAMtraffic. No contradiction and no inferredlowoccupancy."
+    }
+  ],
+  "historical_counter_reference": {
+    "source": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-major-hotspots\\review.json",
+      "bytes": 35494,
+      "sha256": "1d76b340466f20535f29198667bc6be67f047558782afdada8aeb7a917c6a3ef"
+    },
+    "head": {
+      "arm": "hyle",
+      "source": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-current-peer\\ncu\\with-runtime\\hyle.stdout.log",
+        "bytes": 14929,
+        "sha256": "8ff436eeab2f31dcfb2b27080776329647beb7830eb7cb1b7c358a8cd8f1c682"
+      },
+      "kernel": "enable_if<!T7, void>::type kernel<int, int, __nv_bfloat16, __nv_bfloat16, __nv_bfloat16, float, 0, 1, 1, 0, 6, 0, cublasGemvParamsEx<int, cublasGemvTensorStridedBatched<const __nv_bfloat16>, cublasGemvTensorStridedBatched<const __nv_bfloat16>, cublasGemvTensorStridedBatched<__nv_bfloat16>, float>>(T13)",
+      "grid": "(62080, 1, 1)",
+      "block": "(16, 4, 1)",
+      "duration_ns": 2077472.0,
+      "dram_total_bytes": 1020501120.0,
+      "dram_pct_peak": 97.55,
+      "replay_passes": 7.0,
+      "memory_backup_max_bytes": 3898367243.0,
+      "cache_control": "none",
+      "clock_control": "none",
+      "measured_total_GB_s": 491.222562807104
+    },
+    "dual_summary": "Retained original N6144 dual collection measured92.71percent and peer93.96percent DRAM peak. Single-node replay/cache-none/clock-none and different arithmetic limit any cross-engine speed claim. Head retained~97percent DRAM peak in both arms. These are evidence against large untapped bandwidth, not current normalized counters.",
+    "same_trace_counters": false
+  },
+  "next_action": {
+    "priority": "Continue only concrete source-backed workelimination or shape-qualified mathfusion with exactBF16boundaries; check its actualtimebudget before implementation.",
+    "bounds": "451nonprojectionkernels are ~6.65–6.68% of these profiledtokenwindows by exclusiveelapsedunion, not a proven15% throughputgain opportunity. Fasterprojectionmemorywork/legitimateformat-specificquantization are separate experiments; no precisionchange claimed equivalent.",
+    "do_not_repeat": [
+      "Alreadyremoved18×1MiB GDNstate stageout; laterretainedtrace has0state-sized copies.",
+      "RejectedblanketcuBLAS→MMVF and two-rowsFFN experiments, whosemath/performance evidence is alreadyrecorded.",
+      "No newgenericprofiler or interpreting softwareGraphLaunch as recoverablehosttime."
+    ],
+    "host_if_needed": "Use existing latestunprofiled consumerstageclock records; only if a named residual remains, investigate that onehostinterval outsideprofiler. Retirementqueryreuse improves firstprepare and is not a warm596kernel optimization."
+  },
+  "limits": [
+    "Legacy softwareinstrumented Nsight trace with unsupported-driver-version fallback; GraphLaunch call and its preceding/following noGPUinterval are profiler/driver/host mixed and not a recoverablewall estimate.",
+    "Small submicrosecond recordedinterval overlaps are counted by timestampunion, not asserted as actual SMconcurrency or independentlyvalidated timeraccuracy. Projection logicalbytes are tensor geometry, not measured DRAMtraffic. Historical head/dual NsightCompute~93-98% peak was anotherisolatedcountercollection; not wholetrace bandwidth counters.",
+    "The latestretained596 trace predates later finitefamily/stablebind/nativeCast/retirement source changes. It informs recurringGPUwork but cannot sign latestunprofiled perstep gaps or present throughput.",
+    "No newprofiler,GPU,compile,modelprocess,peercomparison or productchange.",
+    "Individualsummary medians are not additive. Exactexclusive singlephase and all25aggregate are included for validaddition.",
+    "No fullproject or allmodels performance conclusion. No fixedpercent improvementceiling asserted for futurearchitectural/math changes."
+  ],
+  "reproduction": {
+    "command": [
+      "python",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-busy-union-review\\analyze.py"
+    ],
+    "script": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-busy-union-review\\analyze.py",
+      "bytes": 13774,
+      "sha256": "29e135da7d36e47a51aeec884f8a4bb642e474760c76e29ed44815868712aa04"
+    },
+    "full_results": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-busy-union-review\\review.json",
+      "bytes": 200145,
+      "sha256": "c7671f5b1f61947a29556ffd9977354db8be4c7c8276649803c8d4edea419743"
+    },
+    "existing_required_input_identities": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gdn-direct-state-output\\profile\\capture.sqlite",
+        "bytes": 6324224,
+        "sha256": "91ccf90b618c19840b20352648efc5a17a025732a3412fa213e750cf9d27a1ae"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\paired-projection-route\\profile\\capture.sqlite",
+        "bytes": 6389760,
+        "sha256": "d4717157d882245a06eaf9663f0ecd2dc0d1666eabdda3325c226b07cb8a0c3f"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-major-hotspots\\trace-analysis.json",
+        "bytes": 540137,
+        "sha256": "0ffc239b2efe7712d219c11cb279d565df1b8c5f0c08126aa4bf34a02a3dede7"
+      }
+    ],
+    "SQLite_mode": "read-only URI",
+    "GPU": 0,
+    "profiler": 0,
+    "compiles": 0,
+    "model_processes": 0
+  },
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\decode-busy-union-2026-10-20.zip",
+    "bytes": 42198,
+    "sha256": "cf40831f7232951dbbf64c28a94b595c32d0346f776519ab2b7fc56cd2525421",
+    "payloads": 4,
+    "CRC_checked": true,
+    "all_payload_SHA256_checked": true,
+    "excluded": "No duplicateSQLite,nsysrep,SDK,binaries,objects or rawvectors; retainedoriginaltrace identities/locations above."
+  }
+}

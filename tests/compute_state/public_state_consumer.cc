@@ -1,7 +1,7 @@
 #include <hyle/compute/state_clone.h>
 #include <hyle/compute/leased_operation.h>
 #include <hyle/compute/model_ops.h>
-#include <hyle/graph/leased_invocation.h>
+#include <hyle/graph/executable.h>
 #if defined(HYLE_COMPUTE_CPU)
 #include <hyle/graph/cpu.h>
 #endif
@@ -22,6 +22,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
+#include <cstring>
 #include <vector>
 
 namespace {
@@ -55,6 +56,12 @@ Result<Logical> logical(const Work &work) {
 #if defined(HYLE_COMPUTE_CPU) || defined(HYLE_COMPUTE_CUDA)
 template<class Compile>struct CommonRoute {
   c::Context &context;c::Queue &queue;m::MemoryResourceRef resource;c::LeasePool &pool;Compile compile;
+  Result<c::ReadLease> load_bytes(const c::TensorDesc &description,std::span<const std::byte> data) {
+    HYLE_ASSIGN_OR_RETURN(auto bytes,description.required_bytes());
+    if(bytes!=data.size_bytes())return std::unexpected(Status::InvalidArgument("state consumer initial bytes"));
+    HYLE_ASSIGN_OR_RETURN(auto writer,pool.allocate(bytes));
+    HYLE_RETURN_IF_ERROR(writer.view()->write(data));return writer.publish();
+  }
   Result<c::ReadLease> load(const c::TensorDesc &description,std::span<const float> data) {
     HYLE_ASSIGN_OR_RETURN(auto bytes,description.required_bytes());
     if(bytes!=data.size_bytes())return std::unexpected(Status::InvalidArgument("state consumer initial bytes"));
@@ -92,11 +99,11 @@ template<class Compile>struct CommonRoute {
       for(auto &writer:outputs){HYLE_ASSIGN_OR_RETURN(auto ready,writer.publish());result.push_back(std::move(ready));}
     } else {
       HYLE_ASSIGN_OR_RETURN(auto graph_work,logical(work));HYLE_ASSIGN_OR_RETURN(auto compiled,compile(graph_work.graph));
-      HYLE_ASSIGN_OR_RETURN(auto invocation,g::LeasedInvocation::create(compiled.executable));
+      HYLE_ASSIGN_OR_RETURN(auto invocation,compiled.executable.create_invocation({.resources = g::ResourceOptions{}}));
       for(std::size_t i=0;i<leases.size();++i)HYLE_RETURN_IF_ERROR(invocation.bind(graph_work.inputs[i],work.inputs[i],leases[i]));
       for(std::size_t i=0;i<work.outputs.size();++i){HYLE_ASSIGN_OR_RETURN(auto bytes,work.outputs[i].required_bytes());HYLE_ASSIGN_OR_RETURN(auto writer,pool.allocate(bytes));HYLE_RETURN_IF_ERROR(invocation.bind(graph_work.outputs[i],work.outputs[i],std::move(writer)));}
       HYLE_ASSIGN_OR_RETURN(auto done,invocation.submit(queue));HYLE_RETURN_IF_ERROR(done.wait());
-      for(auto id:graph_work.outputs){HYLE_ASSIGN_OR_RETURN(auto output,invocation.output(id));HYLE_ASSIGN_OR_RETURN(auto lease,output.storage_lease());result.push_back(std::move(lease));}
+      for(auto id:graph_work.outputs){HYLE_ASSIGN_OR_RETURN(auto output,invocation.result(id));HYLE_ASSIGN_OR_RETURN(auto lease,output.storage_lease());result.push_back(std::move(lease));}
     }
     return result;
   }
@@ -184,6 +191,7 @@ struct VulkanRoute {
 #endif
 
 #include "mtp_prefix_consumer.h"
+#include "kda_prefix_consumer.h"
 #if defined(HYLE_COMPUTE_CPU) && defined(HYLE_COMPUTE_CUDA)
 #include "mtp_hybrid_consumer.h"
 #endif
@@ -309,7 +317,8 @@ Status run() {
     HYLE_ASSIGN_OR_RETURN(auto host_pool,c::LeasePool::create(pinned.ref(),2u*1024u*1024u));
     HYLE_ASSIGN_OR_RETURN(auto device_pool,c::LeasePool::create(device.ref(),2u*1024u*1024u));
     const std::array storage{g::StorageDomain{.resource=pinned.ref()}};
-    const std::array targets{g::ExecutionTarget{.context=&cpu,.default_storage=g::StorageDomainId{0}}};
+    HYLE_ASSIGN_OR_RETURN(auto target_source_0, hyle::graph::ExecutionSource::acquire(cpu));
+    const std::array targets{g::ExecutionTarget{.source = target_source_0,.default_storage=g::StorageDomainId{0}}};
     CommonRoute host{cpu,cpu_queue,pinned.ref(),host_pool,[&](const g::Graph &graph){return g::compile(graph,{.storage_domains=storage,.targets=targets});}};
     CommonRoute accelerator{gpu,gpu_queue,device.ref(),device_pool,[&](const g::Graph &graph){return g::cuda::compile(graph,gpu,device.ref());}};
     HYLE_RETURN_IF_ERROR(exercise_mtp_hybrid(host,accelerator,"CPU to CUDA"));
@@ -318,5 +327,16 @@ Status run() {
 #endif
   return Status::Ok();
 }
+Status run_kda_prefixes() {
+#if defined(HYLE_COMPUTE_CPU)
+  {HYLE_ASSIGN_OR_RETURN(auto context,g::cpu::create_context());HYLE_ASSIGN_OR_RETURN(auto queue,context.create_queue());HYLE_ASSIGN_OR_RETURN(auto pool,c::LeasePool::create(m::system_resource(),128u*1024u*1024u));
+   CommonRoute route{context,queue,m::system_resource(),pool,[&](const g::Graph &graph){return g::compile(graph,context);}};HYLE_RETURN_IF_ERROR(exercise_kda_prefixes(route,"CPU"));}
+#endif
+#if defined(HYLE_COMPUTE_CUDA)
+  {HYLE_ASSIGN_OR_RETURN(auto context,g::cuda::create_context());HYLE_ASSIGN_OR_RETURN(auto queue,context.create_queue());HYLE_ASSIGN_OR_RETURN(auto memory,c::cuda::MemoryResource::create(context,c::cuda::MemoryKind::kDevice));HYLE_ASSIGN_OR_RETURN(auto pool,c::LeasePool::create(memory.ref(),128u*1024u*1024u));
+   CommonRoute route{context,queue,memory.ref(),pool,[&](const g::Graph &graph){return g::cuda::compile(graph,context,memory.ref());}};HYLE_RETURN_IF_ERROR(exercise_kda_prefixes(route,"CUDA"));}
+#endif
+  return Status::Ok();
+}
 } // namespace
-int main(){const auto status=run();if(status.ok())return 0;char text[768]{};status.ToString(text,sizeof(text));std::fprintf(stderr,"F4 public consumer: %s\n",text);return 1;}
+int main(int argc,char **argv){const auto status=argc==2&&std::strcmp(argv[1],"--kda-prefix")==0?run_kda_prefixes():run();if(status.ok())return 0;char text[768]{};status.ToString(text,sizeof(text));std::fprintf(stderr,"F4 public consumer: %s\n",text);return 1;}

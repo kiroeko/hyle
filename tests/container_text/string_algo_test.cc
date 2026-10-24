@@ -24,7 +24,7 @@ TEST(StringAlgo, Classifiers) {
   EXPECT_FALSE(is_hex_digit('g'));
 }
 
-// clay's hex_to_int returned 0 for invalid input (hiding bad data); ours -1.
+// Invalid hex input returns -1 so it is distinct from the digit zero.
 TEST(StringAlgo, HexValueSignalsInvalid) {
   EXPECT_EQ(hex_value('0'), 0);
   EXPECT_EQ(hex_value('9'), 9);

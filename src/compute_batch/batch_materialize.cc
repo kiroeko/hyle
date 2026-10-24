@@ -1,4 +1,5 @@
 #include "hyle/compute/batch_materialize.h"
+#include "hyle/compute/detail/batch_provider.h"
 #include "hyle/util/ref_counted.h"
 
 #include <algorithm>
@@ -53,6 +54,9 @@ MaterializedBatchProgram::MaterializedBatchProgram(MaterializedBatchProgram&&p)n
 MaterializedBatchProgram&MaterializedBatchProgram::operator=(MaterializedBatchProgram&&p)noexcept{if(this!=&p){MaterializedBatchProgram next(std::move(p));std::swap(data_,next.data_);}return *this;}
 MaterializedBatchProgram::~MaterializedBatchProgram(){if(data_)data_->decref();}
 Result<MaterializedBatchProgram> MaterializedBatchProgram::prepare(BatchSchema schema,MaterializedBatchOptions options)noexcept{
+  if(detail::BatchLayoutAccess::is_row_cache(schema))return std::unexpected(Status::InvalidArgument("row cache is not materialized attention"));
+  if(schema.mla_layout()!=MlaCacheLayout::kNone)
+    return std::unexpected(Status::Unimplemented("three-payload materialized attention does not accept a compact MLA schema"));
   if(!schema.valid() || !options.allocator.valid() || !options.max_kv_per_request || !options.max_host_metadata_bytes || !options.max_logical_intermediate_bytes || !std::isfinite(options.scale))
     return std::unexpected(Status::InvalidArgument("materialized batch needs explicit finite capacities/budgets"));
   HYLE_RETURN_IF_ERROR(validate_batch_attention_options(options.causal,options.window_left));

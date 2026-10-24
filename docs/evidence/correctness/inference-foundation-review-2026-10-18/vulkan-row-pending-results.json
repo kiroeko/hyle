@@ -1,0 +1,133 @@
+{
+  "status": "native-pending-input-capability-extracted-and-vulkan-row-pending-implemented",
+  "tests": {
+    "windows_passed": 9,
+    "windows_total": 9,
+    "new_vulkan_pending": 3,
+    "existing_vulkan_ready": 4,
+    "existing_cpu_ready_pending": 2
+  },
+  "original_control": {
+    "total": 9,
+    "failed": 3,
+    "reason": "actual selected projected reader has no pending source admission",
+    "same_final_test_object": true
+  },
+  "windows_native_page_control": "passed; active Q2/18, two slots each, two page nodes share one native Update; original 64-step F16 receiver checks",
+  "apple_control": {
+    "status": "passed",
+    "scope": "Apple existing native page pending control after common capability extraction; no Apple projected-row pending claim",
+    "hardware": {
+      "model": "Mac16,12",
+      "cpu": "Apple M4",
+      "memory": "17179869184",
+      "system": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+      "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin"
+    },
+    "compile_commands": [
+      "002-compile",
+      "003-compile",
+      "004-compile",
+      "005-compile",
+      "006-compile",
+      "007-compile",
+      "008-compile",
+      "009-compile"
+    ],
+    "link": "010-link",
+    "run": "011-run",
+    "checks": [
+      "64 steps each F16 and BF16",
+      "active Q rows 2 and 18; two original slots each",
+      "two page nodes share one native CopyBatchUpdate",
+      "CPU Abs/Cast and Cast/Neg fragments",
+      "both published outputs / exact page frame / untouched history / same generation",
+      "196608 dirty bytes each dtype; no source wait before attention"
+    ],
+    "source_drift": [],
+    "actual_dependencies": 135,
+    "link_inputs": 137,
+    "fresh_host_tus": 8,
+    "no_sdk_shader_or_math_rebuild": true,
+    "retained_math": [
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/f32-partials/mlx.metallib",
+        "bytes": 1666552,
+        "sha256": "cabb611108c741e6132c3b518d832dc0b8c730868415d3c44789526823095636"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/f32-partials/native-host.f32.o",
+        "bytes": 123032,
+        "sha256": "f5fffb14d1ddbff88737830677125b6be027f41c0bf29eb601b95aaf41fafd02"
+      }
+    ],
+    "cleanup": {
+      "manifest": "cleanup-mac.json",
+      "files": 2,
+      "bytes": 17881851
+    },
+    "retained_stage_objects": 8,
+    "live_process": false,
+    "caveat": "Original pending main object reused; mathematical implementation and colocated metallib reused. No additional matrix or performance claim."
+  },
+  "source_files": 17,
+  "fresh_windows_cpp_tus": 8,
+  "fresh_apple_cpp_tus": 8,
+  "native_sdk_shader_math_rebuild": false,
+  "selected_owners": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\vulkan-row-pending\\selected-map-owners.json",
+    "bytes": 12962,
+    "sha256": "8fb5570b9603eec1e37c2be03d8ec250ac1a5058a377198dc528534d9061ae00"
+  },
+  "changes": [
+    "Extracted private native pending input/source capability from Q/K/V-specific NativePagedRegionVTable; old pending fields and overloads removed, no compatibility alias.",
+    "Original Apple/Vulkan native page adapters and Vulkan checked row readers share exact physical input/source validation and commit; common Graph core unchanged.",
+    "Only BatchResources owns CopyOutcomeSource and DependentCompletion; row slot borrows actual pending frame/source and original Run retires precise LeaseUseBatch guards.",
+    "Shared/native submit reject incompatible input protocols before taking the Update; exact reader proof replaces prior lane-only admission check.",
+    "Successful source recovery does not grant ready permissions or replay a consumed frame; original reset begins the next episode."
+  ],
+  "verified_scope": [
+    "RTX4070, real kDevice bank/metadata; FP8 D512 original Map/Decode/Cast/View/Sink/Neg with independent existing FP64 budget, fused and split artifacts.",
+    "FP4 D128 exact decoded BF16 rows, F32 mask and Cast/Neg in its actual supported dimension; no unsupported D512 Sink claim.",
+    "Insufficient new-row copy coverage rejects and restores original native Update; full copy source and Graph actually observe Pending, no results/recovery before retirement.",
+    "Unused physical page writer remains held, two old GraphOutput owners prevent recovery; actual original fence retirement then returns exact page writer and CopyBatchInvocation.",
+    "Prior ready/permuted/empty/reader-rejection and CPU pending controls remain correct; migrated original native-page consumers pass on Windows and Air."
+  ],
+  "limits": [
+    "No new whole-model accuracy, sustained throughput, peak-memory or Linux runtime measurement; full eight-model/22-profile goal remains active.",
+    "Pending observation fixture queries the actual native fence and temporarily retains successful observation at NOT_READY; it proves original Completion/permission lifetime, not physical GPU blocking.",
+    "No new native failure/cancel/close injection matrix; prior page risk evidence is not newly rerun by these consumer controls.",
+    "Apple projected row Graph and Apple/Vulkan five-port paged scorer remain unfinished.",
+    "Cold owned metadata transfers still have real allocation/wait costs; pending bind reserves original guard controls, no end-to-end zero-allocation claim.",
+    "First test fixture erroneously attached D128 FP4 to D512-only Sink and was corrected; a test report field typo caused one strict compile failure. Product math/API/precision was not relaxed.",
+    "Existing native page reset is not claimed to roll back all native program mutations after a later cold prepare failure."
+  ],
+  "goal": "active; full model numerical acceptance/performance and remaining multi-platform functional journeys are incomplete",
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\inference-foundation-review-2026-10-18\\vulkan-row-pending.zip",
+    "bytes": 551128,
+    "sha256": "082e9b653447544dc6fd3b9e338e7f5488f420ebfd2c26168f489d12e3e3e156"
+  },
+  "cleanup": {
+    "archive_verified": true,
+    "windows_files": 12,
+    "windows_bytes": 296062878.0,
+    "retained_windows_objects": 8,
+    "retained_native": 2,
+    "apple": {
+      "verified": true,
+      "deleted": true,
+      "files": 2,
+      "bytes": 17881851,
+      "retained_objects": 8,
+      "retained_math": 2
+    },
+    "other_cache_retained": true,
+    "executed_script": {
+      "path": "test.ps1",
+      "bytes": 4682,
+      "sha256": "1ecd5ac205f69d8fd004af5f5d2d70b5d805f8acbc8189cfab5cc8bb70b30184",
+      "argument": "-ReclaimVulkanRowPending"
+    }
+  }
+}

@@ -1,0 +1,561 @@
+{
+  "scope": "Counter-only same-Qwen-main diagnostic; one scratch resources.cc object replaces one accepted product object. No product algorithm change or speed claim.",
+  "result": "Actual ready-region input lease lookup visits102 binding records per call although only1 has an eligible nonexclusive ReadLease; no match occurs in this fixed dense Qwen journey.",
+  "actual_build": {
+    "CXX_owners": 1,
+    "CUDA_owners": 0,
+    "SDK_builds": 0,
+    "same_main_object": true
+  },
+  "observation": {
+    "passed": true,
+    "groups": [
+      {
+        "invocation": "000005B26039E000",
+        "calls": 656,
+        "visited": 66912,
+        "eligible_visited": 656,
+        "hits": 0,
+        "full_B_sum": 66912,
+        "full_R_sum": 656,
+        "max_B": 102,
+        "max_R": 1,
+        "tail_counted": 0,
+        "early": 0,
+        "steps_max": 1149,
+        "original_visits_per_non_early_call": 102.0,
+        "full_R_over_B_weighted": 0.00980392156862745
+      },
+      {
+        "invocation": "000005B2603AD000",
+        "calls": 10880,
+        "visited": 1109760,
+        "eligible_visited": 10880,
+        "hits": 0,
+        "full_B_sum": 1109760,
+        "full_R_sum": 10880,
+        "max_B": 102,
+        "max_R": 1,
+        "tail_counted": 0,
+        "early": 0,
+        "steps_max": 1101,
+        "original_visits_per_non_early_call": 102.0,
+        "full_R_over_B_weighted": 0.00980392156862745
+      },
+      {
+        "invocation": "000005B2603C6000",
+        "calls": 10200,
+        "visited": 1040400,
+        "eligible_visited": 10200,
+        "hits": 0,
+        "full_B_sum": 1040400,
+        "full_R_sum": 10200,
+        "max_B": 102,
+        "max_R": 1,
+        "tail_counted": 0,
+        "early": 0,
+        "steps_max": 1101,
+        "original_visits_per_non_early_call": 102.0,
+        "full_R_over_B_weighted": 0.00980392156862745
+      }
+    ],
+    "overflow_calls": 0,
+    "equal_vectors_to_accepted_current": 64,
+    "reference_vectors": 64,
+    "observed_vectors": 64,
+    "counter_only": true,
+    "throughput_claim": false,
+    "limits": [
+      "No clocks/printf per lookup; extra tail membership counts and atomic updates perturb runtime.",
+      "All phases aggregate by Invocation address; addresses may be reused; not per-phase warm timing.",
+      "Original same main/inputs/native closure, only one scratch resources object replaced.",
+      "Original model payload hash retained from accepted receipt, not rehashed for this diagnostic."
+    ]
+  },
+  "totals": {
+    "calls": 21736,
+    "visited": 2217072,
+    "eligible_visited": 21736,
+    "hits": 0
+  },
+  "decode_structure": "Two observed decode Invocation addresses aggregate10880 and10200 calls:16*680 and15*680. Each decode step traverses69360 binding records for680 lookup calls; this does not assign a time to those checks.",
+  "next_design": "Investigate an original-order eligible-record filter scoped to the same uncached preparation pass, preserving current lease/view/range checks and owner/permission lifecycle. Confirm membership cannot change during the scope before implementing.",
+  "limits": [
+    "Counts include both preparation passes and aggregate by address; an address is not a globally unique request or phase ID.",
+    "Extra atomic counters/tail membership checks perturb runtime. No per-call clocks or prints, and no timing from this diagnostic is used for throughput.",
+    "This fixed recipe has R=1 and no matches; it does not prove a safe optimization for projected page guards, covering overlaps, exclusive writers or every native hook.",
+    "All64 retained hidden/logits comparisons are equal; this is not independent model quality or cross-platform coverage."
+  ],
+  "source_freeze": {
+    "kind": "scratch counter-only source freeze; not built/run",
+    "product_source": {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\resources.cc",
+      "bytes": 61170,
+      "sha256": "360c50b8777206413a5d781192e59ca026830ea3986120cbab692ce6b14c9fab"
+    },
+    "before": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\before\\src\\graph\\resources.cc",
+      "bytes": 61170,
+      "sha256": "360c50b8777206413a5d781192e59ca026830ea3986120cbab692ce6b14c9fab"
+    },
+    "after": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\source\\src\\graph\\resources.cc",
+      "bytes": 67058,
+      "sha256": "942fe5883d332806dd35e3aa91d58f5bd477f13682f1e07ebe552f7a42ae25cf"
+    },
+    "diff": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\changes.diff",
+      "bytes": 6489,
+      "sha256": "3afdc03c07a96ce70d67f88f2dd504b675b03def9e9fb82d00efcc304df32169"
+    },
+    "base_link_plan": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\checks\\main1\\qwen-link-plan.json",
+      "bytes": 58208,
+      "sha256": "ee4201adad5912b9808d264603e3ef45982524e36d602ee19dba8ea0bf960b48"
+    },
+    "old_resources_recipe": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\prepare-replay-cold-index\\checks\\20261019T173829\\04-graph-resources-identity.json",
+      "bytes": 52640,
+      "sha256": "35a4a862b271f4a42b46c0d46c5579faeae11037c0b5474e7bc5a52be33db1ae"
+    },
+    "old_resources_object": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\prepare-replay-cold-index\\checks\\20261019T173829\\04-graph-resources.obj",
+      "bytes": 843809,
+      "sha256": "3570e3dd20a7d0ef0e338d898ce327344edc3b5c6687381f5ca03f0f58277b3a"
+    },
+    "unchanged_main_object": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\checks\\main1\\qwen-main.obj",
+      "bytes": 2303609,
+      "sha256": "9bb84b171bc8ffddb316c67e677b54a6d64186c3f0e9b090a002ae260306fbcd"
+    },
+    "current_product_dependencies": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\resources.cc",
+        "bytes": 61170,
+        "sha256": "360c50b8777206413a5d781192e59ca026830ea3986120cbab692ce6b14c9fab"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\graph\\executable.h",
+        "bytes": 49762,
+        "sha256": "6305dd557606b26119fc60de9dbb68c979a1f8fe54755a191378c49742ef4714"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\completion.h",
+        "bytes": 1959,
+        "sha256": "98b34b9ee4665e9aedac719504c029a509f304b0a4f566bf6b7f76d88dc2ef34"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\visibility.h",
+        "bytes": 43,
+        "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\visibility.h",
+        "bytes": 11701,
+        "sha256": "893fa73589b6e46f00474c2258af74c28d662b52176b57012290c820812ed486"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\error\\result.h",
+        "bytes": 30856,
+        "sha256": "7718409ab2854eb76959215b356bf8077007134d87db1a24f9384a9b5deff2b5"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\core\\compiler.h",
+        "bytes": 4287,
+        "sha256": "e31151f0ed73c532e464c6568483acecd80a2da9c1ee7afc7e081db87d6fb687"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\core\\detail\\compiler_attributes.h",
+        "bytes": 1913,
+        "sha256": "263c7691f9984073e198b69328092330bf572195113d3994d1ab54fe4564d88a"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\core\\environment.h",
+        "bytes": 6712,
+        "sha256": "3d289765b1b677499a444b38d1dbe366bb5e99f89fcb7670af2d08106fd958fa"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\core\\assert.h",
+        "bytes": 16114,
+        "sha256": "5596728bc220ea27696be4f25e2f9eb9cf2705930f8eb0461747c4a862615790"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\core\\detail\\preprocessor.h",
+        "bytes": 409,
+        "sha256": "1d9872ef98db007dcbed7e0128771244640e1de4092830d52a7a83537f98eb84"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\error\\status.h",
+        "bytes": 18122,
+        "sha256": "4d6b4b0bfa5628947aad5449320513d4b071e0c84debfac47f7a7d264cecb7f4"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\device.h",
+        "bytes": 7702,
+        "sha256": "f966803f2293e03db1cde9b1327f847a92162f21adb53f69ef37f0c19b16a84a"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\provider.h",
+        "bytes": 10281,
+        "sha256": "a9737ca3cf64eec23ce768e20b1112407fc7816a32f8031f0b668b16c49f816a"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\mem\\allocator.h",
+        "bytes": 11717,
+        "sha256": "8beaac413632fdc4409c2384f1cda7d6d5e75b72aafad73d188e13dbfa50781a"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\mem\\visibility.h",
+        "bytes": 43,
+        "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\prepared_operation.h",
+        "bytes": 20281,
+        "sha256": "03895c56e8665daf2482f66fecf205fd8aacf92046e13c169d9d8ff86fff52d7"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\operation.h",
+        "bytes": 28108,
+        "sha256": "35b7c862143839e4b8ce0c9a49753b7add2f325ec424bf5f91a1afeec0101506"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\ops_visibility.h",
+        "bytes": 43,
+        "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\tensor_desc.h",
+        "bytes": 8700,
+        "sha256": "e5496e00c643bcce2efbb42666773f4172243d10458b756d6f9881b0e677eb9a"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\tensor.h",
+        "bytes": 1980,
+        "sha256": "ac00f221a66d0f9044a2b49a1123a6b99a6c425568790898129c31d81519c538"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\mem\\buffer.h",
+        "bytes": 19273,
+        "sha256": "346a4f810babb8c5dacba49faaf57903d998a3cbb49af12b8c62acc85f7be72c"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\mem\\resource.h",
+        "bytes": 7717,
+        "sha256": "84b0366e658ec63f999b4c9719cf8584ad758f4ff5340baf37f1c3ebd17145cd"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\workload.h",
+        "bytes": 5017,
+        "sha256": "2e7509d99d986e71b06788e4dd1dcb9595799e2ad972df48449ff0b58f0815ad"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\resource_budget.h",
+        "bytes": 4622,
+        "sha256": "578d440b6fc3f5b58809837506165de27ac0866ae39b2d132763f5dd1786b1ce"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\mem\\quota_allocator.h",
+        "bytes": 7124,
+        "sha256": "a88fe230dc5358ddde6209de96cc61a59e3f6e60d30b9e7534e986fab10224c9"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\storage_owner.h",
+        "bytes": 8058,
+        "sha256": "549d881d8d4f96eedbb03c8ef9bd6892ede776e5da90a39025538bc50a0530d9"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\detail\\context_ref.h",
+        "bytes": 2563,
+        "sha256": "b1295a6d21d452b2730e3907891ca49993e512a741f8f3a9689976e56f5af3f1"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\detail\\lease_access.h",
+        "bytes": 3996,
+        "sha256": "3df3c018e207f135ab6a5e21336360c68977416f2762dfb8688b6cce0abbb39f"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\resource_leases.h",
+        "bytes": 8660,
+        "sha256": "4e5681ebfa7c2f2ad51e5788c8316f4b993883f595c04b33fe594d7294dab85b"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\detail\\resource_budget_access.h",
+        "bytes": 527,
+        "sha256": "17f1adbcf9a15c6eadc20e4346bcbefb6b704e344d0e21f8cd44328c53b55004"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\graph\\compile_report.h",
+        "bytes": 577,
+        "sha256": "c42c30527d581975c49ddfebb182b0ae7928d799eed91172cb631779a2ad5b4f"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\graph\\execution_source.h",
+        "bytes": 1859,
+        "sha256": "b89de5c6fe8b84192c9618a6a4e4dcee8ac45393e04a9e335f17b5a2d3ecac3f"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\graph\\visibility.h",
+        "bytes": 43,
+        "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\graph\\graph.h",
+        "bytes": 19988,
+        "sha256": "c7a93ccf9fd1c86fb9dec286e7d3345aabcb1810c2fb6793a66093480a5a2136"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\graph\\resources.h",
+        "bytes": 430,
+        "sha256": "c9d3075babb4d863f3543c76576d093fe59f9868df67d50fc492db0aebe7015d"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\graph\\result.h",
+        "bytes": 1646,
+        "sha256": "90861eafec4f3a0aa73014416bd2817dfe3892ac001ea206bebf907e1d3cf182"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\graph\\detail\\region_access.h",
+        "bytes": 11938,
+        "sha256": "e0162ad5f6df939643e21c0a2ddc1bffc7405926d9faf2fea9c139959526646d"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\detail\\provider_extension.h",
+        "bytes": 4033,
+        "sha256": "1508099710fe63576cd04faeb6837288cad911a8952214fd070369c6c21c5e58"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\detail\\queue_sequence.h",
+        "bytes": 9214,
+        "sha256": "d8cc25b000e655468f3de3b1da3f5b17c388329f21d3f9d6f1d06d9e54de8a26"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\detail\\completion_access.h",
+        "bytes": 4164,
+        "sha256": "8699638e39a1a7d5708cbb6a5e41f191228b3ac571b16b026eadcc1aa6765e34"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\detail\\operation_access.h",
+        "bytes": 992,
+        "sha256": "4bdd60939dea229e91907768308155716b7cd8b78d92150391edc771f2089f34"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\detail\\queue_ref.h",
+        "bytes": 1551,
+        "sha256": "a50579827a0b1554ffa4595c3b2fff68cfcbcc9b75caba25c60f78028d49961b"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\mem\\std_allocator.h",
+        "bytes": 5150,
+        "sha256": "adee9ae71753fa27e001b7b71b1d57b61e14f7ebcfdea57bb3993d2a3e9550e4"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\mem\\system_inline.h",
+        "bytes": 8762,
+        "sha256": "d890fe66b1a83a5f1a8f2b22c368276e7b3fadcfd0946df5279692ce055164f1"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\mem\\alignment.h",
+        "bytes": 3645,
+        "sha256": "3ae961e6556cf2a3e5e56f5de9c80db224c7a50a591ce998d81b347a8c4be9ae"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\obs\\trace.h",
+        "bytes": 8554,
+        "sha256": "be0df49a044a0888d46c6c2411a292fdd04908b7bdc393557b87d68a70cf1f6f"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\util\\spin_lock.h",
+        "bytes": 4393,
+        "sha256": "2de2d1d1718fdd07a46335fdda7f61bbf2b84f214a9f3ccbc661707141095fce"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\plan_state.h",
+        "bytes": 56713,
+        "sha256": "1f0f3e1e6d5d35320306f262ac8f4267c0bb3d023d71e16e2f08790b584b0697"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\constant_artifact.h",
+        "bytes": 8132,
+        "sha256": "185a97b2c63ff1b583ffb086d9e042ea81896eb3ecc8efb84e2bde4375bd2dda"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\graph\\detail\\execution_source.h",
+        "bytes": 1782,
+        "sha256": "f4c451def6a23d4dcbe2d0cc5fa0c3bdf86d8ed508d786212c4473c0ebb435ad"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\container\\flat_hash_map.h",
+        "bytes": 65,
+        "sha256": "0043e05aca5e33ab67af266e59dc44336e65babca9ffeddba696b6741d694b20"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\container\\detail\\flat_hash_table.h",
+        "bytes": 44712,
+        "sha256": "c034a533b0554225da54326a7169507c07aa7810504f34b560cfeb80092f0e1f"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\container\\hash.h",
+        "bytes": 28870,
+        "sha256": "4ff2c8bfaf8b2bb683f05c676c741f8bbeca1e4d926061ae0cc58cb524e4e0d0"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\container\\visibility.h",
+        "bytes": 180,
+        "sha256": "ba9e9fc47e67b7fcde0e9353f8acfe9384bf3ce440a412f3f950cf5ef1ce5cd3"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\container\\detail\\flat_hash_probe.h",
+        "bytes": 11389,
+        "sha256": "9415366e42de93d3d7932745783b0964280e5d92f3a484f77b1d109a07d48582"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\core\\cache.h",
+        "bytes": 3625,
+        "sha256": "96ec55f30f1e6ec2e46c32b0ec01063e2feb0d0ee72ee7a353d1cd29e03e7048"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\container\\small_vector.h",
+        "bytes": 30022,
+        "sha256": "cd04f94cac8c7be603600dfeb2a343a88a576bb5230c914d6d38ae5676b99cee"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\graph\\region_provider.h",
+        "bytes": 24812,
+        "sha256": "16558cc236133bd76a2306dc7144b9edd08c81e19600d1d1dc6f7c8bc5127949"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\detail\\resource_binding.h",
+        "bytes": 333,
+        "sha256": "5728b7fc8d0b9e6faf413dd5f8e5ba13e7ddf4d86354a722770f554c1591c6e5"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\resource_requirement.h",
+        "bytes": 749,
+        "sha256": "0a1260090ba84ed86cf26b27ec5d187c8ed5d39b1acda641b632a3b84d3acf76"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\util\\ref_counted.h",
+        "bytes": 15931,
+        "sha256": "47cc650a3bb704ace90bd718fc3e8f0b9d10485a32009551e3e7f456d9f5b5d6"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\storage_budget.h",
+        "bytes": 9959,
+        "sha256": "22bcacde96a3edabc8e7989fca948cc62e84c7a8633b975883703e06237b385b"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\execution_source_internal.h",
+        "bytes": 6898,
+        "sha256": "63030a3f57bafa1bcdb49c572c034aeaad3c4b2f39d5cc99228d6cb9d54abc11"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\graph_state.h",
+        "bytes": 9877,
+        "sha256": "e7b4b8e9c7d72c14e9e2990ba04727a83b4ca75ebd34c142cd92694779f76cce"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\src\\compute\\shape_program.h",
+        "bytes": 3883,
+        "sha256": "1d58ee387d7c7bb21e14c7f9e6330ffa544aaf5eca91d3182b2c08f2927169f1"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\detail\\command_capture.h",
+        "bytes": 3453,
+        "sha256": "e4691dfd82b4a158256d0216c3c64d3d4bc081a72a80e25bb2fc049e03f0c448"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\detail\\backend_extension.h",
+        "bytes": 3637,
+        "sha256": "f0f7dbadc6929cea96c7ddbda6516b14d5e90725b49de1daf55b3921d8fa0a92"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\detail\\retained_completion.h",
+        "bytes": 4972,
+        "sha256": "3199644bf8ae58b283fdbea2f9a4fe43331a2b0297380bd948e1fb3780d34d29"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\mem\\lifetime_plan.h",
+        "bytes": 7018,
+        "sha256": "72277c027d1b76a9c813bcfe7ef3420759274375f5647362ae915e8672bb3b1f"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\resource_episode.h",
+        "bytes": 2257,
+        "sha256": "f0de8906981b08deb25f53a8bae60e40244a85e7270eb0187e85e4c96e0d5c12"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\submission_lifetime.h",
+        "bytes": 3453,
+        "sha256": "0ba69ead747e95ca6889467ca1866f314557dc78a3dcae29e24d14857a78f9c6"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\progress_internal.h",
+        "bytes": 2085,
+        "sha256": "d97358e9b3bfbe6190a204cdd192fa5d774b6b7c90c43ec319cb39a35a4367af"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\input_sources.h",
+        "bytes": 2146,
+        "sha256": "3439b4269cd04f192b4fc8232ddda621542ca339cbd3efcd46cd054e7727d22d"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\submission_internal.h",
+        "bytes": 8059,
+        "sha256": "d35b02445a8ab77581de34cce13281a135ba1ff3248229d9a38efc61f2266700"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\src\\compute\\provider_internal.h",
+        "bytes": 11448,
+        "sha256": "d5fe8397f2f7e7818f48aa1547e549fbfe9c49446275d2a224f92c28d1cab3fb"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\detail\\prepared_callbacks.h",
+        "bytes": 3012,
+        "sha256": "a721592ad0985c92ec0a427973dd63ca20cf3d870cb8c1162b57f86afde514ae"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\src\\compute\\shape_domain.h",
+        "bytes": 4715,
+        "sha256": "2c50da6b169b550e737a4dd95d5be66ab5803ac1843ba628ebc5cc37f2507846"
+      }
+    ],
+    "counter_group_slots": 32,
+    "counter_contract": {
+      "calls": "All input_lease entries by Invocation address",
+      "visited": "Records the ORIGINAL loop actually examined, stops at original first hit",
+      "eligible_visited": "Original visited records passing !exclusive && read.valid, including valid zero byte leases",
+      "hits": "Original returned binding.read addresses",
+      "full_B_sum": "Total resource-record count summed over valid-resource/tensor calls",
+      "full_R_sum": "Full number of current eligible read handles, summed per call; true entire B count even on early hit",
+      "max_B_R": "Max entire binding count and eligible handle count per address group",
+      "tail_counted": "Diagnostic-only cheap membership checks after the original early hit, no extra lease.view/admit calls",
+      "early": "No resources or invalid tensor, original early nullptr path"
+    },
+    "limits": [
+      "No per-call printf/clock or counter heap allocation; fixed32 atomic groups print once at normal process teardown.",
+      "Invocation address groups are not lifetime serial IDs; address reuse can merge groups. Overflow is explicit and invalidates complete-group interpretation.",
+      "Counts aggregate every cold preparation for that address, including initial preparation; no warm phase markers or main changes.",
+      "Extra atomic/tail counter work perturbs runtime; do not use instrumented duration to assign lookup cost.",
+      "Original lookup, lease pointer/lifetime, first-match and resource/handle/range/zero semantics unchanged."
+    ],
+    "build_GPU_run": false
+  },
+  "evidence": {
+    "stage": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe",
+    "archive": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\qwen-lease-lookup-probe-2026-10-20.zip",
+      "bytes": 126670,
+      "sha256": "21e337db605683c8f1f45a411996835c24340062b97d343389a1b93bb7e66a60"
+    },
+    "payload_count": 36,
+    "CRC_checked": true,
+    "all_payload_SHA256_checked": true,
+    "cleanup": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\qwen-current-retest-2026-10-20.cleanup.json",
+      "bytes": 74402,
+      "sha256": "255a6c5a65ce08aca84ace8379f787a60b0be50b5a4e07e8e2608ed15de5d30b"
+    }
+  },
+  "goal": "Active; use observed work as the next implementation decision, not as completed architecture work"
+}

@@ -1,0 +1,112 @@
+{
+  "schema_version": 1,
+  "observed_on": "2026-10-20",
+  "status": "Research complete; Hyle implementation not complete",
+  "artifact_execution_verified": false,
+  "scope": {
+    "catalog_indices": [
+      16,
+      23,
+      30
+    ],
+    "weight_payload_bytes_read": 0,
+    "Hyle_product_builds": 0,
+    "Hyle_operation_tests": 0,
+    "upstream_template_CUDA_compiler_successes": 1,
+    "upstream_template_CUDA_processes": 1,
+    "not_verified": [
+      "Hyle MXFP4 W4A4 implementation",
+      "complete importer/artifact/model execution",
+      "AMD HIP or Triton execution",
+      "hardware MXFP4 GEMM",
+      "quality",
+      "throughput"
+    ]
+  },
+  "artifacts": [
+    {
+      "catalog_index": 16,
+      "repository": "amd/Qwen3.8-2.4T-A95B-Quark-MXFP4",
+      "revision": "13dc9676cdd9e2374c3efb50389d3392b975acae",
+      "fixed_config_url": "https://huggingface.co/amd/Qwen3.8-2.4T-A95B-Quark-MXFP4/blob/13dc9676cdd9e2374c3efb50389d3392b975acae/config.json",
+      "producer_version": "0.12.post1",
+      "sampled_U8_weight_scale_pairs": 1536,
+      "sampled_FP8_weight_scale_pairs": 0,
+      "detail_member": "artifact/artifact-facts.json"
+    },
+    {
+      "catalog_index": 23,
+      "repository": "amd/Kimi-K3-Quark-MXFP4-AttnFP8",
+      "revision": "398ecc22db3722ed6e416d22f8ddb491da32d566",
+      "fixed_config_url": "https://huggingface.co/amd/Kimi-K3-Quark-MXFP4-AttnFP8/blob/398ecc22db3722ed6e416d22f8ddb491da32d566/config.json",
+      "producer_version": "0.13+2fba630fc87",
+      "sampled_U8_weight_scale_pairs": 2694,
+      "sampled_FP8_weight_scale_pairs": 16,
+      "detail_member": "artifact/artifact-facts.json"
+    },
+    {
+      "catalog_index": 30,
+      "repository": "amd/GLM-5.3-Flash-Quark-MXFP4",
+      "revision": "b5688f25491202978c19c4d036eef579f61bbe07",
+      "fixed_config_url": "https://huggingface.co/amd/GLM-5.3-Flash-Quark-MXFP4/blob/b5688f25491202978c19c4d036eef579f61bbe07/config.json",
+      "producer_version": "0.12.post1+1b229f7",
+      "sampled_U8_weight_scale_pairs": 606,
+      "sampled_FP8_weight_scale_pairs": 329,
+      "detail_member": "artifact/artifact-facts.json"
+    }
+  ],
+  "key_findings": [
+    "Original packed weights are U8[N,K/2], adjacent even-K low/odd-K high; original E8M0 scales are U8[N,K/32]. Fixed Pack_fp4 ignores the reorder flag; do not import GGUF or MLX layouts.",
+    "All25 retained wheel sources match the GLM fixed tag;24 of these match the Kimi fixed commit. Its sole config.py change adds a TwoBitScalar algorithm branch; retained MXFP4 numerical kernels, packing and dispatch are unchanged.",
+    "Kimi sampled layer1 includes896 independent packed experts; excluded BF16 routed_expert_up/down_proj are distinct outer projections.",
+    "GLM mixed config has924 exact FP8 overrides:871 MTP layer45 plus53 main roles; ordinary sampled experts are MXFP4 and preserved attention/router examples are BF16. It is not all-layer FP8.",
+    "Default retained HIP, optional Triton and the Python even_round helper have different extreme/zero behavior. Their full domains are not interchangeable; the bounded upstream CUDA template probe is not a Hyle test."
+  ],
+  "numerical_boundaries": {
+    "normal": "Pinned producer BF16 group32 quantization/reconstruction and packing supply the next reference contract; its BF16 intermediate rounding is substantive, not the existing MLX weight-only or ceil-scale roundtrip contract.",
+    "selected_portable_reference_not_implemented": {
+      "A_domain": "Finite BF16 including subnormal and signed zero; source NaN/Inf fail checked Completion.",
+      "scale": "Round absmax BF16 bits by (bits+0x20)&0x7f80; rounded zero selects exponent-127, finite-to-Inf carry selects127, otherwise exact exponent minus2 clamped[-127,127]. No new epsilon floor.",
+      "operands": "BF16 divide, nearest-even saturating E2M1 with sign bits preserved, BF16 reconstruction; original W scale codes0..254 decode2^(code-127) followed by BF16 code product.",
+      "invalid_scale": "Original W scale255 fails checked Completion; legal finite-input intermediate Inf/NaN remain ordinary IEEE results.",
+      "boundary": "This explicitly selected mathematical reference does not preserve undefined log2(0)-to-int behavior, upstream tiny-subnormal loss or optional-Triton differences. No Hyle implementation exists in this research package."
+    },
+    "extreme": "Zero, subnormal, maximum finite and nonfinite diagnostics plus scale-code raw bits are retained. Normal/tie observations and extreme outcomes define the scope; no all-finite bit identity to upstream HIP, AMD hardware or optional Triton is asserted.",
+    "detail_member": "producer/review.json",
+    "raw_upstream_probe_member": "root/upstream-cuda-probe/observations.json"
+  },
+  "next_implementation": "Implement an explicit BF16 group32/E8M0 software reference on original three/four-port packed banks, sharing existing per-backend FP4 traversal/status. Preserve existing ModelOpt/Local semantics, once-per-token shared-activation QDQ, selected-ID checks and bounded W tiles; do not materialize E*N*K floating banks or add an executor. Exact role/import binding and the separate FP8 branches remain follow-up work.",
+  "detail_members": [
+    "artifact/review.json",
+    "producer/review.json",
+    "implementation/review.json",
+    "implementation/retained-source-inventory.json",
+    "root/upstream-cuda-probe/receipt.json"
+  ],
+  "metadata_request_counts": {
+    "safetensors_header_files": 6,
+    "safetensors_header_bytes": 1454936,
+    "safetensors_length_prefix_bytes": 48,
+    "fixed_config_bytes": 1837907,
+    "index_prefix_bytes": 262144,
+    "tensor_payload_bytes": 0
+  },
+  "archive": {
+    "path": "docs/evidence/research/quark-mxfp4-contract-2026-10-20.zip",
+    "bytes": 2552239,
+    "sha256": "fdcd57ba1b03dce500404d37167acd6eef9021617e3067ba23eedd0666ae1ede"
+  },
+  "archive_manifest": {
+    "member": "archive-manifest.json",
+    "bytes": 49880,
+    "sha256": "cfa2711bdc0b296dee813d43b91af2b4945c770cc61d2ae4d8510b1e726f61c5"
+  },
+  "member_count": 222,
+  "retained_current_source_count": 47,
+  "verification": {
+    "CRC_all_members": true,
+    "SHA256_all_payloads": true,
+    "safe_unique_member_paths": true,
+    "catalog_metadata_members_exact": 11
+  }
+}

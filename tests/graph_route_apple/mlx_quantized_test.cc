@@ -24,6 +24,9 @@ hyle::Result<c::apple::Program> prepare(const c::apple::Context &context,
   HYLE_ASSIGN_OR_RETURN(auto graph, std::move(builder).finish());
   return g::apple::compile(context, graph);
 }
+TEST(AppleGraphMlxQuantized, GroupedSharesOriginalActivationAcrossSelectedExperts) {
+  apple_packed_test::grouped_shared_activation(prepare);
+}
 TEST(AppleGraphMlxQuantized, NativeFormatsUseOrdinaryEntryAndCheckedExperts) {
   apple_packed_test::formats(prepare);
 }

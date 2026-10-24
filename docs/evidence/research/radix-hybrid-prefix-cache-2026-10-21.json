@@ -1,0 +1,220 @@
+{
+  "status": "有界本地只读研究已冻结；0产品改动、0构建、0GPU/模型运行；建议尚未实现/测收益",
+  "conclusion": "应补压缩Radix索引，但最长公共token前缀不等于可执行的循环状态边界。保留现有完整Snapshot/同Graph/真实退休机制，只替换引擎私有PrefixCache的索引。",
+  "confirmed_local_reference_facts": [
+    "SGLang统一Radix的Mamba component只接受真正带device/host state的节点。Full-KV可以命中更长，代码明确单列Mamba边界；split新父节点没有Mamba value，原状态留在原深度子节点；按实际tracked seqlen捐赠/请求级COW，不能截取未来状态。",
+    "vLLM本地实现以block/hash+各类manager为主，不是必须使用Radix。MambaManager查真实状态checkpoint；hybrid coordinator对各组命中求共同合法长度。checkpoint builder/exporter明确“分配却未写出状态”会返回未初始化状态，GDN backend也接了builder。",
+    "本地vLLM旧hybrid设计md仍写Mamba未完成，与当前manager/checkpoint代码不符；本报告以实际源码为准，未使用过时说明判断能力。"
+  ],
+  "current_hyle_and_gaps": [
+    "当前已有有界完整Snapshot前缀目录、跨会话共享/分支COW、next_id原子head提交和实际ReplayHistory恢复。Snapshot包含12KV帧+36个有效conv/GDN lease+position；并非没有prefix cache。",
+    "缺真正Radix索引：当前lookup逐E个entry检查hash并逐token精确比较，最坏O(E*L)，publish也扫描entry；LRU touch/移位O(E)。Radix可免反复扫描同一长前缀，但不会降低Graph或GPU执行成本。",
+    "缺任意中间前缀的实际循环checkpoint：当前只保存完成prompt/turn边界。若只有129状态而LCP=100，不能复用100；退到已有64状态再算36，或从头算。新增depth100树节点仍无状态。",
+    "新增真正checkpoint会改变suffix T，须沿现有symbolic finite family冷准备必要child；不应为每个纯结构树节点生成执行child。",
+    "N committed+1串行candidate是现真实额度。prefix与Session别名同版本不重复计，但旧head推进后仍保留旧checkpoint会占一个实际版本。Radix不自动提供4路同时在途/continuous batching。"
+  ],
+  "minimal_replacement": {
+    "files": "仅tools/qwen35_text/prefix_cache.h内部及必要main接线，沿原lookup/publish/retains/Hit/ReplayHistory合同；compute+graph不因索引改形。",
+    "shape": "压缩edge用TokenPlanRef+first/count，节点有稳定NodeId/代际、绝对depth、按首token有序children、可选完整SnapshotRef+ReplayPrefix payload。缓存根明确隔离实际Model/math identity；不按模型名或provider写分支。",
+    "lookup": "沿token精确比较，一路记住长度落在[minimum,target]且身份/next_id/权限状态有效的最后一个payload节点；遇到半edge、无checkpoint结构点或不匹配时，返回最后合法祖先，不把最深结构LCP当命中。",
+    "publish": "只把已整图成功的完整Snapshot挂到其真实depth。edge split的新父节点默认无payload，原完整状态留原depth子节点；先准备必要有界host元数据，再提交索引修改，失败不撤销已可见Session head。",
+    "eviction": "仍一套payload LRU；删除payload使它不可再命中，保分叉/孩子并压缩无payload单子边。真实VersionRef/LeasePool/Completion所有者负责额度与退休，结构节点不给页权限、不复制循环状态。Hit继续保owner；将来多同时pin要计数而非单bool。",
+    "bounds": "对E个payload及时剪空叶/合并无payload单子节点，压缩节点可限制约2E+1个host槽。路径token比较O(L)，有序children另sum(log d)；publish子表维护不是O(1)。可在同一LRU用prev/next代替vector实现O(1)touch；pinned eviction最坏仍O(E)。",
+    "unchanged": "ReplayHistory复制/验证O(K)、state副本和权限admission、Graph耗时不因换树消失。edge引用整个TokenPlan可能仍保较长owner，不能只按压缩edge字节宣称host内存下降。"
+  },
+  "hard_boundaries": [
+    "Snapshot真实包含所有KV+conv/GDN+同position+有效next_id才可命中；只有KV或token相同不够。KV page16并不自动要求状态checkpoint按16对齐，Hyle现有partial-tail129完整状态应保留。",
+    "共享祖先只读，分支COW；独占尾优化必须原PagedArena独占重获成功，树引用数/policy页ID不能代替权限。",
+    "目录淘汰/取消/public Completion丢弃不等于GPU退休，原pending/typed take/reaper门继续保实际state和预算。full-hit0Graph不能造hidden/logits向量。",
+    "恢复保actual source chunk分区和next_id，不能用monolithic同token前缀替换不同分块后放宽oracle。"
+  ],
+  "ownership": {
+    "engine": "token索引、checkpoint保存位置/收益策略、Model/math/用户隔离key、LRU、provenance、suffix冷准备、请求目录/admission。",
+    "hyle": "精确paged/read/write/独占权限、普通Graph append→attention效果/依赖、资源预算、异步Completion/retirement及状态lease输出。索引替换无新公共API缺口；真要mid-chunk状态导出时，再按实际循环算子合同补输出机制。"
+  },
+  "execution_order": [
+    "1 当前capturable append批收尾：冻结已跑correctness/perf/native证据，按实际结论发布。",
+    "2 独占尾权：无共享旧版本时原权限重获后in-place；有共享仍COW，失败保真实退休。",
+    "3 Radix索引/有效状态边界：先用压缩树保现有checkpoint语义，再按真实复用junction与额度保存额外完整checkpoint并冷备必要suffix。",
+    "4 完整多会话对照：相同模型/量化、冷暖缓存、上下文和工作量；报告P/D/内存/总速度及多人TTFT、每路分位和吞吐，明确串行会话与多在途区别。"
+  ],
+  "proportional_check": "实现时一个纯host索引journey检查split/无checkpoint回退/最长有效祖先/pin/evict；数值复用现有真实prefix压力52+canonical18/72，不增全库矩阵或新治理框架。研究本身没运行测试或比较TPS。",
+  "source_scope": "只读本地clean选中文件；repo HEAD及每个源SHA如下，不宣称网络最新版本/上游实测结果。",
+  "sources": {
+    "hyle_prefix": {
+      "path": "C:\\public\\project-hyle\\hyle\\tools\\qwen35_text\\prefix_cache.h",
+      "bytes": 8965,
+      "sha256": "f9f8738135192bb735c3580c78db9caab970f51ad480e0ed788eb33a1659fbc2",
+      "anchors": {
+        "token_plan_and_exact_comparison": [
+          18,
+          37
+        ],
+        "replay_history": [
+          47,
+          71
+        ],
+        "linear_directory": [
+          74,
+          174
+        ]
+      }
+    },
+    "hyle_state": {
+      "path": "C:\\public\\project-hyle\\hyle\\tools\\qwen35_text\\session_state.h",
+      "bytes": 7504,
+      "sha256": "12bec40ae0b60f4402b3243904245d26d096310a507dfd680b077c2d5ffbe8e5",
+      "anchors": {
+        "shared_backing_plan": [
+          36,
+          60
+        ],
+        "distinct_versions_and_whole_snapshot": [
+          137,
+          174
+        ]
+      }
+    },
+    "hyle_driver": {
+      "path": "C:\\public\\project-hyle\\hyle\\tools\\qwen35_text\\main.cc",
+      "bytes": 127938,
+      "sha256": "440220ee2b4c38575765d3617127f275ca932e2a8e25d37d7e5baf4e463bbdd9",
+      "anchors": {
+        "cold_actual_suffix_union": [
+          1590,
+          1630
+        ],
+        "N_committed_plus_candidate_room": [
+          1762,
+          1784
+        ],
+        "prompt_lookup_and_adoption": [
+          1888,
+          1930
+        ],
+        "successful_boundary_publish": [
+          2005,
+          2010
+        ]
+      }
+    },
+    "sglang_mamba_python": {
+      "path": "C:\\public\\project-hyle\\sglang\\python\\sglang\\srt\\mem_cache\\unified_cache\\components\\mamba.py",
+      "bytes": 39532,
+      "sha256": "398c0e929a5fc3ecad826659c6b7e727e6fa4fcea2ba2f142e266d1a8cbe02f1",
+      "anchors": {
+        "match_requires_actual_state": [
+          146,
+          189
+        ],
+        "per_request_cow": [
+          191,
+          224
+        ],
+        "split_has_no_fabricated_state": [
+          308,
+          318
+        ],
+        "actual_tracked_state_boundaries_and_donation": [
+          543,
+          642
+        ]
+      },
+      "repository_head": "234ccba7f625e12639e621044496bcc6197c3758",
+      "selected_source_worktree_status": "clean"
+    },
+    "sglang_mamba_rust": {
+      "path": "C:\\public\\project-hyle\\sglang\\rust\\sglang-radix-tree\\src\\components\\mamba.rs",
+      "bytes": 29913,
+      "sha256": "a996d5d8892303c59c1181d4ce8f728bbad2eff2524ec1a689d08743acd2ff37",
+      "anchors": {
+        "joint_checkpoint_grid": [
+          36,
+          45
+        ],
+        "match_validity_and_fullkv_beyond_state": [
+          112,
+          152
+        ],
+        "donation_and_path_cap": [
+          154,
+          246
+        ],
+        "new_split_parent_no_state": [
+          257,
+          273
+        ]
+      },
+      "repository_head": "234ccba7f625e12639e621044496bcc6197c3758",
+      "selected_source_worktree_status": "clean"
+    },
+    "vllm_mamba_manager": {
+      "path": "C:\\public\\project-hyle\\vllm\\vllm\\v1\\core\\single_type_kv_cache_manager.py",
+      "bytes": 118986,
+      "sha256": "c54c322716949b2ffe1ccb7624928c759be19329ee03b4c11ffbc27084df08a9",
+      "anchors": {
+        "MambaManager_actual_cached_state_hit": [
+          1455,
+          1575
+        ],
+        "checkpoint_partial_key_commit": [
+          2055,
+          2138
+        ]
+      },
+      "repository_head": "276fbcff2717bd934cfa37c8a2e4c391f3e7237b",
+      "selected_source_worktree_status": "clean"
+    },
+    "vllm_hybrid_intersection": {
+      "path": "C:\\public\\project-hyle\\vllm\\vllm\\v1\\core\\kv_cache_coordinator.py",
+      "bytes": 44466,
+      "sha256": "c9f6c47fb6611839a051ad169bd20ba71d294e89fc257e991f38d9d5378e0e15",
+      "anchors": {
+        "monotone_group_hit_intersection": [
+          809,
+          944
+        ]
+      },
+      "repository_head": "276fbcff2717bd934cfa37c8a2e4c391f3e7237b",
+      "selected_source_worktree_status": "clean"
+    },
+    "vllm_checkpoint": {
+      "path": "C:\\public\\project-hyle\\vllm\\vllm\\model_executor\\layers\\mamba\\checkpoint.py",
+      "bytes": 6455,
+      "sha256": "542e017ad94e51ae1adaac2234b2aa2d7ae04df19080e1421f466c2dcb520196",
+      "anchors": {
+        "allocation_without_export_is_not_state": [
+          21,
+          57
+        ],
+        "backend_neutral_checkpoint_builder_and_exporter": [
+          94,
+          169
+        ]
+      },
+      "repository_head": "276fbcff2717bd934cfa37c8a2e4c391f3e7237b",
+      "selected_source_worktree_status": "clean"
+    },
+    "vllm_gdn_backend": {
+      "path": "C:\\public\\project-hyle\\vllm\\vllm\\v1\\attention\\backends\\gdn_attn.py",
+      "bytes": 32197,
+      "sha256": "ce951db92bb58b5b655ff00a89d0ffc68f8fbfb936e1e2a72a5da543cdf9d2f4",
+      "anchors": {
+        "GDN_uses_checkpoint_builder": [
+          94,
+          115
+        ],
+        "build_real_checkpoint_metadata": [
+          524,
+          532
+        ],
+        "pass_checkpoint_to_execution": [
+          600,
+          610
+        ]
+      },
+      "repository_head": "276fbcff2717bd934cfa37c8a2e4c391f3e7237b",
+      "selected_source_worktree_status": "clean"
+    }
+  }
+}

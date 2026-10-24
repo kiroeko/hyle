@@ -49,24 +49,25 @@ double q8_value(std::span<const std::uint8_t> bytes,std::size_t index) {
   return half_test::decode(scale)*code;
 }
 
-template<class T>void boxed_case(bool paged,bool quantized,unsigned dk,unsigned dv,
+template<class T,class Cache=T,class Output=T>void boxed_case(bool paged,bool quantized,unsigned dk,unsigned dv,
     bool causal,int window,bool long_prefill=false,bool large_values=false,bool bounded_long=false,
-    unsigned replays=1,bool resident_history=false) {
+    unsigned replays=1,bool resident_history=false,unsigned query_heads=8,unsigned phase=0,unsigned kv_heads=2) {
   SCOPED_TRACE(::testing::Message()<<"paged="<<paged<<" q8="<<quantized<<" dk="<<dk
-      <<" dv="<<dv<<" window="<<window<<" long="<<long_prefill<<" large="<<large_values);
+      <<" dv="<<dv<<" heads="<<query_heads<<" kv_heads="<<kv_heads<<" phase="<<phase<<" window="<<window<<" long="<<long_prefill<<" large="<<large_values);
   const unsigned qr=large_values?(long_prefill?65:1):(long_prefill?66:(causal?18:68));
   const unsigned physical=resident_history?1856:(large_values?8192:(long_prefill?(paged?256:274):64));
-  const auto storage=quantized?c::CacheStorage::q8_0().value():c::CacheStorage::plain(half_test::data_type<T>()).value();
+  const auto storage=quantized?c::CacheStorage::q8_0().value():c::CacheStorage::plain(half_test::data_type<Cache>()).value();
   const c::BatchCapacity cap{.storage=paged?c::BatchStorage::kPaged:c::BatchStorage::kRagged,
-      .query_type=half_test::data_type<T>(),.output_type=half_test::data_type<T>(),
+      .query_type=half_test::data_type<T>(),.output_type=half_test::data_type<Output>(),
       .key_storage=storage,.value_storage=storage,.max_requests=large_values?1u:2u,
       .max_query_rows=qr,.max_kv_rows=resident_history?1792u:(large_values?physical:(long_prefill?274u:physical)),
       .max_pages=paged?(resident_history?116u:(long_prefill?16u:4u)):0u,
       .max_page_refs=paged?(resident_history?112u:(long_prefill?19u:5u)):0u,
-      .query_heads=8,.kv_heads=2,.qk_head_dim=dk,.value_head_dim=dv,.page_size=paged?16u:1u};
-  auto context=n::Context::create().value();auto memory=n::MemoryResource::create(context,n::MemoryKind::kDevice).value();
-  auto staging=n::MemoryResource::create(context,n::MemoryKind::kStaging).value();
-  auto schema=c::BatchSchema::create(cap).value();
+      .query_heads=query_heads,.kv_heads=kv_heads,.qk_head_dim=dk,.value_head_dim=dv,.page_size=paged?16u:1u};
+  auto made_context=n::Context::create();ASSERT_TRUE(made_context)<<made_context.error().message();auto context=std::move(*made_context);
+  auto made_memory=n::MemoryResource::create(context,n::MemoryKind::kDevice);ASSERT_TRUE(made_memory)<<made_memory.error().message();auto memory=std::move(*made_memory);
+  auto made_staging=n::MemoryResource::create(context,n::MemoryKind::kStaging);ASSERT_TRUE(made_staging)<<made_staging.error().message();auto staging=std::move(*made_staging);
+  auto made_schema=c::BatchSchema::create(cap);ASSERT_TRUE(made_schema)<<made_schema.error().message();auto schema=std::move(*made_schema);
   const std::vector<std::int32_t> qp=large_values?std::vector<std::int32_t>{0,int(qr)}:
       (long_prefill?std::vector<std::int32_t>{0,1,66}:(causal?std::vector<std::int32_t>{0,1,18}:std::vector<std::int32_t>{0,33,68}));
   const std::vector<std::int32_t> kp=resident_history?std::vector<std::int32_t>{0,64,112}:
@@ -79,18 +80,18 @@ template<class T>void boxed_case(bool paged,bool quantized,unsigned dk,unsigned 
   if(resident_history){ids.resize(112);for(unsigned i=0;i<ids.size();++i)ids[i]=111-int(i);}
   const std::vector<std::int32_t> tails=paged?(resident_history?std::vector<std::int32_t>{16,16}:
       (long_prefill?std::vector<std::int32_t>{1,1}:std::vector<std::int32_t>{15,1})):std::vector<std::int32_t>{};
-  auto layout=schema.version({qp,kp,ids,tails}).value();
-  std::vector<T> query(std::size_t(qr)*8*dk);
-  std::vector<float> key(std::size_t(physical)*2*dk),value(std::size_t(physical)*2*dv);
-  for(std::size_t i=0;i<query.size();++i)query[i]=half_test::encode<T>(large_values?0.F:float(.17*std::sin(double(i)*.23)));
-  for(std::size_t i=0;i<key.size();++i)key[i]=large_values?0.F:float(.19*std::cos(double(i)*.13));
+  auto made_layout=schema.version({qp,kp,ids,tails});ASSERT_TRUE(made_layout)<<made_layout.error().message();auto layout=std::move(*made_layout);
+  std::vector<T> query(std::size_t(qr)*query_heads*dk);
+  std::vector<float> key(std::size_t(physical)*kv_heads*dk),value(std::size_t(physical)*kv_heads*dv);
+  for(std::size_t i=0;i<query.size();++i)query[i]=half_test::encode<T>(large_values?0.F:float(.17*std::sin(double(i+phase*17)*.23)));
+  for(std::size_t i=0;i<key.size();++i)key[i]=large_values?0.F:float(.19*std::cos(double(i+phase*13)*.13));
   for(std::size_t i=0;i<value.size();++i)value[i]=large_values&&!bounded_long?(i<value.size()/2?65504.F:-65504.F):
-      float(.23*std::sin(double(i)*.07)+.05*std::cos(double(i)*.17));
+      float(.23*std::sin(double(i+phase*23)*.07)+.05*std::cos(double(i+phase*11)*.17));
   std::vector<std::uint8_t> kb,vb;
   const auto cache_bytes=[&](std::span<const float> source,std::vector<std::uint8_t>& output) {
     if(quantized){const auto status=encode_words(context,memory,half_test::data_type<T>(),source,output);
       ASSERT_TRUE(status.ok())<<status.message();}
-    else {std::vector<T> plain(source.size());for(std::size_t i=0;i<source.size();++i)plain[i]=half_test::encode<T>(source[i]);
+    else {std::vector<Cache> plain(source.size());for(std::size_t i=0;i<source.size();++i)plain[i]=half_test::encode<Cache>(source[i]);
       output.resize(plain.size()*2);std::memcpy(output.data(),plain.data(),output.size());}
   };
   cache_bytes(key,kb);cache_bytes(value,vb);
@@ -98,8 +99,8 @@ template<class T>void boxed_case(bool paged,bool quantized,unsigned dk,unsigned 
   ASSERT_EQ(vb.size(),value.size()*(quantized?34u:64u)/32);
   ASSERT_FALSE(context.environment().software_device);
   const auto qd=c::batch_query_description(cap).value();
-  auto query_tensor=context.upload(qd,std::as_bytes(std::span(query))).value();
-  auto q=memory.import_readonly(query_tensor).value();
+  auto uploaded_query=context.upload(qd,std::as_bytes(std::span(query)));ASSERT_TRUE(uploaded_query)<<uploaded_query.error().message();auto query_tensor=std::move(*uploaded_query);
+  auto imported_query=memory.import_readonly(query_tensor);ASSERT_TRUE(imported_query)<<imported_query.error().message();auto q=std::move(*imported_query);
   const float scale=1.F/std::sqrt(float(dk));
   c::ResultLease<n::Results> result;
   if(paged) {
@@ -128,7 +129,7 @@ template<class T>void boxed_case(bool paged,bool quantized,unsigned dk,unsigned 
     auto kframe=keys.read(layout,kr).value(),vframe=values.read(layout,vr).value();
     auto made_recipe=c::NativePagedBatchProgram::prepare(schema,{.max_host_metadata_bytes=8192,.scale=scale,.causal=causal,.window_left=window});
     ASSERT_TRUE(made_recipe)<<made_recipe.error().message();auto recipe=std::move(*made_recipe);
-    auto slot=n::PagedBatchInvocation::create(context,recipe,memory,staging,{.max_metadata_backing_bytes=4u<<20}).value();
+    auto made_slot=n::PagedBatchInvocation::create(context,recipe,memory,staging,{.max_metadata_backing_bytes=4u<<20});ASSERT_TRUE(made_slot)<<made_slot.error().message();auto slot=std::move(*made_slot);
     for(unsigned replay=0;replay<replays;++replay){
       SCOPED_TRACE(::testing::Message()<<"replay="<<replay);
       result={};
@@ -142,43 +143,65 @@ template<class T>void boxed_case(bool paged,bool quantized,unsigned dk,unsigned 
     const std::array inputs{query_tensor,context.upload(kd,std::as_bytes(std::span(kb))).value(),
         context.upload(vd,std::as_bytes(std::span(vb))).value()};
     auto program=n::prepare_ragged_batch(context,layout,{cap,scale,causal,window});ASSERT_TRUE(program)<<program.error().message();
-    auto slot=program->create_invocation().value();ASSERT_TRUE(slot.bind(inputs).ok());
+    auto made_slot=program->create_invocation();ASSERT_TRUE(made_slot)<<made_slot.error().message();auto slot=std::move(*made_slot);ASSERT_TRUE(slot.bind(inputs).ok());
     auto run=slot.submit();ASSERT_TRUE(run)<<run.error().message();auto waited=run->wait();
     ASSERT_TRUE(waited)<<waited.error().message();result=std::move(*waited);
   }
   auto description=c::batch_output_description(cap,qr).value();
   ASSERT_EQ(result->tensors()[0].description(),description);
-  std::vector<T> actual(std::size_t(qr)*8*dv);
+  std::vector<Output> actual(std::size_t(qr)*query_heads*dv);
   ASSERT_TRUE(context.download(result->tensors()[0],std::as_writable_bytes(std::span(actual))).ok());
   const auto at=[&](bool k,std::size_t index) {
     if(quantized)return q8_value(k?kb:vb,index);
-    return half_test::decode(half_test::encode<T>(k?key[index]:value[index]));
+    return half_test::decode(half_test::encode<Cache>(k?key[index]:value[index]));
   };
   for(unsigned request=0;request<cap.max_requests;++request) {
     const int queries=qp[request+1]-qp[request],rows=resident_history?(request?768:1024):
         (large_values?8192:(long_prefill?(request?145:129):(request?33:31)));
-    for(int row=0;row<queries;++row)for(unsigned head=0;head<8;++head) {
+    for(int row=0;row<queries;++row)for(unsigned head=0;head<query_heads;++head) {
       const int position=rows-queries+row,first=window<0?0:std::max(0,position-window),last=causal?position+1:rows;
       std::vector<double> weights(static_cast<std::size_t>(rows));double sum=0;
       for(int j=first;j<last;++j) {
         const auto physical_row=paged?unsigned(ids[kp[request]+j/16])*16u+unsigned(j%16):unsigned(kp[request]+j);
-        double dot=0;for(unsigned d=0;d<dk;++d)dot+=half_test::decode(query[(std::size_t(qp[request]+row)*8+head)*dk+d])*
-            at(true,(std::size_t(physical_row)*2+head/4)*dk+d);
+        double dot=0;for(unsigned d=0;d<dk;++d)dot+=half_test::decode(query[(std::size_t(qp[request]+row)*query_heads+head)*dk+d])*
+            at(true,(std::size_t(physical_row)*kv_heads+head/(query_heads/kv_heads))*dk+d);
         weights[static_cast<std::size_t>(j)]=std::exp(dot*scale);sum+=weights[static_cast<std::size_t>(j)];
       }
       for(unsigned d=0;d<dv;++d) {
         double expected=0;for(int j=first;j<last;++j) {
           const auto physical_row=paged?unsigned(ids[kp[request]+j/16])*16u+unsigned(j%16):unsigned(kp[request]+j);
-          expected+=weights[static_cast<std::size_t>(j)]/sum*at(false,(std::size_t(physical_row)*2+head/4)*dv+d);
+          expected+=weights[static_cast<std::size_t>(j)]/sum*at(false,(std::size_t(physical_row)*kv_heads+head/(query_heads/kv_heads))*dv+d);
         }
-        const double decoded=half_test::decode(actual[(std::size_t(qp[request]+row)*8+head)*dv+d]);
-        ASSERT_TRUE(std::isfinite(decoded));EXPECT_NEAR(decoded,expected,(large_values&&!bounded_long?.75:(std::is_same_v<T,BF16>?.008:.0025)));
+        const double decoded=half_test::decode(actual[(std::size_t(qp[request]+row)*query_heads+head)*dv+d]);
+        ASSERT_TRUE(std::isfinite(decoded));EXPECT_NEAR(decoded,expected,(large_values&&!bounded_long?.75:(std::is_same_v<Output,BF16>?.008:.0025)));
       }
     }
   }
   result={};ASSERT_TRUE(context.close().ok());
 }
 
+TEST(VulkanCache, PlainHighDimensionsKeepIndependentValuesAndCausalPositions) {
+  for (bool paged : {false, true})
+    for (unsigned phase : {0u, 1u}) {
+      boxed_case<F16>(paged, false, 512, 512, true, -1,
+                      false, false, false, 1, false, 64, phase, 1);
+      boxed_case<F16>(paged, false, 576, 512, true, -1,
+                      false, false, false, 1, false, 96, phase, 1);
+    }
+}
+TEST(VulkanCache, BfloatQwenDepthKeepsCacheWordsAndFinalBfloatOutput) {
+  // D256 is the actual head depth of the Qwen BF16 attention route. Reuse
+  // the independent reference with nonsequential pages and two requests;
+  // its inputs and final output retain the original BF16 bit patterns.
+  boxed_case<BF16>(true,false,256,256,true,16);
+  boxed_case<BF16>(false,false,256,256,true,16);
+  boxed_case<BF16>(true,true,256,256,true,16);
+}
+TEST(VulkanCache, QueryCacheAndOutputTypesAreIndependent) {
+  boxed_case<BF16,F16,BF16>(true,false,256,256,true,16);
+  boxed_case<F16,BF16,F16>(false,false,256,256,true,16);
+  boxed_case<F16,BF16,BF16>(true,false,256,256,true,16);
+}
 TEST(VulkanCache, Q8PagedRaggedWindowsAndIndependentValueDepth) {
   for(bool paged:{false,true})for(int window:{-1,0,15,16,std::numeric_limits<int>::max()}) {
     boxed_case<F16>(paged,true,64,128,true,window);
@@ -218,13 +241,17 @@ TEST(VulkanCache, LongWindowPipelinesPreserveTheirSpecialization) {
   }
 }
 TEST(VulkanCache, EmptyIndependentValueDepthKeepsOutputShape) {
-  for(bool paged:{false,true})for(auto type:{c::DataType::kFloat16}) {
-    SCOPED_TRACE(::testing::Message()<<"paged="<<paged<<" type="<<int(type));
+  const std::array types{std::array{c::DataType::kFloat16,c::DataType::kFloat16},
+      std::array{c::DataType::kFloat16,c::DataType::kBFloat16},
+      std::array{c::DataType::kBFloat16,c::DataType::kFloat16}};
+  for(bool paged:{false,true})for(auto pair:types) {
+    const auto type=pair[0],output_type=pair[1];
+    SCOPED_TRACE(::testing::Message()<<"paged="<<paged<<" query="<<int(type)<<" output="<<int(output_type));
     auto context=n::Context::create().value();auto memory=n::MemoryResource::create(context,n::MemoryKind::kDevice).value();
     auto staging=n::MemoryResource::create(context,n::MemoryKind::kStaging).value();
     const auto q8=c::CacheStorage::q8_0().value();
     const c::BatchCapacity cap{.storage=paged?c::BatchStorage::kPaged:c::BatchStorage::kRagged,
-        .query_type=type,.output_type=type,.key_storage=q8,.value_storage=q8,
+        .query_type=type,.output_type=output_type,.key_storage=q8,.value_storage=q8,
         .max_query_rows=1,.max_kv_rows=16,.max_pages=paged?1u:0u,.max_page_refs=paged?1u:0u,
         .query_heads=8,.kv_heads=2,.qk_head_dim=64,.value_head_dim=128,.page_size=paged?16u:1u};
     auto made_schema=c::BatchSchema::create(cap);ASSERT_TRUE(made_schema)<<made_schema.error().message();auto schema=std::move(*made_schema);
@@ -253,6 +280,7 @@ TEST(VulkanCache, EmptyIndependentValueDepthKeepsOutputShape) {
       auto waited=submitted->wait();ASSERT_TRUE(waited)<<waited.error().message();result=std::move(*waited);
     }
     EXPECT_TRUE(std::ranges::equal(result->tensors()[0].description().dimensions(),std::array<std::int64_t,3>{0,8,128}));
+    EXPECT_EQ(result->tensors()[0].description().data_type(),output_type);
     result={};ASSERT_TRUE(context.close().ok());
   }
 }

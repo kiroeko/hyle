@@ -1,0 +1,134 @@
+{
+  "status": "implemented_and_directed_CUDA_verified; overall architecture goal remains active",
+  "build_plan": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ga-dense-indexer\\checks\\20261019T184046-metadata-boundaries\\plan.json",
+    "bytes": 158183,
+    "sha256": "917d43ab5b0c5019c7d8286b0b2aff807f54f05503dedab4e2ba90095905fda1"
+  },
+  "test_summary": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ga-dense-indexer\\tests-final\\summary.json",
+    "bytes": 2486,
+    "sha256": "371b1c5916c2afd0bba9b32aec36c8554ef9941a1f0b9a73d0b59c8411ddecf3"
+  },
+  "model_summary": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ga-dense-indexer\\correctness-final\\summary.json",
+    "bytes": 112566,
+    "sha256": "9e16c087988f5b2a21b58e350bf7ac4d1908ce9d6396953362f3d9b4bc5ba161"
+  },
+  "profile_summary": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ga-dense-indexer\\profile\\summary.json",
+    "bytes": 3181,
+    "sha256": "bd5ee2ad02a1ffdf75322d18330e4a230f772e653665fda8f2b1f323bbc2ec4c"
+  },
+  "tests": 11,
+  "skipped": 0,
+  "model_equal_vectors": 64,
+  "physical": {
+    "key_tiles": 32,
+    "kernels": 160,
+    "graph_launches": 8
+  },
+  "implementation": "Original native CUDA Provider, private actual Q/Kt/Wr typed descriptor, shared Lt+typed tile helper, same prepared/Invocation/QueueSequence. Graph leaves zero-dispatch metadata Views as actual boundaries.",
+  "fixed": [
+    "GA dense BF16 score carrier with truthful batch pitch, three BF16 RNE boundaries, F16 mask-Cast/Add, optional final widen, empty result; generic H/D native qualification",
+    "Cold composite missed on dense case because it included free metadata Views; fixed mathematical boundaries without rank override",
+    "Current paged fixture invalid-payload retry omitted explicit prepare_replay after new bindings; fixed test caller, kept deferred OutOfRange and sentinel checks"
+  ],
+  "retained_failures": [
+    "Root nvcc dependency option lacked -MD; parser failed before device compile",
+    "Test helper type Run shadowed by GTest Test::Run; renamed Bindings only",
+    "Old fixture .obj referenced removed Graph API; refreshed current two test owners instead of adding compatibility",
+    "Initial dense test: all numerical checks pass but expected composite not selected; direct cold probe showed Lt succeeds and region not selected",
+    "Initial current paged cross-tile fixture returned unprepared error before payload validation"
+  ],
+  "limits": [
+    "Windows RTX4070/SM89/CUDA13.3 only for this carrier",
+    "No complete GA model, CPU/Apple/Vulkan equivalent new carrier, quality or peak-memory claim",
+    "No new Qwen/peer throughput window; latest speed remains previous Cast-SiLU 02:06 Beijing window",
+    "One composite region is tiled multi-kernel execution, not a single fused kernel"
+  ],
+  "next_hotspot_orientation": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ga-dense-indexer\\next-qwen-hotspot-orientation.json",
+    "bytes": 7402,
+    "sha256": "bab48527a1a7ce1afaa45d624a5609205fe27a5aaff6ad16b26f0d5188a96d0e"
+  },
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\ga-dense-indexer-cuda-2026-10-20.zip",
+    "bytes": 1895134,
+    "sha256": "248ef5db04f3d39ad059fa1b9799f05e6855d2a13247a267ee33f63151fd9d00",
+    "entries": 607,
+    "payloads": 605,
+    "CRC_and_every_payload_SHA_verified": true,
+    "crc_verified": true,
+    "payload_sha256_verified": true,
+    "verification_passes": 1,
+    "build_plan": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ga-dense-indexer\\checks\\20261019T184046-metadata-boundaries\\plan.json",
+      "bytes": 158183,
+      "sha256": "917d43ab5b0c5019c7d8286b0b2aff807f54f05503dedab4e2ba90095905fda1"
+    },
+    "tests": 11,
+    "equal_vectors": 64,
+    "duplicate_raw_vectors_omitted": true,
+    "historical_failures_and_probe_retained": true,
+    "SDK_rebuilt": false,
+    "throughput_claim": false,
+    "cleanup_executed": false
+  },
+  "cleanup": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\ga-dense-indexer-cuda-2026-10-20-reclaim.zip",
+    "bytes": 19516,
+    "sha256": "33866d5d5efce8cc7bda9bb55f58a97a78babb450a09e0852248b55cebb3328f",
+    "entries": 9,
+    "crc_verified": true,
+    "payload_sha256_verified": true,
+    "deleted_files": 152,
+    "deleted_bytes": 969563035,
+    "retained_images": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ga-dense-indexer\\checks\\20261019T184046-metadata-boundaries\\qwen.exe",
+        "bytes": 116258816,
+        "sha256": "124076e142a04c33c0a227dedf8072caa6313be0ff7b8448f708f48e78ea3a90"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\binding-port-reuse\\checks\\20261019T174851\\cpu.exe",
+        "bytes": 25206784,
+        "sha256": "460536c52494dd17195b8abe6738259e392b70f97cf5c4e2bac66a11bba560e4"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cast-stable-silu\\checks\\20261019T180121\\qwen.exe",
+        "bytes": 116199424,
+        "sha256": "30e5c447d9e174eacb3c3bdc3d94a6b7c72a2cec0e1278bd1a7b4596348ed8b6"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-explicit-rope\\performance-prepared\\peer.exe",
+        "bytes": 35814400,
+        "sha256": "fb169f0282f2a834a61b3e887edaba92d8699814558b0c5f1a13aaf07e0de969"
+      }
+    ],
+    "retained_reference_vectors": 64,
+    "all_link_inputs_retained": true,
+    "recursive": false
+  },
+  "model_image": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ga-dense-indexer\\checks\\20261019T184046-metadata-boundaries\\qwen.exe",
+    "bytes": 116258816,
+    "sha256": "124076e142a04c33c0a227dedf8072caa6313be0ff7b8448f708f48e78ea3a90"
+  },
+  "tests_image": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ga-dense-indexer\\checks\\20261019T184046-metadata-boundaries\\dense.exe",
+    "bytes": 116678656,
+    "sha256": "0bc10c821f5a86ab62149c4312eb90cccf49379d353734aae485265b588eab10"
+  },
+  "profile_image": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ga-dense-indexer\\checks\\20261019T184046-metadata-boundaries\\dense.exe",
+    "bytes": 116678656,
+    "sha256": "0bc10c821f5a86ab62149c4312eb90cccf49379d353734aae485265b588eab10"
+  },
+  "overall_goal_status": "active",
+  "notes": [
+    "Evidence and archived source snapshots retain all initial failures and their fixes.",
+    "Temporary validation images and duplicate vectors were removed after archive CRC/SHA validation; all actual link inputs remain.",
+    "Reproduce directed tests by relinking the final recorded dense-link-plan using the retained objects, rather than expecting a retained large test executable."
+  ]
+}

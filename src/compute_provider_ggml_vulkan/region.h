@@ -23,11 +23,17 @@ struct PagedAttentionRead final {
   std::int32_t window_left = -1;
   // Only fixed-Q paged batch recipes opt into host-known runtime KV extents.
   std::uint32_t runtime_request = UINT32_MAX;
+  bool compact_mla = false;
+  // E4 bytes use fixed F32 scales. Compact MLA has one physical root and
+  // one shared scale; only its private same-root V512 prefix is strided.
+  bool float8_cache = false;
+  float key_scale = 1.0F;
+  float value_scale = 1.0F;
   static constexpr OperationId operation_id{0x48594c45564b4641ULL,
-                                           0x5041474544524401ULL};
+                                           0x5041474544524402ULL};
   static constexpr std::string_view operation_name = "ggml-vulkan-paged-read";
   constexpr OperationTraits operation_traits() const noexcept {
-    return {{std::uint16_t(paged ? 4 : 3), std::uint16_t(paged ? 4 : 3)}, 1, AliasPolicy::kNone, EffectKind::kPure,
+    return {{std::uint16_t(compact_mla ? (paged ? 3 : 2) : paged ? 4 : 3), std::uint16_t(compact_mla ? (paged ? 3 : 2) : paged ? 4 : 3)}, 1, AliasPolicy::kNone, EffectKind::kPure,
             PrecisionPolicy::kExact, DataType::kFloat32};
   }
   HYLE_GGML_VULKAN_INTERNAL_API Status infer_output_descriptions(
@@ -75,6 +81,10 @@ public:
       Status validate(std::span<const RegionBinding>) const noexcept;
   HYLE_GGML_VULKAN_INTERNAL_API
       Status bind(std::span<const RegionBinding>) noexcept;
+  // Retired-only cold detachment. No native invalidation/admission occurs;
+  // the next bind invalidates its old recording before restoring all ports.
+  HYLE_GGML_VULKAN_INTERNAL_API Status can_detach_bindings() const noexcept;
+  HYLE_GGML_VULKAN_INTERNAL_API void detach_bindings() noexcept;
   HYLE_GGML_VULKAN_INTERNAL_API Status validate_batch_layout(
       std::span<const std::int32_t> kv_indptr,
       std::span<const std::int32_t> last_page_lengths) const noexcept;

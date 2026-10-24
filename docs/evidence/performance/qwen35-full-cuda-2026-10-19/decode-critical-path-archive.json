@@ -1,0 +1,10 @@
+{
+  "path": "docs\\evidence\\performance\\qwen35-full-cuda-2026-10-19\\decode-critical-path.zip",
+  "bytes": 3134160,
+  "sha256": "50bc7d1407c4ef9c89d7ef6084e7d8181ae6531538bba3b2cf35ae56ae945992",
+  "payloads": 58,
+  "original_frozen_payloads": 56,
+  "CRC_and_all_hashes_verified": true,
+  "GPU_collections": 2,
+  "performance_improvement_claim": false
+}

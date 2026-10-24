@@ -2,7 +2,7 @@
 
 #include "hyle/compute/apple.h"
 #include "hyle/graph/graph.h"
-#include "hyle/graph/native_variants.h"
+#include "hyle/graph/weight_binding.h"
 #include "hyle/visibility.h"
 
 #if defined(HYLE_COMPUTE_APPLE)
@@ -18,9 +18,29 @@
 #include "hyle/compute/operation.h"
 #include "hyle/error/result.h"
 #include "hyle/graph/compile_report.h"
+#include "hyle/graph/execution_source.h"
 #include "hyle/compute/apple_batch.h"
+#include "hyle/compute/apple_weights.h"
 
+namespace hyle::graph { class Invocation; struct QueueBinding; }
 namespace hyle::graph::apple {
+// Cold immutable ownership binding to the original Invocation. Binding retains
+// the original batch and metadata without waiting for its upload. The first
+// actual reader follows the original replay HostWaitPolicy.
+HYLE_GRAPH_ROUTE_APPLE_API Status bind(Invocation &, ValueId,
+    const compute::apple::WeightBatch &, std::uint64_t id) noexcept;
+// Resolve all banks and native owners before one atomic input commit.
+HYLE_GRAPH_ROUTE_APPLE_API Status bind(Invocation &,
+    std::span<const graph::WeightBinding>, const compute::apple::WeightBatch &) noexcept;
+
+// Typed pending page updates use the original Invocation and source controls.
+// Rejection before acceptance leaves the update with its caller; recovery
+// requires actual source/suffix retirement and release of public observations.
+HYLE_GRAPH_ROUTE_APPLE_API Result<compute::Completion> submit(Invocation &,
+    std::span<const QueueBinding>, compute::apple::CopyBatchUpdate &&) noexcept;
+HYLE_GRAPH_ROUTE_APPLE_API Result<compute::apple::CopyBatchUpdate>
+take_update(Invocation &) noexcept;
+
 HYLE_GRAPH_ROUTE_APPLE_API Result<compute::apple::MaterializedBatchInvocation>
 prepare_materialized_batch(const compute::apple::Context&,compute::MaterializedBatchProgram,
     const compute::apple::MemoryResource&device,const compute::apple::MemoryResource&staging,
@@ -33,6 +53,16 @@ prepare_materialized_batch(const compute::apple::Context&,compute::MaterializedB
 using CustomLowering = std::function<Result<std::vector<mlx::core::array>>(
     const compute::Operation &, std::span<const mlx::core::array>,
     mlx::core::Stream)>;
+
+struct SourceOptions final {
+  // Retained by this configured Source. Captured borrows must remain valid
+  // through its cold compiles; no public Context address is borrowed implicitly.
+  // Original native programs retain the resulting compiled MLX callable.
+  CustomLowering custom{};
+  mem::AllocatorRef allocator = mem::system_allocator();
+};
+HYLE_GRAPH_ROUTE_APPLE_API Result<ExecutionSource> execution_source(
+    const compute::apple::Context &, SourceOptions = {}) noexcept;
 
 // Independently owned cold diagnostics. No Graph, Program, MLX array, custom
 // payload or Context is retained. Copies use the consumer's ordinary C++
@@ -48,6 +78,11 @@ struct CompileReport final {
   // Sum of declared logical views, including repeated bindings. This is not
   // unique resident memory, RSS or a bound on MLX's private allocator.
   std::size_t logical_constant_bytes = 0;
+  // Unique ready F32 arrays derived from immutable constants during cold
+  // preparation. Original logical bindings/bytes above remain unchanged.
+  // Counts requested payload bytes, not MLX allocation/descriptor overhead.
+  std::size_t prepared_constant_count = 0;
+  std::size_t prepared_constant_bytes = 0;
   std::optional<std::size_t> private_storage_bytes; // MLX/driver: unknown.
   std::string implementation_policy;
   std::string numerical_policy;
@@ -77,8 +112,9 @@ struct CompileOptions final {
 // Admits fixed, dense, pure tensors; MLX Q4 constants use
 // apple::kAffineQ4Format. Public GGUF block descriptions are admitted only as
 // native ggml Metal MatMul/GroupedMatMul weights and bind as uint8 carriers.
-// Symbolic dimensions require exact shape bindings; compile_variants prepares
-// a finite table. Pure control endpoints retain predecessor outputs and split
+// Symbolic dimensions require exact shape bindings. Common graph::compile with
+// kFiniteExact prepares a finite table through the actual ExecutionSource.
+// Pure control endpoints retain predecessor outputs and split
 // managed regions with explicit completion waits. Effects and other unsupported
 // encodings are rejected. Each provider manages its own intermediates/fusion;
 // cross-provider boundaries use checked completion waits, no shadow output copy.
@@ -86,19 +122,6 @@ HYLE_GRAPH_ROUTE_APPLE_API Result<compute::apple::Program>
 compile(const compute::apple::Context &context, const Graph &graph,
         std::span<const mlx::core::array> constants = {},
         CompileOptions options = {}) noexcept;
-
-using Variants = ExactNativeVariants<compute::apple::Program>;
-inline Result<Variants> compile_variants(
-    const compute::apple::Context &context, const Graph &graph,
-    std::span<const ExactShapeVariant> variants,
-    std::span<const mlx::core::array> constants = {}, CompileOptions options = {}) noexcept {
-  if (!options.shape.empty())
-    return std::unexpected(Status::InvalidArgument("variant table supplies its own exact shapes"));
-  options.report = nullptr; // Per-artifact facts are not a single compile report.
-  return Variants::prepare(graph, variants, [&](const Graph &point) {
-    return compile(context, point, constants, options);
-  });
-}
 
 } // namespace hyle::graph::apple
 #endif

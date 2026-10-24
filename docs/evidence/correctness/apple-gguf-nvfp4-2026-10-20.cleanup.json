@@ -1,0 +1,32 @@
+{
+  "passed": true,
+  "mac_files": 12,
+  "mac_bytes": 80553340,
+  "windows_files": 2,
+  "windows_bytes": 2638757,
+  "total_bytes": 83192097,
+  "retained": "all source/SDK/objects/recipes/commands/results, final f8d066bd image and final current-Hyle archive",
+  "mac_exact_targets": [
+    "/Users/kiro/hyle-scratch/compute-unified/apple-nvfp4-20261020/proofs.tar.gz",
+    "/Users/kiro/hyle-scratch/compute-unified/apple-nvfp4-20261020/source-package.tar.gz",
+    "/Users/kiro/hyle-scratch/compute-unified/apple-nvfp4-20261020/checks-final-fixture/nvfp4-tests.map",
+    "/Users/kiro/hyle-scratch/compute-unified/apple-nvfp4-20261020/legacy-control/shared-activation-control.map",
+    "/Users/kiro/hyle-scratch/compute-unified/apple-nvfp4-20261020/legacy-control/shared-activation-control",
+    "/Users/kiro/hyle-scratch/compute-unified/apple-nvfp4-20261020/checks-mixed/libcurrent-hyle.a",
+    "/Users/kiro/hyle-scratch/compute-unified/apple-nvfp4-20261020/checks-shader-fix/nvfp4-tests.map",
+    "/Users/kiro/hyle-scratch/compute-unified/apple-nvfp4-20261020/checks-shader-fix/nvfp4-tests",
+    "/Users/kiro/hyle-scratch/compute-unified/apple-nvfp4-20261020/checks-closure/nvfp4-tests.map",
+    "/Users/kiro/hyle-scratch/compute-unified/apple-nvfp4-20261020/checks-closure/nvfp4-tests",
+    "/Users/kiro/hyle-scratch/compute-unified/apple-nvfp4-20261020/checks-closure/libcurrent-hyle.a",
+    "/Users/kiro/hyle-scratch/compute-unified/apple-nvfp4-20261020/checks-final/libcurrent-hyle.a"
+  ],
+  "original_rejection_source_removed": {
+    "deleted_file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_apple\\nvfp4_admission\\main.cc",
+    "bytes": 3364,
+    "original_snapshot": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\apple-nvfp4\\before\\tests\\compute_route_apple\\nvfp4_admission\\main.cc",
+    "original_sha256": "85451035c3e37e824d6fbdcc28fd3fe53337fdd7d38c637ea0cfc88c013cc43c",
+    "replacement_run": "validation/checks-final-fixture/summary.json"
+  },
+  "source_script": "cleanup-generated.ps1 in the evidence archive",
+  "execution": "Root test.ps1 executed after archive CRC and payload SHA verification"
+}

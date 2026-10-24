@@ -1,13 +1,7 @@
 #include <hyle/compute/custom_kernel.h>
 #include <hyle/compute/backends/cpu.h>
 #include <hyle/graph/graph.h>
-#if defined(HYLE_COMPUTE_VULKAN)
-#include <hyle/graph/cpu_vulkan.h>
-#include <hyle/sched/blocking.h>
-#elif defined(HYLE_COMPUTE_APPLE)
-#include <hyle/graph/cpu_apple.h>
-#endif
-#include <hyle/sched/scheduler.h>
+#include "native_effect_fixture.h"
 
 #include <array>
 #include <atomic>
@@ -20,10 +14,8 @@ namespace c=hyle::compute;
 namespace g=hyle::graph;
 namespace m=hyle::mem;
 #if defined(HYLE_COMPUTE_VULKAN)
-namespace b=g::cpu_vulkan;
 namespace n=c::vulkan;
 #elif defined(HYLE_COMPUTE_APPLE)
-namespace b=g::cpu_apple;
 namespace n=c::apple;
 #endif
 using hyle::Status;
@@ -61,7 +53,7 @@ struct ResourceKernel {
   Touch action;
   struct Invocation {};
   Result<Invocation> create_invocation(m::BufferView,m::AllocatorRef)const noexcept{return Invocation{};}
-  c::KernelCommandResult enqueue(Invocation&,c::Queue&,std::span<const c::ConstTensorView> inputs,
+  c::KernelCommandResult enqueue(Invocation&,c::detail::QueueSequence&,std::span<const c::ConstTensorView> inputs,
       std::span<const c::TensorView> outputs)const noexcept{
     if(!inputs.empty()||!outputs.empty())return c::KernelCommandResult::rejected(Status::InvalidArgument("touch ports"));
     if(action.write)*action.state=41;else *action.observed=*action.state;
@@ -99,16 +91,13 @@ Status run(){
 #if defined(HYLE_COMPUTE_VULKAN)
   HYLE_ASSIGN_OR_RETURN(auto device,n::MemoryResource::create(gpu,n::MemoryKind::kDevice));
   HYLE_ASSIGN_OR_RETURN(auto staging,n::MemoryResource::create(gpu,n::MemoryKind::kStaging));
-  const b::Environment environment{.cpu=&cpu,.vulkan=&gpu,.device=&device,.staging=&staging};
+  const auto staging_resource=staging.ref();
 #else
   HYLE_ASSIGN_OR_RETURN(auto device,n::MemoryResource::create(gpu));
-  const b::Environment environment{.cpu=&cpu,.apple=&gpu,.native=&device};
+  const auto staging_resource=device.ref();
 #endif
   hyle::sched::Scheduler scheduler(1,m::system_allocator(),32);
-#if defined(HYLE_COMPUTE_VULKAN)
   hyle::sched::BlockingPool completion_waiters(m::system_allocator(),1);
-#endif
-  struct Drain{hyle::sched::Scheduler &s;~Drain(){s.drain();}}drain{scheduler};
   HYLE_ASSIGN_OR_RETURN(auto state,m::Buffer::create(m::system_resource(),4,64));
   HYLE_ASSIGN_OR_RETURN(auto mapping,state.view().map_host());
   HYLE_ASSIGN_OR_RETURN(auto bytes,mapping.writable_bytes());
@@ -117,6 +106,7 @@ Status run(){
   HYLE_ASSIGN_OR_RETURN(auto input_storage,m::Buffer::create(m::system_resource(),4,64));
   const std::array<float,1> value{3};HYLE_RETURN_IF_ERROR(input_storage.view().write(std::as_bytes(std::span(value))));
   HYLE_ASSIGN_OR_RETURN(auto input_tensor,c::ConstTensorView::create(desc,input_storage.view()));
+  struct Drain{hyle::sched::Scheduler &s;~Drain(){s.drain();}}drain{scheduler};
   for(int scenario:{0,1,2}){
     const bool fail=scenario==1;Gate gate;
     *word=7;observed=-1;
@@ -132,46 +122,44 @@ Status run(){
     HYLE_RETURN_IF_ERROR(builder.depends_on(middle,write));HYLE_RETURN_IF_ERROR(builder.depends_on(read,middle));
     HYLE_ASSIGN_OR_RETURN(auto output,builder.result(middle));HYLE_RETURN_IF_ERROR(builder.publish(output));
     HYLE_ASSIGN_OR_RETURN(auto graph,std::move(builder).finish());
-    const std::array placements{g::NodePlacement{write,b::kCpuTarget,g::PlacementStrength::kRequired},g::NodePlacement{read,b::kCpuTarget,g::PlacementStrength::kRequired}};
+    const std::array placements{g::NodePlacement{write,effect_test::kCpuTarget,g::PlacementStrength::kRequired},
+        g::NodePlacement{middle,effect_test::kNativeTarget,g::PlacementStrength::kRequired},
+        g::NodePlacement{read,effect_test::kCpuTarget,g::PlacementStrength::kRequired}};
     const std::array effects{g::EffectResourceBinding{resource,g::EffectResourceFootprint::memory(state.view())},
                             g::EffectResourceBinding{observation,g::EffectResourceFootprint::object(&observed)}};
-    HYLE_ASSIGN_OR_RETURN(auto program,b::compile(graph,environment,{.node_placements=placements,.effect_bindings=effects}));
-#if defined(HYLE_COMPUTE_VULKAN)
-    HYLE_ASSIGN_OR_RETURN(auto slot,program.create_invocation(scheduler,queue,completion_waiters));
-#else
-    HYLE_ASSIGN_OR_RETURN(auto slot,program.create_invocation(scheduler,queue));
-#endif
+    HYLE_ASSIGN_OR_RETURN(auto program,effect_test::compile(graph,cpu,gpu,device.ref(),staging_resource,
+        {.effect_bindings=effects,.node_placements=placements}));
+    HYLE_ASSIGN_OR_RETURN(auto slot,program.executable.create_invocation());
+    HYLE_ASSIGN_OR_RETURN(auto queues,effect_test::queues(program.report,queue));
     HYLE_ASSIGN_OR_RETURN(auto alias,c::ConstTensorView::create(desc,state.view()));
     HYLE_RETURN_IF_ERROR(require(slot.bind(input,alias).IsInvalidArgument(),"cross-fragment effect alias admitted"));
-    HYLE_RETURN_IF_ERROR(slot.bind(input,input_tensor));HYLE_RETURN_IF_ERROR(slot.prepare_replay());
-    auto result=[&]() -> Result<c::ResultLease<b::Results>> {
-      if(scenario!=2)return slot.run();
-      HYLE_ASSIGN_OR_RETURN(auto submitted,slot.submit());
+    HYLE_RETURN_IF_ERROR(slot.bind(input,input_tensor));HYLE_RETURN_IF_ERROR(slot.prepare_replay(queues));
+    HYLE_RETURN_IF_ERROR(g::prepare_progress(slot,scheduler,completion_waiters));
+    auto terminal=[&]() -> Status {
+      HYLE_ASSIGN_OR_RETURN(auto submitted,slot.submit(queues));
+      if(scenario!=2)return submitted.wait();
       const auto deadline=std::chrono::steady_clock::now()+std::chrono::seconds(2);
       while(gate.phase.load()==0&&std::chrono::steady_clock::now()<deadline)std::this_thread::yield();
       if(gate.phase.load()!=1){
         gate.phase.store(2);gate.phase.notify_all();
         (void)submitted.request_cancel();(void)submitted.wait();
-        return std::unexpected(Status::DeadlineExceeded("consumer CPU prefix did not start"));
+        return Status::DeadlineExceeded("consumer CPU prefix did not start");
       }
       auto cancel=submitted.request_cancel();
       gate.phase.store(2);gate.phase.notify_all();
-      if(!cancel.ok())return std::unexpected(cancel);
-      return submitted.wait();
+      const auto retired=submitted.wait();
+      return cancel.ok()?retired:cancel;
     }();
-    if(scenario==2){HYLE_RETURN_IF_ERROR(require(!result&&result.error().IsCancelled()&&*word==41&&observed==-1,
+    if(scenario==2){HYLE_RETURN_IF_ERROR(require(terminal.IsCancelled()&&*word==41&&observed==-1,
         "cancelled CPU prefix did not retire before suppressing successors"));}
-    else if(fail){HYLE_RETURN_IF_ERROR(require(!result&&result.error().IsDataLoss()&&*word==41&&observed==-1,"accepted effect prefix or failure propagation differs"));}
+    else if(fail){HYLE_RETURN_IF_ERROR(require(terminal.IsDataLoss()&&*word==41&&observed==-1,"accepted effect prefix or failure propagation differs"));}
     else{
-      if(!result)return result.error();
+      HYLE_RETURN_IF_ERROR(terminal);
+      HYLE_ASSIGN_OR_RETURN(auto result,slot.result(output));
       HYLE_RETURN_IF_ERROR(require(*word==41&&observed==41&&!slot.reset().ok(),"successful effect order or old result guard differs"));
       HYLE_RETURN_IF_ERROR(slot.close()); // Old result remains an owner.
-#if defined(HYLE_COMPUTE_VULKAN)
-      std::array<float,1> actual;HYLE_RETURN_IF_ERROR(gpu.download(*(*result)->tensor(output),std::as_writable_bytes(std::span(actual))));
-      HYLE_RETURN_IF_ERROR(require(actual[0]==-3,"native Vulkan successor math differs"));
-#else
-      HYLE_RETURN_IF_ERROR(require((*result)->array(output)->data<float>()[0]==-3,"native Apple successor math differs"));
-#endif
+      HYLE_ASSIGN_OR_RETURN(auto actual,effect_test::read(result,gpu,device,desc));
+      HYLE_RETURN_IF_ERROR(require(actual==-3,"native successor math differs"));
     }
   }
   HYLE_ASSIGN_OR_RETURN(auto builder,g::GraphBuilder::create());
@@ -179,16 +167,16 @@ Status run(){
   HYLE_ASSIGN_OR_RETURN(auto action,builder.add_node(c::Operation::custom(Touch{word,&observed,true,false}),{}));
   HYLE_RETURN_IF_ERROR(builder.bind_resources(action,std::array{resource}));
   HYLE_ASSIGN_OR_RETURN(auto graph,std::move(builder).finish()); // Effect-only, zero outputs.
-  const std::array placement{g::NodePlacement{action,b::kCpuTarget,g::PlacementStrength::kRequired}};
+  const std::array placement{g::NodePlacement{action,effect_test::kCpuTarget,g::PlacementStrength::kRequired}};
   const std::array effects{g::EffectResourceBinding{resource,g::EffectResourceFootprint::memory(state.view())}};
-  HYLE_ASSIGN_OR_RETURN(auto program,b::compile(graph,environment,{.node_placements=placement,.effect_bindings=effects}));
-#if defined(HYLE_COMPUTE_VULKAN)
-  HYLE_ASSIGN_OR_RETURN(auto slot,program.create_invocation(scheduler,queue,completion_waiters));
-#else
-  HYLE_ASSIGN_OR_RETURN(auto slot,program.create_invocation(scheduler,queue));
-#endif
-  HYLE_RETURN_IF_ERROR(slot.prepare_replay());*word=7;
-  {HYLE_ASSIGN_OR_RETURN(auto result,slot.run());HYLE_RETURN_IF_ERROR(require(*word==41,"zero-output CPU effect was pruned"));}
+  HYLE_ASSIGN_OR_RETURN(auto program,effect_test::compile(graph,cpu,gpu,device.ref(),staging_resource,
+      {.effect_bindings=effects,.node_placements=placement}));
+  HYLE_ASSIGN_OR_RETURN(auto slot,program.executable.create_invocation());
+  HYLE_ASSIGN_OR_RETURN(auto queues,effect_test::queues(program.report,queue));
+  HYLE_RETURN_IF_ERROR(slot.prepare_replay(queues));
+  HYLE_RETURN_IF_ERROR(g::prepare_progress(slot,scheduler,completion_waiters));*word=7;
+  {HYLE_ASSIGN_OR_RETURN(auto completion,slot.submit(queues));HYLE_RETURN_IF_ERROR(completion.wait());
+   HYLE_RETURN_IF_ERROR(require(*word==41,"zero-output CPU effect was pruned"));}
   HYLE_RETURN_IF_ERROR(slot.close());
   return Status::Ok();
 }

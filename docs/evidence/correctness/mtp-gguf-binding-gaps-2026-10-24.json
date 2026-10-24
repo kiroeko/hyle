@@ -1,0 +1,332 @@
+{
+  "date": "2026-10-24",
+  "archive": {
+    "path": "docs\\evidence\\correctness\\mtp-gguf-binding-gaps-2026-10-24.zip",
+    "bytes": 257762,
+    "sha256": "398292423a49e86082c09f3f40e0d9969464218449a5651c0ebb87a4e61172fc"
+  },
+  "common_flash_binding": {
+    "status": "applied-and-full-consumer-compiled",
+    "source": {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_mtp_state_consumer_test.cc",
+      "bytes": 377689,
+      "sha256": "f232fa3bf2d2aa5ca83853b1bcb1adfbae9d9040f8e5c2928ba3c041441d47da"
+    },
+    "compile_record": {
+      "path": ".scratch\\glm-gguf-selected-20261023\\flash-consumer-proposal\\compile2\\flash-state\\identity.json",
+      "bytes": 122050,
+      "sha256": "f721c4015b7bacfc0bff34794c0238ad6617ac3d82aa8d7d926022be290d9844"
+    },
+    "original_B12_B13_pins_enabled": false,
+    "new_controller": false,
+    "new_global_cache": false,
+    "static_source_shared_by_three_stages": true,
+    "observer": "Original packed bytes and actual intermediate/state inputs; NextN/target43/target44.",
+    "fixes": [
+      "Explicit namespace qualification removes geometry ADL ambiguity.",
+      "Distinct local name removes /WX shadow warning."
+    ],
+    "original_B12_B13_execution": false
+  },
+  "packed_tail": {
+    "status": "candidate-native-checked-canonical-merge-pending",
+    "hardware": {
+      "name": "NVIDIA GeForce RTX 4070",
+      "driver": "617.14",
+      "memory_total_MiB": 12282
+    },
+    "process_exit": 0,
+    "tests": 4,
+    "failures": 0,
+    "skips": 0,
+    "generated_only_not_B07": true,
+    "K": 8192,
+    "N": 248320,
+    "original_Q8_layout_bytes": 2161377280,
+    "actual_tail_block_offset": 2161377246,
+    "actual_batches": [
+      1,
+      2
+    ],
+    "all_logits_checked": true,
+    "declared_workspace_bytes": {
+      "M1": 0,
+      "M2": 0
+    },
+    "no_full_F32_shadow_basis": "Retained F32/K%512/small-batch native MMVQ dispatch and typed packed-block addressing; workspace is not a physical-memory measurement.",
+    "run": {
+      "path": ".scratch\\mtp-packed-head-20261024\\focused\\run1\\summary.json",
+      "bytes": 1079,
+      "sha256": "39c7c3afceb159350d6e77d1ebbfbcaf0bc4d48ec2c348ed5abb4407debcc7de"
+    },
+    "result": {
+      "path": ".scratch\\mtp-packed-head-20261024\\focused\\run1\\gtest.xml",
+      "bytes": 2414,
+      "sha256": "547a44438e8042835e85d4cc7ef7e49299cfefb0168458af476f9c8efe070050"
+    }
+  },
+  "original_identity_count_unchanged": 16,
+  "original_identity_total": 25,
+  "remaining": [
+    "Actual independent B12/B13 headers, static pins and selected expert bodies.",
+    "Actual original-weight CPU/CUDA state execution for B12/B13 and B07.",
+    "Apply packed-tail and codec-specific Orin cold facts after priority Q09/Q10 runs; refresh only affected host objects.",
+    "Orin hardware is unavailable; neither this 4070 check nor source review is an Orin execution result."
+  ],
+  "throughput_evidence": false,
+  "physical_memory_evidence": false,
+  "repository_sources": [
+    {
+      "path": "tests\\compute_models\\glm_gguf_flash_fragment.h",
+      "bytes": 16231,
+      "sha256": "784a9d0c270a43516fbadf463cf98418ceb0843ddafa10f3da59b3aa2420ec08"
+    },
+    {
+      "path": "tests\\compute_models\\glm_gguf_flash_reference.h",
+      "bytes": 36910,
+      "sha256": "143426b0230ea7a4aa84c27d56eb71683750f310018bdab63b00a7a2b4182516"
+    },
+    {
+      "path": "tests\\compute_models\\glm_gguf_mtp_reference.h",
+      "bytes": 18447,
+      "sha256": "5ce33fc8df12c3c5566a00319c7382413440b5dbb30a2b976e5d7838426c0996"
+    },
+    {
+      "path": "tests\\compute_models\\glm_gguf_flash_source.h",
+      "bytes": 4231,
+      "sha256": "4e72868b20a5e8779f3dd2eec141b8c2cd54ba7b9aefd557542da0e4d1a08e86"
+    },
+    {
+      "path": "tests\\compute_models\\glm_gguf_runtime_source.h",
+      "bytes": 12416,
+      "sha256": "cfaa7b789d556c72a8d18e13d368822bce601c96e50a63fb675471fd7499a221"
+    },
+    {
+      "path": "tests\\compute_models\\glm_mtp_state_consumer_test.cc",
+      "bytes": 377689,
+      "sha256": "f232fa3bf2d2aa5ca83853b1bcb1adfbae9d9040f8e5c2928ba3c041441d47da"
+    }
+  ],
+  "archive_files": [
+    {
+      "path": "tests\\compute_models\\glm_gguf_flash_fragment.h",
+      "bytes": 16231,
+      "sha256": "784a9d0c270a43516fbadf463cf98418ceb0843ddafa10f3da59b3aa2420ec08"
+    },
+    {
+      "path": "tests\\compute_models\\glm_gguf_flash_reference.h",
+      "bytes": 36910,
+      "sha256": "143426b0230ea7a4aa84c27d56eb71683750f310018bdab63b00a7a2b4182516"
+    },
+    {
+      "path": "tests\\compute_models\\glm_gguf_mtp_reference.h",
+      "bytes": 18447,
+      "sha256": "5ce33fc8df12c3c5566a00319c7382413440b5dbb30a2b976e5d7838426c0996"
+    },
+    {
+      "path": "tests\\compute_models\\glm_gguf_flash_source.h",
+      "bytes": 4231,
+      "sha256": "4e72868b20a5e8779f3dd2eec141b8c2cd54ba7b9aefd557542da0e4d1a08e86"
+    },
+    {
+      "path": "tests\\compute_models\\glm_gguf_runtime_source.h",
+      "bytes": 12416,
+      "sha256": "cfaa7b789d556c72a8d18e13d368822bce601c96e50a63fb675471fd7499a221"
+    },
+    {
+      "path": "tests\\compute_models\\glm_mtp_state_consumer_test.cc",
+      "bytes": 377689,
+      "sha256": "f232fa3bf2d2aa5ca83853b1bcb1adfbae9d9040f8e5c2928ba3c041441d47da"
+    },
+    {
+      "path": ".scratch\\mtp-gguf-binding-gaps-20261024\\publish.py",
+      "bytes": 6504,
+      "sha256": "d7fbe7893ad6a90795c8f2e666a2777d633bead31fb33e4f92963c5ae1a74da8"
+    },
+    {
+      "path": ".scratch\\glm-gguf-selected-20261023\\flash-consumer-proposal\\compile2\\flash-state\\identity.json",
+      "bytes": 122050,
+      "sha256": "f721c4015b7bacfc0bff34794c0238ad6617ac3d82aa8d7d926022be290d9844"
+    },
+    {
+      "path": ".scratch\\glm-gguf-selected-20261023\\flash-consumer-proposal\\compile_current.py",
+      "bytes": 1655,
+      "sha256": "8aa0c3d1bb295c997db4312b23f9407165c6bd5273daee94b921903d2d3085a7"
+    },
+    {
+      "path": ".scratch\\glm-gguf-selected-20261023\\flash-consumer-proposal\\ready.json",
+      "bytes": 6069,
+      "sha256": "0e4a284bb6e408f881f7d683c354bd51fd37ea5fc80c3fb8ac292be847a9d26a"
+    },
+    {
+      "path": ".scratch\\glm-gguf-selected-20261023\\flash-consumer-proposal\\source.patch",
+      "bytes": 54655,
+      "sha256": "f9b56bfdac170822fb1fcb89aed170a43c7cca5a004cd60ec41223ba45cad135"
+    },
+    {
+      "path": ".scratch\\glm-gguf-selected-20261023\\flash-consumer-proposal\\applied.json",
+      "bytes": 1455,
+      "sha256": "deed46b2c66e86a0419d203518ef8c931813a6cc29d961b0b45572e9b74215f8"
+    },
+    {
+      "path": ".scratch\\glm-gguf-selected-20261023\\flash-consumer-proposal\\compile2\\flash-state\\compile.command.json",
+      "bytes": 3254,
+      "sha256": "b391c883a1fdd673938bdbc09807190e600ed00b4ec44e471f28b1892802759b"
+    },
+    {
+      "path": ".scratch\\glm-gguf-selected-20261023\\flash-consumer-proposal\\compile2\\flash-state\\compile.result.json",
+      "bytes": 3324,
+      "sha256": "8e33936f3a978a1b864b648311d7b7310e63b4cc080881de18c1bd15deee9a12"
+    },
+    {
+      "path": ".scratch\\glm-gguf-selected-20261023\\flash-consumer-proposal\\compile2\\flash-state\\compile.stdout.log",
+      "bytes": 32,
+      "sha256": "067a67209aef45e4f1047a64985481b1db78afe7dd4d283715f0e8963df40662"
+    },
+    {
+      "path": ".scratch\\glm-gguf-selected-20261023\\flash-consumer-proposal\\compile2\\flash-state\\compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".scratch\\glm-gguf-selected-20261023\\flash-consumer-proposal\\compile1\\flash-state\\flash-fragment-before-adl-fix.h",
+      "bytes": 16206,
+      "sha256": "2cba3239e1b01adb8706d895ba8b6eb1ba0248f3711dfeb17e287a2f758964e0"
+    },
+    {
+      "path": ".scratch\\glm-gguf-selected-20261023\\flash-reference-proposal\\source.patch",
+      "bytes": 42652,
+      "sha256": "aa2eb6e0ea4327ed85775c7a45eea85797338a18f9b4ab534abbb8fb3d24b216"
+    },
+    {
+      "path": ".scratch\\glm-gguf-selected-20261023\\flash-reference-proposal\\compile2\\pro-reference-before-warning-fix.h",
+      "bytes": 18432,
+      "sha256": "c922d3281d828946f8500790adbf370b70748ce6482d25346a299b7903a03e8a"
+    },
+    {
+      "path": ".scratch\\mtp-packed-head-20261024\\proposal\\source.patch",
+      "bytes": 3412,
+      "sha256": "550aa6a3dc3bbf6f27f3d3b01347907d4983ec5e748c6fec4ecfc32d8c075d00"
+    },
+    {
+      "path": ".scratch\\mtp-packed-head-20261024\\review\\findings.json",
+      "bytes": 4844,
+      "sha256": "9f24e54e65324384bd943f6a0db14cf90b821329cdb99ec8b8f2295feab7ec11"
+    },
+    {
+      "path": ".scratch\\mtp-packed-head-20261024\\review\\native-source-facts.json",
+      "bytes": 2177,
+      "sha256": "a3b677f04a54429d2cdf6e2667d35c89158b4fb9b7e150b21e98de497b3c28b1"
+    },
+    {
+      "path": ".scratch\\mtp-packed-head-20261024\\proposal\\next-source\\src\\compute_provider_ggml_cuda\\tensor_program.cc",
+      "bytes": 62792,
+      "sha256": "d050fa426715a2eb6f04c6e2e63f8d44ce0aea142b7a6383305feadcd2cacfee"
+    },
+    {
+      "path": ".scratch\\mtp-packed-head-20261024\\proposal\\next-source\\tests\\compute_provider_ggml_cuda\\packed_matmul_bounds_test.cc",
+      "bytes": 7353,
+      "sha256": "3738223389114a8dda5d798bd7ad4af65bebe68951835a91547fd466b75a69ec"
+    },
+    {
+      "path": ".scratch\\mtp-packed-head-20261024\\focused\\build.py",
+      "bytes": 11221,
+      "sha256": "74bc327693b8592fbb8ff123e9f1772340a563ba7543563603260217fc0a5a9c"
+    },
+    {
+      "path": ".scratch\\mtp-packed-head-20261024\\focused\\packed_head_boundary_probe_test.cc",
+      "bytes": 5300,
+      "sha256": "fafb92b6573aad989527ac4b1f0867771053388c1f56f1276638cc8247e79f54"
+    },
+    {
+      "path": ".scratch\\mtp-packed-head-20261024\\focused\\commands1.json",
+      "bytes": 10280,
+      "sha256": "4b6a1f0297dbd8f0f35c94cec73e18d36c463017cb7bf173221d3c764ef98650"
+    },
+    {
+      "path": ".scratch\\mtp-packed-head-20261024\\focused\\tests-link1\\link-plan.json",
+      "bytes": 95177,
+      "sha256": "0cdcd51e6a6fe1158cb81f9318a062870c40f2e4a3945fab624276ee2d6cecd2"
+    },
+    {
+      "path": ".scratch\\mtp-packed-head-20261024\\focused\\tests-link1\\runtime-environment.json",
+      "bytes": 8695,
+      "sha256": "6f5a7884844e545fdb46d8beceec8fb9298ffd736652c8aa94688c043f48bde7"
+    },
+    {
+      "path": ".scratch\\mtp-packed-head-20261024\\focused\\run1\\summary.json",
+      "bytes": 1079,
+      "sha256": "39c7c3afceb159350d6e77d1ebbfbcaf0bc4d48ec2c348ed5abb4407debcc7de"
+    },
+    {
+      "path": ".scratch\\mtp-packed-head-20261024\\focused\\run1\\gtest.xml",
+      "bytes": 2414,
+      "sha256": "547a44438e8042835e85d4cc7ef7e49299cfefb0168458af476f9c8efe070050"
+    },
+    {
+      "path": ".scratch\\mtp-packed-head-20261024\\focused\\run1\\plan.json",
+      "bytes": 731,
+      "sha256": "2056a511b35b46a754204da910f6584a31b859c739cbf6c0aad79b9592da95b2"
+    },
+    {
+      "path": ".scratch\\mtp-packed-head-20261024\\focused\\run1\\native\\stdout.log",
+      "bytes": 1345,
+      "sha256": "8de4321a0853da194a7f15abfee243d94148a3e4830b70dbe6db64d5328fe97b"
+    },
+    {
+      "path": ".scratch\\mtp-packed-head-20261024\\focused\\run1\\native\\stderr.log",
+      "bytes": 151,
+      "sha256": "88dd5e35d67fb5c0c371390a98a66a5e061e4c0bef2d890a7b74781363216092"
+    },
+    {
+      "path": ".scratch\\mtp-packed-head-20261024\\focused\\compile1\\tensor-program\\identity.json",
+      "bytes": 42596,
+      "sha256": "49e2d091ef4ffb481060821bfbc1d2f4c45d44e80c16524fba8d4353dba4a308"
+    },
+    {
+      "path": ".scratch\\mtp-packed-head-20261024\\focused\\compile1\\tensor-program\\compile.command.json",
+      "bytes": 2856,
+      "sha256": "5e28e718497958d8cd99b64ea415dbdd281d366911027e3dd45022424b765243"
+    },
+    {
+      "path": ".scratch\\mtp-packed-head-20261024\\focused\\compile1\\tensor-program\\compile.result.json",
+      "bytes": 2926,
+      "sha256": "6d680ff01eb1a49cfe9ed0a311bb55b3e7cdef216c4736f86d9ee8570ffcdb45"
+    },
+    {
+      "path": ".scratch\\mtp-packed-head-20261024\\focused\\compile1\\tensor-program\\compile.stdout.log",
+      "bytes": 19,
+      "sha256": "af0441dbee37064a856a700771d091789232bba62895a6d69a27732cb5b7db99"
+    },
+    {
+      "path": ".scratch\\mtp-packed-head-20261024\\focused\\compile1\\tensor-program\\compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".scratch\\mtp-packed-head-20261024\\focused\\compile1\\probe\\identity.json",
+      "bytes": 62106,
+      "sha256": "71de70feaca79dab2b78cebc0ec0059e714077a98c602480656d488d045378ec"
+    },
+    {
+      "path": ".scratch\\mtp-packed-head-20261024\\focused\\compile1\\probe\\compile.command.json",
+      "bytes": 2631,
+      "sha256": "cae0942c31bd13796628a2626361f73386a1d4de4fa2c9f88cc6f2e9f3900761"
+    },
+    {
+      "path": ".scratch\\mtp-packed-head-20261024\\focused\\compile1\\probe\\compile.result.json",
+      "bytes": 2701,
+      "sha256": "451ee82de4380448eecc655696bd24bb13fcfbe02dd7e1dcc032a9fa42cece52"
+    },
+    {
+      "path": ".scratch\\mtp-packed-head-20261024\\focused\\compile1\\probe\\compile.stdout.log",
+      "bytes": 36,
+      "sha256": "7f6bd77d0c9936898ca7cb764afebff649f6f1c7e9d693d4e77e3683e73f8175"
+    },
+    {
+      "path": ".scratch\\mtp-packed-head-20261024\\focused\\compile1\\probe\\compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ]
+}

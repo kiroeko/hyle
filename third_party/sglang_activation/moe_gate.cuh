@@ -163,7 +163,7 @@ __global__ void moe_fused_gate_kernel_small_token(const MoEFusedGateParams __gri
     const auto weight = is_shared ? (routed_sum / routed_scaling_factor) : routed_weight;
     const auto expert_id = is_shared ? (num_experts + tid - topk_routed) : selected_expert;
     const auto scale = apply_routed_scaling_factor_on_output ? routed_scaling_factor : 1.0f;
-    const auto norm = renormalize && routed_sum > 0.0f ? routed_sum : 1.0f;
+    const auto norm = renormalize ? routed_sum : 1.0f;
     output[output_offset] = weight / norm * scale;
     indices[output_offset] = expert_id;
   }
@@ -250,7 +250,7 @@ __global__ void moe_fused_gate_kernel(const MoEFusedGateParams __grid_constant__
     const auto weight = is_shared ? (routed_sum / routed_scaling_factor) : routed_weight;
     const auto expert_id = is_shared ? (num_experts + lane_id - topk_routed) : selected_expert;
     const auto scale = apply_routed_scaling_factor_on_output ? routed_scaling_factor : 1.0f;
-    const auto norm = renormalize && routed_sum > 0.0f ? routed_sum : 1.0f;
+    const auto norm = renormalize ? routed_sum : 1.0f;
     output[output_idx] = weight / norm * scale;
     indices[output_idx] = expert_id;
   }

@@ -1,0 +1,129 @@
+{
+  "date": "2026-10-20",
+  "status": "research_only_not_implemented",
+  "scope": "One actual ModelOpt calibrated-global group16 NVFP4 W4A4 artifact and its fixed producer source. No product implementation or whole-artifact support claim.",
+  "artifact": {
+    "repository": "AxionML/Qwen3.5-2B-NVFP4",
+    "revision": "6f2ad4febe92be529de499b08f0020f5ff06bf25",
+    "header_bytes": 146464,
+    "length_prefix_bytes": 8,
+    "tensor_payload_bytes_read": 0,
+    "header_tensors": 1190,
+    "quantized_language_linear_roles": 186,
+    "quartet": "U8[N,K/2] adjacent low-first codes; F8_E4M3[N,K/16] group scales; independent F32 scalar weight_scale_2 and input_scale.",
+    "quartet_violations": 0
+  },
+  "producer": {
+    "name": "ModelOpt",
+    "published_version": "0.0.1.dev1+g82f1d216d",
+    "resolved_revision": "82f1d216d1a9022e60b8e1143a77f36c00b885a4",
+    "url": "https://github.com/NVIDIA/Model-Optimizer/tree/82f1d216d1a9022e60b8e1143a77f36c00b885a4"
+  },
+  "findings": [
+    "The saved dynamic=false metadata describes calibrated global input scaling. The pinned producer still computes block scales from the current activation absmax for each16-value block, rounds normalized scales to E4M3, then quantizes activations to E2M1. It must not be interpreted as static per-block activation scales.",
+    "Current group32 power-of-two FP4 roundtrip, group32 FP4 weights plus dynamic FP8 activation, GGUF NVFP4 and CT local-dynamic W4A4 are distinct contracts. Existing naming does not establish a product entry for this artifact.",
+    "Pinned non-fast weight decode forms group_scale*global_scale before applying the FP4 value; the fast kernel expresses FP4*group_scale then global_scale. This research does not certify these two rounding trees as equivalent.",
+    "The proposed explicit linear entry keeps packed banks and two-level scales, quantizes current activation once, and decodes bounded weight groups/tiles through existing provider/Graph ownership. This is a repair proposal, not completed code."
+  ],
+  "geometry_only": {
+    "packed_weight_bytes": 686358528,
+    "group_scale_bytes": 85794816,
+    "hypothetical_dense_BF16_bytes": 2745434112,
+    "measured_memory": false
+  },
+  "read_scope": {
+    "small_HTTP_requests": 10,
+    "small_HTTP_response_bytes": 363187,
+    "large_payload_downloads": 0,
+    "product_edits": 0,
+    "compiles": 0,
+    "links": 0,
+    "GPU_runs": 0,
+    "SDK_builds_or_downloads": 0
+  },
+  "limitations": [
+    "Original weight codes, scale scalar values and model tensor payloads were not read; only the complete safetensors header and8-byte length prefix were read.",
+    "No product operator, kernel, model, numerical quality, throughput or memory experiment ran.",
+    "The exact declared operand narrowing/accumulation/scale multiplication order needs selection and actual regression before claiming implementation or artifact equivalence.",
+    "The pinned fake-quant reference includes its own small-scale guard; do not infer a different consumer/hardware path is identical from metadata alone.",
+    "This does not establish CT local-dynamic or GPTQ packing/zero-point/index compatibility."
+  ],
+  "evidence": [
+    {
+      "member": "review.json",
+      "bytes": 17780,
+      "sha256": "c86bb99e304f360931e1e1dfe97f3bd0bf7aa714627770a0576290965028bc20"
+    },
+    {
+      "member": "http-receipt.json",
+      "bytes": 5175,
+      "sha256": "64f0124c4fe9e6619f6d3a2f0a5226547708ddf48a86540829e21988d8549977"
+    },
+    {
+      "member": "header-length.bin",
+      "bytes": 8,
+      "sha256": "82a93ba8ef41003961a4da83354f9bd645d15ab3ae148f4201190f0dc430fec9"
+    },
+    {
+      "member": "model.safetensors.header.json",
+      "bytes": 146464,
+      "sha256": "446f550bc6ff9f578b60779bbf3ac49718cf03f86ab0b4486db8273fd30b0c8a"
+    },
+    {
+      "member": "full-quantized-role-census.json",
+      "bytes": 22410,
+      "sha256": "b0a141107f848c2608a96c2c0bde716101f62ed89e5810b4cbac492e9cb6556c"
+    },
+    {
+      "member": "modelopt-producer-commit.json",
+      "bytes": 54381,
+      "sha256": "951aa58199597b11086eff23409e7e449a7819c54dac81bb3d6c2d10dd126d7f"
+    },
+    {
+      "member": "modelopt/nvfp4_tensor.py",
+      "bytes": 14872,
+      "sha256": "bd2073b89d45965011aa7cc3b80b7aae1472b9fa10b6c72dd50f648eb93e509e"
+    },
+    {
+      "member": "modelopt/config.py",
+      "bytes": 54303,
+      "sha256": "ef353d10cdee46d8b56f219838e97eaac0b76e1b33d66441937feca970230cbe"
+    },
+    {
+      "member": "modelopt/tensor_quant.py",
+      "bytes": 20534,
+      "sha256": "c073ce09317f96d4d4850ccabefbc4f60b70434c365c25142e42bf057615f8e7"
+    },
+    {
+      "member": "modelopt/tensor_quantizer.py",
+      "bytes": 55336,
+      "sha256": "6b1754d55fa7c5942aa586c492387af5bdd9e0a528af5e853cd42796c29d642f"
+    },
+    {
+      "member": "modelopt/fp4_kernel.py",
+      "bytes": 9768,
+      "sha256": "f76be5f933309eb9929b08497da8ad8da075f2afccf2ff3c16adb37ca8084071"
+    },
+    {
+      "member": "modelopt/fp4_kernel_hopper.py",
+      "bytes": 6079,
+      "sha256": "20b83a886df8dd5a7139eb9619ee98f71b17ca50aa9aa0af11262c0ca1af35c8"
+    }
+  ],
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\research\\nvfp4-channel-global-contract-2026-10-20.zip",
+    "bytes": 90218,
+    "sha256": "426ab70ec48fabb4c56131b240acf5fe716416578512f13eb4e62f1e906babb6",
+    "payloads": 21,
+    "uncompressed_bytes": 456603,
+    "CRC_checked": true,
+    "all_payload_SHA256_checked": true,
+    "safe_paths_and_unique_names_checked": true,
+    "payload_manifest": {
+      "member": "payload-manifest.json",
+      "bytes": 3445,
+      "sha256": "1f83b34ce373dfc5931c35731f51bf1e2a2aca9b00bd7140bef8a388830f4cfc"
+    },
+    "excluded": "No weight/scalar tensor payloads, SDK, object, executable, native binary or copied cache."
+  }
+}

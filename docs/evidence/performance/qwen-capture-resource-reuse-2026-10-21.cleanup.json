@@ -1,0 +1,83 @@
+{
+  "completed": true,
+  "exact_plan": {
+    "allowed": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\native-fix",
+    "remove": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\native-fix\\checks\\attempt1\\link\\qwen.map",
+        "bytes": 57823629,
+        "sha256": "ffb0f0b5359caedd56c6079a68eaaf888515cb4439c38b9001988530aed7756b"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\native-fix\\tests\\attempt1\\link\\native-capture-tests.exe",
+        "bytes": 138619904,
+        "sha256": "c2ff0bd46f2d5496ea40c9df4b7ecce259b8ba77a4ad54d6d9c67112e12fa6b9"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\native-fix\\tests\\attempt1\\link\\native-capture-tests.map",
+        "bytes": 56779729,
+        "sha256": "89a0e0b041d0e102150d28d3be43e97493369f96ee157b75c9fac32b912831d7"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\native-fix\\tests\\attempt1\\link\\hyle_ggml_cpu_avx2_ffa4e8b8_e74fc9bb8964d04f.dll",
+        "bytes": 1358336,
+        "sha256": "09828878dd44d62eb6ae844827e20382ee2b457d0dbd76594b6577bea3ad5434",
+        "hardlink_to": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\native-fix\\checks\\attempt1\\link\\hyle_ggml_cpu_avx2_ffa4e8b8_e74fc9bb8964d04f.dll",
+        "boundary": "Remove only this staging path, never its source module. Logical bytes are not reclaimed physical bytes."
+      }
+    ],
+    "keep": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\native-fix\\checks\\attempt1\\link\\qwen.exe",
+        "bytes": 139478016,
+        "sha256": "f85db7cbc11570f2ec8616aefcb08a1e2b2605b0d05dbc7619efcbf9f62108c7"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\native-fix\\checks\\attempt1\\link\\hyle_ggml_cpu_avx2_ffa4e8b8_e74fc9bb8964d04f.dll",
+        "bytes": 1358336,
+        "sha256": "09828878dd44d62eb6ae844827e20382ee2b457d0dbd76594b6577bea3ad5434",
+        "hardlink_to": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\auto-replay-policy\\checks\\attempt1\\hyle_ggml_cpu_avx2_ffa4e8b8_e74fc9bb8964d04f.dll",
+        "boundary": "Remove only this staging path, never its source module. Logical bytes are not reclaimed physical bytes."
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\native-fix\\checks\\attempt1\\backend\\backend.obj",
+        "bytes": 319048,
+        "sha256": "cd1caac4d4306351476a49654b6798b30ca5b1bfd3bc40fc90914c7776f3f35e"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\native-fix\\checks\\attempt1\\provider\\provider.obj",
+        "bytes": 2259376,
+        "sha256": "fc3946df1249895c6ff667007ffedfbc89960c5732e99ef7b911301e98d5e062"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\native-fix\\tests\\attempt1\\device-status-test\\device-status-test.obj",
+        "bytes": 992885,
+        "sha256": "da56b8ae1b53ca71d6a62c975e0e9e47a63e7d433e4e048092877230d7d526b8"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\native-fix\\tests\\attempt1\\native-retirement-test\\native-retirement-test.obj",
+        "bytes": 252648,
+        "sha256": "2d996d39c946482e2c373ead37b5df99f5e1e3799f85faec18bc329669365703"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\native-fix\\tests\\attempt1\\kernel\\cuda-test-kernel.obj",
+        "bytes": 57980,
+        "sha256": "b01994ade1d14e1d28cdb7064d8fffac7bc8b6468970c4ec85b3a8882ff2dde9"
+      }
+    ],
+    "evidence": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\qwen-capture-resource-reuse-2026-10-21.json",
+      "bytes": 87037,
+      "sha256": "75d8a642d92694db7f9b2e2347101ea84adc0ed86dec158cd2e7998b645f05c3"
+    },
+    "archive": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\qwen-capture-resource-reuse-2026-10-21.zip",
+      "bytes": 8037935,
+      "sha256": "14a485d46f8471b26cb2ef9b90651bd3e19eeb129d81961384ca9a94047cf6fa"
+    }
+  },
+  "removed": 4,
+  "logical_bytes": 254581598.0,
+  "hardlink_bytes_are_not_physical_reclaim": true,
+  "source_script": "# Exact completed native-capture test-artifact cleanup; keep the current Qwen image and objects.\r\n$ErrorActionPreference = 'Stop'\r\n$root = 'C:\\public\\project-hyle\\hyle'\r\n$stage = Join-Path $root '.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\native-fix'\r\n$plan = Get-Content -LiteralPath (Join-Path $stage 'root-cleanup-plan.json') -Raw | ConvertFrom-Json\r\n$allowed = [IO.Path]::GetFullPath($stage).TrimEnd([IO.Path]::DirectorySeparatorChar) + [IO.Path]::DirectorySeparatorChar\r\nfunction Assert-Identity($row) {\r\n  $file = Get-Item -LiteralPath $row.path -ErrorAction Stop\r\n  if ($file.PSIsContainer -or ($file.Attributes -band [IO.FileAttributes]::ReparsePoint)) { throw \"Not a regular file: $($row.path)\" }\r\n  if ($file.Length -ne $row.bytes -or (Get-FileHash -LiteralPath $row.path -Algorithm SHA256).Hash.ToLowerInvariant() -ne $row.sha256) { throw \"Identity changed: $($row.path)\" }\r\n}\r\nAssert-Identity $plan.evidence\r\nAssert-Identity $plan.archive\r\nforeach ($row in $plan.remove) {\r\n  $full = [IO.Path]::GetFullPath($row.path)\r\n  if (-not $full.StartsWith($allowed, [StringComparison]::OrdinalIgnoreCase) -or [IO.Path]::GetExtension($full) -notin '.exe','.map','.dll') { throw \"Outside exact artifact scope: $full\" }\r\n  Assert-Identity $row\r\n}\r\nforeach ($row in $plan.keep) { Assert-Identity $row }\r\n$active = @(Get-CimInstance Win32_Process | Where-Object { $_.ExecutablePath -and $_.ExecutablePath.StartsWith($allowed, [StringComparison]::OrdinalIgnoreCase) })\r\nif ($active.Count) { throw 'A native-fix executable is still running' }\r\nforeach ($row in $plan.remove) { Remove-Item -LiteralPath $row.path -Force }\r\nforeach ($row in $plan.keep) { Assert-Identity $row }\r\n$result = [ordered]@{ completed=$true; exact_plan=$plan; removed=@($plan.remove).Count; logical_bytes=[double]($plan.remove | Measure-Object -Property bytes -Sum).Sum; hardlink_bytes_are_not_physical_reclaim=$true; source_script=[IO.File]::ReadAllText($PSCommandPath) }\r\n$result | ConvertTo-Json -Depth 14 | Set-Content -LiteralPath (Join-Path $root 'docs\\evidence\\performance\\qwen-capture-resource-reuse-2026-10-21.cleanup.json') -Encoding utf8\r\n[pscustomobject]$result | Select-Object completed,removed,logical_bytes | ConvertTo-Json\r\n"
+}

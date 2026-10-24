@@ -4,20 +4,16 @@
 #include <cstdint>
 #include <string_view>
 
-// Compile-time type name + diagnostic hash without RTTI (clay type_name). The
-// name is sliced out of the compiler's pretty-function string. clay hardcoded
-// the FULL per-compiler signature as the prefix/suffix to strip -- brittle:
-// renaming the function or namespace silently breaks the slice. HYLE instead
-// DERIVES the prefix/suffix by probing a sentinel type (the magic_enum/ctti
-// technique), so it survives refactors. conventions §8: keep, but centralize +
-// unit-test (the pretty-function spelling is compiler-fragile).
+// Compile-time type name and diagnostic hash without RTTI. The name is sliced
+// out of the compiler's pretty-function string. Prefix and suffix lengths are
+// derived by probing a sentinel type (the magic_enum/ctti technique), avoiding
+// hardcoded decorated names.
 //
-// Returns std::string_view (a borrowed view into the compiler's static string)
-// -- the conventions-approved view use, and it keeps util independent of
-// container/StringView (whose placement is a deferred architecture decision).
-// The exact spelling differs per compiler (MSVC prefixes "class"/"struct").
-// Use it for diagnostics or a controlled build-local label, never as a unique
-// correctness, persistence, plugin, wire, or cross-compiler identity.
+// Returns std::string_view borrowed from the compiler's static string, keeping
+// util independent of container/StringView. The exact spelling differs per
+// compiler (MSVC prefixes "class"/"struct"). Use it for diagnostics or a controlled
+// build-local label, never as a unique correctness, persistence, plugin, wire,
+// or cross-compiler identity.
 
 namespace hyle::util {
 

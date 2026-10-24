@@ -12,10 +12,8 @@
 
 // Allocation counters + optional leak map (mem-06 stats slice).
 //
-// clay's system allocator stats used unsigned (new_size - old_size) and
-// (new?1:0)-(old?1:0) on free → wrap to huge values (the 32/64 "underflow"
-// in the asset list). HYLE never does unsigned free deltas: free is always a
-// separate subtract of the known old size.
+// Free accounting subtracts the known old size and block count explicitly,
+// avoiding unsigned size-delta underflow when an allocation shrinks or is freed.
 //
 // Production hot path (system_allocator / SystemAllocator) is UNINSTRUMENTED.
 // Stats are opt-in via StatsAllocator wrapping any AllocatorRef — tests and
@@ -95,7 +93,7 @@ class AllocStats {
   //                    allocate() only — reallocs_ counts this call)
   //   old>0,  new==0 → free
   //   both >0        → resize same live slot (count unchanged)
-  // Never computes unsigned (new - old) when new < old (clay underflow).
+  // Never computes unsigned (new - old) when new < old.
   void record_realloc(std::size_t old_bytes, std::size_t new_bytes) noexcept {
     reallocs_.fetch_add(1, std::memory_order_relaxed);
     if (old_bytes == 0 && new_bytes == 0) return;

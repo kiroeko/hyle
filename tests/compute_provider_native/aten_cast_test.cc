@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "aten_cast_reference.h"
+#include "../compute/native_context_fixture.h"
 #include "half_test_support.h"
 #include "hyle/compute/backends/cpu.h"
 #include "hyle/compute/prepared_operation.h"
@@ -138,6 +139,36 @@ TEST(AtenCpuCast,
     }
   }
   ASSERT_TRUE(ctx.close().ok());
+}
+
+void expect_bfloat_nan_payload(bool native) {
+  constexpr std::array<std::uint8_t, 4> input{0x7d, 0x7f, 0xfd, 0xff};
+  constexpr std::array<std::uint16_t, 4> expected{0x7fe0, 0x7fe0, 0xffe0, 0xffe0};
+  const auto desc = TensorDesc::dense(
+      DataType::kFloat8E5M2, std::array<std::int64_t, 1>{4}).value();
+  auto ctx = native ? hyle::compute::test::native_context().value() : context();
+  auto queue = ctx.create_queue().value();
+  auto source = storage(desc);
+  ASSERT_TRUE(source.view().write(std::as_bytes(std::span(input))).ok());
+  auto program = prepare(ctx, Cast{DataType::kBFloat16}, desc);
+  ASSERT_TRUE(program.has_value()) << program.error().message();
+  auto output = storage(program->output_description().value());
+  auto call = program->create_invocation().value();
+  auto done = call.submit(queue, ConstTensorView::create(desc, source.view()).value(),
+      TensorView::create(program->output_description().value(), output.view()).value());
+  ASSERT_TRUE(done.has_value()) << done.error().message();
+  ASSERT_TRUE(done->wait().ok());
+  std::array<std::uint16_t, 4> actual{};
+  ASSERT_TRUE(output.view().read(std::as_writable_bytes(std::span(actual))).ok());
+  EXPECT_EQ(actual, expected);
+}
+TEST(NativeCast, BfloatNanPayloadPreservesE5m2UpperPayloadAndQuietBit) {
+  expect_bfloat_nan_payload(true);
+}
+TEST(AtenCpuCast, BfloatNanPayloadMatchesNativeE5m2StorageContract) {
+  if (!aten_cpu::provider())
+    GTEST_SKIP();
+  expect_bfloat_nan_payload(false);
 }
 
 TEST(AtenCpuCast, ScalarRankEightEmptyAndZeroStrideHaveRealStorageResults) {

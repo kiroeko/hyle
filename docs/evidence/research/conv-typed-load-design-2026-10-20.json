@@ -1,0 +1,86 @@
+{
+  "status": "read-only design; no product edit, build, GPU execution or new profiling",
+  "decision": "Use the existing CUDA SSM_CONV carrier with an exact BF16 sample load and truthful time/channel/batch strides. Preserve its F32 weight loads, rolling window/shared memory, MAC sequence, bias addition and F32 output. This can eliminate the private sample Cast and its layout CONT without changing public CausalConv1d or Graph core.",
+  "evidence": [
+    {
+      "path": ".scratch/architecture-refactor-2026-10-18/projection-typed-epilogue-review/cast-neighbors-and-candidates.json",
+      "fact": "Retained decode7 has 18 sample BF16->F32 conversions after BF16 Concat, followed by F32 transpose and SSM convolution. The separate 18 F32->BF16 convolution-result conversions precede BF16 SiLU and are real rounding boundaries. This is earlier retained trace evidence, not a claim about the concurrently running GDN profile."
+    },
+    {
+      "path": ".scratch/architecture-refactor-2026-10-18/cuda-ffn-projection-review/v12-composition.json",
+      "fact": "Independent earlier phase binning reports 18 transpose-copy F32 kernels, 18 causal-conv kernels and 18 standalone BF16 SiLU kernels per warm decode. Its old overall kernel count and performance are not the current baseline."
+    },
+    {
+      "path": "tools/qwen35_text/main.cc:358-366",
+      "fact": "BF16 history plus BF16 QKV are concatenated as samples; next_history is a published Copy of its last K-1 positions. Samples and constant weights are explicitly cast to F32 for convolution. The result explicitly rounds to BF16 before ordinary BF16 SiLU."
+    },
+    {
+      "path": "include/hyle/compute/model_ops.h:712-762; src/compute_provider_ggml_cuda/tensor_program.cc:494-498,918-921",
+      "fact": "Public CausalConv1d is dense [B,W,C] plus matching-type [C,K], F32 accumulation, output [B,W-K+1,C] of the declared input type. Current CUDA lowering admits F32 only and materializes permute(samples,1,0,2,3) via CONT before SSM_CONV."
+    },
+    {
+      "path": ".scratch/validation/cpu-final-f1/mixed-iq1/source/src/ggml.c:5695-5719",
+      "fact": "Existing SSM_CONV constructor takes native samples [W,C,B] and weights [K,C], derives T=W-K+1 and creates F32 [C,T,B]. It does not require a new public operation or output type. The current CUDA patch manifest has no ssm-conv.cu edits."
+    }
+  ],
+  "actual_layout": {
+    "before": "Public F32 Cast output [B,W,C] is native [C,W,B,1]. Permute makes [W,C,B,1] with non-unit time stride; current CONT changes it to time-contiguous storage: nb0=4, nb1=W*4.",
+    "after": "Take the exact original BF16 tensor of a private Cast, then use the same metadata permutation to [W,C,B,1]. For ordinary dense source its byte strides are nb0=C*2, nb1=2, nb2=W*C*2. Padded source rows/batches must retain their actual byte strides, never borrow the former F32 Cast layout.",
+    "not_removed": "The BF16 Concat and published next_history Copy remain real graph values. This proposal does not make convolution own or mutate history, pack weights again, absorb SiLU, or remove the output BF16 RNE."
+  },
+  "native_math": {
+    "source": ".scratch/validation/cpu-final-f1/mixed-iq1/source/src/ggml-cuda/ssm-conv.cu",
+    "short": "Lines6-55: x and w are float arrays; line45 initial window and line48 sliding update currently use unit time indices. Generalize only these loads to exact widen(sample[channel*channel_stride + time*time_stride]); keep the circular-window indices and the original line53 j-order sumf += x*w.",
+    "long": "Lines59-124: load source samples into existing float shared memory at line93 with actual sample strides, then keep line119 j-order F32 MAC. Do not change split_n_t=32, block/channel distribution or the float shared representation merely to add a low-type input.",
+    "compile": "Instantiate the BF16 input branch in the existing ssm-conv.cu fast-math compilation domain, with explicit exact BF16->float conversion at the original load. Keep legacy F32 launch/arithmetic behavior unchanged. The existing MAC contraction/FTZ policy must stay identical; do not move this computation into the strict SiLU TU or introduce half/BF16 products, tensor cores or a different accumulation tree.",
+    "boundary": "Keep F32 convolution output including the original sumf += bias/zero behavior. Then retain the existing explicit F32->BF16 Cast, strict ordinary BF16 SiLU and its output RNE. The old native conv(+bias)+F32-SiLU formula is not equivalent to this public chain."
+  },
+  "smallest_changes": [
+    {
+      "files": "src/compute_provider_ggml_cuda/tensor_program.cc",
+      "change": "In the existing CausalConv1d branch, reuse TensorBuildFrame::private_bfloat_widen_source from the GDN batch. Require an actual BF16 source with the same native extents as the original F32 Cast input to Conv and the supported original row layout. On a qualified private unique-reader unpublished Cast, pass a metadata permutation of that BF16 source directly to the ordinary SSM_CONV constructor. On miss, retain the current F32 permute+CONT exactly.",
+      "lifetime": "The source may have other BF16 readers, including published history Copy; that is not a reason to invent a new buffer or omit a real edge. Only the F32 Cast output must be private/single-reader. Do not fold a separately published/extra-read Cast output."
+    },
+    {
+      "files": "Existing upstream src/ggml-cuda/ssm-conv.cu and ssm-conv.cuh, represented by precise CUDA patch-manifest edits",
+      "change": "Add a shared metadata-only typed qualification helper and a BF16 input instantiation of the existing short/long kernels/launch helper. Keep weights, optional bias and destination F32. Convert sample loads by type and true time/channel/batch byte strides; preserve all original F32 compute statements.",
+      "safety": "The long-kernel last tile must avoid loads for col >= local_n_t+K-1; zero-fill only those unused shared columns. The original loop currently prefetches K-1+32 columns without this guard. With interleaved stride C, old time-contiguous padding assumptions cannot justify those reads. This guard does not alter any valid convolution MAC input."
+    },
+    {
+      "files": "Existing upstream src/ggml-cuda/ggml-cuda.cu",
+      "change": "Use the same typed metadata qualifier in supports_op and actual SSM_CONV dispatch. Actual encode additionally validates original CUDA buffer/device/capacity, alignment and disjoint source/weight/bias/output ranges. Keep legacy F32 branch and marked-SiLU exclusion unchanged; report a real bridge failure for an invalid bound typed operation rather than silently reading through F32 pointers.",
+      "limit": "No native allocation-only synthetic read dependency is needed for a single Conv whose src0 is the actual BF16 metadata view: the original graph has the real read edge and view ancestry. Do not keep an obsolete Cast/CONT edge as a substitute for actual source lifetime."
+    },
+    {
+      "files": "Only if actual selection externalizes the Cast: src/graph_provider_ggml_cuda/ggml_cuda_region.cc",
+      "change": "The Frame optimization cannot see through an already external F32 region port. Verify the selected recipe first. If necessary, offer the minimal provider-private closed Cast(BF16->F32)->CausalConv1d pair using existing reader/output/control and allowed-node facts, leaving cold constant weight expressions as external prepared inputs. Do not enlarge an entire model island or reconstruct an external BF16 source from addresses.",
+      "proof": "A selected region is not a physical hit. A post-change trace must distinguish removed sample-copy/transpose kernels from preserved output narrowing and SiLU."
+    }
+  ],
+  "qualification": [
+    "Keep actual native K template domain {3,4,5,9,15}, positive B/T/C, channels divisible by 128, and real device block/grid/shared-memory limits. Do not substitute C6144, K4, B1 or a model name for these implementation conditions.",
+    "Initially accept source rows contiguous in original channel order (channel byte stride2), with truthful positive nonoverlapping time/batch pitches. The metadata permutation gives the kernel its real [time,channel,batch] strides. Broader broadcast, overlapping, negative or arbitrary permuted sources remain on the original path unless explicitly implemented.",
+    "Check every byte stride fits the actual kernel parameter type, every pointer-offset product/sum is representable, and every logical/actual accessed range fits its original CUDA buffer. Use widened offset arithmetic or reject products that overflow the existing int expressions. Cold supports must not require data pointers; actual owner/capacity/RESTRICT checks remain at encode.",
+    "Output is dense F32 and must be disjoint from all read ranges. BF16 source cannot be treated as exact F32 inplace storage. Both bound views and view_src roots retain original resources/owners. Never add OUTPUT flags, shadow buffers or retained permissions just to force eligibility.",
+    "Keep weights as the existing F32 prepared constant or ordinary F32 input. Current evidence counts no per-token weight widen; do not claim a second weight-copy saving or expand the schema to mixed public operands.",
+    "Keep the existing marked stable-SiLU guard in main (current v23 source lines3632-3650,3778-3819). Do not let older SSM_CONV(+ADD)+UNARY fusion bypass the BF16 convolution result rounding or stable negative tail."
+  ],
+  "meaningful_small_tests": [
+    "Extend the existing natural-sequence CUDA fixture (GgmlCudaTensor.MatureCausalConvUsesNaturalSequenceLayout) with a Graph BF16 source -> explicit F32 Cast -> CausalConv1d using F32 weights; compare with independently staged Direct F32 Cast/Conv and a small independent dot oracle. Use nonzero varied channel/tap values so a swapped time/channel stride cannot accidentally pass.",
+    "One small table covers T1 short, T33 partial long tile and T128 long path; B2 and C128/256 rather than only the model shape, with K3/4 covering history lengths. Include a true BF16 row/batch-padded source before the public dense Cast, plus exact BF16 values, signed zero/subnormal and NaN/Inf classifications. Do not relax finite bits to compensate for a changed MAC tree.",
+    "Retain an output BF16 Cast -> ordinary BF16 stable SiLU in at least one graph, and preserve/publish a slice-copy of BF16 samples as next_history. A separately published F32 Cast and an extra F32 reader are escape controls that must keep their actual values. Check old input/history backing remains unchanged.",
+    "Reuse existing two-slot/two-round fresh-address and capture harness. Actual correctness includes F32 Conv, BF16 result/SiLU and history outputs, not just a route ID. Existing F32 natural-layout and official Qwen3.8 exact-width conv tests remain useful neighboring controls; no full model/provider matrix is required for the first batch."
+  ],
+  "refresh_and_evidence": {
+    "native": "Fresh main ggml-cuda.cu and ssm-conv.cu from a coherent exact patch replay; ssm-conv.cuh declaration change has no new by-value struct. Reuse all other CUDA/SDK objects.",
+    "host": "Fresh tensor_program.cc and provider version owner; one test TU. Refresh ggml_cuda_region.cc only if the actual cold selection needs the small pair proposal. No public header/Graph core ABI refresh is proposed.",
+    "expected_effect": "At most the source-qualified 18 sample widen +18 transpose materializations per warm token disappear when every private pattern is present and selected. Conv18, output narrow18, BF16 SiLU18, Concat/history and constant packing remain. These 36 launches are a conditional structural target, not measured time or guaranteed workspace reduction.",
+    "required_after_implementation": "Directed numerical/escape/stride/capture tests, exact full-model hidden/logit comparison plus IDs/history, one actual trace of typed conv and both removed families, actual workspace accounting, then paired unprofiled timing. Launch-count reduction alone is not a speed claim."
+  },
+  "do_not_do": [
+    "No public mixed CausalConv1d schema, model name/shape rules or Graph core changes.",
+    "No fused BF16 conv output/SiLU epilogue in this input-load batch; keep both rounding boundaries in their current operators.",
+    "No removal of Concat/history/state copy, cold weight reuse or source liveness merely because two pointers happen to match.",
+    "No change to prefill/decode math, K template set, F32 MAC order, FTZ/FMA policy, extra permissive layout capability or old F32 native behavior without separate evidence."
+  ]
+}

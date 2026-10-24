@@ -16,6 +16,17 @@
 生产闭包与测试夹具闭包分开：测试可复用普通factor，但不能因此制造新公开产品或改变SDK声明。
 普通tests可与install共用构建；改变ABI的测试插桩不能作为生产SDK导出。
 
+文件与计算资源的管线由显式服务产品 `compute_stream` 提供。需要时选择
+`HYLE_COMPONENTS="graph;compute_stream"` 或 `"compute;compute_stream"`，并链接两个对应的
+`hyle::` target；常驻 Compute/Graph 的依赖不含 stream 或 IO。服务包含中立流水线与所选
+`HYLE_COMPUTE_ROUTES` 的复制适配，依赖 `io_core`，不附带 TLS/HTTP 等协议。
+CPU/CUDA 适配只要求实际复制 backend，不因此选择默认数学 Provider；Apple/Vulkan
+适配复用各自原生复制 owner。它们是有实际实现和交付职责的内部组合 factor。
+
+原Invocation的异步主机推进由显式服务产品`graph_progress`提供。选择`graph;graph_progress`并链接
+`hyle::graph`与`hyle::graph_progress`，服务沿公开依赖提供Sched；单独选择服务只构建Graph核心和
+调度依赖，不选择默认数学路线。`graph;sched`可供应用的其他调度用途，不隐式改变Graph产品。
+
 ## 配置只表达无法推导的选择
 
 | 配置层 | 责任 |
@@ -63,6 +74,11 @@ Provider接入由owning factor描述原生target、必要options、usage require
 安装metadata从生产target/资源图生成，按请求组件先导入必要外部依赖，再导入对应闭包。
 请求Mem不应探测CUDA或Torch；重复find可补充同一SDK的产品，不混用不同安装前缀的同名实现。
 源码与安装target提供同样的公开使用要求，内部detail targets只是链接闭包，不成为用户选择项。
+`find_package(Hyle COMPONENTS graph compute_stream)` 显式导入文件服务；即使 SDK 同时包含该服务，
+仅请求 `graph` 或 `compute` 也不应加载它的 IO 依赖。服务工厂头与导出符号由对应组合 factor 拥有，
+默认 route 头不反向包含文件服务。
+同样，安装了`graph_progress`的SDK在仅请求`graph`时不加载进度服务或其Sched闭包；
+需要该能力时显式`find_package(Hyle COMPONENTS graph graph_progress)`。
 
 静态库的必要runtime链接要求仍需传到最终应用；共享库隐藏内部vendor符号。
 RPATH与loader路径须可迁移，构建机器的SDK绝对路径不能写进安装合同。

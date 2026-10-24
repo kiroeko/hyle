@@ -1,0 +1,2360 @@
+{
+  "observed_on": "2026-10-21",
+  "status": "four_backend_GLM_Flash_mixed_MLX_role_and_resource_reference_passed",
+  "scope": "Fixed GLM Flash role geometry and ordinary default-reader equation: D4096/H2048/globalE288/Top8/resident9, routed affine4/4/5 and shared affine6, group64 original F16 scale/bias. BF16 activation and an explicitly supplied F32 router-logit boundary. Synthetic original-format bytes; no checkpoint numeric payload or whole-model execution.",
+  "source": "Fixed catalog32 mlx-community/GLM-5.3-Flash-4bit@fa04cbc3622b16aa7475404060b05e506d81bd4e metadata/header roles; pinned MLX-VLM f1a9b7bac6f2b95f588ffc9343495a3c61c6e328 and MLX core 1f8e74e3f12f31365464a6867c6579f0e9b29d85. Default load retains F16 metadata; ordinary BF16+F16 affine QMM promotes to F32. Original exporter identity and optimized short-block branches remain separate.",
+  "mathematics": "Sigmoid(F32 logits), selection-only correction, Top8, gather unbiased probabilities, divide by(sum+1e-20), multiply2.5. Original BF16 A/F16 metadata gate/up promotes F32; gate only upper-clips10, up clips[-10,10], F32 SiLU multiply feeds F32 down. Routeweights apply after down, then F32 selected sum and original shared affine6 branch addition. No intermediate/final BF16 narrowing is inserted at this MoE boundary.",
+  "oracle": "Existing independent bit-scatter writer and F32/BF16 storage helpers are reused. Synthetic affine rows have baseline code1/F16 bias=-scale and two nonbaseline positions, so the source scalar reference needs no floating NK/ENK bank. F32 decode product/add, clipping/SiLU, routing and sum order are explicit; expected results never read staged device bytes. Eight published source boundaries use fixed normalized-peak and relativeL2<=2e-5, with exact I32 selected global IDs for these non-tied scores.",
+  "counterfactuals": "Before device execution, independent host scalar witnesses reject F16 metadata mistakenly converted to BF16, prematurely narrowed BF16 gate/up, and the older generic softmax route probabilities. All8192 final words differ in each arm and at least one normalized metric exceeds the fixed2e-5 bound. Per-case XML retains the actual error metrics, not only different-word counts.",
+  "observations": {
+    "maximum_peak_normalized_error": 2.57513703e-07,
+    "maximum_relative_l2_error": 1.93228959e-07
+  },
+  "journey": "Three same-generation original weight/map/correction sets. GPU uses two existing WeightSlots configured max_fragments128 and92 genuine source fragments per generation:81 independently stored expert W/SF/bias tensors,9 shared tensors,map and correction. Retained batch then Invocation/results reject overwrite; releasing original owners permits slot0 reuse. Host sources are destroyed before compute. A globally valid absent expert286 maps to-1, fails Completion without a result, and a fresh Invocation recovers. Old results survive later generations and public producer teardown.",
+  "CPU": "The same ordinary graph binds original typed host ReadLeases after explicit cold assembly from independently stored source tensors. CPU does not fabricate native WeightSlots or claim GPU slot retirement. Backend context/resources and retained dynamic-input leases remain alive during the final result checks.",
+  "resource_limits": "No entire288-expert floating bank, new format, quantizer, transfer executor or public operator was introduced. CUDA now places banks at the original256-byte backing alignment in both whole-entry and sliced uploads; the role exposed a small-map/bias boundary previously hidden by E256 dimensions. Actual upload reports distinguish logical data from aligned submitted extents. Apple may still convert resident F16 scale/bias arrays to temporary F32 in the warm path; that source-reviewed delivery3 optimization remains unmodified and no allocation/throughput improvement is claimed here.",
+  "fixes": {
+    "source_bound_role": "Fixed GLM Flash catalog32 layer3 role geometry D4096/H2048/globalE288/Top8/resident9. Routed gate/up affine4, down affine5, all shared affine6, group64 U32 and original F16 metadata. BF16 activation/F16 metadata promotes to F32, and gate/up/clipped SiLU/down/weighted combine/shared/final stay F32. Logits are a declared F32 boundary, sigmoid plus selection-only correction chooses Top8, unbiased probabilities normalize with source1e-20 and scale2.5, weights multiply after down. No invented BF16 narrowing or old softmax substitution.",
+    "resources": "Original92 independently stored fragments per generation:81 routed expert W/SF/bias,9 shared tensors, I32 map and F32 correction. Existing native WeightSlots max_fragments128, two slots and three generations on each GPU; CPU explicitly cold-assembles typed host ReadLease banks. Nonidentity global-to-local mapping, old immutable batch/Invocation/result overwrite rejection, original-source destruction, retained outputs after producer teardown, absent global286 Completion failure and fresh recovery. No new executor, codec or public operation.",
+    "CUDA_alignment": "Actual first CUDA role run exposed bank misalignment: old sliced placement used16-byte alignment, whole placement scalar alignment, but the selected original GGML-CUDA input port requires256. The288-entry I32 map is1152 bytes and put the next bias at offset128mod256. The original CUDA weights owner now shares its existing backing256 guarantee across whole-entry and sliced bank starts. This adds128 padding bytes for this role, preserves fixed-capacity/overflow checks and original payloads, and avoids a shadow copy or relaxed alignment check. Other backends did not need a product change.",
+    "alignment_regression": "One additional CUDA case checks whole-entry and sliced F32[3]+F32[1] uploads: actual second pointer/offset256, raw signedzero/NaN payload preserved, logical/staged16 and submitted/completed260, exact260-byte capacity succeeds and259 rejects before staging/submission. Uploads are not counted as Graph submissions.",
+    "numeric_policy": "Normalized peak and relativeL2<=2e-5 fixed before device observations; exact I32 non-tied IDs. Four backend observed maxima: normalized peak2.57513703e-7, relativeL2 1.93228959e-7. Independent host witnesses and actual cases reject F16 metadata converted toBF16, gate/up prematurely narrowedBF16 and old softmax probabilities; all8192 final words differ and each wrong policy exceeds the fixed bound. No tolerance change or universal F32 reduction-order equivalence claim.",
+    "attempts": "First CPU strict compile failed only because add_node requires explicit Operation(TopK); the one-line call-site wrapper fixed it, preserving dcd source/log/diff before final cf3b shared. First CUDA runtime failed actual offset alignment before numerical execution; original image/source/receipt and current native fix/new link are preserved. Final five cases all passed with0skip, including four role cases16 successful and4 expected failed Graph completions.",
+    "remaining_work": "Capability7/8 now has one required finite source/role action left: Quark FP8 side contracts. Its axis1 layout and typed QDQ differ from existing CT/channel-token and block128 code-dot equations, so it is not signed equivalent. Delivery0/3 remains; Apple warm immutable F16 SF/bias promotion is confirmed repeated data work and needs bounded per-generation prepared reuse, correct budget/lifetime and generation identity. No complete artifact/model/Linux/quality/performance or new decode result."
+  },
+  "build": {
+    "windows_report": ".scratch/architecture-refactor-2026-10-18/glm-flash-mixed-mlx-2026-10-21/windows/build-report.json",
+    "windows": "One CPU mechanical strict-CXX failure preserved, four successful wrapper CXX jobs including the final CUDA wrapper refresh, one successful CUDA weights owner CXX, and four links. No NVCC/SDK/shader rebuild. Current V/T common/native objects and toolchains reused, replacing only necessary current owners. Root ran CPU and Windows GPU processes sequentially. Final current dependency identities are in windows/build-report.json.",
+    "apple": "Only one new wrapper CXX and focused link; product/SDK objects reused. Actual Mac16,12 M4 first run passes1case/4successful+1expectedfailed submissions,0skip/finalfail.1156 actual dependency references/66 canonical files/0drift.36 smallfiles494748bytes synchronized; current cached source/SDK retained.",
+    "scope": "Related incremental compile/link/run only, four CMake registrations. Full canonical configure/install/Linux and throughput were not run. The source-reviewed Apple warm metadata conversion is a concrete pending repair, not a claimed performance improvement in this batch."
+  },
+  "prerequisite": {
+    "path": "docs/evidence/correctness/expert-working-set-reference-2026-10-21.json",
+    "bytes": 180964,
+    "sha256": "d0d5e89e00d86f3a0789788ed7d051254e33f7c50eb93ae6a8b0135c1df55011"
+  },
+  "regression": {
+    "total": 5,
+    "new_cases": 5,
+    "role_cases": 4,
+    "alignment_cases": 1,
+    "neighbors": 0,
+    "failed": 0,
+    "skipped": 0,
+    "successful_Graph_submissions": 16,
+    "expected_failed_Graph_completions": 4,
+    "windows": [
+      {
+        "backend": "cpu",
+        "receipt": {
+          "path": ".scratch/architecture-refactor-2026-10-18/glm-flash-mixed-mlx-2026-10-21/cpu/validation/first1/receipt.json",
+          "bytes": 3120,
+          "sha256": "2092ae905b6940730106985fe5f033af443476d3f9d6d0cdd03a9c8e5a642012"
+        }
+      },
+      {
+        "backend": "cuda",
+        "receipt": {
+          "path": ".scratch/architecture-refactor-2026-10-18/glm-flash-mixed-mlx-2026-10-21/cuda/validation/final1/receipt.json",
+          "bytes": 3435,
+          "sha256": "7a25d9ad3e775e2237bf4ee6eb373ec53b1bb63937278a999df5422900a12905"
+        }
+      },
+      {
+        "backend": "vulkan",
+        "receipt": {
+          "path": ".scratch/architecture-refactor-2026-10-18/glm-flash-mixed-mlx-2026-10-21/vulkan/validation/first1/receipt.json",
+          "bytes": 3239,
+          "sha256": "964ff091c5f6e2f91464d53463f75dc857cbbf36295c77f248451e8c552a1888"
+        }
+      }
+    ],
+    "apple": {
+      "path": ".scratch/architecture-refactor-2026-10-18/glm-flash-mixed-mlx-2026-10-21/apple/final-validation.json",
+      "bytes": 10683,
+      "sha256": "8a3323f2d7d727c5499be2b7276dc1f3ccf155be554865847c9bb08998c67f75"
+    },
+    "cases": [
+      {
+        "backend": "cpu",
+        "name": "CpuGlmFlashMixedMlx.RoleBanksKeepPromotedCompleteMoe",
+        "neighbor": false,
+        "role_consumer": true,
+        "properties": {
+          "successful_submissions": "4",
+          "expected_failed_submissions": "1",
+          "successful_weight_generations": "3",
+          "native_weight_slots": "0",
+          "original_fragments_per_generation": "92",
+          "metadata_bf16_counterfactual_words": "8192",
+          "early_bf16_counterfactual_words": "8192",
+          "softmax_counterfactual_words": "8192",
+          "maximum_peak_normalized_error": "1.0111387e-07",
+          "maximum_relative_l2_error": "2.51960951e-08",
+          "wrong_policy0_peak_error": "0.0106710978",
+          "wrong_policy0_relative_l2": "0.0039310051",
+          "wrong_policy1_peak_error": "0.000456803483",
+          "wrong_policy1_relative_l2": "0.000406376603",
+          "wrong_policy2_peak_error": "0.0620040351",
+          "wrong_policy2_relative_l2": "0.0537358805",
+          "scope": "GLM32 ordinary BF16A/F16metadata g64 routed4/4/5+shared6;D4096/H2048,E288Top8,resident9;synthetic stored-format bytes,no checkpoint/model/quality/performance claim"
+        }
+      },
+      {
+        "backend": "cuda",
+        "name": "CudaGlmFlashMixedMlx.RoleBanksKeepPromotedCompleteMoe",
+        "neighbor": false,
+        "role_consumer": true,
+        "properties": {
+          "replay_route": "3",
+          "successful_submissions": "4",
+          "expected_failed_submissions": "1",
+          "successful_weight_generations": "3",
+          "native_weight_slots": "2",
+          "original_fragments_per_generation": "92",
+          "metadata_bf16_counterfactual_words": "8192",
+          "early_bf16_counterfactual_words": "8192",
+          "softmax_counterfactual_words": "8192",
+          "maximum_peak_normalized_error": "2.09832015e-07",
+          "maximum_relative_l2_error": "6.81625877e-08",
+          "wrong_policy0_peak_error": "0.0106710978",
+          "wrong_policy0_relative_l2": "0.0039310051",
+          "wrong_policy1_peak_error": "0.000456803483",
+          "wrong_policy1_relative_l2": "0.000406376603",
+          "wrong_policy2_peak_error": "0.0620040351",
+          "wrong_policy2_relative_l2": "0.0537358805",
+          "scope": "GLM32 ordinary BF16A/F16metadata g64 routed4/4/5+shared6;D4096/H2048,E288Top8,resident9;synthetic stored-format bytes,no checkpoint/model/quality/performance claim"
+        }
+      },
+      {
+        "backend": "cuda",
+        "name": "CudaWeightBankAlignment.WholeAndSlicedBanksKeepNativePortAlignment",
+        "neighbor": false,
+        "role_consumer": false,
+        "properties": {}
+      },
+      {
+        "backend": "vulkan",
+        "name": "VulkanGlmFlashMixedMlx.RoleBanksKeepPromotedCompleteMoe",
+        "neighbor": false,
+        "role_consumer": true,
+        "properties": {
+          "device": "NVIDIA GeForce RTX 4070",
+          "successful_submissions": "4",
+          "expected_failed_submissions": "1",
+          "successful_weight_generations": "3",
+          "native_weight_slots": "2",
+          "original_fragments_per_generation": "92",
+          "metadata_bf16_counterfactual_words": "8192",
+          "early_bf16_counterfactual_words": "8192",
+          "softmax_counterfactual_words": "8192",
+          "maximum_peak_normalized_error": "2.09832015e-07",
+          "maximum_relative_l2_error": "7.39327067e-08",
+          "wrong_policy0_peak_error": "0.0106710978",
+          "wrong_policy0_relative_l2": "0.0039310051",
+          "wrong_policy1_peak_error": "0.000456803483",
+          "wrong_policy1_relative_l2": "0.000406376603",
+          "wrong_policy2_peak_error": "0.0620040351",
+          "wrong_policy2_relative_l2": "0.0537358805",
+          "scope": "GLM32 ordinary BF16A/F16metadata g64 routed4/4/5+shared6;D4096/H2048,E288Top8,resident9;synthetic stored-format bytes,no checkpoint/model/quality/performance claim"
+        }
+      },
+      {
+        "backend": "apple",
+        "name": "AppleGlmFlashMixedMlx.OriginalRolesKeepTypedPromotionAndWeightGeneration",
+        "neighbor": false,
+        "role_consumer": true,
+        "properties": {
+          "device": "Apple M4",
+          "successful_submissions": "4",
+          "expected_failed_submissions": "1",
+          "successful_weight_generations": "3",
+          "native_weight_slots": "2",
+          "original_fragments_per_generation": "92",
+          "metadata_bf16_counterfactual_words": "8192",
+          "early_bf16_counterfactual_words": "8192",
+          "softmax_counterfactual_words": "8192",
+          "maximum_peak_normalized_error": "2.57513703e-07",
+          "maximum_relative_l2_error": "1.93228959e-07",
+          "wrong_policy0_peak_error": "0.0106710978",
+          "wrong_policy0_relative_l2": "0.0039310051",
+          "wrong_policy1_peak_error": "0.000456803483",
+          "wrong_policy1_relative_l2": "0.000406376603",
+          "wrong_policy2_peak_error": "0.0620040351",
+          "wrong_policy2_relative_l2": "0.0537358805",
+          "scope": "GLM32 ordinary BF16A/F16metadata g64 routed4/4/5+shared6;D4096/H2048,E288Top8,resident9;synthetic stored-format bytes,no checkpoint/model/quality/performance claim"
+        }
+      }
+    ],
+    "alignment_scope": "One CUDA regression covers original whole-entry and sliced F32[3]+F32[1] bank uploads, exact260-byte capacity versus rejected259, data/accounting and prewrite failure. Uploads are not counted as Graph submissions."
+  },
+  "limitations": [
+    "Finite original-role synthetic payload/resource journey only; no artifact numeric weight payload, all129banks/288resident experts, full router projection, attention/mHC/model/quality or performance result.",
+    "Existing mixed affine primitives and slice/bundle execution API are reused. One CUDA weights.cc resource-alignment fix refreshes its actual owner and CUDA wrapper; CPU/Apple/Vulkan role windows retain their already-green product closures. No SDK/new math/provider/executor implementation. Actual compile/link attempts are in metadata.",
+    "The first CPU strict CXX failure is retained with originaldcd99 source/log and the one-line explicit Operation(TopK) fix. It is a GraphBuilder call-site preparation error, not a product numerical failure; oracle, equation, policy and public API remain unchanged.",
+    "The first CUDA role run failed graph binding offset alignment before numerical execution. Original source/log and corrected source/link are preserved. Bank placement is fixed instead of relaxing alignment checks or adding a shadow copy; the shared cf3b source and numerical policy are unchanged.",
+    "Pinned ordinary-reader F32 promotion is source-qualified. Explicit converted/set_dtype artifacts, original exporter version, native same-low-type bitwise equivalence and special optimized short-block branches are not signed.",
+    "No Linux/full canonical configure/install/device/dtype/geometry matrix, total opaque-private-memory or all-captured execution claim. CUDA default preparation preserves its real original routing.",
+    "All33 artifact_execution_verified remainfalse. Capability7/8 still requires the remaining Quark FP8 side-role action; any independent preview report is a next step, not closed qualification. Delivery0/3 remains a separate boundary."
+  ],
+  "source_freeze": {
+    "path": ".scratch/architecture-refactor-2026-10-18/glm-flash-mixed-mlx-2026-10-21/source-freeze.json",
+    "bytes": 1299,
+    "sha256": "4af42aa1ae0029d54af86167cd1ca8ee9ffa34982e38174290ce910234b4880c"
+  },
+  "current_sources": [
+    {
+      "path": "docs/developer/current-work.md",
+      "bytes": 40467,
+      "sha256": "564a81424f0943bf1fc993ae5b0bbbdeb399352e68bfea878d55e104a5223ee5"
+    },
+    {
+      "path": "docs/implementation/model-operators.md",
+      "bytes": 81750,
+      "sha256": "8ed32474d0a290ab5b6ce12cbd9e9fed8b8d0ac405d5fc5af6a83e98bb7e37c0"
+    },
+    {
+      "path": "docs/implementation/model-quantizations.json",
+      "bytes": 562427,
+      "sha256": "bc0e2fc348bbb3db1afa507c9559013d197ca8d5017ef0d1e6dc7cd6311a6754"
+    },
+    {
+      "path": "docs/user/compute.md",
+      "bytes": 120745,
+      "sha256": "d8fed40da73a775041574f4f92ab84d6bc1f24f25cf0ea3566a0fd489b4b198b"
+    },
+    {
+      "path": "docs/user/graph.md",
+      "bytes": 89012,
+      "sha256": "b51d8e16b860e9f014d29afb1c32eef79514f9e886a1dc3be990e46a52d7d692"
+    },
+    {
+      "path": "include/hyle/compute/apple_weights.h",
+      "bytes": 4606,
+      "sha256": "0f74446c0496272df3b902a52e0ec3f0897e6131ddc2f0bc1cdd95e81f228d4f"
+    },
+    {
+      "path": "include/hyle/compute/cuda_weights.h",
+      "bytes": 5065,
+      "sha256": "1e3ca02148c67fc2d6d6744beb5a03ee93dcb7f7a61ffed16aa5b5e49d5a8079"
+    },
+    {
+      "path": "include/hyle/compute/model_ops.h",
+      "bytes": 75341,
+      "sha256": "d3315100def9904a604dd3a1386000641cb03c2e8d36485ef3e55b98e4dde3e5"
+    },
+    {
+      "path": "include/hyle/compute/operation.h",
+      "bytes": 28108,
+      "sha256": "35b7c862143839e4b8ce0c9a49753b7add2f325ec424bf5f91a1afeec0101506"
+    },
+    {
+      "path": "include/hyle/compute/resource_leases.h",
+      "bytes": 8660,
+      "sha256": "4e5681ebfa7c2f2ad51e5788c8316f4b993883f595c04b33fe594d7294dab85b"
+    },
+    {
+      "path": "include/hyle/compute/vulkan_weights.h",
+      "bytes": 3974,
+      "sha256": "f54d91b380e71b6d073c00175ffea08849442250b57844b23eac839472054bf0"
+    },
+    {
+      "path": "include/hyle/compute/weight_assembly.h",
+      "bytes": 2095,
+      "sha256": "c085186c2751371d8e642f29d1b338e53962236e50c9935ea1858a4b188ca3ac"
+    },
+    {
+      "path": "include/hyle/graph/executable.h",
+      "bytes": 49762,
+      "sha256": "6305dd557606b26119fc60de9dbb68c979a1f8fe54755a191378c49742ef4714"
+    },
+    {
+      "path": "include/hyle/graph/result.h",
+      "bytes": 1646,
+      "sha256": "90861eafec4f3a0aa73014416bd2817dfe3892ac001ea206bebf907e1d3cf182"
+    },
+    {
+      "path": "include/hyle/graph/weight_binding.h",
+      "bytes": 422,
+      "sha256": "ebcc3eea951953966a3b10b2951872e74d04921af6f0cc8de45ab52ab1ba32bd"
+    },
+    {
+      "path": "src/compute/resource_leases.cc",
+      "bytes": 27124,
+      "sha256": "6cb990cd573939c9de8a36cdcbac6530ca09dd7081f71c86c593282896d0a281"
+    },
+    {
+      "path": "src/compute/weight_assembly.h",
+      "bytes": 5757,
+      "sha256": "3acee3356f6241ea6bd3f40da5bc357e53d9d20d9652237f52374eeceb82b3ff"
+    },
+    {
+      "path": "src/compute_ops/weight_decode.cc",
+      "bytes": 17848,
+      "sha256": "e2abed9cfde68ba59e13571ac8c7a0007f1f84f0a4fb0293895b6ba28d66cbf1"
+    },
+    {
+      "path": "src/compute_provider_cuda/packed_rows.cuh",
+      "bytes": 2918,
+      "sha256": "83ae1a4011af50a5ca5894d2ded2dc932850d1ad9748516c86a30ecb3b81717f"
+    },
+    {
+      "path": "src/compute_provider_native/torch_cpu_program.cc",
+      "bytes": 42643,
+      "sha256": "430f7b9b9e8781078a9a27eb50d0bad353019418230d3deb5387fc2d4b79783d"
+    },
+    {
+      "path": "src/compute_provider_torch_cuda/artifact_provider.cc",
+      "bytes": 38884,
+      "sha256": "92594dd4cc94f67cad7e73ea9a45dee8c39062887979dcf15f6710fdada643e6"
+    },
+    {
+      "path": "src/compute_provider_torch_cuda/mlx_packed_kernel.cu",
+      "bytes": 21831,
+      "sha256": "2ed0dc5bf50b39bc60db9b9793ec27477601e2514086a9c8d8e84590348a526e"
+    },
+    {
+      "path": "src/compute_provider_torch_cuda/mlx_packed_kernel.h",
+      "bytes": 2302,
+      "sha256": "c02bb164a1349fc13ece18b5d86d42b95a636a92a3abd4abfdd7ad7fcd13afaa"
+    },
+    {
+      "path": "src/compute_route_apple/apple_tensor.cc",
+      "bytes": 39417,
+      "sha256": "79a9712a5a60e2a78f2121f1174056936506bf6764e04d99cc02491c69bb7807"
+    },
+    {
+      "path": "src/compute_route_apple/apple_weights.mm",
+      "bytes": 24029,
+      "sha256": "fdb6f5f6fc059657e7e0cd5302865d8fa7b9e4f6ba3fea41bcd2ed46fb0f0bd5"
+    },
+    {
+      "path": "src/compute_route_cuda/weights.cc",
+      "bytes": 23567,
+      "sha256": "5e24cb66b7f0b6983631e7954e2f0c65f45d8dae189a0785ea8c8f028cb8981c"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_mlx.cc",
+      "bytes": 8127,
+      "sha256": "9696769c8b0412543c30826a0f51e5b4f3938e080601ff269ef1959be7710def"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_weights.cc",
+      "bytes": 15764,
+      "sha256": "1882f3c92605e369053db2d3217cd69c712e26964607fcc15d30c3cf03784e74"
+    },
+    {
+      "path": "src/graph/executable.cc",
+      "bytes": 462934,
+      "sha256": "7817d7e80752912a3daac41cd87511e15a2df3beeb0651c91f1b73d666b2674e"
+    },
+    {
+      "path": "src/graph/input_sources.cc",
+      "bytes": 22954,
+      "sha256": "0b2b241cc6677aa4fc69c13a7e68e4b00d15edd889bfe936424db030cca8ebe8"
+    },
+    {
+      "path": "src/graph/resources.cc",
+      "bytes": 70350,
+      "sha256": "40f38a4b5d2d5e316fe9cae57b2360cd1598446a31acee63740ba297990fa57c"
+    },
+    {
+      "path": "src/graph_route_apple/weight_binding.cc",
+      "bytes": 3694,
+      "sha256": "c49db2528c69f60ae65f2b4770612328a802720b29b7528d259ec316116e5cea"
+    },
+    {
+      "path": "src/graph_route_cuda/weight_binding.cc",
+      "bytes": 2864,
+      "sha256": "5aac253f95f9e42b566e2eafc775eee56442c8d38c118c7399df6052a7eff8d1"
+    },
+    {
+      "path": "src/graph_route_vulkan/weight_binding.cc",
+      "bytes": 3914,
+      "sha256": "7e3937d230e472823c3a1b343199a2265ed96d61edb304f7a4b0b813171f1f73"
+    },
+    {
+      "path": "tests/compute_models/ct_packed_graph_fixture.h",
+      "bytes": 25617,
+      "sha256": "3e5750bdaad93e36792f2ee9428af0ca9672a8fafa24800cd064790432c3ba32"
+    },
+    {
+      "path": "tests/compute_models/ct_packed_grouped_fixture.h",
+      "bytes": 16396,
+      "sha256": "dcadf216276544c7145c913200f38dd762f0cb76d41cce0776b165bac1d3b7b9"
+    },
+    {
+      "path": "tests/compute_models/ct_packed_linear_fixture.h",
+      "bytes": 4201,
+      "sha256": "621ad31932ce9fb55c029ca08891025d966032ec8383519081e1b168fd67f95d"
+    },
+    {
+      "path": "tests/compute_models/expert_working_set_fixture.h",
+      "bytes": 25059,
+      "sha256": "7acdd3077cf034cf8656f831fe27e9247341e24095be2da52de9923098d4dc75"
+    },
+    {
+      "path": "tests/compute_models/ga_indexer_state_fixture.h",
+      "bytes": 26486,
+      "sha256": "c2055b3920c8ebc93ed30d2596d4eba049790e148b8dd3d59128e1ffda48ab84"
+    },
+    {
+      "path": "tests/compute_models/glm_flash_mixed_mlx_fixture.h",
+      "bytes": 24938,
+      "sha256": "cf3b828e94c69f9f0f9112a81ba9a05e66446ab54102f4b088ae9981a2583b5a"
+    },
+    {
+      "path": "tests/compute_models/mlx_affine_bitstream.h",
+      "bytes": 1098,
+      "sha256": "5317fec77bcb553c4f9b5f8073e38083070fdbb7733249fa0b1c7ad848f35cf8"
+    },
+    {
+      "path": "tests/compute_models/nvfp4_reference_fixture.h",
+      "bytes": 22482,
+      "sha256": "cc94ec1f443511722ff4fc227b065af27b82573443735250951cdce934faa4d3"
+    },
+    {
+      "path": "tests/compute_provider_native/half_test_support.h",
+      "bytes": 4399,
+      "sha256": "5f6d8f7b70d07e44600bb6d6d592f66af5dac9970a730695956a1afcfc3cd0b8"
+    },
+    {
+      "path": "tests/graph_route_apple/CMakeLists.txt",
+      "bytes": 7687,
+      "sha256": "172e758aa3aa0c396fd1b5cb5e1bc9e51a06f56f887c38837f690dd36f5452cf"
+    },
+    {
+      "path": "tests/graph_route_apple/glm_flash_mixed_mlx_test.cc",
+      "bytes": 2463,
+      "sha256": "7767b65c06e398607f3456635153840a9ed480360896d15a4d64243a3dfb69e9"
+    },
+    {
+      "path": "tests/graph_route_cpu/CMakeLists.txt",
+      "bytes": 4997,
+      "sha256": "cd25b38893539a2b5c4d6864f6071a840e3c7588cc0982c534b977c11a39b751"
+    },
+    {
+      "path": "tests/graph_route_cpu/glm_flash_mixed_mlx_test.cc",
+      "bytes": 1117,
+      "sha256": "246e0d33c5e39b70f0784b63cf5c38f3b789fdfc74588397f0ce9367e63fc22f"
+    },
+    {
+      "path": "tests/graph_route_cuda/CMakeLists.txt",
+      "bytes": 4387,
+      "sha256": "754a6670731c54950af7a9f2bea164a91653ac0db23519143c0ed9937d359b39"
+    },
+    {
+      "path": "tests/graph_route_cuda/glm_flash_mixed_mlx_test.cc",
+      "bytes": 7174,
+      "sha256": "8af75298a5afe748beabe669e80edd94d58c6f37e995f7d9de026e13000fd98e"
+    },
+    {
+      "path": "tests/graph_route_vulkan/CMakeLists.txt",
+      "bytes": 7500,
+      "sha256": "780bd22036cffdf75f6b17506dfd32a6c60f1b161d38bcfadb7c0e9e9be73ad1"
+    },
+    {
+      "path": "tests/graph_route_vulkan/glm_flash_mixed_mlx_test.cc",
+      "bytes": 4220,
+      "sha256": "31aab037fca24a110578e6ffba6f3b3853f0ecaa9210fec19a9abfc5ca4260fb"
+    },
+    {
+      "path": "third_party/mlx_cpu_quant/mlx_cpu_quant.h",
+      "bytes": 9040,
+      "sha256": "3166c80b0fc9ed9c3eeb2ed79d628401f541f370a5188294ef8d7917de915de3"
+    }
+  ],
+  "archive": {
+    "path": "docs/evidence/correctness/glm-flash-mixed-mlx-reference-2026-10-21.zip",
+    "bytes": 4528053,
+    "sha256": "aa9543e0cb791f4ce28ca1fcfd71ea95318bd33639fb1d3b3be43af1cf97ca63",
+    "members": 377
+  },
+  "archive_entries": [
+    {
+      "entry": "next_revisit/review.json",
+      "bytes": 12004,
+      "sha256": "c8bb3d44b72b8b8f9269677fdcbaafabce0236e76be5e383146b46677c7b7759"
+    },
+    {
+      "entry": "provenance/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/mlx/32/affine-bindings.json",
+      "bytes": 10411566,
+      "sha256": "9a912d79c052a7a7920fa14dfb0fd24c5f03c647145872314dd80fb158bca364"
+    },
+    {
+      "entry": "provenance/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/mlx/32/expert-bank-assembly.json",
+      "bytes": 77167,
+      "sha256": "e400745b6103b751f0ea7eaa6a5db350396b7b4503276467edc76bcb0d5a7326"
+    },
+    {
+      "entry": "provenance/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/mlx/32/headers/model-00031-of-00062.safetensors.header.json",
+      "bytes": 252744,
+      "sha256": "88e6f006f558e0633eac15847d9e6e5443771254302763c9edee8378487753d2"
+    },
+    {
+      "entry": "provenance/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/mlx/32/headers/model-00032-of-00062.safetensors.header.json",
+      "bytes": 260128,
+      "sha256": "83b3f8c5a11c4ba389c7f835c703896a018a7759179949ae3291eb3ddbb0058e"
+    },
+    {
+      "entry": "provenance/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/mlx/32/model.safetensors.index.json",
+      "bytes": 11529499,
+      "sha256": "cacc0f91d635087c63adf6136e51935e251f12b810fbba2f77551c7aaececa1a"
+    },
+    {
+      "entry": "provenance/architecture-refactor-2026-10-18/precise-role-consumers-2026-10-21/apple/producer-contract-review.json",
+      "bytes": 9129,
+      "sha256": "df33b0feff7cb040abfb88350076c56ed9f6c0f8954e2160d725d0ebb088c237"
+    },
+    {
+      "entry": "provenance/architecture-refactor-2026-10-18/precise-role-consumers-2026-10-21/apple/producer/mlx-dtype.cpp",
+      "bytes": 7464,
+      "sha256": "f60852034e52b82df17fad13f3cb63225b421f26357dd89cff83a2e41db8672d"
+    },
+    {
+      "entry": "provenance/architecture-refactor-2026-10-18/precise-role-consumers-2026-10-21/apple/producer/mlx-module-base.py",
+      "bytes": 26169,
+      "sha256": "ec749e1d50fd1a5e57e0aedc8e6eb13fc697e630f59333a0e24aee62a8dc7f0f"
+    },
+    {
+      "entry": "provenance/architecture-refactor-2026-10-18/precise-role-consumers-2026-10-21/apple/producer/mlx-ops.cpp",
+      "bytes": 203048,
+      "sha256": "6eae219354d0f9be37a064cb327c863fc3a12dba6668fd61d428e8d09d6baaf2"
+    },
+    {
+      "entry": "provenance/architecture-refactor-2026-10-18/precise-role-consumers-2026-10-21/apple/producer/requests.json",
+      "bytes": 4999,
+      "sha256": "8221aa96199fd08524a02960753199e4d33f24ccb2898b7dd89a30391b2ddacc"
+    },
+    {
+      "entry": "provenance/architecture-refactor-2026-10-18/precise-role-consumers-2026-10-21/apple/producer/vlm-glm5-next-language.py",
+      "bytes": 43767,
+      "sha256": "478b285c862e09a6c2c9289af702e5644f50445a2aea3a1c5de086455f1c0d9c"
+    },
+    {
+      "entry": "provenance/architecture-refactor-2026-10-18/precise-role-consumers-2026-10-21/apple/producer/vlm-switch-layers.py",
+      "bytes": 17215,
+      "sha256": "f1903e6e9f8f1871ac0f773c317450297bcfe0ebf5469b907b401dfd91d8dcd8"
+    },
+    {
+      "entry": "provenance/architecture-refactor-2026-10-18/precise-role-consumers-2026-10-21/apple/producer/vlm-utils.py",
+      "bytes": 83433,
+      "sha256": "ed95bcfd1c4e8cb522c3c7f34d4aaa10f5e53bc69a45622606f80edfa2fd7cc7"
+    },
+    {
+      "entry": "provenance/expert-working-set-reference-2026-10-21.json",
+      "bytes": 180964,
+      "sha256": "d0d5e89e00d86f3a0789788ed7d051254e33f7c50eb93ae6a8b0135c1df55011"
+    },
+    {
+      "entry": "provenance/fixed-role-binding-2026-10-21.json",
+      "bytes": 238331,
+      "sha256": "50ee808e875a536024e3437e5203783d8b2b3d690817c4a336c3e3be0fd71871"
+    },
+    {
+      "entry": "provenance/fixed-role-binding-2026-10-21.zip",
+      "bytes": 3235093,
+      "sha256": "afc43569ab74af8b94fbba9a1f93265e687498cbc943c92f43804d56533268fd"
+    },
+    {
+      "entry": "records/apple/actual-dependencies-canonical-audit.json",
+      "bytes": 317684,
+      "sha256": "a1ee62d15ebc8961de8f99a0f925dd01f91100f4d8aa796083a4ebadddc11306"
+    },
+    {
+      "entry": "records/apple/attempt1/source-freeze.json",
+      "bytes": 535,
+      "sha256": "eaae0d645ad6211e7ca3bdef2490af4db9464ff2db93785b25b1adc8e76e435a"
+    },
+    {
+      "entry": "records/apple/attempt1/source/tests/compute_models/glm_flash_mixed_mlx_fixture.h",
+      "bytes": 24938,
+      "sha256": "cf3b828e94c69f9f0f9112a81ba9a05e66446ab54102f4b088ae9981a2583b5a"
+    },
+    {
+      "entry": "records/apple/attempt1/source/tests/graph_route_apple/CMakeLists.txt",
+      "bytes": 7687,
+      "sha256": "172e758aa3aa0c396fd1b5cb5e1bc9e51a06f56f887c38837f690dd36f5452cf"
+    },
+    {
+      "entry": "records/apple/attempt1/source/tests/graph_route_apple/glm_flash_mixed_mlx_test.cc",
+      "bytes": 2463,
+      "sha256": "7767b65c06e398607f3456635153840a9ed480360896d15a4d64243a3dfb69e9"
+    },
+    {
+      "entry": "records/apple/audit_dependencies.py",
+      "bytes": 2989,
+      "sha256": "c4367f35bae1b56227125747c6dbd3c39ea9b2c7a63eafe12b8aec5aff3009f1"
+    },
+    {
+      "entry": "records/apple/before/tests/graph_route_apple/CMakeLists.txt",
+      "bytes": 7514,
+      "sha256": "7783a4bb3f2e23bf2584b67e4d86dc87593d50c9dd98ffb5f44bba43013909af"
+    },
+    {
+      "entry": "records/apple/build_mac.py",
+      "bytes": 8399,
+      "sha256": "ea5c0fc147ac0478434de8374383d43269a22126b6425e51edf746076adb72e6"
+    },
+    {
+      "entry": "records/apple/cleanup-readonly-inventory.json",
+      "bytes": 1376,
+      "sha256": "3c6d77cebecfff8926f0b3f015c24bd50168da86f2755a4466122251968e0080"
+    },
+    {
+      "entry": "records/apple/collect_mac.py",
+      "bytes": 990,
+      "sha256": "d9d6c9bd7f423db4fd52523660d21685f2a8e421692e54c9194ae708bd6e6c8e"
+    },
+    {
+      "entry": "records/apple/compile-constant-simplify-excerpts.json",
+      "bytes": 3682,
+      "sha256": "68bb1d0872ca787176a0d38b3f3b5a3d6fd1a02f4970adc256841c7d8e6a30c0"
+    },
+    {
+      "entry": "records/apple/compile-header-source-receipt.json",
+      "bytes": 2095,
+      "sha256": "a42d2fd63c67bb575e8d3c94deed5bcf914e36c2b649a6e58ad143df17717da2"
+    },
+    {
+      "entry": "records/apple/compile-implementation-excerpts.json",
+      "bytes": 11108,
+      "sha256": "1a44571a1626d82f2fb8d191cf8b88af8f20c302665331a8f0bdd4ad593222cb"
+    },
+    {
+      "entry": "records/apple/compile-implementation-index.json",
+      "bytes": 5620,
+      "sha256": "eb4768ebea924bd6e922550b955df9f9fe1d8240e768936de77b42b59e99c7b0"
+    },
+    {
+      "entry": "records/apple/compile-source-locations.json",
+      "bytes": 237,
+      "sha256": "de68e807a6b79c2b91a5ab00ad55111b7914c8368cf2244fa3e46e0d83489913"
+    },
+    {
+      "entry": "records/apple/compile-tracer-excerpts.json",
+      "bytes": 6477,
+      "sha256": "160378cd5d9027d46122d8d9d197c2e1db990e82eda275282be147c9418177e2"
+    },
+    {
+      "entry": "records/apple/final-validation.json",
+      "bytes": 10683,
+      "sha256": "8a3323f2d7d727c5499be2b7276dc1f3ccf155be554865847c9bb08998c67f75"
+    },
+    {
+      "entry": "records/apple/finalize_receipts.py",
+      "bytes": 9429,
+      "sha256": "31f44f8c56ad79224acef1833ac6b6eef313410801ba96621f9e6a80dc93b18a"
+    },
+    {
+      "entry": "records/apple/hot-metadata-conversion-review.json",
+      "bytes": 13070,
+      "sha256": "7b7570ed615e311c133ecb96efb509e0ac509d40ebc696807924f3d6464bf7b8"
+    },
+    {
+      "entry": "records/apple/include-argument-maintenance.json",
+      "bytes": 497,
+      "sha256": "a5d678615591bb10ec20eb17591ecb6fe0accce8b73c3dbe0472b6f84632b84e"
+    },
+    {
+      "entry": "records/apple/incremental-plan.json",
+      "bytes": 1779,
+      "sha256": "4324873b5a169146037bf0c5b11deb6664cbb38fcb125eecd328a792ec0d395b"
+    },
+    {
+      "entry": "records/apple/mac/final/hardware.json",
+      "bytes": 516,
+      "sha256": "e3d3b88dbbb5913e88624a2ef189a6e1418d217e00705e73cdc5f5181427e721"
+    },
+    {
+      "entry": "records/apple/mac/final/plan.json",
+      "bytes": 917811,
+      "sha256": "c590165726d960224f3b91a6e69f969efcb04c59d68f66904494146dad4de52e"
+    },
+    {
+      "entry": "records/apple/mac/final/results/compile-summary.json",
+      "bytes": 544036,
+      "sha256": "b1582113161fb23a91288751367ebc814ea7dfa6ad51979d9c6871bd52517745"
+    },
+    {
+      "entry": "records/apple/mac/final/results/link-inputs.json",
+      "bytes": 44549,
+      "sha256": "8258ad61322710efddb9cc752e405d93d8831d6e138ee28ec8c9f7dead920815"
+    },
+    {
+      "entry": "records/apple/mac/final/results/link.command.json",
+      "bytes": 26259,
+      "sha256": "863c6de8253cfa6d446407f95a7b31be528a21a802ee8a1e3d3f21335fff6edb"
+    },
+    {
+      "entry": "records/apple/mac/final/results/link.result.json",
+      "bytes": 26306,
+      "sha256": "e57e6a8e096f8b3edbbe0cfd0431cebe24f511d050899677b6fd13b0b8755691"
+    },
+    {
+      "entry": "records/apple/mac/final/results/link.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/mac/final/results/link.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/mac/final/results/run.command.json",
+      "bytes": 451,
+      "sha256": "9693fa806f082e655bc89264a08519585503b785659bc9fab75d571b7e7a5edb"
+    },
+    {
+      "entry": "records/apple/mac/final/results/run.result.json",
+      "bytes": 497,
+      "sha256": "9056b2b6fd4997cce3179e91f552036c88a1c5d7b183c1fe7ae880021df6377f"
+    },
+    {
+      "entry": "records/apple/mac/final/results/run.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/mac/final/results/run.stdout.log",
+      "bytes": 705,
+      "sha256": "d7f9d8dead6c7c2cc9ed28db1043450834eb1af720bf66f80461c340a7efccfb"
+    },
+    {
+      "entry": "records/apple/mac/final/results/tests--graph_route_apple--glm_flash_mixed_mlx_test.cc-compile.command.json",
+      "bytes": 243761,
+      "sha256": "34e1bd3ea5f4c4d067fbaf05d5640d8faf23aad7048b4239004da5faac3ddae8"
+    },
+    {
+      "entry": "records/apple/mac/final/results/tests--graph_route_apple--glm_flash_mixed_mlx_test.cc-compile.result.json",
+      "bytes": 243807,
+      "sha256": "cdacbc9bde9be950431c72cd43766e0567a2e898bcb2c4b56b5002ce919a75ad"
+    },
+    {
+      "entry": "records/apple/mac/final/results/tests--graph_route_apple--glm_flash_mixed_mlx_test.cc-compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/mac/final/results/tests--graph_route_apple--glm_flash_mixed_mlx_test.cc-compile.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/mac/final/results/tests--graph_route_apple--glm_flash_mixed_mlx_test.cc-identity.json",
+      "bytes": 514157,
+      "sha256": "9991ef93e6c9c50f21eec99a6e5b10b6fc22796ffc8d936cd3114abce9841210"
+    },
+    {
+      "entry": "records/apple/mac/final/results/tests.xml",
+      "bytes": 2181,
+      "sha256": "2e8ce43bb3a00f7b7246eaa4b2850d98d9c65790281ffcef6c191c32b0f724e8"
+    },
+    {
+      "entry": "records/apple/mac/final/results/validation.json",
+      "bytes": 743,
+      "sha256": "1efb494034ff8ceead6e43d73b7e1185b6e7c88940dcca3e1df631e115ced62d"
+    },
+    {
+      "entry": "records/apple/mac/final/reused-source-manifest.json",
+      "bytes": 18764,
+      "sha256": "27b2471e31c9941fe471063211b38a4b3bd171f7e9b1d44aa0c2412b1aabc04b"
+    },
+    {
+      "entry": "records/apple/mac/final/source-manifest.json",
+      "bytes": 6180,
+      "sha256": "99a0e58890c1ad83bf61c8ae8a48181b14ff7e0ea4fa5885a9393731cde3a0cd"
+    },
+    {
+      "entry": "records/apple/mac/final/tests/compute_models/glm_flash_mixed_mlx_fixture.h",
+      "bytes": 24938,
+      "sha256": "cf3b828e94c69f9f0f9112a81ba9a05e66446ab54102f4b088ae9981a2583b5a"
+    },
+    {
+      "entry": "records/apple/mac/final/tests/graph_route_apple/glm_flash_mixed_mlx_test.cc",
+      "bytes": 2463,
+      "sha256": "7767b65c06e398607f3456635153840a9ed480360896d15a4d64243a3dfb69e9"
+    },
+    {
+      "entry": "records/apple/mac/plan.json",
+      "bytes": 924213,
+      "sha256": "c35636044bf0c88018a4d5958483055c45cc158620ef776e3af2a435ef52ed71"
+    },
+    {
+      "entry": "records/apple/mac/reused-source-manifest.json",
+      "bytes": 19090,
+      "sha256": "31c41eedf0ce5d9b9c514c0216b682876cf16991c6451a699e793838efc62017"
+    },
+    {
+      "entry": "records/apple/mac/source-manifest.json",
+      "bytes": 6362,
+      "sha256": "b2fae04dd5a4e680de2b0d42407a709ab1d5274d43f4d3d58f3beda6dd7b5db1"
+    },
+    {
+      "entry": "records/apple/mac/sync.result.json",
+      "bytes": 775,
+      "sha256": "e3f3a10af25c14d4f201506992d153d3c756d0a7c86f8ada018cfcf8125ed3c6"
+    },
+    {
+      "entry": "records/apple/prepare_mac.py",
+      "bytes": 5074,
+      "sha256": "309f3639b73f4624b607e4ba81386687f357b2c38d7b843f7384b0bcadeabd3b"
+    },
+    {
+      "entry": "records/apple/read-only-design.json",
+      "bytes": 15227,
+      "sha256": "7784448f729760534e35a19752ee160811e80c30fdbf0a1571b3bbc2938fa6df"
+    },
+    {
+      "entry": "records/apple/source-freeze.json",
+      "bytes": 14466,
+      "sha256": "df825a274b36519b5a65a6557d7cde4f83d210c1379f6e22b449d44d901a9cd6"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/apple.h",
+      "bytes": 11664,
+      "sha256": "5baedfd8caa3dd7bd54d9c4619f3c7e7c7e853189a6d8d7c20ab1ebeb2b7dbd5"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/apple_batch.h",
+      "bytes": 8214,
+      "sha256": "c22b73da2caa1031a99fe5cbcbd81e6c255eec7429cbf542c06b35cd82ad8e98"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/apple_memory.h",
+      "bytes": 11994,
+      "sha256": "b7a3f9714752cabab1ce2e9eb2a1c3d8473ac0d906498f22189ffa99e91ff0e4"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/apple_weights.h",
+      "bytes": 4606,
+      "sha256": "0f74446c0496272df3b902a52e0ec3f0897e6131ddc2f0bc1cdd95e81f228d4f"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/batch_layout.h",
+      "bytes": 10506,
+      "sha256": "db6c552379051f9b8132fc8dce775dd0826c9a8d1d0d7fd10eecd1f10b159921"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/batch_materialize.h",
+      "bytes": 7245,
+      "sha256": "9f57cfe9748faf89faae485b604a4b14d6f222bc3ce475bc40a1a265b405b50b"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/batch_ops.h",
+      "bytes": 6114,
+      "sha256": "d6dcf9e7c8559280a762d191bc41c4f7b56b0097844d0b31091b4fda361ea077"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/batch_paged_native.h",
+      "bytes": 4723,
+      "sha256": "b42b17bd38435422f06cd830f0b35f6c7deca256916d9d99bff52b9ec0d9f1ce"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/batch_transfer.h",
+      "bytes": 11416,
+      "sha256": "7bec296577c0439b0e0b48639ccff6b3bd95d137dba085c608f650dbb69fcd1b"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/completion.h",
+      "bytes": 1959,
+      "sha256": "98b34b9ee4665e9aedac719504c029a509f304b0a4f566bf6b7f76d88dc2ef34"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/detail/context_ref.h",
+      "bytes": 2563,
+      "sha256": "b1295a6d21d452b2730e3907891ca49993e512a741f8f3a9689976e56f5af3f1"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/detail/lease_access.h",
+      "bytes": 3996,
+      "sha256": "3df3c018e207f135ab6a5e21336360c68977416f2762dfb8688b6cce0abbb39f"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/detail/resource_budget_access.h",
+      "bytes": 527,
+      "sha256": "17f1adbcf9a15c6eadc20e4346bcbefb6b704e344d0e21f8cd44328c53b55004"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/device.h",
+      "bytes": 7702,
+      "sha256": "f966803f2293e03db1cde9b1327f847a92162f21adb53f69ef37f0c19b16a84a"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/low_precision.h",
+      "bytes": 10406,
+      "sha256": "0920a5a2faecb2991da60ecede680c496bab73411a305e559461ea41cea309cb"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/model_ops.h",
+      "bytes": 75341,
+      "sha256": "d3315100def9904a604dd3a1386000641cb03c2e8d36485ef3e55b98e4dde3e5"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/operation.h",
+      "bytes": 28108,
+      "sha256": "35b7c862143839e4b8ce0c9a49753b7add2f325ec424bf5f91a1afeec0101506"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/ops_visibility.h",
+      "bytes": 43,
+      "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/paged_arena.h",
+      "bytes": 10342,
+      "sha256": "004230261c2bcd629ac581ea2c6ce3fe7da928adc1b7827b8955e6e69f471fa0"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/prepared_operation.h",
+      "bytes": 20281,
+      "sha256": "03895c56e8665daf2482f66fecf205fd8aacf92046e13c169d9d8ff86fff52d7"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/provider.h",
+      "bytes": 10281,
+      "sha256": "a9737ca3cf64eec23ce768e20b1112407fc7816a32f8031f0b668b16c49f816a"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/resource_budget.h",
+      "bytes": 4622,
+      "sha256": "578d440b6fc3f5b58809837506165de27ac0866ae39b2d132763f5dd1786b1ce"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/resource_leases.h",
+      "bytes": 8660,
+      "sha256": "4e5681ebfa7c2f2ad51e5788c8316f4b993883f595c04b33fe594d7294dab85b"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/result.h",
+      "bytes": 4704,
+      "sha256": "07a584147b7de3b3f3c1a238207df4ec548130308295b583fc8c93a4d36a4164"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/state_versions.h",
+      "bytes": 8553,
+      "sha256": "a09cb66a216b56a0651f515f18d8a97772b0e6d281c171a82b8a6630b3e1c7d7"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/storage_owner.h",
+      "bytes": 8058,
+      "sha256": "549d881d8d4f96eedbb03c8ef9bd6892ede776e5da90a39025538bc50a0530d9"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/tensor.h",
+      "bytes": 1980,
+      "sha256": "ac00f221a66d0f9044a2b49a1123a6b99a6c425568790898129c31d81519c538"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/tensor_desc.h",
+      "bytes": 8700,
+      "sha256": "e5496e00c643bcce2efbb42666773f4172243d10458b756d6f9881b0e677eb9a"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/visibility.h",
+      "bytes": 43,
+      "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/weight_assembly.h",
+      "bytes": 2095,
+      "sha256": "c085186c2751371d8e642f29d1b338e53962236e50c9935ea1858a4b188ca3ac"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/weight_import.h",
+      "bytes": 3487,
+      "sha256": "19479024d3e80a6c7357dd55cc79e59347c20b22b621ce6f2779082afaaab6cb"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/workload.h",
+      "bytes": 5017,
+      "sha256": "2e7509d99d986e71b06788e4dd1dcb9595799e2ad972df48449ff0b58f0815ad"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/core/assert.h",
+      "bytes": 16114,
+      "sha256": "5596728bc220ea27696be4f25e2f9eb9cf2705930f8eb0461747c4a862615790"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/core/compiler.h",
+      "bytes": 4287,
+      "sha256": "e31151f0ed73c532e464c6568483acecd80a2da9c1ee7afc7e081db87d6fb687"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/core/detail/compiler_attributes.h",
+      "bytes": 1913,
+      "sha256": "263c7691f9984073e198b69328092330bf572195113d3994d1ab54fe4564d88a"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/core/detail/preprocessor.h",
+      "bytes": 409,
+      "sha256": "1d9872ef98db007dcbed7e0128771244640e1de4092830d52a7a83537f98eb84"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/core/environment.h",
+      "bytes": 6712,
+      "sha256": "3d289765b1b677499a444b38d1dbe366bb5e99f89fcb7670af2d08106fd958fa"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/error/result.h",
+      "bytes": 30856,
+      "sha256": "7718409ab2854eb76959215b356bf8077007134d87db1a24f9384a9b5deff2b5"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/error/status.h",
+      "bytes": 18122,
+      "sha256": "4d6b4b0bfa5628947aad5449320513d4b071e0c84debfac47f7a7d264cecb7f4"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/graph/apple.h",
+      "bytes": 5922,
+      "sha256": "8f4e5660d322a0450c9df544568f0ef818b7c0ee269a7bdd3c9579cb79e99298"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/graph/compile_report.h",
+      "bytes": 577,
+      "sha256": "c42c30527d581975c49ddfebb182b0ae7928d799eed91172cb631779a2ad5b4f"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/graph/executable.h",
+      "bytes": 49762,
+      "sha256": "6305dd557606b26119fc60de9dbb68c979a1f8fe54755a191378c49742ef4714"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/graph/execution_source.h",
+      "bytes": 1859,
+      "sha256": "b89de5c6fe8b84192c9618a6a4e4dcee8ac45393e04a9e335f17b5a2d3ecac3f"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/graph/graph.h",
+      "bytes": 19988,
+      "sha256": "c7a93ccf9fd1c86fb9dec286e7d3345aabcb1810c2fb6793a66093480a5a2136"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/graph/resources.h",
+      "bytes": 430,
+      "sha256": "c9d3075babb4d863f3543c76576d093fe59f9868df67d50fc492db0aebe7015d"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/graph/result.h",
+      "bytes": 1646,
+      "sha256": "90861eafec4f3a0aa73014416bd2817dfe3892ac001ea206bebf907e1d3cf182"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/graph/visibility.h",
+      "bytes": 43,
+      "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/graph/weight_binding.h",
+      "bytes": 422,
+      "sha256": "ebcc3eea951953966a3b10b2951872e74d04921af6f0cc8de45ab52ab1ba32bd"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/mem/allocator.h",
+      "bytes": 11090,
+      "sha256": "0369680d4769a0187bfb77ee8b565b5e8fb53a03909fabf233458d9c1cbcd011"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/mem/buffer.h",
+      "bytes": 19273,
+      "sha256": "346a4f810babb8c5dacba49faaf57903d998a3cbb49af12b8c62acc85f7be72c"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/mem/quota_allocator.h",
+      "bytes": 7124,
+      "sha256": "a88fe230dc5358ddde6209de96cc61a59e3f6e60d30b9e7534e986fab10224c9"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/mem/resource.h",
+      "bytes": 7717,
+      "sha256": "84b0366e658ec63f999b4c9719cf8584ad758f4ff5340baf37f1c3ebd17145cd"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/mem/visibility.h",
+      "bytes": 43,
+      "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/simd/dtype.h",
+      "bytes": 12143,
+      "sha256": "04dc8a2e0a654250413a0edc4bdc667f98c8aa40d85da25264b6bb2054dd51e5"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/simd/types.h",
+      "bytes": 1658,
+      "sha256": "e79863029c8036f918f36f93dd0267b8d42857516e0d74678584d75f8926abbd"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/visibility.h",
+      "bytes": 11701,
+      "sha256": "893fa73589b6e46f00474c2258af74c28d662b52176b57012290c820812ed486"
+    },
+    {
+      "entry": "records/apple/source/tests/compute_models/ct_packed_graph_fixture.h",
+      "bytes": 25617,
+      "sha256": "3e5750bdaad93e36792f2ee9428af0ca9672a8fafa24800cd064790432c3ba32"
+    },
+    {
+      "entry": "records/apple/source/tests/compute_models/ct_packed_grouped_fixture.h",
+      "bytes": 16396,
+      "sha256": "dcadf216276544c7145c913200f38dd762f0cb76d41cce0776b165bac1d3b7b9"
+    },
+    {
+      "entry": "records/apple/source/tests/compute_models/ct_packed_linear_fixture.h",
+      "bytes": 4201,
+      "sha256": "621ad31932ce9fb55c029ca08891025d966032ec8383519081e1b168fd67f95d"
+    },
+    {
+      "entry": "records/apple/source/tests/compute_models/expert_working_set_fixture.h",
+      "bytes": 25059,
+      "sha256": "7acdd3077cf034cf8656f831fe27e9247341e24095be2da52de9923098d4dc75"
+    },
+    {
+      "entry": "records/apple/source/tests/compute_models/ga_indexer_state_fixture.h",
+      "bytes": 26486,
+      "sha256": "c2055b3920c8ebc93ed30d2596d4eba049790e148b8dd3d59128e1ffda48ab84"
+    },
+    {
+      "entry": "records/apple/source/tests/compute_models/glm_flash_mixed_mlx_fixture.h",
+      "bytes": 24938,
+      "sha256": "cf3b828e94c69f9f0f9112a81ba9a05e66446ab54102f4b088ae9981a2583b5a"
+    },
+    {
+      "entry": "records/apple/source/tests/compute_models/mlx_affine_bitstream.h",
+      "bytes": 1098,
+      "sha256": "5317fec77bcb553c4f9b5f8073e38083070fdbb7733249fa0b1c7ad848f35cf8"
+    },
+    {
+      "entry": "records/apple/source/tests/compute_models/nvfp4_reference_fixture.h",
+      "bytes": 22482,
+      "sha256": "cc94ec1f443511722ff4fc227b065af27b82573443735250951cdce934faa4d3"
+    },
+    {
+      "entry": "records/apple/source/tests/compute_provider_native/half_test_support.h",
+      "bytes": 4399,
+      "sha256": "5f6d8f7b70d07e44600bb6d6d592f66af5dac9970a730695956a1afcfc3cd0b8"
+    },
+    {
+      "entry": "records/apple/source/tests/graph_route_apple/CMakeLists.txt",
+      "bytes": 7687,
+      "sha256": "172e758aa3aa0c396fd1b5cb5e1bc9e51a06f56f887c38837f690dd36f5452cf"
+    },
+    {
+      "entry": "records/apple/source/tests/graph_route_apple/glm_flash_mixed_mlx_test.cc",
+      "bytes": 2463,
+      "sha256": "7767b65c06e398607f3456635153840a9ed480360896d15a4d64243a3dfb69e9"
+    },
+    {
+      "entry": "records/cpu/checks/attempt1/compile-plan.json",
+      "bytes": 2964,
+      "sha256": "40ca00ffaf0ce0e6924ba5af2e9d8428207f2321d04285b956b8e3ed2182e035"
+    },
+    {
+      "entry": "records/cpu/checks/attempt1/compile.command.json",
+      "bytes": 2235,
+      "sha256": "51a0dea5f03062baa2ac7ff4ef835c937aa29a6f560c53358c9578b3c1149b13"
+    },
+    {
+      "entry": "records/cpu/checks/attempt1/compile.result.json",
+      "bytes": 2305,
+      "sha256": "24538ba22f005bf0652399fff234a01f78c92e57b51acef7faf3d2ec31dffc09"
+    },
+    {
+      "entry": "records/cpu/checks/attempt1/compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/cpu/checks/attempt1/compile.stdout.log",
+      "bytes": 30690,
+      "sha256": "f9e338a08e9187d2f262156e7c00428bd6a2f740ac07377d817322427bc60853"
+    },
+    {
+      "entry": "records/cpu/checks/attempt1/glm-flash-mixed-mlx-test-deps.json",
+      "bytes": 31547,
+      "sha256": "594bcd32a387666b2ac0e14b48c4cfcce5ee8deed87a333aa266aa8936369e9d"
+    },
+    {
+      "entry": "records/cpu/checks/attempt1/live.json",
+      "bytes": 2305,
+      "sha256": "24538ba22f005bf0652399fff234a01f78c92e57b51acef7faf3d2ec31dffc09"
+    },
+    {
+      "entry": "records/cpu/checks/attempt2/compile-plan.json",
+      "bytes": 2964,
+      "sha256": "2258872a2536ef080dae52c3ab332e1bdea9a85de78f0b9d594dabd40d0dba9b"
+    },
+    {
+      "entry": "records/cpu/checks/attempt2/compile.command.json",
+      "bytes": 2235,
+      "sha256": "c2a8018266ecb1370925b4b0df76c4ec1e9f2d8e654ca3d2fc02082b73491fd8"
+    },
+    {
+      "entry": "records/cpu/checks/attempt2/compile.result.json",
+      "bytes": 2303,
+      "sha256": "20b2ebd4dc447d9fb98139eb1b128aa7f0176cb7549a0c5a037af21b49cc55e6"
+    },
+    {
+      "entry": "records/cpu/checks/attempt2/compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/cpu/checks/attempt2/compile.stdout.log",
+      "bytes": 29,
+      "sha256": "382dac5829b4aa8074fad145831acb45699828e0096a941f1efa977b1282b835"
+    },
+    {
+      "entry": "records/cpu/checks/attempt2/glm-flash-mixed-mlx-test-deps.json",
+      "bytes": 31547,
+      "sha256": "594bcd32a387666b2ac0e14b48c4cfcce5ee8deed87a333aa266aa8936369e9d"
+    },
+    {
+      "entry": "records/cpu/checks/attempt2/identity.json",
+      "bytes": 67280,
+      "sha256": "2cc6d1dd871af947ceef9da27da86db0696315cef7344489d4d5949b2314b0d9"
+    },
+    {
+      "entry": "records/cpu/checks/attempt2/live.json",
+      "bytes": 2303,
+      "sha256": "20b2ebd4dc447d9fb98139eb1b128aa7f0176cb7549a0c5a037af21b49cc55e6"
+    },
+    {
+      "entry": "records/cpu/checks/link1/image.json",
+      "bytes": 258,
+      "sha256": "cd0fc98d0724b4af65a47a650b77b6e1a3e221d4763ef92a2481d51adb104441"
+    },
+    {
+      "entry": "records/cpu/checks/link1/link-plan.json",
+      "bytes": 53056,
+      "sha256": "782b40da761b782aabcb440510282341f1b7d2aa2d2596cc734fbaa22a9e6443"
+    },
+    {
+      "entry": "records/cpu/checks/link1/link.command.json",
+      "bytes": 18410,
+      "sha256": "1abf68242e05ddbe736c9381aa2819b692f0ec46a34a5341a51c5cf92a33ad00"
+    },
+    {
+      "entry": "records/cpu/checks/link1/link.result.json",
+      "bytes": 18481,
+      "sha256": "c5251bc80ca8e535dfde695c5ba8d06e2e5450072c2e34535478ea13726f0b65"
+    },
+    {
+      "entry": "records/cpu/checks/link1/link.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/cpu/checks/link1/link.stdout.log",
+      "bytes": 284,
+      "sha256": "f33aa8ebe4c7eb83bc7f9ad3520f0dfa6092a7bc218a59f9968e9e70d14fed3c"
+    },
+    {
+      "entry": "records/cpu/checks/link1/live.json",
+      "bytes": 18481,
+      "sha256": "c5251bc80ca8e535dfde695c5ba8d06e2e5450072c2e34535478ea13726f0b65"
+    },
+    {
+      "entry": "records/cpu/checks/link1/runtime-environment.json",
+      "bytes": 8168,
+      "sha256": "0d6c2a4b1a37637f38e620d06cdf1c16aa9e603fea74bbb2c4ef57aa8c532b17"
+    },
+    {
+      "entry": "records/cpu/validation/first1/image-before.json",
+      "bytes": 258,
+      "sha256": "cd0fc98d0724b4af65a47a650b77b6e1a3e221d4763ef92a2481d51adb104441"
+    },
+    {
+      "entry": "records/cpu/validation/first1/live.json",
+      "bytes": 600,
+      "sha256": "9ab918bc16a590dbf2f1e8857b3b31f98cff43a45b1503f6d326a42afccdc69f"
+    },
+    {
+      "entry": "records/cpu/validation/first1/receipt.json",
+      "bytes": 3120,
+      "sha256": "2092ae905b6940730106985fe5f033af443476d3f9d6d0cdd03a9c8e5a642012"
+    },
+    {
+      "entry": "records/cpu/validation/first1/runtime-environment.json",
+      "bytes": 8265,
+      "sha256": "31b793f62a5310d02178e16b38342034577bcbd1f136c0ada0ee69968f9979d9"
+    },
+    {
+      "entry": "records/cpu/validation/first1/tests.command.json",
+      "bytes": 529,
+      "sha256": "82e334f89d891911ff2d5e9d2d7b939713a3ae288295cdddf1feb10b4e2419f4"
+    },
+    {
+      "entry": "records/cpu/validation/first1/tests.result.json",
+      "bytes": 600,
+      "sha256": "9ab918bc16a590dbf2f1e8857b3b31f98cff43a45b1503f6d326a42afccdc69f"
+    },
+    {
+      "entry": "records/cpu/validation/first1/tests.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/cpu/validation/first1/tests.stdout.log",
+      "bytes": 703,
+      "sha256": "d2ac7769cfb937bef7deda2a4edb5f5816a4028c4eae03e4a1b22f46ee802670"
+    },
+    {
+      "entry": "records/cpu/validation/first1/tests.xml",
+      "bytes": 2028,
+      "sha256": "118f521175fb15e4949eed52a5abcb4ccc71772d67a29af794dce46acb241d95"
+    },
+    {
+      "entry": "records/cuda/bank-alignment-audit.json",
+      "bytes": 1895,
+      "sha256": "15e6e5bec06c28976c1e3d7366f7a75cf013bf5a85f6c2e2c41ecd5b6034b0a1"
+    },
+    {
+      "entry": "records/cuda/bank-alignment-source-freeze.json",
+      "bytes": 2930,
+      "sha256": "ded687dfde82c65eb0a3a92a3e58439035a2b66fbd71727c74e2b409e93b1686"
+    },
+    {
+      "entry": "records/cuda/bank-alignment.diff",
+      "bytes": 7188,
+      "sha256": "24951cb9c3c2a0de775a35b90977474f590d456f2ceeb5a7f64f17076e2db0ab"
+    },
+    {
+      "entry": "records/cuda/checks/attempt2/compile-plan.json",
+      "bytes": 4997,
+      "sha256": "d4fb01c6c559d8187bafc89db1a366811e1ba16d7fb65de7acaaf54f8dac301f"
+    },
+    {
+      "entry": "records/cuda/checks/attempt2/compile.command.json",
+      "bytes": 4266,
+      "sha256": "963592e1e337bb6faae0ba86f83017dfad8f96b8028ddb15c472474f64d7ee4f"
+    },
+    {
+      "entry": "records/cuda/checks/attempt2/compile.result.json",
+      "bytes": 4336,
+      "sha256": "1fd09c70cadef59f388258e4bc41ab39ec6f418d92985410b91c15a43fb64c72"
+    },
+    {
+      "entry": "records/cuda/checks/attempt2/compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/cuda/checks/attempt2/compile.stdout.log",
+      "bytes": 29,
+      "sha256": "382dac5829b4aa8074fad145831acb45699828e0096a941f1efa977b1282b835"
+    },
+    {
+      "entry": "records/cuda/checks/attempt2/glm-flash-mixed-mlx-test-deps.json",
+      "bytes": 33008,
+      "sha256": "9903838ae951290c610d901fe0c9c8a8a7afc8cd0c702557ef67184c388eee7f"
+    },
+    {
+      "entry": "records/cuda/checks/attempt2/identity.json",
+      "bytes": 71144,
+      "sha256": "486d1758ba9f46cd7e6c1bca41ff7dadb2eec7c3bd203303b5516e25f707ebaf"
+    },
+    {
+      "entry": "records/cuda/checks/attempt2/live.json",
+      "bytes": 4336,
+      "sha256": "1fd09c70cadef59f388258e4bc41ab39ec6f418d92985410b91c15a43fb64c72"
+    },
+    {
+      "entry": "records/cuda/checks/attempt3/compile-plan.json",
+      "bytes": 4997,
+      "sha256": "30642494fe09a881bf68f493e7bfdbd942d60a0bbbf13fbcc1dd71a3bc1c3cb8"
+    },
+    {
+      "entry": "records/cuda/checks/attempt3/compile.command.json",
+      "bytes": 4266,
+      "sha256": "d1a850b70e3285b8ca2c474e5b229f13793a6690c30ccd96d5c76eb7c8247f37"
+    },
+    {
+      "entry": "records/cuda/checks/attempt3/compile.result.json",
+      "bytes": 4336,
+      "sha256": "aef68081f0401b341076641782f95fc9369b82bd507ccd660b7fe66531232600"
+    },
+    {
+      "entry": "records/cuda/checks/attempt3/compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/cuda/checks/attempt3/compile.stdout.log",
+      "bytes": 29,
+      "sha256": "382dac5829b4aa8074fad145831acb45699828e0096a941f1efa977b1282b835"
+    },
+    {
+      "entry": "records/cuda/checks/attempt3/glm-flash-mixed-mlx-test-deps.json",
+      "bytes": 33008,
+      "sha256": "9903838ae951290c610d901fe0c9c8a8a7afc8cd0c702557ef67184c388eee7f"
+    },
+    {
+      "entry": "records/cuda/checks/attempt3/identity.json",
+      "bytes": 71144,
+      "sha256": "5994d9fd1d18422c6dfd2fe37697104720fbb64c1ccc91762eac94d6d2ad9378"
+    },
+    {
+      "entry": "records/cuda/checks/attempt3/live.json",
+      "bytes": 4336,
+      "sha256": "aef68081f0401b341076641782f95fc9369b82bd507ccd660b7fe66531232600"
+    },
+    {
+      "entry": "records/cuda/checks/bank-alignment-product1/compile-plan.json",
+      "bytes": 3092,
+      "sha256": "f61e3df6f55008f77dfcfd0956f3b909526ffc289672ccc99f07e40d998ef20c"
+    },
+    {
+      "entry": "records/cuda/checks/bank-alignment-product1/compile.command.json",
+      "bytes": 2316,
+      "sha256": "068b3857730cfc7b2fd258ee583ec213d9f244345339ee388be40eaee2c6b2e2"
+    },
+    {
+      "entry": "records/cuda/checks/bank-alignment-product1/compile.result.json",
+      "bytes": 2386,
+      "sha256": "68e19bcda4d4f345f365039971be98f339d22d65f0810bb63161658bdd72944f"
+    },
+    {
+      "entry": "records/cuda/checks/bank-alignment-product1/compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/cuda/checks/bank-alignment-product1/compile.stdout.log",
+      "bytes": 12,
+      "sha256": "8449a15f1b4fc95b33dd2c76dcf6c64238ed3ca5deaecde19b79a34770696bf0"
+    },
+    {
+      "entry": "records/cuda/checks/bank-alignment-product1/cuda-weights-deps.json",
+      "bytes": 21500,
+      "sha256": "ab9ed98f1ba0dacb4549cd14ed41e50ee8e280dde229a7d36194256cd7528974"
+    },
+    {
+      "entry": "records/cuda/checks/bank-alignment-product1/identity.json",
+      "bytes": 47053,
+      "sha256": "732676d16a74a3b65e57e80506632f29bb75d7333102a84d5260311557e6fb25"
+    },
+    {
+      "entry": "records/cuda/checks/bank-alignment-product1/live.json",
+      "bytes": 2386,
+      "sha256": "68e19bcda4d4f345f365039971be98f339d22d65f0810bb63161658bdd72944f"
+    },
+    {
+      "entry": "records/cuda/checks/link1/image.json",
+      "bytes": 261,
+      "sha256": "bc79c7ab321ae1c7eb9af6e0234f57ee699419c4e07e8b2591c08d8cfa0c771b"
+    },
+    {
+      "entry": "records/cuda/checks/link1/link-plan.json",
+      "bytes": 79827,
+      "sha256": "12b0bb7f7f979ba9fafab5d98fbcf681995f3aa5783803f2e6b2deb37c6e8847"
+    },
+    {
+      "entry": "records/cuda/checks/link1/link.command.json",
+      "bytes": 27547,
+      "sha256": "b32ec725cd5c0fd6b4efd983ab0d946de9af4fc04f601b7cf40e598b9f305b47"
+    },
+    {
+      "entry": "records/cuda/checks/link1/link.result.json",
+      "bytes": 27618,
+      "sha256": "3ea255bf7537d83ef3b5aa6dba29c2bb63215f19319878d490f6ba226dd97ceb"
+    },
+    {
+      "entry": "records/cuda/checks/link1/link.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/cuda/checks/link1/link.stdout.log",
+      "bytes": 288,
+      "sha256": "d7c8cf76df654b7daf3e340d022209a224c97ac8e8a6ed9884d0f027dbd0d2e9"
+    },
+    {
+      "entry": "records/cuda/checks/link1/live.json",
+      "bytes": 27618,
+      "sha256": "3ea255bf7537d83ef3b5aa6dba29c2bb63215f19319878d490f6ba226dd97ceb"
+    },
+    {
+      "entry": "records/cuda/checks/link1/runtime-environment.json",
+      "bytes": 6716,
+      "sha256": "dfa7fce4c49931f9f117c1b01f427d788bd6109326c34114b95201794d0e8e7d"
+    },
+    {
+      "entry": "records/cuda/checks/link2/image.json",
+      "bytes": 261,
+      "sha256": "4538891e11deb827fe04954ded4a0874e4d7028596a509c729f035dd95e0eda0"
+    },
+    {
+      "entry": "records/cuda/checks/link2/link-plan.json",
+      "bytes": 79188,
+      "sha256": "842dbc2814359cd67be3909e921aaef0e07c972c97892983cea17f4930633f3f"
+    },
+    {
+      "entry": "records/cuda/checks/link2/link.command.json",
+      "bytes": 27554,
+      "sha256": "1244a6cc4d2a2433169500b77f94757449ee2238848e9e66ea4943d6521223f8"
+    },
+    {
+      "entry": "records/cuda/checks/link2/link.result.json",
+      "bytes": 27624,
+      "sha256": "31ef6cffb04bb9859afa173bc7bd77932c065a30d971bffea3d6d91b4663b40e"
+    },
+    {
+      "entry": "records/cuda/checks/link2/link.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/cuda/checks/link2/link.stdout.log",
+      "bytes": 288,
+      "sha256": "560b8ce1b41de841fb12592f4792aedc8a7683f4de806555a0276fcae7dabe6d"
+    },
+    {
+      "entry": "records/cuda/checks/link2/live.json",
+      "bytes": 27624,
+      "sha256": "31ef6cffb04bb9859afa173bc7bd77932c065a30d971bffea3d6d91b4663b40e"
+    },
+    {
+      "entry": "records/cuda/checks/link2/runtime-environment.json",
+      "bytes": 6716,
+      "sha256": "dfa7fce4c49931f9f117c1b01f427d788bd6109326c34114b95201794d0e8e7d"
+    },
+    {
+      "entry": "records/cuda/revisions/bank-alignment-before/src/compute_route_cuda/weights.cc",
+      "bytes": 23241,
+      "sha256": "d0554efedeb27f56d059ddf5f839d41c294c739962a97d628cdf59ff10dcd236"
+    },
+    {
+      "entry": "records/cuda/revisions/bank-alignment-before/tests/graph_route_cuda/CMakeLists.txt",
+      "bytes": 4387,
+      "sha256": "754a6670731c54950af7a9f2bea164a91653ac0db23519143c0ed9937d359b39"
+    },
+    {
+      "entry": "records/cuda/revisions/bank-alignment-before/tests/graph_route_cuda/glm_flash_mixed_mlx_test.cc",
+      "bytes": 2636,
+      "sha256": "99c330492ed16f5efaa51cf0584c1e66989baad83c6d962f650c9c15b84a3442"
+    },
+    {
+      "entry": "records/cuda/revisions/bank-alignment-before/windows/build.py",
+      "bytes": 6508,
+      "sha256": "be4a7afcb9fc805de66300d164f38d32a62f162a8a61b5ef3587f5267af0e1bd"
+    },
+    {
+      "entry": "records/cuda/source-bank-alignment/src/compute_route_cuda/weights.cc",
+      "bytes": 23567,
+      "sha256": "5e24cb66b7f0b6983631e7954e2f0c65f45d8dae189a0785ea8c8f028cb8981c"
+    },
+    {
+      "entry": "records/cuda/source-bank-alignment/tests/compute_models/glm_flash_mixed_mlx_fixture.h",
+      "bytes": 24938,
+      "sha256": "cf3b828e94c69f9f0f9112a81ba9a05e66446ab54102f4b088ae9981a2583b5a"
+    },
+    {
+      "entry": "records/cuda/source-bank-alignment/tests/graph_route_cuda/CMakeLists.txt",
+      "bytes": 4387,
+      "sha256": "754a6670731c54950af7a9f2bea164a91653ac0db23519143c0ed9937d359b39"
+    },
+    {
+      "entry": "records/cuda/source-bank-alignment/tests/graph_route_cuda/glm_flash_mixed_mlx_test.cc",
+      "bytes": 7174,
+      "sha256": "8af75298a5afe748beabe669e80edd94d58c6f37e995f7d9de026e13000fd98e"
+    },
+    {
+      "entry": "records/cuda/validation/final1/image-before.json",
+      "bytes": 261,
+      "sha256": "4538891e11deb827fe04954ded4a0874e4d7028596a509c729f035dd95e0eda0"
+    },
+    {
+      "entry": "records/cuda/validation/final1/live.json",
+      "bytes": 628,
+      "sha256": "46befaeae68c40a98b706e1cc22c0db32fc12fbd2c12c1cd950c5e8596ed86b2"
+    },
+    {
+      "entry": "records/cuda/validation/final1/receipt.json",
+      "bytes": 3435,
+      "sha256": "7a25d9ad3e775e2237bf4ee6eb373ec53b1bb63937278a999df5422900a12905"
+    },
+    {
+      "entry": "records/cuda/validation/final1/runtime-environment.json",
+      "bytes": 7596,
+      "sha256": "0e9f46975683c77cc2758971a2f146eaf081bdb0499845c39be1a30e99e4fcf0"
+    },
+    {
+      "entry": "records/cuda/validation/final1/tests.command.json",
+      "bytes": 559,
+      "sha256": "8e5df83a3ae320b37acf2acb4e751aa9e3c3adaaea4927e26ff871b89ec11693"
+    },
+    {
+      "entry": "records/cuda/validation/final1/tests.result.json",
+      "bytes": 628,
+      "sha256": "46befaeae68c40a98b706e1cc22c0db32fc12fbd2c12c1cd950c5e8596ed86b2"
+    },
+    {
+      "entry": "records/cuda/validation/final1/tests.stderr.log",
+      "bytes": 151,
+      "sha256": "88dd5e35d67fb5c0c371390a98a66a5e061e4c0bef2d890a7b74781363216092"
+    },
+    {
+      "entry": "records/cuda/validation/final1/tests.stdout.log",
+      "bytes": 1020,
+      "sha256": "a72ad9632585ef1c29005bc93d54539debfd3cf4db81d4eafbf20b6f9b571962"
+    },
+    {
+      "entry": "records/cuda/validation/final1/tests.xml",
+      "bytes": 2532,
+      "sha256": "dc139c0ca7413a9c71ce41bf32170d8a6c83a0abc04d04505105e33ae07c0c42"
+    },
+    {
+      "entry": "records/cuda/validation/first1/image-before.json",
+      "bytes": 261,
+      "sha256": "bc79c7ab321ae1c7eb9af6e0234f57ee699419c4e07e8b2591c08d8cfa0c771b"
+    },
+    {
+      "entry": "records/cuda/validation/first1/live.json",
+      "bytes": 604,
+      "sha256": "59c6ecc5d29254d18dc2a10c8db28b7735407cb0d7e10aafdb1ff5ac5b960e90"
+    },
+    {
+      "entry": "records/cuda/validation/first1/receipt.json",
+      "bytes": 1596,
+      "sha256": "db0b6d04873ba91a53c178b27cec63056dc569f45667c7283e59cc90c64ba6f6"
+    },
+    {
+      "entry": "records/cuda/validation/first1/runtime-environment.json",
+      "bytes": 7596,
+      "sha256": "ac083bcec841cc7fb86c26a8ed66a1f0d3f0723696383bcb5f19b82dbaa9a951"
+    },
+    {
+      "entry": "records/cuda/validation/first1/tests.command.json",
+      "bytes": 534,
+      "sha256": "2ff356c2bf4bfe4a283162f60b6477e2a81e23805715ba677f801bd0c25affab"
+    },
+    {
+      "entry": "records/cuda/validation/first1/tests.result.json",
+      "bytes": 604,
+      "sha256": "59c6ecc5d29254d18dc2a10c8db28b7735407cb0d7e10aafdb1ff5ac5b960e90"
+    },
+    {
+      "entry": "records/cuda/validation/first1/tests.stderr.log",
+      "bytes": 151,
+      "sha256": "88dd5e35d67fb5c0c371390a98a66a5e061e4c0bef2d890a7b74781363216092"
+    },
+    {
+      "entry": "records/cuda/validation/first1/tests.stdout.log",
+      "bytes": 1033,
+      "sha256": "c75cea6a4e97f2ba5fab9d11cbfa891273ac6a57ad716399cdc83033d9fe9323"
+    },
+    {
+      "entry": "records/cuda/validation/first1/tests.xml",
+      "bytes": 1099,
+      "sha256": "1540ac1aaeb1e1fbf09599d0874aaa68630b794b913e25701bb8468a999f92a7"
+    },
+    {
+      "entry": "records/review/cuda-bank-alignment-review.json",
+      "bytes": 7008,
+      "sha256": "809c8aa20e46a928f4c58d741607eaee6bffe7425f5fc080f2d5618603660b2f"
+    },
+    {
+      "entry": "records/review/design-review.json",
+      "bytes": 26676,
+      "sha256": "e5316b0835f0536dfa710a3d2687affab7efa4cd6c3e9dec713ae0acba47a0c2"
+    },
+    {
+      "entry": "records/review/scalar-witness.json",
+      "bytes": 4273,
+      "sha256": "0847d6c14a3b43df931b81954b9bf3134b0640b13a4c25ad2f3c615e089931fe"
+    },
+    {
+      "entry": "records/review/scalar_witness.py",
+      "bytes": 4546,
+      "sha256": "89bd4a0a8ce4cd4edbe4633341d23194892f840fa73d671909e52b12e3f2d4b6"
+    },
+    {
+      "entry": "records/review/source-candidate.json",
+      "bytes": 1979,
+      "sha256": "31cde32c2da030ff3e39d1df823eaa46ad7bf06c7db3b7f054d929006dcf031c"
+    },
+    {
+      "entry": "records/review/topk-operation-wrapper.diff",
+      "bytes": 1282,
+      "sha256": "336a2c2436cc831c5d11ebe8f0072df04471743d810b8406372e76d162ade6e2"
+    },
+    {
+      "entry": "records/revisions/first-compile/design-review.json",
+      "bytes": 25743,
+      "sha256": "519a9be5d9bfb8f8d6598617eedf35de94665f9b7716c402484dd21c031eca75"
+    },
+    {
+      "entry": "records/revisions/first-compile/glm_flash_mixed_mlx_fixture.h",
+      "bytes": 24924,
+      "sha256": "dcd99f8766c6d5dc818093f08cbecf7a857d8a7f3ba036c009020371941238da"
+    },
+    {
+      "entry": "records/revisions/first-compile/scalar-witness.json",
+      "bytes": 4141,
+      "sha256": "1770c29317dab103565a21569e1024b099b4dfec93238259a7e33c6cabbad273"
+    },
+    {
+      "entry": "records/revisions/first-compile/source-freeze.json",
+      "bytes": 978,
+      "sha256": "4627f677b67d16235fe63bc0fab5ed3028a08a1d89bb50162018c8fbfc1edd08"
+    },
+    {
+      "entry": "records/root/catalog-update.diff",
+      "bytes": 13441,
+      "sha256": "fcfd099a9178be6d5812189859ff84ae4e478d94e6f93cd1fe9a016d9bd31db3"
+    },
+    {
+      "entry": "records/root/final-results.json",
+      "bytes": 5400,
+      "sha256": "85abd5bba0c03834e6c6dfeb93dc8b61c2f434d7a2ff53fdbb7c68e5d7f25e1a"
+    },
+    {
+      "entry": "records/root/package-preparation.json",
+      "bytes": 386,
+      "sha256": "89031e6a6bd525c1649a066ed876cd5668124e9c44964100b0887d32ae1ad38b"
+    },
+    {
+      "entry": "records/root/package.py",
+      "bytes": 16364,
+      "sha256": "e8db8fc854bf4c73102a5231574015f1798664dcdfeb08cc4a89937d8422d6f1"
+    },
+    {
+      "entry": "records/root/run_windows.py",
+      "bytes": 3499,
+      "sha256": "e98a8d162cc9c041dd644ea223e5389a0e0d240f3f32319000ec7ad68aeeb4ae"
+    },
+    {
+      "entry": "records/root/update_catalog.py",
+      "bytes": 5321,
+      "sha256": "f0eee2de833ef2fb849095b906d8332afd5c9add677ac8f368d655c6e7f99e10"
+    },
+    {
+      "entry": "records/root/update_model_operators.py",
+      "bytes": 965,
+      "sha256": "a0a217434275ebdd57164d22ab71f2bfdaeadb598d0201e9703a0c39a2d631e7"
+    },
+    {
+      "entry": "records/source-freeze.json",
+      "bytes": 1299,
+      "sha256": "4af42aa1ae0029d54af86167cd1ca8ee9ffa34982e38174290ce910234b4880c"
+    },
+    {
+      "entry": "records/vulkan/checks/attempt2/compile-plan.json",
+      "bytes": 5230,
+      "sha256": "c8be0cd3b56b4593655c2a07b5708d377132858e4a50fee65f83e06f0fda7833"
+    },
+    {
+      "entry": "records/vulkan/checks/attempt2/compile.command.json",
+      "bytes": 4494,
+      "sha256": "e588d5eaf804775a40ffa7173181f39540de95d7c1e77091b9564a80fd3db088"
+    },
+    {
+      "entry": "records/vulkan/checks/attempt2/compile.result.json",
+      "bytes": 4562,
+      "sha256": "71024d7a3da8e82258f6f7bd309c7ad89731b83f6948e43b1b037369f173579c"
+    },
+    {
+      "entry": "records/vulkan/checks/attempt2/compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/vulkan/checks/attempt2/compile.stdout.log",
+      "bytes": 29,
+      "sha256": "382dac5829b4aa8074fad145831acb45699828e0096a941f1efa977b1282b835"
+    },
+    {
+      "entry": "records/vulkan/checks/attempt2/glm-flash-mixed-mlx-test-deps.json",
+      "bytes": 35664,
+      "sha256": "272b22245921ac2d4d9c6c530cf70d7e09caa09a3d729f7733b648b6b7f179c8"
+    },
+    {
+      "entry": "records/vulkan/checks/attempt2/identity.json",
+      "bytes": 77987,
+      "sha256": "45626176d9ca82fdea553de3ab92453d9e34a045fd013791d71b69abe0e9edcf"
+    },
+    {
+      "entry": "records/vulkan/checks/attempt2/live.json",
+      "bytes": 4562,
+      "sha256": "71024d7a3da8e82258f6f7bd309c7ad89731b83f6948e43b1b037369f173579c"
+    },
+    {
+      "entry": "records/vulkan/checks/link1/image.json",
+      "bytes": 264,
+      "sha256": "5cdf471e7a783e5862605c6ec9fa5290c77429f9e40e35952573760c129539b6"
+    },
+    {
+      "entry": "records/vulkan/checks/link1/link-plan.json",
+      "bytes": 76658,
+      "sha256": "41986bb31e50d50deda0868a28fb5b82c35a5420da3e7809a7b89526aab629ad"
+    },
+    {
+      "entry": "records/vulkan/checks/link1/link.command.json",
+      "bytes": 26646,
+      "sha256": "78d745007ddfd991bdbc9fd3bfb165b5a6da4492ede6ed508572ca05e02f2a0b"
+    },
+    {
+      "entry": "records/vulkan/checks/link1/link.result.json",
+      "bytes": 26716,
+      "sha256": "a06fae8dbb08859ba3de6fe24376802f5b28a7da6f7439c00795916138afabc2"
+    },
+    {
+      "entry": "records/vulkan/checks/link1/link.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/vulkan/checks/link1/link.stdout.log",
+      "bytes": 296,
+      "sha256": "bd75a17d09c93eb69ceef82f1dd0b42aae44e1b45ca01b89a4a6caed64a3aad2"
+    },
+    {
+      "entry": "records/vulkan/checks/link1/live.json",
+      "bytes": 26716,
+      "sha256": "a06fae8dbb08859ba3de6fe24376802f5b28a7da6f7439c00795916138afabc2"
+    },
+    {
+      "entry": "records/vulkan/checks/link1/runtime-environment.json",
+      "bytes": 8168,
+      "sha256": "0d6c2a4b1a37637f38e620d06cdf1c16aa9e603fea74bbb2c4ef57aa8c532b17"
+    },
+    {
+      "entry": "records/vulkan/validation/first1/image-before.json",
+      "bytes": 264,
+      "sha256": "5cdf471e7a783e5862605c6ec9fa5290c77429f9e40e35952573760c129539b6"
+    },
+    {
+      "entry": "records/vulkan/validation/first1/live.json",
+      "bytes": 612,
+      "sha256": "d8a75d33b1b4015bb1f581e2e2a766a92d79f329340c6eaee51fb3c3ae62f648"
+    },
+    {
+      "entry": "records/vulkan/validation/first1/receipt.json",
+      "bytes": 3239,
+      "sha256": "964ff091c5f6e2f91464d53463f75dc857cbbf36295c77f248451e8c552a1888"
+    },
+    {
+      "entry": "records/vulkan/validation/first1/runtime-environment.json",
+      "bytes": 8265,
+      "sha256": "31b793f62a5310d02178e16b38342034577bcbd1f136c0ada0ee69968f9979d9"
+    },
+    {
+      "entry": "records/vulkan/validation/first1/tests.command.json",
+      "bytes": 542,
+      "sha256": "eaf2bf3e532e5cbe0aea6993762aa2361dbf2fbeead00e93a6eb99a33044b92e"
+    },
+    {
+      "entry": "records/vulkan/validation/first1/tests.result.json",
+      "bytes": 612,
+      "sha256": "d8a75d33b1b4015bb1f581e2e2a766a92d79f329340c6eaee51fb3c3ae62f648"
+    },
+    {
+      "entry": "records/vulkan/validation/first1/tests.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/vulkan/validation/first1/tests.stdout.log",
+      "bytes": 718,
+      "sha256": "6dc123504aba8dfa420a9b7ed1adc31b9db038628b954b7edbb31da838dd8060"
+    },
+    {
+      "entry": "records/vulkan/validation/first1/tests.xml",
+      "bytes": 2105,
+      "sha256": "3c45700ebd18176db00c8f94a0ee8fd6ae36fe215307f02d9cb555f4ae7fc9a4"
+    },
+    {
+      "entry": "records/windows/before/tests/graph_route_cpu/CMakeLists.txt",
+      "bytes": 4708,
+      "sha256": "691da3749b855d8c19e35e077ca541a07f507b371fe0b9dac5cd40b71df456a4"
+    },
+    {
+      "entry": "records/windows/before/tests/graph_route_cuda/CMakeLists.txt",
+      "bytes": 4069,
+      "sha256": "083f52467bc8793001c300eac228995a773d213e4f31b0625762b5bbe0c1d288"
+    },
+    {
+      "entry": "records/windows/before/tests/graph_route_vulkan/CMakeLists.txt",
+      "bytes": 7202,
+      "sha256": "8052a82a5f5b9d7ed1d9cdaab1a5d78cf2d1d069aa93dfee75fee69ff85d20d4"
+    },
+    {
+      "entry": "records/windows/build-report-prevalidation.json",
+      "bytes": 5935,
+      "sha256": "7b034fdef9b58bf0cc09bb2532f188eaa0027a27de9b158b621a8df7566f46a9"
+    },
+    {
+      "entry": "records/windows/build-report.json",
+      "bytes": 7164,
+      "sha256": "d9a8884f03df046b7bf014f2bb1d5864a2a2ca16b6279f822159d6058a16d6c8"
+    },
+    {
+      "entry": "records/windows/build.py",
+      "bytes": 6508,
+      "sha256": "be4a7afcb9fc805de66300d164f38d32a62f162a8a61b5ef3587f5267af0e1bd"
+    },
+    {
+      "entry": "records/windows/build_alignment.py",
+      "bytes": 6417,
+      "sha256": "0d1dc20c791e6af21f81ef44c73ca9cc3cd1ff89ab2dae84de20dbf5a896b559"
+    },
+    {
+      "entry": "records/windows/cleanup-windows-inventory.json",
+      "bytes": 5789,
+      "sha256": "0c077cf29b057e9681246a013824d09bccf2b3c443271667a222971ca54cfa52"
+    },
+    {
+      "entry": "records/windows/current-source-dependency-audit-final.json",
+      "bytes": 82846,
+      "sha256": "7d0376c66898e948ef85d4ae66a5900ddb17b8dcfc3983a84e836884474d849a"
+    },
+    {
+      "entry": "records/windows/current-source-dependency-audit.json",
+      "bytes": 80701,
+      "sha256": "42beb397ae7b77666e8a0f36577f09e230d4b8ff61bdd0a15e7c901e2644f145"
+    },
+    {
+      "entry": "records/windows/freeze_alignment.py",
+      "bytes": 6882,
+      "sha256": "4d59a335d08581ccbad1b10a12d61346245d9f400efe5840f73055df378b05b6"
+    },
+    {
+      "entry": "records/windows/freeze_prepared.py",
+      "bytes": 4485,
+      "sha256": "f1b3ce6be60275691a47739e28f2978f11cb98955e3c4a027ba2768fedf1957b"
+    },
+    {
+      "entry": "records/windows/inventory_windows.py",
+      "bytes": 3539,
+      "sha256": "e816d110f0a6f0680397b80b14ae8e31b9d639024ac91635dddc981f9743ff20"
+    },
+    {
+      "entry": "records/windows/private-module-staging-proof.json",
+      "bytes": 2372,
+      "sha256": "6444a898d375a82caec222f90bb4dfe09ac115ad7d5a9b847c57b5f74e78d18b"
+    },
+    {
+      "entry": "records/windows/ready-for-root-run-cpu.json",
+      "bytes": 1574,
+      "sha256": "20ca1403e6e05a1593a8bf4994b8924ae1b32d214c728ce65c7ac6051caf815d"
+    },
+    {
+      "entry": "records/windows/ready-for-root-run-cuda-alignment.json",
+      "bytes": 1532,
+      "sha256": "f64f9cc90db151f84d4ef020a0fdeb5dede4ed3b6d2364c734ff28e6c55e7cd6"
+    },
+    {
+      "entry": "records/windows/ready-for-root-run-cuda-vulkan.json",
+      "bytes": 2664,
+      "sha256": "276b4fb33962b5eeacb92c5631d6a8e06487463aa78632261124e9a0753050e3"
+    },
+    {
+      "entry": "records/windows/source-alignment-final/src/compute_route_cuda/weights.cc",
+      "bytes": 23567,
+      "sha256": "5e24cb66b7f0b6983631e7954e2f0c65f45d8dae189a0785ea8c8f028cb8981c"
+    },
+    {
+      "entry": "records/windows/source-alignment-final/tests/compute_models/glm_flash_mixed_mlx_fixture.h",
+      "bytes": 24938,
+      "sha256": "cf3b828e94c69f9f0f9112a81ba9a05e66446ab54102f4b088ae9981a2583b5a"
+    },
+    {
+      "entry": "records/windows/source-alignment-final/tests/graph_route_cpu/CMakeLists.txt",
+      "bytes": 4997,
+      "sha256": "cd25b38893539a2b5c4d6864f6071a840e3c7588cc0982c534b977c11a39b751"
+    },
+    {
+      "entry": "records/windows/source-alignment-final/tests/graph_route_cpu/glm_flash_mixed_mlx_test.cc",
+      "bytes": 1117,
+      "sha256": "246e0d33c5e39b70f0784b63cf5c38f3b789fdfc74588397f0ce9367e63fc22f"
+    },
+    {
+      "entry": "records/windows/source-alignment-final/tests/graph_route_cuda/CMakeLists.txt",
+      "bytes": 4387,
+      "sha256": "754a6670731c54950af7a9f2bea164a91653ac0db23519143c0ed9937d359b39"
+    },
+    {
+      "entry": "records/windows/source-alignment-final/tests/graph_route_cuda/glm_flash_mixed_mlx_test.cc",
+      "bytes": 7174,
+      "sha256": "8af75298a5afe748beabe669e80edd94d58c6f37e995f7d9de026e13000fd98e"
+    },
+    {
+      "entry": "records/windows/source-alignment-final/tests/graph_route_vulkan/CMakeLists.txt",
+      "bytes": 7500,
+      "sha256": "780bd22036cffdf75f6b17506dfd32a6c60f1b161d38bcfadb7c0e9e9be73ad1"
+    },
+    {
+      "entry": "records/windows/source-alignment-final/tests/graph_route_vulkan/glm_flash_mixed_mlx_test.cc",
+      "bytes": 4220,
+      "sha256": "31aab037fca24a110578e6ffba6f3b3853f0ecaa9210fec19a9abfc5ca4260fb"
+    },
+    {
+      "entry": "records/windows/source-attempt1/tests/compute_models/glm_flash_mixed_mlx_fixture.h",
+      "bytes": 24924,
+      "sha256": "dcd99f8766c6d5dc818093f08cbecf7a857d8a7f3ba036c009020371941238da"
+    },
+    {
+      "entry": "records/windows/source-attempt1/tests/graph_route_cpu/CMakeLists.txt",
+      "bytes": 4997,
+      "sha256": "cd25b38893539a2b5c4d6864f6071a840e3c7588cc0982c534b977c11a39b751"
+    },
+    {
+      "entry": "records/windows/source-attempt1/tests/graph_route_cpu/glm_flash_mixed_mlx_test.cc",
+      "bytes": 1117,
+      "sha256": "246e0d33c5e39b70f0784b63cf5c38f3b789fdfc74588397f0ce9367e63fc22f"
+    },
+    {
+      "entry": "records/windows/source-attempt2/tests/compute_models/glm_flash_mixed_mlx_fixture.h",
+      "bytes": 24938,
+      "sha256": "cf3b828e94c69f9f0f9112a81ba9a05e66446ab54102f4b088ae9981a2583b5a"
+    },
+    {
+      "entry": "records/windows/source-attempt2/tests/graph_route_cpu/CMakeLists.txt",
+      "bytes": 4997,
+      "sha256": "cd25b38893539a2b5c4d6864f6071a840e3c7588cc0982c534b977c11a39b751"
+    },
+    {
+      "entry": "records/windows/source-attempt2/tests/graph_route_cpu/glm_flash_mixed_mlx_test.cc",
+      "bytes": 1117,
+      "sha256": "246e0d33c5e39b70f0784b63cf5c38f3b789fdfc74588397f0ce9367e63fc22f"
+    },
+    {
+      "entry": "records/windows/source-attempt2/tests/graph_route_cuda/CMakeLists.txt",
+      "bytes": 4387,
+      "sha256": "754a6670731c54950af7a9f2bea164a91653ac0db23519143c0ed9937d359b39"
+    },
+    {
+      "entry": "records/windows/source-attempt2/tests/graph_route_cuda/glm_flash_mixed_mlx_test.cc",
+      "bytes": 2636,
+      "sha256": "99c330492ed16f5efaa51cf0584c1e66989baad83c6d962f650c9c15b84a3442"
+    },
+    {
+      "entry": "records/windows/source-attempt2/tests/graph_route_vulkan/CMakeLists.txt",
+      "bytes": 7500,
+      "sha256": "780bd22036cffdf75f6b17506dfd32a6c60f1b161d38bcfadb7c0e9e9be73ad1"
+    },
+    {
+      "entry": "records/windows/source-attempt2/tests/graph_route_vulkan/glm_flash_mixed_mlx_test.cc",
+      "bytes": 4220,
+      "sha256": "31aab037fca24a110578e6ffba6f3b3853f0ecaa9210fec19a9abfc5ca4260fb"
+    },
+    {
+      "entry": "records/windows/source-final/tests/compute_models/glm_flash_mixed_mlx_fixture.h",
+      "bytes": 24938,
+      "sha256": "cf3b828e94c69f9f0f9112a81ba9a05e66446ab54102f4b088ae9981a2583b5a"
+    },
+    {
+      "entry": "records/windows/source-final/tests/graph_route_cpu/CMakeLists.txt",
+      "bytes": 4997,
+      "sha256": "cd25b38893539a2b5c4d6864f6071a840e3c7588cc0982c534b977c11a39b751"
+    },
+    {
+      "entry": "records/windows/source-final/tests/graph_route_cpu/glm_flash_mixed_mlx_test.cc",
+      "bytes": 1117,
+      "sha256": "246e0d33c5e39b70f0784b63cf5c38f3b789fdfc74588397f0ce9367e63fc22f"
+    },
+    {
+      "entry": "records/windows/source-final/tests/graph_route_cuda/CMakeLists.txt",
+      "bytes": 4387,
+      "sha256": "754a6670731c54950af7a9f2bea164a91653ac0db23519143c0ed9937d359b39"
+    },
+    {
+      "entry": "records/windows/source-final/tests/graph_route_cuda/glm_flash_mixed_mlx_test.cc",
+      "bytes": 2636,
+      "sha256": "99c330492ed16f5efaa51cf0584c1e66989baad83c6d962f650c9c15b84a3442"
+    },
+    {
+      "entry": "records/windows/source-final/tests/graph_route_vulkan/CMakeLists.txt",
+      "bytes": 7500,
+      "sha256": "780bd22036cffdf75f6b17506dfd32a6c60f1b161d38bcfadb7c0e9e9be73ad1"
+    },
+    {
+      "entry": "records/windows/source-final/tests/graph_route_vulkan/glm_flash_mixed_mlx_test.cc",
+      "bytes": 4220,
+      "sha256": "31aab037fca24a110578e6ffba6f3b3853f0ecaa9210fec19a9abfc5ca4260fb"
+    },
+    {
+      "entry": "records/windows/source-freeze-final.json",
+      "bytes": 5632,
+      "sha256": "5e0e1ac2e95a3f04da8ea1be907eab46e3e26c2e425270f0d83d5191b41b6ca1"
+    },
+    {
+      "entry": "records/windows/source-freeze.json",
+      "bytes": 4758,
+      "sha256": "a2b1c511fe5113e334f64a6c224387bf3785dce499b7bb38aacac8ca30036d46"
+    },
+    {
+      "entry": "records/windows/source-review.json",
+      "bytes": 28393,
+      "sha256": "9d5596df05bdf884ff457ccf0a9f67fe24d0cb0b96cd053e6d61ae6d40bb687b"
+    },
+    {
+      "entry": "records/windows/source_review.py",
+      "bytes": 8733,
+      "sha256": "c56532bb0aa1e8727cf578d4154d2be823b21f4d8a087756b98f52d4cc148e0a"
+    },
+    {
+      "entry": "source/docs/developer/current-work.md",
+      "bytes": 40467,
+      "sha256": "564a81424f0943bf1fc993ae5b0bbbdeb399352e68bfea878d55e104a5223ee5"
+    },
+    {
+      "entry": "source/docs/implementation/model-operators.md",
+      "bytes": 81750,
+      "sha256": "8ed32474d0a290ab5b6ce12cbd9e9fed8b8d0ac405d5fc5af6a83e98bb7e37c0"
+    },
+    {
+      "entry": "source/docs/implementation/model-quantizations.json",
+      "bytes": 562427,
+      "sha256": "bc0e2fc348bbb3db1afa507c9559013d197ca8d5017ef0d1e6dc7cd6311a6754"
+    },
+    {
+      "entry": "source/docs/user/compute.md",
+      "bytes": 120745,
+      "sha256": "d8fed40da73a775041574f4f92ab84d6bc1f24f25cf0ea3566a0fd489b4b198b"
+    },
+    {
+      "entry": "source/docs/user/graph.md",
+      "bytes": 89012,
+      "sha256": "b51d8e16b860e9f014d29afb1c32eef79514f9e886a1dc3be990e46a52d7d692"
+    },
+    {
+      "entry": "source/include/hyle/compute/apple_weights.h",
+      "bytes": 4606,
+      "sha256": "0f74446c0496272df3b902a52e0ec3f0897e6131ddc2f0bc1cdd95e81f228d4f"
+    },
+    {
+      "entry": "source/include/hyle/compute/cuda_weights.h",
+      "bytes": 5065,
+      "sha256": "1e3ca02148c67fc2d6d6744beb5a03ee93dcb7f7a61ffed16aa5b5e49d5a8079"
+    },
+    {
+      "entry": "source/include/hyle/compute/model_ops.h",
+      "bytes": 75341,
+      "sha256": "d3315100def9904a604dd3a1386000641cb03c2e8d36485ef3e55b98e4dde3e5"
+    },
+    {
+      "entry": "source/include/hyle/compute/operation.h",
+      "bytes": 28108,
+      "sha256": "35b7c862143839e4b8ce0c9a49753b7add2f325ec424bf5f91a1afeec0101506"
+    },
+    {
+      "entry": "source/include/hyle/compute/resource_leases.h",
+      "bytes": 8660,
+      "sha256": "4e5681ebfa7c2f2ad51e5788c8316f4b993883f595c04b33fe594d7294dab85b"
+    },
+    {
+      "entry": "source/include/hyle/compute/vulkan_weights.h",
+      "bytes": 3974,
+      "sha256": "f54d91b380e71b6d073c00175ffea08849442250b57844b23eac839472054bf0"
+    },
+    {
+      "entry": "source/include/hyle/compute/weight_assembly.h",
+      "bytes": 2095,
+      "sha256": "c085186c2751371d8e642f29d1b338e53962236e50c9935ea1858a4b188ca3ac"
+    },
+    {
+      "entry": "source/include/hyle/graph/executable.h",
+      "bytes": 49762,
+      "sha256": "6305dd557606b26119fc60de9dbb68c979a1f8fe54755a191378c49742ef4714"
+    },
+    {
+      "entry": "source/include/hyle/graph/result.h",
+      "bytes": 1646,
+      "sha256": "90861eafec4f3a0aa73014416bd2817dfe3892ac001ea206bebf907e1d3cf182"
+    },
+    {
+      "entry": "source/include/hyle/graph/weight_binding.h",
+      "bytes": 422,
+      "sha256": "ebcc3eea951953966a3b10b2951872e74d04921af6f0cc8de45ab52ab1ba32bd"
+    },
+    {
+      "entry": "source/src/compute/resource_leases.cc",
+      "bytes": 27124,
+      "sha256": "6cb990cd573939c9de8a36cdcbac6530ca09dd7081f71c86c593282896d0a281"
+    },
+    {
+      "entry": "source/src/compute/weight_assembly.h",
+      "bytes": 5757,
+      "sha256": "3acee3356f6241ea6bd3f40da5bc357e53d9d20d9652237f52374eeceb82b3ff"
+    },
+    {
+      "entry": "source/src/compute_ops/weight_decode.cc",
+      "bytes": 17848,
+      "sha256": "e2abed9cfde68ba59e13571ac8c7a0007f1f84f0a4fb0293895b6ba28d66cbf1"
+    },
+    {
+      "entry": "source/src/compute_provider_cuda/packed_rows.cuh",
+      "bytes": 2918,
+      "sha256": "83ae1a4011af50a5ca5894d2ded2dc932850d1ad9748516c86a30ecb3b81717f"
+    },
+    {
+      "entry": "source/src/compute_provider_native/torch_cpu_program.cc",
+      "bytes": 42643,
+      "sha256": "430f7b9b9e8781078a9a27eb50d0bad353019418230d3deb5387fc2d4b79783d"
+    },
+    {
+      "entry": "source/src/compute_provider_torch_cuda/artifact_provider.cc",
+      "bytes": 38884,
+      "sha256": "92594dd4cc94f67cad7e73ea9a45dee8c39062887979dcf15f6710fdada643e6"
+    },
+    {
+      "entry": "source/src/compute_provider_torch_cuda/mlx_packed_kernel.cu",
+      "bytes": 21831,
+      "sha256": "2ed0dc5bf50b39bc60db9b9793ec27477601e2514086a9c8d8e84590348a526e"
+    },
+    {
+      "entry": "source/src/compute_provider_torch_cuda/mlx_packed_kernel.h",
+      "bytes": 2302,
+      "sha256": "c02bb164a1349fc13ece18b5d86d42b95a636a92a3abd4abfdd7ad7fcd13afaa"
+    },
+    {
+      "entry": "source/src/compute_route_apple/apple_tensor.cc",
+      "bytes": 39417,
+      "sha256": "79a9712a5a60e2a78f2121f1174056936506bf6764e04d99cc02491c69bb7807"
+    },
+    {
+      "entry": "source/src/compute_route_apple/apple_weights.mm",
+      "bytes": 24029,
+      "sha256": "fdb6f5f6fc059657e7e0cd5302865d8fa7b9e4f6ba3fea41bcd2ed46fb0f0bd5"
+    },
+    {
+      "entry": "source/src/compute_route_cuda/weights.cc",
+      "bytes": 23567,
+      "sha256": "5e24cb66b7f0b6983631e7954e2f0c65f45d8dae189a0785ea8c8f028cb8981c"
+    },
+    {
+      "entry": "source/src/compute_route_vulkan/vulkan_mlx.cc",
+      "bytes": 8127,
+      "sha256": "9696769c8b0412543c30826a0f51e5b4f3938e080601ff269ef1959be7710def"
+    },
+    {
+      "entry": "source/src/compute_route_vulkan/vulkan_weights.cc",
+      "bytes": 15764,
+      "sha256": "1882f3c92605e369053db2d3217cd69c712e26964607fcc15d30c3cf03784e74"
+    },
+    {
+      "entry": "source/src/graph/executable.cc",
+      "bytes": 462934,
+      "sha256": "7817d7e80752912a3daac41cd87511e15a2df3beeb0651c91f1b73d666b2674e"
+    },
+    {
+      "entry": "source/src/graph/input_sources.cc",
+      "bytes": 22954,
+      "sha256": "0b2b241cc6677aa4fc69c13a7e68e4b00d15edd889bfe936424db030cca8ebe8"
+    },
+    {
+      "entry": "source/src/graph/resources.cc",
+      "bytes": 70350,
+      "sha256": "40f38a4b5d2d5e316fe9cae57b2360cd1598446a31acee63740ba297990fa57c"
+    },
+    {
+      "entry": "source/src/graph_route_apple/weight_binding.cc",
+      "bytes": 3694,
+      "sha256": "c49db2528c69f60ae65f2b4770612328a802720b29b7528d259ec316116e5cea"
+    },
+    {
+      "entry": "source/src/graph_route_cuda/weight_binding.cc",
+      "bytes": 2864,
+      "sha256": "5aac253f95f9e42b566e2eafc775eee56442c8d38c118c7399df6052a7eff8d1"
+    },
+    {
+      "entry": "source/src/graph_route_vulkan/weight_binding.cc",
+      "bytes": 3914,
+      "sha256": "7e3937d230e472823c3a1b343199a2265ed96d61edb304f7a4b0b813171f1f73"
+    },
+    {
+      "entry": "source/tests/compute_models/ct_packed_graph_fixture.h",
+      "bytes": 25617,
+      "sha256": "3e5750bdaad93e36792f2ee9428af0ca9672a8fafa24800cd064790432c3ba32"
+    },
+    {
+      "entry": "source/tests/compute_models/ct_packed_grouped_fixture.h",
+      "bytes": 16396,
+      "sha256": "dcadf216276544c7145c913200f38dd762f0cb76d41cce0776b165bac1d3b7b9"
+    },
+    {
+      "entry": "source/tests/compute_models/ct_packed_linear_fixture.h",
+      "bytes": 4201,
+      "sha256": "621ad31932ce9fb55c029ca08891025d966032ec8383519081e1b168fd67f95d"
+    },
+    {
+      "entry": "source/tests/compute_models/expert_working_set_fixture.h",
+      "bytes": 25059,
+      "sha256": "7acdd3077cf034cf8656f831fe27e9247341e24095be2da52de9923098d4dc75"
+    },
+    {
+      "entry": "source/tests/compute_models/ga_indexer_state_fixture.h",
+      "bytes": 26486,
+      "sha256": "c2055b3920c8ebc93ed30d2596d4eba049790e148b8dd3d59128e1ffda48ab84"
+    },
+    {
+      "entry": "source/tests/compute_models/glm_flash_mixed_mlx_fixture.h",
+      "bytes": 24938,
+      "sha256": "cf3b828e94c69f9f0f9112a81ba9a05e66446ab54102f4b088ae9981a2583b5a"
+    },
+    {
+      "entry": "source/tests/compute_models/mlx_affine_bitstream.h",
+      "bytes": 1098,
+      "sha256": "5317fec77bcb553c4f9b5f8073e38083070fdbb7733249fa0b1c7ad848f35cf8"
+    },
+    {
+      "entry": "source/tests/compute_models/nvfp4_reference_fixture.h",
+      "bytes": 22482,
+      "sha256": "cc94ec1f443511722ff4fc227b065af27b82573443735250951cdce934faa4d3"
+    },
+    {
+      "entry": "source/tests/compute_provider_native/half_test_support.h",
+      "bytes": 4399,
+      "sha256": "5f6d8f7b70d07e44600bb6d6d592f66af5dac9970a730695956a1afcfc3cd0b8"
+    },
+    {
+      "entry": "source/tests/graph_route_apple/CMakeLists.txt",
+      "bytes": 7687,
+      "sha256": "172e758aa3aa0c396fd1b5cb5e1bc9e51a06f56f887c38837f690dd36f5452cf"
+    },
+    {
+      "entry": "source/tests/graph_route_apple/glm_flash_mixed_mlx_test.cc",
+      "bytes": 2463,
+      "sha256": "7767b65c06e398607f3456635153840a9ed480360896d15a4d64243a3dfb69e9"
+    },
+    {
+      "entry": "source/tests/graph_route_cpu/CMakeLists.txt",
+      "bytes": 4997,
+      "sha256": "cd25b38893539a2b5c4d6864f6071a840e3c7588cc0982c534b977c11a39b751"
+    },
+    {
+      "entry": "source/tests/graph_route_cpu/glm_flash_mixed_mlx_test.cc",
+      "bytes": 1117,
+      "sha256": "246e0d33c5e39b70f0784b63cf5c38f3b789fdfc74588397f0ce9367e63fc22f"
+    },
+    {
+      "entry": "source/tests/graph_route_cuda/CMakeLists.txt",
+      "bytes": 4387,
+      "sha256": "754a6670731c54950af7a9f2bea164a91653ac0db23519143c0ed9937d359b39"
+    },
+    {
+      "entry": "source/tests/graph_route_cuda/glm_flash_mixed_mlx_test.cc",
+      "bytes": 7174,
+      "sha256": "8af75298a5afe748beabe669e80edd94d58c6f37e995f7d9de026e13000fd98e"
+    },
+    {
+      "entry": "source/tests/graph_route_vulkan/CMakeLists.txt",
+      "bytes": 7500,
+      "sha256": "780bd22036cffdf75f6b17506dfd32a6c60f1b161d38bcfadb7c0e9e9be73ad1"
+    },
+    {
+      "entry": "source/tests/graph_route_vulkan/glm_flash_mixed_mlx_test.cc",
+      "bytes": 4220,
+      "sha256": "31aab037fca24a110578e6ffba6f3b3853f0ecaa9210fec19a9abfc5ca4260fb"
+    },
+    {
+      "entry": "source/third_party/mlx_cpu_quant/mlx_cpu_quant.h",
+      "bytes": 9040,
+      "sha256": "3166c80b0fc9ed9c3eeb2ed79d628401f541f370a5188294ef8d7917de915de3"
+    }
+  ]
+}

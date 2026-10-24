@@ -11,6 +11,7 @@
 
 #include "hyle/compute/detail/completion_access.h"
 #include "hyle/compute/detail/lease_access.h"
+#include "hyle/compute/detail/append_lease.h"
 #include "hyle/core/assert.h"
 #include "hyle/mem/std_allocator.h"
 #include "hyle/util/spin_lock.h"
@@ -35,6 +36,13 @@ Status LeasePermissionSet::add(const compute::WriteLease &write) noexcept {
   entries_.push_back({nullptr, &write});
   return Status::Ok();
 }
+Status LeasePermissionSet::add(const compute::detail::AppendLease &append) noexcept {
+  if (!append.valid()) return Status::FailedPrecondition("graph append permission is empty");
+  if (entries_.size() == entries_.capacity())
+    return Status::ResourceExhausted("graph permission scratch capacity");
+  entries_.push_back({nullptr, nullptr, &append});
+  return Status::Ok();
+}
 Status LeasePermissionSet::admit(compute::LeaseUseBatch &uses) noexcept {
   struct Reset final {
     LeasePermissionSet &set;
@@ -42,30 +50,54 @@ Status LeasePermissionSet::admit(compute::LeaseUseBatch &uses) noexcept {
   } reset{*this};
   const auto identity = [](const Entry &entry) {
     return entry.read ? compute::detail::LeaseAccess::identity(*entry.read)
-                      : compute::detail::LeaseAccess::identity(*entry.write);
+        : entry.write ? compute::detail::LeaseAccess::identity(*entry.write)
+                      : compute::detail::LeaseAccess::identity(*entry.append);
   };
   const auto generation = [](const Entry &entry) {
-    return entry.read ? entry.read->generation() : entry.write->generation();
+    return entry.read ? entry.read->generation()
+        : entry.write ? entry.write->generation() : entry.append->generation();
   };
   std::sort(entries_.begin(), entries_.end(), [&](const Entry &a, const Entry &b) {
     return std::less<const void *>{}(identity(a), identity(b));
   });
   // Validate the entire group before using the trusted no-rescan F1 entries.
   // Backing identity cannot replace block identity: one arena has many blocks.
-  for (std::size_t i = 1; i < entries_.size(); ++i) {
-    if (identity(entries_[i - 1]) != identity(entries_[i])) continue;
-    if (generation(entries_[i - 1]) != generation(entries_[i]))
-      return Status::FailedPrecondition("graph permission generation changed");
-    if (bool(entries_[i - 1].read) != bool(entries_[i].read))
-      return Status::InvalidArgument("one use cannot mix lease permissions");
+  for (std::size_t first = 0; first < entries_.size();) {
+    auto end = first + 1;
+    while (end < entries_.size() && identity(entries_[end]) == identity(entries_[first])) ++end;
+    const compute::detail::AppendLease *append = nullptr;
+    bool read = false, write = false;
+    for (auto i = first; i < end; ++i) {
+      const auto &entry = entries_[i];
+      if (generation(entry) != generation(entries_[first]))
+        return Status::FailedPrecondition("graph permission generation changed");
+      read |= entry.read != nullptr;
+      write |= entry.write != nullptr;
+      if (entry.append) {
+        if (append && append != entry.append)
+          return Status::InvalidArgument("graph repeats an original append authority");
+        append = entry.append;
+      }
+    }
+    if (write && (read || append))
+      return Status::InvalidArgument("one use cannot mix ordinary lease permissions");
+    if (append) for (auto i = first; i < end; ++i)
+      if (entries_[i].read)
+        HYLE_RETURN_IF_ERROR(compute::detail::LeaseAccess::validate_prefix(*append, *entries_[i].read));
+    first = end;
   }
-  const Entry *previous = nullptr;
-  for (const auto &entry : entries_) {
-    if (previous && identity(*previous) == identity(entry)) continue;
-    HYLE_RETURN_IF_ERROR(entry.read
-        ? compute::detail::LeaseAccess::read_unique(uses, *entry.read)
-        : compute::detail::LeaseAccess::write_unique(uses, *entry.write, false));
-    previous = &entry;
+  for (std::size_t first = 0; first < entries_.size();) {
+    auto end = first + 1;
+    const Entry *selected = &entries_[first];
+    while (end < entries_.size() && identity(entries_[end]) == identity(entries_[first])) {
+      if (entries_[end].append) selected = &entries_[end];
+      ++end;
+    }
+    HYLE_RETURN_IF_ERROR(selected->append
+        ? compute::detail::LeaseAccess::append_unique(uses, *selected->append)
+        : selected->read ? compute::detail::LeaseAccess::read_unique(uses, *selected->read)
+                         : compute::detail::LeaseAccess::write_unique(uses, *selected->write, false));
+    first = end;
   }
   return Status::Ok();
 }

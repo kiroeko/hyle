@@ -1,44 +1,48 @@
 #include "hyle/graph/executable.h"
+#include "hyle/compute/detail/lease_access.h"
+#include "hyle/compute/detail/resource_budget_access.h"
 #include "hyle/graph/detail/region_access.h"
-#include "hyle/graph/native_variants.h"
+#include "hyle/graph/detail/input_source.h"
+#include "hyle/graph/detail/region_adapter.h"
 
 #include "hyle/obs/trace.h"
 
 #include <algorithm>
 #include <array>
+#include <charconv>
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
 #include <functional>
 #include <limits>
-#include <mutex>
 #include <new>
+#include <optional>
 #include <span>
 #include <string_view>
 #include <utility>
 
-#include "../compute/completion_internal.h"
 #include "../compute/provider_internal.h"
 #include "../compute_ops/view_alias.h"
 #include "compile_internal.h"
 #include "graph_state.h"
-#include "hyle/compute/detail/completion_access.h"
 #include "hyle/compute/detail/queue_sequence.h"
 #include "hyle/compute/transfer.h"
 #include "hyle/core/assert.h"
 #include "hyle/container/flat_hash_map.h"
 #include "hyle/container/hash.h"
+#include "hyle/util/scope_guard.h"
 #include "plan_state.h"
 #include "view_domain.h"
 #include "submission_internal.h"
 
 namespace hyle::graph {
+using detail::delegated_step_index;
+using detail::enqueue_segment_steps;
+using detail::shared_lane;
+
 namespace {
 
 using detail::add_compiled_storage;
-#if defined(HYLE_TESTING)
-thread_local detail::AcceptedCompletionFn accepted_observation_hook = nullptr;
-#endif
 
 Status plan_allocation_failure() noexcept {
   return Status::ResourceExhausted("graph plan metadata allocation failed");
@@ -46,174 +50,6 @@ Status plan_allocation_failure() noexcept {
 
 Status invocation_allocation_failure() noexcept {
   return Status::ResourceExhausted("graph invocation allocation failed");
-}
-
-void merge_aggregate_terminal(detail::AggregateCompletionState &aggregate,
-                              const Status &terminal) noexcept {
-  std::lock_guard lock(aggregate.lock);
-  aggregate.terminal.Update(terminal);
-}
-
-void release_aggregate_episode(
-    detail::AggregateCompletionState *aggregate) noexcept {
-  if (aggregate->remaining.fetch_sub(1, std::memory_order_acq_rel) != 1)
-    return;
-  compute::detail::CompletionLifetime outer;
-  Status terminal;
-  {
-    std::lock_guard lock(aggregate->lock);
-    outer = aggregate->outer_lifetime;
-    aggregate->outer_lifetime = {};
-    terminal = aggregate->terminal;
-  }
-  if (outer.valid()) {
-    outer.terminal(outer.state, terminal);
-    // release() may destroy the InvocationState containing aggregate. Do not
-    // touch aggregate after this call.
-    outer.release(outer.state);
-  }
-}
-
-void aggregate_child_terminal(void *opaque, const Status &terminal) noexcept {
-  auto *child = static_cast<detail::AggregateChildState *>(opaque);
-  merge_aggregate_terminal(*child->aggregate, terminal);
-}
-
-void aggregate_child_release(void *opaque) noexcept {
-  auto *child = static_cast<detail::AggregateChildState *>(opaque);
-  auto *invocation = child->invocation;
-  child->invocation = nullptr;
-  release_aggregate_episode(child->aggregate);
-  // The child owns this reference independently of the outer Completion:
-  // even an unreturnable prefix cannot destroy aggregate before native proof.
-  detail::release(invocation);
-}
-
-compute::Completion &
-aggregate_terminal_completion(detail::AggregateCompletionState &aggregate,
-                              std::size_t index) noexcept {
-  return aggregate.completions[aggregate.completion_segments[index]];
-}
-
-Result<compute::CompletionPoll> poll_aggregate(void *opaque) noexcept {
-  auto &aggregate = *static_cast<detail::AggregateCompletionState *>(opaque);
-  Status terminal = Status::Ok();
-  bool pending = false;
-  for (std::size_t index = 0; index < aggregate.completion_count; ++index) {
-    compute::Completion &completion =
-        aggregate_terminal_completion(aggregate, index);
-    if (!completion.valid()) {
-      terminal.Update(Status::Internal("graph terminal completion is invalid"));
-      continue;
-    }
-    auto result = completion.poll();
-    if (!result)
-      terminal.Update(std::move(result).error());
-    else
-      pending = pending || *result == compute::CompletionPoll::kPending;
-  }
-  merge_aggregate_terminal(aggregate, terminal);
-  if (pending)
-    return compute::CompletionPoll::kPending;
-  {
-    std::lock_guard lock(aggregate.lock);
-    terminal = aggregate.terminal;
-  }
-  return terminal.ok()
-             ? Result<compute::CompletionPoll>(
-                   compute::CompletionPoll::kComplete)
-             : Result<compute::CompletionPoll>(std::unexpected(terminal));
-}
-
-Status wait_aggregate(void *opaque) noexcept {
-  auto &aggregate = *static_cast<detail::AggregateCompletionState *>(opaque);
-  Status terminal = Status::Ok();
-  for (std::size_t index = 0; index < aggregate.completion_count; ++index) {
-    compute::Completion &completion =
-        aggregate_terminal_completion(aggregate, index);
-    if (!completion.valid()) {
-      terminal.Update(Status::Internal("graph terminal completion is invalid"));
-      continue;
-    }
-    terminal.Update(completion.wait());
-  }
-  merge_aggregate_terminal(aggregate, terminal);
-  std::lock_guard lock(aggregate.lock);
-  return aggregate.terminal;
-}
-
-Status cancel_aggregate(void *opaque) noexcept {
-  auto &aggregate = *static_cast<detail::AggregateCompletionState *>(opaque);
-  Status terminal = Status::Ok();
-  bool unsupported = false;
-  for (std::size_t index = 0; index < aggregate.completion_count; ++index) {
-    compute::Completion &completion =
-        aggregate_terminal_completion(aggregate, index);
-    if (!completion.valid())
-      continue;
-    Status result = completion.request_cancel();
-    if (result.IsUnimplemented())
-      unsupported = true;
-    else
-      terminal.Update(std::move(result));
-  }
-  if (!terminal.ok())
-    return terminal;
-  return unsupported
-             ? Status::Unimplemented(
-                   "one or more graph terminal segments cannot be cancelled")
-             : Status::Ok();
-}
-
-void destroy_aggregate(void *opaque,
-                       compute::detail::CompletionLifetime lifetime,
-                       Status terminal_hint) noexcept {
-  auto &aggregate = *static_cast<detail::AggregateCompletionState *>(opaque);
-  {
-    std::lock_guard lock(aggregate.lock);
-    aggregate.terminal.Update(terminal_hint);
-    aggregate.outer_lifetime = lifetime;
-  }
-  // Every selected child was protected before any public poll/wait. An
-  // observation failure may already have handed its guard to the native
-  // reaper; a cached error cannot be used to decide whether to attach it now.
-  for (std::size_t index = 0; index < aggregate.completion_count; ++index) {
-    aggregate_terminal_completion(aggregate, index) = {};
-  }
-  release_aggregate_episode(&aggregate);
-}
-
-const compute::detail::CompletionVTable kAggregateCompletionVTable{
-    .destroy = &destroy_aggregate,
-    .poll = &poll_aggregate,
-    .wait = &wait_aggregate,
-    .request_cancel = &cancel_aggregate,
-};
-
-compute::Completion make_aggregate_completion(
-    detail::AggregateCompletionState &aggregate,
-    detail::InvocationState *invocation) noexcept {
-  // Keep a sentinel until the outer Completion hands off its lifetime.
-  aggregate.remaining.store(1, std::memory_order_relaxed);
-  {
-    std::lock_guard lock(aggregate.lock);
-    aggregate.terminal = Status::Ok();
-    aggregate.outer_lifetime = {};
-  }
-  for (std::size_t index = 0; index < aggregate.completion_count; ++index) {
-    auto &child = aggregate.children[index];
-    HYLE_FATAL_ASSERT(!child.retention.own.valid());
-    child.aggregate = &aggregate;
-    child.invocation = invocation;
-    child.retention.own = {&child, &aggregate_child_terminal, &aggregate_child_release};
-    detail::retain(invocation);
-    aggregate.remaining.fetch_add(1, std::memory_order_relaxed);
-    const auto attached = compute::detail::CompletionAccess::attach_retention(
-        aggregate_terminal_completion(aggregate, index), child.retention);
-    HYLE_FATAL_ASSERT(attached.ok());
-  }
-  return compute::detail::CompletionAccess::make(&kAggregateCompletionVTable,
-                                                 &aggregate);
 }
 
 std::uint64_t hash_word(std::uint64_t hash, std::uint64_t word) noexcept {
@@ -704,22 +540,6 @@ make_specialized_graph(const detail::GraphState &source,
   return detail::GraphAccess::adopt(state);
 }
 
-void mark_invocation_terminal(void *opaque, const Status &terminal) noexcept {
-  auto *state = static_cast<detail::InvocationState *>(opaque);
-  const bool succeeded = terminal.ok();
-  state->outputs_ready.store(succeeded, std::memory_order_release);
-  if (!state->plan->supports_concurrent_invocations) {
-    state->plan->exclusive_in_flight.store(false, std::memory_order_release);
-  }
-  state->phase.store(succeeded ? detail::InvocationPhase::kIdle
-                               : detail::InvocationPhase::kFailed,
-                     std::memory_order_release);
-}
-
-void release_invocation_lifetime(void *opaque) noexcept {
-  detail::release(static_cast<detail::InvocationState *>(opaque));
-}
-
 bool owns(const detail::PlanState &plan, ValueId value) noexcept {
   if (!value.valid() ||
       detail::GraphIdentity::generation(value) != plan.generation ||
@@ -895,28 +715,288 @@ ByteRange bound_range(const detail::InvocationState &invocation,
   return byte_range(invocation.readable[ordinal].storage());
 }
 
-Status validate_external_alias(const detail::InvocationState &invocation,
+ValueId external_alias_value(const detail::PlanState &plan,
+                            std::uint32_t entry) noexcept {
+  if (entry < plan.input_ids.size())
+    return plan.input_ids[entry];
+  return plan.output_ids[entry - plan.input_ids.size()];
+}
+
+Status create_external_alias_index(detail::InvocationState &invocation) noexcept {
+  const auto &plan = *invocation.plan;
+  const auto inputs = plan.input_ids.size(), outputs = plan.output_ids.size();
+  if (outputs > SIZE_MAX - inputs || inputs + outputs >= detail::kNoNode)
+    return invocation_allocation_failure();
+  const auto count = inputs + outputs;
+  if (count == 0)
+    return Status::Ok();
+  std::size_t buckets = 1;
+  while (buckets < count) {
+    if (buckets > SIZE_MAX / 2)
+      return invocation_allocation_failure();
+    buckets *= 2;
+  }
+  if (buckets > SIZE_MAX / 2 / sizeof(std::uint32_t) ||
+      count > SIZE_MAX / sizeof(detail::ExternalAliasEntry) ||
+      plan.instance_descriptions.size() > SIZE_MAX / sizeof(std::uint32_t))
+    return invocation_allocation_failure();
+  if (!invocation.external_alias_heads.try_resize(2 * buckets) ||
+      !invocation.external_alias_entries.try_resize(count) ||
+      !invocation.external_alias_instances.try_resize(
+          plan.instance_descriptions.size()))
+    return invocation_allocation_failure();
+  std::fill(invocation.external_alias_heads.begin(),
+            invocation.external_alias_heads.end(), detail::kNoNode);
+  std::fill(invocation.external_alias_instances.begin(),
+            invocation.external_alias_instances.end(), detail::kNoNode);
+  for (std::size_t index = count; index-- != 0;) {
+    const auto value = external_alias_value(plan, static_cast<std::uint32_t>(index));
+    const auto instance = plan.external_instances[value.ordinal()];
+    if (instance != detail::kNoWorkspaceRequest) {
+      auto &entry = invocation.external_alias_entries[index];
+      entry.same_instance_next = invocation.external_alias_instances[instance];
+      invocation.external_alias_instances[instance] = static_cast<std::uint32_t>(index);
+    }
+  }
+  return Status::Ok();
+}
+
+std::size_t external_alias_bucket(const detail::InvocationState &invocation,
+                                 ByteRange range, bool output) noexcept {
+  // Hash opaque identities without interpreting either as a host address.
+  const auto hash = container::Hash<std::pair<const mem::MemoryResource *, void *>>{}(
+      {&range.resource.resource(), range.handle});
+  const auto count = invocation.external_alias_heads.size() / 2;
+  return (static_cast<std::size_t>(hash) & (count - 1)) + (output ? count : 0);
+}
+
+void rebuild_external_alias_index(detail::InvocationState &invocation) noexcept {
+  std::fill(invocation.external_alias_heads.begin(),
+            invocation.external_alias_heads.end(), detail::kNoNode);
+  // Reverse insertion preserves the original per-list order in every bucket.
+  for (std::size_t index = invocation.external_alias_entries.size(); index-- != 0;) {
+    auto &entry = invocation.external_alias_entries[index];
+    entry.bucket = SIZE_MAX;
+    entry.next = entry.previous = detail::kNoNode;
+    const auto value = external_alias_value(*invocation.plan,
+                                           static_cast<std::uint32_t>(index));
+    const auto instance = invocation.plan->external_instances[value.ordinal()];
+    if (instance == detail::kNoWorkspaceRequest || !invocation.bound[instance])
+      continue;
+    const auto range = bound_range(invocation, value.ordinal());
+    if (range.size == 0)
+      continue; // Empty ranges cannot overlap, including opaque zero-byte views.
+    entry.bucket = external_alias_bucket(invocation, range,
+        index >= invocation.plan->input_ids.size());
+    auto &head = invocation.external_alias_heads[entry.bucket];
+    entry.next = head;
+    if (head != detail::kNoNode)
+      invocation.external_alias_entries[head].previous = static_cast<std::uint32_t>(index);
+    head = static_cast<std::uint32_t>(index);
+  }
+  invocation.external_alias_dirty = false;
+}
+
+void commit_external_alias_binding(detail::InvocationState &invocation,
+                                   std::size_t ordinal) noexcept {
+  if (invocation.external_alias_dirty) {
+    // A generated/projected external range changed since the previous bind.
+    // Rebuild once from committed bindings, never once per ordinary bind.
+    rebuild_external_alias_index(invocation);
+    return;
+  }
+  const auto instance = invocation.plan->external_instances[ordinal];
+  for (auto index = invocation.external_alias_instances[instance];
+       index != detail::kNoNode;
+       index = invocation.external_alias_entries[index].same_instance_next) {
+    auto &entry = invocation.external_alias_entries[index];
+    if (entry.bucket != SIZE_MAX) {
+      if (entry.previous == detail::kNoNode)
+        invocation.external_alias_heads[entry.bucket] = entry.next;
+      else
+        invocation.external_alias_entries[entry.previous].next = entry.next;
+      if (entry.next != detail::kNoNode)
+        invocation.external_alias_entries[entry.next].previous = entry.previous;
+    }
+    entry.bucket = SIZE_MAX;
+    entry.next = entry.previous = detail::kNoNode;
+    const auto value = external_alias_value(*invocation.plan, index);
+    const auto range = bound_range(invocation, value.ordinal());
+    if (range.size == 0)
+      continue;
+    entry.bucket = external_alias_bucket(invocation, range,
+        index >= invocation.plan->input_ids.size());
+    auto next = invocation.external_alias_heads[entry.bucket];
+    auto previous = detail::kNoNode;
+    while (next != detail::kNoNode && next < index) {
+      previous = next;
+      next = invocation.external_alias_entries[next].next;
+    }
+    entry.previous = previous;
+    entry.next = next;
+    if (previous == detail::kNoNode)
+      invocation.external_alias_heads[entry.bucket] = index;
+    else
+      invocation.external_alias_entries[previous].next = index;
+    if (next != detail::kNoNode)
+      invocation.external_alias_entries[next].previous = index;
+  }
+}
+
+void note_external_alias_projection(detail::InvocationState &invocation,
+                                    std::uint32_t instance,
+                                    compute::ConstTensorView tensor,
+                                    bool bound) noexcept {
+  // Membership comes from the actual logical input/output lists, including
+  // published generated and source-aliased outputs, not a role-bit shortcut.
+  if (!invocation.external_alias_instances.empty() &&
+      invocation.external_alias_instances[instance] != detail::kNoNode &&
+      (bool(invocation.bound[instance]) != bound ||
+       !equal_range(byte_range(invocation.readable[instance].storage()),
+                    byte_range(tensor.storage()))))
+    invocation.external_alias_dirty = true;
+}
+
+// The index contains positions in the existing immutable physical binding
+// arrays, not another payload/permission owner. Values below constant_ids.size()
+// are C entries; the remaining positions are P entries in prepared_values.
+ByteRange immutable_alias_range(const detail::PlanState &plan,
+                               std::size_t index) noexcept {
+  if (index < plan.constant_ids.size())
+    return byte_range(plan.constant_bindings[index].storage());
+  return byte_range(
+      plan.prepared_values[index - plan.constant_ids.size()].binding.storage());
+}
+
+// Opaque handles are only equality/order keys here, never interpreted as CPU
+// addresses. std::less supplies a total pointer order across allocations.
+bool allocation_less(ByteRange left, ByteRange right) noexcept {
+  const auto *a = &left.resource.resource();
+  const auto *b = &right.resource.resource();
+  if (a != b)
+    return std::less<const mem::MemoryResource *>{}(a, b);
+  return std::less<void *>{}(left.handle, right.handle);
+}
+
+Status build_immutable_alias_index(detail::PlanState &plan) noexcept {
+  auto &order = plan.immutable_alias_order;
+  order.clear();
+  const auto constants = plan.constant_ids.size();
+  if (plan.prepared_values.size() > SIZE_MAX - constants ||
+      !order.try_reserve(constants + plan.prepared_values.size()))
+    return plan_allocation_failure();
+  for (std::size_t index = 0; index < constants; ++index) {
+    // Match the old C loop's physical-instance eligibility. Its remaining
+    // same-value/bound/planned-alias checks still run at bind time below.
+    const auto instance =
+        plan.external_instances[plan.constant_ids[index].ordinal()];
+    if (instance != detail::kNoWorkspaceRequest &&
+        plan.constant_bindings[index].storage().size() != 0 &&
+        !order.try_push_back(index))
+      return plan_allocation_failure();
+  }
+  for (std::size_t index = 0; index < plan.prepared_values.size(); ++index)
+    if (plan.prepared_values[index].binding.storage().size() != 0 &&
+        !order.try_push_back(constants + index))
+      return plan_allocation_failure();
+  std::sort(order.begin(), order.end(), [&](std::size_t left, std::size_t right) {
+    const auto a = immutable_alias_range(plan, left);
+    const auto b = immutable_alias_range(plan, right);
+    if (allocation_less(a, b)) return true;
+    if (allocation_less(b, a)) return false;
+    // Preserve the original C-before-P and per-array order in each group.
+    return left < right;
+  });
+  return Status::Ok();
+}
+
+Status build_external_input_topology(detail::PlanState &plan) noexcept {
+  auto &aliases = plan.external_input_aliases;
+  auto &consumers = plan.external_input_consumers;
+  for (std::size_t instance = 0; instance < plan.alias_sources.size(); ++instance) {
+    const auto parent = plan.alias_sources[instance];
+    if (parent == detail::kNoInPlaceSource || parent == instance)
+      continue;
+    const auto value = plan.instance_values[parent];
+    // Every descendant chain contains a direct child of its physical root.
+    if ((plan.binding_roles[value] & detail::kExternalInput) != 0 &&
+        plan.external_instances[value] == parent &&
+        !aliases.try_push_back(value))
+      return plan_allocation_failure();
+  }
+  if (!aliases.empty()) {
+    std::sort(aliases.begin(), aliases.end());
+    aliases.erase(std::unique(aliases.begin(), aliases.end()), aliases.end());
+  }
+  for (std::size_t index = 0; index < plan.steps.size(); ++index) {
+    const auto &step = plan.steps[index];
+    for (std::uint32_t port = 0; port < step.input_count; ++port) {
+      const auto instance = plan.node_inputs[step.input_begin + port];
+      const auto value = plan.instance_values[instance];
+      // Include other-storage replicas and copies as well as the external
+      // root. A projected binding must still reject any unqualified reader.
+      if ((plan.binding_roles[value] & detail::kExternalInput) != 0 &&
+          !consumers.try_push_back(detail::ExternalInputConsumer{
+              value, instance, static_cast<std::uint32_t>(index), port}))
+        return plan_allocation_failure();
+    }
+  }
+  if (!consumers.empty())
+    std::sort(consumers.begin(), consumers.end(),
+              [](const auto &left, const auto &right) noexcept {
+                if (left.value != right.value) return left.value < right.value;
+                if (left.step != right.step) return left.step < right.step;
+                return left.port < right.port;
+              });
+  return Status::Ok();
+}
+
+Status validate_external_alias(detail::InvocationState &invocation,
                                std::size_t ordinal,
-                               ByteRange candidate) noexcept {
+                               ByteRange candidate,
+                               std::span<const detail::InputSourceBinding> incoming = {}) noexcept {
   const detail::PlanState &plan = *invocation.plan;
-  HYLE_RETURN_IF_ERROR(validate_effect_tensor_alias(plan, candidate));
+  if (invocation.external_alias_dirty)
+    rebuild_external_alias_index(invocation);
   const bool candidate_is_output =
       (plan.binding_roles[ordinal] & detail::kExternalOutput) != 0;
+  const auto instance = plan.external_instances[ordinal];
+  // Every later binding is checked against the already-bound outputs. An
+  // unchanged output range therefore remains valid, even after input rebinds;
+  // do not rescan all model constants on each repeated output bind. This does
+  // not skip ordinary binding/replay invalidation or native input validation.
+  if (incoming.empty() && candidate_is_output && instance != detail::kNoWorkspaceRequest &&
+      invocation.bound[instance] && invocation.writable[instance].valid() &&
+      equal_range(candidate, bound_range(invocation, ordinal)))
+    return Status::Ok();
+  HYLE_RETURN_IF_ERROR(validate_effect_tensor_alias(plan, candidate));
 
   auto check = [&](ValueId other_value) noexcept -> Status {
     const std::size_t other = other_value.ordinal();
     const std::uint32_t other_instance = plan.external_instances[other];
+    const auto replacement = std::find_if(incoming.begin(), incoming.end(),
+        [&](const auto &item) { return item.value == other_value; });
     if (other == ordinal || other_instance == detail::kNoWorkspaceRequest ||
-        invocation.bound[other_instance] == 0) {
+        (replacement == incoming.end() && invocation.bound[other_instance] == 0)) {
       return Status::Ok();
     }
     const bool other_is_output =
         (plan.binding_roles[other] & detail::kExternalOutput) != 0;
     if (!candidate_is_output && !other_is_output)
       return Status::Ok();
-    const ByteRange existing = bound_range(invocation, other);
+    const ByteRange existing = replacement == incoming.end()
+        ? bound_range(invocation, other) : byte_range(replacement->tensor.storage());
     if (!overlaps(candidate, existing))
       return Status::Ok();
+    const auto immutable_input = [&](std::size_t value) noexcept {
+      for (const auto input : plan.input_ids)
+        if (input.ordinal() == value)
+          return detail::has_input_source(invocation, input);
+      return false;
+    };
+    if ((!candidate_is_output && immutable_input(ordinal)) ||
+        (!other_is_output && immutable_input(other)))
+      return Status::InvalidArgument("graph output overlaps an immutable retained input");
     HYLE_ASSIGN_OR_RETURN(
         const auto planned,
         matches_planned_alias(invocation, ordinal, candidate, other, existing));
@@ -927,47 +1007,463 @@ Status validate_external_alias(const detail::InvocationState &invocation,
         "external graph tensor bindings overlap unsafely");
   };
 
+  auto check_dynamic = [&](bool output) noexcept -> Status {
+    if (candidate.size == 0 || invocation.external_alias_heads.empty())
+      return Status::Ok();
+    const auto bucket = external_alias_bucket(invocation, candidate, output);
+    for (auto index = invocation.external_alias_heads[bucket];
+         index != detail::kNoNode;
+         index = invocation.external_alias_entries[index].next) {
+      const auto value = external_alias_value(plan, index);
+      // Hash collisions only widen candidate enumeration. The original exact
+      // allocation/range test and all permission/planned-alias gates remain.
+      if (same_allocation(candidate, bound_range(invocation, value.ordinal())))
+        HYLE_RETURN_IF_ERROR(check(value));
+    }
+    return Status::Ok();
+  };
+
   if (candidate_is_output) {
-    for (ValueId input : plan.input_ids) {
-      Status status = check(input);
-      if (!status.ok())
-        return status;
-    }
-    for (ValueId constant : plan.constant_ids) {
-      Status status = check(constant);
-      if (!status.ok())
-        return status;
+    HYLE_RETURN_IF_ERROR(check_dynamic(false));
+    // Immutable allocations keep their separate compiled index. Dynamic
+    // candidates above/below still use the original binding permission gates.
+    const auto &order = plan.immutable_alias_order;
+    auto current = std::lower_bound(order.begin(), order.end(), candidate,
+        [&](std::size_t index, ByteRange range) {
+          return allocation_less(immutable_alias_range(plan, index), range);
+        });
+    for (; current != order.end(); ++current) {
+      const auto immutable = immutable_alias_range(plan, *current);
+      if (!same_allocation(candidate, immutable))
+        break;
+      if (*current < plan.constant_ids.size()) {
+        // Keep all old C semantics, including same-value/unbound skips and
+        // matches_planned_alias; a constant is not unconditionally disjoint.
+        HYLE_RETURN_IF_ERROR(check(plan.constant_ids[*current]));
+      } else if (overlaps(candidate, immutable)) {
+        return Status::InvalidArgument(
+            "external graph output overlaps an immutable prepared value");
+      }
     }
   }
-  for (ValueId output : plan.output_ids) {
-    Status status = check(output);
-    if (!status.ok())
-      return status;
-  }
+  HYLE_RETURN_IF_ERROR(check_dynamic(true));
+  // The old allocation index cannot enumerate a newly moved input range.
+  // Scan only this bounded cold bundle using the same permission/alias gate.
+  for (const auto &item : incoming) HYLE_RETURN_IF_ERROR(check(item.value));
   return Status::Ok();
 }
 
-void invalidate_binding_cache(detail::InvocationState &invocation) noexcept {
-  invocation.bindings_prepared = false;
-  invocation.transfers_prepared = false;
-  invocation.dependencies_prepared = false;
-  invocation.outputs_ready.store(false, std::memory_order_release);
-  if (invocation.replay_route == ReplayRoute::kCaptured ||
-      invocation.replay_route == ReplayRoute::kHybrid) {
-    for (compute::detail::CapturedCommands &captured :
-         invocation.captured_segments) {
-      captured.reset();
-    }
-  }
+struct PreparationScope final {
+  detail::InvocationState &state;
+  ~PreparationScope() { detail::release_preparation(state); }
+};
+
+void reset_capture_cache(detail::InvocationState &invocation) noexcept {
+  invocation.captured_ranges.clear();
+  invocation.capture_rebuilds.clear();
+  for (auto &span : invocation.capture_spans)
+    span = {};
   invocation.replay_prepared = false;
   invocation.replay_route = ReplayRoute::kUnprepared;
   invocation.replay_report = {};
 }
 
+void invalidate_binding_cache(detail::InvocationState &invocation,
+                              bool physical_change = true) noexcept {
+  if (physical_change)
+    detail::discard_configuration_spans(invocation);
+  invocation.bindings_prepared = false;
+  invocation.transfers_prepared = false;
+  invocation.dependencies_prepared = false;
+  invocation.outputs_ready.store(false, std::memory_order_release);
+  // Retained commands are dormant until a complete cold preparation proves
+  // their current arguments. Permission/source owners never live in this cache.
+  invocation.replay_prepared = false;
+  invocation.replay_route = ReplayRoute::kUnprepared;
+  invocation.replay_report = {};
+}
+
+void invalidate_unproven_bindings(detail::InvocationState &invocation) noexcept {
+  // An opaque token can change carriers when its owner is withdrawn. Destroy
+  // unqualified recordings first, without scanning every step on every bind.
+  for (std::size_t index = 0; index < invocation.captured_ranges.size();) {
+    const auto &range = invocation.captured_ranges[index];
+    if (range.commands.tensor_bindings_have_stable_identity()) {
+      ++index;
+      continue;
+    }
+    const std::size_t begin = range.step_begin;
+    const std::size_t end = begin + range.step_count;
+    for (std::size_t step = begin; step < end; ++step)
+      if (invocation.plan->steps[step].emits_command())
+        detail::invalidate_step_recording(invocation,
+                                          static_cast<std::uint32_t>(step));
+  }
+}
+
+template <class Tensor>
+bool same_physical_tensor(const Tensor &left, const Tensor &right) noexcept {
+  if (left.valid() != right.valid() ||
+      left.description() != right.description())
+    return false;
+  const auto a = left.storage(), b = right.storage();
+  return a.resource() == b.resource() &&
+         a.native_handle() == b.native_handle() &&
+         a.offset() == b.offset() && a.size() == b.size();
+}
+
+detail::CaptureRebuildRange *capture_storage(detail::InvocationState &invocation,
+                                             std::uint32_t begin,
+                                             std::uint32_t count) noexcept {
+  for (auto &saved : invocation.capture_rebuilds)
+    if (saved.step_begin == begin && saved.step_count == count)
+      return &saved;
+  return nullptr;
+}
+
+void discard_capture_variants(detail::CaptureRebuildRange &saved) noexcept {
+  for (auto &variant : saved.variants) {
+    variant.commands.reset();
+    variant.bindings.clear();
+    variant.key_valid = false;
+  }
+  saved.active_variant = 2;
+  saved.qualification_valid = false;
+  saved.preserves_private_arguments = false;
+}
+
+Status qualify_capture_variants(detail::InvocationState &invocation,
+                                detail::CaptureRebuildRange &saved) noexcept {
+  if (saved.qualification_valid)
+    return Status::Ok();
+  bool preserves = true;
+  std::size_t ports = 0;
+  for (std::size_t index = saved.step_begin;
+       index < std::size_t{saved.step_begin} + saved.step_count; ++index) {
+    const auto &step = invocation.plan->steps[index];
+    if (!step.emits_command())
+      continue;
+    if (invocation.step_bindings[index].native_inputs) {
+      preserves = false;
+      break;
+    }
+    if (step.region.valid()) {
+      preserves = detail::RegionAccess::preserves_capture_bindings(
+          invocation.invocations[index].region);
+    } else if (step.kind == detail::PlanStepKind::kOperation) {
+      auto inspected = compute::detail::OperationPreparationAccess::preserves_capture_bindings(
+          invocation.invocations[index].operation);
+      if (!inspected)
+        return std::move(inspected).error();
+      preserves = *inspected;
+    } else {
+      preserves = false;
+    }
+    if (!preserves)
+      break;
+    if (ports > SIZE_MAX - step.input_count ||
+        ports + step.input_count > SIZE_MAX - step.output_count)
+      return Status::ResourceExhausted("graph capture binding key is too large");
+    ports += std::size_t{step.input_count} + step.output_count;
+  }
+  if (preserves)
+    for (auto &variant : saved.variants)
+      if (!variant.bindings.try_reserve(ports))
+        return Status::ResourceExhausted("graph capture binding key allocation failed");
+  saved.preserves_private_arguments = preserves;
+  saved.qualification_valid = true;
+  return Status::Ok();
+}
+
+bool capture_key_matches(const detail::InvocationState &invocation,
+                         const detail::CaptureRebuildRange &saved,
+                         const detail::CaptureBindingVariant &variant) noexcept {
+  if (!variant.key_valid)
+    return false;
+  std::size_t port = 0;
+  for (std::size_t index = saved.step_begin;
+       index < std::size_t{saved.step_begin} + saved.step_count; ++index) {
+    const auto &step = invocation.plan->steps[index];
+    if (!step.emits_command())
+      continue;
+    for (std::size_t input = 0; input < step.input_count; ++input)
+      if (port == variant.bindings.size() ||
+          !same_physical_tensor(variant.bindings[port++],
+              invocation.submission_inputs[step.input_begin + input]))
+        return false;
+    for (std::size_t output = 0; output < step.output_count; ++output)
+      if (port == variant.bindings.size() ||
+          !same_physical_tensor(variant.bindings[port++],
+              invocation.submission_outputs[step.output_begin + output].as_const()))
+        return false;
+  }
+  return port == variant.bindings.size();
+}
+
+void remember_capture_key(const detail::InvocationState &invocation,
+                          detail::CaptureRebuildRange &saved,
+                          std::uint8_t selected) noexcept {
+  auto &variant = saved.variants[selected];
+  variant.bindings.clear();
+  for (std::size_t index = saved.step_begin;
+       index < std::size_t{saved.step_begin} + saved.step_count; ++index) {
+    const auto &step = invocation.plan->steps[index];
+    if (!step.emits_command())
+      continue;
+    for (std::size_t input = 0; input < step.input_count; ++input) {
+      const bool appended = variant.bindings.try_push_back(
+          invocation.submission_inputs[step.input_begin + input]);
+      HYLE_FATAL_ASSERT(appended);
+    }
+    for (std::size_t output = 0; output < step.output_count; ++output) {
+      const bool appended = variant.bindings.try_push_back(
+          invocation.submission_outputs[step.output_begin + output].as_const());
+      HYLE_FATAL_ASSERT(appended);
+    }
+  }
+  variant.key_valid = true;
+  saved.active_variant = selected;
+  saved.last_used = selected;
+}
+
+void append_capture_range(detail::InvocationState &invocation,
+                           std::uint32_t begin, std::uint32_t count,
+                           compute::detail::CapturedCommands commands) noexcept {
+  const bool appended = invocation.captured_ranges.try_push_back(
+      detail::CapturedStepRange{begin, count, std::move(commands)});
+  HYLE_FATAL_ASSERT(appended);
+  for (std::size_t index = invocation.captured_ranges.size() - 1;
+       index != 0 && invocation.captured_ranges[index - 1].step_begin >
+                         invocation.captured_ranges[index].step_begin; --index)
+    std::swap(invocation.captured_ranges[index - 1], invocation.captured_ranges[index]);
+}
+
+void rebuild_capture_spans(detail::InvocationState &invocation) noexcept {
+  std::size_t index = 0;
+  for (std::size_t segment_index = 0;
+       segment_index < invocation.plan->segments.size(); ++segment_index) {
+    auto &span = invocation.capture_spans[segment_index];
+    span.begin = index;
+    const auto &segment = invocation.plan->segments[segment_index];
+    const auto end = segment.step_begin + segment.step_count;
+    while (index < invocation.captured_ranges.size() &&
+           invocation.captured_ranges[index].step_begin < end)
+      ++index;
+    span.count = index - span.begin;
+  }
+}
+
+std::uint32_t alias_root(const detail::PlanState &plan,
+                         std::uint32_t value) noexcept;
+
+Status validate_known_binding_alignment(const detail::InvocationState &invocation,
+    std::uint32_t instance, mem::ConstBufferView view) noexcept {
+  if (!view.valid() || view.empty())
+    return Status::Ok();
+  const auto &plan = *invocation.plan;
+  const auto needed = plan.instance_alignments[instance];
+  if (needed <= 1)
+    return Status::Ok();
+  auto base = view.resource().properties().minimum_alignment;
+  if (base < needed) {
+    const auto root = alias_root(plan, instance);
+    if (plan.workspace_requests[root] != detail::kNoWorkspaceRequest) {
+      // The LifetimePlan allocated this backing at the root's propagated
+      // alignment. This is a real allocation contract, not a handle cast.
+      base = (std::max)(base, plan.instance_alignments[root]);
+    } else if ((plan.instance_roles[root] & detail::kConstant) != 0) {
+      const auto *owner = plan.owned_instance_constant(root);
+      if (owner && owner->resource() == view.resource() && owner->native_handle() == view.native_handle())
+        base = (std::max)(base, owner->alignment());
+    }
+  }
+  // Unknown opaque caller alignment stays the typed provider's contract.
+  // Reject only an actual offset proven invalid by a known base guarantee.
+  if (base >= needed && base % needed == 0 && view.offset() % needed != 0)
+    return Status::InvalidArgument("graph binding offset does not satisfy provider port alignment");
+  return Status::Ok();
+}
+
+Status project_generated_output(detail::InvocationState &invocation,
+    std::size_t step_index, std::size_t port) noexcept {
+  const auto &plan = *invocation.plan;
+  const auto &step = plan.steps[step_index];
+  const auto instance = plan.node_outputs[step.output_begin + port];
+  const auto contract = step.region.output_contract(port);
+  if (contract.kind == RegionOutputKind::kDeferredGenerated) {
+    RegionValue value;
+    value.description = physical_description(invocation, instance);
+    value.reference = invocation.invocations[step_index].region.output_reference(port);
+    invocation.native_values[instance] = value;
+    note_external_alias_projection(invocation, instance, {}, true);
+    invocation.readable[instance] = {};
+    invocation.bound[instance] = 1;
+    return Status::Ok();
+  }
+  HYLE_ASSIGN_OR_RETURN(auto value,
+      invocation.invocations[step_index].region.output_value(port));
+  if (value.description != physical_description(invocation, instance) ||
+      value.reference.valid() ||
+      (bool(value.native_type) != bool(value.native_handle)) ||
+      (contract.projection == RegionOutputProjection::kTensorView && !value.tensor.valid()) ||
+      (!value.tensor.valid() && value.native_handle == nullptr))
+    return Status::Internal("generated region output has an invalid physical representation");
+  if (value.tensor.valid()) {
+    const auto &source = plan.targets[step.target.ordinal()].source;
+    const auto nominated = plan.storage_domains[plan.instance_storage[instance]].resource;
+    if (value.tensor.description() != value.description ||
+        !detail::ExecutionSourceAccess::matches_read_resource(source, nominated,
+            value.tensor.storage().resource()))
+      return Status::Internal("generated region output does not match its admitted storage");
+    HYLE_RETURN_IF_ERROR(source.validate_resource(value.tensor.storage().resource()));
+    HYLE_RETURN_IF_ERROR(validate_known_binding_alignment(invocation, instance, value.tensor.storage()));
+  }
+  invocation.native_values[instance] = value;
+  note_external_alias_projection(invocation, instance, value.tensor, true);
+  invocation.readable[instance] = value.tensor;
+  invocation.bound[instance] = 1;
+  return Status::Ok();
+}
+
+Status seal_invocation_bindings(detail::InvocationState &invocation) noexcept {
+  // Seals also validate managed slots whose ports are ordinary TensorViews.
+  // Stable addresses cannot preserve a previous episode's preparation fact.
+  for (const auto index : invocation.plan->seal_binding_steps) {
+    const auto status = invocation.invocations[index].region.seal_bindings();
+    if (!status.ok()) {
+      invalidate_binding_cache(invocation);
+      return status;
+    }
+  }
+  return Status::Ok();
+}
+
+Status prepare_command_bindings(detail::InvocationState &invocation,
+    std::size_t step_index,
+    std::optional<std::span<const std::uint32_t>> &lease_candidates) noexcept {
+  const auto &plan = *invocation.plan;
+  const auto &step = plan.steps[step_index];
+  auto &cached = invocation.step_bindings[step_index];
+  // Without a positive actual-backend identity proof, every new binding
+  // episode re-runs the cold hook even if no old graph exists (Commands or
+  // failed capture) and the opaque raw tuple compares equal.
+  bool changed = !cached.stable_binding_identity ||
+                 cached.prepared_revision != cached.revision;
+  // Native references and owned imports can replace private carriers without
+  // changing a raw address. Only ordinary caller TensorView arguments are
+  // eligible for equality-based cold binding reuse.
+  bool native_inputs = false;
+  const bool borrowed_tensor_carrier = step.region.valid() &&
+      detail::RegionAccess::borrows_tensor_views_only(step.region);
+  for (std::size_t index = 0; index < step.input_count; ++index) {
+    const auto instance = plan.node_inputs[step.input_begin + index];
+    const compute::ConstTensorView &binding =
+        invocation.readable[instance];
+    const bool native = step.region.valid() && step.region.prepares_bindings();
+    if (!binding.valid() && !(native &&
+        !invocation.native_values.empty() &&
+        (invocation.native_values[instance].native_handle != nullptr ||
+         invocation.native_values[instance].reference.valid()))) {
+      return Status::Internal(
+          "materializing graph step has no readable input storage");
+    }
+    if (binding.valid())
+      HYLE_RETURN_IF_ERROR(validate_known_binding_alignment(invocation, instance, binding.storage()));
+    auto &submitted = invocation.submission_inputs[step.input_begin + index];
+    const bool port_changed = !same_physical_tensor(submitted, binding);
+    changed |= port_changed;
+    if (port_changed)
+      submitted = binding;
+    if (native) {
+      auto value = invocation.native_values[instance];
+      value.description = physical_description(invocation, instance);
+      value.tensor = binding;
+      // This exact artifact consumes TensorViews only. Its unused lease field
+      // must not search every current page guard for each native input; the
+      // resource episode still admits all actual permissions at submission.
+      value.lease = nullptr;
+      if (!borrowed_tensor_carrier) {
+        // TensorView-only artifacts never use this table. Build it once, at
+        // the first actual native lease lookup, while the same preparation
+        // guard still excludes mutation of the resource binding table.
+        if (!lease_candidates) {
+          HYLE_ASSIGN_OR_RETURN(auto candidates,
+                                detail::collect_input_lease_candidates(invocation));
+          lease_candidates = candidates;
+        }
+        value.lease = detail::input_lease(invocation, binding, *lease_candidates);
+      }
+      native_inputs |= !borrowed_tensor_carrier &&
+          (bool(value.native_type) || value.native_handle != nullptr || value.reference.valid() ||
+           (value.lease != nullptr && value.lease->valid()));
+      invocation.native_inputs[index] = value;
+    }
+  }
+  for (std::size_t index = 0; index < step.output_count; ++index) {
+    const compute::TensorView &binding =
+        invocation.writable[plan.node_outputs[step.output_begin + index]];
+    if (!binding.valid() &&
+        (plan.instance_roles[plan.node_outputs[step.output_begin + index]] &
+            detail::kGeneratedOutput) == 0) {
+      return Status::Internal(
+          "materializing graph step has no writable output storage");
+    }
+    if (binding.valid())
+      HYLE_RETURN_IF_ERROR(validate_known_binding_alignment(invocation,
+          plan.node_outputs[step.output_begin + index], binding.storage()));
+    auto &submitted = invocation.submission_outputs[step.output_begin + index];
+    const bool port_changed = !same_physical_tensor(submitted, binding);
+    changed |= port_changed;
+    if (step.region.valid())
+      native_inputs |= step.region.output_kind(index) != RegionOutputKind::kCaller;
+    if (port_changed)
+      submitted = binding;
+  }
+  changed |= native_inputs || cached.native_inputs;
+  if (changed) {
+    if (cached.stable_binding_identity && !native_inputs && !cached.native_inputs &&
+        cached.prepared_revision == cached.revision)
+      detail::recycle_step_recording(invocation, static_cast<std::uint32_t>(step_index));
+    else
+      detail::invalidate_step_recording(invocation, static_cast<std::uint32_t>(step_index));
+  }
+  cached.native_inputs = native_inputs;
+  if (step.region.valid() && step.region.prepares_bindings()) {
+    if (changed)
+      HYLE_RETURN_IF_ERROR(invocation.invocations[step_index].region.prepare_bindings(
+          std::span<const RegionValue>(invocation.native_inputs).first(step.input_count),
+          std::span<const compute::TensorView>(invocation.submission_outputs)
+              .subspan(step.output_begin, step.output_count)));
+    for (std::size_t port = 0; port < step.output_count; ++port) {
+      const auto kind = step.region.output_kind(port);
+      if (kind != RegionOutputKind::kCaller)
+        HYLE_RETURN_IF_ERROR(project_generated_output(invocation, step_index, port));
+    }
+  } else if (changed && step.kind == detail::PlanStepKind::kOperation) {
+    HYLE_RETURN_IF_ERROR(compute::detail::OperationInvocationAccess::prepare_bindings(
+        invocation.invocations[step_index].operation,
+        std::span<const compute::ConstTensorView>(invocation.submission_inputs)
+            .subspan(step.input_begin, step.input_count),
+        std::span<const compute::TensorView>(invocation.submission_outputs)
+            .subspan(step.output_begin, step.output_count)));
+  }
+  cached.prepared_revision = cached.revision;
+  return Status::Ok();
+}
+
 Status
 prepare_invocation_bindings(detail::InvocationState &invocation) noexcept {
-  if (invocation.bindings_prepared)
-    return Status::Ok();
+  if (invocation.bindings_prepared) {
+    // Native backing owners may escape without changing any address. Reuse
+    // still checks the selected slot's original guard; no native rebind or
+    // new reference baseline is needed for unchanged physical bindings.
+    return seal_invocation_bindings(invocation);
+  }
+  // Any failed preparation abandons the optional physical shortcut; retrying
+  // still has the original complete path and current permission checks.
+  util::ScopeGuard discard_configuration_spans{[&]() noexcept {
+    detail::discard_configuration_spans(invocation);
+  }};
   const detail::PlanState &plan = *invocation.plan;
   for (ValueId value : plan.input_ids) {
     const std::uint32_t instance = plan.external_instances[value.ordinal()];
@@ -988,13 +1484,34 @@ prepare_invocation_bindings(detail::InvocationState &invocation) noexcept {
     }
   }
 
+  std::optional<std::span<const std::uint32_t>> lease_candidates;
+  util::ScopeGuard clear_lease_candidates{[&]() noexcept {
+    detail::clear_input_lease_candidates(invocation);
+  }};
+
+  // A configuration-only reset may preserve physical TensorView spans, never
+  // the new episode's readiness or permissions. Unproven steps still run their
+  // original cold hook; only actual stable binding proofs skip those hooks.
+  const bool reuse_spans = detail::reusable_configuration_spans(invocation);
+  if (reuse_spans) {
+    for (std::size_t index = 0; index < plan.steps.size(); ++index) {
+      if (!plan.steps[index].emits_command()) continue;
+      const auto &cached = invocation.step_bindings[index];
+      if (!cached.stable_binding_identity || cached.prepared_revision != cached.revision)
+        HYLE_RETURN_IF_ERROR(prepare_command_bindings(invocation, index, lease_candidates));
+    }
+    HYLE_RETURN_IF_ERROR(seal_invocation_bindings(invocation));
+    invocation.bindings_prepared = true;
+    return Status::Ok();
+  }
+
   // Resolve aliases and construct stable spans before any Queue accepts work.
   // Cache them until a binding changes so steady replay does not rebuild all
   // per-step views or rescan external values.
   for (std::size_t step_index = 0; step_index < plan.steps.size();
        ++step_index) {
     const detail::PlanStep &step = plan.steps[step_index];
-    if (!step.emits_command()) {
+    if (step.kind == detail::PlanStepKind::kView) {
       for (std::size_t output_index = 0; output_index < step.output_count;
            ++output_index) {
         const std::uint32_t output =
@@ -1005,7 +1522,15 @@ prepare_invocation_bindings(detail::InvocationState &invocation) noexcept {
           return Status::Internal(
               "non-materializing graph output has no readable source");
         }
-        auto bytes = physical_description(invocation, output).required_bytes();
+        const auto &description = physical_description(invocation, output);
+        const auto &previous_projection = invocation.readable[output];
+        // TensorView factories clip storage to the descriptor's exact extent.
+        // Reuse only that immutable metadata, never a lease or readiness fact.
+        const bool same_description = previous_projection.valid() &&
+            previous_projection.description() == description;
+        auto bytes = same_description
+            ? Result<std::size_t>{previous_projection.storage().size()}
+            : description.required_bytes();
         if (!bytes)
           return std::move(bytes).error();
         HYLE_ASSIGN_OR_RETURN(const auto offset,
@@ -1014,13 +1539,23 @@ prepare_invocation_bindings(detail::InvocationState &invocation) noexcept {
             invocation.readable[source].storage().subview(offset, *bytes);
         if (!storage)
           return std::move(storage).error();
-        auto derived = compute::ConstTensorView::create(
-            physical_description(invocation, output), *storage);
+        const auto previous_storage = previous_projection.storage();
+        const bool same_projection = same_description &&
+            previous_storage.resource() == storage->resource() &&
+            previous_storage.native_handle() == storage->native_handle() &&
+            previous_storage.offset() == storage->offset() &&
+            previous_storage.size() == storage->size();
+        auto derived = same_projection
+            ? Result<compute::ConstTensorView>{previous_projection}
+            : compute::ConstTensorView::create(description, *storage);
         if (!derived)
           return std::move(derived).error();
+        HYLE_RETURN_IF_ERROR(validate_known_binding_alignment(invocation, output, derived->storage()));
         const std::uint32_t logical_output = plan.instance_values[output];
         if ((plan.binding_roles[logical_output] &
              detail::kSourceAliasedOutput) != 0) {
+          note_external_alias_projection(invocation, output, *derived,
+                                          invocation.bound[output] != 0);
           invocation.readable[output] = *derived;
         } else if ((plan.instance_roles[output] & detail::kExternalOutput) !=
                    0) {
@@ -1030,30 +1565,21 @@ prepare_invocation_bindings(detail::InvocationState &invocation) noexcept {
                 "published graph view does not bind its inferred storage");
           }
         } else {
+          note_external_alias_projection(invocation, output, *derived,
+                                          invocation.bound[output] != 0);
           invocation.readable[output] = *derived;
         }
       }
       continue;
     }
-    for (std::size_t index = 0; index < step.input_count; ++index) {
-      const compute::ConstTensorView binding =
-          invocation.readable[plan.node_inputs[step.input_begin + index]];
-      if (!binding.valid()) {
-        return Status::Internal(
-            "materializing graph step has no readable input storage");
-      }
-      invocation.submission_inputs[step.input_begin + index] = binding;
-    }
-    for (std::size_t index = 0; index < step.output_count; ++index) {
-      const compute::TensorView binding =
-          invocation.writable[plan.node_outputs[step.output_begin + index]];
-      if (!binding.valid()) {
-        return Status::Internal(
-            "materializing graph step has no writable output storage");
-      }
-      invocation.submission_outputs[step.output_begin + index] = binding;
-    }
+    // Ready-only regions retain their logical/control position, while all
+    // physical outputs were bound from owned artifacts during compilation.
+    // They have neither View aliases to resolve nor a provider invocation.
+    if (!step.emits_command())
+      continue;
+    HYLE_RETURN_IF_ERROR(prepare_command_bindings(invocation, step_index, lease_candidates));
   }
+  HYLE_RETURN_IF_ERROR(seal_invocation_bindings(invocation));
   invocation.bindings_prepared = true;
   return Status::Ok();
 }
@@ -1067,44 +1593,6 @@ compute::Queue *candidate_queue(std::span<const QueueBinding> queues,
   return nullptr;
 }
 
-bool shared_lane(const detail::PlanState &plan, ExecutionLaneId lane) noexcept {
-  return lane.valid() && lane.ordinal() < plan.lanes.size() &&
-         plan.lanes[lane.ordinal()].runtime_mode ==
-             compute::ProviderRuntimeMode::kSharedQueue;
-}
-
-Result<std::size_t>
-delegated_step_index(const detail::PlanState &plan,
-                     const detail::PlanSegment &segment) noexcept {
-  if (!segment.lane.valid() || segment.lane.ordinal() >= plan.lanes.size() ||
-      plan.lanes[segment.lane.ordinal()].runtime_mode !=
-          compute::ProviderRuntimeMode::kDelegated) {
-    return std::unexpected(
-        Status::Internal("graph delegated segment has an invalid lane"));
-  }
-  std::size_t selected = SIZE_MAX;
-  const std::size_t end = segment.step_begin + segment.step_count;
-  for (std::size_t step_index = segment.step_begin; step_index < end;
-       ++step_index) {
-    const detail::PlanStep &step = plan.steps[step_index];
-    if (!step.emits_command())
-      continue;
-    if (step.lane != segment.lane ||
-        step.runtime_properties().mode !=
-            compute::ProviderRuntimeMode::kDelegated ||
-        selected != SIZE_MAX) {
-      return std::unexpected(Status::Internal(
-          "graph delegated segment does not own exactly one command"));
-    }
-    selected = step_index;
-  }
-  if (selected == SIZE_MAX) {
-    return std::unexpected(
-        Status::Internal("graph delegated segment has no command"));
-  }
-  return selected;
-}
-
 bool delegated_can_import_endpoint(
     detail::InvocationState &invocation, const detail::PlanSegment &segment,
     compute::detail::CompletionEndpoint source) noexcept {
@@ -1112,7 +1600,7 @@ bool delegated_can_import_endpoint(
   if (!selected)
     return false;
   const detail::PlanStep &step = invocation.plan->steps[*selected];
-  if (step.kind == detail::PlanStepKind::kRegion) {
+  if (step.region.valid()) {
     return invocation.invocations[*selected].region.can_import_endpoint(source);
   }
   if (step.kind == detail::PlanStepKind::kOperation) {
@@ -1122,44 +1610,22 @@ bool delegated_can_import_endpoint(
   return false;
 }
 
-Result<compute::Completion>
-submit_delegated_segment(detail::InvocationState &invocation,
-                         const detail::PlanSegment &segment,
-                         std::span<const compute::detail::CompletionDependency>
-                             dependencies) noexcept {
-  auto selected = delegated_step_index(*invocation.plan, segment);
-  if (!selected)
-    return std::unexpected(std::move(selected).error());
-  const detail::PlanStep &step = invocation.plan->steps[*selected];
-  const auto all_inputs = std::span<const compute::ConstTensorView>(
-      invocation.submission_inputs.data(), invocation.submission_inputs.size());
-  const auto all_outputs = std::span<const compute::TensorView>(
-      invocation.submission_outputs.data(),
-      invocation.submission_outputs.size());
-  const auto inputs = all_inputs.subspan(step.input_begin, step.input_count);
-  const auto outputs =
-      all_outputs.subspan(step.output_begin, step.output_count);
-  if (step.kind == detail::PlanStepKind::kRegion) {
-    return invocation.invocations[*selected].region.submit_delegated(
-        dependencies, inputs, outputs);
-  }
-  if (step.kind == detail::PlanStepKind::kOperation) {
-    return compute::detail::OperationInvocationAccess::
-        submit_delegated_borrowed_prevalidated(
-            invocation.invocations[*selected].operation, dependencies, inputs,
-            outputs);
-  }
-  return std::unexpected(
-      Status::Internal("graph delegated step kind is invalid"));
-}
-
 Status validate_transfer_routes(detail::InvocationState &invocation,
                                 std::span<const QueueBinding> queues,
                                 ReplayReport &report) noexcept {
   const detail::PlanState &plan = *invocation.plan;
-  for (const detail::PlanStep &step : plan.steps) {
-    if (step.kind != detail::PlanStepKind::kCopy)
+  for (std::size_t index = 0; index < plan.segments.size(); ++index) {
+    invocation.candidate_segment_blocks_host[index] =
+        plan.segments[index].blocks_host;
+  }
+  for (const auto step_index : plan.copy_steps) {
+    const detail::PlanStep &step = plan.steps[step_index];
+    if (step.region.valid()) {
+      // Exact native resource/range validation already ran in cold binding.
+      // This selected transfer has its own original delegated Completion.
+      ++report.queued_transfer_count;
       continue;
+    }
     compute::Queue *queue = candidate_queue(queues, step.lane);
     if (!step.lane.valid() || queue == nullptr || step.input_count != 1 ||
         step.output_count != 1) {
@@ -1185,13 +1651,20 @@ Status validate_transfer_routes(detail::InvocationState &invocation,
     else
       ++report.queued_transfer_count;
     report.peer_transfer_count += properties->peer ? 1u : 0u;
+    const auto source = invocation.readable[input].storage();
+    const auto destination = invocation.writable[output].storage();
+    const bool no_op = destination.size() == 0 ||
+        (destination.resource() == source.resource() &&
+         destination.native_handle() == source.native_handle() &&
+         destination.offset() == source.offset());
+    if (!no_op && properties->mode == compute::TransferMode::kImmediate)
+      invocation.candidate_segment_blocks_host[plan.step_segments[step_index]] = 1;
   }
   return Status::Ok();
 }
 
 Result<ReplayReport>
 prepare_dependency_routes(detail::InvocationState &invocation,
-                          std::span<const QueueBinding> queues,
                           HostWaitPolicy host_wait_policy) noexcept {
   const detail::PlanState &plan = *invocation.plan;
   if (invocation.candidate_dependency_routes.size() !=
@@ -1205,8 +1678,8 @@ prepare_dependency_routes(detail::InvocationState &invocation,
        ++segment_index) {
     const detail::PlanSegment &segment = plan.segments[segment_index];
     const bool destination_shared = shared_lane(plan, segment.lane);
-    compute::Queue *destination =
-        destination_shared ? candidate_queue(queues, segment.lane) : nullptr;
+    const auto &destination =
+        invocation.candidate_queues[segment.lane.ordinal()];
     const std::size_t dependency_end =
         segment.dependency_begin + segment.dependency_count;
     for (std::size_t dependency_index = segment.dependency_begin;
@@ -1214,15 +1687,15 @@ prepare_dependency_routes(detail::InvocationState &invocation,
       const std::uint32_t source_segment =
           plan.segment_dependencies[dependency_index];
       if (source_segment >= segment_index ||
-          (destination_shared && destination == nullptr)) {
+          (destination_shared && !destination.valid())) {
         return std::unexpected(
             Status::Internal("compiled graph dependency is invalid"));
       }
       const detail::PlanSegment &source_record = plan.segments[source_segment];
       const bool source_shared = shared_lane(plan, source_record.lane);
-      compute::Queue *source =
-          source_shared ? candidate_queue(queues, source_record.lane) : nullptr;
-      if (source_shared && source == nullptr) {
+      const auto &source =
+          invocation.candidate_queues[source_record.lane.ordinal()];
+      if (source_shared && !source.valid()) {
         return std::unexpected(
             Status::Internal("compiled graph dependency source is invalid"));
       }
@@ -1232,7 +1705,7 @@ prepare_dependency_routes(detail::InvocationState &invocation,
           invocation.candidate_lane_endpoints[source_record.lane.ordinal()];
       const compute::detail::CompletionEndpoint destination_endpoint =
           invocation.candidate_lane_endpoints[segment.lane.ordinal()];
-      if ((source_shared && destination_shared && source == destination) ||
+      if ((source_shared && destination_shared && source.same_owner(destination)) ||
           (source_endpoint.valid() &&
            source_endpoint == destination_endpoint)) {
         ++report.ordered_dependency_count;
@@ -1243,7 +1716,7 @@ prepare_dependency_routes(detail::InvocationState &invocation,
         bool non_blocking = false;
         if (destination_shared) {
           auto accepted = compute::detail::QueueSequence::can_import_endpoint(
-              *destination, source_endpoint);
+              destination, source_endpoint);
           if (!accepted) {
             return std::unexpected(std::move(accepted).error().WithContext(
                 "selecting graph completion dependency route"));
@@ -1271,51 +1744,6 @@ prepare_dependency_routes(detail::InvocationState &invocation,
   return report;
 }
 
-Status
-enqueue_segment_steps(detail::InvocationState &invocation,
-                      const detail::PlanSegment &segment,
-                      compute::detail::QueueSequence &sequence) noexcept {
-  const detail::PlanState &plan = *invocation.plan;
-  const auto all_inputs = std::span<const compute::ConstTensorView>(
-      invocation.submission_inputs.data(), invocation.submission_inputs.size());
-  const auto all_outputs = std::span<const compute::TensorView>(
-      invocation.submission_outputs.data(),
-      invocation.submission_outputs.size());
-  const std::size_t end = segment.step_begin + segment.step_count;
-  for (std::size_t step_index = segment.step_begin; step_index < end;
-       ++step_index) {
-    const detail::PlanStep &step = plan.steps[step_index];
-    if (!step.emits_command())
-      continue;
-    const auto step_inputs =
-        all_inputs.subspan(step.input_begin, step.input_count);
-    const auto step_outputs =
-        all_outputs.subspan(step.output_begin, step.output_count);
-    compute::detail::EnqueueResult enqueued;
-    if (step.kind == detail::PlanStepKind::kRegion) {
-      enqueued = invocation.invocations[step_index].region.enqueue_prevalidated(
-          sequence, step_inputs, step_outputs);
-    } else if (step.kind == detail::PlanStepKind::kOperation) {
-      enqueued =
-          compute::detail::OperationInvocationAccess::enqueue_prevalidated(
-              invocation.invocations[step_index].operation, sequence,
-              step_inputs, step_outputs);
-    } else if (step.kind == detail::PlanStepKind::kCopy) {
-      enqueued = compute::detail::TransferAccess::enqueue_prevalidated_copy(
-          sequence, step_outputs[0].storage(), step_inputs[0].storage());
-    } else {
-      enqueued = compute::detail::EnqueueResult::rejected(
-          Status::Internal("compiled graph step kind is invalid"));
-    }
-    const bool keep_recording = enqueued.status.ok();
-    Status status = enqueued.status;
-    sequence.record(std::move(enqueued));
-    if (!keep_recording)
-      return status;
-  }
-  return Status::Ok();
-}
-
 bool segment_capture_compatible(const detail::PlanState &plan,
                                 const detail::PlanSegment &segment) noexcept {
   if (segment.step_count == 0)
@@ -1341,6 +1769,61 @@ Status validate_external_resource(const detail::PlanState &plan,
   return Status::Ok();
 }
 
+std::uint32_t alias_root(const detail::PlanState &plan,
+                         std::uint32_t value) noexcept;
+
+Status validate_configured_read_resource(const detail::PlanState &plan,
+    mem::MemoryResourceRef nominated, mem::MemoryResourceRef resource) noexcept {
+  for (const auto &target : plan.targets) {
+    if (detail::ExecutionSourceAccess::matches_read_resource(
+            target.source, nominated, resource)) {
+      HYLE_RETURN_IF_ERROR(target.source.validate_resource(resource));
+      return Status::Ok();
+    }
+  }
+  return Status::InvalidArgument(
+      "readonly memory resource has no configured source authority");
+}
+
+Status validate_external_read_resource(const detail::PlanState &plan,
+    std::size_t logical_ordinal, mem::MemoryResourceRef resource) noexcept {
+  const auto storage = plan.external_storage[logical_ordinal];
+  if (storage >= plan.storage_domains.size())
+    return Status::Internal("graph external storage domain is invalid");
+  const auto nominated = plan.storage_domains[storage].resource;
+  if (nominated == resource)
+    return Status::Ok();
+  const auto instance = plan.external_instances[logical_ordinal];
+  if (instance == detail::kNoWorkspaceRequest)
+    return Status::Internal("readonly graph source has no external physical instance");
+  bool consumed = false;
+  for (const auto &step : plan.steps) {
+    if (!step.emits_command())
+      continue;
+    bool reads_input = false;
+    for (std::size_t port = 0; port < step.input_count; ++port) {
+      if (alias_root(plan, plan.node_inputs[step.input_begin + port]) == instance) {
+        reads_input = true;
+        break;
+      }
+    }
+    if (!reads_input)
+      continue;
+    consumed = true;
+    const auto &source = plan.targets[step.target.ordinal()].source;
+    if (step.kind != detail::PlanStepKind::kRegion ||
+        !detail::ExecutionSourceAccess::matches_read_resource(source, nominated, resource))
+      return Status::InvalidArgument(
+          "readonly memory resource is not accepted by its compiled readers");
+    HYLE_RETURN_IF_ERROR(source.validate_resource(resource));
+  }
+  if (consumed)
+    return Status::Ok();
+  // A published source or metadata-only View has no device reader to query.
+  // It still needs an actual source's explicit readonly-family authority.
+  return validate_configured_read_resource(plan, nominated, resource);
+}
+
 Status initialize_plan_metadata(
     detail::PlanState &plan, const detail::GraphState &graph,
     std::span<const compute::TensorDesc> descriptions) noexcept {
@@ -1355,6 +1838,9 @@ Status initialize_plan_metadata(
       !plan.instance_descriptions.try_resize(graph.values.size()) ||
       !plan.instance_values.try_resize(graph.values.size()) ||
       !plan.instance_storage.try_resize(graph.values.size()) ||
+      !plan.instance_output_contracts.try_resize(graph.values.size()) ||
+      !plan.instance_producer_targets.try_resize(graph.values.size()) ||
+      !plan.instance_constant_owners.try_resize(graph.values.size()) ||
       !plan.instance_roles.try_resize(graph.values.size()) ||
       !plan.external_instances.try_resize(graph.values.size()) ||
       !plan.external_storage.try_resize(graph.values.size()) ||
@@ -1372,6 +1858,9 @@ Status initialize_plan_metadata(
     plan.instance_descriptions[index] = descriptions[index];
     plan.instance_values[index] = static_cast<std::uint32_t>(index);
     plan.instance_storage[index] = 0;
+    plan.instance_output_contracts[index] = {};
+    plan.instance_producer_targets[index] = detail::kNoWorkspaceRequest;
+    plan.instance_constant_owners[index] = detail::kNoWorkspaceRequest;
     plan.instance_roles[index] = 0;
     plan.external_instances[index] = detail::kNoWorkspaceRequest;
     plan.external_storage[index] = 0;
@@ -1437,14 +1926,103 @@ Status initialize_plan_lanes(detail::PlanState &plan,
   return Status::Ok();
 }
 
-// Exists only during compile. Providers receive these replacement views after
-// materialization, never the caller's soon-to-be-released source allocation.
+// Immutable original sources, borrowed only during this compilation. Each
+// candidate publishes its own ready destination views into PlanState.
 struct ConstantPreparation final {
   explicit ConstantPreparation(mem::AllocatorRef allocator) noexcept
       : bindings(allocator) {}
   container::SmallVector<ConstantBinding, 0, mem::AllocatorRef> bindings;
-  bool ready = false;
 };
+
+std::size_t constant_slot(const detail::PlanState &plan,
+                           std::uint32_t value) noexcept {
+  const auto found = std::lower_bound(plan.constant_ids.begin(), plan.constant_ids.end(), value,
+      [](ValueId constant, std::uint32_t ordinal) { return constant.ordinal() < ordinal; });
+  return found != plan.constant_ids.end() && found->ordinal() == value
+      ? static_cast<std::size_t>(found - plan.constant_ids.begin()) : SIZE_MAX;
+}
+
+Status propagate_alias_alignments(detail::PlanState &plan,
+                                  bool check_offsets = true) noexcept {
+  if (std::ranges::all_of(plan.alias_sources,
+          [](auto source) { return source == detail::kNoInPlaceSource; }))
+    return Status::Ok();
+  detail::ValueOrdinals roots(plan.allocator);
+  container::SmallVector<std::size_t, 0, mem::AllocatorRef> offsets(plan.allocator);
+  if (!roots.try_resize(plan.instance_values.size()) ||
+      !offsets.try_resize(plan.instance_values.size()))
+    return plan_allocation_failure();
+  for (std::size_t ordinal = 0; ordinal < plan.instance_values.size(); ++ordinal) {
+    const auto source = plan.alias_sources[ordinal];
+    if (source == detail::kNoInPlaceSource) {
+      roots[ordinal] = static_cast<std::uint32_t>(ordinal);
+      offsets[ordinal] = 0;
+      continue;
+    }
+    if (source >= ordinal || plan.alias_offsets[ordinal] > SIZE_MAX - offsets[source])
+      return Status::Internal("graph physical alias chain is invalid");
+    roots[ordinal] = roots[source];
+    offsets[ordinal] = offsets[source] + plan.alias_offsets[ordinal];
+    const auto alignment = plan.instance_alignments[ordinal];
+    if (check_offsets && offsets[ordinal] % alignment != 0)
+      return Status::InvalidArgument(
+          "graph alias offset cannot satisfy provider port alignment");
+    // Only the allocation root inherits this requirement. An intermediate
+    // View may have a different legal alignment than a later slice's port.
+    auto &root_alignment = plan.instance_alignments[roots[ordinal]];
+    root_alignment = (std::max)(root_alignment, alignment);
+  }
+  return Status::Ok();
+}
+
+Result<bool> accepts_input_alias_alignment(const detail::PlanState &plan,
+    std::uint32_t instance, std::size_t alignment) noexcept {
+  // Domain View offsets belong to the concrete Invocation, not its envelope.
+  if (plan.domain_graph.valid() || alignment <= 1)
+    return true;
+  auto root = instance;
+  std::size_t offset = 0;
+  for (;;) {
+    if (root >= plan.alias_sources.size())
+      return std::unexpected(Status::Internal("graph input alias is invalid"));
+    const auto parent = plan.alias_sources[root];
+    if (parent == detail::kNoInPlaceSource)
+      break;
+    if (parent >= root || plan.alias_offsets[root] > SIZE_MAX - offset)
+      return std::unexpected(Status::Internal("graph input alias chain is invalid"));
+    offset += plan.alias_offsets[root];
+    root = parent;
+  }
+  if (offset % alignment == 0)
+    return true;
+  // Only Graph-owned caller-buffer roots have the zero-aligned allocation
+  // origin enforced below. External/constant bindings and generated carriers
+  // retain their own address contracts; an unknown base is not a bad offset.
+  if ((plan.instance_roles[root] & (detail::kExternalInput |
+          detail::kExternalOutput | detail::kConstant)) != 0 ||
+      plan.instance_output_contracts[root].kind != RegionOutputKind::kCaller)
+    return true;
+  return false;
+}
+
+Status prepare_constant_alignments(detail::PlanState &plan) noexcept {
+  if (plan.constant_ids.empty())
+    return Status::Ok();
+  // Metadata Views already have an immutable physical source. Their reader
+  // requirements must reach a constant before its bytes are allocated.
+  for (const auto &step : plan.steps) {
+    if (step.kind != detail::PlanStepKind::kView)
+      continue;
+    if (step.input_count != 1 || step.output_count != 1)
+      return Status::Internal("metadata View has invalid physical ports");
+    const auto output = plan.node_outputs[step.output_begin];
+    plan.alias_sources[output] = plan.node_inputs[step.input_begin];
+    plan.alias_offsets[output] = step.view_offset;
+  }
+  // A domain's offset is resolved from its concrete Invocation. Propagating a
+  // necessary base alignment here does not prove a symbolic offset is aligned.
+  return propagate_alias_alignments(plan, !plan.domain_graph.valid());
+}
 
 Status bind_constants(detail::PlanState &plan, const detail::GraphState &graph,
                       CompileOptions options,
@@ -1461,18 +2039,9 @@ Status bind_constants(detail::PlanState &plan, const detail::GraphState &graph,
       !seen.try_resize(graph.constants.size())) {
     return plan_allocation_failure();
   }
-  const bool materialize =
-      std::any_of(options.constants.begin(), options.constants.end(),
-                  [](const ConstantBinding &binding) noexcept {
-                    return binding.policy == ConstantPolicy::kMaterialize;
-                  });
-  if (materialize &&
-      (!constants.bindings.try_resize(graph.constants.size()) ||
-       (!plan.shared_constants &&
-        !plan.materialized_constants.try_resize(graph.constants.size()))))
-    return plan_allocation_failure();
-  if (materialize && plan.compilation_storage && !plan.shared_constants &&
-      !plan.constant_charges.try_resize(graph.constants.size()))
+  if (!constants.bindings.try_resize(graph.constants.size()) ||
+      !plan.constant_owners.try_resize(graph.constants.size()) ||
+      !plan.constant_leases.try_resize(graph.constants.size()))
     return plan_allocation_failure();
   for (std::size_t index = 0; index < slots.size(); ++index)
     slots[index] = detail::kNoWorkspaceRequest;
@@ -1500,8 +2069,34 @@ Status bind_constants(detail::PlanState &plan, const detail::GraphState &graph,
           "constant binding does not match its graph description");
     }
     plan.constant_bindings[slot] = binding.tensor;
-    if (materialize)
-      constants.bindings[slot] = binding;
+    if (binding.owner.valid() != binding.lease.valid())
+      return Status::InvalidArgument("constant ownership requires both storage owner and ready lease");
+    if (binding.lease) {
+      HYLE_ASSIGN_OR_RETURN(auto retained, binding.lease.view());
+      const auto backing = compute::detail::LeaseAccess::metadata_backing_allocator(binding.lease);
+      const auto system = mem::system_allocator();
+      const bool process_allocator = backing.valid() &&
+          backing.alloc_fn() == system.alloc_fn() &&
+          backing.free_fn() == system.free_fn() &&
+          backing.realloc_fn() == system.realloc_fn() &&
+          backing.state() == system.state();
+      if (!binding.owner.owns_allocator(backing) && !process_allocator)
+        return Status::InvalidArgument(
+            "constant storage owner does not retain its lease metadata allocator");
+      const auto actual = binding.tensor.storage();
+      if (binding.owner.ref() != retained.resource() ||
+          retained.resource() != actual.resource() ||
+          retained.native_handle() != actual.native_handle() ||
+          actual.offset() < retained.offset() ||
+          actual.offset() - retained.offset() > retained.size() ||
+          actual.size() > retained.size() - (actual.offset() - retained.offset()))
+        return Status::InvalidArgument("constant view is outside its owned ready lease");
+      if (binding.policy == ConstantPolicy::kBorrow) {
+        plan.constant_owners[slot] = binding.owner;
+        plan.constant_leases[slot] = binding.lease;
+      }
+    }
+    constants.bindings[slot] = binding;
     seen[slot] = 1;
   }
   for (std::uint8_t present : seen) {
@@ -1511,19 +2106,148 @@ Status bind_constants(detail::PlanState &plan, const detail::GraphState &graph,
   return Status::Ok();
 }
 
+bool needs_canonical_constant(const detail::PlanState &plan,
+                              const ConstantPreparation &constants,
+                              std::size_t instance) noexcept {
+  if ((plan.instance_roles[instance] & detail::kConstant) == 0 ||
+      plan.alias_sources[instance] != detail::kNoInPlaceSource)
+    return false;
+  const auto slot = constant_slot(plan, plan.instance_values[instance]);
+  return slot != SIZE_MAX &&
+      (plan.external_instances[plan.instance_values[instance]] != instance ||
+       constants.bindings[slot].policy == ConstantPolicy::kMaterialize);
+}
+
+// A retry numbers physical instances anew. Retain ready owners by their real
+// immutable allocation keys, never by the previous instance ordinal. A sorted
+// cold index keeps this O(C log C + I log C), without a second payload cache.
+Status retain_constant_owners(detail::PlanState &plan,
+                               const ConstantPreparation &constants) noexcept {
+  if (plan.canonical_constants.empty())
+    return Status::Ok();
+  detail::ValueOrdinals order(plan.allocator), remap(plan.allocator);
+  if (!order.try_reserve(plan.canonical_constants.size()) ||
+      !remap.try_resize(plan.canonical_constants.size()))
+    return plan_allocation_failure();
+  std::fill(remap.begin(), remap.end(), detail::kNoWorkspaceRequest);
+  for (std::size_t index = 0; index < plan.canonical_constants.size(); ++index)
+    if (plan.canonical_constants[index] && plan.canonical_constants[index]->ready &&
+        !order.try_push_back(static_cast<std::uint32_t>(index)))
+      return plan_allocation_failure();
+  const auto less = [](const detail::CanonicalConstantKey &left,
+                       const detail::CanonicalConstantKey &right) noexcept {
+    if (left.constant != right.constant)
+      return left.constant < right.constant;
+    const auto *l = &left.resource.resource(), *r = &right.resource.resource();
+    if (l != r)
+      return std::less<const mem::MemoryResource *>{}(l, r);
+    return left.alignment < right.alignment;
+  };
+  std::sort(order.begin(), order.end(), [&](auto left, auto right) noexcept {
+    return less(plan.canonical_constants[left]->key, plan.canonical_constants[right]->key);
+  });
+  for (std::size_t instance = 0; instance < plan.instance_values.size(); ++instance) {
+    if (!needs_canonical_constant(plan, constants, instance))
+      continue;
+    const auto logical = plan.instance_values[instance];
+    const auto resource = plan.storage_domains[plan.instance_storage[instance]].resource;
+    const auto &description = plan.instance_descriptions[instance];
+    const detail::CanonicalConstantKey key{logical, description, resource,
+        (std::max)({description.required_alignment(), plan.instance_alignments[instance],
+                    resource.properties().minimum_alignment})};
+    const auto found = std::lower_bound(order.begin(), order.end(), key,
+        [&](auto index, const auto &wanted) noexcept {
+          return less(plan.canonical_constants[index]->key, wanted);
+        });
+    if (found == order.end())
+      continue;
+    const auto &owner = plan.canonical_constants[*found];
+    if (owner->key.constant != logical || owner->key.description != description ||
+        owner->buffer.resource() != resource || owner->buffer.alignment() < key.alignment)
+      continue;
+    plan.instance_constant_owners[instance] = *found;
+    remap[*found] = 0; // Mark before compacting the unique owner arena.
+  }
+  std::uint32_t retained = 0;
+  for (std::size_t index = 0; index < plan.canonical_constants.size(); ++index) {
+    if (remap[index] == detail::kNoWorkspaceRequest)
+      continue;
+    remap[index] = retained;
+    if (index != retained)
+      plan.canonical_constants[retained] = std::move(plan.canonical_constants[index]);
+    ++retained;
+  }
+  plan.canonical_constants.try_resize(retained);
+  for (auto &index : plan.instance_constant_owners)
+    if (index != detail::kNoWorkspaceRequest)
+      index = remap[index];
+  return Status::Ok();
+}
+
+// Exact queued-copy roots, independently retained by one original target
+// prefix. No Plan/Completion cycle or unrelated model constants are retained.
+struct ConstantCopyBatch final : util::RefCounted<ConstantCopyBatch> {
+  struct Root final {
+    compute::StorageOwner source_owner;
+    compute::ReadLease source;
+    util::Ref<detail::CanonicalConstantState> destination;
+  };
+  ConstantCopyBatch(mem::AllocatorRef selected, compute::StorageOwner metadata,
+                    compute::StorageOwner target, ExecutionSource endpoint) noexcept
+      : allocator(selected), metadata_owner(std::move(metadata)),
+        target_owner(std::move(target)), source(std::move(endpoint)),
+        roots(selected) {}
+  void destroy() noexcept {
+    const auto selected = allocator;
+    const auto retained = metadata_owner;
+    this->~ConstantCopyBatch();
+    selected.deallocate(this, sizeof(ConstantCopyBatch), alignof(ConstantCopyBatch));
+  }
+  void protect(compute::Completion &completion) noexcept {
+    incref();
+    retention.own = {this, +[](void *, const Status &) noexcept {},
+        +[](void *value) noexcept { static_cast<ConstantCopyBatch *>(value)->decref(); }};
+    const auto attached = compute::detail::CompletionAccess::attach_retention(completion, retention);
+    HYLE_FATAL_ASSERT(attached.ok());
+  }
+  mem::AllocatorRef allocator;
+  compute::StorageOwner metadata_owner;
+  // The source endpoint may use this allocator; release it before the target
+  // domain/Context allocator, even when the outer compile has already failed.
+  compute::StorageOwner target_owner;
+  ExecutionSource source;
+  container::SmallVector<Root, 0, mem::AllocatorRef> roots;
+  compute::detail::CompletionRetention retention{};
+};
+
 Status materialize_constants(detail::PlanState &plan,
                              CompileEnvironment environment,
-                             ConstantPreparation &constants) noexcept {
-  if (constants.bindings.empty() || constants.ready)
+                             ConstantPreparation &constants,
+                             detail::ConstantArtifactCache &packing,
+                             bool &route_declined) noexcept {
+  route_declined = false;
+  if (constants.bindings.empty())
+    return Status::Ok();
+  std::size_t canonical_count = 0;
+  for (std::size_t instance = 0; instance < plan.instance_values.size(); ++instance)
+    canonical_count += needs_canonical_constant(plan, constants, instance) ? 1U : 0U;
+  if (canonical_count == 0)
     return Status::Ok();
   container::SmallVector<compute::Queue, 2, mem::AllocatorRef> queues(
       plan.allocator);
-  auto copy = [&](mem::BufferView destination, mem::ConstBufferView source,
-                  std::uint32_t storage) noexcept -> Status {
-    if (destination.empty())
-      return Status::Ok();
+  struct PendingCopy final {
+    detail::ConstantCopy transfer;
+    std::uint32_t target;
+    bool native;
+    compute::TransferMode mode = compute::TransferMode::kImmediate;
+    std::size_t slot = 0;
+    util::Ref<detail::CanonicalConstantState> canonical{};
+  };
+  container::SmallVector<PendingCopy, 0, mem::AllocatorRef> pending(plan.allocator);
+  auto select_copy = [&](detail::ConstantCopy transfer, std::uint32_t storage)
+      noexcept -> Result<PendingCopy> {
     if (!queues.try_resize(environment.targets.size()))
-      return plan_allocation_failure();
+      return std::unexpected(plan_allocation_failure());
     // Prefer the target owning the destination domain, then other configured
     // targets. Querying unsupported routes is cold; an actual copy error is
     // never permission to resubmit potentially accepted bytes elsewhere.
@@ -1533,89 +2257,181 @@ Status materialize_constants(detail::PlanState &plan,
         if ((environment.targets[target].default_storage.ordinal() ==
              storage) != preferred)
           continue;
+        const auto &source = plan.targets[target].source;
+        auto retained = detail::ExecutionSourceAccess::compute(source);
+        if (!retained) {
+          if (!retained.error().IsUnimplemented())
+            return std::unexpected(std::move(retained).error());
+          HYLE_ASSIGN_OR_RETURN(const bool supported,
+              detail::ExecutionSourceAccess::can_copy_constant(source, transfer));
+          if (supported)
+            return PendingCopy{transfer, static_cast<std::uint32_t>(target), true};
+          continue;
+        }
         bool compatible = true;
         for (const auto resource :
-             {destination.resource(), source.resource()}) {
-          auto status =
-              plan.targets[target].context.validate_resource(resource);
+             {transfer.destination.storage().resource(), transfer.source.storage().resource()}) {
+          auto status = source.validate_resource(resource);
           if (status.ok())
             continue;
           if (!status.IsFailedPrecondition() && !status.IsUnimplemented())
-            return status;
+            return std::unexpected(std::move(status));
           compatible = false;
           break;
         }
         if (!compatible)
           continue;
         if (!queues[target]) {
-          auto queue = environment.targets[target].context->create_queue();
+          auto queue = (*retained)->create_queue();
           if (!queue)
-            return std::move(queue).error();
+            return std::unexpected(std::move(queue).error());
           queues[target] = std::move(*queue);
         }
-        auto properties =
-            compute::transfer_properties(queues[target], destination, source);
+        auto properties = compute::transfer_properties(queues[target],
+            transfer.destination.storage(), transfer.source.storage());
         if (!properties) {
           auto status = std::move(properties).error();
           if (status.IsUnimplemented())
             continue;
-          return status;
+          return std::unexpected(std::move(status));
         }
-        auto completion =
-            compute::copy_async(queues[target], destination, source);
-        if (!completion)
-          return std::move(completion).error();
-        // Includes an accepted copy that later failed. Both borrowed source
-        // and owned destination remain alive until the real terminal point.
-        return completion->wait();
+        return PendingCopy{transfer, static_cast<std::uint32_t>(target), false,
+                           properties->mode};
       }
     }
-    return Status::Unimplemented(
-        "no configured target can materialize the graph constant");
+    route_declined = true; // Pure qualification, before any transfer accepts work.
+    return std::unexpected(Status::Unimplemented(
+        "no configured target can materialize the graph constant"));
   };
-  for (std::size_t slot = 0; slot < constants.bindings.size(); ++slot) {
-    auto &binding = constants.bindings[slot];
-    if (binding.policy != ConstantPolicy::kMaterialize)
+  if (!pending.try_reserve(canonical_count) ||
+      !plan.prepared_values.try_reserve(canonical_count))
+    return plan_allocation_failure();
+  for (std::size_t instance = 0; instance < plan.instance_values.size(); ++instance) {
+    if (!needs_canonical_constant(plan, constants, instance))
       continue;
-    const auto storage = plan.external_storage[binding.value.ordinal()];
+    const auto slot = constant_slot(plan, plan.instance_values[instance]);
+    const auto &binding = constants.bindings[slot];
+    const auto storage = plan.instance_storage[instance];
     if (storage >= plan.storage_domains.size())
       return Status::Internal("constant has no selected storage domain");
     const auto &description = binding.tensor.description();
-    if (plan.shared_constants) {
-      const auto *buffer = plan.owned_constant(slot);
-      if (buffer == nullptr ||
-          buffer->resource() != plan.storage_domains[storage].resource)
-        return Status::Internal(
-            "variant constant sharing changed its storage contract");
-      HYLE_ASSIGN_OR_RETURN(binding.tensor, compute::ConstTensorView::create(
-                                                description, buffer->view()));
-      plan.constant_bindings[slot] = binding.tensor;
+    if (instance >= plan.instance_alignments.size())
+      return Status::Internal("constant has no physical alignment contract");
+    HYLE_ASSIGN_OR_RETURN(auto acquired, packing.acquire_canonical(
+        plan, slot, static_cast<std::uint32_t>(instance), plan.storage_domains[storage].resource,
+        (std::max)(description.required_alignment(), plan.instance_alignments[instance])));
+    HYLE_ASSIGN_OR_RETURN(auto destination, compute::TensorView::create(
+        description, acquired.owner->buffer.view()));
+    if (acquired.created && !destination.storage().empty()) {
+      HYLE_ASSIGN_OR_RETURN(auto selected,
+          select_copy({destination, binding.tensor}, storage));
+      selected.slot = slot;
+      selected.canonical = acquired.owner;
+      if (selected.mode == compute::TransferMode::kQueuedDirect) {
+        const auto endpoint = detail::ExecutionSourceAccess::compute(
+            plan.targets[selected.target].source);
+        if (!binding.owner || !binding.lease || !acquired.owner->storage_owner ||
+            !plan.metadata_owner || !endpoint || !*endpoint ||
+            acquired.owner->storage_owner.context_identity() != (*endpoint)->identity_key())
+          return Status::FailedPrecondition(
+              "queued constant materialization requires a ready lease and storage owner for source, destination and metadata");
+      }
+      if (!pending.try_push_back(selected))
+        return plan_allocation_failure();
+    }
+  }
+  // Graph-owned allocations, charges and route queries precede accepted bytes.
+  // A native endpoint sees one batch so it can reuse its real staging and
+  // command resources across weights. These resources never enter replay.
+  container::SmallVector<detail::ConstantCopy, 0, mem::AllocatorRef> batch(plan.allocator);
+  const auto native_count = static_cast<std::size_t>(std::count_if(
+      pending.begin(), pending.end(), [](const PendingCopy &copy) { return copy.native; }));
+  if (!batch.try_reserve(native_count))
+    return plan_allocation_failure();
+  // All ownership/metadata admission precedes the first copy on any target.
+  // Reserve one owner per queued target, not one allocation/event per weight.
+  container::SmallVector<util::Ref<ConstantCopyBatch>, 2, mem::AllocatorRef>
+      retained(plan.allocator);
+  if (!retained.try_resize(environment.targets.size()))
+    return plan_allocation_failure();
+  for (std::size_t target = 0; target < environment.targets.size(); ++target) {
+    const auto count = static_cast<std::size_t>(std::count_if(pending.begin(), pending.end(),
+        [&](const auto &copy) { return copy.target == target &&
+            copy.mode == compute::TransferMode::kQueuedDirect; }));
+    if (count == 0) continue;
+    const auto first = std::ranges::find_if(pending, [&](const auto &copy) {
+      return copy.target == target && copy.mode == compute::TransferMode::kQueuedDirect;
+    });
+    auto *memory = plan.allocator.allocate(sizeof(ConstantCopyBatch), alignof(ConstantCopyBatch));
+    if (!memory) return plan_allocation_failure();
+    retained[target] = util::adopt_ref(::new (memory) ConstantCopyBatch(
+        plan.allocator, plan.metadata_owner, first->canonical->storage_owner,
+        plan.targets[target].source));
+    if (!retained[target]->roots.try_reserve(count))
+      return plan_allocation_failure();
+    for (const auto &copy : pending) {
+      if (copy.target != target || copy.mode != compute::TransferMode::kQueuedDirect) continue;
+      const auto &binding = constants.bindings[copy.slot];
+      if (!retained[target]->roots.try_push_back({binding.owner, binding.lease, copy.canonical}))
+        return plan_allocation_failure();
+    }
+  }
+  for (std::size_t target = 0; target < environment.targets.size(); ++target) {
+    batch.clear();
+    for (const auto &copy : pending)
+      if (copy.target == target && copy.native && !batch.try_push_back(copy.transfer))
+        return plan_allocation_failure();
+    if (!batch.empty()) {
+      detail::StorageCharge scratch;
+      if (plan.compilation_storage) {
+        HYLE_ASSIGN_OR_RETURN(const auto bytes,
+            detail::ExecutionSourceAccess::constant_copy_scratch_bytes(
+                plan.targets[target].source, batch));
+        HYLE_ASSIGN_OR_RETURN(scratch, plan.compilation_storage->reserve_private(bytes));
+      }
+      HYLE_RETURN_IF_ERROR(detail::ExecutionSourceAccess::copy_constants(
+          plan.targets[target].source, batch, plan.allocator));
       continue;
     }
-    HYLE_ASSIGN_OR_RETURN(const auto bytes, description.required_bytes());
-    detail::StorageCharge charge;
-    if (plan.compilation_storage) {
-      auto reserved = plan.compilation_storage->reserve_resource(
-          bytes, plan.storage_domains[storage].resource);
-      if (!reserved)
-        return std::move(reserved).error();
-      charge = std::move(*reserved);
+    if (std::ranges::none_of(pending, [&](const auto &copy) {
+          return copy.target == target && !copy.native;
+        }))
+      continue;
+    auto sequence = compute::detail::QueueSequence::begin(queues[target]);
+    if (!sequence) return std::move(sequence).error();
+    for (const auto &copy : pending) {
+      if (copy.target != target)
+        continue;
+      sequence->record(compute::detail::TransferAccess::enqueue_copy(*sequence,
+          copy.transfer.destination.storage(), copy.transfer.source.storage()));
+      if (!sequence->terminal().ok()) break;
     }
-    HYLE_ASSIGN_OR_RETURN(
-        auto buffer,
-        mem::Buffer::create(plan.storage_domains[storage].resource, bytes,
-                            description.required_alignment()));
-    HYLE_ASSIGN_OR_RETURN(auto destination, compute::TensorView::create(
-                                                description, buffer.view()));
-    HYLE_RETURN_IF_ERROR(
-        copy(destination.storage(), binding.tensor.storage(), storage));
-    binding.tensor = destination.as_const();
-    plan.constant_bindings[slot] = binding.tensor;
-    plan.materialized_constants[slot] = std::move(buffer);
-    if (plan.compilation_storage)
-      plan.constant_charges[slot] = std::move(charge);
+    auto completion = sequence->finish();
+    if (!completion) return std::move(completion).error();
+    if (retained[target]) retained[target]->protect(*completion);
+    // A failed observation hands the owner to the existing backend retirement
+    // mechanism. Neither failure nor abandonment publishes canonical bytes.
+    HYLE_RETURN_IF_ERROR(completion->wait());
+    retained[target] = {};
   }
-  constants.ready = true;
+  // Only successful original terminal copies make new cache entries reusable.
+  // All sources remain the caller's original immutable bindings through here.
+  for (const auto &owner : plan.canonical_constants)
+    owner->ready = true;
+  for (std::size_t instance = 0; instance < plan.instance_values.size(); ++instance) {
+    const auto *owner = plan.owned_instance_constant(instance);
+    if (owner == nullptr)
+      continue;
+    HYLE_ASSIGN_OR_RETURN(auto ready, compute::ConstTensorView::create(
+        plan.instance_descriptions[instance], owner->view()));
+    const auto logical = plan.instance_values[instance];
+    if (plan.external_instances[logical] == instance) {
+      plan.constant_bindings[constant_slot(plan, logical)] = ready;
+    } else if (!plan.prepared_values.try_push_back(
+                   {static_cast<std::uint32_t>(instance), ready})) {
+      return plan_allocation_failure();
+    }
+  }
   return Status::Ok();
 }
 
@@ -1654,7 +2470,7 @@ public:
     return Status::Ok();
   }
 
-  Result<bool> allows_family(const compute::Context &context,
+  Result<bool> allows_family(const compute::detail::ContextRef &context,
                              std::size_t index) const noexcept {
     if (allowed_.empty() && denied_.empty())
       return true;
@@ -1664,7 +2480,7 @@ public:
     return allows_family(identity->id);
   }
 
-  Result<bool> allows_operation(const compute::Context &context,
+  Result<bool> allows_operation(const compute::detail::ContextRef &context,
                                 std::size_t index,
                                 std::size_t node) const noexcept {
     const auto *constraint = nodes_.empty() ? nullptr : nodes_[node];
@@ -1690,6 +2506,8 @@ public:
                                      (!constraint->instance.valid() ||
                                       constraint->instance == instance));
   }
+
+  bool allows_native() const noexcept { return allowed_.empty(); }
 
 private:
   using Families =
@@ -1727,9 +2545,28 @@ private:
 };
 
 struct RegionExtension final {
-  compute::detail::ProviderExtensionRef extension{};
-  std::uint32_t provider_index = 0;
+  detail::GraphRegionSource source;
+  std::uint32_t provider_index = UINT32_MAX;
   ExecutionTargetId target{};
+  const detail::RegionAdapter *adapter = nullptr;
+
+  Status call(compute::detail::ProviderExtensionCallFn function,
+              void *context) const noexcept {
+    struct Call final {
+      const detail::RegionAdapter *adapter;
+      compute::detail::ProviderExtensionCallFn function;
+      void *context;
+    } call{adapter, function, context};
+    return source.call(
+        +[](void *native_context, const void *native_interface,
+            void *opaque) noexcept -> Status {
+          const auto &call = *static_cast<Call *>(opaque);
+          return call.function(
+              call.adapter ? call.adapter->context : native_context,
+              call.adapter ? call.adapter->interface : native_interface,
+              call.context);
+        }, &call);
+  }
 };
 
 struct RegionCandidate final {
@@ -1753,6 +2590,7 @@ struct RouteDiagnostic final {
   compute::ProviderImplementationId implementation{};
   compute::RoutePolicyId policy{};
   std::uint32_t preference = 0;
+  std::optional<std::uint32_t> dispatch_count{};
 };
 
 constexpr bool replay_allowed(ProviderReplayPolicy policy,
@@ -1771,6 +2609,8 @@ using RegionValues = container::SmallVector<ValueId, 8, mem::AllocatorRef>;
 struct RegionResourceSkeleton final {
   RegionResourceProposal proposal{};
   std::size_t port_begin = 0;
+  std::size_t input_reference_begin = 0;
+  std::size_t output_contract_begin = 0;
   std::size_t input_count = 0;
   std::size_t output_count = 0;
   std::size_t effect_begin = 0;
@@ -1842,7 +2682,9 @@ public:
 
   explicit RouteSearch(mem::AllocatorRef allocator) noexcept
       : routes_(allocator), begins_(allocator), frames_(allocator),
-        occupied_(allocator) {}
+        occupied_(allocator), incidence_begins_(allocator),
+        incidence_(allocator), blockers_(allocator), available_(allocator),
+        excluded_(allocator) {}
 
   Status initialize(std::size_t node_count, std::size_t target_count,
                     const OperationDiscovery &operations,
@@ -1924,8 +2766,6 @@ public:
             return left.preference_misses < right.preference_misses;
           if (left.policy_preference != right.policy_preference)
             return left.policy_preference < right.policy_preference;
-          if (left.count != right.count)
-            return left.count > right.count;
           if (compare_dispatches && left.dispatches != right.dispatches)
             return left.dispatches < right.dispatches;
           if (left.region != right.region)
@@ -1953,12 +2793,15 @@ public:
             return left.target < right.target;
           if (left.provider != right.provider)
             return left.provider < right.provider;
+          if (left.count != right.count)
+            return left.count > right.count;
           return left.proposal < right.proposal;
         });
     for (const auto &route : routes_)
       ++begins_[route.first + 1];
     for (std::size_t node = 1; node < begins_.size(); ++node)
       begins_[node] += begins_[node - 1];
+    HYLE_RETURN_IF_ERROR(initialize_coverage(node_count));
     if (node_count != 0 && !frames_.try_push_back(Frame{.next = begins_[0]}))
       return plan_allocation_failure();
     return Status::Ok();
@@ -1967,6 +2810,7 @@ public:
   Result<bool> next(std::size_t budget, CompileSearchReport &report,
                     bool &limited) noexcept {
     limited = false;
+    refresh_rejections();
     if (occupied_.empty()) {
       if (yielded_)
         return false;
@@ -1992,7 +2836,9 @@ public:
     }
     while (!frames_.empty()) {
       auto &frame = frames_.back();
-      if (frame.next == begins_[frame.node + 1]) {
+      // A hole in the union of compatible candidates cannot be repaired by
+      // enumerating unrelated prefix alternatives. Backtrack at its cause.
+      if (unsupported_ != 0 || frame.next == begins_[frame.node + 1]) {
         frames_.pop_back();
         if (!frames_.empty())
           undo(frames_.back());
@@ -2006,19 +2852,14 @@ public:
       }
       ++report.route_search_states;
       const auto index = frame.next++;
-      const auto &route = routes_[index];
-      if (rejected(route))
-        continue;
-      bool overlap = false;
-      for_each_node(route, [&](std::uint32_t node) noexcept {
-        overlap |= occupied_[node] != 0;
-      });
-      if (overlap)
+      if (excluded_[index] || blockers_[index] != 0)
         continue;
       frame.chosen = index;
-      for_each_node(route,
-                    [&](std::uint32_t node) noexcept { occupied_[node] = 1; });
-      covered_ += route.count;
+      select(index);
+      if (unsupported_ != 0) {
+        undo(frame);
+        continue;
+      }
       if (covered_ == occupied_.size()) {
         yielded_ = true;
         return true;
@@ -2036,6 +2877,12 @@ public:
   const Route &route(std::size_t index) const noexcept {
     return routes_[index];
   }
+  std::size_t uncovered_node() const noexcept {
+    for (std::size_t node = 0; node < available_.size(); ++node)
+      if (!occupied_[node] && available_[node] == 0)
+        return node;
+    return kNoRoute;
+  }
 
   template <class Visitor>
   void for_each_node(const Route &route, Visitor &&visit) const noexcept {
@@ -2050,6 +2897,89 @@ public:
   }
 
 private:
+  // Cold incidence index, not another routing table. Membership comes only
+  // from actual leaf/region proposals. Each region contributes every member,
+  // including nodes with no starting candidate of their own.
+  Status initialize_coverage(std::size_t node_count) noexcept {
+    if (!incidence_begins_.try_resize(node_count + 1) ||
+        !available_.try_resize(node_count) ||
+        !blockers_.try_resize(routes_.size()) ||
+        !excluded_.try_resize(routes_.size()))
+      return plan_allocation_failure();
+    std::fill(incidence_begins_.begin(), incidence_begins_.end(), std::size_t{0});
+    std::fill(blockers_.begin(), blockers_.end(), std::size_t{0});
+    std::size_t count = 0;
+    for (const auto &route : routes_) {
+      if (route.count > SIZE_MAX - count)
+        return Status::ResourceExhausted("graph route membership overflows");
+      count += route.count;
+      for_each_node(route, [&](std::uint32_t node) noexcept {
+        ++incidence_begins_[node + 1];
+      });
+    }
+    if (!incidence_.try_resize(count))
+      return plan_allocation_failure();
+    for (std::size_t node = 0; node < node_count; ++node) {
+      incidence_begins_[node + 1] += incidence_begins_[node];
+      available_[node] = incidence_begins_[node]; // temporary write head
+    }
+    for (std::size_t index = 0; index < routes_.size(); ++index) {
+      excluded_[index] = rejected(routes_[index]);
+      for_each_node(routes_[index], [&](std::uint32_t node) noexcept {
+        incidence_[available_[node]++] = index;
+      });
+    }
+    std::fill(available_.begin(), available_.end(), std::size_t{0});
+    for (std::size_t index = 0; index < routes_.size(); ++index)
+      if (!excluded_[index])
+        for_each_node(routes_[index], [&](std::uint32_t node) noexcept {
+          ++available_[node];
+        });
+    unsupported_ = static_cast<std::size_t>(
+        std::count(available_.begin(), available_.end(), std::size_t{0}));
+    return Status::Ok();
+  }
+
+  void remove_support(std::uint32_t node) noexcept {
+    HYLE_FATAL_ASSERT(available_[node] != 0);
+    if (--available_[node] == 0 && !occupied_[node])
+      ++unsupported_;
+  }
+  void add_support(std::uint32_t node) noexcept {
+    if (available_[node]++ == 0 && !occupied_[node])
+      --unsupported_;
+  }
+  void refresh_rejections() noexcept {
+    // Preparation only removes candidates. Do not resurrect a declined
+    // implementation when undo makes an overlapping route compatible again.
+    for (std::size_t index = 0; index < routes_.size(); ++index) {
+      if (excluded_[index] || !rejected(routes_[index]))
+        continue;
+      excluded_[index] = 1;
+      if (blockers_[index] == 0)
+        for_each_node(routes_[index],
+                      [&](std::uint32_t node) noexcept { remove_support(node); });
+    }
+  }
+  void select(std::size_t index) noexcept {
+    const auto &route = routes_[index];
+    for_each_node(route, [&](std::uint32_t node) noexcept {
+      if (available_[node] == 0)
+        --unsupported_;
+      occupied_[node] = 1;
+    });
+    for_each_node(route, [&](std::uint32_t node) noexcept {
+      for (auto at = incidence_begins_[node]; at < incidence_begins_[node + 1]; ++at) {
+        const auto other = incidence_[at];
+        if (blockers_[other]++ == 0 && !excluded_[other])
+          for_each_node(routes_[other], [&](std::uint32_t member) noexcept {
+            remove_support(member);
+          });
+      }
+    });
+    covered_ += route.count;
+  }
+
   bool rejected(const Route &route) const noexcept {
     return route.region
                ? region_rejected_[regions_[route.proposal].proposal_order] != 0
@@ -2057,8 +2987,21 @@ private:
   }
   void undo(Frame &frame) noexcept {
     const auto &route = routes_[frame.chosen];
-    for_each_node(route,
-                  [&](std::uint32_t node) noexcept { occupied_[node] = 0; });
+    for_each_node(route, [&](std::uint32_t node) noexcept {
+      for (auto at = incidence_begins_[node]; at < incidence_begins_[node + 1]; ++at) {
+        const auto other = incidence_[at];
+        HYLE_FATAL_ASSERT(blockers_[other] != 0);
+        if (--blockers_[other] == 0 && !excluded_[other])
+          for_each_node(routes_[other], [&](std::uint32_t member) noexcept {
+            add_support(member);
+          });
+      }
+    });
+    for_each_node(route, [&](std::uint32_t node) noexcept {
+      occupied_[node] = 0;
+      if (available_[node] == 0)
+        ++unsupported_;
+    });
     covered_ -= route.count;
     frame.chosen = kNoRoute;
   }
@@ -2066,11 +3009,17 @@ private:
   container::SmallVector<std::size_t, 16, mem::AllocatorRef> begins_;
   container::SmallVector<Frame, 16, mem::AllocatorRef> frames_;
   container::SmallVector<std::uint8_t, 32, mem::AllocatorRef> occupied_;
+  container::SmallVector<std::size_t, 16, mem::AllocatorRef> incidence_begins_;
+  container::SmallVector<std::size_t, 16, mem::AllocatorRef> incidence_;
+  container::SmallVector<std::size_t, 16, mem::AllocatorRef> blockers_;
+  container::SmallVector<std::size_t, 16, mem::AllocatorRef> available_;
+  container::SmallVector<std::uint8_t, 16, mem::AllocatorRef> excluded_;
   std::span<const OperationCandidate> operations_{};
   std::span<const RegionCandidate> regions_{};
   std::span<const NodeId> region_nodes_{};
   std::span<const std::uint8_t> region_rejected_{};
   std::size_t covered_ = 0;
+  std::size_t unsupported_ = 0;
   bool yielded_ = false;
 };
 
@@ -2220,7 +3169,14 @@ Status discover_operation_candidates(
         ++range.count;
         continue;
       }
-      const auto &context = *environment.targets[target].context;
+      auto retained = detail::ExecutionSourceAccess::compute(
+          environment.targets[target].source);
+      if (!retained) {
+        if (retained.error().IsUnimplemented())
+          continue;
+        return std::move(retained).error();
+      }
+      const auto &context = **retained;
       for (std::size_t provider = 0; provider < context.provider_count();
            ++provider) {
         HYLE_ASSIGN_OR_RETURN(auto allowed, policy.allows_operation(
@@ -2264,15 +3220,38 @@ Status discover_operation_candidates(
   return Status::Ok();
 }
 
+// Immutable placement input, validated once for this compilation. Actual
+// resource authority and the selected physical instances remain attempt-local.
+struct PlacementFacts final {
+  using Ordinals =
+      container::SmallVector<std::uint32_t, 16, mem::AllocatorRef>;
+  using Flags = container::SmallVector<std::uint8_t, 16, mem::AllocatorRef>;
+
+  explicit PlacementFacts(mem::AllocatorRef allocator) noexcept
+      : node_required(allocator), node_preferred(allocator),
+        value_required(allocator), value_preferred(allocator),
+        external_seen(allocator) {}
+
+  Ordinals node_required;
+  Ordinals node_preferred;
+  Ordinals value_required;
+  Ordinals value_preferred;
+  Flags external_seen;
+};
+
+enum class RegionCoverage : std::uint8_t { kNone, kEligible, kRejected };
+
 // One discovery per compile, shared by the bounded construction attempts.
 // Proposal ordinals remain stable while the eligible partition changes.
 struct RegionDiscovery final {
   explicit RegionDiscovery(mem::AllocatorRef allocator) noexcept
-      : extensions(allocator), candidates(allocator), nodes(allocator),
-        rejected(allocator), resources(allocator), values(allocator),
-        requirements(allocator), effects(allocator), operations(allocator),
-        routes(allocator), physical(allocator) {}
+      : placement(allocator), extensions(allocator), candidates(allocator),
+        nodes(allocator), rejected(allocator), resources(allocator),
+        values(allocator), requirements(allocator), input_references(allocator),
+        output_contracts(allocator), effects(allocator), operations(allocator),
+        region_coverage(allocator), routes(allocator), physical(allocator) {}
 
+  PlacementFacts placement;
   RegionExtensions extensions;
   RegionCandidates candidates;
   RegionNodeIds nodes;
@@ -2282,13 +3261,18 @@ struct RegionDiscovery final {
   RegionValues values;
   container::SmallVector<compute::ResourceRequirement, 16, mem::AllocatorRef>
       requirements;
+  container::SmallVector<std::uint8_t, 16, mem::AllocatorRef> input_references;
+  container::SmallVector<RegionOutputContract, 16, mem::AllocatorRef>
+      output_contracts;
   container::SmallVector<RegionEffectAccess, 4, mem::AllocatorRef> effects;
   OperationDiscovery operations;
+  container::SmallVector<RegionCoverage, 32, mem::AllocatorRef> region_coverage;
   RouteSearch routes;
   ResourceSearch physical;
   Status last_rejection = Status::Ok();
   bool ready = false;
   bool has_route = false;
+  std::span<const detail::RegionAdapter> adapters;
 };
 
 struct PlacementAttemptOutcome final {
@@ -2460,13 +3444,6 @@ Result<bool> validate_contractible_region(
     }
     return true;
   }
-  if (!selected.try_resize(graph.nodes.size()) ||
-      !reachable_outside.try_resize(graph.nodes.size())) {
-    return std::unexpected(plan_allocation_failure());
-  }
-  std::fill(selected.begin(), selected.end(), std::uint8_t{0});
-  std::fill(reachable_outside.begin(), reachable_outside.end(),
-            std::uint8_t{0});
   std::uint32_t first = detail::kNoNode;
   std::uint32_t last = 0;
   for (NodeId node : nodes) {
@@ -2474,29 +3451,43 @@ Result<bool> validate_contractible_region(
       return std::unexpected(Status::InvalidArgument(
           "provider proposed a graph region node from another graph"));
     }
-    if (selected[node.ordinal()] != 0)
-      return std::unexpected(
-          Status::InvalidArgument("graph region node set has duplicates"));
-    selected[node.ordinal()] = 1;
     first = (std::min)(first, node.ordinal());
     last = (std::max)(last, node.ordinal());
   }
+  const auto span = static_cast<std::size_t>(last) - first + 1;
+  if (!selected.try_resize(span) || !reachable_outside.try_resize(span))
+    return std::unexpected(plan_allocation_failure());
+  std::fill(selected.begin(), selected.end(), std::uint8_t{0});
+  std::fill(reachable_outside.begin(), reachable_outside.end(),
+            std::uint8_t{0});
+  for (NodeId node : nodes) {
+    const auto index = node.ordinal() - first;
+    if (selected[index] != 0)
+      return std::unexpected(
+          Status::InvalidArgument("graph region node set has duplicates"));
+    selected[index] = 1;
+  }
   // In a canonical DAG every path has increasing ordinals, so an interval
   // (including a singleton) cannot leave the set and then re-enter it.
-  if (static_cast<std::size_t>(last) - first + 1 == nodes.size())
+  if (span == nodes.size())
     return true;
 
   auto predecessor_state = [&](std::uint32_t predecessor,
                                bool current_selected) noexcept {
-    if (predecessor == detail::kNoNode)
+    // Before the first selected node no path can have left this region.
+    // Later predecessors cannot occur in the canonical DAG.
+    if (predecessor == detail::kNoNode || predecessor < first ||
+        predecessor > last)
       return false;
+    const auto index = predecessor - first;
     if (current_selected)
-      return selected[predecessor] == 0 && reachable_outside[predecessor] != 0;
-    return selected[predecessor] != 0 || reachable_outside[predecessor] != 0;
+      return selected[index] == 0 && reachable_outside[index] != 0;
+    return selected[index] != 0 || reachable_outside[index] != 0;
   };
   for (std::uint32_t node_index = first; node_index <= last; ++node_index) {
     const detail::NodeRecord &node = graph.nodes[node_index];
-    const bool current_selected = selected[node_index] != 0;
+    const auto index = node_index - first;
+    const bool current_selected = selected[index] != 0;
     bool reached = false;
     for (std::size_t input_index = 0; input_index < node.input_count;
          ++input_index) {
@@ -2516,7 +3507,7 @@ Result<bool> validate_contractible_region(
       return false;
     }
     if (!current_selected)
-      reachable_outside[node_index] = reached ? 1 : 0;
+      reachable_outside[index] = reached ? 1 : 0;
   }
   return true;
 }
@@ -2594,8 +3585,8 @@ private:
 Status propose_region_resources(
     const RegionExtension &extension, const RegionCompileRequest &request,
     mem::AllocatorRef allocator,
-    std::span<compute::detail::ResourceBindingRequirement> input_requirements,
-    std::span<compute::detail::ResourceBindingRequirement> output_requirements,
+    std::span<RegionInputRequirement> input_requirements,
+    std::span<RegionOutputRequirement> output_requirements,
     RegionResourceProposal &resource_proposal) noexcept {
   for (auto &requirement : input_requirements)
     requirement = {};
@@ -2605,14 +3596,12 @@ Status propose_region_resources(
   struct ProposalEpisode final {
     const RegionCompileRequest *request = nullptr;
     mem::AllocatorRef allocator{};
-    std::span<compute::detail::ResourceBindingRequirement> input_requirements{};
-    std::span<compute::detail::ResourceBindingRequirement>
-        output_requirements{};
+    std::span<RegionInputRequirement> input_requirements{};
+    std::span<RegionOutputRequirement> output_requirements{};
     RegionResourceProposal *proposal = nullptr;
   } proposal_episode{&request, allocator, input_requirements,
                      output_requirements, &resource_proposal};
-  Status proposed = compute::detail::ProviderExtensionAccess::call(
-      extension.extension,
+  Status proposed = extension.call(
       +[](void *provider_context, const void *interface_value,
           void *opaque) noexcept -> Status {
         const auto *interface =
@@ -2639,18 +3628,23 @@ Status propose_region_resources(
   HYLE_RETURN_IF_ERROR(
       compute::detail::OperationPreparationAccess::validate_requirement(
           resource_proposal.workspace_resource));
-  for (const auto port : {input_requirements, output_requirements})
-    for (const auto &requirement : port)
-      HYLE_RETURN_IF_ERROR(
-          compute::detail::OperationPreparationAccess::validate_requirement(
-              requirement));
+  for (const auto &requirement : input_requirements)
+    HYLE_RETURN_IF_ERROR(
+        compute::detail::OperationPreparationAccess::validate_requirement(requirement.resource));
+  for (const auto &requirement : output_requirements) {
+    HYLE_RETURN_IF_ERROR(
+        compute::detail::OperationPreparationAccess::validate_requirement(requirement.resource));
+    if (!requirement.value.valid())
+      return Status::Internal("graph region proposed an invalid output carrier");
+  }
   return Status::Ok();
 }
 
 Status
 discover_region_resources(const Graph &published_graph,
                           const detail::GraphState &graph,
-                          detail::PlanState &plan, CompileOptions options,
+                          detail::PlanState &plan, CompileEnvironment environment,
+                          CompileOptions options,
                           std::span<const std::uint32_t> required_targets,
                           RegionDiscovery &discovery) noexcept {
   std::size_t eligible = 0;
@@ -2672,8 +3666,10 @@ discover_region_resources(const Graph &published_graph,
   RegionBoundaryIndex boundary(plan.allocator);
   HYLE_RETURN_IF_ERROR(boundary.initialize(graph));
   RegionValues inputs(plan.allocator), outputs(plan.allocator);
-  container::SmallVector<compute::ResourceRequirement, 8, mem::AllocatorRef>
-      input_requirements(plan.allocator), output_requirements(plan.allocator);
+  container::SmallVector<RegionInputRequirement, 8, mem::AllocatorRef>
+      input_requirements(plan.allocator);
+  container::SmallVector<RegionOutputRequirement, 8, mem::AllocatorRef>
+      output_requirements(plan.allocator);
   container::SmallVector<RegionEffectAccess, 4, mem::AllocatorRef> effects(
       plan.allocator);
   for (const auto &candidate : discovery.candidates) {
@@ -2728,7 +3724,9 @@ discover_region_resources(const Graph &published_graph,
                                        .effect_accesses = effects,
                                        .effect_bindings = plan.effect_bindings,
                                        .has_unknown_effects = unknown_effects,
-                                       .workload = options.workload};
+                                       .workload = options.workload,
+                                       .resource_budget = options.resource_budget,
+                                       .available_storage_domains = environment.storage_domains};
     RegionResourceProposal proposal;
     Status status = propose_region_resources(
         discovery.extensions[candidate.extension_index], request,
@@ -2754,27 +3752,40 @@ discover_region_resources(const Graph &published_graph,
       return Status::ResourceExhausted("region boundary size overflows");
     const auto port_count = inputs.size() + outputs.size();
     const auto begin = discovery.values.size();
+    const auto input_reference_begin = discovery.input_references.size();
+    const auto output_contract_begin = discovery.output_contracts.size();
     const auto effect_begin = discovery.effects.size();
     if (port_count > SIZE_MAX - begin ||
+        inputs.size() > SIZE_MAX - input_reference_begin ||
+        outputs.size() > SIZE_MAX - output_contract_begin ||
         effects.size() > SIZE_MAX - effect_begin)
       return Status::ResourceExhausted(
           "region resource skeleton storage overflows");
     if (!discovery.values.try_resize(begin + port_count) ||
         !discovery.requirements.try_resize(begin + port_count) ||
+        !discovery.input_references.try_resize(input_reference_begin + inputs.size()) ||
+        !discovery.output_contracts.try_resize(output_contract_begin + outputs.size()) ||
         !discovery.effects.try_resize(effect_begin + effects.size()))
       return plan_allocation_failure();
     std::copy(inputs.begin(), inputs.end(), discovery.values.begin() + begin);
     std::copy(outputs.begin(), outputs.end(),
               discovery.values.begin() + begin + inputs.size());
-    std::copy(input_requirements.begin(), input_requirements.end(),
-              discovery.requirements.begin() + begin);
-    std::copy(output_requirements.begin(), output_requirements.end(),
-              discovery.requirements.begin() + begin + inputs.size());
+    for (std::size_t port = 0; port < input_requirements.size(); ++port) {
+      discovery.requirements[begin + port] = input_requirements[port].resource;
+      discovery.input_references[input_reference_begin + port] =
+          input_requirements[port].accepts_reference;
+    }
+    for (std::size_t port = 0; port < output_requirements.size(); ++port) {
+      discovery.requirements[begin + inputs.size() + port] = output_requirements[port].resource;
+      discovery.output_contracts[output_contract_begin + port] = output_requirements[port].value;
+    }
     std::copy(effects.begin(), effects.end(),
               discovery.effects.begin() + effect_begin);
     discovery.resources[candidate.proposal_order] =
         RegionResourceSkeleton{.proposal = proposal,
                                .port_begin = begin,
+                               .input_reference_begin = input_reference_begin,
+                               .output_contract_begin = output_contract_begin,
                                .input_count = inputs.size(),
                                .output_count = outputs.size(),
                                .effect_begin = effect_begin,
@@ -2786,6 +3797,7 @@ discover_region_resources(const Graph &published_graph,
 
 struct RegionPrepareAttempt final {
   detail::PreparedRegion prepared{};
+  detail::PreparedConstantOutputs outputs{};
   compute::detail::ProviderPrepareDecline decline =
       compute::detail::ProviderPrepareDecline::kNone;
   Status reason = Status::Ok();
@@ -2795,10 +3807,17 @@ struct RegionPrepareAttempt final {
 Result<RegionPrepareAttempt> compile_region_artifact(
     detail::PlanState &plan, const RegionExtension &extension,
     RegionCompileRequest request,
-    const RegionResourceProposal &resource_proposal, CompileOptions options,
+    const RegionResourceProposal &resource_proposal,
+    std::span<const std::uint8_t> input_references,
+    std::span<const RegionOutputContract> output_contracts, CompileOptions options,
     detail::ConstantArtifactCache &packing) noexcept {
-  detail::ConstantArtifactScope scope{packing, plan, extension.extension,
-                                      extension.target, options};
+  if (input_references.size() != request.inputs.size() ||
+      output_contracts.size() != request.outputs.size())
+    return std::unexpected(Status::Internal("graph region carrier arity differs"));
+  detail::ConstantArtifactScope scope{packing, plan, extension.source,
+      extension.target, options, request.constants, request.outputs, request.output_resources,
+      detail::PreparedConstantOutputs(plan.allocator)};
+  scope.constant_origins = request.constant_origins;
   request.constant_artifacts = scope.access();
   ProviderRegionPrepared provider_prepared{};
   struct Episode final {
@@ -2807,8 +3826,7 @@ Result<RegionPrepareAttempt> compile_region_artifact(
     ProviderRegionPrepared *prepared = nullptr;
     compute::ProviderPrepareOutcome outcome{};
   } episode{&request, plan.allocator, &provider_prepared};
-  const Status compiled = compute::detail::ProviderExtensionAccess::call(
-      extension.extension,
+  const Status compiled = extension.call(
       +[](void *provider_context, const void *interface_value,
           void *opaque) noexcept -> Status {
         const auto *interface =
@@ -2861,6 +3879,26 @@ Result<RegionPrepareAttempt> compile_region_artifact(
       provider_prepared.properties.runtime;
   const bool shared =
       runtime.mode == compute::ProviderRuntimeMode::kSharedQueue;
+  const auto &properties = provider_prepared.properties;
+  // Zero dispatch is a cold, immutable result, never a substitute for an
+  // outputless effect or a provider episode hidden from Queue scheduling.
+  // bind_prepared_output has already checked each binding's exact resource,
+  // descriptor, acquired owner and unpublished output identity.
+  const bool ready_only = properties.dispatch_count == 0 && shared &&
+      extension.source.valid() && !extension.source.is_native() &&
+      !request.outputs.empty() &&
+      scope.outputs.size() == request.outputs.size() &&
+      std::ranges::all_of(request.outputs, [&](ValueId output) {
+        return std::ranges::count_if(scope.outputs, [&](const auto &entry) {
+          return entry.value == output;
+        }) == 1;
+      }) &&
+      request.effect_accesses.empty() && !request.has_unknown_effects &&
+      workspace.size == 0 && properties.copy_bytes == 0 &&
+      properties.packed_constant_count == 0 &&
+      properties.packed_constant_bytes == 0 &&
+      properties.synchronization_count == 0 &&
+      properties.invocation_private_bytes == std::optional<std::size_t>{0};
   if (table == nullptr || table->destroy_prepared == nullptr ||
       table->alias_support == nullptr || table->create_invocation == nullptr ||
       table->destroy_invocation == nullptr ||
@@ -2870,14 +3908,18 @@ Result<RegionPrepareAttempt> compile_region_artifact(
       (!shared &&
        (table->shared_submit != nullptr || table->delegated_submit == nullptr ||
         table->endpoint == nullptr || table->can_import_endpoint == nullptr)) ||
-      !runtime.valid() || runtime != resource_proposal.runtime ||
+      !runtime.valid() ||
+      !compute::detail::prepared_runtime_matches(runtime, resource_proposal.runtime) ||
+      (std::ranges::any_of(input_references, [](auto accepts) { return accepts != 0; }) &&
+       table->prepare_bindings == nullptr) ||
+      (extension.source.is_native() && shared) ||
       workspace.alignment == 0 ||
       (workspace.alignment & (workspace.alignment - 1)) != 0 ||
       (runtime.workspace_owner == compute::ProviderWorkspaceOwner::kCaller &&
        workspace.size != 0 && !request.workspace_resource.valid()) ||
       (runtime.workspace_owner == compute::ProviderWorkspaceOwner::kProvider &&
        request.workspace_resource.valid()) ||
-      provider_prepared.properties.dispatch_count == 0 ||
+      (properties.dispatch_count == 0 && !ready_only) ||
       provider_prepared.properties.preserves_effects !=
           resource_proposal.preserves_effects ||
       provider_prepared.properties.packed_constant_count >
@@ -2887,20 +3929,47 @@ Result<RegionPrepareAttempt> compile_region_artifact(
     return std::unexpected(Status::Internal(
         "graph region provider returned an invalid compiled artifact"));
   }
+  std::size_t live_port = 0;
+  for (std::size_t port = 0; port < request.outputs.size(); ++port) {
+    // Immutable prepared values are ready owned bindings, not runtime native
+    // ports. Match by logical identity before advancing the live port index.
+    if (std::ranges::any_of(scope.outputs,
+            [&](const auto &entry) { return entry.value == request.outputs[port]; }))
+      continue;
+    const auto actual = table->output_contract
+        ? table->output_contract(provider_prepared.state, live_port)
+        : RegionOutputContract{};
+    ++live_port;
+    if (!actual.valid() || actual != output_contracts[port]) {
+      table->destroy_prepared(provider_prepared.state, plan.allocator);
+      return std::unexpected(Status::Internal(
+          "graph region changed its proposed output carrier"));
+    }
+    const auto kind = actual.kind;
+    if (kind == RegionOutputKind::kCaller) continue;
+    if (shared || table->output_value == nullptr ||
+        (kind == RegionOutputKind::kBoundGenerated && table->prepare_bindings == nullptr)) {
+      table->destroy_prepared(provider_prepared.state, plan.allocator);
+      return std::unexpected(Status::Internal("generated region output contract is incomplete"));
+    }
+  }
   return RegionPrepareAttempt{
-      .prepared = detail::PreparedRegion(extension.extension, provider_prepared,
-                                         plan.allocator)};
+      .prepared = detail::PreparedRegion(extension.source, provider_prepared,
+                                         plan.allocator),
+      .outputs = std::move(scope.outputs)};
 }
 
 Status discover_region_candidates(
     const Graph &published_graph, const detail::GraphState &graph,
-    const compute::Context &context, CompileOptions options,
+    const ExecutionSource &source, CompileOptions options,
     const ProviderPolicy &provider_policy, mem::AllocatorRef allocator,
     RegionExtensions &extensions, RegionCandidates &candidates,
     RegionNodeIds &proposal_nodes, std::size_t &proposal_count,
     std::size_t &proposal_node_count, CompileSearchReport &search,
     ExecutionTargetId target, std::span<const std::uint32_t> node_targets = {},
-    const detail::GraphState *domain = nullptr) noexcept;
+    const detail::GraphState *domain = nullptr,
+    std::span<const detail::RegionAdapter> adapters = {},
+    const OperationDiscovery *operations = nullptr) noexcept;
 
 struct CompilationReservation final {
   detail::StorageCharge resident;
@@ -2909,23 +3978,27 @@ struct CompilationReservation final {
 
 Result<CompilationReservation> reserve_compilation_storage(
     detail::PlanState &plan, CompileOptions options,
-    compute::ProviderCompilationStorage storage) noexcept {
+    compute::ProviderCompilationStorage storage, bool &budget_declined) noexcept {
+  budget_declined = false;
   if (!plan.compilation_storage)
     return CompilationReservation{};
   const auto limits = *options.compilation_storage;
   const bool unknown = !storage.resident_bytes || !storage.peak_bytes;
   if (unknown && limits.unknown == UnknownStoragePolicy::kReject &&
       (limits.max_resident_bytes != SIZE_MAX ||
-       limits.max_peak_bytes != SIZE_MAX))
+       limits.max_peak_bytes != SIZE_MAX)) {
+    budget_declined = true;
     return std::unexpected(Status::ResourceExhausted(
         "graph provider compilation storage upper bound is unknown"));
+  }
   const auto resident = storage.resident_bytes.value_or(0);
   const auto peak = (std::max)(resident, storage.peak_bytes.value_or(0));
-  auto retained = plan.compilation_storage->reserve_private(storage.resident_bytes);
+  auto retained = plan.compilation_storage->reserve_private(storage.resident_bytes, &budget_declined);
   if (!retained)
     return std::unexpected(std::move(retained).error());
   auto transient = plan.compilation_storage->reserve_private(
-      storage.peak_bytes ? std::optional<std::size_t>{peak - resident} : std::nullopt);
+      storage.peak_bytes ? std::optional<std::size_t>{peak - resident} : std::nullopt,
+      &budget_declined);
   if (!transient)
     return std::unexpected(std::move(transient).error());
   if (unknown)
@@ -2933,19 +4006,10 @@ Result<CompilationReservation> reserve_compilation_storage(
   return CompilationReservation{std::move(*retained), std::move(*transient)};
 }
 
-Status prepare_placed_steps_attempt(
-    detail::PlanState &plan, const Graph &published_graph,
-    const detail::GraphState &graph, CompileEnvironment environment,
-    CompileOptions options, const ProviderPolicy &provider_policy,
-    RegionDiscovery &discovery, ConstantPreparation &constants,
-    PlacementAttemptOutcome &outcome,
-    detail::ConstantArtifactCache &packing) noexcept {
-  using Ordinals = container::SmallVector<std::uint32_t, 16, mem::AllocatorRef>;
-  using Flags = container::SmallVector<std::uint8_t, 16, mem::AllocatorRef>;
-  struct OperationPlacement final {
-    const OperationCandidate *route = nullptr;
-    std::uint32_t workspace_storage = detail::kNoWorkspaceRequest;
-  };
+Status initialize_placement_facts(const detail::PlanState &plan,
+                                  const detail::GraphState &graph,
+                                  CompileOptions options,
+                                  PlacementFacts &facts) noexcept {
   constexpr std::uint32_t kNone = detail::kNoWorkspaceRequest;
   const std::size_t target_count = plan.targets.size();
   const std::size_t storage_count = plan.storage_domains.size();
@@ -2962,11 +4026,11 @@ Status prepare_placed_steps_attempt(
         "graph placement capability matrix size overflows");
   }
 
-  Ordinals node_required(plan.allocator);
-  Ordinals node_preferred(plan.allocator);
-  Ordinals value_required(plan.allocator);
-  Ordinals value_preferred(plan.allocator);
-  Flags external_seen(plan.allocator);
+  auto &node_required = facts.node_required;
+  auto &node_preferred = facts.node_preferred;
+  auto &value_required = facts.value_required;
+  auto &value_preferred = facts.value_preferred;
+  auto &external_seen = facts.external_seen;
   if (!node_required.try_resize(node_count) ||
       !node_preferred.try_resize(node_count) ||
       !value_required.try_resize(value_count) ||
@@ -2982,7 +4046,6 @@ Status prepare_placed_steps_attempt(
     value_required[index] = kNone;
     value_preferred[index] = kNone;
     external_seen[index] = 0;
-    plan.external_storage[index] = 0;
   }
 
   for (const NodePlacement placement : options.node_placements) {
@@ -3028,8 +4091,38 @@ Status prepare_placed_steps_attempt(
       return Status::InvalidArgument(
           "graph external resource contract is duplicated");
     external_seen[value] = 1;
-    plan.external_storage[value] = contract.storage.ordinal();
   }
+  return Status::Ok();
+}
+
+Status prepare_placed_steps_attempt(
+    detail::PlanState &plan, const Graph &published_graph,
+    const detail::GraphState &graph, CompileEnvironment environment,
+    CompileOptions options, const ProviderPolicy &provider_policy,
+    RegionDiscovery &discovery, ConstantPreparation &constants,
+    PlacementAttemptOutcome &outcome,
+    detail::ConstantArtifactCache &packing) noexcept {
+  using Ordinals = container::SmallVector<std::uint32_t, 16, mem::AllocatorRef>;
+  struct OperationPlacement final {
+    const OperationCandidate *route = nullptr;
+    std::uint32_t workspace_storage = detail::kNoWorkspaceRequest;
+  };
+  constexpr std::uint32_t kNone = detail::kNoWorkspaceRequest;
+  const std::size_t target_count = plan.targets.size();
+  const std::size_t storage_count = plan.storage_domains.size();
+  const std::size_t value_count = graph.values.size();
+  const std::size_t node_count = graph.nodes.size();
+  const auto &node_required = discovery.placement.node_required;
+  const auto &node_preferred = discovery.placement.node_preferred;
+  const auto &value_required = discovery.placement.value_required;
+  const auto &value_preferred = discovery.placement.value_preferred;
+  const auto &external_seen = discovery.placement.external_seen;
+
+  // Output locality can change with the next complete candidate. Restore the
+  // original contracts without reparsing or retaining a second baseline array.
+  std::fill(plan.external_storage.begin(), plan.external_storage.end(), 0U);
+  for (const ExternalResourceContract contract : options.external_resources)
+    plan.external_storage[contract.value.ordinal()] = contract.storage.ordinal();
 
   // A required placement on an external source supplies its locality when no
   // stronger exact resource contract was given.
@@ -3050,20 +4143,26 @@ Status prepare_placed_steps_attempt(
     }
   }
 
-  // Compile-time constants already expose their exact resource. Validate it
-  // against the selected exact storage resource now.
+  // A borrowed native readonly import can have its own resource owner. Its
+  // source must prove that family now; selected readers are checked again
+  // after physical aliases exist. Materialized constants select their actual
+  // destination later, before the cold copy batch is prepared.
   for (std::size_t index = 0; index < graph.constants.size(); ++index) {
-    if (!constants.bindings.empty() && !constants.ready &&
-        constants.bindings[index].policy == ConstantPolicy::kMaterialize)
+    const bool materialize = !constants.bindings.empty() &&
+        constants.bindings[index].policy == ConstantPolicy::kMaterialize;
+    if (materialize)
       continue;
     const std::uint32_t value = graph.constants[index];
     const mem::MemoryResourceRef actual =
         plan.constant_bindings[index].storage().resource();
     const std::uint32_t storage = plan.external_storage[value];
-    if (storage >= storage_count ||
-        plan.storage_domains[storage].resource != actual) {
+    if (storage >= storage_count) {
       return Status::InvalidArgument(
           "constant binding does not match its external resource contract");
+    }
+    const auto nominated = plan.storage_domains[storage].resource;
+    if (nominated != actual) {
+      HYLE_RETURN_IF_ERROR(validate_configured_read_resource(plan, nominated, actual));
     }
   }
 
@@ -3071,15 +4170,23 @@ Status prepare_placed_steps_attempt(
   auto &all_region_candidates = discovery.candidates;
   auto &all_region_nodes = discovery.nodes;
   if (!discovery.ready) {
+    HYLE_RETURN_IF_ERROR(discover_operation_candidates(
+        plan, graph, environment, options, provider_policy, node_required,
+        discovery.operations, plan.search));
+    if (options.search_policy == CompileSearchPolicy::kRequireUnexhausted &&
+        plan.search.operation_proposal_limit_reached)
+      return Status::ResourceExhausted("graph operation discovery reached a "
+                                       "search limit under strict policy");
     std::size_t region_proposal_count = 0;
     std::size_t region_proposal_node_count = 0;
     for (std::size_t target = 0; target < target_count; ++target) {
       Status discovered = discover_region_candidates(
-          published_graph, graph, *environment.targets[target].context, options,
+          published_graph, graph, environment.targets[target].source, options,
           provider_policy, plan.allocator, extensions, all_region_candidates,
           all_region_nodes, region_proposal_count, region_proposal_node_count,
           plan.search, ExecutionTargetId{static_cast<std::uint32_t>(target)},
-          {}, detail::GraphAccess::state(plan.domain_graph));
+          node_required, detail::GraphAccess::state(plan.domain_graph),
+          discovery.adapters, &discovery.operations);
       if (!discovered.ok())
         return discovered;
     }
@@ -3090,20 +4197,27 @@ Status prepare_placed_steps_attempt(
       return Status::ResourceExhausted("graph candidate discovery reached a "
                                        "search limit under strict policy");
     }
-    HYLE_RETURN_IF_ERROR(discover_operation_candidates(
-        plan, graph, environment, options, provider_policy, node_required,
-        discovery.operations, plan.search));
-    if (options.search_policy == CompileSearchPolicy::kRequireUnexhausted &&
-        plan.search.operation_proposal_limit_reached)
-      return Status::ResourceExhausted("graph operation discovery reached a "
-                                       "search limit under strict policy");
     if (!all_region_nodes.try_resize(region_proposal_node_count) ||
         !discovery.rejected.try_resize(region_proposal_count))
       return plan_allocation_failure();
     std::fill(discovery.rejected.begin(), discovery.rejected.end(),
               std::uint8_t{0});
     HYLE_RETURN_IF_ERROR(discover_region_resources(
-        published_graph, graph, plan, options, node_required, discovery));
+        published_graph, graph, plan, environment, options, node_required, discovery));
+    if (!discovery.region_coverage.try_resize(node_count))
+      return plan_allocation_failure();
+    std::fill(discovery.region_coverage.begin(), discovery.region_coverage.end(),
+              RegionCoverage::kNone);
+    for (const RegionCandidate &candidate : all_region_candidates) {
+      for (NodeId node : candidate_nodes(candidate, all_region_nodes))
+        discovery.region_coverage[node.ordinal()] = RegionCoverage::kEligible;
+    }
+    for (const RegionCandidate &candidate : all_region_candidates) {
+      if (discovery.rejected[candidate.proposal_order] != 0) {
+        for (NodeId node : candidate_nodes(candidate, all_region_nodes))
+          discovery.region_coverage[node.ordinal()] = RegionCoverage::kRejected;
+      }
+    }
     HYLE_RETURN_IF_ERROR(discovery.routes.initialize(
         node_count, target_count, discovery.operations, all_region_candidates,
         all_region_nodes, discovery.rejected, node_preferred));
@@ -3123,6 +4237,36 @@ Status prepare_placed_steps_attempt(
                                                 outcome.search_limit));
     if (!discovery.has_route) {
       outcome.no_feasible_route = true;
+      const auto missing = discovery.routes.uncovered_node();
+      if (missing != RouteSearch::kNoRoute) {
+        const bool limited = plan.search.operation_proposal_limit_reached ||
+                             plan.search.region_proposal_limit_reached ||
+                             plan.search.per_provider_proposal_limit_reached ||
+                             plan.search.region_node_limit_reached;
+        Status status = limited
+                            ? Status::ResourceExhausted(
+                                  "candidate discovery limit left a graph node uncovered")
+                            : Status::Unimplemented(
+                                  "no available operation or region implementation covers this node");
+        if (plan.search.operation_proposal_limit_reached)
+          status = std::move(status).WithContext("operation_proposal_limit");
+        if (plan.search.region_proposal_limit_reached)
+          status = std::move(status).WithContext("region_proposal_limit");
+        if (plan.search.per_provider_proposal_limit_reached)
+          status = std::move(status).WithContext("per_provider_proposal_limit");
+        if (plan.search.region_node_limit_reached)
+          status = std::move(status).WithContext("region_node_limit");
+        std::array<char, 32> location{'g', 'r', 'a', 'p', 'h', ' ', 'n', 'o', 'd', 'e', ' '};
+        const auto number = std::to_chars(location.data() + 11,
+                                           location.data() + location.size(), missing);
+        HYLE_FATAL_ASSERT(number.ec == std::errc{});
+        const auto &node = graph.nodes[missing];
+        const auto name = node.view_index()
+                              ? compute::operation_name(node.kind())
+                              : compute::operation_name(node.operation());
+        return std::move(status).WithContext(name).WithContext(
+            std::string_view(location.data(), number.ptr - location.data()));
+      }
       return Status::Unimplemented(
           "no complete graph route satisfies the available candidates");
     }
@@ -3188,7 +4332,7 @@ Status prepare_placed_steps_attempt(
         return false;
       }
       Status accessible =
-          plan.targets[target].context.validate_resource(resource);
+          plan.targets[target].source.validate_resource(resource);
       if (!accessible.ok()) {
         if (!accessible.IsFailedPrecondition() && !accessible.IsUnimplemented())
           return std::unexpected(std::move(accessible));
@@ -3361,24 +4505,7 @@ Status prepare_placed_steps_attempt(
     }
   }
 
-  enum class RegionCoverage : std::uint8_t { kNone, kEligible, kRejected };
-  container::SmallVector<RegionCoverage, 32, mem::AllocatorRef> region_coverage(
-      plan.allocator);
-  if (!region_coverage.try_resize(node_count)) {
-    return plan_allocation_failure();
-  }
-  std::fill(region_coverage.begin(), region_coverage.end(),
-            RegionCoverage::kNone);
-  for (const RegionCandidate &candidate : all_region_candidates) {
-    for (NodeId node : candidate_nodes(candidate, all_region_nodes))
-      region_coverage[node.ordinal()] = RegionCoverage::kEligible;
-  }
-  for (const RegionCandidate &candidate : all_region_candidates) {
-    if (discovery.rejected[candidate.proposal_order] != 0) {
-      for (NodeId node : candidate_nodes(candidate, all_region_nodes))
-        region_coverage[node.ordinal()] = RegionCoverage::kRejected;
-    }
-  }
+  const auto &region_coverage = discovery.region_coverage;
 
   // With no explicit output storage, keep a published node result where its
   // producer already resides. This avoids manufacturing a boundary copy just
@@ -3390,13 +4517,18 @@ Status prepare_placed_steps_attempt(
     }
   }
 
-  const std::size_t maximum_instances = value_count * storage_count;
+  const std::size_t matrix_instances = value_count * storage_count;
+  // One original generated carrier may coexist with its concrete caller
+  // replica in the same storage domain. The matrix caches the latter.
+  if (value_count > SIZE_MAX - matrix_instances)
+    return Status::ResourceExhausted("graph carrier-instance capacity overflows");
+  const std::size_t maximum_instances = matrix_instances + value_count;
   if (node_count > SIZE_MAX - maximum_instances) {
     return Status::ResourceExhausted("graph plan capacity overflows");
   }
   Ordinals instances(plan.allocator);
   Ordinals producer_instances(plan.allocator);
-  if (!instances.try_resize(maximum_instances) ||
+  if (!instances.try_resize(matrix_instances) ||
       !producer_instances.try_resize(value_count)) {
     return plan_allocation_failure();
   }
@@ -3413,6 +4545,10 @@ Status prepare_placed_steps_attempt(
   plan.instance_descriptions.clear();
   plan.instance_values.clear();
   plan.instance_storage.clear();
+  plan.instance_output_contracts.clear();
+  plan.instance_producer_targets.clear();
+  plan.instance_constant_owners.clear();
+  plan.instance_alignments.clear();
   plan.instance_roles.clear();
   plan.workspace_requests.clear();
   plan.value_materialized.clear();
@@ -3432,6 +4568,10 @@ Status prepare_placed_steps_attempt(
       !plan.instance_descriptions.try_reserve(maximum_instances) ||
       !plan.instance_values.try_reserve(maximum_instances) ||
       !plan.instance_storage.try_reserve(maximum_instances) ||
+      !plan.instance_output_contracts.try_reserve(maximum_instances) ||
+      !plan.instance_producer_targets.try_reserve(maximum_instances) ||
+      !plan.instance_constant_owners.try_reserve(maximum_instances) ||
+      !plan.instance_alignments.try_reserve(maximum_instances) ||
       !plan.instance_roles.try_reserve(maximum_instances) ||
       !plan.workspace_requests.try_reserve(maximum_instances) ||
       !plan.value_materialized.try_reserve(maximum_instances) ||
@@ -3451,6 +4591,9 @@ Status prepare_placed_steps_attempt(
     if (!plan.instance_descriptions.try_push_back(plan.descriptions[value]) ||
         !plan.instance_values.try_push_back(value) ||
         !plan.instance_storage.try_push_back(storage) ||
+        !plan.instance_output_contracts.try_push_back(RegionOutputContract{}) ||
+        !plan.instance_producer_targets.try_push_back(kNone) ||
+        !plan.instance_constant_owners.try_push_back(kNone) ||
         !plan.instance_alignments.try_push_back(1) ||
         !plan.instance_roles.try_push_back(roles) ||
         !plan.workspace_requests.try_push_back(kNone) ||
@@ -3485,14 +4628,39 @@ Status prepare_placed_steps_attempt(
             StorageDomainId{destination_storage}, ExecutionTargetId{target})))
       return plan_allocation_failure();
     plan.value_materialized[destination] = 1;
+    plan.instance_output_contracts[destination] = {};
+    plan.instance_producer_targets[destination] = target;
     return Status::Ok();
   };
 
-  auto supports_copy = [&](std::uint32_t target, std::uint32_t source,
+  auto copy_source = [&](std::uint32_t instance) noexcept {
+    const auto producer = plan.instance_producer_targets[instance];
+    return detail::CopySourceDescription{
+        .description = plan.instance_descriptions[instance],
+        .resource = plan.storage_domains[plan.instance_storage[instance]].resource,
+        .value = plan.instance_output_contracts[instance],
+        .producer = producer < plan.targets.size() ? plan.targets[producer].source : ExecutionSource{}};
+  };
+
+  auto supports_copy = [&](std::uint32_t target, const detail::CopySourceDescription &source,
                            std::uint32_t destination) noexcept -> Result<bool> {
-    for (const auto storage : {source, destination}) {
-      auto status = plan.targets[target].context.validate_resource(
-          plan.storage_domains[storage].resource);
+    // Shared Queue and native transfer capabilities each prove their own
+    // actual resources. Accessibility alone grants neither execution path.
+    auto retained = detail::ExecutionSourceAccess::compute(
+        plan.targets[target].source);
+    if (!retained) {
+      if (retained.error().IsUnimplemented())
+        return detail::ExecutionSourceAccess::can_copy(
+            plan.targets[target].source, source,
+            plan.storage_domains[destination].resource);
+      return std::unexpected(std::move(retained).error());
+    }
+    if (source.value.projection != RegionOutputProjection::kTensorView ||
+        source.value.kind == RegionOutputKind::kDeferredGenerated)
+      return false;
+    for (const auto resource : {source.resource, plan.storage_domains[destination].resource}) {
+      auto status = plan.targets[target].source.validate_resource(
+          resource);
       if (status.ok())
         continue;
       if (status.IsFailedPrecondition() || status.IsUnimplemented())
@@ -3502,14 +4670,14 @@ Status prepare_placed_steps_attempt(
     return true;
   };
 
-  auto copy_targets = [&](std::uint32_t source,
+  auto copy_targets = [&](const detail::CopySourceDescription &source,
                           std::uint32_t destination) noexcept -> Status {
     resource_choices.clear();
     for (unsigned preference = 0; preference != 3; ++preference) {
       for (std::size_t index = 0; index < target_count; ++index) {
         const auto storage = plan.targets[index].default_storage.ordinal();
         const unsigned rank = storage == destination ? 0
-                              : storage == source    ? 1
+                              : plan.storage_domains[storage].resource == source.resource ? 1
                                                      : 2;
         if (rank != preference)
           continue;
@@ -3534,34 +4702,29 @@ Status prepare_placed_steps_attempt(
                          std::uint32_t destination) noexcept -> Status {
     const auto source_storage = plan.instance_storage[source];
     const auto destination_storage = plan.instance_storage[destination];
-    HYLE_RETURN_IF_ERROR(copy_targets(source_storage, destination_storage));
+    const auto description = copy_source(source);
+    HYLE_RETURN_IF_ERROR(copy_targets(description, destination_storage));
     if (!resource_choices.empty()) {
       HYLE_ASSIGN_OR_RETURN(const auto target, select_copy_target());
       return append_copy_step(source, destination, target);
     }
 
-    // Only explicit CPU/GPU admission can reach this branch. Ordinary Graph
-    // still requires one Device, and no direct native admission is weakened.
-    // One shared host domain supplies the two real Copy steps; its lifetime
-    // and workspace quota remain part of the existing physical plan.
-    if (target_count != 2 ||
-        plan.targets[0].context.device() == plan.targets[1].context.device()) {
-      outcome.rejected_plan = true;
-      return Status::Unimplemented(
-          "no execution target can transfer between the selected resources");
-    }
-
+    // Search the configured host-visible intermediates using both actual
+    // transfer capabilities. No backend name or Device-count gate is needed.
     for (std::uint32_t storage = 0; storage < storage_count; ++storage) {
       if (storage == source_storage || storage == destination_storage ||
           !plan.storage_domains[storage].resource.properties().has(
               mem::MemoryProperty::kHostAccessible))
         continue;
       bool from = false, to = false;
+      const detail::CopySourceDescription intermediate{
+          .description = description.description,
+          .resource = plan.storage_domains[storage].resource};
       for (std::uint32_t target = 0; target < target_count; ++target) {
         HYLE_ASSIGN_OR_RETURN(const bool accepts_source,
-                              supports_copy(target, source_storage, storage));
+                              supports_copy(target, description, storage));
         HYLE_ASSIGN_OR_RETURN(const bool accepts_destination,
-                              supports_copy(target, storage, destination_storage));
+                              supports_copy(target, intermediate, destination_storage));
         from |= accepts_source;
         to |= accepts_destination;
       }
@@ -3570,7 +4733,7 @@ Status prepare_placed_steps_attempt(
     }
     if (resource_choices.empty()) {
       outcome.rejected_plan = true;
-      return Status::Unimplemented("CPU+GPU boundary has no shared staging domain");
+      return Status::Unimplemented("storage boundary has no configured transfer bridge");
     }
     HYLE_ASSIGN_OR_RETURN(const auto storage, select_copy_target());
     const auto value = plan.instance_values[source];
@@ -3579,34 +4742,68 @@ Status prepare_placed_steps_attempt(
       HYLE_ASSIGN_OR_RETURN(staged, add_instance(value, storage, 0));
     }
     if (!plan.value_materialized[staged]) {
-      HYLE_RETURN_IF_ERROR(copy_targets(source_storage, storage));
+      HYLE_RETURN_IF_ERROR(copy_targets(description, storage));
       HYLE_ASSIGN_OR_RETURN(const auto from, select_copy_target());
       HYLE_RETURN_IF_ERROR(append_copy_step(source, staged, from));
     }
-    HYLE_RETURN_IF_ERROR(copy_targets(storage, destination_storage));
+    HYLE_RETURN_IF_ERROR(copy_targets(copy_source(staged), destination_storage));
     HYLE_ASSIGN_OR_RETURN(const auto to, select_copy_target());
     return append_copy_step(staged, destination, to);
   };
 
   auto ensure_local_instance =
-      [&](std::uint32_t value,
-          std::uint32_t storage) noexcept -> Result<std::uint32_t> {
-    std::uint32_t instance =
-        instances[static_cast<std::size_t>(value) * storage_count + storage];
-    if (instance != kNone)
-      return instance;
+      [&](auto &&self, std::uint32_t value,
+          std::uint32_t storage, bool needs_tensor) noexcept -> Result<std::uint32_t> {
     const std::uint32_t source = producer_instances[value];
     if (source == kNone) {
       return std::unexpected(
           Status::Internal("graph value has no physical producer"));
     }
-    auto created = add_instance(value, storage, 0);
+    // A reference-capable consumer keeps the original producer even when a
+    // concrete replica has subsequently occupied the same matrix entry.
+    if (!needs_tensor && plan.instance_storage[source] == storage)
+      return source;
+    std::uint32_t instance =
+        instances[static_cast<std::size_t>(value) * storage_count + storage];
+    if (instance != kNone) {
+      const auto contract = plan.instance_output_contracts[instance];
+      if (!needs_tensor || (contract.projection == RegionOutputProjection::kTensorView &&
+                            contract.kind != RegionOutputKind::kDeferredGenerated))
+        return instance;
+    }
+    const bool immutable = (plan.instance_roles[source] & detail::kConstant) != 0;
+    const auto parent = plan.alias_sources[source];
+    if (immutable && parent != detail::kNoInPlaceSource) {
+      HYLE_ASSIGN_OR_RETURN(const auto local,
+          self(self, plan.instance_values[parent], storage, needs_tensor));
+      HYLE_ASSIGN_OR_RETURN(const auto created, add_instance(value, storage, detail::kConstant));
+      plan.alias_sources[created] = local;
+      plan.alias_offsets[created] = plan.alias_offsets[source];
+      plan.instance_output_contracts[created] = plan.instance_output_contracts[local];
+      plan.instance_producer_targets[created] = plan.instance_producer_targets[local];
+      return created;
+    }
+    // Only logical immutable roots can acquire canonical replicas here.
+    // Provider-prepared outputs keep their original artifact provenance.
+    const bool canonical = immutable && constant_slot(plan, value) != SIZE_MAX;
+    auto created = add_instance(value, storage, canonical ? detail::kConstant : 0);
     if (!created)
       return std::unexpected(std::move(created).error());
+    if (canonical)
+      return *created;
     Status copied = append_copy(source, *created);
     if (!copied.ok())
       return std::unexpected(std::move(copied));
     return *created;
+  };
+
+  auto needs_tensor = [&](std::uint32_t value, std::uint32_t target,
+                          bool accepts_reference) noexcept {
+    const auto instance = producer_instances[value];
+    if (!accepts_reference || instance == kNone) return true;
+    const auto producer = plan.instance_producer_targets[instance];
+    return producer >= plan.targets.size() ||
+        !plan.targets[producer].source.same_owner(plan.targets[target].source);
   };
 
   for (std::uint32_t value : graph.inputs) {
@@ -3703,8 +4900,12 @@ Status prepare_placed_steps_attempt(
           std::span<const compute::ResourceRequirement>(discovery.requirements)
               .subspan(skeleton.port_begin, values.size());
       const auto input_requirements = requirements.first(skeleton.input_count);
+      const auto input_references = std::span<const std::uint8_t>(discovery.input_references)
+          .subspan(skeleton.input_reference_begin, skeleton.input_count);
       const auto output_requirements =
           requirements.subspan(skeleton.input_count);
+      const auto output_contracts = std::span<const RegionOutputContract>(discovery.output_contracts)
+          .subspan(skeleton.output_contract_begin, skeleton.output_count);
       if (!selected_inputs.try_resize(logical_inputs.size()) ||
           !selected_outputs.try_resize(logical_outputs.size())) {
         return plan_allocation_failure();
@@ -3778,10 +4979,22 @@ Status prepare_placed_steps_attempt(
       if (!physical_inputs.try_reserve(logical_inputs.size()))
         return plan_allocation_failure();
       for (std::size_t index = 0; index < logical_inputs.size(); ++index) {
-        auto instance = ensure_local_instance(logical_inputs[index].ordinal(),
-                                              selected_inputs[index]);
+        auto instance = ensure_local_instance(ensure_local_instance, logical_inputs[index].ordinal(),
+                                              selected_inputs[index],
+                                              needs_tensor(logical_inputs[index].ordinal(), target,
+                                                  input_references[index] != 0));
         if (!instance)
           return std::move(instance).error();
+        HYLE_ASSIGN_OR_RETURN(const bool aligned,
+            accepts_input_alias_alignment(plan, *instance,
+                input_requirements[index].minimum_alignment));
+        if (!aligned) {
+          discovery.physical.reject_suffix(
+              preparation_prefix[region_nodes.front().ordinal()]);
+          outcome.rejected_region = candidate.proposal_order;
+          return Status::Unimplemented(
+              "graph input alias offset cannot satisfy region port alignment");
+        }
         plan.instance_alignments[*instance] =
             (std::max)(plan.instance_alignments[*instance],
                        input_requirements[index].minimum_alignment);
@@ -3814,6 +5027,8 @@ Status prepare_placed_steps_attempt(
         plan.instance_alignments[*instance] =
             (std::max)(plan.instance_alignments[*instance],
                        output_requirements[index].minimum_alignment);
+        plan.instance_output_contracts[*instance] = output_contracts[index];
+        plan.instance_producer_targets[*instance] = target;
         producer_instances[value] = *instance;
         producer_storage[value] = storage;
         if ((roles & detail::kExternalOutput) != 0)
@@ -3880,9 +5095,21 @@ Status prepare_placed_steps_attempt(
           selected_edge_storage[node.input_begin + input_index];
       if (input_storage == kNone)
         return Status::Internal("prepared graph input has no selected storage");
-      auto instance = ensure_local_instance(value, input_storage);
+      auto instance = ensure_local_instance(ensure_local_instance, value, input_storage, true);
       if (!instance)
         return std::move(instance).error();
+      if (!port_requirements.empty()) {
+        HYLE_ASSIGN_OR_RETURN(const bool aligned,
+            accepts_input_alias_alignment(plan, *instance,
+                port_requirements[input_index].minimum_alignment));
+        if (!aligned) {
+          discovery.physical.reject_suffix(preparation_prefix[node_index]);
+          outcome.rejected_operation = static_cast<std::size_t>(
+              placement->route - discovery.operations.candidates.data());
+          return Status::Unimplemented(
+              "graph input alias offset cannot satisfy operation port alignment");
+        }
+      }
       if (!port_requirements.empty())
         plan.instance_alignments[*instance] =
             (std::max)(plan.instance_alignments[*instance],
@@ -3921,6 +5148,7 @@ Status prepare_placed_steps_attempt(
                        port_requirements[node.input_count + output_index]
                            .minimum_alignment);
       producer_instances[value] = *instance;
+      plan.instance_producer_targets[*instance] = target;
       if ((roles & detail::kExternalOutput) != 0)
         plan.external_instances[value] = *instance;
       if (!plan.node_outputs.try_push_back(*instance))
@@ -3967,6 +5195,16 @@ Status prepare_placed_steps_attempt(
                 plan.instance_descriptions[plan.node_inputs[input_begin]],
                 plan.instance_descriptions[plan.node_outputs[output_begin]]));
       }
+      const auto input = plan.node_inputs[input_begin];
+      const auto output = plan.node_outputs[output_begin];
+      plan.alias_sources[output] = input;
+      plan.alias_offsets[output] = step.view_offset;
+      plan.instance_output_contracts[output] = plan.instance_output_contracts[input];
+      plan.instance_producer_targets[output] = plan.instance_producer_targets[input];
+      if ((plan.instance_roles[input] & detail::kConstant) != 0) {
+        plan.instance_roles[output] |= detail::kConstant;
+        plan.value_materialized[output] = 0;
+      }
     }
     plan.node_steps[node_index] = step_index;
   }
@@ -3985,13 +5223,9 @@ Status prepare_placed_steps_attempt(
     std::uint32_t destination =
         instances[static_cast<std::size_t>(value) * storage_count + storage];
     if (destination == kNone) {
-      auto created = add_instance(value, storage, detail::kExternalOutput);
-      if (!created)
-        return std::move(created).error();
-      destination = *created;
-      Status copied = append_copy(source, destination);
-      if (!copied.ok())
-        return copied;
+      HYLE_ASSIGN_OR_RETURN(destination,
+          ensure_local_instance(ensure_local_instance, value, storage, false));
+      plan.instance_roles[destination] |= detail::kExternalOutput;
     } else {
       plan.instance_roles[destination] |= detail::kExternalOutput;
     }
@@ -4001,14 +5235,78 @@ Status prepare_placed_steps_attempt(
   // The entire physical route, including output copies, exists before any
   // heavyweight artifact. A prepare decline invalidates this construction;
   // it never changes the selected provider/target/storage in this loop.
-  HYLE_RETURN_IF_ERROR(materialize_constants(plan, environment, constants));
+  auto aligned = prepare_constant_alignments(plan);
+  if (!aligned.ok()) {
+    outcome.rejected_plan = aligned.IsInvalidArgument();
+    return aligned;
+  }
+  HYLE_RETURN_IF_ERROR(retain_constant_owners(plan, constants));
+  HYLE_RETURN_IF_ERROR(packing.begin_candidate());
+  bool constant_route_declined = false;
+  const auto materialized = materialize_constants(plan, environment, constants, packing,
+                                                 constant_route_declined);
+  if (!materialized.ok()) {
+    outcome.rejected_plan = constant_route_declined;
+    return materialized;
+  }
   if (plan.compilation_storage &&
       !plan.artifact_charges.try_resize(plan.steps.size()))
     return plan_allocation_failure();
   NodeShapeScratch shape_scratch(plan.allocator);
   for (auto &step : plan.steps) {
-    if (step.kind == detail::PlanStepKind::kCopy ||
-        step.kind == detail::PlanStepKind::kView)
+    if (step.kind == detail::PlanStepKind::kCopy) {
+      const auto &source = plan.targets[step.target.ordinal()].source;
+      auto retained = detail::ExecutionSourceAccess::compute(source);
+      if (retained)
+        continue; // The original shared Queue copy has no prepared artifact.
+      if (!retained.error().IsUnimplemented())
+        return std::move(retained).error();
+      auto charge = reserve_compilation_storage(plan, options, {}, outcome.rejected_plan);
+      if (!charge) {
+        return std::move(charge).error();
+      }
+      HYLE_ASSIGN_OR_RETURN(auto capability, detail::ExecutionSourceAccess::region(source));
+      ProviderRegionPrepared prepared{};
+      const auto input = plan.node_inputs[step.input_begin];
+      const auto output = plan.node_outputs[step.output_begin];
+      const auto status = detail::ExecutionSourceAccess::prepare_copy(source,
+          copy_source(input),
+          plan.storage_domains[plan.instance_storage[output]].resource,
+          plan.allocator, &prepared);
+      // Unsupported geometry is a cold route decline, including when no
+      // artifact was created. Actual preparation errors remain fatal.
+      if (!status.ok())
+        outcome.rejected_plan = status.IsUnimplemented();
+      const auto *table = prepared.vtable;
+      if (table == nullptr || table->destroy_prepared == nullptr) {
+        if (prepared.state != nullptr || status.ok())
+          return Status::Internal("native transfer returned an unowned artifact");
+        return status;
+      }
+      detail::PreparedRegion artifact(std::move(capability), prepared, plan.allocator);
+      if (!status.ok()) {
+        return status;
+      }
+      const auto runtime = prepared.properties.runtime;
+      if (!runtime.valid() || runtime.mode != compute::ProviderRuntimeMode::kDelegated ||
+          runtime.workspace_owner != compute::ProviderWorkspaceOwner::kProvider ||
+          table->alias_support == nullptr || table->create_invocation == nullptr ||
+          table->destroy_invocation == nullptr || table->shared_submit != nullptr ||
+          table->delegated_submit == nullptr || table->endpoint == nullptr ||
+          table->can_import_endpoint == nullptr || table->prepare_bindings == nullptr ||
+          table->seal_bindings == nullptr || prepared.properties.workspace.size != 0 ||
+          (table->output_contract && table->output_contract(prepared.state, 0) != RegionOutputContract{}))
+        return Status::Internal("native transfer returned an invalid execution contract");
+      if (!replay_allowed(options.provider_replay, runtime.replay_class)) {
+        outcome.rejected_plan = true;
+        return Status::Unimplemented("native transfer does not satisfy the replay policy");
+      }
+      step.region = std::move(artifact);
+      if (plan.compilation_storage)
+        plan.artifact_charges[static_cast<std::size_t>(&step - plan.steps.data())] = std::move(charge->resident);
+      continue;
+    }
+    if (step.kind == detail::PlanStepKind::kView)
       continue;
     if (!inputs.try_resize(step.input_count) ||
         !outputs.try_resize(step.output_count) ||
@@ -4052,14 +5350,16 @@ Status prepare_placed_steps_attempt(
       HYLE_ASSIGN_OR_RETURN(auto shape,
                             shape_scratch.bind(plan, step.node_begin));
       auto charge = reserve_compilation_storage(
-          plan, options, route->proposal.cost.compilation_storage);
+          plan, options, route->proposal.cost.compilation_storage, outcome.rejected_plan);
       if (!charge) {
-        outcome.rejected_plan = true;
         return std::move(charge).error();
       }
+      HYLE_ASSIGN_OR_RETURN(auto retained,
+          detail::ExecutionSourceAccess::compute(
+              environment.targets[step.target.ordinal()].source));
       auto attempt =
           compute::detail::OperationPreparationAccess::prepare_candidate(
-              *environment.targets[step.target.ordinal()].context,
+              *retained,
               route->proposal, graph.nodes[step.node_begin].operation(), inputs,
               outputs, requirements.first(step.input_count),
               requirements.subspan(step.input_count),
@@ -4087,15 +5387,76 @@ Status prepare_placed_steps_attempt(
           std::span<const ValueId>(discovery.values)
               .subspan(skeleton.port_begin,
                        skeleton.input_count + skeleton.output_count);
-      const RegionCompileRequest request{
+      container::SmallVector<ConstantBinding, 0, mem::AllocatorRef>
+          region_constants(plan.allocator);
+      container::SmallVector<RegionConstantOrigin, 0, mem::AllocatorRef>
+          region_constant_origins(plan.allocator);
+      for (std::size_t port = 0; port < step.input_count; ++port) {
+        const auto value = values[port];
+        const auto instance = plan.node_inputs[step.input_begin + port];
+        if (instance >= plan.instance_roles.size() ||
+            instance >= plan.alias_sources.size())
+          return Status::Internal("region constant physical instance is invalid");
+        if ((plan.instance_roles[instance] & detail::kConstant) == 0)
+          continue;
+        // A declared domain resolves View offsets from each invocation's
+        // concrete signature. Its envelope is not a cold immutable binding.
+        if (plan.domain_graph.valid() &&
+            plan.alias_sources[instance] != detail::kNoInPlaceSource)
+          continue;
+        auto root = instance;
+        std::size_t offset = 0;
+        while (plan.alias_sources[root] != detail::kNoInPlaceSource) {
+          const auto parent = plan.alias_sources[root];
+          if (parent >= root || parent >= plan.alias_sources.size() ||
+              root >= plan.alias_offsets.size() ||
+              plan.alias_offsets[root] > SIZE_MAX - offset)
+            return Status::Internal("region constant physical alias chain is invalid");
+          offset += plan.alias_offsets[root];
+          root = parent;
+        }
+        if (root >= plan.instance_values.size() ||
+            root >= plan.instance_descriptions.size() ||
+            root >= plan.instance_storage.size() ||
+            instance >= plan.instance_descriptions.size() ||
+            instance >= plan.instance_storage.size() ||
+            plan.instance_storage[root] != plan.instance_storage[instance])
+          return Status::Internal("region constant physical root is invalid");
+        const auto logical_root = plan.instance_values[root];
+        const auto slot = constant_slot(plan, logical_root);
+        // Prepared region outputs have their own artifact provenance. This
+        // interface currently exposes only original logical constant roots.
+        if (slot == SIZE_MAX)
+          continue;
+        const auto *owned = plan.owned_instance_constant(root);
+        auto binding = plan.constant_bindings[slot];
+        if (owned != nullptr) {
+          HYLE_ASSIGN_OR_RETURN(binding, compute::ConstTensorView::create(
+              plan.instance_descriptions[root], owned->view()));
+        }
+        HYLE_ASSIGN_OR_RETURN(const auto bytes,
+            plan.instance_descriptions[instance].required_bytes());
+        HYLE_ASSIGN_OR_RETURN(const auto storage,
+            binding.storage().subview(offset, bytes));
+        HYLE_ASSIGN_OR_RETURN(binding, compute::ConstTensorView::create(
+            plan.instance_descriptions[instance], storage));
+        if (owned && plan.instance_storage[root] >= plan.storage_domains.size())
+          return Status::Internal("region constant physical storage is invalid");
+        if (!region_constants.try_push_back({value, binding,
+                owned ? ConstantPolicy::kMaterialize : ConstantPolicy::kBorrow,
+                owned ? plan.storage_domains[plan.instance_storage[root]].owner
+                      : plan.constant_owners[slot],
+                owned ? compute::ReadLease{} : plan.constant_leases[slot]}) ||
+            !region_constant_origins.try_push_back(
+                {value, plan.constant_ids[slot], offset}))
+          return plan_allocation_failure();
+      }
+      RegionCompileRequest request{
           .graph = &published_graph,
           .nodes = candidate_nodes(candidate, all_region_nodes),
           .inputs = values.first(skeleton.input_count),
           .outputs = values.subspan(skeleton.input_count),
-          .constants =
-              constants.bindings.empty()
-                  ? options.constants
-                  : std::span<const ConstantBinding>(constants.bindings),
+          .constants = region_constants,
           .input_resources = input_resources,
           .output_resources = output_resources,
           .workspace_resource = workspace_resource,
@@ -4105,16 +5466,23 @@ Status prepare_placed_steps_attempt(
                   .subspan(skeleton.effect_begin, skeleton.effect_count),
           .effect_bindings = plan.effect_bindings,
           .has_unknown_effects = skeleton.has_unknown_effects,
-          .workload = options.workload};
+          .workload = options.workload,
+          .resource_budget = options.resource_budget,
+          .available_storage_domains = environment.storage_domains};
+      request.constant_origins = region_constant_origins;
       auto charge = reserve_compilation_storage(
-          plan, options, skeleton.proposal.compilation_storage);
+          plan, options, skeleton.proposal.compilation_storage, outcome.rejected_plan);
       if (!charge) {
-        outcome.rejected_plan = true;
         return std::move(charge).error();
       }
       auto attempt =
           compile_region_artifact(plan, extensions[candidate.extension_index],
-                                  request, skeleton.proposal, options, packing);
+                                  request, skeleton.proposal,
+                                  std::span<const std::uint8_t>(discovery.input_references)
+                                      .subspan(skeleton.input_reference_begin, skeleton.input_count),
+                                  std::span<const RegionOutputContract>(discovery.output_contracts)
+                                      .subspan(skeleton.output_contract_begin, skeleton.output_count),
+                                  options, packing);
       if (!attempt)
         return std::move(attempt).error();
       if (!attempt->prepared.valid()) {
@@ -4129,6 +5497,27 @@ Status prepare_placed_steps_attempt(
         return std::move(attempt->reason);
       }
       step.region = std::move(attempt->prepared);
+      // Native output ports omit immutable prepared values, but their logical
+      // node identities remain in this region for all data/control ordering.
+      // Consumers (including metadata Views) keep the same physical instance.
+      std::uint32_t live_outputs = 0;
+      for (std::uint32_t port = 0; port < step.output_count; ++port) {
+        const auto instance = plan.node_outputs[step.output_begin + port];
+        const auto logical = plan.instance_values[instance];
+        const auto prepared = std::ranges::find_if(attempt->outputs,
+            [&](const auto &entry) { return entry.value.ordinal() == logical; });
+        if (prepared == attempt->outputs.end()) {
+          plan.node_outputs[step.output_begin + live_outputs++] = instance;
+          continue;
+        }
+        if (!plan.prepared_values.try_push_back({instance, prepared->binding}))
+          return plan_allocation_failure();
+        plan.instance_roles[instance] |= detail::kConstant;
+        plan.instance_output_contracts[instance] = {};
+        plan.instance_producer_targets[instance] = kNone;
+        plan.value_materialized[instance] = 0;
+      }
+      step.output_count = live_outputs;
       if (plan.compilation_storage)
         plan.artifact_charges[static_cast<std::size_t>(
             &step - plan.steps.data())] = std::move(charge->resident);
@@ -4153,22 +5542,21 @@ compiled_storage(const detail::PlanState &plan) noexcept {
   CompiledStorageReport total;
   for (const auto &artifact : plan.constant_artifacts)
     HYLE_RETURN_IF_ERROR(add_compiled_storage(total, artifact->storage()));
-  for (std::size_t slot = 0; slot < plan.constant_ids.size(); ++slot) {
-    if (const auto *buffer = plan.owned_constant(slot))
+  for (const auto &owner : plan.canonical_constants) {
+    if (owner && owner->ready)
       HYLE_RETURN_IF_ERROR(add_compiled_storage(
-          total, {.materialized_constant_bytes = buffer->size()}));
+          total, owner->storage()));
   }
   for (const auto &step : plan.steps) {
-    if (step.kind == detail::PlanStepKind::kCopy ||
-        step.kind == detail::PlanStepKind::kView)
-      continue; // Neither a backend copy nor a View owns a Provider artifact.
-    const auto persistent = step.kind == detail::PlanStepKind::kRegion
+    if (!step.region.valid() && step.kind != detail::PlanStepKind::kOperation)
+      continue;
+    const auto persistent = step.region.valid()
                                 ? step.region.properties().persistent_bytes
                                 : step.operation.persistent_bytes();
     HYLE_RETURN_IF_ERROR(add_compiled_storage(
         total, {.provider_persistent_bytes = persistent.value_or(0),
                 .packed_constant_bytes =
-                    step.kind == detail::PlanStepKind::kRegion
+                    step.region.valid()
                         ? step.region.properties().packed_constant_bytes
                         : 0,
                 .unknown_provider_count = persistent ? 0u : 1u}));
@@ -4178,14 +5566,11 @@ compiled_storage(const detail::PlanState &plan) noexcept {
 
 Status check_compiled_storage(CompiledStorageReport storage,
                               CompiledStorageLimits limits,
-                              bool shared_constants,
                               CompiledStorageReport shared) noexcept {
   if (limits.max_bytes == SIZE_MAX)
     return Status::Ok();
-  // A child retains the same canonical owner, already charged to the parent.
-  // Its standalone report still includes these independently retained bytes.
-  if (shared_constants)
-    storage.materialized_constant_bytes = 0;
+  // Shared bytes describe actual prior selected owners, including canonical
+  // allocations. A child still reports all storage it independently retains.
   HYLE_RETURN_IF_ERROR(detail::subtract_compiled_storage(storage, shared));
   if (storage.known_bytes() > limits.max_bytes)
     return Status::ResourceExhausted(
@@ -4211,7 +5596,7 @@ invocation_storage_requirement(const detail::PlanState &plan) noexcept {
     std::optional<std::size_t> bytes;
     if (step.kind == detail::PlanStepKind::kOperation)
       bytes = step.operation.invocation_private_bytes();
-    else if (step.kind == detail::PlanStepKind::kRegion)
+    else if (step.region.valid())
       bytes = step.region.properties().invocation_private_bytes;
     else
       continue; // Backend transfers have no provider invocation allocation.
@@ -4251,8 +5636,12 @@ Status prepare_placed_steps(
     CompileOptions options, const ProviderPolicy &provider_policy,
     ConstantPreparation &constants, std::span<RouteDiagnostic> routes,
     CompileReport &selected_report,
-    detail::ConstantArtifactCache &packing) noexcept {
+    detail::ConstantArtifactCache &packing,
+    std::span<const detail::RegionAdapter> adapters) noexcept {
   RegionDiscovery discovery(plan.allocator);
+  discovery.adapters = adapters;
+  HYLE_RETURN_IF_ERROR(
+      initialize_placement_facts(plan, graph, options, discovery.placement));
   const std::size_t configured_lane_count = plan.lanes.size();
   bool attempted = false;
   for (;;) {
@@ -4262,9 +5651,13 @@ Status prepare_placed_steps(
     // scheduling/alias/workspace choices also belong to this one candidate.
     plan.steps.clear();
     plan.artifact_charges.clear();
+    plan.immutable_alias_order.clear();
+    plan.prepared_values.clear();
     plan.constant_artifacts.clear();
+    for (std::size_t slot = 0; slot < constants.bindings.size(); ++slot) {
+      plan.constant_bindings[slot] = constants.bindings[slot].tensor;
+    }
     plan.shared_artifact_storage = {};
-    HYLE_RETURN_IF_ERROR(packing.begin_candidate());
     plan.region_count = 0;
     if (attempted) {
       while (plan.lanes.size() > configured_lane_count)
@@ -4282,6 +5675,22 @@ Status prepare_placed_steps(
       status =
           finalize_placed_steps(plan, graph, discovery.physical, options,
                                 outcome.search_limit, outcome.rejected_plan);
+    if (status.ok()) {
+      for (std::size_t slot = 0; slot < plan.constant_ids.size(); ++slot) {
+        if (!constants.bindings.empty() &&
+            constants.bindings[slot].policy == ConstantPolicy::kMaterialize)
+          continue;
+        status = validate_external_read_resource(
+            plan, plan.constant_ids[slot].ordinal(),
+            plan.constant_bindings[slot].storage().resource());
+        if (!status.ok()) {
+          outcome.rejected_plan = true;
+          break;
+        }
+      }
+    }
+    if (status.ok())
+      HYLE_RETURN_IF_ERROR(build_immutable_alias_index(plan));
     CompiledStorageReport storage_report;
     if (status.ok()) {
       auto storage = compiled_storage(plan);
@@ -4291,7 +5700,6 @@ Status prepare_placed_steps(
         storage_report = *storage;
         status =
             check_compiled_storage(storage_report, options.compiled_storage,
-                                   static_cast<bool>(plan.shared_constants),
                                    plan.shared_artifact_storage);
       }
       // No user work has been accepted. As with the final workspace gate,
@@ -4319,6 +5727,11 @@ Status prepare_placed_steps(
       if (outcome.no_feasible_route && !discovery.last_rejection.ok())
         return discovery.last_rejection;
       if (status.ok()) {
+        // No retry can use these facts now. Empty moves release their spill
+        // storage without allocating before the report's metadata is built.
+        discovery.placement = PlacementFacts(plan.allocator);
+        discovery.region_coverage =
+            decltype(discovery.region_coverage)(plan.allocator);
         for (const auto &frame : discovery.routes.frames()) {
           const auto &route = discovery.routes.route(frame.chosen);
           const auto diagnostic =
@@ -4327,14 +5740,16 @@ Status prepare_placed_steps(
                                         .implementation,
                                     discovery.candidates[route.proposal].policy,
                                     discovery.candidates[route.proposal]
-                                        .preference}
+                                        .preference,
+                                    route.dispatches}
                   : RouteDiagnostic{
                         discovery.operations.candidates[route.proposal]
                             .proposal.implementation,
                         discovery.operations.candidates[route.proposal]
                             .proposal.policy,
                         discovery.operations.candidates[route.proposal]
-                            .proposal.preference};
+                            .proposal.preference,
+                        route.dispatches};
           discovery.routes.for_each_node(
               route,
               [&](std::uint32_t node) noexcept { routes[node] = diagnostic; });
@@ -4367,8 +5782,18 @@ Status prepare_placed_steps(
           discovery.rejected[rejected] != 0)
         return Status::Internal(
             "graph region retry did not exclude a candidate");
-      if (!discovery.physical.branched())
+      if (!discovery.physical.branched()) {
         discovery.rejected[rejected] = 1;
+        // Resource filtering can leave proposal ordinals sparse. Update only
+        // this fully rejected candidate, not a physical-suffix decline.
+        for (const auto &candidate : discovery.candidates) {
+          if (candidate.proposal_order != rejected)
+            continue;
+          for (NodeId node : candidate_nodes(candidate, discovery.nodes))
+            discovery.region_coverage[node.ordinal()] = RegionCoverage::kRejected;
+          break;
+        }
+      }
       ++plan.search.region_route_rejections;
     }
     discovery.last_rejection = std::move(status);
@@ -4377,13 +5802,15 @@ Status prepare_placed_steps(
 
 Status discover_region_candidates(
     const Graph &published_graph, const detail::GraphState &graph,
-    const compute::Context &context, CompileOptions options,
+    const ExecutionSource &source, CompileOptions options,
     const ProviderPolicy &provider_policy, mem::AllocatorRef allocator,
     RegionExtensions &extensions, RegionCandidates &candidates,
     RegionNodeIds &proposal_nodes, std::size_t &proposal_count,
     std::size_t &proposal_node_count, CompileSearchReport &search,
     ExecutionTargetId target, std::span<const std::uint32_t> node_targets,
-    const detail::GraphState *domain) noexcept {
+    const detail::GraphState *domain,
+    std::span<const detail::RegionAdapter> adapters,
+    const OperationDiscovery *operations) noexcept {
   if (options.region_selection == RegionSelectionPolicy::kDisabled ||
       graph.nodes.empty()) {
     return Status::Ok();
@@ -4402,29 +5829,60 @@ Status discover_region_candidates(
     return Status::OutOfRange(
         "graph region proposal budget exceeds the supported identity space");
   }
-  if (context.provider_count() > (std::numeric_limits<std::uint32_t>::max)()) {
+  auto retained = detail::ExecutionSourceAccess::compute(source);
+  if (!retained && !retained.error().IsUnimplemented())
+    return std::move(retained).error();
+  const auto *context = retained ? *retained : nullptr;
+  const auto provider_count = context ? context->provider_count() : 0;
+  if (provider_count > (std::numeric_limits<std::uint32_t>::max)()) {
     return Status::ResourceExhausted(
         "compute provider identity space is exhausted");
   }
   const std::size_t extension_begin = extensions.size();
-  for (std::size_t index = 0; index < context.provider_count(); ++index) {
-    auto allowed = provider_policy.allows_family(context, index);
+  for (std::size_t index = 0; index < provider_count; ++index) {
+    auto allowed = provider_policy.allows_family(*context, index);
     if (!allowed)
       return std::move(allowed).error();
     if (!*allowed)
       continue;
     auto extension = compute::detail::ProviderExtensionAccess::query(
-        context, index, kRegionProviderExtensionId);
+        *context, index, kRegionProviderExtensionId);
     if (!extension) {
       if (extension.error().IsUnimplemented())
         continue;
       return std::move(extension).error();
     }
+    HYLE_ASSIGN_OR_RETURN(auto capability,
+        detail::GraphRegionSource::shared(source, std::move(*extension)));
     if (!extensions.try_push_back(
-            RegionExtension{std::move(*extension),
+            RegionExtension{std::move(capability),
                             static_cast<std::uint32_t>(index), target})) {
       return plan_allocation_failure();
     }
+  }
+  if (!context && provider_policy.allows_native()) {
+    auto capability = detail::ExecutionSourceAccess::region(source);
+    if (capability) {
+      if (!extensions.try_push_back(RegionExtension{
+              std::move(*capability), UINT32_MAX, target}))
+        return plan_allocation_failure();
+    } else if (!capability.error().IsUnimplemented()) {
+      return std::move(capability).error();
+    }
+  }
+  for (const auto &adapter : adapters) {
+    if (adapter.target != target)
+      continue;
+    bool allowed = provider_policy.allows_native();
+    if (context && adapter.provider_index != UINT32_MAX) {
+      HYLE_ASSIGN_OR_RETURN(allowed,
+          provider_policy.allows_family(*context, adapter.provider_index));
+    }
+    if (!allowed)
+      continue;
+    if (!extensions.try_push_back(RegionExtension{
+            adapter.source, adapter.provider_index, target, &adapter}))
+      return plan_allocation_failure();
   }
   if (extensions.size() == extension_begin)
     return Status::Ok();
@@ -4447,11 +5905,75 @@ Status discover_region_candidates(
       allocator);
   container::SmallVector<std::uint8_t, 16, mem::AllocatorRef> reachable_outside(
       allocator);
+  container::SmallVector<std::uint8_t, 16, mem::AllocatorRef> allowed_nodes(allocator);
+  container::SmallVector<RegionLeafPreference, 16, mem::AllocatorRef>
+      leaf_preferences(allocator);
+  if ((!node_targets.empty() && node_targets.size() != graph.nodes.size()) ||
+      (domain != nullptr && domain->nodes.size() != graph.nodes.size()))
+    return Status::Internal("region discovery node eligibility has a different graph");
+  if (!allowed_nodes.try_resize(graph.nodes.size()))
+    return plan_allocation_failure();
+  const std::size_t leaf_target_count = operations
+      ? operations->ranges.size() / graph.nodes.size() : 0;
+  if (context && operations &&
+      (operations->ranges.size() % graph.nodes.size() != 0 ||
+       target.ordinal() >= leaf_target_count))
+    return Status::Internal("region leaf preference target differs");
+  if (context && operations &&
+      !leaf_preferences.try_resize(graph.nodes.size()))
+    return plan_allocation_failure();
+  // One original provider can expose multiple native capabilities. Adapting
+  // them does not multiply its existing hard discovery allowance.
+  container::SmallVector<std::size_t, 8, mem::AllocatorRef> provider_proposals(
+      allocator);
+  // Native capabilities on this one actual source share one allowance. They
+  // have no Compute provider index; the extra counter is not a provider slot.
+  if (!provider_proposals.try_resize(provider_count + 1))
+    return plan_allocation_failure();
+  std::fill(provider_proposals.begin(), provider_proposals.end(), 0);
   for (std::size_t extension_index = extension_begin;
        extension_index < extensions.size(); ++extension_index) {
+    const auto &extension = extensions[extension_index].source;
+    if (!leaf_preferences.empty()) {
+      for (std::size_t node = 0; node < graph.nodes.size(); ++node) {
+        auto &facts = leaf_preferences[node];
+        facts = {};
+        for (const auto &leaf : operations->for_node(
+                 node, target.ordinal(), leaf_target_count)) {
+          // The zero-copy metadata alternative has no actual provider owner.
+          if (leaf.metadata_view)
+            continue;
+          const auto rank = leaf.proposal.preference;
+          if (!facts.best || rank < *facts.best)
+            facts.best = rank;
+          if (leaf.proposal.provider_index ==
+                  extensions[extension_index].provider_index &&
+              (!facts.provider || rank < *facts.provider))
+            facts.provider = rank;
+        }
+      }
+    }
+    bool any_allowed = false, all_allowed = true;
+    for (std::size_t node = 0; node < graph.nodes.size(); ++node) {
+      const bool allowed =
+          (node_targets.empty() || node_targets[node] == detail::kNoWorkspaceRequest ||
+           node_targets[node] == target.ordinal()) &&
+          provider_policy.allows_node(node, extension.provider().id,
+                                      extension.provider_instance_id()) &&
+          (domain == nullptr || !has_dynamic_shape(*domain, domain->nodes[node]));
+      allowed_nodes[node] = allowed ? 1 : 0;
+      any_allowed |= allowed;
+      all_allowed &= allowed;
+    }
+    if (!any_allowed)
+      continue;
     const std::size_t remaining = options.max_region_proposals - proposal_count;
+    const auto provider_index = extensions[extension_index].provider_index != UINT32_MAX
+        ? extensions[extension_index].provider_index : provider_count;
+    const std::size_t provider_remaining =
+        options.max_region_proposals_per_provider - provider_proposals[provider_index];
     const std::size_t provider_capacity =
-        (std::min)(remaining, options.max_region_proposals_per_provider);
+        (std::min)(remaining, provider_remaining);
     const std::size_t remaining_nodes =
         options.max_region_proposal_nodes - proposal_node_count;
     if (remaining == 0 || remaining_nodes == 0) {
@@ -4460,6 +5982,10 @@ Status discover_region_candidates(
       search.region_proposal_limit_reached |= remaining == 0;
       search.region_node_limit_reached |= remaining_nodes == 0;
       break;
+    }
+    if (provider_remaining == 0) {
+      search.per_provider_proposal_limit_reached = true;
+      continue;
     }
     // A unique proposal cannot contain more nodes than the graph. Reserve
     // only this provider's possible contribution, bounded by the global cap.
@@ -4474,12 +6000,14 @@ Status discover_region_candidates(
         std::span<NodeId>(proposal_nodes)
             .subspan(proposal_node_count, node_capacity));
     struct Episode final {
-      const Graph *graph = nullptr;
+      RegionDiscoveryRequest request;
       mem::AllocatorRef allocator{};
       RegionProposalWriter *writer = nullptr;
-    } episode{&published_graph, allocator, &writer};
-    const Status proposed = compute::detail::ProviderExtensionAccess::call(
-        extensions[extension_index].extension,
+    } episode{{published_graph, all_allowed ? std::span<const std::uint8_t>{}
+                                           : std::span<const std::uint8_t>(allowed_nodes),
+               std::span<const RegionLeafPreference>(leaf_preferences)},
+              allocator, &writer};
+    const Status proposed = extensions[extension_index].call(
         +[](void *provider_context, const void *interface_value,
             void *opaque) noexcept -> Status {
           const auto *interface =
@@ -4490,17 +6018,18 @@ Status discover_region_candidates(
             return Status::Internal(
                 "graph region provider interface is incomplete");
           }
-          return interface->propose(provider_context, *call.graph,
+          return interface->propose(provider_context, call.request,
                                     call.allocator, *call.writer);
         },
         &episode);
     if (!proposed.ok())
       return proposed;
+    provider_proposals[provider_index] += writer.proposals().size();
 
     if (writer.proposal_limit_reached()) {
       search.region_proposal_limit_reached |= provider_capacity == remaining;
       search.per_provider_proposal_limit_reached |=
-          provider_capacity == options.max_region_proposals_per_provider;
+          provider_capacity == provider_remaining;
     }
     search.region_node_limit_reached |= writer.node_limit_reached();
 
@@ -4532,33 +6061,11 @@ Status discover_region_candidates(
       }
       if (!replay_allowed(options.provider_replay, proposal.replay_class))
         continue;
-      // The current region SPI prepares exact graphs only. An exact envelope
-      // proposal is not proof of a complete domain, including internal nodes.
-      if (domain != nullptr &&
-          std::any_of(proposal.nodes.begin(), proposal.nodes.end(),
-                      [&](NodeId node) noexcept {
-                        return has_dynamic_shape(*domain,
-                                                 domain->nodes[node.ordinal()]);
-                      }))
-        continue;
-      const auto &extension = extensions[extension_index].extension;
-      if (!std::all_of(proposal.nodes.begin(), proposal.nodes.end(),
-                       [&](NodeId node) noexcept {
-                         return provider_policy.allows_node(
-                             node.ordinal(), extension.provider().id,
-                             extension.provider_instance_id());
-                       }))
-        continue;
-      bool target_eligible = true;
-      if (!node_targets.empty()) {
-        for (NodeId node : proposal.nodes) {
-          if (node_targets[node.ordinal()] != target.ordinal()) {
-            target_eligible = false;
-            break;
-          }
-        }
-      }
-      if (!target_eligible)
+      // The request exposes these same target/provider/exact-domain facts
+      // before structural discovery. A proposal still proves no broader
+      // mathematical domain, and never overrides an excluded member.
+      if (std::any_of(proposal.nodes.begin(), proposal.nodes.end(),
+                      [&](NodeId node) { return allowed_nodes[node.ordinal()] == 0; }))
         continue;
       const std::ptrdiff_t node_offset =
           proposal.nodes.data() - proposal_nodes.data();
@@ -4568,13 +6075,14 @@ Status discover_region_candidates(
         return Status::Internal(
             "graph region proposal node storage is not writer-owned");
       }
-      auto binding_preference = context.provider_preference(
-          extensions[extension_index].provider_index);
-      if (!binding_preference)
-        return std::move(binding_preference).error();
+      std::uint32_t binding_preference = compute::kUnrankedProviderPreference;
+      if (context && extensions[extension_index].provider_index != UINT32_MAX) {
+        HYLE_ASSIGN_OR_RETURN(binding_preference, context->provider_preference(
+            extensions[extension_index].provider_index));
+      }
       const std::uint32_t preference =
           proposal.preference == (std::numeric_limits<std::uint32_t>::max)()
-              ? *binding_preference
+              ? binding_preference
               : proposal.preference;
       if (!candidates.try_push_back(RegionCandidate{
               .cost = proposal.cost,
@@ -4612,6 +6120,34 @@ Unsigned saturating_multiply(Unsigned left, Unsigned right) noexcept {
   return right != 0 && left > limit / right ? limit : left * right;
 }
 
+// Immutable values may have no native write port, but still carry their
+// logical producer's incoming control dependencies to ordinary data consumers.
+// Resolve the logical node through node_steps each time: scheduling can reorder
+// physical steps without changing the prepared value's identity.
+Status add_immutable_value_producers(
+    const detail::PlanState &plan, const detail::GraphState &graph,
+    std::span<std::uint32_t> producers) noexcept {
+  for (std::size_t instance = 0; instance < plan.instance_values.size(); ++instance) {
+    if ((plan.instance_roles[instance] & detail::kConstant) == 0)
+      continue;
+    const auto logical = plan.instance_values[instance];
+    if (logical >= graph.values.size())
+      return Status::Internal("graph prepared output value is invalid");
+    const auto node = graph.values[logical].producer;
+    if (node == detail::kNoNode && graph.values[logical].kind == ValueKind::kConstant)
+      continue;
+    if (node >= plan.node_steps.size() ||
+        plan.node_steps[node] >= plan.steps.size())
+      return Status::Internal("graph prepared output producer is invalid");
+    const auto step = plan.node_steps[node];
+    if (producers[instance] != detail::kNoNode &&
+        producers[instance] != step)
+      return Status::Internal("graph prepared output producer conflicts");
+    producers[instance] = step;
+  }
+  return Status::Ok();
+}
+
 // Reorder already-prepared plan steps without changing the logical Graph.
 // Kahn scheduling keeps a ready FIFO per execution lane and continues the
 // current lane while possible. This deterministically removes avoidable
@@ -4645,7 +6181,8 @@ Status schedule_steps(detail::PlanState &plan, const detail::GraphState &graph,
       if (plan.lanes.size() >= detail::kNoNode ||
           !plan.lanes.try_push_back(detail::ExecutionLaneRecord{
               .target = step.target,
-              .role = ExecutionLaneRole::kCompute,
+              .role = step.kind == detail::PlanStepKind::kCopy
+                          ? ExecutionLaneRole::kTransfer : ExecutionLaneRole::kCompute,
               .runtime_mode = compute::ProviderRuntimeMode::kDelegated,
           })) {
         return plan.lanes.size() >= detail::kNoNode
@@ -4731,6 +6268,7 @@ Status schedule_steps(detail::PlanState &plan, const detail::GraphState &graph,
           static_cast<std::uint32_t>(step_index);
     }
   }
+  HYLE_RETURN_IF_ERROR(add_immutable_value_producers(plan, graph, producers));
 
   auto add_edge = [&](std::uint32_t source,
                       std::uint32_t destination) noexcept -> Status {
@@ -4917,7 +6455,14 @@ Status build_segments(detail::PlanState &plan,
         "graph segment step identity space is exhausted");
   }
   plan.segments.clear();
+  plan.capture_ranges.clear();
+  plan.seal_binding_steps.clear();
+  plan.copy_steps.clear();
+  plan.command_count = 0;
+  plan.capture_command_count = 0;
   plan.segment_dependencies.clear();
+  plan.segment_successors.clear();
+  plan.has_parallel_targets = false;
   plan.terminal_segments.clear();
   plan.completion_segments.clear();
   plan.required_queue_count = 0;
@@ -4945,12 +6490,20 @@ Status build_segments(detail::PlanState &plan,
     count = 0;
 
   for (std::size_t step = 0; step < plan.steps.size(); ++step) {
-    const std::uint32_t identity = plan.steps[step].schedule_identity;
+    const auto &scheduled = plan.steps[step];
+    const std::uint32_t identity = scheduled.schedule_identity;
     if (identity >= identity_steps.size() ||
         identity_steps[identity] != detail::kNoNode) {
       return Status::Internal("graph scheduled-step identity is invalid");
     }
     identity_steps[identity] = static_cast<std::uint32_t>(step);
+    if (scheduled.kind == detail::PlanStepKind::kCopy &&
+        !plan.copy_steps.try_push_back(static_cast<std::uint32_t>(step)))
+      return plan_allocation_failure();
+    if (scheduled.emits_command() && scheduled.region.valid() &&
+        scheduled.region.seals_bindings() &&
+        !plan.seal_binding_steps.try_push_back(static_cast<std::uint32_t>(step)))
+      return plan_allocation_failure();
   }
   for (std::size_t index = 0; index < plan.steps.size(); ++index) {
     const detail::PlanStep &step = plan.steps[index];
@@ -4960,6 +6513,7 @@ Status build_segments(detail::PlanState &plan,
           static_cast<std::uint32_t>(index);
     }
   }
+  HYLE_RETURN_IF_ERROR(add_immutable_value_producers(plan, graph, producers));
 
   // Index the existing memory-reuse edges by destination once. Together with
   // tensor/control producers these are entry prerequisites, not removable
@@ -5005,8 +6559,8 @@ Status build_segments(detail::PlanState &plan,
     return Status::Ok();
   };
 
-  // Metadata-only View steps resolve aliases during binding preparation and
-  // do not enter a Queue. Keep them inside the surrounding report interval, but
+  // Views and ready-only regions do not enter a Queue. Keep their logical
+  // dependencies inside the surrounding report interval, but
   // start/split runtime segments only for actual commands. This avoids an
   // empty sequence/event for View-only graphs and lets consecutive commands
   // on one lane remain one uninterrupted Queue prefix.
@@ -5158,6 +6712,9 @@ Status build_segments(detail::PlanState &plan,
   if (!edges.try_resize(static_cast<std::size_t>(unique_end - edges.begin()))) {
     return plan_allocation_failure();
   }
+  if (edges.size() > UINT32_MAX)
+    return Status::ResourceExhausted(
+        "graph segment dependency index space is exhausted");
   Ordinals outgoing(plan.allocator);
   if (!outgoing.try_resize(plan.segments.size()))
     return plan_allocation_failure();
@@ -5178,7 +6735,8 @@ Status build_segments(detail::PlanState &plan,
     }
   }
 
-  if (!plan.segment_dependencies.try_resize(edges.size()))
+  if (!plan.segment_dependencies.try_resize(edges.size()) ||
+      !plan.segment_successors.try_resize(edges.size()))
     return plan_allocation_failure();
   std::size_t write = 0;
   for (std::size_t segment_index = 0; segment_index < plan.segments.size();
@@ -5193,6 +6751,82 @@ Status build_segments(detail::PlanState &plan,
     }
     segment.dependency_count =
         static_cast<std::uint32_t>(write - segment.dependency_begin);
+  }
+
+  // Reuse the outgoing counts as CSR insertion cursors. Successors index only
+  // the final dependencies above, including original lane and workspace edges.
+  write = 0;
+  for (std::size_t index = 0; index < plan.segments.size(); ++index) {
+    auto &segment = plan.segments[index];
+    segment.successor_begin = static_cast<std::uint32_t>(write);
+    segment.successor_count = outgoing[index];
+    outgoing[index] = segment.successor_begin;
+    write += segment.successor_count;
+  }
+  ExecutionTargetId first_target{};
+  bool different_targets = false;
+  bool has_unordered_segments = false;
+  for (std::size_t destination = 0; destination < plan.segments.size();
+       ++destination) {
+    const auto &segment = plan.segments[destination];
+    const auto target = plan.lanes[segment.lane.ordinal()].target;
+    if (!first_target.valid())
+      first_target = target;
+    else
+      different_targets |= target != first_target;
+    bool follows_previous = false;
+    const std::size_t end =
+        segment.dependency_begin + segment.dependency_count;
+    for (std::size_t edge = segment.dependency_begin; edge < end; ++edge) {
+      const auto source = plan.segment_dependencies[edge];
+      plan.segment_successors[outgoing[source]++] =
+          static_cast<std::uint32_t>(destination);
+      follows_previous |= destination != 0 && source == destination - 1;
+    }
+    has_unordered_segments |= destination != 0 && !follows_previous;
+  }
+  // A fully ordered cross-target graph retains the original serial fast path.
+  // Any missing adjacent prerequisite can expose ready work behind a wait.
+  plan.has_parallel_targets = different_targets && has_unordered_segments;
+  // Preserve the exact compatible-run boundaries, including metadata between
+  // commands and trailing Views, once after final scheduling. Queue support,
+  // addresses, permissions and capture artifacts remain Invocation facts.
+  for (std::size_t segment_index = 0; segment_index < plan.segments.size();
+       ++segment_index) {
+    auto &segment = plan.segments[segment_index];
+    const std::size_t end = segment.step_begin + segment.step_count;
+    for (std::size_t index = segment.step_begin; index < end; ++index) {
+      const auto &step = plan.steps[index];
+      if (!step.emits_command())
+        continue;
+      ++plan.command_count;
+      segment.blocks_host |= step.runtime_properties().blocks_host;
+    }
+    if (!shared_lane(plan, segment.lane))
+      continue;
+    std::size_t cursor = segment.step_begin;
+    while (cursor < end) {
+      while (cursor < end && (!plan.steps[cursor].emits_command() ||
+                             !plan.steps[cursor].capture_compatible()))
+        ++cursor;
+      if (cursor == end)
+        break;
+      const auto begin = cursor;
+      std::uint32_t commands = 0;
+      while (cursor < end) {
+        const auto &step = plan.steps[cursor];
+        if (step.emits_command() && !step.capture_compatible())
+          break;
+        commands += step.emits_command();
+        ++cursor;
+      }
+      if (!plan.capture_ranges.try_push_back(detail::PlanCaptureRange{
+              static_cast<std::uint32_t>(segment_index),
+              static_cast<std::uint32_t>(begin),
+              static_cast<std::uint32_t>(cursor - begin), commands}))
+        return plan_allocation_failure();
+      plan.capture_command_count += commands;
+    }
   }
   return Status::Ok();
 }
@@ -5209,7 +6843,7 @@ bool has_external_storage_root(const detail::PlanState &plan,
   const std::uint32_t root = alias_root(plan, value);
   const std::uint8_t role = plan.instance_roles[root];
   return (role & (detail::kExternalInput | detail::kExternalOutput |
-                  detail::kConstant)) != 0;
+                  detail::kConstant | detail::kGeneratedOutput)) != 0;
 }
 
 void reset_workspace_decisions(detail::PlanState &plan) noexcept {
@@ -5219,14 +6853,26 @@ void reset_workspace_decisions(detail::PlanState &plan) noexcept {
   plan.supports_concurrent_invocations = true;
   plan.serialization_edge_count = plan.serialization_edges.size();
   for (std::size_t index = 0; index < plan.alias_sources.size(); ++index) {
-    plan.alias_sources[index] = detail::kNoInPlaceSource;
-    plan.alias_offsets[index] = 0;
+    // Cold replicas of immutable Views retain their true parent/offset even
+    // when no repeated physical View step is needed in that storage domain.
+    if ((plan.instance_roles[index] & detail::kConstant) == 0) {
+      plan.alias_sources[index] = detail::kNoInPlaceSource;
+      plan.alias_offsets[index] = 0;
+    }
     plan.instance_roles[index] &= static_cast<std::uint8_t>(
-        ~(detail::kInvocationOwnedOutput | detail::kRetainedOutputRoot));
+        ~(detail::kInvocationOwnedOutput | detail::kRetainedOutputRoot |
+          detail::kGeneratedOutput));
   }
   for (std::uint8_t &role : plan.binding_roles) {
     role &= static_cast<std::uint8_t>(
-        ~(detail::kInvocationOwnedOutput | detail::kSourceAliasedOutput));
+        ~(detail::kInvocationOwnedOutput | detail::kSourceAliasedOutput |
+          detail::kGeneratedOutput));
+  }
+  for (const auto value : plan.output_ids) {
+    const auto instance = plan.external_instances[value.ordinal()];
+    if (instance != detail::kNoWorkspaceRequest &&
+        (plan.instance_roles[instance] & detail::kConstant) != 0)
+      plan.binding_roles[value.ordinal()] |= detail::kSourceAliasedOutput;
   }
   for (std::uint32_t &request : plan.workspace_requests)
     request = detail::kNoWorkspaceRequest;
@@ -5273,6 +6919,21 @@ Status plan_workspace(detail::PlanState &plan, const detail::GraphState &graph,
           plan.node_outputs[step.output_begin + output_index];
       last_uses[output] = (std::max)(last_uses[output], terminal);
       producer_steps[output] = static_cast<std::uint32_t>(step_index);
+      if (step.kind == detail::PlanStepKind::kRegion) {
+        const auto kind = step.region.output_kind(output_index);
+        if (kind != RegionOutputKind::kCaller) {
+          if (kind != RegionOutputKind::kStableGenerated &&
+              kind != RegionOutputKind::kBoundGenerated &&
+              kind != RegionOutputKind::kDeferredGenerated)
+            return Status::Internal("region declared an invalid output storage kind");
+          plan.instance_roles[output] |= detail::kGeneratedOutput;
+          if ((plan.instance_roles[output] & detail::kExternalOutput) != 0) {
+            plan.instance_roles[output] |= detail::kInvocationOwnedOutput;
+            plan.binding_roles[plan.instance_values[output]] |=
+                detail::kGeneratedOutput | detail::kInvocationOwnedOutput;
+          }
+        }
+      }
     }
     for (std::size_t input_index = 0; input_index < step.input_count;
          ++input_index) {
@@ -5282,86 +6943,227 @@ Status plan_workspace(detail::PlanState &plan, const detail::GraphState &graph,
     }
   }
 
-  // The schema supplies only a broad permission. A prepared provider narrows
-  // it for the selected route and layout. Required view aliases preserve
-  // storage without consuming the source; optional in-place aliases require
-  // equal descriptions and the source's final read.
-  for (std::size_t step_index = 0; step_index < plan.steps.size();
-       ++step_index) {
-    const detail::PlanStep &step = plan.steps[step_index];
-    // Region aliases are optional and are not selected until the provider can
-    // report every affected boundary port. A region must therefore support
-    // distinct boundary outputs even if it advertises optional aliases.
+  const std::size_t segment_count = plan.segments.size();
+  const std::size_t lane_count = plan.lanes.size();
+  constexpr std::size_t kMaximumVectorClockCells = 4u * 1024u * 1024u;
+  const bool precise_happens_before =
+      lane_count != 0 && segment_count <= kMaximumVectorClockCells / lane_count;
+  detail::ValueOrdinals segment_sequence(plan.allocator);
+  container::SmallVector<std::uint64_t, 32, mem::AllocatorRef> clocks(plan.allocator);
+  detail::ValueOrdinals lane_sequence(plan.allocator);
+  if (!segment_sequence.try_resize(segment_count) ||
+      !lane_sequence.try_resize(lane_count) ||
+      (precise_happens_before &&
+       !clocks.try_resize(segment_count * lane_count))) {
+    return plan_allocation_failure();
+  }
+  for (std::uint32_t &sequence : lane_sequence)
+    sequence = 0;
+  if (precise_happens_before) {
+    for (std::uint64_t &clock : clocks)
+      clock = 0;
+    for (std::size_t segment = 0; segment < segment_count; ++segment) {
+      std::uint64_t *row = clocks.data() + segment * lane_count;
+      const detail::PlanSegment &record = plan.segments[segment];
+      const std::size_t dependency_end =
+          record.dependency_begin + record.dependency_count;
+      for (std::size_t dependency = record.dependency_begin;
+           dependency < dependency_end; ++dependency) {
+        const std::uint32_t source = plan.segment_dependencies[dependency];
+        if (source >= segment)
+          return Status::Internal("graph segment order is not topological");
+        const std::uint64_t *source_row =
+            clocks.data() + static_cast<std::size_t>(source) * lane_count;
+        for (std::size_t lane = 0; lane < lane_count; ++lane)
+          row[lane] = (std::max)(row[lane], source_row[lane]);
+      }
+      const std::uint32_t lane = record.lane.ordinal();
+      segment_sequence[segment] = ++lane_sequence[lane];
+      row[lane] = segment_sequence[segment];
+    }
+  } else {
+    for (std::size_t segment = 0; segment < segment_count; ++segment) {
+      const std::uint32_t lane = plan.segments[segment].lane.ordinal();
+      segment_sequence[segment] = ++lane_sequence[lane];
+    }
+  }
+
+  const auto segment_before = [&](std::uint32_t source,
+                                  std::uint32_t destination) noexcept {
+    if (source == destination)
+      return true;
+    if (source >= segment_count || destination >= segment_count)
+      return false;
+    const auto source_lane = plan.segments[source].lane.ordinal();
+    const auto destination_lane = plan.segments[destination].lane.ordinal();
+    if (source_lane == destination_lane)
+      return segment_sequence[source] < segment_sequence[destination];
+    return precise_happens_before && segment_sequence[source] <=
+        clocks[static_cast<std::size_t>(destination) * lane_count + source_lane];
+  };
+
+  // Establish all required aliases before choosing destructive aliases. A
+  // later View is another reader of the same storage even when its own node
+  // has not been visited at the candidate write's position.
+  for (const auto &step : plan.steps) {
     if (step.kind != detail::PlanStepKind::kOperation &&
         step.kind != detail::PlanStepKind::kView)
       continue;
-    const detail::NodeRecord &node = graph.nodes[step.node_begin];
-    const compute::OperationTraits traits = node.traits();
-    const compute::AliasPolicy alias = traits.alias;
-    if (alias == compute::AliasPolicy::kNone || node.input_count == 0)
+    const auto &node = graph.nodes[step.node_begin];
+    if (node.traits().alias != compute::AliasPolicy::kMustAliasInput0 ||
+        node.input_count == 0)
       continue;
     for (std::size_t output_index = 0; output_index < node.output_count;
          ++output_index) {
-      const std::uint32_t output =
-          plan.node_outputs[step.output_begin + output_index];
-      const std::uint32_t logical_output = plan.instance_values[output];
-      if (alias == compute::AliasPolicy::kMustAliasInput0) {
-        const auto support =
-            step.kind == detail::PlanStepKind::kView
-                ? Result<compute::AliasSupport>(compute::AliasSupport{
-                      .supported = true, .byte_offset = step.view_offset})
-                : step.operation.alias_support(output_index, 0);
-        if (!support || !support->supported) {
-          return Status::Internal(
-              "prepared provider omitted a required graph alias");
+      const auto output = plan.node_outputs[step.output_begin + output_index];
+      const auto support = step.kind == detail::PlanStepKind::kView
+          ? Result<compute::AliasSupport>(compute::AliasSupport{
+                .supported = true, .byte_offset = step.view_offset})
+          : step.operation.alias_support(output_index, 0);
+      if (!support || !support->supported)
+        return Status::Internal("prepared provider omitted a required graph alias");
+      const auto input = plan.node_inputs[step.input_begin];
+      plan.alias_sources[output] = input;
+      plan.alias_offsets[output] = support->byte_offset;
+      if ((plan.instance_roles[output] & detail::kExternalOutput) != 0) {
+        const auto logical_output = plan.instance_values[output];
+        if (has_external_storage_root(plan, input)) {
+          plan.binding_roles[logical_output] |= detail::kSourceAliasedOutput;
+        } else {
+          plan.binding_roles[logical_output] |= detail::kInvocationOwnedOutput;
+          plan.instance_roles[output] |= detail::kInvocationOwnedOutput;
+          plan.instance_roles[alias_root(plan, input)] |= detail::kRetainedOutputRoot;
         }
-        const std::uint32_t input = plan.node_inputs[step.input_begin];
-        plan.alias_sources[output] = input;
-        plan.alias_offsets[output] = support->byte_offset;
-        if ((plan.instance_roles[output] & detail::kExternalOutput) != 0) {
-          if (has_external_storage_root(plan, input)) {
-            plan.binding_roles[logical_output] |= detail::kSourceAliasedOutput;
-          } else {
-            plan.binding_roles[logical_output] |=
-                detail::kInvocationOwnedOutput;
-            plan.instance_roles[output] |= detail::kInvocationOwnedOutput;
-            plan.instance_roles[alias_root(plan, input)] |=
-                detail::kRetainedOutputRoot;
-          }
-        }
-        continue;
       }
+    }
+  }
 
+  // Liveness belongs to shared physical storage, not just one SSA value.
+  // Required aliases are producer-first; optional aliases merge these groups
+  // as they are selected. Path compression keeps the cold scratch near-linear
+  // without changing the plan's immediate parent/offset or warm path.
+  detail::ValueOrdinals alias_groups(plan.allocator);
+  if (!alias_groups.try_resize(plan.instance_values.size()))
+    return plan_allocation_failure();
+  for (std::uint32_t instance = 0; instance < plan.instance_values.size(); ++instance) {
+    const auto source = plan.alias_sources[instance];
+    if (source != detail::kNoInPlaceSource && source >= instance)
+      return Status::Internal("graph physical alias chain is invalid");
+    const auto root = source == detail::kNoInPlaceSource
+        ? instance : alias_groups[source];
+    alias_groups[instance] = root;
+    // A published value is read after commands finish, including when only a
+    // View of a private workspace root is published.
+    if ((plan.instance_roles[instance] & detail::kExternalOutput) != 0)
+      last_uses[instance] = plan.steps.size() + 1;
+    last_uses[root] = (std::max)(last_uses[root], last_uses[instance]);
+  }
+  const auto group_root = [&](std::uint32_t instance) noexcept {
+    auto root = instance;
+    while (alias_groups[root] != root)
+      root = alias_groups[root];
+    while (alias_groups[instance] != instance) {
+      const auto parent = alias_groups[instance];
+      alias_groups[instance] = root;
+      instance = parent;
+    }
+    return root;
+  };
+
+  // A scalar last use is sufficient on one ordered lane. With several
+  // lanes, earlier independent readers must also precede the destructive
+  // write in the actual segment DAG. Reuse its existing bounded clocks.
+  // Compact read lists exist only in cold multi-lane planning. On a successful
+  // merge the old input readers are consumed, so a long in-place chain does
+  // not repeatedly visit its complete history.
+  detail::ValueOrdinals alias_read_heads(plan.allocator);
+  detail::ValueOrdinals alias_read_next(plan.allocator);
+  detail::ValueOrdinals alias_read_segments(plan.allocator);
+  if (lane_count > 1) {
+    if (!alias_read_heads.try_resize(plan.instance_values.size()) ||
+        !alias_read_next.try_resize(plan.node_inputs.size()) ||
+        !alias_read_segments.try_resize(plan.node_inputs.size()))
+      return plan_allocation_failure();
+    std::fill(alias_read_heads.begin(), alias_read_heads.end(), detail::kNoNode);
+    for (std::size_t step_index = 0; step_index < plan.steps.size(); ++step_index) {
+      const auto &step = plan.steps[step_index];
+      if (!step.emits_command())
+        continue;
+      const auto segment = plan.step_segments[step_index];
+      if (segment >= segment_count)
+        return Status::Internal("graph alias reader has no segment");
+      for (std::size_t port = 0; port < step.input_count; ++port) {
+        const auto use = step.input_begin + port;
+        if (use >= detail::kNoNode)
+          return Status::ResourceExhausted("graph alias reader identity space is exhausted");
+        const auto root = group_root(plan.node_inputs[use]);
+        alias_read_next[use] = alias_read_heads[root];
+        alias_read_segments[use] = segment;
+        alias_read_heads[root] = static_cast<std::uint32_t>(use);
+      }
+    }
+  }
+  const auto readers_before_write = [&](std::uint32_t root,
+                                        std::size_t step) noexcept {
+    if (lane_count <= 1)
+      return true;
+    for (auto use = alias_read_heads[root]; use != detail::kNoNode;
+         use = alias_read_next[use])
+      if (!segment_before(alias_read_segments[use], plan.step_segments[step]))
+        return false;
+    return true;
+  };
+
+  // The schema grants broad permission; the selected provider narrows it.
+  // An optional alias may consume storage only after every alias reader.
+  for (std::size_t step_index = 0; step_index < plan.steps.size(); ++step_index) {
+    const auto &step = plan.steps[step_index];
+    // Region aliases need a complete boundary-port contract before selection.
+    if (step.kind != detail::PlanStepKind::kOperation)
+      continue;
+    const auto &node = graph.nodes[step.node_begin];
+    const auto alias = node.traits().alias;
+    if (alias == compute::AliasPolicy::kNone ||
+        alias == compute::AliasPolicy::kMustAliasInput0 || node.input_count == 0)
+      continue;
+    for (std::size_t output_index = 0; output_index < node.output_count; ++output_index) {
+      const auto output = plan.node_outputs[step.output_begin + output_index];
+      const auto output_root = group_root(output);
       const bool output_is_external =
           (plan.instance_roles[output] & detail::kExternalOutput) != 0;
-      const std::size_t candidate_count =
-          alias == compute::AliasPolicy::kMayAliasAnyInput ? node.input_count
-                                                           : std::size_t{1};
-      for (std::size_t input_index = 0; input_index < candidate_count;
-           ++input_index) {
-        const std::uint32_t input =
-            plan.node_inputs[step.input_begin + input_index];
+      const auto candidate_count = alias == compute::AliasPolicy::kMayAliasAnyInput
+          ? node.input_count : std::size_t{1};
+      for (std::size_t input_index = 0; input_index < candidate_count; ++input_index) {
+        const auto input = plan.node_inputs[step.input_begin + input_index];
         if (plan.instance_storage[input] != plan.instance_storage[output])
           continue;
-        auto support = step.operation.alias_support(output_index, input_index);
-        if (!support)
-          return std::move(support).error();
-        if (!support->supported || support->byte_offset != 0)
+        const auto input_root = group_root(input);
+        if (input_root == output_root || last_uses[input_root] != step_index + 1)
           continue;
-        const bool input_is_external =
-            (plan.instance_roles[input] &
-             (detail::kExternalInput | detail::kConstant)) != 0;
-        const bool internal_pair =
-            !output_is_external && !input_is_external &&
+        // Constants and their metadata Views stay immutable across replays.
+        if ((plan.instance_roles[alias_root(plan, input)] & detail::kConstant) != 0)
+          continue;
+        HYLE_ASSIGN_OR_RETURN(auto support,
+                              step.operation.alias_support(output_index, input_index));
+        if (!support.supported || support.byte_offset != 0)
+          continue;
+        const bool input_is_external = (plan.instance_roles[input] &
+            (detail::kExternalInput | detail::kConstant)) != 0;
+        const bool internal_pair = !output_is_external && !input_is_external &&
             (plan.instance_roles[input] & detail::kExternalOutput) == 0 &&
             !has_external_storage_root(plan, input);
         const bool external_pair = output_is_external && input_is_external;
         if ((internal_pair || external_pair) &&
-            last_uses[input] == step_index + 1 &&
-            plan.instance_descriptions[input] ==
-                plan.instance_descriptions[output]) {
+            plan.instance_descriptions[input] == plan.instance_descriptions[output] &&
+            readers_before_write(input_root, step_index)) {
           plan.alias_sources[output] = input;
           plan.alias_offsets[output] = 0;
+          alias_groups[output_root] = input_root;
+          last_uses[input_root] = (std::max)(last_uses[input_root], last_uses[output_root]);
+          if (lane_count > 1) {
+            alias_read_heads[input_root] = alias_read_heads[output_root];
+            alias_read_heads[output_root] = detail::kNoNode;
+          }
           break;
         }
       }
@@ -5370,22 +7172,14 @@ Status plan_workspace(detail::PlanState &plan, const detail::GraphState &graph,
 
   // The selected provider's port requirement applies to the physical bytes,
   // including when a metadata View exposes those bytes under another shape.
-  // Walk aliases backwards so a root inherits every downstream requirement.
-  for (std::size_t ordinal = plan.instance_values.size(); ordinal-- > 0;) {
-    const auto source = plan.alias_sources[ordinal];
-    if (source == detail::kNoInPlaceSource)
-      continue;
-    const auto alignment = plan.instance_alignments[ordinal];
-    if (plan.alias_offsets[ordinal] % alignment != 0)
-      return Status::InvalidArgument(
-          "graph alias offset cannot satisfy provider port alignment");
-    plan.instance_alignments[source] =
-        (std::max)(plan.instance_alignments[source], alignment);
-  }
+  // Propagate each port's requirement to its allocation root, checking the
+  // complete root-relative offset rather than every intermediate View edge.
+  HYLE_RETURN_IF_ERROR(propagate_alias_alignments(plan, !plan.domain_graph.valid()));
 
   for (std::size_t ordinal = 0; ordinal < plan.instance_values.size();
        ++ordinal) {
-    if (plan.value_materialized[ordinal] == 0 ||
+    if ((plan.instance_roles[ordinal] & detail::kGeneratedOutput) != 0 ||
+        plan.value_materialized[ordinal] == 0 ||
         ((plan.instance_roles[ordinal] & detail::kExternalOutput) != 0 &&
          (plan.instance_roles[ordinal] & detail::kInvocationOwnedOutput) ==
              0)) {
@@ -5455,7 +7249,7 @@ Status plan_workspace(detail::PlanState &plan, const detail::GraphState &graph,
   // backing while every operation/region invocation retains a stable view.
   for (std::size_t step_index = 0; step_index < plan.steps.size();
        ++step_index) {
-    if ((plan.steps[step_index].kind == detail::PlanStepKind::kRegion ||
+    if ((plan.steps[step_index].region.valid() ||
          plan.steps[step_index].kind == detail::PlanStepKind::kOperation) &&
         !plan.steps[step_index]
              .runtime_properties()
@@ -5523,13 +7317,11 @@ Status plan_workspace(detail::PlanState &plan, const detail::GraphState &graph,
     group_end[index] = 0;
   }
   for (std::uint32_t index = 0; index < request_count; ++index) {
-    std::uint32_t root = index;
-    std::size_t depth = 0;
-    while (requests[root].alias_of != mem::kNoLifetimeAlias) {
-      root = requests[root].alias_of;
-      if (root >= request_count || ++depth > request_count)
-        return Status::Internal("graph workspace alias graph is invalid");
-    }
+    const auto parent = requests[index].alias_of;
+    if (parent != mem::kNoLifetimeAlias && parent >= index)
+      return Status::Internal("graph workspace alias graph is invalid");
+    // Requests are emitted producer-first, so each parent's root is ready.
+    const auto root = parent == mem::kNoLifetimeAlias ? index : request_roots[parent];
     request_roots[index] = root;
     if (group_present[root] == 0) {
       group_present[root] = 1;
@@ -5591,51 +7383,6 @@ Status plan_workspace(detail::PlanState &plan, const detail::GraphState &graph,
   if (!use_pairs.try_resize(
           static_cast<std::size_t>(use_end - use_pairs.begin()))) {
     return plan_allocation_failure();
-  }
-
-  const std::size_t segment_count = plan.segments.size();
-  const std::size_t lane_count = plan.lanes.size();
-  constexpr std::size_t kMaximumVectorClockCells = 4u * 1024u * 1024u;
-  const bool precise_happens_before =
-      lane_count != 0 && segment_count <= kMaximumVectorClockCells / lane_count;
-  detail::ValueOrdinals segment_sequence(plan.allocator);
-  Words clocks(plan.allocator);
-  detail::ValueOrdinals lane_sequence(plan.allocator);
-  if (!segment_sequence.try_resize(segment_count) ||
-      !lane_sequence.try_resize(lane_count) ||
-      (precise_happens_before &&
-       !clocks.try_resize(segment_count * lane_count))) {
-    return plan_allocation_failure();
-  }
-  for (std::uint32_t &sequence : lane_sequence)
-    sequence = 0;
-  if (precise_happens_before) {
-    for (std::uint64_t &clock : clocks)
-      clock = 0;
-    for (std::size_t segment = 0; segment < segment_count; ++segment) {
-      std::uint64_t *row = clocks.data() + segment * lane_count;
-      const detail::PlanSegment &record = plan.segments[segment];
-      const std::size_t dependency_end =
-          record.dependency_begin + record.dependency_count;
-      for (std::size_t dependency = record.dependency_begin;
-           dependency < dependency_end; ++dependency) {
-        const std::uint32_t source = plan.segment_dependencies[dependency];
-        if (source >= segment)
-          return Status::Internal("graph segment order is not topological");
-        const std::uint64_t *source_row =
-            clocks.data() + static_cast<std::size_t>(source) * lane_count;
-        for (std::size_t lane = 0; lane < lane_count; ++lane)
-          row[lane] = (std::max)(row[lane], source_row[lane]);
-      }
-      const std::uint32_t lane = record.lane.ordinal();
-      segment_sequence[segment] = ++lane_sequence[lane];
-      row[lane] = segment_sequence[segment];
-    }
-  } else {
-    for (std::size_t segment = 0; segment < segment_count; ++segment) {
-      const std::uint32_t lane = plan.segments[segment].lane.ordinal();
-      segment_sequence[segment] = ++lane_sequence[lane];
-    }
   }
 
   auto group_uses = [&](std::uint32_t root) noexcept {
@@ -5785,22 +7532,6 @@ Status plan_workspace(detail::PlanState &plan, const detail::GraphState &graph,
           "analysis");
     }
 
-    auto segment_before = [&](std::uint32_t source,
-                              std::uint32_t destination) noexcept {
-      if (source == destination)
-        return true;
-      if (source >= segment_count || destination >= segment_count)
-        return false;
-      const std::uint32_t source_lane = plan.segments[source].lane.ordinal();
-      const std::uint32_t destination_lane =
-          plan.segments[destination].lane.ordinal();
-      if (source_lane == destination_lane) {
-        return segment_sequence[source] < segment_sequence[destination];
-      }
-      return segment_sequence[source] <=
-             clocks[static_cast<std::size_t>(destination) * lane_count +
-                    source_lane];
-    };
     auto command_identity = [&](std::uint32_t segment,
                                 bool first) noexcept -> Result<std::uint32_t> {
       if (segment >= plan.segments.size()) {
@@ -6045,10 +7776,11 @@ build_report(const detail::PlanState &plan, const detail::GraphState &graph,
   std::copy(plan.segment_dependencies.begin(), plan.segment_dependencies.end(),
             state->segment_dependencies.begin());
   for (std::size_t index = 0; index < plan.targets.size(); ++index) {
-    const compute::Device device = plan.targets[index].context.device();
+    const auto &source = plan.targets[index].source;
     state->targets[index] = CompileTargetReport{
         .target = ExecutionTargetId{static_cast<std::uint32_t>(index)},
-        .device = device,
+        .backend = source.backend_id(),
+        .device_class = source.device_class(),
         .default_storage = plan.targets[index].default_storage,
     };
   }
@@ -6077,16 +7809,20 @@ build_report(const detail::PlanState &plan, const detail::GraphState &graph,
   }
   for (std::size_t index = 0; index < plan.lanes.size(); ++index) {
     const detail::ExecutionLaneRecord &lane = plan.lanes[index];
-    const compute::Device device =
-        plan.targets[lane.target.ordinal()].context.device();
-    auto properties = device.properties();
+    const auto &source = plan.targets[lane.target.ordinal()].source;
+    auto properties = source.device_properties();
     if (!properties) {
       detail::release(state);
       return std::unexpected(std::move(properties).error());
     }
-    auto capture =
-        plan.targets[lane.target.ordinal()].context.has_backend_extension(
-            compute::detail::kCommandCaptureExtensionId);
+    Result<bool> capture = false;
+    auto retained = detail::ExecutionSourceAccess::compute(source);
+    if (retained) {
+      capture = (*retained)->has_backend_extension(
+          compute::detail::kCommandCaptureExtensionId);
+    } else if (!retained.error().IsUnimplemented()) {
+      capture = std::unexpected(std::move(retained).error());
+    }
     if (!capture) {
       detail::release(state);
       return std::unexpected(std::move(capture).error());
@@ -6114,9 +7850,9 @@ build_report(const detail::PlanState &plan, const detail::GraphState &graph,
       continue;
     }
     if (!state->backend.valid() && !state->mixed_backends) {
-      state->backend = device.backend_id();
+      state->backend = source.backend_id();
     } else if (!state->mixed_backends &&
-               state->backend != device.backend_id()) {
+               state->backend != source.backend_id()) {
       state->backend = {};
       state->mixed_backends = true;
     }
@@ -6125,6 +7861,7 @@ build_report(const detail::PlanState &plan, const detail::GraphState &graph,
   state->workspace_backing_count = plan.workspace_backing_count;
   state->specialization = plan.specialization;
   state->is_shape_domain = plan.domain_graph.valid();
+  state->finite_only = plan.finite_only;
   state->node_count = plan.logical_node_count;
   state->segment_count = plan.segments.size();
   state->segment_dependency_count = plan.segment_dependencies.size();
@@ -6136,18 +7873,27 @@ build_report(const detail::PlanState &plan, const detail::GraphState &graph,
     const auto value = plan.constant_ids[slot];
     const auto *buffer = plan.owned_constant(slot);
     const bool owned = buffer != nullptr;
-    const auto bytes = owned ? buffer->size() : 0;
     state->constants[slot] = CompileConstantReport{
         .value = value,
         .policy =
             owned ? ConstantPolicy::kMaterialize : ConstantPolicy::kBorrow,
         .storage = StorageDomainId{plan.external_storage[value.ordinal()]},
-        .description = plan.constant_bindings[slot].description(),
-        .materialized_bytes = bytes};
+        .description = plan.constant_bindings[slot].description()};
     state->borrowed_constant_count += owned ? 0u : 1u;
     state->materialized_constant_count += owned ? 1u : 0u;
-    state->materialized_constant_bytes =
-        saturating_add(state->materialized_constant_bytes, bytes);
+  }
+  for (const auto &owner : plan.canonical_constants) {
+    if (!owner || !owner->ready)
+      continue;
+    const auto slot = constant_slot(plan, owner->key.constant);
+    if (slot == SIZE_MAX) {
+      detail::release(state);
+      return std::unexpected(Status::Internal("canonical owner has no logical constant"));
+    }
+    auto &bytes = state->constants[slot].materialized_bytes;
+    bytes = saturating_add(bytes, owner->buffer.size());
+    state->materialized_constant_bytes = saturating_add(
+        state->materialized_constant_bytes, owner->buffer.size());
   }
 
   for (std::size_t index = 0; index < plan.instance_values.size(); ++index) {
@@ -6272,7 +8018,8 @@ build_report(const detail::PlanState &plan, const detail::GraphState &graph,
     }
     if (step.kind == detail::PlanStepKind::kCopy) {
       step_report.kind = CompileStepKind::kCopy;
-      step_report.persistent_bytes = 0;
+      step_report.persistent_bytes = step.region.valid()
+          ? step.region.properties().persistent_bytes : std::optional<std::size_t>{0};
       step_report.copy_bytes = step.copy_bytes;
       state->copy_bytes = saturating_add(state->copy_bytes, step.copy_bytes);
     }
@@ -6306,6 +8053,8 @@ build_report(const detail::PlanState &plan, const detail::GraphState &graph,
     } else if (step.kind == detail::PlanStepKind::kOperation) {
       ++state->fallback_operation_count;
       step_report.persistent_bytes = step.operation.persistent_bytes();
+      step_report.dispatch_count = routes[step.node_begin].dispatch_count.value_or(
+          step_report.dispatch_count);
     }
     state->steps[index] = step_report;
 
@@ -6330,15 +8079,79 @@ build_report(const detail::PlanState &plan, const detail::GraphState &graph,
 
 } // namespace
 
-Result<SpecializationSignature> detail::native_shape_signature(
-    const Graph &graph, std::span<const ShapeBinding> shape,
-    mem::AllocatorRef allocator) noexcept {
-  const auto *logical = detail::GraphAccess::state(graph);
-  if (logical == nullptr || !allocator.valid())
-    return std::unexpected(Status::InvalidArgument("native shape graph or allocator is invalid"));
-  ShapeValues values(allocator);
-  HYLE_RETURN_IF_ERROR(bind_shape_values(*logical, shape, allocator, values));
-  return make_shape_signature(*logical, values, allocator);
+namespace {
+void invalidate_recording(detail::InvocationState &invocation,
+                          std::uint32_t selected_step, bool recycle) noexcept {
+  HYLE_FATAL_ASSERT(selected_step < invocation.step_bindings.size());
+  auto &binding = invocation.step_bindings[selected_step];
+  // Saturation cannot preserve readiness: every changed binding must be
+  // prepared again, even when a retired physical recording can stay dormant.
+  if (binding.revision != UINT64_MAX)
+    ++binding.revision;
+  binding.prepared_revision = 0;
+  // Explicit native/configuration/Queue invalidation also drops dormant
+  // allocations before the original provider releases its mutable resources.
+  if (!recycle)
+    for (auto &saved : invocation.capture_rebuilds)
+      if (selected_step >= saved.step_begin && selected_step - saved.step_begin < saved.step_count) {
+        saved.storage.reset();
+        discard_capture_variants(saved);
+      }
+  for (std::size_t index = 0; index < invocation.captured_ranges.size();) {
+    const auto &range = invocation.captured_ranges[index];
+    if (selected_step < range.step_begin ||
+        selected_step - range.step_begin >= range.step_count) {
+      ++index;
+      continue;
+    }
+    bool ordinary = recycle;
+    for (std::size_t step = range.step_begin;
+         ordinary && step < range.step_begin + range.step_count; ++step) {
+      const auto &planned = invocation.plan->steps[step];
+      if (!planned.emits_command()) continue;
+      const auto &cached = invocation.step_bindings[step];
+      ordinary = cached.stable_binding_identity && !cached.native_inputs &&
+          (!planned.region.valid() || detail::RegionAccess::borrows_tensor_views_only(planned.region));
+    }
+    if (auto *saved = capture_storage(invocation, range.step_begin, range.step_count)) {
+      if (ordinary && saved->preserves_private_arguments && saved->active_variant < 2 &&
+          saved->variants[saved->active_variant].key_valid) {
+        auto &variant = saved->variants[saved->active_variant];
+        HYLE_FATAL_ASSERT(!variant.commands.valid());
+        variant.commands = std::move(invocation.captured_ranges[index].commands);
+        saved->active_variant = 2;
+      } else if (ordinary) {
+        saved->storage = compute::detail::CommandCaptureAccess::recycle_after_retirement(
+            std::move(invocation.captured_ranges[index].commands));
+        saved->active_variant = 2;
+      } else {
+        saved->storage.reset();
+        discard_capture_variants(*saved);
+      }
+    }
+    // A positive private-resource contract keeps only retired commands and
+    // borrowed keys dormant. Other artifacts are destroyed or permanently
+    // stripped of launch authority before mutable provider resources change.
+    for (std::size_t next = index + 1;
+         next < invocation.captured_ranges.size(); ++next)
+      invocation.captured_ranges[next - 1] =
+          std::move(invocation.captured_ranges[next]);
+    invocation.captured_ranges.pop_back();
+  }
+  for (auto &span : invocation.capture_spans)
+    span = {};
+  invalidate_binding_cache(invocation);
+}
+} // namespace
+
+void detail::invalidate_step_recording(InvocationState &invocation,
+                                      std::uint32_t selected_step) noexcept {
+  invalidate_recording(invocation, selected_step, false);
+}
+
+void detail::recycle_step_recording(InvocationState &invocation,
+                                   std::uint32_t selected_step) noexcept {
+  invalidate_recording(invocation, selected_step, true);
 }
 
 Status detail::collect_effect_bindings(
@@ -6671,6 +8484,10 @@ bool CompileReport::is_shape_domain() const noexcept {
   return state_ != nullptr && state_->is_shape_domain;
 }
 
+bool CompileReport::has_execution_route() const noexcept {
+  return state_ != nullptr && !state_->finite_only;
+}
+
 SpecializationSignature CompileReport::specialization() const noexcept {
   return state_ != nullptr ? state_->specialization : SpecializationSignature{};
 }
@@ -6951,6 +8768,10 @@ bool Executable::is_shape_domain() const noexcept {
   return state_ != nullptr && state_->domain_graph.valid();
 }
 
+bool Executable::has_execution_route() const noexcept {
+  return state_ != nullptr && !state_->finite_only;
+}
+
 SpecializationSignature Executable::specialization() const noexcept {
   return state_ != nullptr ? state_->specialization : SpecializationSignature{};
 }
@@ -6982,26 +8803,22 @@ Executable::output_ownership(std::size_t index) const noexcept {
   auto value = output_id(index);
   if (!value)
     return std::unexpected(std::move(value).error());
+  if (state_->finite_only)
+    return std::unexpected(Status::FailedPrecondition(
+        "finite-exact output ownership requires a selected route"));
   const std::uint8_t role = state_->binding_roles[value->ordinal()];
   if ((role & detail::kInvocationOwnedOutput) != 0)
     return OutputOwnership::kInvocation;
   if ((role & (detail::kSourceAliasedOutput | detail::kExternalInput |
                detail::kConstant)) != 0) {
-    if (!state_->materialized_constants.empty() || state_->shared_constants) {
+    if (!state_->canonical_constants.empty()) {
       const auto instance = state_->external_instances[value->ordinal()];
-      const auto root = state_->instance_values[alias_root(*state_, instance)];
-      for (std::size_t slot = 0; slot < state_->constant_ids.size(); ++slot)
-        if (state_->constant_ids[slot].ordinal() == root &&
-            state_->owned_constant(slot) != nullptr)
-          return OutputOwnership::kExecutable;
+      if (state_->owned_instance_constant(alias_root(*state_, instance)) != nullptr)
+        return OutputOwnership::kExecutable;
     }
     return OutputOwnership::kSourceAlias;
   }
   return OutputOwnership::kCaller;
-}
-
-Result<Invocation> Executable::create_invocation() const noexcept {
-  return create_invocation({});
 }
 
 std::size_t Executable::exact_variant_count() const noexcept {
@@ -7025,7 +8842,7 @@ Result<Executable> Executable::exact_variant(std::size_t index) const noexcept {
 }
 
 Result<Invocation> Executable::create_invocation(
-    std::span<const ShapeBinding> shape) const noexcept {
+    InvocationOptions options) const noexcept {
   if (state_ == nullptr) {
     return std::unexpected(Status::FailedPrecondition("executable is invalid"));
   }
@@ -7038,14 +8855,18 @@ Result<Invocation> Executable::create_invocation(
   ShapeValues values(allocator);
   const auto *domain = detail::GraphAccess::state(state_->domain_graph);
   if (domain != nullptr) {
-    HYLE_RETURN_IF_ERROR(bind_shape_values(*domain, shape, allocator, values));
+    HYLE_RETURN_IF_ERROR(bind_shape_values(*domain, options.shape, allocator, values));
     if (const auto variant = find_exact_variant(*state_, values)) {
       values = ShapeValues(allocator);
-      return state_->exact_variants[*variant].create_invocation();
+      return state_->exact_variants[*variant].create_invocation(
+          {.resources = std::move(options.resources)});
     }
+    if (state_->finite_only)
+      return std::unexpected(Status::Unimplemented(
+          "shape is outside the prepared finite-exact variants"));
     HYLE_ASSIGN_OR_RETURN(signature, specialize_bound_descriptions(
                                          *domain, values, allocator, concrete));
-  } else if (!shape.empty()) {
+  } else if (!options.shape.empty()) {
     return std::unexpected(
         Status::InvalidArgument("exact executable already has a fixed shape"));
   }
@@ -7074,8 +8895,7 @@ Result<Invocation> Executable::create_invocation(
       }
       for (const auto &step : state_->steps) {
         if (!step.emits_command() ||
-            (step.kind != detail::PlanStepKind::kOperation &&
-             step.kind != detail::PlanStepKind::kRegion))
+            (step.kind != detail::PlanStepKind::kOperation && !step.region.valid()))
           continue;
         const auto private_bytes = step.kind == detail::PlanStepKind::kOperation
             ? step.operation.invocation_private_bytes()
@@ -7107,19 +8927,46 @@ Result<Invocation> Executable::create_invocation(
   if (budget != nullptr)
     ::new (invocation->storage_reservation())
         detail::InvocationState::Reservation(std::move(reservation));
+  auto observation = compute::detail::RetainedCompletion::create(allocator);
+  if (!observation) {
+    auto error = std::move(observation).error();
+    detail::release(invocation);
+    return std::unexpected(std::move(error));
+  }
+  invocation->observation = std::move(*observation);
   invocation->concrete_descriptions = std::move(concrete);
   invocation->specialization = std::move(signature);
+  const auto alias_index = create_external_alias_index(*invocation);
+  if (!alias_index.ok()) {
+    detail::release(invocation);
+    return std::unexpected(alias_index);
+  }
   const std::size_t value_count = state_->instance_descriptions.size();
+  bool native_values = false;
+  std::size_t native_input_count = 0;
+  for (const auto &step : state_->steps) {
+    if (!step.emits_command() || !step.region.valid()) continue;
+    native_values |= step.region.prepares_bindings();
+    native_input_count = (std::max)(native_input_count, std::size_t{step.input_count});
+    for (std::size_t port = 0; port < step.output_count; ++port)
+      native_values |= step.region.output_kind(port) != RegionOutputKind::kCaller;
+  }
   if (!invocation->readable.try_resize(value_count) ||
       !invocation->writable.try_resize(value_count) ||
       !invocation->bound.try_resize(value_count) ||
       !invocation->invocations.try_reserve(state_->steps.size()) ||
       !invocation->submission_inputs.try_resize(state_->node_inputs.size()) ||
       !invocation->submission_outputs.try_resize(state_->node_outputs.size()) ||
+      !invocation->step_bindings.try_resize(state_->steps.size()) ||
       !invocation->queues.try_resize(state_->lanes.size()) ||
+      !invocation->candidate_queues.try_resize(state_->lanes.size()) ||
       !invocation->queue_seen.try_resize(state_->lanes.size()) ||
       !invocation->segment_completions.try_resize(state_->segments.size()) ||
-      !invocation->captured_segments.try_resize(state_->segments.size()) ||
+      !invocation->capture_spans.try_resize(state_->segments.size()) ||
+      !invocation->segment_progress.try_resize(state_->segments.size()) ||
+      !invocation->lane_progress.try_resize(state_->lanes.size()) ||
+      !invocation->segment_blocks_host.try_resize(state_->segments.size()) ||
+      !invocation->candidate_segment_blocks_host.try_resize(state_->segments.size()) ||
       !invocation->dependency_routes.try_resize(
           state_->segment_dependencies.size()) ||
       !invocation->candidate_dependency_routes.try_resize(
@@ -7128,8 +8975,14 @@ Result<Invocation> Executable::create_invocation(
       !invocation->candidate_lane_endpoints.try_resize(state_->lanes.size()) ||
       !invocation->completion_dependencies.try_resize(
           state_->segment_dependencies.size()) ||
-      !invocation->aggregate_segments.try_resize(state_->lanes.size()) ||
-      !invocation->aggregate_children.try_resize(state_->lanes.size())) {
+      !invocation->aggregate_segments.try_resize(state_->segments.size()) ||
+      !invocation->aggregate_children.try_resize(state_->segments.size())) {
+    detail::release(invocation);
+    return std::unexpected(invocation_allocation_failure());
+  }
+  if (native_values &&
+      (!invocation->native_values.try_resize(value_count) ||
+       !invocation->native_inputs.try_resize(native_input_count))) {
     detail::release(invocation);
     return std::unexpected(invocation_allocation_failure());
   }
@@ -7163,7 +9016,8 @@ Result<Invocation> Executable::create_invocation(
       invocation->aggregate_children.data();
   invocation->aggregate_completion.completion_count = 0;
   for (std::size_t index = 0; index < invocation->queues.size(); ++index) {
-    invocation->queues[index] = nullptr;
+    invocation->queues[index].reset();
+    invocation->candidate_queues[index].reset();
     invocation->queue_seen[index] = 0;
     invocation->lane_endpoints[index] = {};
     invocation->candidate_lane_endpoints[index] = {};
@@ -7173,6 +9027,38 @@ Result<Invocation> Executable::create_invocation(
     const std::uint32_t ordinal = state_->external_instances[logical];
     invocation->readable[ordinal] = state_->constant_bindings[index];
     invocation->bound[ordinal] = 1;
+  }
+  for (const auto &value : state_->prepared_values) {
+    invocation->readable[value.instance] = value.binding;
+    invocation->bound[value.instance] = 1;
+  }
+  // Constant metadata aliases share the complete cold root. Bind each exact
+  // child using this Invocation's concrete shape/offset, without copying a
+  // slice or retaining a second canonical allocation under an ambiguous key.
+  for (std::size_t instance = 0; instance < state_->instance_values.size(); ++instance) {
+    const auto parent = state_->alias_sources[instance];
+    if ((state_->instance_roles[instance] & detail::kConstant) == 0 ||
+        parent == detail::kNoInPlaceSource)
+      continue;
+    auto bind_alias = [&]() noexcept -> Status {
+      if (parent >= instance || !invocation->readable[parent].valid())
+        return Status::Internal("immutable View has no ready physical parent");
+      HYLE_ASSIGN_OR_RETURN(const auto offset, bound_alias_offset(*invocation, instance));
+      HYLE_ASSIGN_OR_RETURN(const auto bytes,
+          physical_description(*invocation, instance).required_bytes());
+      HYLE_ASSIGN_OR_RETURN(auto storage, invocation->readable[parent].storage().subview(offset, bytes));
+      HYLE_ASSIGN_OR_RETURN(invocation->readable[instance],
+          compute::ConstTensorView::create(physical_description(*invocation, instance), storage));
+      // Provider port alignment remains part of prepare_replay, alongside
+      // all other bindings. This merely resolves the immutable byte range.
+      invocation->bound[instance] = 1;
+      return Status::Ok();
+    };
+    const auto status = bind_alias();
+    if (!status.ok()) {
+      detail::release(invocation);
+      return std::unexpected(status);
+    }
   }
   for (std::size_t step_index = 0; step_index < state_->steps.size();
        ++step_index) {
@@ -7190,9 +9076,8 @@ Result<Invocation> Executable::create_invocation(
     detail::StepInvocation created_step;
     const detail::PlanStep &step = state_->steps[step_index];
     if (step.emits_command() &&
-        (step.kind == detail::PlanStepKind::kOperation ||
-         step.kind == detail::PlanStepKind::kRegion)) {
-      if (step.kind == detail::PlanStepKind::kRegion) {
+        (step.kind == detail::PlanStepKind::kOperation || step.region.valid())) {
+      if (step.region.valid()) {
         auto created = step.region.create_invocation(step_workspace,
                                                      invocation->allocator);
         if (!created) {
@@ -7245,6 +9130,18 @@ Result<Invocation> Executable::create_invocation(
       detail::release(invocation);
       return std::unexpected(invocation_allocation_failure());
     }
+    if (step.region.valid()) {
+      for (std::size_t port = 0; port < step.output_count; ++port) {
+        const auto kind = step.region.output_kind(port);
+        if (kind != RegionOutputKind::kStableGenerated &&
+            kind != RegionOutputKind::kDeferredGenerated) continue;
+        const auto projected = project_generated_output(*invocation, step_index, port);
+        if (!projected.ok()) {
+          detail::release(invocation);
+          return std::unexpected(projected);
+        }
+      }
+    }
   }
   // A delegated endpoint is an invocation-local ordered execution identity.
   // Resolve it once, after every provider invocation exists, so replay
@@ -7263,7 +9160,7 @@ Result<Invocation> Executable::create_invocation(
           "graph delegated invocation has an invalid execution lane"));
     }
     compute::detail::CompletionEndpoint endpoint{};
-    if (step.kind == detail::PlanStepKind::kRegion) {
+    if (step.region.valid()) {
       endpoint =
           invocation->invocations[step_index].region.delegated_endpoint();
     } else if (step.kind == detail::PlanStepKind::kOperation) {
@@ -7278,7 +9175,11 @@ Result<Invocation> Executable::create_invocation(
     invocation->lane_endpoints[step.lane.ordinal()] = endpoint;
     invocation->candidate_lane_endpoints[step.lane.ordinal()] = endpoint;
   }
-  return detail::InvocationAccess::adopt(invocation);
+  rebuild_external_alias_index(*invocation);
+  auto result = detail::InvocationAccess::adopt(invocation);
+  if (options.resources)
+    HYLE_RETURN_IF_ERROR(result.prepare_resources(std::move(*options.resources)));
+  return result;
 }
 
 Invocation::Invocation(Invocation &&other) noexcept : state_(other.state_) {
@@ -7287,6 +9188,8 @@ Invocation::Invocation(Invocation &&other) noexcept : state_(other.state_) {
 
 Invocation &Invocation::operator=(Invocation &&other) noexcept {
   if (this != &other) {
+    if (state_ != nullptr)
+      state_->observation.reset();
     detail::release(state_);
     state_ = other.state_;
     other.state_ = nullptr;
@@ -7294,24 +9197,22 @@ Invocation &Invocation::operator=(Invocation &&other) noexcept {
   return *this;
 }
 
-Invocation::~Invocation() { detail::release(state_); }
+Invocation::~Invocation() {
+  // The observation retains the submitted Completion, which may in turn
+  // retain this original state. Drop this root before the public owner.
+  if (state_ != nullptr)
+    state_->observation.reset();
+  detail::release(state_);
+}
 
-Status Invocation::bind(ValueId value,
-                        compute::ConstTensorView tensor) noexcept {
-  if (state_ == nullptr) {
-    return Status::FailedPrecondition("invocation is invalid");
-  }
-  if (const auto phase = state_->phase.load(std::memory_order_acquire);
-      phase != detail::InvocationPhase::kIdle) {
-    return Status::FailedPrecondition(
-        phase == detail::InvocationPhase::kFailed
-            ? "failed graph invocation must be recreated"
-            : "invocation bindings cannot change while work is in flight");
-  }
+Status detail::validate_read_binding(InvocationState &state, ValueId value,
+    compute::ConstTensorView tensor, std::span<const InputSourceBinding> incoming) noexcept {
+  HYLE_RETURN_IF_ERROR(detail::resource_control_ready(&state));
+  HYLE_RETURN_IF_ERROR(detail::check_binding_replacement(state, value));
   if (!tensor.valid())
     return Status::InvalidArgument("tensor binding is invalid");
-  const detail::PlanState &plan = *state_->plan;
-  if (!owns(plan, value)) {
+  const detail::PlanState &plan = *state.plan;
+  if (!::hyle::graph::owns(plan, value)) {
     return Status::InvalidArgument("value does not belong to this executable");
   }
   const std::size_t ordinal = value.ordinal();
@@ -7329,38 +9230,45 @@ Status Invocation::bind(ValueId value,
     }
     return Status::InvalidArgument("internal graph values cannot be bound");
   }
-  if (tensor.description() != logical_description(*state_, ordinal)) {
+  if (tensor.description() != logical_description(state, ordinal)) {
     return Status::InvalidArgument(
         "input tensor does not match the executable description");
   }
   Status resource =
-      validate_external_resource(plan, ordinal, tensor.storage().resource());
+      validate_external_read_resource(plan, ordinal, tensor.storage().resource());
   if (!resource.ok())
     return resource;
   Status alias =
-      validate_external_alias(*state_, ordinal, byte_range(tensor.storage()));
+      validate_external_alias(state, ordinal, byte_range(tensor.storage()), incoming);
   if (!alias.ok())
     return alias;
   const std::uint32_t instance = plan.external_instances[ordinal];
   if (instance == detail::kNoWorkspaceRequest)
     return Status::Internal("graph input has no external physical instance");
-  invalidate_binding_cache(*state_);
-  state_->readable[instance] = tensor;
-  state_->bound[instance] = 1;
+  return Status::Ok();
+}
+void detail::commit_read_binding(InvocationState &state, ValueId value,
+    compute::ConstTensorView tensor) noexcept {
+  const auto ordinal = value.ordinal();
+  const auto instance = state.plan->external_instances[ordinal];
+  invalidate_unproven_bindings(state);
+  invalidate_binding_cache(state);
+  state.readable[instance] = tensor;
+  state.bound[instance] = 1;
+  commit_external_alias_binding(state, ordinal);
+  detail::note_borrowed_binding(state, value);
+}
+Status Invocation::bind(ValueId value,
+                        compute::ConstTensorView tensor) noexcept {
+  HYLE_RETURN_IF_ERROR(detail::resource_control_ready(state_));
+  HYLE_RETURN_IF_ERROR(detail::validate_read_binding(*state_, value, tensor));
+  detail::commit_read_binding(*state_, value, tensor);
   return Status::Ok();
 }
 
 Status Invocation::bind(ValueId value, compute::TensorView tensor) noexcept {
-  if (state_ == nullptr) {
-    return Status::FailedPrecondition("invocation is invalid");
-  }
-  if (const auto phase = state_->phase.load(std::memory_order_acquire);
-      phase != detail::InvocationPhase::kIdle) {
-    return Status::FailedPrecondition(
-        phase == detail::InvocationPhase::kFailed
-            ? "failed graph invocation must be recreated"
-            : "invocation bindings cannot change while work is in flight");
-  }
+  HYLE_RETURN_IF_ERROR(detail::resource_control_ready(state_));
+  HYLE_RETURN_IF_ERROR(detail::check_binding_replacement(*state_, value));
   if (!tensor.valid())
     return Status::InvalidArgument("tensor binding is invalid");
   const detail::PlanState &plan = *state_->plan;
@@ -7397,10 +9305,13 @@ Status Invocation::bind(ValueId value, compute::TensorView tensor) noexcept {
     if (instance == detail::kNoWorkspaceRequest) {
       return Status::Internal("graph output has no external physical instance");
     }
+    invalidate_unproven_bindings(*state_);
     invalidate_binding_cache(*state_);
     state_->writable[instance] = tensor;
     state_->readable[instance] = tensor.as_const();
     state_->bound[instance] = 1;
+    commit_external_alias_binding(*state_, ordinal);
+    detail::note_borrowed_binding(*state_, value);
     return Status::Ok();
   }
   if ((plan.binding_roles[ordinal] & detail::kExternalInput) != 0) {
@@ -7432,42 +9343,51 @@ bool Invocation::in_flight() const noexcept {
                                   detail::InvocationPhase::kRunning;
 }
 
+Status detail::RegionAccess::revoke_preparation(Invocation &invocation) noexcept {
+  auto *state = detail::InvocationAccess::state(invocation);
+  HYLE_RETURN_IF_ERROR(detail::resource_control_ready(state));
+  invalidate_unproven_bindings(*state);
+  invalidate_binding_cache(*state, false);
+  return Status::Ok();
+}
+
 Status detail::RegionAccess::visit_bound(Invocation &invocation,
                                         detail::RegionAccessFn callback,
                                         void *user) noexcept {
   auto *state = detail::InvocationAccess::state(invocation);
   if (state == nullptr || callback == nullptr)
     return Status::InvalidArgument("bound region access requires an invocation and callback");
-  if (state->phase.load(std::memory_order_acquire) != detail::InvocationPhase::kIdle)
-    return Status::FailedPrecondition("region access requires an idle successful invocation");
+  HYLE_RETURN_IF_ERROR(detail::begin_preparation(*state));
+  PreparationScope preparation{*state};
   HYLE_RETURN_IF_ERROR(prepare_invocation_bindings(*state));
-  struct Call final {
-    detail::InvocationState *state;
-    detail::RegionAccessFn callback;
-    void *user;
-  } call{state, callback, user};
-  return visit(invocation, +[](void *opaque, const detail::RegionAccessView &view) noexcept -> Status {
-    auto &call = *static_cast<Call *>(opaque);
-    const auto &step = call.state->plan->steps[view.step];
-    auto bound = view;
-    bound.inputs = std::span<const compute::ConstTensorView>(call.state->submission_inputs.data(),
-        call.state->submission_inputs.size()).subspan(step.input_begin, step.input_count);
-    bound.outputs = std::span<const compute::TensorView>(call.state->submission_outputs.data(),
-        call.state->submission_outputs.size()).subspan(step.output_begin, step.output_count);
-    return call.callback(call.user, bound);
-  }, &call);
+  const auto &plan = *state->plan;
+  for (std::size_t index = 0; index < plan.steps.size(); ++index) {
+    const auto &step = plan.steps[index];
+    if (step.kind != detail::PlanStepKind::kRegion)
+      continue;
+    const auto &slot = state->invocations[index].region;
+    const detail::RegionAccessView view{
+        static_cast<std::uint32_t>(index), plan.generation,
+        std::span<const std::uint32_t>(plan.step_nodes)
+            .subspan(step.node_set_begin, step.node_count),
+        step.region.source_.shared_extension(), step.region.prepared_.state,
+        slot.state_, step.lane,
+        std::span<const compute::ConstTensorView>(state->submission_inputs)
+            .subspan(step.input_begin, step.input_count),
+        std::span<const compute::TensorView>(state->submission_outputs)
+            .subspan(step.output_begin, step.output_count),
+        step.region.prepared_.vtable};
+    HYLE_RETURN_IF_ERROR(callback(user, view));
+  }
+  return Status::Ok();
 }
 
 Status Invocation::reset() noexcept {
-  if (state_ == nullptr)
-    return Status::FailedPrecondition("invocation is invalid");
-  if (const auto phase = state_->phase.load(std::memory_order_acquire);
-      phase != detail::InvocationPhase::kIdle) {
-    return Status::FailedPrecondition(
-        phase == detail::InvocationPhase::kFailed
-            ? "failed graph invocation must be recreated"
-            : "invocation cannot reset while work is in flight");
-  }
+  HYLE_RETURN_IF_ERROR(detail::resource_control_ready(state_));
+  // The payload first rejects retained source controls without disturbing the
+  // old episode. Its reset revokes readiness before changing native resources.
+  HYLE_RETURN_IF_ERROR(detail::reset_resource_payload(*this));
+  invalidate_unproven_bindings(*state_);
   invalidate_binding_cache(*state_);
   state_->outputs_ready.store(false, std::memory_order_release);
   for (ValueId value : state_->plan->input_ids) {
@@ -7478,27 +9398,42 @@ Status Invocation::reset() noexcept {
   }
   for (ValueId value : state_->plan->output_ids) {
     const std::size_t logical = value.ordinal();
-    if ((state_->plan->binding_roles[logical] & detail::kConstant) != 0)
-      continue;
     const std::uint32_t ordinal = state_->plan->external_instances[logical];
+    if ((state_->plan->instance_roles[ordinal] & detail::kConstant) != 0)
+      continue;
     state_->readable[ordinal] = {};
     state_->writable[ordinal] = {};
     state_->bound[ordinal] = 0;
   }
+  detail::reset_resource_bindings(*state_);
+  rebuild_external_alias_index(*state_);
+  return Status::Ok();
+}
+
+Status detail::RegionAccess::reset_configuration(Invocation &invocation) noexcept {
+  auto *state = detail::InvocationAccess::state(invocation);
+  HYLE_RETURN_IF_ERROR(detail::resource_control_ready(state));
+  // Seed before callbacks so any successful ordinary bind or command-resource
+  // replacement inside reset can revoke the physical candidate permanently.
+  detail::remember_configuration_spans(*state);
+  const auto reset = detail::reset_resource_payload(invocation);
+  if (!reset.ok()) {
+    detail::discard_configuration_spans(*state);
+    return reset;
+  }
+  invalidate_unproven_bindings(*state);
+  invalidate_binding_cache(*state, false);
+  detail::reset_configuration_bindings(*state);
+  rebuild_external_alias_index(*state);
   return Status::Ok();
 }
 
 Status Invocation::prepare_replay(std::span<const QueueBinding> queues,
                                   ReplayOptions options) noexcept {
-  if (state_ == nullptr)
-    return Status::FailedPrecondition("invocation is invalid");
-  if (const auto phase = state_->phase.load(std::memory_order_acquire);
-      phase != detail::InvocationPhase::kIdle) {
-    return Status::FailedPrecondition(
-        phase == detail::InvocationPhase::kFailed
-            ? "failed graph invocation must be recreated"
-            : "invocation replay cannot be prepared while work is in flight");
-  }
+  if (!state_)
+    return Status::FailedPrecondition("graph invocation is empty");
+  HYLE_RETURN_IF_ERROR(detail::begin_preparation(*state_));
+  PreparationScope preparation{*state_};
   if (options.mode != ReplayMode::kCommands &&
       options.mode != ReplayMode::kPreferCapture &&
       options.mode != ReplayMode::kRequireCapture) {
@@ -7522,8 +9457,17 @@ Status Invocation::prepare_replay(std::span<const QueueBinding> queues,
     return Status::InvalidArgument("replay preparation requires one queue for "
                                    "every active execution lane");
   }
-  for (std::size_t index = 0; index < state_->queues.size(); ++index)
+  struct CandidateQueuesReset final {
+    detail::InvocationState &state;
+    ~CandidateQueuesReset() {
+      for (auto &queue : state.candidate_queues)
+        queue.reset();
+    }
+  } candidate_reset{*state_};
+  for (std::size_t index = 0; index < state_->queues.size(); ++index) {
     state_->queue_seen[index] = 0;
+    state_->candidate_queues[index].reset();
+  }
   for (const QueueBinding binding : queues) {
     if (!binding.lane.valid() ||
         binding.lane.ordinal() >= state_->plan->lanes.size() ||
@@ -7540,11 +9484,15 @@ Status Invocation::prepare_replay(std::span<const QueueBinding> queues,
     if (state_->queue_seen[lane] != 0)
       return Status::InvalidArgument(
           "graph replay queue binding is duplicated");
+    HYLE_ASSIGN_OR_RETURN(auto retained,
+        compute::detail::QueueRef::acquire(*binding.queue));
     const ExecutionTargetId target = state_->plan->lanes[lane].target;
-    if (!state_->plan->targets[target.ordinal()].context.owns(*binding.queue)) {
+    if (!detail::ExecutionSourceAccess::owns(
+            state_->plan->targets[target.ordinal()].source, retained)) {
       return Status::InvalidArgument(
           "graph replay queue belongs to a different compute context");
     }
+    state_->candidate_queues[lane] = std::move(retained);
     state_->queue_seen[lane] = 1;
   }
   for (std::size_t lane = 0; lane < state_->queue_seen.size(); ++lane) {
@@ -7570,10 +9518,10 @@ Status Invocation::prepare_replay(std::span<const QueueBinding> queues,
       state_->candidate_lane_endpoints[lane] = state_->lane_endpoints[lane];
       continue;
     }
-    compute::Queue *queue = candidate_queue(queues, lane_id);
-    if (queue == nullptr)
+    const auto &queue = state_->candidate_queues[lane];
+    if (!queue.valid())
       return Status::Internal("graph replay queue binding is unavailable");
-    auto endpoint = compute::detail::QueueSequence::completion_endpoint(*queue);
+    auto endpoint = compute::detail::QueueSequence::completion_endpoint(queue);
     if (!endpoint) {
       return std::move(endpoint).error().WithContext(
           "querying graph Queue completion endpoint");
@@ -7581,6 +9529,30 @@ Status Invocation::prepare_replay(std::span<const QueueBinding> queues,
     state_->candidate_lane_endpoints[lane] = *endpoint;
   }
 
+  // Commands will enter ordinary provider encoders on the next submit. Old
+  // captures must release their native pool addresses before any cold rebind.
+  // Invalid modes/Queues above have not disturbed a previously prepared route.
+  if (options.mode == ReplayMode::kCommands)
+    reset_capture_cache(*state_);
+  // A recording belongs to its actual Queue owner, not a borrowed Queue
+  // wrapper or logical lane. Destroy foreign recordings before any cold hook.
+  for (std::size_t lane = 0; lane < state_->queues.size(); ++lane) {
+    if (!shared_lane(*state_->plan,
+                    ExecutionLaneId{static_cast<std::uint32_t>(lane)}) ||
+        state_->queues[lane].same_owner(state_->candidate_queues[lane]))
+      continue;
+    for (const auto &segment : state_->plan->segments) {
+      if (segment.lane.ordinal() != lane)
+        continue;
+      const std::size_t end = segment.step_begin + segment.step_count;
+      for (std::size_t index = segment.step_begin; index < end; ++index) {
+        if (!state_->plan->steps[index].emits_command())
+          continue;
+        state_->step_bindings[index].stable_binding_identity = false;
+        detail::invalidate_step_recording(*state_, static_cast<std::uint32_t>(index));
+      }
+    }
+  }
   Status bindings = prepare_invocation_bindings(*state_);
   if (!bindings.ok())
     return std::move(bindings).WithContext("preparing graph replay bindings");
@@ -7589,9 +9561,10 @@ Status Invocation::prepare_replay(std::span<const QueueBinding> queues,
   if (!transfers.ok())
     return transfers;
   auto dependency_report =
-      prepare_dependency_routes(*state_, queues, options.host_wait);
+      prepare_dependency_routes(*state_, options.host_wait);
   if (!dependency_report)
     return std::move(dependency_report).error();
+  HYLE_RETURN_IF_ERROR(detail::prepare_input_sources(*state_, queues, options.host_wait));
   dependency_report->immediate_transfer_count =
       transfer_report.immediate_transfer_count;
   dependency_report->queued_transfer_count =
@@ -7603,14 +9576,17 @@ Status Invocation::prepare_replay(std::span<const QueueBinding> queues,
   // Per-lane reservations would understate ring capacity because the
   // backend sees one physical Queue.
   for (std::size_t index = 0; index < queues.size(); ++index) {
+    const auto &queue =
+        state_->candidate_queues[queues[index].lane.ordinal()];
     bool seen = false;
     for (std::size_t earlier = 0; earlier < index; ++earlier)
-      seen = seen || queues[earlier].queue == queues[index].queue;
+      seen = seen || queue.same_owner(
+                         state_->candidate_queues[queues[earlier].lane.ordinal()]);
     if (seen)
       continue;
     std::size_t count = 0;
     for (const QueueBinding binding : queues) {
-      if (binding.queue != queues[index].queue)
+      if (!queue.same_owner(state_->candidate_queues[binding.lane.ordinal()]))
         continue;
       const std::size_t lane_count =
           state_->plan->lane_segment_counts[binding.lane.ordinal()];
@@ -7620,18 +9596,58 @@ Status Invocation::prepare_replay(std::span<const QueueBinding> queues,
       }
       count += lane_count;
     }
-    Status reserved = queues[index].queue->reserve_completions(count);
+    Status reserved = queue.reserve_completions(count);
     if (!reserved.ok()) {
       return std::move(reserved).WithContext(
           "reserving graph replay completion capacity");
     }
   }
 
-  // Do not disturb a previously usable replay route until every replacement
-  // Queue, binding, transfer and cold completion capacity has been validated
-  // successfully.
-  for (const QueueBinding binding : queues)
-    state_->queues[binding.lane.ordinal()] = binding.queue;
+  // Reserve only the bounded number of selected compatible runs. This is
+  // cold metadata, before replacing a usable route or recording any device work.
+  if (options.mode != ReplayMode::kCommands) {
+    if (options.mode == ReplayMode::kRequireCapture &&
+        state_->plan->capture_command_count != state_->plan->command_count)
+      return Status::Unimplemented("a selected graph command is not capture-safe");
+    if (!state_->captured_ranges.try_reserve(state_->plan->capture_ranges.size()))
+      return Status::ResourceExhausted("graph capture range allocation failed");
+    if (!state_->capture_rebuilds.try_reserve(state_->plan->capture_ranges.size()))
+      return Status::ResourceExhausted("graph capture rebuild allocation failed");
+    while (state_->capture_rebuilds.size() < state_->plan->capture_ranges.size()) {
+      const auto &range = state_->plan->capture_ranges[state_->capture_rebuilds.size()];
+      if (!state_->capture_rebuilds.try_push_back(
+              detail::CaptureRebuildRange{range.step_begin, range.step_count, state_->allocator}))
+        return Status::ResourceExhausted("graph capture rebuild slot allocation failed");
+    }
+    for (auto &saved : state_->capture_rebuilds)
+      HYLE_RETURN_IF_ERROR(qualify_capture_variants(*state_, saved));
+  }
+
+  // Publish the replacement Queue/route only after validation. Any selected
+  // resources already changed above have revoked their old replay first.
+  for (std::size_t lane = 0; lane < state_->queues.size(); ++lane)
+    state_->queues[lane] = std::move(state_->candidate_queues[lane]);
+  // Publish producer identity only at successful preparation, including capture.
+  // Delegated lanes have no Queue and retain their own producer group.
+  auto commit_producer_groups = [&]() noexcept {
+    detail::commit_input_sources(*state_);
+    std::copy(state_->candidate_segment_blocks_host.begin(),
+              state_->candidate_segment_blocks_host.end(),
+              state_->segment_blocks_host.begin());
+    for (std::size_t lane = 0; lane < state_->lane_progress.size(); ++lane) {
+      auto &progress = state_->lane_progress[lane];
+      progress.producer_group = static_cast<std::uint32_t>(lane);
+      if (!shared_lane(*state_->plan,
+                       ExecutionLaneId{static_cast<std::uint32_t>(lane)}))
+        continue;
+      for (std::size_t earlier = 0; earlier < lane; ++earlier) {
+        if (state_->queues[lane].same_owner(state_->queues[earlier])) {
+          progress.producer_group = static_cast<std::uint32_t>(earlier);
+          break;
+        }
+      }
+    }
+  };
   std::copy(state_->candidate_dependency_routes.begin(),
             state_->candidate_dependency_routes.end(),
             state_->dependency_routes.begin());
@@ -7642,141 +9658,184 @@ Status Invocation::prepare_replay(std::span<const QueueBinding> queues,
   state_->dependencies_prepared = true;
   state_->replay_report = *dependency_report;
 
-  for (compute::detail::CapturedCommands &captured :
-       state_->captured_segments) {
-    captured.reset();
-  }
   state_->replay_prepared = false;
   state_->replay_route = ReplayRoute::kUnprepared;
   state_->replay_report.route = ReplayRoute::kUnprepared;
   if (options.mode == ReplayMode::kCommands) {
+    rebuild_capture_spans(*state_);
+    commit_producer_groups();
     state_->replay_route = ReplayRoute::kCommands;
     state_->replay_report.route = ReplayRoute::kCommands;
     state_->replay_prepared = true;
     return Status::Ok();
   }
 
-  auto clear_captures = [&]() noexcept {
-    for (compute::detail::CapturedCommands &captured :
-         state_->captured_segments) {
-      captured.reset();
-    }
+  auto unprepare_captures = [&]() noexcept {
+    // Unchanged and newly completed recordings may remain dormant after a
+    // later cold rejection. No route can launch them until preparation commits.
+    for (auto &span : state_->capture_spans)
+      span = {};
     state_->replay_prepared = false;
     state_->replay_route = ReplayRoute::kUnprepared;
     state_->replay_report = {};
+    // A failed encoder may have invalidated private provider state. No old
+    // variant can bypass that failure on a later same-tuple preparation.
+    for (auto &saved : state_->capture_rebuilds) {
+      saved.storage.reset();
+      discard_capture_variants(saved);
+    }
   };
   auto finish_preparation =
-      [](compute::detail::QueueSequence &sequence) noexcept -> Status {
+      [&](compute::detail::QueueSequence &sequence) noexcept -> Status {
     auto completion = sequence.finish();
     if (!completion)
       return std::move(completion).error();
+    HYLE_RETURN_IF_ERROR(detail::retain_preparation_completion(*state_, *completion));
     return completion->wait();
   };
 
-  std::size_t command_segment_count = 0;
-  std::size_t captured_segment_count = 0;
-  for (std::size_t segment_index = 0;
-       segment_index < state_->plan->segments.size(); ++segment_index) {
-    const detail::PlanSegment &segment = state_->plan->segments[segment_index];
-    bool has_commands = false;
-    const std::size_t step_end = segment.step_begin + segment.step_count;
-    for (std::size_t step = segment.step_begin; step < step_end; ++step)
-      has_commands = has_commands || state_->plan->steps[step].emits_command();
-    if (!has_commands)
-      continue;
-    ++command_segment_count;
-    if (!shared_lane(*state_->plan, segment.lane)) {
-      if (options.mode == ReplayMode::kRequireCapture) {
-        clear_captures();
-        return Status::Unimplemented(
-            "a delegated graph segment cannot use Queue command capture");
-      }
-      continue;
-    }
-    if (!segment_capture_compatible(*state_->plan, segment)) {
-      if (options.mode == ReplayMode::kRequireCapture) {
-        clear_captures();
-        return Status::Unimplemented(
-            "a graph segment contains a provider that is not capture-safe");
-      }
+  std::size_t captured_command_count = 0;
+  std::size_t recorded_range_count = 0;
+  std::size_t reused_range_count = 0;
+  for (const auto &candidate : state_->plan->capture_ranges) {
+    const auto &segment = state_->plan->segments[candidate.segment];
+    detail::PlanSegment range = segment;
+    range.step_begin = candidate.step_begin;
+    range.step_count = candidate.step_count;
+    const auto retained = std::lower_bound(
+        state_->captured_ranges.begin(), state_->captured_ranges.end(),
+        range.step_begin, [](const auto &value, std::uint32_t begin) noexcept {
+          return value.step_begin < begin;
+        });
+    if (retained != state_->captured_ranges.end() &&
+        retained->step_begin == range.step_begin &&
+        retained->step_count == range.step_count) {
+      ++reused_range_count;
+      captured_command_count += candidate.command_count;
       continue;
     }
-
-    compute::Queue &queue = *state_->queues[segment.lane.ordinal()];
-    auto extension = compute::detail::CommandCaptureAccess::query(queue);
+    auto *saved = capture_storage(*state_, range.step_begin, range.step_count);
+    std::uint8_t selected_variant = 2;
+    if (saved != nullptr && saved->preserves_private_arguments) {
+      for (std::uint8_t index = 0; index < 2; ++index) {
+        auto &variant = saved->variants[index];
+        if (!variant.commands.valid() || !capture_key_matches(*state_, *saved, variant))
+          continue;
+        append_capture_range(*state_, range.step_begin, range.step_count,
+                             std::move(variant.commands));
+        saved->active_variant = index;
+        saved->last_used = index;
+        selected_variant = index;
+        break;
+      }
+      if (selected_variant < 2) {
+        ++reused_range_count;
+        captured_command_count += candidate.command_count;
+        continue;
+      }
+      selected_variant = saved->variants[0].key_valid
+          ? saved->variants[1].key_valid ? static_cast<std::uint8_t>(1 - saved->last_used) : std::uint8_t{1}
+          : std::uint8_t{0};
+      auto &evicted = saved->variants[selected_variant];
+      if (evicted.commands.valid())
+        saved->storage = compute::detail::CommandCaptureAccess::recycle_after_retirement(
+            std::move(evicted.commands));
+      evicted.key_valid = false;
+      evicted.bindings.clear();
+    }
+    compute::Queue *queue = candidate_queue(queues, segment.lane);
+    if (queue == nullptr) {
+      unprepare_captures();
+      return Status::Internal("graph capture Queue binding is unavailable");
+    }
+    auto extension = compute::detail::CommandCaptureAccess::query(*queue);
     if (!extension) {
       Status unavailable = std::move(extension).error();
-      if (options.mode == ReplayMode::kPreferCapture &&
-          unavailable.IsUnimplemented())
+      if (options.mode == ReplayMode::kPreferCapture && unavailable.IsUnimplemented()) {
+        if (saved != nullptr) {
+          saved->storage.reset();
+          discard_capture_variants(*saved);
+        }
         continue;
-      clear_captures();
-      return std::move(unavailable)
-          .WithContext("querying graph command capture support");
+      }
+      unprepare_captures();
+      return std::move(unavailable).WithContext("querying graph command capture support");
     }
-    auto sequence = compute::detail::QueueSequence::begin(queue);
+    auto sequence = compute::detail::QueueSequence::begin(
+        state_->queues[segment.lane.ordinal()]);
     if (!sequence) {
-      clear_captures();
-      return std::move(sequence).error().WithContext(
-          "beginning graph command capture sequence");
+      unprepare_captures();
+      return std::move(sequence).error().WithContext("beginning graph command capture sequence");
     }
     if (state_->plan->invocation_storage)
       state_->plan->invocation_storage->note_unknown();
-    Status begun =
-        compute::detail::CommandCaptureAccess::begin(*extension, *sequence);
+    Status begun = compute::detail::CommandCaptureAccess::begin(*extension, *sequence);
     if (!begun.ok()) {
-      // begin() rejected before any graph command was admitted. Retire the
-      // reserved sequence slot, but preserve the causal capture error.
       finish_preparation(*sequence).IgnoreError();
-      if (options.mode == ReplayMode::kPreferCapture && begun.IsUnimplemented())
+      if (options.mode == ReplayMode::kPreferCapture && begun.IsUnimplemented()) {
+        if (saved != nullptr) {
+          saved->storage.reset();
+          discard_capture_variants(*saved);
+        }
         continue;
-      clear_captures();
+      }
+      unprepare_captures();
       return std::move(begun).WithContext("beginning graph command capture");
     }
-
-    Status recorded = enqueue_segment_steps(*state_, segment, *sequence);
+    Status recorded = enqueue_segment_steps(*state_, range, *sequence);
     if (!recorded.ok()) {
-      Status aborted =
-          compute::detail::CommandCaptureAccess::abort(*extension, *sequence);
-      Status finished = finish_preparation(*sequence);
+      const Status aborted = compute::detail::CommandCaptureAccess::abort(*extension, *sequence);
+      const Status finished = finish_preparation(*sequence);
       (void)aborted;
       (void)finished;
-      clear_captures();
-      return std::move(recorded).WithContext(
-          "recording a capture-compatible graph segment");
+      unprepare_captures();
+      return std::move(recorded).WithContext("recording a capture-compatible graph range");
     }
+    compute::detail::CaptureRebuildStorage rebuild;
+    if (saved != nullptr)
+      rebuild = std::move(saved->storage);
     auto captured = compute::detail::CommandCaptureAccess::end(
-        *extension, *sequence, state_->allocator);
+        *extension, *sequence, state_->allocator, std::move(rebuild));
     Status finished = finish_preparation(*sequence);
     if (!captured) {
       Status capture_error = std::move(captured).error();
-      // end() owns capture termination even on failure. The empty preparation
-      // prefix still has to retire, but cannot replace the causal error.
       finished.IgnoreError();
+      // A failed retirement can still own the original Invocation. It cannot
+      // be converted to a usable command fallback while the prefix is live.
       if (options.mode == ReplayMode::kPreferCapture &&
-          capture_error.IsUnimplemented()) {
+          capture_error.IsUnimplemented() && finished.ok()) {
+        if (saved != nullptr)
+          discard_capture_variants(*saved);
         continue;
       }
-      clear_captures();
-      return std::move(capture_error)
-          .WithContext("finalizing graph command capture");
+      unprepare_captures();
+      return std::move(capture_error).WithContext("finalizing graph command capture");
     }
     if (!finished.ok()) {
-      clear_captures();
-      return std::move(finished).WithContext(
-          "retiring graph command capture sequence");
+      unprepare_captures();
+      return std::move(finished).WithContext("retiring graph command capture sequence");
     }
-    state_->captured_segments[segment_index] = std::move(*captured);
-    ++captured_segment_count;
+    // This fact comes from the selected Queue's actual capture backend, not
+    // from the generic allocation token. Keep it after Commands destroys the
+    // artifact so proven pointer-backed bindings need no redundant rebind.
+    const bool stable_identity = captured->tensor_bindings_have_stable_identity();
+    for (std::size_t index = range.step_begin;
+         index < std::size_t{range.step_begin} + range.step_count; ++index)
+      state_->step_bindings[index].stable_binding_identity = stable_identity;
+    if (stable_identity && saved != nullptr && selected_variant < 2)
+      remember_capture_key(*state_, *saved, selected_variant);
+    append_capture_range(*state_, range.step_begin, range.step_count, std::move(*captured));
+    ++recorded_range_count;
+    captured_command_count += candidate.command_count;
   }
-
-  if (captured_segment_count == 0) {
-    state_->replay_route = ReplayRoute::kCommands;
-  } else if (captured_segment_count == command_segment_count) {
-    state_->replay_route = ReplayRoute::kCaptured;
-  } else {
-    state_->replay_route = ReplayRoute::kHybrid;
-  }
+  state_->replay_route = captured_command_count == 0 ? ReplayRoute::kCommands
+      : captured_command_count == state_->plan->command_count ? ReplayRoute::kCaptured
+                                               : ReplayRoute::kHybrid;
   state_->replay_report.route = state_->replay_route;
+  state_->replay_report.recorded_capture_range_count = recorded_range_count;
+  state_->replay_report.reused_capture_range_count = reused_range_count;
+  rebuild_capture_spans(*state_);
+  commit_producer_groups();
   state_->replay_prepared = true;
   return Status::Ok();
 }
@@ -7838,661 +9897,23 @@ Invocation::output(ValueId value) const noexcept {
         Status::InvalidArgument("value is not a published graph output"));
   }
   const std::uint32_t instance = plan.external_instances[ordinal];
-  if (instance == detail::kNoWorkspaceRequest ||
-      !state_->readable[instance].valid()) {
+  if (instance == detail::kNoWorkspaceRequest) {
     return std::unexpected(
         Status::Internal("published graph output has no readable storage"));
   }
-  return state_->readable[instance];
+  return detail::output_tensor(*state_, instance);
 }
 
-Result<compute::Completion> Invocation::submit(compute::Queue &queue) noexcept {
-  if (state_ == nullptr) {
-    return std::unexpected(Status::FailedPrecondition("invocation is invalid"));
-  }
-  if (state_->plan->required_queue_count != 1) {
-    return std::unexpected(Status::InvalidArgument(
-        "single-queue submit requires exactly one active execution lane"));
-  }
-  std::uint32_t active_lane = 0;
-  while (state_->plan->lane_segment_counts[active_lane] == 0 ||
-         !shared_lane(*state_->plan, ExecutionLaneId{active_lane}))
-    ++active_lane;
-  const std::array bindings{
-      QueueBinding{.lane = ExecutionLaneId{active_lane}, .queue = &queue}};
-  if (!state_->replay_prepared ||
-      (state_->replay_route == ReplayRoute::kCommands &&
-       state_->queues[active_lane] != &queue)) {
-    Status prepared = prepare_replay(bindings);
-    if (!prepared.ok())
-      return std::unexpected(std::move(prepared));
-  }
-  return submit(bindings);
-}
-
-Result<compute::Completion> Invocation::submit() noexcept {
-  if (state_ == nullptr) {
-    return std::unexpected(Status::FailedPrecondition("invocation is invalid"));
-  }
-  if (state_->plan->required_queue_count != 0) {
-    return std::unexpected(Status::InvalidArgument(
-        "queue-free submit requires a graph with no caller Queue lanes"));
-  }
-  constexpr std::span<const QueueBinding> no_queues{};
-  if (!state_->replay_prepared) {
-    Status prepared = prepare_replay(no_queues);
-    if (!prepared.ok())
-      return std::unexpected(std::move(prepared));
-  }
-  return submit(no_queues);
-}
-
-Result<compute::Completion>
-Invocation::submit(std::span<const QueueBinding> queues) noexcept {
-  HYLE_ASSIGN_OR_RETURN(auto submission,
-      detail::SubmissionCursor::begin(*this, queues, false));
-  while (!submission.done()) {
-    HYLE_ASSIGN_OR_RETURN(const bool advanced, submission.advance(true));
-    if (!advanced && submission.pending_dependency() != nullptr)
-      submission.pending_dependency()->wait().IgnoreError();
-  }
-  return submission.finish();
-}
-
-Result<detail::SubmissionCursor> detail::SubmissionCursor::begin(
-    Invocation &invocation, std::span<const QueueBinding> queues,
-    bool retain_invocation) noexcept {
-  HYLE_TRACE_ZONE_NAMED("hyle.graph.submit");
-  auto *state_ = InvocationAccess::state(invocation);
-  if (state_ == nullptr) {
-    return std::unexpected(Status::FailedPrecondition("invocation is invalid"));
-  }
-  auto idle = detail::InvocationPhase::kIdle;
-  if (!state_->phase.compare_exchange_strong(
-          idle, detail::InvocationPhase::kRunning, std::memory_order_acq_rel,
-          std::memory_order_acquire)) {
-    return std::unexpected(Status::FailedPrecondition(
-        idle == detail::InvocationPhase::kFailed
-            ? "failed graph invocation must be recreated"
-            : "invocation already has work in flight"));
-  }
-  const detail::PlanState &plan = *state_->plan;
-  bool exclusive = false;
-  if (!plan.supports_concurrent_invocations &&
-      !state_->plan->exclusive_in_flight.compare_exchange_strong(
-          exclusive, true, std::memory_order_acq_rel,
-          std::memory_order_acquire)) {
-    state_->phase.store(detail::InvocationPhase::kIdle,
-                        std::memory_order_release);
-    return std::unexpected(Status::FailedPrecondition(
-        "a provider in this executable requires serialized invocations"));
-  }
-  state_->outputs_ready.store(false, std::memory_order_release);
-  struct RunRollback final {
-    detail::InvocationState *state = nullptr;
-    bool plan_exclusive = false;
-    bool armed = true;
-    ~RunRollback() {
-      if (armed) {
-        if (plan_exclusive) {
-          state->plan->exclusive_in_flight.store(false,
-                                                 std::memory_order_release);
-        }
-        state->phase.store(detail::InvocationPhase::kIdle,
-                           std::memory_order_release);
-      }
-    }
-    void disarm() noexcept { armed = false; }
-  } rollback{state_, !plan.supports_concurrent_invocations};
-
-  if (!state_->replay_prepared) {
-    return std::unexpected(Status::FailedPrecondition(
-        "multi-domain invocation requires prepare_replay()"));
-  }
-  if (queues.size() != plan.required_queue_count) {
-    return std::unexpected(Status::InvalidArgument(
-        "submit requires one queue for every active execution domain"));
-  }
-  for (std::size_t index = 0; index < state_->queue_seen.size(); ++index)
-    state_->queue_seen[index] = 0;
-  for (const QueueBinding binding : queues) {
-    if (!binding.lane.valid() || binding.lane.ordinal() >= plan.lanes.size() ||
-        binding.queue == nullptr) {
-      return std::unexpected(
-          Status::InvalidArgument("graph submit queue binding is invalid"));
-    }
-    const std::size_t lane = binding.lane.ordinal();
-    if (plan.lane_segment_counts[lane] == 0 ||
-        !shared_lane(plan, binding.lane) || state_->queue_seen[lane] != 0 ||
-        state_->queues[lane] != binding.queue) {
-      return std::unexpected(Status::InvalidArgument(
-          "graph submit queues differ from prepared replay queues"));
-    }
-    // The Queue object can keep its address while move-assignment replaces
-    // its Context. Prepared region calls rely on this current-owner check.
-    const ExecutionTargetId target = plan.lanes[lane].target;
-    if (!plan.targets[target.ordinal()].context.owns(*binding.queue)) {
-      return std::unexpected(Status::InvalidArgument(
-          "graph submit queue belongs to a different compute context"));
-    }
-    state_->queue_seen[lane] = 1;
-  }
-  for (std::size_t lane = 0; lane < state_->queue_seen.size(); ++lane) {
-    if (plan.lane_segment_counts[lane] != 0 &&
-        shared_lane(plan, ExecutionLaneId{static_cast<std::uint32_t>(lane)}) &&
-        state_->queue_seen[lane] == 0) {
-      return std::unexpected(
-          Status::InvalidArgument("graph submit queue binding is missing"));
-    }
-  }
-  if (!state_->bindings_prepared || !state_->transfers_prepared ||
-      !state_->dependencies_prepared) {
-    return std::unexpected(Status::Internal(
-        "prepared graph replay lost a binding, transfer, or dependency route"));
-  }
-
-
-  for (compute::Completion &completion : state_->segment_completions)
-    completion = {};
-  SubmissionCursor result(state_, retain_invocation);
-  rollback.disarm();
-  return result;
-}
-
-detail::SubmissionCursor::SubmissionCursor(InvocationState *state,
-                                           bool retained) noexcept
-    : state_(state), retained_(retained) {
-  if (retained_)
-    retain(state_);
-}
-
-detail::SubmissionCursor::SubmissionCursor(SubmissionCursor &&other) noexcept
-    : state_(std::exchange(other.state_, nullptr)),
-      next_segment_(other.next_segment_),
-      tail_error_(std::move(other.tail_error_)), pending_(other.pending_),
-      pending_segment_(other.pending_segment_),
-      finished_(other.finished_), retained_(other.retained_) {
-  other.pending_ = nullptr;
-}
-
-detail::SubmissionCursor &detail::SubmissionCursor::operator=(
-    SubmissionCursor &&other) noexcept {
-  if (this != &other) {
-    reset();
-    state_ = std::exchange(other.state_, nullptr);
-    next_segment_ = other.next_segment_;
-    tail_error_ = std::move(other.tail_error_);
-    pending_ = std::exchange(other.pending_, nullptr);
-    pending_segment_ = other.pending_segment_;
-    finished_ = other.finished_;
-    retained_ = other.retained_;
-  }
-  return *this;
-}
-
-detail::SubmissionCursor::~SubmissionCursor() { reset(); }
-
-void detail::SubmissionCursor::reset() noexcept {
-  if (state_ != nullptr && !finished_) {
-    // Private emergency cleanup only. Public asynchronous composition retains
-    // the cursor until finish() transfers this accepted prefix to Completion.
-    for (auto &completion : state_->segment_completions) {
-      if (completion.valid())
-        completion.wait().IgnoreError();
-    }
-    mark_invocation_terminal(state_, Status::Cancelled(
-        "graph submission cursor abandoned before completion handoff"));
-  }
-  auto *state = std::exchange(state_, nullptr);
-  if (retained_)
-    release(state);
-}
-
-bool detail::SubmissionCursor::done() const noexcept {
-  return state_ == nullptr || finished_ || !tail_error_.ok() ||
-         next_segment_ == state_->plan->segments.size();
-}
-
-ExecutionTargetId detail::SubmissionCursor::next_target() const noexcept {
-  if (done())
-    return {};
-  const auto &plan = *state_->plan;
-  return plan.lanes[plan.segments[next_segment_].lane.ordinal()].target;
-}
-
-compute::Queue *detail::SubmissionCursor::pending_queue() const noexcept {
-  if (state_ == nullptr || pending_ == nullptr ||
-      pending_segment_ >= state_->plan->segments.size())
-    return nullptr;
-  const auto lane = state_->plan->segments[pending_segment_].lane;
-  return shared_lane(*state_->plan, lane)
-             ? state_->queues[lane.ordinal()]
-             : nullptr;
-}
-
-void detail::SubmissionCursor::request_cancel() noexcept {
-  reject_successors(Status::Cancelled("graph successors cancelled"));
-}
-
-void detail::SubmissionCursor::reject_successors(Status terminal) noexcept {
-  if (!finished_ && tail_error_.ok() && !terminal.ok())
-    tail_error_ = std::move(terminal);
-}
-
-detail::SegmentSubmission detail::SubmissionCursor::submit_segment(
-    std::size_t segment_index, bool wait_dependencies, SharedSequenceFn admission,
-    void *admission_owner) noexcept {
-  SegmentSubmission outcome;
-  if (state_ == nullptr || finished_ || segment_index >= state_->plan->segments.size()) {
-    outcome.status = Status::FailedPrecondition("graph segment submission is invalid or finished");
-    return outcome;
-  }
-  const auto &plan = *state_->plan;
-  auto &tail_error = outcome.status;
-  do {
-    const detail::PlanSegment &segment = plan.segments[segment_index];
-    const bool is_shared = shared_lane(plan, segment.lane);
-    compute::Queue *queue =
-        is_shared ? state_->queues[segment.lane.ordinal()] : nullptr;
-    bool continue_segment = true;
-    const std::size_t dependency_end =
-        segment.dependency_begin + segment.dependency_count;
-
-    // A host fallback is a cold-selected, public replay fact. Complete it
-    // before taking the destination Queue's single-producer admission so a
-    // slow upstream device cannot monopolize an otherwise idle Queue.
-    for (std::size_t dependency_index = segment.dependency_begin;
-         dependency_index < dependency_end; ++dependency_index) {
-      const std::uint32_t source_segment =
-          plan.segment_dependencies[dependency_index];
-      if (source_segment >= segment_index ||
-          !state_->segment_completions[source_segment].valid()) {
-        tail_error =
-            Status::Internal("graph segment dependency is not available");
-        continue_segment = false;
-        break;
-      }
-      compute::Completion &source = state_->segment_completions[source_segment];
-      const ReplayDependencyRoute route =
-          state_->dependency_routes[dependency_index];
-      if (route == ReplayDependencyRoute::kOrderedQueue ||
-          route == ReplayDependencyRoute::kSynchronousSource)
-        continue;
-      if (route == ReplayDependencyRoute::kHostWait) {
-        if (wait_dependencies) {
-          Status host = source.wait();
-          if (!host.ok()) {
-            tail_error = std::move(host);
-            continue_segment = false;
-            break;
-          }
-          continue;
-        }
-        auto host = source.poll();
-        if (!host) {
-          tail_error = std::move(host).error();
-          continue_segment = false;
-          break;
-        }
-        if (*host == compute::CompletionPoll::kPending) {
-          outcome.pending = &source;
-          outcome.pending_segment = source_segment;
-          return outcome;
-        }
-      } else if (route != ReplayDependencyRoute::kDeviceWait) {
-        tail_error =
-            Status::Internal("prepared graph dependency route is invalid");
-        continue_segment = false;
-        break;
-      }
-    }
-    if (!continue_segment)
-      break;
-
-    if (is_shared) {
-      if (queue == nullptr) {
-        tail_error =
-            Status::Internal("prepared graph shared lane has no Queue binding");
-        break;
-      }
-      auto sequence = compute::detail::QueueSequence::begin(*queue);
-      if (!sequence) {
-        tail_error = std::move(sequence).error();
-        break;
-      }
-      if (admission) {
-        const auto admitted = admission(admission_owner, segment.lane, *sequence);
-        if (!admitted.ok()) {
-          tail_error = admitted;
-          sequence->record(compute::detail::EnqueueResult::rejected(admitted));
-          continue_segment = false;
-        }
-      }
-      for (std::size_t dependency_index = segment.dependency_begin;
-           continue_segment && dependency_index < dependency_end; ++dependency_index) {
-        if (state_->dependency_routes[dependency_index] ==
-            ReplayDependencyRoute::kDeviceWait) {
-          const std::uint32_t source_segment =
-              plan.segment_dependencies[dependency_index];
-          compute::Completion &source =
-              state_->segment_completions[source_segment];
-          compute::detail::EnqueueResult waited =
-              sequence->enqueue_wait(source);
-          const bool wait_succeeded = waited.status.ok();
-          if (!wait_succeeded) {
-            tail_error =
-                waited.status.IsUnimplemented()
-                    ? Status::Internal(
-                          "prepared graph completion-wait route was rejected")
-                    : waited.status;
-          }
-          sequence->record(std::move(waited));
-          if (!wait_succeeded) {
-            continue_segment = false;
-            break;
-          }
-        }
-      }
-
-      if (continue_segment &&
-          state_->captured_segments[segment_index].valid()) {
-        compute::detail::EnqueueResult launched =
-            state_->captured_segments[segment_index].enqueue(*sequence);
-        continue_segment = launched.status.ok();
-        if (!continue_segment)
-          tail_error = launched.status;
-        sequence->record(std::move(launched));
-      } else if (continue_segment) {
-        Status enqueued = enqueue_segment_steps(*state_, segment, *sequence);
-        if (!enqueued.ok()) {
-          tail_error = std::move(enqueued);
-          continue_segment = false;
-        }
-      }
-      auto completion = sequence->finish();
-      if (!completion) {
-        tail_error = std::move(completion).error();
-        break;
-      }
-      outcome.completion = std::move(*completion);
-    } else {
-      std::size_t imported_count = 0;
-      for (std::size_t dependency_index = segment.dependency_begin;
-           dependency_index < dependency_end; ++dependency_index) {
-        if (state_->dependency_routes[dependency_index] !=
-            ReplayDependencyRoute::kDeviceWait) {
-          continue;
-        }
-        const std::uint32_t source_segment =
-            plan.segment_dependencies[dependency_index];
-        compute::Completion &source =
-            state_->segment_completions[source_segment];
-        const compute::detail::CompletionDependency dependency =
-            compute::detail::CompletionAccess::dependency(source);
-        if (!dependency.pending()) {
-          if (dependency.terminal_hint != nullptr &&
-              !dependency.terminal_hint->ok()) {
-            tail_error = *dependency.terminal_hint;
-            continue_segment = false;
-            break;
-          }
-          continue;
-        }
-        state_->completion_dependencies[segment.dependency_begin +
-                                        imported_count] = dependency;
-        ++imported_count;
-      }
-      if (continue_segment) {
-        const auto dependencies =
-            imported_count == 0
-                ? std::span<const compute::detail::CompletionDependency>{}
-                : std::span<const compute::detail::CompletionDependency>(
-                      state_->completion_dependencies.data() +
-                          segment.dependency_begin,
-                      imported_count);
-        auto completion =
-            submit_delegated_segment(*state_, segment, dependencies);
-        if (!completion) {
-          tail_error = std::move(completion).error();
-          continue_segment = false;
-        } else {
-          outcome.completion = std::move(*completion);
-        }
-      }
-    }
-    if (!continue_segment)
-      break;
-
-  } while (false);
-  return outcome;
-}
-
-Status detail::SubmissionCursor::commit_segment(std::size_t segment_index,
-    SegmentSubmission outcome, AcceptedCompletionFn accepted, void *owner) noexcept {
-  if (state_ == nullptr || finished_ || segment_index >= state_->segment_completions.size() ||
-      state_->segment_completions[segment_index].valid() || outcome.pending != nullptr)
-    return Status::FailedPrecondition("graph segment outcome is not publishable");
-  if (outcome.completion.valid()) {
-    auto &completion = state_->segment_completions[segment_index];
-    completion = std::move(outcome.completion);
-    if (accepted) accepted(owner, segment_index, completion);
-#if defined(HYLE_TESTING)
-    if (accepted && accepted_observation_hook)
-      accepted_observation_hook(nullptr, segment_index, completion);
-#endif
-  }
-  return outcome.status;
-}
-
-void detail::SubmissionCursor::finish_submissions(Status terminal) noexcept {
-  if (state_ == nullptr || finished_) return;
-  reject_successors(std::move(terminal));
-  next_segment_ = state_->plan->segments.size();
-  pending_ = nullptr;
-  pending_segment_ = SIZE_MAX;
-}
-
-Result<bool> detail::SubmissionCursor::advance(bool wait_dependencies,
-    AcceptedCompletionFn accepted, void *owner, SharedSequenceFn admission,
-    void *admission_owner) noexcept {
-  if (state_ == nullptr || finished_)
-    return std::unexpected(Status::FailedPrecondition(
-        "graph submission cursor is invalid or finished"));
-  if (done()) return true;
-  auto outcome = submit_segment(next_segment_, wait_dependencies, admission, admission_owner);
-  pending_ = outcome.pending;
-  pending_segment_ = outcome.pending_segment;
-  if (pending_ != nullptr) return false;
-  tail_error_.Update(commit_segment(next_segment_, std::move(outcome), accepted, owner));
-  if (tail_error_.ok()) ++next_segment_;
-  return true;
-}
-
-Result<compute::Completion> detail::SubmissionCursor::finish(bool defer_retirement) noexcept {
-  if (state_ == nullptr || finished_ || !done())
-    return std::unexpected(Status::FailedPrecondition(
-        "graph submission cursor cannot finish while successors remain"));
-  const auto &plan = *state_->plan;
-  auto &tail_error = tail_error_;
-  compute::Completion final_completion;
-  auto select_latest_queue_prefixes =
-      [&](std::span<const std::uint32_t> candidates) noexcept {
-        std::size_t count = 0;
-        for (const std::uint32_t candidate : candidates) {
-          const detail::PlanSegment &candidate_segment =
-              plan.segments[candidate];
-          if (!shared_lane(plan, candidate_segment.lane)) {
-            // A delegated Completion represents this exact provider episode,
-            // not a HYLE ordered-Queue prefix. Even equal endpoint identities
-            // therefore remain independently observable terminal work.
-            state_->aggregate_segments[count++] = candidate;
-            continue;
-          }
-          const compute::Queue *queue =
-              state_->queues[candidate_segment.lane.ordinal()];
-          std::size_t match = count;
-          for (std::size_t index = 0; index < count; ++index) {
-            const std::uint32_t selected = state_->aggregate_segments[index];
-            if (shared_lane(plan, plan.segments[selected].lane) &&
-                state_->queues[plan.segments[selected].lane.ordinal()] ==
-                    queue) {
-              match = index;
-              break;
-            }
-          }
-          if (match == count) {
-            state_->aggregate_segments[count++] = candidate;
-          } else if (candidate > state_->aggregate_segments[match]) {
-            state_->aggregate_segments[match] = candidate;
-          }
-        }
-        return std::span<const std::uint32_t>(state_->aggregate_segments.data(),
-                                              count);
-      };
-
-  auto assemble_completion = [&](std::span<const std::uint32_t> segments,
-                                 const Status &terminal) noexcept -> Status {
-    if (segments.empty())
-      return terminal;
-    for (std::uint32_t segment : segments) {
-      if (segment >= state_->segment_completions.size() ||
-          !state_->segment_completions[segment].valid()) {
-        return Status::Internal(
-            "graph completion segment is unavailable after submission");
-      }
-    }
-    if (segments.size() == 1) {
-      final_completion =
-          std::move(state_->segment_completions[segments.front()]);
-      compute::detail::CompletionAccess::append_terminal(final_completion,
-                                                         terminal);
-      return Status::Ok();
-    }
-    for (std::size_t index = 0; index < segments.size(); ++index)
-      state_->aggregate_segments[index] = segments[index];
-    state_->aggregate_completion.completion_count = segments.size();
-    final_completion = make_aggregate_completion(state_->aggregate_completion, state_);
-    if (!terminal.ok()) {
-      merge_aggregate_terminal(state_->aggregate_completion, terminal);
-      compute::detail::CompletionAccess::append_terminal(final_completion,
-                                                         terminal);
-    }
-    return Status::Ok();
-  };
-
-  // Only used for an internal assembly failure after acceptance. No borrowed
-  // run storage can escape while its Completion is unavailable to the caller.
-  auto retire_unreturnable_prefix = [&](const Status &failure) noexcept {
-    for (auto &completion : state_->segment_completions) {
-      if (completion.valid())
-        completion.wait().IgnoreError();
-    }
-    if (!defer_retirement) mark_invocation_terminal(state_, failure);
-    finished_ = true;
-  };
-
-  if (!tail_error.ok()) {
-    // Preserve the latest accepted ordered prefix from every participating
-    // lane. A synchronous tail rejection therefore remains asynchronous
-    // when earlier independent branches are still running; no hidden host
-    // drain is needed on the error path.
-    for (std::size_t lane = 0; lane < state_->queue_seen.size(); ++lane)
-      state_->queue_seen[lane] = 0;
-    for (std::size_t index = 0; index < state_->segment_completions.size();
-         ++index) {
-      if (!state_->segment_completions[index].valid())
-        continue;
-      const std::uint32_t lane = plan.segments[index].lane.ordinal();
-      state_->aggregate_segments[lane] = static_cast<std::uint32_t>(index);
-      state_->queue_seen[lane] = 1;
-    }
-    std::size_t count = 0;
-    for (std::size_t lane = 0; lane < state_->queue_seen.size(); ++lane) {
-      if (state_->queue_seen[lane] != 0)
-        state_->aggregate_segments[count++] = state_->aggregate_segments[lane];
-    }
-    if (count == 0) {
-      if (!plan.supports_concurrent_invocations)
-        state_->plan->exclusive_in_flight.store(false,
-                                               std::memory_order_release);
-      state_->phase.store(detail::InvocationPhase::kIdle,
-                          std::memory_order_release);
-      finished_ = true;
-      return std::unexpected(std::move(tail_error));
-    }
-    const auto selected =
-        select_latest_queue_prefixes(std::span<const std::uint32_t>(
-            state_->aggregate_segments.data(), count));
-    const Status assembled = assemble_completion(selected, tail_error);
-    if (!assembled.ok()) {
-      retire_unreturnable_prefix(assembled);
-      return std::unexpected(assembled);
-    }
-    tail_error = Status::Ok();
-  } else {
-    const auto selected =
-        select_latest_queue_prefixes(std::span<const std::uint32_t>(
-            plan.completion_segments.data(), plan.completion_segments.size()));
-    Status assembled = assemble_completion(selected, Status::Ok());
-    if (!assembled.ok()) {
-      retire_unreturnable_prefix(assembled);
-      return std::unexpected(std::move(assembled));
-    }
-  }
-  if (!final_completion.valid())
-    final_completion = compute::Completion::completed();
-
-  if (defer_retirement) {
-    // The opt-in owner has retained Invocation before admission and attached
-    // every accepted child before observation. It publishes the actual final
-    // terminal, so a cached observation error cannot release plan exclusion.
-    finished_ = true;
-    return final_completion;
-  }
-
-  if (!compute::detail::CompletionAccess::has_async_state(final_completion)) {
-    mark_invocation_terminal(state_, final_completion.wait());
-    finished_ = true;
-    return final_completion;
-  }
-
-  detail::retain(state_);
-  state_->completion_lifetime = compute::detail::CompletionLifetime{
-      .state = state_,
-      .terminal = &mark_invocation_terminal,
-      .release = &release_invocation_lifetime,
-  };
-  Status attached = compute::detail::CompletionAccess::attach_lifetime(
-      final_completion, state_->completion_lifetime);
-  if (!attached.ok()) {
-    // This is an invariant/error path after work may have been accepted.
-    // Drain before returning without a Completion, then retire the slot.
-    final_completion.wait().IgnoreError();
-    mark_invocation_terminal(state_, attached);
-    finished_ = true;
-    return std::unexpected(std::move(attached));
-  }
-  finished_ = true;
-  return final_completion;
-}
-
-void detail::InvocationAccess::retire(Invocation &invocation, const Status &terminal) noexcept {
-  if (invocation.state_) mark_invocation_terminal(invocation.state_, terminal);
-}
-#if defined(HYLE_TESTING)
-detail::AcceptedCompletionFn detail::set_accepted_observation_hook(AcceptedCompletionFn hook) noexcept {
-  return std::exchange(accepted_observation_hook, hook);
-}
-#endif
 
 Result<CompiledGraph> compile(const Graph &graph,
                               const compute::Context &context,
                               CompileOptions options) noexcept {
+  HYLE_ASSIGN_OR_RETURN(auto source, ExecutionSource::acquire(context));
   const std::array storage_domains{StorageDomain{
       .resource = mem::system_resource(),
   }};
   const std::array targets{ExecutionTarget{
-      .context = &context,
+      .source = std::move(source),
       .default_storage = StorageDomainId{0},
   }};
   const std::array lanes{ExecutionLane{
@@ -8513,12 +9934,11 @@ namespace {
 Result<CompiledGraph> compile_plan(
     const Graph &graph, CompileEnvironment environment, CompileOptions options,
     detail::ConstantArtifactCache &packing,
-    util::Ref<detail::SharedConstants> shared_constants = {},
     bool inherited_budget = false,
     util::Ref<detail::StorageBudgetState> invocation_storage = {},
     util::Ref<detail::StorageBudgetState> compilation_storage = {},
-    compute::BackendId cpu_backend = {},
-    compute::BackendId gpu_backend = {}) noexcept {
+    std::span<const detail::RegionAdapter> adapters = {},
+    bool finite_shell = false) noexcept {
   if (!options.workload.valid())
     return std::unexpected(Status::InvalidArgument("graph workload context"));
   if (!graph.valid()) {
@@ -8531,13 +9951,6 @@ Result<CompiledGraph> compile_plan(
   if (environment.targets.empty()) {
     return std::unexpected(Status::InvalidArgument(
         "compile environment has no execution targets"));
-  }
-  const bool cpu_gpu = cpu_backend.valid() || gpu_backend.valid();
-  if (cpu_gpu &&
-      (!cpu_backend.valid() || !gpu_backend.valid() ||
-       cpu_backend == gpu_backend || environment.targets.size() != 2)) {
-    return std::unexpected(Status::InvalidArgument(
-        "CPU+GPU graph admission requires exactly two distinct backends"));
   }
   if (environment.storage_domains.size() >
           (std::numeric_limits<std::uint32_t>::max)() ||
@@ -8554,6 +9967,9 @@ Result<CompiledGraph> compile_plan(
       return std::unexpected(Status::InvalidArgument(
           "compile environment storage resource is invalid"));
     }
+    if (storage.owner && storage.owner.ref() != storage.resource)
+      return std::unexpected(Status::InvalidArgument(
+          "compile storage owner belongs to another resource"));
     for (std::size_t previous = 0; previous < index; ++previous) {
       if (environment.storage_domains[previous].resource == storage.resource) {
         return std::unexpected(Status::InvalidArgument(
@@ -8563,21 +9979,9 @@ Result<CompiledGraph> compile_plan(
   }
   for (std::size_t index = 0; index < environment.targets.size(); ++index) {
     const ExecutionTarget &target = environment.targets[index];
-    if (target.context == nullptr || !target.context->valid() ||
-        !target.context->is_open()) {
+    if (!target.source.valid() || !target.source.is_open()) {
       return std::unexpected(Status::FailedPrecondition(
-          "compile environment context is invalid or closed"));
-    }
-    if (!cpu_gpu && index != 0 &&
-        target.context->device() != environment.targets[0].context->device()) {
-      return std::unexpected(
-          Status::InvalidArgument("compute-backed graph requires one Device "
-                                  "for all execution targets"));
-    }
-    if (cpu_gpu && target.context->device().backend_id() !=
-                       (index == 0 ? gpu_backend : cpu_backend)) {
-      return std::unexpected(Status::InvalidArgument(
-          "CPU+GPU graph target identities differ from native admission"));
+          "compile environment execution source is invalid or closed"));
     }
     if (!target.default_storage.valid() ||
         target.default_storage.ordinal() >=
@@ -8586,18 +9990,61 @@ Result<CompiledGraph> compile_plan(
           "compile environment target default storage is invalid"));
     }
     for (std::size_t previous = 0; previous < index; ++previous) {
-      if (environment.targets[previous].context == target.context) {
+      if (environment.targets[previous].source.same_owner(target.source)) {
         return std::unexpected(Status::InvalidArgument(
-            "compile environment duplicates an execution context"));
+            "compile environment duplicates an execution source"));
       }
     }
-    auto lease = compute::detail::ContextRef::acquire(*target.context);
-    if (!lease)
-      return std::unexpected(std::move(lease).error());
-    Status compatible = lease->validate_resource(
+    Status compatible = target.source.validate_resource(
         environment.storage_domains[target.default_storage.ordinal()].resource);
     if (!compatible.ok())
       return std::unexpected(std::move(compatible));
+  }
+  for (const auto &adapter : adapters) {
+    if (!adapter.target.valid() ||
+        adapter.target.ordinal() >= environment.targets.size() ||
+        !adapter.source.valid() || adapter.interface == nullptr ||
+        adapter.interface->propose == nullptr ||
+        adapter.interface->propose_resources == nullptr ||
+        adapter.interface->compile == nullptr)
+      return std::unexpected(Status::InvalidArgument(
+          "graph capability adapter is incomplete or has a foreign target"));
+    const auto &source = environment.targets[adapter.target.ordinal()].source;
+    if (!source.same_owner(adapter.source.source()))
+      return std::unexpected(Status::InvalidArgument(
+          "graph capability adapter belongs to another execution source"));
+    if (adapter.source.is_shared_queue()) {
+      if (adapter.provider_index != UINT32_MAX || adapter.source.native_interface()!=adapter.interface)
+        return std::unexpected(Status::InvalidArgument(
+            "shared Queue transfer cannot have a numerical provider slot"));
+      HYLE_ASSIGN_OR_RETURN(auto retained,
+          detail::ExecutionSourceAccess::compute(source));
+      (void)retained;
+      continue;
+    }
+    if (adapter.source.is_native()) {
+      if (adapter.provider_index != UINT32_MAX)
+        return std::unexpected(Status::InvalidArgument(
+            "native region capability cannot have a Compute provider slot"));
+      HYLE_ASSIGN_OR_RETURN(auto actual,
+          detail::ExecutionSourceAccess::region(source));
+      if (adapter.source.native_interface() != actual.native_interface())
+        return std::unexpected(Status::InvalidArgument(
+            "native region adapter does not retain its actual source capability"));
+      continue;
+    }
+    HYLE_ASSIGN_OR_RETURN(auto retained,
+        detail::ExecutionSourceAccess::compute(source));
+    HYLE_ASSIGN_OR_RETURN(auto identity,
+        retained->provider_identity(adapter.provider_index));
+    HYLE_ASSIGN_OR_RETURN(auto instance,
+        retained->provider_instance_id(adapter.provider_index));
+    const auto *extension = adapter.source.shared_extension();
+    if (extension == nullptr || !retained->owns(*extension) ||
+        adapter.source.provider() != identity ||
+        adapter.source.provider_instance_id() != instance)
+      return std::unexpected(Status::InvalidArgument(
+          "graph capability adapter does not belong to its exact Context/provider"));
   }
   for (const ExecutionLane &lane : environment.lanes) {
     if (!lane.target.valid() ||
@@ -8609,7 +10056,7 @@ Result<CompiledGraph> compile_plan(
           Status::InvalidArgument("compile environment lane is invalid"));
     }
   }
-  const compute::Context &context = *environment.targets[0].context;
+  const auto &source = environment.targets[0].source;
   if (options.search_policy != CompileSearchPolicy::kAllowLimited &&
       options.search_policy != CompileSearchPolicy::kRequireUnexhausted) {
     return std::unexpected(
@@ -8629,10 +10076,6 @@ Result<CompiledGraph> compile_plan(
       options.compilation_storage->unknown != UnknownStoragePolicy::kAllow)
     return std::unexpected(Status::InvalidArgument(
         "graph compilation storage unknown policy is invalid"));
-  if (!context.valid() || !context.is_open()) {
-    return std::unexpected(
-        Status::FailedPrecondition("compute context is invalid or closed"));
-  }
   if (options.region_selection != RegionSelectionPolicy::kDisabled &&
       options.region_selection !=
           RegionSelectionPolicy::kAllowProviderRegions) {
@@ -8679,14 +10122,23 @@ Result<CompiledGraph> compile_plan(
     return std::unexpected(Status::InvalidArgument("graph is invalid"));
   }
 
-  auto backing = context.metadata_allocator();
+  auto backing = source.metadata_allocator();
   if (options.resource_budget) {
     HYLE_ASSIGN_OR_RETURN(backing, options.resource_budget.metadata_allocator());
   }
   if (!backing.valid()) {
     return std::unexpected(Status::FailedPrecondition(
-        "compute context has no metadata allocator"));
+        "execution source has no metadata allocator"));
   }
+  compute::StorageOwner metadata_owner;
+  const auto actual_backing = options.resource_budget
+      ? compute::detail::ResourceBudgetAccess::backing_allocator(options.resource_budget)
+      : backing;
+  for (const auto &domain : environment.storage_domains)
+    if (domain.owner.owns_allocator(actual_backing)) {
+      metadata_owner = domain.owner;
+      break;
+    }
   if (options.compilation_storage && !compilation_storage) {
     HYLE_ASSIGN_OR_RETURN(
         auto *created,
@@ -8694,7 +10146,7 @@ Result<CompiledGraph> compile_plan(
             backing,
             {.max_bytes = options.compilation_storage->max_peak_bytes,
              .unknown = options.compilation_storage->unknown},
-            {}, true, options.resource_budget));
+            {}, true, options.resource_budget, metadata_owner));
     compilation_storage = util::adopt_ref(created);
   }
   const auto allocator =
@@ -8724,7 +10176,9 @@ Result<CompiledGraph> compile_plan(
       make_specialized_graph(*logical,
                              std::span<const compute::TensorDesc>(
                                  descriptions.data(), descriptions.size()),
-                             allocator, shape_values);
+                             allocator, shape_values,
+                             options.shape_policy ==
+                                 CompileShapePolicy::kDeclaredDomain);
   if (!specialized)
     return std::unexpected(std::move(specialized).error());
   const detail::GraphState *concrete = detail::GraphAccess::state(*specialized);
@@ -8740,11 +10194,12 @@ Result<CompiledGraph> compile_plan(
   auto *plan =
       ::new (storage) detail::PlanState(allocator, concrete->generation);
   plan->workload = options.workload;
+  plan->metadata_owner = metadata_owner;
   plan->compilation_storage = std::move(compilation_storage);
   if (options.invocation_storage && !invocation_storage) {
     auto created = detail::StorageBudgetState::create(
         backing, *options.invocation_storage, allocator, false,
-        options.resource_budget);
+        options.resource_budget, metadata_owner);
     if (!created) {
       detail::release(plan);
       return std::unexpected(std::move(created).error());
@@ -8752,9 +10207,10 @@ Result<CompiledGraph> compile_plan(
     invocation_storage = util::adopt_ref(*created);
   }
   plan->invocation_storage = std::move(invocation_storage);
-  plan->shared_constants = std::move(shared_constants);
-  plan->specialization = std::move(signature);
-  if (options.shape_policy == CompileShapePolicy::kDeclaredDomain)
+  if (!finite_shell)
+    plan->specialization = std::move(signature);
+  plan->finite_only = finite_shell;
+  if (finite_shell || options.shape_policy == CompileShapePolicy::kDeclaredDomain)
     plan->domain_graph = graph;
   plan->workspace_reuse = options.workspace_reuse;
   if (!plan->storage_domains.try_reserve(environment.storage_domains.size()) ||
@@ -8769,20 +10225,15 @@ Result<CompiledGraph> compile_plan(
     if (!plan->storage_domains.try_push_back(detail::StorageDomainRecord{
             .resource = storage_domain.resource,
             .workspace_budget_bytes = storage_domain.workspace_budget_bytes,
+            .owner = storage_domain.owner,
         })) {
       detail::release(plan);
       return std::unexpected(plan_allocation_failure());
     }
   }
   for (const ExecutionTarget &target : environment.targets) {
-    auto lease = compute::detail::ContextRef::acquire(*target.context);
-    if (!lease) {
-      Status error = std::move(lease).error();
-      detail::release(plan);
-      return std::unexpected(std::move(error));
-    }
     if (!plan->targets.try_push_back(detail::ExecutionTargetRecord{
-            .context = std::move(*lease),
+            .source = target.source,
             .default_storage = target.default_storage,
         })) {
       detail::release(plan);
@@ -8793,6 +10244,37 @@ Result<CompiledGraph> compile_plan(
   if (!lanes.ok()) {
     detail::release(plan);
     return std::unexpected(std::move(lanes));
+  }
+
+  if (finite_shell) {
+    // Only semantic ports and endpoint metadata live on this cold index.
+    // Concrete descriptions above validate its first declared point; no
+    // physical values, constants, Provider artifacts or workspace are kept.
+    plan->logical_node_count = logical->nodes.size();
+    if (!plan->input_ids.try_reserve(logical->inputs.size()) ||
+        !plan->output_ids.try_reserve(logical->outputs.size()) ||
+        !plan->lane_segment_counts.try_resize(plan->lanes.size())) {
+      detail::release(plan);
+      return std::unexpected(plan_allocation_failure());
+    }
+    for (const auto input : logical->inputs) {
+      if (!plan->input_ids.try_push_back(detail::value_id(*logical, input))) {
+        detail::release(plan);
+        return std::unexpected(plan_allocation_failure());
+      }
+    }
+    for (const auto output : logical->outputs) {
+      if (!plan->output_ids.try_push_back(detail::value_id(*logical, output))) {
+        detail::release(plan);
+        return std::unexpected(plan_allocation_failure());
+      }
+    }
+    auto report = build_report(*plan, *logical, {});
+    if (!report) {
+      detail::release(plan);
+      return std::unexpected(std::move(report).error());
+    }
+    return CompiledGraph{detail::ExecutableAccess::adopt(plan), std::move(*report)};
   }
 
   container::SmallVector<RouteDiagnostic, 16, mem::AllocatorRef> routes(
@@ -8814,7 +10296,9 @@ Result<CompiledGraph> compile_plan(
   if (status.ok())
     status = prepare_placed_steps(*plan, *specialized, *concrete, environment,
                                   options, provider_policy, constants, routes,
-                                  report, packing);
+                                  report, packing, adapters);
+  if (status.ok())
+    status = build_external_input_topology(*plan);
   if (!status.ok()) {
     detail::release(plan);
     return std::unexpected(std::move(status));
@@ -8833,20 +10317,46 @@ Result<CompiledGraph> compile_plan(
 // signatures.
 Status
 index_exact_variants(detail::PlanState &plan,
-                     std::span<const ExactShapeVariant> variants) noexcept {
+                     std::span<const ExactShapeVariant> variants,
+                     std::span<const ConstantBinding> constants) noexcept {
   const auto &graph = *detail::GraphAccess::state(plan.domain_graph);
+  if (constants.size() != graph.constants.size())
+    return Status::InvalidArgument(
+        "compile requires exactly one binding for every graph constant");
   const std::size_t dimensions = graph.dimensions.size();
   if (dimensions != 0 && variants.size() > SIZE_MAX / dimensions)
     return Status::ResourceExhausted("exact variant dimension table overflows");
   container::SmallVector<std::int64_t, 0, mem::AllocatorRef> points(
       plan.allocator);
   ShapeValues values(plan.allocator);
+  detail::TensorDescriptions descriptions(plan.allocator);
+  container::SmallVector<std::uint8_t, 0, mem::AllocatorRef> seen(plan.allocator);
   if (!points.try_resize(variants.size() * dimensions) ||
-      !plan.variant_order.try_resize(variants.size()))
+      !plan.variant_order.try_resize(variants.size()) ||
+      !seen.try_resize(graph.values.size()))
     return plan_allocation_failure();
+  for (const auto &binding : constants) {
+    if (!detail::owns(graph, binding.value) ||
+        binding.value.kind() != ValueKind::kConstant ||
+        !binding.tensor.valid() ||
+        (binding.policy != ConstantPolicy::kBorrow &&
+         binding.policy != ConstantPolicy::kMaterialize))
+      return Status::InvalidArgument("exact variant constant binding is invalid");
+    if (seen[binding.value.ordinal()] != 0)
+      return Status::InvalidArgument("constant binding is duplicated");
+    seen[binding.value.ordinal()] = 1;
+  }
   for (std::size_t index = 0; index < variants.size(); ++index) {
     HYLE_RETURN_IF_ERROR(bind_shape_values(graph, variants[index].shape,
                                            plan.allocator, values));
+    auto signature = specialize_bound_descriptions(
+        graph, values, plan.allocator, descriptions);
+    if (!signature)
+      return std::move(signature).error();
+    for (const auto &binding : constants)
+      if (binding.tensor.description() != descriptions[binding.value.ordinal()])
+        return Status::InvalidArgument(
+            "constant binding does not match an exact variant description");
     for (std::size_t axis = 0; axis < dimensions; ++axis)
       points[index * dimensions + axis] = values[axis];
     plan.variant_order[index] = static_cast<std::uint32_t>(index);
@@ -8865,23 +10375,6 @@ index_exact_variants(detail::PlanState &plan,
   for (std::size_t index = 1; index < plan.variant_order.size(); ++index)
     if (!less(plan.variant_order[index - 1], plan.variant_order[index]))
       return Status::InvalidArgument("exact variant shape is duplicated");
-  return Status::Ok();
-}
-
-Status share_constants(detail::PlanState &plan) noexcept {
-  if (plan.materialized_constants.empty())
-    return Status::Ok();
-  void *storage = plan.allocator.allocate(sizeof(detail::SharedConstants),
-                                          alignof(detail::SharedConstants));
-  if (storage == nullptr)
-    return plan_allocation_failure();
-  auto shared =
-      util::adopt_ref(::new (storage) detail::SharedConstants(plan.allocator));
-  // The zero-inline buffer vector transfers its backing; existing artifact
-  // views retain the same addresses. No tensor payload is copied again.
-  shared->buffers = std::move(plan.materialized_constants);
-  shared->charges = std::move(plan.constant_charges);
-  plan.shared_constants = std::move(shared);
   return Status::Ok();
 }
 
@@ -8954,33 +10447,39 @@ remaining_compile_budget(CompileOptions options,
 Result<CompiledGraph> compile_family(const Graph &graph,
                                      CompileEnvironment environment,
                                      CompileOptions options,
-                                     compute::BackendId cpu_backend = {},
-                                     compute::BackendId gpu_backend = {}) noexcept {
+                                     std::span<const detail::RegionAdapter> adapters = {}) noexcept {
   const auto variants = options.exact_variants;
+  const bool finite = options.shape_policy == CompileShapePolicy::kFiniteExact;
   if (!variants.empty() &&
-      options.shape_policy != CompileShapePolicy::kDeclaredDomain)
+      options.shape_policy != CompileShapePolicy::kDeclaredDomain && !finite)
     return std::unexpected(Status::InvalidArgument(
-        "exact variants require declared-domain compilation"));
+        "exact variants require declared-domain or finite-exact compilation"));
+  if (finite && (variants.empty() || !options.shape.empty()))
+    return std::unexpected(Status::InvalidArgument(
+        "finite-exact compilation requires a nonempty table and no single shape"));
   if (variants.size() > (std::numeric_limits<std::uint32_t>::max)())
     return std::unexpected(
         Status::ResourceExhausted("exact variant index space is exhausted"));
   options.exact_variants = {};
   detail::ConstantArtifactCache packing;
+  auto parent_options = options;
+  if (finite) {
+    parent_options.shape_policy = CompileShapePolicy::kExact;
+    parent_options.shape = variants.front().shape;
+  }
   HYLE_ASSIGN_OR_RETURN(auto result,
-                        compile_plan(graph, environment, options, packing,
-                                     {}, false, {}, {}, cpu_backend,
-                                     gpu_backend));
+                        compile_plan(graph, environment, parent_options, packing,
+                                     false, {}, {}, adapters, finite));
   packing.commit_plan();
   if (variants.empty())
     return result;
 
   auto &plan = *detail::ExecutableAccess::state(result.executable);
   auto &report = *detail::CompileReportAccess::state(result.report);
-  HYLE_RETURN_IF_ERROR(index_exact_variants(plan, variants));
+  HYLE_RETURN_IF_ERROR(index_exact_variants(plan, variants, options.constants));
   if (!plan.exact_variants.try_reserve(variants.size()) ||
       !report.exact_variants.try_reserve(variants.size()))
     return std::unexpected(plan_allocation_failure());
-  HYLE_RETURN_IF_ERROR(share_constants(plan));
   for (std::size_t index = 0; index < variants.size(); ++index) {
     HYLE_ASSIGN_OR_RETURN(
         auto child_options,
@@ -8988,22 +10487,34 @@ Result<CompiledGraph> compile_family(const Graph &graph,
                                  report.total_compiled_storage));
     child_options.shape_policy = CompileShapePolicy::kExact;
     child_options.shape = variants[index].shape;
-    HYLE_ASSIGN_OR_RETURN(auto child,
-                          compile_plan(graph, environment, child_options,
-                                       packing, plan.shared_constants, true,
-                                       plan.invocation_storage,
-                                       plan.compilation_storage, cpu_backend,
-                                       gpu_backend));
+    auto child_result = compile_plan(graph, environment, child_options,
+                                     packing, true, plan.invocation_storage,
+                                     plan.compilation_storage, adapters);
+    if (!child_result) {
+      const std::string_view prefix = finite ? "finite exact variant index "
+                                             : "exact variant index ";
+      std::array<char, 64> location{};
+      std::copy(prefix.begin(), prefix.end(), location.begin());
+      const auto number = std::to_chars(location.data() + prefix.size(),
+                                       location.data() + location.size(), index);
+      HYLE_FATAL_ASSERT(number.ec == std::errc{});
+      return std::unexpected(std::move(child_result).error().WithContext(
+          std::string_view(location.data(), number.ptr - location.data())));
+    }
+    auto child = std::move(*child_result);
     packing.commit_plan();
-    detail::ExecutableAccess::state(child.executable)->exact_variant_index =
-        index;
+    auto &child_plan = *detail::ExecutableAccess::state(child.executable);
+    child_plan.exact_variant_index = index;
     HYLE_RETURN_IF_ERROR(
         accumulate_search(report.total_search, child.report.search()));
     HYLE_RETURN_IF_ERROR(add_compiled_storage(
         report.total_compiled_storage, child.report.compiled_storage(),
-        static_cast<bool>(plan.shared_constants),
-        detail::ExecutableAccess::state(child.executable)
-            ->shared_artifact_storage));
+        child_plan.shared_artifact_storage));
+    if (finite) {
+      plan.supports_concurrent_invocations &=
+          child_plan.supports_concurrent_invocations;
+      report.supports_concurrent_invocations = plan.supports_concurrent_invocations;
+    }
     if (!plan.exact_variants.try_push_back(std::move(child.executable)) ||
         !report.exact_variants.try_push_back(std::move(child.report)))
       return std::unexpected(plan_allocation_failure());
@@ -9017,8 +10528,7 @@ namespace {
 
 Result<CompiledGraph> compile_admitted(
     const Graph &graph, CompileEnvironment environment, CompileOptions options,
-    compute::BackendId cpu_backend = {},
-    compute::BackendId gpu_backend = {}) noexcept {
+    std::span<const detail::RegionAdapter> adapters = {}) noexcept {
   HYLE_TRACE_ZONE_NAMED("hyle.graph.compile");
   if (options.resource_budget) {
     const auto unknown = options.resource_budget.allows_unattributed()
@@ -9030,7 +10540,7 @@ Result<CompiledGraph> compile_admitted(
   }
   HYLE_ASSIGN_OR_RETURN(auto result,
                         compile_family(graph, environment, options,
-                                       cpu_backend, gpu_backend));
+                                       adapters));
   const auto &plan = *detail::ExecutableAccess::state(result.executable);
   if (plan.compilation_storage) {
     // All family compilation scratch has died. Retained reports, signatures,
@@ -9057,10 +10567,10 @@ Result<CompiledGraph> compile(const Graph &graph,
   return compile_admitted(graph, environment, options);
 }
 
-Result<CompiledGraph> detail::compile_cpu_gpu(
+Result<CompiledGraph> detail::compile_with_adapters(
     const Graph &graph, CompileEnvironment environment, CompileOptions options,
-    compute::BackendId cpu_backend, compute::BackendId gpu_backend) noexcept {
-  return compile_admitted(graph, environment, options, cpu_backend, gpu_backend);
+    std::span<const RegionAdapter> adapters) noexcept {
+  return compile_admitted(graph, environment, options, adapters);
 }
 
 } // namespace hyle::graph

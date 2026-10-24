@@ -1,0 +1,22 @@
+{
+  "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\dual-matvec-row-tiles-2026-10-20.zip",
+  "bytes": 365838,
+  "sha256": "20a319243e84793d97100421bb4439afd80a42512f3ec0193c96a30178087d06",
+  "entries": 95,
+  "payload_bytes": 2137252,
+  "CRC_and_every_payload_SHA_verified": true,
+  "crc_verified": true,
+  "payload_sha256_verified": true,
+  "verification_passes": 1,
+  "source_count": 2,
+  "actual_native_headers": 16,
+  "completed_compile_TUs": 2,
+  "terminal_processes": 6,
+  "rows2_promoted": false,
+  "exact_differential_banks_per_process": 6,
+  "model_throughput_claim": false,
+  "new_build_or_GPU": false,
+  "cleanup_executed": false,
+  "scope": "archive-scope.json",
+  "payload_manifest": "payload-sha256.json"
+}

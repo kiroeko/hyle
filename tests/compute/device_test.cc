@@ -5,6 +5,9 @@
 #include <utility>
 
 #include "hyle/compute/backends/cpu.h"
+#include "hyle/compute/detail/backend_extension.h"
+#include "hyle/compute/detail/queue_ref.h"
+#include "hyle/compute/detail/queue_sequence.h"
 #include "hyle/compute/transfer.h"
 #include "hyle/mem/buffer.h"
 
@@ -219,6 +222,71 @@ TEST(Queue, CpuAsyncByteOperationsUseTheOrderedCompletionContract) {
                                         overlapping_source)
                   .error()
                   .IsInvalidArgument());
+}
+
+TEST(Queue, AdmittedSequenceKeepsItsActualOwnerAfterPublicHandlesClose) {
+  namespace detail = hyle::compute::detail;
+  AllocatorProbe probe;
+  auto context = Context::create(hyle::compute::cpu::device(),
+      ContextOptions{.metadata_allocator = probe_allocator(probe)}).value();
+  auto queue = context.create_queue().value();
+  auto retained = detail::QueueRef::acquire(queue).value();
+  const auto cold_allocations = probe.allocations;
+  EXPECT_EQ(cold_allocations, 2u); // Only ContextState and QueueState metadata.
+  auto source = hyle::mem::Buffer::create(hyle::mem::system_resource(), 8).value();
+  auto target = hyle::mem::Buffer::create(hyle::mem::system_resource(), 8).value();
+  const std::array<std::byte, 8> bytes{
+      std::byte{3}, std::byte{5}, std::byte{8}, std::byte{13},
+      std::byte{21}, std::byte{34}, std::byte{55}, std::byte{89}};
+  ASSERT_TRUE(source.view().write(bytes).ok());
+
+  auto begun = detail::QueueSequence::begin(queue);
+  ASSERT_TRUE(begun) << begun.error().message();
+  auto sequence = std::move(*begun);
+  EXPECT_TRUE(retained.same_owner(sequence));
+  auto second_producer = detail::QueueSequence::begin(retained);
+  ASSERT_FALSE(second_producer);
+  EXPECT_TRUE(second_producer.error().IsFailedPrecondition());
+
+  auto moved = std::move(queue);
+  EXPECT_FALSE(queue.valid()); // NOLINT(bugprone-use-after-move)
+  EXPECT_TRUE(retained.same_owner(moved));
+  moved = Queue{}; // Close and release the public shell while recording.
+  ASSERT_TRUE(context.close().ok());
+  context = Context{};
+  EXPECT_FALSE(retained.is_open());
+  EXPECT_EQ(probe.deallocations, 0u);
+
+  // CPU has no backend extensions. This must reach its real query callback,
+  // rather than reject the original sequence's already-held admission.
+  const hyle::compute::BackendExtensionId unknown{0x48594c4554455354ULL,
+                                                0x5155455545524546ULL, 1};
+  auto admitted = detail::BackendExtensionAccess::query_admitted(sequence, unknown);
+  ASSERT_FALSE(admitted);
+  EXPECT_TRUE(admitted.error().IsUnimplemented());
+  auto cold_query = detail::BackendExtensionAccess::query(retained, unknown);
+  ASSERT_FALSE(cold_query);
+  EXPECT_TRUE(cold_query.error().IsFailedPrecondition());
+  auto late = detail::QueueSequence::begin(retained);
+  ASSERT_FALSE(late);
+  EXPECT_TRUE(late.error().IsFailedPrecondition());
+
+  auto copied = detail::TransferAccess::enqueue_copy(sequence, target.view(), source.view());
+  ASSERT_TRUE(copied.accepted);
+  ASSERT_TRUE(copied.status.ok()) << copied.status.message();
+  sequence.record(std::move(copied));
+  auto completed = sequence.finish();
+  ASSERT_TRUE(completed) << completed.error().message();
+  ASSERT_TRUE(completed->wait().ok());
+  EXPECT_FALSE(sequence.valid());
+  std::array<std::byte, 8> observed{};
+  ASSERT_TRUE(target.view().read(observed).ok());
+  EXPECT_EQ(observed, bytes);
+  EXPECT_EQ(probe.allocations, cold_allocations);
+  EXPECT_EQ(probe.deallocations, 0u); // The retained identity still owns both.
+  sequence = detail::QueueSequence{};
+  retained.reset();
+  EXPECT_EQ(probe.deallocations, cold_allocations);
 }
 
 } // namespace

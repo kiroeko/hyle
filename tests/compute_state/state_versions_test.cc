@@ -1,5 +1,7 @@
 #include <gtest/gtest.h>
 #include "hyle/compute/state_versions.h"
+#include "hyle/compute/state_clone.h"
+#include "hyle/compute/backends/cpu.h"
 #include "hyle/mem/quota_allocator.h"
 #include <array>
 #include <thread>
@@ -203,6 +205,92 @@ TEST(StateVersions, FailedSnapshotReplacementLeavesTheSharedBaseIntact) {
   auto unchanged=draft.finalize().value();EXPECT_EQ(bytes(unchanged.member(id).value())[0],std::byte{7});
   EXPECT_EQ(store.stats().host_snapshot_bytes,16u);
 }
+struct SnapshotAllocator final {
+  std::size_t calls=0;
+  bool deny=false;
+  m::AllocatorRef get() noexcept {
+    return {
+      [](void*p,std::size_t n,std::size_t a)noexcept->void*{auto&s=*static_cast<SnapshotAllocator*>(p);
+        if(n)++s.calls;return s.deny?nullptr:m::system_allocator().allocate(n,a);},
+      [](void*,void*p,std::size_t n,std::size_t a)noexcept{m::system_allocator().deallocate(p,n,a);},
+      [](void*p,void*v,std::size_t old,std::size_t n,std::size_t a)noexcept->void*{auto&s=*static_cast<SnapshotAllocator*>(p);
+        if(n)++s.calls;return s.deny&&n?nullptr:m::system_allocator().reallocate(v,old,n,a);},this};
+  }
+};
+TEST(StateVersions, HostSnapshotsReuseOnlyRetiredExactBlocksWithoutWarmAllocations) {
+  SnapshotAllocator allocator;
+  auto schema=StateSchema::create(std::array{StateEntrySpec{.kind=StateEntryKind::kHostMetadata,.metadata_bytes=16}}).value();
+  auto id=schema.entry(0).value();
+  auto store=StateStore::create(schema,{.max_versions=2,.max_drafts=1,.max_retained_blocks=2,
+      .max_backing_bytes=32,.max_host_snapshot_bytes=32,.allocator=allocator.get()}).value();
+  std::array<std::byte,16> source{};
+  auto current=store.import(std::array{StateMember{id,{},source}}).value();
+  std::size_t warmed=0;
+  for(unsigned step=1;step<=32;++step){
+    auto draft=store.begin(current).value();source.fill(std::byte(step));
+    ASSERT_TRUE(draft.replace_metadata(id,source).ok());
+    auto next=draft.finalize();ASSERT_TRUE(next)<<next.error().message();current=std::move(*next);
+    EXPECT_EQ(bytes(current.member(id).value())[0],std::byte(step));
+    if(step==2){warmed=allocator.calls;allocator.deny=true;}
+  }
+  EXPECT_EQ(allocator.calls,warmed);
+  EXPECT_EQ(store.stats().retained_blocks,2u);EXPECT_EQ(store.stats().host_snapshot_bytes,32u);
+  EXPECT_EQ(store.stats().backing_bytes,32u);
+  current.reset();ASSERT_TRUE(store.collect().ok());EXPECT_EQ(store.stats().backing_bytes,0u);
+}
+TEST(StateVersions, EscapedHostSnapshotsSurviveRecordsStoreAndNewNativeReadAdmission) {
+  auto schema=StateSchema::create(std::array{StateEntrySpec{.kind=StateEntryKind::kHostMetadata,.metadata_bytes=16}}).value();
+  auto id=schema.entry(0).value();auto store=StateStore::create(schema).value();
+  std::array<std::byte,16> source{};source.fill(std::byte{7});
+  auto current=store.import(std::array{StateMember{id,{},source}}).value();
+  auto escaped=current.member(id).value();
+  for(unsigned step=8;step<=12;++step){auto draft=store.begin(current).value();source.fill(std::byte(step));
+    ASSERT_TRUE(draft.replace_metadata(id,source).ok());current=draft.finalize().value();
+    EXPECT_EQ(bytes(escaped)[0],std::byte{7});}
+  current.reset();ASSERT_TRUE(store.collect().ok());EXPECT_EQ(store.stats().host_snapshot_bytes,16u);
+  ASSERT_TRUE(store.close().ok());store={};
+  EXPECT_EQ(bytes(escaped)[0],std::byte{7});EXPECT_TRUE(escaped.try_write().error().IsUnavailable());
+  auto uses=LeaseUsePool::create().value();auto use=uses.begin().value();ASSERT_TRUE(use.read(escaped).ok());
+}
+TEST(StateVersions, HostSnapshotReuseWaitsForActualNativeUseAndPreservesFailure) {
+  auto schema=StateSchema::create(std::array{StateEntrySpec{.kind=StateEntryKind::kHostMetadata,.metadata_bytes=16}}).value();
+  auto id=schema.entry(0).value();auto store=StateStore::create(schema,{.max_retained_blocks=2,
+      .max_backing_bytes=32,.max_host_snapshot_bytes=32}).value();
+  std::array<std::byte,16> source{};source.fill(std::byte{1});
+  auto current=store.import(std::array{StateMember{id,{},source}}).value();
+  auto uses=LeaseUsePool::create().value();auto use=uses.begin().value();
+  ASSERT_TRUE(use.read(current.member(id).value()).ok());
+  {auto draft=store.begin(current).value();source.fill(std::byte{2});ASSERT_TRUE(draft.replace_metadata(id,source).ok());current=draft.finalize().value();}
+  auto draft=store.begin(current).value();source.fill(std::byte{3});
+  EXPECT_TRUE(draft.replace_metadata(id,source).IsUnavailable());
+  EXPECT_EQ(bytes(current.member(id).value())[0],std::byte{2});
+  use={};ASSERT_TRUE(draft.replace_metadata(id,source).ok());current=draft.finalize().value();
+  EXPECT_EQ(bytes(current.member(id).value())[0],std::byte{3});
+}
+TEST(StateVersions, IdleHostSnapshotCapacityIsChargedAndReclaimedUnderPressure) {
+  const std::array specs{StateEntrySpec{.kind=StateEntryKind::kHostMetadata,.metadata_bytes=16},
+      StateEntrySpec{.kind=StateEntryKind::kHostMetadata,.metadata_bytes=32}};
+  auto schema=StateSchema::create(specs).value();auto small=schema.entry(0).value(),large=schema.entry(1).value();
+  auto store=StateStore::create(schema,{.max_retained_blocks=3,.max_backing_bytes=80,.max_host_snapshot_bytes=80}).value();
+  std::array<std::byte,16> a{};std::array<std::byte,32>b{};
+  auto current=store.import(std::array{StateMember{small,{},a},StateMember{large,{},b}}).value();
+  {auto draft=store.begin(current).value();a.fill(std::byte{1});ASSERT_TRUE(draft.replace_metadata(small,a).ok());current=draft.finalize().value();}
+  EXPECT_EQ(store.stats().host_snapshot_bytes,64u);
+  {auto draft=store.begin(current).value();b.fill(std::byte{2});ASSERT_TRUE(draft.replace_metadata(large,b).ok());current=draft.finalize().value();}
+  EXPECT_EQ(store.stats().host_snapshot_bytes,80u);EXPECT_EQ(store.stats().backing_bytes,80u);
+  current.reset();ASSERT_TRUE(store.close().ok());EXPECT_EQ(store.stats().host_snapshot_bytes,0u);
+}
+TEST(StateVersions, HostSnapshotAllocationFailureKeepsTheBaseAndDirectoryIntact) {
+  SnapshotAllocator allocator;
+  auto schema=StateSchema::create(std::array{StateEntrySpec{.kind=StateEntryKind::kHostMetadata,.metadata_bytes=16}}).value();
+  auto id=schema.entry(0).value();auto store=StateStore::create(schema,{.allocator=allocator.get()}).value();
+  std::array<std::byte,16> source{};source.fill(std::byte{7});
+  auto current=store.import(std::array{StateMember{id,{},source}}).value();auto draft=store.begin(current).value();
+  allocator.deny=true;source.fill(std::byte{9});EXPECT_TRUE(draft.replace_metadata(id,source).IsResourceExhausted());
+  EXPECT_EQ(store.stats().retained_blocks,1u);EXPECT_EQ(store.stats().host_snapshot_bytes,16u);
+  auto unchanged=draft.finalize();ASSERT_TRUE(unchanged)<<unchanged.error().message();
+  EXPECT_EQ(bytes(unchanged->member(id).value())[0],std::byte{7});
+}
 class DistinctHostResource final : public m::MemoryResource {
 public:
   std::string_view name()const noexcept override{return "state-test-distinct-host";}
@@ -215,5 +303,75 @@ TEST(StateVersions, ResourceConstraintRejectsForeignBackingBeforeImport) {
   auto schema=StateSchema::create(std::array{spec}).value();auto store=StateStore::create(schema).value();auto source=ready(std::byte{8});
   EXPECT_TRUE(store.import(std::array{StateMember{schema.entry(0).value(),source}}).error().IsInvalidArgument());
   EXPECT_TRUE(source.valid());EXPECT_EQ(store.stats().retained_blocks,0u);
+}
+TEST(StateVersions, SlicedCloneWriterCannotPublishAnIncompleteMember) {
+  auto context=Context::create(cpu::device()).value();
+  auto queue=context.create_queue().value();
+  const auto spec=resource_spec();
+  auto schema=StateSchema::create(std::array{spec}).value();
+  const auto id=schema.entry(0).value();
+  auto copy=CopyBatchProgram::prepare(context,std::array{
+      CopyResourceSpec{m::system_resource(),16},
+      CopyResourceSpec{m::system_resource(),16}}).value();
+  const std::array slices{std::array<std::size_t,2>{4,8},
+                          std::array<std::size_t,2>{8,0}};
+  for(const auto &slice:slices) {
+    SCOPED_TRACE(::testing::Message()<<"offset="<<slice[0]<<", size="<<slice[1]);
+    auto store=StateStore::create(schema).value();
+    auto base=store.import(std::array{StateMember{id,ready(std::byte{37})}}).value();
+    auto route=StateCloneRoute::prepare(store,
+        {.resource=m::system_resource(),.capacity_bytes=1024},copy,
+        [&queue](const CopyBatchProgram &program) noexcept {
+          return CopyBatchInvocation::create(program,queue);
+        });
+    ASSERT_TRUE(route)<<route.error().message();
+    auto draft_status=store.begin(base);
+    ASSERT_TRUE(draft_status)<<draft_status.error().message();
+    auto draft=std::move(*draft_status);
+    auto ticket=draft.clone_for_write(id,*route);
+    ASSERT_TRUE(ticket)<<ticket.error().message();
+    auto writer_status=ticket->wait();
+    ASSERT_TRUE(writer_status)<<writer_status.error().message();
+    auto writer=std::move(*writer_status);
+    const auto generation=writer.lease().generation();
+    const auto original_view=writer.lease().view();
+    ASSERT_TRUE(original_view)<<original_view.error().message();
+    auto published=writer.lease().publish();
+    ASSERT_TRUE(published)<<published.error().message();
+    auto full=std::move(*published);
+    auto piece_status=full.subview(slice[0],slice[1]);
+    ASSERT_TRUE(piece_status)<<piece_status.error().message();
+    auto piece=std::move(*piece_status);
+    full.reset();
+    auto shortened=piece.try_write();
+    ASSERT_TRUE(shortened)<<shortened.error().message();
+    writer.lease()=std::move(*shortened);
+    EXPECT_EQ(writer.lease().generation(),generation);
+    EXPECT_EQ(writer.lease().size(),slice[1]);
+    const auto shortened_view=writer.lease().view();
+    ASSERT_TRUE(shortened_view)<<shortened_view.error().message();
+    EXPECT_EQ(shortened_view->native_handle(),original_view->native_handle());
+    EXPECT_EQ(shortened_view->offset(),original_view->offset()+slice[0]);
+    const auto before=store.stats();
+    const auto rejected=writer.publish();
+    EXPECT_TRUE(rejected.IsInvalidArgument())<<rejected.message();
+    EXPECT_EQ(rejected.message(),"state resource byte extent disagrees with schema");
+    EXPECT_TRUE(writer.lease().valid());
+    EXPECT_EQ(writer.lease().generation(),generation);
+    EXPECT_EQ(writer.lease().size(),slice[1]);
+    EXPECT_EQ(store.stats().retained_blocks,before.retained_blocks);
+    auto candidate=draft.finalize();
+    EXPECT_FALSE(candidate);
+    if(!candidate) EXPECT_TRUE(candidate.error().IsUnavailable())<<candidate.error().message();
+    else {
+      auto invalid_member=candidate->member(id);
+      ASSERT_TRUE(invalid_member)<<invalid_member.error().message();
+      EXPECT_EQ(invalid_member->size(),16U);
+    }
+    auto original=base.member(id);
+    ASSERT_TRUE(original)<<original.error().message();
+    EXPECT_EQ(original->size(),16U);
+    EXPECT_EQ(bytes(*original)[0],std::byte{37});
+  }
 }
 } // namespace

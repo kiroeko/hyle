@@ -14,6 +14,7 @@
 
 #include "hyle/compute/backends/cuda.h"
 #include "hyle/compute/leased_operation.h"
+#include "hyle/compute/model_ops.h"
 #include "hyle/compute/prepared_operation.h"
 #include "hyle/compute/tensor.h"
 #include "hyle/mem/buffer.h"
@@ -232,6 +233,236 @@ TEST(CublasProvider, Bfloat16DecodeAndPrefillUseIndependentLanes) {
     run_matrix<hyle::simd::bfloat16_t>(
         compute::DataType::kBFloat16, false, true, false, rows, 128, 64);
   }
+}
+
+TEST(CublasProvider, BfloatLinearF32KeepsStoredWeightOrderAndSubBfloatScores) {
+  using BFloat = hyle::simd::bfloat16_t;
+  auto owner = context();
+  auto resource =
+      cuda::MemoryResource::create(owner, cuda::MemoryKind::kDevice).value();
+  auto queue = owner.create_queue().value();
+  ASSERT_TRUE(queue.reserve_completions(1).ok());
+  // All three axes differ, so treating stored [E,K] as [K,E] row-major
+  // cannot accidentally pass. Input and output elements also differ in size.
+  Matrix input(matrix(compute::DataType::kBFloat16, 3, 5, false), resource.ref());
+  Matrix weights(matrix(compute::DataType::kBFloat16, 7, 5, false), resource.ref());
+  Matrix output(matrix(compute::DataType::kFloat32, 3, 7, false), resource.ref());
+  std::vector<BFloat> stored(35);
+  for (std::size_t e = 0; e < 7; ++e)
+    for (std::size_t k = 0; k < 5; ++k)
+      stored[e * 5 + k] = from_float<BFloat>(
+          static_cast<float>(static_cast<int>((e * 3 + k * 2) % 9) - 4) * .25F);
+  for (std::size_t k = 0; k < 5; ++k)
+    stored[k] = from_float<BFloat>(0);
+  stored[0] = from_float<BFloat>(1);
+  stored[1] = from_float<BFloat>(1.0F / 128);
+  ASSERT_TRUE(weights.storage.view().write(std::as_bytes(std::span(stored))).ok());
+  auto preparation = compute::prepare(owner, compute::model_ops::bfloat_linear_f32(),
+      std::array{input.view.as_const(), weights.view.as_const()}, std::array{output.view});
+  ASSERT_TRUE(preparation) << preparation.error().message();
+  auto prepared = std::move(*preparation);
+  EXPECT_EQ(prepared.provider().id, compute::cublas::kProviderId);
+  EXPECT_TRUE(prepared.capture_compatible());
+  const auto needed = prepared.workspace_requirement();
+  EXPECT_LE(needed.size, std::size_t{32} * 1024 * 1024);
+  auto workspace = mem::Buffer::create(resource.ref(), needed.size, needed.alignment).value();
+  auto invocation = prepared.create_invocation(workspace.view()).value();
+  for (int phase = 0; phase < 2; ++phase) {
+    SCOPED_TRACE(phase);
+    std::vector<BFloat> rows(15);
+    for (std::size_t i = 0; i < rows.size(); ++i)
+      rows[i] = from_float<BFloat>(
+          static_cast<float>(static_cast<int>((i * 5 + static_cast<std::size_t>(phase)) % 11) - 5) * .5F);
+    for (std::size_t k = 0; k < 5; ++k)
+      rows[k] = from_float<BFloat>(0);
+    rows[0] = from_float<BFloat>(1);
+    rows[1] = from_float<BFloat>(.25F);
+    ASSERT_TRUE(input.storage.view().write(std::as_bytes(std::span(rows))).ok());
+    auto completion = invocation.submit(queue, input.view.as_const(),
+        weights.view.as_const(), output.view);
+    ASSERT_TRUE(completion) << completion.error().message();
+    ASSERT_TRUE(completion->wait().ok());
+    std::array<float, 21> actual{};
+    ASSERT_TRUE(output.storage.view().read(std::as_writable_bytes(std::span(actual))).ok());
+    for (std::size_t t = 0; t < 3; ++t)
+      for (std::size_t e = 0; e < 7; ++e) {
+        double expected = 0;
+        for (std::size_t k = 0; k < 5; ++k)
+          expected += static_cast<double>(to_float(rows[t * 5 + k])) *
+              to_float(stored[e * 5 + k]);
+        // The small dyadic products and sums are exact in F32. A broad GEMM
+        // tolerance would hide a layout/byte-width or BF16-output regression.
+        EXPECT_EQ(actual[t * 7 + e], expected) << t << "," << e;
+      }
+    EXPECT_EQ(actual[0], 1.001953125F);
+    EXPECT_EQ(to_float(from_float<BFloat>(actual[0])), 1.0F);
+  }
+}
+
+TEST(CublasProvider, ScoreOperationDoesNotRelaxOrdinaryMatMulDtypes) {
+  auto owner = context();
+  auto resource =
+      cuda::MemoryResource::create(owner, cuda::MemoryKind::kDevice).value();
+  const auto input = matrix(compute::DataType::kBFloat16, 3, 5, false);
+  const auto stored = matrix(compute::DataType::kBFloat16, 7, 5, false);
+  const auto rhs = matrix(compute::DataType::kBFloat16, 5, 7, false);
+  const auto score = matrix(compute::DataType::kFloat32, 3, 7, false);
+  const auto rounded = matrix(compute::DataType::kBFloat16, 3, 7, false);
+  const auto wrong_weight = matrix(compute::DataType::kFloat32, 7, 5, false);
+  auto ordinary = compute::prepare(owner, compute::Operation(compute::MatMul{}),
+      std::array{input, rhs}, std::array{score}, resource.ref());
+  ASSERT_FALSE(ordinary);
+  EXPECT_TRUE(ordinary.error().IsInvalidArgument());
+  auto wrong_score = compute::prepare(owner, compute::model_ops::bfloat_linear_f32(),
+      std::array{input, stored}, std::array{rounded}, resource.ref());
+  ASSERT_FALSE(wrong_score);
+  EXPECT_TRUE(wrong_score.error().IsInvalidArgument());
+  auto mixed_inputs = compute::prepare(owner, compute::model_ops::bfloat_linear_f32(),
+      std::array{input, wrong_weight}, std::array{score}, resource.ref());
+  ASSERT_FALSE(mixed_inputs);
+  EXPECT_TRUE(mixed_inputs.error().IsInvalidArgument());
+}
+
+compute::TensorDesc batched_matrix(compute::DataType type,
+                                   std::vector<std::int64_t> shape,
+                                   bool column_major) {
+  const auto width = static_cast<std::int64_t>(compute::data_type_size(type));
+  std::vector<std::int64_t> strides(shape.size(), width);
+  for (auto axis = shape.size() - 1; axis-- > 0;)
+    strides[axis] = strides[axis + 1] * shape[axis + 1];
+  if (column_major) {
+    strides[shape.size() - 2] = width;
+    strides[shape.size() - 1] = shape[shape.size() - 2] * width;
+  }
+  return compute::TensorDesc::strided_bytes(type, shape, strides).value();
+}
+
+// Independent logical broadcasting oracle: decode each output batch coordinate
+// and index source dimensions directly, without the provider's affine runs.
+std::size_t broadcast_batch_offset(const compute::TensorDesc &source,
+                                   const compute::TensorDesc &output,
+                                   std::size_t batch) {
+  const auto source_rank = source.rank() - 2;
+  const auto output_rank = output.rank() - 2;
+  std::size_t offset_bytes = 0;
+  for (auto axis = output_rank; axis-- > 0;) {
+    const auto coordinate = batch %
+        static_cast<std::size_t>(output.dimensions()[axis]);
+    batch /= static_cast<std::size_t>(output.dimensions()[axis]);
+    if (axis + source_rank < output_rank)
+      continue;
+    const auto source_axis = axis + source_rank - output_rank;
+    if (source.dimensions()[source_axis] != 1)
+      offset_bytes += coordinate *
+          static_cast<std::size_t>(source.byte_strides()[source_axis]);
+  }
+  return offset_bytes;
+}
+
+std::size_t batched_element(const compute::TensorDesc &source,
+                            const compute::TensorDesc &output,
+                            std::size_t batch, std::size_t row,
+                            std::size_t column) {
+  return (broadcast_batch_offset(source, output, batch) +
+          row * static_cast<std::size_t>(
+              source.byte_strides()[source.rank() - 2]) +
+          column * static_cast<std::size_t>(
+              source.byte_strides()[source.rank() - 1])) /
+         compute::data_type_size(source.data_type());
+}
+
+template <class T>
+void run_batched_broadcast(compute::DataType type, bool multiple_resets) {
+  auto owner = context();
+  auto resource =
+      cuda::MemoryResource::create(owner, cuda::MemoryKind::kDevice).value();
+  std::array queues{owner.create_queue().value(), owner.create_queue().value()};
+  for (auto &queue : queues)
+    ASSERT_TRUE(queue.reserve_completions(1).ok());
+  // First domain broadcasts A within a run; the second broadcasts B and has
+  // two outer coordinate axes. Odd small matrix sizes give real non-16-byte
+  // batch offsets/strides for all three storage types.
+  const auto left_desc = batched_matrix(type,
+      multiple_resets ? std::vector<std::int64_t>{2, 1, 2, 2, 3}
+                      : std::vector<std::int64_t>{2, 1, 2, 3},
+      multiple_resets);
+  const auto right_desc = batched_matrix(type,
+      multiple_resets ? std::vector<std::int64_t>{1, 3, 1, 3, 5}
+                      : std::vector<std::int64_t>{1, 3, 3, 5},
+      !multiple_resets);
+  const auto output_desc = batched_matrix(type,
+      multiple_resets ? std::vector<std::int64_t>{2, 3, 2, 2, 5}
+                      : std::vector<std::int64_t>{2, 3, 2, 5},
+      false);
+  const auto left_axis = multiple_resets ? std::size_t{2} : std::size_t{0};
+  EXPECT_NE(left_desc.byte_strides()[left_axis] % 16, 0);
+  EXPECT_NE(right_desc.byte_strides()[1] % 16, 0);
+  EXPECT_NE(output_desc.byte_strides()[output_desc.rank() - 3] % 16, 0);
+  Matrix left(left_desc, resource.ref()), right(right_desc, resource.ref()),
+      first(output_desc, resource.ref()), second(output_desc, resource.ref());
+  auto result = compute::prepare(owner, compute::Operation(compute::MatMul{}),
+      std::array{left.view.as_const(), right.view.as_const()},
+      std::array{first.view});
+  ASSERT_TRUE(result) << result.error().message();
+  auto prepared = std::move(*result);
+  EXPECT_TRUE(prepared.capture_compatible());
+  const auto needed = prepared.workspace_requirement();
+  std::array workspaces{
+      mem::Buffer::create(resource.ref(), needed.size, needed.alignment).value(),
+      mem::Buffer::create(resource.ref(), needed.size, needed.alignment).value()};
+  std::array lanes{prepared.create_invocation(workspaces[0].view()).value(),
+                   prepared.create_invocation(workspaces[1].view()).value()};
+  for (int phase = 0; phase < 2; ++phase) {
+    std::vector<T> a(left.storage.size() / sizeof(T));
+    std::vector<T> b(right.storage.size() / sizeof(T));
+    for (std::size_t i = 0; i < a.size(); ++i)
+      a[i] = from_float<T>(float(int((i * 5 + std::size_t(phase * 2)) % 11) - 5) * .25F);
+    for (std::size_t i = 0; i < b.size(); ++i)
+      b[i] = from_float<T>(float(int((i * 7 + std::size_t(phase * 3)) % 13) - 6) * .5F);
+    ASSERT_TRUE(left.storage.view().write(std::as_bytes(std::span(a))).ok());
+    ASSERT_TRUE(right.storage.view().write(std::as_bytes(std::span(b))).ok());
+    auto first_done = lanes[0].submit(queues[0], left.view.as_const(),
+        right.view.as_const(), first.view);
+    ASSERT_TRUE(first_done) << first_done.error().message();
+    auto second_done = lanes[1].submit(queues[1], left.view.as_const(),
+        right.view.as_const(), second.view);
+    ASSERT_TRUE(second_done) << second_done.error().message();
+    ASSERT_TRUE(first_done->wait().ok());
+    ASSERT_TRUE(second_done->wait().ok());
+    for (Matrix *output : {&first, &second}) {
+      std::vector<T> actual(output->storage.size() / sizeof(T));
+      ASSERT_TRUE(output->storage.view().read(
+          std::as_writable_bytes(std::span(actual))).ok());
+      const auto batch_count = output_desc.element_count().value() / 10;
+      for (std::size_t batch = 0; batch < batch_count; ++batch)
+        for (std::size_t row = 0; row < 2; ++row)
+          for (std::size_t col = 0; col < 5; ++col) {
+            double expected = 0;
+            for (std::size_t k = 0; k < 3; ++k)
+              expected += double(to_float(a[batched_element(left_desc,
+                  output_desc, batch, row, k)])) *
+                  double(to_float(b[batched_element(right_desc,
+                      output_desc, batch, k, col)]));
+            // Quarter/half inputs and a three-term dot are exactly represented
+            // in all tested types, so no broad GEMM tolerance masks a map bug.
+            EXPECT_EQ(to_float(actual[batched_element(output_desc,
+                output_desc, batch, row, col)]), float(expected))
+                << phase << "," << batch << "," << row << "," << col;
+          }
+    }
+  }
+}
+
+TEST(CublasProvider, BatchedBroadcastUsesBothOperandsAndRealSubalignment) {
+  for (bool multiple_resets : {false, true}) {
+    SCOPED_TRACE(multiple_resets);
+    run_batched_broadcast<float>(compute::DataType::kFloat32, multiple_resets);
+    run_batched_broadcast<__half>(compute::DataType::kFloat16, multiple_resets);
+    run_batched_broadcast<hyle::simd::bfloat16_t>(
+        compute::DataType::kBFloat16, multiple_resets);
+  }
+  RecordProperty("finite_batched_domains", "6");
+  RecordProperty("successful_submissions_expected", "24");
 }
 
 TEST(CublasProvider, RejectsUnsupportedTypesAndHostOnlyResources) {

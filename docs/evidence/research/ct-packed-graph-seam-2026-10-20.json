@@ -1,0 +1,188 @@
+{
+  "kind": "read-only concrete CT packed Graph/provider execution seam",
+  "status": "design only: no source edit, build, GPU, network or payload read",
+  "conclusion": "Use the existing graph_route_cuda private RegionProvider decorator pattern on the original torch_cuda provider, and a private same-build CT-linear descriptor prepared by that same provider. A normal public Decode/View/MatMul Graph remains the input; no new public operation, common Graph scheduling rule, ggml executor or Context/Queue is needed.",
+  "actual_seam": [
+    {
+      "path": "src/graph_route_cuda/dense_bfloat_scores_region.cc:25-28,220-229,330-464,466-480",
+      "fact": "Current working exemplar retains original ProviderVTable, exposes only a Graph region extension, forwards native propose/resources/prepare and shared_submit through the original prepared artifact. Pattern is not gated by the leaf provider supporting public MatMul."
+    },
+    {
+      "path": "src/compute/provider_internal.h:215-224",
+      "fact": "ProviderAccess::with_vtable copies the original Provider payload/config owner and only changes its same-build vtable pointer. Static decorated/original table lifetimes and all original create/destroy/context/query delegates must be retained."
+    },
+    {
+      "path": "src/compute_provider_torch_cuda/artifact_provider.cc:320-412,415-495,498-506",
+      "fact": "Existing original Context, resource binding, QueueSequence stream and PreparedVTable already execute packed MLX kernels. Current CT ArtifactWeightDecode instead uses ATen and dense result/copy. Add a distinct private CT branch before the ATen fallback; do not route CT through the MLX affine arithmetic or its format enum."
+    },
+    {
+      "path": "src/compute_route_cuda/cuda_context.cc:23-59; src/compute_route_cuda/default_context.h:9-15; src/graph_route_cuda/cuda_context.cc:13-18",
+      "fact": "Default roster currently hardcodes torch_cuda::provider() while its private create_context accepts only ggml/native decorations. Append a private optional artifacts Provider argument analogous to native; Graph context passes CT-decorated torch provider, Direct retains the original. No public default-policy change is needed."
+    },
+    {
+      "path": "src/compute_route_cuda/default_policy.cc:80-121",
+      "fact": "with_defaults<Family::kTorch,DefaultScope::kGraph> snapshots its first original table. All default Graph assembly calls must consistently supply the decorated table from first use; its prepare and other query hooks remain original. Do not redecorate an already configured table or create a second provider roster."
+    }
+  ],
+  "private_operation": {
+    "location": "new src/compute_provider_torch_cuda/ct_packed_linear.h, private same-build InlineCustomOperationDescriptor",
+    "suggested_fields": [
+      "WeightArtifactFormat (only exact CT symmetric4/asymmetric4)",
+      "group_size copied from public decode",
+      "decoded operand dtype after actual Decode/final Cast edges; infer obtains scale dtype from ports"
+    ],
+    "ports": "A,codes[,packed_zero],scale -> original MatMul output. Asymmetric4 uses A,codes,Z,scale; symmetric4 omits Z.",
+    "infer": "Delegate packed source shape/type validation to the original ArtifactWeightDecode::infer_output_descriptions, derive its exact decoded [N,K] type, use checked metadata transpose [K,N], then original MatMul inference. Do not duplicate a public format/schema or change the public MatMul operation.",
+    "execution": "Recognized/proposed/prepared by artifact_provider.cc under its original Context and ProviderPreparedVTable; reuse mlx_packed_kernel row-dot launch substrate with a distinct typed CT loader. No whole-W at::Tensor, shifts tensor or dense allocation for the packed branch. The loader/launch implementation is still missing and must be implemented/tested."
+  },
+  "matching": {
+    "candidate": "bounded Decode -> exact rank2 transpose View -> MatMul(F32 accumulation), optional explicit lossless F16/BF16->F32 widen only if its position/type is retained; start with the demonstrated dense 2D ports",
+    "location": "new src/graph_route_cuda/ct_packed_linear_region.{h,cc}",
+    "nodes": "Own Decode and every admitted intermediate View/Cast plus terminal MatMul. Decode is the first math node, so do not emit a candidate that starts by swallowing an unrelated free metadata boundary; no rank0 workaround.",
+    "boundary": "Original A,codes,Z,scales actual ValueIds/resources. A may have external readers/published observations. The decoded W and removed internal View/Cast values must be private to this one MatMul, with original Graph outputs/view aliases/control escapes checked. Published decoded W or other readers retain the old decomposition initially.",
+    "discovery": "One allocator-backed value/reader/control index, bounded pattern walks and RegionProposalWriter::try_add. Qualification rechecks exact request.nodes/inputs/outputs and descriptions, with no full graph scan per accepted region. Preserve existing proposal limits and route policy.",
+    "selection": "Use truthful cost/runtime from the private original-provider proposal. No ggml eligibility prefilter, model name/weight role/shape whitelist, or fabricated zero-cost decode. CompileReport plus a focused physical check must demonstrate actual selection before claiming packed execution."
+  },
+  "numerical_boundaries": [
+    "Codes/zeros are treated as U32 bit patterns. The integer centered difference is exactly representable in F16/BF16/F32; do not perform a floating affine -zp*scale substitution.",
+    "The scale-dtype product RNE is mandatory before MatMul: BF16 scale requires BF16_RNE(diff*scale), F16 requires F16_RNE, F32 requires original F32 multiply rounding. An explicit F32 decode output or Cast widens that already rounded value; it does not authorize F32-only dequantization.",
+    "If an explicit decode output changes to another low dtype, preserve that second conversion or decline the pattern initially. Public MatMul requires compatible operand/output types and its declared F32 accumulation; do not silently narrow A or move scale after dot.",
+    "The existing public MatMul permits a different legal F32 reduction tree, not changed weight decode/activation operands. Final output RNE is retained. Zero/nonfinite/subnormal behavior and no-FTZ product boundaries need focused oracle/compiled-math evidence for the new kernel, not inference from the format name.",
+    "The entire conversion chain is semantic: e.g. BF16 scale product -> BF16 RNE -> requested F16 RNE -> optional exact F32 widen -> MatMul F16 or F32 operand as originally described. A same-build descriptor must encode the actual sequence or conservatively decline unsupported secondary conversion, rather than recording just the final dtype. The public MatMul inferred activation/output dtype remains authoritative; F32 accumulation never implies F32 operands/output."
+  ],
+  "ownership": {
+    "no_repack_initial": "No new constant cache entry is required if original packed buffers are consumed directly. Artifact stores immutable shape/options/port mappings, not borrowed request spans or source data addresses.",
+    "original_roots": "request.constants/constant_origins describe exact immutable boundary Views with real root and byte offset (region_provider.h:274-290). Use ordinary Graph-selected input resources/ConstantBindings or dynamic input leases; do not infer immutable ownership from a raw pointer, filename or matching descriptor.",
+    "lifetime": "Ordinary Graph retains canonical/materialized constants and input permissions. Shared submit borrows their actual ConstTensorViews only under original QueueSequence/Completion retention, and writes the original caller destination with unchanged disjoint/permission checks. Region wrapper retains the original prepared artifact/context owner, not a second resource or executor.",
+    "dynamic": "A structural packed kernel need not assume weights are immutable to be mathematically valid; if dynamic ports are admitted they are read fresh each submit under their actual episode leases. Never cache their payload identity or permission. A first implementation may decline unsupported dynamic/layout cases explicitly.",
+    "if_future_repack": "If packing is later introduced, use ConstantArtifactAccess with all real roots/View offsets/desc/options and owned retirement; no ad hoc address-keyed global cache. This is not necessary for the initial no-repack branch."
+  },
+  "provenance_loss": {
+    "example": "tests/compute_models/cpu_c5_non_gguf_fixture.h:96-112",
+    "fact": "The current fragment records decode in a separate cold preparation object, then makes a new dense Graph constant from outputs[0] and sets prepared_constants={0}; only that dense constant + transpose/MatMul are present in the executing Graph. The public Graph has no original code/Z/scale values or decoder node to match.",
+    "existing_CUDA_tests": "tests/graph_route_cuda/artifact_test.cc currently builds Graph decode-only outputs from original packed ports. It proves decode/lifecycle, not an existing in-Graph packed linear implementation.",
+    "can_keep_ordinary_calls": "Yes: consumer builds original packed constants plus the existing ArtifactWeightDecode node, ordinary exact View and MatMul in the same GraphBuilder/compile call using the default Graph CUDA context. The private candidate can then select without a new consumer API. If consumer binds only predecoded dense W, identity is irretrievably absent from that Graph; keep dense MatMul and change that consumer assembly explicitly rather than reverse-infer codec.",
+    "constant_folding": "Graph core does not globally erase/rewrite ArtifactWeightDecode into a packed provenance record. ggml_cuda constant_expressions only handles recipes its own TensorProgram can lower; current TensorProgram has no ArtifactWeightDecode support. Do not assume its private prepared-output cache can recover a separately decoded CT constant."
+  },
+  "minimal_owner_changes": [
+    "src/graph_route_cuda/ct_packed_linear_region.{h,cc} (new private bounded candidate and original-artifact forwarding)",
+    "src/graph_route_cuda/{cuda_context.cc,CMakeLists.txt}, cmake/HyleComponents.cmake private dependency on compute_provider_torch_cuda when enabled",
+    "src/compute_route_cuda/{default_context.h,cuda_context.cc} private optional artifacts Provider injection; default_policy unchanged",
+    "src/compute_provider_torch_cuda/{ct_packed_linear.h,artifact_provider.cc,mlx_packed_kernel.cu,mlx_packed_kernel.h} private semantic descriptor/loader/launch; no shared Program ABI or public header change required",
+    "one focused existing CUDA artifact fixture owner; one consumer Graph assembly that currently separates cold decode if real-model use is intended"
+  ],
+  "first_meaningful_proof": [
+    "Current CT N9/K64/g32 fixture with source BF16/F16 typed-round witness; compare independent explicit decode then mature standalone MatMul, two invocations/rebind, original owners outlive accepted work",
+    "Actual public Graph pattern selected in CompileReport with original torch provider identity; published W/additional readers/control escape cleanly retain decomposition; no model-name dispatch",
+    "Verify no N*K persistent dense allocation and truthful bounded workspace/storage/runtime; packed kernel symbol/count distinguishes actual hit from fallback. These are future tests, not completed results"
+  ],
+  "source_identities": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph_route_cuda\\dense_bfloat_scores_region.cc",
+      "bytes": 24509,
+      "sha256": "fdaaf4abcd3ad2e93b01031ed876c591b526683a976f9519e271378b88dbd022"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph_route_cuda\\dense_bfloat_scores_region.h",
+      "bytes": 350,
+      "sha256": "fa9e2827862d3e1723c511aad683e8d592da258aab12f48d8044f619f7c5673d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph_route_cuda\\cuda_context.cc",
+      "bytes": 3253,
+      "sha256": "42a209b8e7496778937f1c77129a3690010f6ac8ffd4fd9e1817a264d9fe86bd"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_route_cuda\\default_context.h",
+      "bytes": 561,
+      "sha256": "2724280530236068bf30092817f750b70d8bb5b8afa9d581c5bf8b5abfb86962"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_route_cuda\\cuda_context.cc",
+      "bytes": 2455,
+      "sha256": "7434aa4a48e6c01e4900e1932c0bb2ac4f69089817e7fc914d763c0282bd0230"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_route_cuda\\default_policy.cc",
+      "bytes": 5864,
+      "sha256": "c5e18378f63db70ed3cd6177f90d05a58c82ff1104e6fa13d1ab8f5ab6482573"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_torch_cuda\\artifact_provider.cc",
+      "bytes": 26684,
+      "sha256": "909c2d4b81c9ec20cd0e9d9911b6117dfcd991e2f206977683e4e2650493baad"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_torch_cuda\\mlx_packed_kernel.h",
+      "bytes": 661,
+      "sha256": "216753be685389bf7c152e2a72a473b6a8f1197142507dac53a3b316e827eff7"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_torch_cuda\\mlx_packed_kernel.cu",
+      "bytes": 7248,
+      "sha256": "c5297db6e7f11f0878ce7550f0ea5422a3b5cb2542fdd963ff4d857b38de74d2"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_ops\\weight_decode.cc",
+      "bytes": 9098,
+      "sha256": "f6a0a257d1f78008619557c0ca405bcd05d3ce876ffb045643d8e9054e533837"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\graph\\region_provider.h",
+      "bytes": 24812,
+      "sha256": "16558cc236133bd76a2306dc7144b9edd08c81e19600d1d1dc6f7c8bc5127949"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\cpu_c5_non_gguf_fixture.h",
+      "bytes": 10951,
+      "sha256": "01fba41ffeb009a615e8f19fac509c923a83027165bed1d4cb7aa5fad043ab07"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph_provider_ggml_cuda\\constant_expressions.h",
+      "bytes": 13840,
+      "sha256": "dd022607aa5f177f344a8204ad035f6b40316d0f9d6500465f3318af50e1b0d5"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\executable.cc",
+      "bytes": 456330,
+      "sha256": "51189acef79d10727196063ecd70113b96567e8b4b4a546f4d609a2039f1429c"
+    }
+  ],
+  "compile_order_proof": [
+    {
+      "order": 1,
+      "source": "src/graph/executable.cc:482-537,9723-9732",
+      "fact": "make_specialized_graph allocates/copies the full original values/nodes/edges/constants/dependencies and only binds concrete descriptors/shape operands. No tensor-value execution or constant-node folding occurs."
+    },
+    {
+      "order": 2,
+      "source": "src/graph/executable.cc:1759-1847,9835-9846",
+      "fact": "bind_constants accepts only the original Graph ValueKind::kConstant list and validates bindings/owners/leases. It registers source tensors without executing pure node operations; then prepare_placed_steps begins."
+    },
+    {
+      "order": 3,
+      "source": "src/graph/executable.cc:3901-3948,5495-5755",
+      "fact": "Actual leaf proposals and all RegionProvider proposals/resource queries run on the original specialized Graph before heavy artifact creation or canonical constant copies. Route search is initialized with those candidates. A CT region can see Decode/View/MatMul in full at this point."
+    },
+    {
+      "order": 4,
+      "source": "src/graph/executable.cc:4932-4942,1955-2120",
+      "fact": "Only after a complete physical route and output transfers exist does materialize_constants copy original declared immutable roots/metadata aliases into the selected storage. It is a byte-copy transaction over original constant bindings, not an evaluator for ArtifactWeightDecode or other pure nodes."
+    },
+    {
+      "order": 5,
+      "source": "src/graph/executable.cc:5135-5177; src/graph_provider_ggml_cuda/ggml_cuda_region.cc:964-1004",
+      "fact": "The selected region gets real packed constant boundary views/owners and its compile callback. ggml provider-local constant_expressions::prepare runs only here on its selected private recipe, after candidate selection; it neither rewrites the input Graph nor globally erases decoder nodes before other providers can propose."
+    },
+    {
+      "order": 6,
+      "source": "src/graph/executable.cc:5346-5361,5196-5206",
+      "fact": "On candidate retry prepared_values/artifacts are cleared; logical Graph identities stay intact. Even provider-created immutable prepared outputs keep logical node identities for data/control ordering. No ordering change or CT whitelist is needed to expose the in-Graph pattern today."
+    }
+  ],
+  "compile_order_conclusion": "Confirmed from actual compile path: putting original packed constants and Decode/View/MatMul into one normal Graph is sufficient to preserve pattern identity until private region proposals. Current blockers are missing private CT packed execution/candidate/default decoration and consumers that split decode into a different Graph, not an early common constant-fold pass.",
+  "fixture_owned_binding_docs": {
+    "path": "docs/user/graph.md:1101-1113",
+    "fact": "Guide already states InvocationOptions::resources or prepare_resources and shows .resources=ResourceOptions before ReadLease/WriteLease binding. Apple common fixture omission was corrected with the existing factory option, not a core/API/documentation gap."
+  }
+}

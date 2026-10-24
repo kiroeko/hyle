@@ -11,11 +11,13 @@ if(_HYLE_COMPUTE_HAVE_VULKAN)
       --tensor-source "${CMAKE_CURRENT_SOURCE_DIR}/shaders"
       --output "${_shader_output}"
     DEPENDS build_shaders.py ${_shader_inputs} ${_tensor_shaders}
+      "${CMAKE_CURRENT_SOURCE_DIR}/../compute_shader_shared/nvfp4_f32.h"
+      "${CMAKE_CURRENT_SOURCE_DIR}/../compute_shader_shared/ct_packed.h"
     VERBATIM)
   hyle_add_module(compute_route_vulkan TRACE SOURCES
-    vulkan_device.cc vulkan_memory.cc vulkan_copy_recording.cc vulkan_copy_program.cc file_stream.cc vulkan_leased_invocation.cc vulkan_run.cc vulkan_transfer.cc vulkan_transfer_slot.cc vulkan_weights.cc
+    vulkan_device.cc vulkan_memory.cc vulkan_copy_recording.cc vulkan_copy_program.cc vulkan_leased_invocation.cc vulkan_run.cc vulkan_transfer.cc vulkan_transfer_slot.cc vulkan_weights.cc
     vulkan_pipeline.cc vulkan_operations.cc vulkan_tensor.cc vulkan_program.cc vulkan_recorder.cc vulkan_region.cc vulkan_scatter.cc vulkan_batch.cc vulkan_materialized_invocation.cc
-    vulkan_sampling.cc vulkan_normalization.cc vulkan_reduction.cc vulkan_elementwise.cc vulkan_iree.cc vulkan_mlx.cc vulkan_official.cc vulkan_iq1.cc
+    vulkan_sampling.cc vulkan_normalization.cc vulkan_reduction.cc vulkan_elementwise.cc vulkan_iree.cc vulkan_mlx.cc vulkan_official.cc vulkan_nvfp4.cc vulkan_blockwise_w4a8.cc vulkan_ct_packed.cc vulkan_static_fp8.cc vulkan_iq1.cc vulkan_row_cache.cc vulkan_row_cache_paged.cc vulkan_row_cache_indexer.cc
     "${_shader_output}/vulkan_shaders.cc")
   target_include_directories(hyle_compute_route_vulkan PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/../compute" "${CMAKE_CURRENT_BINARY_DIR}"

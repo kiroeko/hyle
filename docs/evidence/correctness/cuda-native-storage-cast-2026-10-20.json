@@ -1,0 +1,352 @@
+{
+  "date": "2026-10-20",
+  "status": "passed targeted Windows CPU/CUDA contract and capture regressions; broad goal remains active",
+  "changes": [
+    "CUDA storage Cast uses original PreparedOperation/shared Queue and one native tensor program; managed ATen CUDA Cast path removed",
+    "Tensor-only six-type dispatch replaces three-type alias; shared ElementType unchanged; only tensor_provider, row_cache_indexer_provider and tensor_kernel own this private seam",
+    "CUDA finite FP8 conversions use installed CUDA13.3 intrinsics with public NaN/Infinity/signed-zero fixups; no new public math operation",
+    "ATen CPU BF16 narrowing now preserves upper NaN payload/sign and sets quiet bit, matching existing SIMD/native CPU",
+    "Cast/Copy use 64-bit shape/index and bounded grid-stride execution with safe tail arithmetic; arithmetic retains the original INT32 qualified domain",
+    "Dense Cast/Copy omit per-element coordinate division and byte-wise source loads; real strides/broadcast use the same program indexing branch"
+  ],
+  "cpu": [
+    {
+      "name": "AtenCpuCast.AllTwentyFiveStoragePairsPreserveExactContractAcrossOddBytes",
+      "failures": 0,
+      "properties": {}
+    },
+    {
+      "name": "AtenCpuCast.BfloatNanPayloadMatchesNativeE5m2StorageContract",
+      "failures": 0,
+      "properties": {}
+    },
+    {
+      "name": "AtenCpuCast.ScalarRankEightEmptyAndZeroStrideHaveRealStorageResults",
+      "failures": 0,
+      "properties": {}
+    },
+    {
+      "name": "AtenCpuCast.PrivatePackingReplaysRejectsAliasAndClosesWithoutLeaks",
+      "failures": 0,
+      "properties": {}
+    },
+    {
+      "name": "AtenCpuCast.FiniteTailAndInfiniteValueGateUsesStableF32Activation",
+      "failures": 0,
+      "properties": {}
+    },
+    {
+      "name": "NativeCast.BfloatNanPayloadPreservesE5m2UpperPayloadAndQuietBit",
+      "failures": 0,
+      "properties": {}
+    },
+    {
+      "name": "NativeCast.ReplaysAllFourQualifiedStoragePairs",
+      "failures": 0,
+      "properties": {}
+    },
+    {
+      "name": "NativeCast.BooleanConversionsKeepSignedZerosTinyValuesAndByteStrides",
+      "failures": 0,
+      "properties": {}
+    },
+    {
+      "name": "CpuFp8ChannelTokenQdqGraph.RankThreeBfloatReferenceKeepsTypedRoundingAndLifetimes",
+      "failures": 0,
+      "properties": {
+        "actual_submissions": "4"
+      }
+    },
+    {
+      "name": "MatureCast.CoversCompleteInferenceStorageConversionGraph",
+      "failures": 0,
+      "properties": {}
+    },
+    {
+      "name": "MatureCast.ConvertsDenseFloat32ToFloat16Bits",
+      "failures": 0,
+      "properties": {}
+    },
+    {
+      "name": "MatureCast.MaterializesStridedFloat16ToFloat32",
+      "failures": 0,
+      "properties": {}
+    },
+    {
+      "name": "MatureCast.RejectsUnfrozenIntegerConversionSemantics",
+      "failures": 0,
+      "properties": {}
+    },
+    {
+      "name": "MatureCast.RejectsOverlappingInputAndOutputStorage",
+      "failures": 0,
+      "properties": {}
+    }
+  ],
+  "cuda": [
+    {
+      "name": "CudaFp8Cast.EveryFp8StorageCodeWidensAndSameTypeCopyKeepsBits",
+      "failures": 0,
+      "properties": {}
+    },
+    {
+      "name": "CudaFp8Cast.Float32MidpointsNeighborsOverflowInfinitiesAndNanBits",
+      "failures": 0,
+      "properties": {}
+    },
+    {
+      "name": "CudaFp8Cast.LowPrecisionPatternsAndCrossFp8UseThePublicStorageOracle",
+      "failures": 0,
+      "properties": {}
+    },
+    {
+      "name": "CudaFp8Cast.PublicClipGraphRebindsTwoOwnedSlotsWithRequiredCapture",
+      "failures": 0,
+      "properties": {}
+    },
+    {
+      "name": "CudaFp8Cast.NativeAdmissionRejectsOverlapButHandlesEmptyScalarAndWideShape",
+      "failures": 0,
+      "properties": {}
+    },
+    {
+      "name": "CudaFp8Cast.OddByteStridesAndBroadcastPreserveBitsAndOutputGuards",
+      "failures": 0,
+      "properties": {}
+    },
+    {
+      "name": "CudaFp8Cast.BoundedGridStrideWritesDenseAndBroadcastTails",
+      "failures": 0,
+      "properties": {}
+    },
+    {
+      "name": "CudaDenseIndexer.DyadicStagesAndMaskKeepThreeBfloatRoundsAndNonfiniteValues",
+      "failures": 0,
+      "properties": {}
+    },
+    {
+      "name": "CudaDenseIndexer.PaddedBatchKeysKeepIndependentSlotsAndRetainedResults",
+      "failures": 0,
+      "properties": {}
+    },
+    {
+      "name": "CudaFp8ChannelTokenQdqGraph.RankThreeBfloatReferenceKeepsTypedRoundingAndLifetimes",
+      "failures": 0,
+      "properties": {
+        "actual_submissions": "4"
+      }
+    },
+    {
+      "name": "CudaTensor.FloatStorageConversionsMatchIndependentRounding",
+      "failures": 0,
+      "properties": {}
+    },
+    {
+      "name": "CudaTensor.BoolConversionsPreserveNonzeroBitsAndNormalizeTruthValues",
+      "failures": 0,
+      "properties": {}
+    },
+    {
+      "name": "CudaTensor.SelectCopyFillPreserveBitsWithBroadcastMaskAndOddStride",
+      "failures": 0,
+      "properties": {}
+    },
+    {
+      "name": "CudaTensor.ViewUsesRequiredStorageOffsetAndCopyRejectsOverlap",
+      "failures": 0,
+      "properties": {}
+    }
+  ],
+  "cpu_red": [
+    {
+      "name": "AtenCpuCast.BfloatNanPayloadMatchesNativeE5m2StorageContract",
+      "failures": 1,
+      "properties": {}
+    },
+    {
+      "name": "NativeCast.BfloatNanPayloadPreservesE5m2UpperPayloadAndQuietBit",
+      "failures": 0,
+      "properties": {}
+    }
+  ],
+  "cuda_red": [
+    {
+      "name": "CudaFp8Cast.EveryFp8StorageCodeWidensAndSameTypeCopyKeepsBits",
+      "failures": 33,
+      "properties": {}
+    },
+    {
+      "name": "CudaFp8Cast.Float32MidpointsNeighborsOverflowInfinitiesAndNanBits",
+      "failures": 8,
+      "properties": {}
+    },
+    {
+      "name": "CudaFp8Cast.LowPrecisionPatternsAndCrossFp8UseThePublicStorageOracle",
+      "failures": 24,
+      "properties": {}
+    },
+    {
+      "name": "CudaFp8Cast.PublicClipGraphRebindsTwoOwnedSlotsWithRequiredCapture",
+      "failures": 2,
+      "properties": {}
+    },
+    {
+      "name": "CudaFp8Cast.NativeAdmissionRejectsOverlapButHandlesEmptyScalarAndWideShape",
+      "failures": 1,
+      "properties": {}
+    },
+    {
+      "name": "CudaFp8Cast.OddByteStridesAndBroadcastPreserveBitsAndOutputGuards",
+      "failures": 1,
+      "properties": {}
+    },
+    {
+      "name": "CudaFp8ChannelTokenQdqGraph.RankThreeBfloatReferenceKeepsTypedRoundingAndLifetimes",
+      "failures": 1,
+      "properties": {}
+    }
+  ],
+  "source": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_cuda\\tensor_provider.cc",
+      "bytes": 14549,
+      "sha256": "8c5a30d0e9a079354f961dc800c3b01ee85b440fd5725a016247ee43b4fb338e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_cuda\\tensor_kernel.h",
+      "bytes": 1560,
+      "sha256": "86db18ce1167690944bb6be7781373ed22f7f92350390bb9ba2733c573b1a2a5"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_cuda\\tensor_kernel.cu",
+      "bytes": 16243,
+      "sha256": "a8ec22c14b45199ad8dc73d2ff71e7e1224b070e04a7e5095d3be187d006956c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_cuda\\row_cache_indexer_provider.cc",
+      "bytes": 39210,
+      "sha256": "0121a5880d147c9273ecbcd3a39aec53084612e974016ad2f0bbe368c84e422b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_torch_cuda\\artifact_provider.cc",
+      "bytes": 29333,
+      "sha256": "30ea54716122a16c1e213a6c3570d7982ad1fd34b3c98fe1e46ec9dc7d334124"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_torch_shared\\storage_cast.h",
+      "bytes": 4506,
+      "sha256": "95290c3163180cd6cf04a8a6f6e9e0750ed74d058c8f311525214827ee0250c0"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\simd\\dtype.h",
+      "bytes": 12213,
+      "sha256": "ef351c21ddf58309cd1bca6c7558862eb10fd53934194065e3a9d7d62f590ae8"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_native\\aten_cast_reference.h",
+      "bytes": 3656,
+      "sha256": "0159068a76f28c2675bc7c865e038de7aa9b0d11f972d03806dbdf1800694495"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_native\\aten_cast_test.cc",
+      "bytes": 14148,
+      "sha256": "372b3ccc5b652ff8458b2caee9bb6b52c5c8f9557e52b7aaa9cf4b3707b25c85"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_cuda\\fp8_cast_test.cc",
+      "bytes": 21388,
+      "sha256": "b2d5818f22d3d9b7f38b2c153e89dd7530acba05891f56a4d44ff8c08517d677"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\fp8_channel_token_qdq_fixture.h",
+      "bytes": 14307,
+      "sha256": "b622bf772a9d9f481ee0e980b0af50054f18d1d344ecc5e02ef9f9abe23aaeba"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_cpu\\fp8_channel_token_qdq_test.cc",
+      "bytes": 1000,
+      "sha256": "025d31075038a3667160313e037e69833e066bd903f49a54aff0c24a9567675e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_cuda\\fp8_channel_token_qdq_test.cc",
+      "bytes": 1488,
+      "sha256": "2623206a6a3ac68b2bc264c3774579a4ea49d7f9ba60e19f5c677ed4b5bac28d"
+    }
+  ],
+  "numerical_contract": {
+    "rounding": "RNE; finite FP8 overflow saturates; true E5M2 infinities survive; source NaN sign survives",
+    "widening": "F32 widening preserves declared NaN payload including E5M2 signaling bits",
+    "narrowing": "BF16 preserves upper payload and quiets; F16/FP8 retain their original signed NaN mapping; same dtype raw Copy preserves all bits",
+    "boolean": "Only F32/F16/BF16 <-> Bool; signed zero false, every nonzero floating storage true, nonzero Bool bytes convert to 1"
+  },
+  "coverage": [
+    "All 256 FP8 codes widen/copy/cross-convert; all 65536 F16/BF16 input codes narrow to each FP8 format",
+    "F32 adjacent midpoint/tie/overflow/NaN cases; byte strides, broadcast, source immutability and output guards",
+    "Empty/scalar, out-of-place alias rejection; 2^33-element descriptor-only cold prepare without giant allocation",
+    "Real 2^24+257-element dense and broadcast casts exercise bounded-grid repeated work/tail with small prefix/middle/tail readback and guards",
+    "Public clip graph with two owned slots requires capture and retains old results",
+    "Fixed CT BF16 QDQ unchanged math/oracle; two slots and four submissions on each backend, final BF16 bits exact; whole CUDA path requires capture",
+    "Two row-cache tests exercise shared private tensor metadata including capture and independent slots"
+  ],
+  "proof_order": "Original seven updated CUDA regressions fail against the preserved old object closure. The identical red test objects pass before the final append-only grid-tail case. Final same-core run includes all14 cases.",
+  "current_core": "Reused latest custom_kernel17 and StateVersions slot-ownership objects; private tensor header owners all refreshed. Other harmless historic declaration/comment/explicit empty-Queue changes are recorded by qwen stable-bind assembly; not a full clean-tree rebuild.",
+  "actual_build": {
+    "cuda_root_host_CXX": 6,
+    "cuda_root_NVCC": 2,
+    "cuda_root_links": 5,
+    "cuda_root_test_processes": 5,
+    "SDK_builds": 0,
+    "detail": "Two red tests plus three product host owners, then one appended grid-tail test; two kernel builds (generic then dense). Red/green/dense/current-core/final each link/run once. CPU separate receipts below."
+  },
+  "cpu_receipt": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\bf16-nan-cast-contract\\summary.json",
+    "bytes": 6965,
+    "sha256": "1b98c0538c44e1ed3f692e699c5af8a913fc42f2204bd3b7ffd3e1d4c923dfc3"
+  },
+  "math_and_oracle_unchanged": true,
+  "sdk": [
+    {
+      "path": "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\include\\cuda_fp8.h",
+      "bytes": 19751,
+      "sha256": "e8dfbad48175435ed6c9ecec8c54aef76b87db38aeee5f69fe0ea16f8c0cc0c0"
+    },
+    {
+      "path": "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\include\\cuda_fp8.hpp",
+      "bytes": 104322,
+      "sha256": "e6412d0feeffd41bd1b7562904f1edc55ef398098d8ff81b1a9d6d95aaef767f"
+    }
+  ],
+  "vendor_api": "https://docs.nvidia.com/cuda/cuda-math-api/cuda_math_api/group__CUDA__MATH__FP8__MISC.html",
+  "performance": "No Cast throughput, fresh kernel trace, memory peak or whole-model gain is claimed. Independent Qwen windows: docs/evidence/performance/qwen-stable-bind-2026-10-20.json",
+  "not_verified": [
+    "Runtime payloads beyond2^32 elements; the2^33 test is cold preparation only",
+    "Other CUDA architectures/OS or Apple/Vulkan storage casts",
+    "Whole CT artifact loading, native FP8 Tensor Core GEMM or model quality",
+    "New fault/retirement permutations beyond existing related regressions"
+  ],
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\cuda-native-storage-cast-2026-10-20.zip",
+    "bytes": 977819,
+    "sha256": "fa8d81e8ecd50ddf32464bfb867543c7260706c445be24bef2814d76c85e3bc1"
+  },
+  "payloads": 190,
+  "manifest": "manifest.json",
+  "members": {
+    "cuda-native-storage-cast/final-validation.json": {
+      "bytes": 13123,
+      "sha256": "c8176c32b1167ba99abeb4aae4a5d74b77f1068a776b6d05a1dcad05329c42ad"
+    },
+    "cuda-native-storage-cast/final/tests.xml": {
+      "bytes": 4791,
+      "sha256": "46a50c0d24d6182b442792ed543741268dcea052d91186e0551b6d8a49f300ee"
+    },
+    "bf16-nan-cast-contract/summary.json": {
+      "bytes": 6965,
+      "sha256": "1b98c0538c44e1ed3f692e699c5af8a913fc42f2204bd3b7ffd3e1d4c923dfc3"
+    },
+    "bf16-nan-cast-contract/final/tests.xml": {
+      "bytes": 4684,
+      "sha256": "91c362ca570799e9d77f8841204514f811d564ac3f619c1cdd56f2263753c7d4"
+    }
+  }
+}

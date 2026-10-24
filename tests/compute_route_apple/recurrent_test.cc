@@ -306,6 +306,53 @@ TEST(AppleRecurrent, PerChannelKdaGateUsesOriginalMetalRegion) {
   check(result->get()->arrays(), fixture.oracle());
 }
 
+TEST(AppleRecurrent, CheckedNativeFailureAfterContCopyRetiresTheInvocation) {
+  auto context = a::Context::create();
+  ASSERT_TRUE(context);
+  std::array<float, 128> weights{};
+  std::array<float, 64> transposed{};
+  for (std::size_t i = 0; i < weights.size(); ++i)
+    weights[i] = float(int(i % 7) - 3) / 16;
+  for (std::size_t i = 0; i < transposed.size(); ++i)
+    transposed[i] = float(int(i % 11) - 5) / 32;
+  auto activation = mx::transpose(mx::array(transposed.data(), {1, 32, 2}),
+                                  {0, 2, 1});
+  activation.eval();
+  activation.wait();
+  ASSERT_FALSE(activation.flags().row_contiguous);
+  const mx::array bank(weights.data(), {2, 2, 32});
+  const std::array<std::int32_t, 2> bad_ids{0, 2}, good_ids{1, 0};
+  const std::array bad{bank, activation, mx::array(bad_ids.data(), {1, 2})};
+  auto program = context->prepare(c::model_ops::grouped_matmul(), bad);
+  ASSERT_TRUE(program) << program.error().message();
+  auto failed = program->create_invocation().value();
+  ASSERT_TRUE(failed.bind(bad).ok());
+  auto submitted = failed.submit();
+  ASSERT_TRUE(submitted);
+  auto result = submitted->wait();
+  ASSERT_FALSE(result);
+  EXPECT_TRUE(result.error().IsOutOfRange());
+  EXPECT_FALSE(failed.submit());
+  // A drained index failure retires this slot, not the Context. The source
+  // remains strided and alive through the accepted CONT prefix above.
+  auto next = program->create_invocation().value();
+  ASSERT_TRUE(next.bind(std::array{bank, activation,
+      mx::array(good_ids.data(), {1, 2})}).ok());
+  auto work = next.submit().value();
+  auto ready = work.wait();
+  ASSERT_TRUE(ready) << ready.error().message();
+  const auto &actual = ready->get()->arrays()[0];
+  ASSERT_EQ(actual.size(), 4U);
+  for (std::size_t selected = 0; selected < 2; ++selected)
+    for (std::size_t row = 0; row < 2; ++row) {
+      double expected = 0;
+      for (std::size_t k = 0; k < 32; ++k)
+        expected += double(weights[(good_ids[selected] * 2 + row) * 32 + k]) *
+                    transposed[k * 2 + selected];
+      EXPECT_NEAR(actual.data<float>()[selected * 2 + row], expected, 2e-5);
+    }
+}
+
 TEST(AppleRecurrent, MatureCausalConvUsesMlxRegion) {
   const std::array<float, 10> samples{1, 10, 2, 20, 3, 30, 4, 40, 5, 50};
   const std::array<float, 6> weights{1, 2, 3, -1, 0, 1};

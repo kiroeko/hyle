@@ -54,6 +54,12 @@ hyle_add_correctness_journey(model_file_lifecycle
   SOURCES model_file_lifecycle_journey_test.cc
   PRODUCTS io mem)
 
+# Consumer-private policy over complete Compute/Graph snapshots; host-only,
+# independent of the CUDA text consumer and its model files.
+hyle_add_correctness_journey(qwen_prefix_cache
+  SOURCES ../tools/qwen_prefix_cache_test.cc
+  PRODUCTS compute_batch graph mem)
+
 hyle_add_correctness_journey(service_connection
   SOURCES service_connection_journey_test.cc
   PRODUCTS io)

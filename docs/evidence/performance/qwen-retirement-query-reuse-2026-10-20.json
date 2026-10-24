@@ -1,0 +1,255 @@
+{
+  "date": "2026-10-20",
+  "status": "adopted_local_positive_retirement_proof_reuse",
+  "scope": "GGML CUDA observe_native_retirement implementation only, plus adjacent permanent regression/old inaccurate assertion correction. No publiccore/header/ABI/Qwenmain/math/precision changes.",
+  "source_freeze": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-retirement-query-reuse\\final-source-freeze.json",
+    "bytes": 4018,
+    "sha256": "be9ccaea5148a947a47f9d953e21ad861cad4f6b626a7fbf419933fff874bcba"
+  },
+  "source_review": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-retirement-query-reuse\\source-review.json",
+    "bytes": 3717,
+    "sha256": "d4a6914108db0edfb0165bb46a8ae1ea3b11a6a8707b1a029a83992a8590edc6"
+  },
+  "parent_independent_review": "Root read source.diff and accepted original-episode historical proof within one retainedslotchain; no stable improvement claim.",
+  "product": {
+    "before": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-retirement-query-reuse\\before\\src\\compute_provider_ggml_cuda\\ggml_cuda_provider.cc",
+      "bytes": 72593,
+      "sha256": "3100b6d7fe7ac4f86d1aea45508134af5d9ebeefa8d321ccb864bb6965dde09f"
+    },
+    "current": {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_ggml_cuda\\ggml_cuda_provider.cc",
+      "bytes": 73533,
+      "sha256": "4e228a12652452600efd406b8b6cca38fc2deb4863f55379ae852b4bc230bef3"
+    },
+    "snapshot": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-retirement-query-reuse\\source\\src\\compute_provider_ggml_cuda\\ggml_cuda_provider.cc",
+      "bytes": 73533,
+      "sha256": "4e228a12652452600efd406b8b6cca38fc2deb4863f55379ae852b4bc230bef3"
+    },
+    "diff": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-retirement-query-reuse\\ggml_cuda_provider.diff",
+      "bytes": 3076,
+      "sha256": "9510beb95af2dc400bcf6e757d118f79fa76df1ad36c5c1eede0ce11f27deafb"
+    }
+  },
+  "test": {
+    "before": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-retirement-query-reuse\\before\\tests\\compute_provider_ggml_cuda\\provider_test.cc",
+      "bytes": 8474,
+      "sha256": "d7fb1ea0bde46271e191e73d8790491287d9c1095b38eb96de4f4593f93fdf9f"
+    },
+    "current": {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_ggml_cuda\\provider_test.cc",
+      "bytes": 12863,
+      "sha256": "62126c56b36c104e8a64feb9ee2c9c501a1f6c0cd8b1a95f3b5103b8d739b1c8"
+    },
+    "snapshot": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-retirement-query-reuse\\source\\tests\\compute_provider_ggml_cuda\\provider_test.cc",
+      "bytes": 12863,
+      "sha256": "62126c56b36c104e8a64feb9ee2c9c501a1f6c0cd8b1a95f3b5103b8d739b1c8"
+    },
+    "diff": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-retirement-query-reuse\\provider_test.diff",
+      "bytes": 5413,
+      "sha256": "9a925210651cfee59d077e193461b76d4e362ed042d01626d3407fa7781e91a3"
+    }
+  },
+  "implementation": {
+    "local_keys": [
+      "CUcontext",
+      "actual cudaStream_t"
+    ],
+    "proof": "Only positive cudaSuccess+CaptureStatusNone for this originalCompletion chain. Not stream future-idleness.",
+    "preserved": [
+      "Per-node ScopedPrimaryContext",
+      "Per-node original recordingguard release",
+      "Per-node nativeaux query/drain/error",
+      "Firsterror and retiredAND",
+      "Unknowncallback invocation",
+      "Negative/Active/error remain conservativepending"
+    ],
+    "invalidates": [
+      "Newcallback/poll starts with emptyproof",
+      "context or stream change",
+      "No original recordingguard/stream",
+      "Incomplete or error",
+      "Nativeaux required",
+      "Unknowncallback boundary"
+    ],
+    "allocations_added": 0,
+    "persistent_cache_added": false
+  },
+  "correctness": {
+    "passed": true,
+    "tests": 6,
+    "failures": 0,
+    "skipped": 0,
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-retirement-query-reuse\\final-test-build\\retirement-tests.exe",
+      "bytes": 120950272,
+      "sha256": "0fa8d33ce2a4343296d8136a42d787bca27807dcaef2ef15fc7576762dcb56fa"
+    },
+    "link_plan": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-retirement-query-reuse\\final-test-build\\link-plan.json",
+      "bytes": 69011,
+      "sha256": "ff5563800e1bf5345245452fa0d316a9369f7ad7c69d836aaeb88f89756f1cba"
+    },
+    "xml": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-retirement-query-reuse\\validation-final\\tests.xml",
+      "bytes": 2178,
+      "sha256": "b53810b7a69f41a777b6c78f73a37de69ec735d77a84941097f2254c1157c58e"
+    },
+    "product": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-retirement-query-reuse\\checks\\provider.obj",
+      "bytes": 2250776,
+      "sha256": "3919b04db3ee98d638e04e624a37959553eea47680c1b3b22fe48c419a90a8eb"
+    },
+    "source_freeze": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-retirement-query-reuse\\final-source-freeze.json",
+      "bytes": 4018,
+      "sha256": "be9ccaea5148a947a47f9d953e21ad861cad4f6b626a7fbf419933fff874bcba"
+    }
+  },
+  "counts": {
+    "CXX": 7,
+    "CXX_exit0": 7,
+    "NVCC": 0,
+    "SDK_rebuilds": 0,
+    "link_attempts": 6,
+    "links_exit0": 5,
+    "links_failed": 1,
+    "correctness_processes": 3,
+    "correctness_exit0": 2,
+    "initial_correctness": "4tests/3passed/1oldassertionfailed/0skip",
+    "intermediate_correctness": "6passed/0skip",
+    "final_correctness": "6passed/0skip",
+    "model_processes": 2,
+    "model_exit0": 2,
+    "throughput_windows": 0,
+    "profiler_processes": 0,
+    "external_memory_sampling": 0
+  },
+  "count_receipts": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-retirement-query-reuse\\process-counts.json",
+    "bytes": 6142,
+    "sha256": "813d3f2c6a6868e0868437a0a0618b170141e52efa13b752ab1f606d9306f425"
+  },
+  "diagnostic": {
+    "summary": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-retirement-query-reuse\\diagnostic\\summary.json",
+      "bytes": 26826,
+      "sha256": "1fead64548c9fd72b8438275ae05bc049bbdc1d70ed649d3187ef6ef8b561fca"
+    },
+    "comparison": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-retirement-query-reuse\\diagnostic\\comparison.json",
+      "bytes": 4833,
+      "sha256": "ba44a19469a90b70248f80d5146801ab23054f78bfa1047f9eccfccdffd73f37"
+    },
+    "actual_chains": [
+      {
+        "phase": "prefill",
+        "nodes": 351,
+        "before_queries": 351,
+        "current_queries": 1,
+        "before_guards": 351,
+        "current_guards": 351
+      },
+      {
+        "phase": "decode1",
+        "nodes": 369,
+        "before_queries": 369,
+        "current_queries": 1,
+        "before_guards": 369,
+        "current_guards": 369
+      },
+      {
+        "phase": "decode2",
+        "nodes": 369,
+        "before_queries": 369,
+        "current_queries": 1,
+        "before_guards": 369,
+        "current_guards": 369
+      }
+    ],
+    "first2_ms": {
+      "before": {
+        "cold_total_seconds": 8.9923,
+        "layout_seconds": 0.0294,
+        "batch_seconds": 1.5372000000000001,
+        "replay_seconds": 7.4247,
+        "report_seconds": 0.001
+      },
+      "current": {
+        "cold_total_seconds": 8.447099999999999,
+        "layout_seconds": 0.032499999999999994,
+        "batch_seconds": 1.4983,
+        "replay_seconds": 6.9155,
+        "report_seconds": 0.0007999999999999999
+      }
+    },
+    "shared_inputs": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-retirement-query-reuse\\diagnostic\\shared-inputs.json",
+      "bytes": 1349,
+      "sha256": "aec07336b11e2b0d9541c4d7ec68bf3687310e6ba3cebc01548c4aeffaa251dc"
+    },
+    "exact_vectors": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-retirement-query-reuse\\diagnostic\\vector-hash-proof.json",
+      "bytes": 9122,
+      "sha256": "314072a353c59b979df70281758b1be0a3e0a1ba0e3ea62de648b76582cfd35b"
+    },
+    "timing_claim": "Exploratory oneprocess-perarm: first2cold8.9923->8.4471ms, replay7.4247->6.9155ms. Demonstrates eliminated duplicatequeries; not a stable throughput or fullstep speedup claim."
+  },
+  "failures": {
+    "failures": [
+      {
+        "kind": "link",
+        "path": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-retirement-query-reuse\\checks\\link.result.json",
+          "bytes": 23862,
+          "sha256": "3b63c454d581886d118396cd1bc02203d6143c94b57905651d29341a3b8a948b"
+        },
+        "reason": "historical cached native_retirement testobj expected oldvoid-return defer_native_retirement privateABI; recompiled only that existingtest owner"
+      },
+      {
+        "kind": "existing_test_assertion",
+        "path": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-retirement-query-reuse\\validation\\tests.xml",
+          "bytes": 2043,
+          "sha256": "29d4051d6af55c335d3fe9617c9aacd8dff371252cddc90789e56344c36021e7"
+        },
+        "reason": "OldCallerCapture fixture expectedUnimplemented. Beforeandcurrent submitalready return preciseFailedPrecondition(originalrecordingsequence). Correctedfixturewithoutweakeningreject."
+      },
+      {
+        "kind": "postprocess_only",
+        "reason": "Firstsuccessful beforemodel process actually had351/369/369callbacknodes, not inventory388. Initialparser assertion failed and then a wrongresultkey exit_code failed; retainedsame rawbeforeprocess was re-read, neverrerun."
+      },
+      {
+        "kind": "pre_edit_script_only",
+        "reason": "Initialapply script assumedCRLF for providerLF and assertedbeforeediting; correctedsourceEOL without productbuild/run."
+      }
+    ]
+  },
+  "limits": [
+    "The exact mid-observer race where a newcapture starts after the first positiveNone is justified from originalCompletion/guard ownership and CUDA captureepisode semantics, not deterministically injected by a producthook.",
+    "Existing NativeCaptureFailureRetiresOnlyItsInvocation uses Linuxstatic --wrap=cudaStreamBeginCapture and is not compiled in thisWindows recipe; no pass/skip claim for it.",
+    "Actual runtime platform only Windows/RTX4070/SM89/CUDA13.3; no Linux/Mac/HIP validation.",
+    "Single instrumented process per arm. Local counters+one fprintf per multi-nodeobserver included in original preparation boundary. Not a throughput estimate or statistical causal timing proof.",
+    "Parent pureCPU work may not have been paused during before; no concurrentGPU model run known. Current was explicitly coordinated quiet. Prefill batch3.7421ms vs .8232ms is unrelated noise/outlier, excluded from optimization benefit.",
+    "Exact6prefix vectors each arm match retained canonical BF16hidden/F32logits; independent quality not assessed.",
+    "No samewindow peer test, profiler, memory sampler or additional model process.",
+    "Initial source-freeze.json records not-built status at its original freeze; final-source-freeze.json and this final-validation are authoritative for completedvalidation.",
+    "No furtherGPUprocess or workloadwindow planned in thisbatch. All GPU work ended andGPU released toVulkanagent."
+  ],
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\qwen-retirement-query-reuse-2026-10-20.zip",
+    "bytes": 463448,
+    "sha256": "6fd1eb0377b7047a4e9e7ce2f83a6ad127e13d0bd6937c09b32879fa647c18a7",
+    "payloads": 160,
+    "CRC_checked": true,
+    "all_payload_SHA256_checked": true,
+    "excluded": "Executables,objects,libs,SDK,fullmaps,duplicate rawvectors and broadhistorical ownerinventory."
+  }
+}

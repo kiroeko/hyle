@@ -1,0 +1,120 @@
+{
+  "status": "Original Q30 finite CPU journey passed; CUDA identity run pending",
+  "tests": 1,
+  "failures": 0,
+  "skips": 0,
+  "actual_graph_submissions": 87,
+  "source": {
+    "original_moe_provider_router": "ggml-cpu",
+    "original_moe_provider_expert_gate": "hyle-native",
+    "original_moe_provider_shared_gate": "hyle-native",
+    "original_moe_provider_expert_up": "hyle-native",
+    "original_moe_provider_shared_up": "hyle-native",
+    "original_moe_provider_expert_down": "hyle-native",
+    "original_moe_provider_shared_down": "hyle-native",
+    "shared_lm_head_provider": "ggml-cpu",
+    "original_attention_provider_query_a": "hyle-native",
+    "original_attention_provider_query_b": "hyle-native",
+    "original_attention_provider_kv_a": "hyle-native",
+    "original_attention_provider_output": "hyle-native",
+    "original_attention_provider_key_bmm": "ggml-cpu",
+    "original_attention_provider_value_bmm": "ggml-cpu",
+    "target_verifier_head_provider": "ggml-cpu",
+    "actual_submissions": "87",
+    "target_submissions": "13",
+    "target43_submissions": "13",
+    "target_verifier_submissions": "3",
+    "target_full_vocabulary": "154880",
+    "target_first_full_reference_values": "309760",
+    "natural_k1_trials": "1",
+    "natural_k1_proposal": "58014",
+    "natural_k1_accepted_drafts": "0",
+    "controlled_matching_trials": "1",
+    "controlled_rejection_trials": "1",
+    "accepted_zero_draft_checkpoints": "2",
+    "accepted_one_draft_checkpoints": "1",
+    "full_original_nextn_roles": "1762",
+    "full_original_nextn_source_bytes": "10030953088",
+    "shared_vocabulary_bank_capacity_bytes": "2537562112",
+    "actual_pending_embedding_feedback_checks": "12",
+    "state_budget_bytes": "305016576",
+    "state_pool_backing_bound": "296474368",
+    "state_initial_backing_bound": "8525824",
+    "peak_state_backing_bytes": "256130756",
+    "component_schema": "34 resources plus Epoch metadata:17 original NextN/indexer,13 independent original target43 MLA/indexer,4 original target44 KDA/conv/finalnormtap/cursor; same StateDraft/expected-base StateHead",
+    "pending_policy": "NaturalK1 compares actual original NextN proposal with target_id0 from full-V R2 head. accept0 keeps after-current first; accept1 keeps after-proposal second; nextpending directly retains target_ids[accepted_drafts] output lease. Matching/rejection controls are separate explicit policy fixtures,not natural acceptance.",
+    "original_target44_roles": "1760",
+    "original_target44_source_bytes": "4143179608",
+    "original_target44_observed_calls": "13",
+    "original_target44_expert_domain": "288",
+    "original_target44_resident_experts": "8",
+    "original_target43_roles": "1762",
+    "original_target43_source_bytes": "4016880472",
+    "original_target43_observed_calls": "13",
+    "original_target43_expert_domain": "288",
+    "original_target43_resident_experts": "8",
+    "scope": "Actual immutable converted-artifact target43 HC/MLA/indexer, target44 HC/KDA/independent final norm, NextN45 and same original full154880 vocabulary use one34-resource plus Epoch StateHead and the existing K1 controller. Original E4 projections use the artifact MultiplyReciprocal/floor contract; target MoE uses original E2M1/UE8M0 group32 with explicit public MXFP4 A-QDQ/BF16-Y boundaries. Experts are authenticated only for actual selected global IDs. Logical role counts/source bytes describe the complete header schema,not whole-bank acquisition. Layer42 inputs and finite initial histories remain fixtures; controlled prefixes are policy checks,not natural model quality or TPS.",
+    "target_moe_storage": "MXFP4 E2M1+UE8M0 G32; actual A group32 QDQ; BF16 down before routeweight",
+    "artifact_repository": "amd/GLM-5.3-Flash-Quark-MXFP4",
+    "artifact_revision": "b5688f25491202978c19c4d036eef579f61bbe07",
+    "nextn_static_manifest_sha256": "72d1c2e8e3f6d0c877b017681b0186939edcd7418ffb559a7bd31a26ffb2d485",
+    "target43_static_manifest_sha256": "a25d372b9779b7188a030d9687f3b3c1c980084f80e9ae7e5ae30c3aa4d9e94b",
+    "target44_static_manifest_sha256": "740215d20c0018feeee5269cbca756f945a268960bafe6f476e6f66f59dc649e"
+  },
+  "driver_fetch_batches": 16,
+  "job_cleanup": {
+    "remaining_descendants": 0,
+    "retired_descendants": []
+  },
+  "records": {
+    "summary.json": {
+      "path": ".scratch/glm-quark-selected-20261024/Q30/graph-integration-preparation/checks2-cpu/summary.json",
+      "bytes": 4262,
+      "sha256": "cc930de51a2d6c7c30dcd8672c84015b25a85939a7d5f5b90a1bda6327a49eeb"
+    },
+    "results.xml": {
+      "path": ".scratch/glm-quark-selected-20261024/Q30/graph-integration-preparation/checks2-cpu/results.xml",
+      "bytes": 6110,
+      "sha256": "673a1d81d61f3678238a5effd6c8da4fe2b6630835ade2ddfee3f8a462960fb0"
+    },
+    "frontier.driver.json": {
+      "path": ".scratch/glm-quark-selected-20261024/Q30/graph-integration-preparation/checks2-cpu/frontier.driver.json",
+      "bytes": 17837,
+      "sha256": "f0ce6e9e0ef6f1127e74007600b83ad7c897ccad3b5ab4d619a33c77a6002790"
+    },
+    "run/stdout.log": {
+      "path": ".scratch/glm-quark-selected-20261024/Q30/graph-integration-preparation/checks2-cpu/run/stdout.log",
+      "bytes": 208778,
+      "sha256": "030fdf1f19e3f37ff3dff408efe7dd4a9d94b3944fb7bee24de8eb00e904995b"
+    },
+    "run/stderr.log": {
+      "path": ".scratch/glm-quark-selected-20261024/Q30/graph-integration-preparation/checks2-cpu/run/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "run/process.json": {
+      "path": ".scratch/glm-quark-selected-20261024/Q30/graph-integration-preparation/checks2-cpu/run/process.json",
+      "bytes": 1162,
+      "sha256": "18b146a240f6e7a51f3421c2795a74057c8888eff59bda28c0cd0211f09de39c"
+    }
+  },
+  "runtime": {
+    "path": ".scratch/glm-quark-selected-20261024/Q30/graph-integration-preparation/tests-link2/runtime-environment.json",
+    "bytes": 8683,
+    "sha256": "736419366b51a2171a01e49af5284fbe8a8b38c05a38e82080c0123893e5f3d4"
+  },
+  "compiled_sources": {
+    "path": ".scratch/glm-quark-selected-20261024/Q30/graph-integration-preparation/compiled-source-snapshot/manifest.json",
+    "bytes": 430974,
+    "sha256": "1fe47fb05312df13093915aeb252608fc6d56b256df4ba425e2671718a1e15c9"
+  },
+  "native_family_correction": {
+    "path": "docs/evidence/correctness/mtp-cpu-native-family-2026-10-24.json",
+    "bytes": 10043,
+    "sha256": "401d2c95f3f4e1dd7694442489b01503946b14ca9709aa35b468d2a64008aaa4"
+  },
+  "original_identity_complete": false,
+  "whole_model_quality": false,
+  "throughput_evidence": false,
+  "physical_memory_evidence": false
+}

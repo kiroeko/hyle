@@ -63,15 +63,6 @@ EnqueueResult CapturedCommands::enqueue(QueueSequence &sequence) noexcept {
       extension_, sequence, &launch_captured, &episode);
 }
 
-EnqueueResult CapturedCommands::enqueue_borrowed(Queue &queue) noexcept {
-  if (!valid())
-    return EnqueueResult::rejected(
-        Status::FailedPrecondition("captured compute commands are invalid"));
-  CaptureLaunch episode{table_, state_};
-  return BackendExtensionAccess::enqueue_borrowed(
-      extension_, queue, &launch_captured, &episode);
-}
-
 Result<BackendExtensionRef>
 CommandCaptureAccess::query(const Queue &queue) noexcept {
   return BackendExtensionAccess::query(queue, kCommandCaptureExtensionId);
@@ -79,6 +70,8 @@ CommandCaptureAccess::query(const Queue &queue) noexcept {
 
 Status CommandCaptureAccess::begin(const BackendExtensionRef &extension,
                                    QueueSequence &sequence) noexcept {
+  if (sequence.recording_)
+    return Status::FailedPrecondition("compute sequence is already recording");
   EnqueueResult result = BackendExtensionAccess::enqueue_admitted(
       extension, sequence,
       +[](void *backend_context, const void *interface_value,
@@ -96,13 +89,18 @@ Status CommandCaptureAccess::begin(const BackendExtensionRef &extension,
                            : EnqueueResult::rejected(std::move(status));
       },
       nullptr);
+  if (result.status.ok())
+    sequence.recording_ = true;
   return std::move(result.status);
 }
 
 Result<CapturedCommands>
 CommandCaptureAccess::end(const BackendExtensionRef &extension,
                           QueueSequence &sequence,
-                          mem::AllocatorRef allocator) noexcept {
+                          mem::AllocatorRef allocator,
+                          CaptureRebuildStorage rebuild) noexcept {
+  if (!sequence.recording_)
+    return std::unexpected(Status::FailedPrecondition("compute sequence is not recording"));
   if (!allocator.valid()) {
     return std::unexpected(
         Status::InvalidArgument("command capture allocator is invalid"));
@@ -111,7 +109,9 @@ CommandCaptureAccess::end(const BackendExtensionRef &extension,
     mem::AllocatorRef allocator{};
     const CommandCaptureVTable *table = nullptr;
     void *state = nullptr;
-  } episode{allocator};
+    bool called = false;
+    CapturedCommands *rebuild = nullptr;
+  } episode{allocator, nullptr, nullptr, false, &rebuild.storage_};
   EnqueueResult result = BackendExtensionAccess::enqueue_admitted(
       extension, sequence,
       +[](void *backend_context, const void *interface_value,
@@ -122,12 +122,19 @@ CommandCaptureAccess::end(const BackendExtensionRef &extension,
           return EnqueueResult::rejected(
               Status::Internal("command capture end callback is missing"));
         }
+        call.called = true;
+        void *storage = call.rebuild->table_ == call.table
+            ? call.rebuild->state_ : nullptr;
         Status status = call.table->end(backend_context, backend_queue,
-                                        call.allocator, &call.state);
+                                        call.allocator, storage, &call.state);
         return status.ok() ? EnqueueResult::no_op()
                            : EnqueueResult::rejected(std::move(status));
       },
       &episode);
+  // The backend end contract terminates recording even when finalization fails.
+  // A rejected foreign extension never called it and cannot clear this state.
+  if (episode.called)
+    sequence.recording_ = false;
   if (!result.status.ok()) {
     if (episode.table != nullptr && episode.table->destroy != nullptr &&
         episode.state != nullptr) {
@@ -142,23 +149,38 @@ CommandCaptureAccess::end(const BackendExtensionRef &extension,
   return CapturedCommands(extension, episode.table, episode.state, allocator);
 }
 
+CaptureRebuildStorage CommandCaptureAccess::recycle_after_retirement(
+    CapturedCommands commands) noexcept {
+  CaptureRebuildStorage result;
+  if (commands.valid() && commands.table_->recycle_after_retirement != nullptr &&
+      commands.table_->recycle_after_retirement(commands.state_))
+    result.storage_ = std::move(commands);
+  return result;
+}
+
 Status CommandCaptureAccess::abort(const BackendExtensionRef &extension,
                                    QueueSequence &sequence) noexcept {
+  if (!sequence.recording_)
+    return Status::FailedPrecondition("compute sequence is not recording");
+  bool called = false;
   EnqueueResult result = BackendExtensionAccess::enqueue_admitted(
       extension, sequence,
       +[](void *backend_context, const void *interface_value,
-          void *backend_queue, void *) noexcept -> EnqueueResult {
+          void *backend_queue, void *opaque) noexcept -> EnqueueResult {
         const auto *table =
             static_cast<const CommandCaptureVTable *>(interface_value);
         if (table == nullptr || table->abort == nullptr) {
           return EnqueueResult::rejected(
               Status::Internal("command capture abort callback is missing"));
         }
+        *static_cast<bool *>(opaque) = true;
         Status status = table->abort(backend_context, backend_queue);
         return status.ok() ? EnqueueResult::no_op()
                            : EnqueueResult::rejected(std::move(status));
       },
-      nullptr);
+      &called);
+  if (called)
+    sequence.recording_ = false;
   return std::move(result.status);
 }
 

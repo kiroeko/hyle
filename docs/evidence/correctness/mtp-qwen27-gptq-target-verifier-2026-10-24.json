@@ -1,0 +1,355 @@
+{
+  "created_at": "2026-10-23T20:45:34.647416+00:00",
+  "identity": {
+    "id": "Q10",
+    "repository": "Vishva007/Qwen3.8-27B-W4A16-AutoRound-GPTQ",
+    "revision": "1b9d56b428e9f841d7ad566f87660b5f47553c97",
+    "variant": "GPTQ-v1-int4-group64"
+  },
+  "scope": "Original target63/global norm, BF16 NextN64 and own untied original full vocabulary; same K1/12-resource StateHead and actual accepted-prefix repair/pending continuation.",
+  "original_roles": 50,
+  "original_bytes": 6135883776,
+  "executions": [
+    {
+      "backend": "cpu",
+      "case": "QwenMtpStateConsumer.CpuQ10OriginalGptqTargetAndBFloatNextNFullVocabularyVerifierPublishesRepairedPrefix",
+      "tests": 1,
+      "failures": 0,
+      "skips": 0,
+      "graphs": 23,
+      "properties": {
+        "target_layer": "63",
+        "target_group_size": "64",
+        "original_manifest_sha256": "c797e4690e580788ad5d676599b78e23f156a157fa00e42f94721384d995ec12",
+        "original_acquisition_sha256": "cc295f9f3fb7fc08037c4740954bb06f7556d9c17453b56ba1a91c832bcd9fea",
+        "target_projection_contract": "original GPTQ-v1 Q/Z/F16 SF/g_idx; F16 scale product then BF16 W, BF16 A/F32 dot/BF16 return; seven packed contractions required",
+        "vocabulary_binding": "two original untied BF16 banks; actual embedding for Gather and independent original head for draft/target fullV logits",
+        "artifact_repository": "Vishva007/Qwen3.8-27B-W4A16-AutoRound-GPTQ",
+        "artifact_revision": "1b9d56b428e9f841d7ad566f87660b5f47553c97",
+        "artifact_variant": "GPTQ-v1-int4-group64",
+        "original_role_count": "50",
+        "original_role_bytes": "6135883776",
+        "full_head_provider": "ggml-cpu",
+        "full_head_encoded_bytes": "2542796800",
+        "target_packed_contractions": "7",
+        "target_packed_recipe_nodes": "4",
+        "target_dense_weight_materializations": "0",
+        "actual_submissions": "23",
+        "target_submissions": "10",
+        "nextn_submissions": "10",
+        "target_verifier_submissions": "3",
+        "accepted_target_conditioned_repairs": "1",
+        "actual_accepted_kv_repair_submissions": "1",
+        "accepted_zero_drafts": "2",
+        "accepted_one_draft": "1",
+        "actual_pending_embedding_feedback_checks": "10",
+        "whole_state_publications": "6",
+        "cancelled_unpublished_drafts": "3",
+        "rejected_stale_publishes": "3",
+        "actual_target_reseed_checks": "7",
+        "original_native_reference_submissions": "0",
+        "natural_k1_trials": "1",
+        "controlled_matching_trials": "1",
+        "controlled_rejection_trials": "1",
+        "natural_accepted_drafts": "0",
+        "natural_proposal": "16",
+        "complete_target_draft_resources": "12",
+        "original_target_roles": "33",
+        "original_target_source_bytes": "200891392",
+        "first_full_target_projection_values": "59392",
+        "first_full_target_verifier_values": "496640",
+        "target_verifier_full_vocabulary": "248320",
+        "target_verifier_matmuls": "1",
+        "target_verifier_rows": "2",
+        "target_verifier_provider": "ggml-cpu",
+        "first_full_nextn_head_values": "248320",
+        "state_budget_bytes": "28248320",
+        "peak_state_backing_bytes": "28191748",
+        "scope": "original GPTQ-v1 target layer and complete BF16 NextN with explicitly supplied original vocabulary roles; upstream target input/history fixture,not a full trained trunk; original F16 scale product then BF16 W and BF16 A/F32 dot/BF16 result; all seven public recipes contract without whole-W materialization; draft/target use their explicitly supplied original vocabulary contracts; targettap follows globalnorm and shifts to next-token NextN input; one M2 verifier,natural K1 and separate actualTop1/Top2 controls; accept0 keeps aftercurrent,accept1 repairs recursive draft KV with actualtargettap before12member sameHead publication; no full-model quality,natural acceptance-rate or TPS claim"
+      },
+      "summary": {
+        "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q10/native-integration/checks1/summary.json",
+        "bytes": 10485,
+        "sha256": "3735cef8ec8299f9cbc0ac8711788f7af3089ba19e090a26c39c9d550a08dada"
+      },
+      "xml": {
+        "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q10/native-integration/checks1/results.xml",
+        "bytes": 4993,
+        "sha256": "f9e58d6fdbca171fd0fb192942603fbb657dc26b82c4ed1c8281ac6a618c1039"
+      },
+      "process": {
+        "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q10/native-integration/checks1/run/process.json",
+        "bytes": 839,
+        "sha256": "f497f30652eaf109867b8e39e38744cb9374905cb3f382d9e8da5320c6d08d1e"
+      },
+      "cleanup": {
+        "process_terminal_exit": 0,
+        "timed_out": false,
+        "driver": null,
+        "external_supplier": false,
+        "resource_peak_measurement": false
+      }
+    },
+    {
+      "backend": "cuda",
+      "case": "QwenMtpStateConsumer.CudaQ10OriginalGptqTargetAndBFloatNextNFullVocabularyVerifierPublishesRepairedPrefix",
+      "tests": 1,
+      "failures": 0,
+      "skips": 0,
+      "graphs": 23,
+      "properties": {
+        "target_layer": "63",
+        "target_group_size": "64",
+        "original_manifest_sha256": "c797e4690e580788ad5d676599b78e23f156a157fa00e42f94721384d995ec12",
+        "original_acquisition_sha256": "cc295f9f3fb7fc08037c4740954bb06f7556d9c17453b56ba1a91c832bcd9fea",
+        "target_projection_contract": "original GPTQ-v1 Q/Z/F16 SF/g_idx; F16 scale product then BF16 W, BF16 A/F32 dot/BF16 return; seven packed contractions required",
+        "vocabulary_binding": "two original untied BF16 banks; actual embedding for Gather and independent original head for draft/target fullV logits",
+        "artifact_repository": "Vishva007/Qwen3.8-27B-W4A16-AutoRound-GPTQ",
+        "artifact_revision": "1b9d56b428e9f841d7ad566f87660b5f47553c97",
+        "artifact_variant": "GPTQ-v1-int4-group64",
+        "original_role_count": "50",
+        "original_role_bytes": "6135883776",
+        "full_head_provider": "cublasLt",
+        "full_head_encoded_bytes": "2542796800",
+        "target_packed_contractions": "7",
+        "target_packed_recipe_nodes": "4",
+        "target_dense_weight_materializations": "0",
+        "actual_submissions": "23",
+        "target_submissions": "10",
+        "nextn_submissions": "10",
+        "target_verifier_submissions": "3",
+        "accepted_target_conditioned_repairs": "1",
+        "actual_accepted_kv_repair_submissions": "1",
+        "accepted_zero_drafts": "2",
+        "accepted_one_draft": "1",
+        "actual_pending_embedding_feedback_checks": "10",
+        "whole_state_publications": "6",
+        "cancelled_unpublished_drafts": "3",
+        "rejected_stale_publishes": "3",
+        "actual_target_reseed_checks": "7",
+        "original_native_reference_submissions": "0",
+        "natural_k1_trials": "1",
+        "controlled_matching_trials": "1",
+        "controlled_rejection_trials": "1",
+        "natural_accepted_drafts": "0",
+        "natural_proposal": "16",
+        "complete_target_draft_resources": "12",
+        "original_target_roles": "33",
+        "original_target_source_bytes": "200891392",
+        "first_full_target_projection_values": "59392",
+        "first_full_target_verifier_values": "496640",
+        "target_verifier_full_vocabulary": "248320",
+        "target_verifier_matmuls": "1",
+        "target_verifier_rows": "2",
+        "target_verifier_provider": "cublasLt",
+        "first_full_nextn_head_values": "248320",
+        "state_budget_bytes": "28248320",
+        "peak_state_backing_bytes": "28191748",
+        "scope": "original GPTQ-v1 target layer and complete BF16 NextN with explicitly supplied original vocabulary roles; upstream target input/history fixture,not a full trained trunk; original F16 scale product then BF16 W and BF16 A/F32 dot/BF16 result; all seven public recipes contract without whole-W materialization; draft/target use their explicitly supplied original vocabulary contracts; targettap follows globalnorm and shifts to next-token NextN input; one M2 verifier,natural K1 and separate actualTop1/Top2 controls; accept0 keeps aftercurrent,accept1 repairs recursive draft KV with actualtargettap before12member sameHead publication; no full-model quality,natural acceptance-rate or TPS claim"
+      },
+      "summary": {
+        "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q10/native-integration/checks2/summary.json",
+        "bytes": 10487,
+        "sha256": "1db4bf641f02a5256ecabcb94ff5965725537fc20670d9cac0d37ac14028af70"
+      },
+      "xml": {
+        "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q10/native-integration/checks2/results.xml",
+        "bytes": 4990,
+        "sha256": "785290cf921bcc28d14f7a746bc902c1be8dc4242d847139dd2919fd3c533875"
+      },
+      "process": {
+        "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q10/native-integration/checks2/run/process.json",
+        "bytes": 839,
+        "sha256": "95cfff3dd29aaf13df5dc88d11603d8edfc380aba0dfc2a41291c676ae530c9b"
+      },
+      "cleanup": {
+        "process_terminal_exit": 0,
+        "timed_out": false,
+        "driver": null,
+        "external_supplier": false,
+        "resource_peak_measurement": false
+      }
+    }
+  ],
+  "cases": 2,
+  "graphs": 46,
+  "failures": 0,
+  "skips": 0,
+  "target_precision": "Original GPTQ-v1 I32 Q/Z/g_idx and F16 scales; zero nibble+1, F16 scale product then BF16 W; BF16 A/F32 accumulation/BF16 output.",
+  "target_packed_contractions_each": 7,
+  "target_packed_recipe_nodes": 4,
+  "dense_weight_materializations": 0,
+  "source_plan": {
+    "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q10/header2-identity/roles-plan.complete.json",
+    "bytes": 37497,
+    "sha256": "2923ff4d43d328f0b344edffeed291208875ca78133ce42aba2d0b13245c73fc"
+  },
+  "acquisition": {
+    "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q10/original-roles/acquisition.json",
+    "bytes": 535278,
+    "sha256": "cc295f9f3fb7fc08037c4740954bb06f7556d9c17453b56ba1a91c832bcd9fea"
+  },
+  "manifest": {
+    "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q10/original-roles/manifest.json",
+    "bytes": 26521,
+    "sha256": "c797e4690e580788ad5d676599b78e23f156a157fa00e42f94721384d995ec12"
+  },
+  "actual_pins": {
+    "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q10/generated/qwen_q10_original_pins.json",
+    "bytes": 1077,
+    "sha256": "1bb40f19b9a9925d984c6e372b174fe3a211f034d9e6e54b02d8051b2b14cd61"
+  },
+  "source_partition": {
+    "nextn": {
+      "roles": 15,
+      "bytes": 849398784
+    },
+    "vocabulary": {
+      "roles": 2,
+      "bytes": 5085593600
+    },
+    "target": {
+      "roles": 32,
+      "bytes": 200881152
+    },
+    "target_norm": {
+      "roles": 1,
+      "bytes": 10240
+    }
+  },
+  "original_vocabulary": {
+    "embedding": "model.language_model.embed_tokens.weight",
+    "head": "lm_head.weight",
+    "unique_banks": 2
+  },
+  "original_weight_bodies_rehashed": false,
+  "build": {
+    "consumer_translation_units": 1,
+    "SDK_builds": 0,
+    "NVCC_builds": 0,
+    "product_recompiles": 0,
+    "compiled": {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q10/native-integration/compile1/qwen-state/identity.json",
+      "bytes": 115970,
+      "sha256": "2e058f08136f99bcf70711a3598a164495b673bc2e508bbd654f87254d88d6f5"
+    },
+    "linked": {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q10/native-integration/tests-link1/link-plan.json",
+      "bytes": 100655,
+      "sha256": "0167a1d97a9732aaa927733838ed2a93f1a2500c86e979e074e859e15ae4693f"
+    },
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-bfloat-selected-20261023\\derived\\Q10\\native-integration\\tests-link1\\qwen-derived-checks.exe",
+      "bytes": 141306368,
+      "sha256": "c4d26aaad06d7296db3abcfb73bce2deff870f7e0d9081ee1ebaefb119958410"
+    },
+    "current_helper": {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/native_build_current.py",
+      "bytes": 12787,
+      "sha256": "fc0bea30eabdf82286447fe29549bcf430204958c886007fb0963237ce764eb8"
+    },
+    "retained_host_records": 131,
+    "native_inputs": {
+      "path": ".scratch/glm-gguf-selected-20261023/B10/native-integration/native-inputs.json",
+      "bytes": 11796,
+      "sha256": "95c04ed7499348ba46922e0c8061734c3c22ef537ed4a0513ae2558f20b46ca0"
+    },
+    "source_family": "Current ABI18 Graph/default-provider closure and correct mixed-owning CPU worker; no old13-host lifecycle"
+  },
+  "transport_metadata": [
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q10/prefetch1/selected50-net/summary.json",
+      "bytes": 978,
+      "sha256": "e435b25109a29729977a9847a7e1df2d1ea0e0f3fbef2bd7b4461fdd19fd91d2"
+    }
+  ],
+  "transport_note": "Q10 original50 logical roles retain6,135,883,776B. Actual successful role HTTP is3,593,086,976B plus2,542,796,800B of authenticated local head content. HTTP Xet ETag and true original LFS SHA are separate. The seed whole-file reconstruction/provenance is archived; this publisher performs no body rehash, acquisition or SDK copy.",
+  "limits": [
+    "Upstream layer62 inputs and finite initial histories remain fixtures; not full trained trunk/model task quality.",
+    "Natural K1 trial and controlled match/rejection trials are separate; not an acceptance-rate estimate.",
+    "No new TPS, physical memory peak, all-device, Linux or Apple conclusion."
+  ],
+  "archive": {
+    "path": "docs/evidence/correctness/mtp-qwen27-gptq-target-verifier-2026-10-24.zip",
+    "bytes": 770576,
+    "sha256": "a1fba860810cc109c1f558e11f43e0440b0b6a4f786caf834d7850c36231bf56"
+  },
+  "archived_files": 147,
+  "whole_original_model": false,
+  "throughput_evidence": false,
+  "memory_evidence": false,
+  "acquisition_accounting": {
+    "logical_role_count": 50,
+    "logical_role_payload_bytes": 6135883776,
+    "successful_request_body_bytes": 3593086976,
+    "authenticated_reused_body_bytes": 2542796800,
+    "reused_role": "lm_head.weight",
+    "head_HTTP_requests": 0,
+    "content_source": "authenticated-content-reuse-v1",
+    "original_whole_file_SHA256": "54d83c1d36631de231876217a8e0c2483eccee8746369a482b79442bdfc5d958",
+    "HTTP_ETag_only": "4a8c494ff93bdcba95af387374af1c82bb96538ae699bc428a152ae160e654fc",
+    "reuse_proof": {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q10/content-reuse/verified-head.json",
+      "bytes": 2512,
+      "sha256": "a43fafc87917e7de51e23090289409d86bbb4cca4c3d4d06175038df8fdd5519"
+    },
+    "witnesses": [
+      {
+        "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q09/roles-plan.json",
+        "bytes": 37084,
+        "sha256": "de024cbff3441dcf45babf8e6a0c088edfbf88a6d63fa6700a61f2fe61651db3"
+      },
+      {
+        "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q09/source/model-00001-of-00005.header.json",
+        "bytes": 120,
+        "sha256": "1c0b3397aa02f43ff6571f52e9845e1df5d9a742d8ce37d54c1d08a9eaa962f5"
+      },
+      {
+        "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q10/content-reuse/q09-api-model.json",
+        "bytes": 37034,
+        "sha256": "a951b2e2dc4895afbf709dfed9684095acdd4fafb26cd8821e49875d3085e63e"
+      },
+      {
+        "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q10/content-reuse/q09-source-receipt.json",
+        "bytes": 704654,
+        "sha256": "60d72be81d2598cf5f1f660627d457f303b803269ff5f1acbcfd4941b8f4d7e4"
+      },
+      {
+        "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q10/content-reuse/verified-head.json",
+        "bytes": 2512,
+        "sha256": "a43fafc87917e7de51e23090289409d86bbb4cca4c3d4d06175038df8fdd5519"
+      },
+      {
+        "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q10/content-reuse-proposal/ast-transform-facts.json",
+        "bytes": 2197,
+        "sha256": "6e184be656f9d900ecec8aaf46a2abf2202c23b6e46294eb03eb78bee6e13a40"
+      },
+      {
+        "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q10/content-reuse-proposal/cached-metadata/q09-api-model.json",
+        "bytes": 37034,
+        "sha256": "a951b2e2dc4895afbf709dfed9684095acdd4fafb26cd8821e49875d3085e63e"
+      },
+      {
+        "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q10/content_reuse.py",
+        "bytes": 20507,
+        "sha256": "425d39beddeb1bd62209063f90727dc4c954ce0e6a849cb395b7794536ae0f46"
+      },
+      {
+        "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q10/head-lfs-identity/acquisition.json",
+        "bytes": 3789,
+        "sha256": "c609fb3c053428b1a72394b329c50d03ef1b35fd0280a15953fefb5bb37af121"
+      },
+      {
+        "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q10/head-lfs-identity/q10-head.pointer.txt",
+        "bytes": 135,
+        "sha256": "da2cf7c3df4d1333b1f2d80a68569d284cd4b1efb9663fdff38912bf1f217d4e"
+      },
+      {
+        "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q10/source/q27/header.json",
+        "bytes": 120,
+        "sha256": "1c0b3397aa02f43ff6571f52e9845e1df5d9a742d8ce37d54c1d08a9eaa962f5"
+      }
+    ],
+    "note": "Successful role response bytes exclude reused content and metadata requests; failed/retried network traffic remains in the existing budget/transport records. Publisher does not stream any weight body."
+  }
+}

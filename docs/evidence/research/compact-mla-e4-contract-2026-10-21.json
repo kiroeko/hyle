@@ -1,0 +1,2399 @@
+{
+  "observed_on": "2026-10-21",
+  "status": "primary_source_contract_review_and_isolated_SM89_static_layout_proof_not_product_execution",
+  "conclusions": [
+    "ModelOpt fixed recipe4956213 quantizes expandedK/V at attention_interface after originalcache.update; constantamax448 gives unit FP8QDQ. It does not establish compressedCKV/KPE cache bytes. Artifact29 exactproducer a4bc45b30 source unavailable; no equivalence asserted.",
+    "UniformcompactE4 runtime need independently established from pinned official SGLang/vLLM implementations. RawTRTLLM MLA has one512B CKV row, or576B CKV512+KPE64 row, V is sharedfirst512prefix. One shared latent scale applies to both QK andPV; SGLang rawwrite unitcast is not proof of arbitrary nonunit equivalence.",
+    "Catalog29 pinnedREADME explicitly selects fp8_e4m3+TRTLLM prefill/decode. Catalog28 does not fix cache dtype/backend; do not claim its default deployment is E4. Runtime snapshotcommits do not identify publisher unpinnedcontainer.",
+    "ScaledDSA is another representation: E4CKV512+fourF32group128scales+BF16KPE64=656B, or528B NoPE. Neither uniformE4 nor current Hyle584B rowcache describes it.",
+    "Current public MLA couples Q/cache/Y dtype and only plainF16/BF16 qualification. Natural next change separates query/output dtype from one shared CacheStorage, retaining existing CKV physical row/Vprefix and original execution core.",
+    "PinnedFlashInfer E4 defaultKV32 one-stage exceeds SM89 dynamicsharedblock99KiB. Isolated candidate keepsQ64/256threads/scheduler, selectsE4KV16 and removes512B deadnonshardedm/dscratch. Actual NVCC static assertions prove Rope64 sizeof101376B, NoPE91296B, align16, alloffsets; originalplainBF16 byte layouts andPlanInfo unchanged.",
+    "E4 candidate supports BF16Q/Y only. ScaleF32 multiply precedes final BF16RNE; isolated helper SASS is FMUL withoutFTZ thenF2FP.BF16.F32. OriginalBF16scale-first path gives an independently recorded1ULP discrepancy."
+  ],
+  "next_action": "Productize homogeneous compact CacheStorage in existing MLA schema/planner and original four backend readers; use BF16Q/E4KV fixedsharedscale initialCUDA domain, preserving originalplain routes. Apply verifiedvendorcandidate through normalmanifest, instantiate realkernel and run bounded numerical/geometry/lifetime cases. No new executor or model whitelist.",
+  "source_reviews": {
+    "producer": {
+      "status": "bounded_primary_source_producer_and_runtime_contract_review_complete_not_executed",
+      "date": "2026-10-21",
+      "product_edits": 0,
+      "builds": 0,
+      "GPU_runs": 0,
+      "model_weight_payload_bytes": 0,
+      "artifacts": [
+        {
+          "catalog": 28,
+          "architecture": [
+            "GlmMoeDsaForCausalLM"
+          ],
+          "config": {
+            "path": ".scratch\\architecture-refactor-2026-10-18\\compact-mla-e4-2026-10-21\\cached-28-config.json",
+            "bytes": 20580,
+            "sha256": "e4a1f239a569ba627c214ee0ea14e90e9077089c394c171bd98b6cca0b11eaad"
+          },
+          "geometry": {
+            "kv_lora_rank": 512,
+            "num_attention_heads": 64,
+            "num_key_value_heads": 64,
+            "qk_head_dim": 256,
+            "qk_nope_head_dim": 192,
+            "qk_rope_head_dim": 64,
+            "v_head_dim": 256
+          },
+          "transformers_version": "5.14.1"
+        },
+        {
+          "catalog": 29,
+          "architecture": [
+            "Glm5NextForConditionalGeneration"
+          ],
+          "config": {
+            "path": ".scratch\\architecture-refactor-2026-10-18\\fixed-role-binding-2026-10-21\\fp8-kv\\cached-metadata\\29\\config.json",
+            "bytes": 16770,
+            "sha256": "41db2811023b40ba4c8f8bbba88bce7dff377af51ecd18b32469a2a07064ebaf"
+          },
+          "geometry": {
+            "kv_lora_rank": 512,
+            "num_attention_heads": 64,
+            "num_key_value_heads": 64,
+            "qk_head_dim": 256,
+            "qk_nope_head_dim": 256,
+            "qk_rope_head_dim": 0,
+            "v_head_dim": 256
+          },
+          "transformers_version": "5.16.1"
+        }
+      ],
+      "producer_identity": {
+        "catalog28": "Metadata version0.0.0 does not identify exact ModelOpt producer.",
+        "catalog29": "0.47.0.dev393+ga4bc45b30.d20260828",
+        "official_lookup": "GitHub commit/a4bc45b30 returned422 and fixed raw tensor_quantizer.py404; source was not retrieved, so recipe4956213 is not asserted equal to artifact producer."
+      },
+      "recipe": {
+        "commit": "4956213d670c382385d9bc43e17379b9fc064e50",
+        "url": "https://github.com/NVIDIA/Model-Optimizer/blob/4956213d670c382385d9bc43e17379b9fc064e50/modelopt_recipes/models/zai-org/GLM-5.3-Flash/ptq/nvfp4_experts_dense_mlp-kv_fp8_cast.yaml",
+        "unit": {
+          "path": ".scratch\\architecture-refactor-2026-10-18\\fixed-role-binding-2026-10-21\\fp8-kv\\primary\\modelopt\\modelopt_recipes\\configs\\ptq\\units\\kv_fp8_cast.yaml",
+          "bytes": 988,
+          "sha256": "04af42ca2e3f1590c36213a3f1c236544a7649e0debc1c0ebdf4b3257bdc65b8"
+        },
+        "fp8_axis": "null/per-tensor",
+        "constant_amax": 448.0,
+        "reference_QDQ_scale": 1.0,
+        "placement": "The generic HF _QuantAttention quantizes the expanded key_states/value_states received by the attention interface; it does not quantize kv_a_layernorm compressed latent directly.",
+        "cache_storage": "The HF reference constructs expanded key/value then invokes past_key_values.update before the quantized attention interface; fake QDQ at interface is not itself physical compact-cache encoding.",
+        "evidence": [
+          {
+            "source": {
+              "path": ".scratch\\architecture-refactor-2026-10-18\\compact-mla-e4-2026-10-21\\recipe\\huggingface.py",
+              "bytes": 85644,
+              "sha256": "dda97161da2cad8b4c0939c7fc0223e70327824b6ecd36c52c9be50bef6c57db"
+            },
+            "matching_lines": [
+              231
+            ],
+            "term": "key_states = self.k_bmm_quantizer"
+          },
+          {
+            "source": {
+              "path": ".scratch\\architecture-refactor-2026-10-18\\compact-mla-e4-2026-10-21\\recipe\\tensor_quantizer.py",
+              "bytes": 75586,
+              "sha256": "22f26ddf34cc6f716a9e7c42f6894cd066ec88f24ecb53fcbb922fdb49a025d7"
+            },
+            "matching_lines": [
+              738,
+              1233
+            ],
+            "term": "if self._use_constant_amax:"
+          },
+          {
+            "source": {
+              "path": ".scratch\\architecture-refactor-2026-10-18\\compact-mla-e4-2026-10-21\\recipe\\quant_utils.py",
+              "bytes": 77662,
+              "sha256": "9045bccd1ad27bd7c757bb1000ce0ddc05fe4fc1ff140a42f171f5dbc8009b07"
+            },
+            "matching_lines": [
+              980
+            ],
+            "term": "\"k_bmm_quantizer._amax\""
+          },
+          {
+            "source": {
+              "path": ".scratch\\architecture-refactor-2026-10-18\\compact-mla-e4-2026-10-21\\recipe\\unified_export_hf.py",
+              "bytes": 75001,
+              "sha256": "48fd69e34d9a1c3b1b21eb470084b423013cbf043369d03235fe7e4a5db31aae"
+            },
+            "matching_lines": [
+              1015
+            ],
+            "term": "kv_cache_max_bound = 448"
+          }
+        ],
+        "scale_export": "Exporter maps existing k_bmm_quantizer._amax/v_bmm_quantizer._amax to k_proj.k_scale/v_proj.v_scale and divides by448. The use_constant_amax option does not itself create an _amax buffer. Sampled missing scale keys do not establish every artifact shard value or runtime fallback."
+      },
+      "fixed_HF_reference": [
+        {
+          "catalog": 28,
+          "version": "v5.14.1",
+          "commit": "a08ace4bbd97e721c98751deec37d87b026acadc",
+          "source": {
+            "path": ".scratch\\architecture-refactor-2026-10-18\\compact-mla-e4-2026-10-21\\transformers\\modeling_glm_moe_dsa.py",
+            "bytes": 37352,
+            "sha256": "adb8317a21716b01273046e46c807f14f0dbaf035af59b60d52bd6bc3007cf72"
+          },
+          "flow": "kv_a output split512/64 -> normalized latent -> kv_b expands per-head K_nope192 and V256; RoPE64 -> concatenate expanded K256 -> past cache -> attention"
+        },
+        {
+          "catalog": 29,
+          "version": "v5.16.1",
+          "commit": "93c8b7b485963a10800c91f55304db6be211c2bd",
+          "source": {
+            "path": ".scratch\\architecture-refactor-2026-10-18\\compact-mla-e4-2026-10-21\\transformers\\modeling_glm5_next.py",
+            "bytes": 102403,
+            "sha256": "2092bbb4efa2a8087b74f4a4da37635c503fe1df9ae73f1e6e8342af8b4b8e8b"
+          },
+          "flow": "kv_a split512/0 -> normalized latent -> expand_kv -> per-head K256/V256 -> past cache -> attention; NoPE sparse-MLA layers coexist with KDA linear-attention layers."
+        }
+      ],
+      "conclusions": [
+        "ModelOpt recipe4956213 quantizes expanded K/V at the HF attention interface; it does not define compressed physical CKV/KPE storage.",
+        "The current official raw TRTLLM serving path independently establishes uniform E4 compact rows:576 values for latent512+RoPE64, and512 values for GLM-5.3-Flash NoPE.",
+        "Other scaled-DSA paths preserve RoPE in BF16 and embed token/group scales; --kv-cache-dtype fp8 by itself does not identify one universal physical layout.",
+        "Reference unit-scale448-amax recipe evidence is not an assertion about unreachable artifact29 producer source, exact payload values, or equivalence to arbitrary runtime scalar settings.",
+        "No DeepSeek-V4.1 source has been used to infer GLM contracts."
+      ],
+      "true_requirements_and_unknowns": [
+        "An independent real library capability is justified by fixed current runtime sources: query F16/BF16 with compact uniform E4 CKV512 plus either KPE64 or no KPE, one shared cache scalar/interpretation, true physical row pitch and original page/update/result lifetimes.",
+        "This runtime demand is separate from ModelOpt expanded-K/V fake-QDQ. It must not be advertised as a4bc producer-mandated compressed-cache format or a complete artifact28/29 binding.",
+        "The mixed scaled-DSA format is a distinct producer/reader contract: token/group128 F32 scales and BF16 KPE; its real GLM row is656 bytes (NoPE528), not640 and not the existing448-based compressed row codec.",
+        "Ordinary paged E4 support alone does not establish compact MLA aliasing, physical row storage or support for NoPE512.",
+        "No scalar tensor payload values, whole model import, quality or performance have been measured. Publisher Docker tag build commits and exact artifact29 a4bc source remain unresolved.",
+        "Fused/native FP8 query arithmetic and scale factoring used by runtime kernels do not prove bitwise equivalence to a bounded Hyle F32 reference tree for every nonunit scale or extreme input."
+      ],
+      "downloads": [
+        {
+          "url": "https://raw.githubusercontent.com/NVIDIA/Model-Optimizer/a4bc45b30/modelopt/torch/quantization/nn/modules/tensor_quantizer.py",
+          "path": "producer/tensor_quantizer.py",
+          "cap": 524288,
+          "started": 1792522601.815336,
+          "model_payload_bytes": 0,
+          "error": "HTTP Error 404: Not Found",
+          "seconds": 0.6078908443450928
+        },
+        {
+          "url": "https://api.github.com/repos/NVIDIA/Model-Optimizer/commits/a4bc45b30",
+          "path": "producer-commit.json",
+          "cap": 262144,
+          "started": 1792522588.877345,
+          "model_payload_bytes": 0,
+          "error": "HTTP Error 422: Unprocessable Entity",
+          "seconds": 0.6688508987426758
+        },
+        {
+          "url": "https://raw.githubusercontent.com/NVIDIA/Model-Optimizer/4956213d670c382385d9bc43e17379b9fc064e50/modelopt/torch/quantization/algorithms.py",
+          "path": "recipe/algorithms.py",
+          "cap": 262144,
+          "started": 1792522781.7879846,
+          "model_payload_bytes": 0,
+          "status": 200,
+          "headers": {
+            "Content-Length": "93347",
+            "Content-Type": "text/plain; charset=utf-8",
+            "ETag": "\"4f767793ac389159a6efb9424da16deb39538e7b5438264c85fa874565af1f9f\""
+          },
+          "bytes": 93347,
+          "sha256": "a9bf15f5a3fa64a6e9729fb32d22f580edde607fedac6abf2bb3ed6abac87b18",
+          "seconds": 0.9464890956878662
+        },
+        {
+          "url": "https://raw.githubusercontent.com/NVIDIA/Model-Optimizer/4956213d670c382385d9bc43e17379b9fc064e50/modelopt/torch/quantization/plugins/attention.py",
+          "path": "recipe/attention.py",
+          "cap": 65536,
+          "started": 1792522621.3515112,
+          "model_payload_bytes": 0,
+          "status": 200,
+          "headers": {
+            "Content-Length": "14494",
+            "Content-Type": "text/plain; charset=utf-8",
+            "ETag": "\"ae9be47e663406bb087bd2189337487cf6dd60b399e07aaf914784a4758376cf\""
+          },
+          "bytes": 14494,
+          "sha256": "a2e084bb44c55cbb75acaff63716be3ab4f1ac5484e97d211ac01513b3d208e7",
+          "seconds": 0.6281418800354004
+        },
+        {
+          "url": "https://raw.githubusercontent.com/NVIDIA/Model-Optimizer/4956213d670c382385d9bc43e17379b9fc064e50/modelopt_recipes/configs/numerics/fp8.yaml",
+          "path": "recipe/fp8.yaml",
+          "cap": 16384,
+          "started": 1792522686.9122753,
+          "model_payload_bytes": 0,
+          "status": 200,
+          "headers": {
+            "Content-Length": "825",
+            "Content-Type": "text/plain; charset=utf-8",
+            "ETag": "\"05ce270e81dc8afbfd6b75b12e183648225910bc405b7566f6b5fa28a6bf0bfc\""
+          },
+          "bytes": 825,
+          "sha256": "191c4a1a037d0619eb566013c2b0de402475a9ace0166ea342d80da7140bfc69",
+          "seconds": 0.6124529838562012
+        },
+        {
+          "url": "https://raw.githubusercontent.com/NVIDIA/Model-Optimizer/4956213d670c382385d9bc43e17379b9fc064e50/modelopt/torch/quantization/plugins/huggingface.py",
+          "path": "recipe/huggingface.py",
+          "cap": 131072,
+          "started": 1792522639.01058,
+          "model_payload_bytes": 0,
+          "status": 200,
+          "headers": {
+            "Content-Length": "85644",
+            "Content-Type": "text/plain; charset=utf-8",
+            "ETag": "\"33af447f601d86fe32d94db4addf40710cc9790b2ea6c708def0256a8ce3b061\""
+          },
+          "bytes": 85644,
+          "sha256": "dda97161da2cad8b4c0939c7fc0223e70327824b6ecd36c52c9be50bef6c57db",
+          "seconds": 0.9613087177276611
+        },
+        {
+          "url": "https://api.github.com/repos/NVIDIA/Model-Optimizer/contents/modelopt/torch/quantization/plugins?ref=4956213d670c382385d9bc43e17379b9fc064e50",
+          "path": "recipe/plugins-directory.json",
+          "cap": 131072,
+          "started": 1792522601.829338,
+          "model_payload_bytes": 0,
+          "status": 200,
+          "headers": {
+            "Content-Length": "18794",
+            "Content-Type": "application/json; charset=utf-8",
+            "ETag": "\"d954ab5ac0ad40c293e71bf842d8562e1fe65f66\"",
+            "Last-Modified": "Tue, 20 Oct 2026 18:06:26 GMT"
+          },
+          "bytes": 18794,
+          "sha256": "5375c3a1de2d7af3a4782b063222249655f12d488891a148be0eee909537a69e",
+          "seconds": 0.6870605945587158
+        },
+        {
+          "url": "https://raw.githubusercontent.com/NVIDIA/Model-Optimizer/4956213d670c382385d9bc43e17379b9fc064e50/modelopt/torch/export/quant_utils.py",
+          "path": "recipe/quant_utils.py",
+          "cap": 262144,
+          "started": 1792522686.9122753,
+          "model_payload_bytes": 0,
+          "status": 200,
+          "headers": {
+            "Content-Length": "77662",
+            "Content-Type": "text/plain; charset=utf-8",
+            "ETag": "\"abddd52eb5bc9586e8e3767fe8efb7f123d07d580d1ddeab03a59384e67e7951\""
+          },
+          "bytes": 77662,
+          "sha256": "9045bccd1ad27bd7c757bb1000ce0ddc05fe4fc1ff140a42f171f5dbc8009b07",
+          "seconds": 0.9650595188140869
+        },
+        {
+          "url": "https://raw.githubusercontent.com/NVIDIA/Model-Optimizer/4956213d670c382385d9bc43e17379b9fc064e50/modelopt/torch/quantization/nn/modules/tensor_quantizer.py",
+          "path": "recipe/tensor_quantizer.py",
+          "cap": 524288,
+          "started": 1792522601.8173358,
+          "model_payload_bytes": 0,
+          "status": 200,
+          "headers": {
+            "Content-Length": "75586",
+            "Content-Type": "text/plain; charset=utf-8",
+            "ETag": "\"24c378206b6fac9f0c13e1157f0701ebe48fd2d477b9bb0f5683f8d1b29b57f1\""
+          },
+          "bytes": 75586,
+          "sha256": "22f26ddf34cc6f716a9e7c42f6894cd066ec88f24ecb53fcbb922fdb49a025d7",
+          "seconds": 0.9361112117767334
+        },
+        {
+          "url": "https://raw.githubusercontent.com/NVIDIA/Model-Optimizer/4956213d670c382385d9bc43e17379b9fc064e50/modelopt/torch/export/unified_export_hf.py",
+          "path": "recipe/unified_export_hf.py",
+          "cap": 196608,
+          "started": 1792522666.0792384,
+          "model_payload_bytes": 0,
+          "status": 200,
+          "headers": {
+            "Content-Length": "75001",
+            "Content-Type": "text/plain; charset=utf-8",
+            "ETag": "\"63cfc5483c48055918757cca4e65dc260be15ac0b684cbdd29a46e045f4373d9\""
+          },
+          "bytes": 75001,
+          "sha256": "48fd69e34d9a1c3b1b21eb470084b423013cbf043369d03235fe7e4a5db31aae",
+          "seconds": 1.1312460899353027
+        },
+        {
+          "url": "https://raw.githubusercontent.com/sgl-project/sglang/82ac83a8d0ab50ea7c9fe8e5b5934c2fa5a224bf/python/sglang/kernels/ops/attention/utils.py",
+          "path": "runtime/sglang/attention_utils.py",
+          "cap": 65536,
+          "started": 1792523019.5603335,
+          "model_payload_bytes": 0,
+          "status": 200,
+          "headers": {
+            "Content-Length": "6978",
+            "Content-Type": "text/plain; charset=utf-8",
+            "ETag": "\"18af00911b1134824b4a0926e642562ed542c82c0f583891eb1677d00a3663f2\""
+          },
+          "bytes": 6978,
+          "sha256": "bc083986e0d75eb2ff97054d8153b06fa5c39ee6280fd8bf22b6b255a936325b",
+          "seconds": 0.7564740180969238
+        },
+        {
+          "url": "https://raw.githubusercontent.com/sgl-project/sglang/82ac83a8d0ab50ea7c9fe8e5b5934c2fa5a224bf/python/sglang/kernels/ops/quantization/dsa_quant_k_cache.py",
+          "path": "runtime/sglang/dsa_quant_k_cache.py",
+          "cap": 65536,
+          "started": 1792522865.6783938,
+          "model_payload_bytes": 0,
+          "status": 200,
+          "headers": {
+            "Content-Length": "10525",
+            "Content-Type": "text/plain; charset=utf-8",
+            "ETag": "\"0ff3096eddbb8e936058e82b2a76f68e1a71ead5cc34e2a5745ad55920015534\""
+          },
+          "bytes": 10525,
+          "sha256": "ccac241747729255164ec635a31f99c1fa937f72f2c07ead0d43d0367c0a3e77",
+          "seconds": 0.7798359394073486
+        },
+        {
+          "url": "https://api.github.com/repos/sgl-project/sglang/contents/python/sglang/srt/model_executor?ref=82ac83a8d0ab50ea7c9fe8e5b5934c2fa5a224bf",
+          "path": "runtime/sglang/executor-directory.json",
+          "cap": 65536,
+          "started": 1792522865.6783938,
+          "model_payload_bytes": 0,
+          "status": 200,
+          "headers": {
+            "Content-Length": "22999",
+            "Content-Type": "application/json; charset=utf-8",
+            "ETag": "\"3154c3b7def7b5a7330720a3a0c08082eaa11385\"",
+            "Last-Modified": "Tue, 20 Oct 2026 18:49:12 GMT"
+          },
+          "bytes": 22999,
+          "sha256": "636ee08c82aec90fe96d335d624c756d7c816086fb4cc45e8077d66307ea2403",
+          "seconds": 0.9124226570129395
+        },
+        {
+          "url": "https://raw.githubusercontent.com/sgl-project/sglang/82ac83a8d0ab50ea7c9fe8e5b5934c2fa5a224bf/python/sglang/srt/models/glm5_next.py",
+          "path": "runtime/sglang/glm5_next.py",
+          "cap": 196608,
+          "started": 1792522822.4812121,
+          "model_payload_bytes": 0,
+          "status": 200,
+          "headers": {
+            "Content-Length": "75918",
+            "Content-Type": "text/plain; charset=utf-8",
+            "ETag": "\"6fb863bc01184d90e3be69164eb5fd841875495448bbcfadd9558cf4dd8be346\""
+          },
+          "bytes": 75918,
+          "sha256": "53a144246428cddfa564d51a7741c42b7370d527a19895e4878f11ec31066ef4",
+          "seconds": 1.008509635925293
+        },
+        {
+          "url": "https://raw.githubusercontent.com/sgl-project/sglang/82ac83a8d0ab50ea7c9fe8e5b5934c2fa5a224bf/python/sglang/srt/models/glm_moe_dsa.py",
+          "path": "runtime/sglang/glm_moe_dsa.py",
+          "cap": 131072,
+          "started": 1792522952.240932,
+          "model_payload_bytes": 0,
+          "error": "HTTP Error 404: Not Found",
+          "seconds": 0.6525123119354248
+        },
+        {
+          "url": "https://raw.githubusercontent.com/sgl-project/sglang/82ac83a8d0ab50ea7c9fe8e5b5934c2fa5a224bf/python/sglang/srt/mem_cache/kv_cache_configurator.py",
+          "path": "runtime/sglang/kv_cache_configurator.py",
+          "cap": 196608,
+          "started": 1792522926.4191985,
+          "model_payload_bytes": 0,
+          "status": 200,
+          "headers": {
+            "Content-Length": "146972",
+            "Content-Type": "text/plain; charset=utf-8",
+            "ETag": "\"f130a92f6807afdd6e13bf1281eb72b11735f5e41500e776059dd0c222473fc4\""
+          },
+          "bytes": 146972,
+          "sha256": "6d26861dc762f507014628ba8a98448435a9325239a9e91fa669a7af1670024e",
+          "seconds": 1.0400433540344238
+        },
+        {
+          "url": "https://raw.githubusercontent.com/sgl-project/sglang/82ac83a8d0ab50ea7c9fe8e5b5934c2fa5a224bf/python/sglang/srt/mem_cache/memory_pool.py",
+          "path": "runtime/sglang/memory_pool.py",
+          "cap": 262144,
+          "started": 1792522822.4670377,
+          "model_payload_bytes": 0,
+          "status": 200,
+          "headers": {
+            "Content-Length": "259001",
+            "Content-Type": "text/plain; charset=utf-8",
+            "ETag": "\"3ccb85332ab05e101c5246ef2377b9f0ccf2e36219e5ec542d72ba78d3bb7e83\""
+          },
+          "bytes": 259001,
+          "sha256": "f3e12b293f3bdce21604ca5e5b473c07dcb6c8e4a34b582c4498d0bd45a10900",
+          "seconds": 1.1645824909210205
+        },
+        {
+          "url": "https://raw.githubusercontent.com/sgl-project/sglang/82ac83a8d0ab50ea7c9fe8e5b5934c2fa5a224bf/python/sglang/srt/configs/model_config.py",
+          "path": "runtime/sglang/model_config.py",
+          "cap": 196608,
+          "started": 1792523047.379754,
+          "model_payload_bytes": 0,
+          "status": 200,
+          "headers": {
+            "Content-Length": "115929",
+            "Content-Type": "text/plain; charset=utf-8",
+            "ETag": "\"79e2122fb626970c0c70469bb35042c1643940371bcb0818146e8afb529f0676\""
+          },
+          "bytes": 115929,
+          "sha256": "d109fc6aa29cc82f82d0ebb38d49c5748294aaad82e48f8d4326045988a3a53d",
+          "seconds": 1.114281415939331
+        },
+        {
+          "url": "https://raw.githubusercontent.com/sgl-project/sglang/82ac83a8d0ab50ea7c9fe8e5b5934c2fa5a224bf/python/sglang/srt/model_executor/pool_configurator.py",
+          "path": "runtime/sglang/pool_configurator.py",
+          "cap": 131072,
+          "started": 1792522888.187628,
+          "model_payload_bytes": 0,
+          "status": 200,
+          "headers": {
+            "Content-Length": "72293",
+            "Content-Type": "text/plain; charset=utf-8",
+            "ETag": "\"598a208dd232f0a97c152bf21c456b798269c863f04443718ee53c24dd09d92d\""
+          },
+          "bytes": 72293,
+          "sha256": "4714484e6c45305a57d26272581c70f225993bb1b3c618efdba2c1c6f2cd6a27",
+          "seconds": 1.039398431777954
+        },
+        {
+          "url": "https://raw.githubusercontent.com/sgl-project/sglang/82ac83a8d0ab50ea7c9fe8e5b5934c2fa5a224bf/python/sglang/srt/layers/attention/trtllm_mla_backend.py",
+          "path": "runtime/sglang/trtllm_mla_backend.py",
+          "cap": 131072,
+          "started": 1792522952.2419329,
+          "model_payload_bytes": 0,
+          "status": 200,
+          "headers": {
+            "Content-Length": "74212",
+            "Content-Type": "text/plain; charset=utf-8",
+            "ETag": "\"dd0053ca5fac002c17e6f9cd42de9b032ac26dda00cf8beb8e31dccf2e7b3f07\""
+          },
+          "bytes": 74212,
+          "sha256": "1e8459d692c4e58ebeaa8ca3bd398c1ed7bd310551a4e0d2f3c313b8daea1aa0",
+          "seconds": 0.9335930347442627
+        },
+        {
+          "url": "https://api.github.com/repos/sgl-project/sglang/git/ref/heads/main",
+          "path": "runtime/sglang-ref.json",
+          "cap": 16384,
+          "started": 1792522781.7853596,
+          "model_payload_bytes": 0,
+          "status": 200,
+          "headers": {
+            "Content-Type": "application/json; charset=utf-8",
+            "ETag": "W/\"aa050fd5cb3258680689d65d9250e067bd9677a4c1380342b7f458ddead02c2e\"",
+            "Last-Modified": "Tue, 20 Oct 2026 18:49:12 GMT",
+            "Content-Length": "334"
+          },
+          "bytes": 334,
+          "sha256": "2648753ef3ee4ebc46ff79d4c7b1eb1d7459bed2cf93671a64c98f3bb62eb0df",
+          "seconds": 0.7072262763977051
+        },
+        {
+          "url": "https://api.github.com/repos/vllm-project/vllm/contents/vllm/v1/attention?ref=7b569ec8953cf8099638a6d2ee1e915b75867c3a",
+          "path": "runtime/vllm/attention-directory.json",
+          "cap": 65536,
+          "started": 1792522888.1911407,
+          "model_payload_bytes": 0,
+          "status": 200,
+          "headers": {
+            "Content-Length": "4833",
+            "Content-Type": "application/json; charset=utf-8",
+            "ETag": "\"b436aa46c77adb6aad4c0ca82fb3679566999aad\"",
+            "Last-Modified": "Tue, 20 Oct 2026 18:55:14 GMT"
+          },
+          "bytes": 4833,
+          "sha256": "586dec1e0ccb30bfce431a345c96f024e3b955fd56ef80d5cc44509bd951e282",
+          "seconds": 0.78871750831604
+        },
+        {
+          "url": "https://raw.githubusercontent.com/vllm-project/vllm/7b569ec8953cf8099638a6d2ee1e915b75867c3a/vllm/v1/attention/backend.py",
+          "path": "runtime/vllm/backend.py",
+          "cap": 65536,
+          "started": 1792523071.8235676,
+          "model_payload_bytes": 0,
+          "status": 200,
+          "headers": {
+            "Content-Length": "43274",
+            "Content-Type": "text/plain; charset=utf-8",
+            "ETag": "\"f9e2e10c9dd386f387ced46e539a8eb2f21a345ce02bfc154a5fd6f17005e07e\""
+          },
+          "bytes": 43274,
+          "sha256": "8e24d7a72446f101b4fe457803396b64870b90d21248bab8cce001daa2f209ca",
+          "seconds": 0.925227165222168
+        },
+        {
+          "url": "https://api.github.com/repos/vllm-project/vllm/contents/vllm/v1/attention/backends?ref=7b569ec8953cf8099638a6d2ee1e915b75867c3a",
+          "path": "runtime/vllm/backends-directory.json",
+          "cap": 65536,
+          "started": 1792522909.4799428,
+          "model_payload_bytes": 0,
+          "status": 200,
+          "headers": {
+            "Content-Length": "34341",
+            "Content-Type": "application/json; charset=utf-8",
+            "ETag": "\"b436aa46c77adb6aad4c0ca82fb3679566999aad\"",
+            "Last-Modified": "Tue, 20 Oct 2026 18:55:14 GMT"
+          },
+          "bytes": 34341,
+          "sha256": "86e2059042fd72f82927bfdd0267703c1f615114bd2caf6d06a97caf3ab0f05d",
+          "seconds": 1.0522007942199707
+        },
+        {
+          "url": "https://raw.githubusercontent.com/vllm-project/vllm/7b569ec8953cf8099638a6d2ee1e915b75867c3a/vllm/v1/attention/backends/mla/flashinfer_mla_sparse.py",
+          "path": "runtime/vllm/flashinfer_mla_sparse.py",
+          "cap": 65536,
+          "started": 1792522952.240932,
+          "model_payload_bytes": 0,
+          "status": 200,
+          "headers": {
+            "Content-Length": "25381",
+            "Content-Type": "text/plain; charset=utf-8",
+            "ETag": "\"35fdd31b1f037c0077c512bfaa59220ba667c534fdaf49e0656b241b19c5a168\""
+          },
+          "bytes": 25381,
+          "sha256": "8750f5fb8c64b92ed1f59c522b2cba6aa4cf255480cd70b49ca07152a15cc485",
+          "seconds": 0.8395979404449463
+        },
+        {
+          "url": "https://raw.githubusercontent.com/vllm-project/vllm/7b569ec8953cf8099638a6d2ee1e915b75867c3a/vllm/model_executor/models/glm5_next.py",
+          "path": "runtime/vllm/glm5_next.py",
+          "cap": 196608,
+          "started": 1792522822.4600403,
+          "model_payload_bytes": 0,
+          "error": "HTTP Error 404: Not Found",
+          "seconds": 0.6219935417175293
+        },
+        {
+          "url": "https://api.github.com/repos/vllm-project/vllm/contents/vllm/models/glm5next/common?ref=7b569ec8953cf8099638a6d2ee1e915b75867c3a",
+          "path": "runtime/vllm/glm5next-common-directory.json",
+          "cap": 32768,
+          "started": 1792522978.2742562,
+          "model_payload_bytes": 0,
+          "status": 200,
+          "headers": {
+            "Content-Length": "7614",
+            "Content-Type": "application/json; charset=utf-8",
+            "ETag": "\"b436aa46c77adb6aad4c0ca82fb3679566999aad\"",
+            "Last-Modified": "Tue, 20 Oct 2026 18:55:14 GMT"
+          },
+          "bytes": 7614,
+          "sha256": "9b161bd653ec9f0f92ea2186e6efd417178e3524220688b15d1adc2045feb755",
+          "seconds": 0.7599458694458008
+        },
+        {
+          "url": "https://api.github.com/repos/vllm-project/vllm/contents/vllm/models/glm5next?ref=7b569ec8953cf8099638a6d2ee1e915b75867c3a",
+          "path": "runtime/vllm/glm5next-directory.json",
+          "cap": 65536,
+          "started": 1792522909.4799428,
+          "model_payload_bytes": 0,
+          "status": 200,
+          "headers": {
+            "Content-Length": "4797",
+            "Content-Type": "application/json; charset=utf-8",
+            "ETag": "\"b436aa46c77adb6aad4c0ca82fb3679566999aad\"",
+            "Last-Modified": "Tue, 20 Oct 2026 18:55:14 GMT"
+          },
+          "bytes": 4797,
+          "sha256": "fa036d64f15b5f1e18d195891f52a38605c46570a83b038b3c7e14f953baf51f",
+          "seconds": 1.3026294708251953
+        },
+        {
+          "url": "https://api.github.com/repos/vllm-project/vllm/contents/vllm/models/glm5next/nvidia?ref=7b569ec8953cf8099638a6d2ee1e915b75867c3a",
+          "path": "runtime/vllm/glm5next-nvidia-directory.json",
+          "cap": 32768,
+          "started": 1792522926.450023,
+          "model_payload_bytes": 0,
+          "status": 200,
+          "headers": {
+            "Content-Length": "3134",
+            "Content-Type": "application/json; charset=utf-8",
+            "ETag": "\"b436aa46c77adb6aad4c0ca82fb3679566999aad\"",
+            "Last-Modified": "Tue, 20 Oct 2026 18:55:14 GMT"
+          },
+          "bytes": 3134,
+          "sha256": "565cdd16d358c05d844e8970c27389301e58c0bd790808e403886b0b7d3e4466",
+          "seconds": 0.8501486778259277
+        },
+        {
+          "url": "https://raw.githubusercontent.com/vllm-project/vllm/7b569ec8953cf8099638a6d2ee1e915b75867c3a/vllm/models/glm5next/common/attention.py",
+          "path": "runtime/vllm/glm5next_attention.py",
+          "cap": 65536,
+          "started": 1792523019.5425696,
+          "model_payload_bytes": 0,
+          "status": 200,
+          "headers": {
+            "Content-Length": "23195",
+            "Content-Type": "text/plain; charset=utf-8",
+            "ETag": "\"994907adde1a3b2a4ba7924aea6fc9e8c039116f5e3e3f55d1e9b773542ff649\""
+          },
+          "bytes": 23195,
+          "sha256": "e83364215dccc2871e47906a8a5286852bd6a922a6a322394ff8f27db80952e0",
+          "seconds": 0.9621970653533936
+        },
+        {
+          "url": "https://api.github.com/repos/vllm-project/vllm/contents/vllm/v1/attention/backends/mla?ref=7b569ec8953cf8099638a6d2ee1e915b75867c3a",
+          "path": "runtime/vllm/mla-directory.json",
+          "cap": 65536,
+          "started": 1792522926.450023,
+          "model_payload_bytes": 0,
+          "status": 200,
+          "headers": {
+            "Content-Length": "29809",
+            "Content-Type": "application/json; charset=utf-8",
+            "ETag": "\"b436aa46c77adb6aad4c0ca82fb3679566999aad\"",
+            "Last-Modified": "Tue, 20 Oct 2026 18:55:14 GMT"
+          },
+          "bytes": 29809,
+          "sha256": "837f4a733cf8e7c0c0d48bc33d60c4c62e55df0573a69c1b71dd2dc7333ffd59",
+          "seconds": 0.9944517612457275
+        },
+        {
+          "url": "https://raw.githubusercontent.com/vllm-project/vllm/7b569ec8953cf8099638a6d2ee1e915b75867c3a/vllm/model_executor/layers/mla.py",
+          "path": "runtime/vllm/mla.py",
+          "cap": 196608,
+          "started": 1792523047.379754,
+          "model_payload_bytes": 0,
+          "status": 200,
+          "headers": {
+            "Content-Length": "10291",
+            "Content-Type": "text/plain; charset=utf-8",
+            "ETag": "\"9c85ca730552c1ecef8be44cd60cc57c4c97461aa51630cedf48e06aa36d8cca\""
+          },
+          "bytes": 10291,
+          "sha256": "594f71cb59ca7e9d7e26d76914272ce1f5b7ca280107756ca9dd03b1403cf1a2",
+          "seconds": 0.7348439693450928
+        },
+        {
+          "url": "https://raw.githubusercontent.com/vllm-project/vllm/7b569ec8953cf8099638a6d2ee1e915b75867c3a/vllm/model_executor/layers/attention/mla_attention.py",
+          "path": "runtime/vllm/mla_attention.py",
+          "cap": 262144,
+          "started": 1792523019.5603335,
+          "model_payload_bytes": 0,
+          "status": 200,
+          "headers": {
+            "Content-Length": "133600",
+            "Content-Type": "text/plain; charset=utf-8",
+            "ETag": "\"adf5194cafd33521262d293634094dbd3899e6b4729ae10a7c3ebe13648561bc\""
+          },
+          "bytes": 133600,
+          "sha256": "650e3d26e7feb7fea5cd826be8680c219dc2892f2af7385f309e303c18e0917a",
+          "seconds": 1.220055341720581
+        },
+        {
+          "url": "https://raw.githubusercontent.com/vllm-project/vllm/7b569ec8953cf8099638a6d2ee1e915b75867c3a/vllm/v1/attention/backends/mla/common.py",
+          "path": "runtime/vllm/mla_common.py",
+          "cap": 262144,
+          "started": 1792522822.4600403,
+          "model_payload_bytes": 0,
+          "error": "HTTP Error 404: Not Found",
+          "seconds": 0.6518616676330566
+        },
+        {
+          "url": "https://api.github.com/repos/vllm-project/vllm/contents/vllm/models?ref=7b569ec8953cf8099638a6d2ee1e915b75867c3a",
+          "path": "runtime/vllm/models-directory.json",
+          "cap": 393216,
+          "started": 1792522888.1911407,
+          "model_payload_bytes": 0,
+          "status": 200,
+          "headers": {
+            "Content-Length": "12174",
+            "Content-Type": "application/json; charset=utf-8",
+            "ETag": "\"b436aa46c77adb6aad4c0ca82fb3679566999aad\"",
+            "Last-Modified": "Tue, 20 Oct 2026 18:55:14 GMT"
+          },
+          "bytes": 12174,
+          "sha256": "87ed5f82be29b730715ba43ebb719fe72b067aff37b7ee3f6d9b1b8b99d61490",
+          "seconds": 1.3708975315093994
+        },
+        {
+          "url": "https://api.github.com/repos/vllm-project/vllm/contents/vllm?ref=7b569ec8953cf8099638a6d2ee1e915b75867c3a",
+          "path": "runtime/vllm/root-directory.json",
+          "cap": 65536,
+          "started": 1792522865.664845,
+          "model_payload_bytes": 0,
+          "status": 200,
+          "headers": {
+            "Content-Length": "51110",
+            "Content-Type": "application/json; charset=utf-8",
+            "ETag": "\"b436aa46c77adb6aad4c0ca82fb3679566999aad\"",
+            "Last-Modified": "Tue, 20 Oct 2026 18:55:14 GMT"
+          },
+          "bytes": 51110,
+          "sha256": "681a60c4531ba907f09c5058f5967a3412e86a953f4301d01125f85bb7f7e161",
+          "seconds": 1.0670952796936035
+        },
+        {
+          "url": "https://raw.githubusercontent.com/vllm-project/vllm/7b569ec8953cf8099638a6d2ee1e915b75867c3a/vllm/model_executor/layers/attention/sparse_mla_attention.py",
+          "path": "runtime/vllm/sparse_mla_attention.py",
+          "cap": 196608,
+          "started": 1792522978.276256,
+          "model_payload_bytes": 0,
+          "status": 200,
+          "headers": {
+            "Content-Length": "47144",
+            "Content-Type": "text/plain; charset=utf-8",
+            "ETag": "\"831bca299be113ab61d4c137184c2163f895b08329033d1f45f5da5726d1e048\""
+          },
+          "bytes": 47144,
+          "sha256": "c2ca75bfe12b33bb26c3ec3d9fe735cd2ddc68c245d6c76788af2632b9528b77",
+          "seconds": 0.8767247200012207
+        },
+        {
+          "url": "https://api.github.com/repos/vllm-project/vllm/git/ref/heads/main",
+          "path": "runtime/vllm-ref.json",
+          "cap": 16384,
+          "started": 1792522781.7966776,
+          "model_payload_bytes": 0,
+          "status": 200,
+          "headers": {
+            "Content-Type": "application/json; charset=utf-8",
+            "ETag": "W/\"8d264c4b56943a2e29736869507e07e384fb33b0d85f21b84e326f37c1f3b342\"",
+            "Last-Modified": "Tue, 20 Oct 2026 18:55:14 GMT",
+            "Content-Length": "332"
+          },
+          "bytes": 332,
+          "sha256": "288c97d7d54f78a12bd07d0dd2ff002e167b35da92c6878668fe8a2110598ba8",
+          "seconds": 0.7357046604156494
+        },
+        {
+          "url": "https://raw.githubusercontent.com/huggingface/transformers/93c8b7b485963a10800c91f55304db6be211c2bd/src/transformers/models/glm5_next/modeling_glm5_next.py",
+          "path": "transformers/modeling_glm5_next.py",
+          "cap": 196608,
+          "started": 1792522666.0792384,
+          "model_payload_bytes": 0,
+          "status": 200,
+          "headers": {
+            "Content-Length": "102403",
+            "Content-Type": "text/plain; charset=utf-8",
+            "ETag": "\"60c6d5100472fe9bc1d4a555f49901a30ef1faebe4318f7c607dc8c8b6917c60\""
+          },
+          "bytes": 102403,
+          "sha256": "2092bbb4efa2a8087b74f4a4da37635c503fe1df9ae73f1e6e8342af8b4b8e8b",
+          "seconds": 1.119626522064209
+        },
+        {
+          "url": "https://raw.githubusercontent.com/huggingface/transformers/a08ace4bbd97e721c98751deec37d87b026acadc/src/transformers/models/glm_moe_dsa/modeling_glm_moe_dsa.py",
+          "path": "transformers/modeling_glm_moe_dsa.py",
+          "cap": 196608,
+          "started": 1792522666.0842228,
+          "model_payload_bytes": 0,
+          "status": 200,
+          "headers": {
+            "Content-Length": "37352",
+            "Content-Type": "text/plain; charset=utf-8",
+            "ETag": "\"6a2d3d9e851f27c5dff8b09dce7522e52b7ea26b42b2f54696e0fe916434eacb\""
+          },
+          "bytes": 37352,
+          "sha256": "adb8317a21716b01273046e46c807f14f0dbaf035af59b60d52bd6bc3007cf72",
+          "seconds": 0.9344570636749268
+        },
+        {
+          "url": "https://api.github.com/repos/huggingface/transformers/git/tags/ec710763db3fd53921a54c6eccf693619abbe866",
+          "path": "transformers-tag5141-object.json",
+          "cap": 16384,
+          "started": 1792522639.0185864,
+          "model_payload_bytes": 0,
+          "status": 200,
+          "headers": {
+            "Content-Type": "application/json; charset=utf-8",
+            "ETag": "W/\"aae4b9524b9ee848a72131f73aeb1acead126053a07ab2ca1cbd7919f912048f\"",
+            "Last-Modified": "Tue, 20 Oct 2026 18:42:34 GMT",
+            "Content-Length": "683"
+          },
+          "bytes": 683,
+          "sha256": "7602a9de11606746339fda4b505128aaa89267eb5d536820105cc9a3b300fc92",
+          "seconds": 0.6743979454040527
+        },
+        {
+          "url": "https://api.github.com/repos/huggingface/transformers/git/ref/tags/v5.14.1",
+          "path": "transformers-tag5141.json",
+          "cap": 16384,
+          "started": 1792522621.3757083,
+          "model_payload_bytes": 0,
+          "status": 200,
+          "headers": {
+            "Content-Type": "application/json; charset=utf-8",
+            "ETag": "W/\"89ac11ce23b39b88f6bcfe1e34c62d318a9b84de488e55cb58c64d5e25a64d13\"",
+            "Last-Modified": "Tue, 20 Oct 2026 18:42:34 GMT",
+            "Content-Length": "353"
+          },
+          "bytes": 353,
+          "sha256": "12f4d5979d0a694027c71ddcb12858ed724e1b2f60721bfa6f516b8787b0fc6f",
+          "seconds": 0.6519300937652588
+        },
+        {
+          "url": "https://api.github.com/repos/huggingface/transformers/git/tags/fb405cdf1bb6fa7b85ac8871b5d8a8b1376f5a3c",
+          "path": "transformers-tag5161-object.json",
+          "cap": 16384,
+          "started": 1792522639.0175862,
+          "model_payload_bytes": 0,
+          "status": 200,
+          "headers": {
+            "Content-Type": "application/json; charset=utf-8",
+            "ETag": "W/\"6f6a60c2fc938e2d25467234eb1dcef044357d9814b009a6f0cf15a1fa0682a6\"",
+            "Last-Modified": "Tue, 20 Oct 2026 18:42:34 GMT",
+            "Content-Length": "677"
+          },
+          "bytes": 677,
+          "sha256": "7b55a3558a6e35260d3e3ee8ba7f9e1d7e7bc55b27e67fd960309dbec4ebc7f6",
+          "seconds": 0.6795339584350586
+        },
+        {
+          "url": "https://api.github.com/repos/huggingface/transformers/git/ref/tags/v5.16.1",
+          "path": "transformers-tag5161.json",
+          "cap": 16384,
+          "started": 1792522621.3515112,
+          "model_payload_bytes": 0,
+          "status": 200,
+          "headers": {
+            "Content-Type": "application/json; charset=utf-8",
+            "ETag": "W/\"250ebc36c8726b5581629805459f00bef551270a4130f853f08ec0b8486266e1\"",
+            "Last-Modified": "Tue, 20 Oct 2026 18:42:34 GMT",
+            "Content-Length": "353"
+          },
+          "bytes": 353,
+          "sha256": "ebf037840295bfdf0d793bda10610bffeaca4c8b7fbe2ae9408c0810d109d842",
+          "seconds": 0.6885285377502441
+        }
+      ],
+      "runtime_followup": {
+        "status": "complete",
+        "official_vllm_commit": "7b569ec8953cf8099638a6d2ee1e915b75867c3a",
+        "official_sglang_commit": "82ac83a8d0ab50ea7c9fe8e5b5934c2fa5a224bf",
+        "commit_selection": "Resolved official main references once, then downloaded only these fixed-commit source files. This snapshots present runtime contracts; it does not identify the publisher Docker tag build commit.",
+        "model_payload_bytes": 0,
+        "builds": 0,
+        "GPU_runs": 0
+      },
+      "publisher_runtime_commands": [
+        {
+          "catalog": 28,
+          "metadata": "docs/evidence/research/model-quantization-discovery-2026-10-19.zip::deepseek-glm/nvidia--GLM-5.3-NVFP4/README.md",
+          "fixed_artifact_revision": "e3b8f9f2fad29727dfa95e766c5cac18ea1414bf",
+          "observed": "SGLang latest, modelopt_fp4; no --kv-cache-dtype or DSA backend in the published command.",
+          "limit": "Do not infer default E4 cache or raw/piecewise cache layout from this command."
+        },
+        {
+          "catalog": 29,
+          "metadata": ".scratch\\architecture-refactor-2026-10-18\\fixed-role-binding-2026-10-21\\fp8-kv\\cached-metadata\\29\\README.md",
+          "fixed_artifact_revision": "da920bb0b9f4a06727223a349e55468e38352348",
+          "observed": "SGLang explicitly fp8_e4m3 with dsa-prefill-backend trtllm and dsa-decode-backend trtllm; vLLM image glm53-flash-arm64-cu130 explicitly kv-cache-dtype fp8.",
+          "limit": "Docker tag/serving package is not pinned to one source commit; inspected runtime snapshots are independent current official contracts."
+        }
+      ],
+      "runtime_physical_layouts": [
+        {
+          "engine": "SGLang",
+          "commit": "82ac83a8d0ab50ea7c9fe8e5b5934c2fa5a224bf",
+          "variant": "raw TRTLLM MLA, also selected by artifact29 published backend flags",
+          "carrier": "Single logical latent row, all components E4M3FN: CKV512 followed by optional KPE64. In NoPE Flash the KPE tail is empty.",
+          "row_bytes": {
+            "CKV512_KPE64": 576,
+            "Flash_NoPE512": 512
+          },
+          "scale": "No per-token group scale is embedded. The inspected quantize_without_rope helper casts directly to E4 and the RoPE helper passes quant_scale_q=quant_scale_kv=1.0. Decode can additionally read optional layer.k_scale_float for BMM1, default1; this is not evidence for arbitrary nonunit checkpoint-scale equivalence in every serving path.",
+          "selection": "calculate_mla_kv_cache_dim returns kv_lora_rank+qk_rope_head_dim whenever the active local DSA backend is trtllm. Equal width disables dsa_kv_cache_store_fp8, so _write_mla_kv_buffer casts CKV and any nonempty KPE to the pool dtype and scatters the original row.",
+          "evidence": [
+            {
+              "path": "runtime/sglang/kv_cache_configurator.py",
+              "sha256": "6d26861dc762f507014628ba8a98448435a9325239a9e91fa669a7af1670024e",
+              "url": "https://raw.githubusercontent.com/sgl-project/sglang/82ac83a8d0ab50ea7c9fe8e5b5934c2fa5a224bf/python/sglang/srt/mem_cache/kv_cache_configurator.py",
+              "term": "if uses_trtllm_kv_layout:",
+              "lines": [
+                3229
+              ]
+            },
+            {
+              "path": "runtime/sglang/memory_pool.py",
+              "sha256": "f3e12b293f3bdce21604ca5e5b473c07dcb6c8e4a34b582c4498d0bd45a10900",
+              "url": "https://raw.githubusercontent.com/sgl-project/sglang/82ac83a8d0ab50ea7c9fe8e5b5934c2fa5a224bf/python/sglang/srt/mem_cache/memory_pool.py",
+              "term": "self.dsa_kv_cache_store_fp8 = (",
+              "lines": [
+                4793
+              ]
+            },
+            {
+              "path": "runtime/sglang/memory_pool.py",
+              "sha256": "f3e12b293f3bdce21604ca5e5b473c07dcb6c8e4a34b582c4498d0bd45a10900",
+              "url": "https://raw.githubusercontent.com/sgl-project/sglang/82ac83a8d0ab50ea7c9fe8e5b5934c2fa5a224bf/python/sglang/srt/mem_cache/memory_pool.py",
+              "term": "cache_k_nope = cache_k_nope.to(self.dtype)",
+              "lines": [
+                5023
+              ]
+            },
+            {
+              "path": "runtime/sglang/attention_utils.py",
+              "sha256": "bc083986e0d75eb2ff97054d8153b06fa5c39ee6280fd8bf22b6b255a936325b",
+              "url": "https://raw.githubusercontent.com/sgl-project/sglang/82ac83a8d0ab50ea7c9fe8e5b5934c2fa5a224bf/python/sglang/kernels/ops/attention/utils.py",
+              "term": "return q, k_nope.to(attn_dtype), k_rope.to(attn_dtype)",
+              "lines": [
+                154
+              ]
+            },
+            {
+              "path": "runtime/sglang/trtllm_mla_backend.py",
+              "sha256": "1e8459d692c4e58ebeaa8ca3bd398c1ed7bd310551a4e0d2f3c313b8daea1aa0",
+              "url": "https://raw.githubusercontent.com/sgl-project/sglang/82ac83a8d0ab50ea7c9fe8e5b5934c2fa5a224bf/python/sglang/srt/layers/attention/trtllm_mla_backend.py",
+              "term": "def _compute_decode_bmm1_scale",
+              "lines": [
+                955
+              ]
+            }
+          ]
+        },
+        {
+          "engine": "SGLang",
+          "commit": "82ac83a8d0ab50ea7c9fe8e5b5934c2fa5a224bf",
+          "variant": "other DSA backends using scaled packed KV; not the raw TRTLLM layout",
+          "carrier": "CKV E4 codes plus one F32 scale per token per128 CKV values; RoPE tail stays BF16 raw bytes.",
+          "row_bytes": {
+            "CKV512_4F32Scales_KPE64BF16": 656,
+            "Flash_CKV512_4F32Scales_NoKPE": 528
+          },
+          "scale": "Dynamic group128 absmax/448 of normalized compressed latent; no epsilon floor in this source. This is neither a fixed scalar layer scale nor uniform E4.",
+          "evidence": [
+            {
+              "path": "runtime/sglang/kv_cache_configurator.py",
+              "sha256": "6d26861dc762f507014628ba8a98448435a9325239a9e91fa669a7af1670024e",
+              "url": "https://raw.githubusercontent.com/sgl-project/sglang/82ac83a8d0ab50ea7c9fe8e5b5934c2fa5a224bf/python/sglang/srt/mem_cache/kv_cache_configurator.py",
+              "term": "kv_lora_rank // quant_block_size * 4",
+              "lines": [
+                3252,
+                3261
+              ]
+            },
+            {
+              "path": "runtime/sglang/memory_pool.py",
+              "sha256": "f3e12b293f3bdce21604ca5e5b473c07dcb6c8e4a34b582c4498d0bd45a10900",
+              "url": "https://raw.githubusercontent.com/sgl-project/sglang/82ac83a8d0ab50ea7c9fe8e5b5934c2fa5a224bf/python/sglang/srt/mem_cache/memory_pool.py",
+              "term": "quantize_k_cache_separate(",
+              "lines": [
+                5013
+              ]
+            },
+            {
+              "path": "runtime/sglang/dsa_quant_k_cache.py",
+              "sha256": "ccac241747729255164ec635a31f99c1fa937f72f2c07ead0d43d0367c0a3e77",
+              "url": "https://raw.githubusercontent.com/sgl-project/sglang/82ac83a8d0ab50ea7c9fe8e5b5934c2fa5a224bf/python/sglang/kernels/ops/quantization/dsa_quant_k_cache.py",
+              "term": "y_s = tl.max(tl.abs(y)) / FP8_MAX",
+              "lines": [
+                270
+              ]
+            },
+            {
+              "path": "runtime/sglang/dsa_quant_k_cache.py",
+              "sha256": "ccac241747729255164ec635a31f99c1fa937f72f2c07ead0d43d0367c0a3e77",
+              "url": "https://raw.githubusercontent.com/sgl-project/sglang/82ac83a8d0ab50ea7c9fe8e5b5934c2fa5a224bf/python/sglang/kernels/ops/quantization/dsa_quant_k_cache.py",
+              "term": "rope_view = rope_part_u8.view(torch.bfloat16)",
+              "lines": [
+                203
+              ]
+            }
+          ]
+        },
+        {
+          "engine": "vLLM",
+          "commit": "7b569ec8953cf8099638a6d2ee1e915b75867c3a",
+          "variant": "FlashInfer sparse TRTLLM raw fp8/fp8_e4m3",
+          "carrier": "Shared latent CKV(+KPE) E4 row, head sizes512/576, one KV head. Source explicitly admits NoPE512 with qk_nope256/kv_lora512.",
+          "row_bytes": {
+            "CKV512_KPE64": 576,
+            "Flash_NoPE512": 512
+          },
+          "scale": "One layer _k_scale tensor is passed to concat_and_cache_mla for the combined latent row. Sparse consumer BMM1 uses softmax_scale*_q_scale_float*_k_scale_float; BMM2 uses the same _k_scale_float. CKV doubles as V, so this is one shared cache interpretation, not independent ordinary K/V scales.",
+          "evidence": [
+            {
+              "path": "runtime/vllm/backend.py",
+              "sha256": "8e24d7a72446f101b4fe457803396b64870b90d21248bab8cce001daa2f209ca",
+              "url": "https://raw.githubusercontent.com/vllm-project/vllm/7b569ec8953cf8099638a6d2ee1e915b75867c3a/vllm/v1/attention/backend.py",
+              "term": "ops.concat_and_cache_mla(",
+              "lines": [
+                1118
+              ]
+            },
+            {
+              "path": "runtime/vllm/mla_attention.py",
+              "sha256": "650e3d26e7feb7fea5cd826be8680c219dc2892f2af7385f309e303c18e0917a",
+              "url": "https://raw.githubusercontent.com/vllm-project/vllm/7b569ec8953cf8099638a6d2ee1e915b75867c3a/vllm/model_executor/layers/attention/mla_attention.py",
+              "term": "num_kv_heads=1,",
+              "lines": [
+                580,
+                1375
+              ]
+            },
+            {
+              "path": "runtime/vllm/flashinfer_mla_sparse.py",
+              "sha256": "8750f5fb8c64b92ed1f59c522b2cba6aa4cf255480cd70b49ca07152a15cc485",
+              "url": "https://raw.githubusercontent.com/vllm-project/vllm/7b569ec8953cf8099638a6d2ee1e915b75867c3a/vllm/v1/attention/backends/mla/flashinfer_mla_sparse.py",
+              "term": "return [512, 576]",
+              "lines": [
+                62
+              ]
+            },
+            {
+              "path": "runtime/vllm/flashinfer_mla_sparse.py",
+              "sha256": "8750f5fb8c64b92ed1f59c522b2cba6aa4cf255480cd70b49ca07152a15cc485",
+              "url": "https://raw.githubusercontent.com/vllm-project/vllm/7b569ec8953cf8099638a6d2ee1e915b75867c3a/vllm/v1/attention/backends/mla/flashinfer_mla_sparse.py",
+              "term": "self.bmm2_scale *= layer._k_scale_float",
+              "lines": [
+                523
+              ]
+            },
+            {
+              "path": "runtime/vllm/flashinfer_mla_sparse.py",
+              "sha256": "8750f5fb8c64b92ed1f59c522b2cba6aa4cf255480cd70b49ca07152a15cc485",
+              "url": "https://raw.githubusercontent.com/vllm-project/vllm/7b569ec8953cf8099638a6d2ee1e915b75867c3a/vllm/v1/attention/backends/mla/flashinfer_mla_sparse.py",
+              "term": "self.bmm1_scale *= layer._q_scale_float * layer._k_scale_float",
+              "lines": [
+                519
+              ]
+            }
+          ]
+        },
+        {
+          "engine": "vLLM",
+          "commit": "7b569ec8953cf8099638a6d2ee1e915b75867c3a",
+          "variant": "fp8_ds_mla",
+          "carrier": "Separate explicitly named packed layout, not the fp8/fp8_e4m3 raw row.",
+          "row_bytes": {
+            "state_content_bytes_declared": 656
+          },
+          "limit": "This read does not certify every backend/device or NoPE form for that packed layout. FlashInfer sparse SM10 explicitly rejects fp8_ds_mla.",
+          "evidence": [
+            {
+              "path": "runtime/vllm/mla_attention.py",
+              "sha256": "650e3d26e7feb7fea5cd826be8680c219dc2892f2af7385f309e303c18e0917a",
+              "url": "https://raw.githubusercontent.com/vllm-project/vllm/7b569ec8953cf8099638a6d2ee1e915b75867c3a/vllm/model_executor/layers/attention/mla_attention.py",
+              "term": "state_content_bytes={\"fp8_ds_mla\": 656",
+              "lines": [
+                1384
+              ]
+            },
+            {
+              "path": "runtime/vllm/flashinfer_mla_sparse.py",
+              "sha256": "8750f5fb8c64b92ed1f59c522b2cba6aa4cf255480cd70b49ca07152a15cc485",
+              "url": "https://raw.githubusercontent.com/vllm-project/vllm/7b569ec8953cf8099638a6d2ee1e915b75867c3a/vllm/v1/attention/backends/mla/flashinfer_mla_sparse.py",
+              "term": "SM10 does not support fp8_ds_mla",
+              "lines": [
+                135
+              ]
+            }
+          ]
+        }
+      ],
+      "runtime_model_binding": {
+        "SGLang": {
+          "architectures": "is_deepseek_dsa explicitly includes both GlmMoeDsaForCausalLM and Glm5NextForConditionalGeneration when index_topk exists. Glm5Next non-linear layers construct DeepseekV2AttentionMLA with actual config dimensions and skip_rope=True.",
+          "evidence": [
+            {
+              "path": "runtime/sglang/model_config.py",
+              "sha256": "d109fc6aa29cc82f82d0ebb38d49c5748294aaad82e48f8d4326045988a3a53d",
+              "url": "https://raw.githubusercontent.com/sgl-project/sglang/82ac83a8d0ab50ea7c9fe8e5b5934c2fa5a224bf/python/sglang/srt/configs/model_config.py",
+              "term": "\"GlmMoeDsaForCausalLM\",",
+              "lines": [
+                199,
+                217
+              ]
+            },
+            {
+              "path": "runtime/sglang/model_config.py",
+              "sha256": "d109fc6aa29cc82f82d0ebb38d49c5748294aaad82e48f8d4326045988a3a53d",
+              "url": "https://raw.githubusercontent.com/sgl-project/sglang/82ac83a8d0ab50ea7c9fe8e5b5934c2fa5a224bf/python/sglang/srt/configs/model_config.py",
+              "term": "\"Glm5NextForConditionalGeneration\",",
+              "lines": [
+                202,
+                2300,
+                2374,
+                2397
+              ]
+            },
+            {
+              "path": "runtime/sglang/glm5_next.py",
+              "sha256": "53a144246428cddfa564d51a7741c42b7370d527a19895e4878f11ec31066ef4",
+              "url": "https://raw.githubusercontent.com/sgl-project/sglang/82ac83a8d0ab50ea7c9fe8e5b5934c2fa5a224bf/python/sglang/srt/models/glm5_next.py",
+              "term": "self.self_attn = DeepseekV2AttentionMLA(",
+              "lines": [
+                720
+              ]
+            }
+          ]
+        },
+        "vLLM": {
+          "architecture": "Glm5NextMLAAttention forwards actual dimensions through MultiHeadLatentAttentionWrapper; sparse TRTLLM backend explicitly handles no-rope512.",
+          "evidence": [
+            {
+              "path": "runtime/vllm/glm5next_attention.py",
+              "sha256": "e83364215dccc2871e47906a8a5286852bd6a922a6a322394ff8f27db80952e0",
+              "url": "https://raw.githubusercontent.com/vllm-project/vllm/7b569ec8953cf8099638a6d2ee1e915b75867c3a/vllm/models/glm5next/common/attention.py",
+              "term": "class Glm5NextMLAAttention",
+              "lines": [
+                385
+              ]
+            },
+            {
+              "path": "runtime/vllm/glm5next_attention.py",
+              "sha256": "e83364215dccc2871e47906a8a5286852bd6a922a6a322394ff8f27db80952e0",
+              "url": "https://raw.githubusercontent.com/vllm-project/vllm/7b569ec8953cf8099638a6d2ee1e915b75867c3a/vllm/models/glm5next/common/attention.py",
+              "term": "self.mla_attn = MultiHeadLatentAttentionWrapper(",
+              "lines": [
+                554
+              ]
+            }
+          ]
+        }
+      },
+      "download_summary": {
+        "successful_text_files": 39,
+        "successful_text_bytes": 1799364,
+        "model_weight_payload_bytes": 0,
+        "whole_checkout_or_archive_downloaded": false,
+        "maximum_response_policy": "Explicit Content-Length and streaming cap per file; over-cap response rejected before reading payload. One known146972-byte cache configurator retried with196608-byte cap; no model files fetched."
+      },
+      "retained_early_fetch_events": [
+        {
+          "url": "https://raw.githubusercontent.com/NVIDIA/Model-Optimizer/4956213d670c382385d9bc43e17379b9fc064e50/modelopt/torch/quantization/plugins/huggingface.py",
+          "event": "First SSL UNEXPECTED_EOF failed before content; same fixed URL retry succeeded.",
+          "observed_started": 1792522621.350921
+        },
+        {
+          "path": "runtime/sglang/kv_cache_configurator.py",
+          "event": "First Content-Length146972 exceeded cap131072, rejected before body; retried with cap196608 and SHA recorded."
+        }
+      ]
+    },
+    "architecture": {
+      "date": "2026-10-21",
+      "mode": "read-only architecture and implementation design; no build, GPU run, product edit or model download",
+      "decision": "Uniform E4 compact MLA is now independently justified by fixed current serving-runtime sources, especially the artifact29 TRTLLM flags, separate from ModelOpt expanded-K/V QDQ. Proceed only after the finite SM89 geometry and F32-scale/BF16-boundary adaptation below is implemented and actually verified; this report does not enable any product guard.",
+      "producer_boundary": {
+        "source": "Parent and independent producer agent source review, recipe4956213 and fixed official HF implementations; the exact producer snapshots belong to that companion review.",
+        "fact": "ModelOpt attention_interface hook quantizes expanded K/V; the official attention implementation applies kv_b_proj before cache.update/attention. This does not prove uniform E4 [CKV512,KPE64] nor mixed CKV E4/KPE BF16 compact rows. GLM NoPE is512, not automatically576.",
+        "not_claimed": "No catalog28/29 artifact requirement or full artifact execution is inferred from a kernel capability or model architecture name."
+      },
+      "current_chain": [
+        {
+          "source": "include/hyle/compute/batch_layout.h:13-32; src/compute_batch/batch_layout.cc:169-187,251-256",
+          "fact": "MlaBatchCapacity.data_type simultaneously selects Q, output and CacheStorage::plain. create_mla projects it into BatchCapacity (kv_heads1, QK512/576, V512), and schema retains only MlaCacheLayout in addition to that projected capacity. The single-type seam is real."
+        },
+        {
+          "source": "include/hyle/compute/batch_ops.h:55-104; src/compute_batch/batch_execution.cc:627-673; src/compute_batch/paged_arena.cc:128-148",
+          "fact": "MLA has Q plus exactly one cache payload; explicit Graph form adds metadata. BatchCacheRole::kMla rejects independent V. Arena allocation, ready/pending exact page permissions and original Queue/completion/output-owner flow are already present; another executor or full-cache readonly lease is unnecessary."
+        },
+        {
+          "source": "src/compute_provider_ggml/native_batch.cc:99-128,257-295,337-354",
+          "fact": "CPU requires plain matching Q but already derives V as a strided first512 view of the original K row and binds K/V to the same backing. Ragged value offsets use the complete K-row pitch. This alias mechanism is the right base for a homogeneous E4 row, not a second V allocation."
+        },
+        {
+          "source": "src/compute_route_vulkan/vulkan_batch.cc:14-46,90-95; src/compute_provider_ggml_vulkan/region.cc:538-592",
+          "fact": "Vulkan compact recipe explicitly rejects E4. Its existing compact infer constructs truthful Vprefix; ordinary E4 admission separately insists dense K/V and a finite64/128/256 domain. The prefix512 from576 has whole-row stride and cannot pass by merely lifting compact_mla guard."
+        },
+        {
+          "source": "src/compute_route_apple/apple_batch.cc:15-29,67-110",
+          "fact": "Apple cache_domain admits high512/576 only for plain storage. It already slices Vprefix without copying. Its E4 invocation currently indexes metadata inputs[3], whereas compact MLA metadata is inputs[2]; enabling the dtype guard alone would produce a port error."
+        },
+        {
+          "source": "src/compute_provider_flashinfer/flashinfer_provider.cc:172-192; src/compute_provider_flashinfer/native_mla.cu:39-48,69-79",
+          "fact": "FlashInfer qualifier requires plain matching Q, wrapper instantiates MLAParams<T,T,T,I32,float>, computes cache+512 with T-size offsets and explicitly rejects spec.fp8. BatchSpec.fp8/key_scale/value_scale fields alone confer no MLA support."
+        }
+      ],
+      "pinned_FlashInfer": {
+        "revision": "69ff11fc4954396d98326656dc85debd2223f637",
+        "source_proof": [
+          {
+            "path": "include/flashinfer/attention/mla.cuh",
+            "original": {
+              "path": ".scratch/g04-bf16-partials-vendor/upstream/include/flashinfer/attention/mla.cuh",
+              "bytes": 61969,
+              "sha256": "3084a832425fa3872ce00b4b3ec52a32f9f319eb8c0403bc991e91c6d443d132"
+            },
+            "current_patched": {
+              "path": ".scratch/inference-foundation-review-2026-10-18/cuda-ragged-mla/verified-headers/include/flashinfer/attention/mla.cuh",
+              "bytes": 64315,
+              "sha256": "b87ea1984c5425c775f8a834f4b424fdc9aad699bb7ad5ceb61c2797b2aae3c6"
+            },
+            "matches_locked_before_and_after": true
+          },
+          {
+            "path": "include/flashinfer/attention/mla_params.cuh",
+            "original": {
+              "path": ".scratch/g04-bf16-partials-vendor/upstream/include/flashinfer/attention/mla_params.cuh",
+              "bytes": 2365,
+              "sha256": "57be4a5ea15a670305fc45dc7d03b5f3b4f041321e6db05efed01096391946bf"
+            },
+            "current_patched": {
+              "path": ".scratch/inference-foundation-review-2026-10-18/cuda-ragged-mla/verified-headers/include/flashinfer/attention/mla_params.cuh",
+              "bytes": 2544,
+              "sha256": "e0fd16a476bf5d786d5b5bc8abd1910ff47e5fcbb32cbfc540c90dd68320d585"
+            },
+            "matches_locked_before_and_after": true
+          }
+        ],
+        "actual_owner_recipe": {
+          "path": ".scratch/inference-foundation-review-2026-10-18/cuda-ragged-mla/native-command.json",
+          "bytes": 2357,
+          "sha256": "7d3e96e3900d616e48d46932093a099284a19f4f92acc95452cbdf47c65ed384"
+        },
+        "actual_prior_hardware_receipt": {
+          "path": ".scratch/inference-foundation-review-2026-10-18/cuda-ragged-mla/15-hardware.stdout.log",
+          "bytes": 133,
+          "sha256": "68d16ec8cde0da42a3669b64df8289e9971d0beac05d61456fd8a08c45fb1276"
+        },
+        "source_capability": "Original pinned headers genuinely have distinct DTypeQ/DTypeKV, E4 tile repack, CKV and KPE pointers/strides, scalar scales and optional CKV row/group128 scale array. This is a reader/kernel contract, not an artifact producer-format proof.",
+        "SM89_obstruction": {
+          "source": "mla.cuh:51-75,1212-1279 (original); corresponding current patched dispatcher retains E4 CTA32 selection",
+          "path": "SM89 selects NUM_STAGES1 from the >=92672 shared-memory-per-SM branch, then E4 overrides CTA_TILE_KV to32 and QK_SHARD=false. SharedStorage retains Q, raw KV and 16-bit repacked KV concurrently.",
+          "source_arithmetic_not_compiled_sizeof": [
+            {
+              "layout": "CKV512+KPE64",
+              "Q_bytes": 73728,
+              "raw_CKV_bytes": 16384,
+              "raw_KPE_or_probability_bytes": 2048,
+              "repacked_CKV_bytes": 32768,
+              "repacked_KPE_bytes": 4096,
+              "state_union_bytes": 512,
+              "sum_aligned16_bytes": 129536
+            },
+            {
+              "layout": "CKV512 without RoPE",
+              "Q_bytes": 65536,
+              "raw_CKV_bytes": 16384,
+              "raw_KPE_or_probability_bytes": 2048,
+              "repacked_CKV_bytes": 32768,
+              "repacked_KPE_placeholder_bytes": 64,
+              "state_union_bytes": 512,
+              "sum_aligned16_bytes": 117312
+            }
+          ],
+          "hardware_limit_primary_source": {
+            "url": "https://docs.nvidia.com/cuda/archive/13.0.0/ada-tuning-guide/index.html",
+            "claim": "Ada has100KiB shared memory perSM and at most99KiB=101376B perthreadblock. Official primary page was checked in this review; no device query or trial launch was performed."
+          },
+          "conclusion": "Both source-derived E4 allocations exceed the SM89 perblock limit. Therefore even instantiating the existing mixed template is insufficient; cudaFuncSetAttribute/launch cannot be presumed to work. This is a source-level resource obstruction, not a fresh measured runtime failure.",
+          "conditional_smallest_native_adaptation": "Keep existing MLA planner/KernelTraits/Queue/capture and its bounded repack. A genuine low-shared-memory E4 tile variant must be designed and checked before admission (e.g. E4 CTA_KV16 yields a source estimate101888B for576, still512B over99KiB; tile16 alone is also insufficient). Reduce overlapping scratch/lifetimes or querytile footprint rather than allocate a full decoded cache. Confirm all MMA/smem swizzle/publication and planner assumptions before any launch."
+        },
+        "numeric_obstructions": [
+          {
+            "source": "mla.cuh:317-397",
+            "fact": "Scalar repack casts ckv_scale/kpe_scale to DTypeQ then uses nv_bfloat162 __hmul2; this gives a BF16-scale RNE boundary before BF16 multiplication when Q is BF16. It is not simply E4code times original F32 scale, and positive finite F32 scales may round toBF16 zero/Inf. The scale-array path instead performs F32 product then casts each element."
+          },
+          {
+            "source": "mla.cuh:331,352-356,372,383-387",
+            "fact": "packed2_t is unconditionally nv_bfloat162 although DTypeQ is templated; a half-Q E4 instantiation cannot be presumed numerically valid. This is an unexercised-template risk, not a failure of the currently admitted plain F16 path."
+          },
+          {
+            "source": "patched mla.cuh BatchMLAPagedAttention linear_kv check; native_mla.cu:50-53",
+            "fact": "Current patched linear/ragged MLA explicitly restricts the absent-page-table path to16bit cache. E4 ragged needs its own correct pointer/page/scalearray proof and cannot inherit paged eligibility."
+          }
+        ],
+        "independent_scalar_witness": {
+          "E4_code": 3,
+          "exact_E4_value": 0.005859375,
+          "F32_scale_bits": "3f805586",
+          "F32_scale": 1.0026099681854248,
+          "BF16_after_F32_product_bits": "3bc1",
+          "BF16_after_BF16_scale_then_product_bits": "3bc0",
+          "method": "Python struct F32 boundaries plus integer BF16 RNE; no product codec, GPU or model. Demonstrates distinct scale trees; not an attention quality/tolerance verdict."
+        }
+      },
+      "conditional_minimal_design": {
+        "uniform_E4_first": {
+          "public_shape": "Replace MlaBatchCapacity.data_type with query_type and cache_storage; keep output=query_type for the current natural contract unless independent output_type is required by an actual consumer. Retain layout kCkv512/kCkv512Rope64 and existing geometry. No old data_type alias/overload.",
+          "storage": "cache_storage is the existing CacheStorage plain(F16/BF16) or float8(positive finite scalar). Project Q/Y from query_type, K and V storage from the same cache_storage. One physical row is homogeneous512/576 elements; V is first512 with unchanged full rowstride and the same CKV decode scale. KPE shares that scale in this homogeneous contract.",
+          "schema": "Schema equality/owned identity includes storage interpretation and scale; cannot change scale during page reuse. Existing BatchCapacity projection is sufficient for this homogeneous case, and BatchCacheRole::kMla remains the sole cache role.",
+          "reader_math": "Use the established E4 storage interpretation (original F32 scale and its declared rounding boundary), F32 accumulation, and existing attention probability/final output policy. Do not silently redefine it to fit the pinned scalar BF16-scale repack.",
+          "CPU": "Relax only the genuine MLA cache/depth qualification; reuse PagedRead and original E4 reader with same CKV K/V scale. Preserve truthful strided Vprefix and ragged row offsets. No whole-page/cache decode expansion.",
+          "Vulkan": "Carry compact flag into the existing E4 private reader and exact import. Admit only the verified Vprefix rowstride/root geometry; update the bounded scalar/shader path for512/576 and metadata index2. Do not weaken arbitrary ordinary dense imports.",
+          "Apple": "Reuse existing one native Program/runtime and prefix slice; share metadata index mla?2:3. Extend E4 shader depth/rowstride support only after the mathematical contract is fixed; no independent V tensor or dense repack graph.",
+          "CUDA": "Keep E4 MLA rejected until low-smem native adaptation and scale-tree agreement are implemented. Split Q and cache template parameters explicitly and use byte-correct strides; do not cast the existing BF16 cache pointer toE4 by merely setting spec.fp8."
+        },
+        "mixed_CKV_E4_KPE_BF16_if_actually_required": {
+          "different_physical_contract": "A row [512 E4 bytes,64 nativeBF16] is640B, with KPE byteoffset512; homogeneousE4 is576B and homogeneousBF16 is1152B. No single homogeneous TensorDesc or element-stride reinterpretation can truthfully describe all three.",
+          "small_natural_extension": "Introduce an MLA-specific immutable two-segment storage descriptor (CKV CacheStorage plus optional positional CacheStorage tied to layout). Store the complete descriptor in BatchSchema; derive rowbytes/segment offsets centrally with checked arithmetic. Mixed payload must have a truthful U8 physical carrier while typed Q/Y stay separate. The whole CKV remains Vprefix; no independent V page.",
+          "existing_owner_reuse": "Extend the original BatchSchema/PagedArena description and per-page byte calculation to consult that descriptor. Feed complete immutable schema/encoding to the same native MLA preparation path, so providers receive actual CKV/KPE pointertypes/bytepitches. Reuse page-footprint, pending/ready leases, original Invocation and completion; no new executor or generic user-managed pointer table.",
+          "reader_work": "CPU and Vulkan split QK dot into CKV andKPE segments, then PV reads CKV only. Apple uses same boundednative segmented reads. FlashInfer original DTypeKV unifies both segments and therefore requires a true separate-KPE type adapter/kernel change; independent pointers alone do not make mixed types legal.",
+          "not_a_substitute": "RowCacheEncoding::float8_block64_tail64 is448E4+64BF16+7UE8 scales+pad=584B, logicaldepth512, and does not represent512E4+64BF16 MLA. Do not reuse its encoding ID, scales, offsets or publisher.",
+          "scope_gate": "Design only until a fixed runtime/import producer needs it. The current ModelOpt expanded-K/V recipe does not establish this requirement; do not preemptively implement a generic segment framework."
+        }
+      },
+      "affected_files_if_uniform_work_is_authorized": {
+        "common": [
+          "include/hyle/compute/batch_layout.h",
+          "src/compute_batch/batch_layout.cc",
+          "include/hyle/compute/batch_ops.h",
+          "src/graph_batch/batch.cc"
+        ],
+        "CPU": [
+          "src/compute_provider_ggml/native_batch.cc",
+          "src/compute_provider_ggml/ggml_cpu_provider.cc",
+          "third_party/ggml_cpu_runtime/patches.json if the actual reader lacks the required high-dimensional/strided domain"
+        ],
+        "Vulkan": [
+          "src/compute_route_vulkan/vulkan_batch.cc",
+          "src/compute_provider_ggml_vulkan/region.h",
+          "src/compute_provider_ggml_vulkan/region.cc",
+          "src/compute_route_vulkan/vulkan_program.cc",
+          "existing typedflash shader/import bridge plus its locked source owners"
+        ],
+        "Apple": [
+          "src/compute_route_apple/apple_batch.cc",
+          "current locked MLX paged-attention bridge/Metalshader (actual typed E4 kernel owners must be identified before compiling)"
+        ],
+        "CUDA": [
+          "src/compute_provider_flashinfer/flashinfer_provider.cc",
+          "src/compute_provider_flashinfer/native_batch.h",
+          "src/compute_provider_flashinfer/native_mla.cu",
+          "third_party/flashinfer_cache/patches.json and its dependency lock/NOTICE only if a new native tile/math adapter is implemented"
+        ],
+        "ABI_note": "Changing public inline MLA descriptors requires fresh actual constructor/extractor owners and extension ABI revision where signatures/layout change. Inventory those actual owners; do not rebuild unrelated SDK just for a public include. No old descriptor compatibility entry is proposed."
+      },
+      "finite_regression_boundary": [
+        "Schema: BF16/F16 Q separate from plain/E4 cache, exact512/576 physical rowbytes, positive finite cache scale validation, changedscale creates a different schema, no independent V role; wrong uniform-vs-mixed carrier rejected.",
+        "One ordinary compact attention journey: BF16 Q, two requests, nontrivial heads, page16, repeated/reordered pages, tails crossing a page, KPE-only and CKV-only oracle contributions so neither segment/pitch can be ignored. Independent decoded reference and explicit wrongscale witness.",
+        "Two original slots plus retained GraphOutput/result, same owned page gates, old result stable across other slot update and object destruction; fresh versus warm plan comparison only within the original provider reuse qualification.",
+        "Retain at least one original plain512/576 and existing F16 case as neighbors. For unsupported SM89 E4 native path, require clear prepare Unimplemented/OutOfRange before submit; do not claim a new GPU result from template presence.",
+        "Before CUDA enablement: exact compiled sizeof SharedStorage and native attrs, bounded tile resource result plus nonpower2/tiny/overflow scale-tree witnesses, then original capture/accepted-prefix and split/no-split finite journey. This is a small enabling check, not a model/throughput validation matrix."
+      ],
+      "existing_test_owners": [
+        "tests/compute_batch/mla_test_support.h",
+        "tests/compute_batch/public_mla_cpu_consumer.cc",
+        "tests/compute_batch/public_mla_cuda_consumer.cc",
+        "tests/compute_batch/public_mla_native_consumer.cc",
+        "tests/compute_batch/public_mla_pending_cuda_consumer.cc",
+        "tests/compute_batch/public_mla_pending_graph_cuda_consumer.cc",
+        "tests/compute_provider_flashinfer/ragged_mla_test.cc",
+        "tests/graph_route_vulkan/native_region_test.cc"
+      ],
+      "current_sources": [
+        {
+          "path": "include/hyle/compute/batch_layout.h",
+          "bytes": 10277,
+          "sha256": "8712c3fc736fb48ee1b02d4d52dbbd8afa4828a0542525bdb97be0b40326cd0e"
+        },
+        {
+          "path": "include/hyle/compute/batch_ops.h",
+          "bytes": 6114,
+          "sha256": "92a052affd8a4159d3f053f879050630297c33e343e96e84a147966ef491a85d"
+        },
+        {
+          "path": "include/hyle/compute/low_precision.h",
+          "bytes": 10406,
+          "sha256": "0920a5a2faecb2991da60ecede680c496bab73411a305e559461ea41cea309cb"
+        },
+        {
+          "path": "include/hyle/compute/detail/batch_provider.h",
+          "bytes": 5498,
+          "sha256": "bf2d93357c2db25109086b84a41f6e4c569aa5fe95fcdac28337cc39da0e856e"
+        },
+        {
+          "path": "src/compute_batch/batch_layout.cc",
+          "bytes": 26240,
+          "sha256": "d7edb3f3194c6bf1e953ed4316aa49d5f0bd2c1f49c280a0e800e8d0ac054052"
+        },
+        {
+          "path": "src/compute_batch/paged_arena.cc",
+          "bytes": 32124,
+          "sha256": "ecb872ca7e6b136f05f2be266b12cc3427fb778524aa62c3c02ed6e2da34858b"
+        },
+        {
+          "path": "src/compute_batch/batch_execution.cc",
+          "bytes": 64570,
+          "sha256": "7e7e2a8f694df5a55d88c0cd7879158fa06694d21dce2f2129b91587e8a90045"
+        },
+        {
+          "path": "src/graph_batch/batch.cc",
+          "bytes": 81889,
+          "sha256": "bb4f4b5f0cf1269df453ec7ff2b833f59c285e776e587cc43c966df2762d0c98"
+        },
+        {
+          "path": "src/graph_batch/native_batch_regions.cc",
+          "bytes": 13819,
+          "sha256": "0c541251e500f3f45c016abdf1fef8d50bb049156c62f25d4a7c8696ff963018"
+        },
+        {
+          "path": "src/compute_provider_ggml/native_batch.cc",
+          "bytes": 21877,
+          "sha256": "e6c1abad92d064f69129b57d98e708d8f0bcafab0de989523df21155b0e3700a"
+        },
+        {
+          "path": "src/compute_provider_flashinfer/flashinfer_provider.cc",
+          "bytes": 44418,
+          "sha256": "73c57a25bb18b8facde5361626742a0ffd0d1193886952a632fde75d2a297767"
+        },
+        {
+          "path": "src/compute_provider_flashinfer/native_batch.h",
+          "bytes": 2620,
+          "sha256": "34d8379ae430ec676223fe0a9d1a80c5244e54b210e64c94a2cd170a71c3b9d6"
+        },
+        {
+          "path": "src/compute_provider_flashinfer/native_mla.cu",
+          "bytes": 5346,
+          "sha256": "174cbf2edb4c0ae4e39b0fd573764d801b0069484d12e8041925a3e8afefb863"
+        },
+        {
+          "path": "src/compute_route_apple/apple_batch.cc",
+          "bytes": 16874,
+          "sha256": "188f6030a69e300d96a1de21035c2c6cf7001bef340d7d72ab1f8c6580d9062c"
+        },
+        {
+          "path": "src/compute_route_vulkan/vulkan_batch.cc",
+          "bytes": 15649,
+          "sha256": "d2ae8b781d2912fd27d7849fb5ba2e339b1ced62ae9a092a4f90de01c5c1e90d"
+        },
+        {
+          "path": "src/compute_provider_ggml_vulkan/region.h",
+          "bytes": 4042,
+          "sha256": "78c48bb9081477b8ce3d4d772f2d010cd461693036deab69a2f2062ea0c093db"
+        },
+        {
+          "path": "src/compute_provider_ggml_vulkan/region.cc",
+          "bytes": 104120,
+          "sha256": "f89d382f4c4827d718dc810e5247264dc06b58d9da82076ff0c797607b8b63a2"
+        }
+      ],
+      "limitations": [
+        "No new compilation or sizeof instantiation, GPU runtime, profiler, model payload or throughput experiment. Shared-memory totals are source-layout arithmetic, and current SM89 block limit is a checked NVIDIA architecture fact.",
+        "No proof of CKV/KPE artifact packing/encoding is inferred from ModelOpt exporter, full model name or another GPU backend.",
+        "The existing admitted plain paths are not declared defective because unadmitted E4 template branches have resource/numeric obstacles."
+      ],
+      "runtime_contract_update": {
+        "producer_review": {
+          "path": ".scratch/architecture-refactor-2026-10-18/compact-mla-e4-2026-10-21/producer-review.json",
+          "bytes": 52734,
+          "sha256": "3f8f0157228aff853f86efa16e35039f7218b7ff3f90a95a4d3a7fc43bf79515"
+        },
+        "raw_uniform": "Fixed SGLang82ac83a8 and vLLM7b569ec8 establish raw512/576 E4 rows for designated TRTLLM paths; the latent CKV also serves asV, so one cache scale must govern both QK and PV. Flash NoPE is512. Published artifact29 flags choose TRTLLM; artifact28 command does not specify E4. This is runtime policy/source evidence, not exact publisher container commit or model payload execution.",
+        "scaled_DSA_is_distinct": "Other fixed SGLang/vLLM layouts use512E4+4F32 group128 scales+64BF16=656B, or528B withoutRoPE. The earlier hypothetical raw640B mixed two-segment row is not evidence for this656B layout. No rowcache584B reuse or scalar-scale masquerade is proposed."
+      },
+      "actionable_adapt": {
+        "recommended": "Keep CTA_Q64, original256threads, original MLAPlan and original partial/merge geometry. For only BF16Q+E4KV, select KV16/NUM_STAGES1/QK_SHARDfalse and remove the genuinely unused512B cross-warpgroup m_wg/d_wg shared state from the E4 specialization. This is smaller than a newQ32 kernel shape.",
+        "why_not_merely_Q32": {
+          "scheduler": "Verified scheduler.cuh MLAPlan currently hardcodes cta_tile_q64, selects cluster by avg_packed_qo_len>64 and sets partial/merge offsets for that geometry. Changing only launch KTraits is inconsistent.",
+          "kernel": "load_q unrolls mma_q<2 and uses warpgroup*16+warp*4; launch is(32,4,2); compute/mask/output map four warps to64 query rows; write_o contains blockIdx.x*4 partial indexes and linear threadid z*128. Q32 requires real remapping, matching planner/count-only sizing, partial strides and write/merge paths. It is possible but not a one-parameter safe change.",
+          "memory_if_done": "Q32/KV16/Rope64 current state fields estimate64768B, but that memory fact alone proves neither indexing nor scheduler compatibility."
+        },
+        "source_proven_safe_dead_state": {
+          "storage": "Current shared payload ends in union float m_wg[2][CTA_Q] / d_wg[2][CTA_Q], exactly512B atQ64.",
+          "references": "All m_wg accesses are in update_mdo_states_ inside if constexpr(KTraits::QK_SHARD); all d_wg accesses are in normalize_d_ inside the same compile-time branch. No nonsharded E4 access occurs. Register m/d remain unchanged.",
+          "implementation_form": "Use an E4-only SharedStorageQKVO partial specialization omitting these dead fields, with static_assert(!QK_SHARD) on the E4 KTraits/dispatcher. Keep the non-E4 declaration verbatim. Do not overlap asynchronously loaded raw KV with the expanded KV tile, and do not overlay Q with live KV: those would require a new lifetime proof.",
+          "outer_union": "Existing o_smem union is retained. Its64*512*2=65536B is smaller than the new payload. It becomes live only after the original KV loop/cp.async waits+CTA barriers; final write sequence is unchanged."
+        },
+        "bytes_current_patched": [
+          {
+            "Q": 64,
+            "KV": 32,
+            "Rope": 64,
+            "Q_nope": 65536,
+            "Q_pe": 8192,
+            "raw_CKV": 16384,
+            "raw_KPE_P": 2048,
+            "repacked_CKV": 32768,
+            "repacked_KPE": 4096,
+            "crossgroup": 512,
+            "sum": 129536
+          },
+          {
+            "Q": 64,
+            "KV": 32,
+            "Rope": 0,
+            "Q_nope": 65536,
+            "Q_pe_placeholder": 128,
+            "raw_CKV": 16384,
+            "raw_KPE_P_placeholder": 2048,
+            "repacked_CKV": 32768,
+            "repacked_KPE_placeholder": 64,
+            "crossgroup": 512,
+            "sum": 117440
+          },
+          {
+            "Q": 64,
+            "KV": 16,
+            "Rope": 64,
+            "Q_nope": 65536,
+            "Q_pe": 8192,
+            "raw_CKV": 8192,
+            "raw_KPE_P": 1024,
+            "repacked_CKV": 16384,
+            "repacked_KPE": 2048,
+            "crossgroup": 0,
+            "sum": 101376,
+            "remaining_to_Ada_99KiB": 0
+          },
+          {
+            "Q": 64,
+            "KV": 16,
+            "Rope": 0,
+            "Q_nope": 65536,
+            "Q_pe_placeholder": 128,
+            "raw_CKV": 8192,
+            "raw_KPE_P_placeholder": 1024,
+            "repacked_CKV": 16384,
+            "repacked_KPE_placeholder": 32,
+            "crossgroup": 0,
+            "sum": 91296,
+            "remaining_to_Ada_99KiB": 10080
+          }
+        ],
+        "arithmetic_correction": "Earlier original-noRoPE117312B did not include the current patched Q_pe placeholder128B. Actual linked patched-header layout is117440B. Both exceed99KiB; the corrected values above are the proposed product-build geometry basis.",
+        "static_layout_proof_source": {
+          "path": ".scratch/architecture-refactor-2026-10-18/compact-mla-e4-2026-10-21/sm89-layout-source-proof.cc",
+          "bytes": 1964,
+          "sha256": "30ff4f0dfb4a09a53acf108c555ed5ce75f2e8cdb5225544b515118c87dfafc5"
+        },
+        "proof_status": "Actual single NVCC13.3/MSVC14.50 sm89 compile succeeded; two realCUDA E4 KTraits layouts and plain BF16 neighbor static assertions passed. Tiny pointwise helper code generated, no full attention or GPU execution.",
+        "KV16_existing_kernel_basis": {
+          "load": "load_kv has an existing if constexpr(NUM_MMA_KV==1) branch. Warpgroup0 cooperatively loads rows0..15 with page index range guard and zero-fill; CKV/KPE pitches remain independent. No new page gather or scheduler is required.",
+          "compute": "E4 alwaysQK_SHARDfalse, so NUM_MMA_KV1 is consumed by the existing complete (not dividedby2) QK/mask/softmax/PV loops. Existing MMA m16n16k16 supports this tile. Original cp.async commit/wait and CTA barriers stay unchanged.",
+          "repack": "Raw16-code128bit reads produce two128bit BF16 stores. CTA16 scales the original rowcount/strides in all repack loops. RawKPE uses its existing64B swizzle for64E4 columns. No cross-stage alias or whole-cache expansion."
+        },
+        "plan_and_launch_consistency": {
+          "unchanged": "MLAPlanInfo layout, cta_tile_q64, cluster_size/num_blks, q_start/work/merge arrays, float_partial_bytes sizeof(float), partial offsets/strides, output rows, pernode QueueSequence, leases, Completion and captured Invocation are unchanged. BatchFacts.cta_tile_q remains64. KV tile is only the native loop step; scheduler KV chunk lengths and page spans remain logical rows.",
+          "cold_selection": "Select only the BF16Q/E4 KV16/one-stage nonsharded native instantiation for the qualified SM89 cache domain. Keep all original plain/F16 launch branches unchanged. Prefer materializing function/maximum-dynamic-shared attributes at existing cold preparation before capture, with explicit static+dynamic <= cudaDevAttrMaxSharedMemoryPerBlockOptin. Reuse the original plan/slot, no global cache or new executor.",
+          "occupancy": "Original MLAPlan sets num_blks_x* num_blks_y=cluster_size*floor(num_sm/cluster_size), no more than numSM. The adapted99KiB block requires one resident block/SM, like the existing large plain path. Real CUDA function attributes/register occupancy/cooperative support still need actual cold confirmation.",
+          "private_ABI": "Existing BatchSpec bfloat16 and fp8 already distinguish BF16query fromE4cache; no new PlanInfo or public launch geometry field is needed for fixedQ64/KV16. If an implementation chooses to store a cold launch choice, use one private owner and refresh its actual linked readers, not parallel schedulers."
+        },
+        "repack_contract": {
+          "admission": "Initially BF16 Q/output only for E4 MLA; keep original F16/plain path. Explicit F16Q/E4 refusal prevents accidentally reinterpreting half lanes asnv_bfloat162. Both cache prefixCKV andKPE share one immutable CacheStorage scalar for the uniform contract.",
+          "pointwise": "Decode each E4 code exactly toF32, perform one F32 RNE code*the original F32scale, then one BF16 RNE. Never BF16round the scale first, never precombine CKVscale with attention or Voutput scale. The same decoded CKV BF16 tile feeds QK andPV.",
+          "implementation": "Replace scalar __hmul2 scale branch for this E4 variant by per-element F32 multiply and __float2bfloat16_rn (or equivalent explicit cvt.rn.bf16.f32). __fmul_rn is adequate only with actual noFTZ flags; inlinePTX mul.rn.f32 without.ftz gives the intended boundary independently of use_fast_math. No unconditional packed2_t is needed; a small BF16-specific loop has no F16 alias hazard.",
+          "pointers": "Instantiate MLAParams<__nv_bfloat16,__nv_fp8_e4m3,__nv_bfloat16,I32,float>. q_pe usesBF16 elementoffset512 and Q rowstrideheads*(512+Rope). kpe usesE4 byteoffset512 and cache row/page pitch(512+Rope), notBF16 pitch. p.ckv_scale and p.kpe_scale receive the same original cache scale. V is p.ckv, so it cannot carry a second ordinary Vscale.",
+          "domain": "Positive finite F32scale including subnormal remains admitted by the public CacheStorage contract; finite E4 may generate BF16zero orInf after the explicit F32product/BF16round. RawE4 NaN propagation and active-tail/page permission behavior must remain the original cache-read domain. Scale-array DSAmode is out of this uniform-scalar package.",
+          "bounded_cost": "One additional F32 scalar product per element inside the original bounded repack; no decoded global cache, A quantizer, extra GPU payload, newlaunch or hot host wait."
+        },
+        "limited_implementation_files": [
+          "third_party/flashinfer_cache/patches.json (E4-only KV16 storage/repack adapter, pinned source closure/NOTICE/lock)",
+          "src/compute_provider_flashinfer/native_mla.cu (newBF16query/E4cache instantiation and typed offsets/scales)",
+          "src/compute_provider_flashinfer/flashinfer_provider.cc (precise query/cache admission and immutable sharedscale)",
+          "src/compute_provider_flashinfer/native_batch.h only if a real cold native choice cannot be represented by existingflags; no mandatory fieldchange"
+        ],
+        "finite_acceptance": [
+          "Compile-time static_assert of actual CUDA SharedStorage101376/91296B forBF16E4 KV16 and preservation of plain instantiation geometry; real cold function attributes and one-block cooperative occupancy.",
+          "Existing one compact512 and576 paged journey with nonpower2scale tree witness, CKV-only/KPE-only QK witness and Vprefix oracle; no model payload required.",
+          "One page-boundary tail + repeated page + two slots/oldresults and original RequireCapture where runtime advertises it; all original numerical/lease failure behavior kept.",
+          "A tiny prepare refusal of F16Q/E4, and one original plain BF16/F16 neighbor. Do not run an expansive geometry matrix or claim throughput from capability."
+        ],
+        "fallback_if_actual_compiler_exceeds_limit": "Do not pad through the99KiB boundary or change callerpayload. If actual sizeof/staticSMEM makes exact-limit101376 infeasible, then implement realQ32 geometry together with planner/report/count-query/output/merge indexing, or another explicitly proven dead-storage reduction. That is a second implementation decision, not a blind parameter flip."
+      },
+      "nvcc_layout_proof": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\compact-mla-e4-2026-10-21\\nvcc-proof\\summary.json",
+        "bytes": 4140,
+        "sha256": "b0295f80b7de259792808e7c56eb62fbfb05828168862466c74df1940bb8c9a0"
+      }
+    },
+    "isolated_NVCC": {
+      "status": "one_compile_layout_proof_passed_not_a_native_MLA_execution_test",
+      "compile": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\compact-mla-e4-2026-10-21\\nvcc-proof\\compile-result.json",
+        "bytes": 6279,
+        "sha256": "206ed79ef934bfd6cbb0f0078fa51bbc41e3b53fc02a0c06479bb7dc9522c229"
+      },
+      "actual_dependencies": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\compact-mla-e4-2026-10-21\\nvcc-proof\\actual-dependencies.json",
+        "bytes": 229943,
+        "sha256": "de088e3a57b134fd1cc5ae8cef45566c506d0972d24f22c0f9520f32a429be75"
+      },
+      "dependency_count": 928,
+      "candidate": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\compact-mla-e4-2026-10-21\\nvcc-proof\\candidate\\include\\flashinfer\\attention\\mla.cuh",
+        "bytes": 66069,
+        "sha256": "e38a53fc5e117d680105871d9127f05196f0b95210035807c48201a3592c3ec9"
+      },
+      "diff": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\compact-mla-e4-2026-10-21\\nvcc-proof\\candidate.diff",
+        "bytes": 5755,
+        "sha256": "91f16cf6a797b898b046b84944b21ef000f2056a1c49ac92189745608ca162f7"
+      },
+      "proof": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\compact-mla-e4-2026-10-21\\nvcc-proof\\layout-proof.cu",
+        "bytes": 2509,
+        "sha256": "384ccc6e194ad8a90431e6e82cebfcb8b35452682d1da09d0417156e088be74d"
+      },
+      "sizeof_align_offsets": {
+        "E4_576": {
+          "sizeof": 101376,
+          "align": 16,
+          "q_nope": 0,
+          "q_pe": 65536,
+          "raw_ckv": 73728,
+          "raw_kpe": 81920,
+          "repacked_ckv": 82944,
+          "repacked_kpe": 99328
+        },
+        "E4_512": {
+          "sizeof": 91296,
+          "align": 16,
+          "q_nope": 0,
+          "q_pe": 65536,
+          "raw_ckv": 65664,
+          "raw_kpe": 73856,
+          "repacked_ckv": 74880,
+          "repacked_kpe": 91264
+        },
+        "plain_BF16_576": 92704,
+        "plain_BF16_512": 84640
+      },
+      "geometry": {
+        "Q": 64,
+        "KV": 16,
+        "threads": 256,
+        "stages": 1,
+        "QK_SHARD": false,
+        "MLAPlanInfo_bytes": 144,
+        "partial_o_offset": 128,
+        "partial_lse_offset": 136
+      },
+      "device_code": {
+        "command": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\compact-mla-e4-2026-10-21\\nvcc-proof\\device-code-command.json",
+          "bytes": 385,
+          "sha256": "852d31f7f5bfb684d33dded1c493d55d6032ffad503108753323bda09d1fe122"
+        },
+        "stdout": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\compact-mla-e4-2026-10-21\\nvcc-proof\\device-code.stdout.log",
+          "bytes": 5396,
+          "sha256": "96d9d6779ebad104fee28d2c3c88e74839a7268ee42d7dec5a57f0b53b5fb9a8"
+        },
+        "operation_excerpt": [
+          "Function : proof_e4_scale_rn",
+          "/*0080*/                   FMUL R0, R2, c[0x0][0x168] ;               /* 0x00005a0002007a20 */",
+          "/*0090*/                   F2FP.BF16.F32.PACK_AB R0, RZ, R0 ;         /* 0x00000000ff00723e */"
+        ],
+        "scope": "only the tiny pointwise scale helper is code-generated; this does not instantiate or execute full attention/repack loops"
+      },
+      "counts": {
+        "NVCC_processes": 1,
+        "successful_NVCC_processes": 1,
+        "NVCC_failed": 0,
+        "links": 0,
+        "GPU_runs": 0,
+        "SDK_rebuilds": 0,
+        "canonical_source_edits": 0,
+        "current_owner_replacements": 0
+      },
+      "warnings": "Actual compiler stdout retains one CCCL fast_modulo_division unused __div warning; no flags/warnings were suppressed.",
+      "limits": [
+        "Full MLA kernel bodies, CTA synchronization, actual shared/static attributes, cooperative launch occupancy, capture and numeric attention results remain untested.",
+        "Current scheduler is actual unchanged linked header; its localcta_tile_q64 and real PlanInfo layout are checked. No new scheduler geometry or ABI was introduced.",
+        "F16Q/E4 is intentionally not a candidate; original plain F16/BF16 code and source layout remain intact."
+      ]
+    }
+  },
+  "limits": [
+    "No product/manifest/currentnative owner changes, no fullMLA kernel instantiation, no link or GPUexecution from isolatedproof.",
+    "No exactartifactproducer a4bc source, weightpayload, wholemodel, Linux, quality or throughput acceptance.",
+    "Staticsharedsize equalsSM89 limit; runtimefunction attributes/resource feasibility and actualkernel remain to be tested. This is a concretecandidate, not a signedworkingCUDApath.",
+    "Uniformfixedscale compactE4 does not imply dynamicgroup-scale mixedDSA supported. F16Q E4 is not exposed."
+  ],
+  "archive": {
+    "path": "docs/evidence/research/compact-mla-e4-contract-2026-10-21.zip",
+    "bytes": 804869,
+    "sha256": "4c0ab9ed6cfb3f3a76648f74f6bd07d9d7140a4c17b9fa747ddd6f57583afa78",
+    "members": 141
+  },
+  "archive_entries": [
+    {
+      "entry": "records/architecture-review.json",
+      "bytes": 32633,
+      "sha256": "002b15fcca13160dc7be36942ccac4cd42790ec545d3f70595212a9cf94cad4e"
+    },
+    {
+      "entry": "records/cached-28-config.json",
+      "bytes": 20580,
+      "sha256": "e4a1f239a569ba627c214ee0ea14e90e9077089c394c171bd98b6cca0b11eaad"
+    },
+    {
+      "entry": "records/fetch.py",
+      "bytes": 1279,
+      "sha256": "d5c741df04de2a96feae49746f109c1a132b6fe0f0eba06da0b016e672c18f02"
+    },
+    {
+      "entry": "records/finalize_review.py",
+      "bytes": 9823,
+      "sha256": "56eff153232eb7a2a60c473d340a0325a04cfe0c5775a29a7f14c831eef47965"
+    },
+    {
+      "entry": "records/nvcc-proof/actual-dependencies.json",
+      "bytes": 229943,
+      "sha256": "de088e3a57b134fd1cc5ae8cef45566c506d0972d24f22c0f9520f32a429be75"
+    },
+    {
+      "entry": "records/nvcc-proof/before-mla.cuh",
+      "bytes": 64315,
+      "sha256": "b87ea1984c5425c775f8a834f4b424fdc9aad699bb7ad5ceb61c2797b2aae3c6"
+    },
+    {
+      "entry": "records/nvcc-proof/candidate.diff",
+      "bytes": 5755,
+      "sha256": "91f16cf6a797b898b046b84944b21ef000f2056a1c49ac92189745608ca162f7"
+    },
+    {
+      "entry": "records/nvcc-proof/candidate/include/flashinfer/attention/mla.cuh",
+      "bytes": 66069,
+      "sha256": "e38a53fc5e117d680105871d9127f05196f0b95210035807c48201a3592c3ec9"
+    },
+    {
+      "entry": "records/nvcc-proof/compile-command.json",
+      "bytes": 4944,
+      "sha256": "382bf50c45d17183e4df8b5d7aef94d60b83593ccb222e16c4254dd3c2a0fd1d"
+    },
+    {
+      "entry": "records/nvcc-proof/compile-plan.json",
+      "bytes": 4505,
+      "sha256": "a2f94e272db9308e8cee925c95288b60dcab6548beba9775b5303ee55f7e965a"
+    },
+    {
+      "entry": "records/nvcc-proof/compile-result.json",
+      "bytes": 6279,
+      "sha256": "206ed79ef934bfd6cbb0f0078fa51bbc41e3b53fc02a0c06479bb7dc9522c229"
+    },
+    {
+      "entry": "records/nvcc-proof/compile.py",
+      "bytes": 2635,
+      "sha256": "2efaccdfbfe58547107f1238c43eff21e6a2176dc05236e96950cb1b0ffe3963"
+    },
+    {
+      "entry": "records/nvcc-proof/device-code-command.json",
+      "bytes": 385,
+      "sha256": "852d31f7f5bfb684d33dded1c493d55d6032ffad503108753323bda09d1fe122"
+    },
+    {
+      "entry": "records/nvcc-proof/device-code.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/nvcc-proof/device-code.stdout.log",
+      "bytes": 5396,
+      "sha256": "96d9d6779ebad104fee28d2c3c88e74839a7268ee42d7dec5a57f0b53b5fb9a8"
+    },
+    {
+      "entry": "records/nvcc-proof/layout-proof.cu",
+      "bytes": 2509,
+      "sha256": "384ccc6e194ad8a90431e6e82cebfcb8b35452682d1da09d0417156e088be74d"
+    },
+    {
+      "entry": "records/nvcc-proof/layout-proof.d",
+      "bytes": 106629,
+      "sha256": "86a5c3e0d8e57c29b563b4bf0fdfc420076ea48b2d636c79e8d9f6e23b295b53"
+    },
+    {
+      "entry": "records/nvcc-proof/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/nvcc-proof/stdout.log",
+      "bytes": 719,
+      "sha256": "c3ed54c58ed7997d33d5e7db42e72dcedc4c8b024f376e576b91de4e2d6e214a"
+    },
+    {
+      "entry": "records/nvcc-proof/summary.json",
+      "bytes": 4140,
+      "sha256": "b0295f80b7de259792808e7c56eb62fbfb05828168862466c74df1940bb8c9a0"
+    },
+    {
+      "entry": "records/producer-commit.json.http.json",
+      "bytes": 289,
+      "sha256": "95552e942f507633646e870f3b07350c0f92f791716d5346d9a172bd62ec5a3e"
+    },
+    {
+      "entry": "records/producer-review.json",
+      "bytes": 52734,
+      "sha256": "3f8f0157228aff853f86efa16e35039f7218b7ff3f90a95a4d3a7fc43bf79515"
+    },
+    {
+      "entry": "records/producer/tensor_quantizer.py.http.json",
+      "bytes": 342,
+      "sha256": "6cca03282d310856e6ffeae94a6858e405376990b105cf6c1dc8aeb77f971824"
+    },
+    {
+      "entry": "records/recipe/algorithms.py",
+      "bytes": 93347,
+      "sha256": "a9bf15f5a3fa64a6e9729fb32d22f580edde607fedac6abf2bb3ed6abac87b18"
+    },
+    {
+      "entry": "records/recipe/algorithms.py.http.json",
+      "bytes": 614,
+      "sha256": "c6d843d17f111c819e7fccaebc5f6e7a261698a972afe7284a6631066df10941"
+    },
+    {
+      "entry": "records/recipe/attention.py",
+      "bytes": 14494,
+      "sha256": "a2e084bb44c55cbb75acaff63716be3ab4f1ac5484e97d211ac01513b3d208e7"
+    },
+    {
+      "entry": "records/recipe/attention.py.http.json",
+      "bytes": 619,
+      "sha256": "4f104b690dc232fd79428f269171d9e479a3bba58a45626bfef0cf2e68966465"
+    },
+    {
+      "entry": "records/recipe/fp8.yaml",
+      "bytes": 825,
+      "sha256": "191c4a1a037d0619eb566013c2b0de402475a9ace0166ea342d80da7140bfc69"
+    },
+    {
+      "entry": "records/recipe/fp8.yaml.http.json",
+      "bytes": 605,
+      "sha256": "efb44d1ca015d31413a835aa85872bac438effe16d2a8b4e80830b99adb56934"
+    },
+    {
+      "entry": "records/recipe/huggingface.py",
+      "bytes": 85644,
+      "sha256": "dda97161da2cad8b4c0939c7fc0223e70327824b6ecd36c52c9be50bef6c57db"
+    },
+    {
+      "entry": "records/recipe/huggingface.py.http.json",
+      "bytes": 622,
+      "sha256": "80a4a321f35e8a04a1f8925824fb6b9dcd2afbb89eff4a19e0ec20d17eded2da"
+    },
+    {
+      "entry": "records/recipe/plugins-directory.json",
+      "bytes": 18794,
+      "sha256": "5375c3a1de2d7af3a4782b063222249655f12d488891a148be0eee909537a69e"
+    },
+    {
+      "entry": "records/recipe/plugins-directory.json.http.json",
+      "bytes": 661,
+      "sha256": "8a415f3776242e7cbbccaf0a4b731495ce5f0589511b05850a5973d711a22019"
+    },
+    {
+      "entry": "records/recipe/quant_utils.py",
+      "bytes": 77662,
+      "sha256": "9045bccd1ad27bd7c757bb1000ce0ddc05fe4fc1ff140a42f171f5dbc8009b07"
+    },
+    {
+      "entry": "records/recipe/quant_utils.py.http.json",
+      "bytes": 610,
+      "sha256": "5bd05a983fe757dcd84ea49b4827ebfef730c46677bb7c31cf44174fd5b7cb0b"
+    },
+    {
+      "entry": "records/recipe/tensor_quantizer.py",
+      "bytes": 75586,
+      "sha256": "22f26ddf34cc6f716a9e7c42f6894cd066ec88f24ecb53fcbb922fdb49a025d7"
+    },
+    {
+      "entry": "records/recipe/tensor_quantizer.py.http.json",
+      "bytes": 637,
+      "sha256": "ecb72b7df32b5b6319e83fcb1a8a13ac2bac95dfce23472c7a451301568ae05d"
+    },
+    {
+      "entry": "records/recipe/unified_export_hf.py",
+      "bytes": 75001,
+      "sha256": "48fd69e34d9a1c3b1b21eb470084b423013cbf043369d03235fe7e4a5db31aae"
+    },
+    {
+      "entry": "records/recipe/unified_export_hf.py.http.json",
+      "bytes": 622,
+      "sha256": "6d41bfb42d6e42df5b110443b383f6ce0f9f8851e2f825f1af4fd504b653715a"
+    },
+    {
+      "entry": "records/revisions/architecture-before-runtime-adapt-a35637364b7f.json",
+      "bytes": 21090,
+      "sha256": "a35637364b7f800f27d735651e3f30163e806b20ab37f4854738d00f9e035de9"
+    },
+    {
+      "entry": "records/runtime/sglang-ref.json",
+      "bytes": 334,
+      "sha256": "2648753ef3ee4ebc46ff79d4c7b1eb1d7459bed2cf93671a64c98f3bb62eb0df"
+    },
+    {
+      "entry": "records/runtime/sglang-ref.json.http.json",
+      "bytes": 602,
+      "sha256": "91e5ad6080c6cf69f32cddab61df5cf0e6e6e26b3735e72e6a35822f41f245fc"
+    },
+    {
+      "entry": "records/runtime/sglang/attention_utils.py",
+      "bytes": 6978,
+      "sha256": "bc083986e0d75eb2ff97054d8153b06fa5c39ee6280fd8bf22b6b255a936325b"
+    },
+    {
+      "entry": "records/runtime/sglang/attention_utils.py.http.json",
+      "bytes": 623,
+      "sha256": "32ecdc45a8fd477541408bced325aa77697b98b1057330f6ddfc2157e0eca864"
+    },
+    {
+      "entry": "records/runtime/sglang/dsa_quant_k_cache.py",
+      "bytes": 10525,
+      "sha256": "ccac241747729255164ec635a31f99c1fa937f72f2c07ead0d43d0367c0a3e77"
+    },
+    {
+      "entry": "records/runtime/sglang/dsa_quant_k_cache.py.http.json",
+      "bytes": 642,
+      "sha256": "a44e21f8cc98949b7c5f9ee5b2f5bc98578fc5cb4948355e815e47e01052064c"
+    },
+    {
+      "entry": "records/runtime/sglang/executor-directory.json",
+      "bytes": 22999,
+      "sha256": "636ee08c82aec90fe96d335d624c756d7c816086fb4cc45e8077d66307ea2403"
+    },
+    {
+      "entry": "records/runtime/sglang/executor-directory.json.http.json",
+      "bytes": 663,
+      "sha256": "19cae22b52609386f18f2bb46e7fc212901ae6bfb198c868f13375e176c6138d"
+    },
+    {
+      "entry": "records/runtime/sglang/glm5_next.py",
+      "bytes": 75918,
+      "sha256": "53a144246428cddfa564d51a7741c42b7370d527a19895e4878f11ec31066ef4"
+    },
+    {
+      "entry": "records/runtime/sglang/glm5_next.py.http.json",
+      "bytes": 612,
+      "sha256": "6f996a9dac02405dfca89f44b807f5a52536672fddcbd24b2b5b34ad776129db"
+    },
+    {
+      "entry": "records/runtime/sglang/glm_moe_dsa.py.http.json",
+      "bytes": 351,
+      "sha256": "40b1f1c246d5a82750de31340e12acc001e3bb17cc41b86a0936351bbbe0d8f2"
+    },
+    {
+      "entry": "records/runtime/sglang/kv_cache_configurator.py",
+      "bytes": 146972,
+      "sha256": "6d26861dc762f507014628ba8a98448435a9325239a9e91fa669a7af1670024e"
+    },
+    {
+      "entry": "records/runtime/sglang/kv_cache_configurator.py.http.json",
+      "bytes": 642,
+      "sha256": "46a86c858548b885a4d739465a6bc83a93d8f546899995d88ac3152e21f3be91"
+    },
+    {
+      "entry": "records/runtime/sglang/memory_pool.py",
+      "bytes": 259001,
+      "sha256": "f3e12b293f3bdce21604ca5e5b473c07dcb6c8e4a34b582c4498d0bd45a10900"
+    },
+    {
+      "entry": "records/runtime/sglang/memory_pool.py.http.json",
+      "bytes": 622,
+      "sha256": "c0dcb8f87af05c61d776429d4d75b5b686f9b5069ab8753f94b176e5e38d6820"
+    },
+    {
+      "entry": "records/runtime/sglang/model_config.py",
+      "bytes": 115929,
+      "sha256": "d109fc6aa29cc82f82d0ebb38d49c5748294aaad82e48f8d4326045988a3a53d"
+    },
+    {
+      "entry": "records/runtime/sglang/model_config.py.http.json",
+      "bytes": 620,
+      "sha256": "350ddd76a15ec54c0e743463e1b68cf9c1cde754e346bb050772b49058d2ef46"
+    },
+    {
+      "entry": "records/runtime/sglang/pool_configurator.py",
+      "bytes": 72293,
+      "sha256": "4714484e6c45305a57d26272581c70f225993bb1b3c618efdba2c1c6f2cd6a27"
+    },
+    {
+      "entry": "records/runtime/sglang/pool_configurator.py.http.json",
+      "bytes": 635,
+      "sha256": "9967d784b38cf4f0855983e894c3072965ebee5df595bf1fc10389d4a971608e"
+    },
+    {
+      "entry": "records/runtime/sglang/trtllm_mla_backend.py",
+      "bytes": 74212,
+      "sha256": "1e8459d692c4e58ebeaa8ca3bd398c1ed7bd310551a4e0d2f3c313b8daea1aa0"
+    },
+    {
+      "entry": "records/runtime/sglang/trtllm_mla_backend.py.http.json",
+      "bytes": 641,
+      "sha256": "cc629519b20c37e8a6064ad90b24e928f57a3644c06fabcd235dc6dbef5a58f0"
+    },
+    {
+      "entry": "records/runtime/vllm-ref.json",
+      "bytes": 332,
+      "sha256": "288c97d7d54f78a12bd07d0dd2ff002e167b35da92c6878668fe8a2110598ba8"
+    },
+    {
+      "entry": "records/runtime/vllm-ref.json.http.json",
+      "bytes": 599,
+      "sha256": "7a95b2f4c12ca923414ca45723d74458906fe9450daf06af41632eba56c4b892"
+    },
+    {
+      "entry": "records/runtime/vllm/attention-directory.json",
+      "bytes": 4833,
+      "sha256": "586dec1e0ccb30bfce431a345c96f024e3b955fd56ef80d5cc44509bd951e282"
+    },
+    {
+      "entry": "records/runtime/vllm/attention-directory.json.http.json",
+      "bytes": 642,
+      "sha256": "38a0052784bb3aec10bc16d3f010a6eb597c62640ade6515ed0f065a1c915d95"
+    },
+    {
+      "entry": "records/runtime/vllm/backend.py",
+      "bytes": 43274,
+      "sha256": "8e24d7a72446f101b4fe457803396b64870b90d21248bab8cce001daa2f209ca"
+    },
+    {
+      "entry": "records/runtime/vllm/backend.py.http.json",
+      "bytes": 597,
+      "sha256": "eb80a2ba23660ca2ac1e94a08e7725fabcc3e65edd1437c6587692dbe21dd814"
+    },
+    {
+      "entry": "records/runtime/vllm/backends-directory.json",
+      "bytes": 34341,
+      "sha256": "86e2059042fd72f82927bfdd0267703c1f615114bd2caf6d06a97caf3ab0f05d"
+    },
+    {
+      "entry": "records/runtime/vllm/backends-directory.json.http.json",
+      "bytes": 654,
+      "sha256": "b728941de2224ca365eccbd21393a93c6ffd472440a8993726e8f9b6af27b3f0"
+    },
+    {
+      "entry": "records/runtime/vllm/flashinfer_mla_sparse.py",
+      "bytes": 25381,
+      "sha256": "8750f5fb8c64b92ed1f59c522b2cba6aa4cf255480cd70b49ca07152a15cc485"
+    },
+    {
+      "entry": "records/runtime/vllm/flashinfer_mla_sparse.py.http.json",
+      "bytes": 638,
+      "sha256": "cec465e97b8bebc4a5f7925fb3d8661c52f74e53fb82b18166275caa290e2c4e"
+    },
+    {
+      "entry": "records/runtime/vllm/glm5_next.py.http.json",
+      "bytes": 347,
+      "sha256": "24aea7dd1e04b3bbe843bbd419973474f858939984157a020555fbfc3a47ed6b"
+    },
+    {
+      "entry": "records/runtime/vllm/glm5next-common-directory.json",
+      "bytes": 7614,
+      "sha256": "9b161bd653ec9f0f92ea2186e6efd417178e3524220688b15d1adc2045feb755"
+    },
+    {
+      "entry": "records/runtime/vllm/glm5next-common-directory.json.http.json",
+      "bytes": 660,
+      "sha256": "484b7ebad00be34f0266fe71d84aa4c08cb30096781a2aa0b7b0ca179d2c1f7d"
+    },
+    {
+      "entry": "records/runtime/vllm/glm5next-directory.json",
+      "bytes": 4797,
+      "sha256": "fa036d64f15b5f1e18d195891f52a38605c46570a83b038b3c7e14f953baf51f"
+    },
+    {
+      "entry": "records/runtime/vllm/glm5next-directory.json.http.json",
+      "bytes": 646,
+      "sha256": "7288127e6029582771397d1a458b3b96cd7bbacb0192c7675d1b097ba031f3b3"
+    },
+    {
+      "entry": "records/runtime/vllm/glm5next-nvidia-directory.json",
+      "bytes": 3134,
+      "sha256": "565cdd16d358c05d844e8970c27389301e58c0bd790808e403886b0b7d3e4466"
+    },
+    {
+      "entry": "records/runtime/vllm/glm5next-nvidia-directory.json.http.json",
+      "bytes": 659,
+      "sha256": "c00ca00411353acb6598823012009dec2a564927fd9cc26833faa5cfd1f0ee31"
+    },
+    {
+      "entry": "records/runtime/vllm/glm5next_attention.py",
+      "bytes": 23195,
+      "sha256": "e83364215dccc2871e47906a8a5286852bd6a922a6a322394ff8f27db80952e0"
+    },
+    {
+      "entry": "records/runtime/vllm/glm5next_attention.py.http.json",
+      "bytes": 621,
+      "sha256": "7e6832163eb90dca52b80bdf33e798129df6f0da4033f35625b56909e130d9c1"
+    },
+    {
+      "entry": "records/runtime/vllm/mla-directory.json",
+      "bytes": 29809,
+      "sha256": "837f4a733cf8e7c0c0d48bc33d60c4c62e55df0573a69c1b71dd2dc7333ffd59"
+    },
+    {
+      "entry": "records/runtime/vllm/mla-directory.json.http.json",
+      "bytes": 652,
+      "sha256": "706890240911fd90d2dcaa6bc0cdcda70497672e1c8d7e3050f80d7632188bb4"
+    },
+    {
+      "entry": "records/runtime/vllm/mla.py",
+      "bytes": 10291,
+      "sha256": "594f71cb59ca7e9d7e26d76914272ce1f5b7ca280107756ca9dd03b1403cf1a2"
+    },
+    {
+      "entry": "records/runtime/vllm/mla.py.http.json",
+      "bytes": 599,
+      "sha256": "7d6655ab58dc1ee291096c2d81aff9423aecff4bb7b24c5638721554dddd1bc2"
+    },
+    {
+      "entry": "records/runtime/vllm/mla_attention.py",
+      "bytes": 133600,
+      "sha256": "650e3d26e7feb7fea5cd826be8680c219dc2892f2af7385f309e303c18e0917a"
+    },
+    {
+      "entry": "records/runtime/vllm/mla_attention.py.http.json",
+      "bytes": 631,
+      "sha256": "5a28f9a3ca049db25ee2cd724b611a97a35312dabc50dfe65b78bd6672b7dee6"
+    },
+    {
+      "entry": "records/runtime/vllm/mla_common.py.http.json",
+      "bytes": 349,
+      "sha256": "8f5fdaef1be4b042a3f6b5d9d7ec877c3544061f8d301bad89ea14b3bf4c8f67"
+    },
+    {
+      "entry": "records/runtime/vllm/models-directory.json",
+      "bytes": 12174,
+      "sha256": "87ed5f82be29b730715ba43ebb719fe72b067aff37b7ee3f6d9b1b8b99d61490"
+    },
+    {
+      "entry": "records/runtime/vllm/models-directory.json.http.json",
+      "bytes": 638,
+      "sha256": "8bbda8b7255af5cac0ca40b1eafb80d91ac40d0d7a076ecb3d8fd98ce2d30c5b"
+    },
+    {
+      "entry": "records/runtime/vllm/root-directory.json",
+      "bytes": 51110,
+      "sha256": "681a60c4531ba907f09c5058f5967a3412e86a953f4301d01125f85bb7f7e161"
+    },
+    {
+      "entry": "records/runtime/vllm/root-directory.json.http.json",
+      "bytes": 627,
+      "sha256": "5c7d11625e769ebbd21ac7e87ff5b81b5ba5ab4ff0f2d9a340f500297dc1654e"
+    },
+    {
+      "entry": "records/runtime/vllm/sparse_mla_attention.py",
+      "bytes": 47144,
+      "sha256": "c2ca75bfe12b33bb26c3ec3d9fe735cd2ddc68c245d6c76788af2632b9528b77"
+    },
+    {
+      "entry": "records/runtime/vllm/sparse_mla_attention.py.http.json",
+      "bytes": 643,
+      "sha256": "52af7e7ac313df0d9e6a55514bfdc6f2af7b9518e4706a40052aa5fd6acc195c"
+    },
+    {
+      "entry": "records/sm89-layout-source-proof.cc",
+      "bytes": 1964,
+      "sha256": "30ff4f0dfb4a09a53acf108c555ed5ce75f2e8cdb5225544b515118c87dfafc5"
+    },
+    {
+      "entry": "records/transformers-tag5141-object.json",
+      "bytes": 683,
+      "sha256": "7602a9de11606746339fda4b505128aaa89267eb5d536820105cc9a3b300fc92"
+    },
+    {
+      "entry": "records/transformers-tag5141-object.json.http.json",
+      "bytes": 648,
+      "sha256": "b1f4bc9c24e823a4d26aa16c60429e9c63c7568b6b1092c737e5abbf87d708e9"
+    },
+    {
+      "entry": "records/transformers-tag5141.json",
+      "bytes": 353,
+      "sha256": "12f4d5979d0a694027c71ddcb12858ed724e1b2f60721bfa6f516b8787b0fc6f"
+    },
+    {
+      "entry": "records/transformers-tag5141.json.http.json",
+      "bytes": 612,
+      "sha256": "b87badcdb67d5d3477371666ebda43962813f193ba95804d2868e34350e98adc"
+    },
+    {
+      "entry": "records/transformers-tag5161-object.json",
+      "bytes": 677,
+      "sha256": "7b55a3558a6e35260d3e3ee8ba7f9e1d7e7bc55b27e67fd960309dbec4ebc7f6"
+    },
+    {
+      "entry": "records/transformers-tag5161-object.json.http.json",
+      "bytes": 648,
+      "sha256": "d05d76374404bee43b254d87768a7ab7ee2506ab31c8503120f5f302bc442be7"
+    },
+    {
+      "entry": "records/transformers-tag5161.json",
+      "bytes": 353,
+      "sha256": "ebf037840295bfdf0d793bda10610bffeaca4c8b7fbe2ae9408c0810d109d842"
+    },
+    {
+      "entry": "records/transformers-tag5161.json.http.json",
+      "bytes": 612,
+      "sha256": "39aeea39910761c9d678ebec75680446cb81faf40e34fc039627c2fa71c006fb"
+    },
+    {
+      "entry": "records/transformers/modeling_glm5_next.py",
+      "bytes": 102403,
+      "sha256": "2092bbb4efa2a8087b74f4a4da37635c503fe1df9ae73f1e6e8342af8b4b8e8b"
+    },
+    {
+      "entry": "records/transformers/modeling_glm5_next.py.http.json",
+      "bytes": 645,
+      "sha256": "001ada398ceedba4f9e29b8d990580a23d18a40aba16cf46341a07f9089676db"
+    },
+    {
+      "entry": "records/transformers/modeling_glm_moe_dsa.py",
+      "bytes": 37352,
+      "sha256": "adb8317a21716b01273046e46c807f14f0dbaf035af59b60d52bd6bc3007cf72"
+    },
+    {
+      "entry": "records/transformers/modeling_glm_moe_dsa.py.http.json",
+      "bytes": 650,
+      "sha256": "b60088ba00020cbffc60bf593c1adccf8144d32f0f7c875dc946daa57ac363c8"
+    },
+    {
+      "entry": "referenced/.scratch/architecture-refactor-2026-10-18/compact-mla-e4-2026-10-21/cached-28-config.json",
+      "bytes": 20580,
+      "sha256": "e4a1f239a569ba627c214ee0ea14e90e9077089c394c171bd98b6cca0b11eaad"
+    },
+    {
+      "entry": "referenced/.scratch/architecture-refactor-2026-10-18/compact-mla-e4-2026-10-21/nvcc-proof/summary.json",
+      "bytes": 4140,
+      "sha256": "b0295f80b7de259792808e7c56eb62fbfb05828168862466c74df1940bb8c9a0"
+    },
+    {
+      "entry": "referenced/.scratch/architecture-refactor-2026-10-18/compact-mla-e4-2026-10-21/producer-review.json",
+      "bytes": 52734,
+      "sha256": "3f8f0157228aff853f86efa16e35039f7218b7ff3f90a95a4d3a7fc43bf79515"
+    },
+    {
+      "entry": "referenced/.scratch/architecture-refactor-2026-10-18/compact-mla-e4-2026-10-21/recipe/huggingface.py",
+      "bytes": 85644,
+      "sha256": "dda97161da2cad8b4c0939c7fc0223e70327824b6ecd36c52c9be50bef6c57db"
+    },
+    {
+      "entry": "referenced/.scratch/architecture-refactor-2026-10-18/compact-mla-e4-2026-10-21/recipe/quant_utils.py",
+      "bytes": 77662,
+      "sha256": "9045bccd1ad27bd7c757bb1000ce0ddc05fe4fc1ff140a42f171f5dbc8009b07"
+    },
+    {
+      "entry": "referenced/.scratch/architecture-refactor-2026-10-18/compact-mla-e4-2026-10-21/recipe/tensor_quantizer.py",
+      "bytes": 75586,
+      "sha256": "22f26ddf34cc6f716a9e7c42f6894cd066ec88f24ecb53fcbb922fdb49a025d7"
+    },
+    {
+      "entry": "referenced/.scratch/architecture-refactor-2026-10-18/compact-mla-e4-2026-10-21/recipe/unified_export_hf.py",
+      "bytes": 75001,
+      "sha256": "48fd69e34d9a1c3b1b21eb470084b423013cbf043369d03235fe7e4a5db31aae"
+    },
+    {
+      "entry": "referenced/.scratch/architecture-refactor-2026-10-18/compact-mla-e4-2026-10-21/sm89-layout-source-proof.cc",
+      "bytes": 1964,
+      "sha256": "30ff4f0dfb4a09a53acf108c555ed5ce75f2e8cdb5225544b515118c87dfafc5"
+    },
+    {
+      "entry": "referenced/.scratch/architecture-refactor-2026-10-18/compact-mla-e4-2026-10-21/transformers/modeling_glm5_next.py",
+      "bytes": 102403,
+      "sha256": "2092bbb4efa2a8087b74f4a4da37635c503fe1df9ae73f1e6e8342af8b4b8e8b"
+    },
+    {
+      "entry": "referenced/.scratch/architecture-refactor-2026-10-18/compact-mla-e4-2026-10-21/transformers/modeling_glm_moe_dsa.py",
+      "bytes": 37352,
+      "sha256": "adb8317a21716b01273046e46c807f14f0dbaf035af59b60d52bd6bc3007cf72"
+    },
+    {
+      "entry": "referenced/.scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/fp8-kv/cached-metadata/29/config.json",
+      "bytes": 16770,
+      "sha256": "41db2811023b40ba4c8f8bbba88bce7dff377af51ecd18b32469a2a07064ebaf"
+    },
+    {
+      "entry": "referenced/.scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/fp8-kv/primary/modelopt/modelopt_recipes/configs/ptq/units/kv_fp8_cast.yaml",
+      "bytes": 988,
+      "sha256": "04af42ca2e3f1590c36213a3f1c236544a7649e0debc1c0ebdf4b3257bdc65b8"
+    },
+    {
+      "entry": "referenced/.scratch/g04-bf16-partials-vendor/upstream/include/flashinfer/attention/mla.cuh",
+      "bytes": 61969,
+      "sha256": "3084a832425fa3872ce00b4b3ec52a32f9f319eb8c0403bc991e91c6d443d132"
+    },
+    {
+      "entry": "referenced/.scratch/g04-bf16-partials-vendor/upstream/include/flashinfer/attention/mla_params.cuh",
+      "bytes": 2365,
+      "sha256": "57be4a5ea15a670305fc45dc7d03b5f3b4f041321e6db05efed01096391946bf"
+    },
+    {
+      "entry": "referenced/.scratch/inference-foundation-review-2026-10-18/cuda-ragged-mla/15-hardware.stdout.log",
+      "bytes": 133,
+      "sha256": "68d16ec8cde0da42a3669b64df8289e9971d0beac05d61456fd8a08c45fb1276"
+    },
+    {
+      "entry": "referenced/.scratch/inference-foundation-review-2026-10-18/cuda-ragged-mla/native-command.json",
+      "bytes": 2357,
+      "sha256": "7d3e96e3900d616e48d46932093a099284a19f4f92acc95452cbdf47c65ed384"
+    },
+    {
+      "entry": "referenced/.scratch/inference-foundation-review-2026-10-18/cuda-ragged-mla/verified-headers/include/flashinfer/attention/mla.cuh",
+      "bytes": 64315,
+      "sha256": "b87ea1984c5425c775f8a834f4b424fdc9aad699bb7ad5ceb61c2797b2aae3c6"
+    },
+    {
+      "entry": "referenced/.scratch/inference-foundation-review-2026-10-18/cuda-ragged-mla/verified-headers/include/flashinfer/attention/mla_params.cuh",
+      "bytes": 2544,
+      "sha256": "e0fd16a476bf5d786d5b5bc8abd1910ff47e5fcbb32cbfc540c90dd68320d585"
+    },
+    {
+      "entry": "referenced/include/hyle/compute/batch_layout.h",
+      "bytes": 10277,
+      "sha256": "8712c3fc736fb48ee1b02d4d52dbbd8afa4828a0542525bdb97be0b40326cd0e"
+    },
+    {
+      "entry": "referenced/include/hyle/compute/batch_ops.h",
+      "bytes": 6114,
+      "sha256": "92a052affd8a4159d3f053f879050630297c33e343e96e84a147966ef491a85d"
+    },
+    {
+      "entry": "referenced/include/hyle/compute/detail/batch_provider.h",
+      "bytes": 5498,
+      "sha256": "bf2d93357c2db25109086b84a41f6e4c569aa5fe95fcdac28337cc39da0e856e"
+    },
+    {
+      "entry": "referenced/include/hyle/compute/low_precision.h",
+      "bytes": 10406,
+      "sha256": "0920a5a2faecb2991da60ecede680c496bab73411a305e559461ea41cea309cb"
+    },
+    {
+      "entry": "referenced/src/compute_batch/batch_execution.cc",
+      "bytes": 64570,
+      "sha256": "7e7e2a8f694df5a55d88c0cd7879158fa06694d21dce2f2129b91587e8a90045"
+    },
+    {
+      "entry": "referenced/src/compute_batch/batch_layout.cc",
+      "bytes": 26240,
+      "sha256": "d7edb3f3194c6bf1e953ed4316aa49d5f0bd2c1f49c280a0e800e8d0ac054052"
+    },
+    {
+      "entry": "referenced/src/compute_batch/paged_arena.cc",
+      "bytes": 32124,
+      "sha256": "ecb872ca7e6b136f05f2be266b12cc3427fb778524aa62c3c02ed6e2da34858b"
+    },
+    {
+      "entry": "referenced/src/compute_provider_flashinfer/flashinfer_provider.cc",
+      "bytes": 44418,
+      "sha256": "73c57a25bb18b8facde5361626742a0ffd0d1193886952a632fde75d2a297767"
+    },
+    {
+      "entry": "referenced/src/compute_provider_flashinfer/native_batch.h",
+      "bytes": 2620,
+      "sha256": "34d8379ae430ec676223fe0a9d1a80c5244e54b210e64c94a2cd170a71c3b9d6"
+    },
+    {
+      "entry": "referenced/src/compute_provider_flashinfer/native_mla.cu",
+      "bytes": 5346,
+      "sha256": "174cbf2edb4c0ae4e39b0fd573764d801b0069484d12e8041925a3e8afefb863"
+    },
+    {
+      "entry": "referenced/src/compute_provider_ggml/native_batch.cc",
+      "bytes": 21877,
+      "sha256": "e6c1abad92d064f69129b57d98e708d8f0bcafab0de989523df21155b0e3700a"
+    },
+    {
+      "entry": "referenced/src/compute_provider_ggml_vulkan/region.cc",
+      "bytes": 104120,
+      "sha256": "f89d382f4c4827d718dc810e5247264dc06b58d9da82076ff0c797607b8b63a2"
+    },
+    {
+      "entry": "referenced/src/compute_provider_ggml_vulkan/region.h",
+      "bytes": 4042,
+      "sha256": "78c48bb9081477b8ce3d4d772f2d010cd461693036deab69a2f2062ea0c093db"
+    },
+    {
+      "entry": "referenced/src/compute_route_apple/apple_batch.cc",
+      "bytes": 16874,
+      "sha256": "188f6030a69e300d96a1de21035c2c6cf7001bef340d7d72ab1f8c6580d9062c"
+    },
+    {
+      "entry": "referenced/src/compute_route_vulkan/vulkan_batch.cc",
+      "bytes": 15649,
+      "sha256": "d2ae8b781d2912fd27d7849fb5ba2e339b1ced62ae9a092a4f90de01c5c1e90d"
+    },
+    {
+      "entry": "referenced/src/graph_batch/batch.cc",
+      "bytes": 81889,
+      "sha256": "bb4f4b5f0cf1269df453ec7ff2b833f59c285e776e587cc43c966df2762d0c98"
+    },
+    {
+      "entry": "referenced/src/graph_batch/native_batch_regions.cc",
+      "bytes": 13819,
+      "sha256": "0c541251e500f3f45c016abdf1fef8d50bb049156c62f25d4a7c8696ff963018"
+    }
+  ]
+}

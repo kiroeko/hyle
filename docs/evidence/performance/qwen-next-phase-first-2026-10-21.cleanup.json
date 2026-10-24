@@ -1,0 +1,43 @@
+{
+  "deleted": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\layout-preparation-diagnostic-2026-10-21\\checks\\attempt1\\qwen.exe",
+      "bytes": 139508736
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\layout-preparation-diagnostic-2026-10-21\\checks\\attempt1\\qwen.map",
+      "bytes": 57883815
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\layout-workspace-facts-reuse-2026-10-21\\checks\\attempt1\\qwen.map",
+      "bytes": 57885323
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\layout-workspace-facts-reuse-2026-10-21\\tests\\attempt2\\link\\flashinfer-native-cache-tests.exe",
+      "bytes": 139659776
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\layout-workspace-facts-reuse-2026-10-21\\tests\\attempt2\\link\\flashinfer-native-cache-tests.map",
+      "bytes": 58399822
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\layout-workspace-facts-reuse-2026-10-21\\tests\\baseline-provider\\link\\flashinfer-native-cache-baseline.exe",
+      "bytes": 139657216
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\layout-workspace-facts-reuse-2026-10-21\\tests\\baseline-provider\\link\\flashinfer-native-cache-baseline.map",
+      "bytes": 58398563
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\layout-workspace-facts-reuse-2026-10-21\\tests\\attempt3\\link\\flashinfer-native-cache-tests.exe",
+      "bytes": 139664384
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\layout-workspace-facts-reuse-2026-10-21\\tests\\attempt3\\link\\flashinfer-native-cache-tests.map",
+      "bytes": 58410065
+    }
+  ],
+  "bytes": 849467700,
+  "retained_current_image": true,
+  "source_objects_and_published_evidence_retained": true
+}

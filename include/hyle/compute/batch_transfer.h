@@ -92,6 +92,7 @@ public:
   HYLE_COMPUTE_API void reset() noexcept;
 private:
   friend class CopyBatchInvocation;
+  friend struct detail::CopyStreamAccess;
   explicit CopyBatchProgram(detail::CopyProgramState *state) noexcept : state_(state) {}
   detail::CopyProgramState *state_ = nullptr;
 };

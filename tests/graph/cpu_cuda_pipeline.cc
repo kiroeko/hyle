@@ -1,6 +1,9 @@
 #include <hyle/graph/cpu.h>
 #include <hyle/graph/cuda.h>
 #include <hyle/graph/cpu_cuda.h>
+#include <hyle/graph/progress.h>
+#include <hyle/graph/result.h>
+#include <hyle/sched/blocking.h>
 
 #include <array>
 #include <atomic>
@@ -131,19 +134,21 @@ Status branches(bool cpu_first, bool tracing, unsigned workers) {
   HYLE_RETURN_IF_ERROR(require(compiled.report.segment_count() >= 3,
       "independent CPU prefix still inherits the GPU join entry wait"));
   hyle::sched::Scheduler scheduler(workers, m::system_allocator(), 64);
+  hyle::sched::BlockingPool pool(m::system_allocator(), workers);
   std::array<c::Queue, 2> cq, gq;
   std::array<Tensor, 2> x, y;
   struct Drain { hyle::sched::Scheduler &scheduler; ~Drain() { scheduler.drain(); } } drain{scheduler};
-  std::array<b::Invocation, 2> slots;
+  std::array<g::Invocation, 2> slots;
+  std::array<std::array<g::QueueBinding, 2>, 2> queues;
   for (unsigned i = 0; i < 2; ++i) {
     HYLE_ASSIGN_OR_RETURN(cq[i], cpu.create_queue());
     HYLE_ASSIGN_OR_RETURN(gq[i], cuda.create_queue());
     HYLE_ASSIGN_OR_RETURN(x[i], tensor(m::system_resource(), desc));
     HYLE_ASSIGN_OR_RETURN(y[i], tensor(m::system_resource(), desc));
-    HYLE_ASSIGN_OR_RETURN(auto native, compiled.executable.create_invocation());
-    const std::array queues{g::QueueBinding{g::ExecutionLaneId{0}, &gq[i]},
+    HYLE_ASSIGN_OR_RETURN(slots[i], compiled.executable.create_invocation());
+    queues[i] = {g::QueueBinding{g::ExecutionLaneId{0}, &gq[i]},
         g::QueueBinding{g::ExecutionLaneId{1}, &cq[i]}};
-    HYLE_ASSIGN_OR_RETURN(slots[i], b::Invocation::create(std::move(native), scheduler, queues));
+    HYLE_RETURN_IF_ERROR(g::prepare_progress(slots[i], scheduler, pool));
   }
   auto bind = [&](unsigned slot, unsigned step) -> Status {
     for (std::size_t i = 0; i < elements; ++i)
@@ -152,7 +157,7 @@ Status branches(bool cpu_first, bool tracing, unsigned workers) {
     HYLE_RETURN_IF_ERROR(slots[slot].bind(xi, x[slot].view.as_const()));
     HYLE_RETURN_IF_ERROR(slots[slot].bind(ai, a.view.as_const()));
     HYLE_RETURN_IF_ERROR(slots[slot].bind(out, y[slot].view));
-    return slots[slot].prepare_replay();
+    return slots[slot].prepare_replay(queues[slot]);
   };
   auto verify = [&](unsigned slot, unsigned step) -> Status {
     HYLE_RETURN_IF_ERROR(y[slot].buffer.view().read(std::as_writable_bytes(std::span(values))));
@@ -165,11 +170,19 @@ Status branches(bool cpu_first, bool tracing, unsigned workers) {
   };
   // Warm original kernels/programs before observing the single-DAG timeline.
   HYLE_RETURN_IF_ERROR(bind(0, 0));
-  { HYLE_ASSIGN_OR_RETURN(auto warm, slots[0].run()); }
+  {
+    HYLE_ASSIGN_OR_RETURN(auto warm, slots[0].submit(queues[0]));
+    HYLE_RETURN_IF_ERROR(warm.wait());
+    HYLE_ASSIGN_OR_RETURN(auto result, slots[0].result(out));
+  }
   for (unsigned step = 0; step < 8; ++step) {
     HYLE_RETURN_IF_ERROR(bind(0, step));
     trace.phase.store(tracing ? (cpu_first ? 1u : 2u) : 0u, std::memory_order_release);
-    { HYLE_ASSIGN_OR_RETURN(auto result, slots[0].run()); }
+    {
+      HYLE_ASSIGN_OR_RETURN(auto pending, slots[0].submit(queues[0]));
+      HYLE_RETURN_IF_ERROR(pending.wait());
+      HYLE_ASSIGN_OR_RETURN(auto result, slots[0].result(out));
+    }
     trace.phase.store(0, std::memory_order_release);
     HYLE_RETURN_IF_ERROR(verify(0, step));
   }
@@ -177,10 +190,12 @@ Status branches(bool cpu_first, bool tracing, unsigned workers) {
     HYLE_RETURN_IF_ERROR(bind(0, step)); HYLE_RETURN_IF_ERROR(bind(1, step));
     trace.phase.store(tracing ? (cpu_first ? 3u : 4u) : 0u, std::memory_order_release);
     {
-      HYLE_ASSIGN_OR_RETURN(auto first, slots[0].submit());
-      HYLE_ASSIGN_OR_RETURN(auto second, slots[1].submit());
-      HYLE_ASSIGN_OR_RETURN(auto old, first.wait());
-      HYLE_ASSIGN_OR_RETURN(auto other, second.wait());
+      HYLE_ASSIGN_OR_RETURN(auto first, slots[0].submit(queues[0]));
+      HYLE_ASSIGN_OR_RETURN(auto second, slots[1].submit(queues[1]));
+      HYLE_RETURN_IF_ERROR(first.wait());
+      HYLE_RETURN_IF_ERROR(second.wait());
+      HYLE_ASSIGN_OR_RETURN(auto old, slots[0].result(out));
+      HYLE_ASSIGN_OR_RETURN(auto other, slots[1].result(out));
       HYLE_RETURN_IF_ERROR(require(!slots[0].bind(xi, x[0].view.as_const()).ok(),
           "retained result did not prevent slot overwrite"));
       HYLE_RETURN_IF_ERROR(verify(0, step)); HYLE_RETURN_IF_ERROR(verify(1, step));
@@ -189,17 +204,18 @@ Status branches(bool cpu_first, bool tracing, unsigned workers) {
   }
   HYLE_RETURN_IF_ERROR(bind(0, 91));
   {
-    HYLE_ASSIGN_OR_RETURN(auto pending, slots[0].submit());
+    HYLE_ASSIGN_OR_RETURN(auto pending, slots[0].submit(queues[0]));
     HYLE_RETURN_IF_ERROR(pending.request_cancel());
     auto result = pending.wait();
-    if (result) HYLE_RETURN_IF_ERROR(verify(0, 91));
-    else HYLE_RETURN_IF_ERROR(require(result.error().IsCancelled(), "cancellation lost its status"));
+    if (result.ok()) HYLE_RETURN_IF_ERROR(verify(0, 91));
+    else HYLE_RETURN_IF_ERROR(require(result.IsCancelled(), "cancellation lost its status"));
   }
-  const auto closed = slots[0].close();
-  HYLE_RETURN_IF_ERROR(require(closed.ok() || closed.IsCancelled(), "cancelled slot did not close"));
+  slots[0].close().IgnoreError();
+  const auto drained = slots[0].drain();
+  HYLE_RETURN_IF_ERROR(require(drained.ok() || drained.IsCancelled(), "cancelled slot did not drain"));
   HYLE_RETURN_IF_ERROR(bind(1, 92));
   {
-    HYLE_ASSIGN_OR_RETURN(auto abandoned, slots[1].submit());
+    HYLE_ASSIGN_OR_RETURN(auto abandoned, slots[1].submit(queues[1]));
     auto moved = std::move(slots[1]);
     abandoned = {};
     moved = {};

@@ -1,0 +1,35 @@
+{
+  "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\view-projection-reuse-2026-10-20-reclaim.zip",
+  "bytes": 19921,
+  "sha256": "73a77e82d5eeac91f17966b8a78b3c8bbec70184f68c24a1ea0ac7fc294263d3",
+  "entries": 9,
+  "crc_verified": true,
+  "payload_sha256_verified": true,
+  "deleted_files": 94,
+  "deleted_bytes": 911152409,
+  "retained_images": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\view-projection-reuse\\checks\\20261019T191627\\qwen.exe",
+      "bytes": 116948992,
+      "sha256": "fc3638f3eec256eb25a5aa4ac3893484b72360655d53f9a5181e787e5a2100b5"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\view-projection-reuse\\checks\\20261019T191627\\cpu.exe",
+      "bytes": 25222656,
+      "sha256": "e3ae816275f4945d5038d1fa6fd484ebf9c0e095f7d251bbfcdcfb1a391dcaba"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cccl-single-row-topk\\checks\\20261019T185912-host\\qwen.exe",
+      "bytes": 116948480,
+      "sha256": "e71ab8002c5af5e38f053788cd3673e07314c6fd1e88d00799e6ad816254d4d4"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-explicit-rope\\performance-prepared\\peer.exe",
+      "bytes": 35814400,
+      "sha256": "fb169f0282f2a834a61b3e887edaba92d8699814558b0c5f1a13aaf07e0de969"
+    }
+  ],
+  "retained_reference_vectors": 64,
+  "all_link_inputs_retained": true,
+  "recursive": false
+}

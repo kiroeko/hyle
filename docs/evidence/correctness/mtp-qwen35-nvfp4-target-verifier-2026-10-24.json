@@ -1,0 +1,1097 @@
+{
+  "created_at": "2026-10-23T17:12:28.728504+00:00",
+  "identity": {
+    "id": "Q03",
+    "repository": "AxionML/Qwen3.5-2B-NVFP4",
+    "revision": "6f2ad4febe92be529de499b08f0020f5ff06bf25",
+    "variant": "NVFP4"
+  },
+  "scope": "Actual original NVFP4 target23, complete BF16 NextN24 and one tied original full-vocabulary bank in existing shared K1/12-member Head controller",
+  "original_roles": 49,
+  "original_bytes": 1168279608,
+  "ordinary_operations_retained": true,
+  "whole_original_model": false,
+  "executions": [
+    {
+      "case": "QwenMtpStateConsumer.CpuQ03OriginalNvfp4TargetAndBFloatNextNFullVocabularyVerifierPublishesRepairedPrefix",
+      "placement": "CPU Context/system owner only",
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0,
+      "graphs": 23,
+      "summary": {
+        "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q03/native-integration/checks1/summary.json",
+        "bytes": 18065,
+        "sha256": "8f56bb84b1ccceb2537b973dc473ea100b6a7cea44f67c39dc9eebd4f7dc36a3"
+      },
+      "properties": {
+        "original_manifest_sha256": "3a71be91f6ed16ed4b7366715b722c2fb4a1c8b83bdc17f201aa71a35c4078fd",
+        "original_acquisition_sha256": "325b95e7c1ac4f7d1ba9d7a5ccfbb6f639425d34518beed00ced80e9eda5e469",
+        "target_projection_contract": "ModelOpt Nvfp4Linear original U8/E4/W-global/A-global; actual A QDQ and BF16 return, no raw-F32 port",
+        "vocabulary_binding": "one original tied BF16 bank, same readonly lease for Gather and draft/target fullV heads",
+        "artifact_repository": "AxionML/Qwen3.5-2B-NVFP4",
+        "artifact_revision": "6f2ad4febe92be529de499b08f0020f5ff06bf25",
+        "artifact_variant": "NVFP4",
+        "original_role_count": "49",
+        "original_role_bytes": "1168279608",
+        "full_head_provider": "ggml-cpu",
+        "full_head_encoded_bytes": "1017118720",
+        "actual_submissions": "23",
+        "target_submissions": "10",
+        "nextn_submissions": "10",
+        "target_verifier_submissions": "3",
+        "accepted_target_conditioned_repairs": "1",
+        "actual_accepted_kv_repair_submissions": "1",
+        "accepted_zero_drafts": "2",
+        "accepted_one_draft": "1",
+        "actual_pending_embedding_feedback_checks": "10",
+        "whole_state_publications": "6",
+        "cancelled_unpublished_drafts": "3",
+        "rejected_stale_publishes": "3",
+        "actual_target_reseed_checks": "7",
+        "original_native_reference_submissions": "0",
+        "natural_k1_trials": "1",
+        "controlled_matching_trials": "1",
+        "controlled_rejection_trials": "1",
+        "natural_accepted_drafts": "0",
+        "natural_proposal": "46227",
+        "complete_target_draft_resources": "12",
+        "original_target_roles": "33",
+        "original_target_source_bytes": "29504568",
+        "first_full_target_projection_values": "21504",
+        "first_full_target_verifier_values": "496640",
+        "target_verifier_full_vocabulary": "248320",
+        "target_verifier_matmuls": "1",
+        "target_verifier_rows": "2",
+        "target_verifier_provider": "ggml-cpu",
+        "first_full_nextn_head_values": "248320",
+        "state_budget_bytes": "21815552",
+        "peak_state_backing_bytes": "21789700",
+        "scope": "original ModelOpt NVFP4 target23 and complete original BF16 NextN retain distinct original roles and one actual tied BF16 vocabulary; layer22 input/history remain explicit fixtures,not a full trained trunk; Nvfp4Linear preserves A QDQ and BF16 return,not a raw-F32 port; draft/target use their explicitly supplied original vocabulary contracts; targettap follows globalnorm and shifts to next-token NextN input; one M2 verifier,natural K1 and separate actualTop1/Top2 controls; accept0 keeps aftercurrent,accept1 repairs recursive draft KV with actualtargettap before12member sameHead publication; no full-model quality,natural acceptance-rate or TPS claim"
+      }
+    },
+    {
+      "case": "QwenMtpStateConsumer.CudaQ03OriginalNvfp4TargetAndBFloatNextNFullVocabularyVerifierPublishesRepairedPrefix",
+      "placement": "CUDA Context/device only",
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0,
+      "graphs": 23,
+      "summary": {
+        "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q03/native-integration/checks2/summary.json",
+        "bytes": 18063,
+        "sha256": "d4fa2728c2172f272050f366ff8acfb961987bf1cd7f0c9a4ce8c6a565d2c1a6"
+      },
+      "properties": {
+        "original_manifest_sha256": "3a71be91f6ed16ed4b7366715b722c2fb4a1c8b83bdc17f201aa71a35c4078fd",
+        "original_acquisition_sha256": "325b95e7c1ac4f7d1ba9d7a5ccfbb6f639425d34518beed00ced80e9eda5e469",
+        "target_projection_contract": "ModelOpt Nvfp4Linear original U8/E4/W-global/A-global; actual A QDQ and BF16 return, no raw-F32 port",
+        "vocabulary_binding": "one original tied BF16 bank, same readonly lease for Gather and draft/target fullV heads",
+        "artifact_repository": "AxionML/Qwen3.5-2B-NVFP4",
+        "artifact_revision": "6f2ad4febe92be529de499b08f0020f5ff06bf25",
+        "artifact_variant": "NVFP4",
+        "original_role_count": "49",
+        "original_role_bytes": "1168279608",
+        "full_head_provider": "cublasLt",
+        "full_head_encoded_bytes": "1017118720",
+        "actual_submissions": "23",
+        "target_submissions": "10",
+        "nextn_submissions": "10",
+        "target_verifier_submissions": "3",
+        "accepted_target_conditioned_repairs": "1",
+        "actual_accepted_kv_repair_submissions": "1",
+        "accepted_zero_drafts": "2",
+        "accepted_one_draft": "1",
+        "actual_pending_embedding_feedback_checks": "10",
+        "whole_state_publications": "6",
+        "cancelled_unpublished_drafts": "3",
+        "rejected_stale_publishes": "3",
+        "actual_target_reseed_checks": "7",
+        "original_native_reference_submissions": "0",
+        "natural_k1_trials": "1",
+        "controlled_matching_trials": "1",
+        "controlled_rejection_trials": "1",
+        "natural_accepted_drafts": "0",
+        "natural_proposal": "46227",
+        "complete_target_draft_resources": "12",
+        "original_target_roles": "33",
+        "original_target_source_bytes": "29504568",
+        "first_full_target_projection_values": "21504",
+        "first_full_target_verifier_values": "496640",
+        "target_verifier_full_vocabulary": "248320",
+        "target_verifier_matmuls": "1",
+        "target_verifier_rows": "2",
+        "target_verifier_provider": "cublasLt",
+        "first_full_nextn_head_values": "248320",
+        "state_budget_bytes": "21815552",
+        "peak_state_backing_bytes": "21789700",
+        "scope": "original ModelOpt NVFP4 target23 and complete original BF16 NextN retain distinct original roles and one actual tied BF16 vocabulary; layer22 input/history remain explicit fixtures,not a full trained trunk; Nvfp4Linear preserves A QDQ and BF16 return,not a raw-F32 port; draft/target use their explicitly supplied original vocabulary contracts; targettap follows globalnorm and shifts to next-token NextN input; one M2 verifier,natural K1 and separate actualTop1/Top2 controls; accept0 keeps aftercurrent,accept1 repairs recursive draft KV with actualtargettap before12member sameHead publication; no full-model quality,natural acceptance-rate or TPS claim"
+      }
+    }
+  ],
+  "total_graphs": 46,
+  "codec_decoder_check": {
+    "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q03/native-integration/codec-check1/summary.json",
+    "bytes": 1062,
+    "sha256": "a62336bda730220db817ae6a4755d8a283522b11f8759a34a10f4fa6bc9b3b0b"
+  },
+  "source_record": {
+    "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q03/native-integration/compile1/qwen-state/identity.json",
+    "bytes": 115026,
+    "sha256": "ae1e6b98c708d918efaacfe7da4b808f4be982f4fd46f5986ff7d257bcbe4b80"
+  },
+  "image": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-bfloat-selected-20261023\\derived\\Q03\\native-integration\\tests-link1\\qwen-gguf-checks.exe",
+    "bytes": 141305856,
+    "sha256": "130a668ebae5c61ffababc28642127224c313e40b5fcf4a0552e5988ff7f3839"
+  },
+  "build": {
+    "new_host_TUs": 1,
+    "cached_product_objects": 13,
+    "SDK_builds": 0,
+    "NVCC_builds": 0
+  },
+  "download": {
+    "unique_original_role_bytes": 1168279608,
+    "own_tied_vocabulary_bytes": 1017118720,
+    "resume_cached_before_latest_batches": 226658360,
+    "latest_batches_reserved_request_bytes": 950009856,
+    "hf_reserved_request_bytes": 0,
+    "transport": "hf-mirror.net only; cross-origin redirects rejected before request",
+    "limit": "Reserved request bytes include the failed8MiB request; not an exact wire-traffic measurement"
+  },
+  "limits": [
+    "Upstream layer22 hidden input and finite initial histories remain explicit fixtures; this is not full trained target execution",
+    "Natural K1 and separate controlled accept0/1 tests are distinct; finite natural accepted0 is not full-model acceptance-rate or quality evidence",
+    "No new TPS, physical memory/VRAM, full-model task-quality, Linux or Apple execution claim"
+  ],
+  "archive": {
+    "path": "docs/evidence/correctness/mtp-qwen35-nvfp4-target-verifier-2026-10-24.zip",
+    "bytes": 683640,
+    "sha256": "2de3096617110d24b74bb43fb9323d3b53179511600dc33952544ebaa417b83c"
+  },
+  "files": [
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q03/generated/qwen_q03_original_pins.h",
+      "bytes": 20169,
+      "sha256": "101d678d82b887583bb8f33dd535b3d29d2eac853bf63c7688b5de99074311c4"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q03/generated/qwen_q03_original_pins.json",
+      "bytes": 27148,
+      "sha256": "6dc6debb69e24a326e936b175094230c0442312536c0e9cb9a70ca953e5fb5c3"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q03/generate_pins.py",
+      "bytes": 15289,
+      "sha256": "871ef2652945e287a86f0e484752479945d9d2e5d569dcebb2fb45e76488685d"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q03/fetch_roles.py",
+      "bytes": 10371,
+      "sha256": "782217f632d88f913a5cf873f13db771c705b1e85d2e83e918997e71a7e8b03b"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q03/roles-plan.json",
+      "bytes": 33666,
+      "sha256": "c0932a8073d2421826100aa4d41c03a69216308ec1310800a28678012e6ded31"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q03/original-roles/acquisition.json",
+      "bytes": 204541,
+      "sha256": "325b95e7c1ac4f7d1ba9d7a5ccfbb6f639425d34518beed00ced80e9eda5e469"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q03/original-roles/manifest.json",
+      "bytes": 22568,
+      "sha256": "3a71be91f6ed16ed4b7366715b722c2fb4a1c8b83bdc17f201aa71a35c4078fd"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q03/original-roles/nextn-manifest.json",
+      "bytes": 7838,
+      "sha256": "5ff65f57dc1bf4e7833c70a84fb26b95fbad0f65774967d53509a305ab7e73a4"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q03/original-roles/target-manifest.json",
+      "bytes": 15933,
+      "sha256": "855b24a1820d387b48388f6dc2b475cbc0aa0b2593d1e88a0a3bb824d9d5b6af"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q03/native-integration/build.py",
+      "bytes": 11172,
+      "sha256": "5f87169da5eea4e89d2c8add51e2f4135e2f135070d340b0f19ee02981f70c16"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q03/native-integration/compile1/qwen-state/identity.json",
+      "bytes": 115026,
+      "sha256": "ae1e6b98c708d918efaacfe7da4b808f4be982f4fd46f5986ff7d257bcbe4b80"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q03/native-integration/compile1/qwen-state/plan.json",
+      "bytes": 6852,
+      "sha256": "c468fee09b5d5bb9dcfcf3b3c776b6ecc98440cf27d6e22cdf70689396fb24cd"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q03/native-integration/compile1/qwen-state/compile.stdout.log",
+      "bytes": 33,
+      "sha256": "95f8dde4cd2e9efa4fa596dd1f890fbe428a512f2211c37d9e38af5428bd0787"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q03/native-integration/compile1/qwen-state/compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q03/native-integration/tests-link1/link-plan.json",
+      "bytes": 94290,
+      "sha256": "7c323985008fc551b1445d64e6ee4ab4cb2ee8a3aedbb11f2a95a121cbdaf825"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q03/native-integration/tests-link1/link.result.json",
+      "bytes": 29802,
+      "sha256": "d85836aa34afad93633f562fe830d78711a76da4c96e44711d9951f07bcc656c"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q03/native-integration/tests-link1/runtime-environment.json",
+      "bytes": 8259,
+      "sha256": "ad70bded7747e197a995bdc1b913ba85007f7f24be4de8f6b9ba27485bc3b200"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q03/native-integration/checks1/summary.json",
+      "bytes": 18065,
+      "sha256": "8f56bb84b1ccceb2537b973dc473ea100b6a7cea44f67c39dc9eebd4f7dc36a3"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q03/native-integration/checks1/results.xml",
+      "bytes": 4550,
+      "sha256": "cb0a75724163490f1072e643fa8937dd3f28fac255b37efe10cd0533af53fb3b"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q03/native-integration/checks1/stdout.log",
+      "bytes": 867,
+      "sha256": "d4297d1fd71aa47972b9677c7510536df1eec6bcd7d0291ccf4e64685697267d"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q03/native-integration/checks1/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q03/native-integration/checks1/command.json",
+      "bytes": 668,
+      "sha256": "a7d77ac05b47c1eb7f4acfcd9558d7a9dfbfa0ccfabd0a17b21b136b40dad488"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q03/native-integration/checks2/summary.json",
+      "bytes": 18063,
+      "sha256": "d4fa2728c2172f272050f366ff8acfb961987bf1cd7f0c9a4ce8c6a565d2c1a6"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q03/native-integration/checks2/results.xml",
+      "bytes": 4548,
+      "sha256": "050513958fc80816a1701fce00c3fbce7a5ea17afb8103cc27760bb4dd58f418"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q03/native-integration/checks2/stdout.log",
+      "bytes": 867,
+      "sha256": "9ba65fade7f237c41f2d7696f89817b7778f918a4de6e9f641909677742c674b"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q03/native-integration/checks2/stderr.log",
+      "bytes": 14445,
+      "sha256": "644d13e3792dcc680ed0f4b32deeffcf45c48270f4f777ba226df727d40fd530"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q03/native-integration/checks2/command.json",
+      "bytes": 668,
+      "sha256": "880fac146008a8a0e133bf0ea7843453879bd4122af6212b42f5b59f8a785587"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q03/prefetch2/plan.json",
+      "bytes": 1151,
+      "sha256": "d90aaa6178d1b26eed4503a4dfcb9f5ad5636d1b5df45cc17766068e4e3b513d"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q03/prefetch2/selected49-net/summary.json",
+      "bytes": 973,
+      "sha256": "026d9bcbef1a5d5e7df54151626c8f7ff6e01ce2fa7c5004b98b7456e9b1c722"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q03/prefetch3/plan.json",
+      "bytes": 1152,
+      "sha256": "3c25c70a565c7a867e31b0f3e33db22a2d1e6ea7dcff128227bca54f86d22fc3"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q03/prefetch3/selected49-net/summary.json",
+      "bytes": 969,
+      "sha256": "d79ab6ad6c16e6257685ed11d1f4915b5f435544bf00f2800ba033939d75b0a0"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q03/native-integration/codec-check1/summary.json",
+      "bytes": 1062,
+      "sha256": "a62336bda730220db817ae6a4755d8a283522b11f8759a34a10f4fa6bc9b3b0b"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q03/native-integration/codec-check1/results.xml",
+      "bytes": 617,
+      "sha256": "1fb3e4ea07811101accf247671964ab7588200c7616c0795741457cdcb30ff99"
+    },
+    {
+      "path": "tests/compute_models/qwen_mtp_state_consumer_test.cc",
+      "bytes": 272565,
+      "sha256": "28a89607a10367b607c16b84aef2534ee782a24de41227f4d722be4698080f70"
+    },
+    {
+      "path": "include/hyle/compute/resource_leases.h",
+      "bytes": 8660,
+      "sha256": "4e5681ebfa7c2f2ad51e5788c8316f4b993883f595c04b33fe594d7294dab85b"
+    },
+    {
+      "path": "include/hyle/compute/completion.h",
+      "bytes": 1959,
+      "sha256": "98b34b9ee4665e9aedac719504c029a509f304b0a4f566bf6b7f76d88dc2ef34"
+    },
+    {
+      "path": "include/hyle/compute/visibility.h",
+      "bytes": 43,
+      "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+    },
+    {
+      "path": "include/hyle/visibility.h",
+      "bytes": 11701,
+      "sha256": "893fa73589b6e46f00474c2258af74c28d662b52176b57012290c820812ed486"
+    },
+    {
+      "path": "include/hyle/error/result.h",
+      "bytes": 30856,
+      "sha256": "7718409ab2854eb76959215b356bf8077007134d87db1a24f9384a9b5deff2b5"
+    },
+    {
+      "path": "include/hyle/core/compiler.h",
+      "bytes": 4287,
+      "sha256": "e31151f0ed73c532e464c6568483acecd80a2da9c1ee7afc7e081db87d6fb687"
+    },
+    {
+      "path": "include/hyle/core/detail/compiler_attributes.h",
+      "bytes": 1913,
+      "sha256": "263c7691f9984073e198b69328092330bf572195113d3994d1ab54fe4564d88a"
+    },
+    {
+      "path": "include/hyle/core/environment.h",
+      "bytes": 6712,
+      "sha256": "3d289765b1b677499a444b38d1dbe366bb5e99f89fcb7670af2d08106fd958fa"
+    },
+    {
+      "path": "include/hyle/core/assert.h",
+      "bytes": 16114,
+      "sha256": "5596728bc220ea27696be4f25e2f9eb9cf2705930f8eb0461747c4a862615790"
+    },
+    {
+      "path": "include/hyle/core/detail/preprocessor.h",
+      "bytes": 409,
+      "sha256": "1d9872ef98db007dcbed7e0128771244640e1de4092830d52a7a83537f98eb84"
+    },
+    {
+      "path": "include/hyle/error/status.h",
+      "bytes": 18122,
+      "sha256": "4d6b4b0bfa5628947aad5449320513d4b071e0c84debfac47f7a7d264cecb7f4"
+    },
+    {
+      "path": "include/hyle/compute/resource_budget.h",
+      "bytes": 4622,
+      "sha256": "578d440b6fc3f5b58809837506165de27ac0866ae39b2d132763f5dd1786b1ce"
+    },
+    {
+      "path": "include/hyle/mem/quota_allocator.h",
+      "bytes": 7124,
+      "sha256": "a88fe230dc5358ddde6209de96cc61a59e3f6e60d30b9e7534e986fab10224c9"
+    },
+    {
+      "path": "include/hyle/mem/allocator.h",
+      "bytes": 11090,
+      "sha256": "0369680d4769a0187bfb77ee8b565b5e8fb53a03909fabf233458d9c1cbcd011"
+    },
+    {
+      "path": "include/hyle/mem/visibility.h",
+      "bytes": 43,
+      "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+    },
+    {
+      "path": "include/hyle/mem/resource.h",
+      "bytes": 7717,
+      "sha256": "84b0366e658ec63f999b4c9719cf8584ad758f4ff5340baf37f1c3ebd17145cd"
+    },
+    {
+      "path": "include/hyle/compute/tensor.h",
+      "bytes": 1980,
+      "sha256": "ac00f221a66d0f9044a2b49a1123a6b99a6c425568790898129c31d81519c538"
+    },
+    {
+      "path": "include/hyle/compute/tensor_desc.h",
+      "bytes": 8700,
+      "sha256": "e5496e00c643bcce2efbb42666773f4172243d10458b756d6f9881b0e677eb9a"
+    },
+    {
+      "path": "include/hyle/compute/ops_visibility.h",
+      "bytes": 43,
+      "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+    },
+    {
+      "path": "include/hyle/mem/buffer.h",
+      "bytes": 19273,
+      "sha256": "346a4f810babb8c5dacba49faaf57903d998a3cbb49af12b8c62acc85f7be72c"
+    },
+    {
+      "path": "include/hyle/compute/state_versions.h",
+      "bytes": 8553,
+      "sha256": "a09cb66a216b56a0651f515f18d8a97772b0e6d281c171a82b8a6630b3e1c7d7"
+    },
+    {
+      "path": "include/hyle/compute/batch_transfer.h",
+      "bytes": 11416,
+      "sha256": "7bec296577c0439b0e0b48639ccff6b3bd95d137dba085c608f650dbb69fcd1b"
+    },
+    {
+      "path": "include/hyle/graph/batch.h",
+      "bytes": 18453,
+      "sha256": "1cf89548b6544889419045c54d859153d5fdb21e49cdac8357e0f653dbdf04a0"
+    },
+    {
+      "path": "include/hyle/graph/executable.h",
+      "bytes": 50386,
+      "sha256": "aa3a55ed1869f84149ad0a6a558d6541880d71ba0bf4c6789480724564cdc0b0"
+    },
+    {
+      "path": "include/hyle/compute/device.h",
+      "bytes": 7702,
+      "sha256": "f966803f2293e03db1cde9b1327f847a92162f21adb53f69ef37f0c19b16a84a"
+    },
+    {
+      "path": "include/hyle/compute/provider.h",
+      "bytes": 10281,
+      "sha256": "a9737ca3cf64eec23ce768e20b1112407fc7816a32f8031f0b668b16c49f816a"
+    },
+    {
+      "path": "include/hyle/compute/prepared_operation.h",
+      "bytes": 20281,
+      "sha256": "03895c56e8665daf2482f66fecf205fd8aacf92046e13c169d9d8ff86fff52d7"
+    },
+    {
+      "path": "include/hyle/compute/operation.h",
+      "bytes": 28394,
+      "sha256": "01730da295dde06e2982685b98176c2bdfcebbb0963515b8fbce6e63ad4fe025"
+    },
+    {
+      "path": "include/hyle/compute/workload.h",
+      "bytes": 5017,
+      "sha256": "2e7509d99d986e71b06788e4dd1dcb9595799e2ad972df48449ff0b58f0815ad"
+    },
+    {
+      "path": "include/hyle/compute/storage_owner.h",
+      "bytes": 8058,
+      "sha256": "549d881d8d4f96eedbb03c8ef9bd6892ede776e5da90a39025538bc50a0530d9"
+    },
+    {
+      "path": "include/hyle/compute/detail/context_ref.h",
+      "bytes": 2563,
+      "sha256": "b1295a6d21d452b2730e3907891ca49993e512a741f8f3a9689976e56f5af3f1"
+    },
+    {
+      "path": "include/hyle/compute/detail/lease_access.h",
+      "bytes": 6794,
+      "sha256": "1b0ab7b4b05faf25d5e6a87e4638504b47f38a54fcbce5ffeb7e50ff2148c8bc"
+    },
+    {
+      "path": "include/hyle/compute/detail/append_lease.h",
+      "bytes": 1944,
+      "sha256": "67b6e87fb0bfbc179d781174c2dc414f1e7487445925cb4c2a4faea579cb7ec5"
+    },
+    {
+      "path": "include/hyle/compute/detail/resource_budget_access.h",
+      "bytes": 2741,
+      "sha256": "f5cfd7955fed71cf08b9a08e0ddacf70191495a61883dac4224e02ef3cba4871"
+    },
+    {
+      "path": "include/hyle/graph/compile_report.h",
+      "bytes": 577,
+      "sha256": "c42c30527d581975c49ddfebb182b0ae7928d799eed91172cb631779a2ad5b4f"
+    },
+    {
+      "path": "include/hyle/graph/execution_source.h",
+      "bytes": 1859,
+      "sha256": "b89de5c6fe8b84192c9618a6a4e4dcee8ac45393e04a9e335f17b5a2d3ecac3f"
+    },
+    {
+      "path": "include/hyle/graph/visibility.h",
+      "bytes": 43,
+      "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+    },
+    {
+      "path": "include/hyle/graph/graph.h",
+      "bytes": 19988,
+      "sha256": "c7a93ccf9fd1c86fb9dec286e7d3345aabcb1810c2fb6793a66093480a5a2136"
+    },
+    {
+      "path": "include/hyle/graph/resources.h",
+      "bytes": 430,
+      "sha256": "c9d3075babb4d863f3543c76576d093fe59f9868df67d50fc492db0aebe7015d"
+    },
+    {
+      "path": "include/hyle/graph/result.h",
+      "bytes": 2146,
+      "sha256": "dc576aa9e523321df6d69ced5717cd9a8e92a9261245a42a431ecc8039a3dd46"
+    },
+    {
+      "path": "include/hyle/compute/batch_execution.h",
+      "bytes": 10247,
+      "sha256": "4efe41eead34949a75dbb6fbae4ea7c3013b33e413b540d9d5e3b0d5396542c8"
+    },
+    {
+      "path": "include/hyle/compute/batch_ops.h",
+      "bytes": 6114,
+      "sha256": "d6dcf9e7c8559280a762d191bc41c4f7b56b0097844d0b31091b4fda361ea077"
+    },
+    {
+      "path": "include/hyle/compute/batch_layout.h",
+      "bytes": 10506,
+      "sha256": "db6c552379051f9b8132fc8dce775dd0826c9a8d1d0d7fd10eecd1f10b159921"
+    },
+    {
+      "path": "include/hyle/compute/low_precision.h",
+      "bytes": 10406,
+      "sha256": "0920a5a2faecb2991da60ecede680c496bab73411a305e559461ea41cea309cb"
+    },
+    {
+      "path": "include/hyle/compute/batch_materialize.h",
+      "bytes": 7245,
+      "sha256": "9f57cfe9748faf89faae485b604a4b14d6f222bc3ce475bc40a1a265b405b50b"
+    },
+    {
+      "path": "include/hyle/compute/paged_arena.h",
+      "bytes": 14088,
+      "sha256": "24d54cdae3a2c46f28126fffbfce06fc28ee6acb44c677324ce4f8fbaf67d458"
+    },
+    {
+      "path": "include/hyle/compute/batch_paged_native.h",
+      "bytes": 4723,
+      "sha256": "b42b17bd38435422f06cd830f0b35f6c7deca256916d9d99bff52b9ec0d9f1ce"
+    },
+    {
+      "path": "include/hyle/graph/cpu_cuda.h",
+      "bytes": 1682,
+      "sha256": "ecd0664c4eb77dd97aae87bcc64741482f91c6c30f383525fb9bebb62ba06cd8"
+    },
+    {
+      "path": "include/hyle/compute/backends/cuda.h",
+      "bytes": 9030,
+      "sha256": "8b1eeec880b852f5d35a98464c55a20abb8de0b1db447421dff4b90ba4a13748"
+    },
+    {
+      "path": "include/hyle/compute/providers/ggml_cuda.h",
+      "bytes": 1154,
+      "sha256": "0a98c283bb0201254cbbc0bc04562e4d3b92c212a84c1747a3c69314f91af259"
+    },
+    {
+      "path": "include/hyle/graph/cuda.h",
+      "bytes": 2663,
+      "sha256": "658f3dab4eb1a0a90f2dc472652e0c0fa5e694373544abc21331f116adee1373"
+    },
+    {
+      "path": "include/hyle/compute/cuda.h",
+      "bytes": 1457,
+      "sha256": "308beb0703f01239c106d23792f8ef68a57880630b209d1e772a6cd9958918e7"
+    },
+    {
+      "path": "include/hyle/compute/cuda_weights.h",
+      "bytes": 5065,
+      "sha256": "1e3ca02148c67fc2d6d6744beb5a03ee93dcb7f7a61ffed16aa5b5e49d5a8079"
+    },
+    {
+      "path": "include/hyle/compute/weight_assembly.h",
+      "bytes": 2095,
+      "sha256": "c085186c2751371d8e642f29d1b338e53962236e50c9935ea1858a4b188ca3ac"
+    },
+    {
+      "path": "include/hyle/graph/weight_binding.h",
+      "bytes": 422,
+      "sha256": "ebcc3eea951953966a3b10b2951872e74d04921af6f0cc8de45ab52ab1ba32bd"
+    },
+    {
+      "path": "tests/compute_models/cuda_sidecar_quant_reference.h",
+      "bytes": 7639,
+      "sha256": "cd865999a598c06f2ce13b4353cbe061cab14bfdf84c5050cece6ebf3c3f9221"
+    },
+    {
+      "path": "tests/compute_models/d5_gguf_test_support.h",
+      "bytes": 13405,
+      "sha256": "4742b35f873bc892213e8721f44a4bde0cfeea9d30da036c454a4d3042bd7898"
+    },
+    {
+      "path": "include/hyle/compute/providers/ggml_cpu.h",
+      "bytes": 1054,
+      "sha256": "9a4255d47bb85235d9f1fa66228367017cd6ae2e61c0edebcc63f65ade0e1e58"
+    },
+    {
+      "path": "include/hyle/graph/cpu.h",
+      "bytes": 919,
+      "sha256": "01165b3d6fe8276d4275495d8cb52186d9a81b11749db49a2684856bfbe088e8"
+    },
+    {
+      "path": "include/hyle/compute/cpu.h",
+      "bytes": 3070,
+      "sha256": "5573eb9618c4ef2a0db299dfb3bc3f2bf93f0e7005ec31aa7ccd95e25efac21f"
+    },
+    {
+      "path": "include/hyle/compute/backends/cpu.h",
+      "bytes": 1814,
+      "sha256": "a0b99762a3620c1b44b6856263c172d12fa6e482282fe9c2fcc06aa7d82a1d4d"
+    },
+    {
+      "path": "include/hyle/compute/detail/queue_sequence.h",
+      "bytes": 9214,
+      "sha256": "d8cc25b000e655468f3de3b1da3f5b17c388329f21d3f9d6f1d06d9e54de8a26"
+    },
+    {
+      "path": "include/hyle/compute/detail/completion_access.h",
+      "bytes": 4164,
+      "sha256": "8699638e39a1a7d5708cbb6a5e41f191228b3ac571b16b026eadcc1aa6765e34"
+    },
+    {
+      "path": "include/hyle/compute/detail/operation_access.h",
+      "bytes": 992,
+      "sha256": "4bdd60939dea229e91907768308155716b7cd8b78d92150391edc771f2089f34"
+    },
+    {
+      "path": "include/hyle/compute/detail/queue_ref.h",
+      "bytes": 1551,
+      "sha256": "a50579827a0b1554ffa4595c3b2fff68cfcbcc9b75caba25c60f78028d49961b"
+    },
+    {
+      "path": "tests/compute_models/qwen_mtp_state_consumer.h",
+      "bytes": 38119,
+      "sha256": "e052f19ef616c2fea64886c9b5c37e5fcc5bba2a00182a8a62d9353950639a5f"
+    },
+    {
+      "path": "tests/compute_models/cpu_c5_qwen_nextn.h",
+      "bytes": 17901,
+      "sha256": "8f7c52ccf22eeb6e17f135664d2c1bcfb3115ba201cbbb01309b14ec048e90bb"
+    },
+    {
+      "path": "tests/compute_models/cpu_c5_qwen_attention.h",
+      "bytes": 10075,
+      "sha256": "24b1428ffefbe46f10b9c6dc168020af603e207ad796963fb9c8764af093c5ae"
+    },
+    {
+      "path": "tests/compute_models/cpu_c5_parameter_fragments.h",
+      "bytes": 7080,
+      "sha256": "16de6e8f2c70b32557073966aed4e5a51cc53d38a86df93a4ff09e45f8c21575"
+    },
+    {
+      "path": "tests/compute_models/cpu_c5_gguf_fixture.h",
+      "bytes": 12070,
+      "sha256": "15d62432a075667b52084c1b646f9c181a8b0b3474331f15ff142b033e544609"
+    },
+    {
+      "path": "tests/compute_models/cpu_expanded_gguf_fixture.h",
+      "bytes": 5708,
+      "sha256": "169fb6b22159dd6cc82b61f87d358d7934fd6a6fdb28cc4724355ab227fd7ca7"
+    },
+    {
+      "path": "tests/compute_models/cpu_c4_model_branches.h",
+      "bytes": 53346,
+      "sha256": "41e3860c11bcda5b0137ce49139f758aa883c10488d52be752f6762dc9de6a89"
+    },
+    {
+      "path": "tests/compute_models/d5_deepseek_official_attention.h",
+      "bytes": 52641,
+      "sha256": "28810d78250c6a8d70432467462a1e7c2996231b8c92c9b2c768d5453e398d6a"
+    },
+    {
+      "path": "tests/compute_models/d5_deepseek_official_fragments.h",
+      "bytes": 22366,
+      "sha256": "6cc0360a0c06c63316116419c56240d7b62abbddac873d228138a06f22c1c9d2"
+    },
+    {
+      "path": "tests/compute_models/d5_quantization_roundtrip.h",
+      "bytes": 3170,
+      "sha256": "64096613c76fb2fb5fa1d2f63bdcd4fd0abf576f7e126decc3ab10ed5dccd3a8"
+    },
+    {
+      "path": "tests/compute_models/d5_fp8_weight_preparation.h",
+      "bytes": 4214,
+      "sha256": "2e9936b89899495588bd701455ba2a371f1833bb6bdef10b008f043f904200fc"
+    },
+    {
+      "path": "tests/compute_models/d5_dynamic_fp8_fragments.h",
+      "bytes": 16239,
+      "sha256": "6e6d323a06331a70666a6ce2a8e26984932d7fbf5732f71ced728a3bc0b68040"
+    },
+    {
+      "path": "tests/compute_models/d5_official_fp8_fragments.h",
+      "bytes": 5606,
+      "sha256": "c132fe5588268de6ce57506025f754aeda0c6e7698703db77932711bcfb4dd56"
+    },
+    {
+      "path": "tests/compute_models/d5_moe_execution_cases.h",
+      "bytes": 4217,
+      "sha256": "8d3dedc2d98d2ba3cd72c1cec165bc53f6472b274da4215509f623511f4321cf"
+    },
+    {
+      "path": "tests/compute_models/d5_moe_profile_cases.h",
+      "bytes": 11520,
+      "sha256": "c21f3e73aba1a7ce161b71c9eec135af9b6352e8aba255c3229c9b82f4d93a6d"
+    },
+    {
+      "path": "tests/compute_models/d5_qwen_gguf_vocabulary_cases.h",
+      "bytes": 2928,
+      "sha256": "8db378b333614ddc594a3ae9364fcbfdded76a2c1226d5cb19b44b24968af655"
+    },
+    {
+      "path": "tests/compute_models/d5_qwen35_fixture.h",
+      "bytes": 9558,
+      "sha256": "b80a27f10ce671ab5fa3953a0862dd387fd85bb0aa2cfd31670593303b8ab393"
+    },
+    {
+      "path": "tests/compute/workload_fixture.h",
+      "bytes": 1211,
+      "sha256": "d451c816f7362313b73758d60fc68c49acbaf0e31735db3039d72e80d39b6a5e"
+    },
+    {
+      "path": "tests/compute_models/d5_qwen38_24t_fixture.h",
+      "bytes": 7313,
+      "sha256": "b5b12c7030e2fbf2f14e8b8d0be9569ef47c64a49d58e98bc7b333b4256e050f"
+    },
+    {
+      "path": "tests/compute_models/d5_qwen38_official_fixture.h",
+      "bytes": 5967,
+      "sha256": "61cacc3d6251c1ef2cfc9a9f724412f9ca4615f4692dcbf777a81e790e7a1ff0"
+    },
+    {
+      "path": "tests/compute_models/d5_qwen38_gdn_fixture.h",
+      "bytes": 8553,
+      "sha256": "9a0fb6af064c85209fa478a7021eb399bf1451fff67d43538a655936343bf2ed"
+    },
+    {
+      "path": "tests/compute_provider_native/half_test_support.h",
+      "bytes": 4399,
+      "sha256": "5f6d8f7b70d07e44600bb6d6d592f66af5dac9970a730695956a1afcfc3cd0b8"
+    },
+    {
+      "path": "include/hyle/simd/dtype.h",
+      "bytes": 12143,
+      "sha256": "04dc8a2e0a654250413a0edc4bdc667f98c8aa40d85da25264b6bb2054dd51e5"
+    },
+    {
+      "path": "include/hyle/simd/types.h",
+      "bytes": 1658,
+      "sha256": "e79863029c8036f918f36f93dd0267b8d42857516e0d74678584d75f8926abbd"
+    },
+    {
+      "path": "tests/compute_models/d5_qwen38_24t_semantic_fragments.h",
+      "bytes": 35712,
+      "sha256": "090b13d99fad2f7def7f3a861823033827d70681683989b4ffa4b8b7ceefd320"
+    },
+    {
+      "path": "tests/compute_models/d5_qwen35_gguf_fragment_support.h",
+      "bytes": 6939,
+      "sha256": "24d8ae62cbb2ed362c4e949db02fdce18505e03ff06adb23cdcfe8b358b61cb1"
+    },
+    {
+      "path": "tests/compute_models/d5_qwen38_24t_full_router.h",
+      "bytes": 22959,
+      "sha256": "7bff099e41ecee6f6dd4dc85a91db2b13a1737bee46699befe27e4d867b6fd04"
+    },
+    {
+      "path": "include/hyle/compute/model_ops.h",
+      "bytes": 79485,
+      "sha256": "351978e0a82a28cf9d4f7fbe9b75bf34bb65e03522de6e4f89a395a1975abbda"
+    },
+    {
+      "path": "tests/compute_models/d5_qwen38_24t_moe_profiles.h",
+      "bytes": 11480,
+      "sha256": "ea93064fca5e64b4db7bfb5ded1062d83baf6ab3794f52f962beee2b0fd8a9ee"
+    },
+    {
+      "path": "tests/compute_models/d5_moe_execution_fragments.h",
+      "bytes": 29763,
+      "sha256": "ab7857f47f82b87bf2b39b56d2f637a9d3d3068256abfcbd2a69d94ab1b08f3c"
+    },
+    {
+      "path": "tests/compute_models/d5_moe_semantic_fragments.h",
+      "bytes": 17811,
+      "sha256": "75b094320cc81125cfdf7b8ab473be5b51238b66b6403e8f142b14fbe00b5131"
+    },
+    {
+      "path": "tests/compute_models/d5_kda_projection_cases.h",
+      "bytes": 5583,
+      "sha256": "489e42c858140847b89f4932a5519572aa132f515d96cb9927392ce0266c0feb"
+    },
+    {
+      "path": "tests/compute_models/d5_official_fp4_storage.h",
+      "bytes": 4623,
+      "sha256": "3f9d8a651e2d79dcf5f9ab2ac09cca4439a0d5ef2d4a2ea948c1768966e38846"
+    },
+    {
+      "path": "tests/compute_models/dspark_stored_projection_fragment.h",
+      "bytes": 4575,
+      "sha256": "fc1489160e4ff4c61aba0c28f0f628557887737a185f7933079a1a1ac819ee4e"
+    },
+    {
+      "path": "tests/compute_models/d5_deepseek_remaining_fragments.h",
+      "bytes": 39907,
+      "sha256": "5174d4fedabd5b719c7acb91fe2abb523a768c7ec9685878e9b1efaed3241a2b"
+    },
+    {
+      "path": "tests/compute_models/d5_kda_full_fragments.h",
+      "bytes": 12967,
+      "sha256": "8af401a0982f99b0283199c53f44ec15f6524a35eb0590b850a3c403f4d7e76e"
+    },
+    {
+      "path": "tests/compute_models/d5_glm_mtp_head_test.h",
+      "bytes": 475,
+      "sha256": "d8267206827f0399423e5500f45492f70ce51e2bb52bad38bbc1b10b9c33b668"
+    },
+    {
+      "path": "tests/compute_models/d5_glm_remaining_fragments.h",
+      "bytes": 54263,
+      "sha256": "12dbf546cb1050470dd6db65fe4d1f0a70364781a22d9df466699e7b10cde742"
+    },
+    {
+      "path": "tests/compute_models/d5_kimi_remaining_fragments.h",
+      "bytes": 18043,
+      "sha256": "edc6aaeb8d05c1f848447849b45bf3f908b77a737823ce6dfbf737feedeb2218"
+    },
+    {
+      "path": "tests/compute_models/d5_grouped_fp8_fragments.h",
+      "bytes": 8697,
+      "sha256": "100afd9e17c00798ffa5b6f1cb7201dcea93981937321eac4a5afbaa269f2717"
+    },
+    {
+      "path": "tests/compute_models/dspark_vocabulary_fragment.h",
+      "bytes": 3292,
+      "sha256": "a96019dc985d5b584bd65b0ad3e56a87177d16a65bda76fb4ed8e0b8e9c2e4fc"
+    },
+    {
+      "path": "tests/compute_models/cpu_c5_gguf_inputs.h",
+      "bytes": 93837,
+      "sha256": "050f5c2b3dc9f84cc681e3e039aeed5978e692d64e60e27b0cd88d49afd1b8fd"
+    },
+    {
+      "path": "tests/compute_models/qwen_nextn_input_fragment.h",
+      "bytes": 1794,
+      "sha256": "94ef3a7f43bd469d6249940a00a58e9c89e0f9b1e8151eb292838be7558ece87"
+    },
+    {
+      "path": "tests/compute_models/qwen_original_mtp_roles.h",
+      "bytes": 11144,
+      "sha256": "2740c2d1a39afa676ad0fe6dcae17478ba0697b648819a3e50984caf41a2f04a"
+    },
+    {
+      "path": "tests/compute_models/original_role_input.h",
+      "bytes": 7051,
+      "sha256": "ef769dc0479128b1ab6d727abe76b47fc96023e80ff6592e7442c40703932617"
+    },
+    {
+      "path": "tests/compute_models/original_named_role_source.h",
+      "bytes": 11527,
+      "sha256": "b16e528049b54349fc972a48125add5c5e866a195fd1c120b9e6a7aa3f89a6cd"
+    },
+    {
+      "path": "include/hyle/mem/mapping.h",
+      "bytes": 7139,
+      "sha256": "98b1a1ea8c4d85eff4fb8ddeb0fd7a425e7619128c468ae29e11c5e3fbfd05c3"
+    },
+    {
+      "path": "include/hyle/platform/fs.h",
+      "bytes": 24891,
+      "sha256": "2af351149fc82762267b89303439ef71626a2eb541d1922ff6f66014136a9ffa"
+    },
+    {
+      "path": "include/hyle/platform/fs_visibility.h",
+      "bytes": 43,
+      "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+    },
+    {
+      "path": "include/hyle/time/unix_timestamp.h",
+      "bytes": 11791,
+      "sha256": "bcd6bdc860d6ee1e73004ebd15e3b2b2a60ca3dff7a0818deecf9420f95b4496"
+    },
+    {
+      "path": "include/hyle/platform/virtual_memory.h",
+      "bytes": 10485,
+      "sha256": "1b01086d44f330a592a5d3b4946fb213e485095dce904db99bb71103e2a578b8"
+    },
+    {
+      "path": "include/hyle/platform/numa.h",
+      "bytes": 8400,
+      "sha256": "e154f229dc7f6f5ceb1c44f20f769204b48bd422e57c5fed1e53c490607b8fde"
+    },
+    {
+      "path": "include/hyle/platform/visibility.h",
+      "bytes": 43,
+      "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+    },
+    {
+      "path": "tests/compute_models/qwen27_original_nextn_roles.h",
+      "bytes": 10559,
+      "sha256": "d723d77f45eb69ec84cd6facd3fe0b7c557be937b4905de5079cd730e180096a"
+    },
+    {
+      "path": "tests/compute_models/qwen24_original_nextn_roles.h",
+      "bytes": 14151,
+      "sha256": "879781ed80bca285d14de2313b2cfbdd72499ed002d9ffb93e760f6f07404ba6"
+    },
+    {
+      "path": "tests/compute_models/qwen24_original_moe_fragment.h",
+      "bytes": 13983,
+      "sha256": "f9453a5e1b1b527af73250a10dabeae931f2919bb84beeab8d4e869cd4d9aaf7"
+    },
+    {
+      "path": "tests/compute_models/qwen_full_attention_fragment.h",
+      "bytes": 18883,
+      "sha256": "38a40b13fc1da9482715db3f93cb58d8d20e50953907268e2462bfa6b133356b"
+    },
+    {
+      "path": "tests/compute_models/qwen_bfloat_original_roles.h",
+      "bytes": 37310,
+      "sha256": "af8c5ad8181fefa48b8d929771945279a02ba542946e4f2e5263ac0f9da2aa39"
+    },
+    {
+      "path": "tests/compute_models/qwen27_original_nextn_reference.h",
+      "bytes": 17880,
+      "sha256": "ed9504d5a1c6f22d3d2842b5460ff5ec47efb550bee33bd78b1e39edc4af1307"
+    },
+    {
+      "path": "tests/compute_models/dspark_original_shared_reference.h",
+      "bytes": 16279,
+      "sha256": "f3a68f4bf5758818585c0e6e9e640137f88a751486036a7fd884889994252dff"
+    },
+    {
+      "path": "tests/compute_models/gguf_nvfp4_fixture.h",
+      "bytes": 3365,
+      "sha256": "b75573cffa3906c26623252c9d9cf8c5cf4791485addd2e0c9f09fac513fcb26"
+    },
+    {
+      "path": "tests/compute_models/qwen24_original_nextn_reference.h",
+      "bytes": 20889,
+      "sha256": "f82b693dd541e9bc8d57790e4b32c66db39c03e588f1cbb99582c58a1f1fdf3a"
+    },
+    {
+      "path": "tests/compute_models/qwen24_original_resident_weights.h",
+      "bytes": 15500,
+      "sha256": "2cfff435e80b8a7e7b23015e1261a76d471be55a495aa425f1847875cd60d8b4"
+    },
+    {
+      "path": "tests/compute_models/model_resident_fragment.h",
+      "bytes": 8672,
+      "sha256": "138deaba975edb57d7c29622fef0df737b22f924db43846d3c5bd6d1001fe0cd"
+    },
+    {
+      "path": "tests/compute_models/qwen27_original_target_reference.h",
+      "bytes": 4856,
+      "sha256": "030e61490473e8dbd74c17055783acda8efaa32bca96af25bbec9aad5f503a4c"
+    },
+    {
+      "path": "tests/compute_models/qwen27_original_target_roles.h",
+      "bytes": 8147,
+      "sha256": "dbb3e918ace2bc290d7b23b798334eb2eba34d71175990e7de29db3444f42e02"
+    },
+    {
+      "path": "tests/compute_models/qwen_full_attention_reference.h",
+      "bytes": 7358,
+      "sha256": "20303955b698b2afd4006849ff8a7bcce2ca909aa51c2ad5472670ec77ccff81"
+    },
+    {
+      "path": "tests/compute_models/qwen_bfloat_original_reference.h",
+      "bytes": 13945,
+      "sha256": "9d39fdfba504ef4f01431f9b326e3c499d5c899edd37e07f404a69b462da64d7"
+    },
+    {
+      "path": "tests/compute_models/qwen24_original_target_roles.h",
+      "bytes": 12866,
+      "sha256": "9109d99a3aa2630a13a343d8d271d8beb682332cc8437f87d38b10991b048669"
+    },
+    {
+      "path": "tests/compute_models/qwen24_original_target_fragment.h",
+      "bytes": 1856,
+      "sha256": "7597d3d3077f0a0bdc905767167d0a64fb269a719237596ef8ae35168cab7014"
+    },
+    {
+      "path": "tests/compute_models/qwen24_original_target_reference.h",
+      "bytes": 2970,
+      "sha256": "6174962d137b4fa6e7aca6186cbd5fce7535e33ac3276af9e49b24cbea1fab5e"
+    },
+    {
+      "path": "tests/compute_models/qwen24_moe_reference.h",
+      "bytes": 4283,
+      "sha256": "516a33d7bf0c470517c8e06139623c5e49d1fe6f907491239e5e6219d7e0c6f4"
+    },
+    {
+      "path": "tests/compute_models/qwen_nvfp4_target_fragment.h",
+      "bytes": 3955,
+      "sha256": "7025e1d25f30e742551e7887ba4ed2863591923f24fda9c3a5df69a6189c8735"
+    },
+    {
+      "path": "tests/compute_models/qwen_nvfp4_original_reference.h",
+      "bytes": 5681,
+      "sha256": "2e5e5fd3f1e4bc44534bba1ad51a3a1198dc2fad3480116f1125d60737d6aab5"
+    },
+    {
+      "path": "tests/compute_models/nvfp4_reference_fixture.h",
+      "bytes": 22482,
+      "sha256": "cc94ec1f443511722ff4fc227b065af27b82573443735250951cdce934faa4d3"
+    },
+    {
+      "path": "tests/compute_models/qwen_gptq_projection_fragment.h",
+      "bytes": 4057,
+      "sha256": "5e5640b71c47ab6e28a870e6585b1200e30e176c6f7712b185d71acaaca88024"
+    },
+    {
+      "path": "tests/compute_models/qwen_artifact_projection_fragment.h",
+      "bytes": 3485,
+      "sha256": "f5e566762150eb1afdbd591edd3d83529be8dd489aeb31f593ab66e00beb7f10"
+    },
+    {
+      "path": "tests/compute_models/qwen_ct_asymmetric_projection_fragment.h",
+      "bytes": 3546,
+      "sha256": "c8cf78531806ad04c5418269adf3da8ee941c23723e7ccbbcac4f6d21c1ecd56"
+    },
+    {
+      "path": "tests/compute_models/qwen_ct_asymmetric_original_reference.h",
+      "bytes": 4310,
+      "sha256": "c0d13d56b27843bdfe6919c969e7b39dafe902a302f763ab4e01b96ed84c12a6"
+    },
+    {
+      "path": "tests/compute_models/qwen_gptq_original_reference.h",
+      "bytes": 5001,
+      "sha256": "6ebd118e2effeeb577c8b0d3a45a3c979dcd99839919414b69ed959dd05c41f3"
+    },
+    {
+      "path": "tests/compute_models/qwen_bfloat_original_artifacts.h",
+      "bytes": 6798,
+      "sha256": "5d4f008e9a4bfe536e84a423db16489b12a3ba78f39bbe60f02a6865f2ab24ee"
+    },
+    {
+      "path": "tests/compute_models/qwen_bfloat_moe_reference.h",
+      "bytes": 17002,
+      "sha256": "ad6071dbebf473b312b90a7145c68b4787a85b496b4961c84e91f52592e5d27a"
+    },
+    {
+      "path": "tests/compute_models/qwen_bfloat_moe_target_fragment.h",
+      "bytes": 5626,
+      "sha256": "ef4eda315c8eafd85d9ac872e8dbfb7eb9f05faaa4bf2dc3f52ee76f0c425b5f"
+    },
+    {
+      "path": "tests/compute_models/qwen_bfloat_selected_experts.h",
+      "bytes": 16095,
+      "sha256": "f9d16dcccf22ea7c79aa81a238e7685c641935d2c323a12031cd42bf4b3d8032"
+    },
+    {
+      "path": "tests/compute_models/qwen_bfloat_q24_artifacts.h",
+      "bytes": 11492,
+      "sha256": "bc2688627d122d043dc8c42595dec4ca25ed24d8872e61ffb7ef4f8a0baf9089"
+    }
+  ]
+}

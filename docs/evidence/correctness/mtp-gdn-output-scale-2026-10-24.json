@@ -1,0 +1,80 @@
+{
+  "created_at": "2026-10-23T18:50:03.832256+00:00",
+  "scope": "Public GatedDeltaNet optional output_scale, actual CPU/CUDA direct Compute Prepared/Invocation/Completion execution.",
+  "contract": {
+    "empty": "Unchanged native1/sqrt(Dk)",
+    "explicit_one": "Raw final F32 S*q dot",
+    "finite_values": "Explicit finite F32 including signed zero/negative values; nonfinite rejected before preparation",
+    "state": "Output multiply follows dot reduction; Q/K, recurrent state and snapshot math unchanged",
+    "fused": "recurrent_gated_delta_net(snapshot_count, output_scale)",
+    "native_params": "Slot0 K and slot1 CUDA state marker unchanged; slot2 scale F32 bits, slot3 explicit-presence tag"
+  },
+  "executions": [
+    {
+      "backend": "cpu",
+      "tests": 3,
+      "failures": 0,
+      "skips": 0,
+      "summary": {
+        "path": ".scratch/glm-mlx-flash-original-20261024/gdn-output-scale-validation/focused-cpu-link1/checks1/summary.json",
+        "bytes": 857,
+        "sha256": "aca7e77c5066c1260585a6186a74877ab507d0380e79e6df45321cf9f5d7ed6c"
+      },
+      "XML": {
+        "path": ".scratch/glm-mlx-flash-original-20261024/gdn-output-scale-validation/focused-cpu-link1/checks1/results.xml",
+        "bytes": 1191,
+        "sha256": "c95f6ad4bb658e387e19f7041175e8075ed8518e32198407e485c0034cbeac49"
+      }
+    },
+    {
+      "backend": "cuda",
+      "tests": 3,
+      "failures": 0,
+      "skips": 0,
+      "summary": {
+        "path": ".scratch/glm-mlx-flash-original-20261024/gdn-output-scale-validation/focused-cuda-link1/checks1/summary.json",
+        "bytes": 861,
+        "sha256": "065eb6c7413f6a4648395ea8795bbf17344961523c4d42df932e03082ab1dd2e"
+      },
+      "XML": {
+        "path": ".scratch/glm-mlx-flash-original-20261024/gdn-output-scale-validation/focused-cuda-link1/checks1/results.xml",
+        "bytes": 1191,
+        "sha256": "1ad1d6040dd027ab8ac1f70a1b22f64b0d777e12bcfadb5bded1de7c96ea2683"
+      }
+    }
+  ],
+  "source_files": 23,
+  "checks": 6,
+  "windows_build": {
+    "focused_test_TUs": 2,
+    "lowering_host_TUs": 2,
+    "core_backend_host_TUs": 38,
+    "foundation_TUs": 4,
+    "CPU_native_TUs": 3,
+    "CPU_AVX2_DLL_links": 1,
+    "CUDA_native_NVCC_TUs": 1,
+    "SDK_builds": 0,
+    "closure": "Fresh actual core/ops/backend/provider18, CPU selector/export ABI3 and exact-revision native deltas; no old Graph/provider/default-route/test archives."
+  },
+  "state_checks": "GDN, per-channel KDA and fused recurrent gates, T2/K2 snapshots, unmodified initial state and cancellation-sensitive F32 final dots.",
+  "source_only_backends": [
+    "Metal host/kargs/shader lowering and Vulkan host/clone lowering are applied and owning manifests/locks verified; not native-executed in this record."
+  ],
+  "limits": [
+    "Direct Compute cases do not certify the new Graph/default-provider assembly closure.",
+    "Q32 MLX original source and whole-model/task-quality/performance are not executed by these focused checks.",
+    "No TPS, physical CPU/GPU memory peak, Linux/macOS execution, or complete dtype/device matrix claim."
+  ],
+  "retained_failures": [
+    "CUDA environment preparation originally treated nvcc as the host compiler; no NVCC was executed in that attempt.",
+    "CPU link1 missing temporary directory, link2 missing console subsystem, link3 omitted foundational symbols. All retained; successful link4 adds real current owners."
+  ],
+  "throughput_evidence": false,
+  "memory_evidence": false,
+  "archive": {
+    "path": "docs/evidence/correctness/mtp-gdn-output-scale-2026-10-24.zip",
+    "bytes": 2839961,
+    "sha256": "317bf1180c1a6af34eae481a74ac4b94b601bb5466e3670a67a0310bcb249bcb"
+  },
+  "archived_files": 731
+}

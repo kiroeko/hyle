@@ -1,0 +1,83 @@
+{
+  "recursive": false,
+  "raw_vectors_retained": true,
+  "objects_retained": true,
+  "targets": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-projection-fusion\\bench-checks\\20261019T054748-b0f8e2cb\\matvec-bench.exe",
+      "bytes": 113983488,
+      "sha256": "821b6d191b6c16cdaa2a1c8167b430bb95f72e23fd77016116fe20207af70492"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-projection-fusion\\bench-checks\\20261019T054748-b0f8e2cb\\matvec-bench.exp",
+      "bytes": 25047,
+      "sha256": "b25c0b69d1fab6349cb60a411172e5a48189dce432e239aa0e7b0c4e0112fcda"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-projection-fusion\\bench-checks\\20261019T054748-b0f8e2cb\\matvec-bench.lib",
+      "bytes": 42166,
+      "sha256": "c70dbbe230a5a3c54cdef8ce5eb5d8a615b49c7e83a00383490a6a8632ad3bbf"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-projection-fusion\\bench-checks\\20261019T054748-b0f8e2cb\\matvec-bench.map",
+      "bytes": 32724094,
+      "sha256": "92a5183162c0eba2259fa5f8178f6d995139cdde93a828ec02d38a754cfaf0db"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-projection-fusion\\checks\\20261019T054525-686f560d\\candidate.exe",
+      "bytes": 116165632,
+      "sha256": "a4835f3fffafa82cee42e74b88de89af5b562e261ff0072400569df67f649e2b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-projection-fusion\\checks\\20261019T054525-686f560d\\candidate.exp",
+      "bytes": 25034,
+      "sha256": "f8ff9936c7213ebae13b2c151e94b92a5e0415eef570dc7f2ace0ef1f1795ee1"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-projection-fusion\\checks\\20261019T054525-686f560d\\candidate.lib",
+      "bytes": 41826,
+      "sha256": "a17fe4c1ccde457403d9126a084aa4f236618e410d072f5513aca0806f2713a6"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-projection-fusion\\checks\\20261019T054525-686f560d\\candidate.map",
+      "bytes": 33594707,
+      "sha256": "10524044814edb92b55eb8076da57ae67893af216e040fdd267da3fdeefceb64"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-projection-fusion\\checks\\20261019T054525-686f560d\\fusion-tests.exe",
+      "bytes": 116995584,
+      "sha256": "e8042b5a81a082c91c14a00bd4c87819d252c5af9b6ab6944d8b94453d2d76dc"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-projection-fusion\\checks\\20261019T054525-686f560d\\fusion-tests.exp",
+      "bytes": 25041,
+      "sha256": "feba991c5f7a1a65989899d42584f379bee66faa20a0daa049c6cd04ce90e1d3"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-projection-fusion\\checks\\20261019T054525-686f560d\\fusion-tests.lib",
+      "bytes": 42166,
+      "sha256": "bc8a9121fabe065864b9d7b3f9b377d169ff3d0bf416946436dda717b60ec12f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-projection-fusion\\checks\\20261019T054525-686f560d\\fusion-tests.map",
+      "bytes": 35505091,
+      "sha256": "6203953d8237bd68e169f7c7dcb3cd294497c60a903207acc5ab035c87b4cb0d"
+    }
+  ],
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\qwen35-full-cuda-2026-10-19\\cuda-bfloat-matvec.zip",
+    "bytes": 15490900,
+    "sha256": "5bb79e2b6192c9f0d2d13f4e7c2e30c3b48168b1b3eab9a8ddef433013f68388",
+    "payload_files": 317,
+    "CRC_and_SHA256_verified": true,
+    "failed_compilation_results": [
+      ".scratch/architecture-refactor-2026-10-18/cuda-projection-fusion/checks/20261019T054414-2b10bf3d/ggml-cuda-compile.result.json"
+    ],
+    "raw_vectors": 64,
+    "reclaim_manifest": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-projection-fusion\\reclaim-targets.json",
+      "bytes": 3410,
+      "sha256": "5c15fb77b717f018957995ac005717041681eec87dfa610f1b7491bba0c5ad88"
+    }
+  }
+}

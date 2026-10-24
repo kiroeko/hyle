@@ -1,0 +1,222 @@
+{
+  "schema_version": 1,
+  "status": "focused_Apple_product_fix_validated",
+  "date": "2026-10-21",
+  "archive": {
+    "path": "docs/evidence/performance/apple-affine-constant-preparation-reference-2026-10-21.zip",
+    "bytes": 631452,
+    "sha256": "554d8fa1d178ddeebeb94250c7865d291dc955916ede3b4b8d6e94f4dd31b7e3"
+  },
+  "members": 162,
+  "problem": "Original captured affine MLX F16/BF16 SF and bias could reconstruct pending F32 AsType operands on actual compiled calls.",
+  "change": [
+    "Reuse the original Plan.prepared_casts cold owner/table. Deduplicate each eligible immutable constant SSA value, then use its ready F32 array only as the internal affine QMM operand. Original logical inputs, public Cast/View publication rules and output rounding remain intact.",
+    "Prepare through the original Runtime/Program/Invocation. The derived readonly native descriptor retains the actual native cast array plus its original requested-byte reservations without a payload copy, second native free or producer cycle.",
+    "Both direct Apple graph compile and common graph compile use this implementation. New native CompileReport fields describe unique prepared count/logical bytes; common reports them as known packed constants while opaque private bytes remain unknown.",
+    "Reserve one F32 payload before conversion; its sequential isolated and actual output use one reservation. Extra isolated low-type input has a temporary workspace charge. The final data owner retains the payload reservation."
+  ],
+  "actual": {
+    "status": "actual_focused_Apple_product_validation_passed",
+    "cases": [
+      {
+        "name": "AppleAffineMetadata.ConstantsKeepLogicalTypesAndBothEntryContracts",
+        "properties": {
+          "successful_submissions": "8"
+        }
+      },
+      {
+        "name": "AppleAffineMetadata.BudgetExhaustionRollsBackAndLastOwnerReleasesPreparedStorage",
+        "properties": {
+          "successful_submissions": "1",
+          "expected_compile_budget_rejections": "1"
+        }
+      },
+      {
+        "name": "AppleGlmFlashMixedMlx.OriginalRolesKeepTypedPromotionAndWeightGeneration",
+        "properties": {
+          "device": "Apple M4",
+          "successful_submissions": "4",
+          "expected_failed_submissions": "1",
+          "successful_weight_generations": "3",
+          "native_weight_slots": "2",
+          "original_fragments_per_generation": "92",
+          "metadata_bf16_counterfactual_words": "8192",
+          "early_bf16_counterfactual_words": "8192",
+          "softmax_counterfactual_words": "8192",
+          "maximum_peak_normalized_error": "2.57513703e-07",
+          "maximum_relative_l2_error": "1.93228959e-07",
+          "wrong_policy0_peak_error": "0.0106710978",
+          "wrong_policy0_relative_l2": "0.0039310051",
+          "wrong_policy1_peak_error": "0.000456803483",
+          "wrong_policy1_relative_l2": "0.000406376603",
+          "wrong_policy2_peak_error": "0.0620040351",
+          "wrong_policy2_relative_l2": "0.0537358805",
+          "scope": "GLM32 ordinary BF16A/F16metadata g64 routed4/4/5+shared6;D4096/H2048,E288Top8,resident9;synthetic stored-format bytes,no checkpoint/model/quality/performance claim"
+        }
+      },
+      {
+        "name": "AppleImmutableMetadataDiagnostic.GraphConstantsKeepMetadataReadyAcrossThreeSubmissions",
+        "properties": {
+          "device": "Apple M4",
+          "successful_submissions": "3",
+          "scope": "tiny Graph compile constants;BF16 A/F16 SF+bias;original GLM SF bit pattern;3 actual dynamic A submits"
+        }
+      }
+    ],
+    "passed": 4,
+    "skipped": 0,
+    "successful_submissions": 16,
+    "new_cases": 2,
+    "new_successful_submissions": 9,
+    "neighbor_cases": 2,
+    "neighbor_successful_submissions": 7,
+    "expected_failed_submissions": 1,
+    "expected_compile_budget_rejections": 1,
+    "actual_project_dependencies": 128,
+    "actual_dependency_references": 5535,
+    "accidental_source_drift": 0,
+    "source_freeze": {
+      "path": ".scratch/architecture-refactor-2026-10-18/apple-affine-constant-preparation-2026-10-21/source-freeze.json",
+      "bytes": 2031,
+      "sha256": "7d244ac61cf856ed415f58de9e91157acdd983f9c46f7c8a25a3fdc3e9b32758"
+    },
+    "observation": {
+      "path": ".scratch/architecture-refactor-2026-10-18/apple-affine-constant-preparation-2026-10-21/apple/prepared-observation.json",
+      "bytes": 121370,
+      "sha256": "28358df909e5b7607fcc933b62f5cda59a2ce20dbd9e14fa8166c87b29251955"
+    },
+    "cleanup": {
+      "path": ".scratch/architecture-refactor-2026-10-18/apple-affine-constant-preparation-2026-10-21/apple/cleanup-inventory.json",
+      "bytes": 6054,
+      "sha256": "9b2c2757e626079448a87f7581195bd04fa6131a69257142dc010e6786e8feef"
+    },
+    "compile_exit_codes": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "link_exit": 0,
+    "run_exit": 0,
+    "known_limits": [
+      "Tests execute canonical current loose object overrides plus an explicit validation-only observer. Current installed SDK is not signed.",
+      "No physical allocator/dispatch/tokens-per-second measurement. Pending graph-node elimination is the observation.",
+      "Normal dyadic F16/BF16 outputs are byte checked. Tiny/nonfinite widening uses the identical original mx::astype source path but was not separately GPU-tested here.",
+      "Budget escape case holds GraphOutput/Program, then observes last release zero. Independent sole derived-array alias is structurally reviewed, not separately executed."
+    ],
+    "source_review": {
+      "path": ".scratch/architecture-refactor-2026-10-18/apple-affine-constant-preparation-2026-10-21/independent-source-review.json",
+      "bytes": 10227,
+      "sha256": "0b21e5ce3649817170e2939cd6f76cde6e2dc41e0417d8accfc42c55ac520346"
+    },
+    "first_compile_red": "Mac first lowering compile used const auto* for custom_as optional;fixed exactly two declarations.",
+    "first_runtime_red": "Budget test omitted the required default system metadata resource in limits;setup rejected before any product conversion;fixed limits only.",
+    "installed_producer": {
+      "path": ".scratch/architecture-refactor-2026-10-18/apple-affine-constant-preparation-2026-10-21/apple/installed-producer-refresh-plan.json",
+      "bytes": 3397,
+      "sha256": "ca4c5b3bd4521570f014d21a675a42844c1daec973fdbd5510ed21b254d55273"
+    }
+  },
+  "observation": {
+    "scope": "Observer is the unchanged nonproduct context object from the diagnostic package. New products/tests are canonical current source.",
+    "frames": 38,
+    "new_main_calls": 9,
+    "new_main_pending_metadata_casts": 0,
+    "old_tiny_constants_calls": 3,
+    "before_pending_F16_casts_per_call": 2,
+    "after_pending_F16_casts_per_call": 0,
+    "dynamic_X_calls": 5,
+    "dynamic_F16_pending_casts_per_call": 12,
+    "dynamic_weight_cache_implemented": false,
+    "physical_dispatches": null,
+    "physical_allocations": null,
+    "throughput_delta": null
+  },
+  "scope": {
+    "eligible": "Dense plain F16/BF16 affine MLX constant SF/bias; supported orientation/bits/group semantics unchanged. Original eligible explicit BF16 Cast preparation shares the same table.",
+    "dynamic_WeightSlots": "Not cached. Original X consumer still has twelve pending F16 metadata casts per actual call; immutable identity/content-epoch handoff remains a separate unresolved resource seam.",
+    "tiny_nonfinite": "Same original mx::astype primitive path, with no new domain restriction. This focused GPU numeric data is normal dyadic and does not sign separate tiny/nonfinite values.",
+    "installed_SDK": "Not validated here. Actual tests use canonical current loose object overrides plus a clearly marked validation-only graph observer. Old installed producer/cache drift is documented; current install closure renewal is separate ongoing work.",
+    "physical_performance": "No allocator/dispatch/physical memory or speed measurement; graph-node preparation and logical requested bytes only."
+  },
+  "ABI": {
+    "type": "hyle::graph::apple::CompileReport",
+    "change": "Two size_t fields inserted after logical_constant_bytes; no compatibility claim with old native-report layout.",
+    "actual_affected_owners": "Fresh apple_lowering.cc plus new consumer constructs/accesses the layout. Other linked products only carry declaration/pointer use; old native-report test owners are excluded from the actual map.",
+    "private_TUs": "apple_tensor.cc,apple_operations.cc,apple_lowering.cc,native_region.cc refreshed; no external SDK build."
+  },
+  "cleanup": {
+    "remote_root": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-affine-constant-preparation-2026-10-21/apple",
+    "remote_root_is_symlink": false,
+    "deletable_files": [
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-affine-constant-preparation-2026-10-21/apple/affine-constant-preparation",
+        "bytes": 15548280,
+        "sha256": "757971ac92e5733ed7415f21c505a6096ee279a321157848852bf21e1b1dc3a3",
+        "symlink": false,
+        "resolved": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-affine-constant-preparation-2026-10-21/apple/affine-constant-preparation"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-affine-constant-preparation-2026-10-21/apple/affine-constant-preparation.map",
+        "bytes": 4557143,
+        "sha256": "b441f139f21e14629b52aa0725020c933ba6c610c5ca69edb1628f107ef551ed",
+        "symlink": false,
+        "resolved": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-affine-constant-preparation-2026-10-21/apple/affine-constant-preparation.map"
+      }
+    ],
+    "retained_objects": [
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-affine-constant-preparation-2026-10-21/apple/objects/src--graph_route_apple--native_region.cc.o",
+        "bytes": 192984,
+        "sha256": "c3bafb413d50af5dec5e2df8de2202e199f3222852f649aa0b7ffd80d70ea5bd",
+        "symlink": false,
+        "resolved": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-affine-constant-preparation-2026-10-21/apple/objects/src--graph_route_apple--native_region.cc.o"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-affine-constant-preparation-2026-10-21/apple/objects/tests--graph_route_apple--affine_metadata_test.cc.o",
+        "bytes": 189056,
+        "sha256": "15d55ccd26778da5632d4835d290385f119e6450c8315156702a0e8f29069763",
+        "symlink": false,
+        "resolved": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-affine-constant-preparation-2026-10-21/apple/objects/tests--graph_route_apple--affine_metadata_test.cc.o"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-affine-constant-preparation-2026-10-21/apple/objects/src--compute_route_apple--apple_operations.cc.o",
+        "bytes": 171672,
+        "sha256": "82f121e9c4baaed101eb8af54678619bad4b1c514d21671ee1acad3f748c7e82",
+        "symlink": false,
+        "resolved": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-affine-constant-preparation-2026-10-21/apple/objects/src--compute_route_apple--apple_operations.cc.o"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-affine-constant-preparation-2026-10-21/apple/objects/src--compute_route_apple--apple_tensor.cc.o",
+        "bytes": 150200,
+        "sha256": "2d85f2f65166f1af51619dc99d1eff3a9c83bb5033db6a7a8bf8fc892c145e8c",
+        "symlink": false,
+        "resolved": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-affine-constant-preparation-2026-10-21/apple/objects/src--compute_route_apple--apple_tensor.cc.o"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-affine-constant-preparation-2026-10-21/apple/objects/src--graph_route_apple--apple_lowering.cc.o",
+        "bytes": 297488,
+        "sha256": "aeaba298b41d378ed3ee1e9583147480afa66186062909790af7130a79073dee",
+        "symlink": false,
+        "resolved": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-affine-constant-preparation-2026-10-21/apple/objects/src--graph_route_apple--apple_lowering.cc.o"
+      }
+    ],
+    "active_lsof": [],
+    "lsof_exit": 1,
+    "map_owner_check": {
+      "actual": [
+        "[  1] /Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-affine-constant-preparation-2026-10-21/apple/objects/tests--graph_route_apple--affine_metadata_test.cc.o",
+        "[  2] /Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-immutable-materialization-2026-10-21/apple/objects/tests--graph_route_apple--glm_flash_mixed_mlx_test.cc.o",
+        "[ 84] /Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-immutable-materialization-2026-10-21/apple/objects/src--compute_route_apple--apple_context.cc.o",
+        "[ 91] /Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-affine-constant-preparation-2026-10-21/apple/objects/src--compute_route_apple--apple_operations.cc.o",
+        "[ 95] /Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-affine-constant-preparation-2026-10-21/apple/objects/src--compute_route_apple--apple_tensor.cc.o",
+        "[116] /Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-affine-constant-preparation-2026-10-21/apple/objects/src--graph_route_apple--apple_lowering.cc.o",
+        "[119] /Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-affine-constant-preparation-2026-10-21/apple/objects/src--graph_route_apple--native_region.cc.o"
+      ],
+      "stale_changed_archive_members": []
+    },
+    "retained_diagnostic_context": "Explicit nonproduct observer compiled previously;canonical context source remains unchanged."
+  },
+  "original_diagnostic": "apple-affine-metadata-preparation-2026-10-21.json"
+}

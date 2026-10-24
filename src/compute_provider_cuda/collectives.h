@@ -35,6 +35,8 @@ struct Program final {
   std::size_t temporary_offset = 0;
   std::size_t temporary_bytes = 0;
   std::size_t prefix_offset = 0;
+  std::size_t arg_tiles = 0;
+  std::size_t arg_partials_offset = 0;
   std::size_t bounds_offset = 0;
   std::size_t keys_in_offset = 0;
   std::size_t keys_out_offset = 0;
@@ -47,6 +49,6 @@ cudaError_t configure(Program *program) noexcept;
 cudaError_t submit(const Program &program, const void *input,
                    const void *index_input, void *values, void *indices,
                    void *workspace, cudaStream_t stream,
-                   bool *validation_failed) noexcept;
+                   bool *validation_failed, unsigned *device_status) noexcept;
 
 } // namespace hyle::compute::cuda_native::collectives

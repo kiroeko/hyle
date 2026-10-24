@@ -19,7 +19,8 @@ template <
     typename DST_DTYPE,
     bool IS_COLUMN_MAJOR = false,
     bool SCALE_UE8M0 = false,
-    typename scale_packed_t = std::conditional_t<SCALE_UE8M0, uint32_t, float>>
+    typename scale_packed_t = std::conditional_t<SCALE_UE8M0, uint32_t, float>,
+    bool MULTIPLY_RECIPROCAL = false>
 __global__ void per_token_group_quant_8bit_kernel(
     const T* __restrict__ input,
     void* __restrict__ output_q,
@@ -81,10 +82,20 @@ __global__ void per_token_group_quant_8bit_kernel(
 
   local_absmax = GroupReduceMax(local_absmax, lane_id);
 
-  float y_s = local_absmax / max_8bit;
+  // Separate portable policy: do not exchange the original division tree.
+  static_assert(!MULTIPLY_RECIPROCAL || (!IS_COLUMN_MAJOR && !SCALE_UE8M0));
+  float y_s;
+  if constexpr (MULTIPLY_RECIPROCAL) {
+    y_s = __fmul_rn(local_absmax, __uint_as_float(0x3b124925u)); // F32(1/448)
+  } else {
+    y_s = local_absmax / max_8bit;
+  }
   if constexpr (SCALE_UE8M0) {
     y_s = exp2f(ceilf(log2f(fmaxf(y_s, 1e-10f))));
   }
+
+  float inverse_scale = 0.0F;
+  if constexpr (MULTIPLY_RECIPROCAL) inverse_scale = __fdiv_rn(1.0F, y_s);
 
   // TODO can optimize
   scale_element_t y_s_quant;
@@ -105,13 +116,18 @@ __global__ void per_token_group_quant_8bit_kernel(
 #pragma unroll
     for (uint32_t j = 0; j < vec_size; ++j) {
       float val = static_cast<float>(input_vec[j]);
-      float q_val = fminf(fmaxf(val / y_s, min_8bit), max_8bit);
+      float normalized;
+      if constexpr (MULTIPLY_RECIPROCAL) normalized = __fmul_rn(val, inverse_scale);
+      else normalized = val / y_s;
+      float q_val = fminf(fmaxf(normalized, min_8bit), max_8bit);
       group_output[i * vec_size + j] = DST_DTYPE(q_val);
     }
   }
 }
 
 void instantiate() {
+per_token_group_quant_8bit_kernel<float, __nv_fp8_e4m3, false, false, float, true><<<1,16>>>(static_cast<const float*>(nullptr),nullptr,static_cast<float*>(nullptr),128,1,1,1e-10F,-448.F,448.F);
+per_token_group_quant_8bit_kernel<__nv_bfloat16, __nv_fp8_e4m3, false, false, float, true><<<1,16>>>(static_cast<const __nv_bfloat16*>(nullptr),nullptr,static_cast<float*>(nullptr),128,1,1,1e-10F,-448.F,448.F);
 per_token_group_quant_8bit_kernel<float, __nv_fp8_e4m3, false, false, float><<<1,16>>>(static_cast<const float*>(nullptr),nullptr,static_cast<float*>(nullptr),128,1,1,1e-10F,-448.F,448.F);
 per_token_group_quant_8bit_kernel<__nv_bfloat16, __nv_fp8_e4m3, false, false, float><<<1,16>>>(static_cast<const __nv_bfloat16*>(nullptr),nullptr,static_cast<float*>(nullptr),128,1,1,1e-10F,-448.F,448.F);
 }

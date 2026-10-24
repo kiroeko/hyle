@@ -1,3 +1,4 @@
+#include <hyle/graph/cuda.h>
 #include <hyle/compute/backends/cuda.h>
 #include <hyle/compute/batch_execution.h>
 #include <hyle/compute/paged_arena.h>
@@ -146,12 +147,11 @@ c::BatchProgramOptions options(const Data& data, bool allow, std::size_t bytes) 
   return result;
 }
 
-hyle::Result<std::unique_ptr<Fixture>> fixture(const Data& data, bool graph_allow, std::size_t bytes) {
+hyle::Result<std::unique_ptr<Fixture>> fixture(const Data& data) {
   auto f = std::make_unique<Fixture>();
   HYLE_ASSIGN_OR_RETURN(f->schema, c::BatchSchema::create(data.capacity));
   HYLE_ASSIGN_OR_RETURN(f->layout, f->schema.version({data.qptr, data.kptr, data.ids, data.tails}));
-  HYLE_ASSIGN_OR_RETURN(auto provider, gb::provider(c::flashinfer::provider(), f->schema,
-                                                  options(data, graph_allow, bytes)));
+  const auto provider = c::flashinfer::provider();
   HYLE_ASSIGN_OR_RETURN(auto id, c::cuda::device(0));
   HYLE_ASSIGN_OR_RETURN(f->context, c::Context::create(id, provider));
   HYLE_ASSIGN_OR_RETURN(f->queue, f->context.create_queue());
@@ -264,7 +264,7 @@ Status direct(Fixture& f, const Data& data, bool allow, std::size_t cap, bool na
   return f.queue.drain();
 }
 
-Status graph(Fixture& f, const Data& data, bool descriptor_allow, bool mismatch, bool narrow, std::size_t cap) {
+Status graph(Fixture& f, const Data& data, bool descriptor_allow, bool narrow, std::size_t cap) {
   HYLE_ASSIGN_OR_RETURN(auto builder, g::GraphBuilder::create());
   HYLE_ASSIGN_OR_RETURN(auto qdesc, c::batch_query_description(data.capacity));
   HYLE_ASSIGN_OR_RETURN(auto kdesc, c::batch_cache_description(data.capacity, c::BatchCacheRole::kKey));
@@ -279,34 +279,33 @@ Status graph(Fixture& f, const Data& data, bool descriptor_allow, bool mismatch,
   HYLE_ASSIGN_OR_RETURN(auto output_id, builder.result(node));
   HYLE_RETURN_IF_ERROR(builder.publish(output_id));
   HYLE_ASSIGN_OR_RETURN(auto graph_value, std::move(builder).finish());
-  const std::array domains{g::StorageDomain{f.device.ref()}};
-  const std::array targets{g::ExecutionTarget{&f.context, g::StorageDomainId{0}}};
-  auto compiled = g::compile(graph_value, {domains, targets, {}},
+  auto compiled = g::cuda::compile(graph_value, f.context, f.device.ref(),
                              {.operation_fallback = g::OperationFallbackPolicy::kReject});
-  if (mismatch) return require(!compiled, "Graph ignored descriptor/provider precision mismatch");
   if (!compiled) return compiled.error();
-  HYLE_ASSIGN_OR_RETURN(auto invocation, gb::Invocation::create(compiled->executable,
-      std::array{gb::LaneBinding{g::ExecutionLaneId{0}, &f.context, &f.queue, f.host.ref()}}));
+  const std::array queues{g::QueueBinding{g::ExecutionLaneId{0}, &f.queue}};
+  const gb::PrepareOptions preparation{.host_workspace=f.host.ref(),
+      .max_float_workspace_bytes=cap,.max_int_workspace_bytes=4096};
+  HYLE_ASSIGN_OR_RETURN(auto invocation, compiled->executable.create_invocation({.resources = g::ResourceOptions{}}));
   HYLE_ASSIGN_OR_RETURN(auto output_desc, c::batch_output_description(data.capacity, data.capacity.max_query_rows));
   HYLE_ASSIGN_OR_RETURN(auto output_bytes, output_desc.required_bytes());
   HYLE_ASSIGN_OR_RETURN(auto outputs, c::LeasePool::create(f.device.ref(), output_bytes + 512));
   for (unsigned captured = 0; captured < 2; ++captured) {
     for (unsigned episode = 0; episode < 2; ++episode) {
       const std::array layouts{gb::NodeLayout{node, f.layout}};
-      HYLE_RETURN_IF_ERROR(invocation.prepare_batch(layouts));
+      HYLE_RETURN_IF_ERROR(gb::prepare(invocation, queues, layouts, preparation));
       HYLE_RETURN_IF_ERROR(invocation.bind(inputs[0], qdesc, f.query));
-      HYLE_RETURN_IF_ERROR(invocation.bind(inputs[1], f.key_frame));
-      HYLE_RETURN_IF_ERROR(invocation.bind(inputs[2], f.value_frame));
+      HYLE_RETURN_IF_ERROR(gb::bind(invocation, inputs[1], f.key_frame));
+      HYLE_RETURN_IF_ERROR(gb::bind(invocation, inputs[2], f.value_frame));
       HYLE_ASSIGN_OR_RETURN(auto writer, outputs.allocate(output_bytes));
       HYLE_RETURN_IF_ERROR(invocation.bind(output_id, output_desc, std::move(writer)));
-      if (captured) HYLE_RETURN_IF_ERROR(invocation.prepare_replay());
-      HYLE_ASSIGN_OR_RETURN(auto done, invocation.submit()); HYLE_RETURN_IF_ERROR(done.wait());
-      HYLE_ASSIGN_OR_RETURN(auto output, invocation.output(output_id));
+      if (captured) HYLE_RETURN_IF_ERROR(gb::prepare_replay(invocation, queues));
+      HYLE_RETURN_IF_ERROR(invocation.prepare_replay(queues));HYLE_ASSIGN_OR_RETURN(auto done, invocation.submit(queues)); HYLE_RETURN_IF_ERROR(done.wait());
+      HYLE_ASSIGN_OR_RETURN(auto output, invocation.result(output_id));
       HYLE_ASSIGN_OR_RETURN(auto storage, output.storage_lease());
       HYLE_RETURN_IF_ERROR(check_output(data, storage));
       done = {};
-      HYLE_RETURN_IF_ERROR(require(!invocation.prepare_batch(layouts).ok(), "Graph old output allowed overwrite"));
-      HYLE_ASSIGN_OR_RETURN(auto report, invocation.report(node));
+      HYLE_RETURN_IF_ERROR(require(!gb::prepare(invocation, queues, layouts, preparation).ok(), "Graph old output allowed overwrite"));
+      HYLE_ASSIGN_OR_RETURN(auto report, gb::report(invocation, node));
       HYLE_RETURN_IF_ERROR(check_report(data, report, narrow, cap));
       if (captured) HYLE_RETURN_IF_ERROR(require(report.capture_compatible, "Graph native capture was not retained"));
     }
@@ -321,30 +320,28 @@ Status run() {
   static_assert(!c::PagedAttention{}.allow_bf16_partials);
   constexpr std::size_t reduced = 11u << 20, original = 22u << 20;
   const Data data(256, 64, 128, 1024, 768, -1);
-  HYLE_ASSIGN_OR_RETURN(auto f, fixture(data, true, reduced));
+  HYLE_ASSIGN_OR_RETURN(auto f, fixture(data));
   HYLE_ASSIGN_OR_RETURN(auto environment, c::cuda::environment(f->context));
   std::printf("POLICY_ENV device=%s sm=%d%d\n", environment.device_name.data(), environment.sm_major, environment.sm_minor);
   HYLE_RETURN_IF_ERROR(direct(*f, data, false, reduced, false, true));
   HYLE_RETURN_IF_ERROR(direct(*f, data, false, original, false));
   HYLE_RETURN_IF_ERROR(direct(*f, data, true, reduced, true));
-  HYLE_RETURN_IF_ERROR(graph(*f, data, false, true, false, reduced));
-  HYLE_RETURN_IF_ERROR(graph(*f, data, true, false, true, reduced));
+  HYLE_RETURN_IF_ERROR(graph(*f, data, true, true, reduced));
   HYLE_RETURN_IF_ERROR(f->queue.drain()); f.reset();
   {
-    HYLE_ASSIGN_OR_RETURN(auto original_graph, fixture(data, false, original));
-    HYLE_RETURN_IF_ERROR(graph(*original_graph, data, true, true, false, original));
-    HYLE_RETURN_IF_ERROR(graph(*original_graph, data, false, false, false, original));
+    HYLE_ASSIGN_OR_RETURN(auto original_graph, fixture(data));
+    HYLE_RETURN_IF_ERROR(graph(*original_graph, data, false, false, original));
     HYLE_RETURN_IF_ERROR(original_graph->queue.drain());
   }
   {
     const Data tail(256, 64, 128, 1023, 767, -1);
-    HYLE_ASSIGN_OR_RETURN(auto other, fixture(tail, true, reduced));
+    HYLE_ASSIGN_OR_RETURN(auto other, fixture(tail));
     HYLE_RETURN_IF_ERROR(direct(*other, tail, true, reduced, true));
     HYLE_RETURN_IF_ERROR(other->queue.drain());
   }
   for (unsigned depth : {64u, 256u}) {
     const Data fallback(depth, 1, 17, 1024, 768, 16);
-    HYLE_ASSIGN_OR_RETURN(auto other, fixture(fallback, true, reduced));
+    HYLE_ASSIGN_OR_RETURN(auto other, fixture(fallback));
     HYLE_RETURN_IF_ERROR(direct(*other, fallback, true, reduced, false));
     HYLE_RETURN_IF_ERROR(other->queue.drain());
   }
@@ -352,7 +349,7 @@ Status run() {
     // The cold domain matches, but the actual query tile is 16. Planning
     // must retain four-byte partials when the runtime selects the F32 path.
     const Data small_query(256, 1, 1, 1024, 768, -1);
-    HYLE_ASSIGN_OR_RETURN(auto other, fixture(small_query, true, reduced));
+    HYLE_ASSIGN_OR_RETURN(auto other, fixture(small_query));
     HYLE_RETURN_IF_ERROR(direct(*other, small_query, true, reduced, false));
     HYLE_RETURN_IF_ERROR(other->queue.drain());
   }

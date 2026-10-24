@@ -1,0 +1,74 @@
+{
+  "date": "2026-10-21",
+  "status": "source_research_and_proposed_design_only_not_implemented_flags",
+  "scope": "Fixed local source of llama.cpp, ik_llama.cpp, TensorRT-LLM, vLLM, SGLang and current Hyle public APIs. No network update, build, GPU run or new session implementation in this research.",
+  "conclusion": "Separate logical context, retained sessions, active sequences and aggregate cache/state bytes. Let the engine derive preparation domains and resource capacities from semantic user controls; Hyle supplies bounded state/page/plan/execution mechanisms.",
+  "engine_controls": [
+    {
+      "name": "context_per_sequence",
+      "meaning": "Logical history per continuable sequence; not physical cache pool size."
+    },
+    {
+      "name": "cached_sessions",
+      "meaning": "Retained idle plus active continuation entries; not active execution slots."
+    },
+    {
+      "name": "active_sequences",
+      "meaning": "Combined actively scheduled distinct sequences; not number of users or in-flight batches."
+    },
+    {
+      "name": "cache_budget_bytes",
+      "meaning": "Managed all-layer KV, recurrent/conv, copy-on-write and retained-version backing; not total process GPU memory."
+    }
+  ],
+  "automatic_or_optional": {
+    "memory_budget": "Optional host/device operating budgets with explicit unknown provider bytes and headroom.",
+    "step_tokens": "Auto chosen new query tokens per step, distinct from retained history.",
+    "inflight_batches": "Auto chosen independent mutable execution slots, each charged to the real resource budget.",
+    "prepared_step_sizes": "Auto chosen finite hot shapes; explicit preparation outside the ready domain."
+  },
+  "boundary": {
+    "engine": [
+      "Session identities and isolation policy",
+      "Admission, queueing, eviction and exact prefix matching",
+      "Batching, token/position/model semantics, generation and MTP acceptance policy"
+    ],
+    "hyle": [
+      "Actual dtype/layout/state/effect contracts and cold capability/route selection",
+      "Bounded page permissions, state versions, explicit copy-on-write and native retirement",
+      "Shared immutable plans, independent mutable invocations, preparation reports and explicit capacity failures"
+    ]
+  },
+  "important_limits": [
+    "These names are design terms, not newly available Hyle flags or compulsory user settings.",
+    "Capacity planning does not guarantee TPS, prevent all native layout replans, or reserve physical VRAM against drivers and other processes.",
+    "A known bounded KV token pool alone is insufficient for hybrid recurrent/conv models. Current Qwen has 19537920 bytes of conv/GDN state per version before KV and other ownership costs.",
+    "vLLM total-GPU executor utilization, SGLang weights-plus-KV static fraction and TensorRT-LLM currently-free-memory KV fraction use different denominators.",
+    "A session-directory eviction or cancellation cannot reclaim storage still pinned by results, state versions or native execution.",
+    "Finite shapes and stable addresses are insufficient to prove capture reuse; native layout topology and resource identities still apply.",
+    "Source research is not new measured performance. Existing current multi-turn measurements remain separate."
+  ],
+  "source_reports": [
+    {
+      "member": "llama-ik.json",
+      "bytes": 28915,
+      "sha256": "509bd7689a7b708256db22a2691911e44891fa36f8a1a915b7e3454dfefe8a2d"
+    },
+    {
+      "member": "serving-engines.json",
+      "bytes": 25192,
+      "sha256": "fce89762e1cab8d236feebaf4e1ea2a1612decf85187db8549dffbedb181349f"
+    },
+    {
+      "member": "hyle-capacity-design.json",
+      "bytes": 23987,
+      "sha256": "e6b085d37c96aa615e23a5ba2bbf38239925b6a6a3ba2438d4a17b0250eef8dc"
+    }
+  ],
+  "source_caveats": "TRT-LLM checkout has extensive index/untracked changes; cited source bytes were checked against its fixed HEAD. Local CLI defaults are not asserted as latest upstream releases or as defaults in the earlier matched benchmark SDK.",
+  "bundle": {
+    "path": "docs/evidence/research/engine-capacity-2026-10-21.zip",
+    "bytes": 25611,
+    "sha256": "8f1c2659e9cc60c1f545212624711111c8fafc92750ce200b6da758f7603c810"
+  }
+}

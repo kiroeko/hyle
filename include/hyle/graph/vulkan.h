@@ -2,7 +2,8 @@
 
 #include "hyle/compute/vulkan.h"
 #include "hyle/graph/graph.h"
-#include "hyle/graph/native_variants.h"
+#include "hyle/graph/execution_source.h"
+#include "hyle/graph/weight_binding.h"
 #include "hyle/visibility.h"
 
 #if defined(HYLE_COMPUTE_VULKAN)
@@ -19,8 +20,31 @@
 #include "hyle/error/result.h"
 #include "hyle/graph/compile_report.h"
 #include "hyle/compute/vulkan_batch.h"
+#include "hyle/compute/vulkan_weights.h"
+
+namespace hyle::graph { class Invocation; struct QueueBinding; }
 
 namespace hyle::graph::vulkan {
+// Cold immutable ownership binding to the original Invocation. No upload wait
+// occurs here; the original replay host-wait policy orders the native producer
+// at its real readers. Batch/native owners are retained; resource and allocator
+// objects remain borrowed through all retained storage and work.
+HYLE_GRAPH_ROUTE_VULKAN_API Status bind(Invocation &, ValueId,
+    const compute::vulkan::WeightBatch &, std::uint64_t id) noexcept;
+// Resolve all banks and native storage owners before one atomic input commit.
+HYLE_GRAPH_ROUTE_VULKAN_API Status bind(Invocation &,
+    std::span<const graph::WeightBinding>, const compute::vulkan::WeightBatch &) noexcept;
+
+// Typed pending page frames bind through batch::bind after cold batch::prepare
+// reserves source capacity. This transfers the original native F2 controls to
+// the same Graph submission; rejection before acceptance leaves update owned
+// by the caller. Recovery requires actual source/suffix retirement and release
+// of the original public outcome and result observations.
+HYLE_GRAPH_ROUTE_VULKAN_API Result<compute::Completion> submit(Invocation &,
+    std::span<const QueueBinding>, compute::vulkan::CopyBatchUpdate &&) noexcept;
+HYLE_GRAPH_ROUTE_VULKAN_API Result<compute::vulkan::CopyBatchUpdate>
+take_update(Invocation &) noexcept;
+
 HYLE_GRAPH_ROUTE_VULKAN_API Result<compute::vulkan::MaterializedBatchInvocation>
 prepare_materialized_batch(const compute::vulkan::Context&,compute::MaterializedBatchProgram,
     const compute::vulkan::MemoryResource&device,const compute::vulkan::MemoryResource&staging,
@@ -35,11 +59,22 @@ struct CustomDispatch final {
   std::vector<std::byte> push_constants;
 };
 
-// Called once per live custom node during cold compilation. The resulting
-// Program retains native pipelines; it never retains or invokes this callback.
+// Called only during cold compilation. Capture the actual Context/Kernel and
+// any other required owner explicitly. The resulting native Program retains
+// pipelines; it never retains or invokes this callback during replay.
 using CustomLowering = std::function<Result<CustomDispatch>(
-    const compute::vulkan::Context &, const compute::Operation &,
+    const compute::Operation &,
     std::span<const compute::TensorDesc>, const compute::TensorDesc &)>;
+
+struct SourceOptions final {
+  // Retained by this configured Source. Captured borrows must remain valid
+  // through every cold compile using it; no public Context address is borrowed
+  // implicitly. Prepared native programs keep only the resulting pipelines.
+  CustomLowering custom{};
+  mem::AllocatorRef allocator = mem::system_allocator();
+};
+HYLE_GRAPH_ROUTE_VULKAN_API Result<ExecutionSource> execution_source(
+    const compute::vulkan::Context &, SourceOptions = {}) noexcept;
 
 // Cold, independently owned facts; never retains Graph/Program/Buffer/Kernel,
 // Context or custom payload. Unknown status means no attempt. Failure resets
@@ -91,7 +126,7 @@ struct CompileOptions final {
 //
 // Built-ins share the Compute route's qualified dtype/shape domains. Custom
 // schemas require the cold native lowering above. Symbolic graphs require exact
-// bindings or a finite compile_variants table. Pure control endpoints separate
+// bindings. Finite tables use the common Graph compile entry. Pure control endpoints separate
 // native regions and retain predecessor outputs through original barriers.
 // Effects, unsupported alias schemas and input/constant-only published outputs
 // are rejected explicitly. TopK and qualified recurrent/categorical schemas may
@@ -101,19 +136,6 @@ HYLE_GRAPH_ROUTE_VULKAN_API Result<compute::vulkan::Program>
 compile(const compute::vulkan::Context &context, const Graph &graph,
         std::span<const compute::vulkan::Tensor> constants = {},
         CompileOptions options = {}) noexcept;
-
-using Variants = ExactNativeVariants<compute::vulkan::Program>;
-inline Result<Variants> compile_variants(
-    const compute::vulkan::Context &context, const Graph &graph,
-    std::span<const ExactShapeVariant> variants,
-    std::span<const compute::vulkan::Tensor> constants = {}, CompileOptions options = {}) noexcept {
-  if (!options.shape.empty())
-    return std::unexpected(Status::InvalidArgument("variant table supplies its own exact shapes"));
-  options.report = nullptr;
-  return Variants::prepare(graph, variants, [&](const Graph &point) {
-    return compile(context, point, constants, options);
-  });
-}
 
 } // namespace hyle::graph::vulkan
 #endif

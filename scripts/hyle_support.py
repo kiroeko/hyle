@@ -122,7 +122,7 @@ def _selected_directory(args: argparse.Namespace, *, required: bool) -> Path | N
     return None
 
 
-def parse_backends(value: str, system: str, arch: str) -> tuple[str, ...]:
+def parse_backends(value: str, system: str, arch: str, *, complete_math: bool = True) -> tuple[str, ...]:
     requested = [part.strip().lower() for part in re.split(r"[,;]", value)]
     if not requested or any(not part for part in requested):
         raise SetupError("--backends must be a nonempty comma-separated set: cpu,cuda,metal,vulkan or all.")
@@ -130,7 +130,7 @@ def parse_backends(value: str, system: str, arch: str) -> tuple[str, ...]:
         if requested != ["all"]:
             raise SetupError("Use --backends all alone, or list the backends you need.")
         requested = ["vulkan"]
-        if system in {"Windows", "Linux"} and arch == "x86_64":
+        if system in {"Windows", "Linux"} and (arch == "x86_64" or not complete_math):
             requested = ["cpu", "cuda", "vulkan"]
         elif system == "Darwin" and arch == "aarch64":
             requested = ["cpu", "metal", "vulkan"]
@@ -138,8 +138,11 @@ def parse_backends(value: str, system: str, arch: str) -> tuple[str, ...]:
     unknown = set(requested) - {"cpu", "cuda", "apple", "vulkan"}
     if unknown:
         raise SetupError(f"Unknown backend(s): {', '.join(sorted(unknown))}. Use cpu,cuda,metal,vulkan or all.")
-    if "cuda" in requested and (system not in {"Windows", "Linux"} or arch != "x86_64"):
-        raise SetupError("The complete CUDA backend supports Windows/Linux x86_64. Use Vulkan on this target.")
+    if "cuda" in requested:
+        if system not in {"Windows", "Linux"}:
+            raise SetupError("The CUDA backend requires Windows or Linux.")
+        if complete_math and arch != "x86_64":
+            raise SetupError("The complete CUDA backend supports Windows/Linux x86_64. Use Vulkan on this target.")
     if "apple" in requested and (system != "Darwin" or arch != "aarch64"):
         raise SetupError("The Metal backend requires macOS on Apple Silicon. Use CUDA or Vulkan on this target.")
     return tuple(item for item in ("cpu", "cuda", "apple", "vulkan") if item in requested)
@@ -178,13 +181,14 @@ def _boolean(args: argparse.Namespace, name: str, cache: dict[str, str], key: st
 def _selection(args: argparse.Namespace, cache: dict[str, str], saved_config: str | None = None) -> dict:
     system, arch = _host()
     backend_value = args.backends if args.backends is not None else cache.get("HYLE_COMPUTE_ROUTES", "cpu")
-    routes = parse_backends(backend_value, system, arch)
     components = args.components if args.components is not None else cache.get("HYLE_COMPONENTS", "all")
     products = [part.strip().lower() for part in re.split(r"[,;]", components)]
     if any(not re.fullmatch(r"[a-z][a-z0-9_]*", part) for part in products):
         raise SetupError("--components must be product names separated by commas, or all.")
     if "all" in products and products != ["all"]:
         raise SetupError("Use --components all alone, or list the products you need.")
+    routes = parse_backends(backend_value, system, arch,
+                            complete_math=bool({"all", "compute", "graph"}.intersection(products)))
     configuration = args.config or cache.get("CMAKE_BUILD_TYPE") or saved_config or "Release"
     if configuration not in CONFIGURATIONS:
         # Existing multi-config/custom CMake trees remain consumable by build/test.
@@ -320,7 +324,7 @@ def initialize(args: argparse.Namespace) -> int:
     })
     if not ("Visual Studio" in environment.generator or "Multi-Config" in environment.generator):
         definitions["CMAKE_BUILD_TYPE"] = selected["config"]
-    if {"all", "compute", "graph"}.intersection(selected["components"]):
+    if {"all", "compute", "graph", "compute_stream"}.intersection(selected["components"]):
         definitions["HYLE_COMPUTE_ROUTES"] = ";".join(selected["routes"])
     if {"all", "io"}.intersection(selected["components"]):
         definitions["HYLE_IO_TLS"] = "ON" if selected["tls"] else "OFF"

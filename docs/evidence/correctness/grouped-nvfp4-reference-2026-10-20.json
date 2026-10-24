@@ -1,0 +1,342 @@
+{
+  "status": "implemented_and_targeted_execution_passed",
+  "date": "2026-10-20",
+  "scope": "Grouped ModelOpt group16 BF16 software-reference capability on Windows CPU/CUDA/Vulkan and macOS Apple Metal; includes dense NVFP4 regression. No model artifact or performance acceptance.",
+  "previous_contract": "docs/evidence/correctness/nvfp4-cross-backend-reference-2026-10-20.json",
+  "header_design": "docs/evidence/research/nvfp4-grouped-expert-contract-2026-10-20.json",
+  "operation": {
+    "name": "model_ops::GroupedNvfp4Linear / grouped_nvfp4_linear()",
+    "id": "0x48594c454d4f444c:0x4e56463447525001",
+    "ports": [
+      "BF16 A[T,A_slots,K]",
+      "U8 W[E,N,K/2]",
+      "E4M3FN SF[E,N,K/16]",
+      "F32 WG[E]",
+      "F32 IG[E]",
+      "I32 IDs[T,S]"
+    ],
+    "output": "BF16 Y[T,S,N]",
+    "geometry": "Positive T/S/E/N/K, K%16=0; A_slots1 orS. A dense or existing shared zero-slot-stride contiguous-K proof with actual element-aligned token padding; remaining ports dense.",
+    "domain": "IDs all in[0,E) before expert access. Finite A; selected SF finite/nonnegative including both zero signs; selected WG/IG positive finite including F32 subnormals. Unselected metadata is not scanned.",
+    "math": "For each selected expert, original group16 A absmax/E4M3 scale rounding and 1e-5 guard; E2M1 RNE QDQ narrowed to BF16. W narrows BF16 after E2M1code * F32(E4M3SF*WG), with code8 positive zero. Backend F32 reduction then BF16 output; finite scaling overflow/NaN behavior retained.",
+    "failure": "Accepted Completion reports invalid ID/numeric data, outputs unusable without rollback. Failed Graph Invocation is terminal; recovery uses a fresh Invocation."
+  },
+  "integration": {
+    "core_or_executor_added": false,
+    "public_layout_widened": false,
+    "resources": "Existing prepared provider/native Program, caller/Invocation workspace, Queue, capture and result/retirement mechanisms.",
+    "qdq_payload_bytes": "2*T*S*K, independent of E; selected IG makes slot QDQ distinct even when raw A is shared.",
+    "weight_storage": "Original W/SF/WG/IG carriers; no persistent dense E*N*K decoded weight bank.",
+    "other_storage": "Apple retains compact numeric/ID check arrays and reduction/status intermediates; CUDA/Vulkan retain existing device-status/runtime storage. QDQ payload is not a claim about total or opaque/private memory.",
+    "cuda": "IDs check kernel precedes quantize and dot on the same stream; atomic status observation; grouped Rows1 avoids dense Rows4 cross-expert weight sharing. Both private Program owners refreshed.",
+    "vulkan": "Separate internal grouped shader variant with7descriptors/24-byte origins; prior dense6/20 ABI preserved. IDs dispatch precedes QDQ/dot; selected SF validation and atomic status. Only declared SF port2 admits E4M3 carrier.",
+    "apple": "Full GPU ID reduction gates both arithmetic kernels; rank1 status carrier and existing with_device_status. Shared integer F32 helpers preserve division/subnormal semantics.",
+    "cold_routing": "One typed custom operation along original backend routes; no model whitelist, producer switch, new executor or user macro."
+  },
+  "validation": {
+    "windows_cpu": {
+      "tests": 8,
+      "failures": 0,
+      "skipped": 0,
+      "cases": [
+        {
+          "suite": "NativeNvfp4",
+          "name": "RejectsCallerWorkspaceAliasingReadInputsBeforeAnyWrite",
+          "properties": {}
+        },
+        {
+          "suite": "CpuNvfp4ReferenceGraph",
+          "name": "OriginalPackedBanksAndBfloatBoundariesSurviveSlotsAndUpdates",
+          "properties": {
+            "actual_submissions": "8"
+          }
+        },
+        {
+          "suite": "CpuNvfp4ReferenceGraph",
+          "name": "RuntimeDomainFailuresRecoverWithoutChangingTheReferenceTree",
+          "properties": {
+            "successful_submissions": "25",
+            "failed_completions": "18"
+          }
+        },
+        {
+          "suite": "NativeGroupedNvfp4",
+          "name": "ColdSchemaAndWorkspaceDependOnSelectedRowsNotExpertBank",
+          "properties": {}
+        },
+        {
+          "suite": "NativeGroupedNvfp4",
+          "name": "SelectedPackedRowsAndAllActivationLayoutsUseCurrentValues",
+          "properties": {
+            "actual_submissions": "12"
+          }
+        },
+        {
+          "suite": "NativeGroupedNvfp4",
+          "name": "RejectsAllIdsAndInputWorkspaceOverlapBeforeWriting",
+          "properties": {}
+        },
+        {
+          "suite": "CpuGroupedNvfp4ReferenceGraph",
+          "name": "SelectedExpertGlobalsAndSharedViewsSurviveSlotsAndUpdates",
+          "properties": {
+            "actual_submissions": "24"
+          }
+        },
+        {
+          "suite": "CpuGroupedNvfp4ReferenceGraph",
+          "name": "CheckedSelectedRuntimeDomainUsesFreshInvocationAfterFailure",
+          "properties": {
+            "successful_submissions": "26",
+            "failed_completions": "20"
+          }
+        }
+      ],
+      "xml": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-nvfp4\\common-cpu\\checks\\tests.xml",
+        "bytes": 3868,
+        "sha256": "c6fa67f8d0809148a23db6f8d260a50f1a9059cc346b757de977d4e2e39b0cf8"
+      },
+      "xml_member": "evidence/grouped-nvfp4/common-cpu/checks/tests.xml",
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-nvfp4\\common-cpu\\checks\\cpu.exe",
+        "bytes": 27289088,
+        "sha256": "3a9fa733e95843c591268cfb8fd8a4215230237c57d32dbead433e39dba1653d"
+      }
+    },
+    "windows_cuda": {
+      "tests": 4,
+      "failures": 0,
+      "skipped": 0,
+      "cases": [
+        {
+          "suite": "CudaNvfp4ReferenceGraph",
+          "name": "OriginalPackedBanksAndBfloatBoundariesSurviveSlotsAndUpdates",
+          "properties": {
+            "actual_submissions": "8"
+          }
+        },
+        {
+          "suite": "CudaNvfp4ReferenceGraph",
+          "name": "RuntimeDomainFailuresRecoverWithoutChangingTheReferenceTree",
+          "properties": {
+            "successful_submissions": "25",
+            "failed_completions": "18"
+          }
+        },
+        {
+          "suite": "CudaGroupedNvfp4ReferenceGraph",
+          "name": "SelectedExpertGlobalsSharedViewsAndRetainedResults",
+          "properties": {
+            "actual_submissions": "24"
+          }
+        },
+        {
+          "suite": "CudaGroupedNvfp4ReferenceGraph",
+          "name": "SelectedOnlyValidationFailuresAndBoundedWorkspace",
+          "properties": {
+            "successful_submissions": "26",
+            "failed_completions": "20"
+          }
+        }
+      ],
+      "xml": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-nvfp4\\cuda\\validation\\tests.xml",
+        "bytes": 2295,
+        "sha256": "017607e07b4e3a58da740989dbe1c7c034c27e84c733291bcbd34014253a0c2f"
+      },
+      "xml_member": "evidence/grouped-nvfp4/cuda/validation/tests.xml",
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-nvfp4\\cuda\\tests\\cuda.exe",
+        "bytes": 121129472,
+        "sha256": "f7c9df3b6195c6841de06237eee9d0bbde56702f76e2c333cb215cea74da5c53"
+      }
+    },
+    "windows_vulkan": {
+      "tests": 4,
+      "failures": 0,
+      "skipped": 0,
+      "cases": [
+        {
+          "suite": "VulkanGroupedNvfp4ReferenceGraph",
+          "name": "SelectedPackedExpertsAndSlotDependentQdqSurviveLifetimes",
+          "properties": {
+            "device": "NVIDIA GeForce RTX 4070",
+            "actual_submissions": "24"
+          }
+        },
+        {
+          "suite": "VulkanGroupedNvfp4ReferenceGraph",
+          "name": "OnlySelectedExpertsAreValidatedAndInvalidIdsFail",
+          "properties": {
+            "device": "NVIDIA GeForce RTX 4070",
+            "successful_submissions": "26",
+            "failed_completions": "20"
+          }
+        },
+        {
+          "suite": "VulkanNvfp4ReferenceGraph",
+          "name": "OriginalPackedBanksAndBfloatBoundariesSurviveSlotsAndUpdates",
+          "properties": {
+            "device": "NVIDIA GeForce RTX 4070",
+            "actual_submissions": "8"
+          }
+        },
+        {
+          "suite": "VulkanNvfp4ReferenceGraph",
+          "name": "RuntimeDomainFailuresRecoverWithoutChangingTheReferenceTree",
+          "properties": {
+            "device": "NVIDIA GeForce RTX 4070",
+            "successful_submissions": "25",
+            "failed_completions": "18"
+          }
+        }
+      ],
+      "xml": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-nvfp4\\vulkan\\validation\\tests.xml",
+        "bytes": 2588,
+        "sha256": "98071b7f2090f76adf9525d64dcf184e2c2c5c894969cf6502d71875f54be994"
+      },
+      "xml_member": "evidence/grouped-nvfp4/vulkan/validation/tests.xml",
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-nvfp4-vulkan\\checks\\grouped-nvfp4-test.exe",
+        "bytes": 68818944,
+        "sha256": "96d2f953c521de62fcbd3e962383b0d54ce7c9680946da5462d2d25d455cfc4d"
+      }
+    },
+    "macos_apple": {
+      "tests": 4,
+      "failures": 0,
+      "skipped": 0,
+      "cases": [
+        {
+          "suite": "AppleGroupedNvfp4ReferenceGraph",
+          "name": "SharedActivationsKeepExpertSpecificQuantizationAndIndependentSlots",
+          "properties": {
+            "device": "Apple M4",
+            "actual_submissions": "24"
+          }
+        },
+        {
+          "suite": "AppleGroupedNvfp4ReferenceGraph",
+          "name": "SelectedExpertsValidateBeforeAccessAndFailuresRetire",
+          "properties": {
+            "device": "Apple M4",
+            "successful_submissions": "26",
+            "failed_completions": "20"
+          }
+        },
+        {
+          "suite": "AppleNvfp4ReferenceGraph",
+          "name": "OriginalPackedBanksAndBfloatBoundariesSurviveSlotsAndUpdates",
+          "properties": {
+            "device": "Apple M4",
+            "actual_submissions": "8"
+          }
+        },
+        {
+          "suite": "AppleNvfp4ReferenceGraph",
+          "name": "RuntimeDomainFailuresRecoverWithoutChangingTheReferenceTree",
+          "properties": {
+            "device": "Apple M4",
+            "successful_submissions": "25",
+            "failed_completions": "18"
+          }
+        }
+      ],
+      "xml": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-nvfp4\\apple\\mac\\remote\\status-carrier-v2\\results\\tests.xml",
+        "bytes": 2866,
+        "sha256": "c65fb8ab9b1d945774d0c3180c128881a5b8541e92b6d97876043b91737d59aa"
+      },
+      "xml_member": "evidence/grouped-nvfp4/apple/mac/remote/status-carrier-v2/results/tests.xml",
+      "image": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/grouped-nvfp4/apple/status-carrier-v2/grouped-nvfp4",
+        "bytes": 15606192,
+        "sha256": "8b6ccb8acbf697169a4c34b0b0266c0bacd622964f43930ce0dac08751018309"
+      }
+    }
+  },
+  "totals": {
+    "tests": 20,
+    "failures": 0,
+    "skipped": 0,
+    "grouped_cases": 11,
+    "dense_neighbor_cases": 9
+  },
+  "coverage": [
+    "Shared A1, per-slot AS and real zero-slot/padded-token Graph View; E3/E17, T2/S3/N5/K32 and distinct selected IG.",
+    "Duplicate/replaced IDs, current A updates, two slots, retained old results and owner destruction; selected-only invalid numeric metadata and fresh Invocation recovery.",
+    "Each backend grouped Graph fixture records24 lifetime submissions plus26 successful runtime-domain submissions and20 intentional failed Completions; these are assertions within passing tests, not failed test cases.",
+    "Native Direct additionally checks cold schema/workspace independence, actual layouts and input/workspace overlap rejection. Dense arithmetic/lifetime/alias neighbours re-executed.",
+    "Nonzero BF16 subnormal-weight witness, signed scale zeros and valid finite inputs causing overflow/NaN retain the reference tree."
+  ],
+  "machines": {
+    "windows": "Actual retained Windows x64 local CPU/CUDA13.3 sm89/Vulkan closure; Vulkan XML records NVIDIA GeForce RTX4070.",
+    "apple": {
+      "model": "Mac16,12",
+      "cpu": "Apple M4",
+      "memory": "17179869184",
+      "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+      "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+      "space": "Filesystem      Size    Used   Avail Capacity iused ifree %iused  Mounted on\n/dev/disk3s5   228Gi   163Gi    38Gi    81%    2.3M  403M    1%   /System/Volumes/Data"
+    }
+  },
+  "retained_failures": [
+    {
+      "stage": "Vulkan first CXX",
+      "failure": "C2440 optional descriptor cannot copy-initialize bool",
+      "correction": "Explicit has_value(); no math/resource change."
+    },
+    {
+      "stage": "CUDA first NVCC",
+      "failure": "CCCL rejected traditional MSVC preprocessor",
+      "correction": "Existing per-source conforming-preprocessor contract now includes nvfp4_kernel.cu; actual retry uses /Zc:preprocessor, without suppressing the check."
+    },
+    {
+      "stage": "Apple first link",
+      "failure": "Retained dense base omitted current CT lowerer leaf",
+      "correction": "Add source/ABI-proven existing CT leaf cache; no SDK/leaf rebuild."
+    },
+    {
+      "stage": "Apple first actual Metal run",
+      "failure": "2 grouped cases failed compiling scalar id_status[0]; dense2passed",
+      "correction": "Reshape ID reduction to rank1 length1; original math/fixture unchanged; final4passed."
+    }
+  ],
+  "reviews": [
+    "evidence/grouped-nvfp4/cuda/independent-apple-review.json",
+    "evidence/grouped-nvfp4/cuda/independent-vulkan-review.json"
+  ],
+  "visibility": {
+    "command": [
+      "python",
+      "scripts/generate-visibility.py",
+      "--check"
+    ],
+    "exit_code": 0,
+    "stdout": "visibility.h: 57 API macros checked"
+  },
+  "limitations": [
+    "No Linux run; Windows CPU/GPU and macOS Metal scopes only.",
+    "No Q24/or other full artifact payload, full model execution, quality or token-throughput acceptance; artifact_execution_verified remains false.",
+    "No hardware-native FP4 GEMM equivalence or performance claim.",
+    "Current backend INT32/UINT32/byte-span/maxStorageBufferRange and allocation limits remain; no whole4GiB expert-bank/multi-buffer capability claim.",
+    "No new validation-layer or external spirv-val run. Vulkan glslang compilation and SPIRV instruction/capability checks are distinct from GPU tests.",
+    "Only retained actual build closures were incrementally refreshed; this is not a whole-current-tree build or full test matrix."
+  ],
+  "archive_policy": "Current owned source and relevant small shared source, actual commands/XML/logs, scoped diffs, freezes and compact source/object identities. Heavy repeated dependency recipes referenced by original hash. No binaries, objects, libraries, SDK, model payloads or source archives.",
+  "archive": {
+    "path": "docs/evidence/correctness/grouped-nvfp4-reference-2026-10-20.zip",
+    "bytes": 481364,
+    "sha256": "6cf84d04906f40ddfaac2e5b0c048922c45e4d63bf74dae5e5b58526db4ac50f",
+    "members": 261,
+    "uncompressed_bytes": 2204514,
+    "inventory": {
+      "member": "inventory.json",
+      "bytes": 127585,
+      "sha256": "c6f22209e35749f446da6f81e13845fcf8a180f2eb8790978989ccddc1c9def6"
+    },
+    "verification": "CRC all members and every member byte/SHA inventory verified after writing."
+  }
+}

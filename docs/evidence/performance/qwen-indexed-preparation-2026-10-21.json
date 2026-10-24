@@ -1,0 +1,867 @@
+{
+  "date": "2026-10-21",
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\qwen-prefix-reuse-2026-10-21.zip",
+    "bytes": 2382945,
+    "sha256": "6d070618417d0cec9bc91da7cd974a9ec7472f34631ed9aa3e1c1b53ef64049a"
+  },
+  "source_files": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tools\\qwen35_text\\main.cc",
+      "bytes": 121027,
+      "sha256": "bab6e9fc9325f3006fd34b3249023e158091b665ac5af6727ebc9ffaf554d971"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tools\\qwen35_text\\session_state.h",
+      "bytes": 7504,
+      "sha256": "12bec40ae0b60f4402b3243904245d26d096310a507dfd680b077c2d5ffbe8e5"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tools\\qwen35_text\\prefix_cache.h",
+      "bytes": 8965,
+      "sha256": "f9f8738135192bb735c3580c78db9caab970f51ad480e0ed788eb33a1659fbc2"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tools\\qwen35_text\\schedule.h",
+      "bytes": 3917,
+      "sha256": "4fff152976d9c7ae80be67b0ee03f2a08ff99dc6ca9ef7c89baa8130931c2db3"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tools\\qwen35_text\\session_schedule.h",
+      "bytes": 3469,
+      "sha256": "ebe364a2113c3a8cf69b78afdd8aea2b530dd6288a6856d9f37347553cdaacc8"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\graph\\detail\\region_access.h",
+      "bytes": 15742,
+      "sha256": "6bd0a9990fedffeeabd4e0f3b3080f599cfd6af2f88c05f560e81622eb71ca5d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\region_access.cc",
+      "bytes": 12225,
+      "sha256": "d4f0f32199cf21271ac883c7c4baf4892fa3583acde8a9e552afe29688247a8f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\resources.cc",
+      "bytes": 85789,
+      "sha256": "ec935ea2052c482371e7129c2a31fa200ba93e402f4e8a07744bd2982f9e9fbe"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph_batch\\batch.cc",
+      "bytes": 86763,
+      "sha256": "c1ebf5e46c9ba291b37a573748c9ed3161f937a09cfec2f0e64f6bc34ef1d6a5"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph_batch\\paged_append.cc",
+      "bytes": 24187,
+      "sha256": "1c1c8c43baa588d72d847469bd1ab15c66c2dc67f913c27cc15587868017d90d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\executable.cc",
+      "bytes": 465076,
+      "sha256": "883e322cecab2efe012afe6f28781944433415cdbf2e6d878b07d181be07e805"
+    }
+  ],
+  "current_ready": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-prefix-20261021\\ready-attempt3.json",
+    "bytes": 3315,
+    "sha256": "83373ff0ebe68bd4a7d34b44e23f3ee18a0669f63e23402aa0bb78063940d047"
+  },
+  "current_image": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-prefix-20261021\\checks\\attempt3\\qwen.exe",
+    "bytes": 139692032,
+    "sha256": "e155b89db7003dfd9a215438faf44922060b7c4b028e4ef83cc4b86d79f98098"
+  },
+  "link_plan": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-prefix-20261021\\checks\\attempt3\\link-plan.json",
+    "bytes": 87076,
+    "sha256": "5681c18b25f81731dd25cdc62bdb9993259797184e72b199de422787c2dd5b47"
+  },
+  "runtime": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-prefix-20261021\\checks\\attempt3\\runtime-environment.json",
+    "bytes": 7870,
+    "sha256": "44e950c3329f46fc7bcf4e78aa12e845416098b9763eb13b6641dd7e7a4824fa"
+  },
+  "source_and_runtime_scope": "Windows RTX4070 shared CUDA, process-local same Model/math. Other platforms and native providers not executed for this feature.",
+  "SDK_builds": 0,
+  "NVCC": 0,
+  "correctness_evidence": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\qwen-prefix-reuse-2026-10-21.json",
+    "bytes": 37479,
+    "sha256": "24afb863f5489b2fa96c3578ca5859146dfc7f093addf2410d8e10b266620611"
+  },
+  "method": {
+    "timing_processes": 12,
+    "separate_memory_processes": 4,
+    "processes_per_arm": 3,
+    "workload": {
+      "capacity": 1024,
+      "turns": 3,
+      "prefill_input_tokens_per_turn": 256,
+      "decode_calls_per_turn": 32,
+      "total_input_tokens": 864,
+      "total_decode_calls": 96,
+      "total_outputs": 99,
+      "total_outputs_definition": "One host-visible decision per prompt plus one per teacher-forced decode call."
+    },
+    "prefix_policy": "off in single-session Hyle arms",
+    "trace": false,
+    "profiler": false,
+    "preparation_diagnostics": false,
+    "concurrent_GPU": false,
+    "rates": "median across3 process rates; pooled statistics separately named, not used as table values"
+  },
+  "public_table": {
+    "scope": "All table speed values in rows are median/min/max across three fresh unmonitored processes per arm; pooled ratios are separately named and must not replace median cells.",
+    "source": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-prefix-20261021\\performance\\independent-review.json",
+      "bytes": 267920,
+      "sha256": "54501caf011521b68d875edf99383297e94eae6424c03e2be97cdbe57601c3f7"
+    },
+    "workload": {
+      "capacity": 1024,
+      "turns": 3,
+      "prefill_input_tokens_per_turn": 256,
+      "decode_calls_per_turn": 32,
+      "total_input_tokens": 864,
+      "total_decode_calls": 96,
+      "total_outputs": 99,
+      "total_outputs_definition": "One host-visible decision per prompt plus one per teacher-forced decode call."
+    },
+    "phase_order": [
+      "round1_prefill",
+      "round1_decode",
+      "round2_prefill",
+      "round2_decode",
+      "round3_prefill",
+      "round3_decode"
+    ],
+    "rows": {
+      "current": {
+        "prefill_256_TPS_by_turn": [
+          {
+            "count": 3,
+            "min": 3231.821320678733,
+            "median": 3271.2519566814685,
+            "max": 3291.29221789383
+          },
+          {
+            "count": 3,
+            "min": 7297.8759190049805,
+            "median": 7440.99523311243,
+            "max": 7502.952822253289
+          },
+          {
+            "count": 3,
+            "min": 8112.7417581198715,
+            "median": 8203.550599243736,
+            "max": 8438.596028585744
+          }
+        ],
+        "decode_32_TPS_by_turn": [
+          {
+            "count": 3,
+            "min": 100.84622589302484,
+            "median": 101.034179547209,
+            "max": 101.90258495013461
+          },
+          {
+            "count": 3,
+            "min": 101.5725655039888,
+            "median": 102.04312661415484,
+            "max": 102.09026629926932
+          },
+          {
+            "count": 3,
+            "min": 101.0416127251807,
+            "median": 101.05862063193851,
+            "max": 101.80267079306826
+          }
+        ],
+        "aggregate_prefill_768_over_sumP_TPS": {
+          "count": 3,
+          "min": 5310.182413063048,
+          "median": 5325.315774583822,
+          "max": 5366.617542550359
+        },
+        "aggregate_decode_96_over_sumD_TPS": {
+          "count": 3,
+          "min": 101.21549263372621,
+          "median": 101.57692891678258,
+          "max": 101.66624623437755
+        },
+        "session_outputs_99_over_session_TPS": {
+          "count": 3,
+          "min": 90.59056814927129,
+          "median": 90.90394052054167,
+          "max": 90.96142923007856
+        },
+        "session_inputs_864_over_session_TPS": {
+          "count": 3,
+          "min": 790.6085947572767,
+          "median": 793.3434809065456,
+          "max": 793.845200553413
+        },
+        "session_seconds": {
+          "count": 3,
+          "min": 1.0883734,
+          "median": 1.0890617,
+          "max": 1.092829
+        },
+        "startup_total_seconds": {
+          "count": 3,
+          "min": 2.2513832,
+          "median": 2.25276,
+          "max": 2.2642842
+        },
+        "startup_to_ready_seconds": {
+          "count": 3,
+          "min": 1.1629,
+          "median": 1.16359,
+          "max": 1.17135
+        },
+        "first_token_elapsed_seconds": {
+          "count": 3,
+          "min": 1.24079,
+          "median": 1.24291,
+          "max": 1.24971
+        },
+        "memory_sampled_peaks_GiB": {
+          "working_set_bytes": 1.0456809997558594,
+          "private_commit_bytes": 5.753963470458984,
+          "gpu_dedicated_bytes": 4.1143341064453125,
+          "gpu_shared_bytes": 0.08984375,
+          "gpu_total_bytes": 4.1905059814453125
+        },
+        "memory_phase_dedicated_max_GiB_in_phase_order": [
+          3.9951934814453125,
+          4.0049591064453125,
+          4.1104278564453125,
+          4.1123809814453125,
+          4.1123809814453125,
+          4.1143341064453125
+        ],
+        "memory_phase_samples_in_phase_order": [
+          7,
+          30,
+          3,
+          30,
+          4,
+          30
+        ],
+        "actual_sample_interval_ms": {
+          "count": 242,
+          "min": 0.0846,
+          "median": 15.1784,
+          "max": 20.8386
+        },
+        "memory_sample_count": 262,
+        "ready_memory_baseline_unknown": true,
+        "pure_reuse_cold_by_turn_ms": [
+          {
+            "turn": 1,
+            "raw_call_stats": {
+              "min": 0.1558,
+              "median": 0.1996,
+              "max": 0.3696
+            },
+            "raw_call_count": 90,
+            "per_process_medians": [
+              0.19845,
+              0.19855,
+              0.20135
+            ],
+            "median_of_process_medians": 0.19855,
+            "source_field": "prepared cold_batch_seconds, T=1 and capture_recorded=0; no time-based trimming"
+          },
+          {
+            "turn": 2,
+            "raw_call_stats": {
+              "min": 0.16620000000000001,
+              "median": 0.21714999999999998,
+              "max": 0.9879000000000001
+            },
+            "raw_call_count": 90,
+            "per_process_medians": [
+              0.20775,
+              0.20275,
+              0.23785
+            ],
+            "median_of_process_medians": 0.20775,
+            "source_field": "prepared cold_batch_seconds, T=1 and capture_recorded=0; no time-based trimming"
+          },
+          {
+            "turn": 3,
+            "raw_call_stats": {
+              "min": 0.18430000000000002,
+              "median": 0.24055,
+              "max": 0.4125
+            },
+            "raw_call_count": 90,
+            "per_process_medians": [
+              0.22794999999999999,
+              0.2329,
+              0.26955
+            ],
+            "median_of_process_medians": 0.2329,
+            "source_field": "prepared cold_batch_seconds, T=1 and capture_recorded=0; no time-based trimming"
+          }
+        ]
+      },
+      "before": {
+        "prefill_256_TPS_by_turn": [
+          {
+            "count": 3,
+            "min": 3314.4607592445623,
+            "median": 3325.8069628886715,
+            "max": 3438.1337380303257
+          },
+          {
+            "count": 3,
+            "min": 7373.760358549098,
+            "median": 7391.986047626336,
+            "max": 7537.703238267976
+          },
+          {
+            "count": 3,
+            "min": 7901.210181450057,
+            "median": 8010.413537598879,
+            "max": 8154.9179570656315
+          }
+        ],
+        "decode_32_TPS_by_turn": [
+          {
+            "count": 3,
+            "min": 99.93682119085341,
+            "median": 100.8778262341614,
+            "max": 101.3971899036283
+          },
+          {
+            "count": 3,
+            "min": 99.83879155126706,
+            "median": 100.9829108513396,
+            "max": 101.82732313469049
+          },
+          {
+            "count": 3,
+            "min": 99.85305998142108,
+            "median": 100.80143440441157,
+            "max": 101.38703804738702
+          }
+        ],
+        "aggregate_prefill_768_over_sumP_TPS": {
+          "count": 3,
+          "min": 5346.331602040795,
+          "median": 5385.996409335728,
+          "max": 5427.899402931066
+        },
+        "aggregate_decode_96_over_sumD_TPS": {
+          "count": 3,
+          "min": 100.1875385487209,
+          "median": 100.76520678175032,
+          "max": 101.34023516634946
+        },
+        "session_outputs_99_over_session_TPS": {
+          "count": 3,
+          "min": 89.83339172503796,
+          "median": 90.37035414224842,
+          "max": 90.91354892884554
+        },
+        "session_inputs_864_over_session_TPS": {
+          "count": 3,
+          "min": 784.0005096003313,
+          "median": 788.6867270596226,
+          "max": 793.4273361062883
+        },
+        "session_seconds": {
+          "count": 3,
+          "min": 1.0889466,
+          "median": 1.095492,
+          "max": 1.1020401
+        },
+        "startup_total_seconds": {
+          "count": 3,
+          "min": 2.2502483,
+          "median": 2.2533338,
+          "max": 2.2595353
+        },
+        "startup_to_ready_seconds": {
+          "count": 3,
+          "min": 1.15739,
+          "median": 1.15773,
+          "max": 1.1612
+        },
+        "first_token_elapsed_seconds": {
+          "count": 3,
+          "min": 1.23447,
+          "median": 1.23508,
+          "max": 1.23576
+        },
+        "memory_sampled_peaks_GiB": {
+          "working_set_bytes": 1.045928955078125,
+          "private_commit_bytes": 5.758869171142578,
+          "gpu_dedicated_bytes": 4.1143341064453125,
+          "gpu_shared_bytes": 0.08984375,
+          "gpu_total_bytes": 4.1905059814453125
+        },
+        "memory_phase_dedicated_max_GiB_in_phase_order": [
+          3.9951934814453125,
+          4.0049591064453125,
+          4.1104278564453125,
+          4.1123809814453125,
+          4.1123809814453125,
+          4.1143341064453125
+        ],
+        "memory_phase_samples_in_phase_order": [
+          7,
+          32,
+          3,
+          29,
+          3,
+          30
+        ],
+        "actual_sample_interval_ms": {
+          "count": 244,
+          "min": 0.09,
+          "median": 15.25805,
+          "max": 16.7151
+        },
+        "memory_sample_count": 264,
+        "ready_memory_baseline_unknown": true,
+        "pure_reuse_cold_by_turn_ms": [
+          {
+            "turn": 1,
+            "raw_call_stats": {
+              "min": 0.1923,
+              "median": 0.25325,
+              "max": 0.4437
+            },
+            "raw_call_count": 90,
+            "per_process_medians": [
+              0.2454,
+              0.27945,
+              0.2208
+            ],
+            "median_of_process_medians": 0.2454,
+            "source_field": "prepared cold_batch_seconds, T=1 and capture_recorded=0; no time-based trimming"
+          },
+          {
+            "turn": 2,
+            "raw_call_stats": {
+              "min": 0.21589999999999998,
+              "median": 0.28114999999999996,
+              "max": 0.5168
+            },
+            "raw_call_count": 90,
+            "per_process_medians": [
+              0.29095,
+              0.28085000000000004,
+              0.24764999999999998
+            ],
+            "median_of_process_medians": 0.28085000000000004,
+            "source_field": "prepared cold_batch_seconds, T=1 and capture_recorded=0; no time-based trimming"
+          },
+          {
+            "turn": 3,
+            "raw_call_stats": {
+              "min": 0.2043,
+              "median": 0.2783,
+              "max": 0.4726
+            },
+            "raw_call_count": 90,
+            "per_process_medians": [
+              0.3325,
+              0.24689999999999998,
+              0.26635
+            ],
+            "median_of_process_medians": 0.26635,
+            "source_field": "prepared cold_batch_seconds, T=1 and capture_recorded=0; no time-based trimming"
+          }
+        ]
+      },
+      "dense": {
+        "prefill_256_TPS_by_turn": [
+          {
+            "count": 3,
+            "min": 3124.1038032302745,
+            "median": 3375.21144513106,
+            "max": 3447.583930488089
+          },
+          {
+            "count": 3,
+            "min": 7575.86967136706,
+            "median": 7737.715620815664,
+            "max": 7803.712250304071
+          },
+          {
+            "count": 3,
+            "min": 8143.996029801935,
+            "median": 8244.554085563013,
+            "max": 8360.302930351492
+          }
+        ],
+        "decode_32_TPS_by_turn": [
+          {
+            "count": 3,
+            "min": 103.68902882587405,
+            "median": 104.55633642438893,
+            "max": 104.56436524855603
+          },
+          {
+            "count": 3,
+            "min": 104.82616382429431,
+            "median": 105.3003247527828,
+            "max": 105.65481054606698
+          },
+          {
+            "count": 3,
+            "min": 104.74354035130328,
+            "median": 105.38205936303132,
+            "max": 105.50182106033947
+          }
+        ],
+        "aggregate_prefill_768_over_sumP_TPS": {
+          "count": 3,
+          "min": 5218.483215237971,
+          "median": 5497.384447555812,
+          "max": 5566.810790044977
+        },
+        "aggregate_decode_96_over_sumD_TPS": {
+          "count": 3,
+          "min": 104.86578326711314,
+          "median": 104.90138614069112,
+          "max": 104.9626333025443
+        },
+        "session_outputs_99_over_session_TPS": {
+          "count": 3,
+          "min": 93.17918922810924,
+          "median": 93.88458568732337,
+          "max": 93.96308977973912
+        },
+        "session_inputs_864_over_session_TPS": {
+          "count": 3,
+          "min": 813.2001968998624,
+          "median": 819.3563841802767,
+          "max": 820.041510804996
+        },
+        "session_seconds": {
+          "count": 3,
+          "min": 1.0536052,
+          "median": 1.0544862,
+          "max": 1.062469
+        },
+        "startup_total_seconds": {
+          "count": 3,
+          "min": 2.2094095,
+          "median": 2.225037,
+          "max": 2.2364038
+        },
+        "startup_to_ready_seconds": {
+          "count": 3,
+          "min": 1.15487,
+          "median": 1.17138,
+          "max": 1.17389
+        },
+        "first_token_elapsed_seconds": {
+          "count": 3,
+          "min": 1.23077,
+          "median": 1.24569,
+          "max": 1.25588
+        },
+        "memory_sampled_peaks_GiB": {
+          "working_set_bytes": 1.0543937683105469,
+          "private_commit_bytes": 5.746433258056641,
+          "gpu_dedicated_bytes": 4.0850372314453125,
+          "gpu_shared_bytes": 0.08984375,
+          "gpu_total_bytes": 4.1612091064453125
+        },
+        "memory_phase_dedicated_max_GiB_in_phase_order": [
+          3.9561309814453125,
+          3.9717559814453125,
+          4.0772247314453125,
+          4.0811309814453125,
+          4.0811309814453125,
+          4.0850372314453125
+        ],
+        "memory_phase_samples_in_phase_order": [
+          8,
+          28,
+          3,
+          30,
+          3,
+          28
+        ],
+        "actual_sample_interval_ms": {
+          "count": 240,
+          "min": 0.0858,
+          "median": 15.1985,
+          "max": 18.9908
+        },
+        "memory_sample_count": 259,
+        "ready_memory_baseline_unknown": true,
+        "pure_reuse_cold_by_turn_ms": [
+          {
+            "turn": 1,
+            "raw_call_stats": {
+              "min": 0.0348,
+              "median": 0.06999999999999999,
+              "max": 0.16670000000000001
+            },
+            "raw_call_count": 90,
+            "per_process_medians": [
+              0.07434999999999999,
+              0.0838,
+              0.05669999999999999
+            ],
+            "median_of_process_medians": 0.07434999999999999,
+            "source_field": "prepared cold_batch_seconds, T=1 and capture_recorded=0; no time-based trimming"
+          },
+          {
+            "turn": 2,
+            "raw_call_stats": {
+              "min": 0.0326,
+              "median": 0.06899999999999999,
+              "max": 0.16
+            },
+            "raw_call_count": 90,
+            "per_process_medians": [
+              0.07285000000000001,
+              0.0711,
+              0.05815000000000001
+            ],
+            "median_of_process_medians": 0.0711,
+            "source_field": "prepared cold_batch_seconds, T=1 and capture_recorded=0; no time-based trimming"
+          },
+          {
+            "turn": 3,
+            "raw_call_stats": {
+              "min": 0.031099999999999996,
+              "median": 0.0574,
+              "max": 0.3382
+            },
+            "raw_call_count": 90,
+            "per_process_medians": [
+              0.0509,
+              0.0658,
+              0.06434999999999999
+            ],
+            "median_of_process_medians": 0.06434999999999999,
+            "source_field": "prepared cold_batch_seconds, T=1 and capture_recorded=0; no time-based trimming"
+          }
+        ]
+      },
+      "peer": {
+        "prefill_256_TPS_by_turn": [
+          {
+            "count": 3,
+            "min": 2248.7267463207845,
+            "median": 2310.3608855902066,
+            "max": 2372.63096042433
+          },
+          {
+            "count": 3,
+            "min": 8711.838912653606,
+            "median": 8739.289249991465,
+            "max": 9165.771571786609
+          },
+          {
+            "count": 3,
+            "min": 8673.23257476428,
+            "median": 8796.797415940759,
+            "max": 9144.882081032229
+          }
+        ],
+        "decode_32_TPS_by_turn": [
+          {
+            "count": 3,
+            "min": 103.55467605993874,
+            "median": 104.230928834379,
+            "max": 104.61745483386585
+          },
+          {
+            "count": 3,
+            "min": 105.21152118762765,
+            "median": 106.07663307462789,
+            "max": 106.10463043923006
+          },
+          {
+            "count": 3,
+            "min": 105.709257917706,
+            "median": 106.23471631014961,
+            "max": 106.38870843443031
+          }
+        ],
+        "aggregate_prefill_768_over_sumP_TPS": {
+          "count": 3,
+          "min": 4448.272326938749,
+          "median": 4536.540415376981,
+          "max": 4688.046519094939
+        },
+        "aggregate_decode_96_over_sumD_TPS": {
+          "count": 3,
+          "min": 104.81701896467426,
+          "median": 105.55678399706376,
+          "max": 105.64714820930286
+        },
+        "session_outputs_99_over_session_TPS": {
+          "count": 3,
+          "min": 90.94144234597321,
+          "median": 91.83170865416456,
+          "max": 92.23313181791504
+        },
+        "session_inputs_864_over_session_TPS": {
+          "count": 3,
+          "min": 793.6707695648571,
+          "median": 801.4403664363452,
+          "max": 804.9436958654403
+        },
+        "session_seconds": {
+          "count": 3,
+          "min": 1.073367,
+          "median": 1.078059,
+          "max": 1.0886126
+        },
+        "startup_total_seconds": {
+          "count": 3,
+          "min": 2.6598115,
+          "median": 2.6769847,
+          "max": 2.6887287
+        },
+        "startup_to_ready_seconds": {
+          "count": 3,
+          "min": 1.5816822,
+          "median": 1.588306,
+          "max": 1.6153012
+        },
+        "first_token_elapsed_seconds": {
+          "count": 3,
+          "min": 1.6925577,
+          "median": 1.7022143,
+          "max": 1.7232588
+        },
+        "memory_sampled_peaks_GiB": {
+          "working_set_bytes": 4.074089050292969,
+          "private_commit_bytes": 5.140754699707031,
+          "gpu_dedicated_bytes": 4.194427490234375,
+          "gpu_shared_bytes": 0.08203125,
+          "gpu_total_bytes": 4.276458740234375
+        },
+        "memory_phase_dedicated_max_GiB_in_phase_order": [
+          4.190521240234375,
+          4.194427490234375,
+          4.194427490234375,
+          4.194427490234375,
+          4.194427490234375,
+          4.194427490234375
+        ],
+        "memory_phase_samples_in_phase_order": [
+          11,
+          29,
+          3,
+          29,
+          3,
+          28
+        ],
+        "actual_sample_interval_ms": {
+          "count": 298,
+          "min": 0.0767,
+          "median": 15.180050000000001,
+          "max": 22.372
+        },
+        "memory_sample_count": 306,
+        "ready_memory_baseline_unknown": true,
+        "pure_reuse_cold_by_turn_ms": null
+      }
+    },
+    "current_vs_other_median_rate_change_percent": {
+      "before": {
+        "aggregate_prefill_768_over_sumP_TPS": -1.1266371185603918,
+        "aggregate_decode_96_over_sumD_TPS": 0.8055579509605781,
+        "session_outputs_99_over_session_TPS": 0.5904440492214391,
+        "session_inputs_864_over_session_TPS": 0.5904440492214391
+      },
+      "dense": {
+        "aggregate_prefill_768_over_sumP_TPS": -3.1300098185509495,
+        "aggregate_decode_96_over_sumD_TPS": -3.169126115692944,
+        "session_outputs_99_over_session_TPS": -3.174797167139398,
+        "session_inputs_864_over_session_TPS": -3.174797167139387
+      },
+      "peer": {
+        "aggregate_prefill_768_over_sumP_TPS": 17.38715600401619,
+        "aggregate_decode_96_over_sumD_TPS": -3.7703451446492453,
+        "session_outputs_99_over_session_TPS": -1.0102917033993575,
+        "session_inputs_864_over_session_TPS": -1.0102917033993464
+      }
+    },
+    "pooled_ratios_for_separate_reference_only": {
+      "current": {
+        "prefill_TPS": 5333.9321659954885,
+        "decode_TPS": 101.48584795707401,
+        "session_output_TPS": 90.81835317214899,
+        "session_processed_TPS": 792.5965367751185,
+        "median_process_prefill_TPS": 5325.315774583822,
+        "median_process_decode_TPS": 101.57692891678258,
+        "median_process_session_output_TPS": 90.90394052054167
+      },
+      "before": {
+        "prefill_TPS": 5386.536604251577,
+        "decode_TPS": 100.76212905760435,
+        "session_output_TPS": 90.37027989866479,
+        "session_processed_TPS": 788.68607911562,
+        "median_process_prefill_TPS": 5385.996409335728,
+        "median_process_decode_TPS": 100.76520678175032,
+        "median_process_session_output_TPS": 90.37035414224842
+      },
+      "dense": {
+        "prefill_TPS": 5423.313894299518,
+        "decode_TPS": 104.90991898877913,
+        "session_output_TPS": 93.67429177504393,
+        "session_processed_TPS": 817.5210918549288,
+        "median_process_prefill_TPS": 5497.384447555812,
+        "median_process_decode_TPS": 104.90138614069112,
+        "median_process_session_output_TPS": 93.88458568732337
+      },
+      "peer": {
+        "prefill_TPS": 4555.48257468599,
+        "decode_TPS": 105.33900120558292,
+        "session_output_TPS": 91.66557460148778,
+        "session_processed_TPS": 799.9904692493478,
+        "median_process_prefill_TPS": 4536.540415376981,
+        "median_process_decode_TPS": 105.55678399706376,
+        "median_process_session_output_TPS": 91.83170865416456
+      }
+    },
+    "notes": [
+      "Session rate is99 divided by one complete session wall, never an arithmetic average of phase TPS. Overall input rate is864/session.",
+      "Per-process aggregate prefill/decode rates use768/sumP and96/sumD first, then median/min/max across processes.",
+      "Pure-reuse cold raw-call median pools90 recorded=0 calls per turn across3processes. Per-process medians are also given so this cannot be mistaken for a process-rate median.",
+      "Memory is one separate sampled process per arm. GiB=2^30 bytes; maxima are sampled lower bounds. Unknown ready baseline and zero-interior-sample phases remain unknown/null.",
+      "GPU total is peak simultaneous dedicated+shared, not the sum of independent peaks. CPU working set/private commit/GPU shared are overlapping counters, not additive physical memory.",
+      "Current vs before changes main plus5core objects; both use the same FI provider7f7d. This single-session benchmark has prefix cache off and does not measure hit speed or isolate a single patch.",
+      "No new model process, GPU query, build, source change or memory sampling was performed for this extraction."
+    ]
+  },
+  "independent_review": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-prefix-20261021\\performance\\independent-review.json",
+    "bytes": 267920,
+    "sha256": "54501caf011521b68d875edf99383297e94eae6424c03e2be97cdbe57601c3f7"
+  },
+  "raw_timing": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-prefix-20261021\\performance\\timing\\runs.json",
+    "bytes": 1492986,
+    "sha256": "1ce11a82b27b060df73552c71c79bcf054edb0e7146429ac02f60ffe901e85e6"
+  },
+  "raw_memory": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-prefix-20261021\\performance\\memory\\runs.json",
+    "bytes": 507813,
+    "sha256": "e6cb40abc77b0abfed0be6851863e64889ddb997e556f29c9e192f1bed32b3ad"
+  },
+  "conclusion": "Current decode101.58 vsbefore100.77 vsllama105.56; output90.90 vs90.37 vs91.83. Overlapping ranges do not establish a stable speedup. Dedicated sampled peak unchanged vsbefore.",
+  "changes": "Append-known-node/proof chain38 full visits ->2full+36indexed; reuse original immutable layout page footprint. Prefix consumer and cold budget/error improvements included; six changed object inputs, no single-function isolation.",
+  "limits": [
+    "No fixed clocks or exclusive GPU. Finite3timing samples/arm only.",
+    "Ready memory baseline unknown in all arms; sampled peaks are lower bounds; CPU/GPU counters overlap.",
+    "Single-session prefix cache off; this does not measure prefix hit speed or multi-user throughput.",
+    "No background-load causal claim from rolling nvidia-smi end snapshots."
+  ]
+}

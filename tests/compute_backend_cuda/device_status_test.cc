@@ -72,12 +72,12 @@ struct Fixture final {
       return pointer.error();
     unsigned *word = nullptr;
     auto initialized =
-        cuda::detail::acquire_device_status(sequence.queue(), &word);
+        cuda::detail::acquire_device_status(sequence, &word);
     const auto status = initialized.status;
     sequence.record(std::move(initialized));
     if (!status.ok())
       return status;
-    const auto stream = cuda::stream(sequence.queue()).value();
+    const auto stream = cuda::stream(sequence).value();
     const auto recorded =
         scan ? launch_scan_validation(stream, *pointer + element_offset, count,
                                       word)
@@ -331,7 +331,7 @@ TEST(CudaDeviceStatus, PureCaptureAndPrefixAddNoStatusCommands) {
   auto extension = CommandCaptureAccess::query(fixture.first).value();
   ASSERT_TRUE(CommandCaptureAccess::begin(extension, sequence).ok());
   auto pointer = cuda::pointer<int>(fixture.values.view()).value();
-  const auto stream = cuda::stream(fixture.first).value();
+  const auto stream = cuda::stream(sequence).value();
   ASSERT_EQ(launch_increment_kernel(stream, pointer, sizeof(int)), cudaSuccess);
   sequence.record(EnqueueResult::accepted_command());
   cudaStreamCaptureStatus capture_status{};
@@ -358,6 +358,143 @@ TEST(CudaDeviceStatus, PureCaptureAndPrefixAddNoStatusCommands) {
   EXPECT_FALSE(slot->status_copied);
   EXPECT_EQ(slot->status_references, nullptr);
   ASSERT_TRUE(done.wait().ok());
+}
+
+TEST(CudaDeviceStatus, PureArtifactsSurviveCheckedStatusStorageHandoff) {
+  Fixture fixture;
+  ASSERT_TRUE(fixture.write(std::array{0, 1, 0}).ok());
+  auto extension = CommandCaptureAccess::query(fixture.first).value();
+  std::array<CapturedCommands, 2> pure;
+  CapturedCommands checked;
+  for (std::size_t index = 0; index != pure.size(); ++index) {
+    auto sequence = QueueSequence::begin(fixture.first).value();
+    ASSERT_TRUE(CommandCaptureAccess::begin(extension, sequence).ok());
+    auto *counter = cuda::pointer<std::byte>(fixture.values.view()).value() +
+                    2 * sizeof(int);
+    ASSERT_EQ(launch_increment_kernel(cuda::stream(sequence).value(), counter, 1),
+              cudaSuccess);
+    sequence.record(EnqueueResult::accepted_command());
+    pure[index] =
+        CommandCaptureAccess::end(extension, sequence, fixture.stats.get())
+            .value();
+    ASSERT_TRUE(sequence.finish().value().wait().ok());
+    if (index == 0)
+      checked = fixture.capture(fixture.first, 1).value();
+  }
+  compute::Completion previous;
+  for (const bool invalid : {true, false}) {
+    ASSERT_TRUE(fixture.write(std::array{invalid ? -1 : 0, 1, 0}).ok());
+    auto sequence = QueueSequence::begin(fixture.first).value();
+    sequence.record(pure[0].enqueue(sequence));
+    sequence.record(checked.enqueue(sequence));
+    sequence.record(pure[1].enqueue(sequence));
+    auto done = sequence.finish().value();
+    const auto status = done.wait();
+    if (invalid)
+      EXPECT_TRUE(status.IsOutOfRange());
+    else
+      EXPECT_TRUE(status.ok()) << status.message();
+    std::array<std::byte, sizeof(int)> counter{};
+    ASSERT_TRUE(fixture.values.read(2 * sizeof(int), counter).ok());
+    EXPECT_EQ(counter[0], std::byte{2});
+    for (std::size_t index = 1; index != counter.size(); ++index)
+      EXPECT_EQ(counter[index], std::byte{0});
+    if (invalid)
+      previous = std::move(done);
+  }
+  // A later successful replay cannot rewrite the old failed completion.
+  EXPECT_TRUE(previous.wait().IsOutOfRange());
+}
+
+TEST(CudaDeviceStatus, RebuiltCheckedCaptureUsesNewArgumentsAndKeepsOldFailure) {
+  Fixture fixture;
+  auto extension = CommandCaptureAccess::query(fixture.first).value();
+  const auto capture = [&](compute::detail::CaptureRebuildStorage rebuild,
+                           std::size_t checked_element,
+                           std::size_t counter_element,
+                           std::size_t increment_nodes = 1)
+      -> hyle::Result<CapturedCommands> {
+    auto recording = QueueSequence::begin(fixture.first).value();
+    auto begun = CommandCaptureAccess::begin(extension, recording);
+    if (!begun.ok())
+      return std::unexpected(begun);
+    auto checked = fixture.check(recording, 1, false, checked_element);
+    if (!checked.ok()) {
+      CommandCaptureAccess::abort(extension, recording).IgnoreError();
+      recording.finish().value().wait().IgnoreError();
+      return std::unexpected(checked);
+    }
+    auto *counter = cuda::pointer<std::byte>(fixture.values.view()).value() +
+                    counter_element * sizeof(int);
+    for (std::size_t node = 0; node < increment_nodes; ++node)
+      recording.record(EnqueueResult::accepted_command(cuda::status(
+          launch_increment_kernel(cuda::stream(recording).value(), counter, 1))));
+    auto captured = CommandCaptureAccess::end(
+        extension, recording, fixture.stats.get(), std::move(rebuild));
+    auto retired = recording.finish().value().wait();
+    if (!retired.ok())
+      return std::unexpected(retired);
+    return captured;
+  };
+  ASSERT_TRUE(fixture.write(std::array{-1, 7, 0, 0, 0}).ok());
+  auto original_result = capture({}, 0, 3);
+  ASSERT_TRUE(original_result);
+  auto original = std::move(*original_result);
+  auto first = QueueSequence::begin(fixture.first).value();
+  first.record(original.enqueue(first));
+  auto old_failure = first.finish().value();
+  ASSERT_TRUE(old_failure.wait().IsOutOfRange());
+
+  // The actual wait above retires the native launch. The still-live public
+  // failed Completion must not be rewritten by replacement or later replays.
+  auto rebuild = CommandCaptureAccess::recycle_after_retirement(
+      std::move(original));
+  ASSERT_TRUE(rebuild.valid());
+  EXPECT_FALSE(original.valid());
+  EXPECT_TRUE(old_failure.wait().IsOutOfRange());
+  ASSERT_TRUE(fixture.write(std::array{-1, 7, 0, 0, 0}).ok());
+  auto replacement_result = capture(std::move(rebuild), 1, 4);
+  ASSERT_TRUE(replacement_result);
+  EXPECT_FALSE(rebuild.valid());
+  auto replacement = std::move(*replacement_result);
+  auto replay = QueueSequence::begin(fixture.first).value();
+  replay.record(replacement.enqueue(replay));
+  ASSERT_TRUE(replay.finish().value().wait().ok());
+  std::array<int, 5> actual{};
+  ASSERT_TRUE(fixture.values.read(
+      0, std::as_writable_bytes(std::span{actual})).ok());
+  // Both the checked source and the increment destination moved. Launching old
+  // arguments would report -1 and increment the old counter instead.
+  EXPECT_EQ(actual, (std::array{-1, 7, 0, 0, 1}));
+  EXPECT_TRUE(old_failure.wait().IsOutOfRange());
+
+  for (const int checked_value : {-1, 9}) {
+    ASSERT_TRUE(fixture.write(std::array{-1, checked_value, 0, 0, 0}).ok());
+    auto next = QueueSequence::begin(fixture.first).value();
+    next.record(replacement.enqueue(next));
+    const auto status = next.finish().value().wait();
+    if (checked_value < 0)
+      EXPECT_TRUE(status.IsOutOfRange());
+    else
+      EXPECT_TRUE(status.ok());
+    EXPECT_TRUE(old_failure.wait().IsOutOfRange());
+  }
+
+  // Adding one native node makes this replacement topologically incompatible.
+  // It must instantiate the freshly recorded graph after update rejects it.
+  auto incompatible = CommandCaptureAccess::recycle_after_retirement(
+      std::move(replacement));
+  ASSERT_TRUE(incompatible.valid());
+  ASSERT_TRUE(fixture.write(std::array{-1, 13, 0, 0, 0}).ok());
+  auto fallback = capture(std::move(incompatible), 1, 3, 2);
+  ASSERT_TRUE(fallback);
+  auto fresh = QueueSequence::begin(fixture.first).value();
+  fresh.record(fallback->enqueue(fresh));
+  ASSERT_TRUE(fresh.finish().value().wait().ok());
+  ASSERT_TRUE(fixture.values.read(
+      0, std::as_writable_bytes(std::span{actual})).ok());
+  EXPECT_EQ(actual, (std::array{-1, 13, 0, 2, 0}));
+  EXPECT_TRUE(old_failure.wait().IsOutOfRange());
 }
 
 TEST(CudaDeviceStatus, CapturedStatusRejectsOverlappingReuseAndAbortIsClean) {
@@ -436,11 +573,11 @@ TEST(CudaDeviceStatus, KnownTailFailureAndUnknownDeviceCodeRemainErrors) {
   EXPECT_TRUE(sequence.finish().value().wait().IsInvalidArgument());
   auto unknown = QueueSequence::begin(fixture.first).value();
   unsigned *word = nullptr;
-  auto acquired = cuda::detail::acquire_device_status(fixture.first, &word);
+  auto acquired = cuda::detail::acquire_device_status(unknown, &word);
   ASSERT_TRUE(acquired.status.ok());
   unknown.record(std::move(acquired));
   const auto written = cudaMemsetAsync(word, 0x7f, sizeof(unsigned),
-                                       cuda::stream(fixture.first).value());
+                                       cuda::stream(unknown).value());
   unknown.record(EnqueueResult::accepted_command(cuda::status(written)));
   EXPECT_TRUE(unknown.finish().value().wait().IsInternal());
 }
@@ -491,7 +628,7 @@ TEST(CudaDeviceStatus, ColdMetadataOomRollsBackPoolAndNativeCapturedStorage) {
     auto recording = QueueSequence::begin(queue).value();
     ASSERT_TRUE(CommandCaptureAccess::begin(extension, recording).ok());
     unsigned *word = nullptr;
-    recording.record(cuda::detail::acquire_device_status(queue, &word));
+    recording.record(cuda::detail::acquire_device_status(recording, &word));
     ASSERT_TRUE(recording.terminal().ok());
     const auto retained = stats.snapshot().live_count;
     failure.fail = true;
@@ -506,7 +643,7 @@ TEST(CudaDeviceStatus, ColdMetadataOomRollsBackPoolAndNativeCapturedStorage) {
     EXPECT_EQ(state->capture_device_status, nullptr);
     ASSERT_TRUE(recording.finish().value().wait().ok());
     auto fresh = QueueSequence::begin(queue).value();
-    fresh.record(cuda::detail::acquire_device_status(queue, &word));
+    fresh.record(cuda::detail::acquire_device_status(fresh, &word));
     ASSERT_TRUE(fresh.finish().value().wait().ok());
     ASSERT_TRUE(context.close().ok());
   }

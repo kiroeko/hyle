@@ -32,10 +32,7 @@ inline Status subtract_compiled_storage(CompiledStorageReport &total,
 
 inline Status add_compiled_storage(CompiledStorageReport &total,
                                    CompiledStorageReport part,
-                                   bool shared_constants = false,
                                    CompiledStorageReport shared = {}) noexcept {
-  if (shared_constants)
-    part.materialized_constant_bytes = 0;
   HYLE_RETURN_IF_ERROR(subtract_compiled_storage(part, shared));
   for (const auto field : kCompiledStorageFields) {
     if (part.*field > SIZE_MAX - total.*field)
@@ -93,7 +90,8 @@ public:
   create(mem::AllocatorRef backing, InvocationStorageLimits limits,
          std::optional<mem::AllocatorRef> control_owner = {},
          bool account_control = false,
-         compute::ResourceBudget resource_budget = {}) noexcept {
+         compute::ResourceBudget resource_budget = {},
+         compute::StorageOwner allocator_owner = {}) noexcept {
     if (account_control && limits.max_bytes < sizeof(StorageBudgetState))
       return std::unexpected(Status::ResourceExhausted(
           "graph storage budget cannot hold its control state"));
@@ -105,6 +103,7 @@ public:
           Status::ResourceExhausted("graph storage budget allocation failed"));
     auto *result = ::new (storage) StorageBudgetState(
         backing, owner, limits, std::move(resource_budget));
+    result->allocator_owner_ = std::move(allocator_owner);
     if (account_control)
       result->control_charge_ =
           std::move(*result->reserve(sizeof(StorageBudgetState)));
@@ -113,6 +112,7 @@ public:
 
   void destroy() noexcept {
     const auto owner = control_owner_;
+    const auto retained = allocator_owner_;
     this->~StorageBudgetState();
     owner.deallocate(this, sizeof(StorageBudgetState),
                      alignof(StorageBudgetState));
@@ -142,14 +142,26 @@ public:
     }
     return make_charge(std::move(*aggregate), std::move(charge));
   }
-  Result<StorageCharge> reserve_private(std::optional<std::size_t> bytes) noexcept {
+  // A route may decline its declared byte/unknown-storage requirement. A real
+  // charge-record allocation failure remains fatal and must not trigger a
+  // different plan. Report that distinction at the original admission point.
+  Result<StorageCharge> reserve_private(std::optional<std::size_t> bytes,
+                                        bool *budget_declined = nullptr) noexcept {
+    if (budget_declined) *budget_declined = false;
     if (bytes && *bytes == 0) return StorageCharge{};
     auto aggregate = reserve(bytes.value_or(0));
-    if (!aggregate)
+    if (!aggregate) {
+      if (budget_declined) *budget_declined = true;
       return std::unexpected(Status::ResourceExhausted("graph storage budget is exhausted"));
+    }
     compute::ResourceBudget::Reservation charge;
     if (resource_budget_) {
-      HYLE_ASSIGN_OR_RETURN(charge, resource_budget_.reserve_unattributed(bytes));
+      auto reserved = resource_budget_.reserve_unattributed(bytes);
+      if (!reserved) {
+        if (budget_declined) *budget_declined = true;
+        return std::unexpected(std::move(reserved).error());
+      }
+      charge = std::move(*reserved);
     }
     return make_charge(std::move(*aggregate), std::move(charge));
   }
@@ -212,6 +224,7 @@ private:
     return result;
   }
 
+  compute::StorageOwner allocator_owner_;
   mem::AllocatorRef backing_;
   mem::AllocatorRef control_owner_;
   InvocationStorageLimits limits_;

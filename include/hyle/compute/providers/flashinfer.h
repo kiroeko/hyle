@@ -8,7 +8,7 @@ namespace hyle::compute::flashinfer {
 inline constexpr ProviderId kProviderId{0x48594c4500000001ULL,
                                         0x464c415348490001ULL};
 
-// Pinned upstream attention on qualified Linux CUDA SM89 devices. The initial
+// Pinned upstream attention on qualified Windows/Linux CUDA SM89 devices. The initial
 // domain is dense BSHD FP16/BF16, Q/KV heads 8/2, head depth 256, no extra
 // mask, and bottom-right causal attention with KV length >= query length.
 // Invocation borrows caller workspace and payload through real Completion.

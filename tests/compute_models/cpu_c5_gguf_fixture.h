@@ -126,7 +126,16 @@ struct Bank {
 #if defined(HYLE_C5_GGUF_DOT_REFERENCE)
     return HYLE_C5_GGUF_DOT_REFERENCE(type,k,packed,decoded,activation,f32_activation);
 #else
-    (void)f32_activation;
+    if(f32_activation && type==GGML_TYPE_BF16) {
+      std::array<float,prototypes> result{};
+      for(std::int64_t row=0;row<prototypes;++row) {
+        double sum=0;
+        for(std::int64_t col=0;col<k;++col)
+          sum+=double(activation[col])*decoded[row*k+col];
+        result[row]=float(sum);
+      }
+      return result;
+    }
     const auto *traits=ggml_get_type_traits_cpu(type);
     const auto bytes=ggml_row_size(traits->vec_dot_type,k);
     std::vector<std::uint64_t> encoded((bytes+7)/8);

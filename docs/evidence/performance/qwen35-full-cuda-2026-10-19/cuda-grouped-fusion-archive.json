@@ -1,0 +1,22 @@
+{
+  "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\qwen35-full-cuda-2026-10-19\\cuda-grouped-fusion.zip",
+  "bytes": 16922076,
+  "sha256": "db7d3634c48aadcaac5be6dfe15b61921deca80cf32b61f358a30060fb54b431",
+  "payloads": 513,
+  "uncompressed_payload_bytes": 42700423,
+  "CRC_and_every_payload_SHA_verified": true,
+  "source_id": "a80c353ef5972ed2",
+  "native_TUs": 1,
+  "host_TUs": 3,
+  "CUDA_tests": 28,
+  "model_equal_vectors": 64,
+  "physical_directed_kernels": {
+    "old": 80,
+    "current": 56
+  },
+  "compiler_failures_preserved": 2,
+  "original24of25_and_old_metadata_failure_preserved": true,
+  "cleanup_executed": false,
+  "throughput_claim": false,
+  "quality_acceptance": false
+}

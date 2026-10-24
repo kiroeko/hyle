@@ -17,9 +17,11 @@
 
 #include "backend_internal.h"
 #include "context_state.h"
+#include "hyle/compute/detail/capture_bindings.h"
 #include "hyle/compute/detail/completion_access.h"
 #include "hyle/compute/detail/queue_sequence.h"
 #include "prepared_state.h"
+#include "operation_cold.h"
 
 namespace hyle::compute {
 namespace {
@@ -645,7 +647,7 @@ PreparedOperation::alias_support(std::size_t output_index,
 
 Result<detail::ProviderOperationProposal>
 detail::OperationPreparationAccess::propose(
-    const Context &context, std::size_t provider_index, Operation operation,
+    const ContextRef &context, std::size_t provider_index, Operation operation,
     std::span<const TensorDesc> inputs, std::span<const TensorDesc> outputs,
     std::span<ResourceBindingRequirement> input_requirements,
     std::span<ResourceBindingRequirement> output_requirements,
@@ -774,7 +776,7 @@ Status detail::OperationPreparationAccess::match_resource(
 
 Result<detail::ProviderPrepareAttempt>
 detail::OperationPreparationAccess::prepare_candidate(
-    const Context &context, const ProviderOperationProposal &proposal,
+    const ContextRef &context, const ProviderOperationProposal &proposal,
     Operation operation, std::span<const TensorDesc> inputs,
     std::span<const TensorDesc> outputs,
     std::span<const ResourceBindingRequirement> input_requirements,
@@ -947,7 +949,7 @@ detail::OperationPreparationAccess::prepare_candidate(
   if (!valid_prepared_callbacks(provider_prepared) ||
       (shape.exact() ? provider_prepared.instantiate != nullptr
                      : provider_prepared.instantiate == nullptr) ||
-      provider_prepared.runtime != proposal.runtime ||
+      !prepared_runtime_matches(provider_prepared.runtime, proposal.runtime) ||
       !is_power_of_two(provider_prepared.workspace.alignment) ||
       (proposal.cost.workspace.has_value() &&
        (provider_prepared.workspace.size != proposal.cost.workspace->size ||
@@ -1172,6 +1174,7 @@ prepare_for_mode(const Context &context, Operation operation,
   detail::ContextState *state = detail::ContextAccess::state(context);
   if (state == nullptr)
     return std::unexpected(Status::FailedPrecondition("context is invalid"));
+  HYLE_ASSIGN_OR_RETURN(auto retained, detail::ContextRef::acquire(context));
   if (resources.inputs.size() != inputs.size() ||
       resources.outputs.size() != outputs.size()) {
     return std::unexpected(Status::InvalidArgument(
@@ -1210,7 +1213,7 @@ prepare_for_mode(const Context &context, Operation operation,
     auto output_requirements =
         requirements.span().subspan(offset + inputs.size(), outputs.size());
     auto proposal = detail::OperationPreparationAccess::propose(
-        context, index, operation, inputs, outputs, input_requirements,
+        retained, index, operation, inputs, outputs, input_requirements,
         output_requirements, {}, std::nullopt, workload);
     if (!proposal && proposal.error().IsUnimplemented()) {
       if (!prepared_decline) {
@@ -1252,7 +1255,7 @@ prepare_for_mode(const Context &context, Operation operation,
     auto output_requirements = requirements.span().subspan(
         candidate.requirement_offset + inputs.size(), outputs.size());
     auto attempt = detail::OperationPreparationAccess::prepare_candidate(
-        context, candidate.proposal, operation, inputs, outputs,
+        retained, candidate.proposal, operation, inputs, outputs,
         input_requirements, output_requirements, resources);
     if (!attempt)
       return std::unexpected(std::move(attempt).error());
@@ -1903,6 +1906,131 @@ OperationInvocation::submit(Queue &queue,
   return completion;
 }
 
+namespace {
+Result<const detail::OperationAccessVTable *> operation_access_table(
+    const detail::PreparedState &prepared, ProviderExtensionId extension) noexcept {
+  for (std::size_t i = 0; i < prepared.context->provider_count; ++i) {
+    const auto &slot = prepared.context->providers()[i];
+    if (slot.instance != prepared.provider_instance) continue;
+    const auto *table = detail::ProviderAccess::vtable(slot.provider);
+    const auto *access = table->query_extension
+        ? static_cast<const detail::OperationAccessVTable *>(
+              table->query_extension(slot.state, extension)) : nullptr;
+    if (!access || !access->inspect)
+      return std::unexpected(Status::Unimplemented("selected prepared has no access capability"));
+    return access;
+  }
+  return std::unexpected(Status::Internal("prepared provider instance disappeared"));
+}
+Result<detail::OperationPreparedAccess> inspect_operation_access(
+    const detail::PreparedState &prepared,
+    const detail::OperationAccessVTable &table) noexcept {
+  detail::OperationPreparedAccess access;
+  HYLE_RETURN_IF_ERROR(table.inspect(prepared.provider_prepared, &access));
+  if (access.projected_input != detail::OperationPreparedAccess::kNoInput &&
+      access.projected_input >= prepared.input_count)
+    return std::unexpected(Status::Internal("prepared projection port exceeds its inputs"));
+  if (access.requires_configuration && !table.configure)
+    return std::unexpected(Status::Internal("prepared layout capability has no configuration callback"));
+  return access;
+}
+} // namespace
+
+Result<detail::OperationPreparedAccess> detail::OperationPreparationAccess::inspect_access(
+    const PreparedOperation &operation, ProviderExtensionId extension) noexcept {
+  const auto *prepared = operation.state_;
+  if (!prepared || !extension.valid())
+    return std::unexpected(Status::InvalidArgument("prepared access request is invalid"));
+  auto *context = prepared->context;
+  if (!context->admission.try_enter())
+    return std::unexpected(Status::FailedPrecondition("context is closed"));
+  struct Leave final { detail::ContextState *context; ~Leave(){context->admission.leave();} } leave{context};
+  HYLE_ASSIGN_OR_RETURN(auto table, operation_access_table(*prepared, extension));
+  return inspect_operation_access(*prepared, *table);
+}
+
+Result<bool> detail::OperationPreparationAccess::preserves_capture_bindings(
+    const OperationInvocation &invocation) noexcept {
+  const auto *prepared = invocation.state_ ? invocation.state_->prepared : nullptr;
+  if (!prepared)
+    return std::unexpected(Status::InvalidArgument(
+        "operation capture bindings request is invalid"));
+  auto *context = prepared->context;
+  if (!context->admission.try_enter())
+    return std::unexpected(Status::FailedPrecondition("context is closed"));
+  struct Leave final {
+    detail::ContextState *context;
+    ~Leave() { context->admission.leave(); }
+  } leave{context};
+  for (std::size_t index = 0; index < context->provider_count; ++index) {
+    const auto &slot = context->providers()[index];
+    if (slot.instance != prepared->provider_instance)
+      continue;
+    const auto *provider = detail::ProviderAccess::vtable(slot.provider);
+    const auto *capability = provider->query_extension
+        ? static_cast<const detail::CaptureBindingsVTable *>(
+              provider->query_extension(slot.state,
+                  detail::kCaptureBindingsExtensionId)) : nullptr;
+    if (!capability || !capability->inspect)
+      return false;
+    bool preserves = false;
+    const auto status = capability->inspect(prepared->provider_prepared,
+                                            &preserves);
+    if (status.IsUnimplemented())
+      return false;
+    if (!status.ok())
+      return std::unexpected(status);
+    return preserves;
+  }
+  return std::unexpected(Status::Internal(
+      "prepared capture bindings provider instance disappeared"));
+}
+
+Status detail::OperationInvocationAccess::prepare_bindings(
+    OperationInvocation &invocation, std::span<const ConstTensorView> inputs,
+    std::span<const TensorView> outputs) noexcept {
+  auto *state = invocation.state_;
+  if (!state)
+    return Status::FailedPrecondition("operation invocation is invalid");
+  if (state->phase.load(std::memory_order_acquire) != InvocationPhase::kIdle ||
+      !state->is_unique())
+    return Status::Unavailable(
+        "cold operation bindings require their idle unretained slot");
+  auto &prepared = *state->prepared;
+  auto *context = prepared.context;
+  if (!context->admission.try_enter())
+    return Status::FailedPrecondition("context is closed");
+  struct Leave final {
+    detail::ContextState *context;
+    ~Leave() { context->admission.leave(); }
+  } leave{context};
+  HYLE_RETURN_IF_ERROR(validate_bindings(prepared, inputs, outputs));
+  const auto *table = prepared.provider_prepared.vtable;
+  if (!table->prepare_bindings)
+    return Status::Ok();
+  return table->prepare_bindings(prepared.provider_prepared.state,
+                                 state->provider_state, inputs, outputs);
+}
+
+Result<bool> detail::OperationInvocationAccess::configure_cold(
+    OperationInvocation &invocation,
+    ProviderExtensionId extension, const void *configuration) noexcept {
+  auto *state=invocation.state_;
+  if(!state || !configuration || !extension.valid())
+    return std::unexpected(Status::InvalidArgument("cold operation configuration is invalid"));
+  if(state->phase.load(std::memory_order_acquire)!=InvocationPhase::kIdle || !state->is_unique())
+    return std::unexpected(Status::Unavailable("cold operation configuration requires its idle unretained slot"));
+  auto &prepared=*state->prepared;
+  auto *context=prepared.context;
+  if(!context->admission.try_enter())return std::unexpected(Status::FailedPrecondition("context is closed"));
+  struct Leave final {detail::ContextState *context;~Leave(){context->admission.leave();}}leave{context};
+  HYLE_ASSIGN_OR_RETURN(auto table, operation_access_table(prepared, extension));
+  HYLE_ASSIGN_OR_RETURN(auto access, inspect_operation_access(prepared, *table));
+  if (!access.requires_configuration) return false;
+  HYLE_RETURN_IF_ERROR(table->configure(prepared.provider_prepared,state->provider_state,configuration));
+  return true;
+}
+
 detail::EnqueueResult detail::OperationInvocationAccess::enqueue(
     OperationInvocation &invocation, detail::QueueSequence &sequence,
     std::span<const ConstTensorView> inputs,
@@ -1913,12 +2041,8 @@ detail::EnqueueResult detail::OperationInvocationAccess::enqueue(
   if (!sequence.valid())
     return EnqueueResult::rejected(
         Status::FailedPrecondition("compute queue sequence is invalid"));
-  Queue &queue = sequence.queue();
-  if (!queue.valid())
-    return EnqueueResult::rejected(
-        Status::FailedPrecondition("queue is invalid"));
   detail::PreparedState &prepared = *invocation.state_->prepared;
-  detail::QueueState *queue_state = detail::ContextAccess::state(queue);
+  detail::QueueState *queue_state = detail::ContextAccess::state(sequence);
   if (queue_state->context != prepared.context) {
     return EnqueueResult::rejected(Status::InvalidArgument(
         "queue and operation invocation belong to different contexts"));
@@ -1934,7 +2058,7 @@ detail::EnqueueResult detail::OperationInvocationAccess::enqueue(
 
   return prepared.provider_prepared.vtable->shared_submit(
       prepared.provider_prepared.state, invocation.state_->provider_state,
-      queue, inputs, outputs);
+      sequence, inputs, outputs);
 }
 
 detail::EnqueueResult detail::OperationInvocationAccess::enqueue_prevalidated(
@@ -1949,7 +2073,7 @@ detail::EnqueueResult detail::OperationInvocationAccess::enqueue_prevalidated(
         Status::FailedPrecondition("compute queue sequence is invalid"));
   detail::PreparedState &prepared = *invocation.state_->prepared;
   detail::QueueState *queue_state =
-      detail::ContextAccess::state(sequence.queue());
+      detail::ContextAccess::state(sequence);
   if (queue_state == nullptr || queue_state->context != prepared.context ||
       inputs.size() != prepared.input_count ||
       outputs.size() != prepared.output_count) {
@@ -1961,7 +2085,7 @@ detail::EnqueueResult detail::OperationInvocationAccess::enqueue_prevalidated(
   HYLE_ASSUME(prepared.provider_prepared.vtable->shared_submit != nullptr);
   return prepared.provider_prepared.vtable->shared_submit(
       prepared.provider_prepared.state, invocation.state_->provider_state,
-      sequence.queue(), inputs, outputs);
+      sequence, inputs, outputs);
 }
 
 detail::CompletionEndpoint

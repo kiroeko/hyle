@@ -45,7 +45,7 @@ def entry(kind, scale, output):
             args.append("%scales: tensor<?xf32>")
         args.append("%book: tensor<16xf32>")
     else:
-        if kind == "awq":
+        if kind in ("awq", "ct_asym"):
             args.append("%zeros: tensor<?x?xi32>")
         args.append(f"%scales: {scale_type}")
     args.append("%group_arg: i32")
@@ -122,6 +122,12 @@ def entry(kind, scale, output):
                       "%physical_lane = arith.remui %column, %c8 : index",
                       f"%word = tensor.extract %packed[%row, %packed_column] : {packed_type}"]
             indices = "%row, %group_index"
+            if kind == "ct_asym":
+                inner += ["%zero_row = arith.divui %row, %c8 : index",
+                          "%zero_lane = arith.remui %row, %c8 : index",
+                          "%zero_shift_index = arith.muli %zero_lane, %c4 : index",
+                          "%zero_shift = arith.index_cast %zero_shift_index : index to i32",
+                          "%zero_word = tensor.extract %zeros[%zero_row, %group_index] : tensor<?x?xi32>"]
         inner += ["%shift_index = arith.muli %physical_lane, %c4 : index",
                   "%shift = arith.index_cast %shift_index : index to i32",
                   "%shifted = arith.shrui %word, %shift : i32",
@@ -130,12 +136,29 @@ def entry(kind, scale, output):
             inner += ["%zero_shifted = arith.shrui %zero_word, %shift : i32",
                       "%zero_code = arith.andi %zero_shifted, %mask : i32",
                       "%signed = arith.subi %code, %zero_code : i32"]
+        elif kind == "ct_asym":
+            # W packs K, while Z packs N (including padded high lanes).
+            # Both fields use unsigned extraction followed by signed -8.
+            inner += ["%zero_shifted = arith.shrui %zero_word, %zero_shift : i32",
+                      "%zero_code = arith.andi %zero_shifted, %mask : i32",
+                      "%signed_code = arith.subi %code, %eight : i32",
+                      "%signed_zero = arith.subi %zero_code, %eight : i32",
+                      "%code_value = arith.sitofp %signed_code : i32 to f32",
+                      "%zero_value = arith.sitofp %signed_zero : i32 to f32",
+                      "%difference = arith.subf %code_value, %zero_value : f32"]
         else:
             inner.append("%signed = arith.subi %code, %eight : i32")
-        inner += ["%value = arith.sitofp %signed : i32 to f32",
-                  f"%scale_bits = tensor.extract %scales[{indices}] : {scale_type}"]
+        if kind == "ct_asym":
+            casts, difference = convert("%difference", "f32", scale, "source_difference")
+            inner += casts
+            casts, difference = convert(difference, scale, "f32", "difference_rounded")
+            inner += casts
+        else:
+            inner.append("%value = arith.sitofp %signed : i32 to f32")
+            difference = "%value"
+        inner.append(f"%scale_bits = tensor.extract %scales[{indices}] : {scale_type}")
         casts, scale_value = convert("%scale_bits", scale, "f32", "scale")
-        inner += casts + [f"%decoded = arith.mulf %value, {scale_value} : f32"]
+        inner += casts + [f"%decoded = arith.mulf {difference}, {scale_value} : f32"]
         # Signed nibble differences are exactly representable in every source
         # dtype. Materialize the original source multiplication rounding.
         casts, source_product = convert("%decoded", "f32", scale, "source_product")
@@ -152,7 +175,7 @@ def entry(kind, scale, output):
 
 def generate():
     entries, names = [], []
-    for kind in ("nf4", "nf4_nested", "awq", "ct"):
+    for kind in ("nf4", "nf4_nested", "awq", "ct", "ct_asym"):
         for scale in (("f32",) if kind.startswith("nf4") else TYPES):
             for output in TYPES:
                 # Cross-dtype half sources use the route's already qualified

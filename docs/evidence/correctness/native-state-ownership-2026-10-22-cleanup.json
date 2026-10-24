@@ -1,0 +1,72 @@
+{
+  "schema": 1,
+  "date": "2026-10-22",
+  "result": "EXACT_OBSOLETE_LEAVES_REMOVED",
+  "plan": {
+    "windows": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\native-state-ownership-20261022\\cpu-link1\\retained-budget.exe",
+        "bytes": 138869760,
+        "sha256": "3c573b971919e5e3a904f783c4a4422234a4b9185e087068e176a122502d2e96"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\native-state-ownership-20261022\\cpu-link1\\retained-budget.map",
+        "bytes": 56684614,
+        "sha256": "b4899f2f89a5f27fba7739748732b1f3761c5e734c7687ae004284bac90c9d3e"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\native-state-ownership-20261022\\cpu-link1\\retained-budget.lib",
+        "bytes": 42434,
+        "sha256": "798632dca93387a0ce53c4d397d5a6d1c433a31aba27c793292182cf97dd2480"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\native-state-ownership-20261022\\cpu-link1\\retained-budget.exp",
+        "bytes": 25000,
+        "sha256": "90e3a0a157f7721017bf7fe329501c55fee00062fc03077527829b0a9c1d4cf3"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\native-state-ownership-20261022\\cpu-link2\\retained-budget.map",
+        "bytes": 56684694,
+        "sha256": "1f698d1de1d76a4c5b73b0dfc0e24a1310b1d233b5ac4249b531838ff8f9a421"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\native-state-ownership-20261022\\cpu-link2\\retained-budget.lib",
+        "bytes": 42434,
+        "sha256": "798632dca93387a0ce53c4d397d5a6d1c433a31aba27c793292182cf97dd2480"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\native-state-ownership-20261022\\cpu-link2\\retained-budget.exp",
+        "bytes": 25000,
+        "sha256": "d7468c5c5689102f166def414b99ce43fed59b65a283b20ded1b9fee864751a3"
+      }
+    ],
+    "apple": {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/native-state-ownership-20261022/core1/libhyle_compute.a",
+      "bytes": 876088,
+      "sha256": "26fa119b6980a47eb4e9731a1a2db04c4dd025382add271f318cbda0ae36c4fd"
+    },
+    "root": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/native-state-ownership-20261022"
+  },
+  "apple_result": {
+    "deleted": {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/native-state-ownership-20261022/core1/libhyle_compute.a",
+      "bytes": 876088,
+      "sha256": "26fa119b6980a47eb4e9731a1a2db04c4dd025382add271f318cbda0ae36c4fd"
+    },
+    "recursive_delete": false
+  },
+  "executed_script": {
+    "path": "C:\\public\\project-hyle\\hyle\\test.ps1",
+    "bytes": 1609,
+    "sha256": "0d403b93ba824a53efed3ec334765370a665de029cb7db4b24a72dba4d999252"
+  },
+  "script_text": "# AK exact obsolete leaves. Already-run scripts must not be rerun.\n$ErrorActionPreference = 'Stop'\n$taskRoot = Join-Path $PSScriptRoot '.scratch/native-state-ownership-20261022'\n$plan = Get-Content -Raw -LiteralPath (Join-Path $taskRoot 'cleanup-plan.json') | ConvertFrom-Json\n$manifest = Get-Content -Raw -LiteralPath (Join-Path $PSScriptRoot 'docs/evidence/correctness/native-state-ownership-2026-10-22.json') | ConvertFrom-Json\n$archive = Join-Path $PSScriptRoot $manifest.evidence_archive.path\nif ((Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash.ToLowerInvariant() -ne $manifest.evidence_archive.sha256) { throw 'Evidence archive changed' }\n$allowedRoot = [IO.Path]::GetFullPath($taskRoot).TrimEnd('\\') + '\\'\nforeach ($item in $plan.windows) {\n    $absolute = [IO.Path]::GetFullPath($item.path)\n    if (-not $absolute.StartsWith($allowedRoot, [StringComparison]::OrdinalIgnoreCase)) { throw \"Outside task: $absolute\" }\n    $file = Get-Item -LiteralPath $absolute -Force\n    if ($file.PSIsContainer -or ($file.Attributes -band [IO.FileAttributes]::ReparsePoint) -or $file.Length -ne $item.bytes -or (Get-FileHash -LiteralPath $absolute -Algorithm SHA256).Hash.ToLowerInvariant() -ne $item.sha256) { throw \"Identity changed: $absolute\" }\n}\nforeach ($item in $plan.windows) { Remove-Item -LiteralPath $item.path -Force }\npython (Join-Path $taskRoot 'cleanup.py') native\nif ($LASTEXITCODE -ne 0) { throw 'Native cleanup failed; inspect exact state before retry' }\nWrite-Output \"Removed $($plan.windows.Count) Windows obsolete leaves and one native archive; no recursive delete.\"\n",
+  "native_helper": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\native-state-ownership-20261022\\cleanup.py",
+    "bytes": 5048,
+    "sha256": "cd5ec4c090142132af277a7c82ab86b3befdb730c8ff0bcb56ffd72b48dfef27"
+  },
+  "native_helper_text": "\"\"\"Prepare/run exact obsolete leaves via root test.ps1; no recursive delete.\"\"\"\nfrom pathlib import Path\nimport argparse,hashlib,importlib.util,json,sys\nsys.dont_write_bytecode=True\nS=Path(__file__).resolve().parent;R=S.parents[1];E=R/'docs/evidence/correctness'\nspec=importlib.util.spec_from_file_location('ak_cleanup_mac',S/'apple_build.py');h=importlib.util.module_from_spec(spec);spec.loader.exec_module(h)\ndef ident(p):\n raw=p.read_bytes();return dict(path=str(p),bytes=len(raw),sha256=hashlib.sha256(raw).hexdigest())\ndef save(p,x):p.write_text(json.dumps(x,indent=2)+'\\n',encoding='utf8')\ndef prepare():\n targets=[S/'cpu-link1'/('retained-budget'+ext) for ext in ['.exe','.map','.lib','.exp']]\n targets += [S/'cpu-link2'/('retained-budget'+ext) for ext in ['.map','.lib','.exp']]\n native=h.m.ssh(r'''\nfrom pathlib import Path\nimport hashlib,json,sys\np=json.load(sys.stdin);path=Path(p['root'])/'core1/libhyle_compute.a';assert path.is_file() and not path.is_symlink();raw=path.read_bytes();print(json.dumps(dict(path=str(path),bytes=len(raw),sha256=hashlib.sha256(raw).hexdigest())))\n''',dict(root=h.BASE))\n plan=dict(windows=[ident(x) for x in targets if x.exists()],apple=native,root=h.BASE)\n save(S/'cleanup-plan.json',plan)\n previous=S/'before/test.ps1';assert not previous.exists();previous.write_bytes((R/'test.ps1').read_bytes())\n script=r'''# AK exact obsolete leaves. Already-run scripts must not be rerun.\n$ErrorActionPreference = 'Stop'\n$taskRoot = Join-Path $PSScriptRoot '.scratch/native-state-ownership-20261022'\n$plan = Get-Content -Raw -LiteralPath (Join-Path $taskRoot 'cleanup-plan.json') | ConvertFrom-Json\n$manifest = Get-Content -Raw -LiteralPath (Join-Path $PSScriptRoot 'docs/evidence/correctness/native-state-ownership-2026-10-22.json') | ConvertFrom-Json\n$archive = Join-Path $PSScriptRoot $manifest.evidence_archive.path\nif ((Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash.ToLowerInvariant() -ne $manifest.evidence_archive.sha256) { throw 'Evidence archive changed' }\n$allowedRoot = [IO.Path]::GetFullPath($taskRoot).TrimEnd('\\') + '\\'\nforeach ($item in $plan.windows) {\n    $absolute = [IO.Path]::GetFullPath($item.path)\n    if (-not $absolute.StartsWith($allowedRoot, [StringComparison]::OrdinalIgnoreCase)) { throw \"Outside task: $absolute\" }\n    $file = Get-Item -LiteralPath $absolute -Force\n    if ($file.PSIsContainer -or ($file.Attributes -band [IO.FileAttributes]::ReparsePoint) -or $file.Length -ne $item.bytes -or (Get-FileHash -LiteralPath $absolute -Algorithm SHA256).Hash.ToLowerInvariant() -ne $item.sha256) { throw \"Identity changed: $absolute\" }\n}\nforeach ($item in $plan.windows) { Remove-Item -LiteralPath $item.path -Force }\npython (Join-Path $taskRoot 'cleanup.py') native\nif ($LASTEXITCODE -ne 0) { throw 'Native cleanup failed; inspect exact state before retry' }\nWrite-Output \"Removed $($plan.windows.Count) Windows obsolete leaves and one native archive; no recursive delete.\"\n'''\n (R/'test.ps1').write_text(script,encoding='utf8')\n print(json.dumps(dict(windows=len(plan['windows']),apple=1,bytes=sum(x['bytes'] for x in plan['windows'])+native['bytes'],script=ident(R/'test.ps1'))))\ndef native():\n plan=json.loads((S/'cleanup-plan.json').read_bytes())\n code=r'''\nfrom pathlib import Path\nimport hashlib,json,sys\np=json.load(sys.stdin);root=Path(p['root']);item=p['item'];path=Path(item['path']);assert root.name=='native-state-ownership-20261022' and path.resolve().is_relative_to(root.resolve()) and not path.is_symlink();raw=path.read_bytes();assert len(raw)==item['bytes'] and hashlib.sha256(raw).hexdigest()==item['sha256'];path.unlink();print(json.dumps(dict(deleted=item,recursive_delete=False)))\n'''\n remote=h.m.ssh(code,dict(root=plan['root'],item=plan['apple']))\n assert all(not Path(x['path']).exists() for x in plan['windows'])\n receipt=dict(schema=1,date='2026-10-22',result='EXACT_OBSOLETE_LEAVES_REMOVED',plan=plan,apple_result=remote,\n              executed_script=ident(R/'test.ps1'),script_text=(R/'test.ps1').read_text(encoding='utf8'),\n              native_helper=ident(Path(__file__)),native_helper_text=Path(__file__).read_text(encoding='utf8'),\n              unlinked_logical_bytes=sum(x['bytes'] for x in plan['windows'])+plan['apple']['bytes'],\n              retained='Final Windows cpu-link2 test image/objects, Apple test1 image and current core2 compute/core1 graph archives/objects, all original caches and model. File sizes are not a free-space measurement.')\n save(E/'native-state-ownership-2026-10-22-cleanup.json',receipt)\n public=E/'native-state-ownership-2026-10-22.json';doc=json.loads(public.read_bytes())\n doc['cleanup']=dict(executed=True,receipt=ident(E/'native-state-ownership-2026-10-22-cleanup.json'),script_must_not_be_rerun=True)\n save(public,doc)\n print(json.dumps(dict(result=receipt['result'],bytes=receipt['unlinked_logical_bytes'])))\nif __name__=='__main__':\n p=argparse.ArgumentParser(description=__doc__);p.add_argument('action',choices=['prepare','native']);a=p.parse_args()\n if a.action=='prepare':prepare()\n else:native()\n",
+  "unlinked_logical_bytes": 253250024,
+  "retained": "Final Windows cpu-link2 test image/objects, Apple test1 image and current core2 compute/core1 graph archives/objects, all original caches and model. File sizes are not a free-space measurement."
+}

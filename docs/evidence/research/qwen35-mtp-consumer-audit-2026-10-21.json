@@ -1,0 +1,494 @@
+{
+  "status": "Local read-only preparation complete; actual Qwen MTP consumer remains unimplemented/unrun. Zero build/GPU/network/model-copy.",
+  "direct_answer": [
+    "The real local checkpoint already contains a usable single trained full-attention MTP block: 15 BF16 tensors,121656320 bytes. Ordinary target operation support is largely reusable; the current320-tensor text consumer never loads or executes this block.",
+    "The shortest truthful first consumer is bounded greedy K=1: one real MTP draft, target verifyT2 with both row decisions/hidden states, actual acceptance0/1 and a checked correction/bonus token. Keep weights/shared plans in one Model; use original Graph/Invocation/Queue for the distinct mathematical roles.",
+    "Current whole-candidate commit and last-row-only outputs are the concrete seams. Existing GDN snapshots and atomic state versions cover recurrent selection, but the current paged-ready public API does not expose projection of an existing verified frame to a shorter accepted layout.",
+    "A correct initial rejection fallback can retire/abort verification and replay only the accepted target prefix using existingT1. This has real extra cost and must be measured. Fast partial acceptance needs permission-safe accepted KV projection plus matching conv/GDN checkpoints; changing a length counter alone is invalid.",
+    "Local llama.cpp contains actual Qwen MTP code, including in the retained cached source; however the present benchmark GGUF was explicitly exported --no-mtp and has320 tensors/nextn=null. Existing ordinary peer timings are not MTP results."
+  ],
+  "local_weights": {
+    "path": "C:\\Users\\kiro\\Downloads\\Qwen3.5-2B\\model.safetensors-00001-of-00001.safetensors",
+    "file_bytes": 4548221488,
+    "metadata_read_bytes": 76656,
+    "header_bytes": 76648,
+    "header_sha256": "ccba2c1f645fe59268f89ee7ea552e02ce6bf0c8a087bf332fb0e3bd99bfee9d",
+    "payload_read": false,
+    "full_file_rehashed": false,
+    "selected_tensors": [
+      {
+        "name": "mtp.fc.weight",
+        "dtype": "BF16",
+        "shape": [
+          2048,
+          4096
+        ],
+        "payload_relative_offset": 4426488512,
+        "absolute_file_offset": 4426565168,
+        "bytes": 16777216
+      },
+      {
+        "name": "mtp.layers.0.input_layernorm.weight",
+        "dtype": "BF16",
+        "shape": [
+          2048
+        ],
+        "payload_relative_offset": 4443265728,
+        "absolute_file_offset": 4443342384,
+        "bytes": 4096
+      },
+      {
+        "name": "mtp.layers.0.mlp.down_proj.weight",
+        "dtype": "BF16",
+        "shape": [
+          2048,
+          6144
+        ],
+        "payload_relative_offset": 4443269824,
+        "absolute_file_offset": 4443346480,
+        "bytes": 25165824
+      },
+      {
+        "name": "mtp.layers.0.mlp.gate_proj.weight",
+        "dtype": "BF16",
+        "shape": [
+          6144,
+          2048
+        ],
+        "payload_relative_offset": 4468435648,
+        "absolute_file_offset": 4468512304,
+        "bytes": 25165824
+      },
+      {
+        "name": "mtp.layers.0.mlp.up_proj.weight",
+        "dtype": "BF16",
+        "shape": [
+          6144,
+          2048
+        ],
+        "payload_relative_offset": 4493601472,
+        "absolute_file_offset": 4493678128,
+        "bytes": 25165824
+      },
+      {
+        "name": "mtp.layers.0.post_attention_layernorm.weight",
+        "dtype": "BF16",
+        "shape": [
+          2048
+        ],
+        "payload_relative_offset": 4518767296,
+        "absolute_file_offset": 4518843952,
+        "bytes": 4096
+      },
+      {
+        "name": "mtp.layers.0.self_attn.k_norm.weight",
+        "dtype": "BF16",
+        "shape": [
+          256
+        ],
+        "payload_relative_offset": 4518771392,
+        "absolute_file_offset": 4518848048,
+        "bytes": 512
+      },
+      {
+        "name": "mtp.layers.0.self_attn.k_proj.weight",
+        "dtype": "BF16",
+        "shape": [
+          512,
+          2048
+        ],
+        "payload_relative_offset": 4518771904,
+        "absolute_file_offset": 4518848560,
+        "bytes": 2097152
+      },
+      {
+        "name": "mtp.layers.0.self_attn.o_proj.weight",
+        "dtype": "BF16",
+        "shape": [
+          2048,
+          2048
+        ],
+        "payload_relative_offset": 4520869056,
+        "absolute_file_offset": 4520945712,
+        "bytes": 8388608
+      },
+      {
+        "name": "mtp.layers.0.self_attn.q_norm.weight",
+        "dtype": "BF16",
+        "shape": [
+          256
+        ],
+        "payload_relative_offset": 4529257664,
+        "absolute_file_offset": 4529334320,
+        "bytes": 512
+      },
+      {
+        "name": "mtp.layers.0.self_attn.q_proj.weight",
+        "dtype": "BF16",
+        "shape": [
+          4096,
+          2048
+        ],
+        "payload_relative_offset": 4529258176,
+        "absolute_file_offset": 4529334832,
+        "bytes": 16777216
+      },
+      {
+        "name": "mtp.layers.0.self_attn.v_proj.weight",
+        "dtype": "BF16",
+        "shape": [
+          512,
+          2048
+        ],
+        "payload_relative_offset": 4546035392,
+        "absolute_file_offset": 4546112048,
+        "bytes": 2097152
+      },
+      {
+        "name": "mtp.norm.weight",
+        "dtype": "BF16",
+        "shape": [
+          2048
+        ],
+        "payload_relative_offset": 4548132544,
+        "absolute_file_offset": 4548209200,
+        "bytes": 4096
+      },
+      {
+        "name": "mtp.pre_fc_norm_embedding.weight",
+        "dtype": "BF16",
+        "shape": [
+          2048
+        ],
+        "payload_relative_offset": 4548136640,
+        "absolute_file_offset": 4548213296,
+        "bytes": 4096
+      },
+      {
+        "name": "mtp.pre_fc_norm_hidden.weight",
+        "dtype": "BF16",
+        "shape": [
+          2048
+        ],
+        "payload_relative_offset": 4548140736,
+        "absolute_file_offset": 4548217392,
+        "bytes": 4096
+      }
+    ],
+    "payload_bytes": 121656320,
+    "total_text_plus_mtp_tensors": 335,
+    "total_original_text_plus_mtp_bytes": 3885311680,
+    "architecture": {
+      "hidden_size": 2048,
+      "intermediate_size": 6144,
+      "num_hidden_layers": 24,
+      "num_attention_heads": 8,
+      "num_key_value_heads": 2,
+      "head_dim": 256,
+      "mtp_num_hidden_layers": 1,
+      "mtp_use_dedicated_embeddings": false,
+      "tie_word_embeddings": true,
+      "vocab_size": 248320,
+      "rms_norm_eps": 1e-06
+    },
+    "shared": "No dedicated MTP embedding or LM-head tensor is in these15; reuse original token embedding/tied LM head. Do not duplicate the target bank."
+  },
+  "math_and_alignment": [
+    "Observed local Qwen MTP graph: independently RMS-normalize shifted target hidden h_p and token embedding e(x_{p+1}); concatenate [embedding_norm,hidden_norm] in that order; apply fc[2048,4096]; one normal gated full-attention decoder block; MTP norm; shared embedding/LM head. It is not an extra GDN layer and not merely another LM-head matmul.",
+    "Its attention is Hq8/Hkv2/D256, q_proj includes interleaved Q/gate (4096 outputs), q/k head norm, rotary64 with the original positions/MRoPE convention, sigmoid attention gate, output projection and residual, then norm+SwiGLU6144+residual. Reuse the existing ordinary text operations and declared dtype boundaries.",
+    "Raw HF norm parameters are delta weights; current Hyle Recipe.norm explicitly adds1 inF32. Local llama conversion remaps enorm/hnorm/shared_head.norm and adds1 to norm weights, often storing vectorsF32. Never add1 again to already converted GGUF norm values.",
+    "Both inspected llama revisions expose target h_nextn after final RMS norm and before LM-head row selection. Hyle already computes that full activation but publishes only its last BF16 row. Prefill MTP catch-up requires all actual rows; the shifted first pair uses saved previous hidden (zero on a new sequence in inspected llama), then each next token pairs with the previous target row.",
+    "For more than one speculative step, the same trained head recurs with its own KV and its own predicted normalized hidden. After target verification, carryover hidden must be reset to the actual accepted target row, not the last speculative row. One trained head does not mean an architectural hard limit of one drafted token.",
+    "This is a source-defined mathematical route, not a claim of BF16/F32 bit identity across llama and Hyle. The local checkpoint supplies no standalone official MTP forward module here; preserve each chosen reference dtype/cast tree and validate the head numerically before signing acceptance-rate results."
+  ],
+  "minimal_K1_round": {
+    "base": "Committed target state has processed L tokens; its last hidden h[L-1] and sampled next_id x[L] are available. x[L] was already returned by the previous target step but has not yet been fed into target state; do not count/emit it a second time.",
+    "draft": "Run real MTP head on (h[L-1], embedding(x[L])) at positionL with its own synchronized KV; propose d1.",
+    "verify": "Run original24-layer target on [x[L],d1] at positionsL,L+1, publishing both target row IDs/hidden. Compare d1 with row0 greedy ID; row1 is the bonus only when d1 is accepted.",
+    "accept": "If equal, commit full target candidate after2 processed inputs, emit d1 and row1 bonus, retain actual hidden/state at the end of the accepted prefix; bonus remains pending input for the next round.",
+    "reject": "If unequal, commit state only after x[L], emit row0 correction and retain its corresponding hidden/state. The rejected d1 is never published as accepted state. First implementation may abort retiredT2 candidate then rerunT1 from the old head; assert the rerun decision equals verify row0.",
+    "failure": "On verification/native error or cancellation, no accepted head publication. Retain all candidate owners through true retirement; roll back reserved suffix and discard fresh candidate reservations through original APIs before reuse.",
+    "policy": "Start with deterministic greedy exact-ID matching, not probabilistic rejection. Stochastic MTP additionally needs actual p/q distributions, independent RNG/sampler state, accept min(1,p/q), and normalized max(0,p-q) correction; TopK equality alone does not preserve that distribution."
+  },
+  "existing_reuse": [
+    "One pinned FileStream loader/actual cold weight bank can add15 original byte ranges after explicit new inventory validation; Recipe requires an absolute-name path because its current weight(name) always prepends model.language_model. Keep ordinary320-only behavior separately identifiable.",
+    "Ordinary Embedding/Gather, F32/BF16 norm/casts, Concat, MatMul, RoPE, sigmoid, causal paged attention, SwiGLU and TopK can express the MTP head and verifier row decisions; no new model operator or executor is established as necessary.",
+    "GatedDeltaNet(snapshot_count=K) already returns the lastK actual chronological post-token F32 states. CPU/CUDA/Apple/Vulkan state fixture source exercises accept0..4, matching conv windows, KV prefixes, cancellation and continuation through Direct/Graph. This is primitive-state coverage, not a real15-weight MTP model test or new runtime pass in this report.",
+    "StateStore/StateDraft/StateHead supply immutable member replacement and expected-base atomic publication; the current Qwen thin Snapshot bundle already provides one complete-head publication. Extend that one consumer path to include MTP state/alignment, rather than adding a parallel cache or Model per role/session.",
+    "Current prepare_evaluation/submit_evaluation/finish_evaluation separate native preparation/submission/terminal publication; StepState abort and actual retirement can support verification that remains private until acceptance."
+  ],
+  "necessary_seams": [
+    {
+      "owner": "Consumer loader/Recipe",
+      "change": "Explicitly identify/load335 text+MTP tensor inventory (3885311680 original bytes); add absolute-name constants for mtp.* and reuse the same existing token embedding/head. No whole-weight widening/repacking."
+    },
+    {
+      "owner": "Consumer Graph definition/phase IO",
+      "change": "Add MTP-head Graph and target verification output mode using the same original graph builder/Model constants. Publish target hidden for all relevant rows and per-row TopK IDs; current last-row slice is insufficient for prefill catch-up or rejection alignment. Bound cold child sizesT1/T2 explicitly first."
+    },
+    {
+      "owner": "Consumer transaction/state model",
+      "change": "Accept/reject before visible head commit. Track target state, draft KV/frontier, pending actual hidden, pending token and position as one coherent continuation identity. Draft-only work must not advance target length or toggle its ordinary parity twice."
+    },
+    {
+      "owner": "Existing public path, correctness-first fallback",
+      "change": "For K1 keep final-state GDN outputs and on reject abort/retire then replay acceptedT1. This needs no new schema but costs another target forward on rejection; do not advertise efficient partial accept or hide replay in throughput."
+    },
+    {
+      "owner": "Efficient accepted-prefix API seam",
+      "change": "Current PagedArenaRead exposes layout/page_count only, and PagedAppendPages.ready publishes its full next layout. A natural small readonly prefix projection must validate the accepted layout against actual initialized guarded rows, retain exact subset guards, and never widen permissions. Without it, use real replay; neither metadata length nor PageInventory IDs substitute for F1."
+    },
+    {
+      "owner": "Fast rejection state selection/budget",
+      "change": "Use GDN snapshots for all accepted positions plus matching conv input/history slices and actual target hidden. An accepted readonly KV projection may leave the arena frontier beyond acceptance; discard that idle tail and COW next, or separately design a real partial-commit append contract. Do not rewind committed append frontiers informally."
+    },
+    {
+      "owner": "State/resources",
+      "change": "Draft head has its own attention KV (2048 original BF16 bytes per token for K+V) and cursor. T2 GDN snapshot outputs across18 recurrent layers are37748736 bytes,18874368 above final-state-only recurrent outputs, before other temporaries. Declare actual workspace/state budgets; existing N+1 target candidate bound does not silently cover these extra buffers."
+    },
+    {
+      "owner": "Prefix/session integration",
+      "change": "A target prefix hit does not magically provide draft KV or shifted hidden. Either retain a complete composite MTP checkpoint under the proper model/math identity or explicitly rebuild/catch up from actual source chunks. Initial single-session prefix-cache-off MTP is a valid limited milestone, not full cached/multi-session MTP."
+    }
+  ],
+  "peer": {
+    "local_head": "23b0202a189c44a54625aadcb37a946dd1d6278d",
+    "local_worktree_status": "clean",
+    "retained_cached_source_head": "d9e03f1074dbd2979126d91dce1b5d304ec8394e",
+    "retained_source_root": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\llama-matched-consumer\\source",
+    "existing_gguf": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\llama-matched-consumer\\Qwen3.5-2B-text-BF16.gguf",
+    "existing_gguf_tensors": 320,
+    "existing_gguf_nextn_predict_layers": null,
+    "current_old_peer_is_MTP": false,
+    "reusable": "Both local current and retained source contain Qwen graph_mtp/common draft-mtp. Cached headers expose load_mtp and LLAMA_CONTEXT_TYPE_MTP; check exact retained ABI before writing the peer adapter. One combined target+MTP model can supply two contexts sharing weights.",
+    "next": "The existing --no-mtp GGUF cannot be made MTP by a runtime flag. A properly exported MTP-capable artifact is required (or an already existing correct artifact). No conversion/model copy is performed now. Consumer must enable actual draft-MTP loading, all target hidden rows, and original accept/rollback hooks; retain no-MTP baseline.",
+    "fair_comparison": "Same source target weights/precision policy/prompt, same greedy output sequence and stopping budget, actual draft/verify/accepted counts, per-position acceptance, replay/catch-up work, startup/P/D/session throughput and separate memory. Existing fixed teacher-forced decode tape can check numerics but is not an autonomous MTP acceptance-rate benchmark."
+  },
+  "next_milestone": "A single real K1 greedy consumer with exact draft/verify row alignment, natural accept and reject (plus an explicitly labeled injected rejection witness if necessary), unchanged no-MTP greedy reference outputs, actual old-state continuation and failure retirement. Then optimize partial-prefix selection from measured reject/catch-up costs; no full model/support matrix.",
+  "sources": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tools\\qwen35_text\\main.cc",
+      "bytes": 131729,
+      "sha256": "f1a6ce9dab41e1845e7e9e2e74a6354d0729054abbf2237acaa51120daf3dea8",
+      "anchors": {
+        "const auto value = constant(bank.at(": 255,
+        "V norm(V x": 363,
+        "WeightLoadReport load_weight_bank(": 561,
+        "if (weights.size() != 320": 619,
+        "auto recurrent = r.op(c::Operation(c::GatedDeltaNet{})": 926,
+        "definition.hidden_port = last;": 990,
+        "void prepare_evaluation(": 1229,
+        "void submit_evaluation(": 1366,
+        "finish_evaluation(": 1378,
+        "session.head = step.next;": 1436
+      }
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tools\\qwen35_text\\session_state.h",
+      "bytes": 7504,
+      "sha256": "12bec40ae0b60f4402b3243904245d26d096310a507dfd680b077c2d5ffbe8e5",
+      "anchors": {
+        "struct Snapshot final": 159,
+        "struct VersionCount final": 137
+      }
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\operation.h",
+      "bytes": 28108,
+      "sha256": "35b7c862143839e4b8ce0c9a49753b7add2f325ec424bf5f91a1afeec0101506",
+      "anchors": {
+        "// Pure recurrent region": 427,
+        "struct GatedDeltaNet final": 443
+      }
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\model_ops.h",
+      "bytes": 75815,
+      "sha256": "91ef5991618307e1be23c4d36f8b07aca09d9ff41473098b3d50ada4feb6b5cb",
+      "anchors": {
+        "struct RecurrentGatedDeltaNet final": 1077
+      }
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_ggml_cuda\\tensor_program.cc",
+      "bytes": 54758,
+      "sha256": "6edcfe378983d4f371cede7a0ec463ae17c2e11f307b81ab8f61a0c0d917a4b2",
+      "anchors": {
+        "auto *packed = ggml_gated_delta_net(": 1121
+      }
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\state_versions.h",
+      "bytes": 8553,
+      "sha256": "a09cb66a216b56a0651f515f18d8a97772b0e6d281c171a82b8a6630b3e1c7d7",
+      "anchors": {
+        "class StateStore final": 92,
+        "class StateDraft final": 151,
+        "class StateHead final": 177
+      }
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\paged_arena.h",
+      "bytes": 13088,
+      "sha256": "6b3f39672f7b833b3db0284bdeaa0259305a320fc4bef62c8dc78542e4e151d4",
+      "anchors": {
+        "class PagedArenaRead final": 172,
+        "publish_appendable(": 108,
+        "class PagedPageAppender final": 134
+      }
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\graph\\batch.h",
+      "bytes": 18021,
+      "sha256": "6eda97359b65f09e86ed264ea9159bd741d17a7378ae7873ecc2b84d5be74721",
+      "anchors": {
+        "class PagedAppendPages final": 156,
+        "take_append(Invocation&": 203
+      }
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_state\\mtp_prefix_consumer.h",
+      "bytes": 12284,
+      "sha256": "0aa3b92c849699b0015e0b5cc5dca051dae93b75f0d407e1354f834a4fd8d842",
+      "anchors": {
+        "Work verify{": 68,
+        "for(std::size_t accepted=0;": 89,
+        "rejected.cancel()": 105,
+        "MTP %s: accept 0..4": 153
+      }
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_state\\public_state_consumer.cc",
+      "bytes": 29552,
+      "sha256": "020df893247b905bfae6b063bc10a439eb54c61680f31847563822a4130d390b",
+      "anchors": {
+        "exercise_mtp_prefixes(route,\"CPU\")": 298,
+        "exercise_mtp_prefixes(route,\"CUDA\")": 302,
+        "exercise_mtp_prefixes(route,\"Apple\")": 305,
+        "exercise_mtp_prefixes(route,\"Vulkan\")": 309
+      }
+    },
+    {
+      "path": "C:\\public\\project-hyle\\llama.cpp\\AGENTS.md",
+      "bytes": 11574,
+      "sha256": "40b6109f77d2998e8ac937d6630a274c5b37883b3958d5cfc06a32d4ca4b426e",
+      "anchors": {}
+    },
+    {
+      "path": "C:\\public\\project-hyle\\llama.cpp\\src\\models\\qwen35.cpp",
+      "bytes": 28614,
+      "sha256": "6bd7c382bbc2c8ae04cbbe3905a333b1d88c5db170620690022a78d05dbe74a6",
+      "anchors": {
+        "graph_mtp::graph_mtp": 500,
+        "ggml_concat(ctx0, e_norm, h_norm": 561,
+        "res->t_h_nextn = cur;": 213,
+        "head_norm_w = layer.nextn.shared_head_norm": 639
+      }
+    },
+    {
+      "path": "C:\\public\\project-hyle\\llama.cpp\\common\\speculative.cpp",
+      "bytes": 120960,
+      "sha256": "d78b09fba32cd9b206d390e07129b5c8d464cc186b79129bf90e634c4d29fa2b",
+      "anchors": {
+        "struct common_speculative_impl_draft_mtp": 1390,
+        "// Per-sequence cross-batch carryover:": 1412,
+        "batch.set_embd_state(idx, { pending_h[seq_id]": 1686,
+        "const int32_t i_h = std::min<int32_t>(n_accepted": 1828
+      }
+    },
+    {
+      "path": "C:\\public\\project-hyle\\llama.cpp\\common\\sampling.cpp",
+      "bytes": 41902,
+      "sha256": "32f8cf1b487cdb2720dee65650d785ddea4ea3d89c2a8186d830933e6facb233",
+      "anchors": {
+        "common_sampler_sample_and_accept_n(struct": 689,
+        "// Accept a drafted token with probability": 732
+      }
+    },
+    {
+      "path": "C:\\public\\project-hyle\\llama.cpp\\common\\common.cpp",
+      "bytes": 83346,
+      "sha256": "09927ad4006dfda02dde98fefb0e3dca9d58d60cb7e8b08d56c6e7acc0c7c197",
+      "anchors": {
+        "cparams_dft.ctx_type = LLAMA_CONTEXT_TYPE_MTP;": 1255,
+        "an MTP context runs on the weights of the main model": 1263
+      }
+    },
+    {
+      "path": "C:\\public\\project-hyle\\llama.cpp\\conversion\\qwen.py",
+      "bytes": 48864,
+      "sha256": "de5b282b3413744ce9dd6b47790236ce62ff00388a31fa33144bfd3a748b5ff5",
+      "anchors": {
+        "class _QwenMtpMixin:": 278,
+        "\"pre_fc_norm_embedding\":": 330,
+        "elif name.endswith(\"norm.weight\")": 402,
+        "class Qwen3_5TextModel(": 655
+      }
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\llama-matched-consumer\\source\\src\\models\\qwen35.cpp",
+      "bytes": 28105,
+      "sha256": "ef973e9c789eb52ef27a77e0b1f36c6f41a378733a994d41b5924e3be012f671",
+      "anchors": {
+        "graph_mtp::graph_mtp": 486,
+        "res->t_h_nextn = cur;": 209,
+        "ggml_concat(ctx0, e_norm, h_norm": 546
+      }
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\llama-matched-consumer\\source\\common\\speculative.cpp",
+      "bytes": 117117,
+      "sha256": "c5f070dfc9d3d1af31f92567900d6bb06a8d35fe5fcef6df7cd416be1758dbc2",
+      "anchors": {
+        "struct common_speculative_impl_draft_mtp": 1330,
+        "void accept(llama_seq_id seq_id, uint16_t n_accepted": 172
+      }
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\llama-matched-consumer\\source\\common\\common.cpp",
+      "bytes": 79588,
+      "sha256": "e6eccdf376a80a3f534fc71ad7775fcac52eb6089367f1592ce1d293b147db66",
+      "anchors": {
+        "mparams.load_mtp": 1713,
+        "cparams_dft.ctx_type = LLAMA_CONTEXT_TYPE_MTP;": 1309
+      }
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\llama-matched-consumer\\conversion-plan.json",
+      "bytes": 2433,
+      "sha256": "1334d8a3750508e27197dfc40020789ff3cdfac8001a2e1dd1976c64639ac70b",
+      "anchors": {}
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\llama-matched-consumer\\converted-model-audit.json",
+      "bytes": 1975,
+      "sha256": "4c33e66c69ea383b6581ad0101f4d0ef8904678221aab80c40c8ccbae3512fb4",
+      "anchors": {}
+    },
+    {
+      "path": "C:\\Users\\kiro\\Downloads\\Qwen3.5-2B\\config.json",
+      "bytes": 2908,
+      "sha256": "ed1c1723241f23f7f4e23430759cbd7dcfb4103cbdfe052bfe7626b57c2615b4",
+      "anchors": {}
+    }
+  ],
+  "limits": [
+    "Only fixed local metadata/source was read. No Internet, SDK configure/build, conversion, GPU query/model execution or checkpoint payload read.",
+    "The15-tensor header inventory is actual; it is not an execution/quality/acceptance-rate or speed result.",
+    "Current ordinary Qwen and previous primitive MTP-state evidence do not make the real MTP consumer complete.",
+    "No claim that new target chunkT2 and sequentialT1 hidden/logits are universally bit-identical; record actual output differences and require the declared greedy decisions/reference contract in validation."
+  ],
+  "actual_operations": {
+    "builds": 0,
+    "links": 0,
+    "GPU_runs": 0,
+    "network": 0,
+    "model_copies": 0
+  },
+  "script": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-consumer-20261021\\research.py",
+    "bytes": 18299,
+    "sha256": "bf0f9f02e144f80d2a4e8febbb6573cd1216f17ad7767fdf62e41973246e60a5",
+    "anchors": {}
+  }
+}

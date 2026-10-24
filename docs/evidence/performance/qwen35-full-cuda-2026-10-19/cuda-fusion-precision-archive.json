@@ -1,0 +1,13 @@
+{
+  "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\qwen35-full-cuda-2026-10-19\\cuda-fusion-precision.zip",
+  "bytes": 21880072,
+  "sha256": "53eb34d90e6fbaf7fbc1885b8d36f7a233ea955910da6f5e6f97fc08ad98cb07",
+  "payloads": 341,
+  "entries_including_manifest": 342,
+  "uncompressed_payload_bytes": 149004237,
+  "CRC_and_every_payload_SHA_verified": true,
+  "source_id": "866a383d696d3931",
+  "header_count": 89,
+  "SDKs_models_objects_executables_excluded": true,
+  "later_unfrozen_product_sources_excluded": true
+}

@@ -13,11 +13,14 @@
 #include <ATen/Context.h>
 
 #include "../compute_provider_native/half_test_support.h"
+#include "../compute_models/mlx_grouped_shared_fixture.h"
 #include "hyle/compute/backends/cuda.h"
 #include "hyle/compute/cuda.h"
 #include "hyle/compute/model_ops.h"
 #include "hyle/compute/prepared_operation.h"
 #include "hyle/compute/providers/torch_cuda.h"
+#include "hyle/graph/cuda.h"
+#include "../compute_models/mlx_moe_fixture.h"
 
 namespace {
 namespace c=hyle::compute;
@@ -25,6 +28,17 @@ namespace mem=hyle::mem;
 using Format=c::model_ops::MlxWeightFormat;
 using Half=hyle::simd::float16_t;
 using Bfloat=hyle::simd::bfloat16_t;
+TEST(CudaMlxMoeGraph, MixedBitMoeKeepsTypedMetadataAndIndependentSlots) {
+  auto context = hyle::graph::cuda::create_context().value();
+  auto resource = c::cuda::MemoryResource::create(context, c::cuda::MemoryKind::kDevice).value();
+  const auto owner = c::StorageOwner::adopt(context, std::move(resource)).value();
+  auto queue = context.create_queue().value();
+  const std::array queues{hyle::graph::QueueBinding{hyle::graph::ExecutionLaneId{0}, &queue}};
+  mlx_moe_test::run(owner.ref(), queues, [&](const hyle::graph::Graph &graph,
+      hyle::graph::CompileOptions options) { return hyle::graph::cuda::compile(graph, context, owner, options); },
+      [](mem::BufferView destination, std::span<const std::byte> source) { return destination.write(source); },
+      [](mem::ConstBufferView source, std::span<std::byte> destination) { return source.read(destination); }, owner);
+}
 template<class T> std::vector<std::byte> bytes(const std::vector<T> &v) {
   const auto view=std::as_bytes(std::span(v));return {view.begin(),view.end()};
 }
@@ -54,7 +68,7 @@ private:
 class CudaMlxPrecision:public ::testing::TestWithParam<std::tuple<Format,c::DataType,std::int64_t>>{};
 TEST_P(CudaMlxPrecision, SourceF32EquationAndGroupScaleArePreservedUnderForeignTf32Policy) {
   const auto [format,type,rows]=GetParam();
-  const bool affine=format==Format::kAffine4;
+  const bool affine=format==Format::kAffine;
   const auto group=affine?64:32,pack=format==Format::kMxfp8?4:8;
   constexpr std::int64_t n=8,k=64;
   auto context=c::cuda::create_context().value();
@@ -85,7 +99,7 @@ TEST_P(CudaMlxPrecision, SourceF32EquationAndGroupScaleArePreservedUnderForeignT
     ASSERT_TRUE(buffers.back().view().write(payloads[i]).ok());
     inputs.push_back(c::ConstTensorView::create(descriptors[i],buffers.back().view()).value());
   }
-  const auto operation=c::model_ops::mlx_quantized_matmul(format,group);
+  const auto operation=c::model_ops::mlx_quantized_matmul(format,format==Format::kMxfp8?8:4,group);
   std::array<c::TensorDesc,1> descriptions;
   ASSERT_TRUE(c::infer_output_descriptions(operation,descriptors,descriptions).ok());
   auto prepared_result=c::prepare(context,operation,descriptors,descriptions,resource.ref());
@@ -142,7 +156,52 @@ TEST_P(CudaMlxPrecision, SourceF32EquationAndGroupScaleArePreservedUnderForeignT
   }
 }
 INSTANTIATE_TEST_SUITE_P(OriginalDtypes,CudaMlxPrecision,
-  ::testing::Combine(::testing::Values(Format::kAffine4,Format::kMxfp4,Format::kMxfp8),
+  ::testing::Combine(::testing::Values(Format::kAffine,Format::kMxfp4,Format::kMxfp8),
                     ::testing::Values(c::DataType::kFloat16,c::DataType::kBFloat16,c::DataType::kFloat32),
                     ::testing::Values(std::int64_t{1},std::int64_t{5})));
+
+TEST(CudaMlxSharedActivation, OriginalPayloadStridesAndCheckedIdsSurviveReuse) {
+  auto context=c::cuda::create_context().value();
+  auto resource=c::cuda::MemoryResource::create(context,c::cuda::MemoryKind::kDevice).value();
+  auto queue=context.create_queue().value();
+  for(const auto type:{c::DataType::kFloat32,c::DataType::kBFloat16})for(bool shared_view:{false,true}) {
+    SCOPED_TRACE(static_cast<int>(type));
+    SCOPED_TRACE(shared_view);
+    const mlx_grouped_shared_test::Case data(type,shared_view);
+    std::vector<mem::Buffer> buffers;std::vector<c::ConstTensorView> inputs;
+    for(std::size_t port=0;port<data.payloads.size();++port) {
+      buffers.push_back(mem::Buffer::create(resource.ref(),data.payloads[port].size(),256).value());
+      ASSERT_TRUE(buffers.back().view().write(data.payloads[port]).ok());
+      inputs.push_back(c::ConstTensorView::create(data.descriptions[port],buffers.back().view()).value());
+    }
+    std::array<c::TensorDesc,1> out;
+    const auto inferred=c::infer_output_descriptions(data.operation,data.descriptions,out);
+    ASSERT_TRUE(inferred.ok())<<inferred.message();
+    EXPECT_EQ(out[0].dimensions()[1],3);
+    auto prepared=c::prepare(context,data.operation,data.descriptions,out,resource.ref());
+    ASSERT_TRUE(prepared)<<prepared.error().message();
+    auto slot=prepared->create_invocation().value();
+    auto output=mem::Buffer::create(resource.ref(),out[0].required_bytes().value(),256).value();
+    const std::array outputs{c::TensorView::create(out[0],output.view()).value()};
+    for(unsigned repeat=0;repeat<2;++repeat) {
+      if(repeat) {
+        const auto count=buffers[0].size()/c::data_type_size(type);
+        std::vector<float> a(count,-777.F);
+        std::fill_n(a.begin(),64,2.F);std::fill_n(a.begin()+(shared_view?80:64),64,4.F);
+        ASSERT_TRUE(buffers[0].view().write(floating(type,a)).ok());
+      }
+      auto done=slot.submit(queue,inputs,outputs);ASSERT_TRUE(done)<<done.error().message();
+      const auto status=done->wait();ASSERT_TRUE(status.ok())<<status.message();
+      auto expected=data.expected;for(auto &value:expected)value*=repeat?2.F:1.F;
+      std::vector<std::byte> actual(output.size());ASSERT_TRUE(output.view().read(actual).ok());
+      EXPECT_EQ(actual,floating(type,expected));
+    }
+    std::vector<std::byte> before(output.size());ASSERT_TRUE(output.view().read(before).ok());
+    const std::array<std::int32_t,6> invalid{-1,0,2,1,1,0};
+    ASSERT_TRUE(buffers.back().view().write(std::as_bytes(std::span(invalid))).ok());
+    auto failed=slot.submit(queue,inputs,outputs);ASSERT_TRUE(failed)<<failed.error().message();
+    EXPECT_TRUE(failed->wait().IsOutOfRange());
+    std::vector<std::byte> after(output.size());ASSERT_TRUE(output.view().read(after).ok());EXPECT_EQ(after,before);
+  }
+}
 } // namespace

@@ -174,6 +174,9 @@ struct Buffer final {
 };
 
 struct Run;
+// Residual shaders: up to five caller inputs plus their private status word.
+// General custom pipelines retain their own raw push-constant contract.
+using TensorByteOrigins=std::array<std::uint32_t,6>;
 struct NativeEncoding;
 struct IreeStage;
 struct AsyncRun final {
@@ -213,7 +216,7 @@ struct Run final {
   std::shared_ptr<Run> completion_owner;
   std::vector<std::shared_ptr<Buffer>, mem::StdAllocator<std::shared_ptr<Buffer>>> retained_buffers;
   std::vector<VkDescriptorSet> descriptor_sets;
-  std::vector<std::array<std::uint32_t, 3>> recorded_origins;
+  std::vector<TensorByteOrigins> recorded_origins;
   std::shared_ptr<const void> recording_owner;
   InvocationAllocation allocation;
   compute::ResourceBudget::Reservation private_storage;
@@ -281,6 +284,14 @@ struct Access final {
   static Invocation
   invocation(std::shared_ptr<InvocationState> state) noexcept {
     return Invocation(std::move(state));
+  }
+  static const std::shared_ptr<InvocationState> &
+  invocation_state(const Invocation &invocation) noexcept {
+    return invocation.state_;
+  }
+  static const std::shared_ptr<InvocationState> &
+  invocation(const Invocation &value) noexcept {
+    return value.state_;
   }
   static Results results(std::shared_ptr<ResultValues> values) noexcept {
     return Results(std::move(values));

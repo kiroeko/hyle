@@ -17,6 +17,15 @@ namespace compute = hyle::compute;
 namespace cuda = compute::cuda;
 namespace mem = hyle::mem;
 
+inline mem::Buffer workspace_buffer(const compute::PreparedOperation &prepared,
+                                    mem::MemoryResourceRef resource) {
+  const auto requirement = prepared.workspace_requirement();
+  if (requirement.size == 0)
+    return {};
+  return mem::Buffer::create(resource, requirement.size, requirement.alignment)
+      .value();
+}
+
 struct Tensor final {
   compute::TensorDesc description;
   mem::Buffer storage;
@@ -75,9 +84,11 @@ inline void exercise_direct(compute::Context &context) {
   EXPECT_EQ(prepared->provider().id, compute::ggml_cuda::kProviderId);
   EXPECT_EQ(prepared->runtime_properties().replay_class,
             compute::ProviderReplayClass::kManaged);
-  auto first = prepared->create_invocation();
+  auto first_workspace = workspace_buffer(*prepared, memory.ref());
+  auto first = prepared->create_invocation(first_workspace.view());
   ASSERT_TRUE(first) << first.error().message();
-  auto second = prepared->create_invocation();
+  auto second_workspace = workspace_buffer(*prepared, memory.ref());
+  auto second = prepared->create_invocation(second_workspace.view());
   ASSERT_TRUE(second) << second.error().message();
   std::vector<float> old;
   for (const int seed : {0, 3, 7}) {
@@ -100,8 +111,10 @@ inline void exercise_direct(compute::Context &context) {
   ASSERT_TRUE(done.wait().ok());
   check_norm(old, first_output.read(), false);
   check_norm(changed, second_output.read(), false);
+  auto abandoned_workspace = workspace_buffer(*prepared, memory.ref());
   {
-    auto abandoned = prepared->create_invocation().value();
+    auto abandoned =
+        prepared->create_invocation(abandoned_workspace.view()).value();
     ASSERT_TRUE(abandoned.submit(first_queue, input.view.as_const(),
                                  first_output.view));
   }

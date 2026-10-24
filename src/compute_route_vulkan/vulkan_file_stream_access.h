@@ -4,6 +4,8 @@
 
 namespace hyle::compute::vulkan::detail {
 struct CopyStreamAccess final {
+  static HYLE_COMPUTE_ROUTE_VULKAN_API Result<CopyBatchProgram> prepare_program(
+      const std::shared_ptr<Runtime>&,std::span<const CopyResourceSpec>,CopyBatchOptions) noexcept;
   static HYLE_COMPUTE_ROUTE_VULKAN_API Result<std::size_t> retirement_sources(
       CopyBatchUpdate &, std::span<Completion *>) noexcept;
   // Trusted update receivers only: no host reads or public ready conversion.
@@ -21,7 +23,7 @@ struct CopyStreamAccess final {
                                 CopyResourceId) noexcept;
 
   static HYLE_COMPUTE_ROUTE_VULKAN_API Result<WriteLease> take_mutable(CopyBatchInvocation &, CopyResourceId) noexcept;
-  static Result<compute::detail::PhysicalCopyResource> physical(CopyBatchInvocation &, mem::ConstBufferView, bool) noexcept;
-  static Status observe(CopyBatchInvocation &) noexcept;
+  static HYLE_COMPUTE_ROUTE_VULKAN_API Result<compute::detail::PhysicalCopyResource> physical(CopyBatchInvocation &, mem::ConstBufferView, bool) noexcept;
+  static HYLE_COMPUTE_ROUTE_VULKAN_API Status observe(CopyBatchInvocation &) noexcept;
 };
 } // namespace hyle::compute::vulkan::detail

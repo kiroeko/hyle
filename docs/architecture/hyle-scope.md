@@ -33,8 +33,8 @@ Compute 拥有设备、资源与算子执行；Graph 拥有逻辑 DAG、冷编�
 模型文件解析、tokenizer、生成和接受策略、KV/prefix/expert 缓存政策、请求调度及 serving 留在引擎。
 HYLE 提供可复用的计算、存储、状态版本、依赖和完成机制。模型相关数值边界见
 [Compute](compute-design.md#推理负载与数值边界)，原生后端和混合计算见[路线设计](compute-routes.md)。
-当前完整文本引擎、MTP 与图像 encoder/projector 的工作范围只见[当前工作主线](../developer/current-work.md)，
-不从算子片段或固定模型测试推导完整引擎能力。
+完整文本消费者与MTP的列明结果和验证边界见[模型与算子覆盖](../implementation/model-operators.md)。
+图像encoder/projector仍属于独立消费者工作，不从算子片段或固定模型测试推导完整引擎能力。
 
 ## 扩展边界
 

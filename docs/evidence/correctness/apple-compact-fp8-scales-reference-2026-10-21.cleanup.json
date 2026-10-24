@@ -1,0 +1,67 @@
+{
+  "completed": true,
+  "windows_removed": 0,
+  "windows_bytes": 0.0,
+  "windows_kept_objects": 0,
+  "mac": {
+    "removed": 2,
+    "bytes": 20040444,
+    "kept_objects": 2
+  },
+  "evidence_sha256": "bb3d11e67c1c1219061155b03b1e74f87830695538b707725cef61bf43a429f0",
+  "archive_sha256": "95dfbf50d6ce3fc51648bc4378392a767ed4ed6a9883693541fa2ec5768dff10",
+  "exact_plan": {
+    "allowed_windows": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\apple-compact-fp8-scales-2026-10-21",
+    "remove_windows": [],
+    "keep_windows": [],
+    "keep_runtime_cache": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_ggml_cpu_avx2_ffa4e8b8_e74fc9bb8964d04f.dll",
+        "bytes": 1358336,
+        "sha256": "09828878dd44d62eb6ae844827e20382ee2b457d0dbd76594b6577bea3ad5434"
+      }
+    ],
+    "evidence": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\apple-compact-fp8-scales-reference-2026-10-21.json",
+      "bytes": 8066,
+      "sha256": "bb3d11e67c1c1219061155b03b1e74f87830695538b707725cef61bf43a429f0"
+    },
+    "archive": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\apple-compact-fp8-scales-reference-2026-10-21.zip",
+      "bytes": 138327,
+      "sha256": "95dfbf50d6ce3fc51648bc4378392a767ed4ed6a9883693541fa2ec5768dff10"
+    },
+    "mac": {
+      "allowed_mac": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-compact-fp8-scales-2026-10-21/apple",
+      "remove_mac": [
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-compact-fp8-scales-2026-10-21/apple/compact-fp8-scales",
+          "bytes": 15498784,
+          "sha256": "80d90c566845dd320514998705b36ceaed41852d912b7e8d2db45659dbdecd06",
+          "symlink": false
+        },
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-compact-fp8-scales-2026-10-21/apple/compact-fp8-scales.map",
+          "bytes": 4541660,
+          "sha256": "8105af73650f61ded1ecdc5d3b0e43f1f9e40bd828b217990b252115d776abe5",
+          "symlink": false
+        }
+      ],
+      "keep_mac": [
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-compact-fp8-scales-2026-10-21/apple/objects/src--compute_route_apple--apple_mature_float.cc.o",
+          "bytes": 153256,
+          "sha256": "d2a66a721ec427cccb0eaddf617bfbd5dbf08a9b544c783079ab854034eb0d71",
+          "symlink": false
+        },
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-compact-fp8-scales-2026-10-21/apple/objects/tests--compute_route_apple--fp8_tile_test.cc.o",
+          "bytes": 114024,
+          "sha256": "0b406a921d65542b449389591ac96c6142c3bf42be559b2dfd5573d36e0a5bae",
+          "symlink": false
+        }
+      ]
+    }
+  },
+  "source_script": "# Exact Apple compact FP8 scales test-artifact cleanup. No recursive directory removal.\n$ErrorActionPreference = 'Stop'\n$plan = Get-Content -LiteralPath 'C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\apple-compact-fp8-scales-2026-10-21\\root\\cleanup-plan.json' -Raw | ConvertFrom-Json\n$separator = [IO.Path]::DirectorySeparatorChar\n$allowed = [IO.Path]::GetFullPath($plan.allowed_windows).TrimEnd($separator) + $separator\nfunction Assert-Identity($row) {\n  $file = Get-Item -LiteralPath $row.path -ErrorAction Stop\n  if ($file.PSIsContainer -or ($file.Attributes -band [IO.FileAttributes]::ReparsePoint)) { throw \"Not a regular file: $($row.path)\" }\n  if ($file.Length -ne $row.bytes -or (Get-FileHash -LiteralPath $row.path -Algorithm SHA256).Hash.ToLowerInvariant() -ne $row.sha256) { throw \"Identity changed: $($row.path)\" }\n}\nAssert-Identity $plan.evidence\nAssert-Identity $plan.archive\nforeach ($row in $plan.remove_windows) {\n  $full = [IO.Path]::GetFullPath($row.path)\n  if (-not $full.StartsWith($allowed, [StringComparison]::OrdinalIgnoreCase) -or [IO.Path]::GetExtension($full) -notin '.exe','.map','.dll') { throw \"Outside exact artifact scope: $full\" }\n  Assert-Identity $row\n}\nforeach ($row in $plan.keep_windows) { Assert-Identity $row }\nforeach ($row in $plan.keep_runtime_cache) { Assert-Identity $row }\n$active = @(Get-CimInstance Win32_Process | Where-Object { $_.ExecutablePath -and $_.ExecutablePath.StartsWith($allowed, [StringComparison]::OrdinalIgnoreCase) })\nif ($active.Count) { throw 'A test executable in this exact workspace is still running' }\nforeach ($row in $plan.remove_windows) { Remove-Item -LiteralPath $row.path -Force }\nforeach ($row in $plan.keep_windows) { Assert-Identity $row }\nforeach ($row in $plan.keep_runtime_cache) { Assert-Identity $row }\n$macProgram = @'\nimport pathlib,hashlib,json,subprocess\nplan=json.loads('{\"allowed_mac\": \"/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-compact-fp8-scales-2026-10-21/apple\", \"remove_mac\": [{\"path\": \"/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-compact-fp8-scales-2026-10-21/apple/compact-fp8-scales\", \"bytes\": 15498784, \"sha256\": \"80d90c566845dd320514998705b36ceaed41852d912b7e8d2db45659dbdecd06\", \"symlink\": false}, {\"path\": \"/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-compact-fp8-scales-2026-10-21/apple/compact-fp8-scales.map\", \"bytes\": 4541660, \"sha256\": \"8105af73650f61ded1ecdc5d3b0e43f1f9e40bd828b217990b252115d776abe5\", \"symlink\": false}], \"keep_mac\": [{\"path\": \"/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-compact-fp8-scales-2026-10-21/apple/objects/src--compute_route_apple--apple_mature_float.cc.o\", \"bytes\": 153256, \"sha256\": \"d2a66a721ec427cccb0eaddf617bfbd5dbf08a9b544c783079ab854034eb0d71\", \"symlink\": false}, {\"path\": \"/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-compact-fp8-scales-2026-10-21/apple/objects/tests--compute_route_apple--fp8_tile_test.cc.o\", \"bytes\": 114024, \"sha256\": \"0b406a921d65542b449389591ac96c6142c3bf42be559b2dfd5573d36e0a5bae\", \"symlink\": false}]}')\nbase=pathlib.Path(plan['allowed_mac']); assert base.is_dir() and not base.is_symlink()\ndef verify(row):\n p=pathlib.Path(row['path']); assert p.is_absolute() and not p.is_symlink() and p.resolve().is_relative_to(base.resolve())\n assert p.is_file() and p.stat().st_size==row['bytes'] and hashlib.sha256(p.read_bytes()).hexdigest()==row['sha256'],str(p)\n return p\npaths=[verify(x) for x in plan['remove_mac']]\nfor row in plan['keep_mac']:verify(row)\nactive=subprocess.check_output(['ps','-axo','command='],text=True)\nassert not any(str(p) in command for p in paths for command in active.splitlines() if not command.startswith('python3 -')), 'test executable is running'\nfor p in paths:p.unlink()\nfor row in plan['keep_mac']:verify(row)\nprint(json.dumps(dict(removed=len(paths),bytes=sum(x['bytes'] for x in plan['remove_mac']),kept_objects=len(plan['keep_mac']))))\n'@\n$macResult = $macProgram | & ssh kiro@172.22.10.198 python3 -\nif ($LASTEXITCODE -ne 0) { throw 'Mac exact-file cleanup failed; do not report both platforms completed' }\n$result = [ordered]@{\n  completed = $true\n  windows_removed = @($plan.remove_windows).Count\n  windows_bytes = [double]($plan.remove_windows | Measure-Object -Property bytes -Sum).Sum\n  windows_kept_objects = @($plan.keep_windows).Count\n  mac = ($macResult | ConvertFrom-Json)\n  evidence_sha256 = $plan.evidence.sha256\n  archive_sha256 = $plan.archive.sha256\n  exact_plan = $plan\n  source_script = [IO.File]::ReadAllText($PSCommandPath)\n}\n$result | ConvertTo-Json -Depth 18 | Set-Content -LiteralPath 'C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\apple-compact-fp8-scales-reference-2026-10-21.cleanup.json' -Encoding utf8\n[pscustomobject]$result | Select-Object completed,windows_removed,windows_bytes,windows_kept_objects,mac | ConvertTo-Json -Depth 5\n"
+}

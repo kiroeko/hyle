@@ -1,0 +1,424 @@
+{
+  "schema": "hyle.viewspec-independent-review.v1",
+  "date": "2026-10-21",
+  "conclusion": {
+    "blocking_findings": 0,
+    "assessment": "Frozen attempt9 products, three actual linked images and terminal records agree. Independent re-read confirms 72 endpoint tensors byte-identical to the retained independent single-session baselines. No mathematical change is introduced by the three custom-kind discovery filters."
+  },
+  "basis": {
+    "published_json": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\paged-append-graph-2026-10-21.json",
+      "bytes": 486867,
+      "sha256": "6c7fb88b45e16dd7038636b7c5f1e15b9c0de9ce3100443b48a4076839da8924"
+    },
+    "published_zip": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\paged-append-graph-2026-10-21.zip",
+      "bytes": 1528059,
+      "sha256": "f8a2625f379f6814126653817162e4183e1bb9d56ea08d9743604b39712ab176"
+    },
+    "source_basis": "Published ZIP and attempt9 identities; no claim that subsequent live development has passed.",
+    "current_live_source_drift": [
+      {
+        "path": "src/graph_batch/paged_append.cc",
+        "frozen_sha256": "684146e783a1f8a59f6431df082ace8822379273583b16a1e0254a399f5e64bc",
+        "current_sha256": "6cdbd21d786c04d87bab5fb6de13c2c6d6705a853d4700f4e53e3c1a9f7e2985"
+      },
+      {
+        "path": "tests/graph_batch/paged_append_graph_test.cc",
+        "frozen_sha256": "563b0b322d4d4cfb92181d26350b095f82733f8bbde7b466696ef11bdc0a8e64",
+        "current_sha256": "a6f40c436fe6dd5dae9fcced12cd2ce73e297057c5e81d0ef77fb3d3012ef049"
+      },
+      {
+        "path": "tests/graph_batch/paged_append_cuda_consumer.cc",
+        "frozen_sha256": "1348b9ce49363792b4c51cd220c89517bb350e09df6d56266eca889fbe143bb3",
+        "current_sha256": "de3c3168bd9137f48a63796e26cfaa2e23cc2cb0bfa662b71c0d7443116675aa"
+      }
+    ]
+  },
+  "activity": {
+    "product_edits": 0,
+    "builds": 0,
+    "gpu_runs": 0,
+    "new_model_runs": 0
+  },
+  "source_inverse_proof": [
+    {
+      "path": "src/graph_batch/batch.cc",
+      "published_sha256": "4ab8bd211cc2ef5f93f85e0a96e5528630d1e1e1dfb5db724b256cf6fbc81276",
+      "before_source": {
+        "path": "C:\\public\\project-hyle\\hyle\\src\\graph_batch\\batch.cc",
+        "bytes": 86241,
+        "sha256": "b056afe0672fdc1f0a8b3cd5f16f68fe210e028ea966ff215ebcf790e62b4155"
+      },
+      "exact_before_bytes_restored": true,
+      "removed_custom_kind_guards": 2,
+      "other_inverse_edits": "Only the explanatory comment and discovery-statement whitespace joins. No arithmetic, decoder, native execution or permission branch edits."
+    },
+    {
+      "path": "src/graph_batch/paged_append.cc",
+      "published_sha256": "684146e783a1f8a59f6431df082ace8822379273583b16a1e0254a399f5e64bc",
+      "before_source": {
+        "path": "C:\\public\\project-hyle\\hyle\\src\\graph_batch\\paged_append.cc",
+        "bytes": 21758,
+        "sha256": "e6b3a7096c7cd50a77c2366fd3c5a8cb2540ba1cc3d77bd6854f1392f40934a1"
+      },
+      "exact_before_bytes_restored": true,
+      "removed_custom_kind_guards": 1,
+      "other_inverse_edits": "Only the explanatory comment and discovery-statement whitespace joins. No arithmetic, decoder, native execution or permission branch edits."
+    }
+  ],
+  "logical_view_fixtures": {
+    "cpu_source": {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\graph_batch\\paged_append_graph_test.cc",
+      "bytes": 15573,
+      "sha256": "563b0b322d4d4cfb92181d26350b095f82733f8bbde7b466696ef11bdc0a8e64"
+    },
+    "cuda_source": {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\graph_batch\\paged_append_cuda_consumer.cc",
+      "bytes": 13239,
+      "sha256": "1348b9ce49363792b4c51cd220c89517bb350e09df6d56266eca889fbe143bb3"
+    },
+    "observation": "Both frozen fixtures contain a logical ViewSpec reshape [2,1,64] before the original Copy producer. The identity ViewSpec remains part of the original logical graph seen before specialization; no per-consumer removal or numerical workaround was introduced.",
+    "scope": "Custom discovery ignores nodes outside its own typed/custom family, so it no longer asks a logical ViewSpec for an unavailable concrete Operation. Existing custom geometry/lowering/math code is byte-preserved by the exact inverse proof."
+  },
+  "attempt9_compiles": [
+    {
+      "identity": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\checks\\attempt9\\graph_batch--batch\\identity.json",
+        "bytes": 48272,
+        "sha256": "c15be8c9b06c5a94a95ad6585ad39aa294ecac8522447654e559b81f45a4cdf9"
+      },
+      "source": {
+        "path": "C:\\public\\project-hyle\\hyle\\src\\graph_batch\\batch.cc",
+        "bytes": 86625,
+        "sha256": "4ab8bd211cc2ef5f93f85e0a96e5528630d1e1e1dfb5db724b256cf6fbc81276"
+      },
+      "object": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\checks\\attempt9\\graph_batch--batch\\graph_batch--batch.obj",
+        "bytes": 2129296,
+        "sha256": "f1ff55445b536327616d042566835dc356890d370e736d55e2114845eb5f6d16"
+      },
+      "strict_W4_WX": true,
+      "exit": 0
+    },
+    {
+      "identity": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\checks\\attempt9\\graph_batch--paged_append\\identity.json",
+        "bytes": 45308,
+        "sha256": "d34d2b6198d929cb137adcc1eb6b8a554d89e9e082dd69b647b2a6daf4f24556"
+      },
+      "source": {
+        "path": "C:\\public\\project-hyle\\hyle\\src\\graph_batch\\paged_append.cc",
+        "bytes": 21879,
+        "sha256": "684146e783a1f8a59f6431df082ace8822379273583b16a1e0254a399f5e64bc"
+      },
+      "object": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\checks\\attempt9\\graph_batch--paged_append\\graph_batch--paged_append.obj",
+        "bytes": 1108628,
+        "sha256": "87dbdd1f3d545fcd84f83e5c61e9473a47760a244c9b0f1d2f12496935d1cab5"
+      },
+      "strict_W4_WX": true,
+      "exit": 0
+    },
+    {
+      "identity": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\checks\\attempt9\\graph_batch--paged_append_graph_test\\identity.json",
+        "bytes": 42759,
+        "sha256": "dd4fb3eb563ef6a23fff9ac0ec0d24988401c6b11bc03d1971adb418abc9661b"
+      },
+      "source": {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\graph_batch\\paged_append_graph_test.cc",
+        "bytes": 15573,
+        "sha256": "563b0b322d4d4cfb92181d26350b095f82733f8bbde7b466696ef11bdc0a8e64"
+      },
+      "object": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\checks\\attempt9\\graph_batch--paged_append_graph_test\\graph_batch--paged_append_graph_test.obj",
+        "bytes": 991496,
+        "sha256": "749afce19473ccb7c55c6ea5bb6f5ac45911b0cc3f1d01d52bd4189559a986fa"
+      },
+      "strict_W4_WX": true,
+      "exit": 0
+    },
+    {
+      "identity": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\checks\\attempt9\\graph_batch--paged_append_cuda_consumer\\identity.json",
+        "bytes": 45132,
+        "sha256": "40a48b8dd5e943b534219768ddea73ce24a222969d696735181f437a20b06a46"
+      },
+      "source": {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\graph_batch\\paged_append_cuda_consumer.cc",
+        "bytes": 13239,
+        "sha256": "1348b9ce49363792b4c51cd220c89517bb350e09df6d56266eca889fbe143bb3"
+      },
+      "object": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\checks\\attempt9\\graph_batch--paged_append_cuda_consumer\\graph_batch--paged_append_cuda_consumer.obj",
+        "bytes": 912533,
+        "sha256": "06c9a5c7ccb5227bfe06d54dda64b8bb185d8c30f4c36ea54e831920be399efd"
+      },
+      "strict_W4_WX": true,
+      "exit": 0
+    }
+  ],
+  "execution_windows": [
+    {
+      "arm": "cpu",
+      "ready": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\viewspec-cpu-ready.json",
+        "bytes": 1448,
+        "sha256": "9d4a1dbfe247306eb7ec19602b31faa120a68308e31925f5c93c4189d3aab3f2"
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\viewspec-cpu1\\cpu.exe",
+        "bytes": 139256320,
+        "sha256": "3604d67040f1c93824eb69bbf76913a7b185c72d729bd315ccd8be52503510fd"
+      },
+      "link_plan": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\viewspec-cpu1\\link-plan.json",
+        "bytes": 85120,
+        "sha256": "9a6e96722e0fa808ae4b1c244cf5af0291519b86cb7eb8666890c9ab0f2e8a80"
+      },
+      "runtime_environment": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\viewspec-cpu1\\runtime-environment.json",
+        "bytes": 9346,
+        "sha256": "618d7d51c33826b96f0b4e1502cdbe587e44ad2898ab978a7fb0bec20c9d45a4"
+      },
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\viewspec-cpu-run1\\result.json",
+        "bytes": 872,
+        "sha256": "7ce74ed4824934245afd6144a8a6cc48ed90afbeefc57852b84e9a1544f560d2"
+      },
+      "stdout": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\viewspec-cpu-run1\\stdout.log",
+        "bytes": 393,
+        "sha256": "daeefdcb09ef42345dfa30302647f06f15c6bc32f80231457c3a16b3ef47dff4"
+      },
+      "stderr": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\viewspec-cpu-run1\\stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "terminal_exit": 0,
+      "pass_lines": [
+        "paged append ordinary Graph copy-producer/COW/page-boundary/attention/exact-ready/old-snapshot F16 PASS",
+        "paged append ordinary Graph copy-producer/COW/page-boundary/attention/exact-ready/old-snapshot BF16 PASS",
+        "paged append missing original control edge preserves original pages PASS",
+        "paged append accepted-prefix error retains old snapshot, rejects publication, recovers original pages PASS"
+      ],
+      "linked_frozen_product_objects_once": true,
+      "link_exit": 0,
+      "staged_dlls": [
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\viewspec-cpu1\\hyle_ggml_cpu_append_hyca.dll",
+          "bytes": 1358336,
+          "sha256": "4b574bc5b1b90d223cc0dd3fa29013320d1198b871a9f401b7b0205542755546"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\viewspec-cpu1\\hyle_ggml_cpu_avx2_ffa4e8b8_e74fc9bb8964d04f.dll",
+          "bytes": 1358336,
+          "sha256": "09828878dd44d62eb6ae844827e20382ee2b457d0dbd76594b6577bea3ad5434"
+        }
+      ]
+    },
+    {
+      "arm": "cuda",
+      "ready": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\viewspec-cuda-ready.json",
+        "bytes": 1455,
+        "sha256": "d6e38e7f8fc80f2a1c5e03e7d0dee0ea176e683722158d3bca559dcaea5f3685"
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\viewspec-cuda1\\cuda.exe",
+        "bytes": 139240448,
+        "sha256": "71c476f4b4fc657d4589726a4d9769a0de9ad3d60309fd919dcf77b92d74ab7a"
+      },
+      "link_plan": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\viewspec-cuda1\\link-plan.json",
+        "bytes": 84315,
+        "sha256": "690e00f5e3cd0253f6bb70357f2ea5d30ee839cb4dd343b4fa8cc04b549b7624"
+      },
+      "runtime_environment": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\viewspec-cuda1\\runtime-environment.json",
+        "bytes": 7828,
+        "sha256": "b3ea455f24951dcae446958c7eda52c878442d4393332ee205e5cc3130a2ae93"
+      },
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\viewspec-cuda-run1\\result.json",
+        "bytes": 845,
+        "sha256": "75728ce38f0358399c72ec02e3922abc129f6a055c88a0e7e45f2cc46931add5"
+      },
+      "stdout": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\viewspec-cuda-run1\\stdout.log",
+        "bytes": 165,
+        "sha256": "ab7c128f7cde578599bd0b3923e94e19cd6f939f67de0f3c2019ff57ddf05d81"
+      },
+      "stderr": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\viewspec-cuda-run1\\stderr.log",
+        "bytes": 151,
+        "sha256": "88dd5e35d67fb5c0c371390a98a66a5e061e4c0bef2d890a7b74781363216092"
+      },
+      "terminal_exit": 0,
+      "pass_lines": [
+        "CUDA paged append missing dependency rejected before ownership transfer PASS",
+        "CUDA ordinary Copy -> exact append/COW -> causal paged attention -> ready frames PASS"
+      ],
+      "linked_frozen_product_objects_once": true,
+      "link_exit": 0,
+      "staged_dlls": [
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\viewspec-cuda1\\hyle_ggml_cpu_avx2_ffa4e8b8_e74fc9bb8964d04f.dll",
+          "bytes": 1358336,
+          "sha256": "09828878dd44d62eb6ae844827e20382ee2b457d0dbd76594b6577bea3ad5434"
+        }
+      ]
+    },
+    {
+      "arm": "qwen",
+      "ready": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\viewspec-qwen-ready.json",
+        "bytes": 1433,
+        "sha256": "f7d61ef56aee4bf2374b910ba69165a41f804bb7b349046ffa999a36541a9c9c"
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\viewspec-qwen1\\qwen.exe",
+        "bytes": 139555328,
+        "sha256": "d095b067e75d78a27fd6cf47f388dc793686ace160e152a3a47458c0b948c849"
+      },
+      "link_plan": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\viewspec-qwen1\\link-plan.json",
+        "bytes": 83875,
+        "sha256": "63988f25fe162ce33ac7f51b561fbbbb6fee340a5bab68484358cb05ca2d425a"
+      },
+      "runtime_environment": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\viewspec-qwen1\\runtime-environment.json",
+        "bytes": 7828,
+        "sha256": "d4f86c09a9e0e10ad112f019c07863b1858f47f640ee4da79d2116b008c14ba0"
+      },
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\viewspec-qwen-run1\\result.json",
+        "bytes": 1864,
+        "sha256": "ecf2a4b5653c3b84222a7c3d7d7e6c6afbee75e0554958728172ec942465ed6d"
+      },
+      "stdout": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\viewspec-qwen-run1\\stdout.log",
+        "bytes": 6775,
+        "sha256": "a7cbc078bdd827ca27d4292fba52badffb1ed1d3a7e9a8ffc5de60de1bb831fc"
+      },
+      "stderr": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\viewspec-qwen-run1\\stderr.log",
+        "bytes": 15881,
+        "sha256": "6f8aeb6bfb7c4bf62f708714c5f5de312ca3e5df0d9dbb450c67190b478f6cf5"
+      },
+      "terminal_exit": 0,
+      "pass_lines": [],
+      "linked_frozen_product_objects_once": true,
+      "link_exit": 0,
+      "staged_dlls": [
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\viewspec-qwen1\\hyle_ggml_cpu_avx2_ffa4e8b8_e74fc9bb8964d04f.dll",
+          "bytes": 1358336,
+          "sha256": "09828878dd44d62eb6ae844827e20382ee2b457d0dbd76594b6577bea3ad5434"
+        }
+      ]
+    }
+  ],
+  "cpu_scope": {
+    "selector_identity": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\checks\\attempt7\\compute_ggml_runtime--cpu_program\\identity.json",
+      "bytes": 54302,
+      "sha256": "2b4ab9b7ead6f67aa4ca525df20731e5206de073fdbc9314819f4e84c5b24371"
+    },
+    "selector_object": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\checks\\attempt7\\compute_ggml_runtime--cpu_program\\compute_ggml_runtime--cpu_program.obj",
+      "bytes": 40186,
+      "sha256": "b0d246e75a205bc8fc1f46661d77f439e60f6c19a0a97f0ddc163452c4adbb90"
+    },
+    "native_overlay": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\cpu-native-causal\\ffa4\\hyle_ggml_cpu_avx2_ffa4_causal_overlay.dll",
+      "bytes": 1358336,
+      "sha256": "4b574bc5b1b90d223cc0dd3fa29013320d1198b871a9f401b7b0205542755546"
+    },
+    "scope": "Explicit ABI2/HYCA selector plus matching staged causal DLL. CPU plain F16/BF16 only; no E4 correctness, installed-package refresh, latest native-module-wide equivalence or throughput conclusion.",
+    "runtime_evidence_limit": "Verified static selector definition, exact staged bytes and successful causal numerical assertions; no new loaded-module instrumentation was run by reviewer.",
+    "selector_object_bytes_rehashed_and_linked_once": true
+  },
+  "cuda_scope": "Original shared CUDA Context/Queue/StorageOwner, BF16 fresh+COW append with ordinary Copy producer, explicit dependencies and causal reader; missing dependency rejects before writer ownership transfer. No custom provider or injected CUDA kernel. No all-dtype/all-backend or capture/throughput claim.",
+  "qwen_common_core_regression": {
+    "summary": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\viewspec-qwen-run1\\summary.json",
+      "bytes": 54024,
+      "sha256": "08446f66639d36448e748196dc82a685d9ca18ecdb9e193876fe869e5c0f5e6f"
+    },
+    "vector_count": 72,
+    "vector_bytes_each_side": 35905536,
+    "all_byte_equal": true,
+    "no_unlisted_endpoint_tensor_files": true,
+    "equality_transcript_sha256": "ee84a94075cddb63ba569c9662b6f91a7c190b11ba51d1b2ab302978a46299a7",
+    "sessions": [
+      {
+        "id": "alice",
+        "logical_evaluate_calls": 9,
+        "vectors_equal": 18,
+        "ids_contexts_and_phase_geometry_equal": true,
+        "restored_calls": 5,
+        "restored_tokens": 132
+      },
+      {
+        "id": "bob",
+        "logical_evaluate_calls": 9,
+        "vectors_equal": 18,
+        "ids_contexts_and_phase_geometry_equal": true,
+        "restored_calls": 4,
+        "restored_tokens": 26
+      },
+      {
+        "id": "carol",
+        "logical_evaluate_calls": 9,
+        "vectors_equal": 18,
+        "ids_contexts_and_phase_geometry_equal": true,
+        "restored_calls": 3,
+        "restored_tokens": 18
+      },
+      {
+        "id": "dave",
+        "logical_evaluate_calls": 9,
+        "vectors_equal": 18,
+        "ids_contexts_and_phase_geometry_equal": true,
+        "restored_calls": 6,
+        "restored_tokens": 9
+      }
+    ],
+    "logical_calls": 36,
+    "processed_tokens": 239,
+    "resident_limit": 2,
+    "active_limit": 2,
+    "requested_cache_byte_limit": 168886272,
+    "peak_requested_state_bytes": 84443136,
+    "observed_evictions": [
+      "bob",
+      "alice",
+      "carol",
+      "dave",
+      "alice",
+      "bob"
+    ],
+    "weight_loads_observed": 1,
+    "family_compiles_observed": 1,
+    "scope": "The real Qwen graph still uses its original dense Scatter/Ragged KV math. This proves the common-core mixed-DAG discovery regression is fixed and cache eviction/reconstruction preserves the retained reference outputs; it is not Qwen paged-prefix integration or a performance experiment."
+  },
+  "retained_first_failure": {
+    "result": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\final-qwen-run1\\result.json",
+      "bytes": 1848,
+      "sha256": "f9d55c54e8804541d18739649150d0a18f25a349b0b653e195943f685dfe0cb7"
+    },
+    "stderr": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\final-qwen-run1\\stderr.log",
+      "bytes": 586,
+      "sha256": "f4653e090a39fdfa87d84704cd55d541e3ad7cd3eabdf4595bd5f9e9e07eb438"
+    },
+    "exit": 1,
+    "message": "logical ViewSpec requires specialization; inspect view_spec()",
+    "classification": "Pre-math Graph discovery error caused by querying Operation for a logical ViewSpec; preserved, not erased by later success."
+  },
+  "publication_handling": "Only this side review JSON was created. The already published JSON/ZIP were read and remain immutable."
+}

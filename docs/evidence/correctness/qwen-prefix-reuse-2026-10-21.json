@@ -1,0 +1,1048 @@
+{
+  "date": "2026-10-21",
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\qwen-prefix-reuse-2026-10-21.zip",
+    "bytes": 2382945,
+    "sha256": "6d070618417d0cec9bc91da7cd974a9ec7472f34631ed9aa3e1c1b53ef64049a"
+  },
+  "source_files": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tools\\qwen35_text\\main.cc",
+      "bytes": 121027,
+      "sha256": "bab6e9fc9325f3006fd34b3249023e158091b665ac5af6727ebc9ffaf554d971"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tools\\qwen35_text\\session_state.h",
+      "bytes": 7504,
+      "sha256": "12bec40ae0b60f4402b3243904245d26d096310a507dfd680b077c2d5ffbe8e5"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tools\\qwen35_text\\prefix_cache.h",
+      "bytes": 8965,
+      "sha256": "f9f8738135192bb735c3580c78db9caab970f51ad480e0ed788eb33a1659fbc2"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tools\\qwen35_text\\schedule.h",
+      "bytes": 3917,
+      "sha256": "4fff152976d9c7ae80be67b0ee03f2a08ff99dc6ca9ef7c89baa8130931c2db3"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tools\\qwen35_text\\session_schedule.h",
+      "bytes": 3469,
+      "sha256": "ebe364a2113c3a8cf69b78afdd8aea2b530dd6288a6856d9f37347553cdaacc8"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\graph\\detail\\region_access.h",
+      "bytes": 15742,
+      "sha256": "6bd0a9990fedffeeabd4e0f3b3080f599cfd6af2f88c05f560e81622eb71ca5d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\region_access.cc",
+      "bytes": 12225,
+      "sha256": "d4f0f32199cf21271ac883c7c4baf4892fa3583acde8a9e552afe29688247a8f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\resources.cc",
+      "bytes": 85789,
+      "sha256": "ec935ea2052c482371e7129c2a31fa200ba93e402f4e8a07744bd2982f9e9fbe"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph_batch\\batch.cc",
+      "bytes": 86763,
+      "sha256": "c1ebf5e46c9ba291b37a573748c9ed3161f937a09cfec2f0e64f6bc34ef1d6a5"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph_batch\\paged_append.cc",
+      "bytes": 24187,
+      "sha256": "1c1c8c43baa588d72d847469bd1ab15c66c2dc67f913c27cc15587868017d90d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\executable.cc",
+      "bytes": 465076,
+      "sha256": "883e322cecab2efe012afe6f28781944433415cdbf2e6d878b07d181be07e805"
+    }
+  ],
+  "current_ready": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-prefix-20261021\\ready-attempt3.json",
+    "bytes": 3315,
+    "sha256": "83373ff0ebe68bd4a7d34b44e23f3ee18a0669f63e23402aa0bb78063940d047"
+  },
+  "current_image": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-prefix-20261021\\checks\\attempt3\\qwen.exe",
+    "bytes": 139692032,
+    "sha256": "e155b89db7003dfd9a215438faf44922060b7c4b028e4ef83cc4b86d79f98098"
+  },
+  "link_plan": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-prefix-20261021\\checks\\attempt3\\link-plan.json",
+    "bytes": 87076,
+    "sha256": "5681c18b25f81731dd25cdc62bdb9993259797184e72b199de422787c2dd5b47"
+  },
+  "runtime": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-prefix-20261021\\checks\\attempt3\\runtime-environment.json",
+    "bytes": 7870,
+    "sha256": "44e950c3329f46fc7bcf4e78aa12e845416098b9763eb13b6641dd7e7a4824fa"
+  },
+  "source_and_runtime_scope": "Windows RTX4070 shared CUDA, process-local same Model/math. Other platforms and native providers not executed for this feature.",
+  "SDK_builds": 0,
+  "NVCC": 0,
+  "result": "passed within the explicitly executed serial scope; goal not complete",
+  "behavior": [
+    "Exact longest completed full-state prefix lookup at prompt boundaries only; decode uses direct Session.",
+    "12KV frames +36conv/GDN leases +positions +committed next_id hand off through original Snapshot; same original Graph execution.",
+    "N committed real versions plus1 serial candidate; globally reserved backing charged once, directory aliases never count as release.",
+    "Successful prompt/turn checkpoints; immutable token owners and actual evaluated chunk/next_id history for eviction reconstruction.",
+    "Full hit returns saved decision with0 Graph, head-only Session, and unavailable tensor payload trace metadata."
+  ],
+  "main": {
+    "observation": {
+      "source_id": "4068044d8571635d8a86f1e96a43dad104efc7089169065f735601e350008155",
+      "text_tensors": 320,
+      "session_count": 4,
+      "execution": "turn_round_robin_serial",
+      "processed_tokens": 555,
+      "generated_tokens": 12,
+      "actual_graph_calls": 11,
+      "actual_graph_tokens": 168,
+      "prefix_hits": 3,
+      "prefix_misses": 2,
+      "prefix_full_hits": 1,
+      "reused_tokens": 387,
+      "interleaved_seconds": 0.3670599,
+      "startup_total_seconds": 1.6393203,
+      "step_sum_seconds": 0.3383252,
+      "max_cached_sessions": 4,
+      "active_sequences": 1,
+      "cache_requested_byte_limit": 110469168,
+      "effective_cache_sessions": 4,
+      "cache_recurrent_payload_bytes_per_snapshot": 19537920,
+      "cache_shared_backing_bytes": 110469168,
+      "cache_page_rows": 16,
+      "cache_max_physical_pages": 65,
+      "cache_live_snapshot_versions": 4,
+      "cache_peak_committed_versions": 4,
+      "cache_committed_version_limit": 4,
+      "cache_live_requested_bytes": 110469168,
+      "cache_peak_requested_bytes": 110469168,
+      "cache_retained_sessions": 4,
+      "prefix_cache": "auto",
+      "prefix_entry_capacity": 4,
+      "prefix_entries": 1,
+      "prefix_evictions": 7,
+      "diagnostic": true,
+      "dispatch_session_ids": [
+        "seed",
+        "seed",
+        "branch_a",
+        "branch_a",
+        "branch_a",
+        "branch_b",
+        "branch_b",
+        "branch_b",
+        "full_hit",
+        "seed",
+        "seed",
+        "seed"
+      ],
+      "evicted_session_ids": [],
+      "sessions": [
+        {
+          "source_id": "4068044d8571635d8a86f1e96a43dad104efc7089169065f735601e350008155",
+          "text_tensors": 320,
+          "visible_tokens": 147,
+          "generated_ids": [
+            958,
+            71163,
+            291,
+            286,
+            220
+          ],
+          "fixed_decode": true,
+          "decode_input_ids": [
+            30729,
+            601,
+            602
+          ],
+          "schedule": true,
+          "phase_count": 4,
+          "turn_count": 2,
+          "processed_tokens": 147,
+          "generated_tokens": 5,
+          "session_seconds": 0.3670599,
+          "startup_total_seconds": 1.6393203,
+          "step_sum_seconds": 0.18772650000000002,
+          "cache_hits": 1,
+          "cache_misses": 1,
+          "restored_calls": 0,
+          "restored_tokens": 0,
+          "cache_prepare_seconds": 3.1e-06,
+          "prefix_cache": "auto",
+          "prefix_hits": 0,
+          "prefix_misses": 2,
+          "prefix_full_hits": 0,
+          "reused_tokens": 0,
+          "actual_graph_calls": 5,
+          "actual_graph_tokens": 147,
+          "cache_shared_backing_bytes": 110469168,
+          "cache_committed_version_limit": 4,
+          "cache_live_snapshot_versions": 4,
+          "cache_peak_committed_versions": 4,
+          "diagnostic": true,
+          "session_id": "seed",
+          "trace_subdirectory": "session0_seed",
+          "phases": [
+            {
+              "turn": 1,
+              "kind": "prefill",
+              "name": "round1_prefill",
+              "input_tokens": 128,
+              "calls": 1,
+              "generated_tokens": 1,
+              "context_before": 0,
+              "context_after": 128,
+              "seconds": 0.133198,
+              "step_sum_seconds": 0.133198
+            },
+            {
+              "turn": 1,
+              "kind": "decode",
+              "name": "round1_decode",
+              "input_tokens": 1,
+              "calls": 1,
+              "generated_tokens": 1,
+              "context_before": 128,
+              "context_after": 129,
+              "seconds": 0.0138931,
+              "step_sum_seconds": 0.0138929
+            },
+            {
+              "turn": 2,
+              "kind": "prefill",
+              "name": "round2_prefill",
+              "input_tokens": 16,
+              "calls": 1,
+              "generated_tokens": 1,
+              "context_before": 129,
+              "context_after": 145,
+              "seconds": 0.0152457,
+              "step_sum_seconds": 0.0152456
+            },
+            {
+              "turn": 2,
+              "kind": "decode",
+              "name": "round2_decode",
+              "input_tokens": 2,
+              "calls": 2,
+              "generated_tokens": 2,
+              "context_before": 145,
+              "context_after": 147,
+              "seconds": 0.0277312,
+              "step_sum_seconds": 0.02539
+            }
+          ]
+        },
+        {
+          "source_id": "4068044d8571635d8a86f1e96a43dad104efc7089169065f735601e350008155",
+          "text_tensors": 320,
+          "visible_tokens": 132,
+          "generated_ids": [
+            271,
+            1147,
+            11
+          ],
+          "fixed_decode": true,
+          "decode_input_ids": [
+            401,
+            402
+          ],
+          "schedule": true,
+          "phase_count": 2,
+          "turn_count": 1,
+          "processed_tokens": 132,
+          "generated_tokens": 3,
+          "session_seconds": 0.0695743,
+          "startup_total_seconds": 1.4938801,
+          "step_sum_seconds": 0.0644415,
+          "cache_hits": 0,
+          "cache_misses": 1,
+          "restored_calls": 0,
+          "restored_tokens": 0,
+          "cache_prepare_seconds": 7e-07,
+          "prefix_cache": "auto",
+          "prefix_hits": 1,
+          "prefix_misses": 0,
+          "prefix_full_hits": 0,
+          "reused_tokens": 129,
+          "actual_graph_calls": 3,
+          "actual_graph_tokens": 3,
+          "cache_shared_backing_bytes": 110469168,
+          "cache_committed_version_limit": 4,
+          "cache_live_snapshot_versions": 4,
+          "cache_peak_committed_versions": 4,
+          "diagnostic": true,
+          "session_id": "branch_a",
+          "trace_subdirectory": "session1_branch_a",
+          "phases": [
+            {
+              "turn": 1,
+              "kind": "prefill",
+              "name": "round1_prefill",
+              "input_tokens": 130,
+              "calls": 1,
+              "generated_tokens": 1,
+              "context_before": 0,
+              "context_after": 130,
+              "seconds": 0.0392534,
+              "step_sum_seconds": 0.0392533
+            },
+            {
+              "turn": 1,
+              "kind": "decode",
+              "name": "round1_decode",
+              "input_tokens": 2,
+              "calls": 2,
+              "generated_tokens": 2,
+              "context_before": 130,
+              "context_after": 132,
+              "seconds": 0.0277733,
+              "step_sum_seconds": 0.0251882
+            }
+          ]
+        },
+        {
+          "source_id": "4068044d8571635d8a86f1e96a43dad104efc7089169065f735601e350008155",
+          "text_tensors": 320,
+          "visible_tokens": 147,
+          "generated_ids": [
+            217,
+            13810,
+            397
+          ],
+          "fixed_decode": true,
+          "decode_input_ids": [
+            501,
+            502
+          ],
+          "schedule": true,
+          "phase_count": 2,
+          "turn_count": 1,
+          "processed_tokens": 147,
+          "generated_tokens": 3,
+          "session_seconds": 0.0917359,
+          "startup_total_seconds": 1.5884215,
+          "step_sum_seconds": 0.0861507,
+          "cache_hits": 0,
+          "cache_misses": 1,
+          "restored_calls": 0,
+          "restored_tokens": 0,
+          "cache_prepare_seconds": 7e-07,
+          "prefix_cache": "auto",
+          "prefix_hits": 1,
+          "prefix_misses": 0,
+          "prefix_full_hits": 0,
+          "reused_tokens": 129,
+          "actual_graph_calls": 3,
+          "actual_graph_tokens": 18,
+          "cache_shared_backing_bytes": 110469168,
+          "cache_committed_version_limit": 4,
+          "cache_live_snapshot_versions": 4,
+          "cache_peak_committed_versions": 4,
+          "diagnostic": true,
+          "session_id": "branch_b",
+          "trace_subdirectory": "session2_branch_b",
+          "phases": [
+            {
+              "turn": 1,
+              "kind": "prefill",
+              "name": "round1_prefill",
+              "input_tokens": 145,
+              "calls": 1,
+              "generated_tokens": 1,
+              "context_before": 0,
+              "context_after": 145,
+              "seconds": 0.0606307,
+              "step_sum_seconds": 0.0606305
+            },
+            {
+              "turn": 1,
+              "kind": "decode",
+              "name": "round1_decode",
+              "input_tokens": 2,
+              "calls": 2,
+              "generated_tokens": 2,
+              "context_before": 145,
+              "context_after": 147,
+              "seconds": 0.0283,
+              "step_sum_seconds": 0.0255202
+            }
+          ]
+        },
+        {
+          "source_id": "4068044d8571635d8a86f1e96a43dad104efc7089169065f735601e350008155",
+          "text_tensors": 320,
+          "visible_tokens": 129,
+          "generated_ids": [
+            71163
+          ],
+          "fixed_decode": true,
+          "decode_input_ids": [],
+          "schedule": true,
+          "phase_count": 1,
+          "turn_count": 1,
+          "processed_tokens": 129,
+          "generated_tokens": 1,
+          "session_seconds": 6.8e-06,
+          "startup_total_seconds": 1.5910581,
+          "step_sum_seconds": 6.5e-06,
+          "cache_hits": 0,
+          "cache_misses": 1,
+          "restored_calls": 0,
+          "restored_tokens": 0,
+          "cache_prepare_seconds": 9e-07,
+          "prefix_cache": "auto",
+          "prefix_hits": 1,
+          "prefix_misses": 0,
+          "prefix_full_hits": 1,
+          "reused_tokens": 129,
+          "actual_graph_calls": 0,
+          "actual_graph_tokens": 0,
+          "cache_shared_backing_bytes": 110469168,
+          "cache_committed_version_limit": 4,
+          "cache_live_snapshot_versions": 4,
+          "cache_peak_committed_versions": 4,
+          "diagnostic": true,
+          "session_id": "full_hit",
+          "trace_subdirectory": "session3_full_hit",
+          "phases": [
+            {
+              "turn": 1,
+              "kind": "prefill",
+              "name": "round1_prefill",
+              "input_tokens": 129,
+              "calls": 1,
+              "generated_tokens": 1,
+              "context_before": 0,
+              "context_after": 129,
+              "seconds": 6.8e-06,
+              "step_sum_seconds": 6.5e-06
+            }
+          ]
+        }
+      ]
+    },
+    "new_vectors": 22,
+    "actual_input_tokens": 168,
+    "logical_input_tokens": 555,
+    "reused_tokens": 387,
+    "full_hit_graph_calls": 0,
+    "branch_suffix_rows": [
+      1,
+      16
+    ],
+    "committed_limit": 4,
+    "shared_backing_bytes": 110469168
+  },
+  "pressure": {
+    "observation": {
+      "source_id": "4068044d8571635d8a86f1e96a43dad104efc7089169065f735601e350008155",
+      "text_tensors": 320,
+      "session_count": 5,
+      "execution": "turn_round_robin_serial",
+      "processed_tokens": 689,
+      "generated_tokens": 15,
+      "actual_graph_calls": 20,
+      "actual_graph_tokens": 692,
+      "prefix_hits": 2,
+      "prefix_misses": 5,
+      "prefix_full_hits": 0,
+      "reused_tokens": 129,
+      "interleaved_seconds": 0.7543256,
+      "startup_total_seconds": 2.041356,
+      "step_sum_seconds": 0.7109927,
+      "max_cached_sessions": 2,
+      "active_sequences": 1,
+      "cache_requested_byte_limit": 65101872,
+      "effective_cache_sessions": 2,
+      "cache_recurrent_payload_bytes_per_snapshot": 19537920,
+      "cache_shared_backing_bytes": 65101872,
+      "cache_page_rows": 16,
+      "cache_max_physical_pages": 33,
+      "cache_live_snapshot_versions": 2,
+      "cache_peak_committed_versions": 2,
+      "cache_committed_version_limit": 2,
+      "cache_live_requested_bytes": 65101872,
+      "cache_peak_requested_bytes": 65101872,
+      "cache_retained_sessions": 2,
+      "prefix_cache": "auto",
+      "prefix_entry_capacity": 2,
+      "prefix_entries": 1,
+      "prefix_evictions": 11,
+      "diagnostic": true,
+      "dispatch_session_ids": [
+        "seed",
+        "seed",
+        "branch_a",
+        "branch_a",
+        "branch_a",
+        "branch_b",
+        "branch_b",
+        "branch_b",
+        "full_hit",
+        "changed",
+        "seed",
+        "seed",
+        "seed",
+        "branch_a",
+        "branch_a"
+      ],
+      "evicted_session_ids": [
+        "seed",
+        "branch_a",
+        "branch_b",
+        "full_hit",
+        "changed"
+      ],
+      "sessions": [
+        {
+          "source_id": "4068044d8571635d8a86f1e96a43dad104efc7089169065f735601e350008155",
+          "text_tensors": 320,
+          "visible_tokens": 147,
+          "generated_ids": [
+            958,
+            71163,
+            291,
+            286,
+            220
+          ],
+          "fixed_decode": true,
+          "decode_input_ids": [
+            30729,
+            601,
+            602
+          ],
+          "schedule": true,
+          "phase_count": 4,
+          "turn_count": 2,
+          "processed_tokens": 147,
+          "generated_tokens": 5,
+          "session_seconds": 0.5964763,
+          "startup_total_seconds": 1.8835067,
+          "step_sum_seconds": 0.2252315,
+          "cache_hits": 0,
+          "cache_misses": 2,
+          "restored_calls": 0,
+          "restored_tokens": 0,
+          "cache_prepare_seconds": 0.008845800000000001,
+          "prefix_cache": "auto",
+          "prefix_hits": 1,
+          "prefix_misses": 1,
+          "prefix_full_hits": 0,
+          "reused_tokens": 0,
+          "actual_graph_calls": 5,
+          "actual_graph_tokens": 147,
+          "cache_shared_backing_bytes": 65101872,
+          "cache_committed_version_limit": 2,
+          "cache_live_snapshot_versions": 2,
+          "cache_peak_committed_versions": 2,
+          "diagnostic": true,
+          "session_id": "seed",
+          "trace_subdirectory": "session0_seed",
+          "phases": [
+            {
+              "turn": 1,
+              "kind": "prefill",
+              "name": "round1_prefill",
+              "input_tokens": 128,
+              "calls": 1,
+              "generated_tokens": 1,
+              "context_before": 0,
+              "context_after": 128,
+              "seconds": 0.1235402,
+              "step_sum_seconds": 0.1235402
+            },
+            {
+              "turn": 1,
+              "kind": "decode",
+              "name": "round1_decode",
+              "input_tokens": 1,
+              "calls": 1,
+              "generated_tokens": 1,
+              "context_before": 128,
+              "context_after": 129,
+              "seconds": 0.0149552,
+              "step_sum_seconds": 0.014955
+            },
+            {
+              "turn": 2,
+              "kind": "prefill",
+              "name": "round2_prefill",
+              "input_tokens": 16,
+              "calls": 1,
+              "generated_tokens": 1,
+              "context_before": 129,
+              "context_after": 145,
+              "seconds": 0.0617551,
+              "step_sum_seconds": 0.0617548
+            },
+            {
+              "turn": 2,
+              "kind": "decode",
+              "name": "round2_decode",
+              "input_tokens": 2,
+              "calls": 2,
+              "generated_tokens": 2,
+              "context_before": 145,
+              "context_after": 147,
+              "seconds": 0.0273499,
+              "step_sum_seconds": 0.0249815
+            }
+          ]
+        },
+        {
+          "source_id": "4068044d8571635d8a86f1e96a43dad104efc7089169065f735601e350008155",
+          "text_tensors": 320,
+          "visible_tokens": 137,
+          "generated_ids": [
+            271,
+            1147,
+            11,
+            13,
+            2490
+          ],
+          "fixed_decode": true,
+          "decode_input_ids": [
+            401,
+            402,
+            705
+          ],
+          "schedule": true,
+          "phase_count": 4,
+          "turn_count": 2,
+          "processed_tokens": 137,
+          "generated_tokens": 5,
+          "session_seconds": 0.6109368,
+          "startup_total_seconds": 2.041356,
+          "step_sum_seconds": 0.23851529999999999,
+          "cache_hits": 0,
+          "cache_misses": 2,
+          "restored_calls": 5,
+          "restored_tokens": 132,
+          "cache_prepare_seconds": 0.0071049,
+          "prefix_cache": "auto",
+          "prefix_hits": 1,
+          "prefix_misses": 1,
+          "prefix_full_hits": 0,
+          "reused_tokens": 129,
+          "actual_graph_calls": 10,
+          "actual_graph_tokens": 140,
+          "cache_shared_backing_bytes": 65101872,
+          "cache_committed_version_limit": 2,
+          "cache_live_snapshot_versions": 2,
+          "cache_peak_committed_versions": 2,
+          "diagnostic": true,
+          "session_id": "branch_a",
+          "trace_subdirectory": "session1_branch_a",
+          "phases": [
+            {
+              "turn": 1,
+              "kind": "prefill",
+              "name": "round1_prefill",
+              "input_tokens": 130,
+              "calls": 1,
+              "generated_tokens": 1,
+              "context_before": 0,
+              "context_after": 130,
+              "seconds": 0.0597222,
+              "step_sum_seconds": 0.0597221
+            },
+            {
+              "turn": 1,
+              "kind": "decode",
+              "name": "round1_decode",
+              "input_tokens": 2,
+              "calls": 2,
+              "generated_tokens": 2,
+              "context_before": 130,
+              "context_after": 132,
+              "seconds": 0.0290904,
+              "step_sum_seconds": 0.0261229
+            },
+            {
+              "turn": 2,
+              "kind": "prefill",
+              "name": "round2_prefill",
+              "input_tokens": 4,
+              "calls": 1,
+              "generated_tokens": 1,
+              "context_before": 132,
+              "context_after": 136,
+              "seconds": 0.1432376,
+              "step_sum_seconds": 0.1432375
+            },
+            {
+              "turn": 2,
+              "kind": "decode",
+              "name": "round2_decode",
+              "input_tokens": 1,
+              "calls": 1,
+              "generated_tokens": 1,
+              "context_before": 136,
+              "context_after": 137,
+              "seconds": 0.0094329,
+              "step_sum_seconds": 0.0094328
+            }
+          ]
+        },
+        {
+          "source_id": "4068044d8571635d8a86f1e96a43dad104efc7089169065f735601e350008155",
+          "text_tensors": 320,
+          "visible_tokens": 147,
+          "generated_ids": [
+            217,
+            13810,
+            397
+          ],
+          "fixed_decode": true,
+          "decode_input_ids": [
+            501,
+            502
+          ],
+          "schedule": true,
+          "phase_count": 2,
+          "turn_count": 1,
+          "processed_tokens": 147,
+          "generated_tokens": 3,
+          "session_seconds": 0.1280895,
+          "startup_total_seconds": 1.659148,
+          "step_sum_seconds": 0.1223526,
+          "cache_hits": 0,
+          "cache_misses": 1,
+          "restored_calls": 0,
+          "restored_tokens": 0,
+          "cache_prepare_seconds": 0.0232666,
+          "prefix_cache": "auto",
+          "prefix_hits": 0,
+          "prefix_misses": 1,
+          "prefix_full_hits": 0,
+          "reused_tokens": 0,
+          "actual_graph_calls": 3,
+          "actual_graph_tokens": 147,
+          "cache_shared_backing_bytes": 65101872,
+          "cache_committed_version_limit": 2,
+          "cache_live_snapshot_versions": 2,
+          "cache_peak_committed_versions": 2,
+          "diagnostic": true,
+          "session_id": "branch_b",
+          "trace_subdirectory": "session2_branch_b",
+          "phases": [
+            {
+              "turn": 1,
+              "kind": "prefill",
+              "name": "round1_prefill",
+              "input_tokens": 145,
+              "calls": 1,
+              "generated_tokens": 1,
+              "context_before": 0,
+              "context_after": 145,
+              "seconds": 0.0977588,
+              "step_sum_seconds": 0.0977588
+            },
+            {
+              "turn": 1,
+              "kind": "decode",
+              "name": "round1_decode",
+              "input_tokens": 2,
+              "calls": 2,
+              "generated_tokens": 2,
+              "context_before": 145,
+              "context_after": 147,
+              "seconds": 0.0272093,
+              "step_sum_seconds": 0.0245938
+            }
+          ]
+        },
+        {
+          "source_id": "4068044d8571635d8a86f1e96a43dad104efc7089169065f735601e350008155",
+          "text_tensors": 320,
+          "visible_tokens": 129,
+          "generated_ids": [
+            71163
+          ],
+          "fixed_decode": true,
+          "decode_input_ids": [],
+          "schedule": true,
+          "phase_count": 1,
+          "turn_count": 1,
+          "processed_tokens": 129,
+          "generated_tokens": 1,
+          "session_seconds": 0.0612237,
+          "startup_total_seconds": 1.7230696,
+          "step_sum_seconds": 0.0612235,
+          "cache_hits": 0,
+          "cache_misses": 1,
+          "restored_calls": 0,
+          "restored_tokens": 0,
+          "cache_prepare_seconds": 0.014736,
+          "prefix_cache": "auto",
+          "prefix_hits": 0,
+          "prefix_misses": 1,
+          "prefix_full_hits": 0,
+          "reused_tokens": 0,
+          "actual_graph_calls": 1,
+          "actual_graph_tokens": 129,
+          "cache_shared_backing_bytes": 65101872,
+          "cache_committed_version_limit": 2,
+          "cache_live_snapshot_versions": 2,
+          "cache_peak_committed_versions": 2,
+          "diagnostic": true,
+          "session_id": "full_hit",
+          "trace_subdirectory": "session3_full_hit",
+          "phases": [
+            {
+              "turn": 1,
+              "kind": "prefill",
+              "name": "round1_prefill",
+              "input_tokens": 129,
+              "calls": 1,
+              "generated_tokens": 1,
+              "context_before": 0,
+              "context_after": 129,
+              "seconds": 0.0612237,
+              "step_sum_seconds": 0.0612235
+            }
+          ]
+        },
+        {
+          "source_id": "4068044d8571635d8a86f1e96a43dad104efc7089169065f735601e350008155",
+          "text_tensors": 320,
+          "visible_tokens": 129,
+          "generated_ids": [
+            71163
+          ],
+          "fixed_decode": true,
+          "decode_input_ids": [],
+          "schedule": true,
+          "phase_count": 1,
+          "turn_count": 1,
+          "processed_tokens": 129,
+          "generated_tokens": 1,
+          "session_seconds": 0.0636699,
+          "startup_total_seconds": 1.7891945,
+          "step_sum_seconds": 0.0636698,
+          "cache_hits": 0,
+          "cache_misses": 1,
+          "restored_calls": 0,
+          "restored_tokens": 0,
+          "cache_prepare_seconds": 0.0173187,
+          "prefix_cache": "auto",
+          "prefix_hits": 0,
+          "prefix_misses": 1,
+          "prefix_full_hits": 0,
+          "reused_tokens": 0,
+          "actual_graph_calls": 1,
+          "actual_graph_tokens": 129,
+          "cache_shared_backing_bytes": 65101872,
+          "cache_committed_version_limit": 2,
+          "cache_live_snapshot_versions": 2,
+          "cache_peak_committed_versions": 2,
+          "diagnostic": true,
+          "session_id": "changed",
+          "trace_subdirectory": "session4_changed",
+          "phases": [
+            {
+              "turn": 1,
+              "kind": "prefill",
+              "name": "round1_prefill",
+              "input_tokens": 129,
+              "calls": 1,
+              "generated_tokens": 1,
+              "context_before": 0,
+              "context_after": 129,
+              "seconds": 0.0636699,
+              "step_sum_seconds": 0.0636698
+            }
+          ]
+        }
+      ]
+    },
+    "new_vectors": 30,
+    "actual_graph_calls": 20,
+    "actual_graph_tokens": 692,
+    "logical_input_tokens": 689,
+    "logical_outputs": 15,
+    "restored_calls": 5,
+    "restored_tokens": 132,
+    "committed_limit": 2,
+    "shared_backing_bytes": 65101872
+  },
+  "independent_vector_check": {
+    "status": "passed",
+    "report": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-prefix-20261021\\review\\check_actual-provenance.json",
+      "bytes": 76534,
+      "sha256": "92ae21dcfdf954f5fdf6e39d47b2363b8b2a3685c49c4577a4469a229a99b895"
+    },
+    "checker": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-prefix-20261021\\review\\check_actual.py",
+      "bytes": 23602,
+      "sha256": "49cfaa30cb50ea2f348c29224ce0fb625aacaba94d2f9cc3dc638781d46c97b1"
+    },
+    "vectors": 52,
+    "comparison": "exact complete bytes; no tolerance relaxation"
+  },
+  "canonical_regression": {
+    "single_vectors": 18,
+    "four_session_vectors": 72,
+    "reports": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-prefix-20261021\\single-run3\\summary.json",
+        "bytes": 11772,
+        "sha256": "43e5bcae2cf5d55a2cea302b21c17b614f48b2d8a81f27bc56abef3295e61df0"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-prefix-20261021\\multi-run3\\summary.json",
+        "bytes": 49871,
+        "sha256": "e5c0f9d6807e6759c9403065a48141a5932642f637af9e3eec96433ef4f36f65"
+      }
+    ]
+  },
+  "actual_fixtures": {
+    "cpu-run1": {
+      "result": {
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-prefix-20261021\\cpu-link1\\cpu.exe"
+        ],
+        "cwd": "C:\\public\\project-hyle\\hyle",
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-prefix-20261021\\cpu-link1\\cpu.exe",
+          "bytes": 139479040,
+          "sha256": "d4b3a433e436f0391e1bee020098f999323d59677711f0862e86191468104cb1"
+        },
+        "source": {
+          "path": "C:\\public\\project-hyle\\hyle\\tests\\graph_batch\\paged_append_graph_test.cc",
+          "bytes": 28439,
+          "sha256": "03ceb8273eb14eb0d50bc95289ee088effa4820e4babc4d11c1471a0ea0478bf"
+        },
+        "runtime_environment": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-prefix-20261021\\cpu-link1\\runtime-environment.json",
+          "bytes": 9507,
+          "sha256": "b217d508dabe3d3aa671c31ac37ed12f6f14e24bf06bfe9e03cd9d757a02d4de"
+        },
+        "throughput_evidence": false,
+        "started_unix_ns": 1792580225106669400,
+        "gpu_concurrent_execution": false,
+        "pid": 80516,
+        "exit": 0,
+        "finished_unix_ns": 1792580225890322300
+      },
+      "source": "original real fixture; no new mirror tests"
+    },
+    "cuda-run1": {
+      "result": {
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-prefix-20261021\\cuda-link1\\cuda.exe"
+        ],
+        "cwd": "C:\\public\\project-hyle\\hyle",
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-prefix-20261021\\cuda-link1\\cuda.exe",
+          "bytes": 139252224,
+          "sha256": "9cee13d060ee06c92de1b2c3073fb7009957d9ebee002e438eb775008e712655"
+        },
+        "source": {
+          "path": "C:\\public\\project-hyle\\hyle\\tests\\graph_batch\\paged_append_cuda_consumer.cc",
+          "bytes": 13814,
+          "sha256": "23e9841d61a3b5378edd233855b2dddccb9c9b42bdb717f43cefcbd4995adc49"
+        },
+        "runtime_environment": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-prefix-20261021\\cuda-link1\\runtime-environment.json",
+          "bytes": 7895,
+          "sha256": "8ebbf6a88039bc0b286a3a8bab41e9a9238a17d0b1b3000cef6a16c7e0428140"
+        },
+        "throughput_evidence": false,
+        "started_unix_ns": 1792580225988611100,
+        "gpu_concurrent_execution": false,
+        "pid": 92596,
+        "exit": 0,
+        "finished_unix_ns": 1792580226863122700
+      },
+      "source": "original real fixture; no new mirror tests"
+    }
+  },
+  "cold_failure_and_fix": {
+    "original_failures": [
+      {
+        "folder": "main-run1",
+        "result": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-prefix-20261021\\main-run1\\result.json",
+          "bytes": 1729,
+          "sha256": "6841808636270b56daaae47758bbe9acebb0d1d9221074edd06857aa2927f3ef"
+        },
+        "stderr": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-prefix-20261021\\main-run1\\stderr.log",
+          "bytes": 602,
+          "sha256": "47cf64558ed24d0c8305fd3ad3e990ffb5cb5de2bca40b25248179e5b6edaa69"
+        }
+      },
+      {
+        "folder": "main-run2",
+        "result": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-prefix-20261021\\main-run2\\result.json",
+          "bytes": 1756,
+          "sha256": "c7dc694b730454c9221bbe4ecfdcca052444d5dbe91d41c9213f5ebb78a5d001"
+        },
+        "stderr": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-prefix-20261021\\main-run2\\stderr.log",
+          "bytes": 658,
+          "sha256": "6a15f28e45005323016ad8f2bdc7fcffedbb6a70f532c6b1b24503e4e46d7adc"
+        }
+      },
+      {
+        "folder": "main-run3",
+        "result": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-prefix-20261021\\main-run3\\result.json",
+          "bytes": 1730,
+          "sha256": "5c051b91cc5b61491ca8135affd78f66e01b06e05f71d9188350778b0710530b"
+        },
+        "stderr": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-prefix-20261021\\main-run3\\stderr.log",
+          "bytes": 633,
+          "sha256": "73f0e75c8e6b27410acdb135d53dc2fef562b5ea06aacfc477c9201d1386e6f7"
+        }
+      }
+    ],
+    "diagnosed": "Family-wide operation proposal16384 and artifact preparation4096 caps exhausted at exact variant index6. No hardware/VRAM limit.",
+    "policy": "Consumer computes only these two family caps from per-graph defaults times actual requested variants, with overflow checks. Library cumulative hard caps and all other limits unchanged.",
+    "actual8": {
+      "operation_proposals": 21552,
+      "placement_attempts": 4694,
+      "operation_cap": 131072,
+      "placement_cap": 32768
+    },
+    "actual9": {
+      "operation_proposals": 24246,
+      "placement_attempts": 5289,
+      "operation_cap": 147456,
+      "placement_cap": 36864
+    }
+  },
+  "oracle_correction": {
+    "retained_failed_comparison": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-prefix-20261021\\review\\check_actual-first-failure.json",
+      "bytes": 44557,
+      "sha256": "dd71d4e473ca9d4d62cdb3d3b617422b4fd50203799e449717df51eed2e4a570"
+    },
+    "reason": "Pressure seed restored equal-length state produced by another request monolithic129; initial P128+D1 baseline was a different partition. Cache key intentionally does not impose chunk provenance.",
+    "corrected_method": "Independent original aa486 image ran actual P129 -> continuationT16 -> D1/D1. Pressure producer129 itself and late continuation/decode bytes matched exactly. No product, input, byte precision or candidate run changed.",
+    "independent_original_image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-prefix-20261021\\baselines\\baseline_seed_monolithic\\command.json",
+      "bytes": 3095,
+      "sha256": "7926274a199886c9b824be1a511a44df6b8d0756359965881d8b65918e465b26"
+    },
+    "wrapper_correction": "Original legacy JSON intentionally contains continuation+two decode IDs, excluding its overwritten prefill decision; initial wrapper length4 assertion corrected to3 using same exit0 output, without GPU rerun."
+  },
+  "limitations": [
+    "No exclusive in-place tail append or asynchronous recycle acceptance.",
+    "No GPU concurrency, user-serving throughput, prefix-hit speed comparison or persistent cross-Model cache.",
+    "No actual MTP/image/mmproj run; no new model or Apple/Vulkan complete consumer acceptance.",
+    "Vector equality is numerical/state regression, not independent model-quality acceptance."
+  ]
+}

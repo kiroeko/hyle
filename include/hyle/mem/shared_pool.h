@@ -28,10 +28,9 @@
 // Both borrow slab + link array from the injected AllocatorRef. Each shard uses a
 // 32-bit tagged 64-bit-CAS fast path; before the finite tag could wrap, that
 // shard permanently enters a serialized 64-bit-change-counter fallback, so
-// stale CAS can never become valid again. The free lists are sharded per core:
-// clay's single-head toy ran 278x slower than per-thread heaps under 8-way
-// churn. The `next` links live in a PARALLEL index array, never intrusively in
-// user bytes.
+// stale CAS can never become valid again. Free lists are sharded per core to
+// limit contention. The `next` links live in a parallel index array, never
+// intrusively in user bytes.
 //
 // PooledArena (bottom of file) is the single-threaded bump allocator over ONE
 // borrowed pool block -- a different tool (bulk release, no per-object free),

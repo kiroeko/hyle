@@ -23,6 +23,7 @@
 #include "hyle/compute/low_precision.h"
 #include "hyle/compute/prepared_operation.h"
 #include "hyle/mem/buffer.h"
+#include "fixtures/fp4_f32_cancellation.h"
 
 namespace {
 namespace compute = hyle::compute;
@@ -914,6 +915,74 @@ TEST(DeepSeekFp4, ColdShapeDomainAndHostMemory) {
   check(2, 1, 6, 4096, 2048, mem::system_resource());
 }
 
+TEST(DeepSeekFp4, ActualDownProjectionCancellationRetainsF32Precision) {
+  namespace fixture = fp4_f32_cancellation;
+  constexpr auto n = fixture::kOutputs, k = fixture::kReduction;
+  auto owner = context(compute::cuda_native::deepseek_provider());
+  auto resource = cuda::MemoryResource::create(owner, cuda::MemoryKind::kDevice).value();
+  const auto ad = compute::TensorDesc::dense(compute::DataType::kBFloat16,
+      std::array<std::int64_t, 3>{1, 1, k}).value();
+  const auto wd = compute::float4_grouped_weight_description(1, n, k).value();
+  const auto id = matrix(compute::DataType::kInt32, 1, 1);
+  const auto cd = compute::TensorDesc::dense(compute::DataType::kBFloat16,
+      std::array<std::int64_t, 3>{1, 1, n}).value();
+  Tensor input(ad, resource.ref()), weight(wd, resource.ref()), ids(id, resource.ref()), output(cd, resource.ref());
+  ASSERT_TRUE(input.storage.view().write(std::as_bytes(std::span(fixture::kActivation))).ok());
+  const std::array<std::int32_t, 1> selected{0};
+  ASSERT_TRUE(ids.storage.view().write(std::as_bytes(std::span(selected))).ok());
+
+  // One original row in a complete supported bank. The other4095 rows are
+  // zero codes with finite unit scales, so no large model fixture is needed.
+  constexpr auto code_bytes = std::size_t(n) * (k / 2);
+  std::vector<std::byte> carrier(wd.required_bytes().value(), std::byte{0});
+  const float one = 1.F;
+  for (std::size_t group = 0; group < std::size_t(n) * (k / 32); ++group)
+    std::memcpy(carrier.data() + code_bytes + group * sizeof(float), &one, sizeof(one));
+  for (std::size_t i = 0; i < fixture::kWeightCodes.size(); ++i)
+    carrier[std::size_t(fixture::kRow) * (k / 2) + i] = std::byte(fixture::kWeightCodes[i]);
+  for (std::size_t group = 0; group < fixture::kWeightScale.size(); ++group) {
+    ASSERT_NE(fixture::kWeightScale[group], 255);
+    const float scale = std::ldexp(1.F, int(fixture::kWeightScale[group]) - 127);
+    std::memcpy(carrier.data() + code_bytes +
+        (std::size_t(fixture::kRow) * (k / 32) + group) * sizeof(float), &scale, sizeof(scale));
+  }
+  ASSERT_TRUE(weight.storage.view().write(carrier).ok());
+  auto result = compute::prepare(owner, compute::model_ops::grouped_float4_linear(),
+      std::array{weight.view.as_const(), input.view.as_const(), ids.view.as_const()}, std::array{output.view});
+  ASSERT_TRUE(result.has_value()) << result.error().message();
+  auto prepared = std::move(*result);
+  EXPECT_EQ(prepared.provider().id, compute::cuda_native::kDeepSeekProviderId);
+  const auto need = prepared.workspace_requirement();
+  auto workspace = mem::Buffer::create(resource.ref(), need.size, need.alignment).value();
+  auto invocation = prepared.create_invocation(workspace.view()).value();
+  auto queue = owner.create_queue().value();
+  auto done = invocation.submit(queue,
+      std::array{weight.view.as_const(), input.view.as_const(), ids.view.as_const()}, std::array{output.view});
+  ASSERT_TRUE(done.has_value()) << done.error().message();
+  ASSERT_TRUE(done->wait().ok());
+  std::vector<__nv_bfloat16> actual(n);
+  ASSERT_TRUE(output.storage.view().read(std::as_writable_bytes(std::span(actual))).ok());
+
+  // Preserve the original independent F32 interval, including its source
+  // quantization and accumulation bound. Outward F32 endpoints followed by
+  // monotone BF16 RNE admit the possible final stores without fitting a tol.
+  const auto lower64 = std::nextafter(fixture::kCenter - fixture::kBound, -std::numeric_limits<double>::infinity());
+  const auto upper64 = std::nextafter(fixture::kCenter + fixture::kBound, std::numeric_limits<double>::infinity());
+  float lower32 = float(lower64), upper32 = float(upper64);
+  if (double(lower32) > lower64) lower32 = std::nextafter(lower32, -std::numeric_limits<float>::infinity());
+  if (double(upper32) < upper64) upper32 = std::nextafter(upper32, std::numeric_limits<float>::infinity());
+  const float lower = __bfloat162float(__float2bfloat16(lower32));
+  const float upper = __bfloat162float(__float2bfloat16(upper32));
+  ASSERT_GT(fixture::kPreviousActual, upper) << "The frozen case must still reject the observed old FP8 MMA result";
+  const float value = __bfloat162float(actual[fixture::kRow]);
+  EXPECT_TRUE(std::isfinite(value));EXPECT_GE(value, lower);EXPECT_LE(value, upper);
+  for (int row = 0; row < n; ++row) if (row != fixture::kRow)
+    EXPECT_EQ(__bfloat162float(actual[std::size_t(row)]), 0.F) << row;
+  ::testing::Test::RecordProperty("fixture_payload_bytes", 5184);
+  ::testing::Test::RecordProperty("actual_projection_row", fixture::kRow);
+  ::testing::Test::RecordProperty("scope", "One original BF16/E2M1/UE8 cancellation counterexample; original F32 interval and final BF16 RNE. No large model, runtime fixture file, throughput or universal accuracy claim.");
+}
+
 
 TEST(DeepSeekRoundtrip, WorkspaceRejectionsRollbackConcurrencyAndLifetime) {
   using Format = compute::model_ops::BlockQuantizationFormat;
@@ -1263,8 +1332,8 @@ TEST(SglangFp8, DynamicWorkspaceOomIsolationReplayAndCompletionOwnership) {
       Tensor weight(bd, resource.ref());
       std::array outputs{Tensor(cd, resource.ref()), Tensor(cd, resource.ref())};
       const auto op = compute::model_ops::float8_block_linear(
-          bf16 ? compute::model_ops::Float8ScaleRounding::kPowerOfTwo
-               : compute::model_ops::Float8ScaleRounding::kNone, bf16 ? 1e-4F : 1e-10F);
+          bf16 ? compute::model_ops::Float8ScalePolicy::kPowerOfTwo
+               : compute::model_ops::Float8ScalePolicy::kDivide, bf16 ? 1e-4F : 1e-10F);
       const auto make = [&] { return compute::prepare(owner, op,
           std::array{inputs[0].view.as_const(), weight.view.as_const()}, std::array{outputs[0].view}); };
       const auto check_failures = [&](auto create) {
@@ -1497,7 +1566,8 @@ TEST(SglangFp8, GroupedColdDomainAndActivationAlignment) {
     ASSERT_FALSE(result);
     EXPECT_TRUE(result.error().IsUnimplemented()) << result.error().message();
   };
-  rejected(9, 1, 4, 129, 128);
+  // The public shape is valid, but flattened native indexing exceeds I32.
+  rejected(9, 1, 1LL << 25, 129, 128);
   rejected(1023, 1, 8, 129, 128);
   rejected(9, 1LL << 25, 8, 129, 128);
   rejected(9, 1, 8, 1LL << 24, 128);
@@ -1522,6 +1592,78 @@ TEST(SglangFp8, GroupedColdDomainAndActivationAlignment) {
     EXPECT_TRUE(result.error().IsInvalidArgument());
     EXPECT_FALSE(invocation.in_flight());
   }
+}
+
+TEST(SglangFp8, FullGlmBankUsesHighExpertAddressBeyondTwoGiB) {
+  constexpr std::int64_t experts = 256, n = 2048, k = 6144, slots = 8;
+  auto owner = context(compute::cuda_native::sglang_provider());
+  auto resource = cuda::MemoryResource::create(owner, cuda::MemoryKind::kDevice).value();
+  const auto wd = compute::float8_grouped_weight_description(experts, n, k).value();
+  const auto ad = compute::TensorDesc::dense(compute::DataType::kFloat32,
+      std::array<std::int64_t, 3>{1, 1, k}).value();
+  const auto id = matrix(compute::DataType::kInt32, 1, slots);
+  const auto cd = compute::TensorDesc::dense(compute::DataType::kFloat32,
+      std::array<std::int64_t, 3>{1, slots, n}).value();
+  cudaDeviceProp device{};
+  ASSERT_EQ(cudaGetDeviceProperties(&device, 0), cudaSuccess);
+  if (device.major != 8 || device.minor != 9)
+    GTEST_SKIP() << "Original grouped FP8 AOT requires SM89";
+  std::size_t available = 0, total = 0;
+  ASSERT_EQ(cudaMemGetInfo(&available, &total), cudaSuccess);
+  const auto bytes = wd.required_bytes().value();
+  if (available < bytes || available - bytes < (std::size_t{1} << 30))
+    GTEST_SKIP() << "Full GLM bank needs " << bytes << " bytes plus 1GiB headroom";
+  const auto descriptions = std::array{wd, ad, id};
+  auto prepared = compute::prepare(owner, compute::model_ops::grouped_float8_linear(),
+      descriptions, std::span(&cd, 1), resource.ref());
+  ASSERT_TRUE(prepared) << prepared.error().message();
+  EXPECT_EQ(prepared->provider().id, compute::cuda_native::kSglangProviderId);
+  auto allocated = mem::Buffer::create(resource.ref(), bytes, 256);
+  ASSERT_TRUE(allocated) << allocated.error().message();
+  auto weights = std::move(*allocated);
+  const auto weight = compute::ConstTensorView::create(wd, weights.view()).value();
+  const auto per_expert = std::size_t(n) * k;
+  const auto selected_offset = std::size_t(experts - 1) * per_expert;
+  ASSERT_GT(selected_offset, std::size_t{1} << 31);
+  // Touch only the selected 12MiB expert and its 3KiB scale block. Other
+  // experts are never selected; no multi-GiB host vector or full-bank fill.
+  ASSERT_TRUE(weights.view().subview(selected_offset, per_expert).value()
+                  .fill(std::byte{0x38}).ok()); // E4M3FN 1.0
+  const auto scale_count = std::size_t(n / 128) * (k / 128);
+  const std::vector<float> scales(scale_count, 1.0F);
+  const auto scale_offset = std::size_t(experts) * per_expert +
+      std::size_t(experts - 1) * scale_count * sizeof(float);
+  ASSERT_TRUE(weights.view().subview(scale_offset, scales.size() * sizeof(float))
+                  .value().write(std::as_bytes(std::span(scales))).ok());
+  Tensor activation(ad, resource.ref()), ids(id, resource.ref()), output(cd, resource.ref());
+  std::array<std::int32_t, slots> chosen{};
+  chosen.fill(std::int32_t(experts - 1));
+  ASSERT_TRUE(ids.storage.view().write(std::as_bytes(std::span(chosen))).ok());
+  const auto need = prepared->workspace_requirement();
+  auto workspace = mem::Buffer::create(resource.ref(), need.size, need.alignment).value();
+  auto invocation = prepared->create_invocation(workspace.view()).value();
+  auto queue = owner.create_queue().value();
+  const std::array inputs{weight, activation.view.as_const(), ids.view.as_const()};
+  for (int repeat = 1; repeat <= 2; ++repeat) {
+    const std::vector<float> input(std::size_t(k), 0.25F * repeat);
+    ASSERT_TRUE(activation.storage.view().write(std::as_bytes(std::span(input))).ok());
+    auto done = invocation.submit(queue, inputs, std::array{output.view});
+    ASSERT_TRUE(done) << done.error().message();
+    const auto status = done->wait();
+    ASSERT_TRUE(status.ok()) << status.message();
+    std::vector<float> actual(std::size_t(slots * n));
+    ASSERT_TRUE(output.storage.view().read(std::as_writable_bytes(std::span(actual))).ok());
+    const auto expected = float(k) * 0.25F * repeat;
+    for (const auto value : actual)
+      EXPECT_NEAR(value, expected, 2e-6F + 2e-6F * expected);
+  }
+  // Error state is checked at Completion, as in the existing grouped domain.
+  // No new whole-output atomicity contract is inferred for invalid IDs.
+  chosen.fill(std::int32_t(experts));
+  ASSERT_TRUE(ids.storage.view().write(std::as_bytes(std::span(chosen))).ok());
+  auto invalid = invocation.submit(queue, inputs, std::array{output.view});
+  ASSERT_TRUE(invalid) << invalid.error().message();
+  EXPECT_TRUE(invalid->wait().IsOutOfRange());
 }
 
 TEST(SglangFp8, RejectsDifferentEncodingMalformedPayloadAndIndexOverflow) {

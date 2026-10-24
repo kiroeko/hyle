@@ -680,9 +680,9 @@ TEST(GraphCustomKernel, ReportDistinguishesTextOfSameFamilyInstances) {
     const std::array storage{
         hyle::graph::StorageDomain{hyle::mem::system_resource()}};
     const std::array targets{
-        hyle::graph::ExecutionTarget{&contexts[0],
+        hyle::graph::ExecutionTarget{hyle::graph::ExecutionSource::acquire(contexts[0]).value(),
                                      hyle::graph::StorageDomainId{0}},
-        hyle::graph::ExecutionTarget{&contexts[1],
+        hyle::graph::ExecutionTarget{hyle::graph::ExecutionSource::acquire(contexts[1]).value(),
                                      hyle::graph::StorageDomainId{0}}};
     const std::array placements{
         hyle::graph::NodePlacement{graph.node_id(0).value(),

@@ -364,18 +364,31 @@ TEST(FlashinferCache, EmptyRequestsAndAllZeroQueriesUseCheckedNoOp){
         HYLE_ASSIGN_OR_RETURN(auto layout,schema.version({ptr,ptr,{},tails}));
         HYLE_ASSIGN_OR_RETURN(auto prepared,slot.update_batch(layout));
         EXPECT_EQ(slot.report().float_workspace_bytes,0u);EXPECT_EQ(slot.report().int_workspace_bytes,0u);
-        EXPECT_TRUE(prepared.prepare_replay(inputs).IsUnimplemented());
         if(paged){
           HYLE_ASSIGN_OR_RETURN(auto ka,c::PagedArena::create(schema,c::BatchCacheRole::kKey,memory.ref(),{.max_backing_bytes=4160}));
           HYLE_ASSIGN_OR_RETURN(auto va,c::PagedArena::create(schema,c::BatchCacheRole::kValue,memory.ref(),{.max_backing_bytes=4160}));
-          // Arena projection deliberately requires nonempty exact page guards.
-          // Empty native execution uses the existing complete owning Q/K/V API.
-          const auto kr=ka.read(layout,{}),vr=va.read(layout,{});
-          EXPECT_FALSE(kr);EXPECT_FALSE(vr);
-          if(kr || vr)return hyle::Status::Internal("empty arena projection bypassed its nonempty contract");
-          EXPECT_TRUE(kr.error().IsInvalidArgument());EXPECT_TRUE(vr.error().IsInvalidArgument());
+          // True zero-footprint frames retain the truthful capacity address,
+          // without fabricating permission to read an uninitialized page.
+          HYLE_ASSIGN_OR_RETURN(auto kr,ka.read(layout,{}));HYLE_ASSIGN_OR_RETURN(auto vr,va.read(layout,{}));
+          EXPECT_TRUE(kr.valid());EXPECT_TRUE(vr.valid());EXPECT_EQ(kr.page_count(),0u);EXPECT_EQ(vr.page_count(),0u);
+          if(count==0){
+            const std::array<std::int32_t,2> active{0,1};
+            const std::array<std::int32_t,1> page{0},tail{1};
+            HYLE_ASSIGN_OR_RETURN(auto nonempty,schema.version({active,active,page,tail}));
+            const auto missing_key=ka.read(nonempty,{}),missing_value=va.read(nonempty,{});
+            EXPECT_FALSE(missing_key);EXPECT_FALSE(missing_value);
+            if(missing_key || missing_value)return hyle::Status::Internal("nonempty arena projection accepted missing page guards");
+            EXPECT_TRUE(missing_key.error().IsInvalidArgument());EXPECT_TRUE(missing_value.error().IsInvalidArgument());
+          }
+          EXPECT_TRUE(prepared.prepare_replay(query,kr,vr).IsUnimplemented());
+          HYLE_ASSIGN_OR_RETURN(auto done,prepared.run(query,kr,vr));HYLE_RETURN_IF_ERROR(done.wait());
+        }else{
+          EXPECT_TRUE(prepared.prepare_replay(inputs).IsUnimplemented());
+          HYLE_ASSIGN_OR_RETURN(auto done,prepared.run(inputs));HYLE_RETURN_IF_ERROR(done.wait());
         }
-        HYLE_ASSIGN_OR_RETURN(auto done,prepared.run(inputs));HYLE_RETURN_IF_ERROR(done.wait());
+        HYLE_ASSIGN_OR_RETURN(auto output,slot.output());HYLE_ASSIGN_OR_RETURN(auto view,output.view());
+        std::vector<std::byte> actual(view.size(),std::byte{0xff});HYLE_RETURN_IF_ERROR(view.read(actual));
+        EXPECT_EQ(actual.size(),1024u);EXPECT_TRUE(std::all_of(actual.begin(),actual.end(),[](std::byte x){return x==std::byte{0};}));
       }
       HYLE_RETURN_IF_ERROR(slot.close());return context.drain();
     };

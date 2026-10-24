@@ -314,16 +314,21 @@ bool readers_returned(FileStreamState &state, std::uint32_t r) noexcept {
   return true;
 }
 void reclaim_locked(FileStreamState &state) noexcept {
-  for (std::uint32_t r = 0; r < state.requests.size(); ++r) {
-    auto &request = state.requests[r];
-    if (!request.live || request.ticket || !request.result.complete || request.pending_producers || !request.result.retirement_proven ||
-        !readers_returned(state, r)) continue;
-    for (std::uint32_t g = 0; g < request.result.total_groups; ++g) {
-      auto &group = state.group(r, g);
-      for (std::uint32_t i = 0; i < group.count; ++i) state.range(r, g, i) = {};
-      group = {};
+  // Retired writebacks can hold aliases of earlier read outputs. Drop their
+  // internal references before testing read uniqueness, independent of slot
+  // index/reuse. External readers and unproven native work keep the old gates.
+  for (unsigned pass = 0; pass != 2; ++pass) {
+    for (std::uint32_t r = 0; r < state.requests.size(); ++r) {
+      auto &request = state.requests[r];
+      if (!request.live || request.write != (pass == 0) || request.ticket || !request.result.complete ||
+          request.pending_producers || !request.result.retirement_proven || !readers_returned(state, r)) continue;
+      for (std::uint32_t g = 0; g < request.result.total_groups; ++g) {
+        auto &group = state.group(r, g);
+        for (std::uint32_t i = 0; i < group.count; ++i) state.range(r, g, i) = {};
+        group = {};
+      }
+      request = {}; --state.report.live_requests;
     }
-    request = {}; --state.report.live_requests;
   }
   existing_accounting(state, false);
   state.report.active_backing_bytes = backing_usage(state);

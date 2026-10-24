@@ -86,8 +86,7 @@ inline Routing hash_routing(Fragment &f, ValueId logits, HashInputs lookup,
     auto selected = reshape(f, f.one(c::Operation(c::Gather{}), {rows, ids}), {1, 6});
     auto scores = unary(f, c::UnaryKind::kSqrt,
                          unary(f, c::UnaryKind::kSoftplus, selected));
-    auto denominator = binary(f, c::BinaryKind::kAdd, sum(f, scores, -1),
-                                filled(f, dense({1, 1}), 1.0e-20F));
+    auto denominator = sum(f, scores, -1);
     weights = binary(f, c::BinaryKind::kDivide, scores, denominator);
   }
   const auto weight_desc = f.description(weights);
@@ -164,27 +163,14 @@ inline Routing routing(Fragment &f, const Case &model, ValueId input,
   auto selection = binary(f, c::BinaryKind::kAdd, scores, correction);
   auto top = f.append(c::Operation(c::TopK{.count = std::size_t(model.top_k)}),
                        {selection}, 2);
-  const auto tokens=f.description(scores).dimensions()[0];
-  ValueId selected;
-  if(tokens==1) {
-    auto score_rows=reshape(f,scores,{model.experts,1});
-    selected=reshape(f,f.one(c::Operation(c::Gather{}),{score_rows,top[1]}),{1,model.top_k});
-  }else{
-    // The admitted Gather has cartesian index semantics, not gather_elements.
-    // Select the diagonal using two original gathers. The fixed draft block
-    // has T=5: only 150 score scalars, no integer arithmetic/cast extension.
-    auto cartesian=f.one(c::Operation(c::Gather{.axis=1}),{scores,top[1]});
-    auto rows=reshape(f,cartesian,{tokens*tokens,model.top_k});
-    std::vector<std::int32_t> diagonal(tokens);
-    for(std::int64_t row=0;row<tokens;++row)diagonal[row]=std::int32_t(row*(tokens+1));
-    auto ids=f.constant(dense({tokens},c::DataType::kInt32),bytes(diagonal));
-    selected=f.one(c::Operation(c::Gather{}),{rows,ids});
-  }
+  // TopK guarantees each ID is in this score row's expert extent. Select
+  // directly, retaining T*K values instead of a T*T*K Cartesian intermediate.
+  auto selected=f.one(c::model_ops::gather_elements(-1,c::IndexBoundsPolicy::kUnchecked),
+                       {scores,top[1]});
   auto total = sum(f, selected, -1);
-  // DeepSeek's positive-sum normalization retains tiny nonzero scores.
-  // sqrt(nonzero F32 softplus) exceeds the F32 normal floor; zero stays zero.
-  total = bound(f, total, model.sqrt_softplus
-                    ? std::numeric_limits<float>::min() : 6.103515625e-5F, false);
+  // Sqrt-softplus uses the exact divide-by-sum formula, including 0/0.
+  // The separate sigmoid model recipes retain their own normalization floor.
+  if (!model.sqrt_softplus) total = bound(f, total, 6.103515625e-5F, false);
   auto normalized = binary(f, c::BinaryKind::kDivide, selected, total);
   normalized = binary(f, c::BinaryKind::kMultiply, normalized,
                        filled(f, dense({1, model.top_k}), model.scaling));
@@ -206,6 +192,15 @@ inline std::vector<float> activation(const Case &model, int replay) {
     values[0] = 5.0F / 64.0F;
   return values;
 }
+// Independent host oracle: retain the declared F32 softplus and sqrt
+// boundaries before normalization; double exp/sqrt are not native helpers.
+inline float sqrt_softplus_reference(float value) {
+  const double wide = value;
+  const float exponential = float(std::exp(-std::abs(wide)));
+  const float logarithm = float(std::log1p(double(exponential)));
+  const float softplus = float(std::max(wide, 0.0) + double(logarithm));
+  return float(std::sqrt(double(softplus)));
+}
 struct RouteReference final {
   std::vector<std::int32_t> ids;
   std::vector<float> scores, weights, tags;
@@ -221,7 +216,7 @@ inline RouteReference route_reference(const Case &model,
   std::vector<double> selection(model.experts);
   for (std::int64_t e = 0; e < model.experts; ++e) {
     const double logit = e <= model.top_k ? double(input[e]) * router_gain : 0;
-    const double score = model.sqrt_softplus ? std::sqrt(std::log1p(std::exp(logit)))
+    const double score = model.sqrt_softplus ? sqrt_softplus_reference(float(logit))
                                              : core::sigmoid(logit);
     r.scores[e] = float(score);
     selection[e] = score + (e <= model.top_k ? double(e % 3 - 1) / 16.0 : -4.0);
@@ -234,7 +229,7 @@ inline RouteReference route_reference(const Case &model,
   } else {
     r.ids.assign(hash_ids.begin(), hash_ids.end());
   }
-  double denominator = hash_ids.empty() ? 0 : 1.0e-20;
+  double denominator = 0;
   for (auto id : r.ids)
     denominator += r.scores[id];
   for (auto id : r.ids) {
@@ -280,17 +275,15 @@ inline Fragment hash_router(const Case &model, bool native_routing = false,
       // Duplicate expert IDs are a valid table payload, not a dedup request.
       if (mode == 4) table[ids[row] * 6 + 1] = table[ids[row] * 6];
       for (std::int64_t e = 0; e < model.experts; ++e)
-        x[row * model.experts + e] = mode == 1 ? -80.0F + float(e % 7) / 8.0F
+        x[row * model.experts + e] = mode == 1 ? -100.0F + float(e % 7) / 8.0F
               : mode == 2 ? -1000.0F : mode == 3 ? 1000.0F + float(e)
               : float((e * 7 + row * 3 + replay * 11) % 81 - 40);
-      std::array<double, 6> scores;
-      double denominator = 1.0e-20;
+      std::array<float, 6> scores;
+      double denominator = 0;
       for (std::size_t slot = 0; slot < 6; ++slot) {
         const auto expert = table[ids[row] * 6 + slot];
         selected[row * 6 + slot] = float(expert);
-        const double value = x[row * model.experts + expert];
-        scores[slot] = std::sqrt(std::max(value, 0.0) +
-                                   std::log1p(std::exp(-std::abs(value))));
+        scores[slot] = sqrt_softplus_reference(x[row * model.experts + expert]);
         denominator += scores[slot];
       }
       for (std::size_t slot = 0; slot < 6; ++slot)
@@ -315,7 +308,8 @@ inline Fragment native_router_boundary(std::int64_t experts,
                           {logits, correction}, 2);
   f.outputs = {outputs[0], gathered_ids(f, model, outputs[1])};
   f.exact_outputs = {1};
-  if (mode == 1 || mode == 2) f.unordered_ids = Fragment::UnorderedIds{1, 6, experts};
+  if (mode == 1 || mode == 2 || mode == 6)
+    f.unordered_ids = Fragment::UnorderedIds{1, 6, experts};
   for (int replay = 0; replay < 2; ++replay) {
     std::vector<float> x(tokens * experts), weights(tokens * 6), tags(tokens * 6);
     for (std::int64_t row = 0; row < tokens; ++row) {
@@ -328,12 +322,10 @@ inline Fragment native_router_boundary(std::int64_t experts,
                          : mode == 3 ? std::numeric_limits<float>::quiet_NaN()
                          : mode == 4 ? -80.0F + float(index) / 512.0F
                          : mode == 5 ? 1.0F + float(index) / 65536.0F
+                         : mode == 6 ? -100.0F
                          : float((index * 7 + row * 11) % 81 - 40) + float(index) / 512.0F;
         x[row * experts + e] = value;
-        const double wide = value;
-        const float sp = mode == 3 ? 0.0F
-            : float(std::max(wide, 0.0) + std::log1p(std::exp(-std::abs(wide))));
-        scores[e] = std::sqrt(double(sp));
+        scores[e] = mode == 3 ? 0.0F : sqrt_softplus_reference(value);
       }
       std::stable_sort(selected.begin(), selected.end(), [&](auto a, auto b) {
         return scores[a] > scores[b];
@@ -341,8 +333,7 @@ inline Fragment native_router_boundary(std::int64_t experts,
       double denominator = 0;
       for (std::size_t slot = 0; slot < 6; ++slot) denominator += scores[selected[slot]];
       for (std::size_t slot = 0; slot < 6; ++slot) {
-        weights[row * 6 + slot] = denominator > 0
-            ? float(scores[selected[slot]] / denominator * model.scaling) : 0.0F;
+        weights[row * 6 + slot] = float(scores[selected[slot]] / denominator * model.scaling);
         tags[row * 6 + slot] = mode == 3 ? 0.0F : float(selected[slot]);
       }
     }

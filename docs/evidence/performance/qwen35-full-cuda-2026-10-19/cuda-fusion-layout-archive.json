@@ -1,0 +1,8 @@
+{
+  "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\qwen35-full-cuda-2026-10-19\\cuda-fusion-layout.zip",
+  "bytes": 27630591,
+  "sha256": "7fde43b44bdbfb7549a25510f86722e79a6029411303d4679fbe24632fdad29a",
+  "payloads": 276,
+  "CRC_and_payload_SHA_verified": true,
+  "SDKs_models_objects_executables_excluded": true
+}

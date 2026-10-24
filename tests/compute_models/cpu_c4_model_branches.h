@@ -1,6 +1,7 @@
 #pragma once
 
 #include "d5_deepseek_official_attention.h"
+#include "dspark_vocabulary_fragment.h"
 
 // Fixed new model consumers. Product math stays in the mature providers.
 // Source: C1 complete headers and the official DSpark model.py, not preview NextN.
@@ -219,60 +220,174 @@ inline Fragment cache_prefill(const Model &model,std::int64_t tokens) {
 
 using DraftReference=std::function<ds::moe::ReferenceOutputs(std::span<const float>,
     std::span<const float>,std::span<const float>,std::int32_t)>;
+enum class AttentionProjectionRole : std::uint8_t { kQueryA,kQueryB,kOutputA,kOutputB };
+struct DraftAttentionProjections final { std::array<ds::official::PackedProjectionParameter,4> weights; };
+inline c::TensorDesc attention_weight_description(const Model &model,AttentionProjectionRole role) {
+  switch(role) {
+  case AttentionProjectionRole::kQueryA:
+    return c::gguf_weight_description(c::GgufQuantizedType::kQ8_0,c::DataType::kFloat32,model.hidden,model.query_rank).value();
+  case AttentionProjectionRole::kQueryB:
+    return c::gguf_weight_description(c::GgufQuantizedType::kQ8_0,c::DataType::kFloat32,model.query_rank,model.heads*512).value();
+  case AttentionProjectionRole::kOutputA:
+    return c::gguf_grouped_weight_description(c::GgufQuantizedType::kQ8_0,c::DataType::kFloat32,model.groups,1024,4096).value();
+  case AttentionProjectionRole::kOutputB:
+    return c::gguf_weight_description(c::GgufQuantizedType::kQ8_0,c::DataType::kFloat32,model.groups*1024,model.hidden).value();
+  }
+  throw std::runtime_error("draft attention projection role is absent");
+}
+struct DraftAttentionParameters final {
+  std::span<const float> query_norm, sinks;
+};
+struct DraftSinkPorts final { ValueId query, keys, mask, raw, stored; };
+struct DraftAttentionProjectionPorts final {
+  ValueId input,qa_raw,qa_stored,qb_raw,qb_stored;
+  ds::QueryNormPorts query_norm;
+  ds::RopePorts rotary,inverse;
+  ValueId grouped_input,group_ids,oa_raw,oa_stored,ob_input,ob_raw,ob_stored;
+  template<class Visitor> void visit_values(Visitor &&visitor) {
+    for(auto *value:{&input,&qa_raw,&qa_stored,&qb_raw,&qb_stored})visitor(*value);
+    query_norm.visit_values(visitor);rotary.visit_values(visitor);inverse.visit_values(visitor);
+    for(auto *value:{&grouped_input,&group_ids,&oa_raw,&oa_stored,&ob_input,&ob_raw,&ob_stored})visitor(*value);
+  }
+};
+struct DraftAttentionPorts final {
+  ds::NormPorts query_norm;
+  DraftSinkPorts sink;
+  std::optional<DraftAttentionProjectionPorts> projections{};
+};
 inline Fragment draft_attention(const Model &model,std::span<const float> initial_actual,
-                                 std::span<const float> initial_expected,DraftReference *reference_out=nullptr) {
+                                 std::span<const float> initial_expected,DraftReference *reference_out=nullptr,
+                                 bool prepared_keys=false,
+                                 const DraftAttentionParameters *parameters=nullptr,
+                                 const DraftAttentionProjections *projections=nullptr) {
+  if(projections && !parameters)
+    throw std::runtime_error("original draft projections require their learned query norm and sinks");
+  if(projections && !prepared_keys && !reference_out)
+    throw std::runtime_error("packed draft projections require ordinary parent attachment, not generated standalone replays");
   Fragment f{.profile=model.profile,.region=0x0c040102,.quantized=true};
-  auto x=f.input(dense({block,model.hidden})),main=f.input(dense({1,model.hidden}));
-  auto old_cache=f.input(dense({window,512}));
-  auto main_position=f.input(dense({1},c::DataType::kInt32));
+  auto x=f.input(dense({block,model.hidden}));
+  ValueId main{},old_cache{},main_position{},writing{},keys{};
+  if(!prepared_keys) {
+    main=f.input(dense({1,model.hidden}));old_cache=f.input(dense({window,512}));
+    main_position=f.input(dense({1},c::DataType::kInt32));
+  }
   auto draft_positions=f.input(dense({block},c::DataType::kInt32));
-  auto writing=f.input(dense({window,1},c::DataType::kBool));
+  if(!prepared_keys) writing=f.input(dense({window,1},c::DataType::kBool));
   auto mask=f.input(dense({block,window+block}));
+  if(prepared_keys) keys=f.input(dense({1,window+block,1,512}));
+  ValueId supplied_query_norm{},supplied_sinks{},query_norm_raw{};
+  if(parameters) {
+    if(parameters->query_norm.size()!=std::size_t(model.query_rank) || parameters->sinks.size()!=std::size_t(model.heads))
+      throw std::runtime_error("draft attention requires complete query norm and sink coefficients");
+    supplied_query_norm=f.input(dense({model.query_rank})); supplied_sinks=f.input(dense({model.heads}));
+  }
+  std::array<ValueId,4> projection_weights;
+  std::array<ds::official::PackedProjectionReference,4> supplied_references;
+  std::optional<DraftAttentionProjectionPorts> projection_ports;
+  if(projections) {
+    projection_ports.emplace();projection_ports->input=x;
+    for(std::size_t i=0;i<projection_weights.size();++i) {
+      const auto &parameter=projections->weights[i];
+      const auto desc=ds::official::projection_description(attention_weight_description(model,static_cast<AttentionProjectionRole>(i)),parameter);
+      if(parameter.codes.size()!=desc.required_bytes().value() || !parameter.reference)
+        throw std::runtime_error("original draft attention child needs four complete packed projection banks");
+      projection_weights[i]=f.input(desc);supplied_references[i]=parameter.reference;
+    }
+  }
   auto qscale=sem::oracle::scale(model.query_rank),kscale=sem::oracle::scale(512);
-  auto qa=fp8::model_linear(f,x,model.query_rank,model.hidden,439,true);
+  if(parameters) qscale.assign(parameters->query_norm.begin(),parameters->query_norm.end());
+  fp8::ModelLinear qa{};
+  if(projections) {
+    projection_ports->qa_raw=dspark_stored_projection_fragment::linear(f,x,projection_weights[0]);
+    qa.output=ds::bfloat_boundary(f,projection_ports->qa_raw);projection_ports->qa_stored=qa.output;
+  } else qa=fp8::model_linear(f,x,model.query_rank,model.hidden,439,true);
   qa.fused_scale_accumulation = model.fused_scale_accumulation;
-  auto qr=ds::norm(f,qa.output,qscale);
-  auto qb=fp8::model_linear(f,qr,model.heads*512,model.query_rank,449,true);
+  ValueId qr;
+  if(parameters) {
+    query_norm_raw=f.one(c::Operation(c::RmsNorm{.epsilon=1.0e-6F}),{qa.output,supplied_query_norm});
+    qr=ds::bfloat_boundary(f,query_norm_raw);
+  } else qr=ds::norm(f,qa.output,qscale);
+  fp8::ModelLinear qb{};
+  if(projections) {
+    projection_ports->qb_raw=dspark_stored_projection_fragment::linear(f,qr,projection_weights[1]);
+    qb.output=ds::bfloat_boundary(f,projection_ports->qb_raw);projection_ports->qb_stored=qb.output;
+  } else qb=fp8::model_linear(f,qr,model.heads*512,model.query_rank,449,true);
   qb.fused_scale_accumulation = model.fused_scale_accumulation;
-  auto q=ds::query_norm(f,core::reshape(f,qb.output,{1,block,model.heads,512}));
-  q=ds::rope(f,q,draft_positions,false);
+  auto q=ds::query_norm(f,core::reshape(f,qb.output,{1,block,model.heads,512}),
+      projection_ports?&projection_ports->query_norm:nullptr);
+  q=ds::rope(f,q,draft_positions,false,false,projection_ports?&projection_ports->rotary:nullptr);
   // Main and draft use the same wkv parameter. One batched original linear
   // preserves per-row activation quantization while binding that weight once.
-  auto kv=fp8::model_linear(f,ds::concat(f,main,x,0),512,model.hidden,443,true);
-  kv.fused_scale_accumulation = model.fused_scale_accumulation;
-  auto all=ds::norm(f,kv.output,kscale);
-  auto mk=ds::rope(f,core::reshape(f,ds::slice(f,all,0,0,1),{1,1,1,512}),main_position,false);
-  mk=ds::cache_quant(f,core::reshape(f,mk,{1,512}),false);
-  auto dk=ds::rope(f,core::reshape(f,ds::slice(f,all,0,1,block),{1,block,1,512}),draft_positions,false);
-  dk=ds::cache_quant(f,core::reshape(f,dk,{block,512}),false);
-  auto cache=f.one(c::Operation(c::Select{}),{writing,mk,old_cache});
-  auto keys=core::reshape(f,ds::concat(f,cache,dk,0),{1,window+block,1,512});
+  fp8::ModelLinear kv{};ValueId cache{};
+  if(!prepared_keys) {
+    kv=fp8::model_linear(f,ds::concat(f,main,x,0),512,model.hidden,443,true);
+    kv.fused_scale_accumulation = model.fused_scale_accumulation;
+    auto all=ds::norm(f,kv.output,kscale);
+    auto mk=ds::rope(f,core::reshape(f,ds::slice(f,all,0,0,1),{1,1,1,512}),main_position,false);
+    mk=ds::cache_quant(f,core::reshape(f,mk,{1,512}),false);
+    auto dk=ds::rope(f,core::reshape(f,ds::slice(f,all,0,1,block),{1,block,1,512}),draft_positions,false);
+    dk=ds::cache_quant(f,core::reshape(f,dk,{block,512}),false);
+    cache=f.one(c::Operation(c::Select{}),{writing,mk,old_cache});
+    keys=core::reshape(f,ds::concat(f,cache,dk,0),{1,window+block,1,512});
+  }
   std::vector<float> sinks(model.heads);
   for(std::int64_t i=0;i<model.heads;++i)sinks[i]=0.75F+float(i%11)/16;
+  if(parameters) sinks.assign(parameters->sinks.begin(),parameters->sinks.end());
   const float scale=1.0F/std::sqrt(512.0F);
-  auto attended=ds::bfloat_boundary(f,f.one(c::model_ops::sink_attention(scale),
-      {q,keys,keys,mask,f.constant(dense({model.heads}),bytes(sinks))}));
-  auto inverse=ds::rope(f,attended,draft_positions,false,true);
-  auto prepared=ds::prepare_output_weight(f,model.groups);
-  auto wa=std::move(prepared.weight);
+  const auto sink_value=parameters?supplied_sinks:f.constant(dense({model.heads}),bytes(sinks));
+  const auto attention_raw=f.one(c::model_ops::sink_attention(scale),{q,keys,keys,mask,sink_value});
+  auto attended=ds::bfloat_boundary(f,attention_raw);
+  auto inverse=ds::rope(f,attended,draft_positions,false,true,projection_ports?&projection_ports->inverse:nullptr);
+  sem::Weight wa{};ValueId output_weight;
+  if(projections)output_weight=projection_weights[2];
+  else {
+    auto prepared=ds::prepare_output_weight(f,model.groups);
+    wa=std::move(prepared.weight);output_weight=prepared.value;
+  }
   std::vector<std::int32_t> group_ids(block*model.groups);
   for(std::int64_t row=0;row<block;++row)
     std::iota(group_ids.begin()+row*model.groups,group_ids.begin()+(row+1)*model.groups,0);
   auto ids=f.constant(dense({block,model.groups},c::DataType::kInt32),bytes(group_ids));
   auto grouped=core::reshape(f,inverse,{block,model.groups,4096});
-  auto oa=ds::bfloat_boundary(f,f.one(c::model_ops::grouped_matmul(),{prepared.value,grouped,ids}));
-  auto ob=fp8::model_linear(f,core::reshape(f,oa,{block,model.groups*1024}),
-                          model.hidden,model.groups*1024,457,true);
+  // For original plain BF16 output-a the operation result is BF16. Its F32
+  // accumulator is not exposed; oa_raw denotes the actual typed BMM result.
+  const auto oa_raw=projections&&f.description(output_weight).is_plain()?
+      dspark_stored_projection_fragment::output_a(f,grouped,output_weight,model.groups,1024,4096):
+      f.one(c::model_ops::grouped_matmul(),{output_weight,grouped,ids});
+  auto oa=ds::bfloat_boundary(f,oa_raw);
+  const auto ob_input=core::reshape(f,oa,{block,model.groups*1024});
+  fp8::ModelLinear ob{};
+  if(projections) {
+    projection_ports->ob_raw=dspark_stored_projection_fragment::linear(f,ob_input,projection_weights[3]);
+    ob.output=ds::bfloat_boundary(f,projection_ports->ob_raw);
+    projection_ports->grouped_input=grouped;projection_ports->group_ids=ids;
+    projection_ports->oa_raw=oa_raw;projection_ports->oa_stored=oa;projection_ports->ob_input=ob_input;
+    projection_ports->ob_stored=ob.output;
+  } else ob=fp8::model_linear(f,ob_input,model.hidden,model.groups*1024,457,true);
   ob.fused_scale_accumulation = model.fused_scale_accumulation;
+  const auto append_observations=[&] {
+    if(parameters) f.outputs.insert(f.outputs.end(),
+        {qa.output,query_norm_raw,qr,q,keys,mask,attention_raw,attended});
+    if(projection_ports)projection_ports->visit_values([&](ValueId value){f.outputs.push_back(value);});
+  };
+  if(prepared_keys) {
+    // This component consumes actual model-prepared keys. Main history was
+    // already caught up and is not a proposal output or a repeated main write.
+    if(reference_out) throw std::runtime_error("prepared draft keys require their own producer oracle");
+    f.outputs={ob.output};f.bfloat_chain_outputs={0};append_observations();return f;
+  }
   f.outputs={cache,attended,inverse,oa,ob.output};f.state_ports={{2,0}};
+  append_observations();
   f.bfloat_chain_outputs={0,1,2,3,4};
-  auto evaluate=[model,qa,qb,kv,ob,wa,qscale,kscale,sinks,scale,group_ids]
+  auto evaluate=[model,qa,qb,kv,ob,wa,qscale,kscale,sinks,scale,group_ids,supplied_references]
       (std::span<const float> activation,std::span<const float> main_x,
        std::span<const float> incoming_cache,std::int32_t position)->ds::moe::ReferenceOutputs {
     std::array<std::int32_t,1> mp{position};
     std::vector<std::int32_t> dp(block);std::iota(dp.begin(),dp.end(),position+1);
-    auto query=model_rotary(model,ds::query_norm_reference(
-        qb.reference(ds::norm_reference(qa.reference(activation),qscale)),512),model.heads,dp);
+    auto query_a=supplied_references[0]?ds::bfloat_boundary(supplied_references[0](activation)):qa.reference(activation);
+    auto query_rank=ds::norm_reference(query_a,qscale);
+    auto query_b=supplied_references[1]?ds::bfloat_boundary(supplied_references[1](query_rank)):qb.reference(query_rank);
+    auto query=model_rotary(model,ds::query_norm_reference(std::move(query_b),512),model.heads,dp);
     std::vector<float> both(main_x.begin(),main_x.end());both.insert(both.end(),activation.begin(),activation.end());
     auto kv_reference=ds::norm_reference(kv.reference(both),kscale);
     auto main_k=ds::cache_reference(model_rotary(model,std::vector<float>(kv_reference.begin(),kv_reference.begin()+512),1,mp),512,false);
@@ -285,8 +400,9 @@ inline Fragment draft_attention(const Model &model,std::span<const float> initia
         ds::old::sink_reference(query,keys_reference,keys_reference,
             std::vector<float>(block*(window+block),0),sinks,block,window+block,scale));
     auto derotated=model_rotary(model,attention,model.heads,dp,true);
-    auto grouped_output=ds::bfloat_boundary(ds::moe::project(derotated,wa,group_ids,1024,4096));
-    auto result=ob.reference(grouped_output);
+    auto grouped_output=ds::bfloat_boundary(supplied_references[2]?supplied_references[2](derotated):
+        ds::moe::project(derotated,wa,group_ids,1024,4096));
+    auto result=supplied_references[3]?ds::bfloat_boundary(supplied_references[3](grouped_output)):ob.reference(grouped_output);
     return {std::move(cache_reference),std::move(attention),std::move(derotated),std::move(grouped_output),std::move(result)};
   };
   if(reference_out) {*reference_out=std::move(evaluate);return f;}
@@ -365,32 +481,124 @@ inline std::vector<ValueId> attach_branch(Fragment &parent,Fragment child,
   return ds::glm::attach(parent,std::move(child),inputs);
 }
 
+enum class DraftParameter : std::uint8_t {
+  kAttentionNorm, kFfnNorm, kQueryNorm, kSinks,
+  kAttentionFn, kAttentionScale, kAttentionBase, kFfnFn, kFfnScale, kFfnBase,
+  kOutputNorm, kHeadFn, kHeadScale, kHeadBase
+};
+struct DraftParameters final {
+  std::function<ds::ImmutableF32Parameter(Fragment &,std::size_t,DraftParameter)> parameter;
+  std::function<ds::official::PackedProjectionParameter(Fragment &,std::size_t,ds::official::SharedFfnRole)> shared_ffn;
+  std::function<ds::official::PackedProjectionParameter(Fragment &,std::size_t,AttentionProjectionRole)> attention_projection;
+  std::function<ds::official::RoutedExpertParameters(Fragment &,std::size_t)> routed_experts;
+};
+struct DraftStagePorts final {
+  ds::HyperPrePorts attention_hc, ffn_hc;
+  ds::HyperPostPorts attention_post, ffn_post;
+  ds::NormPorts attention_norm, ffn_norm;
+  DraftAttentionPorts attention;
+  std::optional<ds::official::SharedFfnPorts> shared_ffn{};
+  std::optional<ds::official::RoutedExpertPorts> routed_experts{};
+};
+struct DraftHeadPorts final {
+  ValueId state,flat,projection,inverse,mixes,gate,collapsed_raw,collapsed;
+  ds::NormPorts output_norm;
+};
+struct DraftObservations final {
+  std::array<DraftStagePorts,3> stages;
+  DraftHeadPorts head;
+  // Stable full-Fragment ordinals for cold cuts. Observation materialization
+  // must never replace these producer/input IDs with terminal Copy IDs.
+  std::optional<std::array<ds::official::RoutedBoundary,3>> residency{};
+  // The caller can materialize test-only observations after cold assembly.
+  // No observation creates an additional producer or affects model state.
+  template<class Visitor> void visit_values(Visitor &&visitor) {
+    const auto norm=[&](ds::NormPorts &p) { for(auto *v:{&p.input,&p.raw,&p.stored}) visitor(*v); };
+    const auto pre=[&](ds::HyperPrePorts &p) {
+      for(auto *v:{&p.state,&p.flat,&p.projection,&p.inverse,&p.mixes,&p.pre,&p.post,&p.combination,&p.collapsed_raw,&p.collapsed}) visitor(*v);
+    };
+    const auto post=[&](ds::HyperPostPorts &p) { for(auto *v:{&p.branch,&p.residual,&p.expanded,&p.stored}) visitor(*v); };
+    for(auto &stage:stages) {
+      pre(stage.attention_hc);post(stage.attention_post);norm(stage.attention_norm);
+      pre(stage.ffn_hc);post(stage.ffn_post);norm(stage.ffn_norm);norm(stage.attention.query_norm);
+      auto &sink=stage.attention.sink;
+      for(auto *v:{&sink.query,&sink.keys,&sink.mask,&sink.raw,&sink.stored}) visitor(*v);
+      if(stage.attention.projections)stage.attention.projections->visit_values(visitor);
+      if(stage.shared_ffn)stage.shared_ffn->visit_values(visitor);
+      if(stage.routed_experts)stage.routed_experts->visit_values(visitor);
+    }
+    for(auto *v:{&head.state,&head.flat,&head.projection,&head.inverse,&head.mixes,&head.gate,&head.collapsed_raw,&head.collapsed}) visitor(*v);
+    norm(head.output_norm);
+  }
+};
 struct DraftProgram {
   Fragment fragment;
   linear::Projection head;
   std::vector<float> head_base{-0.25F,0.125F,0.375F,-0.5F},norm_scale{};
+  std::span<const float> head_coefficients{};
+  float head_mix_scale=0.125F;
+  std::optional<DraftObservations> observations{};
 };
-inline DraftProgram complete_draft(const Model &model) {
+// A model-only cold assembly seam: append one stage's actual encoded history
+// reader and temporary proposal KV. The callback only builds public operations.
+struct DraftHistoryInput final {
+  c::TensorDesc description;
+  std::function<ValueId(Fragment &,ValueId,ValueId,ValueId)> append_keys;
+};
+using DraftHistoryInputs=std::array<DraftHistoryInput,3>;
+// Cold model assembly may borrow the matching target's full BF16 vocabulary.
+// The callback supplies one immutable table, not a per-stage embedding copy.
+using DraftEmbeddingTable=std::function<ValueId(Fragment &)>;
+inline DraftProgram complete_draft(const Model &model,const DraftHistoryInputs *histories=nullptr,
+                                    const DraftEmbeddingTable *embedding_table=nullptr,
+                                    const DraftParameters *parameters=nullptr) {
   DraftProgram result{Fragment{.profile=model.profile,.region=0x0c040108,.quantized=true},{}};
   auto &f=result.fragment;
-  auto main=f.input(dense({1,model.hidden}));
+  if(parameters) {
+    if(!parameters->parameter) throw std::runtime_error("complete draft requires its immutable parameter supplier");
+    result.observations.emplace();
+    if(parameters->routed_experts) {
+      if(!histories || !parameters->shared_ffn)throw std::runtime_error("resident draft needs actual history and shared FFN suppliers");
+      result.observations->residency.emplace();
+    }
+  }
+  const auto parameter_value=[&](std::size_t stage,DraftParameter role,const c::TensorDesc &description) {
+    auto parameter=parameters->parameter(f,stage,role);
+    ds::require_parameter(f,parameter,description);return parameter;
+  };
+  ValueId main{},position{},writing{};
+  if(!histories) main=f.input(dense({1,model.hidden}));
   auto token=f.input(dense({1},c::DataType::kInt32));
   auto markov_ids=f.input(dense({block},c::DataType::kInt32));
-  auto position=f.input(dense({1},c::DataType::kInt32));
+  if(!histories) position=f.input(dense({1},c::DataType::kInt32));
   auto draft_positions=f.input(dense({block},c::DataType::kInt32));
-  auto writing=f.input(dense({window,1},c::DataType::kBool));
+  if(!histories) writing=f.input(dense({window,1},c::DataType::kBool));
   auto mask=f.input(dense({block,window+block}));
   std::array<ValueId,3> caches;
-  for(auto &cache:caches)cache=f.input(dense({window,512}));
-  std::vector<std::byte> embedding(dense({vocabulary,model.hidden},c::DataType::kBFloat16).required_bytes().value());
-  for(std::int64_t row:std::array<std::int64_t,4>{3,5,7,noise_token})for(std::int64_t col=0;col<model.hidden;++col) {
-    const auto value=sem::q::encode(0.25+double((col+row)%11)/64);
-    std::memcpy(embedding.data()+(row*model.hidden+col)*sizeof(value),&value,sizeof(value));
+  for(std::size_t stage=0;stage<caches.size();++stage) {
+    if(histories && !(*histories)[stage].append_keys)
+      throw std::runtime_error("prepared draft history needs all three model readers");
+    caches[stage]=f.input(histories?(*histories)[stage].description:dense({window,512}));
   }
-  auto table=f.constant(dense({vocabulary,model.hidden},c::DataType::kBFloat16),std::move(embedding));
+  const auto table=[&] {
+    if(embedding_table) {
+      if(!*embedding_table) throw std::runtime_error("DSpark shared embedding supplier is empty");
+      const auto supplied=(*embedding_table)(f);
+      if(supplied.ordinal()>=f.descriptions.size())
+        throw std::runtime_error("DSpark shared embedding Value is absent");
+      dspark_vocabulary_fragment::require_embedding(f.description(supplied),vocabulary,model.hidden);
+      return supplied;
+    }
+    std::vector<std::byte> embedding(dense({vocabulary,model.hidden},c::DataType::kBFloat16).required_bytes().value());
+    for(std::int64_t row:std::array<std::int64_t,4>{3,5,7,noise_token})for(std::int64_t col=0;col<model.hidden;++col) {
+      const auto value=sem::q::encode(0.25+double((col+row)%11)/64);
+      std::memcpy(embedding.data()+(row*model.hidden+col)*sizeof(value),&value,sizeof(value));
+    }
+    return f.constant(dense({vocabulary,model.hidden},c::DataType::kBFloat16),std::move(embedding));
+  }();
   auto noise=f.constant(dense({block-1},c::DataType::kInt32),bytes(std::vector<std::int32_t>(block-1,int(noise_token))));
   auto ids=ds::concat(f,token,noise,0);
-  auto embedded=f.one(c::Operation(c::Gather{}),{table,ids});
+  auto embedded=dspark_vocabulary_fragment::append_embedding(f,table,ids,vocabulary,model.hidden).stored;
   auto plain=f.one(c::Operation(c::Cast{.output_type=c::DataType::kFloat32}),{embedded});
   auto state=core::binary(f,c::BinaryKind::kMultiply,core::reshape(f,plain,{block,1,model.hidden}),
                          core::filled(f,dense({1,4,1}),1));
@@ -398,34 +606,172 @@ inline DraftProgram complete_draft(const Model &model) {
   std::array<DraftReference,3> attention_reference;
   std::array<ds::moe::MoeReference,3> moe_reference;
   auto attn_scale=sem::oracle::scale(model.hidden),ffn_scale=attn_scale;
+  std::array<std::vector<float>,3> supplied_attn_scale,supplied_ffn_scale;
   std::array<ValueId,3> next_cache;
   for(int stage=0;stage<3;++stage) {
-    attention_mix[stage]=ds::hyper_pre(f,state,model.hidden,467+stage*19);
-    auto collapsed=ds::norm(f,attention_mix[stage].collapsed,attn_scale);
-    auto recipe=draft_attention(model,{}, {},&attention_reference[stage]);
-    auto attention=attach_branch(f,std::move(recipe),{collapsed,main,caches[stage],position,draft_positions,writing,mask});
-    next_cache[stage]=attention[0];
-    state=ds::hyper_post(f,attention_mix[stage],state,attention.back());
-    moe_mix[stage]=ds::hyper_pre(f,state,model.hidden,473+stage*23);
-    auto moe_input=ds::norm(f,moe_mix[stage].collapsed,ffn_scale);
-    auto moe_recipe=ds::official::moe_chain(model.main_case(),false,&moe_reference[stage],false,block);
-    auto moe_outputs=attach_branch(f,std::move(moe_recipe),{moe_input});
-    state=ds::hyper_post(f,moe_mix[stage],state,moe_outputs[5]);
+    ValueId collapsed;
+    DraftAttentionParameters attention_parameters{};
+    ds::ImmutableF32Parameter query_norm{},sinks{};
+    if(parameters) {
+      const ds::HyperParameters hc{
+        parameter_value(stage,DraftParameter::kAttentionFn,dense({24,4*model.hidden})),
+        parameter_value(stage,DraftParameter::kAttentionScale,dense({3})),
+        parameter_value(stage,DraftParameter::kAttentionBase,dense({24}))};
+      attention_mix[stage]=ds::hyper_pre(f,state,model.hidden,hc);
+      const auto norm=parameter_value(stage,DraftParameter::kAttentionNorm,dense({model.hidden}));
+      auto normalized=ds::norm(f,attention_mix[stage].collapsed,norm);collapsed=normalized.stored;
+      result.observations->stages[stage].attention_hc=attention_mix[stage].ports;
+      result.observations->stages[stage].attention_norm=normalized;
+      supplied_attn_scale[stage].assign(norm.coefficients.begin(),norm.coefficients.end());
+      query_norm=parameter_value(stage,DraftParameter::kQueryNorm,dense({model.query_rank}));
+      sinks=parameter_value(stage,DraftParameter::kSinks,dense({model.heads}));
+      attention_parameters={query_norm.coefficients,sinks.coefficients};
+    } else {
+      attention_mix[stage]=ds::hyper_pre(f,state,model.hidden,467+stage*19);
+      collapsed=ds::norm(f,attention_mix[stage].collapsed,attn_scale);
+    }
+    std::optional<DraftAttentionProjections> attention_projections;
+    if(parameters && parameters->attention_projection) {
+      attention_projections.emplace();
+      for(std::size_t i=0;i<attention_projections->weights.size();++i) {
+        const auto role=static_cast<AttentionProjectionRole>(i);
+        auto parameter=parameters->attention_projection(f,std::size_t(stage),role);
+        ds::official::require_packed_parameter(f,attention_weight_description(model,role),parameter);
+        attention_projections->weights[i]=std::move(parameter);
+      }
+    }
+    std::vector<ValueId> attention;
+    if(histories) {
+      auto keys=(*histories)[stage].append_keys(f,collapsed,caches[stage],draft_positions);
+      auto recipe=draft_attention(model,{}, {},nullptr,true,parameters?&attention_parameters:nullptr,
+          attention_projections?&*attention_projections:nullptr);
+      if(attention_projections) attention=attach_branch(f,std::move(recipe),
+          {collapsed,draft_positions,mask,keys,query_norm.value,sinks.value,
+          attention_projections->weights[0].value,attention_projections->weights[1].value,
+          attention_projections->weights[2].value,attention_projections->weights[3].value});
+      else attention=parameters?attach_branch(f,std::move(recipe),{collapsed,draft_positions,mask,keys,query_norm.value,sinks.value}):
+          attach_branch(f,std::move(recipe),{collapsed,draft_positions,mask,keys});
+    } else {
+      auto recipe=draft_attention(model,{}, {},&attention_reference[stage],false,parameters?&attention_parameters:nullptr,
+          attention_projections?&*attention_projections:nullptr);
+      if(attention_projections)attention=attach_branch(f,std::move(recipe),
+          {collapsed,main,caches[stage],position,draft_positions,writing,mask,query_norm.value,sinks.value,
+          attention_projections->weights[0].value,attention_projections->weights[1].value,
+          attention_projections->weights[2].value,attention_projections->weights[3].value});
+      else attention=parameters?attach_branch(f,std::move(recipe),{collapsed,main,caches[stage],position,draft_positions,writing,mask,query_norm.value,sinks.value}):
+          attach_branch(f,std::move(recipe),{collapsed,main,caches[stage],position,draft_positions,writing,mask});
+      next_cache[stage]=attention[0];
+    }
+    const auto attention_output=attention[histories?0:4];
+    if(parameters) {
+      const auto first=histories?1u:5u;
+      result.observations->stages[stage].attention={{attention[first],attention[first+1],attention[first+2]},
+          {attention[first+3],attention[first+4],attention[first+5],attention[first+6],attention[first+7]}};
+      if(attention_projections) {
+        auto &ports=result.observations->stages[stage].attention.projections.emplace();
+        auto offset=first+8u;
+        ports.visit_values([&](ValueId &value){value=attention.at(offset++);});
+        if(offset!=attention.size())throw std::runtime_error("original attention observation output count differs");
+      }
+    }
+    state=ds::hyper_post(f,attention_mix[stage],state,attention_output,
+        parameters?&result.observations->stages[stage].attention_post:nullptr);
+    ValueId moe_input;
+    if(parameters) {
+      const ds::HyperParameters hc{
+        parameter_value(stage,DraftParameter::kFfnFn,dense({24,4*model.hidden})),
+        parameter_value(stage,DraftParameter::kFfnScale,dense({3})),
+        parameter_value(stage,DraftParameter::kFfnBase,dense({24}))};
+      moe_mix[stage]=ds::hyper_pre(f,state,model.hidden,hc);
+      const auto norm=parameter_value(stage,DraftParameter::kFfnNorm,dense({model.hidden}));
+      auto normalized=ds::norm(f,moe_mix[stage].collapsed,norm);moe_input=normalized.stored;
+      result.observations->stages[stage].ffn_hc=moe_mix[stage].ports;
+      result.observations->stages[stage].ffn_norm=normalized;
+      supplied_ffn_scale[stage].assign(norm.coefficients.begin(),norm.coefficients.end());
+    } else {
+      moe_mix[stage]=ds::hyper_pre(f,state,model.hidden,473+stage*23);
+      moe_input=ds::norm(f,moe_mix[stage].collapsed,ffn_scale);
+    }
+    std::optional<ds::official::SharedFfnParameters> shared_ffn;
+    if(parameters && parameters->shared_ffn) {
+      shared_ffn.emplace();
+      for(std::size_t i=0;i<shared_ffn->weights.size();++i) {
+        const auto role=static_cast<ds::official::SharedFfnRole>(i);
+        shared_ffn->weights[i]=parameters->shared_ffn(f,std::size_t(stage),role);
+        ds::official::require_shared_parameter(f,model.main_case(),role,shared_ffn->weights[i]);
+      }
+    }
+    std::optional<ds::official::RoutedExpertParameters> resident_experts;
+    if(parameters && parameters->routed_experts) {
+      resident_experts=parameters->routed_experts(f,std::size_t(stage));
+      ds::official::require_routed_parameters(f,model.main_case(),*resident_experts);
+    }
+    auto moe_recipe=ds::official::moe_chain(model.main_case(),false,&moe_reference[stage],false,block,
+        shared_ffn?&*shared_ffn:nullptr,resident_experts?&*resident_experts:nullptr);
+    std::vector<ValueId> moe_outputs;
+    if(resident_experts)moe_outputs=attach_branch(f,std::move(moe_recipe),{moe_input,
+        shared_ffn->weights[0].value,shared_ffn->weights[1].value,shared_ffn->weights[2].value,
+        resident_experts->router,resident_experts->bias,resident_experts->weights[0],
+        resident_experts->weights[1],resident_experts->weights[2],resident_experts->map});
+    else moe_outputs=shared_ffn?attach_branch(f,std::move(moe_recipe),{moe_input,
+        shared_ffn->weights[0].value,shared_ffn->weights[1].value,shared_ffn->weights[2].value}):
+        attach_branch(f,std::move(moe_recipe),{moe_input});
+    if(shared_ffn)result.observations->stages[stage].shared_ffn=ds::official::shared_ffn_ports(moe_outputs);
+    if(resident_experts) {
+      auto &ports=result.observations->stages[stage].routed_experts.emplace();
+      std::size_t offset=20;
+      ports.visit_values([&](ValueId &value){value=moe_outputs.at(offset++);});
+      if(offset!=moe_outputs.size())throw std::runtime_error("resident expert observation count");
+      (*result.observations->residency)[std::size_t(stage)]={ports.input,ports.ids,ports.weights,
+          resident_experts->weights,resident_experts->map};
+    }
+    state=ds::hyper_post(f,moe_mix[stage],state,moe_outputs[5],
+        parameters?&result.observations->stages[stage].ffn_post:nullptr);
   }
   auto flat=core::reshape(f,state,{block,4*model.hidden});
+  ValueId mixes,gate,inverse;
+  if(parameters) {
+    const auto fn=parameter_value(3,DraftParameter::kHeadFn,dense({4,4*model.hidden}));
+    const auto scale=parameter_value(3,DraftParameter::kHeadScale,dense({1}));
+    const auto base=parameter_value(3,DraftParameter::kHeadBase,dense({4}));
+    const auto product=f.one(c::Operation(c::MatMul{}),{flat,ds::permute(f,fn.value,{1,0})});
+    result.head={{},linear::Storage::kF32,product};result.head_coefficients=fn.coefficients;
+    result.head_mix_scale=scale.coefficients[0];result.head_base.assign(base.coefficients.begin(),base.coefficients.end());
+    inverse=ds::inverse_rms(f,flat);
+    mixes=core::binary(f,c::BinaryKind::kMultiply,product,inverse);
+    gate=core::binary(f,c::BinaryKind::kAdd,
+        core::unary(f,c::UnaryKind::kSigmoid,core::binary(f,c::BinaryKind::kAdd,
+            core::binary(f,c::BinaryKind::kMultiply,mixes,scale.value),base.value)),
+        core::filled(f,dense({1}),1.0e-6F));
+  } else {
   result.head=linear::projection(f,flat,4,4*model.hidden,linear::Storage::kF32,487);
-  auto mixes=core::binary(f,c::BinaryKind::kMultiply,result.head.output,ds::inverse_rms(f,flat));
-  auto gate=core::binary(f,c::BinaryKind::kAdd,
+  inverse=ds::inverse_rms(f,flat);
+  mixes=core::binary(f,c::BinaryKind::kMultiply,result.head.output,inverse);
+  gate=core::binary(f,c::BinaryKind::kAdd,
       core::unary(f,c::UnaryKind::kSigmoid,core::binary(f,c::BinaryKind::kAdd,
           core::binary(f,c::BinaryKind::kMultiply,mixes,core::filled(f,dense({1}),0.125F)),
           f.constant(dense({4}),bytes(result.head_base)))),core::filled(f,dense({1}),1.0e-6F));
-  auto hidden=ds::bfloat_boundary(f,f.one(c::model_ops::hyper_connection_pre(),{state,gate}));
-  result.norm_scale=sem::oracle::scale(model.hidden);
-  auto normalized=ds::norm(f,hidden,result.norm_scale);
+  }
+  const auto hidden_raw=f.one(c::model_ops::hyper_connection_pre(),{state,gate});
+  auto hidden=ds::bfloat_boundary(f,hidden_raw);
+  ValueId normalized;
+  if(parameters) {
+    const auto norm=parameter_value(3,DraftParameter::kOutputNorm,dense({model.hidden}));
+    const auto normalized_ports=ds::norm(f,hidden,norm);normalized=normalized_ports.stored;
+    result.norm_scale.assign(norm.coefficients.begin(),norm.coefficients.end());
+    result.observations->head={state,flat,result.head.output,inverse,mixes,gate,hidden_raw,hidden,normalized_ports};
+  } else {
+    result.norm_scale=sem::oracle::scale(model.hidden);
+    normalized=ds::norm(f,hidden,result.norm_scale);
+  }
   auto markov_recipe=markov_embedding(model);
   auto markov=attach_branch(f,std::move(markov_recipe),{markov_ids})[0];
   auto confidence_recipe=confidence(model);
   auto confidence_output=attach_branch(f,std::move(confidence_recipe),{hidden,markov})[0];
+  if(histories) {
+    f.outputs={state,hidden,normalized,markov,confidence_output};
+    f.bfloat_chain_outputs={0,1,2};f.exact_outputs={3};return result;
+  }
   f.outputs={state,next_cache[0],next_cache[1],next_cache[2],hidden,normalized,markov,confidence_output};
   f.state_ports={{7,1},{8,2},{9,3}};f.bfloat_chain_outputs={0,1,2,3,4,5};f.exact_outputs={6};
   std::array<std::vector<float>,3> history;
@@ -446,23 +792,24 @@ inline DraftProgram complete_draft(const Model &model) {
         state_reference[(row*4+stream)*model.hidden+col]=fp8::bfloat(float(0.25+double((col+(row?noise_token:first_token))%11)/64));
     for(int stage=0;stage<3;++stage) {
       auto pre=attention_mix[stage].reference(state_reference,std::vector<float>(block*model.hidden));
-      auto x=ds::norm_reference(pre[1],attn_scale);
+      auto x=ds::norm_reference(pre[1],parameters?supplied_attn_scale[stage]:attn_scale);
       auto attention=attention_reference[stage](x,main_x,history[stage],pos);
       history[stage]=attention[0];
       state_reference=attention_mix[stage].reference(state_reference,attention.back())[2];
       auto pm=moe_mix[stage].reference(state_reference,std::vector<float>(block*model.hidden));
-      auto mv=moe_reference[stage](ds::norm_reference(pm[1],ffn_scale));
+      auto mv=moe_reference[stage](ds::norm_reference(pm[1],parameters?supplied_ffn_scale[stage]:ffn_scale));
       state_reference=moe_mix[stage].reference(state_reference,mv[5])[2];
     }
     std::vector<float> hidden_reference(block*model.hidden);
     for(std::int64_t row=0;row<block;++row) {
       const auto s=std::span(state_reference).subspan(row*4*model.hidden,4*model.hidden);
-      auto hm=result.head.reference(s);double square=0;
+      auto hm=result.head_coefficients.empty()?result.head.reference(s):
+          ds::dense_projection_reference(s,result.head_coefficients,4,std::size_t(4*model.hidden));double square=0;
       for(auto value:s)square+=double(value)*value;
       const auto inv=1.0F/std::sqrt(float(square/s.size())+1.0e-6F);
       for(std::int64_t col=0;col<model.hidden;++col) {
         double sum=0;for(int stream=0;stream<4;++stream)
-          sum+=s[stream*model.hidden+col]*(core::sigmoid(hm[stream]*inv*0.125F+result.head_base[stream])+1.0e-6);
+          sum+=s[stream*model.hidden+col]*(core::sigmoid(hm[stream]*inv*result.head_mix_scale+result.head_base[stream])+1.0e-6);
         hidden_reference[row*model.hidden+col]=fp8::bfloat(float(sum));
       }
     }

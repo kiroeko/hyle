@@ -1,0 +1,299 @@
+{
+  "date": "2026-10-23",
+  "stage": "BH",
+  "goal_complete": false,
+  "conclusion": "Canonical packed one-row CUDA MatMul no longer inherits the full-F32 weight scratch cap; Q27/Q24 use one complete head instead of61 subheads through the ordinary Graph/Provider route.",
+  "implementation": {
+    "product": "One private input1 admission predicate in tensor_program.cc. Canonical native GGUF logicalF32 rank2/blockaxis0 RHS, F32 dense M1 activation/output, F32 accumulation, K%512==0, logical and block product<=INT32_MAX-1024, encoded bytes/strides<=INT32_MAX. Generic representable(), ordinary activation/output checks, inference, lowering and final original-native supports checks stay unchanged.",
+    "no_full_weight_decode": "The locked native M1 quantized path selects MMVQ. K%512 avoids extra native padding/clear; F32 activation/output avoids dtype cuBLAS fallback. The existing readonly packed allocation remains external; no full F32 weight shadow, bank copy, new executor, public option or ABI is introduced.",
+    "consumers": "Same full248320-row Vocabulary owner/ReadLease -> one MatMul -> stable TopK1 -> actual global pendingID. Full logits/score diagnostics have independent caller outputs; every row is checked against the same matching-carrier prototype oracle, actual TopK is additionally compared exactly to the actual full vector and smallest tied ID. Six-state protocol and five submits remain unchanged."
+  },
+  "exact_geometry": [
+    {
+      "model": "Q27 MAIN UD-Q4_K_M generated head",
+      "codec": "Q6_K",
+      "K": 5120,
+      "V": 248320,
+      "logical_elements": 1271398400,
+      "encoded_bytes": 1042944000,
+      "logits_F32_bytes": 993280
+    },
+    {
+      "model": "Q24 MAIN UD-IQ4_XS generated head",
+      "codec": "Q4_K",
+      "K": 8192,
+      "V": 248320,
+      "logical_elements": 2034237440,
+      "encoded_bytes": 1144258560,
+      "logits_F32_bytes": 993280
+    }
+  ],
+  "validation": {
+    "unique_tests": 7,
+    "failures": 0,
+    "errors": 0,
+    "skips": 0,
+    "model_graph_submissions": 20,
+    "extra_original_native_CUDA_reference_submissions": 225,
+    "reference_scope": "The225 raw original-native CUDA calls validate generated quantized carrier integration, not independent numerical kernels and not extra consumer Graph submissions. Independent original-role decoded/F64 and local F32 checks are unchanged.",
+    "selected_cases": [
+      {
+        "attributes": {
+          "name": "CpuQ27WholeNextNPrefixPublishesAndContinues",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\qwen_mtp_state_consumer_test.cc",
+          "line": "431",
+          "status": "run",
+          "result": "completed",
+          "time": "1.842",
+          "timestamp": "2026-10-23T02:53:17.286",
+          "classname": "QwenMtpStateConsumer"
+        },
+        "properties": {
+          "full_head_provider": "ggml-cpu",
+          "full_head_encoded_bytes": "1042944000",
+          "backend": "ordinary CPU Graph",
+          "actual_submissions": "5",
+          "quantized_reference": "unchanged CPU C5 native-codec dots; independent original-role F64/decoded and strict F32 local gates retained",
+          "complete_draft_resources": "6",
+          "full_vocabulary": "248320",
+          "head_matmuls": "1",
+          "original_role_bytes": "43048960",
+          "scope": "Q27 MAIN UD-Q4_K_M original blk64 EH/enorm/hnorm inside complete generated-parameter dense NextN; generated embedding and distinct-codec fullVhead; actual pending/hidden/fullKV/cursor/position prefix0/1/2 and eachhead continuation; no complete64-layer target or natural acceptance claim",
+          "original_native_reference_submissions": "0"
+        }
+      },
+      {
+        "attributes": {
+          "name": "CpuQ24WholeNextNPrefixPublishesAndContinues",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\qwen_mtp_state_consumer_test.cc",
+          "line": "437",
+          "status": "run",
+          "result": "completed",
+          "time": "1.474",
+          "timestamp": "2026-10-23T02:53:19.129",
+          "classname": "QwenMtpStateConsumer"
+        },
+        "properties": {
+          "full_head_provider": "ggml-cpu",
+          "full_head_encoded_bytes": "1144258560",
+          "backend": "ordinary CPU Graph",
+          "actual_submissions": "5",
+          "quantized_reference": "unchanged CPU C5 native-codec dots; independent original-role F64/decoded and strict F32 local gates retained",
+          "complete_draft_resources": "6",
+          "full_vocabulary": "248320",
+          "head_matmuls": "1",
+          "original_role_bytes": "11535360",
+          "scope": "Q24 MAIN UD-IQ4_XS original blk92 K/V/knorm inside complete generated-parameter MoE NextN; generated8-resident expert mapping,shared embedding/head; actual pending/hidden/fullKV/cursor/position prefix0/1/2 and eachhead continuation; no original512-expert target or natural acceptance claim",
+          "original_native_reference_submissions": "0"
+        }
+      },
+      {
+        "attributes": {
+          "name": "CudaQ27WholeNextNPrefixPublishesAndContinues",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\qwen_mtp_state_consumer_test.cc",
+          "line": "445",
+          "status": "run",
+          "result": "completed",
+          "time": "1.504",
+          "timestamp": "2026-10-23T02:53:20.603",
+          "classname": "QwenMtpStateConsumer"
+        },
+        "properties": {
+          "full_head_provider": "ggml-cuda",
+          "full_head_encoded_bytes": "1042944000",
+          "backend": "ordinary CUDA Graph",
+          "actual_submissions": "5",
+          "quantized_reference": "existing original-native CUDA integration oracle with matching activation codec; independent original-role F64/decoded and strict F32 local gates retained",
+          "complete_draft_resources": "6",
+          "full_vocabulary": "248320",
+          "head_matmuls": "1",
+          "original_role_bytes": "43048960",
+          "scope": "Q27 MAIN UD-Q4_K_M original blk64 EH/enorm/hnorm inside complete generated-parameter dense NextN; generated embedding and distinct-codec fullVhead; actual pending/hidden/fullKV/cursor/position prefix0/1/2 and eachhead continuation; no complete64-layer target or natural acceptance claim",
+          "original_native_reference_submissions": "40"
+        }
+      },
+      {
+        "attributes": {
+          "name": "CudaQ24WholeNextNPrefixPublishesAndContinues",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\qwen_mtp_state_consumer_test.cc",
+          "line": "451",
+          "status": "run",
+          "result": "completed",
+          "time": "1.",
+          "timestamp": "2026-10-23T02:53:22.108",
+          "classname": "QwenMtpStateConsumer"
+        },
+        "properties": {
+          "full_head_provider": "ggml-cuda",
+          "full_head_encoded_bytes": "1144258560",
+          "backend": "ordinary CUDA Graph",
+          "actual_submissions": "5",
+          "quantized_reference": "existing original-native CUDA integration oracle with matching activation codec; independent original-role F64/decoded and strict F32 local gates retained",
+          "complete_draft_resources": "6",
+          "full_vocabulary": "248320",
+          "head_matmuls": "1",
+          "original_role_bytes": "11535360",
+          "scope": "Q24 MAIN UD-IQ4_XS original blk92 K/V/knorm inside complete generated-parameter MoE NextN; generated8-resident expert mapping,shared embedding/head; actual pending/hidden/fullKV/cursor/position prefix0/1/2 and eachhead continuation; no original512-expert target or natural acceptance claim",
+          "original_native_reference_submissions": "185"
+        }
+      },
+      {
+        "attributes": {
+          "name": "FullVocabularySingleRowPreparesWithoutWeightStorage",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_ggml_cuda\\packed_matmul_bounds_test.cc",
+          "line": "28",
+          "status": "run",
+          "result": "completed",
+          "time": "0.003",
+          "timestamp": "2026-10-23T02:53:23.110",
+          "classname": "GgmlCudaPackedBounds"
+        },
+        "properties": {}
+      },
+      {
+        "attributes": {
+          "name": "LargeHeadsDeclineFallbackAndPaddedLayouts",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_ggml_cuda\\packed_matmul_bounds_test.cc",
+          "line": "55",
+          "status": "run",
+          "result": "completed",
+          "time": "0.001",
+          "timestamp": "2026-10-23T02:53:23.113",
+          "classname": "GgmlCudaPackedBounds"
+        },
+        "properties": {}
+      },
+      {
+        "attributes": {
+          "name": "EncodedAndLogicalLimitsKeepOtherPortsBounded",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_ggml_cuda\\packed_matmul_bounds_test.cc",
+          "line": "94",
+          "status": "run",
+          "result": "completed",
+          "time": "0.001",
+          "timestamp": "2026-10-23T02:53:23.114",
+          "classname": "GgmlCudaPackedBounds"
+        },
+        "properties": {}
+      }
+    ],
+    "descriptor_checks": "3 public prepare cases cover actual fullQ27/Q24 without payload allocation; reject large M2, BF16, K padding, noncanonical row strides, logical overflow, encoded byte overflow, oversized activation and plainF32 bank; retain ordinary small packed M2.",
+    "execution_checks": "Four CPU/CUDA complete NextN journeys: all fullV scores, stable actual Top1, prefix0/1/2 whole-state publication/continuation, old results, readonly bank/state leases, NaN-safe futureKV and retirement. Actual compile report verifies full head geometry and original ggml CUDA provider on CUDA.",
+    "native_run": {
+      "path": ".scratch\\large-gguf-head-20261023\\checks1\\summary.json",
+      "bytes": 7781,
+      "sha256": "547f5b49e339ec0d622e68de6b0f8e8eb534a9b4bbad18feaa9717bf4dc95660"
+    },
+    "results": {
+      "path": ".scratch\\large-gguf-head-20261023\\checks1\\results.xml",
+      "bytes": 7102,
+      "sha256": "a5fe193dd158e26f2dfff056a0562c5229926b8c0a523d0c5fa27afbf20d4f5b"
+    },
+    "new_translation_units_compiled": 3,
+    "SDK_builds": 0,
+    "native_CPU_builds": 0,
+    "NVCC_builds": 0,
+    "shaders": 0
+  },
+  "retained_initial_compile_failures": [
+    {
+      "path": "compile1/bounds",
+      "reason": "Missing backend include, explicit Operation construction and duplicate same-line SCOPED_TRACE names; test-source fixes only."
+    },
+    {
+      "path": "compile1/qwen-state",
+      "reason": "MSVC /WX C4456 token loop variable shadow; renamed vocabulary_token, no math or checks changed."
+    }
+  ],
+  "source_reviews": [
+    {
+      "path": ".scratch\\large-gguf-head-20261023\\admission-source\\freeze.json",
+      "bytes": 4154,
+      "sha256": "182544ee0fcaa240a4e7d685ae78d7cc760b958823c0c923065810334881ab75"
+    },
+    {
+      "path": ".scratch\\large-gguf-head-20261023\\qwen-source\\freeze2.json",
+      "bytes": 1203,
+      "sha256": "5dcb0cd1742c604a69319aa43dcc7271ca83157279b321638c567f24af8fec68"
+    },
+    {
+      "path": ".scratch\\large-gguf-head-20261023\\review\\cuda-packed-m1-independent.json",
+      "bytes": 4922,
+      "sha256": "ee8503e950a27e173db47242719c4d7cf04a8620a5684278e0883c54e0a6d283"
+    },
+    {
+      "path": ".scratch\\large-gguf-head-20261023\\review\\bounds-and-single-head-independent.json",
+      "bytes": 5929,
+      "sha256": "8a9d6c3b72a985d965feedda8ec41d4327f8b9d582359a3498cb49422e080b3a"
+    },
+    {
+      "path": ".scratch\\large-gguf-head-20261023\\review\\qwen-single-head-independent.json",
+      "bytes": 3056,
+      "sha256": "4e2d1e95efa7dab155331e6cb6b6e95abc1a87910dc231b29c2a1adfa1844e14"
+    }
+  ],
+  "next_original_supplier_map": {
+    "path": ".scratch\\large-gguf-head-20261023\\review\\next-original-suppliers.json",
+    "bytes": 30383,
+    "sha256": "e8a5d920a2bf21dbd4c0ad487b34dad70128c8a98e6416baa343832777c77038"
+  },
+  "next": "GLM Flash seven original BF16 indexer roles14943744B into the existing complete NextN fresh/catchup chain, reusing already acquired original input roles. Follow exact BF16 store/norm boundaries and separate target43 roles. DSpark remaining norms/HC then router/expert readiness, shared LM, realtarget taps, Progeometry and confirmedquant combinations remain.",
+  "limitations": [
+    "WindowsCPU/CUDA only; no Linux/Apple/Vulkan model execution this batch.",
+    "Q27/Q24 full head weights/vocabulary and remaining NextN coefficients are generated; original EH/norm or K/V roles stay injected. No complete original target trunk, full original expert bank, natural acceptance or full generation quality claim.",
+    "The generic large-bank allowance is deliberately tied to the actual no-full-weight-decode path. Other shapes, types, layouts and native fallbacks retain prior limits.",
+    "Full-logit Copy observations and six-generation pool are test diagnostics, not a production performance configuration.",
+    "No new loading/TPS or physical memory/VRAM observation; AV four-arm table unchanged.",
+    "This closes one real library limitation; the full MTP and broad architecture/performance goal remain incomplete."
+  ],
+  "performance_tail_sha256": "80b8672315911a74039a14cd137659bc67289273dc9c3707cd267b2d06de2551",
+  "final_image": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\large-gguf-head-20261023\\tests-link1\\packed-head-checks.exe",
+    "bytes": 140584960,
+    "sha256": "117b3a529fb40b50db346fb163472911e7e4a4e21599ddb970021a6ae2aa6bf4"
+  },
+  "sources": [
+    {
+      "path": "src\\compute_provider_ggml_cuda\\tensor_program.cc",
+      "bytes": 58386,
+      "sha256": "d3f710fa6ee7fc99af3bcb6b9ab9c0c2dbea05e14abca3e967906490e8495238"
+    },
+    {
+      "path": "tests\\compute_provider_ggml_cuda\\packed_matmul_bounds_test.cc",
+      "bytes": 6005,
+      "sha256": "926149a9c3ca309ca17615cdbc86cef002e76c83ba2ba04775a6115e858e5c03"
+    },
+    {
+      "path": "tests\\compute_provider_ggml_cuda\\CMakeLists.txt",
+      "bytes": 1239,
+      "sha256": "34dc811e68d6c469e2cce1ba8dc010802222c50a242fe5f749a6132edd13616b"
+    },
+    {
+      "path": "tests\\compute_models\\qwen_mtp_state_consumer.h",
+      "bytes": 20224,
+      "sha256": "2ab61745c43e16dde9263c7fe240b5fcb189e419b3d04c6083b6a3d51a61b64a"
+    },
+    {
+      "path": "tests\\compute_models\\qwen_mtp_state_consumer_test.cc",
+      "bytes": 31064,
+      "sha256": "6e7d971d9b3796cd0ffde0919c4fb78738fb3702aee0b7423a9ddccb08fe0987"
+    },
+    {
+      "path": "docs\\developer\\current-work.md",
+      "bytes": 23979,
+      "sha256": "f1460e8a81763d6081b4eaf077587993e3493f03935551720b097a6c844232b1"
+    },
+    {
+      "path": "docs\\implementation\\model-operators.md",
+      "bytes": 92774,
+      "sha256": "2ebbfa1d77e78e783ee920a7d043a4075c6bfc93218b803954348f60479a122d"
+    }
+  ],
+  "cleanup": "One current new executable/map retained for replay; no redundant BH image was produced. Failed compile logs and small objects/recipes retained. No cleanup deletion performed.",
+  "archive": {
+    "path": "docs\\evidence\\correctness\\mtp-full-packed-head-2026-10-23.zip",
+    "bytes": 337163,
+    "sha256": "d6ff5e8e8bf910092b5811db79e6939cd8df81c070897330b3221351779ba65b"
+  },
+  "archive_items": 87
+}

@@ -29,13 +29,15 @@ struct BatchSlot final {
       : destinations(mem::StdAllocator<CUdeviceptr>(allocator)),
         sources(mem::StdAllocator<CUdeviceptr>(allocator)),
         sizes(mem::StdAllocator<std::size_t>(allocator)),
-        ranges(mem::StdAllocator<CopyBackendRange>(allocator)) {}
+        ranges(mem::StdAllocator<CopyBackendRange>(allocator)) {
+    attributes.srcAccessOrder = CU_MEMCPY_SRC_ACCESS_ORDER_STREAM;
+  }
   Array<CUdeviceptr> destinations, sources;
   Array<std::size_t> sizes;
   Array<CopyBackendRange> ranges;
   std::size_t count = 0;
   QueueState *queue = nullptr; // borrowed original slot endpoint
-  CUmemcpyAttributes attributes{.srcAccessOrder = CU_MEMCPY_SRC_ACCESS_ORDER_STREAM};
+  CUmemcpyAttributes attributes{};
   std::size_t attribute_index = 0;
   bool use_batch = false;
 };

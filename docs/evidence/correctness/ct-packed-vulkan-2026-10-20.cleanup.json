@@ -1,0 +1,42 @@
+{
+  "reason": "Archived, superseded focused test/performance images and maps only; latest images, every object, SDK and metallib retained.",
+  "scope": "Windows repository scratch",
+  "deleted": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-vulkan\\checks\\ct-perf.exe",
+      "bytes": 68714496,
+      "sha256": "91d1a4b361219ac14ef16cec4a9f99504f0dfb1a0686f2df1f34511570e4508c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-vulkan\\checks\\ct-perf.map",
+      "bytes": 35043801,
+      "sha256": "c0a6a24442d8b284217236ba4d293b9d8309290ba80bfd69a8e7eda9b5618448"
+    }
+  ],
+  "bytes": 103758297.0,
+  "protected_verified": 6,
+  "proofs": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\ct-packed-vulkan-2026-10-20.json",
+      "bytes": 23591,
+      "sha256": "9b3a955b479a54e2ebb4e7f4ab25277dcfdcb52972d1b78ac10c30a174094ee3"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\ct-packed-vulkan-2026-10-20.zip",
+      "bytes": 248795,
+      "sha256": "6d608533564f89f435aa254f63f09e428880fff48e82e71667c8e6f50c1f4033"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\ct-packed-apple-2026-10-20.json",
+      "bytes": 99805,
+      "sha256": "39b3c92f999e5fc89e0ef18c2bc6199f6fbb1bb35b12ba6e9c2aa1a30daeebba"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\ct-packed-apple-2026-10-20.zip",
+      "bytes": 2564359,
+      "sha256": "889c4c71678771c8888d1fb919e0e471b1a38345ae472b2ac36f256e6e6f1161"
+    }
+  ],
+  "script": "test.ps1",
+  "current_images_all_objects_and_SDK_retained": true
+}

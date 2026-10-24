@@ -33,5 +33,12 @@ void destroy_batch_state(void *) noexcept;
 cudaError_t query_batch_workspace(BatchSpec,const std::int32_t *,const std::int32_t *,cudaStream_t,BatchFacts &);
 cudaError_t plan_batch(void *,BatchSpec,const std::int32_t *,const std::int32_t *,void *,std::size_t,void *,void *,std::size_t,cudaStream_t,BatchFacts &);
 cudaError_t run_batch(const void *,BatchSpec,const void *,const void *,const void *,const void *,void *,void *,void *,cudaStream_t);
+cudaError_t run_highdim_batch(const void *,BatchSpec,const void *,const void *,const void *,const void *,void *,void *,void *,cudaStream_t);
 cudaError_t run_cache_batch(const void *,BatchSpec,const void *,const void *,const void *,const void *,void *,void *,void *,cudaStream_t);
+std::size_t mla_state_bytes() noexcept;
+void initialize_mla_state(void *) noexcept;
+void destroy_mla_state(void *) noexcept;
+cudaError_t query_mla_workspace(BatchSpec,const std::int32_t *,const std::int32_t *,const std::int32_t *,cudaStream_t,BatchFacts &);
+cudaError_t plan_mla(void *,BatchSpec,const std::int32_t *,const std::int32_t *,const std::int32_t *,void *,std::size_t,void *,void *,std::size_t,cudaStream_t,BatchFacts &);
+cudaError_t run_mla(const void *,BatchSpec,const void *,const void *,const void *,void *,void *,void *,cudaStream_t);
 } // namespace hyle::compute::flashinfer::native

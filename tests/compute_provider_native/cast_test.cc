@@ -1,11 +1,15 @@
 #include <gtest/gtest.h>
 
 #include <array>
+#include <bit>
+#include <cfenv>
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
+#include <limits>
 #include <span>
 #include <type_traits>
+#include <vector>
 
 #include "../compute/native_context_fixture.h"
 #include "hyle/compute/prepared_operation.h"
@@ -215,7 +219,7 @@ TEST(MatureCast, MaterializesStridedFloat16ToFloat32) {
   EXPECT_EQ(actual, expected);
 }
 
-TEST(MatureCast, RejectsUnfrozenIntegerConversionSemantics) {
+TEST(AtenCpuCast, RejectsUnsupportedIntegerConversionCarrier) {
   constexpr std::array<std::int64_t, 1> shape{4};
   const TensorDesc input_desc =
       TensorDesc::dense(DataType::kInt32, shape).value();
@@ -224,6 +228,79 @@ TEST(MatureCast, RejectsUnfrozenIntegerConversionSemantics) {
       hyle::compute::prepare(context, Cast{DataType::kFloat32}, input_desc);
   ASSERT_FALSE(prepared.has_value());
   EXPECT_TRUE(prepared.error().IsUnimplemented());
+}
+
+TEST(NativeCast, Int32ToFloat32RoundsEvenAcrossDenseAndOddByteStrides) {
+  constexpr std::array<std::int64_t,2> shape{2,8}, strides{51,5};
+  constexpr std::array<std::int32_t,16> values{
+      0,1,-1,129279,16777215,16777216,16777217,16777219,
+      -16777217,-16777219,2147483520,2147483583,2147483584,
+      std::numeric_limits<std::int32_t>::max(),
+      std::numeric_limits<std::int32_t>::min(),
+      std::numeric_limits<std::int32_t>::min()+1};
+  // Independent IEEE754 binary32 encodings, including both sides of 2^24
+  // midpoint ties and the 2^31 carry. No floating cast constructs this oracle.
+  constexpr std::array<std::uint32_t,16> expected{
+      0x00000000u,0x3f800000u,0xbf800000u,0x47fc7f80u,
+      0x4b7fffffu,0x4b800000u,0x4b800000u,0x4b800002u,
+      0xcb800000u,0xcb800002u,0x4effffffu,0x4effffffu,
+      0x4f000000u,0x4f000000u,0xcf000000u,0xcf000000u};
+  struct RestoreRounding final {
+    int mode=std::fegetround();
+    ~RestoreRounding() { if (mode!=-1) std::fesetround(mode); }
+  } restore_rounding;
+  ASSERT_NE(restore_rounding.mode,-1);
+  auto context=hyle::compute::test::native_context().value();
+  auto queue=context.create_queue().value();
+  for (const bool strided:{false,true}) {
+    SCOPED_TRACE(strided);
+    const auto input_desc=(strided ? TensorDesc::strided_bytes(DataType::kInt32,shape,strides)
+                                 : TensorDesc::dense(DataType::kInt32,shape)).value();
+    const auto output_desc=TensorDesc::dense(DataType::kFloat32,shape).value();
+    auto source=Buffer::create(hyle::mem::system_resource(),input_desc.required_bytes().value(),64).value();
+    auto destination=Buffer::create(hyle::mem::system_resource(),sizeof(expected),64).value();
+    auto prepared=hyle::compute::prepare(context,Cast{DataType::kFloat32},input_desc);
+    ASSERT_TRUE(prepared)<<prepared.error().message();
+    EXPECT_EQ(prepared->output_description().value(),output_desc);
+    auto invocation=prepared->create_invocation().value();
+    const auto input=ConstTensorView::create(input_desc,source.view()).value();
+    const auto output=TensorView::create(output_desc,destination.view()).value();
+    for (int replay=0;replay<2;++replay) {
+      SCOPED_TRACE(replay);
+      ASSERT_EQ(std::fesetround(replay ? FE_DOWNWARD : FE_UPWARD),0);
+      std::vector<std::byte> physical(source.size(),std::byte{0x5a});
+      std::array<std::uint32_t,values.size()> answer{};
+      for (std::size_t i=0;i<values.size();++i) {
+        const auto from=replay ? values.size()-1-i : i;
+        const auto offset=strided ? (i/8)*std::size_t(strides[0])+(i%8)*std::size_t(strides[1])
+                                  : i*sizeof(std::int32_t);
+        std::memcpy(physical.data()+offset,&values[from],sizeof(values[from]));
+        answer[i]=expected[from];
+      }
+      ASSERT_TRUE(source.view().write(physical).ok());
+      if (!replay) {
+        const auto aliased=TensorView::create(output_desc,source.view()).value();
+        auto rejected=invocation.submit(queue,input,aliased);
+        ASSERT_FALSE(rejected);
+        EXPECT_TRUE(rejected.error().IsInvalidArgument());
+      }
+      auto done=invocation.submit(queue,input,output);
+      ASSERT_TRUE(done)<<done.error().message();
+      ASSERT_TRUE(done->wait().ok());
+      std::array<std::uint32_t,expected.size()> actual{};
+      ASSERT_TRUE(destination.view().read(std::as_writable_bytes(std::span(actual))).ok());
+      EXPECT_EQ(actual,answer);
+      std::vector<std::byte> unchanged(source.size());
+      ASSERT_TRUE(source.view().read(unchanged).ok());
+      EXPECT_EQ(unchanged,physical);
+    }
+  }
+  // Freezing the integer->float pair does not define float truncation,
+  // out-of-range integer results or NaN-to-integer behavior.
+  auto reverse=hyle::compute::prepare(context,Cast{DataType::kInt32},
+      TensorDesc::dense(DataType::kFloat32,shape).value());
+  ASSERT_FALSE(reverse);
+  EXPECT_TRUE(reverse.error().IsUnimplemented());
 }
 
 TEST(MatureCast, RejectsOverlappingInputAndOutputStorage) {
@@ -249,6 +326,72 @@ TEST(MatureCast, RejectsOverlappingInputAndOutputStorage) {
   auto submitted = invocation.submit(queue, input, output);
   ASSERT_FALSE(submitted.has_value());
   EXPECT_TRUE(submitted.error().IsInvalidArgument());
+}
+
+
+template<class Bits> void expect_boolean_cast(DataType type,
+    const std::array<Bits, 8> &values, Bits one) {
+  constexpr std::array<std::int64_t, 2> shape{2, 4};
+  constexpr std::array<std::uint8_t, 8> truth{0, 0, 1, 1, 1, 1, 1, 1};
+  constexpr std::array<std::uint8_t, 8> boolean{0, 1, 2, 255, 1, 0, 0, 1};
+  auto context = hyle::compute::test::native_context().value();
+  auto queue = context.create_queue().value();
+  for (const bool strided : {false, true}) {
+    SCOPED_TRACE(strided);
+    const auto width = static_cast<std::int64_t>(sizeof(Bits));
+    const std::array<std::int64_t, 2> source_strides{4 * (width + 1) + 1, width + 1};
+    const auto input_desc = (strided ? TensorDesc::strided_bytes(type, shape, source_strides)
+        : TensorDesc::dense(type, shape)).value();
+    std::vector<std::byte> physical(input_desc.required_bytes().value(), std::byte{0x5a});
+    for (std::size_t i = 0; i < values.size(); ++i) {
+      const auto offset = strided ? (i / 4) * std::size_t(source_strides[0]) +
+          (i % 4) * std::size_t(source_strides[1]) : i * sizeof(Bits);
+      std::memcpy(physical.data() + offset, &values[i], sizeof(Bits));
+    }
+    auto source = Buffer::create(hyle::mem::system_resource(), physical.size(), 64).value();
+    auto destination = Buffer::create(hyle::mem::system_resource(), truth.size(), 64).value();
+    ASSERT_TRUE(source.view().write(physical).ok());
+    auto prepared = hyle::compute::prepare(context, Cast{DataType::kBool}, input_desc);
+    ASSERT_TRUE(prepared) << prepared.error().message();
+    auto invocation = prepared->create_invocation().value();
+    auto done = invocation.submit(queue, ConstTensorView::create(input_desc, source.view()).value(),
+        TensorView::create(prepared->output_description().value(), destination.view()).value());
+    ASSERT_TRUE(done) << done.error().message();
+    ASSERT_TRUE(done->wait().ok());
+    std::array<std::uint8_t, 8> actual{};
+    ASSERT_TRUE(destination.view().read(std::as_writable_bytes(std::span(actual))).ok());
+    EXPECT_EQ(actual, truth);
+
+    const std::array<std::int64_t, 2> bool_strides{11, 2};
+    const auto bool_desc = (strided ? TensorDesc::strided_bytes(DataType::kBool, shape, bool_strides)
+        : TensorDesc::dense(DataType::kBool, shape)).value();
+    std::vector<std::byte> raw(bool_desc.required_bytes().value(), std::byte{0x5a});
+    for (std::size_t i = 0; i < boolean.size(); ++i)
+      raw[strided ? (i / 4) * 11 + (i % 4) * 2 : i] = std::byte{boolean[i]};
+    auto mask = Buffer::create(hyle::mem::system_resource(), raw.size(), 64).value();
+    auto numeric = Buffer::create(hyle::mem::system_resource(), 8 * sizeof(Bits), 64).value();
+    ASSERT_TRUE(mask.view().write(raw).ok());
+    auto reverse = hyle::compute::prepare(context, Cast{type}, bool_desc);
+    ASSERT_TRUE(reverse) << reverse.error().message();
+    auto reverse_invocation = reverse->create_invocation().value();
+    auto reverse_done = reverse_invocation.submit(queue, ConstTensorView::create(bool_desc, mask.view()).value(),
+        TensorView::create(reverse->output_description().value(), numeric.view()).value());
+    ASSERT_TRUE(reverse_done) << reverse_done.error().message();
+    ASSERT_TRUE(reverse_done->wait().ok());
+    std::array<Bits, 8> widened{}, expected{};
+    for (std::size_t i = 0; i < boolean.size(); ++i) expected[i] = boolean[i] ? one : Bits{0};
+    ASSERT_TRUE(numeric.view().read(std::as_writable_bytes(std::span(widened))).ok());
+    EXPECT_EQ(widened, expected);
+  }
+}
+
+TEST(NativeCast, BooleanConversionsKeepSignedZerosTinyValuesAndByteStrides) {
+  expect_boolean_cast<std::uint32_t>(DataType::kFloat32,
+      {0, 0x80000000u, 1, 0x80000001u, 0x3f800000u, 0xbf800000u, 0x7f800000u, 0x7fc00001u}, 0x3f800000u);
+  expect_boolean_cast<std::uint16_t>(DataType::kFloat16,
+      {0, 0x8000, 1, 0x8001, 0x3c00, 0xbc00, 0x7c00, 0x7e01}, 0x3c00);
+  expect_boolean_cast<std::uint16_t>(DataType::kBFloat16,
+      {0, 0x8000, 1, 0x8001, 0x3f80, 0xbf80, 0x7f80, 0x7fc1}, 0x3f80);
 }
 
 } // namespace

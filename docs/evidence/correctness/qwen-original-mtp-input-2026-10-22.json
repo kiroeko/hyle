@@ -1,0 +1,444 @@
+{
+  "date": "2026-10-22",
+  "status": "ORIGINAL_Q27_INPUT_AND_CURRENT_Q24_CODEC_CONSUMERS_PASS",
+  "goal_complete": false,
+  "changes": [
+    {
+      "path": "tests\\compute_models\\qwen27_original_mtp_input_test.cc",
+      "bytes": 16423,
+      "sha256": "76b858257bf82b3c58bb3a27a81f89f2c6231c09d1d0fbab7a57017f9c301d13"
+    },
+    {
+      "path": "tests\\compute_models\\original_role_input.h",
+      "bytes": 6332,
+      "sha256": "271f194b4544b8f4401f098070b3364d825a133c80c40b0bb2d7845e3596b05a"
+    },
+    {
+      "path": "tests\\compute_models\\cpu_c5_qwen_nextn.h",
+      "bytes": 16232,
+      "sha256": "a01d1244baf9f6ed151938f05f070db32dfd63fb8cda7832b793a91a07829f5d"
+    },
+    {
+      "path": "tests\\compute_models\\cpu_c5_parameter_tests.h",
+      "bytes": 5172,
+      "sha256": "71d8ad1a8739bee7b34b4a3f55ea20143548305cc5b38fd4a083d835c26693bf"
+    },
+    {
+      "path": "tests\\graph_route_cpu\\CMakeLists.txt",
+      "bytes": 6010,
+      "sha256": "df200efb9a6d3f767a23ffb29e9ec6ac4af01635ab48b8191bed846696486492"
+    },
+    {
+      "path": "tests\\graph_route_cuda\\CMakeLists.txt",
+      "bytes": 7170,
+      "sha256": "c7fc6555c466dc87f8ddaeaeca474e25dd5ceec9eef103fd1561b5676c87d8f4"
+    },
+    {
+      "path": "docs\\developer\\current-work.md",
+      "bytes": 55732,
+      "sha256": "00517a70935d906e95a622c1fb58b452ff328233f008b78eba1db62321685add"
+    },
+    {
+      "path": "docs\\implementation\\model-operators.md",
+      "bytes": 91086,
+      "sha256": "ac5c1ce763022b799a541badbae2a7d3b6183a438b3a60565b611de68ad16bab"
+    }
+  ],
+  "final_checks": {
+    "process": {
+      "command": [
+        "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-original-mtp-20261022\\tests-link3\\qwen-mtp-checks.exe",
+        "--gtest_filter=*OriginalMtpInput*:*Qwen24OriginalMtpCodecNormOrderAndCarry*:*Qwen24CompleteNextNUsesMixedRolesCacheMoeAndFullHead*",
+        "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\qwen-original-mtp-20261022\\checks2\\results.xml"
+      ],
+      "cwd": "C:\\public\\project-hyle\\hyle",
+      "started": 1792670166.482436,
+      "timeout_seconds": 1200,
+      "throughput_evidence": false,
+      "memory_evidence": false,
+      "trace": false,
+      "profiler": false,
+      "pid": 82960,
+      "exit": 0,
+      "timed_out": false,
+      "finished": 1792670173.3115873,
+      "process_wall_seconds": 6.828323599998839
+    },
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-original-mtp-20261022\\tests-link3\\qwen-mtp-checks.exe",
+      "bytes": 141606912,
+      "sha256": "010aebfc58dfc13e0d6d973cd4f2ad6d2ed0109b0b164044e8b0926605bb1684"
+    },
+    "throughput_evidence": false,
+    "memory_evidence": false,
+    "whole_original_model": false,
+    "tests": 5,
+    "failures": 0,
+    "errors": 0,
+    "disabled": 0,
+    "skips": 0,
+    "cases": [
+      {
+        "attributes": {
+          "name": "CudaPrimaryQ6KRolesKeepOrderAndPriorResults",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\qwen27_original_mtp_input_test.cc",
+          "line": "288",
+          "status": "run",
+          "result": "completed",
+          "time": "0.491",
+          "timestamp": "2026-10-22T19:56:06.950",
+          "classname": "Qwen27OriginalMtpInput"
+        },
+        "properties": {
+          "scope": "original Q27 primary main-GGUF blk64 Q6_K EH plus two F32 norms; generated F32 input boundary only, not complete MTP model/state",
+          "backend": "ordinary CUDA Graph",
+          "actual_submissions": "3",
+          "original_role_bytes": "43048960",
+          "eh_proj_sha256": "5e72ecfbdff8f87139874ff85031dc18bc275fcd1639a3b124690c73ca3b9e07",
+          "enorm_sha256": "d96abe72c938e866b5a8bdaa8aa9f8590577f55bef6281c2e9fce892db518d97",
+          "hnorm_sha256": "e9247e9fc08ebd0ca8f14a610cfd1046a0115143f6967de9d520647149890ac2"
+        }
+      },
+      {
+        "attributes": {
+          "name": "CpuPrimaryQ6KRolesKeepOrderAndPriorResults",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\qwen27_original_mtp_input_test.cc",
+          "line": "297",
+          "status": "run",
+          "result": "completed",
+          "time": "0.398",
+          "timestamp": "2026-10-22T19:56:07.441",
+          "classname": "Qwen27OriginalMtpInput"
+        },
+        "properties": {
+          "scope": "original Q27 primary main-GGUF blk64 Q6_K EH plus two F32 norms; generated F32 input boundary only, not complete MTP model/state",
+          "backend": "ordinary CPU Graph",
+          "actual_submissions": "3",
+          "original_role_bytes": "43048960",
+          "eh_proj_sha256": "5e72ecfbdff8f87139874ff85031dc18bc275fcd1639a3b124690c73ca3b9e07",
+          "enorm_sha256": "d96abe72c938e866b5a8bdaa8aa9f8590577f55bef6281c2e9fce892db518d97",
+          "hnorm_sha256": "e9247e9fc08ebd0ca8f14a610cfd1046a0115143f6967de9d520647149890ac2"
+        }
+      },
+      {
+        "attributes": {
+          "name": "Layer45OriginalNormAndProjectionPreserveOrderAndOldResults",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_cuda\\glm_original_mtp_input_test.cc",
+          "line": "128",
+          "status": "run",
+          "result": "completed",
+          "time": "0.587",
+          "timestamp": "2026-10-22T19:56:07.841",
+          "classname": "CudaGlmOriginalMtpInput"
+        },
+        "properties": {
+          "scope": "original GLM-5.3-Flash layer45 BF16 norm/EH input component only; no attention/MoE/state/head/full-model claim",
+          "actual_submissions": "3",
+          "original_role_bytes": "67125248",
+          "eh_proj_sha256": "17af8402a6b674a462f2847612b2477e76c0de7dfc5ff9fba50ead1e5c88d649",
+          "enorm_sha256": "187f2b4efe991b8c69a1a0365ded195b7fd463d50a7facd0d7196402a66dcc54",
+          "hnorm_sha256": "3fbc01762fea938ae24e94ece075b03dd5cb44cbe218884712b35d865b820501"
+        }
+      },
+      {
+        "attributes": {
+          "name": "Qwen24OriginalMtpCodecNormOrderAndCarry",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_cpu\\../compute_models/cpu_c5_parameter_tests.h",
+          "line": "83",
+          "status": "run",
+          "result": "completed",
+          "time": "0.166",
+          "timestamp": "2026-10-22T19:56:08.429",
+          "classname": "CpuGraphC5Parameters"
+        },
+        "properties": {}
+      },
+      {
+        "attributes": {
+          "name": "Qwen24CompleteNextNUsesMixedRolesCacheMoeAndFullHead",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_cpu\\../compute_models/cpu_c5_parameter_tests.h",
+          "line": "91",
+          "status": "run",
+          "result": "completed",
+          "time": "4.497",
+          "timestamp": "2026-10-22T19:56:08.595",
+          "classname": "CpuGraphC5Parameters"
+        },
+        "properties": {}
+      }
+    ]
+  },
+  "q27": {
+    "acquisition": {
+      "repository": "unsloth/Qwen3.8-27B-GGUF",
+      "revision": "4ca720788d1e01f1bff70c033e0d0028fd02e502",
+      "file": "Qwen3.8-27B-UD-Q4_K_M.gguf",
+      "url": "https://huggingface.co/unsloth/Qwen3.8-27B-GGUF/resolve/4ca720788d1e01f1bff70c033e0d0028fd02e502/Qwen3.8-27B-UD-Q4_K_M.gguf",
+      "whole_file_download_allowed": false,
+      "requests": [
+        {
+          "first": 0,
+          "last": 11999999,
+          "bytes": 12000000,
+          "complete": true,
+          "http_status": 206,
+          "content_range": "bytes 0-11999999/16464440224",
+          "etag": "\"76b9d90a30128aedd438a2239b9b3867e877687223a9bf8c55eff5314e3a1473\"",
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-original-mtp-20261022\\original-q27\\header-prefix.bin",
+          "sha256": "6286251a4c455bd3032e31f2f68ee9e037597200e9bc51aa2bbc79859e2ebbb0"
+        },
+        {
+          "first": 16421350304,
+          "last": 16464358303,
+          "bytes": 43008000,
+          "complete": true,
+          "http_status": 206,
+          "content_range": "bytes 16421350304-16464358303/16464440224",
+          "etag": "\"76b9d90a30128aedd438a2239b9b3867e877687223a9bf8c55eff5314e3a1473\"",
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-original-mtp-20261022\\original-q27\\eh_proj.weight.q6_k",
+          "sha256": "5e72ecfbdff8f87139874ff85031dc18bc275fcd1639a3b124690c73ca3b9e07"
+        },
+        {
+          "first": 16464358304,
+          "last": 16464378783,
+          "bytes": 20480,
+          "complete": true,
+          "http_status": 206,
+          "content_range": "bytes 16464358304-16464378783/16464440224",
+          "etag": "\"76b9d90a30128aedd438a2239b9b3867e877687223a9bf8c55eff5314e3a1473\"",
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-original-mtp-20261022\\original-q27\\enorm.weight.f32",
+          "sha256": "d96abe72c938e866b5a8bdaa8aa9f8590577f55bef6281c2e9fce892db518d97"
+        },
+        {
+          "first": 16464378784,
+          "last": 16464399263,
+          "bytes": 20480,
+          "complete": true,
+          "http_status": 206,
+          "content_range": "bytes 16464378784-16464399263/16464440224",
+          "etag": "\"76b9d90a30128aedd438a2239b9b3867e877687223a9bf8c55eff5314e3a1473\"",
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-original-mtp-20261022\\original-q27\\hnorm.weight.f32",
+          "sha256": "e9247e9fc08ebd0ca8f14a610cfd1046a0115143f6967de9d520647149890ac2"
+        }
+      ],
+      "roles": [
+        {
+          "name": "blk.64.nextn.eh_proj.weight",
+          "GGUF_shape": [
+            10240,
+            5120
+          ],
+          "dtype": "Q6_K",
+          "relative_offset": 16410353664,
+          "absolute_start": 16421350304,
+          "payload": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-original-mtp-20261022\\original-q27\\eh_proj.weight.q6_k",
+            "bytes": 43008000,
+            "sha256": "5e72ecfbdff8f87139874ff85031dc18bc275fcd1639a3b124690c73ca3b9e07"
+          }
+        },
+        {
+          "name": "blk.64.nextn.enorm.weight",
+          "GGUF_shape": [
+            5120
+          ],
+          "dtype": "F32",
+          "relative_offset": 16453361664,
+          "absolute_start": 16464358304,
+          "payload": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-original-mtp-20261022\\original-q27\\enorm.weight.f32",
+            "bytes": 20480,
+            "sha256": "d96abe72c938e866b5a8bdaa8aa9f8590577f55bef6281c2e9fce892db518d97"
+          }
+        },
+        {
+          "name": "blk.64.nextn.hnorm.weight",
+          "GGUF_shape": [
+            5120
+          ],
+          "dtype": "F32",
+          "relative_offset": 16453382144,
+          "absolute_start": 16464378784,
+          "payload": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-original-mtp-20261022\\original-q27\\hnorm.weight.f32",
+            "bytes": 20480,
+            "sha256": "e9247e9fc08ebd0ca8f14a610cfd1046a0115143f6967de9d520647149890ac2"
+          }
+        }
+      ],
+      "complete": true,
+      "file_bytes": 16464440224,
+      "etag": "\"76b9d90a30128aedd438a2239b9b3867e877687223a9bf8c55eff5314e3a1473\"",
+      "header_prefix": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-original-mtp-20261022\\original-q27\\header-prefix.bin",
+        "bytes": 12000000,
+        "sha256": "6286251a4c455bd3032e31f2f68ee9e037597200e9bc51aa2bbc79859e2ebbb0"
+      },
+      "tensor_data_offset": 10996640
+    },
+    "parsed_main_header": {
+      "path": ".scratch\\qwen-original-mtp-20261022\\original-q27\\header.json",
+      "bytes": 157827,
+      "sha256": "01794437b4b91212a3db94335fb71b49025db3e1a565cbe4182de49069d9e3fe"
+    },
+    "scope": "Primary UD-Q4_K_M main GGUF embedded NextN blk64, not the Q4_K EH sidecar. Original Q6_K EH[GGUF K10240,N5120] and two F32 norm5120 roles.",
+    "graph": "F32 h/e -> separate F32 RMSNorm epsilon1e-6F from actual metadata -> normalized embedding before hidden -> original packed Q6_K EH -> F32.",
+    "execution": "One shared logical builder/checker; ordinary CPU and CUDA contexts, each one cold parameter binding and one Invocation with three actual submissions. Dense changed input twice then zero; bounded two-generation output pool and four old result leases remain valid after pool reuse/Invocation destruction. Original parameter bytes unchanged.",
+    "reference": "Independent FP64 normalization and row-wise original Q6_K decode plus FP64 Neumaier dot. Both actual-joined local equation and independently normalized whole component equation checked. Decode is oracle-only with one row scratch, not an expanded model weight bank for execution.",
+    "tolerance": "Existing strict F32 norm gate3e-5 absolute +2e-5 relative; exact concat bytes. Existing quantized-chain RMSE/max gates after existing reference-peak normalization, unchanged. CPU native Q6_KxQ8_K and CUDA small-M Q6_KxQ8_1 activation quantization differ, so no cross-backend byte equality claim.",
+    "numerical_observations": [
+      {
+        "backend": "CUDA",
+        "reference": "actual-joined local equation",
+        "max_absolute_error": 0.016045600175857544,
+        "RMSE": 0.0038515500675121196,
+        "reference_peak": 3.434384346008301
+      },
+      {
+        "backend": "CUDA",
+        "reference": "independent norm-to-EH chain equation",
+        "max_absolute_error": 0.01604554057121277,
+        "RMSE": 0.0038515501889269353,
+        "reference_peak": 3.434384346008301
+      },
+      {
+        "backend": "CUDA",
+        "reference": "actual-joined local equation",
+        "max_absolute_error": 0.06194782257080078,
+        "RMSE": 0.003982804857729011,
+        "reference_peak": 5.709714412689209
+      },
+      {
+        "backend": "CUDA",
+        "reference": "independent norm-to-EH chain equation",
+        "max_absolute_error": 0.06194734573364258,
+        "RMSE": 0.003982802187093035,
+        "reference_peak": 5.709713935852051
+      },
+      {
+        "backend": "CUDA",
+        "reference": "actual-joined local equation",
+        "max_absolute_error": 0.0,
+        "RMSE": 0.0,
+        "reference_peak": 0.0
+      },
+      {
+        "backend": "CUDA",
+        "reference": "independent norm-to-EH chain equation",
+        "max_absolute_error": 0.0,
+        "RMSE": 0.0,
+        "reference_peak": 0.0
+      },
+      {
+        "backend": "CPU",
+        "reference": "actual-joined local equation",
+        "max_absolute_error": 0.01690182089805603,
+        "RMSE": 0.004623413130328786,
+        "reference_peak": 3.434384346008301
+      },
+      {
+        "backend": "CPU",
+        "reference": "independent norm-to-EH chain equation",
+        "max_absolute_error": 0.016901850700378418,
+        "RMSE": 0.004623413722431032,
+        "reference_peak": 3.434384346008301
+      },
+      {
+        "backend": "CPU",
+        "reference": "actual-joined local equation",
+        "max_absolute_error": 0.026669979095458984,
+        "RMSE": 0.004410635266586317,
+        "reference_peak": 5.709714412689209
+      },
+      {
+        "backend": "CPU",
+        "reference": "independent norm-to-EH chain equation",
+        "max_absolute_error": 0.026670455932617188,
+        "RMSE": 0.004410635164076108,
+        "reference_peak": 5.709713935852051
+      },
+      {
+        "backend": "CPU",
+        "reference": "actual-joined local equation",
+        "max_absolute_error": 0.0,
+        "RMSE": 0.0,
+        "reference_peak": 0.0
+      },
+      {
+        "backend": "CPU",
+        "reference": "independent norm-to-EH chain equation",
+        "max_absolute_error": 0.0,
+        "RMSE": 0.0,
+        "reference_peak": 0.0
+      }
+    ],
+    "full_model": false,
+    "complete_MTP_state": false
+  },
+  "q24": {
+    "profiles": [
+      "UD-IQ4_XS",
+      "Q8_0"
+    ],
+    "fixed_revision": "567d3e6ac26c5474b18311e619c04350fb9a5556",
+    "correction": "The existing generated NextN decoder consumer now uses the currently selected primary profile54 and fidelity48. Removed old UD-IQ1_M/Q2_K expert branch; named parameters carry each actual role codec.",
+    "primary": "Q5_K attention/shared gate-up; Q4_K routed experts and vocabulary; Q6_K shared down; Q8_0 EH; F32 router/shared gate/norms.",
+    "fidelity": "Q8_0 attention, experts, shared FFN, vocabulary and EH, with F32 router/shared gate/norms.",
+    "checks": "Existing original-order/norm/carry case and complete NextN case both run both profiles via ordinary CPU Graph. Four embedding/decode feedback steps and full V248320 sharded head; prior state ports/oracle/tolerances unchanged.",
+    "original_payload": false,
+    "complete_accepted_prefix_publication": false,
+    "investigation": {
+      "path": ".scratch\\qwen-original-mtp-20261022\\q24-review\\review.json",
+      "bytes": 31770,
+      "sha256": "632bcb8d1ab703b56a002bab6f8d4397deefa03af09cc04d6bdbab97c209e022"
+    }
+  },
+  "validation_cache": {
+    "first_run": "checks1: four pass; Q24 fidelity large Q8_0 embedding Gather refused before execution.",
+    "reason": "Retained AW provider object was compiled without HYLE_GGML_CPU_IQ1_EXTENSIONS despite using the actual fixed CPU SDK. Production CMake already propagates this capability through ggml INTERFACE. Only the mismatched C++ provider TU was rebuilt with that existing capability.",
+    "source": "src/compute_ggml_runtime/CMakeLists.txt:239-240; src/compute_provider_ggml/ggml_cpu_provider.cc:2067-2078.",
+    "source_elements": 2034237440,
+    "source_encoded_bytes": 2161377280,
+    "product_gate_changed": false,
+    "math_changed": false,
+    "provider_forced": false,
+    "link_closure": "First link also lacked the existing CPU public compile entry and the head checker companion test TU; both were compiled from unchanged current sources, matching their normal CMake target composition."
+  },
+  "shared_reader": "Extracted authenticated read_bytes and finite little-endian read_float from the existing helper; original read_bfloat API, SHA and finite checks retained. Existing GLM original BF16 component rerun and passed3 submissions.",
+  "CMake": "The same source is registered for CPU-only and CUDA test targets with separate backend guards; the actual run enabled both in one cached host image. Dedicated CMake configurations were not rebuilt.",
+  "cleanup": {
+    "Removed": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-original-mtp-20261022\\tests-link1\\qwen-mtp-checks.map",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-original-mtp-20261022\\tests-link2\\qwen-mtp-checks.exe",
+        "bytes": 141606912,
+        "sha256": "7d717812f5a57d8efdf68d030b987358adba33616403b2303fc7bc4bf74fa8d4"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-original-mtp-20261022\\tests-link2\\qwen-mtp-checks.map",
+        "bytes": 62046625,
+        "sha256": "391a563acfe149ea0740db5d65d3e851d3668c12a3e1b0e0ebb022d23b6b7399"
+      }
+    ],
+    "Bytes": 203653537,
+    "CurrentImageRetained": true,
+    "CurrentMapRetained": true
+  },
+  "limits": [
+    "Windows CPU/CUDA finite component checks only; no whole Q27 model, MTP proposal/acceptance or complete state claim.",
+    "Q24 weights remain generated packed banks with the declared finite resident mapping. Original payloads and complete accepted-prefix composition remain.",
+    "No new TPS or physical CPU/GPU memory sample. AV remains the latest four-arm performance table.",
+    "No new production executor/loader/public API, SDK build, NVCC or shader build."
+  ],
+  "next": "Bind selected actual Q24 K/V Q5_K plus K norm (11,535,360B), verifying the fixed shard29 physical offsets first; continue applicable actual-role/state combinations rather than expanding unrelated synthetic matrices.",
+  "sources_commands_results_and_cleanup": {
+    "path": "docs\\evidence\\correctness\\qwen-original-mtp-input-2026-10-22.logs.zip",
+    "bytes": 540956,
+    "sha256": "a40be97914842971ccd9fb9624b1be20237e45a26e0fcf60f99448611ba591da"
+  },
+  "large_original_payloads_archived": false
+}

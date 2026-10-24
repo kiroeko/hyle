@@ -1,6 +1,7 @@
 #include <hyle/compute/apple.h>
 #include <hyle/compute/model_ops.h>
 #include <hyle/graph/apple.h>
+#include <hyle/simd/dtype.h>
 #include <mlx/ops.h>
 #include <mlx/transforms.h>
 
@@ -14,6 +15,9 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <limits>
+
+#include "../../compute_models/ct_asymmetric_int4_fixture.h"
 
 namespace c = hyle::compute;
 namespace a = c::apple;
@@ -139,6 +143,86 @@ void artifact(bool graph) {
   expect(decoded, expected);
 }
 
+void asymmetric_artifact(bool graph) {
+  using Fixture = ct_asymmetric_test::Fixture;
+  const auto stream = mx::default_stream(mx::Device::gpu);
+  for (const auto type : {c::DataType::kFloat16, c::DataType::kBFloat16,
+                          c::DataType::kFloat32}) {
+    const auto native = type == c::DataType::kFloat16 ? mx::float16
+                      : type == c::DataType::kBFloat16 ? mx::bfloat16 : mx::float32;
+    const auto round_source = [type](double value) -> double {
+      const auto f = static_cast<float>(value);
+      if (type == c::DataType::kFloat16)
+        return hyle::simd::f16_to_f32(hyle::simd::f32_to_f16(f));
+      if (type == c::DataType::kBFloat16)
+        return hyle::simd::bf16_to_f32(hyle::simd::f32_to_bf16(f));
+      return f;
+    };
+    for (const auto requested : {c::DataType::kUnknown, c::DataType::kFloat32}) {
+      auto context = take(a::Context::create());
+      const std::array descriptions{
+          dense(c::DataType::kInt32, {Fixture::rows, Fixture::columns / 8}),
+          dense(c::DataType::kInt32, {(Fixture::rows + 7) / 8, Fixture::groups}),
+          dense(type, {Fixture::rows, Fixture::groups})};
+      const auto op = c::model_ops::artifact_weight_decode(
+          c::model_ops::WeightArtifactFormat::kCompressedTensorsAsymmetric4,
+          Fixture::group, requested);
+      auto program = prepare(context, graph, op, descriptions);
+      std::vector<mx::array> retained;
+      std::vector<std::vector<double>> retained_expected;
+      for (unsigned seed : {0U, 1U}) {
+        Fixture fixture(seed);
+        if (seed) {
+          fixture.scales[2] = std::numeric_limits<double>::infinity();
+          fixture.scales[3] = -std::numeric_limits<double>::infinity();
+          fixture.scales[4] = std::numeric_limits<double>::quiet_NaN();
+        }
+        auto expected = fixture.expected(round_source);
+        if (!seed && type != c::DataType::kFloat32) {
+          const auto witness = type == c::DataType::kBFloat16 ? 0 : Fixture::group;
+          const auto scale = type == c::DataType::kBFloat16 ? 0 : 1;
+          if (expected[witness] == 3 * round_source(fixture.scales[scale]))
+            throw std::runtime_error("asymmetric source-rounding witness is ineffective");
+        }
+        mx::array scales = [&] {
+          const mx::Shape shape{int(Fixture::rows), int(Fixture::groups)};
+          if (type == c::DataType::kFloat32) {
+            const std::vector<float> values(fixture.scales.begin(), fixture.scales.end());
+            return mx::array(values.data(), shape, mx::float32);
+          }
+          std::vector<std::uint16_t> bits;
+          for (double value : fixture.scales)
+            bits.push_back(type == c::DataType::kFloat16
+                ? hyle::simd::f32_to_f16(static_cast<float>(value)).bits
+                : hyle::simd::f32_to_bf16(static_cast<float>(value)).bits);
+          return ready(mx::view(mx::array(bits.data(), shape, mx::uint16), native, stream));
+        }();
+        auto result = run(program, std::array{
+            mx::array(fixture.codes.data(), {int(Fixture::rows), int(Fixture::columns / 8)}),
+            mx::array(fixture.zero_points.data(), {int((Fixture::rows + 7) / 8), int(Fixture::groups)}),
+            scales});
+        if (result.dtype() != (requested == c::DataType::kFloat32 ? mx::float32 : native))
+          throw std::runtime_error("asymmetric output dtype differs");
+        retained.push_back(std::move(result));
+        retained_expected.push_back(std::move(expected));
+      }
+      check(context.close());
+      for (std::size_t pass = 0; pass < retained.size(); ++pass) {
+        auto actual = ready(mx::contiguous(mx::astype(retained[pass], mx::float32, stream), false, stream));
+        const auto &expected = retained_expected[pass];
+        if (actual.size() != expected.size()) throw std::runtime_error("asymmetric extent differs");
+        const auto *values = actual.data<float>();
+        for (std::size_t i = 0; i < expected.size(); ++i) {
+          const auto wanted = static_cast<float>(expected[i]);
+          if (std::isnan(wanted) ? !std::isnan(values[i])
+              : values[i] != wanted || (wanted == 0 && std::signbit(values[i]) != std::signbit(wanted)))
+            throw std::runtime_error("asymmetric typed value differs at " + std::to_string(i));
+        }
+      }
+    }
+  }
+}
+
 void fp4(bool graph) {
   auto context = take(a::Context::create());
   const auto stream = mx::default_stream(mx::Device::gpu);
@@ -196,8 +280,8 @@ void fp4(bool graph) {
 
 int main() {
   try {
-    for (bool graph : {false, true}) { codecs(graph); artifact(graph); fp4(graph); }
-    std::puts("PASS ordinary Direct/Graph Q4_K, mature NF4, FP4 tiny bits/experts/replay/failure/leases");
+    for (bool graph : {false, true}) { codecs(graph); artifact(graph); asymmetric_artifact(graph); fp4(graph); }
+    std::puts("PASS ordinary Direct/Graph Q4_K, NF4, CT asymmetric typed rounding/rebind/leases, FP4 tiny bits/experts/replay/failure/leases");
     return 0;
   } catch (const std::exception &error) {
     std::fprintf(stderr, "FAIL %s\n", error.what());

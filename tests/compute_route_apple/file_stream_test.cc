@@ -1,5 +1,6 @@
 #include "../compute_stream/native_journey.h"
 #include "hyle/compute/apple_memory.h"
+#include "hyle/compute/apple_file_stream.h"
 #include "apple_copy_internal.h"
 #include "hyle/compute/detail/retained_completion.h"
 #include <chrono>

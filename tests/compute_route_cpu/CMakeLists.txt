@@ -6,11 +6,15 @@ hyle_add_test(compute_route_cpu SOURCES context_test.cc d5_qwen35_profile_test.c
   cpu_artifact_decode_test.cc
   cpu_mlx_quantized_test.cc
   ds4_roundtrip_test.cc
+  row_cache_test.cc
+  row_cache_padded_test.cc
+  row_cache_indexer_test.cc
+  row_cache_paged_test.cc
   d5_qwen_gguf_vocabulary_test.cc
   d5_qwen38_official_test.cc
   d5_qwen35_gguf_projection_test.cc
   d5_qwen35_gguf_fragment_test.cc
-  DEPS hyle_compute_provider_native hyle_compute_provider_onednn
+  DEPS hyle_compute_batch hyle_compute_provider_native hyle_compute_provider_onednn
        hyle_compute_provider_ggml)
 target_link_libraries(hyle_compute_route_cpu_test PRIVATE ggml)
 target_include_directories(hyle_compute_route_cpu_test SYSTEM PRIVATE
@@ -25,6 +29,15 @@ endif()
 hyle_add_test(compute_route_cpu NAME sampling_consumer
   SOURCES sampling_consumer.cc DEPS hyle_compute_provider_native hyle_compute_provider_ggml hyle_compute_provider_onednn)
 hyle_stage_runtime(hyle_compute_route_cpu_sampling_consumer_test)
+
+hyle_add_test(compute_route_cpu NAME gguf_nvfp4
+  SOURCES gguf_nvfp4_test.cc DEPS hyle_compute_provider_native
+  hyle_compute_provider_onednn hyle_compute_provider_ggml)
+hyle_stage_runtime(hyle_compute_route_cpu_gguf_nvfp4_test)
+hyle_add_test(compute_route_cpu NAME grouped_shared_activation
+  SOURCES grouped_shared_activation_test.cc DEPS hyle_compute_provider_native
+  hyle_compute_provider_onednn hyle_compute_provider_ggml)
+hyle_stage_runtime(hyle_compute_route_cpu_grouped_shared_activation_test)
 
 # Each scenario gets a fresh process: the startup contract never resets globals.
 hyle_add_test(compute_route_cpu NAME thread_runtime NO_AUTORUN

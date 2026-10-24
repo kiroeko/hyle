@@ -1,0 +1,396 @@
+{
+  "status": "fixed_checkpoint_headers_and_producer_math_researched_implementation_separate",
+  "scope": "CT tensor_group16 local-dynamic NVFP4 parts of the two locked target-model artifacts; BF16 inputs, original U8 low-first packed weights, E4M3FN group scales and original independent F32[1] WG/IG quantization multipliers.",
+  "artifacts": [
+    {
+      "catalog_index": 8,
+      "repository": "unsloth/Qwen3.8-27B-NVFP4",
+      "revision": "f0b7c9e722f5565102fff8481c99e4d86ae099c7",
+      "producer_config_version": "0.17.2.a20260716",
+      "model_dtype": "bfloat16",
+      "header": {
+        "path": ".scratch/architecture-refactor-2026-10-18/ct-local-nvfp4-contract-review/artifact/8/model.safetensors/header.json",
+        "bytes": 251128,
+        "sha256": "4b84e0212253cc57dc5d3a6ac51fec8eb4775c7c0c35d1d59b375822be22f9e4"
+      },
+      "nvfp4_targets": {
+        "format": "nvfp4-pack-quantized",
+        "input_activations": {
+          "actorder": null,
+          "block_structure": null,
+          "dynamic": "local",
+          "group_size": 16,
+          "num_bits": 4,
+          "observer": "static_minmax",
+          "observer_kwargs": {},
+          "scale_dtype": "torch.float8_e4m3fn",
+          "strategy": "tensor_group",
+          "symmetric": true,
+          "type": "float",
+          "zp_dtype": null
+        },
+        "output_activations": null,
+        "targets": [
+          "re:.*mlp\\.(gate|up|down)_proj$"
+        ],
+        "weights": {
+          "actorder": "static",
+          "block_structure": null,
+          "dynamic": false,
+          "group_size": 16,
+          "num_bits": 4,
+          "observer_kwargs": {},
+          "scale_dtype": "torch.float8_e4m3fn",
+          "strategy": "tensor_group",
+          "symmetric": true,
+          "type": "float",
+          "zp_dtype": null
+        }
+      },
+      "sampled_complete_packed_roles": 168,
+      "complete_role_counts_by_layer": {
+        "0": 3,
+        "1": 3,
+        "10": 3,
+        "11": 3,
+        "12": 3,
+        "13": 3,
+        "14": 3,
+        "15": 3,
+        "16": 3,
+        "17": 3,
+        "18": 3,
+        "19": 3,
+        "2": 3,
+        "20": 3,
+        "21": 3,
+        "22": 3,
+        "23": 3,
+        "24": 3,
+        "25": 3,
+        "26": 3,
+        "27": 3,
+        "28": 3,
+        "29": 3,
+        "3": 3,
+        "30": 3,
+        "31": 3,
+        "32": 3,
+        "33": 3,
+        "34": 3,
+        "35": 3,
+        "36": 3,
+        "37": 3,
+        "38": 3,
+        "39": 3,
+        "4": 3,
+        "40": 3,
+        "41": 3,
+        "42": 3,
+        "43": 3,
+        "44": 3,
+        "45": 3,
+        "46": 3,
+        "47": 3,
+        "48": 3,
+        "49": 3,
+        "5": 3,
+        "50": 3,
+        "51": 3,
+        "52": 3,
+        "53": 3,
+        "54": 3,
+        "55": 3,
+        "6": 3,
+        "7": 3,
+        "8": 3,
+        "9": 3
+      },
+      "logical_shapes": [
+        {
+          "N": 5120,
+          "K": 17408,
+          "roles": 56
+        },
+        {
+          "N": 17408,
+          "K": 5120,
+          "roles": 112
+        }
+      ],
+      "physical_schema_all_sampled_roles_pass": true,
+      "roles_with_partial_companions": [],
+      "global_tensors_for_cross_shard_roles": []
+    },
+    {
+      "catalog_index": 18,
+      "repository": "RedHatAI/Qwen3.8-2.4T-A95B-NVFP4-FP8",
+      "revision": "b94577f02dd4bcb722aad2c60f8117032411dfb5",
+      "producer_config_version": "0.17.2.dev32+g46196ce",
+      "model_dtype": "bfloat16",
+      "header": {
+        "path": ".scratch/architecture-refactor-2026-10-18/ct-local-nvfp4-contract-review/artifact/18/model-00001-of-00070.safetensors/header.json",
+        "bytes": 798144,
+        "sha256": "716718e8be07c9be792b9980c7f462f77cab5eb0647c3586cbfece0c1c8c186e"
+      },
+      "nvfp4_targets": {
+        "format": "nvfp4-pack-quantized",
+        "input_activations": {
+          "actorder": null,
+          "block_structure": null,
+          "dynamic": "local",
+          "group_size": 16,
+          "num_bits": 4,
+          "observer": "static_minmax",
+          "observer_kwargs": {},
+          "scale_dtype": "torch.float8_e4m3fn",
+          "strategy": "tensor_group",
+          "symmetric": true,
+          "type": "float",
+          "zp_dtype": null
+        },
+        "output_activations": null,
+        "targets": [
+          "re:.*mlp\\..*"
+        ],
+        "weights": {
+          "actorder": null,
+          "block_structure": null,
+          "dynamic": false,
+          "group_size": 16,
+          "num_bits": 4,
+          "observer": "memoryless_minmax",
+          "observer_kwargs": {},
+          "scale_dtype": "torch.float8_e4m3fn",
+          "strategy": "tensor_group",
+          "symmetric": true,
+          "type": "float",
+          "zp_dtype": null
+        }
+      },
+      "sampled_complete_packed_roles": 1593,
+      "complete_role_counts_by_layer": {
+        "0": 1539,
+        "1": 54
+      },
+      "logical_shapes": [
+        {
+          "N": 2048,
+          "K": 8192,
+          "roles": 1062
+        },
+        {
+          "N": 8192,
+          "K": 2048,
+          "roles": 531
+        }
+      ],
+      "physical_schema_all_sampled_roles_pass": true,
+      "roles_with_partial_companions": [],
+      "global_tensors_for_cross_shard_roles": [
+        "model.layers.1.mlp.experts.18.up_proj.input_global_scale",
+        "model.layers.1.mlp.experts.18.up_proj.weight_global_scale"
+      ]
+    }
+  ],
+  "network_read_summary": {
+    "safetensors_length_prefix_bytes": 16,
+    "safetensors_header_bytes": 1049272,
+    "tensor_payload_bytes": 0,
+    "extra_recipe_bytes": 2086
+  },
+  "activation": {
+    "layout": "Independently for each leading-index row and each consecutive group of 16 K elements. No per-token current global max is computed.",
+    "global": "IG is a stored F32[1] calibration parameter. dynamic=local initializes this global but does not store input_scale; only local scales are recomputed at forward.",
+    "steps": [
+      "A is BF16. Group absmax remains BF16. u = BF16_RNE(amax / 6). This divide happens before the F32 global multiply.",
+      "v = F32_RNE(IG * F32(u)); IG has shape [1], promoting BF16 local scales to F32.",
+      "SF = E4M3FN_RNE(clamp(v,-448,448)), widened back to F32. Only exact SF==0 is replaced by 0.125. This is not max(SF,eps), min-normal, or the E4 min-subnormal.",
+      "effective = F32_RNE(SF / IG). Do not replace this division by SF * F32_RNE(1/IG).",
+      "normalized = clamp(F32_RNE(F32(A) / effective),-6,6).",
+      "FP4 pre-rounding is the real semantic difference: exact nightly casts this normalized value directly to E2M1; commit46196ce first rounds this clamped value to BF16, then E2M1.",
+      "E2M1 ties go to even magnitude code. Thresholds are .25->0, .75->1, 1.25->1, 1.75->2, 2.5->2, 3.5->4, 5->4.",
+      "QDQ = BF16_RNE(F32_RNE(F32(code_value) * effective)); the final group result is explicitly restored to original A dtype."
+    ],
+    "source_locations": [
+      "utils/helpers.py:50-136 (calculate_qparams)",
+      "utils/helpers.py:140-196 (group reduction)",
+      "utils/helpers.py:364-370 (E4 epsilon .125)",
+      "lifecycle/initialize.py:160-174 (static global, local dynamic)",
+      "lifecycle/forward.py:310-335 (current local-scale calculation)",
+      "lifecycle/forward_helpers.py:122-168,176-212 (reshape, dtype and QDQ)",
+      "quant_args.py:462-498 (clamp before FP4 cast)"
+    ]
+  },
+  "weight": {
+    "ports": "Wpacked U8[N,K/2], SF E4M3FN[N,K/16], raw WG F32[1]; A also needs raw IG F32[1]",
+    "global_convention": "CT raw WG/IG is a quantization multiplier, hence an effective-dequant divisor. ModelOpt's scaling_factor_2 is the dequant multiplier; these are not interchangeable input buffers.",
+    "steps": [
+      "Unpack even K from low nibble, odd K from high nibble. Sign bit is 3; magnitude table is [0,.5,1,1.5,2,3,4,6]. Code8 is negative zero.",
+      "Canonical CT decompressor unpacks to BF16 by default, widens SF E4 to BF16 exactly, then computes F32_RNE(SF / rawWG).",
+      "Decoded W = BF16_RNE(F32_RNE(F32(code_value) * F32_RNE(SF / rawWG))).",
+      "Weight SF0 is directly decoded; unlike dynamic activation scale generation, weight decompression adds no epsilon or new validity guard.",
+      "Ordinary CT reference inference multiplies QDQ A and decoded W in their BF16 dtype. A future packed implementation must preserve the per-element BF16 operands, not substitute a code-dot with combined post-scales. The backend dot/reduction tree remains a separate contract."
+    ],
+    "source_locations": [
+      "compressors/nvfp4/base.py:55-65,116-138",
+      "compressors/nvfp4/helpers.py:101-166,169-202",
+      "lifecycle/forward_helpers.py:246-268"
+    ]
+  },
+  "producer_sources": {
+    "artifact8": {
+      "producer_version_from_config": "0.17.2.a20260716",
+      "normalized_pypi_version": "0.17.2a20260716",
+      "pypi_url": "https://pypi.org/pypi/compressed-tensors/0.17.2.a20260716/json",
+      "source_archive": {
+        "path": "compressed_tensors-0.17.2a20260716.tar.gz",
+        "bytes": 271067,
+        "sha256": "d77167ac493971d3d0fab1820e5e60210e00e62e51500c5cf35fc5b0ea02b220"
+      },
+      "archive_sha_matches_pypi_digest": true,
+      "version_py": "ct-nightly-20260716/src/compressed_tensors/version.py",
+      "unknown": "No exact git commit claimed for this nightly; the exact release source archive is retained"
+    },
+    "artifact18": {
+      "producer_version_from_config": "0.17.2.dev32+g46196ce",
+      "resolved_commit": "46196ce607421d9992a47644612dc6b443f3c434",
+      "commit_url": "https://github.com/vllm-project/compressed-tensors/commit/46196ce607421d9992a47644612dc6b443f3c434",
+      "commit_receipt": "ct-commit-46196ce.json"
+    },
+    "source_manifest": "primary-source-identities.json",
+    "http_receipts": [
+      "http-initial.json",
+      "http-source-archives.json"
+    ],
+    "source_snapshot_count": 22
+  },
+  "version_difference": {
+    "helpers": "utils/helpers.py, lifecycle/forward_helpers.py, compressors/nvfp4/base.py are identical in the relevant retained versions (see version diff files).",
+    "nightly": "FP4_E2M1_DATA._cast_to_fp4 thresholds the current floating value directly (quant_args.py:67-80).",
+    "dev461": "FP4_E2M1_DATA.cast_to_fp4 dispatches to new fp4_utils. Both cast_to_fp4_torch and the Triton kernel first cast to BF16 (fp4_utils.py:26,108).",
+    "natural_schema": "A numerical pre-rounding field (direct vs BF16) is sufficient to distinguish the finite normalized-value difference; do not encode model names, producer versions, or a routing whitelist.",
+    "not_uniform_bit_semantics": "The finite pre-rounding field alone does not establish identical special-value behavior across the producer CPU and Triton branches; see signed_zero_and_nonfinite."
+  },
+  "witnesses": {
+    "oracle": "oracle.py",
+    "results": "oracle-results.json",
+    "status": "Pure Python scalar assertions passed; not a Hyle/producer numerical execution",
+    "version_difference": {
+      "A": [
+        1.25,
+        6,
+        "14 zeros"
+      ],
+      "raw_IG_bits": "0x3f8020c5",
+      "SF": 1,
+      "nightly_first_dq": 1.5,
+      "dev461_first_dq": 1.0
+    },
+    "global_direction": {
+      "packed_code": 1,
+      "SF": 1,
+      "raw_WG": 2,
+      "CT_dq_BF16": 0.5,
+      "incorrect_direct_ModelOpt_multiplier": 2.0
+    },
+    "input_dtype_rounding": {
+      "amax": {
+        "value": 0.0478515625,
+        "f32_bits": "0x3d440000"
+      },
+      "raw_IG": {
+        "value": 1.100000023841858,
+        "f32_bits": "0x3f8ccccd"
+      },
+      "bf16_divide": {
+        "value": 0.00799560546875,
+        "f32_bits": "0x3c030000"
+      },
+      "f32_divide": {
+        "value": 0.007975260727107525,
+        "f32_bits": "0x3c02aaab"
+      },
+      "ct_local_e4": 0.009765625,
+      "f32_first_local_e4": 0.0078125
+    },
+    "reciprocal_conversion": {
+      "SF": 1.5,
+      "raw_WG": {
+        "value": 3060.04638671875,
+        "f32_bits": "0x453f40be"
+      },
+      "packed_code": 1.0,
+      "direct_divide": {
+        "value": 0.0004901886568404734,
+        "f32_bits": "0x3a008001"
+      },
+      "loader_reciprocal_then_mul": {
+        "value": 0.0004901885986328125,
+        "f32_bits": "0x3a008000"
+      },
+      "CT_final_BF16": {
+        "value": 0.000492095947265625,
+        "f32_bits": "0x3a010000"
+      },
+      "converted_final_BF16": {
+        "value": 0.00048828125,
+        "f32_bits": "0x3a000000"
+      }
+    }
+  },
+  "signed_zero_and_nonfinite": {
+    "A_negative_zero": "Nightly and dev CPU use torch.sign, not a copied sign bit; exact signed-zero preservation is not explicitly guaranteed there. The dev Triton kernel explicitly carries the BF16 input sign bit, including -0.",
+    "negative_tiny_to_zero": "For finite negative nonzero normalized values, thresholded +0 times sign=-1 produces -0 in the sign-multiply paths; Triton explicitly ORs the sign bit.",
+    "weight_code8": "Unpack table's +0 multiplied by -1 yields -0; positive finite WG and finite nonnegative SF preserve the usual IEEE signed-zero path. No unsigned-zero reinterpretation is justified.",
+    "NaN": "Nightly/CPU torch.sign+arithmetic and dev Triton comparison/bitwise-sign code are not one uniform NaN contract. In particular Triton NaN comparisons leave initial magnitude0; CPU arithmetic propagates a NaN. No actual backend special-value execution was performed.",
+    "positive_finite_globals": "A sensible bounded consumer domain, but not proof all intermediates remain finite. F32 SF/global may overflow or underflow; 0*Inf can yield NaN. Preserve operation order and IEEE behavior rather than adding a new clamp/guard.",
+    "finite_overflow_tree": "Local IG*u may overflow F32 and is then clamped by the E4 conversion; effective SF/IG can overflow even for positive finite IG. W SF/WG can similarly overflow; code0*Inf is NaN. Finite normalized A overflows are clipped to6 before FP4."
+  },
+  "integration": {
+    "shape": "Two explicit FP4 pre-rounding policies under the existing prepared/native operation execution and resource lifetime machinery; dense and selected-grouped paths are both required. No runtime model/producer whitelist or new executor.",
+    "chosen_portable_reference": "Torch sign convention is explicit: a signed zero presented to the FP4 threshold stage maps to+0; a negative nonzero value which rounds to zero retains-0. The BF16 pre-rounding mode applies before that sign test. Original packed weight code8 retains-0.",
+    "resource_gap": "Checkpoint expert weights are separate tensors. Current grouped carrier requires one dense bank. Existing WeightSlots/catalog/selected fragments provide bounded uploading and lifetime building blocks, but the NVFP4 bridge for segmented experts, global/local ID mapping, working-set planning and real copy accounting is still to be completed under delivery3. Combining512 artifact18 role weights creates a4GiB W carrier and512MiB SF carrier, which is not a requirement of the checkpoint itself.",
+    "source_map": {
+      "member": "implementation/review.json",
+      "identity": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-local-nvfp4-contract-review\\implementation\\review.json",
+        "bytes": 34739,
+        "sha256": "8990c3959709c6b4454d7804a313c111d1304067c13a0eaed98cf0401182d362"
+      }
+    }
+  },
+  "limits": [
+    "No tensor payload values, publisher artifact execution, model import, quality or throughput were verified.",
+    "Artifact8 full header covers168 complete MLP NVFP4 roles in layers0-55; last8 layers MLP are FP8. Artifact18 only first of70 shards was inspected, covering1593 complete NVFP4 roles; additional global-only cross-shard entries are not complete roles.",
+    "A source-level independent scalar oracle is not execution of the original producer. Calibration observer/version and calibration payload are not reconstructed. Stored globals remain original ports.",
+    "Deployment FP4 tensor-core/code-dot paths, vLLM emulation variants and the producer fakequant tree are not assumed numerically equivalent.",
+    "This research archive makes no Hyle build, GPU, Linux, installed-consumer, complete bank or whole-model support claim. Hyle implementation and focused testing are in progress separately."
+  ],
+  "reports": {
+    "artifact": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-local-nvfp4-contract-review\\artifact\\review.json",
+      "bytes": 20056,
+      "sha256": "4fad007e2dcb0ce5c5f482b855daaa6d5e053b11831625598125b9168bedc5fd"
+    },
+    "producer": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-local-nvfp4-contract-review\\producer\\review.json",
+      "bytes": 13371,
+      "sha256": "ce5491592eec65e387626b73df59e93b8c17a7018261428c7cdb32657596e94d"
+    },
+    "implementation": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-local-nvfp4-contract-review\\implementation\\review.json",
+      "bytes": 34739,
+      "sha256": "8990c3959709c6b4454d7804a313c111d1304067c13a0eaed98cf0401182d362"
+    }
+  },
+  "archive": {
+    "identity": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\research\\ct-local-nvfp4-contract-2026-10-20.zip",
+      "bytes": 550203,
+      "sha256": "edf53c63ca32ecfa899fc82b6df7ce728bcacf9b477338733399a3ba08cb4c16"
+    },
+    "members": 80,
+    "verification": "CRC plus every member exact bytes and SHA inventory"
+  }
+}

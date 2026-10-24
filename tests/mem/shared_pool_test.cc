@@ -211,9 +211,8 @@ TEST(ConcurrentBlockPool, BlocksAlignedAndNonOverlapping) {
   for (void* p : ps) pool.deallocate(p);
 }
 
-TEST(ConcurrentBlockPool, AboveClay64SlotLimit) {
-  // clay capped arena allocators at 64 static slots (bug #5). Ours takes a
-  // block_count parameter -- prove well past 64 works.
+TEST(ConcurrentBlockPool, Above64SlotLimit) {
+  // The runtime block_count must support capacities well above 64 slots.
   constexpr std::uint32_t kN = 1000;
   ConcurrentBlockPool pool(system_allocator(), 16, kN);
   std::vector<void*> ps;

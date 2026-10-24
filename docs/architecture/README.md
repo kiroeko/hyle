@@ -1,8 +1,8 @@
 # 架构：少数原则与必要差异
 
 这些文档解释为何这样分层，以及哪些原生差异不能被统一外观抹掉。
-API与用法见[用户文档](../user/README.md)，操作与性能方法见[开发文档](../developer/README.md)，
-当前任务见[工作主线](../developer/current-work.md)。这里集中说明长期边界和设计取舍。
+API与用法见[用户文档](../user/README.md)，操作与性能方法见[开发文档](../developer/README.md)。
+这里集中说明长期边界和设计取舍。
 
 从[产品范围](hyle-scope.md)进入：先区分事实、机制、应用政策和资源owner，再看需要深入的设计。
 

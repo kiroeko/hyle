@@ -4,15 +4,96 @@
 #include "../compute_models/d5_qwen38_profile_cases.h"
 #include "../compute_provider_native/half_test_support.h"
 #include "ffn_support.h"
-#include "../../src/compute_route_cuda/best_of.h"
 #if defined(HYLE_COMPUTE_FLASHINFER)
 #include "hyle/compute/providers/flashinfer.h"
 #endif
 #include "hyle/compute/providers/ggml_cuda.h"
 #include "hyle/compute/providers/torch_cuda.h"
+#include "hyle/compute/cuda_weights.h"
+#include "hyle/compute/detail/completion_access.h"
+#include "hyle/compute/detail/queue_sequence.h"
+
+#include <atomic>
 
 namespace {
 using namespace cuda_route_test;
+
+TEST(CudaRoute, WeightOrderObservesReadyUploadWithoutAnotherNativePrefix) {
+  auto owner = compute::Context::create(cuda::device(0).value()).value();
+  auto host = cuda::MemoryResource::create(owner, cuda::MemoryKind::kPinnedHost).value();
+  auto device = cuda::MemoryResource::create(owner, cuda::MemoryKind::kDevice).value();
+  auto copy = owner.create_queue().value(), work = owner.create_queue().value();
+  const auto description = compute::TensorDesc::dense(
+      compute::DataType::kFloat32, std::array<std::int64_t, 1>{4}).value();
+  auto source = mem::Buffer::create(mem::system_resource(), 16, 256).value();
+  const std::array<float, 4> expected{1, -2, 3, 4};
+  ASSERT_TRUE(source.view().write(std::as_bytes(std::span(expected))).ok());
+  const auto input = compute::ConstTensorView::create(description, source.view()).value();
+  const std::array catalog{cuda::WeightSpec{7, description}};
+  auto slots = cuda::WeightSlots::create(owner, host, device, catalog, 16).value();
+  const std::array selection{cuda::WeightFragment{7, input}};
+  auto batch = slots.upload(0, selection, copy).value();
+  // Native readiness has not yet settled the original HYLE Completion.
+  ASSERT_EQ(cudaStreamSynchronize(cuda::stream(copy).value()), cudaSuccess);
+  for (unsigned episode = 0; episode < 8; ++episode) {
+    auto ordered = batch.order(work);
+    ASSERT_TRUE(ordered) << ordered.error().message();
+    EXPECT_FALSE(compute::detail::CompletionAccess::dependency(*ordered).pending());
+    EXPECT_TRUE(ordered->wait().ok());
+  }
+  std::array<float, 4> actual{};
+  ASSERT_TRUE(batch.binding(7)->storage().read(std::as_writable_bytes(std::span(actual))).ok());
+  EXPECT_EQ(actual, expected);
+  auto active = compute::detail::QueueSequence::begin(work).value();
+  auto busy = batch.order(work);
+  EXPECT_TRUE(!busy && busy.error().IsFailedPrecondition());
+  ASSERT_TRUE(active.finish());
+  auto foreign = compute::Context::create(cuda::device(0).value()).value();
+  auto foreign_queue = foreign.create_queue().value();
+  auto wrong_owner = batch.order(foreign_queue);
+  EXPECT_TRUE(!wrong_owner && wrong_owner.error().IsInvalidArgument());
+  ASSERT_TRUE(work.close().ok());
+  auto closed = batch.order(work);
+  EXPECT_TRUE(!closed && closed.error().IsFailedPrecondition());
+}
+
+TEST(CudaRoute, WeightOrderKeepsPendingUploadDependency) {
+  auto owner = compute::Context::create(cuda::device(0).value()).value();
+  auto host = cuda::MemoryResource::create(owner, cuda::MemoryKind::kPinnedHost).value();
+  auto device = cuda::MemoryResource::create(owner, cuda::MemoryKind::kDevice).value();
+  auto copy = owner.create_queue().value(), work = owner.create_queue().value();
+  const auto description = compute::TensorDesc::dense(
+      compute::DataType::kFloat32, std::array<std::int64_t, 1>{4}).value();
+  auto source = mem::Buffer::create(mem::system_resource(), 16, 256).value();
+  const std::array<float, 4> zeros{};
+  ASSERT_TRUE(source.view().write(std::as_bytes(std::span(zeros))).ok());
+  const std::array catalog{cuda::WeightSpec{7, description}};
+  auto slots = cuda::WeightSlots::create(owner, host, device, catalog, 16).value();
+  struct Gate {
+    std::atomic<bool> open{false};
+    static void CUDART_CB block(void *value) noexcept {
+      static_cast<Gate *>(value)->open.wait(false, std::memory_order_acquire);
+    }
+    void release() noexcept { open.store(true, std::memory_order_release); open.notify_all(); }
+    ~Gate() { release(); }
+  } gate;
+  auto blocked = cuda::submit(copy, [&gate](cudaStream_t stream) noexcept {
+    return cudaLaunchHostFunc(stream, &Gate::block, &gate);
+  }).value();
+  const std::array selection{cuda::WeightFragment{7,
+      compute::ConstTensorView::create(description, source.view()).value()}};
+  auto batch = slots.upload(0, selection, copy).value();
+  auto ordered = batch.order(work);
+  // Always release the host callback before any fatal assertion can unwind.
+  const auto pending = ordered ? ordered->poll() : hyle::Result<compute::CompletionPoll>(
+      std::unexpected(ordered.error()));
+  gate.release();
+  ASSERT_TRUE(ordered) << ordered.error().message();
+  ASSERT_TRUE(pending) << pending.error().message();
+  EXPECT_EQ(*pending, compute::CompletionPoll::kPending);
+  EXPECT_TRUE(ordered->wait().ok());
+  EXPECT_TRUE(blocked.wait().ok());
+}
 
 void run_ffn(compute::DataType type, std::int64_t rows) {
   auto stats = mem::StatsAllocator::create(mem::system_allocator()).value();
@@ -32,13 +113,9 @@ void run_ffn(compute::DataType type, std::int64_t rows) {
         compute::cuda_native::kDeepSeekProviderId,
         compute::cuda_native::kCcclProviderId,
         compute::cuda_native::kProviderId};
-    const auto extra = owner.provider_count() - expected.size();
-    ASSERT_LE(extra, 1U);
-    if (extra) {
-      EXPECT_EQ(owner.provider_identity(0)->id, compute::cuda_native::kProviderId);
-    }
+    ASSERT_EQ(owner.provider_count(), expected.size());
     for (std::size_t i = 0; i < expected.size(); ++i)
-      EXPECT_EQ(owner.provider_identity(i + extra)->id, expected[i]);
+      EXPECT_EQ(owner.provider_identity(i)->id, expected[i]);
     auto resource =
         cuda::MemoryResource::create(owner, cuda::MemoryKind::kDevice).value();
     Linear first(resource.ref(), type, 128, 256, 1);

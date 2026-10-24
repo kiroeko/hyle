@@ -14,10 +14,14 @@ hyle_add_test(compute_provider_native SOURCES
   aten_storage_test.cc
   ../compute/operation_test.cc
   cast_test.cc
+  ct_packed_test.cc
   elementwise_test.cc
   indexing_test.cc
   matmul_gated_test.cc
   normalization_test.cc
+  nvfp4_test.cc
+  grouped_nvfp4_test.cc
+  gptq_test.cc
   provider_shape_test.cc
   retirement_test.cc
   reduction_test.cc

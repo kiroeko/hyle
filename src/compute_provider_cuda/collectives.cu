@@ -1,5 +1,6 @@
 #include "collectives.h"
 
+#include <cub/block/block_reduce.cuh>
 #include <cub/device/device_radix_sort.cuh>
 #include <cub/device/device_reduce.cuh>
 #include <cub/device/device_scan.cuh>
@@ -10,7 +11,7 @@
 #include <cuda/std/tuple>
 #include <cuda_bf16.h>
 #include <cuda_fp16.h>
-#include <thrust/gather.h>
+#include <thrust/for_each.h>
 #include <thrust/iterator/counting_iterator.h>
 #include <thrust/iterator/transform_iterator.h>
 #include <thrust/system/cuda/execution_policy.h>
@@ -22,6 +23,8 @@
 #include <limits>
 #include <new>
 #include <type_traits>
+
+#include "device_status_kernel.h"
 
 namespace hyle::compute::cuda_native::collectives {
 namespace {
@@ -113,6 +116,83 @@ template <class T> struct GatherInput {
   }
 };
 
+struct CheckGatherIndex {
+  GatherIndex index;
+  unsigned *status;
+  __device__ void operator()(std::size_t logical) const {
+    const auto value = index(logical);
+    if (value < 0 || static_cast<std::uint64_t>(value) >= index.program.width)
+      atomicCAS(status, 0U, static_cast<unsigned>(
+          cuda::detail::DeviceStatusCode::kIndexOutOfRange));
+  }
+};
+
+template <class T> struct GatherOutput {
+  GatherMap mapping;
+  GatherInput<T> input;
+  T *output;
+  const unsigned *status;
+  __device__ void operator()(std::size_t logical) const {
+    // The preceding validation kernel checks every ID before any write.
+    if (status != nullptr && *status != 0)
+      return;
+    output[logical] = input(mapping(logical));
+  }
+};
+
+constexpr unsigned kGatherThreads = 256;
+
+__global__ void gather_check_kernel(Program program, const void *indices,
+                                    unsigned *status) {
+  const auto logical = static_cast<std::size_t>(blockIdx.x) * blockDim.x +
+                       threadIdx.x;
+  if (logical < program.index_count)
+    CheckGatherIndex{{program, indices}, status}(logical);
+}
+
+template <class T>
+__global__ void gather_output_kernel(Program program, const void *input,
+                                     const void *indices, void *output,
+                                     const unsigned *status) {
+  const auto logical = static_cast<std::size_t>(blockIdx.x) * blockDim.x +
+                       threadIdx.x;
+  if (logical < program.count)
+    GatherOutput<T>{{{program, indices}}, {{program}, input},
+                    static_cast<T *>(output), status}(logical);
+}
+
+template <class Kernel> cudaError_t configure_gather_kernel(Kernel kernel) {
+  // Resolve runtime function materialization while proposing/preparing, before
+  // any external capture. Gather has no temporary storage or host completion.
+  cudaFuncAttributes attributes{};
+  const auto status = cudaFuncGetAttributes(&attributes, kernel);
+  if (status != cudaSuccess)
+    return status;
+  return attributes.maxThreadsPerBlock < static_cast<int>(kGatherThreads)
+             ? cudaErrorInvalidConfiguration
+             : cudaSuccess;
+}
+
+cudaError_t configure_gather(const Program &program) {
+  if (program.checked) {
+    const auto status = configure_gather_kernel(gather_check_kernel);
+    if (status != cudaSuccess)
+      return status;
+  }
+  switch (program.element_bytes) {
+  case 1:
+    return configure_gather_kernel(gather_output_kernel<std::uint8_t>);
+  case 2:
+    return configure_gather_kernel(gather_output_kernel<std::uint16_t>);
+  case 4:
+    return configure_gather_kernel(gather_output_kernel<std::uint32_t>);
+  case 8:
+    return configure_gather_kernel(gather_output_kernel<std::uint64_t>);
+  default:
+    return cudaErrorInvalidValue;
+  }
+}
+
 struct Group {
   std::size_t width;
   __host__ __device__ std::size_t operator()(std::size_t index) const {
@@ -148,7 +228,7 @@ template <class Score> struct Key {
 };
 template <class Score> struct Decompose {
   __host__ __device__ auto operator()(Key<Score> &key) const {
-    return cuda::std::tie(key.row, key.nan, key.value);
+    return ::cuda::std::tie(key.row, key.nan, key.value);
   }
 };
 template <class T> struct SortInput {
@@ -220,6 +300,93 @@ template<class T> struct ArgInput {
             static_cast<std::int32_t>(index % layout.program.width)};
   }
 };
+template<class T> struct SingleRowArgInput {
+  const void *input;
+  __device__ ArgPair<Accumulation<T>> operator()(std::size_t index) const {
+    // Dense storage with one ordered row is already in reduction order.
+    // Preserve byte-aligned public views and the original source value.
+    T value;
+    memcpy(&value, static_cast<const char *>(input) + index * sizeof(T),
+           sizeof(T));
+    return {static_cast<Accumulation<T>>(value),
+            static_cast<std::int32_t>(index)};
+  }
+};
+
+// A segmented device reduction assigns one CTA to each row. Wide axes with
+// few independent rows must distribute their input across CTAs before the
+// final per-row reduction. Both stages use the same associative selection
+// order; the final value is still read from its original input storage.
+constexpr unsigned kArgThreads = 256;
+constexpr std::size_t kArgTileItems = kArgThreads * 8;
+
+template <class T>
+__global__ void arg_tiles_kernel(Program program, const void *input,
+                                 ArgPair<Accumulation<T>> *partials) {
+  using Acc = Accumulation<T>;
+  using Reduce = cub::BlockReduce<ArgPair<Acc>, kArgThreads>;
+  __shared__ typename Reduce::TempStorage temporary;
+  const auto row = static_cast<std::size_t>(blockIdx.x) / program.arg_tiles;
+  const auto tile = static_cast<std::size_t>(blockIdx.x) % program.arg_tiles;
+  const auto first = tile * kArgTileItems;
+  const auto end = (first + kArgTileItems < program.width)
+                       ? first + kArgTileItems : program.width;
+  const ArgBest<Acc> best{program.largest};
+  ArgPair<Acc> selected{Acc{}, INT32_MAX};
+  const ArgInput<T> generic{{program}, input};
+  for (auto column = first + threadIdx.x; column < end; column += kArgThreads) {
+    ArgPair<Acc> value;
+    if (program.dense && program.inner == 1) {
+      T original;
+      memcpy(&original, static_cast<const char *>(input) +
+                            (row * program.width + column) * sizeof(T),
+             sizeof(T));
+      value = {static_cast<Acc>(original), static_cast<std::int32_t>(column)};
+    } else {
+      value = generic(row * program.width + column);
+    }
+    selected = best(selected, value);
+  }
+  selected = Reduce(temporary).Reduce(selected, best);
+  if (threadIdx.x == 0)
+    partials[row * program.arg_tiles + tile] = selected;
+}
+
+template <class T>
+__global__ void arg_finish_kernel(Program program, const void *input,
+                                  const ArgPair<Accumulation<T>> *partials,
+                                  T *values, std::int32_t *indices) {
+  using Acc = Accumulation<T>;
+  using Reduce = cub::BlockReduce<ArgPair<Acc>, kArgThreads>;
+  __shared__ typename Reduce::TempStorage temporary;
+  const auto row = static_cast<std::size_t>(blockIdx.x);
+  const ArgBest<Acc> best{program.largest};
+  ArgPair<Acc> selected{Acc{}, INT32_MAX};
+  for (auto tile = static_cast<std::size_t>(threadIdx.x); tile < program.arg_tiles;
+       tile += kArgThreads)
+    selected = best(selected, partials[row * program.arg_tiles + tile]);
+  selected = Reduce(temporary).Reduce(selected, best);
+  if (threadIdx.x == 0) {
+    // With K=1, flat output order is the ordered row index, including a
+    // non-last input axis. Read the original T bits; the comparison score
+    // must not be narrowed back into the public value output.
+    values[row] = Layout{program}.read<T>(
+        input, row * program.width + static_cast<std::size_t>(selected.index));
+    indices[row] = selected.index;
+  }
+}
+
+template <class T> cudaError_t configure_arg_tiles() {
+  cudaFuncAttributes attributes{};
+  auto status = cudaFuncGetAttributes(&attributes, arg_tiles_kernel<T>);
+  if (status != cudaSuccess) return status;
+  if (attributes.maxThreadsPerBlock < static_cast<int>(kArgThreads))
+    return cudaErrorInvalidConfiguration;
+  status = cudaFuncGetAttributes(&attributes, arg_finish_kernel<T>);
+  if (status != cudaSuccess) return status;
+  return attributes.maxThreadsPerBlock < static_cast<int>(kArgThreads)
+             ? cudaErrorInvalidConfiguration : cudaSuccess;
+}
 struct SegmentBoundary {
   std::size_t width;
   __host__ __device__ std::size_t operator()(std::size_t index) const {
@@ -253,7 +420,14 @@ cudaError_t arg_reduce(const Program &program, const void *input,
   const ArgBest<Acc> best{program.largest};
   const auto rows = program.count / program.width;
   // A single vocabulary row uses the mature device-wide reduction, so all
-  // SMs can participate. Independent rows use the native segmented carrier.
+  // SMs can participate. Short independent rows use the segmented carrier;
+  // wide multi-row reductions use the cold-prepared two-stage tile path.
+  if (program.dense && program.inner == 1 && program.count == program.width) {
+    const auto linear = thrust::make_transform_iterator(
+        Counter(0), SingleRowArgInput<T>{input});
+    return cub::DeviceReduce::Reduce(temporary, bytes, linear, output,
+                                      program.count, best, initial, stream);
+  }
   if (rows == 1)
     return cub::DeviceReduce::Reduce(temporary, bytes, values, output,
                                       program.count, best, initial, stream);
@@ -272,81 +446,38 @@ bool reserve(Program &program, std::size_t bytes, std::size_t &offset) {
   program.workspace_bytes += (bytes + 255) & ~std::size_t{255};
   return true;
 }
-cudaError_t configure_gather(Program &program) {
-  if (!program.checked)
-    return cudaSuccess;
-  const auto indices = thrust::make_transform_iterator(
-      Counter(0), GatherIndex{program, nullptr});
-  std::size_t minimum_bytes = 0, maximum_bytes = 0;
-  auto status = cub::DeviceReduce::Min(nullptr, minimum_bytes, indices,
-                                       static_cast<std::int64_t *>(nullptr),
-                                       program.index_count);
-  if (status != cudaSuccess)
-    return status;
-  status = cub::DeviceReduce::Max(nullptr, maximum_bytes, indices,
-                                  static_cast<std::int64_t *>(nullptr),
-                                  program.index_count);
-  if (status != cudaSuccess)
-    return status;
-  program.temporary_bytes = std::max(minimum_bytes, maximum_bytes);
-  return reserve(program, 2 * sizeof(std::int64_t), program.bounds_offset) &&
-                 reserve(program, program.temporary_bytes,
-                         program.temporary_offset)
-             ? cudaSuccess
-             : cudaErrorInvalidValue;
-}
-cudaError_t validate_gather(const Program &program, const void *index_input,
-                            void *workspace, cudaStream_t stream,
-                            bool *invalid) {
-  if (!program.checked)
-    return cudaSuccess;
-  auto *storage = static_cast<char *>(workspace);
-  auto *temporary = storage + program.temporary_offset;
-  auto *bounds =
-      reinterpret_cast<std::int64_t *>(storage + program.bounds_offset);
-  const auto indices = thrust::make_transform_iterator(
-      Counter(0), GatherIndex{program, index_input});
-  auto bytes = program.temporary_bytes;
-  auto status = cub::DeviceReduce::Min(temporary, bytes, indices, bounds,
-                                       program.index_count, stream);
-  if (status != cudaSuccess)
-    return status;
-  bytes = program.temporary_bytes;
-  status = cub::DeviceReduce::Max(temporary, bytes, indices, bounds + 1,
-                                  program.index_count, stream);
-  if (status != cudaSuccess)
-    return status;
-  std::int64_t limits[2];
-  status = cudaMemcpyAsync(limits, bounds, sizeof(limits),
-                           cudaMemcpyDeviceToHost, stream);
-  if (status != cudaSuccess)
-    return status;
-  status = cudaStreamSynchronize(stream);
-  if (status != cudaSuccess)
-    return status;
-  *invalid =
-      limits[0] < 0 || static_cast<std::uint64_t>(limits[1]) >= program.width;
-  return cudaSuccess;
-}
 template <class T>
 cudaError_t gather(const Program &program, const void *input,
-                   const void *index_input, void *output, cudaStream_t stream) {
-  const auto mapping = thrust::make_transform_iterator(
-      Counter(0), GatherMap{{program, index_input}});
-  const auto values = thrust::make_transform_iterator(
-      Counter(0), GatherInput<T>{{program}, input});
-  thrust::gather(thrust::cuda::par_nosync.on(stream), mapping,
-                 mapping + program.count, values, static_cast<T *>(output));
-  return cudaSuccess;
+                   const void *index_input, void *output, cudaStream_t stream,
+                   const unsigned *status) {
+  const auto blocks = static_cast<unsigned>(
+      (program.count + kGatherThreads - 1) / kGatherThreads);
+  gather_output_kernel<T><<<blocks, kGatherThreads, 0, stream>>>(
+      program, input, index_input, output, status);
+  return cudaGetLastError();
 }
+
 template <class T> cudaError_t configure_typed(Program &program) {
   using Acc = Accumulation<T>;
   const Layout layout{program};
   if (program.kind == Kind::kTopK && program.k == 1) {
-    auto status = arg_reduce<T>(program, nullptr, nullptr, nullptr,
-                                 program.temporary_bytes, nullptr);
-    if (status != cudaSuccess) return status;
     const auto rows = program.count / program.width;
+    if (rows > 1 && program.width > kArgTileItems) {
+      program.arg_tiles = 1 + (program.width - 1) / kArgTileItems;
+      if (rows > static_cast<std::size_t>(INT32_MAX) / program.arg_tiles ||
+          rows * program.arg_tiles > SIZE_MAX / sizeof(ArgPair<Acc>))
+        return cudaErrorInvalidValue;
+      const auto status = configure_arg_tiles<T>();
+      if (status != cudaSuccess) return status;
+      if (!reserve(program, rows * program.arg_tiles * sizeof(ArgPair<Acc>),
+                   program.arg_partials_offset))
+        return cudaErrorInvalidValue;
+      return cudaSuccess;
+    } else {
+      auto status = arg_reduce<T>(program, nullptr, nullptr, nullptr,
+                                   program.temporary_bytes, nullptr);
+      if (status != cudaSuccess) return status;
+    }
     if (rows > SIZE_MAX / sizeof(ArgPair<Acc>) ||
         !reserve(program, rows * sizeof(ArgPair<Acc>), program.prefix_offset) ||
         !reserve(program, program.temporary_bytes, program.temporary_offset))
@@ -417,9 +548,22 @@ cudaError_t submit_typed(const Program &program, const void *input,
   auto bytes = program.temporary_bytes;
   if (program.kind == Kind::kTopK && program.k == 1) {
     auto *selected = reinterpret_cast<ArgPair<Acc> *>(storage + program.prefix_offset);
-    auto status = arg_reduce<T>(program, input, selected, temporary, bytes, stream);
-    if (status != cudaSuccess) return status;
+    cudaError_t status;
     const auto rows = program.count / program.width;
+    if (program.arg_tiles) {
+      auto *partials = reinterpret_cast<ArgPair<Acc> *>(storage + program.arg_partials_offset);
+      arg_tiles_kernel<T><<<static_cast<unsigned>(rows * program.arg_tiles),
+                            kArgThreads, 0, stream>>>(program, input, partials);
+      status = cudaGetLastError();
+      if (status != cudaSuccess) return status;
+      arg_finish_kernel<T><<<static_cast<unsigned>(rows), kArgThreads, 0, stream>>>(
+          program, input, partials, static_cast<T *>(output),
+          static_cast<std::int32_t *>(indices));
+      return cudaGetLastError();
+    } else {
+      status = arg_reduce<T>(program, input, selected, temporary, bytes, stream);
+    }
+    if (status != cudaSuccess) return status;
     status = cub::DeviceTransform::Transform(Counter(0), static_cast<T *>(output),
         rows, ArgValue<T>{layout, input, selected}, stream);
     if (status != cudaSuccess) return status;
@@ -435,7 +579,7 @@ cudaError_t submit_typed(const Program &program, const void *input,
         Counter(0), ScanInput<T>{layout, input});
     auto status = cub::DeviceScan::InclusiveSumByKey(
         temporary, bytes, keys, values, prefix, program.count,
-        cuda::std::equal_to<>{}, stream);
+        ::cuda::std::equal_to<>{}, stream);
     if (status != cudaSuccess)
       return status;
     if constexpr (std::is_same_v<T, std::int32_t>) {
@@ -530,22 +674,30 @@ cudaError_t configure(Program *program) noexcept try {
 cudaError_t submit(const Program &program, const void *input,
                    const void *index_input, void *values, void *indices,
                    void *workspace, cudaStream_t stream,
-                   bool *integer_overflow) noexcept try {
+                   bool *integer_overflow, unsigned *device_status) noexcept try {
   *integer_overflow = false;
   if (program.kind == Kind::kGather) {
-    const auto status = validate_gather(program, index_input, workspace, stream,
-                                        integer_overflow);
-    if (status != cudaSuccess || *integer_overflow)
-      return status;
+    if (program.checked) {
+      if (device_status == nullptr)
+        return cudaErrorInvalidValue;
+      const auto blocks = static_cast<unsigned>(
+          (program.index_count + kGatherThreads - 1) / kGatherThreads);
+      gather_check_kernel<<<blocks, kGatherThreads, 0, stream>>>(
+          program, index_input, device_status);
+      const auto status = cudaGetLastError();
+      if (status != cudaSuccess)
+        return status;
+    }
+    const auto *status = program.checked ? device_status : nullptr;
     switch (program.element_bytes) {
     case 1:
-      return gather<std::uint8_t>(program, input, index_input, values, stream);
+      return gather<std::uint8_t>(program, input, index_input, values, stream, status);
     case 2:
-      return gather<std::uint16_t>(program, input, index_input, values, stream);
+      return gather<std::uint16_t>(program, input, index_input, values, stream, status);
     case 4:
-      return gather<std::uint32_t>(program, input, index_input, values, stream);
+      return gather<std::uint32_t>(program, input, index_input, values, stream, status);
     case 8:
-      return gather<std::uint64_t>(program, input, index_input, values, stream);
+      return gather<std::uint64_t>(program, input, index_input, values, stream, status);
     default:
       return cudaErrorInvalidValue;
     }

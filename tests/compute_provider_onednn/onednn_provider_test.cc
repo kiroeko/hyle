@@ -14,6 +14,7 @@
 
 #include "brgemm_internal.h"
 #include "hyle/compute/backends/cpu.h"
+#include "hyle/compute/detail/context_ref.h"
 #include "hyle/compute/prepared_operation.h"
 #include "hyle/compute/tensor.h"
 #include "hyle/mem/buffer.h"
@@ -165,12 +166,14 @@ TEST(OneDnnProvider, ExposesStableIdentity) {
 TEST(OneDnnProvider, MatMulRejectsUnsupportedAccumulationAtBothColdStages) {
   using namespace hyle::compute::detail;
   auto context = create_context();
+  const auto context_ref =
+      hyle::compute::detail::ContextRef::acquire(context).value();
   const std::array inputs{matrix(16, 5), matrix(5, 4)};
   const std::array outputs{matrix(16, 4)};
   std::array<ResourceBindingRequirement, 2> input_requirements{};
   std::array<ResourceBindingRequirement, 1> output_requirements{};
   const auto proposal = OperationPreparationAccess::propose(
-      context, 0, hyle::compute::Operation(MatMul{}), inputs, outputs,
+      context_ref, 0, hyle::compute::Operation(MatMul{}), inputs, outputs,
       input_requirements, output_requirements);
   ASSERT_TRUE(proposal.has_value()) << proposal.error().message();
   const std::array resources{hyle::mem::system_resource(),
@@ -183,7 +186,7 @@ TEST(OneDnnProvider, MatMulRejectsUnsupportedAccumulationAtBothColdStages) {
     auto query_inputs = input_requirements;
     auto query_outputs = output_requirements;
     auto rejected = OperationPreparationAccess::propose(
-        context, 0, operation, inputs, outputs, query_inputs, query_outputs);
+        context_ref, 0, operation, inputs, outputs, query_inputs, query_outputs);
     ASSERT_FALSE(rejected.has_value());
     EXPECT_TRUE(rejected.error().IsUnimplemented());
     auto direct = hyle::compute::prepare(context, MatMul{type}, inputs[0],
@@ -193,7 +196,7 @@ TEST(OneDnnProvider, MatMulRejectsUnsupportedAccumulationAtBothColdStages) {
     // Exact preparation must recheck the requested semantics even when its
     // resource proposal came from a supported operation of the same shape.
     auto exact = OperationPreparationAccess::prepare_candidate(
-        context, *proposal, operation, inputs, outputs, input_requirements,
+        context_ref, *proposal, operation, inputs, outputs, input_requirements,
         output_requirements, {resources, std::span(resources).first(1)});
     ASSERT_TRUE(exact.has_value()) << exact.error().message();
     EXPECT_FALSE(exact->succeeded());
@@ -207,6 +210,8 @@ TEST(OneDnnProvider, DirectBrgemmDeclinesNonExactShapeDomains) {
   auto context = Context::create(hyle::compute::cpu::device(),
                                  hyle::compute::onednn::provider())
                      .value();
+  const auto context_ref =
+      hyle::compute::detail::ContextRef::acquire(context).value();
   // An exact point is admitted independently of a bounded shape domain.
   const std::array inputs{matrix(16, 5), matrix(5, 4)};
   const std::array outputs{matrix(16, 4)};
@@ -219,7 +224,7 @@ TEST(OneDnnProvider, DirectBrgemmDeclinesNonExactShapeDomains) {
   std::array<ResourceBindingRequirement, 1> output_requirements{};
   const auto propose = [&]() {
     return OperationPreparationAccess::propose(
-        context, 0, hyle::compute::Operation(MatMul{}), inputs, outputs,
+        context_ref, 0, hyle::compute::Operation(MatMul{}), inputs, outputs,
         input_requirements, output_requirements, domain);
   };
   auto bounded = propose();

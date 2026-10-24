@@ -4,6 +4,7 @@
 #include "hyle/graph/executable.h"
 #include "hyle/mem/std_allocator.h"
 
+#include <algorithm>
 #include <cstdint>
 #include <limits>
 #include <new>
@@ -22,13 +23,13 @@ struct NativeAnalysis final {
   Flags needed, boundary, control_predecessor;
 };
 
-inline Result<NativeAnalysis> analyze_native_pure(
-    const Graph &graph, mem::AllocatorRef allocator = mem::system_allocator(),
-    std::span<const std::uint8_t> cpu_nodes = {}) noexcept {
+// Reachability is independent of backend admission. Effects remain live even
+// when their data results are dead; an unrelated effect must not disqualify a
+// different source's pure fragment during discovery or exact compilation.
+inline Result<NativeAnalysis> analyze_native_reachability(
+    const Graph &graph, mem::AllocatorRef allocator = mem::system_allocator()) noexcept {
   if (!graph || !allocator.valid())
     return std::unexpected(Status::InvalidArgument("native analysis requires graph and allocator"));
-  if (!cpu_nodes.empty() && cpu_nodes.size() != graph.node_count())
-    return std::unexpected(Status::InvalidArgument("CPU effect admission mask size differs"));
   try {
     NativeAnalysis result(allocator);
     result.needed.resize(graph.node_count());
@@ -44,23 +45,14 @@ inline Result<NativeAnalysis> analyze_native_pure(
       HYLE_ASSIGN_OR_RETURN(auto node, graph.node_id(i - 1));
       HYLE_ASSIGN_OR_RETURN(const auto &operation, graph.operation(node));
       const auto traits = compute::operation_traits(operation);
-      // Even dead effects cannot be silently erased. A native effect needs
-      // actual ports, permissions and a preserves_effects carrier first.
-      if (traits.effect != compute::EffectKind::kPure || traits.resource_count != 0) {
-        if (cpu_nodes.empty() || !cpu_nodes[i - 1])
-          return std::unexpected(Status::Unimplemented("native Graph has no qualified effect carrier"));
+      if (traits.effect != compute::EffectKind::kPure || traits.resource_count != 0)
         result.needed[i - 1] = result.boundary[i - 1] = 1;
-      }
       HYLE_ASSIGN_OR_RETURN(auto count, graph.node_output_count(node));
       for (std::size_t port = 0; port < count; ++port) {
         HYLE_ASSIGN_OR_RETURN(auto value, graph.result(node, port));
         result.needed[i - 1] |= live[value.ordinal()];
       }
       if (!result.needed[i - 1]) continue;
-      if (traits.alias == compute::AliasPolicy::kMustAliasInput0 &&
-          operation.kind() != compute::OperationKind::kView &&
-          (cpu_nodes.empty() || !cpu_nodes[i - 1]))
-        return std::unexpected(Status::Unimplemented("native custom schema has no qualified mandatory alias carrier"));
       HYLE_ASSIGN_OR_RETURN(count, graph.node_input_count(node));
       for (std::size_t port = 0; port < count; ++port) {
         HYLE_ASSIGN_OR_RETURN(auto value, graph.node_input(node, port));
@@ -78,6 +70,47 @@ inline Result<NativeAnalysis> analyze_native_pure(
   } catch (const std::bad_alloc &) {
     return std::unexpected(Status::ResourceExhausted("native reachability allocation failed"));
   }
+}
+
+inline Status validate_native_node(const compute::Operation &operation) noexcept {
+  const auto traits = compute::operation_traits(operation);
+  if (traits.effect != compute::EffectKind::kPure || traits.resource_count != 0)
+    return Status::Unimplemented("native Graph has no qualified effect carrier");
+  if (traits.alias == compute::AliasPolicy::kMustAliasInput0 &&
+      operation.kind() != compute::OperationKind::kView)
+    return Status::Unimplemented("native custom schema has no qualified mandatory alias carrier");
+  return Status::Ok();
+}
+
+inline Result<NativeAnalysis> analyze_native_pure(
+    const Graph &graph, mem::AllocatorRef allocator = mem::system_allocator(),
+    std::span<const std::uint8_t> cpu_nodes = {}) noexcept {
+  if (!cpu_nodes.empty() && cpu_nodes.size() != graph.node_count())
+    return std::unexpected(Status::InvalidArgument("CPU effect admission mask size differs"));
+  HYLE_ASSIGN_OR_RETURN(auto result, analyze_native_reachability(graph, allocator));
+  for (std::size_t i = 0; i < graph.node_count(); ++i) {
+    if (!result.needed[i] || (!cpu_nodes.empty() && cpu_nodes[i])) continue;
+    HYLE_ASSIGN_OR_RETURN(auto node, graph.node_id(i));
+    HYLE_ASSIGN_OR_RETURN(const auto &operation, graph.operation(node));
+    HYLE_RETURN_IF_ERROR(validate_native_node(operation));
+  }
+  return result;
+}
+
+// Exact region compilation validates only the selected original nodes. The
+// original graph still supplies control endpoints, but no outside node becomes
+// native work or lends its effect/alias admission to this fragment.
+inline Result<NativeAnalysis> analyze_native_fragment(
+    const Graph &graph, std::span<const NodeId> selected,
+    mem::AllocatorRef allocator = mem::system_allocator()) noexcept {
+  HYLE_ASSIGN_OR_RETURN(auto result, analyze_native_reachability(graph, allocator));
+  std::fill(result.needed.begin(), result.needed.end(), std::uint8_t{0});
+  for (const auto node : selected) {
+    HYLE_ASSIGN_OR_RETURN(const auto &operation, graph.operation(node));
+    HYLE_RETURN_IF_ERROR(validate_native_node(operation));
+    result.needed[node.ordinal()] = 1;
+  }
+  return result;
 }
 
 // A fragment may absorb a same-target successor only when that successor does

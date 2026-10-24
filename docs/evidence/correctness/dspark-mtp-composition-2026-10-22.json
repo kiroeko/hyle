@@ -1,0 +1,840 @@
+{
+  "status": "IMPLEMENTED_TWO_FINITE_DSPARK_COMPOSITIONS_PASS_NOT_WHOLE_ORIGINAL_MODEL",
+  "date": "2026-10-22",
+  "goal_complete": false,
+  "changes": [
+    {
+      "path": "src\\compute_provider_ggml\\ggml_cpu_provider.cc",
+      "bytes": 114557,
+      "sha256": "01f8a1da56a74679e420ec9646f35a9770e61b1e9b076f79e0b66a508877d955"
+    },
+    {
+      "path": "tests\\compute_models\\original_role_input.h",
+      "bytes": 5143,
+      "sha256": "e93d2f62457ed0d4acd6a4c23bc1373374bb7eb81cab1031a039582e698e59f5"
+    },
+    {
+      "path": "tests\\compute_models\\dspark_original_roles.h",
+      "bytes": 6416,
+      "sha256": "60999491c87a0ede761de205250a7a85c47089c35db0ebc52aa8364efc3a6cd2"
+    },
+    {
+      "path": "tests\\compute_models\\dspark_complete_graph_fixture.h",
+      "bytes": 9175,
+      "sha256": "aec542759cb2bc26a2a0f2764d47bc7cae655ee48e50f8f22ec93373d1e37698"
+    },
+    {
+      "path": "tests\\graph_route_cuda\\dspark_complete_consumer_test.cc",
+      "bytes": 17597,
+      "sha256": "634af20a408d43187b5a5f04f00c8850cba830846d3ff9322637df11d321a0d5"
+    },
+    {
+      "path": "tests\\graph_route_cuda\\dspark_original_confidence_test.cc",
+      "bytes": 14347,
+      "sha256": "d94bdf3541da53299d5a12b6db78d64a5a05698cbe34c73eec4304e2cbe3de01"
+    },
+    {
+      "path": "tests\\graph_route_cuda\\CMakeLists.txt",
+      "bytes": 5576,
+      "sha256": "84b6f2eec85e914fec6cfd40932fdad2861ea7c9355b9d0c460da8ec2f85e02e"
+    },
+    {
+      "path": "tests\\compute_state\\deepseek_sparse_prefix_consumer.cc",
+      "bytes": 619,
+      "sha256": "6ae0a0084200f1a717a86195f6c0ae51efc6217634730e3255dd65fe55db5669"
+    },
+    {
+      "path": "tests\\compute_state\\deepseek_sparse_prefix_fixture.h",
+      "bytes": 32743,
+      "sha256": "f14537a61a37fbdb521059765986c1a276079338eb0ae9b1a54f0bc82265c3ac"
+    },
+    {
+      "path": "tests\\compute_state\\dspark_accepted_prefix_fixture.h",
+      "bytes": 9495,
+      "sha256": "ebad6be42dfdd9dfc1ff532bde1cb541df6620d039e722f65f667ca4ae60c0ab"
+    },
+    {
+      "path": "tests\\compute_state\\dspark_prefix_consumer_test.cc",
+      "bytes": 13516,
+      "sha256": "4ff95a7ac47babf518dad25c56482f17eaac0523b338728eee25dbf4eaec9439"
+    },
+    {
+      "path": "tests\\compute_state\\CMakeLists.txt",
+      "bytes": 3488,
+      "sha256": "66299dd128bc4f95d7fd7186e05e33be37c54841c713604bac74cb32a4e8aa12"
+    }
+  ],
+  "documentation": [
+    {
+      "path": "docs\\developer\\current-work.md",
+      "bytes": 55889,
+      "sha256": "617fb1fa14212a26244053661ee01f0e45858bac42a9d574f34b536d29d8c50b"
+    },
+    {
+      "path": "docs\\implementation\\model-operators.md",
+      "bytes": 90049,
+      "sha256": "66f67d0275487a9b67c54f6919efdee17cf69cb889ead219cc1ad7a9b1bcaa7c"
+    }
+  ],
+  "final_checks": {
+    "process": {
+      "command": [
+        "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-mtp-integration-20261022\\tests-link9\\dspark-checks.exe",
+        "--gtest_filter=*",
+        "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\dspark-mtp-integration-20261022\\checks6\\results.xml"
+      ],
+      "cwd": "C:\\public\\project-hyle\\hyle",
+      "started": 1792667045.0164165,
+      "timeout_seconds": 1200,
+      "throughput_evidence": false,
+      "memory_evidence": false,
+      "trace": false,
+      "profiler": false,
+      "pid": 72984,
+      "exit": 0,
+      "timed_out": false,
+      "finished": 1792667052.8989012,
+      "process_wall_seconds": 7.881435899995267
+    },
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-mtp-integration-20261022\\tests-link9\\dspark-checks.exe",
+      "bytes": 140262400,
+      "sha256": "35dac9d05ee8b4db2865d01202da83f4b2ecf307eaf8d82b23d7cb05c9239a32"
+    },
+    "throughput_evidence": false,
+    "whole_original_model": false,
+    "inputs": {
+      "HYLE_DSPARK_MARKOV_DIR": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-mtp-integration-20261022\\original-markov",
+      "HYLE_DSPARK_CONFIDENCE_BF16": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-next-20261022\\original-confidence\\conf_proj.weight.bf16"
+    },
+    "tests": 4,
+    "failures": 0,
+    "errors": 0,
+    "disabled": 0,
+    "skips": 0,
+    "cases": [
+      {
+        "attributes": {
+          "name": "FullWidthRawAndSidecarPolicyKeepPriorLeases",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_cuda\\dspark_original_confidence_test.cc",
+          "line": "149",
+          "status": "run",
+          "result": "completed",
+          "time": "0.124",
+          "timestamp": "2026-10-22T19:04:05.325",
+          "classname": "CudaDSparkOriginalConfidence"
+        },
+        "properties": {
+          "original_payload_sha256": "15c5d09c7842d0f947ce0afdc154691ead377e6263af71bd2f7cb34bd592f30f",
+          "original_payload_role": "conf_proj.weight BF16[1,4352], fixed fbbb5b93fb787c21338159b0af3318bb3f4d9768",
+          "actual_submissions": "4",
+          "scope": "one original8704B confidence role/full4096+256width/rawF32+separateSigmoid; not completeMTP/quality"
+        }
+      },
+      {
+        "attributes": {
+          "name": "FullFlashStagesFeedOriginalMarkovGreedyRowsAndRetainPriorState",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_cuda\\dspark_complete_consumer_test.cc",
+          "line": "196",
+          "status": "run",
+          "result": "completed",
+          "time": "6.837",
+          "timestamp": "2026-10-22T19:04:05.450",
+          "classname": "CudaDSparkComplete"
+        },
+        "properties": {
+          "scope": "Flash H4096/heads64/D512/three stages/five greedy rows/full V129280; generated stage+LM weights, original W1/W2/confidence only",
+          "actual_hot_submissions": "3",
+          "adjusted_logit_check": "exact BF16 products; gamma256 F32 reduction plus FP64 oracle bound; normal-quantum/finite range checked; necessary numerical compatibility, not vendor-internal proof",
+          "markov_w1_sha256": "966bd0507046347754d0f4bf3addd6df6c179ff16243d63998258b3987e4b2f5",
+          "markov_w2_sha256": "40ac7e99651c5c6aab8d2555ff65d247931f318414cf94baedc6da2d3bf7c175",
+          "confidence_sha256": "15c5d09c7842d0f947ce0afdc154691ead377e6263af71bd2f7cb34bd592f30f"
+        }
+      },
+      {
+        "attributes": {
+          "name": "Ratio4TargetIndexAndThreeMainRingsPublishAtomically",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_state\\dspark_prefix_consumer_test.cc",
+          "line": "208",
+          "status": "run",
+          "result": "completed",
+          "time": "0.255",
+          "timestamp": "2026-10-22T19:04:12.288",
+          "classname": "DSparkAcceptedPrefix"
+        },
+        "properties": {}
+      },
+      {
+        "attributes": {
+          "name": "Ratio128HalfWindowsAndThreeMainRingsPublishAtomically",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_state\\dspark_prefix_consumer_test.cc",
+          "line": "214",
+          "status": "run",
+          "result": "completed",
+          "time": "0.156",
+          "timestamp": "2026-10-22T19:04:12.544",
+          "classname": "DSparkAcceptedPrefix"
+        },
+        "properties": {}
+      }
+    ]
+  },
+  "complete_draft": {
+    "backend": "Windows RTX4070 CUDA ordinary Graph",
+    "hidden": 4096,
+    "heads": 64,
+    "head_depth": 512,
+    "stages": 3,
+    "proposal_rows": 5,
+    "full_vocabulary": 129280,
+    "temperature": 0,
+    "original_roles": [
+      "markov_w1.weight BF16[129280,256]",
+      "markov_w2.weight BF16[129280,256]",
+      "conf_proj.weight BF16[1,4352]"
+    ],
+    "original_role_bytes": 132391424,
+    "generated_roles": "Stage parameters, embedding and shared LM are format-valid generated test banks, not trained payloads.",
+    "cold": "One ordinary cold Graph widens LM, W2 and confidence BF16 source to original F32 parameters once; all five rows share those parameters. Full cold outputs checked in bounded chunks.",
+    "hot": "Three submissions reuse one Invocation. Actual produced TopK I32 token_i feeds the next Markov Gather in the same Graph; no teacher token or observed host value is fed between rows.",
+    "checks": "Original six stage/state/hidden outputs retain independent chain oracle; head uses observed BF16-boundary hidden/norm as a separately declared local numerical boundary and independent trained-weight FP64 Neumaier oracle. All IDs/Markov bits match. Prior ten result leases survive pool reuse and Invocation destruction.",
+    "persistent": "Only three verified main-KV rings persist. The five-row proposal KV remains private attention intermediates."
+  },
+  "accepted_prefix": {
+    "backend": "Windows CPU ordinary Graph with existing matched CPU program and providers",
+    "target_boundary": "Projected attention inputs with F32 storage and explicit original BF16/FP8 boundaries; not complete target layers or packed KV storage.",
+    "ratio4_target_resources": 11,
+    "ratio128_target_resources": 6,
+    "additional_resources": "Three independent stage main-KV rings and one main_x carry",
+    "host_metadata_bytes": 28,
+    "counts": "Verify six target inputs: previous pending plus five proposals. Accepted input rows0..6: zero is abort; rows1..6 correspond to matching0..5 drafts. Full acceptance also continues the next seventh projected input.",
+    "dependencies": "Real target Sink output ReadLease feeds a deliberately finite first-head-to-main_x bridge, then original model-linear/Norm/RoPE/cache-quant main-KV updates. Bridge is not checkpoint main_proj.",
+    "publication": "Complete target windows/phase/raw/index caches, three caught-up main rings, carry/frontiers/pending publish as one StateHead candidate. Staged replacement failure and stale-head publication leave committed state unchanged.",
+    "checks": "Every acceptance boundary compared with independent one-input continuation; ring position/wrap has independent projection oracle; untouched rows and prior full snapshot bytes remain unchanged.",
+    "successful_Graph_submissions_from_completed_fixed_control_flow": 54,
+    "natural_acceptance_driver": false
+  },
+  "original_markov_acquisition": {
+    "repository": "unsloth/DeepSeek-V4-Flash-0731-GGUF",
+    "revision": "fbbb5b93fb787c21338159b0af3318bb3f4d9768",
+    "file": "dspark-DeepSeek-V4-Flash-0731-Q8_0.gguf",
+    "tensor_table_sha256": "44f30d92e3be1e3737b92dddcb737e6d85944b60804a7a7a810a2ac60c79de5f",
+    "tensor_data_offset": 5253152,
+    "whole_file_download_allowed": false,
+    "roles": [
+      {
+        "role": {
+          "name": "markov_w1.weight",
+          "shape": [
+            "256",
+            "129280"
+          ],
+          "dtype": "BF16",
+          "dtype_code": 30,
+          "role": "dspark",
+          "offset": "10758405184"
+        },
+        "requested_bytes": 66191360,
+        "absolute_range": [
+          10763658336,
+          10829849695
+        ],
+        "started_unix": 1792665359.7694938,
+        "status": "ACQUIRED_EXACT_ROLE",
+        "http_status": 206,
+        "content_range": "bytes 10763658336-10829849695/10896057440",
+        "content_length": "66191360",
+        "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+        "payload": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-mtp-integration-20261022\\original-markov\\markov_w1.weight.bf16",
+          "bytes": 66191360,
+          "sha256": "966bd0507046347754d0f4bf3addd6df6c179ff16243d63998258b3987e4b2f5"
+        },
+        "finished_unix": 1792665377.175839
+      },
+      {
+        "role": {
+          "name": "markov_w2.weight",
+          "shape": [
+            "256",
+            "129280"
+          ],
+          "dtype": "BF16",
+          "dtype_code": 30,
+          "role": "dspark",
+          "offset": "10824596544"
+        },
+        "requested_bytes": 66191360,
+        "absolute_range": [
+          10829849696,
+          10896041055
+        ],
+        "started_unix": 1792665377.175839,
+        "status": "ACQUIRED_EXACT_ROLE",
+        "http_status": 206,
+        "content_range": "bytes 10829849696-10896041055/10896057440",
+        "content_length": "66191360",
+        "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+        "payload": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-mtp-integration-20261022\\original-markov\\markov_w2.weight.bf16",
+          "bytes": 66191360,
+          "sha256": "40ac7e99651c5c6aab8d2555ff65d247931f318414cf94baedc6da2d3bf7c175"
+        },
+        "finished_unix": 1792665392.5379386
+      }
+    ],
+    "complete": true
+  },
+  "original_confidence": {
+    "source": {
+      "repository": "unsloth/DeepSeek-V4-Flash-0731-GGUF",
+      "revision": "fbbb5b93fb787c21338159b0af3318bb3f4d9768",
+      "file": "dspark-DeepSeek-V4-Flash-0731-Q8_0.gguf",
+      "role": "conf_proj.weight",
+      "dtype": "BF16",
+      "GGUF_shape": [
+        "4352",
+        "1"
+      ],
+      "payload_bytes_needed": 8704,
+      "tensor_data_base": 5253152,
+      "relative_offset": 10726135040,
+      "absolute_start": 10731388192,
+      "absolute_end_inclusive": 10731396895,
+      "cached_actual_payload_bytes_confirmed": 0
+    },
+    "url": "https://huggingface.co/unsloth/DeepSeek-V4-Flash-0731-GGUF/resolve/fbbb5b93fb787c21338159b0af3318bb3f4d9768/dspark-DeepSeek-V4-Flash-0731-Q8_0.gguf",
+    "requested_range": [
+      10731388192,
+      10731396895
+    ],
+    "requested_bytes": 8704,
+    "started_unix": 1792663102.9276004,
+    "status": "ACQUIRED_EXACT_ROLE",
+    "whole_file_download_allowed": false,
+    "http_status": 206,
+    "content_range": "bytes 10731388192-10731396895/10896057440",
+    "content_length": "8704",
+    "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+    "payload": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-next-20261022\\original-confidence\\conf_proj.weight.bf16",
+      "bytes": 8704,
+      "sha256": "15c5d09c7842d0f947ce0afdc154691ead377e6263af71bd2f7cb34bd592f30f"
+    },
+    "model_inference_run": false,
+    "whole_file_downloaded": false,
+    "finished_unix": 1792663105.7013645
+  },
+  "numerical_investigation": {
+    "initial_failure": "checks1 applied a single-MatMul empirical relative gate to adjusted LM+Markov logits. Three-stage outputs, all selected IDs and gathered Markov bits passed before this failure.",
+    "witness": {
+      "index": 259870,
+      "LM": 0.690673828125,
+      "exact_Markov_bias": -0.6583220362663269,
+      "sum_absolute_products": 87.26291340589523,
+      "actual": 0.03235054016113281,
+      "exact_sum": 0.032351791858673096,
+      "F32_bound": 0.0013420857159967433
+    },
+    "correction": "Original Graph and product math/precision unchanged. Exact BF16 products plus at most256 F32 additions use gamma256*(abs(LM)+sum(abs(products))), with conservative FP64 oracle error. Product representability, a sufficient normal quantum and finite/no-overflow domain are explicitly checked. This is necessary numerical compatibility, not proof of vendor internal reduction.",
+    "unchanged": "Raw confidence retains the previous 1e-6 absolute plus1e-6 relative projection gate. No model precision, token selection, weight data or provider route was changed to pass.",
+    "final_three_replays": [
+      {
+        "former_single_projection_gate_exceedances": 2,
+        "max_absolute_error": 1.239776611328125e-05,
+        "max_F32_bound_ratio": 0.005933009304291493
+      },
+      {
+        "former_single_projection_gate_exceedances": 0,
+        "max_absolute_error": 6.198883056640625e-06,
+        "max_F32_bound_ratio": 0.006214447484731737
+      },
+      {
+        "former_single_projection_gate_exceedances": 0,
+        "max_absolute_error": 2.9727816581726074e-06,
+        "max_F32_bound_ratio": 0.005251959575619454
+      }
+    ]
+  },
+  "validation_cache_resolution": {
+    "provider_probe": {
+      "path": ".scratch\\dspark-mtp-integration-20261022\\provider-contracts1\\stdout.log",
+      "bytes": 223,
+      "sha256": "d61b56ed961c2ac4bdaaf6d8d664828c7c54589ed261617de65dd65707df0555"
+    },
+    "provider_result": "Cached oneDNN region14 versus common provider17; all other probed factories17. Recompiled current oneDNN region and the missing CPU graph factory/regions with cached host recipes.",
+    "runtime_result": "The CUDA-derived closure retained an older CPU program without the Hadamard ABI2 field. Reused the already built, source/header-verified ABI2 CPU program object and its known baseline/AVX2 runtime closure. No SDK rebuild or operation substitution.",
+    "product_diagnostic": "Native lowering mismatch now identifies operation name, recipe node and actual/expected output count."
+  },
+  "historical_runs": [
+    {
+      "folder": "checks1",
+      "summary": {
+        "process": {
+          "command": [
+            "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-mtp-integration-20261022\\tests-link1\\dspark-checks.exe",
+            "--gtest_filter=*",
+            "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\dspark-mtp-integration-20261022\\checks1\\results.xml"
+          ],
+          "cwd": "C:\\public\\project-hyle\\hyle",
+          "started": 1792666062.2074883,
+          "timeout_seconds": 1200,
+          "throughput_evidence": false,
+          "memory_evidence": false,
+          "trace": false,
+          "profiler": false,
+          "pid": 53452,
+          "exit": 1,
+          "timed_out": false,
+          "finished": 1792666072.6403515,
+          "process_wall_seconds": 10.43159910000395
+        },
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-mtp-integration-20261022\\tests-link1\\dspark-checks.exe",
+          "bytes": 139996160,
+          "sha256": "1f3d8b6b3a73d686fc75ba690162f2479846df169470e644f5ad9980b05e8224"
+        },
+        "throughput_evidence": false,
+        "whole_original_model": false,
+        "inputs": {
+          "HYLE_DSPARK_MARKOV_DIR": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-mtp-integration-20261022\\original-markov",
+          "HYLE_DSPARK_CONFIDENCE_BF16": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-next-20261022\\original-confidence\\conf_proj.weight.bf16"
+        },
+        "tests": 2,
+        "failures": 1,
+        "errors": 0,
+        "disabled": 0,
+        "skips": 0,
+        "cases": [
+          {
+            "attributes": {
+              "name": "FullWidthRawAndSidecarPolicyKeepPriorLeases",
+              "file": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_cuda\\dspark_original_confidence_test.cc",
+              "line": "149",
+              "status": "run",
+              "result": "completed",
+              "time": "0.129",
+              "timestamp": "2026-10-22T18:47:42.523",
+              "classname": "CudaDSparkOriginalConfidence"
+            },
+            "properties": {
+              "original_payload_sha256": "15c5d09c7842d0f947ce0afdc154691ead377e6263af71bd2f7cb34bd592f30f",
+              "original_payload_role": "conf_proj.weight BF16[1,4352], fixed fbbb5b93fb787c21338159b0af3318bb3f4d9768",
+              "actual_submissions": "4",
+              "scope": "one original8704B confidence role/full4096+256width/rawF32+separateSigmoid; not completeMTP/quality"
+            }
+          },
+          {
+            "attributes": {
+              "name": "FullFlashStagesFeedOriginalMarkovGreedyRowsAndRetainPriorState",
+              "file": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_cuda\\dspark_complete_consumer_test.cc",
+              "line": "154",
+              "status": "run",
+              "result": "completed",
+              "time": "9.799",
+              "timestamp": "2026-10-22T18:47:42.652",
+              "classname": "CudaDSparkComplete"
+            },
+            "properties": {}
+          }
+        ]
+      }
+    },
+    {
+      "folder": "checks2",
+      "summary": {
+        "process": {
+          "command": [
+            "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-mtp-integration-20261022\\tests-link4\\dspark-checks.exe",
+            "--gtest_filter=*",
+            "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\dspark-mtp-integration-20261022\\checks2\\results.xml"
+          ],
+          "cwd": "C:\\public\\project-hyle\\hyle",
+          "started": 1792666560.7115216,
+          "timeout_seconds": 1200,
+          "throughput_evidence": false,
+          "memory_evidence": false,
+          "trace": false,
+          "profiler": false,
+          "pid": 53320,
+          "exit": 1,
+          "timed_out": false,
+          "finished": 1792666568.3204224,
+          "process_wall_seconds": 7.609352100058459
+        },
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-mtp-integration-20261022\\tests-link4\\dspark-checks.exe",
+          "bytes": 140242432,
+          "sha256": "49b9e531f7a7cbbc30ad4cd5a92646f0a89dbb5e78072c89d52f96308eee796c"
+        },
+        "throughput_evidence": false,
+        "whole_original_model": false,
+        "inputs": {
+          "HYLE_DSPARK_MARKOV_DIR": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-mtp-integration-20261022\\original-markov",
+          "HYLE_DSPARK_CONFIDENCE_BF16": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-next-20261022\\original-confidence\\conf_proj.weight.bf16"
+        },
+        "tests": 4,
+        "failures": 2,
+        "errors": 0,
+        "disabled": 0,
+        "skips": 0,
+        "cases": [
+          {
+            "attributes": {
+              "name": "FullWidthRawAndSidecarPolicyKeepPriorLeases",
+              "file": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_cuda\\dspark_original_confidence_test.cc",
+              "line": "149",
+              "status": "run",
+              "result": "completed",
+              "time": "0.129",
+              "timestamp": "2026-10-22T18:56:01.039",
+              "classname": "CudaDSparkOriginalConfidence"
+            },
+            "properties": {
+              "original_payload_sha256": "15c5d09c7842d0f947ce0afdc154691ead377e6263af71bd2f7cb34bd592f30f",
+              "original_payload_role": "conf_proj.weight BF16[1,4352], fixed fbbb5b93fb787c21338159b0af3318bb3f4d9768",
+              "actual_submissions": "4",
+              "scope": "one original8704B confidence role/full4096+256width/rawF32+separateSigmoid; not completeMTP/quality"
+            }
+          },
+          {
+            "attributes": {
+              "name": "FullFlashStagesFeedOriginalMarkovGreedyRowsAndRetainPriorState",
+              "file": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_cuda\\dspark_complete_consumer_test.cc",
+              "line": "196",
+              "status": "run",
+              "result": "completed",
+              "time": "6.955",
+              "timestamp": "2026-10-22T18:56:01.169",
+              "classname": "CudaDSparkComplete"
+            },
+            "properties": {
+              "scope": "Flash H4096/heads64/D512/three stages/five greedy rows/full V129280; generated stage+LM weights, original W1/W2/confidence only",
+              "actual_hot_submissions": "3",
+              "adjusted_logit_check": "exact BF16 products; gamma256 F32 reduction plus FP64 oracle bound; normal-quantum/finite range checked; necessary numerical compatibility, not vendor-internal proof",
+              "markov_w1_sha256": "966bd0507046347754d0f4bf3addd6df6c179ff16243d63998258b3987e4b2f5",
+              "markov_w2_sha256": "40ac7e99651c5c6aab8d2555ff65d247931f318414cf94baedc6da2d3bf7c175",
+              "confidence_sha256": "15c5d09c7842d0f947ce0afdc154691ead377e6263af71bd2f7cb34bd592f30f"
+            }
+          },
+          {
+            "attributes": {
+              "name": "Ratio4TargetIndexAndThreeMainRingsPublishAtomically",
+              "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_state\\dspark_prefix_consumer_test.cc",
+              "line": "208",
+              "status": "run",
+              "result": "completed",
+              "time": "0.",
+              "timestamp": "2026-10-22T18:56:08.125",
+              "classname": "DSparkAcceptedPrefix"
+            },
+            "properties": {}
+          },
+          {
+            "attributes": {
+              "name": "Ratio128HalfWindowsAndThreeMainRingsPublishAtomically",
+              "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_state\\dspark_prefix_consumer_test.cc",
+              "line": "214",
+              "status": "run",
+              "result": "completed",
+              "time": "0.",
+              "timestamp": "2026-10-22T18:56:08.125",
+              "classname": "DSparkAcceptedPrefix"
+            },
+            "properties": {}
+          }
+        ]
+      }
+    },
+    {
+      "folder": "checks3",
+      "summary": {
+        "process": {
+          "command": [
+            "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-mtp-integration-20261022\\tests-link6\\dspark-checks.exe",
+            "--gtest_filter=*",
+            "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\dspark-mtp-integration-20261022\\checks3\\results.xml"
+          ],
+          "cwd": "C:\\public\\project-hyle\\hyle",
+          "started": 1792666725.0956068,
+          "timeout_seconds": 1200,
+          "throughput_evidence": false,
+          "memory_evidence": false,
+          "trace": false,
+          "profiler": false,
+          "pid": 102672,
+          "exit": 1,
+          "timed_out": false,
+          "finished": 1792666725.78353,
+          "process_wall_seconds": 0.6861203999724239
+        },
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-mtp-integration-20261022\\tests-link6\\dspark-checks.exe",
+          "bytes": 139768320,
+          "sha256": "11dc505e12d7967cc6d381b390743926c3d23356d0703e8aa8c646402c8e4951"
+        },
+        "throughput_evidence": false,
+        "whole_original_model": false,
+        "inputs": {
+          "HYLE_DSPARK_MARKOV_DIR": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-mtp-integration-20261022\\original-markov",
+          "HYLE_DSPARK_CONFIDENCE_BF16": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-next-20261022\\original-confidence\\conf_proj.weight.bf16"
+        },
+        "tests": 2,
+        "failures": 1,
+        "errors": 0,
+        "disabled": 0,
+        "skips": 0,
+        "cases": [
+          {
+            "attributes": {
+              "name": "Ratio4TargetIndexAndThreeMainRingsPublishAtomically",
+              "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_state\\dspark_prefix_consumer_test.cc",
+              "line": "208",
+              "status": "run",
+              "result": "completed",
+              "time": "0.094",
+              "timestamp": "2026-10-22T18:58:45.406",
+              "classname": "DSparkAcceptedPrefix"
+            },
+            "properties": {}
+          },
+          {
+            "attributes": {
+              "name": "Ratio128HalfWindowsAndThreeMainRingsPublishAtomically",
+              "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_state\\dspark_prefix_consumer_test.cc",
+              "line": "214",
+              "status": "run",
+              "result": "completed",
+              "time": "0.156",
+              "timestamp": "2026-10-22T18:58:45.501",
+              "classname": "DSparkAcceptedPrefix"
+            },
+            "properties": {}
+          }
+        ]
+      }
+    },
+    {
+      "folder": "checks4",
+      "summary": {
+        "process": {
+          "command": [
+            "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-mtp-integration-20261022\\tests-link7\\dspark-checks.exe",
+            "--gtest_filter=DSparkAcceptedPrefix.Ratio4TargetIndexAndThreeMainRingsPublishAtomically",
+            "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\dspark-mtp-integration-20261022\\checks4\\results.xml"
+          ],
+          "cwd": "C:\\public\\project-hyle\\hyle",
+          "started": 1792666826.6273792,
+          "timeout_seconds": 1200,
+          "throughput_evidence": false,
+          "memory_evidence": false,
+          "trace": false,
+          "profiler": false,
+          "pid": 5536,
+          "exit": 1,
+          "timed_out": false,
+          "finished": 1792666827.1615074,
+          "process_wall_seconds": 0.5331271999748424
+        },
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-mtp-integration-20261022\\tests-link7\\dspark-checks.exe",
+          "bytes": 139768832,
+          "sha256": "fa4792f8616f5512aa1d8701d4134414a0771bbd5ddec28923c29f21e2b1a654"
+        },
+        "throughput_evidence": false,
+        "whole_original_model": false,
+        "inputs": {
+          "HYLE_DSPARK_MARKOV_DIR": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-mtp-integration-20261022\\original-markov",
+          "HYLE_DSPARK_CONFIDENCE_BF16": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-next-20261022\\original-confidence\\conf_proj.weight.bf16"
+        },
+        "tests": 1,
+        "failures": 1,
+        "errors": 0,
+        "disabled": 0,
+        "skips": 0,
+        "cases": [
+          {
+            "attributes": {
+              "name": "Ratio4TargetIndexAndThreeMainRingsPublishAtomically",
+              "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_state\\dspark_prefix_consumer_test.cc",
+              "line": "208",
+              "status": "run",
+              "result": "completed",
+              "time": "0.095",
+              "timestamp": "2026-10-22T19:00:26.941",
+              "classname": "DSparkAcceptedPrefix"
+            },
+            "properties": {}
+          }
+        ]
+      }
+    },
+    {
+      "folder": "checks5",
+      "summary": {
+        "process": {
+          "command": [
+            "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-mtp-integration-20261022\\tests-link8\\dspark-checks.exe",
+            "--gtest_filter=*",
+            "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\dspark-mtp-integration-20261022\\checks5\\results.xml"
+          ],
+          "cwd": "C:\\public\\project-hyle\\hyle",
+          "started": 1792666976.1807625,
+          "timeout_seconds": 1200,
+          "throughput_evidence": false,
+          "memory_evidence": false,
+          "trace": false,
+          "profiler": false,
+          "pid": 60696,
+          "exit": 0,
+          "timed_out": false,
+          "finished": 1792666977.0336902,
+          "process_wall_seconds": 0.8526070000370964
+        },
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-mtp-integration-20261022\\tests-link8\\dspark-checks.exe",
+          "bytes": 139781632,
+          "sha256": "00f6686ddc601ec85956861c63dc495b1c18afb8978af42a951d5129e752e7f0"
+        },
+        "throughput_evidence": false,
+        "whole_original_model": false,
+        "inputs": {
+          "HYLE_DSPARK_MARKOV_DIR": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-mtp-integration-20261022\\original-markov",
+          "HYLE_DSPARK_CONFIDENCE_BF16": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-next-20261022\\original-confidence\\conf_proj.weight.bf16"
+        },
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "disabled": 0,
+        "skips": 0,
+        "cases": [
+          {
+            "attributes": {
+              "name": "Ratio4TargetIndexAndThreeMainRingsPublishAtomically",
+              "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_state\\dspark_prefix_consumer_test.cc",
+              "line": "208",
+              "status": "run",
+              "result": "completed",
+              "time": "0.259",
+              "timestamp": "2026-10-22T19:02:56.494",
+              "classname": "DSparkAcceptedPrefix"
+            },
+            "properties": {}
+          },
+          {
+            "attributes": {
+              "name": "Ratio128HalfWindowsAndThreeMainRingsPublishAtomically",
+              "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_state\\dspark_prefix_consumer_test.cc",
+              "line": "214",
+              "status": "run",
+              "result": "completed",
+              "time": "0.155",
+              "timestamp": "2026-10-22T19:02:56.754",
+              "classname": "DSparkAcceptedPrefix"
+            },
+            "properties": {}
+          }
+        ]
+      }
+    }
+  ],
+  "limits": [
+    "Two related compositions are checked separately; this is not one natural full proposal->original target verify->accept/catchup journey.",
+    "Full original draft/LM parameter bindings, other applicable actual model/quantized roles and complete adapters remain. No new public math/state/loader API was shown necessary.",
+    "These new compositions ran on Windows CPU/CUDA only, not Linux, Apple or Vulkan; prior cross-platform Qwen evidence retains its own scope.",
+    "No new Qwen ordinary/MTP TPS, memory-peak, model-quality or natural acceptance-rate comparison was run. Current-work AV performance table remains authoritative for its own image/window.",
+    "Standalone previous target-prefix main was recompiled after helper extraction; its previous full acceptance matrix was not rerun. Current new two target-prefix cases execute the extracted target graph and same route."
+  ],
+  "cleanup": {
+    "Removed": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-mtp-integration-20261022\\tests-link1\\dspark-checks.exe",
+        "bytes": 139996160,
+        "sha256": "1f3d8b6b3a73d686fc75ba690162f2479846df169470e644f5ad9980b05e8224"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-mtp-integration-20261022\\tests-link1\\dspark-checks.map",
+        "bytes": 58425334,
+        "sha256": "0081cd0909baa23dd2d02bd5f2887cb34a4203b370d3ea09abf651bdd6a6eb8b"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-mtp-integration-20261022\\tests-link2\\dspark-checks.map",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-mtp-integration-20261022\\tests-link3\\dspark-checks.map",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-mtp-integration-20261022\\tests-link4\\dspark-checks.exe",
+        "bytes": 140242432,
+        "sha256": "49b9e531f7a7cbbc30ad4cd5a92646f0a89dbb5e78072c89d52f96308eee796c"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-mtp-integration-20261022\\tests-link4\\dspark-checks.map",
+        "bytes": 58777617,
+        "sha256": "bfdb40ce81d7c91b47aeb484c939de272a1b3261ea2d5d13c3295b6d54461926"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-mtp-integration-20261022\\tests-link5\\dspark-checks.exe",
+        "bytes": 138621952,
+        "sha256": "b1fd563cb6a48c8a216d3243173ff1115396cbd7dd83ef59115e1249de29a783"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-mtp-integration-20261022\\tests-link5\\dspark-checks.map",
+        "bytes": 55851087,
+        "sha256": "3a85bb183756ce6c879eaa88afee8da01f7d3c2126bbe8fa36908a4975b2f91e"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-mtp-integration-20261022\\tests-link6\\dspark-checks.exe",
+        "bytes": 139768320,
+        "sha256": "11dc505e12d7967cc6d381b390743926c3d23356d0703e8aa8c646402c8e4951"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-mtp-integration-20261022\\tests-link6\\dspark-checks.map",
+        "bytes": 57860976,
+        "sha256": "557700d38262328a9e745c028a5d32ea8c781fc13b3ea7e19565d9cc7678eb65"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-mtp-integration-20261022\\tests-link7\\dspark-checks.exe",
+        "bytes": 139768832,
+        "sha256": "fa4792f8616f5512aa1d8701d4134414a0771bbd5ddec28923c29f21e2b1a654"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-mtp-integration-20261022\\tests-link7\\dspark-checks.map",
+        "bytes": 57844546,
+        "sha256": "de4292fcc4c31ab4d649c3d53de2851ed0fe3743a6cc7b7c9d2c48c26c0d5d5b"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-mtp-integration-20261022\\tests-link8\\dspark-checks.exe",
+        "bytes": 139781632,
+        "sha256": "00f6686ddc601ec85956861c63dc495b1c18afb8978af42a951d5129e752e7f0"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-mtp-integration-20261022\\tests-link8\\dspark-checks.map",
+        "bytes": 57853903,
+        "sha256": "fde13cc36cbc93f721f63d9894cdd2edb5248ae94eed6c92a42474d2dfe24804"
+      }
+    ],
+    "Bytes": 1184792791,
+    "CurrentImageRetained": true,
+    "CurrentMapRetained": true
+  },
+  "retained_image": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-mtp-integration-20261022\\tests-link9\\dspark-checks.exe",
+    "bytes": 140262400,
+    "sha256": "35dac9d05ee8b4db2865d01202da83f4b2ecf307eaf8d82b23d7cb05c9239a32"
+  },
+  "SDK_builds": 0,
+  "NVCC_builds": 0,
+  "shader_builds": 0,
+  "public_API_changed": false,
+  "archived_sources_commands_results_and_cleanup": {
+    "path": "docs\\evidence\\correctness\\dspark-mtp-composition-2026-10-22.logs.zip",
+    "bytes": 736791,
+    "sha256": "2b01f158e1ece696fe88787d7e09fc19d4d333fd84046e0ce5c1a4c7404a9e54"
+  },
+  "large_role_payloads_in_archive": false
+}

@@ -1,0 +1,125 @@
+{
+  "archive": {
+    "path": "docs/evidence/correctness/inference-foundation-review-2026-10-18/strided-layout-axes.zip",
+    "bytes": 708040,
+    "sha256": "da6904d4e3803a40ae787c453ec8cc95db393d985b226ca272aa021bcdf9d664"
+  },
+  "strided_reshape": {
+    "result": "9/9 PASS, including 5 new logical-address cases; exact prior operation object fails all 5 new cases.",
+    "contract": "Plain, zero-copy, contiguous stride chunks only. Preserve singleton, broadcast and byte-span semantics; gap flatten needs explicit Copy. Whole-domain reshape still requires its original dense proof.",
+    "hot_cost": "O(rank) fixed metadata; no new allocation, dispatch cache, executor or Plan/Invocation ABI."
+  },
+  "qwen": {
+    "result": "150/150 byte-identical, 62,785,536 bytes; full 24 layers and 320 original tensors.",
+    "journey": "prefill T23/KV23 -> continuation T4/KV27 -> decode T1/KV28; next 20 -> 248046 -> 198.",
+    "graph_nodes": {
+      "before": 1938,
+      "after": 1878
+    },
+    "copy_nodes": {
+      "before": 85,
+      "after": 25
+    },
+    "reported_steps": {
+      "before": 1252,
+      "after": 1204
+    },
+    "retained_copy": "18 caller history, 6 gapped gate flatten, 1 caller final hidden.",
+    "workspace_bytes_per_slot": {
+      "T23": [
+        4104704,
+        4151296
+      ],
+      "T4": [
+        1427776,
+        1443840
+      ],
+      "T1": [
+        933568,
+        937536
+      ]
+    },
+    "limits": "Single direct trace journey, no new scheduler/platform/throughput acceptance; original independent-oracle approx 2% logits discrepancy remains. Native CONT may remain; no total memory-reduction claim."
+  },
+  "vulkan_dtype_axes": {
+    "status": "passed_for_tested_domains",
+    "device": "NVIDIA GeForce RTX 4070",
+    "commands": {
+      "fresh_wrappers_tests": "001..004",
+      "link": "005",
+      "run": "006"
+    },
+    "implementation": [
+      "Paired F16/BF16 plain KV and paired Q8_0 use existing FaType decoding independently of the query dtype.",
+      "Private flash output and request join remain F32 for either supported query dtype; round only once to selected public output.",
+      "True-empty output also preserves independently selected output dtype."
+    ],
+    "verification": {
+      "tests": 6,
+      "failures": 0,
+      "new_tests": 2,
+      "fresh_wrapper_tus": 2,
+      "fresh_test_tus": 2,
+      "reused_native_host": true,
+      "rebuilt_shaders": false,
+      "rebuilt_core": false,
+      "two_graph_slots": true,
+      "strict_same_bindings_replay": true,
+      "old_output_gate": true,
+      "q0_output_f16_bf16": true,
+      "mixed_fp64_max_abs": [
+        6.10259588e-05,
+        7.62799728e-06,
+        6.10254565e-05
+      ]
+    },
+    "tested_combinations": [
+      "BF16 query / F16 KV -> BF16, D256 Direct and ordinary Graph.",
+      "F16 query / BF16 KV -> F16, D256 Direct and ordinary Graph.",
+      "F16 query / BF16 KV -> BF16, D256 Direct and ordinary Graph.",
+      "Original short F16 D64/128/256, BF16 plain/Q8 D256, and BF16 compact MLA 576/512 controls."
+    ],
+    "limits": [
+      "Common BatchCapacity continues to accept F16/BF16 query/output; F32 was not added.",
+      "K/V remain the same storage format. Original depth/page16/device/shared-memory checks remain.",
+      "Compact MlaBatchCapacity has one data_type; this change does not add a new schema API.",
+      "No pending numerical, full-model, performance or other-device acceptance; original FP64 tolerances unchanged."
+    ],
+    "sources": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\vulkan-attention-dtype-axes\\source-identities.json",
+      "bytes": 1274,
+      "sha256": "2a54dedccfa4f15b57866697b2a9f62352b7807dcea167803a444f4a441b15c9"
+    },
+    "matched_objects": 101,
+    "failures": []
+  },
+  "stream_bridge": {
+    "status": "Read-only private implementation design only; not implemented or tested.",
+    "original_fact": "Old T23 route used 449 ggml submit entries; current matched T23 route uses 401. Existing per-entry event bridge remains."
+  },
+  "validation_scope": "8 unique small TUs in this slice; cached SDK/native host/shaders reused. No full project rebuild.",
+  "prior_control": "Latest control links the identified original ops.obj whose source SHA matches operation.before.cc; the earlier archive-only negative run is retained as history.",
+  "cleanup_plan": {
+    "files": 162,
+    "bytes": 315369424,
+    "retained_objects": 8,
+    "original_trace_retained": 150,
+    "script": "test.ps1 -ReclaimStridedLayouts"
+  },
+  "cleanup": {
+    "archive_verified": true,
+    "files": 162,
+    "bytes": 315369424.0,
+    "retained_objects": 8,
+    "retained_original_trace": 150,
+    "reused_native_retained": true,
+    "other_cache_retained": true
+  },
+  "post_archive_native_cost_review": {
+    "note_path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-admitted-ggml-stream\\cost-review.txt",
+    "bytes": 3286,
+    "sha256": "76beed28fc28cad2ba470935605dca9e5cf91a48daf5261df429526320593deb",
+    "text": "Read-only Qwen Copy / CONT cost review (frozen; no implementation or validation added)\n\nObserved route counts\n- Existing T23 baseline: 1,252 steps, 449 ggml CUDA entries = 255 ordinary leaf + 194 regions.\n- Current strided-reshape T23: 1,204 steps, 401 ggml CUDA entries = 207 ordinary leaf + 194 regions.\n- Logical Copy nodes: 85 -> 25. Old ggml leaf Copy nodes: 73 -> 19 (-54). Six further removed full-Q Copy nodes had belonged to fused regions and did not occupy independent Graph steps.\n- Repartitioning creates six additional ordinary Cast leaves (80 -> 86). Other ordinary ggml leaf kinds are unchanged. Thus 54 removed independent Copy steps minus six additional Cast steps = 48 fewer steps; regions remain 194.\n- Concrete first attention example: old step176 contains 274:copy,275:cast,276:binary,277:cast,278:rms-norm,279:cast. In the new route, weight-scale cast/binary join the preceding step162 region, Q widening 267:cast is independent step167, and step168 contains 268:rms-norm,269:cast. This pattern repeats across the six full-attention layers.\n\nRemaining original native materialization\n- tensor_program.cc:204-213 matrix() inserts original ggml_cont for a non-contiguous input before native reshape; lower_tensor_operation input()/fp() at 574-579 uses that path. Q/K L2 square and later multiplication using the original Q/K, V Cast, and full-Q Cast can therefore retain native CONT materialization despite deletion of the explicit Graph Copy.\n- For T23/T4, GDN Q/K/V subrows retain the original 6144-channel token pitch. For T1, the single-token Q/K/V reshape can be dense, so the same internal CONT count cannot be assumed across all phases.\n- Full-Q slices retain a gap between the eight heads (512 projected channels -> 256 selected channels), including T1.\n- Existing causal-conv permute + CONT at tensor_program.cc:753 and packed GDN scores/state separation at 902-917 remain independent of this Copy removal. They satisfy the current original kernel/independent output layout contracts.\n- Graph View is handled by the common metadata alias path; it does not call native ggml_reshape on a non-contiguous tensor. Native input construction preserves the real byte strides.\n\nWhat these facts do not establish\n- Graph route rows do not enumerate internal native graph nodes, optimized launches, or payload traffic. Removing 60 logical Copy nodes does not prove 60 fewer GPU copies or a fixed byte saving.\n- Reported Graph workspace increases by 46,592 bytes for T23 (4,104,704 -> 4,151,296), 16,064 for T4 (1,427,776 -> 1,443,840), and 3,968 for T1 (933,568 -> 937,536). These are common Graph workspace figures, not the full provider-owned native CONT/arena cost or total peak memory.\n- The root-authorized actual journey reports 150/150 tensors byte-identical. This review adds no execution and makes no throughput, total-traffic, or overall peak-memory claim.\n\nCurrent evidence identities\nroute: C:/public/project-hyle/hyle/.scratch/architecture-refactor-2026-10-18/strided-reshape/trace/routes/default-T23.route.tsv\nroute SHA256: faf9eaec9eaa5500dd6b33e59469e1fbe7be9a4a6c37698da8e662fd2398ecf6\nsource: C:/public/project-hyle/hyle/src/compute_provider_ggml_cuda/tensor_program.cc\nsource SHA256: 0ed855948088a739fb930224d70ef7ba5505185df57cb5359372310c33f73687\n",
+    "scope": "Read-only follow-up after archive; no product edit or rerun."
+  }
+}

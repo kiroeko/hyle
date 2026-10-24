@@ -109,13 +109,13 @@ Status create_invocation(void *, mem::AllocatorRef, mem::BufferView,
   return Status::Ok();
 }
 void destroy_invocation(void *, mem::AllocatorRef) noexcept {}
-detail::EnqueueResult submit(void *state, void *, Queue &queue,
+detail::EnqueueResult submit(void *state, void *, detail::QueueSequence &sequence,
                              std::span<const ConstTensorView> inputs,
                              std::span<const TensorView> outputs) noexcept {
   const auto &prepared = *static_cast<const Prepared *>(state);
   if (prepared.count == 0)
     return detail::EnqueueResult::no_op();
-  auto stream = cuda::stream(queue);
+  auto stream = cuda::stream(sequence);
   if (!stream)
     return detail::EnqueueResult::rejected(std::move(stream).error());
   auto output = cuda::detail::mutable_pointer(outputs[0].storage(),
@@ -205,7 +205,7 @@ ProviderPrepareOutcome prepare(void *state,
     return ProviderPrepareOutcome::error(scope.status());
   auto *storage = allocator.allocate(sizeof(Prepared), alignof(Prepared));
   if (storage == nullptr)
-    return ProviderPrepareOutcome::resource_declined(
+    return ProviderPrepareOutcome::error(
         Status::ResourceExhausted("CUDA Concat program allocation failed"));
   auto *prepared = ::new (storage) Prepared{
       .primary = primary,
@@ -215,7 +215,7 @@ ProviderPrepareOutcome prepare(void *state,
         allocator.allocate(selection->groups * sizeof(Group), alignof(Group)));
     if (prepared->groups == nullptr) {
       destroy(prepared, allocator);
-      return ProviderPrepareOutcome::resource_declined(
+      return ProviderPrepareOutcome::error(
           Status::ResourceExhausted("CUDA Concat group allocation failed"));
     }
     prepared->count = selection->groups;

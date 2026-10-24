@@ -1,0 +1,1166 @@
+{
+  "date": "2026-10-21",
+  "status": "finite_submit_tail_diagnostic_complete_no_product_change",
+  "scope": "Same CUDA M1 N128 K7168 source-bound artificial outer-FP8 role, original Commands consumer and preflight/11 calls. Two diagnostic processes, not new model throughput runs.",
+  "counts": {
+    "independent_diagnostic_processes": 2,
+    "case_executions": 2,
+    "distinct_backend_geometry_cases": 1,
+    "failed": 0,
+    "skipped": 0
+  },
+  "finding": [
+    "Call4 is slot1's second stable execution, not its first submit. Slot0's corresponding second stable execution occurs at preflight call2.",
+    "The locked GGML CUDA source warmup_complete rule executes directly on the first/property-changing call, captures/instantiates when the second call has stable properties, and subsequently launches the existing provider-internal graph.",
+    "Actual trace has five GGML graph capture/instantiate/update/launch groups for default, two for bounded at call2 and call4. Calls3 and5 contain graph launches without new instantiate. This matches original GGML Program counts5 versus2.",
+    "These are original provider-internal graphs. Hyle outer replay remains Commands; the Hyle outer backend uses cudaGraphInstantiateWithFlags, while this native path uses cudaGraphInstantiate(old5arg). The bounded GPU kernel list includes static_quantize/static_code_dot; its suffix does not call cuBLAS GEMM.",
+    "Call4 explicit cudaMalloc/cuMemAlloc/cudaHostAlloc/EventCreate calls are absent across all traced threads. This rules out the proposed Queue event-block expansion mechanism for this observed spike, not all possible hidden driver/CPU allocations or every workload.",
+    "Trace call4 instantiation sums are61.397us(default5) and24.144us(budget2). Do not equate these with the entire submit durations387.3/172.7us or all submit excess. Other capture/launch/context/host work and instrumentation remain."
+  ],
+  "measurements": [
+    {
+      "name": "stage_only",
+      "xml": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\outer-fp8-default-routing-2026-10-21\\cuda\\validation\\tail-stage-attempt1\\tests.xml",
+        "bytes": 9514,
+        "sha256": "b258d5069468da041eb00b297f0c991eea709b76ace9dd476b5e56d177449446"
+      },
+      "stage_analysis": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\outer-fp8-default-routing-2026-10-21\\cuda\\validation\\tail-stage-attempt1\\stage-analysis.json",
+        "bytes": 9417,
+        "sha256": "5f4cbb2831f9c1770c51c1ba5da3db0b38c27af488a94416f41224b0e107a56c"
+      },
+      "arms": {
+        "default": {
+          "call4": {
+            "call": 4,
+            "slot": 1,
+            "release": 0.1,
+            "submit": 264.3,
+            "wait": 20.3,
+            "result": 0.3,
+            "read": 27.8,
+            "total": 312.8
+          },
+          "warm_stage_medians_us": {
+            "release": 0.1,
+            "submit": 118.5,
+            "wait": 5.7,
+            "result": 0.1,
+            "read": 38.0,
+            "total": 165.9
+          },
+          "all_calls": [
+            {
+              "call": 0,
+              "slot": 0,
+              "release": 0.1,
+              "submit": 7194.7,
+              "wait": 496.9,
+              "result": 1.1,
+              "read": 47.7,
+              "total": 7740.5
+            },
+            {
+              "call": 1,
+              "slot": 1,
+              "release": 0.0,
+              "submit": 229.9,
+              "wait": 18.2,
+              "result": 0.5,
+              "read": 26.9,
+              "total": 275.5
+            },
+            {
+              "call": 2,
+              "slot": 0,
+              "release": 0.1,
+              "submit": 510.8,
+              "wait": 20.1,
+              "result": 0.5,
+              "read": 32.1,
+              "total": 563.6
+            },
+            {
+              "call": 3,
+              "slot": 0,
+              "release": 0.1,
+              "submit": 187.9,
+              "wait": 0.8,
+              "result": 0.1,
+              "read": 26.8,
+              "total": 215.7
+            },
+            {
+              "call": 4,
+              "slot": 1,
+              "release": 0.1,
+              "submit": 264.3,
+              "wait": 20.3,
+              "result": 0.3,
+              "read": 27.8,
+              "total": 312.8
+            },
+            {
+              "call": 5,
+              "slot": 0,
+              "release": 0.1,
+              "submit": 170.4,
+              "wait": 16.7,
+              "result": 0.1,
+              "read": 27.5,
+              "total": 214.8
+            },
+            {
+              "call": 6,
+              "slot": 1,
+              "release": 0.1,
+              "submit": 131.9,
+              "wait": 5.7,
+              "result": 0.1,
+              "read": 38.0,
+              "total": 175.8
+            },
+            {
+              "call": 7,
+              "slot": 0,
+              "release": 0.1,
+              "submit": 116.0,
+              "wait": 5.6,
+              "result": 0.1,
+              "read": 38.2,
+              "total": 160.0
+            },
+            {
+              "call": 8,
+              "slot": 1,
+              "release": 0.0,
+              "submit": 116.2,
+              "wait": 5.8,
+              "result": 0.1,
+              "read": 38.1,
+              "total": 160.2
+            },
+            {
+              "call": 9,
+              "slot": 0,
+              "release": 0.0,
+              "submit": 114.2,
+              "wait": 5.5,
+              "result": 0.1,
+              "read": 38.1,
+              "total": 157.9
+            },
+            {
+              "call": 10,
+              "slot": 1,
+              "release": 0.0,
+              "submit": 114.4,
+              "wait": 5.7,
+              "result": 13.9,
+              "read": 26.8,
+              "total": 160.8
+            },
+            {
+              "call": 11,
+              "slot": 0,
+              "release": 0.1,
+              "submit": 118.5,
+              "wait": 5.6,
+              "result": 0.1,
+              "read": 39.1,
+              "total": 163.4
+            },
+            {
+              "call": 12,
+              "slot": 1,
+              "release": 0.1,
+              "submit": 78.9,
+              "wait": 328.4,
+              "result": 0.1,
+              "read": 26.2,
+              "total": 433.7
+            },
+            {
+              "call": 13,
+              "slot": 0,
+              "release": 0.1,
+              "submit": 121.5,
+              "wait": 6.1,
+              "result": 0.1,
+              "read": 38.1,
+              "total": 165.9
+            }
+          ]
+        },
+        "budget3MiB": {
+          "call4": {
+            "call": 4,
+            "slot": 1,
+            "release": 0.0,
+            "submit": 298.2,
+            "wait": 2.3,
+            "result": 0.3,
+            "read": 31.4,
+            "total": 332.2
+          },
+          "warm_stage_medians_us": {
+            "release": 0.1,
+            "submit": 72.5,
+            "wait": 14.9,
+            "result": 0.1,
+            "read": 31.4,
+            "total": 124.2
+          },
+          "all_calls": [
+            {
+              "call": 0,
+              "slot": 0,
+              "release": 0.0,
+              "submit": 71.2,
+              "wait": 34.8,
+              "result": 0.2,
+              "read": 25.2,
+              "total": 131.4
+            },
+            {
+              "call": 1,
+              "slot": 1,
+              "release": 0.0,
+              "submit": 78.3,
+              "wait": 14.7,
+              "result": 13.8,
+              "read": 24.6,
+              "total": 131.4
+            },
+            {
+              "call": 2,
+              "slot": 0,
+              "release": 0.0,
+              "submit": 160.8,
+              "wait": 0.9,
+              "result": 0.1,
+              "read": 25.9,
+              "total": 187.7
+            },
+            {
+              "call": 3,
+              "slot": 0,
+              "release": 0.0,
+              "submit": 61.8,
+              "wait": 14.8,
+              "result": 0.0,
+              "read": 192.3,
+              "total": 268.9
+            },
+            {
+              "call": 4,
+              "slot": 1,
+              "release": 0.0,
+              "submit": 298.2,
+              "wait": 2.3,
+              "result": 0.3,
+              "read": 31.4,
+              "total": 332.2
+            },
+            {
+              "call": 5,
+              "slot": 0,
+              "release": 0.2,
+              "submit": 77.1,
+              "wait": 28.9,
+              "result": 0.1,
+              "read": 24.9,
+              "total": 131.2
+            },
+            {
+              "call": 6,
+              "slot": 1,
+              "release": 0.1,
+              "submit": 59.7,
+              "wait": 28.9,
+              "result": 0.1,
+              "read": 24.6,
+              "total": 113.4
+            },
+            {
+              "call": 7,
+              "slot": 0,
+              "release": 0.1,
+              "submit": 60.4,
+              "wait": 15.1,
+              "result": 0.1,
+              "read": 37.7,
+              "total": 113.4
+            },
+            {
+              "call": 8,
+              "slot": 1,
+              "release": 0.1,
+              "submit": 72.5,
+              "wait": 27.7,
+              "result": 0.1,
+              "read": 27.4,
+              "total": 127.8
+            },
+            {
+              "call": 9,
+              "slot": 0,
+              "release": 0.1,
+              "submit": 72.8,
+              "wait": 27.5,
+              "result": 0.0,
+              "read": 24.3,
+              "total": 124.7
+            },
+            {
+              "call": 10,
+              "slot": 1,
+              "release": 0.0,
+              "submit": 85.5,
+              "wait": 14.2,
+              "result": 0.1,
+              "read": 24.3,
+              "total": 124.1
+            },
+            {
+              "call": 11,
+              "slot": 0,
+              "release": 0.0,
+              "submit": 61.6,
+              "wait": 14.5,
+              "result": 0.1,
+              "read": 38.0,
+              "total": 114.2
+            },
+            {
+              "call": 12,
+              "slot": 1,
+              "release": 0.1,
+              "submit": 62.1,
+              "wait": 14.9,
+              "result": 0.0,
+              "read": 38.4,
+              "total": 115.5
+            },
+            {
+              "call": 13,
+              "slot": 0,
+              "release": 0.1,
+              "submit": 85.8,
+              "wait": 0.8,
+              "result": 0.1,
+              "read": 37.4,
+              "total": 124.2
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "nsys_CUDA_API",
+      "xml": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\outer-fp8-default-routing-2026-10-21\\tail-diagnostic\\nsys-api-attempt1\\tests.xml",
+        "bytes": 9512,
+        "sha256": "fe31c1475050d9a196724415bb6ef049d85d7a0678d68ec197b4dc938bd3ef02"
+      },
+      "stage_analysis": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\outer-fp8-default-routing-2026-10-21\\tail-diagnostic\\nsys-api-attempt1\\stage-analysis.json",
+        "bytes": 9489,
+        "sha256": "90a884083320ffd8c743c48bacae09bc9db55c02cac8bad03c9333edbbe8ab21"
+      },
+      "arms": {
+        "default": {
+          "call4": {
+            "call": 4,
+            "slot": 1,
+            "release": 0.0,
+            "submit": 387.3,
+            "wait": 23.0,
+            "result": 0.3,
+            "read": 33.8,
+            "total": 444.4
+          },
+          "warm_stage_medians_us": {
+            "release": 0.1,
+            "submit": 213.5,
+            "wait": 21.8,
+            "result": 0.2,
+            "read": 29.9,
+            "total": 263.3
+          },
+          "all_calls": [
+            {
+              "call": 0,
+              "slot": 0,
+              "release": 0.3,
+              "submit": 7805.9,
+              "wait": 17.0,
+              "result": 1.5,
+              "read": 65.6,
+              "total": 7890.3
+            },
+            {
+              "call": 1,
+              "slot": 1,
+              "release": 0.1,
+              "submit": 314.9,
+              "wait": 6.6,
+              "result": 0.6,
+              "read": 34.5,
+              "total": 356.7
+            },
+            {
+              "call": 2,
+              "slot": 0,
+              "release": 0.0,
+              "submit": 678.8,
+              "wait": 8.0,
+              "result": 0.7,
+              "read": 37.6,
+              "total": 725.1
+            },
+            {
+              "call": 3,
+              "slot": 0,
+              "release": 0.1,
+              "submit": 212.1,
+              "wait": 21.8,
+              "result": 0.1,
+              "read": 29.2,
+              "total": 263.3
+            },
+            {
+              "call": 4,
+              "slot": 1,
+              "release": 0.0,
+              "submit": 387.3,
+              "wait": 23.0,
+              "result": 0.3,
+              "read": 33.8,
+              "total": 444.4
+            },
+            {
+              "call": 5,
+              "slot": 0,
+              "release": 0.1,
+              "submit": 213.7,
+              "wait": 21.7,
+              "result": 0.2,
+              "read": 35.3,
+              "total": 271.0
+            },
+            {
+              "call": 6,
+              "slot": 1,
+              "release": 0.1,
+              "submit": 213.5,
+              "wait": 21.8,
+              "result": 0.2,
+              "read": 106.1,
+              "total": 341.7
+            },
+            {
+              "call": 7,
+              "slot": 0,
+              "release": 0.1,
+              "submit": 221.8,
+              "wait": 4.4,
+              "result": 0.3,
+              "read": 29.9,
+              "total": 256.5
+            },
+            {
+              "call": 8,
+              "slot": 1,
+              "release": 0.2,
+              "submit": 223.7,
+              "wait": 25.8,
+              "result": 0.2,
+              "read": 30.9,
+              "total": 280.8
+            },
+            {
+              "call": 9,
+              "slot": 0,
+              "release": 0.1,
+              "submit": 199.6,
+              "wait": 22.5,
+              "result": 0.1,
+              "read": 29.0,
+              "total": 251.3
+            },
+            {
+              "call": 10,
+              "slot": 1,
+              "release": 0.1,
+              "submit": 214.0,
+              "wait": 4.0,
+              "result": 0.2,
+              "read": 29.0,
+              "total": 247.3
+            },
+            {
+              "call": 11,
+              "slot": 0,
+              "release": 0.0,
+              "submit": 184.6,
+              "wait": 21.3,
+              "result": 0.1,
+              "read": 28.3,
+              "total": 234.3
+            },
+            {
+              "call": 12,
+              "slot": 1,
+              "release": 0.1,
+              "submit": 188.2,
+              "wait": 21.9,
+              "result": 0.1,
+              "read": 28.3,
+              "total": 238.6
+            },
+            {
+              "call": 13,
+              "slot": 0,
+              "release": 0.0,
+              "submit": 198.2,
+              "wait": 38.5,
+              "result": 0.2,
+              "read": 35.1,
+              "total": 272.0
+            }
+          ]
+        },
+        "budget3MiB": {
+          "call4": {
+            "call": 4,
+            "slot": 1,
+            "release": 0.0,
+            "submit": 172.7,
+            "wait": 4.2,
+            "result": 0.3,
+            "read": 29.3,
+            "total": 206.5
+          },
+          "warm_stage_medians_us": {
+            "release": 0.1,
+            "submit": 109.3,
+            "wait": 3.8,
+            "result": 0.2,
+            "read": 29.1,
+            "total": 143.4
+          },
+          "all_calls": [
+            {
+              "call": 0,
+              "slot": 0,
+              "release": 0.2,
+              "submit": 143.0,
+              "wait": 20.4,
+              "result": 0.3,
+              "read": 29.8,
+              "total": 193.7
+            },
+            {
+              "call": 1,
+              "slot": 1,
+              "release": 0.0,
+              "submit": 144.3,
+              "wait": 4.3,
+              "result": 0.3,
+              "read": 29.5,
+              "total": 178.4
+            },
+            {
+              "call": 2,
+              "slot": 0,
+              "release": 0.0,
+              "submit": 180.4,
+              "wait": 29.8,
+              "result": 0.3,
+              "read": 31.0,
+              "total": 241.5
+            },
+            {
+              "call": 3,
+              "slot": 0,
+              "release": 0.1,
+              "submit": 106.4,
+              "wait": 3.7,
+              "result": 0.1,
+              "read": 28.2,
+              "total": 138.5
+            },
+            {
+              "call": 4,
+              "slot": 1,
+              "release": 0.0,
+              "submit": 172.7,
+              "wait": 4.2,
+              "result": 0.3,
+              "read": 29.3,
+              "total": 206.5
+            },
+            {
+              "call": 5,
+              "slot": 0,
+              "release": 0.2,
+              "submit": 128.3,
+              "wait": 4.0,
+              "result": 0.3,
+              "read": 29.3,
+              "total": 162.1
+            },
+            {
+              "call": 6,
+              "slot": 1,
+              "release": 0.1,
+              "submit": 109.1,
+              "wait": 3.8,
+              "result": 0.1,
+              "read": 28.6,
+              "total": 141.7
+            },
+            {
+              "call": 7,
+              "slot": 0,
+              "release": 0.1,
+              "submit": 62.4,
+              "wait": 197.7,
+              "result": 0.2,
+              "read": 34.4,
+              "total": 294.8
+            },
+            {
+              "call": 8,
+              "slot": 1,
+              "release": 0.1,
+              "submit": 147.7,
+              "wait": 119.7,
+              "result": 0.3,
+              "read": 33.7,
+              "total": 301.5
+            },
+            {
+              "call": 9,
+              "slot": 0,
+              "release": 0.2,
+              "submit": 110.6,
+              "wait": 3.6,
+              "result": 0.2,
+              "read": 28.4,
+              "total": 143.0
+            },
+            {
+              "call": 10,
+              "slot": 1,
+              "release": 0.1,
+              "submit": 109.3,
+              "wait": 3.4,
+              "result": 0.2,
+              "read": 28.7,
+              "total": 141.7
+            },
+            {
+              "call": 11,
+              "slot": 0,
+              "release": 0.1,
+              "submit": 105.6,
+              "wait": 3.4,
+              "result": 0.2,
+              "read": 34.1,
+              "total": 143.4
+            },
+            {
+              "call": 12,
+              "slot": 1,
+              "release": 0.1,
+              "submit": 104.0,
+              "wait": 3.7,
+              "result": 0.2,
+              "read": 27.9,
+              "total": 135.9
+            },
+            {
+              "call": 13,
+              "slot": 0,
+              "release": 0.1,
+              "submit": 124.4,
+              "wait": 3.8,
+              "result": 0.1,
+              "read": 29.1,
+              "total": 157.5
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "trace_mapping": {
+    "expected_output_reads": 34,
+    "observed_sync_DtoH": 34,
+    "matched_256byte_output_reads": 34,
+    "accepted": true,
+    "method": "256byte GPU-copy correlation plus synchronous Driver DtoH API",
+    "limitation": "Without NVTX or absolute host checkpoints these are output-read-to-output-read intervals. They also include prior Completion destructor/assert/sample bookkeeping outside the timed call. Do not equate interval length to submit or total."
+  },
+  "graph_initialization": {
+    "status": "read_only_actual_SQL_extraction",
+    "intervals": [
+      {
+        "arm": "default",
+        "call": 0,
+        "mapped_interval_ns": [
+          847810577,
+          847873535
+        ],
+        "graph_apis": [],
+        "explicit_event_pool_growth_calls_all_threads": []
+      },
+      {
+        "arm": "default",
+        "call": 1,
+        "mapped_interval_ns": [
+          847873535,
+          848308844
+        ],
+        "graph_apis": [],
+        "explicit_event_pool_growth_calls_all_threads": []
+      },
+      {
+        "arm": "default",
+        "call": 2,
+        "mapped_interval_ns": [
+          848337004,
+          849175957
+        ],
+        "graph_apis": [
+          {
+            "name": "cudaStreamBeginCapture_v10000",
+            "count": 5,
+            "sum_us": 24.034,
+            "raw_us": [
+              17.685,
+              2.693,
+              1.202,
+              1.367,
+              1.087
+            ]
+          },
+          {
+            "name": "cudaStreamEndCapture_v10000",
+            "count": 5,
+            "sum_us": 3.09,
+            "raw_us": [
+              1.191,
+              0.663,
+              0.436,
+              0.391,
+              0.409
+            ]
+          },
+          {
+            "name": "cudaGraphInstantiate_v12000",
+            "count": 5,
+            "sum_us": 125.60600000000001,
+            "raw_us": [
+              65.162,
+              11.838,
+              13.523,
+              24.39,
+              10.693
+            ]
+          },
+          {
+            "name": "cudaGraphExecUpdate_v10020",
+            "count": 5,
+            "sum_us": 11.421000000000001,
+            "raw_us": [
+              8.406,
+              1.034,
+              0.678,
+              0.643,
+              0.66
+            ]
+          },
+          {
+            "name": "cudaGraphLaunch_v10000",
+            "count": 5,
+            "sum_us": 80.256,
+            "raw_us": [
+              42.534,
+              11.311,
+              8.606,
+              8.756,
+              9.049
+            ]
+          }
+        ],
+        "explicit_event_pool_growth_calls_all_threads": []
+      },
+      {
+        "arm": "budget3MiB",
+        "call": 0,
+        "mapped_interval_ns": [
+          849175957,
+          849370350
+        ],
+        "graph_apis": [],
+        "explicit_event_pool_growth_calls_all_threads": []
+      },
+      {
+        "arm": "budget3MiB",
+        "call": 1,
+        "mapped_interval_ns": [
+          849370350,
+          849618688
+        ],
+        "graph_apis": [],
+        "explicit_event_pool_growth_calls_all_threads": []
+      },
+      {
+        "arm": "budget3MiB",
+        "call": 2,
+        "mapped_interval_ns": [
+          849648306,
+          849997783
+        ],
+        "graph_apis": [
+          {
+            "name": "cudaStreamBeginCapture_v10000",
+            "count": 2,
+            "sum_us": 4.394,
+            "raw_us": [
+              3.025,
+              1.369
+            ]
+          },
+          {
+            "name": "cudaStreamEndCapture_v10000",
+            "count": 2,
+            "sum_us": 1.0939999999999999,
+            "raw_us": [
+              0.524,
+              0.57
+            ]
+          },
+          {
+            "name": "cudaGraphInstantiate_v12000",
+            "count": 2,
+            "sum_us": 26.08,
+            "raw_us": [
+              13.439,
+              12.641
+            ]
+          },
+          {
+            "name": "cudaGraphExecUpdate_v10020",
+            "count": 2,
+            "sum_us": 1.847,
+            "raw_us": [
+              1.05,
+              0.797
+            ]
+          },
+          {
+            "name": "cudaGraphLaunch_v10000",
+            "count": 2,
+            "sum_us": 24.378,
+            "raw_us": [
+              13.92,
+              10.458
+            ]
+          }
+        ],
+        "explicit_event_pool_growth_calls_all_threads": []
+      },
+      {
+        "arm": "default",
+        "call": 3,
+        "mapped_interval_ns": [
+          849997783,
+          850261397
+        ],
+        "graph_apis": [
+          {
+            "name": "cudaGraphLaunch_v10000",
+            "count": 5,
+            "sum_us": 64.806,
+            "raw_us": [
+              11.454,
+              19.932,
+              20.187,
+              5.796,
+              7.437
+            ]
+          }
+        ],
+        "explicit_event_pool_growth_calls_all_threads": []
+      },
+      {
+        "arm": "budget3MiB",
+        "call": 3,
+        "mapped_interval_ns": [
+          850261397,
+          850400383
+        ],
+        "graph_apis": [
+          {
+            "name": "cudaGraphLaunch_v10000",
+            "count": 2,
+            "sum_us": 13.294,
+            "raw_us": [
+              8.736,
+              4.558
+            ]
+          }
+        ],
+        "explicit_event_pool_growth_calls_all_threads": []
+      },
+      {
+        "arm": "budget3MiB",
+        "call": 4,
+        "mapped_interval_ns": [
+          850400383,
+          850607120
+        ],
+        "graph_apis": [
+          {
+            "name": "cudaStreamBeginCapture_v10000",
+            "count": 2,
+            "sum_us": 3.3569999999999998,
+            "raw_us": [
+              2.207,
+              1.15
+            ]
+          },
+          {
+            "name": "cudaStreamEndCapture_v10000",
+            "count": 2,
+            "sum_us": 0.864,
+            "raw_us": [
+              0.437,
+              0.427
+            ]
+          },
+          {
+            "name": "cudaGraphInstantiate_v12000",
+            "count": 2,
+            "sum_us": 24.144,
+            "raw_us": [
+              15.477,
+              8.667
+            ]
+          },
+          {
+            "name": "cudaGraphExecUpdate_v10020",
+            "count": 2,
+            "sum_us": 1.488,
+            "raw_us": [
+              0.868,
+              0.62
+            ]
+          },
+          {
+            "name": "cudaGraphLaunch_v10000",
+            "count": 2,
+            "sum_us": 19.752000000000002,
+            "raw_us": [
+              11.083,
+              8.669
+            ]
+          }
+        ],
+        "explicit_event_pool_growth_calls_all_threads": []
+      },
+      {
+        "arm": "default",
+        "call": 4,
+        "mapped_interval_ns": [
+          850607120,
+          851051947
+        ],
+        "graph_apis": [
+          {
+            "name": "cudaStreamBeginCapture_v10000",
+            "count": 5,
+            "sum_us": 6.615,
+            "raw_us": [
+              1.534,
+              1.159,
+              1.2,
+              1.709,
+              1.013
+            ]
+          },
+          {
+            "name": "cudaStreamEndCapture_v10000",
+            "count": 5,
+            "sum_us": 2.112,
+            "raw_us": [
+              0.43,
+              0.359,
+              0.382,
+              0.537,
+              0.404
+            ]
+          },
+          {
+            "name": "cudaGraphInstantiate_v12000",
+            "count": 5,
+            "sum_us": 61.397,
+            "raw_us": [
+              12.556,
+              13.79,
+              7.166,
+              9.588,
+              18.297
+            ]
+          },
+          {
+            "name": "cudaGraphExecUpdate_v10020",
+            "count": 5,
+            "sum_us": 3.44,
+            "raw_us": [
+              0.876,
+              0.7,
+              0.528,
+              0.702,
+              0.634
+            ]
+          },
+          {
+            "name": "cudaGraphLaunch_v10000",
+            "count": 5,
+            "sum_us": 44.827,
+            "raw_us": [
+              11.481,
+              8.244,
+              7.396,
+              8.949,
+              8.757
+            ]
+          }
+        ],
+        "explicit_event_pool_growth_calls_all_threads": []
+      },
+      {
+        "arm": "default",
+        "call": 5,
+        "mapped_interval_ns": [
+          851051947,
+          851323440
+        ],
+        "graph_apis": [
+          {
+            "name": "cudaGraphLaunch_v10000",
+            "count": 5,
+            "sum_us": 77.975,
+            "raw_us": [
+              10.924,
+              19.926,
+              20.216,
+              5.466,
+              21.443
+            ]
+          }
+        ],
+        "explicit_event_pool_growth_calls_all_threads": []
+      },
+      {
+        "arm": "budget3MiB",
+        "call": 5,
+        "mapped_interval_ns": [
+          851323440,
+          851486002
+        ],
+        "graph_apis": [
+          {
+            "name": "cudaGraphLaunch_v10000",
+            "count": 2,
+            "sum_us": 13.982,
+            "raw_us": [
+              8.885,
+              5.097
+            ]
+          }
+        ],
+        "explicit_event_pool_growth_calls_all_threads": []
+      }
+    ],
+    "limits": "Read-to-read intervals contain outside-total host bookkeeping. Individual CUDA API duration is instrumented, nested domains may overlap, no total causal sum is claimed."
+  },
+  "limitations": [
+    "Four extra host-clock probes remain inside the unchanged total interval; arrays/formatting are outside. Source math, preflight, old-result gates and11samples are unchanged.",
+    "CUDA all-API tracing adds overhead and the stage-only window also drifted. Neither diagnostic is directly comparable to unprofiled performance or pooled with it.",
+    "Without NVTX/absolute host checkpoints, API regions are output-read-to-output-read intervals and include adjacent host bookkeeping outside total. Driver/runtime API calls can nest; sums across domains are not wall time.",
+    "Budget call4 submit is elevated but is not the largest complete latency in the traced window; later wait/read tails also occur. This is a specific initialization attribution, not an explanation of every tail.",
+    "No public mathematical/capture/lifetime bug or need to enlarge Queue pools is established. No extra trace, warmup, route modification or product instrumentation is requested."
+  ],
+  "related_performance": {
+    "file": "outer-fp8-route-cost-2026-10-21.json",
+    "identity": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\outer-fp8-route-cost-2026-10-21.json",
+      "bytes": 44522,
+      "sha256": "2d778e4e0bd175dfa24925669201174b08c5b52127009f21c570db9ac45d02ec"
+    }
+  },
+  "source_proof": {
+    "upstream_revision": "456172ec733a135778adcd32d00e576a58232e45",
+    "source": "C:\\Users\\kiro\\AppData\\Local\\hyle\\dependencies\\v1\\sources\\ggml-456172ec733a-41b7e10fd424\\src\\ggml-cuda\\ggml-cuda.cu",
+    "before_sha256": "523470d6604755b82d0208414ce40f1378941b10bc1349763bbdf02edaab9634",
+    "after_sha256": "fe7d6967343b512dcaf986d9e069c24f19f93467172583d5c276e709217351fa",
+    "edits": 153,
+    "all_edit_anchors_unique": true,
+    "warmup_excerpt_preserved_byte_exact": true,
+    "SDK_copied": false,
+    "builds": 0,
+    "GPU_runs": 0
+  },
+  "source_proof_scope": "One upstream ggml-cuda.cu file and current153 exact manifest edits replayed offline to the declared final SHA; warmup excerpt byte-identical before/after. No SDK tree or numeric model payload copied.",
+  "routing_decision": {
+    "status": "read_only_no_route_product_change_recommended_in_this_diagnostic",
+    "now": [
+      "Keep CPU default: the earlier single-process M2 bounded consumer was slower.",
+      "The current public 3MiB StorageDomain workspace limit already selects the bounded CUDA candidate naturally, without a forced provider or product fix. Keep it as the explicit space-constrained choice.",
+      "Keep all original 11 samples including one-time initialization. This diagnostic does not replace them with a tail-deleted throughput result. Typical post-initialization calls can be described, but a global CUDA default win is not established across arbitrary shapes/domains."
+    ],
+    "possible_later_minimum": {
+      "intent": "A local CUDA bounded-space engineering default, not a global optimizer or model-name rule.",
+      "mechanism": [
+        "Generate an additional non-obstructing GGML region cut for an actually admitted exact closed static FP8 suffix. Respect node/target/provider/replay constraints; reuse existing closure and allowed-node proof.",
+        "Keep the original broad region and all leaves as fallback. Prefer the cut ahead of the obstructing broad region only in this admitted replacement context; a rank change on the suffix alone cannot undo an earlier-starting region that already consumed its Cast.",
+        "The current static candidate rank200 already precedes ordinary CUDA Graph leaf baselines>=300 at its first node. A cut must be ranked strictly ahead of the original GGML maximal region100, since otherwise same-policy tie breaking prefers its larger node count. This would be a scoped engineering space policy, not measured universal latency ranking.",
+        "Reuse existing RouteSearch backtracking on resource/prepare decline. No executor, hot allocation, new public operation, model whitelist or global comparator change is required in principle."
+      ],
+      "owners": [
+        "src/graph_provider_ggml_cuda/ggml_cuda_region.cc: cut variants and fallback preservation",
+        "src/graph_route_cuda/ct_packed_linear_region.cc or CUDA default region composition: hand off actually admitted exact candidate boundaries",
+        "src/graph/static_fp8_region.h and src/graph/closed_region.h: reuse mathematical/closed-reader proof; no math change"
+      ],
+      "risks": [
+        "Current per-provider discovery does not directly share the other provider's native admission. A clean cold handoff is needed; do not reserve nodes solely from a syntactic match while the static provider is unavailable.",
+        "Never remove ordinary coverage, defeat explicit placement/provider constraints, swallow published/intermediate readers or change ordered SA/SW products.",
+        "No current soft memory-cost field guarantees the earliest region preserves the later suffix. Existing budgets already express the resource contract; automatic preference would be optional policy work and requires default-route/fallback evidence."
+      ]
+    }
+  },
+  "cleanup": "cleanup/cleanup-plan.json",
+  "build": {
+    "diagnostic_CXX": 1,
+    "links": 1,
+    "SDK": 0,
+    "NVCC": 0,
+    "product_changes": 0,
+    "additional_builds_for_trace": 0
+  },
+  "archive": {
+    "file": "outer-fp8-submit-tail-2026-10-21.zip",
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\outer-fp8-submit-tail-2026-10-21.zip",
+    "bytes": 1173119,
+    "sha256": "73923e9bf49fad55e2508e2d2169fbc04c186c2bd8d869b1a4f91f6d74714559",
+    "members": 90,
+    "manifest": "manifest.json"
+  }
+}

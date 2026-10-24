@@ -151,11 +151,11 @@ std::uint32_t origin(const Buffer *buffer) noexcept {
                                       .minStorageBufferOffsetAlignment);
   return static_cast<std::uint32_t>(buffer->offset % alignment);
 }
-std::array<std::uint32_t, 3> origins(const Run &run,
+TensorByteOrigins origins(const Run &run,
                                      const Dispatch &dispatch) noexcept {
-  std::array<std::uint32_t, 3> result{};
+  TensorByteOrigins result{};
   if (dispatch.tensor_byte_origins)
-    for (std::size_t port = 0; port < result.size(); ++port)
+    for (std::size_t port = 0; port < dispatch.push.size()/sizeof(std::uint32_t); ++port)
       result[port] = origin(run.retained_buffers[dispatch.values[port]].get());
   return result;
 }
@@ -199,8 +199,9 @@ bool origins_changed(const Run &run,
                      std::span<const Dispatch> dispatches) noexcept {
   if (!run.encoding_valid)
     return true;
+  if(run.recorded_origins.size()!=dispatches.size())return true;
   for (std::size_t index = 0; index < dispatches.size(); ++index)
-    if (origins(run, dispatches[index]) != run.recorded_origins[index])
+    if (origins(run,dispatches[index]) != run.recorded_origins[index])
       return true;
   return false;
 }
@@ -291,7 +292,10 @@ Status record(const std::shared_ptr<Run> &run,
       if (!dispatch.pipeline ||
           dispatch.pipeline->device != run->runtime->device ||
           dispatch.values.size() != dispatch.pipeline->bindings ||
-          dispatch.push.size() != dispatch.pipeline->push_bytes)
+          dispatch.push.size() != dispatch.pipeline->push_bytes ||
+          (dispatch.tensor_byte_origins &&
+           (dispatch.push.size()%sizeof(std::uint32_t) || dispatch.push.size()>sizeof(TensorByteOrigins) ||
+            dispatch.push.size()/sizeof(std::uint32_t)>dispatch.values.size())))
         return Status::InvalidArgument(
             "Vulkan dispatch pipeline or binding arity");
       for (std::size_t axis = 0; axis < 3; ++axis)
@@ -367,7 +371,7 @@ Status record(const std::shared_ptr<Run> &run,
         const auto value = dispatch.values[binding];
         DescriptorBinding entry;
         entry.value = value;
-        entry.byte_origin = dispatch.tensor_byte_origins && binding < 3;
+        entry.byte_origin = dispatch.tensor_byte_origins && binding < dispatch.push.size()/sizeof(std::uint32_t);
         const auto &buffer = run->retained_buffers[value];
         HYLE_ASSIGN_OR_RETURN(entry.buffer,
                               descriptor_buffer(buffer.get(),
@@ -391,6 +395,57 @@ Status record(const std::shared_ptr<Run> &run,
   } catch (const std::bad_alloc &) {
     return Status::ResourceExhausted("Vulkan command recording metadata");
   }
+}
+
+Status rebind_descriptors(Run &run, std::span<const PlanValue> values,
+    std::span<const Dispatch> dispatches,
+    std::span<const std::uint32_t> parent_values) noexcept {
+  if (run.descriptor_sets.size() != dispatches.size() ||
+      (!parent_values.empty() && parent_values.size() != run.retained_buffers.size()))
+    return Status::Internal("Vulkan descriptor rebind recipe differs");
+  const auto description = [&](std::uint32_t value) -> const TensorDesc & {
+    return values[parent_values.empty() ? value : parent_values[value]].description;
+  };
+  // Validate the complete prospective set before touching any descriptor.
+  // Failure after a parent block rotation keeps its Invocation cold/unbound.
+  for (const auto &dispatch : dispatches) {
+    for (std::size_t port = 0; port < dispatch.values.size(); ++port) {
+      const auto value = dispatch.values[port];
+      if (value >= run.retained_buffers.size() ||
+          (parent_values.empty() ? value : parent_values[value]) >= values.size())
+        return Status::Internal("Vulkan descriptor rebind value differs");
+      const auto &buffer = run.retained_buffers[value];
+      if (!buffer || buffer->handle == VK_NULL_HANDLE)
+        return Status::FailedPrecondition("Vulkan descriptor rebind input is unbound");
+      const bool byte_origin = dispatch.tensor_byte_origins &&
+          port < dispatch.push.size() / sizeof(std::uint32_t);
+      HYLE_ASSIGN_OR_RETURN(auto prospective,
+          descriptor_buffer(buffer.get(), description(value), byte_origin));
+      (void)prospective;
+    }
+  }
+  auto &device = *run.runtime->device;
+  for (std::size_t index = 0; index < dispatches.size(); ++index) {
+    const auto &dispatch = dispatches[index];
+    for (std::uint32_t port = 0; port < dispatch.values.size(); ++port) {
+      const auto value = dispatch.values[port];
+      const bool byte_origin = dispatch.tensor_byte_origins &&
+          port < dispatch.push.size() / sizeof(std::uint32_t);
+      HYLE_ASSIGN_OR_RETURN(auto buffer,
+          descriptor_buffer(run.retained_buffers[value].get(), description(value), byte_origin));
+      VkWriteDescriptorSet write{};
+      write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+      write.dstSet = run.descriptor_sets[index];
+      write.dstBinding = port;
+      write.descriptorCount = 1;
+      write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+      write.pBufferInfo = &buffer;
+      device.fn.UpdateDescriptorSets(device.native.device, 1, &write, 0, nullptr);
+    }
+  }
+  if (!device.environment.storage_update_after_bind || origins_changed(run, dispatches))
+    return encode_commands(run, dispatches);
+  return Status::Ok();
 }
 
 } // namespace hyle::compute::vulkan::detail

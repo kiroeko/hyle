@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include "../compute_route_vulkan/tensor_test_support.h"
+#include "../compute_models/batched_sink_fixture.h"
 #include "hyle/graph/vulkan.h"
 
 namespace {
@@ -163,5 +164,60 @@ TEST(VulkanGraph,
       EXPECT_EQ(bits(context, old.get()->tensors()[1]), old_low);
     }
   }
+}
+TEST(VulkanGraph, BatchedSinkPreservesPublishedIntermediateAcrossMaskRanksAndReplay) {
+  namespace sink = batched_sink_test;
+  for (const auto heads : {64, 128})
+    for (const bool batched_mask : {false, true})
+      for (const auto queries : {1, 3}) {
+        SCOPED_TRACE(::testing::Message() << "H=" << heads
+                     << " mask3=" << batched_mask << " Q=" << queries);
+        auto context = vulkan_test::context().value();
+        sink::Fixture fixture(heads, batched_mask, queries);
+        auto builder = g::GraphBuilder::create().value();
+        std::array<g::ValueId, 5> ports;
+        for (std::size_t i = 0; i < ports.size(); ++i)
+          ports[i] = builder.input(fixture.descriptions[i]).value();
+        const auto node = builder.add_node(fixture.operation, ports);
+        ASSERT_TRUE(node) << node.error().message();
+        const auto attended = builder.result(*node).value();
+        const auto negative = builder.add(
+            c::Unary{c::UnaryKind::kNeg}, attended).value();
+        ASSERT_TRUE(builder.publish(attended).ok());
+        ASSERT_TRUE(builder.publish(negative).ok());
+        auto graph = std::move(builder).finish().value();
+        auto program = gv::compile(context, graph);
+        ASSERT_TRUE(program) << program.error().message();
+        graph = {};
+        auto slot = program->create_invocation();
+        ASSERT_TRUE(slot) << slot.error().message();
+        for (int phase = 0; phase < 2; ++phase) {
+          SCOPED_TRACE(phase);
+          fixture.update(phase);
+          std::array<v::Tensor, 5> inputs;
+          for (std::size_t i = 0; i < inputs.size(); ++i) {
+            auto uploaded = context.upload(fixture.descriptions[i],
+                std::as_bytes(std::span(fixture.payloads[i])));
+            ASSERT_TRUE(uploaded) << uploaded.error().message();
+            inputs[i] = std::move(*uploaded);
+          }
+          ASSERT_TRUE(slot->bind(inputs).ok());
+          auto work = slot->submit();
+          ASSERT_TRUE(work) << work.error().message();
+          auto result = work->wait();
+          ASSERT_TRUE(result) << result.error().message();
+          ASSERT_EQ(result->get()->tensors().size(), 2U);
+          const auto actual = vulkan_test::read(context, result->get()->tensors()[0]);
+          ASSERT_TRUE(actual) << actual.error().message();
+          auto expected = fixture.expected();
+          sink::check(*actual, expected);
+          const auto negated = vulkan_test::read(context, result->get()->tensors()[1]);
+          ASSERT_TRUE(negated) << negated.error().message();
+          for (auto &value : expected)
+            value = -value;
+          sink::check(*negated, expected);
+        }
+        ASSERT_TRUE(context.close().ok());
+      }
 }
 } // namespace

@@ -16,7 +16,6 @@
 #include <mlx/stream.h>
 
 #include "hyle/compute/operation.h"
-#include "hyle/compute/file_stream.h"
 #include "hyle/compute/result.h"
 #include "hyle/compute/resource_leases.h"
 #include "hyle/compute/workload.h"
@@ -30,6 +29,7 @@ struct ProgramState;
 struct InvocationState;
 struct ResultValues;
 struct ContextAccess;
+struct InvocationAccess;
 struct PagedBatchAccess;
 } // namespace detail
 
@@ -235,8 +235,13 @@ public:
 private:
   friend class Program;
   friend class LeasedInvocation;
+  friend struct detail::InvocationAccess;
   friend struct detail::PagedBatchAccess;
-  HYLE_COMPUTE_ROUTE_APPLE_API Result<OwnedResult<Results>> submit_guarded(LeaseUseBatch uses) noexcept;
+  // A pending receiver borrows its stable original Update through this Job's
+  // actual retirement. The preflight neither observes public work nor waits.
+  HYLE_COMPUTE_ROUTE_APPLE_API Result<OwnedResult<Results>> submit_guarded(
+      LeaseUseBatch uses, Status (*preflight)(const void *) noexcept = nullptr,
+      const void *source = nullptr) noexcept;
   HYLE_COMPUTE_ROUTE_APPLE_API Status wait_native() noexcept;
   explicit Invocation(detail::InvocationState *state) noexcept
       : state_(state) {}
@@ -261,9 +266,5 @@ Context::prepare(Descriptor operation,
                  const WorkloadContext &workload) const noexcept {
   return prepare(Operation(std::move(operation)), inputs, workload);
 }
-// Original MLX/Metal stream and shared native resources; no common Queue.
-HYLE_COMPUTE_ROUTE_APPLE_API Result<FileResourcePipeline> create_file_pipeline(
-    io::IoContext &, const Context &, mem::MemoryResourceRef staging,
-    std::span<const CopyResourceSpec> targets, FileStreamOptions options = {}) noexcept;
 } // namespace hyle::compute::apple
 #endif

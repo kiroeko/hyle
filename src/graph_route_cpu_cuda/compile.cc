@@ -3,7 +3,7 @@
 #include <array>
 
 #include "../compute_backend_cuda/resource_admission.h"
-#include "../graph/compile_internal.h"
+#include "hyle/graph/batch.h"
 #include "hyle/compute/backends/cpu.h"
 
 namespace hyle::graph::cpu_cuda {
@@ -36,10 +36,14 @@ Result<CompiledGraph> compile(const Graph &graph, Environment environment,
       StorageDomain{.resource = environment.staging->ref(),
                     .workspace_budget_bytes =
                         environment.staging_workspace_budget_bytes}};
+  HYLE_ASSIGN_OR_RETURN(auto cuda_source,
+                        ExecutionSource::acquire(*environment.cuda));
+  HYLE_ASSIGN_OR_RETURN(auto cpu_source,
+                        ExecutionSource::acquire(*environment.cpu));
   const std::array targets{
-      ExecutionTarget{.context = environment.cuda,
+      ExecutionTarget{.source = std::move(cuda_source),
                       .default_storage = kDeviceStorage},
-      ExecutionTarget{.context = environment.cpu,
+      ExecutionTarget{.source = std::move(cpu_source),
                       .default_storage = kHostStorage}};
   const std::array lanes{ExecutionLane{.target = kCudaTarget},
                         ExecutionLane{.target = kCpuTarget}};
@@ -49,9 +53,9 @@ Result<CompiledGraph> compile(const Graph &graph, Environment environment,
       if (!usage) return std::unexpected(std::move(usage).error());
     }
   }
-  return graph::detail::compile_cpu_gpu(
+  return graph::batch::compile(
       graph, {.storage_domains = storage, .targets = targets, .lanes = lanes},
-      options, compute::cpu::kBackendId, compute::cuda::kBackendId);
+      options);
 }
 
 } // namespace hyle::graph::cpu_cuda

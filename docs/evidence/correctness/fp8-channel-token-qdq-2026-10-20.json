@@ -1,0 +1,213 @@
+{
+  "status": "passed focused Windows CPU/CUDA reference consumer; broader goal remains active",
+  "date": "2026-10-20",
+  "scope": "Synthetic fixed compressed-tensors BF16 QDQ reference on ordinary public Graph, not an artifact payload or native FP8 dot implementation",
+  "source": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_native\\cast.cc",
+      "bytes": 9379,
+      "sha256": "6982eab0fd84cd992f6880d05c1167b8c0b7cd69bdabd7f1a8b8850260714dcf"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_cuda\\tensor_provider.cc",
+      "bytes": 14041,
+      "sha256": "1b771cf8b1536f297f0068a09a7e42a40d477efbea9f2d49badb1c5bac409ca6"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_cuda\\tensor_kernel.h",
+      "bytes": 1464,
+      "sha256": "b86ae4b619af30898d965cd388973865461873523c9d1d209b831ec3eaae3c71"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_cuda\\tensor_kernel.cu",
+      "bytes": 11621,
+      "sha256": "67410e2dd780ad718df12decdeb324e4562864819f4b78aabc6a3d7ed6ff19d3"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_native\\cast_test.cc",
+      "bytes": 15006,
+      "sha256": "7adfeb66da9e4ea92ca9427d6947c4e1af6437b1095d0ef4af599fe4644cd32c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_cuda\\tensor_test.cc",
+      "bytes": 58015,
+      "sha256": "2ea7b29d8d2893876bcbcae9abf35432e8912313f3439ac520bc79802ef06d59"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\fp8_channel_token_qdq_fixture.h",
+      "bytes": 14281,
+      "sha256": "e7275be994f2c1da52b0b8a9ca0d624b5bac55cfea593c9990b773276da88bbc"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_cpu\\fp8_channel_token_qdq_test.cc",
+      "bytes": 849,
+      "sha256": "fb59cdc5f143799bd93f3af5eb0cb0cb6019d4c315ec6bf8d88161b2abb43917"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_cuda\\fp8_channel_token_qdq_test.cc",
+      "bytes": 1125,
+      "sha256": "947b2830ad449af5214f3d874c86e60d2e0ce048ac1be0f8e90dea9f73aafffb"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_cpu\\CMakeLists.txt",
+      "bytes": 3077,
+      "sha256": "dda8d38fc2ed23548bbe830552c052c1e21d8b02586bd0696d9f51ccaa7e4e56"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_cuda\\CMakeLists.txt",
+      "bytes": 2245,
+      "sha256": "292b8056db26032ffcab0313d575e4bf00a5c504e2052af94fd525689280469e"
+    }
+  ],
+  "cpu": [
+    {
+      "name": "CpuFp8ChannelTokenQdqGraph.RankThreeBfloatReferenceKeepsTypedRoundingAndLifetimes",
+      "properties": {
+        "actual_submissions": "4"
+      }
+    },
+    {
+      "name": "NativeCast.ReplaysAllFourQualifiedStoragePairs",
+      "properties": {}
+    },
+    {
+      "name": "NativeCast.BooleanConversionsKeepSignedZerosTinyValuesAndByteStrides",
+      "properties": {}
+    }
+  ],
+  "cuda": [
+    {
+      "name": "CudaFp8Cast.EveryFp8StorageCodeWidensAndSameTypeCopyKeepsBits",
+      "properties": {}
+    },
+    {
+      "name": "CudaFp8Cast.Float32MidpointsNeighborsOverflowInfinitiesAndNanBits",
+      "properties": {}
+    },
+    {
+      "name": "CudaFp8Cast.LowPrecisionPatternsAndCrossFp8UseThePublicStorageOracle",
+      "properties": {}
+    },
+    {
+      "name": "CudaFp8Cast.PublicClipGraphRebindsTwoOwnedSlotsAndRejectsRequireCapture",
+      "properties": {}
+    },
+    {
+      "name": "CudaFp8Cast.NativeAdmissionRejectsStridesAndOverlapButHandlesEmptyAndScalar",
+      "properties": {}
+    },
+    {
+      "name": "CudaFp8ChannelTokenQdqGraph.RankThreeBfloatReferenceKeepsTypedRoundingAndLifetimes",
+      "properties": {
+        "actual_submissions": "4"
+      }
+    },
+    {
+      "name": "CudaTensor.FloatStorageConversionsMatchIndependentRounding",
+      "properties": {}
+    },
+    {
+      "name": "CudaTensor.BoolConversionsPreserveNonzeroBitsAndNormalizeTruthValues",
+      "properties": {}
+    },
+    {
+      "name": "CudaTensor.SelectCopyFillPreserveBitsWithBroadcastMaskAndOddStride",
+      "properties": {}
+    },
+    {
+      "name": "CudaTensor.ViewUsesRequiredStorageOffsetAndCopyRejectsOverlap",
+      "properties": {}
+    }
+  ],
+  "mathematical_contract": {
+    "source_research": "docs/evidence/research/fp8-channel-token-contract-2026-10-20.json",
+    "shape": "BF16 A[1,3,16]; E4M3FN W[4,16]; BF16 Ws[4,1]",
+    "reference": "BF16 last-K absmax/448; replace only exactly-zero scale by BF16 epsilon; BF16 divide/clamp, FP8 RNE, BF16 dequant A and per-channel W before ordinary BF16 MatMul/F32 accumulation",
+    "oracle": "Independent finite BF16 bit rounding, enumerated FP8 RNE and scalar products; final BF16 bits equal for all four submissions on each backend",
+    "negative_controls": "Payload rejects a positive epsilon floor and omission of BF16 per-element weight dequant rounding"
+  },
+  "product_changes": [
+    "CPU Native Cast adds F32/F16/BF16 <-> Bool using original NativePlan/materializer",
+    "CUDA Native tensor provider and private kernel add the same conversions without changing shared ElementType or layout",
+    "Floating magnitude bits distinguish +/-0 from every nonzero pattern without FTZ/DAZ loss; Bool bytes normalize via !=0",
+    "Bool arithmetic and integer/FP8 Bool Cast remain unadmitted; same-type Bool Cast materializes Copy; out-of-place rules remain"
+  ],
+  "actual_lifetimes": "Five materialized constants; original bindings/read leases cleared after compile and Invocation creation; two independent slots, four content updates, old-result replay gate, retained results read after Invocation destruction",
+  "red_proof": [
+    "Original CPU/CUDA Graph each refuses BF16 -> Bool at node3, before submit",
+    "Native-only CUDA Direct regression has six expected admission failures before the repair; the identical test object passes afterward",
+    "CPU has no pre-repair Direct Bool run; its original Graph route failure is the red evidence"
+  ],
+  "fixture_errors": "Preserved initial CompileReport receiver compile errors, missing Invocation resources, aligned output pool capacity, CUDA constant owner/readiness errors. These are new test fixture mistakes, not additional product defects.",
+  "final_build": "CPU repair: one product CXX and one existing Cast test CXX. CUDA private-header closure: two host owners and one NVCC TU, plus one native Tensor test CXX; all other objects and SDKs reused. A preliminary CUDA green build and formatting rebuild both ran this same product closure.",
+  "agent_counts": {
+    "CXX_processes": 10,
+    "CXX_passes": 8,
+    "CXX_failures": 2,
+    "product_CXX": 1,
+    "native_test_CXX": 1,
+    "QDQ_test_CXX_passes": 6,
+    "QDQ_test_CXX_failures": 2,
+    "link_processes": 5,
+    "link_passes": 5,
+    "CPU_test_processes": 4,
+    "CUDA_test_processes": 1,
+    "SDK_builds": 0,
+    "NVCC": 0,
+    "models": 0,
+    "scope": "Includes original consumer preparation plus this CPU fix and all fixture API revisions; root CUDA Bool product/tests/links/runs are separately owned and excluded."
+  },
+  "root_counts": {
+    "host_CXX": 5,
+    "NVCC": 2,
+    "links": 5,
+    "GPU_test_processes": 5,
+    "SDK_builds": 0,
+    "model_runs": 0,
+    "detail": "One red test CXX; two successive product builds each two CXX+one NVCC; red, preliminary green, final green, fixture-owner rejection and final consumer each link/run once"
+  },
+  "cpu_receipt": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fp8-channel-token-qdq\\cpu-final-validation.json",
+    "bytes": 28621,
+    "sha256": "69ca94013614f60a68fb767299f2c54a37f62371eb4b63ef21bd129f0211b736"
+  },
+  "device": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-bool-cast\\device.txt",
+    "bytes": 44,
+    "sha256": "31d4e2a9c839ea4de2404461f48358d5e209f3c8af6ef68b91ff82fecd16e174"
+  },
+  "not_verified": [
+    "Full artifact payload/role loader, base-model identity or quality",
+    "Deployment quantizer and native FP8 Tensor Core dot",
+    "Whole Qwen speed, kernels, loading, memory or power",
+    "CT QDQ CUDA capture (existing FP8 Cast is not capture-compatible)",
+    "Other CPU/GPU backends or operating systems for this new Bool/CT path",
+    "No new dedicated Bool zero-stride/empty/same-type regression"
+  ],
+  "related_linux": "docs/evidence/correctness/linux-layout-current-2026-10-20.json",
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\fp8-channel-token-qdq-2026-10-20.zip",
+    "bytes": 696670,
+    "sha256": "ceb8c0329fbb792e66d8d7b6c9e5dd242c9b69ece7300cd206d37fb5ee16a46b"
+  },
+  "payloads": 303,
+  "manifest": "manifest.json",
+  "members": {
+    "cuda-bool-cast/final-validation.json": {
+      "bytes": 8699,
+      "sha256": "74455d55244c71c5f66534b674fe38579d6eceffaf39cdeec0db808903b8616b"
+    },
+    "fp8-channel-token-qdq/cpu-final-validation.json": {
+      "bytes": 28621,
+      "sha256": "69ca94013614f60a68fb767299f2c54a37f62371eb4b63ef21bd129f0211b736"
+    },
+    "cuda-bool-cast/consumer-final/tests.xml": {
+      "bytes": 3531,
+      "sha256": "4162dfa11078fb45c6e3a825c18134eae626826f6f703d268af239bd5828d86f"
+    },
+    "fp8-channel-token-qdq/fixture-api-correction/final-checks/cpu/tests.xml": {
+      "bytes": 1441,
+      "sha256": "d0acbf9f47bf3362fa369e7f1045c9ae97750b0348bdb81c88f5b65716c31985"
+    }
+  }
+}

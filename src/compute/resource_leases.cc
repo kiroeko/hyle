@@ -8,7 +8,9 @@
 
 #include "hyle/compute/detail/completion_access.h"
 #include "hyle/compute/detail/lease_access.h"
+#include "hyle/compute/detail/resource_budget_access.h"
 #include "hyle/core/assert.h"
+#include "hyle/container/small_vector.h"
 #include "hyle/mem/range_allocator.h"
 #include "hyle/mem/shared_pool.h"
 #include "hyle/util/ref_counted.h"
@@ -18,6 +20,12 @@ namespace hyle::compute {
 namespace detail {
 
 struct LeaseDomain;
+const unsigned retained_domain_authority = 0;
+const unsigned retained_host_address_authority = 0;
+struct RetainedBacking final {
+  mem::MemoryResourceRef resource;
+  SharedBackingReservation charge;
+};
 struct LeaseBlock final : util::RefCounted<LeaseBlock> {
   LeaseBlock(LeaseDomain *owner, mem::RangeAllocation allocation,
              std::uint64_t identity) noexcept
@@ -28,13 +36,23 @@ struct LeaseBlock final : util::RefCounted<LeaseBlock> {
   std::uint64_t generation;
   Status failure{};
   std::uint32_t writes = 0;
+  std::uint32_t native_uses = 0;
   bool writer = true;
   bool writable = true;
+  // One opt-in tail, not a general range permission map. Allocation generation
+  // and committed readers survive an independently failed append epoch.
+  bool append_mode = false;
+  bool append_owner = false;
+  std::size_t append_committed = 0;
+  std::size_t append_reserved = 0;
+  std::uint64_t append_epoch = 0;
+  Status append_failure{};
 };
 
 struct LeaseDomain final : util::RefCounted<LeaseDomain> {
   LeaseDomain(mem::AllocatorRef selected, std::uint32_t count) noexcept
-      : allocator(selected), blocks(selected, sizeof(LeaseBlock), count, alignof(LeaseBlock)) {}
+      : allocator(selected), retained(selected),
+        blocks(selected, sizeof(LeaseBlock), count, alignof(LeaseBlock)) {}
   void destroy() noexcept {
     const auto selected = allocator;
     const auto retained_owner = resource_owner;
@@ -46,8 +64,13 @@ struct LeaseDomain final : util::RefCounted<LeaseDomain> {
   mem::AllocatorRef allocator;
   void *resource_owner = nullptr;
   LeaseAccess::ReleaseOwnerFn release_resource_owner = nullptr;
-  ResourceBudget::Reservation charge{};
+  // Accounting tokens must disappear before the original payload can free
+  // and its canonical identity can be reused by another allocation.
   mem::Buffer backing{};
+  ResourceBudget::Reservation charge{};
+  container::SmallVector<RetainedBacking, 1, mem::AllocatorRef> retained;
+  BackingIdentity retained_identity{};
+  std::size_t retained_bytes = 0, retained_offset = 0;
   mem::RangeAllocator ranges{};
   mem::ConcurrentBlockPool blocks;
   util::SpinLock lock{};
@@ -65,6 +88,84 @@ Result<LeaseBackingInfo> LeaseAccess::backing(const WriteLease &lease) noexcept 
   if (!lease.block_) return std::unexpected(Status::FailedPrecondition("lease is empty"));
   const auto *domain = lease.block_->domain;
   return LeaseBackingInfo{domain, domain->backing.resource(), domain->backing.size()};
+}
+Status LeaseAccess::set_retained_backing(ReadLease &lease,
+    mem::MemoryResourceRef nominated, const void *authority,
+    const void *canonical_owner, std::size_t full_bytes,
+    std::size_t backing_offset) noexcept {
+  if (!lease.valid() || !nominated.valid() || !authority || !canonical_owner ||
+      !full_bytes || full_bytes == SIZE_MAX)
+    return Status::InvalidArgument("retained backing identity/resource/capacity is empty");
+  auto &domain = *lease.block_->domain;
+  std::lock_guard guard(domain.lock);
+  if (domain.backing.resource() != nominated || backing_offset > full_bytes ||
+      domain.backing.size() > full_bytes - backing_offset)
+    return Status::InvalidArgument("retained backing wrapper is outside its original allocation");
+  if (domain.retained_identity.value) {
+    if (domain.retained_identity.authority == authority &&
+        domain.retained_identity.value == canonical_owner &&
+        domain.retained_bytes == full_bytes && domain.retained_offset == backing_offset)
+      return Status::Ok();
+    return Status::FailedPrecondition("retained backing identity is already established");
+  }
+  if (!domain.retained.empty())
+    return Status::FailedPrecondition("cannot change an already-admitted backing identity");
+  domain.retained_identity = {authority, canonical_owner};
+  domain.retained_bytes = full_bytes;
+  domain.retained_offset = backing_offset;
+  return Status::Ok();
+}
+Status LeaseAccess::retain_budget(ReadLease &lease, mem::MemoryResourceRef nominated,
+                                 const ResourceBudget &budget) noexcept {
+  if (!budget.valid()) return Status::Ok();
+  if (!lease.valid() || !nominated.valid())
+    return Status::InvalidArgument("retained result budget requires an owned lease and admitted resource");
+  auto &domain = *lease.block_->domain;
+  {
+    std::lock_guard guard(domain.lock);
+    for (const auto &retained : domain.retained)
+      if (retained.resource == nominated && retained.charge.same_scope(budget)) return Status::Ok();
+  }
+  // An opaque provider token is not a cross-wrapper physical identity. Only
+  // the explicit stable-host-address contract permits merging independent
+  // domains here; mapping grants no new public permission to the full buffer.
+  BackingIdentity identity{&retained_domain_authority, &domain};
+  const auto actual = domain.backing.resource();
+  if (domain.backing.size() && actual.properties().has(mem::MemoryProperty::kHostAddressIdentity)) {
+    HYLE_ASSIGN_OR_RETURN(auto mapped, actual.resource().map_host(
+        domain.backing.native_handle(), 0, domain.backing.size(), mem::HostAccess::kRead));
+    identity = {&retained_host_address_authority, mapped.data};
+    HYLE_RETURN_IF_ERROR(actual.resource().unmap_host(domain.backing.native_handle(), mapped.token,
+        0, domain.backing.size(), mem::HostAccess::kRead));
+    if (!identity.value) return Status::Internal("retained backing has no promised canonical address");
+  }
+  std::lock_guard guard(domain.lock);
+  for (const auto &retained : domain.retained)
+    if (retained.resource == nominated && retained.charge.same_scope(budget)) return Status::Ok();
+  if (!domain.retained.try_reserve(domain.retained.size() + 1))
+    return Status::ResourceExhausted("retained result budget metadata");
+  // Read the annotation under the same lock as admission: a concurrent first
+  // export cannot install a different key between proof and token publication.
+  const auto bytes = domain.retained_identity.value ? domain.retained_bytes : domain.backing.size();
+  if (domain.retained_identity.value) identity = domain.retained_identity;
+  SharedBackingReservation retained;
+  if (bytes == domain.backing.size() && domain.backing.resource() == nominated &&
+      ResourceBudgetAccess::same_scope(domain.charge, budget)) {
+    HYLE_ASSIGN_OR_RETURN(retained, ResourceBudgetAccess::adopt_backing(
+        budget, nominated, identity, bytes, domain.charge));
+  } else {
+    HYLE_ASSIGN_OR_RETURN(retained, ResourceBudgetAccess::reserve_backing(
+        budget, nominated, identity, bytes));
+  }
+  HYLE_FATAL_ASSERT(domain.retained.try_push_back(RetainedBacking{nominated, std::move(retained)}));
+  return Status::Ok();
+}
+mem::AllocatorRef LeaseAccess::metadata_backing_allocator(
+    const ReadLease &lease) noexcept {
+  if (!lease.block_) return {};
+  const auto *domain = lease.block_->domain;
+  const auto backing = ResourceBudgetAccess::backing_allocator(domain->charge);
+  return backing.valid() ? backing : domain->allocator;
 }
 bool LeaseAccess::unique_read_owner(const ReadLease &lease) noexcept {
   if (!lease.block_) return false;
@@ -96,6 +197,7 @@ void LeaseBlock::destroy() noexcept {
 struct LeaseUseEntry final {
   LeaseBlock *block = nullptr;
   bool write = false;
+  std::uint64_t append_epoch = 0;
 };
 struct LeaseUsePoolState;
 struct LeaseUseEpisode final {
@@ -143,7 +245,11 @@ void episode_terminal(void *opaque, const Status &terminal) noexcept {
   auto *episode = static_cast<LeaseUseEpisode *>(opaque);
   for (std::uint32_t index = 0; index < episode->count; ++index) {
     auto &entry = entries(episode)[index];
-    if (entry.write) {
+    if (entry.append_epoch != 0) {
+      std::lock_guard guard(entry.block->domain->lock);
+      HYLE_FATAL_ASSERT(entry.block->append_epoch == entry.append_epoch);
+      entry.block->append_failure.Update(terminal);
+    } else if (entry.write) {
       std::lock_guard guard(entry.block->domain->lock);
       entry.block->failure.Update(terminal);
     }
@@ -160,9 +266,17 @@ void release_episode(void *opaque) noexcept {
     {
       std::lock_guard guard(domain->lock);
       domain->incref();
+      HYLE_FATAL_ASSERT(block->native_uses != 0);
+      --block->native_uses;
       if (entry.write) {
         HYLE_FATAL_ASSERT(block->writes != 0);
         --block->writes;
+      }
+      if (block->append_mode && !block->append_owner && block->native_uses == 0) {
+        // Dropping the tail authority cannot retire accepted work. Only this
+        // original native-use release may finish its abandoned reservation.
+        block->append_reserved = 0;
+        block->append_failure = Status::Ok();
       }
     }
     block->decref();
@@ -198,7 +312,7 @@ Status add_use(LeaseUseEpisode *episode, LeaseBlock *block, bool write) noexcept
     for (std::uint32_t index = 0; index < episode->count; ++index) {
       const auto &entry = entries(episode)[index];
       if (entry.block == block)
-        return entry.write == write ? Status::Ok()
+        return entry.append_epoch == 0 && entry.write == write ? Status::Ok()
                                    : Status::InvalidArgument("one use cannot mix lease permissions");
     }
   }
@@ -208,9 +322,13 @@ Status add_use(LeaseUseEpisode *episode, LeaseBlock *block, bool write) noexcept
   {
     std::lock_guard guard(domain->lock);
     if (domain->closed) return Status::FailedPrecondition("lease domain is closed");
+    if (block->append_reserved != 0)
+      return Status::Unavailable("append suffix is reserved for its ordered use");
     if (block->writer != (write || ExclusiveRead))
       return Status::FailedPrecondition("resource use does not match lease permission");
     if (!block->failure.ok()) return block->failure;
+    if (block->native_uses == UINT32_MAX)
+      return Status::ResourceExhausted("resource native use count exhausted");
     if constexpr (!Ordered) {
       if (write && block->writes != 0)
         return Status::Unavailable("resource already has an admitted writer");
@@ -220,10 +338,11 @@ Status add_use(LeaseUseEpisode *episode, LeaseBlock *block, bool write) noexcept
         return Status::ResourceExhausted("resource writer use count exhausted");
     }
     if (write) ++block->writes;
+    ++block->native_uses;
     block->incref();
     domain->uses.fetch_add(1, std::memory_order_relaxed);
   }
-  std::construct_at(entries(episode) + episode->count, block, write);
+  std::construct_at(entries(episode) + episode->count, block, write, std::uint64_t{0});
   ++episode->count;
   return Status::Ok();
 }
@@ -239,6 +358,179 @@ Result<mem::BufferView> lease_view(LeaseBlock *block, std::size_t offset,
   if (block == nullptr) return std::unexpected(Status::FailedPrecondition("lease is empty"));
   return block->domain->backing.view().subview(
       static_cast<std::size_t>(block->range.offset()) + offset, size);
+}
+
+Result<AppendLeasePublication> LeaseAccess::publish_appendable(
+    WriteLease &lease, std::size_t prefix_bytes) noexcept {
+  if (!lease.block_)
+    return std::unexpected(Status::FailedPrecondition("appendable writer is empty"));
+  auto *block = lease.block_;
+  std::lock_guard guard(block->domain->lock);
+  if (block->domain->closed || !block->writer || block->append_mode)
+    return std::unexpected(Status::FailedPrecondition("appendable writer is not fresh"));
+  if (lease.offset_ != 0 || lease.size_ != block->range.size() || prefix_bytes > lease.size_)
+    return std::unexpected(Status::InvalidArgument("appendable publication requires the original full block"));
+  if (!block->is_unique() || block->native_uses != 0)
+    return std::unexpected(Status::Unavailable("appendable writer still has admitted uses"));
+  if (!block->failure.ok()) return std::unexpected(block->failure);
+  const bool has_tail = prefix_bytes != lease.size_;
+  block->append_mode = true;
+  block->append_owner = has_tail;
+  block->append_committed = prefix_bytes;
+  block->writer = false;
+  block->writable = false;
+  if (has_tail) block->incref();
+  ReadLease prefix(std::exchange(lease.block_, nullptr), 0, prefix_bytes);
+  return AppendLeasePublication{std::move(prefix), has_tail ? AppendLease(block) : AppendLease{}};
+}
+
+bool LeaseAccess::is_appendable_prefix(const ReadLease &lease) noexcept {
+  if (!lease.block_) return false;
+  const auto *block = lease.block_;
+  std::lock_guard guard(block->domain->lock);
+  return block->append_mode && lease.offset_ <= block->append_committed &&
+      lease.size_ <= block->append_committed - lease.offset_;
+}
+
+Status LeaseAccess::validate_prefix(const AppendLease &appender,
+                                   const ReadLease &prefix) noexcept {
+  if (!appender.block_ || prefix.block_ != appender.block_)
+    return Status::FailedPrecondition("append prefix has a different allocation");
+  const auto *block = appender.block_;
+  std::lock_guard guard(block->domain->lock);
+  if (!block->append_mode || !block->append_owner ||
+      prefix.offset_ > block->append_committed ||
+      prefix.size_ > block->append_committed - prefix.offset_)
+    return Status::FailedPrecondition("read lease exceeds the committed append prefix");
+  return Status::Ok();
+}
+
+Status LeaseAccess::append_unique(LeaseUseBatch &uses, const AppendLease &lease) noexcept {
+  auto *episode = uses.state_;
+  auto *block = lease.block_;
+  if (!episode || !block)
+    return Status::FailedPrecondition("resource use or append lease is empty");
+  if (episode->count == episode->pool->capacity)
+    return Status::ResourceExhausted("resource use metadata capacity exhausted");
+  // Like read_unique/write_unique this entry is already root-deduplicated by
+  // the Graph. native_uses below also rejects any second admission of this root.
+  auto *domain = block->domain;
+  std::uint64_t epoch;
+  {
+    std::lock_guard guard(domain->lock);
+    if (domain->closed || !block->append_owner || block->append_reserved == 0)
+      return Status::FailedPrecondition("append lease has no open reservation");
+    if (!block->append_failure.ok()) return block->append_failure;
+    if (block->native_uses != 0)
+      return Status::Unavailable("append lease still has admitted native uses");
+    epoch = block->append_epoch;
+    ++block->native_uses;
+    block->incref();
+    domain->uses.fetch_add(1, std::memory_order_relaxed);
+  }
+  std::construct_at(entries(episode) + episode->count, block, false, epoch);
+  ++episode->count;
+  return Status::Ok();
+}
+
+AppendLease::AppendLease(AppendLease &&other) noexcept
+    : block_(std::exchange(other.block_, nullptr)) {}
+AppendLease &AppendLease::operator=(AppendLease &&other) noexcept {
+  if (this != &other) {
+    reset();
+    block_ = std::exchange(other.block_, nullptr);
+  }
+  return *this;
+}
+AppendLease::~AppendLease() { reset(); }
+void AppendLease::reset() noexcept {
+  auto *block = std::exchange(block_, nullptr);
+  if (!block) return;
+  {
+    std::lock_guard guard(block->domain->lock);
+    block->append_owner = false;
+    if (block->native_uses == 0) {
+      block->append_reserved = 0;
+      block->append_failure = Status::Ok();
+    }
+  }
+  block->decref();
+}
+std::uint64_t AppendLease::generation() const noexcept {
+  return block_ ? block_->generation : 0;
+}
+std::uint64_t AppendLease::epoch() const noexcept {
+  if (!block_) return 0;
+  std::lock_guard guard(block_->domain->lock);
+  return block_->append_epoch;
+}
+std::size_t AppendLease::committed_bytes() const noexcept {
+  if (!block_) return 0;
+  std::lock_guard guard(block_->domain->lock);
+  return block_->append_committed;
+}
+std::size_t AppendLease::reserved_bytes() const noexcept {
+  if (!block_) return 0;
+  std::lock_guard guard(block_->domain->lock);
+  return block_->append_reserved;
+}
+std::size_t AppendLease::capacity_bytes() const noexcept {
+  if (!block_) return 0;
+  return static_cast<std::size_t>(block_->range.size());
+}
+Status AppendLease::reserve(std::size_t bytes) noexcept {
+  if (!block_) return Status::FailedPrecondition("append lease is empty");
+  auto *block = block_;
+  std::lock_guard guard(block->domain->lock);
+  if (block->domain->closed || !block->append_owner)
+    return Status::FailedPrecondition("append lease domain is closed");
+  if (block->append_reserved != 0 || block->native_uses != 0)
+    return Status::Unavailable("append lease has a reservation or admitted native uses");
+  const auto capacity = block->range.size();
+  if (bytes == 0 || bytes > capacity - block->append_committed)
+    return Status::OutOfRange("append reservation exceeds the unused tail");
+  if (block->append_epoch == UINT64_MAX)
+    return Status::OutOfRange("append epoch exhausted");
+  ++block->append_epoch;
+  block->append_reserved = bytes;
+  block->append_failure = Status::Ok();
+  return Status::Ok();
+}
+Result<mem::BufferView> AppendLease::view() const noexcept {
+  if (!block_) return std::unexpected(Status::FailedPrecondition("append lease is empty"));
+  const auto *block = block_;
+  std::lock_guard guard(block->domain->lock);
+  if (block->domain->closed || !block->append_owner || block->append_reserved == 0)
+    return std::unexpected(Status::FailedPrecondition("append lease has no open reservation"));
+  if (block->native_uses != 0)
+    return std::unexpected(Status::Unavailable("append lease has admitted native uses"));
+  if (!block->append_failure.ok()) return std::unexpected(block->append_failure);
+  return lease_view(block_, block->append_committed, block->append_reserved);
+}
+Result<ReadLease> LeaseAccess::publish_append(AppendLease &lease) noexcept {
+  if (!lease.block_)
+    return std::unexpected(Status::FailedPrecondition("append lease is empty"));
+  auto *block = lease.block_;
+  std::lock_guard guard(block->domain->lock);
+  if (block->domain->closed || !block->append_owner || block->append_reserved == 0)
+    return std::unexpected(Status::FailedPrecondition("append lease has no open reservation"));
+  if (block->native_uses != 0)
+    return std::unexpected(Status::Unavailable("append lease still has admitted native uses"));
+  if (!block->append_failure.ok()) return std::unexpected(block->append_failure);
+  block->append_committed += block->append_reserved;
+  block->append_reserved = 0;
+  block->incref();
+  return ReadLease(block, 0, block->append_committed);
+}
+Result<ReadLease> AppendLease::publish() noexcept { return LeaseAccess::publish_append(*this); }
+Status AppendLease::rollback() noexcept {
+  if (!block_) return Status::FailedPrecondition("append lease is empty");
+  std::lock_guard guard(block_->domain->lock);
+  if (block_->native_uses != 0)
+    return Status::Unavailable("append rollback requires actual native retirement");
+  block_->append_reserved = 0;
+  block_->append_failure = Status::Ok();
+  return Status::Ok();
 }
 
 Result<mem::BufferView> LeaseAccess::ordered_view(const WriteLease &lease) noexcept {
@@ -307,6 +599,25 @@ void detail::LeaseAccess::retire_native(LeaseUseBatch &uses, Status terminal) no
 void detail::LeaseAccess::detach_pool_root(LeasePool &pool) noexcept {
   HYLE_FATAL_ASSERT(pool.state_ && pool.state_->resource_owner && pool.state_->release_resource_owner);
   detail::release_domain(std::exchange(pool.state_,nullptr));
+}
+Result<mem::ConstBufferView> detail::LeaseAccess::backing_span(const LeasePool&pool) noexcept {
+  if(!pool.state_)return std::unexpected(Status::FailedPrecondition("lease pool is empty"));
+  return mem::ConstBufferView(pool.state_->backing.view());
+}
+void detail::LeaseAccess::retire_host_snapshot_pool(LeasePool &pool, const ReadLease &ready) noexcept {
+  if (!pool.state_) return;
+  auto *domain = pool.state_;
+  HYLE_FATAL_ASSERT(ready.block_ && ready.block_->domain == domain);
+  {
+    std::lock_guard guard(domain->lock);
+    const auto ranges = domain->ranges.stats();
+    HYLE_FATAL_ASSERT(!domain->closed && !domain->resource_owner &&
+        domain->backing.resource() == mem::system_resource() &&
+        ranges.max_allocations == 1 && ranges.live_allocations == 1 &&
+        ready.offset_ == 0 && ready.size_ == domain->backing.size() && !ready.block_->writer);
+    ready.block_->writable = false;
+  }
+  detail::release_domain(std::exchange(pool.state_, nullptr));
 }
 
 Status detail::LeaseAccess::read_unique(LeaseUseBatch &uses, const ReadLease &lease) noexcept {

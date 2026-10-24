@@ -1,0 +1,3626 @@
+{
+  "created_at": "2026-10-23T22:05:49.807813+00:00",
+  "identity": {
+    "id": "B10",
+    "repository": "unsloth/GLM-5.3-GGUF",
+    "revision": "346b3591c7f28d1a23716f97a065ecf12ec14771",
+    "variant": "Q8_0"
+  },
+  "status": "Completed finite own target77 + NextN78 Pro CPU/CUDA full-vocabulary K1 execution",
+  "validation": {
+    "cases": 2,
+    "failures": 0,
+    "skips": 0,
+    "graph_submissions": 88,
+    "executions": [
+      {
+        "backend": "CPU",
+        "case": "GlmProMtpStateConsumer.CpuConvertedB10TargetAndNextNFullVocabularyVerifier",
+        "tests": 1,
+        "failures": 0,
+        "skips": 0,
+        "graph_submissions": 44,
+        "properties": {
+          "actual_submissions": "44",
+          "artifact_identity": "unsloth/GLM-5.3-GGUF@346b3591c7f28d1a23716f97a065ecf12ec14771 Q8_0",
+          "artifact_repository": "unsloth/GLM-5.3-GGUF",
+          "artifact_revision": "346b3591c7f28d1a23716f97a065ecf12ec14771",
+          "artifact_variant": "Q8_0",
+          "artifact_first_file": "Q8_0/GLM-5.3-Q8_0-00001-of-00017.gguf",
+          "expert_source_plan_sha256": "47c4a13876ab3f04c8d537cd6f72d95aaeb1febbd2c8f60582d66b1a90257cf5",
+          "static_source_roles": "47",
+          "static_source_bytes": "2566508544",
+          "actual_nextn_steps": "11",
+          "actual_target_calls": "8",
+          "actual_pending_embedding_feedback_checks": "11",
+          "actual_index_catchup_steps": "1",
+          "actual_skip_steps": "7",
+          "accepted_zero_draft_checkpoints": "2",
+          "accepted_one_draft_checkpoints": "1",
+          "accepted_target_conditioned_repairs": "1",
+          "actual_accepted_kv_repair_submissions": "2",
+          "natural_k1_trials": "1",
+          "natural_k1_accepted_drafts": "0",
+          "controlled_matching_trials": "1",
+          "controlled_rejection_trials": "1",
+          "cancelled_unpublished_drafts": "3",
+          "rejected_stale_publishes": "3",
+          "state_budget_bytes": "442815232",
+          "peak_state_backing_bytes": "341306564",
+          "target_first_full_reference_values": "309760",
+          "first_full_nextn_head_reference_values": "154880",
+          "ready_non_moe_bank_capacity_bytes": "2566508544",
+          "component_schema": "13 resources + Epoch24: 10 F32/plain-index NextN resources and distinct target main/cursor/F32tap; no index scales member",
+          "scope": "Original converted target77+NextN78 packed roles with actual full-V Q8 verifier; explicit F32 compute/hidden/journal/main/index runtime, complete indexed fresh/skip/accepted-lag catchup. Upstream74 IDs/layer76 input+residual/initial histories are finite fixtures; not complete target-engine quality or TPS."
+        },
+        "summary": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\native-integration\\checks3-cpu\\summary.json",
+          "bytes": 4091,
+          "sha256": "0d576b87dcc5e6f2d9a1103f9a4e0fb34123bc17f96680281571a01f798c3218"
+        },
+        "XML": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\native-integration\\checks3-cpu\\results.xml",
+          "bytes": 3350,
+          "sha256": "ae1e9921801151504fd582a7bf3534745df00ae1474cb1f64abdefc7f768e530"
+        },
+        "driver": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\native-integration\\checks3-cpu\\frontier.driver.json",
+          "bytes": 2457,
+          "sha256": "6adc22e74f32a65719fc0e117d8598f76f34af76c99647f83d161cdb74253514"
+        },
+        "process": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\native-integration\\checks3-cpu\\run\\process.json",
+          "bytes": 1143,
+          "sha256": "65497a2effc26278130f321830d79a918cdb42ccce80843e4e223c21d47768b7"
+        },
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\native-integration\\tests-link4\\glm-b10-checks.exe",
+          "bytes": 141244416,
+          "sha256": "98f8e1d9c12179957f8c7a93ba21d8b32a653ba1b76eaa32fb1c80bbe7c4437a"
+        },
+        "evaluation": {
+          "passed": true,
+          "source": "Actual terminal native/process/OwnedJob/XML and own packed-source contract validation.",
+          "original_summary_passed": true
+        }
+      },
+      {
+        "backend": "CUDA",
+        "case": "GlmProMtpStateConsumer.CudaConvertedB10TargetAndNextNFullVocabularyVerifier",
+        "tests": 1,
+        "failures": 0,
+        "skips": 0,
+        "graph_submissions": 44,
+        "properties": {
+          "actual_submissions": "44",
+          "artifact_identity": "unsloth/GLM-5.3-GGUF@346b3591c7f28d1a23716f97a065ecf12ec14771 Q8_0",
+          "artifact_repository": "unsloth/GLM-5.3-GGUF",
+          "artifact_revision": "346b3591c7f28d1a23716f97a065ecf12ec14771",
+          "artifact_variant": "Q8_0",
+          "artifact_first_file": "Q8_0/GLM-5.3-Q8_0-00001-of-00017.gguf",
+          "expert_source_plan_sha256": "47c4a13876ab3f04c8d537cd6f72d95aaeb1febbd2c8f60582d66b1a90257cf5",
+          "static_source_roles": "47",
+          "static_source_bytes": "2566508544",
+          "actual_nextn_steps": "11",
+          "actual_target_calls": "8",
+          "actual_pending_embedding_feedback_checks": "11",
+          "actual_index_catchup_steps": "1",
+          "actual_skip_steps": "7",
+          "accepted_zero_draft_checkpoints": "2",
+          "accepted_one_draft_checkpoints": "1",
+          "accepted_target_conditioned_repairs": "1",
+          "actual_accepted_kv_repair_submissions": "2",
+          "natural_k1_trials": "1",
+          "natural_k1_accepted_drafts": "0",
+          "controlled_matching_trials": "1",
+          "controlled_rejection_trials": "1",
+          "cancelled_unpublished_drafts": "3",
+          "rejected_stale_publishes": "3",
+          "state_budget_bytes": "442815232",
+          "peak_state_backing_bytes": "341306564",
+          "target_first_full_reference_values": "309760",
+          "first_full_nextn_head_reference_values": "154880",
+          "ready_non_moe_bank_capacity_bytes": "2566508544",
+          "component_schema": "13 resources + Epoch24: 10 F32/plain-index NextN resources and distinct target main/cursor/F32tap; no index scales member",
+          "scope": "Original converted target77+NextN78 packed roles with actual full-V Q8 verifier; explicit F32 compute/hidden/journal/main/index runtime, complete indexed fresh/skip/accepted-lag catchup. Upstream74 IDs/layer76 input+residual/initial histories are finite fixtures; not complete target-engine quality or TPS."
+        },
+        "summary": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\native-integration\\checks4-cuda\\summary.json",
+          "bytes": 4094,
+          "sha256": "7ee3009a185010c65cff9d8fc05e31612327f3f94150e5673af44e88dd1a6daf"
+        },
+        "XML": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\native-integration\\checks4-cuda\\results.xml",
+          "bytes": 3351,
+          "sha256": "8090e653221e6268961497ade9bc9fd6bca46c111ea40b9f8c76255bcd9f3467"
+        },
+        "driver": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\native-integration\\checks4-cuda\\frontier.driver.json",
+          "bytes": 828,
+          "sha256": "bcdcf5c26f8d33eeffd1798bff0ac1eae123a3e4c4258ad5a7b2a47dd28fde9f"
+        },
+        "process": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\native-integration\\checks4-cuda\\run\\process.json",
+          "bytes": 1145,
+          "sha256": "d0dcb9ce6c5fa4d1961ff7df38881fec04f009d56af8b11fc9eb30140510ece8"
+        },
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\native-integration\\tests-link4\\glm-b10-checks.exe",
+          "bytes": 141244416,
+          "sha256": "98f8e1d9c12179957f8c7a93ba21d8b32a653ba1b76eaa32fb1c80bbe7c4437a"
+        },
+        "evaluation": {
+          "passed": true,
+          "source": "Actual terminal native/process/OwnedJob/XML and own packed-source contract validation.",
+          "original_summary_passed": true
+        }
+      }
+    ],
+    "scope": "Actual native test cases. Per-execution evaluation separately preserves any original wrapper observation failure."
+  },
+  "original_static": {
+    "manifest": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-static\\manifest.json",
+      "bytes": 15350,
+      "sha256": "b3af3fc55151e4d2ca212dbff4f3c011b6d16c7d758085565c435e6058e4a458"
+    },
+    "acquisition": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-static\\acquisition.json",
+      "bytes": 336756,
+      "sha256": "7cb03c6db9d3983787f02777774eea070a1eafcc089437fddbf15c30581eb67d"
+    },
+    "source_plan": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\static-plan.json",
+      "bytes": 37188,
+      "sha256": "3f1dce5e8c439c9330fb0261fb9d344680cadb875e7823be2f904cfdb9c300df"
+    },
+    "expert_plan": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\expert-source-plan.json",
+      "bytes": 9579,
+      "sha256": "47c4a13876ab3f04c8d537cd6f72d95aaeb1febbd2c8f60582d66b1a90257cf5"
+    },
+    "roles": 47,
+    "source_bytes": 2566508544,
+    "body_rehashed": false,
+    "bytes": 2566508544
+  },
+  "actual_pins": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\generated\\glm_gguf_b10_artifacts.json",
+    "bytes": 2739,
+    "sha256": "98ad80949dd5908005919dbfac9bb6d29154ec93ce7b713d3642a37a919f9a0c"
+  },
+  "selected_experts": {
+    "cached_sets": [
+      {
+        "section": "draft",
+        "global_id": 0,
+        "bytes": 40108032,
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert000\\ready.json",
+          "bytes": 1396,
+          "sha256": "cb4b4dc1ab4795c202a8b18bb5fa0d5feaa8f12fdc82270e5fbebc697c7e9efc"
+        },
+        "acquisition": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert000\\acquisition.json",
+          "bytes": 8707,
+          "sha256": "7999b636d6d9f2c44a932fefdd9630badda479ffa5e4d26e2ab76e51c1b63cce"
+        },
+        "plan": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert000\\plan.json",
+          "bytes": 4417,
+          "sha256": "a72705bda05e5f4ab13a741746dadfc0ff16318e5709b56829d84b6f0e1c30f6"
+        },
+        "bundle": {
+          "path": ".scratch/glm-gguf-selected-20261023/B10/original-experts/draft/stage0/expert000/roles.bin",
+          "bytes": 40108032,
+          "sha256": "c619f33d6584601061edda44166b8131f7c471fa0301124de933852b77c5ac22"
+        }
+      },
+      {
+        "section": "draft",
+        "global_id": 6,
+        "bytes": 40108032,
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert006\\ready.json",
+          "bytes": 1396,
+          "sha256": "ebbd990b5b03c9a5b995fdaf8135b2f453e0924ab4e0e702f5d6e47c4a2541c7"
+        },
+        "acquisition": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert006\\acquisition.json",
+          "bytes": 8707,
+          "sha256": "b64f96a0d494e72f738c294faa577820171b846849f9d4b838610f0b0416552c"
+        },
+        "plan": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert006\\plan.json",
+          "bytes": 4417,
+          "sha256": "f825e535273bbc32ab9011ee280b4fbd1b364cf977dcc02e2f6fad3e5c1ae420"
+        },
+        "bundle": {
+          "path": ".scratch/glm-gguf-selected-20261023/B10/original-experts/draft/stage0/expert006/roles.bin",
+          "bytes": 40108032,
+          "sha256": "f8752b2fc217d0f8e0d1d52ab65ca523c98902d4e9252d781afacef4fda61fc6"
+        }
+      },
+      {
+        "section": "draft",
+        "global_id": 7,
+        "bytes": 40108032,
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert007\\ready.json",
+          "bytes": 1396,
+          "sha256": "1887975ad8890d7c6b72eff27fe05f13e58b7d52e5f05db5a5890a6e437c1e44"
+        },
+        "acquisition": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert007\\acquisition.json",
+          "bytes": 8707,
+          "sha256": "343d36757827b2c5f07911c4f1c1a21775abf86f8cd5a39e4aa6c44794e04866"
+        },
+        "plan": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert007\\plan.json",
+          "bytes": 4417,
+          "sha256": "12529de26b6a466c40c5066adab157f9762c30b57a4277868c23c6463013e2d7"
+        },
+        "bundle": {
+          "path": ".scratch/glm-gguf-selected-20261023/B10/original-experts/draft/stage0/expert007/roles.bin",
+          "bytes": 40108032,
+          "sha256": "e502f21a7a7673163a3ad08ba0f41ff6d280b99568d0b6e26ee926483b67f881"
+        }
+      },
+      {
+        "section": "draft",
+        "global_id": 15,
+        "bytes": 40108032,
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert015\\ready.json",
+          "bytes": 1397,
+          "sha256": "4e83d9844322973c753a9b3132c1589a0471685fc8f28ad9dcb8a51611b67916"
+        },
+        "acquisition": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert015\\acquisition.json",
+          "bytes": 8708,
+          "sha256": "ecaf35ff318be3b901e0aa2af56be703c0fc66112812966d6b4eeccce9e8586a"
+        },
+        "plan": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert015\\plan.json",
+          "bytes": 4421,
+          "sha256": "89831a555cb3d842f3bf2d6f0e63d5ed2a158bcade397924f57794477baaf201"
+        },
+        "bundle": {
+          "path": ".scratch/glm-gguf-selected-20261023/B10/original-experts/draft/stage0/expert015/roles.bin",
+          "bytes": 40108032,
+          "sha256": "8c1a0f6d9356057cd2a18b2d3f8b9f95b3f2328145c0bc85d133f8f2478a8e81"
+        }
+      },
+      {
+        "section": "draft",
+        "global_id": 26,
+        "bytes": 40108032,
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert026\\ready.json",
+          "bytes": 1397,
+          "sha256": "1b2e6291787ac8ef75782e3f184ae9d1e62f1cf085350ec0904b3cb8d90b71cc"
+        },
+        "acquisition": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert026\\acquisition.json",
+          "bytes": 8708,
+          "sha256": "db97d72cbede07b74d3253fff4bb151b83cd9031b9980a1ce7c587705e939351"
+        },
+        "plan": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert026\\plan.json",
+          "bytes": 4421,
+          "sha256": "4d36d1554ee5e02bc17b84b041708ac6d5f11c8f64c169ef174097895e7077bd"
+        },
+        "bundle": {
+          "path": ".scratch/glm-gguf-selected-20261023/B10/original-experts/draft/stage0/expert026/roles.bin",
+          "bytes": 40108032,
+          "sha256": "2d74bfb0b8bddc44f7a9dc7b6b98c91e2fe3d601f8f79cf3a65545336eee9814"
+        }
+      },
+      {
+        "section": "draft",
+        "global_id": 29,
+        "bytes": 40108032,
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert029\\ready.json",
+          "bytes": 1397,
+          "sha256": "4ed9471e30aace26924d5f41da33629e7b58b72ee02c45fa912abc87334ac379"
+        },
+        "acquisition": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert029\\acquisition.json",
+          "bytes": 8708,
+          "sha256": "bf4839bc27566e034723896dba13baeebf740634055ad2229c19d640d72bbd9d"
+        },
+        "plan": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert029\\plan.json",
+          "bytes": 4421,
+          "sha256": "612eecb2bc94da7b44e2689aebc3db867cfe24eec571807ce7ca2e4365b6748a"
+        },
+        "bundle": {
+          "path": ".scratch/glm-gguf-selected-20261023/B10/original-experts/draft/stage0/expert029/roles.bin",
+          "bytes": 40108032,
+          "sha256": "8d9735092f92b424c401b4fb45c42429538f1b8259c9fca9de3cfeacc9a1a3d9"
+        }
+      },
+      {
+        "section": "draft",
+        "global_id": 32,
+        "bytes": 40108032,
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert032\\ready.json",
+          "bytes": 1397,
+          "sha256": "fb6943c32739fb7ef99544a9b13ba039c42e598c2e49dd25dfbca099a8dd3d15"
+        },
+        "acquisition": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert032\\acquisition.json",
+          "bytes": 8708,
+          "sha256": "0c8e9c79d5a04e4cadd31c3c41b48918220375c6c5a4e8a000c2eb6b0b4d4d8b"
+        },
+        "plan": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert032\\plan.json",
+          "bytes": 4421,
+          "sha256": "a629ae3c21b7e27865c0e5a3928fb49929229ac5de479755304754323936c20b"
+        },
+        "bundle": {
+          "path": ".scratch/glm-gguf-selected-20261023/B10/original-experts/draft/stage0/expert032/roles.bin",
+          "bytes": 40108032,
+          "sha256": "8a2751731dadfb05f9db211910fa0afc1d19ef58bfc5d598e2414f242e8d393f"
+        }
+      },
+      {
+        "section": "draft",
+        "global_id": 34,
+        "bytes": 40108032,
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert034\\ready.json",
+          "bytes": 1397,
+          "sha256": "b78879bd2b78fd6b80a8040457d423f6b5dded0b9eea151c9a3bbefc0e132b9d"
+        },
+        "acquisition": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert034\\acquisition.json",
+          "bytes": 8708,
+          "sha256": "210835f8ffca567a04101e3c43cd6b761da19f71134168cdb53227b743160bfd"
+        },
+        "plan": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert034\\plan.json",
+          "bytes": 4421,
+          "sha256": "9952cee59307f56fbcbd6b9d2fe8577be5b39edf089c4d571a5c21d40f9b5d55"
+        },
+        "bundle": {
+          "path": ".scratch/glm-gguf-selected-20261023/B10/original-experts/draft/stage0/expert034/roles.bin",
+          "bytes": 40108032,
+          "sha256": "88d679e94c91a02eace3f8cc33033c7cd088086fd4f89218a4e1f4f8a512de8b"
+        }
+      },
+      {
+        "section": "draft",
+        "global_id": 50,
+        "bytes": 40108032,
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert050\\ready.json",
+          "bytes": 1397,
+          "sha256": "e85f5b2f6df8a3abce5b7d2fd58eb5e04b7c2d364d5e0d4bb5fe8d0b90c54772"
+        },
+        "acquisition": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert050\\acquisition.json",
+          "bytes": 8708,
+          "sha256": "28174629091460304182b63d995f6f4224a57600693d15076ea29af9a674cc12"
+        },
+        "plan": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert050\\plan.json",
+          "bytes": 4421,
+          "sha256": "f83d34112abf0a17f0122010bf7a48232ec3b9ab7865f38a1737b5e519033c28"
+        },
+        "bundle": {
+          "path": ".scratch/glm-gguf-selected-20261023/B10/original-experts/draft/stage0/expert050/roles.bin",
+          "bytes": 40108032,
+          "sha256": "b53682692028eef7fb002306e6548953fbad7867917347cd9dc6ce47a2a96404"
+        }
+      },
+      {
+        "section": "draft",
+        "global_id": 63,
+        "bytes": 40108032,
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert063\\ready.json",
+          "bytes": 1397,
+          "sha256": "1386997d7055355fffd266a84fceaa3e065e7a5d4689701041b166e9ed6e142b"
+        },
+        "acquisition": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert063\\acquisition.json",
+          "bytes": 8708,
+          "sha256": "40a53b732b0615227ad22130e009440c144b0c960f6ba9784f5e8972c8e1c146"
+        },
+        "plan": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert063\\plan.json",
+          "bytes": 4421,
+          "sha256": "85a10ba8dbb8058c4565d00ea711374f4201209939eab1441916985fdd6a9a84"
+        },
+        "bundle": {
+          "path": ".scratch/glm-gguf-selected-20261023/B10/original-experts/draft/stage0/expert063/roles.bin",
+          "bytes": 40108032,
+          "sha256": "8cd86035e96fce89d136d4fa94a80447d76464aa6151372f4cc0a2358416bbe1"
+        }
+      },
+      {
+        "section": "draft",
+        "global_id": 64,
+        "bytes": 40108032,
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert064\\ready.json",
+          "bytes": 1397,
+          "sha256": "e5bb2b6ef2af5bbd371f829463628a021d2b03ddbf670489c696a946bbfcbf03"
+        },
+        "acquisition": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert064\\acquisition.json",
+          "bytes": 8708,
+          "sha256": "47c1c0abc106bcf8a10816bc7b2183f3a0b1578bb798a6470bc01d8e1fa84028"
+        },
+        "plan": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert064\\plan.json",
+          "bytes": 4421,
+          "sha256": "bf486e1cbe64c66b9dd0de889fd14e0a9ee4043fd0bb59c4a32b692fa0c8de97"
+        },
+        "bundle": {
+          "path": ".scratch/glm-gguf-selected-20261023/B10/original-experts/draft/stage0/expert064/roles.bin",
+          "bytes": 40108032,
+          "sha256": "cdc73089be37741737ed604a0cad71fae4837d2806a8fa40a73ac7cf6484c2ae"
+        }
+      },
+      {
+        "section": "draft",
+        "global_id": 69,
+        "bytes": 40108032,
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert069\\ready.json",
+          "bytes": 1397,
+          "sha256": "cdc0ed24d5b9cc79ba3171f1131eeaa80eb426fe434baee3918cdbe3f3b4cc33"
+        },
+        "acquisition": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert069\\acquisition.json",
+          "bytes": 8708,
+          "sha256": "7e4e75651adfee4e4a903e0be12e56b76d85b1394873ec1b0b363d6f893a761e"
+        },
+        "plan": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert069\\plan.json",
+          "bytes": 4421,
+          "sha256": "e8147df617888cb18f8faba51115d8f677b6f1a0e18cfacc14837e1f5c56b033"
+        },
+        "bundle": {
+          "path": ".scratch/glm-gguf-selected-20261023/B10/original-experts/draft/stage0/expert069/roles.bin",
+          "bytes": 40108032,
+          "sha256": "766fbd1b64c2e66735b13956508cfc63181443daffbc675c6ba718c70e5c9235"
+        }
+      },
+      {
+        "section": "draft",
+        "global_id": 71,
+        "bytes": 40108032,
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert071\\ready.json",
+          "bytes": 1397,
+          "sha256": "4bab8b612f4a85305379af543fb184c70e19ce6e93b04e9e239106d374cd27bb"
+        },
+        "acquisition": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert071\\acquisition.json",
+          "bytes": 8708,
+          "sha256": "2c4a2ac99e31fe1671fda5dd020ab847bb05880d1616c8b2188376b94789946a"
+        },
+        "plan": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert071\\plan.json",
+          "bytes": 4421,
+          "sha256": "1c8223eeb006622c1ae66ad22813e83f93023f7e019bce79f387a0376441552f"
+        },
+        "bundle": {
+          "path": ".scratch/glm-gguf-selected-20261023/B10/original-experts/draft/stage0/expert071/roles.bin",
+          "bytes": 40108032,
+          "sha256": "6b9a2410cf79abddc0a107718a0e80c99e5398b3a3514af50173aa0dcb73bd43"
+        }
+      },
+      {
+        "section": "draft",
+        "global_id": 75,
+        "bytes": 40108032,
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert075\\ready.json",
+          "bytes": 1397,
+          "sha256": "b6c91d9d45cc950e1da8420b05e6aa78a8adf8f27a9b8754990989432204b563"
+        },
+        "acquisition": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert075\\acquisition.json",
+          "bytes": 8708,
+          "sha256": "ad1c6ce43943e3405f2d1d054346f8cb619deadb23b88e46af9372098df7bf3c"
+        },
+        "plan": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert075\\plan.json",
+          "bytes": 4421,
+          "sha256": "2b24f8e4b4bc1f61356c0c05814607bb03057f103d592fe4d555c49e00392866"
+        },
+        "bundle": {
+          "path": ".scratch/glm-gguf-selected-20261023/B10/original-experts/draft/stage0/expert075/roles.bin",
+          "bytes": 40108032,
+          "sha256": "7f2de2df37dc700e94425d4a07360a37728f54b12a94ffb45ac7cf11725c74e6"
+        }
+      },
+      {
+        "section": "draft",
+        "global_id": 77,
+        "bytes": 40108032,
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert077\\ready.json",
+          "bytes": 1397,
+          "sha256": "2347ed39855f19da120d011e36d3187570ff606fea16fc8d94050a885a465447"
+        },
+        "acquisition": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert077\\acquisition.json",
+          "bytes": 8708,
+          "sha256": "112c44a2d62ad1ebf11db0a590b15f83e1c27c20fdfe114576a866d1a057891c"
+        },
+        "plan": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert077\\plan.json",
+          "bytes": 4421,
+          "sha256": "21e41688166f704885d8e1c7f5fabb06f0968649b0948c4d9b20b9018f6f447a"
+        },
+        "bundle": {
+          "path": ".scratch/glm-gguf-selected-20261023/B10/original-experts/draft/stage0/expert077/roles.bin",
+          "bytes": 40108032,
+          "sha256": "39e48d1857daebd8c1c8150e6cc06ab12a75991e514eaebd55972c5c87bf9eba"
+        }
+      },
+      {
+        "section": "draft",
+        "global_id": 79,
+        "bytes": 40108032,
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert079\\ready.json",
+          "bytes": 1397,
+          "sha256": "7e44aa9c4c8e4aa00a114987607c4df688b6b282034d4a5c2503c3836d6316ab"
+        },
+        "acquisition": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert079\\acquisition.json",
+          "bytes": 8708,
+          "sha256": "effd3b37e42ed4577116fa46e32fb9ff1dec80c0ea47cf72b33fb74a75ae6e82"
+        },
+        "plan": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert079\\plan.json",
+          "bytes": 4421,
+          "sha256": "f6cc4d34619d79765c6a0f01801bbc39bcd8b31ccec964157c3027c32bf8341a"
+        },
+        "bundle": {
+          "path": ".scratch/glm-gguf-selected-20261023/B10/original-experts/draft/stage0/expert079/roles.bin",
+          "bytes": 40108032,
+          "sha256": "beea9058abf7e58b1609604572965851bb5a98c5cd9d56456e3350ef809c128f"
+        }
+      },
+      {
+        "section": "draft",
+        "global_id": 83,
+        "bytes": 40108032,
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert083\\ready.json",
+          "bytes": 1397,
+          "sha256": "8514dba20c6a0302a45a68aea1ee446bd75e0be1eec9484e523da0d655965534"
+        },
+        "acquisition": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert083\\acquisition.json",
+          "bytes": 8708,
+          "sha256": "56236527d9755f56c6e1c1463596966dff5167b332823d819f87f70736b34981"
+        },
+        "plan": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert083\\plan.json",
+          "bytes": 4421,
+          "sha256": "3903008c53c81586c06612dbee6b272500e7c02f09b93861d2856c700ee98d04"
+        },
+        "bundle": {
+          "path": ".scratch/glm-gguf-selected-20261023/B10/original-experts/draft/stage0/expert083/roles.bin",
+          "bytes": 40108032,
+          "sha256": "4d0f433ced0378f74bd7b199d2a359d212d37b2714a809eee2c41d53243ec05d"
+        }
+      },
+      {
+        "section": "draft",
+        "global_id": 88,
+        "bytes": 40108032,
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert088\\ready.json",
+          "bytes": 1397,
+          "sha256": "9010a9db42a5bb63f60f74261ab6d361708175fed44e1c4727a05307c13e5ee9"
+        },
+        "acquisition": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert088\\acquisition.json",
+          "bytes": 8708,
+          "sha256": "a6f81036c99c7694a0562615de5647956b9acc36bba45f71725a08eff83e7c6d"
+        },
+        "plan": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert088\\plan.json",
+          "bytes": 4421,
+          "sha256": "c92b92e53534a3fed66ec33531a21890515902fc21817412a993366d702be988"
+        },
+        "bundle": {
+          "path": ".scratch/glm-gguf-selected-20261023/B10/original-experts/draft/stage0/expert088/roles.bin",
+          "bytes": 40108032,
+          "sha256": "d72bc8fd3df8899420661f82d1bbb13a13073d6cf9cb25ec3d516b2d1a7a6904"
+        }
+      },
+      {
+        "section": "draft",
+        "global_id": 110,
+        "bytes": 40108032,
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert110\\ready.json",
+          "bytes": 1398,
+          "sha256": "01ae87843b8d7af0f4e1a692ab6c901d86a881034212fe47850ad124acb68ad0"
+        },
+        "acquisition": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert110\\acquisition.json",
+          "bytes": 8709,
+          "sha256": "bd5b92c5d66b9c08a168bb4bc341cc292ea20b071fd30c5404cb49a57bcf0481"
+        },
+        "plan": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert110\\plan.json",
+          "bytes": 4425,
+          "sha256": "2125b740d588c7877d39a42dcddd39ff0e49b0165f72b2d076d469b068d8c606"
+        },
+        "bundle": {
+          "path": ".scratch/glm-gguf-selected-20261023/B10/original-experts/draft/stage0/expert110/roles.bin",
+          "bytes": 40108032,
+          "sha256": "59cacec7f6fc3fd8150f62a90583ecc852b0f58597fadcfa85f457661b8683a8"
+        }
+      },
+      {
+        "section": "draft",
+        "global_id": 112,
+        "bytes": 40108032,
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert112\\ready.json",
+          "bytes": 1398,
+          "sha256": "424ae8c569d79c10888da4abdd6fb06ccbd544da006938474a4ecbbd8a42dcdd"
+        },
+        "acquisition": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert112\\acquisition.json",
+          "bytes": 8709,
+          "sha256": "cc5ab3f27a4452abde789776b00b2898f2d3195771ab6433444f68251039fb3c"
+        },
+        "plan": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert112\\plan.json",
+          "bytes": 4425,
+          "sha256": "cdb3844f83d6f21db24d582a4f10a87b84a76415603cc289fadfcde2b75a0758"
+        },
+        "bundle": {
+          "path": ".scratch/glm-gguf-selected-20261023/B10/original-experts/draft/stage0/expert112/roles.bin",
+          "bytes": 40108032,
+          "sha256": "20b715c00490f86451347155b7fa68b5c73f7f766c1b3306635337b142d8e840"
+        }
+      },
+      {
+        "section": "draft",
+        "global_id": 115,
+        "bytes": 40108032,
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert115\\ready.json",
+          "bytes": 1398,
+          "sha256": "f667e654af462d5aed79ccd0d053ce96b309c57fe5be5f1c5724fefc7f602820"
+        },
+        "acquisition": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert115\\acquisition.json",
+          "bytes": 8709,
+          "sha256": "307c85f71a6425ba2bca1d7c7bcc29f5e631495dd7db00acc18084a80275f823"
+        },
+        "plan": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert115\\plan.json",
+          "bytes": 4425,
+          "sha256": "9f609e488bbda6449e35469853693a91a65bcdd9019966488ff8714e602fb052"
+        },
+        "bundle": {
+          "path": ".scratch/glm-gguf-selected-20261023/B10/original-experts/draft/stage0/expert115/roles.bin",
+          "bytes": 40108032,
+          "sha256": "395cd546371ab7850760ad495bc5868796f011eac95deebe10d154467848fc13"
+        }
+      },
+      {
+        "section": "draft",
+        "global_id": 128,
+        "bytes": 40108032,
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert128\\ready.json",
+          "bytes": 1398,
+          "sha256": "600d096fa3846273c75c55c0c0793595b3724694c25afa201d82c23ea011e434"
+        },
+        "acquisition": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert128\\acquisition.json",
+          "bytes": 8709,
+          "sha256": "69557fc7c55eb488621c254dea6c699c6c07138f23227d07de345cae198e39a6"
+        },
+        "plan": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert128\\plan.json",
+          "bytes": 4425,
+          "sha256": "5ba78e09d9666388f324a4995312d73ab213f31bd38f2872a27b017ba09dfa3e"
+        },
+        "bundle": {
+          "path": ".scratch/glm-gguf-selected-20261023/B10/original-experts/draft/stage0/expert128/roles.bin",
+          "bytes": 40108032,
+          "sha256": "27149910ae2388f461d2e16bbb8b98debc6336d175ac2637e990a6b49fa1b184"
+        }
+      },
+      {
+        "section": "draft",
+        "global_id": 131,
+        "bytes": 40108032,
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert131\\ready.json",
+          "bytes": 1398,
+          "sha256": "26de7ee65c444e4f561c396496464297686e8d244edaa4eaa3a38904e6f23a4a"
+        },
+        "acquisition": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert131\\acquisition.json",
+          "bytes": 8709,
+          "sha256": "452e3a13150c6c469eafc8c5f93d50ea1391c38450bf8586cfc551a566d1f34c"
+        },
+        "plan": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert131\\plan.json",
+          "bytes": 4425,
+          "sha256": "fe3bba52a9529c0f937f79e12a7a850db6435d7e642106f63d9a563af6e37174"
+        },
+        "bundle": {
+          "path": ".scratch/glm-gguf-selected-20261023/B10/original-experts/draft/stage0/expert131/roles.bin",
+          "bytes": 40108032,
+          "sha256": "bfc3b4ad66f0e70def20f17982c1396ee642fb2c621ca7d86265f3f2b7d02188"
+        }
+      },
+      {
+        "section": "draft",
+        "global_id": 139,
+        "bytes": 40108032,
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert139\\ready.json",
+          "bytes": 1398,
+          "sha256": "993b43b48ffa4394337f2a4040c12f71cd0d9b93fffda7dcedfb273306ce0d1a"
+        },
+        "acquisition": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert139\\acquisition.json",
+          "bytes": 8709,
+          "sha256": "57e4942f1b4b91bc931d987992c069bcd0f1fb3f525b939f5a5c9c9fbe5aa098"
+        },
+        "plan": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert139\\plan.json",
+          "bytes": 4425,
+          "sha256": "23bf08483f4ad2e31b910835290d8df10c993971a4279715d1dec9425964db40"
+        },
+        "bundle": {
+          "path": ".scratch/glm-gguf-selected-20261023/B10/original-experts/draft/stage0/expert139/roles.bin",
+          "bytes": 40108032,
+          "sha256": "53f2be4fcbe36b916c9bdc74feaa1e1ffb195d5011ab863bcf2614363c45db4c"
+        }
+      },
+      {
+        "section": "draft",
+        "global_id": 140,
+        "bytes": 40108032,
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert140\\ready.json",
+          "bytes": 1398,
+          "sha256": "03af1ede8824847eeb8eed9b0c4ef6a5d715435f72ae6dae7e6ae6117962a639"
+        },
+        "acquisition": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert140\\acquisition.json",
+          "bytes": 8709,
+          "sha256": "0c1ce15d405e1ac47a4c8326837156ac55e489c22ae4a06dc2b442c51345ad8d"
+        },
+        "plan": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert140\\plan.json",
+          "bytes": 4425,
+          "sha256": "f92903372462bf65ba5e4cb373bc66d5983a3eb278fb0250da8b60ad1c040507"
+        },
+        "bundle": {
+          "path": ".scratch/glm-gguf-selected-20261023/B10/original-experts/draft/stage0/expert140/roles.bin",
+          "bytes": 40108032,
+          "sha256": "1679887bcb2d6afd247cce7810c361804b91e1ae7d1837aeb543de8565f200eb"
+        }
+      },
+      {
+        "section": "draft",
+        "global_id": 159,
+        "bytes": 40108032,
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert159\\ready.json",
+          "bytes": 1398,
+          "sha256": "f28d6efe8757b87971a80449f7ec40bbb5015a7c8d57abc3012393a096634e6b"
+        },
+        "acquisition": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert159\\acquisition.json",
+          "bytes": 8709,
+          "sha256": "d982ad32412705e0e63727dcfdf1568160c27e7e8f2b10fc7a2297b667ecaa7d"
+        },
+        "plan": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert159\\plan.json",
+          "bytes": 4425,
+          "sha256": "81e5f58bb1ff10e135a4160b4287533e282c8df7414c3d26c7f14f67c47ba139"
+        },
+        "bundle": {
+          "path": ".scratch/glm-gguf-selected-20261023/B10/original-experts/draft/stage0/expert159/roles.bin",
+          "bytes": 40108032,
+          "sha256": "c1b3eb4bf51d51d350b910af5b54b6e29404e720010c0004d8e5b7e49b6b2785"
+        }
+      },
+      {
+        "section": "draft",
+        "global_id": 163,
+        "bytes": 40108032,
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert163\\ready.json",
+          "bytes": 1398,
+          "sha256": "4639979f2bb821d6013c8bfba3dd72df204fba62e35abdebf2a23978f599e0ce"
+        },
+        "acquisition": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert163\\acquisition.json",
+          "bytes": 8709,
+          "sha256": "7f515e9a47ba1024c5496cd5f64b566a65e54a4d5bea98a17742fc2c13513b91"
+        },
+        "plan": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert163\\plan.json",
+          "bytes": 4425,
+          "sha256": "bdb3136aab3851ebaecaa05ba35c8548f2d2ab4ba9f62bd0fb2c74d10c1e5bb3"
+        },
+        "bundle": {
+          "path": ".scratch/glm-gguf-selected-20261023/B10/original-experts/draft/stage0/expert163/roles.bin",
+          "bytes": 40108032,
+          "sha256": "d8768e6f125755e185e983188589335a7a60c2da78b59d79abfed1a389be59b0"
+        }
+      },
+      {
+        "section": "draft",
+        "global_id": 169,
+        "bytes": 40108032,
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert169\\ready.json",
+          "bytes": 1398,
+          "sha256": "036d1889b3b8bdb3df143b3b537ab84c31ba2c56220eb06bc901f0292e4d30d6"
+        },
+        "acquisition": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert169\\acquisition.json",
+          "bytes": 8709,
+          "sha256": "b85c692897e6748a4c4ceea569bd0ed3336adb6bc2b18b4375bcfe1bc4bb2e6e"
+        },
+        "plan": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert169\\plan.json",
+          "bytes": 4425,
+          "sha256": "a0cf758ed5abfcf720adc7d71401eb156c7eb33bfea0d406e10fdfd71779adea"
+        },
+        "bundle": {
+          "path": ".scratch/glm-gguf-selected-20261023/B10/original-experts/draft/stage0/expert169/roles.bin",
+          "bytes": 40108032,
+          "sha256": "27fcb42e31275173ed749235ba378aa1057ae532d7e4d470647c9071ddda5eaa"
+        }
+      },
+      {
+        "section": "draft",
+        "global_id": 175,
+        "bytes": 40108032,
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert175\\ready.json",
+          "bytes": 1398,
+          "sha256": "7c2535218e810f68f19ece8088a9b4ba9ccf013ae797d13368278c5bbc613a84"
+        },
+        "acquisition": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert175\\acquisition.json",
+          "bytes": 8709,
+          "sha256": "ea83f957aa0a958c460c0b411f9e021984ef6fa91bd1e939ce71d83b6085a338"
+        },
+        "plan": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert175\\plan.json",
+          "bytes": 4425,
+          "sha256": "d243b88728f82485cad676187b98afdaf5982e48892da04d700d04e1d82b1a4d"
+        },
+        "bundle": {
+          "path": ".scratch/glm-gguf-selected-20261023/B10/original-experts/draft/stage0/expert175/roles.bin",
+          "bytes": 40108032,
+          "sha256": "4ee7abe9b09372ff7a14eb962b23aa88783384e238fa92498281175124acbb11"
+        }
+      },
+      {
+        "section": "draft",
+        "global_id": 180,
+        "bytes": 40108032,
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert180\\ready.json",
+          "bytes": 1398,
+          "sha256": "09254869e9a542f89acb6fcae4a5516c4baea397fe12510d519592d7bdefddd0"
+        },
+        "acquisition": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert180\\acquisition.json",
+          "bytes": 8709,
+          "sha256": "62e1e4d4bf7483f8ba296b7602d7560907479b8f46f5fb796fcedbe2aaa300f3"
+        },
+        "plan": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert180\\plan.json",
+          "bytes": 4425,
+          "sha256": "852ae77bcc0c58d6ba149169df8da767970f4ba4fad5a3520fca4f67c5e54fa4"
+        },
+        "bundle": {
+          "path": ".scratch/glm-gguf-selected-20261023/B10/original-experts/draft/stage0/expert180/roles.bin",
+          "bytes": 40108032,
+          "sha256": "ffba8dec0f0945e418b772c5513dfce6eff4d30f4a76762bedc5c4ebaf6eccfc"
+        }
+      },
+      {
+        "section": "draft",
+        "global_id": 184,
+        "bytes": 40108032,
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert184\\ready.json",
+          "bytes": 1398,
+          "sha256": "e3702d38050985fa5cb5643618b5e0b1adf6fb0090e459561cfd69604e730a78"
+        },
+        "acquisition": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert184\\acquisition.json",
+          "bytes": 8709,
+          "sha256": "6636f623dfb8a967d3a92d80ac5ebaa7c755e50fdea3b15835f0aae7f94705ff"
+        },
+        "plan": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert184\\plan.json",
+          "bytes": 4425,
+          "sha256": "b1fe1d166ee507c3a024184137e75e5f73139f392197546db632bea9671247b7"
+        },
+        "bundle": {
+          "path": ".scratch/glm-gguf-selected-20261023/B10/original-experts/draft/stage0/expert184/roles.bin",
+          "bytes": 40108032,
+          "sha256": "6fd180cffe76ac2e43d709b4fd8851600e349e92bbd90eab953728303ff3c01c"
+        }
+      },
+      {
+        "section": "draft",
+        "global_id": 193,
+        "bytes": 40108032,
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert193\\ready.json",
+          "bytes": 1398,
+          "sha256": "7792bcb453e7587e4875156526d759ad207f126adcc59e0526d1f4fc8873e1e1"
+        },
+        "acquisition": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert193\\acquisition.json",
+          "bytes": 8709,
+          "sha256": "3a4af5da7fe6b903a1f4f0539e3d23e60042c341d3ada6c934edf03e6afe3cff"
+        },
+        "plan": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert193\\plan.json",
+          "bytes": 4425,
+          "sha256": "5cf7234c51d68d1d3131253494859a9e161a39147181a2428c8dc55ea0e99077"
+        },
+        "bundle": {
+          "path": ".scratch/glm-gguf-selected-20261023/B10/original-experts/draft/stage0/expert193/roles.bin",
+          "bytes": 40108032,
+          "sha256": "7f1e2dbd6d37daa97b1a3fd0c4d1ce21c7ecfe11133d621cbf7d18011ad19d93"
+        }
+      },
+      {
+        "section": "draft",
+        "global_id": 198,
+        "bytes": 40108032,
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert198\\ready.json",
+          "bytes": 1398,
+          "sha256": "b3524a56c92139e038696da922c052a5da5905a37caefa8d7ef832d129ed8123"
+        },
+        "acquisition": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert198\\acquisition.json",
+          "bytes": 8709,
+          "sha256": "65d2ad7a52f1377da094e13e508c1950808348e6bd7705021b41ef70ce01d66d"
+        },
+        "plan": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert198\\plan.json",
+          "bytes": 4425,
+          "sha256": "105d15b798f95fe40300e039292626974b133b1d3d7ff523ae865c4746a5be6d"
+        },
+        "bundle": {
+          "path": ".scratch/glm-gguf-selected-20261023/B10/original-experts/draft/stage0/expert198/roles.bin",
+          "bytes": 40108032,
+          "sha256": "0635197c2c18698f5c04c1b57002890b390fb57cf6b48d342ef6f7221468218b"
+        }
+      },
+      {
+        "section": "draft",
+        "global_id": 199,
+        "bytes": 40108032,
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert199\\ready.json",
+          "bytes": 1398,
+          "sha256": "9dafd4e7d410bc651c069fd8d7b585fbce97c523a92f9ac4a9f93e25a577dd80"
+        },
+        "acquisition": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert199\\acquisition.json",
+          "bytes": 8709,
+          "sha256": "3a6e17bcbf1ff8984d009703fb195d1af225f4f61f7270ae4a9fc0556ac8e718"
+        },
+        "plan": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert199\\plan.json",
+          "bytes": 4425,
+          "sha256": "eab12f077b476821d7335459579bb037a5b46a911d16c059ea5d48828a6f15e3"
+        },
+        "bundle": {
+          "path": ".scratch/glm-gguf-selected-20261023/B10/original-experts/draft/stage0/expert199/roles.bin",
+          "bytes": 40108032,
+          "sha256": "b4be1c93d7882b47d2f70bdbddf2abaf7a67d0a96c00fad17c5e4988194f35fe"
+        }
+      },
+      {
+        "section": "draft",
+        "global_id": 200,
+        "bytes": 40108032,
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert200\\ready.json",
+          "bytes": 1398,
+          "sha256": "a9b58ef99ce30bd9fc87c9bd2283792fc205c17336fc113a4acc88b20634046b"
+        },
+        "acquisition": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert200\\acquisition.json",
+          "bytes": 8709,
+          "sha256": "1fd4c90405f0dafd1e1c0c11036d0075adccdea093a6384dc28f68dc77147031"
+        },
+        "plan": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert200\\plan.json",
+          "bytes": 4425,
+          "sha256": "442dc2939c4528463a76e7972a1d5df204238123481f307550496a98422cab51"
+        },
+        "bundle": {
+          "path": ".scratch/glm-gguf-selected-20261023/B10/original-experts/draft/stage0/expert200/roles.bin",
+          "bytes": 40108032,
+          "sha256": "bc8e652529f954e04f467282334cd4e8a2b937936833b0003218e826d2fef2af"
+        }
+      },
+      {
+        "section": "draft",
+        "global_id": 202,
+        "bytes": 40108032,
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert202\\ready.json",
+          "bytes": 1398,
+          "sha256": "df1cefb0f2bf5228b49ec542aa6dd3b70119bd5289714339f559c4f3ce5975bc"
+        },
+        "acquisition": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert202\\acquisition.json",
+          "bytes": 8974,
+          "sha256": "9ffe74fe55a7cf78fa2420926404b8d8a6688663e1966240201b86c3edf298fe"
+        },
+        "plan": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert202\\plan.json",
+          "bytes": 4425,
+          "sha256": "6d4ec33ccaf0f4905b3c0b3765c579d77fc0b77a602e7f686a065be081f8cba1"
+        },
+        "bundle": {
+          "path": ".scratch/glm-gguf-selected-20261023/B10/original-experts/draft/stage0/expert202/roles.bin",
+          "bytes": 40108032,
+          "sha256": "a5fba133209731091b53409b3b3a789d84fce015e79ecee60a1fdde952981ef1"
+        }
+      },
+      {
+        "section": "draft",
+        "global_id": 213,
+        "bytes": 40108032,
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert213\\ready.json",
+          "bytes": 1398,
+          "sha256": "87d592623b66538b18f359ad21d2d6fe73f7960019daa0dc3ce541806706e780"
+        },
+        "acquisition": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert213\\acquisition.json",
+          "bytes": 8709,
+          "sha256": "723db6989a31140bfe8c766db240c544d29d1a2cbc09945b532dfb4b8d50bbd8"
+        },
+        "plan": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert213\\plan.json",
+          "bytes": 4425,
+          "sha256": "dd9a55c100b6c16f2add2bdaa382f7bb0419df3bab3f85ca23e7fcc63e3f350b"
+        },
+        "bundle": {
+          "path": ".scratch/glm-gguf-selected-20261023/B10/original-experts/draft/stage0/expert213/roles.bin",
+          "bytes": 40108032,
+          "sha256": "a1370470b38d2b7bf2fe56158cf52098e9cc0a66fcad4cea7444f6b1df9a9ca8"
+        }
+      },
+      {
+        "section": "draft",
+        "global_id": 217,
+        "bytes": 40108032,
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert217\\ready.json",
+          "bytes": 1398,
+          "sha256": "5b59dca53705d9e8f2dabc89a27688199b387ea13fefc707a38ec5c18d8b3678"
+        },
+        "acquisition": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert217\\acquisition.json",
+          "bytes": 8709,
+          "sha256": "f647bda69fdefdf03c39731882fa326322280aef227457463cd884929a3f9630"
+        },
+        "plan": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert217\\plan.json",
+          "bytes": 4425,
+          "sha256": "e8b62fa7d6ff77e69edf66adbed45a771fd8f8befce8f6efeb4aedf97bdf0d14"
+        },
+        "bundle": {
+          "path": ".scratch/glm-gguf-selected-20261023/B10/original-experts/draft/stage0/expert217/roles.bin",
+          "bytes": 40108032,
+          "sha256": "1bd4114e7edd2fb21f7a37595f9a49c3f9fe29d03d722ab542783057b15b4f4c"
+        }
+      },
+      {
+        "section": "draft",
+        "global_id": 219,
+        "bytes": 40108032,
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert219\\ready.json",
+          "bytes": 1398,
+          "sha256": "dcfa056fbc9806be41eaf11508377fa7ce69a4bb188838f3d85af8689f3004ce"
+        },
+        "acquisition": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert219\\acquisition.json",
+          "bytes": 8709,
+          "sha256": "b288d82ce42c7bf79d4a4b8385ac7cd20bcc9ecaf4b64c812e6e1d94b31ab069"
+        },
+        "plan": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert219\\plan.json",
+          "bytes": 4425,
+          "sha256": "36325dc603e494113b52ed5f1e9a35759124e4b279727d4e3775fbddb67221c0"
+        },
+        "bundle": {
+          "path": ".scratch/glm-gguf-selected-20261023/B10/original-experts/draft/stage0/expert219/roles.bin",
+          "bytes": 40108032,
+          "sha256": "5798f4e1589c62c99ac16133444a7e8ca014fc1295fe233281cda08f1fbe5eee"
+        }
+      },
+      {
+        "section": "draft",
+        "global_id": 221,
+        "bytes": 40108032,
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert221\\ready.json",
+          "bytes": 1398,
+          "sha256": "3b7afd02f52bf0b97607f38e3f6a0e4aa121e9fcf7baaa02edf112967f648cba"
+        },
+        "acquisition": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert221\\acquisition.json",
+          "bytes": 8709,
+          "sha256": "818cbc4f8fd1096be702a563a183ca3e2b40fdeabf5eb1b030aaeb0e007d35f4"
+        },
+        "plan": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert221\\plan.json",
+          "bytes": 4425,
+          "sha256": "dd8f55b92e669b51421a2d163a123153dd9edb69336c605f54fc78f72a30f5e7"
+        },
+        "bundle": {
+          "path": ".scratch/glm-gguf-selected-20261023/B10/original-experts/draft/stage0/expert221/roles.bin",
+          "bytes": 40108032,
+          "sha256": "c059d1339542689244f4972dc6a4ed7b76eca0a1f313e861475ab269fd8e97b9"
+        }
+      },
+      {
+        "section": "draft",
+        "global_id": 222,
+        "bytes": 40108032,
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert222\\ready.json",
+          "bytes": 1398,
+          "sha256": "5601c20a3d7c30fcfdd87ba20b39be234d407f8899b0a9df2dc4ca111377e010"
+        },
+        "acquisition": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert222\\acquisition.json",
+          "bytes": 8709,
+          "sha256": "bb74952fea53331659f80668fe7ff7cd2b8698f5480b25bd05058a1c07f76b2c"
+        },
+        "plan": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert222\\plan.json",
+          "bytes": 4425,
+          "sha256": "043efb2976a8bfc2cafb89cb59cd96bd394a6e60ed2a9ab6b9fedefc5692436e"
+        },
+        "bundle": {
+          "path": ".scratch/glm-gguf-selected-20261023/B10/original-experts/draft/stage0/expert222/roles.bin",
+          "bytes": 40108032,
+          "sha256": "e7b41e01190b56fd8353d409ad1b63d564c635571be0d637777512489fecc4f5"
+        }
+      },
+      {
+        "section": "draft",
+        "global_id": 231,
+        "bytes": 40108032,
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert231\\ready.json",
+          "bytes": 1398,
+          "sha256": "3ec81d6e5f4e629622332d90ff0a75c781ad0c678a5c12a0a4d1f8f973ddca21"
+        },
+        "acquisition": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert231\\acquisition.json",
+          "bytes": 8709,
+          "sha256": "e6263e3cbe1eb2f454bd47405723677455c705c87cb688c59e910437c680e5bc"
+        },
+        "plan": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert231\\plan.json",
+          "bytes": 4425,
+          "sha256": "b7373775b09fd279bdba450d8feb339dc47f45ef3e5f83831e8098469bb3d6e4"
+        },
+        "bundle": {
+          "path": ".scratch/glm-gguf-selected-20261023/B10/original-experts/draft/stage0/expert231/roles.bin",
+          "bytes": 40108032,
+          "sha256": "4482db7017edf91a4d8dbf8026daad45e9a1875a3a0f52a500873e2ee1d755db"
+        }
+      },
+      {
+        "section": "draft",
+        "global_id": 232,
+        "bytes": 40108032,
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert232\\ready.json",
+          "bytes": 1398,
+          "sha256": "126349efa37e5e8ddf7062115a8eea045ba777278b1c6c3d5c2b669e28cf302d"
+        },
+        "acquisition": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert232\\acquisition.json",
+          "bytes": 8709,
+          "sha256": "9fa24b0bafc93f91c396450f1d464af10999306b764e2cc670e6598ae42763bf"
+        },
+        "plan": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert232\\plan.json",
+          "bytes": 4425,
+          "sha256": "3b960bc70e8f7cad45f657db97df137a49a41d446795b3dc6e9445576aad7d1a"
+        },
+        "bundle": {
+          "path": ".scratch/glm-gguf-selected-20261023/B10/original-experts/draft/stage0/expert232/roles.bin",
+          "bytes": 40108032,
+          "sha256": "cbe3da5a3fc1b7295eb9e4c1d33b8bac342d983bf5e5d72d5b1050eb670176a3"
+        }
+      },
+      {
+        "section": "draft",
+        "global_id": 234,
+        "bytes": 40108032,
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert234\\ready.json",
+          "bytes": 1398,
+          "sha256": "370997db499cc86a4b3e12727e56c74060336c4ae53b1e2ac534dd45908e7772"
+        },
+        "acquisition": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert234\\acquisition.json",
+          "bytes": 8709,
+          "sha256": "c56fe415a78bef063f820f61cbf8f5d6094ad145fb233afd05e42787ab9f757c"
+        },
+        "plan": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert234\\plan.json",
+          "bytes": 4425,
+          "sha256": "08e692c24b9e03da8cdc8a9d8bbd3c7b976480046585f6d701382dee3929357d"
+        },
+        "bundle": {
+          "path": ".scratch/glm-gguf-selected-20261023/B10/original-experts/draft/stage0/expert234/roles.bin",
+          "bytes": 40108032,
+          "sha256": "428c9a7125c7a43b3f0ae6b41da73d1038a1b024d69e3fdc3743a9db5b1703e6"
+        }
+      },
+      {
+        "section": "draft",
+        "global_id": 253,
+        "bytes": 40108032,
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert253\\ready.json",
+          "bytes": 1398,
+          "sha256": "dc0abe6b601c5409cfb435ab164b517a189d3e41d26f86cb01c3d033b2aafda4"
+        },
+        "acquisition": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert253\\acquisition.json",
+          "bytes": 8709,
+          "sha256": "13617a031238d71f1cc9a577b4fc3a1b941b7e2837458d3c2702a7d6baced5f5"
+        },
+        "plan": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert253\\plan.json",
+          "bytes": 4425,
+          "sha256": "d2cb47e9310dce59313a99b2dda770e02c5f778980a3d7e27b16d901e2323f74"
+        },
+        "bundle": {
+          "path": ".scratch/glm-gguf-selected-20261023/B10/original-experts/draft/stage0/expert253/roles.bin",
+          "bytes": 40108032,
+          "sha256": "916bd4015c6804492b0e1252dbb2e2f9de2c1bb3847884ff015a13956916f916"
+        }
+      },
+      {
+        "section": "draft",
+        "global_id": 254,
+        "bytes": 40108032,
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert254\\ready.json",
+          "bytes": 1398,
+          "sha256": "96280f74a0b46e911911d4b00c8a4bf213166246d42a283fa39552e04113bd73"
+        },
+        "acquisition": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert254\\acquisition.json",
+          "bytes": 8709,
+          "sha256": "4b450f06f2a545b21ab080efbb840adc8dd97db5e926e4a94409865f23f5b15b"
+        },
+        "plan": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\draft\\stage0\\expert254\\plan.json",
+          "bytes": 4425,
+          "sha256": "1a9d13b807870b2ced236708e2d3d1914040fdcd6a2147c7f60abeb69e700a51"
+        },
+        "bundle": {
+          "path": ".scratch/glm-gguf-selected-20261023/B10/original-experts/draft/stage0/expert254/roles.bin",
+          "bytes": 40108032,
+          "sha256": "6e50bd4c966878895b95bc271ded41728b179161df35c09f81dd44029a36b200"
+        }
+      },
+      {
+        "section": "target",
+        "global_id": 1,
+        "bytes": 40108032,
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\target\\stage0\\expert001\\ready.json",
+          "bytes": 1401,
+          "sha256": "fb040dce3070ab99cd1f9171c33e1205534f8182cea86f45c5126e809bd9f3ff"
+        },
+        "acquisition": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\target\\stage0\\expert001\\acquisition.json",
+          "bytes": 8713,
+          "sha256": "b0fe601e002d606c24dd825d2cc73d385c00ca76efb8466c8d7dcb9892d83cf2"
+        },
+        "plan": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\target\\stage0\\expert001\\plan.json",
+          "bytes": 4419,
+          "sha256": "193524fc3b4714098d312da910fb528fabc981a252e7d00e92a3b62543d58bb1"
+        },
+        "bundle": {
+          "path": ".scratch/glm-gguf-selected-20261023/B10/original-experts/target/stage0/expert001/roles.bin",
+          "bytes": 40108032,
+          "sha256": "432646deaacf302c20e54962cd920a3b3967dfe78ec080b7e99a13ea8ad103d3"
+        }
+      },
+      {
+        "section": "target",
+        "global_id": 3,
+        "bytes": 40108032,
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\target\\stage0\\expert003\\ready.json",
+          "bytes": 1401,
+          "sha256": "4fde63e6211c5f75bc330274ffed668f032297448a89723a24a23bdadd459e18"
+        },
+        "acquisition": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\target\\stage0\\expert003\\acquisition.json",
+          "bytes": 8713,
+          "sha256": "5af1fab814aa8e1233f4feb4898f374378d484c9f8117c1698ebd63892724a8d"
+        },
+        "plan": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\target\\stage0\\expert003\\plan.json",
+          "bytes": 4419,
+          "sha256": "5bc6ac4b6989ae91396b6f305e8af89334dd0c67f4e0aed6acf6e0cfc4ec37c9"
+        },
+        "bundle": {
+          "path": ".scratch/glm-gguf-selected-20261023/B10/original-experts/target/stage0/expert003/roles.bin",
+          "bytes": 40108032,
+          "sha256": "19ae8cdc8d6af7362b9e89864d54f09800ca76177c5e76cf811f9c9bd25ee462"
+        }
+      },
+      {
+        "section": "target",
+        "global_id": 7,
+        "bytes": 40108032,
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\target\\stage0\\expert007\\ready.json",
+          "bytes": 1401,
+          "sha256": "9acfe857b9dcd7501b0771f820970c5911524a9dd35cd6b4980210b27edf0eca"
+        },
+        "acquisition": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\target\\stage0\\expert007\\acquisition.json",
+          "bytes": 8713,
+          "sha256": "e8c993e61227332bf8319aa0cd1cf80bb03fd030186123d4e66fd4c873fb7d90"
+        },
+        "plan": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\target\\stage0\\expert007\\plan.json",
+          "bytes": 4419,
+          "sha256": "d7b4f9a89619bd27e68ada9a85121d1829d3549ca3b8394990ba0cf8ce67a827"
+        },
+        "bundle": {
+          "path": ".scratch/glm-gguf-selected-20261023/B10/original-experts/target/stage0/expert007/roles.bin",
+          "bytes": 40108032,
+          "sha256": "76903fdcacb31788ba9a400e5ab6caf49e69b508835839e10c44c893e9c3e555"
+        }
+      },
+      {
+        "section": "target",
+        "global_id": 8,
+        "bytes": 40108032,
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\target\\stage0\\expert008\\ready.json",
+          "bytes": 1401,
+          "sha256": "d2bad05746dd9053ec690b69692b1dd2db3cfd705d6dbdd16b257fb4f719cfe7"
+        },
+        "acquisition": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\target\\stage0\\expert008\\acquisition.json",
+          "bytes": 8713,
+          "sha256": "4aa134c9e89d56ec25d935185e60cdbce82aa0dd91c6fc969c5e3870a99b8a4e"
+        },
+        "plan": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\target\\stage0\\expert008\\plan.json",
+          "bytes": 4419,
+          "sha256": "d308ddc196f14b15eb112b314bc9c5c70cdab466819e6a5ce31cdb0c4601d77e"
+        },
+        "bundle": {
+          "path": ".scratch/glm-gguf-selected-20261023/B10/original-experts/target/stage0/expert008/roles.bin",
+          "bytes": 40108032,
+          "sha256": "82817c07d3b40dce52b2a270d7a3e094255557414e909fc30399656d55da0a9b"
+        }
+      },
+      {
+        "section": "target",
+        "global_id": 10,
+        "bytes": 40108032,
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\target\\stage0\\expert010\\ready.json",
+          "bytes": 1402,
+          "sha256": "efbe190baa22aa5615e929ac6458c6e0257c8ab91810fcfb5389d39b82f2886d"
+        },
+        "acquisition": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\target\\stage0\\expert010\\acquisition.json",
+          "bytes": 8714,
+          "sha256": "4425adccfe26d666f86552a2a5e239fe068b9c7e7e69fd5e30399f055dccb8d8"
+        },
+        "plan": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\target\\stage0\\expert010\\plan.json",
+          "bytes": 4423,
+          "sha256": "80a811d27ea0a08ad82548f80aa5b2666900ecf7cac1c94eed127efbf3c825ab"
+        },
+        "bundle": {
+          "path": ".scratch/glm-gguf-selected-20261023/B10/original-experts/target/stage0/expert010/roles.bin",
+          "bytes": 40108032,
+          "sha256": "dc437bb1a4d9e596b8a67c665765cad7e7dafe66413ff06e064c4f882e6234dc"
+        }
+      },
+      {
+        "section": "target",
+        "global_id": 30,
+        "bytes": 40108032,
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\target\\stage0\\expert030\\ready.json",
+          "bytes": 1402,
+          "sha256": "a4da3654bfd5e9fae2296fbb7cf9160899f304e1879fe41819adca154757f4c7"
+        },
+        "acquisition": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\target\\stage0\\expert030\\acquisition.json",
+          "bytes": 8714,
+          "sha256": "38228acf2a1a7cd4af7318b20866a4f66b8d1c9b0bcbdc935ae3de3bce69a2af"
+        },
+        "plan": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\target\\stage0\\expert030\\plan.json",
+          "bytes": 4423,
+          "sha256": "69a83c029864143d5f38ebac7692cf5b44e2dfec88da7480813ed984f210020b"
+        },
+        "bundle": {
+          "path": ".scratch/glm-gguf-selected-20261023/B10/original-experts/target/stage0/expert030/roles.bin",
+          "bytes": 40108032,
+          "sha256": "d0b2fd990924445e244f71403e98bf288e2813fb7b5bb5c3bb76af82a7fa5120"
+        }
+      },
+      {
+        "section": "target",
+        "global_id": 47,
+        "bytes": 40108032,
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\target\\stage0\\expert047\\ready.json",
+          "bytes": 1402,
+          "sha256": "b2442516f4454d9445e74c15826bea854d8a2322274059cfa044e1ced037ecb4"
+        },
+        "acquisition": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\target\\stage0\\expert047\\acquisition.json",
+          "bytes": 8714,
+          "sha256": "14eb15e29118f1436fd133bc9f7ac6a0cceda806d459986d62dc8414664bb784"
+        },
+        "plan": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\target\\stage0\\expert047\\plan.json",
+          "bytes": 4423,
+          "sha256": "ac45df35f2ff80ea265889d0f35d4e2352638b34eedd06bf19bd67513575dc18"
+        },
+        "bundle": {
+          "path": ".scratch/glm-gguf-selected-20261023/B10/original-experts/target/stage0/expert047/roles.bin",
+          "bytes": 40108032,
+          "sha256": "1ab0411dfd40a7024a9823a282bd9d45c354a9757d4d6a2d09c90db49b0b1cd1"
+        }
+      },
+      {
+        "section": "target",
+        "global_id": 48,
+        "bytes": 40108032,
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\target\\stage0\\expert048\\ready.json",
+          "bytes": 1402,
+          "sha256": "5b440e60a4648e2af19dde1cc5b05f9a55955b97131c069d079b8c0a9465fc33"
+        },
+        "acquisition": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\target\\stage0\\expert048\\acquisition.json",
+          "bytes": 8714,
+          "sha256": "8907699e431f6eafb2a2c80373b13ca09093fb9da82abb6c683b8d5763bdcc23"
+        },
+        "plan": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\target\\stage0\\expert048\\plan.json",
+          "bytes": 4423,
+          "sha256": "f4aa6fd992272bdae02c81f87a52ffca0fe42720fe3e598121fb751c06ade7ae"
+        },
+        "bundle": {
+          "path": ".scratch/glm-gguf-selected-20261023/B10/original-experts/target/stage0/expert048/roles.bin",
+          "bytes": 40108032,
+          "sha256": "a05a3fd1a24ee09c5ac807325a241e497a4137967d43d4e1d0c87fdd7e13e1a2"
+        }
+      },
+      {
+        "section": "target",
+        "global_id": 52,
+        "bytes": 40108032,
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\target\\stage0\\expert052\\ready.json",
+          "bytes": 1402,
+          "sha256": "352ebf4c45ade9b2e471b5922ca50710d6cd6162b1c61002aaf21ff9364ef58b"
+        },
+        "acquisition": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\target\\stage0\\expert052\\acquisition.json",
+          "bytes": 8714,
+          "sha256": "559b08cf50f279b312be87ca3cf36370b65159984b69a83b5022b00fdae9b708"
+        },
+        "plan": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\target\\stage0\\expert052\\plan.json",
+          "bytes": 4423,
+          "sha256": "5d9455a07e519bbb1c7c0f54edb42aa3605e772c96f97ad9d3cfee0009514ec6"
+        },
+        "bundle": {
+          "path": ".scratch/glm-gguf-selected-20261023/B10/original-experts/target/stage0/expert052/roles.bin",
+          "bytes": 40108032,
+          "sha256": "f0fa33514b3c5aaa37b9649915be784697aca3af77fd8d330e3418c2490474e1"
+        }
+      },
+      {
+        "section": "target",
+        "global_id": 55,
+        "bytes": 40108032,
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\target\\stage0\\expert055\\ready.json",
+          "bytes": 1402,
+          "sha256": "5604156c12eb80801b0c08c05763774610e953dd631813aa070811a6c24633c0"
+        },
+        "acquisition": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\target\\stage0\\expert055\\acquisition.json",
+          "bytes": 8714,
+          "sha256": "bfb510035a06ed6388b83eab1e3b98a8847847e85ff373055c959e1fb4a9dc45"
+        },
+        "plan": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\target\\stage0\\expert055\\plan.json",
+          "bytes": 4423,
+          "sha256": "640a8e3c6310323cc1c1e646fbc4921841f7540b36557449755b1b9010e644c0"
+        },
+        "bundle": {
+          "path": ".scratch/glm-gguf-selected-20261023/B10/original-experts/target/stage0/expert055/roles.bin",
+          "bytes": 40108032,
+          "sha256": "2d68e3b0e84337f3b1440663adbd96040d12e3c14bbd8aa2a88cd0e5ad10cef0"
+        }
+      },
+      {
+        "section": "target",
+        "global_id": 59,
+        "bytes": 40108032,
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\target\\stage0\\expert059\\ready.json",
+          "bytes": 1402,
+          "sha256": "f1d473c9e3ed20a5077206a4fa83b158a51c3a4517ecedeffa63a5c84761e22e"
+        },
+        "acquisition": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\target\\stage0\\expert059\\acquisition.json",
+          "bytes": 8714,
+          "sha256": "cca1de350993859c62f5398c2150e98fee4fbf470b0866195552875d10384353"
+        },
+        "plan": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\target\\stage0\\expert059\\plan.json",
+          "bytes": 4423,
+          "sha256": "1498aed3dd6da46d43500dae9c89080cda58696d62e9f0d06623711bc28d0119"
+        },
+        "bundle": {
+          "path": ".scratch/glm-gguf-selected-20261023/B10/original-experts/target/stage0/expert059/roles.bin",
+          "bytes": 40108032,
+          "sha256": "198612443051fa5eb16bc127570d7f86ad29d36be9a501ee12ee0ee921d904ff"
+        }
+      },
+      {
+        "section": "target",
+        "global_id": 68,
+        "bytes": 40108032,
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\target\\stage0\\expert068\\ready.json",
+          "bytes": 1402,
+          "sha256": "30d7322256be246a0be5be0e3d5d5b7dc017bcac87b9db1480a5c87bce1a5348"
+        },
+        "acquisition": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\target\\stage0\\expert068\\acquisition.json",
+          "bytes": 8714,
+          "sha256": "230ac8b492938709301a58d19043de850f7329da3073be482561d89b3f0e506c"
+        },
+        "plan": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\target\\stage0\\expert068\\plan.json",
+          "bytes": 4423,
+          "sha256": "44b8dd7faf93092333f488547142a341f0ee28134246ba28e60131012a44b0e5"
+        },
+        "bundle": {
+          "path": ".scratch/glm-gguf-selected-20261023/B10/original-experts/target/stage0/expert068/roles.bin",
+          "bytes": 40108032,
+          "sha256": "1477bacd0d13ba4cb91142eb1723f5eb10e2db4f7f5bcce2ae4b5e3ff3e10576"
+        }
+      },
+      {
+        "section": "target",
+        "global_id": 89,
+        "bytes": 40108032,
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\target\\stage0\\expert089\\ready.json",
+          "bytes": 1402,
+          "sha256": "fcabed35f9189bcdeb3b2e570e2d5e6c00a490585e927aa87ba3a9ae3250d873"
+        },
+        "acquisition": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\target\\stage0\\expert089\\acquisition.json",
+          "bytes": 8714,
+          "sha256": "c2d310491f06efe1cb916827b593835ad7077cf2b86fe781c55ec558cde67b3f"
+        },
+        "plan": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\target\\stage0\\expert089\\plan.json",
+          "bytes": 4423,
+          "sha256": "1de58fc9e6c063c44e3df78e6183c0d7d00a818d27ec43db8d36b230ab01cf8b"
+        },
+        "bundle": {
+          "path": ".scratch/glm-gguf-selected-20261023/B10/original-experts/target/stage0/expert089/roles.bin",
+          "bytes": 40108032,
+          "sha256": "71da776c31bfc581657f89f184f69c1734bd4ab7774664ba53ca4de33c5f46da"
+        }
+      },
+      {
+        "section": "target",
+        "global_id": 98,
+        "bytes": 40108032,
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\target\\stage0\\expert098\\ready.json",
+          "bytes": 1402,
+          "sha256": "32cac8bf5f775ca55cc0fd9d6fd17c72bcb53022b4ef46a1e3c02d29d17b268f"
+        },
+        "acquisition": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\target\\stage0\\expert098\\acquisition.json",
+          "bytes": 8714,
+          "sha256": "67214136b62151a3e841cea764684f43c8d5956c8edb7c9fc00dd7fdb7cc6c6a"
+        },
+        "plan": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\target\\stage0\\expert098\\plan.json",
+          "bytes": 4423,
+          "sha256": "3e5e83bba3d1cbbbc77f08bb4ffe6d0fea9d3e63e5e1641697dd8f7c954188d0"
+        },
+        "bundle": {
+          "path": ".scratch/glm-gguf-selected-20261023/B10/original-experts/target/stage0/expert098/roles.bin",
+          "bytes": 40108032,
+          "sha256": "0d13f2111b4005ebad410573227a9c6c2595cfaa069634f9ed1b11289d668d9c"
+        }
+      },
+      {
+        "section": "target",
+        "global_id": 104,
+        "bytes": 40108032,
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\target\\stage0\\expert104\\ready.json",
+          "bytes": 1403,
+          "sha256": "462f2aeab8809cb9e29bcd3121b40eb0933603fcef16f162409e364c88e66128"
+        },
+        "acquisition": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\target\\stage0\\expert104\\acquisition.json",
+          "bytes": 8715,
+          "sha256": "372abe4c5c381e4dd82b62470c994e169e97012d2f90f0b5ddf1ac4e49cebaec"
+        },
+        "plan": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\target\\stage0\\expert104\\plan.json",
+          "bytes": 4427,
+          "sha256": "b33ca1d0312c38092a486c0e5008f431c1e8eb7c23613ef98b0a9a2a4681ee47"
+        },
+        "bundle": {
+          "path": ".scratch/glm-gguf-selected-20261023/B10/original-experts/target/stage0/expert104/roles.bin",
+          "bytes": 40108032,
+          "sha256": "9e2db4f56cdb620441bf52633c0cf747c25c51b37b707e81f9bde9932a771ecf"
+        }
+      },
+      {
+        "section": "target",
+        "global_id": 118,
+        "bytes": 40108032,
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\target\\stage0\\expert118\\ready.json",
+          "bytes": 1403,
+          "sha256": "8fcf52cf87ed5284bc09707d948250c6a66ad22545a947d940299a068b2be07c"
+        },
+        "acquisition": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\target\\stage0\\expert118\\acquisition.json",
+          "bytes": 8715,
+          "sha256": "855b841f1a33a701f10baf61d78231c6998778d942ff606612e42702084370e4"
+        },
+        "plan": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\target\\stage0\\expert118\\plan.json",
+          "bytes": 4427,
+          "sha256": "0b3e02c75690a2920c826e7dc7de5211f9266dfd708469c31ef3c48515d3f2b2"
+        },
+        "bundle": {
+          "path": ".scratch/glm-gguf-selected-20261023/B10/original-experts/target/stage0/expert118/roles.bin",
+          "bytes": 40108032,
+          "sha256": "dc1cc335ed84b31bfe0edfef16c34023f30d4620a29f109641e0de001468119b"
+        }
+      },
+      {
+        "section": "target",
+        "global_id": 130,
+        "bytes": 40108032,
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\target\\stage0\\expert130\\ready.json",
+          "bytes": 1403,
+          "sha256": "bb9b14ffcd4a01c8e8e2cd2f11943819c3fc82cd5631c863375e6f1c680019b5"
+        },
+        "acquisition": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\target\\stage0\\expert130\\acquisition.json",
+          "bytes": 8715,
+          "sha256": "e81f21f309f7ddc24283427d1b96850d4958000e14887fde55826b573ec67108"
+        },
+        "plan": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\target\\stage0\\expert130\\plan.json",
+          "bytes": 4427,
+          "sha256": "c932067a92cc4c3aef6aebd4d675c79375ea76dea1b8e77b87f6a2f9460b8839"
+        },
+        "bundle": {
+          "path": ".scratch/glm-gguf-selected-20261023/B10/original-experts/target/stage0/expert130/roles.bin",
+          "bytes": 40108032,
+          "sha256": "54d7a710c172089a255a65fd25d4c3c43de1c7c295e13be7bb77b71af7bed4b0"
+        }
+      },
+      {
+        "section": "target",
+        "global_id": 136,
+        "bytes": 40108032,
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\target\\stage0\\expert136\\ready.json",
+          "bytes": 1403,
+          "sha256": "3400b0e58ee7c279268334836abc0cedff2d8896fbae4a3a96066ca3d8aa85ac"
+        },
+        "acquisition": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\target\\stage0\\expert136\\acquisition.json",
+          "bytes": 8715,
+          "sha256": "79ff2cff4b2b8b3c9e9fc7a4b9e48658671e832de1998b2b647354e82b34ed67"
+        },
+        "plan": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\target\\stage0\\expert136\\plan.json",
+          "bytes": 4427,
+          "sha256": "d82f76f1265e32a189a9a29551aeb7fa636b463b6f48afa2883af06729724de1"
+        },
+        "bundle": {
+          "path": ".scratch/glm-gguf-selected-20261023/B10/original-experts/target/stage0/expert136/roles.bin",
+          "bytes": 40108032,
+          "sha256": "58c99d4ffd5539520dd0fdb7a94a9df4b7a48c55b0ef61185707b63c438e40da"
+        }
+      },
+      {
+        "section": "target",
+        "global_id": 212,
+        "bytes": 40108032,
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\target\\stage0\\expert212\\ready.json",
+          "bytes": 1403,
+          "sha256": "939f342ee739202422e4a2187fdb95f04e79189f6b45d5c403642b1d3147be01"
+        },
+        "acquisition": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\target\\stage0\\expert212\\acquisition.json",
+          "bytes": 8715,
+          "sha256": "b4d245d3f16155757798769c28f9b8095f7e8dceb579b305485023f2cfd9ffd2"
+        },
+        "plan": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\target\\stage0\\expert212\\plan.json",
+          "bytes": 4427,
+          "sha256": "b1c075a1a0470fdeef172c517475315d83ccdf6357ee9f2b37e82e01338f58a7"
+        },
+        "bundle": {
+          "path": ".scratch/glm-gguf-selected-20261023/B10/original-experts/target/stage0/expert212/roles.bin",
+          "bytes": 40108032,
+          "sha256": "5a1ed9e8633e96c1322fe4dce62b5b6ad05db6af06f969263eb09f6560d900cb"
+        }
+      },
+      {
+        "section": "target",
+        "global_id": 221,
+        "bytes": 40108032,
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\target\\stage0\\expert221\\ready.json",
+          "bytes": 1403,
+          "sha256": "e63f55844c7272aa1a1570299a8cc56df4abeddb923b06be28b5b36cdc848517"
+        },
+        "acquisition": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\target\\stage0\\expert221\\acquisition.json",
+          "bytes": 8715,
+          "sha256": "f2fcb57a608367011651d30774372ba01b245fbf56e8654d6c2f5c62736199c0"
+        },
+        "plan": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\target\\stage0\\expert221\\plan.json",
+          "bytes": 4427,
+          "sha256": "976baf414982d8726277703a7104b79729d66a160ca8ba2cfc289b11f66b3028"
+        },
+        "bundle": {
+          "path": ".scratch/glm-gguf-selected-20261023/B10/original-experts/target/stage0/expert221/roles.bin",
+          "bytes": 40108032,
+          "sha256": "ef649d5fa8d5aa96e677d00c94795ec1ebdd89626b029c9b0190b020b3659fc8"
+        }
+      },
+      {
+        "section": "target",
+        "global_id": 223,
+        "bytes": 40108032,
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\target\\stage0\\expert223\\ready.json",
+          "bytes": 1403,
+          "sha256": "6dec59404fc093371138dc7f5ec246bd6de1295fb912734a98ed623d2d4cb9f3"
+        },
+        "acquisition": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\target\\stage0\\expert223\\acquisition.json",
+          "bytes": 8715,
+          "sha256": "53c7a09620d8c85f220907e24c11e29a4b5d73aeeb771d9970faa7e436a80d69"
+        },
+        "plan": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\target\\stage0\\expert223\\plan.json",
+          "bytes": 4427,
+          "sha256": "84e80843da14a4826239283e54d9e61d908e6b00ed837d90ed1cbfb9fce120af"
+        },
+        "bundle": {
+          "path": ".scratch/glm-gguf-selected-20261023/B10/original-experts/target/stage0/expert223/roles.bin",
+          "bytes": 40108032,
+          "sha256": "83f8573a1e2055f6e94a67ba275a547f28297b2615e5984cc480544509a0ee8e"
+        }
+      },
+      {
+        "section": "target",
+        "global_id": 231,
+        "bytes": 40108032,
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\target\\stage0\\expert231\\ready.json",
+          "bytes": 1403,
+          "sha256": "bec8e57ca77e8c2b85c11aedcedfa33974bc325b52d113e1cd01dcc227ba6f64"
+        },
+        "acquisition": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\target\\stage0\\expert231\\acquisition.json",
+          "bytes": 8715,
+          "sha256": "57541bcec30fbb559b448e73a1061e23b8ccf2e27efac7a7c2de9d5323d4a328"
+        },
+        "plan": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\target\\stage0\\expert231\\plan.json",
+          "bytes": 4427,
+          "sha256": "f7cd3c8b739a6a2472c563d3ad6920c50928dd5275b4879ceca37c1245655e86"
+        },
+        "bundle": {
+          "path": ".scratch/glm-gguf-selected-20261023/B10/original-experts/target/stage0/expert231/roles.bin",
+          "bytes": 40108032,
+          "sha256": "b5b5f7d177898b602ec5ff7c935a267805c2998d94023c2a6b09f7e07d80c123"
+        }
+      },
+      {
+        "section": "target",
+        "global_id": 237,
+        "bytes": 40108032,
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\target\\stage0\\expert237\\ready.json",
+          "bytes": 1403,
+          "sha256": "7ee75da3894c63c4ea87aef6e2a80d0b91bf46d98a2195e00ef76b463233dd3d"
+        },
+        "acquisition": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\target\\stage0\\expert237\\acquisition.json",
+          "bytes": 8715,
+          "sha256": "2331e4f0f3ca99ed429b54a5966db47b918dc3f052da7e77303ba8de891076b0"
+        },
+        "plan": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\target\\stage0\\expert237\\plan.json",
+          "bytes": 4427,
+          "sha256": "d19707700805ece486fc8e153ff1965217c661096cc7bd06e318ae96152e7cb2"
+        },
+        "bundle": {
+          "path": ".scratch/glm-gguf-selected-20261023/B10/original-experts/target/stage0/expert237/roles.bin",
+          "bytes": 40108032,
+          "sha256": "fccef470b187ebe4685892261a0aebe053680ac926800858b624a14f5153aa5b"
+        }
+      },
+      {
+        "section": "target",
+        "global_id": 240,
+        "bytes": 40108032,
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\target\\stage0\\expert240\\ready.json",
+          "bytes": 1403,
+          "sha256": "2b4795da8a2ca1d3f62d95c557501301f3fc9d1f001fd0e57b61f0cb4018a618"
+        },
+        "acquisition": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\target\\stage0\\expert240\\acquisition.json",
+          "bytes": 8715,
+          "sha256": "063a9bfa68640ff8c98fa45609a008218b0405e50470a6b8d1f047f2456ff6a4"
+        },
+        "plan": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\original-experts\\target\\stage0\\expert240\\plan.json",
+          "bytes": 4427,
+          "sha256": "0c9a945c43a6e8e06e8e74243097f657a1ced217b1fc1c7cd10a758e4b4c4b30"
+        },
+        "bundle": {
+          "path": ".scratch/glm-gguf-selected-20261023/B10/original-experts/target/stage0/expert240/roles.bin",
+          "bytes": 40108032,
+          "sha256": "ef4e1a9778762dc8527a334237bb04f8dd279156c5ad0c7220d8566b3e05fe03"
+        }
+      }
+    ],
+    "cached_payload_bytes": 2807562240,
+    "actual_missing_frontiers": [
+      {
+        "request": {
+          "section": "draft",
+          "stage": 0,
+          "global_ids": [
+            71,
+            110,
+            140,
+            163,
+            180,
+            222,
+            232,
+            254
+          ],
+          "missing_ids": [
+            71
+          ]
+        },
+        "exit": 0
+      },
+      {
+        "request": {
+          "section": "draft",
+          "stage": 0,
+          "global_ids": [
+            6,
+            79,
+            83,
+            128,
+            131,
+            198,
+            217,
+            232
+          ],
+          "missing_ids": [
+            128,
+            131,
+            198
+          ]
+        },
+        "exit": 0
+      }
+    ],
+    "accounting": "Cache includes earlier completed requests. Actual per-run properties are preserved verbatim; no full-bank or active-union count is invented.",
+    "body_rehashed": false
+  },
+  "attempt_history": [
+    {
+      "summary": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\native-integration\\checks1-cpu\\summary.json",
+        "bytes": 1903,
+        "sha256": "ccf5c0b4161676f9f3c6796e0c3cf92a1b338c9ffc417d2c414d3eabe90701b9"
+      },
+      "passed": false,
+      "selected": false
+    },
+    {
+      "summary": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\native-integration\\checks2-cpu\\summary.json",
+        "bytes": 1903,
+        "sha256": "7084787df3f959d2c75328735112ec0836293b5b67e25d0b65f2656bd8020153"
+      },
+      "passed": false,
+      "selected": false
+    },
+    {
+      "summary": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\native-integration\\checks3-cpu\\summary.json",
+        "bytes": 4091,
+        "sha256": "0d576b87dcc5e6f2d9a1103f9a4e0fb34123bc17f96680281571a01f798c3218"
+      },
+      "passed": true,
+      "selected": true
+    },
+    {
+      "summary": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\native-integration\\checks4-cuda\\summary.json",
+        "bytes": 4094,
+        "sha256": "7ee3009a185010c65cff9d8fc05e31612327f3f94150e5673af44e88dd1a6daf"
+      },
+      "passed": true,
+      "selected": true
+    }
+  ],
+  "state": "Own Pro 13 resources + Epoch24: ten plain NextN resources and distinct target main/cursor/F32tap. Actual component_schema and state counts remain in XML properties.",
+  "reference_finite_proof": {
+    "identity": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\mtp-glm-gguf-b09-target-verifier-2026-10-24.json",
+      "bytes": 60882,
+      "sha256": "bf11f4faf2981c788b312a3e2b318275f3cc3bbaab0cbfdeef3ebbffd578c5ae"
+    },
+    "scope": "Prior B09 runtime/behavior reference only; no graph or byte counts borrowed."
+  },
+  "build": {
+    "consumer_record": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\native-integration\\compile4\\glm-pro\\identity.json",
+      "bytes": 118402,
+      "sha256": "ee952b58500b61dc9542e17cd6c04505c8c57c66c8b18190d5ed0f92e64d865a"
+    },
+    "link_plan": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\native-integration\\tests-link4\\link-plan.json",
+      "bytes": 97731,
+      "sha256": "4b6aaca3b7292277f3f54eaf0567fcec7488c3c6f66be68334c28d3f64763043"
+    },
+    "runtime": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\native-integration\\tests-link4\\runtime-environment.json",
+      "bytes": 11486,
+      "sha256": "4c82e5cf14857e011d93256b06b078c174b0ae91338bdcdc3d352fc127c8e19d"
+    },
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\native-integration\\tests-link4\\glm-b10-checks.exe",
+      "bytes": 141244416,
+      "sha256": "98f8e1d9c12179957f8c7a93ba21d8b32a653ba1b76eaa32fb1c80bbe7c4437a"
+    },
+    "retained_host_records": 131,
+    "fresh_consumer_TUs": 1,
+    "fresh_product_TUs": 0,
+    "SDK_builds": 0,
+    "NVCC_builds": 0,
+    "compiled_source_manifest": [
+      {
+        "original_path": "tests/compute_models/glm_pro_mtp_state_consumer_test.cc",
+        "compiled_sha256": "eddf627e9ba9ccc75b1ba6c62c67ff1b60837735d93675a413e1eb7b57da2201",
+        "bytes": 136453,
+        "archive_path": "compiled-sources/eddf627e9ba9ccc75b1ba6c62c67ff1b60837735d93675a413e1eb7b57da2201/tests/compute_models/glm_pro_mtp_state_consumer_test.cc",
+        "actual_copy": {
+          "path": "tests/compute_models/glm_pro_mtp_state_consumer_test.cc",
+          "bytes": 136453,
+          "sha256": "eddf627e9ba9ccc75b1ba6c62c67ff1b60837735d93675a413e1eb7b57da2201"
+        }
+      },
+      {
+        "original_path": "include/hyle/compute/model_ops.h",
+        "compiled_sha256": "67d6e6d00e7c5db80f42d4df78695cbc5673ecc2f48b6f104f2885ac6a72c27c",
+        "bytes": 80271,
+        "archive_path": "compiled-sources/67d6e6d00e7c5db80f42d4df78695cbc5673ecc2f48b6f104f2885ac6a72c27c/include/hyle/compute/model_ops.h",
+        "actual_copy": {
+          "path": "include/hyle/compute/model_ops.h",
+          "bytes": 80271,
+          "sha256": "67d6e6d00e7c5db80f42d4df78695cbc5673ecc2f48b6f104f2885ac6a72c27c"
+        }
+      },
+      {
+        "original_path": "include/hyle/compute/operation.h",
+        "compiled_sha256": "280817a4d89de308fead871f3051c6eff5365339c73cf50323dee57322d40fe5",
+        "bytes": 28771,
+        "archive_path": "compiled-sources/280817a4d89de308fead871f3051c6eff5365339c73cf50323dee57322d40fe5/include/hyle/compute/operation.h",
+        "actual_copy": {
+          "path": "include/hyle/compute/operation.h",
+          "bytes": 28771,
+          "sha256": "280817a4d89de308fead871f3051c6eff5365339c73cf50323dee57322d40fe5"
+        }
+      },
+      {
+        "original_path": "include/hyle/compute/ops_visibility.h",
+        "compiled_sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1",
+        "bytes": 43,
+        "archive_path": "compiled-sources/87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1/include/hyle/compute/ops_visibility.h",
+        "actual_copy": {
+          "path": "include/hyle/compute/ops_visibility.h",
+          "bytes": 43,
+          "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+        }
+      },
+      {
+        "original_path": "include/hyle/visibility.h",
+        "compiled_sha256": "893fa73589b6e46f00474c2258af74c28d662b52176b57012290c820812ed486",
+        "bytes": 11701,
+        "archive_path": "compiled-sources/893fa73589b6e46f00474c2258af74c28d662b52176b57012290c820812ed486/include/hyle/visibility.h",
+        "actual_copy": {
+          "path": "include/hyle/visibility.h",
+          "bytes": 11701,
+          "sha256": "893fa73589b6e46f00474c2258af74c28d662b52176b57012290c820812ed486"
+        }
+      },
+      {
+        "original_path": "include/hyle/compute/tensor_desc.h",
+        "compiled_sha256": "e5496e00c643bcce2efbb42666773f4172243d10458b756d6f9881b0e677eb9a",
+        "bytes": 8700,
+        "archive_path": "compiled-sources/e5496e00c643bcce2efbb42666773f4172243d10458b756d6f9881b0e677eb9a/include/hyle/compute/tensor_desc.h",
+        "actual_copy": {
+          "path": "include/hyle/compute/tensor_desc.h",
+          "bytes": 8700,
+          "sha256": "e5496e00c643bcce2efbb42666773f4172243d10458b756d6f9881b0e677eb9a"
+        }
+      },
+      {
+        "original_path": "include/hyle/error/result.h",
+        "compiled_sha256": "7718409ab2854eb76959215b356bf8077007134d87db1a24f9384a9b5deff2b5",
+        "bytes": 30856,
+        "archive_path": "compiled-sources/7718409ab2854eb76959215b356bf8077007134d87db1a24f9384a9b5deff2b5/include/hyle/error/result.h",
+        "actual_copy": {
+          "path": "include/hyle/error/result.h",
+          "bytes": 30856,
+          "sha256": "7718409ab2854eb76959215b356bf8077007134d87db1a24f9384a9b5deff2b5"
+        }
+      },
+      {
+        "original_path": "include/hyle/core/compiler.h",
+        "compiled_sha256": "e31151f0ed73c532e464c6568483acecd80a2da9c1ee7afc7e081db87d6fb687",
+        "bytes": 4287,
+        "archive_path": "compiled-sources/e31151f0ed73c532e464c6568483acecd80a2da9c1ee7afc7e081db87d6fb687/include/hyle/core/compiler.h",
+        "actual_copy": {
+          "path": "include/hyle/core/compiler.h",
+          "bytes": 4287,
+          "sha256": "e31151f0ed73c532e464c6568483acecd80a2da9c1ee7afc7e081db87d6fb687"
+        }
+      },
+      {
+        "original_path": "include/hyle/core/detail/compiler_attributes.h",
+        "compiled_sha256": "263c7691f9984073e198b69328092330bf572195113d3994d1ab54fe4564d88a",
+        "bytes": 1913,
+        "archive_path": "compiled-sources/263c7691f9984073e198b69328092330bf572195113d3994d1ab54fe4564d88a/include/hyle/core/detail/compiler_attributes.h",
+        "actual_copy": {
+          "path": "include/hyle/core/detail/compiler_attributes.h",
+          "bytes": 1913,
+          "sha256": "263c7691f9984073e198b69328092330bf572195113d3994d1ab54fe4564d88a"
+        }
+      },
+      {
+        "original_path": "include/hyle/core/environment.h",
+        "compiled_sha256": "3d289765b1b677499a444b38d1dbe366bb5e99f89fcb7670af2d08106fd958fa",
+        "bytes": 6712,
+        "archive_path": "compiled-sources/3d289765b1b677499a444b38d1dbe366bb5e99f89fcb7670af2d08106fd958fa/include/hyle/core/environment.h",
+        "actual_copy": {
+          "path": "include/hyle/core/environment.h",
+          "bytes": 6712,
+          "sha256": "3d289765b1b677499a444b38d1dbe366bb5e99f89fcb7670af2d08106fd958fa"
+        }
+      },
+      {
+        "original_path": "include/hyle/core/assert.h",
+        "compiled_sha256": "5596728bc220ea27696be4f25e2f9eb9cf2705930f8eb0461747c4a862615790",
+        "bytes": 16114,
+        "archive_path": "compiled-sources/5596728bc220ea27696be4f25e2f9eb9cf2705930f8eb0461747c4a862615790/include/hyle/core/assert.h",
+        "actual_copy": {
+          "path": "include/hyle/core/assert.h",
+          "bytes": 16114,
+          "sha256": "5596728bc220ea27696be4f25e2f9eb9cf2705930f8eb0461747c4a862615790"
+        }
+      },
+      {
+        "original_path": "include/hyle/core/detail/preprocessor.h",
+        "compiled_sha256": "1d9872ef98db007dcbed7e0128771244640e1de4092830d52a7a83537f98eb84",
+        "bytes": 409,
+        "archive_path": "compiled-sources/1d9872ef98db007dcbed7e0128771244640e1de4092830d52a7a83537f98eb84/include/hyle/core/detail/preprocessor.h",
+        "actual_copy": {
+          "path": "include/hyle/core/detail/preprocessor.h",
+          "bytes": 409,
+          "sha256": "1d9872ef98db007dcbed7e0128771244640e1de4092830d52a7a83537f98eb84"
+        }
+      },
+      {
+        "original_path": "include/hyle/error/status.h",
+        "compiled_sha256": "4d6b4b0bfa5628947aad5449320513d4b071e0c84debfac47f7a7d264cecb7f4",
+        "bytes": 18122,
+        "archive_path": "compiled-sources/4d6b4b0bfa5628947aad5449320513d4b071e0c84debfac47f7a7d264cecb7f4/include/hyle/error/status.h",
+        "actual_copy": {
+          "path": "include/hyle/error/status.h",
+          "bytes": 18122,
+          "sha256": "4d6b4b0bfa5628947aad5449320513d4b071e0c84debfac47f7a7d264cecb7f4"
+        }
+      },
+      {
+        "original_path": "include/hyle/compute/low_precision.h",
+        "compiled_sha256": "0920a5a2faecb2991da60ecede680c496bab73411a305e559461ea41cea309cb",
+        "bytes": 10406,
+        "archive_path": "compiled-sources/0920a5a2faecb2991da60ecede680c496bab73411a305e559461ea41cea309cb/include/hyle/compute/low_precision.h",
+        "actual_copy": {
+          "path": "include/hyle/compute/low_precision.h",
+          "bytes": 10406,
+          "sha256": "0920a5a2faecb2991da60ecede680c496bab73411a305e559461ea41cea309cb"
+        }
+      },
+      {
+        "original_path": "include/hyle/compute/resource_leases.h",
+        "compiled_sha256": "4e5681ebfa7c2f2ad51e5788c8316f4b993883f595c04b33fe594d7294dab85b",
+        "bytes": 8660,
+        "archive_path": "compiled-sources/4e5681ebfa7c2f2ad51e5788c8316f4b993883f595c04b33fe594d7294dab85b/include/hyle/compute/resource_leases.h",
+        "actual_copy": {
+          "path": "include/hyle/compute/resource_leases.h",
+          "bytes": 8660,
+          "sha256": "4e5681ebfa7c2f2ad51e5788c8316f4b993883f595c04b33fe594d7294dab85b"
+        }
+      },
+      {
+        "original_path": "include/hyle/compute/completion.h",
+        "compiled_sha256": "98b34b9ee4665e9aedac719504c029a509f304b0a4f566bf6b7f76d88dc2ef34",
+        "bytes": 1959,
+        "archive_path": "compiled-sources/98b34b9ee4665e9aedac719504c029a509f304b0a4f566bf6b7f76d88dc2ef34/include/hyle/compute/completion.h",
+        "actual_copy": {
+          "path": "include/hyle/compute/completion.h",
+          "bytes": 1959,
+          "sha256": "98b34b9ee4665e9aedac719504c029a509f304b0a4f566bf6b7f76d88dc2ef34"
+        }
+      },
+      {
+        "original_path": "include/hyle/compute/visibility.h",
+        "compiled_sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1",
+        "bytes": 43,
+        "archive_path": "compiled-sources/87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1/include/hyle/compute/visibility.h",
+        "actual_copy": {
+          "path": "include/hyle/compute/visibility.h",
+          "bytes": 43,
+          "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+        }
+      },
+      {
+        "original_path": "include/hyle/compute/resource_budget.h",
+        "compiled_sha256": "578d440b6fc3f5b58809837506165de27ac0866ae39b2d132763f5dd1786b1ce",
+        "bytes": 4622,
+        "archive_path": "compiled-sources/578d440b6fc3f5b58809837506165de27ac0866ae39b2d132763f5dd1786b1ce/include/hyle/compute/resource_budget.h",
+        "actual_copy": {
+          "path": "include/hyle/compute/resource_budget.h",
+          "bytes": 4622,
+          "sha256": "578d440b6fc3f5b58809837506165de27ac0866ae39b2d132763f5dd1786b1ce"
+        }
+      },
+      {
+        "original_path": "include/hyle/mem/quota_allocator.h",
+        "compiled_sha256": "a88fe230dc5358ddde6209de96cc61a59e3f6e60d30b9e7534e986fab10224c9",
+        "bytes": 7124,
+        "archive_path": "compiled-sources/a88fe230dc5358ddde6209de96cc61a59e3f6e60d30b9e7534e986fab10224c9/include/hyle/mem/quota_allocator.h",
+        "actual_copy": {
+          "path": "include/hyle/mem/quota_allocator.h",
+          "bytes": 7124,
+          "sha256": "a88fe230dc5358ddde6209de96cc61a59e3f6e60d30b9e7534e986fab10224c9"
+        }
+      },
+      {
+        "original_path": "include/hyle/mem/allocator.h",
+        "compiled_sha256": "0369680d4769a0187bfb77ee8b565b5e8fb53a03909fabf233458d9c1cbcd011",
+        "bytes": 11090,
+        "archive_path": "compiled-sources/0369680d4769a0187bfb77ee8b565b5e8fb53a03909fabf233458d9c1cbcd011/include/hyle/mem/allocator.h",
+        "actual_copy": {
+          "path": "include/hyle/mem/allocator.h",
+          "bytes": 11090,
+          "sha256": "0369680d4769a0187bfb77ee8b565b5e8fb53a03909fabf233458d9c1cbcd011"
+        }
+      },
+      {
+        "original_path": "include/hyle/mem/visibility.h",
+        "compiled_sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1",
+        "bytes": 43,
+        "archive_path": "compiled-sources/87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1/include/hyle/mem/visibility.h",
+        "actual_copy": {
+          "path": "include/hyle/mem/visibility.h",
+          "bytes": 43,
+          "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+        }
+      },
+      {
+        "original_path": "include/hyle/mem/resource.h",
+        "compiled_sha256": "84b0366e658ec63f999b4c9719cf8584ad758f4ff5340baf37f1c3ebd17145cd",
+        "bytes": 7717,
+        "archive_path": "compiled-sources/84b0366e658ec63f999b4c9719cf8584ad758f4ff5340baf37f1c3ebd17145cd/include/hyle/mem/resource.h",
+        "actual_copy": {
+          "path": "include/hyle/mem/resource.h",
+          "bytes": 7717,
+          "sha256": "84b0366e658ec63f999b4c9719cf8584ad758f4ff5340baf37f1c3ebd17145cd"
+        }
+      },
+      {
+        "original_path": "include/hyle/compute/tensor.h",
+        "compiled_sha256": "ac00f221a66d0f9044a2b49a1123a6b99a6c425568790898129c31d81519c538",
+        "bytes": 1980,
+        "archive_path": "compiled-sources/ac00f221a66d0f9044a2b49a1123a6b99a6c425568790898129c31d81519c538/include/hyle/compute/tensor.h",
+        "actual_copy": {
+          "path": "include/hyle/compute/tensor.h",
+          "bytes": 1980,
+          "sha256": "ac00f221a66d0f9044a2b49a1123a6b99a6c425568790898129c31d81519c538"
+        }
+      },
+      {
+        "original_path": "include/hyle/mem/buffer.h",
+        "compiled_sha256": "346a4f810babb8c5dacba49faaf57903d998a3cbb49af12b8c62acc85f7be72c",
+        "bytes": 19273,
+        "archive_path": "compiled-sources/346a4f810babb8c5dacba49faaf57903d998a3cbb49af12b8c62acc85f7be72c/include/hyle/mem/buffer.h",
+        "actual_copy": {
+          "path": "include/hyle/mem/buffer.h",
+          "bytes": 19273,
+          "sha256": "346a4f810babb8c5dacba49faaf57903d998a3cbb49af12b8c62acc85f7be72c"
+        }
+      },
+      {
+        "original_path": "include/hyle/compute/storage_owner.h",
+        "compiled_sha256": "549d881d8d4f96eedbb03c8ef9bd6892ede776e5da90a39025538bc50a0530d9",
+        "bytes": 8058,
+        "archive_path": "compiled-sources/549d881d8d4f96eedbb03c8ef9bd6892ede776e5da90a39025538bc50a0530d9/include/hyle/compute/storage_owner.h",
+        "actual_copy": {
+          "path": "include/hyle/compute/storage_owner.h",
+          "bytes": 8058,
+          "sha256": "549d881d8d4f96eedbb03c8ef9bd6892ede776e5da90a39025538bc50a0530d9"
+        }
+      },
+      {
+        "original_path": "include/hyle/compute/detail/context_ref.h",
+        "compiled_sha256": "b1295a6d21d452b2730e3907891ca49993e512a741f8f3a9689976e56f5af3f1",
+        "bytes": 2563,
+        "archive_path": "compiled-sources/b1295a6d21d452b2730e3907891ca49993e512a741f8f3a9689976e56f5af3f1/include/hyle/compute/detail/context_ref.h",
+        "actual_copy": {
+          "path": "include/hyle/compute/detail/context_ref.h",
+          "bytes": 2563,
+          "sha256": "b1295a6d21d452b2730e3907891ca49993e512a741f8f3a9689976e56f5af3f1"
+        }
+      },
+      {
+        "original_path": "include/hyle/compute/device.h",
+        "compiled_sha256": "f966803f2293e03db1cde9b1327f847a92162f21adb53f69ef37f0c19b16a84a",
+        "bytes": 7702,
+        "archive_path": "compiled-sources/f966803f2293e03db1cde9b1327f847a92162f21adb53f69ef37f0c19b16a84a/include/hyle/compute/device.h",
+        "actual_copy": {
+          "path": "include/hyle/compute/device.h",
+          "bytes": 7702,
+          "sha256": "f966803f2293e03db1cde9b1327f847a92162f21adb53f69ef37f0c19b16a84a"
+        }
+      },
+      {
+        "original_path": "include/hyle/compute/provider.h",
+        "compiled_sha256": "a9737ca3cf64eec23ce768e20b1112407fc7816a32f8031f0b668b16c49f816a",
+        "bytes": 10281,
+        "archive_path": "compiled-sources/a9737ca3cf64eec23ce768e20b1112407fc7816a32f8031f0b668b16c49f816a/include/hyle/compute/provider.h",
+        "actual_copy": {
+          "path": "include/hyle/compute/provider.h",
+          "bytes": 10281,
+          "sha256": "a9737ca3cf64eec23ce768e20b1112407fc7816a32f8031f0b668b16c49f816a"
+        }
+      },
+      {
+        "original_path": "include/hyle/compute/detail/lease_access.h",
+        "compiled_sha256": "1b0ab7b4b05faf25d5e6a87e4638504b47f38a54fcbce5ffeb7e50ff2148c8bc",
+        "bytes": 6794,
+        "archive_path": "compiled-sources/1b0ab7b4b05faf25d5e6a87e4638504b47f38a54fcbce5ffeb7e50ff2148c8bc/include/hyle/compute/detail/lease_access.h",
+        "actual_copy": {
+          "path": "include/hyle/compute/detail/lease_access.h",
+          "bytes": 6794,
+          "sha256": "1b0ab7b4b05faf25d5e6a87e4638504b47f38a54fcbce5ffeb7e50ff2148c8bc"
+        }
+      },
+      {
+        "original_path": "include/hyle/compute/detail/append_lease.h",
+        "compiled_sha256": "67b6e87fb0bfbc179d781174c2dc414f1e7487445925cb4c2a4faea579cb7ec5",
+        "bytes": 1944,
+        "archive_path": "compiled-sources/67b6e87fb0bfbc179d781174c2dc414f1e7487445925cb4c2a4faea579cb7ec5/include/hyle/compute/detail/append_lease.h",
+        "actual_copy": {
+          "path": "include/hyle/compute/detail/append_lease.h",
+          "bytes": 1944,
+          "sha256": "67b6e87fb0bfbc179d781174c2dc414f1e7487445925cb4c2a4faea579cb7ec5"
+        }
+      },
+      {
+        "original_path": "include/hyle/compute/detail/resource_budget_access.h",
+        "compiled_sha256": "f5cfd7955fed71cf08b9a08e0ddacf70191495a61883dac4224e02ef3cba4871",
+        "bytes": 2741,
+        "archive_path": "compiled-sources/f5cfd7955fed71cf08b9a08e0ddacf70191495a61883dac4224e02ef3cba4871/include/hyle/compute/detail/resource_budget_access.h",
+        "actual_copy": {
+          "path": "include/hyle/compute/detail/resource_budget_access.h",
+          "bytes": 2741,
+          "sha256": "f5cfd7955fed71cf08b9a08e0ddacf70191495a61883dac4224e02ef3cba4871"
+        }
+      },
+      {
+        "original_path": "include/hyle/compute/state_versions.h",
+        "compiled_sha256": "a09cb66a216b56a0651f515f18d8a97772b0e6d281c171a82b8a6630b3e1c7d7",
+        "bytes": 8553,
+        "archive_path": "compiled-sources/a09cb66a216b56a0651f515f18d8a97772b0e6d281c171a82b8a6630b3e1c7d7/include/hyle/compute/state_versions.h",
+        "actual_copy": {
+          "path": "include/hyle/compute/state_versions.h",
+          "bytes": 8553,
+          "sha256": "a09cb66a216b56a0651f515f18d8a97772b0e6d281c171a82b8a6630b3e1c7d7"
+        }
+      },
+      {
+        "original_path": "include/hyle/compute/batch_transfer.h",
+        "compiled_sha256": "7bec296577c0439b0e0b48639ccff6b3bd95d137dba085c608f650dbb69fcd1b",
+        "bytes": 11416,
+        "archive_path": "compiled-sources/7bec296577c0439b0e0b48639ccff6b3bd95d137dba085c608f650dbb69fcd1b/include/hyle/compute/batch_transfer.h",
+        "actual_copy": {
+          "path": "include/hyle/compute/batch_transfer.h",
+          "bytes": 11416,
+          "sha256": "7bec296577c0439b0e0b48639ccff6b3bd95d137dba085c608f650dbb69fcd1b"
+        }
+      },
+      {
+        "original_path": "include/hyle/graph/cpu.h",
+        "compiled_sha256": "01165b3d6fe8276d4275495d8cb52186d9a81b11749db49a2684856bfbe088e8",
+        "bytes": 919,
+        "archive_path": "compiled-sources/01165b3d6fe8276d4275495d8cb52186d9a81b11749db49a2684856bfbe088e8/include/hyle/graph/cpu.h",
+        "actual_copy": {
+          "path": "include/hyle/graph/cpu.h",
+          "bytes": 919,
+          "sha256": "01165b3d6fe8276d4275495d8cb52186d9a81b11749db49a2684856bfbe088e8"
+        }
+      },
+      {
+        "original_path": "include/hyle/compute/cpu.h",
+        "compiled_sha256": "5573eb9618c4ef2a0db299dfb3bc3f2bf93f0e7005ec31aa7ccd95e25efac21f",
+        "bytes": 3070,
+        "archive_path": "compiled-sources/5573eb9618c4ef2a0db299dfb3bc3f2bf93f0e7005ec31aa7ccd95e25efac21f/include/hyle/compute/cpu.h",
+        "actual_copy": {
+          "path": "include/hyle/compute/cpu.h",
+          "bytes": 3070,
+          "sha256": "5573eb9618c4ef2a0db299dfb3bc3f2bf93f0e7005ec31aa7ccd95e25efac21f"
+        }
+      },
+      {
+        "original_path": "include/hyle/compute/backends/cpu.h",
+        "compiled_sha256": "a0b99762a3620c1b44b6856263c172d12fa6e482282fe9c2fcc06aa7d82a1d4d",
+        "bytes": 1814,
+        "archive_path": "compiled-sources/a0b99762a3620c1b44b6856263c172d12fa6e482282fe9c2fcc06aa7d82a1d4d/include/hyle/compute/backends/cpu.h",
+        "actual_copy": {
+          "path": "include/hyle/compute/backends/cpu.h",
+          "bytes": 1814,
+          "sha256": "a0b99762a3620c1b44b6856263c172d12fa6e482282fe9c2fcc06aa7d82a1d4d"
+        }
+      },
+      {
+        "original_path": "include/hyle/compute/detail/queue_sequence.h",
+        "compiled_sha256": "d8cc25b000e655468f3de3b1da3f5b17c388329f21d3f9d6f1d06d9e54de8a26",
+        "bytes": 9214,
+        "archive_path": "compiled-sources/d8cc25b000e655468f3de3b1da3f5b17c388329f21d3f9d6f1d06d9e54de8a26/include/hyle/compute/detail/queue_sequence.h",
+        "actual_copy": {
+          "path": "include/hyle/compute/detail/queue_sequence.h",
+          "bytes": 9214,
+          "sha256": "d8cc25b000e655468f3de3b1da3f5b17c388329f21d3f9d6f1d06d9e54de8a26"
+        }
+      },
+      {
+        "original_path": "include/hyle/compute/detail/completion_access.h",
+        "compiled_sha256": "8699638e39a1a7d5708cbb6a5e41f191228b3ac571b16b026eadcc1aa6765e34",
+        "bytes": 4164,
+        "archive_path": "compiled-sources/8699638e39a1a7d5708cbb6a5e41f191228b3ac571b16b026eadcc1aa6765e34/include/hyle/compute/detail/completion_access.h",
+        "actual_copy": {
+          "path": "include/hyle/compute/detail/completion_access.h",
+          "bytes": 4164,
+          "sha256": "8699638e39a1a7d5708cbb6a5e41f191228b3ac571b16b026eadcc1aa6765e34"
+        }
+      },
+      {
+        "original_path": "include/hyle/compute/detail/operation_access.h",
+        "compiled_sha256": "4bdd60939dea229e91907768308155716b7cd8b78d92150391edc771f2089f34",
+        "bytes": 992,
+        "archive_path": "compiled-sources/4bdd60939dea229e91907768308155716b7cd8b78d92150391edc771f2089f34/include/hyle/compute/detail/operation_access.h",
+        "actual_copy": {
+          "path": "include/hyle/compute/detail/operation_access.h",
+          "bytes": 992,
+          "sha256": "4bdd60939dea229e91907768308155716b7cd8b78d92150391edc771f2089f34"
+        }
+      },
+      {
+        "original_path": "include/hyle/compute/detail/queue_ref.h",
+        "compiled_sha256": "a50579827a0b1554ffa4595c3b2fff68cfcbcc9b75caba25c60f78028d49961b",
+        "bytes": 1551,
+        "archive_path": "compiled-sources/a50579827a0b1554ffa4595c3b2fff68cfcbcc9b75caba25c60f78028d49961b/include/hyle/compute/detail/queue_ref.h",
+        "actual_copy": {
+          "path": "include/hyle/compute/detail/queue_ref.h",
+          "bytes": 1551,
+          "sha256": "a50579827a0b1554ffa4595c3b2fff68cfcbcc9b75caba25c60f78028d49961b"
+        }
+      },
+      {
+        "original_path": "include/hyle/graph/executable.h",
+        "compiled_sha256": "aa3a55ed1869f84149ad0a6a558d6541880d71ba0bf4c6789480724564cdc0b0",
+        "bytes": 50386,
+        "archive_path": "compiled-sources/aa3a55ed1869f84149ad0a6a558d6541880d71ba0bf4c6789480724564cdc0b0/include/hyle/graph/executable.h",
+        "actual_copy": {
+          "path": "include/hyle/graph/executable.h",
+          "bytes": 50386,
+          "sha256": "aa3a55ed1869f84149ad0a6a558d6541880d71ba0bf4c6789480724564cdc0b0"
+        }
+      },
+      {
+        "original_path": "include/hyle/compute/prepared_operation.h",
+        "compiled_sha256": "03895c56e8665daf2482f66fecf205fd8aacf92046e13c169d9d8ff86fff52d7",
+        "bytes": 20281,
+        "archive_path": "compiled-sources/03895c56e8665daf2482f66fecf205fd8aacf92046e13c169d9d8ff86fff52d7/include/hyle/compute/prepared_operation.h",
+        "actual_copy": {
+          "path": "include/hyle/compute/prepared_operation.h",
+          "bytes": 20281,
+          "sha256": "03895c56e8665daf2482f66fecf205fd8aacf92046e13c169d9d8ff86fff52d7"
+        }
+      },
+      {
+        "original_path": "include/hyle/compute/workload.h",
+        "compiled_sha256": "2e7509d99d986e71b06788e4dd1dcb9595799e2ad972df48449ff0b58f0815ad",
+        "bytes": 5017,
+        "archive_path": "compiled-sources/2e7509d99d986e71b06788e4dd1dcb9595799e2ad972df48449ff0b58f0815ad/include/hyle/compute/workload.h",
+        "actual_copy": {
+          "path": "include/hyle/compute/workload.h",
+          "bytes": 5017,
+          "sha256": "2e7509d99d986e71b06788e4dd1dcb9595799e2ad972df48449ff0b58f0815ad"
+        }
+      },
+      {
+        "original_path": "include/hyle/graph/compile_report.h",
+        "compiled_sha256": "c42c30527d581975c49ddfebb182b0ae7928d799eed91172cb631779a2ad5b4f",
+        "bytes": 577,
+        "archive_path": "compiled-sources/c42c30527d581975c49ddfebb182b0ae7928d799eed91172cb631779a2ad5b4f/include/hyle/graph/compile_report.h",
+        "actual_copy": {
+          "path": "include/hyle/graph/compile_report.h",
+          "bytes": 577,
+          "sha256": "c42c30527d581975c49ddfebb182b0ae7928d799eed91172cb631779a2ad5b4f"
+        }
+      },
+      {
+        "original_path": "include/hyle/graph/execution_source.h",
+        "compiled_sha256": "b89de5c6fe8b84192c9618a6a4e4dcee8ac45393e04a9e335f17b5a2d3ecac3f",
+        "bytes": 1859,
+        "archive_path": "compiled-sources/b89de5c6fe8b84192c9618a6a4e4dcee8ac45393e04a9e335f17b5a2d3ecac3f/include/hyle/graph/execution_source.h",
+        "actual_copy": {
+          "path": "include/hyle/graph/execution_source.h",
+          "bytes": 1859,
+          "sha256": "b89de5c6fe8b84192c9618a6a4e4dcee8ac45393e04a9e335f17b5a2d3ecac3f"
+        }
+      },
+      {
+        "original_path": "include/hyle/graph/visibility.h",
+        "compiled_sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1",
+        "bytes": 43,
+        "archive_path": "compiled-sources/87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1/include/hyle/graph/visibility.h",
+        "actual_copy": {
+          "path": "include/hyle/graph/visibility.h",
+          "bytes": 43,
+          "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+        }
+      },
+      {
+        "original_path": "include/hyle/graph/graph.h",
+        "compiled_sha256": "c7a93ccf9fd1c86fb9dec286e7d3345aabcb1810c2fb6793a66093480a5a2136",
+        "bytes": 19988,
+        "archive_path": "compiled-sources/c7a93ccf9fd1c86fb9dec286e7d3345aabcb1810c2fb6793a66093480a5a2136/include/hyle/graph/graph.h",
+        "actual_copy": {
+          "path": "include/hyle/graph/graph.h",
+          "bytes": 19988,
+          "sha256": "c7a93ccf9fd1c86fb9dec286e7d3345aabcb1810c2fb6793a66093480a5a2136"
+        }
+      },
+      {
+        "original_path": "include/hyle/graph/resources.h",
+        "compiled_sha256": "c9d3075babb4d863f3543c76576d093fe59f9868df67d50fc492db0aebe7015d",
+        "bytes": 430,
+        "archive_path": "compiled-sources/c9d3075babb4d863f3543c76576d093fe59f9868df67d50fc492db0aebe7015d/include/hyle/graph/resources.h",
+        "actual_copy": {
+          "path": "include/hyle/graph/resources.h",
+          "bytes": 430,
+          "sha256": "c9d3075babb4d863f3543c76576d093fe59f9868df67d50fc492db0aebe7015d"
+        }
+      },
+      {
+        "original_path": "include/hyle/graph/result.h",
+        "compiled_sha256": "dc576aa9e523321df6d69ced5717cd9a8e92a9261245a42a431ecc8039a3dd46",
+        "bytes": 2146,
+        "archive_path": "compiled-sources/dc576aa9e523321df6d69ced5717cd9a8e92a9261245a42a431ecc8039a3dd46/include/hyle/graph/result.h",
+        "actual_copy": {
+          "path": "include/hyle/graph/result.h",
+          "bytes": 2146,
+          "sha256": "dc576aa9e523321df6d69ced5717cd9a8e92a9261245a42a431ecc8039a3dd46"
+        }
+      },
+      {
+        "original_path": "include/hyle/compute/backends/cuda.h",
+        "compiled_sha256": "8b1eeec880b852f5d35a98464c55a20abb8de0b1db447421dff4b90ba4a13748",
+        "bytes": 9030,
+        "archive_path": "compiled-sources/8b1eeec880b852f5d35a98464c55a20abb8de0b1db447421dff4b90ba4a13748/include/hyle/compute/backends/cuda.h",
+        "actual_copy": {
+          "path": "include/hyle/compute/backends/cuda.h",
+          "bytes": 9030,
+          "sha256": "8b1eeec880b852f5d35a98464c55a20abb8de0b1db447421dff4b90ba4a13748"
+        }
+      },
+      {
+        "original_path": "include/hyle/graph/cuda.h",
+        "compiled_sha256": "658f3dab4eb1a0a90f2dc472652e0c0fa5e694373544abc21331f116adee1373",
+        "bytes": 2663,
+        "archive_path": "compiled-sources/658f3dab4eb1a0a90f2dc472652e0c0fa5e694373544abc21331f116adee1373/include/hyle/graph/cuda.h",
+        "actual_copy": {
+          "path": "include/hyle/graph/cuda.h",
+          "bytes": 2663,
+          "sha256": "658f3dab4eb1a0a90f2dc472652e0c0fa5e694373544abc21331f116adee1373"
+        }
+      },
+      {
+        "original_path": "include/hyle/compute/cuda.h",
+        "compiled_sha256": "308beb0703f01239c106d23792f8ef68a57880630b209d1e772a6cd9958918e7",
+        "bytes": 1457,
+        "archive_path": "compiled-sources/308beb0703f01239c106d23792f8ef68a57880630b209d1e772a6cd9958918e7/include/hyle/compute/cuda.h",
+        "actual_copy": {
+          "path": "include/hyle/compute/cuda.h",
+          "bytes": 1457,
+          "sha256": "308beb0703f01239c106d23792f8ef68a57880630b209d1e772a6cd9958918e7"
+        }
+      },
+      {
+        "original_path": "include/hyle/compute/cuda_weights.h",
+        "compiled_sha256": "1e3ca02148c67fc2d6d6744beb5a03ee93dcb7f7a61ffed16aa5b5e49d5a8079",
+        "bytes": 5065,
+        "archive_path": "compiled-sources/1e3ca02148c67fc2d6d6744beb5a03ee93dcb7f7a61ffed16aa5b5e49d5a8079/include/hyle/compute/cuda_weights.h",
+        "actual_copy": {
+          "path": "include/hyle/compute/cuda_weights.h",
+          "bytes": 5065,
+          "sha256": "1e3ca02148c67fc2d6d6744beb5a03ee93dcb7f7a61ffed16aa5b5e49d5a8079"
+        }
+      },
+      {
+        "original_path": "include/hyle/compute/weight_assembly.h",
+        "compiled_sha256": "c085186c2751371d8e642f29d1b338e53962236e50c9935ea1858a4b188ca3ac",
+        "bytes": 2095,
+        "archive_path": "compiled-sources/c085186c2751371d8e642f29d1b338e53962236e50c9935ea1858a4b188ca3ac/include/hyle/compute/weight_assembly.h",
+        "actual_copy": {
+          "path": "include/hyle/compute/weight_assembly.h",
+          "bytes": 2095,
+          "sha256": "c085186c2751371d8e642f29d1b338e53962236e50c9935ea1858a4b188ca3ac"
+        }
+      },
+      {
+        "original_path": "include/hyle/graph/weight_binding.h",
+        "compiled_sha256": "ebcc3eea951953966a3b10b2951872e74d04921af6f0cc8de45ab52ab1ba32bd",
+        "bytes": 422,
+        "archive_path": "compiled-sources/ebcc3eea951953966a3b10b2951872e74d04921af6f0cc8de45ab52ab1ba32bd/include/hyle/graph/weight_binding.h",
+        "actual_copy": {
+          "path": "include/hyle/graph/weight_binding.h",
+          "bytes": 422,
+          "sha256": "ebcc3eea951953966a3b10b2951872e74d04921af6f0cc8de45ab52ab1ba32bd"
+        }
+      },
+      {
+        "original_path": "tests/compute_models/glm_pro_mtp_fragment.h",
+        "compiled_sha256": "9fb398590f711e0b652efd21a2c70393238ea3673ec8655f5d5202ae6f0d2784",
+        "bytes": 20814,
+        "archive_path": "compiled-sources/9fb398590f711e0b652efd21a2c70393238ea3673ec8655f5d5202ae6f0d2784/tests/compute_models/glm_pro_mtp_fragment.h",
+        "actual_copy": {
+          "path": "tests/compute_models/glm_pro_mtp_fragment.h",
+          "bytes": 20814,
+          "sha256": "9fb398590f711e0b652efd21a2c70393238ea3673ec8655f5d5202ae6f0d2784"
+        }
+      },
+      {
+        "original_path": "tests/compute_models/glm_official_index_cache.h",
+        "compiled_sha256": "a454c67796fc456cea071439589826c3d6afc7298209219c7ab8b66ee4111bd3",
+        "bytes": 17011,
+        "archive_path": "compiled-sources/a454c67796fc456cea071439589826c3d6afc7298209219c7ab8b66ee4111bd3/tests/compute_models/glm_official_index_cache.h",
+        "actual_copy": {
+          "path": "tests/compute_models/glm_official_index_cache.h",
+          "bytes": 17011,
+          "sha256": "a454c67796fc456cea071439589826c3d6afc7298209219c7ab8b66ee4111bd3"
+        }
+      },
+      {
+        "original_path": "tests/compute_models/d5_glm_remaining_fragments.h",
+        "compiled_sha256": "12dbf546cb1050470dd6db65fe4d1f0a70364781a22d9df466699e7b10cde742",
+        "bytes": 54263,
+        "archive_path": "compiled-sources/12dbf546cb1050470dd6db65fe4d1f0a70364781a22d9df466699e7b10cde742/tests/compute_models/d5_glm_remaining_fragments.h",
+        "actual_copy": {
+          "path": "tests/compute_models/d5_glm_remaining_fragments.h",
+          "bytes": 54263,
+          "sha256": "12dbf546cb1050470dd6db65fe4d1f0a70364781a22d9df466699e7b10cde742"
+        }
+      },
+      {
+        "original_path": "tests/compute_models/d5_kimi_remaining_fragments.h",
+        "compiled_sha256": "edc6aaeb8d05c1f848447849b45bf3f908b77a737823ce6dfbf737feedeb2218",
+        "bytes": 18043,
+        "archive_path": "compiled-sources/edc6aaeb8d05c1f848447849b45bf3f908b77a737823ce6dfbf737feedeb2218/tests/compute_models/d5_kimi_remaining_fragments.h",
+        "actual_copy": {
+          "path": "tests/compute_models/d5_kimi_remaining_fragments.h",
+          "bytes": 18043,
+          "sha256": "edc6aaeb8d05c1f848447849b45bf3f908b77a737823ce6dfbf737feedeb2218"
+        }
+      },
+      {
+        "original_path": "tests/compute_models/d5_kda_full_fragments.h",
+        "compiled_sha256": "8af401a0982f99b0283199c53f44ec15f6524a35eb0590b850a3c403f4d7e76e",
+        "bytes": 12967,
+        "archive_path": "compiled-sources/8af401a0982f99b0283199c53f44ec15f6524a35eb0590b850a3c403f4d7e76e/tests/compute_models/d5_kda_full_fragments.h",
+        "actual_copy": {
+          "path": "tests/compute_models/d5_kda_full_fragments.h",
+          "bytes": 12967,
+          "sha256": "8af401a0982f99b0283199c53f44ec15f6524a35eb0590b850a3c403f4d7e76e"
+        }
+      },
+      {
+        "original_path": "tests/compute_models/d5_moe_semantic_fragments.h",
+        "compiled_sha256": "75b094320cc81125cfdf7b8ab473be5b51238b66b6403e8f142b14fbe00b5131",
+        "bytes": 17811,
+        "archive_path": "compiled-sources/75b094320cc81125cfdf7b8ab473be5b51238b66b6403e8f142b14fbe00b5131/tests/compute_models/d5_moe_semantic_fragments.h",
+        "actual_copy": {
+          "path": "tests/compute_models/d5_moe_semantic_fragments.h",
+          "bytes": 17811,
+          "sha256": "75b094320cc81125cfdf7b8ab473be5b51238b66b6403e8f142b14fbe00b5131"
+        }
+      },
+      {
+        "original_path": "tests/compute_models/d5_moe_profile_cases.h",
+        "compiled_sha256": "c21f3e73aba1a7ce161b71c9eec135af9b6352e8aba255c3229c9b82f4d93a6d",
+        "bytes": 11520,
+        "archive_path": "compiled-sources/c21f3e73aba1a7ce161b71c9eec135af9b6352e8aba255c3229c9b82f4d93a6d/tests/compute_models/d5_moe_profile_cases.h",
+        "actual_copy": {
+          "path": "tests/compute_models/d5_moe_profile_cases.h",
+          "bytes": 11520,
+          "sha256": "c21f3e73aba1a7ce161b71c9eec135af9b6352e8aba255c3229c9b82f4d93a6d"
+        }
+      },
+      {
+        "original_path": "tests/compute_models/d5_qwen_gguf_vocabulary_cases.h",
+        "compiled_sha256": "8db378b333614ddc594a3ae9364fcbfdded76a2c1226d5cb19b44b24968af655",
+        "bytes": 2928,
+        "archive_path": "compiled-sources/8db378b333614ddc594a3ae9364fcbfdded76a2c1226d5cb19b44b24968af655/tests/compute_models/d5_qwen_gguf_vocabulary_cases.h",
+        "actual_copy": {
+          "path": "tests/compute_models/d5_qwen_gguf_vocabulary_cases.h",
+          "bytes": 2928,
+          "sha256": "8db378b333614ddc594a3ae9364fcbfdded76a2c1226d5cb19b44b24968af655"
+        }
+      },
+      {
+        "original_path": "tests/compute_models/d5_qwen35_fixture.h",
+        "compiled_sha256": "b80a27f10ce671ab5fa3953a0862dd387fd85bb0aa2cfd31670593303b8ab393",
+        "bytes": 9558,
+        "archive_path": "compiled-sources/b80a27f10ce671ab5fa3953a0862dd387fd85bb0aa2cfd31670593303b8ab393/tests/compute_models/d5_qwen35_fixture.h",
+        "actual_copy": {
+          "path": "tests/compute_models/d5_qwen35_fixture.h",
+          "bytes": 9558,
+          "sha256": "b80a27f10ce671ab5fa3953a0862dd387fd85bb0aa2cfd31670593303b8ab393"
+        }
+      },
+      {
+        "original_path": "tests/compute/workload_fixture.h",
+        "compiled_sha256": "d451c816f7362313b73758d60fc68c49acbaf0e31735db3039d72e80d39b6a5e",
+        "bytes": 1211,
+        "archive_path": "compiled-sources/d451c816f7362313b73758d60fc68c49acbaf0e31735db3039d72e80d39b6a5e/tests/compute/workload_fixture.h",
+        "actual_copy": {
+          "path": "tests/compute/workload_fixture.h",
+          "bytes": 1211,
+          "sha256": "d451c816f7362313b73758d60fc68c49acbaf0e31735db3039d72e80d39b6a5e"
+        }
+      },
+      {
+        "original_path": "tests/compute_models/d5_qwen38_24t_fixture.h",
+        "compiled_sha256": "b5b12c7030e2fbf2f14e8b8d0be9569ef47c64a49d58e98bc7b333b4256e050f",
+        "bytes": 7313,
+        "archive_path": "compiled-sources/b5b12c7030e2fbf2f14e8b8d0be9569ef47c64a49d58e98bc7b333b4256e050f/tests/compute_models/d5_qwen38_24t_fixture.h",
+        "actual_copy": {
+          "path": "tests/compute_models/d5_qwen38_24t_fixture.h",
+          "bytes": 7313,
+          "sha256": "b5b12c7030e2fbf2f14e8b8d0be9569ef47c64a49d58e98bc7b333b4256e050f"
+        }
+      },
+      {
+        "original_path": "tests/compute_models/d5_qwen38_official_fixture.h",
+        "compiled_sha256": "61cacc3d6251c1ef2cfc9a9f724412f9ca4615f4692dcbf777a81e790e7a1ff0",
+        "bytes": 5967,
+        "archive_path": "compiled-sources/61cacc3d6251c1ef2cfc9a9f724412f9ca4615f4692dcbf777a81e790e7a1ff0/tests/compute_models/d5_qwen38_official_fixture.h",
+        "actual_copy": {
+          "path": "tests/compute_models/d5_qwen38_official_fixture.h",
+          "bytes": 5967,
+          "sha256": "61cacc3d6251c1ef2cfc9a9f724412f9ca4615f4692dcbf777a81e790e7a1ff0"
+        }
+      },
+      {
+        "original_path": "tests/compute_models/d5_qwen38_gdn_fixture.h",
+        "compiled_sha256": "9a0fb6af064c85209fa478a7021eb399bf1451fff67d43538a655936343bf2ed",
+        "bytes": 8553,
+        "archive_path": "compiled-sources/9a0fb6af064c85209fa478a7021eb399bf1451fff67d43538a655936343bf2ed/tests/compute_models/d5_qwen38_gdn_fixture.h",
+        "actual_copy": {
+          "path": "tests/compute_models/d5_qwen38_gdn_fixture.h",
+          "bytes": 8553,
+          "sha256": "9a0fb6af064c85209fa478a7021eb399bf1451fff67d43538a655936343bf2ed"
+        }
+      },
+      {
+        "original_path": "tests/compute_provider_native/half_test_support.h",
+        "compiled_sha256": "5f6d8f7b70d07e44600bb6d6d592f66af5dac9970a730695956a1afcfc3cd0b8",
+        "bytes": 4399,
+        "archive_path": "compiled-sources/5f6d8f7b70d07e44600bb6d6d592f66af5dac9970a730695956a1afcfc3cd0b8/tests/compute_provider_native/half_test_support.h",
+        "actual_copy": {
+          "path": "tests/compute_provider_native/half_test_support.h",
+          "bytes": 4399,
+          "sha256": "5f6d8f7b70d07e44600bb6d6d592f66af5dac9970a730695956a1afcfc3cd0b8"
+        }
+      },
+      {
+        "original_path": "include/hyle/simd/dtype.h",
+        "compiled_sha256": "04dc8a2e0a654250413a0edc4bdc667f98c8aa40d85da25264b6bb2054dd51e5",
+        "bytes": 12143,
+        "archive_path": "compiled-sources/04dc8a2e0a654250413a0edc4bdc667f98c8aa40d85da25264b6bb2054dd51e5/include/hyle/simd/dtype.h",
+        "actual_copy": {
+          "path": "include/hyle/simd/dtype.h",
+          "bytes": 12143,
+          "sha256": "04dc8a2e0a654250413a0edc4bdc667f98c8aa40d85da25264b6bb2054dd51e5"
+        }
+      },
+      {
+        "original_path": "include/hyle/simd/types.h",
+        "compiled_sha256": "e79863029c8036f918f36f93dd0267b8d42857516e0d74678584d75f8926abbd",
+        "bytes": 1658,
+        "archive_path": "compiled-sources/e79863029c8036f918f36f93dd0267b8d42857516e0d74678584d75f8926abbd/include/hyle/simd/types.h",
+        "actual_copy": {
+          "path": "include/hyle/simd/types.h",
+          "bytes": 1658,
+          "sha256": "e79863029c8036f918f36f93dd0267b8d42857516e0d74678584d75f8926abbd"
+        }
+      },
+      {
+        "original_path": "tests/compute_models/d5_kda_projection_cases.h",
+        "compiled_sha256": "489e42c858140847b89f4932a5519572aa132f515d96cb9927392ce0266c0feb",
+        "bytes": 5583,
+        "archive_path": "compiled-sources/489e42c858140847b89f4932a5519572aa132f515d96cb9927392ce0266c0feb/tests/compute_models/d5_kda_projection_cases.h",
+        "actual_copy": {
+          "path": "tests/compute_models/d5_kda_projection_cases.h",
+          "bytes": 5583,
+          "sha256": "489e42c858140847b89f4932a5519572aa132f515d96cb9927392ce0266c0feb"
+        }
+      },
+      {
+        "original_path": "tests/compute_models/d5_qwen38_24t_semantic_fragments.h",
+        "compiled_sha256": "090b13d99fad2f7def7f3a861823033827d70681683989b4ffa4b8b7ceefd320",
+        "bytes": 35712,
+        "archive_path": "compiled-sources/090b13d99fad2f7def7f3a861823033827d70681683989b4ffa4b8b7ceefd320/tests/compute_models/d5_qwen38_24t_semantic_fragments.h",
+        "actual_copy": {
+          "path": "tests/compute_models/d5_qwen38_24t_semantic_fragments.h",
+          "bytes": 35712,
+          "sha256": "090b13d99fad2f7def7f3a861823033827d70681683989b4ffa4b8b7ceefd320"
+        }
+      },
+      {
+        "original_path": "tests/compute_models/d5_qwen35_gguf_fragment_support.h",
+        "compiled_sha256": "24d8ae62cbb2ed362c4e949db02fdce18505e03ff06adb23cdcfe8b358b61cb1",
+        "bytes": 6939,
+        "archive_path": "compiled-sources/24d8ae62cbb2ed362c4e949db02fdce18505e03ff06adb23cdcfe8b358b61cb1/tests/compute_models/d5_qwen35_gguf_fragment_support.h",
+        "actual_copy": {
+          "path": "tests/compute_models/d5_qwen35_gguf_fragment_support.h",
+          "bytes": 6939,
+          "sha256": "24d8ae62cbb2ed362c4e949db02fdce18505e03ff06adb23cdcfe8b358b61cb1"
+        }
+      },
+      {
+        "original_path": "tests/compute_models/d5_qwen38_24t_full_router.h",
+        "compiled_sha256": "7bff099e41ecee6f6dd4dc85a91db2b13a1737bee46699befe27e4d867b6fd04",
+        "bytes": 22959,
+        "archive_path": "compiled-sources/7bff099e41ecee6f6dd4dc85a91db2b13a1737bee46699befe27e4d867b6fd04/tests/compute_models/d5_qwen38_24t_full_router.h",
+        "actual_copy": {
+          "path": "tests/compute_models/d5_qwen38_24t_full_router.h",
+          "bytes": 22959,
+          "sha256": "7bff099e41ecee6f6dd4dc85a91db2b13a1737bee46699befe27e4d867b6fd04"
+        }
+      },
+      {
+        "original_path": "tests/compute_models/d5_qwen38_24t_moe_profiles.h",
+        "compiled_sha256": "ea93064fca5e64b4db7bfb5ded1062d83baf6ab3794f52f962beee2b0fd8a9ee",
+        "bytes": 11480,
+        "archive_path": "compiled-sources/ea93064fca5e64b4db7bfb5ded1062d83baf6ab3794f52f962beee2b0fd8a9ee/tests/compute_models/d5_qwen38_24t_moe_profiles.h",
+        "actual_copy": {
+          "path": "tests/compute_models/d5_qwen38_24t_moe_profiles.h",
+          "bytes": 11480,
+          "sha256": "ea93064fca5e64b4db7bfb5ded1062d83baf6ab3794f52f962beee2b0fd8a9ee"
+        }
+      },
+      {
+        "original_path": "tests/compute_models/d5_gguf_test_support.h",
+        "compiled_sha256": "4742b35f873bc892213e8721f44a4bde0cfeea9d30da036c454a4d3042bd7898",
+        "bytes": 13405,
+        "archive_path": "compiled-sources/4742b35f873bc892213e8721f44a4bde0cfeea9d30da036c454a4d3042bd7898/tests/compute_models/d5_gguf_test_support.h",
+        "actual_copy": {
+          "path": "tests/compute_models/d5_gguf_test_support.h",
+          "bytes": 13405,
+          "sha256": "4742b35f873bc892213e8721f44a4bde0cfeea9d30da036c454a4d3042bd7898"
+        }
+      },
+      {
+        "original_path": "tests/compute_models/d5_moe_execution_fragments.h",
+        "compiled_sha256": "ab7857f47f82b87bf2b39b56d2f637a9d3d3068256abfcbd2a69d94ab1b08f3c",
+        "bytes": 29763,
+        "archive_path": "compiled-sources/ab7857f47f82b87bf2b39b56d2f637a9d3d3068256abfcbd2a69d94ab1b08f3c/tests/compute_models/d5_moe_execution_fragments.h",
+        "actual_copy": {
+          "path": "tests/compute_models/d5_moe_execution_fragments.h",
+          "bytes": 29763,
+          "sha256": "ab7857f47f82b87bf2b39b56d2f637a9d3d3068256abfcbd2a69d94ab1b08f3c"
+        }
+      },
+      {
+        "original_path": "tests/compute_models/d5_moe_execution_cases.h",
+        "compiled_sha256": "8d3dedc2d98d2ba3cd72c1cec165bc53f6472b274da4215509f623511f4321cf",
+        "bytes": 4217,
+        "archive_path": "compiled-sources/8d3dedc2d98d2ba3cd72c1cec165bc53f6472b274da4215509f623511f4321cf/tests/compute_models/d5_moe_execution_cases.h",
+        "actual_copy": {
+          "path": "tests/compute_models/d5_moe_execution_cases.h",
+          "bytes": 4217,
+          "sha256": "8d3dedc2d98d2ba3cd72c1cec165bc53f6472b274da4215509f623511f4321cf"
+        }
+      },
+      {
+        "original_path": "tests/compute_models/d5_official_fp4_storage.h",
+        "compiled_sha256": "3f9d8a651e2d79dcf5f9ab2ac09cca4439a0d5ef2d4a2ea948c1768966e38846",
+        "bytes": 4623,
+        "archive_path": "compiled-sources/3f9d8a651e2d79dcf5f9ab2ac09cca4439a0d5ef2d4a2ea948c1768966e38846/tests/compute_models/d5_official_fp4_storage.h",
+        "actual_copy": {
+          "path": "tests/compute_models/d5_official_fp4_storage.h",
+          "bytes": 4623,
+          "sha256": "3f9d8a651e2d79dcf5f9ab2ac09cca4439a0d5ef2d4a2ea948c1768966e38846"
+        }
+      },
+      {
+        "original_path": "tests/compute_models/d5_glm_mtp_head_test.h",
+        "compiled_sha256": "d8267206827f0399423e5500f45492f70ce51e2bb52bad38bbc1b10b9c33b668",
+        "bytes": 475,
+        "archive_path": "compiled-sources/d8267206827f0399423e5500f45492f70ce51e2bb52bad38bbc1b10b9c33b668/tests/compute_models/d5_glm_mtp_head_test.h",
+        "actual_copy": {
+          "path": "tests/compute_models/d5_glm_mtp_head_test.h",
+          "bytes": 475,
+          "sha256": "d8267206827f0399423e5500f45492f70ce51e2bb52bad38bbc1b10b9c33b668"
+        }
+      },
+      {
+        "original_path": "tests/compute_models/d5_dynamic_fp8_fragments.h",
+        "compiled_sha256": "6e6d323a06331a70666a6ce2a8e26984932d7fbf5732f71ced728a3bc0b68040",
+        "bytes": 16239,
+        "archive_path": "compiled-sources/6e6d323a06331a70666a6ce2a8e26984932d7fbf5732f71ced728a3bc0b68040/tests/compute_models/d5_dynamic_fp8_fragments.h",
+        "actual_copy": {
+          "path": "tests/compute_models/d5_dynamic_fp8_fragments.h",
+          "bytes": 16239,
+          "sha256": "6e6d323a06331a70666a6ce2a8e26984932d7fbf5732f71ced728a3bc0b68040"
+        }
+      },
+      {
+        "original_path": "tests/compute_models/d5_official_fp8_fragments.h",
+        "compiled_sha256": "c132fe5588268de6ce57506025f754aeda0c6e7698703db77932711bcfb4dd56",
+        "bytes": 5606,
+        "archive_path": "compiled-sources/c132fe5588268de6ce57506025f754aeda0c6e7698703db77932711bcfb4dd56/tests/compute_models/d5_official_fp8_fragments.h",
+        "actual_copy": {
+          "path": "tests/compute_models/d5_official_fp8_fragments.h",
+          "bytes": 5606,
+          "sha256": "c132fe5588268de6ce57506025f754aeda0c6e7698703db77932711bcfb4dd56"
+        }
+      },
+      {
+        "original_path": "tests/compute_models/d5_grouped_fp8_fragments.h",
+        "compiled_sha256": "100afd9e17c00798ffa5b6f1cb7201dcea93981937321eac4a5afbaa269f2717",
+        "bytes": 8697,
+        "archive_path": "compiled-sources/100afd9e17c00798ffa5b6f1cb7201dcea93981937321eac4a5afbaa269f2717/tests/compute_models/d5_grouped_fp8_fragments.h",
+        "actual_copy": {
+          "path": "tests/compute_models/d5_grouped_fp8_fragments.h",
+          "bytes": 8697,
+          "sha256": "100afd9e17c00798ffa5b6f1cb7201dcea93981937321eac4a5afbaa269f2717"
+        }
+      },
+      {
+        "original_path": "tests/compute_models/glm_original_moe_fragment.h",
+        "compiled_sha256": "6e9baa6c434cde19ad7bc8c42958701daf073e97a85f684934a2f37b159714c2",
+        "bytes": 11476,
+        "archive_path": "compiled-sources/6e9baa6c434cde19ad7bc8c42958701daf073e97a85f684934a2f37b159714c2/tests/compute_models/glm_original_moe_fragment.h",
+        "actual_copy": {
+          "path": "tests/compute_models/glm_original_moe_fragment.h",
+          "bytes": 11476,
+          "sha256": "6e9baa6c434cde19ad7bc8c42958701daf073e97a85f684934a2f37b159714c2"
+        }
+      },
+      {
+        "original_path": "tests/compute_models/glm_moe_geometry.h",
+        "compiled_sha256": "fec9a813d4c482b540c3a4f710e2d91c1442fe1f1080e1466017fe6568240792",
+        "bytes": 3364,
+        "archive_path": "compiled-sources/fec9a813d4c482b540c3a4f710e2d91c1442fe1f1080e1466017fe6568240792/tests/compute_models/glm_moe_geometry.h",
+        "actual_copy": {
+          "path": "tests/compute_models/glm_moe_geometry.h",
+          "bytes": 3364,
+          "sha256": "fec9a813d4c482b540c3a4f710e2d91c1442fe1f1080e1466017fe6568240792"
+        }
+      },
+      {
+        "original_path": "tests/compute_models/glm_moe_storage.h",
+        "compiled_sha256": "cea81977a8072688d1d25851891e57dd2be2923da7635cd561d25d6a348898eb",
+        "bytes": 2662,
+        "archive_path": "compiled-sources/cea81977a8072688d1d25851891e57dd2be2923da7635cd561d25d6a348898eb/tests/compute_models/glm_moe_storage.h",
+        "actual_copy": {
+          "path": "tests/compute_models/glm_moe_storage.h",
+          "bytes": 2662,
+          "sha256": "cea81977a8072688d1d25851891e57dd2be2923da7635cd561d25d6a348898eb"
+        }
+      },
+      {
+        "original_path": "tests/compute_models/glm_shared_vocabulary.h",
+        "compiled_sha256": "930b11d95b8826c6a65d18dac34746d67238d0f4ab67a3909a024c182555c525",
+        "bytes": 13861,
+        "archive_path": "compiled-sources/930b11d95b8826c6a65d18dac34746d67238d0f4ab67a3909a024c182555c525/tests/compute_models/glm_shared_vocabulary.h",
+        "actual_copy": {
+          "path": "tests/compute_models/glm_shared_vocabulary.h",
+          "bytes": 13861,
+          "sha256": "930b11d95b8826c6a65d18dac34746d67238d0f4ab67a3909a024c182555c525"
+        }
+      },
+      {
+        "original_path": "include/hyle/mem/mapping.h",
+        "compiled_sha256": "98b1a1ea8c4d85eff4fb8ddeb0fd7a425e7619128c468ae29e11c5e3fbfd05c3",
+        "bytes": 7139,
+        "archive_path": "compiled-sources/98b1a1ea8c4d85eff4fb8ddeb0fd7a425e7619128c468ae29e11c5e3fbfd05c3/include/hyle/mem/mapping.h",
+        "actual_copy": {
+          "path": "include/hyle/mem/mapping.h",
+          "bytes": 7139,
+          "sha256": "98b1a1ea8c4d85eff4fb8ddeb0fd7a425e7619128c468ae29e11c5e3fbfd05c3"
+        }
+      },
+      {
+        "original_path": "include/hyle/platform/fs.h",
+        "compiled_sha256": "2af351149fc82762267b89303439ef71626a2eb541d1922ff6f66014136a9ffa",
+        "bytes": 24891,
+        "archive_path": "compiled-sources/2af351149fc82762267b89303439ef71626a2eb541d1922ff6f66014136a9ffa/include/hyle/platform/fs.h",
+        "actual_copy": {
+          "path": "include/hyle/platform/fs.h",
+          "bytes": 24891,
+          "sha256": "2af351149fc82762267b89303439ef71626a2eb541d1922ff6f66014136a9ffa"
+        }
+      },
+      {
+        "original_path": "include/hyle/platform/fs_visibility.h",
+        "compiled_sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1",
+        "bytes": 43,
+        "archive_path": "compiled-sources/87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1/include/hyle/platform/fs_visibility.h",
+        "actual_copy": {
+          "path": "include/hyle/platform/fs_visibility.h",
+          "bytes": 43,
+          "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+        }
+      },
+      {
+        "original_path": "include/hyle/time/unix_timestamp.h",
+        "compiled_sha256": "bcd6bdc860d6ee1e73004ebd15e3b2b2a60ca3dff7a0818deecf9420f95b4496",
+        "bytes": 11791,
+        "archive_path": "compiled-sources/bcd6bdc860d6ee1e73004ebd15e3b2b2a60ca3dff7a0818deecf9420f95b4496/include/hyle/time/unix_timestamp.h",
+        "actual_copy": {
+          "path": "include/hyle/time/unix_timestamp.h",
+          "bytes": 11791,
+          "sha256": "bcd6bdc860d6ee1e73004ebd15e3b2b2a60ca3dff7a0818deecf9420f95b4496"
+        }
+      },
+      {
+        "original_path": "include/hyle/platform/virtual_memory.h",
+        "compiled_sha256": "1b01086d44f330a592a5d3b4946fb213e485095dce904db99bb71103e2a578b8",
+        "bytes": 10485,
+        "archive_path": "compiled-sources/1b01086d44f330a592a5d3b4946fb213e485095dce904db99bb71103e2a578b8/include/hyle/platform/virtual_memory.h",
+        "actual_copy": {
+          "path": "include/hyle/platform/virtual_memory.h",
+          "bytes": 10485,
+          "sha256": "1b01086d44f330a592a5d3b4946fb213e485095dce904db99bb71103e2a578b8"
+        }
+      },
+      {
+        "original_path": "include/hyle/platform/numa.h",
+        "compiled_sha256": "e154f229dc7f6f5ceb1c44f20f769204b48bd422e57c5fed1e53c490607b8fde",
+        "bytes": 8400,
+        "archive_path": "compiled-sources/e154f229dc7f6f5ceb1c44f20f769204b48bd422e57c5fed1e53c490607b8fde/include/hyle/platform/numa.h",
+        "actual_copy": {
+          "path": "include/hyle/platform/numa.h",
+          "bytes": 8400,
+          "sha256": "e154f229dc7f6f5ceb1c44f20f769204b48bd422e57c5fed1e53c490607b8fde"
+        }
+      },
+      {
+        "original_path": "include/hyle/platform/visibility.h",
+        "compiled_sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1",
+        "bytes": 43,
+        "archive_path": "compiled-sources/87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1/include/hyle/platform/visibility.h",
+        "actual_copy": {
+          "path": "include/hyle/platform/visibility.h",
+          "bytes": 43,
+          "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+        }
+      },
+      {
+        "original_path": "tests/compute_models/glm_fp8_arithmetic.h",
+        "compiled_sha256": "38b468a31e367bfdce507f4c1b7aa1e4911b52fe752b9f67b3bdec6c9d397e41",
+        "bytes": 888,
+        "archive_path": "compiled-sources/38b468a31e367bfdce507f4c1b7aa1e4911b52fe752b9f67b3bdec6c9d397e41/tests/compute_models/glm_fp8_arithmetic.h",
+        "actual_copy": {
+          "path": "tests/compute_models/glm_fp8_arithmetic.h",
+          "bytes": 888,
+          "sha256": "38b468a31e367bfdce507f4c1b7aa1e4911b52fe752b9f67b3bdec6c9d397e41"
+        }
+      },
+      {
+        "original_path": "tests/compute_models/glm_pro_original_roles.h",
+        "compiled_sha256": "445e105d7f8727bb2657aff9129d150d46b62be0beeb6c4a07b94db58f5277f8",
+        "bytes": 17348,
+        "archive_path": "compiled-sources/445e105d7f8727bb2657aff9129d150d46b62be0beeb6c4a07b94db58f5277f8/tests/compute_models/glm_pro_original_roles.h",
+        "actual_copy": {
+          "path": "tests/compute_models/glm_pro_original_roles.h",
+          "bytes": 17348,
+          "sha256": "445e105d7f8727bb2657aff9129d150d46b62be0beeb6c4a07b94db58f5277f8"
+        }
+      },
+      {
+        "original_path": "include/hyle/compute/weight_import.h",
+        "compiled_sha256": "19479024d3e80a6c7357dd55cc79e59347c20b22b621ce6f2779082afaaab6cb",
+        "bytes": 3487,
+        "archive_path": "compiled-sources/19479024d3e80a6c7357dd55cc79e59347c20b22b621ce6f2779082afaaab6cb/include/hyle/compute/weight_import.h",
+        "actual_copy": {
+          "path": "include/hyle/compute/weight_import.h",
+          "bytes": 3487,
+          "sha256": "19479024d3e80a6c7357dd55cc79e59347c20b22b621ce6f2779082afaaab6cb"
+        }
+      },
+      {
+        "original_path": "tests/compute_models/glm_pro_mtp_reference.h",
+        "compiled_sha256": "c99e8ba4e9996d83e21adeeaa1ae82481b26196286df60f2d638941eae7eb1bf",
+        "bytes": 25067,
+        "archive_path": "compiled-sources/c99e8ba4e9996d83e21adeeaa1ae82481b26196286df60f2d638941eae7eb1bf/tests/compute_models/glm_pro_mtp_reference.h",
+        "actual_copy": {
+          "path": "tests/compute_models/glm_pro_mtp_reference.h",
+          "bytes": 25067,
+          "sha256": "c99e8ba4e9996d83e21adeeaa1ae82481b26196286df60f2d638941eae7eb1bf"
+        }
+      },
+      {
+        "original_path": "tests/compute_models/glm_original_attention_reference.h",
+        "compiled_sha256": "1e8bf56f06ecf8a29347956e1a44f2f640d2f90f50be2639da952937e349e3b7",
+        "bytes": 17795,
+        "archive_path": "compiled-sources/1e8bf56f06ecf8a29347956e1a44f2f640d2f90f50be2639da952937e349e3b7/tests/compute_models/glm_original_attention_reference.h",
+        "actual_copy": {
+          "path": "tests/compute_models/glm_original_attention_reference.h",
+          "bytes": 17795,
+          "sha256": "1e8bf56f06ecf8a29347956e1a44f2f640d2f90f50be2639da952937e349e3b7"
+        }
+      },
+      {
+        "original_path": "tests/compute_models/glm_original_attention_roles.h",
+        "compiled_sha256": "7385e547f395386b4abe265f3f9f828c7c7db4948e68f9cb5c82ebd143331efa",
+        "bytes": 13930,
+        "archive_path": "compiled-sources/7385e547f395386b4abe265f3f9f828c7c7db4948e68f9cb5c82ebd143331efa/tests/compute_models/glm_original_attention_roles.h",
+        "actual_copy": {
+          "path": "tests/compute_models/glm_original_attention_roles.h",
+          "bytes": 13930,
+          "sha256": "7385e547f395386b4abe265f3f9f828c7c7db4948e68f9cb5c82ebd143331efa"
+        }
+      },
+      {
+        "original_path": "tests/compute_models/glm_original_mtp_roles.h",
+        "compiled_sha256": "b4a0ed7bdb5c18dd1d56224b75bc403a40d2bf8dcd05c36486267c01c2c91b85",
+        "bytes": 18300,
+        "archive_path": "compiled-sources/b4a0ed7bdb5c18dd1d56224b75bc403a40d2bf8dcd05c36486267c01c2c91b85/tests/compute_models/glm_original_mtp_roles.h",
+        "actual_copy": {
+          "path": "tests/compute_models/glm_original_mtp_roles.h",
+          "bytes": 18300,
+          "sha256": "b4a0ed7bdb5c18dd1d56224b75bc403a40d2bf8dcd05c36486267c01c2c91b85"
+        }
+      },
+      {
+        "original_path": "tests/compute_models/original_role_input.h",
+        "compiled_sha256": "ef769dc0479128b1ab6d727abe76b47fc96023e80ff6592e7442c40703932617",
+        "bytes": 7051,
+        "archive_path": "compiled-sources/ef769dc0479128b1ab6d727abe76b47fc96023e80ff6592e7442c40703932617/tests/compute_models/original_role_input.h",
+        "actual_copy": {
+          "path": "tests/compute_models/original_role_input.h",
+          "bytes": 7051,
+          "sha256": "ef769dc0479128b1ab6d727abe76b47fc96023e80ff6592e7442c40703932617"
+        }
+      },
+      {
+        "original_path": "tests/compute_models/glm_original_indexer_reference.h",
+        "compiled_sha256": "b6d4ab20192d490f6f6c63c3ce526c8556322a54300c990ea427afd0eb31ec12",
+        "bytes": 11617,
+        "archive_path": "compiled-sources/b6d4ab20192d490f6f6c63c3ce526c8556322a54300c990ea427afd0eb31ec12/tests/compute_models/glm_original_indexer_reference.h",
+        "actual_copy": {
+          "path": "tests/compute_models/glm_original_indexer_reference.h",
+          "bytes": 11617,
+          "sha256": "b6d4ab20192d490f6f6c63c3ce526c8556322a54300c990ea427afd0eb31ec12"
+        }
+      },
+      {
+        "original_path": "tests/compute_models/glm_shared_vocabulary_reference.h",
+        "compiled_sha256": "f091ff25783e12b28ac6e233fa2aca7c84702b8feefc5a6afaebf9f4ca75e446",
+        "bytes": 14905,
+        "archive_path": "compiled-sources/f091ff25783e12b28ac6e233fa2aca7c84702b8feefc5a6afaebf9f4ca75e446/tests/compute_models/glm_shared_vocabulary_reference.h",
+        "actual_copy": {
+          "path": "tests/compute_models/glm_shared_vocabulary_reference.h",
+          "bytes": 14905,
+          "sha256": "f091ff25783e12b28ac6e233fa2aca7c84702b8feefc5a6afaebf9f4ca75e446"
+        }
+      },
+      {
+        "original_path": "tests/compute_models/glm_pro_target_roles.h",
+        "compiled_sha256": "e981b64a009b9eda778ed64e7ad5726f1bb87db9edb009c30c6f795371dbe640",
+        "bytes": 13902,
+        "archive_path": "compiled-sources/e981b64a009b9eda778ed64e7ad5726f1bb87db9edb009c30c6f795371dbe640/tests/compute_models/glm_pro_target_roles.h",
+        "actual_copy": {
+          "path": "tests/compute_models/glm_pro_target_roles.h",
+          "bytes": 13902,
+          "sha256": "e981b64a009b9eda778ed64e7ad5726f1bb87db9edb009c30c6f795371dbe640"
+        }
+      },
+      {
+        "original_path": "tests/compute_models/glm_pro_target_fragment.h",
+        "compiled_sha256": "8dde97b6405386c09715a3206d5d7327239c51ca51a1c5408852e3120564dbdc",
+        "bytes": 3920,
+        "archive_path": "compiled-sources/8dde97b6405386c09715a3206d5d7327239c51ca51a1c5408852e3120564dbdc/tests/compute_models/glm_pro_target_fragment.h",
+        "actual_copy": {
+          "path": "tests/compute_models/glm_pro_target_fragment.h",
+          "bytes": 3920,
+          "sha256": "8dde97b6405386c09715a3206d5d7327239c51ca51a1c5408852e3120564dbdc"
+        }
+      },
+      {
+        "original_path": "tests/compute_models/glm_pro_target_reference.h",
+        "compiled_sha256": "0ba924ab6187547ba3db11c0d37e629ba344e08126bf04487afbfffa9ab43591",
+        "bytes": 7432,
+        "archive_path": "compiled-sources/0ba924ab6187547ba3db11c0d37e629ba344e08126bf04487afbfffa9ab43591/tests/compute_models/glm_pro_target_reference.h",
+        "actual_copy": {
+          "path": "tests/compute_models/glm_pro_target_reference.h",
+          "bytes": 7432,
+          "sha256": "0ba924ab6187547ba3db11c0d37e629ba344e08126bf04487afbfffa9ab43591"
+        }
+      },
+      {
+        "original_path": "tests/compute_models/glm_original_moe_roles.h",
+        "compiled_sha256": "123f1b8f850b36908f1643b741573a75aa93cb7399f5c7f6bc35d851eb54fb56",
+        "bytes": 26352,
+        "archive_path": "compiled-sources/123f1b8f850b36908f1643b741573a75aa93cb7399f5c7f6bc35d851eb54fb56/tests/compute_models/glm_original_moe_roles.h",
+        "actual_copy": {
+          "path": "tests/compute_models/glm_original_moe_roles.h",
+          "bytes": 26352,
+          "sha256": "123f1b8f850b36908f1643b741573a75aa93cb7399f5c7f6bc35d851eb54fb56"
+        }
+      },
+      {
+        "original_path": "tests/compute_models/glm_original_moe_reference.h",
+        "compiled_sha256": "2fbf01735019d5c8667f6c3f09d7ad640e31e4f7015b8adad8de2c589ac930f2",
+        "bytes": 16731,
+        "archive_path": "compiled-sources/2fbf01735019d5c8667f6c3f09d7ad640e31e4f7015b8adad8de2c589ac930f2/tests/compute_models/glm_original_moe_reference.h",
+        "actual_copy": {
+          "path": "tests/compute_models/glm_original_moe_reference.h",
+          "bytes": 16731,
+          "sha256": "2fbf01735019d5c8667f6c3f09d7ad640e31e4f7015b8adad8de2c589ac930f2"
+        }
+      },
+      {
+        "original_path": "tests/compute_models/glm_original_moe_resident_weights.h",
+        "compiled_sha256": "d169e7bfe8b5b43c9989e409eebfba2451e86bd6fc49be775b9fc5ec1d3b63e0",
+        "bytes": 11945,
+        "archive_path": "compiled-sources/d169e7bfe8b5b43c9989e409eebfba2451e86bd6fc49be775b9fc5ec1d3b63e0/tests/compute_models/glm_original_moe_resident_weights.h",
+        "actual_copy": {
+          "path": "tests/compute_models/glm_original_moe_resident_weights.h",
+          "bytes": 11945,
+          "sha256": "d169e7bfe8b5b43c9989e409eebfba2451e86bd6fc49be775b9fc5ec1d3b63e0"
+        }
+      },
+      {
+        "original_path": "tests/compute_models/glm_target_verifier_fragment.h",
+        "compiled_sha256": "0a8761c481fd8770053c380a5b41866b2ac6899649e85f592317c3ffb821e5d9",
+        "bytes": 4975,
+        "archive_path": "compiled-sources/0a8761c481fd8770053c380a5b41866b2ac6899649e85f592317c3ffb821e5d9/tests/compute_models/glm_target_verifier_fragment.h",
+        "actual_copy": {
+          "path": "tests/compute_models/glm_target_verifier_fragment.h",
+          "bytes": 4975,
+          "sha256": "0a8761c481fd8770053c380a5b41866b2ac6899649e85f592317c3ffb821e5d9"
+        }
+      },
+      {
+        "original_path": "tests/compute_models/model_graph_run.h",
+        "compiled_sha256": "53510f8b1dfde6fbed87685e56ee1a5b0bcbedf3e76357a904df46831cb663f5",
+        "bytes": 3467,
+        "archive_path": "compiled-sources/53510f8b1dfde6fbed87685e56ee1a5b0bcbedf3e76357a904df46831cb663f5/tests/compute_models/model_graph_run.h",
+        "actual_copy": {
+          "path": "tests/compute_models/model_graph_run.h",
+          "bytes": 3467,
+          "sha256": "53510f8b1dfde6fbed87685e56ee1a5b0bcbedf3e76357a904df46831cb663f5"
+        }
+      },
+      {
+        "original_path": "tests/compute_models/model_resident_fragment.h",
+        "compiled_sha256": "138deaba975edb57d7c29622fef0df737b22f924db43846d3c5bd6d1001fe0cd",
+        "bytes": 8672,
+        "archive_path": "compiled-sources/138deaba975edb57d7c29622fef0df737b22f924db43846d3c5bd6d1001fe0cd/tests/compute_models/model_resident_fragment.h",
+        "actual_copy": {
+          "path": "tests/compute_models/model_resident_fragment.h",
+          "bytes": 8672,
+          "sha256": "138deaba975edb57d7c29622fef0df737b22f924db43846d3c5bd6d1001fe0cd"
+        }
+      },
+      {
+        "original_path": "tests/compute_models/glm_gguf_mtp_fragment.h",
+        "compiled_sha256": "8face58f8bc695c425976c9c9ada2f6c8c0efc650e6416cf75a540756049b364",
+        "bytes": 13794,
+        "archive_path": "compiled-sources/8face58f8bc695c425976c9c9ada2f6c8c0efc650e6416cf75a540756049b364/tests/compute_models/glm_gguf_mtp_fragment.h",
+        "actual_copy": {
+          "path": "tests/compute_models/glm_gguf_mtp_fragment.h",
+          "bytes": 13794,
+          "sha256": "8face58f8bc695c425976c9c9ada2f6c8c0efc650e6416cf75a540756049b364"
+        }
+      },
+      {
+        "original_path": "tests/compute_models/glm_gguf_f32_cache_fragment.h",
+        "compiled_sha256": "88db91c4067d03a2cab98037e238f46660fe319daabca00e170a6fbcff697fdb",
+        "bytes": 12140,
+        "archive_path": "compiled-sources/88db91c4067d03a2cab98037e238f46660fe319daabca00e170a6fbcff697fdb/tests/compute_models/glm_gguf_f32_cache_fragment.h",
+        "actual_copy": {
+          "path": "tests/compute_models/glm_gguf_f32_cache_fragment.h",
+          "bytes": 12140,
+          "sha256": "88db91c4067d03a2cab98037e238f46660fe319daabca00e170a6fbcff697fdb"
+        }
+      },
+      {
+        "original_path": "tests/compute_models/glm_gguf_compute_fragment.h",
+        "compiled_sha256": "a6bdb37577a503b1070dbb66eef4ca64030e977ef91e3efdcbd02d85d1de4d98",
+        "bytes": 7819,
+        "archive_path": "compiled-sources/a6bdb37577a503b1070dbb66eef4ca64030e977ef91e3efdcbd02d85d1de4d98/tests/compute_models/glm_gguf_compute_fragment.h",
+        "actual_copy": {
+          "path": "tests/compute_models/glm_gguf_compute_fragment.h",
+          "bytes": 7819,
+          "sha256": "a6bdb37577a503b1070dbb66eef4ca64030e977ef91e3efdcbd02d85d1de4d98"
+        }
+      },
+      {
+        "original_path": "tests/compute_models/glm_gguf_model_types.h",
+        "compiled_sha256": "f992828eeee77e73c4d6d945bdd28042f1d8fbd51028f2e1ff0afc9f457c44a5",
+        "bytes": 2112,
+        "archive_path": "compiled-sources/f992828eeee77e73c4d6d945bdd28042f1d8fbd51028f2e1ff0afc9f457c44a5/tests/compute_models/glm_gguf_model_types.h",
+        "actual_copy": {
+          "path": "tests/compute_models/glm_gguf_model_types.h",
+          "bytes": 2112,
+          "sha256": "f992828eeee77e73c4d6d945bdd28042f1d8fbd51028f2e1ff0afc9f457c44a5"
+        }
+      },
+      {
+        "original_path": "tests/compute_models/glm_gguf_projection_fragment.h",
+        "compiled_sha256": "63f260164d3c6ca683886b1e0e652dbfa75c07b767405b7dd2688e15460f3706",
+        "bytes": 5602,
+        "archive_path": "compiled-sources/63f260164d3c6ca683886b1e0e652dbfa75c07b767405b7dd2688e15460f3706/tests/compute_models/glm_gguf_projection_fragment.h",
+        "actual_copy": {
+          "path": "tests/compute_models/glm_gguf_projection_fragment.h",
+          "bytes": 5602,
+          "sha256": "63f260164d3c6ca683886b1e0e652dbfa75c07b767405b7dd2688e15460f3706"
+        }
+      },
+      {
+        "original_path": "tests/compute_models/glm_gguf_runtime_source.h",
+        "compiled_sha256": "cfaa7b789d556c72a8d18e13d368822bce601c96e50a63fb675471fd7499a221",
+        "bytes": 12416,
+        "archive_path": "compiled-sources/cfaa7b789d556c72a8d18e13d368822bce601c96e50a63fb675471fd7499a221/tests/compute_models/glm_gguf_runtime_source.h",
+        "actual_copy": {
+          "path": "tests/compute_models/glm_gguf_runtime_source.h",
+          "bytes": 12416,
+          "sha256": "cfaa7b789d556c72a8d18e13d368822bce601c96e50a63fb675471fd7499a221"
+        }
+      },
+      {
+        "original_path": "tests/compute_models/glm_gguf_named_parameters.h",
+        "compiled_sha256": "f893729118b05a36c8a302c737f0f09348b1724875cf5cdf1e4c341a540c7cb1",
+        "bytes": 13321,
+        "archive_path": "compiled-sources/f893729118b05a36c8a302c737f0f09348b1724875cf5cdf1e4c341a540c7cb1/tests/compute_models/glm_gguf_named_parameters.h",
+        "actual_copy": {
+          "path": "tests/compute_models/glm_gguf_named_parameters.h",
+          "bytes": 13321,
+          "sha256": "f893729118b05a36c8a302c737f0f09348b1724875cf5cdf1e4c341a540c7cb1"
+        }
+      },
+      {
+        "original_path": "tests/compute_models/original_named_role_source.h",
+        "compiled_sha256": "22f951ce766d6a54c97a3d4ff5e93120e35b388426dad7a3ebc537d9a7eda1d4",
+        "bytes": 11638,
+        "archive_path": "compiled-sources/22f951ce766d6a54c97a3d4ff5e93120e35b388426dad7a3ebc537d9a7eda1d4/tests/compute_models/original_named_role_source.h",
+        "actual_copy": {
+          "path": "tests/compute_models/original_named_role_source.h",
+          "bytes": 11638,
+          "sha256": "22f951ce766d6a54c97a3d4ff5e93120e35b388426dad7a3ebc537d9a7eda1d4"
+        }
+      },
+      {
+        "original_path": "tests/compute_models/model_packed_expert_layout.h",
+        "compiled_sha256": "fd9b93166b70c068b12c26051d0f28b45e7c197679ce7d8112595f4bf959e01b",
+        "bytes": 7641,
+        "archive_path": "compiled-sources/fd9b93166b70c068b12c26051d0f28b45e7c197679ce7d8112595f4bf959e01b/tests/compute_models/model_packed_expert_layout.h",
+        "actual_copy": {
+          "path": "tests/compute_models/model_packed_expert_layout.h",
+          "bytes": 7641,
+          "sha256": "fd9b93166b70c068b12c26051d0f28b45e7c197679ce7d8112595f4bf959e01b"
+        }
+      },
+      {
+        "original_path": "tests/compute_models/dspark_original_role_source.h",
+        "compiled_sha256": "926137bfcad6f1757260d0fa177896365c30a8a17a21907cb1c4600d8434411b",
+        "bytes": 12316,
+        "archive_path": "compiled-sources/926137bfcad6f1757260d0fa177896365c30a8a17a21907cb1c4600d8434411b/tests/compute_models/dspark_original_role_source.h",
+        "actual_copy": {
+          "path": "tests/compute_models/dspark_original_role_source.h",
+          "bytes": 12316,
+          "sha256": "926137bfcad6f1757260d0fa177896365c30a8a17a21907cb1c4600d8434411b"
+        }
+      },
+      {
+        "original_path": "tests/compute_models/glm_gguf_expert_frontier.h",
+        "compiled_sha256": "e47d32a9c1e9f4052c11f293f13403d48a13bb3e0e00c8b1e50234b51c638cda",
+        "bytes": 7044,
+        "archive_path": "compiled-sources/e47d32a9c1e9f4052c11f293f13403d48a13bb3e0e00c8b1e50234b51c638cda/tests/compute_models/glm_gguf_expert_frontier.h",
+        "actual_copy": {
+          "path": "tests/compute_models/glm_gguf_expert_frontier.h",
+          "bytes": 7044,
+          "sha256": "e47d32a9c1e9f4052c11f293f13403d48a13bb3e0e00c8b1e50234b51c638cda"
+        }
+      },
+      {
+        "original_path": "tests/compute_models/glm_gguf_mtp_reference.h",
+        "compiled_sha256": "e5296f5c8721dbe21225a23f64226929d8c406a6cf473e0b3f4e10d1548b2191",
+        "bytes": 19156,
+        "archive_path": "compiled-sources/e5296f5c8721dbe21225a23f64226929d8c406a6cf473e0b3f4e10d1548b2191/tests/compute_models/glm_gguf_mtp_reference.h",
+        "actual_copy": {
+          "path": "tests/compute_models/glm_gguf_mtp_reference.h",
+          "bytes": 19156,
+          "sha256": "e5296f5c8721dbe21225a23f64226929d8c406a6cf473e0b3f4e10d1548b2191"
+        }
+      },
+      {
+        "original_path": "tests/compute_models/qwen24_original_nextn_reference.h",
+        "compiled_sha256": "f82b693dd541e9bc8d57790e4b32c66db39c03e588f1cbb99582c58a1f1fdf3a",
+        "bytes": 20889,
+        "archive_path": "compiled-sources/f82b693dd541e9bc8d57790e4b32c66db39c03e588f1cbb99582c58a1f1fdf3a/tests/compute_models/qwen24_original_nextn_reference.h",
+        "actual_copy": {
+          "path": "tests/compute_models/qwen24_original_nextn_reference.h",
+          "bytes": 20889,
+          "sha256": "f82b693dd541e9bc8d57790e4b32c66db39c03e588f1cbb99582c58a1f1fdf3a"
+        }
+      },
+      {
+        "original_path": "tests/compute_models/qwen27_original_nextn_reference.h",
+        "compiled_sha256": "ec31701bcfd76197978b1462c683f4f2381ec78872d0fe81b73d3beb1b64c166",
+        "bytes": 18076,
+        "archive_path": "compiled-sources/ec31701bcfd76197978b1462c683f4f2381ec78872d0fe81b73d3beb1b64c166/tests/compute_models/qwen27_original_nextn_reference.h",
+        "actual_copy": {
+          "path": "tests/compute_models/qwen27_original_nextn_reference.h",
+          "bytes": 18076,
+          "sha256": "ec31701bcfd76197978b1462c683f4f2381ec78872d0fe81b73d3beb1b64c166"
+        }
+      },
+      {
+        "original_path": "tests/compute_models/dspark_original_shared_reference.h",
+        "compiled_sha256": "f3a68f4bf5758818585c0e6e9e640137f88a751486036a7fd884889994252dff",
+        "bytes": 16279,
+        "archive_path": "compiled-sources/f3a68f4bf5758818585c0e6e9e640137f88a751486036a7fd884889994252dff/tests/compute_models/dspark_original_shared_reference.h",
+        "actual_copy": {
+          "path": "tests/compute_models/dspark_original_shared_reference.h",
+          "bytes": 16279,
+          "sha256": "f3a68f4bf5758818585c0e6e9e640137f88a751486036a7fd884889994252dff"
+        }
+      },
+      {
+        "original_path": "tests/compute_models/packed_projection_failure_capture.h",
+        "compiled_sha256": "42b6b68c8ab598e89a70a768b93a5bf019ce0a169beb0db736de7dc1836aa76f",
+        "bytes": 5454,
+        "archive_path": "compiled-sources/42b6b68c8ab598e89a70a768b93a5bf019ce0a169beb0db736de7dc1836aa76f/tests/compute_models/packed_projection_failure_capture.h",
+        "actual_copy": {
+          "path": "tests/compute_models/packed_projection_failure_capture.h",
+          "bytes": 5454,
+          "sha256": "42b6b68c8ab598e89a70a768b93a5bf019ce0a169beb0db736de7dc1836aa76f"
+        }
+      },
+      {
+        "original_path": ".scratch/glm-gguf-selected-20261023/B10/generated/glm_gguf_b10_artifacts.h",
+        "compiled_sha256": "e7e4af540fb776d07841f093ef16bb1e15f6d3761c6a6a835c00deb2f9ef4485",
+        "bytes": 11411,
+        "archive_path": "compiled-sources/e7e4af540fb776d07841f093ef16bb1e15f6d3761c6a6a835c00deb2f9ef4485/.scratch/glm-gguf-selected-20261023/B10/generated/glm_gguf_b10_artifacts.h",
+        "actual_copy": {
+          "path": ".scratch/glm-gguf-selected-20261023/B10/generated/glm_gguf_b10_artifacts.h",
+          "bytes": 11411,
+          "sha256": "e7e4af540fb776d07841f093ef16bb1e15f6d3761c6a6a835c00deb2f9ef4485"
+        }
+      }
+    ],
+    "shared_proofs": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\mtp-cpu-native-family-2026-10-24.json",
+        "bytes": 10043,
+        "sha256": "401d2c95f3f4e1dd7694442489b01503946b14ca9709aa35b468d2a64008aaa4"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\mtp-gdn-output-scale-2026-10-24.json",
+        "bytes": 3773,
+        "sha256": "fe4ca9d1d3e15dcf2bde69dbcffdf1d32cab5405f86150db9482aa985d071de5"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\mtp-batched-f32-bfloat-linear-2026-10-24.json",
+        "bytes": 3115,
+        "sha256": "daec677b967329d20ab3b0a2357398853e704c33ec98490591bfe5386998ea56"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\mtp-packed-mmvq-tail-integration-2026-10-24.json",
+        "bytes": 19332,
+        "sha256": "44fd2ee0b12afb343291a4f47359469c31258677a7079d8e7f7a08539ddca189"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\mtp-gguf-binding-gaps-2026-10-24.json",
+        "bytes": 13472,
+        "sha256": "821c504aa8b64f01577bd86a10e10ffd80a10fde599662cb837e4def671cc2bb"
+      }
+    ],
+    "compile_entry_source": {
+      "recorded": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\native-current-proposal\\build.py",
+        "bytes": 3906,
+        "sha256": "b0a96fa0f28a5109c1e4587242a6d0c06a73809424c2717a56894da6ca4b33f1"
+      },
+      "archived_copy": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\runtime-override-proposal\\before\\build.py",
+        "bytes": 3906,
+        "sha256": "b0a96fa0f28a5109c1e4587242a6d0c06a73809424c2717a56894da6ca4b33f1"
+      },
+      "current_source_claimed": false
+    },
+    "runtime_correction": {
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\cpu-native-avx2-corrected1\\result.json",
+        "bytes": 68235,
+        "sha256": "0fbd466594e7508f71a4d0ba6980e66cd37244b974c426d80ebdbb97b5ae9a8e"
+      },
+      "plan": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\cpu-runtime-assembly-proposal\\plan1.json",
+        "bytes": 53884,
+        "sha256": "54b3851584c249528a370a2d117f28ea7d85bcfccbf1f4f7fe7181618e019ece"
+      },
+      "module": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\native-integration\\tests-link4\\hyle_ggml_cpu_gdn_scale_v3.dll",
+        "bytes": 1204736,
+        "sha256": "fcb2b57d8aad1453c8dde3468986d4f0120edcd71ef3e6edfd86870c6c1914fa"
+      },
+      "helper": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\runtime_override.py",
+        "bytes": 3970,
+        "sha256": "46414bb5743db1a63c1ac17a631849a5c5688b21a44b366ad49c61503e40568d"
+      }
+    }
+  },
+  "limits": [
+    "Upstream layer76 input/residual, shared-index upstream74 IDs and finite initial histories are fixtures; this is not a full trained target engine or task-quality result.",
+    "One natural K1 trial and separate controlled match/rejection trials do not measure natural acceptance rate.",
+    "State/capacity properties are logical bounds. No TPS, full-model, measured physical memory or all-platform claim."
+  ],
+  "whole_original_model": false,
+  "throughput_evidence": false,
+  "memory_evidence": false,
+  "weight_bodies_rehashed": false,
+  "scope_or_progress_updated": false,
+  "corrections": [
+    {
+      "kind": "Validation runtime assembly",
+      "RCA": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\q8-diagnostic-proposal\\rca.json",
+        "bytes": 5633,
+        "sha256": "a6d5a58cd6215c358d5b2a23e8aac12b9f80f16640fda261ec7252085d11db20"
+      },
+      "original_failures": [
+        "checks1-cpu native3",
+        "checks2-cpu native3"
+      ],
+      "reclassified_as_passing": false,
+      "correction": "Complete correct AVX2 worker staged from its actual15-TU compile/link result; oracle and tolerances unchanged.",
+      "actual_runtime": {
+        "result": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\cpu-native-avx2-corrected1\\result.json",
+          "bytes": 68235,
+          "sha256": "0fbd466594e7508f71a4d0ba6980e66cd37244b974c426d80ebdbb97b5ae9a8e"
+        },
+        "plan": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\cpu-runtime-assembly-proposal\\plan1.json",
+          "bytes": 53884,
+          "sha256": "54b3851584c249528a370a2d117f28ea7d85bcfccbf1f4f7fe7181618e019ece"
+        },
+        "module": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\B10\\native-integration\\tests-link4\\hyle_ggml_cpu_gdn_scale_v3.dll",
+          "bytes": 1204736,
+          "sha256": "fcb2b57d8aad1453c8dde3468986d4f0120edcd71ef3e6edfd86870c6c1914fa"
+        },
+        "helper": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\runtime_override.py",
+          "bytes": 3970,
+          "sha256": "46414bb5743db1a63c1ac17a631849a5c5688b21a44b366ad49c61503e40568d"
+        }
+      }
+    }
+  ],
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\mtp-glm-gguf-b10-target-verifier-2026-10-24.zip",
+    "bytes": 3783253,
+    "sha256": "f64ba56f26cd74e70e01466056effcbf0decebcaab934ae3ba1f84239e9d8f1c"
+  },
+  "archived_files": 972
+}

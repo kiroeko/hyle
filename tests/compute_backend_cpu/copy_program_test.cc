@@ -33,6 +33,81 @@ hyle::Status bind(std::array<LeasePool, 4> &pools, CopyBatchInvocation &invocati
   return hyle::Status::Ok();
 }
 
+class HostAliasResource final : public mem::MemoryResource {
+public:
+  HostAliasResource(std::span<std::byte> storage, bool identity) noexcept
+      : storage_(storage), identity_(identity) {}
+  std::string_view name() const noexcept override { return "copy.test.host-alias"; }
+  mem::MemoryProperties properties() const noexcept override {
+    auto result = mem::system_resource().properties();
+    if (!identity_)
+      result.flags = mem::MemoryProperty::kHostAccessible | mem::MemoryProperty::kHostDeviceCoherent;
+    return result;
+  }
+  hyle::Result<mem::ResourceAllocation> allocate(std::size_t size,
+                                               std::size_t alignment) noexcept override {
+    if (live_ || size > storage_.size() || alignment > 64)
+      return std::unexpected(hyle::Status::ResourceExhausted("alias fixture allocation"));
+    live_ = true;
+    return mem::ResourceAllocation{storage_.data(), size, alignment};
+  }
+  void deallocate(mem::ResourceAllocation allocation) noexcept override {
+    EXPECT_TRUE(live_);
+    EXPECT_EQ(allocation.native_handle, storage_.data());
+    live_ = false; // The test's original array owns both imported aliases.
+  }
+  hyle::Result<mem::ResourceHostMapping> map_host(void *handle, std::size_t offset,
+      std::size_t bytes, mem::HostAccess access) noexcept override {
+    return mem::system_resource().resource().map_host(handle, offset, bytes, access);
+  }
+  hyle::Status unmap_host(void *handle, void *token, std::size_t offset,
+      std::size_t bytes, mem::HostAccess access) noexcept override {
+    return mem::system_resource().resource().unmap_host(handle, token, offset, bytes, access);
+  }
+private:
+  std::span<std::byte> storage_;
+  bool identity_, live_ = false;
+};
+
+TEST(CpuCopyProgram, HostAddressCapabilityRejectsUnprovenMappingsAndDetectsWrapperAliases) {
+  auto context = Context::create(cpu::device()).value();
+  auto queue = context.create_queue().value();
+  EXPECT_TRUE(mem::system_resource().properties().has(mem::MemoryProperty::kHostAddressIdentity));
+  for (const bool identity : {false, true}) {
+    SCOPED_TRACE(identity);
+    alignas(64) std::array<std::byte, 64> backing;
+    backing.fill(std::byte{37});
+    HostAliasResource source_resource(backing, identity), destination_resource(backing, identity);
+    const std::array resources{CopyResourceSpec{mem::MemoryResourceRef(source_resource), 32},
+        CopyResourceSpec{mem::MemoryResourceRef(destination_resource), 32}};
+    auto program = CopyBatchProgram::prepare(context, resources).value();
+    auto invocation = CopyBatchInvocation::create(program, queue).value();
+    auto source_pool = LeasePool::create(resources[0].resource, 64,
+        {.max_blocks = 1, .backing_alignment = 64}).value();
+    auto destination_pool = LeasePool::create(resources[1].resource, 64,
+        {.max_blocks = 1, .backing_alignment = 64}).value();
+    auto source = source_pool.allocate(32, 8).value().publish().value();
+    auto writer = destination_pool.allocate(32, 8).value();
+    const auto read_bound = invocation.bind_source({0}, source);
+    const auto write_bound = invocation.bind_mutable({1}, std::move(writer));
+    if (!identity) {
+      EXPECT_TRUE(read_bound.IsUnimplemented());
+      EXPECT_TRUE(write_bound.IsUnimplemented());
+      EXPECT_TRUE(writer.valid());
+      continue;
+    }
+    ASSERT_TRUE(read_bound.ok()) << read_bound.message();
+    ASSERT_TRUE(write_bound.ok()) << write_bound.message();
+    const std::array phases{CopyPhase{}};
+    // Different resource/lease identities cannot hide the same physical bytes.
+    const std::array ranges{CopyRange{{0}, {1}, {0}, 0, 4, 16}};
+    EXPECT_TRUE(invocation.prepare_replay(phases, ranges).IsInvalidArgument());
+    EXPECT_FALSE(invocation.submit());
+    EXPECT_EQ(invocation.report().native_calls, 0u);
+    for (auto byte : backing) EXPECT_EQ(byte, std::byte{37});
+  }
+}
+
 TEST(CpuCopyProgram, TwoSlotsUseOriginalSynchronousCopyAndFixedMetadataReplay) {
   auto context = Context::create(cpu::device()).value();
   auto queue = context.create_queue().value();

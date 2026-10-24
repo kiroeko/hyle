@@ -1,0 +1,1043 @@
+{
+  "status": "IMPLEMENTED_FINITE_CONSUMER_AND_COLD_ALIGNMENT_CHECKS_PASS",
+  "date": "2026-10-22",
+  "goal_complete": false,
+  "product_changes": [
+    {
+      "path": "src\\graph\\executable.cc",
+      "bytes": 477960,
+      "sha256": "3439cde8a75e6bf2c1ed4397a7756cb9b2e6765305af7b2882b76c3945dab06d"
+    },
+    {
+      "path": "src\\compute_provider_ggml_cuda\\program.h",
+      "bytes": 4726,
+      "sha256": "36f93bf98562d352a32e14db7ad6de03a369a3173dd3f9558c0ce306b90c1869"
+    },
+    {
+      "path": "tests\\graph\\region_provider_test.cc",
+      "bytes": 604686,
+      "sha256": "f2e3bdd9d62523d444c23696bea80191476e2252792a4208b1cd055454ee7ed3"
+    },
+    {
+      "path": "tests\\graph_route_cuda\\dspark_feedback_consumer_test.cc",
+      "bytes": 17419,
+      "sha256": "f4adea5f826cd1be837ef08da9f21081c3762b1dcf8d89633b562f21eee33b76"
+    },
+    {
+      "path": "tests\\graph_route_cuda\\dspark_original_confidence_test.cc",
+      "bytes": 17796,
+      "sha256": "e7a0aa1f161c4f87334f889162edc8f9ca549dc1af1be9462f288270c13f45a2"
+    },
+    {
+      "path": "tests\\graph_route_cuda\\CMakeLists.txt",
+      "bytes": 5166,
+      "sha256": "76a4cabc6725f9c850ced7e0dbf8bda03b0d2825ead4d3545d8a60ae68772c43"
+    }
+  ],
+  "public_API_changed": false,
+  "model_provider_whitelist_added": false,
+  "SDK_builds": 0,
+  "NVCC_builds": 0,
+  "shader_builds": 0,
+  "implementation": {
+    "lease_lookup": "Collect the current resource episode ReadLease candidates once, at the first actual nonborrowed native lookup. Optional distinguishes never-built from a valid empty list; existing borrowed-carrier facts are reused, without an extra provider-query pass. No cross-episode permission/readiness cache.",
+    "alias_qualification": "After actual local resource/alias placement, reject incompatible known static owned caller-buffer input offsets before preparing the candidate. Reuse original region/leaf suffix retry and hard required-instance constraints. A real materializing Copy has a new root. Symbolic, external, constant and generated unknown bases retain original later validation.",
+    "F32_Add": "GGML CUDA F32 Binary(Add) declares natural4B alignment. Actual linked native normal/unravel and multi-Add scalar32 accesses, same-dtype semantic contract and other fused-reader guards were checked. Other op/dtype requirements and workspace allocation alignment remain unchanged.",
+    "feedback": "Ordinary Graph five-row actual TopK1 I32 output drives the next Markov Gather, F32 bias and selected token. Confidence pairs original collapsed BF16 hidden with that row token_i Markov embedding. A separate teacher-forced path supplies a counterexample.",
+    "original_role": "Exact8704B trained sidecar BF16 conf_proj.weight, full hidden4096+Markov256 BF16 inputs, cold exact F32 parameter widening, Concat/Cast/F32 MatMul raw output and a separately declared sigmoid probability. No new model-specific public API or GPU kernel."
+  },
+  "checks": {
+    "common": {
+      "status": "PASS",
+      "process": {
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-next-20261022\\tests-link4\\checks.exe",
+          "--gtest_filter=GraphRegions.*Captur*:CudaDeviceStatus.*:GraphRegions.DeferredPortsBindOriginalSourcesAndProjectOnlyAfterSuccess:GraphRegions.OwnedNativeInputsKeepFirstCoveringPermissionAcrossRetryAndRebind:GraphRegions.EmptyOwnedNativeInputKeepsItsValidZeroBytePermission:GraphRegions.ExclusiveDeferredInputDoesNotCaptureItsUpgradeableReader:GraphRegions.InputSliceAlignmentDeclinesRegionAndLeafBeforePreparation:GraphRegions.CopiedSliceGetsItsOwnAlignedInputBeforeCandidateQualification",
+          "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-next-20261022\\checks4\\results.xml"
+        ],
+        "cwd": "C:\\public\\project-hyle\\hyle",
+        "started": 1792664077.082691,
+        "timeout_seconds": 120,
+        "throughput_evidence": false,
+        "memory_evidence": false,
+        "trace": false,
+        "profiler": false,
+        "pid": 87344,
+        "exit": 0,
+        "timed_out": false,
+        "finished": 1792664077.7367713,
+        "process_wall_seconds": 0.6528968999627978
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-next-20261022\\tests-link4\\checks.exe",
+        "bytes": 142224896,
+        "sha256": "386b297e40ed02a7e69c02bbec7447897bb1e42398d45a79099de0ebf9ee19d4"
+      },
+      "tests": 29,
+      "failures": 0,
+      "skips": 0,
+      "cases": [
+        {
+          "name": "InputSliceAlignmentDeclinesRegionAndLeafBeforePreparation",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\region_provider_test.cc",
+          "line": "3953",
+          "status": "run",
+          "result": "completed",
+          "time": "0.004",
+          "timestamp": "2026-10-22T18:14:37.392",
+          "classname": "GraphRegions"
+        },
+        {
+          "name": "CopiedSliceGetsItsOwnAlignedInputBeforeCandidateQualification",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\region_provider_test.cc",
+          "line": "4016",
+          "status": "run",
+          "result": "completed",
+          "time": "0.",
+          "timestamp": "2026-10-22T18:14:37.396",
+          "classname": "GraphRegions"
+        },
+        {
+          "name": "BorrowedCaptureLaunchUsesOriginalAdmissionAndRejectsForeignContext",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\region_provider_test.cc",
+          "line": "5716",
+          "status": "run",
+          "result": "completed",
+          "time": "0.",
+          "timestamp": "2026-10-22T18:14:37.396",
+          "classname": "GraphRegions"
+        },
+        {
+          "name": "OrdinaryBindingsAreColdBeforeOriginalCommandCapture",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\region_provider_test.cc",
+          "line": "5803",
+          "status": "run",
+          "result": "completed",
+          "time": "0.",
+          "timestamp": "2026-10-22T18:14:37.396",
+          "classname": "GraphRegions"
+        },
+        {
+          "name": "CapturesCompatibleRangesAroundAnUncapturableCommandInOneSequence",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\region_provider_test.cc",
+          "line": "5848",
+          "status": "run",
+          "result": "completed",
+          "time": "0.",
+          "timestamp": "2026-10-22T18:14:37.396",
+          "classname": "GraphRegions"
+        },
+        {
+          "name": "CapturesAndReplaysACommandSegmentWithoutRewalkingItsSteps",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\region_provider_test.cc",
+          "line": "5928",
+          "status": "run",
+          "result": "completed",
+          "time": "0.",
+          "timestamp": "2026-10-22T18:14:37.396",
+          "classname": "GraphRegions"
+        },
+        {
+          "name": "RetiredCaptureRebuildsNewBindingsWithoutPublishingFailure",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\region_provider_test.cc",
+          "line": "6026",
+          "status": "run",
+          "result": "completed",
+          "time": "0.",
+          "timestamp": "2026-10-22T18:14:37.396",
+          "classname": "GraphRegions"
+        },
+        {
+          "name": "NativeInvalidationAndQueueReplacementDiscardCaptureStorage",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\region_provider_test.cc",
+          "line": "6108",
+          "status": "run",
+          "result": "completed",
+          "time": "0.",
+          "timestamp": "2026-10-22T18:14:37.397",
+          "classname": "GraphRegions"
+        },
+        {
+          "name": "StablePrivateCaptureVariantsReuseBothBoundPortsAfterPreparation",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\region_provider_test.cc",
+          "line": "6183",
+          "status": "run",
+          "result": "completed",
+          "time": "0.",
+          "timestamp": "2026-10-22T18:14:37.397",
+          "classname": "GraphRegions"
+        },
+        {
+          "name": "CaptureVariantsUseBoundedLruAndClearBeforeForcedChanges",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\region_provider_test.cc",
+          "line": "6234",
+          "status": "run",
+          "result": "completed",
+          "time": "0.",
+          "timestamp": "2026-10-22T18:14:37.397",
+          "classname": "GraphRegions"
+        },
+        {
+          "name": "CaptureVariantEndAndSealFailuresCannotPublishAnOldRoute",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\region_provider_test.cc",
+          "line": "6321",
+          "status": "run",
+          "result": "completed",
+          "time": "0.",
+          "timestamp": "2026-10-22T18:14:37.397",
+          "classname": "GraphRegions"
+        },
+        {
+          "name": "UnknownCaptureIdentityRepreparesAfterSameTupleBindingEpisode",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\region_provider_test.cc",
+          "line": "6395",
+          "status": "run",
+          "result": "completed",
+          "time": "0.",
+          "timestamp": "2026-10-22T18:14:37.397",
+          "classname": "GraphRegions"
+        },
+        {
+          "name": "FailedCommandAndCapturedSlotsRetireAtTheActualTerminal",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\region_provider_test.cc",
+          "line": "6550",
+          "status": "run",
+          "result": "completed",
+          "time": "0.",
+          "timestamp": "2026-10-22T18:14:37.397",
+          "classname": "GraphRegions"
+        },
+        {
+          "name": "DeferredPortsBindOriginalSourcesAndProjectOnlyAfterSuccess",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\region_provider_test.cc",
+          "line": "11544",
+          "status": "run",
+          "result": "completed",
+          "time": "0.",
+          "timestamp": "2026-10-22T18:14:37.397",
+          "classname": "GraphRegions"
+        },
+        {
+          "name": "OwnedNativeInputsKeepFirstCoveringPermissionAcrossRetryAndRebind",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\region_provider_test.cc",
+          "line": "11605",
+          "status": "run",
+          "result": "completed",
+          "time": "0.",
+          "timestamp": "2026-10-22T18:14:37.397",
+          "classname": "GraphRegions"
+        },
+        {
+          "name": "EmptyOwnedNativeInputKeepsItsValidZeroBytePermission",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\region_provider_test.cc",
+          "line": "11719",
+          "status": "run",
+          "result": "completed",
+          "time": "0.",
+          "timestamp": "2026-10-22T18:14:37.397",
+          "classname": "GraphRegions"
+        },
+        {
+          "name": "ExclusiveDeferredInputDoesNotCaptureItsUpgradeableReader",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\region_provider_test.cc",
+          "line": "11774",
+          "status": "run",
+          "result": "completed",
+          "time": "0.",
+          "timestamp": "2026-10-22T18:14:37.397",
+          "classname": "GraphRegions"
+        },
+        {
+          "name": "GpuChecksReportOnlyAfterCompletionAndFreshRunsRecover",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_backend_cuda\\device_status_test.cc",
+          "line": "152",
+          "status": "run",
+          "result": "completed",
+          "time": "0.093",
+          "timestamp": "2026-10-22T18:14:37.397",
+          "classname": "CudaDeviceStatus"
+        },
+        {
+          "name": "OnePrefixKeepsItsFirstDeviceFailure",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_backend_cuda\\device_status_test.cc",
+          "line": "191",
+          "status": "run",
+          "result": "completed",
+          "time": "0.003",
+          "timestamp": "2026-10-22T18:14:37.491",
+          "classname": "CudaDeviceStatus"
+        },
+        {
+          "name": "ImportsRetainSourceWordsAfterEarlyObservationAndSlotReuse",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_backend_cuda\\device_status_test.cc",
+          "line": "208",
+          "status": "run",
+          "result": "completed",
+          "time": "0.041",
+          "timestamp": "2026-10-22T18:14:37.495",
+          "classname": "CudaDeviceStatus"
+        },
+        {
+          "name": "CapturedSlotsResetStateAndRetainArtifactsThroughClose",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_backend_cuda\\device_status_test.cc",
+          "line": "267",
+          "status": "run",
+          "result": "completed",
+          "time": "0.014",
+          "timestamp": "2026-10-22T18:14:37.536",
+          "classname": "CudaDeviceStatus"
+        },
+        {
+          "name": "MixedCapturesAndRuntimeWorkAggregateIntoOnePrefix",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_backend_cuda\\device_status_test.cc",
+          "line": "307",
+          "status": "run",
+          "result": "completed",
+          "time": "0.003",
+          "timestamp": "2026-10-22T18:14:37.551",
+          "classname": "CudaDeviceStatus"
+        },
+        {
+          "name": "PureCaptureAndPrefixAddNoStatusCommands",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_backend_cuda\\device_status_test.cc",
+          "line": "324",
+          "status": "run",
+          "result": "completed",
+          "time": "0.002",
+          "timestamp": "2026-10-22T18:14:37.554",
+          "classname": "CudaDeviceStatus"
+        },
+        {
+          "name": "PureArtifactsSurviveCheckedStatusStorageHandoff",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_backend_cuda\\device_status_test.cc",
+          "line": "363",
+          "status": "run",
+          "result": "completed",
+          "time": "0.002",
+          "timestamp": "2026-10-22T18:14:37.557",
+          "classname": "CudaDeviceStatus"
+        },
+        {
+          "name": "RebuiltCheckedCaptureUsesNewArgumentsAndKeepsOldFailure",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_backend_cuda\\device_status_test.cc",
+          "line": "409",
+          "status": "run",
+          "result": "completed",
+          "time": "0.002",
+          "timestamp": "2026-10-22T18:14:37.560",
+          "classname": "CudaDeviceStatus"
+        },
+        {
+          "name": "CapturedStatusRejectsOverlappingReuseAndAbortIsClean",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_backend_cuda\\device_status_test.cc",
+          "line": "500",
+          "status": "run",
+          "result": "completed",
+          "time": "0.019",
+          "timestamp": "2026-10-22T18:14:37.563",
+          "classname": "CudaDeviceStatus"
+        },
+        {
+          "name": "ReservedReferenceBudgetRejectsWithoutLosingAcceptedWork",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_backend_cuda\\device_status_test.cc",
+          "line": "537",
+          "status": "run",
+          "result": "completed",
+          "time": "0.003",
+          "timestamp": "2026-10-22T18:14:37.582",
+          "classname": "CudaDeviceStatus"
+        },
+        {
+          "name": "KnownTailFailureAndUnknownDeviceCodeRemainErrors",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_backend_cuda\\device_status_test.cc",
+          "line": "566",
+          "status": "run",
+          "result": "completed",
+          "time": "0.002",
+          "timestamp": "2026-10-22T18:14:37.586",
+          "classname": "CudaDeviceStatus"
+        },
+        {
+          "name": "ColdMetadataOomRollsBackPoolAndNativeCapturedStorage",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_backend_cuda\\device_status_test.cc",
+          "line": "611",
+          "status": "run",
+          "result": "completed",
+          "time": "0.002",
+          "timestamp": "2026-10-22T18:14:37.589",
+          "classname": "CudaDeviceStatus"
+        }
+      ],
+      "scope": "Capture lifetime plus original nonborrowed native F1 permission selection, zero-byte owned input, exclusive upgrade, failure/rebind and generated references."
+    },
+    "dspark": {
+      "process": {
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-next-20261022\\dspark-link2\\dspark-checks.exe",
+          "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-next-20261022\\dspark-checks2\\results.xml"
+        ],
+        "cwd": "C:\\public\\project-hyle\\hyle",
+        "started": 1792664086.729532,
+        "timeout_seconds": 120,
+        "throughput_evidence": false,
+        "memory_evidence": false,
+        "trace": false,
+        "profiler": false,
+        "pid": 53892,
+        "exit": 0,
+        "timed_out": false,
+        "finished": 1792664087.3498516,
+        "process_wall_seconds": 0.6203276000451297
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-next-20261022\\dspark-link2\\dspark-checks.exe",
+        "bytes": 139663872,
+        "sha256": "f73d72d4931c4d3adfdf06b9803fc2200bc894578cfe080c600e2cecdce015b5"
+      },
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "disabled": 0,
+      "skips": 0,
+      "cases": [
+        {
+          "name": "FiveGreedyRowsFeedActualMarkovIdsAndKeepPriorResults",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_cuda\\dspark_feedback_consumer_test.cc",
+          "line": "249",
+          "status": "run",
+          "result": "completed",
+          "time": "0.143",
+          "timestamp": "2026-10-22T18:14:47.042",
+          "classname": "CudaDSparkFeedback"
+        },
+        {
+          "name": "FullWidthRawAndSidecarPolicyKeepPriorLeases",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_cuda\\dspark_original_confidence_test.cc",
+          "line": "211",
+          "status": "run",
+          "result": "completed",
+          "time": "0.006",
+          "timestamp": "2026-10-22T18:14:47.186",
+          "classname": "CudaDSparkOriginalConfidence"
+        }
+      ],
+      "scope": "Finite CUDA ordinary Graph five-row DSpark head feedback, deterministic synthetic boundary inputs/weights. Not a full 129280-vocabulary, three-stage original-payload model or accepted-target-state journey; no TPS/memory claim.",
+      "test_properties": {
+        "FiveGreedyRowsFeedActualMarkovIdsAndKeepPriorResults": {
+          "scope": "finite17-vocabulary/8-hidden/4-Markov, sourceBF16+F32 head boundary only",
+          "actual_submissions": "4",
+          "proposal_rows_per_submission": "5"
+        },
+        "FullWidthRawAndSidecarPolicyKeepPriorLeases": {
+          "original_payload_sha256": "15c5d09c7842d0f947ce0afdc154691ead377e6263af71bd2f7cb34bd592f30f",
+          "original_payload_role": "conf_proj.weight BF16[1,4352], fixed fbbb5b93fb787c21338159b0af3318bb3f4d9768",
+          "actual_submissions": "4",
+          "scope": "one original8704B confidence role/full4096+256width/rawF32+separateSigmoid; not completeMTP/quality"
+        }
+      }
+    },
+    "ordinary_MTP_screen": {
+      "status": "PASS",
+      "records": [
+        {
+          "arm": "hyle_plain",
+          "process": {
+            "command": [
+              "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-next-20261022\\hyle-link4\\qwen.exe",
+              "--inputs",
+              "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-window-20261022\\inputs\\text",
+              "--steps",
+              "64",
+              "--capacity",
+              "1024",
+              "--max-sessions",
+              "1",
+              "--active-sequences",
+              "1",
+              "--prefix-cache",
+              "off",
+              "--progress",
+              "direct",
+              "--replay",
+              "auto",
+              "--mtp",
+              "off"
+            ],
+            "cwd": "C:\\public\\project-hyle\\hyle",
+            "started": 1792664077.8392982,
+            "timeout_seconds": 120,
+            "throughput_evidence": false,
+            "memory_evidence": false,
+            "trace": false,
+            "profiler": false,
+            "pid": 83860,
+            "exit": 0,
+            "timed_out": false,
+            "finished": 1792664080.6829267,
+            "process_wall_seconds": 2.843456199974753
+          },
+          "image": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-next-20261022\\hyle-link4\\qwen.exe",
+            "bytes": 140411392,
+            "sha256": "9dce4f40d2edb8004c0d79c58e20de6ca6cdc5d1477db3773d26b40d7a05d883"
+          },
+          "unchanged_fields": {
+            "generated_ids": true,
+            "actual_graph_calls": true,
+            "actual_target_rows": true,
+            "actual_draft_rows": true,
+            "committed_target_rows": true,
+            "verified_target_rows": true,
+            "committed_target_decode_rows": true,
+            "draft_rows": true,
+            "draft_rounds": true,
+            "agreements": true,
+            "accepted_drafts": true,
+            "generated_decode_tokens": true,
+            "prefill_target_rows": true,
+            "prefill_draft_rows": true,
+            "visible_tokens": true,
+            "cache_live_requested_bytes": true,
+            "cache_peak_requested_bytes": true,
+            "score_dtype": true,
+            "score_policy": true
+          },
+          "capture_recorded": 2,
+          "capture_reused": 61,
+          "decode_tokens_per_second": 100.33900248697384,
+          "throughput_claim": false
+        },
+        {
+          "arm": "hyle_mtp",
+          "process": {
+            "command": [
+              "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-next-20261022\\hyle-link4\\qwen.exe",
+              "--inputs",
+              "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-window-20261022\\inputs\\mtp",
+              "--steps",
+              "64",
+              "--capacity",
+              "1024",
+              "--max-sessions",
+              "1",
+              "--active-sequences",
+              "1",
+              "--prefix-cache",
+              "off",
+              "--progress",
+              "direct",
+              "--replay",
+              "auto",
+              "--mtp",
+              "on"
+            ],
+            "cwd": "C:\\public\\project-hyle\\hyle",
+            "started": 1792664080.6929264,
+            "timeout_seconds": 120,
+            "throughput_evidence": false,
+            "memory_evidence": false,
+            "trace": false,
+            "profiler": false,
+            "pid": 86296,
+            "exit": 0,
+            "timed_out": false,
+            "finished": 1792664083.4418335,
+            "process_wall_seconds": 2.7479826000053436
+          },
+          "image": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-next-20261022\\hyle-link4\\qwen.exe",
+            "bytes": 140411392,
+            "sha256": "9dce4f40d2edb8004c0d79c58e20de6ca6cdc5d1477db3773d26b40d7a05d883"
+          },
+          "unchanged_fields": {
+            "generated_ids": true,
+            "actual_graph_calls": true,
+            "actual_target_rows": true,
+            "actual_draft_rows": true,
+            "committed_target_rows": true,
+            "verified_target_rows": true,
+            "committed_target_decode_rows": true,
+            "draft_rows": true,
+            "draft_rounds": true,
+            "agreements": true,
+            "accepted_drafts": true,
+            "generated_decode_tokens": true,
+            "prefill_target_rows": true,
+            "prefill_draft_rows": true,
+            "visible_tokens": true,
+            "cache_live_requested_bytes": true,
+            "cache_peak_requested_bytes": true,
+            "score_dtype": true,
+            "score_policy": true
+          },
+          "capture_recorded": 19,
+          "capture_reused": 49,
+          "decode_tokens_per_second": 122.6169254564999,
+          "throughput_claim": false
+        }
+      ],
+      "scope": "One current ordinary and one MTP process, output/work/decisions/resource regression only. Not a formal TPS or memory window; latest four-arm table remains AU."
+    },
+    "linked_native_alignment_review": {
+      "scope": "Static host-only inspection of actual linked archive, no GPU/compiler/native model execution or source edit.",
+      "actual_archive": {
+        "path": ".scratch/validation/cuda-final-u3-delivery/reference-windows/lib/ggml-cuda.lib",
+        "bytes": 108378918,
+        "sha256_from_actual_link_plan": "ebc36f3034c307facbbbb2b7e75643551bb6324f23cceceae08901999c88aa11",
+        "receipt": ".scratch/qwen-mtp-next-20261022/dspark-link1/link-plan.json"
+      },
+      "actual_member": {
+        "name": "src/compute_ggml_runtime/vendor/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/binbcast.cu.obj",
+        "archive_data_offset": 102432088,
+        "bytes": 2802211,
+        "sha256_read_from_actual_archive": "35d94485f0214fc6535ecf2d066cc56147701f328f6a6913a839cef99742f983",
+        "embedded_source_path": "C:/hv/m2b1-cuda/src/compute_ggml_runtime/source-f99368c68335266b/src/ggml-cuda/binbcast.cu",
+        "original_source_still_exists": false
+      },
+      "actual_device_proof": {
+        "matched_functions": 16,
+        "instantiations": "op_add,float,float,float; k_bin_bcast and k_bin_bcast_unravel; one through eight fused RHS pointers",
+        "global_memory_instruction_count": 104,
+        "mnemonics": [
+          "LDG.E",
+          "STG.E"
+        ],
+        "operand_width_bits": 32,
+        "interpretation": "Every actual F32 add kernel uses individual 32-bit global loads/stores, not64/128-bit vector accesses. Address operands such as[R10.64] are64-bit addresses, not64-bit data loads. Four-byte-aligned F32 row bases satisfy the demonstrated memory access granularity."
+      },
+      "linked_native_dispatch": {
+        "source": ".scratch/architecture-refactor-2026-10-18/gdn-direct-state-output/native-source/src/ggml-cuda/ggml-cuda.cu",
+        "sha256": "e4b2cd325b2390c8aaed56c50fd2037a13a537210c01fc7adda7e1f5580f9dc8",
+        "identity": ".scratch/architecture-refactor-2026-10-18/gdn-direct-state-output/checks/native1/native-main-identity.json",
+        "anchors": [
+          "2790-2793 GGML_OP_ADD/ADD1 -> ggml_cuda_op_add",
+          "5840-5870 multi-add chain -> ggml_cuda_op_fused_add",
+          "5466-5518 matmul+add uses same qualified matvec matcher",
+          "2208-2215 actual matvec fusion address guard requires F32 input/ids/bias/scale alignof(float); matrix and output constraints remain independent"
+        ]
+      },
+      "source_crosschecks_not_compiled_identity": [
+        {
+          "path": "C:/Users/kiro/AppData/Local/hyle/dependencies/v1/sources/ggml-456172ec733a-41b7e10fd424/src/ggml-cuda/binbcast.cu",
+          "sha256": "08c4e21cc2144ee317c52b23c940105f04ffa47a3ed71cbf1f5e06ecaa8cb810"
+        },
+        {
+          "path": "C:/Users/kiro/AppData/Local/hyle/dependencies/v1/sources/ggml_cpu-ffa4e8b80930-ac5706fbc134/src/ggml-cuda/binbcast.cu",
+          "sha256": "65e2270b9aeedc298be30d0e5fc117e85fad5f8c298a292615716a912473edfa",
+          "anchors": "F32 dispatch419-420/442-443; scalar load kernel31-100; stride divisibility284-297; fused_add498-524"
+        }
+      ],
+      "conclusion": "The demonstrated failure has a more direct provider-capability repair than changing the finite head or inserting consumer copies: the original same-dtype F32 Add carrier has natural4B argument accesses. Actual binary ordinary/unravel/fused1..8 kernels show no odd/even vector alternative. A F32 Binary(Add)4B declaration is supported within existing provider admission. Other operation/type requirements remain256 or their established scalar exceptions. Graph is correct to reject an alias that violates a declared requirement; the generic automatic consumer-edge Copy/alternative-route fallback at propagate_alias_alignments is still absent and is not claimed implemented by this provider fact.",
+      "limitations": [
+        "Original f993 binbcast.cu per-file checksum is not available; current shared caches are not mislabeled as that old compiled source. Binary instruction evidence is from the actual linked member.",
+        "The root proposed odd-width branch is deliberately narrower than the observed set of actual scalarF32 kernel instantiations. This review is not a complete all-shape provider qualification.",
+        "No actual successful DSpark submission yet; first Graph compile failure remains preserved."
+      ],
+      "evidence": [
+        {
+          "path": ".scratch/qwen-mtp-next-20261022/dspark/alignment-native/sass-f32-add.txt",
+          "bytes": 979314,
+          "sha256": "fc3ba6faa1ae30f4a999c1fa2f2e030f65bce90e648981db6191e3e1b3df8542"
+        },
+        {
+          "path": ".scratch/qwen-mtp-next-20261022/dspark/alignment-native/sass-f32-add-command.json",
+          "bytes": 20394,
+          "sha256": "1e0e26742c9de3fbb6dd58abd41480f4c9962b7365482bd8a12214dc421d6da4"
+        },
+        {
+          "path": ".scratch/qwen-mtp-next-20261022/dspark/alignment-native/sass-f32-add.stderr.log",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "earlier_empty_filter": {
+        "command_record": ".scratch/qwen-mtp-next-20261022/dspark/alignment-native/command.json",
+        "reason": "Initial exact-name filter matched zero functions; output onlymetadata is not used as device proof. It is retained rather than silently replaced."
+      },
+      "recommended_public_fact": {
+        "operation": "BinaryKind::kAdd",
+        "port_dtype": "F32, same dtype mandated by infer_binary",
+        "minimum_alignment_bytes": 4,
+        "shape_restriction": "No odd-dimension restriction is required by the observed kernel dispatch; this remains within the provider original admitted shape/stride bounds.",
+        "unchanged": "Other operations/dtypes retain original declarations, actual typed view/stride/extent/resource/alias validation, native fusion address gates and Graph permission/seal/retirement."
+      },
+      "all_F32_candidates_check": {
+        "normal_and_unravel": true,
+        "n_fuse": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8
+        ],
+        "device_kernels": 16,
+        "no_float2_float4_add_kernel_candidates": true,
+        "global_memory_data_width": "All104 memory instructions in these16 actual kernels are scalar32, regardless odd/even final dimension.64-bit bracketed address registers do not increase data width.",
+        "mixed_dtype_excluded": "src/compute_ops/operation.cc480-488 rejects different input dtypes and creates output with same dtype; this positive F32 Binary(Add) fact does not expose mixed F16/F32 internal GGML dispatch."
+      },
+      "additional_fusion_review": [
+        {
+          "path": ".scratch/architecture-refactor-2026-10-18/gdn-direct-state-output/native-source/src/ggml-cuda/ggml-cuda.cu",
+          "anchors": "2208-2215,5466-5518",
+          "fact": "Actually compiled overlay matvec matcher accepts both Add operand orders, and validates bias/input IDs/scale with alignof(float); matrix alignment and restrict/no-overlap checks remain separate."
+        },
+        {
+          "path": "C:/Users/kiro/AppData/Local/hyle/dependencies/v1/sources/ggml_cpu-ffa4e8b80930-ac5706fbc134/src/ggml-cuda/norm.cu",
+          "anchors": "76-100,145-151,595-620",
+          "fact": "RMSNorm+Mul+Add add pointer is constfloat* and loaded as add[add_col], scalar. This source crosscheck is not relabeled as the missing f993 per-file compiled checksum."
+        },
+        {
+          "path": "C:/Users/kiro/AppData/Local/hyle/dependencies/v1/sources/ggml_cpu-ffa4e8b80930-ac5706fbc134/src/ggml-cuda/ssm-conv.cu",
+          "anchors": "7-14,38,112",
+          "fact": "F32 convolution Add bias uses constfloat* and scalar bias[bidy*split_d_inner+tid]. This source crosscheck is not a new native execution result."
+        },
+        {
+          "path": ".scratch/architecture-refactor-2026-10-18/gdn-direct-state-output/native-source/src/ggml-cuda/ggml-cuda.cu",
+          "anchors": "5795-5835",
+          "fact": "Snake-tail Add shares x with the leading Mul, so the region full requirement still includes original Mul256B. A lower Add requirement cannot weaken that other-node boundary requirement."
+        }
+      ],
+      "boundary_source_crosschecks": [
+        {
+          "path": "src/compute_ops/operation.cc",
+          "bytes": 64429,
+          "sha256": "21b665ce7df5e6bfcfe25dea3f302044ae9c536a6b9203d4ec335bd898b615c4"
+        },
+        {
+          "path": "src/compute_provider_ggml_cuda/program.h",
+          "bytes": 4726,
+          "sha256": "36f93bf98562d352a32e14db7ad6de03a369a3173dd3f9558c0ce306b90c1869"
+        },
+        {
+          "path": "C:/Users/kiro/AppData/Local/hyle/dependencies/v1/sources/ggml_cpu-ffa4e8b80930-ac5706fbc134/src/ggml-cuda/norm.cu",
+          "bytes": 31994,
+          "sha256": "22665ae073caf2090716ce6476d7661caada5e327edcd48ba202550209fdedfd"
+        },
+        {
+          "path": "C:/Users/kiro/AppData/Local/hyle/dependencies/v1/sources/ggml_cpu-ffa4e8b80930-ac5706fbc134/src/ggml-cuda/ssm-conv.cu",
+          "bytes": 9245,
+          "sha256": "684ef5e8180ba88bb1f389310b28f8a694cb107a924492c43682a5c5c1754424"
+        }
+      ],
+      "review_status": "Frozen source/binary read-only review; root owns any provider edit, compile and real verification. Original V17/full5row MatMul/teacher fixture unchanged."
+    },
+    "lease_lifetime_review": {
+      "schema": "hyle.lease-lookup-final-review.v1",
+      "date": "2026-10-22",
+      "scope": "Read-only static audit of final lazy optional-span input ReadLease candidate collection. Only this review artifact is written. No product changes, build, native/model execution, instrumentation or rerun.",
+      "source_sha256": "2d548d23a39ae94073c9e82c43e9b8b57948412161a6eb5b0db3b9fcd40d4220",
+      "result": "NO_BLOCKING_DEFECT_FOUND",
+      "implementation": "prepare_invocation_bindings owns one initially disengaged optional<span<const uint32_t>> and its original clear-candidate ScopeGuard. Both existing prepare_command_bindings call sites pass it by reference. The helper engages it only in the existing native and non-borrowed input branch immediately before input_lease.",
+      "cases": [
+        {
+          "case": "legitimate_empty_table",
+          "verdict": "SAFE",
+          "anchors": [
+            "src/graph/executable.cc:1384-1394,1487-1490",
+            "src/graph/resources.cc:1286-1307"
+          ],
+          "reason": "Collection returns a successful empty span for no ResourceEpisode or zero qualifying reads. Assignment engages optional regardless of span.empty(); all later native inputs reuse that valid empty result rather than recollecting."
+        },
+        {
+          "case": "zero_input_steps",
+          "verdict": "SAFE",
+          "anchors": [
+            "src/graph/executable.cc:1356-1358,1402-1440"
+          ],
+          "reason": "No input loop means no optional check or collection; output representation, generated output projection, change detection and provider hook/seal logic are unchanged. Ordinary-operation inputs also never consume this native lookup table."
+        },
+        {
+          "case": "native_reference_without_tensor_or_resource_episode",
+          "verdict": "SAFE",
+          "anchors": [
+            "src/graph/executable.cc:1362-1368,1377-1399",
+            "src/graph/resources.cc:1291,1314-1333"
+          ],
+          "reason": "The existing native-handle/reference validity exception remains. With no episode collection succeeds with an empty span; input_lease returns nullptr for absent resources or invalid TensorView. Native type, handle and reference still independently set native_inputs, preserving original forced invalidation. No borrowed TensorView is promoted into an owner."
+        },
+        {
+          "case": "mixed_borrowed_then_native",
+          "verdict": "SAFE",
+          "anchors": [
+            "src/graph/executable.cc:1356-1357,1377-1399,1501,1580",
+            "src/graph/resources.cc:1299-1307",
+            "src/graph/submission.cc:289-311"
+          ],
+          "reason": "Borrowed-only steps assign value.lease=nullptr without engaging optional. The first real non-borrowed native input collects all current eligible owned reads, in original binding order. Later native inputs use the same span; the preparation guard excludes public mutation of ResourceEpisode bindings for its lifetime. Generated projections change readable/native_values/bound, not the candidate backing vector or resource bindings."
+        },
+        {
+          "case": "first_covering_F1_permission_and_exclusive_input",
+          "verdict": "UNCHANGED",
+          "anchors": [
+            "src/graph/resources.cc:1302-1305,1314-1333,1582-1627",
+            "src/graph/executable.cc:1370-1399,1411-1450"
+          ],
+          "reason": "The same input_lease lookup still skips exclusive reads, checks exact resource/native handle and contained byte interval, and returns the first covering owned read. All ordinary completeness, alignment, physical identity, revision/native invalidation and provider preparation checks remain. Submission still admits every current permission via the original LeaseUseBatch/LeasePermissionSet; optional span stores indices, grants no permission and retains no owner."
+        },
+        {
+          "case": "failure_and_scope_exit",
+          "verdict": "SAFE",
+          "anchors": [
+            "src/graph/executable.cc:1328-1336,1389-1394,1464-1490,1496-1505,1511-1584",
+            "src/graph/resources.cc:1288-1307,1309-1312",
+            "include/hyle/util/scope_guard.h:140-141"
+          ],
+          "reason": "Once collection can occur, the outer clear ScopeGuard already exists. Capacity/guard failure during collect, invalid later input/output, provider prepare failure, generated projection failure and seal failure all unwind through it. The collector clears before checking capacity, so even a partial/rejected collection leaves no candidate tail. Success also clears. Earlier incomplete-binding exits cannot have collected, and bindings_prepared fast path cannot observe a table retained from a prior call because all such calls cleared on exit."
+        },
+        {
+          "case": "no_new_per_step_provider_queries",
+          "verdict": "CONFIRMED_BY_CURRENT_STRUCTURE",
+          "anchors": [
+            "src/graph/executable.cc:1341-1399,1487-1505,1511-1584"
+          ],
+          "reason": "There is no added outer scan/lambda querying every region. The current helper reuses its already-computed borrowed_tensor_carrier and existing native branch. New runtime work is only optional engagement/check at actual non-borrowed native lookups; all-borrowed and zero-consumer preparations avoid the binding-vector collection entirely. No field, public API or cross-episode cache was added."
+        }
+      ],
+      "existing_validation_read_not_rerun": {
+        "checks2": {
+          "path": ".scratch/qwen-mtp-next-20261022/checks2/summary.json",
+          "status": "PASS",
+          "tests": 27,
+          "failures": 0,
+          "skips": 0
+        },
+        "screen2": {
+          "path": ".scratch/qwen-mtp-next-20261022/screen2/summary.json",
+          "status": "PASS",
+          "arms": [
+            {
+              "arm": "hyle_plain",
+              "exit": 0,
+              "unchanged_fields_all_true": true,
+              "capture_recorded": 2,
+              "capture_reused": 61
+            },
+            {
+              "arm": "hyle_mtp",
+              "exit": 0,
+              "unchanged_fields_all_true": true,
+              "capture_recorded": 19,
+              "capture_reused": 49
+            }
+          ]
+        },
+        "limits": "These are existing root-owned results inspected as records, not newly executed checks. No throughput or memory improvement is inferred from this static audit or screen."
+      },
+      "source_identities": [
+        {
+          "path": "src/graph/executable.cc",
+          "bytes": 475550,
+          "sha256": "2d548d23a39ae94073c9e82c43e9b8b57948412161a6eb5b0db3b9fcd40d4220"
+        },
+        {
+          "path": "src/graph/resources.cc",
+          "bytes": 101488,
+          "sha256": "95e518cdd8e9222b5b267506dab8021165afdf23f62ca3034e3a966226b117df"
+        },
+        {
+          "path": "src/graph/submission.cc",
+          "bytes": 52555,
+          "sha256": "bcea096540781de5396351d834915abc4323cd1066dc4877a5a9c07e9159eaab"
+        },
+        {
+          "path": "src/graph/resource_episode.h",
+          "bytes": 3243,
+          "sha256": "328c52a6aadb1535d36f124db937a7077ccb5d93bfe1fcd156181bebe9d9b23f"
+        },
+        {
+          "path": "include/hyle/util/scope_guard.h",
+          "bytes": 7234,
+          "sha256": "a473ed57ffb45fe1bb27e85626ed886f5c28b67d15ec0c9ac73f88d89bcbca45"
+        },
+        {
+          "path": ".scratch/qwen-mtp-next-20261022/checks2/summary.json",
+          "bytes": 11334,
+          "sha256": "b6409d3850de3904eb87739824f2595465516da4e54636d4d658ccbb18db8ed8"
+        },
+        {
+          "path": ".scratch/qwen-mtp-next-20261022/screen2/summary.json",
+          "bytes": 4651,
+          "sha256": "4ffde0e996e36db52fb9b2a9f496fcf1633a2b0127962f3dd4524736ca66cdfb"
+        }
+      ]
+    },
+    "alias_route_source_review": {
+      "schema": "hyle.alias-port-candidate-review.v1",
+      "status": "SOURCE_FROZEN_NOT_COMPILED_NOT_RUN",
+      "scope": "Only common cold candidate input qualification and two permanent Graph tests; original F1 optional-span code unchanged. Root owns compilation/execution.",
+      "files": [
+        {
+          "path": "src/graph/executable.cc",
+          "before_sha256": "2d548d23a39ae94073c9e82c43e9b8b57948412161a6eb5b0db3b9fcd40d4220",
+          "sha256": "3439cde8a75e6bf2c1ed4397a7756cb9b2e6765305af7b2882b76c3945dab06d",
+          "bytes": 477960
+        },
+        {
+          "path": "tests/graph/region_provider_test.cc",
+          "before_sha256": "079b3eca99c32322ae5211dc6b12cc1f11f99f7ec67636f8d73037013727c3d8",
+          "sha256": "f2e3bdd9d62523d444c23696bea80191476e2252792a4208b1cd055454ee7ed3",
+          "bytes": 604686
+        }
+      ],
+      "diff": {
+        "path": ".scratch\\qwen-mtp-next-20261022\\alias-route\\change.diff",
+        "sha256": "3f906efd89d2a8e2dbcf73f45962757a21d94f91296ee7eadde3441a47a81460"
+      },
+      "implementation": [
+        "Actual physical alias sources/offsets already exist from earlier selected metadata View units before the consumer resource input is attached. Walk that exact chain after ensure_local_instance, before raising port alignment and before artifact preparation.",
+        "An incompatible static cumulative offset on a Graph-owned caller-buffer root returns explicit candidate-local Unimplemented via existing rejected_region/rejected_operation and suffix search. It does not invalidate the model, suppress a required instance or change runtime routing.",
+        "A real Copy or materialized replacement has a distinct no-alias root and is accepted. No new shadow copy is introduced.",
+        "Symbolic/domain offsets, external inputs/outputs, constants and generated roots are not rejected by this new proof when their actual base is unknown. Their existing allocation/binding validation remains unchanged. This change does not broaden external-base layout support.",
+        "No public API, model/provider whitelist, preparation work, field or per-Invocation cache was added."
+      ],
+      "permanent_tests": [
+        "GraphRegions.InputSliceAlignmentDeclinesRegionAndLeafBeforePreparation: 68-byte real slice, 256-byte first candidate versus 4-byte alternate, region and leaf paths, exact numerical result, zero preparation of rejected candidate, required instance remains a hard failure.",
+        "GraphRegions.CopiedSliceGetsItsOwnAlignedInputBeforeCandidateQualification: existing cross-resource Copy materializes an aligned root, high-alignment candidate is selected and actual output is checked."
+      ],
+      "suggested_neighbors": [
+        "GraphRegions.UnsupportedResourceQueryRejectsOnlyThatCandidate",
+        "GraphRegions.ExplicitLeafDeclinesCanSelectAnotherTarget",
+        "GraphViews.DynamicAttributesWithEqualShapesKeepDifferentViewOffsets",
+        "GraphViewDomain.GuardedNestedSlicesUseOnePlanAndActualWorkspaceOffsets"
+      ],
+      "product_math_or_hot_path_changes": false,
+      "builds": 0,
+      "native_runs": 0
+    },
+    "original_payload": {
+      "acquisition": {
+        "source": {
+          "repository": "unsloth/DeepSeek-V4-Flash-0731-GGUF",
+          "revision": "fbbb5b93fb787c21338159b0af3318bb3f4d9768",
+          "file": "dspark-DeepSeek-V4-Flash-0731-Q8_0.gguf",
+          "role": "conf_proj.weight",
+          "dtype": "BF16",
+          "GGUF_shape": [
+            "4352",
+            "1"
+          ],
+          "payload_bytes_needed": 8704,
+          "tensor_data_base": 5253152,
+          "relative_offset": 10726135040,
+          "absolute_start": 10731388192,
+          "absolute_end_inclusive": 10731396895,
+          "cached_actual_payload_bytes_confirmed": 0
+        },
+        "url": "https://huggingface.co/unsloth/DeepSeek-V4-Flash-0731-GGUF/resolve/fbbb5b93fb787c21338159b0af3318bb3f4d9768/dspark-DeepSeek-V4-Flash-0731-Q8_0.gguf",
+        "requested_range": [
+          10731388192,
+          10731396895
+        ],
+        "requested_bytes": 8704,
+        "started_unix": 1792663102.9276004,
+        "status": "ACQUIRED_EXACT_ROLE",
+        "whole_file_download_allowed": false,
+        "http_status": 206,
+        "content_range": "bytes 10731388192-10731396895/10896057440",
+        "content_length": "8704",
+        "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+        "payload": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-next-20261022\\original-confidence\\conf_proj.weight.bf16",
+          "bytes": 8704,
+          "sha256": "15c5d09c7842d0f947ce0afdc154691ead377e6263af71bd2f7cb34bd592f30f"
+        },
+        "model_inference_run": false,
+        "whole_file_downloaded": false,
+        "finished_unix": 1792663105.7013645
+      },
+      "identity": {
+        "path": ".scratch\\qwen-mtp-next-20261022\\original-confidence\\conf_proj.weight.bf16",
+        "bytes": 8704,
+        "sha256": "15c5d09c7842d0f947ce0afdc154691ead377e6263af71bd2f7cb34bd592f30f"
+      }
+    },
+    "first_graph_alias_rejection": {
+      "path": ".scratch\\qwen-mtp-next-20261022\\dspark-checks1\\summary.json",
+      "bytes": 1615,
+      "sha256": "74784ad8705fea0f915d52f6bd19feff1453a523b8bad698f55ee8d49dd8a7f6"
+    },
+    "historical_driver_count_correction": "Initial common selector union ran27, allpassed; an expected28 parser assertion double-counted ExclusiveDeferredInput already matched by Captur. The completed process was analyzed without rerun.",
+    "build_corrections": "First head recipe lacked CUDA include paths; reused cached CUDA test recipe. Original-role TU used Windows-deprecated getenv; switched to owned _dupenv_s and corrected string c_str call. Strict warning/error flags stayed enabled; failed command/log receipts retained."
+  },
+  "remaining": [
+    "Other applicable original MTP role/codec bindings and full model-specific draft/target accepted-prefix state adapters remain incomplete. Finite test consumers do not require building eight production inference engines.",
+    "DSpark synthetic head boundary is V17/H8/Markov4 with20 proposal rows over4 submissions. It does not execute full129280-vocabulary trained Markov/LM weights, the three trained draft stages, target verification or accepted complete state.",
+    "One trained confidence role and finite source-correct synthetic feedback do not certify the whole artifact, semantic quality, all quantization formats or other backends.",
+    "Q35 greedy K1 main protocol and listed finite state/lifetime checks already exist; the prior8QKV investigation is closed. Remaining shared decode gap belongs to the ongoing performance line, not proof of an MTP calculation defect.",
+    "No new current full-state vector/prefix matrix was run after this host/cold-binding batch. Current checks are the29 targeted cases, two actual DSpark consumers, ordinary/MTP screens and full performance processes. Earlier AU/AQ state evidence keeps its own scope.",
+    "Images remain deferred; the broad active capability/architecture/performance goal is not complete."
+  ],
+  "source_scope_review": {
+    "path": "docs\\evidence\\research\\mtp-artifact-scope-2026-10-22.json",
+    "bytes": 45564,
+    "sha256": "fa60058ed2eb8216dc06104475e4c6bcce696555f0683cc0848ad4e9878a3069"
+  },
+  "performance_result": "docs\\evidence\\performance\\qwen-mtp-assembly-2026-10-22.json",
+  "archived_logs": {
+    "path": "docs\\evidence\\correctness\\mtp-consumer-wiring-2026-10-22.logs.zip",
+    "bytes": 2324909,
+    "sha256": "0575b8098eefce28ad186ef2d1452ace964a3897afe2f9c1049fc396665feaf9"
+  },
+  "finalization": {
+    "status": "ARCHIVED_FINAL_DOCUMENTATION_AND_ALREADY_EXECUTED_CLEANUP",
+    "no_additional_build_test_or_model_run": true,
+    "documentation": [
+      {
+        "path": "docs\\developer\\current-work.md",
+        "bytes": 55134,
+        "sha256": "00381cb61bd4c4d8da99774057f58f459d97664657a5d6eabc3c1850be51ce19"
+      },
+      {
+        "path": "docs\\developer\\performance\\decode.md",
+        "bytes": 45071,
+        "sha256": "46cc1917e087bdd0ff807f2f5f44ca8660ed9b9388e6ae79ef87662f1f41a17c"
+      },
+      {
+        "path": "docs\\implementation\\model-operators.md",
+        "bytes": 89739,
+        "sha256": "672223ab6546afd3725427b179fa298fcda56f966acd99343a33a8982041deb8"
+      },
+      {
+        "path": "docs\\implementation\\model-quantizations.json",
+        "bytes": 570374,
+        "sha256": "474e247296fbfb449f82f66bc79b1f64df2ff620770efcada7c64aa511381150"
+      },
+      {
+        "path": "docs\\architecture\\graph-design.md",
+        "bytes": 18610,
+        "sha256": "1bf27689c4a8f0347547c9d7a6d7bc6898ac853ef99c12eda4e854040b6f743e"
+      }
+    ],
+    "cleanup": {
+      "removed_files": 18,
+      "removed_bytes": 1807132794,
+      "current_image": {
+        "path": ".scratch\\qwen-mtp-next-20261022\\hyle-link4\\qwen.exe",
+        "bytes": 140411392,
+        "sha256": "9dce4f40d2edb8004c0d79c58e20de6ca6cdc5d1477db3773d26b40d7a05d883"
+      },
+      "current_map": {
+        "path": ".scratch\\qwen-mtp-next-20261022\\hyle-link4\\qwen.map",
+        "bytes": 58999674,
+        "sha256": "da795ab47ebc62e56a139945755eb47261b4862fd844f89be9a14d9dd27d5df3"
+      },
+      "scope": "Only the eighteen exactly listed obsolete exe/map files were removed. No object, dependency, SDK, source or original role payload path was deleted.",
+      "result": {
+        "path": ".scratch\\qwen-mtp-next-20261022\\cleanup-result.json",
+        "bytes": 4353,
+        "sha256": "dc208f96e0ed85c833ccb512094d448d5b433fa1d56b27a9ef35cc66788e54a7"
+      },
+      "deletion_script": {
+        "path": "test.ps1",
+        "bytes": 1701,
+        "sha256": "41c78a668e49bc0d7930ca352130da04b5bcd1c4a59872b097e257695958305c"
+      },
+      "already_executed": true,
+      "rerun_cleanup": false
+    },
+    "goal_complete": false
+  }
+}

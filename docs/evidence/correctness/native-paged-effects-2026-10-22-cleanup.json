@@ -1,0 +1,188 @@
+{
+  "status": "PASS",
+  "result": {
+    "status": "PASS",
+    "windows_files": 8,
+    "windows_bytes": 395320812.0,
+    "mac": {
+      "status": "PASS",
+      "files": 3,
+      "bytes": 13270056,
+      "removed": [
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/native-paged-effects-20261022/native-append",
+          "bytes": 11828592,
+          "sha256": "3aeb3847ddc2d00ab99f41821a885373cdb3a722f0f8b54f0e715803657bd4b9",
+          "reason": "Initial failed image; final successful image is lowering-fix1/native-append."
+        },
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/native-paged-effects-20261022/lib/libhyle_graph_route_apple.a",
+          "bytes": 1143720,
+          "sha256": "c47a97ed2141ac523054de7c84523b0d3f5833f618583f22ad0a78ac800f4418",
+          "reason": "Initial GraphRouteApple archive superseded only by lowering-fix1/libhyle_graph_route_apple.a."
+        },
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/native-paged-effects-20261022/objects/graph_route_apple/apple_lowering.cc.o",
+          "bytes": 297744,
+          "sha256": "5ada7ccdc536500416868bdf4ab7040e589a2b4038b719a32a89cac2cd2b3149",
+          "reason": "Initial lowering object superseded only by lowering-fix1/apple_lowering.o."
+        }
+      ],
+      "kept_current_image_verified": true
+    },
+    "kept_current_images_verified": true,
+    "recursive_delete": false,
+    "windows_removed": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\native-paged-effects-20261022\\cpu-link1\\cpu-append.exe",
+        "bytes": 139958784,
+        "sha256": "640cddca1593e4cc63de6faeba2a6ffd3fbfee4f798496ffbdcee984bdcbf779"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\native-paged-effects-20261022\\cpu-link1\\cpu-append.exp",
+        "bytes": 24989,
+        "sha256": "72e4ab3021489ade0cb68a47469a047c1fb0a74d8ddf47ab5bc0569789e6494f"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\native-paged-effects-20261022\\cpu-link1\\cpu-append.lib",
+        "bytes": 41912,
+        "sha256": "cb45a3fd34a30487fb7836c47c87c61d207c75a1e9a6341c151f796620e2b59e"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\native-paged-effects-20261022\\cpu-link1\\cpu-append.map",
+        "bytes": 57622967,
+        "sha256": "f8a09dae6127e3cbe6ab0d0fdf3e5848d73f76d79944360863ef46b243e4a14f"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\native-paged-effects-20261022\\cpu-link2\\cpu-append.exe",
+        "bytes": 139971584,
+        "sha256": "a66e8f6a8088fb9f671f9241083d36186664fb6816acada6581cf922e57b4f7b"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\native-paged-effects-20261022\\cpu-link2\\cpu-append.exp",
+        "bytes": 24989,
+        "sha256": "8fa8b103b15b33358477c416b74234d36657a8439ce8c698538bd98b9a943d11"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\native-paged-effects-20261022\\cpu-link2\\cpu-append.lib",
+        "bytes": 41912,
+        "sha256": "cb45a3fd34a30487fb7836c47c87c61d207c75a1e9a6341c151f796620e2b59e"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\native-paged-effects-20261022\\cpu-link2\\cpu-append.map",
+        "bytes": 57633675,
+        "sha256": "9c1d0a76927e7a257d06114446dd8ca98bd089fa43260654a3c3a2309c1add4d"
+      }
+    ]
+  },
+  "plan": {
+    "windows": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\native-paged-effects-20261022\\cpu-link1\\cpu-append.exe",
+        "bytes": 139958784,
+        "sha256": "640cddca1593e4cc63de6faeba2a6ffd3fbfee4f798496ffbdcee984bdcbf779"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\native-paged-effects-20261022\\cpu-link1\\cpu-append.exp",
+        "bytes": 24989,
+        "sha256": "72e4ab3021489ade0cb68a47469a047c1fb0a74d8ddf47ab5bc0569789e6494f"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\native-paged-effects-20261022\\cpu-link1\\cpu-append.lib",
+        "bytes": 41912,
+        "sha256": "cb45a3fd34a30487fb7836c47c87c61d207c75a1e9a6341c151f796620e2b59e"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\native-paged-effects-20261022\\cpu-link1\\cpu-append.map",
+        "bytes": 57622967,
+        "sha256": "f8a09dae6127e3cbe6ab0d0fdf3e5848d73f76d79944360863ef46b243e4a14f"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\native-paged-effects-20261022\\cpu-link2\\cpu-append.exe",
+        "bytes": 139971584,
+        "sha256": "a66e8f6a8088fb9f671f9241083d36186664fb6816acada6581cf922e57b4f7b"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\native-paged-effects-20261022\\cpu-link2\\cpu-append.exp",
+        "bytes": 24989,
+        "sha256": "8fa8b103b15b33358477c416b74234d36657a8439ce8c698538bd98b9a943d11"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\native-paged-effects-20261022\\cpu-link2\\cpu-append.lib",
+        "bytes": 41912,
+        "sha256": "cb45a3fd34a30487fb7836c47c87c61d207c75a1e9a6341c151f796620e2b59e"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\native-paged-effects-20261022\\cpu-link2\\cpu-append.map",
+        "bytes": 57633675,
+        "sha256": "9c1d0a76927e7a257d06114446dd8ca98bd089fa43260654a3c3a2309c1add4d"
+      }
+    ],
+    "mac": [
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/native-paged-effects-20261022/native-append",
+        "bytes": 11828592,
+        "sha256": "3aeb3847ddc2d00ab99f41821a885373cdb3a722f0f8b54f0e715803657bd4b9",
+        "reason": "Initial failed image; final successful image is lowering-fix1/native-append."
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/native-paged-effects-20261022/lib/libhyle_graph_route_apple.a",
+        "bytes": 1143720,
+        "sha256": "c47a97ed2141ac523054de7c84523b0d3f5833f618583f22ad0a78ac800f4418",
+        "reason": "Initial GraphRouteApple archive superseded only by lowering-fix1/libhyle_graph_route_apple.a."
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/native-paged-effects-20261022/objects/graph_route_apple/apple_lowering.cc.o",
+        "bytes": 297744,
+        "sha256": "5ada7ccdc536500416868bdf4ab7040e589a2b4038b719a32a89cac2cd2b3149",
+        "reason": "Initial lowering object superseded only by lowering-fix1/apple_lowering.o."
+      }
+    ],
+    "mac_root": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/native-paged-effects-20261022",
+    "archive": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\native-paged-effects-2026-10-22.zip",
+      "bytes": 2370941,
+      "sha256": "b3ac3804ca54292a214ec16c751ab71c6a6bc61f5ef52a88c77487ba9dd557c5",
+      "unique_files": 362,
+      "logical_files": 586,
+      "uncompressed_unique_bytes": 24124196,
+      "all_archived_SHA_verified": true
+    },
+    "keep_windows": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cublas-scores-20261022\\qwen-link1\\qwen.exe",
+        "bytes": 140355072,
+        "sha256": "18932968a05db1f13fbf6c1579d1783eac60b1426ef6ca28d4018a09128fff15"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\native-paged-effects-20261022\\vulkan-link1\\native-paged-append.exe",
+        "bytes": 68268032,
+        "sha256": "0468d1c60b5550a47842d2508ce6a68f9342089a3a508d31b0dca18dc9716e0c"
+      }
+    ],
+    "keep_mac": [
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/native-paged-effects-20261022/lowering-fix1/native-append",
+        "bytes": 11828592,
+        "sha256": "593860d1cafd94e1abb6f5cd77358bbf7086ca30542856f7cd06c20043c8ccea"
+      }
+    ],
+    "reason": "CPU probe images/maps/import stubs are rebuildable from retained objects/commands. Three initial Mac artifacts were superseded by the one-owner lowering correction. Keep all dependency/SDK and current native caches."
+  },
+  "script_identity": {
+    "path": "C:\\public\\project-hyle\\hyle\\test.ps1",
+    "bytes": 3993,
+    "sha256": "ded35221b97cc889be5838c930577de2191fdfbb4e745ef4e08e1a555f9b523f"
+  },
+  "script": "# AH cleanup: exact files only. This script is one-shot; do not rerun.\n$ErrorActionPreference = 'Stop'\nSet-StrictMode -Version Latest\n$repoRoot = (Resolve-Path -LiteralPath $PSScriptRoot).Path\nif ($repoRoot -ne 'C:\\public\\project-hyle\\hyle') { throw 'Unexpected workspace' }\n$stageRoot = Join-Path $repoRoot '.scratch\\native-paged-effects-20261022'\n$plan = Get-Content -LiteralPath (Join-Path $stageRoot 'cleanup-plan.json') -Raw | ConvertFrom-Json\n$receiptPath = Join-Path $stageRoot 'cleanup-result.json'\nif (Test-Path -LiteralPath $receiptPath) { throw 'Cleanup already has a terminal receipt' }\nif ((Get-FileHash -LiteralPath $plan.archive.path -Algorithm SHA256).Hash.ToLowerInvariant() -ne $plan.archive.sha256) { throw 'Evidence archive changed' }\n$allowedParents = @((Join-Path $stageRoot 'cpu-link1'), (Join-Path $stageRoot 'cpu-link2'))\nforeach ($item in $plan.windows) {\n  $file = Get-Item -LiteralPath $item.path\n  $resolved = (Resolve-Path -LiteralPath $item.path).Path\n  if ($file.PSIsContainer -or $file.Attributes.HasFlag([IO.FileAttributes]::ReparsePoint) -or $resolved -ne $file.FullName -or $file.DirectoryName -notin $allowedParents) { throw \"Unexpected cleanup target $resolved\" }\n  if ($file.Length -ne $item.bytes -or (Get-FileHash -LiteralPath $resolved -Algorithm SHA256).Hash.ToLowerInvariant() -ne $item.sha256) { throw \"Cleanup target changed $resolved\" }\n}\nforeach ($item in $plan.keep_windows) {\n  if ((Get-FileHash -LiteralPath $item.path -Algorithm SHA256).Hash.ToLowerInvariant() -ne $item.sha256) { throw 'Kept current image changed' }\n}\n$remoteCode = @'\nfrom pathlib import Path\nimport hashlib,json,subprocess,sys\np=json.load(sys.stdin);root=Path(p['root']).resolve(strict=True)\nassert root.name=='native-paged-effects-20261022' and str(root).startswith('/Users/kiro/hyle-scratch/compute-unified/')\nassert subprocess.check_output(['/usr/sbin/sysctl','-n','hw.model'],text=True).strip()=='Mac16,12'\ndef same(x):\n q=Path(x['path']);raw=q.read_bytes();return len(raw)==x['bytes']and hashlib.sha256(raw).hexdigest()==x['sha256']\nfor x in p['keep']:assert same(x),'kept Mac image changed'\nfor x in p['files']:\n q=Path(x['path']);assert q.is_file()and not q.is_symlink()and q.resolve(strict=True).is_relative_to(root)\n assert same(x),'Mac cleanup target changed'\nfor x in p['files']:Path(x['path']).unlink()\nassert all(not Path(x['path']).exists()for x in p['files'])\nassert all(same(x)for x in p['keep'])\nprint(json.dumps(dict(status='PASS',files=len(p['files']),bytes=sum(x['bytes']for x in p['files']),removed=p['files'],kept_current_image_verified=True)))\n'@\n$encoded = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($remoteCode))\n$payload = @{root=$plan.mac_root;files=$plan.mac;keep=$plan.keep_mac} | ConvertTo-Json -Depth 10 -Compress\n$remoteOutput = $payload | & ssh -o BatchMode=yes -o ConnectTimeout=8 kiro@172.22.10.198 \"python3 -c `\"import base64;exec(base64.b64decode('$encoded'))`\"\"\nif ($LASTEXITCODE -ne 0) { throw 'Mac exact-file cleanup failed' }\n$macResult = $remoteOutput | ConvertFrom-Json\nforeach ($item in $plan.windows) { Remove-Item -LiteralPath $item.path -Force }\nforeach ($item in $plan.windows) { if (Test-Path -LiteralPath $item.path) { throw 'A cleanup target remains' } }\nforeach ($item in $plan.keep_windows) { if ((Get-FileHash -LiteralPath $item.path -Algorithm SHA256).Hash.ToLowerInvariant() -ne $item.sha256) { throw 'Kept current image changed after cleanup' } }\n$result = @{status='PASS';windows_files=$plan.windows.Count;windows_bytes=($plan.windows | Measure-Object -Property bytes -Sum).Sum;windows_removed=$plan.windows;mac=$macResult;kept_current_images_verified=$true;recursive_delete=$false}\n$result | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath $receiptPath -Encoding utf8\n$result | Select-Object status,windows_files,windows_bytes,@{Name='mac_files';Expression={$_.mac.files}},@{Name='mac_bytes';Expression={$_.mac.bytes}} | ConvertTo-Json -Compress\n",
+  "original_receipt": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\native-paged-effects-20261022\\cleanup-result.json",
+    "bytes": 3488,
+    "sha256": "239bede64a08b80e4f5fa65e0ec76d615d201ec690920ca077869cfefafcffbc"
+  },
+  "total_removed_bytes": 408590868,
+  "evidence_archive_verified_before_and_after": true,
+  "current_images_verified": true,
+  "recursive_delete": false,
+  "retained": "Current Vulkan/Metal native images, all relevant source/receipts/objects, Qwen baseline image and shared SDK/dependency caches. Root test.ps1 has completed and must not be rerun."
+}

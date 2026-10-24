@@ -1,0 +1,915 @@
+{
+  "schema": "hyle-finite-consumer-correctness-v1",
+  "date": "2026-10-24",
+  "status": "passed",
+  "scope": "Four actual Hyle/llama ordinary/K1 arms, one resident session with two consecutive natural turns; four generated outputs per turn. Finite cache/pending continuation smoke only.",
+  "counts": {
+    "arms": 4,
+    "passed": 4,
+    "failed": 0,
+    "turns_per_arm": 2,
+    "output_quota_per_turn": 4,
+    "actual_outputs_per_arm": 8
+  },
+  "input": {
+    "preparation": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-final-window-20261024\\natural-inputs\\prepared.json",
+      "bytes": 2508,
+      "sha256": "d8ed24281a61cae5e22b1c128f5060123a88f256b311d31f9cc64fa47efc18df"
+    },
+    "schedule": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-final-window-20261024\\natural-inputs\\smoke4.txt",
+      "bytes": 134,
+      "sha256": "cc8eb42a0dae9e02ed8f33a2bc3e80649076c7923156acc832c7efd20d2cb65d"
+    },
+    "prompt": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-window-20261022\\inputs\\prompt.ids",
+      "bytes": 733,
+      "sha256": "b6a10feefb0af4687ee536285c9666bfbdf093fc9e484ab0461834345a5993a4"
+    },
+    "user_rows": [
+      154,
+      154
+    ],
+    "target_prefill_rows": 309,
+    "pending_flushed_once_before_second_turn": 1,
+    "final_committed_target_rows": 315,
+    "capacity": 1024,
+    "raw_token_append": true,
+    "chat_template_claim": false
+  },
+  "behavior": {
+    "natural_greedy": true,
+    "teacher_forced_generation": false,
+    "model_loaded_once_per_arm": true,
+    "contexts_or_session_retained_across_turns": true,
+    "history_clear_or_reprefill": false,
+    "same_token_cross_arm_claim": false,
+    "source_math": "Existing K1 arithmetic/selection/trim operations remain; source adds serial turn boundaries and actual observations."
+  },
+  "runs": [
+    {
+      "arm": "hyle_plain",
+      "passed": true,
+      "generated_ids": [
+        71093,
+        12305,
+        198,
+        464,
+        71093,
+        12305,
+        198,
+        1445
+      ],
+      "generated_tokens": 8,
+      "turns": [
+        {
+          "turn": 1,
+          "requested_steps": 4,
+          "pending_flushed": 0,
+          "context_before": 0,
+          "context_after": 157,
+          "output_begin": 0,
+          "output_end": 4,
+          "last_output_is_EOS": false,
+          "stopped_on_EOS": false
+        },
+        {
+          "turn": 2,
+          "requested_steps": 4,
+          "pending_flushed": 1,
+          "context_before": 157,
+          "context_after": 315,
+          "output_begin": 4,
+          "output_end": 8,
+          "last_output_is_EOS": false,
+          "stopped_on_EOS": false
+        }
+      ],
+      "actual_target_rows": 315,
+      "actual_draft_rows": 0,
+      "prefill_target_rows": 309,
+      "accepted_drafts": 0,
+      "observation": {
+        "path": ".scratch/qwen-mtp-final-window-20261024/smoke1/hyle_plain/observation.json",
+        "bytes": 5852,
+        "sha256": "e6e8b2cee5e0afb3723afceaa0a3a3b79ffc046631bc169bbf8ca6e53843fb0c"
+      },
+      "process": {
+        "path": ".scratch/qwen-mtp-final-window-20261024/smoke1/hyle_plain/process.json",
+        "bytes": 955,
+        "sha256": "fc58db96076c99f83ce191613174ab4362a298d77cda1339facfabe6452424e0"
+      },
+      "stdout": {
+        "path": ".scratch/qwen-mtp-final-window-20261024/smoke1/hyle_plain/stdout.log",
+        "bytes": 3629,
+        "sha256": "4be905598e7e5266d204cf648f811e744aabab9bb07d08fa7a768060f063eb7b"
+      },
+      "stderr": {
+        "path": ".scratch/qwen-mtp-final-window-20261024/smoke1/hyle_plain/stderr.log",
+        "bytes": 3678,
+        "sha256": "024c34a906b0e7057c13d2d7da3833107ddf7f95974c410b97e5d4e130f0ff48"
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-quality-20261022\\current-refresh-20261024\\hyle-link2\\qwen.exe",
+        "bytes": 140950016,
+        "sha256": "bdbd2c8149871e76d680b410ef77fc6f87d5524479dcae3a38b9f2d25face105"
+      },
+      "ready": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-quality-20261022\\current-refresh-20261024\\hyle-link2\\ready.json",
+        "bytes": 1816,
+        "sha256": "80de1cf12dddc3a849446ba6bd41c97931b4d91c3acbd0520f967de60e57ed21"
+      },
+      "compiled_record": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-quality-20261022\\current-refresh-20261024\\compile2\\qwen\\identity.json",
+        "bytes": 72220,
+        "sha256": "dcd76a989338535eabdf4c37175b36eb6ed4e22d726f27ec569d19d6dc906a22"
+      },
+      "runtime": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-quality-20261022\\current-refresh-20261024\\hyle-link2\\runtime-environment.json",
+        "bytes": 11693,
+        "sha256": "83eecd6a2baea506081acb3e02d491ca7212046761fc92188b21c7cbe057492e"
+      }
+    },
+    {
+      "arm": "hyle_mtp",
+      "passed": true,
+      "generated_ids": [
+        71093,
+        12305,
+        198,
+        464,
+        71093,
+        12305,
+        198,
+        1445
+      ],
+      "generated_tokens": 8,
+      "turns": [
+        {
+          "turn": 1,
+          "requested_steps": 4,
+          "pending_flushed": 0,
+          "context_before": 0,
+          "context_after": 157,
+          "output_begin": 0,
+          "output_end": 4,
+          "last_output_is_EOS": false
+        },
+        {
+          "turn": 2,
+          "requested_steps": 4,
+          "pending_flushed": 1,
+          "context_before": 157,
+          "context_after": 315,
+          "output_begin": 4,
+          "output_end": 8,
+          "last_output_is_EOS": false
+        }
+      ],
+      "actual_target_rows": 315,
+      "actual_draft_rows": 315,
+      "prefill_target_rows": 309,
+      "accepted_drafts": 2,
+      "observation": {
+        "path": ".scratch/qwen-mtp-final-window-20261024/smoke1/hyle_mtp/observation.json",
+        "bytes": 6548,
+        "sha256": "3f2d6648fd761610959ab36cce71c19f51d76fefb5bea4c7ca48943e152f93a0"
+      },
+      "process": {
+        "path": ".scratch/qwen-mtp-final-window-20261024/smoke1/hyle_mtp/process.json",
+        "bytes": 953,
+        "sha256": "347d48856edd377b0e62b53fc9a46a35a4c459a711d0ebe6a52f315d78f7d7b7"
+      },
+      "stdout": {
+        "path": ".scratch/qwen-mtp-final-window-20261024/smoke1/hyle_mtp/stdout.log",
+        "bytes": 10589,
+        "sha256": "edec077fea8416b1bc9c2bf2e7ccd0b1f60673fb960fb0a4019a46959a8337fd"
+      },
+      "stderr": {
+        "path": ".scratch/qwen-mtp-final-window-20261024/smoke1/hyle_mtp/stderr.log",
+        "bytes": 6055,
+        "sha256": "4d068f85a6d82626856ee680a4f74e9a8ee4174e07a8e6eddef47e89b98ce827"
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-quality-20261022\\current-refresh-20261024\\hyle-link2\\qwen.exe",
+        "bytes": 140950016,
+        "sha256": "bdbd2c8149871e76d680b410ef77fc6f87d5524479dcae3a38b9f2d25face105"
+      },
+      "ready": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-quality-20261022\\current-refresh-20261024\\hyle-link2\\ready.json",
+        "bytes": 1816,
+        "sha256": "80de1cf12dddc3a849446ba6bd41c97931b4d91c3acbd0520f967de60e57ed21"
+      },
+      "compiled_record": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-quality-20261022\\current-refresh-20261024\\compile2\\qwen\\identity.json",
+        "bytes": 72220,
+        "sha256": "dcd76a989338535eabdf4c37175b36eb6ed4e22d726f27ec569d19d6dc906a22"
+      },
+      "runtime": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-quality-20261022\\current-refresh-20261024\\hyle-link2\\runtime-environment.json",
+        "bytes": 11693,
+        "sha256": "83eecd6a2baea506081acb3e02d491ca7212046761fc92188b21c7cbe057492e"
+      }
+    },
+    {
+      "arm": "peer_plain",
+      "passed": true,
+      "generated_ids": [
+        71093,
+        12305,
+        198,
+        464,
+        71093,
+        12305,
+        198,
+        1445
+      ],
+      "generated_tokens": 8,
+      "turns": [
+        {
+          "turn": 1,
+          "requested_steps": 4,
+          "pending_flushed": false,
+          "context_before": 0,
+          "context_after": 157,
+          "output_begin": 0,
+          "output_end": 4,
+          "last_output_is_EOS": false,
+          "stopped_on_EOS": false
+        },
+        {
+          "turn": 2,
+          "requested_steps": 4,
+          "pending_flushed": true,
+          "context_before": 157,
+          "context_after": 315,
+          "output_begin": 4,
+          "output_end": 8,
+          "last_output_is_EOS": false,
+          "stopped_on_EOS": false
+        }
+      ],
+      "actual_target_rows": 315,
+      "actual_draft_rows": 0,
+      "prefill_target_rows": 309,
+      "accepted_drafts": 0,
+      "observation": {
+        "path": ".scratch/qwen-mtp-final-window-20261024/smoke1/peer_plain/observation.json",
+        "bytes": 17497,
+        "sha256": "16e81e24f8a30bbc1bdc4b833df685e2ce7672082dc6c5f31063db4285d711b7"
+      },
+      "process": {
+        "path": ".scratch/qwen-mtp-final-window-20261024/smoke1/peer_plain/process.json",
+        "bytes": 1055,
+        "sha256": "05dda839c693bb8fac58d70316f84b38ef8e465aa49910cf55caf7c1cbe7521e"
+      },
+      "stdout": {
+        "path": ".scratch/qwen-mtp-final-window-20261024/smoke1/peer_plain/stdout.log",
+        "bytes": 22974,
+        "sha256": "107c28e82575747f2a102f7135a83cbd1c37dc1eff8b0175d5673d5db8acf9bf"
+      },
+      "stderr": {
+        "path": ".scratch/qwen-mtp-final-window-20261024/smoke1/peer_plain/stderr.log",
+        "bytes": 58261,
+        "sha256": "5d2060216b61c21125a81cd1870a8726811d4498dea60ccc96e18ed16303854b"
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-final-window-20261024\\peer-link1\\peer.exe",
+        "bytes": 35830272,
+        "sha256": "433e7051f4c36d0d9b2297dc378631546b7e3c44630cda0653cba2d1ec6bbe8e"
+      },
+      "ready": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-final-window-20261024\\peer-link1\\ready.json",
+        "bytes": 1842,
+        "sha256": "ec3a6b31960c9c94a12da712192069e4dbb17708704f28c69f846eb398dbf994"
+      },
+      "compiled_record": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-final-window-20261024\\compile1\\peer\\identity.json",
+        "bytes": 68001,
+        "sha256": "42d1da4148f7c081fed7c28bb8f56e1322f2c96fedcf4bd94c820cad1013c189"
+      },
+      "runtime": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-final-window-20261024\\peer-link1\\runtime-environment.json",
+        "bytes": 5854,
+        "sha256": "551e7e5ded6fd51ce9cd8fff452905a70611608c56fb07e138232a8438ec0ec0"
+      }
+    },
+    {
+      "arm": "peer_mtp",
+      "passed": true,
+      "generated_ids": [
+        71093,
+        12305,
+        198,
+        464,
+        71093,
+        12305,
+        198,
+        1445
+      ],
+      "generated_tokens": 8,
+      "turns": [
+        {
+          "turn": 1,
+          "requested_steps": 4,
+          "pending_flushed": false,
+          "context_before": 0,
+          "context_after": 157,
+          "output_begin": 0,
+          "output_end": 4,
+          "last_output_is_EOS": false,
+          "stopped_on_EOS": false
+        },
+        {
+          "turn": 2,
+          "requested_steps": 4,
+          "pending_flushed": true,
+          "context_before": 157,
+          "context_after": 315,
+          "output_begin": 4,
+          "output_end": 8,
+          "last_output_is_EOS": false,
+          "stopped_on_EOS": false
+        }
+      ],
+      "actual_target_rows": 315,
+      "actual_draft_rows": 315,
+      "prefill_target_rows": 309,
+      "accepted_drafts": 2,
+      "observation": {
+        "path": ".scratch/qwen-mtp-final-window-20261024/smoke1/peer_mtp/observation.json",
+        "bytes": 16556,
+        "sha256": "5028349674d38fba30e703eb86c76c80f9806eb405f3674256b677b13939c7a7"
+      },
+      "process": {
+        "path": ".scratch/qwen-mtp-final-window-20261024/smoke1/peer_mtp/process.json",
+        "bytes": 1055,
+        "sha256": "81c32b2f5ef8e7f2d6d0b6b5c2125807c0f7d40563055e249ccc36dc64fa5dfb"
+      },
+      "stdout": {
+        "path": ".scratch/qwen-mtp-final-window-20261024/smoke1/peer_mtp/stdout.log",
+        "bytes": 22276,
+        "sha256": "2983c97e3e44710d63ae69a4412e5650b04f4f4317585fd304c892fb6b2dfd9a"
+      },
+      "stderr": {
+        "path": ".scratch/qwen-mtp-final-window-20261024/smoke1/peer_mtp/stderr.log",
+        "bytes": 64210,
+        "sha256": "d02cd4e564cb9593ffcef52662b83dfee0866973856bfeb1af52a5ee3e7f659f"
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-final-window-20261024\\peer-link1\\peer.exe",
+        "bytes": 35830272,
+        "sha256": "433e7051f4c36d0d9b2297dc378631546b7e3c44630cda0653cba2d1ec6bbe8e"
+      },
+      "ready": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-final-window-20261024\\peer-link1\\ready.json",
+        "bytes": 1842,
+        "sha256": "ec3a6b31960c9c94a12da712192069e4dbb17708704f28c69f846eb398dbf994"
+      },
+      "compiled_record": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-final-window-20261024\\compile1\\peer\\identity.json",
+        "bytes": 68001,
+        "sha256": "42d1da4148f7c081fed7c28bb8f56e1322f2c96fedcf4bd94c820cad1013c189"
+      },
+      "runtime": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-final-window-20261024\\peer-link1\\runtime-environment.json",
+        "bytes": 5854,
+        "sha256": "551e7e5ded6fd51ce9cd8fff452905a70611608c56fb07e138232a8438ec0ec0"
+      }
+    }
+  ],
+  "plan": {
+    "path": ".scratch/qwen-mtp-final-window-20261024/smoke1/plan.json",
+    "bytes": 9414,
+    "sha256": "4ed6d2d46c45b5fd153e23f68438b31655c2506d34f3daa490e6b19ba00d735e"
+  },
+  "summary": {
+    "path": ".scratch/qwen-mtp-final-window-20261024/smoke1/summary.json",
+    "bytes": 57363,
+    "sha256": "574b3e6935a9fc85b539afa34d671c8a181ea4ebd43e4b2e536f1940f1bf072b"
+  },
+  "source_changes": {
+    "hyle": {
+      "path": "C:\\public\\project-hyle\\hyle\\tools\\qwen35_text\\main.cc",
+      "bytes": 288566,
+      "sha256": "f6a688610e1156e26e5300e2477a5f4f939210983fdbded3ed6fe697071dee9f"
+    },
+    "parser": {
+      "path": "C:\\public\\project-hyle\\hyle\\tools\\qwen35_text\\mtp_schedule.h",
+      "bytes": 5486,
+      "sha256": "b4323081d2b8defc71cb40fe5b183411adc993df0172f44aaa80505811b99f5c"
+    },
+    "peer": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-final-window-20261024\\source\\peer_multiturn.cc",
+      "bytes": 33292,
+      "sha256": "0a6ce1d98fb66c7e74a5f56ecb26470c83aa043c8cd7814ded0afafb532e9132"
+    },
+    "original_peer": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-quality-20261022\\source\\peer_mtp.cc",
+      "bytes": 25057,
+      "sha256": "03099c5c8698d1ce4a079737c69b1f8366aef9941406dcc72b505dfbc7a7224f"
+    }
+  },
+  "build": {
+    "result": {
+      "path": ".scratch/qwen-mtp-final-window-20261024/current-build-result.json",
+      "bytes": 3899,
+      "sha256": "bf09d70048e65bb4a4569dda5ee542c74d02576847bce7d182f4522ac2540916"
+    },
+    "fresh_Hyle_main_TUs": 1,
+    "fresh_peer_consumer_TUs": 1,
+    "native_kernel_TUs": 0,
+    "SDK_builds": 0,
+    "NVCC": 0
+  },
+  "reused_evidence": [
+    {
+      "path": "docs/evidence/correctness/mtp-packed-mmq-workspace-2026-10-24.json",
+      "bytes": 94562,
+      "sha256": "917a43569700c43b0675da09e9e08db925b175fa66662018bef33af20c6898ae"
+    },
+    {
+      "path": "docs/evidence/correctness/qwen-mtp-quality-prefix-2026-10-22.json",
+      "bytes": 200348,
+      "sha256": "4add86414861f12c36471ebe0c4d972a3c34334d1be681d3aaaf8b4a03112289"
+    }
+  ],
+  "limitations": [
+    "This short smoke does not assess generated task correctness or complete model quality; the earlier four-arm coding-task result remains unchanged.",
+    "No new speed, throughput, memory/VRAM peak or multi-session/concurrent serving result is claimed.",
+    "Both turns reached their four-output quota here; EOS-ended turn continuation was not exercised.",
+    "MTP ran natural acceptance and within-turn lag catchup; this smoke does not exercise a lag1 boundary between turns or all cancellation/failure paths.",
+    "The explicit original154-token raw segment is appended twice; this is not a new rendered chat-template contract.",
+    "Native F32 peer carry and Hyle BF16 intermediate policies remain distinct; no cross-engine numerical equivalence follows from this smoke."
+  ],
+  "throughput_evidence": false,
+  "memory_peak_evidence": false,
+  "full_model_quality_pass": false,
+  "source_check_only_activity_after_run": true,
+  "new_native_runs_by_publisher": 0,
+  "HTTP": 0,
+  "files": [
+    {
+      "archive_path": ".scratch/qwen-mtp-final-window-20261024/build_turns.py",
+      "path": ".scratch/qwen-mtp-final-window-20261024/build_turns.py",
+      "bytes": 5041,
+      "sha256": "4fea5b858f0b07eff0eb8a351a7cf1ea38d64d3eb72ce8f8ab26d8b6148532da"
+    },
+    {
+      "archive_path": ".scratch/qwen-mtp-final-window-20261024/compile1/peer/compile.command.json",
+      "path": ".scratch/qwen-mtp-final-window-20261024/compile1/peer/compile.command.json",
+      "bytes": 1761,
+      "sha256": "6bbb34e41f5a44906dc1877e114bd7d02ba98c70c08204a424a1ff3e98e94164"
+    },
+    {
+      "archive_path": ".scratch/qwen-mtp-final-window-20261024/compile1/peer/compile.result.json",
+      "path": ".scratch/qwen-mtp-final-window-20261024/compile1/peer/compile.result.json",
+      "bytes": 1831,
+      "sha256": "7d245a3c1b46a58306231685772bb12d1c8c023c19b44c63a39bfd3c1c478796"
+    },
+    {
+      "archive_path": ".scratch/qwen-mtp-final-window-20261024/compile1/peer/compile.stderr.log",
+      "path": ".scratch/qwen-mtp-final-window-20261024/compile1/peer/compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "archive_path": ".scratch/qwen-mtp-final-window-20261024/compile1/peer/compile.stdout.log",
+      "path": ".scratch/qwen-mtp-final-window-20261024/compile1/peer/compile.stdout.log",
+      "bytes": 19,
+      "sha256": "6949a13f115a19522d0919c26efa262bba5fa8b40aec45210ce3e7377e21fc7a"
+    },
+    {
+      "archive_path": ".scratch/qwen-mtp-final-window-20261024/compile1/peer/identity.json",
+      "path": ".scratch/qwen-mtp-final-window-20261024/compile1/peer/identity.json",
+      "bytes": 68001,
+      "sha256": "42d1da4148f7c081fed7c28bb8f56e1322f2c96fedcf4bd94c820cad1013c189"
+    },
+    {
+      "archive_path": ".scratch/qwen-mtp-final-window-20261024/compile1/peer/plan.json",
+      "path": ".scratch/qwen-mtp-final-window-20261024/compile1/peer/plan.json",
+      "bytes": 2176,
+      "sha256": "930deb094d70fd95a459998934c1c4e2fc3b2be33796c60ee13e5ebe63725527"
+    },
+    {
+      "archive_path": ".scratch/qwen-mtp-final-window-20261024/current-build-result.json",
+      "path": ".scratch/qwen-mtp-final-window-20261024/current-build-result.json",
+      "bytes": 3899,
+      "sha256": "bf09d70048e65bb4a4569dda5ee542c74d02576847bce7d182f4522ac2540916"
+    },
+    {
+      "archive_path": ".scratch/qwen-mtp-final-window-20261024/natural-inputs/prepared.json",
+      "path": ".scratch/qwen-mtp-final-window-20261024/natural-inputs/prepared.json",
+      "bytes": 2508,
+      "sha256": "d8ed24281a61cae5e22b1c128f5060123a88f256b311d31f9cc64fa47efc18df"
+    },
+    {
+      "archive_path": ".scratch/qwen-mtp-final-window-20261024/natural-inputs/smoke4.txt",
+      "path": ".scratch/qwen-mtp-final-window-20261024/natural-inputs/smoke4.txt",
+      "bytes": 134,
+      "sha256": "cc8eb42a0dae9e02ed8f33a2bc3e80649076c7923156acc832c7efd20d2cb65d"
+    },
+    {
+      "archive_path": ".scratch/qwen-mtp-final-window-20261024/natural-turns-proposal/after.json",
+      "path": ".scratch/qwen-mtp-final-window-20261024/natural-turns-proposal/after.json",
+      "bytes": 392,
+      "sha256": "1eff8230ce4afd078a4b8fd6e93e20e29e94ac7ec41d1a48772932726764cb61"
+    },
+    {
+      "archive_path": ".scratch/qwen-mtp-final-window-20261024/natural-turns-proposal/before.json",
+      "path": ".scratch/qwen-mtp-final-window-20261024/natural-turns-proposal/before.json",
+      "bytes": 324,
+      "sha256": "8ae04f44fbd2f1b4da3446f421e07def1efc119f4f2665d335121cd9c66d0f71"
+    },
+    {
+      "archive_path": ".scratch/qwen-mtp-final-window-20261024/natural-turns-proposal/before/tools/qwen35_text/main.cc",
+      "path": ".scratch/qwen-mtp-final-window-20261024/natural-turns-proposal/before/tools/qwen35_text/main.cc",
+      "bytes": 279550,
+      "sha256": "b48a51ea9611a46804624252d3b69217db3303aad789bde74a7bcf5a698c8856"
+    },
+    {
+      "archive_path": ".scratch/qwen-mtp-final-window-20261024/natural-turns-proposal/before/tools/qwen35_text/mtp_schedule.h",
+      "path": ".scratch/qwen-mtp-final-window-20261024/natural-turns-proposal/before/tools/qwen35_text/mtp_schedule.h",
+      "bytes": 4698,
+      "sha256": "091a7d5c7b61bf72c842ddbb540f428ae29d362fc0a2a7892d2f2cd1dd7349ff"
+    },
+    {
+      "archive_path": ".scratch/qwen-mtp-final-window-20261024/natural-turns-proposal/peer-source.diff",
+      "path": ".scratch/qwen-mtp-final-window-20261024/natural-turns-proposal/peer-source.diff",
+      "bytes": 29481,
+      "sha256": "540408a815eb7ac8002061940e8cb73f66f7f1428cf51882e0913fbafcf9c256"
+    },
+    {
+      "archive_path": ".scratch/qwen-mtp-final-window-20261024/natural-turns-proposal/source.patch",
+      "path": ".scratch/qwen-mtp-final-window-20261024/natural-turns-proposal/source.patch",
+      "bytes": 15905,
+      "sha256": "0909da0a62ed38d8bc617cd840b707021720ef5ca97c77ee87137fa4106008ad"
+    },
+    {
+      "archive_path": ".scratch/qwen-mtp-final-window-20261024/peer-link1/link-plan.json",
+      "path": ".scratch/qwen-mtp-final-window-20261024/peer-link1/link-plan.json",
+      "bytes": 4801,
+      "sha256": "f175f3c5480d7eec90d15f86bdc7a99a6ab064cb384e8fb57196c607d917d963"
+    },
+    {
+      "archive_path": ".scratch/qwen-mtp-final-window-20261024/peer-link1/link.command.json",
+      "path": ".scratch/qwen-mtp-final-window-20261024/peer-link1/link.command.json",
+      "bytes": 1891,
+      "sha256": "56ff29e97836f08e85f891ef385b2ec65b2a25d33f2d21db267fccf1f0b5dd28"
+    },
+    {
+      "archive_path": ".scratch/qwen-mtp-final-window-20261024/peer-link1/link.result.json",
+      "path": ".scratch/qwen-mtp-final-window-20261024/peer-link1/link.result.json",
+      "bytes": 1961,
+      "sha256": "f7f805a25754137f41e787dc507dc5c62253321945bf7db8bea9b47ed6abfc4c"
+    },
+    {
+      "archive_path": ".scratch/qwen-mtp-final-window-20261024/peer-link1/link.stderr.log",
+      "path": ".scratch/qwen-mtp-final-window-20261024/peer-link1/link.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "archive_path": ".scratch/qwen-mtp-final-window-20261024/peer-link1/link.stdout.log",
+      "path": ".scratch/qwen-mtp-final-window-20261024/peer-link1/link.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "archive_path": ".scratch/qwen-mtp-final-window-20261024/peer-link1/ready.json",
+      "path": ".scratch/qwen-mtp-final-window-20261024/peer-link1/ready.json",
+      "bytes": 1842,
+      "sha256": "ec3a6b31960c9c94a12da712192069e4dbb17708704f28c69f846eb398dbf994"
+    },
+    {
+      "archive_path": ".scratch/qwen-mtp-final-window-20261024/peer-link1/runtime-environment.json",
+      "path": ".scratch/qwen-mtp-final-window-20261024/peer-link1/runtime-environment.json",
+      "bytes": 5854,
+      "sha256": "551e7e5ded6fd51ce9cd8fff452905a70611608c56fb07e138232a8438ec0ec0"
+    },
+    {
+      "archive_path": ".scratch/qwen-mtp-final-window-20261024/prepare_peer_multiturn.py",
+      "path": ".scratch/qwen-mtp-final-window-20261024/prepare_peer_multiturn.py",
+      "bytes": 17520,
+      "sha256": "deb184be8d8d20a1f8e45be75cce99501162a35eb3745ceae02638b9e1d04b21"
+    },
+    {
+      "archive_path": ".scratch/qwen-mtp-final-window-20261024/publish_smoke.py",
+      "path": ".scratch/qwen-mtp-final-window-20261024/publish_smoke.py",
+      "bytes": 9874,
+      "sha256": "51cd9db8364b5bb0a3ab498e4a5c4a5ca17fa4d140d727ae91780274d1f012c9"
+    },
+    {
+      "archive_path": ".scratch/qwen-mtp-final-window-20261024/smoke.py",
+      "path": ".scratch/qwen-mtp-final-window-20261024/smoke.py",
+      "bytes": 8930,
+      "sha256": "264d77ae564be581adc77d6f87abeb12b3f2c60767d6dd98da3c08a455d2dae9"
+    },
+    {
+      "archive_path": ".scratch/qwen-mtp-final-window-20261024/smoke1/hyle_mtp/command.json",
+      "path": ".scratch/qwen-mtp-final-window-20261024/smoke1/hyle_mtp/command.json",
+      "bytes": 817,
+      "sha256": "beb2ba6d20a87d87c76fecccbaa1d071eeafe1c4d4287578bc90198ee587528f"
+    },
+    {
+      "archive_path": ".scratch/qwen-mtp-final-window-20261024/smoke1/hyle_mtp/live.json",
+      "path": ".scratch/qwen-mtp-final-window-20261024/smoke1/hyle_mtp/live.json",
+      "bytes": 834,
+      "sha256": "643dd974122573a3f1abce6322ca4ff0ecdd2fb36f15158e26ecd7af44afda4b"
+    },
+    {
+      "archive_path": ".scratch/qwen-mtp-final-window-20261024/smoke1/hyle_mtp/observation.json",
+      "path": ".scratch/qwen-mtp-final-window-20261024/smoke1/hyle_mtp/observation.json",
+      "bytes": 6548,
+      "sha256": "3f2d6648fd761610959ab36cce71c19f51d76fefb5bea4c7ca48943e152f93a0"
+    },
+    {
+      "archive_path": ".scratch/qwen-mtp-final-window-20261024/smoke1/hyle_mtp/process.json",
+      "path": ".scratch/qwen-mtp-final-window-20261024/smoke1/hyle_mtp/process.json",
+      "bytes": 953,
+      "sha256": "347d48856edd377b0e62b53fc9a46a35a4c459a711d0ebe6a52f315d78f7d7b7"
+    },
+    {
+      "archive_path": ".scratch/qwen-mtp-final-window-20261024/smoke1/hyle_mtp/stderr.log",
+      "path": ".scratch/qwen-mtp-final-window-20261024/smoke1/hyle_mtp/stderr.log",
+      "bytes": 6055,
+      "sha256": "4d068f85a6d82626856ee680a4f74e9a8ee4174e07a8e6eddef47e89b98ce827"
+    },
+    {
+      "archive_path": ".scratch/qwen-mtp-final-window-20261024/smoke1/hyle_mtp/stdout.log",
+      "path": ".scratch/qwen-mtp-final-window-20261024/smoke1/hyle_mtp/stdout.log",
+      "bytes": 10589,
+      "sha256": "edec077fea8416b1bc9c2bf2e7ccd0b1f60673fb960fb0a4019a46959a8337fd"
+    },
+    {
+      "archive_path": ".scratch/qwen-mtp-final-window-20261024/smoke1/hyle_plain/command.json",
+      "path": ".scratch/qwen-mtp-final-window-20261024/smoke1/hyle_plain/command.json",
+      "bytes": 819,
+      "sha256": "e3072a9ae0c1fffa906e464e818abcafc7eaa2a4d8bf0004cb4e34b661bcb731"
+    },
+    {
+      "archive_path": ".scratch/qwen-mtp-final-window-20261024/smoke1/hyle_plain/live.json",
+      "path": ".scratch/qwen-mtp-final-window-20261024/smoke1/hyle_plain/live.json",
+      "bytes": 836,
+      "sha256": "d3be03fe6aa9727d0358ff8b33b8c5e1a600729c529db6d8d5aac163bd10df5d"
+    },
+    {
+      "archive_path": ".scratch/qwen-mtp-final-window-20261024/smoke1/hyle_plain/observation.json",
+      "path": ".scratch/qwen-mtp-final-window-20261024/smoke1/hyle_plain/observation.json",
+      "bytes": 5852,
+      "sha256": "e6e8b2cee5e0afb3723afceaa0a3a3b79ffc046631bc169bbf8ca6e53843fb0c"
+    },
+    {
+      "archive_path": ".scratch/qwen-mtp-final-window-20261024/smoke1/hyle_plain/process.json",
+      "path": ".scratch/qwen-mtp-final-window-20261024/smoke1/hyle_plain/process.json",
+      "bytes": 955,
+      "sha256": "fc58db96076c99f83ce191613174ab4362a298d77cda1339facfabe6452424e0"
+    },
+    {
+      "archive_path": ".scratch/qwen-mtp-final-window-20261024/smoke1/hyle_plain/stderr.log",
+      "path": ".scratch/qwen-mtp-final-window-20261024/smoke1/hyle_plain/stderr.log",
+      "bytes": 3678,
+      "sha256": "024c34a906b0e7057c13d2d7da3833107ddf7f95974c410b97e5d4e130f0ff48"
+    },
+    {
+      "archive_path": ".scratch/qwen-mtp-final-window-20261024/smoke1/hyle_plain/stdout.log",
+      "path": ".scratch/qwen-mtp-final-window-20261024/smoke1/hyle_plain/stdout.log",
+      "bytes": 3629,
+      "sha256": "4be905598e7e5266d204cf648f811e744aabab9bb07d08fa7a768060f063eb7b"
+    },
+    {
+      "archive_path": ".scratch/qwen-mtp-final-window-20261024/smoke1/peer_mtp/command.json",
+      "path": ".scratch/qwen-mtp-final-window-20261024/smoke1/peer_mtp/command.json",
+      "bytes": 920,
+      "sha256": "6d3289beee488dfd6df3c634de408ae070ff4668d01e306d5a7939e9abc44259"
+    },
+    {
+      "archive_path": ".scratch/qwen-mtp-final-window-20261024/smoke1/peer_mtp/consumer-result.json",
+      "path": ".scratch/qwen-mtp-final-window-20261024/smoke1/peer_mtp/consumer-result.json",
+      "bytes": 21090,
+      "sha256": "b5960f1b21a8e03910fcdeff76afd89e65b45c286c1e5d2770f8f0e2f3e476be"
+    },
+    {
+      "archive_path": ".scratch/qwen-mtp-final-window-20261024/smoke1/peer_mtp/live.json",
+      "path": ".scratch/qwen-mtp-final-window-20261024/smoke1/peer_mtp/live.json",
+      "bytes": 937,
+      "sha256": "abb8becf9310eb9125f4e1403b3efe77abc74da12e629101517bf2c832e58904"
+    },
+    {
+      "archive_path": ".scratch/qwen-mtp-final-window-20261024/smoke1/peer_mtp/observation.json",
+      "path": ".scratch/qwen-mtp-final-window-20261024/smoke1/peer_mtp/observation.json",
+      "bytes": 16556,
+      "sha256": "5028349674d38fba30e703eb86c76c80f9806eb405f3674256b677b13939c7a7"
+    },
+    {
+      "archive_path": ".scratch/qwen-mtp-final-window-20261024/smoke1/peer_mtp/process.json",
+      "path": ".scratch/qwen-mtp-final-window-20261024/smoke1/peer_mtp/process.json",
+      "bytes": 1055,
+      "sha256": "81c32b2f5ef8e7f2d6d0b6b5c2125807c0f7d40563055e249ccc36dc64fa5dfb"
+    },
+    {
+      "archive_path": ".scratch/qwen-mtp-final-window-20261024/smoke1/peer_mtp/stderr.log",
+      "path": ".scratch/qwen-mtp-final-window-20261024/smoke1/peer_mtp/stderr.log",
+      "bytes": 64210,
+      "sha256": "d02cd4e564cb9593ffcef52662b83dfee0866973856bfeb1af52a5ee3e7f659f"
+    },
+    {
+      "archive_path": ".scratch/qwen-mtp-final-window-20261024/smoke1/peer_mtp/stdout.log",
+      "path": ".scratch/qwen-mtp-final-window-20261024/smoke1/peer_mtp/stdout.log",
+      "bytes": 22276,
+      "sha256": "2983c97e3e44710d63ae69a4412e5650b04f4f4317585fd304c892fb6b2dfd9a"
+    },
+    {
+      "archive_path": ".scratch/qwen-mtp-final-window-20261024/smoke1/peer_plain/command.json",
+      "path": ".scratch/qwen-mtp-final-window-20261024/smoke1/peer_plain/command.json",
+      "bytes": 920,
+      "sha256": "16d3f1ae9eabdff88bcb56443ad5161e2bc72999919b29f78cb3487b40ec807c"
+    },
+    {
+      "archive_path": ".scratch/qwen-mtp-final-window-20261024/smoke1/peer_plain/consumer-result.json",
+      "path": ".scratch/qwen-mtp-final-window-20261024/smoke1/peer_plain/consumer-result.json",
+      "bytes": 21753,
+      "sha256": "12f162f171037c6704800b881a7eeeafaa13927e6e200eddec3b822747fe1568"
+    },
+    {
+      "archive_path": ".scratch/qwen-mtp-final-window-20261024/smoke1/peer_plain/live.json",
+      "path": ".scratch/qwen-mtp-final-window-20261024/smoke1/peer_plain/live.json",
+      "bytes": 937,
+      "sha256": "bfbc17f5046d0dad014f1c8e6a127a4b9ae2d8f36ef2ce04d43f78d0ccc22d13"
+    },
+    {
+      "archive_path": ".scratch/qwen-mtp-final-window-20261024/smoke1/peer_plain/observation.json",
+      "path": ".scratch/qwen-mtp-final-window-20261024/smoke1/peer_plain/observation.json",
+      "bytes": 17497,
+      "sha256": "16e81e24f8a30bbc1bdc4b833df685e2ce7672082dc6c5f31063db4285d711b7"
+    },
+    {
+      "archive_path": ".scratch/qwen-mtp-final-window-20261024/smoke1/peer_plain/process.json",
+      "path": ".scratch/qwen-mtp-final-window-20261024/smoke1/peer_plain/process.json",
+      "bytes": 1055,
+      "sha256": "05dda839c693bb8fac58d70316f84b38ef8e465aa49910cf55caf7c1cbe7521e"
+    },
+    {
+      "archive_path": ".scratch/qwen-mtp-final-window-20261024/smoke1/peer_plain/stderr.log",
+      "path": ".scratch/qwen-mtp-final-window-20261024/smoke1/peer_plain/stderr.log",
+      "bytes": 58261,
+      "sha256": "5d2060216b61c21125a81cd1870a8726811d4498dea60ccc96e18ed16303854b"
+    },
+    {
+      "archive_path": ".scratch/qwen-mtp-final-window-20261024/smoke1/peer_plain/stdout.log",
+      "path": ".scratch/qwen-mtp-final-window-20261024/smoke1/peer_plain/stdout.log",
+      "bytes": 22974,
+      "sha256": "107c28e82575747f2a102f7135a83cbd1c37dc1eff8b0175d5673d5db8acf9bf"
+    },
+    {
+      "archive_path": ".scratch/qwen-mtp-final-window-20261024/smoke1/plan.json",
+      "path": ".scratch/qwen-mtp-final-window-20261024/smoke1/plan.json",
+      "bytes": 9414,
+      "sha256": "4ed6d2d46c45b5fd153e23f68438b31655c2506d34f3daa490e6b19ba00d735e"
+    },
+    {
+      "archive_path": ".scratch/qwen-mtp-final-window-20261024/smoke1/summary.json",
+      "path": ".scratch/qwen-mtp-final-window-20261024/smoke1/summary.json",
+      "bytes": 57363,
+      "sha256": "574b3e6935a9fc85b539afa34d671c8a181ea4ebd43e4b2e536f1940f1bf072b"
+    },
+    {
+      "archive_path": ".scratch/qwen-mtp-final-window-20261024/source/peer_multiturn.cc",
+      "path": ".scratch/qwen-mtp-final-window-20261024/source/peer_multiturn.cc",
+      "bytes": 33292,
+      "sha256": "0a6ce1d98fb66c7e74a5f56ecb26470c83aa043c8cd7814ded0afafb532e9132"
+    },
+    {
+      "archive_path": ".scratch/qwen-mtp-quality-20261022/current-refresh-20261024/build-result2.json",
+      "path": ".scratch/qwen-mtp-quality-20261022/current-refresh-20261024/build-result2.json",
+      "bytes": 1839,
+      "sha256": "c7214d47632f09e6868cda0c710260e483224df68a9849cf6d93b118825379db"
+    },
+    {
+      "archive_path": ".scratch/qwen-mtp-quality-20261022/current-refresh-20261024/compile2/qwen/compile.command.json",
+      "path": ".scratch/qwen-mtp-quality-20261022/current-refresh-20261024/compile2/qwen/compile.command.json",
+      "bytes": 1996,
+      "sha256": "c12c84d0a4103ae4cbd5e73201ad65f2cda2c9d7264a52203834f7f9a4d2c7ed"
+    },
+    {
+      "archive_path": ".scratch/qwen-mtp-quality-20261022/current-refresh-20261024/compile2/qwen/compile.result.json",
+      "path": ".scratch/qwen-mtp-quality-20261022/current-refresh-20261024/compile2/qwen/compile.result.json",
+      "bytes": 2066,
+      "sha256": "5b9bb3e3f80ba0364a7db0d433382edae771501c24f4ec0b7a9d495580313459"
+    },
+    {
+      "archive_path": ".scratch/qwen-mtp-quality-20261022/current-refresh-20261024/compile2/qwen/compile.stderr.log",
+      "path": ".scratch/qwen-mtp-quality-20261022/current-refresh-20261024/compile2/qwen/compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "archive_path": ".scratch/qwen-mtp-quality-20261022/current-refresh-20261024/compile2/qwen/compile.stdout.log",
+      "path": ".scratch/qwen-mtp-quality-20261022/current-refresh-20261024/compile2/qwen/compile.stdout.log",
+      "bytes": 9,
+      "sha256": "f197b2519eedf02e571357ddc67cf5ca097ec055c64ddd28a980d92394b07b5d"
+    },
+    {
+      "archive_path": ".scratch/qwen-mtp-quality-20261022/current-refresh-20261024/compile2/qwen/identity.json",
+      "path": ".scratch/qwen-mtp-quality-20261022/current-refresh-20261024/compile2/qwen/identity.json",
+      "bytes": 72220,
+      "sha256": "dcd76a989338535eabdf4c37175b36eb6ed4e22d726f27ec569d19d6dc906a22"
+    },
+    {
+      "archive_path": ".scratch/qwen-mtp-quality-20261022/current-refresh-20261024/compile2/qwen/plan.json",
+      "path": ".scratch/qwen-mtp-quality-20261022/current-refresh-20261024/compile2/qwen/plan.json",
+      "bytes": 2391,
+      "sha256": "f19b89210e7738a83938f02f25c9ba1f8ef251802ffe42134e7f346773584765"
+    },
+    {
+      "archive_path": ".scratch/qwen-mtp-quality-20261022/current-refresh-20261024/hyle-link2/link-plan.json",
+      "path": ".scratch/qwen-mtp-quality-20261022/current-refresh-20261024/hyle-link2/link-plan.json",
+      "bytes": 96453,
+      "sha256": "e8d9f19d05bbb1295b07ee2f195e6de62f2ca98cb06f7ffb47dbe1270174c17d"
+    },
+    {
+      "archive_path": ".scratch/qwen-mtp-quality-20261022/current-refresh-20261024/hyle-link2/link.command.json",
+      "path": ".scratch/qwen-mtp-quality-20261022/current-refresh-20261024/hyle-link2/link.command.json",
+      "bytes": 32874,
+      "sha256": "fe4de98ac2175579cea022a89bb41960e948e29ba5f4635e4775c9c9d5fc7a36"
+    },
+    {
+      "archive_path": ".scratch/qwen-mtp-quality-20261022/current-refresh-20261024/hyle-link2/link.result.json",
+      "path": ".scratch/qwen-mtp-quality-20261022/current-refresh-20261024/hyle-link2/link.result.json",
+      "bytes": 32943,
+      "sha256": "b107360aa33182901502e55b1bf17475f02bb666aaa8abfd948d3e3ce9ef62e3"
+    },
+    {
+      "archive_path": ".scratch/qwen-mtp-quality-20261022/current-refresh-20261024/hyle-link2/link.stderr.log",
+      "path": ".scratch/qwen-mtp-quality-20261022/current-refresh-20261024/hyle-link2/link.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "archive_path": ".scratch/qwen-mtp-quality-20261022/current-refresh-20261024/hyle-link2/link.stdout.log",
+      "path": ".scratch/qwen-mtp-quality-20261022/current-refresh-20261024/hyle-link2/link.stdout.log",
+      "bytes": 248,
+      "sha256": "9172fa257f41d5d0807e6785b17037e9a54e5bcea9f7b828bb46a05e75f37f2c"
+    },
+    {
+      "archive_path": ".scratch/qwen-mtp-quality-20261022/current-refresh-20261024/hyle-link2/ready.json",
+      "path": ".scratch/qwen-mtp-quality-20261022/current-refresh-20261024/hyle-link2/ready.json",
+      "bytes": 1816,
+      "sha256": "80de1cf12dddc3a849446ba6bd41c97931b4d91c3acbd0520f967de60e57ed21"
+    },
+    {
+      "archive_path": ".scratch/qwen-mtp-quality-20261022/current-refresh-20261024/hyle-link2/runtime-environment.json",
+      "path": ".scratch/qwen-mtp-quality-20261022/current-refresh-20261024/hyle-link2/runtime-environment.json",
+      "bytes": 11693,
+      "sha256": "83eecd6a2baea506081acb3e02d491ca7212046761fc92188b21c7cbe057492e"
+    },
+    {
+      "archive_path": ".scratch/qwen-mtp-quality-20261022/source/peer_mtp.cc",
+      "path": ".scratch/qwen-mtp-quality-20261022/source/peer_mtp.cc",
+      "bytes": 25057,
+      "sha256": "03099c5c8698d1ce4a079737c69b1f8366aef9941406dcc72b505dfbc7a7224f"
+    },
+    {
+      "archive_path": ".scratch/qwen-mtp-window-20261022/inputs/input.json",
+      "path": ".scratch/qwen-mtp-window-20261022/inputs/input.json",
+      "bytes": 8361,
+      "sha256": "e768036a9ea28c234b49fc3510da144d11d099109e753d2a989e49fc87990ea2"
+    },
+    {
+      "archive_path": ".scratch/qwen-mtp-window-20261022/inputs/prompt.ids",
+      "path": ".scratch/qwen-mtp-window-20261022/inputs/prompt.ids",
+      "bytes": 733,
+      "sha256": "b6a10feefb0af4687ee536285c9666bfbdf093fc9e484ab0461834345a5993a4"
+    },
+    {
+      "archive_path": "tools/qwen35_text/main.cc",
+      "path": "tools/qwen35_text/main.cc",
+      "bytes": 288566,
+      "sha256": "f6a688610e1156e26e5300e2477a5f4f939210983fdbded3ed6fe697071dee9f"
+    },
+    {
+      "archive_path": "tools/qwen35_text/mtp_schedule.h",
+      "path": "tools/qwen35_text/mtp_schedule.h",
+      "bytes": 5486,
+      "sha256": "b4323081d2b8defc71cb40fe5b183411adc993df0172f44aaa80505811b99f5c"
+    },
+    {
+      "archive_path": "tools/qwen35_text/schedule.h",
+      "path": "tools/qwen35_text/schedule.h",
+      "bytes": 4762,
+      "sha256": "093583e30cdce2e55d4a40b3f384715a25928a3583b8171057c0719218145fbe"
+    },
+    {
+      "archive_path": "tools/qwen35_text/session_schedule.h",
+      "path": "tools/qwen35_text/session_schedule.h",
+      "bytes": 4134,
+      "sha256": "7ce20af02378a4904cda4d522a01ffeb7b047febaaed5b41d1b82c7ab18c31ac"
+    }
+  ],
+  "archive": {
+    "path": "docs/evidence/correctness/mtp-qwen-natural-multiturn-2026-10-24.zip",
+    "bytes": 309243,
+    "sha256": "6309d75cd8ec07f471641d8fb933b5a6158fdb1f207b1e69bfaafbe4dc148bf2"
+  }
+}

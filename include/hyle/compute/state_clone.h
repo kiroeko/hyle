@@ -122,7 +122,7 @@ template<class Program, class Factory> struct TypedStateCopy final {
   Result<std::uint32_t> start(const ReadLease &source, WriteLease &&destination, std::size_t bytes) noexcept {
     if (closed) return std::unexpected(Status::FailedPrecondition("state copy route is closed"));
     for (std::uint32_t i = 0; i < slots.size(); ++i) {
-      auto &s = slots[i]; if (s.live || s.disabled) continue;
+      auto &s = slots[i]; if (s.observers || s.live || s.disabled) continue;
       s.bytes = bytes; s.abandoned = false;
       auto status = s.invocation.bind_source({0}, source);
       if (status.ok()) status = s.invocation.bind_mutable({1}, std::move(destination));
@@ -147,7 +147,10 @@ template<class Program, class Factory> struct TypedStateCopy final {
     if (!wait && s.invocation.in_flight()) return std::unexpected(Status::Unavailable("state clone pending"));
     if (s.submission.valid()) {
       const auto terminal = s.submission.wait();
-      if (!terminal.ok()) { s.disabled = true; s.abandoned = true; cleanup(s).IgnoreError(); return std::unexpected(terminal); }
+      if (!terminal.ok()) {
+        if (!terminal.IsUnavailable()) { s.disabled = true; s.abandoned = true; cleanup(s).IgnoreError(); }
+        return std::unexpected(terminal);
+      }
       auto output = s.submission.output({0},{1},0,s.bytes);
       if (!output) return std::unexpected(output.error());
       s.output = std::move(*output); s.submission = {};
@@ -169,10 +172,14 @@ template<class Program, class Factory> struct TypedStateCopy final {
   Status cancel(std::uint32_t i) noexcept {
     if (i >= slots.size()) return Status::InvalidArgument("state clone slot index");
     auto &s = slots[i]; s.abandoned = true; s.disabled = true;
+    // The store monitor protects observer admission, not the original F2
+    // handle while its host wait runs outside that monitor. Defer native
+    // cancellation/cleanup while that observer owns it; close never waits.
+    if (s.observers) return Status::Unavailable("state copy has an explicit host observer");
     return s.submission.valid() ? s.submission.request_cancel() : Status::Ok();
   }
   Status collect() noexcept {
-    for (auto &s : slots) if (s.live && s.abandoned && !s.invocation.in_flight()) cleanup(s).IgnoreError();
+    for (auto &s : slots) if (s.live && s.abandoned && !s.observers && !s.invocation.in_flight()) cleanup(s).IgnoreError();
     for (const auto &s : slots) if (s.live && s.abandoned) return Status::Unavailable("state abandoned clone still retires");
     return Status::Ok();
   }
@@ -180,7 +187,7 @@ template<class Program, class Factory> struct TypedStateCopy final {
     closed = true;
     for (std::uint32_t i = 0; i < slots.size(); ++i) {
       if (slots[i].live) cancel(i).IgnoreError();
-      slots[i].invocation.close().IgnoreError();
+      if (!slots[i].observers) slots[i].invocation.close().IgnoreError();
     }
     return active() ? Status::Unavailable("state clone route has native work") : Status::Ok();
   }
@@ -199,7 +206,7 @@ template<class Program, class Factory> struct TypedStateCopy final {
     collect().IgnoreError();
     try {
       for (auto &s : slots) if (s.disabled) {
-        if (s.live) return Status::Unavailable("state copy actual retirement is unproven");
+        if (s.observers || s.live) return Status::Unavailable("state copy actual retirement is unproven");
         HYLE_ASSIGN_OR_RETURN(auto native, std::invoke(factory, std::as_const(program)));
         s.invocation = std::move(native); s.disabled = false; s.abandoned = false;
       }

@@ -1,0 +1,39 @@
+#version 450
+
+// One word owns four encoded bytes; padding outside the logical tail is kept.
+layout(local_size_x = 128) in;
+layout(binding = 0) readonly buffer A { uint a[]; };
+layout(binding = 2) buffer Status { uint status[]; };
+layout(binding = 3) buffer D { uint d[]; };
+layout(push_constant) uniform Origins { uint a; uint b; uint c; } origin;
+layout(constant_id = 1) const uint input_type = 0;
+layout(constant_id = 6) const uint count = 1;
+layout(constant_id = 7) const uint scale_bits = 0x3f800000u;
+uint hyle_mul_hi(uint a, uint b) { uint high, low; umulExtended(a,b,high,low); return high; }
+uint hyle_clz(uint value) { return value==0u ? 32u : 31u-uint(findMSB(value)); }
+// HYLE_CACHE_E4_F32_SOURCE
+#include "fp8_storage.glsl"
+uint load_bytes(uint offset, uint bytes) {
+    uint shift=(offset&3u)*8u;
+    uint bits=a[offset/4u]>>shift;
+    if(shift+bytes*8u>32u) bits |= a[offset/4u+1u]<<(32u-shift);
+    return bytes==4u ? bits : bits&65535u;
+}
+void main() {
+    uint word = gl_GlobalInvocationID.x + gl_GlobalInvocationID.y * gl_NumWorkGroups.x * 128u;
+    if(word >= (count+3u)/4u) return;
+    uint encoded = 0u, mask = 0u;
+    for(uint lane=0u;lane<4u;++lane) {
+        uint element=word*4u+lane;
+        if(element>=count) break;
+        uint offset=origin.a+element*(input_type==0u ? 4u : 2u);
+        uint bits=load_bytes(offset,input_type==0u ? 4u : 2u);
+        if(input_type!=0u) bits=hyle_ct_widen(bits&65535u,input_type);
+        bool finite=(bits&0x7fffffffu)<0x7f800000u;
+        if(!finite) atomicOr(status[0],4u);
+        uint code=finite ? f32_to_fp8_e4m3_bits(hyle_f32_div(bits,scale_bits)) : 0u;
+        encoded |= code << (lane*8u);
+        mask |= 255u << (lane*8u);
+    }
+    d[word] = mask==0xffffffffu ? encoded : (d[word]&~mask)|encoded;
+}

@@ -1,0 +1,375 @@
+{
+  "status": "bounded_CT_local_dynamic_NVFP4_software_reference_verified",
+  "scope": "Single-machine WindowsCPU/CUDA/Vulkan and macOSApple dense/grouped reference math, resource lifetime and selected-domain regressions. No checkpoint payload execution.",
+  "contract": {
+    "inputs": "BF16A; original adjacent-low-first U8 packedE2M1W, logicalE4M3FN group16SF, independent positivefinite F32 rawWG/IG divisors; grouped adds IDs and perexpert metadata.",
+    "activation": "BF16(absmax/6) then F32IGmultiply, SATFINITE nearest-evenE4 blockscale, exactzero->0.125; effective=F32(SF/IG); F32A/effective clamped[-6,6], explicit Float32 or BF16 input pre-round before E2M1 nearest-even, portableTorch sign then F32scale multiply andBF16 operand.",
+    "weight": "F32(E4SF/rawWG), separate signedE2M1code multiply thenBF16 operand; code8 source arithmetic retains negativezero. BF16 operands precede backendF32 reduction/finalBF16.",
+    "resources": "Existing execution paths and per-slot activation workspace, boundedWtiles, completeIDs before selectedmetadata addressing; mutablecurrentports reread, unselected invalidmetadata untouched. No newexecutor or NK/ENKfloatingbank."
+  },
+  "validation": {
+    "windows_cpu": {
+      "tests": 8,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "cases": [
+        {
+          "suite": "NativeNvfp4",
+          "name": "RejectsCallerWorkspaceAliasingReadInputsBeforeAnyWrite",
+          "properties": {}
+        },
+        {
+          "suite": "CpuNvfp4ReferenceGraph",
+          "name": "OriginalPackedBanksAndBfloatBoundariesSurviveSlotsAndUpdates",
+          "properties": {
+            "actual_submissions": "8"
+          }
+        },
+        {
+          "suite": "CpuNvfp4ReferenceGraph",
+          "name": "RuntimeDomainFailuresRecoverWithoutChangingTheReferenceTree",
+          "properties": {
+            "successful_submissions": "25",
+            "failed_completions": "18"
+          }
+        },
+        {
+          "suite": "CpuGroupedNvfp4ReferenceGraph",
+          "name": "SelectedExpertGlobalsAndSharedViewsSurviveSlotsAndUpdates",
+          "properties": {
+            "actual_submissions": "24"
+          }
+        },
+        {
+          "suite": "CpuGroupedNvfp4ReferenceGraph",
+          "name": "CheckedSelectedRuntimeDomainUsesFreshInvocationAfterFailure",
+          "properties": {
+            "successful_submissions": "26",
+            "failed_completions": "20"
+          }
+        },
+        {
+          "suite": "CpuLocalNvfp4ReferenceGraph",
+          "name": "OriginalDivisorBanksAndBothRoundingModesSurviveSlots",
+          "properties": {
+            "actual_submissions": "32"
+          }
+        },
+        {
+          "suite": "CpuLocalNvfp4ReferenceGraph",
+          "name": "DynamicSelectedRuntimeDomainAndFailureRecovery",
+          "properties": {
+            "successful_submissions": "44",
+            "failed_completions": "24"
+          }
+        },
+        {
+          "suite": "CpuLocalNvfp4ReferenceDirect",
+          "name": "CallerWorkspaceCannotOverwriteOriginalInputs",
+          "properties": {}
+        }
+      ],
+      "xml": {
+        "path": ".scratch/architecture-refactor-2026-10-18/ct-local-nvfp4-reference/common-cpu/checks/attempt2/tests.xml",
+        "bytes": 4236,
+        "sha256": "4f34c6f8746840ce9dcf65882c78d4223b355d7ed83420519f92e208bc154b05"
+      }
+    },
+    "windows_cuda_local": {
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "cases": [
+        {
+          "suite": "CudaLocalNvfp4ReferenceGraph",
+          "name": "DenseGroupedRoundingPoliciesRetainSlotsAndResults",
+          "properties": {
+            "actual_submissions": "32"
+          }
+        },
+        {
+          "suite": "CudaLocalNvfp4ReferenceGraph",
+          "name": "RuntimeScaleIndexFailuresAndIeeeReconstruction",
+          "properties": {
+            "successful_submissions": "44",
+            "failed_completions": "24"
+          }
+        }
+      ],
+      "xml": {
+        "path": ".scratch/architecture-refactor-2026-10-18/ct-local-nvfp4-reference/cuda/validation/static-and-runtime/tests.xml",
+        "bytes": 1232,
+        "sha256": "eb94fec5736fbf443165590cf687686ea36f40d91a0c27ef27de42cefbc1f0a2"
+      }
+    },
+    "windows_cuda_neighbors": {
+      "tests": 4,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "cases": [
+        {
+          "suite": "CudaNvfp4ReferenceGraph",
+          "name": "OriginalPackedBanksAndBfloatBoundariesSurviveSlotsAndUpdates",
+          "properties": {
+            "actual_submissions": "8"
+          }
+        },
+        {
+          "suite": "CudaNvfp4ReferenceGraph",
+          "name": "RuntimeDomainFailuresRecoverWithoutChangingTheReferenceTree",
+          "properties": {
+            "successful_submissions": "25",
+            "failed_completions": "18"
+          }
+        },
+        {
+          "suite": "CudaGroupedNvfp4ReferenceGraph",
+          "name": "SelectedExpertGlobalsSharedViewsAndRetainedResults",
+          "properties": {
+            "actual_submissions": "24"
+          }
+        },
+        {
+          "suite": "CudaGroupedNvfp4ReferenceGraph",
+          "name": "SelectedOnlyValidationFailuresAndBoundedWorkspace",
+          "properties": {
+            "successful_submissions": "26",
+            "failed_completions": "20"
+          }
+        }
+      ],
+      "xml": {
+        "path": ".scratch/architecture-refactor-2026-10-18/ct-local-nvfp4-reference/cuda/validation/neighbors/tests.xml",
+        "bytes": 2294,
+        "sha256": "ad59b50ba001dbd2f5888348aae998b57b513cfc1015b9f1419a7818846ebd63"
+      }
+    },
+    "windows_vulkan_local": {
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "cases": [
+        {
+          "suite": "VulkanLocalNvfp4ReferenceGraph",
+          "name": "DenseAndSelectedExpertRoundingModesSurviveLifetimes",
+          "properties": {
+            "device": "NVIDIA GeForce RTX 4070",
+            "actual_submissions": "32"
+          }
+        },
+        {
+          "suite": "VulkanLocalNvfp4ReferenceGraph",
+          "name": "PointwiseBoundariesAndRuntimeDomainsRetainLocalMath",
+          "properties": {
+            "device": "NVIDIA GeForce RTX 4070",
+            "successful_submissions": "44",
+            "failed_completions": "24"
+          }
+        }
+      ],
+      "xml": {
+        "path": ".scratch/architecture-refactor-2026-10-18/ct-local-nvfp4-reference/vulkan/validation/static-and-runtime/tests.xml",
+        "bytes": 1384,
+        "sha256": "2e2d2947dad4e53288c95f52db7f61aaa1b98b2b85535f4ee1cb8b2a0f54268b"
+      }
+    },
+    "windows_vulkan_neighbors": {
+      "tests": 4,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "cases": [
+        {
+          "suite": "VulkanGroupedNvfp4ReferenceGraph",
+          "name": "SelectedPackedExpertsAndSlotDependentQdqSurviveLifetimes",
+          "properties": {
+            "device": "NVIDIA GeForce RTX 4070",
+            "actual_submissions": "24"
+          }
+        },
+        {
+          "suite": "VulkanGroupedNvfp4ReferenceGraph",
+          "name": "OnlySelectedExpertsAreValidatedAndInvalidIdsFail",
+          "properties": {
+            "device": "NVIDIA GeForce RTX 4070",
+            "successful_submissions": "26",
+            "failed_completions": "20"
+          }
+        },
+        {
+          "suite": "VulkanNvfp4ReferenceGraph",
+          "name": "OriginalPackedBanksAndBfloatBoundariesSurviveSlotsAndUpdates",
+          "properties": {
+            "device": "NVIDIA GeForce RTX 4070",
+            "actual_submissions": "8"
+          }
+        },
+        {
+          "suite": "VulkanNvfp4ReferenceGraph",
+          "name": "RuntimeDomainFailuresRecoverWithoutChangingTheReferenceTree",
+          "properties": {
+            "device": "NVIDIA GeForce RTX 4070",
+            "successful_submissions": "25",
+            "failed_completions": "18"
+          }
+        }
+      ],
+      "xml": {
+        "path": ".scratch/architecture-refactor-2026-10-18/ct-local-nvfp4-reference/vulkan/validation/neighbors/tests.xml",
+        "bytes": 2587,
+        "sha256": "1422499a3304b86ed2293468a73d7fe94d3888361b8999a9be005c22bdf712c9"
+      }
+    },
+    "macos_apple": {
+      "tests": 7,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "cases": [
+        {
+          "suite": "AppleLocalNvfp4ReferenceGraph",
+          "name": "StoredGlobalDivisorsAndBothRoundingModesKeepIndependentSlots",
+          "properties": {
+            "device": "Apple M4",
+            "actual_submissions": "32"
+          }
+        },
+        {
+          "suite": "AppleLocalNvfp4ReferenceGraph",
+          "name": "SelectedDomainsValidateBeforeAccessAndFiniteOverflowRetires",
+          "properties": {
+            "device": "Apple M4",
+            "successful_submissions": "44",
+            "failed_completions": "24"
+          }
+        },
+        {
+          "suite": "AppleNvfp4ReferenceGraph",
+          "name": "OriginalPackedBanksAndBfloatBoundariesSurviveSlotsAndUpdates",
+          "properties": {
+            "device": "Apple M4",
+            "actual_submissions": "8"
+          }
+        },
+        {
+          "suite": "AppleNvfp4ReferenceGraph",
+          "name": "RuntimeDomainFailuresRecoverWithoutChangingTheReferenceTree",
+          "properties": {
+            "device": "Apple M4",
+            "successful_submissions": "25",
+            "failed_completions": "18"
+          }
+        },
+        {
+          "suite": "AppleNvfp4ReferenceGraph",
+          "name": "ByteCarrierDoesNotTurnLogicalFp8IntoIntegerArithmetic",
+          "properties": {}
+        },
+        {
+          "suite": "AppleGroupedNvfp4ReferenceGraph",
+          "name": "SharedActivationsKeepExpertSpecificQuantizationAndIndependentSlots",
+          "properties": {
+            "device": "Apple M4",
+            "actual_submissions": "24"
+          }
+        },
+        {
+          "suite": "AppleGroupedNvfp4ReferenceGraph",
+          "name": "SelectedExpertsValidateBeforeAccessAndFailuresRetire",
+          "properties": {
+            "device": "Apple M4",
+            "successful_submissions": "26",
+            "failed_completions": "20"
+          }
+        }
+      ],
+      "xml": {
+        "path": ".scratch/architecture-refactor-2026-10-18/ct-local-nvfp4-reference/apple/mac/remote/guard-update/results/tests.xml",
+        "bytes": 4653,
+        "sha256": "f4f49cc53273bc22d2e89d9e7c8420449c7eb241667f715c5dc50aec943048cc"
+      }
+    }
+  },
+  "total_passed": 27,
+  "final_source_freeze": {
+    "path": ".scratch/architecture-refactor-2026-10-18/ct-local-nvfp4-reference/root/final-source-freeze.json",
+    "bytes": 7214,
+    "sha256": "05de7297054afcf06ae6e5dfeae7bdd6a9f3fd6be9fb2f76e887489a80c3c9ea"
+  },
+  "backend_receipts": {
+    "common-cpu": {
+      "path": ".scratch/architecture-refactor-2026-10-18/ct-local-nvfp4-reference/common-cpu/final-validation.json",
+      "bytes": 10709,
+      "sha256": "0519e3e0929865a60b86858774ca83b8039cc569e7a3bf964288451394cea948"
+    },
+    "cuda": {
+      "path": ".scratch/architecture-refactor-2026-10-18/ct-local-nvfp4-reference/cuda/final-validation.json",
+      "bytes": 6108,
+      "sha256": "93f5d187a07a1648c30a76459481ea24d6321ad8c91fb8dc93e4c1d4e2e675d3"
+    },
+    "vulkan": {
+      "path": ".scratch/architecture-refactor-2026-10-18/ct-local-nvfp4-reference/vulkan/final-validation.json",
+      "bytes": 9213,
+      "sha256": "c53ad8f176e8a702581ba6758814fab19a887cc2c169e317ef631db1c00da76b"
+    },
+    "apple": {
+      "path": ".scratch/architecture-refactor-2026-10-18/ct-local-nvfp4-reference/apple/final-validation.json",
+      "bytes": 11497,
+      "sha256": "7d70f939406c49177b6ef2d6329ac9b79b8111b405334f388a6e66d095166040"
+    }
+  },
+  "source_counts": {
+    "root_final_unique": 32,
+    "current_source_members": 35
+  },
+  "research": {
+    "report": {
+      "path": "docs/evidence/research/ct-local-nvfp4-contract-2026-10-20.json",
+      "bytes": 17515,
+      "sha256": "f3688c154c7736617b3837530f904046f0f3101a5cee197d82b4f032f84fbc8c"
+    },
+    "archive": {
+      "path": "docs/evidence/research/ct-local-nvfp4-contract-2026-10-20.zip",
+      "bytes": 550203,
+      "sha256": "edf53c63ca32ecfa899fc82b6df7ce728bcacf9b477338733399a3ba08cb4c16"
+    },
+    "scope": "Independently published fixed headers/source research; no primary-source or header archive duplicated here."
+  },
+  "new_reference_case_counts": {
+    "per_backend_lifetime_submissions": 32,
+    "per_backend_runtime_successes": 44,
+    "per_backend_expected_failed_completions": 24,
+    "cpu_additional_direct_alias_rejections": 2
+  },
+  "corrections": [
+    "First CPU sharedweight_decode CXX failed C2270 because extracted free inferencehelpers retained memberconst. Root removed only those2const qualifiers; original failedsource, command/result/log and successfulfreshowner retained. No product numerical failure was observed.",
+    "Apple firstprocess passed6/7: old ByteCarrier guard expected FP8Cast rejection despite the preceding package adding that numerical bridge. Test-only update now executes actualE4 Cast numeric witnesses and retains FP8Binary rejection. SameLocal math/oracle/product sources passed final7/7; do not call the staleguard a Local numerical failure.",
+    "CUDA/Vulkan first link-helper metadata/path planning errors stopped before launching linker/GPU; scripts/errorreceipts retained separately. They are not compiler/linker/GPU failures."
+  ],
+  "limits": [
+    "No originalcheckpoint tensorpayload, fullartifact/model importer, quality, throughput, nativehardwareW4A4 GEMM or deploymentaccumulator equivalence claim.",
+    "Input pre-rounding is explicit arithmetic, not a model/producer whitelist. Finite inputs/scales may still generate legalInf/NaN intermediates; finalNaNs compared by class.",
+    "Independent sparsewitnesses and finalBF16 checks do not certify everyinternalzero sign or identical arbitraryF32 reduction trees acrossbackends.",
+    "Actual integer/grid/storage-buffer limits remain. Large4GiB completeexpertbanks, multi-span/catalogWeightSlots and allshard loading were not covered; opaque private allocations are unknown and OOM does not promise automatic re-selection.",
+    "No Linux/build-all or separate validation-layer run claim. Originalsame-shader byte checks and source review supplement actualGPUtests."
+  ],
+  "archive": {
+    "identity": {
+      "path": "docs/evidence/correctness/ct-local-nvfp4-reference-2026-10-20.zip",
+      "bytes": 1227649,
+      "sha256": "ed936bdb1e25df230b6c0c26b222d1678f0ffc03cf8da13cc1ab67833960df7e"
+    },
+    "members": 352,
+    "uncompressed_bytes": 5579981,
+    "inventory": {
+      "member": "inventory.json",
+      "bytes": 162908,
+      "sha256": "629343f45437bb42f6adc4d8c3ea7f81c918335ab381f46de650ea4cc6d9de96"
+    },
+    "verification": "CRC+everymember exact bytes/SHA; safe unique relative memberpaths; publicJSON archive/inventory identities verified."
+  }
+}

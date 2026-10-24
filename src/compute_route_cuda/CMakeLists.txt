@@ -1,35 +1,7 @@
 if(_HYLE_COMPUTE_HAVE_CUDA)
   hyle_add_module(compute_route_cuda SOURCES
-    cuda_context.cc default_policy.cc best_of.cc weights.cc file_stream.cc)
+    cuda_context.cc default_policy.cc weights.cc)
   target_include_directories(hyle_compute_route_cuda PRIVATE "${HYLE_SOURCE_DIR}/src/compute")
-  # Evidence is tied to the original static C2 recipe. Normal builds need no
-  # user switches; unqualified recipes keep the per-operation mature defaults.
-  get_target_property(_native_cuda_compiler hyle_compute_provider_cuda HYLE_CUDA_COMPILER_VERSION)
-  if(CMAKE_SYSTEM_NAME STREQUAL "Windows" AND
-     CMAKE_CXX_COMPILER_ID STREQUAL "MSVC" AND
-     CMAKE_CXX_COMPILER_VERSION VERSION_EQUAL "19.50.35728" AND HYLE_STATIC AND
-     _native_cuda_compiler VERSION_EQUAL "13.3.73" AND
-     CMAKE_CUDA_ARCHITECTURES STREQUAL "89-real" AND
-     HYLE_SANITIZER STREQUAL "off" AND NOT HYLE_TRACE AND
-     CMAKE_CXX_FLAGS STREQUAL "/DWIN32 /D_WINDOWS /EHsc" AND
-     CMAKE_CXX_FLAGS_RELEASE STREQUAL "/O2 /Ob2 /DNDEBUG" AND
-     NOT CMAKE_INTERPROCEDURAL_OPTIMIZATION AND
-     NOT CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELEASE AND
-     CMAKE_CUDA_FLAGS STREQUAL "-D_WINDOWS -Xcompiler=\" /EHsc\"" AND
-     CMAKE_CUDA_FLAGS_RELEASE STREQUAL "-Xcompiler=\"-O2 -Ob2\" -DNDEBUG")
-    get_directory_property(_caller_options COMPILE_OPTIONS)
-    get_directory_property(_caller_definitions COMPILE_DEFINITIONS)
-    if(NOT _caller_options AND NOT _caller_definitions AND
-       (NOT CMAKE_MSVC_RUNTIME_LIBRARY OR
-        CMAKE_MSVC_RUNTIME_LIBRARY STREQUAL "MultiThreadedDLL" OR
-        CMAKE_MSVC_RUNTIME_LIBRARY STREQUAL "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL"))
-      target_compile_definitions(hyle_compute_route_cuda PRIVATE
-        "$<$<CONFIG:Release>:HYLE_CUDA_DEFAULT_C2_RECIPE=1>")
-    endif()
-    unset(_caller_options)
-    unset(_caller_definitions)
-  endif()
-  unset(_native_cuda_compiler)
   foreach(_provider IN ITEMS torch_cuda flashinfer)
     get_target_property(_provider_features hyle_compute_provider_${_provider} INTERFACE_COMPILE_DEFINITIONS)
     if(_provider_features)
@@ -44,18 +16,6 @@ if(_HYLE_COMPUTE_HAVE_CUDA)
     list(REMOVE_ITEM _cuda_interface "$<LINK_ONLY:hyle_compute_provider_torch_cuda>")
     list(APPEND _cuda_interface "$<LINK_ONLY:$<BUILD_INTERFACE:hyle_compute_provider_torch_cuda>>")
     set_property(TARGET hyle_compute_route_cuda PROPERTY INTERFACE_LINK_LIBRARIES "${_cuda_interface}")
-  endif()
-  if(NOT CMAKE_SYSTEM_NAME STREQUAL "Linux")
-    # This pin's FlashInfer factor is a build-only absent placeholder here.
-    # Its public factory is available only on the admitted Linux route. Keep
-    # the absent build identity out of both static and shared SDK interfaces.
-    get_target_property(_cuda_interface hyle_compute_route_cuda
-      INTERFACE_LINK_LIBRARIES)
-    list(REMOVE_ITEM _cuda_interface "hyle_compute_provider_flashinfer")
-    list(APPEND _cuda_interface
-      "$<BUILD_INTERFACE:hyle_compute_provider_flashinfer>")
-    set_property(TARGET hyle_compute_route_cuda PROPERTY
-      INTERFACE_LINK_LIBRARIES "${_cuda_interface}")
   endif()
 else()
   hyle_add_module(compute_route_cuda OPTIONAL_ABSENT)

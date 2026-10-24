@@ -6,14 +6,19 @@ include("${CMAKE_CURRENT_SOURCE_DIR}/torch_cpu_sdk.cmake")
 
 hyle_add_module(compute_provider_native SOURCES
   aten_cpu_provider.cc
+  blockwise_w4a8.cc
   cast.cc
+  ct_packed.cc
+  static_fp8.cc
   default_rules.cc
   ds4_quantization.cc
   elementwise.cc
   indexing.cc
   native_provider.cc
+  nvfp4.cc
   normalization.cc
   reduction.cc
+  row_cache.cc
   sampling.cc
   transform.cc
   transformer.cc)

@@ -1,8 +1,11 @@
 #include "../compute_ggml_runtime/gallocr_faults.h"
 #include "../compute_provider_native/half_test_support.h"
+#include "../compute_models/batched_sink_fixture.h"
 #include "cpu_program.h"
 #include "ggml-backend-impl.h"
 #include "hyle/compute/backends/cpu.h"
+#include "hyle/compute/cpu.h"
+#include "hyle/compute/detail/queue_sequence.h"
 #include "hyle/compute/model_ops.h"
 #include "hyle/compute/prepared_operation.h"
 #include "hyle/mem/quota_allocator.h"
@@ -23,6 +26,45 @@ namespace {
 namespace c = hyle::compute;
 namespace d = c::ggml_cpu::internal;
 using Half = hyle::simd::float16_t;
+
+TEST(GgmlCpuAttention, BatchedSinkMasksAndHeadDenominatorsReplay) {
+  auto context = c::cpu::create_context({.native_threads = 2}).value();
+  batched_sink_test::direct(context, hyle::mem::system_resource());
+}
+
+// Also run with an assertion-enabled native SDK: the sink alone supplies a
+// positive denominator, even though every ordinary softmax term is zero.
+TEST(GgmlCpuMathAttention, FiniteSinkAcceptsFullyMaskedSingleKey) {
+  auto context = c::Context::create(c::cpu::device(), c::ggml_cpu::provider()).value();
+  auto queue = context.create_queue().value();
+  auto resource = hyle::mem::system_resource();
+  batched_sink_test::Fixture fixture(64, false, 1, 1, 1);
+  auto prepared = c::prepare(context, fixture.operation, fixture.descriptions,
+      std::span(&fixture.descriptions[0], 1), resource).value();
+  EXPECT_EQ(prepared.provider().id, c::ggml_cpu::kProviderId);
+  auto invocation = prepared.create_invocation().value();
+  std::array<hyle::mem::Buffer, 5> buffers;
+  std::array<c::ConstTensorView, 5> inputs;
+  for (std::size_t port = 0; port < buffers.size(); ++port) {
+    buffers[port] = hyle::mem::Buffer::create(resource,
+        fixture.descriptions[port].required_bytes().value(), 64).value();
+    inputs[port] = c::ConstTensorView::create(fixture.descriptions[port], buffers[port].view()).value();
+  }
+  auto output = hyle::mem::Buffer::create(resource,
+      fixture.descriptions[0].required_bytes().value(), 64).value();
+  auto destination = c::TensorView::create(fixture.descriptions[0], output.view()).value();
+  for (int phase = 0; phase < 2; ++phase) {
+    fixture.update(phase);
+    fixture.payloads[3][0] = -std::numeric_limits<float>::infinity();
+    for (std::size_t port = 0; port < buffers.size(); ++port)
+      ASSERT_TRUE(buffers[port].view().write(std::as_bytes(std::span(fixture.payloads[port]))).ok());
+    auto done = invocation.submit(queue, inputs, std::span(&destination, 1));
+    ASSERT_TRUE(done) << done.error().message();
+    ASSERT_TRUE(done->wait().ok());
+    for (const auto value : half_test::read<float>(output)) EXPECT_EQ(value, 0.F);
+  }
+}
+
 struct AttentionPorts final {
   std::vector<hyle::mem::Buffer> owners;
   std::vector<hyle::mem::BufferView> views;
@@ -100,9 +142,11 @@ struct RawProgram final {
     for (std::size_t i = 0; i < outputs.size(); ++i)
       y.push_back(
           c::TensorView::create(outputs[i], ports.views[ninputs + i]).value());
-    return prepared.vtable
-        ->shared_submit(prepared.state, slots[slot], queue, x, y)
-        .status;
+    HYLE_ASSIGN_OR_RETURN(auto sequence, c::detail::QueueSequence::begin(queue));
+    sequence.record(prepared.vtable
+        ->shared_submit(prepared.state, slots[slot], sequence, x, y));
+    HYLE_ASSIGN_OR_RETURN(auto completion, sequence.finish());
+    return completion.wait();
   }
 };
 struct MathCase final {

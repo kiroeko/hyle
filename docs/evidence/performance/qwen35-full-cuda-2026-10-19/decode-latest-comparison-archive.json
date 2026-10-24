@@ -1,0 +1,13 @@
+{
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\qwen35-full-cuda-2026-10-19\\decode-latest-comparison.zip",
+    "bytes": 106006,
+    "sha256": "e3215a1f3e626e98b14a9418dffb2cadbc138595cfcc1baee1b7d486a03c7e60"
+  },
+  "payload_count": 57,
+  "CRC_verified": true,
+  "payload_SHA256_verified": true,
+  "started": "2026-10-19T22:12:40.709498+08:00",
+  "finished": "2026-10-19T22:13:07.667114+08:00",
+  "report": "report.json"
+}

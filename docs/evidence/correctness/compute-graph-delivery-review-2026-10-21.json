@@ -1,0 +1,221 @@
+{
+  "kind": "bounded-delivery3-scope-review",
+  "date": "2026-10-21",
+  "result": "No new mandatory public primitive, shared-executor change, or demonstrably equivalent mature fusion omission established by the reviewed current scope. Delivery3 can close after precise documentation/evidence reconciliation; delivery1 install validation and delivery2 native-state validation retain their separate actual status.",
+  "reviewer_execution": {
+    "builds": 0,
+    "gpu_runs": 0,
+    "product_or_document_changes": 0
+  },
+  "mandatory_close_actions": [
+    {
+      "action": "Reconcile completed constant cold preparation with current tables",
+      "anchors": [
+        "docs/developer/current-work.md:6,31,43,153-154",
+        "docs/implementation/model-operators.md:122",
+        "docs/implementation/model-quantizations.json#/artifacts/32/provider_coverage/missing_capabilities/2"
+      ],
+      "fact": "The new immutable Graph-constant path is no longer pending: shared prepare_constant_casts, source SSA dedup, original F16/BF16 logical types, kConstant reservation/native-array ownership, both public entry paths and CompileReport ABI closure have been reviewed. Owner final4/4 records new2 cases9success plus two neighbors7success/1expectedfailure.",
+      "evidence": ".scratch/architecture-refactor-2026-10-18/apple-affine-constant-preparation-2026-10-21/independent-source-review.json",
+      "scope": "Dynamic WeightSlots remain ordinary managed inputs. Pending AsType nodes alone do not measure physical hot dispatch/allocation costs and do not justify a global address cache or a new public cache abstraction."
+    },
+    {
+      "action": "Replace unresolved-default wording by the actual bounded routing decision",
+      "anchors": [
+        "docs/developer/current-work.md:156-158",
+        "docs/implementation/model-operators.md:172",
+        "docs/implementation/model-quantizations.json#/artifacts/23/provider_coverage/missing_capabilities/1"
+      ],
+      "fact": "A3MiB workspace budget naturally selects the existing bounded candidate on CPU/CUDA without forced constraints or a search-limit excuse. CPU M2 was slower; CUDA short windows included each-slot GGML delayed initialization. Defaults remain unchanged.",
+      "evidence": [
+        "docs/evidence/performance/outer-fp8-route-cost-2026-10-21.json",
+        "docs/evidence/performance/outer-fp8-submit-tail-2026-10-21.json"
+      ],
+      "scope": "A local nonblocking region-cut proposal, priority change, throughput tuning, shared dynamic metadata reuse and more physical fusions are optional measured engineering candidates, not missing functional paths."
+    }
+  ],
+  "ordinary_journey_reconciliation": [
+    {
+      "regions": "R04/R05",
+      "basis": "Original Qwen complete attention/gate and recurrent-state ordinary consumers, supplemented by the current Qwen engine/correctness evidence.",
+      "references": [
+        "docs/evidence/correctness/llm-moe-d5-real-fragments/qwen-nine-profile-complete-gate/receipt.json",
+        "docs/implementation/tasks/compute/llm-moe-d5-acceptance-ledger.json"
+      ]
+    },
+    {
+      "regions": "R06/R07",
+      "basis": "KDA and absorbed MLA/AttnRes ordinary journeys remain present. Current compact MLA distinguishes query/output types, uniform scalar cache storage and V prefix; paging/ragged/length-plan limits remain explicit.",
+      "references": [
+        "docs/evidence/correctness/llm-moe-d5-real-fragments/kimi-remaining-batch/receipt.json",
+        "tests/graph_route_apple/d5_qwen35_execution_test.cc:2129,2148,2157",
+        "docs/evidence/correctness/compact-mla-e4-reference-2026-10-21.json",
+        "include/hyle/compute/batch_layout.h:13-27"
+      ]
+    },
+    {
+      "regions": "R08/R09",
+      "basis": "Do not promote old F32/packed synthetic row scorers to formal GA evidence. Current formal BF16 post-QAT scorer, TopK0/I32 mapping and ratio4 F32 producer have separate finite source-bound journeys.",
+      "references": [
+        "docs/developer/current-work.md:46-60",
+        "tests/compute_models/ga_indexer_state_fixture.h",
+        "docs/evidence/correctness/ga-ratio4-producer-reference-2026-10-21.json"
+      ]
+    },
+    {
+      "regions": "R10/R11",
+      "basis": "Generic MoE plus actual selected-bank slice/atomic-generation journeys exist; formal GA fullFFN and GLM mixed roles now supply source-bound finite combinations. Old R11 backend rejection rows do not remain current missing GroupedFloat4/Float8 primitives.",
+      "references": [
+        "docs/evidence/correctness/ga-full-ffn-reference-2026-10-21.json",
+        "docs/evidence/correctness/glm-flash-mixed-mlx-reference-2026-10-21.json",
+        "docs/evidence/correctness/encoded-bank-slices-reference-2026-10-21.json",
+        "docs/evidence/correctness/expert-working-set-reference-2026-10-21.json"
+      ]
+    },
+    {
+      "regions": "R12",
+      "basis": "Formal mHC now has its independent source oracle, StateVersion journey and actual BF16 boundaries; original Kimi AttnRes remains a distinct ordinary composition.",
+      "references": [
+        "docs/evidence/correctness/ga-mhc-reference-2026-10-21.json",
+        "tests/graph_route_apple/d5_qwen35_execution_test.cc:2148"
+      ]
+    }
+  ],
+  "historical_r09_failure_audit": {
+    "old_cells": [
+      "deepseek_v4_flash:fidelity_gguf:UD-Q8_K_XL:vulkan:direct",
+      "deepseek_v4_flash:fidelity_gguf:UD-Q8_K_XL:vulkan:graph"
+    ],
+    "old_identity": {
+      "model": "deepseek-ai/DeepSeek-V4-Flash",
+      "model_revision": "60d8d70770c6776ff598c94bb586a859a38244f1",
+      "artifact": "unsloth/DeepSeek-V4-Flash-GGUF",
+      "artifact_revision": "e3aa0d6a5fa4f820d9e132ac1fd1d01e1b2b49e0",
+      "pointer": "tests/compute_models/d5_moe_profile_facts.json#/profiles/6"
+    },
+    "current_identity": {
+      "model": "deepseek-ai/DeepSeek-V4-Flash-0731",
+      "model_revision": "7872f01b1d1fe23eabc4c98b48bffcef5a386062",
+      "artifact": "unsloth/DeepSeek-V4-Flash-0731-GGUF",
+      "artifact_revision": "fbbb5b93fb787c21338159b0af3318bb3f4d9768",
+      "pointer": "docs/implementation/tasks/compute/llm-moe-provider-demand-matrix.json#/current_scope/added_releases/1"
+    },
+    "scope_proof": "current_scope.excluded_preview_models explicitly excludes deepseek_v4_flash and the note excludes its derivatives. This is not the selected GA model/revision or quantization recipe.",
+    "numeric_gate": "The failure was a real independent operation/reference error, not model-quality comparison. Fidelity Case[6] picks BF16 compressor projections despite its artifact name. Projection.reference rounds activation to BF16 and uses values decoded from the actual written BF16 weights. The suffix independently computes F32 pooling/RMS/RoPE/Hadamard; fragment.quantized=false uses absolute8e-5 and relative4e-5 gate. Source construction deliberately tests positions after reset offset65536.",
+    "math_anchors": [
+      "tests/compute_models/d5_moe_execution_cases.h:43-47",
+      "tests/compute_models/d5_kda_full_fragments.h:40-76",
+      "tests/compute_models/d5_deepseek_remaining_fragments.h:183-305",
+      "tests/compute_models/d5_qwen38_24t_semantic_fragments.h:42-47,739-745"
+    ],
+    "resolution": "Keep both historical RUN_FAIL records and the original long-position precision limitation. Close their obligation as excluded preview scope; do not mark them repaired, rename them quality loss, or claim the new GA BF16/QAT ratio4 result reran the old all-F32 recipe. The old failure alone does not create a current mandatory GA defect.",
+    "receipt": "docs/evidence/correctness/llm-moe-d5-real-fragments/vulkan-delivery/summary.json",
+    "ordinary_rope_boundary": {
+      "public_contract": "RoPE declares rotary dimensions, sequence axis and layout; user docs require explicit Cast nodes to express F32 rotation. No F64 trig implementation, all-position absolute/relative accuracy bound or whole-compressor4e-5 gate is promised.",
+      "current_implementation": "Vulkan ordinary RoPE lowers through explicit_rope: I32positions->F32, F32p*f, nativeggmlcos/sin, F32multiply/add/sub, final original-typecast.",
+      "old_reference": "rope_reference first forms angle as F32p*f but calls std::cos/std::sin on double and uses double rotations; upstream compressor pool and RMS also use double reductions. A whole-chain failure does not isolate the current native RoPE numerical contract.",
+      "finding": "No current same-operation/same-geometry isolated counterexample against a published accuracy requirement was found in the reviewed evidence. Preserve the old long-position chain failure without promoting it to a newly proven mandatory public RoPE bug or marking it fixed.",
+      "anchors": [
+        "include/hyle/compute/operation.h:384-388",
+        "docs/user/compute.md:252-254",
+        "src/compute_provider_ggml_vulkan/region.cc:1359-1369",
+        "src/compute_ggml_runtime/explicit_rope.h:10-69",
+        "tests/compute_models/d5_deepseek_remaining_fragments.h:67-81,142-176"
+      ]
+    }
+  },
+  "boundaries_not_new_mandatory_packages": [
+    "Scaled DSA per128F32SF+BF16KPE656/528 is a distinct unqualified runtime storage policy, not admitted by MlaBatchCapacity scalar uniform cache contract. Selected TRTLLM rawuniform512/576 requirement is covered; preserve the alternative-format limitation rather than inventing a currently promised cache reader.",
+    "Codec-specific payload/import evidence is not transferable merely because generic WeightSlices/atomic binding are shared. Conversely, unexecuted payloads, all129 GLM banks, all156 head triples or arbitrary huge-bank limits are not hundreds of missing public primitives.",
+    "Existing managed conversions and output copies may cost memory/time but are functional. Native FP4/FP8 tensorcore GEMM, complete FFN single-kernel, extra dtype/prefill fusions and default-route tuning require numerical/benefit evidence and remain optional here.",
+    "Model semantics, routeweight placement, generation/acceptance and residency policy stay with the consumer engine; cold pattern/provider selection/layout stay planning; permission/lease/Completion/output publication stay common core; device math/native resources stay backend-owned.",
+    "All33 artifact_execution_verified flags remainfalse. This records no full-artifact execution, not a requirement to build33 model engines or a denial of the completed primitive/reference capabilities."
+  ],
+  "current_doc_inventory": [
+    {
+      "path": "docs/developer/current-work.md",
+      "bytes": 45088,
+      "sha256": "8994e142427ad611832e3b2fe07dc5fc19671c2ea8c9f5b02cf46ccf1fc16013"
+    },
+    {
+      "path": "docs/implementation/model-operators.md",
+      "bytes": 83496,
+      "sha256": "eb97d4436481586c8409bb184f1bcbbf7f3e146e3807307c60dd823095fb2ca2"
+    },
+    {
+      "path": "docs/implementation/model-quantizations.json",
+      "bytes": 567746,
+      "sha256": "35111e690883462a746608742361efc5636c6fa05cfb38ff8c3d4fcd771509bc"
+    },
+    {
+      "path": "docs/implementation/tasks/compute/llm-moe-provider-demand-matrix.json",
+      "bytes": 25575,
+      "sha256": "3a803704977def58bba3202652f27380e0a72197752ff3989eab42b2d68a1fd3"
+    },
+    {
+      "path": "docs/implementation/tasks/compute/llm-moe-d5-acceptance-ledger.json",
+      "bytes": 448416,
+      "sha256": "c4b647ad371178978b8923bd22bf6a6c166e00d4e622f54b0811cdffa990df5f"
+    },
+    {
+      "path": "tests/compute_models/d5_moe_profile_facts.json",
+      "bytes": 17900,
+      "sha256": "70ca48bb58af938b083ce3b78bfb19080149f7b45af38e3896dd10dc162861ce"
+    },
+    {
+      "path": "tests/compute_models/d5_moe_execution_cases.h",
+      "bytes": 4217,
+      "sha256": "8d3dedc2d98d2ba3cd72c1cec165bc53f6472b274da4215509f623511f4321cf"
+    },
+    {
+      "path": "tests/compute_models/d5_kda_full_fragments.h",
+      "bytes": 12036,
+      "sha256": "fab310b39195f960106d61e9d5a5ea03a31c56b81d83fa32608592f31ffa2cb0"
+    },
+    {
+      "path": "tests/compute_models/d5_deepseek_remaining_fragments.h",
+      "bytes": 39907,
+      "sha256": "5174d4fedabd5b719c7acb91fe2abb523a768c7ec9685878e9b1efaed3241a2b"
+    },
+    {
+      "path": "tests/compute_models/d5_qwen38_24t_semantic_fragments.h",
+      "bytes": 34939,
+      "sha256": "b419ccdab0d23da5ff1db51d6e2c9c504bcae02f83666885cb5bb457b62d2736"
+    },
+    {
+      "path": "include/hyle/compute/batch_layout.h",
+      "bytes": 10506,
+      "sha256": "db6c552379051f9b8132fc8dce775dd0826c9a8d1d0d7fd10eecd1f10b159921"
+    },
+    {
+      "path": "include/hyle/compute/operation.h",
+      "bytes": 28108,
+      "sha256": "35b7c862143839e4b8ce0c9a49753b7add2f325ec424bf5f91a1afeec0101506"
+    },
+    {
+      "path": "src/compute_ggml_runtime/explicit_rope.h",
+      "bytes": 3577,
+      "sha256": "356def1adf2f40dc2dcd1b342c45c0fc5cf2f015739783b8df0741b94cc5acff"
+    },
+    {
+      "path": "src/compute_provider_ggml_vulkan/region.cc",
+      "bytes": 105872,
+      "sha256": "d76fd202636a65774bb63e8a2a27cbd636c8fa36c070768c09bbefbb9e001bd3"
+    },
+    {
+      "path": "docs/user/compute.md",
+      "bytes": 121644,
+      "sha256": "6478fc53e5615e67eab436140bea1be234296fa75630a5deab64b074739b6607"
+    }
+  ],
+  "artifact_count": 33,
+  "all_artifact_execution_verified_false": true,
+  "status": "Independent finite delivery3 review completed; precise documentation reconciliation remains with the parent task. No new mandatory product gap established.",
+  "archive": {
+    "path": "docs/evidence/correctness/compute-graph-delivery-review-2026-10-21.zip",
+    "members": 7,
+    "bytes": 16949,
+    "sha256": "cd6001e8254c6b113d5457bbff09bb494c713f2937bc029b428b408c10b31e93",
+    "contents": "Small R09 fixed-identity/math/current-contract excerpts, reference index and original bounded review; no SDK, model payload, binary or large prior archive."
+  }
+}

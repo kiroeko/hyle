@@ -1,0 +1,70 @@
+{
+  "status": "completed",
+  "time_utc": "2026-10-21T12:13:19.1467570Z",
+  "deleted_files": 11,
+  "deleted_bytes": 451944761.0,
+  "targets": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-retirement-20261021\\cpu-link1\\cpu.exe",
+      "bytes": 139479040,
+      "sha256": "03dd74d98f28ec298c4d8d03e1aa84ff4053a66c05d2923b8df73be378a5adc1"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-retirement-20261021\\cuda-link1\\cuda.exe",
+      "bytes": 139252224,
+      "sha256": "31cd10cd8c15fceaba0d859333c5fb5e956e48ed19c2e0c50447884285eaa705"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-native-cost-20261021\\qwen-link1\\qwen.map",
+      "bytes": 58245521,
+      "sha256": "25c5a8126f651809a7c432cb4586f57c075d340a0885788893edb56d079ab08a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-native-cost-20261021\\qwen-link1\\qwen.lib",
+      "bytes": 41384,
+      "sha256": "339d3ce297534ebac8825c27a011f2f4f9dfe366c657ebfc45dbbfdc8412a2cb"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-native-cost-20261021\\qwen-link1\\qwen.exp",
+      "bytes": 24975,
+      "sha256": "ccd4ffe9464fb24f22b04ed011b87d001e69d9fca7331df60d6201d1abe951bf"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-native-cost-20261021\\cpu-link1\\cpu.map",
+      "bytes": 57436344,
+      "sha256": "091724306c046309bb473ef314ecabacc3b6a37ddcff7faca68894381e1fd7f6"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-native-cost-20261021\\cpu-link1\\cpu.lib",
+      "bytes": 41298,
+      "sha256": "1a72c22d3a6dec39cca5118fd99aa738ff5f4202c029fc8a48afb6c3d20e909d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-native-cost-20261021\\cpu-link1\\cpu.exp",
+      "bytes": 24971,
+      "sha256": "a17660a76d7696a1d188e84e330678f513b4d1a7b863699c23f1d848ab8bd44f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-native-cost-20261021\\cuda-link1\\cuda.map",
+      "bytes": 57332645,
+      "sha256": "23071724e9236eed571ac86f97bea00b1edc56130e26763fc7ea169d1814105d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-native-cost-20261021\\cuda-link1\\cuda.lib",
+      "bytes": 41384,
+      "sha256": "097299e17e955c077a99f65f363d3484d564c016359baeb643f4e47c6b737d59"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-native-cost-20261021\\cuda-link1\\cuda.exp",
+      "bytes": 24975,
+      "sha256": "d52dee14c7e99b176d9060f85f47df8e78013a94b9be93966356a6f009415a39"
+    }
+  ],
+  "reason": "Superseded append-fixture images and reconstructible link maps/import stubs only.",
+  "kept": [
+    "Both raw native timelines and SQLite exports; latest3859/current-profile2941/beforee155/denseff748 model images; new CPU/CUDA append fixtures; final async probe; all original objects/SDKs/weights/source/commands/vector baselines."
+  ],
+  "recursive_delete": false,
+  "plan_sha256": "63c9cb3345586fdabb85d7ed0cb01120b5810075212c8562a73cbf1892ed91a4",
+  "script_sha256": "5e8526095aeefafd3d3b001ac1528ad9a21ce3b63c2014c983b1274f18ffca75"
+}

@@ -1,0 +1,1167 @@
+{
+  "date": "2026-10-20",
+  "status": "consumer_binding_simplified_and_two_independent_windows_retained",
+  "change": {
+    "source": {
+      "path": "C:\\public\\project-hyle\\hyle\\tools\\qwen35_text\\main.cc",
+      "bytes": 57917,
+      "sha256": "33a3e3de91050ad752935b81d1b5bb82fa9e09a8868ca04b0a028dd832b66a6c"
+    },
+    "before": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-stable-bind\\before\\tools\\qwen35_text\\main.cc",
+      "bytes": 57719,
+      "sha256": "883dcaecb78294b14bb0502c8488c59efcb6d8661aabb9c6820e4c6c736c1579"
+    },
+    "diff": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-stable-bind\\main.diff",
+      "bytes": 3572,
+      "sha256": "4e947dfb6e11cda32a9d10864f654baeef9eb55fba088f8e31ad5bd356f869e7"
+    },
+    "ordinary_binds_per_slot_initialized_cold": 101,
+    "ordinary_hot_binds": 0,
+    "reason": "Caller bindings now naturally survive batch configuration changes. Initialize fixed exact-child/parity mappings at slot creation; update contents and metadata during inference.",
+    "unchanged": "Original public batch preparation, replay, submit/wait, result/lifetime guards and model arithmetic. No precision/provider policy, new executor/cache or public interface.",
+    "performance_claim": "No throughput improvement established. Keep as consumer/API clarity simplification; the bind-only window measured a small negative result."
+  },
+  "same_core": {
+    "common_inputs": 149,
+    "only_main_diff_between_bind_arms": true,
+    "old_qwen_replacements": 13,
+    "assembly": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-stable-bind\\ab\\link-assembly.json",
+      "bytes": 53786,
+      "sha256": "3430abdcccd5dd1f4fef749f51f6ef7f9ed53c7554094d703b295bc5538855fc"
+    },
+    "current_link_plan": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-stable-bind\\ab\\current\\link-plan.json",
+      "bytes": 64829,
+      "sha256": "af994e064d30562956b9eb05ad3c17efffee05d31ed36e8817b884cbcb88deda"
+    },
+    "before_link_plan": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-stable-bind\\ab\\before\\link-plan.json",
+      "bytes": 64907,
+      "sha256": "14cc70b8783b8605ae14edb34ea5eda562232b9111230aff6c6c93072f879dbc"
+    },
+    "header_compatibility": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-stable-bind\\compatibility\\headers\\index.json",
+      "bytes": 10073,
+      "sha256": "3257ad646d6d9ae96064c717b55f16a8e2ac3690abfe8aae099434b4473c446a"
+    },
+    "notes": [
+      "model_ops.h old8b863→current differs only sharedA explanatory comments; exact diff retained.",
+      "resource_episode.h/input_sources.h/region_access.h differences only declarations and comments; behavior owners4are fresh current. No public object or PlanState layout change.",
+      "batch_ops.h comments and batch_layout.h extra overload declaration only. compute_batch actual behavior4owners already current from family base.",
+      "ggml_cuda program.h adds supports_bfloat_paired_projection declaration only; retained tensor_program source unchanged.",
+      "constant_artifact.cc current only adds explicit .queue={} GNU aggregate initialization; exact source diff proof retained under linux-layout-current-review. No recompile for equal existing default initialization.",
+      "Older native/SDK/generated owners retained from actual green closure; no full SDK rebuild or automatic recompilation on unrelated declaration/comment/source-metadata changes. Broad dependency hashes not all current; compatibility exceptions explicitly retained with bounded execution validation."
+    ],
+    "limits": "Actual selected objects/libraries checked; shared ABI/behavior owners refreshed. Historical declaration/comment-only source metadata differences retained explicitly, not claimed all-tree source-hash freshness."
+  },
+  "exact_checks": {
+    "processes": 2,
+    "all_exit0": true,
+    "before_equal_to_original64": true,
+    "current_equal_to_original64": true,
+    "before_current_pairwise_equal64": true,
+    "vector_hash_proof": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-stable-bind\\correctness\\vector-hash-proof.json",
+      "bytes": 74005,
+      "sha256": "244b23bddc85455b61460486817cb7d2d1e834048ea8384a954de3bb4c91fdc6"
+    },
+    "regression": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-stable-bind\\correctness\\summary.json",
+      "bytes": 56341,
+      "sha256": "ca1c9535fae28e54e982dc83e57edc80a8e4673922d44fe43ed89c6ac4371b35"
+    },
+    "raw_vectors": "Duplicate canonical original64 omitted; per-vector byte/hash equality and prior qwen-finite-family evidence references are in the archive. No new independent quality oracle.",
+    "not_run": "No new23/4/1scheduler continuation, failure injection, other platform/full-model run in this batch."
+  },
+  "bind_only_window": {
+    "interval": {
+      "start": "2026-10-20T14:58:54.854092+08:00",
+      "finish": "2026-10-20T14:59:03.114561+08:00",
+      "timezone": "Asia/Shanghai"
+    },
+    "receipt": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-stable-bind\\final-validation.json",
+      "bytes": 25204,
+      "sha256": "2a8e63406107b67e3a0f118dc8362c93d8c7df38d1f6d4cfee30a69cf80bb597"
+    },
+    "raw_summary": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-stable-bind\\timing\\summary.json",
+      "bytes": 5474,
+      "sha256": "66b6a0e2aae1d6106f8024dd7887e3ef37c97d68facdac1ec67a6e217d414701"
+    },
+    "order": [
+      "before",
+      "current",
+      "current",
+      "before"
+    ],
+    "fresh_processes": 4,
+    "all_exit0": true,
+    "groups": {
+      "before": {
+        "load_seconds": {
+          "samples": [
+            0.845449,
+            0.835523
+          ],
+          "median": 0.8404860000000001
+        },
+        "prepare_seconds": {
+          "samples": [
+            0.252197,
+            0.263773
+          ],
+          "median": 0.257985
+        },
+        "startup_to_ready_seconds": {
+          "samples": [
+            1.18194,
+            1.1851
+          ],
+          "median": 1.1835200000000001
+        },
+        "ttft_seconds": {
+          "samples": [
+            1.24295,
+            1.24667
+          ],
+          "median": 1.24481
+        },
+        "prefill_seconds": {
+          "samples": [
+            0.0607613,
+            0.0613705
+          ],
+          "median": 0.0610659
+        },
+        "prefill_tokens_per_second": {
+          "samples": [
+            2106.604039084088,
+            2085.6926373420456
+          ],
+          "median": 2096.148338213067
+        },
+        "full31_seconds": {
+          "samples": [
+            0.299496,
+            0.2994115
+          ],
+          "median": 0.29945374999999996
+        },
+        "full31_tokens_per_second": {
+          "samples": [
+            103.5072254721265,
+            103.53643731119212
+          ],
+          "median": 103.5218313916593
+        },
+        "warm7_31_seconds": {
+          "samples": [
+            0.2336099,
+            0.2343823
+          ],
+          "median": 0.23399609999999998
+        },
+        "warm7_31_tokens_per_second": {
+          "samples": [
+            107.0160125919321,
+            106.66334445903125
+          ],
+          "median": 106.83967852548167
+        },
+        "warm_cold_batch_seconds": {
+          "samples": [
+            0.004579,
+            0.0045255
+          ],
+          "median": 0.00455225
+        },
+        "warm_cold_batch_median_seconds": {
+          "samples": [
+            0.0001815,
+            0.0001721
+          ],
+          "median": 0.00017680000000000001
+        },
+        "warm_submit_seconds": {
+          "samples": [
+            0.0015531,
+            0.0015413
+          ],
+          "median": 0.0015471999999999999
+        },
+        "warm_submit_median_seconds": {
+          "samples": [
+            6.36e-05,
+            6.02e-05
+          ],
+          "median": 6.19e-05
+        }
+      },
+      "current": {
+        "load_seconds": {
+          "samples": [
+            0.836954,
+            0.836641
+          ],
+          "median": 0.8367975
+        },
+        "prepare_seconds": {
+          "samples": [
+            0.257423,
+            0.257249
+          ],
+          "median": 0.257336
+        },
+        "startup_to_ready_seconds": {
+          "samples": [
+            1.1794,
+            1.17569
+          ],
+          "median": 1.1775449999999998
+        },
+        "ttft_seconds": {
+          "samples": [
+            1.24117,
+            1.23718
+          ],
+          "median": 1.239175
+        },
+        "prefill_seconds": {
+          "samples": [
+            0.0615691,
+            0.0613095
+          ],
+          "median": 0.0614393
+        },
+        "prefill_tokens_per_second": {
+          "samples": [
+            2078.964935332821,
+            2087.767801074874
+          ],
+          "median": 2083.3663682038477
+        },
+        "full31_seconds": {
+          "samples": [
+            0.3001055,
+            0.3030677
+          ],
+          "median": 0.30158660000000004
+        },
+        "full31_tokens_per_second": {
+          "samples": [
+            103.29700721912793,
+            102.28737671483962
+          ],
+          "median": 102.79219196698378
+        },
+        "warm7_31_seconds": {
+          "samples": [
+            0.2353499,
+            0.2378975
+          ],
+          "median": 0.2366237
+        },
+        "warm7_31_tokens_per_second": {
+          "samples": [
+            106.22481675156862,
+            105.08727498187244
+          ],
+          "median": 105.65604586672053
+        },
+        "warm_cold_batch_seconds": {
+          "samples": [
+            0.0053256,
+            0.0044783
+          ],
+          "median": 0.00490195
+        },
+        "warm_cold_batch_median_seconds": {
+          "samples": [
+            0.0002111,
+            0.000182
+          ],
+          "median": 0.00019655
+        },
+        "warm_submit_seconds": {
+          "samples": [
+            0.0018284,
+            0.0015205
+          ],
+          "median": 0.00167445
+        },
+        "warm_submit_median_seconds": {
+          "samples": [
+            7.38e-05,
+            5.55e-05
+          ],
+          "median": 6.465e-05
+        }
+      }
+    },
+    "current_over_before": {
+      "load_seconds": 0.9956114676508591,
+      "prepare_seconds": 0.9974843498653022,
+      "startup_to_ready_seconds": 0.9949515006083545,
+      "ttft_seconds": 0.9954732047461058,
+      "prefill_seconds": 1.0061147055885526,
+      "prefill_tokens_per_second": 0.9939021634222149,
+      "full31_seconds": 1.007122468828659,
+      "full31_tokens_per_second": 0.9929518304026612,
+      "warm7_31_seconds": 1.0112292469831763,
+      "warm7_31_tokens_per_second": 0.9889214131388571,
+      "warm_cold_batch_seconds": 1.0768191553627329,
+      "warm_cold_batch_median_seconds": 1.1117081447963801,
+      "warm_submit_seconds": 1.0822453464322648,
+      "warm_submit_median_seconds": 1.0444264943457189
+    },
+    "conclusion": "No measured improvement. Warm medians106.8397→105.6560tokens/s(-1.11%); full31-0.70%; whole cold preparation also did not decrease. Two samples/arm, no significance or stable regression conclusion."
+  },
+  "latest_peer_window": {
+    "interval": {
+      "start": "2026-10-20T15:02:47.170785+08:00",
+      "finish": "2026-10-20T15:03:02.895951+08:00",
+      "timezone": "Asia/Shanghai"
+    },
+    "receipt": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-stable-bind\\peer-window\\receipt.json",
+      "bytes": 23984,
+      "sha256": "7cd7f2b229be2e21e6750f8b64294b3a6c49365c2ec13f6cd4e3fc8a020f0694"
+    },
+    "raw_summary": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-stable-bind\\peer-window\\summary.json",
+      "bytes": 13123,
+      "sha256": "5a395f1ccaf925b9ce9f2c5797d8cb34763d0a72e53b2f9d157fa5c080d26ce6"
+    },
+    "order": [
+      "current",
+      "llama",
+      "llama",
+      "current",
+      "current",
+      "llama"
+    ],
+    "fresh_processes": 6,
+    "all_exit0": true,
+    "groups": {
+      "current": {
+        "load_seconds": {
+          "samples": [
+            0.929977,
+            0.916732,
+            0.937909
+          ],
+          "median": 0.929977,
+          "min": 0.916732,
+          "max": 0.937909
+        },
+        "prepare_seconds": {
+          "samples": [
+            0.261443,
+            0.267641,
+            0.271797
+          ],
+          "median": 0.267641,
+          "min": 0.261443,
+          "max": 0.271797
+        },
+        "startup_to_ready_seconds": {
+          "samples": [
+            1.28209,
+            1.26953,
+            1.30109
+          ],
+          "median": 1.28209,
+          "min": 1.26953,
+          "max": 1.30109
+        },
+        "ttft_seconds": {
+          "samples": [
+            1.34885,
+            1.3314,
+            1.36432
+          ],
+          "median": 1.34885,
+          "min": 1.3314,
+          "max": 1.36432
+        },
+        "prefill_seconds": {
+          "samples": [
+            0.0665691,
+            0.0616746,
+            0.0630349
+          ],
+          "median": 0.0630349,
+          "min": 0.0616746,
+          "max": 0.0665691
+        },
+        "prefill_tokens_per_second": {
+          "samples": [
+            1922.814038345118,
+            2075.408677153966,
+            2030.6211321030094
+          ],
+          "median": 2030.6211321030094,
+          "min": 1922.814038345118,
+          "max": 2075.408677153966
+        },
+        "full31_seconds": {
+          "samples": [
+            0.3385894,
+            0.3274783,
+            0.3353369
+          ],
+          "median": 0.3353369,
+          "min": 0.3274783,
+          "max": 0.3385894
+        },
+        "full31_tokens_per_second": {
+          "samples": [
+            91.55632160959559,
+            94.66276086079597,
+            92.44434477684979
+          ],
+          "median": 92.44434477684979,
+          "min": 91.55632160959559,
+          "max": 94.66276086079597
+        },
+        "warm7_31_seconds": {
+          "samples": [
+            0.2612922,
+            0.252541,
+            0.2602952
+          ],
+          "median": 0.2602952,
+          "min": 0.252541,
+          "max": 0.2612922
+        },
+        "warm7_31_tokens_per_second": {
+          "samples": [
+            95.67832487919655,
+            98.99382674496418,
+            96.0447983673921
+          ],
+          "median": 96.0447983673921,
+          "min": 95.67832487919655,
+          "max": 98.99382674496418
+        }
+      },
+      "llama": {
+        "load_seconds": {
+          "samples": [
+            1.7879911,
+            1.7494664,
+            1.7446859
+          ],
+          "median": 1.7494664,
+          "min": 1.7446859,
+          "max": 1.7879911
+        },
+        "prepare_seconds": {
+          "samples": [
+            0.0082141,
+            0.0092111,
+            0.0075847
+          ],
+          "median": 0.0082141,
+          "min": 0.0075847,
+          "max": 0.0092111
+        },
+        "startup_to_ready_seconds": {
+          "samples": [
+            1.8743708,
+            1.8374626,
+            1.8377697
+          ],
+          "median": 1.8377697,
+          "min": 1.8374626,
+          "max": 1.8743708
+        },
+        "ttft_seconds": {
+          "samples": [
+            1.9752005,
+            1.9389799,
+            1.9417832
+          ],
+          "median": 1.9417832,
+          "min": 1.9389799,
+          "max": 1.9752005
+        },
+        "prefill_seconds": {
+          "samples": [
+            0.1007707,
+            0.1014596,
+            0.1039592
+          ],
+          "median": 0.1014596,
+          "min": 0.1007707,
+          "max": 0.1039592
+        },
+        "prefill_tokens_per_second": {
+          "samples": [
+            1270.2104877707507,
+            1261.585892315759,
+            1231.252260502197
+          ],
+          "median": 1261.585892315759,
+          "min": 1231.252260502197,
+          "max": 1270.2104877707507
+        },
+        "full31_seconds": {
+          "samples": [
+            0.3237317,
+            0.3202838,
+            0.3185084
+          ],
+          "median": 0.3202838,
+          "min": 0.3185084,
+          "max": 0.3237317
+        },
+        "full31_tokens_per_second": {
+          "samples": [
+            95.75830850052682,
+            96.78916011362423,
+            97.32867327831856
+          ],
+          "median": 96.78916011362423,
+          "min": 95.75830850052682,
+          "max": 97.32867327831856
+        },
+        "warm7_31_seconds": {
+          "samples": [
+            0.2556852,
+            0.2559509,
+            0.2512326
+          ],
+          "median": 0.2556852,
+          "min": 0.2512326,
+          "max": 0.2559509
+        },
+        "warm7_31_tokens_per_second": {
+          "samples": [
+            97.77648452080918,
+            97.6749837566502,
+            99.50937895798556
+          ],
+          "median": 97.77648452080918,
+          "min": 97.6749837566502,
+          "max": 99.50937895798556
+        }
+      }
+    },
+    "current_over_llama": {
+      "load_seconds": 0.5315775141494573,
+      "prepare_seconds": 32.58311927052264,
+      "startup_to_ready_seconds": 0.6976336588855502,
+      "ttft_seconds": 0.6946450046534547,
+      "prefill_seconds": 0.6212807856526145,
+      "prefill_tokens_per_second": 1.6095781860524883,
+      "full31_seconds": 1.0469992550356901,
+      "full31_tokens_per_second": 0.9551105172141807,
+      "warm7_31_seconds": 1.0180299837456372,
+      "warm7_31_tokens_per_second": 0.982289339181053
+    },
+    "same_predictions_all6": true,
+    "predictions_deterministic_within_arms": true,
+    "observed": {
+      "full31_tokens_per_second": "Hyle92.4443/llama96.7892",
+      "warm7_31_tokens_per_second": "Hyle96.0448/llama97.7765",
+      "prefill_tokens_per_second": "Hyle2030.6211/llama1261.5859",
+      "TTFT_seconds": "Hyle1.34885/llama1.9417832"
+    },
+    "causal_claim": false
+  },
+  "phase_decomposition": {
+    "source": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-stable-bind\\peer-window\\phase-decomposition.json",
+      "bytes": 114487,
+      "sha256": "4d5e6f8515007c8a8fc16f4f087e208e501e2468327b2f1c5ea06516d72adc7c"
+    },
+    "read_only_existing_data": true,
+    "new_GPU_runs": 0,
+    "definition": "First6=decode1..6, later25=decode7..31; prefill excluded.",
+    "medians": {
+      "current": {
+        "first2": {
+          "step_seconds": {
+            "samples": [
+              0.033421,
+              0.0334369,
+              0.0314468
+            ],
+            "median": 0.033421
+          },
+          "cold_batch_seconds": {
+            "samples": [
+              0.009473800000000001,
+              0.0137807,
+              0.010424300000000001
+            ],
+            "median": 0.010424300000000001
+          },
+          "post_prepare_submit_wait_and_id_read_seconds": {
+            "samples": [
+              0.023654,
+              0.019494699999999997,
+              0.020943999999999997
+            ],
+            "median": 0.020943999999999997
+          },
+          "submit_call_seconds": {
+            "samples": [
+              0.0003501,
+              0.0003508,
+              0.0003789
+            ],
+            "median": 0.0003508
+          },
+          "outside_cold_and_post_prepare_seconds": {
+            "samples": [
+              0.00029319999999999867,
+              0.00016150000000000192,
+              7.850000000000044e-05
+            ],
+            "median": 0.00016150000000000192
+          },
+          "post_submit_wait_and_id_read_seconds": {
+            "samples": [
+              0.0233039,
+              0.0191439,
+              0.0205651
+            ],
+            "median": 0.0205651
+          },
+          "tokens": {
+            "samples": [
+              2,
+              2,
+              2
+            ],
+            "median": 2
+          },
+          "tokens_per_second": {
+            "samples": [
+              59.84261392537626,
+              59.814157412918064,
+              63.59947594031826
+            ],
+            "median": 59.84261392537626
+          }
+        },
+        "first6": {
+          "step_seconds": {
+            "samples": [
+              0.0772972,
+              0.0749373,
+              0.0750417
+            ],
+            "median": 0.0750417
+          },
+          "cold_batch_seconds": {
+            "samples": [
+              0.0104678,
+              0.0145353,
+              0.01382
+            ],
+            "median": 0.01382
+          },
+          "post_prepare_submit_wait_and_id_read_seconds": {
+            "samples": [
+              0.0663674,
+              0.059916899999999995,
+              0.0604359
+            ],
+            "median": 0.0604359
+          },
+          "submit_call_seconds": {
+            "samples": [
+              0.0006606,
+              0.0006004000000000001,
+              0.0006597
+            ],
+            "median": 0.0006597
+          },
+          "outside_cold_and_post_prepare_seconds": {
+            "samples": [
+              0.00046199999999999887,
+              0.00048510000000000393,
+              0.0007857999999999997
+            ],
+            "median": 0.00048510000000000393
+          },
+          "post_submit_wait_and_id_read_seconds": {
+            "samples": [
+              0.0657068,
+              0.059316499999999994,
+              0.0597762
+            ],
+            "median": 0.0597762
+          },
+          "tokens": {
+            "samples": [
+              6,
+              6,
+              6
+            ],
+            "median": 6
+          },
+          "tokens_per_second": {
+            "samples": [
+              77.62247532898992,
+              80.06693595846127,
+              79.95554471713727
+            ],
+            "median": 79.95554471713727
+          }
+        },
+        "later25": {
+          "step_seconds": {
+            "samples": [
+              0.2612922,
+              0.252541,
+              0.2602952
+            ],
+            "median": 0.2602952
+          },
+          "cold_batch_seconds": {
+            "samples": [
+              0.0052155,
+              0.0044802999999999996,
+              0.0045089
+            ],
+            "median": 0.0045089
+          },
+          "post_prepare_submit_wait_and_id_read_seconds": {
+            "samples": [
+              0.2544927,
+              0.2466374,
+              0.2542951
+            ],
+            "median": 0.2542951
+          },
+          "submit_call_seconds": {
+            "samples": [
+              0.0017523,
+              0.0013879,
+              0.0016175
+            ],
+            "median": 0.0016175
+          },
+          "outside_cold_and_post_prepare_seconds": {
+            "samples": [
+              0.0015839999999999986,
+              0.0014232999999999937,
+              0.001491200000000005
+            ],
+            "median": 0.001491200000000005
+          },
+          "post_submit_wait_and_id_read_seconds": {
+            "samples": [
+              0.25274040000000003,
+              0.2452495,
+              0.2526776
+            ],
+            "median": 0.2526776
+          },
+          "tokens": {
+            "samples": [
+              25,
+              25,
+              25
+            ],
+            "median": 25
+          },
+          "tokens_per_second": {
+            "samples": [
+              95.67832487919655,
+              98.99382674496418,
+              96.0447983673921
+            ],
+            "median": 96.0447983673921
+          }
+        },
+        "all31": {
+          "step_seconds": {
+            "samples": [
+              0.3385894,
+              0.3274783,
+              0.3353369
+            ],
+            "median": 0.3353369
+          },
+          "cold_batch_seconds": {
+            "samples": [
+              0.0156833,
+              0.0190156,
+              0.0183289
+            ],
+            "median": 0.0183289
+          },
+          "post_prepare_submit_wait_and_id_read_seconds": {
+            "samples": [
+              0.3208601,
+              0.3065543,
+              0.314731
+            ],
+            "median": 0.314731
+          },
+          "submit_call_seconds": {
+            "samples": [
+              0.0024129,
+              0.0019883,
+              0.0022772
+            ],
+            "median": 0.0022772
+          },
+          "outside_cold_and_post_prepare_seconds": {
+            "samples": [
+              0.0020459999999999975,
+              0.0019083999999999976,
+              0.0022770000000000047
+            ],
+            "median": 0.0020459999999999975
+          },
+          "post_submit_wait_and_id_read_seconds": {
+            "samples": [
+              0.3184472,
+              0.304566,
+              0.3124538
+            ],
+            "median": 0.3124538
+          },
+          "tokens": {
+            "samples": [
+              31,
+              31,
+              31
+            ],
+            "median": 31
+          },
+          "tokens_per_second": {
+            "samples": [
+              91.55632160959559,
+              94.66276086079597,
+              92.44434477684979
+            ],
+            "median": 92.44434477684979
+          }
+        }
+      },
+      "llama": {
+        "first2": {
+          "step_seconds": {
+            "samples": [
+              0.024198400000000002,
+              0.0240676,
+              0.0253984
+            ],
+            "median": 0.024198400000000002
+          },
+          "input_prepare_seconds": {
+            "samples": [
+              2e-07,
+              4e-07,
+              5e-07
+            ],
+            "median": 4e-07
+          },
+          "decode_return_seconds": {
+            "samples": [
+              0.0087652,
+              0.0088965,
+              0.0072515999999999995
+            ],
+            "median": 0.0087652
+          },
+          "synchronize_seconds": {
+            "samples": [
+              0.0153984,
+              0.015133500000000001,
+              0.0180998
+            ],
+            "median": 0.0153984
+          },
+          "token_access_seconds": {
+            "samples": [
+              4.3e-06,
+              4.1e-06,
+              8e-06
+            ],
+            "median": 4.3e-06
+          },
+          "sample_fastpath_seconds": {
+            "samples": [
+              3.0299999999999998e-05,
+              3.3100000000000005e-05,
+              3.85e-05
+            ],
+            "median": 3.3100000000000005e-05
+          },
+          "tokens": {
+            "samples": [
+              2,
+              2,
+              2
+            ],
+            "median": 2
+          },
+          "tokens_per_second": {
+            "samples": [
+              82.65009256810367,
+              83.09927038840598,
+              78.74511780269623
+            ],
+            "median": 82.65009256810367
+          }
+        },
+        "first6": {
+          "step_seconds": {
+            "samples": [
+              0.0680465,
+              0.0643329,
+              0.0672758
+            ],
+            "median": 0.0672758
+          },
+          "input_prepare_seconds": {
+            "samples": [
+              7e-07,
+              1e-06,
+              9e-07
+            ],
+            "median": 9e-07
+          },
+          "decode_return_seconds": {
+            "samples": [
+              0.0097811,
+              0.0097497,
+              0.0081081
+            ],
+            "median": 0.0097497
+          },
+          "synchronize_seconds": {
+            "samples": [
+              0.0581374,
+              0.0544753,
+              0.0590691
+            ],
+            "median": 0.0581374
+          },
+          "token_access_seconds": {
+            "samples": [
+              2.54e-05,
+              2.1e-05,
+              1.7500000000000002e-05
+            ],
+            "median": 2.1e-05
+          },
+          "sample_fastpath_seconds": {
+            "samples": [
+              0.0001019,
+              8.59e-05,
+              8.02e-05
+            ],
+            "median": 8.59e-05
+          },
+          "tokens": {
+            "samples": [
+              6,
+              6,
+              6
+            ],
+            "median": 6
+          },
+          "tokens_per_second": {
+            "samples": [
+              88.17499797932297,
+              93.26487691367869,
+              89.185115598774
+            ],
+            "median": 89.185115598774
+          }
+        },
+        "later25": {
+          "step_seconds": {
+            "samples": [
+              0.2556852,
+              0.2559509,
+              0.2512326
+            ],
+            "median": 0.2556852
+          },
+          "input_prepare_seconds": {
+            "samples": [
+              2.4e-06,
+              3.2999999999999997e-06,
+              2.4999999999999998e-06
+            ],
+            "median": 2.4999999999999998e-06
+          },
+          "decode_return_seconds": {
+            "samples": [
+              0.0058012,
+              0.0057221,
+              0.0050995
+            ],
+            "median": 0.0057221
+          },
+          "synchronize_seconds": {
+            "samples": [
+              0.2493777,
+              0.2497943,
+              0.2457568
+            ],
+            "median": 0.2493777
+          },
+          "token_access_seconds": {
+            "samples": [
+              0.00010680000000000001,
+              0.0001089,
+              9.340000000000001e-05
+            ],
+            "median": 0.00010680000000000001
+          },
+          "sample_fastpath_seconds": {
+            "samples": [
+              0.0003971,
+              0.00032230000000000003,
+              0.0002804
+            ],
+            "median": 0.00032230000000000003
+          },
+          "tokens": {
+            "samples": [
+              25,
+              25,
+              25
+            ],
+            "median": 25
+          },
+          "tokens_per_second": {
+            "samples": [
+              97.77648452080918,
+              97.6749837566502,
+              99.50937895798556
+            ],
+            "median": 97.77648452080918
+          }
+        },
+        "all31": {
+          "step_seconds": {
+            "samples": [
+              0.3237317,
+              0.3202838,
+              0.3185084
+            ],
+            "median": 0.3202838
+          },
+          "input_prepare_seconds": {
+            "samples": [
+              3.1e-06,
+              4.2999999999999995e-06,
+              3.3999999999999996e-06
+            ],
+            "median": 3.3999999999999996e-06
+          },
+          "decode_return_seconds": {
+            "samples": [
+              0.0155823,
+              0.0154718,
+              0.0132076
+            ],
+            "median": 0.0154718
+          },
+          "synchronize_seconds": {
+            "samples": [
+              0.3075151,
+              0.3042696,
+              0.3048259
+            ],
+            "median": 0.3048259
+          },
+          "token_access_seconds": {
+            "samples": [
+              0.00013220000000000001,
+              0.0001299,
+              0.0001109
+            ],
+            "median": 0.0001299
+          },
+          "sample_fastpath_seconds": {
+            "samples": [
+              0.000499,
+              0.0004082,
+              0.0003606
+            ],
+            "median": 0.0004082
+          },
+          "tokens": {
+            "samples": [
+              31,
+              31,
+              31
+            ],
+            "median": 31
+          },
+          "tokens_per_second": {
+            "samples": [
+              95.75830850052682,
+              96.78916011362423,
+              97.32867327831856
+            ],
+            "median": 96.78916011362423
+          }
+        }
+      }
+    },
+    "first_decode_clue": "First2step sums: Hyle33.4210ms/peer24.1984ms. Hyle first2cold_batch sums per process9.4738/13.7807/10.4243ms, and those2phases first record each parity slot. Later25cold_batch median sums4.5089ms. Initial preparation/recording is a concrete cost location; this is not proof that pure CUDA capture alone causes the gap.",
+    "first6_and_later25": "Step-sum medians: first6Hyle75.0417ms/peer67.2758ms; later25Hyle260.2952ms/peer255.6852ms.",
+    "boundaries": [
+      "First6meansdecode1..6, later25meansdecode7..31; prefill excluded from both.",
+      "Hyle first2decode phases perform the first actual recording for each parity slot. Later phases reuse one retained outer capture. cold_batch includes configuration/layout preparation,metadata readiness and capture preparation, not capture alone.",
+      "Hyle post_prepare field includes submit, completion wait and4BIDread; it is not pureGPUtime. outside residual is derived from printed timer precision and includes input preparation/uploads/hostgaps, not an independently instrumented API.",
+      "Peer exposes decode_return/synchronize/tokenaccess/sample timers, but their scopes differ from Hyle. Compare total step latencies; do not label matching component names as common CPU/GPU cost.",
+      "Medians of summed stages are independent summaries and need not sum to the median of total step time. No new GPU process, profiler or timing boundary change."
+    ]
+  },
+  "actual_process_totals": {
+    "CXX": 2,
+    "NVCC": 0,
+    "links": 2,
+    "model_correctness": 2,
+    "bind_timing": 4,
+    "peer_timing": 6,
+    "all_model_exit0": 12,
+    "SDK_rebuild": 0,
+    "profiler": 0,
+    "external_memory_monitor": 0
+  },
+  "limits": [
+    "One new6process rotated window,3fresh processes per image; no old samples pooled or reverse window planned.",
+    "Same frozen BF16 weight artifact provenance and exact128prompt+31teacher-forced decode inputs/context256; current IDs do not drive next input.",
+    "Hyle BF16 activation/output boundaries/F32accum differ from peer F32 activation/output intermediates. Same weights and predictions do not prove equivalent math or model quality.",
+    "Peer consumer reads248320F32logits per phase; Hyle reads4BselectedID. Keep end-to-end consumer difference explicit.",
+    "Hyle prepares finiteT128/T1 before prefill; peer graph maintenance occurs in step. Model load and context prepare sub-boundaries differ; compare startup/TTFT as wider observations.",
+    "No profiler/memory/power observer; OS cache not cleared and frequency/other system drift remain possible.",
+    "Reference retained image/object/library input hashes verified; no source/SDK rebuild or new support claim.",
+    "The bind-only and peer windows are independent and never pooled. Do not attribute cross-window absolute rates or the older12:16window differences to this change.",
+    "Model weights are the frozen BF16 provenance; Hyle BF16 boundaries/F32accum and peer F32 activation/output intermediates differ. This is a consumer comparison, not bit-identical engine math.",
+    "Fixed teacher-forced decode input sequence does not depend on reported predictions. Matching IDs is regression evidence, not independent model-quality acceptance.",
+    "Peer reads248320F32logits per phase; Hyle reads4BselectedID. Loading/preparation subtimers and graph-maintenance placement differ; broader startup/TTFT observations remain explicit.",
+    "First-decode preparation is included in full31 and TTFT where it actually occurs. Moving this interval outside a timer is not a performance optimization.",
+    "Only the requested bounded windows ran. No reversed/extra window, profiler, memory/power side sampler or causal attribution."
+  ],
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\qwen-stable-bind-2026-10-20.zip",
+    "bytes": 460535,
+    "sha256": "d0ee08adc47ebcfff3e86f4d19b6d591d23cca8ff8366e8ebd5a5df9cf66cbc8",
+    "payloads": 160,
+    "manifest_member": "payload-sha256.json",
+    "CRC_checked": true,
+    "all_payload_SHA256_checked": true,
+    "excluded": "Executables, objects, libraries, SDK, full link maps and duplicate raw vectors."
+  }
+}

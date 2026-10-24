@@ -1,0 +1,86 @@
+{
+  "archive": {
+    "path": "docs/evidence/correctness/inference-foundation-review-2026-10-18/bf16-source-journey.zip",
+    "bytes": 724610,
+    "sha256": "d99ecbe5a01659bb1d2dae39bc921571e126b1023f215e5036897593a0b845f8"
+  },
+  "source_entries": 157,
+  "input_source_scratch": {
+    "result": "4/4 PASS; original source fails only the new allocation regression",
+    "scenario": "Two fixed immutable sources, rotating ordinary activation and output buffers, two warm rounds then four observed prepare_replay windows.",
+    "allocations_before": 12,
+    "allocations_after": 0,
+    "preserved": "Each preparation requalifies actual source/Queue routes; actual affine outputs, pending/failure handling, held-output gate and final live count/bytes pass.",
+    "cost": "Two integer-only scratch vectors retain capacity in the original optional source state until slot destruction. Active/candidate transactions unchanged; no total-run zero-allocation claim."
+  },
+  "vulkan_bfloat_attention": {
+    "result": "Final new BF16 tests 2/2 PASS; original F16 low/high depth and Q8 controls 3/3 PASS.",
+    "domains": [
+      "BF16 plain D256 paged and ragged",
+      "BF16 Q/output with Q8_0 KV at D256",
+      "D256 and single-CKV compact MLA D576 to D512, Direct and ordinary Graph"
+    ],
+    "lifetime": "Two slots, strict unchanged replay and escaped GraphOutput reuse protection pass.",
+    "math": "Original FullF32 flash reads BF16/Q8 KV per tile. Private results and request concatenation remain F32; one original IREE RNE conversion produces public BF16.",
+    "verification": {
+      "final_bf16_tests": 2,
+      "final_failures": 0,
+      "old_f16_low_high_and_q8_tests_passed": 3,
+      "d256_graph_fp64_max_abs": 6.09797296e-05,
+      "compact_mla_576_512_graph_fp64_max_abs": 0.000121891445,
+      "plain_d256_paged_ragged": true,
+      "q8_d256_bfloat_query": true,
+      "two_slots": true,
+      "strict_same_bindings_replay": true,
+      "old_output_gate": true,
+      "original_spirv_rebuilt": false,
+      "native_host_unique_tus": 1,
+      "hyle_product_unique_tus": 2,
+      "test_unique_tus": 2
+    },
+    "build": "One native-host TU, two Hyle product TUs and two test TUs; exact patch replay, original patched headers/shaders and dependency tree audit pass. No SPIR-V or SDK rebuild.",
+    "retained_failures": "Fixture initially omitted a Direct options argument, then supplied metadata backing cap zero. Both errors retained; final uses the established 4096-byte metadata contract."
+  },
+  "qwen": {
+    "result": "Full 24-layer direct execution parity only; one relink and one run, no compilation.",
+    "phases": [
+      {
+        "name": "prefill",
+        "tokens": 23,
+        "visible": 23,
+        "next": 20
+      },
+      {
+        "name": "continuation",
+        "tokens": 4,
+        "visible": 27,
+        "next": 248046
+      },
+      {
+        "name": "decode1",
+        "tokens": 1,
+        "visible": 28,
+        "next": 198
+      }
+    ],
+    "trace_count": 150,
+    "trace_byte_equal": 150,
+    "closure": "Uses current alias/liveness core, current input-source owner and current ggml CUDA provider plus corrected original causal-mask CU.",
+    "limits": "No new scheduler run, numerical acceptance or throughput result. Previous independent-oracle logits discrepancy remains."
+  },
+  "cleanup": {
+    "archive_verified": true,
+    "files": 166,
+    "bytes": 505607286.0,
+    "retained_objects": 7,
+    "retained_original_trace": 150,
+    "other_cache_retained": true
+  },
+  "remaining": [
+    "Full-model numerical acceptance and fair throughput comparison remain.",
+    "No new Apple/Linux runtime validation in this round.",
+    "Vulkan plain cache/query dtype and output/query dtype still share the admitted domain; other independent combinations, pending precision and additional geometries were not accepted by these tests.",
+    "Historical T23 route shows repeated ggml stream bridges and unconditional consumer slice materialization worth investigating; no measured bottleneck or T1 provider census claimed."
+  ],
+  "goal": "active; broader architecture and model coverage remain"
+}

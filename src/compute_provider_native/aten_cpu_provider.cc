@@ -1,7 +1,9 @@
 #include "hyle/compute/providers/native.h"
+#include "hyle/compute/model_ops.h"
 #include "hyle/core/environment.h"
 
 #include "../compute/provider_internal.h"
+#include "../compute/operation_cold.h"
 #include "torch_cpu_program.h"
 
 #include <limits>
@@ -14,6 +16,8 @@
 #endif
 
 #include <ATen/ATen.h>
+
+#include "../compute_torch_shared/storage_cast.h"
 #include <ATen/Parallel.h>
 #include <ATen/core/grad_mode.h>
 #include <c10/util/Exception.h>
@@ -136,6 +140,7 @@ Status select(Operation operation, std::span<const TensorDesc> inputs,
     return Status::Unimplemented("ATen basic tensor math is an edge-layout carrier");
   const bool supported =
       operation.get_if<Select>() || operation.get_if<Gather>() ||
+      operation.custom_as<model_ops::GatherElements>() ||
       operation.get_if<Fill>() || operation.get_if<Copy>() ||
       operation.get_if<Concat>() ||
       (operation.get_if<Scatter>() &&
@@ -336,7 +341,7 @@ Status create_invocation(void *state, mem::AllocatorRef allocator,
       inv->condition =
           at::empty(at::IntArrayRef(shape.sizes.data(), shape.rank), at::kBool);
     }
-    if (p.operation.get_if<Gather>() ||
+    if (p.operation.get_if<Gather>() || p.operation.custom_as<model_ops::GatherElements>() ||
         (p.operation.get_if<Scatter>() &&
          p.operation.get_if<Scatter>()->kind == ScatterKind::kAssign)) {
       const auto width =
@@ -403,72 +408,6 @@ at::Tensor numeric_input(const Program &p, Invocation &inv, std::size_t index) {
       at::IntArrayRef(shape.sizes.data(), shape.rank));
   bytes.copy_(inv.tensors[index]);
   return inv.numeric_inputs[index];
-}
-// Original ATen conversion followed by public NaN/finite-overflow semantics.
-// All payload transformations below are original Tensor kernels, not HYLE
-// loops.
-at::Tensor storage_cast(const at::Tensor &input, at::ScalarType target) {
-  if (input.scalar_type() == target)
-    return input;
-  auto value = input.to(at::kFloat);
-  if (target == at::kFloat) {
-    // Restore the declared widening payload bits, including signalling NaNs.
-    // Native arithmetic conversions can quiet them before a storage write.
-    const bool half = input.scalar_type() == at::kHalf;
-    const bool bf16 = input.scalar_type() == at::kBFloat16;
-    const bool e4 = input.scalar_type() == at::kFloat8_e4m3fn;
-    auto bits = input.flatten()
-                    .view(half || bf16 ? at::kShort : at::kByte)
-                    .to(at::kInt);
-    auto sign = bits.bitwise_and(half || bf16 ? 0x8000 : 0x80)
-                    .bitwise_left_shift(half || bf16 ? 16 : 24);
-    at::Tensor nan, payload;
-    if (half) {
-      nan = bits.bitwise_and(0x7c00).eq(0x7c00).logical_and(
-          bits.bitwise_and(0x3ff).ne(0));
-      payload = bits.bitwise_and(0x3ff)
-                    .bitwise_left_shift(13)
-                    .bitwise_or(0x7f800000)
-                    .bitwise_or(sign);
-    } else if (bf16) {
-      nan = bits.bitwise_and(0x7f80).eq(0x7f80).logical_and(
-          bits.bitwise_and(0x7f).ne(0));
-      payload = bits.bitwise_and(0xffff).bitwise_left_shift(16);
-    } else if (e4) {
-      nan = bits.bitwise_and(0x7f).eq(0x7f);
-      payload = sign.bitwise_or(0x7fc00000);
-    } else {
-      nan = bits.bitwise_and(0x7c).eq(0x7c).logical_and(
-          bits.bitwise_and(3).ne(0));
-      payload = bits.bitwise_and(3)
-                    .bitwise_left_shift(21)
-                    .bitwise_or(0x7f800000)
-                    .bitwise_or(sign);
-    }
-    auto output = at::where(nan, payload, value.flatten().view(at::kInt));
-    return output.view(at::kFloat).view(input.sizes());
-  }
-  const bool e4 = target == at::kFloat8_e4m3fn;
-  const bool e5 = target == at::kFloat8_e5m2;
-  auto converted = value;
-  if (e4 || e5) {
-    const double maximum = e4 ? 448 : 57344;
-    converted = value.clamp(-maximum, maximum);
-    if (e5)
-      converted = at::where(value.isinf(), value, converted);
-  }
-  auto output = converted.to(target);
-  const auto storage = e4 || e5 ? at::kByte : at::kShort;
-  auto bits = output.flatten().view(storage);
-  const int positive = e4                    ? 0x7f
-                       : e5                  ? 0x7e
-                       : target == at::kHalf ? 0x7fff
-                                             : 0x7fc0;
-  const int negative = e4 ? 0xff : e5 ? 0xfe : target == at::kHalf ? -1 : -64;
-  auto nan = at::where(value.flatten().signbit(), at::full_like(bits, negative),
-                       at::full_like(bits, positive));
-  bits = at::where(value.flatten().isnan(), nan, bits);
-  return bits.view(target).view(input.sizes());
 }
 
 at::Tensor activation(const at::Tensor &input, GatedActivationKind kind) {
@@ -647,7 +586,7 @@ void execute_numeric(const Program &p, Invocation &inv, at::Tensor &output) {
   auto first = numeric_input(p, inv, 0);
   at::Tensor result;
   if (p.operation.get_if<Cast>()) {
-    result = storage_cast(first, native_type(p.output.data_type()));
+    result = torch_shared::storage_cast(first, native_type(p.output.data_type()));
   } else {
     // RoPE clones the original typed input to preserve untouched tail bits.
     // Its rotated prefix and phase already use the original Double kernels.
@@ -754,6 +693,19 @@ Status execute(const Program &p, Invocation &inv,
       execute_numeric(p, inv, out);
       return Status::Ok();
     }
+    if (p.operation.custom_as<model_ops::GatherElements>()) {
+      inv.index_destination.copy_(input[1]);
+      const auto dimensions = p.inputs[1].dimensions();
+      const auto shape = byte_shape(p.output);
+      // Gather exact storage bytes, including half/BF16 NaNs and signed zero.
+      // The expanded byte axis is a view, not a Cartesian row intermediate.
+      const auto indices = inv.index_values
+          .view(at::IntArrayRef(dimensions.data(), dimensions.size()))
+          .unsqueeze(-1)
+          .expand(at::IntArrayRef(shape.sizes.data(), shape.rank));
+      at::gather_out(out, input[0], static_cast<std::int64_t>(p.axis), indices);
+      return Status::Ok();
+    }
     switch (p.operation.kind()) {
     case OperationKind::kSelect:
       at::ne_out(inv.condition, input[0], 0);
@@ -825,7 +777,7 @@ Status execute(const Program &p, Invocation &inv,
   }
 }
 
-detail::EnqueueResult submit(void *state, void *invocation, Queue &,
+detail::EnqueueResult submit(void *state, void *invocation, detail::QueueSequence &,
                              std::span<const ConstTensorView> inputs,
                              std::span<const TensorView> outputs) noexcept {
   const auto &p = *static_cast<const Program *>(state);
@@ -855,8 +807,10 @@ detail::EnqueueResult submit(void *state, void *invocation, Queue &,
       inv.tensors[i] = byte_tensor(
           p.inputs[i], const_cast<std::byte *>(inv.mappings[i].bytes().data()));
     }
+    const auto gather_elements=p.operation.custom_as<model_ops::GatherElements>();
     if (status.ok() &&
-        (p.operation.get_if<Gather>() || p.operation.get_if<Scatter>()))
+        (p.operation.get_if<Gather>() || p.operation.get_if<Scatter>() ||
+         (gather_elements && gather_elements->bounds==IndexBoundsPolicy::kChecked)))
       status = check_indices(p, inv.mappings[1].bytes().data());
   } catch (const std::bad_alloc &) {
     status = Status::ResourceExhausted(
@@ -911,6 +865,30 @@ const detail::ProviderPreparedVTable kPreparedVTable{
     .create_invocation = &create_invocation,
     .destroy_invocation = &destroy_invocation,
     .shared_submit = &submit};
+
+Status inspect_projected_input_access(
+    const detail::ProviderPrepared &prepared,
+    detail::OperationPreparedAccess *access) noexcept {
+  if (!access || !prepared.state)
+    return Status::InvalidArgument("ATen CPU prepared access output is null");
+  if (prepared.vtable != &kPreparedVTable)
+    return Status::Unimplemented("foreign ATen CPU prepared implementation");
+  const auto &program = *static_cast<const Program *>(prepared.state);
+  const auto *gather = program.operation.get_if<Gather>();
+  if (!gather || program.axis != 0 ||
+      gather->bounds != IndexBoundsPolicy::kChecked)
+    return Status::Unimplemented(
+        "selected ATen CPU implementation has no projected input read");
+  // This Gather uses borrowed byte from_blob views and index_select_out;
+  // numeric_input's whole-input conversion is not part of this program.
+  *access = {.projected_input = 0};
+  return Status::Ok();
+}
+const void *query_extension(void *, ProviderExtensionId id) noexcept {
+  static constexpr detail::OperationAccessVTable access{
+      .inspect = &inspect_projected_input_access};
+  return id == detail::kProjectedInputReadExtensionId ? &access : nullptr;
+}
 detail::ResourceBindingRequirement host() noexcept {
   return {.required_properties = mem::MemoryProperty::kHostAccessible,
           .minimum_alignment = 1};
@@ -982,7 +960,7 @@ ProviderPrepareOutcome prepare(void *,
   auto *storage =
       static_cast<std::byte *>(allocator.allocate(bytes, alignof(Program)));
   if (!storage)
-    return ProviderPrepareOutcome::resource_declined(
+    return ProviderPrepareOutcome::error(
         Status::ResourceExhausted("ATen CPU program allocation failed"));
   auto *p = ::new (storage) Program{.operation = request.operation,
                                     .output = request.outputs[0],
@@ -994,6 +972,8 @@ ProviderPrepareOutcome prepare(void *,
   p->inputs = {descriptions, request.inputs.size()};
   std::int32_t requested_axis = 0;
   if (const auto *op = request.operation.get_if<Gather>())
+    requested_axis = op->axis;
+  if (const auto op = request.operation.custom_as<model_ops::GatherElements>())
     requested_axis = op->axis;
   if (const auto *op = request.operation.get_if<Scatter>())
     requested_axis = op->axis;
@@ -1008,7 +988,8 @@ ProviderPrepareOutcome prepare(void *,
         requested_axis < 0
             ? static_cast<std::int64_t>(requested_axis) + p->inputs[0].rank()
             : requested_axis);
-  if (request.operation.get_if<Gather>() || request.operation.get_if<Scatter>())
+  if (request.operation.get_if<Gather>() || request.operation.get_if<Scatter>() ||
+      request.operation.custom_as<model_ops::GatherElements>())
     p->index_count = p->inputs[1].element_count().value();
   if (const auto *reduce = request.operation.get_if<Reduce>()) {
     std::array<bool, kMaxTensorRank> selected{};
@@ -1067,7 +1048,8 @@ const detail::ProviderVTable kProviderVTable{
     .destroy_context = &destroy_context,
     .propose = &propose,
     .prepare = &prepare,
-    .drain_context = &drain};
+    .drain_context = &drain,
+    .query_extension = &query_extension};
 } // namespace
 Provider provider() noexcept {
   return detail::ProviderAccess::make(&kProviderVTable, std::uint8_t{0});

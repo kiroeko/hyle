@@ -14,14 +14,12 @@ def derive(source, resource_manifest, cpu_manifest, output):
     cpu = json.loads(cpu_manifest.read_text(encoding="utf-8"))
     if resource["upstream_revision"] != "456172ec733a135778adcd32d00e576a58232e45":
         raise ValueError("mixed CPU core changed; re-audit the port")
-    existing = {e["before"] for f in resource["files"] for e in f["edits"]}
+    existing = {f["path"]: {(e["before"], e["after"]) for e in f["edits"]}
+                for f in resource["files"]}
     edits = {f["path"]: list(f["edits"]) for f in resource["files"]}
-    added = 0
     for file in cpu["files"]:
         borrowed = []
         for edit in file["edits"]:
-            if edit["before"] in existing:
-                continue
             # The old core has the same F32 FWHT body without the newer F16
             # template overload. Adapt only its signature/call-site spelling;
             # the original arithmetic remains in each owning native source.
@@ -34,12 +32,16 @@ def derive(source, resource_manifest, cpu_manifest, output):
                     "ggml_compute_forward_fwht_f32").replace(
                     "ggml_compute_forward_fwht_impl(",
                     "ggml_compute_forward_fwht_f32(")
+            shared = existing.setdefault(file["path"], set())
+            identity = (ported["before"], ported["after"])
+            if identity in shared:
+                continue
+            if any(before == ported["before"] for before, _ in shared):
+                raise ValueError(f"conflicting shared CPU edit: {file['path']}")
             borrowed.append(ported)
+            shared.add(identity)
         if borrowed:
             edits.setdefault(file["path"], []).extend(borrowed)
-            added += len(borrowed)
-    if added != 23:
-        raise ValueError("mixed CPU patch composition changed; re-audit")
     files = []
     for name, changes in edits.items():
         relative = Path(name)

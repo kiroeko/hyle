@@ -1,0 +1,25 @@
+{
+  "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\inference-foundation-review-2026-10-18\\recurrent-gdn-schema.zip",
+  "bytes": 16653372,
+  "sha256": "806415df007ea4e684be2f7691dbbf5285cea5a7862f9e139b59e1702e70aa4a",
+  "payloads": 602,
+  "entries_including_manifest": 603,
+  "uncompressed_payload_bytes": 42776414,
+  "CRC_and_every_payload_SHA_verified": true,
+  "applied_product_after_files_verified": 5,
+  "actual_compiles_and_header_dependencies_verified": 30,
+  "unique_host_source_snapshots_verified": 29,
+  "public_header_snapshot_verified": true,
+  "actual_link_inputs": {
+    "cpu": 114,
+    "cuda": 133,
+    "qwen": 125
+  },
+  "exact_tests_and_model_raw_records_included": {
+    "cases": 15,
+    "vectors": 64
+  },
+  "original_unknown_nonowner_records_included": 25,
+  "SDK_models_binary_cache_maps_tmp_excluded": true,
+  "unapplied_source_drafts_excluded": true
+}

@@ -20,10 +20,12 @@ endif()
 if(_hyle_compute_ops_test_deps)
   hyle_add_test(compute_ops
     SOURCES operation_test.cc tensor_desc_test.cc low_precision_test.cc
+      view_reshape_test.cc
     DEPS ${_hyle_compute_ops_test_deps})
 else()
   hyle_add_test(compute_ops
-    SOURCES operation_test.cc tensor_desc_test.cc low_precision_test.cc)
+    SOURCES operation_test.cc tensor_desc_test.cc low_precision_test.cc
+      view_reshape_test.cc)
 endif()
 
 unset(_hyle_compute_ops_test_deps)

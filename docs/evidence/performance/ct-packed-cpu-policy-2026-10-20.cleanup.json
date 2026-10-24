@@ -1,0 +1,236 @@
+{
+  "status": "executed",
+  "files": 16,
+  "bytes": 363089041.0,
+  "protected_verified": 8,
+  "plan": {
+    "files": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cpu-benchmark\\checks\\cpu-bench.exe",
+        "bytes": 27171328,
+        "sha256": "61ab8a5effe0678235ddf82b9f67bb6e1dea9ed3b26d5b3e624344748c0f4643"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cpu-benchmark\\checks\\cpu-bench.exp",
+        "bytes": 25010,
+        "sha256": "ac6ad3fe57c9d509f77943fdb3b62f3727e697a8ebb381491768a4dd15de5da0"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cpu-benchmark\\checks\\cpu-bench.lib",
+        "bytes": 41826,
+        "sha256": "9197fceb97a105f890bc35faecef665aa56bf55155fc2811baca612427c24add"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cpu-benchmark\\checks\\cpu-bench.map",
+        "bytes": 39518366,
+        "sha256": "c9a897ec033fbba617dd63e9e65c98d75a8e48d1feec03066af6ea2bd69c8808"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cpu-benchmark\\ranking\\checks\\cpu-bench.exe",
+        "bytes": 27176448,
+        "sha256": "8b19de30fcada3feb9ed0d31a5cca72ad29545050bf860e28638124d319a9cc9"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cpu-benchmark\\ranking\\checks\\cpu-bench.exp",
+        "bytes": 25018,
+        "sha256": "2ada69ed24639117e638899e995bbe17e562ff315f6cf87f2e12f7eb8a634ad8"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cpu-benchmark\\ranking\\checks\\cpu-bench.lib",
+        "bytes": 41826,
+        "sha256": "9197fceb97a105f890bc35faecef665aa56bf55155fc2811baca612427c24add"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cpu-benchmark\\ranking\\checks\\cpu-bench.map",
+        "bytes": 39525946,
+        "sha256": "6583559e9790f0f59ac6473ab20a3af2c8e50ba52e01e33ab8c46ceaf924c9e2"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cross-platform\\cpu-green\\cpu.exe",
+        "bytes": 27183104,
+        "sha256": "03144ff1d305f8f2bbb5c09d6153da6bf5e84d041997c00308b02d2f47e043e2"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cross-platform\\cuda-final\\cuda.exe",
+        "bytes": 121014272,
+        "sha256": "b3a4adb7ee2ef850aa6a9dd211503fefcd8102fb8d3a0a06240b987797b85fe3"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cross-platform\\ranking\\cpu\\cpu.exp",
+        "bytes": 25004,
+        "sha256": "78892d38b8ffe3d3610476d18b77cb555e97cc8cb6d62ae66a5fffa4ba4a8b4e"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cross-platform\\ranking\\cpu\\cpu.lib",
+        "bytes": 41298,
+        "sha256": "1a72c22d3a6dec39cca5118fd99aa738ff5f4202c029fc8a48afb6c3d20e909d"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cross-platform\\ranking\\cpu\\cpu.map",
+        "bytes": 39577647,
+        "sha256": "7da7ec1c3370f3371c2df15814967813332b90a886226849cdc8471c9e4744c3"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cross-platform\\ranking\\cuda\\cuda.exp",
+        "bytes": 25008,
+        "sha256": "0b393862c2f3092cc02cccec9dca389e4c2cee2e8bc43362c0c4ecd5bb546a6c"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cross-platform\\ranking\\cuda\\cuda.lib",
+        "bytes": 41384,
+        "sha256": "097299e17e955c077a99f65f363d3484d564c016359baeb643f4e47c6b737d59"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cross-platform\\ranking\\cuda\\cuda.map",
+        "bytes": 41655556,
+        "sha256": "13e78425d5650af56f1b002a9a88346333930f227aa3be477736ab747fe87c10"
+      }
+    ],
+    "protected": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cross-platform\\ranking\\cpu\\cpu.exe",
+        "bytes": 27189248,
+        "sha256": "359b4172d1c035c14176d7119bb257f4261cd1bf1fd9ff0e1c7c8587b1067aaf"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cross-platform\\ranking\\cuda\\cuda.exe",
+        "bytes": 121012736,
+        "sha256": "6f6216d6bcede15381b4e1eb9a02faa2a87d59c615da5476f25a57cde3e47493"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-explicit-rope\\performance-prepared\\peer.exe",
+        "bytes": 35814400,
+        "sha256": "fb169f0282f2a834a61b3e887edaba92d8699814558b0c5f1a13aaf07e0de969"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-current-rebenchmark\\build\\qwen.exe",
+        "bytes": 117831168,
+        "sha256": "a9b7a934060a846d0c9b15227acd894f2ddf53c68a066449d152a3c76a415722"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-retirement-query-reuse\\final-test-build\\retirement-tests.exe",
+        "bytes": 120950272,
+        "sha256": "0fa8d33ce2a4343296d8136a42d787bca27807dcaef2ef15fc7576762dcb56fa"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-stable-bind\\ab\\before\\qwen.exe",
+        "bytes": 117827584,
+        "sha256": "84d6ec6b0ed171244d4067657d4ec533ac7f2bfab2bb45da44310da5594461d2"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-stable-bind\\ab\\current\\qwen.exe",
+        "bytes": 117830656,
+        "sha256": "f798042c7a2550d5edca4144a97ef7a8c13045bcb352db46b35717ebc627e3bb"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-vulkan-reference\\checks\\vulkan.exe",
+        "bytes": 68569600,
+        "sha256": "e1774d6c9556f0e67db711fa371e17d5c859a08bdbdd2405600d1ea305827505"
+      }
+    ],
+    "proofs": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\ct-packed-cpu-policy-2026-10-20.json",
+        "bytes": 23621,
+        "sha256": "83219d8d5126dbfa879ca687d0a22d9e695dc4d654d4a9a1779fe413258a9d5c"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\ct-packed-cpu-policy-2026-10-20.zip",
+        "bytes": 523427,
+        "sha256": "d6930b8080ea048dc86da2a96e516410b1fe40abdd63aeb940f7359a35311e08"
+      }
+    ]
+  },
+  "execution": {
+    "files": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cpu-benchmark\\checks\\cpu-bench.exe",
+        "bytes": 27171328,
+        "sha256": "61ab8a5effe0678235ddf82b9f67bb6e1dea9ed3b26d5b3e624344748c0f4643"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cpu-benchmark\\checks\\cpu-bench.exp",
+        "bytes": 25010,
+        "sha256": "ac6ad3fe57c9d509f77943fdb3b62f3727e697a8ebb381491768a4dd15de5da0"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cpu-benchmark\\checks\\cpu-bench.lib",
+        "bytes": 41826,
+        "sha256": "9197fceb97a105f890bc35faecef665aa56bf55155fc2811baca612427c24add"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cpu-benchmark\\checks\\cpu-bench.map",
+        "bytes": 39518366,
+        "sha256": "c9a897ec033fbba617dd63e9e65c98d75a8e48d1feec03066af6ea2bd69c8808"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cpu-benchmark\\ranking\\checks\\cpu-bench.exe",
+        "bytes": 27176448,
+        "sha256": "8b19de30fcada3feb9ed0d31a5cca72ad29545050bf860e28638124d319a9cc9"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cpu-benchmark\\ranking\\checks\\cpu-bench.exp",
+        "bytes": 25018,
+        "sha256": "2ada69ed24639117e638899e995bbe17e562ff315f6cf87f2e12f7eb8a634ad8"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cpu-benchmark\\ranking\\checks\\cpu-bench.lib",
+        "bytes": 41826,
+        "sha256": "9197fceb97a105f890bc35faecef665aa56bf55155fc2811baca612427c24add"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cpu-benchmark\\ranking\\checks\\cpu-bench.map",
+        "bytes": 39525946,
+        "sha256": "6583559e9790f0f59ac6473ab20a3af2c8e50ba52e01e33ab8c46ceaf924c9e2"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cross-platform\\cpu-green\\cpu.exe",
+        "bytes": 27183104,
+        "sha256": "03144ff1d305f8f2bbb5c09d6153da6bf5e84d041997c00308b02d2f47e043e2"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cross-platform\\cuda-final\\cuda.exe",
+        "bytes": 121014272,
+        "sha256": "b3a4adb7ee2ef850aa6a9dd211503fefcd8102fb8d3a0a06240b987797b85fe3"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cross-platform\\ranking\\cpu\\cpu.exp",
+        "bytes": 25004,
+        "sha256": "78892d38b8ffe3d3610476d18b77cb555e97cc8cb6d62ae66a5fffa4ba4a8b4e"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cross-platform\\ranking\\cpu\\cpu.lib",
+        "bytes": 41298,
+        "sha256": "1a72c22d3a6dec39cca5118fd99aa738ff5f4202c029fc8a48afb6c3d20e909d"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cross-platform\\ranking\\cpu\\cpu.map",
+        "bytes": 39577647,
+        "sha256": "7da7ec1c3370f3371c2df15814967813332b90a886226849cdc8471c9e4744c3"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cross-platform\\ranking\\cuda\\cuda.exp",
+        "bytes": 25008,
+        "sha256": "0b393862c2f3092cc02cccec9dca389e4c2cee2e8bc43362c0c4ecd5bb546a6c"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cross-platform\\ranking\\cuda\\cuda.lib",
+        "bytes": 41384,
+        "sha256": "097299e17e955c077a99f65f363d3484d564c016359baeb643f4e47c6b737d59"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cross-platform\\ranking\\cuda\\cuda.map",
+        "bytes": 41655556,
+        "sha256": "13e78425d5650af56f1b002a9a88346333930f227aa3be477736ab747fe87c10"
+      }
+    ],
+    "bytes": 363089041.0,
+    "protected_verified": 8
+  },
+  "script": {
+    "path": "C:\\public\\project-hyle\\hyle\\test.ps1",
+    "bytes": 1519,
+    "sha256": "c6ff1abcd4130962daf1d4a2e5151c668eb71e72dde8b56ab7bf083e2c420cb6"
+  },
+  "scope": "Policy diagnostics/superseded tests/linker sidecars only. Current CPU/CUDA tests, model current/direct-before/peer, source, raw results, all objects/SDKs retained."
+}

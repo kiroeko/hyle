@@ -14,6 +14,7 @@
 
 #include "../compute/native_context_fixture.h"
 #include "hyle/compute/backends/cpu.h"
+#include "hyle/compute/detail/context_ref.h"
 #include "hyle/compute/providers/native.h"
 #include "hyle/mem/buffer.h"
 #include "prepared_state.h"
@@ -29,6 +30,8 @@ using hyle::mem::Buffer;
 
 TEST(NativeMatMul, BothColdStagesDeclineRetiredMatrixPrograms) {
   auto context = test::native_context().value();
+  const auto context_ref =
+      hyle::compute::detail::ContextRef::acquire(context).value();
   const auto matrix = [](std::int64_t rows, std::int64_t columns) {
     return TensorDesc::dense(DataType::kFloat32, std::array{rows, columns})
         .value();
@@ -57,7 +60,7 @@ TEST(NativeMatMul, BothColdStagesDeclineRetiredMatrixPrograms) {
     SCOPED_TRACE(static_cast<int>(type));
     const Operation operation(MatMul{type});
     auto rejected = OperationPreparationAccess::propose(
-        context, 0, operation, inputs, outputs, input_requirements,
+        context_ref, 0, operation, inputs, outputs, input_requirements,
         output_requirements);
     ASSERT_FALSE(rejected.has_value());
     EXPECT_TRUE(rejected.error().IsUnimplemented());
@@ -124,6 +127,7 @@ Result<PreparedOperation>
 prepare_domain(const Context &context, const RmsDomain &domain,
                std::optional<hyle::mem::AllocatorRef> allocator = std::nullopt,
                bool exact = false) {
+  HYLE_ASSIGN_OR_RETURN(auto context_ref, ContextRef::acquire(context));
   std::array<ResourceBindingRequirement, 2> inputs{};
   std::array<ResourceBindingRequirement, 1> outputs{};
   const auto input_requirements = std::span(inputs).first(domain.input_count);
@@ -131,7 +135,7 @@ prepare_domain(const Context &context, const RmsDomain &domain,
   const auto shape = exact ? ProviderShapeDomain{} : domain.view();
   HYLE_ASSIGN_OR_RETURN(auto proposal,
                         OperationPreparationAccess::propose(
-                            context, 0, operation, domain.input_descriptions(),
+                            context_ref, 0, operation, domain.input_descriptions(),
                             domain.outputs, input_requirements, outputs, shape,
                             allocator));
   if (!exact) {
@@ -141,7 +145,7 @@ prepare_domain(const Context &context, const RmsDomain &domain,
                              hyle::mem::system_resource()};
   HYLE_ASSIGN_OR_RETURN(auto attempt,
                         OperationPreparationAccess::prepare_candidate(
-                            context, proposal, operation,
+                            context_ref, proposal, operation,
                             domain.input_descriptions(), domain.outputs,
                             input_requirements, outputs,
                             {std::span(resources).first(domain.input_count),
@@ -297,6 +301,8 @@ TEST(NativeProviderShape, DoesNotMistakeUpperPointSupportForABoundedArtifact) {
   using namespace hyle::compute;
   using namespace hyle::compute::detail;
   auto context = hyle::compute::test::native_context().value();
+  const auto context_ref =
+      hyle::compute::detail::ContextRef::acquire(context).value();
   const std::array<std::int64_t, 1> shape{8};
   const std::array descriptions{
       TensorDesc::dense(DataType::kFloat32, shape).value()};
@@ -307,7 +313,7 @@ TEST(NativeProviderShape, DoesNotMistakeUpperPointSupportForABoundedArtifact) {
   std::array<ResourceBindingRequirement, 1> inputs{}, outputs{};
   const auto propose = [&]() {
     return OperationPreparationAccess::propose(
-        context, 0, Operation(Unary{UnaryKind::kExp}), descriptions,
+        context_ref, 0, Operation(Unary{UnaryKind::kExp}), descriptions,
         descriptions, inputs, outputs, domain);
   };
   auto bounded = propose();
@@ -698,6 +704,8 @@ TEST(NativeMetadataOwner, EveryOverrideAllocationCanFailAndRetry) {
 
 TEST(NativeMetadataOwner, InvalidOverrideIsNotSilentlyInherited) {
   auto context = hyle::compute::test::native_context().value();
+  const auto context_ref =
+      hyle::compute::detail::ContextRef::acquire(context).value();
   const RmsDomain domain;
   const hyle::mem::AllocatorRef invalid;
   EXPECT_TRUE(
@@ -705,12 +713,12 @@ TEST(NativeMetadataOwner, InvalidOverrideIsNotSilentlyInherited) {
   std::array<ResourceBindingRequirement, 1> inputs{}, outputs{};
   const Operation operation(RmsNorm{});
   auto proposal = OperationPreparationAccess::propose(
-                      context, 0, operation, domain.input_descriptions(),
+                      context_ref, 0, operation, domain.input_descriptions(),
                       domain.outputs, inputs, outputs, domain.view())
                       .value();
   const std::array resources{hyle::mem::system_resource()};
   auto rejected = OperationPreparationAccess::prepare_candidate(
-      context, proposal, operation, domain.input_descriptions(), domain.outputs,
+      context_ref, proposal, operation, domain.input_descriptions(), domain.outputs,
       inputs, outputs, {resources, resources}, domain.view(), invalid);
   ASSERT_FALSE(rejected);
   EXPECT_TRUE(rejected.error().IsInvalidArgument());
@@ -865,7 +873,7 @@ const ProviderPreparedVTable kDomainCallbacks{
         },
     .destroy_invocation = [](void *, hyle::mem::AllocatorRef) noexcept {},
     .shared_submit =
-        [](void *, void *, Queue &, std::span<const ConstTensorView>,
+        [](void *, void *, hyle::compute::detail::QueueSequence &, std::span<const ConstTensorView>,
            std::span<const TensorView>) noexcept {
           return EnqueueResult::rejected(
               Status::Unimplemented("contract-only fixture"));
@@ -1097,11 +1105,13 @@ TEST(PreparedDomainContract,
      RejectsPointOnlyAndInvalidCoverageBeforePreparation) {
   DomainProbe probe;
   auto context = probe_context(probe);
+  const auto context_ref =
+      hyle::compute::detail::ContextRef::acquire(context).value();
   const RmsDomain domain;
   const Operation operation(RmsNorm{});
   std::array<ResourceBindingRequirement, 1> inputs{}, outputs{};
   auto proposal = OperationPreparationAccess::propose(
-                      context, 0, operation, domain.input_descriptions(),
+                      context_ref, 0, operation, domain.input_descriptions(),
                       domain.outputs, inputs, outputs, domain.view())
                       .value();
   const std::array resources{hyle::mem::system_resource()};
@@ -1109,7 +1119,7 @@ TEST(PreparedDomainContract,
                         static_cast<ProviderShapeCoverage>(255)}) {
     proposal.shape_coverage = coverage;
     auto attempt = OperationPreparationAccess::prepare_candidate(
-        context, proposal, operation, domain.input_descriptions(),
+        context_ref, proposal, operation, domain.input_descriptions(),
         domain.outputs, inputs, outputs, {resources, resources}, domain.view());
     ASSERT_FALSE(attempt);
     EXPECT_TRUE(attempt.error().IsInvalidArgument());
@@ -1297,6 +1307,8 @@ TEST(PreparedDomainContract, StridedMembershipDoesNotOverrideOperationSchema) {
 TEST(NativeProviderShape,
      BoundedCopyRequiresDenseOutputAndIdenticalAxisExpressions) {
   auto context = hyle::compute::test::native_context().value();
+  const auto context_ref =
+      hyle::compute::detail::ContextRef::acquire(context).value();
   std::array<ShapeDimension, 2> dimensions{};
   dimensions[0].bounds = dimensions[1].bounds = {0, 4, 1};
   std::array<ProviderTensorAxes, 1> input_axes{}, output_axes{};
@@ -1314,7 +1326,7 @@ TEST(NativeProviderShape,
   const auto propose = [&] {
     std::array<ResourceBindingRequirement, 1> in{}, out{};
     return OperationPreparationAccess::propose(
-        context, 0, Operation(Copy{}), inputs, outputs, in, out,
+        context_ref, 0, Operation(Copy{}), inputs, outputs, in, out,
         ProviderShapeDomain{dimensions, input_axes, output_axes});
   };
   auto accepted = propose();
@@ -1336,6 +1348,8 @@ TEST(AtenCpuResources, ColdCompilationBoundsCoverAllAdmittedProgramFamilies) {
   if (!aten_cpu::provider())
     GTEST_SKIP() << "locked Torch CPU SDK disabled";
   auto context = Context::create(cpu::device(), aten_cpu::provider()).value();
+  const auto context_ref =
+      hyle::compute::detail::ContextRef::acquire(context).value();
   const auto tensor = [](DataType type,
                          std::initializer_list<std::int64_t> shape) {
     return TensorDesc::dense(type, {shape.begin(), shape.size()}).value();
@@ -1384,7 +1398,7 @@ TEST(AtenCpuResources, ColdCompilationBoundsCoverAllAdmittedProgramFamilies) {
     std::vector<ResourceBindingRequirement> inputs(test.inputs.size());
     std::array<ResourceBindingRequirement, 1> outputs{};
     auto proposal = OperationPreparationAccess::propose(
-        context, 0, test.operation, test.inputs, std::span(&*output, 1), inputs,
+        context_ref, 0, test.operation, test.inputs, std::span(&*output, 1), inputs,
         outputs);
     ASSERT_TRUE(proposal) << proposal.error().message();
     EXPECT_EQ(proposal->cost.compilation_storage.resident_bytes, 0);
@@ -1403,6 +1417,8 @@ TEST(AtenCpuResources, ColdCompilationBoundsCoverAllAdmittedProgramFamilies) {
 
 TEST(NativeNumericRetirement, BothColdStagesDeclineAllRetiredDomains) {
   auto context = test::native_context().value();
+  const auto context_ref =
+      hyle::compute::detail::ContextRef::acquire(context).value();
   const auto dense = [](DataType type,
                         std::initializer_list<std::int64_t> dims) {
     return TensorDesc::dense(type, {dims.begin(), dims.size()}).value();
@@ -1441,7 +1457,7 @@ TEST(NativeNumericRetirement, BothColdStagesDeclineAllRetiredDomains) {
     std::vector<ResourceBindingRequirement> ir(item.inputs.size());
     std::array<ResourceBindingRequirement, 1> orq{};
     auto proposal = OperationPreparationAccess::propose(
-        context, 0, item.operation, item.inputs, std::span(&*output, 1), ir,
+        context_ref, 0, item.operation, item.inputs, std::span(&*output, 1), ir,
         orq);
     ASSERT_FALSE(proposal);
     EXPECT_TRUE(proposal.error().IsUnimplemented());
@@ -1455,6 +1471,8 @@ TEST(NativeNumericRetirement, BothColdStagesDeclineAllRetiredDomains) {
 
 TEST(NativeNumericRetirement, BothColdStagesDeclineLowPrecisionScatterAdd) {
   auto context = test::native_context().value();
+  const auto context_ref =
+      hyle::compute::detail::ContextRef::acquire(context).value();
   for (auto type : {DataType::kFloat16, DataType::kBFloat16})
     for (auto index_type : {DataType::kInt32, DataType::kInt64})
       for (std::int32_t axis : {0, 1}) {
@@ -1475,7 +1493,7 @@ TEST(NativeNumericRetirement, BothColdStagesDeclineLowPrecisionScatterAdd) {
         std::array<ResourceBindingRequirement, 3> ir{};
         std::array<ResourceBindingRequirement, 1> orq{};
         const auto proposal = OperationPreparationAccess::propose(
-            context, 0, operation, inputs, std::span(&output, 1), ir, orq);
+            context_ref, 0, operation, inputs, std::span(&output, 1), ir, orq);
         ASSERT_FALSE(proposal);
         EXPECT_TRUE(proposal.error().IsUnimplemented());
         const auto prepared =

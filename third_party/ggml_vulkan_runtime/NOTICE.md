@@ -13,7 +13,7 @@ carries logical KV length separately. Its scalar shader maps every original
 K/V row load through an owned I32 page table. The unused mask-opt binding and
 mask-only push fields carry that table and its offset without extending the
 128-byte push packet. Paged causal masking uses logical positions. Only the
-private full-F32/F16 paged identity admits these fields; normal flash and
+private full-F32 paged identity admits these fields; normal flash and
 coopmat identities keep their original addressing and arithmetic.
 
 These backend edits disable nested shader/compiler parallelism. Common context
@@ -43,7 +43,7 @@ No new multiplication shader or algorithm is introduced.
 HYLE's tagged full-F32 attention mode reuses the original scalar FP32 flash
 shader. The private slot tag is distinct from accumulation precision, because
 the normal native FP32 accumulator may still narrow Q/K/V or probabilities.
-Only the tagged F16/F32, same-D64/128/256 domain selects scalar tuning and the
+The tagged F16/F32, same-D64/128/256 domain selects scalar tuning and the
 original FP32 SPIR-V, accounts for float shared storage, and has a separate
 pipeline-cache key. Other ggml calls and device capability flags are unchanged.
 No attention shader, kernel or replacement queue/runtime is introduced.
@@ -57,6 +57,22 @@ paged requests use the original owned table. Logical length, offset and window
 reuse mask-only push fields and remain in the private pipeline identity.
 The original Q8 copy shader has a tagged reference roundf mode, including exact
 ties and adjacent values. Other Q8 copies keep their original rounding.
+
+Plain F16 cache attention additionally admits (Dqk,Dv)=(512,512) and
+(576,512) through that same tagged scalar F32 shader. Head dimensions are
+pipeline specialization constants; the shader, page addressing and arithmetic
+are unchanged, and admission retains the actual F32 shared-memory check.
+This extension does not admit high-dimensional Q8 caches or change ordinary
+attention's selection between fused and mathematical paths.
+
+The same tagged scalar domain also admits paired plain BF16 K/V, including
+those two high-dimensional pairs. Its existing FaTypeK/FaTypeV specialization
+loads the original BF16 words as F32 within each tile; neither a full-cache
+F16/F32 conversion nor new SPIR-V is introduced. Q is converted to F32 and
+the private flash result remains F32. The HYLE route then uses its existing
+IREE nearest-even conversion for the public BF16 result. Original page-table,
+window, shared-memory, workgroup and physical storage checks remain in force;
+ordinary untagged attention and high-dimensional Q8 admission are unchanged.
 
 The two Argsort shaders retain the upstream bitonic sorting networks, barriers,
 dispatch and scratch management. Their comparison uses original F32 storage
@@ -120,3 +136,34 @@ adding storage or dispatches. Sin preserves signed zero. Nonfinite arguments
 and values outside this finite domain retain the native intrinsic; this patch
 does not qualify their accuracy. The original independent F32 phase oracle,
 attention tolerances, quantized storage and state feedback are unchanged.
+
+The indexed matrix and vector drivers retain actual direct activation byte
+spans and token/slot strides, including shared activation views with padded
+token pitches. Direct noncontiguous matrix inputs use the existing unaligned
+pipeline; converted/quantized staging keeps its compact layout. This changes
+host addressing only, without a new shader, weight decode or arithmetic path.
+
+Indexed matrix dispatch covers the full slot/token occurrence upper bound,
+including repeated expert IDs. Cold support checks the widened product and
+actual created tile/device grid limits before native graph allocation. The
+original push constants, scalar arithmetic and output addressing are unchanged.
+
+Ordinary page16 E4M3FN cache reads use a separate private scalar-F32 variant
+of the same flash shader and original queue/graph/lifetime path. Raw I8 K/V
+ports are admitted only with the explicit E4 storage tag. Fixed independent
+K/V scales form part of the pipeline key and specialization constants; each
+addressed E4 value is widened and scaled in F32 before the original flash
+math. No complete-cache decode, intermediate BF16 cache or new executor is
+introduced. The numerical include is generated from HYLE's shared integer
+IEEE helpers and E4 storage codec, preserving subnormal scale multiplication.
+The original F16/BF16/Q8 shader modules and compact MLA storage remain separate.
+
+The same private E4 scalar shader additionally admits compact MLA rows with
+CKV512 or CKV512+KPE64 and a V512 prefix of the same physical row. The host
+requires the same view root, byte origin, row pitch and fixed scale for K/V;
+it does not admit arbitrary padded E4 inputs. Only this tagged support check
+changes: the existing shader reads the original pitch, and no V bank,
+complete-cache decode, new SPIR-V or executor is introduced. Ragged compact
+rows use the same private cache identity with a logical row offset instead of
+a page table. Plain and ordinary separate-K/V E4 attention keep their
+previous domain and behavior.

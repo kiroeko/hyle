@@ -17,7 +17,7 @@ if(_HYLE_COMPUTE_HAVE_CUDA)
   # The provider's own Direct/Graph contract does not require the complete
   # default CUDA route or rebuilding unrelated ggml kernels.
   hyle_add_test(compute_provider_torch_cuda NAME attention
-    SOURCES attention_test.cc DEPS hyle_compute_backend_cuda hyle_graph)
+    SOURCES attention_test.cc DEPS hyle_compute_backend_cuda hyle_graph hyle_compute_provider_ggml_cuda)
   target_include_directories(hyle_compute_provider_torch_cuda_attention_test SYSTEM PRIVATE
     "${_cuda_lib_directory}/../include")
   target_link_libraries(hyle_compute_provider_torch_cuda_attention_test PRIVATE

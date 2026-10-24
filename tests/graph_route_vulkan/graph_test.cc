@@ -1,4 +1,8 @@
 #include "hyle/graph/vulkan.h"
+#include "hyle/graph/executable.h"
+#include "hyle/graph/result.h"
+#include "hyle/compute/model_ops.h"
+#include "hyle/compute/vulkan_memory.h"
 
 #include <array>
 #include <cmath>
@@ -156,7 +160,7 @@ TEST(VulkanGraph, MatureMatMulAndCustomSpirvPrepareOnceThenReplay) {
   int preparations = 0;
   auto program = gv::compile(
       *context, *graph, constants,
-      {.custom = [&](const v::Context &, const c::Operation &operation,
+      {.custom = [&](const c::Operation &operation,
                      std::span<const c::TensorDesc>,
                      const c::TensorDesc &output)
            -> hyle::Result<gv::CustomDispatch> {
@@ -190,11 +194,130 @@ TEST(VulkanGraph, MatureMatMulAndCustomSpirvPrepareOnceThenReplay) {
   EXPECT_EQ(preparations, 1);
   auto wrong = gv::compile(
       *context, *graph, constants,
-      {.custom = [](const auto &, const auto &, auto,
+      {.custom = [](const auto &, auto,
                     const auto &) -> hyle::Result<gv::CustomDispatch> {
         return gv::CustomDispatch{};
       }});
   EXPECT_FALSE(wrong);
+}
+
+TEST(VulkanGraph, ConfiguredSourceLowersCustomColdAndReplaysOrdinaryInvocation) {
+  auto context = t::context().value();
+  const auto description = t::dense({4});
+  auto builder = g::GraphBuilder::create().value();
+  const auto input = builder.input(description).value();
+  const auto output = builder.add(c::Operation::custom(Affine{}), input).value();
+  ASSERT_TRUE(builder.publish(output).ok());
+  const auto logical = std::move(builder).finish().value();
+  auto memory = v::MemoryResource::create(context, v::MemoryKind::kDevice).value();
+  const std::array domains{g::StorageDomain{memory.ref()}};
+  const std::array plain_targets{g::ExecutionTarget{
+      gv::execution_source(context).value(), g::StorageDomainId{0}}};
+  EXPECT_FALSE(g::compile(logical, {domains, plain_targets}));
+
+  const auto kernel = t::affine(context).value();
+  unsigned calls = 0;
+  auto source = gv::execution_source(context, {.custom = [&, kernel](
+      const c::Operation &operation, std::span<const c::TensorDesc>,
+      const c::TensorDesc &result) -> hyle::Result<gv::CustomDispatch> {
+    if (!operation.custom_as<Affine>())
+      return std::unexpected(hyle::Status::Unimplemented("unknown application schema"));
+    ++calls;
+    return gv::CustomDispatch{kernel, {1, 1, 1},
+        t::count_push(static_cast<std::uint32_t>(*result.element_count()))};
+  }}).value();
+  const std::array targets{g::ExecutionTarget{source, g::StorageDomainId{0}}};
+  auto compiled = g::compile(logical, {domains, targets});
+  ASSERT_TRUE(compiled) << compiled.error().message();
+  EXPECT_EQ(calls, 1U);
+  auto invocation = compiled->executable.create_invocation().value();
+  ASSERT_TRUE(invocation.prepare_resources().ok());
+  for (unsigned iteration = 1; iteration <= 2; ++iteration) {
+    const std::array<float, 4> host{float(iteration), -2.0F, 0.5F, 4.0F};
+    const auto uploaded = t::upload(context, description, host).value();
+    auto owner = memory.import_readonly(uploaded).value();
+    ASSERT_TRUE(invocation.bind(input, description, std::move(owner)).ok());
+    ASSERT_TRUE(invocation.prepare_replay({}).ok());
+    auto done = invocation.submit();
+    ASSERT_TRUE(done) << done.error().message();
+    ASSERT_TRUE(done->wait().ok());
+    auto result = invocation.result(output).value();
+    auto read = result.storage_lease().value();
+    const auto native = memory.binding(std::move(read), description).value();
+    const auto actual = t::read(context, native).value();
+    for (std::size_t index = 0; index < host.size(); ++index)
+      EXPECT_EQ(actual[index], 2.0F * host[index] + 1.0F);
+  }
+  EXPECT_EQ(calls, 1U);
+}
+
+// A builtin typed implementation owns its actual admission; supplying an
+// expert fallback does not route builtin requests through a Graph op list.
+TEST(VulkanGraph, BuiltinCarrierOwnsLoweringBeforeExpertFallback) {
+  auto context = t::context().value();
+  const auto data_desc = t::dense({2, 3});
+  const auto ids_desc = c::TensorDesc::dense(c::DataType::kInt32,
+      std::array<std::int64_t, 2>{2, 2}).value();
+  auto builder = g::GraphBuilder::create().value();
+  const auto data = builder.input(data_desc).value();
+  const auto ids = builder.input(ids_desc).value();
+  const auto output = builder.result(builder.add_node(
+      c::model_ops::gather_elements(), std::array{data, ids}).value()).value();
+  ASSERT_TRUE(builder.publish(output).ok());
+  int calls = 0;
+  auto program = gv::compile(context, std::move(builder).finish().value(), {},
+      {.custom = [&](const auto &, auto, const auto &)
+          -> hyle::Result<gv::CustomDispatch> {
+        ++calls;
+        return std::unexpected(hyle::Status::Internal("builtin used expert fallback"));
+      }});
+  ASSERT_TRUE(program) << program.error().message();
+  const std::array<float, 6> values{1, 2, 3, 4, 5, 6};
+  const std::array<std::int32_t, 4> indices{2, 0, 0, 1};
+  const auto x = context.upload(data_desc, std::as_bytes(std::span(values))).value();
+  const auto i = context.upload(ids_desc, std::as_bytes(std::span(indices))).value();
+  auto slot = program->create_invocation().value();
+  ASSERT_TRUE(slot.bind(std::array{x, i}).ok());
+  auto done = slot.submit().value();
+  auto result = done.wait();
+  ASSERT_TRUE(result) << result.error().message();
+  const auto actual = t::read(context, result->get()->tensors()[0]).value();
+  EXPECT_EQ(actual, (std::vector<float>{3, 1, 4, 5}));
+  EXPECT_EQ(calls, 0);
+}
+
+struct AffinePair final {
+  static constexpr c::OperationId operation_id{0x68796c657236ULL, 2};
+  static constexpr auto operation_name = "vulkan-test-affine-pair";
+  c::OperationTraits operation_traits() const noexcept {
+    return {.inputs = {1, 1}, .outputs = 2};
+  }
+  hyle::Status infer_output_descriptions(std::span<const c::TensorDesc> inputs,
+      std::span<c::TensorDesc> outputs) const noexcept {
+    if (inputs.size() != 1 || outputs.size() != 2)
+      return hyle::Status::InvalidArgument("affine pair arity");
+    outputs[0] = outputs[1] = inputs[0];
+    return hyle::Status::Ok();
+  }
+};
+TEST(VulkanGraph, ExpertSingleOutputAbiDoesNotPromiseArbitraryCustomOutputs) {
+  auto context = t::context().value();
+  auto builder = g::GraphBuilder::create().value();
+  const auto input = builder.input(t::dense({4})).value();
+  const auto node = builder.add_node(c::Operation::custom(AffinePair{}),
+      std::array{input}).value();
+  ASSERT_TRUE(builder.publish(builder.result(node, 0).value()).ok());
+  ASSERT_TRUE(builder.publish(builder.result(node, 1).value()).ok());
+  int calls = 0;
+  auto program = gv::compile(context, std::move(builder).finish().value(), {},
+      {.custom = [&](const auto &, auto, const auto &)
+          -> hyle::Result<gv::CustomDispatch> {
+        ++calls;
+        return gv::CustomDispatch{};
+      }});
+  ASSERT_FALSE(program);
+  EXPECT_TRUE(program.error().IsUnimplemented());
+  EXPECT_EQ(calls, 0);
 }
 
 TEST(VulkanGraph, RejectsMissingMismatchedConstantsAndInputOnlyOutput) {
@@ -251,7 +374,7 @@ TEST(VulkanGraph, ReportOutlivesBorrowedConstantsCustomPayloadAndDevice) {
     const std::array constants{*borrowed, *borrowed};
     auto program = gv::compile(
         *context, graph, constants,
-        {.custom = [&, payload](const auto &, const auto &, auto, const auto &)
+        {.custom = [&, payload](const auto &, auto, const auto &)
              -> hyle::Result<gv::CustomDispatch> {
            return gv::CustomDispatch{
                *kernel,

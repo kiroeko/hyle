@@ -1,0 +1,345 @@
+{
+  "date_utc": "2026-10-19T23:59:24.372680+00:00",
+  "scope": "Ordinary CUDA Graph sharing one dynamic group128 FP8 activation producer between two independent Float8BlockLinear siblings; fixed microbenchmark, not Qwen BF16/model validation.",
+  "implementation": {
+    "private_op": "Float8BlockLinearPair [A,W0,W1]->[Y0,Y1], native SGLang route22",
+    "Graph": "Original SGLang provider decorated once; same logical A, floor bits and rounding; canonical native admission and original output boundaries, N may differ.",
+    "native": "One unchanged quantizer and two unchanged original AOT GEMMs in the original QueueSequence. No concatenated W, payload cache, hot allocation, new executor or public API.",
+    "numerical": "Standalone F32/BF16 output and BF16 power2 colmajor scales remain distinct original contracts; all actual ports validated before first launch and launch-stage errors retain accepted-prefix semantics.",
+    "ancillary": [
+      "Delete unreachable historical C2 qualified-provider wrapper; preserve ordinary native admission/math/resources and roster.",
+      "Forward known selected leaf dispatch counts into compile reports; unknown/default, selection and execution remain unchanged."
+    ]
+  },
+  "source_fingerprints": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_route_cuda\\CMakeLists.txt",
+      "sha256": "9b4100f88d494a034d682d1f976a3be455d2a8b3235c94a22ba13fcf41298496",
+      "bytes": 1357
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_route_cuda\\cuda_context.cc",
+      "sha256": "4135b4c75a52291734af2ba43b1b150eea7686a83a15c9fcd429b3176880e54e",
+      "bytes": 2402
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_route_cuda\\default_context.h",
+      "sha256": "50621effdb480111240140cb299c1094a4fae050e83e6f71d26fd66a27744438",
+      "bytes": 623
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_cuda\\cuda_provider.cc",
+      "sha256": "6993ff40d9fac8ba955407f78b13fdd36be50e351783d3eb42d06b72024f8e93",
+      "bytes": 21209
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_cuda\\tensor_provider.cc",
+      "sha256": "b5db7a75c19734320543ca091004ad95bb1f019399088c886f6b0457c3be1e52",
+      "bytes": 13534
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_cuda\\tensor_provider.h",
+      "sha256": "d5685f48cb9e2fe1d98c8815ac09888dfd5b7634fc54c29b4ac5093afc8fa09d",
+      "bytes": 717
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_cuda\\norm_provider.cc",
+      "sha256": "3b68516941e4fb311e36ab23669eb4a3a31fd9419aeea4abcf60d6fb7d994612",
+      "bytes": 11797
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_cuda\\norm_provider.h",
+      "sha256": "c785f6aa42b21eb5c40974e8a5bac332ee0c2fde27cfd6dc06836b5fbece7fc9",
+      "bytes": 1233
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_cuda\\CMakeLists.txt",
+      "sha256": "9d61ae1a1d9520576fffe2f52ea32539a455975bac13365cf0d20c6ee5dc675f",
+      "bytes": 865
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_cuda\\context_test.cc",
+      "sha256": "79e4f42b76a7828e0326b60bdcc560e6803b77677fa3cc239b5763befaa27a0e",
+      "bytes": 23100
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_cuda\\fp8_provider.cc",
+      "sha256": "42b2af1c1324468bf74da4b5460be93e0a9732e1585e1f9aa752cf0d64036e38",
+      "bytes": 18437
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_cuda\\fp8_provider.h",
+      "sha256": "ecd866f75a90cd49e9e2a64317606d0a2d9414adc8442159bf6d7965d7cd1e63",
+      "bytes": 860
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_cuda\\fp8_shared_linear.h",
+      "sha256": "2a69ad356288680ab133f2431c09326f7dd2568e5e4cef2ac35b4d524cd8da69",
+      "bytes": 1766
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph_route_cuda\\fp8_shared_prologue_region.cc",
+      "sha256": "d3bca394e55a4b23d4362b9dd8489660763212595aa1bc9c20e13f8e045bec60",
+      "bytes": 11768
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph_route_cuda\\fp8_shared_prologue_region.h",
+      "sha256": "d2c024250b46263bd90deee95a9106ee61d5ade086288f8687421136173e6f28",
+      "bytes": 151
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph_route_cuda\\mapped_native_region.h",
+      "sha256": "711d30ca47d3a8f290b07057f1dc4996ff475df449d1d1c0773136ac85119443",
+      "bytes": 7924
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph_route_cuda\\cuda_context.cc",
+      "sha256": "63878262c789986703035870e329bea081fdf89b58630311d76178850e83fbac",
+      "bytes": 3417
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph_route_cuda\\CMakeLists.txt",
+      "sha256": "25e4d388902b890fdab2a9be8f7ed28905977400d8cfdb6591e31249176d8957",
+      "bytes": 461
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_cuda\\fp8_shared_prologue_test.cc",
+      "sha256": "5d3649ac33d699d87d721b1981aeecb300b6babb9b8448e6b3cc8dc17f834897",
+      "bytes": 15483
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_cuda\\CMakeLists.txt",
+      "sha256": "905ab54b81f099ad52c4686b608d85222bc3107fc2670ef218e7428e1a547470",
+      "bytes": 2198
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\executable.cc",
+      "sha256": "4bba5b13c01790f45ce3fa319c64a81a94144b988d3a1cc1e822209f9a8d056c",
+      "bytes": 456598
+    }
+  ],
+  "removed_C2_files": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_route_cuda\\best_of.cc",
+      "before_sha256": "e68757a259f876cef729a5bb4b2f9519bec70ef9a5adf45a473437af5332c807"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_route_cuda\\best_of.h",
+      "before_sha256": "8c5154c4785b2740b905c38c597d4e715a24127cc377c09b539ef38741f16699"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_cuda\\qualified_prepare.h",
+      "before_sha256": "94c885ee0478f21b59c40d8927e6439ae642bee1cc9f364e675c1f10786cc8e0"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_cuda\\best_of_test.cc",
+      "before_sha256": "ad6edbb796e20d8d6c781f9a8aaabb24930785b196e1010440e479419c3206a7"
+    }
+  ],
+  "actual_build": {
+    "unique_main_closure_Cpp_owners": 17,
+    "additional_benchmark_Cpp_owners": 2,
+    "native_compiles": 0,
+    "SDK_builds": 0,
+    "main_plan": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fp8-shared-prologue\\checks\\host1\\plan.json",
+      "bytes": 64862,
+      "sha256": "e74ea039eed380d32f13b7dccbf01c95642948fb38b37dd6f321c8e6d9a99202"
+    },
+    "tests_image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fp8-shared-prologue\\checks\\host1\\tests.exe",
+      "bytes": 118315008,
+      "sha256": "bc7bd826a80f633f0e9f5e9c9472c1795ac8603ebc6210e8915ac11f73a94d94"
+    },
+    "benchmark_plan": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fp8-shared-prologue\\benchmark\\build\\plan.json",
+      "bytes": 98116,
+      "sha256": "a39dc0aeb96fca32512624152aeffb4a15a441fabd810bcd053e323f58d96231"
+    },
+    "common_benchmark_object": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fp8-shared-prologue\\benchmark\\build\\common-bench.obj",
+      "bytes": 637474,
+      "sha256": "6026afafd0fe4038f928c5d4a396cac93c1f0571fb402b6ba8574cfe977f5612"
+    },
+    "only_arm_link_delta_excluding_output_paths": [
+      {
+        "index": 111,
+        "control": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fp8-shared-prologue\\benchmark\\build\\control-context.obj",
+        "new": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fp8-shared-prologue\\checks\\host1\\graph_route_cuda--cuda_context.obj"
+      }
+    ],
+    "history": "17 C++ owners in the final closure; second build reused15 and compiled only the Graph report owner plus context test feature macro correction."
+  },
+  "correctness": {
+    "actual_cases": 16,
+    "skipped": 0,
+    "names": [
+      "CudaDenseIndexer.DyadicStagesAndMaskKeepThreeBfloatRoundsAndNonfiniteValues",
+      "CudaDenseIndexer.PaddedBatchKeysKeepIndependentSlotsAndRetainedResults",
+      "CudaDenseIndexer.EscapingCoreIntermediatesKeepOrdinaryBoundaries",
+      "CudaDenseIndexer.EmptyBatchTokenAndHistoryProduceNoWork",
+      "CudaFp8SharedPrologue.FloatSiblingsKeepBothOriginalLinearResultsAcrossCapturedSlots",
+      "CudaFp8SharedPrologue.BfloatSiblingsKeepBothOriginalLinearResultsAcrossCapturedSlots",
+      "CudaFp8SharedPrologue.PowerOfTwoBfloatSiblingsKeepTheirOriginalScaleLayoutAcrossCapturedSlots",
+      "CudaFp8SharedPrologue.DifferentContractsOrValueIdsAndPackedSingleLinearStayStandalone",
+      "CudaDefaultCompute.DenseFfnUsesFixedRulesAndIndependentSlots",
+      "CudaDefaultCompute.DescriptorPreparationChecksDeviceResourcesBeforePayload",
+      "CudaDefaultCompute.DefaultRulesRetainSeparateAndPackedTailCapability",
+      "CudaDefaultCompute.BFloat16AttentionPrefersFusedTorchBeforeGgml",
+      "CudaCtPackedLinear.PublicChainsKeepSourceRoundsAndTypedCastWitnesses",
+      "CudaCtPackedLinear.CapturedDynamicInputsRebindAcrossOwnedSlotsAndRetainResults",
+      "CudaCtPackedLinear.PublishedViewAndControlEscapesExecuteTheOriginalDecomposition",
+      "CudaCtPackedLinear.OriginalPackedConstantsDoNotRetainOrWorkspaceADenseWeightBank"
+    ],
+    "summary": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fp8-shared-prologue\\runs\\actual-report-macro-fixed\\summary.json",
+      "bytes": 1703,
+      "sha256": "556950b56dcb7ad9e03abec5510c9d3601634cf2a62f8a9242e8bb60915bd9c9"
+    },
+    "math": "4 FP8 tests compare both outputs bytewise with original standalone Direct linears for F32, BF16 and BF16power2; exact contract/ValueId mismatch and existing packed-single controls remain standalone. 4 CT,4 Dense and4 default-context neighbours pass.",
+    "lifetime": "Two independently owned slots/Queues and changed A through real permissions, captured replay, old GraphOutput gate and exported output ownership. Sequential completed journeys; no simultaneous in-flight stress claim."
+  },
+  "microbenchmark": {
+    "shape": {
+      "M": 32,
+      "K": 1024,
+      "N": [
+        512,
+        768
+      ],
+      "activation_output": "BF16",
+      "accumulation": "F32",
+      "floor": 1e-10,
+      "rounding": "none"
+    },
+    "metric": "Same public Graph, one common benchmark object; Commands Invocation.submit through Completion.wait; upload/compile/prepare/D2H/file writes excluded.",
+    "runs": "3 pairs AB/BA/AB,64 warmups and256 raw samples per process",
+    "process_medians_us": {
+      "control": [
+        664.1,
+        660.3,
+        661.6
+      ],
+      "new": [
+        648.9,
+        655.25,
+        655
+      ]
+    },
+    "pairs": [
+      {
+        "pair": 0,
+        "control": 664.1,
+        "new": 648.9,
+        "change_percent": -2.28881192591478
+      },
+      {
+        "pair": 1,
+        "new": 655.25,
+        "control": 660.3,
+        "change_percent": -0.7648038770255883
+      },
+      {
+        "pair": 2,
+        "control": 661.6,
+        "new": 655,
+        "change_percent": -0.9975816203143917
+      }
+    ],
+    "median_of_process_medians_us": {
+      "control": 661.6,
+      "new": 655
+    },
+    "change_percent": -0.9975816203143917,
+    "process_median_ranges_overlap": false,
+    "raw_iteration_ranges_overlap": true,
+    "interpretation": "All3 paired process medians are lower in this fixed window (~1.00% median reduction); no inference of long-term significance, other-shape or full-model benefit.",
+    "outputs_byte_equal": true,
+    "output_identities": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fp8-shared-prologue\\benchmark\\rotation1\\0-control\\output.y0.bin",
+        "bytes": 32768,
+        "sha256": "40c1d12d37a6225c3b205a5d79c0e7127217205d5d07fe1f5562838507e3073b"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fp8-shared-prologue\\benchmark\\rotation1\\0-control\\output.y1.bin",
+        "bytes": 49152,
+        "sha256": "04bc4b64262dc4488461c9d79e363d1fd22d42653df804027d7ea44f54d3bcf4"
+      }
+    ],
+    "raw_results": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fp8-shared-prologue\\benchmark\\rotation1\\summary.json",
+      "bytes": 35518,
+      "sha256": "a9a48ebe6600058437d560664c4532193692a1efe5a4b225ca0dcd3c2125141c"
+    }
+  },
+  "workspace": {
+    "graph_caller_bytes_control": 33792,
+    "graph_caller_bytes_new": 33792,
+    "sum_step_declarations_control": 67584,
+    "sum_step_declarations_new": 33792,
+    "interpretation": "One encoded activation workspace per pair; ordinary Graph allocation already reuses sequential leaf scratch. Not whole-Graph peak halving, total device peak or zero unknown native storage."
+  },
+  "physical_trace": {
+    "control_kernel_count": 4,
+    "new_kernel_count": 3,
+    "control_quantizers": 2,
+    "new_quantizers": 1,
+    "original_GEMMs_each": 2,
+    "scope": "One warmup submit outside cudaProfilerApi range, then exactly one submit/wait per arm inside. Counts only; profiler duration is not the warm latency result.",
+    "both_outputs_equal_to_timing": true,
+    "target_JSON_forwarded": false,
+    "status": "Nsight collection/export/stats exit0; target JSON was not forwarded. No independent target exit or profile timing is invented.",
+    "summary": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fp8-shared-prologue\\benchmark\\profile1\\summary.json",
+      "bytes": 4282,
+      "sha256": "c95e2555eedcd2fcb841b6dab64810615b2c5c81e6d7c3db824cfdbe2450c703"
+    }
+  },
+  "retained_failures": [
+    "Original optional-vs-null source review/compile defect and corrected source identity before-optional-fix.",
+    "First fixture compile API errors; second std::bind ADL error; missing existing weights-module link owner.",
+    "Initial16 run14pass/2fail: leaf dispatch report default1 instead of native2, and context fixture compiled without actual factory FlashInfer macro. Raw assertions were preserved, not relaxed.",
+    "Profile parser StopIteration after successful control collection because child JSON was not forwarded; valid control trace reused, outputs verified and new collected once."
+  ],
+  "not_claimed": [
+    "No full FP8 artifact/model or quality validation and no new Qwen BF16 throughput result.",
+    "No broader matrix, other device/platform, stable long-run performance or total CPU/GPU peak-memory assertion.",
+    "No inference that the old C2 measured23 shapes are new current winners or a runtime capability whitelist."
+  ],
+  "evidence": {
+    "archive": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\fp8-shared-prologue-2026-10-20.zip",
+      "bytes": 3926176,
+      "sha256": "76436565eb3d13df9b69bbedc41af4b597a79ce256caccc846816f149170c348",
+      "payload_count": 815,
+      "entry_count": 816,
+      "crc_verified": true,
+      "payload_sha256_verified": true,
+      "one_read_CRC_and_SHA_per_payload": true
+    },
+    "hardware_snapshot": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fp8-shared-prologue\\hardware-before.csv",
+      "bytes": 233,
+      "sha256": "107ce374d9cd30b6601b913ed4320e526cd4cf8d23db74db120a175b2c8c7476"
+    },
+    "source_dependency_snapshot": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fp8-shared-prologue\\dependency-source-freeze.json",
+      "bytes": 45584,
+      "sha256": "c6d68ce3e81065a606dcec81891ba74ca2b9f76bc71fdbb7f409af5c4009b802"
+    },
+    "reproduce": [
+      "python .scratch/architecture-refactor-2026-10-18/fp8-shared-prologue/build.py --build --resume",
+      "python .scratch/architecture-refactor-2026-10-18/fp8-shared-prologue/run_cases.py NEW_RUN_NAME",
+      "python .scratch/architecture-refactor-2026-10-18/fp8-shared-prologue/bench.py --build",
+      "python .scratch/architecture-refactor-2026-10-18/fp8-shared-prologue/bench.py --run --name NEW_ROTATION_NAME",
+      "python .scratch/architecture-refactor-2026-10-18/fp8-shared-prologue/bench.py --profile --name profile1 --resume"
+    ],
+    "cleanup": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\qwen-current-retest-2026-10-20.cleanup.json",
+      "bytes": 74402,
+      "sha256": "255a6c5a65ce08aca84ace8379f787a60b0be50b5a4e07e8e2608ed15de5d30b"
+    }
+  },
+  "goal": "Active; this batch does not complete the architecture/model/operator/quantization work."
+}

@@ -35,7 +35,9 @@ hyle::Status execute(Context &context, Op operation,
   if (!prepared)
     return std::move(prepared).error();
   EXPECT_EQ(prepared->provider().id, ggml_cuda::kProviderId);
-  auto invocation = prepared->create_invocation();
+  auto workspace =
+      ggml_cuda_test::workspace_buffer(*prepared, output.storage().resource());
+  auto invocation = prepared->create_invocation(workspace.view());
   if (!invocation)
     return std::move(invocation).error();
   auto queue = context.create_queue();

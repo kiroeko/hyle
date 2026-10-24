@@ -109,7 +109,7 @@ void linears(Prepare prepare) {
       SCOPED_TRACE(::testing::Message() << "linear/" << static_cast<int>(type) << '/' << power << '/' << n);
       const int m = 3, k = 384;Weight first(1, n, k), second(1, n, k, false, 1);
       const auto ad = t::dense(type, {m, k});const auto floor = power ? 1e-4f : 1e-10f;
-      const auto operation = c::model_ops::float8_block_linear(power ? c::model_ops::Float8ScaleRounding::kPowerOfTwo : c::model_ops::Float8ScaleRounding::kNone, floor);
+      const auto operation = c::model_ops::float8_block_linear(power ? c::model_ops::Float8ScalePolicy::kPowerOfTwo : c::model_ops::Float8ScalePolicy::kDivide, floor);
       const std::array descriptions{ad, first.description};auto program = prepare(context, operation, descriptions);
       ASSERT_TRUE(program) << program.error().message();auto slot = program->create_invocation().value();
       for (int pass = 0; pass < 2; ++pass) {
@@ -124,13 +124,13 @@ void linears(Prepare prepare) {
 }
 
 template <class Prepare>
-void grouped(Prepare prepare) {
+void grouped(Prepare prepare, int columns = 7) {
   auto context = vulkan_test::context().value();
   for (bool four : {false, true}) for (auto type : {c::DataType::kFloat32, c::DataType::kBFloat16}) {
     if (four && type != c::DataType::kBFloat16) continue;
     for (int activations : {1, 2}) {
       SCOPED_TRACE(::testing::Message() << "grouped/" << four << '/' << static_cast<int>(type) << '/' << activations);
-      const int tokens = 2, slots = 2, k = 256, n = 7;Weight first(3, n, k, four), second(3, n, k, four, 1);
+      const int tokens = 2, slots = 2, k = 256, n = columns;Weight first(3, n, k, four), second(3, n, k, four, 1);
       const auto ad = t::dense(type, {tokens, activations, k}), id = t::dense(c::DataType::kInt32, {tokens, slots});
       const auto operation = four ? c::model_ops::grouped_float4_linear() : c::model_ops::grouped_float8_linear();
       const std::array descriptions{first.description, ad, id};auto program = prepare(context, operation, descriptions);
@@ -205,7 +205,7 @@ void lifecycle(Prepare prepare) {
   {
     auto context = vulkan_test::context(&quota).value();Weight w(1, 5, 256);
     const auto ad = t::dense(c::DataType::kBFloat16, {2, 256});const std::array descriptions{ad, w.description};
-    const auto operation = c::model_ops::float8_block_linear(c::model_ops::Float8ScaleRounding::kPowerOfTwo, 1e-4f);
+    const auto operation = c::model_ops::float8_block_linear(c::model_ops::Float8ScalePolicy::kPowerOfTwo, 1e-4f);
     auto program = prepare(context, operation, descriptions).value();
     { auto reservation = quota.try_reserve_bytes(quota.limit() - quota.used());ASSERT_TRUE(reservation);
       auto denied = program.create_invocation();ASSERT_FALSE(denied);EXPECT_TRUE(denied.error().IsResourceExhausted()); }

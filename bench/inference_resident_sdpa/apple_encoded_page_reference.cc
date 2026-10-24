@@ -197,7 +197,10 @@ Result<n::Program> encoded_page_reference_program(const AppleEncodedPeerContext 
       cap.query_type != c::DataType::kFloat16 || cap.output_type != cap.query_type || cap.page_size != 16)
     return std::unexpected(Status::Unimplemented("original Metal peer finite Q8/F16 domain"));
   std::array<n::InputSpec, 4> specs;
-  for (unsigned i = 0; i < 4; ++i) { HYLE_ASSIGN_OR_RETURN(specs[i], n::input_spec(recipe.descriptions()[i])); }
+  for (unsigned i = 0; i < 4; ++i) {
+    HYLE_ASSIGN_OR_RETURN(auto description, recipe.input_description(layout, i));
+    HYLE_ASSIGN_OR_RETURN(specs[i], n::input_spec(description));
+  }
   return n::detail::PagedBatchAccess::prepare_runtime_program(*peer.context,layout,specs,
       [recipe, completion = peer.completion](const c::BatchLayoutVersion& layout,
       const std::vector<mx::array> &inputs, mx::Stream stream) -> Result<std::vector<mx::array>> {

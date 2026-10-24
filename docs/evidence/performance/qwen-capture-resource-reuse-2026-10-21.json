@@ -1,0 +1,1893 @@
+{
+  "schema": "hyle.qwen.capture-resource-reuse.v1",
+  "date": "2026-10-21",
+  "status": "Correctness and structural reduction verified; no throughput gain established; D4 remains open",
+  "changes": [
+    "Queue retains one unused capture status word; checked artifacts retain independent owned words.",
+    "GGML native-retirement traversal omits CUDA context guards only after same-chain positive proof and when no native query remains."
+  ],
+  "public_API_or_layout_changes": false,
+  "baseline_image": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\auto-replay-policy\\checks\\attempt1\\qwen.exe",
+    "bytes": 139478016,
+    "sha256": "044288ddcfdd56421b0e174c66a96aa1e0a499973ad2c5e2559f2750e01d81b8"
+  },
+  "candidate_image": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\native-fix\\checks\\attempt1\\link\\qwen.exe",
+    "bytes": 139478016,
+    "sha256": "f85db7cbc11570f2ec8616aefcb08a1e2b2605b0d05dbc7619efcbf9f62108c7"
+  },
+  "source_inventory": [
+    {
+      "path": "src/compute_backend_cuda/cuda_backend.cc",
+      "bytes": 67634,
+      "sha256": "d2591248732b258ca91261ca30a3b684ca2884cca99f19bd7301396b1fb0aa40"
+    },
+    {
+      "path": "src/compute_provider_ggml_cuda/ggml_cuda_provider.cc",
+      "bytes": 73819,
+      "sha256": "8da6586cfa81cfa3859306fe1e15d8d92a34d063467ac292039f32d09b06322b"
+    },
+    {
+      "path": "tests/compute_backend_cuda/device_status_test.cc",
+      "bytes": 24190,
+      "sha256": "a9296dea856ace33c6ed510480c4d2c844a2fbf85dae0c25d0985b1d7860353d"
+    }
+  ],
+  "correctness": {
+    "native_tests": {
+      "passed": true,
+      "cases": 5,
+      "names": [
+        "CudaDeviceStatus.PureCaptureAndPrefixAddNoStatusCommands",
+        "CudaDeviceStatus.PureArtifactsSurviveCheckedStatusStorageHandoff",
+        "CudaDeviceStatus.CapturedStatusRejectsOverlappingReuseAndAbortIsClean",
+        "CudaDeviceStatus.ColdMetadataOomRollsBackPoolAndNativeCapturedStorage",
+        "CudaNativeRetirement.RootFenceAndObservationErrorsDoNotReleaseNativeOwner"
+      ],
+      "process": {
+        "tag": "tests",
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\native-fix\\tests\\attempt1\\link\\native-capture-tests.exe",
+          "--gtest_filter=CudaDeviceStatus.PureArtifactsSurviveCheckedStatusStorageHandoff:CudaDeviceStatus.PureCaptureAndPrefixAddNoStatusCommands:CudaDeviceStatus.CapturedStatusRejectsOverlappingReuseAndAbortIsClean:CudaDeviceStatus.ColdMetadataOomRollsBackPoolAndNativeCapturedStorage:CudaNativeRetirement.RootFenceAndObservationErrorsDoNotReleaseNativeOwner",
+          "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\native-fix\\validation\\native-tests\\results.xml"
+        ],
+        "cwd": "C:\\public\\project-hyle\\hyle",
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\native-fix\\tests\\attempt1\\link\\native-capture-tests.exe",
+          "bytes": 138619904,
+          "sha256": "c2ff0bd46f2d5496ea40c9df4b7ecce259b8ba77a4ad54d6d9c67112e12fa6b9"
+        },
+        "started": 1792558697.8844888,
+        "profiler": false,
+        "memory_monitor": false,
+        "exit": 0,
+        "process_wall_seconds": 0.5584717,
+        "finished": 1792558698.4437766
+      },
+      "builds": 0,
+      "skipped": 0
+    },
+    "original_vectors": {
+      "passed": true,
+      "checks": {
+        "all64_vectors_equal": true,
+        "fixed_inputs_equal": true,
+        "predictions_equal": true,
+        "one_shot_commands_then_decode_capture": true
+      },
+      "vectors": [
+        {
+          "name": "decode1/hidden.bf16",
+          "actual": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\native-fix\\validation\\correctness\\trace\\decode1\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "e40060187d8c6376d00e58794643dd3f444dceefe29eb675c6ee2b0899131210"
+          },
+          "reference": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\current-correctness\\trace\\decode1\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "e40060187d8c6376d00e58794643dd3f444dceefe29eb675c6ee2b0899131210"
+          },
+          "byte_equal": true
+        },
+        {
+          "name": "decode1/logits.f32",
+          "actual": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\native-fix\\validation\\correctness\\trace\\decode1\\logits.f32",
+            "bytes": 993280,
+            "sha256": "54999d39e6a46f665fe6f7fc5d22b5136eb5e9b73ae179e5b908b33d7009f326"
+          },
+          "reference": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\current-correctness\\trace\\decode1\\logits.f32",
+            "bytes": 993280,
+            "sha256": "54999d39e6a46f665fe6f7fc5d22b5136eb5e9b73ae179e5b908b33d7009f326"
+          },
+          "byte_equal": true
+        },
+        {
+          "name": "decode10/hidden.bf16",
+          "actual": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\native-fix\\validation\\correctness\\trace\\decode10\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "14f67a52e0c149e904e363021efe444ddabc3de5c45c16e9fb3f4a4c533f8ba9"
+          },
+          "reference": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\current-correctness\\trace\\decode10\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "14f67a52e0c149e904e363021efe444ddabc3de5c45c16e9fb3f4a4c533f8ba9"
+          },
+          "byte_equal": true
+        },
+        {
+          "name": "decode10/logits.f32",
+          "actual": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\native-fix\\validation\\correctness\\trace\\decode10\\logits.f32",
+            "bytes": 993280,
+            "sha256": "bcc503ff8585699e10eda6c4eb899a900aca16db9f348e3ca1ecba3899e0f4dc"
+          },
+          "reference": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\current-correctness\\trace\\decode10\\logits.f32",
+            "bytes": 993280,
+            "sha256": "bcc503ff8585699e10eda6c4eb899a900aca16db9f348e3ca1ecba3899e0f4dc"
+          },
+          "byte_equal": true
+        },
+        {
+          "name": "decode11/hidden.bf16",
+          "actual": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\native-fix\\validation\\correctness\\trace\\decode11\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "025d250c3511f106ae4dc6f11d659262e917fd545c94c8e18da3253437af50d9"
+          },
+          "reference": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\current-correctness\\trace\\decode11\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "025d250c3511f106ae4dc6f11d659262e917fd545c94c8e18da3253437af50d9"
+          },
+          "byte_equal": true
+        },
+        {
+          "name": "decode11/logits.f32",
+          "actual": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\native-fix\\validation\\correctness\\trace\\decode11\\logits.f32",
+            "bytes": 993280,
+            "sha256": "a695e7dd458fc3eb5d5e4301d1ca4548bd5d9c38bfe3fed8e05203e2b7f7d43a"
+          },
+          "reference": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\current-correctness\\trace\\decode11\\logits.f32",
+            "bytes": 993280,
+            "sha256": "a695e7dd458fc3eb5d5e4301d1ca4548bd5d9c38bfe3fed8e05203e2b7f7d43a"
+          },
+          "byte_equal": true
+        },
+        {
+          "name": "decode12/hidden.bf16",
+          "actual": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\native-fix\\validation\\correctness\\trace\\decode12\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "f7b6685cf738390474f1fa85320df313e39eb469bf0af22dea10c3c016edc06c"
+          },
+          "reference": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\current-correctness\\trace\\decode12\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "f7b6685cf738390474f1fa85320df313e39eb469bf0af22dea10c3c016edc06c"
+          },
+          "byte_equal": true
+        },
+        {
+          "name": "decode12/logits.f32",
+          "actual": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\native-fix\\validation\\correctness\\trace\\decode12\\logits.f32",
+            "bytes": 993280,
+            "sha256": "372a79e6f28a730945c45b223bb2a7958ea0d1967e57b8586ff08b4804d54eed"
+          },
+          "reference": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\current-correctness\\trace\\decode12\\logits.f32",
+            "bytes": 993280,
+            "sha256": "372a79e6f28a730945c45b223bb2a7958ea0d1967e57b8586ff08b4804d54eed"
+          },
+          "byte_equal": true
+        },
+        {
+          "name": "decode13/hidden.bf16",
+          "actual": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\native-fix\\validation\\correctness\\trace\\decode13\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "a9d03c31ab0682e9cb017af1eba6e9872778715bea080c5bad77122e4b50a2d6"
+          },
+          "reference": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\current-correctness\\trace\\decode13\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "a9d03c31ab0682e9cb017af1eba6e9872778715bea080c5bad77122e4b50a2d6"
+          },
+          "byte_equal": true
+        },
+        {
+          "name": "decode13/logits.f32",
+          "actual": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\native-fix\\validation\\correctness\\trace\\decode13\\logits.f32",
+            "bytes": 993280,
+            "sha256": "534e20e20dfc7419d234026daa156c0ea2a8cd7d0b81d7394562679b931932b4"
+          },
+          "reference": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\current-correctness\\trace\\decode13\\logits.f32",
+            "bytes": 993280,
+            "sha256": "534e20e20dfc7419d234026daa156c0ea2a8cd7d0b81d7394562679b931932b4"
+          },
+          "byte_equal": true
+        },
+        {
+          "name": "decode14/hidden.bf16",
+          "actual": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\native-fix\\validation\\correctness\\trace\\decode14\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "25d9877095a26bb7e6c6c2419cb0e182a01b6cd9e40f0bb769c42fcb34fc2dfb"
+          },
+          "reference": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\current-correctness\\trace\\decode14\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "25d9877095a26bb7e6c6c2419cb0e182a01b6cd9e40f0bb769c42fcb34fc2dfb"
+          },
+          "byte_equal": true
+        },
+        {
+          "name": "decode14/logits.f32",
+          "actual": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\native-fix\\validation\\correctness\\trace\\decode14\\logits.f32",
+            "bytes": 993280,
+            "sha256": "52722aedd166038381d5c6732855b3c73804e7f32db14403edaa1fe619ab8e71"
+          },
+          "reference": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\current-correctness\\trace\\decode14\\logits.f32",
+            "bytes": 993280,
+            "sha256": "52722aedd166038381d5c6732855b3c73804e7f32db14403edaa1fe619ab8e71"
+          },
+          "byte_equal": true
+        },
+        {
+          "name": "decode15/hidden.bf16",
+          "actual": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\native-fix\\validation\\correctness\\trace\\decode15\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "be0704805ca7c78aa081b4ac85dd9a017010c913b9260fb1d2f591f0994370e7"
+          },
+          "reference": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\current-correctness\\trace\\decode15\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "be0704805ca7c78aa081b4ac85dd9a017010c913b9260fb1d2f591f0994370e7"
+          },
+          "byte_equal": true
+        },
+        {
+          "name": "decode15/logits.f32",
+          "actual": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\native-fix\\validation\\correctness\\trace\\decode15\\logits.f32",
+            "bytes": 993280,
+            "sha256": "6c804d67822906c715a8238c52507f61ffa0c62057eb7bac124253ab56b57f84"
+          },
+          "reference": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\current-correctness\\trace\\decode15\\logits.f32",
+            "bytes": 993280,
+            "sha256": "6c804d67822906c715a8238c52507f61ffa0c62057eb7bac124253ab56b57f84"
+          },
+          "byte_equal": true
+        },
+        {
+          "name": "decode16/hidden.bf16",
+          "actual": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\native-fix\\validation\\correctness\\trace\\decode16\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "db38845e211bf589a3a41f9beee7610a37538b9d015df79d7a86744a245b5d09"
+          },
+          "reference": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\current-correctness\\trace\\decode16\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "db38845e211bf589a3a41f9beee7610a37538b9d015df79d7a86744a245b5d09"
+          },
+          "byte_equal": true
+        },
+        {
+          "name": "decode16/logits.f32",
+          "actual": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\native-fix\\validation\\correctness\\trace\\decode16\\logits.f32",
+            "bytes": 993280,
+            "sha256": "65abecf3cc29af92f817b3cd91cbccd155362a92e779be9c81e77341d9709ea0"
+          },
+          "reference": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\current-correctness\\trace\\decode16\\logits.f32",
+            "bytes": 993280,
+            "sha256": "65abecf3cc29af92f817b3cd91cbccd155362a92e779be9c81e77341d9709ea0"
+          },
+          "byte_equal": true
+        },
+        {
+          "name": "decode17/hidden.bf16",
+          "actual": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\native-fix\\validation\\correctness\\trace\\decode17\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "ee49ec44b74f98a437c9df25aa3add98bc3247475b2605f16efa8b964c5451f6"
+          },
+          "reference": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\current-correctness\\trace\\decode17\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "ee49ec44b74f98a437c9df25aa3add98bc3247475b2605f16efa8b964c5451f6"
+          },
+          "byte_equal": true
+        },
+        {
+          "name": "decode17/logits.f32",
+          "actual": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\native-fix\\validation\\correctness\\trace\\decode17\\logits.f32",
+            "bytes": 993280,
+            "sha256": "ad8067b76a35214374e5e585c9671654c547c9a4f4e79bb6b4b589bdfa83b845"
+          },
+          "reference": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\current-correctness\\trace\\decode17\\logits.f32",
+            "bytes": 993280,
+            "sha256": "ad8067b76a35214374e5e585c9671654c547c9a4f4e79bb6b4b589bdfa83b845"
+          },
+          "byte_equal": true
+        },
+        {
+          "name": "decode18/hidden.bf16",
+          "actual": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\native-fix\\validation\\correctness\\trace\\decode18\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "d1336e9f037dea6d1a28d519b2300686825b1666ccad9972d9667b91769a97f5"
+          },
+          "reference": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\current-correctness\\trace\\decode18\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "d1336e9f037dea6d1a28d519b2300686825b1666ccad9972d9667b91769a97f5"
+          },
+          "byte_equal": true
+        },
+        {
+          "name": "decode18/logits.f32",
+          "actual": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\native-fix\\validation\\correctness\\trace\\decode18\\logits.f32",
+            "bytes": 993280,
+            "sha256": "500ce9be766ecde9d75c2ed2f7ac0f9b6401806288bd9e545f4227e27c9795a2"
+          },
+          "reference": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\current-correctness\\trace\\decode18\\logits.f32",
+            "bytes": 993280,
+            "sha256": "500ce9be766ecde9d75c2ed2f7ac0f9b6401806288bd9e545f4227e27c9795a2"
+          },
+          "byte_equal": true
+        },
+        {
+          "name": "decode19/hidden.bf16",
+          "actual": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\native-fix\\validation\\correctness\\trace\\decode19\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "72de0d12d75275391252ae195d2b2b19f4d3a234095e2e988ba12455fbe3cf7c"
+          },
+          "reference": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\current-correctness\\trace\\decode19\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "72de0d12d75275391252ae195d2b2b19f4d3a234095e2e988ba12455fbe3cf7c"
+          },
+          "byte_equal": true
+        },
+        {
+          "name": "decode19/logits.f32",
+          "actual": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\native-fix\\validation\\correctness\\trace\\decode19\\logits.f32",
+            "bytes": 993280,
+            "sha256": "35be9bd7e307d44e2929605be12977d985b8818af81fcdd59259163b7a748002"
+          },
+          "reference": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\current-correctness\\trace\\decode19\\logits.f32",
+            "bytes": 993280,
+            "sha256": "35be9bd7e307d44e2929605be12977d985b8818af81fcdd59259163b7a748002"
+          },
+          "byte_equal": true
+        },
+        {
+          "name": "decode2/hidden.bf16",
+          "actual": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\native-fix\\validation\\correctness\\trace\\decode2\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "f6d075ad86e2e0550617e6dfd6201ae335228ee6808ab8ae8bb3681159663424"
+          },
+          "reference": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\current-correctness\\trace\\decode2\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "f6d075ad86e2e0550617e6dfd6201ae335228ee6808ab8ae8bb3681159663424"
+          },
+          "byte_equal": true
+        },
+        {
+          "name": "decode2/logits.f32",
+          "actual": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\native-fix\\validation\\correctness\\trace\\decode2\\logits.f32",
+            "bytes": 993280,
+            "sha256": "772199ca4b0550c00635c25bd8036a9b5334cb0c22bb79ce86f6fbd81520df67"
+          },
+          "reference": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\current-correctness\\trace\\decode2\\logits.f32",
+            "bytes": 993280,
+            "sha256": "772199ca4b0550c00635c25bd8036a9b5334cb0c22bb79ce86f6fbd81520df67"
+          },
+          "byte_equal": true
+        },
+        {
+          "name": "decode20/hidden.bf16",
+          "actual": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\native-fix\\validation\\correctness\\trace\\decode20\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "43c03820fa5f5b838cd5992205b52f44f12fd82c5585698eb08197f48713cb6f"
+          },
+          "reference": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\current-correctness\\trace\\decode20\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "43c03820fa5f5b838cd5992205b52f44f12fd82c5585698eb08197f48713cb6f"
+          },
+          "byte_equal": true
+        },
+        {
+          "name": "decode20/logits.f32",
+          "actual": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\native-fix\\validation\\correctness\\trace\\decode20\\logits.f32",
+            "bytes": 993280,
+            "sha256": "aa2082864e5999cce1e72d98d71f1a34f0b59bfbf9a728aba621cce2e25b644f"
+          },
+          "reference": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\current-correctness\\trace\\decode20\\logits.f32",
+            "bytes": 993280,
+            "sha256": "aa2082864e5999cce1e72d98d71f1a34f0b59bfbf9a728aba621cce2e25b644f"
+          },
+          "byte_equal": true
+        },
+        {
+          "name": "decode21/hidden.bf16",
+          "actual": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\native-fix\\validation\\correctness\\trace\\decode21\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "f8188e3da86374d7e412e99e95ebbeb5b542392318adad6c4fe4be6849dbb026"
+          },
+          "reference": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\current-correctness\\trace\\decode21\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "f8188e3da86374d7e412e99e95ebbeb5b542392318adad6c4fe4be6849dbb026"
+          },
+          "byte_equal": true
+        },
+        {
+          "name": "decode21/logits.f32",
+          "actual": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\native-fix\\validation\\correctness\\trace\\decode21\\logits.f32",
+            "bytes": 993280,
+            "sha256": "d10c058ee22da65190fb9d9c04997754b8484607f6202283f3b89416be4d2580"
+          },
+          "reference": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\current-correctness\\trace\\decode21\\logits.f32",
+            "bytes": 993280,
+            "sha256": "d10c058ee22da65190fb9d9c04997754b8484607f6202283f3b89416be4d2580"
+          },
+          "byte_equal": true
+        },
+        {
+          "name": "decode22/hidden.bf16",
+          "actual": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\native-fix\\validation\\correctness\\trace\\decode22\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "d6ae658866d9358580e704e5374fec7acf9f66eddb5895a4d09917a7f7f20022"
+          },
+          "reference": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\current-correctness\\trace\\decode22\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "d6ae658866d9358580e704e5374fec7acf9f66eddb5895a4d09917a7f7f20022"
+          },
+          "byte_equal": true
+        },
+        {
+          "name": "decode22/logits.f32",
+          "actual": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\native-fix\\validation\\correctness\\trace\\decode22\\logits.f32",
+            "bytes": 993280,
+            "sha256": "96a33dcc9a7b11ab9fa4720a945007c5dac2c4f660cfb04cbcaa77d9fcaf0e9f"
+          },
+          "reference": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\current-correctness\\trace\\decode22\\logits.f32",
+            "bytes": 993280,
+            "sha256": "96a33dcc9a7b11ab9fa4720a945007c5dac2c4f660cfb04cbcaa77d9fcaf0e9f"
+          },
+          "byte_equal": true
+        },
+        {
+          "name": "decode23/hidden.bf16",
+          "actual": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\native-fix\\validation\\correctness\\trace\\decode23\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "eb27d0449a834afd98899067feb7ceb33f37f1819e21ff63ac668654c90a8d5a"
+          },
+          "reference": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\current-correctness\\trace\\decode23\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "eb27d0449a834afd98899067feb7ceb33f37f1819e21ff63ac668654c90a8d5a"
+          },
+          "byte_equal": true
+        },
+        {
+          "name": "decode23/logits.f32",
+          "actual": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\native-fix\\validation\\correctness\\trace\\decode23\\logits.f32",
+            "bytes": 993280,
+            "sha256": "dc53f76f793be5e01854f437be46a71985a53861042b08220a8b1e49528b21a0"
+          },
+          "reference": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\current-correctness\\trace\\decode23\\logits.f32",
+            "bytes": 993280,
+            "sha256": "dc53f76f793be5e01854f437be46a71985a53861042b08220a8b1e49528b21a0"
+          },
+          "byte_equal": true
+        },
+        {
+          "name": "decode24/hidden.bf16",
+          "actual": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\native-fix\\validation\\correctness\\trace\\decode24\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "1b55a229ef3ada9232b7f590977fce3c3b2b7ee56932ceadd8c16f05201a35a1"
+          },
+          "reference": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\current-correctness\\trace\\decode24\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "1b55a229ef3ada9232b7f590977fce3c3b2b7ee56932ceadd8c16f05201a35a1"
+          },
+          "byte_equal": true
+        },
+        {
+          "name": "decode24/logits.f32",
+          "actual": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\native-fix\\validation\\correctness\\trace\\decode24\\logits.f32",
+            "bytes": 993280,
+            "sha256": "04903c42456b5d223ce673d73794e0aa88a5da810bd58f054cdff7db57bc354c"
+          },
+          "reference": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\current-correctness\\trace\\decode24\\logits.f32",
+            "bytes": 993280,
+            "sha256": "04903c42456b5d223ce673d73794e0aa88a5da810bd58f054cdff7db57bc354c"
+          },
+          "byte_equal": true
+        },
+        {
+          "name": "decode25/hidden.bf16",
+          "actual": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\native-fix\\validation\\correctness\\trace\\decode25\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "386adc36e11cae2a75fbb2e3fe8b66dfe37d9a6b4d5fd5e73c67f287625b34bd"
+          },
+          "reference": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\current-correctness\\trace\\decode25\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "386adc36e11cae2a75fbb2e3fe8b66dfe37d9a6b4d5fd5e73c67f287625b34bd"
+          },
+          "byte_equal": true
+        },
+        {
+          "name": "decode25/logits.f32",
+          "actual": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\native-fix\\validation\\correctness\\trace\\decode25\\logits.f32",
+            "bytes": 993280,
+            "sha256": "079091277422cd9c20aee9d03a3672ac7223d48ffb8f9fb0869b5434740f244b"
+          },
+          "reference": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\current-correctness\\trace\\decode25\\logits.f32",
+            "bytes": 993280,
+            "sha256": "079091277422cd9c20aee9d03a3672ac7223d48ffb8f9fb0869b5434740f244b"
+          },
+          "byte_equal": true
+        },
+        {
+          "name": "decode26/hidden.bf16",
+          "actual": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\native-fix\\validation\\correctness\\trace\\decode26\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "9ad10d1bc33b02b2ee0bf1df056087f84eb510871bfe4af278e895b3eede0419"
+          },
+          "reference": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\current-correctness\\trace\\decode26\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "9ad10d1bc33b02b2ee0bf1df056087f84eb510871bfe4af278e895b3eede0419"
+          },
+          "byte_equal": true
+        },
+        {
+          "name": "decode26/logits.f32",
+          "actual": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\native-fix\\validation\\correctness\\trace\\decode26\\logits.f32",
+            "bytes": 993280,
+            "sha256": "0ddbec9ca8cb287be9d9dd415e4d7baf53175d100d309a4d3014eb690430270e"
+          },
+          "reference": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\current-correctness\\trace\\decode26\\logits.f32",
+            "bytes": 993280,
+            "sha256": "0ddbec9ca8cb287be9d9dd415e4d7baf53175d100d309a4d3014eb690430270e"
+          },
+          "byte_equal": true
+        },
+        {
+          "name": "decode27/hidden.bf16",
+          "actual": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\native-fix\\validation\\correctness\\trace\\decode27\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "11126f85e99889de5700986061d56f2759ff5b0eea94bb2636a36707ae2df606"
+          },
+          "reference": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\current-correctness\\trace\\decode27\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "11126f85e99889de5700986061d56f2759ff5b0eea94bb2636a36707ae2df606"
+          },
+          "byte_equal": true
+        },
+        {
+          "name": "decode27/logits.f32",
+          "actual": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\native-fix\\validation\\correctness\\trace\\decode27\\logits.f32",
+            "bytes": 993280,
+            "sha256": "ea0c1a5585e84ee37096cf8fb2c531784c352bf43e270bf80bd954bd60e459ef"
+          },
+          "reference": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\current-correctness\\trace\\decode27\\logits.f32",
+            "bytes": 993280,
+            "sha256": "ea0c1a5585e84ee37096cf8fb2c531784c352bf43e270bf80bd954bd60e459ef"
+          },
+          "byte_equal": true
+        },
+        {
+          "name": "decode28/hidden.bf16",
+          "actual": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\native-fix\\validation\\correctness\\trace\\decode28\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "5b81866d1c8c9d4e282e45025e1b4d4010878e4f367b14ef2d6a08fc27c85c6e"
+          },
+          "reference": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\current-correctness\\trace\\decode28\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "5b81866d1c8c9d4e282e45025e1b4d4010878e4f367b14ef2d6a08fc27c85c6e"
+          },
+          "byte_equal": true
+        },
+        {
+          "name": "decode28/logits.f32",
+          "actual": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\native-fix\\validation\\correctness\\trace\\decode28\\logits.f32",
+            "bytes": 993280,
+            "sha256": "75083b3b88af9047012de440d3e42c05eb1baa96763f888eddd134da287b8538"
+          },
+          "reference": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\current-correctness\\trace\\decode28\\logits.f32",
+            "bytes": 993280,
+            "sha256": "75083b3b88af9047012de440d3e42c05eb1baa96763f888eddd134da287b8538"
+          },
+          "byte_equal": true
+        },
+        {
+          "name": "decode29/hidden.bf16",
+          "actual": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\native-fix\\validation\\correctness\\trace\\decode29\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "b92b40b4fd571a637b2ef95b1634470d63d1ea628f45ce0a117c7a32afe76eb8"
+          },
+          "reference": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\current-correctness\\trace\\decode29\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "b92b40b4fd571a637b2ef95b1634470d63d1ea628f45ce0a117c7a32afe76eb8"
+          },
+          "byte_equal": true
+        },
+        {
+          "name": "decode29/logits.f32",
+          "actual": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\native-fix\\validation\\correctness\\trace\\decode29\\logits.f32",
+            "bytes": 993280,
+            "sha256": "10e0712c92ed33298e2dd4a5919bd714cef9bb74cb53b19780dbfd2856c791e0"
+          },
+          "reference": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\current-correctness\\trace\\decode29\\logits.f32",
+            "bytes": 993280,
+            "sha256": "10e0712c92ed33298e2dd4a5919bd714cef9bb74cb53b19780dbfd2856c791e0"
+          },
+          "byte_equal": true
+        },
+        {
+          "name": "decode3/hidden.bf16",
+          "actual": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\native-fix\\validation\\correctness\\trace\\decode3\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "227c7e6548e2159393ddf350d7dfbd1dda87040994ade315075c005ce7798889"
+          },
+          "reference": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\current-correctness\\trace\\decode3\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "227c7e6548e2159393ddf350d7dfbd1dda87040994ade315075c005ce7798889"
+          },
+          "byte_equal": true
+        },
+        {
+          "name": "decode3/logits.f32",
+          "actual": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\native-fix\\validation\\correctness\\trace\\decode3\\logits.f32",
+            "bytes": 993280,
+            "sha256": "aff61c4c7ec366a0b25cf583427df267859aca70ab3c9e264268a30f2d45f3d4"
+          },
+          "reference": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\current-correctness\\trace\\decode3\\logits.f32",
+            "bytes": 993280,
+            "sha256": "aff61c4c7ec366a0b25cf583427df267859aca70ab3c9e264268a30f2d45f3d4"
+          },
+          "byte_equal": true
+        },
+        {
+          "name": "decode30/hidden.bf16",
+          "actual": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\native-fix\\validation\\correctness\\trace\\decode30\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "ca725572fbf8c186b9bc0c5662173d8ad7dae136b179587657ea87029eb1349f"
+          },
+          "reference": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\current-correctness\\trace\\decode30\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "ca725572fbf8c186b9bc0c5662173d8ad7dae136b179587657ea87029eb1349f"
+          },
+          "byte_equal": true
+        },
+        {
+          "name": "decode30/logits.f32",
+          "actual": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\native-fix\\validation\\correctness\\trace\\decode30\\logits.f32",
+            "bytes": 993280,
+            "sha256": "42d688f93ec3ae1e4c920fa3a22b1169f1050d0eec291e5b69aa51b54b24e11d"
+          },
+          "reference": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\current-correctness\\trace\\decode30\\logits.f32",
+            "bytes": 993280,
+            "sha256": "42d688f93ec3ae1e4c920fa3a22b1169f1050d0eec291e5b69aa51b54b24e11d"
+          },
+          "byte_equal": true
+        },
+        {
+          "name": "decode31/hidden.bf16",
+          "actual": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\native-fix\\validation\\correctness\\trace\\decode31\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "886b6f71fcbbcf3f95dc61f7873e43f245f40a4d967d0c2401205fbba52bd95e"
+          },
+          "reference": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\current-correctness\\trace\\decode31\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "886b6f71fcbbcf3f95dc61f7873e43f245f40a4d967d0c2401205fbba52bd95e"
+          },
+          "byte_equal": true
+        },
+        {
+          "name": "decode31/logits.f32",
+          "actual": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\native-fix\\validation\\correctness\\trace\\decode31\\logits.f32",
+            "bytes": 993280,
+            "sha256": "6619c64b58de04545169513c926b852f92822fb64ae0b22fc7efbd9cf8842887"
+          },
+          "reference": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\current-correctness\\trace\\decode31\\logits.f32",
+            "bytes": 993280,
+            "sha256": "6619c64b58de04545169513c926b852f92822fb64ae0b22fc7efbd9cf8842887"
+          },
+          "byte_equal": true
+        },
+        {
+          "name": "decode4/hidden.bf16",
+          "actual": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\native-fix\\validation\\correctness\\trace\\decode4\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "f7d8474a362ca19268b3481791345307fee1026f0a4c871e1227ce3315e7021e"
+          },
+          "reference": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\current-correctness\\trace\\decode4\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "f7d8474a362ca19268b3481791345307fee1026f0a4c871e1227ce3315e7021e"
+          },
+          "byte_equal": true
+        },
+        {
+          "name": "decode4/logits.f32",
+          "actual": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\native-fix\\validation\\correctness\\trace\\decode4\\logits.f32",
+            "bytes": 993280,
+            "sha256": "0ab4e55caa9276fd56d4353c36121014f07342989b570eb9c3f7dfddc21a2bba"
+          },
+          "reference": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\current-correctness\\trace\\decode4\\logits.f32",
+            "bytes": 993280,
+            "sha256": "0ab4e55caa9276fd56d4353c36121014f07342989b570eb9c3f7dfddc21a2bba"
+          },
+          "byte_equal": true
+        },
+        {
+          "name": "decode5/hidden.bf16",
+          "actual": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\native-fix\\validation\\correctness\\trace\\decode5\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "850b8196a3ee12fb1ef0f4f71a37155b3b4b394053b616603d33457b3d0c8a19"
+          },
+          "reference": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\current-correctness\\trace\\decode5\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "850b8196a3ee12fb1ef0f4f71a37155b3b4b394053b616603d33457b3d0c8a19"
+          },
+          "byte_equal": true
+        },
+        {
+          "name": "decode5/logits.f32",
+          "actual": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\native-fix\\validation\\correctness\\trace\\decode5\\logits.f32",
+            "bytes": 993280,
+            "sha256": "ebb26764856c828fae8d95a751837b1af2fc6101e9207cfa3bdaa0fdea3c7a1e"
+          },
+          "reference": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\current-correctness\\trace\\decode5\\logits.f32",
+            "bytes": 993280,
+            "sha256": "ebb26764856c828fae8d95a751837b1af2fc6101e9207cfa3bdaa0fdea3c7a1e"
+          },
+          "byte_equal": true
+        },
+        {
+          "name": "decode6/hidden.bf16",
+          "actual": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\native-fix\\validation\\correctness\\trace\\decode6\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "1f04b58f50a488b9599eabf6b360ede1b3e3205fe9f1fd44b2d86dd25adf4484"
+          },
+          "reference": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\current-correctness\\trace\\decode6\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "1f04b58f50a488b9599eabf6b360ede1b3e3205fe9f1fd44b2d86dd25adf4484"
+          },
+          "byte_equal": true
+        },
+        {
+          "name": "decode6/logits.f32",
+          "actual": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\native-fix\\validation\\correctness\\trace\\decode6\\logits.f32",
+            "bytes": 993280,
+            "sha256": "cbda8781111c0ca4ad618ae56c2d840974152770d2d5474c43498bd0e81e2a84"
+          },
+          "reference": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\current-correctness\\trace\\decode6\\logits.f32",
+            "bytes": 993280,
+            "sha256": "cbda8781111c0ca4ad618ae56c2d840974152770d2d5474c43498bd0e81e2a84"
+          },
+          "byte_equal": true
+        },
+        {
+          "name": "decode7/hidden.bf16",
+          "actual": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\native-fix\\validation\\correctness\\trace\\decode7\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "db84650d85f3c3fea8e4c3d4bf891b1fc01a65aad3f7807e8eef53315f7723f2"
+          },
+          "reference": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\current-correctness\\trace\\decode7\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "db84650d85f3c3fea8e4c3d4bf891b1fc01a65aad3f7807e8eef53315f7723f2"
+          },
+          "byte_equal": true
+        },
+        {
+          "name": "decode7/logits.f32",
+          "actual": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\native-fix\\validation\\correctness\\trace\\decode7\\logits.f32",
+            "bytes": 993280,
+            "sha256": "8c90db2481c2110453c52633a8b3153fe37391085de09fb4e5a0943adfe396c1"
+          },
+          "reference": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\current-correctness\\trace\\decode7\\logits.f32",
+            "bytes": 993280,
+            "sha256": "8c90db2481c2110453c52633a8b3153fe37391085de09fb4e5a0943adfe396c1"
+          },
+          "byte_equal": true
+        },
+        {
+          "name": "decode8/hidden.bf16",
+          "actual": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\native-fix\\validation\\correctness\\trace\\decode8\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "4ba5e0f90d2c22025d9136092d03307914b18795082217cd34d4aec5c85dfdd6"
+          },
+          "reference": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\current-correctness\\trace\\decode8\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "4ba5e0f90d2c22025d9136092d03307914b18795082217cd34d4aec5c85dfdd6"
+          },
+          "byte_equal": true
+        },
+        {
+          "name": "decode8/logits.f32",
+          "actual": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\native-fix\\validation\\correctness\\trace\\decode8\\logits.f32",
+            "bytes": 993280,
+            "sha256": "db08f2c1bdd302459dd6151dea7de3d6f37b431d7dfaf3cf191b9ada82858745"
+          },
+          "reference": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\current-correctness\\trace\\decode8\\logits.f32",
+            "bytes": 993280,
+            "sha256": "db08f2c1bdd302459dd6151dea7de3d6f37b431d7dfaf3cf191b9ada82858745"
+          },
+          "byte_equal": true
+        },
+        {
+          "name": "decode9/hidden.bf16",
+          "actual": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\native-fix\\validation\\correctness\\trace\\decode9\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "e9852a023ec1982b1258a0042712d1abd868575fc9f968798be75da2cd9fdc5a"
+          },
+          "reference": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\current-correctness\\trace\\decode9\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "e9852a023ec1982b1258a0042712d1abd868575fc9f968798be75da2cd9fdc5a"
+          },
+          "byte_equal": true
+        },
+        {
+          "name": "decode9/logits.f32",
+          "actual": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\native-fix\\validation\\correctness\\trace\\decode9\\logits.f32",
+            "bytes": 993280,
+            "sha256": "e19784e9cb938d33e1a6508bacca54fb44b8807c41f091cdf8b401c161da6cb9"
+          },
+          "reference": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\current-correctness\\trace\\decode9\\logits.f32",
+            "bytes": 993280,
+            "sha256": "e19784e9cb938d33e1a6508bacca54fb44b8807c41f091cdf8b401c161da6cb9"
+          },
+          "byte_equal": true
+        },
+        {
+          "name": "prefill/hidden.bf16",
+          "actual": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\native-fix\\validation\\correctness\\trace\\prefill\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "441f8e0eea6b8deea8b640bb76efc9dcc1267f3ee4de9e936bcc9fa9110a8ee1"
+          },
+          "reference": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\current-correctness\\trace\\prefill\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "441f8e0eea6b8deea8b640bb76efc9dcc1267f3ee4de9e936bcc9fa9110a8ee1"
+          },
+          "byte_equal": true
+        },
+        {
+          "name": "prefill/logits.f32",
+          "actual": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\native-fix\\validation\\correctness\\trace\\prefill\\logits.f32",
+            "bytes": 993280,
+            "sha256": "3f9f6f36cbefdeae7dc1e5e89b8af0729c2d9d6f59dab28e040a4771d9609b43"
+          },
+          "reference": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\current-correctness\\trace\\prefill\\logits.f32",
+            "bytes": 993280,
+            "sha256": "3f9f6f36cbefdeae7dc1e5e89b8af0729c2d9d6f59dab28e040a4771d9609b43"
+          },
+          "byte_equal": true
+        }
+      ],
+      "process": {
+        "tag": "qwen",
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\native-fix\\checks\\attempt1\\link\\qwen.exe",
+          "--inputs",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-gpu-comparison\\128-prefill\\inputs",
+          "--decode-ids",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-gpu-comparison\\128-prefill\\decode.ids",
+          "--steps",
+          "32",
+          "--capacity",
+          "256",
+          "--progress",
+          "direct",
+          "--trace",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\native-fix\\validation\\correctness\\trace",
+          "--trace-level",
+          "decisions"
+        ],
+        "cwd": "C:\\public\\project-hyle\\hyle",
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\native-fix\\checks\\attempt1\\link\\qwen.exe",
+          "bytes": 139478016,
+          "sha256": "f85db7cbc11570f2ec8616aefcb08a1e2b2605b0d05dbc7619efcbf9f62108c7"
+        },
+        "started": 1792558643.8350856,
+        "profiler": false,
+        "memory_monitor": false,
+        "exit": 0,
+        "process_wall_seconds": 2.7750201,
+        "finished": 1792558646.6110804
+      },
+      "observation": {
+        "raw": {
+          "source_id": "4068044d8571635d8a86f1e96a43dad104efc7089169065f735601e350008155",
+          "text_tensors": 320,
+          "visible_tokens": 159,
+          "generated_ids": [
+            958,
+            71163,
+            369,
+            279,
+            1817,
+            539,
+            864,
+            10462,
+            11,
+            65562,
+            11,
+            321,
+            1010,
+            22434,
+            5335,
+            3000,
+            4649,
+            1083,
+            279,
+            6797,
+            1083,
+            11153,
+            4649,
+            9476,
+            1061,
+            7022,
+            1817,
+            11,
+            10462,
+            958,
+            303,
+            12141
+          ],
+          "fixed_decode": true,
+          "decode_input_ids": [
+            30729,
+            71163,
+            369,
+            279,
+            1817,
+            539,
+            864,
+            10462,
+            11,
+            65562,
+            11,
+            321,
+            1010,
+            22434,
+            5335,
+            3000,
+            4649,
+            494,
+            279,
+            6797,
+            1083,
+            11153,
+            4649,
+            13,
+            11615,
+            411,
+            12355,
+            11,
+            781,
+            1831,
+            303
+          ]
+        },
+        "phases": [
+          {
+            "name": "prefill",
+            "input_tokens": 128,
+            "visible_tokens": 128,
+            "predicted_id": 958,
+            "step_seconds": 0.0570467,
+            "submit_to_token_seconds": 0.0558444,
+            "submit_seconds": 0.0460258
+          },
+          {
+            "name": "decode1",
+            "input_tokens": 1,
+            "visible_tokens": 129,
+            "predicted_id": 71163,
+            "step_seconds": 0.0184831,
+            "submit_to_token_seconds": 0.0131509,
+            "submit_seconds": 0.0001795
+          },
+          {
+            "name": "decode2",
+            "input_tokens": 1,
+            "visible_tokens": 130,
+            "predicted_id": 369,
+            "step_seconds": 0.0146695,
+            "submit_to_token_seconds": 0.0094918,
+            "submit_seconds": 0.0001649
+          },
+          {
+            "name": "decode3",
+            "input_tokens": 1,
+            "visible_tokens": 131,
+            "predicted_id": 279,
+            "step_seconds": 0.0110528,
+            "submit_to_token_seconds": 0.0108452,
+            "submit_seconds": 5.19e-05
+          },
+          {
+            "name": "decode4",
+            "input_tokens": 1,
+            "visible_tokens": 132,
+            "predicted_id": 1817,
+            "step_seconds": 0.0093321,
+            "submit_to_token_seconds": 0.0091422,
+            "submit_seconds": 5.48e-05
+          },
+          {
+            "name": "decode5",
+            "input_tokens": 1,
+            "visible_tokens": 133,
+            "predicted_id": 539,
+            "step_seconds": 0.0089496,
+            "submit_to_token_seconds": 0.0088288,
+            "submit_seconds": 4.91e-05
+          },
+          {
+            "name": "decode6",
+            "input_tokens": 1,
+            "visible_tokens": 134,
+            "predicted_id": 864,
+            "step_seconds": 0.0105931,
+            "submit_to_token_seconds": 0.0104707,
+            "submit_seconds": 5.1e-05
+          },
+          {
+            "name": "decode7",
+            "input_tokens": 1,
+            "visible_tokens": 135,
+            "predicted_id": 10462,
+            "step_seconds": 0.0095828,
+            "submit_to_token_seconds": 0.0093798,
+            "submit_seconds": 6.04e-05
+          },
+          {
+            "name": "decode8",
+            "input_tokens": 1,
+            "visible_tokens": 136,
+            "predicted_id": 11,
+            "step_seconds": 0.0116911,
+            "submit_to_token_seconds": 0.0114948,
+            "submit_seconds": 5.61e-05
+          },
+          {
+            "name": "decode9",
+            "input_tokens": 1,
+            "visible_tokens": 137,
+            "predicted_id": 65562,
+            "step_seconds": 0.012399,
+            "submit_to_token_seconds": 0.0121389,
+            "submit_seconds": 6.21e-05
+          },
+          {
+            "name": "decode10",
+            "input_tokens": 1,
+            "visible_tokens": 138,
+            "predicted_id": 11,
+            "step_seconds": 0.0094061,
+            "submit_to_token_seconds": 0.0092069,
+            "submit_seconds": 5.67e-05
+          },
+          {
+            "name": "decode11",
+            "input_tokens": 1,
+            "visible_tokens": 139,
+            "predicted_id": 321,
+            "step_seconds": 0.0091561,
+            "submit_to_token_seconds": 0.0089542,
+            "submit_seconds": 5.86e-05
+          },
+          {
+            "name": "decode12",
+            "input_tokens": 1,
+            "visible_tokens": 140,
+            "predicted_id": 1010,
+            "step_seconds": 0.0106559,
+            "submit_to_token_seconds": 0.0105144,
+            "submit_seconds": 5.85e-05
+          },
+          {
+            "name": "decode13",
+            "input_tokens": 1,
+            "visible_tokens": 141,
+            "predicted_id": 22434,
+            "step_seconds": 0.0094326,
+            "submit_to_token_seconds": 0.0091961,
+            "submit_seconds": 6.66e-05
+          },
+          {
+            "name": "decode14",
+            "input_tokens": 1,
+            "visible_tokens": 142,
+            "predicted_id": 5335,
+            "step_seconds": 0.0092686,
+            "submit_to_token_seconds": 0.0090703,
+            "submit_seconds": 4.98e-05
+          },
+          {
+            "name": "decode15",
+            "input_tokens": 1,
+            "visible_tokens": 143,
+            "predicted_id": 3000,
+            "step_seconds": 0.0101689,
+            "submit_to_token_seconds": 0.0100447,
+            "submit_seconds": 5.2e-05
+          },
+          {
+            "name": "decode16",
+            "input_tokens": 1,
+            "visible_tokens": 144,
+            "predicted_id": 4649,
+            "step_seconds": 0.0095829,
+            "submit_to_token_seconds": 0.0094482,
+            "submit_seconds": 5.48e-05
+          },
+          {
+            "name": "decode17",
+            "input_tokens": 1,
+            "visible_tokens": 145,
+            "predicted_id": 1083,
+            "step_seconds": 0.0090018,
+            "submit_to_token_seconds": 0.0088115,
+            "submit_seconds": 5.38e-05
+          },
+          {
+            "name": "decode18",
+            "input_tokens": 1,
+            "visible_tokens": 146,
+            "predicted_id": 279,
+            "step_seconds": 0.0094166,
+            "submit_to_token_seconds": 0.0092999,
+            "submit_seconds": 4.9e-05
+          },
+          {
+            "name": "decode19",
+            "input_tokens": 1,
+            "visible_tokens": 147,
+            "predicted_id": 6797,
+            "step_seconds": 0.0099974,
+            "submit_to_token_seconds": 0.0098876,
+            "submit_seconds": 4.55e-05
+          },
+          {
+            "name": "decode20",
+            "input_tokens": 1,
+            "visible_tokens": 148,
+            "predicted_id": 1083,
+            "step_seconds": 0.00957,
+            "submit_to_token_seconds": 0.0093828,
+            "submit_seconds": 5.68e-05
+          },
+          {
+            "name": "decode21",
+            "input_tokens": 1,
+            "visible_tokens": 149,
+            "predicted_id": 11153,
+            "step_seconds": 0.0094746,
+            "submit_to_token_seconds": 0.009208,
+            "submit_seconds": 6.24e-05
+          },
+          {
+            "name": "decode22",
+            "input_tokens": 1,
+            "visible_tokens": 150,
+            "predicted_id": 4649,
+            "step_seconds": 0.0100955,
+            "submit_to_token_seconds": 0.0099599,
+            "submit_seconds": 6.07e-05
+          },
+          {
+            "name": "decode23",
+            "input_tokens": 1,
+            "visible_tokens": 151,
+            "predicted_id": 9476,
+            "step_seconds": 0.0100525,
+            "submit_to_token_seconds": 0.0098521,
+            "submit_seconds": 6.14e-05
+          },
+          {
+            "name": "decode24",
+            "input_tokens": 1,
+            "visible_tokens": 152,
+            "predicted_id": 1061,
+            "step_seconds": 0.011568,
+            "submit_to_token_seconds": 0.010968,
+            "submit_seconds": 6.13e-05
+          },
+          {
+            "name": "decode25",
+            "input_tokens": 1,
+            "visible_tokens": 153,
+            "predicted_id": 7022,
+            "step_seconds": 0.0097985,
+            "submit_to_token_seconds": 0.0095969,
+            "submit_seconds": 6e-05
+          },
+          {
+            "name": "decode26",
+            "input_tokens": 1,
+            "visible_tokens": 154,
+            "predicted_id": 1817,
+            "step_seconds": 0.0090993,
+            "submit_to_token_seconds": 0.0088863,
+            "submit_seconds": 6.15e-05
+          },
+          {
+            "name": "decode27",
+            "input_tokens": 1,
+            "visible_tokens": 155,
+            "predicted_id": 11,
+            "step_seconds": 0.0099108,
+            "submit_to_token_seconds": 0.0097186,
+            "submit_seconds": 5.44e-05
+          },
+          {
+            "name": "decode28",
+            "input_tokens": 1,
+            "visible_tokens": 156,
+            "predicted_id": 10462,
+            "step_seconds": 0.0100838,
+            "submit_to_token_seconds": 0.0099383,
+            "submit_seconds": 6.48e-05
+          },
+          {
+            "name": "decode29",
+            "input_tokens": 1,
+            "visible_tokens": 157,
+            "predicted_id": 958,
+            "step_seconds": 0.0093165,
+            "submit_to_token_seconds": 0.0091159,
+            "submit_seconds": 6.17e-05
+          },
+          {
+            "name": "decode30",
+            "input_tokens": 1,
+            "visible_tokens": 158,
+            "predicted_id": 303,
+            "step_seconds": 0.0091809,
+            "submit_to_token_seconds": 0.0089803,
+            "submit_seconds": 6.13e-05
+          },
+          {
+            "name": "decode31",
+            "input_tokens": 1,
+            "visible_tokens": 159,
+            "predicted_id": 12141,
+            "step_seconds": 0.009245,
+            "submit_to_token_seconds": 0.0088435,
+            "submit_seconds": 6.37e-05
+          }
+        ],
+        "loading": {
+          "model_load_seconds": 0.98517,
+          "model_seconds": 1.08805,
+          "shape_prepare_seconds": 0.27288,
+          "startup_to_ready_seconds": 1.36124,
+          "first_token_elapsed_seconds": 1.42278
+        },
+        "capture_counts": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            0
+          ],
+          [
+            1,
+            0
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ]
+        ],
+        "workspace": [
+          {
+            "tokens": 128,
+            "steps": 1113,
+            "workspace_bytes_per_slot": 26910720,
+            "compiled_known_bytes": 2195648,
+            "compiled_unknown_providers": 647
+          },
+          {
+            "tokens": 1,
+            "steps": 1047,
+            "workspace_bytes_per_slot": 1807616,
+            "compiled_known_bytes": 2195648,
+            "compiled_unknown_providers": 581
+          }
+        ]
+      },
+      "independent_model_quality_acceptance": false
+    },
+    "prediction_equality_in_timing": true,
+    "trace_17_predictions_equal": true,
+    "independent_model_quality_acceptance": false
+  },
+  "build": {
+    "Windows": "Two strict product CXX objects and one Qwen link; two test CXX and one small test CUDA TU plus one test link. No SDK rebuild.",
+    "Linux": {
+      "status": "current_two_CPP_built_installed_relocated_and_two_consumers_relinked_not_executed",
+      "source": "/root/hyle-scratch/active-cpu-z/source",
+      "build": "/root/hyle-scratch/active-cpu-z/build",
+      "prefix": "/root/hyle-scratch/active-cpu-z/delivery1-linux-current-build-2026-10-21/static-sdk-relocated",
+      "prefix_inode_unchanged": 1162883,
+      "old_prefix_exists": false,
+      "producer": {
+        "CXX": 2,
+        "archive_links": 2,
+        "NVCC": 0,
+        "SDK_rebuilds": 0,
+        "post_build_payload_jobs": 0
+      },
+      "installed_archives": [
+        {
+          "name": "libhyle_compute_backend_cuda.a",
+          "previous": {
+            "path": "/root/hyle-scratch/active-cpu-z/delivery1-linux-current-build-2026-10-21/static-sdk-relocated/lib/libhyle_compute_backend_cuda.a",
+            "bytes": 213844,
+            "sha256": "e8c9887380287b19a4e4b772a4f6a35fd99542fd746ee0bfd46db4b21fc04bd8"
+          },
+          "current": {
+            "path": "/root/hyle-scratch/active-cpu-z/delivery1-linux-current-build-2026-10-21/static-sdk-relocated/lib/libhyle_compute_backend_cuda.a",
+            "bytes": 213900,
+            "sha256": "f92fc88f63e8af7718d523a91c1324336849a80d4711c8531acb9eb1410b5d78"
+          },
+          "producer": {
+            "path": "/root/hyle-scratch/active-cpu-z/build/bin/libhyle_compute_backend_cuda.a",
+            "bytes": 213900,
+            "sha256": "f92fc88f63e8af7718d523a91c1324336849a80d4711c8531acb9eb1410b5d78"
+          }
+        },
+        {
+          "name": "libhyle_compute_provider_ggml_cuda.a",
+          "previous": {
+            "path": "/root/hyle-scratch/active-cpu-z/delivery1-linux-current-build-2026-10-21/static-sdk-relocated/lib/libhyle_compute_provider_ggml_cuda.a",
+            "bytes": 448714,
+            "sha256": "00180ed803961e8a79ad059749dcfbf285629adf76e0e9e59e0a493321daf3ee"
+          },
+          "current": {
+            "path": "/root/hyle-scratch/active-cpu-z/delivery1-linux-current-build-2026-10-21/static-sdk-relocated/lib/libhyle_compute_provider_ggml_cuda.a",
+            "bytes": 448826,
+            "sha256": "5815ea46fd4170aefd646c7925863eceed1894a9ab881e50b3c0c379fbeab0f5"
+          },
+          "producer": {
+            "path": "/root/hyle-scratch/active-cpu-z/build/bin/libhyle_compute_provider_ggml_cuda.a",
+            "bytes": 448826,
+            "sha256": "5815ea46fd4170aefd646c7925863eceed1894a9ab881e50b3c0c379fbeab0f5"
+          }
+        }
+      ],
+      "consumers": [
+        {
+          "name": "cpp",
+          "previous_image": {
+            "path": "/root/hyle-scratch/active-cpu-z/delivery1-linux-current-build-2026-10-21/consumer-cpp2/hyle_package_graph_cpp",
+            "bytes": 149574048,
+            "sha256": "271148c85821cde0f00ea9eb98e8167da5d50128c6ee2a4423eb759ff84588f0"
+          },
+          "current_image": {
+            "path": "/root/hyle-scratch/active-cpu-z/delivery1-linux-current-build-2026-10-21/consumer-cpp2/hyle_package_graph_cpp",
+            "bytes": 149574048,
+            "sha256": "fc48f4c389398fb3bb68ea6f97bf1f83111f852de31e3ae400b4afbc07187873"
+          },
+          "CXX": 0,
+          "relinks": 1,
+          "missing_dynamic_dependencies": 0,
+          "pending_jobs_after": 0,
+          "executed": false
+        },
+        {
+          "name": "cpu_cuda",
+          "previous_image": {
+            "path": "/root/hyle-scratch/active-cpu-z/delivery1-linux-current-build-2026-10-21/consumer-cpu_cuda/hyle_cpu_cuda_sample",
+            "bytes": 149765328,
+            "sha256": "bcc83b0ea0fd3ddca23861700267dd21a0b4ac691de9ffacfad4b61c189b21e4"
+          },
+          "current_image": {
+            "path": "/root/hyle-scratch/active-cpu-z/delivery1-linux-current-build-2026-10-21/consumer-cpu_cuda/hyle_cpu_cuda_sample",
+            "bytes": 149765328,
+            "sha256": "e056d481efc26d30e231ce937c1c7a977eef9d39c6455cfe63be2b8cdea6a0f3"
+          },
+          "CXX": 0,
+          "relinks": 1,
+          "missing_dynamic_dependencies": 0,
+          "pending_jobs_after": 0,
+          "executed": false
+        }
+      ],
+      "new_SDK_copies": 0,
+      "GPU_runs": 0,
+      "source_sync": {
+        "files": [
+          {
+            "relative": "src/compute_backend_cuda/cuda_backend.cc",
+            "previous": {
+              "path": "/root/hyle-scratch/active-cpu-z/source/src/compute_backend_cuda/cuda_backend.cc",
+              "bytes": 67320,
+              "sha256": "0d3fe86d58de8abaa89b86e8a394810c0b1ca68807e02f2bcc960fb3ce8c9193"
+            },
+            "backup": {
+              "path": "/root/hyle-scratch/active-cpu-z/d4-first-decode-native-incremental-2026-10-21/before/src/compute_backend_cuda/cuda_backend.cc",
+              "bytes": 67320,
+              "sha256": "0d3fe86d58de8abaa89b86e8a394810c0b1ca68807e02f2bcc960fb3ce8c9193"
+            },
+            "current": {
+              "path": "/root/hyle-scratch/active-cpu-z/source/src/compute_backend_cuda/cuda_backend.cc",
+              "bytes": 67634,
+              "sha256": "d2591248732b258ca91261ca30a3b684ca2884cca99f19bd7301396b1fb0aa40"
+            }
+          },
+          {
+            "relative": "src/compute_provider_ggml_cuda/ggml_cuda_provider.cc",
+            "previous": {
+              "path": "/root/hyle-scratch/active-cpu-z/source/src/compute_provider_ggml_cuda/ggml_cuda_provider.cc",
+              "bytes": 73537,
+              "sha256": "c87325fc25cc21cf228f5518ed25c8d7dc29985fe7f5d24473880757ef96b484"
+            },
+            "backup": {
+              "path": "/root/hyle-scratch/active-cpu-z/d4-first-decode-native-incremental-2026-10-21/before/src/compute_provider_ggml_cuda/ggml_cuda_provider.cc",
+              "bytes": 73537,
+              "sha256": "c87325fc25cc21cf228f5518ed25c8d7dc29985fe7f5d24473880757ef96b484"
+            },
+            "current": {
+              "path": "/root/hyle-scratch/active-cpu-z/source/src/compute_provider_ggml_cuda/ggml_cuda_provider.cc",
+              "bytes": 73819,
+              "sha256": "8da6586cfa81cfa3859306fe1e15d8d92a34d063467ac292039f32d09b06322b"
+            }
+          }
+        ],
+        "fixed_backup_root": "/root/hyle-scratch/active-cpu-z/d4-first-decode-native-incremental-2026-10-21/before",
+        "reverse_sync": false,
+        "SDK_copies": 0,
+        "unrelated_files_changed": 0
+      },
+      "source_audit": {
+        "selected_files": 1149,
+        "current_CPU_CUDA_files": 1145,
+        "selected_CPU_CUDA_drift": 0,
+        "Apple_only_out_of_route_names": [
+          "cmake/HyleComponents.cmake",
+          "include/hyle/graph/apple.h",
+          "src/compute_route_apple/apple_tensor.h",
+          "src/graph_route_apple/apple_lowering_internal.h"
+        ],
+        "exactly_synced_files": [
+          "src/compute_backend_cuda/cuda_backend.cc",
+          "src/compute_provider_ggml_cuda/ggml_cuda_provider.cc"
+        ],
+        "no_all_repository_current_claim": true
+      },
+      "next": "Root may run the two original relocated sample programs sequentially; no GPU/model/sample execution performed by this script."
+    },
+    "Linux_actual_consumers": {
+      "passed": true,
+      "runs": [
+        {
+          "image": {
+            "path": "/root/hyle-scratch/active-cpu-z/delivery1-linux-current-build-2026-10-21/consumer-cpp2/hyle_package_graph_cpp",
+            "bytes": 149574048,
+            "sha256": "fc48f4c389398fb3bb68ea6f97bf1f83111f852de31e3ae400b4afbc07187873"
+          },
+          "command": [
+            "/root/hyle-scratch/active-cpu-z/delivery1-linux-current-build-2026-10-21/consumer-cpp2/hyle_package_graph_cpp"
+          ],
+          "cwd": "/root/hyle-scratch/active-cpu-z/delivery1-linux-current-build-2026-10-21/consumer-cpp2",
+          "started": 1792559095.323766,
+          "execution_owner": "root",
+          "builds": 0,
+          "SDK_copies": 0,
+          "exit_code": 0,
+          "seconds": 1.6941063404083252,
+          "terminal": true
+        },
+        {
+          "image": {
+            "path": "/root/hyle-scratch/active-cpu-z/delivery1-linux-current-build-2026-10-21/consumer-cpu_cuda/hyle_cpu_cuda_sample",
+            "bytes": 149765328,
+            "sha256": "e056d481efc26d30e231ce937c1c7a977eef9d39c6455cfe63be2b8cdea6a0f3"
+          },
+          "command": [
+            "/root/hyle-scratch/active-cpu-z/delivery1-linux-current-build-2026-10-21/consumer-cpu_cuda/hyle_cpu_cuda_sample"
+          ],
+          "cwd": "/root/hyle-scratch/active-cpu-z/delivery1-linux-current-build-2026-10-21/consumer-cpu_cuda",
+          "started": 1792559097.1357057,
+          "execution_owner": "root",
+          "builds": 0,
+          "SDK_copies": 0,
+          "exit_code": 0,
+          "seconds": 0.7278966903686523,
+          "terminal": true
+        }
+      ]
+    },
+    "macOS": "Not rerun: product changes are CUDA-only."
+  },
+  "no_profiler_timing": {
+    "passed": true,
+    "groups": {
+      "baseline": {
+        "prefill_tokens_per_second": {
+          "samples": [
+            2169.1275531732813,
+            2214.647819090956,
+            2009.6179056955395
+          ],
+          "median": 2169.1275531732813
+        },
+        "full_decode_tokens_per_second": {
+          "samples": [
+            86.8885950870946,
+            93.04414014008245,
+            93.09784583597362
+          ],
+          "median": 93.04414014008245
+        },
+        "stable_decode_tokens_per_second": {
+          "samples": [
+            91.95223044847309,
+            97.28644749197484,
+            96.64024393543812
+          ],
+          "median": 96.64024393543812
+        },
+        "first_two_decode_ms": {
+          "samples": [
+            41.134699999999995,
+            33.665099999999995,
+            32.769
+          ],
+          "median": 33.665099999999995
+        }
+      },
+      "candidate": {
+        "prefill_tokens_per_second": {
+          "samples": [
+            2126.086920412926,
+            2280.02643405647,
+            2185.4266191791676
+          ],
+          "median": 2185.4266191791676
+        },
+        "full_decode_tokens_per_second": {
+          "samples": [
+            85.35576005449552,
+            93.61460798580923,
+            92.29014115032814
+          ],
+          "median": 92.29014115032814
+        },
+        "stable_decode_tokens_per_second": {
+          "samples": [
+            85.93835401239299,
+            96.17703961686146,
+            97.16537507972419
+          ],
+          "median": 96.17703961686146
+        },
+        "first_two_decode_ms": {
+          "samples": [
+            32.0526,
+            30.104300000000002,
+            34.7849
+          ],
+          "median": 32.0526
+        }
+      },
+      "llama": {
+        "prefill_tokens_per_second": {
+          "samples": [
+            1292.793484320839,
+            1230.7301787539434,
+            1375.4936464014183
+          ],
+          "median": 1292.793484320839
+        },
+        "full_decode_tokens_per_second": {
+          "samples": [
+            96.44605616520525,
+            93.90106523185838,
+            95.79180423863284
+          ],
+          "median": 95.79180423863284
+        },
+        "stable_decode_tokens_per_second": {
+          "samples": [
+            99.1153361556095,
+            95.12416366835302,
+            98.27449639234324
+          ],
+          "median": 98.27449639234324
+        },
+        "first_two_decode_ms": {
+          "samples": [
+            25.900100000000002,
+            26.3486,
+            28.018
+          ],
+          "median": 26.3486
+        }
+      }
+    },
+    "Hyle_predictions_equal": true,
+    "processes": 9,
+    "fresh_processes_per_arm": 3,
+    "statistical_significance": false,
+    "independent_model_quality_acceptance": false
+  },
+  "timing_interpretation": "Three fresh processes per arm, interleaved baseline/candidate/peer, original128+31 host-token steps. Candidate full92.29 versus baseline93.04 and peer95.79 tok/s. Candidate first-two median32.05 versus33.67ms, but samples vary widely; no significant speedup/regression conclusion. This window is not pooled with earlier faster windows.",
+  "node_trace": {
+    "baseline": {
+      "decode1": {
+        "kernels": 596,
+        "context_push": 1313,
+        "context_pop": 1313,
+        "cudaMalloc": 7,
+        "cudaFree": 1
+      },
+      "decode2": {
+        "kernels": 596,
+        "context_push": 1313,
+        "context_pop": 1313,
+        "cudaMalloc": 7,
+        "cudaFree": 1
+      }
+    },
+    "candidate": {
+      "decode1": {
+        "kernels": 596,
+        "context_push": 945,
+        "context_pop": 945,
+        "cudaMalloc": 7,
+        "cudaFree": 0
+      },
+      "decode2": {
+        "kernels": 596,
+        "context_push": 945,
+        "context_pop": 945,
+        "cudaMalloc": 6,
+        "cudaFree": 0
+      }
+    }
+  },
+  "trace_interpretation": "Same596 kernels per M1. Context push/pop pairs drop1313 to945 each first M1; second capture removes one cudaMalloc, both remove one cudaFree. Counts confirm the intended structural effect. Instrumented times are not throughput evidence or recoverable savings.",
+  "limits": [
+    "Single RTX4070 under normal desktop use; no exclusive GPU or fixed clocks.",
+    "Hyle uses mainly BF16 intermediates; peer uses additional F32 arithmetic and naturally transfers sampled logits. Same original weights and fixed inputs are not identical per-operator arithmetic.",
+    "Two fixed-binding captured artifacts remain independent; source review did not justify sharing them or moving actual first execution outside timing.",
+    "No new memory peak, energy, long-decode or MTP measurement in this finite native experiment."
+  ],
+  "next_action": "Broader local-engine source research, then rank only concrete Hyle gaps by actual full-call speed opportunity. No repeated broad benchmark matrix.",
+  "archive": {
+    "path": "docs/evidence/performance/qwen-capture-resource-reuse-2026-10-21.zip",
+    "bytes": 8037935,
+    "sha256": "14a485d46f8471b26cb2ef9b90651bd3e19eeb129d81961384ca9a94047cf6fa",
+    "members": 319
+  }
+}

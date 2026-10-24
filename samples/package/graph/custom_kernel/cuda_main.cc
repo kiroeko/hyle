@@ -42,9 +42,9 @@ struct Kernel final {
     return {output == 0 && input == 0, 0};
   }
   KernelCommandResult
-  enqueue(Invocation &, Queue &queue, std::span<const ConstTensorView> inputs,
+  enqueue(Invocation &, detail::QueueSequence &sequence, std::span<const ConstTensorView> inputs,
           std::span<const TensorView> outputs) const noexcept {
-    auto stream = cuda::stream(queue);
+    auto stream = cuda::stream(sequence);
     if (!stream)
       return KernelCommandResult::rejected(std::move(stream).error());
     auto input = cuda::pointer<float>(inputs[0].storage());
@@ -190,8 +190,9 @@ Status exercise(bool report_after_launch) {
         HYLE_ASSIGN_OR_RETURN(auto graph, std::move(builder).finish());
         const std::array storage{
             hyle::graph::StorageDomain{.resource = memory.ref()}};
+        HYLE_ASSIGN_OR_RETURN(auto target_source_0, hyle::graph::ExecutionSource::acquire(context));
         const std::array targets{hyle::graph::ExecutionTarget{
-            .context = &context,
+            .source = target_source_0,
             .default_storage = hyle::graph::StorageDomainId{0}}};
         HYLE_ASSIGN_OR_RETURN(auto family, context.provider_identity(0));
         HYLE_ASSIGN_OR_RETURN(auto instance, context.provider_instance_id(0));
@@ -296,8 +297,9 @@ Status exercise_transfer_pipeline() {
   HYLE_ASSIGN_OR_RETURN(auto logical, std::move(builder).finish());
   const std::array storage{graph::StorageDomain{memory.ref()},
                            graph::StorageDomain{pinned.ref()}};
+  HYLE_ASSIGN_OR_RETURN(auto target_source_1, hyle::graph::ExecutionSource::acquire(context));
   const std::array targets{
-      graph::ExecutionTarget{&context, graph::StorageDomainId{0}}};
+      graph::ExecutionTarget{target_source_1, graph::StorageDomainId{0}}};
   const std::array lanes{
       graph::ExecutionLane{graph::ExecutionTargetId{0},
                            graph::ExecutionLaneRole::kCompute},

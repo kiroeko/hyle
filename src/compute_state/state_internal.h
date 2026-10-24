@@ -32,9 +32,24 @@ struct StateRecord final {
   Status failure;
 };
 struct StateBacking final {
+  StateBacking() = default;
+  StateBacking(StateBacking &&b) noexcept : anchor(std::move(b.anchor)), backing(b.backing),
+      metadata(b.metadata), snapshot_pool(std::move(b.snapshot_pool)) {}
+  StateBacking &operator=(StateBacking &&b) noexcept {
+    if (this != &b) {
+      if (snapshot_pool.valid()) LeaseAccess::retire_host_snapshot_pool(snapshot_pool, anchor);
+      anchor = std::move(b.anchor); backing = b.backing; metadata = b.metadata;
+      snapshot_pool = std::move(b.snapshot_pool);
+    }
+    return *this;
+  }
+  ~StateBacking() {
+    if (snapshot_pool.valid()) LeaseAccess::retire_host_snapshot_pool(snapshot_pool, anchor);
+  }
   ReadLease anchor;
   LeaseBackingInfo backing;
   bool metadata = false;
+  LeasePool snapshot_pool;
 };
 struct StateCopyRoute final {
   StateCopyRoute() = default;

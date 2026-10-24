@@ -21,8 +21,7 @@ template <class T> class ObjectPoolCache;
 // Typed object pool: fixed-capacity create/destroy of T with slot reuse, on top
 // of a sharded shared block pool. create() placement-news a T in a pooled slot;
 // destroy() runs ~T then returns the slot -- BOTH through the SAME pool, never
-// global new/delete (fixes clay bug #3, where slots were taken via the
-// allocator but freed with global delete -- an alloc/free mismatch = UB).
+// global new/delete, so allocation and deallocation use the same backing.
 //
 // ObjectPool<T> owns the hard-capacity ConcurrentBlockPool. Hot workers may explicitly
 // attach an ObjectPoolCache<T>; cache lifetime, capacity, transfer batch and

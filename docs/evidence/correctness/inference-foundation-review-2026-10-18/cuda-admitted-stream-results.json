@@ -1,0 +1,337 @@
+{
+  "archive": {
+    "path": "docs/evidence/correctness/inference-foundation-review-2026-10-18/cuda-admitted-stream.zip",
+    "bytes": 478066,
+    "sha256": "962d7293213569aaf7523d1ce29adeccbf5bc27bf13c9cc3902d159825cbe487"
+  },
+  "implementation": [
+    "Original ggml CUDA invocation borrows the admitted QueueSequence stream; cuBLAS stream/workspace and the native stream table/current index restore on every path.",
+    "No per-fragment entry/exit events and no unconditional private root stream creation. Original independent cold packing keeps native lazy stream creation.",
+    "Failed auxiliary retirement is observed by one optional probe in the original CUDA EventSlot. Root fence and native prefix must both retire; original reaper retains attachments across wait observation errors, abandonment and close.",
+    "Plain caller payload remains borrowed under its existing lifetime contract. Non-success auxiliary observations are conservatively unproved, including terminal device failures requiring process recovery."
+  ],
+  "verification": {
+    "focused_tests": 10,
+    "failures": 0,
+    "new_tests": 4,
+    "final_full_qwen_trace_tensors": 150,
+    "byte_equal": 150,
+    "trace_bytes": 62785536,
+    "graph": "1878 nodes, 1204 steps; identical route and Graph workspace to the strided-layout baseline.",
+    "unique_compiled_tus": 8,
+    "build": "One original native main TU plus four affected backend host TUs, provider host and two test TUs. Cached numerical kernels/SDK reused. Native C4819 header warnings preserved under original flags; Hyle host compilation /W4 /WX.",
+    "native_failure_limit": "No real auxiliary drain or cuBLAS-restore fault injection. Deferred retirement ownership is independently tested with actual root fence plus controlled nonretired/observation-error probe; capture and controlled GPU pending are exercised."
+  },
+  "benchmark": {
+    "scope": "Within-Hyle old/new, 3 each in ABBAAB order; identical current consumer/weights/inputs/precision/capacity32/direct/steps6, trace disabled. Normal EOS stops both after decode2; these are short-request first/native-cold slot executions, not sustained warm decode throughput. Embedded phase end-to-end completion+next-token time; process/model load/cold graph compilation excluded. Not llama.cpp comparison or whole-model accuracy acceptance.",
+    "result": {
+      "source_id": "4068044d8571635d8a86f1e96a43dad104efc7089169065f735601e350008155",
+      "text_tensors": 320,
+      "visible_tokens": 29,
+      "generated_ids": [
+        248046,
+        198,
+        248044
+      ]
+    },
+    "phases": [
+      {
+        "phase": "prefill",
+        "before_seconds": [
+          0.0786702,
+          0.0817528,
+          0.0822521
+        ],
+        "after_seconds": [
+          0.0656057,
+          0.0720197,
+          0.0712622
+        ],
+        "before_median": 0.0817528,
+        "after_median": 0.0712622,
+        "speed_ratio": 1.147211284523913,
+        "observed_ranges_separate": true
+      },
+      {
+        "phase": "continuation",
+        "before_seconds": [
+          0.035167,
+          0.0344199,
+          0.0360966
+        ],
+        "after_seconds": [
+          0.0218332,
+          0.0318006,
+          0.0262638
+        ],
+        "before_median": 0.035167,
+        "after_median": 0.0262638,
+        "speed_ratio": 1.3389913112344747,
+        "observed_ranges_separate": true
+      },
+      {
+        "phase": "decode1",
+        "before_seconds": [
+          0.0335912,
+          0.0347062,
+          0.0320671
+        ],
+        "after_seconds": [
+          0.0202653,
+          0.0189075,
+          0.0215911
+        ],
+        "before_median": 0.0335912,
+        "after_median": 0.0202653,
+        "speed_ratio": 1.6575723033954592,
+        "observed_ranges_separate": true
+      },
+      {
+        "phase": "decode2",
+        "before_seconds": [
+          0.0313667,
+          0.0326779,
+          0.0323122
+        ],
+        "after_seconds": [
+          0.0194216,
+          0.0262962,
+          0.0251018
+        ],
+        "before_median": 0.0323122,
+        "after_median": 0.0251018,
+        "speed_ratio": 1.2872463329322996,
+        "observed_ranges_separate": true
+      }
+    ]
+  },
+  "numerical_next": {
+    "status": "read_only_next_discriminant_identified_not_numerical_acceptance",
+    "scope": {
+      "product_modified": false,
+      "compiled": false,
+      "gpu_run": false,
+      "full_model_run": false,
+      "tolerance_changed": false
+    },
+    "authenticated_archives": [
+      {
+        "archive": {
+          "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\inference-foundation-review-2026-10-18\\qwen-numerical-localization.zip",
+          "bytes": 2728350,
+          "sha256": "ff93d5d437515551ef08554da53f1f0c611979c8f84a01a3c92593585bbff439"
+        },
+        "member": "diagnosis/summary.json",
+        "member_sha256": "38693a4f02b82f1025daf1202f2d8521c30783af050df6011d2e2cd15acd19c7"
+      },
+      {
+        "archive": {
+          "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\inference-foundation-review-2026-10-18\\qwen-rmsnorm-f32.zip",
+          "bytes": 872736,
+          "sha256": "ddc3e6019534469c6e5c11f5bb0efd2234ce8decbe55409b4928340aff3474c6"
+        },
+        "member": "experiment/summary.json",
+        "member_sha256": "87e31936f155cd2e114dd149efaf0469fbe5e4d85e51f81b5f625715c1e33abe"
+      },
+      {
+        "archive": {
+          "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\inference-foundation-review-2026-10-18\\qwen-norm-reduction.zip",
+          "bytes": 1089198,
+          "sha256": "247799090333336221296e12ae050877509db54339bd1774da8a7d753654994c"
+        },
+        "member": "experiment/summary.json",
+        "member_sha256": "b7423d174dc632056ba57a47f2d915821f66d95e3f251c59e2699f780c41a723"
+      }
+    ],
+    "already_established": {
+      "norm": "Original native reduction topology explains the saved two-F32-ULP mean difference and BF16 midpoint split. Do not repeat that experiment.",
+      "causal_limit": "Its prior intervention explains all layer0 hidden elements and layer1 convolution history for prefill, not the remaining 24-layer error.",
+      "norm_conclusion": "For token21/channel619, the observed and independently reconstructed original reduction order produces mean0x3b4ae0ec, two F32ULP below previously saved actual Torch variance0x3b4ae0ee. The native scale and two ordered multiply results match RN calculations for those observed inputs; an offline RN chain from saved Torch variance yields its saved0x3f568000 midpoint, while native yields0x3f568001. This reduction-order difference crosses the BF16 midpoint and explains this isolated coordinate and its already demonstrated propagation.",
+      "latest_alias_source_journey": {
+        "trace_files": 150,
+        "byte_equal": 150,
+        "meaning": "Core/source changes reproduce prior Hyle journey; no independent-reference acceptance."
+      }
+    },
+    "precision_mismatches": [
+      {
+        "operation": "Explicit RoPE",
+        "reference": "Official rotary embedding forms F32 sin/cos, converts each to BF16, then applies BF16 products and BF16 addition to BF16 Q/K.",
+        "hyle": "explicit_rope widens original BF16 Q/K to F32, forms F32 phase/sin/cos/products/sums, then casts result once to original dtype.",
+        "evidence": [
+          {
+            "path": "C:\\Program Files\\Python312\\Lib\\site-packages\\transformers\\models\\qwen3_5\\modeling_qwen3_5.py",
+            "lines": [
+              229,
+              248
+            ],
+            "sha256": "0e7410f5251e5c324a5628c5340ee3551f7a6a505ce398569fcc3b5f3ac07f7a"
+          },
+          {
+            "path": "C:\\Program Files\\Python312\\Lib\\site-packages\\transformers\\models\\qwen3_5\\modeling_qwen3_5.py",
+            "lines": [
+              638,
+              671
+            ],
+            "sha256": "0e7410f5251e5c324a5628c5340ee3551f7a6a505ce398569fcc3b5f3ac07f7a"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\src\\compute_ggml_runtime\\explicit_rope.h",
+            "lines": [
+              15,
+              75
+            ],
+            "sha256": "356def1adf2f40dc2dcd1b342c45c0fc5cf2f015739783b8df0741b94cc5acff"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\tools\\qwen35_text\\main.cc",
+            "lines": [
+              375,
+              386
+            ],
+            "sha256": "7587f6f6e73a7fa8e06ab642d00504d3aac674cf5f2749bdbf040ae6526efbb8"
+          }
+        ],
+        "implication": "Same rotation and input/output storage do not imply equal BF16 outputs. No evidence yet quantifies its contribution to final logits."
+      },
+      {
+        "operation": "Full attention",
+        "reference": "reference.py selects eager: BF16 QK matmul output, BF16 scaling/mask score boundaries, F32 softmax cast back to BF16, then BF16 PV.",
+        "hyle": "The executed route census selects FlashInfer for all six ragged attention nodes; the batch launch has false QK reduced-precision flag and no explicit materialized BF16 scores boundary.",
+        "evidence": [
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\tools\\qwen35_text\\reference.py",
+            "lines": [
+              83,
+              83
+            ],
+            "sha256": "003293760afbe8540909ac286adb65bbfb1ed0c440abc5a9064cb6b05fbe39e4"
+          },
+          {
+            "path": "C:\\Program Files\\Python312\\Lib\\site-packages\\transformers\\models\\qwen3_5\\modeling_qwen3_5.py",
+            "lines": [
+              688,
+              710
+            ],
+            "sha256": "0e7410f5251e5c324a5628c5340ee3551f7a6a505ce398569fcc3b5f3ac07f7a"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_flashinfer\\native_batch.cu",
+            "lines": [
+              38,
+              45
+            ],
+            "sha256": "c17e99b53e793e3357b36eec288d2a1e36211081b95a8d2145c4ff3b4234d6da"
+          }
+        ],
+        "implication": "Eager and fused evaluation orders/intermediate rounding are not identical. Do not equate absent global probability storage with every native internal arithmetic operation being F32."
+      }
+    ],
+    "consumer_semantics": {
+      "obvious_shape_cache_scale_bug_found": false,
+      "checked": [
+        "24 layer types match checkpoint: three linear-attention blocks then one full-attention block, repeated six times.",
+        "Qwen full-attention H8/KV2/D256, scale 1/16, partial rotary64, theta1e7 and plain-text repeated MRoPE positions match current graph.",
+        "Both paths tie output embedding weights and widen stored BF16 logits to F32; same source ID/320 unquantized text tensors.",
+        "Reference deliberately fixes cached multi-token conv/recurrent reset; its four-row conv state is sliced to the same last three prior rows consumed by Hyle.",
+        "GDN L2, scale, gated normalization precision boundaries and recurrent-state transpose were already authenticated by the first-block comparison."
+      ],
+      "caveat": "No new execution was performed; source agreement is not a proof of all downstream numerical behavior."
+    },
+    "next_action": {
+      "title": "One same-input first-full-attention boundary experiment, layer3 prefill only",
+      "candidate": "Use a scratch derivative of the existing Qwen consumer, truncate execution to the first four decoder layers and capture layer3 normalized pre-RoPE Q/K, actual post-RoPE Q/K/V, and original selected RaggedAttention output. Keep Q23/H8/KV2/D256, exact phase positions/scale, actual FlashInfer route and original BF16 boundaries.",
+      "guard": "Before interpreting new probes, require its layer0..3 conv/GDN and active layer3 K/V to match the existing full-journey trace. Publication/truncation can affect fusion; a failed guard invalidates the purported comparison.",
+      "independent_replay": "Read only those executed candidate inputs. Apply unmodified official RoPE/eager attention in Torch, and separately explicit F32 phase/rotation and F32-score/softmax controls with the same final BF16 storage. Never supply any oracle-computed intermediate to the candidate.",
+      "observations": [
+        "First compare native post-RoPE Q/K against official BF16 and F32-boundary controls before considering attention.",
+        "Then compare the native attention output on its recorded post-RoPE Q/K/V to official eager and a forced-math F32 control; spell out the bottom-right causal mask rather than relying on a backend default.",
+        "Record exact input/output bytes, BF16 mismatch/ULP counts, maxAbs/relL2 and token/head/channel first mismatch. Use the original budgets, not a tolerance derived from these data."
+      ],
+      "decision": "If differences follow precisely the changed RoPE/score storage boundaries and native agrees with an independently aligned F32 control, this is precision-policy evidence. If mismatch remains after matching boundaries, investigate functional GQA/position/mask/scale or selected-kernel behavior at this first boundary. Neither outcome alone accepts the final 2% logits gap.",
+      "cost": "One prefix of four layers plus one small operator replay, not another 24-layer run; use current matching host/native cache, no SDK or kernel rebuild. This action is proposed, not executed."
+    },
+    "no_recommended_changes": [
+      "Do not switch to precise unary, re-run single RMSNorm, feed reference state into Hyle, or loosen the logit budget on the basis of existing evidence."
+    ],
+    "config": {
+      "path": {
+        "path": "C:\\Users\\kiro\\Downloads\\Qwen3.5-2B\\config.json",
+        "bytes": 2908,
+        "sha256": "ed1c1723241f23f7f4e23430759cbd7dcfb4103cbdfe052bfe7626b57c2615b4"
+      },
+      "head_dim": 256,
+      "heads": 8,
+      "kv_heads": 2,
+      "rope": {
+        "mrope_interleaved": true,
+        "mrope_section": [
+          11,
+          11,
+          10
+        ],
+        "rope_type": "default",
+        "rope_theta": 10000000,
+        "partial_rotary_factor": 0.25
+      }
+    },
+    "current_sources": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tools\\qwen35_text\\main.cc",
+        "bytes": 33954,
+        "sha256": "7587f6f6e73a7fa8e06ab642d00504d3aac674cf5f2749bdbf040ae6526efbb8"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tools\\qwen35_text\\reference.py",
+        "bytes": 8299,
+        "sha256": "003293760afbe8540909ac286adb65bbfb1ed0c440abc5a9064cb6b05fbe39e4"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\src\\compute_ggml_runtime\\explicit_rope.h",
+        "bytes": 3577,
+        "sha256": "356def1adf2f40dc2dcd1b342c45c0fc5cf2f015739783b8df0741b94cc5acff"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_ggml_cuda\\tensor_program.cc",
+        "bytes": 42697,
+        "sha256": "0ed855948088a739fb930224d70ef7ba5505185df57cb5359372310c33f73687"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_flashinfer\\native_batch.cu",
+        "bytes": 6906,
+        "sha256": "c17e99b53e793e3357b36eec288d2a1e36211081b95a8d2145c4ff3b4234d6da"
+      }
+    ],
+    "official_source": {
+      "path": "C:\\Program Files\\Python312\\Lib\\site-packages\\transformers\\models\\qwen3_5\\modeling_qwen3_5.py",
+      "bytes": 101574,
+      "sha256": "0e7410f5251e5c324a5628c5340ee3551f7a6a505ce398569fcc3b5f3ac07f7a"
+    }
+  },
+  "limits": [
+    "No scheduler rerun or new Linux/Apple/Vulkan full-model journey.",
+    "Independent-oracle approximately 2% logits discrepancy remains unaccepted. RoPE/eager-attention BF16 intermediate boundaries differ; next experiment uses candidate real inputs.",
+    "Short-request timing stops at ordinary EOS after decode2. No sustained warm-decode, llama.cpp, whole-device memory or power conclusion."
+  ],
+  "investigation": [
+    "First new fixture requested plain MatMul from ggml-only provider, which is outside its actual domain; replaced the fixture with supported F32 SDPA to exercise native cuBLAS. No production capability expanded to satisfy a test.",
+    "Initial fixture compilation needed explicit Operation at the general span API and explicit contained Completion reset; diagnostics retained.",
+    "Benchmark initially assumed six generated tokens; ordinary EOS correctly stopped both implementations after three IDs. Measurement captions and parser were corrected; no EOS override or model change."
+  ],
+  "cleanup_plan": {
+    "files": 312,
+    "bytes": 574147629,
+    "retained_objects": 8,
+    "retained_original_trace": 150,
+    "script": "test.ps1 -ReclaimCudaAdmittedStream"
+  },
+  "cleanup": {
+    "archive_verified": true,
+    "files": 312,
+    "bytes": 574147629.0,
+    "retained_objects": 8,
+    "retained_original_trace": 150,
+    "reused_native_retained": true,
+    "other_cache_retained": true
+  }
+}

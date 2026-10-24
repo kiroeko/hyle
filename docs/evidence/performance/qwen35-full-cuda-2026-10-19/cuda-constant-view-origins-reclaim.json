@@ -1,0 +1,99 @@
+{
+  "objects_retained": true,
+  "raw_vectors_retained": true,
+  "recursive": false,
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\qwen35-full-cuda-2026-10-19\\cuda-constant-view-origins.zip",
+    "bytes": 19335291,
+    "sha256": "15118c9dba4e67466ae96eafe0623f13347b70b176c7dee1c31b709217d8f2c8",
+    "entries": 466,
+    "CRC_and_payload_SHA_verified": true,
+    "reclaim_manifest": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\immutable-constant-alias\\reclaim-targets-current.json",
+      "bytes": 4423,
+      "sha256": "2d515e39eb2443b64528b7983accea721a221d29025a5fae259e8bc2beceb522"
+    }
+  },
+  "targets": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\immutable-constant-alias\\checks\\20261019T063301-1d108b74\\cpu.exe",
+      "bytes": 23367168,
+      "sha256": "e2efbac674ed20275e66a8caf1d1bc8f76ff07ce0ea1d6876c7f675472de7159"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\immutable-constant-alias\\checks\\20261019T063301-1d108b74\\cpu.exp",
+      "bytes": 25024,
+      "sha256": "5e02a37b54e363bd286a0d8a6e2716a0b87c72db7b69a98e38d2db148c0e25bb"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\immutable-constant-alias\\checks\\20261019T063301-1d108b74\\cpu.lib",
+      "bytes": 41298,
+      "sha256": "1a72c22d3a6dec39cca5118fd99aa738ff5f4202c029fc8a48afb6c3d20e909d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\immutable-constant-alias\\checks\\20261019T063301-1d108b74\\cpu.map",
+      "bytes": 31219197,
+      "sha256": "9ab54c79853d3a0021629de3f7f46a3a4c2c1f1694829164bc0eccb5a38faa0f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\immutable-constant-alias\\checks\\20261019T063301-1d108b74\\cuda.exe",
+      "bytes": 117141504,
+      "sha256": "5aa9bcf4b19c6e8bf8487678e920089da21cdead7653ee8d04a75e8895f5a9d6"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\immutable-constant-alias\\checks\\20261019T063301-1d108b74\\cuda.exp",
+      "bytes": 25027,
+      "sha256": "14d9bc5c563ee567fe18da86e676d87b92c4d5043ed5d65480149356657480e8"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\immutable-constant-alias\\checks\\20261019T063301-1d108b74\\cuda.lib",
+      "bytes": 41384,
+      "sha256": "097299e17e955c077a99f65f363d3484d564c016359baeb643f4e47c6b737d59"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\immutable-constant-alias\\checks\\20261019T063301-1d108b74\\cuda.map",
+      "bytes": 35861861,
+      "sha256": "441da6705afa90e14017d60c08c94f59523a843ca3ed70e6b85e266f507bd179"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\immutable-constant-alias\\checks\\20261019T063301-1d108b74\\qwen.exe",
+      "bytes": 116208128,
+      "sha256": "8bae44757f12381ed34570755e1ffec576cad82ca4542b48be51b2f50535bda9"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\immutable-constant-alias\\checks\\20261019T063301-1d108b74\\qwen.exp",
+      "bytes": 25027,
+      "sha256": "491ec3a25f02082944750eec0f4f8eb49f381d7bff884942c971c5f5d80a69b6"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\immutable-constant-alias\\checks\\20261019T063301-1d108b74\\qwen.lib",
+      "bytes": 41384,
+      "sha256": "339d3ce297534ebac8825c27a011f2f4f9dfe366c657ebfc45dbbfdc8412a2cb"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\immutable-constant-alias\\checks\\20261019T063301-1d108b74\\qwen.map",
+      "bytes": 33712552,
+      "sha256": "0be1dc9d51d39fbee4a7087a3911e0e2174d355fc0c474f94478d209d7e82db9"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\immutable-constant-alias\\checks\\20261019T063738-35becef7\\cpu.exe",
+      "bytes": 23370240,
+      "sha256": "e970757bf66a311ac98a4a2a8c15c59170791c32b89c98d26b4a09f2d8f3a87e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\immutable-constant-alias\\checks\\20261019T063738-35becef7\\cpu.exp",
+      "bytes": 25024,
+      "sha256": "a0313c971588da543de0b4da405150b1bc5211f7612f61452925151d06c005e6"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\immutable-constant-alias\\checks\\20261019T063738-35becef7\\cpu.lib",
+      "bytes": 41298,
+      "sha256": "1a72c22d3a6dec39cca5118fd99aa738ff5f4202c029fc8a48afb6c3d20e909d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\immutable-constant-alias\\checks\\20261019T063738-35becef7\\cpu.map",
+      "bytes": 31192460,
+      "sha256": "15f716aaec99409fbcde7dd4d970600c523aa41d00f969bfcb1fe944fe24afab"
+    }
+  ]
+}

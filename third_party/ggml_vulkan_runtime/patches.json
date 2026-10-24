@@ -4,7 +4,7 @@
     {
       "path": "src/ggml-vulkan/vulkan-shaders/vulkan-shaders-gen.cpp",
       "before_sha256": "e2066c68067c91fa72a8c6420a0a6a4f6072ba6aec6b9ee303e2706517ed843c",
-      "after_sha256": "dba91aefb190fdb35ddc31df0ea2c3a28a14a17f2a93de9d1cd1299075a19180",
+      "after_sha256": "15c1954861514359a6a8c1ad18edee0e288256fe0fb5dd12ef68910acd1b3d9e",
       "edits": [
         {
           "before": "#define ASYNCIO_CONCURRENCY 64",
@@ -13,6 +13,10 @@
         {
           "before": "    // 16 is an arbitrary limit, the goal is to avoid \"failed to create pipe\" errors.\n    uint32_t N = std::max(1u, std::min(16u, std::thread::hardware_concurrency()));",
           "after": "    // HYLE: one shader compiler per outer build job, no nested fan-out.\n    const uint32_t N = 1;"
+        },
+        {
+          "before": "    for (const bool& fp16 : {false, true}) {\n        std::map<std::string, std::string> base_dict;",
+          "after": "    string_to_spv(\"hyle_flash_attn_e4\", \"flash_attn.comp\",\n        {{\"FLOAT_TYPE\", \"float\"}, {\"FLOAT_TYPEV2\", \"vec2\"}, {\"FLOAT_TYPEV4\", \"vec4\"},\n         {\"ACC_TYPE\", \"float\"}, {\"ACC_TYPEV2\", \"vec2\"}, {\"ACC_TYPEV4\", \"vec4\"},\n         {\"DATA_A_IQ4_NL\", \"1\"}, {\"Q_TYPE\", \"float\"}, {\"D_TYPE\", \"float\"}, {\"D_TYPEV4\", \"vec4\"},\n         {\"HYLE_E4_CACHE\", \"1\"}}, false, false, false, false);\n\n    for (const bool& fp16 : {false, true}) {\n        std::map<std::string, std::string> base_dict;"
         }
       ]
     },
@@ -421,7 +425,7 @@
         },
         {
           "before": "                if (hyle_full_f32) {\n                    if (HSK != HSV || (HSK != 64 && HSK != 128 && HSK != 256) ||\n                        (op->src[1]->type != GGML_TYPE_F16 && op->src[1]->type != GGML_TYPE_F32) ||\n                        (op->src[2]->type != GGML_TYPE_F16 && op->src[2]->type != GGML_TYPE_F32)) {\n                        return false;\n",
-          "after": "                if (hyle_full_f32) {\n                    if ((HSK != HSV && !(HSK == 64 && HSV == 128)) || (HSK != 64 && HSK != 128 && HSK != 256) ||\n                        (op->src[1]->type != GGML_TYPE_F16 && op->src[1]->type != GGML_TYPE_F32 && op->src[1]->type != GGML_TYPE_Q8_0) ||\n                        (op->src[2]->type != GGML_TYPE_F16 && op->src[2]->type != GGML_TYPE_F32 && op->src[2]->type != GGML_TYPE_Q8_0)) {\n                        return false;\n"
+          "after": "                if (hyle_full_f32) {\n                    const bool hyle_wide_f16 = HSV == 512 && (HSK == 512 || HSK == 576) &&\n                        op->src[1]->type == GGML_TYPE_F16 && op->src[2]->type == GGML_TYPE_F16;\n                    if ((!hyle_wide_f16 && ((HSK != HSV && !(HSK == 64 && HSV == 128)) ||\n                         (HSK != 64 && HSK != 128 && HSK != 256))) ||\n                        (op->src[1]->type != GGML_TYPE_F16 && op->src[1]->type != GGML_TYPE_F32 && op->src[1]->type != GGML_TYPE_Q8_0) ||\n                        (op->src[2]->type != GGML_TYPE_F16 && op->src[2]->type != GGML_TYPE_F32 && op->src[2]->type != GGML_TYPE_Q8_0)) {\n                        return false;\n"
         },
         {
           "before": "                        int64_t(offset) + (int64_t(rows) + 15) / 16 > ggml_nelements(table) ||\n                        op->src[1]->type != GGML_TYPE_F16 || op->src[2]->type != GGML_TYPE_F16 ||\n                        op->src[1]->ne[1] % 16 != 0 ||\n",
@@ -458,9 +462,117 @@
         {
           "before": "uint32_t(dst->op_params[hyle::compute::ggml_vulkan::bridge::kFlashAttentionWindowSlot] + 1)",
           "after": "(uint32_t(dst->op_params[hyle::compute::ggml_vulkan::bridge::kFlashAttentionWindowSlot]) + 1u)"
+        },
+        {
+          "before": "                        (op->src[1]->type != GGML_TYPE_F16 && op->src[1]->type != GGML_TYPE_Q8_0) ||\n                        op->src[2]->type != op->src[1]->type ||\n",
+          "after": "                        (op->src[1]->type != GGML_TYPE_F16 && op->src[1]->type != GGML_TYPE_BF16 &&\n                         op->src[1]->type != GGML_TYPE_Q8_0) ||\n                        op->src[2]->type != op->src[1]->type ||\n"
+        },
+        {
+          "before": "                    const bool hyle_wide_f16 = HSV == 512 && (HSK == 512 || HSK == 576) &&\n                        op->src[1]->type == GGML_TYPE_F16 && op->src[2]->type == GGML_TYPE_F16;\n                    if ((!hyle_wide_f16 && ((HSK != HSV && !(HSK == 64 && HSV == 128)) ||\n                         (HSK != 64 && HSK != 128 && HSK != 256))) ||\n                        (op->src[1]->type != GGML_TYPE_F16 && op->src[1]->type != GGML_TYPE_F32 && op->src[1]->type != GGML_TYPE_Q8_0) ||\n                        (op->src[2]->type != GGML_TYPE_F16 && op->src[2]->type != GGML_TYPE_F32 && op->src[2]->type != GGML_TYPE_Q8_0)) {\n",
+          "after": "                    const bool hyle_wide_plain = HSV == 512 && (HSK == 512 || HSK == 576) &&\n                        (op->src[1]->type == GGML_TYPE_F16 || op->src[1]->type == GGML_TYPE_BF16) &&\n                        op->src[2]->type == op->src[1]->type;\n                    if ((!hyle_wide_plain && ((HSK != HSV && !(HSK == 64 && HSV == 128)) ||\n                         (HSK != 64 && HSK != 128 && HSK != 256))) ||\n                        (op->src[1]->type != GGML_TYPE_F16 && op->src[1]->type != GGML_TYPE_BF16 &&\n                         op->src[1]->type != GGML_TYPE_F32 && op->src[1]->type != GGML_TYPE_Q8_0) ||\n                        (op->src[2]->type != GGML_TYPE_F16 && op->src[2]->type != GGML_TYPE_BF16 &&\n                         op->src[2]->type != GGML_TYPE_F32 && op->src[2]->type != GGML_TYPE_Q8_0)) {\n"
+        },
+        {
+          "before": "    qy_needs_dequant = qy_needs_dequant || y_needs_k_padding;",
+          "after": "    qy_needs_dequant = qy_needs_dequant || y_needs_k_padding;\n    const bool direct_y = !qy_needs_dequant && !quantize_y;"
+        },
+        {
+          "before": "    const bool aligned = !quantize_y && ne10 == kpad && ne01 > 8 && nei1 > 8;",
+          "after": "    // Direct strided Y must not enter vector loads that divide its pitches.\n    const bool aligned = !quantize_y && ne10 == kpad && ne01 > 8 && nei1 > 8 &&\n                         (!direct_y || ggml_is_contiguous(src1));"
+        },
+        {
+          "before": "    const uint64_t qy_sz = ggml_type_size(src1->type) * ggml_nelements(src1) / ggml_blck_size(src1->type);",
+          "after": "    const uint64_t qy_sz = ggml_nbytes(src1);"
+        },
+        {
+          "before": "    const uint64_t qy_sz = ggml_nbytes(src1);\n    const uint64_t x_sz = !qx_needs_dequant ? qx_sz : sizeof(ggml_fp16_t) * x_ne;\n    const uint64_t y_sz = quantize_y ? (ggml_vk_align_size(y_ne, 128) * ggml_type_size(GGML_TYPE_Q8_1) / ggml_blck_size(GGML_TYPE_Q8_1)) : (y_f32_kernel ? sizeof(float) * y_ne : sizeof(ggml_fp16_t) * y_ne);",
+          "after": "    const uint64_t qy_sz = ggml_nbytes(src1);\n    const uint64_t x_sz = !qx_needs_dequant ? qx_sz : sizeof(ggml_fp16_t) * x_ne;\n    const uint64_t y_sz = direct_y ? qy_sz :\n        (quantize_y ? (ggml_vk_align_size(y_ne, 128) * ggml_type_size(GGML_TYPE_Q8_1) / ggml_blck_size(GGML_TYPE_Q8_1)) : (y_f32_kernel ? sizeof(float) * y_ne : sizeof(ggml_fp16_t) * y_ne));"
+        },
+        {
+          "before": "    uint32_t stride_batch_y = y_needs_k_padding ? y_staged_row_stride * ne11 : ne10*ne11;\n\n    if (!ggml_vk_dim01_contiguous(src0) && !qx_needs_dequant) {\n        stride_batch_x = src0->nb[0] / ggml_type_size(src0->type);\n    }\n\n    if (!ggml_vk_dim01_contiguous(src1) && !qy_needs_dequant && !quantize_y) {\n        stride_batch_y = src1->nb[0] / ggml_type_size(src1->type);\n    }",
+          "after": "    uint32_t stride_batch_y = y_needs_k_padding ? y_staged_row_stride * ne11 : ne10*ne11;\n\n    if (!ggml_vk_dim01_contiguous(src0) && !qx_needs_dequant) {\n        stride_batch_x = src0->nb[0] / ggml_type_size(src0->type);\n    }\n\n    if (direct_y) {\n        stride_b_y = src1->nb[1] / ggml_type_size(src1->type);\n        stride_batch_y = src1->nb[2] / ggml_type_size(src1->type);\n    }"
+        },
+        {
+          "before": "    const uint64_t y_sz = quantize_y ? (ggml_vk_align_size(y_ne, 128) * ggml_type_size(GGML_TYPE_Q8_1) / ggml_blck_size(GGML_TYPE_Q8_1)) :\n                                       (f16_f32_kernel ? sizeof(float) * y_ne : sizeof(ggml_fp16_t) * y_ne);",
+          "after": "    const uint64_t y_sz = !qy_needs_dequant && !quantize_y ? ggml_nbytes(src1) :\n        (quantize_y ? (ggml_vk_align_size(y_ne, 128) * ggml_type_size(GGML_TYPE_Q8_1) / ggml_blck_size(GGML_TYPE_Q8_1)) :\n                      (f16_f32_kernel ? sizeof(float) * y_ne : sizeof(ggml_fp16_t) * y_ne));"
+        },
+        {
+          "before": "    if (!ggml_vk_dim01_contiguous(src1) && !qy_needs_dequant) {\n        stride_batch_y = src1->nb[2] / ggml_type_size(src1->type);\n    }",
+          "after": "    if (!qy_needs_dequant && !quantize_y) {\n        stride_batch_y = src1->nb[2] / ggml_type_size(src1->type);\n    }"
+        },
+        {
+          "before": "    ggml_vk_dispatch_pipeline(ctx, subctx, pipeline, { a, b, d, ids, expert_count_buf }, pc, { m, nei1, n_as });",
+          "after": "    // An expert can occur in every slot of every token, including duplicates.\n    // Keep the mathematical push constants unchanged; only cover all row tiles.\n    const uint64_t occurrence_rows = uint64_t(nei0) * nei1;\n    GGML_ASSERT(occurrence_rows <= UINT32_MAX - (pipeline->wg_denoms[1] - 1));\n    ggml_vk_dispatch_pipeline(ctx, subctx, pipeline, { a, b, d, ids, expert_count_buf }, pc,\n                              { m, uint32_t(occurrence_rows), n_as });"
+        },
+        {
+          "before": "                    if (!device->mul_mat_id_s[src0_type] && !device->mul_mat_id_m[src0_type] && !device->mul_mat_id_l[src0_type]) {\n                        // If there's not enough shared memory for row_ids and the result tile, fallback to CPU\n                        return false;\n                    }",
+          "after": "                    if (!device->mul_mat_id_s[src0_type] && !device->mul_mat_id_m[src0_type] && !device->mul_mat_id_l[src0_type]) {\n                        // If there's not enough shared memory for row_ids and the result tile, fallback to CPU\n                        return false;\n                    }\n                    const auto * ids = op->src[2];\n                    const bool vector_path = ids->ne[1] <= 8 &&\n                        (src0_type == GGML_TYPE_F32 || src0_type == GGML_TYPE_F16 || ggml_is_quantized(src0_type));\n                    if (!vector_path) {\n                        if (ids->ne[0] <= 0 || ids->ne[1] <= 0 ||\n                            uint64_t(ids->ne[0]) > UINT32_MAX / uint64_t(ids->ne[1])) {\n                            return false;\n                        }\n                        const uint64_t rows = uint64_t(ids->ne[0]) * uint64_t(ids->ne[1]);\n                        uint32_t min_y = UINT32_MAX;\n                        uint32_t max_y = 0;\n                        // The original selector may use a converted operand map.\n                        // Bound every actually created indexed tile, without a template table.\n                        for (const auto & map : device->pipeline_matmul) {\n                            if (!map.first.mul_mat_id) continue;\n                            for (const auto & config : map.second) {\n                                for (const auto & pipeline : {config.unaligned, config.aligned}) {\n                                    if (!pipeline) continue;\n                                    min_y = std::min(min_y, pipeline->wg_denoms[1]);\n                                    max_y = std::max(max_y, pipeline->wg_denoms[1]);\n                                }\n                            }\n                        }\n                        if (max_y == 0 || min_y == 0 || rows > UINT32_MAX - (max_y - 1) ||\n                            rows > uint64_t(device->properties.limits.maxComputeWorkGroupCount[1]) * min_y) {\n                            return false;\n                        }\n                    }"
+        },
+        {
+          "before": "    bool hyle_full_f32 = false;",
+          "after": "    bool hyle_full_f32 = false;\n    uint32_t hyle_key_scale = 0x3f800000u;\n    uint32_t hyle_value_scale = 0x3f800000u;"
+        },
+        {
+          "before": "k_type, v_type, hyle_full_f32) <",
+          "after": "k_type, v_type, hyle_full_f32, hyle_key_scale, hyle_value_scale) <"
+        },
+        {
+          "before": "b.k_type, b.v_type, b.hyle_full_f32);",
+          "after": "b.k_type, b.v_type, b.hyle_full_f32, b.hyle_key_scale, b.hyle_value_scale);"
+        },
+        {
+          "before": "        /*15 FaBlockBytesV   */ fa_block_bytes(state.v_type),",
+          "after": "        /*15 FaBlockBytesV   */ fa_block_bytes(state.v_type),\n        /*16 E4 key scale    */ state.hyle_key_scale,\n        /*17 E4 value scale  */ state.hyle_value_scale,"
+        },
+        {
+          "before": "        if (fa.first.hyle_full_f32 || bf16_kv) {",
+          "after": "        if (fa.first.hyle_full_f32 && fa.first.k_type == GGML_TYPE_I8) {\n            spv_data = hyle_flash_attn_e4_fp32_data;\n            spv_size = hyle_flash_attn_e4_fp32_len;\n            name = \"hyle_flash_attn_e4_full_f32\";\n        } else if (fa.first.hyle_full_f32 || bf16_kv) {"
+        },
+        {
+          "before": "    fa_pipeline_state.hyle_full_f32 = hyle_full_f32;",
+          "after": "    fa_pipeline_state.hyle_full_f32 = hyle_full_f32;\n    if (dst->op_params[hyle::compute::ggml_vulkan::bridge::kFlashAttentionStorageSlot] ==\n        hyle::compute::ggml_vulkan::bridge::kFlashAttentionE4M3) {\n        memcpy(&fa_pipeline_state.hyle_key_scale,\n            &dst->op_params[hyle::compute::ggml_vulkan::bridge::kFlashAttentionKeyScaleSlot], sizeof(uint32_t));\n        memcpy(&fa_pipeline_state.hyle_value_scale,\n            &dst->op_params[hyle::compute::ggml_vulkan::bridge::kFlashAttentionValueScaleSlot], sizeof(uint32_t));\n    }"
+        },
+        {
+          "before": "                if (hyle_paged) {\n                    const auto * table = op->src[5];",
+          "after": "                const bool hyle_e4 = hyle_paged && hyle_full_f32 &&\n                    op->op_params[hyle::compute::ggml_vulkan::bridge::kFlashAttentionStorageSlot] ==\n                        hyle::compute::ggml_vulkan::bridge::kFlashAttentionE4M3;\n                if (hyle_e4) {\n                    float key_scale, value_scale;\n                    memcpy(&key_scale, &op->op_params[hyle::compute::ggml_vulkan::bridge::kFlashAttentionKeyScaleSlot], sizeof(float));\n                    memcpy(&value_scale, &op->op_params[hyle::compute::ggml_vulkan::bridge::kFlashAttentionValueScaleSlot], sizeof(float));\n                    if (op->src[1]->type != GGML_TYPE_I8 || op->src[2]->type != GGML_TYPE_I8 ||\n                        !std::isfinite(key_scale) || key_scale <= 0.0f ||\n                        !std::isfinite(value_scale) || value_scale <= 0.0f) return false;\n                }\n                if (hyle_paged) {\n                    const auto * table = op->src[5];"
+        },
+        {
+          "before": "                         op->src[1]->type != GGML_TYPE_Q8_0) ||",
+          "after": "                         op->src[1]->type != GGML_TYPE_Q8_0 && !hyle_e4) ||"
+        },
+        {
+          "before": "                         op->src[1]->type != GGML_TYPE_F32 && op->src[1]->type != GGML_TYPE_Q8_0) ||",
+          "after": "                         op->src[1]->type != GGML_TYPE_F32 && op->src[1]->type != GGML_TYPE_Q8_0 && !hyle_e4) ||"
+        },
+        {
+          "before": "                         op->src[2]->type != GGML_TYPE_F32 && op->src[2]->type != GGML_TYPE_Q8_0)) {",
+          "after": "                         op->src[2]->type != GGML_TYPE_F32 && op->src[2]->type != GGML_TYPE_Q8_0 && !hyle_e4)) {"
+        },
+        {
+          "before": "                if (!fa_kv_ok(op->src[1]->type) || !fa_kv_ok(op->src[2]->type)) {",
+          "after": "                if ((!fa_kv_ok(op->src[1]->type) || !fa_kv_ok(op->src[2]->type)) && !hyle_e4) {"
+        },
+        {
+          "before": "                    if ((!hyle_wide_plain && ((HSK != HSV && !(HSK == 64 && HSV == 128)) ||\n",
+          "after": "                    // Compact E4 has one physical root and one scale. Only\n                    // its exact V512 prefix may retain the wider CKV pitch.\n                    const auto * hyle_k = op->src[1];\n                    const auto * hyle_v = op->src[2];\n                    const bool hyle_wide_e4 = hyle_e4 && HSV == 512 && (HSK == 512 || HSK == 576) &&\n                        hyle_k->view_src && hyle_k->view_src == hyle_v->view_src &&\n                        hyle_k->view_offs == hyle_v->view_offs &&\n                        hyle_k->ne[1] == hyle_v->ne[1] && hyle_k->ne[2] == 1 && hyle_k->ne[3] == 1 &&\n                        hyle_v->ne[2] == 1 && hyle_v->ne[3] == 1 && hyle_k->nb[0] == 1 &&\n                        hyle_k->nb[1] == HSK && memcmp(hyle_k->nb, hyle_v->nb, sizeof(hyle_k->nb)) == 0 &&\n                        op->op_params[hyle::compute::ggml_vulkan::bridge::kFlashAttentionKeyScaleSlot] ==\n                        op->op_params[hyle::compute::ggml_vulkan::bridge::kFlashAttentionValueScaleSlot];\n                    if ((!hyle_wide_plain && !hyle_wide_e4 && ((HSK != HSV && !(HSK == 64 && HSV == 128)) ||\n"
+        },
+        {
+          "before": "                const bool hyle_e4 = hyle_paged && hyle_full_f32 &&\n",
+          "after": "                const bool hyle_e4 = hyle_full_f32 &&\n                    op->op_params[hyle::compute::ggml_vulkan::bridge::kFlashAttentionCacheSlot] ==\n                        hyle::compute::ggml_vulkan::bridge::kFlashAttentionCache &&\n"
+        },
+        {
+          "before": "#include \"ggml-vulkan.h\"\n",
+          "after": "#include \"ggml-vulkan.h\"\n#include \"gated_delta_scale.h\"\n\nextern \"C\" std::int32_t ggml_hyle_vulkan_gdn_output_scale_contract() {\n    return hyle::compute::ggml_runtime::kGdnOutputScaleContract;\n}\n\n"
+        },
+        {
+          "before": "    const float scale = 1.0f / sqrtf((float)S_v);",
+          "after": "    const float scale = hyle::compute::ggml_runtime::gdn_output_scale(\n        dst, 1.0f / sqrtf((float)S_v));"
+        },
+        {
+          "before": "            src_clone[2], src_clone[3], src_clone[4], src_clone[5],\n            ggml_get_op_params_i32(tensor, 0));",
+          "after": "            src_clone[2], src_clone[3], src_clone[4], src_clone[5],\n            ggml_get_op_params_i32(tensor, 0));\n            // Retain explicit-scale presence and F32 bits in the CPU oracle clone.\n            tensor_clone->op_params[hyle::compute::ggml_runtime::kGdnOutputScaleSlot] =\n                tensor->op_params[hyle::compute::ggml_runtime::kGdnOutputScaleSlot];\n            tensor_clone->op_params[hyle::compute::ggml_runtime::kGdnOutputScalePresenceSlot] =\n                tensor->op_params[hyle::compute::ggml_runtime::kGdnOutputScalePresenceSlot];"
         }
       ],
-      "after_sha256": "af7dea1e1c981877a9ca0f1ce955844c35a11593a0ec88b3addf263a8f4e261a"
+      "after_sha256": "dcaab6e022298178106d51e54a524499a447fe710759a4d243b27bcb4ef746f2"
     },
     {
       "path": "src/ggml.cpp",
@@ -669,9 +781,13 @@
         {
           "before": "const bool HYLE_CAUSAL = (Flags & 32u) != 0;\nuint32_t hyle_kv_row(uint32_t logical_row) {\n",
           "after": "const bool HYLE_CAUSAL = (Flags & 32u) != 0;\nconst bool HYLE_WINDOW = (Flags & 64u) != 0;\nconst bool HYLE_CACHE = (Flags & 128u) != 0;\nuint32_t hyle_kv_row(uint32_t logical_row) {\n"
+        },
+        {
+          "before": "#include \"flash_attn_dequant.glsl\"",
+          "after": "#include \"flash_attn_dequant.glsl\"\n#ifdef HYLE_E4_CACHE\n#include \"hyle_e4_cache.glsl\"\nlayout(constant_id = 16) const uint HyleKeyScale = 0x3f800000u;\nlayout(constant_id = 17) const uint HyleValueScale = 0x3f800000u;\nlayout(binding = 1) readonly buffer HyleE4K { uint hyle_e4_k[]; };\nlayout(binding = 2) readonly buffer HyleE4V { uint hyle_e4_v[]; };\n// I8 is only an opaque byte carrier. This variant exists solely for the\n// private paged E4 tag; ordinary ggml I8 arithmetic remains unsupported.\nFLOAT_TYPEV4 hyle_e4_dequantize4(uint ib, uint iqs, uint offset, uint port) {\n    uint address = offset + ib;\n    uint word = port == BINDING_IDX_K ? hyle_e4_k[address / 4u] : hyle_e4_v[address / 4u];\n    uint scale = port == BINDING_IDX_K ? HyleKeyScale : HyleValueScale;\n    vec4 result;\n    for(uint lane=0u;lane<4u;++lane)\n        result[lane] = uintBitsToFloat(hyle_f32_mul(fp8_e4m3_to_f32_bits((word>>(lane*8u))&255u),scale));\n    return FLOAT_TYPEV4(result);\n}\n#define dequantize4 hyle_e4_dequantize4\n#endif"
         }
       ],
-      "after_sha256": "6286c022977503dcaebfa0b40e13b15380b4989da5df306e3eb922f7637b228d"
+      "after_sha256": "5e8560630ba810b670f57d370b3a1be3f3a1308317d2d1e05ea559b57d315a13"
     },
     {
       "path": "src/ggml-vulkan/vulkan-shaders/copy_to_quant.comp",

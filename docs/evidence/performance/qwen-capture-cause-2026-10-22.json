@@ -1,0 +1,3982 @@
+{
+  "status": "Actual first invalidation causes identified; no product execution fix or new speed claim in this diagnostic batch; broad goal remains active",
+  "date": "2026-10-22",
+  "ready": {
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\qwen-link1\\qwen.exe",
+      "bytes": 140366336,
+      "sha256": "1478ac8e35bb04840412727f5e1a57f36a3a2598a157947ff55680cf3a23468f"
+    },
+    "source": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\probe\\tools\\qwen35_text\\main.cc",
+      "bytes": 267977,
+      "sha256": "a50a7633163de2a7b0231e99b15aebf193535d8ad019886edfc96e949255e038"
+    },
+    "main": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\probe\\tools\\qwen35_text\\main.cc",
+      "bytes": 267977,
+      "sha256": "a50a7633163de2a7b0231e99b15aebf193535d8ad019886edfc96e949255e038"
+    },
+    "compiled_records": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\compile1\\main\\identity.json",
+        "bytes": 73218,
+        "sha256": "592b4265df43669ef108b394328bcd80babb141e2043d7002bfcc66b758841db"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\compile1\\executable\\identity.json",
+        "bytes": 55597,
+        "sha256": "ea14f1106846e06a4244fc857fb79e5974d7fc127d78a3f2dc77ebf9c98da838"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\compile1\\resources\\identity.json",
+        "bytes": 54359,
+        "sha256": "02332a330bf2a85f9dab1bf715d25b6fc3e6a07cb6ed4703bb75d2d04af84ddc"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\compile1\\region_access\\identity.json",
+        "bytes": 52299,
+        "sha256": "8a20fc96776cc0032a11b63dec96018fcf5026c77375115f690027c2ba0dd4b7"
+      }
+    ],
+    "consumer_compiled_record": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\compile1\\main\\identity.json",
+      "bytes": 73218,
+      "sha256": "592b4265df43669ef108b394328bcd80babb141e2043d7002bfcc66b758841db"
+    },
+    "consumer_recompiled": true,
+    "changed_sources": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\probe\\tools\\qwen35_text\\main.cc",
+        "bytes": 267977,
+        "sha256": "a50a7633163de2a7b0231e99b15aebf193535d8ad019886edfc96e949255e038"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\probe\\src\\graph\\executable.cc",
+        "bytes": 476895,
+        "sha256": "d1464970f54bb8138f3cc0770afb2df0a3e214ce9b6f46052c9d2431582ee595"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\probe\\src\\graph\\resources.cc",
+        "bytes": 100373,
+        "sha256": "47ffdef52428056fabe7f1e1b8269d990696fe2eba1f38390107de6e0e2feee2"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\probe\\src\\graph\\region_access.cc",
+        "bytes": 12656,
+        "sha256": "a6b4e764b375c88f129c74a9638be8563ac30efaf6eabd1c89cb8e817a9d0b7f"
+      }
+    ],
+    "link_plan": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\qwen-link1\\link-plan.json",
+      "bytes": 85020,
+      "sha256": "4af172e39d7b1ef84ef27b26b8294f3c71fa0d2d85aa0bfa7f97b10ed3ff3d03"
+    },
+    "runtime_environment": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\qwen-link1\\runtime-environment.json",
+      "bytes": 8849,
+      "sha256": "e83b0859fc212e915b8ebf837383d291767cd8952f9e4db0aee90a39af71608a"
+    },
+    "diagnostic_only": true,
+    "SDK_builds": 0,
+    "NVCC_builds": 0
+  },
+  "docs_freeze": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\docs-freeze.json",
+    "bytes": 1066,
+    "sha256": "4f60fa69af93480d4c10bc3db7b1b50b97457e38fe5e83942f75a50d2543f125"
+  },
+  "build_scope": {
+    "successful_host_compiles": 4,
+    "host_compile_attempts": 4,
+    "successful_links": 1,
+    "input_count": 195,
+    "reused_inputs": 191,
+    "SDK_builds": 0,
+    "NVCC_builds": 0,
+    "full_configures": 0,
+    "compile_receipts": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\compile1\\main\\compile.result.json",
+        "bytes": 2307,
+        "sha256": "19574b15dfaf3bd77e6758df92b2bd8d56d2ed356f5fd1aff396c8b0d4a24be4"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\compile1\\executable\\compile.result.json",
+        "bytes": 2272,
+        "sha256": "c2a6eeb4da3967a66b740201e3852662e65dcf66a50b0d62a7309a9fe9a16f6e"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\compile1\\resources\\compile.result.json",
+        "bytes": 2264,
+        "sha256": "a0122c99ee90bcd9ff3774616b09fac1ca538087ff0f11085f7aa217beea1d54"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\compile1\\region_access\\compile.result.json",
+        "bytes": 2292,
+        "sha256": "b6c1a2cb59f0db30688e83d11d8d6212f05a6c9f2ca759cbc507d45ef7aeee34"
+      }
+    ]
+  },
+  "actual_model_processes": 1,
+  "diagnostic_processes": 1,
+  "performance_processes": 0,
+  "actual_run": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\diagnostic1\\run.result.json",
+    "bytes": 825,
+    "sha256": "a6a865e6c098c61277d7a8b1227829882e245f46453db9d5dc31004448366a8a"
+  },
+  "finite_control": {
+    "status": "same_selected_output_work_fields",
+    "selected_changes": {},
+    "no_tensor_payloads": true,
+    "unexpected_payload_paths": [],
+    "actual_outputs": 64,
+    "performance_evidence": false
+  },
+  "losses": [
+    {
+      "event": "0",
+      "serial": "5",
+      "role": "4",
+      "R": "1",
+      "T": "2",
+      "slot": "0",
+      "prior": "1",
+      "run": "0000020DABCA34B8",
+      "inv": "0000036564723000",
+      "plan": "0000036560941000",
+      "generation": "3",
+      "step": "0",
+      "range_begin": "0",
+      "range_count": "53",
+      "revision": "3",
+      "prepared_revision": "3",
+      "stable": "1",
+      "native_inputs": "0",
+      "why": "prepare-binding",
+      "caller": "0000000000000000",
+      "unproved": "0",
+      "revision_changed": "0",
+      "native_current": "0",
+      "port_kind": "input",
+      "port": "2",
+      "instance": "4",
+      "old_valid": "1",
+      "old_dtype": "5",
+      "old_rank": "2",
+      "old_resource": "00000365600F0080",
+      "old_handle": "000000139DDF9A00",
+      "old_offset": "8192",
+      "old_bytes": "4096",
+      "old_dims": "1,2048",
+      "old_strides": "4096,2",
+      "new_valid": "1",
+      "new_dtype": "5",
+      "new_rank": "2",
+      "new_resource": "00000365600F0080",
+      "new_handle": "000000139DDF9A00",
+      "new_offset": "0",
+      "new_bytes": "4096",
+      "new_dims": "1,2048",
+      "new_strides": "4096,2"
+    },
+    {
+      "event": "1",
+      "serial": "8",
+      "role": "3",
+      "R": "1",
+      "T": "2",
+      "slot": "1",
+      "prior": "1",
+      "run": "0000020DA811C8A0",
+      "inv": "000003656471E000",
+      "plan": "0000036560923000",
+      "generation": "2",
+      "step": "63",
+      "range_begin": "57",
+      "range_count": "1269",
+      "revision": "3",
+      "prepared_revision": "3",
+      "stable": "1",
+      "native_inputs": "0",
+      "why": "prepare-binding",
+      "caller": "0000000000000000",
+      "unproved": "0",
+      "revision_changed": "0",
+      "native_current": "0",
+      "port_kind": "input",
+      "port": "0",
+      "instance": "8",
+      "old_valid": "1",
+      "old_dtype": "5",
+      "old_rank": "3",
+      "old_resource": "00000365600F0080",
+      "old_handle": "000000139DD56E00",
+      "old_offset": "36864",
+      "old_bytes": "36864",
+      "old_dims": "1,3,6144",
+      "old_strides": "36864,12288,2",
+      "new_valid": "1",
+      "new_dtype": "5",
+      "new_rank": "3",
+      "new_resource": "00000365600F0080",
+      "new_handle": "000000139DD56E00",
+      "new_offset": "73728",
+      "new_bytes": "36864",
+      "new_dims": "1,3,6144",
+      "new_strides": "36864,12288,2"
+    },
+    {
+      "event": "2",
+      "serial": "9",
+      "role": "4",
+      "R": "1",
+      "T": "2",
+      "slot": "0",
+      "prior": "3",
+      "run": "0000020DABCA34B8",
+      "inv": "0000036564723000",
+      "plan": "0000036560941000",
+      "generation": "3",
+      "step": "0",
+      "range_begin": "0",
+      "range_count": "53",
+      "revision": "4",
+      "prepared_revision": "4",
+      "stable": "1",
+      "native_inputs": "0",
+      "why": "prepare-binding",
+      "caller": "0000000000000000",
+      "unproved": "0",
+      "revision_changed": "0",
+      "native_current": "0",
+      "port_kind": "input",
+      "port": "2",
+      "instance": "4",
+      "old_valid": "1",
+      "old_dtype": "5",
+      "old_rank": "2",
+      "old_resource": "00000365600F0080",
+      "old_handle": "000000139DDF9A00",
+      "old_offset": "0",
+      "old_bytes": "4096",
+      "old_dims": "1,2048",
+      "old_strides": "4096,2",
+      "new_valid": "1",
+      "new_dtype": "5",
+      "new_rank": "2",
+      "new_resource": "00000365600F0080",
+      "new_handle": "000000139DDF9A00",
+      "new_offset": "8192",
+      "new_bytes": "4096",
+      "new_dims": "1,2048",
+      "new_strides": "4096,2"
+    },
+    {
+      "event": "3",
+      "serial": "11",
+      "role": "4",
+      "R": "1",
+      "T": "2",
+      "slot": "0",
+      "prior": "4",
+      "run": "0000020DABCA34B8",
+      "inv": "0000036564723000",
+      "plan": "0000036560941000",
+      "generation": "3",
+      "step": "0",
+      "range_begin": "0",
+      "range_count": "53",
+      "revision": "5",
+      "prepared_revision": "5",
+      "stable": "1",
+      "native_inputs": "0",
+      "why": "prepare-binding",
+      "caller": "0000000000000000",
+      "unproved": "0",
+      "revision_changed": "0",
+      "native_current": "0",
+      "port_kind": "input",
+      "port": "2",
+      "instance": "4",
+      "old_valid": "1",
+      "old_dtype": "5",
+      "old_rank": "2",
+      "old_resource": "00000365600F0080",
+      "old_handle": "000000139DDF9A00",
+      "old_offset": "8192",
+      "old_bytes": "4096",
+      "old_dims": "1,2048",
+      "old_strides": "4096,2",
+      "new_valid": "1",
+      "new_dtype": "5",
+      "new_rank": "2",
+      "new_resource": "00000365600F0080",
+      "new_handle": "000000139DDF9A00",
+      "new_offset": "0",
+      "new_bytes": "4096",
+      "new_dims": "1,2048",
+      "new_strides": "4096,2"
+    },
+    {
+      "event": "4",
+      "serial": "14",
+      "role": "3",
+      "R": "1",
+      "T": "2",
+      "slot": "1",
+      "prior": "3",
+      "run": "0000020DA811C8A0",
+      "inv": "000003656471E000",
+      "plan": "0000036560923000",
+      "generation": "2",
+      "step": "5",
+      "range_begin": "0",
+      "range_count": "55",
+      "revision": "3",
+      "prepared_revision": "3",
+      "stable": "1",
+      "native_inputs": "0",
+      "why": "prepare-binding",
+      "caller": "0000000000000000",
+      "unproved": "0",
+      "revision_changed": "0",
+      "native_current": "0",
+      "port_kind": "input",
+      "port": "0",
+      "instance": "3",
+      "old_valid": "1",
+      "old_dtype": "5",
+      "old_rank": "2",
+      "old_resource": "00000365600F0080",
+      "old_handle": "000000139DDF9A00",
+      "old_offset": "4096",
+      "old_bytes": "4096",
+      "old_dims": "1,2048",
+      "old_strides": "4096,2",
+      "new_valid": "1",
+      "new_dtype": "5",
+      "new_rank": "2",
+      "new_resource": "00000365600F0080",
+      "new_handle": "000000139DDF9A00",
+      "new_offset": "0",
+      "new_bytes": "4096",
+      "new_dims": "1,2048",
+      "new_strides": "4096,2"
+    },
+    {
+      "event": "5",
+      "serial": "14",
+      "role": "3",
+      "R": "1",
+      "T": "2",
+      "slot": "1",
+      "prior": "3",
+      "run": "0000020DA811C8A0",
+      "inv": "000003656471E000",
+      "plan": "0000036560923000",
+      "generation": "2",
+      "step": "1321",
+      "range_begin": "57",
+      "range_count": "1269",
+      "revision": "3",
+      "prepared_revision": "3",
+      "stable": "1",
+      "native_inputs": "0",
+      "why": "prepare-binding",
+      "caller": "0000000000000000",
+      "unproved": "0",
+      "revision_changed": "0",
+      "native_current": "0",
+      "port_kind": "output",
+      "port": "0",
+      "instance": "1920",
+      "old_valid": "1",
+      "old_dtype": "5",
+      "old_rank": "2",
+      "old_resource": "00000365600F0080",
+      "old_handle": "000000139DDF9A00",
+      "old_offset": "8192",
+      "old_bytes": "4096",
+      "old_dims": "1,2048",
+      "old_strides": "4096,2",
+      "new_valid": "1",
+      "new_dtype": "5",
+      "new_rank": "2",
+      "new_resource": "00000365600F0080",
+      "new_handle": "000000139DDF9A00",
+      "new_offset": "4096",
+      "new_bytes": "4096",
+      "new_dims": "1,2048",
+      "new_strides": "4096,2"
+    },
+    {
+      "event": "6",
+      "serial": "15",
+      "role": "4",
+      "R": "1",
+      "T": "2",
+      "slot": "0",
+      "prior": "5",
+      "run": "0000020DABCA34B8",
+      "inv": "0000036564723000",
+      "plan": "0000036560941000",
+      "generation": "3",
+      "step": "0",
+      "range_begin": "0",
+      "range_count": "53",
+      "revision": "6",
+      "prepared_revision": "6",
+      "stable": "1",
+      "native_inputs": "0",
+      "why": "prepare-binding",
+      "caller": "0000000000000000",
+      "unproved": "0",
+      "revision_changed": "0",
+      "native_current": "0",
+      "port_kind": "input",
+      "port": "2",
+      "instance": "4",
+      "old_valid": "1",
+      "old_dtype": "5",
+      "old_rank": "2",
+      "old_resource": "00000365600F0080",
+      "old_handle": "000000139DDF9A00",
+      "old_offset": "0",
+      "old_bytes": "4096",
+      "old_dims": "1,2048",
+      "old_strides": "4096,2",
+      "new_valid": "1",
+      "new_dtype": "5",
+      "new_rank": "2",
+      "new_resource": "00000365600F0080",
+      "new_handle": "000000139DDF9A00",
+      "new_offset": "4096",
+      "new_bytes": "4096",
+      "new_dims": "1,2048",
+      "new_strides": "4096,2"
+    },
+    {
+      "event": "7",
+      "serial": "15",
+      "role": "4",
+      "R": "1",
+      "T": "2",
+      "slot": "0",
+      "prior": "5",
+      "run": "0000020DABCA34B8",
+      "inv": "0000036564723000",
+      "plan": "0000036560941000",
+      "generation": "3",
+      "step": "1319",
+      "range_begin": "55",
+      "range_count": "1269",
+      "revision": "3",
+      "prepared_revision": "3",
+      "stable": "1",
+      "native_inputs": "0",
+      "why": "prepare-binding",
+      "caller": "0000000000000000",
+      "unproved": "0",
+      "revision_changed": "0",
+      "native_current": "0",
+      "port_kind": "output",
+      "port": "0",
+      "instance": "1923",
+      "old_valid": "1",
+      "old_dtype": "5",
+      "old_rank": "2",
+      "old_resource": "00000365600F0080",
+      "old_handle": "000000139DDF9A00",
+      "old_offset": "4096",
+      "old_bytes": "4096",
+      "old_dims": "1,2048",
+      "old_strides": "4096,2",
+      "new_valid": "1",
+      "new_dtype": "5",
+      "new_rank": "2",
+      "new_resource": "00000365600F0080",
+      "new_handle": "000000139DDF9A00",
+      "new_offset": "0",
+      "new_bytes": "4096",
+      "new_dims": "1,2048",
+      "new_strides": "4096,2"
+    },
+    {
+      "event": "8",
+      "serial": "16",
+      "role": "4",
+      "R": "1",
+      "T": "2",
+      "slot": "1",
+      "prior": "3",
+      "run": "0000020DABCA34C0",
+      "inv": "0000036564728000",
+      "plan": "0000036560941000",
+      "generation": "3",
+      "step": "0",
+      "range_begin": "0",
+      "range_count": "53",
+      "revision": "3",
+      "prepared_revision": "3",
+      "stable": "1",
+      "native_inputs": "0",
+      "why": "prepare-binding",
+      "caller": "0000000000000000",
+      "unproved": "0",
+      "revision_changed": "0",
+      "native_current": "0",
+      "port_kind": "input",
+      "port": "2",
+      "instance": "4",
+      "old_valid": "1",
+      "old_dtype": "5",
+      "old_rank": "2",
+      "old_resource": "00000365600F0080",
+      "old_handle": "000000139DDF9A00",
+      "old_offset": "4096",
+      "old_bytes": "4096",
+      "old_dims": "1,2048",
+      "old_strides": "4096,2",
+      "new_valid": "1",
+      "new_dtype": "5",
+      "new_rank": "2",
+      "new_resource": "00000365600F0080",
+      "new_handle": "000000139DDF9A00",
+      "new_offset": "0",
+      "new_bytes": "4096",
+      "new_dims": "1,2048",
+      "new_strides": "4096,2"
+    },
+    {
+      "event": "9",
+      "serial": "16",
+      "role": "4",
+      "R": "1",
+      "T": "2",
+      "slot": "1",
+      "prior": "3",
+      "run": "0000020DABCA34C0",
+      "inv": "0000036564728000",
+      "plan": "0000036560941000",
+      "generation": "3",
+      "step": "1319",
+      "range_begin": "55",
+      "range_count": "1269",
+      "revision": "3",
+      "prepared_revision": "3",
+      "stable": "1",
+      "native_inputs": "0",
+      "why": "prepare-binding",
+      "caller": "0000000000000000",
+      "unproved": "0",
+      "revision_changed": "0",
+      "native_current": "0",
+      "port_kind": "output",
+      "port": "0",
+      "instance": "1923",
+      "old_valid": "1",
+      "old_dtype": "5",
+      "old_rank": "2",
+      "old_resource": "00000365600F0080",
+      "old_handle": "000000139DDF9A00",
+      "old_offset": "0",
+      "old_bytes": "4096",
+      "old_dims": "1,2048",
+      "old_strides": "4096,2",
+      "new_valid": "1",
+      "new_dtype": "5",
+      "new_rank": "2",
+      "new_resource": "00000365600F0080",
+      "new_handle": "000000139DDF9A00",
+      "new_offset": "4096",
+      "new_bytes": "4096",
+      "new_dims": "1,2048",
+      "new_strides": "4096,2"
+    }
+  ],
+  "diagnostic_summary": "capture_probe_summary retained_loss_events=10 capacity=256 overflow=0 pending=0 context_anchor=00007FF73BA5BF20",
+  "reports": {
+    "actual-cause-review.json": {
+      "status": "Actual diagnostic causal review complete.10 retained-range erases have concrete physical binding causes; no Graph identity/capture invalidation defect established.",
+      "scope": "Pure-host parsing of the10events, terminal/result metadata, small route/boundary TSV and current source. No GPU/model/build/product change, no numerical payload or performance rerun.",
+      "inputs": [
+        {
+          "path": ".scratch/qwen-capture-cause-20261022/diagnostic1/run.stderr.log",
+          "bytes": 17925,
+          "sha256": "e3bc765f9f961abbde2a98e18f0c842b50d813b603ed072a3c5049968e71ab21"
+        },
+        {
+          "path": ".scratch/qwen-capture-cause-20261022/diagnostic1/run.result.json",
+          "bytes": 825,
+          "sha256": "a6a865e6c098c61277d7a8b1227829882e245f46453db9d5dc31004448366a8a"
+        },
+        {
+          "path": ".scratch/qwen-capture-cause-20261022/diagnostic1/plan.json",
+          "bytes": 1368,
+          "sha256": "3f7d19f5a794a6cffbd73162fd1be7aff85787defbc9da54a642b317df928839"
+        },
+        {
+          "path": ".scratch/qwen-capture-cause-20261022/diagnostic1/parsed.json",
+          "bytes": 9126,
+          "sha256": "4e454ad0f8f81ae5fff682c8312434a27915b206b84b6747879139160b4b61ed"
+        },
+        {
+          "path": ".scratch/qwen-capture-cause-20261022/diagnostic1/finite-control.json",
+          "bytes": 206,
+          "sha256": "d6f31ca451f4b150ba4c68a54161c8c1399b9c0bea1687309b60369b82098bc3"
+        },
+        {
+          "path": ".scratch/qwen-capture-cause-20261022/diagnostic1/route-only/routes/default-role3-R1-T2.route.tsv",
+          "bytes": 42642,
+          "sha256": "64192ecf65ab8afcccd04496ddcc49bcfc118e5c3fcc28a6206b7f0394ac692f"
+        },
+        {
+          "path": ".scratch/qwen-capture-cause-20261022/diagnostic1/route-only/routes/default-role3-R1-T2.boundaries.tsv",
+          "bytes": 353,
+          "sha256": "e5cc0b8186d0aba023c66e3272542f9006c034e29c07979345579aaba97bbd1a"
+        },
+        {
+          "path": ".scratch/qwen-capture-cause-20261022/diagnostic1/route-only/routes/default-role4-R1-T2.route.tsv",
+          "bytes": 42624,
+          "sha256": "c0674c3ca7d7b0f5b4f5ddfe54c6dfd22d28327dd9e058ff29052a4574633cdd"
+        },
+        {
+          "path": ".scratch/qwen-capture-cause-20261022/diagnostic1/route-only/routes/default-role4-R1-T2.boundaries.tsv",
+          "bytes": 353,
+          "sha256": "01b473b01abf03774e4fdba1e0211cc556ec7c7ecc9e5e3263ffaf0a2c79dfe6"
+        }
+      ],
+      "accounting": {
+        "actual_outputs": 64,
+        "events": 10,
+        "offset_only_events": 10,
+        "hidden_pool_events": 9,
+        "conv_history_events": 1,
+        "prior_hidden_input_events": 5,
+        "carry_hidden_input_events": 1,
+        "carry_row0_output_events": 3,
+        "native_owner_events": 0,
+        "queue_events": 0,
+        "permission_release_events": 0,
+        "probe_overflow": 0,
+        "probe_pending": 0,
+        "context_serial_includes_initial_prefill": true,
+        "range_first_part_events": 6,
+        "range_second_part_events": 4,
+        "limit": "Each record is the first observed mismatch that destroys that covering range. It does not enumerate every port that may differ later in the same now-uncaptured range."
+      },
+      "events": [
+        {
+          "event": 0,
+          "context_serial": 5,
+          "natural_round": 4,
+          "role": "kMtpCatchupRound",
+          "slot": 0,
+          "prior_uses": 1,
+          "base_length": 160,
+          "selected_accepted_target_rows": 2,
+          "pending": 1445,
+          "proposal": 18904,
+          "selected_step": 0,
+          "route": {
+            "step": "0",
+            "kind": "1",
+            "provider": "ggml-cuda",
+            "implementation": "2",
+            "nodes": "0:concat,1:concat,3:cast,4:binary"
+          },
+          "port_kind": "input",
+          "port": 2,
+          "physical_instance": 4,
+          "semantic": "base.prior_hidden: previous target hidden h[L-2], concatenated before carry for lag1 draft catchup",
+          "old_offset": 8192,
+          "new_offset": 0,
+          "extent_bytes": 4096,
+          "same_resource": true,
+          "same_native_allocation": true,
+          "same_dtype_shape_stride_span": true,
+          "covering_range": {
+            "begin": 0,
+            "count": 53
+          },
+          "revision": 3,
+          "prepared_revision": 3
+        },
+        {
+          "event": 1,
+          "context_serial": 8,
+          "natural_round": 7,
+          "role": "kMtpRound",
+          "slot": 1,
+          "prior_uses": 1,
+          "base_length": 165,
+          "selected_accepted_target_rows": 2,
+          "pending": 51338,
+          "proposal": 11,
+          "selected_step": 63,
+          "route": {
+            "step": "63",
+            "kind": "0",
+            "provider": "ggml-cuda",
+            "implementation": "1",
+            "nodes": "89:concat"
+          },
+          "port_kind": "input",
+          "port": 0,
+          "physical_instance": 8,
+          "semantic": "base.state[0].history: target layer0 previous3 conv rows, concatenated with new qkv",
+          "old_offset": 36864,
+          "new_offset": 73728,
+          "extent_bytes": 36864,
+          "same_resource": true,
+          "same_native_allocation": true,
+          "same_dtype_shape_stride_span": true,
+          "covering_range": {
+            "begin": 57,
+            "count": 1269
+          },
+          "revision": 3,
+          "prepared_revision": 3
+        },
+        {
+          "event": 2,
+          "context_serial": 9,
+          "natural_round": 8,
+          "role": "kMtpCatchupRound",
+          "slot": 0,
+          "prior_uses": 3,
+          "base_length": 167,
+          "selected_accepted_target_rows": 2,
+          "pending": 36760,
+          "proposal": 11,
+          "selected_step": 0,
+          "route": {
+            "step": "0",
+            "kind": "1",
+            "provider": "ggml-cuda",
+            "implementation": "2",
+            "nodes": "0:concat,1:concat,3:cast,4:binary"
+          },
+          "port_kind": "input",
+          "port": 2,
+          "physical_instance": 4,
+          "semantic": "base.prior_hidden: previous target hidden h[L-2], concatenated before carry for lag1 draft catchup",
+          "old_offset": 0,
+          "new_offset": 8192,
+          "extent_bytes": 4096,
+          "same_resource": true,
+          "same_native_allocation": true,
+          "same_dtype_shape_stride_span": true,
+          "covering_range": {
+            "begin": 0,
+            "count": 53
+          },
+          "revision": 4,
+          "prepared_revision": 4
+        },
+        {
+          "event": 3,
+          "context_serial": 11,
+          "natural_round": 10,
+          "role": "kMtpCatchupRound",
+          "slot": 0,
+          "prior_uses": 4,
+          "base_length": 171,
+          "selected_accepted_target_rows": 1,
+          "pending": 11906,
+          "proposal": 271,
+          "selected_step": 0,
+          "route": {
+            "step": "0",
+            "kind": "1",
+            "provider": "ggml-cuda",
+            "implementation": "2",
+            "nodes": "0:concat,1:concat,3:cast,4:binary"
+          },
+          "port_kind": "input",
+          "port": 2,
+          "physical_instance": 4,
+          "semantic": "base.prior_hidden: previous target hidden h[L-2], concatenated before carry for lag1 draft catchup",
+          "old_offset": 8192,
+          "new_offset": 0,
+          "extent_bytes": 4096,
+          "same_resource": true,
+          "same_native_allocation": true,
+          "same_dtype_shape_stride_span": true,
+          "covering_range": {
+            "begin": 0,
+            "count": 53
+          },
+          "revision": 5,
+          "prepared_revision": 5
+        },
+        {
+          "event": 4,
+          "context_serial": 14,
+          "natural_round": 13,
+          "role": "kMtpRound",
+          "slot": 1,
+          "prior_uses": 3,
+          "base_length": 174,
+          "selected_accepted_target_rows": 2,
+          "pending": 3829,
+          "proposal": 271,
+          "selected_step": 5,
+          "route": {
+            "step": "5",
+            "kind": "0",
+            "provider": "ggml-cuda",
+            "implementation": "1",
+            "nodes": "8:cast"
+          },
+          "port_kind": "input",
+          "port": 0,
+          "physical_instance": 3,
+          "semantic": "base.carry_hidden: previous target hidden h[L-1], cast to F32 by draft pre_fc_norm_hidden",
+          "old_offset": 4096,
+          "new_offset": 0,
+          "extent_bytes": 4096,
+          "same_resource": true,
+          "same_native_allocation": true,
+          "same_dtype_shape_stride_span": true,
+          "covering_range": {
+            "begin": 0,
+            "count": 55
+          },
+          "revision": 3,
+          "prepared_revision": 3
+        },
+        {
+          "event": 5,
+          "context_serial": 14,
+          "natural_round": 13,
+          "role": "kMtpRound",
+          "slot": 1,
+          "prior_uses": 3,
+          "base_length": 174,
+          "selected_accepted_target_rows": 2,
+          "pending": 3829,
+          "proposal": 271,
+          "selected_step": 1321,
+          "route": {
+            "step": "1321",
+            "kind": "0",
+            "provider": "ggml-cuda",
+            "implementation": "1",
+            "nodes": "2110:copy"
+          },
+          "port_kind": "output",
+          "port": 0,
+          "physical_instance": 1920,
+          "semantic": "target carry_ports[0][0]: independent Copy of normalized target verify row0 h[L]",
+          "old_offset": 8192,
+          "new_offset": 4096,
+          "extent_bytes": 4096,
+          "same_resource": true,
+          "same_native_allocation": true,
+          "same_dtype_shape_stride_span": true,
+          "covering_range": {
+            "begin": 57,
+            "count": 1269
+          },
+          "revision": 3,
+          "prepared_revision": 3
+        },
+        {
+          "event": 6,
+          "context_serial": 15,
+          "natural_round": 14,
+          "role": "kMtpCatchupRound",
+          "slot": 0,
+          "prior_uses": 5,
+          "base_length": 176,
+          "selected_accepted_target_rows": 2,
+          "pending": 51,
+          "proposal": 283,
+          "selected_step": 0,
+          "route": {
+            "step": "0",
+            "kind": "1",
+            "provider": "ggml-cuda",
+            "implementation": "2",
+            "nodes": "0:concat,1:concat,3:cast,4:binary"
+          },
+          "port_kind": "input",
+          "port": 2,
+          "physical_instance": 4,
+          "semantic": "base.prior_hidden: previous target hidden h[L-2], concatenated before carry for lag1 draft catchup",
+          "old_offset": 0,
+          "new_offset": 4096,
+          "extent_bytes": 4096,
+          "same_resource": true,
+          "same_native_allocation": true,
+          "same_dtype_shape_stride_span": true,
+          "covering_range": {
+            "begin": 0,
+            "count": 53
+          },
+          "revision": 6,
+          "prepared_revision": 6
+        },
+        {
+          "event": 7,
+          "context_serial": 15,
+          "natural_round": 14,
+          "role": "kMtpCatchupRound",
+          "slot": 0,
+          "prior_uses": 5,
+          "base_length": 176,
+          "selected_accepted_target_rows": 2,
+          "pending": 51,
+          "proposal": 283,
+          "selected_step": 1319,
+          "route": {
+            "step": "1319",
+            "kind": "0",
+            "provider": "ggml-cuda",
+            "implementation": "1",
+            "nodes": "2112:copy"
+          },
+          "port_kind": "output",
+          "port": 0,
+          "physical_instance": 1923,
+          "semantic": "target carry_ports[0][0]: independent Copy of normalized target verify row0 h[L]",
+          "old_offset": 4096,
+          "new_offset": 0,
+          "extent_bytes": 4096,
+          "same_resource": true,
+          "same_native_allocation": true,
+          "same_dtype_shape_stride_span": true,
+          "covering_range": {
+            "begin": 55,
+            "count": 1269
+          },
+          "revision": 3,
+          "prepared_revision": 3
+        },
+        {
+          "event": 8,
+          "context_serial": 16,
+          "natural_round": 15,
+          "role": "kMtpCatchupRound",
+          "slot": 1,
+          "prior_uses": 3,
+          "base_length": 178,
+          "selected_accepted_target_rows": 2,
+          "pending": 3856,
+          "proposal": 3829,
+          "selected_step": 0,
+          "route": {
+            "step": "0",
+            "kind": "1",
+            "provider": "ggml-cuda",
+            "implementation": "2",
+            "nodes": "0:concat,1:concat,3:cast,4:binary"
+          },
+          "port_kind": "input",
+          "port": 2,
+          "physical_instance": 4,
+          "semantic": "base.prior_hidden: previous target hidden h[L-2], concatenated before carry for lag1 draft catchup",
+          "old_offset": 4096,
+          "new_offset": 0,
+          "extent_bytes": 4096,
+          "same_resource": true,
+          "same_native_allocation": true,
+          "same_dtype_shape_stride_span": true,
+          "covering_range": {
+            "begin": 0,
+            "count": 53
+          },
+          "revision": 3,
+          "prepared_revision": 3
+        },
+        {
+          "event": 9,
+          "context_serial": 16,
+          "natural_round": 15,
+          "role": "kMtpCatchupRound",
+          "slot": 1,
+          "prior_uses": 3,
+          "base_length": 178,
+          "selected_accepted_target_rows": 2,
+          "pending": 3856,
+          "proposal": 3829,
+          "selected_step": 1319,
+          "route": {
+            "step": "1319",
+            "kind": "0",
+            "provider": "ggml-cuda",
+            "implementation": "1",
+            "nodes": "2112:copy"
+          },
+          "port_kind": "output",
+          "port": 0,
+          "physical_instance": 1923,
+          "semantic": "target carry_ports[0][0]: independent Copy of normalized target verify row0 h[L]",
+          "old_offset": 0,
+          "new_offset": 4096,
+          "extent_bytes": 4096,
+          "same_resource": true,
+          "same_native_allocation": true,
+          "same_dtype_shape_stride_span": true,
+          "covering_range": {
+            "begin": 55,
+            "count": 1269
+          },
+          "revision": 3,
+          "prepared_revision": 3
+        }
+      ],
+      "semantic_mapping_proof": [
+        {
+          "anchor": "tools/qwen35_text/main.cc:1094-1140,1736-1739; tools/qwen35_text/mtp_graph.h:146-161",
+          "fact": "Graph construction creates carry input before optional prior input. Lag1 graph concatenates prior then carry; the actual role4 first region maps node0concat/node1concat/node3cast/node4binary and its inputport2 is the prior hidden. Role3 step5/node8cast is the same original carry hidden converted for MTP pre_fc_norm_hidden. The instance numbers are physical plan indices, not global stable logical IDs."
+        },
+        {
+          "anchor": "tools/qwen35_text/main.cc:1183-1208,1910; role3 route step63/node89",
+          "fact": "Layer0 history input is BF16[1,3,6144], exactly36,864B. Its concat with the new projected qkv is actual step63 input0; the observed36,864->73,728 shift moves from slot1 to slot2 of that real layer0 history pool."
+        },
+        {
+          "anchor": "tools/qwen35_text/main.cc:1318-1331; role3 node2110copy / role4 node2112copy",
+          "fact": "After publishing the all-row hidden output, construction makes separate normalized-row0 and row1 Copies. The observed late output step is the first Copy, carry_ports[0][0], not the fixed Phase.hidden tensor or the draft score output."
+        }
+      ],
+      "allocation_and_acceptance_root_cause": [
+        {
+          "anchor": "tools/qwen35_text/main.cc:1041-1048,1912-1925; tools/qwen35_text/session_state.h:54-62",
+          "fact": "For N1/R1/two boundaries, each conv/GDN pool has3 physical state allocations; the hidden pool has4 rows. Each verify obtains new ordinary leases: next then first conv/GDN states, and carry row0 then row1. All these are real snapshot/candidate material, not scratch replicas of a current state."
+        },
+        {
+          "anchor": "src/compute/resource_leases.cc:701-721; src/mem/range_allocator.cc:489-516",
+          "fact": "LeasePool allocates a fresh generation from a shared bounded free-range allocator using bytes/alignment only. It has no role/Invocation/previous-capture-offset affinity. Released/coalesced free ranges and selected live versions determine which physical offset becomes available; equal schema or lease size is not an address-stability promise."
+        },
+        {
+          "anchor": "tools/qwen35_text/main.cc:2063-2082,2148-2184",
+          "fact": "After actual completion and accepted1/2 selection, next snapshot takes first or next recurrent/conv boundary. Target row0 becomes carry on accepted1, or prior on accepted2 while row1 becomes carry. Only after all export/take/ready/unbind work does one head swap commit. Old head and in-flight candidate ownership preserve rollback and snapshot readers."
+        },
+        {
+          "fact": "Consequently role/slot revisits can see a different correct prior/carry/conv allocation, or receive a different correct output candidate range even though native backing handle, dtype, shape and strides match. The actual10records are these offset changes. The round7 conv case follows the earlier rejection selecting the first boundary, then returning to the previously captured lag0 role/slot; it is not a changed attention schedule."
+        }
+      ],
+      "legality": {
+        "anchor": "src/graph/executable.cc:1110-1118,1212-1305,7888-7916; include/hyle/compute/detail/command_capture.h:27-33",
+        "conclusion": "Correct mandatory invalidation for the current command representation. Recorded commands contain full physical argument addresses: same allocation handle plus another offset is a different address. stable=1 proves identity only when the complete TensorView tuple remains equal; it does not permit changing offsets. Treating these as content-only updates could launch stale pointers and cross snapshot boundaries.",
+        "not_causes": "The actual probe observed no retained-range loss due to native-owner change, Queue change, unproven identity, revision mismatch or permission withdrawal. That is evidence for this workload, not a universal claim those mechanisms never invalidate captures.",
+        "historical_relation": "The diagnostic reproduces the same7round positions/count pattern as historical W:4/7/8/10/13/14/15 with1/1/1/1/2/2/2 losses. New concrete tuple evidence replaces the earlier unresolved attribution; it does not turn the diagnostic cold wall into a function-specific cost measurement."
+      },
+      "safe_next_directions_without_shadow_payload_or_copy": [
+        {
+          "priority": 1,
+          "direction": "Prefer already-free physical output ranges / existing idle execution slots using bounded metadata affinity.",
+          "shape": "A general allocation hint may try the range last used by a prepared output only when that exact range is truly free and retired, otherwise use the original allocation/invalidation path. Or the existing two idle Phase slots can be chosen using actual available binding tuples rather than unconditional global parity, if this reduces mismatch without changing admission or adding concurrent carrier use.",
+          "current_gap": "LeasePool/RangeAllocator currently expose only bytes/alignment allocation, not an exact/preferred-free-range request. Do not pretend the current API can select offsets. Existing two captured slots need no new executor, but matching selection would need explicit bounded metadata and an honest fallback; it cannot guarantee all input and output tuples match.",
+          "safety": "Never pin extra hidden/conv payload as a capture cache, retain rejected candidate storage beyond the real version budget, or overwrite old head merely because its ReadLease is unique. Current head must survive graph/selector failure; prefix/snapshot/native-use owners can keep a preferred range occupied. Count every real allocation and preserve N+2R / hidden2(N+R) budgets."
+        },
+        {
+          "priority": 2,
+          "direction": "If the remaining semantic input-address rotations dominate, use an explicit backend-qualified command-argument update/indirection capability rather than weakening TensorView identity.",
+          "shape": "This would be a separate, measured generic capture/provider capability with fresh permissions and actual retained carriers; no shadow state or copy-to-fixed-input buffer. It is larger than an allocator affinity hint and is not implemented or justified by range counts alone.",
+          "safety": "Same backing handle is insufficient. The current backend/Graph contract does not promise arbitrary offset updates, and immutable old snapshots, shared prefixes, other sessions and failed candidates must remain isolated."
+        }
+      ],
+      "not_claimed": [
+        "No speedup amount, removed55ms, all later changed ports or universal allocation-affinity success.",
+        "No need to repair Graph lifetime/identity or attention topology on the basis of these10events.",
+        "No next implementation selected here; compare the smallest metadata-affinity option against actual available slots and correctness before changing product allocation policy."
+      ],
+      "source_identity": [
+        {
+          "path": "tools/qwen35_text/main.cc",
+          "bytes": 271868,
+          "sha256": "f2e1c6002042d8ccf08eaed3d2204fe7c459a2e9a37ae74d13c2ff93e3714131"
+        },
+        {
+          "path": "tools/qwen35_text/session_state.h",
+          "bytes": 10809,
+          "sha256": "9cd094e7778ff48567b87c2983e138597940b9683e63023409562d0e562c35cd"
+        },
+        {
+          "path": "tools/qwen35_text/mtp_graph.h",
+          "bytes": 18155,
+          "sha256": "409ac3116cdcf34dadcf8ebe8a6f638061eb23d5ac79011deb82509b4758b97f"
+        },
+        {
+          "path": "src/compute/resource_leases.cc",
+          "bytes": 36526,
+          "sha256": "71fc2a3389bbb413873713039b4278954377b0a7fff149255a1e7b4110d3f9af"
+        },
+        {
+          "path": "src/mem/range_allocator.cc",
+          "bytes": 21276,
+          "sha256": "93afdc4799f68459fa3ef789f5a6da05d4a8a1cd90eac0ebf6a2d504030673df"
+        },
+        {
+          "path": ".scratch/qwen-capture-cause-20261022/qwen-ready-attempt1.json",
+          "bytes": 3619,
+          "sha256": "c2dfbc25c88a77110d9b63cefc05bfa123015b66755639bac5d9e65f87d9a02a"
+        },
+        {
+          "path": ".scratch/qwen-capture-cause-20261022/probe/core-source-freeze.json",
+          "bytes": 5325,
+          "sha256": "e0fc4da5ab2fb2ca6cac7b652a2f108ef6781a8199fd18789fa7513af55d8e04"
+        }
+      ]
+    },
+    "actual-run-review.json": {
+      "status": "FROZEN_PURE_HOST_ACTUAL_RUN_REVIEW",
+      "sources": [
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\diagnostic1\\plan.json",
+          "bytes": 1368,
+          "sha256": "3f7d19f5a794a6cffbd73162fd1be7aff85787defbc9da54a642b317df928839"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\diagnostic1\\run.command.json",
+          "bytes": 755,
+          "sha256": "31b09dca0e451d1a146b374b11d64703af13d72dae1d112d62f86c1574ef81d8"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\diagnostic1\\run.result.json",
+          "bytes": 825,
+          "sha256": "a6a865e6c098c61277d7a8b1227829882e245f46453db9d5dc31004448366a8a"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\diagnostic1\\run.stdout.log",
+          "bytes": 6061,
+          "sha256": "72eb30fe65526ee1544693b3308ae99cfac430161a45dafbdae97878e7faf35e"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\diagnostic1\\run.stderr.log",
+          "bytes": 17925,
+          "sha256": "e3bc765f9f961abbde2a98e18f0c842b50d813b603ed072a3c5049968e71ab21"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\diagnostic1\\parsed.json",
+          "bytes": 9126,
+          "sha256": "4e454ad0f8f81ae5fff682c8312434a27915b206b84b6747879139160b4b61ed"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\diagnostic1\\finite-control.json",
+          "bytes": 206,
+          "sha256": "d6f31ca451f4b150ba4c68a54161c8c1399b9c0bea1687309b60369b82098bc3"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\qwen-ready-attempt1.json",
+          "bytes": 3619,
+          "sha256": "c2dfbc25c88a77110d9b63cefc05bfa123015b66755639bac5d9e65f87d9a02a"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\probe\\core-source-freeze.json",
+          "bytes": 5325,
+          "sha256": "e0fc4da5ab2fb2ca6cac7b652a2f108ef6781a8199fd18789fa7513af55d8e04"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\main-probe.json",
+          "bytes": 618,
+          "sha256": "d7567c7d9c8f47dfea645a37a1429907615d32411a7f464214921ac251b6fa9c"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\probe\\capture_probe.h",
+          "bytes": 7380,
+          "sha256": "b1196e3a02843d9e8c50ab767237e46df27ae1e36652f58940de11ace01c1df3"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cublas-scores-20261022\\performance\\timing\\runs.json",
+          "bytes": 321878,
+          "sha256": "f47851d39ebeaf2505d9415a6b7bb4416b30ee385681ad7f8931854126dbc601"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\review\\check_actual_run.py",
+          "bytes": 11693,
+          "sha256": "7d5b8c2a7c6d3b126dee718bc34323bf814fd073ca9a40540cc9b6d55ac3fc37"
+        }
+      ],
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\qwen-link1\\qwen.exe",
+        "bytes": 140366336,
+        "sha256": "1478ac8e35bb04840412727f5e1a57f36a3a2598a157947ff55680cf3a23468f"
+      },
+      "verification": {
+        "exit_zero_terminal": true,
+        "parsed_equals_stdout": true,
+        "AD64_IDs_equal": true,
+        "AD34_rounds_equal": true,
+        "AD_exported_work_equal": true,
+        "prepared_calls": 35,
+        "capture_loss_events": 10,
+        "event_indices_contiguous": true,
+        "first_change_offset_only": true,
+        "all_events_prepare_binding_stable1_native_inputs0": true,
+        "native_owner_loss_events": 0,
+        "event_buffer_overflow": 0,
+        "event_buffer_pending": 0,
+        "truncated_events": 0,
+        "role_slot_generation_identity_stable_across_observed_events": true,
+        "route_metadata_files": 6,
+        "tensor_payload_files": 0
+      },
+      "work": {
+        "actual_graph_calls": 35,
+        "actual_target_rows": 222,
+        "actual_draft_rows": 216,
+        "committed_target_rows": 217,
+        "verified_target_rows": 68,
+        "committed_target_decode_rows": 63,
+        "draft_rows": 62,
+        "draft_rounds": 34,
+        "agreements": 29,
+        "accepted_drafts": 29,
+        "generated_decode_tokens": 63,
+        "prefill_target_rows": 154,
+        "prefill_draft_rows": 154,
+        "visible_tokens": 217,
+        "draft_frontier": 216,
+        "draft_lag": 1
+      },
+      "capture": {
+        "recorded_ranges": 18,
+        "reused_ranges": 50,
+        "initial_role_slot_ranges": 8,
+        "actual_lost_and_rerecorded_ranges": 10,
+        "equation": "18 = 4 first role/slot uses *2 ranges +10 actual retained-range losses;18+50=34 decode calls *2 child ranges.",
+        "first_uses": [
+          {
+            "serial": 2,
+            "round_index_zero_based": 0,
+            "role": 3,
+            "slot": 1,
+            "prior": 0,
+            "recorded_ranges": 2
+          },
+          {
+            "serial": 3,
+            "round_index_zero_based": 1,
+            "role": 4,
+            "slot": 0,
+            "prior": 0,
+            "recorded_ranges": 2
+          },
+          {
+            "serial": 4,
+            "round_index_zero_based": 2,
+            "role": 4,
+            "slot": 1,
+            "prior": 0,
+            "recorded_ranges": 2
+          },
+          {
+            "serial": 13,
+            "round_index_zero_based": 11,
+            "role": 3,
+            "slot": 0,
+            "prior": 0,
+            "recorded_ranges": 2
+          }
+        ],
+        "losses_by_call": [
+          {
+            "serial": 5,
+            "round_index_zero_based": 3,
+            "role": 4,
+            "slot": 0,
+            "prior": 1,
+            "actual_loss_ranges": 1
+          },
+          {
+            "serial": 8,
+            "round_index_zero_based": 6,
+            "role": 3,
+            "slot": 1,
+            "prior": 1,
+            "actual_loss_ranges": 1
+          },
+          {
+            "serial": 9,
+            "round_index_zero_based": 7,
+            "role": 4,
+            "slot": 0,
+            "prior": 3,
+            "actual_loss_ranges": 1
+          },
+          {
+            "serial": 11,
+            "round_index_zero_based": 9,
+            "role": 4,
+            "slot": 0,
+            "prior": 4,
+            "actual_loss_ranges": 1
+          },
+          {
+            "serial": 14,
+            "round_index_zero_based": 12,
+            "role": 3,
+            "slot": 1,
+            "prior": 3,
+            "actual_loss_ranges": 2
+          },
+          {
+            "serial": 15,
+            "round_index_zero_based": 13,
+            "role": 4,
+            "slot": 0,
+            "prior": 5,
+            "actual_loss_ranges": 2
+          },
+          {
+            "serial": 16,
+            "round_index_zero_based": 14,
+            "role": 4,
+            "slot": 1,
+            "prior": 3,
+            "actual_loss_ranges": 2
+          }
+        ]
+      },
+      "events": [
+        {
+          "event": 0,
+          "serial": 5,
+          "round_index_zero_based": 3,
+          "role": 4,
+          "slot": 0,
+          "prior": 1,
+          "step": 0,
+          "range_begin": 0,
+          "range_count": 53,
+          "revision": 3,
+          "port_kind": "input",
+          "port": 2,
+          "instance": 4,
+          "first_observed_changed_field": "offset",
+          "old_offset_bytes": 8192,
+          "new_offset_bytes": 0,
+          "unchanged_extent_bytes": 4096,
+          "unchanged_dims": "1,2048",
+          "unchanged_strides": "4096,2"
+        },
+        {
+          "event": 1,
+          "serial": 8,
+          "round_index_zero_based": 6,
+          "role": 3,
+          "slot": 1,
+          "prior": 1,
+          "step": 63,
+          "range_begin": 57,
+          "range_count": 1269,
+          "revision": 3,
+          "port_kind": "input",
+          "port": 0,
+          "instance": 8,
+          "first_observed_changed_field": "offset",
+          "old_offset_bytes": 36864,
+          "new_offset_bytes": 73728,
+          "unchanged_extent_bytes": 36864,
+          "unchanged_dims": "1,3,6144",
+          "unchanged_strides": "36864,12288,2"
+        },
+        {
+          "event": 2,
+          "serial": 9,
+          "round_index_zero_based": 7,
+          "role": 4,
+          "slot": 0,
+          "prior": 3,
+          "step": 0,
+          "range_begin": 0,
+          "range_count": 53,
+          "revision": 4,
+          "port_kind": "input",
+          "port": 2,
+          "instance": 4,
+          "first_observed_changed_field": "offset",
+          "old_offset_bytes": 0,
+          "new_offset_bytes": 8192,
+          "unchanged_extent_bytes": 4096,
+          "unchanged_dims": "1,2048",
+          "unchanged_strides": "4096,2"
+        },
+        {
+          "event": 3,
+          "serial": 11,
+          "round_index_zero_based": 9,
+          "role": 4,
+          "slot": 0,
+          "prior": 4,
+          "step": 0,
+          "range_begin": 0,
+          "range_count": 53,
+          "revision": 5,
+          "port_kind": "input",
+          "port": 2,
+          "instance": 4,
+          "first_observed_changed_field": "offset",
+          "old_offset_bytes": 8192,
+          "new_offset_bytes": 0,
+          "unchanged_extent_bytes": 4096,
+          "unchanged_dims": "1,2048",
+          "unchanged_strides": "4096,2"
+        },
+        {
+          "event": 4,
+          "serial": 14,
+          "round_index_zero_based": 12,
+          "role": 3,
+          "slot": 1,
+          "prior": 3,
+          "step": 5,
+          "range_begin": 0,
+          "range_count": 55,
+          "revision": 3,
+          "port_kind": "input",
+          "port": 0,
+          "instance": 3,
+          "first_observed_changed_field": "offset",
+          "old_offset_bytes": 4096,
+          "new_offset_bytes": 0,
+          "unchanged_extent_bytes": 4096,
+          "unchanged_dims": "1,2048",
+          "unchanged_strides": "4096,2"
+        },
+        {
+          "event": 5,
+          "serial": 14,
+          "round_index_zero_based": 12,
+          "role": 3,
+          "slot": 1,
+          "prior": 3,
+          "step": 1321,
+          "range_begin": 57,
+          "range_count": 1269,
+          "revision": 3,
+          "port_kind": "output",
+          "port": 0,
+          "instance": 1920,
+          "first_observed_changed_field": "offset",
+          "old_offset_bytes": 8192,
+          "new_offset_bytes": 4096,
+          "unchanged_extent_bytes": 4096,
+          "unchanged_dims": "1,2048",
+          "unchanged_strides": "4096,2"
+        },
+        {
+          "event": 6,
+          "serial": 15,
+          "round_index_zero_based": 13,
+          "role": 4,
+          "slot": 0,
+          "prior": 5,
+          "step": 0,
+          "range_begin": 0,
+          "range_count": 53,
+          "revision": 6,
+          "port_kind": "input",
+          "port": 2,
+          "instance": 4,
+          "first_observed_changed_field": "offset",
+          "old_offset_bytes": 0,
+          "new_offset_bytes": 4096,
+          "unchanged_extent_bytes": 4096,
+          "unchanged_dims": "1,2048",
+          "unchanged_strides": "4096,2"
+        },
+        {
+          "event": 7,
+          "serial": 15,
+          "round_index_zero_based": 13,
+          "role": 4,
+          "slot": 0,
+          "prior": 5,
+          "step": 1319,
+          "range_begin": 55,
+          "range_count": 1269,
+          "revision": 3,
+          "port_kind": "output",
+          "port": 0,
+          "instance": 1923,
+          "first_observed_changed_field": "offset",
+          "old_offset_bytes": 4096,
+          "new_offset_bytes": 0,
+          "unchanged_extent_bytes": 4096,
+          "unchanged_dims": "1,2048",
+          "unchanged_strides": "4096,2"
+        },
+        {
+          "event": 8,
+          "serial": 16,
+          "round_index_zero_based": 14,
+          "role": 4,
+          "slot": 1,
+          "prior": 3,
+          "step": 0,
+          "range_begin": 0,
+          "range_count": 53,
+          "revision": 3,
+          "port_kind": "input",
+          "port": 2,
+          "instance": 4,
+          "first_observed_changed_field": "offset",
+          "old_offset_bytes": 4096,
+          "new_offset_bytes": 0,
+          "unchanged_extent_bytes": 4096,
+          "unchanged_dims": "1,2048",
+          "unchanged_strides": "4096,2"
+        },
+        {
+          "event": 9,
+          "serial": 16,
+          "round_index_zero_based": 14,
+          "role": 4,
+          "slot": 1,
+          "prior": 3,
+          "step": 1319,
+          "range_begin": 55,
+          "range_count": 1269,
+          "revision": 3,
+          "port_kind": "output",
+          "port": 0,
+          "instance": 1923,
+          "first_observed_changed_field": "offset",
+          "old_offset_bytes": 0,
+          "new_offset_bytes": 4096,
+          "unchanged_extent_bytes": 4096,
+          "unchanged_dims": "1,2048",
+          "unchanged_strides": "4096,2"
+        }
+      ],
+      "metadata": [
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\diagnostic1\\route-only\\routes\\default-role2-R1-T154.boundaries.tsv",
+          "bytes": 358,
+          "sha256": "a893a69968c822c14497dceed9170863844bddea7a0c7e404e94a6154d8871f2"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\diagnostic1\\route-only\\routes\\default-role2-R1-T154.route.tsv",
+          "bytes": 37674,
+          "sha256": "39794d0f12e55f0433e801177ac64a14adb8db06e2bf21d8acddc130ed519075"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\diagnostic1\\route-only\\routes\\default-role3-R1-T2.boundaries.tsv",
+          "bytes": 353,
+          "sha256": "e5cc0b8186d0aba023c66e3272542f9006c034e29c07979345579aaba97bbd1a"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\diagnostic1\\route-only\\routes\\default-role3-R1-T2.route.tsv",
+          "bytes": 42642,
+          "sha256": "64192ecf65ab8afcccd04496ddcc49bcfc118e5c3fcc28a6206b7f0394ac692f"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\diagnostic1\\route-only\\routes\\default-role4-R1-T2.boundaries.tsv",
+          "bytes": 353,
+          "sha256": "01b473b01abf03774e4fdba1e0211cc556ec7c7ecc9e5e3263ffaf0a2c79dfe6"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\diagnostic1\\route-only\\routes\\default-role4-R1-T2.route.tsv",
+          "bytes": 42624,
+          "sha256": "c0674c3ca7d7b0f5b4f5ddfe54c6dfd22d28327dd9e058ff29052a4574633cdd"
+        }
+      ],
+      "inclusive_diagnostic_cold_buckets": {
+        "prefill_inclusive_cold_batch_seconds": 0.0047461,
+        "all34_decode_calls_inclusive_seconds": 0.0572235,
+        "first8_ranges_in4_calls": {
+          "calls": 4,
+          "inclusive_cold_batch_seconds": 0.029626,
+          "by_call": [
+            {
+              "serial": 2,
+              "round_index_zero_based": 0,
+              "role": 3,
+              "slot": 1,
+              "prior": 0,
+              "cold_batch_seconds": 0.0105577
+            },
+            {
+              "serial": 3,
+              "round_index_zero_based": 1,
+              "role": 4,
+              "slot": 0,
+              "prior": 0,
+              "cold_batch_seconds": 0.0064736
+            },
+            {
+              "serial": 4,
+              "round_index_zero_based": 2,
+              "role": 4,
+              "slot": 1,
+              "prior": 0,
+              "cold_batch_seconds": 0.0060741
+            },
+            {
+              "serial": 13,
+              "round_index_zero_based": 11,
+              "role": 3,
+              "slot": 0,
+              "prior": 0,
+              "cold_batch_seconds": 0.0065206
+            }
+          ]
+        },
+        "actual10_loss_ranges_in7_calls": {
+          "calls": 7,
+          "inclusive_cold_batch_seconds": 0.0181936,
+          "by_call": [
+            {
+              "serial": 5,
+              "round_index_zero_based": 3,
+              "role": 4,
+              "slot": 0,
+              "prior": 1,
+              "cold_batch_seconds": 0.000705
+            },
+            {
+              "serial": 8,
+              "round_index_zero_based": 6,
+              "role": 3,
+              "slot": 1,
+              "prior": 1,
+              "cold_batch_seconds": 0.0040213
+            },
+            {
+              "serial": 9,
+              "round_index_zero_based": 7,
+              "role": 4,
+              "slot": 0,
+              "prior": 3,
+              "cold_batch_seconds": 0.0006465
+            },
+            {
+              "serial": 11,
+              "round_index_zero_based": 9,
+              "role": 4,
+              "slot": 0,
+              "prior": 4,
+              "cold_batch_seconds": 0.0006859
+            },
+            {
+              "serial": 14,
+              "round_index_zero_based": 12,
+              "role": 3,
+              "slot": 1,
+              "prior": 3,
+              "cold_batch_seconds": 0.0040301
+            },
+            {
+              "serial": 15,
+              "round_index_zero_based": 13,
+              "role": 4,
+              "slot": 0,
+              "prior": 5,
+              "cold_batch_seconds": 0.0042005
+            },
+            {
+              "serial": 16,
+              "round_index_zero_based": 14,
+              "role": 4,
+              "slot": 1,
+              "prior": 3,
+              "cold_batch_seconds": 0.0039043
+            }
+          ]
+        },
+        "remaining23_calls": {
+          "calls": 23,
+          "inclusive_cold_batch_seconds": 0.0094039,
+          "by_call": [
+            {
+              "serial": 6,
+              "round_index_zero_based": 4,
+              "role": 4,
+              "slot": 1,
+              "prior": 1,
+              "cold_batch_seconds": 0.0003701
+            },
+            {
+              "serial": 7,
+              "round_index_zero_based": 5,
+              "role": 4,
+              "slot": 0,
+              "prior": 2,
+              "cold_batch_seconds": 0.0003318
+            },
+            {
+              "serial": 10,
+              "round_index_zero_based": 8,
+              "role": 4,
+              "slot": 1,
+              "prior": 2,
+              "cold_batch_seconds": 0.0004496
+            },
+            {
+              "serial": 12,
+              "round_index_zero_based": 10,
+              "role": 3,
+              "slot": 1,
+              "prior": 2,
+              "cold_batch_seconds": 0.0003954
+            },
+            {
+              "serial": 17,
+              "round_index_zero_based": 15,
+              "role": 4,
+              "slot": 0,
+              "prior": 6,
+              "cold_batch_seconds": 0.0004976
+            },
+            {
+              "serial": 18,
+              "round_index_zero_based": 16,
+              "role": 4,
+              "slot": 1,
+              "prior": 4,
+              "cold_batch_seconds": 0.0004154
+            },
+            {
+              "serial": 19,
+              "round_index_zero_based": 17,
+              "role": 4,
+              "slot": 0,
+              "prior": 7,
+              "cold_batch_seconds": 0.0004631
+            },
+            {
+              "serial": 20,
+              "round_index_zero_based": 18,
+              "role": 4,
+              "slot": 1,
+              "prior": 5,
+              "cold_batch_seconds": 0.0004615
+            },
+            {
+              "serial": 21,
+              "round_index_zero_based": 19,
+              "role": 4,
+              "slot": 0,
+              "prior": 8,
+              "cold_batch_seconds": 0.0003632
+            },
+            {
+              "serial": 22,
+              "round_index_zero_based": 20,
+              "role": 4,
+              "slot": 1,
+              "prior": 6,
+              "cold_batch_seconds": 0.000363
+            },
+            {
+              "serial": 23,
+              "round_index_zero_based": 21,
+              "role": 4,
+              "slot": 0,
+              "prior": 9,
+              "cold_batch_seconds": 0.0004255
+            },
+            {
+              "serial": 24,
+              "round_index_zero_based": 22,
+              "role": 4,
+              "slot": 1,
+              "prior": 7,
+              "cold_batch_seconds": 0.0003267
+            },
+            {
+              "serial": 25,
+              "round_index_zero_based": 23,
+              "role": 4,
+              "slot": 0,
+              "prior": 10,
+              "cold_batch_seconds": 0.0004189
+            },
+            {
+              "serial": 26,
+              "round_index_zero_based": 24,
+              "role": 4,
+              "slot": 1,
+              "prior": 8,
+              "cold_batch_seconds": 0.0005934
+            },
+            {
+              "serial": 27,
+              "round_index_zero_based": 25,
+              "role": 4,
+              "slot": 0,
+              "prior": 11,
+              "cold_batch_seconds": 0.0004179
+            },
+            {
+              "serial": 28,
+              "round_index_zero_based": 26,
+              "role": 3,
+              "slot": 1,
+              "prior": 4,
+              "cold_batch_seconds": 0.0003595
+            },
+            {
+              "serial": 29,
+              "round_index_zero_based": 27,
+              "role": 4,
+              "slot": 0,
+              "prior": 12,
+              "cold_batch_seconds": 0.0003728
+            },
+            {
+              "serial": 30,
+              "round_index_zero_based": 28,
+              "role": 4,
+              "slot": 1,
+              "prior": 9,
+              "cold_batch_seconds": 0.0005249
+            },
+            {
+              "serial": 31,
+              "round_index_zero_based": 29,
+              "role": 4,
+              "slot": 0,
+              "prior": 13,
+              "cold_batch_seconds": 0.0004465
+            },
+            {
+              "serial": 32,
+              "round_index_zero_based": 30,
+              "role": 4,
+              "slot": 1,
+              "prior": 10,
+              "cold_batch_seconds": 0.0003412
+            },
+            {
+              "serial": 33,
+              "round_index_zero_based": 31,
+              "role": 4,
+              "slot": 0,
+              "prior": 14,
+              "cold_batch_seconds": 0.0002807
+            },
+            {
+              "serial": 34,
+              "round_index_zero_based": 32,
+              "role": 4,
+              "slot": 1,
+              "prior": 11,
+              "cold_batch_seconds": 0.0004591
+            },
+            {
+              "serial": 35,
+              "round_index_zero_based": 33,
+              "role": 4,
+              "slot": 0,
+              "prior": 15,
+              "cold_batch_seconds": 0.0003261
+            }
+          ]
+        }
+      },
+      "erased_range_step_counts": {
+        "53": 5,
+        "55": 1,
+        "1269": 4
+      },
+      "interpretation": "All10 actual retained covering-range erases first observed an ordinary prepared input/output byte-offset change within the same logged resource/native_handle. Tensor valid/dtype/rank/extent/dimensions/strides and prior prepared revision were unchanged. No native-region-invalidate/native owner-loss event was recorded in this window.",
+      "attribution_limits": [
+        "Only the first changed tensor port at each actual range erase is snapshotted; later differences are not enumerated and cannot be declared absent.",
+        "Unchanged tensor descriptions do not mean the owned paged BatchLayoutVersion/content never changes; this probe did not record every layout identity.",
+        "Role/slot/prior are checked against natural accept/reject lag transitions, source global parity starting0 and source per-role-slot preparation use counts. Initial first-use ranges do not have old covering artifacts to lose.",
+        "No payload read was added by the diagnostic: six route/boundary TSV files and scalar tuple metadata only. This is not new hidden/state numerical-quality or timing evidence.",
+        "The result establishes these10 actual first-port losses in this single run, not a cache bug or a safe optimization to ignore offsets. Semantic pool/port mapping is outside this review.",
+        "cold_batch_seconds is an inclusive diagnostic preparation bucket, not capture self-time or recoverable savings. The7 loss-bearing calls include all other preparation work and can record two different-sized ranges in one call; their bucket is only a descriptive upper envelope, not10 times a per-range cost or a share of an unprofiled decode gap.",
+        "The fixed buffer reported no overflow/pending/truncation. Explicit global capture-cache resets and teardown are outside this per-step erase hook; no such event is inferred from absent logs."
+      ],
+      "new_native_runs": 0,
+      "builds": 0,
+      "GPU_runs": 0
+    },
+    "build-recipes.json": {
+      "status": "All requested retained recipes and exact AD objects found; no build/native execution",
+      "base_link_plan": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cublas-scores-20261022\\qwen-link1\\link-plan.json",
+        "bytes": 84283,
+        "sha256": "2d3889e0e7118f61e574feb75a66ce9d24ae00f6a706bd05921a1114e9e86498"
+      },
+      "link_inputs": 195,
+      "current_build_tags": [
+        "main",
+        "executable",
+        "resources",
+        "region_access"
+      ],
+      "reference_only": [
+        "batch"
+      ],
+      "expected_replaced_indices": [
+        0,
+        80,
+        76,
+        83
+      ],
+      "expected_reused_inputs": 191,
+      "TUs": [
+        {
+          "tag": "main",
+          "compile_in_this_batch": true,
+          "original_source": {
+            "path": "C:\\public\\project-hyle\\hyle\\tools\\qwen35_text\\main.cc",
+            "bytes": 271868,
+            "sha256": "f2e1c6002042d8ccf08eaed3d2204fe7c459a2e9a37ae74d13c2ff93e3714131"
+          },
+          "actual_link_input_index": 0,
+          "actual_object": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-f32-scores-20261022\\compile1\\qwen\\qwen.obj",
+            "bytes": 7640210,
+            "sha256": "6051599739388c35c3465d74eb5299c079f9aa9c0bfd85e99e4130e8d07f8783"
+          },
+          "recipe_identity": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-f32-scores-20261022\\compile1\\qwen\\identity.json",
+            "bytes": 71223,
+            "sha256": "4bda68e76ddc60d94ebde8b29e0fbe4874c9b4e36ef1b4a54cc510ad2028a4c7"
+          },
+          "command_record": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-f32-scores-20261022\\compile1\\qwen\\compile.command.json",
+            "bytes": 2121,
+            "sha256": "68ff378550b19d11dae8d96a6553b5a7c24b7e778790e7e10ae23d6b35dabc4c"
+          },
+          "terminal_record": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-f32-scores-20261022\\compile1\\qwen\\compile.result.json",
+            "bytes": 2190,
+            "sha256": "cada8dea96fa64d21e4e6a89fa1931579c4fda81e627f44847a344de166b145b"
+          },
+          "command": [
+            "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\cl.exe",
+            "/DHYLE_IO_HAS_COROUTINE_TRANSPORT=1",
+            "/nologo",
+            "/c",
+            "/std:c++latest",
+            "/EHsc",
+            "/Zc:preprocessor",
+            "/Zc:__cplusplus",
+            "/utf-8",
+            "/O2",
+            "/Ob2",
+            "/MD",
+            "/DNDEBUG",
+            "/permissive-",
+            "/bigobj",
+            "/W4",
+            "/WX",
+            "/wd4324",
+            "/wd4702",
+            "/DHYLE_STATIC",
+            "/DNOMINMAX",
+            "/DGGML_USE_CUDA",
+            "/DHYLE_COMPUTE_CUDA=1",
+            "/DHYLE_COMPUTE_GGML_CUDA=1",
+            "/IC:\\public\\project-hyle\\hyle\\include",
+            "/IC:\\public\\project-hyle\\hyle\\src\\compute",
+            "/IC:\\public\\project-hyle\\hyle\\src\\compute_provider_ggml_cuda",
+            "/IC:\\public\\project-hyle\\hyle\\src\\compute_ggml_runtime",
+            "/IC:\\public\\project-hyle\\hyle\\src\\compute_backend_cuda",
+            "/IC:\\public\\project-hyle\\hyle\\tests\\compute_state",
+            "/external:IC:\\public\\project-hyle\\hyle\\.scratch\\validation\\cuda-final-u3-delivery\\reference-windows\\include",
+            "/external:IC:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\include",
+            "/external:IC:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\include\\cccl",
+            "/external:IC:\\Users\\kiro\\AppData\\Local\\hyle\\dependencies\\v1\\sources\\googletest-063de7e9578f-162765170ae6\\googletest\\include",
+            "/external:W0",
+            "/IC:\\public\\project-hyle\\hyle",
+            "/external:IC:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\extras\\CUPTI\\include",
+            "/sourceDependencies",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-f32-scores-20261022\\compile1\\qwen\\qwen-deps.json",
+            "C:\\public\\project-hyle\\hyle\\tools\\qwen35_text\\main.cc",
+            "/FoC:\\public\\project-hyle\\hyle\\.scratch\\qwen-f32-scores-20261022\\compile1\\qwen\\qwen.obj",
+            "/FdC:\\public\\project-hyle\\hyle\\.scratch\\qwen-f32-scores-20261022\\compile1\\qwen\\qwen.pdb"
+          ],
+          "cwd": "C:\\public\\project-hyle\\hyle",
+          "compiler_exists": true,
+          "current_source_matches_record": true,
+          "actual_object_sha_matches_AD_input": true,
+          "retained_dependencies": {
+            "count": 297,
+            "identity_record_contains_per_dependency_SHA": true,
+            "source_dependencies_record": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-f32-scores-20261022\\compile1\\qwen\\qwen-deps.json",
+              "bytes": 32796,
+              "sha256": "a6a3f190cf5d6946d0747670fbf6fd0e2c61cb2f47092e87ff8bbfd403e63ecd"
+            },
+            "missing_paths": [],
+            "all_current_dependency_hashes_rechecked": false
+          },
+          "scratch_source": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\probe\\tools\\qwen35_text\\main.cc",
+          "quoted_includes": [
+            {
+              "include": "schedule.h",
+              "resolved": "C:\\public\\project-hyle\\hyle\\tools\\qwen35_text\\schedule.h"
+            },
+            {
+              "include": "session_schedule.h",
+              "resolved": "C:\\public\\project-hyle\\hyle\\tools\\qwen35_text\\session_schedule.h"
+            },
+            {
+              "include": "session_cache.h",
+              "resolved": "C:\\public\\project-hyle\\hyle\\tools\\qwen35_text\\session_cache.h"
+            },
+            {
+              "include": "session_state.h",
+              "resolved": "C:\\public\\project-hyle\\hyle\\tools\\qwen35_text\\session_state.h"
+            },
+            {
+              "include": "prefix_cache.h",
+              "resolved": "C:\\public\\project-hyle\\hyle\\tools\\qwen35_text\\prefix_cache.h"
+            },
+            {
+              "include": "batch_schedule.h",
+              "resolved": "C:\\public\\project-hyle\\hyle\\tools\\qwen35_text\\batch_schedule.h"
+            },
+            {
+              "include": "mtp_graph.h",
+              "resolved": "C:\\public\\project-hyle\\hyle\\tools\\qwen35_text\\mtp_graph.h"
+            },
+            {
+              "include": "mtp_schedule.h",
+              "resolved": "C:\\public\\project-hyle\\hyle\\tools\\qwen35_text\\mtp_schedule.h"
+            },
+            {
+              "include": "hyle/container/small_vector.h",
+              "resolved": "C:\\public\\project-hyle\\hyle\\include\\hyle\\container\\small_vector.h"
+            },
+            {
+              "include": "hyle/compute/backends/cuda.h",
+              "resolved": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\backends\\cuda.h"
+            },
+            {
+              "include": "hyle/compute/cuda_file_stream.h",
+              "resolved": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\cuda_file_stream.h"
+            },
+            {
+              "include": "hyle/compute/model_ops.h",
+              "resolved": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\model_ops.h"
+            },
+            {
+              "include": "hyle/compute/resource_budget.h",
+              "resolved": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\resource_budget.h"
+            },
+            {
+              "include": "hyle/graph/batch.h",
+              "resolved": "C:\\public\\project-hyle\\hyle\\include\\hyle\\graph\\batch.h"
+            },
+            {
+              "include": "hyle/graph/cuda.h",
+              "resolved": "C:\\public\\project-hyle\\hyle\\include\\hyle\\graph\\cuda.h"
+            },
+            {
+              "include": "hyle/graph/progress.h",
+              "resolved": "C:\\public\\project-hyle\\hyle\\include\\hyle\\graph\\progress.h"
+            },
+            {
+              "include": "hyle/mem/buffer.h",
+              "resolved": "C:\\public\\project-hyle\\hyle\\include\\hyle\\mem\\buffer.h"
+            },
+            {
+              "include": "hyle/io/file.h",
+              "resolved": "C:\\public\\project-hyle\\hyle\\include\\hyle\\io\\file.h"
+            },
+            {
+              "include": "hyle/io/io_context.h",
+              "resolved": "C:\\public\\project-hyle\\hyle\\include\\hyle\\io\\io_context.h"
+            },
+            {
+              "include": "hyle/sched/join.h",
+              "resolved": "C:\\public\\project-hyle\\hyle\\include\\hyle\\sched\\join.h"
+            },
+            {
+              "include": "hyle/sched/blocking.h",
+              "resolved": "C:\\public\\project-hyle\\hyle\\include\\hyle\\sched\\blocking.h"
+            },
+            {
+              "include": "hyle/sched/scheduler.h",
+              "resolved": "C:\\public\\project-hyle\\hyle\\include\\hyle\\sched\\scheduler.h"
+            }
+          ],
+          "unresolved_before_extra_include": [
+            "schedule.h",
+            "session_schedule.h",
+            "session_cache.h",
+            "session_state.h",
+            "prefix_cache.h",
+            "batch_schedule.h",
+            "mtp_graph.h",
+            "mtp_schedule.h"
+          ],
+          "required_original_quote_include_directory": "C:\\public\\project-hyle\\hyle\\tools\\qwen35_text",
+          "extra_I_needed": true,
+          "include_directory_existence": [
+            {
+              "path": "C:\\public\\project-hyle\\hyle\\include",
+              "exists": true
+            },
+            {
+              "path": "C:\\public\\project-hyle\\hyle\\src\\compute",
+              "exists": true
+            },
+            {
+              "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_ggml_cuda",
+              "exists": true
+            },
+            {
+              "path": "C:\\public\\project-hyle\\hyle\\src\\compute_ggml_runtime",
+              "exists": true
+            },
+            {
+              "path": "C:\\public\\project-hyle\\hyle\\src\\compute_backend_cuda",
+              "exists": true
+            },
+            {
+              "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_state",
+              "exists": true
+            },
+            {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cuda-final-u3-delivery\\reference-windows\\include",
+              "exists": true
+            },
+            {
+              "path": "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\include",
+              "exists": true
+            },
+            {
+              "path": "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\include\\cccl",
+              "exists": true
+            },
+            {
+              "path": "C:\\Users\\kiro\\AppData\\Local\\hyle\\dependencies\\v1\\sources\\googletest-063de7e9578f-162765170ae6\\googletest\\include",
+              "exists": true
+            },
+            {
+              "path": "C:\\public\\project-hyle\\hyle",
+              "exists": true
+            },
+            {
+              "path": "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\extras\\CUPTI\\include",
+              "exists": true
+            }
+          ],
+          "source_replacement_policy": "Change only source path, /sourceDependencies output, /Fo output and /Fd output; retain original flags/macros; add required original quote-include directory if absent."
+        },
+        {
+          "tag": "executable",
+          "compile_in_this_batch": true,
+          "original_source": {
+            "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\executable.cc",
+            "bytes": 465076,
+            "sha256": "883e322cecab2efe012afe6f28781944433415cdbf2e6d878b07d181be07e805"
+          },
+          "actual_link_input_index": 80,
+          "actual_object": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-prefix-20261021\\core-checks\\diagnostic2\\graph--executable.obj",
+            "bytes": 5052731,
+            "sha256": "df6930372c81144a1825454f8a9e6b7fe5994b29455933d7e9a217b066a08172"
+          },
+          "recipe_identity": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-prefix-20261021\\core-checks\\diagnostic2\\identity.json",
+            "bytes": 53760,
+            "sha256": "fc956f466b4e0a8f135dbc1493bd9ed7721ac3ab50542099bf905a38a6717c00"
+          },
+          "command_record": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-prefix-20261021\\core-checks\\diagnostic2\\compile.command.json",
+            "bytes": 2168,
+            "sha256": "bbf4285af6ff3a49e9114ee097ec77a9e1e7f8a521b5bca7733377cbb4353fb5"
+          },
+          "terminal_record": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-prefix-20261021\\core-checks\\diagnostic2\\compile.result.json",
+            "bytes": 2238,
+            "sha256": "b6e81ab45b9c044a09c110b947369d12d382c6d14041fe1c0a72b6038073c557"
+          },
+          "command": [
+            "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\cl.exe",
+            "/IC:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\paged-row-scorer\\validation\\windows-current\\shaders",
+            "/nologo",
+            "/c",
+            "/std:c++latest",
+            "/EHsc",
+            "/Zc:preprocessor",
+            "/Zc:__cplusplus",
+            "/utf-8",
+            "/O2",
+            "/Ob2",
+            "/MD",
+            "/DNDEBUG",
+            "/permissive-",
+            "/bigobj",
+            "/W4",
+            "/WX",
+            "/wd4324",
+            "/wd4702",
+            "/DHYLE_STATIC",
+            "/DNOMINMAX",
+            "/DHYLE_COMPUTE_GGML_CPU=1",
+            "/DHYLE_TEST_GGML_CPU=1",
+            "/DHYLE_GGML_CPU_PROVIDER_VERSION=\"hadamard-unary-overlay\"",
+            "/IC:\\public\\project-hyle\\hyle\\include",
+            "/IC:\\public\\project-hyle\\hyle\\src\\compute",
+            "/IC:\\public\\project-hyle\\hyle\\src\\compute_provider_ggml",
+            "/IC:\\public\\project-hyle\\hyle\\src\\compute_ggml_runtime",
+            "/external:IC:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-final-f1\\mixed-iq1\\source\\include",
+            "/external:IC:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-final-f1\\mixed-iq1\\source\\src",
+            "/external:IC:\\Users\\kiro\\AppData\\Local\\hyle\\dependencies\\v1\\sources\\googletest-063de7e9578f-162765170ae6\\googletest\\include",
+            "/external:W0",
+            "/IC:\\public\\project-hyle\\hyle",
+            "/IC:\\public\\project-hyle\\hyle\\src\\graph",
+            "/IC:\\public\\project-hyle\\hyle\\src\\compute_provider_ggml",
+            "/IC:\\public\\project-hyle\\hyle\\src\\graph",
+            "/sourceDependencies",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-prefix-20261021\\core-checks\\diagnostic2\\graph--executable-deps.json",
+            "C:\\public\\project-hyle\\hyle\\src\\graph\\executable.cc",
+            "/FoC:\\public\\project-hyle\\hyle\\.scratch\\qwen-prefix-20261021\\core-checks\\diagnostic2\\graph--executable.obj",
+            "/FdC:\\public\\project-hyle\\hyle\\.scratch\\qwen-prefix-20261021\\core-checks\\diagnostic2\\graph--executable.pdb"
+          ],
+          "cwd": "C:\\public\\project-hyle\\hyle",
+          "compiler_exists": true,
+          "current_source_matches_record": true,
+          "actual_object_sha_matches_AD_input": true,
+          "retained_dependencies": {
+            "count": 221,
+            "identity_record_contains_per_dependency_SHA": true,
+            "source_dependencies_record": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-prefix-20261021\\core-checks\\diagnostic2\\graph--executable-deps.json",
+              "bytes": 23971,
+              "sha256": "310c8f299c5dc0d6785190dfce2580781ad3be9646a350182c845b0ba3a40e25"
+            },
+            "missing_paths": [],
+            "all_current_dependency_hashes_rechecked": false
+          },
+          "scratch_source": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\probe\\src\\graph\\executable.cc",
+          "quoted_includes": [
+            {
+              "include": "hyle/graph/executable.h",
+              "resolved": "C:\\public\\project-hyle\\hyle\\include\\hyle\\graph\\executable.h"
+            },
+            {
+              "include": "hyle/compute/detail/lease_access.h",
+              "resolved": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\detail\\lease_access.h"
+            },
+            {
+              "include": "hyle/compute/detail/resource_budget_access.h",
+              "resolved": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\detail\\resource_budget_access.h"
+            },
+            {
+              "include": "hyle/graph/detail/region_access.h",
+              "resolved": "C:\\public\\project-hyle\\hyle\\include\\hyle\\graph\\detail\\region_access.h"
+            },
+            {
+              "include": "hyle/graph/detail/input_source.h",
+              "resolved": "C:\\public\\project-hyle\\hyle\\include\\hyle\\graph\\detail\\input_source.h"
+            },
+            {
+              "include": "hyle/graph/detail/region_adapter.h",
+              "resolved": "C:\\public\\project-hyle\\hyle\\include\\hyle\\graph\\detail\\region_adapter.h"
+            },
+            {
+              "include": "hyle/obs/trace.h",
+              "resolved": "C:\\public\\project-hyle\\hyle\\include\\hyle\\obs\\trace.h"
+            },
+            {
+              "include": "../compute/provider_internal.h",
+              "resolved": "C:\\public\\project-hyle\\hyle\\src\\compute\\provider_internal.h"
+            },
+            {
+              "include": "../compute_ops/view_alias.h",
+              "resolved": "C:\\public\\project-hyle\\hyle\\src\\compute_ops\\view_alias.h"
+            },
+            {
+              "include": "compile_internal.h",
+              "resolved": "C:\\public\\project-hyle\\hyle\\src\\graph\\compile_internal.h"
+            },
+            {
+              "include": "graph_state.h",
+              "resolved": "C:\\public\\project-hyle\\hyle\\src\\graph\\graph_state.h"
+            },
+            {
+              "include": "hyle/compute/detail/queue_sequence.h",
+              "resolved": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\detail\\queue_sequence.h"
+            },
+            {
+              "include": "hyle/compute/transfer.h",
+              "resolved": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\transfer.h"
+            },
+            {
+              "include": "hyle/core/assert.h",
+              "resolved": "C:\\public\\project-hyle\\hyle\\include\\hyle\\core\\assert.h"
+            },
+            {
+              "include": "hyle/container/flat_hash_map.h",
+              "resolved": "C:\\public\\project-hyle\\hyle\\include\\hyle\\container\\flat_hash_map.h"
+            },
+            {
+              "include": "hyle/container/hash.h",
+              "resolved": "C:\\public\\project-hyle\\hyle\\include\\hyle\\container\\hash.h"
+            },
+            {
+              "include": "hyle/util/scope_guard.h",
+              "resolved": "C:\\public\\project-hyle\\hyle\\include\\hyle\\util\\scope_guard.h"
+            },
+            {
+              "include": "plan_state.h",
+              "resolved": "C:\\public\\project-hyle\\hyle\\src\\graph\\plan_state.h"
+            },
+            {
+              "include": "view_domain.h",
+              "resolved": "C:\\public\\project-hyle\\hyle\\src\\graph\\view_domain.h"
+            },
+            {
+              "include": "submission_internal.h",
+              "resolved": "C:\\public\\project-hyle\\hyle\\src\\graph\\submission_internal.h"
+            }
+          ],
+          "unresolved_before_extra_include": [],
+          "required_original_quote_include_directory": "C:\\public\\project-hyle\\hyle\\src\\graph",
+          "extra_I_needed": false,
+          "include_directory_existence": [
+            {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\paged-row-scorer\\validation\\windows-current\\shaders",
+              "exists": true
+            },
+            {
+              "path": "C:\\public\\project-hyle\\hyle\\include",
+              "exists": true
+            },
+            {
+              "path": "C:\\public\\project-hyle\\hyle\\src\\compute",
+              "exists": true
+            },
+            {
+              "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_ggml",
+              "exists": true
+            },
+            {
+              "path": "C:\\public\\project-hyle\\hyle\\src\\compute_ggml_runtime",
+              "exists": true
+            },
+            {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-final-f1\\mixed-iq1\\source\\include",
+              "exists": true
+            },
+            {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-final-f1\\mixed-iq1\\source\\src",
+              "exists": true
+            },
+            {
+              "path": "C:\\Users\\kiro\\AppData\\Local\\hyle\\dependencies\\v1\\sources\\googletest-063de7e9578f-162765170ae6\\googletest\\include",
+              "exists": true
+            },
+            {
+              "path": "C:\\public\\project-hyle\\hyle",
+              "exists": true
+            },
+            {
+              "path": "C:\\public\\project-hyle\\hyle\\src\\graph",
+              "exists": true
+            },
+            {
+              "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_ggml",
+              "exists": true
+            },
+            {
+              "path": "C:\\public\\project-hyle\\hyle\\src\\graph",
+              "exists": true
+            }
+          ],
+          "source_replacement_policy": "Change only source path, /sourceDependencies output, /Fo output and /Fd output; retain original flags/macros; add required original quote-include directory if absent."
+        },
+        {
+          "tag": "resources",
+          "compile_in_this_batch": true,
+          "original_source": {
+            "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\resources.cc",
+            "bytes": 98244,
+            "sha256": "6a69f543f6b788530d0534d6c04466d19858f6cb3f453752a179a87fcb06dc20"
+          },
+          "actual_link_input_index": 76,
+          "actual_object": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-round-20261022\\compile1\\resources\\resources.obj",
+            "bytes": 1538160,
+            "sha256": "9d32ecd44dce5119980429f608f733ac3148ae3861334b74a573be2ad27d36f2"
+          },
+          "recipe_identity": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-round-20261022\\compile1\\resources\\identity.json",
+            "bytes": 52645,
+            "sha256": "9d4e6ab1a4be4f013e062d1a32b23206badfae0eac6ddb8f19660ff9bda8de19"
+          },
+          "command_record": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-round-20261022\\compile1\\resources\\compile.command.json",
+            "bytes": 2137,
+            "sha256": "c488a60a8e6ea9bba0bd479ea816491f53809691a2c117386956c09c887659a4"
+          },
+          "terminal_record": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-round-20261022\\compile1\\resources\\compile.result.json",
+            "bytes": 2207,
+            "sha256": "8cce3ece70b6d15ec5fc6c44cd55ac298e424415f1d88202753b1b00ebb1715d"
+          },
+          "command": [
+            "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\cl.exe",
+            "/IC:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\paged-row-scorer\\validation\\windows-current\\shaders",
+            "/nologo",
+            "/c",
+            "/std:c++latest",
+            "/EHsc",
+            "/Zc:preprocessor",
+            "/Zc:__cplusplus",
+            "/utf-8",
+            "/O2",
+            "/Ob2",
+            "/MD",
+            "/DNDEBUG",
+            "/permissive-",
+            "/bigobj",
+            "/W4",
+            "/WX",
+            "/wd4324",
+            "/wd4702",
+            "/DHYLE_STATIC",
+            "/DNOMINMAX",
+            "/DHYLE_COMPUTE_GGML_CPU=1",
+            "/DHYLE_TEST_GGML_CPU=1",
+            "/DHYLE_GGML_CPU_PROVIDER_VERSION=\"hadamard-unary-overlay\"",
+            "/IC:\\public\\project-hyle\\hyle\\include",
+            "/IC:\\public\\project-hyle\\hyle\\src\\compute",
+            "/IC:\\public\\project-hyle\\hyle\\src\\compute_provider_ggml",
+            "/IC:\\public\\project-hyle\\hyle\\src\\compute_ggml_runtime",
+            "/external:IC:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-final-f1\\mixed-iq1\\source\\include",
+            "/external:IC:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-final-f1\\mixed-iq1\\source\\src",
+            "/external:IC:\\Users\\kiro\\AppData\\Local\\hyle\\dependencies\\v1\\sources\\googletest-063de7e9578f-162765170ae6\\googletest\\include",
+            "/external:W0",
+            "/IC:\\public\\project-hyle\\hyle",
+            "/IC:\\public\\project-hyle\\hyle\\src\\graph",
+            "/IC:\\public\\project-hyle\\hyle\\src\\compute_provider_ggml",
+            "/IC:\\public\\project-hyle\\hyle\\src\\graph",
+            "/sourceDependencies",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-round-20261022\\compile1\\resources\\resources-deps.json",
+            "C:\\public\\project-hyle\\hyle\\src\\graph\\resources.cc",
+            "/FoC:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-round-20261022\\compile1\\resources\\resources.obj",
+            "/FdC:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-round-20261022\\compile1\\resources\\resources.pdb"
+          ],
+          "cwd": "C:\\public\\project-hyle\\hyle",
+          "compiler_exists": true,
+          "current_source_matches_record": true,
+          "actual_object_sha_matches_AD_input": true,
+          "retained_dependencies": {
+            "count": 216,
+            "identity_record_contains_per_dependency_SHA": true,
+            "source_dependencies_record": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-round-20261022\\compile1\\resources\\resources-deps.json",
+              "bytes": 23592,
+              "sha256": "6db33d58a8f4ee21678a2dd4917d7aec9b326e143dadc7aa2c8e97eac82c7291"
+            },
+            "missing_paths": [],
+            "all_current_dependency_hashes_rechecked": false
+          },
+          "scratch_source": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\probe\\src\\graph\\resources.cc",
+          "quoted_includes": [
+            {
+              "include": "hyle/graph/executable.h",
+              "resolved": "C:\\public\\project-hyle\\hyle\\include\\hyle\\graph\\executable.h"
+            },
+            {
+              "include": "hyle/graph/detail/region_access.h",
+              "resolved": "C:\\public\\project-hyle\\hyle\\include\\hyle\\graph\\detail\\region_access.h"
+            },
+            {
+              "include": "hyle/graph/result.h",
+              "resolved": "C:\\public\\project-hyle\\hyle\\include\\hyle\\graph\\result.h"
+            },
+            {
+              "include": "hyle/compute/detail/completion_access.h",
+              "resolved": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\detail\\completion_access.h"
+            },
+            {
+              "include": "hyle/compute/detail/lease_access.h",
+              "resolved": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\detail\\lease_access.h"
+            },
+            {
+              "include": "hyle/compute/detail/append_lease.h",
+              "resolved": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\detail\\append_lease.h"
+            },
+            {
+              "include": "hyle/core/assert.h",
+              "resolved": "C:\\public\\project-hyle\\hyle\\include\\hyle\\core\\assert.h"
+            },
+            {
+              "include": "hyle/mem/std_allocator.h",
+              "resolved": "C:\\public\\project-hyle\\hyle\\include\\hyle\\mem\\std_allocator.h"
+            },
+            {
+              "include": "hyle/util/spin_lock.h",
+              "resolved": "C:\\public\\project-hyle\\hyle\\include\\hyle\\util\\spin_lock.h"
+            },
+            {
+              "include": "plan_state.h",
+              "resolved": "C:\\public\\project-hyle\\hyle\\src\\graph\\plan_state.h"
+            },
+            {
+              "include": "resource_episode.h",
+              "resolved": "C:\\public\\project-hyle\\hyle\\src\\graph\\resource_episode.h"
+            },
+            {
+              "include": "submission_internal.h",
+              "resolved": "C:\\public\\project-hyle\\hyle\\src\\graph\\submission_internal.h"
+            },
+            {
+              "include": "submission_lifetime.h",
+              "resolved": "C:\\public\\project-hyle\\hyle\\src\\graph\\submission_lifetime.h"
+            },
+            {
+              "include": "../compute/provider_internal.h",
+              "resolved": "C:\\public\\project-hyle\\hyle\\src\\compute\\provider_internal.h"
+            }
+          ],
+          "unresolved_before_extra_include": [],
+          "required_original_quote_include_directory": "C:\\public\\project-hyle\\hyle\\src\\graph",
+          "extra_I_needed": false,
+          "include_directory_existence": [
+            {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\paged-row-scorer\\validation\\windows-current\\shaders",
+              "exists": true
+            },
+            {
+              "path": "C:\\public\\project-hyle\\hyle\\include",
+              "exists": true
+            },
+            {
+              "path": "C:\\public\\project-hyle\\hyle\\src\\compute",
+              "exists": true
+            },
+            {
+              "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_ggml",
+              "exists": true
+            },
+            {
+              "path": "C:\\public\\project-hyle\\hyle\\src\\compute_ggml_runtime",
+              "exists": true
+            },
+            {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-final-f1\\mixed-iq1\\source\\include",
+              "exists": true
+            },
+            {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-final-f1\\mixed-iq1\\source\\src",
+              "exists": true
+            },
+            {
+              "path": "C:\\Users\\kiro\\AppData\\Local\\hyle\\dependencies\\v1\\sources\\googletest-063de7e9578f-162765170ae6\\googletest\\include",
+              "exists": true
+            },
+            {
+              "path": "C:\\public\\project-hyle\\hyle",
+              "exists": true
+            },
+            {
+              "path": "C:\\public\\project-hyle\\hyle\\src\\graph",
+              "exists": true
+            },
+            {
+              "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_ggml",
+              "exists": true
+            },
+            {
+              "path": "C:\\public\\project-hyle\\hyle\\src\\graph",
+              "exists": true
+            }
+          ],
+          "source_replacement_policy": "Change only source path, /sourceDependencies output, /Fo output and /Fd output; retain original flags/macros; add required original quote-include directory if absent."
+        },
+        {
+          "tag": "region_access",
+          "compile_in_this_batch": true,
+          "original_source": {
+            "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\region_access.cc",
+            "bytes": 12225,
+            "sha256": "d4f0f32199cf21271ac883c7c4baf4892fa3583acde8a9e552afe29688247a8f"
+          },
+          "actual_link_input_index": 83,
+          "actual_object": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-prefix-20261021\\core-checks\\attempt1\\graph--region_access\\graph--region_access.obj",
+            "bytes": 100071,
+            "sha256": "caeecf89aaadfd7c7dd7bc4fa759380b126f41b4e33be517358a9053a78dcf3d"
+          },
+          "recipe_identity": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-prefix-20261021\\core-checks\\attempt1\\graph--region_access\\identity.json",
+            "bytes": 50497,
+            "sha256": "ef3bbb419e32af97212b66dc2206ac5b24b0b71e6331470acdb28fcaf12bc617"
+          },
+          "command_record": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-prefix-20261021\\core-checks\\attempt1\\graph--region_access\\compile.command.json",
+            "bytes": 2237,
+            "sha256": "38082c25b0277779dcabc0d94633b33161958beb624e638a86e2d2c0068478be"
+          },
+          "terminal_record": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-prefix-20261021\\core-checks\\attempt1\\graph--region_access\\compile.result.json",
+            "bytes": 2308,
+            "sha256": "3db4e5191b3747c6660ca40c401f8d1555c16a4760d7b271b7c519f3b96021ac"
+          },
+          "command": [
+            "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\cl.exe",
+            "/IC:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\paged-row-scorer\\validation\\windows-current\\shaders",
+            "/nologo",
+            "/c",
+            "/std:c++latest",
+            "/EHsc",
+            "/Zc:preprocessor",
+            "/Zc:__cplusplus",
+            "/utf-8",
+            "/O2",
+            "/Ob2",
+            "/MD",
+            "/DNDEBUG",
+            "/permissive-",
+            "/bigobj",
+            "/W4",
+            "/WX",
+            "/wd4324",
+            "/wd4702",
+            "/DHYLE_STATIC",
+            "/DNOMINMAX",
+            "/DHYLE_COMPUTE_GGML_CPU=1",
+            "/DHYLE_TEST_GGML_CPU=1",
+            "/DHYLE_GGML_CPU_PROVIDER_VERSION=\"hadamard-unary-overlay\"",
+            "/IC:\\public\\project-hyle\\hyle\\include",
+            "/IC:\\public\\project-hyle\\hyle\\src\\compute",
+            "/IC:\\public\\project-hyle\\hyle\\src\\compute_provider_ggml",
+            "/IC:\\public\\project-hyle\\hyle\\src\\compute_ggml_runtime",
+            "/external:IC:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-final-f1\\mixed-iq1\\source\\include",
+            "/external:IC:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-final-f1\\mixed-iq1\\source\\src",
+            "/external:IC:\\Users\\kiro\\AppData\\Local\\hyle\\dependencies\\v1\\sources\\googletest-063de7e9578f-162765170ae6\\googletest\\include",
+            "/external:W0",
+            "/IC:\\public\\project-hyle\\hyle",
+            "/IC:\\public\\project-hyle\\hyle\\src\\graph",
+            "/IC:\\public\\project-hyle\\hyle\\src\\compute_provider_ggml",
+            "/IC:\\public\\project-hyle\\hyle\\src\\graph",
+            "/sourceDependencies",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-prefix-20261021\\core-checks\\attempt1\\graph--region_access\\graph--region_access-deps.json",
+            "C:\\public\\project-hyle\\hyle\\src\\graph\\region_access.cc",
+            "/FoC:\\public\\project-hyle\\hyle\\.scratch\\qwen-prefix-20261021\\core-checks\\attempt1\\graph--region_access\\graph--region_access.obj",
+            "/FdC:\\public\\project-hyle\\hyle\\.scratch\\qwen-prefix-20261021\\core-checks\\attempt1\\graph--region_access\\graph--region_access.pdb"
+          ],
+          "cwd": "C:\\public\\project-hyle\\hyle",
+          "compiler_exists": true,
+          "current_source_matches_record": true,
+          "actual_object_sha_matches_AD_input": true,
+          "retained_dependencies": {
+            "count": 206,
+            "identity_record_contains_per_dependency_SHA": true,
+            "source_dependencies_record": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-prefix-20261021\\core-checks\\attempt1\\graph--region_access\\graph--region_access-deps.json",
+              "bytes": 22445,
+              "sha256": "5220b5a5573217d618667f1520c54c1677a343da2563b80fc07fecb723875042"
+            },
+            "missing_paths": [],
+            "all_current_dependency_hashes_rechecked": false
+          },
+          "scratch_source": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\probe\\src\\graph\\region_access.cc",
+          "quoted_includes": [
+            {
+              "include": "hyle/graph/detail/region_access.h",
+              "resolved": "C:\\public\\project-hyle\\hyle\\include\\hyle\\graph\\detail\\region_access.h"
+            },
+            {
+              "include": "../compute/provider_internal.h",
+              "resolved": "C:\\public\\project-hyle\\hyle\\src\\compute\\provider_internal.h"
+            },
+            {
+              "include": "plan_state.h",
+              "resolved": "C:\\public\\project-hyle\\hyle\\src\\graph\\plan_state.h"
+            }
+          ],
+          "unresolved_before_extra_include": [],
+          "required_original_quote_include_directory": "C:\\public\\project-hyle\\hyle\\src\\graph",
+          "extra_I_needed": false,
+          "include_directory_existence": [
+            {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\paged-row-scorer\\validation\\windows-current\\shaders",
+              "exists": true
+            },
+            {
+              "path": "C:\\public\\project-hyle\\hyle\\include",
+              "exists": true
+            },
+            {
+              "path": "C:\\public\\project-hyle\\hyle\\src\\compute",
+              "exists": true
+            },
+            {
+              "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_ggml",
+              "exists": true
+            },
+            {
+              "path": "C:\\public\\project-hyle\\hyle\\src\\compute_ggml_runtime",
+              "exists": true
+            },
+            {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-final-f1\\mixed-iq1\\source\\include",
+              "exists": true
+            },
+            {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-final-f1\\mixed-iq1\\source\\src",
+              "exists": true
+            },
+            {
+              "path": "C:\\Users\\kiro\\AppData\\Local\\hyle\\dependencies\\v1\\sources\\googletest-063de7e9578f-162765170ae6\\googletest\\include",
+              "exists": true
+            },
+            {
+              "path": "C:\\public\\project-hyle\\hyle",
+              "exists": true
+            },
+            {
+              "path": "C:\\public\\project-hyle\\hyle\\src\\graph",
+              "exists": true
+            },
+            {
+              "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_ggml",
+              "exists": true
+            },
+            {
+              "path": "C:\\public\\project-hyle\\hyle\\src\\graph",
+              "exists": true
+            }
+          ],
+          "source_replacement_policy": "Change only source path, /sourceDependencies output, /Fo output and /Fd output; retain original flags/macros; add required original quote-include directory if absent."
+        },
+        {
+          "tag": "batch",
+          "compile_in_this_batch": false,
+          "original_source": {
+            "path": "C:\\public\\project-hyle\\hyle\\src\\graph_batch\\batch.cc",
+            "bytes": 90339,
+            "sha256": "559d829deb62415484a1e25ad63d37466a1eb406019b007a4835358d46e187f3"
+          },
+          "actual_link_input_index": 77,
+          "actual_object": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-round-20261022\\compile1\\batch\\batch.obj",
+            "bytes": 2210926,
+            "sha256": "109fb8c4cbd38688a5c5ba1e75655cb280ec3821f87e0e52646f54a3da8896fa"
+          },
+          "recipe_identity": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-round-20261022\\compile1\\batch\\identity.json",
+            "bytes": 49233,
+            "sha256": "c10ec28a600741900a5cb51506290fb03ba466c3b65ddce32603c115934b7530"
+          },
+          "command_record": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-round-20261022\\compile1\\batch\\compile.command.json",
+            "bytes": 2115,
+            "sha256": "449fb9a70bf53f4076a91fea15d1aa4652f81fc708b7b3bdeed402fcecc642d7"
+          },
+          "terminal_record": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-round-20261022\\compile1\\batch\\compile.result.json",
+            "bytes": 2185,
+            "sha256": "98146999ec217f7bc2fd63a0beb88801a4997da47a0de7e58651e4e6367575cc"
+          },
+          "command": [
+            "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\cl.exe",
+            "/IC:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\paged-row-scorer\\validation\\windows-current\\shaders",
+            "/nologo",
+            "/c",
+            "/std:c++latest",
+            "/EHsc",
+            "/Zc:preprocessor",
+            "/Zc:__cplusplus",
+            "/utf-8",
+            "/O2",
+            "/Ob2",
+            "/MD",
+            "/DNDEBUG",
+            "/permissive-",
+            "/bigobj",
+            "/W4",
+            "/WX",
+            "/wd4324",
+            "/wd4702",
+            "/DHYLE_STATIC",
+            "/DNOMINMAX",
+            "/DHYLE_COMPUTE_GGML_CPU=1",
+            "/DHYLE_TEST_GGML_CPU=1",
+            "/DHYLE_GGML_CPU_PROVIDER_VERSION=\"hadamard-unary-overlay\"",
+            "/IC:\\public\\project-hyle\\hyle\\include",
+            "/IC:\\public\\project-hyle\\hyle\\src\\compute",
+            "/IC:\\public\\project-hyle\\hyle\\src\\compute_provider_ggml",
+            "/IC:\\public\\project-hyle\\hyle\\src\\compute_ggml_runtime",
+            "/external:IC:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-final-f1\\mixed-iq1\\source\\include",
+            "/external:IC:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-final-f1\\mixed-iq1\\source\\src",
+            "/external:IC:\\Users\\kiro\\AppData\\Local\\hyle\\dependencies\\v1\\sources\\googletest-063de7e9578f-162765170ae6\\googletest\\include",
+            "/external:W0",
+            "/IC:\\public\\project-hyle\\hyle",
+            "/IC:\\public\\project-hyle\\hyle\\src\\graph",
+            "/IC:\\public\\project-hyle\\hyle\\src\\compute_provider_ggml",
+            "/IC:\\public\\project-hyle\\hyle\\src\\graph",
+            "/sourceDependencies",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-round-20261022\\compile1\\batch\\batch-deps.json",
+            "C:\\public\\project-hyle\\hyle\\src\\graph_batch\\batch.cc",
+            "/FoC:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-round-20261022\\compile1\\batch\\batch.obj",
+            "/FdC:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-round-20261022\\compile1\\batch\\batch.pdb"
+          ],
+          "cwd": "C:\\public\\project-hyle\\hyle",
+          "compiler_exists": true,
+          "current_source_matches_record": true,
+          "actual_object_sha_matches_AD_input": true,
+          "retained_dependencies": {
+            "count": 202,
+            "identity_record_contains_per_dependency_SHA": true,
+            "source_dependencies_record": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-round-20261022\\compile1\\batch\\batch-deps.json",
+              "bytes": 21841,
+              "sha256": "de7bd12dd17ef4359af22fa1544cb0c13ce30c4b8435bf2d95e803f8ca99e01a"
+            },
+            "missing_paths": [],
+            "all_current_dependency_hashes_rechecked": false
+          },
+          "scratch_source": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\probe\\src\\graph_batch\\batch.cc",
+          "quoted_includes": [
+            {
+              "include": "hyle/graph/batch.h",
+              "resolved": "C:\\public\\project-hyle\\hyle\\include\\hyle\\graph\\batch.h"
+            },
+            {
+              "include": "hyle/graph/detail/region_access.h",
+              "resolved": "C:\\public\\project-hyle\\hyle\\include\\hyle\\graph\\detail\\region_access.h"
+            },
+            {
+              "include": "hyle/graph/region_provider.h",
+              "resolved": "C:\\public\\project-hyle\\hyle\\include\\hyle\\graph\\region_provider.h"
+            },
+            {
+              "include": "hyle/compute/detail/batch_graph_access.h",
+              "resolved": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\detail\\batch_graph_access.h"
+            },
+            {
+              "include": "hyle/compute/detail/paged_arena_access.h",
+              "resolved": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\detail\\paged_arena_access.h"
+            },
+            {
+              "include": "hyle/compute/detail/context_ref.h",
+              "resolved": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\detail\\context_ref.h"
+            },
+            {
+              "include": "hyle/compute/detail/queue_ref.h",
+              "resolved": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\detail\\queue_ref.h"
+            },
+            {
+              "include": "hyle/graph/detail/region_adapter.h",
+              "resolved": "C:\\public\\project-hyle\\hyle\\include\\hyle\\graph\\detail\\region_adapter.h"
+            },
+            {
+              "include": "hyle/compute/detail/copy_outcome_source.h",
+              "resolved": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\detail\\copy_outcome_source.h"
+            },
+            {
+              "include": "hyle/mem/std_allocator.h",
+              "resolved": "C:\\public\\project-hyle\\hyle\\include\\hyle\\mem\\std_allocator.h"
+            },
+            {
+              "include": "../graph/compile_internal.h",
+              "resolved": "C:\\public\\project-hyle\\hyle\\src\\graph\\compile_internal.h"
+            },
+            {
+              "include": "../graph/execution_source_internal.h",
+              "resolved": "C:\\public\\project-hyle\\hyle\\src\\graph\\execution_source_internal.h"
+            },
+            {
+              "include": "native_batch_regions.h",
+              "resolved": "C:\\public\\project-hyle\\hyle\\src\\graph_batch\\native_batch_regions.h"
+            },
+            {
+              "include": "row_cache_node.h",
+              "resolved": "C:\\public\\project-hyle\\hyle\\src\\graph_batch\\row_cache_node.h"
+            },
+            {
+              "include": "paged_append.h",
+              "resolved": "C:\\public\\project-hyle\\hyle\\src\\graph_batch\\paged_append.h"
+            }
+          ],
+          "unresolved_before_extra_include": [
+            "native_batch_regions.h",
+            "row_cache_node.h",
+            "paged_append.h"
+          ],
+          "required_original_quote_include_directory": "C:\\public\\project-hyle\\hyle\\src\\graph_batch",
+          "extra_I_needed": true,
+          "include_directory_existence": [
+            {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\paged-row-scorer\\validation\\windows-current\\shaders",
+              "exists": true
+            },
+            {
+              "path": "C:\\public\\project-hyle\\hyle\\include",
+              "exists": true
+            },
+            {
+              "path": "C:\\public\\project-hyle\\hyle\\src\\compute",
+              "exists": true
+            },
+            {
+              "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_ggml",
+              "exists": true
+            },
+            {
+              "path": "C:\\public\\project-hyle\\hyle\\src\\compute_ggml_runtime",
+              "exists": true
+            },
+            {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-final-f1\\mixed-iq1\\source\\include",
+              "exists": true
+            },
+            {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-final-f1\\mixed-iq1\\source\\src",
+              "exists": true
+            },
+            {
+              "path": "C:\\Users\\kiro\\AppData\\Local\\hyle\\dependencies\\v1\\sources\\googletest-063de7e9578f-162765170ae6\\googletest\\include",
+              "exists": true
+            },
+            {
+              "path": "C:\\public\\project-hyle\\hyle",
+              "exists": true
+            },
+            {
+              "path": "C:\\public\\project-hyle\\hyle\\src\\graph",
+              "exists": true
+            },
+            {
+              "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_ggml",
+              "exists": true
+            },
+            {
+              "path": "C:\\public\\project-hyle\\hyle\\src\\graph",
+              "exists": true
+            }
+          ],
+          "source_replacement_policy": "Change only source path, /sourceDependencies output, /Fo output and /Fd output; retain original flags/macros; add required original quote-include directory if absent."
+        }
+      ],
+      "notes": [
+        "Core recipes intentionally retain the actual original CPU-common compilation macros even though the runtime closure is CUDA; do not silently replace them with consumer CUDA flags.",
+        "main requires original tools/qwen35_text include directory. executable/resources/region_access already include original src/graph, resolving local and ../compute includes from scratch copies. batch would additionally need src/graph_batch but is not compiled in this batch.",
+        "Dependency metadata is referenced in place; only selected source/object hashes and quoted include resolution were checked. No full SDK/archive/whole-closure hashing or copying.",
+        "Only four diagnostic source copies and four fresh host CXX objects plus one195-input link are planned. No NVCC, SDK/CMake build or model/GPU execution."
+      ]
+    },
+    "native-invalidation-predicates.json": {
+      "status": "FROZEN_READ_ONLY_SOURCE_PREDICATES_NOT_EVENT_ATTRIBUTION",
+      "scope": "Current source reasoning for the two native invalidation branches and FlashInfer native-plan reuse. No SDK/big raw scan, product edit, build or GPU run. Historical18record/50reuse including10 non-first-role-slot records is not assigned a cause by this report.",
+      "source_identities": [
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\src\\graph_batch\\paged_append.cc",
+          "bytes": 44745,
+          "sha256": "b3fcfcfd040785da06f546534c4dd0315d299daacfeb5575a16ad7de2bddfd52"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\src\\graph_batch\\batch.cc",
+          "bytes": 90339,
+          "sha256": "559d829deb62415484a1e25ad63d37466a1eb406019b007a4835358d46e187f3"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_flashinfer\\flashinfer_provider.cc",
+          "bytes": 46732,
+          "sha256": "7f7d4d036c187fd206955a61f9e9f7a7873d2ab56f4eb8ee6e5476f44f9674e7"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\src\\compute_batch\\batch_execution.cc",
+          "bytes": 64570,
+          "sha256": "7e7e2a8f694df5a55d88c0cd7879158fa06694d21dce2f2129b91587e8a90045"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\src\\compute_batch\\paged_append_program.cc",
+          "bytes": 5669,
+          "sha256": "2e9fe5da238442e248d923998fe5219bfda74711cee812e398cc68f006a5237e"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\detail\\paged_append_wire.h",
+          "bytes": 1153,
+          "sha256": "5706d6d51ddda8887485f7dcc91c9d5c7e58ef3594ff8733ff49f6c21c995eb2"
+        }
+      ],
+      "physical_tuple": {
+        "definition": [
+          "resource()",
+          "native_handle()",
+          "offset()",
+          "size()"
+        ],
+        "append_comparison": {
+          "path": "src/graph_batch/paged_append.cc",
+          "line": 275,
+          "function": "same_storage",
+          "fields": "All four exact fields; neither ReadLease control identity nor MirrorGroup shared_ptr count is the predicate."
+        },
+        "scope": "Exact current command/binding contract; changing a logical permission/generation alone is not a physical port change."
+      },
+      "append_branch": {
+        "entry": {
+          "path": "src/graph_batch/paged_append.cc",
+          "line": 429,
+          "function": "prepare_native",
+          "fields": "Prepared.native/spec; Slot.selected_first/selected_next,group,arena,bindings; PagedAppendData.ranges/targets/previous/layout"
+        },
+        "instruction_resolution": {
+          "path": "src/graph_batch/paged_append.cc",
+          "line": 438,
+          "function": "prepare_native instruction construction",
+          "fields": "source_kind,source_page from old canonical footprint,source_row,destination_page,destination_row,rows; validate finite input/prefix capacity"
+        },
+        "share_hit": {
+          "path": "src/graph_batch/paged_append.cc",
+          "line": 467,
+          "function": "prepare_native bound-sibling match",
+          "fields": "selected.pages.valid && group exists && exact BatchLayoutVersion && QueueRef.same_owner && device resource && host resource && instruction_capacity && full instruction vector equality"
+        },
+        "oldtail_rule": "Same new layout is insufficient: previous partial-tail source_page is resolved into the compared words. Different source pages, destination IDs or row offsets cannot reuse a sibling group whose words differ.",
+        "carrier_create": {
+          "path": "src/graph_batch/paged_append.cc",
+          "line": 475,
+          "function": "prepare_native local group fallback",
+          "fields": "Start from own retained group. Allocate new mirror if absent, occupied by any still-bound sibling, different Queue owner/device resource/host resource/fixed capacity. An occupied shared group is never overwritten for divergent words."
+        },
+        "same_carrier_update": {
+          "path": "src/graph_batch/paged_append.cc",
+          "line": 487,
+          "function": "prepare_native metadata upload",
+          "fields": "RegionAccess::revoke_preparation then sealed=false, mirror.upload, commit group.layout/words after success. This revocation clears callable episode preparation; it is not an explicit invalidate_commands call."
+        },
+        "actual_invalidate": {
+          "path": "src/graph_batch/paged_append.cc",
+          "line": 493,
+          "function": "prepare_native before carrier replacement",
+          "fields": "If !same_storage(old bindings.arena,new capacity.storage) OR !same_storage(old bindings.metadata,new ready.view), invalidate_commands(invocation, exact append step) before replacing retained group/carriers."
+        },
+        "rows_input": {
+          "path": "src/graph_batch/paged_append.cc",
+          "line": 331,
+          "function": "ProviderRegionPreparedVTable.prepare_bindings",
+          "fields": "Input port0 description must match exact packed rows; native validates no input/destination overlap, then stores bindings.rows. Ordinary Graph physical input/projection comparison governs changed rows ports; this is separate from explicit arena/metadata invalidation at495."
+        },
+        "fresh_seal": {
+          "path": "src/graph_batch/paged_append.cc",
+          "line": 338,
+          "function": "ProviderRegionPreparedVTable.seal_bindings",
+          "fields": "Every episode requires current pages, exact group.layout, ready metadata, valid arena/rows/metadata and alias validation; shared_submit also checks Queue and actual rows tuple."
+        },
+        "retirement": {
+          "path": "src/compute_batch/paged_append_program.cc",
+          "line": 53,
+          "function": "PagedAppendMirror::upload",
+          "fields": "Reject failed/oversized/pending/active uses, retake original ready/staging writer, capture views before admission, admit read/write uses, original Queue copy+Completion attach, wait true completion/uses, publish ready only after success."
+        },
+        "retained_owner": "Slot.arena/group keep stable allocations across take, not old page read permissions or dirty writers. Descriptor ready is separately admitted as an F1 control. A ready mirror never certifies the page payload itself.",
+        "necessarily_invalidated_under_current_contract": [
+          "Actual bank allocation/resource/offset/extent changes",
+          "Actual descriptor mirror allocation/resource/offset/extent changes (including genuine shared-to-split replacement)",
+          "A different original program or packed-row physical binding identified by the ordinary Graph step/port preparation path"
+        ],
+        "not_sufficient_by_itself": [
+          "Changed descriptor bytes/page IDs/oldtail coordinates while uploading into the same mirror",
+          "A new layout generation with reusable descriptor carrier",
+          "Fresh permission lease/token or take/ready boundary after real retirement",
+          "Different MirrorGroup identity if the actual captured tuples and program remain unchanged"
+        ]
+      },
+      "batch_callback_branch": {
+        "fanout": {
+          "path": "src/graph_batch/batch.cc",
+          "line": 352,
+          "function": "CommandChange/before_command_change",
+          "fields": "For each prepared entry: invalidate exact step when entry.slot==changed slot OR entry.slot.metadata_owner==changed slot. A dependent can be in another outer capture range."
+        },
+        "reason": "Must retract all recordings borrowing original native metadata before its owner can release/change that carrier; does not depend on old page permission guards still being present.",
+        "cold_program_predicate": {
+          "path": "src/graph_batch/batch.cc",
+          "line": 501,
+          "function": "prepare_native program reuse",
+          "fields": "s.program.valid && program.schema().owns(layout) && same QueueRef owner && same host_workspace && max_float_workspace_bytes && max_int_workspace_bytes && allocator state/alloc/free/realloc function identities"
+        },
+        "cold_program_miss": {
+          "path": "src/graph_batch/batch.cc",
+          "line": 510,
+          "function": "prepare_native !reuse",
+          "fields": "Callback runs before native/program reset, then original program prepare/create. Invalidation is required for the actual reconstruction; whether an option-only miss could avoid reconstruction is a separate unproved optimization."
+        },
+        "shared_metadata": {
+          "path": "src/graph_batch/batch.cc",
+          "line": 525,
+          "function": "BatchGraphAccess::prepare_shared/prepare",
+          "fields": "Pass callback into original Compute batch preparation, then record actual metadata_owner from selected source; not a fabricated metadata stamp."
+        },
+        "permission_only_path": {
+          "path": "src/graph_batch/batch.cc",
+          "line": 1022,
+          "function": "invalidate_projected_commands",
+          "fields": "Exact selected shared region_table && Region.graph_capture skips unconditional invalidation for fresh page permission alone; all other selected readers keep conservative invalidate. bind_append proof preserves exact role/layout/Queue/port checks at1083–1107."
+        },
+        "bridge_triggers": [
+          {
+            "path": "src/compute_batch/batch_execution.cc",
+            "line": 129,
+            "function": "PreparationChangeGate::before_change/invalidate_recorded_commands",
+            "fields": "One callback per current prepare gate before resetting inner replay commands and graph_metadata_epoch"
+          },
+          {
+            "path": "src/compute_batch/batch_execution.cc",
+            "line": 142,
+            "function": "prepare_workspace",
+            "fields": "Invalidate before grow/release if retained float_workspace/int_workspace/host_workspace capacities are insufficient; smaller requirements retain high-water storage."
+          },
+          {
+            "path": "src/compute_batch/batch_execution.cc",
+            "line": 459,
+            "function": "BatchInvocation::prepare metadata tuple",
+            "fields": "If previous graph_metadata_binding valid, compare next shared ready/own mirror tuple; change triggers callback before old metadata may be released."
+          },
+          {
+            "path": "src/compute_batch/batch_execution.cc",
+            "line": 521,
+            "function": "BatchInvocation::prepare fresh native plan",
+            "fields": "may_update=update && (previous prepared||ran); call provider update only if may_update && !workspace_changed; if false/not attempted, invalidate before original planning submit+actual retirement."
+          }
+        ],
+        "ordinary_replay_ports": {
+          "path": "src/compute_batch/batch_execution.cc",
+          "line": 165,
+          "function": "replay_bindings/same_replay",
+          "fields": "Q=input0,K/cache=input1,V=input2 if present, metadata, output exact physical tuples; workspace growth is covered separately by preparation change gate."
+        },
+        "safe_scope": "Retain existing idle/ticket/native retirement/completion/old-output checks before query or mutation (batch_execution.cc432–450). Failure/accepted-prefix cleanup is not a reusable-plan success."
+      },
+      "flashinfer_plan_reuse": {
+        "entry": {
+          "path": "src/compute_provider_flashinfer/flashinfer_provider.cc",
+          "line": 257,
+          "function": "can_reuse_batch_plan",
+          "fields": "generation!=0; original schema owns new layout; exact query_indptr array size+contents"
+        },
+        "plain_paged_or_ragged": "Physical page IDs and tail lengths are runtime metadata. If KV indptr unchanged, same query split passes. If nonempty query and KV indptr changed, require nonzero kv_chunk_rows divisible by units(page_size if paged else1), nonzero cta_tile_q, and unchanged chunk count for every active-query request.",
+        "chunk_formula": {
+          "units": "page_size for paged,1 for ragged",
+          "chunk": "kv_chunk_rows / units",
+          "length": "kv_indptr[r+1]-kv_indptr[r], in page units if paged",
+          "window": "If window_left>=0 clamp length to ceil((window_left+cta_tile_q)/units)",
+          "count": "ceil(max(length,1)/chunk)",
+          "ignore_inactive": "Only requests with query_indptr[r+1]!=query_indptr[r] affect original active launch topology."
+        },
+        "MLA": "Additionally exact kv_indptr and last_page_lengths arrays (line264); schedules bake KV lengths/offsets. Page-ID-only changes may reuse.",
+        "update": {
+          "path": "src/compute_provider_flashinfer/flashinfer_provider.cc",
+          "line": 420,
+          "function": "update_batch_slot",
+          "fields": "If predicate passes: clear stale sizing query, update owned layout/generation/report.reused_native_plan=true; no native scheduling/reallocation. Otherwise returnfalse and original common fresh-plan path applies."
+        },
+        "facts_are_not_plan_reuse": {
+          "path": "src/compute_provider_flashinfer/flashinfer_provider.cc",
+          "line": 287,
+          "function": "query_batch_layout and plan_batch_slot",
+          "fields": "Sizing reuse returns retained bytes only if allow_update && can_reuse. Fresh sizing caches {exact layout,QueueRef,primary,spec,facts}; next plan consumes once and requires exact identities/spec. It still executes original native::plan_batch/plan_mla; reusing facts is not reusing the prepared native plan."
+        },
+        "native_failures": {
+          "path": "src/compute_provider_flashinfer/flashinfer_provider.cc",
+          "line": 320,
+          "function": "plan_batch_slot",
+          "fields": "Clear workspace_query/generation before rejections, validate actual workspace capacity before planning; after native planning boundary preserve accepted_command(status), commit plan fields only on success."
+        },
+        "not_compared_here": "This topology predicate does not prove ordinary Graph Q/K/V/output/metadata pointers identical. Those are separate captured binding/carrier gates. scale/dtype/heads/page geometry are fixed in the original slot/spec; same_batch_spec130–138 guards one-use workspace facts.",
+        "mandatory_fresh_under_current_plan": [
+          "No successful prior generation or foreign schema",
+          "Any query_indptr split/size change",
+          "Active request KV split chunk-count change, or missing original chunk/CTA facts needed to prove equality",
+          "MLA KV indptr/tail change",
+          "Explicit update=false or partial-preparation state that cannot prove original plan reusable"
+        ]
+      },
+      "MAP_event_interpretation": {
+        "append_callsite": "An invalidate return address resolving to prepare_native/line495 indicates that bank or metadata exact tuple comparison failed in that call. Capture old/new tuple to distinguish which and why a mirror group was replaced.",
+        "batch_callsite": "A return address resolving to before_command_change/line362 identifies the dependency invalidation sink, not uniquely metadata change vs scratch growth vs fresh plan vs cold program rebuild. /O2 inlining can map an enclosing function; use exact compiled MAP/source identity.",
+        "minimum_existing_episode_facts": [
+          "Original Invocation and selected step/node/lane/role/T/physical slot; event order before prepare/bind/take/replay",
+          "Old/new arena,descriptor,Q/K/V/output tuple(resource,handle,offset,size) for the triggering step",
+          "Append group match/occupied flags, old/new descriptor group and words signature including resolved oldtail source IDs",
+          "Batch reuse options/Queue/schema predicate result; previous prepared/ran, update, workspace capacities/requirements and metadata tuple comparison",
+          "FlashInfer generation,query_indptr,kv_indptr,tails,kv_chunk_rows,page_size,cta_tile_q,window_left and resulting per-active-request chunk counts"
+        ],
+        "bounded_use": "These are finite scratch event correlation inputs to the planned diagnostic, not a proposal for a new product tracing framework or broad capture cache."
+      },
+      "potential_overinvalidation_not_proven": [
+        "A full native-plan rebuild can be conservative even if it happens to choose the same launch topology. Current false predicate does not prove equality; cannot safely keep recordings from the MAP count alone.",
+        "Fresh program reconstruction after a prepare option change must invalidate today; proving some option changes can preserve the same original owners would require the specific old/new option and allocation facts.",
+        "A new source ReadLease/owner object is not sufficient evidence of physical change. Conversely a genuinely changed packed-row producer carrier or state/carry pool tuple requires re-recording even when shape and selected Invocation slot are unchanged.",
+        "Shared descriptor occupied/split is necessary if siblings need different current words. Only an event with identical compatible words and no occupancy/carrier/program change could support a redundant replacement allegation.",
+        "Multiple dependency callback invocations can target the same covering outer range; event count is not equal to number of newly recorded ranges or their cost."
+      ],
+      "conclusion": "No new correctness defect or proven redundant native invalidation is established by this static review. Keep historical10 extra recordings unassigned until AE actual events identify the exact triggering branch and changed physical/topology facts.",
+      "builds": 0,
+      "GPU_runs": 0,
+      "product_edits": 0
+    },
+    "next-optimization-design.json": {
+      "status": "FROZEN_SOURCE_ONLY_FEASIBILITY_REVIEW",
+      "scope": {
+        "product_edits": 0,
+        "builds": 0,
+        "GPU_runs": 0,
+        "new_native_runs": 0,
+        "quality_claim": false
+      },
+      "actual_evidence": {
+        "path": ".scratch\\qwen-capture-cause-20261022\\review\\actual-run-review.json",
+        "bytes": 23172,
+        "sha256": "fce4374b5a875ad0602d874ba7a108e90e43675ac5ec7653af5863f6f76bf78e",
+        "terminal_exit_zero": true,
+        "capture": {
+          "decode_calls": 34,
+          "recorded_ranges": 18,
+          "reused_ranges": 50,
+          "initial_role_slot_ranges": 8,
+          "actual_lost_ranges": 10,
+          "loss_bearing_calls": 7,
+          "last_loss_decode_index_zero_based": 14,
+          "subsequent_decode_calls_without_loss": 19
+        },
+        "resolved_cause": "All 10 retained-range losses first observed an exact prepared tensor byte-offset change within the same logged resource/native handle. No native-owner callback loss was observed. These are legitimate physical-binding changes requiring requalification and recording under the current capture contract.",
+        "examples_bytes": {
+          "hidden_offsets": [
+            0,
+            4096,
+            8192
+          ],
+          "conv_history_offset_change": [
+            36864,
+            73728
+          ]
+        },
+        "qualification": "The diagnostic records the first differing port of each affected range, not an exhaustive list of every changed port. It does not prove that fixing that first port would preserve every other port.",
+        "inclusive_diagnostic_cold_buckets_ms": {
+          "first_four_calls_eight_initial_ranges": 29.626,
+          "seven_calls_with_ten_losses": 18.1936,
+          "remaining_23_calls": 9.4039,
+          "all_34_decode_calls": 57.2235
+        },
+        "timing_limit": "These are inclusive preparation buckets from a diagnostic run, not capture/instantiate self-time, recoverable time, a throughput result, or evidence for a 15% gain."
+      },
+      "existing_mechanisms": [
+        "LeasePool and RangeAllocator already bound backing and metadata. Free-bin selection, alignment, splitting and coalescing choose offsets; neither public allocator accepts a preferred address or offset.",
+        "ReadLease::try_write can reuse an existing block only when whole-block ownership is unique and native uses have retired. Snapshot aliases and real native uses keep the range alive. Allocation generation and actual retirement remain authoritative.",
+        "The consumer allocates candidate first/next recurrent, convolution and hidden boundaries from these pools; selection, unselected candidates and pinned snapshots naturally change the available range order. Model execution parity is not a physical state-slot assignment.",
+        "Graph preserves dormant recordings only subject to complete preparation and exact resource/handle/offset/extent/permission identity. A stable allocation handle alone is insufficient.",
+        "The CUDA backend currently captures a new graph and instantiates it; the current Hyle capture extension has no update operation. Existing status-word reuse does not update graph parameters."
+      ],
+      "options_considered": {
+        "consumer_address_affinity": {
+          "possible_basis": "A bounded, ownership-aware preference could retain and safely promote an actual retired block via existing try_write; any unavailable, failed or pinned block must fall back to normal allocation.",
+          "missing_piece": "There is no address-hint allocator API or output-writer return API. Reusing state owners across every create/rebuild/selection/abort path would require additional consumer ownership bookkeeping and could add per-step work. Retained idle owners must still fit the existing physical backing and live-version bounds.",
+          "decision": "Not adopted. No small, proved allocation-order change currently eliminates these losses across acceptance choices, prefix pins and multiple sessions. Do not restructure 36 state pools solely from the 10-event count."
+        },
+        "generic_capture_update": {
+          "vendor_basis": "The locally installed CUDA 13.3 cuda_runtime_api.h:12820-12910 exposes cudaGraphExecUpdate for compatible freshly captured graphs, subject to topology, node, context and parameter restrictions.",
+          "current_gap": "Hyle currently destroys the covering recording on physical-binding invalidation and exposes no update API. A correct future path must retain an idle old artifact as nonlaunchable, fully revalidate new bindings/owners, capture the new graph, check update status/result and fall back to fresh instantiate. Context, checked-status and true retirement ownership must remain valid throughout.",
+          "limit": "This still performs new capture and preparation; it can only avoid the eligible instantiation portion. Opaque vendor node parameters must not be patched or assumed compatible.",
+          "decision": "Not adopted in this batch. No current API can safely substitute this behavior without an explicit owner/lifecycle contract."
+        }
+      },
+      "rejected_shortcuts": [
+        "Ignoring byte offsets because resource/native handles match, or suppressing the existing physical-binding invalidation.",
+        "Treating role/parity as a fixed state address, overwriting a pinned snapshot, returning a range before actual retirement, or reserving unbounded address tuples.",
+        "Adding shadow state buffers/copies, bypassing owned lease admission through raw output views, or introducing a Qwen-specific executor."
+      ],
+      "decision_and_next_action": {
+        "capture_cause_status": "Resolved for the observed 10 losses; do not leave this as an unlocated capture problem.",
+        "current_change": "No allocator, consumer state layout, capture API or invalidation change is recommended now.",
+        "next_finite_measurement": "Profile one existing MTP steady interval after decode index 14, where the observed run has no further recording losses. Attribute actual kernel/busy-gap and host dispatch/preparation costs there before selecting the next performance implementation.",
+        "measurement_limit": "A diagnostic profile must not be reported as a new throughput window, as isolated allocator/capture savings, or as a numerical-quality result."
+      },
+      "sources": [
+        {
+          "path": "include/hyle/compute/resource_leases.h",
+          "bytes": 8660,
+          "sha256": "4e5681ebfa7c2f2ad51e5788c8316f4b993883f595c04b33fe594d7294dab85b",
+          "anchors": [
+            "LeasePoolOptions; ReadLease::try_write; LeasePool::allocate"
+          ]
+        },
+        {
+          "path": "src/compute/resource_leases.cc",
+          "bytes": 36526,
+          "sha256": "71fc2a3389bbb413873713039b4278954377b0a7fff149255a1e7b4110d3f9af",
+          "anchors": [
+            "101 LeaseBlock::destroy",
+            "175 release_episode",
+            "631 ReadLease::try_write",
+            "701 LeasePool::allocate"
+          ]
+        },
+        {
+          "path": "include/hyle/mem/range_allocator.h",
+          "bytes": 4780,
+          "sha256": "ad1b8455a5f940a08e9877526c21feaa2dd19c0344dcad01bd1e423ac898c20c",
+          "anchors": [
+            "RangeAllocator::allocate(size, alignment); no preferred-offset API"
+          ]
+        },
+        {
+          "path": "src/mem/range_allocator.cc",
+          "bytes": 21276,
+          "sha256": "93afdc4799f68459fa3ef789f5a6da05d4a8a1cd90eac0ebf6a2d504030673df",
+          "anchors": [
+            "128 insert_free",
+            "169 find_suitable",
+            "264 allocate_node",
+            "359 free/coalescing"
+          ]
+        },
+        {
+          "path": "tools/qwen35_text/session_state.h",
+          "bytes": 10809,
+          "sha256": "9cd094e7778ff48567b87c2983e138597940b9683e63023409562d0e562c35cd",
+          "anchors": [
+            "Plan N+R versions / N+2R MTP state boundaries; hidden_slots; Snapshot"
+          ]
+        },
+        {
+          "path": "tools/qwen35_text/main.cc",
+          "bytes": 271868,
+          "sha256": "f2e1c6002042d8ccf08eaed3d2204fe7c459a2e9a37ae74d13c2ff93e3714131",
+          "anchors": [
+            "1040 state pools",
+            "1452 create_session",
+            "1910 candidate state/hidden allocation",
+            "2062 selected first/next export",
+            "2166 state_resource_ports unbind"
+          ]
+        },
+        {
+          "path": "include/hyle/compute/detail/command_capture.h",
+          "bytes": 3453,
+          "sha256": "e4691dfd82b4a158256d0216c3c64d3d4bc081a72a80e25bb2fc049e03f0c448",
+          "anchors": [
+            "CommandCaptureVTable v2 begin/end/abort/destroy/launch; no update"
+          ]
+        },
+        {
+          "path": "src/graph/executable.cc",
+          "bytes": 465076,
+          "sha256": "883e322cecab2efe012afe6f28781944433415cdbf2e6d878b07d181be07e805",
+          "anchors": [
+            "1069 invalidate_binding_cache",
+            "1103 same_physical_tensor",
+            "1213 prepare_command_bindings",
+            "7887 invalidate_step_recording"
+          ]
+        },
+        {
+          "path": "src/compute_backend_cuda/cuda_backend.cc",
+          "bytes": 67793,
+          "sha256": "039cbf631faaef9335c9eb1833f46e1fd08a2181cc8a20452a11a20b2b9999ee",
+          "anchors": [
+            "1247 begin_capture",
+            "1270 end_capture",
+            "1302 cudaGraphInstantiateWithFlags",
+            "1360 launch_capture"
+          ]
+        },
+        {
+          "path": "src/compute_backend_cuda/cuda_internal.h",
+          "bytes": 9220,
+          "sha256": "c3dafa453b452a253536545dd453d02c6883978e6ee0654f85c8b72e7f0e4fbb",
+          "anchors": [
+            "126 CapturedCommandsState owns executable/context/status; no retained graph/update candidate"
+          ]
+        }
+      ]
+    }
+  },
+  "product_code_changed": false,
+  "findings": [
+    "The original P154/64 natural MTP workload completed once with64 actual IDs and selected work fields equal to the frozen AD run. Scratch logging records only metadata and emits after the original workload; tensor payload copies are suppressed.",
+    "Ten actual retained capture ranges were erased. All first observed causes were qualified ordinary tensor binding tuple changes with same resource/native allocation but different byte offset, not native-plan callback, unproven identity, Queue replacement or permission-release loss.",
+    "Nine first changed ports are MTP prior/carry hidden pool views; one is the layer0 conv history input. Read aliases and candidate output aliases vary with accepted-prefix state selection and ordinary pooled range reuse.",
+    "Physical argument changes require invalidation under the original captured-command contract. The same backing allocation is not proof that a different subrange may replay through old pointer arguments.",
+    "Each event captures only the first changed port which causes a whole retained range to be erased. It is not an exhaustive diff of every later port or proof all history/state movement was observed.",
+    "Existing Graph invalidation and state lifetime contracts remain unchanged. No public diagnostic API, new executor, shadow state copy, unsafe preservation or performance improvement is introduced.",
+    "All observed losses occur in decode rounds4..15, followed by complete recorded-range reuse. The7 affected calls have18.1936ms inclusive cold buckets in this instrumented process, not a measurement of invalidation self-time or recoverable performance. The next finite investigation is actual no-recapture MTP steady-state hotspots.",
+    "This batch closes the actual first-cause attribution gap for the current AD-shaped workload. Historical W data retains its original scope; matching total counts alone do not retroactively prove those old causes."
+  ],
+  "limitations": [
+    "Only one finite diagnostic process; it supplies causal metadata, not uninstrumented TPS, statistical performance or new full quality evidence.",
+    "Existing preparation-diagnostics still rejects MTP; no claim is made that six target BatchPlanReports cover the seventh draft attention. This probe uses first-loss metadata and actual route TSV instead.",
+    "Only first losses through the original central per-step invalidator are recorded. Explicit whole-cache teardown/reset paths and fresh slots without retained ranges are outside this event log.",
+    "No native allocation delta, removable time or universal pointer-stability optimization is established. State readers/versions and actual native retirement remain mandatory.",
+    "Other backend/model/quantization/image and architecture requirements remain unfinished."
+  ],
+  "previous_evidence": [
+    "docs/evidence/performance/qwen-cublas-scores-2026-10-22.json",
+    "docs/evidence/performance/qwen-mtp-divergence-2026-10-22.json"
+  ],
+  "archives": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\qwen-capture-cause-2026-10-22.data.zip",
+      "bytes": 601493,
+      "sha256": "04d316e185a56ea71001f4f6432d6aa43b5ce1410c8a42d9f99c27991ac3e846"
+    }
+  ],
+  "archive_files": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\actual-summary.json",
+      "bytes": 151604,
+      "sha256": "7d8effc07dbb48e248c8c2da0e46c8f31d8e9dd87b4b538095e7347c0f83aa29",
+      "entry": ".scratch/qwen-capture-cause-20261022/actual-summary.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\before\\current-work.md",
+      "bytes": 60237,
+      "sha256": "b37d1aa3645543d8e9fe7cdd7428785911c50ab864d9a15ccc99e579be13538b",
+      "entry": ".scratch/qwen-capture-cause-20261022/before/current-work.md"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\before\\decode.md",
+      "bytes": 35134,
+      "sha256": "921255e6d2b5c9cc59794e35556543fed1bf59ca2a990f5ac67538c6fa015634",
+      "entry": ".scratch/qwen-capture-cause-20261022/before/decode.md"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\before\\src\\graph\\executable.cc",
+      "bytes": 465076,
+      "sha256": "883e322cecab2efe012afe6f28781944433415cdbf2e6d878b07d181be07e805",
+      "entry": ".scratch/qwen-capture-cause-20261022/before/src/graph/executable.cc"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\before\\src\\graph\\region_access.cc",
+      "bytes": 12225,
+      "sha256": "d4f0f32199cf21271ac883c7c4baf4892fa3583acde8a9e552afe29688247a8f",
+      "entry": ".scratch/qwen-capture-cause-20261022/before/src/graph/region_access.cc"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\before\\src\\graph\\resources.cc",
+      "bytes": 98244,
+      "sha256": "6a69f543f6b788530d0534d6c04466d19858f6cb3f453752a179a87fcb06dc20",
+      "entry": ".scratch/qwen-capture-cause-20261022/before/src/graph/resources.cc"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\before\\test.ps1",
+      "bytes": 3182,
+      "sha256": "9e8af09e1249e0ae99ef7867fd99ceb3a9bcaf1a4a829cc0c36cf2cfc8d82c92",
+      "entry": ".scratch/qwen-capture-cause-20261022/before/test.ps1"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\build.py",
+      "bytes": 9323,
+      "sha256": "67552e4a433e2df619b3ac0cdb3e5163604277d67dc799b33927f83a811687ee",
+      "entry": ".scratch/qwen-capture-cause-20261022/build.py"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\compile1\\executable\\compile.command.json",
+      "bytes": 2202,
+      "sha256": "28642fb92b426b274974710b0a644344c89bc53aa2300cbb1bccfccbc033a4f6",
+      "entry": ".scratch/qwen-capture-cause-20261022/compile1/executable/compile.command.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\compile1\\executable\\compile.result.json",
+      "bytes": 2272,
+      "sha256": "c2a6eeb4da3967a66b740201e3852662e65dcf66a50b0d62a7309a9fe9a16f6e",
+      "entry": ".scratch/qwen-capture-cause-20261022/compile1/executable/compile.result.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\compile1\\executable\\compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "entry": ".scratch/qwen-capture-cause-20261022/compile1/executable/compile.stderr.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\compile1\\executable\\compile.stdout.log",
+      "bytes": 15,
+      "sha256": "e7f3ca2d037330ccc61c3339535287ba36312762361a62ef5c649884d8973e34",
+      "entry": ".scratch/qwen-capture-cause-20261022/compile1/executable/compile.stdout.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\compile1\\executable\\executable-deps.json",
+      "bytes": 24469,
+      "sha256": "0d412cbad1142440961bad8b4be5d469dd351c91d573c30296d808e3a9dac1eb",
+      "entry": ".scratch/qwen-capture-cause-20261022/compile1/executable/executable-deps.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\compile1\\executable\\identity.json",
+      "bytes": 55597,
+      "sha256": "ea14f1106846e06a4244fc857fb79e5974d7fc127d78a3f2dc77ebf9c98da838",
+      "entry": ".scratch/qwen-capture-cause-20261022/compile1/executable/identity.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\compile1\\executable\\live.json",
+      "bytes": 2272,
+      "sha256": "c2a6eeb4da3967a66b740201e3852662e65dcf66a50b0d62a7309a9fe9a16f6e",
+      "identical_content_alias": true,
+      "entry": ".scratch/qwen-capture-cause-20261022/compile1/executable/compile.result.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\compile1\\executable\\plan.json",
+      "bytes": 3380,
+      "sha256": "674cc43a1652c4d8858315f1cb8e6b2439d45a3dcae592b0110742bd3bfef2b9",
+      "entry": ".scratch/qwen-capture-cause-20261022/compile1/executable/plan.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\compile1\\executable\\source\\executable.cc",
+      "bytes": 476895,
+      "sha256": "d1464970f54bb8138f3cc0770afb2df0a3e214ce9b6f46052c9d2431582ee595",
+      "entry": ".scratch/qwen-capture-cause-20261022/compile1/executable/source/executable.cc"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\compile1\\main\\compile.command.json",
+      "bytes": 2237,
+      "sha256": "76188b3fb585dd3ea9f7c811be04065cce1303aa56493b86267d91ba38618a55",
+      "entry": ".scratch/qwen-capture-cause-20261022/compile1/main/compile.command.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\compile1\\main\\compile.result.json",
+      "bytes": 2307,
+      "sha256": "19574b15dfaf3bd77e6758df92b2bd8d56d2ed356f5fd1aff396c8b0d4a24be4",
+      "entry": ".scratch/qwen-capture-cause-20261022/compile1/main/compile.result.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\compile1\\main\\compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "identical_content_alias": true,
+      "entry": ".scratch/qwen-capture-cause-20261022/compile1/executable/compile.stderr.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\compile1\\main\\compile.stdout.log",
+      "bytes": 9,
+      "sha256": "f197b2519eedf02e571357ddc67cf5ca097ec055c64ddd28a980d92394b07b5d",
+      "entry": ".scratch/qwen-capture-cause-20261022/compile1/main/compile.stdout.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\compile1\\main\\identity.json",
+      "bytes": 73218,
+      "sha256": "592b4265df43669ef108b394328bcd80babb141e2043d7002bfcc66b758841db",
+      "entry": ".scratch/qwen-capture-cause-20261022/compile1/main/identity.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\compile1\\main\\live.json",
+      "bytes": 2307,
+      "sha256": "19574b15dfaf3bd77e6758df92b2bd8d56d2ed356f5fd1aff396c8b0d4a24be4",
+      "identical_content_alias": true,
+      "entry": ".scratch/qwen-capture-cause-20261022/compile1/main/compile.result.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\compile1\\main\\main-deps.json",
+      "bytes": 33199,
+      "sha256": "2e16b08371b27c84854d750e863284be33a21f64abcd8c672f60c135405a8b1e",
+      "entry": ".scratch/qwen-capture-cause-20261022/compile1/main/main-deps.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\compile1\\main\\plan.json",
+      "bytes": 3382,
+      "sha256": "336cb11108ad4ab6f60d15ef6d8b5428925e5a1505a42deeb2c44aa3f12101f0",
+      "entry": ".scratch/qwen-capture-cause-20261022/compile1/main/plan.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\compile1\\main\\source\\main.cc",
+      "bytes": 267977,
+      "sha256": "a50a7633163de2a7b0231e99b15aebf193535d8ad019886edfc96e949255e038",
+      "entry": ".scratch/qwen-capture-cause-20261022/compile1/main/source/main.cc"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\compile1\\region_access\\compile.command.json",
+      "bytes": 2222,
+      "sha256": "1051780f1bc4b2004130abe369de6371a5327adcdabe2e3a326c6897cadffd87",
+      "entry": ".scratch/qwen-capture-cause-20261022/compile1/region_access/compile.command.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\compile1\\region_access\\compile.result.json",
+      "bytes": 2292,
+      "sha256": "b6c1a2cb59f0db30688e83d11d8d6212f05a6c9f2ca759cbc507d45ef7aeee34",
+      "entry": ".scratch/qwen-capture-cause-20261022/compile1/region_access/compile.result.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\compile1\\region_access\\compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "identical_content_alias": true,
+      "entry": ".scratch/qwen-capture-cause-20261022/compile1/executable/compile.stderr.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\compile1\\region_access\\compile.stdout.log",
+      "bytes": 18,
+      "sha256": "2137f633d07202d58063434dcfc083ec899aad459d97604a2f638ff3ea54113f",
+      "entry": ".scratch/qwen-capture-cause-20261022/compile1/region_access/compile.stdout.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\compile1\\region_access\\identity.json",
+      "bytes": 52299,
+      "sha256": "8a20fc96776cc0032a11b63dec96018fcf5026c77375115f690027c2ba0dd4b7",
+      "entry": ".scratch/qwen-capture-cause-20261022/compile1/region_access/identity.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\compile1\\region_access\\live.json",
+      "bytes": 2292,
+      "sha256": "b6c1a2cb59f0db30688e83d11d8d6212f05a6c9f2ca759cbc507d45ef7aeee34",
+      "identical_content_alias": true,
+      "entry": ".scratch/qwen-capture-cause-20261022/compile1/region_access/compile.result.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\compile1\\region_access\\plan.json",
+      "bytes": 3450,
+      "sha256": "47d42dff608c969e7ef7bd5ffd28e1de4e86bdcd8bf46c8e39bf70ab982b7cfa",
+      "entry": ".scratch/qwen-capture-cause-20261022/compile1/region_access/plan.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\compile1\\region_access\\region_access-deps.json",
+      "bytes": 22943,
+      "sha256": "b98a2c3adb382a4adb9b31763cffafc131ce916e9a84ec2cc8bfeeb1bd076d65",
+      "entry": ".scratch/qwen-capture-cause-20261022/compile1/region_access/region_access-deps.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\compile1\\region_access\\source\\region_access.cc",
+      "bytes": 12656,
+      "sha256": "a6b4e764b375c88f129c74a9638be8563ac30efaf6eabd1c89cb8e817a9d0b7f",
+      "entry": ".scratch/qwen-capture-cause-20261022/compile1/region_access/source/region_access.cc"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\compile1\\resources\\compile.command.json",
+      "bytes": 2194,
+      "sha256": "7f2aa1be47e7d6d5bb763e404c29009512b608e9e084d59e12ac413cfcb5c58f",
+      "entry": ".scratch/qwen-capture-cause-20261022/compile1/resources/compile.command.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\compile1\\resources\\compile.result.json",
+      "bytes": 2264,
+      "sha256": "a0122c99ee90bcd9ff3774616b09fac1ca538087ff0f11085f7aa217beea1d54",
+      "entry": ".scratch/qwen-capture-cause-20261022/compile1/resources/compile.result.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\compile1\\resources\\compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "identical_content_alias": true,
+      "entry": ".scratch/qwen-capture-cause-20261022/compile1/executable/compile.stderr.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\compile1\\resources\\compile.stdout.log",
+      "bytes": 14,
+      "sha256": "672f8debd5dcc4a361c440145e99c21bf022590cbfb43129aa89acf894aac842",
+      "entry": ".scratch/qwen-capture-cause-20261022/compile1/resources/compile.stdout.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\compile1\\resources\\identity.json",
+      "bytes": 54359,
+      "sha256": "02332a330bf2a85f9dab1bf715d25b6fc3e6a07cb6ed4703bb75d2d04af84ddc",
+      "entry": ".scratch/qwen-capture-cause-20261022/compile1/resources/identity.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\compile1\\resources\\live.json",
+      "bytes": 2264,
+      "sha256": "a0122c99ee90bcd9ff3774616b09fac1ca538087ff0f11085f7aa217beea1d54",
+      "identical_content_alias": true,
+      "entry": ".scratch/qwen-capture-cause-20261022/compile1/resources/compile.result.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\compile1\\resources\\plan.json",
+      "bytes": 3356,
+      "sha256": "35e66006ea1fb42e588152ae10b21ccbfd204fa630df63acee1406f59e1fd1d2",
+      "entry": ".scratch/qwen-capture-cause-20261022/compile1/resources/plan.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\compile1\\resources\\resources-deps.json",
+      "bytes": 23995,
+      "sha256": "6bc4b02eaa08d8a00578d4de9f3e6bcdde4a0c102f1e9bc9f1d0df491ab37827",
+      "entry": ".scratch/qwen-capture-cause-20261022/compile1/resources/resources-deps.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\compile1\\resources\\source\\resources.cc",
+      "bytes": 100373,
+      "sha256": "47ffdef52428056fabe7f1e1b8269d990696fe2eba1f38390107de6e0e2feee2",
+      "entry": ".scratch/qwen-capture-cause-20261022/compile1/resources/source/resources.cc"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\current\\docs\\developer\\current-work.md",
+      "bytes": 61852,
+      "sha256": "f5b08b050b2d72a398c448b4b5858ff52f8b39275ffcfedf2cd2cefa2a38f9d1",
+      "entry": ".scratch/qwen-capture-cause-20261022/current/docs/developer/current-work.md"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\current\\docs\\developer\\performance\\decode.md",
+      "bytes": 37294,
+      "sha256": "93dfe177613e5b5744ea1f3c0442b1fb56f276ef637b410924ea7b51d303ef96",
+      "entry": ".scratch/qwen-capture-cause-20261022/current/docs/developer/performance/decode.md"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\diagnostic1\\finite-control.json",
+      "bytes": 206,
+      "sha256": "d6f31ca451f4b150ba4c68a54161c8c1399b9c0bea1687309b60369b82098bc3",
+      "entry": ".scratch/qwen-capture-cause-20261022/diagnostic1/finite-control.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\diagnostic1\\live.json",
+      "bytes": 825,
+      "sha256": "a6a865e6c098c61277d7a8b1227829882e245f46453db9d5dc31004448366a8a",
+      "entry": ".scratch/qwen-capture-cause-20261022/diagnostic1/live.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\diagnostic1\\parsed.json",
+      "bytes": 9126,
+      "sha256": "4e454ad0f8f81ae5fff682c8312434a27915b206b84b6747879139160b4b61ed",
+      "entry": ".scratch/qwen-capture-cause-20261022/diagnostic1/parsed.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\diagnostic1\\plan.json",
+      "bytes": 1368,
+      "sha256": "3f7d19f5a794a6cffbd73162fd1be7aff85787defbc9da54a642b317df928839",
+      "entry": ".scratch/qwen-capture-cause-20261022/diagnostic1/plan.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\diagnostic1\\route-only\\routes\\default-role2-R1-T154.boundaries.tsv",
+      "bytes": 358,
+      "sha256": "a893a69968c822c14497dceed9170863844bddea7a0c7e404e94a6154d8871f2",
+      "entry": ".scratch/qwen-capture-cause-20261022/diagnostic1/route-only/routes/default-role2-R1-T154.boundaries.tsv"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\diagnostic1\\route-only\\routes\\default-role2-R1-T154.route.tsv",
+      "bytes": 37674,
+      "sha256": "39794d0f12e55f0433e801177ac64a14adb8db06e2bf21d8acddc130ed519075",
+      "entry": ".scratch/qwen-capture-cause-20261022/diagnostic1/route-only/routes/default-role2-R1-T154.route.tsv"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\diagnostic1\\route-only\\routes\\default-role3-R1-T2.boundaries.tsv",
+      "bytes": 353,
+      "sha256": "e5cc0b8186d0aba023c66e3272542f9006c034e29c07979345579aaba97bbd1a",
+      "entry": ".scratch/qwen-capture-cause-20261022/diagnostic1/route-only/routes/default-role3-R1-T2.boundaries.tsv"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\diagnostic1\\route-only\\routes\\default-role3-R1-T2.route.tsv",
+      "bytes": 42642,
+      "sha256": "64192ecf65ab8afcccd04496ddcc49bcfc118e5c3fcc28a6206b7f0394ac692f",
+      "entry": ".scratch/qwen-capture-cause-20261022/diagnostic1/route-only/routes/default-role3-R1-T2.route.tsv"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\diagnostic1\\route-only\\routes\\default-role4-R1-T2.boundaries.tsv",
+      "bytes": 353,
+      "sha256": "01b473b01abf03774e4fdba1e0211cc556ec7c7ecc9e5e3263ffaf0a2c79dfe6",
+      "entry": ".scratch/qwen-capture-cause-20261022/diagnostic1/route-only/routes/default-role4-R1-T2.boundaries.tsv"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\diagnostic1\\route-only\\routes\\default-role4-R1-T2.route.tsv",
+      "bytes": 42624,
+      "sha256": "c0674c3ca7d7b0f5b4f5ddfe54c6dfd22d28327dd9e058ff29052a4574633cdd",
+      "entry": ".scratch/qwen-capture-cause-20261022/diagnostic1/route-only/routes/default-role4-R1-T2.route.tsv"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\diagnostic1\\run.command.json",
+      "bytes": 755,
+      "sha256": "31b09dca0e451d1a146b374b11d64703af13d72dae1d112d62f86c1574ef81d8",
+      "entry": ".scratch/qwen-capture-cause-20261022/diagnostic1/run.command.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\diagnostic1\\run.result.json",
+      "bytes": 825,
+      "sha256": "a6a865e6c098c61277d7a8b1227829882e245f46453db9d5dc31004448366a8a",
+      "identical_content_alias": true,
+      "entry": ".scratch/qwen-capture-cause-20261022/diagnostic1/live.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\diagnostic1\\run.stderr.log",
+      "bytes": 17925,
+      "sha256": "e3bc765f9f961abbde2a98e18f0c842b50d813b603ed072a3c5049968e71ab21",
+      "entry": ".scratch/qwen-capture-cause-20261022/diagnostic1/run.stderr.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\diagnostic1\\run.stdout.log",
+      "bytes": 6061,
+      "sha256": "72eb30fe65526ee1544693b3308ae99cfac430161a45dafbdae97878e7faf35e",
+      "entry": ".scratch/qwen-capture-cause-20261022/diagnostic1/run.stdout.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\docs-freeze.json",
+      "bytes": 1066,
+      "sha256": "4f60fa69af93480d4c10bc3db7b1b50b97457e38fe5e83942f75a50d2543f125",
+      "entry": ".scratch/qwen-capture-cause-20261022/docs-freeze.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\generate_cleanup.py",
+      "bytes": 849,
+      "sha256": "9c57624e97052653bf1617577e8412cddcf83b73bac7d21ab4ec27527ef4c046",
+      "entry": ".scratch/qwen-capture-cause-20261022/generate_cleanup.py"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\main-probe.diff",
+      "bytes": 1935,
+      "sha256": "eb521f28ebce6d9c2ac8164bd3ee427e06798b60da995b2c7d5af3f10dc4ed35",
+      "entry": ".scratch/qwen-capture-cause-20261022/main-probe.diff"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\main-probe.json",
+      "bytes": 618,
+      "sha256": "d7567c7d9c8f47dfea645a37a1429907615d32411a7f464214921ac251b6fa9c",
+      "entry": ".scratch/qwen-capture-cause-20261022/main-probe.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\postconditions.py",
+      "bytes": 3477,
+      "sha256": "e47fa4402f66efce37178ea13261d07e6136a9128c486e7d666f80d23d10a786",
+      "entry": ".scratch/qwen-capture-cause-20261022/postconditions.py"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\prepare_cleanup.py",
+      "bytes": 5306,
+      "sha256": "b500f190b7f74745911d6b48810bbade56fc0260a66207637396777c035fb1cc",
+      "entry": ".scratch/qwen-capture-cause-20261022/prepare_cleanup.py"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\prepare_main_probe.py",
+      "bytes": 2423,
+      "sha256": "af40e7249e6773cbf79ea93b5d435648fbc1d330dd447002fd6b28df424c59c9",
+      "entry": ".scratch/qwen-capture-cause-20261022/prepare_main_probe.py"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\probe\\capture_probe.h",
+      "bytes": 7380,
+      "sha256": "b1196e3a02843d9e8c50ab767237e46df27ae1e36652f58940de11ace01c1df3",
+      "entry": ".scratch/qwen-capture-cause-20261022/probe/capture_probe.h"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\probe\\core-implementation.diff",
+      "bytes": 8985,
+      "sha256": "2e122ef5dc8eb7bea3d16bdd4ee2c785efcf5372a2e321d9a27607a203ae7562",
+      "entry": ".scratch/qwen-capture-cause-20261022/probe/core-implementation.diff"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\probe\\core-source-freeze.json",
+      "bytes": 5325,
+      "sha256": "e0fc4da5ab2fb2ca6cac7b652a2f108ef6781a8199fd18789fa7513af55d8e04",
+      "entry": ".scratch/qwen-capture-cause-20261022/probe/core-source-freeze.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\probe\\src\\graph\\executable.cc",
+      "bytes": 476895,
+      "sha256": "d1464970f54bb8138f3cc0770afb2df0a3e214ce9b6f46052c9d2431582ee595",
+      "identical_content_alias": true,
+      "entry": ".scratch/qwen-capture-cause-20261022/compile1/executable/source/executable.cc"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\probe\\src\\graph\\region_access.cc",
+      "bytes": 12656,
+      "sha256": "a6b4e764b375c88f129c74a9638be8563ac30efaf6eabd1c89cb8e817a9d0b7f",
+      "identical_content_alias": true,
+      "entry": ".scratch/qwen-capture-cause-20261022/compile1/region_access/source/region_access.cc"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\probe\\src\\graph\\resources.cc",
+      "bytes": 100373,
+      "sha256": "47ffdef52428056fabe7f1e1b8269d990696fe2eba1f38390107de6e0e2feee2",
+      "identical_content_alias": true,
+      "entry": ".scratch/qwen-capture-cause-20261022/compile1/resources/source/resources.cc"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\probe\\tools\\qwen35_text\\main.cc",
+      "bytes": 267977,
+      "sha256": "a50a7633163de2a7b0231e99b15aebf193535d8ad019886edfc96e949255e038",
+      "identical_content_alias": true,
+      "entry": ".scratch/qwen-capture-cause-20261022/compile1/main/source/main.cc"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\publish.py",
+      "bytes": 8890,
+      "sha256": "d25175ef18db7f6e9af2b93c6e1cdd1c9061816c8143b05500a12ed02feb28e9",
+      "entry": ".scratch/qwen-capture-cause-20261022/publish.py"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\qwen-link1\\link-plan.json",
+      "bytes": 85020,
+      "sha256": "4af172e39d7b1ef84ef27b26b8294f3c71fa0d2d85aa0bfa7f97b10ed3ff3d03",
+      "entry": ".scratch/qwen-capture-cause-20261022/qwen-link1/link-plan.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\qwen-link1\\link.command.json",
+      "bytes": 29117,
+      "sha256": "8f4ff4dee3b88e187ee14793e15447ed03b5870b3fa9d5737e7061a58e6fcbe1",
+      "entry": ".scratch/qwen-capture-cause-20261022/qwen-link1/link.command.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\qwen-link1\\link.result.json",
+      "bytes": 29187,
+      "sha256": "9341d29c7d57aa07afd69a0acf428b9b30f999965dd8d59a77030efb58ddec98",
+      "entry": ".scratch/qwen-capture-cause-20261022/qwen-link1/link.result.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\qwen-link1\\link.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "identical_content_alias": true,
+      "entry": ".scratch/qwen-capture-cause-20261022/compile1/executable/compile.stderr.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\qwen-link1\\link.stdout.log",
+      "bytes": 202,
+      "sha256": "6059085b719d7d98637c9f4bf93c33b89d3f4313016a1d7f528210586c0673cc",
+      "entry": ".scratch/qwen-capture-cause-20261022/qwen-link1/link.stdout.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\qwen-link1\\live.json",
+      "bytes": 29187,
+      "sha256": "9341d29c7d57aa07afd69a0acf428b9b30f999965dd8d59a77030efb58ddec98",
+      "identical_content_alias": true,
+      "entry": ".scratch/qwen-capture-cause-20261022/qwen-link1/link.result.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\qwen-link1\\runtime-environment.json",
+      "bytes": 8849,
+      "sha256": "e83b0859fc212e915b8ebf837383d291767cd8952f9e4db0aee90a39af71608a",
+      "entry": ".scratch/qwen-capture-cause-20261022/qwen-link1/runtime-environment.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\qwen-ready-attempt1.json",
+      "bytes": 3619,
+      "sha256": "c2dfbc25c88a77110d9b63cefc05bfa123015b66755639bac5d9e65f87d9a02a",
+      "entry": ".scratch/qwen-capture-cause-20261022/qwen-ready-attempt1.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\review\\actual-cause-review.json",
+      "bytes": 21455,
+      "sha256": "5087d500368a610307a95cd64fd93e993b4eb5f035d9f990b26bba7357190d1b",
+      "entry": ".scratch/qwen-capture-cause-20261022/review/actual-cause-review.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\review\\actual-run-review.json",
+      "bytes": 23172,
+      "sha256": "fce4374b5a875ad0602d874ba7a108e90e43675ac5ec7653af5863f6f76bf78e",
+      "entry": ".scratch/qwen-capture-cause-20261022/review/actual-run-review.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\review\\build-recipes.json",
+      "bytes": 47317,
+      "sha256": "9b705f98c0f53eeda17070ef2cee1d2c950614f42c64b2b57fb5a2146ab91928",
+      "entry": ".scratch/qwen-capture-cause-20261022/review/build-recipes.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\review\\check_actual_run.py",
+      "bytes": 11693,
+      "sha256": "7d5b8c2a7c6d3b126dee718bc34323bf814fd073ca9a40540cc9b6d55ac3fc37",
+      "entry": ".scratch/qwen-capture-cause-20261022/review/check_actual_run.py"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\review\\native-invalidation-predicates.json",
+      "bytes": 17122,
+      "sha256": "8b617146589a70c0791d6ce180e0a2b10bc790e26cc884b49dde934f6aabe57b",
+      "entry": ".scratch/qwen-capture-cause-20261022/review/native-invalidation-predicates.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\review\\next-optimization-design.json",
+      "bytes": 9415,
+      "sha256": "4d95a09a8e2be147c15d2d90a57291b2dba8f252c32958d479d36cb88a150971",
+      "entry": ".scratch/qwen-capture-cause-20261022/review/next-optimization-design.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\run_probe.py",
+      "bytes": 2773,
+      "sha256": "a3245063c68211880df4ad179708f46eef02d763c72e770b3c572ebb6e0340a9",
+      "entry": ".scratch/qwen-capture-cause-20261022/run_probe.py"
+    }
+  ],
+  "archive_verified": {
+    "CRC": true,
+    "all_unique_entry_SHA256": true,
+    "source_files": 90,
+    "unique_entries": 76
+  }
+}

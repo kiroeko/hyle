@@ -126,7 +126,7 @@ Result<CopySpan> result_source_range(void*opaque,std::size_t index)noexcept {
   if(index>=plan.copies)return std::unexpected(Status::OutOfRange("native result source range index"));
   const auto&copy=state.copies[plan.first+index];
   if(!state.result_sources || !state.result_sources->results.owns(copy.source))
-    return copy_span(state.ranges[plan.first+index].source);
+    return copy_span(state.ranges[plan.first+index].source, mem::HostAccess::kRead);
   auto source=state.result_sources->spans[copy.source];
   if(copy.source_offset>source.physical.capacity || copy.physical_bytes>source.physical.capacity-copy.source_offset ||
       copy.source_offset>SIZE_MAX-source.physical.origin)
@@ -273,11 +273,14 @@ CopyBatchProgram::~CopyBatchProgram() { reset(); }
 void CopyBatchProgram::reset() noexcept { if (auto *state = std::exchange(state_, nullptr)) state->decref(); }
 Result<CopyBatchProgram> CopyBatchProgram::prepare(const Context &context,
     std::span<const CopyResourceSpec> specs, CopyBatchOptions options) noexcept {
-  if (!context.valid() || !options.allocator.valid() || options.max_resources == 0 ||
+  return detail::CopyStreamAccess::prepare_program(detail::ContextAccess::runtime(context),specs,std::move(options));
+}
+Result<CopyBatchProgram> detail::CopyStreamAccess::prepare_program(std::shared_ptr<Runtime> runtime,
+    std::span<const CopyResourceSpec> specs, CopyBatchOptions options) noexcept {
+  if (!runtime || !options.allocator.valid() || options.max_resources == 0 ||
       options.max_copies == 0 || options.max_copies > UINT32_MAX / 2 || options.max_phases == 0 ||
       options.max_phases > 64 || options.max_bytes == 0 || specs.size() > options.max_resources)
     return std::unexpected(Status::InvalidArgument("Apple copy program limits are invalid"));
-  const auto &runtime = detail::ContextAccess::runtime(context);
   { std::lock_guard lock(runtime->queue_mutex);
     if (!runtime->accepting) return std::unexpected(Status::FailedPrecondition("Apple copy Context is closed"));
     if (!runtime->failure.ok()) return std::unexpected(runtime->failure); }
@@ -358,9 +361,10 @@ Result<WriteLease> detail::CopyStreamAccess::take_mutable(CopyBatchInvocation &i
   return writer;
 }
 Result<compute::detail::PhysicalCopyResource> detail::CopyStreamAccess::physical(
-    CopyBatchInvocation &invocation, mem::ConstBufferView view, bool) noexcept {
+    CopyBatchInvocation &invocation, mem::ConstBufferView view, bool writable) noexcept {
   if (!invocation.state_) return std::unexpected(Status::FailedPrecondition("Apple copy invocation is empty"));
-  HYLE_ASSIGN_OR_RETURN(auto span, detail::copy_span(view)); return span.physical;
+  HYLE_ASSIGN_OR_RETURN(auto span, detail::copy_span(view,
+      writable ? mem::HostAccess::kWrite : mem::HostAccess::kRead)); return span.physical;
 }
 Status detail::CopyStreamAccess::observe(CopyBatchInvocation &invocation) noexcept {
   auto *state = invocation.state_;
@@ -383,7 +387,7 @@ Status CopyBatchInvocation::bind_source(CopyResourceId id, const ReadLease &sour
   if (!detail::copy_source_resource_matches(spec.resource, view.resource()) ||
       view.size() > spec.capacity_bytes)
     return Status::InvalidArgument("Apple copy source endpoint/capacity differs");
-  HYLE_ASSIGN_OR_RETURN(auto span, detail::copy_span(view));
+  HYLE_ASSIGN_OR_RETURN(auto span, detail::copy_span(view, mem::HostAccess::kRead));
   auto &binding = state_->bindings[id.value]; binding = {}; binding.read = source; binding.source = view;
   binding.root = compute::detail::LeaseAccess::identity(source); state_->physical[id.value] = span.physical;
   state_->prepared = false; return Status::Ok();
@@ -423,7 +427,7 @@ Status CopyBatchInvocation::bind_mutable(CopyResourceId id, WriteLease &&destina
   const auto &spec = state_->program->specs[id.value];
   if (view.resource() != spec.resource || view.size() > spec.capacity_bytes)
     return Status::InvalidArgument("Apple copy mutable endpoint/capacity differs");
-  HYLE_ASSIGN_OR_RETURN(auto span, detail::copy_span(view));
+  HYLE_ASSIGN_OR_RETURN(auto span, detail::copy_span(view, mem::HostAccess::kWrite));
   auto &binding = state_->bindings[id.value]; binding = {}; binding.root = compute::detail::LeaseAccess::identity(destination);
   binding.write = std::move(destination); binding.source = view; binding.destination = view;
   state_->physical[id.value] = span.physical; state_->prepared = false; return Status::Ok();
@@ -644,6 +648,27 @@ Result<compute::detail::CompletionDependency> detail::CopyStreamAccess::dependen
     if (native.pending()) latest = native;
   }
   return latest;
+}
+Status detail::CopyStreamAccess::preflight(const CopyBatchUpdate &owner) noexcept {
+  const auto &invocation = detail::CopyUpdateAccess::invocation(owner);
+  const auto &submission = detail::CopyUpdateAccess::submission(owner);
+  HYLE_RETURN_IF_ERROR(detail::CopyUpdateAccess::qualify(invocation, submission));
+  auto *state = invocation.state_;
+  std::lock_guard lock(state->observations);
+  HYLE_RETURN_IF_ERROR(state->tail);
+  for (std::uint32_t index = 0; index < state->submitted; ++index) {
+    const auto &phase = *state->phases[index];
+    // Read cached/native identity hints without settling its public observer.
+    HYLE_ASSIGN_OR_RETURN(auto native,
+        compute::detail::RetainedCompletion::native_dependency(phase.completion));
+    if (native.terminal_hint) HYLE_RETURN_IF_ERROR(*native.terminal_hint);
+    HYLE_ASSIGN_OR_RETURN(auto ready, detail::poll_copy_recording(*phase.recording));
+    if (ready != CompletionPoll::kComplete)
+      return Status::Unavailable("Apple pending source FIFO recording is not retired");
+    if (phase.retired.load(std::memory_order_acquire)) HYLE_RETURN_IF_ERROR(phase.terminal);
+  }
+  if (state->failed) return Status::FailedPrecondition("Apple pending copy source failed");
+  return Status::Ok();
 }
 Result<std::size_t> detail::CopyStreamAccess::retirement_sources(
     CopyBatchUpdate &owner, std::span<Completion *> output) noexcept {

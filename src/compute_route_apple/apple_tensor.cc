@@ -17,6 +17,7 @@
 #include <mlx/fast.h>
 #include <mlx/fast_primitives.h>
 #include <mlx/ops.h>
+#include <mlx/primitives.h>
 #include <mlx/utils.h>
 
 #include "apple_internal.h"
@@ -485,7 +486,8 @@ AttentionPath attention_path(const ScaledDotProductAttention &attention,
 }
 
 bool is_mlx_tensor_custom(const Operation &operation) noexcept {
-  return operation.custom_as<model_ops::CausalConv1d>().has_value() ||
+  return operation.custom_as<model_ops::GatherElements>().has_value() ||
+         operation.custom_as<model_ops::CausalConv1d>().has_value() ||
          operation.custom_as<model_ops::SinkAttention>().has_value() ||
          operation.custom_as<model_ops::ArtifactWeightDecode>().has_value() ||
          operation.custom_as<model_ops::MlxQuantized>().has_value() ||
@@ -529,7 +531,8 @@ Result<std::vector<mx::array>> lower_attention_math_block(
 
 Result<std::vector<mx::array>> lower_tensor(const Operation &operation,
                                             std::span<const mx::array> inputs,
-                                            mx::Stream stream) noexcept {
+                                            mx::Stream stream,
+                                            const PreparedMlxAffineMetadata *prepared) noexcept {
   try {
     const auto causal_conv = operation.custom_as<model_ops::CausalConv1d>();
     const auto mlx_quantized = operation.custom_as<model_ops::MlxQuantized>();
@@ -563,20 +566,36 @@ Result<std::vector<mx::array>> lower_tensor(const Operation &operation,
       if (output.element_count().value() > static_cast<std::uint64_t>(INT32_MAX))
         return std::unexpected(Status::OutOfRange(
             "Apple artifact preparation exceeds native flat index range"));
-      return std::vector{lower_mature_artifact(*artifact_decode, inputs, shape, type, stream)};
+      HYLE_ASSIGN_OR_RETURN(auto decoded,
+          lower_mature_artifact(*artifact_decode, inputs, shape, type, stream));
+      return std::vector{std::move(decoded)};
     }
     if (mlx_quantized) {
       const auto &op = *mlx_quantized;
-      const bool affine = op.format == model_ops::MlxWeightFormat::kAffine4;
+      const bool affine = op.format == model_ops::MlxWeightFormat::kAffine;
       const bool embedding = op.kind == model_ops::MlxQuantizedKind::kEmbedding;
       const bool grouped = op.kind == model_ops::MlxQuantizedKind::kGrouped;
-      const int bits = op.format == model_ops::MlxWeightFormat::kMxfp8 ? 8 : 4;
+      const bool transpose_weight =
+          op.orientation == model_ops::MlxMatmulOrientation::kTransposeWeight;
+      const int bits = static_cast<int>(op.bits);
       const std::string mode = affine ? "affine" : bits == 4 ? "mxfp4" : "mxfp8";
       const std::size_t w = embedding ? 0 : 1;
       const auto weights = inputs[w];
       const auto scales = inputs[w + 1];
       const std::optional<mx::array> bias = affine
           ? std::optional<mx::array>{inputs[w + 2]} : std::nullopt;
+      if (prepared) {
+        if (!affine || embedding)
+          return std::unexpected(Status::InvalidArgument(
+              "Apple prepared affine metadata differs from the operation"));
+        const auto matches = [](const auto &value, const mx::array &source) {
+          return !value || (value->status() == mx::array::available &&
+              value->dtype() == mx::float32 && value->shape() == source.shape());
+        };
+        if (!matches(prepared->scales, scales) || !matches(prepared->biases, *bias))
+          return std::unexpected(Status::InvalidArgument(
+              "Apple prepared affine metadata is not its ready F32 operand"));
+      }
       std::optional<mx::array> status;
       std::optional<mx::array> ids;
       if (embedding || grouped) {
@@ -595,27 +614,59 @@ Result<std::vector<mx::array>> lower_tensor(const Operation &operation,
         result = mx::dequantize(selected_w, selected_s, selected_b,
              static_cast<int>(op.group_size), bits, mode, std::nullopt, type, stream);
       } else {
-        // The original GPU kernels accumulate in F32. An explicit widened
-        // result for mixed affine ports is part of the declared contract.
-        auto activation = mx::astype(inputs[0], type, stream);
-        auto scale = affine ? mx::astype(scales, type, stream) : scales;
-        auto biases = bias ? std::optional<mx::array>{mx::astype(*bias, type, stream)}
-                           : std::nullopt;
+        // Affine dots use the F32 decoded-weight equation. A low-type QMM
+        // otherwise rounds decoded weights in its native threadgroup tile.
+        // Keep packed W and the original final output rounding below.
+        const auto compute_type = affine ? mx::float32 : type;
+        auto source_activation = inputs[0];
+        if (grouped && source_activation.shape(1) != 1) {
+          // Native Broadcast metadata may still be lazy. Remove only this
+          // exact slot broadcast; equal values never imply shared storage.
+          if (source_activation.has_primitive() &&
+              dynamic_cast<const mx::Broadcast *>(&source_activation.primitive()) &&
+              source_activation.inputs().size() == 1) {
+            const auto &origin = source_activation.inputs()[0];
+            if (origin.ndim() == 3 && origin.shape(0) == source_activation.shape(0) &&
+                origin.shape(1) == 1 && origin.shape(2) == source_activation.shape(2))
+              source_activation = origin;
+          }
+          if (source_activation.shape(1) != 1 && source_activation.strides()[1] == 0) {
+            auto stop = source_activation.shape(); stop[1] = 1;
+            source_activation = mx::slice(source_activation, {0, 0, 0}, stop, stream);
+          }
+        }
+        // Collapse the shared slot before conversion, so affine promotion
+        // converts T*K values rather than materializing a T*S*K broadcast.
+        auto activation = mx::astype(source_activation, compute_type, stream);
+        auto scale = affine && prepared && prepared->scales
+            ? *prepared->scales
+            : affine ? mx::astype(scales, compute_type, stream) : scales;
+        auto biases = bias
+            ? std::optional<mx::array>{prepared && prepared->biases
+                  ? *prepared->biases : mx::astype(*bias, compute_type, stream)}
+            : std::nullopt;
         if (grouped) {
-          const auto count64 = std::int64_t{activation.shape(0)} * activation.shape(1);
+          const auto count64 = std::int64_t{ids->shape(0)} * ids->shape(1);
           if (count64 > (std::numeric_limits<int>::max)())
             return std::unexpected(Status::OutOfRange("MLX selected expert batch exceeds native range"));
-          const int count = static_cast<int>(count64);
-          auto rows = mx::reshape(activation, {count, 1, activation.shape(2)}, stream);
           // Upstream indices_or_default casts I32 without forwarding its
           // stream. Supply U32 on this stream so that internal cast is a no-op.
-          auto selected = mx::astype(mx::reshape(*ids, {count}, stream),
-                                     mx::uint32, stream);
-          result = mx::gather_qmm(rows, weights, scale, biases, std::nullopt,
-              selected, true, static_cast<int>(op.group_size), bits, mode, false, stream);
+          if (activation.shape(1) == 1) {
+            auto lhs = mx::reshape(mx::arange(0, activation.shape(0), mx::uint32, stream),
+                                   {activation.shape(0), 1}, stream);
+            auto selected = mx::astype(*ids, mx::uint32, stream);
+            result = mx::gather_qmm(activation, weights, scale, biases, lhs,
+                selected, transpose_weight, static_cast<int>(op.group_size), bits, mode, false, stream);
+          } else {
+            const int count = static_cast<int>(count64);
+            auto rows = mx::reshape(activation, {count, 1, activation.shape(2)}, stream);
+            auto selected = mx::astype(mx::reshape(*ids, {count}, stream), mx::uint32, stream);
+            result = mx::gather_qmm(rows, weights, scale, biases, std::nullopt,
+                selected, transpose_weight, static_cast<int>(op.group_size), bits, mode, false, stream);
+          }
           result = mx::reshape(result, shape, stream);
         } else {
-          result = mx::quantized_matmul(activation, weights, scale, biases, true,
+          result = mx::quantized_matmul(activation, weights, scale, biases, transpose_weight,
                        static_cast<int>(op.group_size), bits, mode, stream);
         }
       }
@@ -631,8 +682,12 @@ Result<std::vector<mx::array>> lower_tensor(const Operation &operation,
       auto query = mx::transpose(inputs[0], {0, 2, 1, 3}, stream);
       auto key = mx::transpose(inputs[1], {0, 2, 1, 3}, stream);
       auto value = mx::transpose(inputs[2], {0, 2, 1, 3}, stream);
+      auto mask = inputs[3];
+      if (mask.ndim() == 3)
+        mask = mx::reshape(mask,
+            {mask.shape(0), 1, mask.shape(1), mask.shape(2)}, stream);
       auto result = mx::fast::scaled_dot_product_attention(query, key, value,
-          sink_attention->scale, "array", inputs[3], inputs[4], false, stream);
+          sink_attention->scale, "array", mask, inputs[4], false, stream);
       return std::vector{mx::transpose(result, {0, 2, 1, 3}, stream)};
     }
     if (causal_conv) {
@@ -646,6 +701,7 @@ Result<std::vector<mx::array>> lower_tensor(const Operation &operation,
           mx::conv1d(inputs[0], weights, 1, 0, 1, channels, stream)};
     }
     if (operation.kind() == OperationKind::kGather ||
+        operation.custom_as<model_ops::GatherElements>() ||
         operation.kind() == OperationKind::kScan ||
         operation.kind() == OperationKind::kScatter ||
         operation.kind() == OperationKind::kTopK)
@@ -683,17 +739,32 @@ Result<std::vector<mx::array>> lower_tensor(const Operation &operation,
       }
       }
     }
-    if (operation.kind() == OperationKind::kCopy)
-      return std::vector{mx::copy(inputs[0], stream)};
+    if (operation.kind() == OperationKind::kCopy) {
+      // MLX Copy is a shared-buffer identity, while public Copy produces a
+      // dense snapshot. Use the original native copy primitives once, through
+      // same-width integer storage so floating payload/sign bits stay exact.
+      const auto width = inputs[0].itemsize();
+      const auto bits = width == 1 ? mx::uint8 : width == 2 ? mx::uint16
+          : width == 4 ? mx::uint32 : mx::uint64;
+      const auto raw = mx::view(inputs[0], bits, stream);
+      auto copied = inputs[0].flags().row_contiguous
+          ? mx::full(shape, raw, bits, stream)
+          : mx::contiguous(raw, false, stream);
+      return std::vector{mx::view(copied, type, stream)};
+    }
     if (operation.kind() == OperationKind::kSelect) {
+      // Bool storage admits any nonzero byte. Normalize through its raw
+      // carrier before selection, without touching either selected payload.
+      const auto condition = mx::not_equal(mx::view(inputs[0], mx::uint8, stream),
+          mx::array(std::uint8_t{0}), stream);
       if (!floating(type))
-        return std::vector{mx::where(inputs[0], inputs[1], inputs[2], stream)};
+        return std::vector{mx::where(condition, inputs[1], inputs[2], stream)};
       // Selection is storage-exact. A compiled floating selection can
       // canonicalize BF16 NaNs; same-width native views keep payload/sign bits
       // out of floating constant conversion without introducing arithmetic.
       const auto bits = type == mx::float32 ? mx::uint32 : mx::uint16;
       return std::vector{
-          mx::view(mx::where(inputs[0], mx::view(inputs[1], bits, stream),
+          mx::view(mx::where(condition, mx::view(inputs[1], bits, stream),
                              mx::view(inputs[2], bits, stream), stream),
                    type, stream)};
     }
@@ -701,6 +772,24 @@ Result<std::vector<mx::array>> lower_tensor(const Operation &operation,
       return std::vector{
           mx::concatenate(std::vector<mx::array>(inputs.begin(), inputs.end()),
                           concat->axis, stream)};
+    if (operation.kind() == OperationKind::kCast) {
+      if (floating(inputs[0].dtype()) && type == mx::bool_) {
+        // Floating truth is an IEEE storage test: both signed zeros are
+        // false; subnormals, infinities and NaNs are true even under FTZ.
+        const bool wide = inputs[0].dtype() == mx::float32;
+        const auto raw = mx::view(inputs[0], wide ? mx::uint32 : mx::uint16, stream);
+        const auto magnitude = mx::bitwise_and(raw, wide
+            ? mx::array(std::uint32_t{0x7fffffff})
+            : mx::array(std::uint16_t{0x7fff}), stream);
+        return std::vector{mx::not_equal(magnitude, wide
+            ? mx::array(std::uint32_t{0}) : mx::array(std::uint16_t{0}), stream)};
+      }
+      if (inputs[0].dtype() == mx::bool_ && floating(type)) {
+        const auto truth = mx::not_equal(mx::view(inputs[0], mx::uint8, stream),
+            mx::array(std::uint8_t{0}), stream);
+        return std::vector{mx::astype(truth, type, stream)};
+      }
+    }
     if (!floating(inputs[0].dtype()) || !floating(type))
       return std::unexpected(Status::Unimplemented(
           "Apple arithmetic and Cast require F32/F16/BF16"));

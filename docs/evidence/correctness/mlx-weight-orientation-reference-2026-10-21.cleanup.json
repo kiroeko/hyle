@@ -1,0 +1,241 @@
+{
+  "completed": true,
+  "windows_removed": 14,
+  "windows_bytes": 844892830.0,
+  "windows_kept_objects": 19,
+  "mac": {
+    "removed": 2,
+    "bytes": 22004672,
+    "kept_objects": 6
+  },
+  "evidence_sha256": "d54ec21e770cb694b7550fe5948a605f9968a618968b787ea907e19ddcb095c3",
+  "archive_sha256": "fe26138588cb8e2c636575d8fdac7444245623efff8d1f05c5e42f6a0c281745",
+  "exact_plan": {
+    "allowed_windows": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-weight-orientation-2026-10-21",
+    "allowed_mac": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/mlx-weight-orientation-2026-10-21/apple",
+    "remove_windows": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-weight-orientation-2026-10-21\\cpu\\checks\\link1\\cpu.exe",
+        "bytes": 28781568,
+        "sha256": "43add48ad6f17dc491ef462662ebdf01648fc0f005168ebd696291519b651107"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-weight-orientation-2026-10-21\\cpu\\checks\\link1\\cpu.map",
+        "bytes": 47372842,
+        "sha256": "65693106cb6ad4f1a24ccb1165c9c5967bfd43f431f427341b1e1aeaad15aeb6"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-weight-orientation-2026-10-21\\cpu\\checks\\link2\\cpu.exe",
+        "bytes": 28781568,
+        "sha256": "1046524899d1c3c8f0180b39920fd169ceb442974e422eb8410671a721e2eeb4"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-weight-orientation-2026-10-21\\cpu\\checks\\link2\\cpu.map",
+        "bytes": 47378542,
+        "sha256": "8d3cae2e18e244574a8842e823fc3163a9dbb2a6222e8e2c3e902840ce28b467"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-weight-orientation-2026-10-21\\cuda\\checks\\link1\\cuda.exe",
+        "bytes": 125338112,
+        "sha256": "f7535fe96bfed7abaa9cda502490e173b4601cadd906727407c7a2e91a251cb9"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-weight-orientation-2026-10-21\\cuda\\checks\\link1\\cuda.map",
+        "bytes": 50452887,
+        "sha256": "ef358621527b04d461ada885da9d04e17d81ed56143a3946b776186d79ecd2f8"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-weight-orientation-2026-10-21\\cuda\\checks\\link2\\cuda.exe",
+        "bytes": 125337600,
+        "sha256": "40f33716eae968d09251d60bce16adc5469a897b6999c507bef89bb5692380e1"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-weight-orientation-2026-10-21\\cuda\\checks\\link2\\cuda.map",
+        "bytes": 50452887,
+        "sha256": "694bbcbd8dd5a20ab20be371eb8408df506584f85bd4451caacf51b0df46a141"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-weight-orientation-2026-10-21\\vulkan\\checks\\diag1\\vulkan.exe",
+        "bytes": 70514688,
+        "sha256": "75006039bc1a1d4d71542c60e2cb6e3270c991a1b0c7b4d0666857b3d3762813"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-weight-orientation-2026-10-21\\vulkan\\checks\\diag1\\vulkan.map",
+        "bytes": 43161570,
+        "sha256": "a0d1671e7487963a16378f276aa068b13fc0760a1b61e1707c59703668de73a5"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-weight-orientation-2026-10-21\\vulkan\\checks\\link1\\vulkan.exe",
+        "bytes": 70501888,
+        "sha256": "fb16b5e6fbe7cc68c5833ce081914e5fb933d6fd233f55ad2ce6b3894c9f8024"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-weight-orientation-2026-10-21\\vulkan\\checks\\link1\\vulkan.map",
+        "bytes": 43161211,
+        "sha256": "a3208367d7ffd0bdfa72bf868f7e91a9d120806b1c572147f7d9e5814bfa2d6c"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-weight-orientation-2026-10-21\\vulkan\\checks\\link2\\vulkan.exe",
+        "bytes": 70496256,
+        "sha256": "97da10d87859b26f8940f2d1b1b0c38381f118258f46a1b20d2eecafaa243638"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-weight-orientation-2026-10-21\\vulkan\\checks\\link2\\vulkan.map",
+        "bytes": 43161211,
+        "sha256": "18cb4985aeb7591f0793698a7564a86f47c3daf8837c500b152b2781cd55b1f6"
+      }
+    ],
+    "keep_windows": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-weight-orientation-2026-10-21\\common\\checks\\schema1\\compute_ops--weight_decode-25df34\\compute_ops--weight_decode-25df34.obj",
+        "bytes": 107391,
+        "sha256": "659472d29aa03318a4e6bf1cd5654ac7f1b3dddd95906188a0b9602436922c70"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-weight-orientation-2026-10-21\\cpu\\checks\\test2\\expert-test.obj",
+        "bytes": 2282076,
+        "sha256": "698212a180c42137942f7c3e5214bf606d29487a6384ede52bf29736d6d1a126"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-weight-orientation-2026-10-21\\cpu\\checks\\test3\\expert-test.obj",
+        "bytes": 2295707,
+        "sha256": "ab587491b8965cf14d199abb46268940ae993fd049fe51eb03dca68205818b3e"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-weight-orientation-2026-10-21\\cpu-cuda\\checks\\attempt1\\artifact-provider\\artifact-provider.obj",
+        "bytes": 1378168,
+        "sha256": "4775a790499c5739ab57d388e2c04192ecd0746e6e2e0af77fb0a20b5e596920"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-weight-orientation-2026-10-21\\cpu-cuda\\checks\\attempt1\\default-policy\\default-policy.obj",
+        "bytes": 641388,
+        "sha256": "a26bbcc47d9cb2bd67705facbfa73819bfc3e94f3646e057b80c176afa1375f7"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-weight-orientation-2026-10-21\\cpu-cuda\\checks\\attempt1\\torch-cpu\\torch-cpu.obj",
+        "bytes": 1887310,
+        "sha256": "59c56656a2ce2da482626017253d8c84180cb98321610d0fd94ca2a3df83f513"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-weight-orientation-2026-10-21\\cpu-cuda\\checks\\attempt2\\mlx-packed-kernel\\mlx-packed-kernel.obj",
+        "bytes": 833405,
+        "sha256": "5d1d8ab74b6f092dcffd3cf1861dde7946973e7ed1123f6b12ce724fbdd66a05"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-weight-orientation-2026-10-21\\cpu-cuda\\checks\\attempt3\\artifact-provider\\artifact-provider.obj",
+        "bytes": 1378118,
+        "sha256": "bdc5cc8b52849c2d9d957b9c1a942423706da14d44a216b1543eab9c476a3e19"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-weight-orientation-2026-10-21\\cpu-cuda\\tests\\checks\\attempt1\\cpu-mlx-neighbor\\cpu-mlx-neighbor.obj",
+        "bytes": 2738487,
+        "sha256": "c132923e4383764d7f906fc2aec9dbc7be1ac4bf22e7d66ea403c0ce11ea8d71"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-weight-orientation-2026-10-21\\cpu-cuda\\tests\\checks\\attempt1\\schema-test\\schema-test.obj",
+        "bytes": 4457283,
+        "sha256": "70fdb424b01a0d92956bf149ae89df60cd513285ecd4917be20be19be57b9231"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-weight-orientation-2026-10-21\\cuda\\checks\\test1\\expert-test.obj",
+        "bytes": 2517060,
+        "sha256": "530e0627d5339095fe7799dee2849294c8e6dc4fe1f796c8de77f3b901548cdf"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-weight-orientation-2026-10-21\\vulkan\\checks\\attempt1\\embedded.obj",
+        "bytes": 828426,
+        "sha256": "5583493879ef4031917da6867bf3802800f7579d493c8fffca6918e08c8c7082"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-weight-orientation-2026-10-21\\vulkan\\checks\\attempt1\\iree.obj",
+        "bytes": 1004714,
+        "sha256": "4e46575d70aa8f2c50fafcbf1b9cc3cb5722b59e498dfb53652345da97eec5b1"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-weight-orientation-2026-10-21\\vulkan\\checks\\attempt1\\mlx.obj",
+        "bytes": 225719,
+        "sha256": "327c9fefd95959d3809c0beb0cab2476e5b5f43a52f094d056080c738045220e"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-weight-orientation-2026-10-21\\vulkan\\checks\\attempt1\\native-program.obj",
+        "bytes": 408312,
+        "sha256": "936ae8f231963e065af051d03418c8976dbfcd9815966a772ca92d04ffb1932f"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-weight-orientation-2026-10-21\\vulkan\\checks\\diag1\\expert-test.obj",
+        "bytes": 2467272,
+        "sha256": "61bccb9b5759119017432ee104a609500144fb306552d43a36f9b0c489ae07aa"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-weight-orientation-2026-10-21\\vulkan\\checks\\embedded2\\embedded.obj",
+        "bytes": 822798,
+        "sha256": "69764156d59a51341dcc2e2ff114a17dfa4bddb739eacc061c6ce31cb85cfe60"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-weight-orientation-2026-10-21\\vulkan\\checks\\test1\\orientation-test.obj",
+        "bytes": 2412823,
+        "sha256": "e30f3143cb346b5a3d89c17c3557751fca8f5a56b1dcca121b43b71780e667d4"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-weight-orientation-2026-10-21\\vulkan\\checks\\test2\\orientation-test.obj",
+        "bytes": 2426956,
+        "sha256": "ba514f9ba45c90ce30d4451154da7b190c3cda9c3b4a83cf86aa6164f8bc699b"
+      }
+    ],
+    "remove_mac": [
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/mlx-weight-orientation-2026-10-21/apple/mlx-weight-orientation",
+        "bytes": 16976056,
+        "sha256": "92b739e760765565ee19d7bc27725bd1542177e2d0a005486a004cd5036fcd70"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/mlx-weight-orientation-2026-10-21/apple/mlx-weight-orientation.map",
+        "bytes": 5028616,
+        "sha256": "b0da7ba9b4cafba8eafbf8f5792066af12ae1b54d05406c444f06b29ec80fefd"
+      }
+    ],
+    "keep_mac": [
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/mlx-weight-orientation-2026-10-21/apple/objects/src--compute_ops--weight_decode.cc.o",
+        "bytes": 22424,
+        "sha256": "2bd630049d9bf006de4f1e8e01d1ad676de0c25bd5006cf5cc33dea95fc3ea32"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/mlx-weight-orientation-2026-10-21/apple/objects/src--compute_provider_native--torch_cpu_program.cc.o",
+        "bytes": 262864,
+        "sha256": "6204deaa71880554db38fce2ec12644266690c9264f193af610dd5213a530ead"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/mlx-weight-orientation-2026-10-21/apple/objects/src--compute_route_apple--apple_tensor.cc.o",
+        "bytes": 149088,
+        "sha256": "c02aa4c667e15f5b64d27d742205d120f165317e984f65382727a3efa9f7b945"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/mlx-weight-orientation-2026-10-21/apple/objects/tests--graph_route_apple--mlx_moe_test.cc.o",
+        "bytes": 185240,
+        "sha256": "d4cdc7396e136d65c6a93ab30f06c93b1ae4a01b279e4279aeeac0993483ce65"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/mlx-weight-orientation-2026-10-21/apple/objects/tests--graph_route_apple--mlx_orientation_test.cc.o",
+        "bytes": 207264,
+        "sha256": "32ec78c39acb6f64ee161090c21ed4af3956d41f5ed6c32a5fb2c137ecb2498c"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/mlx-weight-orientation-2026-10-21/apple/objects/tests--graph_route_apple--mlx_quantized_test.cc.o",
+        "bytes": 193296,
+        "sha256": "724005a8472e5b795682e6af208a0b2e036540ff7a4eca95215c13e109430d6d"
+      }
+    ],
+    "evidence": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\mlx-weight-orientation-reference-2026-10-21.json",
+      "bytes": 184914,
+      "sha256": "d54ec21e770cb694b7550fe5948a605f9968a618968b787ea907e19ddcb095c3"
+    },
+    "archive": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\mlx-weight-orientation-reference-2026-10-21.zip",
+      "bytes": 8397190,
+      "sha256": "fe26138588cb8e2c636575d8fdac7444245623efff8d1f05c5e42f6a0c281745"
+    }
+  },
+  "source_script": "# Exact MLX weight orientation test-artifact cleanup. No recursive directory removal.\r\n$ErrorActionPreference = 'Stop'\r\n$plan = Get-Content -LiteralPath 'C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-weight-orientation-2026-10-21\\root\\cleanup-plan.json' -Raw | ConvertFrom-Json\r\n$separator = [IO.Path]::DirectorySeparatorChar\r\n$allowed = [IO.Path]::GetFullPath($plan.allowed_windows).TrimEnd($separator) + $separator\r\nfunction Assert-Identity($row) {\r\n  $file = Get-Item -LiteralPath $row.path -ErrorAction Stop\r\n  if ($file.PSIsContainer -or ($file.Attributes -band [IO.FileAttributes]::ReparsePoint)) { throw \"Not a regular file: $($row.path)\" }\r\n  if ($file.Length -ne $row.bytes -or (Get-FileHash -LiteralPath $row.path -Algorithm SHA256).Hash.ToLowerInvariant() -ne $row.sha256) { throw \"Identity changed: $($row.path)\" }\r\n}\r\nAssert-Identity $plan.evidence\r\nAssert-Identity $plan.archive\r\nforeach ($row in $plan.remove_windows) {\r\n  $full = [IO.Path]::GetFullPath($row.path)\r\n  if (-not $full.StartsWith($allowed, [StringComparison]::OrdinalIgnoreCase) -or [IO.Path]::GetExtension($full) -notin '.exe','.map') { throw \"Outside exact artifact scope: $full\" }\r\n  Assert-Identity $row\r\n}\r\nforeach ($row in $plan.keep_windows) { Assert-Identity $row }\r\n$active = @(Get-CimInstance Win32_Process | Where-Object { $_.ExecutablePath -and $_.ExecutablePath.StartsWith($allowed, [StringComparison]::OrdinalIgnoreCase) })\r\nif ($active.Count) { throw 'A test executable in this exact workspace is still running' }\r\nforeach ($row in $plan.remove_windows) { Remove-Item -LiteralPath $row.path -Force }\r\nforeach ($row in $plan.keep_windows) { Assert-Identity $row }\r\n$macProgram = @'\r\nimport pathlib,hashlib,json,subprocess\r\nplan=json.loads('{\"allowed_mac\": \"/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/mlx-weight-orientation-2026-10-21/apple\", \"remove_mac\": [{\"path\": \"/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/mlx-weight-orientation-2026-10-21/apple/mlx-weight-orientation\", \"bytes\": 16976056, \"sha256\": \"92b739e760765565ee19d7bc27725bd1542177e2d0a005486a004cd5036fcd70\"}, {\"path\": \"/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/mlx-weight-orientation-2026-10-21/apple/mlx-weight-orientation.map\", \"bytes\": 5028616, \"sha256\": \"b0da7ba9b4cafba8eafbf8f5792066af12ae1b54d05406c444f06b29ec80fefd\"}], \"keep_mac\": [{\"path\": \"/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/mlx-weight-orientation-2026-10-21/apple/objects/src--compute_ops--weight_decode.cc.o\", \"bytes\": 22424, \"sha256\": \"2bd630049d9bf006de4f1e8e01d1ad676de0c25bd5006cf5cc33dea95fc3ea32\"}, {\"path\": \"/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/mlx-weight-orientation-2026-10-21/apple/objects/src--compute_provider_native--torch_cpu_program.cc.o\", \"bytes\": 262864, \"sha256\": \"6204deaa71880554db38fce2ec12644266690c9264f193af610dd5213a530ead\"}, {\"path\": \"/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/mlx-weight-orientation-2026-10-21/apple/objects/src--compute_route_apple--apple_tensor.cc.o\", \"bytes\": 149088, \"sha256\": \"c02aa4c667e15f5b64d27d742205d120f165317e984f65382727a3efa9f7b945\"}, {\"path\": \"/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/mlx-weight-orientation-2026-10-21/apple/objects/tests--graph_route_apple--mlx_moe_test.cc.o\", \"bytes\": 185240, \"sha256\": \"d4cdc7396e136d65c6a93ab30f06c93b1ae4a01b279e4279aeeac0993483ce65\"}, {\"path\": \"/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/mlx-weight-orientation-2026-10-21/apple/objects/tests--graph_route_apple--mlx_orientation_test.cc.o\", \"bytes\": 207264, \"sha256\": \"32ec78c39acb6f64ee161090c21ed4af3956d41f5ed6c32a5fb2c137ecb2498c\"}, {\"path\": \"/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/mlx-weight-orientation-2026-10-21/apple/objects/tests--graph_route_apple--mlx_quantized_test.cc.o\", \"bytes\": 193296, \"sha256\": \"724005a8472e5b795682e6af208a0b2e036540ff7a4eca95215c13e109430d6d\"}]}')\r\nbase=pathlib.Path(plan['allowed_mac']); assert base.is_dir() and not base.is_symlink()\r\ndef verify(row):\r\n p=pathlib.Path(row['path']); assert p.is_absolute() and not p.is_symlink() and p.resolve().is_relative_to(base.resolve())\r\n assert p.is_file() and p.stat().st_size==row['bytes'] and hashlib.sha256(p.read_bytes()).hexdigest()==row['sha256'],str(p)\r\n return p\r\npaths=[verify(x) for x in plan['remove_mac']]\r\nfor row in plan['keep_mac']:verify(row)\r\nactive=subprocess.check_output(['ps','-axo','command='],text=True)\r\nassert not any(str(p) in command for p in paths for command in active.splitlines() if not command.startswith('python3 -')), 'test executable is running'\r\nfor p in paths:p.unlink()\r\nfor row in plan['keep_mac']:verify(row)\r\nprint(json.dumps(dict(removed=len(paths),bytes=sum(x['bytes'] for x in plan['remove_mac']),kept_objects=len(plan['keep_mac']))))\r\n'@\r\n$macResult = $macProgram | & ssh kiro@172.22.10.198 python3 -\r\nif ($LASTEXITCODE -ne 0) { throw 'Mac exact-file cleanup failed; do not report both platforms completed' }\r\n$result = [ordered]@{\r\n  completed = $true\r\n  windows_removed = @($plan.remove_windows).Count\r\n  windows_bytes = ($plan.remove_windows | Measure-Object -Property bytes -Sum).Sum\r\n  windows_kept_objects = @($plan.keep_windows).Count\r\n  mac = ($macResult | ConvertFrom-Json)\r\n  evidence_sha256 = $plan.evidence.sha256\r\n  archive_sha256 = $plan.archive.sha256\r\n  exact_plan = $plan\r\n  source_script = [IO.File]::ReadAllText($PSCommandPath)\r\n}\r\n$result | ConvertTo-Json -Depth 18 | Set-Content -LiteralPath 'C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\mlx-weight-orientation-reference-2026-10-21.cleanup.json' -Encoding utf8\r\n[pscustomobject]$result | Select-Object completed,windows_removed,windows_bytes,windows_kept_objects,mac | ConvertTo-Json -Depth 5\r\n"
+}

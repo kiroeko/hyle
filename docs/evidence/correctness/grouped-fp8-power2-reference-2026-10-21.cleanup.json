@@ -1,0 +1,236 @@
+{
+  "completed": true,
+  "windows_removed": 16,
+  "windows_bytes": 1021724169.0,
+  "windows_kept_objects": 19,
+  "mac": {
+    "removed": 2,
+    "bytes": 20535664,
+    "kept_objects": 3
+  },
+  "evidence_sha256": "e1136b9552aafa64a6e904d7b8d22a023b572aafbaf57cc08c2650a2f60a4593",
+  "archive_sha256": "e8cf3ac970cf5688358fdff300d4a764ab35976c49f303a3a11c34658063a87b",
+  "exact_plan": {
+    "allowed_windows": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-power2-reference",
+    "allowed_mac": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/grouped-fp8-power2-reference/apple",
+    "remove_windows": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-power2-reference\\cpu\\checks\\attempt1\\cpu.exe",
+        "bytes": 28084736,
+        "sha256": "fc2d8a659377a17f372e2f7a9743d71d91bc66622f5045b6a56d3bbf9de19229"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-power2-reference\\cpu\\checks\\attempt1\\cpu.map",
+        "bytes": 43744875,
+        "sha256": "e95629a93c5e1e2aaafbcd8cf9182157045d5ebda733ca43e3b727719c20d577"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-power2-reference\\cuda\\checks\\new-wrapper\\attempt1\\cuda.exe",
+        "bytes": 123441152,
+        "sha256": "ba41cb0f16e7eba4b8c476732613062b4d45874ed5a5ea44a8cbf30399c57bc3"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-power2-reference\\cuda\\checks\\new-wrapper\\attempt1\\cuda.map",
+        "bytes": 47566470,
+        "sha256": "861da4324d05029cfd52528b96936d09d5eb15ee0bc06d0eb1d17fb45bfbf8c5"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-power2-reference\\cuda\\checks\\new-wrapper\\attempt2\\cuda.exe",
+        "bytes": 123441664,
+        "sha256": "6d022ce5d44fdec7c9d5c9a8731a2106466af306f7d7c1d816fa65d5c5c7f80c"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-power2-reference\\cuda\\checks\\new-wrapper\\attempt2\\cuda.map",
+        "bytes": 47573158,
+        "sha256": "b8fe4300d5001de34a294ea1414bb70a234cc1da849fdb96a16aae825254f2f0"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-power2-reference\\cuda\\checks\\new-wrapper\\attempt3\\cuda.exe",
+        "bytes": 123446784,
+        "sha256": "33bcbe49b4b353504719e489ccb69e345e6eba90cabf765f78f796a0b1483fcb"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-power2-reference\\cuda\\checks\\new-wrapper\\attempt3\\cuda.map",
+        "bytes": 47588298,
+        "sha256": "dbf5da0950ccfe75d3007f2d1db91d64231e5e25dba7b5671f23bcf4e88e916a"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-power2-reference\\vulkan\\checks\\final\\grouped-fp8-power2.exe",
+        "bytes": 69458432,
+        "sha256": "d3d6f2e89efeac74565c8134714d286387c1f61ba5930433b8d3fcb718aec756"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-power2-reference\\vulkan\\checks\\final\\grouped-fp8-power2.map",
+        "bytes": 39737605,
+        "sha256": "fe8ceaf15997992ca375d4d727a9f37fa4bb12414971c4bd6af56f626c6f9f2f"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-power2-reference\\vulkan\\checks\\final2\\grouped-fp8-power2.exe",
+        "bytes": 69458944,
+        "sha256": "bb728aa5cfe8dad85314854a7915db52bf386608a138c86662850483a5b45e74"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-power2-reference\\vulkan\\checks\\final2\\grouped-fp8-power2.map",
+        "bytes": 39747411,
+        "sha256": "fa8cd336d3936be7edab320e0e6206a0baada0c93faa72081665d39d7c320216"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-power2-reference\\vulkan\\checks\\none-rne\\grouped-fp8-power2.exe",
+        "bytes": 69459456,
+        "sha256": "53003cc0e4fb89a6d7d775d8bd05f0322b1570b04ebbb0342176873b3d85222d"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-power2-reference\\vulkan\\checks\\none-rne\\grouped-fp8-power2.map",
+        "bytes": 39747411,
+        "sha256": "a879bec18f278d36dc0f732bf9d05119f1a78a33521468f3ad58b1818a80e72a"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-power2-reference\\vulkan\\probe\\checks\\none-scale-probe.exe",
+        "bytes": 69468672,
+        "sha256": "12ed085dcf68eddd0ab65c07a9594751e44947fa714367b582d6ead87bb96f29"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-power2-reference\\vulkan\\probe\\checks\\none-scale-probe.map",
+        "bytes": 39759101,
+        "sha256": "e47c9f7dc41aa3efffd83858d57888d5bc6045b8efc5f64237301490b2c0f147"
+      }
+    ],
+    "keep_windows": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-power2-reference\\cpu\\checks\\attempt1\\affected0.obj",
+        "bytes": 4381737,
+        "sha256": "1e23f5e5aa8394c1c61479b3698afaa5fbb374777b35a2352aae080e2371a56b"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-power2-reference\\cpu\\checks\\attempt1\\power-test.obj",
+        "bytes": 1699602,
+        "sha256": "407d76d7f1b2981f50f1f16722596356dd60865b7e3802a5b6dae1eacffd6faf"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-power2-reference\\cuda\\checks\\cuda-provider\\attempt1\\cuda-provider.obj",
+        "bytes": 705457,
+        "sha256": "d144f5b37e1243da0075ed8525d5791f0a4e4a636f9b3a0b30fed51e117688d6"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-power2-reference\\cuda\\checks\\grouped-provider\\attempt1\\grouped-provider.obj",
+        "bytes": 1356837,
+        "sha256": "1018f72dfc062b3e9518997b5623b3b0542c171807a6e825691c2567af440de9"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-power2-reference\\cuda\\checks\\grouped-test\\attempt1\\grouped-test.obj",
+        "bytes": 1796921,
+        "sha256": "b77715cdbb5c4a6a415c5e11f9fe6930f7c2cc41a982bad640d0b8e9a7b585ea"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-power2-reference\\cuda\\checks\\new-wrapper\\attempt1\\power-test.obj",
+        "bytes": 2126569,
+        "sha256": "115979418fd976df84860b3527a97bb3edb74ddd14dd4c181e53dac51e42b252"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-power2-reference\\cuda\\checks\\new-wrapper\\attempt2\\power-test.obj",
+        "bytes": 2140365,
+        "sha256": "56160b66219a064aa36a663f70965895088290df369f552251924653cc5dd080"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-power2-reference\\cuda\\checks\\new-wrapper\\attempt3\\power-test.obj",
+        "bytes": 2210583,
+        "sha256": "ec90dbb357d7f1112bb0d7a7e54a91b73bfaf18c9400ad8e1ac168a2212d4fba"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-power2-reference\\cuda\\checks\\scale-test\\attempt1\\scale-test.obj",
+        "bytes": 1100162,
+        "sha256": "7bfd641bcb8b68a17d6d683e9bd8319a224cf1d8ccb3773925a265a8ee571223"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-power2-reference\\vulkan\\checks\\none-rne\\embedded.obj",
+        "bytes": 702534,
+        "sha256": "a371901f96f1cbe4fc61e44b2b657e2cc1e215b57453d66a43eca79978afbeb9"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-power2-reference\\vulkan\\checks\\products\\embedded.obj",
+        "bytes": 701830,
+        "sha256": "984a8a2e32083de8ef9dd7e7854f59d9156ae49cfad8dfe95a98f8303104e402"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-power2-reference\\vulkan\\checks\\products\\iree.obj",
+        "bytes": 1004283,
+        "sha256": "13d682b5b38b7278f8a5d8d58fb07c7d69fda7be54d347c19b869d93775c9c82"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-power2-reference\\vulkan\\checks\\products\\native-program.obj",
+        "bytes": 402929,
+        "sha256": "9db798710ed196f8b36c2d886fc9ca1db9d57cd617f294011ea785586c6ec933"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-power2-reference\\vulkan\\checks\\products\\official.obj",
+        "bytes": 248491,
+        "sha256": "6de010a9182a83008a67ea9f9c9cc3fbb890154605e17b667c7b4ba66112c5e8"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-power2-reference\\vulkan\\checks\\products\\program.obj",
+        "bytes": 2452071,
+        "sha256": "88159093dd6f208b60387f3148d400267201fb7ce6097018636c3a5bbf73414b"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-power2-reference\\vulkan\\checks\\products\\torch-cpu.obj",
+        "bytes": 1869001,
+        "sha256": "c5d6313e80c6b33e90ef609b412d14959ce04b748707a55d06ab5192fb1e50ef"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-power2-reference\\vulkan\\checks\\test\\grouped-power.obj",
+        "bytes": 2311671,
+        "sha256": "4aacc1e45b1351b8568806801946a345c1b5f4ce883df241a00be1b230dd647f"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-power2-reference\\vulkan\\checks\\test2\\grouped-power.obj",
+        "bytes": 2328876,
+        "sha256": "5d032ddaf1bf722255584d4fda76d78bd63e57bb59c1893b39a2cbd30632323b"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-power2-reference\\vulkan\\probe\\checks\\none-probe.obj",
+        "bytes": 600525,
+        "sha256": "72f809fa454a7ad3d191590eea3e036535bb72cbdb36cb89a36b8d06b1b3abc8"
+      }
+    ],
+    "remove_mac": [
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/grouped-fp8-power2-reference/apple/grouped-fp8-power2",
+        "bytes": 15830448,
+        "sha256": "f0393c41d790b682e1e6ea1a944664af23bb9eb60c6e9200430e14f6cefd0ac0"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/grouped-fp8-power2-reference/apple/grouped-fp8-power2.map",
+        "bytes": 4705216,
+        "sha256": "98b49d0168b227409e3e468cf8652e95efb1570d94761f788eb6ba7e8957741c"
+      }
+    ],
+    "keep_mac": [
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/grouped-fp8-power2-reference/apple/objects/src--compute_provider_native--torch_cpu_program.cc.o",
+        "bytes": 250032,
+        "sha256": "945921f99e5546815c1160d4ad3e4f391ce6414ca9317662353c3ca328b80174"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/grouped-fp8-power2-reference/apple/objects/src--compute_route_apple--apple_mature_float.cc.o",
+        "bytes": 137800,
+        "sha256": "23472b8f1a7a3922145c607a6ed1ad3a80aaaa8a177da6253671aeef7c6381de"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/grouped-fp8-power2-reference/apple/objects/tests--graph_route_apple--grouped_fp8_power2_test.cc.o",
+        "bytes": 200976,
+        "sha256": "5278df4e2767dcc7e1be586c7f69fe49b841ee9c93a452f9cca151aa73a03572"
+      }
+    ],
+    "evidence": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\grouped-fp8-power2-reference-2026-10-21.json",
+      "bytes": 131820,
+      "sha256": "e1136b9552aafa64a6e904d7b8d22a023b572aafbaf57cc08c2650a2f60a4593"
+    },
+    "archive": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\grouped-fp8-power2-reference-2026-10-21.zip",
+      "bytes": 4180084,
+      "sha256": "e8cf3ac970cf5688358fdff300d4a764ab35976c49f303a3a11c34658063a87b"
+    }
+  },
+  "source_script": "# Exact grouped FP8 power2 test-artifact cleanup. No recursive directory removal.\r\n$ErrorActionPreference = 'Stop'\r\n$plan = Get-Content -LiteralPath 'C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-power2-reference\\root\\cleanup-plan.json' -Raw | ConvertFrom-Json\r\n$separator = [IO.Path]::DirectorySeparatorChar\r\n$allowed = [IO.Path]::GetFullPath($plan.allowed_windows).TrimEnd($separator) + $separator\r\nfunction Assert-Identity($row) {\r\n  $file = Get-Item -LiteralPath $row.path -ErrorAction Stop\r\n  if ($file.PSIsContainer -or ($file.Attributes -band [IO.FileAttributes]::ReparsePoint)) { throw \"Not a regular file: $($row.path)\" }\r\n  if ($file.Length -ne $row.bytes -or (Get-FileHash -LiteralPath $row.path -Algorithm SHA256).Hash.ToLowerInvariant() -ne $row.sha256) { throw \"Identity changed: $($row.path)\" }\r\n}\r\nAssert-Identity $plan.evidence\r\nAssert-Identity $plan.archive\r\nforeach ($row in $plan.remove_windows) {\r\n  $full = [IO.Path]::GetFullPath($row.path)\r\n  if (-not $full.StartsWith($allowed, [StringComparison]::OrdinalIgnoreCase) -or [IO.Path]::GetExtension($full) -notin '.exe','.map') { throw \"Outside exact artifact scope: $full\" }\r\n  Assert-Identity $row\r\n}\r\nforeach ($row in $plan.keep_windows) { Assert-Identity $row }\r\n$active = @(Get-CimInstance Win32_Process | Where-Object { $_.ExecutablePath -and $_.ExecutablePath.StartsWith($allowed, [StringComparison]::OrdinalIgnoreCase) })\r\nif ($active.Count) { throw 'A test executable in this exact workspace is still running' }\r\nforeach ($row in $plan.remove_windows) { Remove-Item -LiteralPath $row.path -Force }\r\nforeach ($row in $plan.keep_windows) { Assert-Identity $row }\r\n$macProgram = @'\r\nimport pathlib,hashlib,json,subprocess\r\nplan=json.loads('{\"allowed_mac\": \"/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/grouped-fp8-power2-reference/apple\", \"remove_mac\": [{\"path\": \"/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/grouped-fp8-power2-reference/apple/grouped-fp8-power2\", \"bytes\": 15830448, \"sha256\": \"f0393c41d790b682e1e6ea1a944664af23bb9eb60c6e9200430e14f6cefd0ac0\"}, {\"path\": \"/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/grouped-fp8-power2-reference/apple/grouped-fp8-power2.map\", \"bytes\": 4705216, \"sha256\": \"98b49d0168b227409e3e468cf8652e95efb1570d94761f788eb6ba7e8957741c\"}], \"keep_mac\": [{\"path\": \"/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/grouped-fp8-power2-reference/apple/objects/src--compute_provider_native--torch_cpu_program.cc.o\", \"bytes\": 250032, \"sha256\": \"945921f99e5546815c1160d4ad3e4f391ce6414ca9317662353c3ca328b80174\"}, {\"path\": \"/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/grouped-fp8-power2-reference/apple/objects/src--compute_route_apple--apple_mature_float.cc.o\", \"bytes\": 137800, \"sha256\": \"23472b8f1a7a3922145c607a6ed1ad3a80aaaa8a177da6253671aeef7c6381de\"}, {\"path\": \"/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/grouped-fp8-power2-reference/apple/objects/tests--graph_route_apple--grouped_fp8_power2_test.cc.o\", \"bytes\": 200976, \"sha256\": \"5278df4e2767dcc7e1be586c7f69fe49b841ee9c93a452f9cca151aa73a03572\"}]}')\r\nbase=pathlib.Path(plan['allowed_mac']); assert base.is_dir() and not base.is_symlink()\r\ndef verify(row):\r\n p=pathlib.Path(row['path']); assert p.is_absolute() and not p.is_symlink() and p.resolve().is_relative_to(base.resolve())\r\n assert p.is_file() and p.stat().st_size==row['bytes'] and hashlib.sha256(p.read_bytes()).hexdigest()==row['sha256'],str(p)\r\n return p\r\npaths=[verify(x) for x in plan['remove_mac']]\r\nfor row in plan['keep_mac']:verify(row)\r\nactive=subprocess.check_output(['ps','-axo','command='],text=True)\r\nassert not any(str(p) in command for p in paths for command in active.splitlines() if not command.startswith('python3 -')), 'test executable is running'\r\nfor p in paths:p.unlink()\r\nfor row in plan['keep_mac']:verify(row)\r\nprint(json.dumps(dict(removed=len(paths),bytes=sum(x['bytes'] for x in plan['remove_mac']),kept_objects=len(plan['keep_mac']))))\r\n'@\r\n$macResult = $macProgram | & ssh kiro@172.22.10.198 python3 -\r\nif ($LASTEXITCODE -ne 0) { throw 'Mac exact-file cleanup failed; do not report both platforms completed' }\r\n$result = [ordered]@{\r\n  completed = $true\r\n  windows_removed = @($plan.remove_windows).Count\r\n  windows_bytes = ($plan.remove_windows | Measure-Object -Property bytes -Sum).Sum\r\n  windows_kept_objects = @($plan.keep_windows).Count\r\n  mac = ($macResult | ConvertFrom-Json)\r\n  evidence_sha256 = $plan.evidence.sha256\r\n  archive_sha256 = $plan.archive.sha256\r\n  exact_plan = $plan\r\n  source_script = (Get-Content -LiteralPath $PSCommandPath -Raw)\r\n}\r\n$result | ConvertTo-Json -Depth 18 | Set-Content -LiteralPath 'C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\grouped-fp8-power2-reference-2026-10-21.cleanup.json' -Encoding utf8\r\n[pscustomobject]$result | Select-Object completed,windows_removed,windows_bytes,windows_kept_objects,mac | ConvertTo-Json -Depth 5\r\n"
+}

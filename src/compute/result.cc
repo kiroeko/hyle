@@ -7,6 +7,7 @@
 #include <memory>
 
 #include "hyle/compute/detail/completion_access.h"
+#include "hyle/core/assert.h"
 #include "hyle/util/ref_counted.h"
 
 namespace hyle::compute::detail {
@@ -96,6 +97,31 @@ Status begin_result(ResultStorage *storage) noexcept {
   storage->clear_payload();
   storage->incref(); // transferred from write to OwnedResult on publish
   return Status::Ok();
+}
+
+Status can_detach_result(ResultStorage *storage,
+                         const ResultStorageOwner &known_private) noexcept {
+  if (storage == nullptr)
+    return Status::FailedPrecondition("result slot is invalid");
+  if (known_private.valid() && known_private.get() != storage)
+    return Status::InvalidArgument("private result owner belongs to another slot");
+  if (storage->busy.load(std::memory_order_acquire))
+    return Status::FailedPrecondition("result slot is in flight");
+  const auto expected = known_private.valid() ? 2u : 1u;
+  if (storage->use_count() != expected)
+    return Status::FailedPrecondition("result is still retained");
+  // Pair final old-reader release with this observational reference check.
+  // The caller's existing producer gate excludes begin/private-owner copying
+  // throughout validation and commit; this check does not claim that gate.
+  std::atomic_thread_fence(std::memory_order_acquire);
+  return Status::Ok();
+}
+
+void discard_retired_result_payload(ResultStorage *storage) noexcept {
+  HYLE_FATAL_ASSERT(storage != nullptr);
+  HYLE_FATAL_ASSERT(!storage->busy.load(std::memory_order_acquire));
+  HYLE_FATAL_ASSERT(storage->is_unique());
+  storage->clear_payload();
 }
 
 void rollback_result(ResultStorage *storage) noexcept {

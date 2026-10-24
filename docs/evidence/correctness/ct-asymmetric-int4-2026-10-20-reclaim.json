@@ -1,0 +1,917 @@
+{
+  "plan": {
+    "targets": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\vulkan\\windows-host\\checks\\20261019T194520\\ct-asymmetric-vulkan.exp",
+        "bytes": 25064,
+        "sha256": "743e860ca3862538a53fccf521e5bde05e220fa48f8ab7b2e24d026b02d33421",
+        "reason": "Map archived byte-for-byte; link side products rebuildable from retained actual objects/commands"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\vulkan\\windows-host\\checks\\20261019T194520\\ct-asymmetric-vulkan.lib",
+        "bytes": 42878,
+        "sha256": "82a90e044f013ef6f121046c69b843095e1020eb881be130eacde6a55dfa9d4e",
+        "reason": "Map archived byte-for-byte; link side products rebuildable from retained actual objects/commands"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\vulkan\\windows-host\\checks\\20261019T194520\\ct-asymmetric-vulkan.map",
+        "bytes": 30551288,
+        "sha256": "db790f1f890aa3dc2c5eabea8e1f86abb34f379bd012b5bcdf48d1ae5f12b4be",
+        "reason": "Map archived byte-for-byte; link side products rebuildable from retained actual objects/commands"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\windows-host\\checks\\20261019T194607\\cpu-direct.exp",
+        "bytes": 25037,
+        "sha256": "03e40e5aaa1c90080c027aa7a6e8eb85e5f66de9b1e4bcbd9009d02ca447e663",
+        "reason": "Map archived byte-for-byte; link side products rebuildable from retained actual objects/commands"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\windows-host\\checks\\20261019T194607\\cpu-direct.lib",
+        "bytes": 41912,
+        "sha256": "c7e25dd7c75c328bc97339b3b993051922e0a0126e72ce0a0398383aa2336bc7",
+        "reason": "Map archived byte-for-byte; link side products rebuildable from retained actual objects/commands"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\windows-host\\checks\\20261019T194607\\cpu-direct.map",
+        "bytes": 34843639,
+        "sha256": "db01d7a4935ffdac3dd9a36c089e3483bd32b36953733256f7fc854983766c53",
+        "reason": "Map archived byte-for-byte; link side products rebuildable from retained actual objects/commands"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\windows-host\\checks\\20261019T194607\\cpu-graph.exp",
+        "bytes": 25034,
+        "sha256": "226f4c011f6240435eb0ef8cdf6ef4608a82ee344653619c7e121c3eeaf92705",
+        "reason": "Map archived byte-for-byte; link side products rebuildable from retained actual objects/commands"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\windows-host\\checks\\20261019T194607\\cpu-graph.lib",
+        "bytes": 41826,
+        "sha256": "24788347ea65b76a656de5cfde61a0b5868a6cae36c53b63b5f2ab14e39d8bfd",
+        "reason": "Map archived byte-for-byte; link side products rebuildable from retained actual objects/commands"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\windows-host\\checks\\20261019T194607\\cpu-graph.map",
+        "bytes": 34866214,
+        "sha256": "2680fa1043123dac289d3329b0141eeaf99465b4afa0b66cf586558ac420de6a",
+        "reason": "Map archived byte-for-byte; link side products rebuildable from retained actual objects/commands"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\windows-host\\checks\\20261019T194607\\cuda.exp",
+        "bytes": 25025,
+        "sha256": "1bd4469ec3b4a4b8d3345961bdcf39e8b863ea9cb963b673ceccf4f5913427f4",
+        "reason": "Map archived byte-for-byte; link side products rebuildable from retained actual objects/commands"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\windows-host\\checks\\20261019T194607\\cuda.lib",
+        "bytes": 41384,
+        "sha256": "097299e17e955c077a99f65f363d3484d564c016359baeb643f4e47c6b737d59",
+        "reason": "Map archived byte-for-byte; link side products rebuildable from retained actual objects/commands"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\windows-host\\checks\\20261019T194607\\cuda.map",
+        "bytes": 34597045,
+        "sha256": "ed862fe4e7ebd4768fbec2d2ea0f760eb52ca0c9545acbdaf20e66f3db95a770",
+        "reason": "Map archived byte-for-byte; link side products rebuildable from retained actual objects/commands"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\windows-host\\checks\\20261019T194607\\qwen.exp",
+        "bytes": 25025,
+        "sha256": "57892550794514c9e353c4f66a51261bdf525a5653cc55c8df3e2b0743fb3e27",
+        "reason": "Map archived byte-for-byte; link side products rebuildable from retained actual objects/commands"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\windows-host\\checks\\20261019T194607\\qwen.lib",
+        "bytes": 41384,
+        "sha256": "339d3ce297534ebac8825c27a011f2f4f9dfe366c657ebfc45dbbfdc8412a2cb",
+        "reason": "Map archived byte-for-byte; link side products rebuildable from retained actual objects/commands"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\windows-host\\checks\\20261019T194607\\qwen.map",
+        "bytes": 34235330,
+        "sha256": "4296760cd762ee82027b975817788bd7199b486499e092aa3aa8c08342f191a7",
+        "reason": "Map archived byte-for-byte; link side products rebuildable from retained actual objects/commands"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\windows-host\\checks\\20261019T194607\\cpu-direct.exe",
+        "bytes": 25311744,
+        "sha256": "01ac7d37190c0de1b4e95fa95d8e8275b9bc2a079f19dcd3200ee46932a77a5a",
+        "reason": "Completed test image; all actual objects and exact link inputs remain, current CPU Graph/Qwen/Vulkan images retained"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\windows-host\\checks\\20261019T194607\\cuda.exe",
+        "bytes": 116932096,
+        "sha256": "70c80720145429adb93700a502c5b7c93f5a8bc5f01137d0153585dca75d0c16",
+        "reason": "Completed test image; all actual objects and exact link inputs remain, current CPU Graph/Qwen/Vulkan images retained"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\correctness\\trace\\decode1\\hidden.bf16",
+        "bytes": 4096,
+        "sha256": "e40060187d8c6376d00e58794643dd3f444dceefe29eb675c6ee2b0899131210",
+        "reason": "Duplicate bit-identical output; original reference and exact comparison retained"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\correctness\\trace\\decode1\\logits.f32",
+        "bytes": 993280,
+        "sha256": "54999d39e6a46f665fe6f7fc5d22b5136eb5e9b73ae179e5b908b33d7009f326",
+        "reason": "Duplicate bit-identical output; original reference and exact comparison retained"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\correctness\\trace\\decode10\\hidden.bf16",
+        "bytes": 4096,
+        "sha256": "14f67a52e0c149e904e363021efe444ddabc3de5c45c16e9fb3f4a4c533f8ba9",
+        "reason": "Duplicate bit-identical output; original reference and exact comparison retained"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\correctness\\trace\\decode10\\logits.f32",
+        "bytes": 993280,
+        "sha256": "bcc503ff8585699e10eda6c4eb899a900aca16db9f348e3ca1ecba3899e0f4dc",
+        "reason": "Duplicate bit-identical output; original reference and exact comparison retained"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\correctness\\trace\\decode11\\hidden.bf16",
+        "bytes": 4096,
+        "sha256": "025d250c3511f106ae4dc6f11d659262e917fd545c94c8e18da3253437af50d9",
+        "reason": "Duplicate bit-identical output; original reference and exact comparison retained"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\correctness\\trace\\decode11\\logits.f32",
+        "bytes": 993280,
+        "sha256": "a695e7dd458fc3eb5d5e4301d1ca4548bd5d9c38bfe3fed8e05203e2b7f7d43a",
+        "reason": "Duplicate bit-identical output; original reference and exact comparison retained"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\correctness\\trace\\decode12\\hidden.bf16",
+        "bytes": 4096,
+        "sha256": "f7b6685cf738390474f1fa85320df313e39eb469bf0af22dea10c3c016edc06c",
+        "reason": "Duplicate bit-identical output; original reference and exact comparison retained"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\correctness\\trace\\decode12\\logits.f32",
+        "bytes": 993280,
+        "sha256": "372a79e6f28a730945c45b223bb2a7958ea0d1967e57b8586ff08b4804d54eed",
+        "reason": "Duplicate bit-identical output; original reference and exact comparison retained"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\correctness\\trace\\decode13\\hidden.bf16",
+        "bytes": 4096,
+        "sha256": "a9d03c31ab0682e9cb017af1eba6e9872778715bea080c5bad77122e4b50a2d6",
+        "reason": "Duplicate bit-identical output; original reference and exact comparison retained"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\correctness\\trace\\decode13\\logits.f32",
+        "bytes": 993280,
+        "sha256": "534e20e20dfc7419d234026daa156c0ea2a8cd7d0b81d7394562679b931932b4",
+        "reason": "Duplicate bit-identical output; original reference and exact comparison retained"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\correctness\\trace\\decode14\\hidden.bf16",
+        "bytes": 4096,
+        "sha256": "25d9877095a26bb7e6c6c2419cb0e182a01b6cd9e40f0bb769c42fcb34fc2dfb",
+        "reason": "Duplicate bit-identical output; original reference and exact comparison retained"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\correctness\\trace\\decode14\\logits.f32",
+        "bytes": 993280,
+        "sha256": "52722aedd166038381d5c6732855b3c73804e7f32db14403edaa1fe619ab8e71",
+        "reason": "Duplicate bit-identical output; original reference and exact comparison retained"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\correctness\\trace\\decode15\\hidden.bf16",
+        "bytes": 4096,
+        "sha256": "be0704805ca7c78aa081b4ac85dd9a017010c913b9260fb1d2f591f0994370e7",
+        "reason": "Duplicate bit-identical output; original reference and exact comparison retained"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\correctness\\trace\\decode15\\logits.f32",
+        "bytes": 993280,
+        "sha256": "6c804d67822906c715a8238c52507f61ffa0c62057eb7bac124253ab56b57f84",
+        "reason": "Duplicate bit-identical output; original reference and exact comparison retained"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\correctness\\trace\\decode16\\hidden.bf16",
+        "bytes": 4096,
+        "sha256": "db38845e211bf589a3a41f9beee7610a37538b9d015df79d7a86744a245b5d09",
+        "reason": "Duplicate bit-identical output; original reference and exact comparison retained"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\correctness\\trace\\decode16\\logits.f32",
+        "bytes": 993280,
+        "sha256": "65abecf3cc29af92f817b3cd91cbccd155362a92e779be9c81e77341d9709ea0",
+        "reason": "Duplicate bit-identical output; original reference and exact comparison retained"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\correctness\\trace\\decode17\\hidden.bf16",
+        "bytes": 4096,
+        "sha256": "ee49ec44b74f98a437c9df25aa3add98bc3247475b2605f16efa8b964c5451f6",
+        "reason": "Duplicate bit-identical output; original reference and exact comparison retained"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\correctness\\trace\\decode17\\logits.f32",
+        "bytes": 993280,
+        "sha256": "ad8067b76a35214374e5e585c9671654c547c9a4f4e79bb6b4b589bdfa83b845",
+        "reason": "Duplicate bit-identical output; original reference and exact comparison retained"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\correctness\\trace\\decode18\\hidden.bf16",
+        "bytes": 4096,
+        "sha256": "d1336e9f037dea6d1a28d519b2300686825b1666ccad9972d9667b91769a97f5",
+        "reason": "Duplicate bit-identical output; original reference and exact comparison retained"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\correctness\\trace\\decode18\\logits.f32",
+        "bytes": 993280,
+        "sha256": "500ce9be766ecde9d75c2ed2f7ac0f9b6401806288bd9e545f4227e27c9795a2",
+        "reason": "Duplicate bit-identical output; original reference and exact comparison retained"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\correctness\\trace\\decode19\\hidden.bf16",
+        "bytes": 4096,
+        "sha256": "72de0d12d75275391252ae195d2b2b19f4d3a234095e2e988ba12455fbe3cf7c",
+        "reason": "Duplicate bit-identical output; original reference and exact comparison retained"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\correctness\\trace\\decode19\\logits.f32",
+        "bytes": 993280,
+        "sha256": "35be9bd7e307d44e2929605be12977d985b8818af81fcdd59259163b7a748002",
+        "reason": "Duplicate bit-identical output; original reference and exact comparison retained"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\correctness\\trace\\decode2\\hidden.bf16",
+        "bytes": 4096,
+        "sha256": "f6d075ad86e2e0550617e6dfd6201ae335228ee6808ab8ae8bb3681159663424",
+        "reason": "Duplicate bit-identical output; original reference and exact comparison retained"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\correctness\\trace\\decode2\\logits.f32",
+        "bytes": 993280,
+        "sha256": "772199ca4b0550c00635c25bd8036a9b5334cb0c22bb79ce86f6fbd81520df67",
+        "reason": "Duplicate bit-identical output; original reference and exact comparison retained"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\correctness\\trace\\decode20\\hidden.bf16",
+        "bytes": 4096,
+        "sha256": "43c03820fa5f5b838cd5992205b52f44f12fd82c5585698eb08197f48713cb6f",
+        "reason": "Duplicate bit-identical output; original reference and exact comparison retained"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\correctness\\trace\\decode20\\logits.f32",
+        "bytes": 993280,
+        "sha256": "aa2082864e5999cce1e72d98d71f1a34f0b59bfbf9a728aba621cce2e25b644f",
+        "reason": "Duplicate bit-identical output; original reference and exact comparison retained"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\correctness\\trace\\decode21\\hidden.bf16",
+        "bytes": 4096,
+        "sha256": "f8188e3da86374d7e412e99e95ebbeb5b542392318adad6c4fe4be6849dbb026",
+        "reason": "Duplicate bit-identical output; original reference and exact comparison retained"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\correctness\\trace\\decode21\\logits.f32",
+        "bytes": 993280,
+        "sha256": "d10c058ee22da65190fb9d9c04997754b8484607f6202283f3b89416be4d2580",
+        "reason": "Duplicate bit-identical output; original reference and exact comparison retained"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\correctness\\trace\\decode22\\hidden.bf16",
+        "bytes": 4096,
+        "sha256": "d6ae658866d9358580e704e5374fec7acf9f66eddb5895a4d09917a7f7f20022",
+        "reason": "Duplicate bit-identical output; original reference and exact comparison retained"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\correctness\\trace\\decode22\\logits.f32",
+        "bytes": 993280,
+        "sha256": "96a33dcc9a7b11ab9fa4720a945007c5dac2c4f660cfb04cbcaa77d9fcaf0e9f",
+        "reason": "Duplicate bit-identical output; original reference and exact comparison retained"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\correctness\\trace\\decode23\\hidden.bf16",
+        "bytes": 4096,
+        "sha256": "eb27d0449a834afd98899067feb7ceb33f37f1819e21ff63ac668654c90a8d5a",
+        "reason": "Duplicate bit-identical output; original reference and exact comparison retained"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\correctness\\trace\\decode23\\logits.f32",
+        "bytes": 993280,
+        "sha256": "dc53f76f793be5e01854f437be46a71985a53861042b08220a8b1e49528b21a0",
+        "reason": "Duplicate bit-identical output; original reference and exact comparison retained"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\correctness\\trace\\decode24\\hidden.bf16",
+        "bytes": 4096,
+        "sha256": "1b55a229ef3ada9232b7f590977fce3c3b2b7ee56932ceadd8c16f05201a35a1",
+        "reason": "Duplicate bit-identical output; original reference and exact comparison retained"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\correctness\\trace\\decode24\\logits.f32",
+        "bytes": 993280,
+        "sha256": "04903c42456b5d223ce673d73794e0aa88a5da810bd58f054cdff7db57bc354c",
+        "reason": "Duplicate bit-identical output; original reference and exact comparison retained"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\correctness\\trace\\decode25\\hidden.bf16",
+        "bytes": 4096,
+        "sha256": "386adc36e11cae2a75fbb2e3fe8b66dfe37d9a6b4d5fd5e73c67f287625b34bd",
+        "reason": "Duplicate bit-identical output; original reference and exact comparison retained"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\correctness\\trace\\decode25\\logits.f32",
+        "bytes": 993280,
+        "sha256": "079091277422cd9c20aee9d03a3672ac7223d48ffb8f9fb0869b5434740f244b",
+        "reason": "Duplicate bit-identical output; original reference and exact comparison retained"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\correctness\\trace\\decode26\\hidden.bf16",
+        "bytes": 4096,
+        "sha256": "9ad10d1bc33b02b2ee0bf1df056087f84eb510871bfe4af278e895b3eede0419",
+        "reason": "Duplicate bit-identical output; original reference and exact comparison retained"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\correctness\\trace\\decode26\\logits.f32",
+        "bytes": 993280,
+        "sha256": "0ddbec9ca8cb287be9d9dd415e4d7baf53175d100d309a4d3014eb690430270e",
+        "reason": "Duplicate bit-identical output; original reference and exact comparison retained"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\correctness\\trace\\decode27\\hidden.bf16",
+        "bytes": 4096,
+        "sha256": "11126f85e99889de5700986061d56f2759ff5b0eea94bb2636a36707ae2df606",
+        "reason": "Duplicate bit-identical output; original reference and exact comparison retained"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\correctness\\trace\\decode27\\logits.f32",
+        "bytes": 993280,
+        "sha256": "ea0c1a5585e84ee37096cf8fb2c531784c352bf43e270bf80bd954bd60e459ef",
+        "reason": "Duplicate bit-identical output; original reference and exact comparison retained"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\correctness\\trace\\decode28\\hidden.bf16",
+        "bytes": 4096,
+        "sha256": "5b81866d1c8c9d4e282e45025e1b4d4010878e4f367b14ef2d6a08fc27c85c6e",
+        "reason": "Duplicate bit-identical output; original reference and exact comparison retained"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\correctness\\trace\\decode28\\logits.f32",
+        "bytes": 993280,
+        "sha256": "75083b3b88af9047012de440d3e42c05eb1baa96763f888eddd134da287b8538",
+        "reason": "Duplicate bit-identical output; original reference and exact comparison retained"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\correctness\\trace\\decode29\\hidden.bf16",
+        "bytes": 4096,
+        "sha256": "b92b40b4fd571a637b2ef95b1634470d63d1ea628f45ce0a117c7a32afe76eb8",
+        "reason": "Duplicate bit-identical output; original reference and exact comparison retained"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\correctness\\trace\\decode29\\logits.f32",
+        "bytes": 993280,
+        "sha256": "10e0712c92ed33298e2dd4a5919bd714cef9bb74cb53b19780dbfd2856c791e0",
+        "reason": "Duplicate bit-identical output; original reference and exact comparison retained"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\correctness\\trace\\decode3\\hidden.bf16",
+        "bytes": 4096,
+        "sha256": "227c7e6548e2159393ddf350d7dfbd1dda87040994ade315075c005ce7798889",
+        "reason": "Duplicate bit-identical output; original reference and exact comparison retained"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\correctness\\trace\\decode3\\logits.f32",
+        "bytes": 993280,
+        "sha256": "aff61c4c7ec366a0b25cf583427df267859aca70ab3c9e264268a30f2d45f3d4",
+        "reason": "Duplicate bit-identical output; original reference and exact comparison retained"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\correctness\\trace\\decode30\\hidden.bf16",
+        "bytes": 4096,
+        "sha256": "ca725572fbf8c186b9bc0c5662173d8ad7dae136b179587657ea87029eb1349f",
+        "reason": "Duplicate bit-identical output; original reference and exact comparison retained"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\correctness\\trace\\decode30\\logits.f32",
+        "bytes": 993280,
+        "sha256": "42d688f93ec3ae1e4c920fa3a22b1169f1050d0eec291e5b69aa51b54b24e11d",
+        "reason": "Duplicate bit-identical output; original reference and exact comparison retained"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\correctness\\trace\\decode31\\hidden.bf16",
+        "bytes": 4096,
+        "sha256": "886b6f71fcbbcf3f95dc61f7873e43f245f40a4d967d0c2401205fbba52bd95e",
+        "reason": "Duplicate bit-identical output; original reference and exact comparison retained"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\correctness\\trace\\decode31\\logits.f32",
+        "bytes": 993280,
+        "sha256": "6619c64b58de04545169513c926b852f92822fb64ae0b22fc7efbd9cf8842887",
+        "reason": "Duplicate bit-identical output; original reference and exact comparison retained"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\correctness\\trace\\decode4\\hidden.bf16",
+        "bytes": 4096,
+        "sha256": "f7d8474a362ca19268b3481791345307fee1026f0a4c871e1227ce3315e7021e",
+        "reason": "Duplicate bit-identical output; original reference and exact comparison retained"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\correctness\\trace\\decode4\\logits.f32",
+        "bytes": 993280,
+        "sha256": "0ab4e55caa9276fd56d4353c36121014f07342989b570eb9c3f7dfddc21a2bba",
+        "reason": "Duplicate bit-identical output; original reference and exact comparison retained"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\correctness\\trace\\decode5\\hidden.bf16",
+        "bytes": 4096,
+        "sha256": "850b8196a3ee12fb1ef0f4f71a37155b3b4b394053b616603d33457b3d0c8a19",
+        "reason": "Duplicate bit-identical output; original reference and exact comparison retained"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\correctness\\trace\\decode5\\logits.f32",
+        "bytes": 993280,
+        "sha256": "ebb26764856c828fae8d95a751837b1af2fc6101e9207cfa3bdaa0fdea3c7a1e",
+        "reason": "Duplicate bit-identical output; original reference and exact comparison retained"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\correctness\\trace\\decode6\\hidden.bf16",
+        "bytes": 4096,
+        "sha256": "1f04b58f50a488b9599eabf6b360ede1b3e3205fe9f1fd44b2d86dd25adf4484",
+        "reason": "Duplicate bit-identical output; original reference and exact comparison retained"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\correctness\\trace\\decode6\\logits.f32",
+        "bytes": 993280,
+        "sha256": "cbda8781111c0ca4ad618ae56c2d840974152770d2d5474c43498bd0e81e2a84",
+        "reason": "Duplicate bit-identical output; original reference and exact comparison retained"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\correctness\\trace\\decode7\\hidden.bf16",
+        "bytes": 4096,
+        "sha256": "db84650d85f3c3fea8e4c3d4bf891b1fc01a65aad3f7807e8eef53315f7723f2",
+        "reason": "Duplicate bit-identical output; original reference and exact comparison retained"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\correctness\\trace\\decode7\\logits.f32",
+        "bytes": 993280,
+        "sha256": "8c90db2481c2110453c52633a8b3153fe37391085de09fb4e5a0943adfe396c1",
+        "reason": "Duplicate bit-identical output; original reference and exact comparison retained"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\correctness\\trace\\decode8\\hidden.bf16",
+        "bytes": 4096,
+        "sha256": "4ba5e0f90d2c22025d9136092d03307914b18795082217cd34d4aec5c85dfdd6",
+        "reason": "Duplicate bit-identical output; original reference and exact comparison retained"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\correctness\\trace\\decode8\\logits.f32",
+        "bytes": 993280,
+        "sha256": "db08f2c1bdd302459dd6151dea7de3d6f37b431d7dfaf3cf191b9ada82858745",
+        "reason": "Duplicate bit-identical output; original reference and exact comparison retained"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\correctness\\trace\\decode9\\hidden.bf16",
+        "bytes": 4096,
+        "sha256": "e9852a023ec1982b1258a0042712d1abd868575fc9f968798be75da2cd9fdc5a",
+        "reason": "Duplicate bit-identical output; original reference and exact comparison retained"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\correctness\\trace\\decode9\\logits.f32",
+        "bytes": 993280,
+        "sha256": "e19784e9cb938d33e1a6508bacca54fb44b8807c41f091cdf8b401c161da6cb9",
+        "reason": "Duplicate bit-identical output; original reference and exact comparison retained"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\correctness\\trace\\prefill\\hidden.bf16",
+        "bytes": 4096,
+        "sha256": "441f8e0eea6b8deea8b640bb76efc9dcc1267f3ee4de9e936bcc9fa9110a8ee1",
+        "reason": "Duplicate bit-identical output; original reference and exact comparison retained"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\correctness\\trace\\prefill\\logits.f32",
+        "bytes": 993280,
+        "sha256": "3f9f6f36cbefdeae7dc1e5e89b8af0729c2d9d6f59dab28e040a4771d9609b43",
+        "reason": "Duplicate bit-identical output; original reference and exact comparison retained"
+      }
+    ],
+    "count": 81,
+    "total_bytes": 343587957,
+    "archive": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\ct-asymmetric-int4-2026-10-20.zip",
+      "bytes": 15143713,
+      "sha256": "ebcbd74183c2f67e83fdeb835b6f686020a8f9daa6ca51fb2ea48fae07940cc9"
+    },
+    "retained_images": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\windows-host\\checks\\20261019T194607\\cpu-graph.exe",
+        "bytes": 25325056,
+        "sha256": "0a52619d27dbe3f2a96af12c4356b916164ec545dfba7bd9484acc78a1464d1d"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\windows-host\\checks\\20261019T194607\\qwen.exe",
+        "bytes": 116951040,
+        "sha256": "0f0f15edffde6ad6b24c7a77192249dbf5d73c25162c34c91700e4664994e942"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\vulkan\\windows-host\\checks\\20261019T194520\\ct-asymmetric-vulkan.exe",
+        "bytes": 66193920,
+        "sha256": "4875e2369f82626b62ff124b4f3c832828393b7d5448b246076ab1610d6ab5ae"
+      }
+    ],
+    "retained_references": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode1\\hidden.bf16",
+        "bytes": 4096,
+        "sha256": "e40060187d8c6376d00e58794643dd3f444dceefe29eb675c6ee2b0899131210"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode1\\logits.f32",
+        "bytes": 993280,
+        "sha256": "54999d39e6a46f665fe6f7fc5d22b5136eb5e9b73ae179e5b908b33d7009f326"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode10\\hidden.bf16",
+        "bytes": 4096,
+        "sha256": "14f67a52e0c149e904e363021efe444ddabc3de5c45c16e9fb3f4a4c533f8ba9"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode10\\logits.f32",
+        "bytes": 993280,
+        "sha256": "bcc503ff8585699e10eda6c4eb899a900aca16db9f348e3ca1ecba3899e0f4dc"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode11\\hidden.bf16",
+        "bytes": 4096,
+        "sha256": "025d250c3511f106ae4dc6f11d659262e917fd545c94c8e18da3253437af50d9"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode11\\logits.f32",
+        "bytes": 993280,
+        "sha256": "a695e7dd458fc3eb5d5e4301d1ca4548bd5d9c38bfe3fed8e05203e2b7f7d43a"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode12\\hidden.bf16",
+        "bytes": 4096,
+        "sha256": "f7b6685cf738390474f1fa85320df313e39eb469bf0af22dea10c3c016edc06c"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode12\\logits.f32",
+        "bytes": 993280,
+        "sha256": "372a79e6f28a730945c45b223bb2a7958ea0d1967e57b8586ff08b4804d54eed"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode13\\hidden.bf16",
+        "bytes": 4096,
+        "sha256": "a9d03c31ab0682e9cb017af1eba6e9872778715bea080c5bad77122e4b50a2d6"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode13\\logits.f32",
+        "bytes": 993280,
+        "sha256": "534e20e20dfc7419d234026daa156c0ea2a8cd7d0b81d7394562679b931932b4"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode14\\hidden.bf16",
+        "bytes": 4096,
+        "sha256": "25d9877095a26bb7e6c6c2419cb0e182a01b6cd9e40f0bb769c42fcb34fc2dfb"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode14\\logits.f32",
+        "bytes": 993280,
+        "sha256": "52722aedd166038381d5c6732855b3c73804e7f32db14403edaa1fe619ab8e71"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode15\\hidden.bf16",
+        "bytes": 4096,
+        "sha256": "be0704805ca7c78aa081b4ac85dd9a017010c913b9260fb1d2f591f0994370e7"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode15\\logits.f32",
+        "bytes": 993280,
+        "sha256": "6c804d67822906c715a8238c52507f61ffa0c62057eb7bac124253ab56b57f84"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode16\\hidden.bf16",
+        "bytes": 4096,
+        "sha256": "db38845e211bf589a3a41f9beee7610a37538b9d015df79d7a86744a245b5d09"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode16\\logits.f32",
+        "bytes": 993280,
+        "sha256": "65abecf3cc29af92f817b3cd91cbccd155362a92e779be9c81e77341d9709ea0"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode17\\hidden.bf16",
+        "bytes": 4096,
+        "sha256": "ee49ec44b74f98a437c9df25aa3add98bc3247475b2605f16efa8b964c5451f6"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode17\\logits.f32",
+        "bytes": 993280,
+        "sha256": "ad8067b76a35214374e5e585c9671654c547c9a4f4e79bb6b4b589bdfa83b845"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode18\\hidden.bf16",
+        "bytes": 4096,
+        "sha256": "d1336e9f037dea6d1a28d519b2300686825b1666ccad9972d9667b91769a97f5"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode18\\logits.f32",
+        "bytes": 993280,
+        "sha256": "500ce9be766ecde9d75c2ed2f7ac0f9b6401806288bd9e545f4227e27c9795a2"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode19\\hidden.bf16",
+        "bytes": 4096,
+        "sha256": "72de0d12d75275391252ae195d2b2b19f4d3a234095e2e988ba12455fbe3cf7c"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode19\\logits.f32",
+        "bytes": 993280,
+        "sha256": "35be9bd7e307d44e2929605be12977d985b8818af81fcdd59259163b7a748002"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode2\\hidden.bf16",
+        "bytes": 4096,
+        "sha256": "f6d075ad86e2e0550617e6dfd6201ae335228ee6808ab8ae8bb3681159663424"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode2\\logits.f32",
+        "bytes": 993280,
+        "sha256": "772199ca4b0550c00635c25bd8036a9b5334cb0c22bb79ce86f6fbd81520df67"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode20\\hidden.bf16",
+        "bytes": 4096,
+        "sha256": "43c03820fa5f5b838cd5992205b52f44f12fd82c5585698eb08197f48713cb6f"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode20\\logits.f32",
+        "bytes": 993280,
+        "sha256": "aa2082864e5999cce1e72d98d71f1a34f0b59bfbf9a728aba621cce2e25b644f"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode21\\hidden.bf16",
+        "bytes": 4096,
+        "sha256": "f8188e3da86374d7e412e99e95ebbeb5b542392318adad6c4fe4be6849dbb026"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode21\\logits.f32",
+        "bytes": 993280,
+        "sha256": "d10c058ee22da65190fb9d9c04997754b8484607f6202283f3b89416be4d2580"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode22\\hidden.bf16",
+        "bytes": 4096,
+        "sha256": "d6ae658866d9358580e704e5374fec7acf9f66eddb5895a4d09917a7f7f20022"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode22\\logits.f32",
+        "bytes": 993280,
+        "sha256": "96a33dcc9a7b11ab9fa4720a945007c5dac2c4f660cfb04cbcaa77d9fcaf0e9f"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode23\\hidden.bf16",
+        "bytes": 4096,
+        "sha256": "eb27d0449a834afd98899067feb7ceb33f37f1819e21ff63ac668654c90a8d5a"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode23\\logits.f32",
+        "bytes": 993280,
+        "sha256": "dc53f76f793be5e01854f437be46a71985a53861042b08220a8b1e49528b21a0"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode24\\hidden.bf16",
+        "bytes": 4096,
+        "sha256": "1b55a229ef3ada9232b7f590977fce3c3b2b7ee56932ceadd8c16f05201a35a1"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode24\\logits.f32",
+        "bytes": 993280,
+        "sha256": "04903c42456b5d223ce673d73794e0aa88a5da810bd58f054cdff7db57bc354c"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode25\\hidden.bf16",
+        "bytes": 4096,
+        "sha256": "386adc36e11cae2a75fbb2e3fe8b66dfe37d9a6b4d5fd5e73c67f287625b34bd"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode25\\logits.f32",
+        "bytes": 993280,
+        "sha256": "079091277422cd9c20aee9d03a3672ac7223d48ffb8f9fb0869b5434740f244b"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode26\\hidden.bf16",
+        "bytes": 4096,
+        "sha256": "9ad10d1bc33b02b2ee0bf1df056087f84eb510871bfe4af278e895b3eede0419"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode26\\logits.f32",
+        "bytes": 993280,
+        "sha256": "0ddbec9ca8cb287be9d9dd415e4d7baf53175d100d309a4d3014eb690430270e"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode27\\hidden.bf16",
+        "bytes": 4096,
+        "sha256": "11126f85e99889de5700986061d56f2759ff5b0eea94bb2636a36707ae2df606"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode27\\logits.f32",
+        "bytes": 993280,
+        "sha256": "ea0c1a5585e84ee37096cf8fb2c531784c352bf43e270bf80bd954bd60e459ef"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode28\\hidden.bf16",
+        "bytes": 4096,
+        "sha256": "5b81866d1c8c9d4e282e45025e1b4d4010878e4f367b14ef2d6a08fc27c85c6e"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode28\\logits.f32",
+        "bytes": 993280,
+        "sha256": "75083b3b88af9047012de440d3e42c05eb1baa96763f888eddd134da287b8538"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode29\\hidden.bf16",
+        "bytes": 4096,
+        "sha256": "b92b40b4fd571a637b2ef95b1634470d63d1ea628f45ce0a117c7a32afe76eb8"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode29\\logits.f32",
+        "bytes": 993280,
+        "sha256": "10e0712c92ed33298e2dd4a5919bd714cef9bb74cb53b19780dbfd2856c791e0"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode3\\hidden.bf16",
+        "bytes": 4096,
+        "sha256": "227c7e6548e2159393ddf350d7dfbd1dda87040994ade315075c005ce7798889"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode3\\logits.f32",
+        "bytes": 993280,
+        "sha256": "aff61c4c7ec366a0b25cf583427df267859aca70ab3c9e264268a30f2d45f3d4"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode30\\hidden.bf16",
+        "bytes": 4096,
+        "sha256": "ca725572fbf8c186b9bc0c5662173d8ad7dae136b179587657ea87029eb1349f"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode30\\logits.f32",
+        "bytes": 993280,
+        "sha256": "42d688f93ec3ae1e4c920fa3a22b1169f1050d0eec291e5b69aa51b54b24e11d"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode31\\hidden.bf16",
+        "bytes": 4096,
+        "sha256": "886b6f71fcbbcf3f95dc61f7873e43f245f40a4d967d0c2401205fbba52bd95e"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode31\\logits.f32",
+        "bytes": 993280,
+        "sha256": "6619c64b58de04545169513c926b852f92822fb64ae0b22fc7efbd9cf8842887"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode4\\hidden.bf16",
+        "bytes": 4096,
+        "sha256": "f7d8474a362ca19268b3481791345307fee1026f0a4c871e1227ce3315e7021e"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode4\\logits.f32",
+        "bytes": 993280,
+        "sha256": "0ab4e55caa9276fd56d4353c36121014f07342989b570eb9c3f7dfddc21a2bba"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode5\\hidden.bf16",
+        "bytes": 4096,
+        "sha256": "850b8196a3ee12fb1ef0f4f71a37155b3b4b394053b616603d33457b3d0c8a19"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode5\\logits.f32",
+        "bytes": 993280,
+        "sha256": "ebb26764856c828fae8d95a751837b1af2fc6101e9207cfa3bdaa0fdea3c7a1e"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode6\\hidden.bf16",
+        "bytes": 4096,
+        "sha256": "1f04b58f50a488b9599eabf6b360ede1b3e3205fe9f1fd44b2d86dd25adf4484"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode6\\logits.f32",
+        "bytes": 993280,
+        "sha256": "cbda8781111c0ca4ad618ae56c2d840974152770d2d5474c43498bd0e81e2a84"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode7\\hidden.bf16",
+        "bytes": 4096,
+        "sha256": "db84650d85f3c3fea8e4c3d4bf891b1fc01a65aad3f7807e8eef53315f7723f2"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode7\\logits.f32",
+        "bytes": 993280,
+        "sha256": "8c90db2481c2110453c52633a8b3153fe37391085de09fb4e5a0943adfe396c1"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode8\\hidden.bf16",
+        "bytes": 4096,
+        "sha256": "4ba5e0f90d2c22025d9136092d03307914b18795082217cd34d4aec5c85dfdd6"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode8\\logits.f32",
+        "bytes": 993280,
+        "sha256": "db08f2c1bdd302459dd6151dea7de3d6f37b431d7dfaf3cf191b9ada82858745"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode9\\hidden.bf16",
+        "bytes": 4096,
+        "sha256": "e9852a023ec1982b1258a0042712d1abd868575fc9f968798be75da2cd9fdc5a"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode9\\logits.f32",
+        "bytes": 993280,
+        "sha256": "e19784e9cb938d33e1a6508bacca54fb44b8807c41f091cdf8b401c161da6cb9"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\prefill\\hidden.bf16",
+        "bytes": 4096,
+        "sha256": "441f8e0eea6b8deea8b640bb76efc9dcc1267f3ee4de9e936bcc9fa9110a8ee1"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\prefill\\logits.f32",
+        "bytes": 993280,
+        "sha256": "3f9f6f36cbefdeae7dc1e5e89b8af0729c2d9d6f59dab28e040a4771d9609b43"
+      }
+    ],
+    "link_plans": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\windows-host\\checks\\20261019T194607\\cpu-direct-link-plan.json",
+        "bytes": 49442,
+        "sha256": "5ba7d731fd6888cda27b1a7eeb268b0a6890e97fedb4077d04ec29f27bc1fad0"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\windows-host\\checks\\20261019T194607\\cpu-graph-link-plan.json",
+        "bytes": 49437,
+        "sha256": "aa862c0d400ecb6f1205faddf386935659afb686407b44fbfbc62fc0d19cf2c6"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\windows-host\\checks\\20261019T194607\\qwen-link-plan.json",
+        "bytes": 56183,
+        "sha256": "bf6f9dd3c1a7f214d88837a6e37166e9ad0d7d2cb054bcfdbcfe82e18e811dab"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\windows-host\\checks\\20261019T194607\\cuda-link-plan.json",
+        "bytes": 56822,
+        "sha256": "eae7ffee8cfec534b947fd336d0590f26652582bc4149851e4e723662dd255aa"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\vulkan\\windows-host\\checks\\20261019T194520\\vulkan-link-plan.json",
+        "bytes": 99273,
+        "sha256": "09cf3c2fbaed8ad236ef420c7d806b9d0dd934682bf3b09eb9d4a1e7d1fda37b"
+      }
+    ],
+    "recursive": false,
+    "link_inputs_deleted": false,
+    "SDK_or_object_deleted": false,
+    "older_measured_images_outside_this_stage_untouched": true
+  },
+  "script": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\executed-reclaim.ps1",
+    "bytes": 2864,
+    "sha256": "5eddaad75ac566d537e1c277e442beb8e973da1841da7fe8e7b11c52b0ebe24f"
+  },
+  "exact_script": "$ErrorActionPreference = 'Stop'\n$workspace = [IO.Path]::GetFullPath($PSScriptRoot).TrimEnd('\\')\n$stage = (Resolve-Path -LiteralPath (Join-Path $workspace '.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4')).Path\n$planPath = Join-Path $stage 'cleanup-plan.json'\nif ((Get-FileHash -LiteralPath $planPath -Algorithm SHA256).Hash.ToLowerInvariant() -ne 'e91ef0e8a3024b61378c7241095fee8c899e6da36d7dda090d6d12126bccfcad') { throw 'Cleanup plan changed' }\n$plan = Get-Content -LiteralPath $planPath -Raw | ConvertFrom-Json\nfunction Assert-Identity($row) {\n    $item = Get-Item -LiteralPath $row.path -Force\n    if ($item.PSIsContainer -or $item.Length -ne $row.bytes -or (Get-FileHash -LiteralPath $item.FullName -Algorithm SHA256).Hash.ToLowerInvariant() -ne $row.sha256) { throw \"File differs: $($row.path)\" }\n}\n$protected = @($plan.archive) + @($plan.retained_images) + @($plan.retained_references) + @($plan.link_plans)\nforeach ($row in $protected) { Assert-Identity $row }\n$inputPaths = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)\nforeach ($row in $plan.link_plans) {\n    $link = Get-Content -LiteralPath $row.path -Raw | ConvertFrom-Json\n    foreach ($inputRow in $link.inputs) { [void]$inputPaths.Add([IO.Path]::GetFullPath($inputRow.path)) }\n}\nforeach ($row in $plan.targets) {\n    $item = Get-Item -LiteralPath $row.path -Force\n    if (-not $item.FullName.StartsWith($stage + '\\', [StringComparison]::OrdinalIgnoreCase) -or $item.PSIsContainer -or ($item.Attributes -band [IO.FileAttributes]::ReparsePoint)) { throw 'Unexpected target path' }\n    $parent = $item.Directory\n    while ($parent.FullName.StartsWith($workspace, [StringComparison]::OrdinalIgnoreCase)) {\n        if ($parent.Attributes -band [IO.FileAttributes]::ReparsePoint) { throw 'Reparse point in target ancestry' }\n        if ($parent.FullName -eq $workspace) { break }\n        $parent = $parent.Parent\n    }\n    if ($inputPaths.Contains($item.FullName)) { throw 'Target is an actual retained link input' }\n    Assert-Identity $row\n}\nforeach ($row in $plan.targets) { Remove-Item -LiteralPath $row.path -Force }\nforeach ($row in $plan.targets) { if (Test-Path -LiteralPath $row.path) { throw 'Target remains' } }\nforeach ($row in $plan.retained_images) { Assert-Identity $row }\nforeach ($row in $plan.retained_references) { if (-not (Test-Path -LiteralPath $row.path)) { throw 'Reference disappeared' } }\n@{ deleted_files = $plan.count; deleted_bytes = $plan.total_bytes; recursive = $false; retained_images = $plan.retained_images; reference_vectors_retained = @($plan.retained_references).Count; all_link_inputs_retained = $true; archive = $plan.archive } | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath (Join-Path $stage 'cleanup-result.json') -Encoding utf8\nWrite-Output \"CT_RECLAIMED $($plan.count) files / $($plan.total_bytes) bytes\"\n",
+  "result": {
+    "deleted_bytes": 343587957,
+    "reference_vectors_retained": 64,
+    "retained_images": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\windows-host\\checks\\20261019T194607\\cpu-graph.exe",
+        "bytes": 25325056,
+        "sha256": "0a52619d27dbe3f2a96af12c4356b916164ec545dfba7bd9484acc78a1464d1d"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\windows-host\\checks\\20261019T194607\\qwen.exe",
+        "bytes": 116951040,
+        "sha256": "0f0f15edffde6ad6b24c7a77192249dbf5d73c25162c34c91700e4664994e942"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\vulkan\\windows-host\\checks\\20261019T194520\\ct-asymmetric-vulkan.exe",
+        "bytes": 66193920,
+        "sha256": "4875e2369f82626b62ff124b4f3c832828393b7d5448b246076ab1610d6ab5ae"
+      }
+    ],
+    "archive": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\ct-asymmetric-int4-2026-10-20.zip",
+      "bytes": 15143713,
+      "sha256": "ebcbd74183c2f67e83fdeb835b6f686020a8f9daa6ca51fb2ea48fae07940cc9"
+    },
+    "deleted_files": 81,
+    "all_link_inputs_retained": true,
+    "recursive": false
+  },
+  "archive": {
+    "archive": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\ct-asymmetric-int4-2026-10-20.zip",
+      "bytes": 15143713,
+      "sha256": "ebcbd74183c2f67e83fdeb835b6f686020a8f9daa6ca51fb2ea48fae07940cc9"
+    },
+    "payload_entries": 1375,
+    "manifest_entries": 1,
+    "CRC_and_each_payload_SHA_verified_once": true,
+    "retained_maps": true,
+    "binaries_and_duplicate_vectors_archived": false
+  },
+  "remaining_work": "The overall Compute/Graph goal remains active; packed INT4, other formats and cross-platform journeys remain."
+}

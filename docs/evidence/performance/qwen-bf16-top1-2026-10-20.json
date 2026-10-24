@@ -1,0 +1,2666 @@
+{
+  "date": "2026-10-20",
+  "scope": "Bounded Windows RTX4070 BF16 Qwen3.5-2B text consumer experiment; same retained D1 product closure, only consumer main replaced. No provider/native/SDK rebuild in the whole-consumer candidate.",
+  "decision": {
+    "decision": "Do not promote this D2 consumer experiment to the selected full-model baseline. Restore exact D1 main; preserve candidate source, the useful new CUDA test and all positive/negative observations.",
+    "consumer_sha256": "33a3e3de91050ad752935b81d1b5bb82fa9e09a8868ca04b0a028dd832b66a6c",
+    "previous_consumer": {
+      "path": "C:\\public\\project-hyle\\hyle\\tools\\qwen35_text\\main.cc",
+      "bytes": 58940,
+      "sha256": "96dcbeca56ad9b1158ab6e99189b58f2cb08199520993f66e3c8d11424b7e798"
+    },
+    "selected_consumer": {
+      "path": "C:\\public\\project-hyle\\hyle\\tools\\qwen35_text\\main.cc",
+      "bytes": 57917,
+      "sha256": "33a3e3de91050ad752935b81d1b5bb82fa9e09a8868ca04b0a028dd832b66a6c"
+    },
+    "candidate_snapshot": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-bf16-top1\\consumer\\after\\tools\\qwen35_text\\main.cc",
+      "bytes": 58940,
+      "sha256": "96dcbeca56ad9b1158ab6e99189b58f2cb08199520993f66e3c8d11424b7e798"
+    },
+    "selected_image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-prepare-cost\\candidate\\qwen.exe",
+      "bytes": 117832192,
+      "sha256": "6e09735e395e86412d4588cf67507fe5902d149e3e03f674b688ddde5cddf1f8"
+    },
+    "reason": "The local direct-BF16 path is cheaper in this observation, but neither complete-model window establishes a throughput benefit. This is a baseline-selection decision, not proof that BF16 Top1 is slower, mathematically wrong, or useless on other hardware.",
+    "local_observation": {
+      "direct_wall_us_median": 39.95,
+      "cast_wall_us_median": 44.05,
+      "paired_cast_minus_direct_us_median": 2.25,
+      "expected_token": 10462,
+      "samples_per_arm": 128,
+      "independent_processes": 1,
+      "correlated_samples": true,
+      "limitation": "Both Commands routes on one hot actual logits row. Model Cast belongs to a larger captured segment. Auxiliary stream events include host-admission gaps. Do not convert these samples into model throughput or an identified whole-model regression cause."
+    },
+    "preserved_test": {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_cuda\\collectives_test.cc",
+      "bytes": 22846,
+      "sha256": "91b208e363f9e9da105f3e71bd9cc0c87404fe9c60f51855c488543b30034f47"
+    },
+    "no_new_regression_cause_identified": true,
+    "mathematical_correctness_and_performance_are_separate": true,
+    "memory_bandwidth_hypothesis": "Dominant weight streaming can dilute small suffix/host improvements; no new full-step DRAM saturation measurement was performed. Lower physical traffic/cache reuse improvements remain relevant. Do not blame this candidate on a hardware bottleneck without counters.",
+    "next": "End this bounded D2 investigation absent a new measured premise; proceed with remaining format/function packages. Retain D1 as the throughput reference and test the current closure at final delivery."
+  },
+  "current_consumer": {
+    "bytes": 57917,
+    "sha256": "33a3e3de91050ad752935b81d1b5bb82fa9e09a8868ca04b0a028dd832b66a6c",
+    "matches": "before"
+  },
+  "candidate": "One graph retains BF16 head logits and direct BF16 Top1; trace-only U16bits<<16 widening preserves original logits.f32 file format after inference timing endpoint.",
+  "source_freeze": {
+    "scope": "Qwen text consumer only; one graph retains BF16 head logits and direct BF16 TopK1",
+    "before": {
+      "path": "tools/qwen35_text/main.cc",
+      "bytes": 57917,
+      "sha256": "33a3e3de91050ad752935b81d1b5bb82fa9e09a8868ca04b0a028dd832b66a6c"
+    },
+    "after": {
+      "path": "tools/qwen35_text/main.cc",
+      "bytes": 58940,
+      "sha256": "96dcbeca56ad9b1158ab6e99189b58f2cb08199520993f66e3c8d11424b7e798"
+    },
+    "seams": {
+      "graph": "Ordinary head MatMul remains BF16 with F32 accumulation; no full-row Cast; TopK value descriptor now BF16 and ID remains I32",
+      "phase": "Output Tensor allocation reads actual CompileReport description and binding uses that same TensorView, so both naturally become BF16 without trace-specific graphs",
+      "trace": "Only trace dump widens original BF16 U16 bits left16 into IEEE32 bit words; unchanged logits.f32 filename/element count, outside existing finished/step timing boundary",
+      "others": "hidden/state/probe byte formats, failure/capacity checks, queue/capture/permission/slot lifetimes unchanged"
+    },
+    "line_endings": "Original CRLF retained; scoped diff normalized to LF for readability",
+    "source_only": true,
+    "build_or_gpu_run": false,
+    "runtime_validation_pending": [
+      "Actual CUDA BF16 TopK stable-index equivalence including special values",
+      "Existing 64 trace vectors and inference/capture journey",
+      "Same-window timing; no savings claim from source alone"
+    ],
+    "known_representation": "The existing raw CUDA trace format and host bit-word storage use the same supported little-endian IEEE representation; no floating host arithmetic is used for widening"
+  },
+  "validation": {
+    "CUDA_tests": {
+      "cases": 3,
+      "failed": 0,
+      "skipped": 0,
+      "names": [
+        "CudaCccl.TopKFourTypesStableTiesNaNsAndOriginalBits",
+        "CudaCccl.SingleRowTopOneDenseAndGenericLayoutsKeepStableOriginalBits",
+        "CudaCccl.VocabularyBfloatTopOneMatchesCastFloatAcrossBlocks"
+      ]
+    },
+    "original_hidden_logits_vectors": {
+      "byte_equal": 64,
+      "stored_as": "Hashes and metrics in correctness summary; repeated tensor payloads excluded"
+    },
+    "cold_plan_and_source_review": {
+      "reviewer": "quant_gap_next_fix_review",
+      "method": "Read-only staged source, frozen actual link-input records, T1/T128 cold route TSV and SQLite structural metadata; no added build/profile/GPU/window",
+      "scope": "Only D2 main differs from D1 baseline; not all-current-SDK source validation",
+      "product_and_plan": {
+        "non_main_link_inputs": 149,
+        "same_non_main_link_input_bytes_and_SHA256": true,
+        "cold_T1_T128_route_prefixes_equal": true,
+        "route_delta": "One terminal ggml Cast removed; CCCL TopK step/node ordinal decremented; all preceding actual selected providers/implementations identical",
+        "head": "Actual same cuBLAS gemvx BF16/BF16/BF16/F32 kernel,grid62080,block16x4,168registers,272dynamicshared,0localmemory",
+        "TopK": "BF16 SingleRowArgInput replaces float; same grid122/block256,39registers versus old40,0localmemory; finalreduce unchanged"
+      },
+      "D1_gate_review": [
+        "The input/source/native/config-alias criteria are unchanged by replacing only the final logits output and TopK datatype",
+        "Warm real capture logs remain recorded0/reused1; fresh permission/seal preparation unchanged",
+        "Cold_batch combines layout,batch and replay; observed medians overlap, no direct internal D1 reuse marker in these windows",
+        "No actual address/arena snapshot was added; changed head output backing cannot be used as a proven regression cause"
+      ],
+      "math_trace": [
+        "Three retained CUDA TopK tests passed0skip",
+        "64 original hidden/logit trace vectors identical under explicit U16bits<<16 widening",
+        "Same graph and output counts retained; only logits dtype/backing becomesBF16; selected TopK value unused, IDI32 preserved",
+        "Trace-only widening follows finished timing endpoint and is absent from no-trace windows"
+      ],
+      "remaining_uncertainty": [
+        "No proven source bug or quantified mechanism explains the observed approximately0.7-0.95percent window deltas",
+        "N3/arm and long-window process spread prevent statistical-significance claim",
+        "Old and candidate profiler structural collections are separate instrumented processes; duration subtraction is not a wall-time budget"
+      ],
+      "evidence": [
+        "checks/qwen-link-plan.json",
+        "../decode-prepare-cost/candidate/link-plan.json",
+        "correctness/trace/routes/default-T1.route.tsv",
+        "correctness/trace/routes/default-T128.route.tsv",
+        "../decode-prepare-cost/correctness/trace/routes/default-T1.route.tsv",
+        "../decode-prepare-cost/correctness/trace/routes/default-T128.route.tsv",
+        "profile/summary.json",
+        "../paired-projection-route/profile/capture.sqlite"
+      ],
+      "decision": "Await one local isolation and root final disposition; retain no speed claim"
+    },
+    "structural_profile": {
+      "status": "structural_profile_only",
+      "phases": [
+        {
+          "index": 1,
+          "kernels": 595,
+          "casts": {
+            "bf16->f32": 36,
+            "f32->bf16": 18
+          },
+          "typed_stable_gating": 18,
+          "graph_launches": 1,
+          "graph_kernel_nodes": 590
+        },
+        {
+          "index": 2,
+          "kernels": 595,
+          "casts": {
+            "bf16->f32": 36,
+            "f32->bf16": 18
+          },
+          "typed_stable_gating": 18,
+          "graph_launches": 1,
+          "graph_kernel_nodes": 590
+        },
+        {
+          "index": 3,
+          "kernels": 595,
+          "casts": {
+            "bf16->f32": 36,
+            "f32->bf16": 18
+          },
+          "typed_stable_gating": 18,
+          "graph_launches": 1,
+          "graph_kernel_nodes": 590
+        },
+        {
+          "index": 4,
+          "kernels": 595,
+          "casts": {
+            "bf16->f32": 36,
+            "f32->bf16": 18
+          },
+          "typed_stable_gating": 18,
+          "graph_launches": 1,
+          "graph_kernel_nodes": 590
+        },
+        {
+          "index": 5,
+          "kernels": 595,
+          "casts": {
+            "bf16->f32": 36,
+            "f32->bf16": 18
+          },
+          "typed_stable_gating": 18,
+          "graph_launches": 1,
+          "graph_kernel_nodes": 590
+        },
+        {
+          "index": 6,
+          "kernels": 595,
+          "casts": {
+            "bf16->f32": 36,
+            "f32->bf16": 18
+          },
+          "typed_stable_gating": 18,
+          "graph_launches": 1,
+          "graph_kernel_nodes": 590
+        },
+        {
+          "index": 7,
+          "kernels": 595,
+          "casts": {
+            "bf16->f32": 36,
+            "f32->bf16": 18
+          },
+          "typed_stable_gating": 18,
+          "graph_launches": 1,
+          "graph_kernel_nodes": 590
+        }
+      ],
+      "diagnostics": [
+        {
+          "timestamp": 0,
+          "timestampType": 1,
+          "source": 3,
+          "severity": 1,
+          "text": "Profiling has started.",
+          "globalPid": -144115188075855872
+        },
+        {
+          "timestamp": 91332400,
+          "timestampType": 2,
+          "source": 3,
+          "severity": 1,
+          "text": "Number of CUDA events collected: \t87610.",
+          "globalPid": 281743009513472
+        },
+        {
+          "timestamp": 103724200,
+          "timestampType": 1,
+          "source": 2,
+          "severity": 1,
+          "text": "Process 15976 was launched by the profiler",
+          "globalPid": 281743009513472
+        },
+        {
+          "timestamp": 484964078,
+          "timestampType": 1,
+          "source": 1,
+          "severity": 1,
+          "text": "Common injection library initialized successfully.",
+          "globalPid": 281743009513472
+        },
+        {
+          "timestamp": 502226936,
+          "timestampType": 1,
+          "source": 1,
+          "severity": 1,
+          "text": "Buffers holding CUDA trace data will be flushed on CudaProfilerStop() call. See --flush-on-cudaprofilerstop to control this behavior.",
+          "globalPid": 281743009513472
+        },
+        {
+          "timestamp": 515698814,
+          "timestampType": 1,
+          "source": 1,
+          "severity": 1,
+          "text": "Loaded CUPTI library: C:\\Program Files\\NVIDIA Corporation\\Nsight Systems 2026.1.3\\target-windows-x64\\cupti64_133.dll",
+          "globalPid": 281743009513472
+        },
+        {
+          "timestamp": 515705541,
+          "timestampType": 1,
+          "source": 1,
+          "severity": 2,
+          "text": "Installed CUDA driver version (13.4) is not supported by this build of Nsight Systems. CUDA trace will be collected using libraries for driver version 13.3",
+          "globalPid": 281743009513472
+        },
+        {
+          "timestamp": 516263266,
+          "timestampType": 1,
+          "source": 1,
+          "severity": 1,
+          "text": "CUDA injection initialized successfully.",
+          "globalPid": 281743009513472
+        },
+        {
+          "timestamp": 1998108537,
+          "timestampType": 1,
+          "source": 1,
+          "severity": 1,
+          "text": "Number of CUPTI events produced: \t90875, CUPTI buffers: 20.",
+          "globalPid": 281743009513472
+        },
+        {
+          "timestamp": 1998119396,
+          "timestampType": 1,
+          "source": 1,
+          "severity": 1,
+          "text": "CUDA hardware tracing is not supported on this system. A legacy (software instrumented) trace was collected instead.",
+          "globalPid": 281743009513472
+        },
+        {
+          "timestamp": 1998322518,
+          "timestampType": 1,
+          "source": 1,
+          "severity": 1,
+          "text": "Number of CUPTI events produced: \t90878, CUPTI buffers: 20.",
+          "globalPid": 281743009513472
+        },
+        {
+          "timestamp": 2427423000,
+          "timestampType": 1,
+          "source": 3,
+          "severity": 1,
+          "text": "Profiling has stopped.",
+          "globalPid": -144115188075855872
+        }
+      ],
+      "throughput_claim": false
+    },
+    "consumer_build": {
+      "passed": true,
+      "consumer_CXX": 1,
+      "test_CXX": 1,
+      "product_CXX": 0,
+      "links": 2,
+      "GPU": 0,
+      "SDK": 0,
+      "NVCC": 0,
+      "images": {
+        "qwen": {
+          "image": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-bf16-top1\\checks\\qwen.exe",
+            "bytes": 117833216,
+            "sha256": "a942c48d76e9d000208eeb01c0bfa44df28ae034c51eca3ed8c0769bf8056fbd"
+          },
+          "link_plan": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-bf16-top1\\checks\\qwen-link-plan.json",
+            "bytes": 64465,
+            "sha256": "014b556910f2694467424532776cd368c17fba5062375f58a04eb5f37a03f9d3"
+          }
+        },
+        "topk": {
+          "image": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-bf16-top1\\checks\\topk.exe",
+            "bytes": 117071872,
+            "sha256": "ec9fff4e40684d6467d63faf77d93d1d379e18dea8919e47e24fb6e61fa8ac3f"
+          },
+          "link_plan": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-bf16-top1\\checks\\topk-link-plan.json",
+            "bytes": 65556,
+            "sha256": "c252053cf429c84e2805e2127a5f25f8ec9a71e8ddf4e47446535b5a35cd3813"
+          }
+        }
+      },
+      "test_filter_for_root": "CudaCccl.VocabularyBfloatTopOneMatchesCastFloatAcrossBlocks:CudaCccl.SingleRowTopOneDenseAndGenericLayoutsKeepStableOriginalBits:CudaCccl.TopKFourTypesStableTiesNaNsAndOriginalBits",
+      "consumer_ready": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-bf16-top1\\consumer\\source-freeze.json",
+        "bytes": 1647,
+        "sha256": "ef9e5eecdb3f076ed340b422b6525187be1da2036276a8bce4490ac59e31b902"
+      },
+      "test_ready": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-bf16-top1\\tests\\source-freeze.json",
+        "bytes": 1284,
+        "sha256": "2be874372cc5c64531f2e814001994fda8e465b81f87f1010d2977c712edb72d"
+      },
+      "correctness_not_run": true,
+      "performance_not_run": true
+    },
+    "local_isolation": {
+      "directory": "isolation",
+      "evidence_prefix": "local-isolation/",
+      "conclusion": "Use root decision and actual retained local outputs; this publication does not infer a result from fewer casts."
+    }
+  },
+  "windows": {
+    "timing": {
+      "groups": {
+        "baseline": {
+          "prefill_tokens_per_second": {
+            "samples": [
+              2047.7182339710057,
+              2001.8673669031891,
+              1992.0938774239735
+            ],
+            "median": 2001.8673669031891
+          },
+          "full_decode_tokens_per_second": {
+            "samples": [
+              103.53024786477212,
+              104.98755220167364,
+              104.8923837978487
+            ],
+            "median": 104.8923837978487
+          },
+          "warm7_end_tokens_per_second": {
+            "samples": [
+              107.20756456575576,
+              109.08518112721644,
+              108.38613906028351
+            ],
+            "median": 108.38613906028351
+          }
+        },
+        "current": {
+          "prefill_tokens_per_second": {
+            "samples": [
+              2058.9006435673027,
+              2112.0230210509294,
+              1999.100404817832
+            ],
+            "median": 2058.9006435673027
+          },
+          "full_decode_tokens_per_second": {
+            "samples": [
+              104.41479214046282,
+              103.90077007228813,
+              102.97043121027127
+            ],
+            "median": 103.90077007228813
+          },
+          "warm7_end_tokens_per_second": {
+            "samples": [
+              107.92646495066467,
+              107.60380108275248,
+              107.62256164943199
+            ],
+            "median": 107.62256164943199
+          }
+        },
+        "llama": {
+          "prefill_tokens_per_second": {
+            "samples": [
+              1300.9438957781322,
+              1415.4250366572967,
+              1347.3060195106752
+            ],
+            "median": 1347.3060195106752
+          },
+          "full_decode_tokens_per_second": {
+            "samples": [
+              104.5308386205706,
+              104.95883074508242,
+              106.21068705637767
+            ],
+            "median": 104.95883074508242
+          },
+          "warm7_end_tokens_per_second": {
+            "samples": [
+              106.98450479226392,
+              106.72978239078127,
+              108.31410396940863
+            ],
+            "median": 106.98450479226392
+          }
+        }
+      },
+      "current_over_baseline": {
+        "prefill_tokens_per_second": 1.0284900376553627,
+        "full_decode_tokens_per_second": 0.9905463705785195,
+        "warm7_end_tokens_per_second": 0.9929550271144281
+      },
+      "current_over_llama": {
+        "prefill_tokens_per_second": 1.5281610961072303,
+        "full_decode_tokens_per_second": 0.9899192791565671,
+        "warm7_end_tokens_per_second": 1.0059640118763649
+      },
+      "processes_per_arm": 3,
+      "current_matches_baseline_ids": true
+    },
+    "long-timing": {
+      "groups": {
+        "baseline": {
+          "prefill_tokens_per_second": {
+            "samples": [
+              1904.6882114680086,
+              1796.5996544352854,
+              2015.3671747071419
+            ],
+            "median": 1904.6882114680086
+          },
+          "full_decode_tokens_per_second": {
+            "samples": [
+              99.30776234041653,
+              98.66700871229686,
+              106.77809703774858
+            ],
+            "median": 99.30776234041653
+          },
+          "warm7_end_tokens_per_second": {
+            "samples": [
+              99.99720668959826,
+              99.5425075711949,
+              107.65499048943785
+            ],
+            "median": 99.99720668959826
+          }
+        },
+        "current": {
+          "prefill_tokens_per_second": {
+            "samples": [
+              2010.1007563004098,
+              2021.6793521781226,
+              1894.584153579728
+            ],
+            "median": 2010.1007563004098
+          },
+          "full_decode_tokens_per_second": {
+            "samples": [
+              101.81362126759883,
+              98.49840347272797,
+              96.97906397640125
+            ],
+            "median": 98.49840347272797
+          },
+          "warm7_end_tokens_per_second": {
+            "samples": [
+              102.86568495964264,
+              99.17080909693013,
+              98.08482489143185
+            ],
+            "median": 99.17080909693013
+          }
+        },
+        "llama": {
+          "prefill_tokens_per_second": {
+            "samples": [
+              1361.4254975850652,
+              1307.8373172987028,
+              1285.5484270109794
+            ],
+            "median": 1307.8373172987028
+          },
+          "full_decode_tokens_per_second": {
+            "samples": [
+              101.88239354312711,
+              99.53431265169675,
+              101.16657809944324
+            ],
+            "median": 101.16657809944324
+          },
+          "warm7_end_tokens_per_second": {
+            "samples": [
+              102.34573030529815,
+              99.98629939798332,
+              101.75357571315381
+            ],
+            "median": 101.75357571315381
+          }
+        }
+      },
+      "current_over_baseline": {
+        "prefill_tokens_per_second": 1.0553437272293276,
+        "full_decode_tokens_per_second": 0.9918499939117129,
+        "warm7_end_tokens_per_second": 0.9917357932283714
+      },
+      "current_over_llama": {
+        "prefill_tokens_per_second": 1.5369654388301217,
+        "full_decode_tokens_per_second": 0.973625927882106,
+        "warm7_end_tokens_per_second": 0.9746174363100067
+      },
+      "processes_per_arm": 3,
+      "current_matches_baseline_ids": true
+    }
+  },
+  "window_analysis": {
+    "timing": {
+      "ratios_percent": {
+        "current_over_baseline": {
+          "prefill_tokens_per_second": 2.849003765536273,
+          "full_decode_tokens_per_second": -0.9453629421480536,
+          "warm7_end_tokens_per_second": -0.7044972885571932
+        },
+        "current_over_llama": {
+          "prefill_tokens_per_second": 52.816109610723025,
+          "full_decode_tokens_per_second": -1.0080720843432922,
+          "warm7_end_tokens_per_second": 0.5964011876364861
+        }
+      },
+      "arms": {
+        "baseline": {
+          "warm_cold_us": [
+            64.9,
+            51.9,
+            55.699999999999996
+          ],
+          "submit_seconds_median_us": [
+            47.7,
+            40.800000000000004,
+            44.7
+          ],
+          "seconds_median_us": [
+            9071.4,
+            8926.9,
+            9015.0
+          ]
+        },
+        "current": {
+          "warm_cold_us": [
+            58.8,
+            65.9,
+            75.0
+          ],
+          "submit_seconds_median_us": [
+            43.300000000000004,
+            49.2,
+            55.099999999999994
+          ],
+          "seconds_median_us": [
+            9087.3,
+            9109.8,
+            8973.6
+          ]
+        }
+      },
+      "peer_prediction_differences": {
+        "03-llama": [],
+        "04-llama": [],
+        "08-llama": []
+      }
+    },
+    "long-timing": {
+      "ratios_percent": {
+        "current_over_baseline": {
+          "prefill_tokens_per_second": 5.534372722932757,
+          "full_decode_tokens_per_second": -0.8150006088287087,
+          "warm7_end_tokens_per_second": -0.8264206771628646
+        },
+        "current_over_llama": {
+          "prefill_tokens_per_second": 53.69654388301217,
+          "full_decode_tokens_per_second": -2.6374072117894,
+          "warm7_end_tokens_per_second": -2.5382563689993254
+        }
+      },
+      "arms": {
+        "baseline": {
+          "warm_cold_us": [
+            82.0,
+            93.1,
+            69.2
+          ],
+          "submit_seconds_median_us": [
+            57.2,
+            64.39999999999999,
+            46.699999999999996
+          ],
+          "seconds_median_us": [
+            9804.4,
+            9878.5,
+            9079.9
+          ]
+        },
+        "current": {
+          "warm_cold_us": [
+            97.80000000000001,
+            92.39999999999999,
+            94.7
+          ],
+          "submit_seconds_median_us": [
+            64.5,
+            62.9,
+            67.7
+          ],
+          "seconds_median_us": [
+            9577.300000000001,
+            9816.9,
+            9960.1
+          ]
+        }
+      },
+      "peer_prediction_differences": {
+        "03-llama": [],
+        "04-llama": [],
+        "08-llama": []
+      }
+    }
+  },
+  "independent_timing_review": {
+    "reviewer": "vulkan_paged_runtime_fix",
+    "method": "Independent parsing of original Hyle stderr key/value lines plus stdout final JSON, and original llama peer phase JSON. No author script imports, compilation, GPU execution, new measurement, source changes, or removal of slow samples. Rates calculated per process, then median across exactly three fresh processes per arm.",
+    "scope": "This retained D1 product closure with only the candidate consumer main object replaced; not a rebuild of all current format owners. Image identities below come from original inputs metadata, not a new executable/dependency rehash.",
+    "formulas": {
+      "prefill_tps": "128 / phase0.step_seconds",
+      "full_decode_tps": "decode_tokens / sum(phase1..end.step_seconds)",
+      "warm7_end_tps": "(phase_count-7) / sum(phase7..end.step_seconds)",
+      "warm_cold_batch_us": "median(cold_batch_seconds[7:])*1e6, independently per Hyle process",
+      "observed_spread_percent": "100*(max(process_rates)/min(process_rates)-1); descriptive within-arm variability, not a confidence interval or a proven drift mechanism"
+    },
+    "windows": {
+      "timing": {
+        "process_count": 9,
+        "processes_per_arm": 3,
+        "distinct_pids": [
+          85228,
+          99556,
+          88388,
+          97836,
+          95172,
+          76744,
+          103908,
+          89872,
+          94976
+        ],
+        "all_exit_zero": true,
+        "process_intervals_do_not_overlap": true,
+        "decode_tokens": 31,
+        "warm7_end_decode_tokens": 25,
+        "final_visible_tokens": 159,
+        "repeated_original31_tape": false,
+        "groups": {
+          "baseline": {
+            "prefill_tokens_per_second": {
+              "samples": [
+                2047.7182339710057,
+                2001.8673669031891,
+                1992.0938774239735
+              ],
+              "median": 2001.8673669031891,
+              "min": 1992.0938774239735,
+              "max": 2047.7182339710057,
+              "observed_spread_percent": 2.7922557856039143
+            },
+            "full_decode_tokens_per_second": {
+              "samples": [
+                103.53024786477212,
+                104.98755220167364,
+                104.8923837978487
+              ],
+              "median": 104.8923837978487,
+              "min": 103.53024786477212,
+              "max": 104.98755220167364,
+              "observed_spread_percent": 1.407612139405856
+            },
+            "warm7_end_tokens_per_second": {
+              "samples": [
+                107.20756456575576,
+                109.08518112721644,
+                108.38613906028351
+              ],
+              "median": 108.38613906028351,
+              "min": 107.20756456575576,
+              "max": 109.08518112721644,
+              "observed_spread_percent": 1.7513844000336842
+            }
+          },
+          "current": {
+            "prefill_tokens_per_second": {
+              "samples": [
+                2058.9006435673027,
+                2112.0230210509294,
+                1999.100404817832
+              ],
+              "median": 2058.9006435673027,
+              "min": 1999.100404817832,
+              "max": 2112.0230210509294,
+              "observed_spread_percent": 5.648671570520114
+            },
+            "full_decode_tokens_per_second": {
+              "samples": [
+                104.41479214046282,
+                103.90077007228813,
+                102.97043121027127
+              ],
+              "median": 103.90077007228813,
+              "min": 102.97043121027127,
+              "max": 104.41479214046282,
+              "observed_spread_percent": 1.4026948447385612
+            },
+            "warm7_end_tokens_per_second": {
+              "samples": [
+                107.92646495066467,
+                107.60380108275248,
+                107.62256164943199
+              ],
+              "median": 107.62256164943199,
+              "min": 107.60380108275248,
+              "max": 107.92646495066467,
+              "observed_spread_percent": 0.2998628902189493
+            }
+          },
+          "llama": {
+            "prefill_tokens_per_second": {
+              "samples": [
+                1300.9438957781322,
+                1415.4250366572967,
+                1347.3060195106752
+              ],
+              "median": 1347.3060195106752,
+              "min": 1300.9438957781322,
+              "max": 1415.4250366572967,
+              "observed_spread_percent": 8.799852265011786
+            },
+            "full_decode_tokens_per_second": {
+              "samples": [
+                104.5308386205706,
+                104.95883074508242,
+                106.21068705637767
+              ],
+              "median": 104.95883074508242,
+              "min": 104.5308386205706,
+              "max": 106.21068705637767,
+              "observed_spread_percent": 1.607036218186897
+            },
+            "warm7_end_tokens_per_second": {
+              "samples": [
+                106.98450479226392,
+                106.72978239078127,
+                108.31410396940863
+              ],
+              "median": 106.98450479226392,
+              "min": 106.72978239078127,
+              "max": 108.31410396940863,
+              "observed_spread_percent": 1.4844231320799706
+            }
+          }
+        },
+        "percent_change_current_vs": {
+          "baseline": {
+            "prefill_tokens_per_second": 2.849003765536273,
+            "full_decode_tokens_per_second": -0.9453629421480536,
+            "warm7_end_tokens_per_second": -0.7044972885571932
+          },
+          "llama": {
+            "prefill_tokens_per_second": 52.816109610723025,
+            "full_decode_tokens_per_second": -1.0080720843432922,
+            "warm7_end_tokens_per_second": 0.5964011876364861
+          }
+        },
+        "all_predicted_ids_and_forced_input_ids_equal": true,
+        "capture": {
+          "hyle_each_of_six_processes": {
+            "recorded_phases": [
+              0,
+              1,
+              2
+            ],
+            "reused_phase_range": [
+              3,
+              31
+            ],
+            "reused_count": 29,
+            "route": "hybrid"
+          },
+          "peer_each_of_three_processes": {
+            "graph_reuse_messages": 30,
+            "warmup_complete_messages": 1
+          }
+        },
+        "preparation": {
+          "baseline": [
+            {
+              "tag": "01-baseline",
+              "warm_cold_batch_median_us": 64.9,
+              "first2_decode_cold_batch_total_ms": 9.6114
+            },
+            {
+              "tag": "05-baseline",
+              "warm_cold_batch_median_us": 51.9,
+              "first2_decode_cold_batch_total_ms": 9.002099999999999
+            },
+            {
+              "tag": "09-baseline",
+              "warm_cold_batch_median_us": 55.699999999999996,
+              "first2_decode_cold_batch_total_ms": 9.064300000000001
+            }
+          ],
+          "current": [
+            {
+              "tag": "02-current",
+              "warm_cold_batch_median_us": 58.8,
+              "first2_decode_cold_batch_total_ms": 8.9563
+            },
+            {
+              "tag": "06-current",
+              "warm_cold_batch_median_us": 65.9,
+              "first2_decode_cold_batch_total_ms": 8.876499999999998
+            },
+            {
+              "tag": "07-current",
+              "warm_cold_batch_median_us": 75.0,
+              "first2_decode_cold_batch_total_ms": 11.3599
+            }
+          ]
+        },
+        "author_summary_matches_raw": true,
+        "image_sha256": {
+          "baseline": "6e09735e395e86412d4588cf67507fe5902d149e3e03f674b688ddde5cddf1f8",
+          "current": "a942c48d76e9d000208eeb01c0bfa44df28ae034c51eca3ed8c0769bf8056fbd",
+          "llama": "fb169f0282f2a834a61b3e887edaba92d8699814558b0c5f1a13aaf07e0de969"
+        }
+      },
+      "long-timing": {
+        "process_count": 9,
+        "processes_per_arm": 3,
+        "distinct_pids": [
+          47908,
+          88276,
+          102196,
+          98980,
+          2656,
+          3008,
+          92500,
+          87368,
+          26944
+        ],
+        "all_exit_zero": true,
+        "process_intervals_do_not_overlap": true,
+        "decode_tokens": 127,
+        "warm7_end_decode_tokens": 121,
+        "final_visible_tokens": 255,
+        "repeated_original31_tape": true,
+        "groups": {
+          "baseline": {
+            "prefill_tokens_per_second": {
+              "samples": [
+                1904.6882114680086,
+                1796.5996544352854,
+                2015.3671747071419
+              ],
+              "median": 1904.6882114680086,
+              "min": 1796.5996544352854,
+              "max": 2015.3671747071419,
+              "observed_spread_percent": 12.176753999244227
+            },
+            "full_decode_tokens_per_second": {
+              "samples": [
+                99.30776234041653,
+                98.66700871229686,
+                106.77809703774858
+              ],
+              "median": 99.30776234041653,
+              "min": 98.66700871229686,
+              "max": 106.77809703774858,
+              "observed_spread_percent": 8.220669128728563
+            },
+            "warm7_end_tokens_per_second": {
+              "samples": [
+                99.99720668959826,
+                99.5425075711949,
+                107.65499048943785
+              ],
+              "median": 99.99720668959826,
+              "min": 99.5425075711949,
+              "max": 107.65499048943785,
+              "observed_spread_percent": 8.1497674874633
+            }
+          },
+          "current": {
+            "prefill_tokens_per_second": {
+              "samples": [
+                2010.1007563004098,
+                2021.6793521781226,
+                1894.584153579728
+              ],
+              "median": 2010.1007563004098,
+              "min": 1894.584153579728,
+              "max": 2021.6793521781226,
+              "observed_spread_percent": 6.7083427441454235
+            },
+            "full_decode_tokens_per_second": {
+              "samples": [
+                101.81362126759883,
+                98.49840347272797,
+                96.97906397640125
+              ],
+              "median": 98.49840347272797,
+              "min": 96.97906397640125,
+              "max": 101.81362126759883,
+              "observed_spread_percent": 4.985155654187401
+            },
+            "warm7_end_tokens_per_second": {
+              "samples": [
+                102.86568495964264,
+                99.17080909693013,
+                98.08482489143185
+              ],
+              "median": 99.17080909693013,
+              "min": 98.08482489143185,
+              "max": 102.86568495964264,
+              "observed_spread_percent": 4.874209719498013
+            }
+          },
+          "llama": {
+            "prefill_tokens_per_second": {
+              "samples": [
+                1361.4254975850652,
+                1307.8373172987028,
+                1285.5484270109794
+              ],
+              "median": 1307.8373172987028,
+              "min": 1285.5484270109794,
+              "max": 1361.4254975850652,
+              "observed_spread_percent": 5.902311338866251
+            },
+            "full_decode_tokens_per_second": {
+              "samples": [
+                101.88239354312711,
+                99.53431265169675,
+                101.16657809944324
+              ],
+              "median": 101.16657809944324,
+              "min": 99.53431265169675,
+              "max": 101.88239354312711,
+              "observed_spread_percent": 2.3590667669018517
+            },
+            "warm7_end_tokens_per_second": {
+              "samples": [
+                102.34573030529815,
+                99.98629939798332,
+                101.75357571315381
+              ],
+              "median": 101.75357571315381,
+              "min": 99.98629939798332,
+              "max": 102.34573030529815,
+              "observed_spread_percent": 2.35975420784742
+            }
+          }
+        },
+        "percent_change_current_vs": {
+          "baseline": {
+            "prefill_tokens_per_second": 5.534372722932757,
+            "full_decode_tokens_per_second": -0.8150006088287087,
+            "warm7_end_tokens_per_second": -0.8264206771628646
+          },
+          "llama": {
+            "prefill_tokens_per_second": 53.69654388301217,
+            "full_decode_tokens_per_second": -2.6374072117894,
+            "warm7_end_tokens_per_second": -2.5382563689993254
+          }
+        },
+        "all_predicted_ids_and_forced_input_ids_equal": true,
+        "capture": {
+          "hyle_each_of_six_processes": {
+            "recorded_phases": [
+              0,
+              1,
+              2
+            ],
+            "reused_phase_range": [
+              3,
+              127
+            ],
+            "reused_count": 125,
+            "route": "hybrid"
+          },
+          "peer_each_of_three_processes": {
+            "graph_reuse_messages": 126,
+            "warmup_complete_messages": 1
+          }
+        },
+        "preparation": {
+          "baseline": [
+            {
+              "tag": "01-baseline",
+              "warm_cold_batch_median_us": 82.0,
+              "first2_decode_cold_batch_total_ms": 9.815299999999999
+            },
+            {
+              "tag": "05-baseline",
+              "warm_cold_batch_median_us": 93.1,
+              "first2_decode_cold_batch_total_ms": 11.4892
+            },
+            {
+              "tag": "09-baseline",
+              "warm_cold_batch_median_us": 69.2,
+              "first2_decode_cold_batch_total_ms": 9.1631
+            }
+          ],
+          "current": [
+            {
+              "tag": "02-current",
+              "warm_cold_batch_median_us": 97.80000000000001,
+              "first2_decode_cold_batch_total_ms": 11.7708
+            },
+            {
+              "tag": "06-current",
+              "warm_cold_batch_median_us": 92.39999999999999,
+              "first2_decode_cold_batch_total_ms": 9.586399999999998
+            },
+            {
+              "tag": "07-current",
+              "warm_cold_batch_median_us": 94.7,
+              "first2_decode_cold_batch_total_ms": 10.4769
+            }
+          ]
+        },
+        "author_summary_matches_raw": true,
+        "image_sha256": {
+          "baseline": "6e09735e395e86412d4588cf67507fe5902d149e3e03f674b688ddde5cddf1f8",
+          "current": "a942c48d76e9d000208eeb01c0bfa44df28ae034c51eca3ed8c0769bf8056fbd",
+          "llama": "2bb2a20fbaba48f6aa87713845e8bc5b0a8f7478e79edc1fd6cd91984acdfb7a"
+        }
+      }
+    },
+    "raw_identity_manifest": {
+      "member_count": 64,
+      "sha256_of_path_sorted_compact_json": "c3ba0bfdf91ad12edb84f73650dda95c2fea62f893d715567d209d4477c5913c",
+      "selection": "Both windows: all09 process result.json/stderr.log/stdout.log, all03 llama-peer-result.json, inputs.json, summary.json. Identity entries are relative path, bytes, sha256; original members remain separately retained."
+    },
+    "judgment": {
+      "observed_result": "Candidate medians are lower than baseline in both full-decode and warm7-end windows. Short full -0.94536%, warm -0.70450%; long full -0.81500%, warm -0.82642%. No demonstrated throughput benefit.",
+      "not_signed": [
+        "speedup",
+        "no-regression",
+        "statistical significance",
+        "a proven performance regression magnitude",
+        "independent quality acceptance",
+        "whole-current-build validation"
+      ],
+      "variability": "Long baseline full-decode process rates range 98.6670..106.7781 tokens/s (8.22067% max/min spread); current and peer also vary. This is larger than the median candidate/baseline delta. Time ordering is rotated but there is no same-image A/A control or stationarity proof; neither attributing the entire delta to the change nor dismissing it as mere timer resolution is justified.",
+      "correctness_vs_performance": "The separately completed three TopK tests and 64 byte-equal vectors establish tested semantic compatibility. Structural reduction to 595 kernels/54 Casts verifies removal of a physical conversion, not a wall-time gain. This review does not rerun these checks or infer timing from profiler duration/counts.",
+      "next_experiment": "No additional full-model window or broader D2 search is necessary to justify keeping the baseline when a candidate has no demonstrated benefit. One bounded same-process actual-vocabulary BF16-Top1 versus Cast-to-F32-Top1 control can explain local cost if already prepared; it cannot establish end-to-end gain or no-regression. If it yields no material local saving, close this candidate, revert the consumer change, retain its semantic regression test and negative evidence. Do not increase repeated full-window sampling merely to obtain a favorable sign."
+    },
+    "fairness_limits": [
+      "All metrics retain the complete host-token phase endpoint, including current cold preparation/capture, submit/wait/read. Full decode excludes prefill but includes initial two decode captures; warm7-end excludes decode1..6 in both arms.",
+      "Peer retains official F32 intermediate/logits consumer work including 248320 F32 logits per phase; Hyle BF16 boundary arithmetic differs. This is actual consumer-path comparison, not identical intermediate precision.",
+      "Long window uses 128 prompt plus127 repeated/truncated fixed decode inputs; matching predicted IDs is not free generation or quality acceptance.",
+      "Retained normal progress/graph logging and coarse peer memory snapshots exist; no new D1 buckets/profiler/external sampler/build within timing windows.",
+      "Logical read/write byte reductions are not measured DRAM bytes. Kernel/event counts and accumulated profiler durations are not additive wall-time savings.",
+      "The separate software profiler warns of unsupported driver fallback and software tracing; it is only structural evidence here."
+    ]
+  },
+  "local_observation": {
+    "process": {
+      "tag": "bench",
+      "command": [
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-bf16-top1\\isolation\\checks\\bench.exe",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode7\\logits.f32"
+      ],
+      "cwd": "C:\\public\\project-hyle\\hyle",
+      "started": 1792494769.317067,
+      "exit": 0,
+      "pid": 94000,
+      "finished": 1792494770.2471595,
+      "terminal": true
+    },
+    "observation": {
+      "completed": true,
+      "route": "commands",
+      "input_dtype": "BF16",
+      "width": 248320,
+      "input_fnv1a64": 9169576016234394200,
+      "expected_token": 10462,
+      "expected_value_f32_bits": 1102118912,
+      "cold_prepares": 2,
+      "warmup_per_arm": 32,
+      "primary_cycles": 64,
+      "primary_samples_per_arm": 128,
+      "direct_wall_us_median": 39.95,
+      "cast_wall_us_median": 44.05,
+      "paired_cast_minus_direct_us_median": 2.25,
+      "direct_wall_us": [
+        33.8,
+        59,
+        58.7,
+        32.8,
+        32.8,
+        47.9,
+        33.1,
+        33,
+        32.4,
+        33.2,
+        33.2,
+        47.3,
+        47.4,
+        33,
+        62.4,
+        48.3,
+        41.8,
+        32.8,
+        60.4,
+        32.8,
+        46.1,
+        48.8,
+        48.5,
+        45.9,
+        33.3,
+        32.4,
+        32.5,
+        32.4,
+        48,
+        32.7,
+        60.6,
+        32.5,
+        32.6,
+        32.5,
+        53.5,
+        33.1,
+        44,
+        32.9,
+        51,
+        40.6,
+        54.2,
+        34.8,
+        32.5,
+        32.4,
+        34.8,
+        51,
+        35.9,
+        34,
+        51.4,
+        41.6,
+        50.3,
+        32.9,
+        60.8,
+        32.8,
+        33.1,
+        32.4,
+        34,
+        37.3,
+        36.1,
+        57.4,
+        69.8,
+        38,
+        37,
+        57.6,
+        34.7,
+        35.3,
+        54.6,
+        44.4,
+        46.1,
+        56.8,
+        35.7,
+        33.8,
+        36.4,
+        38.1,
+        311.4,
+        294.9,
+        37.4,
+        48.5,
+        44.8,
+        53.3,
+        36.4,
+        39.4,
+        59.5,
+        34.7,
+        61.9,
+        48.3,
+        41.8,
+        45.5,
+        60.3,
+        61,
+        32.9,
+        33,
+        47.5,
+        32.9,
+        43.4,
+        47,
+        32.6,
+        33.1,
+        42.8,
+        32.9,
+        59.8,
+        34.2,
+        43.3,
+        49,
+        42.2,
+        46.1,
+        33,
+        32.6,
+        33.3,
+        32.5,
+        61.1,
+        33,
+        61.5,
+        32.9,
+        43.5,
+        45.1,
+        32.8,
+        47.9,
+        47.6,
+        32.8,
+        40.5,
+        41.7,
+        33.7,
+        32.9,
+        47.8,
+        33,
+        43.4,
+        48
+      ],
+      "cast_wall_us": [
+        45.6,
+        37.8,
+        37.3,
+        44.6,
+        37.1,
+        50.6,
+        37.5,
+        69.2,
+        37.1,
+        44.1,
+        44,
+        38.1,
+        37.8,
+        37.7,
+        37.2,
+        37.9,
+        45.8,
+        37.6,
+        37.2,
+        45.3,
+        38.7,
+        47.2,
+        37.7,
+        39.7,
+        37.9,
+        49.1,
+        51.6,
+        69.8,
+        44.4,
+        37.6,
+        37.3,
+        44.3,
+        37.1,
+        49.2,
+        37,
+        37.6,
+        52.6,
+        49.4,
+        38.2,
+        37.8,
+        60.5,
+        98.4,
+        43.1,
+        62.3,
+        44.5,
+        37.4,
+        49.9,
+        60.1,
+        39.8,
+        46.3,
+        54.8,
+        36.8,
+        37.5,
+        92.3,
+        45,
+        72.6,
+        38.5,
+        238.8,
+        74.1,
+        41.5,
+        42.2,
+        53.6,
+        55.8,
+        55.2,
+        64.6,
+        48.6,
+        39.1,
+        39.3,
+        105.4,
+        41.2,
+        46.9,
+        66,
+        59.8,
+        41.6,
+        183.7,
+        41.1,
+        58.3,
+        302.1,
+        39.4,
+        48.4,
+        46.7,
+        85.5,
+        55.9,
+        38.7,
+        40.8,
+        49.6,
+        38,
+        65,
+        54.5,
+        73.6,
+        64.4,
+        59.8,
+        38.5,
+        44.1,
+        37.4,
+        38,
+        37.8,
+        54.8,
+        55.4,
+        37.4,
+        37.8,
+        44,
+        37.6,
+        38.2,
+        44.2,
+        37.4,
+        45.5,
+        69.5,
+        37.4,
+        49,
+        36.6,
+        37.4,
+        37.6,
+        44.7,
+        37.8,
+        48.2,
+        37.1,
+        58.6,
+        38.1,
+        37.9,
+        45.3,
+        37.7,
+        44,
+        62.7,
+        38.2,
+        44.1,
+        37.8,
+        37.9
+      ],
+      "paired_cast_minus_direct_us": [
+        -4.7,
+        -4.8,
+        3.5,
+        20.3,
+        7.8,
+        0.8,
+        -2.45,
+        -17.8,
+        4.4,
+        -5.35,
+        -4.5,
+        -8.5,
+        10.65,
+        28.25,
+        0.65,
+        -5.75,
+        10.6,
+        -6,
+        12.55,
+        -7.8,
+        34.95,
+        20.25,
+        -1.95,
+        20.05,
+        -3.45,
+        4.2,
+        18.1,
+        26.05,
+        103,
+        11.05,
+        -6,
+        8.2,
+        21.6,
+        -10.3,
+        21.85,
+        21.7,
+        13.45,
+        -190.75,
+        137.25,
+        -5.15,
+        28.2,
+        0.2,
+        -9.9,
+        7.85,
+        3.4,
+        29.15,
+        1.1,
+        -7.5,
+        13.45,
+        8.55,
+        -6.1,
+        -8.25,
+        -3.35,
+        24.7,
+        10.3,
+        -10.05,
+        -6.05,
+        -1.3,
+        7.5,
+        -2.2,
+        0.4,
+        20.05,
+        0.75,
+        -7.85
+      ],
+      "aux_event_cycles": 8,
+      "direct_stream_us_median": 16.9919999316,
+      "cast_stream_us_median": 32.7679989859,
+      "direct_stream_us": [
+        22.528000176,
+        16.3839999586,
+        16.9600006193,
+        17.023999244,
+        16.3839999586,
+        16.3839999586,
+        16.3839999586,
+        16.3839999586,
+        45.3119985759,
+        43.0079996586,
+        42.7840016782,
+        16.4800006896,
+        45.3439988196,
+        42.9119989276,
+        17.216000706,
+        16.3839999586
+      ],
+      "cast_stream_us": [
+        25.5999993533,
+        39.9359986186,
+        45.0560003519,
+        22.4959999323,
+        22.3680008203,
+        49.0240007639,
+        45.9839999676,
+        21.5039998293,
+        41.9839993119,
+        21.5039998293,
+        21.5039998293,
+        21.5039998293,
+        40.9599989653,
+        22.528000176,
+        40.9599989653,
+        51.0720014572
+      ],
+      "both_values_and_tokens_verified": true,
+      "profiler": false,
+      "wall_boundary": "public-submit+original-completion-wait-and-destruction+4B-host-token-read",
+      "limit": "One hot logits row, same Commands route, correlated within-process ABBA/BAAB samples; stream event intervals include host admission gaps and are not kernel-only or full-model throughput"
+    },
+    "independent_processes": 1,
+    "correlated_samples": true,
+    "full_model_throughput_claim": false,
+    "captured_model_suffix_equivalence": false,
+    "limitation": "Both Commands routes; the original Cast belongs to a larger captured model segment. Hot row observation cannot assign full-model delta."
+  },
+  "bandwidth_review": {
+    "scope": "Read-only reconciliation of retained historical counters/hotspots with the one just-completed Top1 isolation; zero new GPU/build/profiler.",
+    "conclusion": "Historical sampled large projections are strongly DRAM constrained; this dilutes the whole-step significance of tiny suffix savings. It does not prove every current kernel or the entire decode is DRAM-saturated, and it does not explain or establish the candidate full-model slowdown.",
+    "head_hardware_counter": {
+      "source": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projection-hotspot-review\\review.json",
+        "bytes": 76191,
+        "sha256": "962dd06fed26c42e9be0f93c1486118766d5f6a1d26c686d7d2b1ef004e5c979",
+        "line": 1757
+      },
+      "original_raw": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-current-peer\\ncu\\with-runtime\\hyle.stdout.log",
+        "bytes": 14929,
+        "sha256": "8ff436eeab2f31dcfb2b27080776329647beb7830eb7cb1b7c358a8cd8f1c682"
+      },
+      "shape_role": "BF16 W[248320,2048], one LM-head invocation",
+      "observed": {
+        "duration_ns": 2077472.0,
+        "dram_total_bytes": 1020501120.0,
+        "dram_pct_peak": 97.55,
+        "measured_total_GB_s": 491.222562807104,
+        "replay_passes": 7.0,
+        "memory_backup_max_bytes": 3898367243.0,
+        "cache_control": "none",
+        "clock_control": "none"
+      },
+      "meaning": "This one sampled carrier reached97.55% of NCU sustained DRAM peak and491.223GB/s total measured DRAM traffic. This is evidence of little unused bandwidth in that sampled carrier, not an aggregate current-model measurement.",
+      "limits": [
+        "Historical separate acquisition, seven kernel-replay passes, uncontrolled caches/clocks. Backup bytes are replay bookkeeping, not kernel traffic.",
+        "Total measured DRAM read+write traffic is not useful-weight-only bytes. Hyle/peer intermediate types differ, and their counter processes were not simultaneous."
+      ]
+    },
+    "dual_ffn_hardware_counter": {
+      "source": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cold-capture-topology\\projection-readonly-review.json",
+        "bytes": 6165,
+        "sha256": "b991f1c53413b8ba54953521c84ec91c5b33df32113768ba5dfdf7ecf1243701",
+        "line": 36
+      },
+      "observed": {
+        "dram_read_bytes": 50827648,
+        "dram_write_bytes": 7368832,
+        "duration_ns": 124672,
+        "dram_pct_peak": 92.71,
+        "l2_sector_hit_percent": 0.89,
+        "l2_read_sectors": 1620804,
+        "read_bytes_per_duration_GB_s": 407.69096509240245,
+        "read_plus_write_bytes_per_duration_GB_s": 466.79671457905545,
+        "replay_passes": 5
+      },
+      "logical_weight_payload_bytes": 50331648,
+      "meaning": "One selected N6144/K2048 dual gate/up carrier has low measured L2 hit0.89% and high92.71% DRAM utilization. Its actual read50,827,648B is close to the logical two-bank50,331,648B, consistent with streaming for this node; L2 throughput was32.02% of its own sustained peak.",
+      "limits": [
+        "92.71% includes measured writes. Read-only rate407.691GB/s is below the466.797GB/s read+write rate; do not call useful-weight reads92.71% peak.",
+        "Five replay passes and shared L2/DRAM prevent weight-only or full-model attribution. The separate local-space probe found zero local load/store sectors, while DRAM writes changed; no extra dense intermediate or spill cause is proved."
+      ]
+    },
+    "cache_size_and_negative_optimization": {
+      "source": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projection-hotspot-review\\microbenchmark\\summary.json",
+        "bytes": 2929,
+        "sha256": "ca11b35e97ace5ccc3f7865fae8ef65ee90b706ff7c0fae4045129b7ce64ff81",
+        "line": 12
+      },
+      "actual_device_L2_bytes": 37748736,
+      "already_tested_weight_ring_bytes": 150994944,
+      "row1_and_row2_stream_us_median": 107.52,
+      "meaning": "The old three-bank row-tiling experiment exceeds36MiB L2 and showed equal stream medians despite fewer CTAs. This is a prior negative result, not a new candidate and not a universal cache-residency proof."
+    },
+    "role_geometry_not_physical_traffic": {
+      "source": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-major-hotspots\\review.json",
+        "bytes": 35494,
+        "sha256": "1d76b340466f20535f29198667bc6be67f047558782afdada8aeb7a917c6a3ef",
+        "line": 74
+      },
+      "logical_weight_bytes_per_decode": 3762552832,
+      "head_gateup_down_share_of_logical_weight_bytes": 0.7518985577927959,
+      "hyle_projection_share_of_mean_kernel_elapsed": 0.9242467220629518,
+      "major_roles": [
+        {
+          "role": "FFN_gate_up",
+          "logical_weight_bytes": 1207959552,
+          "hyle_profiled_us_median": 2903.718
+        },
+        {
+          "role": "LM_head",
+          "logical_weight_bytes": 1017118720,
+          "hyle_profiled_us_median": 2120.396
+        },
+        {
+          "role": "FFN_down",
+          "logical_weight_bytes": 603979776,
+          "hyle_profiled_us_median": 1330.1629999999998
+        }
+      ],
+      "meaning": "Historical whole-model trace attributes about92.4% of summed kernel elapsed to projections. Head+gate/up+down are75.19% of logical weights. A one-token BF16 matrix-vector dot has about1 arithmetic operation per logical weight byte by2NK operations/2NK weightbytes, before other traffic; this is geometric reasoning, not a measured whole-model roofline.",
+      "limits": [
+        "3,762,552,832 logical weightbytes per step is tensor geometry, not an aggregate DRAM byte counter. No whole-model DRAM saturation or ideal tokens/s is inferred.",
+        "Projection share is a kernel-duration denominator, not unprofiled end-to-end wall share; traces are historical software-instrumented processes."
+      ]
+    },
+    "launch_latency_and_required_other_work": {
+      "source": {
+        "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\decode-busy-union-2026-10-20.json",
+        "bytes": 26380,
+        "sha256": "868a299acc47f8a9ef9c122c796ae39f2cd3ea57912ffb858bc4aa47f7ae1558",
+        "line": 588
+      },
+      "prior_trace_graph_span_median_us": 9571.17,
+      "prior_trace_graph_device_union_median_us": 9523.355,
+      "prior_trace_graph_internal_no_device_median_us": 47.753,
+      "later_trace_graph_internal_no_device_median_us": 41.608,
+      "meaning": "Most observed graph-interior time is occupied by actual kernels/copies. Required norm/gating/residual/GDN/attention/rounding work and host token completion exist outside projection intervals. Few-kernel savings must be measured by time, not count.",
+      "limits": [
+        "These are separate statistical medians and must not be added/subtracted as one exact phase.",
+        "Software GraphLaunch intervals overlap driver/profiler/host work and are not recoverable wall. Occasional231-767us graph gaps are unassigned; no deterministic Hyle source defect is established.",
+        "Logical bytes/whole-step wall being lower than isolated-head DRAM throughput is not proof of low GPU occupancy; the denominators, bytes and acquisition windows differ."
+      ]
+    },
+    "current_top1_isolation": {
+      "source": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-bf16-top1\\isolation\\observation\\summary.json",
+        "bytes": 6808,
+        "sha256": "601c29dff2ca4e203baac01e79d2f05546e825a8bb2c2322bd4d1a9368e39791"
+      },
+      "observed": {
+        "route": "commands",
+        "width": 248320,
+        "direct_wall_us_median": 39.95,
+        "cast_wall_us_median": 44.05,
+        "paired_cast_minus_direct_us_median": 2.25,
+        "direct_stream_us_median": 16.9919999316,
+        "cast_stream_us_median": 32.7679989859,
+        "primary_samples_per_arm": 128,
+        "aux_event_cycles": 8,
+        "wall_boundary": "public-submit+original-completion-wait-and-destruction+4B-host-token-read"
+      },
+      "independent_processes": 1,
+      "interpretation": "In this one hot-row Commands observation BF16-direct is locally faster. The2.25us paired statistic and4.10us difference of arm medians are different summaries. Neither proves captured whole-model gain or BF16-global slowdown.",
+      "scale_illustration_only": {
+        "assumption": "If2.25us were delivered unchanged to a10ms step, which has not been established",
+        "conditional_step_fraction": 0.000225,
+        "conditional_step_percent": 0.0225
+      },
+      "limits": [
+        "Both Commands routes; the original Cast belongs to a larger captured model segment, so this is not captured-suffix equivalence.",
+        "Stream events16.992/32.768us include host admission gaps; they are not pure kernel time and must not be subtracted from primary wall.",
+        "Within-process correlated samples; no repeated favorable window or extrapolated model gain."
+      ]
+    },
+    "decision_context": "Keep D1 as selected baseline. Retain candidate as an experiment without demonstrated full-model speedup; lack of full-model gain is the reason, not proof that BF16 Top1 itself is slower. DRAM dominance can dilute a microsecond saving, but cannot by itself diagnose the observed negative whole-model deltas.",
+    "official_reference": {
+      "url": "https://docs.nvidia.com/nsight-compute/ComputeTriage/",
+      "purpose": "Official reference for memory/L1/L2/DRAM bottleneck triage; not newly fetched in this read-only task, no fresh claims derived from it."
+    },
+    "new_activity": {
+      "build": 0,
+      "GPU": 0,
+      "profiler": 0,
+      "product_changes": 0
+    }
+  },
+  "limits": [
+    "Short128+31 and long128+127 windows each have three fresh processes per arm; no statistical significance or precise regression mechanism is established. Do not pool the windows.",
+    "Candidate full-decode medians were approximately0.945percent and0.815percent below baseline in the two windows; warm deltas approximately0.704percent and0.826percent. Preserve all raw samples and observed drift.",
+    "596to595 physical kernels and one fewer Cast are structural observations, not speed evidence. Software-traced profiler durations are not uninstrumented wall-time budgets.",
+    "Both real host-token endpoints are retained. Hyle BF16 intermediates and peer F32 intermediates differ; peer also returns sampled full logits. Same weights do not mean identical mathematical work.",
+    "Three CUDA tests and64 identical vectors do not independently accept model quality or complete model/quantization/platform support.",
+    "Environment captures, exe/obj/lib/map, SDK caches, raw nsys/sqlite and repeated hidden/logit tensor payloads are excluded. Their available identities and structural/validation summaries are retained.",
+    "No new memory peak, power/energy, Linux or Apple execution is claimed."
+  ],
+  "archive": {
+    "path": "qwen-bf16-top1-2026-10-20.zip",
+    "bytes": 418261,
+    "sha256": "5fb17ecbc39bac7d5269e821637ebbe98c2923be3a5ba81cd523a3136cb90b64",
+    "members": 192
+  },
+  "payloads": [
+    {
+      "member": "experiment/consumer/after/tools/qwen35_text/main.cc",
+      "bytes": 58940,
+      "sha256": "96dcbeca56ad9b1158ab6e99189b58f2cb08199520993f66e3c8d11424b7e798"
+    },
+    {
+      "member": "experiment/consumer/before/tools/qwen35_text/main.cc",
+      "bytes": 57917,
+      "sha256": "33a3e3de91050ad752935b81d1b5bb82fa9e09a8868ca04b0a028dd832b66a6c"
+    },
+    {
+      "member": "experiment/consumer/implementation.diff",
+      "bytes": 2902,
+      "sha256": "82bd09dd2d3cc1b1823245e6bbd666a73c36f2a24c93e035136808732ea19157"
+    },
+    {
+      "member": "experiment/consumer/source-freeze.json",
+      "bytes": 1647,
+      "sha256": "ef9e5eecdb3f076ed340b422b6525187be1da2036276a8bce4490ac59e31b902"
+    },
+    {
+      "member": "experiment/consumer/source-review.json",
+      "bytes": 2709,
+      "sha256": "483fef691eeb891026bdded23cafb29fff91717313e2b793864d2fffb3f6560f"
+    },
+    {
+      "member": "experiment/tests/after/tests/compute_provider_cuda/collectives_test.cc",
+      "bytes": 22846,
+      "sha256": "91b208e363f9e9da105f3e71bd9cc0c87404fe9c60f51855c488543b30034f47"
+    },
+    {
+      "member": "experiment/tests/source-freeze.json",
+      "bytes": 1284,
+      "sha256": "2be874372cc5c64531f2e814001994fda8e465b81f87f1010d2977c712edb72d"
+    },
+    {
+      "member": "experiment/checks/compile-summary.json",
+      "bytes": 125,
+      "sha256": "9cc0df59ce8448d4d2da08df001df0dd91581816aac8b8b4b8c4895c1a3eb847"
+    },
+    {
+      "member": "experiment/checks/direct-test-compile.command.json",
+      "bytes": 2432,
+      "sha256": "3322864c0c76261b19a9f856d6461868550682deab64413be673d43f49b76cc8"
+    },
+    {
+      "member": "experiment/checks/direct-test-compile.result.json",
+      "bytes": 2503,
+      "sha256": "72ffa0bae3308897aaf6b5dd633b1464304311426b86207167651a65472736c2"
+    },
+    {
+      "member": "experiment/checks/direct-test-compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "member": "experiment/checks/direct-test-compile.stdout.log",
+      "bytes": 21,
+      "sha256": "5cc3ecd4da5b0a16845b5b36bef6346b11453c80b100a6dfa4a6a1519afd0b79"
+    },
+    {
+      "member": "experiment/checks/direct-test-deps.json",
+      "bytes": 30839,
+      "sha256": "bae0ca46c544efa87a79fe9ef7e01fc622f57f3c178cf3dd71d6f37a7199c46f"
+    },
+    {
+      "member": "experiment/checks/direct-test-identity.json",
+      "bytes": 64730,
+      "sha256": "a4cc34cb21d376767230fe37f0635a6c59146b2e1ea8954abd27ae10bde51eac"
+    },
+    {
+      "member": "experiment/checks/live.json",
+      "bytes": 22361,
+      "sha256": "3acf2f33d4cc6974c410a65a166b1e57c037ed4e5509c89147e88d37c1cbf730"
+    },
+    {
+      "member": "experiment/checks/main-compile.command.json",
+      "bytes": 2179,
+      "sha256": "7b49c5ea104fc10e64f529e0c1cbc70cbaf93f7c1858c621ae5ea365550d7c5e"
+    },
+    {
+      "member": "experiment/checks/main-compile.result.json",
+      "bytes": 2249,
+      "sha256": "b2360b3b432bcde5d5a2ee77b09f9552a7424582700f10cfb11ca23aab3ffc6b"
+    },
+    {
+      "member": "experiment/checks/main-compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "member": "experiment/checks/main-compile.stdout.log",
+      "bytes": 9,
+      "sha256": "f197b2519eedf02e571357ddc67cf5ca097ec055c64ddd28a980d92394b07b5d"
+    },
+    {
+      "member": "experiment/checks/main-deps.json",
+      "bytes": 31639,
+      "sha256": "6ae48bdec821225151c1c3141cab64d44c33ec08a2e26226ed0d496d01bf38b7"
+    },
+    {
+      "member": "experiment/checks/main-identity.json",
+      "bytes": 69403,
+      "sha256": "7739b46c338f88a88075b89081740a0aa971ea42503209e5446fbdf04a96dc64"
+    },
+    {
+      "member": "experiment/checks/plan.json",
+      "bytes": 8884,
+      "sha256": "dede4d8b45b0541c49429e10e1344a83d5cf919dedb7e000a31329586b5ca467"
+    },
+    {
+      "member": "experiment/checks/proposed-plan.json",
+      "bytes": 7388,
+      "sha256": "30e3c17bc7d25db595246e09eed0f280acdc73864fb406588431e0711fbd0a6a"
+    },
+    {
+      "member": "experiment/checks/qwen-image.json",
+      "bytes": 234,
+      "sha256": "4f86f88e1b90c55c306dbee8155db03959cb2650995ddc8323b638df54d1cccb"
+    },
+    {
+      "member": "experiment/checks/qwen-link-plan.json",
+      "bytes": 64465,
+      "sha256": "014b556910f2694467424532776cd368c17fba5062375f58a04eb5f37a03f9d3"
+    },
+    {
+      "member": "experiment/checks/qwen-link.command.json",
+      "bytes": 22105,
+      "sha256": "fa926a02e94a61e49c274304510d8d209dba6f760f410a5731736c606fb5d377"
+    },
+    {
+      "member": "experiment/checks/qwen-link.result.json",
+      "bytes": 22175,
+      "sha256": "63cee0c3a924743e23f049d4057c7849c192e5b0d0e2340bf7b414f8da46f763"
+    },
+    {
+      "member": "experiment/checks/qwen-link.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "member": "experiment/checks/qwen-link.stdout.log",
+      "bytes": 238,
+      "sha256": "7d4f7d7c86f452d7a2ad9e014546866a537b01e517835f73bc125ed1d9d6c13e"
+    },
+    {
+      "member": "experiment/checks/retained-input-recheck.json",
+      "bytes": 41560,
+      "sha256": "d5a782678e1a4d64daba465ece3fed53eb647847003ff5ac1697061771827976"
+    },
+    {
+      "member": "experiment/checks/summary.json",
+      "bytes": 2130,
+      "sha256": "ad5541adb284a6eb32260ecdb22fa43b084ffcc2183d117f4e1a22a67b12d9cd"
+    },
+    {
+      "member": "experiment/checks/topk-image.json",
+      "bytes": 234,
+      "sha256": "c7141633a6b1d1a5e70c8fdfc0a07be3055b75e6e60055da5ac771c9a4522c2d"
+    },
+    {
+      "member": "experiment/checks/topk-link-plan.json",
+      "bytes": 65556,
+      "sha256": "c252053cf429c84e2805e2127a5f25f8ec9a71e8ddf4e47446535b5a35cd3813"
+    },
+    {
+      "member": "experiment/checks/topk-link.command.json",
+      "bytes": 22291,
+      "sha256": "0a92868ffece51ad19c85ed03d741e8d8bbedf4340735fa4e9dceda63eef919d"
+    },
+    {
+      "member": "experiment/checks/topk-link.result.json",
+      "bytes": 22361,
+      "sha256": "3acf2f33d4cc6974c410a65a166b1e57c037ed4e5509c89147e88d37c1cbf730"
+    },
+    {
+      "member": "experiment/checks/topk-link.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "member": "experiment/checks/topk-link.stdout.log",
+      "bytes": 238,
+      "sha256": "dd49aca14f498bf67c82ecf13d14eea299bb794180ce0843704e97d66c3e1591"
+    },
+    {
+      "member": "experiment/regression/live.json",
+      "bytes": 677,
+      "sha256": "1a9671e4a6e0917558916fae72c85406bc3266a3b9eb92e60af9e68e2b11a6c9"
+    },
+    {
+      "member": "experiment/regression/results.xml",
+      "bytes": 1153,
+      "sha256": "9ed26f31bb7a6c172784e86627f97758e1dc1fcf61a66d474ed5b1381ec64c7c"
+    },
+    {
+      "member": "experiment/regression/summary.json",
+      "bytes": 1239,
+      "sha256": "c0bb9dc2207d19e7ea8ad0aef731e9aa9780ab3c8055ce05f943a8403fa45ef9"
+    },
+    {
+      "member": "experiment/regression/tests.command.json",
+      "bytes": 608,
+      "sha256": "e1f2a8d0c81b0a3b6a68a0cabb0d402a769077cbfde747c0e9910b80121871e4"
+    },
+    {
+      "member": "experiment/regression/tests.result.json",
+      "bytes": 677,
+      "sha256": "1a9671e4a6e0917558916fae72c85406bc3266a3b9eb92e60af9e68e2b11a6c9"
+    },
+    {
+      "member": "experiment/regression/tests.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "member": "experiment/regression/tests.stdout.log",
+      "bytes": 1139,
+      "sha256": "2c9472ea2cf73a5850597b42103353fcca7f4ecfc9fe4c9aea9306fc826c97c4"
+    },
+    {
+      "member": "experiment/correctness/analysis.json",
+      "bytes": 106040,
+      "sha256": "232f64f8bc2a54c102f1fdd2aa7652090ad1562c24b89e7ce09d53bb94a25351"
+    },
+    {
+      "member": "experiment/correctness/live.json",
+      "bytes": 929,
+      "sha256": "ccf936cff5a445e3cdf906e4347245ff617ad064fb4627dcaf05b0c81d9967a5"
+    },
+    {
+      "member": "experiment/correctness/qwen.command.json",
+      "bytes": 859,
+      "sha256": "5302c4213be3248edad80896146196f865214fdca4035868540a4300a0e74572"
+    },
+    {
+      "member": "experiment/correctness/qwen.result.json",
+      "bytes": 929,
+      "sha256": "ccf936cff5a445e3cdf906e4347245ff617ad064fb4627dcaf05b0c81d9967a5"
+    },
+    {
+      "member": "experiment/correctness/qwen.stderr.log",
+      "bytes": 8260,
+      "sha256": "df6068ece9d15d68c6e9b33bd3c5279b210437de0ec17b053b6407d7b220eae4"
+    },
+    {
+      "member": "experiment/correctness/qwen.stdout.log",
+      "bytes": 478,
+      "sha256": "58dd34b7b6029330f4447507901336eb770484a64b7fba87ad9f40be531d8f6c"
+    },
+    {
+      "member": "experiment/correctness/summary.json",
+      "bytes": 112815,
+      "sha256": "4f6357fb8133afbc6e1fb06a6c7690132e4ceaa9e0763268e954e035f157f4ea"
+    },
+    {
+      "member": "experiment/correctness/trace/routes/default-T1.boundaries.tsv",
+      "bytes": 339,
+      "sha256": "9e50e74e57b4bb9a68a7bd4433a0b7c9fa40c08ec911c7bb2c445ca07b1e0d36"
+    },
+    {
+      "member": "experiment/correctness/trace/routes/default-T1.route.tsv",
+      "bytes": 35517,
+      "sha256": "83002856008bd4481eb05bd8f80ede6f31d9d619e75656b2abffea0dc20180a0"
+    },
+    {
+      "member": "experiment/correctness/trace/routes/default-T128.boundaries.tsv",
+      "bytes": 357,
+      "sha256": "d95051bed8b0971dbd4b955f171830fb3b8b09691f67b6c082b080a3652c6308"
+    },
+    {
+      "member": "experiment/correctness/trace/routes/default-T128.route.tsv",
+      "bytes": 36753,
+      "sha256": "1b8f1f14c1349924d80bf92f7f2b4b074a837dc3a824412ed2cc6051b7b92b3f"
+    },
+    {
+      "member": "experiment/timing/01-baseline.command.json",
+      "bytes": 695,
+      "sha256": "7d836ca8d3331c63bc8d3cb5327159b7b93fc64ea9661ecdca0f72ff66f3946d"
+    },
+    {
+      "member": "experiment/timing/01-baseline.result.json",
+      "bytes": 765,
+      "sha256": "8184ab75a51bfd3216de0c4a8f25bc26852a5ad02e24bd33c06b76f784b952e1"
+    },
+    {
+      "member": "experiment/timing/01-baseline.stderr.log",
+      "bytes": 8251,
+      "sha256": "84ed51dc8c23e74a8cde3c259267c87fc6a485fd2654fcf8664ed06291064258"
+    },
+    {
+      "member": "experiment/timing/01-baseline.stdout.log",
+      "bytes": 478,
+      "sha256": "58dd34b7b6029330f4447507901336eb770484a64b7fba87ad9f40be531d8f6c"
+    },
+    {
+      "member": "experiment/timing/02-current.command.json",
+      "bytes": 688,
+      "sha256": "b58d6d0976989ef92ab3534536ccac7d6d2bf2f92e408aa8f2e9f9bb3fe56a2b"
+    },
+    {
+      "member": "experiment/timing/02-current.result.json",
+      "bytes": 758,
+      "sha256": "440aa6ac6337fafe8b5ef253c554a39eb1b08d87fa6d0ade5994214df3494ba9"
+    },
+    {
+      "member": "experiment/timing/02-current.stderr.log",
+      "bytes": 8248,
+      "sha256": "25addcd0950f1fd7dbf15756d3b3362e2646cf6e0b46a0fba8f2ae8ea80a1099"
+    },
+    {
+      "member": "experiment/timing/02-current.stdout.log",
+      "bytes": 478,
+      "sha256": "58dd34b7b6029330f4447507901336eb770484a64b7fba87ad9f40be531d8f6c"
+    },
+    {
+      "member": "experiment/timing/03-llama-peer-result.json",
+      "bytes": 21627,
+      "sha256": "c5ffdf48695f1a88d228af987e815c72c2c6bbbc09412c8a906d3d3a149d493e"
+    },
+    {
+      "member": "experiment/timing/03-llama.command.json",
+      "bytes": 684,
+      "sha256": "2fa1e08a36dd72f6e15a22a2623829966b59ca21db4f0828093c3277f16233fb"
+    },
+    {
+      "member": "experiment/timing/03-llama.result.json",
+      "bytes": 754,
+      "sha256": "f7e975f16d25addd0d2656936d444a319231b28a819538c7f2672b0b042add97"
+    },
+    {
+      "member": "experiment/timing/03-llama.stderr.log",
+      "bytes": 60799,
+      "sha256": "2e12ca0e1370a38bff20c976f60f791939b70dfee1d7085c6444093799a88e2f"
+    },
+    {
+      "member": "experiment/timing/03-llama.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "member": "experiment/timing/04-llama-peer-result.json",
+      "bytes": 21626,
+      "sha256": "0f443a438f9d8eb22797274fa4dcdbf72496219c80b0ec0d07a0afce101d9ae5"
+    },
+    {
+      "member": "experiment/timing/04-llama.command.json",
+      "bytes": 684,
+      "sha256": "ec230565b389c2d558f27f40fc99b30a1584cd2cc51ecff8ecf32d69ec93a41e"
+    },
+    {
+      "member": "experiment/timing/04-llama.result.json",
+      "bytes": 754,
+      "sha256": "e2288e0ce9e179c27868fb99a4299b87ba4755aaa873beaf4f24d218dcac4b5f"
+    },
+    {
+      "member": "experiment/timing/04-llama.stderr.log",
+      "bytes": 60798,
+      "sha256": "f42908cf5bbbc84bb7883d1d143c18fa4cebe7c7bdfd5c03f4ef767c9a6a605c"
+    },
+    {
+      "member": "experiment/timing/04-llama.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "member": "experiment/timing/05-baseline.command.json",
+      "bytes": 694,
+      "sha256": "3187ad8bcd6d000638e092640a7578e736dcbabd5ab6cf2cd940352cd8c6e4c6"
+    },
+    {
+      "member": "experiment/timing/05-baseline.result.json",
+      "bytes": 764,
+      "sha256": "9fe9382aae8caa8211dc6fa1ad77ecf5e291041d09a6fd9cbf84b1f27b1e87ed"
+    },
+    {
+      "member": "experiment/timing/05-baseline.stderr.log",
+      "bytes": 8258,
+      "sha256": "f9f0a0cd70590d7a4b0c01afd15ce05522a2cc2a5ce07ccde451cd4135e5b14a"
+    },
+    {
+      "member": "experiment/timing/05-baseline.stdout.log",
+      "bytes": 478,
+      "sha256": "58dd34b7b6029330f4447507901336eb770484a64b7fba87ad9f40be531d8f6c"
+    },
+    {
+      "member": "experiment/timing/06-current.command.json",
+      "bytes": 688,
+      "sha256": "afcd90cf17fe5837c26a330876711bb4c3991c3e813d8cfe7205e4f7bde262d0"
+    },
+    {
+      "member": "experiment/timing/06-current.result.json",
+      "bytes": 758,
+      "sha256": "da5d0e00f7586e221a6a8d4f19993e1fb37c779647a3081dc4040ff17e0e0c32"
+    },
+    {
+      "member": "experiment/timing/06-current.stderr.log",
+      "bytes": 8253,
+      "sha256": "ed1fbd23a721ba70aca1ce3b4603c5208f6cc24bf7c7a7d54a39f2664effdb4a"
+    },
+    {
+      "member": "experiment/timing/06-current.stdout.log",
+      "bytes": 478,
+      "sha256": "58dd34b7b6029330f4447507901336eb770484a64b7fba87ad9f40be531d8f6c"
+    },
+    {
+      "member": "experiment/timing/07-current.command.json",
+      "bytes": 688,
+      "sha256": "d7a75b5d0b7cdbb82ec0ce33e1f82ea3106e968c46eefb27e7eaf4ac33189404"
+    },
+    {
+      "member": "experiment/timing/07-current.result.json",
+      "bytes": 759,
+      "sha256": "f5cacff135b18a7d4d3a164e68ef39cd45497cf966e2912ab5b02711eb1be9bf"
+    },
+    {
+      "member": "experiment/timing/07-current.stderr.log",
+      "bytes": 8248,
+      "sha256": "335cf66a3647a9d1d736276054a7ed55f3642fb9424fc779798aa7991671824d"
+    },
+    {
+      "member": "experiment/timing/07-current.stdout.log",
+      "bytes": 478,
+      "sha256": "58dd34b7b6029330f4447507901336eb770484a64b7fba87ad9f40be531d8f6c"
+    },
+    {
+      "member": "experiment/timing/08-llama-peer-result.json",
+      "bytes": 21650,
+      "sha256": "78a3e7ea809fe84533de38a1c283d110886c1e0d32b0440fbc51d8ea1948f065"
+    },
+    {
+      "member": "experiment/timing/08-llama.command.json",
+      "bytes": 684,
+      "sha256": "6e0e4ca73bdef5b56d75deb23977398f96b41c466797d9e6b253855b8869bac4"
+    },
+    {
+      "member": "experiment/timing/08-llama.result.json",
+      "bytes": 753,
+      "sha256": "ac0a4a062947b7ce9dec6711bc3cec449bbd74beb595b513909b5f1b3617bdf5"
+    },
+    {
+      "member": "experiment/timing/08-llama.stderr.log",
+      "bytes": 60798,
+      "sha256": "7e4ee1cc230a1391803ff636618d2b0cd55aa832e9bf54f536172db677fd6870"
+    },
+    {
+      "member": "experiment/timing/08-llama.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "member": "experiment/timing/09-baseline.command.json",
+      "bytes": 694,
+      "sha256": "016ee939d409df12684947670942aafb1ceec1929ee42651b87cac2f6c3a21b0"
+    },
+    {
+      "member": "experiment/timing/09-baseline.result.json",
+      "bytes": 764,
+      "sha256": "c3833c87683439b7ca9c7b01129d3175e70375b2f2ab236c031235486cc6da14"
+    },
+    {
+      "member": "experiment/timing/09-baseline.stderr.log",
+      "bytes": 8255,
+      "sha256": "b60b15c63458ce6bddda736321e42f21df902b77e7279aefc80a7e841ff6fdc2"
+    },
+    {
+      "member": "experiment/timing/09-baseline.stdout.log",
+      "bytes": 478,
+      "sha256": "58dd34b7b6029330f4447507901336eb770484a64b7fba87ad9f40be531d8f6c"
+    },
+    {
+      "member": "experiment/timing/inputs.json",
+      "bytes": 2606,
+      "sha256": "3fe89ae828be0955b46467ebe8b008496b617a8d5dd860423c4d9484bfb865b9"
+    },
+    {
+      "member": "experiment/timing/live.json",
+      "bytes": 764,
+      "sha256": "c3833c87683439b7ca9c7b01129d3175e70375b2f2ab236c031235486cc6da14"
+    },
+    {
+      "member": "experiment/timing/runs.json",
+      "bytes": 35210,
+      "sha256": "b829648ef9fd286da9b9dd5ef1b34cbc136261db7e2fe9c056ce5383f55f8e54"
+    },
+    {
+      "member": "experiment/timing/summary.json",
+      "bytes": 3623,
+      "sha256": "f02b2cfcfeafdbb75f03f2295f6baf470ffd8f774dddc056d6bd84261b814c5a"
+    },
+    {
+      "member": "experiment/long-timing/01-baseline.command.json",
+      "bytes": 693,
+      "sha256": "495d175a43d94aa3bf6810e97207029caeaa7c3fa83058e4f75aef9ca9968ef0"
+    },
+    {
+      "member": "experiment/long-timing/01-baseline.result.json",
+      "bytes": 763,
+      "sha256": "be4120d16fcba61b8d4447d1aa23b722276f170252d2c5e675ffdfc1e7beaab2"
+    },
+    {
+      "member": "experiment/long-timing/01-baseline.stderr.log",
+      "bytes": 29907,
+      "sha256": "adb5751996e141a33959ffc4bd270195907e07b3a8e64b9225dc63931236afb6"
+    },
+    {
+      "member": "experiment/long-timing/01-baseline.stdout.log",
+      "bytes": 1375,
+      "sha256": "09439753df62d53b6706e2bcb6de1e2b9497eb494c4c9664040063f7e09fe5ed"
+    },
+    {
+      "member": "experiment/long-timing/02-current.command.json",
+      "bytes": 687,
+      "sha256": "46f916dfdc6b4371797afe19b9bbc12f76b8ddf5a4efcfbbd64d7a566eab54ca"
+    },
+    {
+      "member": "experiment/long-timing/02-current.result.json",
+      "bytes": 756,
+      "sha256": "ca048c9175ebc3c053626c04a14a2e715c253e4c2767e4a82a4da5e75b3b9725"
+    },
+    {
+      "member": "experiment/long-timing/02-current.stderr.log",
+      "bytes": 29966,
+      "sha256": "fdf77da4471d53106ded827c2e69e2421a92785225b555dad1d7e8b597f2ab07"
+    },
+    {
+      "member": "experiment/long-timing/02-current.stdout.log",
+      "bytes": 1375,
+      "sha256": "09439753df62d53b6706e2bcb6de1e2b9497eb494c4c9664040063f7e09fe5ed"
+    },
+    {
+      "member": "experiment/long-timing/03-llama-peer-result.json",
+      "bytes": 64514,
+      "sha256": "c48f1be5ed0df65fe1ab6de00f0c150878fba9f6ccf50be6ade747da52dd76b8"
+    },
+    {
+      "member": "experiment/long-timing/03-llama.command.json",
+      "bytes": 676,
+      "sha256": "9ab67948c55719553b7c0384704ae9a924e55e4d28324c6cb2da378915a61f23"
+    },
+    {
+      "member": "experiment/long-timing/03-llama.result.json",
+      "bytes": 746,
+      "sha256": "0ab114ec7e8e79bf85e5634b05bb00698db39bb19afc55fb893cce5e5bbc9d31"
+    },
+    {
+      "member": "experiment/long-timing/03-llama.stderr.log",
+      "bytes": 71646,
+      "sha256": "bcd7707965c46d1f2e46df9ed2753f0a285593dee2e6dbfef19e109a202f053c"
+    },
+    {
+      "member": "experiment/long-timing/03-llama.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "member": "experiment/long-timing/04-llama-peer-result.json",
+      "bytes": 64529,
+      "sha256": "76c81d47b8eab13117866469e42d61708010f018dd96208f4e67775f0229d596"
+    },
+    {
+      "member": "experiment/long-timing/04-llama.command.json",
+      "bytes": 677,
+      "sha256": "bb5b0a78b1ab4fc27989c34eb44e013a9d3c1032ed0a48d932c900f0b0afaf1b"
+    },
+    {
+      "member": "experiment/long-timing/04-llama.result.json",
+      "bytes": 747,
+      "sha256": "9431c2914b53d7848d0f58d19bb34f4e6579685de4ea53a6c1678bb9ab0a33e2"
+    },
+    {
+      "member": "experiment/long-timing/04-llama.stderr.log",
+      "bytes": 71646,
+      "sha256": "2fcd91b24c195824c9f5acec114a42f4a31dcf8c12f9f7268113e24333ab7d42"
+    },
+    {
+      "member": "experiment/long-timing/04-llama.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "member": "experiment/long-timing/05-baseline.command.json",
+      "bytes": 694,
+      "sha256": "6d61c83b17df7fa1633fedf5b98253a1b5cbbdefeb77c5e853a4c217a8d556be"
+    },
+    {
+      "member": "experiment/long-timing/05-baseline.result.json",
+      "bytes": 763,
+      "sha256": "fc9125350f77c222d71bad39e031082bb6e263fb70056a898db1dc65a1139c2f"
+    },
+    {
+      "member": "experiment/long-timing/05-baseline.stderr.log",
+      "bytes": 29947,
+      "sha256": "1bb7899e3f979d1405da01a0ed79ddf97f8cc27bf4b301f1f9414fb040d58c8a"
+    },
+    {
+      "member": "experiment/long-timing/05-baseline.stdout.log",
+      "bytes": 1375,
+      "sha256": "09439753df62d53b6706e2bcb6de1e2b9497eb494c4c9664040063f7e09fe5ed"
+    },
+    {
+      "member": "experiment/long-timing/06-current.command.json",
+      "bytes": 686,
+      "sha256": "0517df17013b5428ab0fa58efed73b587b37d2599c7b90bc9a8dccf9f53ce113"
+    },
+    {
+      "member": "experiment/long-timing/06-current.result.json",
+      "bytes": 755,
+      "sha256": "ba5265e2516dc01f09478231504346cc5c0997d35a6af0cb6ef1e664bbfd75ef"
+    },
+    {
+      "member": "experiment/long-timing/06-current.stderr.log",
+      "bytes": 29968,
+      "sha256": "3dc82445eea356d066695012efefdf59ae66b5ece88b5ef9740131405870aaa3"
+    },
+    {
+      "member": "experiment/long-timing/06-current.stdout.log",
+      "bytes": 1375,
+      "sha256": "09439753df62d53b6706e2bcb6de1e2b9497eb494c4c9664040063f7e09fe5ed"
+    },
+    {
+      "member": "experiment/long-timing/07-current.command.json",
+      "bytes": 687,
+      "sha256": "e2371bb2b39db00667fcb21a5011a56148399d3b2053e63971d860bb5ad39850"
+    },
+    {
+      "member": "experiment/long-timing/07-current.result.json",
+      "bytes": 757,
+      "sha256": "8f8332cee335fde1eb7159fdd721b238c34306b5e728df5c56666494928ca20f"
+    },
+    {
+      "member": "experiment/long-timing/07-current.stderr.log",
+      "bytes": 29954,
+      "sha256": "097dd8b17c0a99c053add0f3f1a72b372b1851f1577e4bb0df299e4e4561f800"
+    },
+    {
+      "member": "experiment/long-timing/07-current.stdout.log",
+      "bytes": 1375,
+      "sha256": "09439753df62d53b6706e2bcb6de1e2b9497eb494c4c9664040063f7e09fe5ed"
+    },
+    {
+      "member": "experiment/long-timing/08-llama-peer-result.json",
+      "bytes": 64457,
+      "sha256": "ce2433ba61de20b8c8e6927c087721dcc303c94521806ce693d255d5ffac11a0"
+    },
+    {
+      "member": "experiment/long-timing/08-llama.command.json",
+      "bytes": 677,
+      "sha256": "2e68a9594f8a141ad5eba271977ddc45d91a75056864a92c0ce921f1b9364c2f"
+    },
+    {
+      "member": "experiment/long-timing/08-llama.result.json",
+      "bytes": 747,
+      "sha256": "c3cca0ea0b85e6905d89d99fb36631da60c629cbdd35356d6a824d118e08e3d1"
+    },
+    {
+      "member": "experiment/long-timing/08-llama.stderr.log",
+      "bytes": 71646,
+      "sha256": "03e9aae5c9ebd331fe39e8b64b54bcce184d6aae24370ea440319cdf4341e2f9"
+    },
+    {
+      "member": "experiment/long-timing/08-llama.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "member": "experiment/long-timing/09-baseline.command.json",
+      "bytes": 694,
+      "sha256": "1ce81e8afcb915a5dbd7d256451d09c40883fbf1588abf5aaf49d3ce3777af5f"
+    },
+    {
+      "member": "experiment/long-timing/09-baseline.result.json",
+      "bytes": 764,
+      "sha256": "f07835c86f1fc1f9ca1931c8b11bf50875c60ad113474dcf9ca5b64c9667fe0c"
+    },
+    {
+      "member": "experiment/long-timing/09-baseline.stderr.log",
+      "bytes": 29910,
+      "sha256": "5cb55d026ac7839447f10f6989ad287a567aa20afa18bdb5c828b61f05d8f079"
+    },
+    {
+      "member": "experiment/long-timing/09-baseline.stdout.log",
+      "bytes": 1375,
+      "sha256": "09439753df62d53b6706e2bcb6de1e2b9497eb494c4c9664040063f7e09fe5ed"
+    },
+    {
+      "member": "experiment/long-timing/inputs.json",
+      "bytes": 2596,
+      "sha256": "50e1166d7b6d00e95a3b89b02fb59e30e68149dc5471b65aa094490ac4106b9d"
+    },
+    {
+      "member": "experiment/long-timing/live.json",
+      "bytes": 764,
+      "sha256": "f07835c86f1fc1f9ca1931c8b11bf50875c60ad113474dcf9ca5b64c9667fe0c"
+    },
+    {
+      "member": "experiment/long-timing/runs.json",
+      "bytes": 106665,
+      "sha256": "28866f901039065ddaa4464a18fb07266b7017325bab97119d546b11943e44f5"
+    },
+    {
+      "member": "experiment/long-timing/summary.json",
+      "bytes": 3598,
+      "sha256": "65ffc65a3513f658fd2c702bebc98f11751e3f41b094706a972338a0b9b554c3"
+    },
+    {
+      "member": "experiment/profile/decode.ids",
+      "bytes": 40,
+      "sha256": "0a01443f4325550dc2a34a2fd1c61d02373f52984a1703992e7d00516e353d36"
+    },
+    {
+      "member": "experiment/profile/export.command.json",
+      "bytes": 542,
+      "sha256": "86e4d90a3596a5f9b81c3e31bbfb71d8e60771e4a78de73c4861f1b36337ef5c"
+    },
+    {
+      "member": "experiment/profile/export.result.json",
+      "bytes": 610,
+      "sha256": "9eb91eaf4bf707c7a3a5eb007caed04f5f4e4b1876ace3c33d5ab8551feb915c"
+    },
+    {
+      "member": "experiment/profile/export.stderr.log",
+      "bytes": 8102,
+      "sha256": "adc54dc09a25799aa3abebb480fca595a964daca42a5c9e061d0f55c32d2311b"
+    },
+    {
+      "member": "experiment/profile/export.stdout.log",
+      "bytes": 27,
+      "sha256": "a8d8a6c59d8810a277aae8bd3f8caa994ccde2b07b534c974fd99f373d702571"
+    },
+    {
+      "member": "experiment/profile/live.json",
+      "bytes": 610,
+      "sha256": "9eb91eaf4bf707c7a3a5eb007caed04f5f4e4b1876ace3c33d5ab8551feb915c"
+    },
+    {
+      "member": "experiment/profile/plan.json",
+      "bytes": 3172,
+      "sha256": "6c3ce6f52b711ec0a6bd08c4a5f10135c868dc320d1e7e51621d6ae3125e6410"
+    },
+    {
+      "member": "experiment/profile/profile.command.json",
+      "bytes": 1101,
+      "sha256": "e8e0cb5ca4d010883c88b610df8810c773a6887c8cfb4ffc6b97b6a6a287b672"
+    },
+    {
+      "member": "experiment/profile/profile.result.json",
+      "bytes": 1171,
+      "sha256": "3103510f48ca12c53713628549d3062425bd002a391c8434d23edf5c21d2cc6e"
+    },
+    {
+      "member": "experiment/profile/profile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "member": "experiment/profile/profile.stdout.log",
+      "bytes": 820,
+      "sha256": "902fad909d6572fc1048492e122f27396bca4b1ea082309a4a0de831e39c7385"
+    },
+    {
+      "member": "experiment/profile/summary.json",
+      "bytes": 4642,
+      "sha256": "ec87d4016c896fc76cc26737bb43cf620b489a19fc71bcb0d8c3cec026f25de8"
+    },
+    {
+      "member": "experiment/profile/target.stderr.log",
+      "bytes": 2854,
+      "sha256": "f04094518a8f5fdec0f2ea3fb50d786b7b7f6a8d18871f1ef3d7df750ea3bb8f"
+    },
+    {
+      "member": "experiment/profile/target.stdout.log",
+      "bytes": 251,
+      "sha256": "ea8482024eba5c7dd8b8fe260a45bd76b096c072f5b37ae7817b617eb06dbc78"
+    },
+    {
+      "member": "experiment/publish.py",
+      "bytes": 11050,
+      "sha256": "b59858656aabb82d97c7d30a793210aaac23f936297c72a31e90dabac397bf3c"
+    },
+    {
+      "member": "experiment/build.py",
+      "bytes": 7389,
+      "sha256": "dac4d0df5512f76dc5db4c0db76247fc54a8230a8a97924fa42975b857703c71"
+    },
+    {
+      "member": "experiment/run.py",
+      "bytes": 8006,
+      "sha256": "9a9ca27fc1647a998bb9bda62af79b12af04cd6eabf260da442c09b5414806c3"
+    },
+    {
+      "member": "experiment/finalize.py",
+      "bytes": 3750,
+      "sha256": "fb3ad6e3570ae66a1f39b7dafd6e8f46e3b36c76be6f00645d610536f776d0d9"
+    },
+    {
+      "member": "experiment/window-analysis.json",
+      "bytes": 2671,
+      "sha256": "310af05b9b414d03e80324ad7a63181e4e6c188fea11320049b0f2f85eb810e9"
+    },
+    {
+      "member": "experiment/independent-timing-review.json",
+      "bytes": 17575,
+      "sha256": "a68db8b557d8f8d0c2b24cc1c091211650093a2bbf5375f0713b49115f149da9"
+    },
+    {
+      "member": "experiment/bandwidth-review.json",
+      "bytes": 9685,
+      "sha256": "5853eddb9ef026b1cf48355841bf03be1707c26c612741517004d7db54eada18"
+    },
+    {
+      "member": "experiment/hardware-before.csv",
+      "bytes": 231,
+      "sha256": "6a657c60f70ff83fb70acbb49b552331ea1b99106a3272330e50c9fb76e6b780"
+    },
+    {
+      "member": "experiment/hardware-after.csv",
+      "bytes": 231,
+      "sha256": "e6c255f1e29f2f34ae3c982778e8c934d6af254efc2b11f8fe042ab377896e7e"
+    },
+    {
+      "member": "experiment/decision.json",
+      "bytes": 2969,
+      "sha256": "2fff825bd9f40d571dc65444950f1de97aa9cae98ea221f2d092cec0f5316f18"
+    },
+    {
+      "member": "local-isolation/build.py",
+      "bytes": 5647,
+      "sha256": "724cd2b3503dbc885a39e6dc997e16a44019db7b065c7f2a0a747f65ea060154"
+    },
+    {
+      "member": "local-isolation/checks/bench-deps.json",
+      "bytes": 26015,
+      "sha256": "542e45d0071a5683bb95e3408d01463d34b40070a5c4e6f444c8119ed770a658"
+    },
+    {
+      "member": "local-isolation/checks/bench-identity.json",
+      "bytes": 55489,
+      "sha256": "18811f448d3de1479c839d7684ab17fffe5760a9c0bf59e672ef4546eaf3195b"
+    },
+    {
+      "member": "local-isolation/checks/compile.command.json",
+      "bytes": 2274,
+      "sha256": "2a41fcdac9311168ac6102a7e3dd1a37cf1e366dee221f4d719a5732cfc857fa"
+    },
+    {
+      "member": "local-isolation/checks/compile.result.json",
+      "bytes": 2345,
+      "sha256": "ff35631847c600338fc65d3ef55f4ed33ecdf31e15798ad3a5ca0d2c79f56522"
+    },
+    {
+      "member": "local-isolation/checks/compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "member": "local-isolation/checks/compile.stdout.log",
+      "bytes": 20,
+      "sha256": "96905ef9516014cdd608e0755734f43c7a239799ccd7533d6a7503759481e129"
+    },
+    {
+      "member": "local-isolation/checks/image.json",
+      "bytes": 246,
+      "sha256": "4160a289608591e0fd1c6fd50f2edfde85a2f8ce32cd94c6227cc3944eb86e1e"
+    },
+    {
+      "member": "local-isolation/checks/link-plan.json",
+      "bytes": 63951,
+      "sha256": "5be0ffe6cf98d89d44e575df6b76b3336d20a9eff5be65b6a7b4836a1723b546"
+    },
+    {
+      "member": "local-isolation/checks/link.command.json",
+      "bytes": 22148,
+      "sha256": "e424345359e488057ac55424731e35309c8785312a38b9d248b5c4b0fdb42055"
+    },
+    {
+      "member": "local-isolation/checks/link.result.json",
+      "bytes": 22219,
+      "sha256": "4c4e35316b1178f4fababba46447871bd3fca59db45db878e2700afa89964b7a"
+    },
+    {
+      "member": "local-isolation/checks/link.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "member": "local-isolation/checks/link.stdout.log",
+      "bytes": 260,
+      "sha256": "4bec71fcef71b060ac2c4184fbcd255fcefc4b71398f79441b599f475352948d"
+    },
+    {
+      "member": "local-isolation/checks/live.json",
+      "bytes": 22219,
+      "sha256": "4c4e35316b1178f4fababba46447871bd3fca59db45db878e2700afa89964b7a"
+    },
+    {
+      "member": "local-isolation/checks/plan.json",
+      "bytes": 5704,
+      "sha256": "76a1de81ae8bac862fc26f6ffe91c402565b613c9b398cd47947e4477c13c3da"
+    },
+    {
+      "member": "local-isolation/checks/run-plan.json",
+      "bytes": 1609,
+      "sha256": "232a4bd57ae45ba8600c3ef1f097622dc493ca37a9f9d3026b3506c4ac6c7933"
+    },
+    {
+      "member": "local-isolation/checks/summary.json",
+      "bytes": 448,
+      "sha256": "b99c9e7fdabfb7f07a155e25e98681faa35f8fe1d89f39d2ad15d2046db64a9d"
+    },
+    {
+      "member": "local-isolation/observation/bench.command.json",
+      "bytes": 421,
+      "sha256": "42e4d7dd8c8e4e5c4e351ca187531dc69a510caacc89ee3567cf1c805ed0e685"
+    },
+    {
+      "member": "local-isolation/observation/bench.result.json",
+      "bytes": 491,
+      "sha256": "c79bb37877abb9859c0a6073a209ee24b3263569b6a55b60b3b9a54a857c640f"
+    },
+    {
+      "member": "local-isolation/observation/bench.stderr.log",
+      "bytes": 212,
+      "sha256": "fd5235a9f56c475925ce6204c4d396d21bb6f013d8ecd6a28b5be4a2529bd2e2"
+    },
+    {
+      "member": "local-isolation/observation/bench.stdout.log",
+      "bytes": 2918,
+      "sha256": "c561c2bf858afa768995f6ca5ed1b0ccdc7f29b95184a8a8aa5ba25fedff5e18"
+    },
+    {
+      "member": "local-isolation/observation/inputs.json",
+      "bytes": 2398,
+      "sha256": "e721f88d7b2005ab7c5cdbf57703e90b418ae7fdf088d9f2b7aedc26842fc313"
+    },
+    {
+      "member": "local-isolation/observation/live.json",
+      "bytes": 491,
+      "sha256": "c79bb37877abb9859c0a6073a209ee24b3263569b6a55b60b3b9a54a857c640f"
+    },
+    {
+      "member": "local-isolation/observation/summary.json",
+      "bytes": 6808,
+      "sha256": "601c29dff2ca4e203baac01e79d2f05546e825a8bb2c2322bd4d1a9368e39791"
+    },
+    {
+      "member": "local-isolation/run.py",
+      "bytes": 2126,
+      "sha256": "adba740148282fc67fad466300e547c62e9f95d4fc76493349d30af311d9b9da"
+    },
+    {
+      "member": "local-isolation/top1_path_bench.cc",
+      "bytes": 11165,
+      "sha256": "3bb5b3c40991c70859a5b62aa2ccc7a8b250db1a86a19e38630b0e949aafc8ef"
+    }
+  ],
+  "archive_verified": {
+    "CRC": true,
+    "all_payload_SHA256": true,
+    "member_paths_and_duplicates": true
+  }
+}

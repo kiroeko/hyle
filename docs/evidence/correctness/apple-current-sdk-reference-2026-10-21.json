@@ -1,0 +1,688 @@
+{
+  "schema": "hyle.current-installed-sdk-reference.v1",
+  "date": "2026-10-21",
+  "status": "PASS",
+  "scope": "Current Apple-only static Compute+Graph+graph_progress producer, true CMake build/install, relocated installed consumption, and the two affine constant-preparation regressions linked solely to the current SDK.",
+  "results": {
+    "distinct_cases": 4,
+    "passed": 4,
+    "failed": 0,
+    "skipped": 0,
+    "cases": [
+      {
+        "kind": "compute",
+        "name": "hyle_package_compute_cpp",
+        "result": "PASS",
+        "record": {
+          "path": ".scratch/architecture-refactor-2026-10-18/apple-current-sdk-2026-10-21/attempts/final/results/compute-tests.xml",
+          "bytes": 1473,
+          "sha256": "9479f71b3db8d4e194888811c8b9df073bc68b39cc353f53ca2b00e55098b71e"
+        }
+      },
+      {
+        "kind": "graph",
+        "name": "hyle_package_graph_cpp",
+        "result": "PASS",
+        "record": {
+          "path": ".scratch/architecture-refactor-2026-10-18/apple-current-sdk-2026-10-21/attempts/final/results/graph-tests.xml",
+          "bytes": 1469,
+          "sha256": "252cbe3ff7b337b6519227f724bfccf9d5cbac4e720c391008dafe9c938a0ce1"
+        }
+      },
+      {
+        "kind": "affine_current_installed_sdk",
+        "name": "AppleAffineMetadata.ConstantsKeepLogicalTypesAndBothEntryContracts",
+        "result": "PASS",
+        "properties": {
+          "successful_submissions": "8"
+        },
+        "record": {
+          "path": ".scratch/architecture-refactor-2026-10-18/apple-current-sdk-2026-10-21/attempts/final/results/affine-gtest.xml",
+          "bytes": 1443,
+          "sha256": "0029edeece71230d5977eb130a0fa658e01ce3803bb48711293c0e7a9854ed15"
+        }
+      },
+      {
+        "kind": "affine_current_installed_sdk",
+        "name": "AppleAffineMetadata.BudgetExhaustionRollsBackAndLastOwnerReleasesPreparedStorage",
+        "result": "PASS",
+        "properties": {
+          "successful_submissions": "1",
+          "expected_compile_budget_rejections": "1"
+        },
+        "record": {
+          "path": ".scratch/architecture-refactor-2026-10-18/apple-current-sdk-2026-10-21/attempts/final/results/affine-gtest.xml",
+          "bytes": 1443,
+          "sha256": "0029edeece71230d5977eb130a0fa658e01ce3803bb48711293c0e7a9854ed15"
+        }
+      }
+    ],
+    "affine_successful_submissions": 9,
+    "affine_expected_compile_budget_rejections": 1,
+    "sample_submission_count": null,
+    "ctest_aggregation": "Three CTest entries: two existing samples and one affine test executable containing two GoogleTest cases. The affine CTest wrapper is not counted as an extra fifth case."
+  },
+  "hardware": {
+    "model": "Mac16,12",
+    "cpu": "Apple M4",
+    "memory": "17179869184",
+    "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+    "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+    "cmake": "cmake version 4.3.4\n\nCMake suite maintained and supported by Kitware (kitware.com/cmake).",
+    "ninja": "1.13.2",
+    "space": "Filesystem      Size    Used   Avail Capacity iused ifree %iused  Mounted on\n/dev/disk3s5   228Gi   164Gi    38Gi    82%    2.3M  394M    1%   /System/Volumes/Data"
+  },
+  "configuration": {
+    "components": [
+      "compute",
+      "graph",
+      "graph_progress"
+    ],
+    "routes": [
+      "apple"
+    ],
+    "static": true,
+    "tests_and_bench_in_producer": false,
+    "deployment_target": "14.4",
+    "build_type": "Release",
+    "native_rebuild": true,
+    "build_parallelism": 2
+  },
+  "producer": {
+    "configure_exit": 0,
+    "build_exit": 0,
+    "build_seconds": 86.39991617202759,
+    "install_exit": 0,
+    "DAG_commands": 390,
+    "task_groups": {
+      "Hyle_original_TU": 130,
+      "Hyle_generated_SIMD_TU": 2,
+      "MLX_native_CXX": 120,
+      "ggml_native_TU": 19,
+      "mimalloc_fcontext_TU": 4,
+      "ggml_embed_ASM": 20,
+      "ggml_Metal_generate_embed": 20,
+      "MLX_preamble_generation": 41,
+      "MLX_Metal_compile": 8,
+      "MLX_metallib_link": 1,
+      "archive": 25
+    },
+    "actual_native_warnings": 5,
+    "Hyle_warnings": 0,
+    "warning_scope": "Four missing-prototype warnings in patched ggml Metal and one upstream MLX typeid warning. Current default CMake warning policy retained; this is not a -Werror producer build claim."
+  },
+  "installed_sdk": {
+    "prefix": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk",
+    "original_prefix_absent": true,
+    "files": 694,
+    "bytes": 31633326,
+    "archives": [
+      {
+        "relative": "lib/libggml-base.a",
+        "bytes": 1047128,
+        "sha256": "7cbc1c3746508db8da325d13f30980c8214585ffa1ab3178df0bfeb6eb92a7da"
+      },
+      {
+        "relative": "lib/libggml-metal.a",
+        "bytes": 2523416,
+        "sha256": "4127312adfc69dc8f19b9d89b41cc97a98dd382610f79078d2097ed8bee18e96"
+      },
+      {
+        "relative": "lib/libggml.a",
+        "bytes": 41744,
+        "sha256": "ff3af9b85c1e509cf2c4ef484044f645844b03e8407ce38a9dc2a87f634b1453"
+      },
+      {
+        "relative": "lib/libhyle_compute.a",
+        "bytes": 842640,
+        "sha256": "3370b3e0adf22199103bf3bc58ff9e4f3e99ef89940b7e77031082c96c3afe60"
+      },
+      {
+        "relative": "lib/libhyle_compute_batch.a",
+        "bytes": 684576,
+        "sha256": "74e304f80f974045473fed2409d2d6eaa044155079c15254f45fe0b20e1bf8a0"
+      },
+      {
+        "relative": "lib/libhyle_compute_ggml_runtime.a",
+        "bytes": 9768,
+        "sha256": "b9a79cabea39049c228bcaa4ce7f525e97f5cf497e6441edeafa43e716d5e788"
+      },
+      {
+        "relative": "lib/libhyle_compute_ops.a",
+        "bytes": 144544,
+        "sha256": "9372649fc0bf56cecaa66434ce413ebad3ec21bc67461f4896b2d113b6ef3060"
+      },
+      {
+        "relative": "lib/libhyle_compute_provider_ggml_metal.a",
+        "bytes": 118296,
+        "sha256": "0199806d1f6589c23caae6a61114b8b34cf0ec43ec44d34e05bd55fa137568e5"
+      },
+      {
+        "relative": "lib/libhyle_compute_route_apple.a",
+        "bytes": 3005784,
+        "sha256": "98c8160168c946454e79e5caaa06d23d2863c934fa13bcd6f5927c31d8178ee2"
+      },
+      {
+        "relative": "lib/libhyle_compute_state.a",
+        "bytes": 112672,
+        "sha256": "15083ec4a82eb3aebb97a7fc1767cd75c2b2547b9482c190e25c0fee8c39d6c9"
+      },
+      {
+        "relative": "lib/libhyle_container.a",
+        "bytes": 56808,
+        "sha256": "84c7158422a28646c325da268823c826bfd4051c5f8f2487566f6aa58e9160ce"
+      },
+      {
+        "relative": "lib/libhyle_error.a",
+        "bytes": 30360,
+        "sha256": "6f00063f374b74d9735dc6ca78df366518eee441f4e8c79ba2629cd9d19d7e68"
+      },
+      {
+        "relative": "lib/libhyle_graph.a",
+        "bytes": 1820912,
+        "sha256": "dd2a7d928f6e31b08b07b4201c51f07ee3712fad93b192d2a641158bee1e5495"
+      },
+      {
+        "relative": "lib/libhyle_graph_batch.a",
+        "bytes": 575192,
+        "sha256": "5940480063ae2fc5ae5ff05edef41f848466f3559e4b8cf9b8c64a18a97050a3"
+      },
+      {
+        "relative": "lib/libhyle_graph_progress.a",
+        "bytes": 38416,
+        "sha256": "72b0cbbfd358baa08140f8fb8dde11df685feb69002bf1c8800d5c84ea8027da"
+      },
+      {
+        "relative": "lib/libhyle_graph_route_apple.a",
+        "bytes": 1000096,
+        "sha256": "ea8499c96105892b4c38bdd5bde429987ea046d58120d18275b513c28ce2db14"
+      },
+      {
+        "relative": "lib/libhyle_mem.a",
+        "bytes": 202832,
+        "sha256": "63dbb265e8ef8f0743af973ab8c8e0e559807b216794c6da53c3f2b2c51a9686"
+      },
+      {
+        "relative": "lib/libhyle_mem_vm.a",
+        "bytes": 59464,
+        "sha256": "a61b45093f46b814e4b6ccdd18df43861dc17fab2671ee3fbe1704db7e2ff3fd"
+      },
+      {
+        "relative": "lib/libhyle_platform.a",
+        "bytes": 142432,
+        "sha256": "5cf82480637902f8a112230eef7aaec561d42c379d8c31903ff6fc0f0de6b8b2"
+      },
+      {
+        "relative": "lib/libhyle_platform_fs.a",
+        "bytes": 61256,
+        "sha256": "714aa37094a7ebe22d5e19abf926af9245b725c2fa20b4402907d88fa0c531c5"
+      },
+      {
+        "relative": "lib/libhyle_platform_thread.a",
+        "bytes": 20272,
+        "sha256": "d027e6e3a63e707b190be293f65a5d4c07769e48f3a1731c31ffbb2f3b3ae89e"
+      },
+      {
+        "relative": "lib/libhyle_sched.a",
+        "bytes": 256176,
+        "sha256": "624aaa0a3dc310547e6ad20bedfb73e5c91ce60621319466841ec891a4b6cb01"
+      },
+      {
+        "relative": "lib/libhyle_time.a",
+        "bytes": 16168,
+        "sha256": "832d3e1509b724d977e39c8c1ca19ec7e3848b1d98836ec0b0ff18274073c2bc"
+      },
+      {
+        "relative": "lib/libmimalloc_static.a",
+        "bytes": 308632,
+        "sha256": "1790cdb1e845744797513c9f8e945a6b7204caa87171dfe4c7cbd10c23fd9815"
+      },
+      {
+        "relative": "lib/libmlx.a",
+        "bytes": 11545288,
+        "sha256": "623d8fca526ed1b18c20e3fc9ab4260d190cbfbf85ea09d87f597c9b57c3100f"
+      }
+    ],
+    "public_apple_header": {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk/include/hyle/graph/apple.h",
+      "bytes": 6233,
+      "sha256": "f61ad9e69cb85f731112b2a1ca0ec9b0a1158714e02b911bfc3924fbb0ba03d0"
+    },
+    "metadata_files": [
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk/lib/cmake/Hyle/HyleTargets-factor_error.cmake",
+        "bytes": 5168,
+        "sha256": "e244882f2611dac180e1ac10554ef21023bea6968c0c21e0c1243291df954edc"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk/lib/cmake/Hyle/HyleTargets-product_error.cmake",
+        "bytes": 4898,
+        "sha256": "b21495d5729d47d25bc4cdb80d525d854db6d4dceee21d215b71ae37801bd56e"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk/lib/cmake/Hyle/HyleTargets-factor_graph_route_apple-release.cmake",
+        "bytes": 960,
+        "sha256": "ffa699c9db4addfb3a124c6f4afd99a815346c4de9e287e16fe39dd8fdbd61dc"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk/lib/cmake/Hyle/HyleTargets-factor_mem-release.cmake",
+        "bytes": 1348,
+        "sha256": "9b57d2c6f6d4b563417aa2ae51f708d1aef7dbc73b6d8337842032e7cf16efe1"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk/lib/cmake/Hyle/HyleTargets-factor_compute_state.cmake",
+        "bytes": 5420,
+        "sha256": "8f9b8d75a76c2acc17af47a0df1e7cf55d60682725e3393a3938e7aff4717f76"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk/lib/cmake/Hyle/HyleTargets-factor_graph_batch-release.cmake",
+        "bytes": 918,
+        "sha256": "1338848b81d00b0b1e4d983416bae8af3688c873cef4a4b0ab6f22c2c8d0e013"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk/lib/cmake/Hyle/HyleTargets-factor_platform-release.cmake",
+        "bytes": 897,
+        "sha256": "06a609ddb29ce97762934756620896b017c435087ca735c58ebedd3a4b4cf45d"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk/lib/cmake/Hyle/HyleTargets-factor_compute.cmake",
+        "bytes": 5436,
+        "sha256": "3cd9c94250e82665423b3b778e30f10fcc4249a135614b87f43893721f20e482"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk/lib/cmake/Hyle/HyleTargets-factor_compute_provider_ggml_metal.cmake",
+        "bytes": 5558,
+        "sha256": "ef534d49687dd73313eb44b38fa564a6e5a1924de92072539771bae45255b625"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk/lib/cmake/Hyle/HyleTargets-factor_container_intrusive.cmake",
+        "bytes": 5145,
+        "sha256": "66fe1446ee9e97340dba60f5c92ffaa4cdeb2fba92df29f9d8a8d7a443e03653"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk/lib/cmake/Hyle/HyleTargets-factor_mem_vm-release.cmake",
+        "bytes": 883,
+        "sha256": "492f4f49126ffa30d2faf1aeacfc5d046409fd6a5f1c2a16a57eba9e1ffd4578"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk/lib/cmake/Hyle/HyleTargets-factor_util_core.cmake",
+        "bytes": 5095,
+        "sha256": "bbb9781919533bfce8ebfff3802058f2da10b1b5ecc55ca44a1a9388be98a19b"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk/lib/cmake/Hyle/HyleTargets-foundation_hyle_trace.cmake",
+        "bytes": 4042,
+        "sha256": "496bf7826f37591e72afe6f7b9d20038ed0201d37806a7fd951846aff9953ecf"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk/lib/cmake/Hyle/HyleTargets-factor_container_queue.cmake",
+        "bytes": 5163,
+        "sha256": "aec8952711f8149c405eb5107562ee583c3eb817cd89ebb3031e30b75f256077"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk/lib/cmake/Hyle/HyleTargets-factor_graph_progress.cmake",
+        "bytes": 5523,
+        "sha256": "e490917efd31ca2b5eaa8072fc490efa571f8fca8c307bf29938bc7f1b896f6b"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk/lib/cmake/Hyle/HyleTargets-factor_compute_route_apple-release.cmake",
+        "bytes": 1455,
+        "sha256": "2ce31fd00c1222f3a4f6cb253784f85098b579b02e0439a0be78dbe4445bc2d2"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk/lib/cmake/Hyle/HyleConfigVersion.cmake",
+        "bytes": 3249,
+        "sha256": "d9f95ead4f9d6d91365d659e872794aacbaa4262a60cdc268231920763e3cf87"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk/lib/cmake/Hyle/HyleTargets-factor_mem_vm.cmake",
+        "bytes": 5359,
+        "sha256": "58d148989dd6c0f989ad05594566d775abfdf1c98e73296c2542228dadc9d312"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk/lib/cmake/Hyle/HyleTargets-factor_container-release.cmake",
+        "bytes": 904,
+        "sha256": "657045f32c935ac6eb2b4596689f58cc5210ac887585d73206504e36c1a1b000"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk/lib/cmake/Hyle/HyleTargets-factor_compute_ops.cmake",
+        "bytes": 5248,
+        "sha256": "35bee3b8e61f3df17374e0708b322bdca739a93609c3a4251909612cedcc0f4e"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk/lib/cmake/Hyle/HyleTargets-factor_platform_thread-release.cmake",
+        "bytes": 946,
+        "sha256": "3bcc45c22009ee439937954e09a7b0583c79f8b839c0e2dd540bec514fc41659"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk/lib/cmake/Hyle/HyleTargets-factor_graph_route_apple.cmake",
+        "bytes": 5798,
+        "sha256": "e184fd2f22dd60dcd418891f10d7afd2c688d9a25684c0f5887341cc1c0310d8"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk/lib/cmake/Hyle/HyleTargets-factor_mem.cmake",
+        "bytes": 5423,
+        "sha256": "0603d3505364286bb949e59fd1a151ce6bce4454b7493016a71014211d5f3750"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk/lib/cmake/Hyle/HyleTargets-factor_compute_ops-release.cmake",
+        "bytes": 918,
+        "sha256": "63a58191687405f548ba989e839b2d43a5d64dab2f0060dcfc49abbfb65b634c"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk/lib/cmake/Hyle/HyleTargets-factor_container.cmake",
+        "bytes": 5327,
+        "sha256": "6006e373a11905a713ca050bd3f5c1264eea04075a1c777caecfef4353037032"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk/lib/cmake/Hyle/HyleTargets-factor_graph-release.cmake",
+        "bytes": 876,
+        "sha256": "db0093910c758deede8eab056dc8c0a9754c1c6eaa2faf048ef7bd2cfc465d51"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk/lib/cmake/Hyle/HyleTargets-foundation_hyle_build_contract.cmake",
+        "bytes": 4057,
+        "sha256": "34d4fe30662eaff82d07005d13b2884fd8fd1e1c5c461ce0e81c429383d0d487"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk/lib/cmake/Hyle/HyleTargets-factor_time-release.cmake",
+        "bytes": 869,
+        "sha256": "9d268cb13a589b986dae0a47e1d3cae7adad1bf6673a8d1e262e72278f32e41b"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk/lib/cmake/Hyle/HyleTargets-product_sched.cmake",
+        "bytes": 4898,
+        "sha256": "2d79f245aa8baee1eeee7665e5c382099d414b9f77cf716c0b3b0ee54e87d126"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk/lib/cmake/Hyle/HyleTargets-factor_sched.cmake",
+        "bytes": 5748,
+        "sha256": "c1dcca5987e94eec06b5afcd1b85d76e02fc41c1f500131d58fd7fdbf0f571a9"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk/lib/cmake/Hyle/HyleTargets-factor_core.cmake",
+        "bytes": 5030,
+        "sha256": "5b0db1bca160f10ee2e758470fb898eefca0309ffcd4f1a04b80c8e63039bc9a"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk/lib/cmake/Hyle/HyleTargets-product_compute.cmake",
+        "bytes": 5220,
+        "sha256": "43038414b357460aba0604a71e2eecbe644c7e139f1655d5290f5d3185139724"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk/lib/cmake/Hyle/HyleTargets-factor_error-release.cmake",
+        "bytes": 876,
+        "sha256": "c89bf31f082b60d85b61a627c8e2ab0f12f822771996cfaf6eb004f1e7a8f927"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk/lib/cmake/Hyle/HyleTargets-product_core.cmake",
+        "bytes": 4891,
+        "sha256": "a94e467b47d382864f41fbc0ca0e14085f87814aa4297f94f84d912616522e8f"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk/lib/cmake/Hyle/HyleTargets-factor_compute-release.cmake",
+        "bytes": 890,
+        "sha256": "2cb11517bdab6268f98881a747a4cfe4190c58d5d20ffb46c4198f3ac630b527"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk/lib/cmake/Hyle/HyleTargets-product_time.cmake",
+        "bytes": 4945,
+        "sha256": "3d325a36995a68913d4199332f4f06f608c8f95b744e4779650712291678a102"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk/lib/cmake/Hyle/HyleTargets-foundation_hyle_testing.cmake",
+        "bytes": 4050,
+        "sha256": "b03046f22eecaccfe2ac337af7e09faf2ae2e3191d84122f154748bb4dc70210"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk/lib/cmake/Hyle/HyleTargets-factor_time.cmake",
+        "bytes": 5163,
+        "sha256": "906fbbd7213b4dc62e5de922bc1f1c3c608f4292dc4d2d13e20187b52c19b722"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk/lib/cmake/Hyle/HyleTargets-factor_compute_route_apple.cmake",
+        "bytes": 6320,
+        "sha256": "d6cab47ae94a1cd937a402677f9b71235d5254f2850c9bf1cf666a26959d926c"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk/lib/cmake/Hyle/HyleTargets-factor_compute_batch.cmake",
+        "bytes": 5420,
+        "sha256": "969d289f331927a2ba9bf91a5104c625595461a9c79706645cd9895bb50e8718"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk/lib/cmake/Hyle/HyleTargets-factor_platform_thread.cmake",
+        "bytes": 5316,
+        "sha256": "da8593458098505aed5ad1618e2d3d80b115140eeb87693c5b64848ddcca5443"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk/lib/cmake/Hyle/HyleTargets-factor_sched-release.cmake",
+        "bytes": 880,
+        "sha256": "5d22a8309490aa294c72c78377a7d100f509c7344b427ed6847c02d960766e63"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk/lib/cmake/Hyle/HyleTargets-factor_compute_batch-release.cmake",
+        "bytes": 932,
+        "sha256": "0502e0a14a1a6c000dc6c13aa62856e21903d4db25f0f23d99091c3e24f3309d"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk/lib/cmake/Hyle/HyleTargets-product_graph_progress.cmake",
+        "bytes": 4961,
+        "sha256": "4ad51acc8ae5cba5198716179ad6ef21d6c3d6ea413c9cd5a042b331cde4994e"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk/lib/cmake/Hyle/HyleTargets-factor_compute_state-release.cmake",
+        "bytes": 932,
+        "sha256": "6c254b0394cb0755c0c55283183619aae80e5e5c1a583d11b28150f0621adf06"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk/lib/cmake/Hyle/HyleTargets-factor_platform.cmake",
+        "bytes": 5225,
+        "sha256": "324c94c50ab182de6ccef45ce672e74416ce2ca2811e446f466142283abbb388"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk/lib/cmake/Hyle/HylePackageIndex.cmake",
+        "bytes": 11328,
+        "sha256": "5d9d74051c3db8438ddb1a806b7d4c54d3250c2049c7e99eed430fab62b3aa97"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk/lib/cmake/Hyle/HyleTargets-product_platform.cmake",
+        "bytes": 5035,
+        "sha256": "d1e5d11a13ee02da91f20c0365844b496a03d813ec8f53cedc760606aa439169"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk/lib/cmake/Hyle/HyleTargets-factor_graph.cmake",
+        "bytes": 5572,
+        "sha256": "daec1aa790d7c658f16e7a08cae08f0eb331f87db03bf5ea7e9060c1153da227"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk/lib/cmake/Hyle/HyleTargets-product_graph.cmake",
+        "bytes": 5140,
+        "sha256": "d02d0ef9548931ca867c40423983939f36c23803a06af2d9f8c35706d5cfab0d"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk/lib/cmake/Hyle/HyleTargets-product_math.cmake",
+        "bytes": 4891,
+        "sha256": "a0d5fab1d7c2652540a5ea0b256a399bc020678ba477dcd98cfaed54efea9919"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk/lib/cmake/Hyle/HyleTargets-factor_compute_provider_ggml_metal-release.cmake",
+        "bytes": 1030,
+        "sha256": "fc3f0a10ab25caa855ce36a90ffc8ccb9d7df4530299f97817fc1713957dd602"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk/lib/cmake/Hyle/HyleTargets-factor_math.cmake",
+        "bytes": 5070,
+        "sha256": "b2b4fe8992678f50060b4ca2363dbb8646d6f47401e23afbad7e01b0fffc4d7d"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk/lib/cmake/Hyle/HyleRuntimeStaging.cmake",
+        "bytes": 16926,
+        "sha256": "1a256a253dc5e269554bf44599e22fa679baac0f495a207847e5cf8cd8cdcc65"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk/lib/cmake/Hyle/HyleAppleRuntime.cmake",
+        "bytes": 1984,
+        "sha256": "70b4dd4f0696a7d12048ae986ac2af4d19189d6d6b30858bc11b06f8d8a17869"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk/lib/cmake/Hyle/HyleTargets-factor_graph_batch.cmake",
+        "bytes": 5524,
+        "sha256": "32caa920cb71148155eafae901f6448a518913e293963832d570161d4f77e398"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk/lib/cmake/Hyle/HyleConfig.cmake",
+        "bytes": 9904,
+        "sha256": "805f7f15bd5a4db13ca4f110ce14caaeb6ddccff75f820c4a7f402b1164a3739"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk/lib/cmake/Hyle/HyleTargets-factor_timer_queue.cmake",
+        "bytes": 5215,
+        "sha256": "59a5917588448e6f843bb9277d479a1d23185e1ed09304b8a5e6e1fcc0efe824"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk/lib/cmake/Hyle/HyleTargets-factor_compute_ggml_runtime-release.cmake",
+        "bytes": 2482,
+        "sha256": "7b3d178535c9603617066b22f94af42453ef39719fa613f35ef7445e38691a30"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk/lib/cmake/Hyle/HyleTargets-factor_platform_fs.cmake",
+        "bytes": 5342,
+        "sha256": "411ca7d6586771a7fb71754b279e715a08aaa50c4e93f728f08afdb36e51b5fc"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk/lib/cmake/Hyle/HyleTargets-factor_graph_progress-release.cmake",
+        "bytes": 939,
+        "sha256": "15443951909912a4636e7d1b25a5b4525344e836fef501faa687b9e2ad31bd4b"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk/lib/cmake/Hyle/HyleTargets-factor_platform_fs-release.cmake",
+        "bytes": 918,
+        "sha256": "beec00b6f42d3ae5c79f8be8db831ad822a7950599ffd8bfabd28fe41b1dbc6d"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk/lib/cmake/Hyle/HyleTargets-factor_compute_ggml_runtime.cmake",
+        "bytes": 6640,
+        "sha256": "a8ed96e9ae3e9bd56fa1493d0cdfcd9e8eb195b79c48829bc97983c35877365f"
+      }
+    ],
+    "forbidden_source_build_old_prefix_references": []
+  },
+  "relocation": {
+    "original_prefix_absent": true,
+    "new_prefix": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk",
+    "method": "Renamed the actual cmake --install output to relocated/sdk; configured fresh consumers with only that explicit Hyle_DIR and CMAKE_PREFIX_PATH. No manual archive/member replacement or native override object was used."
+  },
+  "source_identity": {
+    "producer_inputs": 751,
+    "source_manifest_sha256": "d6ef9053a5adb1b10d5df935040a7fa089280411849f64b344461dd3e02d7083",
+    "source_freeze": {
+      "path": ".scratch/architecture-refactor-2026-10-18/apple-current-sdk-2026-10-21/source-freeze.json",
+      "bytes": 133243,
+      "sha256": "e75fb9443dd65c1aa98eda4e84bce0b761eeb5ea5830297106d47adc8c5ccbb2"
+    },
+    "actual_ninja_dependency_audit": {
+      "path": ".scratch/architecture-refactor-2026-10-18/apple-current-sdk-2026-10-21/actual-dependencies-audit.json",
+      "bytes": 65022,
+      "sha256": "2772da59535b20d058e0c890a8010c7d75fbf6c1d09eefde2c852378f49d8501"
+    },
+    "actual_project_dependencies": 420,
+    "current_canonical_drift": 0
+  },
+  "actual_link": {
+    "archives_scope": "Current relocated installed Hyle, MLX and ggml archives. The affine regression additionally uses one frozen current-layout test object and the unchanged original GoogleTest harness archives.",
+    "observer_context": false,
+    "old_Hyle_loose_overrides": false,
+    "owner_excerpt": {
+      "path": ".scratch/architecture-refactor-2026-10-18/apple-current-sdk-2026-10-21/actual-link-owner-excerpt.txt",
+      "bytes": 45669,
+      "sha256": "55fc74ed932f4d5ffbed7e15afed5ca31991a864cc162ae3e75bcaca9290c642"
+    },
+    "test_object_reuse": {
+      "path": ".scratch/architecture-refactor-2026-10-18/apple-current-sdk-2026-10-21/affine-test-object-reuse.json",
+      "bytes": 19615,
+      "sha256": "eee76bc5766783a5e7741053b6152fe6c1c0871b88cc5968c7d8ca187aba01c3"
+    },
+    "native_header_reuse": {
+      "path": ".scratch/architecture-refactor-2026-10-18/apple-current-sdk-2026-10-21/affine-test-sdk-header-reuse-check.json",
+      "bytes": 3103,
+      "sha256": "cfbdfd950549fb18122794d6e0f4c7914496ec22374a8f34dd56c446f08eb635"
+    },
+    "harness": {
+      "path": ".scratch/architecture-refactor-2026-10-18/apple-current-sdk-2026-10-21/reused-test-harness-identity.json",
+      "bytes": 462,
+      "sha256": "104465d817ad0c6d2cd9f4f3ce973839d114b7fcf5ba4a414dec533195db0828"
+    }
+  },
+  "retained_failures": [
+    {
+      "record": "attempts/configure1/results/configure.stderr.log",
+      "reason": "Real missing direct private container dependency of graph_route_apple/weight_binding.cc; parent added only the private edge, keeping the audit enabled."
+    },
+    {
+      "record": "attempts/install1/results/install.stderr.log",
+      "reason": "Validation source sync omitted root THIRD_PARTY_NOTICES.md. Added the exact current 4591-byte file and reran install; no product code or math changed."
+    }
+  ],
+  "product_change": {
+    "file": "cmake/HyleComponents.cmake",
+    "component": "graph_route_apple",
+    "change": "Added container to PRIVATE_DEPS because the existing Apple WeightBatch bind adapter directly includes container/small_vector.h.",
+    "scope": "Apple-only factor dependency edge; no PUBLIC dependency or audit bypass. This edge does not alter the Linux selected closure.",
+    "diff": {
+      "path": ".scratch/architecture-refactor-2026-10-18/apple-current-sdk-2026-10-21/product-dependency-fix.diff",
+      "bytes": 657,
+      "sha256": "352151bc531cb227a4809948bcd78ead4b0a622a42ea9108f8a3e24cce977d45"
+    }
+  },
+  "ABI": {
+    "description": "The installed Apple CompileReport includes prepared_constant_count and prepared_constant_bytes. Every selected product owner was rebuilt by the current producer. The frozen affine test object uses the same current public header and the same 12 native headers; 75 actual canonical project dependencies were rechecked.",
+    "public_header": {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk/include/hyle/graph/apple.h",
+      "bytes": 6233,
+      "sha256": "f61ad9e69cb85f731112b2a1ca0ec9b0a1158714e02b911bfc3924fbb0ba03d0"
+    }
+  },
+  "limitations": [
+    "No full operator/model/performance matrix rerun.",
+    "No throughput, physical allocation or GPU dispatch claim.",
+    "Apple-only producer does not sign CPU or hybrid routes.",
+    "Current package exports target and headers and the affine verification consumer finds and links it. These tests do not execute a progress-specific API journey.",
+    "Existing samples return success after their native numerical checks; no per-submit XML count is emitted, so no aggregate submit count is inferred.",
+    "No throughput, physical allocation or full operator/model matrix claim. This is a current default CMake warning-policy build, not a -Werror producer build; five external warnings are retained in the actual build log."
+  ],
+  "retention": {
+    "cleanup_performed": false,
+    "instruction": "Preserve the fixed producer, relocated SDK, consumer builds and current objects. No deletion or test.ps1 execution is part of this publication.",
+    "producer_build": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/build",
+    "installed_sdk": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk",
+    "candidate_cleanup_inventory": {
+      "path": ".scratch/architecture-refactor-2026-10-18/apple-current-sdk-2026-10-21/current-sdk/results/cleanup-inventory.json",
+      "bytes": 1938,
+      "sha256": "feae265cac21554e247b4d4ad756cf77a5295a98d13ee879aa2517c947bf2d4e"
+    }
+  },
+  "related_evidence": [
+    {
+      "path": "docs/evidence/performance/apple-affine-constant-preparation-reference-2026-10-21.json",
+      "bytes": 14987,
+      "sha256": "260d5132e47bb3f3142a510c606071cc7a7818d644f03d0f1026249e95798e5e"
+    },
+    {
+      "path": "docs/evidence/performance/apple-affine-metadata-preparation-2026-10-21.json",
+      "bytes": 14819,
+      "sha256": "630d41813599f61970cc8bc2fce33bad2fbdec8dff3690b923a5d57133fa61c3"
+    }
+  ],
+  "dependency_lock": {
+    "path": "cmake/HyleDependencyLock.json",
+    "bytes": 77554,
+    "sha256": "88d6abfd8da5f71eb0e76cd167bf2056d3c4a15d9af1765ac022cce80b9abe65"
+  },
+  "evidence_zip": {
+    "path": "docs/evidence/correctness/apple-current-sdk-reference-2026-10-21.zip",
+    "bytes": 510288,
+    "sha256": "fac97044dadb75b00ff25d13a551675e1bf73232bdb30ebdf5f120e16cd80b23",
+    "members": 187,
+    "members_checked": 187
+  }
+}

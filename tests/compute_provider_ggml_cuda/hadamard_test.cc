@@ -46,7 +46,9 @@ void exercise_hadamard(DataType type, std::int64_t width, bool inverse) {
                           inputs, outputs, memory.ref());
   ASSERT_TRUE(prepared) << prepared.error().message();
   EXPECT_EQ(prepared->provider().id, ggml_cuda::kProviderId);
-  auto invocation = prepared->create_invocation();
+  auto invocation_workspace =
+      ggml_cuda_test::workspace_buffer(*prepared, memory.ref());
+  auto invocation = prepared->create_invocation(invocation_workspace.view());
   ASSERT_TRUE(invocation) << invocation.error().message();
   auto queue = context.create_queue().value();
   const auto check = [&](const mem::Buffer &output,

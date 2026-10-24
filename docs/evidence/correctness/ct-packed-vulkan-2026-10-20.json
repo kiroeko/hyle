@@ -1,0 +1,630 @@
+{
+  "date": "2026-10-20",
+  "status": "implemented_actual_vulkan_focused_correctness_and_two_shape_paired_performance_complete",
+  "scope": "Synthetic ordinary public Graph CT symmetric/asymmetric INT4 native packed contraction on Windows NVIDIA RTX4070. No selected artifact payload, whole-model inference or validation-layer execution.",
+  "architecture": "Two native whole-region proposals: original route1, closed CT-contracted route4. Reuse shared CtPackedPattern and original Program/Invocation/Queue/lifetimes.",
+  "numerical_contract": "Rscale((q-z)*s) -> Rdecode -> Roperand; F32 dot and output RNE. Shared U32 typed/source math, native precise ordinary dot and U32 exceptional/FTZ-sensitive replay. Symmetric z=8; asymmetric K-packed W and N-packed Z preserve original bytes.",
+  "storage": {
+    "dense_weight_bank": false,
+    "activation_qdq_bank": false,
+    "bounded_transient": "64 shared partial words plus 64 exceptional flags per workgroup; scalar weight decode per participating lane",
+    "native_plan_probe": {
+      "M": 3,
+      "N": 257,
+      "K": 1024,
+      "output_invocation_payload_bytes": 3084,
+      "original_constant_capacity_bytes": 152256,
+      "excluded_dense_bf16_weight_bytes": 526336,
+      "excluded_dense_f32_weight_bytes": 1052672
+    },
+    "limits": "Actual original carriers/output padded byte capacities and native dispatch/U32 bounds. Existing generic Program descriptor bounds still apply; no fake dense N*K allowance."
+  },
+  "default_route": "All supported M and F32/F16/BF16 boundaries remain capable as route4. Packed rank199 only if every contraction has flattened M1 and BF16 scale/decode/operand; others rank201, original rank200. No model allowlist or public force switch.",
+  "validation": {
+    "total": 18,
+    "failures": 0,
+    "skipped": 0,
+    "suites": [
+      {
+        "name": "VulkanCtPackedLinear",
+        "tests": 5,
+        "failures": 0,
+        "skipped": 0
+      },
+      {
+        "name": "VulkanNvfp4ReferenceGraph",
+        "tests": 2,
+        "failures": 0,
+        "skipped": 0
+      },
+      {
+        "name": "VulkanNativeRegion",
+        "tests": 11,
+        "failures": 0,
+        "skipped": 0
+      }
+    ],
+    "route_default_assertions": "Seven source-round profiles: actual default selects M1 BF16/BF16/BF16; M3 and other precision profiles use original route. Every profile also executes forced-existing packed and original candidates through test-only proposal filtering.",
+    "final_xml": "checks/ct-packed-tests.xml",
+    "commands": "checks/commands-run.json",
+    "initial_errors": "checks/ct-packed-tests-harness-red.xml and original compile logs are preserved; no product range/ownership checks were weakened."
+  },
+  "performance": {
+    "scope": "RTX4070 single-machine paired wall submit+wait; not GPU timestamps; only BF16/BF16/BF16 N512K1024 M1/128; no crossover claim",
+    "method": "Same public Graph, same source/resource, constant materialize/compile/bind/prepare excluded; two warmups per arm, ten AB/BA paired samples per arm; steady_clock wall submit+wait. Original route1 includes hot ArtifactWeightDecode/IREE input copies plus its mature MatMul; this is not a separately predecoded dense-weight GEMM comparison.",
+    "samples": [
+      {
+        "M": 1,
+        "N": 512,
+        "K": 1024,
+        "arm": "original",
+        "microseconds": [
+          229.8,
+          320.2,
+          234.4,
+          277.4,
+          478.8,
+          249.2,
+          276.5,
+          224.3,
+          283.3,
+          232.5
+        ],
+        "median_us": 262.85,
+        "min_us": 224.3,
+        "max_us": 478.8
+      },
+      {
+        "M": 1,
+        "N": 512,
+        "K": 1024,
+        "arm": "packed",
+        "microseconds": [
+          74.3,
+          73.7,
+          81.2,
+          74.6,
+          82.4,
+          93.8,
+          80.6,
+          75.2,
+          89,
+          79.8
+        ],
+        "median_us": 80.19999999999999,
+        "min_us": 73.7,
+        "max_us": 93.8
+      },
+      {
+        "M": 128,
+        "N": 512,
+        "K": 1024,
+        "arm": "original",
+        "microseconds": [
+          303.2,
+          712.1,
+          550.1,
+          409.7,
+          304.7,
+          535.7,
+          433.6,
+          470.9,
+          390.8,
+          549.7
+        ],
+        "median_us": 452.25,
+        "min_us": 303.2,
+        "max_us": 712.1
+      },
+      {
+        "M": 128,
+        "N": 512,
+        "K": 1024,
+        "arm": "packed",
+        "microseconds": [
+          1769.6,
+          3129.4,
+          2332.8,
+          1768.6,
+          1745.5,
+          2719.6,
+          2306.2,
+          1822.3,
+          2070.4,
+          1796.6
+        ],
+        "median_us": 1946.35,
+        "min_us": 1745.5,
+        "max_us": 3129.4
+      }
+    ],
+    "M1_speedup": 3.277431421446384,
+    "M128_packed_slowdown": 4.303703703703704,
+    "interpretation": "M1 BF16: original262.85us vs packed80.2us median, ~3.28x faster. M128 BF16: original452.25us vs packed1946.35us, ~4.30x slower. Preserve full capability but default favor only measured M1 BF16 boundary branch. No crossover or general shape/hardware claim.",
+    "raw": "checks/ct-paired-perf.stdout.log",
+    "summary": "checks/performance-summary.json",
+    "timing_version": "Measured before the final cold default-rank and metadata bad_alloc handling change. Actual hot shader/lowering objects unchanged; test-side arm filtering excludes other candidates and therefore ignores default rank. Exact bench source/compile dependency identities and retained executable are in checks. Later final wrapper adds default-policy assertions."
+  },
+  "shader_proofs": {
+    "old_variants": 13,
+    "old_variants_byte_identical": 13,
+    "comparison": "checks/shader-comparison.json",
+    "new_ct_only_spirv": "shaders/ct_packed.spv",
+    "shared_source": "checks/ct-exact-shared-source-proof.json",
+    "shared_exact": true
+  },
+  "explicit_limits": {
+    "selected_artifact_payload_run": false,
+    "whole_model_run": false,
+    "validation_layer_run": false,
+    "other_backend_run": false,
+    "original_native_private_memory": "unknown",
+    "real_invocation_oom_reselects_packed": false,
+    "capacity_scope": "Only actual direct native CT PlanFacts payload probe; not global RSS/VRAM peak or all model capacity acceptance."
+  },
+  "build_scope": "Incremental strict MSVC /W4 /WX: native_region, vulkan_operations, vulkan_ct_packed, generated Vulkan shaders; one new CT wrapper. Existing SDK/libs/other linked objects reused. CMake source/dependency edits included; no full CMake target/SDK rebuild.",
+  "source_freeze": "source-freeze.json",
+  "product_snapshots": "source/",
+  "full_report": "final-receipt.json",
+  "evidence_archive": {
+    "path": "docs/evidence/correctness/ct-packed-vulkan-2026-10-20.zip",
+    "bytes": 248795,
+    "sha256": "6d608533564f89f435aa254f63f09e428880fff48e82e71667c8e6f50c1f4033",
+    "member_count": 90,
+    "uncompressed_bytes": 1107130,
+    "members": [
+      {
+        "member": "archive.py",
+        "bytes": 10724,
+        "sha256": "45bea48fcaadf7171da4881366f82673598ead6f4ae872d6d85b05c89711c891"
+      },
+      {
+        "member": "build.py",
+        "bytes": 6401,
+        "sha256": "cb95a7f115b35a9a1af1fe4f14300b573d020b8d372d091724dc16d2a5a73f50"
+      },
+      {
+        "member": "checks/commands-host.json",
+        "bytes": 12431,
+        "sha256": "d9571b885eedbab7b776ba3d88de18ad25f276390cc39aa2c93e7249ba63cdba"
+      },
+      {
+        "member": "checks/commands-link.json",
+        "bytes": 25097,
+        "sha256": "0cc6211083021a3aa5a1ee11486018d6eb0be6cfca6b123fde8dad47498baedc"
+      },
+      {
+        "member": "checks/commands-list.json",
+        "bytes": 269,
+        "sha256": "94f40688e6f8e3a7e4006d689f79d9a8d619ccc7ce9a40ea1844d839f222ea8d"
+      },
+      {
+        "member": "checks/commands-perfbuild.json",
+        "bytes": 28881,
+        "sha256": "3a39c5a0a61b67721ef9e2a09b57cf7cd3ec6711f814ef4fd99a392e7f04b9de"
+      },
+      {
+        "member": "checks/commands-perfrun.json",
+        "bytes": 444,
+        "sha256": "c46c4f83684adbcda7f02e9c39180f721caa3b5139415c420c9c632ed4f37c11"
+      },
+      {
+        "member": "checks/commands-rank.json",
+        "bytes": 3353,
+        "sha256": "d0a3df6385610259b36e2a36498c3e68f4ff7d134f3f5b3c313ec5aa33456e4d"
+      },
+      {
+        "member": "checks/commands-run.json",
+        "bytes": 497,
+        "sha256": "878aea029dd1271739c7d212ecd19875d53f3c30db85ee389ccc72caa1d37761"
+      },
+      {
+        "member": "checks/commands-shaders-reserved-word.json",
+        "bytes": 630,
+        "sha256": "12e8d93b5612dae95ea568985de270b81f0b79e9f824651ee7541f02e72675d1"
+      },
+      {
+        "member": "checks/commands-shaders.json",
+        "bytes": 629,
+        "sha256": "ee580b61ed595b792c2d2c8be62debd37fac9d99eada4edc02654902be87b043"
+      },
+      {
+        "member": "checks/commands-test.json",
+        "bytes": 3785,
+        "sha256": "226bc4bafe3ec601c92d5091fb12876e0b1f9f8415236bf8c6060dcc8db816da"
+      },
+      {
+        "member": "checks/ct-exact-shared-source-proof.json",
+        "bytes": 1637,
+        "sha256": "c90a880bd1ceb2bb4c9f2af6e0f76aff1cd17da02019b2626e74098a21a2f273"
+      },
+      {
+        "member": "checks/ct-packed-tests-harness-red.stdout.log",
+        "bytes": 2031,
+        "sha256": "d74ed8a390b68f2fed5bb7c81787746881bf443b98bbe5af52e7643e83981a39"
+      },
+      {
+        "member": "checks/ct-packed-tests-harness-red.xml",
+        "bytes": 3225,
+        "sha256": "aea10c18a03630769ba44ff38a00e9b8cc00739dc48d8b55084cc89a94e51bf6"
+      },
+      {
+        "member": "checks/ct-packed-tests-pre-rank.stdout.log",
+        "bytes": 1478,
+        "sha256": "e38b0a1edbf43dc874ea4ab6176728705671813655189a854516859fe78f806c"
+      },
+      {
+        "member": "checks/ct-packed-tests-pre-rank.xml",
+        "bytes": 2617,
+        "sha256": "3d2b36bd6ca94460d7a7fad48b8d517d0ff9985680c8f7500915fc91c42488d0"
+      },
+      {
+        "member": "checks/ct-packed-tests.stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "member": "checks/ct-packed-tests.stdout.log",
+        "bytes": 6042,
+        "sha256": "23668abe57ed7834410232d50087cf58cf302741538a0e01218041cdd349e543"
+      },
+      {
+        "member": "checks/ct-packed-tests.xml",
+        "bytes": 8081,
+        "sha256": "d5d639b3e11837a2569ae275102b23171daf3649387ea93d451c105ee488c9d7"
+      },
+      {
+        "member": "checks/ct-paired-perf.stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "member": "checks/ct-paired-perf.stdout.log",
+        "bytes": 1198,
+        "sha256": "a75c25bbc67b62e5ec73f92d941b971a3b05ff8a95cf3d1bb0c30d61262a774e"
+      },
+      {
+        "member": "checks/ct-paired-perf.xml",
+        "bytes": 761,
+        "sha256": "de3e926fc2cc6a7f9308ad00dcb369358c3eced749f7e574270478697e01358d"
+      },
+      {
+        "member": "checks/ct-perf-compile.stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "member": "checks/ct-perf-compile.stdout.log",
+        "bytes": 8,
+        "sha256": "30c79a8e2c6db2271740a5c469a2a72c39e380b97f946e9e2cf859483d371052"
+      },
+      {
+        "member": "checks/ct-perf-deps.json",
+        "bytes": 36891,
+        "sha256": "de179be837611f74e9e683b25c72af582885f21c8c90960e69575e45e2467235"
+      },
+      {
+        "member": "checks/ct-perf-identity.json",
+        "bytes": 78294,
+        "sha256": "89ab64d61ca21eee510960ffd44c4292c7114ed59756852df4b77bde27e03c45"
+      },
+      {
+        "member": "checks/ct-test-compile-attempt1.stdout.log",
+        "bytes": 1839,
+        "sha256": "cd93d17147f6ff0aeb4095ebee5f60fceb0a68e5c82103cf9101b87177e324b9"
+      },
+      {
+        "member": "checks/ct-test-compile.stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "member": "checks/ct-test-compile.stdout.log",
+        "bytes": 25,
+        "sha256": "fe7c04ebd5e34d7ef4469c2c62e6e45b6ef82fb220eac4cd471e433ace86882a"
+      },
+      {
+        "member": "checks/ct-test-deps.json",
+        "bytes": 36269,
+        "sha256": "a698555dda53f03b71e1c06db576aa054ebfd3cacae1f18520f1f43de27ece27"
+      },
+      {
+        "member": "checks/ct-test-identity.json",
+        "bytes": 77043,
+        "sha256": "5fe6232ef66df38055a996ad4333767d8e396a22ca414ae9c31369e52620001e"
+      },
+      {
+        "member": "checks/link-plan.json",
+        "bytes": 69791,
+        "sha256": "9be7af1c0d3493452004519116f807a9928b645e80b5289791e549cb58743b47"
+      },
+      {
+        "member": "checks/link.stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "member": "checks/link.stdout.log",
+        "bytes": 257,
+        "sha256": "1f1e4702ebb7814174d5238b88f54b5b5dced3f8d2f920ecf91fe9b8f40e491b"
+      },
+      {
+        "member": "checks/list.stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "member": "checks/list.stdout.log",
+        "bytes": 4635,
+        "sha256": "d0c4fe5e3de17602891c87aead7aa7d898856ede0cd60867e2819654ead53531"
+      },
+      {
+        "member": "checks/native_region-compile.stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "member": "checks/native_region-compile.stdout.log",
+        "bytes": 17,
+        "sha256": "d0f97f06aafb720a7def52392c87139b1543ce29cdf1d973b1d6d281a4551985"
+      },
+      {
+        "member": "checks/native_region-deps.json",
+        "bytes": 28707,
+        "sha256": "2f77f411a5a057e6d04f6c3b7d16f0a14cf7cb3b9925f73246b12068391873d8"
+      },
+      {
+        "member": "checks/native_region-identity.json",
+        "bytes": 63011,
+        "sha256": "0674050eb76d8fc0a7b428bb3f356aaa6f7fcc19f3aa231c7ec4fff815b589bd"
+      },
+      {
+        "member": "checks/perf-link-plan.json",
+        "bytes": 24869,
+        "sha256": "f400d5989d418fd87012c7dfb0790829808896f1db78991356e05216270ea969"
+      },
+      {
+        "member": "checks/perf-link.stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "member": "checks/perf-link.stdout.log",
+        "bytes": 243,
+        "sha256": "9cfe2baa5f288be4c3c109aab4c039453c534cf4446cd976bac1bae5f6f6b52b"
+      },
+      {
+        "member": "checks/performance-summary.json",
+        "bytes": 1674,
+        "sha256": "ce5d94431aa23fca8e3213dc4f0d7e440581fb7d51ecc86876bd0f2147b86243"
+      },
+      {
+        "member": "checks/runtime-environment.json",
+        "bytes": 1769,
+        "sha256": "8a158fe9d4a6f2ae37bf2a10b131469799af7212043d7ff1d0d57fc06952ee03"
+      },
+      {
+        "member": "checks/shader-comparison.json",
+        "bytes": 7230,
+        "sha256": "37afdbd9f9c737c88a1b769b84fbe8ab7be9f470b1600118219ada44683e7a64"
+      },
+      {
+        "member": "checks/shader-generation-reserved-word.stderr.log",
+        "bytes": 1002,
+        "sha256": "70d35b4dc972715b34040ba3978c2023cd4c7fa84db10fe996f0bb5a2df16140"
+      },
+      {
+        "member": "checks/shader-generation-reserved-word.stdout.log",
+        "bytes": 542,
+        "sha256": "286ce5c913591ba12911e16c0f216818ba007a8278e3efe80ae01b9dc2c06239"
+      },
+      {
+        "member": "checks/shader-generation.stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "member": "checks/shader-generation.stdout.log",
+        "bytes": 1159,
+        "sha256": "939894df70d0cf3c1782a01fab5029ee25048d4be001d18123ff4a5c6ad04228"
+      },
+      {
+        "member": "checks/vulkan_ct_packed-compile.stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "member": "checks/vulkan_ct_packed-compile.stdout.log",
+        "bytes": 20,
+        "sha256": "0e74919e810d205d124847c9a7143251595f87d3cd6d4e4ee283f29a29d8168f"
+      },
+      {
+        "member": "checks/vulkan_ct_packed-deps.json",
+        "bytes": 23335,
+        "sha256": "6c268ce3e3cfa1ae734a99d5c771a231a2844bc86cefed2169eb234d501a8edd"
+      },
+      {
+        "member": "checks/vulkan_ct_packed-identity.json",
+        "bytes": 50322,
+        "sha256": "5e45a323e7d58b1b2f534e8d0c17a6a1dd5da5c4d25243af3a66a4ee53c0ec59"
+      },
+      {
+        "member": "checks/vulkan_operations-compile.stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "member": "checks/vulkan_operations-compile.stdout.log",
+        "bytes": 21,
+        "sha256": "a62a06502bce8b643731789a5c5c0a145f7ee4eece9eab2978df9e910b3763f8"
+      },
+      {
+        "member": "checks/vulkan_operations-deps.json",
+        "bytes": 23463,
+        "sha256": "a77ff09b15a07dc3229c5f73ab12b357e1b8ccfbcdba355348453d2fb63d9c0c"
+      },
+      {
+        "member": "checks/vulkan_operations-identity.json",
+        "bytes": 50693,
+        "sha256": "1d377d08235fe4c60006e219139dba3f7fd9c5e21fc4daf7fe3bd739dcbe875f"
+      },
+      {
+        "member": "checks/vulkan_shaders-compile.stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "member": "checks/vulkan_shaders-compile.stdout.log",
+        "bytes": 18,
+        "sha256": "5ffc81a85d7862aa4b4ebced8b8a3a6fa5117d52447350ef198c6266116e4dc1"
+      },
+      {
+        "member": "checks/vulkan_shaders-deps.json",
+        "bytes": 8863,
+        "sha256": "e1ac503e031d5b921a1d76dab24889f894bad2dae0dd7183f0bed7a558a30d66"
+      },
+      {
+        "member": "checks/vulkan_shaders-identity.json",
+        "bytes": 21111,
+        "sha256": "9917fb9f391c53e5e9c5d2ff79181b0cf714e9d24221d696e5cef58475914316"
+      },
+      {
+        "member": "final-receipt.json",
+        "bytes": 10585,
+        "sha256": "56fd868b7a651f7bad924a9a9448b6c4b799aba0fa387c06ef220c93d0dbe09a"
+      },
+      {
+        "member": "freeze.py",
+        "bytes": 9248,
+        "sha256": "a4c133a87418fd6a72af71312f6c4ead5a07ba2c615da5f2526e5017dda047ac"
+      },
+      {
+        "member": "perf.cc",
+        "bytes": 2370,
+        "sha256": "aaeaaa8a334f1d1769bdf9c6c22d5372b0480fcec3fdeba865d0893acced36ed"
+      },
+      {
+        "member": "performance-compiled-source/ct_packed_linear_test.cc",
+        "bytes": 17814,
+        "sha256": "cdb30943f015fc7f4e7b840d68279ba390f232517cf937de55694bf306efb8f9"
+      },
+      {
+        "member": "performance-compiled-source/identity.json",
+        "bytes": 715,
+        "sha256": "fbb3ead0eb2a88e1f6260352dc277d266403fdfc380a4ee850248479061ea596"
+      },
+      {
+        "member": "shaders/ct_packed.generated.comp",
+        "bytes": 11950,
+        "sha256": "4e1a5ed100a4c21f534c3190b8595fc5a6493eff4dfde94c3c1e6a1be1ecc6b8"
+      },
+      {
+        "member": "shaders/ct_packed.spv",
+        "bytes": 34500,
+        "sha256": "8d7c9fc341b6eff4b5d69554c2cd2ea0c07088ada14e1371149db60249d60f45"
+      },
+      {
+        "member": "source-freeze.json",
+        "bytes": 11475,
+        "sha256": "6086f630fdb60b20d4befbb4189f074b01ed624fdb6cfd39337d50272c7ec1d1"
+      },
+      {
+        "member": "source/src/compute_packed_shared/ct_packed_linear.h",
+        "bytes": 2459,
+        "sha256": "8c18cb714ffa23e629f16b163b7dafabc3ece8947a740b6e98154cac9056cdfe"
+      },
+      {
+        "member": "source/src/compute_route_vulkan/CMakeLists.txt",
+        "bytes": 3204,
+        "sha256": "4d602a30cf9d671ef78dd12a56c3d2724e5d39aa99c8e0b2a64baa9c77c793b2"
+      },
+      {
+        "member": "source/src/compute_route_vulkan/build_shaders.py",
+        "bytes": 6026,
+        "sha256": "1b881ab03ba3c4b371c48391428929455eaf2f568797382a80130185a456aff7"
+      },
+      {
+        "member": "source/src/compute_route_vulkan/shaders/ct_packed.comp",
+        "bytes": 5587,
+        "sha256": "b9da377847b0fe885b45f5ba9ff3077837da779558796cfaf499e1f698b7b335"
+      },
+      {
+        "member": "source/src/compute_route_vulkan/vulkan_ct_packed.cc",
+        "bytes": 3950,
+        "sha256": "d335e9eea5148f909f749d41cf095fc2087fb5da447dd2db56b3b01ef09b131a"
+      },
+      {
+        "member": "source/src/compute_route_vulkan/vulkan_iree.cc",
+        "bytes": 30967,
+        "sha256": "ed058ba8333b06e041a7ce6c0a02e1606aea149c215ffce40d3548756d248b98"
+      },
+      {
+        "member": "source/src/compute_route_vulkan/vulkan_operations.cc",
+        "bytes": 4955,
+        "sha256": "ca1d34c21bff4d338de19280b43c392d494386dc24d66d20014be451ea933bde"
+      },
+      {
+        "member": "source/src/compute_route_vulkan/vulkan_program.cc",
+        "bytes": 54713,
+        "sha256": "c3c4acb50fcfe5ea1d6fe9e47e923316df02d546c05c9e6a2ddb221d8b6dccc0"
+      },
+      {
+        "member": "source/src/compute_route_vulkan/vulkan_run.cc",
+        "bytes": 29274,
+        "sha256": "6f432bc851bfae1dc4c54cfd32a3f160e909c886657b405954e2870fc5f10361"
+      },
+      {
+        "member": "source/src/compute_route_vulkan/vulkan_tensor.h",
+        "bytes": 1596,
+        "sha256": "58a1d16ea23f669cc5e38f2ee9604af5ef241bfb69e0727f364419feb169de57"
+      },
+      {
+        "member": "source/src/compute_shader_shared/ct_packed.h",
+        "bytes": 2374,
+        "sha256": "33a6001ae830c9649e5ab15ee2b6335456438b41486cf7965ce3e9bcc55d5459"
+      },
+      {
+        "member": "source/src/compute_shader_shared/nvfp4_f32.h",
+        "bytes": 4845,
+        "sha256": "bcb1534ec5072993166944e8a6085a10078a61ec85fe2d88fc1e7dd659822c43"
+      },
+      {
+        "member": "source/src/graph/ct_packed_region.h",
+        "bytes": 17504,
+        "sha256": "566764816fe921c1fc129ec71ea202eadbf76fbc4874bd11e462e86364186120"
+      },
+      {
+        "member": "source/src/graph/mapped_native_region.h",
+        "bytes": 7908,
+        "sha256": "b881145fa09ce17f0d68779ee674dac393b05bf6cab4a6a83363072a48d46e6e"
+      },
+      {
+        "member": "source/src/graph_route_vulkan/native_region.cc",
+        "bytes": 46399,
+        "sha256": "bb94261b0f194ef1797986765f1b2878e4392f0e1bcbf02d60cfa61ba980926f"
+      },
+      {
+        "member": "source/tests/compute_models/ct_packed_graph_fixture.h",
+        "bytes": 25617,
+        "sha256": "3e5750bdaad93e36792f2ee9428af0ca9672a8fafa24800cd064790432c3ba32"
+      },
+      {
+        "member": "source/tests/compute_models/ct_packed_linear_fixture.h",
+        "bytes": 4140,
+        "sha256": "523cbb539ce7b1d2be6de9646535594b191d556d9645f727406c5b52ea5cd396"
+      },
+      {
+        "member": "source/tests/graph_route_vulkan/CMakeLists.txt",
+        "bytes": 5455,
+        "sha256": "8a9266b5d3e78ae79a6d6b9536dd383a6450a8abe077b0b280b9736c2dba1206"
+      },
+      {
+        "member": "source/tests/graph_route_vulkan/ct_packed_linear_test.cc",
+        "bytes": 18168,
+        "sha256": "e01a27b06269fef0da8fcb6b3c706f16d4b12d66c856b605f4996787ad41f6d5"
+      }
+    ],
+    "verification": "Every zip member SHA256/size checked against collected frozen bytes; duplicate/path escape/binary SDK members rejected; zip CRC test passed."
+  },
+  "exclusions": "No exe/obj/map/pdb/lib/SDK, no 13 duplicated old SPIRVs, no model payload. Only the new CT SPIRV is included."
+}

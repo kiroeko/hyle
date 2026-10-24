@@ -70,6 +70,17 @@ struct ProgramState final {
   std::shared_ptr<const RaggedContract> ragged;
 };
 
+inline bool iree_requires_staging(iree_vulkan::ProgramKind kind) noexcept {
+  return kind == iree_vulkan::ProgramKind::ScanInclusive ||
+      kind == iree_vulkan::ProgramKind::ScanExclusive || iree_vulkan::official_checked(kind);
+}
+inline bool requires_staging(const ProgramState &program) noexcept {
+  if (program.status_value) return true;
+  for (const auto &dispatch : program.dispatches)
+    if (dispatch.iree && iree_requires_staging(dispatch.iree->kind)) return true;
+  return false;
+}
+
 struct ResultValues final {
   std::vector<Tensor> tensors;
 };
@@ -100,6 +111,17 @@ struct InvocationState final {
   bool bound = false;
   bool composition_sealed = false;
   bool composition_preparing = false;
+  bool retained_output_reuse = false;
+  // Graph reverse unbind can drop downstream private owners before this slot
+  // is released. Its old baseline must never be remeasured over survivors.
+  bool output_rearm_required = false;
+  // New private storage has not been published. Its caller export references
+  // may still be under construction; submit stays blocked until cold seal.
+  bool output_epoch_pending = false;
+  // Graph-only retained result epochs. A spare is an original whole storage
+  // block; it is reusable only when no old view/native owner still holds it.
+  // Appended after the old members so other private readers keep their offsets.
+  std::vector<std::shared_ptr<Buffer>> output_spares;
 };
 
 struct RecorderState final {
@@ -122,6 +144,11 @@ Result<VkDescriptorBufferInfo>
 descriptor_buffer(const Buffer *buffer, const TensorDesc &description,
                   bool byte_origin, VkDeviceSize relative_offset = 0) noexcept;
 Status encode_commands(Run &run, std::span<const Dispatch> dispatches) noexcept;
+// Cold only, with the original Run retired. Refresh all original descriptor
+// sets, including statically bound outputs/intermediates; do not rebuild Run.
+Status rebind_descriptors(Run &run, std::span<const PlanValue> values,
+    std::span<const Dispatch> dispatches,
+    std::span<const std::uint32_t> parent_values = {}) noexcept;
 bool origins_changed(const Run &run,
                      std::span<const Dispatch> dispatches) noexcept;
 Status lower_operation(ProgramState &program, const PlanStep &step) noexcept;
@@ -144,6 +171,7 @@ bool single_topk_operation(const ProgramState &, const PlanStep &) noexcept;
 Status lower_sampling(ProgramState &, const PlanStep &) noexcept;
 Status lower_topk(ProgramState &, const PlanStep &) noexcept;
 Status lower_gather(ProgramState &, const PlanStep &) noexcept;
+Status lower_gather_elements(ProgramState &, const PlanStep &) noexcept;
 Status lower_scan(ProgramState &, const PlanStep &) noexcept;
 bool mature_scatter_add_operation(const ProgramState &,
                                   const PlanStep &) noexcept;
@@ -159,7 +187,7 @@ Status lower_iree(ProgramState &, const PlanStep &) noexcept;
 Status record_regions(const std::shared_ptr<Run> &, std::span<const PlanValue>,
                       std::span<const Dispatch>,
                       std::vector<DescriptorBinding> *) noexcept;
-Status bind_regions(Run &) noexcept;
+Status bind_regions(Run &, const ProgramState *rebound_storage = nullptr) noexcept;
 void refresh_region_bindings(Run &) noexcept;
 
 } // namespace hyle::compute::vulkan::detail

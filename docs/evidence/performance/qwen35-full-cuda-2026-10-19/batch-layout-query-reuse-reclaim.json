@@ -1,0 +1,89 @@
+{
+  "bytes": 525822744.0,
+  "targets": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-fusion-allocation\\checks\\20261019T115201\\qwen.exe",
+      "bytes": 116362752,
+      "sha256": "8f6027436cade9108a90cb25c75ac0ab3f148592cb65fcf8bc9b96e7f66b081f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-fusion-allocation\\checks\\20261019T115201\\cuda.exe",
+      "bytes": 118578688,
+      "sha256": "56aec42e989493c974688180522e6b61e4ae5b3f9200350677d09ce75ff116fe"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-layout-query-reuse\\checks\\20261019T120828-test-define\\cpu.exe",
+      "bytes": 25742848,
+      "sha256": "8abf5b38c56ba8b78830f4aab00e10999d6b20c332ba6acdaea4d3c68af1bdfd"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-layout-query-reuse\\checks\\20261019T120828-test-define\\query-probe.exe",
+      "bytes": 118730240,
+      "sha256": "050f603c42b479b62b70f30df9263d8aeb26e439a63d852144b6b829412ceee2"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-layout-query-reuse\\checks\\20261019T120828-test-define\\cpu.map",
+      "bytes": 35332173,
+      "sha256": "52bf2175f8e470d67b8488f4f5be1b217fcebd6c40271cdd1c7ddedfd1713ce0"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-layout-query-reuse\\checks\\20261019T120828-test-define\\cpu.lib",
+      "bytes": 41298,
+      "sha256": "1a72c22d3a6dec39cca5118fd99aa738ff5f4202c029fc8a48afb6c3d20e909d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-layout-query-reuse\\checks\\20261019T120828-test-define\\cpu.exp",
+      "bytes": 25027,
+      "sha256": "bbec6bcd5c6f201782896bafe4afce28315f8c0e2aa327a480aa88e37f236097"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-layout-query-reuse\\checks\\20261019T120828-test-define\\cuda.map",
+      "bytes": 38346451,
+      "sha256": "260408ac92a8b99385e7edd0dc99194c0b829b70d05afea166099f0bdc4b1c94"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-layout-query-reuse\\checks\\20261019T120828-test-define\\cuda.lib",
+      "bytes": 41384,
+      "sha256": "097299e17e955c077a99f65f363d3484d564c016359baeb643f4e47c6b737d59"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-layout-query-reuse\\checks\\20261019T120828-test-define\\cuda.exp",
+      "bytes": 25030,
+      "sha256": "87d7cf80908129ff7157935ed8058f5fd1b1de5ebfc83390971ef8838b7cee22"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-layout-query-reuse\\checks\\20261019T120828-test-define\\qwen.map",
+      "bytes": 33825734,
+      "sha256": "9614017c7db86c28c73ef3d700865f6a2997188b3c98da81806ffcd651667428"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-layout-query-reuse\\checks\\20261019T120828-test-define\\qwen.lib",
+      "bytes": 41384,
+      "sha256": "339d3ce297534ebac8825c27a011f2f4f9dfe366c657ebfc45dbbfdc8412a2cb"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-layout-query-reuse\\checks\\20261019T120828-test-define\\qwen.exp",
+      "bytes": 25030,
+      "sha256": "c86e1117cc2cce2e2a5a46215efe882a83f0ed5c1478fba7228f744b91e6f845"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-layout-query-reuse\\checks\\20261019T120828-test-define\\query-probe.map",
+      "bytes": 38637660,
+      "sha256": "7010c8deed0af27a85ff3e337e17d05f8ae530eca50e363180c79ff205b754f6"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-layout-query-reuse\\checks\\20261019T120828-test-define\\query-probe.lib",
+      "bytes": 42002,
+      "sha256": "ea5b247feeb07534f30ec0f5ebe5ac252b023ac953fdd3044a515f96becddf99"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-layout-query-reuse\\checks\\20261019T120828-test-define\\query-probe.exp",
+      "bytes": 25043,
+      "sha256": "d31f4f67c1da66047178dc273cf72d6fcaccd76b0ab577fa41c040f799567839"
+    }
+  ],
+  "recursive": false,
+  "objects_retained": true,
+  "latest_qwen_cuda_and_shared_peer_retained": true,
+  "old_baseline_relinkable": true
+}

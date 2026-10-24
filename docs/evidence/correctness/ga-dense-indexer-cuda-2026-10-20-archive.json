@@ -1,0 +1,23 @@
+{
+  "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\ga-dense-indexer-cuda-2026-10-20.zip",
+  "bytes": 1895134,
+  "sha256": "248ef5db04f3d39ad059fa1b9799f05e6855d2a13247a267ee33f63151fd9d00",
+  "entries": 607,
+  "payloads": 605,
+  "CRC_and_every_payload_SHA_verified": true,
+  "crc_verified": true,
+  "payload_sha256_verified": true,
+  "verification_passes": 1,
+  "build_plan": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ga-dense-indexer\\checks\\20261019T184046-metadata-boundaries\\plan.json",
+    "bytes": 158183,
+    "sha256": "917d43ab5b0c5019c7d8286b0b2aff807f54f05503dedab4e2ba90095905fda1"
+  },
+  "tests": 11,
+  "equal_vectors": 64,
+  "duplicate_raw_vectors_omitted": true,
+  "historical_failures_and_probe_retained": true,
+  "SDK_rebuilt": false,
+  "throughput_claim": false,
+  "cleanup_executed": false
+}

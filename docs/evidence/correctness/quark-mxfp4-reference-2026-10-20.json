@@ -1,0 +1,167 @@
+{
+  "status": "PASS: bounded portable BF16 MXFP4 dense and selected-grouped reference on four backends",
+  "public_operations": [
+    "model_ops::Mxfp4Linear",
+    "model_ops::GroupedMxfp4Linear"
+  ],
+  "source_definition": "docs/evidence/research/quark-mxfp4-contract-2026-10-20.json",
+  "contract": {
+    "dense": "BF16 A[M,K], original U8 W[N,K/2], U8 E8M0 SF[N,K/32] -> BF16[M,N]",
+    "grouped": "BF16 A[T,1-or-S,K], U8 W[E,N,K/2], U8 SF[E,N,K/32], checked I32 IDs[T,S] -> BF16[T,S,N]",
+    "activation": "Group32 even scale from BF16 absmax; explicit roundedzero exponent-127 and Infcarry127; BF16 divide -> signed saturating nearest-even E2M1 -> BF16 reconstruction.",
+    "weight": "Adjacent evenK low/oddK high nibble; original E8M0 code0..254 means2^(code-127). BF16 decoded operands precede backend F32 dot and BF16 output.",
+    "invalid": "Nonfinite source A or selected SF255 fail Completion. Every ID is validated before selected expert addressing. Legal finite-source overflow remains IEEE; failed results are unusable.",
+    "not_assumed": "Original default HIP and optional Triton full-domain bit equivalence, SDK bug compatibility or native hardware MXFP4 GEMM"
+  },
+  "resources": {
+    "shared_A": "A1 or actual zero-slot-stride: one QDQ row per token; CPU/CUDA caller workspace2*T*K bytes.",
+    "independent_A": "A[T,S,K]: CPU/CUDA caller workspace2*T*S*K bytes.",
+    "weights": "Directly read only selected original compressed W/SF tiles; no floating E*N*K bank.",
+    "native_costs": "Apple/Vulkan also own check/status/QDQ native storage; this is not a peak-memory benchmark.",
+    "pending_bridge": "Checkpoint per-expert tensors still need the delivery3 catalog/WeightSlots/global-local-ID working-set bridge. This operator takes one dense W/SF carrier."
+  },
+  "architecture": "Existing per-backend FP4 preparation/traversal, Program/Invocation, capture, status and Completion lifetime. No extra Graph executor, fake global input arrays or public CMake switch. The four ModelOpt/Local public numerical contracts remain separate.",
+  "results": [
+    {
+      "backend": "Windows CPU",
+      "passed": 12,
+      "failed": 0,
+      "skipped": 0,
+      "xml": "common-cpu/checks/attempt2/tests.xml",
+      "identity": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\quark-mxfp4-reference\\common-cpu\\checks\\attempt2\\tests.xml",
+        "bytes": 6149,
+        "sha256": "fa04744280bf1dcb41abd744b8b20f51f2384d3c81f2cf3d5518e265a25dd59d"
+      },
+      "names": [
+        "NativeNvfp4.RejectsCallerWorkspaceAliasingReadInputsBeforeAnyWrite",
+        "CpuNvfp4ReferenceGraph.OriginalPackedBanksAndBfloatBoundariesSurviveSlotsAndUpdates",
+        "CpuNvfp4ReferenceGraph.RuntimeDomainFailuresRecoverWithoutChangingTheReferenceTree",
+        "CpuGroupedNvfp4ReferenceGraph.SelectedExpertGlobalsAndSharedViewsSurviveSlotsAndUpdates",
+        "CpuGroupedNvfp4ReferenceGraph.CheckedSelectedRuntimeDomainUsesFreshInvocationAfterFailure",
+        "CpuLocalNvfp4ReferenceGraph.OriginalDivisorBanksAndBothRoundingModesSurviveSlots",
+        "CpuLocalNvfp4ReferenceGraph.DynamicSelectedRuntimeDomainAndFailureRecovery",
+        "CpuLocalNvfp4ReferenceDirect.CallerWorkspaceCannotOverwriteOriginalInputs",
+        "CpuMxfp4ReferenceGraph.OriginalPackedBanksSurviveSharedAndIndependentSlots",
+        "CpuMxfp4ReferenceGraph.TinyOperandsRuntimeFailuresAndIeeeRecovery",
+        "CpuMxfp4ReferenceDirect.QuantizesSharedRowsOnceAndRejectsWorkspaceAliasing",
+        "CpuMxfp4ReferenceSchema.RejectsWrongScaleAndIncompleteGroupWithoutGlobals"
+      ]
+    },
+    {
+      "backend": "Windows CUDA RTX4070",
+      "passed": 8,
+      "failed": 0,
+      "skipped": 0,
+      "xml": "cuda/validation/final1/tests.xml",
+      "identity": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\quark-mxfp4-reference\\cuda\\validation\\final1\\tests.xml",
+        "bytes": 4372,
+        "sha256": "095acda8c0e5bfa7aad638dae9750ed1ef03927fb2a5872698a578548c1f3a0e"
+      },
+      "names": [
+        "CudaMxfp4ReferenceGraph.DenseGroupedGroup32RoundingRetainsSlotsAndResults",
+        "CudaMxfp4ReferenceGraph.RuntimeScaleIndexFailuresAndIeeeReconstruction",
+        "CudaLocalNvfp4ReferenceGraph.DenseGroupedRoundingPoliciesRetainSlotsAndResults",
+        "CudaLocalNvfp4ReferenceGraph.RuntimeScaleIndexFailuresAndIeeeReconstruction",
+        "CudaNvfp4ReferenceGraph.OriginalPackedBanksAndBfloatBoundariesSurviveSlotsAndUpdates",
+        "CudaNvfp4ReferenceGraph.RuntimeDomainFailuresRecoverWithoutChangingTheReferenceTree",
+        "CudaGroupedNvfp4ReferenceGraph.SelectedExpertGlobalsSharedViewsAndRetainedResults",
+        "CudaGroupedNvfp4ReferenceGraph.SelectedOnlyValidationFailuresAndBoundedWorkspace"
+      ]
+    },
+    {
+      "backend": "Windows Vulkan RTX4070",
+      "passed": 8,
+      "failed": 0,
+      "skipped": 0,
+      "xml": "vulkan/validation/final1/tests.xml",
+      "identity": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\quark-mxfp4-reference\\vulkan\\validation\\final1\\tests.xml",
+        "bytes": 4963,
+        "sha256": "377f8e3313100a86d86e245cb1e9bcf54016a98e530e5a0856565401b833ebef"
+      },
+      "names": [
+        "VulkanMxfp4ReferenceGraph.DenseAndSelectedExpertsShareOriginalActivationSafely",
+        "VulkanMxfp4ReferenceGraph.PortableRoundingAndRuntimeDomainsRetainBf16Math",
+        "VulkanLocalNvfp4ReferenceGraph.DenseAndSelectedExpertRoundingModesSurviveLifetimes",
+        "VulkanLocalNvfp4ReferenceGraph.PointwiseBoundariesAndRuntimeDomainsRetainLocalMath",
+        "VulkanGroupedNvfp4ReferenceGraph.SelectedPackedExpertsAndSlotDependentQdqSurviveLifetimes",
+        "VulkanGroupedNvfp4ReferenceGraph.OnlySelectedExpertsAreValidatedAndInvalidIdsFail",
+        "VulkanNvfp4ReferenceGraph.OriginalPackedBanksAndBfloatBoundariesSurviveSlotsAndUpdates",
+        "VulkanNvfp4ReferenceGraph.RuntimeDomainFailuresRecoverWithoutChangingTheReferenceTree"
+      ]
+    },
+    {
+      "backend": "macOS Apple M4",
+      "passed": 9,
+      "failed": 0,
+      "skipped": 0,
+      "xml": "apple/mac/remote/results/tests.xml",
+      "identity": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\quark-mxfp4-reference\\apple\\mac\\remote\\results\\tests.xml",
+        "bytes": 5910,
+        "sha256": "be55f08393120296c34135ebae07a83736603a0c3c7d8db9d65568ffbdfcdb58"
+      },
+      "names": [
+        "AppleMxfp4ReferenceGraph.DenseGroupedGroup32RoundingRetainsSlotsAndResults",
+        "AppleMxfp4ReferenceGraph.RuntimeScaleIndexFailuresAndIeeeReconstruction",
+        "AppleLocalNvfp4ReferenceGraph.StoredGlobalDivisorsAndBothRoundingModesKeepIndependentSlots",
+        "AppleLocalNvfp4ReferenceGraph.SelectedDomainsValidateBeforeAccessAndFiniteOverflowRetires",
+        "AppleNvfp4ReferenceGraph.OriginalPackedBanksAndBfloatBoundariesSurviveSlotsAndUpdates",
+        "AppleNvfp4ReferenceGraph.RuntimeDomainFailuresRecoverWithoutChangingTheReferenceTree",
+        "AppleNvfp4ReferenceGraph.ByteCarrierDoesNotTurnLogicalFp8IntoIntegerArithmetic",
+        "AppleGroupedNvfp4ReferenceGraph.SharedActivationsKeepExpertSpecificQuantizationAndIndependentSlots",
+        "AppleGroupedNvfp4ReferenceGraph.SelectedExpertsValidateBeforeAccessAndFailuresRetire"
+      ]
+    }
+  ],
+  "total_final_passed": 37,
+  "final_failed": 0,
+  "final_skipped": 0,
+  "witnesses": [
+    "Actual updates through stable original A/W/SF/ID buffers; denseK2048 and grouped/shared/zeroS/tokenpadding/E17",
+    "Two independent slots, retained old results, submit protection, dropped graph/constants/executable and post-Invocation result lifetime",
+    "Per backend:16 new lifetime submissions plus30 successful runtime-domain submissions and10 expected failed Completions with fresh-slot recovery",
+    "Subnormal A0x0030/0x0040 with SF254 gives BF16 one; original scale0 gives nonzero BF16 result0x0140",
+    "NaN/Inf source rejection, selected scale255, invalid final IDs, unread NaN token padding and unselected SF255",
+    "CPU actual quantized signedzero, shared-vs-independent workspace size and every input/workspace alias rejected before write",
+    "Original four Vulkan FP4 shader variants recompiled byte-identically; original ModelOpt/Local numerical and lifetime neighbors pass"
+  ],
+  "retained_failures": [
+    "First CPU direct test setup wrote a short payload to an oversized full view; fixed the upload to its exact subview.11 of12 passed initially; only test TU was refreshed, then12 of12 passed.",
+    "Apple first MX dense Metal signature used an invalid0D dummy scalar. Final MX signatures remove global arrays entirely.",
+    "Apple cold signature macro initially hid a legacy grouped metadata identifier; replaced by cold body expansion and reran all9.",
+    "Apple retained old NVFP4 Cast test object was stale; refreshed the existing current canonical test source.",
+    "Root GPU helper initially guessed a Vulkan image receipt filename; corrected to ready-to-run.json before any Vulkan GPU process."
+  ],
+  "review_members": [
+    "root/independent-native-review.json",
+    "vulkan/independent-cuda-review.json",
+    "cuda/implementation-receipt.json",
+    "vulkan/compiled-identities.json",
+    "apple/final-validation.json"
+  ],
+  "limits": [
+    "No selected artifact weight payload or whole-model execution/quality was verified.",
+    "No Linux, installed-consumer, giant complete expert bank or hardware-native FP4 GEMM claim.",
+    "No loading/prefill/decode throughput, peak memory or energy measurement in this package.",
+    "Current BF16 Qwen consumer does not use this weight format; this is capability coverage, not a claimed Qwen speedup."
+  ],
+  "progress": {
+    "capability_packages_complete": 5,
+    "capability_packages_total": 8,
+    "delivery_packages_complete": 0,
+    "delivery_packages_total": 3,
+    "next": "CT channel/token QDQ Apple/Vulkan wiring"
+  },
+  "archive": {
+    "identity": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\quark-mxfp4-reference-2026-10-20.zip",
+      "bytes": 3881337,
+      "sha256": "a32df778f451ccab190e38730914558dafa0f8105cc2adf684759ccf323a9f64"
+    },
+    "members": 463,
+    "current_sources": 32
+  }
+}

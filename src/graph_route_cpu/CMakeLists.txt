@@ -1,4 +1,4 @@
-hyle_add_module(graph_route_cpu SOURCES cpu_context.cc)
+hyle_add_module(graph_route_cpu SOURCES cpu_context.cc compile.cc ct_packed_linear_region.cc)
 
 if(HYLE_GGML_CPU_ENABLED)
   target_sources(hyle_graph_route_cpu PRIVATE ggml_region.cc)

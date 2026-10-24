@@ -14,12 +14,9 @@
 
 // Time primitives. Two distinct clocks (conflating them is a classic bug):
 //   - monotonic: steady, never jumps/goes back, arbitrary zero. The ONLY clock
-//     for deadlines/timeouts/elapsed (sched will key timers on it). clay lacked
-//     this -- its time.h is wall-clock only, which silently breaks when the
-//     admin/NTP steps the system clock.
+//     for deadlines/timeouts/elapsed; wall-clock adjustments do not affect it.
 //   - realtime: wall clock, ns since the Unix epoch. For timestamps/logging.
-// Nanoseconds everywhere (clay used lossy float us/ms + ms ticks); ns is the
-// modern unit (std::chrono / tokio Instant) and what the syscalls already give.
+// Both clocks use integer nanoseconds to avoid lossy floating time units.
 
 namespace hyle::time {
 

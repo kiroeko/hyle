@@ -187,6 +187,22 @@ Status prepare_ds4_quantization(Operation operation,
                                 std::span<const TensorDesc> inputs,
                                 std::span<const TensorDesc> outputs,
                                 NativePlan &plan) noexcept;
+Status prepare_blockwise_w4a8(Operation operation, std::span<const TensorDesc> inputs,
+    std::span<const TensorDesc> outputs, NativePlan &plan) noexcept;
+Status prepare_nvfp4(Operation operation, std::span<const TensorDesc> inputs,
+                      std::span<const TensorDesc> outputs,
+                      NativePlan &plan) noexcept;
+Status prepare_static_fp8(Operation operation, std::span<const TensorDesc> inputs,
+                          std::span<const TensorDesc> outputs, NativePlan &plan) noexcept;
+Status prepare_ct_packed(Operation operation, std::span<const TensorDesc> inputs,
+                         std::span<const TensorDesc> outputs,
+                         NativePlan &plan) noexcept;
+Status prepare_row_cache(Operation operation,
+                         std::span<const TensorDesc> inputs,
+                         std::span<const TensorDesc> outputs,
+                         NativePlan &plan) noexcept;
+bool inspect_row_cache_access(const NativePlan &,
+                              detail::OperationPreparedAccess &) noexcept;
 Status prepare_elementwise(Operation operation,
                            std::span<const TensorDesc> inputs,
                            std::span<const TensorDesc> outputs,
@@ -206,6 +222,8 @@ Status prepare_normalization(Operation operation,
 Status prepare_indexing(Operation operation, std::span<const TensorDesc> inputs,
                         std::span<const TensorDesc> outputs,
                         NativePlan &plan) noexcept;
+bool inspect_indexing_access(const NativePlan &,
+                             detail::OperationPreparedAccess &) noexcept;
 Status prepare_transformer(Operation operation,
                            std::span<const TensorDesc> inputs,
                            std::span<const TensorDesc> outputs,

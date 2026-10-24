@@ -1,0 +1,1003 @@
+{
+  "date_utc": "2026-10-19T23:19:49.621032+00:00",
+  "scope": "CUDA GroupedMatMul original BF16 expert bank, F32 activation/accumulator/output; not whole-model MoE or Qwen performance",
+  "source_identity": {
+    "version": "hyle-ggml-cuda-resource-iq1-inference-v30",
+    "source_id": "dd6a1fe12c20b997",
+    "files": [
+      {
+        "path": "src/ggml-cuda/ggml-cuda.cu",
+        "before": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\bf16-grouped-bank\\before\\src\\ggml-cuda\\ggml-cuda.cu",
+          "bytes": 300524,
+          "sha256": "9a4e9c9aab0a73bbf1b9098396684d80fe20dea1f2c9b420de2ca57b996aeadc"
+        },
+        "after": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\bf16-grouped-bank\\native-source\\src\\ggml-cuda\\ggml-cuda.cu",
+          "bytes": 301902,
+          "sha256": "2c068e01ae5bd7f315fe7b5352efb6676f40a8afae0f04c4bf5915914e478ee0"
+        }
+      },
+      {
+        "path": "src/ggml-cuda/mmvf.cuh",
+        "before": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\bf16-grouped-bank\\before\\src\\ggml-cuda\\mmvf.cuh",
+          "bytes": 28203,
+          "sha256": "7bcf9e15af5381cfb1d5a4b4494fa64dbd2a6c678cf591f271b453f439dabe3b"
+        },
+        "after": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\bf16-grouped-bank\\native-source\\src\\ggml-cuda\\mmvf.cuh",
+          "bytes": 29070,
+          "sha256": "3bbb18c263d1479dc6f445f539460e561f7330cf643c978fc1678f73881bcaa0"
+        }
+      },
+      {
+        "path": "src/ggml-cuda/mmvf.cu",
+        "before": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\bf16-grouped-bank\\before\\src\\ggml-cuda\\mmvf.cu",
+          "bytes": 22180,
+          "sha256": "4dbdf75f5453622b05c898f7aa86ff1237cc652c1830671906d0a112571d238c"
+        },
+        "after": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\bf16-grouped-bank\\native-source\\src\\ggml-cuda\\mmvf.cu",
+          "bytes": 23321,
+          "sha256": "8365995bbf00ae3e7bd670ae4fa01d3508e3cdcf0b1038c27601cbd40698b1e4"
+        }
+      }
+    ],
+    "sources": {
+      "src/ggml-cuda/ggml-cuda.cu": "2c068e01ae5bd7f315fe7b5352efb6676f40a8afae0f04c4bf5915914e478ee0",
+      "src/ggml-cuda/mmvf.cuh": "3bbb18c263d1479dc6f445f539460e561f7330cf643c978fc1678f73881bcaa0",
+      "src/ggml-cuda/mmvf.cu": "8365995bbf00ae3e7bd670ae4fa01d3508e3cdcf0b1038c27601cbd40698b1e4",
+      "src/ggml-cuda/unary.cu": "58ae08ca55536e08dd90d1efe4098a27a0eb27d882d65f4eeafc0dfae414d348"
+    },
+    "header_root": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gguf-nvfp4\\cpu-cuda\\native-source",
+    "header_closure": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\bf16-grouped-bank\\native-header-closure.json",
+      "bytes": 31733,
+      "sha256": "ab3ee65e230ea2a821122cda307fc9462c64765a1395a47d71ceb60e9ec02454"
+    },
+    "native_TUs_requiring_refresh": [
+      "ggml-cuda.cu",
+      "mmvf.cu",
+      "unary.cu"
+    ],
+    "native_unchanged_TUs": "convert.cu and all other native kernels retain source/header definitions; actual BF16 conversion already uses exact source widening",
+    "changed_private_template_header": "mmvf.cuh, only original three include owners",
+    "public_or_struct_ABI_changed": false,
+    "compile_run": false,
+    "GPU_run": false,
+    "SDK_modified": false,
+    "product_files": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\third_party\\ggml_cuda_runtime\\patches.json",
+        "bytes": 512024,
+        "sha256": "eae9c9cf73fc1d77ce3daab0c94784314a641dc65c8b6ca7d6df90695c860120"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\third_party\\ggml_cuda_runtime\\NOTICE.md",
+        "bytes": 20883,
+        "sha256": "a097766eb8406d1015fe7bd411befbe91f9c94fd8abd8ebd9043d308c1785f05"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\cmake\\HyleDependencyLock.json",
+        "bytes": 77554,
+        "sha256": "7445a91844039df6bba6bfeac8878b63c3b1c8c3ee6557b45b61cb48a7000709"
+      }
+    ]
+  },
+  "result": "Remove unconditional E*N*K F32 bank cast, CUDA-only grouped cold widening factory/singleton; keep actual BF16 storage and exact F32 activation contract in native MMVF or original per-expert F32 cuBLAS fallback",
+  "design": [
+    "Graph/engine has no new backend/model/shape branch, option, public op or executor; original Prepared/Invocation/Completion/checked-output lifetimes remain",
+    "SmallT reuses original bounded F32 arithmetic preference with actual BF16 element/pair/stride/span/device-grid checks; exact BF16 register bit widening including subnormals",
+    "Original strict F32 no-FTZ FMA/reduction topology reused, legacy default/quantized/AMD math remains; native old mixed fused epilogues declined instead of silently narrowing activation",
+    "OddK/largeT keep original F32 sorted activation and both precision markers; original computeF32 cuBLAS widens only one active expert N*K into pooled temporary"
+  ],
+  "actual_build": {
+    "unique_refreshed_native_owners": 6,
+    "unique_refreshed_product_host_owners": 3,
+    "refreshed_test_owners": 2,
+    "cached_CT_test_owner_relinked": true,
+    "shared_dependency_cache": true,
+    "no_SDK_build": true,
+    "history": [
+      "First GDN compile failed on duplicate same-byte common headers from two physical snapshot paths; exact source materialized beside one canonical header closure, only failed TU retried",
+      "Initial image ran12/12 but wrapper correctly rejected expected16 because cached CT tests were absent from link; added actual cached CT test object, final16/16 passed"
+    ],
+    "plan": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\bf16-grouped-bank\\checks\\native1\\plan.json",
+      "bytes": 89230,
+      "sha256": "c3c1bfbcabe4ebb1e0887f8d77ae2c2e999d54d8be7d346493655e7d4eac8970"
+    },
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\bf16-grouped-bank\\checks\\native1\\tests.exe",
+      "bytes": 117938688,
+      "sha256": "81f83b834a6edd058b8ff769ee43103b11331bc196258807cfc02f4af25344e3"
+    }
+  },
+  "correctness": {
+    "actual_tests": {
+      "passed": true,
+      "cases": 16,
+      "expected": 16,
+      "names": [
+        "CudaCtPackedLinear.PublicChainsKeepSourceRoundsAndTypedCastWitnesses",
+        "CudaCtPackedLinear.CapturedDynamicInputsRebindAcrossOwnedSlotsAndRetainResults",
+        "CudaCtPackedLinear.PublishedViewAndControlEscapesExecuteTheOriginalDecomposition",
+        "CudaCtPackedLinear.OriginalPackedConstantsDoNotRetainOrWorkspaceADenseWeightBank",
+        "CudaGroupedShared.DenseAndBroadcastInputsPreserveEveryPlainSlot",
+        "CudaGroupedShared.BfloatBanksRetainOriginalStorageAndFloatActivation",
+        "CudaGroupedShared.SmallTokenDirectAndGraphKeepFloatActivationAndSubnormalBits",
+        "CudaGroupedShared.OriginalBfloatBankHasNoWidenedBankAndDynamicDirectReuses64Submissions",
+        "CudaGroupedShared.PackedSharedInputsRetainOriginalQuantizationAndCapture",
+        "CudaGroupedShared.SharedCapacityUsesPhysicalRowsRatherThanBroadcastElements",
+        "CudaGroupedShared.PrivateGateUpGluRetainsSharedAndPerSlotTopology",
+        "GgmlCudaGraph.BfloatTypedElementwiseMatchesFloatRecipeAndKeepsEveryRoundingBoundary",
+        "GgmlCudaGraph.BfloatChainsPreserveEveryRoundingAndPublishedIntermediate",
+        "GgmlCudaGraph.ConstantDenseRhsPacksWithoutChangingOtherConsumersOrDynamicInputs",
+        "GgmlCudaGraph.BfloatExpertConstantsRetainOriginalBankAndDynamicWeightsRemainRebindable",
+        "GgmlCudaGraph.SingleBfloatExpertConstantRetainsOriginalBankAndDynamicWeightRemainsRebindable"
+      ],
+      "skipped": 0,
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\bf16-grouped-bank\\checks\\native1\\tests.exe",
+        "bytes": 117938688,
+        "sha256": "81f83b834a6edd058b8ff769ee43103b11331bc196258807cfc02f4af25344e3"
+      }
+    },
+    "named_test_properties": {
+      "OriginalPackedConstantsDoNotRetainOrWorkspaceADenseWeightBank": {
+        "compiled_known_bytes": "1512",
+        "workspace_bytes": "0",
+        "excluded_dense_f32_bank_bytes": "1052672"
+      },
+      "OriginalBfloatBankHasNoWidenedBankAndDynamicDirectReuses64Submissions": {
+        "E3_original_bf16_bytes": "13056",
+        "E3_caller_workspace_bytes": "256",
+        "E3_compiled_known_bytes": "0",
+        "E3_compiled_unknown_provider_count": "1",
+        "E17_original_bf16_bytes": "73984",
+        "E17_caller_workspace_bytes": "256",
+        "E17_compiled_known_bytes": "0",
+        "E17_compiled_unknown_provider_count": "1",
+        "direct_submissions": "64",
+        "direct_reused_caller_workspace_bytes": "256",
+        "direct_native_private_bytes_known": "false"
+      },
+      "PrivateGateUpGluRetainsSharedAndPerSlotTopology": {
+        "max_glu_relative": "0.000002",
+        "max_glu_ulp_vs_standalone": "17"
+      }
+    },
+    "strict_compiled_code": {
+      "passed": true,
+      "architecture": "sm89",
+      "entries": [
+        {
+          "name": "_Z13mul_mat_vec_fI13__nv_bfloat16fLi1ELi256ELb0ELb0EffvLb1EEvPKT_PKT5_PKi31ggml_cuda_mm_fusion_args_devicePT6_i5uint3iiiSC_iiiSC_iiii",
+          "weight_type": "BF16",
+          "FFMA": true,
+          "FADD": true,
+          "FTZ_modifier": false
+        },
+        {
+          "name": "_Z13mul_mat_vec_fI13__nv_bfloat16fLi1ELi224ELb0ELb0EffvLb1EEvPKT_PKT5_PKi31ggml_cuda_mm_fusion_args_devicePT6_i5uint3iiiSC_iiiSC_iiii",
+          "weight_type": "BF16",
+          "FFMA": true,
+          "FADD": true,
+          "FTZ_modifier": false
+        },
+        {
+          "name": "_Z13mul_mat_vec_fI13__nv_bfloat16fLi1ELi192ELb0ELb0EffvLb1EEvPKT_PKT5_PKi31ggml_cuda_mm_fusion_args_devicePT6_i5uint3iiiSC_iiiSC_iiii",
+          "weight_type": "BF16",
+          "FFMA": true,
+          "FADD": true,
+          "FTZ_modifier": false
+        },
+        {
+          "name": "_Z13mul_mat_vec_fI13__nv_bfloat16fLi1ELi160ELb0ELb0EffvLb1EEvPKT_PKT5_PKi31ggml_cuda_mm_fusion_args_devicePT6_i5uint3iiiSC_iiiSC_iiii",
+          "weight_type": "BF16",
+          "FFMA": true,
+          "FADD": true,
+          "FTZ_modifier": false
+        },
+        {
+          "name": "_Z13mul_mat_vec_fI13__nv_bfloat16fLi1ELi128ELb0ELb0EffvLb1EEvPKT_PKT5_PKi31ggml_cuda_mm_fusion_args_devicePT6_i5uint3iiiSC_iiiSC_iiii",
+          "weight_type": "BF16",
+          "FFMA": true,
+          "FADD": true,
+          "FTZ_modifier": false
+        },
+        {
+          "name": "_Z13mul_mat_vec_fI13__nv_bfloat16fLi1ELi96ELb0ELb0EffvLb1EEvPKT_PKT5_PKi31ggml_cuda_mm_fusion_args_devicePT6_i5uint3iiiSC_iiiSC_iiii",
+          "weight_type": "BF16",
+          "FFMA": true,
+          "FADD": true,
+          "FTZ_modifier": false
+        },
+        {
+          "name": "_Z13mul_mat_vec_fI13__nv_bfloat16fLi1ELi64ELb0ELb0EffvLb1EEvPKT_PKT5_PKi31ggml_cuda_mm_fusion_args_devicePT6_i5uint3iiiSC_iiiSC_iiii",
+          "weight_type": "BF16",
+          "FFMA": true,
+          "FADD": true,
+          "FTZ_modifier": false
+        },
+        {
+          "name": "_Z13mul_mat_vec_fI13__nv_bfloat16fLi1ELi32ELb0ELb0EffvLb1EEvPKT_PKT5_PKi31ggml_cuda_mm_fusion_args_devicePT6_i5uint3iiiSC_iiiSC_iiii",
+          "weight_type": "BF16",
+          "FFMA": true,
+          "FADD": true,
+          "FTZ_modifier": false
+        },
+        {
+          "name": "_Z13mul_mat_vec_fI13__nv_bfloat16fLi1ELi256ELb0ELb1EffvLb1EEvPKT_PKT5_PKi31ggml_cuda_mm_fusion_args_devicePT6_i5uint3iiiSC_iiiSC_iiii",
+          "weight_type": "BF16",
+          "FFMA": true,
+          "FADD": true,
+          "FTZ_modifier": false
+        },
+        {
+          "name": "_Z13mul_mat_vec_fI13__nv_bfloat16fLi1ELi224ELb0ELb1EffvLb1EEvPKT_PKT5_PKi31ggml_cuda_mm_fusion_args_devicePT6_i5uint3iiiSC_iiiSC_iiii",
+          "weight_type": "BF16",
+          "FFMA": true,
+          "FADD": true,
+          "FTZ_modifier": false
+        },
+        {
+          "name": "_Z13mul_mat_vec_fI13__nv_bfloat16fLi1ELi192ELb0ELb1EffvLb1EEvPKT_PKT5_PKi31ggml_cuda_mm_fusion_args_devicePT6_i5uint3iiiSC_iiiSC_iiii",
+          "weight_type": "BF16",
+          "FFMA": true,
+          "FADD": true,
+          "FTZ_modifier": false
+        },
+        {
+          "name": "_Z13mul_mat_vec_fI13__nv_bfloat16fLi1ELi160ELb0ELb1EffvLb1EEvPKT_PKT5_PKi31ggml_cuda_mm_fusion_args_devicePT6_i5uint3iiiSC_iiiSC_iiii",
+          "weight_type": "BF16",
+          "FFMA": true,
+          "FADD": true,
+          "FTZ_modifier": false
+        },
+        {
+          "name": "_Z13mul_mat_vec_fI13__nv_bfloat16fLi1ELi128ELb0ELb1EffvLb1EEvPKT_PKT5_PKi31ggml_cuda_mm_fusion_args_devicePT6_i5uint3iiiSC_iiiSC_iiii",
+          "weight_type": "BF16",
+          "FFMA": true,
+          "FADD": true,
+          "FTZ_modifier": false
+        },
+        {
+          "name": "_Z13mul_mat_vec_fI13__nv_bfloat16fLi1ELi96ELb0ELb1EffvLb1EEvPKT_PKT5_PKi31ggml_cuda_mm_fusion_args_devicePT6_i5uint3iiiSC_iiiSC_iiii",
+          "weight_type": "BF16",
+          "FFMA": true,
+          "FADD": true,
+          "FTZ_modifier": false
+        },
+        {
+          "name": "_Z13mul_mat_vec_fI13__nv_bfloat16fLi1ELi64ELb0ELb1EffvLb1EEvPKT_PKT5_PKi31ggml_cuda_mm_fusion_args_devicePT6_i5uint3iiiSC_iiiSC_iiii",
+          "weight_type": "BF16",
+          "FFMA": true,
+          "FADD": true,
+          "FTZ_modifier": false
+        },
+        {
+          "name": "_Z13mul_mat_vec_fI13__nv_bfloat16fLi1ELi32ELb0ELb1EffvLb1EEvPKT_PKT5_PKi31ggml_cuda_mm_fusion_args_devicePT6_i5uint3iiiSC_iiiSC_iiii",
+          "weight_type": "BF16",
+          "FFMA": true,
+          "FADD": true,
+          "FTZ_modifier": false
+        },
+        {
+          "name": "_Z13mul_mat_vec_fIffLi1ELi256ELb0ELb0EffvLb1EEvPKT_PKT5_PKi31ggml_cuda_mm_fusion_args_devicePT6_i5uint3iiiSB_iiiSB_iiii",
+          "weight_type": "F32",
+          "FFMA": true,
+          "FADD": true,
+          "FTZ_modifier": false
+        },
+        {
+          "name": "_Z13mul_mat_vec_fIffLi1ELi224ELb0ELb0EffvLb1EEvPKT_PKT5_PKi31ggml_cuda_mm_fusion_args_devicePT6_i5uint3iiiSB_iiiSB_iiii",
+          "weight_type": "F32",
+          "FFMA": true,
+          "FADD": true,
+          "FTZ_modifier": false
+        },
+        {
+          "name": "_Z13mul_mat_vec_fIffLi1ELi192ELb0ELb0EffvLb1EEvPKT_PKT5_PKi31ggml_cuda_mm_fusion_args_devicePT6_i5uint3iiiSB_iiiSB_iiii",
+          "weight_type": "F32",
+          "FFMA": true,
+          "FADD": true,
+          "FTZ_modifier": false
+        },
+        {
+          "name": "_Z13mul_mat_vec_fIffLi1ELi160ELb0ELb0EffvLb1EEvPKT_PKT5_PKi31ggml_cuda_mm_fusion_args_devicePT6_i5uint3iiiSB_iiiSB_iiii",
+          "weight_type": "F32",
+          "FFMA": true,
+          "FADD": true,
+          "FTZ_modifier": false
+        },
+        {
+          "name": "_Z13mul_mat_vec_fIffLi1ELi128ELb0ELb0EffvLb1EEvPKT_PKT5_PKi31ggml_cuda_mm_fusion_args_devicePT6_i5uint3iiiSB_iiiSB_iiii",
+          "weight_type": "F32",
+          "FFMA": true,
+          "FADD": true,
+          "FTZ_modifier": false
+        },
+        {
+          "name": "_Z13mul_mat_vec_fIffLi1ELi96ELb0ELb0EffvLb1EEvPKT_PKT5_PKi31ggml_cuda_mm_fusion_args_devicePT6_i5uint3iiiSB_iiiSB_iiii",
+          "weight_type": "F32",
+          "FFMA": true,
+          "FADD": true,
+          "FTZ_modifier": false
+        },
+        {
+          "name": "_Z13mul_mat_vec_fIffLi1ELi64ELb0ELb0EffvLb1EEvPKT_PKT5_PKi31ggml_cuda_mm_fusion_args_devicePT6_i5uint3iiiSB_iiiSB_iiii",
+          "weight_type": "F32",
+          "FFMA": true,
+          "FADD": true,
+          "FTZ_modifier": false
+        },
+        {
+          "name": "_Z13mul_mat_vec_fIffLi1ELi32ELb0ELb0EffvLb1EEvPKT_PKT5_PKi31ggml_cuda_mm_fusion_args_devicePT6_i5uint3iiiSB_iiiSB_iiii",
+          "weight_type": "F32",
+          "FFMA": true,
+          "FADD": true,
+          "FTZ_modifier": false
+        },
+        {
+          "name": "_Z13mul_mat_vec_fIffLi1ELi256ELb0ELb1EffvLb1EEvPKT_PKT5_PKi31ggml_cuda_mm_fusion_args_devicePT6_i5uint3iiiSB_iiiSB_iiii",
+          "weight_type": "F32",
+          "FFMA": true,
+          "FADD": true,
+          "FTZ_modifier": false
+        },
+        {
+          "name": "_Z13mul_mat_vec_fIffLi1ELi224ELb0ELb1EffvLb1EEvPKT_PKT5_PKi31ggml_cuda_mm_fusion_args_devicePT6_i5uint3iiiSB_iiiSB_iiii",
+          "weight_type": "F32",
+          "FFMA": true,
+          "FADD": true,
+          "FTZ_modifier": false
+        },
+        {
+          "name": "_Z13mul_mat_vec_fIffLi1ELi192ELb0ELb1EffvLb1EEvPKT_PKT5_PKi31ggml_cuda_mm_fusion_args_devicePT6_i5uint3iiiSB_iiiSB_iiii",
+          "weight_type": "F32",
+          "FFMA": true,
+          "FADD": true,
+          "FTZ_modifier": false
+        },
+        {
+          "name": "_Z13mul_mat_vec_fIffLi1ELi160ELb0ELb1EffvLb1EEvPKT_PKT5_PKi31ggml_cuda_mm_fusion_args_devicePT6_i5uint3iiiSB_iiiSB_iiii",
+          "weight_type": "F32",
+          "FFMA": true,
+          "FADD": true,
+          "FTZ_modifier": false
+        },
+        {
+          "name": "_Z13mul_mat_vec_fIffLi1ELi128ELb0ELb1EffvLb1EEvPKT_PKT5_PKi31ggml_cuda_mm_fusion_args_devicePT6_i5uint3iiiSB_iiiSB_iiii",
+          "weight_type": "F32",
+          "FFMA": true,
+          "FADD": true,
+          "FTZ_modifier": false
+        },
+        {
+          "name": "_Z13mul_mat_vec_fIffLi1ELi96ELb0ELb1EffvLb1EEvPKT_PKT5_PKi31ggml_cuda_mm_fusion_args_devicePT6_i5uint3iiiSB_iiiSB_iiii",
+          "weight_type": "F32",
+          "FFMA": true,
+          "FADD": true,
+          "FTZ_modifier": false
+        },
+        {
+          "name": "_Z13mul_mat_vec_fIffLi1ELi64ELb0ELb1EffvLb1EEvPKT_PKT5_PKi31ggml_cuda_mm_fusion_args_devicePT6_i5uint3iiiSB_iiiSB_iiii",
+          "weight_type": "F32",
+          "FFMA": true,
+          "FADD": true,
+          "FTZ_modifier": false
+        },
+        {
+          "name": "_Z13mul_mat_vec_fIffLi1ELi32ELb0ELb1EffvLb1EEvPKT_PKT5_PKi31ggml_cuda_mm_fusion_args_devicePT6_i5uint3iiiSB_iiiSB_iiii",
+          "weight_type": "F32",
+          "FFMA": true,
+          "FADD": true,
+          "FTZ_modifier": false
+        }
+      ],
+      "actual_object": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\bf16-grouped-bank\\checks\\native1\\native--mmvf.obj",
+        "bytes": 4243438,
+        "sha256": "faa38bbea7e312d936072984c4a0c477031911eff0dad184abc1fd88ea24d959"
+      },
+      "tool": {
+        "path": "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\bin\\cuobjdump.exe",
+        "bytes": 18550896,
+        "sha256": "cb72e7e353ed20320deb4770f75291a828c0b23ca8c2d27688c4eeced96543f5"
+      },
+      "selected_disassembly": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\bf16-grouped-bank\\sass\\strict-sass.stdout.log",
+        "bytes": 2536947,
+        "sha256": "be9a5668aebf19302ffe6ccecf2eeb0eddd8d1a6d20111b56d3fc52f1682862a"
+      },
+      "limitation": "Only actual SM89 cubin strict specializations, not a blanket device or floating-payload proof; native emits no PTX."
+    },
+    "dynamic_and_boundary_consumers": {
+      "baseline-witness": {
+        "passed": true,
+        "tokens": 1,
+        "slots": 4,
+        "K": 2048,
+        "N": 512,
+        "E": 8,
+        "warmup": 0,
+        "iterations": 1,
+        "caller_cpu": 2,
+        "command_mode": true,
+        "submit_and_wait_ns_median": 8782400,
+        "reported_caller_workspace_bytes": 33562624,
+        "BF16_weights_F32_activation_F32_accumulator": true,
+        "unit_precision_witness": true,
+        "activation_subnormal_product_witness": true,
+        "weight_subnormal_product_witness": true,
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\bf16-grouped-bank\\checks\\before\\control.exe",
+          "bytes": 116756992,
+          "sha256": "efbe1fd35665a46fe0183355f3ca4b393b55ecafe0bd6dffbf7d60e6d8119d84"
+        }
+      },
+      "new-witness": {
+        "passed": true,
+        "tokens": 1,
+        "slots": 4,
+        "K": 2048,
+        "N": 512,
+        "E": 8,
+        "warmup": 0,
+        "iterations": 1,
+        "caller_cpu": 2,
+        "command_mode": true,
+        "submit_and_wait_ns_median": 8637200,
+        "reported_caller_workspace_bytes": 8192,
+        "BF16_weights_F32_activation_F32_accumulator": true,
+        "unit_precision_witness": true,
+        "activation_subnormal_product_witness": true,
+        "weight_subnormal_product_witness": true,
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\bf16-grouped-bank\\checks\\native1\\new.exe",
+          "bytes": 116786688,
+          "sha256": "7b123d7b74e2ee730614016a9c4c5df00601b4174c0af2e2889fb2e54200a848"
+        }
+      },
+      "baseline-larger-T9": {
+        "passed": true,
+        "tokens": 9,
+        "slots": 4,
+        "K": 2048,
+        "N": 512,
+        "E": 8,
+        "warmup": 0,
+        "iterations": 1,
+        "caller_cpu": 2,
+        "command_mode": true,
+        "submit_and_wait_ns_median": 48528500,
+        "reported_caller_workspace_bytes": 33628160,
+        "BF16_weights_F32_activation_F32_accumulator": true,
+        "unit_precision_witness": true,
+        "activation_subnormal_product_witness": true,
+        "weight_subnormal_product_witness": true,
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\bf16-grouped-bank\\checks\\before\\control.exe",
+          "bytes": 116756992,
+          "sha256": "efbe1fd35665a46fe0183355f3ca4b393b55ecafe0bd6dffbf7d60e6d8119d84"
+        }
+      },
+      "new-larger-T9": {
+        "passed": true,
+        "tokens": 9,
+        "slots": 4,
+        "K": 2048,
+        "N": 512,
+        "E": 8,
+        "warmup": 0,
+        "iterations": 1,
+        "caller_cpu": 2,
+        "command_mode": true,
+        "submit_and_wait_ns_median": 48769700,
+        "reported_caller_workspace_bytes": 73728,
+        "BF16_weights_F32_activation_F32_accumulator": true,
+        "unit_precision_witness": true,
+        "activation_subnormal_product_witness": true,
+        "weight_subnormal_product_witness": true,
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\bf16-grouped-bank\\checks\\native1\\new.exe",
+          "bytes": 116786688,
+          "sha256": "7b123d7b74e2ee730614016a9c4c5df00601b4174c0af2e2889fb2e54200a848"
+        }
+      },
+      "baseline-larger-N1024": {
+        "passed": true,
+        "tokens": 1,
+        "slots": 4,
+        "K": 2048,
+        "N": 1024,
+        "E": 8,
+        "warmup": 0,
+        "iterations": 1,
+        "caller_cpu": 2,
+        "command_mode": true,
+        "submit_and_wait_ns_median": 10562500,
+        "reported_caller_workspace_bytes": 67125248,
+        "BF16_weights_F32_activation_F32_accumulator": true,
+        "unit_precision_witness": true,
+        "activation_subnormal_product_witness": true,
+        "weight_subnormal_product_witness": true,
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\bf16-grouped-bank\\checks\\before\\control.exe",
+          "bytes": 116756992,
+          "sha256": "efbe1fd35665a46fe0183355f3ca4b393b55ecafe0bd6dffbf7d60e6d8119d84"
+        }
+      },
+      "new-larger-N1024": {
+        "passed": true,
+        "tokens": 1,
+        "slots": 4,
+        "K": 2048,
+        "N": 1024,
+        "E": 8,
+        "warmup": 0,
+        "iterations": 1,
+        "caller_cpu": 2,
+        "command_mode": true,
+        "submit_and_wait_ns_median": 8623100,
+        "reported_caller_workspace_bytes": 16384,
+        "BF16_weights_F32_activation_F32_accumulator": true,
+        "unit_precision_witness": true,
+        "activation_subnormal_product_witness": true,
+        "weight_subnormal_product_witness": true,
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\bf16-grouped-bank\\checks\\native1\\new.exe",
+          "bytes": 116786688,
+          "sha256": "7b123d7b74e2ee730614016a9c4c5df00601b4174c0af2e2889fb2e54200a848"
+        }
+      }
+    },
+    "witnesses": [
+      "F32 activation 1+2^-20 remains bits0x3f800008",
+      "BF16 Wbits0x0008 times F32 A2^120 equals bits0x3a800000",
+      "BF16 W2^120 times F32 Abits0x00080000 equals bits0x3a800000"
+    ]
+  },
+  "space": {
+    "ready_constant_original_BF16_payload_bytes": 16777216,
+    "removed_extra_resident_F32_bank_bytes": 33554432,
+    "ready_constant_caller_workspace_control_and_new_bytes": 8192,
+    "dynamic_T1_caller_workspace_control_bytes": 33562624,
+    "dynamic_T1_caller_workspace_new_bytes": 8192,
+    "dynamic_T9_caller_workspace_control_bytes": 33628160,
+    "dynamic_T9_caller_workspace_new_bytes": 73728,
+    "small_borrowed_constants": "E3 and E17: no materialized/packed F32 bank, workspace256B, compiled known bytes0 with one unknown provider; actual immutable lease retained",
+    "remaining": "LargerT sorting O(T*S*(K+N)) floats/maps and host scan/sync remain; strict BF16 fallback adds a pooled4*N*K expert temporary. Native/vendor pool and total process/device peak not measured."
+  },
+  "performance": {
+    "variants": {
+      "ready_owned_constant": {
+        "control": {
+          "process_medians_ns": [
+            54600,
+            59100,
+            54900
+          ],
+          "median_of_process_medians_ns": 54900,
+          "caller_workspace_bytes": 8192,
+          "packed_constant_bytes": 33554432,
+          "images": [
+            {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\bf16-grouped-bank\\checks\\constant-owned\\control.exe",
+              "bytes": 116770816,
+              "sha256": "b4d3b50ccab28b864977b039aab39d5684efdd6ca75e8864b70cbb99ff347cf6"
+            },
+            {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\bf16-grouped-bank\\checks\\constant-owned\\control.exe",
+              "bytes": 116770816,
+              "sha256": "b4d3b50ccab28b864977b039aab39d5684efdd6ca75e8864b70cbb99ff347cf6"
+            },
+            {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\bf16-grouped-bank\\checks\\constant-owned\\control.exe",
+              "bytes": 116770816,
+              "sha256": "b4d3b50ccab28b864977b039aab39d5684efdd6ca75e8864b70cbb99ff347cf6"
+            }
+          ]
+        },
+        "new": {
+          "process_medians_ns": [
+            55600,
+            55600,
+            55500
+          ],
+          "median_of_process_medians_ns": 55600,
+          "caller_workspace_bytes": 8192,
+          "packed_constant_bytes": 0,
+          "images": [
+            {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\bf16-grouped-bank\\checks\\constant-owned\\new.exe",
+              "bytes": 116800000,
+              "sha256": "690346f7a284584fe079af88b64b4cbab0ab534d7b37ac37a6d06030e7ee592c"
+            },
+            {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\bf16-grouped-bank\\checks\\constant-owned\\new.exe",
+              "bytes": 116800000,
+              "sha256": "690346f7a284584fe079af88b64b4cbab0ab534d7b37ac37a6d06030e7ee592c"
+            },
+            {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\bf16-grouped-bank\\checks\\constant-owned\\new.exe",
+              "bytes": 116800000,
+              "sha256": "690346f7a284584fe079af88b64b4cbab0ab534d7b37ac37a6d06030e7ee592c"
+            }
+          ]
+        },
+        "latency_change_percent": 1.2750455373406133,
+        "order": [
+          "control1",
+          "new1",
+          "new2",
+          "control2",
+          "control3",
+          "new3"
+        ],
+        "timing": "Already prepared public command Invocation::submit through Completion::wait; no compile/packing/upload or final output D2H",
+        "conclusion": "No demonstrated stable latency gain; process spread overlaps, remove 32MiB extra resident F32 pack"
+      },
+      "raw_borrowed_constant": {
+        "control": {
+          "process_medians_ns": [
+            171300,
+            171500,
+            169400
+          ],
+          "median_of_process_medians_ns": 171300,
+          "caller_workspace_bytes": 33562624,
+          "packed_constant_bytes": 0,
+          "images": [
+            {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\bf16-grouped-bank\\checks\\constant\\control.exe",
+              "bytes": 116759552,
+              "sha256": "994e3e48434769bc093abc3297da8668d6cd5987ba55214e264dc5a8ebb84a49"
+            },
+            {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\bf16-grouped-bank\\checks\\constant\\control.exe",
+              "bytes": 116759552,
+              "sha256": "994e3e48434769bc093abc3297da8668d6cd5987ba55214e264dc5a8ebb84a49"
+            },
+            {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\bf16-grouped-bank\\checks\\constant\\control.exe",
+              "bytes": 116759552,
+              "sha256": "994e3e48434769bc093abc3297da8668d6cd5987ba55214e264dc5a8ebb84a49"
+            }
+          ]
+        },
+        "new": {
+          "process_medians_ns": [
+            50600,
+            56000,
+            55200
+          ],
+          "median_of_process_medians_ns": 55200,
+          "caller_workspace_bytes": 8192,
+          "packed_constant_bytes": 0,
+          "images": [
+            {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\bf16-grouped-bank\\checks\\constant\\new.exe",
+              "bytes": 116788224,
+              "sha256": "2d453c12761a2592492d356950a42d50f53204ff5c73444689e290e445322e4e"
+            },
+            {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\bf16-grouped-bank\\checks\\constant\\new.exe",
+              "bytes": 116788224,
+              "sha256": "2d453c12761a2592492d356950a42d50f53204ff5c73444689e290e445322e4e"
+            },
+            {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\bf16-grouped-bank\\checks\\constant\\new.exe",
+              "bytes": 116788224,
+              "sha256": "2d453c12761a2592492d356950a42d50f53204ff5c73444689e290e445322e4e"
+            }
+          ]
+        },
+        "latency_change_percent": -67.77583187390543,
+        "order": [
+          "control1",
+          "new1",
+          "new2",
+          "control2",
+          "control3",
+          "new3"
+        ],
+        "timing": "Already prepared public command Invocation::submit through Completion::wait; no compile/packing/upload or final output D2H",
+        "conclusion": "Valid raw constant has no ready owner for old queued cold packing, so old whole-bank cast stays in replay; this is not the strongest old constant baseline"
+      }
+    },
+    "limitations": [
+      "Synthetic T1/S4/E8/N512/K2048; repeated IDs select expert0. This is not whole-model MoE/Qwen throughput.",
+      "No GPU frequency lock, device total peak or quality result; desktop is present. Each process has 512 warmups and 512 measurements on caller core2.",
+      "Three process medians are kept; per-iteration samples and exact bounds remain in runs.",
+      "Preferred constant comparison has actual StorageOwner/ReadLease in both arms. Raw borrowed constants are separately retained, not substituted as the best control."
+    ]
+  },
+  "physical_trace": {
+    "passed": true,
+    "variant": "Actual ready-owned constant consumer, one cold preparation and one command invocation per arm",
+    "arms": {
+      "control": {
+        "all_kernels": [
+          {
+            "start": 728848815,
+            "end": 728947790,
+            "correlationId": 979,
+            "name": "void cpy_scalar_contiguous<__nv_bfloat16, float>(const char *, char *, long long)"
+          },
+          {
+            "start": 730082050,
+            "end": 730083426,
+            "correlationId": 1078,
+            "name": "hyle::compute::ggml_cuda::internal::<unnamed>::check(const int *, int *, unsigned long long, long long, unsigned int *)"
+          },
+          {
+            "start": 740712821,
+            "end": 740731253,
+            "correlationId": 1091,
+            "name": "void mul_mat_vec_f<float, float, (int)1, (int)256, (bool)0, (bool)0, float, float, void, (bool)1>(const T1 *, const T7 *, const int *, ggml_cuda_mm_fusion_args_device, T8 *, int, uint3, int, int, int, uint3, int, int, int, uint3, int, int, int, int)"
+          },
+          {
+            "start": 740781365,
+            "end": 740782581,
+            "correlationId": 1096,
+            "name": "hyle::compute::ggml_cuda::internal::<unnamed>::publish(const unsigned char *, unsigned char *, unsigned long long, const unsigned int *)"
+          }
+        ],
+        "cold_preparation_kernels": [
+          {
+            "start": 728848815,
+            "end": 728947790,
+            "correlationId": 979,
+            "name": "void cpy_scalar_contiguous<__nv_bfloat16, float>(const char *, char *, long long)"
+          }
+        ],
+        "hot_kernels": [
+          {
+            "start": 730082050,
+            "end": 730083426,
+            "correlationId": 1078,
+            "name": "hyle::compute::ggml_cuda::internal::<unnamed>::check(const int *, int *, unsigned long long, long long, unsigned int *)"
+          },
+          {
+            "start": 740712821,
+            "end": 740731253,
+            "correlationId": 1091,
+            "name": "void mul_mat_vec_f<float, float, (int)1, (int)256, (bool)0, (bool)0, float, float, void, (bool)1>(const T1 *, const T7 *, const int *, ggml_cuda_mm_fusion_args_device, T8 *, int, uint3, int, int, int, uint3, int, int, int, uint3, int, int, int, int)"
+          },
+          {
+            "start": 740781365,
+            "end": 740782581,
+            "correlationId": 1096,
+            "name": "hyle::compute::ggml_cuda::internal::<unnamed>::publish(const unsigned char *, unsigned char *, unsigned long long, const unsigned int *)"
+          }
+        ],
+        "operation_window_ns": {
+          "start": 730082050,
+          "end": 740782581
+        },
+        "all_copies": [
+          {
+            "start": 723977857,
+            "end": 725334963,
+            "bytes": 16777216,
+            "copyKind": 1
+          },
+          {
+            "start": 725627952,
+            "end": 725629136,
+            "bytes": 8192,
+            "copyKind": 1
+          },
+          {
+            "start": 725676655,
+            "end": 725676975,
+            "bytes": 16,
+            "copyKind": 1
+          },
+          {
+            "start": 740819284,
+            "end": 740820564,
+            "bytes": 4,
+            "copyKind": 2
+          },
+          {
+            "start": 740873364,
+            "end": 740874580,
+            "bytes": 8192,
+            "copyKind": 2
+          }
+        ],
+        "operation_copies": [],
+        "operation_stream_synchronizations": [],
+        "all_process_stream_synchronizations": {
+          "cuStreamSynchronize": 3
+        }
+      },
+      "new": {
+        "all_kernels": [
+          {
+            "start": 736356528,
+            "end": 736357808,
+            "correlationId": 1003,
+            "name": "hyle::compute::ggml_cuda::internal::<unnamed>::check(const int *, int *, unsigned long long, long long, unsigned int *)"
+          },
+          {
+            "start": 748302262,
+            "end": 748314166,
+            "correlationId": 1016,
+            "name": "void mul_mat_vec_f<__nv_bfloat16, float, (int)1, (int)256, (bool)0, (bool)0, float, float, void, (bool)1>(const T1 *, const T7 *, const int *, ggml_cuda_mm_fusion_args_device, T8 *, int, uint3, int, int, int, uint3, int, int, int, uint3, int, int, int, int)"
+          },
+          {
+            "start": 748380182,
+            "end": 748381302,
+            "correlationId": 1021,
+            "name": "hyle::compute::ggml_cuda::internal::<unnamed>::publish(const unsigned char *, unsigned char *, unsigned long long, const unsigned int *)"
+          }
+        ],
+        "cold_preparation_kernels": [],
+        "hot_kernels": [
+          {
+            "start": 736356528,
+            "end": 736357808,
+            "correlationId": 1003,
+            "name": "hyle::compute::ggml_cuda::internal::<unnamed>::check(const int *, int *, unsigned long long, long long, unsigned int *)"
+          },
+          {
+            "start": 748302262,
+            "end": 748314166,
+            "correlationId": 1016,
+            "name": "void mul_mat_vec_f<__nv_bfloat16, float, (int)1, (int)256, (bool)0, (bool)0, float, float, void, (bool)1>(const T1 *, const T7 *, const int *, ggml_cuda_mm_fusion_args_device, T8 *, int, uint3, int, int, int, uint3, int, int, int, uint3, int, int, int, int)"
+          },
+          {
+            "start": 748380182,
+            "end": 748381302,
+            "correlationId": 1021,
+            "name": "hyle::compute::ggml_cuda::internal::<unnamed>::publish(const unsigned char *, unsigned char *, unsigned long long, const unsigned int *)"
+          }
+        ],
+        "operation_window_ns": {
+          "start": 736356528,
+          "end": 748381302
+        },
+        "all_copies": [
+          {
+            "start": 733203376,
+            "end": 734571266,
+            "bytes": 16777216,
+            "copyKind": 1
+          },
+          {
+            "start": 734828640,
+            "end": 734829824,
+            "bytes": 8192,
+            "copyKind": 1
+          },
+          {
+            "start": 734863135,
+            "end": 734863455,
+            "bytes": 16,
+            "copyKind": 1
+          },
+          {
+            "start": 748415797,
+            "end": 748416949,
+            "bytes": 4,
+            "copyKind": 2
+          },
+          {
+            "start": 748469109,
+            "end": 748470325,
+            "bytes": 8192,
+            "copyKind": 2
+          }
+        ],
+        "operation_copies": [],
+        "operation_stream_synchronizations": [],
+        "all_process_stream_synchronizations": {
+          "cuStreamSynchronize": 3
+        }
+      }
+    },
+    "result": "Hot kernels remain three in both arms. Old cold whole-bank BF16->F32 preparation is absent; new dot reads BF16 directly with strict F32 arithmetic.",
+    "retained": "Original checked IDs, guarded publication and asynchronous4-byte Completion status plus final explicit result readback",
+    "limitation": "This zero-warmup trace establishes physical shape only; its cold timings are not the accepted latency benchmark or a total-memory-peak measurement."
+  },
+  "not_claimed": [
+    "No stable latency gain for the strongest old ready-owned constant baseline (54.9us vs55.6us new, overlapping process spread)",
+    "No new Qwen tokens/s, accuracy, long-run state or total GPU/CPU memory peak",
+    "No selected27B/2.4T weight payload or complete MoE model run",
+    "No current Linux/macOS validation; CPU widening unchanged; strict mixed indexed GLU remains to be fused",
+    "No claim of zero native allocation/synchronization across fallback shapes"
+  ],
+  "evidence": {
+    "stage": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\bf16-grouped-bank",
+    "products": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_ggml_cuda\\tensor_program.cc",
+        "bytes": 54186,
+        "sha256": "46752caa89a2ac98faffd763cbfb41fbf353aca3dcd141393219a6d4da69e1a4"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_ggml_cuda\\ggml_cuda_provider.cc",
+        "bytes": 72254,
+        "sha256": "6b9c007610a0c97dbe48853f129daf59833fd4d6b338e6bfccbd46dc805154ed"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_ggml_cuda\\program.h",
+        "bytes": 4162,
+        "sha256": "f8b8e49d88c841143d6a931ad6c983d743ae8f106ca02a9d724ddd95be44f540"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\src\\graph_provider_ggml_cuda\\ggml_cuda_region.cc",
+        "bytes": 54703,
+        "sha256": "7a3a25c3762b2aa450daf3cb6b339f10352047b48829afbc6eb7d73282176243"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\third_party\\ggml_cuda_runtime\\patches.json",
+        "bytes": 512024,
+        "sha256": "eae9c9cf73fc1d77ce3daab0c94784314a641dc65c8b6ca7d6df90695c860120"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\third_party\\ggml_cuda_runtime\\NOTICE.md",
+        "bytes": 20883,
+        "sha256": "a097766eb8406d1015fe7bd411befbe91f9c94fd8abd8ebd9043d308c1785f05"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\cmake\\HyleDependencyLock.json",
+        "bytes": 77554,
+        "sha256": "7445a91844039df6bba6bfeac8878b63c3b1c8c3ee6557b45b61cb48a7000709"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_cuda\\grouped_shared_activation_test.cc",
+        "bytes": 38041,
+        "sha256": "ef6d9ecf23ef020af331334e7ab44fd8b31488bf54581c3d6954983341f28c99"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\graph_provider_ggml_cuda\\region_test.cc",
+        "bytes": 71777,
+        "sha256": "fe1ba62bb62d88e74728e16699f7914651e16ad7df7316b26a821ba5536bd143"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\docs\\user\\compute.md",
+        "bytes": 99030,
+        "sha256": "b7c4ea58d653360b854ce2be874ecac855cd1d790ebbd8c8dad44b31cc5f6fcf"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\docs\\developer\\current-work.md",
+        "bytes": 17299,
+        "sha256": "6b9e70d2547787ee522093b4c976559ee18c7676972e59b6da6849b4f0edbbdd"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\docs\\implementation\\model-operators.md",
+        "bytes": 55395,
+        "sha256": "05c64be072ae8611b6e4fa31678792bf3858e0f2614b4c66c996f65215a4eb5d"
+      }
+    ],
+    "reproduce": [
+      "python .scratch/architecture-refactor-2026-10-18/bf16-grouped-bank/build.py --build --resume",
+      "python .scratch/architecture-refactor-2026-10-18/bf16-grouped-bank/run_cases.py NEW_UNIQUE_RUN_NAME"
+    ],
+    "source_and_command_archive": "bf16-grouped-bank-2026-10-20.zip",
+    "archive": {
+      "archive": {
+        "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\bf16-grouped-bank-2026-10-20.zip",
+        "bytes": 2543855,
+        "sha256": "4eb6017adfea85a773b6ec3e8cbdf71f7e1c16c321bc99a86f76795bb648bba1"
+      },
+      "payload_count": 529,
+      "manifest_entries": 530,
+      "all_payload_SHA256_checked": true,
+      "CRC_checked": true
+    },
+    "cleanup": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\bf16-grouped-bank-2026-10-20.cleanup.json",
+      "bytes": 8345,
+      "sha256": "7238d746b5dcd02739753b27aab871f9ced3a447344bf968d0fe03eda404f5f1"
+    }
+  },
+  "goal": "Active; this completed batch does not complete architecture, model/operator/quantization coverage or cross-platform lifecycle requirements"
+}

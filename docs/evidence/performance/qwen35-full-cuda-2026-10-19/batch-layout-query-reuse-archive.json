@@ -1,0 +1,21 @@
+{
+  "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\qwen35-full-cuda-2026-10-19\\batch-layout-query-reuse.zip",
+  "sha256": "d40b8fbd6032a6836224e4aec1184124428b8b3a0e9847dd3bc09fedc90068d9",
+  "bytes": 15931982,
+  "payloads": 458,
+  "entries_including_manifest": 459,
+  "uncompressed_payload_bytes": 36913106,
+  "CRC_and_every_payload_SHA_verified": true,
+  "host_TUs": 13,
+  "native_TUs": 0,
+  "fresh_host_TUs_after_test_define": 2,
+  "reused_successful_host_TUs": 11,
+  "tests": 5,
+  "model_equal_vectors": 64,
+  "performance_terminal_zero": 9,
+  "stable_decode_improvement_proven": false,
+  "production_provider_is_uninstrumented": true,
+  "source_retry_fixture_and_failed_compile_corrections_preserved": true,
+  "SDK_models_objects_executables_maps_tmp_excluded": true,
+  "other_unapplied_batch_drafts_excluded": true
+}

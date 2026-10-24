@@ -13,6 +13,7 @@
 #include "fp8_provider.h"
 #include "native_context.h"
 #include "fp8/sglang_fp8_quantize_cuda_sm89.h"
+#include "fp8/sglang_fp8_dynamic_sm89.h"
 #include "fp8/grouped/sglang_grouped_fp8_sm89.h"
 
 namespace hyle::compute::cuda_native::grouped_fp8 {
@@ -25,8 +26,8 @@ constexpr ProviderRuntimeProperties kRuntime{
     .supports_concurrent_invocations = true, .capture_compatible = true};
 
 struct Shape final {
-  int e, n, k, rows, slots, capacity, quant_groups, buckets, scan;
-  bool bfloat, shared_input, small;
+  int e, n, k, rows, slots, top_k, capacity, quant_groups, buckets, scan;
+  bool bfloat, small, power2, multiply_reciprocal;
   float floor;
   unsigned align_threads, align_shared, grid;
   std::size_t scale, sorted, experts, post, cumsum, workspace;
@@ -51,14 +52,15 @@ Result<Shape> select(const detail::ProviderOperationRequest &request) noexcept {
   const auto &a = request.inputs[1];
   const auto e = w.dimensions()[0], n = w.dimensions()[1], k = w.dimensions()[2];
   const auto t = a.dimensions()[0], activations = a.dimensions()[1];
-  // Fixed native top-8 GLM variants. The 1024-thread generic align scan needs
+  const auto selected = request.inputs[2].dimensions()[1];
+  // The 1024-thread generic align scan needs
   // a thread for the final prefix, hence E+1 must be strictly below 1024.
-  if (request.inputs[2].dimensions()[1] != 8 || e > 1022 ||
-      n > INT32_MAX || k > INT32_MAX || t > INT32_MAX / 8 ||
-      n > INT32_MAX / k || e > INT32_MAX / (n * k) ||
-      t * 8 > INT32_MAX / k || t * 8 > INT32_MAX / n)
-    return std::unexpected(Status::Unimplemented("grouped FP8 top-8 native indexing domain exceeded"));
-  const auto slots = t * 8;
+  if (e > 1022 || selected > INT32_MAX ||
+      n > INT32_MAX || k > INT32_MAX || t > INT32_MAX / selected ||
+      n > INT32_MAX / k ||
+      t * selected > INT32_MAX / k || t * selected > INT32_MAX / n)
+    return std::unexpected(Status::Unimplemented("grouped FP8 native indexing domain exceeded"));
+  const auto slots = t * selected;
   const auto capacity = ((slots + (e + 1) * 63 + 63) / 64) * 64;
   const auto nblocks = n / 128 + (n % 128 != 0);
   if (capacity > INT32_MAX || capacity / 64 > INT32_MAX / nblocks)
@@ -66,12 +68,17 @@ Result<Shape> select(const detail::ProviderOperationRequest &request) noexcept {
   Shape s{};
   s.e = static_cast<int>(e); s.n = static_cast<int>(n); s.k = static_cast<int>(k);
   s.rows = static_cast<int>(t * activations); s.slots = static_cast<int>(slots);
+  s.top_k = activations == 1 ? static_cast<int>(selected) : 1;
   s.capacity = static_cast<int>(capacity); s.buckets = s.e + 1;
   s.scan = static_cast<int>(std::bit_ceil(static_cast<unsigned>(s.buckets)));
-  s.quant_groups = 16;
-  while ((s.rows * (s.k / 128)) % s.quant_groups) s.quant_groups /= 2;
   s.bfloat = a.data_type() == DataType::kBFloat16;
-  s.shared_input = activations == 1;
+  s.power2 = op->scale_policy == model_ops::Float8ScalePolicy::kPowerOfTwo;
+  s.multiply_reciprocal = op->scale_policy == model_ops::Float8ScalePolicy::kMultiplyReciprocal;
+  if (s.power2 && !s.bfloat)
+    return std::unexpected(Status::Unimplemented(
+        "grouped FP8 power-of-two activation scales are qualified for BF16 input"));
+  s.quant_groups = s.power2 ? 1 : 16;
+  while ((s.rows * (s.k / 128)) % s.quant_groups) s.quant_groups /= 2;
   s.floor = op->absmax_floor;
   s.small = slots < 1024 && s.buckets <= 64;
   const unsigned threads = static_cast<unsigned>(std::max(s.buckets, 32));
@@ -120,12 +127,12 @@ void destroy_invocation(void *state, mem::AllocatorRef allocator) noexcept {
   allocator.deallocate(invocation, sizeof(Invocation), alignof(Invocation));
 }
 
-detail::EnqueueResult submit(void *state, void *lane, Queue &queue,
+detail::EnqueueResult submit(void *state, void *lane, detail::QueueSequence &sequence,
                              std::span<const ConstTensorView> inputs,
                              std::span<const TensorView> outputs) noexcept {
   const auto &p = *static_cast<const Prepared *>(state);
   const auto &s = p.shape;
-  auto stream = cuda::stream(queue);
+  auto stream = cuda::stream(sequence);
   if (!stream) return detail::EnqueueResult::rejected(std::move(stream).error());
   std::array<CUdeviceptr, 3> in;
   for (std::size_t i = 0; i < in.size(); ++i) {
@@ -138,7 +145,7 @@ detail::EnqueueResult submit(void *state, void *lane, Queue &queue,
   cuda::detail::ScopedPrimaryContext scope(p.primary);
   if (!scope) return detail::EnqueueResult::rejected(scope.status());
   unsigned *status_word = nullptr;
-  auto initialized = cuda::detail::acquire_device_status(queue, &status_word);
+  auto initialized = cuda::detail::acquire_device_status(sequence, &status_word);
   if (!initialized.status.ok()) return initialized;
   const auto base = static_cast<const Invocation *>(lane)->workspace;
   std::array<CUdeviceptr, 10> ptrs{base, in[0], reinterpret_cast<CUdeviceptr>(*output),
@@ -152,7 +159,17 @@ detail::EnqueueResult submit(void *state, void *lane, Queue &queue,
   float floor = s.floor, minimum = -448, maximum = 448;
   std::array<void *, 11> quant{&in[1], &ptrs[0], &ptrs[3], &block, &groups, &per_block,
       &floor, &minimum, &maximum, &unused, &unused};
-  auto result = launch(p.quant, unsigned(groups / per_block), unsigned(per_block * 16), 0, quant);
+  std::array<CUdeviceptr, 2> scratch{};
+  int columns = s.k, scale_stride = s.rows;
+  if (s.power2) {
+    // Reuse the unchanged BF16 pow2 AOT ABI; scales are col-major.
+    quant[4] = &columns;
+    quant[5] = &scale_stride;
+    quant[9] = &scratch[0];
+    quant[10] = &scratch[1];
+  }
+  auto result = launch(p.quant, unsigned(groups / per_block),
+                       s.power2 ? 32u : unsigned(per_block * 16), 0, quant);
   if (result != CUDA_SUCCESS) return detail::EnqueueResult::accepted_command(cuda::status(result));
 
   int buckets = s.buckets, tile = 64, capacity = s.capacity, scan = s.scan;
@@ -176,13 +193,16 @@ detail::EnqueueResult submit(void *state, void *lane, Queue &queue,
   // Original grouped GEMM consumes only the bounds-checked sorted IDs. Invalid
   // slots never become expert addresses; Queue translates the status at Completion.
   std::array integers{s.n, s.k, s.capacity, s.slots, s.k, 1, s.n * s.k, 1, s.k,
-      0, 0, s.n, 1, s.k / 128, 1, (s.n / 128 + (s.n % 128 != 0)) * (s.k / 128), 1, s.k / 128};
-  std::array<void *, 28> gemm;
+      0, 0, s.n, 1, s.power2 ? 1 : s.k / 128, s.power2 ? s.rows : 1,
+      (s.n / 128 + (s.n % 128 != 0)) * (s.k / 128), 1, s.k / 128,
+      s.top_k};
+  std::array<void *, 29> gemm;
   for (std::size_t i = 0; i < 8; ++i) gemm[i] = &ptrs[i];
   for (std::size_t i = 0; i < integers.size(); ++i) gemm[i + 8] = &integers[i];
-  gemm[26] = &ptrs[8]; gemm[27] = &ptrs[9]; // Triton 3.8 zero-sized scratch ABI.
+  gemm[27] = &ptrs[8]; gemm[28] = &ptrs[9]; // Triton 3.8 zero-sized scratch ABI.
   return detail::EnqueueResult::accepted_command(
-      cuda::status(launch(p.gemm, s.grid, 128, 24576, gemm)));
+      cuda::status(launch(p.gemm, s.grid, 128,
+          s.bfloat ? kGroupedBf16SharedBytes : kGroupedF32SharedBytes, gemm)));
 }
 const detail::ProviderPreparedVTable kVTable{
     .destroy_prepared = &destroy, .alias_support = &alias,
@@ -231,7 +251,7 @@ ProviderPrepareOutcome prepare(void *state, const detail::ProviderPrepareRequest
   cuda::detail::ScopedPrimaryContext scope(primary);
   if (!scope) return ProviderPrepareOutcome::error(scope.status());
   auto *memory = allocator.allocate(sizeof(Prepared), alignof(Prepared));
-  if (!memory) return ProviderPrepareOutcome::resource_declined(Status::ResourceExhausted("grouped FP8 program allocation failed"));
+  if (!memory) return ProviderPrepareOutcome::error(Status::ResourceExhausted("grouped FP8 program allocation failed"));
   auto *p = ::new (memory) Prepared{primary, *shape};
   const auto load = [](CUmodule &module, const unsigned char *image, CUfunction &function,
                         const char *name) noexcept {
@@ -240,17 +260,20 @@ ProviderPrepareOutcome prepare(void *state, const detail::ProviderPrepareRequest
     if (result == CUDA_SUCCESS) result = cuFuncLoad(function);
     return result;
   };
-  auto result = load(p->modules[0], fp8::kSglangFp8QuantizeCuda, p->quant,
-      shape->bfloat ? fp8::kSglangFp8QuantizeBf16Name : fp8::kSglangFp8QuantizeF32Name);
+  auto result = load(p->modules[0],
+      shape->power2 ? fp8::kSglangFp8QuantizeBf16Pow2 : fp8::kSglangFp8QuantizeCuda,
+      p->quant, shape->power2 ? "_per_token_group_quant_8bit_colmajor"
+      : shape->multiply_reciprocal
+          ? (shape->bfloat ? fp8::kSglangFp8QuantizeMultiplyReciprocalBf16Name
+                           : fp8::kSglangFp8QuantizeMultiplyReciprocalF32Name)
+          : (shape->bfloat ? fp8::kSglangFp8QuantizeBf16Name : fp8::kSglangFp8QuantizeF32Name));
   if (result == CUDA_SUCCESS)
     result = load(p->modules[1], kCheckedAlign, p->align, shape->small ? kAlignSmallName : kAlignName);
   if (result == CUDA_SUCCESS && !shape->small) {
     result = cuModuleGetFunction(&p->sort, p->modules[1], kAlignSortName);
     if (result == CUDA_SUCCESS) result = cuFuncLoad(p->sort);
   }
-  const auto *gemm = shape->bfloat
-      ? (shape->shared_input ? kGroupedBf16Top8 : kGroupedBf16Top1)
-      : (shape->shared_input ? kGroupedF32Top8 : kGroupedF32Top1);
+  const auto *gemm = shape->bfloat ? kGroupedBf16 : kGroupedF32;
   if (result == CUDA_SUCCESS) result = load(p->modules[2], gemm, p->gemm, "fused_moe_kernel");
   if (result != CUDA_SUCCESS) {
     destroy(p, allocator);

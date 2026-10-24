@@ -11,6 +11,7 @@ if(_HYLE_COMPUTE_HAVE_CUDA)
     copy_batch_test.cc
     copy_program_test.cc
     device_status_test.cc
+    native_retirement_test.cc
     cuda_test_kernel.cu)
   target_include_directories(hyle_compute_backend_cuda_test PRIVATE
     "${HYLE_SOURCE_DIR}/src/compute_backend_cuda")

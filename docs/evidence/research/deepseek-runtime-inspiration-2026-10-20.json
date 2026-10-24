@@ -1,0 +1,822 @@
+{
+  "date": "2026-10-20",
+  "status": "read_only_research_complete_no_product_change_or_performance_claim",
+  "scope": "Existing local official repositories, current single-machine CPU/one-GPU/mixed Hyle design; DeepSeek V4.1 Flash is not added to supported models.",
+  "official_web_verification": {
+    "pages_opened": [
+      "https://github.com/deepseek-ai/DeepInfer",
+      "https://github.com/deepseek-ai/deepseek-recipe"
+    ],
+    "result": "Official repository READMEs corroborate project ownership, distinct responsibilities, supported hardware and benchmark scope; source analysis is pinned to the actual local commits below. This is not a separate audit of release timing."
+  },
+  "actions_attached_to_existing_plan": [
+    {
+      "step": "3: calibrated static FP8 and exact role binding",
+      "status": "source-guided implementation consideration; no demonstrated Hyle defect or gain",
+      "mechanism": "Produce the selected consumer layout directly; prepare immutable weight/scale artifacts cold.",
+      "next": "While implementing the required FP8 contract, trace one actual producer-consumer path and its cast/repack bytes. Contract-equivalent lowering belongs to the original region/provider and allocation owners.",
+      "boundary": "Keep original QDQ/RNE and public escaping tensors; do not silently substitute FP8 for BF16/F32."
+    },
+    {
+      "step": "5: bounded final hotspot review before D4",
+      "status": "one finite investigation; not an adopted optimization",
+      "mechanism": "Projection plus residual epilogue writes the final output.",
+      "next": "Check one real supported projection/residual chain for equivalent native epilogue support and removable materialization. Prove the original BF16 boundaries before changing code; decide adopt or reject with the actual timing, rather than leave an indefinite candidate.",
+      "boundary": "Vendor C-accumulation is not automatically BF16(MatMul) then BF16 Add; preserve alias, readers and retained output lifetime."
+    },
+    {
+      "step": "6: actual Qwen MTP consumer and matched llama.cpp MTP comparison",
+      "status": "required consumer already planned; device-resident metadata is a later measured optimization",
+      "mechanism": "Retain prior sampled tokens/accepted lengths on GPU and overlap host postprocessing.",
+      "next": "First execute actual local MTP weights with draft/verify/accepted-prefix correctness and no-MTP baseline. Then inspect token/length round trips and only overlap where original Completion/state/stop/cancel dependencies permit.",
+      "boundary": "DSpark learned confidence scheduling needs a compatible trained ConfidenceHead; the local Qwen checkpoint has none. Preserve token-visible timing or separately label a throughput mode."
+    },
+    {
+      "step": "4/5 consumer boundary, 6 token stream, 7 images",
+      "status": "architecture guidance; no new required API-server module",
+      "mechanism": "Keep request/render/tokenizer/stream policy outside Compute/Graph; image preprocessing is separate from encoder/projector.",
+      "next": "Use the existing consumer and completion boundary for token IDs and stop/finish; preserve backend retirement on close. When stage7 starts, provide actual encoder/mmproj math in addition to byte/image preprocessing.",
+      "boundary": "Recipe provides no model kernel, precision, GPU capture, KV allocator or measured inference gain."
+    }
+  ],
+  "already_present": "Finite cold graph families, stable metadata binding and original Invocation/Completion are already Hyle mechanisms. Preserve independent live slots/old results rather than copy DeepInfer sequential shared output/pool ownership.",
+  "out_of_scope_examples": "Wide EP/EPLB, cluster disaggregation/GDR/3FS and V4.1-specific approximate SWA replay; no single-SM89-Qwen gain follows from the SM100 multiGPU benchmark.",
+  "deepinfer": {
+    "scope": "Read-only source research of existing local DeepInfer checkout; no Hyle product/other-repository edit, dependency/model download, build, benchmark or GPU execution. This does not add V4.1 model support.",
+    "provenance": {
+      "receipt": "provenance.json",
+      "origin": "https://github.com/deepseek-ai/DeepInfer.git",
+      "commit": "774ce244b87cc0eb8d4b94ab9f5de2ab22049f01",
+      "commit_time": "2026-10-20T19:03:13+08:00",
+      "subject": "update Q&A EN doc",
+      "clean_worktree": true,
+      "identity_limit": "Local origin/commit/date inspected; no independent remote release/API attestation requested or performed."
+    },
+    "actual_project": {
+      "source": "README.md:1-41,83-95",
+      "framework": "README explicitly says originally built primarily on vLLM, with SGLang and TensorRT-LLM inspiration; actual source is PyTorch model runtime + native C++ metadata/scheduler + custom TileLang and external kernel libraries.",
+      "model": "Only DeepSeek-V4.1-Flash listed; default checkpoint DeepSeek-V4.1-Flash-1017. It is not advertised as a generic model-independent base library.",
+      "hardware": "NVIDIA SM100 and Huawei Ascend950; not evidence that imported kernels run on current Hyle SM89 or portable CPU/Metal/Vulkan.",
+      "benchmark_scope": "Published README plots use4 SM100 prefill and64 SM100 decode. Q&A deployment goals use large EP/DP; these rates cannot demonstrate a single-GPU advantage or predict Qwen2B performance.",
+      "unavailable_source": "All6 vendor submodule entries are uninitialized (- prefix). Local call sites and gitlink pins were read, not the imported DeepGEMM/FlashMLA/DeepEP/DeepSelect kernel implementations."
+    },
+    "best_transferable_mechanisms": [
+      {
+        "priority": 1,
+        "name": "Produce the next consumer physical representation directly, with cold immutable weight/scale layout preparation",
+        "evidence": [
+          "layers/linear.py:13-24,65-79 (block32, packed UE8M0, aligned scale layout; weight scale transformed in constructor)",
+          "layers/tilelang_ops/norm.py:23-63,65-110,154-166 (explicit output buffers and logical/physical scale views)",
+          "layers/tilelang_ops/cuda/norm.py:231-246,258-282,288-324 (input-dtype residual RNE; norm; original-dtype RNE before FP8 quantization; optional simultaneous BF16 output)",
+          "models/v4_modules/mlp.py:259-300,534-544 (post-load packed weights, normalization writes directly to final SymmBuffer input/scale slots)",
+          "models/v4_modules/attn.py:111-148,151-210 (cold Q/Wv layout permutation, fused norm/RoPE/attention and consumer-ready FP8 output)"
+        ],
+        "what_it_removes": "Separate activation cast, scale repack and intermediate materialization when the actual selected consumer needs that representation. Cold weight conversion is shared rather than repeated per decode slot.",
+        "hyle_mapping": "Use existing cold Region proposals/representation facts and PreparedOperation/Invocation; bind immutable derived artifacts to their actual provider/layout and budget, and preserve caller-visible logical tensors at escaping boundaries. Existing FP8 shared-prologue region and typed/packed routes are natural carriers; no second engine or model whitelist.",
+        "numeric_limit": "This is explicit quantized math, not permission to transparently change ordinary BF16/F32 MatMul to FP8. Their norm kernel explicitly rounds through the input dtype before quantization. UE8M0 packed scale layout and model FP4/QAT assumptions are not Hyle current F32-scale FP8/NVFP4 contracts.",
+        "lifetime_limit": "DeepInfer resizes original parameter storage after replacement in some cold repacks; Hyle must not copy that destructive action onto borrowed/mmap/constants still referenced by another plan, slot, capture or old result.",
+        "bounded_next_investigation": "One supported quantized producer-consumer path: inventory actual cast/repack bytes and cold artifact reuse; only implement a fused output representation if a complete numerical/layout contract and real consumer exist. No claim of measured benefit here."
+      },
+      {
+        "priority": 2,
+        "name": "Complete projection plus residual/accumulation epilogue using the final output buffer",
+        "evidence": [
+          "layers/linear.py:83-114 (32-byte padded physical output stride, logical slicing)",
+          "layers/linear.py:116-165 (out_acc passed as C to native GEMM and reused as D)",
+          "models/v4_modules/mlp.py:513-526,549-562 (shared down projection accumulates into existing routed-expert output)"
+        ],
+        "what_it_removes": "One temporary projection output and a following read/add/write pass when a native epilogue can implement the original result.",
+        "hyle_mapping": "Existing cold MatMul/Add region qualification and native Provider output/alias/workspace contracts can represent this; retain the exact original BF16 output and residual-add rounding boundaries, control readers and no-escape proof.",
+        "numeric_limit": "Vendor GEMM C accumulation may add C in the F32 accumulator before final BF16; that is not automatically equal to BF16(MatMul)->BF16 Add. Vendor kernel body is absent locally. A legal Hyle lowering must explicitly stage the original RNE(s), even if performed inside one epilogue.",
+        "bounded_next_investigation": "A real supported projection+residual chain, identical bytes/strides/output publication and Completion boundary, source-matched independent rounding witness first. End-to-end benefit remains to be measured; no repeated whole-MMVF or already negative BF16-Top1 experiment is implied."
+      },
+      {
+        "priority": 3,
+        "name": "Keep accepted tokens and compact decode metadata on GPU across steps; overlap CPU scheduling without a new executor",
+        "evidence": [
+          "worker/model_runner.py:308-367 (forward/sample forbid implicit device synchronization)",
+          "worker/worker.py:89-180,191-243,248-271 (enqueue current forward before previous host postprocess; GPU prior sampled tokens/accepted lengths; explicit event when CPU really needs a result)",
+          "layers/tilelang_ops/prepare_v4_decode_metadata.py:9-105 (compact ragged per-sequence inputs produce many derived arrays with one metadata CTA kernel plus block-table expansion)",
+          "doc/inference_deployment_qa.md:262-280 (CPU budget/GPU exact per-request draft lengths)"
+        ],
+        "hyle_mapping": "After the requested actual MTP consumer is functional, reuse state versions/accepted-prefix and original invocation/transfer dependencies to test device-resident next-token and position/length inputs. Generic slots/state metadata should express dependencies; sampler policy remains engine-owned.",
+        "risk": "Cancellation, stop tokens, old-result leases, failed Completion, selected state generation and rejected drafts must gate visibility. DeepInfer still performs explicit synchronization for required host postprocessing; zero-overhead is an overlap objective, not zero CPU cost or no waits.",
+        "current_limit": "Current Hyle Qwen consumer is a correctness/performance test product without MTP; this source does not justify silently changing its public per-token host observation or rewriting Graph capture/configuration."
+      }
+    ],
+    "already_aligned_not_a_new_redesign": {
+      "DeepInfer": "worker/cuda_graph_runner.py:41-51,92-110,125-151 builds finite batch sizes; one max source/device/output allocation sliced per variant; reverse capture and shared graph memory pool; stable metadata addresses and small replay handle.",
+      "Hyle": "tools/qwen35_text/main.cc already has exact finite child family and phase slots; src/graph/executable.cc/resources.cc already preserve eligible physical binding facts across configuration metadata refresh (D1), while keeping current permission/lease checks. This is confirmation of the chosen shape, not evidence of another missing capture architecture.",
+      "ownership_difference": "DeepInfer max output/pool slices are reused by its sequential runtime. Hyle must keep separate mutable invocation slots and retain old GraphOutput/OwnedResult storage until retirement/release; do not pool overlapping live results or use batch padding to claim an unfair speed gain."
+    },
+    "resource_layout_lesson": {
+      "source": "layers/tilelang_ops/cache_common.py:25-106,109-133; worker/cache_engine.py:151-166,385-482",
+      "mechanism": "KVCacheFormat separates quantized element semantics, scale encoding, physical byte type, per-token bytes and stride alignment; block/state cache allocators carve aligned views and share only explicitly mapped prior layers. One token interleaves data and encoded scales rather than materializing dense cache for attention.",
+      "hyle_limit": "Useful for explicit native representation and byte-budget facts; V4.1 compressed/SWA/share-KV format is model-specific. Bounded replay in Q&A is explicitly approximate and depends on V4.1 window/backtracking/YOCO; not a generic mathematically equivalent Qwen optimization."
+    },
+    "confidence_head_dependency": {
+      "source": "models/mtp/dflash.py:46-80,155-185; models/v4_modules/heads.py:37-43,105; doc/inference_deployment_qa.md:239-264",
+      "fact": "DSpark confidence scheduling consumes a learned acceptance-rate predictor projection weight (and optional Markov correction), loaded from the final draft module. It is not obtained for free from an arbitrary MTP head or a generic TopK probability.",
+      "local_Qwen_receipt": "qwen-mtp-header-facts.json",
+      "local_Qwen_fact": "Exactly15 mtp.* BF16 tensors; no confidence/accept_rate key in the whole inspected safetensor header.",
+      "decision": "Keep requested stage6 actual Qwen fixed draft/verify consumer separate from DSpark learned-confidence scheduling; the latter requires an actual compatible trained head, numerical contract and calibration/acceptance evidence."
+    },
+    "distributed_mechanisms_not_directly_transferable": [
+      "models/v4_modules/mlp.py:184-201,254-321,528-560: mega-MoE is a DeepGEMM call using EP group/NVL-domain qualification, prepacked experts and SymmBuffer, optional shared expert fusion and fast_math=True. One Python call does not prove one CUDA kernel; absent vendor bodies prevent inspecting its scheduling details or assuming singleton efficiency.",
+      "parallel_utils/userbuffer.py:40-50,65-96 reserves SMs for communication and manages process-wide EP/symmetric buffers; appropriate only with the corresponding concurrent communication workload. Do not reserve SMs on a single idle-communication GPU by imitation.",
+      "Wide EP64-128, EPLB expert replication/shuffle, DP balancing, disaggregated prefill/decode, GDR and3FS cache retention target cluster services and fall outside this single-machine/one-GPU base-library task.",
+      "Published throughput, batch-invariant mode and speculative verification gains are operating-point/model dependent; they are not established on Hyle supported hardware or ordinary BF16 Qwen."
+    ],
+    "recommended_result": "Retain current Hyle cold-plan/provider/Invocation architecture. Highest-value next source-guided work is exact producer-output layout with shared cold weight artifacts, then a complete projection/residual epilogue whose BF16 boundaries are proven; device-resident MTP metadata belongs after the actual requested MTP consumer works. No new model, runtime, global cache or governance mechanism follows from this review.",
+    "upstream_sources": [
+      {
+        "path": "README.md",
+        "bytes": 4660,
+        "sha256": "b55624158ada4dc21b882d24ded06bf82f65350b44d170877b68395712cd670d",
+        "url": "https://github.com/deepseek-ai/DeepInfer/blob/774ce244b87cc0eb8d4b94ab9f5de2ab22049f01/README.md"
+      },
+      {
+        "path": ".gitmodules",
+        "bytes": 666,
+        "sha256": "abaec302b842bd11753e114cc02af43925c7216f9673983090b879e46b9fc157",
+        "url": "https://github.com/deepseek-ai/DeepInfer/blob/774ce244b87cc0eb8d4b94ab9f5de2ab22049f01/.gitmodules"
+      },
+      {
+        "path": "doc/inference_deployment_qa.md",
+        "bytes": 28865,
+        "sha256": "55d428d9958aa35ac863d7f5a2eb21528e683226784b1ac334e8068e21f2326f",
+        "url": "https://github.com/deepseek-ai/DeepInfer/blob/774ce244b87cc0eb8d4b94ab9f5de2ab22049f01/doc/inference_deployment_qa.md"
+      },
+      {
+        "path": "deepinfer/worker/cuda_graph_runner.py",
+        "bytes": 7207,
+        "sha256": "9f559e88d60d057d23243852616aa9cd7264a59841d580731bec1f8cb8bd57b0",
+        "url": "https://github.com/deepseek-ai/DeepInfer/blob/774ce244b87cc0eb8d4b94ab9f5de2ab22049f01/deepinfer/worker/cuda_graph_runner.py"
+      },
+      {
+        "path": "deepinfer/worker/model_runner.py",
+        "bytes": 29533,
+        "sha256": "9e2e18d136c9e0c9f23905ff994e9d23afaa94aa7a133d425e7fc1fc069033ef",
+        "url": "https://github.com/deepseek-ai/DeepInfer/blob/774ce244b87cc0eb8d4b94ab9f5de2ab22049f01/deepinfer/worker/model_runner.py"
+      },
+      {
+        "path": "deepinfer/worker/worker.py",
+        "bytes": 11604,
+        "sha256": "ad32e595d9ab289dff1a7709136431ac60dae709e9e5123ae42eb0ebf7c30cbb",
+        "url": "https://github.com/deepseek-ai/DeepInfer/blob/774ce244b87cc0eb8d4b94ab9f5de2ab22049f01/deepinfer/worker/worker.py"
+      },
+      {
+        "path": "deepinfer/worker/cache_engine.py",
+        "bytes": 49243,
+        "sha256": "ca3d80120fe6bc50971b180278dd575d585e1a6c7a3c2174a8a6fd6213454161",
+        "url": "https://github.com/deepseek-ai/DeepInfer/blob/774ce244b87cc0eb8d4b94ab9f5de2ab22049f01/deepinfer/worker/cache_engine.py"
+      },
+      {
+        "path": "deepinfer/model_executor/layers/linear.py",
+        "bytes": 6850,
+        "sha256": "a8ca60074a1c868e87662240073c6c3648d66ceae953befa3b08772da2225967",
+        "url": "https://github.com/deepseek-ai/DeepInfer/blob/774ce244b87cc0eb8d4b94ab9f5de2ab22049f01/deepinfer/model_executor/layers/linear.py"
+      },
+      {
+        "path": "deepinfer/model_executor/layers/layernorm.py",
+        "bytes": 2013,
+        "sha256": "9d641bc03f21571c017e3e8873cd66d443a2bbd66efb8d31e554d9391e63b554",
+        "url": "https://github.com/deepseek-ai/DeepInfer/blob/774ce244b87cc0eb8d4b94ab9f5de2ab22049f01/deepinfer/model_executor/layers/layernorm.py"
+      },
+      {
+        "path": "deepinfer/model_executor/layers/tilelang_ops/norm.py",
+        "bytes": 26521,
+        "sha256": "14d6f0704e2fa172052cc9dfdc455cae49004c0107f0b7ea7cb72ba0e8b6dce0",
+        "url": "https://github.com/deepseek-ai/DeepInfer/blob/774ce244b87cc0eb8d4b94ab9f5de2ab22049f01/deepinfer/model_executor/layers/tilelang_ops/norm.py"
+      },
+      {
+        "path": "deepinfer/model_executor/layers/tilelang_ops/cuda/norm.py",
+        "bytes": 15245,
+        "sha256": "568abbc63ec7d72aed3edaa8ffde9033095eb1421077141c787cabe6628dcb91",
+        "url": "https://github.com/deepseek-ai/DeepInfer/blob/774ce244b87cc0eb8d4b94ab9f5de2ab22049f01/deepinfer/model_executor/layers/tilelang_ops/cuda/norm.py"
+      },
+      {
+        "path": "deepinfer/model_executor/layers/tilelang_ops/fused_transform.py",
+        "bytes": 47640,
+        "sha256": "8bb4e3f1177d6a474ea1398de3dacef5fcddec2e54a93920902dd0d480dd28d8",
+        "url": "https://github.com/deepseek-ai/DeepInfer/blob/774ce244b87cc0eb8d4b94ab9f5de2ab22049f01/deepinfer/model_executor/layers/tilelang_ops/fused_transform.py"
+      },
+      {
+        "path": "deepinfer/model_executor/layers/tilelang_ops/prepare_v4_decode_metadata.py",
+        "bytes": 25411,
+        "sha256": "4117a3203a8e444549969647ba57c1d56d10116a93b50c9d9b8e96c74f36d06e",
+        "url": "https://github.com/deepseek-ai/DeepInfer/blob/774ce244b87cc0eb8d4b94ab9f5de2ab22049f01/deepinfer/model_executor/layers/tilelang_ops/prepare_v4_decode_metadata.py"
+      },
+      {
+        "path": "deepinfer/model_executor/layers/tilelang_ops/cache_common.py",
+        "bytes": 18002,
+        "sha256": "95835810dc6676704c7902ca6e9778d38b6f8137fb37320a245826992aed55d1",
+        "url": "https://github.com/deepseek-ai/DeepInfer/blob/774ce244b87cc0eb8d4b94ab9f5de2ab22049f01/deepinfer/model_executor/layers/tilelang_ops/cache_common.py"
+      },
+      {
+        "path": "deepinfer/model_executor/models/v4_modules/attn.py",
+        "bytes": 46250,
+        "sha256": "cb228c8fd4c76200e2ec266c51872107cfe7b384fdc88458b3d1c0ff101f3116",
+        "url": "https://github.com/deepseek-ai/DeepInfer/blob/774ce244b87cc0eb8d4b94ab9f5de2ab22049f01/deepinfer/model_executor/models/v4_modules/attn.py"
+      },
+      {
+        "path": "deepinfer/model_executor/models/v4_modules/mlp.py",
+        "bytes": 25524,
+        "sha256": "2541bcc83b178a9e2f18b387b301d60111d6d603e18e2d31df38196b03d290dd",
+        "url": "https://github.com/deepseek-ai/DeepInfer/blob/774ce244b87cc0eb8d4b94ab9f5de2ab22049f01/deepinfer/model_executor/models/v4_modules/mlp.py"
+      },
+      {
+        "path": "deepinfer/model_executor/parallel_utils/userbuffer.py",
+        "bytes": 8707,
+        "sha256": "580331d0e6d6b013189b1d482b242b0bf3d60be46cad1108896b4830202d33bf",
+        "url": "https://github.com/deepseek-ai/DeepInfer/blob/774ce244b87cc0eb8d4b94ab9f5de2ab22049f01/deepinfer/model_executor/parallel_utils/userbuffer.py"
+      },
+      {
+        "path": "deepinfer/model_executor/models/mtp/dflash.py",
+        "bytes": 17894,
+        "sha256": "12ebfb9c793062844d40e0fab17164d5365d965c318f8b9f0f4adf51b3afb684",
+        "url": "https://github.com/deepseek-ai/DeepInfer/blob/774ce244b87cc0eb8d4b94ab9f5de2ab22049f01/deepinfer/model_executor/models/mtp/dflash.py"
+      },
+      {
+        "path": "deepinfer/model_executor/models/v4_modules/heads.py",
+        "bytes": 4365,
+        "sha256": "697439602617d53409fea41c8cc1d95b1002842823d7ccd824fb720b5111ae2e",
+        "url": "https://github.com/deepseek-ai/DeepInfer/blob/774ce244b87cc0eb8d4b94ab9f5de2ab22049f01/deepinfer/model_executor/models/v4_modules/heads.py"
+      },
+      {
+        "path": "csrc/engine/mtp_varlen.hpp",
+        "bytes": 12151,
+        "sha256": "164f45db4cccd6d6909dd2846e7dfffb57754b108af679443bf4bd71ec33785a",
+        "url": "https://github.com/deepseek-ai/DeepInfer/blob/774ce244b87cc0eb8d4b94ab9f5de2ab22049f01/csrc/engine/mtp_varlen.hpp"
+      },
+      {
+        "path": "tests/test_cuda_sync_guards.py",
+        "bytes": 8246,
+        "sha256": "d362e11f6a7004b497e2012f2d4e54c54073ec970b78e9ef77a28b5b7a996b18",
+        "url": "https://github.com/deepseek-ai/DeepInfer/blob/774ce244b87cc0eb8d4b94ab9f5de2ab22049f01/tests/test_cuda_sync_guards.py"
+      }
+    ],
+    "hyle_observed_sources": [
+      {
+        "path": "docs/architecture/compute-design.md",
+        "bytes": 103141,
+        "sha256": "bf5d02a12125a2719ceaaa007257027f043c44c218d93ebc8d87fe76a942967c"
+      },
+      {
+        "path": "docs/architecture/graph-design.md",
+        "bytes": 13273,
+        "sha256": "e3a124c7dbb11c611a01dfe1d899b9471318e7ae155505fb35aed5d0b0b8b576"
+      },
+      {
+        "path": "docs/developer/current-work.md",
+        "bytes": 15640,
+        "sha256": "9e32479afebc276cadc3a03208c80cc6f709e4d108e45efaae60c68222570fca"
+      },
+      {
+        "path": "tools/qwen35_text/main.cc",
+        "bytes": 57917,
+        "sha256": "33a3e3de91050ad752935b81d1b5bb82fa9e09a8868ca04b0a028dd832b66a6c"
+      },
+      {
+        "path": "src/graph/executable.cc",
+        "bytes": 461623,
+        "sha256": "943fd313abb2f9a7292f99348a570308303b14a024bb45a82e96f56066760065"
+      },
+      {
+        "path": "src/graph/resources.cc",
+        "bytes": 68601,
+        "sha256": "f80a323818d8fbe8df08d909978baddb6db0077c34f005b3dbe68ff97089bab7"
+      },
+      {
+        "path": "src/graph_route_cuda/fp8_shared_prologue_region.cc",
+        "bytes": 11822,
+        "sha256": "9759ee05668ee66a8104eec4db9a817fe36a01716c89ee01e46066108f2ca497"
+      },
+      {
+        "path": "src/compute_provider_cuda/fp8_provider.cc",
+        "bytes": 18437,
+        "sha256": "42b2af1c1324468bf74da4b5460be93e0a9732e1585e1f9aa752cf0d64036e38"
+      },
+      {
+        "path": "src/compute_provider_ggml_cuda/ggml_cuda_provider.cc",
+        "bytes": 73533,
+        "sha256": "4e228a12652452600efd406b8b6cca38fc2deb4863f55379ae852b4bc230bef3"
+      },
+      {
+        "path": "src/graph/ct_packed_region.h",
+        "bytes": 17504,
+        "sha256": "566764816fe921c1fc129ec71ea202eadbf76fbc4874bd11e462e86364186120"
+      }
+    ],
+    "verification": {
+      "read_only": true,
+      "builds": 0,
+      "GPU_runs": 0,
+      "benchmarks": 0,
+      "model_payload_reads": 0,
+      "dependency_downloads": 0,
+      "transferred_code": false,
+      "performance_or_quality_verified": false
+    },
+    "existing_plan_attachment": [
+      {
+        "stage": 3,
+        "owner": "Existing Compute/Graph numeric+layout contract and native Provider owners",
+        "revisit_point": "When an existing required quantization capability actually emits data/scales consumed by a supported next op. Inspect producer-native output layout and shared immutable prepared weights as part of that package; no independent speculative FP8/megakernel project."
+      },
+      {
+        "stage": 5,
+        "owner": "Current final-consumer performance owner, original provider/kernel owner",
+        "revisit_point": "After required capability/delivery packages, at the already planned same-boundary D4 comparison. A complete projection+residual epilogue is one source-guided hypothesis only if current profile identifies its traffic; exact BF16 stages required. If unsupported or no measured benefit, close it rather than retain a pending candidate."
+      },
+      {
+        "stage": 6,
+        "owner": "Qwen test-consumer MTP policy + existing state/metadata Provider owners",
+        "revisit_point": "First implement actual supported Qwen MTP draft/verification with existing15 weights and state-prefix lifetime, then inspect device-resident token/length metadata to avoid CPU bubbles. Do not equate this with DSpark learned ConfidenceHead; compatible trained head is absent."
+      },
+      {
+        "stage": 7,
+        "owner": "Existing future image encoder/projector consumer",
+        "revisit_point": "Keep separate image-to-text semantic adapter and base-library computation, as already planned. DeepInfer V4.1-specific multimodal/cluster code does not add a model or require another executor; this review starts no stage7 task."
+      }
+    ],
+    "candidate_status": "Research only; no newly opened optimization candidate, no deferred implementation promise. Existing current steps own any future revisit."
+  },
+  "recipe": {
+    "status": "read_only_local_source_research_complete_no_execution_or_edits",
+    "provenance": {
+      "checkout": "C:\\public\\project-hyle\\deepseek-recipe",
+      "remote": "https://github.com/deepseek-ai/deepseek-recipe.git",
+      "HEAD": "935817c66f5d6e64838f419692545f06787e485f",
+      "HEAD_author_date": "2026-10-20T01:49:41+08:00",
+      "HEAD_commit_date": "2026-10-20T01:51:02+08:00",
+      "HEAD_subject": "docs: update build-python-wheel.md",
+      "release_commit": "93b0fd229cc9ffa6b1a8c63d42b0bf741bbec170",
+      "release_local_log": "2026-10-20T00:21:22+08:00 Release 0.2.0",
+      "changelog": {
+        "path": "CHANGELOG.md",
+        "line": 11,
+        "symbol_or_text": "## 0.2.0 - 2026-10-20"
+      },
+      "primary_permalink": "https://github.com/deepseek-ai/deepseek-recipe/tree/935817c66f5d6e64838f419692545f06787e485f",
+      "online_official_release_verification": "Parent performs independent official-primary verification; this report establishes retained local checkout facts only.",
+      "initial_and_final_worktree_clean": true
+    },
+    "main_finding": "deepseek-recipe0.2.0 is actual protocol/prompt/tokenizer/image-preprocessing code, with mock server examples and an application-provided inference callback. It is not vLLM or a GPU inference recipe. V4.1-Flash names select prompt/API semantics, not model math. There is no numerical singleGPU optimization to port from this repository.",
+    "scope_proof": [
+      {
+        "path": "README.zh.md",
+        "line": 10,
+        "url": "https://github.com/deepseek-ai/deepseek-recipe/blob/935817c66f5d6e64838f419692545f06787e485f/README.zh.md#L10"
+      },
+      {
+        "path": "server-rs/README.md",
+        "line": 3,
+        "url": "https://github.com/deepseek-ai/deepseek-recipe/blob/935817c66f5d6e64838f419692545f06787e485f/server-rs/README.md#L3"
+      },
+      {
+        "path": "server-py/main.py",
+        "line": 159,
+        "url": "https://github.com/deepseek-ai/deepseek-recipe/blob/935817c66f5d6e64838f419692545f06787e485f/server-py/main.py#L159"
+      }
+    ],
+    "negative_scan": {
+      "tracked_files": 139,
+      "Rust_sources": 86,
+      "native_gpu_source_files": 0,
+      "command": [
+        "rg",
+        "-n",
+        "-i",
+        "-g",
+        "*.rs",
+        "-g",
+        "*.py",
+        "-g",
+        "*.md",
+        "-g",
+        "*.toml",
+        "vllm|cuda|cudagraph|graph.?capture|tensor.?parallel|KV.?cache|bfloat|fp8|nccl|all.?reduce|tensor.?core",
+        "."
+      ],
+      "exit_code": 1,
+      "matches": 0,
+      "interpretation": "Absence corroborates explicit ownership docs and reviewed callback code; a keyword scan alone would not prove absence of all optimization."
+    },
+    "runtime_axes": {
+      "fusion_graphcapture": "No transformer decode fusion, static GPU graph or capture implementation. PreparedRequest means rendered protocol request.",
+      "precision_kernels": "No model W/A/Y dtypes, quantization, BF16/FP8 kernel or device/kernel chooser; f32 sampling/logprob fields are metadata.",
+      "KV_state_memory": "PromptUsage receives backend-reported cache-hit token counts; it does not implement KV/cache/model-state storage. Actual state is CPU token/parser buffers and encoded-image byte reservations.",
+      "multiGPU": "No weights, TP/EP ranks, NCCL/collectives or sharding assumptions. Adapter is hardware-agnostic; this supplies neither singleGPU nor multiGPU performance evidence."
+    },
+    "three_boundary_takeaways": [
+      {
+        "finding": "Canonical request and output events remain independent of model compute.",
+        "actual_implementation": "ConversationRequest separates inference, parsing and response options. PreparedRequest holds rendered prompt/images; callback produces ordered Ready/Text/Tokens/Finish events. Model-dependent top_p/defaults stay in request conversion. OutputConstraint is description/prompt data, not an implemented grammar-mask decoder.",
+        "sources": [
+          {
+            "path": "deepseek-recipe/src/request/mod.rs",
+            "line": 145,
+            "url": "https://github.com/deepseek-ai/deepseek-recipe/blob/935817c66f5d6e64838f419692545f06787e485f/deepseek-recipe/src/request/mod.rs#L145"
+          },
+          {
+            "path": "server-py/main.py",
+            "line": 68,
+            "url": "https://github.com/deepseek-ai/deepseek-recipe/blob/935817c66f5d6e64838f419692545f06787e485f/server-py/main.py#L68"
+          },
+          {
+            "path": "server-py/main.py",
+            "line": 87,
+            "url": "https://github.com/deepseek-ai/deepseek-recipe/blob/935817c66f5d6e64838f419692545f06787e485f/server-py/main.py#L87"
+          },
+          {
+            "path": "deepseek-recipe/src/stream/inference.rs",
+            "line": 29,
+            "url": "https://github.com/deepseek-ai/deepseek-recipe/blob/935817c66f5d6e64838f419692545f06787e485f/deepseek-recipe/src/stream/inference.rs#L29"
+          }
+        ],
+        "hyle_owner": "Engine/test consumer tools/qwen35_text/main.cc::Model and future caller adapters; existing include/hyle/graph/executable.h::Invocation and compute/sampling_ops.h stay generic.",
+        "future_stage": "Current steps4/5 interface/consumer boundary review; no new required server/API module. A future interactive consumer can adapt normalized input onto existing finite Graph invocations.",
+        "next_action": "Keep prompt/model/API policy outside per-token numerical submit. Reuse existing RNG/categorical/Completion seams; do not add DeepSeek model selectors, Rust/Python/HTTP dependencies or a second executor to Compute/Graph.",
+        "singleGPU_implication": "Keeps parsing/rendering off the numerical hot path; a design inference, not measured speedup."
+      },
+      {
+        "finding": "Token-ID provenance, UTF8 buffering and stop/finish semantics are one incremental consumer contract.",
+        "actual_implementation": "Prompt.special_ranges distinguishes explicit control tokens from equal spelling in user text. PromptTokenizer prepares plain-vocabulary encoding once; StreamDecoder buffers incomplete UTF8 and preserves special IDs. StreamProcessor stops on finish/stop; Python iterator aclose is shielded on disconnect. Backend cleanup remains caller responsibility.",
+        "sources": [
+          {
+            "path": "deepseek-recipe-core/src/prompt.rs",
+            "line": 26,
+            "url": "https://github.com/deepseek-ai/deepseek-recipe/blob/935817c66f5d6e64838f419692545f06787e485f/deepseek-recipe-core/src/prompt.rs#L26"
+          },
+          {
+            "path": "deepseek-recipe-encoding/src/tokenizer.rs",
+            "line": 41,
+            "url": "https://github.com/deepseek-ai/deepseek-recipe/blob/935817c66f5d6e64838f419692545f06787e485f/deepseek-recipe-encoding/src/tokenizer.rs#L41"
+          },
+          {
+            "path": "deepseek-recipe/src/stream/decoder.rs",
+            "line": 160,
+            "url": "https://github.com/deepseek-ai/deepseek-recipe/blob/935817c66f5d6e64838f419692545f06787e485f/deepseek-recipe/src/stream/decoder.rs#L160"
+          },
+          {
+            "path": "deepseek-recipe/src/stream/processor.rs",
+            "line": 58,
+            "url": "https://github.com/deepseek-ai/deepseek-recipe/blob/935817c66f5d6e64838f419692545f06787e485f/deepseek-recipe/src/stream/processor.rs#L58"
+          },
+          {
+            "path": "server-py/main.py",
+            "line": 193,
+            "url": "https://github.com/deepseek-ai/deepseek-recipe/blob/935817c66f5d6e64838f419692545f06787e485f/server-py/main.py#L193"
+          }
+        ],
+        "hyle_owner": "Test consumer token IDs/EOG in tools/qwen35_text/main.cc; future tokenizer/stream adapter above Graph. Existing Completion::request_cancel and Invocation::close/drain keep actual retirement and old-result ownership.",
+        "future_stage": "Step5 generation/stop boundary; accepted-token batch adaptation can inform later step6 MTP consumer without changing the MTP algorithm. Current token-tape consumer does not require a tokenizer/server project to finish.",
+        "next_action": "When a text stream is added, consume accepted token IDs, preserve boundary/type and separate stop-policy from retirement. Closing a stream may stop new admission; it does not prove an in-flight GPU kernel stopped or allow early buffer reuse.",
+        "limits": "Python example attaches no tokenizer and requires Text chunks; Tokens support is in the library. Vec/tokenizer/parser code is not a zero-allocation or decode-throughput guarantee."
+      },
+      {
+        "finding": "Image preprocessing and token-budget bookkeeping do not provide a vision encoder/projector.",
+        "actual_implementation": "OpenCV reads headers, decodes/resizes/pads and re-encodes WebP; ImageByteBudget reserves concurrent encoded bytes and resolver commits quota only after success. MultiModalData computes image-token adjustment, used alongside exact encoded prompt length/context limits. The model encoder/mmproj is wholly external.",
+        "sources": [
+          {
+            "path": "deepseek-recipe-image/src/opencv.rs",
+            "line": 34,
+            "url": "https://github.com/deepseek-ai/deepseek-recipe/blob/935817c66f5d6e64838f419692545f06787e485f/deepseek-recipe-image/src/opencv.rs#L34"
+          },
+          {
+            "path": "deepseek-recipe-image/src/opencv.rs",
+            "line": 295,
+            "url": "https://github.com/deepseek-ai/deepseek-recipe/blob/935817c66f5d6e64838f419692545f06787e485f/deepseek-recipe-image/src/opencv.rs#L295"
+          },
+          {
+            "path": "deepseek-recipe-image/src/limits.rs",
+            "line": 173,
+            "url": "https://github.com/deepseek-ai/deepseek-recipe/blob/935817c66f5d6e64838f419692545f06787e485f/deepseek-recipe-image/src/limits.rs#L173"
+          },
+          {
+            "path": "deepseek-recipe-image/src/resolver.rs",
+            "line": 169,
+            "url": "https://github.com/deepseek-ai/deepseek-recipe/blob/935817c66f5d6e64838f419692545f06787e485f/deepseek-recipe-image/src/resolver.rs#L169"
+          },
+          {
+            "path": "deepseek-recipe-core/src/multimodal/mod.rs",
+            "line": 197,
+            "url": "https://github.com/deepseek-ai/deepseek-recipe/blob/935817c66f5d6e64838f419692545f06787e485f/deepseek-recipe-core/src/multimodal/mod.rs#L197"
+          }
+        ],
+        "hyle_owner": "Future step7 image consumer preprocessing and semantic encoder/projector Graph; existing Tensor/Graph, ResourceBudget and native limits own actual numeric storage/execution.",
+        "future_stage": "Step7 mmproj/image-to-text only, after current pure-text foundation. This does not establish current multimodal support or a new current-goal missing server module.",
+        "next_action": "Keep context-token policy, encoded image bytes and actual typed/opaque GPU memory as distinct budgets. Implement and verify encoder/projector tensors/weights/math separately in step7; use generic existing math and lifetime paths.",
+        "limits": "Request quotas do not replace physical KV/device max-buffer or opaque allocation constraints; no image inference/kernel performance was demonstrated."
+      }
+    ],
+    "decision": "Preserve the existing inference-library boundary. These are three consumer/interface lessons for existing stages, not evidence for new model support, a mandatory HTTP server, or numerical performance changes.",
+    "local_source_identities": [
+      {
+        "path": "README.zh.md",
+        "bytes": 6660,
+        "sha256": "62c22884aaa0446109a73d6b92e3d9c59e81399e8a57902f6ef49fc0dba5bedb"
+      },
+      {
+        "path": "CHANGELOG.md",
+        "bytes": 15876,
+        "sha256": "ce712e66f1a4616c8faa44ae47a1084065081574f747ed7b3ea472df2a70ea7c"
+      },
+      {
+        "path": "Cargo.toml",
+        "bytes": 1972,
+        "sha256": "790d9820e34cfb0555aba0d64e753591cffb786ee66c73b6c7d2925972ba0510"
+      },
+      {
+        "path": "server-rs/README.md",
+        "bytes": 1493,
+        "sha256": "f7510c58c0debc45ec5ac875fe751eea933fef707d14f4d03359372bff2a8a5b"
+      },
+      {
+        "path": "server-rs/src/lib.rs",
+        "bytes": 10736,
+        "sha256": "d7b38679d17f516086309d934537f15c52cfa452dd7a78812a384991320a0a55"
+      },
+      {
+        "path": "server-py/README.md",
+        "bytes": 3336,
+        "sha256": "d22a05044ff092cf4f3ccaf987176341c003b8fbb9806b1590f427db1f0ef727"
+      },
+      {
+        "path": "server-py/main.py",
+        "bytes": 9670,
+        "sha256": "07c3c12723a2ceabc07610122b88b3f5f6e8bf6b90173c1f49e884b63936748f"
+      },
+      {
+        "path": "deepseek-recipe/src/lib.rs",
+        "bytes": 615,
+        "sha256": "fe68548dc1a0c3ae7ffe573064b5c9ae31a006eeacc3e77a65529444e22464c7"
+      },
+      {
+        "path": "deepseek-recipe/src/request/mod.rs",
+        "bytes": 11979,
+        "sha256": "c2d996aca81b6956b9e997c24fd4239a1191248d4e5399dfa069ee41f19fc2b9"
+      },
+      {
+        "path": "deepseek-recipe/src/request/options.rs",
+        "bytes": 12320,
+        "sha256": "0a0c998d3f3dfc93fd6b53ca106e600416bcbb36c4083b0e5f9c773a2e7ba128"
+      },
+      {
+        "path": "deepseek-recipe/src/stream/inference.rs",
+        "bytes": 3538,
+        "sha256": "1088a96d606e6090e0aedf08419c587536deb84d4afadf063b753f13436f203d"
+      },
+      {
+        "path": "deepseek-recipe/src/stream/decoder.rs",
+        "bytes": 8791,
+        "sha256": "2237f08024225c3afa79042e9fcd1f3fc838d3e433027d4f193f20e5f1f9d084"
+      },
+      {
+        "path": "deepseek-recipe/src/stream/processor.rs",
+        "bytes": 45272,
+        "sha256": "40eb9f349666af775e8649ab340ba32ae76f8c5e251b8a05a38fe854afc35bc4"
+      },
+      {
+        "path": "deepseek-recipe/src/stream/output_parser.rs",
+        "bytes": 30794,
+        "sha256": "38aeb5e0cd475c39b2269e71adc037167e713cf98ba551d7210365ceb6eccbc7"
+      },
+      {
+        "path": "deepseek-recipe-core/src/prompt.rs",
+        "bytes": 10758,
+        "sha256": "c63534a96f533d47dc02467ccb540e0fc5cccbf89afc5dabbd275331ddf188d6"
+      },
+      {
+        "path": "deepseek-recipe-encoding/src/tokenizer.rs",
+        "bytes": 4823,
+        "sha256": "21fefc37c6689cac8357d030f1ccb2c84e37d293950797ec4a6a0bfc208b56de"
+      },
+      {
+        "path": "deepseek-recipe-encoding/src/v4/dsv41.rs",
+        "bytes": 17617,
+        "sha256": "33f7b0e0c3dde66020a4746ffc6c35df8dd30933e653aaf9071c1beb21439a90"
+      },
+      {
+        "path": "deepseek-recipe-image/src/limits.rs",
+        "bytes": 9310,
+        "sha256": "607999351cf46d3ec5c6f80237ef2c66442c783193e18e0e81d14640997a78c1"
+      },
+      {
+        "path": "deepseek-recipe-image/src/resolver.rs",
+        "bytes": 23454,
+        "sha256": "94808dafbb2cd87878e6674fadc5809d922d503d4f865502670fa860c41166c9"
+      },
+      {
+        "path": "deepseek-recipe-core/src/multimodal/mod.rs",
+        "bytes": 8163,
+        "sha256": "9de7b7227d6ee10df5eac92b426f25f5c32f0b9bdd01aa326a2270042269776b"
+      },
+      {
+        "path": "deepseek-recipe-image/src/opencv.rs",
+        "bytes": 18356,
+        "sha256": "926f4ac722dd50f19640dc0749c674a38127421b9b34d89e4e3ff4497a6d6c83"
+      }
+    ],
+    "hyle_source_identities": [
+      {
+        "path": "tools/qwen35_text/main.cc",
+        "bytes": 57917,
+        "sha256": "33a3e3de91050ad752935b81d1b5bb82fa9e09a8868ca04b0a028dd832b66a6c"
+      },
+      {
+        "path": "include/hyle/graph/executable.h",
+        "bytes": 49762,
+        "sha256": "6305dd557606b26119fc60de9dbb68c979a1f8fe54755a191378c49742ef4714"
+      },
+      {
+        "path": "include/hyle/compute/completion.h",
+        "bytes": 1959,
+        "sha256": "98b34b9ee4665e9aedac719504c029a509f304b0a4f566bf6b7f76d88dc2ef34"
+      },
+      {
+        "path": "include/hyle/compute/sampling_ops.h",
+        "bytes": 3673,
+        "sha256": "887faba6ebe6249a0e2f766e2ea4b6bd83900bcf1e85165ad55e3e9be18528da"
+      },
+      {
+        "path": "include/hyle/compute/resource_budget.h",
+        "bytes": 4622,
+        "sha256": "578d440b6fc3f5b58809837506165de27ac0866ae39b2d132763f5dd1786b1ce"
+      }
+    ],
+    "performed": {
+      "external_repo_reads_only": true,
+      "network_downloads": 0,
+      "dependency_installs": 0,
+      "builds": 0,
+      "GPU_runs": 0,
+      "model_payloads": 0,
+      "repo_edits": 0,
+      "Hyle_product_edits": 0,
+      "new_artifact_only": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\deepseek-runtime-inspiration-2026-10-20\\recipe-review.json"
+    },
+    "limits": [
+      "No external repository build/test/server was run; no speed or correctness execution claim.",
+      "Local0.2.0/date/model-name evidence does not establish online release provenance; parent owns official web verification.",
+      "No claim that this repo implements vLLM, GPU inference, graph capture, precision recipes, KV/state scheduling, MTP or hardware acceleration."
+    ]
+  },
+  "local_qwen_mtp_header": {
+    "path": "C:\\Users\\kiro\\Downloads\\Qwen3.5-2B\\model.safetensors-00001-of-00001.safetensors",
+    "file_bytes": 4548221488,
+    "header_bytes": 76648,
+    "header_sha256": "ccba2c1f645fe59268f89ee7ea552e02ce6bf0c8a087bf332fb0e3bd99bfee9d",
+    "mtp_count": 15,
+    "mtp": [
+      {
+        "key": "mtp.fc.weight",
+        "dtype": "BF16",
+        "shape": [
+          2048,
+          4096
+        ]
+      },
+      {
+        "key": "mtp.layers.0.input_layernorm.weight",
+        "dtype": "BF16",
+        "shape": [
+          2048
+        ]
+      },
+      {
+        "key": "mtp.layers.0.mlp.down_proj.weight",
+        "dtype": "BF16",
+        "shape": [
+          2048,
+          6144
+        ]
+      },
+      {
+        "key": "mtp.layers.0.mlp.gate_proj.weight",
+        "dtype": "BF16",
+        "shape": [
+          6144,
+          2048
+        ]
+      },
+      {
+        "key": "mtp.layers.0.mlp.up_proj.weight",
+        "dtype": "BF16",
+        "shape": [
+          6144,
+          2048
+        ]
+      },
+      {
+        "key": "mtp.layers.0.post_attention_layernorm.weight",
+        "dtype": "BF16",
+        "shape": [
+          2048
+        ]
+      },
+      {
+        "key": "mtp.layers.0.self_attn.k_norm.weight",
+        "dtype": "BF16",
+        "shape": [
+          256
+        ]
+      },
+      {
+        "key": "mtp.layers.0.self_attn.k_proj.weight",
+        "dtype": "BF16",
+        "shape": [
+          512,
+          2048
+        ]
+      },
+      {
+        "key": "mtp.layers.0.self_attn.o_proj.weight",
+        "dtype": "BF16",
+        "shape": [
+          2048,
+          2048
+        ]
+      },
+      {
+        "key": "mtp.layers.0.self_attn.q_norm.weight",
+        "dtype": "BF16",
+        "shape": [
+          256
+        ]
+      },
+      {
+        "key": "mtp.layers.0.self_attn.q_proj.weight",
+        "dtype": "BF16",
+        "shape": [
+          4096,
+          2048
+        ]
+      },
+      {
+        "key": "mtp.layers.0.self_attn.v_proj.weight",
+        "dtype": "BF16",
+        "shape": [
+          512,
+          2048
+        ]
+      },
+      {
+        "key": "mtp.norm.weight",
+        "dtype": "BF16",
+        "shape": [
+          2048
+        ]
+      },
+      {
+        "key": "mtp.pre_fc_norm_embedding.weight",
+        "dtype": "BF16",
+        "shape": [
+          2048
+        ]
+      },
+      {
+        "key": "mtp.pre_fc_norm_hidden.weight",
+        "dtype": "BF16",
+        "shape": [
+          2048
+        ]
+      }
+    ],
+    "confidence_or_accept_rate_keys": [],
+    "scope": "Header only; no payload read, no model load."
+  },
+  "retained_report_identities": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\deepseek-runtime-inspiration-2026-10-20\\deepinfer-review.json",
+      "bytes": 22330,
+      "sha256": "7143150fc1314ede9ef0ece93e464454c0aefc7ad401911c110ed5194313f154"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\deepseek-runtime-inspiration-2026-10-20\\recipe-review.json",
+      "bytes": 16626,
+      "sha256": "b9b6aa23239db62dc923e34fb90b06698b8cffd1ab03f4cb1eccf14b48caeb07"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\deepseek-runtime-inspiration-2026-10-20\\provenance.json",
+      "bytes": 1860,
+      "sha256": "163adc631bf481acd3e573858d1fe3918bd73892e5d2a4ef3f97cfed94a73f1e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\deepseek-runtime-inspiration-2026-10-20\\qwen-mtp-header-facts.json",
+      "bytes": 2452,
+      "sha256": "6b7542058c91edcd2ad8867e7c8100ff697a593cb50bc563eecb84db86144a90"
+    }
+  ],
+  "verification": {
+    "builds": 0,
+    "tests": 0,
+    "GPU_runs": 0,
+    "benchmarks": 0,
+    "SDK_or_model_downloads": 0,
+    "third_party_code_transferred": false,
+    "new_supported_models": 0
+  },
+  "record_policy": "One compact research record with fixed source URLs/hashes; no repository, SDK, binary or full-source archive copy."
+}

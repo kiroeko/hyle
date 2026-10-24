@@ -1,0 +1,126 @@
+﻿{
+    "completed":  true,
+    "windows_removed":  6,
+    "windows_bytes":  364664378,
+    "windows_kept_objects":  5,
+    "mac":  {
+                "removed":  4,
+                "bytes":  43629795,
+                "kept_objects":  3
+            },
+    "evidence_sha256":  "b7ae29a82e51c68b5db0add97e81d1294c591e09df78704cc88e553e4b9097a0",
+    "archive_sha256":  "b52ddffe66f044651b2c0fa7543af362912463ae268dc154ff27adb2b4cd9d6d",
+    "exact_plan":  {
+                       "allowed_windows":  "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\precise-role-consumers-2026-10-21",
+                       "allowed_mac":  "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/precise-role-consumers-2026-10-21/apple",
+                       "remove_windows":  [
+                                              {
+                                                  "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\precise-role-consumers-2026-10-21\\cpu\\checks\\link1\\cpu.exe",
+                                                  "bytes":  28828160,
+                                                  "sha256":  "d9b9df1cb45ec3f84c25121570aefd99a1ed5fd833dace7e567d9100bdf754fd"
+                                              },
+                                              {
+                                                  "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\precise-role-consumers-2026-10-21\\cpu\\checks\\link1\\cpu.map",
+                                                  "bytes":  47043232,
+                                                  "sha256":  "f11399b21b4541129341d85a5a10edf7f8c3725487801c35b6b1fb06cfef86da"
+                                              },
+                                              {
+                                                  "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\precise-role-consumers-2026-10-21\\cuda\\checks\\link1\\cuda.exe",
+                                                  "bytes":  125464576,
+                                                  "sha256":  "a12aab2766feae1b1ac104f779808e6e11d3ae0a5b1d185d812fbc549485a57d"
+                                              },
+                                              {
+                                                  "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\precise-role-consumers-2026-10-21\\cuda\\checks\\link1\\cuda.map",
+                                                  "bytes":  50419734,
+                                                  "sha256":  "65d1fec12b043a51497fba2ced1204af0b8d212b8947a05f0b5995c3c5a7e39d"
+                                              },
+                                              {
+                                                  "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\precise-role-consumers-2026-10-21\\vulkan\\checks\\link1\\vulkan.exe",
+                                                  "bytes":  70317056,
+                                                  "sha256":  "87c1ac2a39673a3f411e98774c00c30ad2a305580dc7e9503e14e27242766c95"
+                                              },
+                                              {
+                                                  "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\precise-role-consumers-2026-10-21\\vulkan\\checks\\link1\\vulkan.map",
+                                                  "bytes":  42591620,
+                                                  "sha256":  "de69ce3dea78387496006904ef9de0cc91634cb311d97a20919f1bdbb0042f5a"
+                                              }
+                                          ],
+                       "keep_windows":  [
+                                            {
+                                                "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\precise-role-consumers-2026-10-21\\common\\checks\\import1\\compute--weight_import-28eb7b\\compute--weight_import-28eb7b.obj",
+                                                "bytes":  142881,
+                                                "sha256":  "b215931c41435dd8d36a1f3ec1d87b97dddb3d5c9237e102803c398f11e4af74"
+                                            },
+                                            {
+                                                "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\precise-role-consumers-2026-10-21\\common\\checks\\import1\\compute--weight_import_test-1c834d\\compute--weight_import_test-1c834d.obj",
+                                                "bytes":  1298147,
+                                                "sha256":  "21e9adb88dd5bbcf03b26566ee9d40d3c2d4d2e3daae64ce03091cb7156b544b"
+                                            },
+                                            {
+                                                "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\precise-role-consumers-2026-10-21\\common\\checks\\wrappers2\\graph_route_cpu--e8m0_weight_import_test-2e8480\\graph_route_cpu--e8m0_weight_import_test-2e8480.obj",
+                                                "bytes":  1708003,
+                                                "sha256":  "63128833c86c5c71ad48f8492685a015aa76cf6c6b086e96abf53e8ed21dde39"
+                                            },
+                                            {
+                                                "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\precise-role-consumers-2026-10-21\\common\\checks\\wrappers2\\graph_route_cuda--e8m0_weight_import_test-4baf3d\\graph_route_cuda--e8m0_weight_import_test-4baf3d.obj",
+                                                "bytes":  2073217,
+                                                "sha256":  "8cd76a35ab420abec68875ebca1a27f2b3a90bccda7e228a6b473db395d009d9"
+                                            },
+                                            {
+                                                "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\precise-role-consumers-2026-10-21\\common\\checks\\wrappers2\\graph_route_vulkan--e8m0_weight_import_test-10c483\\graph_route_vulkan--e8m0_weight_import_test-10c483.obj",
+                                                "bytes":  2016665,
+                                                "sha256":  "c457073580576553fab8e2cb413540073e0a7c7fc8db2e669bf538cebbb982a1"
+                                            }
+                                        ],
+                       "remove_mac":  [
+                                          {
+                                              "path":  "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/precise-role-consumers-2026-10-21/apple/mlx-moe-complete",
+                                              "bytes":  16816464,
+                                              "sha256":  "30cfca9e95ab499eb25cd9a8269e5de11fbc4f309a4916f68b15a860ada6a664"
+                                          },
+                                          {
+                                              "path":  "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/precise-role-consumers-2026-10-21/apple/mlx-moe-complete.map",
+                                              "bytes":  4987149,
+                                              "sha256":  "902d101ebaf83193cdc54db6466b9123eca711ddd94b1e6416156a923d154f9d"
+                                          },
+                                          {
+                                              "path":  "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/precise-role-consumers-2026-10-21/apple/precise-role-consumers",
+                                              "bytes":  16835720,
+                                              "sha256":  "93d636ac29ca4702ac429ea226d914b78c8bfa938dca729ffd58bcdd110e6904"
+                                          },
+                                          {
+                                              "path":  "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/precise-role-consumers-2026-10-21/apple/precise-role-consumers.map",
+                                              "bytes":  4990462,
+                                              "sha256":  "ab70ed9f5c57d753ee029af5248073bef6319c20b1defa0a0ef641c38295d263"
+                                          }
+                                      ],
+                       "keep_mac":  [
+                                        {
+                                            "path":  "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/precise-role-consumers-2026-10-21/apple/objects/src--compute--weight_import.cc.o",
+                                            "bytes":  28776,
+                                            "sha256":  "b01eeb2c89bf0f1864afbfd0874415270b6d455aa651348b6b70e9f7dd9978b8"
+                                        },
+                                        {
+                                            "path":  "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/precise-role-consumers-2026-10-21/apple/objects/tests--graph_route_apple--e8m0_weight_import_test.cc.o",
+                                            "bytes":  169392,
+                                            "sha256":  "b27fb6fcff4636978da2a5744acff3607263331c6c21fd49545356d8a1361c50"
+                                        },
+                                        {
+                                            "path":  "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/precise-role-consumers-2026-10-21/apple/objects/tests--graph_route_apple--mlx_moe_test.cc.o",
+                                            "bytes":  185104,
+                                            "sha256":  "f0b088e6bf1b9fa40a19b2c1203f4df13ed59c5d127637e8f703e687ef9a192c"
+                                        }
+                                    ],
+                       "evidence":  {
+                                        "path":  "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\precise-role-consumers-reference-2026-10-21.json",
+                                        "bytes":  85289,
+                                        "sha256":  "b7ae29a82e51c68b5db0add97e81d1294c591e09df78704cc88e553e4b9097a0"
+                                    },
+                       "archive":  {
+                                       "path":  "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\precise-role-consumers-reference-2026-10-21.zip",
+                                       "bytes":  2187175,
+                                       "sha256":  "b52ddffe66f044651b2c0fa7543af362912463ae268dc154ff27adb2b4cd9d6d"
+                                   }
+                   },
+    "source_script":  "# Exact precise role consumer test-artifact cleanup. No recursive directory removal.\r\n$ErrorActionPreference = \u0027Stop\u0027\r\n$plan = Get-Content -LiteralPath \u0027C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\precise-role-consumers-2026-10-21\\root\\cleanup-plan.json\u0027 -Raw | ConvertFrom-Json\r\n$separator = [IO.Path]::DirectorySeparatorChar\r\n$allowed = [IO.Path]::GetFullPath($plan.allowed_windows).TrimEnd($separator) + $separator\r\nfunction Assert-Identity($row) {\r\n  $file = Get-Item -LiteralPath $row.path -ErrorAction Stop\r\n  if ($file.PSIsContainer -or ($file.Attributes -band [IO.FileAttributes]::ReparsePoint)) { throw \"Not a regular file: $($row.path)\" }\r\n  if ($file.Length -ne $row.bytes -or (Get-FileHash -LiteralPath $row.path -Algorithm SHA256).Hash.ToLowerInvariant() -ne $row.sha256) { throw \"Identity changed: $($row.path)\" }\r\n}\r\nAssert-Identity $plan.evidence\r\nAssert-Identity $plan.archive\r\nforeach ($row in $plan.remove_windows) {\r\n  $full = [IO.Path]::GetFullPath($row.path)\r\n  if (-not $full.StartsWith($allowed, [StringComparison]::OrdinalIgnoreCase) -or [IO.Path]::GetExtension($full) -notin \u0027.exe\u0027,\u0027.map\u0027) { throw \"Outside exact artifact scope: $full\" }\r\n  Assert-Identity $row\r\n}\r\nforeach ($row in $plan.keep_windows) { Assert-Identity $row }\r\n$active = @(Get-CimInstance Win32_Process | Where-Object { $_.ExecutablePath -and $_.ExecutablePath.StartsWith($allowed, [StringComparison]::OrdinalIgnoreCase) })\r\nif ($active.Count) { throw \u0027A test executable in this exact workspace is still running\u0027 }\r\nforeach ($row in $plan.remove_windows) { Remove-Item -LiteralPath $row.path -Force }\r\nforeach ($row in $plan.keep_windows) { Assert-Identity $row }\r\n$macProgram = @\u0027\r\nimport pathlib,hashlib,json,subprocess\r\nplan=json.loads(\u0027{\"allowed_mac\": \"/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/precise-role-consumers-2026-10-21/apple\", \"remove_mac\": [{\"path\": \"/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/precise-role-consumers-2026-10-21/apple/mlx-moe-complete\", \"bytes\": 16816464, \"sha256\": \"30cfca9e95ab499eb25cd9a8269e5de11fbc4f309a4916f68b15a860ada6a664\"}, {\"path\": \"/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/precise-role-consumers-2026-10-21/apple/mlx-moe-complete.map\", \"bytes\": 4987149, \"sha256\": \"902d101ebaf83193cdc54db6466b9123eca711ddd94b1e6416156a923d154f9d\"}, {\"path\": \"/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/precise-role-consumers-2026-10-21/apple/precise-role-consumers\", \"bytes\": 16835720, \"sha256\": \"93d636ac29ca4702ac429ea226d914b78c8bfa938dca729ffd58bcdd110e6904\"}, {\"path\": \"/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/precise-role-consumers-2026-10-21/apple/precise-role-consumers.map\", \"bytes\": 4990462, \"sha256\": \"ab70ed9f5c57d753ee029af5248073bef6319c20b1defa0a0ef641c38295d263\"}], \"keep_mac\": [{\"path\": \"/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/precise-role-consumers-2026-10-21/apple/objects/src--compute--weight_import.cc.o\", \"bytes\": 28776, \"sha256\": \"b01eeb2c89bf0f1864afbfd0874415270b6d455aa651348b6b70e9f7dd9978b8\"}, {\"path\": \"/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/precise-role-consumers-2026-10-21/apple/objects/tests--graph_route_apple--e8m0_weight_import_test.cc.o\", \"bytes\": 169392, \"sha256\": \"b27fb6fcff4636978da2a5744acff3607263331c6c21fd49545356d8a1361c50\"}, {\"path\": \"/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/precise-role-consumers-2026-10-21/apple/objects/tests--graph_route_apple--mlx_moe_test.cc.o\", \"bytes\": 185104, \"sha256\": \"f0b088e6bf1b9fa40a19b2c1203f4df13ed59c5d127637e8f703e687ef9a192c\"}]}\u0027)\r\nbase=pathlib.Path(plan[\u0027allowed_mac\u0027]); assert base.is_dir() and not base.is_symlink()\r\ndef verify(row):\r\n p=pathlib.Path(row[\u0027path\u0027]); assert p.is_absolute() and not p.is_symlink() and p.resolve().is_relative_to(base.resolve())\r\n assert p.is_file() and p.stat().st_size==row[\u0027bytes\u0027] and hashlib.sha256(p.read_bytes()).hexdigest()==row[\u0027sha256\u0027],str(p)\r\n return p\r\npaths=[verify(x) for x in plan[\u0027remove_mac\u0027]]\r\nfor row in plan[\u0027keep_mac\u0027]:verify(row)\r\nactive=subprocess.check_output([\u0027ps\u0027,\u0027-axo\u0027,\u0027command=\u0027],text=True)\r\nassert not any(str(p) in command for p in paths for command in active.splitlines() if not command.startswith(\u0027python3 -\u0027)), \u0027test executable is running\u0027\r\nfor p in paths:p.unlink()\r\nfor row in plan[\u0027keep_mac\u0027]:verify(row)\r\nprint(json.dumps(dict(removed=len(paths),bytes=sum(x[\u0027bytes\u0027] for x in plan[\u0027remove_mac\u0027]),kept_objects=len(plan[\u0027keep_mac\u0027]))))\r\n\u0027@\r\n$macResult = $macProgram | \u0026 ssh kiro@172.22.10.198 python3 -\r\nif ($LASTEXITCODE -ne 0) { throw \u0027Mac exact-file cleanup failed; do not report both platforms completed\u0027 }\r\n$result = [ordered]@{\r\n  completed = $true\r\n  windows_removed = @($plan.remove_windows).Count\r\n  windows_bytes = ($plan.remove_windows | Measure-Object -Property bytes -Sum).Sum\r\n  windows_kept_objects = @($plan.keep_windows).Count\r\n  mac = ($macResult | ConvertFrom-Json)\r\n  evidence_sha256 = $plan.evidence.sha256\r\n  archive_sha256 = $plan.archive.sha256\r\n  exact_plan = $plan\r\n  source_script = [IO.File]::ReadAllText($PSCommandPath)\r\n}\r\n$result | ConvertTo-Json -Depth 18 | Set-Content -LiteralPath \u0027C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\precise-role-consumers-reference-2026-10-21.cleanup.json\u0027 -Encoding utf8\r\n[pscustomobject]$result | Select-Object completed,windows_removed,windows_bytes,windows_kept_objects,mac | ConvertTo-Json -Depth 5\r\n"
+}

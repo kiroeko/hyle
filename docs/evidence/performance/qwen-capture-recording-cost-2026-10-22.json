@@ -1,0 +1,2182 @@
+{
+  "status": "RECORDING_COST_IDENTIFIED_NO_NEW_PRODUCT_PERFORMANCE_RESULT",
+  "date": "2026-10-22",
+  "conclusion": "The remaining repeated-capture cost is dominated by encoding a fresh recording, not re-instantiating the native graph or rebuilding the GGML graph. Logged state ports alternate between two tuples; a bounded exact full-binding capture variant mechanism needs explicit private-resource stability facts.",
+  "measurements": [
+    {
+      "records": [
+        {
+          "replay": "auto",
+          "image": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cost-20261022\\diagnostic-link1\\qwen.exe",
+            "bytes": 140402176,
+            "sha256": "320bcfc719c8c14e3cfed53380b46156a4d7b5a3694ac97ac1de43aa8f2b4a26"
+          },
+          "process": {
+            "command": [
+              "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cost-20261022\\diagnostic-link1\\qwen.exe",
+              "--inputs",
+              "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-window-20261022\\inputs\\text",
+              "--steps",
+              "64",
+              "--capacity",
+              "1024",
+              "--max-sessions",
+              "1",
+              "--active-sequences",
+              "1",
+              "--prefix-cache",
+              "off",
+              "--progress",
+              "direct",
+              "--replay",
+              "auto",
+              "--mtp",
+              "off"
+            ],
+            "cwd": "C:\\public\\project-hyle\\hyle",
+            "started": 1792656969.9208276,
+            "timeout_seconds": 120,
+            "throughput_evidence": false,
+            "memory_evidence": false,
+            "trace": false,
+            "profiler": false,
+            "pid": 56448,
+            "exit": 0,
+            "timed_out": false,
+            "finished": 1792656973.0931032,
+            "process_wall_seconds": 3.172045600018464
+          },
+          "IDs_equal_current": true,
+          "phases": {
+            "prefill": {
+              "calls": 1,
+              "intervals_ns": {
+                "total": {
+                  "total": 581300,
+                  "median": 581300,
+                  "min": 581300,
+                  "max": 581300
+                },
+                "bindings": {
+                  "total": 557200,
+                  "median": 557200,
+                  "min": 557200,
+                  "max": 557200
+                },
+                "sources": {
+                  "total": 3100,
+                  "median": 3100,
+                  "min": 3100,
+                  "max": 3100
+                },
+                "begin": {
+                  "total": 0,
+                  "median": 0,
+                  "min": 0,
+                  "max": 0
+                },
+                "record": {
+                  "total": 0,
+                  "median": 0,
+                  "min": 0,
+                  "max": 0
+                },
+                "end": {
+                  "total": 0,
+                  "median": 0,
+                  "min": 0,
+                  "max": 0
+                },
+                "finish": {
+                  "total": 0,
+                  "median": 0,
+                  "min": 0,
+                  "max": 0
+                }
+              }
+            },
+            "decode": {
+              "calls": 63,
+              "intervals_ns": {
+                "total": {
+                  "total": 113410300,
+                  "median": 1780100,
+                  "min": 1239300,
+                  "max": 4615600
+                },
+                "bindings": {
+                  "total": 10808600,
+                  "median": 167700,
+                  "min": 104500,
+                  "max": 513300
+                },
+                "sources": {
+                  "total": 8400,
+                  "median": 100,
+                  "min": 0,
+                  "max": 300
+                },
+                "begin": {
+                  "total": 273300,
+                  "median": 4100,
+                  "min": 2500,
+                  "max": 24100
+                },
+                "record": {
+                  "total": 86166800,
+                  "median": 1362900,
+                  "min": 995300,
+                  "max": 2449500
+                },
+                "end": {
+                  "total": 14915900,
+                  "median": 220200,
+                  "min": 123100,
+                  "max": 1596800
+                },
+                "finish": {
+                  "total": 895800,
+                  "median": 13800,
+                  "min": 10600,
+                  "max": 26600
+                }
+              }
+            }
+          },
+          "caller_tuples": {
+            "calls": 63,
+            "distinct_logged_state_tuples": 2,
+            "sequence": [
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0
+            ],
+            "port_counts": [
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72
+            ],
+            "scope": "Caller state input/output descriptions/resource/handle/offset/span only; not full capture signature or proof private resources stay valid."
+          },
+          "throughput_evidence": false,
+          "memory_evidence": false,
+          "limits": [
+            "Logging-only one process; wall intervals may contain native waits and are not CPU self-time.",
+            "Intervals are disjoint coarse prepare_replay subphases. Unmeasured remainder includes dependency validation, metadata and scope cleanup.",
+            "Caller tuple logging occurs before core phase clocks; it still perturbs the process. No throughput conclusion from this run."
+          ]
+        },
+        {
+          "replay": "commands",
+          "image": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cost-20261022\\diagnostic-link1\\qwen.exe",
+            "bytes": 140402176,
+            "sha256": "320bcfc719c8c14e3cfed53380b46156a4d7b5a3694ac97ac1de43aa8f2b4a26"
+          },
+          "process": {
+            "command": [
+              "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cost-20261022\\diagnostic-link1\\qwen.exe",
+              "--inputs",
+              "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-window-20261022\\inputs\\text",
+              "--steps",
+              "64",
+              "--capacity",
+              "1024",
+              "--max-sessions",
+              "1",
+              "--active-sequences",
+              "1",
+              "--prefix-cache",
+              "off",
+              "--progress",
+              "direct",
+              "--replay",
+              "commands",
+              "--mtp",
+              "off"
+            ],
+            "cwd": "C:\\public\\project-hyle\\hyle",
+            "started": 1792656973.145902,
+            "timeout_seconds": 120,
+            "throughput_evidence": false,
+            "memory_evidence": false,
+            "trace": false,
+            "profiler": false,
+            "pid": 104856,
+            "exit": 0,
+            "timed_out": false,
+            "finished": 1792656975.8347096,
+            "process_wall_seconds": 2.6879893000004813
+          },
+          "IDs_equal_current": true,
+          "phases": {
+            "prefill": {
+              "calls": 1,
+              "intervals_ns": {
+                "total": {
+                  "total": 530700,
+                  "median": 530700,
+                  "min": 530700,
+                  "max": 530700
+                },
+                "bindings": {
+                  "total": 508700,
+                  "median": 508700,
+                  "min": 508700,
+                  "max": 508700
+                },
+                "sources": {
+                  "total": 2100,
+                  "median": 2100,
+                  "min": 2100,
+                  "max": 2100
+                },
+                "begin": {
+                  "total": 0,
+                  "median": 0,
+                  "min": 0,
+                  "max": 0
+                },
+                "record": {
+                  "total": 0,
+                  "median": 0,
+                  "min": 0,
+                  "max": 0
+                },
+                "end": {
+                  "total": 0,
+                  "median": 0,
+                  "min": 0,
+                  "max": 0
+                },
+                "finish": {
+                  "total": 0,
+                  "median": 0,
+                  "min": 0,
+                  "max": 0
+                }
+              }
+            },
+            "decode": {
+              "calls": 63,
+              "intervals_ns": {
+                "total": {
+                  "total": 12137300,
+                  "median": 178300,
+                  "min": 145200,
+                  "max": 616900
+                },
+                "bindings": {
+                  "total": 11927200,
+                  "median": 175500,
+                  "min": 142800,
+                  "max": 605900
+                },
+                "sources": {
+                  "total": 9500,
+                  "median": 100,
+                  "min": 0,
+                  "max": 300
+                },
+                "begin": {
+                  "total": 0,
+                  "median": 0,
+                  "min": 0,
+                  "max": 0
+                },
+                "record": {
+                  "total": 0,
+                  "median": 0,
+                  "min": 0,
+                  "max": 0
+                },
+                "end": {
+                  "total": 0,
+                  "median": 0,
+                  "min": 0,
+                  "max": 0
+                },
+                "finish": {
+                  "total": 0,
+                  "median": 0,
+                  "min": 0,
+                  "max": 0
+                }
+              }
+            }
+          },
+          "caller_tuples": {
+            "calls": 63,
+            "distinct_logged_state_tuples": 2,
+            "sequence": [
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0
+            ],
+            "port_counts": [
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72
+            ],
+            "scope": "Caller state input/output descriptions/resource/handle/offset/span only; not full capture signature or proof private resources stay valid."
+          },
+          "throughput_evidence": false,
+          "memory_evidence": false,
+          "limits": [
+            "Logging-only one process; wall intervals may contain native waits and are not CPU self-time.",
+            "Intervals are disjoint coarse prepare_replay subphases. Unmeasured remainder includes dependency validation, metadata and scope cleanup.",
+            "Caller tuple logging occurs before core phase clocks; it still perturbs the process. No throughput conclusion from this run."
+          ]
+        }
+      ],
+      "product_changes": false
+    },
+    {
+      "records": [
+        {
+          "replay": "auto",
+          "image": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cost-20261022\\diagnostic-link2\\qwen.exe",
+            "bytes": 140403712,
+            "sha256": "5895edab718cc0c3c440e004da807ca2505cc95a1e5f00af9eb7f9d2b45111cb"
+          },
+          "process": {
+            "command": [
+              "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cost-20261022\\diagnostic-link2\\qwen.exe",
+              "--inputs",
+              "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-window-20261022\\inputs\\text",
+              "--steps",
+              "64",
+              "--capacity",
+              "1024",
+              "--max-sessions",
+              "1",
+              "--active-sequences",
+              "1",
+              "--prefix-cache",
+              "off",
+              "--progress",
+              "direct",
+              "--replay",
+              "auto",
+              "--mtp",
+              "off"
+            ],
+            "cwd": "C:\\public\\project-hyle\\hyle",
+            "started": 1792657460.8948772,
+            "timeout_seconds": 120,
+            "throughput_evidence": false,
+            "memory_evidence": false,
+            "trace": false,
+            "profiler": false,
+            "pid": 77876,
+            "exit": 0,
+            "timed_out": false,
+            "finished": 1792657463.8927495,
+            "process_wall_seconds": 2.99692100007087
+          },
+          "IDs_equal_current": true,
+          "phases": {
+            "prefill": {
+              "calls": 1,
+              "intervals_ns": {
+                "total": {
+                  "total": 586900,
+                  "median": 586900,
+                  "min": 586900,
+                  "max": 586900
+                },
+                "bindings": {
+                  "total": 544400,
+                  "median": 544400,
+                  "min": 544400,
+                  "max": 544400
+                },
+                "sources": {
+                  "total": 1900,
+                  "median": 1900,
+                  "min": 1900,
+                  "max": 1900
+                },
+                "begin": {
+                  "total": 0,
+                  "median": 0,
+                  "min": 0,
+                  "max": 0
+                },
+                "record": {
+                  "total": 0,
+                  "median": 0,
+                  "min": 0,
+                  "max": 0
+                },
+                "end": {
+                  "total": 0,
+                  "median": 0,
+                  "min": 0,
+                  "max": 0
+                },
+                "finish": {
+                  "total": 0,
+                  "median": 0,
+                  "min": 0,
+                  "max": 0
+                }
+              }
+            },
+            "decode": {
+              "calls": 63,
+              "intervals_ns": {
+                "total": {
+                  "total": 113481000,
+                  "median": 1779900,
+                  "min": 1345800,
+                  "max": 3911800
+                },
+                "bindings": {
+                  "total": 10852300,
+                  "median": 170000,
+                  "min": 119700,
+                  "max": 496100
+                },
+                "sources": {
+                  "total": 12400,
+                  "median": 200,
+                  "min": 0,
+                  "max": 600
+                },
+                "begin": {
+                  "total": 263900,
+                  "median": 4000,
+                  "min": 2400,
+                  "max": 19900
+                },
+                "record": {
+                  "total": 86083400,
+                  "median": 1363100,
+                  "min": 1040200,
+                  "max": 1872700
+                },
+                "end": {
+                  "total": 15103500,
+                  "median": 220500,
+                  "min": 153400,
+                  "max": 1473700
+                },
+                "finish": {
+                  "total": 817200,
+                  "median": 12900,
+                  "min": 10300,
+                  "max": 19400
+                }
+              }
+            }
+          },
+          "caller_tuples": {
+            "calls": 63,
+            "distinct_logged_state_tuples": 2,
+            "sequence": [
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0
+            ],
+            "port_counts": [
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72
+            ],
+            "scope": "Caller state input/output descriptions/resource/handle/offset/span only; not full capture signature or proof private resources stay valid."
+          },
+          "throughput_evidence": false,
+          "memory_evidence": false,
+          "limits": [
+            "Logging-only one process; wall intervals may contain native waits and are not CPU self-time.",
+            "Intervals are disjoint coarse prepare_replay subphases. Unmeasured remainder includes dependency validation, metadata and scope cleanup.",
+            "Caller tuple logging occurs before core phase clocks; it still perturbs the process. No throughput conclusion from this run."
+          ]
+        }
+      ],
+      "product_changes": false
+    },
+    {
+      "records": [
+        {
+          "replay": "auto",
+          "image": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cost-20261022\\diagnostic-link3\\qwen.exe",
+            "bytes": 140403712,
+            "sha256": "17c34a0590a96338ae64b8694d4c6233e2864a68f2545c5e22c7c64ec4c32f2a"
+          },
+          "process": {
+            "command": [
+              "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cost-20261022\\diagnostic-link3\\qwen.exe",
+              "--inputs",
+              "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-window-20261022\\inputs\\text",
+              "--steps",
+              "64",
+              "--capacity",
+              "1024",
+              "--max-sessions",
+              "1",
+              "--active-sequences",
+              "1",
+              "--prefix-cache",
+              "off",
+              "--progress",
+              "direct",
+              "--replay",
+              "auto",
+              "--mtp",
+              "off"
+            ],
+            "cwd": "C:\\public\\project-hyle\\hyle",
+            "started": 1792657588.1605523,
+            "timeout_seconds": 120,
+            "throughput_evidence": false,
+            "memory_evidence": false,
+            "trace": false,
+            "profiler": false,
+            "pid": 103960,
+            "exit": 0,
+            "timed_out": false,
+            "finished": 1792657591.123118,
+            "process_wall_seconds": 2.9615089000435546
+          },
+          "IDs_equal_current": true,
+          "phases": {
+            "prefill": {
+              "calls": 1,
+              "intervals_ns": {
+                "total": {
+                  "total": 1890300,
+                  "median": 1890300,
+                  "min": 1890300,
+                  "max": 1890300
+                },
+                "bindings": {
+                  "total": 637200,
+                  "median": 637200,
+                  "min": 637200,
+                  "max": 637200
+                },
+                "sources": {
+                  "total": 2100,
+                  "median": 2100,
+                  "min": 2100,
+                  "max": 2100
+                },
+                "begin": {
+                  "total": 0,
+                  "median": 0,
+                  "min": 0,
+                  "max": 0
+                },
+                "record": {
+                  "total": 0,
+                  "median": 0,
+                  "min": 0,
+                  "max": 0
+                },
+                "end": {
+                  "total": 0,
+                  "median": 0,
+                  "min": 0,
+                  "max": 0
+                },
+                "finish": {
+                  "total": 0,
+                  "median": 0,
+                  "min": 0,
+                  "max": 0
+                }
+              }
+            },
+            "decode": {
+              "calls": 63,
+              "intervals_ns": {
+                "total": {
+                  "total": 98094600,
+                  "median": 1467000,
+                  "min": 1179400,
+                  "max": 5559300
+                },
+                "bindings": {
+                  "total": 9070400,
+                  "median": 130800,
+                  "min": 93600,
+                  "max": 637700
+                },
+                "sources": {
+                  "total": 6300,
+                  "median": 100,
+                  "min": 0,
+                  "max": 300
+                },
+                "begin": {
+                  "total": 203200,
+                  "median": 2700,
+                  "min": 2100,
+                  "max": 24900
+                },
+                "record": {
+                  "total": 73443000,
+                  "median": 1125900,
+                  "min": 942800,
+                  "max": 2009900
+                },
+                "end": {
+                  "total": 13281300,
+                  "median": 175300,
+                  "min": 122600,
+                  "max": 1779200
+                },
+                "finish": {
+                  "total": 755000,
+                  "median": 11100,
+                  "min": 9700,
+                  "max": 23600
+                }
+              }
+            }
+          },
+          "caller_tuples": {
+            "calls": 63,
+            "distinct_logged_state_tuples": 2,
+            "sequence": [
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1,
+              0
+            ],
+            "port_counts": [
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72,
+              72
+            ],
+            "scope": "Caller state input/output descriptions/resource/handle/offset/span only; not full capture signature or proof private resources stay valid."
+          },
+          "throughput_evidence": false,
+          "memory_evidence": false,
+          "limits": [
+            "Logging-only one process; wall intervals may contain native waits and are not CPU self-time.",
+            "Intervals are disjoint coarse prepare_replay subphases. Unmeasured remainder includes dependency validation, metadata and scope cleanup.",
+            "Caller tuple logging occurs before core phase clocks; it still perturbs the process. No throughput conclusion from this run."
+          ]
+        }
+      ],
+      "product_changes": false
+    }
+  ],
+  "capture_provider_commands": [
+    {
+      "invocation": "000003798100A000",
+      "commands": [
+        {
+          "region": false,
+          "provider": "cccl-cuda",
+          "count": 1
+        },
+        {
+          "region": true,
+          "provider": "ggml-cuda",
+          "count": 235
+        },
+        {
+          "region": false,
+          "provider": "cublasLt",
+          "count": 187
+        },
+        {
+          "region": false,
+          "provider": "ggml-cuda",
+          "count": 115
+        },
+        {
+          "region": false,
+          "provider": "original-artifacts-cuda",
+          "count": 18
+        },
+        {
+          "region": true,
+          "provider": "<unnamed-native>",
+          "count": 12
+        },
+        {
+          "region": true,
+          "provider": "flashinfer",
+          "count": 6
+        }
+      ]
+    },
+    {
+      "invocation": "0000037981050000",
+      "commands": [
+        {
+          "region": false,
+          "provider": "cccl-cuda",
+          "count": 1
+        },
+        {
+          "region": true,
+          "provider": "ggml-cuda",
+          "count": 253
+        },
+        {
+          "region": false,
+          "provider": "cublasLt",
+          "count": 103
+        },
+        {
+          "region": false,
+          "provider": "ggml-cuda",
+          "count": 115
+        },
+        {
+          "region": false,
+          "provider": "original-artifacts-cuda",
+          "count": 18
+        },
+        {
+          "region": true,
+          "provider": "<unnamed-native>",
+          "count": 12
+        },
+        {
+          "region": true,
+          "provider": "flashinfer",
+          "count": 6
+        }
+      ]
+    }
+  ],
+  "compiled_diagnostics": [
+    {
+      "record": {
+        "path": ".scratch\\qwen-capture-cost-20261022\\compile1\\graph-cost\\identity.json",
+        "bytes": 62686,
+        "sha256": "bdd6f215866b5c3297ff2c2febda2eeba8339526b36e4190aa1963e3a0b01dd4"
+      },
+      "actual_frozen_source": {
+        "path": ".scratch\\qwen-capture-cost-20261022\\compile1\\graph-cost\\source\\.scratch\\qwen-capture-cost-20261022\\diagnostic\\executable.cc",
+        "bytes": 478592,
+        "sha256": "c81b756dae11085da8aa7a00e374a1c68a256b5f086cb54fa197b2875f8f0569"
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cost-20261022\\diagnostic-link1\\qwen.exe",
+        "bytes": 140402176,
+        "sha256": "320bcfc719c8c14e3cfed53380b46156a4d7b5a3694ac97ac1de43aa8f2b4a26"
+      }
+    },
+    {
+      "record": {
+        "path": ".scratch\\qwen-capture-cost-20261022\\compile2\\graph-cost\\identity.json",
+        "bytes": 62686,
+        "sha256": "89c4dfb3f0ac875c675c4183bb900b3f2ac614ded4b533e4ab9e3a4b4fa1199d"
+      },
+      "actual_frozen_source": {
+        "path": ".scratch\\qwen-capture-cost-20261022\\compile2\\graph-cost\\source\\.scratch\\qwen-capture-cost-20261022\\diagnostic\\executable.cc",
+        "bytes": 479363,
+        "sha256": "7245a7ebeaf0dfba57f43c4ab3b6010997f6eda8ed9dba8442cc83a93b1bdeb1"
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cost-20261022\\diagnostic-link2\\qwen.exe",
+        "bytes": 140403712,
+        "sha256": "5895edab718cc0c3c440e004da807ca2505cc95a1e5f00af9eb7f9d2b45111cb"
+      }
+    },
+    {
+      "record": {
+        "path": ".scratch\\qwen-capture-cost-20261022\\compile3\\graph-cost\\identity.json",
+        "bytes": 62686,
+        "sha256": "119da75166079ffa143dbcecbc74bb519180ac9393998167b9dd09a9a9e2ddff"
+      },
+      "actual_frozen_source": {
+        "path": ".scratch\\qwen-capture-cost-20261022\\compile3\\graph-cost\\source\\.scratch\\qwen-capture-cost-20261022\\diagnostic\\executable.cc",
+        "bytes": 479628,
+        "sha256": "7dd5e0c022aa587292aa6c8ec5aa786169ee145a81cd9c945923fef1a8166572"
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cost-20261022\\diagnostic-link3\\qwen.exe",
+        "bytes": 140403712,
+        "sha256": "17c34a0590a96338ae64b8694d4c6233e2864a68f2545c5e22c7c64ec4c32f2a"
+      }
+    }
+  ],
+  "recorded_fraction_of_prepare_wall": 0.7597793145772473,
+  "product_sources_unchanged": true,
+  "product_source_identity_reference": {
+    "path": "docs\\evidence\\performance\\qwen-capture-rebuild-2026-10-22.json",
+    "bytes": 246540,
+    "sha256": "35c0b526cafb7babc139abc735d5da1e29d56266ba4f30994e49736b7b3bcfc8"
+  },
+  "full_performance_result_unchanged": {
+    "hyle_plain_decode": 80.26226139813292,
+    "hyle_MTP_decode": 103.84204010379588
+  },
+  "source_reviews": [
+    {
+      "source": {
+        "path": ".scratch\\qwen-capture-cost-20261022\\review\\binding-path-review.json",
+        "bytes": 9769,
+        "sha256": "27835ec61eb210625ad9360e29bf37f1efc21b46d05c9db4c841e49f1c747932"
+      },
+      "review": {
+        "status": "READ_ONLY_SOURCE_REVIEW_COMPLETE",
+        "product_changes": false,
+        "build_or_native_execution": false,
+        "answer": "Changing ports does not rebuild the ggml graph, repeat gallocr reserve, allocate the Invocation private graph/workspace or rerun Hyle provider selection in prepare_bindings. The current provider already rebinds external addresses in place. Remaining visible costs are repeated boundary validation/metadata walks and fresh original native encoding when the outer capture must change.",
+        "cold_work_already_done": [
+          {
+            "at": "src/graph_provider_ggml_cuda/ggml_cuda_region.cc:1202-1306",
+            "fact": "Graph compile qualifies/proposes/selects its region, builds one immutable native Recipe, performs constant preparation/packing, and compiles ProviderPrepared. No such call is in binding callbacks."
+          },
+          {
+            "at": "src/compute_provider_ggml_cuda/ggml_cuda_provider.cc:1584-1632",
+            "fact": "Program compile lowers a measurement graph once, checks capture compatibility and measures gallocr workspace chunks. This can create a temporary measurement Invocation but is a cold operation."
+          },
+          {
+            "at": "src/compute_provider_ggml_cuda/ggml_cuda_provider.cc:600-792,801-824,880-895",
+            "fact": "Actual create_invocation calls initialize -> build -> reserve. MetadataArena/tensors/roots/buffers/pointers/views, native backend, operation lowering, supports_op checks, graph_build_forward_expand, safe-index/constants storage, allocation-dependency graph and gallocr reserve are all created cold for the exact immutable recipe. Each actual Invocation retains its original metadata/backend/private workspace."
+          },
+          {
+            "at": "src/compute_provider_ggml_cuda/ggml_cuda_provider.cc:587-598",
+            "fact": "finish_bind runs ggml_gallocr_alloc_graph only when graph_bound is false, then sets graph_bound true. Later changed external ports only run bind_views. First real external bindings are needed for the first alloc_graph; this is already one-time rather than per-token reserve."
+          }
+        ],
+        "repeated_actual_path": [
+          {
+            "at": "src/graph/executable.cc:1213-1313",
+            "work": "Graph compares full descriptions/resources/native handles/offsets/extents, validates alignments and selected native facts. Only actual changed or unproven bindings reach the cold provider hook; equality-based omission is restricted to proven stable borrowed TensorViews."
+          },
+          {
+            "at": "src/graph_provider_ggml_cuda/ggml_cuda_region.cc:1160-1175",
+            "work": "The region wrapper resizes its retained vector and copies I RegionValue.tensor metadata into contiguous ConstTensorViews. The exact compiled boundary count is fixed, so resize is not evidence of recurring heap allocation after first use; it copies metadata, not tensor payload."
+          },
+          {
+            "at": "src/compute_provider_ggml_cuda/ggml_cuda_provider.cc:965-1009; src/compute_backend_cuda/cuda_memory.cc:567-609",
+            "work": "Each provider prepare validates and extracts every actual input/output CUDA pointer, compares with pointers[], and writes scratch. These checks are resource/size/alignment/provenance operations, not cudaMalloc or operator selection. Equal pointers return before context selection/root/view changes."
+          },
+          {
+            "at": "src/compute_provider_ggml_cuda/ggml_cuda_provider.cc:1010-1029,441-455",
+            "work": "If any port changes, the provider enters the proper primary context, rewrites every external binding_buffer/root pointer (all inputs and ordinary caller outputs), and finish_bind refreshes all V views. The array/graph is reused. Checked regions retain private outputs and publish only through their existing checked gate."
+          },
+          {
+            "at": "src/compute_provider_ggml_cuda/ggml_cuda_provider.cc:1033-1090",
+            "work": "shared_submit invokes the same prepare_bindings again. After Graph cold preparation this is normally an equal-pointer pass but still validates/compares every boundary pointer. It then selects context, checks actual stream capture state, runs checked-index preparation where required and enters the original encoder."
+          },
+          {
+            "at": "src/compute_provider_ggml_cuda/native_bridge_impl.h:76-183,239-292",
+            "work": "Fresh capture encoding still uses RecordingModeScope, AdmittedStreamScope, compatibility/key refresh, original ggml_cuda_graph_encode, and restore. Existing handle path gets the original cuBLAS stream and sets/restores stream+workspace. This is outside prepare_bindings and does not mean the ggml graph was rebuilt."
+          }
+        ],
+        "cost_accounting_without_new_measurement": {
+          "symbols": "I inputs, O outputs, P=I+O boundary ports, V retained views; these are per exact prepared native recipe.",
+          "binding_work": "For a Graph hook followed by fresh capture encoding, provider pointer validation visits P twice; changed hook additionally touches I or P external roots and V view records. Region bridge copies I metadata records once. Native encode traversal/API submission is separate and cannot be inferred from these loop counts.",
+          "allocation_boundary": "No per-binding build/reserve/scratch-allocation call occurs in this path. Original native kernels/encoder may request reusable pool temporaries during encode or first execution; this review does not prove zero CUDA allocation in the encoder or quantify it.",
+          "not_attribution": "No wall-time, CPU self-time or fraction of the current regression is attributed from source alone."
+        },
+        "small_maintainable_candidates": [
+          {
+            "priority": 1,
+            "change": "After complete validation succeeds, update only changed authoritative external binding_buffer/root mappings instead of rebinding every port. Keep existing pointers scratch and transactional bindings_ready behavior; any per-port dirty facts can be cold-sized within the original Invocation, without a new cache layer.",
+            "risk": "Do not update native roots before all ports validate. Alias/view-root relationships and checked private-output behavior must remain exact; unchanged root.data alone is not sufficient if a different binding_buffer also needs adjustment. Expected benefit is unmeasured."
+          },
+          {
+            "priority": 2,
+            "change": "Split existing view metadata cold into a full first-bind pass and later views transitively rooted in mutable external arguments; optionally retain a cold root-to-view update order to refresh only affected chains. Private/constant/workspace-rooted views need their first gallocr address installation, not repeated unchanged writes.",
+            "risk": "Must retain producer-before-view order, transitive view offsets and all first-bind updates. Do not omit views just because a current pointer happens to compare equal, or rebuild this dependency set per episode. This is prepared Invocation metadata, not another owner/cache/executor."
+          },
+          {
+            "priority": 3,
+            "change": "Treat the repeated submit-side pointer pass as a measured candidate, not removable redundant code by assumption. Public Direct and Graph share the same ProviderPrepared callbacks; any omission needs an explicit original prepared-binding proof rather than trusting a prior unrelated call.",
+            "risk": "Do not drop Direct validation, resource provenance/alignment checks, or Graph current-episode permissions. The existing ABI does not expose such an extra proof flag; no API change is proposed in this review."
+          },
+          {
+            "priority": 4,
+            "change": "The original recording compatibility scan is based on immutable graph metadata, so cold retention of that boolean may be possible while keeping the required live native graph-key enabled refresh and original admitted-stream setup.",
+            "risk": "First prove native graph metadata relevant to compatibility is immutable across all admitted encoder paths and preserve native idle-eviction refresh. Keep capture-mode, status, cuBLAS workspace restore and recording-retirement guards. No native library rebuild or implementation is authorized here."
+          }
+        ],
+        "do_not_do": [
+          "Do not move typed resource/current-episode permission checks into model-specific cold assumptions.",
+          "Do not reinterpret address rotation as full graph recreation or try to share mutable ggml tensor metadata between independent Invocations.",
+          "Do not remove native recording guards, stream restoration or real retirement to reduce host work.",
+          "Do not introduce a per-layer executor, shadow state copy, signature cache or provider choice in the consumer."
+        ],
+        "next_scope": "If root chooses a follow-up, select a single local metadata-pass reduction and measure it on the existing real workload. This source review does not require a new validation matrix or new mechanism.",
+        "sources": [
+          {
+            "path": "src/graph_provider_ggml_cuda/ggml_cuda_region.cc",
+            "bytes": 68939,
+            "sha256": "145727c7d2ed891f98d5cc2e15f2a2d9e62dd4c79e36521f52a8aae0ec1001c4"
+          },
+          {
+            "path": "src/compute_provider_ggml_cuda/ggml_cuda_provider.cc",
+            "bytes": 73819,
+            "sha256": "8da6586cfa81cfa3859306fe1e15d8d92a34d063467ac292039f32d09b06322b"
+          },
+          {
+            "path": "src/compute_provider_ggml_cuda/native_bridge_impl.h",
+            "bytes": 13109,
+            "sha256": "ebd8f22fcb89d1d3858bf7717eac78c88b78e843184b40bf1d028ba16ae89feb"
+          },
+          {
+            "path": "src/compute_backend_cuda/cuda_memory.cc",
+            "bytes": 25947,
+            "sha256": "555f86658d23b10a12f1c2c7ac3bb0a8978e8c0361e5c292904e9101b1bc3712"
+          },
+          {
+            "path": "src/graph/executable.cc",
+            "bytes": 467803,
+            "sha256": "d43e9a2f27af26dec43a47a2dd03218e57bac9157bb9e93d27e1eb0afeabb9e9"
+          }
+        ]
+      }
+    },
+    {
+      "source": {
+        "path": ".scratch\\qwen-capture-cost-20261022\\review\\binding-variants-plan.json",
+        "bytes": 11597,
+        "sha256": "72e865d9d0c5144a9ca04d1e335f15eac9cc08c28648633260e2bb7ceebaf22f"
+      },
+      "review": {
+        "status": "READ_ONLY_DESIGN; no product edits, build, native execution or GPU query",
+        "conclusion": "Invocation 局部、每 immutable capture range 上限 2 份已退休 binding variants 是处理严格 A/B 地址回返的合理下一步。先减少 fresh capture，保留现有权限与完整 cold qualification；不能把 2 份当作所有 MTP hidden/offset 组合都命中，也不能将其视作恢复双 Invocation。",
+        "current_reason": [
+          {
+            "source": "resources.cc:124-139,310-341;executable.cc:1070-1113",
+            "fact": "unbind 撤回当前权限并使 route unprepared；borrowed TensorViews + stable native identity 的旧 artifact 可 dormant，不是 unbind 立即无条件销 capture。每次新绑定必须重新取得本 episode 的权限、别名与 source 资格。"
+          },
+          {
+            "source": "executable.cc:1214-1312,1369-1446",
+            "fact": "仅有上一组 submission_inputs/outputs。A→B 完整 TensorDesc/resource/native_handle/offset/size 不同，须先撤销当前可执行范围，再 cold prepare。B→A 又与上一组 B 不同。alias spans 同时由本次 bindings 重新推导；不能只把 bindings_prepared 置 true。"
+          },
+          {
+            "source": "executable.cc:7894-7953,9493-9585;plan_state.h:1100-1125",
+            "fact": "每 range 只有一份 current CapturedCommands；发生 eligible 普通重绑时该 artifact 变永久不可 launch 的 CaptureRebuildStorage。end 生成新 graph，用 idle executable 更新或 instantiate，再发布 distinct 新 state。它省 instantiate，仍逐段走 encoder/record/prepare Completion。"
+          },
+          {
+            "source": "ggml_cuda_region.cc:1160-1187",
+            "fact": "region 将当前 RegionValue.tensor 逐个转 borrowed TensorViews 交给原 Compute slot；没有第二执行器或隐含输入 lease owner。release no-op 仅保 dormant 元数据，不替代当前权限或私有 workspace 证明。"
+          }
+        ],
+        "actual_evidence_boundary": {
+          "source": {
+            "path": ".scratch/qwen-capture-reuse-20261022/native-update-probe1/summary.json",
+            "bytes": 6597,
+            "sha256": "e61cbebfac76c6bc8bf62b1bbc5326ec3689ab76c7347d8b69fcb06eccb52139"
+          },
+          "fact": "既有单普通 Qwen 诊断进程 exit0，62 次 native=0/result=0 update，64 ID 与当前一致；仅诊断，不是 TPS/内存证据。当前工作计划记录 record/reuse 仍 plain63/0、MTP60/8，说明 fresh recording 尚在。不能由此量化 cold binding 与 record 各占多少时间。"
+        },
+        "minimal_generic_design": [
+          {
+            "step": "1. 局部固定边界",
+            "design": "在 Invocation 内每个既有 immutable capture range 设置容量 2 的 variant 槽，只有一个被成功 preparation 选择为 active；无自动扩容、无跨 Invocation/全局缓存。miss 的第三组参数只淘汰实际已退休的旧条目；淘汰者可沿现 v3 recycle→update 路径，保留 1-entry/update 路径作不适用时的行为。"
+          },
+          {
+            "step": "2. 匹配完整身份",
+            "design": "key = immutable plan/range + 当前实际 Queue owner 的 epoch + native/configuration force epoch + 该 range 每个 material command 的所有 input/output 完整物理 TensorView tuple。允许 hash 加速，但必须 full equality。当前 revision 同时随普通地址改变而增加，不能直接用它把 A 回返永久判 miss；须把 force epoch 与当前 binding episode 区分。"
+          },
+          {
+            "step": "3. 不保留权限",
+            "design": "variant 仅存 borrowed tuple 元数据、native artifact 及明确的私有寿命证明；不持旧 ReadLease/WriteLease、GraphOutput、Completion、Snapshot 或 fresh permission set。unbind 仍清当前 permissions/owners，strict submit 仍拒未完整 prepare。旧独立只读租约不因命中被升级成可写；当前写权限/alias/ledger 必须重新合法。"
+          },
+          {
+            "step": "4. 先资格后选择",
+            "design": "将当前 alias/tuple 解析与资格校验同“覆盖 range artifact 销毁/回收”决策分开：得到完整 candidate tuple 后查局部 variants；命中才保留该 artifact 并选为候选。不能沿当前逐端口发现首个差异就把旧 A artifact 永久 recycle，否则回 A 无从命中。第一版仍调用当前 cold hooks/seal、transfer/dependency/source 准备，成功后才提交 active route；失败保持 unprepared，所有 dormant 条目不可 launch。"
+          },
+          {
+            "step": "5. 明确私有资源能力",
+            "design": "除实际 backend stable Tensor identity，还需 provider 正向声明：同一个存活原 slot 的 ordinary borrowed rebind/outer recording 不会释放或替换任何旧 captures 引用的私有地址；生命周期内需在真正变化前 force invalidate。无此证明的 operation/region、native import/reference、generated owned output 沿当前保守路径。borrows_tensor_views_only 只保证输入 carrier 不带 owner，不能独自代表全部私有地址稳定。"
+          },
+          {
+            "step": "6. force 失效清全范围",
+            "design": "configuration callback/native resource change/release/unproven carrier/实际 Queue owner 更换/进入 Commands 或可能清私有池的普通 warmup，必须在原 callback/free 之前清覆盖 range 的所有 variants 与 rebuild seed。保持原实际 retirement/preparation_uses/results/observation gates；public Completion 析构、refcount unique 或 checked status_busy=false 都不能单独冒充实际退休。"
+          }
+        ],
+        "why_not_reuse_rebuild_seed": "现 v3 recycle 成功后 seed 永久 nonlaunchable，不能“恢复”为 A 的 variant。保留 A/B 时必须保持各自原 CapturedCommands dormant；只在确定容量淘汰时转为 seed。每份 checked artifact 的状态字及原 Completion 引用独立，不共享/重写历史错误。",
+        "private_address_scope": [
+          {
+            "source": "ggml_cuda_provider.cc:227-272,587-600,758-822,965-1028",
+            "fact": "slot 的 gallocr graph/private workspace 首次绑定后地址不变，普通 A/B rebind 只改外部 roots/views；这是当前目标的具体基础。"
+          },
+          {
+            "source": "compute_provider_ggml_cuda/native_bridge_impl.h:23-32;third_party/ggml_cuda_runtime/patches.json:157-186,49-54",
+            "fact": "slot 还用独立 legacy 临时池；outer recording 满容量拒新分配、record OOM 不清池，保住成功录制的旧临时地址。但 Commands/普通原生执行可 clear/free，因此跨这类执行必须清 variants。"
+          },
+          {
+            "source": "ggml_cuda_provider.cc:909-937,1075-1083",
+            "fact": "recording_guard 只覆盖尚未结束的 outer recording；它在原 Completion 观察后释放，不是多 artifact 的持久私有资源 pin。不能靠延长 guard 把能力泛化。"
+          }
+        ],
+        "binding_work_followup": {
+          "first_step": "保留全 cold qualification 的 variants 已可省反复 capture/encoder walk；第一版不要同时大改所有 binding 管线，收益与代价便于归因。",
+          "optional_after_evidence": "若剩余成本确认主要是 mutable provider prepare，可为 opt-in provider 区分“当前权限/tuple资格校验”和“将参数装入普通 encoder”。captured-hit 可免后者，但需 provider 明确允许 captured replay 独立于其最后一次 encoder bindings，且当前 seal 仍可验证。",
+          "important_state": "跳过 encoder bind 时须独立标记 provider-binding 未安装。以后 Commands/capture miss 即使 Graph tuple 相等也必须真实安装；不能把 prepared_revision 复用为“provider 当前已绑定 A”，否则 provider 仍为 B 时会错误普通 submit。只缓存上一组 submission spans 或直接恢复旧 lease 都不成立。"
+        },
+        "comparison": [
+          {
+            "approach": "当前单 exec update",
+            "benefit": "native executable 数量最少、无需多组完整 signature；实际已证明 Qwen update成功。",
+            "cost": "A/B 每轮仍 cold rebind、fresh record、end、preparation wait，update仍有开销；地址/组合不复现时较合适。"
+          },
+          {
+            "approach": "每 range 2 个局部 variants",
+            "benefit": "严格 A/B 回返两次首录后可跳整个 fresh capture；仍只有一个原 Invocation/provider slot/常量/workspace。",
+            "cost": "多一份 native exec/status + 完整 signature 与 force-invalidation/selection 维护；若真实 tuple超过2组会 churn；需要更强私有寿命证明。"
+          },
+          {
+            "approach": "variant命中且免encoder bind",
+            "benefit": "可进一步省重复 provider argument安装与部分元数据工作。",
+            "cost": "需明确 provider capability、分开资格/安装状态及 Commands 恢复门，维护成本高于单纯 variants；不应与首个有限实现捆绑。"
+          }
+        ],
+        "space_limits": {
+          "bound": "R 个 range、V=2：持久 native exec 最多 R*V，额外 borrowed tuple 元数据 O(R*V*P)（P 为各 range 真实端口tuple数）。不复制模型常量、state payload 或 provider workspace，也不通过 cache 持有旧输入/output lease。",
+          "unknown": "native driver graph allocation 大小仍未声明，有限个数不等于字节预算已知。沿现 invocation_storage UnknownStoragePolicy；不把未计 native bytes 写成0。structural fallback/new artifact 的短暂峰可能多于持久 V，需如实计入上界。",
+          "tradeoff": "相比恢复双 Invocation，不重复原 slot/workspace，但比当前update更占driver graph内存。没有实际峰值与TPS结果前不签收益或忽略OOM风险。"
+        },
+        "finite_validation_when_implemented": [
+          "同一 Invocation A→B→A，fresh current权限，第二次 A 只命中旧artifact；旧readonly bytes和原retirement合同保留。",
+          "第三 tuple 触发有界淘汰/seed update；失败 preparation 不发布且可从原资源重试。",
+          "force config/native/Queue/Commands前清所有相关 variants；未opt-in私有carrier沿原保守路径。实际原消费者沿现窗口核 IDs/work/decisions及内存/TPS，不增加模型或组合矩阵。"
+        ],
+        "source_identities": [
+          {
+            "path": "src/graph/executable.cc",
+            "bytes": 467803,
+            "sha256": "d43e9a2f27af26dec43a47a2dd03218e57bac9157bb9e93d27e1eb0afeabb9e9"
+          },
+          {
+            "path": "src/graph/resources.cc",
+            "bytes": 101488,
+            "sha256": "95e518cdd8e9222b5b267506dab8021165afdf23f62ca3034e3a966226b117df"
+          },
+          {
+            "path": "src/graph/plan_state.h",
+            "bytes": 57912,
+            "sha256": "512e7cf0cef2e56bc9d588ee34c864714dc5e1c4b7167bb92c949b1e8e31bffc"
+          },
+          {
+            "path": "src/graph_provider_ggml_cuda/ggml_cuda_region.cc",
+            "bytes": 68939,
+            "sha256": "145727c7d2ed891f98d5cc2e15f2a2d9e62dd4c79e36521f52a8aae0ec1001c4"
+          },
+          {
+            "path": "src/compute_provider_ggml_cuda/ggml_cuda_provider.cc",
+            "bytes": 73819,
+            "sha256": "8da6586cfa81cfa3859306fe1e15d8d92a34d063467ac292039f32d09b06322b"
+          },
+          {
+            "path": "src/compute_provider_ggml_cuda/native_bridge_impl.h",
+            "bytes": 13109,
+            "sha256": "ebd8f22fcb89d1d3858bf7717eac78c88b78e843184b40bf1d028ba16ae89feb"
+          },
+          {
+            "path": "include/hyle/compute/detail/command_capture.h",
+            "bytes": 5120,
+            "sha256": "7a6f262d713015806c9936f0108f8945afb6ee5a790c7d213f7005bcf0b46473"
+          },
+          {
+            "path": "third_party/ggml_cuda_runtime/patches.json",
+            "bytes": 567480,
+            "sha256": "23516631ebf16ddf03d2c82fdf43f62b0f45400497471ceaa3f239951b3d910a"
+          }
+        ]
+      }
+    },
+    {
+      "source": {
+        "path": ".scratch\\qwen-capture-cost-20261022\\review\\operation-private-stability.json",
+        "bytes": 16042,
+        "sha256": "c45a59b2fdb44afae30672430ad4be6ebb90f5ceb2d8292998dec66b70a4ba06"
+      },
+      "review": {
+        "status": "READ_ONLY_SOURCE_AUDIT_COMPLETE; no product edits, build, link, native execution or GPU query",
+        "scope": "Current actual T1 capture subset only: 237 ordinary Compute Operations; previous T2 route estimates superseded.",
+        "actual_T1": {
+          "evidence": {
+            "path": ".scratch/qwen-capture-cost-20261022/phase-probe3/auto/stderr.log",
+            "bytes": 1284921,
+            "sha256": "15dcfa6b1c7d10a40cf563e5bb48ccf03938491c96bb27d738f24289acbdbf02"
+          },
+          "parsed": {
+            "invocation": "0000037981050000",
+            "counts": [
+              [
+                [
+                  0,
+                  "cccl-cuda"
+                ],
+                1
+              ],
+              [
+                [
+                  1,
+                  "ggml-cuda"
+                ],
+                253
+              ],
+              [
+                [
+                  0,
+                  "cublasLt"
+                ],
+                103
+              ],
+              [
+                [
+                  0,
+                  "ggml-cuda"
+                ],
+                115
+              ],
+              [
+                [
+                  0,
+                  "original-artifacts-cuda"
+                ],
+                18
+              ],
+              [
+                [
+                  1,
+                  ""
+                ],
+                12
+              ],
+              [
+                [
+                  1,
+                  "flashinfer"
+                ],
+                6
+              ]
+            ]
+          },
+          "operations": {
+            "ggml-cuda": 115,
+            "cublasLt": 103,
+            "original-artifacts-cuda": 18,
+            "cccl-cuda": 1
+          },
+          "regions_outside_this_audit": {
+            "ggml-cuda": 253,
+            "flashinfer": 6,
+            "native_empty_provider": 12
+          }
+        },
+        "answer": "The four actual operation implementations can supply explicit positive proof through their own selected-artifact inspectors. Conditions differ: ggml needs its outer-record-only private-pool boundary; cuBLAS uses one unchanged handle and caller workspace; Torch must inspect Program flags; CCCL must inspect Program.kind/arg_tiles. No provider-name whitelist and no generic no-prepare shortcut.",
+        "providers": [
+          {
+            "label": "ggml-cuda singleton operation",
+            "real_type": "ggml_cuda_provider.cc anonymous Program + Invocation; actual detail::ProviderPrepared.vtable == &kPrepared (1131-1137). Same original Compute Program/Invocation implementation is used by the ggml Graph region wrapper.",
+            "predicate": "Check vtable == &kPrepared and state != nullptr BEFORE interpreting Program. Require actual prepared.runtime.capture_compatible and shared-Queue route. Program.primary/device must be valid; immutable recipe/workspace layout is the one compiled by internal::compile. Do not require index_checks.empty(): its safe-index/output staging storage is installed cold and its per-record status word is captured independently.",
+            "allocation_and_lifetime": [
+              {
+                "at": "ggml_cuda_provider.cc:227-272,415-453",
+                "fact": "Invocation owns native backend, MetadataArena, graph_allocator, external binding-buffer metadata, scratch/safe-index/constants vectors. allocate() allocates buffers during build; bind()/bind_views() only replace external root/view pointers. Destructor drains, then frees gallocr/buffers/scratch/backend."
+              },
+              {
+                "at": "ggml_cuda_provider.cc:587-600,749-822",
+                "fact": "safe_indices/scalar+dense constants allocated once in build; gallocr reserve and caller workspace base/layout fixed in initialize. finish_bind installs gallocr addresses only once, then refreshes external-dependent views; private addresses explicitly cannot change."
+              },
+              {
+                "at": "ggml_cuda_provider.cc:965-1029",
+                "fact": "ordinary rebind validates current pointers, changes pointer scratch and roots/views; no workspace allocation/free/rebuild or constant reload. First-bind alloc_graph exception is cold and precedes any reusable artifact."
+              },
+              {
+                "at": "native_bridge_impl.h:23-32,163-180,257-281;third_party/ggml_cuda_runtime/patches.json:157-186",
+                "fact": "Each native backend owns separate fixed legacy temporary caches; outer recording uses recording_depth, refuses allocation when retaining capacity full, and does not clear old cached allocations on record OOM. cuBLAS stream restore reapplies the same owned workspace; successful next outer record does not free old capture private temporary addresses."
+              }
+            ],
+            "exceptions_and_force_points": [
+              "Do not generalize to ordinary Commands/private native warmup: they keep original cache clear/free behavior. Clear all covering variants before compute_on_admitted_stream or any such pool-clearing path.",
+              "Provider/backend/graph/workspace/constant/safe-index resource replacement or destruction must be preceded by all-variant invalidation. The same original slot must remain alive while any variant survives.",
+              "Capture errors set Invocation.failed and may retain native recording guards/auxiliary work (1038-1119). End/abort and actual original retirement remain mandatory; a variant hit cannot skip current cold hooks and thereby bypass failed-slot rejection.",
+              "recording_guard is only an unfinished-recording exclusion, not an artifact-lifetime memory pin."
+            ]
+          },
+          {
+            "label": "cublasLt operation",
+            "real_type": "cublas_provider.cc CublasPrepared(primary, operation descriptor, immutable runs/layouts/algorithms/workspace_bytes) + CublasInvocation(primary, unique Lt handle, fixed caller workspace ptr); actual kPreparedVTable (609-615).",
+            "predicate": "Check vtable == &kPreparedVTable and state != nullptr before cast. Require prepared runtime capture/shared/caller route. CublasPrepared.primary and operation non-null, runs nonempty with valid layouts; this exact table is only published after successful configure for admitted MatMul(F32 accumulation) or BFloatLinearF32. No dtype/provider-name special case is needed.",
+            "allocation_and_lifetime": [
+              {
+                "at": "cublas_provider.cc:28-54,402-520,625-659",
+                "fact": "Prepared layouts, offsets, batch strides and selected algorithms are configured cold once. ColdHandle is destroyed at configure exit; resulting immutable descriptors/algorithms remain in CublasPrepared."
+              },
+              {
+                "at": "cublas_provider.cc:518-561",
+                "fact": "create_invocation validates and borrows original caller workspace address, allocates one host CublasInvocation and creates one Lt handle. destroy_invocation is the only invocation handle teardown; destroy_prepared frees operation/layout descriptors."
+              },
+              {
+                "at": "cublas_provider.cc:563-604",
+                "fact": "submit only obtains current A/B/C addresses, applies immutable run offsets and calls cublasLtMatmul with original handle, selected algorithm and same workspace. No Hyle reconfigure, allocation, free or handle replacement occurs on ordinary rebind or next record."
+              }
+            ],
+            "exceptions_and_force_points": [
+              "All future table additions require renewed inspector qualification; do not assume any foreign vtable with no prepare hook is safe.",
+              "Handle, workspace, prepared algorithm/layout/operation descriptor or Context replacement/destruction requires all covering variants invalidated first.",
+              "A vendor error may follow accepted work: current accepted-prefix lifetime is preserved (596-601); failure is not native retirement and never authorizes dropping the handle/workspace early.",
+              "This is source-visible Hyle lifetime proof using the existing original cuBLAS capture contract, not inspection of closed vendor implementation."
+            ]
+          },
+          {
+            "label": "original-artifacts-cuda operation",
+            "real_type": "artifact_provider.cc Program immutable descriptors/flags + Invocation { at::Tensor result; void* encoded_activation; }; one actual kPrepared (567-570) covers both safe direct-output/native paths and managed allocating-result paths.",
+            "recommended_predicate": "Check vtable == &kPrepared and state != nullptr before cast. Then Program.is_softplus || Program.is_mlx || Program.is_packed_artifact || Program.is_gptq_decode || Program.is_static_fp8, plus the actual shared/capture-compatible prepared route. The narrow current-Qwen declaration may initially use Program.is_softplus only. Do not require replay_class==kPrepared: Softplus intentionally remains kManaged while capture compatible.",
+            "allocation_and_lifetime": [
+              {
+                "at": "artifact_provider.cc:77-95,130-167,588-601",
+                "fact": "Only accepted Unary Softplus sets is_softplus; select requires matching dense floating input/output descriptions. The exact Program stores immutable flags and copied descriptions; no name-based reinterpretation is required."
+              },
+              {
+                "at": "artifact_provider.cc:411-435",
+                "fact": "Native MLX/packed/GPTQ creates no result holder (null invocation state is intentional). FP8 installs encoded_activation from original caller workspace only at create. Other Invocation objects are host holders; destroy is the only holder teardown."
+              },
+              {
+                "at": "artifact_provider.cc:458-506",
+                "fact": "Static FP8 uses fixed encoded activation scratch; MLX and native packed/GPTQ branches launch original native kernels with current ports/status word and immutable Program, then return before managed Tensor-result code."
+              },
+              {
+                "at": "artifact_provider.cc:508-533",
+                "fact": "Softplus builds non-owning from_blob wrappers for current pointers and calls at::softplus_out on the actual caller destination. It does not assign invocation.result or keep an allocated result/copy intermediary. The new record uses new explicit pointers; old graph launch remains tied to old fully matched tuple."
+              },
+              {
+                "at": "artifact_provider.cc:535-563",
+                "fact": "Excluded attention and managed NF4/double-quant/AWQ/CT decode assign invocation.result and create local intermediate Tensor values; next submit can replace/free old private allocations."
+              }
+            ],
+            "exceptions_and_force_points": [
+              "Do not opt in the entire kPrepared table: attention and managed allocating decode branches remain false; they currently also declare capture incompatible.",
+              "Do not use Program.is_softplus as an arbitrary unary whitelist: it is safe only after current select/prepare admission (130-167,588-601).",
+              "Native packed paths may have no slot; non-null invocation state is not a required common predicate.",
+              "Program/slot/caller FP8 workspace replacement or destruction requires force invalidation. Keep original errors and accepted-prefix retirement; do not release tensor owners merely because a callback threw."
+            ],
+            "current_Qwen_semantic_boundary": "main.cc:1303 constructs recurrent Softplus, consistent with 18 linear-attention layers. The existing actual provider dump does not include operation flags, so Program.is_softplus must be checked by the actual inspector; the count alone is not the proof.",
+            "locked_upstream_support": [
+              "https://raw.githubusercontent.com/pytorch/pytorch/v2.8.0/aten/src/ATen/native/Activation.cpp",
+              "https://raw.githubusercontent.com/pytorch/pytorch/v2.8.0/aten/src/ATen/native/cuda/ActivationSoftplusKernel.cu"
+            ]
+          },
+          {
+            "label": "cccl-cuda operation",
+            "real_type": "collectives_provider.cc Prepared { primary, collectives::Program, output_alignment } + Invocation { workspace }; actual kPrepared (327-332).",
+            "predicate": "Check vtable == &kPrepared and state != nullptr before cast. For p=Prepared.program require p.count==0 || p.kind==collectives::Kind::kGather || (p.kind==collectives::Kind::kTopK && p.k==1 && p.arg_tiles!=0). Also preserve actual capture/shared route. No provider name or callback absence inference.",
+            "allocation_and_lifetime": [
+              {
+                "at": "collectives_provider.cc:18-49,235-259",
+                "fact": "create validates original caller workspace and stores its address in one host holder. Ordinary rebind has no private pointer mutation hook. Holder/state destroyed only at original teardown."
+              },
+              {
+                "at": "collectives_provider.cc:262-325;collectives.cu:553-562,679-700",
+                "fact": "Gather and cold-tiled TopK1 use immutable Program plus current input/output pointers and the same caller workspace, directly launching original kernels. Checked Gather captures the current artifact status word; no persistent result allocation is replaced."
+              },
+              {
+                "at": "collectives_provider.cc:295-304;collectives.cu:460-475",
+                "fact": "Scan and other TopK go through managed CUB, are not covered by the positive predicate, and explicitly reject external capture."
+              }
+            ],
+            "exceptions_and_force_points": [
+              "Empty count is a real no-op, not permission to skip Graph bindings/alias validation.",
+              "Scan and non-tiled/non-k1 TopK remain false. Do not generalize arg_tiles to an unreviewed future Program kind.",
+              "Program, original slot or caller workspace replacement/destruction requires all covering variants invalidated first; kernel failure still preserves the accepted-prefix Completion."
+            ]
+          }
+        ],
+        "implementation_notes": [
+          "Each inspector must compare its own exact actual prepared vtable BEFORE casting state; the Graph core only consumes the returned fact. Query by original selected provider instance through the existing private extension seam.",
+          "A positive operation predicate does not qualify a whole range unless every actual emitting step (including 271 regions audited separately) supplies its required private-resource proof and actual backend stable identity.",
+          "Across all four operations, full TensorDesc/resource/native_handle/offset/extent matching, fresh permissions/alias/seal, actual native retirement and same actual Queue owner remain necessary. No cache stores old write permissions or retains state payload.",
+          "Only the provider-specific state conditions above are proposed; no new model, quantization combination or wider quality promise is added."
+        ],
+        "sources": [
+          {
+            "path": "src/compute_provider_ggml_cuda/ggml_cuda_provider.cc",
+            "bytes": 73819,
+            "sha256": "8da6586cfa81cfa3859306fe1e15d8d92a34d063467ac292039f32d09b06322b"
+          },
+          {
+            "path": "src/compute_provider_ggml_cuda/native_bridge_impl.h",
+            "bytes": 13109,
+            "sha256": "ebd8f22fcb89d1d3858bf7717eac78c88b78e843184b40bf1d028ba16ae89feb"
+          },
+          {
+            "path": "third_party/ggml_cuda_runtime/patches.json",
+            "bytes": 567480,
+            "sha256": "23516631ebf16ddf03d2c82fdf43f62b0f45400497471ceaa3f239951b3d910a"
+          },
+          {
+            "path": "src/compute_provider_cublas/cublas_provider.cc",
+            "bytes": 29894,
+            "sha256": "ae713f4e21ec4a3d5e77493a9f3aa06e02d54736606b0697601719357bb28c1c"
+          },
+          {
+            "path": "src/compute_provider_torch_cuda/artifact_provider.cc",
+            "bytes": 39279,
+            "sha256": "db2e9dada361708ad89d9690a9ad41219ed23a15b6db6db5a0a36c26b43a1035"
+          },
+          {
+            "path": "src/compute_provider_torch_cuda/mlx_packed_kernel.cu",
+            "bytes": 22280,
+            "sha256": "de76c2c530281bba175ce9d7eb71bbb9291a2e14cfe751b253fcfa8fdce42cac"
+          },
+          {
+            "path": "src/compute_provider_cuda/collectives_provider.cc",
+            "bytes": 17271,
+            "sha256": "7d7a78f017d568b9a5a28eae634228b53a5b0694245ceeb810916f361114d4f5"
+          },
+          {
+            "path": "src/compute_provider_cuda/collectives.cu",
+            "bytes": 29327,
+            "sha256": "ae85ee7e3ad863f099020785fbb3f3dbc6904a95cc3be56e5b09174dd9d0fc40"
+          },
+          {
+            "path": "tools/qwen35_text/main.cc",
+            "bytes": 279550,
+            "sha256": "b48a51ea9611a46804624252d3b69217db3303aad789bde74a7bcf5a698c8856"
+          }
+        ]
+      }
+    },
+    {
+      "source": {
+        "path": ".scratch\\qwen-capture-cost-20261022\\review\\operation-variant-trait.json",
+        "bytes": 7119,
+        "sha256": "af0aceb438d3114c1ece12463ca3982a4db02e32d91318c796305b2591d48880"
+      },
+      "review": {
+        "status": "READ_ONLY; no product edits, build or native execution",
+        "answer": "需普通 Compute Operation 的正向私有资源保留事实；不能仅改 ggml region，也不能把无 prepare hook 当作通用证明。现 ProviderPreparedVTable 没有 query_extension。",
+        "current_source_facts": [
+          {
+            "source": "include/hyle/compute/detail/prepared_callbacks.h:14-58",
+            "fact": "ProviderPreparedVTable 只有 destroy/create/submit/prepare_bindings 等，不含 query_extension。prepare_bindings 缺省仅表示没有该 hook；shared_submit 仍可触动私有资源。"
+          },
+          {
+            "source": "src/compute/operation.cc:1909-1948;src/compute/provider_internal.h:159",
+            "fact": "已有 selected-artifact inspect 桥：找到 PreparedState.provider_instance 的原 Context provider slot，经 ProviderVTable::query_extension 取 versioned私有接口，再 inspect(实际 ProviderPrepared)。当前 projected-access 已这样做。可复用查询形状，不能按 provider 名称/route schema 认定。"
+          },
+          {
+            "source": "src/compute_provider_ggml_cuda/ggml_cuda_provider.cc:1131-1137,1199-1212",
+            "fact": "普通 ggml singleton 的实际 kPrepared 也有 prepare_bindings；其 Context query_extension 目前只转发创建 Context 时的 Extension{id,table}，可在原入口优先处理新 capture binding ID，原 graph-region扩展转发保持。"
+          },
+          {
+            "source": "src/compute_provider_cublas/cublas_provider.cc:609-615;src/compute_provider_cuda/collectives_provider.cc:327;src/compute_provider_torch_cuda/artifact_provider.cc:kPrepared",
+            "fact": "这些普通 prepared 表无 prepare_bindings。该事实不能替代 shared_submit/私有池/原slot寿命的具体证明。"
+          }
+        ],
+        "smallest_internal_trait": {
+          "location": "新的独立 compute::detail capture-binding extension ID/interface；VTable类型可放 src/compute/operation_cold.h 或专用私有头，事实不要塞入 projected-access 的数学/权限字段。OperationPreparationAccess 在 provider_internal.h 提供 cold inspect，operation.cc沿原 selected-provider查询。无需增加公开 PreparedOperation/ReplayReport API，也无需给每个 ProviderPreparedVTable 加字段。",
+          "shape": "CaptureBindingFacts { bool preserves_private_arguments_under_tensor_rebind_and_record = false; }; VTable.inspect(const detail::ProviderPrepared&, CaptureBindingFacts*)。未知/接口缺失=false，真实context/instance错误仍按原gate处理。",
+          "meaning": "同一存活原 provider invocation slot、所有旧 native uses 已真实退休后，仅普通完整 TensorView rebind 和再次 outer recording 不会释放/替换任何旧 captures 引用的私有地址。它不授权保留旧permissions、改配置、Commands/native warmup或provider重建。",
+          "ggml_implementation": "inspector 只接受实际 kPrepared/native recipe，声明已核的固定graph workspace与独立临时cache合同。region用独立versioned RegionCaptureBinding capability或等价原region query_extension正向声明同一合同，不借 borrows_tensor_views_only 推断；不要改旧release table布局而沿旧ID解释新结构。",
+          "other_operations": "逐实际实现确认后opt-in；无hook、private_bytes=0、capture_compatible或backend stable identity都不足作为默认true。未声明的range继续现有单exec update/fresh行为。",
+          "force_gate": "配置/原生资源mutation/Queue owner变化/Commands或清pool执行前，清覆盖range全部variants及seed；先清后callback。所有当前权限、alias、seal、retirement保持。"
+        },
+        "route_evidence_limit": {
+          "old_real_route": {
+            "path": ".scratch/qwen-capture-cause-20261022/diagnostic1/route-only/routes/default-role3-R1-T2.route.tsv",
+            "sha256": "64192ecf65ab8afcccd04496ddcc49bcfc118e5c3fcc28a6206b7f0394ac692f"
+          },
+          "old_T2_all_steps_by_kind_provider_implementation": [
+            [
+              [
+                "0",
+                "cccl-cuda",
+                "1"
+              ],
+              4
+            ],
+            [
+              [
+                "1",
+                "ggml-cuda",
+                "2"
+              ],
+              201
+            ],
+            [
+              [
+                "0",
+                "ggml-cuda",
+                "1"
+              ],
+              188
+            ],
+            [
+              [
+                "3",
+                "",
+                "0"
+              ],
+              639
+            ],
+            [
+              [
+                "0",
+                "cublasLt",
+                "1"
+              ],
+              194
+            ],
+            [
+              [
+                "1",
+                "",
+                "5782981759343874128"
+              ],
+              14
+            ],
+            [
+              [
+                "1",
+                "flashinfer",
+                "4774189727942066516"
+              ],
+              7
+            ],
+            [
+              [
+                "1",
+                "ggml-cuda",
+                "4"
+              ],
+              1
+            ],
+            [
+              [
+                "1",
+                "ggml-cuda",
+                "5"
+              ],
+              18
+            ],
+            [
+              [
+                "0",
+                "original-artifacts-cuda",
+                "6071768544477970944"
+              ],
+              18
+            ],
+            [
+              [
+                "1",
+                "ggml-cuda",
+                "3"
+              ],
+              42
+            ]
+          ],
+          "interpretation": "此旧真实T2全route含188个普通ggml-cuda Operation、194个cublasLt Operation等，证明Qwen存在需普通Operation处理的真实路径；并非当前普通T1实际capture command范围清单。route.tsv没有完整emits/selected-capture证明，不能将其中View、ready-only region或不同lane全算为captured command。",
+          "current_T1": "当前phase-probe1/auto日志只有T1 steps=1039等，不含capture_kinds或按provider的range清单。不能由当前源码独立恢复runtime所选每一step类型；根可补一次现有diagnostic摘要，按range输出emits命令的kind/provider/implementation/prepares/trait，非模型新矩阵。"
+        },
+        "profile_update": "根已提供实际63步prepare113.41ms、record86.17ms(76%)、binding10.81ms；支持优先只省record的bounded2方案。caller72端口2tuple不是完整range signature；须由完整键匹配决定命中。",
+        "sources": [
+          {
+            "path": "include/hyle/compute/detail/prepared_callbacks.h",
+            "sha256": "a721592ad0985c92ec0a427973dd63ca20cf3d870cb8c1162b57f86afde514ae"
+          },
+          {
+            "path": "src/compute/operation.cc",
+            "sha256": "9e0df773efa72da878fc92a19892d82f8376129f71f5513979998b9bcea03265"
+          },
+          {
+            "path": "src/compute/provider_internal.h",
+            "sha256": "d5fe8397f2f7e7818f48aa1547e549fbfe9c49446275d2a224f92c28d1cab3fb"
+          },
+          {
+            "path": "src/compute/operation_cold.h",
+            "sha256": "0bb54f81060d671a17e8d998c4a4a2c679c7eb5d9d6906367cd50c55bb57be4e"
+          },
+          {
+            "path": "src/compute_provider_ggml_cuda/ggml_cuda_provider.cc",
+            "sha256": "8da6586cfa81cfa3859306fe1e15d8d92a34d063467ac292039f32d09b06322b"
+          },
+          {
+            "path": "src/graph_provider_ggml_cuda/ggml_cuda_region.cc",
+            "sha256": "145727c7d2ed891f98d5cc2e15f2a2d9e62dd4c79e36521f52a8aae0ec1001c4"
+          }
+        ]
+      }
+    },
+    {
+      "source": {
+        "path": ".scratch\\qwen-capture-cost-20261022\\review\\region-private-stability.json",
+        "bytes": 14030,
+        "sha256": "0c18fc7be6f73c23436b108975c7df4a474e3e264e26f1a8aa43044635eb8a81"
+      },
+      "review": {
+        "status": "READ_ONLY_IMPLEMENTATION_AUDIT_COMPLETE",
+        "blocking_findings": [],
+        "scope": "Three selected CUDA Graph region families only; 237 operation steps are outside this review. No source edit, build or native execution.",
+        "correction": {
+          "prior_message": "I initially inferred FlashInfer borrows=false only from its missing RegionBindingReleaseVTable. That inference was wrong.",
+          "actual_implementation": "src/graph/resources.cc:233-239 returns true immediately when !region.prepares_bindings(). FlashInfer batch region_table has no prepare_bindings callback, so it is borrowed=true. GGML and append tables explicitly declare borrowed=true.",
+          "runtime_consistency": "Parent supplied phase-probe3 T1 regions=271/borrowed=271 and AS native 62 successful updates. This audit does not reject that evidence or infer lack of seeds from a missing release table."
+        },
+        "important_distinction": "borrows_tensor_views_only classifies external TensorView/import/permission handling; it is not a promise that every private kernel argument is immutable forever. Identical replay needs both complete physical argument equality and the original private-resource invalidation gates. Current executable rebuild may instead retain only a permanently nonlaunchable idle seed, record all new commands and use backend update/fallback; that does not need old and new private pointers to be identical.",
+        "families": [
+          {
+            "family": "253 ggml-cuda regions",
+            "private_owners": "Graph wrapper Invocation holds one original compute Invocation plus input TensorView metadata. Compute Invocation owns MetadataArena, lowered graph/tensors/roots/binding buffers, graph allocator, NativeWorkspace, safe-index/constants scratch, original GGML backend and its auxiliary pools.",
+            "ordinary_rebind": "ggml_cuda_region.cc:1160-1175 only copies input TensorViews. ggml_cuda_provider.cc:965-1029 validates real pointers then rebinds external buffer/root addresses. finish_bind:587-598 installs gallocr allocations once and only refreshes existing views afterwards. It does not rebuild graph, change private workspace base, allocate replacement state or reroute operators.",
+            "what_is_stable": "For the same original Invocation/exact recipe, MetadataArena objects, immutable graph, roots, safe-index/constants backing and gallocr-assigned caller workspace survive ordinary TensorView rebind. Declared view addresses rooted in external inputs/outputs change with those actual pointers; unchanged private-rooted views do not. Full complete tuple equality is still required for direct reuse.",
+            "next_record_limit": "native_bridge_impl.h:24-33 gives each GGML backend its original legacy CUDA pools; record_on_admitted_stream:257-292 invokes the real encoder. Those pools are reusable resource owners, not an API promise of the same allocation for every native temporary on every encode. The locally examined locked ggml-cuda.cu pool implementation:418-537 performs best-fit reuse, may allocate if none fits, flush on OOM or free when full. Do not infer permanent auxiliary address equality merely from fixed gallocr workspace or borrowed TensorViews.",
+            "forced_paths": "Explicit Commands clears all outer captures/seeds before ordinary native encoding. Queue owner replacement clears affected ranges. Provider/native/configuration replacement retains force invalidate before the original mutable resources can release. Old seed remains nonlaunchable and is consumed/destroyed, not replayed after a different recording.",
+            "eligibility": "Current ordinary stable-TensorView tuple change is suitable for nonlaunchable idle exec rebuild with complete fresh recording. A shortcut that launches/patches old commands without recording cannot be authorized from this carrier flag alone; it would additionally require actual native temporary/handle/graph stability for the selected slot, which this seam does not currently expose."
+          },
+          {
+            "family": "6 FlashInfer batch attention regions",
+            "private_owners": "graph_batch/batch.cc Slot owns BatchProgram, BatchInvocation, PreparedBatch and QueueRef. BatchInvocationData owns provider BatchSlot, metadata mirror/staging, float/int/host workspace and retained readiness; FlashInfer BatchSlot owns PrefillPlanInfo plus spec/chunk/topology/report facts. The output is the original caller Graph tensor.",
+            "ordinary_rebind": "No Region prepare_bindings hook exists. submit_region:64-76 orders the current Q/K/V/metadata TensorViews and enqueues the original PreparedBatch. Merely changing Q/output or other ordinary tensor addresses does not recreate BatchSlot or plan; current address arguments are passed at run_batch_slot:380-418.",
+            "what_is_stable": "The old plan/mirror/workspace addresses persist when same actual schema/Queue/options/program are reused and the original provider update accepts the layout with sufficient high-water workspace. can_reuse_batch_plan:257-286 checks exact query_indptr, native chunk/CTA-compatible request chunk counts and stricter MLA KV/tail equality. update_batch_slot:420-426 changes layout/generation/report metadata, not plan storage or launch topology. Fresh metadata contents can change at the same address while all current permissions and seal epoch are renewed.",
+            "forced_paths": "batch.cc:355-364 before_command_change invalidates both the owner region and all slots whose metadata_owner points to it. Program/schema/Queue/options replacement:503-522 calls this before destroying native/program. batch_execution.cc:136-162 clears captures before workspace growth; :459-465 before metadata carrier change; :527-535 before any fresh native plan. Reset:batch.cc653-679 revokes preparation and current tickets/page permissions but retains qualified graph_capture private owners; unknown/native/noncapture slots force invalidate. Commands and Queue change remain common force paths.",
+            "eligibility": "An unchanged valid PreparedBatch under the original private-owner gates is enough for its admitted outer recording behavior; borrowed=true is only the external input classification. Native plan replacement, different metadata carrier, changed workspace backing, different program/options/schema/Queue or failed/pending preparation cannot be treated as an ordinary stable rebind. Fresh prepare must finish and validate_prepared must seal current metadata epoch before any launch."
+          },
+          {
+            "family": "12 provider-empty entries consistent with shared CUDA PagedAppend",
+            "identity_boundary": "The custom paged append region table does not publish an ordinary provider ID; 12 entries match six target layers times K/V. Counts alone are not a substitute for an actual selected table/operation identity. This paragraph audits the real src/graph_batch/paged_append.cc table, not every empty-provider region.",
+            "private_owners": "Prepared owns immutable PagedAppendProgram/spec. Slot retains the PagedArena backing owner independently of old page permissions, MirrorGroup, bindings and selected-slot links. MirrorGroup owns device/host descriptor pools, QueueRef and resolved instruction words. CUDA AppendProgram holds only original context/kernel/spec/capacity; it allocates no per-episode kernel scratch.",
+            "ordinary_rebind": "prepare_bindings:340-345 updates only actual packed-rows storage after alias/extent validation. Native enqueue uses bank/rows/descriptor pointers and fixed finite geometry. Dynamic physical page IDs/old-tail coordinates are device descriptor contents; changed contents at the same retained mirror address do not change recorded kernel arguments.",
+            "what_is_stable": "prepare_native:470-541 shares a group only for exact current layout, Queue/resource/host/capacity and full resolved instructions including old-tail source IDs. A same-slot unoccupied group may upload new words into its same device carrier after original readiness/native-use gates; upload waits for real copy retirement. Slot.arena keeps the real bank allocation through take without retaining old page permissions.",
+            "forced_paths": "Any bank or descriptor storage tuple change triggers RegionAccess::invalidate_commands BEFORE replacing group/arena/bindings (:535-539). Occupied sibling or shared-to-split layouts get independent carriers rather than overwriting a live sibling. Upload first revokes replay readiness; failure cannot leave a callable prepared route. Runtime-native Apple/Vulkan copied-range configuration follows a separate force-invalidate path (:596-600), not this CUDA descriptor table. Commands and Queue owner changes remain common force paths.",
+            "take_and_rebind": "take:670-699 latches original whole-Graph success for all selected append transactions before first permission withdrawal. release_writer_preparation in resources.cc:873-891 preserves commands only for actual Idle/notclosed, stable backend identity and the selected projected_write.preserves_commands predicate. Append predicate requires native program, sealed slot, retained arena/group/mirror and valid actual carriers. Otherwise it force invalidates. Every new episode re-admits real writers/appender/control reads and seals again.",
+            "eligibility": "For this actual CUDA native program only, retained bank/descriptor backing plus ordinary rows tuple proof and all fresh page/alias/Queue/seal gates support dormant recordings. A transfer fallback (native invalid), new group/bank pointer, untaken pages, failed metadata upload or changed selected program is not eligible. The zero provider ID or borrowed flag alone proves none of this."
+          }
+        ],
+        "current_graph_eligible_predicate": {
+          "entry": "prepare_command_bindings requires previous actual stable backend identity, no old/current native_inputs, and prepared_revision==revision before choosing recycle rather than force invalidate.",
+          "whole_range": "invalidate_recording scans every emitting step and requires stable_binding_identity && !native_inputs && (operation || RegionAccess::borrows_tensor_views_only(actual prepared region)). Only an actual-retired backend-approved artifact can become one move-only nonlaunchable seed per immutable plan range.",
+          "retirement_and_permissions": "begin_preparation/resource_control_ready rejects Running/Failed/preparing/results/occupied old observation. Original native lifetime publishes Idle after actual accepted children retire. Seed has no enqueue API; no old lease/page/native import owner becomes new admission.",
+          "meaning": "This predicate authorizes nonlaunchable seed conversion only, followed by complete new bindings/recording and backend update or fresh instantiate. It does not by itself authorize old captured private arguments to remain launchable after arbitrary provider mutation.",
+          "if_a_stronger_shortcut_is_considered": "The minimum additional fact would be a selected-slot positive proof that ordinary typed rebind does not replace any private carrier/address referenced by recorded commands, with every cold private configuration change invalidating first. Existing before_command_change and projected-write proof supply local evidence for two families; borrowed input classification must not be relabeled as that stronger fact. No new API or implementation is proposed in this audit."
+        },
+        "source_identities": [
+          {
+            "path": "src/graph/resources.cc",
+            "bytes": 101488,
+            "sha256": "95e518cdd8e9222b5b267506dab8021165afdf23f62ca3034e3a966226b117df"
+          },
+          {
+            "path": "src/graph/executable.cc",
+            "bytes": 467803,
+            "sha256": "d43e9a2f27af26dec43a47a2dd03218e57bac9157bb9e93d27e1eb0afeabb9e9"
+          },
+          {
+            "path": "src/graph_provider_ggml_cuda/ggml_cuda_region.cc",
+            "bytes": 68939,
+            "sha256": "145727c7d2ed891f98d5cc2e15f2a2d9e62dd4c79e36521f52a8aae0ec1001c4"
+          },
+          {
+            "path": "src/compute_provider_ggml_cuda/ggml_cuda_provider.cc",
+            "bytes": 73819,
+            "sha256": "8da6586cfa81cfa3859306fe1e15d8d92a34d063467ac292039f32d09b06322b"
+          },
+          {
+            "path": "src/compute_provider_ggml_cuda/native_bridge_impl.h",
+            "bytes": 13109,
+            "sha256": "ebd8f22fcb89d1d3858bf7717eac78c88b78e843184b40bf1d028ba16ae89feb"
+          },
+          {
+            "path": "src/graph_batch/batch.cc",
+            "bytes": 92904,
+            "sha256": "617efab5249d1b2137e303f2d47e7c2bd61d2518adc82d7cb891d4e549393233"
+          },
+          {
+            "path": "src/compute_batch/batch_execution.cc",
+            "bytes": 64570,
+            "sha256": "7e7e2a8f694df5a55d88c0cd7879158fa06694d21dce2f2129b91587e8a90045"
+          },
+          {
+            "path": "src/compute_provider_flashinfer/flashinfer_provider.cc",
+            "bytes": 46732,
+            "sha256": "7f7d4d036c187fd206955a61f9e9f7a7873d2ab56f4eb8ee6e5476f44f9674e7"
+          },
+          {
+            "path": "src/compute_provider_flashinfer/native_batch.cu",
+            "bytes": 6906,
+            "sha256": "c17e99b53e793e3357b36eec288d2a1e36211081b95a8d2145c4ff3b4234d6da"
+          },
+          {
+            "path": "src/graph_batch/paged_append.cc",
+            "bytes": 54282,
+            "sha256": "97039f71408c75a0e8898d13d29bcbb6f3b58d629390c028f6f93d0275e640db"
+          },
+          {
+            "path": "src/compute_batch/paged_append_program.cc",
+            "bytes": 5669,
+            "sha256": "2e9fe5da238442e248d923998fe5219bfda74711cee812e398cc68f006a5237e"
+          },
+          {
+            "path": "src/compute_backend_cuda/cuda_paged_append.cc",
+            "bytes": 5770,
+            "sha256": "8a81140cab3f542c242e63d9e650e449b6eefcf540be68340bc885bdf9311e85"
+          }
+        ],
+        "native_pool_source_boundary": "Legacy-pool behavior was read in the already-local locked source .scratch/legacy-root/hyle-scratch/ggml-native-static/src/compute_ggml_runtime/source-4e1a7b2f39afe15d/src/ggml-cuda/ggml-cuda.cu. No new SDK scan or claim that every injected native source byte equals that snapshot is made; current bridge explicitly selects that pool class, so absent a stronger lifetime guarantee it must not be treated as permanent pointer affinity."
+      }
+    }
+  ],
+  "proposed_design": {
+    "status": "DESIGN_AFTER_MEASURED_RECORDING_HOTSPOT_NOT_IMPLEMENTED",
+    "purpose": "Keep one Invocation/workspace while reusing a bounded pair of exact recorded physical argument variants. Optimize recording, not resource permission checks.",
+    "eligibility": [
+      "Actual backend declares complete TensorView argument identity stable.",
+      "Every emitting step in the immutable capture range explicitly proves private arguments survive ordinary TensorView rebinding and another recording. No inference from provider name, no-prepare hook or borrowed-input fact alone.",
+      "No native input/generated reference requiring conservative invalidation, and no configuration/Queue/provider-resource epoch change."
+    ],
+    "ownership": [
+      "At most two launchable native executables per range across active and dormant storage; no second Invocation, workspace, state bank or executor.",
+      "Keep move-only CapturedCommands dormant for potential matching; never revive v3 CaptureRebuildStorage, whose backend authorization permanently revoked launch.",
+      "Only actual native retirement permits moving an active recording into dormant storage. Public Completion destruction or unique refcount is not a retirement proof.",
+      "Store borrowed physical argument metadata only, with full descriptions/resource/handle/offset/span. Do not retain ReadLease/WriteLease/page permissions as cache authorization."
+    ],
+    "prepare": [
+      "Keep all current input permission, effect, alias, binding preparation and seal checks first. Do not skip Provider.prepare_bindings on a variant hit in the first implementation.",
+      "Compare complete input/output tuples for every captured emitting step after preparation; include actual Queue ownership through mandatory invalidation and private-resource epoch.",
+      "Restore a matching dormant command only after those checks succeed, then rebuild the ordinary captured-range traversal and publish replay readiness.",
+      "On a miss keep the two bounded slots; retire/evict the older candidate, optionally convert it to the existing nonlaunchable seed, and use the existing update-or-instantiate path.",
+      "Missing stability capability preserves the current single-executable update/fresh-capture behavior."
+    ],
+    "forced_invalidation": [
+      "Configuration/native resource replacement, actual Queue owner change, reset/close and explicit invalidate_commands clear all overlapping variants and rebuild seed BEFORE mutation.",
+      "Commands and any path that may run a provider private warmup or clear its pool first destroy that range's variants. A preferred-capture fallback must not bypass this rule.",
+      "Failed binding/seal/capture/retirement never publishes a ready route; dormant storage grants no enqueue authority."
+    ],
+    "costs": [
+      "O(2P) borrowed argument metadata for P captured ports and at most two driver graph executables per range. Native executable private bytes remain unknown and must be reported as unknown.",
+      "More than two physical variants remain correct but can miss and re-record; do not enlarge to an unbounded signature cache or assume MTP has exactly two variants."
+    ],
+    "next_implementation": "Audit and declare exact artifact stability capabilities for the providers actually observed in T1; implement the bounded common Graph mechanism and focused state/lifetime checks, then rerun the ordinary baseline and MTP incremental four-arm window.",
+    "not_claimed": [
+      "Feature implemented",
+      "Performance recovery",
+      "Full capture key repeats proven from caller-state logs",
+      "Private resource stability proven by tuple repetition"
+    ]
+  },
+  "scope": {
+    "diagnostic_model_processes": 4,
+    "host_translation_unit_compiles": 4,
+    "SDK_builds": 0,
+    "NVCC_builds": 0,
+    "shader_builds": 0,
+    "new_full_TPS_windows": 0,
+    "new_memory_windows": 0
+  },
+  "limits": [
+    "Diagnostic intervals are host wall brackets that can include SDK waits. They are not CPU self-time and do not establish exclusive causal accounting of all decode time.",
+    "Three auto diagnostic processes have different added metadata logging and background conditions. Their durations are not a new formal performance window or a basis for extrapolated tokens/s.",
+    "72 logged state port identities include dimensions/strides/dtype/resource/handle/offset/span; they do not cover all private capture arguments or prove future MTP shapes have exactly two variants.",
+    "The source audits describe exact currently reviewed implementations. A provider family name, capture-compatible flag or no-prepare callback alone does not prove cross-record private stability.",
+    "Capture variants and their capability contracts are proposed and not implemented in this batch; current default execution, precision and resource lifetime are unchanged."
+  ],
+  "archived_logs": {
+    "path": "docs\\evidence\\performance\\qwen-capture-recording-cost-2026-10-22.logs.zip",
+    "bytes": 824399,
+    "sha256": "26203d2a6a44543b2c9bc20ceedf7df8f653dd25a9734eb14fb56787fe1dd528"
+  },
+  "cleanup": {
+    "bytes_removed": 421209600.0,
+    "disposable_images": [
+      {
+        "Path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cost-20261022\\diagnostic-link1\\qwen.exe",
+        "Sha256": "320bcfc719c8c14e3cfed53380b46156a4d7b5a3694ac97ac1de43aa8f2b4a26",
+        "Bytes": 140402176
+      },
+      {
+        "Path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cost-20261022\\diagnostic-link2\\qwen.exe",
+        "Sha256": "5895edab718cc0c3c440e004da807ca2505cc95a1e5f00af9eb7f9d2b45111cb",
+        "Bytes": 140403712
+      },
+      {
+        "Path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cost-20261022\\diagnostic-link3\\qwen.exe",
+        "Sha256": "17c34a0590a96338ae64b8694d4c6233e2864a68f2545c5e22c7c64ec4c32f2a",
+        "Bytes": 140403712
+      }
+    ]
+  }
+}

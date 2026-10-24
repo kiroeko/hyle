@@ -3,6 +3,72 @@
   "id": "llm-moe-provider-demand-reconciliation-v1",
   "baseline": "4b74d2b860d5ee864f3e38931124fdd5b9db51cf",
   "generated_at": "2026-09-24",
+  "current_scope": {
+    "updated_on": "2026-10-19",
+    "models": ["qwen35_2b", "qwen38_27b", "qwen38_24t", "kimi_k3", "glm53", "glm53_flash", "deepseek_v4_pro_0813", "deepseek_v4_flash_0731"],
+    "excluded_preview_models": ["deepseek_v4_pro", "deepseek_v4_flash"],
+    "operator_inventory": "../../model-operators.md",
+    "quantization_scope": {
+      "artifact_catalog": "../../model-quantizations.json",
+      "include": "Published Unsloth quantizations and mainstream Hugging Face quantizations of the current target releases, beyond the initial official/UD-Q4/UD-Q8 baseline.",
+      "selection": "Check the actual base release, fixed artifact revision and per-role codec/packing/numeric domain. Different bit widths, mixed precision and scale/group variants remain distinct where they need different math or wiring. The baseline profile count is not a support limit or a runtime whitelist.",
+      "inventory": "Map model/artifact/weight role and phase to base operations, common fused subgraphs and actual provider implementations. Record demand, implementation reachability and measured execution separately; a published artifact is not proof of Hyle support.",
+      "retirement": "A preview-only implementation is removable only after checking all current release and quantization consumers, plus its independent general-purpose API uses."
+    },
+    "added_releases": [
+      {
+        "model": "deepseek_v4_pro_0813",
+        "official": {
+          "repository": "deepseek-ai/DeepSeek-V4-Pro-0813",
+          "revision": "72e1d3230f6c080a530b0a1d46f8eb4602340597",
+          "config_sha256": "9dd2a89255469e120b333668ef5a169b7ae46c00f6bbab786bf0be457546aec0",
+          "variant": "official-fp4-fp8-dspark",
+          "formats": ["packed FP4 expert", "FP8 E4M3", "UE8M0 scale", "BF16", "F32", "I64"],
+          "model_card_url": "https://huggingface.co/deepseek-ai/DeepSeek-V4-Pro-0813/blob/72e1d3230f6c080a530b0a1d46f8eb4602340597/README.md"
+        },
+        "primary_gguf": {
+          "repository": "unsloth/DeepSeek-V4-Pro-0813-GGUF",
+          "revision": "6d053616d152293da72569f56b861466f10ace7d",
+          "variant": "UD-Q4_K_XL",
+          "formats": null,
+          "format_note": "Matching GA base model and variant identity verified. Exact per-role GGUF codecs and DSpark inclusion still require tensor-header inspection."
+        },
+        "fidelity_gguf": {
+          "repository": "unsloth/DeepSeek-V4-Pro-0813-GGUF",
+          "revision": "6d053616d152293da72569f56b861466f10ace7d",
+          "variant": "UD-Q8_K_XL",
+          "formats": null,
+          "format_note": "Matching GA base model and variant identity verified. Exact per-role GGUF codecs and DSpark inclusion still require tensor-header inspection."
+        }
+      },
+      {
+        "model": "deepseek_v4_flash_0731",
+        "official": {
+          "repository": "deepseek-ai/DeepSeek-V4-Flash-0731",
+          "revision": "7872f01b1d1fe23eabc4c98b48bffcef5a386062",
+          "config_sha256": "6c8f3d2d3b48707541b88f32f22ef3f0f8a6b57d8523281e2b8d3cdb0ae9a023",
+          "variant": "official-fp4-fp8-dspark",
+          "formats": ["packed FP4 expert", "FP8 E4M3", "UE8M0 scale", "BF16", "F32", "I64"],
+          "model_card_url": "https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash-0731/blob/7872f01b1d1fe23eabc4c98b48bffcef5a386062/README.md"
+        },
+        "primary_gguf": {
+          "repository": "unsloth/DeepSeek-V4-Flash-0731-GGUF",
+          "revision": "fbbb5b93fb787c21338159b0af3318bb3f4d9768",
+          "variant": "UD-Q4_K_XL",
+          "formats": null,
+          "format_note": "Matching GA base model and variant identity verified. Exact per-role GGUF codecs and DSpark inclusion still require tensor-header inspection."
+        },
+        "fidelity_gguf": {
+          "repository": "unsloth/DeepSeek-V4-Flash-0731-GGUF",
+          "revision": "fbbb5b93fb787c21338159b0af3318bb3f4d9768",
+          "variant": "UD-Q8_K_XL",
+          "formats": null,
+          "format_note": "Matching GA base model and variant identity verified. Exact per-role GGUF codecs and DSpark inclusion still require tensor-header inspection."
+        }
+      }
+    ],
+    "note": "Current work selects matching model IDs and their non-null artifact profiles from the historical profile_catalog, plus added_releases. The two old DeepSeek preview model IDs and their derivatives are excluded; the separately pinned GA releases are required. GGUF variants must derive from the matching GA release, not preview. Historical catalog entries, results and counts remain snapshots, not current support or completion claims. Retire a preview-specific implementation only after checking the GA releases and all other current consumers."
+  },
   "authority": {
     "model_facts": "llm-moe-model-weight-operator-audit.md",
     "snapshot_scope": "profile_catalog and demand definitions remain the fixed requirements; storage_reachability, route_status, provider_inventory, finite_fix_set and counts describe the D1/D2 baseline audit, not current runtime support or a new work queue.",

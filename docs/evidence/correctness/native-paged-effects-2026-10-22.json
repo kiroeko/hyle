@@ -1,0 +1,324 @@
+{
+  "title": "普通Graph的Apple/Metal与Vulkan原生分页写入effect接线",
+  "date": "2026-10-22",
+  "status": "IMPLEMENTED_WITH_THE_BOUNDED_CPU_METAL_VULKAN_RUNS_LISTED_BELOW",
+  "scope": "普通Graph的原生producer、无tensor输出PagedAppend、COW及同图分页reader。不是完整Qwen跨平台/MTP/量化/质量或性能验收。",
+  "implementation": [
+    "按实际选定native artifact的独立有序写能力准入；保留原共享Queue校验、Graph身份、明确控制依赖及精确页/尾权。",
+    "原生slot持有原PagedAppendPages；冷配置复制精确prefix/new-row范围，不入队，不制造ready帧或外部CopyBatchUpdate。",
+    "Apple沿原Runtime FIFO、CopyRecording/Metal blit及原native生成输出epoch/pin；reader FIFO预检真实写结果。",
+    "Vulkan沿原compute VkQueue/CopyRecording、真实buffer owners及visibility barrier；已知写失败/取消拒绝reader，晚错误汇入整图原Completion。",
+    "所有子工作真实退休后才能回收；首次take在撤销准备前锁存所有共享/native事务的整图成功结果。",
+    "Apple冷配置先检查原Runtime开放/失败状态；native writer及reader配置改变先使原录制和准备失效。",
+    "Apple pure区域按boundary输出检查，允许producer服务合法零公开输出effect图；公开wholeGraph无输出仍拒。",
+    "Vulkan CMake补列既有native_ragged_region.cc，两端加入同一原生追加消费者测试。"
+  ],
+  "validation": {
+    "CPU": {
+      "exit": 0,
+      "checks": 13,
+      "receipt": "stage/cpu-run2/run.result.json",
+      "stdout": "paged append ordinary Graph copy-producer/COW/page-boundary/attention/exact-ready/old-snapshot F16 PASS\npaged append ordinary Graph copy-producer/COW/page-boundary/attention/exact-ready/old-snapshot BF16 PASS\npaged append missing original control edge preserves original pages PASS\npaged append accepted-prefix error retains old snapshot, rejects publication, recovers original pages PASS\npaged append opaque Session frame composition and independent ready projection PASS\npaged append nonmonotonic IDs/original writer order/shared full prefix/independent COW/dirty sharing rejection PASS\npaged append ordinary Graph copy-producer/COW/page-boundary/attention/exact-ready/old-snapshot BF16 PASS\npaged append wrong finite-child layout preserves original pages PASS\npaged append one symbolic Graph finite child T1 causal attention/exact-ready PASS\npaged append one symbolic Graph finite child T2 causal attention/exact-ready PASS\npaged append exclusive same-page suffix/retired rollback retry/bounded old snapshot/no-tail COW BF16 PASS\npaged append writer-only two effects/no reader/COW/stale-submit/whole-failure ready PASS\npaged append writer-only two effects/no reader/COW/stale-submit/whole-failure failed PASS\n",
+      "coverage": "既有F16/BF16因果oracle、COW/页边界、原帧合成/非顺序页ID/共享旧前缀、符号有限T1/T2、独占尾权rollback、writer-only及wholeGraph失败后不发布/恢复。"
+    },
+    "Metal": {
+      "exit": 0,
+      "model": "Mac16,12 / Apple M4 / 16GiB",
+      "image": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/native-paged-effects-20261022/lowering-fix1/native-append",
+        "bytes": 11828592,
+        "sha256": "593860d1cafd94e1abb6f5cd77358bbf7086ca30542856f7cd06c20043c8ccea"
+      },
+      "stdout": "native paged append missing direct reader edge preserves caller pages PASS\nnative Cast producer -> two writer-only effects exact COW/old NaN/two-take latch/reset/stale-submit PASS\nnative Cast producer -> two effects -> causal attention exact COW/old NaN/two-take latch/reset/stale-submit PASS\n",
+      "receipt": "stage/apple/mac-native-lowering-fix1-run1.json"
+    },
+    "Vulkan": {
+      "exit": 0,
+      "hardware": "NVIDIA GeForce RTX 4070, GPU-e7376560-6f5d-ec19-6ee4-3dd3a2c81ef8, 617.14, 12282 MiB",
+      "image": {
+        "path": "C:/public/project-hyle/hyle/.scratch/native-paged-effects-20261022/vulkan-link1/native-paged-append.exe",
+        "bytes": 68268032,
+        "sha256": "0468d1c60b5550a47842d2508ce6a68f9342089a3a508d31b0dca18dc9716e0c"
+      },
+      "stdout": "native paged append missing direct reader edge preserves caller pages PASS\nnative Cast producer -> two writer-only effects exact COW/old NaN/two-take latch/reset/stale-submit PASS\nnative Cast producer -> two effects -> causal attention exact COW/old NaN/two-take latch/reset/stale-submit PASS\n",
+      "receipt": "stage/vulkan-run1/run.result.json"
+    },
+    "native_case_geometry": {
+      "dtype": "F16",
+      "page_rows": 16,
+      "qk_and_value_depth": 64,
+      "query_heads": 2,
+      "kv_heads": 1,
+      "previous_rows": 3,
+      "new_rows": 2,
+      "previous_physical_page": 0,
+      "cow_page": 1,
+      "old_values": [
+        1,
+        2,
+        3
+      ],
+      "new_values": [
+        4,
+        5
+      ],
+      "query_and_keys": 0,
+      "expected_causal_means": [
+        2.5,
+        3.0
+      ],
+      "unused_old_tail": "NaN bits preserved exactly"
+    },
+    "native_cases": [
+      "缺直接reader依赖，拒绝且不消耗调用方Pages。",
+      "原生F32→F16 Cast产出K/V，双writer-only effect，无公开tensor输出。",
+      "相同producer及写页直接接同Graph原生因果attention，核独立均值。"
+    ],
+    "native_lifetime_checks": [
+      "原旧frame与整页字节/NaN尾不变。",
+      "原Pages确实转移；未take时reset拒绝。",
+      "双take后两事务均可ready，验证首次take锁存兄弟事务成功结果。",
+      "take后未经重绑的旧提交拒绝，ready帧继续持真实旧/新页guard。"
+    ],
+    "builds": {
+      "Windows_host_CXX": 17,
+      "Mac_initial_Hyle_CXX_or_ObjCXX": 48,
+      "Mac_consumer_CXX": 1,
+      "Mac_corrective_lowering_CXX": 1,
+      "reused_Mac_Hyle_objects": 89,
+      "Windows_Vulkan_link_inputs": 171,
+      "SDK_builds": 0,
+      "NVCC_builds": 0,
+      "shader_builds": 0,
+      "note": "Windows第二批6个owner随共享私有header的准确队列合同注释/冷拒修正刷新；CPU已通过后未为注释重复跑。Mac按缓存源码/依赖差异刷新相关Hyle owner，不重造MLX/ggml。"
+    }
+  },
+  "actual_failures_and_corrections": [
+    {
+      "kind": "验证缓存选择",
+      "evidence": "stage/cpu-run1/run.stderr.log",
+      "result": "首CPU测试误用CUDA消费者闭包的旧CPU原生DLL，独立ready对照同样非因果。沿已有CPU追加闭包选择既有HYCA selector/baseline及匹配DLL后13项通过；无算术/预期放宽或新SDK构建。"
+    },
+    {
+      "kind": "产品实现接缝",
+      "evidence": "stage/apple/mac-native-run1.json",
+      "result": "首Metal运行缺edge用例通过，writer-only被Apple lowering的整图公开输出数量门拒绝。只修区域boundary输出门并重编1个TU/重包1库/重链，3例通过，fixture未加假输出。"
+    }
+  ],
+  "limitations": [
+    "本批原生数值仅F16/page16/D64/单请求2新行及一页COW；BF16行复制已有实现，但其完整native attention/MTP组合未由本批证明。",
+    "本批未新增原生在途阻塞取消、故障注入、设备丢失、encoded页写、所有shape/模型或量化测试。CPU失败回归不是原生设备故障验收。",
+    "Vulkan保本地固定SDK及其原生ABI；已有旧私有声明字段比对及新detach实现接线，不把未运行的量化叶或七个历史对象身份缺口签为全平台通过。",
+    "当前真实Qwen使用compute::PagedAttention(capacity)+显式metadata四输入；本批原生reader是owned-layout的graph::batch::PagedAttention。前者的原生接线是下一明确实现缺口，不能把本批测试算完整Qwen跨平台。",
+    "没有Qwen调用或新增TPS/显存性能窗口；current-work页末已有四臂表不改写。"
+  ],
+  "next_action": "沿原native页reader冷准备承载Qwen的capacity+metadata合同，先做同一有限Graph的T1/T2及所需精度/状态组合，再换消费者冷装配/加载/I/O；维持原完整head提交协议，不在各层新增平台分支。",
+  "sources": [
+    {
+      "relative": "include/hyle/graph/detail/region_access.h",
+      "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\graph\\detail\\region_access.h",
+      "bytes": 18373,
+      "sha256": "f6e51fb66ccafd72a831267c850527f04230a1fda83eb4f2b7ca4d6cb015861d"
+    },
+    {
+      "relative": "src/graph/resources.cc",
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\resources.cc",
+      "bytes": 100593,
+      "sha256": "ad0b167d45c78f1ad4be39ca432e7347e431dd4ddb90879ec8dea97348d8fae8"
+    },
+    {
+      "relative": "src/graph_batch/batch.cc",
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph_batch\\batch.cc",
+      "bytes": 92821,
+      "sha256": "ff1028827c8911b12ff05a0c48e125fc4f84f6a75444a6b445d39d625b9c6f9d"
+    },
+    {
+      "relative": "src/graph_batch/paged_append.h",
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph_batch\\paged_append.h",
+      "bytes": 1772,
+      "sha256": "4d1851107106162fd0bb4d139848bad81513c350976f334eab1dba0a42407fa4"
+    },
+    {
+      "relative": "src/graph_batch/paged_append.cc",
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph_batch\\paged_append.cc",
+      "bytes": 54282,
+      "sha256": "97039f71408c75a0e8898d13d29bcbb6f3b58d629390c028f6f93d0275e640db"
+    },
+    {
+      "relative": "src/graph_batch/native_append_regions.h",
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph_batch\\native_append_regions.h",
+      "bytes": 2461,
+      "sha256": "159128dc3daea9a253209d483d716f880c6921bc3aa94e4af100dacc9275d4cf"
+    },
+    {
+      "relative": "src/graph_batch/native_batch_regions.h",
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph_batch\\native_batch_regions.h",
+      "bytes": 5237,
+      "sha256": "02e0ab672bcbcb5b26152aa561e9f0bc5c3ce477e60c6467e4634b38fabcd77f"
+    },
+    {
+      "relative": "src/compute_route_apple/apple_carrier.h",
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_route_apple\\apple_carrier.h",
+      "bytes": 4414,
+      "sha256": "9f8215e4bc4e7fb347ff545d62df59ed624079655b486fc730f0a57d1d62099c"
+    },
+    {
+      "relative": "src/compute_route_apple/apple_context.cc",
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_route_apple\\apple_context.cc",
+      "bytes": 71894,
+      "sha256": "92235ad77fec7a233e64b2fb2ccc1857315ca9a1e624c7087830759520439df2"
+    },
+    {
+      "relative": "src/compute_route_apple/apple_copy_internal.h",
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_route_apple\\apple_copy_internal.h",
+      "bytes": 6588,
+      "sha256": "2fe529e8e857567b37e672789125ba4691681b79f5e9d4703a092dee668aff3f"
+    },
+    {
+      "relative": "src/compute_route_apple/apple_copy_recording.mm",
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_route_apple\\apple_copy_recording.mm",
+      "bytes": 27509,
+      "sha256": "507e39dc7ff37fbf6b7a73824ab266fff563120168ebeb590f8c21193ded1182"
+    },
+    {
+      "relative": "src/graph_route_apple/native_paged_append_region.h",
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph_route_apple\\native_paged_append_region.h",
+      "bytes": 760,
+      "sha256": "8967d1147db7c4fc2525817aa8d7fa70c6428b468be6169ea0dd8310b2c478cf"
+    },
+    {
+      "relative": "src/graph_route_apple/native_paged_append_region.cc",
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph_route_apple\\native_paged_append_region.cc",
+      "bytes": 23326,
+      "sha256": "80b8691d2fc59e1ee0f11538d7f5fc607b783736a9795931ae785bc9af8843df"
+    },
+    {
+      "relative": "src/graph_route_apple/native_region.cc",
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph_route_apple\\native_region.cc",
+      "bytes": 49275,
+      "sha256": "5091353367cdebbbd8f20c7bf719b104d6b1d283dec7cb019f181b76364ecf4f"
+    },
+    {
+      "relative": "src/graph_route_apple/native_paged_region.cc",
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph_route_apple\\native_paged_region.cc",
+      "bytes": 39682,
+      "sha256": "7759ef08fc1b8cf10efeb5135ad12f461cabcda82ab67e66e681613280558c68"
+    },
+    {
+      "relative": "src/graph_route_apple/apple_lowering.cc",
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph_route_apple\\apple_lowering.cc",
+      "bytes": 40981,
+      "sha256": "21ce9320bbac89cd81619a0546435f1c160ef8096c85772a76938ee85450308f"
+    },
+    {
+      "relative": "src/graph_route_apple/CMakeLists.txt",
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph_route_apple\\CMakeLists.txt",
+      "bytes": 435,
+      "sha256": "505de0ba0c531d145d5672f49299ed6406f5fbf1915cda7ee5742cce52465f37"
+    },
+    {
+      "relative": "src/compute_route_vulkan/vulkan_copy_internal.h",
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_route_vulkan\\vulkan_copy_internal.h",
+      "bytes": 2602,
+      "sha256": "bf7dc50a5d5deb9796dcfe8cda85450e29001c32909c38dce72732d7d7c13529"
+    },
+    {
+      "relative": "src/compute_route_vulkan/vulkan_copy_recording.cc",
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_route_vulkan\\vulkan_copy_recording.cc",
+      "bytes": 14971,
+      "sha256": "48b2b434fdb645d9d4d63eab448819a38c0a4d0b33faa70337fea5b5872ab111"
+    },
+    {
+      "relative": "src/graph_route_vulkan/native_paged_append.h",
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph_route_vulkan\\native_paged_append.h",
+      "bytes": 689,
+      "sha256": "0abbf55bd62f08440df3a7a592fc0801186365a8b4b4769cdc35e163cf9708b8"
+    },
+    {
+      "relative": "src/graph_route_vulkan/native_paged_append.cc",
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph_route_vulkan\\native_paged_append.cc",
+      "bytes": 17769,
+      "sha256": "e17ba8bfaf91758140d5daf394fd0e12562bca60c092a44b14b427e6255f79e7"
+    },
+    {
+      "relative": "src/graph_route_vulkan/native_region.cc",
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph_route_vulkan\\native_region.cc",
+      "bytes": 50727,
+      "sha256": "05985f4175fe463c71bc2327cc52ebbbb36554e593c48c2b874a89f324e6071e"
+    },
+    {
+      "relative": "src/graph_route_vulkan/native_paged_region.cc",
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph_route_vulkan\\native_paged_region.cc",
+      "bytes": 37339,
+      "sha256": "26efa08e0e033259e2a89395c516a73a3fa7d728f81b78df290ece8966ae8f3e"
+    },
+    {
+      "relative": "src/graph_route_vulkan/CMakeLists.txt",
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph_route_vulkan\\CMakeLists.txt",
+      "bytes": 434,
+      "sha256": "166d2603c44451d113996a98416fbc1c8a91f247500e9993da38e1e0a6b3d776"
+    },
+    {
+      "relative": "tests/graph_batch/native_paged_append_consumer.cc",
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\graph_batch\\native_paged_append_consumer.cc",
+      "bytes": 18316,
+      "sha256": "6dff19c3618f7346bc538c68fb37ae590043e808aba8d9e2f912c253a045c439"
+    },
+    {
+      "relative": "tests/graph_batch/paged_append_graph_test.cc",
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\graph_batch\\paged_append_graph_test.cc",
+      "bytes": 51840,
+      "sha256": "30b855a339cfb98ea55cbce6a135b9b29967bf11c7cc498088c742b39a6f709b"
+    },
+    {
+      "relative": "tests/graph_batch/CMakeLists.txt",
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\graph_batch\\CMakeLists.txt",
+      "bytes": 10517,
+      "sha256": "b6174911a6b8615a6606ca5367ed44d4aa79a40d1e1ee2bd6f8528c2f3bea7c7"
+    },
+    {
+      "relative": "docs/developer/current-work.md",
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\developer\\current-work.md",
+      "bytes": 37742,
+      "sha256": "b02f33d7e91de1ce0184d818dba44bdd83c628654ff5aaffa471d3a7e11ba833"
+    },
+    {
+      "relative": "docs/architecture/compute-design.md",
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\architecture\\compute-design.md",
+      "bytes": 117164,
+      "sha256": "df1619178f03025d2f632b305bdaa043f1f3606a916b35f44f64a858c21d8d68"
+    },
+    {
+      "relative": "docs/architecture/graph-design.md",
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\architecture\\graph-design.md",
+      "bytes": 16903,
+      "sha256": "53c8f2da270d9da728444dbaa5c8f8c988a8ee0895b6a9c9cbc21ac1ccbf1438"
+    },
+    {
+      "relative": "docs/user/batch-attention.md",
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\user\\batch-attention.md",
+      "bytes": 68170,
+      "sha256": "048b57796623e7a7489133b54b77c00a5b5e478f0ef83bd136f8d65fb2713195"
+    }
+  ],
+  "reproduction": {
+    "Windows_CPU": "python .scratch/native-paged-effects-20261022/build_windows.py resources batch append native-batch cpu-test; link-cpu/run-cpu使用已有正确CPU原生闭包（原实际命令在记录中）。",
+    "Windows_Vulkan": "build_windows.py相关owner编译；vulkan/build_remaining.py link；vulkan/run.py。精确原命令见各compile/link/run receipt。",
+    "Mac": "apple/mac.py prepare; compile --limit 49; link; 首运行保留；apple/correct_lowering.py; apple/run_mac.py --directory lowering-fix1。使用旧SDK缓存原址，固定Mac16,12。",
+    "evidence": "ZIP按SHA去重保存当前源码、可用before/diff、命令、构建身份及实际日志；不归档SDK、对象、DLL、可执行文件、metallib或大link maps。"
+  },
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\native-paged-effects-2026-10-22.zip",
+    "bytes": 2370941,
+    "sha256": "b3ac3804ca54292a214ec16c751ab71c6a6bc61f5ef52a88c77487ba9dd557c5",
+    "unique_files": 362,
+    "logical_files": 586,
+    "uncompressed_unique_bytes": 24124196,
+    "all_archived_SHA_verified": true
+  },
+  "cleanup": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\native-paged-effects-2026-10-22-cleanup.json",
+    "bytes": 13429,
+    "sha256": "d82d4b714383e807c3c15e01654e2d0e46e9f5cc687c3f89968144f1f5900852"
+  }
+}

@@ -118,9 +118,10 @@ StateStoreStats stats_locked(d::StateStoreData &s) noexcept {
   stats.backing_roots += std::uint32_t(s.routes.size());
   return stats;
 }
-void collect_backing(d::StateStoreData &s) noexcept {
+void collect_backing(d::StateStoreData &s, bool keep_snapshots = true) noexcept {
   for (auto &b : s.backing) if (b.anchor.valid() && d::LeaseAccess::unique_read_owner(b.anchor)) {
-    b.anchor.reset(); b.backing = {}; b.metadata = false;
+    if (keep_snapshots && b.snapshot_pool.valid()) continue;
+    b = {};
   }
 }
 bool same_block(const ReadLease &a, const ReadLease &b) noexcept {
@@ -128,10 +129,9 @@ bool same_block(const ReadLease &a, const ReadLease &b) noexcept {
 }
 // Validate every new root/block before changing the ledger. Earlier input
 // handles deduplicate both block records and whole-pool capacity.
-Status preflight_backing(d::StateStoreData &s, std::span<const ReadLease> incoming,
+Status preflight_backing_once(d::StateStoreData &s, std::span<const ReadLease> incoming,
                         std::span<const unsigned char> metadata,
                         StateStoreStats *projected = nullptr) noexcept {
-  collect_backing(s);
   auto stats = stats_locked(s);
   for (std::size_t i = 0; i < incoming.size(); ++i) {
     if (!incoming[i].valid() && metadata[i]) continue; // forecast owned snapshot before allocation
@@ -164,18 +164,37 @@ Status preflight_backing(d::StateStoreData &s, std::span<const ReadLease> incomi
   if (projected) *projected = stats;
   return Status::Ok();
 }
-void retain_backing(d::StateStoreData &s, const ReadLease &incoming, bool metadata) noexcept {
-  for (const auto &b : s.backing) if (b.anchor.valid() && same_block(b.anchor, incoming)) return;
+Status preflight_backing(d::StateStoreData &s, std::span<const ReadLease> incoming,
+                        std::span<const unsigned char> metadata,
+                        StateStoreStats *projected = nullptr) noexcept {
+  collect_backing(s);
+  auto status = preflight_backing_once(s, incoming, metadata, projected);
+  if (status.IsUnavailable()) {
+    collect_backing(s, false); // Idle snapshots must not deny otherwise admissible resources.
+    status = preflight_backing_once(s, incoming, metadata, projected);
+  }
+  return status;
+}
+void retain_backing(d::StateStoreData &s, const ReadLease &incoming, bool metadata,
+                    LeasePool snapshot_pool = {}) noexcept {
+  for (const auto &b : s.backing) if (b.anchor.valid() && same_block(b.anchor, incoming)) {
+    HYLE_FATAL_ASSERT(!snapshot_pool.valid()); return;
+  }
   for (auto &b : s.backing) if (!b.anchor.valid()) {
-    b.backing = *d::LeaseAccess::backing(incoming); b.anchor = incoming; b.metadata = metadata; return;
+    b.backing = *d::LeaseAccess::backing(incoming); b.anchor = incoming; b.metadata = metadata;
+    b.snapshot_pool = std::move(snapshot_pool); return;
   }
   HYLE_FATAL_ASSERT(false); // preflight reserved enough fixed ledger records
+}
+Status check_resource_extent(const StateEntrySpec &spec, std::size_t size) noexcept {
+  HYLE_ASSIGN_OR_RETURN(auto bytes, spec.description.required_bytes());
+  return size == bytes ? Status::Ok()
+      : Status::InvalidArgument("state resource byte extent disagrees with schema");
 }
 Status check_resource(const StateEntrySpec &spec, const ReadLease &value) noexcept {
   if (spec.kind != StateEntryKind::kResource || !value.valid())
     return Status::InvalidArgument("state resource member requires a readonly lease");
-  HYLE_ASSIGN_OR_RETURN(auto bytes, spec.description.required_bytes());
-  if (value.size() != bytes) return Status::InvalidArgument("state resource byte extent disagrees with schema");
+  HYLE_RETURN_IF_ERROR(check_resource_extent(spec, value.size()));
   HYLE_ASSIGN_OR_RETURN(auto tensor, value.tensor(spec.description));
   (void)tensor;
   HYLE_ASSIGN_OR_RETURN(auto b, d::LeaseAccess::backing(value));
@@ -183,14 +202,60 @@ Status check_resource(const StateEntrySpec &spec, const ReadLease &value) noexce
     return Status::InvalidArgument("state member resource disagrees with schema");
   return Status::Ok();
 }
-Result<ReadLease> metadata_copy(d::StateStoreData &s, std::span<const std::byte> source) noexcept {
-  HYLE_ASSIGN_OR_RETURN(auto backing, mem::Buffer::create(mem::system_resource(), source.size(), 64));
-  HYLE_RETURN_IF_ERROR(backing.view().write(source));
-  return ReadLease::adopt(std::move(backing), {.allocator=s.allocator, .resource_budget=s.options.resource_budget});
+struct MetadataSnapshot final { ReadLease ready; LeasePool pool; };
+Result<MetadataSnapshot> metadata_copy(d::StateStoreData &s, std::span<const std::byte> source) noexcept {
+  LeasePool pool;
+  WriteLease writer;
+  for (auto &b : s.backing) {
+    if (!b.snapshot_pool.valid() || b.anchor.size() != source.size() ||
+        !d::LeaseAccess::unique_read_owner(b.anchor)) continue;
+    auto taken = b.anchor.try_write();
+    if (!taken) { if (taken.error().IsUnavailable()) continue; return std::unexpected(taken.error()); }
+    writer = std::move(*taken); pool = std::move(b.snapshot_pool); b = {}; break;
+  }
+  if (!pool.valid()) {
+    const auto fits = [&]() noexcept {
+      const auto stats = stats_locked(s);
+      return stats.retained_blocks < s.options.max_retained_blocks &&
+          source.size() <= s.options.max_host_snapshot_bytes - stats.host_snapshot_bytes &&
+          source.size() <= s.options.max_backing_bytes - stats.backing_bytes;
+    };
+    if (!fits()) collect_backing(s, false);
+    if (!fits()) return std::unexpected(Status::Unavailable("state snapshot capacity before allocation"));
+    HYLE_ASSIGN_OR_RETURN(pool, LeasePool::create(mem::system_resource(), source.size(),
+        {.max_blocks=1, .backing_alignment=64, .allocator=s.allocator, .resource_budget=s.options.resource_budget}));
+    HYLE_ASSIGN_OR_RETURN(writer, pool.allocate(source.size(), 64));
+  }
+  HYLE_ASSIGN_OR_RETURN(auto view, writer.view());
+  HYLE_RETURN_IF_ERROR(view.write(source));
+  HYLE_ASSIGN_OR_RETURN(auto ready, writer.publish());
+  return MetadataSnapshot{std::move(ready), std::move(pool)};
 }
 Status open_draft(const d::StateStoreData &s, const d::StateRecord &r) noexcept {
   if (s.closed || r.finished) return Status::FailedPrecondition("state draft is closed or finalized");
   return r.failure;
+}
+bool owns_copy(const d::StateCell &member, std::uint32_t route, std::uint32_t copy) noexcept {
+  return member.pending && member.route == route && member.copy == copy;
+}
+Status cancel_copy(d::StateStoreData &s, d::StateCell &member) noexcept {
+  if (!member.pending || member.route == UINT32_MAX || member.copy == UINT32_MAX) return Status::Ok();
+  // Revoke this record's native ownership before cancellation can make the
+  // finite slot reusable. A retained failed Ticket/Draft is not a new owner.
+  const auto route = std::exchange(member.route, UINT32_MAX);
+  const auto copy = std::exchange(member.copy, UINT32_MAX);
+  auto &driver = s.routes[route].driver;
+  return driver.cancel(driver.object, copy);
+}
+Status require_copy(d::StateStoreData &s, d::StateRecord &record, d::StateCell &member,
+                    std::uint32_t route, std::uint32_t copy) noexcept {
+  const auto status = open_draft(s, record);
+  if (!status.ok()) {
+    if (owns_copy(member, route, copy)) cancel_copy(s, member).IgnoreError();
+    return status;
+  }
+  return owns_copy(member, route, copy) ? Status::Ok()
+      : Status::FailedPrecondition("state clone ticket no longer owns this copy");
 }
 } // namespace
 
@@ -272,6 +337,7 @@ Result<StateVersion> StateStore::import(std::span<const StateMember> members) no
       return std::unexpected(Status::InvalidArgument("state import must supply the complete schema"));
     d::StateArray<ReadLease> incoming{mem::StdAllocator<ReadLease>(data_->allocator)};
     d::StateArray<unsigned char> seen{mem::StdAllocator<unsigned char>(data_->allocator)};
+    d::StateArray<LeasePool> snapshots{mem::StdAllocator<LeasePool>(data_->allocator)};
     incoming.resize(members.size()); seen.resize(members.size());
     const auto &specs = d::StateAccess::schema(data_->schema)->specs;
     for (const auto &m : members) {
@@ -290,6 +356,7 @@ Result<StateVersion> StateStore::import(std::span<const StateMember> members) no
       if (specs[index].kind == StateEntryKind::kResource) incoming[index] = m.resource;
       else seen[index] = 1;
     }
+    collect_backing(*data_, false);
     StateStoreStats projected;
     HYLE_RETURN_IF_ERROR(preflight_backing(*data_, incoming, seen, &projected));
     // Each owned snapshot creates one fresh block/root. Forecast all bytes and
@@ -304,11 +371,15 @@ Result<StateVersion> StateStore::import(std::span<const StateMember> members) no
     }
     for (const auto &m : members) {
       const auto index = *d::StateAccess::entry(*data_, m.entry);
-      if (seen[index]) { HYLE_ASSIGN_OR_RETURN(incoming[index], metadata_copy(*data_, m.metadata)); }
+      if (seen[index]) {
+        if (snapshots.empty()) snapshots.resize(members.size());
+        HYLE_ASSIGN_OR_RETURN(auto copied, metadata_copy(*data_, m.metadata));
+        incoming[index] = std::move(copied.ready); snapshots[index] = std::move(copied.pool);
+      }
     }
     HYLE_RETURN_IF_ERROR(preflight_backing(*data_, incoming, seen));
     for (std::size_t i = 0; i < incoming.size(); ++i) {
-      retain_backing(*data_, incoming[i], seen[i] != 0);
+      retain_backing(*data_, incoming[i], seen[i] != 0, snapshots.empty() ? LeasePool{} : std::move(snapshots[i]));
       data_->records[slot].members[i].lease = std::move(incoming[i]);
     }
     activate(*data_, slot); return d::StateAccess::version(data_, slot);
@@ -332,13 +403,14 @@ Status StateStore::collect() noexcept {
   std::lock_guard guard(data_->lock);
   Status first;
   for (auto &r : data_->routes) { const auto status = r.driver.collect(r.driver.object); if (first.ok()) first = status; }
-  collect_backing(*data_); return first;
+  collect_backing(*data_, false); return first;
 }
 Status StateStore::close() noexcept {
   if (!data_) return Status::Ok();
   std::lock_guard guard(data_->lock);
   if (data_->closed) return stats_locked(*data_).active_clones ? Status::Unavailable("state clones still retire") : Status::Ok();
   data_->closed = true;
+  collect_backing(*data_, false);
   Status first;
   for (auto &r : data_->routes) { const auto status = r.driver.close(r.driver.object); if (first.ok()) first = status; }
   return first;
@@ -399,9 +471,7 @@ Status StateDraft::cancel() noexcept {
   auto &s = *d::StateAccess::store(*this); std::lock_guard guard(s.lock);
   auto &r = d::StateAccess::record(*this);
   if (!r.finished && r.failure.ok()) r.failure = Status::Cancelled("state draft abandoned");
-  for (auto &m : r.members) if (m.pending && m.route != UINT32_MAX && m.copy != UINT32_MAX) {
-    auto &driver=s.routes[m.route].driver; driver.cancel(driver.object,m.copy).IgnoreError();
-  }
+  for (auto &m : r.members) cancel_copy(s, m).IgnoreError();
   return Status::Ok();
 }
 Status StateDraft::replace(const StateEntryId &id, const ReadLease &value) noexcept {
@@ -423,15 +493,12 @@ Status StateDraft::replace_metadata(const StateEntryId &id, std::span<const std:
   const auto &spec = d::StateAccess::schema(s.schema)->specs[entry];
   if (spec.kind != StateEntryKind::kHostMetadata || value.size() != spec.metadata_bytes)
     return Status::InvalidArgument("state metadata extent disagrees with schema");
-  collect_backing(s);const auto stats=stats_locked(s);
-  if(stats.retained_blocks==s.options.max_retained_blocks ||
-      value.size()>s.options.max_host_snapshot_bytes-stats.host_snapshot_bytes ||
-      value.size()>s.options.max_backing_bytes-stats.backing_bytes)
-    return Status::Unavailable("state snapshot capacity before allocation");
-  HYLE_ASSIGN_OR_RETURN(auto ready, metadata_copy(s, value));
+  collect_backing(s);
+  HYLE_ASSIGN_OR_RETURN(auto copied, metadata_copy(s, value));
   const unsigned char metadata = 1;
-  HYLE_RETURN_IF_ERROR(preflight_backing(s, std::span(&ready, 1), std::span(&metadata, 1)));
-  retain_backing(s, ready, true); r.members[entry].lease = std::move(ready); return Status::Ok();
+  HYLE_RETURN_IF_ERROR(preflight_backing(s, std::span(&copied.ready, 1), std::span(&metadata, 1)));
+  retain_backing(s, copied.ready, true, std::move(copied.pool));
+  r.members[entry].lease = std::move(copied.ready); return Status::Ok();
 }
 Result<StateVersion> StateDraft::finalize() noexcept {
   if (!valid()) return std::unexpected(Status::FailedPrecondition("state draft is empty"));
@@ -568,7 +635,8 @@ Status CloneTicket::request_cancel() noexcept {
   auto *s=d::StateAccess::store(store_);std::lock_guard guard(s->lock);
   auto &record=s->records[draft_];
   if(record.failure.ok()) record.failure=Status::Cancelled("state clone candidate cancelled");
-  auto &driver=s->routes[route_].driver;return driver.cancel(driver.object,slot_);
+  auto &member=record.members[entry_];
+  return owns_copy(member,route_,slot_) ? cancel_copy(*s,member) : Status::Ok();
 }
 Result<StateWriter> CloneTicket::poll() noexcept { return take(false); }
 Result<StateWriter> CloneTicket::wait() noexcept { return take(true); }
@@ -576,21 +644,30 @@ Result<StateWriter> CloneTicket::take(bool wait) noexcept {
   if(!valid()) return std::unexpected(Status::FailedPrecondition("state clone ticket is empty"));
   auto *s=d::StateAccess::store(store_);auto &driver=s->routes[route_].driver;
   if(wait) {
-    { std::lock_guard guard(s->lock);driver.observe(driver.object,slot_,true); }
+    { std::lock_guard guard(s->lock);
+      auto &record=s->records[draft_];
+      HYLE_RETURN_IF_ERROR(require_copy(*s,record,record.members[entry_],route_,slot_));
+      driver.observe(driver.object,slot_,true); }
     const auto terminal=driver.wait(driver.object,slot_);
     { std::lock_guard guard(s->lock);driver.observe(driver.object,slot_,false);
-      if(!terminal.ok() && !terminal.IsUnavailable() && s->records[draft_].failure.ok())
-        s->records[draft_].failure=terminal; }
+      if(!terminal.ok() && !terminal.IsUnavailable()) {
+        auto &record=s->records[draft_];
+        if(record.failure.ok()) record.failure=terminal;
+        auto &member=record.members[entry_];
+        if(owns_copy(member,route_,slot_)) cancel_copy(*s,member).IgnoreError();
+      } }
     if(!terminal.ok()) return std::unexpected(terminal);
   }
   std::lock_guard guard(s->lock);auto &record=s->records[draft_];
-  HYLE_RETURN_IF_ERROR(open_draft(*s,record));
+  HYLE_RETURN_IF_ERROR(require_copy(*s,record,record.members[entry_],route_,slot_));
   auto taken=driver.take(driver.object,slot_,false);
   if(!taken) {
-    if(!taken.error().IsUnavailable()) record.failure=taken.error();
+    if(!taken.error().IsUnavailable()) {
+      record.failure=taken.error();cancel_copy(*s,record.members[entry_]).IgnoreError();
+    }
     return std::unexpected(taken.error());
   }
-  auto &member=record.members[entry_];member.copy=UINT32_MAX;
+  auto &member=record.members[entry_];member.route=member.copy=UINT32_MAX;
   // Transfer this ticket's draft reference; no extra root/permission is made.
   return StateWriter(std::move(store_),draft_,entry_,std::move(*taken));
 }
@@ -618,6 +695,7 @@ Status StateWriter::publish() noexcept {
   if(!writer_.valid()) return Status::FailedPrecondition("native consumer owns the writer; complete its ready reader");
   if(d::LeaseAccess::identity(writer_)!=block_ || writer_.generation()!=generation_)
     return Status::InvalidArgument("state writer mutable handle was replaced by a foreign block");
+  HYLE_RETURN_IF_ERROR(check_resource_extent(d::StateAccess::schema(s->schema)->specs[entry_],writer_.size()));
   // Reserve a tracking record before publish consumes the mutable handle.
   collect_backing(*s);
   if(stats_locked(*s).retained_blocks==s->options.max_retained_blocks)

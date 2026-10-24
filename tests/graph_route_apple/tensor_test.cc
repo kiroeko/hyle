@@ -6,11 +6,54 @@
 
 #include "../compute_route_apple/tensor_test_support.h"
 #include "hyle/graph/apple.h"
+#include "../compute_models/derived_cast_fixture.h"
 
 namespace {
 using namespace apple_tensor_test;
 namespace g = hyle::graph;
 namespace ga = g::apple;
+
+TEST(AppleGraph, ImmutableBfloatCastCapturesOneReadyPayloadAndKeepsPublicValues) {
+  namespace f = derived_cast_test;
+  auto context = a::Context::create().value();
+  for (int mode = 0; mode < 6; ++mode) {
+    SCOPED_TRACE(mode);
+    f::Fixture fixture(mode);
+    auto weight_values = f::weights(0);
+    const auto weight = make(weight_values, {f::columns, f::width}, mx::bfloat16);
+    const auto scale = ready(mx::ones({f::width}, mx::float32, stream()));
+    std::vector<mx::array> constants;
+    if (mode != 1) constants.push_back(weight);
+    constants.push_back(scale);
+    auto program = ga::compile(context, fixture.graph, constants);
+    ASSERT_TRUE(program) << program.error().message();
+    std::array slots{program->create_invocation().value(), program->create_invocation().value()};
+    std::optional<mx::array> previous;
+    std::vector<std::uint64_t> previous_bits;
+    for (int phase = 0; phase < 2; ++phase) {
+      const auto input_values = f::inputs(phase);
+      const auto input = ready(make(input_values, {f::rows, f::width}, mx::float32));
+      if (mode == 1) weight_values = f::weights(phase);
+      std::vector<mx::array> arguments{input};
+      if (mode == 1) arguments.push_back(make(weight_values, {f::columns, f::width}, mx::bfloat16));
+      ASSERT_TRUE(slots[phase].bind(arguments).ok());
+      auto work = slots[phase].submit(); ASSERT_TRUE(work) << work.error().message();
+      auto result = work->wait(); ASSERT_TRUE(result) << result.error().message();
+      const auto arrays = result->get()->arrays();
+      expect(arrays[0], f::reference(input_values, weight_values));
+      if (mode == 2 || mode == 4) expect(arrays[1], weight_values);
+      if (mode == 3) {
+        std::vector<double> transposed(f::columns * f::width);
+        for (std::int64_t n = 0; n < f::columns; ++n)
+          for (std::int64_t k = 0; k < f::width; ++k)
+            transposed[k * f::columns + n] = weight_values[n * f::width + k];
+        expect(arrays[1], transposed);
+      }
+      if (!phase) { previous = arrays[0]; previous_bits = bits(*previous); }
+      else EXPECT_EQ(bits(*previous), previous_bits);
+    }
+  }
+}
 
 TEST(AppleGraph, BFloatCastBoundariesSurviveFusionAndChangedStridedInputs) {
   auto builder = g::GraphBuilder::create().value();
@@ -399,4 +442,68 @@ TEST(AppleGraph, PublishedFusedMaskNativeResultsRetainOwnersAndRebinding) {
     EXPECT_EQ(bits(old_outputs[i]), old_bits[i]);
 }
 
+} // namespace
+
+#include "../compute_models/batched_sink_fixture.h"
+
+namespace {
+TEST(AppleSinkGraph, BatchedSharedAndPerRequestMasksRetainReboundOutputs) {
+  namespace bs = batched_sink_test;
+  for (const int heads : {64, 128})
+    for (const bool batched_mask : {false, true})
+      for (const int queries : {1, 3}) {
+        SCOPED_TRACE(::testing::Message() << "H=" << heads
+            << " mask3=" << batched_mask << " Q=" << queries);
+        bs::Fixture fixture(heads, batched_mask, queries);
+        auto builder = g::GraphBuilder::create().value();
+        std::array<g::ValueId, 5> ports;
+        for (std::size_t i = 0; i < ports.size(); ++i)
+          ports[i] = builder.input(fixture.descriptions[i]).value();
+        const auto sink = builder.add(fixture.operation,
+            ports[0], ports[1], ports[2], ports[3], ports[4]).value();
+        const auto negative = builder.add(c::Unary{c::UnaryKind::kNeg}, sink).value();
+        ASSERT_TRUE(builder.publish(sink).ok());
+        ASSERT_TRUE(builder.publish(negative).ok());
+        auto graph = std::move(builder).finish().value();
+        auto context = a::Context::create().value();
+        auto program = ga::compile(context, graph, {});
+        ASSERT_TRUE(program) << program.error().message();
+        auto invocation = program->create_invocation().value();
+        std::vector<mx::array> retained;
+        std::vector<std::vector<std::uint64_t>> retained_bits;
+        for (int phase = 0; phase < 2; ++phase) {
+          fixture.update(phase);
+          std::vector<mx::array> inputs;
+          for (std::size_t i = 0; i < ports.size(); ++i) {
+            const auto spec = a::input_spec(fixture.descriptions[i]).value();
+            inputs.push_back(ready(mx::array(fixture.payloads[i].data(),
+                spec.shape, mx::float32)));
+          }
+          ASSERT_TRUE(invocation.bind(inputs).ok());
+          auto accepted = invocation.submit();
+          ASSERT_TRUE(accepted) << accepted.error().message();
+          auto finished = accepted->wait();
+          ASSERT_TRUE(finished) << finished.error().message();
+          const auto outputs = finished->get()->arrays();
+          ASSERT_EQ(outputs.size(), 2U);
+          auto expected = fixture.expected();
+          for (std::size_t i = 0; i < outputs.size(); ++i) {
+            EXPECT_EQ(outputs[i].shape(), inputs[0].shape());
+            auto contiguous = ready(mx::contiguous(outputs[i], false, stream()));
+            bs::check(std::span(contiguous.data<float>(), contiguous.size()), expected);
+            ASSERT_FALSE(::testing::Test::HasFailure());
+            if (phase == 0) {
+              retained.push_back(outputs[i]);
+              retained_bits.push_back(bits(outputs[i]));
+            }
+            for (auto &value : expected) value = -value;
+          }
+        }
+        invocation = {};
+        *program = {};
+        ASSERT_TRUE(context.close().ok());
+        for (std::size_t i = 0; i < retained.size(); ++i)
+          EXPECT_EQ(bits(retained[i]), retained_bits[i]);
+      }
+}
 } // namespace

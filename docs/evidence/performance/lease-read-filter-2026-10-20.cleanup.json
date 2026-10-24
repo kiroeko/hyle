@@ -1,0 +1,18 @@
+{
+  "status": "executed",
+  "date_utc": "2026-10-20T00:25:47.076841+00:00",
+  "exit_code": 0,
+  "files": 134,
+  "reclaimed_bytes": 357708303,
+  "script": {
+    "path": "C:\\public\\project-hyle\\hyle\\test.ps1",
+    "bytes": 97178,
+    "sha256": "f44d8432b89014c5e640d53cfaf7c88d9bca7294a04af97a6e12086ac5ef08c4"
+  },
+  "plan": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\lease-read-filter\\cleanup-plan.json",
+    "bytes": 105820,
+    "sha256": "9dcec5687e8430605fda2ca1afaa2c26fbd8641597d7c698fc06d3067c774557"
+  },
+  "retained": "Current product CPU/Qwen/maps, immediate baseline/peer, all cached link inputs, accepted reference64, source/commands/results; duplicate vectors and obsolete images removed"
+}

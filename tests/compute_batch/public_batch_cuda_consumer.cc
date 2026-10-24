@@ -1,7 +1,9 @@
 #include <hyle/compute/batch_execution.h>
 #include <hyle/compute/backends/cuda.h>
+#include <hyle/compute/cuda.h>
 #include <hyle/compute/providers/flashinfer.h>
 #include <hyle/graph/batch.h>
+#include <hyle/graph/cuda.h>
 #include <hyle/simd/dtype.h>
 #include <algorithm>
 #include <array>
@@ -10,7 +12,7 @@
 #include <vector>
 
 #if !defined(HYLE_COMPUTE_FLASHINFER)
-#error public CUDA batch consumer requires qualified Linux FlashInfer
+#error public CUDA batch consumer requires qualified FlashInfer
 #endif
 
 namespace {
@@ -88,14 +90,15 @@ Status oracle(const c::BatchCapacity &cap, const c::BatchLayoutVersion &layout,
   std::printf("public CUDA nonuniform oracle maxError=%.9g PASS\n", maximum);
   return Status::Ok();
 }
-Status exercise(bool paged, bool bf16) {
-  constexpr unsigned depth = 256, page = 16;
+Status exercise(bool paged, bool bf16, unsigned query_heads = 4, unsigned kv_heads = 2,
+                unsigned depth = 256) {
+  constexpr unsigned page = 16;
   const c::BatchCapacity cap{
       .storage = paged ? c::BatchStorage::kPaged : c::BatchStorage::kRagged,
       .query_type=bf16 ? c::DataType::kBFloat16 : c::DataType::kFloat16,.output_type=bf16 ? c::DataType::kBFloat16 : c::DataType::kFloat16,.key_storage=c::CacheStorage::plain(bf16 ? c::DataType::kBFloat16 : c::DataType::kFloat16).value(),.value_storage=c::CacheStorage::plain(bf16 ? c::DataType::kBFloat16 : c::DataType::kFloat16).value(),
       .max_requests = 2, .max_query_rows = 4, .max_kv_rows = 32,
       .max_pages = paged ? 4u : 0u, .max_page_refs = paged ? 3u : 0u,
-      .query_heads = 4, .kv_heads = 2, .qk_head_dim=depth,.value_head_dim=depth,
+      .query_heads = query_heads, .kv_heads = kv_heads, .qk_head_dim=depth,.value_head_dim=depth,
       .page_size = paged ? page : 1u};
   HYLE_ASSIGN_OR_RETURN(auto schema, c::BatchSchema::create(cap));
   const std::array<std::int32_t, 3> qptr{0, 1, 3}, kvptr{0, paged ? 2 : 19, paged ? 3 : 29};
@@ -108,9 +111,7 @@ Status exercise(bool paged, bool bf16) {
       .resource={},
       .max_float_workspace_bytes = 8u << 20, .max_int_workspace_bytes = 64u << 10,
       .max_invocations = 2, .scale = 1.f / std::sqrt(float(depth))};
-  HYLE_ASSIGN_OR_RETURN(auto wrapped, gb::provider(c::flashinfer::provider(), schema, options));
-  HYLE_ASSIGN_OR_RETURN(auto device_id, c::cuda::device(0));
-  HYLE_ASSIGN_OR_RETURN(auto context, c::Context::create(device_id, wrapped));
+  HYLE_ASSIGN_OR_RETURN(auto context, g::cuda::create_context());
   HYLE_ASSIGN_OR_RETURN(auto queue, context.create_queue());
   HYLE_ASSIGN_OR_RETURN(auto device, c::cuda::MemoryResource::create(context, c::cuda::MemoryKind::kDevice));
   HYLE_ASSIGN_OR_RETURN(auto host, c::cuda::MemoryResource::create(context, c::cuda::MemoryKind::kPinnedHost));
@@ -158,37 +159,83 @@ Status exercise(bool paged, bool bf16) {
   HYLE_ASSIGN_OR_RETURN(auto node, builder.add_node(operation, inputs));
   HYLE_ASSIGN_OR_RETURN(auto output_id, builder.result(node));
   HYLE_RETURN_IF_ERROR(builder.publish(output_id));
+  HYLE_ASSIGN_OR_RETURN(auto second_node, builder.add_node(operation, inputs));
+  HYLE_ASSIGN_OR_RETURN(auto second_output_id, builder.result(second_node));
+  HYLE_RETURN_IF_ERROR(builder.publish(second_output_id));
   HYLE_ASSIGN_OR_RETURN(auto graph, std::move(builder).finish());
-  const std::array storage{g::StorageDomain{device.ref()}};
-  const std::array targets{g::ExecutionTarget{&context, g::StorageDomainId{0}}};
-  HYLE_ASSIGN_OR_RETURN(auto compiled, g::compile(graph, {storage, targets, {}}, {.operation_fallback = g::OperationFallbackPolicy::kReject}));
-  HYLE_ASSIGN_OR_RETURN(auto invocation, gb::Invocation::create(compiled.executable, std::array{gb::LaneBinding{g::ExecutionLaneId{0}, &context, &queue, host.ref()}}));
-  const std::array layouts{gb::NodeLayout{node, layout}};
-  HYLE_RETURN_IF_ERROR(invocation.prepare_batch(layouts));
+  HYLE_ASSIGN_OR_RETURN(auto compiled, g::cuda::compile(graph, context, device.ref(), {.operation_fallback = g::OperationFallbackPolicy::kReject}));
+  HYLE_ASSIGN_OR_RETURN(auto invocation, compiled.executable.create_invocation({.resources=g::ResourceOptions{}}));
+  const std::array queues{g::QueueBinding{g::ExecutionLaneId{0}, &queue}};
+  const std::array layouts{gb::NodeLayout{node, layout},gb::NodeLayout{second_node,layout}};
+  const gb::PrepareOptions preparation{.host_workspace=host.ref(),
+      .max_float_workspace_bytes=options.max_float_workspace_bytes,
+      .max_int_workspace_bytes=options.max_int_workspace_bytes};
+  HYLE_RETURN_IF_ERROR(gb::prepare(invocation,queues,layouts,preparation));
   for (unsigned i = 0; i < leases.size(); ++i) HYLE_RETURN_IF_ERROR(invocation.bind(inputs[i], descriptions[i], leases[i]));
   HYLE_ASSIGN_OR_RETURN(auto writer, pool.allocate(q.size() * 2));
   HYLE_RETURN_IF_ERROR(invocation.bind(output_id, qdesc, std::move(writer)));
+  HYLE_ASSIGN_OR_RETURN(auto second_writer, pool.allocate(q.size() * 2));
+  HYLE_RETURN_IF_ERROR(invocation.bind(second_output_id, qdesc, std::move(second_writer)));
 #if defined(HYLE_G06_CAPTURE_REPLAY)
-  HYLE_RETURN_IF_ERROR(invocation.prepare_replay());
+  HYLE_RETURN_IF_ERROR(gb::prepare_replay(invocation,queues));
 #endif
-  HYLE_ASSIGN_OR_RETURN(auto graph_done, invocation.submit());
+  HYLE_RETURN_IF_ERROR(invocation.prepare_replay(queues,{.mode=g::ReplayMode::kCommands,.host_wait=g::HostWaitPolicy::kReject}));
+  HYLE_ASSIGN_OR_RETURN(auto graph_done, invocation.submit(queues));
   HYLE_RETURN_IF_ERROR(graph_done.wait());
-  HYLE_ASSIGN_OR_RETURN(auto graph_output, invocation.output(output_id));
+  HYLE_ASSIGN_OR_RETURN(auto report, gb::report(invocation,node));
+  HYLE_ASSIGN_OR_RETURN(auto second_report, gb::report(invocation,second_node));
+  HYLE_RETURN_IF_ERROR(check(second_report.metadata_staging_bytes==0,
+      "shared Graph metadata was uploaded a second time"));
+  HYLE_ASSIGN_OR_RETURN(auto graph_output, invocation.result(output_id));
   HYLE_ASSIGN_OR_RETURN(auto result, graph_output.storage_lease());
   HYLE_RETURN_IF_ERROR(oracle(cap, layout, q, k, v, result, bf16));
-  HYLE_RETURN_IF_ERROR(check(!invocation.prepare_batch(layouts).ok(), "public Graph old output allowed overwrite"));
-  HYLE_ASSIGN_OR_RETURN(auto report, invocation.report(node));
+  HYLE_ASSIGN_OR_RETURN(auto second_graph_output, invocation.result(second_output_id));
+  HYLE_ASSIGN_OR_RETURN(auto second_result, second_graph_output.storage_lease());
+  HYLE_RETURN_IF_ERROR(oracle(cap, layout, q, k, v, second_result, bf16));
+  HYLE_RETURN_IF_ERROR(check(!gb::prepare(invocation,queues,layouts,preparation).ok(), "public Graph old output allowed overwrite"));
   HYLE_RETURN_IF_ERROR(check(report.layout_generation == layout.generation(), "public Graph mirror generation differs"));
 #if defined(HYLE_G06_CAPTURE_REPLAY)
   HYLE_RETURN_IF_ERROR(check(report.capture_compatible,"public Graph native batch capture not prepared"));
-  HYLE_RETURN_IF_ERROR(check(!invocation.prepare_replay().ok(),"public Graph captured replay ignored old output"));
+  HYLE_RETURN_IF_ERROR(check(!gb::prepare_replay(invocation,queues).ok(),"public Graph captured replay ignored old output"));
 #endif
-  std::printf("public CUDA FlashInfer %s %s D256 Direct/Graph GQA/causal/active-capacity/page-tail/old-output PASS\n",
-              paged ? "paged" : "ragged", bf16 ? "BF16" : "F16");
+  std::printf("public CUDA FlashInfer %s %s H%u/KV%u D%u CTA%u Direct/Graph GQA/causal/active-capacity/page-tail/old-output PASS\n",
+              paged ? "paged" : "ragged", bf16 ? "BF16" : "F16", query_heads, kv_heads,
+              depth, report.cta_tile_q);
+  return Status::Ok();
+}
+Status default_context_exposes_batch(unsigned depth = 256, unsigned query_heads = 24,
+                                     unsigned kv_heads = 4) {
+  HYLE_ASSIGN_OR_RETURN(auto context, c::cuda::create_context());
+  HYLE_ASSIGN_OR_RETURN(auto device, c::cuda::MemoryResource::create(context, c::cuda::MemoryKind::kDevice));
+  HYLE_ASSIGN_OR_RETURN(auto host, c::cuda::MemoryResource::create(context, c::cuda::MemoryKind::kPinnedHost));
+  const c::BatchCapacity cap{
+      .storage = c::BatchStorage::kRagged,
+      .max_requests = 1, .max_query_rows = 1, .max_kv_rows = 1,
+      .max_pages = 0, .max_page_refs = 0,
+      .query_heads = query_heads, .kv_heads = kv_heads, .qk_head_dim = depth,
+      .value_head_dim = depth, .page_size = 1};
+  HYLE_ASSIGN_OR_RETURN(auto schema, c::BatchSchema::create(cap));
+  HYLE_ASSIGN_OR_RETURN(auto program, c::BatchProgram::prepare(context, schema, {
+      .resource = device.ref(), .host_workspace = host.ref(),
+      .max_float_workspace_bytes = 1u << 20,
+      .max_int_workspace_bytes = 64u << 10, .scale = 1.F / std::sqrt(float(depth))}));
+  HYLE_RETURN_IF_ERROR(context.drain());
+  std::printf("public default CUDA context exposes native BatchPlanning H%u/KV%u D%u PASS\n",
+              query_heads, kv_heads, depth);
   return Status::Ok();
 }
 Status run() {
+  HYLE_RETURN_IF_ERROR(default_context_exposes_batch());
+  HYLE_RETURN_IF_ERROR(default_context_exposes_batch(512, 64, 1));
   for (bool paged : {false, true}) for (bool bf16 : {false, true}) HYLE_RETURN_IF_ERROR(exercise(paged, bf16));
+  // Qwen3.8-27B's 24/4 heads require the non-power-of-two GQA ratio six.
+  for (bool paged : {false, true}) for (bool bf16 : {false, true}) HYLE_RETURN_IF_ERROR(exercise(paged, bf16, 24, 4));
+  // GLM-5.3-Flash's absorbed latent has 64 query heads and D512 K/V.
+  // These packed lengths exercise both native high-dimensional CTA16/32.
+  for (bool paged : {false, true}) for (bool bf16 : {false, true}) {
+    HYLE_RETURN_IF_ERROR(exercise(paged, bf16, 4, 2, 512));
+    HYLE_RETURN_IF_ERROR(exercise(paged, bf16, 64, 1, 512));
+  }
   return Status::Ok();
 }
 } // namespace

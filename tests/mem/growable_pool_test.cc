@@ -77,8 +77,8 @@ TEST(GrowableObjectPool, ConstructorThrowReturnsSlotToPool) {
   pool.destroy(value);
 }
 
-// Move transfers ownership (and the allocator -- clay's move-assign bug). The
-// moved-from pool is empty; the moved-to frees correctly via the right allocator.
+// Move transfers block and allocator ownership together. The moved-from pool
+// is empty; the destination frees through the original allocator.
 TEST(GrowableObjectPool, MoveTransfersOwnership) {
   GrowableObjectPool<int> a(system_allocator(), 8);
   int* p = a.create(7);

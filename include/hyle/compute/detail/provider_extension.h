@@ -8,6 +8,7 @@
 namespace hyle::compute::detail {
 
 struct ContextState;
+class ContextRef;
 struct ProviderExtensionAccess;
 
 // Internal copyable capability handle. It retains the exact Context/provider
@@ -43,6 +44,7 @@ private:
                        ProviderInstanceId instance) noexcept;
 
   friend struct ProviderExtensionAccess;
+  friend class ContextRef;
   ContextState *owner_ = nullptr;
   void *provider_context_ = nullptr;
   const void *interface_ = nullptr;
@@ -61,12 +63,18 @@ using ProviderExtensionCallFn = Status (*)(void *provider_context,
 
 using ProviderExtensionSubmitFn =
     EnqueueResult (*)(void *provider_context, const void *interface_value,
-                      void *call_context, Queue &queue) noexcept;
+                      void *call_context, QueueSequence &sequence) noexcept;
 
 struct ProviderExtensionAccess final {
   HYLE_COMPUTE_API static Result<ProviderExtensionRef>
   query(const Context &context, std::size_t provider_index,
         ProviderExtensionId id) noexcept;
+  HYLE_COMPUTE_API static Result<ProviderExtensionRef>
+  query(const ContextRef &context, std::size_t provider_index,
+        ProviderExtensionId id) noexcept;
+  // Query another cold capability of this exact retained Context/instance.
+  HYLE_COMPUTE_API static Result<ProviderExtensionRef>
+  query(const ProviderExtensionRef &source, ProviderExtensionId id) noexcept;
 
   HYLE_COMPUTE_API static Status call(const ProviderExtensionRef &extension,
                                       ProviderExtensionCallFn function,

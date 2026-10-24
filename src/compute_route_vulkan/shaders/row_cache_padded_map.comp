@@ -1,0 +1,43 @@
+#version 450
+layout(local_size_x=128) in;
+layout(binding=0) readonly buffer Ids {uint a[];};
+layout(binding=1) readonly buffer Ranges {uint b[];};
+layout(binding=2) readonly buffer Metadata {uint c[];};
+layout(binding=3) writeonly buffer Physical {uint d[];};
+layout(binding=4) writeonly buffer Mask {uint e[];};
+layout(push_constant) uniform Origins {uint a;uint b;uint c;uint d;uint e;} origin;
+layout(constant_id=0) const uint rows=0;
+layout(constant_id=1) const uint selected=0;
+layout(constant_id=2) const uint columns=0;
+layout(constant_id=3) const uint q_offset=0;
+layout(constant_id=4) const uint kv_offset=0;
+layout(constant_id=5) const uint page_offset=0;
+layout(constant_id=6) const uint tail_offset=0;
+layout(constant_id=7) const uint page_size=1;
+layout(constant_id=8) const uint max_pages=0;
+layout(constant_id=9) const uint max_requests=0;
+layout(constant_id=10) const uint max_refs=0;
+uint word(uint offset){uint at=origin.c+offset*4u,shift=(at&3u)*8u;uint value=c[at/4u]>>shift;
+  if(shift!=0u)value|=c[at/4u+1u]<<(32u-shift);return value;}
+void main(){
+  uint work=(gl_WorkGroupID.y*gl_NumWorkGroups.x+gl_WorkGroupID.x)*128u+gl_LocalInvocationID.x;
+  if(work>=selected)return;
+  uint row=work/(selected/rows),requests=word(4u),query_rows=word(5u),refs=word(7u);
+  bool valid=requests<=max_requests && query_rows==rows && refs<=max_refs;
+  uint lo=0u,hi=requests;
+  if(valid)while(lo<hi){uint mid=lo+(hi-lo)/2u;if(int(word(q_offset+mid+1u))<=int(row))lo=mid+1u;else hi=mid;}
+  bool request_ok=valid && lo<requests;
+  if(request_ok)request_ok=int(word(q_offset+lo))<=int(row)&&int(word(q_offset+lo+1u))>int(row);
+  int first=request_ok?int(word(kv_offset+lo)):0,end=request_ok?int(word(kv_offset+lo+1u)):0,tail=request_ok?int(word(tail_offset+lo)):0;
+  bool span=request_ok && first>=0 && end>=first && uint(end)<=refs && ((end==first&&tail==0)||(end>first&&tail>0&&uint(tail)<=page_size));
+  uint length=span&&end>first?uint(end-first-1)*page_size+uint(tail):0u;
+  int begin=int(b[origin.b/4u+row*2u]),stop=int(b[origin.b/4u+row*2u+1u]);
+  span=span && begin>=0 && stop>=begin && uint(stop)<=length && uint(stop)<=columns;
+  int id=int(a[origin.a/4u+work]),physical=-2;uint bias=0xff800000u;
+  if(span && id>=-1 && (id==-1||uint(id)<columns)){
+    physical=-1;
+    if(id>=begin&&id<stop){int page=int(word(page_offset+uint(first)+uint(id)/page_size));
+      if(page>=0&&uint(page)<max_pages){physical=int(uint(page)*page_size+uint(id)%page_size);bias=0u;}else physical=-2;}
+  }
+  d[origin.d/4u+work]=uint(physical);e[origin.e/4u+work]=bias;
+}

@@ -1,0 +1,17 @@
+{
+  "archive_verified": true,
+  "results_verified": true,
+  "windows": {
+    "files": 16,
+    "retained": 15,
+    "bytes": 399608433.0
+  },
+  "apple": {
+    "verified": true,
+    "deleted": true,
+    "files": 4,
+    "bytes": 38542260,
+    "retained": 10
+  },
+  "other_cache_retained": true
+}

@@ -1,5 +1,7 @@
 #include "hyle/compute/vulkan_weights.h"
+#include "vulkan_weights_internal.h"
 #include "vulkan_transfer_internal.h"
+#include "../compute/weight_assembly.h"
 
 #include <algorithm>
 #include <mutex>
@@ -20,12 +22,81 @@ struct WeightState final {
   std::vector<SelectedWeight, mem::StdAllocator<SelectedWeight>> selected;
   std::vector<UploadPart, mem::StdAllocator<UploadPart>> parts;
   Tensor destination;
+  mem::MemoryResourceRef device_resource;
   TransferSlot transfer;
   Completion completion;
+  compute::WeightUploadReport report;
   std::mutex completion_mutex;
-  std::size_t capacity = 0, count = 0;
+  std::size_t capacity = 0, count = 0, max_fragments = 0;
 };
+namespace {
+Result<CompletionPoll> poll_weight(WeightState &state) noexcept {
+  auto result = state.completion.poll();
+  if (!result) state.report.copied_bytes_unknown = true;
+  else if (*result == CompletionPoll::kComplete && state.report.submitted_bytes != 0) {
+    state.report.completed_bytes = state.report.submitted_bytes;
+    state.report.copied_bytes_unknown = false;
+  }
+  return result;
+}
+Status wait_weight(WeightState &state) noexcept {
+  auto result = state.completion.wait();
+  if (!result.ok()) state.report.copied_bytes_unknown = true;
+  else if (state.report.submitted_bytes != 0) {
+    state.report.completed_bytes = state.report.submitted_bytes;
+    state.report.copied_bytes_unknown = false;
+  }
+  return result;
+}
+} // namespace
 } // namespace detail
+
+Result<detail::WeightBinding> detail::WeightAccess::binding(
+    const WeightBatch &batch, std::uint64_t id) noexcept {
+  auto owner = batch.state_;
+  if (!owner)
+    return std::unexpected(Status::FailedPrecondition("empty Vulkan weight batch"));
+  for (std::size_t i = 0; i < owner->count; ++i) {
+    const auto &entry = owner->selected[i];
+    if (entry.spec.id != id) continue;
+    try {
+      const auto &root = Access::buffer(owner->destination);
+      HYLE_ASSIGN_OR_RETURN(auto padded, buffer_capacity(entry.bytes));
+      if (entry.offset > root->bytes || padded > root->bytes - entry.offset)
+        return std::unexpected(Status::OutOfRange("Vulkan selected weight exceeds original backing"));
+      auto buffer = std::allocate_shared<Buffer>(mem::StdAllocator<Buffer>(owner->allocator));
+      bind_view_buffer(*buffer, root, entry.offset);
+      buffer->device = root->device;
+      // Every selected entry begins at at least four-byte alignment. Upload
+      // clears the complete padded selection; this entry's private padding
+      // cannot overlap the next selected entry. Public authority stays exact.
+      buffer->bytes = padded;
+      // Preserve the Buffer parent pointer and retain the selected batch.
+      buffer->external_owner = std::shared_ptr<const void>(owner, root.get());
+      auto native = Access::tensor(entry.spec.description, std::move(buffer));
+      HYLE_ASSIGN_OR_RETURN(auto storage, MemoryAccess::export_storage(
+          owner->runtime, owner->device_resource, native, owner->allocator));
+      HYLE_ASSIGN_OR_RETURN(auto exact, storage.view().subview(0, entry.bytes));
+      HYLE_ASSIGN_OR_RETURN(auto tensor, ConstTensorView::create(entry.spec.description, exact));
+      return WeightBinding{std::move(owner), std::move(storage), tensor, batch.state_->allocator};
+    } catch (const std::bad_alloc &) {
+      return std::unexpected(Status::ResourceExhausted("Vulkan weight input metadata"));
+    }
+  }
+  return std::unexpected(Status::NotFound("Vulkan weight ID is not selected"));
+}
+Result<CompletionPoll> detail::WeightAccess::poll(WeightState *state) noexcept {
+  if (!state)
+    return std::unexpected(Status::FailedPrecondition("empty Vulkan weight source"));
+  std::unique_lock lock(state->completion_mutex, std::try_to_lock);
+  if (!lock.owns_lock()) return CompletionPoll::kPending;
+  return poll_weight(*state);
+}
+Status detail::WeightAccess::wait(WeightState *state) noexcept {
+  if (!state) return Status::FailedPrecondition("empty Vulkan weight source");
+  std::lock_guard lock(state->completion_mutex);
+  return wait_weight(*state);
+}
 
 WeightBatch::~WeightBatch() = default;
 WeightSlots::~WeightSlots() = default;
@@ -38,12 +109,18 @@ Result<TensorDesc> WeightBatch::description(std::uint64_t id) const noexcept {
 Result<CompletionPoll> WeightBatch::poll() const noexcept {
   if (!state_) return std::unexpected(Status::FailedPrecondition("empty Vulkan weight batch"));
   std::lock_guard lock(state_->completion_mutex);
-  return state_->completion.poll();
+  return detail::poll_weight(*state_);
 }
 Status WeightBatch::wait() const noexcept {
   if (!state_) return Status::FailedPrecondition("empty Vulkan weight batch");
   std::lock_guard lock(state_->completion_mutex);
-  return state_->completion.wait();
+  return detail::wait_weight(*state_);
+}
+Result<compute::WeightUploadReport> WeightBatch::report() const noexcept {
+  if (!state_) return std::unexpected(Status::FailedPrecondition("empty Vulkan weight batch"));
+  std::lock_guard lock(state_->completion_mutex);
+  if (state_->completion.valid()) (void)detail::poll_weight(*state_);
+  return state_->report;
 }
 Result<Tensor> WeightBatch::binding(std::uint64_t id) const noexcept {
   HYLE_ASSIGN_OR_RETURN(auto ready, poll());
@@ -57,7 +134,8 @@ Result<Tensor> WeightBatch::binding(std::uint64_t id) const noexcept {
       const auto &root = detail::Access::buffer(state_->destination);
       detail::bind_view_buffer(*buffer, root, entry.offset);
       buffer->device = root->device;
-      buffer->external_owner = state_; // The state never owns this alias.
+      // The state keeps the parent alive without owning this alias.
+      buffer->external_owner = std::shared_ptr<const void>(state_, root.get());
       return detail::Access::tensor(entry.spec.description, std::move(buffer));
     } catch (const std::bad_alloc &) {
       return std::unexpected(Status::ResourceExhausted("Vulkan weight alias metadata"));
@@ -70,7 +148,7 @@ Result<WeightSlots> WeightSlots::create(
     const Context &context, const MemoryResource &staging, const MemoryResource &device,
     std::span<const WeightSpec> catalog, std::size_t capacity, WeightSlotOptions options) noexcept {
   if (!context.valid() || !staging.valid() || !device.valid() || catalog.empty() || capacity == 0 ||
-      capacity > static_cast<std::size_t>(INT64_MAX) ||
+      capacity > static_cast<std::size_t>(INT64_MAX) || options.max_fragments == 0 ||
       detail::MemoryAccess::runtime(staging) != detail::Access::runtime(context) ||
       detail::MemoryAccess::runtime(device) != detail::Access::runtime(context) ||
       !staging.ref().properties().has(mem::MemoryProperty::kHostAccessible) ||
@@ -95,9 +173,17 @@ Result<WeightSlots> WeightSlots::create(
     for (auto &state : slots.states_) {
       state = std::allocate_shared<detail::WeightState>(mem::StdAllocator<detail::WeightState>(allocator), allocator);
       state->runtime = detail::Access::runtime(context); state->capacity = capacity;
+      state->max_fragments = options.max_fragments;
+      state->device_resource = device.ref();
+      if (catalog.size() > state->catalog.max_size() ||
+          catalog.size() > state->selected.max_size() ||
+          (std::max)(catalog.size(), options.max_fragments) > state->parts.max_size())
+        return std::unexpected(Status::OutOfRange("Vulkan weight metadata capacity exceeds address domain"));
       state->catalog.assign(catalog.begin(), catalog.end());
       std::sort(state->catalog.begin(), state->catalog.end(), [](const auto &a, const auto &b) { return a.id < b.id; });
-      state->selected.resize(catalog.size()); state->parts.resize(catalog.size());
+      state->selected.resize(catalog.size());
+      // The original whole-entry API retains its catalog-sized capacity.
+      state->parts.resize((std::max)(catalog.size(), options.max_fragments));
       HYLE_ASSIGN_OR_RETURN(state->destination, device.allocate(raw,
           {.resource_budget = options.resource_budget, .category = ResourceBudgetCategory::kMigration}));
       HYLE_ASSIGN_OR_RETURN(state->transfer, TransferSlot::create(context, staging, capacity,
@@ -116,13 +202,14 @@ Result<WeightBatch> WeightSlots::upload(std::size_t slot, std::span<const Weight
     return std::unexpected(Status::FailedPrecondition("Vulkan weight batch/Tensor/owner is still retained"));
   std::lock_guard lock(state.completion_mutex);
   if (state.completion.valid()) {
-    HYLE_ASSIGN_OR_RETURN(auto ready, state.completion.poll());
+    HYLE_ASSIGN_OR_RETURN(auto ready, detail::poll_weight(state));
     if (ready == CompletionPoll::kPending)
       return std::unexpected(Status::FailedPrecondition("Vulkan weight upload is pending"));
   }
   if (selection.size() > state.selected.size())
     return std::unexpected(Status::InvalidArgument("too many Vulkan weight fragments"));
-  std::size_t used = 0;
+  state.report = {}; state.count = 0;
+  std::size_t used = 0, logical_bytes = 0;
   for (std::size_t i = 0; i < selection.size(); ++i) {
     const auto &fragment = selection[i];
     const auto found = std::lower_bound(state.catalog.begin(), state.catalog.end(), fragment.id,
@@ -142,18 +229,61 @@ Result<WeightBatch> WeightSlots::upload(std::size_t slot, std::span<const Weight
     state.selected[i] = {*found, used + padding, bytes};
     state.parts[i] = {fragment.source, used + padding};
     used += padding + bytes;
+    logical_bytes += bytes;
   }
+  state.report.logical_bytes = logical_bytes;
   HYLE_ASSIGN_OR_RETURN(auto completion, detail::TransferAccess::upload(state.transfer, state.destination,
-      std::span(state.parts.data(), selection.size()), used));
+      std::span(state.parts.data(), selection.size()), used, &state.report));
   state.completion = std::move(completion); state.count = selection.size();
   return WeightBatch(owner);
+}
+Result<WeightBatch> WeightSlots::upload_slices(
+    std::size_t slot, std::span<const compute::WeightSlice> selection) noexcept {
+  if (closed_ || slot >= 2 || !states_[slot])
+    return std::unexpected(Status::FailedPrecondition("invalid or closed Vulkan weight slot"));
+  auto &owner = states_[slot]; auto &state = *owner;
+  if (owner.use_count() != 1)
+    return std::unexpected(Status::FailedPrecondition("Vulkan weight batch/Tensor/owner is still retained"));
+  std::lock_guard lock(state.completion_mutex);
+  if (state.completion.valid()) {
+    HYLE_ASSIGN_OR_RETURN(auto ready, detail::poll_weight(state));
+    if (ready == CompletionPoll::kPending)
+      return std::unexpected(Status::FailedPrecondition("Vulkan weight upload is pending"));
+  }
+  state.report = {}; state.count = 0;
+  if (selection.size() > state.max_fragments)
+    return std::unexpected(Status::ResourceExhausted("Vulkan weight fragment metadata capacity exceeded"));
+  const auto alignment = (std::max)(std::size_t{4},
+      static_cast<std::size_t>(state.runtime->device->properties.limits.minStorageBufferOffsetAlignment));
+  HYLE_ASSIGN_OR_RETURN(auto size, compute::detail::prepare_weight_slices(
+      std::span<const WeightSpec>(state.catalog), selection,
+      std::span<detail::SelectedWeight>(state.selected), state.capacity, alignment));
+  const std::span<const detail::SelectedWeight> entries(state.selected.data(), size.banks);
+  for (std::size_t i = 0; i < selection.size(); ++i) {
+    HYLE_ASSIGN_OR_RETURN(auto base, compute::detail::weight_slice_offset(entries, selection[i].id));
+    state.parts[i] = {selection[i].source, base + selection[i].destination_offset};
+  }
+  state.report.logical_bytes = size.logical_bytes;
+  HYLE_ASSIGN_OR_RETURN(auto completion, detail::TransferAccess::upload(state.transfer,
+      state.destination, std::span(state.parts.data(), selection.size()), size.physical_bytes,
+      &state.report, true));
+  state.completion = std::move(completion); state.count = size.banks;
+  return WeightBatch(owner);
+}
+Result<compute::WeightUploadReport> WeightSlots::report(std::size_t slot) const noexcept {
+  if (slot >= 2 || !states_[slot])
+    return std::unexpected(Status::FailedPrecondition("invalid Vulkan weight slot"));
+  auto &state = *states_[slot];
+  std::lock_guard lock(state.completion_mutex);
+  if (state.completion.valid()) (void)detail::poll_weight(state);
+  return state.report;
 }
 Status WeightSlots::close() noexcept {
   closed_ = true; Status status;
   for (const auto &state : states_) if (state) {
     std::lock_guard lock(state->completion_mutex);
     if (!state->completion.valid()) continue;
-    const auto terminal = state->completion.wait();
+    const auto terminal = detail::wait_weight(*state);
     if (status.ok()) status = terminal;
   }
   return status;

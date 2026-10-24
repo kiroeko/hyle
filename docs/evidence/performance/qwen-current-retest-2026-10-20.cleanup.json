@@ -1,0 +1,775 @@
+{
+  "passed": true,
+  "date_utc": "2026-10-20T00:01:56.998190+00:00",
+  "reclaimed_bytes": 513800205,
+  "file_count": 77,
+  "removed": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fp8-shared-prologue\\benchmark\\build\\control.exe",
+      "bytes": 118222848,
+      "sha256": "11fe38e2db390093996f4973e21f75b103ecaf88b4c8056d800a8941cec773b5"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fp8-shared-prologue\\benchmark\\build\\control.exp",
+      "bytes": 25011,
+      "sha256": "db67dcede555ecd4cdc28bc573b94b979e30ac5b0ee54c16084751672df48d31"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fp8-shared-prologue\\benchmark\\build\\control.lib",
+      "bytes": 41650,
+      "sha256": "6e6021240d599850ba1dccf0341a4d8a81278adfcfef859a93c118a266481a09"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fp8-shared-prologue\\benchmark\\build\\control.map",
+      "bytes": 36781770,
+      "sha256": "0e4c0fad9d5945982f0055714f9ac369d79bf8dc0457368cefe2ef9fd5f180ef"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fp8-shared-prologue\\benchmark\\build\\new.exe",
+      "bytes": 118223360,
+      "sha256": "028e749e0c79b7e05e268152ded95e3295aa37302efefc0cb1878c434ce1cec9"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fp8-shared-prologue\\benchmark\\build\\new.exp",
+      "bytes": 25003,
+      "sha256": "cfb506eafa74eac679732f28d156c59ef9d19966de611952b12597930c5086b4"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fp8-shared-prologue\\benchmark\\build\\new.lib",
+      "bytes": 41298,
+      "sha256": "ff599a1e2d38a703595037bc03d26501290cb1137416884558125aa8e747bf7a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fp8-shared-prologue\\benchmark\\build\\new.map",
+      "bytes": 36783306,
+      "sha256": "559479d82101d2827fc4db270b233fed5201c37c7d374f72223698b455b2550e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\checks\\one-object\\qwen-probe.exe",
+      "bytes": 117185024,
+      "sha256": "1b810c30ec24aa3a47c6a560a710f8439f632f092d21a31e362020d9455faada"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\checks\\one-object\\qwen-probe.exp",
+      "bytes": 25032,
+      "sha256": "6d1d6b71468480cf0921862b63ce8cd66ce7dd12f06eab5dcc4a380fe8da9ddb"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\checks\\one-object\\qwen-probe.lib",
+      "bytes": 41912,
+      "sha256": "53b8fd7fb8bc9eb8ace7b006800dbaabc0c22ac0febdf046c710ec99e8a355d4"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\checks\\one-object\\qwen-probe.map",
+      "bytes": 34468538,
+      "sha256": "961ebcd9b486d62e0ca82b9554f1c259bf2186265698f10e3a4cdddbd69580e3"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode1\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "e40060187d8c6376d00e58794643dd3f444dceefe29eb675c6ee2b0899131210"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode1\\logits.f32",
+      "bytes": 993280,
+      "sha256": "54999d39e6a46f665fe6f7fc5d22b5136eb5e9b73ae179e5b908b33d7009f326"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode10\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "14f67a52e0c149e904e363021efe444ddabc3de5c45c16e9fb3f4a4c533f8ba9"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode10\\logits.f32",
+      "bytes": 993280,
+      "sha256": "bcc503ff8585699e10eda6c4eb899a900aca16db9f348e3ca1ecba3899e0f4dc"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode11\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "025d250c3511f106ae4dc6f11d659262e917fd545c94c8e18da3253437af50d9"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode11\\logits.f32",
+      "bytes": 993280,
+      "sha256": "a695e7dd458fc3eb5d5e4301d1ca4548bd5d9c38bfe3fed8e05203e2b7f7d43a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode12\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "f7b6685cf738390474f1fa85320df313e39eb469bf0af22dea10c3c016edc06c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode12\\logits.f32",
+      "bytes": 993280,
+      "sha256": "372a79e6f28a730945c45b223bb2a7958ea0d1967e57b8586ff08b4804d54eed"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode13\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "a9d03c31ab0682e9cb017af1eba6e9872778715bea080c5bad77122e4b50a2d6"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode13\\logits.f32",
+      "bytes": 993280,
+      "sha256": "534e20e20dfc7419d234026daa156c0ea2a8cd7d0b81d7394562679b931932b4"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode14\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "25d9877095a26bb7e6c6c2419cb0e182a01b6cd9e40f0bb769c42fcb34fc2dfb"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode14\\logits.f32",
+      "bytes": 993280,
+      "sha256": "52722aedd166038381d5c6732855b3c73804e7f32db14403edaa1fe619ab8e71"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode15\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "be0704805ca7c78aa081b4ac85dd9a017010c913b9260fb1d2f591f0994370e7"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode15\\logits.f32",
+      "bytes": 993280,
+      "sha256": "6c804d67822906c715a8238c52507f61ffa0c62057eb7bac124253ab56b57f84"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode16\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "db38845e211bf589a3a41f9beee7610a37538b9d015df79d7a86744a245b5d09"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode16\\logits.f32",
+      "bytes": 993280,
+      "sha256": "65abecf3cc29af92f817b3cd91cbccd155362a92e779be9c81e77341d9709ea0"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode17\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "ee49ec44b74f98a437c9df25aa3add98bc3247475b2605f16efa8b964c5451f6"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode17\\logits.f32",
+      "bytes": 993280,
+      "sha256": "ad8067b76a35214374e5e585c9671654c547c9a4f4e79bb6b4b589bdfa83b845"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode18\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "d1336e9f037dea6d1a28d519b2300686825b1666ccad9972d9667b91769a97f5"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode18\\logits.f32",
+      "bytes": 993280,
+      "sha256": "500ce9be766ecde9d75c2ed2f7ac0f9b6401806288bd9e545f4227e27c9795a2"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode19\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "72de0d12d75275391252ae195d2b2b19f4d3a234095e2e988ba12455fbe3cf7c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode19\\logits.f32",
+      "bytes": 993280,
+      "sha256": "35be9bd7e307d44e2929605be12977d985b8818af81fcdd59259163b7a748002"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode2\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "f6d075ad86e2e0550617e6dfd6201ae335228ee6808ab8ae8bb3681159663424"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode2\\logits.f32",
+      "bytes": 993280,
+      "sha256": "772199ca4b0550c00635c25bd8036a9b5334cb0c22bb79ce86f6fbd81520df67"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode20\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "43c03820fa5f5b838cd5992205b52f44f12fd82c5585698eb08197f48713cb6f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode20\\logits.f32",
+      "bytes": 993280,
+      "sha256": "aa2082864e5999cce1e72d98d71f1a34f0b59bfbf9a728aba621cce2e25b644f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode21\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "f8188e3da86374d7e412e99e95ebbeb5b542392318adad6c4fe4be6849dbb026"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode21\\logits.f32",
+      "bytes": 993280,
+      "sha256": "d10c058ee22da65190fb9d9c04997754b8484607f6202283f3b89416be4d2580"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode22\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "d6ae658866d9358580e704e5374fec7acf9f66eddb5895a4d09917a7f7f20022"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode22\\logits.f32",
+      "bytes": 993280,
+      "sha256": "96a33dcc9a7b11ab9fa4720a945007c5dac2c4f660cfb04cbcaa77d9fcaf0e9f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode23\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "eb27d0449a834afd98899067feb7ceb33f37f1819e21ff63ac668654c90a8d5a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode23\\logits.f32",
+      "bytes": 993280,
+      "sha256": "dc53f76f793be5e01854f437be46a71985a53861042b08220a8b1e49528b21a0"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode24\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "1b55a229ef3ada9232b7f590977fce3c3b2b7ee56932ceadd8c16f05201a35a1"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode24\\logits.f32",
+      "bytes": 993280,
+      "sha256": "04903c42456b5d223ce673d73794e0aa88a5da810bd58f054cdff7db57bc354c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode25\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "386adc36e11cae2a75fbb2e3fe8b66dfe37d9a6b4d5fd5e73c67f287625b34bd"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode25\\logits.f32",
+      "bytes": 993280,
+      "sha256": "079091277422cd9c20aee9d03a3672ac7223d48ffb8f9fb0869b5434740f244b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode26\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "9ad10d1bc33b02b2ee0bf1df056087f84eb510871bfe4af278e895b3eede0419"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode26\\logits.f32",
+      "bytes": 993280,
+      "sha256": "0ddbec9ca8cb287be9d9dd415e4d7baf53175d100d309a4d3014eb690430270e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode27\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "11126f85e99889de5700986061d56f2759ff5b0eea94bb2636a36707ae2df606"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode27\\logits.f32",
+      "bytes": 993280,
+      "sha256": "ea0c1a5585e84ee37096cf8fb2c531784c352bf43e270bf80bd954bd60e459ef"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode28\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "5b81866d1c8c9d4e282e45025e1b4d4010878e4f367b14ef2d6a08fc27c85c6e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode28\\logits.f32",
+      "bytes": 993280,
+      "sha256": "75083b3b88af9047012de440d3e42c05eb1baa96763f888eddd134da287b8538"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode29\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "b92b40b4fd571a637b2ef95b1634470d63d1ea628f45ce0a117c7a32afe76eb8"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode29\\logits.f32",
+      "bytes": 993280,
+      "sha256": "10e0712c92ed33298e2dd4a5919bd714cef9bb74cb53b19780dbfd2856c791e0"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode3\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "227c7e6548e2159393ddf350d7dfbd1dda87040994ade315075c005ce7798889"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode3\\logits.f32",
+      "bytes": 993280,
+      "sha256": "aff61c4c7ec366a0b25cf583427df267859aca70ab3c9e264268a30f2d45f3d4"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode30\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "ca725572fbf8c186b9bc0c5662173d8ad7dae136b179587657ea87029eb1349f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode30\\logits.f32",
+      "bytes": 993280,
+      "sha256": "42d688f93ec3ae1e4c920fa3a22b1169f1050d0eec291e5b69aa51b54b24e11d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode31\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "886b6f71fcbbcf3f95dc61f7873e43f245f40a4d967d0c2401205fbba52bd95e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode31\\logits.f32",
+      "bytes": 993280,
+      "sha256": "6619c64b58de04545169513c926b852f92822fb64ae0b22fc7efbd9cf8842887"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode4\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "f7d8474a362ca19268b3481791345307fee1026f0a4c871e1227ce3315e7021e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode4\\logits.f32",
+      "bytes": 993280,
+      "sha256": "0ab4e55caa9276fd56d4353c36121014f07342989b570eb9c3f7dfddc21a2bba"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode5\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "850b8196a3ee12fb1ef0f4f71a37155b3b4b394053b616603d33457b3d0c8a19"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode5\\logits.f32",
+      "bytes": 993280,
+      "sha256": "ebb26764856c828fae8d95a751837b1af2fc6101e9207cfa3bdaa0fdea3c7a1e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode6\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "1f04b58f50a488b9599eabf6b360ede1b3e3205fe9f1fd44b2d86dd25adf4484"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode6\\logits.f32",
+      "bytes": 993280,
+      "sha256": "cbda8781111c0ca4ad618ae56c2d840974152770d2d5474c43498bd0e81e2a84"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode7\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "db84650d85f3c3fea8e4c3d4bf891b1fc01a65aad3f7807e8eef53315f7723f2"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode7\\logits.f32",
+      "bytes": 993280,
+      "sha256": "8c90db2481c2110453c52633a8b3153fe37391085de09fb4e5a0943adfe396c1"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode8\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "4ba5e0f90d2c22025d9136092d03307914b18795082217cd34d4aec5c85dfdd6"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode8\\logits.f32",
+      "bytes": 993280,
+      "sha256": "db08f2c1bdd302459dd6151dea7de3d6f37b431d7dfaf3cf191b9ada82858745"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode9\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "e9852a023ec1982b1258a0042712d1abd868575fc9f968798be75da2cd9fdc5a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode9\\logits.f32",
+      "bytes": 993280,
+      "sha256": "e19784e9cb938d33e1a6508bacca54fb44b8807c41f091cdf8b401c161da6cb9"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "441f8e0eea6b8deea8b640bb76efc9dcc1267f3ee4de9e936bcc9fa9110a8ee1"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "3f9f6f36cbefdeae7dc1e5e89b8af0729c2d9d6f59dab28e040a4771d9609b43"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\metadata-inventory.json",
+      "bytes": 20019421,
+      "sha256": "007d2c59635c67be90d752f7e8f33a9804448137aca672c79bc789f9ccf7325c"
+    }
+  ],
+  "protected": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-explicit-rope\\performance-prepared\\peer.exe",
+      "bytes": 35814400,
+      "sha256": "fb169f0282f2a834a61b3e887edaba92d8699814558b0c5f1a13aaf07e0de969"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fp8-shared-prologue\\checks\\host1\\tests.exe",
+      "bytes": 118315008,
+      "sha256": "bc7bd826a80f633f0e9f5e9c9472c1795ac8603ebc6210e8915ac11f73a94d94"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fp8-shared-prologue\\checks\\host1\\tests.map",
+      "bytes": 37050757,
+      "sha256": "d9026ca5ba8f2ce132194ca008e8e8e9d8dbfb4d94055b9fd817079f68b3acee"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\checks\\main1\\qwen.exe",
+      "bytes": 117182976,
+      "sha256": "0e240734d1b82eb69a9af86c2c4e03448f89873a5db9499a435dbf3166458a23"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\checks\\main1\\qwen.map",
+      "bytes": 34468884,
+      "sha256": "0785b9ebd5955475642663317289c61f44d653034a3dc5f712b282de4e65b18e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode1\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "e40060187d8c6376d00e58794643dd3f444dceefe29eb675c6ee2b0899131210"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode1\\logits.f32",
+      "bytes": 993280,
+      "sha256": "54999d39e6a46f665fe6f7fc5d22b5136eb5e9b73ae179e5b908b33d7009f326"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode10\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "14f67a52e0c149e904e363021efe444ddabc3de5c45c16e9fb3f4a4c533f8ba9"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode10\\logits.f32",
+      "bytes": 993280,
+      "sha256": "bcc503ff8585699e10eda6c4eb899a900aca16db9f348e3ca1ecba3899e0f4dc"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode11\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "025d250c3511f106ae4dc6f11d659262e917fd545c94c8e18da3253437af50d9"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode11\\logits.f32",
+      "bytes": 993280,
+      "sha256": "a695e7dd458fc3eb5d5e4301d1ca4548bd5d9c38bfe3fed8e05203e2b7f7d43a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode12\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "f7b6685cf738390474f1fa85320df313e39eb469bf0af22dea10c3c016edc06c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode12\\logits.f32",
+      "bytes": 993280,
+      "sha256": "372a79e6f28a730945c45b223bb2a7958ea0d1967e57b8586ff08b4804d54eed"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode13\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "a9d03c31ab0682e9cb017af1eba6e9872778715bea080c5bad77122e4b50a2d6"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode13\\logits.f32",
+      "bytes": 993280,
+      "sha256": "534e20e20dfc7419d234026daa156c0ea2a8cd7d0b81d7394562679b931932b4"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode14\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "25d9877095a26bb7e6c6c2419cb0e182a01b6cd9e40f0bb769c42fcb34fc2dfb"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode14\\logits.f32",
+      "bytes": 993280,
+      "sha256": "52722aedd166038381d5c6732855b3c73804e7f32db14403edaa1fe619ab8e71"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode15\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "be0704805ca7c78aa081b4ac85dd9a017010c913b9260fb1d2f591f0994370e7"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode15\\logits.f32",
+      "bytes": 993280,
+      "sha256": "6c804d67822906c715a8238c52507f61ffa0c62057eb7bac124253ab56b57f84"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode16\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "db38845e211bf589a3a41f9beee7610a37538b9d015df79d7a86744a245b5d09"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode16\\logits.f32",
+      "bytes": 993280,
+      "sha256": "65abecf3cc29af92f817b3cd91cbccd155362a92e779be9c81e77341d9709ea0"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode17\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "ee49ec44b74f98a437c9df25aa3add98bc3247475b2605f16efa8b964c5451f6"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode17\\logits.f32",
+      "bytes": 993280,
+      "sha256": "ad8067b76a35214374e5e585c9671654c547c9a4f4e79bb6b4b589bdfa83b845"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode18\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "d1336e9f037dea6d1a28d519b2300686825b1666ccad9972d9667b91769a97f5"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode18\\logits.f32",
+      "bytes": 993280,
+      "sha256": "500ce9be766ecde9d75c2ed2f7ac0f9b6401806288bd9e545f4227e27c9795a2"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode19\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "72de0d12d75275391252ae195d2b2b19f4d3a234095e2e988ba12455fbe3cf7c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode19\\logits.f32",
+      "bytes": 993280,
+      "sha256": "35be9bd7e307d44e2929605be12977d985b8818af81fcdd59259163b7a748002"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode2\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "f6d075ad86e2e0550617e6dfd6201ae335228ee6808ab8ae8bb3681159663424"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode2\\logits.f32",
+      "bytes": 993280,
+      "sha256": "772199ca4b0550c00635c25bd8036a9b5334cb0c22bb79ce86f6fbd81520df67"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode20\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "43c03820fa5f5b838cd5992205b52f44f12fd82c5585698eb08197f48713cb6f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode20\\logits.f32",
+      "bytes": 993280,
+      "sha256": "aa2082864e5999cce1e72d98d71f1a34f0b59bfbf9a728aba621cce2e25b644f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode21\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "f8188e3da86374d7e412e99e95ebbeb5b542392318adad6c4fe4be6849dbb026"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode21\\logits.f32",
+      "bytes": 993280,
+      "sha256": "d10c058ee22da65190fb9d9c04997754b8484607f6202283f3b89416be4d2580"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode22\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "d6ae658866d9358580e704e5374fec7acf9f66eddb5895a4d09917a7f7f20022"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode22\\logits.f32",
+      "bytes": 993280,
+      "sha256": "96a33dcc9a7b11ab9fa4720a945007c5dac2c4f660cfb04cbcaa77d9fcaf0e9f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode23\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "eb27d0449a834afd98899067feb7ceb33f37f1819e21ff63ac668654c90a8d5a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode23\\logits.f32",
+      "bytes": 993280,
+      "sha256": "dc53f76f793be5e01854f437be46a71985a53861042b08220a8b1e49528b21a0"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode24\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "1b55a229ef3ada9232b7f590977fce3c3b2b7ee56932ceadd8c16f05201a35a1"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode24\\logits.f32",
+      "bytes": 993280,
+      "sha256": "04903c42456b5d223ce673d73794e0aa88a5da810bd58f054cdff7db57bc354c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode25\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "386adc36e11cae2a75fbb2e3fe8b66dfe37d9a6b4d5fd5e73c67f287625b34bd"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode25\\logits.f32",
+      "bytes": 993280,
+      "sha256": "079091277422cd9c20aee9d03a3672ac7223d48ffb8f9fb0869b5434740f244b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode26\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "9ad10d1bc33b02b2ee0bf1df056087f84eb510871bfe4af278e895b3eede0419"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode26\\logits.f32",
+      "bytes": 993280,
+      "sha256": "0ddbec9ca8cb287be9d9dd415e4d7baf53175d100d309a4d3014eb690430270e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode27\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "11126f85e99889de5700986061d56f2759ff5b0eea94bb2636a36707ae2df606"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode27\\logits.f32",
+      "bytes": 993280,
+      "sha256": "ea0c1a5585e84ee37096cf8fb2c531784c352bf43e270bf80bd954bd60e459ef"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode28\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "5b81866d1c8c9d4e282e45025e1b4d4010878e4f367b14ef2d6a08fc27c85c6e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode28\\logits.f32",
+      "bytes": 993280,
+      "sha256": "75083b3b88af9047012de440d3e42c05eb1baa96763f888eddd134da287b8538"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode29\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "b92b40b4fd571a637b2ef95b1634470d63d1ea628f45ce0a117c7a32afe76eb8"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode29\\logits.f32",
+      "bytes": 993280,
+      "sha256": "10e0712c92ed33298e2dd4a5919bd714cef9bb74cb53b19780dbfd2856c791e0"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode3\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "227c7e6548e2159393ddf350d7dfbd1dda87040994ade315075c005ce7798889"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode3\\logits.f32",
+      "bytes": 993280,
+      "sha256": "aff61c4c7ec366a0b25cf583427df267859aca70ab3c9e264268a30f2d45f3d4"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode30\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "ca725572fbf8c186b9bc0c5662173d8ad7dae136b179587657ea87029eb1349f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode30\\logits.f32",
+      "bytes": 993280,
+      "sha256": "42d688f93ec3ae1e4c920fa3a22b1169f1050d0eec291e5b69aa51b54b24e11d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode31\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "886b6f71fcbbcf3f95dc61f7873e43f245f40a4d967d0c2401205fbba52bd95e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode31\\logits.f32",
+      "bytes": 993280,
+      "sha256": "6619c64b58de04545169513c926b852f92822fb64ae0b22fc7efbd9cf8842887"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode4\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "f7d8474a362ca19268b3481791345307fee1026f0a4c871e1227ce3315e7021e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode4\\logits.f32",
+      "bytes": 993280,
+      "sha256": "0ab4e55caa9276fd56d4353c36121014f07342989b570eb9c3f7dfddc21a2bba"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode5\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "850b8196a3ee12fb1ef0f4f71a37155b3b4b394053b616603d33457b3d0c8a19"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode5\\logits.f32",
+      "bytes": 993280,
+      "sha256": "ebb26764856c828fae8d95a751837b1af2fc6101e9207cfa3bdaa0fdea3c7a1e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode6\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "1f04b58f50a488b9599eabf6b360ede1b3e3205fe9f1fd44b2d86dd25adf4484"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode6\\logits.f32",
+      "bytes": 993280,
+      "sha256": "cbda8781111c0ca4ad618ae56c2d840974152770d2d5474c43498bd0e81e2a84"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode7\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "db84650d85f3c3fea8e4c3d4bf891b1fc01a65aad3f7807e8eef53315f7723f2"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode7\\logits.f32",
+      "bytes": 993280,
+      "sha256": "8c90db2481c2110453c52633a8b3153fe37391085de09fb4e5a0943adfe396c1"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode8\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "4ba5e0f90d2c22025d9136092d03307914b18795082217cd34d4aec5c85dfdd6"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode8\\logits.f32",
+      "bytes": 993280,
+      "sha256": "db08f2c1bdd302459dd6151dea7de3d6f37b431d7dfaf3cf191b9ada82858745"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode9\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "e9852a023ec1982b1258a0042712d1abd868575fc9f968798be75da2cd9fdc5a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode9\\logits.f32",
+      "bytes": 993280,
+      "sha256": "e19784e9cb938d33e1a6508bacca54fb44b8807c41f091cdf8b401c161da6cb9"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "441f8e0eea6b8deea8b640bb76efc9dcc1267f3ee4de9e936bcc9fa9110a8ee1"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "3f9f6f36cbefdeae7dc1e5e89b8af0729c2d9d6f59dab28e040a4771d9609b43"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\view-projection-reuse\\checks\\20261019T191627\\qwen.exe",
+      "bytes": 116948992,
+      "sha256": "fc3638f3eec256eb25a5aa4ac3893484b72360655d53f9a5181e787e5a2100b5"
+    }
+  ],
+  "executed_script": {
+    "path": "C:\\public\\project-hyle\\hyle\\test.ps1",
+    "bytes": 29531,
+    "sha256": "35a51196e034d2bf42f707e2be2cf7c9b7a0aa3aaa164f03ff43147a18885d40"
+  },
+  "script_text": "$ErrorActionPreference = 'Stop'\n$hyleTurnWorkspace = (Resolve-Path -LiteralPath $PSScriptRoot).Path\n$hyleTurnAllowed = @(\n    [System.IO.Path]::GetFullPath((Join-Path $hyleTurnWorkspace '.scratch/architecture-refactor-2026-10-18/fp8-shared-prologue')),\n    [System.IO.Path]::GetFullPath((Join-Path $hyleTurnWorkspace '.scratch/architecture-refactor-2026-10-18/qwen-current-retest'))\n)\n$hyleTurnTargets = @(\n    [pscustomobject]@{ Path='C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fp8-shared-prologue\\benchmark\\build\\control.exe'; SHA256='11fe38e2db390093996f4973e21f75b103ecaf88b4c8056d800a8941cec773b5' }\n    [pscustomobject]@{ Path='C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fp8-shared-prologue\\benchmark\\build\\control.exp'; SHA256='db67dcede555ecd4cdc28bc573b94b979e30ac5b0ee54c16084751672df48d31' }\n    [pscustomobject]@{ Path='C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fp8-shared-prologue\\benchmark\\build\\control.lib'; SHA256='6e6021240d599850ba1dccf0341a4d8a81278adfcfef859a93c118a266481a09' }\n    [pscustomobject]@{ Path='C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fp8-shared-prologue\\benchmark\\build\\control.map'; SHA256='0e4c0fad9d5945982f0055714f9ac369d79bf8dc0457368cefe2ef9fd5f180ef' }\n    [pscustomobject]@{ Path='C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fp8-shared-prologue\\benchmark\\build\\new.exe'; SHA256='028e749e0c79b7e05e268152ded95e3295aa37302efefc0cb1878c434ce1cec9' }\n    [pscustomobject]@{ Path='C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fp8-shared-prologue\\benchmark\\build\\new.exp'; SHA256='cfb506eafa74eac679732f28d156c59ef9d19966de611952b12597930c5086b4' }\n    [pscustomobject]@{ Path='C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fp8-shared-prologue\\benchmark\\build\\new.lib'; SHA256='ff599a1e2d38a703595037bc03d26501290cb1137416884558125aa8e747bf7a' }\n    [pscustomobject]@{ Path='C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fp8-shared-prologue\\benchmark\\build\\new.map'; SHA256='559479d82101d2827fc4db270b233fed5201c37c7d374f72223698b455b2550e' }\n    [pscustomobject]@{ Path='C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\checks\\one-object\\qwen-probe.exe'; SHA256='1b810c30ec24aa3a47c6a560a710f8439f632f092d21a31e362020d9455faada' }\n    [pscustomobject]@{ Path='C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\checks\\one-object\\qwen-probe.exp'; SHA256='6d1d6b71468480cf0921862b63ce8cd66ce7dd12f06eab5dcc4a380fe8da9ddb' }\n    [pscustomobject]@{ Path='C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\checks\\one-object\\qwen-probe.lib'; SHA256='53b8fd7fb8bc9eb8ace7b006800dbaabc0c22ac0febdf046c710ec99e8a355d4' }\n    [pscustomobject]@{ Path='C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\checks\\one-object\\qwen-probe.map'; SHA256='961ebcd9b486d62e0ca82b9554f1c259bf2186265698f10e3a4cdddbd69580e3' }\n    [pscustomobject]@{ Path='C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode1\\hidden.bf16'; SHA256='e40060187d8c6376d00e58794643dd3f444dceefe29eb675c6ee2b0899131210' }\n    [pscustomobject]@{ Path='C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode1\\logits.f32'; SHA256='54999d39e6a46f665fe6f7fc5d22b5136eb5e9b73ae179e5b908b33d7009f326' }\n    [pscustomobject]@{ Path='C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode10\\hidden.bf16'; SHA256='14f67a52e0c149e904e363021efe444ddabc3de5c45c16e9fb3f4a4c533f8ba9' }\n    [pscustomobject]@{ Path='C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode10\\logits.f32'; SHA256='bcc503ff8585699e10eda6c4eb899a900aca16db9f348e3ca1ecba3899e0f4dc' }\n    [pscustomobject]@{ Path='C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode11\\hidden.bf16'; SHA256='025d250c3511f106ae4dc6f11d659262e917fd545c94c8e18da3253437af50d9' }\n    [pscustomobject]@{ Path='C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode11\\logits.f32'; SHA256='a695e7dd458fc3eb5d5e4301d1ca4548bd5d9c38bfe3fed8e05203e2b7f7d43a' }\n    [pscustomobject]@{ Path='C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode12\\hidden.bf16'; SHA256='f7b6685cf738390474f1fa85320df313e39eb469bf0af22dea10c3c016edc06c' }\n    [pscustomobject]@{ Path='C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode12\\logits.f32'; SHA256='372a79e6f28a730945c45b223bb2a7958ea0d1967e57b8586ff08b4804d54eed' }\n    [pscustomobject]@{ Path='C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode13\\hidden.bf16'; SHA256='a9d03c31ab0682e9cb017af1eba6e9872778715bea080c5bad77122e4b50a2d6' }\n    [pscustomobject]@{ Path='C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode13\\logits.f32'; SHA256='534e20e20dfc7419d234026daa156c0ea2a8cd7d0b81d7394562679b931932b4' }\n    [pscustomobject]@{ Path='C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode14\\hidden.bf16'; SHA256='25d9877095a26bb7e6c6c2419cb0e182a01b6cd9e40f0bb769c42fcb34fc2dfb' }\n    [pscustomobject]@{ Path='C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode14\\logits.f32'; SHA256='52722aedd166038381d5c6732855b3c73804e7f32db14403edaa1fe619ab8e71' }\n    [pscustomobject]@{ Path='C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode15\\hidden.bf16'; SHA256='be0704805ca7c78aa081b4ac85dd9a017010c913b9260fb1d2f591f0994370e7' }\n    [pscustomobject]@{ Path='C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode15\\logits.f32'; SHA256='6c804d67822906c715a8238c52507f61ffa0c62057eb7bac124253ab56b57f84' }\n    [pscustomobject]@{ Path='C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode16\\hidden.bf16'; SHA256='db38845e211bf589a3a41f9beee7610a37538b9d015df79d7a86744a245b5d09' }\n    [pscustomobject]@{ Path='C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode16\\logits.f32'; SHA256='65abecf3cc29af92f817b3cd91cbccd155362a92e779be9c81e77341d9709ea0' }\n    [pscustomobject]@{ Path='C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode17\\hidden.bf16'; SHA256='ee49ec44b74f98a437c9df25aa3add98bc3247475b2605f16efa8b964c5451f6' }\n    [pscustomobject]@{ Path='C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode17\\logits.f32'; SHA256='ad8067b76a35214374e5e585c9671654c547c9a4f4e79bb6b4b589bdfa83b845' }\n    [pscustomobject]@{ Path='C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode18\\hidden.bf16'; SHA256='d1336e9f037dea6d1a28d519b2300686825b1666ccad9972d9667b91769a97f5' }\n    [pscustomobject]@{ Path='C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode18\\logits.f32'; SHA256='500ce9be766ecde9d75c2ed2f7ac0f9b6401806288bd9e545f4227e27c9795a2' }\n    [pscustomobject]@{ Path='C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode19\\hidden.bf16'; SHA256='72de0d12d75275391252ae195d2b2b19f4d3a234095e2e988ba12455fbe3cf7c' }\n    [pscustomobject]@{ Path='C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode19\\logits.f32'; SHA256='35be9bd7e307d44e2929605be12977d985b8818af81fcdd59259163b7a748002' }\n    [pscustomobject]@{ Path='C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode2\\hidden.bf16'; SHA256='f6d075ad86e2e0550617e6dfd6201ae335228ee6808ab8ae8bb3681159663424' }\n    [pscustomobject]@{ Path='C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode2\\logits.f32'; SHA256='772199ca4b0550c00635c25bd8036a9b5334cb0c22bb79ce86f6fbd81520df67' }\n    [pscustomobject]@{ Path='C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode20\\hidden.bf16'; SHA256='43c03820fa5f5b838cd5992205b52f44f12fd82c5585698eb08197f48713cb6f' }\n    [pscustomobject]@{ Path='C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode20\\logits.f32'; SHA256='aa2082864e5999cce1e72d98d71f1a34f0b59bfbf9a728aba621cce2e25b644f' }\n    [pscustomobject]@{ Path='C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode21\\hidden.bf16'; SHA256='f8188e3da86374d7e412e99e95ebbeb5b542392318adad6c4fe4be6849dbb026' }\n    [pscustomobject]@{ Path='C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode21\\logits.f32'; SHA256='d10c058ee22da65190fb9d9c04997754b8484607f6202283f3b89416be4d2580' }\n    [pscustomobject]@{ Path='C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode22\\hidden.bf16'; SHA256='d6ae658866d9358580e704e5374fec7acf9f66eddb5895a4d09917a7f7f20022' }\n    [pscustomobject]@{ Path='C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode22\\logits.f32'; SHA256='96a33dcc9a7b11ab9fa4720a945007c5dac2c4f660cfb04cbcaa77d9fcaf0e9f' }\n    [pscustomobject]@{ Path='C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode23\\hidden.bf16'; SHA256='eb27d0449a834afd98899067feb7ceb33f37f1819e21ff63ac668654c90a8d5a' }\n    [pscustomobject]@{ Path='C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode23\\logits.f32'; SHA256='dc53f76f793be5e01854f437be46a71985a53861042b08220a8b1e49528b21a0' }\n    [pscustomobject]@{ Path='C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode24\\hidden.bf16'; SHA256='1b55a229ef3ada9232b7f590977fce3c3b2b7ee56932ceadd8c16f05201a35a1' }\n    [pscustomobject]@{ Path='C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode24\\logits.f32'; SHA256='04903c42456b5d223ce673d73794e0aa88a5da810bd58f054cdff7db57bc354c' }\n    [pscustomobject]@{ Path='C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode25\\hidden.bf16'; SHA256='386adc36e11cae2a75fbb2e3fe8b66dfe37d9a6b4d5fd5e73c67f287625b34bd' }\n    [pscustomobject]@{ Path='C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode25\\logits.f32'; SHA256='079091277422cd9c20aee9d03a3672ac7223d48ffb8f9fb0869b5434740f244b' }\n    [pscustomobject]@{ Path='C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode26\\hidden.bf16'; SHA256='9ad10d1bc33b02b2ee0bf1df056087f84eb510871bfe4af278e895b3eede0419' }\n    [pscustomobject]@{ Path='C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode26\\logits.f32'; SHA256='0ddbec9ca8cb287be9d9dd415e4d7baf53175d100d309a4d3014eb690430270e' }\n    [pscustomobject]@{ Path='C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode27\\hidden.bf16'; SHA256='11126f85e99889de5700986061d56f2759ff5b0eea94bb2636a36707ae2df606' }\n    [pscustomobject]@{ Path='C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode27\\logits.f32'; SHA256='ea0c1a5585e84ee37096cf8fb2c531784c352bf43e270bf80bd954bd60e459ef' }\n    [pscustomobject]@{ Path='C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode28\\hidden.bf16'; SHA256='5b81866d1c8c9d4e282e45025e1b4d4010878e4f367b14ef2d6a08fc27c85c6e' }\n    [pscustomobject]@{ Path='C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode28\\logits.f32'; SHA256='75083b3b88af9047012de440d3e42c05eb1baa96763f888eddd134da287b8538' }\n    [pscustomobject]@{ Path='C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode29\\hidden.bf16'; SHA256='b92b40b4fd571a637b2ef95b1634470d63d1ea628f45ce0a117c7a32afe76eb8' }\n    [pscustomobject]@{ Path='C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode29\\logits.f32'; SHA256='10e0712c92ed33298e2dd4a5919bd714cef9bb74cb53b19780dbfd2856c791e0' }\n    [pscustomobject]@{ Path='C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode3\\hidden.bf16'; SHA256='227c7e6548e2159393ddf350d7dfbd1dda87040994ade315075c005ce7798889' }\n    [pscustomobject]@{ Path='C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode3\\logits.f32'; SHA256='aff61c4c7ec366a0b25cf583427df267859aca70ab3c9e264268a30f2d45f3d4' }\n    [pscustomobject]@{ Path='C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode30\\hidden.bf16'; SHA256='ca725572fbf8c186b9bc0c5662173d8ad7dae136b179587657ea87029eb1349f' }\n    [pscustomobject]@{ Path='C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode30\\logits.f32'; SHA256='42d688f93ec3ae1e4c920fa3a22b1169f1050d0eec291e5b69aa51b54b24e11d' }\n    [pscustomobject]@{ Path='C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode31\\hidden.bf16'; SHA256='886b6f71fcbbcf3f95dc61f7873e43f245f40a4d967d0c2401205fbba52bd95e' }\n    [pscustomobject]@{ Path='C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode31\\logits.f32'; SHA256='6619c64b58de04545169513c926b852f92822fb64ae0b22fc7efbd9cf8842887' }\n    [pscustomobject]@{ Path='C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode4\\hidden.bf16'; SHA256='f7d8474a362ca19268b3481791345307fee1026f0a4c871e1227ce3315e7021e' }\n    [pscustomobject]@{ Path='C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode4\\logits.f32'; SHA256='0ab4e55caa9276fd56d4353c36121014f07342989b570eb9c3f7dfddc21a2bba' }\n    [pscustomobject]@{ Path='C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode5\\hidden.bf16'; SHA256='850b8196a3ee12fb1ef0f4f71a37155b3b4b394053b616603d33457b3d0c8a19' }\n    [pscustomobject]@{ Path='C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode5\\logits.f32'; SHA256='ebb26764856c828fae8d95a751837b1af2fc6101e9207cfa3bdaa0fdea3c7a1e' }\n    [pscustomobject]@{ Path='C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode6\\hidden.bf16'; SHA256='1f04b58f50a488b9599eabf6b360ede1b3e3205fe9f1fd44b2d86dd25adf4484' }\n    [pscustomobject]@{ Path='C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode6\\logits.f32'; SHA256='cbda8781111c0ca4ad618ae56c2d840974152770d2d5474c43498bd0e81e2a84' }\n    [pscustomobject]@{ Path='C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode7\\hidden.bf16'; SHA256='db84650d85f3c3fea8e4c3d4bf891b1fc01a65aad3f7807e8eef53315f7723f2' }\n    [pscustomobject]@{ Path='C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode7\\logits.f32'; SHA256='8c90db2481c2110453c52633a8b3153fe37391085de09fb4e5a0943adfe396c1' }\n    [pscustomobject]@{ Path='C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode8\\hidden.bf16'; SHA256='4ba5e0f90d2c22025d9136092d03307914b18795082217cd34d4aec5c85dfdd6' }\n    [pscustomobject]@{ Path='C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode8\\logits.f32'; SHA256='db08f2c1bdd302459dd6151dea7de3d6f37b431d7dfaf3cf191b9ada82858745' }\n    [pscustomobject]@{ Path='C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode9\\hidden.bf16'; SHA256='e9852a023ec1982b1258a0042712d1abd868575fc9f968798be75da2cd9fdc5a' }\n    [pscustomobject]@{ Path='C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\decode9\\logits.f32'; SHA256='e19784e9cb938d33e1a6508bacca54fb44b8807c41f091cdf8b401c161da6cb9' }\n    [pscustomobject]@{ Path='C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\prefill\\hidden.bf16'; SHA256='441f8e0eea6b8deea8b640bb76efc9dcc1267f3ee4de9e936bcc9fa9110a8ee1' }\n    [pscustomobject]@{ Path='C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\lease-probe\\runs\\run1\\trace\\prefill\\logits.f32'; SHA256='3f9f6f36cbefdeae7dc1e5e89b8af0729c2d9d6f59dab28e040a4771d9609b43' }\n    [pscustomobject]@{ Path='C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\metadata-inventory.json'; SHA256='007d2c59635c67be90d752f7e8f33a9804448137aca672c79bc789f9ccf7325c' }\n)\n$hyleTurnProtected = @(\n    'C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-explicit-rope\\performance-prepared\\peer.exe'\n    'C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fp8-shared-prologue\\checks\\host1\\tests.exe'\n    'C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fp8-shared-prologue\\checks\\host1\\tests.map'\n    'C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\checks\\main1\\qwen.exe'\n    'C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\checks\\main1\\qwen.map'\n    'C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode1\\hidden.bf16'\n    'C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode1\\logits.f32'\n    'C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode10\\hidden.bf16'\n    'C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode10\\logits.f32'\n    'C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode11\\hidden.bf16'\n    'C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode11\\logits.f32'\n    'C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode12\\hidden.bf16'\n    'C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode12\\logits.f32'\n    'C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode13\\hidden.bf16'\n    'C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode13\\logits.f32'\n    'C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode14\\hidden.bf16'\n    'C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode14\\logits.f32'\n    'C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode15\\hidden.bf16'\n    'C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode15\\logits.f32'\n    'C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode16\\hidden.bf16'\n    'C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode16\\logits.f32'\n    'C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode17\\hidden.bf16'\n    'C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode17\\logits.f32'\n    'C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode18\\hidden.bf16'\n    'C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode18\\logits.f32'\n    'C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode19\\hidden.bf16'\n    'C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode19\\logits.f32'\n    'C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode2\\hidden.bf16'\n    'C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode2\\logits.f32'\n    'C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode20\\hidden.bf16'\n    'C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode20\\logits.f32'\n    'C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode21\\hidden.bf16'\n    'C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode21\\logits.f32'\n    'C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode22\\hidden.bf16'\n    'C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode22\\logits.f32'\n    'C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode23\\hidden.bf16'\n    'C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode23\\logits.f32'\n    'C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode24\\hidden.bf16'\n    'C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode24\\logits.f32'\n    'C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode25\\hidden.bf16'\n    'C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode25\\logits.f32'\n    'C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode26\\hidden.bf16'\n    'C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode26\\logits.f32'\n    'C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode27\\hidden.bf16'\n    'C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode27\\logits.f32'\n    'C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode28\\hidden.bf16'\n    'C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode28\\logits.f32'\n    'C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode29\\hidden.bf16'\n    'C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode29\\logits.f32'\n    'C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode3\\hidden.bf16'\n    'C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode3\\logits.f32'\n    'C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode30\\hidden.bf16'\n    'C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode30\\logits.f32'\n    'C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode31\\hidden.bf16'\n    'C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode31\\logits.f32'\n    'C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode4\\hidden.bf16'\n    'C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode4\\logits.f32'\n    'C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode5\\hidden.bf16'\n    'C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode5\\logits.f32'\n    'C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode6\\hidden.bf16'\n    'C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode6\\logits.f32'\n    'C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode7\\hidden.bf16'\n    'C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode7\\logits.f32'\n    'C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode8\\hidden.bf16'\n    'C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode8\\logits.f32'\n    'C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode9\\hidden.bf16'\n    'C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\decode9\\logits.f32'\n    'C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\prefill\\hidden.bf16'\n    'C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\correctness\\trace\\prefill\\logits.f32'\n    'C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\view-projection-reuse\\checks\\20261019T191627\\qwen.exe'\n)\nforeach ($hyleTurnItem in $hyleTurnTargets) {\n    $hyleTurnResolved = (Resolve-Path -LiteralPath $hyleTurnItem.Path).Path\n    $hyleTurnInside = $false\n    foreach ($hyleTurnStage in $hyleTurnAllowed) {\n        if ($hyleTurnResolved.StartsWith($hyleTurnStage.TrimEnd('\\') + '\\', [System.StringComparison]::OrdinalIgnoreCase)) { $hyleTurnInside = $true }\n    }\n    if (-not $hyleTurnInside) { throw \"Target outside current batches: $hyleTurnResolved\" }\n    if ($hyleTurnProtected -contains $hyleTurnResolved) { throw \"Protected file: $hyleTurnResolved\" }\n    if ((Get-Item -LiteralPath $hyleTurnResolved).PSIsContainer) { throw \"Only explicit files may be removed: $hyleTurnResolved\" }\n    if ((Get-FileHash -LiteralPath $hyleTurnResolved -Algorithm SHA256).Hash -ne $hyleTurnItem.SHA256) { throw \"Target changed: $hyleTurnResolved\" }\n}\n[long]$hyleTurnReclaimed = 0\nforeach ($hyleTurnItem in $hyleTurnTargets) {\n    $hyleTurnReclaimed += (Get-Item -LiteralPath $hyleTurnItem.Path).Length\n    Remove-Item -LiteralPath $hyleTurnItem.Path -Force\n}\nWrite-Output \"HYLE_CURRENT_TURN_RECLAIMED_BYTES=$hyleTurnReclaimed\"\n",
+  "archives": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\qwen-current-retest-2026-10-20.zip",
+      "bytes": 388953,
+      "sha256": "7c6d3feee3c83a9db06cfc8b7cfa9e3a972ebd361b0546981103b70bf83262b4"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\qwen-lease-lookup-probe-2026-10-20.zip",
+      "bytes": 126670,
+      "sha256": "21e337db605683c8f1f45a411996835c24340062b97d343389a1b93bb7e66a60"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\fp8-shared-prologue-2026-10-20.zip",
+      "bytes": 3926176,
+      "sha256": "76436565eb3d13df9b69bbedc41af4b597a79ce256caccc846816f149170c348",
+      "payload_count": 815,
+      "entry_count": 816,
+      "crc_verified": true,
+      "payload_sha256_verified": true,
+      "one_read_CRC_and_SHA_per_payload": true
+    }
+  ],
+  "retained": "Current Qwen and tests images/maps, old Qwen/reference images, all link objects/libraries, current64 observations, original references, sources/commands/failures and raw measurements",
+  "status": "Already executed successfully; do not rerun the old deletion list"
+}

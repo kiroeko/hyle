@@ -1,0 +1,739 @@
+{
+  "date": "2026-10-22",
+  "status": "vulkan_R1_plain_K1_passed_multi_session_capacity_incomplete",
+  "implementation": [
+    "Graph-only pure-retired cold binding gate and optional prepare trait; replay/submit strict gates preserved",
+    "One unpublished output epoch through initial export, retry and failed selection; no InvocationState fields added",
+    "Paged/ragged readers use existing whole-owned-block rotation, atomic Tensor/Buffer projection update, complete bind and final seal",
+    "Native consumer execution budget registers actual device/staging/system resources once; cache budget and checked Gather unchanged"
+  ],
+  "changed_files": [
+    {
+      "before": {
+        "path": ".scratch/vulkan-retained-paged-20261022/before/docs/developer/current-work.md",
+        "bytes": 45339,
+        "sha256": "e90f061813cd7bce84e7ff6fc1774b0834599a10bb25ab57ca2aa3253add82a8"
+      },
+      "current": {
+        "path": "docs/developer/current-work.md",
+        "bytes": 47103,
+        "sha256": "6cbad905d4f565dc1883ce505b42fcf005523a00394ddadb9c1863d231cf0594"
+      }
+    },
+    {
+      "before": {
+        "path": ".scratch/vulkan-retained-paged-20261022/before/include/hyle/compute/detail/materialized_native_controller.h",
+        "bytes": 29926,
+        "sha256": "192b5bd239f8e8a53ff6db4142a9ee266f8a64122cab371290ac4e58f7d9c850"
+      },
+      "current": {
+        "path": "include/hyle/compute/detail/materialized_native_controller.h",
+        "bytes": 30214,
+        "sha256": "190948d40d745accfb83d16a7d39f2aba858e789b0ae0690a3b3b540d3a4275d"
+      }
+    },
+    {
+      "before": {
+        "path": ".scratch/vulkan-retained-paged-20261022/before/src/compute_route_vulkan/vulkan_composition_access.h",
+        "bytes": 1096,
+        "sha256": "ba8057faa7ef105ce86bfc2b0ab4167155fc6e5742f27376a278bac09a6e64f1"
+      },
+      "current": {
+        "path": "src/compute_route_vulkan/vulkan_composition_access.h",
+        "bytes": 1424,
+        "sha256": "6045947dea24ce1c2a13d6c2facf35f2a2658dc4153ffd855cab0ca314efa68e"
+      }
+    },
+    {
+      "before": {
+        "path": ".scratch/vulkan-retained-paged-20261022/before/src/compute_route_vulkan/vulkan_program.cc",
+        "bytes": 68413,
+        "sha256": "d6e68d2e74e13a1127d829ec36d79c0d7b23ece10f0a61723db8bb0140a47b25"
+      },
+      "current": {
+        "path": "src/compute_route_vulkan/vulkan_program.cc",
+        "bytes": 70547,
+        "sha256": "bc405ab3ac45160d79461d6d465fccf075d6b77f09d1a8102cc6cc12177905cb"
+      }
+    },
+    {
+      "before": {
+        "path": ".scratch/vulkan-retained-paged-20261022/before/src/graph_route_vulkan/native_paged_region.cc",
+        "bytes": 47602,
+        "sha256": "cfce25a5ded98d0ed5d025fbfe658f0ee12f179aa468846ea1c9a1dd081b6b2f"
+      },
+      "current": {
+        "path": "src/graph_route_vulkan/native_paged_region.cc",
+        "bytes": 48264,
+        "sha256": "602200a88bd5be13a400e5fa7147f29a45dc8df52a2c29b96c6184f99d3d8549"
+      }
+    },
+    {
+      "before": {
+        "path": ".scratch/vulkan-retained-paged-20261022/before/src/graph_route_vulkan/native_ragged_region.cc",
+        "bytes": 21299,
+        "sha256": "49a6caeff235ac8fc7142e9cd8ce0d7e76ee4576fc388b064fb006b50dc1f920"
+      },
+      "current": {
+        "path": "src/graph_route_vulkan/native_ragged_region.cc",
+        "bytes": 22193,
+        "sha256": "a4039899e45e805876ec69291bb7454410bb9b75de726b2f544d0ff1ac701648"
+      }
+    },
+    {
+      "before": {
+        "path": ".scratch/vulkan-retained-paged-20261022/before/tests/graph_route_vulkan/CMakeLists.txt",
+        "bytes": 8203,
+        "sha256": "a1e855cd2e98ad1015f6f37fcd5b81c209157e824b5280ae1daba4d8b27819a4"
+      },
+      "current": {
+        "path": "tests/graph_route_vulkan/CMakeLists.txt",
+        "bytes": 8455,
+        "sha256": "2193a32526255def01a833f9a029fb5a76a2cff03a902672c834b5d92a2d2b78"
+      }
+    },
+    {
+      "before": null,
+      "current": {
+        "path": "tests/graph_route_vulkan/retained_attention_consumer.cc",
+        "bytes": 18532,
+        "sha256": "6d7355c9212e643965c18f81cf8281cddff88fa3b5a2436225a154f3ef12d37b"
+      }
+    },
+    {
+      "before": {
+        "path": ".scratch/vulkan-retained-paged-20261022/before/tools/qwen35_text/README.md",
+        "bytes": 36266,
+        "sha256": "8caae02c7766c7b36a1177847866e0a12ff0d1a9f28ab4c55861c50053f7712c"
+      },
+      "current": {
+        "path": "tools/qwen35_text/README.md",
+        "bytes": 36446,
+        "sha256": "71443b72ba16800557665de4521188a4ee610b93a958fe1f89eada36ab1b8809"
+      }
+    },
+    {
+      "before": {
+        "path": ".scratch/vulkan-retained-paged-20261022/before/tools/qwen35_text/main.cc",
+        "bytes": 279429,
+        "sha256": "29a388d5c85ecca65a22288b1b5d89fa22f471d1c61a5cee18009fba688ddda1"
+      },
+      "current": {
+        "path": "tools/qwen35_text/main.cc",
+        "bytes": 279899,
+        "sha256": "4375293aeaf846cb7c7567065d42652716e6e3460fdc0e7d90ab64237a60202e"
+      }
+    }
+  ],
+  "regressions": {
+    "attention_cases": [
+      "capacity-paged",
+      "owned-paged",
+      "ragged"
+    ],
+    "shape": "BF16/Q2/H2/KVH1/D64/page16",
+    "result": {
+      "path": ".scratch/vulkan-retained-paged-20261022/test-run2/run.result.json",
+      "bytes": 310,
+      "sha256": "94d4cf0ea4fef9456988609204782d25bbd384e59ecb4a091b0e03d21f6abd64"
+    },
+    "checks": [
+      "one Invocation per case, three generations",
+      "old whole and offset slice bytes/read permission unchanged",
+      "typed KV unbind remains rejected; ordinary input withdrawal revokes submit",
+      "no strict submit through partial preparation/binding",
+      "released generation1 backing reused as generation3 spare",
+      "generation2/3 remain readable after Invocation destruction"
+    ],
+    "ordinary_reuse_and_canonical_IO_result": {
+      "path": ".scratch/vulkan-retained-paged-20261022/reuse-run1/run.result.json",
+      "bytes": 312,
+      "sha256": "1c48b4f0732aa4587cae012f89ef3f3ebcbe42ddf0260bdf07e7a34226d4af8a"
+    }
+  },
+  "finite_real_model": {
+    "parameters": "Original P15/natural4, C64, N1/R1, cache256MiB, prefix off, commands",
+    "current_image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\vulkan-retained-paged-20261022\\qwen-link2\\qwen.exe",
+      "bytes": 68982784,
+      "sha256": "118bd52eab44664f35d1b1f8b3b4aacdc4b163b5c71afe3fddfafca267a3daa6"
+    },
+    "generated_ids": [
+      1328,
+      5675,
+      11,
+      9637
+    ],
+    "plain_result": {
+      "path": ".scratch/vulkan-retained-paged-20261022/qwen-plain-run2/result.json",
+      "bytes": 971,
+      "sha256": "5148250dd36e465714dcde8afc9be832e2e8ded6b359136f7a6cf7527383c1fc"
+    },
+    "mtp_result": {
+      "path": ".scratch/vulkan-retained-paged-20261022/qwen-mtp-run2/result.json",
+      "bytes": 971,
+      "sha256": "cdc8b84eb789560075e429b7100708658ab3b23fc521b16e52a87241843c0a18"
+    },
+    "protocol_output_work_comparisons": [
+      {
+        "mode": "plain",
+        "run": {
+          "path": ".scratch/vulkan-retained-paged-20261022/qwen-plain-run2/result.json",
+          "bytes": 971,
+          "sha256": "5148250dd36e465714dcde8afc9be832e2e8ded6b359136f7a6cf7527383c1fc"
+        },
+        "output": {
+          "path": ".scratch/vulkan-retained-paged-20261022/qwen-plain-run2/stdout.log",
+          "bytes": 1769,
+          "sha256": "99e55e9de271c173fe8ff3876377716e42f88844d155d3ef3f2c53fe3cc6f91f"
+        },
+        "comparisons": [
+          {
+            "backend": "CUDA",
+            "reference": {
+              "path": ".scratch/qwen-retained-budget-20261022/cuda-plain/stdout.log",
+              "bytes": 1721,
+              "sha256": "ebc628ed01a0797bb8d83c3a6ef9e9d57d190cb1523834ac1c866d5a7bac1e75"
+            },
+            "equal_fields": {
+              "source_id": true,
+              "score_dtype": true,
+              "score_policy": true,
+              "generated_ids": true,
+              "actual_graph_calls": true,
+              "actual_target_rows": true,
+              "actual_draft_rows": true,
+              "committed_target_rows": true
+            }
+          },
+          {
+            "backend": "Apple",
+            "reference": {
+              "path": ".scratch/qwen-retained-budget-20261022/apple-plain-run1.json",
+              "bytes": 36173,
+              "sha256": "20f53d5ffdffe78686d417ce36534a2e8453c59aba8a8353d127b366dce006da"
+            },
+            "equal_fields": {
+              "source_id": true,
+              "score_dtype": true,
+              "score_policy": true,
+              "generated_ids": true,
+              "actual_graph_calls": true,
+              "actual_target_rows": true,
+              "actual_draft_rows": true,
+              "committed_target_rows": true
+            }
+          }
+        ],
+        "cache": {
+          "cache_budget_scope": "shared_pools_and_retained_output_backing",
+          "cache_shared_backing_bytes": 20521008,
+          "cache_retained_output_backing_bytes": 25026560,
+          "cache_live_requested_bytes": 45547568,
+          "cache_peak_requested_bytes": 74711088,
+          "cache_requested_byte_limit": 268435456
+        }
+      },
+      {
+        "mode": "mtp",
+        "run": {
+          "path": ".scratch/vulkan-retained-paged-20261022/qwen-mtp-run2/result.json",
+          "bytes": 971,
+          "sha256": "cdc8b84eb789560075e429b7100708658ab3b23fc521b16e52a87241843c0a18"
+        },
+        "output": {
+          "path": ".scratch/vulkan-retained-paged-20261022/qwen-mtp-run2/stdout.log",
+          "bytes": 1845,
+          "sha256": "0ef3bc6ea902c8f803ec3123c41535068942c3ba33027617d62775cb303454c6"
+        },
+        "comparisons": [
+          {
+            "backend": "CUDA",
+            "reference": {
+              "path": ".scratch/qwen-retained-budget-20261022/cuda-mtp/stdout.log",
+              "bytes": 1854,
+              "sha256": "06820348fa4f354fc5ad7eef4ec908463a8a61a7d05b365eec3c547396c76f99"
+            },
+            "equal_fields": {
+              "source_id": true,
+              "score_dtype": true,
+              "score_policy": true,
+              "generated_ids": true,
+              "actual_graph_calls": true,
+              "actual_target_rows": true,
+              "actual_draft_rows": true,
+              "committed_target_rows": true,
+              "draft_frontier": true,
+              "draft_lag": true,
+              "rounds": true
+            }
+          },
+          {
+            "backend": "Apple",
+            "reference": {
+              "path": ".scratch/qwen-retained-budget-20261022/apple-mtp-run1.json",
+              "bytes": 67139,
+              "sha256": "692517904d855465d93fd094b128f6da9c2ac43b907299dc4f15e4c69810bdbe"
+            },
+            "equal_fields": {
+              "source_id": true,
+              "score_dtype": true,
+              "score_policy": true,
+              "generated_ids": true,
+              "actual_graph_calls": true,
+              "actual_target_rows": true,
+              "actual_draft_rows": true,
+              "committed_target_rows": true,
+              "draft_frontier": true,
+              "draft_lag": true,
+              "rounds": true
+            }
+          }
+        ],
+        "cache": {
+          "cache_budget_scope": "shared_pools_and_retained_output_backing",
+          "cache_shared_backing_bytes": 20688947,
+          "cache_retained_output_backing_bytes": 33064960,
+          "cache_live_requested_bytes": 53753907,
+          "cache_peak_requested_bytes": 85739571,
+          "cache_requested_byte_limit": 268435456
+        }
+      }
+    ],
+    "quality_pass": false,
+    "performance_comparison": false
+  },
+  "failures": {
+    "fixture": "First attention fixture illegally withdrew source-owned paged KV ports; corrected to require rejection and retain original permissions, no product gate weakened",
+    "multi_session_runs": [
+      {
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\vulkan-retained-paged-20261022\\qwen-link1\\qwen.exe",
+          "--inputs",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-native-assembly-20261022\\inputs\\mtp",
+          "--mtp",
+          "on",
+          "--capacity",
+          "64",
+          "--session-schedules",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-20261022\\fixtures\\sessions.txt",
+          "--max-sessions",
+          "2",
+          "--active-sequences",
+          "2",
+          "--cache-bytes",
+          "auto",
+          "--prefix-cache",
+          "off",
+          "--progress",
+          "direct",
+          "--replay",
+          "commands"
+        ],
+        "cwd": "C:\\public\\project-hyle\\hyle",
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\vulkan-retained-paged-20261022\\qwen-link1\\qwen.exe",
+          "bytes": 68981760,
+          "sha256": "99d63c2730591a543ed10e4725e66b3014c6e7d462625990998b3e8a49cf7a56"
+        },
+        "fixtures": [
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-20261022\\fixtures\\sessions.txt",
+            "bytes": 32,
+            "sha256": "b6dd6cc1769d2e135feb43561920b14c0cf60d6ede18777430b7295fc19aed7e"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-20261022\\fixtures\\a-long.txt",
+            "bytes": 56,
+            "sha256": "5337c980bd52a6296dbf4dc795ce75dab88a51e66db95dbfede1779e71073d01"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-20261022\\fixtures\\b.txt",
+            "bytes": 55,
+            "sha256": "809bb9c24a9a553d97a72a15444e49613f95476f1176403aa8569929701f95c7"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-20261022\\fixtures\\c.txt",
+            "bytes": 56,
+            "sha256": "54e70c1f592b353dd93892b990b89a5149e0f040b8a1e63622795f9d9d20e580"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-20261022\\fixtures\\p15.ids",
+            "bytes": 70,
+            "sha256": "f57af71846ab496f90f1e09a089a8f4651570e975e115bc162084cba74a98868"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-20261022\\fixtures\\p23.ids",
+            "bytes": 113,
+            "sha256": "0459156ffd8f318a1e1e2049e18a063c1b760fed77013afa689584fcc1d20d30"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-20261022\\fixtures\\u1.ids",
+            "bytes": 8,
+            "sha256": "c1a3954da0b521ad1a53c596aaf03e6aa79d9881a6f54aab59fcdd5aabd4d175"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-20261022\\fixtures\\u8.ids",
+            "bytes": 38,
+            "sha256": "09e9bcf99e844541c359b9fa14aca67a9a4a2202a9446614df71f98cb2a6afc9"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-20261022\\fixtures\\u24.ids",
+            "bytes": 120,
+            "sha256": "eb5cc8bc4c2e3190a0852886081224de2c6a0d942553bbe32d013df5f5a605bd"
+          }
+        ],
+        "started": 1792643328.316961,
+        "performance_comparison": false,
+        "pid": 105304,
+        "state": "terminal",
+        "exit": 1,
+        "seconds": 6.128877401351929
+      },
+      {
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\vulkan-retained-paged-20261022\\diagnostic-link1\\qwen.exe",
+          "--inputs",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-native-assembly-20261022\\inputs\\mtp",
+          "--mtp",
+          "on",
+          "--capacity",
+          "64",
+          "--session-schedules",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-20261022\\fixtures\\sessions.txt",
+          "--max-sessions",
+          "2",
+          "--active-sequences",
+          "2",
+          "--cache-bytes",
+          "auto",
+          "--prefix-cache",
+          "off",
+          "--progress",
+          "direct",
+          "--replay",
+          "commands"
+        ],
+        "cwd": "C:\\public\\project-hyle\\hyle",
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\vulkan-retained-paged-20261022\\diagnostic-link1\\qwen.exe",
+          "bytes": 68982784,
+          "sha256": "821f1e869581dc9630d4412ed97c77c2a625a8a3f0c09a4fbc72fea4b98d86de"
+        },
+        "fixtures": [
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-20261022\\fixtures\\sessions.txt",
+            "bytes": 32,
+            "sha256": "b6dd6cc1769d2e135feb43561920b14c0cf60d6ede18777430b7295fc19aed7e"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-20261022\\fixtures\\a-long.txt",
+            "bytes": 56,
+            "sha256": "5337c980bd52a6296dbf4dc795ce75dab88a51e66db95dbfede1779e71073d01"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-20261022\\fixtures\\b.txt",
+            "bytes": 55,
+            "sha256": "809bb9c24a9a553d97a72a15444e49613f95476f1176403aa8569929701f95c7"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-20261022\\fixtures\\c.txt",
+            "bytes": 56,
+            "sha256": "54e70c1f592b353dd93892b990b89a5149e0f040b8a1e63622795f9d9d20e580"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-20261022\\fixtures\\p15.ids",
+            "bytes": 70,
+            "sha256": "f57af71846ab496f90f1e09a089a8f4651570e975e115bc162084cba74a98868"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-20261022\\fixtures\\p23.ids",
+            "bytes": 113,
+            "sha256": "0459156ffd8f318a1e1e2049e18a063c1b760fed77013afa689584fcc1d20d30"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-20261022\\fixtures\\u1.ids",
+            "bytes": 8,
+            "sha256": "c1a3954da0b521ad1a53c596aaf03e6aa79d9881a6f54aab59fcdd5aabd4d175"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-20261022\\fixtures\\u8.ids",
+            "bytes": 38,
+            "sha256": "09e9bcf99e844541c359b9fa14aca67a9a4a2202a9446614df71f98cb2a6afc9"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-20261022\\fixtures\\u24.ids",
+            "bytes": 120,
+            "sha256": "eb5cc8bc4c2e3190a0852886081224de2c6a0d942553bbe32d013df5f5a605bd"
+          }
+        ],
+        "started": 1792643472.5424032,
+        "performance_comparison": false,
+        "pid": 16172,
+        "state": "terminal",
+        "exit": 1,
+        "seconds": 5.899445533752441
+      },
+      {
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\vulkan-retained-paged-20261022\\qwen-link2\\qwen.exe",
+          "--inputs",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-native-assembly-20261022\\inputs\\mtp",
+          "--mtp",
+          "on",
+          "--capacity",
+          "64",
+          "--session-schedules",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-20261022\\fixtures\\sessions.txt",
+          "--max-sessions",
+          "2",
+          "--active-sequences",
+          "2",
+          "--cache-bytes",
+          "auto",
+          "--prefix-cache",
+          "off",
+          "--progress",
+          "direct",
+          "--replay",
+          "commands"
+        ],
+        "cwd": "C:\\public\\project-hyle\\hyle",
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\vulkan-retained-paged-20261022\\qwen-link2\\qwen.exe",
+          "bytes": 68982784,
+          "sha256": "118bd52eab44664f35d1b1f8b3b4aacdc4b163b5c71afe3fddfafca267a3daa6"
+        },
+        "fixtures": [
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-20261022\\fixtures\\sessions.txt",
+            "bytes": 32,
+            "sha256": "b6dd6cc1769d2e135feb43561920b14c0cf60d6ede18777430b7295fc19aed7e"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-20261022\\fixtures\\a-long.txt",
+            "bytes": 56,
+            "sha256": "5337c980bd52a6296dbf4dc795ce75dab88a51e66db95dbfede1779e71073d01"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-20261022\\fixtures\\b.txt",
+            "bytes": 55,
+            "sha256": "809bb9c24a9a553d97a72a15444e49613f95476f1176403aa8569929701f95c7"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-20261022\\fixtures\\c.txt",
+            "bytes": 56,
+            "sha256": "54e70c1f592b353dd93892b990b89a5149e0f040b8a1e63622795f9d9d20e580"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-20261022\\fixtures\\p15.ids",
+            "bytes": 70,
+            "sha256": "f57af71846ab496f90f1e09a089a8f4651570e975e115bc162084cba74a98868"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-20261022\\fixtures\\p23.ids",
+            "bytes": 113,
+            "sha256": "0459156ffd8f318a1e1e2049e18a063c1b760fed77013afa689584fcc1d20d30"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-20261022\\fixtures\\u1.ids",
+            "bytes": 8,
+            "sha256": "c1a3954da0b521ad1a53c596aaf03e6aa79d9881a6f54aab59fcdd5aabd4d175"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-20261022\\fixtures\\u8.ids",
+            "bytes": 38,
+            "sha256": "09e9bcf99e844541c359b9fa14aca67a9a4a2202a9446614df71f98cb2a6afc9"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-20261022\\fixtures\\u24.ids",
+            "bytes": 120,
+            "sha256": "eb5cc8bc4c2e3190a0852886081224de2c6a0d942553bbe32d013df5f5a605bd"
+          }
+        ],
+        "started": 1792643579.8157647,
+        "performance_comparison": false,
+        "pid": 56440,
+        "state": "terminal",
+        "exit": 1,
+        "seconds": 28.763444900512695
+      }
+    ],
+    "budget_cause": {
+      "path": ".scratch/vulkan-retained-paged-20261022/review/b2-budget-cause.json",
+      "bytes": 15174,
+      "sha256": "dd1b5becf24eda3b510f22e04742e7862e151fcc92e7caddd7cf1b0b181aaff6"
+    },
+    "budget_repaired": "Actual 4B staging status for checked B2 Gather; fixed only native execution resource registration",
+    "remaining": "N2/R2 existing three-session/two-turn journey reaches B2 prefill/verify, lag catchup, bounded reconstruction and second turn; next B2/T2 carrier creation fails original native allocation request 33024B. No complete multi-session output was produced."
+  },
+  "memory_scope": {
+    "driver_limits": {
+      "path": ".scratch/vulkan-retained-paged-20261022/driver-limits/report.json",
+      "bytes": 1064,
+      "sha256": "861610390e0b53b71ffcb819250a5e58aaa9a9f34d09c3eb93e796f7a84b972f"
+    },
+    "maxMemoryAllocationCount": 4294967295,
+    "allocation_count_4096_cause_rejected": true,
+    "remaining_OOM_cause": "unknown; failure-time live heap/native work scratch and per-role/slot allocations not measured",
+    "locked_source_research": {
+      "path": ".scratch/vulkan-retained-paged-20261022/review/native-allocation-research.json",
+      "bytes": 7525,
+      "sha256": "9779b017e3978059a5c8f8aca7c477f7f540da0b4f036bb465ad743ff3dbf7e9"
+    },
+    "physical_peak_measured": false
+  },
+  "limits": [
+    "No new complete TPS/memory comparison; current-work final table unchanged",
+    "Finite native mechanism and R1 real-model cases only; other profiles/prefix/cancel and complete quality remain",
+    "Four incremental product TUs plus small test; one temporary budget-diagnostic TU; cached SDK/shader/NVCC objects reused",
+    "CMake test registration changed but no CMake configure/full build run; no new CPU/Apple native run"
+  ],
+  "next_action": "Measure failure-time heap/private NativeWork and per-role/slot costs in the actual N2/R2 journey, then fix the responsible native allocation/preparation mechanism without reducing the requested workload or relaxing permissions.",
+  "cleanup": {
+    "executed_from": {
+      "path": "test.ps1",
+      "bytes": 6134,
+      "sha256": "4f7fd8dfdf8b00f4dabf558f8570414449dcb5b6e426693851d6dc25a961807a"
+    },
+    "frozen_script": {
+      "path": ".scratch/vulkan-retained-paged-20261022/cleanup-test.ps1",
+      "bytes": 6134,
+      "sha256": "4f7fd8dfdf8b00f4dabf558f8570414449dcb5b6e426693851d6dc25a961807a"
+    },
+    "targets": [
+      {
+        "path": ".scratch/vulkan-retained-paged-20261022/diagnostic-link1/qwen.exe",
+        "bytes": 68982784,
+        "sha256": "821f1e869581dc9630d4412ed97c77c2a625a8a3f0c09a4fbc72fea4b98d86de"
+      },
+      {
+        "path": ".scratch/vulkan-retained-paged-20261022/diagnostic-link1/qwen.exp",
+        "bytes": 24985,
+        "sha256": "f3a918f5a9c822faa9c4e20786eae9509d608777bd21d1f04a5c487f6b1770b7"
+      },
+      {
+        "path": ".scratch/vulkan-retained-paged-20261022/diagnostic-link1/qwen.lib",
+        "bytes": 41384,
+        "sha256": "339d3ce297534ebac8825c27a011f2f4f9dfe366c657ebfc45dbbfdc8412a2cb"
+      },
+      {
+        "path": ".scratch/vulkan-retained-paged-20261022/diagnostic-link1/qwen.map",
+        "bytes": 32548442,
+        "sha256": "cfc6c63b4c1f06b00512c4a95a9553d4326439a7d3c40c1531af7eae74df02ab"
+      },
+      {
+        "path": ".scratch/vulkan-retained-paged-20261022/qwen-link1/qwen.exe",
+        "bytes": 68981760,
+        "sha256": "99d63c2730591a543ed10e4725e66b3014c6e7d462625990998b3e8a49cf7a56"
+      },
+      {
+        "path": ".scratch/vulkan-retained-paged-20261022/qwen-link1/qwen.exp",
+        "bytes": 24979,
+        "sha256": "f0a49374814bc84f29cdc151338ca0197c35022da6d0ca05aa5631fd08aa5d7e"
+      },
+      {
+        "path": ".scratch/vulkan-retained-paged-20261022/qwen-link1/qwen.lib",
+        "bytes": 41384,
+        "sha256": "339d3ce297534ebac8825c27a011f2f4f9dfe366c657ebfc45dbbfdc8412a2cb"
+      },
+      {
+        "path": ".scratch/vulkan-retained-paged-20261022/qwen-link1/qwen.map",
+        "bytes": 32546516,
+        "sha256": "fe58fadefe23ce0108ca83922fa21cc78adb9e22eb24a07d0186dcdbd947fe1c"
+      },
+      {
+        "path": ".scratch/vulkan-retained-paged-20261022/qwen-link2/qwen.exp",
+        "bytes": 24979,
+        "sha256": "520d224501a724eff695046a68d31a6eaf5b84f5d1d63b2480654d2cf9a2f092"
+      },
+      {
+        "path": ".scratch/vulkan-retained-paged-20261022/qwen-link2/qwen.lib",
+        "bytes": 41384,
+        "sha256": "339d3ce297534ebac8825c27a011f2f4f9dfe366c657ebfc45dbbfdc8412a2cb"
+      },
+      {
+        "path": ".scratch/vulkan-retained-paged-20261022/qwen-link2/qwen.map",
+        "bytes": 32547369,
+        "sha256": "606bf9402e9d3c4e5507ee764cdd89285720fd24a86f3ac314a89754b88ef0d6"
+      },
+      {
+        "path": ".scratch/vulkan-retained-paged-20261022/reuse-link1/reuse.exp",
+        "bytes": 24981,
+        "sha256": "043e1fb1979cdade73f0e706c0e319d19842c99b24b657467bf8649b8bd7b81d"
+      },
+      {
+        "path": ".scratch/vulkan-retained-paged-20261022/reuse-link1/reuse.lib",
+        "bytes": 41474,
+        "sha256": "49931d400525d89837ada805b2102071f231a0de282d944255c7513ee71e10b8"
+      },
+      {
+        "path": ".scratch/vulkan-retained-paged-20261022/reuse-link1/reuse.map",
+        "bytes": 30510901,
+        "sha256": "4e627c1067c8141cfdf9a22bc353ba6ec9e306625d99fb6bf1cca16a0ce0b95d"
+      },
+      {
+        "path": ".scratch/vulkan-retained-paged-20261022/test-link1/test.exe",
+        "bytes": 68165120,
+        "sha256": "9cc9e30e114e5e3ef447b03a764ee722a39374ec9dd40ed75b7acd8948c07512"
+      },
+      {
+        "path": ".scratch/vulkan-retained-paged-20261022/test-link1/test.exp",
+        "bytes": 24979,
+        "sha256": "cfa913bceeceb0bea0c9e3062e1e81ebed45838fdad9464c12ec24751918bc32"
+      },
+      {
+        "path": ".scratch/vulkan-retained-paged-20261022/test-link1/test.lib",
+        "bytes": 41384,
+        "sha256": "e8b2f56b280c09b2f7a259f184ba9923439c597a6227843d256c824b87a691fa"
+      },
+      {
+        "path": ".scratch/vulkan-retained-paged-20261022/test-link1/test.map",
+        "bytes": 30872330,
+        "sha256": "33b3b1dc50bac82c0b34cfe8ea4ebf62a011d97aee60f7107d56c04bda3a8cd6"
+      },
+      {
+        "path": ".scratch/vulkan-retained-paged-20261022/test-link2/test.exp",
+        "bytes": 24979,
+        "sha256": "1e760d0bc29a0a136ced27c319c432b6dfab85850e7b353e76e5bf5754afeb54"
+      },
+      {
+        "path": ".scratch/vulkan-retained-paged-20261022/test-link2/test.lib",
+        "bytes": 41384,
+        "sha256": "e8b2f56b280c09b2f7a259f184ba9923439c597a6227843d256c824b87a691fa"
+      },
+      {
+        "path": ".scratch/vulkan-retained-paged-20261022/test-link2/test.map",
+        "bytes": 30872983,
+        "sha256": "35817b38e530b48923d2b211ed14e4ae5b1f1ea91f1b3ba0657025b21f8e1dc1"
+      },
+      {
+        "path": ".scratch/vulkan-qwen-assembly-20261022/qwen-link3/qwen.exe",
+        "bytes": 68978176,
+        "sha256": "8a7043b6c9a4611c81d4ce09b81515467309d45316b7498ecc7ea172368b4585"
+      },
+      {
+        "path": ".scratch/vulkan-qwen-assembly-20261022/test-link3/test.exe",
+        "bytes": 67955712,
+        "sha256": "f53ed83d3ba3dfb153ce9ccef226b5471ca77517b17946a5eefb510497693c4c"
+      },
+      {
+        "path": ".scratch/vulkan-bf16-linear-20261022/qwen-link1/qwen.exe",
+        "bytes": 68980224,
+        "sha256": "e9b4f32661c8d0efc81f0be9bda1012bcae426e343531db917a032be30ec87e5"
+      },
+      {
+        "path": ".scratch/vulkan-bf16-linear-20261022/test-link2/test.exe",
+        "bytes": 67931136,
+        "sha256": "22a2d167fcdd33ba0d33edb7e1395b1c72b112751f077700ebfc19abed91e5e2"
+      }
+    ],
+    "logical_file_bytes": 670271729
+  },
+  "evidence_zip": {
+    "path": "docs/evidence/correctness/vulkan-retained-paged-2026-10-22-logs.zip",
+    "bytes": 919900,
+    "sha256": "c284ba8f986a51ac1dc6ce9aad2cad657bdb9bb9b95959d4717b430ccece40c9"
+  },
+  "archive_files": 218
+}

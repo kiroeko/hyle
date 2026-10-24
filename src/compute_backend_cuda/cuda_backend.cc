@@ -16,6 +16,7 @@
 #include "cuda_internal.h"
 #include "driver_release.h"
 #include "hyle/compute/detail/backend_extension.h"
+#include "hyle/compute/detail/paged_append_backend.h"
 #include "hyle/core/assert.h"
 
 namespace hyle::compute::cuda {
@@ -136,6 +137,27 @@ CUcontext borrow_primary_context(void *backend_state) noexcept {
 const Environment *borrow_environment(void *backend_state) noexcept {
   const auto *context = static_cast<const ContextState *>(backend_state);
   return context != nullptr ? &context->environment : nullptr;
+}
+
+NativeRetirement defer_native_retirement(compute::detail::QueueSequence &sequence,
+                             NativeRetirement native) noexcept {
+  const auto *original = compute::detail::ContextAccess::state(sequence);
+  HYLE_FATAL_ASSERT(original != nullptr &&
+                    original->context->device.backend_id() == kBackendId &&
+                    sequence.terminal().ok());
+  auto *queue = static_cast<QueueState *>(
+      compute::detail::ContextAccess::backend_queue(sequence));
+  HYLE_FATAL_ASSERT(queue != nullptr && queue->active_sequence != nullptr &&
+                    (!queue->capture_owned || sequence.recording()) &&
+                    native.state != nullptr &&
+                    native.observe != nullptr);
+  auto &slot = *queue->active_sequence;
+  HYLE_FATAL_ASSERT(slot.owner == queue && slot.fence == FenceKind::kReserved &&
+                    (sequence.recording() ||
+                     slot.native_retirement.observe == nullptr));
+  const auto previous = slot.native_retirement;
+  slot.native_retirement = native;
+  return previous;
 }
 
 ScopedPrimaryContext::ScopedPrimaryContext(CUcontext primary) noexcept
@@ -325,6 +347,7 @@ Result<EventSlot *> QueueState::acquire() noexcept {
         slot->next = nullptr;
         slot->fence = FenceKind::kReserved;
         slot->lifetime = {};
+        slot->native_retirement = {};
         slot->terminal_hint = Status::Ok();
         slot->references.store(1, std::memory_order_relaxed);
         slot->status_used = false;
@@ -353,6 +376,7 @@ void QueueState::release(EventSlot *slot) noexcept {
   HYLE_FATAL_ASSERT(slot->status_references == nullptr);
   slot->fence = FenceKind::kReserved;
   slot->lifetime = {};
+  slot->native_retirement = {};
   slot->terminal_hint = Status::Ok();
   {
     std::lock_guard lock(slots_lock);
@@ -424,12 +448,52 @@ cudaError_t wait_event(cudaEvent_t event) noexcept {
   return cudaEventSynchronize(event);
 }
 
-Status retire_slot(EventSlot *slot, cudaError_t result) noexcept {
+Status retire_slot(EventSlot *slot) noexcept {
   settle_status_references(slot);
-  slot->terminal_hint.Update(result == cudaSuccess
-                                ? completed_device_status(slot)
-                                : runtime_status(result));
+  slot->native_retirement = {};
   slot->fence = FenceKind::kRetired;
+  return slot->terminal_hint;
+}
+
+bool observe_native_retirement(EventSlot *slot, bool wait) noexcept {
+  if (slot->native_retirement.observe == nullptr)
+    return true;
+  bool retired = false;
+  slot->terminal_hint.Update(slot->native_retirement.observe(
+      slot->native_retirement.state, wait, &retired));
+  return retired;
+}
+
+void record_root_retirement(EventSlot *slot, cudaError_t result) noexcept {
+  if (result != cudaSuccess && slot->native_retirement.observe != nullptr) {
+    // An actual asynchronous CUDA failure takes precedence over the native
+    // enqueue diagnostic retained only for this exceptional probe episode.
+    slot->terminal_hint = runtime_status(result);
+  } else {
+    slot->terminal_hint.Update(result == cudaSuccess
+                                  ? completed_device_status(slot)
+                                  : runtime_status(result));
+  }
+  // Root retirement alone does not cover a failed native auxiliary stream.
+  // Keep the original EventSlot and its attached owners until the probe also
+  // proves retirement; an observation error never grants that proof.
+  slot->fence = FenceKind::kNativeRetirementPending;
+}
+
+Result<CompletionPoll> poll_native_retirement(EventSlot *slot) noexcept {
+  if (!observe_native_retirement(slot, false))
+    return CompletionPoll::kPending;
+  auto status = retire_slot(slot);
+  if (!status.ok())
+    return std::unexpected(std::move(status));
+  return CompletionPoll::kComplete;
+}
+
+Status wait_native_retirement(EventSlot *slot) noexcept {
+  if (observe_native_retirement(slot, true))
+    return retire_slot(slot);
+  slot->terminal_hint.Update(Status::Unavailable(
+      "CUDA native work retirement remains unproven"));
   return slot->terminal_hint;
 }
 
@@ -452,6 +516,8 @@ Result<CompletionPoll> poll_slot(EventSlot *slot) noexcept {
       return std::unexpected(slot->terminal_hint);
     return CompletionPoll::kComplete;
   }
+  if (slot->fence == FenceKind::kNativeRetirementPending)
+    return poll_native_retirement(slot);
   if (slot->fence == FenceKind::kEvent)
     result = query_event(slot->event);
   else if (slot->fence == FenceKind::kStreamFallback)
@@ -461,10 +527,8 @@ Result<CompletionPoll> poll_slot(EventSlot *slot) noexcept {
         Status::Internal("CUDA completion was not recorded"));
 
   if (result == cudaSuccess || terminal_device_error(result)) {
-    auto status = retire_slot(slot, result);
-    if (!status.ok())
-      return std::unexpected(std::move(status));
-    return CompletionPoll::kComplete;
+    record_root_retirement(slot, result);
+    return poll_native_retirement(slot);
   }
   if (result == cudaErrorNotReady)
     return CompletionPoll::kPending;
@@ -472,8 +536,10 @@ Result<CompletionPoll> poll_slot(EventSlot *slot) noexcept {
   // A broken observation need not imply a broken stream. This is an
   // exceptional, nonblocking whole-stream proof; the ordinary path is exact.
   result = cudaStreamQuery(slot->owner->stream);
-  if (result == cudaSuccess || terminal_device_error(result))
-    return std::unexpected(retire_slot(slot, result));
+  if (result == cudaSuccess || terminal_device_error(result)) {
+    record_root_retirement(slot, result);
+    return poll_native_retirement(slot);
+  }
   if (result != cudaErrorNotReady)
     slot->terminal_hint.Update(runtime_status(result));
   return CompletionPoll::kPending;
@@ -485,14 +551,18 @@ Status wait_slot(EventSlot *slot) noexcept {
   cudaError_t result = cudaSuccess;
   if (slot->fence == FenceKind::kRetired)
     return slot->terminal_hint;
+  if (slot->fence == FenceKind::kNativeRetirementPending)
+    return wait_native_retirement(slot);
   if (slot->fence == FenceKind::kEvent)
     result = wait_event(slot->event);
   else if (slot->fence == FenceKind::kStreamFallback)
     result = cudaStreamSynchronize(slot->owner->stream);
   else
     return Status::Internal("CUDA completion was not recorded");
-  if (result == cudaSuccess || terminal_device_error(result))
-    return retire_slot(slot, result);
+  if (result == cudaSuccess || terminal_device_error(result)) {
+    record_root_retirement(slot, result);
+    return wait_native_retirement(slot);
+  }
   slot->terminal_hint.Update(runtime_status(result));
   // One exceptional drain attempt. An unproved failure remains owned by the
   // backend destroy/reaper path rather than being mistaken for quiescence.
@@ -502,13 +572,16 @@ Status wait_slot(EventSlot *slot) noexcept {
     return slot->terminal_hint;
   }
   result = cudaStreamSynchronize(slot->owner->stream);
-  if (result == cudaSuccess || terminal_device_error(result))
-    return retire_slot(slot, result);
+  if (result == cudaSuccess || terminal_device_error(result)) {
+    record_root_retirement(slot, result);
+    return wait_native_retirement(slot);
+  }
   slot->terminal_hint.Update(runtime_status(result));
   return slot->terminal_hint;
 }
 
 void finish_abandoned(EventSlot *slot, Status observed) noexcept {
+  HYLE_FATAL_ASSERT(slot->fence == FenceKind::kRetired);
   const compute::detail::CompletionLifetime lifetime = slot->lifetime;
   Status terminal =
       combine_terminal(std::move(observed), std::move(slot->terminal_hint));
@@ -599,7 +672,9 @@ void CompletionReaper::run() noexcept {
       batch = batch->next;
       slot->next = nullptr;
       auto result = poll_slot(slot);
-      if (result && *result == CompletionPoll::kPending) {
+      if (slot->fence != FenceKind::kRetired) {
+        if (!result)
+          slot->terminal_hint.Update(std::move(result).error());
         if (pending_tail != nullptr)
           pending_tail->next = slot;
         else
@@ -920,7 +995,9 @@ void completion_destroy(void *state,
                         Status terminal_hint) noexcept {
   auto *slot = static_cast<cuda::detail::EventSlot *>(state);
   auto result = cuda::detail::poll_slot(slot);
-  if (result && *result == CompletionPoll::kPending) {
+  if (slot->fence != cuda::detail::FenceKind::kRetired) {
+    if (!result)
+      terminal_hint.Update(std::move(result).error());
     cuda::detail::CompletionReaper::instance().retire(slot, lifetime,
                                                       std::move(terminal_hint));
     return;
@@ -969,7 +1046,11 @@ Completion finish_sequence_impl(void *queue, void *sequence, bool accepted,
         Status::Internal("CUDA sequence slot does not belong to queue"));
   }
   queue_state->active_sequence = nullptr;
+  // A failed Commands prefix or a successful cold recording guard may extend
+  // the original Completion. Both came from an accepted provider command.
+  HYLE_FATAL_ASSERT(slot->native_retirement.observe == nullptr || accepted);
   if (!accepted) {
+    HYLE_FATAL_ASSERT(slot->native_retirement.observe == nullptr);
     cuda::detail::settle_status_references(slot);
     queue_state->release(slot);
     return Completion::completed(std::move(terminal));
@@ -988,6 +1069,8 @@ Completion finish_sequence_impl(void *queue, void *sequence, bool accepted,
   // A software diagnostic must not replace an already-observed enqueue/copy/
   // event error. Asynchronous CUDA runtime failures still take precedence.
   slot->report_device_status = terminal.ok() && recorded == cudaSuccess;
+  if (slot->native_retirement.observe != nullptr)
+    slot->terminal_hint.Update(terminal);
   slot->fence = recorded == cudaSuccess
                     ? cuda::detail::FenceKind::kEvent
                     : cuda::detail::FenceKind::kStreamFallback;
@@ -1074,6 +1157,11 @@ wait_completion_impl(void *queue,
         "CUDA queue can wait only on a compatible CUDA completion"));
   }
   auto *source = static_cast<cuda::detail::EventSlot *>(completion_state);
+  if (!source->terminal_hint.ok())
+    return compute::detail::EnqueueResult::rejected(source->terminal_hint);
+  if (source->native_retirement.observe != nullptr)
+    return compute::detail::EnqueueResult::rejected(Status::FailedPrecondition(
+        "CUDA native retirement or recording guard cannot be imported as a root event"));
   if (source->owner->context != destination->context ||
       source->fence != cuda::detail::FenceKind::kEvent) {
     return compute::detail::EnqueueResult::rejected(Status::Unimplemented(
@@ -1164,9 +1252,10 @@ Status begin_capture(void *backend_context, void *backend_queue) noexcept {
   cuda::detail::ScopedPrimaryContext scope(context->primary);
   if (!scope)
     return scope.status();
-  unsigned *device_status = nullptr;
-  HYLE_RETURN_IF_ERROR(status(
-      cudaMalloc(reinterpret_cast<void **>(&device_status), sizeof(unsigned))));
+  auto *device_status = std::exchange(queue->capture_device_status, nullptr);
+  if (device_status == nullptr)
+    HYLE_RETURN_IF_ERROR(status(
+        cudaMalloc(reinterpret_cast<void **>(&device_status), sizeof(unsigned))));
   const Status begun = status(
       cudaStreamBeginCapture(queue->stream, cudaStreamCaptureModeThreadLocal));
   if (begun.ok()) {
@@ -1180,7 +1269,7 @@ Status begin_capture(void *backend_context, void *backend_queue) noexcept {
 }
 
 Status end_capture(void *backend_context, void *backend_queue,
-                   mem::AllocatorRef allocator,
+                   mem::AllocatorRef allocator, void *rebuild_storage,
                    void **captured_commands) noexcept {
   auto *context = static_cast<cuda::detail::ContextState *>(backend_context);
   auto *queue = static_cast<cuda::detail::QueueState *>(backend_queue);
@@ -1202,36 +1291,80 @@ Status end_capture(void *backend_context, void *backend_queue,
         status(cudaFree(word)).IgnoreError();
     }
   } device_status{std::exchange(queue->capture_device_status, nullptr)};
-  if (ended != cudaSuccess) {
-    if (graph != nullptr)
-      status(cudaGraphDestroy(graph)).IgnoreError();
+  struct GraphStorage final {
+    cudaGraph_t graph;
+    ~GraphStorage() {
+      if (graph != nullptr)
+        status(cudaGraphDestroy(graph)).IgnoreError();
+    }
+  } captured_graph{graph};
+  if (ended != cudaSuccess)
     return status(ended);
-  }
   if (graph == nullptr)
     return Status::Internal("CUDA capture returned no graph");
-  cudaGraphExec_t executable = nullptr;
-  const cudaError_t instantiated =
-      cudaGraphInstantiateWithFlags(&executable, graph, 0);
-  const Status graph_destroyed = status(cudaGraphDestroy(graph));
-  if (instantiated != cudaSuccess)
-    return status(instantiated);
-  if (!graph_destroyed.ok()) {
-    status(cudaGraphExecDestroy(executable)).IgnoreError();
-    return graph_destroyed;
+  struct ExecutableStorage final {
+    cudaGraphExec_t executable = nullptr;
+    ~ExecutableStorage() {
+      if (executable != nullptr)
+        status(cudaGraphExecDestroy(executable)).IgnoreError();
+    }
+  } selected;
+  auto *rebuild = static_cast<CapturedCommandsState *>(rebuild_storage);
+  if (rebuild != nullptr && rebuild->context == context &&
+      rebuild->rebuild_only && rebuild->is_unique() &&
+      !rebuild->status_busy.load(std::memory_order_acquire) &&
+      rebuild->executable != nullptr) {
+#if CUDART_VERSION >= 12000
+    cudaGraphExecUpdateResultInfo result{};
+    result.result = cudaGraphExecUpdateError;
+    const auto updated =
+        cudaGraphExecUpdate(rebuild->executable, graph, &result);
+    const auto update_result = result.result;
+#else
+    cudaGraphNode_t error_node = nullptr;
+    cudaGraphExecUpdateResult update_result = cudaGraphExecUpdateError;
+    const auto updated = cudaGraphExecUpdate(rebuild->executable, graph,
+                                             &error_node, &update_result);
+#endif
+    if (updated == cudaSuccess) {
+      if (update_result != cudaGraphExecUpdateSuccess)
+        return Status::Internal("CUDA graph update returned inconsistent success");
+      // Only the executable moves. The old state/status word remain immutable
+      // until the common owner destroys the consumed, nonlaunchable seed.
+      selected.executable = std::exchange(rebuild->executable, nullptr);
+    } else if (updated == cudaErrorGraphExecUpdateFailure) {
+      // Structural incompatibility is the only native update rejection that
+      // permits fresh instantiation. Do not swallow an unrelated sticky error.
+      const auto last_error = cudaGetLastError();
+      if (last_error != cudaSuccess &&
+          last_error != cudaErrorGraphExecUpdateFailure)
+        return status(last_error);
+    } else {
+      return status(updated);
+    }
   }
+  if (selected.executable == nullptr)
+    HYLE_RETURN_IF_ERROR(status(
+        cudaGraphInstantiateWithFlags(&selected.executable, graph, 0)));
+  const Status graph_destroyed =
+      status(cudaGraphDestroy(std::exchange(captured_graph.graph, nullptr)));
+  if (!graph_destroyed.ok())
+    return graph_destroyed;
   void *storage = allocator.allocate(sizeof(CapturedCommandsState),
                                      alignof(CapturedCommandsState));
-  if (storage == nullptr) {
-    status(cudaGraphExecDestroy(executable)).IgnoreError();
+  if (storage == nullptr)
     return Status::ResourceExhausted("CUDA graph artifact allocation failed");
-  }
   context->incref();
   auto *captured = ::new (storage) CapturedCommandsState{};
   captured->context = context;
-  captured->executable = executable;
+  captured->executable = std::exchange(selected.executable, nullptr);
   captured->allocator = allocator;
   if (used_status)
     captured->device_status = std::exchange(device_status.word, nullptr);
+  else
+    // No captured node referenced this word. Keep one idle word in its
+    // original Queue owner; checked artifacts still retain independent words.
+    queue->capture_device_status = std::exchange(device_status.word, nullptr);
   *captured_commands = captured;
   return Status::Ok();
 }
@@ -1263,6 +1396,18 @@ void destroy_capture(void *captured_commands, mem::AllocatorRef) noexcept {
   captured->decref();
 }
 
+bool recycle_capture_after_retirement(void *captured_commands) noexcept {
+  auto *captured = static_cast<CapturedCommandsState *>(captured_commands);
+  // The caller's actual native retirement proof is required even for unchecked
+  // captures, whose launch does not hold a status-reference refcount.
+  if (captured == nullptr || captured->rebuild_only ||
+      captured->executable == nullptr || !captured->is_unique() ||
+      captured->status_busy.load(std::memory_order_acquire))
+    return false;
+  captured->rebuild_only = true;
+  return true;
+}
+
 compute::detail::EnqueueResult
 launch_capture(void *backend_context, void *backend_queue,
                void *captured_commands) noexcept {
@@ -1274,6 +1419,9 @@ launch_capture(void *backend_context, void *backend_queue,
     return compute::detail::EnqueueResult::rejected(
         Status::InvalidArgument("CUDA graph launch context is invalid"));
   }
+  if (captured->rebuild_only || captured->executable == nullptr)
+    return compute::detail::EnqueueResult::rejected(
+        Status::FailedPrecondition("CUDA graph artifact is rebuild-only"));
   if (captured->device_status != nullptr) {
     if (queue->capture_owned || queue->active_sequence == nullptr)
       return compute::detail::EnqueueResult::rejected(
@@ -1324,6 +1472,10 @@ const compute::detail::CommandCaptureVTable kCommandCaptureVTable{
     .abort = &abort_capture,
     .destroy = &destroy_capture,
     .launch = &launch_capture,
+    .recycle_after_retirement = &recycle_capture_after_retirement,
+    // Resource admission accepts CUDA pointer-backed resources only; the
+    // native argument is that pointer plus the validated logical byte offset.
+    .tensor_bindings_have_stable_identity = true,
 };
 
 const void *query_extension_impl(void *, BackendExtensionId id) noexcept {
@@ -1333,6 +1485,8 @@ const void *query_extension_impl(void *, BackendExtensionId id) noexcept {
     return &kCommandCaptureVTable;
   if (id == compute::detail::kCopyBatchExtensionId)
     return cuda::detail::copy_batch_interface();
+  if (id == compute::detail::kPagedAppendExtensionId)
+    return cuda::detail::paged_append_interface();
   return nullptr;
 }
 
@@ -1630,6 +1784,17 @@ Result<cudaStream_t> stream(const Queue &queue) noexcept {
       compute::detail::ContextAccess::backend_queue(queue));
   if (state == nullptr)
     return std::unexpected(Status::Internal("CUDA queue state is null"));
+  return state->stream;
+}
+
+Result<cudaStream_t> stream(const compute::detail::QueueSequence &sequence) noexcept {
+  HYLE_ASSIGN_OR_RETURN(auto extension,
+      compute::detail::BackendExtensionAccess::query_admitted(sequence, kCudaExtensionId));
+  (void)extension;
+  auto *state = static_cast<cuda::detail::QueueState *>(
+      compute::detail::ContextAccess::backend_queue(sequence));
+  if (!state)
+    return std::unexpected(Status::Internal("CUDA admitted queue state is null"));
   return state->stream;
 }
 

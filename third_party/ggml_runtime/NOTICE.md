@@ -54,3 +54,15 @@ constructs the equivalent zero/negative-infinity values in its existing tile
 scratch. Native tiled/split selection and QK/softmax/PV arithmetic, including
 the vector Half PV path, are retained. The boxed-window tag remains separate.
 These CPU-only changes do not alter Vulkan or Metal attention kernels.
+
+Metal grouped matrix metadata emits every token/slot occurrence, including repeated expert IDs. The original matrix kernel reads a compact T*S index map plus per-expert counts/offsets; no repeated activation or selected-weight bank is introduced. Shared F32 activation slots are normalized to their true A1 storage at cold lowering. Floating-point dot and output math remain unchanged.
+
+GGUF NVFP4 keeps its original 64-value/36-byte encoding and four UE4M3 scale
+groups. A private decoder is included only by the existing mul_mv, mul_mm and
+quantize Metal kinds. Existing MV/MVID, tiled SIMD MM/MMID and selected-row
+carriers read packed blocks directly; the NV matrix specialization retains F32
+activation, dequantized tile, accumulation and output, including on Metal 4.
+Its 12 KiB shared tile and actual pipeline thread limits are checked during
+the original NativeProgram cold preparation. Existing non-NV numerical
+specializations and compact duplicate-ID mapping are retained. No whole-bank
+F32 expansion, new executor or installed C API is introduced.

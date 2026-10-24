@@ -52,11 +52,11 @@ Status create_invocation(void *, mem::AllocatorRef, mem::BufferView,
   return Status::Ok();
 }
 void destroy_invocation(void *, mem::AllocatorRef) noexcept {}
-detail::EnqueueResult submit(void *state, void *, Queue &queue,
+detail::EnqueueResult submit(void *state, void *, detail::QueueSequence &sequence,
                              std::span<const ConstTensorView> inputs,
                              std::span<const TensorView> outputs) noexcept {
   const auto &prepared = *static_cast<const Prepared *>(state);
-  auto stream = cuda::stream(queue);
+  auto stream = cuda::stream(sequence);
   if (!stream) return detail::EnqueueResult::rejected(std::move(stream).error());
   std::array<const void *, 2> in;
   std::array<void *, 2> out;
@@ -103,11 +103,11 @@ void destroy_hash(void *state, mem::AllocatorRef allocator) noexcept {
   prepared->~HashPrepared();
   allocator.deallocate(prepared, sizeof(HashPrepared), alignof(HashPrepared));
 }
-detail::EnqueueResult submit_hash(void *state, void *, Queue &queue,
+detail::EnqueueResult submit_hash(void *state, void *, detail::QueueSequence &sequence,
                                   std::span<const ConstTensorView> inputs,
                                   std::span<const TensorView> outputs) noexcept {
   const auto &prepared = *static_cast<const HashPrepared *>(state);
-  auto stream = cuda::stream(queue);
+  auto stream = cuda::stream(sequence);
   if (!stream) return detail::EnqueueResult::rejected(std::move(stream).error());
   std::array<const void *, 3> in;
   std::array<void *, 2> out;
@@ -124,7 +124,7 @@ detail::EnqueueResult submit_hash(void *state, void *, Queue &queue,
   cuda::detail::ScopedPrimaryContext scope(prepared.primary);
   if (!scope) return detail::EnqueueResult::rejected(scope.status());
   unsigned *status_word = nullptr;
-  auto initialized = cuda::detail::acquire_device_status(queue, &status_word);
+  auto initialized = cuda::detail::acquire_device_status(sequence, &status_word);
   if (!initialized.status.ok()) return initialized;
   return detail::EnqueueResult::accepted_command(cuda::status(
       native::sglang_hash_router_launch(prepared.program, in[0], in[1], in[2],
@@ -184,7 +184,7 @@ ProviderPrepareOutcome prepare_hash(void *state,
     return ProviderPrepareOutcome::error(cuda::status(configured));
   auto *memory = allocator.allocate(sizeof(HashPrepared), alignof(HashPrepared));
   if (!memory)
-    return ProviderPrepareOutcome::resource_declined(Status::ResourceExhausted("SGLang hash router program allocation failed"));
+    return ProviderPrepareOutcome::error(Status::ResourceExhausted("SGLang hash router program allocation failed"));
   auto *prepared = ::new (memory) HashPrepared{primary, program};
   *output = {.vtable = &kHashVTable, .state = prepared, .runtime = kRuntime,
              .persistent_bytes = sizeof(HashPrepared), .invocation_private_bytes = 0};
@@ -244,7 +244,7 @@ ProviderPrepareOutcome prepare(void *state,
     return ProviderPrepareOutcome::error(cuda::status(configured));
   auto *memory = allocator.allocate(sizeof(Prepared), alignof(Prepared));
   if (!memory)
-    return ProviderPrepareOutcome::resource_declined(Status::ResourceExhausted("SGLang router program allocation failed"));
+    return ProviderPrepareOutcome::error(Status::ResourceExhausted("SGLang router program allocation failed"));
   auto *prepared = ::new (memory) Prepared{primary, program};
   *output = {.vtable = &kVTable, .state = prepared, .runtime = kRuntime,
              .persistent_bytes = sizeof(Prepared), .invocation_private_bytes = 0};

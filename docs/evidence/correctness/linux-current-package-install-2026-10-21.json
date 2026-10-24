@@ -1,0 +1,297 @@
+{
+  "schema": "hyle.linux-current-package-install.v1",
+  "date": "2026-10-21",
+  "scope": "One current static Compute + Graph + GraphProgress installation for CPU/CUDA, using the original relocated package samples.",
+  "result": "Current Linux installation column passed; this does not mark the overall delivery-1 cross-system scope complete.",
+  "public_configuration": {
+    "components": [
+      "compute",
+      "graph",
+      "graph_progress"
+    ],
+    "routes": [
+      "cpu",
+      "cuda"
+    ],
+    "HYLE_STATIC": true,
+    "HYLE_INSTALL": true,
+    "tests": false,
+    "build_parallel": 2,
+    "compiler": "GNU 14.2",
+    "CUDA_Toolkit": "13.3.73",
+    "NVCC_host": "GNU 13.3",
+    "CUDA_architecture": "89-real"
+  },
+  "actual_build": {
+    "unique_payload_jobs": 477,
+    "payload_command_attempts": 478,
+    "failed_initial_compile_commands": 1,
+    "family_counts": [
+      {
+        "family": "Hyle",
+        "operation": "Building CXX",
+        "count": 223
+      },
+      {
+        "family": "Hyle",
+        "operation": "Linking CXX static",
+        "count": 35
+      },
+      {
+        "family": "mimalloc",
+        "operation": "Building C",
+        "count": 1
+      },
+      {
+        "family": "mimalloc",
+        "operation": "Linking C static",
+        "count": 1
+      },
+      {
+        "family": "original_AVX2_CPU_program",
+        "operation": "Building C",
+        "count": 3
+      },
+      {
+        "family": "original_AVX2_CPU_program",
+        "operation": "Building CXX",
+        "count": 13
+      },
+      {
+        "family": "Hyle",
+        "operation": "Building CUDA",
+        "count": 25
+      },
+      {
+        "family": "ggml_vendor",
+        "operation": "Building C",
+        "count": 6
+      },
+      {
+        "family": "ggml_vendor",
+        "operation": "Building CXX",
+        "count": 20
+      },
+      {
+        "family": "ggml_vendor",
+        "operation": "Linking CXX static",
+        "count": 4
+      },
+      {
+        "family": "original_AVX2_CPU_program",
+        "operation": "Linking CXX shared module",
+        "count": 1
+      },
+      {
+        "family": "ggml_vendor",
+        "operation": "Building CUDA",
+        "count": 145
+      }
+    ],
+    "count_note": "The earlier 146-unit GGML-family estimate comprises 145 vendor CUDA TUs plus the Hyle runtime bfloat-cast CUDA helper. The 4 oneDNN-facing CXX wrappers belong to Hyle; the original oneDNN SDK binary was reused.",
+    "source_caches_reused": true,
+    "binary_Torch_and_oneDNN_SDKs_reused": true,
+    "no_new_dependency_download": true,
+    "no_duplicate_SDK_tree": true,
+    "report": "evidence/actual-build-jobs.json"
+  },
+  "product_fix": {
+    "owner": "src/compute_provider_ggml_cuda/ggml_cuda_provider.cc",
+    "change": "Explicit empty initializers for the original constant-recipe input_bindings/workspace members.",
+    "mathematical_change": false,
+    "public_ABI_change": false,
+    "warnings_relaxed": false,
+    "before_sha256": "4e228a12652452600efd406b8b6cca38fc2deb4863f55379ae852b4bc230bef3",
+    "after_sha256": "c87325fc25cc21cf228f5518ed25c8d7dc29985fe7f5d24473880757ef96b484"
+  },
+  "installation": {
+    "products": [
+      "compute",
+      "graph",
+      "graph_progress"
+    ],
+    "current_canonical_public_headers": 232,
+    "StateCore": "state_versions.cc was compiled; current StateWriter/Clone headers and compute_state archive/export are installed. These two graph samples are not StateClone runtime tests.",
+    "relocated_before_find_package": true,
+    "original_prefix_absent": true,
+    "SDK_instances": 1,
+    "SDK_copies": 0,
+    "prefix": "/root/hyle-scratch/active-cpu-z/delivery1-linux-current-build-2026-10-21/static-sdk-relocated",
+    "external_dependencies": "Original pinned cached CPU/Torch-CUDA binary SDKs and installed native Linux CUDA 13.3 Toolkit; no new SDK download.",
+    "Linux_runtime": "Existing hyle_stage_runtime BUILD_RPATH uses the relocated lib and original pinned binary-SDK library directories. No per-application SDK copy.",
+    "source_scope": "All current CPU/CUDA selected files match; three concurrent Apple-only updates are recorded out of route.",
+    "actual_dependency_check": "Both sample ldd results have no missing libraries; compile/link commands have no original-prefix or producer include/bin leakage."
+  },
+  "actual_validation": {
+    "execution_owner": "root",
+    "GPU_consumer_processes": 2,
+    "exit_codes": [
+      0,
+      0
+    ],
+    "timeouts": 0,
+    "samples": [
+      {
+        "path": "samples/package/graph/cpp",
+        "meaning": "Independent CPU and pure CUDA graph checks selected by the exported route macros.",
+        "result": "evidence/consumer-run-cpp.result.json",
+        "stdout": "Empty stdout, exit 0; no invented printed PASS count."
+      },
+      {
+        "path": "samples/package/graph/cpu_cuda",
+        "meaning": "Explicit CPU normalization/casts and CUDA FFN/FP16 fragments; two math slots, native DMA, lease and replay checks.",
+        "result": "evidence/consumer-run-cpu_cuda.result.json",
+        "stdout": "Two actual PASS lines."
+      }
+    ],
+    "performance_claim": false
+  },
+  "preserved_failures": [
+    {
+      "path": "evidence/build.stdout.log",
+      "classification": "Product portability compile error: GCC missing-field-initializers; fixed without changing mathematics or layout."
+    },
+    {
+      "path": "evidence/consumer-configure-cpp.stderr.log",
+      "classification": "External WSL Finder selected Windows nvcc.exe from PATH; a fresh small consumer configuration explicitly selected the already-installed Linux CUDAToolkit_ROOT. Original failed directory was retained."
+    },
+    {
+      "path": "evidence/consumer-preparation-first-error.json",
+      "classification": "Harness cache type parsing assumption before CMake; corrected to accept the actual UNINITIALIZED compiler entry."
+    },
+    {
+      "path": "evidence/installed-audit-harness-correction.json",
+      "classification": "Read-only audit initially assumed Windows-style DLL staging on Linux; corrected to the existing RPATH contract, without rebuilding or re-running consumers."
+    }
+  ],
+  "remaining_scope": [
+    "Overall delivery-1 still waits for the separate current Mac installed-producer verification.",
+    "This packet does not claim a full model, performance, every route/component combination or StateClone execution on Linux.",
+    "Applications still own deployment of external SDK libraries; this proves Hyle SDK relocation before configuration, not a standalone copied executable."
+  ],
+  "prior_preparation": {
+    "report": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\linux-current-package-preparation-2026-10-21.json",
+      "bytes": 10956,
+      "sha256": "8bafbe9faa67111afef4f14a9455b3a43e4dcc863e32e57c6719c1b739fa47c0"
+    },
+    "archive": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\linux-current-package-preparation-2026-10-21.zip",
+      "bytes": 246403,
+      "sha256": "ee3698dc316c54f6c2380df5afc84edfba734eee0fc170898ffbaffed5382f3f"
+    },
+    "scope": "Historical configure/dryrun and current CMake/lock fixes; its 0-build/0-GPU statements remain historical facts."
+  },
+  "source_count": 21,
+  "sources": [
+    {
+      "relative": "src/compute_provider_ggml_cuda/ggml_cuda_provider.cc",
+      "bytes": 73537,
+      "sha256": "c87325fc25cc21cf228f5518ed25c8d7dc29985fe7f5d24473880757ef96b484"
+    },
+    {
+      "relative": "src/compute_state/CMakeLists.txt",
+      "bytes": 57,
+      "sha256": "74c451450ce59a4f0f465f654211b34f683db2bb5e2fcd8e19ca030073bab76c"
+    },
+    {
+      "relative": "src/compute_state/state_versions.cc",
+      "bytes": 41194,
+      "sha256": "1d344d6c0c37cd1e18b7ee765a56bb58e1ab9aa24095208f453a4c3065b5fe99"
+    },
+    {
+      "relative": "src/compute_state/state_internal.h",
+      "bytes": 4740,
+      "sha256": "055eda4db80e3099b726053ee0ab07931e4242ecd6207343a677a2d7c7405a7b"
+    },
+    {
+      "relative": "include/hyle/compute/state_clone.h",
+      "bytes": 14637,
+      "sha256": "5117445bbb250a62443587d8d9f64a733970af7f430183f0cc2ef1e52abc2704"
+    },
+    {
+      "relative": "include/hyle/compute/state_versions.h",
+      "bytes": 8553,
+      "sha256": "a09cb66a216b56a0651f515f18d8a97772b0e6d281c171a82b8a6630b3e1c7d7"
+    },
+    {
+      "relative": "include/hyle/compute/detail/state_clone_access.h",
+      "bytes": 1714,
+      "sha256": "b56629d38582f595a9b46eb74d9e6d4b983868bf3a73cf91fb4a965248ee9608"
+    },
+    {
+      "relative": "cmake/HyleRuntimeStaging.cmake",
+      "bytes": 16926,
+      "sha256": "1a256a253dc5e269554bf44599e22fa679baac0f495a207847e5cf8cd8cdcc65"
+    },
+    {
+      "relative": "samples/package/graph/cpp/apple_ffn.h",
+      "bytes": 3155,
+      "sha256": "f249e324c1876de9f13c001f886f6955bdd574a89b9b0e618abb51cbed5e1d90"
+    },
+    {
+      "relative": "samples/package/graph/cpp/apple_recurrent.h",
+      "bytes": 1566,
+      "sha256": "d0e6a60f0744fcb87787e25dd3b800ca1af4f4d36a46013804170cc938a99a8e"
+    },
+    {
+      "relative": "samples/package/graph/cpp/CMakeLists.txt",
+      "bytes": 452,
+      "sha256": "2b518c7d09ff6e3de6d109503330e59b359b730d480a645f4ceb0b9b477406f3"
+    },
+    {
+      "relative": "samples/package/graph/cpp/cpu_normalization.h",
+      "bytes": 5665,
+      "sha256": "7d213af6aaf8b8224f2e0e03f700160e8169578679349e93da9e714d89ddd81a"
+    },
+    {
+      "relative": "samples/package/graph/cpp/cuda_ffn.h",
+      "bytes": 5093,
+      "sha256": "9e321c6a23965959f8eb75340786f799f6a9783d5f4a6f533cd134ae5fc17484"
+    },
+    {
+      "relative": "samples/package/graph/cpp/main.cc",
+      "bytes": 6869,
+      "sha256": "7deadde7bf732c67341aaace7d241dfb72d84c859bc82c9bddc009e4f6290d00"
+    },
+    {
+      "relative": "samples/package/graph/cpp/vulkan_ffn.h",
+      "bytes": 7899,
+      "sha256": "d1773a85760ba9bf9c668722ee62e5147489576e159bc690eb8d0d10110e460e"
+    },
+    {
+      "relative": "samples/package/graph/cpp/vulkan_mature.h",
+      "bytes": 1636,
+      "sha256": "1524156b46bd4ee5ef9b1d46602f24eddf70f31e00a464d4621a916f520a6c9f"
+    },
+    {
+      "relative": "samples/package/graph/cpu_cuda/CMakeLists.txt",
+      "bytes": 1071,
+      "sha256": "f9929927c319223b5a07d0b349524c34331b93fda29a24663108998aa14b8fc4"
+    },
+    {
+      "relative": "samples/package/graph/cpu_cuda/inference.h",
+      "bytes": 6446,
+      "sha256": "d7393134d5f0444c2293ec4d3e4ce49649b0096fcfc65e947be1faafc417a752"
+    },
+    {
+      "relative": "samples/package/graph/cpu_cuda/main.cc",
+      "bytes": 16159,
+      "sha256": "c9cd524f792dba52d0204e0af9807495a6f27c233e02d93ef556654274e93798"
+    },
+    {
+      "relative": "samples/package/graph/cpu_cuda/README.md",
+      "bytes": 2695,
+      "sha256": "f91bf0365ca68404a9f5b959c5185dd4f2dfb0742f490db72b4c68da1d63bfbd"
+    },
+    {
+      "relative": "samples/package/compute/cpp/workload.h",
+      "bytes": 1154,
+      "sha256": "7d3325e2a78bffeafa5f1cc19b08202328b8785f137c66a4431cbe2652e4120d"
+    }
+  ],
+  "archive": "linux-current-package-install-2026-10-21.zip",
+  "archived_binaries": false,
+  "cleanup_executed": false,
+  "retained_remote": "Current producer build cache, relocated SDK, consumer objects/executables and validation results are retained for the next relevant checks."
+}

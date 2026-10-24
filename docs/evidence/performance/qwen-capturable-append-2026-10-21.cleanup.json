@@ -1,0 +1,275 @@
+{
+  "status": "completed",
+  "time_utc": "2026-10-21T13:15:43.9503661Z",
+  "deleted_files": 52,
+  "deleted_bytes": 2204887560.0,
+  "targets": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-capture-20261021\\cpu-link1\\cpu.exe",
+      "bytes": 139516928,
+      "sha256": "e884e523d14815d760058b2e59f8c79458a59afe507ebf6c1f9537553d806442"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-capture-20261021\\cpu-link2\\cpu.exe",
+      "bytes": 139517952,
+      "sha256": "1114c8772d41b568e485b8a4e840e466ff53b089e809200be8a123da127051bc"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-capture-20261021\\qwen-link1\\qwen.exe",
+      "bytes": 139738624,
+      "sha256": "7b5ee49c7e172991cf942cbc2af36cbe62a88f17dc236d2533242b0ee6e6ff6c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-capture-20261021\\qwen-link2\\qwen.exe",
+      "bytes": 139740672,
+      "sha256": "3ca709dcf7bedf7a2dde088ca28fcb485c3a1ac30f5a45d4aeed741bfc035802"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-capture-20261021\\probe-link1\\probe.exe",
+      "bytes": 139670528,
+      "sha256": "d1ff68974b37a9ac7c55659fb55f418d524ccb62a9df76694fd54465e4d12922"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-capture-20261021\\probe-link2\\probe.exe",
+      "bytes": 139671040,
+      "sha256": "9b9b87baaa14b008a172f6aae28b8c42db387862d172e80c7452d6e83fac1da6"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-capture-20261021\\cuda-link1\\cuda.exe",
+      "bytes": 139348992,
+      "sha256": "797879f6033ff2bf8da577ee399f869aa127c641e429d7b821c4a568caab6bda"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-capture-20261021\\cuda-link2\\cuda.exe",
+      "bytes": 139348992,
+      "sha256": "4c6ff3d55d6d52c09d7cbb8e6d2bf5943bde78dd357865157d8affd5dc2140c1"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-capture-20261021\\cuda-link3\\cuda.exe",
+      "bytes": 139348992,
+      "sha256": "8814fdff3d7b2a4a25f57d8acde4c0859df6a3b6c31444bb072b63de63be75db"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-capture-20261021\\cuda-link4\\cuda.exe",
+      "bytes": 139350016,
+      "sha256": "3f2d2ab4b5de637057e383e10c0fa8bdc4a56de7e73b593f1b2a5f0d1ebc6c8f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-capture-20261021\\cpu-link1\\cpu.map",
+      "bytes": 57472752,
+      "sha256": "b924bd23a93613f6598b3c8ea37df96671907d3684b51e06c5c4c83961cbf0df"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-capture-20261021\\cpu-link1\\cpu.lib",
+      "bytes": 41298,
+      "sha256": "1a72c22d3a6dec39cca5118fd99aa738ff5f4202c029fc8a48afb6c3d20e909d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-capture-20261021\\cpu-link1\\cpu.exp",
+      "bytes": 24967,
+      "sha256": "8c7878bc1d007c4bd6709f4c963f490c7b2c932b92da78b2f3e890f6c1e4f2d1"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-capture-20261021\\cpu-link2\\cpu.map",
+      "bytes": 57474328,
+      "sha256": "504be58510e2a7d6762f314bf0bed97e8572dd79c86ba583b7f1a133beeb0cb4"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-capture-20261021\\cpu-link2\\cpu.lib",
+      "bytes": 41298,
+      "sha256": "1a72c22d3a6dec39cca5118fd99aa738ff5f4202c029fc8a48afb6c3d20e909d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-capture-20261021\\cpu-link2\\cpu.exp",
+      "bytes": 24967,
+      "sha256": "b249d3143ee3aff59ffda9f8f8194333853013adf5aacdd19f029d76101947c5"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-capture-20261021\\cpu-link3\\cpu.map",
+      "bytes": 57473972,
+      "sha256": "3135be90cc48eb146bccb706055ba6b5e03b4a3a11adccb5cca4bb7c5ef6792d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-capture-20261021\\cpu-link3\\cpu.lib",
+      "bytes": 41298,
+      "sha256": "1a72c22d3a6dec39cca5118fd99aa738ff5f4202c029fc8a48afb6c3d20e909d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-capture-20261021\\cpu-link3\\cpu.exp",
+      "bytes": 24967,
+      "sha256": "cbeb0c97398260205bccf7a85174b448a388c972da63f4b89539a221a1605138"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-capture-20261021\\qwen-link1\\qwen.map",
+      "bytes": 58282223,
+      "sha256": "4c6a56347e95211ce43ac153d75bf2c2a8ee9bba5ed6fee096c5351a2efddff9"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-capture-20261021\\qwen-link1\\qwen.lib",
+      "bytes": 41384,
+      "sha256": "339d3ce297534ebac8825c27a011f2f4f9dfe366c657ebfc45dbbfdc8412a2cb"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-capture-20261021\\qwen-link1\\qwen.exp",
+      "bytes": 24971,
+      "sha256": "da994b43626bb4180c350986eb0aa7206cdd589a60bd0d596948f75b87211a52"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-capture-20261021\\qwen-link2\\qwen.map",
+      "bytes": 58283799,
+      "sha256": "26c60d20e2640553505918c761e52127f38dc0763f24ec5d9a04f9b8c381b63c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-capture-20261021\\qwen-link2\\qwen.lib",
+      "bytes": 41384,
+      "sha256": "339d3ce297534ebac8825c27a011f2f4f9dfe366c657ebfc45dbbfdc8412a2cb"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-capture-20261021\\qwen-link2\\qwen.exp",
+      "bytes": 24971,
+      "sha256": "b6be9bc158b516f577fca0b6dd7f26cd55a070b67c281f174177c219090a897b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-capture-20261021\\qwen-link3\\qwen.map",
+      "bytes": 58283443,
+      "sha256": "e02da5f4b4c19870e06bc002145c2007c64d372f39d4e532f2efd23ded3d2fdd"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-capture-20261021\\qwen-link3\\qwen.lib",
+      "bytes": 41384,
+      "sha256": "339d3ce297534ebac8825c27a011f2f4f9dfe366c657ebfc45dbbfdc8412a2cb"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-capture-20261021\\qwen-link3\\qwen.exp",
+      "bytes": 24971,
+      "sha256": "57358c2a3afc91c7f6e7b7dd2fe881394a9c9c640d4e8536bb47f6189aaa5ef7"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-capture-20261021\\probe-link1\\probe.map",
+      "bytes": 58167139,
+      "sha256": "f069e74c431acf2492bf788bc091a92eac0ab5ce816baa14388a892908cc40a9"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-capture-20261021\\probe-link1\\probe.lib",
+      "bytes": 41474,
+      "sha256": "d97664b9bfac874c565d303c78aaddedc46408bb52d748c1e55eff080d46dac2"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-capture-20261021\\probe-link1\\probe.exp",
+      "bytes": 24973,
+      "sha256": "b0f95f230a95a8651f4e17b2921a7dd2e775f16dbc381388fe5c946e8671a741"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-capture-20261021\\probe-link2\\probe.map",
+      "bytes": 58168715,
+      "sha256": "9598bcc752bffffd6bcc24004cb21fe2e11ee446c2fd273e19cea5cd917d29ed"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-capture-20261021\\probe-link2\\probe.lib",
+      "bytes": 41474,
+      "sha256": "d97664b9bfac874c565d303c78aaddedc46408bb52d748c1e55eff080d46dac2"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-capture-20261021\\probe-link2\\probe.exp",
+      "bytes": 24973,
+      "sha256": "3a2736d45d2d159c6532f171b3fba9ff20728e089039c06be1cb1df27a09ba66"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-capture-20261021\\probe-link3\\probe.map",
+      "bytes": 58168359,
+      "sha256": "e8b020014923f808cddf310e9611367072261d275987d28700bcc541ace3bc56"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-capture-20261021\\probe-link3\\probe.lib",
+      "bytes": 41474,
+      "sha256": "d97664b9bfac874c565d303c78aaddedc46408bb52d748c1e55eff080d46dac2"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-capture-20261021\\probe-link3\\probe.exp",
+      "bytes": 24973,
+      "sha256": "d0e6ddb402e1517b35e5997a8cab6741a241a71097f1d3f228b3d263129f8f40"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-capture-20261021\\cuda-link1\\cuda.map",
+      "bytes": 57386113,
+      "sha256": "55d2339007cd04262091ee780d8b62dc263e9ac8de180c8af8b771f9d876d501"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-capture-20261021\\cuda-link1\\cuda.lib",
+      "bytes": 41384,
+      "sha256": "097299e17e955c077a99f65f363d3484d564c016359baeb643f4e47c6b737d59"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-capture-20261021\\cuda-link1\\cuda.exp",
+      "bytes": 24971,
+      "sha256": "1157703312d33719f1775d093798d763e3f5fa539a07cb55f847031fe814ce3e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-capture-20261021\\cuda-link2\\cuda.map",
+      "bytes": 57386113,
+      "sha256": "de9c4b89eebb88d152d551b70ff0a84ab88ff5d480db9cb9c6242a912a069677"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-capture-20261021\\cuda-link2\\cuda.lib",
+      "bytes": 41384,
+      "sha256": "097299e17e955c077a99f65f363d3484d564c016359baeb643f4e47c6b737d59"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-capture-20261021\\cuda-link2\\cuda.exp",
+      "bytes": 24971,
+      "sha256": "3d59ed6a6400e49b63c5413f9f32a6d4f22b3b7b66be211f52fb8145c35a374a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-capture-20261021\\cuda-link3\\cuda.map",
+      "bytes": 57385867,
+      "sha256": "6c463f41266b6ba2fdca53dc902423c853df2e40b4c01a2dbc4f5e5471eda606"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-capture-20261021\\cuda-link3\\cuda.lib",
+      "bytes": 41384,
+      "sha256": "097299e17e955c077a99f65f363d3484d564c016359baeb643f4e47c6b737d59"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-capture-20261021\\cuda-link3\\cuda.exp",
+      "bytes": 24971,
+      "sha256": "9cfa01e392c28db9318b1d78c71c1345b0863713d48e110c97c78d36e8cae138"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-capture-20261021\\cuda-link4\\cuda.map",
+      "bytes": 57387374,
+      "sha256": "3b22fabac9b8e9b48f7bb78d10b0dc96611ec184f3999c44d339c37378527024"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-capture-20261021\\cuda-link4\\cuda.lib",
+      "bytes": 41384,
+      "sha256": "097299e17e955c077a99f65f363d3484d564c016359baeb643f4e47c6b737d59"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-capture-20261021\\cuda-link4\\cuda.exp",
+      "bytes": 24971,
+      "sha256": "2552e0de397433d0c997674248690bdec45cf7307d78a98e23ca2b294e0ec906"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-capture-20261021\\cuda-link5\\cuda.map",
+      "bytes": 57385651,
+      "sha256": "1aa56d30e44e9b2213357c83550ef1a01a028064170b34d1a65859dcc4379bca"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-capture-20261021\\cuda-link5\\cuda.lib",
+      "bytes": 41384,
+      "sha256": "097299e17e955c077a99f65f363d3484d564c016359baeb643f4e47c6b737d59"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-capture-20261021\\cuda-link5\\cuda.exp",
+      "bytes": 24971,
+      "sha256": "38cbbfc70be4ffc4b1c4baff03f8ecf44b31706702254702b0417922fb6fce39"
+    }
+  ],
+  "reason": "Only superseded trial images and reconstructible linker maps/import stubs from this stage. All exact commands, failures, source snapshots, final images and numerical/native evidence remain.",
+  "kept": [
+    "Current7b854 Qwen image, final CPU3/CUDA5/probe3 images, prior3859/dense/llama comparison images, all objects/toolchains/dependencies/weights, raw NSYS+SQLite, vectors+oracles, source changes/commands/results/reviews."
+  ],
+  "recursive_delete": false,
+  "plan_sha256": "ba97e11b8788581eb5c08ddce5c2fac6dbce18afd80e483491735ebe8c24d554",
+  "script_sha256": "04b90b6fd4506c829cb4a4492200638e61ba5fb4c36ee24c94b556196118895f"
+}

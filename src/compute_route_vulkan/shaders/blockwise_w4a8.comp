@@ -1,0 +1,139 @@
+#version 450
+
+// Portable group512 INT4/INT8 reference. Original W/SF bytes are never
+// expanded; quantization stores one I8 code per unique activation element.
+layout(local_size_x = 64) in;
+layout(binding = 0) readonly buffer A { uint a[]; };
+layout(binding = 1) readonly buffer W { uint w[]; };
+layout(binding = 2) buffer Status { uint status[]; };
+layout(binding = 3) readonly buffer SF { uint sf[]; };
+layout(binding = 4) buffer Scale { uint scales[]; };
+#ifdef HYLE_BLOCKWISE_GROUPED
+layout(binding = 5) readonly buffer IDs { uint ids[]; };
+layout(binding = 6) writeonly buffer Y { uint y[]; };
+layout(push_constant) uniform Origins { uint a; uint w; uint status; uint sf; uint scales; uint ids; } origin;
+#else
+layout(binding = 5) writeonly buffer Y { uint y[]; };
+layout(push_constant) uniform Origins { uint a; uint w; uint status; uint sf; uint scales; } origin;
+#endif
+layout(constant_id = 0) const uint phase = 1;
+layout(constant_id = 1) const uint rows = 1;
+layout(constant_id = 2) const uint columns = 1;
+layout(constant_id = 3) const uint depth = 512;
+layout(constant_id = 4) const uint slots = 1;
+layout(constant_id = 5) const uint experts = 1;
+layout(constant_id = 6) const uint token_stride = 0;
+layout(constant_id = 7) const uint slot_stride = 0;
+layout(constant_id = 8) const uint quant_slots = 1;
+
+uint hyle_mul_hi(uint x, uint value) {
+  uint high, low;
+  umulExtended(x, value, high, low);
+  return high;
+}
+uint hyle_clz(uint value) { return value == 0u ? 32u : 31u - uint(findMSB(value)); }
+// HYLE_BLOCKWISE_W4A8_F32_SOURCE
+
+uint word(uint port, uint index) {
+#ifdef HYLE_BLOCKWISE_GROUPED
+  if (port == 3u) return ids[index];
+#endif
+  return port == 0u ? a[index] : port == 1u ? w[index] : sf[index];
+}
+uint load_bytes(uint port, uint offset, uint bytes) {
+  uint shift = (offset & 3u) * 8u;
+  uint value = word(port, offset / 4u) >> shift;
+  if (shift + bytes * 8u > 32u)
+    value |= word(port, offset / 4u + 1u) << (32u - shift);
+  return bytes == 4u ? value : value & ((1u << (bytes * 8u)) - 1u);
+}
+void invalid(uint code) { atomicOr(status[origin.status / 4u], code); }
+bool failed() { return atomicOr(status[origin.status / 4u], 0u) != 0u; }
+uint bf16(uint value) { return hyle_ct_round(value, 2u); }
+
+void quantize(uint work) {
+  uint groups = depth / 512u, quant_rows = (rows / slots) * quant_slots;
+  if (work >= quant_rows * groups) return;
+  uint row = work / groups, group = work % groups;
+#ifdef HYLE_BLOCKWISE_GROUPED
+  uint base = origin.a + (row / quant_slots) * token_stride +
+      (row % quant_slots) * slot_stride + group * 1024u;
+#else
+  uint base = origin.a + work * 1024u;
+#endif
+  uint maximum = 0u;
+  for (uint k = 0u; k < 512u; ++k) {
+    uint value = load_bytes(0u, base + k * 2u, 2u) << 16u;
+    uint magnitude = value & 0x7fffffffu;
+    if (magnitude >= 0x7f800000u) { invalid(4u); return; }
+    maximum = max(maximum, magnitude);
+  }
+  // BF16(1/127) is exactly0x3c01. Both the scale and reciprocal retain
+  // their source BF16 boundaries, including underflow and scale==0.
+  uint scale = bf16(hyle_f32_mul(maximum, 0x3c010000u));
+  uint inverse = scale == 0u ? 0u : bf16(hyle_f32_div(0x3f800000u, scale));
+  scales[origin.scales / 4u + work] = scale;
+  for (uint pair = 0u; pair < 128u; ++pair) {
+    uint packed = 0u;
+    for (uint component = 0u; component < 4u; ++component) {
+      uint value = load_bytes(0u, base + (pair * 4u + component) * 2u, 2u) << 16u;
+      uint normalized = bf16(hyle_f32_mul(value, inverse));
+      uint magnitude = normalized & 0x7fffffffu;
+      // Truncation admits positive[0,128) and negative(-129,0]. No clamp,
+      // wrapping or conversion of NaN/Inf is substituted for the source.
+      uint bound = (normalized & 0x80000000u) == 0u ? 0x43000000u : 0x43010000u;
+      if (magnitude >= bound) { invalid(4u); return; }
+      int code = int(uintBitsToFloat(normalized));
+      packed |= (uint(code) & 255u) << (component * 8u);
+    }
+    y[work * 128u + pair] = packed;
+  }
+}
+
+uint dot(uint index) {
+  uint row = index / columns, column = index % columns;
+#ifdef HYLE_BLOCKWISE_GROUPED
+  uint expert = load_bytes(3u, origin.ids + row * 4u, 4u);
+  uint bank_row = expert * columns + column;
+#else
+  uint bank_row = column;
+#endif
+  uint qrow = (row / slots) * quant_slots + (quant_slots == 1u ? 0u : row % slots);
+  uint groups = depth / 512u, result = 0u;
+  for (uint group = 0u; group < groups; ++group) {
+    uint weight_scale = load_bytes(2u, origin.sf + (bank_row * groups + group) * 4u, 4u);
+    if (weight_scale == 0u || weight_scale >= 0x7f800000u) { invalid(4u); return 0u; }
+    int sum = 0;
+    for (uint k = 0u; k < 512u; ++k) {
+      uint depth_index = group * 512u + k;
+      uint code = load_bytes(0u, origin.a + qrow * depth + depth_index, 1u);
+      int activation = int(code) - (code >= 128u ? 256 : 0);
+      uint packed = load_bytes(1u, origin.w +
+          (bank_row * (depth / 8u) + depth_index / 8u) * 4u, 4u);
+      int weight = int((packed >> ((depth_index & 7u) * 4u)) & 15u) - 8;
+      sum += activation * weight;
+    }
+    // |sum|<=512*128*8, so the I32->F32 conversion is exact. Every
+    // subsequent product/add has a separate BF16 RNE storage boundary.
+    uint value = bf16(floatBitsToUint(float(sum)));
+    value = bf16(hyle_f32_mul(value, scales[origin.scales / 4u + qrow * groups + group]));
+    value = bf16(hyle_f32_mul(value, bf16(weight_scale)));
+    result = bf16(hyle_f32_add(result, value));
+  }
+  return result >> 16u;
+}
+void main() {
+  uint work = (gl_WorkGroupID.y * gl_NumWorkGroups.x + gl_WorkGroupID.x) * 64u + gl_LocalInvocationID.x;
+#ifdef HYLE_BLOCKWISE_GROUPED
+  if (phase == 0u) {
+    if (work < rows && load_bytes(3u, origin.ids + work * 4u, 4u) >= experts) invalid(1u);
+    return;
+  }
+#endif
+  if (failed()) return;
+  if (phase == 1u) { quantize(work); return; }
+  if (work >= (rows * columns + 1u) / 2u) return;
+  uint value = dot(work * 2u);
+  if (work * 2u + 1u < rows * columns) value |= dot(work * 2u + 1u) << 16u;
+  y[work] = value;
+}

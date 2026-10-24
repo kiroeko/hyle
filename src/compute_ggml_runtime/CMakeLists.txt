@@ -118,6 +118,23 @@ endif()
 if(_HYLE_COMPUTE_HAVE_VULKAN)
   hyle_audit_in_tree_dependencies(ggml_vulkan_runtime_patches)
   set(_vk_patches "${HYLE_SOURCE_DIR}/third_party/ggml_vulkan_runtime")
+  set(_vk_e4_manifest "${CMAKE_CURRENT_BINARY_DIR}/vulkan-e4-source.json")
+  execute_process(COMMAND "${Python3_EXECUTABLE}"
+    "${CMAKE_CURRENT_SOURCE_DIR}/prepare_vulkan_e4_manifest.py" --output "${_vk_e4_manifest}"
+    RESULT_VARIABLE _vk_e4_result ERROR_VARIABLE _vk_e4_error)
+  if(NOT _vk_e4_result EQUAL 0)
+    message(FATAL_ERROR "Vulkan E4 numerical source preparation failed: ${_vk_e4_error}")
+  endif()
+  list(APPEND _manifests "${_vk_e4_manifest}")
+  list(APPEND _patch_args --manifest "${_vk_e4_manifest}")
+  foreach(_vk_e4_input IN ITEMS
+      "${CMAKE_CURRENT_SOURCE_DIR}/prepare_vulkan_e4_manifest.py"
+      "${HYLE_SOURCE_DIR}/src/compute_shader_shared/nvfp4_f32.h"
+      "${HYLE_SOURCE_DIR}/src/compute_route_vulkan/shaders/fp8_storage.glsl")
+    file(SHA256 "${_vk_e4_input}" _vk_e4_sha)
+    string(APPEND _source_identity "${_vk_e4_sha}")
+    set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${_vk_e4_input}")
+  endforeach()
   list(APPEND _manifests "${_vk_patches}/patches.json")
   list(APPEND _patch_args --manifest "${_vk_patches}/patches.json")
   string(APPEND _source_identity "${HYLE_DEP_GGML_VULKAN_RUNTIME_PATCHES_VENDORED_TREE_SHA256}")
@@ -158,6 +175,10 @@ if(_HYLE_COMPUTE_HAVE_CUDA)
     "${_cuda_patches}/LICENSE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|ggml-cuda-patches-LICENSE"
     "${_cuda_patches}/NOTICE.md|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|ggml-cuda-patches-NOTICE.md")
 endif()
+file(SHA256 "${CMAKE_CURRENT_SOURCE_DIR}/gated_delta_scale.h" _gdn_scale_sha)
+string(APPEND _source_identity "${_gdn_scale_sha}")
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
+  "${CMAKE_CURRENT_SOURCE_DIR}/gated_delta_scale.h")
 string(SHA256 _source_identity "${_source_identity}")
 string(SUBSTRING "${_source_identity}" 0 16 _source_id)
 if(_HYLE_COMPUTE_HAVE_CUDA)
@@ -301,6 +322,26 @@ if(_HYLE_COMPUTE_HAVE_VULKAN)
   target_include_directories(ggml-vulkan PRIVATE
     "${HYLE_SOURCE_DIR}/src/compute_provider_ggml_vulkan")
   target_compile_definitions(ggml-base PRIVATE GGML_HYLE_EMBEDDED=1)
+endif()
+foreach(_gdn_entry IN ITEMS
+    "ggml-cpu|src/ggml-cpu/ops.cpp"
+    "ggml-cuda|src/ggml-cuda/gated_delta_net.cu"
+    "ggml-metal|src/ggml-metal/ggml-metal-ops.cpp"
+    "ggml-vulkan|src/ggml-vulkan/ggml-vulkan.cpp")
+  string(REPLACE "|" ";" _gdn_parts "${_gdn_entry}")
+  list(GET _gdn_parts 0 _gdn_target)
+  list(GET _gdn_parts 1 _gdn_relative)
+  if(TARGET ${_gdn_target})
+    get_target_property(_gdn_directory ${_gdn_target} SOURCE_DIR)
+    set_property(SOURCE "${_patched_source}/${_gdn_relative}"
+      DIRECTORY "${_gdn_directory}" APPEND PROPERTY INCLUDE_DIRECTORIES
+      "${CMAKE_CURRENT_SOURCE_DIR}")
+  endif()
+endforeach()
+# The isolated CPU module is declared in this directory.
+if(_cpu)
+  set_property(SOURCE "${_patched_source}/src/ggml-cpu/ops.cpp"
+    APPEND PROPERTY INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}")
 endif()
 foreach(_target IN LISTS _vendor_targets)
   if(NOT TARGET ${_target})

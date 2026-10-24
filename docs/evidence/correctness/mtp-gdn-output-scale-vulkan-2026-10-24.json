@@ -1,0 +1,659 @@
+{
+  "date": "2026-10-24",
+  "scope": "Direct Windows Vulkan focused GDN output_scale boundary; no model identity or Graph expansion.",
+  "validation": {
+    "passed": true,
+    "process": {
+      "command": [
+        "C:\\public\\project-hyle\\hyle\\.scratch\\gdn-vulkan-output-scale-20261024\\link1\\gdn-vulkan.exe",
+        "--gtest_filter=GdnOutputScale.*",
+        "--gtest_throw_on_failure=1",
+        "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\gdn-vulkan-output-scale-20261024\\checks1\\results.xml"
+      ],
+      "cwd": "C:\\public\\project-hyle\\hyle",
+      "started": 1792798366.2165253,
+      "timeout_seconds": 600,
+      "throughput_evidence": false,
+      "memory_evidence": false,
+      "trace": false,
+      "profiler": false,
+      "pid": 21304,
+      "exit": 0,
+      "timed_out": false,
+      "finished": 1792798366.9647918,
+      "process_wall_seconds": 0.7472630999982357
+    },
+    "command": [
+      "C:\\public\\project-hyle\\hyle\\.scratch\\gdn-vulkan-output-scale-20261024\\link1\\gdn-vulkan.exe",
+      "--gtest_filter=GdnOutputScale.*",
+      "--gtest_throw_on_failure=1",
+      "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\gdn-vulkan-output-scale-20261024\\checks1\\results.xml"
+    ],
+    "cases": 2,
+    "failures": 0,
+    "skips": 0,
+    "case_names": [
+      "GdnOutputScale.RawDefaultAndFusedGatesKeepStateSnapshots",
+      "GdnOutputScale.PublicInferenceRejectsNonfiniteAndRetainsExplicitDomain"
+    ],
+    "xml": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\gdn-vulkan-output-scale-20261024\\checks1\\results.xml",
+      "bytes": 905,
+      "sha256": "6efda02337f9f02d97ad78d50f27e4808f68c4cdbb2dc3927f08662265ae16a1"
+    },
+    "independent_native_family": "ggml.h 9ac7ee3d; no CPU/CUDA or second GGML",
+    "throughput_evidence": false,
+    "HTTP": 0,
+    "model_data": 0
+  },
+  "build": {
+    "host_translation_units": 40,
+    "native_translation_units": 1,
+    "reused_current_provider_neutral_objects": 35,
+    "SDK_builds": 0,
+    "shader_builds": 0,
+    "NVCC": 0,
+    "actual_compile_records": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\gdn-vulkan-output-scale-20261024\\compile1\\route--vulkan_device\\identity.json",
+        "bytes": 50372,
+        "sha256": "cad59cce236c2f32d0a2dcde0a19632c15c83927aad73ebd63f7c33c96b9a327"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\gdn-vulkan-output-scale-20261024\\compile1\\route--vulkan_memory\\identity.json",
+        "bytes": 55531,
+        "sha256": "185ffb9dd9c0a874d4de0d3a6cf5b74a5641059e158bb9514a2fb16f75699f81"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\gdn-vulkan-output-scale-20261024\\compile1\\route--vulkan_copy_recording\\identity.json",
+        "bytes": 53466,
+        "sha256": "0265ec9da3cedb27820f947c01f0c2531386d5dd2e3a94fed79a6b19c8dbe1bf"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\gdn-vulkan-output-scale-20261024\\compile1\\route--vulkan_copy_program\\identity.json",
+        "bytes": 54983,
+        "sha256": "5f621367f70b5def62b53dd8583002dcbdba71d42b2e1f60b820d14ff1f96e1a"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\gdn-vulkan-output-scale-20261024\\compile1\\route--vulkan_leased_invocation\\identity.json",
+        "bytes": 47807,
+        "sha256": "084ec2b2c226f559be4230c3f07b7cd3e439bedf6971aa00e88ee55ccf5c5d6e"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\gdn-vulkan-output-scale-20261024\\compile1\\route--vulkan_run\\identity.json",
+        "bytes": 60144,
+        "sha256": "f58b5d91105f7a7d3cef70d85f92259369459fa828ad0c2f96ccd41d5a6372b3"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\gdn-vulkan-output-scale-20261024\\compile1\\route--vulkan_transfer\\identity.json",
+        "bytes": 49155,
+        "sha256": "52c263d82e26157be934f3c833df36f5e4458e4bfa0cabad7c9f3b8191c38e2c"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\gdn-vulkan-output-scale-20261024\\compile1\\route--vulkan_transfer_slot\\identity.json",
+        "bytes": 52153,
+        "sha256": "3eeaa730ea645cd5632ba25a6535d00d8b732540f37279ab30dbe83ada4ef72e"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\gdn-vulkan-output-scale-20261024\\compile1\\route--vulkan_weights\\identity.json",
+        "bytes": 52707,
+        "sha256": "640768adc52737cb5ff4b5fef1ce0ca7bff50038d68b63ebced9db9c182be9cb"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\gdn-vulkan-output-scale-20261024\\compile1\\route--vulkan_pipeline\\identity.json",
+        "bytes": 51238,
+        "sha256": "521124a8f758fcc3f7c62d22bdefaa670630843c3c4594e4a947105e10712ddf"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\gdn-vulkan-output-scale-20261024\\compile1\\route--vulkan_operations\\identity.json",
+        "bytes": 52760,
+        "sha256": "cbf81bf566646ddcdab824f7a5c573bc2445d757c6bb16005ea0f0dd7f7d3042"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\gdn-vulkan-output-scale-20261024\\compile1\\route--vulkan_tensor\\identity.json",
+        "bytes": 51919,
+        "sha256": "cc7c1d7a00d2d4e1ef968cb643144fa894f33f97551a9e21d135078500110cbd"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\gdn-vulkan-output-scale-20261024\\compile1\\route--vulkan_program\\identity.json",
+        "bytes": 56595,
+        "sha256": "f07e81e58a0a9efcffac9c2bbe7726e6d103db54214f8742ec81e715d7a8185e"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\gdn-vulkan-output-scale-20261024\\compile1\\route--vulkan_recorder\\identity.json",
+        "bytes": 51235,
+        "sha256": "bd6795881bcd86ab1e796785b64c0f160bfcc9444b1759292d7bd50571013d23"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\gdn-vulkan-output-scale-20261024\\compile1\\route--vulkan_region\\identity.json",
+        "bytes": 52055,
+        "sha256": "c12bdb1b941adb2462e263602a2801801479ea7323c111cc3815733cc1377e42"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\gdn-vulkan-output-scale-20261024\\compile1\\route--vulkan_scatter\\identity.json",
+        "bytes": 51438,
+        "sha256": "b53118ad8d527d968c5ac7622f2a84d81147ee1377de7a2bc4798784363a0bf5"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\gdn-vulkan-output-scale-20261024\\compile1\\route--vulkan_batch\\identity.json",
+        "bytes": 52541,
+        "sha256": "6685fa35912fd971ea715a28e845f3ad1ceb94187ae5eb0fa47d33143ef150e4"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\gdn-vulkan-output-scale-20261024\\compile1\\route--vulkan_materialized_invocation\\identity.json",
+        "bytes": 55370,
+        "sha256": "67d3372dc771d3cc78a764908882124e8c27b070412996f2cef609aa06354ed0"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\gdn-vulkan-output-scale-20261024\\compile1\\route--vulkan_sampling\\identity.json",
+        "bytes": 51731,
+        "sha256": "320b5091984e7f212e4c5a44288a84fd3561bc731c8399b79eb9ce3b6f296e41"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\gdn-vulkan-output-scale-20261024\\compile1\\route--vulkan_normalization\\identity.json",
+        "bytes": 50749,
+        "sha256": "d92ec601dfe2caf9e3b993990be30b0e818b7d963783f8b9d4e1314008aa701a"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\gdn-vulkan-output-scale-20261024\\compile1\\route--vulkan_reduction\\identity.json",
+        "bytes": 51467,
+        "sha256": "11ee96be48dc874489b37d3496e5aeb2f9b512dac314dfdd059f1efa1d513056"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\gdn-vulkan-output-scale-20261024\\compile1\\route--vulkan_elementwise\\identity.json",
+        "bytes": 51700,
+        "sha256": "e2f2191592dd352969b7e4846bb9a6a573df968025fd01c5ce052ac0ca7ad705"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\gdn-vulkan-output-scale-20261024\\compile1\\route--vulkan_iree\\identity.json",
+        "bytes": 53531,
+        "sha256": "91892ee42e4b7cb92989f0e380d783772f30a24769443aa5f4c1d8140058c894"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\gdn-vulkan-output-scale-20261024\\compile1\\route--vulkan_mlx\\identity.json",
+        "bytes": 51797,
+        "sha256": "55b8fe02c9ba2b692e0f033614367dc776a0701811e40dfd72acd4b650b376ac"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\gdn-vulkan-output-scale-20261024\\compile1\\route--vulkan_official\\identity.json",
+        "bytes": 52085,
+        "sha256": "f3bc3a59e69dd2ec51b6aaf5881478f8c7800e4cdc08bb579ddf92722ea8e94c"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\gdn-vulkan-output-scale-20261024\\compile1\\route--vulkan_nvfp4\\identity.json",
+        "bytes": 51901,
+        "sha256": "918af9055b50c434af6f75c9073e5bb5ebe087dcd3515cfba0b54f17d83b2e6b"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\gdn-vulkan-output-scale-20261024\\compile1\\route--vulkan_blockwise_w4a8\\identity.json",
+        "bytes": 52027,
+        "sha256": "b081643701e1a64d5a39842b06201143a51174fc36912abcfea2d6455027a3b4"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\gdn-vulkan-output-scale-20261024\\compile1\\route--vulkan_ct_packed\\identity.json",
+        "bytes": 52184,
+        "sha256": "c51f08aaf1f5b0fcc14facc57dd485b0658d536186fd7525bf05d88fb5c752ab"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\gdn-vulkan-output-scale-20261024\\compile1\\route--vulkan_static_fp8\\identity.json",
+        "bytes": 52190,
+        "sha256": "59d7a7dff1be0612a65234299d1c6dc5db8aa756e5a9ff9041ddbd3802fdffd9"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\gdn-vulkan-output-scale-20261024\\compile1\\route--vulkan_iq1\\identity.json",
+        "bytes": 52007,
+        "sha256": "79d18aa47444e1f25034fb2b039d23ebf1ec3d293bf4f377aeeeed0bc81e3ac5"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\gdn-vulkan-output-scale-20261024\\compile1\\route--vulkan_row_cache\\identity.json",
+        "bytes": 52167,
+        "sha256": "78ba307eba3c17b2ab959cdd3a07e321972d656d64b3946e5c9756fd99c252f3"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\gdn-vulkan-output-scale-20261024\\compile1\\route--vulkan_row_cache_paged\\identity.json",
+        "bytes": 54966,
+        "sha256": "6e069ac896365aed616aa647d5c948b2d48277cf610eea41452cf855565ff923"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\gdn-vulkan-output-scale-20261024\\compile1\\route--vulkan_row_cache_indexer\\identity.json",
+        "bytes": 52276,
+        "sha256": "d463f76be1035cdc79ed11f239ecb8b2c6ef7dfc824099e77cb30454be110c3a"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\gdn-vulkan-output-scale-20261024\\compile1\\compute_provider_ggml_vulkan--native_device\\identity.json",
+        "bytes": 38645,
+        "sha256": "e8f8878e0ac2eb35b8eada81670fb3c737e069a7f1064f0133a1c454f84d0c6c"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\gdn-vulkan-output-scale-20261024\\compile1\\compute_provider_ggml_vulkan--native_graph\\identity.json",
+        "bytes": 38436,
+        "sha256": "3d7d61c92701709c99de49503b2017e4670193298e62a8db58131cb23412f598"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\gdn-vulkan-output-scale-20261024\\compile1\\compute_provider_ggml_vulkan--region\\identity.json",
+        "bytes": 42926,
+        "sha256": "8d2cbf1403c100075f6dcc04bef56647dfb911dc50d1ad397784b993babe6ca6"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\gdn-vulkan-output-scale-20261024\\compile1\\compute_provider_iree_vulkan--native_device\\identity.json",
+        "bytes": 101268,
+        "sha256": "b02f8e7b6d2e178b042e0a98a7cb846953abd6553cf3deb76259ff2fc9517d06"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\gdn-vulkan-output-scale-20261024\\compile1\\compute_provider_iree_vulkan--native_program\\identity.json",
+        "bytes": 101839,
+        "sha256": "a3541029b05f50c58243de92d71cc56970efb3253359b69edf3b8c40efa08be0"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\gdn-vulkan-output-scale-20261024\\compile1\\compute_ggml_runtime--metadata_arena\\identity.json",
+        "bytes": 33149,
+        "sha256": "8ec7d74834d9011cedcef880a7dad904121fec30e2f9a7d17f324c82b34c060a"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\gdn-vulkan-output-scale-20261024\\compile1\\test\\identity.json",
+        "bytes": 65429,
+        "sha256": "2df64efbb79f408f4d25b9996747b04a3c5a67afd6ca90a7f9d70492ca1a13f8"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\gdn-vulkan-output-scale-20261024\\compile1\\native\\identity.json",
+        "bytes": 85387,
+        "sha256": "2a2fdee8f07c3dfe676a3f9f7c461d6b255d49154fd812faeeab2d90d441a849"
+      }
+    ],
+    "actual_link_result": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\gdn-vulkan-output-scale-20261024\\link1\\run\\process.json",
+      "bytes": 3901,
+      "sha256": "fa89768e7dd3c8a2ba60b7cd6f5f7863b318f08461185ffd949c4c0c5f0f0315"
+    },
+    "actual_link_plan": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\gdn-vulkan-output-scale-20261024\\link1\\link-plan.json",
+      "bytes": 33375,
+      "sha256": "601bf3df24ec9cf51624426346208a801878aad83cb7242b9afa4d5b4fee2502"
+    },
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\gdn-vulkan-output-scale-20261024\\link1\\gdn-vulkan.exe",
+      "bytes": 47124992,
+      "sha256": "77a6cc975c6f6e3306d992752c737a3342e02d160e9ce090cfae3016fb0d0c2c"
+    }
+  },
+  "native": {
+    "upstream_revision": "456172ec733a135778adcd32d00e576a58232e45",
+    "original": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\bench-api-runtime\\vulkan\\build\\native\\hyle\\src\\compute_ggml_runtime\\source-bdb6226828f5304e\\src\\ggml-vulkan\\ggml-vulkan.cpp",
+      "bytes": 1072082,
+      "sha256": "af7dea1e1c981877a9ca0f1ce955844c35a11593a0ec88b3addf263a8f4e261a"
+    },
+    "after": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\gdn-vulkan-output-scale-20261024\\native-source\\ggml-vulkan.cpp",
+      "bytes": 1072760,
+      "sha256": "51069a53f27299db38d88f807d74538d6efd87c7434dffb8490bb5e5f8361972"
+    },
+    "manifest": {
+      "path": "C:\\public\\project-hyle\\hyle\\third_party\\ggml_vulkan_runtime\\patches.json",
+      "bytes": 92235,
+      "sha256": "505e55f8a06e087b062569457cec0378e929d1bf0afe7b09444a993c98d76f86"
+    },
+    "edits": [
+      {
+        "before": "#include \"ggml-vulkan.h\"\n",
+        "after": "#include \"ggml-vulkan.h\"\n#include \"gated_delta_scale.h\"\n\nextern \"C\" std::int32_t ggml_hyle_vulkan_gdn_output_scale_contract() {\n    return hyle::compute::ggml_runtime::kGdnOutputScaleContract;\n}\n\n"
+      },
+      {
+        "before": "    const float scale = 1.0f / sqrtf((float)S_v);",
+        "after": "    const float scale = hyle::compute::ggml_runtime::gdn_output_scale(\n        dst, 1.0f / sqrtf((float)S_v));"
+      },
+      {
+        "before": "            src_clone[2], src_clone[3], src_clone[4], src_clone[5],\n            ggml_get_op_params_i32(tensor, 0));",
+        "after": "            src_clone[2], src_clone[3], src_clone[4], src_clone[5],\n            ggml_get_op_params_i32(tensor, 0));\n            // Retain explicit-scale presence and F32 bits in the CPU oracle clone.\n            tensor_clone->op_params[hyle::compute::ggml_runtime::kGdnOutputScaleSlot] =\n                tensor->op_params[hyle::compute::ggml_runtime::kGdnOutputScaleSlot];\n            tensor_clone->op_params[hyle::compute::ggml_runtime::kGdnOutputScalePresenceSlot] =\n                tensor->op_params[hyle::compute::ggml_runtime::kGdnOutputScalePresenceSlot];"
+      }
+    ],
+    "header": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\bench-api-runtime\\vulkan\\build\\native\\hyle\\src\\compute_ggml_runtime\\source-bdb6226828f5304e\\include\\ggml.h",
+      "bytes": 115658,
+      "sha256": "9ac7ee3d3a957e5f7b21b104d3e3dc50b1b106f808f9d6735ead950450bfeec6"
+    },
+    "family_audit": {
+      "actual_map": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\gdn-vulkan-output-scale-20261024\\link1\\gdn-vulkan.map",
+        "bytes": 5808759,
+        "sha256": "42f945bec23def1cc12fd453c71732d6cd2584e0a58a0297786d7ffaaaf53b33"
+      },
+      "anchors": {
+        "ggml_hyle_vulkan_gdn_output_scale_contract": [
+          " 0001:000f5a20       ggml_hyle_vulkan_gdn_output_scale_contract 00000001400f6a20 f   native.obj"
+        ],
+        "ggml_backend_cpu_init": [],
+        "ggml_hyle_cpu_gdn_output_scale_contract": [],
+        "ggml_hyle_cuda_gdn_output_scale_contract": [],
+        "ggml-vulkan.cpp.obj": []
+      },
+      "native_header": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\bench-api-runtime\\vulkan\\build\\native\\hyle\\src\\compute_ggml_runtime\\source-bdb6226828f5304e\\include\\ggml.h",
+        "bytes": 115658,
+        "sha256": "9ac7ee3d3a957e5f7b21b104d3e3dc50b1b106f808f9d6735ead950450bfeec6"
+      },
+      "native_libraries": [
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\bench-api-runtime\\vulkan\\build\\native\\hyle\\src\\compute_ggml_runtime\\vendor\\src\\ggml.lib",
+          "bytes": 651094,
+          "sha256": "d129c90cbb1a265c11152d197c15b48f3ea6f25db5e561bada149e88a8c5f184"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\bench-api-runtime\\vulkan\\build\\native\\hyle\\src\\compute_ggml_runtime\\vendor\\src\\ggml-vulkan\\ggml-vulkan.lib",
+          "bytes": 52599004,
+          "sha256": "405a127ffa10f9c08734dbf6caffb8bd4a91a3c438aa1ce338dcda01bbe6e91f"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\bench-api-runtime\\vulkan\\build\\native\\hyle\\src\\compute_ggml_runtime\\vendor\\src\\ggml-base.lib",
+          "bytes": 5560434,
+          "sha256": "65fc61fb2e07086da52e180b980bd645aca297d9b9827a4bd07672c0981de112"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\bench-api-runtime\\vulkan\\build\\native\\hyle\\_deps\\iv\\build\\runtime\\src\\iree\\runtime\\iree_runtime_unified.lib",
+          "bytes": 4935388,
+          "sha256": "c630d21d3a6095420a07014e189a7d32d8a15d098defc988430c1f9bdc9368d6"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\bench-api-runtime\\vulkan\\build\\native\\hyle\\_deps\\iv\\build\\build_tools\\third_party\\flatcc\\flatcc_parsing.lib",
+          "bytes": 44104,
+          "sha256": "2573fc091aa9d05381128b98a58926a22687df37b14f0ab448d82495ee61f5a4"
+        }
+      ],
+      "current_public_records": [
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-quark-selected-20261024\\Q30\\graph-integration-preparation\\host1\\records\\compute_batch--batch_execution\\identity.json",
+          "bytes": 43158,
+          "sha256": "a3f9a6e4512bd124d3a882235749805b66b1e5a191a2da927d3b3f2112f956a6"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-quark-selected-20261024\\Q30\\graph-integration-preparation\\host1\\records\\compute_batch--batch_materialize\\identity.json",
+          "bytes": 40347,
+          "sha256": "c8b86c6e0047b8f9f079584f88f790dd74dba9d36c5b8e11929d649b06947da9"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-quark-selected-20261024\\Q30\\graph-integration-preparation\\host1\\records\\compute_batch--batch_paged_native\\identity.json",
+          "bytes": 43477,
+          "sha256": "3f20e0ef45e624412f4f402e33caed476ff5c54a79a8e14666b5e06fdefe404f"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-quark-selected-20261024\\Q30\\graph-integration-preparation\\host1\\records\\compute_batch--materialized_invocation\\identity.json",
+          "bytes": 40237,
+          "sha256": "1f95360cf3bc4380e205b6e9618c52a45cc722d66a2bbe3712ed742f0ef7a18c"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-quark-selected-20261024\\Q30\\graph-integration-preparation\\host1\\records\\compute_batch--paged_append_program\\identity.json",
+          "bytes": 37293,
+          "sha256": "b09a0f9ae24713532e6350e6ba149a9b12619e14d75aa642711bc68c2d8b6702"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-quark-selected-20261024\\Q30\\graph-integration-preparation\\host1\\records\\compute_batch--paged_arena\\identity.json",
+          "bytes": 41649,
+          "sha256": "72dd275484e6ac9da04ca6c59459803a7d726b01e0e472f8668a01f91b34fe4f"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-quark-selected-20261024\\Q30\\graph-integration-preparation\\host1\\records\\compute_batch--row_cache_paged_reader\\identity.json",
+          "bytes": 42717,
+          "sha256": "6f0f3f240ad5f2739770d67b7b45b4dea41fca3c0525dac79f787e58077b5415"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mlx-flash-original-20261024\\gdn-output-scale-validation\\host1\\records\\compute--batch_transfer\\identity.json",
+          "bytes": 39917,
+          "sha256": "96dbb62c0b6f9c7899313d0f4db36a5ed41d363e81ecdb96dd36caac229c9b54"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mlx-flash-original-20261024\\gdn-output-scale-validation\\host1\\records\\compute--command_capture\\identity.json",
+          "bytes": 34892,
+          "sha256": "908726effc78ec98b093470b2e1e76b78bcfd82883cab7f9449c440596ffe680"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mlx-flash-original-20261024\\gdn-output-scale-validation\\host1\\records\\compute--completion\\identity.json",
+          "bytes": 31818,
+          "sha256": "316fbf0b49c1d14ccd8713b7796a218c0fd356858dd7ac5dd8f2ac421c346f73"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mlx-flash-original-20261024\\gdn-output-scale-validation\\host1\\records\\compute--copy_control\\identity.json",
+          "bytes": 37136,
+          "sha256": "d6934bf636066c9966db5bf5270cb6ccc3fed93d728520ade243d729b771b313"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mlx-flash-original-20261024\\gdn-output-scale-validation\\host1\\records\\compute--copy_ranges\\identity.json",
+          "bytes": 35209,
+          "sha256": "ee0df4d6fe333a876cd45678f3c902a8a55bd7adcca320157c362b5d860933bb"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mlx-flash-original-20261024\\gdn-output-scale-validation\\host1\\records\\compute--custom_kernel\\identity.json",
+          "bytes": 38014,
+          "sha256": "52dec8e2e7b9eeeda76b0245a60fe9593c65765dc898b787f9e27627af541fc1"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mlx-flash-original-20261024\\gdn-output-scale-validation\\host1\\records\\compute--device\\identity.json",
+          "bytes": 38480,
+          "sha256": "674d8535194ad452e255dc9501c612f0bb5a35136a76ef36a209790ddbff1f7d"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mlx-flash-original-20261024\\gdn-output-scale-validation\\host1\\records\\compute--leased_operation\\identity.json",
+          "bytes": 36810,
+          "sha256": "bd09835fea7b52e213263c45351d5dc44d8b9a346d728981fe29ccec15cd383a"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mlx-flash-original-20261024\\gdn-output-scale-validation\\host1\\records\\compute--operation\\identity.json",
+          "bytes": 39648,
+          "sha256": "3b942708f93118943eed6ad4e621e6c93208a66f6023d723d2b3bcb6cf57e40d"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mlx-flash-original-20261024\\gdn-output-scale-validation\\host1\\records\\compute--provider\\identity.json",
+          "bytes": 36788,
+          "sha256": "7dbed0bc8b4ba6457fb00af9318a3f3a20ca851e523151b993790fcc871e9603"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mlx-flash-original-20261024\\gdn-output-scale-validation\\host1\\records\\compute--resource_budget\\identity.json",
+          "bytes": 36693,
+          "sha256": "30d44f652c20210e8632bafb98750fb1853c3ee102858e54e2353c4ad31ebf23"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mlx-flash-original-20261024\\gdn-output-scale-validation\\host1\\records\\compute--resource_leases\\identity.json",
+          "bytes": 41667,
+          "sha256": "f9ab065e89d6c4d1d66343c70fbd96b5922ef0bb35f82d9e6c20ee72a400ec25"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mlx-flash-original-20261024\\gdn-output-scale-validation\\host1\\records\\compute--result\\identity.json",
+          "bytes": 33938,
+          "sha256": "b432697ce954e9110ec372a6032f1b6685e0177c6b4a145fc7ddd6af1a61a535"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mlx-flash-original-20261024\\gdn-output-scale-validation\\host1\\records\\compute--retained_completion\\identity.json",
+          "bytes": 38010,
+          "sha256": "a38cff95b6d0402c8274d4ed6b06c613ae7f879c4d9ab91b74ce8315d8b8d43d"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mlx-flash-original-20261024\\gdn-output-scale-validation\\host1\\records\\compute--route_policy\\identity.json",
+          "bytes": 33645,
+          "sha256": "829c2f0314d961932e6f3a8c0f70da3a6f523ef41c2fd27985be71e8afe01106"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mlx-flash-original-20261024\\gdn-output-scale-validation\\host1\\records\\compute--shape_domain\\identity.json",
+          "bytes": 32319,
+          "sha256": "69227218ee2cb7927cd24fe2e2fb71795b3e58af44b62f934322edb67bb7811f"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mlx-flash-original-20261024\\gdn-output-scale-validation\\host1\\records\\compute--shape_program\\identity.json",
+          "bytes": 32723,
+          "sha256": "4d6fdd48f81469eea7e772450ba77e197c2ae690689b00cedfacb131eea89cfa"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mlx-flash-original-20261024\\gdn-output-scale-validation\\host1\\records\\compute--tensor_view\\identity.json",
+          "bytes": 32718,
+          "sha256": "96a5f80689e2fd8d0f88b04345a7629ad058c82848989d92ad2876de63d0e5d8"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mlx-flash-original-20261024\\gdn-output-scale-validation\\host1\\records\\compute--transfer\\identity.json",
+          "bytes": 35434,
+          "sha256": "108051ea0f2f5f6e0aa0681e4ca494e534224dd393978b765e0867f9131c3a50"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mlx-flash-original-20261024\\gdn-output-scale-validation\\host1\\records\\compute--weight_import\\identity.json",
+          "bytes": 35203,
+          "sha256": "b35eefaeac4243b02095e4a2e346d775542aa518c0d15e04d47fc7db752ce6ea"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mlx-flash-original-20261024\\gdn-output-scale-validation\\host1\\records\\compute--workload\\identity.json",
+          "bytes": 31787,
+          "sha256": "7a5f820d4df18c83ff1eb0bcd20e96ed3b3e90c3225db8a57b067bb9930a4f48"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mlx-flash-original-20261024\\gdn-output-scale-validation\\host1\\records\\compute_ops--blockwise_w4a8\\identity.json",
+          "bytes": 33648,
+          "sha256": "e9a50717ae2392e4df2560c1d2971dccae2306296de66a91bb88560f2f7e78d1"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mlx-flash-original-20261024\\gdn-output-scale-validation\\host1\\records\\compute_ops--low_precision\\identity.json",
+          "bytes": 32658,
+          "sha256": "f1406e833e4cdef7f66a8bece83290b65d3538acc83a1d867208ea48b1cbbbb2"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mlx-flash-original-20261024\\gdn-output-scale-validation\\host1\\records\\compute_ops--operation\\identity.json",
+          "bytes": 33846,
+          "sha256": "4ed2645ab5801cdd4015703d5c8c5260c2d465f64542bffdec08119eafa8742e"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mlx-flash-original-20261024\\gdn-output-scale-validation\\host1\\records\\compute_ops--sampling_ops\\identity.json",
+          "bytes": 32653,
+          "sha256": "1754bf66d1dd4ac03c8f5e7db98465ca30074c2b587119dfffa5683174ea3564"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mlx-flash-original-20261024\\gdn-output-scale-validation\\host1\\records\\compute_ops--tensor_desc\\identity.json",
+          "bytes": 32432,
+          "sha256": "bc1244ddb0ff7996166dd348cb038cfabd1c191ff7433eba74cf8a9944cab272"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mlx-flash-original-20261024\\gdn-output-scale-validation\\host1\\records\\compute_ops--weight_decode\\identity.json",
+          "bytes": 33644,
+          "sha256": "40c18dc3b5989061ed195cb551cc5100df14addfd0da9ef1a4d84ccd081ade41"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mlx-flash-original-20261024\\gdn-output-scale-validation\\foundation1\\records\\batch-layout\\identity.json",
+          "bytes": 43866,
+          "sha256": "327674e7532092770c29a82003a4718c687667d93412cb1d6d303b813fce4e01"
+        }
+      ],
+      "retained_common_libraries": [
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\lib\\gtest_main.lib",
+          "bytes": 9922,
+          "sha256": "2ba99648f575cc131bedbd24137f02e050e3abe211d97ea0a7d87858e8342394"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\lib\\gtest.lib",
+          "bytes": 5884522,
+          "sha256": "3bfd89195042039c256ca3b5df467813da5efa8d5a99caae3ae72891c9d17296"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_container.lib",
+          "bytes": 300918,
+          "sha256": "5f014b65f203f823e02c91c4b368b31bb4e8cadb25110771d5e6c6415bcb4d6b"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_mem.lib",
+          "bytes": 1280686,
+          "sha256": "10fe859d66dcd68d391c65d1a933e1a4de902d8bb49003f8dca768d65b19dbe4"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\mimalloc_static.lib",
+          "bytes": 989658,
+          "sha256": "6e92620e93dddd66497fb57f6bb43ad36b525e050812c4f1df7e04b66c439858"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_platform.lib",
+          "bytes": 764086,
+          "sha256": "4b88eede9ed8ef3813059bc6db5c87baefbae7266a4a7304ec24ede1904f1b6f"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_error.lib",
+          "bytes": 136936,
+          "sha256": "1da55ee1495b45e4b32f14cdf6b374487e538f01899e0902446742ef24c25326"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_platform_thread.lib",
+          "bytes": 119700,
+          "sha256": "2d0008331fc5cad2cc2e310788a4e9dba2c911ecf334498ac8b3af7861d736f7"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_time.lib",
+          "bytes": 113586,
+          "sha256": "275bc429d61d97153acf50f126151f73581a1a4823a5faf2b01536bf7e52535d"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_simd.lib",
+          "bytes": 27179832,
+          "sha256": "7ef184c55086e5bf3fffa1df8730ab33df4b7e54e2f9366d7e9f29460d5b1645"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_sched.lib",
+          "bytes": 1643842,
+          "sha256": "d1987955f9b36b60d2bdd1bcea7b821b4fe880f409cafd1823dfe16b8972ac65"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_mem_vm.lib",
+          "bytes": 332730,
+          "sha256": "7b67c790b1ba298f6e76c0d59df03fdfbf0ec521bcc82f8973239699b8090d90"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_platform_fs.lib",
+          "bytes": 286796,
+          "sha256": "3c750d5908efe3fc60570ed87ea469c6e907d236dd72a42f14fbd25c6ea0eafb"
+        }
+      ],
+      "no_second_ggml_family": true,
+      "no_graph_or_cpu_cuda_providers": true
+    }
+  },
+  "covered": [
+    "Empty scale preserves the native 1/sqrt(D) default; explicit 1 produces raw final S*q.",
+    "Scalar-gate GDN, vector-gate KDA and recurrent raw-gates all produce correct F32 cancellation outputs and two state snapshots.",
+    "Original input state is preserved after each invocation.",
+    "Public inference accepts finite 0/-0/-2/1 and rejects +/-infinity/NaN without publishing valid outputs."
+  ],
+  "boundaries": [
+    "Existing two canonical focused cases only, D128 and two token rows; no model or quantized artifact check.",
+    "Finite 0/-0/-2 acceptance is an inference check; GPU numerical cases use empty and explicit 1.",
+    "No Graph bridge, concurrency, throughput, memory peak, or full model quality claim.",
+    "Cached shaders and IREE embedded programs reused unchanged; no SDK or third-party shader/binary contents archived.",
+    "Selected Vulkan device name is not emitted by the existing canonical cases; no additional device matrix was run."
+  ],
+  "preparation_corrections": {
+    "before": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\gdn-vulkan-output-scale-20261024\\build-before-filter-fix.py",
+      "bytes": 15600,
+      "sha256": "246469ff34e7fd32ea2fa48257b27fdfe4d8c21dbf62d4fed9d3b335ecfdc993"
+    },
+    "after": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\gdn-vulkan-output-scale-20261024\\build.py",
+      "bytes": 15594,
+      "sha256": "ac91f1c6e07c21a8a7a49e33ea3babad5af7c418d64ad650d12ca592e7bb0755"
+    },
+    "prepared_filter": "VulkanGdnOutputScale.*",
+    "actual_filter": "GdnOutputScale.*",
+    "reason": "Use the two actual existing canonical test suite names; no source/math/compile changes.",
+    "compiled_jobs": 41,
+    "native_executed": false,
+    "after_filter_snapshot": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\gdn-vulkan-output-scale-20261024\\build-after-filter-before-pathcase.py",
+      "bytes": 15594,
+      "sha256": "ac91f1c6e07c21a8a7a49e33ea3babad5af7c418d64ad650d12ca592e7bb0755"
+    },
+    "current_entry": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\gdn-vulkan-output-scale-20261024\\build.py",
+      "bytes": 15664,
+      "sha256": "ee45f79f4b81405e09b75f90c9f824156837ba4983cb68772622b36a69689600"
+    },
+    "path_case_correction": "require compares exact bytes+SHA of named file; MSVC lower-case dependency paths resolve to the same Windows file."
+  },
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\mtp-gdn-output-scale-vulkan-2026-10-24.zip",
+    "bytes": 1828500,
+    "sha256": "43f0915b77f2e0cf7ecc1ed0a41a438185770499069e86cf4a9c4c3920defa4c"
+  },
+  "archive_entries": 457,
+  "network_bytes": 0,
+  "automatic_downloads": false
+}

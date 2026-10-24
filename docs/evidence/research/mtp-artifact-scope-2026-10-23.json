@@ -1,0 +1,2432 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-23",
+  "status": "Local fixed metadata reconciliation; original source execution is separately identified.",
+  "scope": {
+    "models": [
+      "qwen35_2b",
+      "qwen38_27b",
+      "qwen38_24t",
+      "kimi_k3",
+      "glm53",
+      "glm53_flash",
+      "deepseek_v4_pro_0813",
+      "deepseek_v4_flash_0731"
+    ],
+    "authority": "docs/implementation/tasks/compute/llm-moe-provider-demand-matrix.json#/current_scope",
+    "quantization_catalog": "docs/implementation/model-quantizations.json",
+    "excluded": "DeepSeek preview releases, V4.1 and unselected/new families are not added. Existing mainstream quantization discovery is retained; unreviewed is not unsupported.",
+    "method": "Only existing local header/index/source/evidence metadata was read. No network, weight download, native build or test was executed for this reconciliation."
+  },
+  "counting": {
+    "unit": "Exact fixed artifact/profile or explicit sidecar identity; not engine count, public-operator gap count, whole-model task count or completion percentage.",
+    "baseline_profiles": 24,
+    "baseline_confirmed_MTP": 15,
+    "baseline_complete_finite_original_consumers": 15,
+    "baseline_confirmed_original_bindings_not_complete": 0,
+    "baseline_complete_negative_or_explicit_no_MTP": 9,
+    "explicit_optional_sidecars": 3,
+    "sidecars_complete_finite_original_consumers": 3,
+    "sidecars_original_binding_not_complete": 0,
+    "catalog_derivative_confirmed_presence": 7,
+    "catalog_confirmed_original_binding_not_complete": 0,
+    "confirmed_identity_entries": 25,
+    "complete_finite_original_consumers": 25,
+    "confirmed_original_identity_bindings_not_complete": 0,
+    "confirmed_presence_with_schema_still_partial": 0,
+    "partial_schema_ids": [],
+    "other_catalog_full_negative_censuses": 5,
+    "other_catalog_partial_presence_questions": 3,
+    "other_catalog_unconfirmed": 13,
+    "Kimi_catalog_rows_no_new_MTP_requirement_established": 5
+  },
+  "finite_remaining": {
+    "confirmed_original_bindings": {
+      "total": 0,
+      "baseline": 0,
+      "explicit_sidecars": 0,
+      "catalog_derivatives": 0,
+      "ids": [],
+      "meaning": "Supplier/codec/store/shape integration obligations for0 selected original identities on existing graph/state mechanisms. All25 retain complete physical MTP schemas. Counts do not measure engines, missing public math operations or full-model completion."
+    },
+    "additional_existing_pairing": {
+      "count": 0,
+      "identity": "S02 Q8_0 DSpark sidecar paired with same-release mainUDQ4_K_XL GGUF vocabulary",
+      "current": "Completed matching original main-UD-Q4_K_XL Q8_0 embedding/head with original Q8_0/MXFP4 sidecar and original formal40/41/42 target-tail. CPU/CUDA each87Graphs and affected formal BF16 CUDA45Graphs passed:3cases219Graphs. This does not add or change any draft identity count.",
+      "remaining": [],
+      "source_review": {
+        "header_archive": "docs/evidence/correctness/cpu-quant-mtp-c1-demand/headers.json.gz",
+        "header_key": "12ae7e95b1ccabb5c54be054acf89b4a22b7bf8ac347b2d21b932f8e14d753e7",
+        "repository": "unsloth/DeepSeek-V4-Flash-0731-GGUF",
+        "revision": "fbbb5b93fb787c21338159b0af3318bb3f4d9768",
+        "file": "UD-Q4_K_XL/DeepSeek-V4-Flash-0731-UD-Q4_K_XL-00002-of-00005.gguf",
+        "original_embedding_codec": "Q8_0",
+        "original_output_codec": "Q8_0",
+        "hidden": 4096,
+        "vocabulary": 129280,
+        "encoded_bytes_per_bank": 562626560,
+        "possible_F32_full_bank_bytes": 2118123520,
+        "current_generic_F32_byte_equivalent_limit": 2147482623,
+        "conclusion": "This exact head fits the existing generic representation/scratch admission independently of the M<=4 large-bank exception. Actual CPU/CUDA six-row original Q8 vocabulary consumer passed without a provider limit change; current RTX4070 result is not all-device admission proof.",
+        "native_executed": true
+      },
+      "native_execution": {
+        "cpu": {
+          "status": "passed",
+          "path": ".scratch/dspark-pro-target-draft-20261023/checks10/summary.json",
+          "cases": 1,
+          "graphs": 87,
+          "failures": 0,
+          "skips": 0
+        },
+        "cuda": {
+          "status": "passed",
+          "path": ".scratch/dspark-pro-target-draft-20261023/checks11/summary.json",
+          "cases": 1,
+          "graphs": 87,
+          "failures": 0,
+          "skips": 0
+        },
+        "affected_bfloat_cuda": {
+          "status": "passed",
+          "path": ".scratch/dspark-pro-target-draft-20261023/checks12/summary.json",
+          "cases": 1,
+          "graphs": 45,
+          "failures": 0,
+          "skips": 0
+        }
+      },
+      "completed_count": 1,
+      "finite_original_pairing_complete": true,
+      "runtime_evidence": "docs/evidence/correctness/mtp-dspark-main-gguf-q8-vocabulary-2026-10-23.json",
+      "limits": "Layer39 and initial valid histories remain finite fixtures. Not whole main-UDQ4 body, formal-source equivalence, quality, natural acceptance-rate, TPS or physical-memory peak."
+    },
+    "performance": "Current ordinary/MTP single-turn and genuine two-turn four-arm speed and independent memory windows completed on 2026-10-24. Artifact finite execution does not claim TPS. Recheck only if a subsequent shared-product change affects the actual consumer.",
+    "unresolved_presence": "Other partial clues and unconfirmed catalog rows remain bounded metadata questions, not proven runtime work. Q01/Q10/Q30 physical schemas remain complete; unfinished original source bindings are the exact IDs listed above.",
+    "already_bound_consumer_target": {
+      "identity": "B08 official GLM Pro",
+      "finite_target_combination_complete": true,
+      "remaining": [],
+      "actual_status": "Original77 target producer, original78/fullV verifier and14resources+Epoch accepted repair/catchup passed CPU/CUDA:4 cases140Graphs including old78 regression.",
+      "runtime_evidence": "docs/evidence/correctness/mtp-glm-pro-target-verifier-2026-10-23.json",
+      "limits": "Upstream74 IDs/layer76 hidden adapter/residual and finite initial histories remain synthetic boundaries. Not full78-layer taskquality/TPS."
+    }
+  },
+  "confirmed": [
+    {
+      "id": "B01",
+      "model": "qwen35_2b",
+      "selection": "baseline",
+      "profile": "official",
+      "repository": "Qwen/Qwen3.5-2B",
+      "revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+      "variant_or_file": "official-bf16",
+      "hf": "https://huggingface.co/Qwen/Qwen3.5-2B/tree/15852e8c16360a2fea060d615a32b45270f8a8fc",
+      "presence": "confirmed",
+      "execution": "original_complete_finite_state_passed",
+      "remaining": [],
+      "evidence": {
+        "path": "docs/evidence/research/mtp-artifact-scope-2026-10-22.json#/official_header_extract",
+        "complete_named_header_census": true,
+        "all_tensors": 632,
+        "mtp_roles": 15,
+        "mtp_dtypes": {
+          "BF16": 15
+        },
+        "mtp_role_table_sha256": "507cfcb46d69f18ac1de132cd042ef16ad2ab0e198853b21adb91745fb64bf3a"
+      },
+      "executed_scope": "FULL_TARGET_AND_ORIGINAL_MTP_K1",
+      "runtime_evidence": [
+        "docs/evidence/correctness/qwen-mtp-weights-2026-10-22.json",
+        "docs/evidence/correctness/qwen-mtp-batch-2026-10-22.json",
+        "docs/evidence/correctness/qwen-native-protocol-2026-10-22.json",
+        "docs/evidence/correctness/mtp-qwen-natural-multiturn-2026-10-24.json"
+      ],
+      "limits": "Full target/original BF16 MTP K1 execution is evidenced on CUDA, Apple and Vulkan. Existing CPU generated-payload or local Q8 checks do not establish an original BF16 full-consumer CPU run. Current Q35 single-turn and genuine two-turn four-arm comparisons are complete; task-quality failures and cross-shape floating-point boundaries remain explicit.",
+      "finite_original_consumer_complete": true,
+      "executed_backends": [
+        "cuda",
+        "apple",
+        "vulkan"
+      ]
+    },
+    {
+      "id": "B02",
+      "model": "qwen38_27b",
+      "selection": "baseline",
+      "profile": "official",
+      "repository": "Qwen/Qwen3.8-27B",
+      "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+      "variant_or_file": "official-bf16",
+      "hf": "https://huggingface.co/Qwen/Qwen3.8-27B/tree/1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+      "presence": "confirmed",
+      "execution": "cpu_cuda_original_complete_finite_state_passed",
+      "remaining": [],
+      "evidence": {
+        "path": "docs/evidence/research/mtp-artifact-scope-2026-10-22.json#/official_header_extract",
+        "complete_named_header_census": true,
+        "all_tensors": 1199,
+        "mtp_roles": 15,
+        "mtp_dtypes": {
+          "BF16": 15
+        },
+        "mtp_role_table_sha256": "eb51fc4ea2b190d94d8898761eaf1fb2780de8ee5e3c1b59f0b7108eff093f26",
+        "finite_runtime_evidence": "docs/evidence/correctness/mtp-qwen-bfloat-target-verifier-2026-10-23.json"
+      },
+      "executed_scope": "ORIGINAL_BFLOAT_TARGET63_NEXTN_FULL_V_K1",
+      "runtime_evidence": [
+        "docs/evidence/correctness/mtp-qwen-bfloat-target-verifier-2026-10-23.json"
+      ],
+      "limits": "Layer62 upstream input and initial histories remain finite fixtures; F32-fused RoPE has one BF16 output store and does not claim HF eager intermediate-bit identity. Not a full64-layer prompt-to-output model, task quality, natural acceptance rate or TPS result.",
+      "actual_progress": {
+        "acquired_roles": 29,
+        "acquired_bytes": 6679513088,
+        "original_manifest_sha256": "0c81c7c18e2ac7cf21308a0cd07d3e34d8b24896b2af80028e7b77b24ace1008",
+        "finite_complete_target_state_native_pass": true,
+        "CPU_CUDA_passed": true,
+        "runtime_evidence": "docs/evidence/correctness/mtp-qwen-bfloat-target-verifier-2026-10-23.json"
+      }
+    },
+    {
+      "id": "B03",
+      "model": "qwen38_27b",
+      "selection": "baseline",
+      "profile": "primary_gguf",
+      "repository": "unsloth/Qwen3.8-27B-GGUF",
+      "revision": "4ca720788d1e01f1bff70c033e0d0028fd02e502",
+      "variant_or_file": "UD-Q4_K_M",
+      "hf": "https://huggingface.co/unsloth/Qwen3.8-27B-GGUF/tree/4ca720788d1e01f1bff70c033e0d0028fd02e502",
+      "presence": "confirmed",
+      "execution": "cpu_cuda_original_complete_finite_state_passed",
+      "remaining": [],
+      "evidence": {
+        "path": ".scratch/gguf-weight-audit.json#/qwen38_27b_ud_q4_k_m",
+        "complete_named_header_census": true,
+        "all_tensors": 866,
+        "mtp_block": 64,
+        "mtp_roles": 15,
+        "mtp_dtypes": {
+          "Q8_0": 2,
+          "F32": 7,
+          "Q6_K": 6
+        },
+        "mtp_role_table_sha256": "274bf22628fa56207c5567cdacc5197f0a8aeb449f892242b2159f3305d1e620"
+      },
+      "first_header_hf": "https://huggingface.co/unsloth/Qwen3.8-27B-GGUF/resolve/4ca720788d1e01f1bff70c033e0d0028fd02e502/Qwen3.8-27B-UD-Q4_K_M.gguf",
+      "role_codecs": {
+        "blk.64.attn_k.weight": "Q8_0",
+        "blk.64.attn_k_norm.weight": "F32",
+        "blk.64.attn_norm.weight": "F32",
+        "blk.64.attn_output.weight": "Q6_K",
+        "blk.64.attn_q.weight": "Q6_K",
+        "blk.64.attn_q_norm.weight": "F32",
+        "blk.64.attn_v.weight": "Q8_0",
+        "blk.64.ffn_down.weight": "Q6_K",
+        "blk.64.ffn_gate.weight": "Q6_K",
+        "blk.64.ffn_up.weight": "Q6_K",
+        "blk.64.nextn.eh_proj.weight": "Q6_K",
+        "blk.64.nextn.enorm.weight": "F32",
+        "blk.64.nextn.hnorm.weight": "F32",
+        "blk.64.nextn.shared_head_norm.weight": "F32",
+        "blk.64.post_attention_norm.weight": "F32"
+      },
+      "executed_scope": "ORIGINAL_17_ROLE_NEXTN_AND_TARGET63_K1",
+      "runtime_evidence": [
+        "docs/evidence/correctness/mtp-q27-original-nextn-2026-10-23.json",
+        "docs/evidence/correctness/mtp-qwen27-target-verifier-2026-10-23.json"
+      ],
+      "limits": "Actual original target63 and full-V verifier; layer62/history remain finite fixtures, not a full64-layer engine."
+    },
+    {
+      "id": "B04",
+      "model": "qwen38_27b",
+      "selection": "baseline",
+      "profile": "fidelity_gguf",
+      "repository": "unsloth/Qwen3.8-27B-GGUF",
+      "revision": "4ca720788d1e01f1bff70c033e0d0028fd02e502",
+      "variant_or_file": "UD-Q8_K_XL",
+      "hf": "https://huggingface.co/unsloth/Qwen3.8-27B-GGUF/tree/4ca720788d1e01f1bff70c033e0d0028fd02e502",
+      "presence": "confirmed",
+      "execution": "cpu_and_cuda_original_complete_finite_state_passed",
+      "remaining": [],
+      "evidence": {
+        "path": ".scratch/gguf-weight-audit.json#/qwen38_27b_ud_q8_k_xl",
+        "complete_named_header_census": true,
+        "all_tensors": 866,
+        "mtp_block": 64,
+        "mtp_roles": 15,
+        "mtp_dtypes": {
+          "BF16": 4,
+          "F32": 7,
+          "Q8_0": 4
+        },
+        "mtp_role_table_sha256": "d9533aab5d7bc4056af544b4c1edd86070818c6ba713828088002afd2711a634"
+      },
+      "first_header_hf": "https://huggingface.co/unsloth/Qwen3.8-27B-GGUF/resolve/4ca720788d1e01f1bff70c033e0d0028fd02e502/Qwen3.8-27B-UD-Q8_K_XL.gguf",
+      "role_codecs": {
+        "blk.64.attn_k.weight": "BF16",
+        "blk.64.attn_k_norm.weight": "F32",
+        "blk.64.attn_norm.weight": "F32",
+        "blk.64.attn_output.weight": "Q8_0",
+        "blk.64.attn_q.weight": "BF16",
+        "blk.64.attn_q_norm.weight": "F32",
+        "blk.64.attn_v.weight": "BF16",
+        "blk.64.ffn_down.weight": "Q8_0",
+        "blk.64.ffn_gate.weight": "Q8_0",
+        "blk.64.ffn_up.weight": "Q8_0",
+        "blk.64.nextn.eh_proj.weight": "BF16",
+        "blk.64.nextn.enorm.weight": "F32",
+        "blk.64.nextn.hnorm.weight": "F32",
+        "blk.64.nextn.shared_head_norm.weight": "F32",
+        "blk.64.post_attention_norm.weight": "F32"
+      },
+      "finite_original_consumer_complete": true,
+      "runtime_evidence": "docs/evidence/correctness/mtp-qwen27-fidelity-gguf-target-verifier-2026-10-24.json",
+      "native_execution": {
+        "cpu": {
+          "status": "passed",
+          "cases": 1,
+          "graphs": 23,
+          "failures": 0,
+          "skips": 0
+        },
+        "cuda": {
+          "status": "passed",
+          "cases": 1,
+          "graphs": 23,
+          "failures": 0,
+          "skips": 0
+        },
+        "source_roles": 29,
+        "source_bytes": 4927328256,
+        "evidence_sha256": "334abcf6bb3eb78594af90aeb18d0a14ffb8a60b38e8a987a3e2be956f31e203"
+      },
+      "limits": "Finite layer62 input/history fixtures do not execute the preceding trained trunk or full model. The one natural trial remains separate from controlled match/rejection and is not an acceptance-rate result. Per-role original codec, actual provider choices and mathematical observations are retained in each XML; no cross-provider bit identity is inferred. No TPS, task-quality, physical-memory peak or new platform/device claim."
+    },
+    {
+      "id": "B05",
+      "model": "qwen38_24t",
+      "selection": "baseline",
+      "profile": "official",
+      "repository": "Qwen/Qwen3.8-2.4T-A95B",
+      "revision": "207bd685a7e3696cfaff12ded7c6a7ea0f88c996",
+      "variant_or_file": "official-bf16",
+      "hf": "https://huggingface.co/Qwen/Qwen3.8-2.4T-A95B/tree/207bd685a7e3696cfaff12ded7c6a7ea0f88c996",
+      "presence": "confirmed",
+      "execution": "cpu_and_mixed_original_complete_finite_state_passed",
+      "remaining": [],
+      "evidence": {
+        "path": "docs/evidence/research/mtp-artifact-scope-2026-10-22.json#/official_header_extract",
+        "complete_named_header_census": true,
+        "all_tensors": 1609,
+        "mtp_roles": 19,
+        "mtp_dtypes": {
+          "BF16": 19
+        },
+        "mtp_role_table_sha256": "f6c35a51502a91fb6302a2e14a89a577c1a6d187a6b362e40983d3af56d41004",
+        "original_static_manifest": ".scratch/qwen-bfloat-selected-20261023/B05/original-roles/manifest.json",
+        "graph_retirement_runtime": "docs/evidence/correctness/graph-segment-retirement-2026-10-23.json",
+        "finite_mixed_execution": {
+          "path": ".scratch/qwen-bfloat-selected-20261023/checks9/summary.json",
+          "tests": 1,
+          "graphs": 43,
+          "failures": 0,
+          "skips": 0
+        },
+        "finite_runtime_evidence": "docs/evidence/correctness/mtp-qwen24-bfloat-target-verifier-2026-10-23.json"
+      },
+      "executed_scope": "ORIGINAL_BFLOAT_TARGET91_NEXTN_FULL_V_K1_CPU_AND_CPU_VOCAB_CUDA_BODY",
+      "runtime_evidence": [
+        "docs/evidence/correctness/mtp-qwen24-bfloat-target-verifier-2026-10-23.json"
+      ],
+      "limits": "Layer90 upstream input and initial histories remain fixtures. Only actual selected original BF16 expert planes are supplied. Mixed execution keeps both original vocabulary banks in CPU memory, body/state on CUDA; not all-CUDA, a full92-layer trained model, task quality, natural acceptance-rate estimate, TPS or measured-memory result.",
+      "actual_progress": {
+        "acquired_static_roles": 33,
+        "acquired_static_bytes": 10301376512,
+        "original_manifest_sha256": "abc95f30f8c549e0e7f6bbc47e94aa1c42bc3cf221d98703efbf9ff3ee365f09",
+        "selected_original_expert_supply_complete": true,
+        "all512_expert_banks_acquired": false,
+        "finite_complete_target_state_native_pass": true,
+        "CPU_and_mixed_passed": true,
+        "runtime_evidence": "docs/evidence/correctness/mtp-qwen24-bfloat-target-verifier-2026-10-23.json"
+      }
+    },
+    {
+      "id": "B06",
+      "model": "qwen38_24t",
+      "selection": "baseline",
+      "profile": "primary_gguf",
+      "repository": "unsloth/Qwen3.8-2.4T-A95B-GGUF",
+      "revision": "567d3e6ac26c5474b18311e619c04350fb9a5556",
+      "variant_or_file": "UD-IQ4_XS",
+      "hf": "https://huggingface.co/unsloth/Qwen3.8-2.4T-A95B-GGUF/tree/567d3e6ac26c5474b18311e619c04350fb9a5556",
+      "presence": "confirmed",
+      "execution": "cpu_cuda_original_complete_finite_state_passed",
+      "remaining": [],
+      "evidence": {
+        "path": ".scratch/gguf-weight-audit.json#/qwen38_24t_ud_iq4_xs",
+        "complete_named_header_census": true,
+        "all_tensors": 1702,
+        "mtp_block": 92,
+        "mtp_roles": 20,
+        "mtp_dtypes": {
+          "Q5_K": 6,
+          "F32": 9,
+          "Q4_K": 3,
+          "Q6_K": 1,
+          "Q8_0": 1
+        },
+        "mtp_role_table_sha256": "329d8ad01a73f13ae78e65bdf2dec3ab2bdba9019e4c77d1c45125262477d329"
+      },
+      "first_header_hf": "https://huggingface.co/unsloth/Qwen3.8-2.4T-A95B-GGUF/resolve/567d3e6ac26c5474b18311e619c04350fb9a5556/UD-IQ4_XS/Qwen3.8-2.4T-A95B-UD-IQ4_XS-00001-of-00029.gguf",
+      "role_codecs": {
+        "blk.92.attn_k.weight": "Q5_K",
+        "blk.92.attn_k_norm.weight": "F32",
+        "blk.92.attn_norm.weight": "F32",
+        "blk.92.attn_output.weight": "Q5_K",
+        "blk.92.attn_q.weight": "Q5_K",
+        "blk.92.attn_q_norm.weight": "F32",
+        "blk.92.attn_v.weight": "Q5_K",
+        "blk.92.ffn_down_exps.weight": "Q4_K",
+        "blk.92.ffn_down_shexp.weight": "Q6_K",
+        "blk.92.ffn_gate_exps.weight": "Q4_K",
+        "blk.92.ffn_gate_inp.weight": "F32",
+        "blk.92.ffn_gate_inp_shexp.weight": "F32",
+        "blk.92.ffn_gate_shexp.weight": "Q5_K",
+        "blk.92.ffn_up_exps.weight": "Q4_K",
+        "blk.92.ffn_up_shexp.weight": "Q5_K",
+        "blk.92.nextn.eh_proj.weight": "Q8_0",
+        "blk.92.nextn.enorm.weight": "F32",
+        "blk.92.nextn.hnorm.weight": "F32",
+        "blk.92.nextn.shared_head_norm.weight": "F32",
+        "blk.92.post_attention_norm.weight": "F32"
+      },
+      "executed_scope": "ORIGINAL_22_ROLE_NEXTN_AND_TARGET91_K1",
+      "runtime_evidence": [
+        "docs/evidence/correctness/mtp-q24-original-nextn-2026-10-23.json",
+        "docs/evidence/correctness/mtp-qwen24-target-verifier-2026-10-23.json"
+      ],
+      "limits": "Distinct original target91 IQ4_XS experts and draft92 Q4_K; layer90/history remain finite fixtures."
+    },
+    {
+      "id": "B07",
+      "model": "qwen38_24t",
+      "selection": "baseline",
+      "profile": "fidelity_gguf",
+      "repository": "unsloth/Qwen3.8-2.4T-A95B-GGUF",
+      "revision": "567d3e6ac26c5474b18311e619c04350fb9a5556",
+      "variant_or_file": "Q8_0",
+      "hf": "https://huggingface.co/unsloth/Qwen3.8-2.4T-A95B-GGUF/tree/567d3e6ac26c5474b18311e619c04350fb9a5556",
+      "presence": "confirmed",
+      "execution": "cpu_and_cuda_original_complete_finite_state_passed",
+      "remaining": [],
+      "evidence": {
+        "path": ".scratch/gguf-weight-audit.json#/qwen38_24t_q8_0",
+        "complete_named_header_census": true,
+        "all_tensors": 1702,
+        "mtp_block": 92,
+        "mtp_roles": 20,
+        "mtp_dtypes": {
+          "Q8_0": 11,
+          "F32": 9
+        },
+        "mtp_role_table_sha256": "210fa5801e7e43cafcac8cc9229e16b42e60d05a4acc1ffeba70e6a960650ffc"
+      },
+      "first_header_hf": "https://huggingface.co/unsloth/Qwen3.8-2.4T-A95B-GGUF/resolve/567d3e6ac26c5474b18311e619c04350fb9a5556/Q8_0/Qwen3.8-2.4T-A95B-Q8_0-00001-of-00056.gguf",
+      "role_codecs": {
+        "blk.92.ffn_gate_exps.weight": "Q8_0",
+        "blk.92.ffn_up_exps.weight": "Q8_0",
+        "blk.92.ffn_down_exps.weight": "Q8_0",
+        "blk.92.nextn.eh_proj.weight": "Q8_0",
+        "blk.92.attn_norm.weight": "F32",
+        "blk.92.ffn_gate_inp.weight": "F32",
+        "blk.92.ffn_down_shexp.weight": "Q8_0",
+        "blk.92.ffn_gate_shexp.weight": "Q8_0",
+        "blk.92.ffn_up_shexp.weight": "Q8_0",
+        "blk.92.ffn_gate_inp_shexp.weight": "F32",
+        "blk.92.post_attention_norm.weight": "F32",
+        "blk.92.attn_k_norm.weight": "F32",
+        "blk.92.attn_k.weight": "Q8_0",
+        "blk.92.attn_output.weight": "Q8_0",
+        "blk.92.attn_q_norm.weight": "F32",
+        "blk.92.attn_q.weight": "Q8_0",
+        "blk.92.attn_v.weight": "Q8_0",
+        "blk.92.nextn.shared_head_norm.weight": "F32",
+        "blk.92.nextn.enorm.weight": "F32",
+        "blk.92.nextn.hnorm.weight": "F32"
+      },
+      "finite_original_consumer_complete": true,
+      "runtime_evidence": "docs/evidence/correctness/mtp-qwen24-fidelity-gguf-target-verifier-2026-10-24.json",
+      "native_execution": {
+        "cpu": {
+          "status": "passed",
+          "cases": 1,
+          "graphs": 43,
+          "failures": 0,
+          "skips": 0
+        },
+        "cuda": {
+          "status": "passed",
+          "cases": 1,
+          "graphs": 43,
+          "failures": 0,
+          "skips": 0
+        },
+        "source_roles": 33,
+        "source_bytes": 5497491456,
+        "evidence_sha256": "acae6eb48009e984f9faeb3d4c6f3f3c722c7118b7ad0ba896984fb60905e38c"
+      },
+      "limits": "Layer90 input/history fixtures do not execute the preceding trained trunk or full model. One natural K1 trial and separate controlled match/rejection are not a natural acceptance-rate result. No TPS, full-model quality, measured physical memory or additional platform/device claim."
+    },
+    {
+      "id": "B08",
+      "model": "glm53",
+      "selection": "baseline",
+      "profile": "official",
+      "repository": "zai-org/GLM-5.3",
+      "revision": "aca966e4e02791568aa6a4ced368624b3d897f42",
+      "variant_or_file": "official-fp8",
+      "hf": "https://huggingface.co/zai-org/GLM-5.3/tree/aca966e4e02791568aa6a4ced368624b3d897f42",
+      "presence": "confirmed",
+      "execution": "cpu_cuda_original_complete_finite_state_passed",
+      "remaining": [],
+      "executed_scope": "ORIGINAL_TARGET77_NEXTN78_FULL_V_FINITE_STATE",
+      "runtime_evidence": [
+        "docs/evidence/correctness/mtp-glm-pro-nextn-2026-10-23.json",
+        "docs/evidence/correctness/mtp-glm-pro-target-verifier-2026-10-23.json"
+      ],
+      "limits": "Original77 target and78/fullV accepted state, repair/index lag/catchup passed CPU/CUDA. Upstream74 IDs, layer76 hidden/residual adapter and finite initial histories remain fixture boundaries; not a full78-layer target, task quality or throughput result.",
+      "evidence": {
+        "path": "docs/evidence/correctness/mtp-glm-pro-nextn-2026-10-23.json",
+        "fixed_original_roles": 1571,
+        "role_count_includes": "original NextN plus shared embedding/head/norm; expert code/scale entries are distinct raw roles",
+        "nextn_layer": 78
+      },
+      "role_codecs": {
+        "EH_norm_router_vocabulary": "BF16 with source-specific F32 accumulation/correction",
+        "qa_qb_kva_output": "E4M3+F32 block128 scales",
+        "kv_b": "E4M3+F32 global block128 scales",
+        "index_key_query": "E4M3+F32 block128 scales",
+        "expert_and_shared": "E4M3+F32 block128 scales",
+        "index_cache": "UE8M0/E4 encoded128; model-specific pooling, RoPE and skip behavior"
+      }
+    },
+    {
+      "id": "B09",
+      "model": "glm53",
+      "selection": "baseline",
+      "profile": "primary_gguf",
+      "repository": "unsloth/GLM-5.3-GGUF",
+      "revision": "346b3591c7f28d1a23716f97a065ecf12ec14771",
+      "variant_or_file": "UD-Q4_K_XL",
+      "hf": "https://huggingface.co/unsloth/GLM-5.3-GGUF/tree/346b3591c7f28d1a23716f97a065ecf12ec14771",
+      "presence": "confirmed",
+      "execution": "cpu_and_cuda_original_complete_finite_state_passed",
+      "remaining": [],
+      "evidence": {
+        "path": ".scratch/gguf-weight-audit.json#/glm53_ud_q4_k_xl",
+        "complete_named_header_census": true,
+        "all_tensors": 1809,
+        "mtp_block": 78,
+        "mtp_roles": 27,
+        "mtp_dtypes": {
+          "Q8_0": 12,
+          "F32": 12,
+          "Q5_K": 1,
+          "Q4_K": 2
+        },
+        "mtp_role_table_sha256": "a472efdd87d11a2162813680ee3305b0f955f10770b30ddc0a780f4c354748bc"
+      },
+      "first_header_hf": "https://huggingface.co/unsloth/GLM-5.3-GGUF/resolve/346b3591c7f28d1a23716f97a065ecf12ec14771/UD-Q4_K_XL/GLM-5.3-UD-Q4_K_XL-00001-of-00011.gguf",
+      "role_codecs": {
+        "blk.78.attn_k_b.weight": "Q8_0",
+        "blk.78.attn_kv_a_mqa.weight": "Q8_0",
+        "blk.78.attn_kv_a_norm.weight": "F32",
+        "blk.78.attn_norm.weight": "F32",
+        "blk.78.attn_output.weight": "Q8_0",
+        "blk.78.attn_q_a.weight": "Q8_0",
+        "blk.78.attn_q_a_norm.weight": "F32",
+        "blk.78.attn_q_b.weight": "Q8_0",
+        "blk.78.attn_v_b.weight": "Q8_0",
+        "blk.78.exp_probs_b.bias": "F32",
+        "blk.78.ffn_down_exps.weight": "Q5_K",
+        "blk.78.ffn_down_shexp.weight": "Q8_0",
+        "blk.78.ffn_gate_exps.weight": "Q4_K",
+        "blk.78.ffn_gate_inp.weight": "F32",
+        "blk.78.ffn_gate_shexp.weight": "Q8_0",
+        "blk.78.ffn_norm.weight": "F32",
+        "blk.78.ffn_up_exps.weight": "Q4_K",
+        "blk.78.ffn_up_shexp.weight": "Q8_0",
+        "blk.78.indexer.attn_k.weight": "Q8_0",
+        "blk.78.indexer.attn_q_b.weight": "Q8_0",
+        "blk.78.indexer.k_norm.bias": "F32",
+        "blk.78.indexer.k_norm.weight": "F32",
+        "blk.78.indexer.proj.weight": "F32",
+        "blk.78.nextn.eh_proj.weight": "Q8_0",
+        "blk.78.nextn.enorm.weight": "F32",
+        "blk.78.nextn.hnorm.weight": "F32",
+        "blk.78.nextn.shared_head_norm.weight": "F32"
+      },
+      "finite_original_consumer_complete": true,
+      "runtime_evidence": "docs/evidence/correctness/mtp-glm-gguf-b09-target-verifier-2026-10-24.json",
+      "native_execution": {
+        "cpu": {
+          "status": "passed",
+          "cases": 1,
+          "graphs": 44,
+          "failures": 0,
+          "skips": 0
+        },
+        "cuda": {
+          "status": "passed",
+          "cases": 1,
+          "graphs": 44,
+          "failures": 0,
+          "skips": 0
+        },
+        "source_static_roles": 47,
+        "source_static_bytes": 2567086080,
+        "selected_expert_IDs": 73,
+        "same_head_resources": 13,
+        "epoch_bytes": 24,
+        "actual_accepted_repair_each": 1,
+        "evidence_sha256": "bf11f4faf2981c788b312a3e2b318275f3cc3bbaab0cbfdeef3ebbffd578c5ae"
+      },
+      "limits": "Upstream layer76 input/residual, shared-index74 IDs and finite initial histories remain fixtures. Not complete GLM model quality, natural acceptance rate, TPS or measured physical memory."
+    },
+    {
+      "id": "B10",
+      "model": "glm53",
+      "selection": "baseline",
+      "profile": "fidelity_gguf",
+      "repository": "unsloth/GLM-5.3-GGUF",
+      "revision": "346b3591c7f28d1a23716f97a065ecf12ec14771",
+      "variant_or_file": "Q8_0",
+      "hf": "https://huggingface.co/unsloth/GLM-5.3-GGUF/tree/346b3591c7f28d1a23716f97a065ecf12ec14771",
+      "presence": "confirmed",
+      "execution": "cpu_and_cuda_original_complete_finite_state_passed",
+      "remaining": [],
+      "evidence": {
+        "path": ".scratch/gguf-weight-audit.json#/glm53_q8_0",
+        "complete_named_header_census": true,
+        "all_tensors": 1809,
+        "mtp_block": 78,
+        "mtp_roles": 27,
+        "mtp_dtypes": {
+          "Q8_0": 15,
+          "F32": 12
+        },
+        "mtp_role_table_sha256": "9848c29723f7c1422965462d19d600cd9bb26f30d2a22a1d6bd58f9a5ce8cb75"
+      },
+      "first_header_hf": "https://huggingface.co/unsloth/GLM-5.3-GGUF/resolve/346b3591c7f28d1a23716f97a065ecf12ec14771/Q8_0/GLM-5.3-Q8_0-00001-of-00017.gguf",
+      "role_codecs": {
+        "blk.78.nextn.eh_proj.weight": "Q8_0",
+        "blk.78.nextn.enorm.weight": "F32",
+        "blk.78.nextn.hnorm.weight": "F32",
+        "blk.78.attn_norm.weight": "F32",
+        "blk.78.ffn_down_exps.weight": "Q8_0",
+        "blk.78.ffn_gate_exps.weight": "Q8_0",
+        "blk.78.ffn_up_exps.weight": "Q8_0",
+        "blk.78.exp_probs_b.bias": "F32",
+        "blk.78.ffn_gate_inp.weight": "F32",
+        "blk.78.ffn_down_shexp.weight": "Q8_0",
+        "blk.78.ffn_gate_shexp.weight": "Q8_0",
+        "blk.78.ffn_up_shexp.weight": "Q8_0",
+        "blk.78.ffn_norm.weight": "F32",
+        "blk.78.indexer.k_norm.bias": "F32",
+        "blk.78.indexer.k_norm.weight": "F32",
+        "blk.78.indexer.proj.weight": "F32",
+        "blk.78.indexer.attn_k.weight": "Q8_0",
+        "blk.78.indexer.attn_q_b.weight": "Q8_0",
+        "blk.78.attn_kv_a_norm.weight": "F32",
+        "blk.78.attn_kv_a_mqa.weight": "Q8_0",
+        "blk.78.attn_k_b.weight": "Q8_0",
+        "blk.78.attn_v_b.weight": "Q8_0",
+        "blk.78.attn_output.weight": "Q8_0",
+        "blk.78.attn_q_a_norm.weight": "F32",
+        "blk.78.attn_q_a.weight": "Q8_0",
+        "blk.78.attn_q_b.weight": "Q8_0",
+        "blk.78.nextn.shared_head_norm.weight": "F32"
+      },
+      "finite_original_consumer_complete": true,
+      "runtime_evidence": "docs/evidence/correctness/mtp-glm-gguf-b10-target-verifier-2026-10-24.json",
+      "native_execution": {
+        "cpu": {
+          "status": "passed",
+          "cases": 1,
+          "graphs": 44,
+          "failures": 0,
+          "skips": 0
+        },
+        "cuda": {
+          "status": "passed",
+          "cases": 1,
+          "graphs": 44,
+          "failures": 0,
+          "skips": 0
+        },
+        "source_roles": 47,
+        "source_bytes": 2566508544,
+        "evidence_sha256": "a63e2799b8349923e32a07fc6d1022be55b47febd1dc6d1d2715f7ac7d2e23a9"
+      },
+      "limits": "Upstream layer76 input/residual, shared-index upstream74 IDs and finite initial histories are fixtures; this is not a full trained target engine or task-quality result. One natural K1 trial and separate controlled match/rejection trials do not measure natural acceptance rate. State/capacity properties are logical bounds. No TPS, full-model, measured physical memory or all-platform claim."
+    },
+    {
+      "id": "B11",
+      "model": "glm53_flash",
+      "selection": "baseline",
+      "profile": "official",
+      "repository": "zai-org/GLM-5.3-Flash",
+      "revision": "eb9eb208eb0d988989d07a6a12d0fdeb5f52574a",
+      "variant_or_file": "official-fp8",
+      "hf": "https://huggingface.co/zai-org/GLM-5.3-Flash/tree/eb9eb208eb0d988989d07a6a12d0fdeb5f52574a",
+      "presence": "confirmed",
+      "execution": "cpu_cuda_original_complete_finite_state_passed",
+      "remaining": [],
+      "executed_scope": "ORIGINAL_1762_ROLE_NEXTN_AND_TARGET43_44_VERIFIER",
+      "runtime_evidence": [
+        "docs/evidence/correctness/mtp-glm-original-moe-2026-10-23.json",
+        "docs/evidence/correctness/mtp-glm-original-target43-2026-10-23.json"
+      ],
+      "limits": "Actual43/44/45 source and full-V verifier; layer42/upstream initial histories remain finite fixtures. HC uses explicit torch/unfused contract.",
+      "evidence": {
+        "path": "docs/evidence/correctness/mtp-glm-original-moe-2026-10-23.json",
+        "fixed_original_roles": 1762,
+        "role_count_includes": "original NextN plus shared embedding/head/norm; expert code/scale entries are distinct raw roles",
+        "nextn_layer": 45
+      },
+      "role_codecs": {
+        "EH_norm_router_vocabulary": "BF16 with source-specific F32 accumulation/correction",
+        "qa_qb_kva_output": "E4M3+F32 block128 scales",
+        "kv_b": "BF16",
+        "index_key_query": "BF16",
+        "expert_and_shared": "E4M3+F32 block128 scales",
+        "index_cache": "UE8M0/E4 encoded128; model-specific pooling, RoPE and skip behavior"
+      }
+    },
+    {
+      "id": "B12",
+      "model": "glm53_flash",
+      "selection": "baseline",
+      "profile": "primary_gguf",
+      "repository": "unsloth/GLM-5.3-Flash-GGUF",
+      "revision": "621d456e93e926e4b52f85cff5f634358c1828f9",
+      "variant_or_file": "UD-Q4_K_XL",
+      "hf": "https://huggingface.co/unsloth/GLM-5.3-Flash-GGUF/tree/621d456e93e926e4b52f85cff5f634358c1828f9",
+      "presence": "confirmed",
+      "execution": "cpu_and_cuda_original_complete_finite_state_passed",
+      "remaining": [],
+      "evidence": {
+        "path": ".scratch/gguf-weight-audit.json#/glm53_flash_ud_q4_k_xl",
+        "complete_named_header_census": true,
+        "all_tensors": 1412,
+        "mtp_block": 45,
+        "mtp_roles": 29,
+        "mtp_dtypes": {
+          "Q8_0": 13,
+          "F32": 13,
+          "Q5_K": 1,
+          "Q4_K": 2
+        },
+        "mtp_role_table_sha256": "6cfb5471efaa8cde0f8db8f57abe481d2402fe068a58b8cc530d82272331189f"
+      },
+      "first_header_hf": "https://huggingface.co/unsloth/GLM-5.3-Flash-GGUF/resolve/621d456e93e926e4b52f85cff5f634358c1828f9/UD-Q4_K_XL/GLM-5.3-Flash-UD-Q4_K_XL-00001-of-00006.gguf",
+      "role_codecs": {
+        "blk.45.attn_k_b.weight": "Q8_0",
+        "blk.45.attn_kv_a_mqa.weight": "Q8_0",
+        "blk.45.attn_kv_a_norm.weight": "F32",
+        "blk.45.attn_norm.weight": "F32",
+        "blk.45.attn_output.weight": "Q8_0",
+        "blk.45.attn_q_a.weight": "Q8_0",
+        "blk.45.attn_q_a_norm.weight": "F32",
+        "blk.45.attn_q_b.weight": "Q8_0",
+        "blk.45.attn_v_b.weight": "Q8_0",
+        "blk.45.exp_probs_b.bias": "F32",
+        "blk.45.ffn_down_exps.weight": "Q5_K",
+        "blk.45.ffn_down_shexp.weight": "Q8_0",
+        "blk.45.ffn_gate_exps.weight": "Q4_K",
+        "blk.45.ffn_gate_inp.weight": "F32",
+        "blk.45.ffn_gate_shexp.weight": "Q8_0",
+        "blk.45.ffn_norm.weight": "F32",
+        "blk.45.ffn_up_exps.weight": "Q4_K",
+        "blk.45.ffn_up_shexp.weight": "Q8_0",
+        "blk.45.indexer.attn_k.weight": "Q8_0",
+        "blk.45.indexer.attn_q_b.weight": "Q8_0",
+        "blk.45.indexer.k_norm.bias": "F32",
+        "blk.45.indexer.k_norm.weight": "F32",
+        "blk.45.indexer.proj.weight": "F32",
+        "blk.45.indexer_compressor_ape.weight": "F32",
+        "blk.45.indexer_compressor_gate.weight": "Q8_0",
+        "blk.45.nextn.eh_proj.weight": "Q8_0",
+        "blk.45.nextn.enorm.weight": "F32",
+        "blk.45.nextn.hnorm.weight": "F32",
+        "blk.45.nextn.shared_head_norm.weight": "F32"
+      },
+      "finite_original_consumer_complete": true,
+      "runtime_evidence": "docs/evidence/correctness/mtp-glm-gguf-b12-target-verifier-2026-10-24.json",
+      "native_execution": {
+        "cpu": {
+          "status": "passed",
+          "cases": 1,
+          "graphs": 87,
+          "failures": 0,
+          "skips": 0
+        },
+        "cuda": {
+          "status": "passed",
+          "cases": 1,
+          "graphs": 87,
+          "failures": 0,
+          "skips": 0
+        },
+        "source_roles": 85,
+        "source_bytes": 1892821552,
+        "evidence_sha256": "a75eac9ba10f82d42b0294276888b9488afb4d6ff52b85b78b1011515976202c"
+      },
+      "limits": "Layer42 upstream fourstream and finite initial histories remain fixtures; this is not a complete trained target engine or task-quality result. Single natural K1 trial and separate controlled match/rejection checks do not measure natural acceptance rate. Per-run properties are preserved verbatim; generic legacy logical role counters are not substituted for this artifact physical85-role acquisition. Logical parameter/state budgets are not measured physical memory peaks. No TPS, full-model, or all-platform claim."
+    },
+    {
+      "id": "B13",
+      "model": "glm53_flash",
+      "selection": "baseline",
+      "profile": "fidelity_gguf",
+      "repository": "unsloth/GLM-5.3-Flash-GGUF",
+      "revision": "621d456e93e926e4b52f85cff5f634358c1828f9",
+      "variant_or_file": "Q8_0",
+      "hf": "https://huggingface.co/unsloth/GLM-5.3-Flash-GGUF/tree/621d456e93e926e4b52f85cff5f634358c1828f9",
+      "presence": "confirmed",
+      "execution": "cpu_and_cuda_original_complete_finite_state_passed",
+      "remaining": [],
+      "evidence": {
+        "path": ".scratch/gguf-weight-audit.json#/glm53_flash_q8_0",
+        "complete_named_header_census": true,
+        "all_tensors": 1412,
+        "mtp_block": 45,
+        "mtp_roles": 29,
+        "mtp_dtypes": {
+          "Q8_0": 16,
+          "F32": 13
+        },
+        "mtp_role_table_sha256": "ccca995c43c3dcd0465348a406ed6f1d080c7d08d3d843523a0e92f43ba26788"
+      },
+      "first_header_hf": "https://huggingface.co/unsloth/GLM-5.3-Flash-GGUF/resolve/621d456e93e926e4b52f85cff5f634358c1828f9/Q8_0/GLM-5.3-Flash-Q8_0-00001-of-00008.gguf",
+      "role_codecs": {
+        "blk.45.attn_k_b.weight": "Q8_0",
+        "blk.45.attn_kv_a_mqa.weight": "Q8_0",
+        "blk.45.attn_kv_a_norm.weight": "F32",
+        "blk.45.attn_norm.weight": "F32",
+        "blk.45.attn_output.weight": "Q8_0",
+        "blk.45.attn_q_a.weight": "Q8_0",
+        "blk.45.attn_q_a_norm.weight": "F32",
+        "blk.45.attn_q_b.weight": "Q8_0",
+        "blk.45.attn_v_b.weight": "Q8_0",
+        "blk.45.exp_probs_b.bias": "F32",
+        "blk.45.ffn_down_exps.weight": "Q8_0",
+        "blk.45.ffn_down_shexp.weight": "Q8_0",
+        "blk.45.ffn_gate_exps.weight": "Q8_0",
+        "blk.45.ffn_gate_inp.weight": "F32",
+        "blk.45.ffn_gate_shexp.weight": "Q8_0",
+        "blk.45.ffn_norm.weight": "F32",
+        "blk.45.ffn_up_exps.weight": "Q8_0",
+        "blk.45.ffn_up_shexp.weight": "Q8_0",
+        "blk.45.indexer.attn_k.weight": "Q8_0",
+        "blk.45.indexer.attn_q_b.weight": "Q8_0",
+        "blk.45.indexer.k_norm.bias": "F32",
+        "blk.45.indexer.k_norm.weight": "F32",
+        "blk.45.indexer.proj.weight": "F32",
+        "blk.45.indexer_compressor_ape.weight": "F32",
+        "blk.45.indexer_compressor_gate.weight": "Q8_0",
+        "blk.45.nextn.eh_proj.weight": "Q8_0",
+        "blk.45.nextn.enorm.weight": "F32",
+        "blk.45.nextn.hnorm.weight": "F32",
+        "blk.45.nextn.shared_head_norm.weight": "F32"
+      },
+      "finite_original_consumer_complete": true,
+      "runtime_evidence": "docs/evidence/correctness/mtp-glm-gguf-b13-target-verifier-2026-10-24.json",
+      "native_execution": {
+        "cpu": {
+          "status": "passed",
+          "cases": 1,
+          "graphs": 87,
+          "failures": 0,
+          "skips": 0
+        },
+        "cuda": {
+          "status": "passed",
+          "cases": 1,
+          "graphs": 87,
+          "failures": 0,
+          "skips": 0
+        },
+        "source_roles": 85,
+        "source_bytes": 1892821552,
+        "evidence_sha256": "c753018eece25dd40127b87a8591f5caa44d1f7ee7599f24e5a675afb2bc429a"
+      },
+      "limits": "Layer42 upstream fourstream and finite initial histories remain fixtures; this is not a complete trained target engine or task-quality result. One natural K1 trial and separate controlled match/rejection checks do not measure natural acceptance rate. Own85-role physical acquisition and actual per-run XML properties are preserved; Pro/B10 resource or graph counts are not borrowed. State/capacity properties are logical bounds. No TPS, full-model, measured physical memory or all-platform claim."
+    },
+    {
+      "id": "B14",
+      "model": "deepseek_v4_pro_0813",
+      "selection": "baseline",
+      "profile": "official",
+      "repository": "deepseek-ai/DeepSeek-V4-Pro-0813",
+      "revision": "72e1d3230f6c080a530b0a1d46f8eb4602340597",
+      "variant_or_file": "official-fp4-fp8-dspark",
+      "hf": "https://huggingface.co/deepseek-ai/DeepSeek-V4-Pro-0813/tree/72e1d3230f6c080a530b0a1d46f8eb4602340597",
+      "presence": "confirmed",
+      "execution": "cpu_cuda_original_complete_finite_state_passed",
+      "remaining": [],
+      "evidence": {
+        "path": ".scratch/dspark-pro-target-draft-20261023/review/draft-artifact-and-integration.json",
+        "fixed_original_source": true,
+        "draft_stages": [
+          "mtp.0",
+          "mtp.1",
+          "mtp.2"
+        ],
+        "complete_runtime_claim": false,
+        "finite_runtime_evidence": "docs/evidence/correctness/mtp-dspark-pro-target-verifier-2026-10-23.json"
+      },
+      "role_codecs": {
+        "projections_main_and_shared": "E4M3+UE8M0 block128",
+        "experts": "packed E2M1+UE8M0 group32",
+        "router_norm_vocab_markov_confidence": "BF16 with source-specific F32 math/coefficients"
+      },
+      "actual_progress": {
+        "acquired_dense_roles": 216,
+        "acquired_dense_bytes": 6504119672,
+        "dense_plan": ".scratch/dspark-pro-target-draft-20261023/dense-plan.json",
+        "formal_selected_expert_payload_complete": true,
+        "formal_complete_draft_native_pass": true,
+        "selected_expert_scope": "Actual CPU/CUDA frontier selections only; not all384 experts in each layer.",
+        "formal_all_experts_acquired": false,
+        "finite_complete_target_state_native_pass": true,
+        "runtime_evidence": "docs/evidence/correctness/mtp-dspark-pro-target-verifier-2026-10-23.json"
+      },
+      "executed_scope": "ORIGINAL_TARGET58_59_60_FORMAL_THREE_STAGE_DRAFT_FULL_V_K5",
+      "runtime_evidence": [
+        "docs/evidence/correctness/mtp-dspark-pro-target-verifier-2026-10-23.json",
+        "docs/evidence/correctness/mtp-dspark-formal-flash-2026-10-23.json"
+      ],
+      "limits": "Actual original parameters and selected full384-domain experts; target58/59/60 and formal three-stage draft/fullV K5 accepted-prefix plus pending continuation. Layer57 input and initial histories remain finite synthetic boundaries. Not a full61-layer model, task quality, natural acceptance rate or TPS result."
+    },
+    {
+      "id": "B15",
+      "model": "deepseek_v4_flash_0731",
+      "selection": "baseline",
+      "profile": "official",
+      "repository": "deepseek-ai/DeepSeek-V4-Flash-0731",
+      "revision": "7872f01b1d1fe23eabc4c98b48bffcef5a386062",
+      "variant_or_file": "official-fp4-fp8-dspark",
+      "hf": "https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash-0731/tree/7872f01b1d1fe23eabc4c98b48bffcef5a386062",
+      "presence": "confirmed",
+      "execution": "cpu_cuda_original_complete_finite_state_passed",
+      "remaining": [],
+      "evidence": {
+        "path": "docs/evidence/research/mtp-artifact-scope-2026-10-22.json",
+        "fixed_original_source": true,
+        "draft_stages": [
+          "mtp.0",
+          "mtp.1",
+          "mtp.2"
+        ],
+        "complete_runtime_claim": false,
+        "finite_runtime_evidence": "docs/evidence/correctness/mtp-dspark-formal-flash-2026-10-23.json"
+      },
+      "role_codecs": {
+        "projections_main_and_shared": "E4M3+UE8M0 block128",
+        "experts": "packed E2M1+UE8M0 group32",
+        "router_norm_vocab_markov_confidence": "BF16 with source-specific F32 math/coefficients"
+      },
+      "executed_scope": "ORIGINAL_TARGET40_41_42_FORMAL_THREE_STAGE_DRAFT_FULL_V_K5",
+      "runtime_evidence": [
+        "docs/evidence/correctness/mtp-dspark-formal-flash-2026-10-23.json"
+      ],
+      "limits": "Layer39 upstream input and initial histories remain finite fixtures. Original256-domain experts are selected by actual route; this is not a complete43-layer model, task quality, natural acceptance-rate estimate or TPS result.",
+      "actual_progress": {
+        "acquired_new_draft_roles": 97,
+        "acquired_new_draft_bytes": 595182108,
+        "composite_named_roles": 216,
+        "composite_named_source_bytes": 3194218552,
+        "extra_target_or_vocabulary_copies": 0,
+        "formal_selected_expert_payload_complete": true,
+        "formal_all_experts_acquired": false,
+        "finite_complete_target_state_native_pass": true,
+        "runtime_evidence": "docs/evidence/correctness/mtp-dspark-formal-flash-2026-10-23.json"
+      }
+    },
+    {
+      "id": "S01",
+      "model": "qwen38_27b",
+      "selection": "explicit_optional_sidecar",
+      "profile": "explicit_optional_sidecar",
+      "repository": "unsloth/Qwen3.8-27B-GGUF",
+      "revision": "4ca720788d1e01f1bff70c033e0d0028fd02e502",
+      "variant_or_file": "MTP/mtp-Qwen3.8-27B-Q4_0.gguf",
+      "hf": "https://huggingface.co/unsloth/Qwen3.8-27B-GGUF/resolve/4ca720788d1e01f1bff70c033e0d0028fd02e502/MTP/mtp-Qwen3.8-27B-Q4_0.gguf",
+      "presence": "confirmed",
+      "execution": "cpu_and_cuda_original_complete_finite_state_passed",
+      "remaining": [],
+      "evidence": {
+        "path": "docs/evidence/correctness/cpu-quant-mtp-c4-three-stage/sidecar-roles.json",
+        "complete_named_header_census": true,
+        "roles": 18,
+        "role_dtypes": {
+          "Q3_K": 2,
+          "F32": 8,
+          "Q6_K": 4,
+          "Q4_K": 4
+        },
+        "tensor_table_digest": "e94135836ef1ea7fcb4dd77420060378d200f70d55ed2fbc73030661e9d531c8",
+        "fresh_bounded_http_schema": {
+          "summary": ".scratch/qwen-gguf-selected-20261023/S01/summary.json",
+          "header_receipt": ".scratch/qwen-gguf-selected-20261023/S01/header.json",
+          "range_plan": ".scratch/qwen-gguf-selected-20261023/S01/roles-plan.json",
+          "complete_named_role_census": 18,
+          "tensor_payload_bytes": 0,
+          "http_identity_authenticated": true
+        },
+        "original_payload_acquisition": {
+          "status": "complete_original18_roles_cpu_cuda_finite_state_passed",
+          "command": {
+            "path": ".scratch/qwen-gguf-selected-20261023/S01/payload-fetch1/command.json",
+            "bytes": 601,
+            "sha256": "ad92c84a4c332d038b498b1301e55fd3f42b9595e99e6a04d08fb526e3be3df2"
+          },
+          "receipt": ".scratch/qwen-gguf-selected-20261023/S01/original-roles/acquisition.json",
+          "original_roles": 18,
+          "expected_role_payload_bytes": 1358645248,
+          "native_executed": true,
+          "manifest": ".scratch/qwen-gguf-selected-20261023/S01/original-roles/manifest.json",
+          "generated_pins": ".scratch/qwen-gguf-selected-20261023/S01/generated/qwen_gguf_original_artifacts.h",
+          "generated_header_sha256": "ec50c94aa9eb547ea1946c086805a2c89c62dd28baafa6c753c257b1bf6d6baa",
+          "host_compile": ".scratch/qwen-gguf-selected-20261023/compile1/qwen-state/identity.json"
+        },
+        "native_execution": {
+          "path": "docs/evidence/correctness/mtp-qwen27-sidecar-target-verifier-2026-10-23.json",
+          "sha256": "1298123871ae3c54ac4530b1244f366fa853455d5d52dc5a9286061576a2d877",
+          "tests": 5,
+          "graph_submissions": 135,
+          "failures": 0,
+          "skips": 0,
+          "new_identity_cases": 2,
+          "new_identity_graph_submissions": 46,
+          "affected_regression_cases": 3,
+          "affected_regression_graph_submissions": 89
+        }
+      },
+      "limits": "Original sidecar18 roles, paired primary target63/global norm and original full-vocabulary K1/12-resource state. Upstream layer62, target embedding boundary and finite initial histories remain fixtures; not complete-model/task-quality/TPS evidence.",
+      "runtime_evidence": [
+        "docs/evidence/correctness/mtp-qwen27-sidecar-target-verifier-2026-10-23.json"
+      ]
+    },
+    {
+      "id": "S02",
+      "model": "deepseek_v4_flash_0731",
+      "selection": "explicit_optional_sidecar",
+      "profile": "explicit_optional_sidecar",
+      "repository": "unsloth/DeepSeek-V4-Flash-0731-GGUF",
+      "revision": "fbbb5b93fb787c21338159b0af3318bb3f4d9768",
+      "variant_or_file": "dspark-DeepSeek-V4-Flash-0731-Q8_0.gguf",
+      "hf": "https://huggingface.co/unsloth/DeepSeek-V4-Flash-0731-GGUF/resolve/fbbb5b93fb787c21338159b0af3318bb3f4d9768/dspark-DeepSeek-V4-Flash-0731-Q8_0.gguf",
+      "presence": "confirmed",
+      "execution": "cpu_cuda_original_complete_finite_state_passed",
+      "remaining": [],
+      "evidence": {
+        "path": "docs/evidence/correctness/cpu-quant-mtp-c4-three-stage/sidecar-roles.json",
+        "complete_named_header_census": true,
+        "roles": 81,
+        "role_dtypes": {
+          "MXFP4": 9,
+          "F32": 41,
+          "Q8_0": 25,
+          "BF16": 6
+        },
+        "tensor_table_digest": "b77793866ec63e166212f588ce5b74d9edb464bdd0787f54bc6cab2779ad8eb1"
+      },
+      "executed_scope": "ORIGINAL_81_SIDECAR_PLUS2_FORMAL_BF16_VOCAB_AND_REAL_FORMAL_TARGET_K5",
+      "runtime_evidence": [
+        "docs/evidence/correctness/mtp-dspark-original-experts-2026-10-23.json",
+        "docs/evidence/correctness/mtp-dspark-target-verifier-2026-10-23.json"
+      ],
+      "limits": "Finite target40/41/42, genuine full-V pending and30-member atomic state; layer39/history are fixtures. Current vocab is formalBF16, not mainUDQ4 GGUF. Proposal KV is temporary; accepted target captures/main history are persistent."
+    },
+    {
+      "id": "S03",
+      "model": "deepseek_v4_flash_0731",
+      "selection": "explicit_optional_sidecar",
+      "profile": "explicit_optional_sidecar",
+      "repository": "unsloth/DeepSeek-V4-Flash-0731-GGUF",
+      "revision": "fbbb5b93fb787c21338159b0af3318bb3f4d9768",
+      "variant_or_file": "dspark/dspark-DeepSeek-V4-Flash-0731-BF16.gguf",
+      "hf": "https://huggingface.co/unsloth/DeepSeek-V4-Flash-0731-GGUF/resolve/fbbb5b93fb787c21338159b0af3318bb3f4d9768/dspark/dspark-DeepSeek-V4-Flash-0731-BF16.gguf",
+      "presence": "confirmed",
+      "execution": "cpu_and_cuda_original_complete_finite_state_passed",
+      "remaining": [],
+      "evidence": {
+        "path": "docs/evidence/correctness/cpu-quant-mtp-c4-three-stage/sidecar-roles.json",
+        "complete_named_header_census": true,
+        "roles": 81,
+        "role_dtypes": {
+          "MXFP4": 9,
+          "F32": 41,
+          "BF16": 31
+        },
+        "tensor_table_digest": "b2c4a277a97de1a825ac02bae7e1887d0b3d2778dd57e2ae2d0636e7b015d5e3",
+        "fresh_authenticated_header": {
+          "header": {
+            "path": ".scratch/dspark-gguf-selected-20261023/S03/header.json",
+            "bytes": 3716,
+            "sha256": "6e831a9e97c1d69057c4f11c4d6e52b540e8f3d3353590f1e9d5a0f71558f78c"
+          },
+          "static_plan": {
+            "path": ".scratch/dspark-gguf-selected-20261023/S03/static-plan.json",
+            "bytes": 45778,
+            "sha256": "2e7eb0a9fc9c19995d41d2d41c93dd928c082a3e9e5b756aaf9c26132310e428"
+          },
+          "expert_source_plan": {
+            "path": ".scratch/dspark-gguf-selected-20261023/S03/expert-source-plan.json",
+            "bytes": 8474,
+            "sha256": "e3cfe35aec5870034d0b384553fd90b242806e63fedab435d18c16969324984f"
+          },
+          "all81_tensors_match": true,
+          "static_roles": 72,
+          "static_bytes": 1041922972,
+          "expert_banks_acquired": false,
+          "new_vocabulary_bytes": 0,
+          "reused_vocabulary_manifest_sha256": "7502444e1150da9b5e15e79ec68be087b81c6ad02146d74b9b03a08e465db1e0",
+          "tensor_payload_bytes_downloaded": 0,
+          "native_executed": false,
+          "retained_initial_wrapper_failure": ".scratch/dspark-gguf-selected-20261023/S03/header-attempt1-failure.json"
+        },
+        "original_static_acquisition": {
+          "receipt": ".scratch/dspark-gguf-selected-20261023/S03/original-static/acquisition.json",
+          "complete": true,
+          "roles": 72,
+          "bytes": 1041922972,
+          "sha256": "6ba3bd9b54b69f119b16174c83aa2f07a5e57ef81919559c81b6c8d5987eeba7",
+          "generated_header": ".scratch/dspark-gguf-selected-20261023/S03/generated/dspark_bfloat_sidecar_artifacts.h",
+          "generated_header_sha256": "1b81667b9a28708c54037d87cee778373948fe5d543bbe6b169fa6bd24da42b0",
+          "experts_acquired": false,
+          "native_executed": false
+        },
+        "native_execution": {
+          "path": "docs/evidence/correctness/mtp-dspark-bfloat-sidecar-target-verifier-2026-10-23.json",
+          "sha256": "f75bd857ee21765ca6c918024c72785372b3266796f4a4d8f49ad08ffc28618c",
+          "tests": 3,
+          "graph_submissions": 261,
+          "failures": 0,
+          "skips": 0,
+          "new_identity_cases": 2,
+          "new_identity_graph_submissions": 174,
+          "affected_regression_cases": 1,
+          "affected_regression_graph_submissions": 87
+        }
+      },
+      "limits": "Original81-role BF16/F32/MXFP4 draft, matching own-release main Q8 vocab and formal Flash40/41/42 target-tail; real K5/30-member StateHead and pending continuation. Layer39/upstream and finite initial history remain fixtures, not whole-model quality, acceptance-rate or TPS.",
+      "runtime_evidence": [
+        "docs/evidence/correctness/mtp-dspark-bfloat-sidecar-target-verifier-2026-10-23.json"
+      ]
+    },
+    {
+      "id": "Q03",
+      "model": "qwen35_2b",
+      "selection": "existing_quantization_catalog",
+      "catalog_pointer": "docs/implementation/model-quantizations.json#/artifacts/3",
+      "repository": "AxionML/Qwen3.5-2B-NVFP4",
+      "revision": "6f2ad4febe92be529de499b08f0020f5ff06bf25",
+      "hf": "https://huggingface.co/AxionML/Qwen3.5-2B-NVFP4/tree/6f2ad4febe92be529de499b08f0020f5ff06bf25",
+      "presence": "confirmed",
+      "evidence": {
+        "archive": "docs/evidence/research/nvfp4-channel-global-contract-2026-10-20.zip",
+        "entries": [
+          "model.safetensors.header.json"
+        ],
+        "all_tensors": 1190,
+        "mtp_role_table_sha256": "2f18b750ba8f3e6fb11fd863497f2b7909575209b9eb6dd2ffa48266f476dacd"
+      },
+      "mtp_roles": 15,
+      "role_codecs": {
+        "BF16": 15
+      },
+      "complete_role_census": true,
+      "execution": "cpu_and_cuda_original_complete_finite_state_passed",
+      "remaining": [],
+      "runtime_evidence": "docs/evidence/correctness/mtp-qwen35-nvfp4-target-verifier-2026-10-24.json",
+      "finite_original_consumer_complete": true,
+      "native_execution": {
+        "cpu": {
+          "status": "passed",
+          "cases": 1,
+          "graphs": 23,
+          "failures": 0,
+          "skips": 0
+        },
+        "cuda": {
+          "status": "passed",
+          "cases": 1,
+          "graphs": 23,
+          "failures": 0,
+          "skips": 0
+        },
+        "source_roles": 49,
+        "source_bytes": 1168279608,
+        "same_head_members": 12,
+        "actual_accepted_repair_each": 1,
+        "evidence_sha256": "e8497a8d901fe9bfabd7b5e5f90e53133dc4cd6b378576d4bad73dd13df45149"
+      },
+      "limits": "Upstream layer22 hidden input and finite initial histories remain fixtures. No full trained target/model quality, natural acceptance-rate, TPS or physical-memory claim."
+    },
+    {
+      "id": "Q09",
+      "model": "qwen38_27b",
+      "selection": "existing_quantization_catalog",
+      "catalog_pointer": "docs/implementation/model-quantizations.json#/artifacts/9",
+      "repository": "cyankiwi/Qwen3.8-27B-AWQ-INT4",
+      "revision": "6e134bae811fb5adac50ee042ae5f029ac6779aa",
+      "hf": "https://huggingface.co/cyankiwi/Qwen3.8-27B-AWQ-INT4/tree/6e134bae811fb5adac50ee042ae5f029ac6779aa",
+      "presence": "confirmed",
+      "evidence": {
+        "archive": "docs/evidence/correctness/ct-asymmetric-int4-header-2026-10-20.zip",
+        "entries": [
+          "headers/model-00001-of-00005.header.json",
+          "headers/model-00002-of-00005.header.json",
+          "headers/model-00003-of-00005.header.json",
+          "headers/model-00004-of-00005.header.json",
+          "headers/model-00005-of-00005.header.json"
+        ],
+        "all_tensors": 2396,
+        "mtp_role_table_sha256": "b633f237007dc111afa88919f4b6d4c19528991e74dc52c5dc269a4f6f366dbd"
+      },
+      "mtp_roles": 15,
+      "role_codecs": {
+        "BF16": 15
+      },
+      "complete_role_census": true,
+      "execution": "cpu_and_cuda_original_complete_finite_state_passed",
+      "remaining": [],
+      "finite_original_consumer_complete": true,
+      "runtime_evidence": "docs/evidence/correctness/mtp-qwen27-ct-asymmetric-target-verifier-2026-10-24.json",
+      "native_execution": {
+        "cpu": {
+          "status": "passed",
+          "cases": 1,
+          "graphs": 23,
+          "failures": 0,
+          "skips": 0
+        },
+        "cuda": {
+          "status": "passed",
+          "cases": 1,
+          "graphs": 23,
+          "failures": 0,
+          "skips": 0
+        },
+        "source_roles": 50,
+        "source_bytes": 6150228080,
+        "same_head_members": 12,
+        "packed_contractions_each": 7,
+        "packed_recipe_nodes": 3,
+        "dense_weight_materializations": 0,
+        "evidence_sha256": "97fb33cdbe7e4950160f96d9c3622d0b959503d429e42f5e801ebafc62bfa516"
+      },
+      "limits": "Layer62 upstream input and finite initial histories remain fixtures. Not full trained trunk/model quality, natural acceptance-rate, TPS or physical-memory peak."
+    },
+    {
+      "id": "Q01",
+      "model": "qwen35_2b",
+      "selection": "existing_quantization_catalog",
+      "catalog_pointer": "docs/implementation/model-quantizations.json#/artifacts/1",
+      "repository": "Vishva007/Qwen3.5-2B-W4A16-AutoRound-GPTQ",
+      "revision": "8ec79a3b08636bc68fd40d69df80e97ff1263995",
+      "hf": "https://huggingface.co/Vishva007/Qwen3.5-2B-W4A16-AutoRound-GPTQ/tree/8ec79a3b08636bc68fd40d69df80e97ff1263995",
+      "presence": "confirmed",
+      "evidence": {
+        "archive": "docs/evidence/correctness/gptq-reference-2026-10-20.zip",
+        "entries": [
+          "evidence/gptq-contract-review/q35/index.json"
+        ],
+        "complete_named_weight_map": true,
+        "all_named_tensors": 1082,
+        "mtp_named_prefix": "mtp.",
+        "mtp_file": "model_extra_tensors.safetensors",
+        "mtp_weight_map_sha256": "31ad5420a44bd292ac150e30d8de32d9d3bec9ea4af2fa910cb41ef6a49661cb",
+        "extra_file_header_inspected": true,
+        "physical_schema": {
+          "archive": "docs/evidence/research/mtp-artifact-schema-2026-10-23.zip",
+          "entry": "Q01/physical-schema.json",
+          "sha256": "a6820421a3ad3c96fe9906eaa67ea5a30f53093db6633977069feac5631fcf86",
+          "complete_physical_census": true,
+          "actual_MTP_shards": [
+            "model_extra_tensors.safetensors"
+          ],
+          "tensor_payload_bytes_downloaded": 0,
+          "artifact_executed": false
+        }
+      },
+      "mtp_roles": 15,
+      "role_codecs": {
+        "BF16": 15
+      },
+      "complete_role_census": true,
+      "execution": "cpu_and_cuda_original_complete_finite_state_passed",
+      "remaining": [],
+      "runtime_evidence": "docs/evidence/correctness/mtp-qwen35-gptq-target-verifier-2026-10-24.json",
+      "finite_original_consumer_complete": true,
+      "native_execution": {
+        "cpu": {
+          "status": "passed",
+          "cases": 1,
+          "graphs": 23,
+          "failures": 0,
+          "skips": 0
+        },
+        "cuda": {
+          "status": "passed",
+          "cases": 1,
+          "graphs": 23,
+          "failures": 0,
+          "skips": 0
+        },
+        "source_roles": 49,
+        "source_bytes": 1169172480,
+        "same_head_members": 12,
+        "actual_accepted_repair_each": 1,
+        "packed_contractions_each": 7,
+        "dense_weight_materializations": 0,
+        "evidence_sha256": "3985a0f2e1ce1624226fd99ff3d8fe26d3b3f1cff7c30b52aba89471c9b3e24a"
+      },
+      "limits": "Layer22 upstream input and finite initial histories remain fixtures. Not full trained target/model task quality, natural acceptance-rate, TPS or physical-memory peak."
+    },
+    {
+      "id": "Q10",
+      "model": "qwen38_27b",
+      "selection": "existing_quantization_catalog",
+      "catalog_pointer": "docs/implementation/model-quantizations.json#/artifacts/10",
+      "repository": "Vishva007/Qwen3.8-27B-W4A16-AutoRound-GPTQ",
+      "revision": "1b9d56b428e9f841d7ad566f87660b5f47553c97",
+      "hf": "https://huggingface.co/Vishva007/Qwen3.8-27B-W4A16-AutoRound-GPTQ/tree/1b9d56b428e9f841d7ad566f87660b5f47553c97",
+      "presence": "confirmed",
+      "evidence": {
+        "archive": "docs/evidence/correctness/gptq-reference-2026-10-20.zip",
+        "entries": [
+          "evidence/gptq-contract-review/q27/index.json"
+        ],
+        "complete_named_weight_map": true,
+        "all_named_tensors": 2399,
+        "mtp_named_prefix": "mtp.",
+        "mtp_file": "model_extra_tensors.safetensors",
+        "mtp_weight_map_sha256": "31ad5420a44bd292ac150e30d8de32d9d3bec9ea4af2fa910cb41ef6a49661cb",
+        "extra_file_header_inspected": true,
+        "physical_schema": {
+          "archive": "docs/evidence/research/mtp-artifact-schema-2026-10-23.zip",
+          "entry": "Q10/physical-schema.json",
+          "sha256": "722de61bbd5300fc884bd6030dba2d533597040874926fc139359386314992e2",
+          "complete_physical_census": true,
+          "actual_MTP_shards": [
+            "model_extra_tensors.safetensors"
+          ],
+          "tensor_payload_bytes_downloaded": 0,
+          "artifact_executed": false
+        },
+        "target_physical_schema": {
+          "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q10/target-physical-schema.json",
+          "sha256": "8d2846bb83174aedfb6d199b16b55af7d236c57f8ae800737510221ecba00c72",
+          "roles": 33,
+          "source_bytes": 200891392,
+          "tensor_payload_bytes": 0,
+          "native_executed": false
+        }
+      },
+      "mtp_roles": 15,
+      "role_codecs": {
+        "BF16": 15
+      },
+      "complete_role_census": true,
+      "execution": "cpu_and_cuda_original_complete_finite_state_passed",
+      "remaining": [],
+      "finite_original_consumer_complete": true,
+      "runtime_evidence": "docs/evidence/correctness/mtp-qwen27-gptq-target-verifier-2026-10-24.json",
+      "native_execution": {
+        "cpu": {
+          "status": "passed",
+          "cases": 1,
+          "graphs": 23,
+          "failures": 0,
+          "skips": 0
+        },
+        "cuda": {
+          "status": "passed",
+          "cases": 1,
+          "graphs": 23,
+          "failures": 0,
+          "skips": 0
+        },
+        "source_roles": 50,
+        "source_bytes": 6135883776,
+        "same_head_members": 12,
+        "packed_contractions_each": 7,
+        "packed_recipe_nodes": 4,
+        "dense_weight_materializations": 0,
+        "evidence_sha256": "7caca4d5f813d5652c13a479b34c9231436b3b5bd684d7459b3c4cacd677745c"
+      },
+      "limits": "Layer62 upstream input and finite initial histories remain fixtures. Not full trained trunk/model quality, natural acceptance-rate, TPS or physical-memory peak."
+    },
+    {
+      "id": "Q14",
+      "model": "qwen38_27b",
+      "selection": "existing_quantization_catalog",
+      "catalog_pointer": "docs/implementation/model-quantizations.json#/artifacts/14",
+      "repository": "cdiamond/Qwen3.8-27B-iMatrix-NVFP4-MTP-GGUF",
+      "revision": "ac343e8f44caef0896f79d372ecc07ef7ab34ec8",
+      "hf": "https://huggingface.co/cdiamond/Qwen3.8-27B-iMatrix-NVFP4-MTP-GGUF/tree/ac343e8f44caef0896f79d372ecc07ef7ab34ec8",
+      "presence": "confirmed",
+      "evidence": {
+        "path": "docs/evidence/correctness/gguf-nvfp4-2026-10-20.json",
+        "file": "Qwen3.8-27B-iMatrix-NVFP4-MTP.gguf",
+        "all_tensors": 866,
+        "header_bytes": 10996832,
+        "header_sha256": "d6b286fea2fceacbbaf9e40428ad40afd973506925de4ae3093476d9b02229cf"
+      },
+      "mtp_roles": 15,
+      "role_codecs": {
+        "NVFP4": 8,
+        "F32": 7,
+        "embedding": "Q6_K",
+        "head": "Q8_0"
+      },
+      "complete_role_census": true,
+      "execution": "cpu_and_cuda_original_complete_finite_state_passed",
+      "remaining": [],
+      "runtime_evidence": "docs/evidence/correctness/mtp-qwen27-gguf-nvfp4-target-verifier-2026-10-24.json",
+      "finite_original_consumer_complete": true,
+      "native_execution": {
+        "cpu": {
+          "status": "passed",
+          "cases": 1,
+          "graphs": 23,
+          "failures": 0,
+          "skips": 0
+        },
+        "cuda": {
+          "status": "passed",
+          "cases": 1,
+          "graphs": 23,
+          "failures": 0,
+          "skips": 0
+        },
+        "source_roles": 29,
+        "source_bytes": 2900606976,
+        "same_head_members": 12,
+        "actual_accepted_repair_each": 1,
+        "evidence_sha256": "3e7c03c87387423bf00c38d1542a216b24f8ea6d6696a29c1bf70fd89781b8d8"
+      },
+      "limits": "Layer62 hidden input and finite initial histories remain fixtures. Own converted revision pinned; base revision unknown. No full trained target/model quality, natural acceptance-rate, TPS or physical-memory peak claim."
+    },
+    {
+      "id": "Q30",
+      "model": "glm53_flash",
+      "selection": "existing_quantization_catalog",
+      "catalog_pointer": "docs/implementation/model-quantizations.json#/artifacts/30",
+      "repository": "amd/GLM-5.3-Flash-Quark-MXFP4",
+      "revision": "b5688f25491202978c19c4d036eef579f61bbe07",
+      "hf": "https://huggingface.co/amd/GLM-5.3-Flash-Quark-MXFP4/tree/b5688f25491202978c19c4d036eef579f61bbe07",
+      "presence": "confirmed",
+      "evidence": {
+        "archive": "docs/evidence/research/quark-mxfp4-contract-2026-10-20.zip",
+        "entries": [
+          "artifact/30/model-00001-of-00062.safetensors/header.json",
+          "artifact/30/model-00019-of-00062.safetensors/header.json"
+        ],
+        "observed_mtp_role_table_sha256": "2a309b8866bc64a760aeb6f42f07c8d0599b1860094d7b246a4c6e381f6d24a9",
+        "config_mtp_fp8_matrix_overrides": 871,
+        "physical_schema": {
+          "archive": "docs/evidence/research/mtp-artifact-schema-2026-10-23.zip",
+          "entry": "Q30/physical-schema.json",
+          "sha256": "0a6660ce3780007b0c561914c7a0ecf453f4a3cfe92883a8c139020cc4c9d8ac",
+          "complete_physical_census": true,
+          "actual_MTP_shards": [
+            "model-00001-of-00062.safetensors",
+            "model-00002-of-00062.safetensors"
+          ],
+          "tensor_payload_bytes_downloaded": 0,
+          "artifact_executed": false
+        }
+      },
+      "mtp_roles": 1760,
+      "role_codecs": {
+        "BF16": 17,
+        "F8_E4M3": 871,
+        "F32": 872
+      },
+      "complete_role_census": true,
+      "execution": "cpu_and_cuda_original_complete_finite_state_passed",
+      "remaining": [],
+      "source_integration_evidence": {
+        "path": "docs/evidence/correctness/mtp-quark-source-wiring-2026-10-24.json",
+        "sha256": "d3e6da13a35da060d1ded6048e90effec37de5bac92bf58237f3fc913f595185",
+        "actual_quark_original_executed": false,
+        "affected_official_CPU_graphs": 49
+      },
+      "finite_original_consumer_complete": true,
+      "runtime_evidence": "docs/evidence/correctness/mtp-glm-quark-target-verifier-2026-10-24.json",
+      "native_execution": {
+        "cpu": {
+          "status": "passed",
+          "cases": 1,
+          "graphs": 87,
+          "failures": 0,
+          "skips": 0,
+          "driver_remaining_descendants": 0
+        },
+        "cuda": {
+          "status": "passed",
+          "cases": 1,
+          "graphs": 87,
+          "failures": 0,
+          "skips": 0,
+          "driver_remaining_descendants": 0
+        },
+        "source_static_roles": 100,
+        "source_static_bytes": 3240744240,
+        "same_head_resources": 34,
+        "epoch_metadata": true,
+        "evidence_sha256": "61cef0fa852b86e4f4b4d9385e11549a87d92787a7dd98039b0392931e22b61a",
+        "expert_supply": "Only authenticated original six-plane per-ID sets from actual frontiers; no whole expert bank acquisition."
+      },
+      "limits": "Upstream layer42 fourstream and finite initial histories remain fixtures. One natural K1 trial and separate policy controls do not establish full-model task quality, natural acceptance rate, TPS, all-platform execution or a physical memory peak."
+    },
+    {
+      "id": "Q32",
+      "model": "glm53_flash",
+      "selection": "existing_quantization_catalog",
+      "catalog_pointer": "docs/implementation/model-quantizations.json#/artifacts/32",
+      "repository": "mlx-community/GLM-5.3-Flash-4bit",
+      "revision": "fa04cbc3622b16aa7475404060b05e506d81bd4e",
+      "hf": "https://huggingface.co/mlx-community/GLM-5.3-Flash-4bit/tree/fa04cbc3622b16aa7475404060b05e506d81bd4e",
+      "presence": "confirmed",
+      "evidence": {
+        "archive": "docs/evidence/research/fixed-role-binding-2026-10-21.zip",
+        "headers_glob": "mlx/32/headers/*.safetensors.header.json",
+        "header_count": 62,
+        "header_entry_list_sha256": "c9b56a568736326c9fec3f0fe71d1b14c6b0fcc8ea4e510fc440edb9fdf1f830",
+        "index": "mlx/32/model.safetensors.index.json",
+        "all_tensors": 113446,
+        "header_and_index_names_identical": true,
+        "named_table_sha256": "9dbc48580683b79d5ecf5c4510a17073676c3f643a4b0673c67131c73ccac9e5"
+      },
+      "mtp_roles": 2631,
+      "role_codecs": {
+        "U32": 871,
+        "BF16": 17,
+        "F16": 1742,
+        "F32": 1
+      },
+      "complete_role_census": true,
+      "execution": "cpu_and_cuda_original_complete_finite_state_passed",
+      "remaining": [],
+      "packing": {
+        "group_size": 64,
+        "expert_gate_up_bits": 4,
+        "expert_down_bits": 5,
+        "shared_gate_up_down_bits": 6,
+        "qa_qb_kva_o_bits": 4,
+        "scale_bias": "F16",
+        "unquantized_roles": "BF16 EH/norm/router/index/KV_b plus original F32 router correction"
+      },
+      "finite_original_consumer_complete": true,
+      "runtime_evidence": "docs/evidence/correctness/mtp-glm-mlx-target-verifier-2026-10-24.json",
+      "native_execution": {
+        "cpu": {
+          "status": "passed",
+          "cases": 1,
+          "graphs": 90,
+          "failures": 0,
+          "skips": 0
+        },
+        "cuda": {
+          "status": "passed",
+          "cases": 1,
+          "graphs": 90,
+          "failures": 0,
+          "skips": 0
+        },
+        "source_roles": 117,
+        "source_bytes": 3162045744,
+        "evidence_sha256": "9e98c220c544886c7e53320b4ed0268de561ac0ed24721ed2c62520e322e3cc3"
+      },
+      "limits": "Upstream layer42 and initial histories are fixtures, not a whole trained engine. No model quality, natural acceptance-rate, TPS, physical peak-memory or all-platform claim."
+    }
+  ],
+  "excluded_baseline": [
+    {
+      "repository": "unsloth/Qwen3.5-2B-GGUF",
+      "revision": "f6d5376be1edb4d416d56da11e5397a961aca8ae",
+      "variant": "UD-Q4_K_XL",
+      "hf": "https://huggingface.co/unsloth/Qwen3.5-2B-GGUF/resolve/f6d5376be1edb4d416d56da11e5397a961aca8ae/Qwen3.5-2B-UD-Q4_K_XL.gguf",
+      "presence": "complete_header_no_MTP_roles",
+      "evidence": ".scratch/gguf-weight-audit.json#/qwen35_2b_ud_q4_k_xl",
+      "tensors": 320,
+      "named_table_sha256": "b6f73a61b9a5e2c3552a7674f6184952911b05baa3524cb131b48affb366f942",
+      "remaining_MTP_binding": false
+    },
+    {
+      "repository": "unsloth/Qwen3.5-2B-GGUF",
+      "revision": "f6d5376be1edb4d416d56da11e5397a961aca8ae",
+      "variant": "UD-Q8_K_XL",
+      "hf": "https://huggingface.co/unsloth/Qwen3.5-2B-GGUF/resolve/f6d5376be1edb4d416d56da11e5397a961aca8ae/Qwen3.5-2B-UD-Q8_K_XL.gguf",
+      "presence": "complete_header_no_MTP_roles",
+      "evidence": ".scratch/gguf-weight-audit.json#/qwen35_2b_ud_q8_k_xl",
+      "tensors": 320,
+      "named_table_sha256": "80e446b88a660816b2db16dfe84389c187155c97264d0bab8a2d67cbab8beb17",
+      "remaining_MTP_binding": false
+    },
+    {
+      "repository": "unsloth/Kimi-K3-GGUF",
+      "revision": "a0836360ce58dfec088d966a97f2ddc8a606279b",
+      "variant": "UD-Q4_K_XL",
+      "hf": "https://huggingface.co/unsloth/Kimi-K3-GGUF/resolve/a0836360ce58dfec088d966a97f2ddc8a606279b/UD-Q4_K_XL/Kimi-K3-UD-Q4_K_XL-00001-of-00032.gguf",
+      "presence": "complete_header_no_MTP_roles",
+      "evidence": ".scratch/gguf-weight-audit.json#/kimi_k3_ud_q4_k_xl",
+      "tensors": 2573,
+      "named_table_sha256": "83d640c426c9ca2596a6291a834f28152dbdcb2d587c47e143298e71980ba14c",
+      "remaining_MTP_binding": false,
+      "model": "kimi_k3",
+      "mtp_roles": 0,
+      "independent_quantized_census": true,
+      "repository_file_inventory": {
+        "archive": "docs/evidence/research/model-quantization-discovery-2026-10-19.zip",
+        "entry": "qwen-kimi/unsloth--Kimi-K3-GGUF/api-model.json",
+        "sha256": "f0dd4f79910035fbeb05edaa3e844501aed9c92726b3c3256c81d7e9de09bb39",
+        "repository_revision": "a0836360ce58dfec088d966a97f2ddc8a606279b",
+        "all_siblings": 171,
+        "variant_gguf_files": 32,
+        "separate_mtp_draft_files": [],
+        "scope": "The saved fixed-revision complete sibling list, independent of the official model NextN=0 configuration."
+      }
+    },
+    {
+      "repository": "unsloth/Kimi-K3-GGUF",
+      "revision": "a0836360ce58dfec088d966a97f2ddc8a606279b",
+      "variant": "UD-Q8_K_XL",
+      "hf": "https://huggingface.co/unsloth/Kimi-K3-GGUF/resolve/a0836360ce58dfec088d966a97f2ddc8a606279b/UD-Q8_K_XL/Kimi-K3-UD-Q8_K_XL-00001-of-00034.gguf",
+      "presence": "complete_header_no_MTP_roles",
+      "evidence": ".scratch/gguf-weight-audit.json#/kimi_k3_ud_q8_k_xl",
+      "tensors": 2573,
+      "named_table_sha256": "502a88a2c35bbf3dcef44f61c76b5f515b2ba530c96fa82ed13b52f308657b17",
+      "remaining_MTP_binding": false,
+      "model": "kimi_k3",
+      "mtp_roles": 0,
+      "independent_quantized_census": true,
+      "repository_file_inventory": {
+        "archive": "docs/evidence/research/model-quantization-discovery-2026-10-19.zip",
+        "entry": "qwen-kimi/unsloth--Kimi-K3-GGUF/api-model.json",
+        "sha256": "f0dd4f79910035fbeb05edaa3e844501aed9c92726b3c3256c81d7e9de09bb39",
+        "repository_revision": "a0836360ce58dfec088d966a97f2ddc8a606279b",
+        "all_siblings": 171,
+        "variant_gguf_files": 34,
+        "separate_mtp_draft_files": [],
+        "scope": "The saved fixed-revision complete sibling list, independent of the official model NextN=0 configuration."
+      }
+    },
+    {
+      "repository": "unsloth/DeepSeek-V4-Pro-0813-GGUF",
+      "revision": "6d053616d152293da72569f56b861466f10ace7d",
+      "variant": "UD-Q4_K_XL",
+      "hf": "https://huggingface.co/unsloth/DeepSeek-V4-Pro-0813-GGUF/resolve/6d053616d152293da72569f56b861466f10ace7d/UD-Q4_K_XL/DeepSeek-V4-Pro-0813-UD-Q4_K_XL-00001-of-00020.gguf",
+      "presence": "complete_header_no_MTP_roles",
+      "evidence": ".scratch/gguf-weight-audit.json#/deepseek_v4_pro_0813_ud_q4_k_xl",
+      "tensors": 1894,
+      "named_table_sha256": "493206187dff7e72faab352943019dfd374a771a87e9dddd207ad0d6a048838e",
+      "remaining_MTP_binding": false
+    },
+    {
+      "repository": "unsloth/DeepSeek-V4-Pro-0813-GGUF",
+      "revision": "6d053616d152293da72569f56b861466f10ace7d",
+      "variant": "UD-Q8_K_XL",
+      "hf": "https://huggingface.co/unsloth/DeepSeek-V4-Pro-0813-GGUF/resolve/6d053616d152293da72569f56b861466f10ace7d/UD-Q8_K_XL/DeepSeek-V4-Pro-0813-UD-Q8_K_XL-00001-of-00020.gguf",
+      "presence": "complete_header_no_MTP_roles",
+      "evidence": ".scratch/gguf-weight-audit.json#/deepseek_v4_pro_0813_ud_q8_k_xl",
+      "tensors": 1894,
+      "named_table_sha256": "3f57a11ef353f48042639c91e620b1232462d48e6d5546f73128ab2755b853b7",
+      "remaining_MTP_binding": false
+    },
+    {
+      "repository": "unsloth/DeepSeek-V4-Flash-0731-GGUF",
+      "revision": "fbbb5b93fb787c21338159b0af3318bb3f4d9768",
+      "variant": "UD-Q4_K_XL",
+      "hf": "https://huggingface.co/unsloth/DeepSeek-V4-Flash-0731-GGUF/tree/fbbb5b93fb787c21338159b0af3318bb3f4d9768",
+      "presence": "complete_header_no_MTP_roles",
+      "evidence": "docs/evidence/correctness/cpu-quant-mtp-c1-demand/headers.json.gz",
+      "observed_shards": 5,
+      "tensors": 1328,
+      "named_table_sha256": "71b81d16617f9c2340e5a3814cb8b30eb4f5f7422c1122d5c32de0b9c93cc68a",
+      "remaining_MTP_binding": false,
+      "note": "Explicit DSpark sidecars are separate entries S02/S03, not embedded main GGUF roles."
+    },
+    {
+      "repository": "unsloth/DeepSeek-V4-Flash-0731-GGUF",
+      "revision": "fbbb5b93fb787c21338159b0af3318bb3f4d9768",
+      "variant": "UD-Q8_K_XL",
+      "hf": "https://huggingface.co/unsloth/DeepSeek-V4-Flash-0731-GGUF/tree/fbbb5b93fb787c21338159b0af3318bb3f4d9768",
+      "presence": "complete_header_no_MTP_roles",
+      "evidence": "docs/evidence/correctness/cpu-quant-mtp-c1-demand/headers.json.gz",
+      "observed_shards": 5,
+      "tensors": 1328,
+      "named_table_sha256": "71b81d16617f9c2340e5a3814cb8b30eb4f5f7422c1122d5c32de0b9c93cc68a",
+      "remaining_MTP_binding": false,
+      "note": "Explicit DSpark sidecars are separate entries S02/S03, not embedded main GGUF roles."
+    },
+    {
+      "model": "kimi_k3",
+      "repository": "moonshotai/Kimi-K3",
+      "revision": "f831ab66814297da540d832a5235f8e904f29d06",
+      "hf": "https://huggingface.co/moonshotai/Kimi-K3/tree/f831ab66814297da540d832a5235f8e904f29d06",
+      "presence": "complete_header_no_MTP_roles",
+      "evidence": "docs/evidence/research/mtp-artifact-scope-2026-10-22.json#/official_header_extract",
+      "tensors": 497220,
+      "mtp_roles": 0,
+      "num_nextn_predict_layers": 0,
+      "remaining_MTP_binding": false
+    }
+  ],
+  "excluded_catalog_derivatives": [
+    {
+      "catalog_index": 4,
+      "model": "qwen35_2b",
+      "repository": "mlx-community/Qwen3.5-2B-MLX-4bit",
+      "revision": "93760be4f1f69842a46bc13dbdc0f19e291392a3",
+      "hf": "https://huggingface.co/mlx-community/Qwen3.5-2B-MLX-4bit/tree/93760be4f1f69842a46bc13dbdc0f19e291392a3",
+      "presence": "complete_header_and_index_no_MTP_roles",
+      "evidence": {
+        "archive": "docs/evidence/research/fixed-role-binding-2026-10-21.zip",
+        "headers_glob": "mlx/4/headers/*.safetensors.header.json",
+        "header_count": 1,
+        "header_entry_list_sha256": "e1e1714a9be3ff05b40c15a14047d16ab3235401ae5b975ac9cecd2ec21985f5",
+        "index": "mlx/4/model.safetensors.index.json",
+        "all_tensors": 991,
+        "header_and_index_names_identical": true,
+        "named_table_sha256": "69d68b30141bb3aa16e53b43d0ee35e02b37ff24bc5ec2428b6a6ae4db30967c"
+      },
+      "remaining_MTP_binding": false
+    },
+    {
+      "catalog_index": 5,
+      "model": "qwen35_2b",
+      "repository": "mlx-community/Qwen3.5-2B-MLX-8bit",
+      "revision": "e6ffd0033d03c9efa880984e611028e0da63905f",
+      "hf": "https://huggingface.co/mlx-community/Qwen3.5-2B-MLX-8bit/tree/e6ffd0033d03c9efa880984e611028e0da63905f",
+      "presence": "complete_header_and_index_no_MTP_roles",
+      "evidence": {
+        "archive": "docs/evidence/research/fixed-role-binding-2026-10-21.zip",
+        "headers_glob": "mlx/5/headers/*.safetensors.header.json",
+        "header_count": 1,
+        "header_entry_list_sha256": "aa5776645fa07ced06e2ac258a86f385d4dc8a2d86665073dcb14b44368bc95c",
+        "index": "mlx/5/model.safetensors.index.json",
+        "all_tensors": 991,
+        "header_and_index_names_identical": true,
+        "named_table_sha256": "fbbd0d3f4e52417ad88e2624c94378cd5eaa76c5cf0d2563245d41822a13d7f5"
+      },
+      "remaining_MTP_binding": false
+    },
+    {
+      "catalog_index": 11,
+      "model": "qwen38_27b",
+      "repository": "mlx-community/Qwen3.8-27B-4bit",
+      "revision": "10c35caafbb80f7dc6a7a432cdd11af10a6d4818",
+      "hf": "https://huggingface.co/mlx-community/Qwen3.8-27B-4bit/tree/10c35caafbb80f7dc6a7a432cdd11af10a6d4818",
+      "presence": "complete_header_and_index_no_MTP_roles",
+      "evidence": {
+        "archive": "docs/evidence/research/fixed-role-binding-2026-10-21.zip",
+        "headers_glob": "mlx/11/headers/*.safetensors.header.json",
+        "header_count": 3,
+        "header_entry_list_sha256": "15a59201ce842b16fd389b50ac8696efa280ae00a7c3286ce62d20a93cf30460",
+        "index": "mlx/11/model.safetensors.index.json",
+        "all_tensors": 2180,
+        "header_and_index_names_identical": true,
+        "named_table_sha256": "b8b3cd740db9da5a46274591229aaee6c4f48e983c9cfa9ad8534bded9d966d3"
+      },
+      "remaining_MTP_binding": false
+    },
+    {
+      "catalog_index": 12,
+      "model": "qwen38_27b",
+      "repository": "mlx-community/Qwen3.8-27B-8bit",
+      "revision": "815b83c0df8ffd1d1b5244cf75fd6ef14fca9ef9",
+      "hf": "https://huggingface.co/mlx-community/Qwen3.8-27B-8bit/tree/815b83c0df8ffd1d1b5244cf75fd6ef14fca9ef9",
+      "presence": "complete_header_and_index_no_MTP_roles",
+      "evidence": {
+        "archive": "docs/evidence/research/fixed-role-binding-2026-10-21.zip",
+        "headers_glob": "mlx/12/headers/*.safetensors.header.json",
+        "header_count": 6,
+        "header_entry_list_sha256": "52475e4d787fdfd6e661a03b6185a701ccbe3778f36a11dc8ce59aabd448bfd9",
+        "index": "mlx/12/model.safetensors.index.json",
+        "all_tensors": 2180,
+        "header_and_index_names_identical": true,
+        "named_table_sha256": "5d0ad90a8f602d38176d160651033d301a227486406a123e2664869eaab1c71f"
+      },
+      "remaining_MTP_binding": false
+    },
+    {
+      "catalog_index": 31,
+      "model": "glm53",
+      "repository": "mlx-community/GLM-5.3-4bit",
+      "revision": "81ad9b73c6188f808737dbb52458f082d249dcbe",
+      "hf": "https://huggingface.co/mlx-community/GLM-5.3-4bit/tree/81ad9b73c6188f808737dbb52458f082d249dcbe",
+      "presence": "complete_header_and_index_no_MTP_roles",
+      "evidence": {
+        "archive": "docs/evidence/research/fixed-role-binding-2026-10-21.zip",
+        "headers_glob": "mlx/31/headers/*.safetensors.header.json",
+        "header_count": 91,
+        "header_entry_list_sha256": "72a899ecbdb638eb2be2c7bc4459a168913db0206de7391f028f889641f02f5e",
+        "index": "mlx/31/model.safetensors.index.json",
+        "all_tensors": 3481,
+        "header_and_index_names_identical": true,
+        "named_table_sha256": "1d63ab76322cb523f424919b00edebd64441fdd454bf7ecf3bdfdc3ec8f326eb"
+      },
+      "remaining_MTP_binding": false
+    }
+  ],
+  "partial_presence_questions": [
+    {
+      "catalog_index": 8,
+      "model": "qwen38_27b",
+      "repository": "unsloth/Qwen3.8-27B-NVFP4",
+      "revision": "f0b7c9e722f5565102fff8481c99e4d86ae099c7",
+      "hf": "https://huggingface.co/unsloth/Qwen3.8-27B-NVFP4/tree/f0b7c9e722f5565102fff8481c99e4d86ae099c7",
+      "catalog_codec_claim": "CT-mixed-FP8token-NVFP4",
+      "status": "Main header alone has0 MTP roles but saved API lists model_mtp.safetensors; sidecar header/schema not inspected. Not a negative census and not a complete original role manifest."
+    },
+    {
+      "catalog_index": 19,
+      "model": "qwen38_24t",
+      "repository": "Inferact/Qwen3.8-2.4T-A95B-MXFP4",
+      "revision": "98b8fd6c5dec37c28ff28e7a0f577677ccbdc49f",
+      "hf": "https://huggingface.co/Inferact/Qwen3.8-2.4T-A95B-MXFP4/tree/98b8fd6c5dec37c28ff28e7a0f577677ccbdc49f",
+      "catalog_codec_claim": "HF-mxfp4-micro32-macro128",
+      "status": "Saved API includes two MTP expert shard filenames; complete original role/codec manifest not established by sampled other headers."
+    },
+    {
+      "catalog_index": 27,
+      "model": "deepseek_v4_flash_0731",
+      "repository": "AtlasCloud/DeepSeek-V4-Flash-0731-FP8-DSpark",
+      "revision": "7eb21d27aee405755da5251f4458e9fff87c047b",
+      "hf": "https://huggingface.co/AtlasCloud/DeepSeek-V4-Flash-0731-FP8-DSpark/tree/7eb21d27aee405755da5251f4458e9fff87c047b",
+      "catalog_codec_claim": "FP8-DSpark",
+      "status": "Publisher DSpark declaration and sampled target headers are available; complete actual draft role header not inspected."
+    }
+  ],
+  "unconfirmed_catalog": [
+    {
+      "catalog_index": 0,
+      "model": "qwen35_2b",
+      "repository": "cyankiwi/Qwen3.5-2B-AWQ-4bit",
+      "revision": "718fd9b52c5ca16f1f856f6c4e4209129802a6a2",
+      "hf": "https://huggingface.co/cyankiwi/Qwen3.5-2B-AWQ-4bit/tree/718fd9b52c5ca16f1f856f6c4e4209129802a6a2",
+      "catalog_codec_claim": "AWQ/CT-INT4-g32-sym",
+      "status": "MTP presence/complete schema unconfirmed in locally reviewed metadata; retain discovery question, do not infer absence or create an original binding task from the family name."
+    },
+    {
+      "catalog_index": 2,
+      "model": "qwen35_2b",
+      "repository": "Freesolo-Co/Qwen3.5-2B-FP8",
+      "revision": "e200465690a076860468c19bec107ac54a257953",
+      "hf": "https://huggingface.co/Freesolo-Co/Qwen3.5-2B-FP8/tree/e200465690a076860468c19bec107ac54a257953",
+      "catalog_codec_claim": "CT-FP8-channel-token",
+      "status": "MTP presence/complete schema unconfirmed in locally reviewed metadata; retain discovery question, do not infer absence or create an original binding task from the family name."
+    },
+    {
+      "catalog_index": 6,
+      "model": "qwen38_27b",
+      "repository": "Qwen/Qwen3.8-27B-FP8",
+      "revision": "017b9c7af6b5689d5dd426a76e0bc077eb5ca20a",
+      "hf": "https://huggingface.co/Qwen/Qwen3.8-27B-FP8/tree/017b9c7af6b5689d5dd426a76e0bc077eb5ca20a",
+      "catalog_codec_claim": "HF-FP8-block128",
+      "status": "MTP presence/complete schema unconfirmed in locally reviewed metadata; retain discovery question, do not infer absence or create an original binding task from the family name."
+    },
+    {
+      "catalog_index": 7,
+      "model": "qwen38_27b",
+      "repository": "nvidia/Qwen3.8-27B-NVFP4",
+      "revision": "482ca0f3832238542f8f5295dde86b5f22711d80",
+      "hf": "https://huggingface.co/nvidia/Qwen3.8-27B-NVFP4/tree/482ca0f3832238542f8f5295dde86b5f22711d80",
+      "catalog_codec_claim": "ModelOpt-mixed-FP8-NVFP4",
+      "status": "MTP presence/complete schema unconfirmed in locally reviewed metadata; retain discovery question, do not infer absence or create an original binding task from the family name."
+    },
+    {
+      "catalog_index": 13,
+      "model": "qwen38_27b",
+      "repository": "unsloth/Qwen3.8-27B-unsloth-bnb-4bit",
+      "revision": "8aa5f05d26b7205477066e1449e0af13f762a299",
+      "hf": "https://huggingface.co/unsloth/Qwen3.8-27B-unsloth-bnb-4bit/tree/8aa5f05d26b7205477066e1449e0af13f762a299",
+      "catalog_codec_claim": "BNB-NF4-doublequant",
+      "status": "MTP presence/complete schema unconfirmed in locally reviewed metadata; retain discovery question, do not infer absence or create an original binding task from the family name."
+    },
+    {
+      "catalog_index": 15,
+      "model": "qwen38_24t",
+      "repository": "Qwen/Qwen3.8-2.4T-A95B-FP8",
+      "revision": "d2dc35658bcf77e66643428cb52e774cc3b5bd29",
+      "hf": "https://huggingface.co/Qwen/Qwen3.8-2.4T-A95B-FP8/tree/d2dc35658bcf77e66643428cb52e774cc3b5bd29",
+      "catalog_codec_claim": "HF-FP8-block128",
+      "status": "MTP presence/complete schema unconfirmed in locally reviewed metadata; retain discovery question, do not infer absence or create an original binding task from the family name."
+    },
+    {
+      "catalog_index": 16,
+      "model": "qwen38_24t",
+      "repository": "amd/Qwen3.8-2.4T-A95B-Quark-MXFP4",
+      "revision": "13dc9676cdd9e2374c3efb50389d3392b975acae",
+      "hf": "https://huggingface.co/amd/Qwen3.8-2.4T-A95B-Quark-MXFP4/tree/13dc9676cdd9e2374c3efb50389d3392b975acae",
+      "catalog_codec_claim": "Quark-MXFP4-W4A4-g32",
+      "status": "MTP presence/complete schema unconfirmed in locally reviewed metadata; retain discovery question, do not infer absence or create an original binding task from the family name."
+    },
+    {
+      "catalog_index": 17,
+      "model": "qwen38_24t",
+      "repository": "nvidia/Qwen3.8-2.4T-A95B-NVFP4",
+      "revision": "74eb734297318ecf7c48016a4ac8ce1b47cc74a9",
+      "hf": "https://huggingface.co/nvidia/Qwen3.8-2.4T-A95B-NVFP4/tree/74eb734297318ecf7c48016a4ac8ce1b47cc74a9",
+      "catalog_codec_claim": "ModelOpt-mixed-FP8-NVFP4",
+      "status": "MTP presence/complete schema unconfirmed in locally reviewed metadata; retain discovery question, do not infer absence or create an original binding task from the family name."
+    },
+    {
+      "catalog_index": 18,
+      "model": "qwen38_24t",
+      "repository": "RedHatAI/Qwen3.8-2.4T-A95B-NVFP4-FP8",
+      "revision": "b94577f02dd4bcb722aad2c60f8117032411dfb5",
+      "hf": "https://huggingface.co/RedHatAI/Qwen3.8-2.4T-A95B-NVFP4-FP8/tree/b94577f02dd4bcb722aad2c60f8117032411dfb5",
+      "catalog_codec_claim": "CT-mixed-FP8block-NVFP4",
+      "status": "MTP presence/complete schema unconfirmed in locally reviewed metadata; retain discovery question, do not infer absence or create an original binding task from the family name."
+    },
+    {
+      "catalog_index": 25,
+      "model": "deepseek_v4_pro_0813",
+      "repository": "nvidia/DeepSeek-V4-Pro-0813-NVFP4",
+      "revision": "949138637e8e8fe190335be2396af62187dc8a83",
+      "hf": "https://huggingface.co/nvidia/DeepSeek-V4-Pro-0813-NVFP4/tree/949138637e8e8fe190335be2396af62187dc8a83",
+      "catalog_codec_claim": "NVFP4/mixed-FP8",
+      "status": "MTP presence/complete schema unconfirmed in locally reviewed metadata; retain discovery question, do not infer absence or create an original binding task from the family name."
+    },
+    {
+      "catalog_index": 26,
+      "model": "deepseek_v4_flash_0731",
+      "repository": "nvidia/DeepSeek-V4-Flash-0731-NVFP4",
+      "revision": "f1caa71142bd0be02f728c79f75042ac1e461579",
+      "hf": "https://huggingface.co/nvidia/DeepSeek-V4-Flash-0731-NVFP4/tree/f1caa71142bd0be02f728c79f75042ac1e461579",
+      "catalog_codec_claim": "NVFP4/mixed-FP8",
+      "status": "MTP presence/complete schema unconfirmed in locally reviewed metadata; retain discovery question, do not infer absence or create an original binding task from the family name."
+    },
+    {
+      "catalog_index": 28,
+      "model": "glm53",
+      "repository": "nvidia/GLM-5.3-NVFP4",
+      "revision": "e3b8f9f2fad29727dfa95e766c5cac18ea1414bf",
+      "hf": "https://huggingface.co/nvidia/GLM-5.3-NVFP4/tree/e3b8f9f2fad29727dfa95e766c5cac18ea1414bf",
+      "catalog_codec_claim": "NVFP4/mixed-FP8",
+      "status": "MTP presence/complete schema unconfirmed in locally reviewed metadata; retain discovery question, do not infer absence or create an original binding task from the family name."
+    },
+    {
+      "catalog_index": 29,
+      "model": "glm53_flash",
+      "repository": "nvidia/GLM-5.3-Flash-NVFP4",
+      "revision": "da920bb0b9f4a06727223a349e55468e38352348",
+      "hf": "https://huggingface.co/nvidia/GLM-5.3-Flash-NVFP4/tree/da920bb0b9f4a06727223a349e55468e38352348",
+      "catalog_codec_claim": "NVFP4/mixed-FP8",
+      "status": "MTP presence/complete schema unconfirmed in locally reviewed metadata; retain discovery question, do not infer absence or create an original binding task from the family name."
+    }
+  ],
+  "Kimi_catalog_no_requirement_established": [
+    {
+      "catalog_index": 20,
+      "model": "kimi_k3",
+      "repository": "nvidia/Kimi-K3-NVFP4",
+      "revision": "b2428a0b83a8b712ff2e1a8448a103d4175341f1",
+      "hf": "https://huggingface.co/nvidia/Kimi-K3-NVFP4/tree/b2428a0b83a8b712ff2e1a8448a103d4175341f1",
+      "catalog_codec_claim": "ModelOpt-NVFP4-FP8-PB-WO",
+      "status": "No distinct trained draft identified; fixed formal Kimi source has0 MTP and num_nextn_predict_layers0. No additional MTP binding requirement established; this is not an independent full negative census of this derivative."
+    },
+    {
+      "catalog_index": 21,
+      "model": "kimi_k3",
+      "repository": "RedHatAI/Kimi-K3-FP8-BLOCK",
+      "revision": "6409c37cf440abeb76f0b44ab4fb7db8c8bccb4b",
+      "hf": "https://huggingface.co/RedHatAI/Kimi-K3-FP8-BLOCK/tree/6409c37cf440abeb76f0b44ab4fb7db8c8bccb4b",
+      "catalog_codec_claim": "CT-FP8-block128",
+      "status": "No distinct trained draft identified; fixed formal Kimi source has0 MTP and num_nextn_predict_layers0. No additional MTP binding requirement established; this is not an independent full negative census of this derivative."
+    },
+    {
+      "catalog_index": 22,
+      "model": "kimi_k3",
+      "repository": "RedHatAI/Kimi-K3-INT4",
+      "revision": "d5048a3ba6d23dd68749ea4b84abcb66d59a07e3",
+      "hf": "https://huggingface.co/RedHatAI/Kimi-K3-INT4/tree/d5048a3ba6d23dd68749ea4b84abcb66d59a07e3",
+      "catalog_codec_claim": "CT-INT4-g128-W4A16",
+      "status": "No distinct trained draft identified; fixed formal Kimi source has0 MTP and num_nextn_predict_layers0. No additional MTP binding requirement established; this is not an independent full negative census of this derivative."
+    },
+    {
+      "catalog_index": 23,
+      "model": "kimi_k3",
+      "repository": "amd/Kimi-K3-Quark-MXFP4-AttnFP8",
+      "revision": "398ecc22db3722ed6e416d22f8ddb491da32d566",
+      "hf": "https://huggingface.co/amd/Kimi-K3-Quark-MXFP4-AttnFP8/tree/398ecc22db3722ed6e416d22f8ddb491da32d566",
+      "catalog_codec_claim": "Quark-MXFP4-W4A4-FP8",
+      "status": "No distinct trained draft identified; fixed formal Kimi source has0 MTP and num_nextn_predict_layers0. No additional MTP binding requirement established; this is not an independent full negative census of this derivative."
+    },
+    {
+      "catalog_index": 24,
+      "model": "kimi_k3",
+      "repository": "open-inference/Kimi-K3-W4A8-K512-GPTQ-Mixed-Cal72-Seq1024",
+      "revision": "dabd12ab69bf9c71fd219bae4c49a34f00249bd2",
+      "hf": "https://huggingface.co/open-inference/Kimi-K3-W4A8-K512-GPTQ-Mixed-Cal72-Seq1024/tree/dabd12ab69bf9c71fd219bae4c49a34f00249bd2",
+      "catalog_codec_claim": "CT-INT4-K512-custom-W4A8",
+      "status": "No distinct trained draft identified; fixed formal Kimi source has0 MTP and num_nextn_predict_layers0. No additional MTP binding requirement established; this is not an independent full negative census of this derivative."
+    }
+  ],
+  "reusable_implementation_boundaries": [
+    "Reuse ordinary Fragment/Graph, cold provider planning, typed readonly constants, actual output leases, StateStore/StateHead atomic publication, old-reader lifetime and budgets; no per-artifact executor or runtime model whitelist is required.",
+    "Dense Qwen artifacts share attention/residual/FFN/state shapes; MoE Qwen shares actualglobalID selection, bounded expert residency and sameHead repair. Official BF16 source stores/gamma are not proved by GGUF F32 effective-gamma tests.",
+    "GLM artifacts share MLA latent/cache/index fresh/skip/lag/catchup and residual workflow. Official global FP8 KV_b and converted GGUF per-head Q8 banks are distinct math/layout; preserve their actual activation quantizer and storage boundaries.",
+    "Formal DSpark E4+UE8 block128/E2M1+UE8 group32 is distinct from GGUF Q8_0/MXFP4. Reuse five-proposal/main-history/prefix state; proposal KV is temporary. Original accepted target captures must feed actual history, rather than imposing Qwen K1 repair semantics.",
+    "Stable greedy verification, accepted-count policy and upstream target taps can be supplied by an engine through current Graph/StateHead boundaries. Original payload identity/header presence alone does not prove target model computation, quality, throughput or complete backend reachability."
+  ],
+  "sources": [
+    {
+      "path": "docs/implementation/model-quantizations.json",
+      "bytes": 570374,
+      "sha256": "474e247296fbfb449f82f66bc79b1f64df2ff620770efcada7c64aa511381150"
+    },
+    {
+      "path": "docs/implementation/tasks/compute/llm-moe-provider-demand-matrix.json",
+      "bytes": 25575,
+      "sha256": "3a803704977def58bba3202652f27380e0a72197752ff3989eab42b2d68a1fd3"
+    },
+    {
+      "path": "docs/evidence/research/mtp-artifact-scope-2026-10-22.json",
+      "bytes": 45564,
+      "sha256": "fa60058ed2eb8216dc06104475e4c6bcce696555f0683cc0848ad4e9878a3069"
+    },
+    {
+      "path": ".scratch/gguf-weight-audit.json",
+      "bytes": 4823061,
+      "sha256": "cc69c6fbb4e41f10d7d0135bb1fcb7748776e0b491b5f66009fcb0b6f17b8555"
+    },
+    {
+      "path": "docs/evidence/correctness/cpu-quant-mtp-c1-demand/headers.json.gz",
+      "bytes": 1417359,
+      "sha256": "66d44241ba7d8d5e4fce07db21b346172f8c2cbf6c79355b8f92ee7e842d698c"
+    },
+    {
+      "path": "docs/evidence/correctness/cpu-quant-mtp-c4-three-stage/sidecar-roles.json",
+      "bytes": 49966,
+      "sha256": "abb6810eb41c763d49fc36f0c462324cabf31a0dca0921e711238263b55d4ad7"
+    },
+    {
+      "archive": "docs/evidence/research/mtp-artifact-schema-2026-10-23.zip",
+      "bytes": 350909,
+      "sha256": "ffc194995ef37d2911309b67fb32ca11b9675a721129c5a44d5b120519876cdb",
+      "scope": "Complete fixed-revision Q01/Q10/Q30 physical MTP schema, raw headers/index, HTTP206 receipts and acquisition helper. No tensor payload or native execution."
+    }
+  ],
+  "notes": [
+    "The earlier2026-10-22 presence/runtime snapshot and BR local20-row review are historical. This report supersedes their stale remaining counts; their original raw metadata remains evidence.",
+    "A main header without MTP is not a whole-artifact negative if its complete index/API identifies a separate MTP file (GPTQ extra tensors and Unsloth NVFP4 are explicit examples).",
+    "Artifact title/quantization family does not determine every role codec: Q27 sidecar Q4_0 title includesQ3_K vocab, Quark MXFP4 title overridesMTP871 matrices toFP8, MLX Flash mixes4/5/6bits withF16 scales.",
+    "Header confirmation is not native source binding. A finite target-tail fixture is not a full model engine, and a generic operator regression is not execution of every publisher artifact."
+  ],
+  "implementation_work_packages": {
+    "unit": "0 active shared schema packages cover0 unfinished original identities. Counts are not engine counts or a completion percentage.",
+    "identity_count": 0,
+    "package_count": 0,
+    "packages": [
+      {
+        "id": "W01",
+        "schema": "Qwen original BF16 NextN roles",
+        "identities": [],
+        "classification": "One shared source adapter plus explicit original BF16 graph boundaries; no per-artifact executor.",
+        "already_exists": [
+          "tools/qwen35_text/mtp_graph.h:input_projection/project_kv/full_head (BF16 Q35 actual semantics)",
+          "include/hyle/compute/model_ops.h:BFloatLinearF32 and GroupedMatMul (plain BF16 expert storage/F32 accumulation)",
+          "tests/compute_models/qwen_full_attention_fragment.h:append_qkv/append_finite_history and common target attention",
+          "tests/compute_models/qwen_mtp_state_consumer_test.cc:shared K1/current-target/accepted-repair StateHead journey"
+        ],
+        "specific_code_gap": [],
+        "completed_source_notes": [
+          "Shared BF16/packed leaf, original source binding and K1 are implemented. Remaining original identities for this package: none. Each completed identity retains its declared backend and fixture boundaries.",
+          "Q24 original fused512-expert gate_up/down views and bounded BF16 supply have passed the finite original CPU/mixed journey. Preserve per-range selected-plane provenance when applying this source machinery to other artifacts; no whole50GB bank or synthetic full-bank SHA is required.",
+          "The existing original Q35 consumer is already complete within its listed scope. New Q27/Q24 and derived artifact runs must preserve their actual target/vocabulary contract and BF16 store boundaries, not substitute the already-tested GGUF F32 path."
+        ],
+        "minimal_implementation": [
+          "One metadata-driven BF16 source loader with FileMapping, exact sizes/SHA and shared readonly leases for rank1/2/3 banks; retain original coefficient bits and names.",
+          "One BF16 parameter/store leaf policy in shared Qwen NextN/attention/MoE construction; official fused expert views use current public View/MatMul/GroupedMatMul and existing explicit resident map.",
+          "Bind each fixed manifest and original vocab through the same complete K1 state/controller; source-only or generic codec checks do not count as original execution."
+        ],
+        "implementation_source": "tests/compute_models/qwen_bfloat_original_roles.h (new shared adapter; no per-identity consumer)",
+        "new_public_operation_established": false,
+        "shared_source_status": "Same BF16 NextN/K1 source and controller; completed finite original derived identities: Q01, Q03, Q09, Q10. Newly published derived evidence retains CPU/CUDA each23Graphs, seven packed contractions and zero dense-W materializations. Remaining W01 original identities: none. Full-model quality and final performance remain separate.",
+        "Q03_runtime_evidence": {
+          "path": "docs/evidence/correctness/mtp-qwen35-nvfp4-target-verifier-2026-10-24.json",
+          "sha256": "e8497a8d901fe9bfabd7b5e5f90e53133dc4cd6b378576d4bad73dd13df45149"
+        },
+        "completed_identities": [
+          "B02",
+          "B05",
+          "Q03",
+          "Q01",
+          "Q09",
+          "Q10"
+        ],
+        "latest_original_execution": {
+          "evidence": "docs/evidence/correctness/mtp-qwen27-gptq-target-verifier-2026-10-24.json",
+          "sha256": "7caca4d5f813d5652c13a479b34c9231436b3b5bd684d7459b3c4cacd677745c",
+          "cases": 2,
+          "graphs": 46,
+          "failures": 0,
+          "skips": 0
+        },
+        "completed_identity_evidence": {
+          "Q09": {
+            "path": "docs/evidence/correctness/mtp-qwen27-ct-asymmetric-target-verifier-2026-10-24.json",
+            "bytes": 13833,
+            "sha256": "97fb33cdbe7e4950160f96d9c3622d0b959503d429e42f5e801ebafc62bfa516"
+          },
+          "Q10": {
+            "path": "docs/evidence/correctness/mtp-qwen27-gptq-target-verifier-2026-10-24.json",
+            "bytes": 17358,
+            "sha256": "7caca4d5f813d5652c13a479b34c9231436b3b5bd684d7459b3c4cacd677745c"
+          }
+        }
+      },
+      {
+        "id": "W02",
+        "schema": "Qwen GGUF role manifests with existing native codecs",
+        "identities": [],
+        "classification": "Finite original CPU/CUDA consumers completed: S01, Q14, B04, B07. Remaining original bindings: none.",
+        "already_exists": [
+          "tests/compute_models/qwen_mtp_state_consumer.h:build/append_packed_head/external",
+          "tests/compute_models/qwen_full_attention_fragment.h:append_target/append_target_attention",
+          "tests/compute_models/qwen24_original_resident_weights.h:PackedExpertLayout derives codec/stride from actual descriptions",
+          "tests/compute_models/qwen24_original_moe_fragment.h:complete512-domain Top10 and actual codec-derived GGUF legs",
+          "tests/compute_models/cpu_c5_gguf_fixture.h:projection already handles native BF16 using explicit Cast+BFloatLinearF32",
+          "include/hyle/compute/low_precision.h:GgufQuantizedType including Q3_K/Q4_K/Q6_K/Q8_0/NVFP4; docs/evidence/correctness/gguf-nvfp4-2026-10-20.json confirms existing packed MatMul/GroupedMatMul/Gather route"
+        ],
+        "same_schema_original_payload_not_run": [],
+        "specific_code_gap": [],
+        "minimal_implementation": [
+          "Parameterize existing GGUF role manifests and native/plain descriptor handling, preserving same packed source allocation for embedding/head.",
+          "Run the existing complete Qwen controller against each fixed original identity and required backend; keep local reference codec matched to actual route."
+        ],
+        "new_public_operation_established": false,
+        "source_review_plan": ".scratch/qwen-gguf-selected-20261023/review/w02-minimal-plan.json",
+        "shared_source_status": "Finite original CPU/CUDA consumers completed: S01, Q14, B04, B07. Remaining original bindings: none. Historical capability evidence and its unverified device boundaries are retained below.",
+        "completed_identities": [
+          "S01",
+          "Q14",
+          "B04",
+          "B07"
+        ],
+        "latest_original_execution": {
+          "evidence": "docs/evidence/correctness/mtp-qwen24-fidelity-gguf-target-verifier-2026-10-24.json",
+          "sha256": "acae6eb48009e984f9faeb3d4c6f3f3c722c7118b7ad0ba896984fb60905e38c",
+          "cases": 2,
+          "graphs": 86,
+          "failures": 0,
+          "skips": 0
+        },
+        "completed_identity_evidence": {
+          "B04": {
+            "path": "docs/evidence/correctness/mtp-qwen27-fidelity-gguf-target-verifier-2026-10-24.json",
+            "bytes": 119947,
+            "sha256": "334abcf6bb3eb78594af90aeb18d0a14ffb8a60b38e8a987a3e2be956f31e203"
+          },
+          "B07": {
+            "path": "docs/evidence/correctness/mtp-qwen24-fidelity-gguf-target-verifier-2026-10-24.json",
+            "bytes": 172240,
+            "sha256": "acae6eb48009e984f9faeb3d4c6f3f3c722c7118b7ad0ba896984fb60905e38c"
+          }
+        }
+      },
+      {
+        "id": "W03",
+        "schema": "GLM converted GGUF MLA/indexer/MoE NextN",
+        "identities": [],
+        "classification": "Converted GGUF finite original CPU/CUDA consumers completed: B09, B12, B10, B13. Remaining original bindings: none.",
+        "already_exists": [
+          "tests/compute_models/d5_glm_remaining_fragments.h:mtp_input/head_projection/apply_head_projection/mtp_decoder includes generated GGUF shape recipes",
+          "tests/compute_models/glm_pro_mtp_fragment.h:shared MLA/state geometry and nonpooled index fresh/skip/catchup",
+          "tests/compute_models/glm_mtp_state_consumer_test.cc:shared sparse attention/index journal/catchup, one StateHead/controller",
+          "tests/compute_models/glm_original_moe_roles.h and glm_original_moe_resident_weights.h:model geometry/selected union/readonly source pattern",
+          "include/hyle/compute/model_ops.h:GroupedMatMul plus existing GGUF descriptors and public ordinary graph operations"
+        ],
+        "specific_code_gap": [],
+        "minimal_implementation": [
+          "Bind one converted-role parameter view (Q8_0/Q4_K/Q5_K/F32, per-head K/V) and descriptor-derived selected expert supply.",
+          "Reuse existing MLA/index/cache/lag/controller and original shared-vocab pending leases; preserve converted F32 boundaries and actual GGUF AQ."
+        ],
+        "new_public_operation_established": false,
+        "source_integration_evidence": {
+          "path": "docs/evidence/correctness/mtp-glm-gguf-shared-runtime-2026-10-24.json",
+          "sha256": "353c75f4971fdda128243fac309d685471e3e801415fd8b77c41d197fe512a2c",
+          "actual_converted_original_executed": false,
+          "affected_official_CPU_graphs": 89
+        },
+        "completed_identity_ids": [
+          "B09",
+          "B12",
+          "B10",
+          "B13"
+        ],
+        "latest_original_execution": {
+          "evidence": "docs/evidence/correctness/mtp-glm-gguf-b13-target-verifier-2026-10-24.json",
+          "sha256": "c753018eece25dd40127b87a8591f5caa44d1f7ee7599f24e5a675afb2bc429a",
+          "cases": 2,
+          "graphs": 174,
+          "failures": 0,
+          "skips": 0
+        },
+        "completed_identity_evidence": {
+          "B12": {
+            "path": "docs/evidence/correctness/mtp-glm-gguf-b12-target-verifier-2026-10-24.json",
+            "bytes": 200197,
+            "sha256": "a75eac9ba10f82d42b0294276888b9488afb4d6ff52b85b78b1011515976202c"
+          },
+          "B10": {
+            "path": "docs/evidence/correctness/mtp-glm-gguf-b10-target-verifier-2026-10-24.json",
+            "bytes": 184652,
+            "sha256": "a63e2799b8349923e32a07fc6d1022be55b47febd1dc6d1d2715f7ac7d2e23a9"
+          },
+          "B13": {
+            "path": "docs/evidence/correctness/mtp-glm-gguf-b13-target-verifier-2026-10-24.json",
+            "bytes": 204699,
+            "sha256": "c753018eece25dd40127b87a8591f5caa44d1f7ee7599f24e5a675afb2bc429a"
+          }
+        }
+      },
+      {
+        "id": "W04",
+        "schema": "Formal DSpark E4+UE8 A128 / E2M1+UE8 group32",
+        "identities": [],
+        "classification": "Completed finite original Flash binding on shared formal named-source/geometry/controller",
+        "already_exists": [
+          "tests/compute_models/dspark_target_geometry.h:kFlash/kPro immutable same-source geometry",
+          "tests/compute_models/dspark_formal_fragment.h:shared FP8/OA/MoE/head typed math",
+          "tests/compute_models/dspark_original_target_program.h:TargetBindings<Source>, explicit geometry/profile, same ordinary Graph",
+          "tests/compute_models/dspark_original_draft_fragment.h and dspark_original_draft_program.h:actual five-row formal draft/Markov/confidence/main-history",
+          "tests/compute_models/dspark_original_role_source.h and dspark_pro_original_roles.h:authenticated dense Bundle/selected ExpertSet, readonly roles and same source views",
+          "tests/compute_models/dspark_original_target_weights.h:actual descriptor-derived E6/E30 CPU/CUDA supply"
+        ],
+        "specific_code_gap": [],
+        "minimal_implementation": [
+          "Bind actual formal Flash original sources into the same named source, geometry-driven builder/reference and30member K5 consumer, retaining distinct original BF16 vocabularies without duplicate payload acquisition."
+        ],
+        "new_public_operation_established": false,
+        "runtime_evidence": "docs/evidence/correctness/mtp-dspark-formal-flash-2026-10-23.json",
+        "completed_identities": [
+          "B14",
+          "B15"
+        ]
+      },
+      {
+        "id": "W05",
+        "schema": "DSpark GGUF BF16/MXFP4 sidecar",
+        "identities": [],
+        "classification": "Completed finite original BF16/F32/MXFP4 sidecar on shared three-stage/K5/history state path",
+        "already_exists": [
+          "tests/compute_models/dspark_original_state_consumer.h:make_draft/decide_block5 and actual accepted target history",
+          "tests/compute_models/cpu_c4_model_branches.h:DraftParameters typed cold hooks, complete_draft",
+          "tests/compute_models/dspark_original_target_weights.h and dspark_original_resident_weights.h:bounded same-generation supply patterns",
+          "include/hyle/compute/model_ops.h:BFloatLinearF32/GroupedMatMul and MXFP4 reference operations"
+        ],
+        "specific_code_gap": [],
+        "minimal_implementation": [
+          "Admit actual plain BF16 projection leaves in existing typed parameter hooks, retain the sidecar original MXFP4 experts and original F32 metadata.",
+          "Use the existing shared K5 controller and original selected vocabulary, not a new sidecar executor."
+        ],
+        "new_public_operation_established": false,
+        "source_acquisition_status": "Original72static roles1041922972B plus actual selected MXFP4 slices and reused own-release Q8 vocabulary passed CPU/CUDA87Graphs each; affected S02 CUDA87Graphs passed. All5 draft episodes, full six-row verifier, natural fixture and controlled0/2/5 prefixes, four continued branches, cancellation/stale/old-reader/budget checks. Explicit net-only acquisitions, no native downloader or full expert bank. No whole-model quality/TPS claim.",
+        "applied_source_record": ".scratch/dspark-gguf-selected-20261023/S03/integration/applied.json",
+        "completed_identity_ids": [
+          "S03"
+        ],
+        "runtime_evidence": "docs/evidence/correctness/mtp-dspark-bfloat-sidecar-target-verifier-2026-10-23.json"
+      },
+      {
+        "id": "W06",
+        "schema": "GPTQ extra-file BF16 MTP; metadata resolved and implementation merged into W01",
+        "identities": [],
+        "classification": "Metadata discovery merged into W01; both Q01/Q10 original finite CPU/CUDA bindings are completed there. No separate remaining implementation work.",
+        "already_exists": [
+          "docs/evidence/research/mtp-artifact-scope-2026-10-23.json:complete index names15 MTP roles in model_extra_tensors.safetensors",
+          "tests/compute_models/gptq_reference_fixture.h and ct_packed_graph_fixture.h:existing packed target arithmetic independent of the MTP codec",
+          "W01/W02 shared original-role and NextN graph/state paths"
+        ],
+        "specific_code_gap": [],
+        "minimal_implementation": [
+          "Use the W01 BF16 supplier/store/state branch for these actual original MTP parameters; preserve each artifact's target/vocabulary contract. No GPTQ MTP codec is inferred from the target title."
+        ],
+        "new_public_operation_established": false,
+        "merged_into": "W01",
+        "physical_schema_complete": true,
+        "completed_identities": [
+          "Q01",
+          "Q10"
+        ]
+      },
+      {
+        "id": "W07",
+        "schema": "Quark Flash FP8 override MTP",
+        "identities": [],
+        "classification": "Completed finite original Q30 target43/44 plus NextN45 full-vocabulary CPU/CUDA binding on the shared Graph/StateHead accepted-prefix and continuation path.",
+        "already_exists": [
+          "include/hyle/compute/model_ops.h:Float8ScalePolicy::kMultiplyReciprocal and float8_block_linear/grouped_float8_linear",
+          "include/hyle/compute/weight_import.h:canonical original E4/block128 weight import",
+          "tests/compute_models/glm_original_moe_fragment.h:actual role-driven selected expert math and shared state path",
+          "tests/compute_models/ct_block128_qdq_fixture.h and docs/evidence/research/quark-mxfp4-contract-2026-10-20.zip:original-format arithmetic/schema evidence"
+        ],
+        "specific_code_gap": [],
+        "minimal_implementation": [
+          "Own100 static roles3,240,744,240B and immutable six-plane sets for actual selected expert IDs are bound through the shared ordinary resident Program and StateHead. Original E4 draft projections and MXFP4 target expert boundaries retain their actual contracts; no full expert bank is required."
+        ],
+        "new_public_operation_established": false,
+        "source_integration_evidence": {
+          "path": "docs/evidence/correctness/mtp-quark-source-wiring-2026-10-24.json",
+          "sha256": "d3e6da13a35da060d1ded6048e90effec37de5bac92bf58237f3fc913f595185",
+          "actual_quark_original_executed": false,
+          "affected_official_CPU_graphs": 49
+        },
+        "latest_validation_preparation": {
+          "status": "Same-family CPU module correction retained; original Q30 CPU/CUDA now passed in their distinct recorded source/image versions.",
+          "evidence": {
+            "path": "docs/evidence/correctness/mtp-cpu-native-family-2026-10-24.json",
+            "sha256": "401d2c95f3f4e1dd7694442489b01503946b14ca9709aa35b468d2a64008aaa4"
+          },
+          "invalid_first_native_attempt": "Manual validation assembly mixed native revisions; stopped after a bounded active fetch finished. Not a product HC defect or Q30 identity pass."
+        },
+        "latest_original_execution": {
+          "status": "cpu_cuda_finite_passed",
+          "evidence": {
+            "path": "docs/evidence/correctness/mtp-glm-quark-target-verifier-2026-10-24.json",
+            "bytes": 769177,
+            "sha256": "61cef0fa852b86e4f4b4d9385e11549a87d92787a7dd98039b0392931e22b61a"
+          },
+          "cases": 2,
+          "graphs": 174,
+          "failures": 0,
+          "skips": 0,
+          "original_identity_complete": true
+        },
+        "completed_identity_ids": [
+          "Q30"
+        ],
+        "runtime_evidence": "docs/evidence/correctness/mtp-glm-quark-target-verifier-2026-10-24.json"
+      },
+      {
+        "id": "W08",
+        "schema": "MLX affine group64 mixed4/5/6bit Flash NextN",
+        "identities": [],
+        "classification": "Finite original CPU/CUDA consumers completed: Q32. Remaining original bindings: none.",
+        "already_exists": [
+          "include/hyle/compute/model_ops.h:MlxQuantized affine bits4/5/6, linear/grouped/embedding, original scale/bias dtype",
+          "tests/compute_models/glm_flash_mixed_mlx_fixture.h:generated original-format Flash Top8/288-domain resident/shared path with mixed4/5/6/F16 metadata",
+          "tests/compute_models/mlx_orientation_fixture.h and mlx_affine_bitstream.h:original bitstream/orientation tests",
+          "tests/compute_models/model_resident_fragment.h and common StateHead/controller"
+        ],
+        "specific_code_gap": [],
+        "minimal_implementation": [
+          "Bind own117 static roles (41 NextN/vocabulary plus76 target43/44 roles), with original unquantized BF16/F32 and packed U32/F16 scale/bias. Fetch only nine planes per actual selected expert ID; no complete expert domain download. Reuse existing affine bitstream/orientation and explicit F32 stores.",
+          "Use common router cuts, accepted-prefix/catchup/controller; no new codec algorithm or per-identity executor is implied."
+        ],
+        "new_public_operation_established": false,
+        "shared_precision_evidence": {
+          "path": "docs/evidence/correctness/mtp-f32-bfloat-linear-2026-10-24.json",
+          "sha256": "b324e2a60cb1e40b382b9d1aacd7f25018520aeab0a2c6ebdba983de5a180db5",
+          "CPU_CUDA_checks_passed": 4,
+          "Q32_original_executed": false,
+          "Vulkan_native_pending": false,
+          "Metal_batched_native_passed": true
+        },
+        "batched_precision_evidence": [
+          {
+            "path": "docs/evidence/correctness/mtp-batched-f32-bfloat-linear-2026-10-24.json",
+            "sha256": "daec677b967329d20ab3b0a2357398853e704c33ec98490591bfe5386998ea56"
+          },
+          {
+            "path": "docs/evidence/correctness/mtp-batched-f32-bfloat-apple-2026-10-24.json",
+            "sha256": "fee9d4e8dcd9f50c734045d926bbe473f968bee9653457ee2ec531da4d962c5f"
+          },
+          {
+            "path": "docs/evidence/correctness/mtp-batched-f32-bfloat-vulkan-2026-10-24.json",
+            "bytes": 6795,
+            "sha256": "58658bbcebbda3d91657db3464ff2cb8f055dd592b2432c6d259261f8cf14178"
+          }
+        ],
+        "source_integration_status": "Finite original CPU/CUDA consumers completed: Q32. Remaining original bindings: none. Historical capability evidence and its unverified device boundaries are retained below.",
+        "output_scale_evidence": {
+          "path": "docs/evidence/correctness/mtp-gdn-output-scale-2026-10-24.json",
+          "sha256": "fe4ca9d1d3e15dcf2bde69dbcffdf1d32cab5405f86150db9482aa985d071de5",
+          "CPU_CUDA_checks": 6,
+          "Q32_original_executed": false,
+          "Graph_executed": false
+        },
+        "public_capability_status": "Explicit output_scale and batched F32-activation/BF16-weight lowering have passed their declared CPU/CUDA, Apple and Vulkan focused checks. One default Apple Graph bridge has passed its ordinary-GDN scope. Original Q32 finite CPU/CUDA execution completed separately with180 Graph submissions; backend dtype/shape and hardware boundaries remain explicit.",
+        "apple_output_scale_evidence": {
+          "path": "docs/evidence/correctness/mtp-gdn-output-scale-apple-2026-10-24.json",
+          "bytes": 9381,
+          "sha256": "0b140b0634560cf77b43158e6bf0a1feaab13a6cafa85356f569c84d2bed029e"
+        },
+        "apple_graph_bridge_evidence": {
+          "path": "docs/evidence/correctness/mtp-gdn-output-scale-apple-graph-2026-10-24.json",
+          "bytes": 483324,
+          "sha256": "a5fbf39547c7a10177066b87cb88f43c7fca9a6988551adecce4f805db0fe22b"
+        },
+        "vulkan_output_scale_evidence": {
+          "path": "docs/evidence/correctness/mtp-gdn-output-scale-vulkan-2026-10-24.json",
+          "bytes": 36801,
+          "sha256": "ede2eac025864e3b63f2aa4c1ad453fb0c307b91536d97c3f2aa51889a6c4ae1"
+        },
+        "completed_identity_ids": [
+          "Q32"
+        ],
+        "completed_identity_evidence": {
+          "Q32": {
+            "path": "docs/evidence/correctness/mtp-glm-mlx-target-verifier-2026-10-24.json",
+            "bytes": 181265,
+            "sha256": "9e98c220c544886c7e53320b4ed0268de561ac0ed24721ed2c62520e322e3cc3"
+          }
+        },
+        "latest_original_execution": {
+          "evidence": "docs/evidence/correctness/mtp-glm-mlx-target-verifier-2026-10-24.json",
+          "sha256": "9e98c220c544886c7e53320b4ed0268de561ac0ed24721ed2c62520e322e3cc3",
+          "cases": 2,
+          "graphs": 180,
+          "failures": 0,
+          "skips": 0
+        }
+      }
+    ],
+    "common_runtime": "Ordinary Fragment/Graph compilation, existing model_graph_run/model_resident_fragment and actual output leases/StateHead acceptance stay shared. Header/codec implementation is not original-artifact execution.",
+    "confirmed_new_public_operation_count": 0,
+    "public_capability_limits": [
+      "Zero here means no new public operation has been established by this source-only grouping, not that all codecs/shapes/backends are proved supported. Actual backend preparation remains authoritative.",
+      "Existing S02 main-GGUF vocabulary pairing is completed separately from the remaining original-identity bindings. Its actual Q8_0 head4096x129280 passed full six-row CPU/CUDA K5 execution plus affected formal BF16 CUDA regression:3cases219Graphs. It fits the existing generic representation bound; no provider limit change or all-device admission is implied."
+    ],
+    "metadata_only_ids": [],
+    "separate_existing_consumer": [
+      "B08 GLM Pro original target77 plus NextN78 finite CPU/CUDA execution is complete within its declared upstream/history boundaries; it is separate from the0 unfinished binding identities.",
+      "Final ordinary/MTP performance comparison is separate from role/codec coverage."
+    ],
+    "validation": "Complete fixed-revision header/index census includes Q01/Q10/Q30; that census fetched no tensor payload. B02 original BF16 plus affected F32 passed4cases92Graphs. B05 original BF16 MoE CPU/mixed passed2cases86Graphs. B15 formal Flash plus affected Pro passed4cases180Graphs. S01 original sidecar plus affected primary/BF16 regression passed5cases135Graphs. S03 CPU/CUDA and affected S02 CUDA passed3cases261Graphs. Of25 confirmed identities,25 have finite original consumers and0 remain across0 active implementation packages. Source grouping does not establish whole-model quality or performance. Q03 NVFP4 target/BF16 NextN and Q14 GGUF NVFP4 NextN/target each passed CPU/CUDA46Graphs. Q01 original GPTQ target/BF16 NextN passed CPU/CUDA46Graphs with seven packed contractions each. B09 converted original Pro CPU/CUDA each44Graphs passed original projection/fullV, accepted repair and indexed catchup. Q09 original target/BF16 NextN and own untied vocabulary passed CPU/CUDA each23Graphs with seven packed contractions and zero dense W materializations. Q30 original target43/44 and NextN45 passed CPU/CUDA each87Graphs:2cases174Graphs, with completed driver cleanup, full154880 vocabulary and accepted-prefix continuation; upstream/history fixtures remain explicit. Q10 original target/BF16 NextN and own untied vocabulary passed CPU/CUDA each23Graphs with seven packed contractions and zero dense W materializations. B12 own original GGUF CPU/CUDA finite execution passed 174 Graphs in total; no complete-model or performance claim. B10 own original GGUF CPU/CUDA finite execution passed 88 Graphs in total; no complete-model or performance claim. B13 own original GGUF CPU/CUDA finite execution passed 174 Graphs in total; no complete-model or performance claim. B04 own original CPU/CUDA finite execution passed 46 Graphs in total; no complete-model or performance claim. Q32 own original CPU/CUDA finite execution passed 180 Graphs in total; no complete-model or performance claim. B07 own original CPU/CUDA finite execution passed 86 Graphs in total; no complete-model or performance claim.",
+    "active_package_ids": [],
+    "metadata_resolved_ids": [
+      "Q01",
+      "Q10",
+      "Q30"
+    ]
+  },
+  "user_scope_decision": {
+    "date": "2026-10-23",
+    "MTP_excludes": [
+      "kimi_k3"
+    ],
+    "basis": "User explicitly excludes Kimi from this MTP work after independent official and two selected GGUF no-MTP evidence. Ordinary inference/quantization/operator support remains in scope."
+  }
+}

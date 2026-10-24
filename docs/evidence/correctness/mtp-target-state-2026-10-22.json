@@ -1,0 +1,1231 @@
+{
+  "date": "2026-10-22",
+  "status": "GLM_TARGET_NEXTN_COMPOSITION_AND_DSPARK_ORIGINAL_ROLES_PASS",
+  "goal_complete": false,
+  "checks": {
+    "process": {
+      "command": [
+        "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mtp-catchup-20261022\\tests-link5\\glm-catchup-checks.exe",
+        "--gtest_filter=*",
+        "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\glm-mtp-catchup-20261022\\checks5\\results.xml"
+      ],
+      "cwd": "C:\\public\\project-hyle\\hyle",
+      "started": 1792682655.0627048,
+      "timeout_seconds": 600,
+      "throughput_evidence": false,
+      "memory_evidence": false,
+      "trace": false,
+      "profiler": false,
+      "pid": 35708,
+      "exit": 0,
+      "timed_out": false,
+      "finished": 1792682699.8490465,
+      "process_wall_seconds": 44.78612439999961
+    },
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mtp-catchup-20261022\\tests-link5\\glm-catchup-checks.exe",
+      "bytes": 140781568,
+      "sha256": "8cacc1c352c4646ca8b6e7e27dfe7f4cf6554fd7eebac63e12b431870f2b2bcb"
+    },
+    "throughput_evidence": false,
+    "physical_memory_evidence": false,
+    "whole_original_model": false,
+    "tests": 10,
+    "failures": 0,
+    "errors": 0,
+    "disabled": 0,
+    "skips": 0,
+    "cases": [
+      {
+        "attributes": {
+          "name": "CudaWholeNextNPrefixPublishesAndContinuesWithoutRejectedTail",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_mtp_state_consumer_test.cc",
+          "line": "1094",
+          "status": "run",
+          "result": "completed",
+          "time": "4.04",
+          "timestamp": "2026-10-22T23:24:15.350",
+          "classname": "GlmMtpStateConsumer"
+        },
+        "properties": {
+          "actual_submissions": "7",
+          "backend": "ordinary CUDA Graph",
+          "component_schema": "16 native resources plus explicit iteration policy; complete NextN/indexer state and bounded nx journal/lag count",
+          "scope": "generated primary GGUF/F32 single complete NextN component; fresh K4 closepool->actual I32 sparse MLA/MoE; same-epoch entire-indexer skip; no original checkpoint/full target/KDA/mHC/official FP8cache/natural acceptance",
+          "prefixes": "0 retained;1 corrected-pending atomic publish and independent base recomputation;2 independent branch; rejected tail/cancel/stale publish/old readonly ownership",
+          "uncovered": "this case is single-epoch; cross-epoch catchup is covered by the separate AcceptedJournal cases; target KDA/conv/mHC, original encodings and vocabulary/natural acceptance remain separate"
+        }
+      },
+      {
+        "attributes": {
+          "name": "CudaAcceptedJournalCatchesUpAndReseedsNextIteration",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_mtp_state_consumer_test.cc",
+          "line": "1100",
+          "status": "run",
+          "result": "completed",
+          "time": "7.639",
+          "timestamp": "2026-10-22T23:24:19.390",
+          "classname": "GlmMtpStateConsumer"
+        },
+        "properties": {
+          "actual_submissions": "14",
+          "fresh_submissions": "8",
+          "skip_submissions": "3",
+          "catchup_submissions": "2",
+          "policy_submissions": "1",
+          "backend": "ordinary CUDA Graph",
+          "journal": "actual nx[2,4096] with I32 valid lag count; selected StateVersion determines accepted input; no eager indexer during skip",
+          "journey": "base2054 tail2; accept1 rejects B and fresh2055 closes pool; accept2 catches actual accepted B2055 then fresh2056 appends tail1; independent actual nx direct-input reference",
+          "scope": "generated selected GGUF/F32 NextN cross-epoch accepted-feature catchup and fresh seed; no target KDA/conv/mHC, original FP8cache or natural acceptance claim"
+        }
+      },
+      {
+        "attributes": {
+          "name": "CudaTargetPrefixAndNextNPublishAndReseedTogether",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_mtp_state_consumer_test.cc",
+          "line": "1106",
+          "status": "run",
+          "result": "completed",
+          "time": "9.199",
+          "timestamp": "2026-10-22T23:24:27.031",
+          "classname": "GlmMtpStateConsumer"
+        },
+        "properties": {
+          "actual_submissions": "26",
+          "target_submissions": "12",
+          "state_budget_bytes": "536870912",
+          "peak_state_backing_bytes": "127777004",
+          "target_output_generations": "10",
+          "backend": "ordinary CUDA Graph",
+          "component_schema": "16 NextN/indexer resources plus epoch metadata and4 target resources: raw QKV history,KDA matrix,finalnorm tap,I32 cursor; one StateStore/Head/Draft",
+          "journey": "actual target warmup->A/B verify pending->accept1/2->accepted journal catchup->epoch8 real target-tap reseed; independent base recomputation/direct nx catchup; rejected tail,stale CAS,cancellation,old readonly leases",
+          "scope": "generated primary GGUF/F32 layer44 KDA/conv/two mHC branches/sparse FFN/finalnorm target tap composed with complete NextN; upper-layer4H remains generated; no full45-layer original model,natural acceptance,official FP8cache or throughput claim"
+        }
+      },
+      {
+        "attributes": {
+          "name": "CpuWholeNextNPrefixPublishesAndContinuesWithoutRejectedTail",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_mtp_state_consumer_test.cc",
+          "line": "1115",
+          "status": "run",
+          "result": "completed",
+          "time": "4.003",
+          "timestamp": "2026-10-22T23:24:36.230",
+          "classname": "GlmMtpStateConsumer"
+        },
+        "properties": {
+          "actual_submissions": "7",
+          "backend": "ordinary CPU Graph",
+          "component_schema": "16 native resources plus explicit iteration policy; complete NextN/indexer state and bounded nx journal/lag count",
+          "scope": "generated primary GGUF/F32 single complete NextN component; fresh K4 closepool->actual I32 sparse MLA/MoE; same-epoch entire-indexer skip; no original checkpoint/full target/KDA/mHC/official FP8cache/natural acceptance",
+          "prefixes": "0 retained;1 corrected-pending atomic publish and independent base recomputation;2 independent branch; rejected tail/cancel/stale publish/old readonly ownership",
+          "uncovered": "this case is single-epoch; cross-epoch catchup is covered by the separate AcceptedJournal cases; target KDA/conv/mHC, original encodings and vocabulary/natural acceptance remain separate"
+        }
+      },
+      {
+        "attributes": {
+          "name": "CpuAcceptedJournalCatchesUpAndReseedsNextIteration",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_mtp_state_consumer_test.cc",
+          "line": "1120",
+          "status": "run",
+          "result": "completed",
+          "time": "7.926",
+          "timestamp": "2026-10-22T23:24:40.234",
+          "classname": "GlmMtpStateConsumer"
+        },
+        "properties": {
+          "actual_submissions": "14",
+          "fresh_submissions": "8",
+          "skip_submissions": "3",
+          "catchup_submissions": "2",
+          "policy_submissions": "1",
+          "backend": "ordinary CPU Graph",
+          "journal": "actual nx[2,4096] with I32 valid lag count; selected StateVersion determines accepted input; no eager indexer during skip",
+          "journey": "base2054 tail2; accept1 rejects B and fresh2055 closes pool; accept2 catches actual accepted B2055 then fresh2056 appends tail1; independent actual nx direct-input reference",
+          "scope": "generated selected GGUF/F32 NextN cross-epoch accepted-feature catchup and fresh seed; no target KDA/conv/mHC, original FP8cache or natural acceptance claim"
+        }
+      },
+      {
+        "attributes": {
+          "name": "CpuTargetPrefixAndNextNPublishAndReseedTogether",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_mtp_state_consumer_test.cc",
+          "line": "1125",
+          "status": "run",
+          "result": "completed",
+          "time": "9.959",
+          "timestamp": "2026-10-22T23:24:48.160",
+          "classname": "GlmMtpStateConsumer"
+        },
+        "properties": {
+          "actual_submissions": "26",
+          "target_submissions": "12",
+          "state_budget_bytes": "536870912",
+          "peak_state_backing_bytes": "127777004",
+          "target_output_generations": "10",
+          "backend": "ordinary CPU Graph",
+          "component_schema": "16 NextN/indexer resources plus epoch metadata and4 target resources: raw QKV history,KDA matrix,finalnorm tap,I32 cursor; one StateStore/Head/Draft",
+          "journey": "actual target warmup->A/B verify pending->accept1/2->accepted journal catchup->epoch8 real target-tap reseed; independent base recomputation/direct nx catchup; rejected tail,stale CAS,cancellation,old readonly leases",
+          "scope": "generated primary GGUF/F32 layer44 KDA/conv/two mHC branches/sparse FFN/finalnorm target tap composed with complete NextN; upper-layer4H remains generated; no full45-layer original model,natural acceptance,official FP8cache or throughput claim"
+        }
+      },
+      {
+        "attributes": {
+          "name": "CpuActualCaptureLeasesReachSameStageMainKv",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_target_binding_test.cc",
+          "line": "352",
+          "status": "run",
+          "result": "completed",
+          "time": "0.285",
+          "timestamp": "2026-10-22T23:24:58.120",
+          "classname": "DSparkTargetBinding"
+        },
+        "properties": {
+          "actual_submissions": "9",
+          "scope": "formal Flash0731 selected Q8 role types, generated parameters; actual raw HC producer leases -> mean/concat/main projection/norm -> same stage0 wkv/norm 512-wide pre-RoPE; no trained payload/physical ring/full-model claim",
+          "backend": "ordinary CPU Graph"
+        }
+      },
+      {
+        "attributes": {
+          "name": "CudaActualCaptureLeasesReachSameStageMainKv",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_target_binding_test.cc",
+          "line": "364",
+          "status": "run",
+          "result": "completed",
+          "time": "0.286",
+          "timestamp": "2026-10-22T23:24:58.406",
+          "classname": "DSparkTargetBinding"
+        },
+        "properties": {
+          "actual_submissions": "9",
+          "scope": "formal Flash0731 selected Q8 role types, generated parameters; actual raw HC producer leases -> mean/concat/main projection/norm -> same stage0 wkv/norm 512-wide pre-RoPE; no trained payload/physical ring/full-model claim",
+          "backend": "ordinary CUDA Graph"
+        }
+      },
+      {
+        "attributes": {
+          "name": "CpuOriginalCaptureProjectionFeedsSameStageMainKv",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_target_binding_test.cc",
+          "line": "357",
+          "status": "run",
+          "result": "completed",
+          "time": "0.325",
+          "timestamp": "2026-10-22T23:24:58.906",
+          "classname": "DSparkOriginalTargetBinding"
+        },
+        "properties": {
+          "actual_submissions": "9",
+          "scope": "formal Flash0731 four original Q8/F32 roles; generated raw HC producer leases -> original main projection/norm -> original stage0 wkv/norm 512-wide pre-RoPE; no original target captures/physical ring/full-model claim",
+          "original_role_count": "4",
+          "original_role_bytes": "55724032",
+          "fc_sha256": "4516df35cd05ecd36b93e73ac2ae74c524ec6edda13b634a7895b7eabe0c8c04",
+          "main_norm_sha256": "0f99d64b4fa46264c9bd2efdffcb66d3ec0cdd0ca61109f929ed958bcb843f0b",
+          "wkv_sha256": "a52e49dc69f4eff1c8287b3887123dd7a583bdaee7d42efe55310f035bafd35f",
+          "kv_norm_sha256": "edbbd17729cfb3c0852c8b6cdb8c1044eb9f501d8864c7ef4444c568e56fc966",
+          "backend": "ordinary CPU Graph"
+        }
+      },
+      {
+        "attributes": {
+          "name": "CudaOriginalCaptureProjectionFeedsSameStageMainKv",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_target_binding_test.cc",
+          "line": "370",
+          "status": "run",
+          "result": "completed",
+          "time": "0.324",
+          "timestamp": "2026-10-22T23:24:59.231",
+          "classname": "DSparkOriginalTargetBinding"
+        },
+        "properties": {
+          "actual_submissions": "9",
+          "scope": "formal Flash0731 four original Q8/F32 roles; generated raw HC producer leases -> original main projection/norm -> original stage0 wkv/norm 512-wide pre-RoPE; no original target captures/physical ring/full-model claim",
+          "original_role_count": "4",
+          "original_role_bytes": "55724032",
+          "fc_sha256": "4516df35cd05ecd36b93e73ac2ae74c524ec6edda13b634a7895b7eabe0c8c04",
+          "main_norm_sha256": "0f99d64b4fa46264c9bd2efdffcb66d3ec0cdd0ca61109f929ed958bcb843f0b",
+          "wkv_sha256": "a52e49dc69f4eff1c8287b3887123dd7a583bdaee7d42efe55310f035bafd35f",
+          "kv_norm_sha256": "edbbd17729cfb3c0852c8b6cdb8c1044eb9f501d8864c7ef4444c568e56fc966",
+          "backend": "ordinary CUDA Graph"
+        }
+      }
+    ]
+  },
+  "actual_Graph_submissions": 130,
+  "changes": [
+    {
+      "path": "tests/compute_models/glm_mtp_state_consumer_test.cc",
+      "bytes": 75776,
+      "sha256": "413e9acc71e3f71d8a2484a1124ed166c27b76ca2a2cdd650899baec2514c137"
+    },
+    {
+      "path": "tests/compute_models/glm_mtp_target_component.h",
+      "bytes": 9517,
+      "sha256": "e3c6a3b3b5e490e832f3ae11f145c10447920bafde2d2a19229da5ad1cc902f9"
+    },
+    {
+      "path": "tests/compute_models/d5_kda_full_fragments.h",
+      "bytes": 12967,
+      "sha256": "8af401a0982f99b0283199c53f44ec15f6524a35eb0590b850a3c403f4d7e76e"
+    },
+    {
+      "path": "tests/compute_models/d5_moe_semantic_fragments.h",
+      "bytes": 17811,
+      "sha256": "75b094320cc81125cfdf7b8ab473be5b51238b66b6403e8f142b14fbe00b5131"
+    },
+    {
+      "path": "tests/compute_models/dspark_target_binding.h",
+      "bytes": 11069,
+      "sha256": "8bf23b73fada20df1d0a17f84ee1a5a7a010cdb9fe90274c66af4cb9c40239b2"
+    },
+    {
+      "path": "tests/compute_models/dspark_target_binding_test.cc",
+      "bytes": 21479,
+      "sha256": "e5e900428be5b0ad0ab16507bf61411ddc531258bbf7d41db6b7b1c57ac70e6e"
+    },
+    {
+      "path": "tests/graph_route_cpu/CMakeLists.txt",
+      "bytes": 8832,
+      "sha256": "035b6feb33a908b278978cf602e1a074d4d3205663268488c7ab1659e755cdb4"
+    },
+    {
+      "path": "tests/graph_route_cuda/CMakeLists.txt",
+      "bytes": 10152,
+      "sha256": "ef9a549c16ee5f6fb9ebce0b92d3bbd725cfda88cbeada44668eb063d513535b"
+    },
+    {
+      "path": "docs/developer/current-work.md",
+      "bytes": 22223,
+      "sha256": "7ab7a7c71bf004cd1086df8220c6d4bd9eacc5bcd71333aaae5cccb1b017a697"
+    },
+    {
+      "path": "docs/implementation/model-operators.md",
+      "bytes": 93212,
+      "sha256": "c22598773df9cd1a4f5e41c1c2a6d2556c0e34402641a9a706716214e802a4fc"
+    }
+  ],
+  "predecessor": {
+    "path": "docs/evidence/correctness/glm-mtp-state-2026-10-22.json",
+    "bytes": 143834,
+    "sha256": "ec9e35a79f8047d46bb888bb8d80418aa69443c182192be94b5004c934aaf768"
+  },
+  "GLM": {
+    "schema": "16 native NextN/indexer resources including nx[2,4096] journal and I32 lag count,24-byte epoch policy, plus4 target resources: raw QKV history,KDA matrix,finalnorm tap,I32 cursor. One StateStore/Schema/Head/Draft.",
+    "catchup": "Source-qualified whole-indexer skip retains actual raw rings/pools/cursors/full2051 I32 seed including its old tail. MLA/hidden advance and actual nx is journalled. Prefix1/2 selects the whole version. Between epochs only accepted lagged nx is projected/pool-written; rejected B is refused before prepare.",
+    "target": "Actual generated final layer44 of45: attention mHC collapse->norm->full KDA/raw conv->mHC post->separate FFN mHC collapse/norm/MoE/post->4-stream mean->target final norm. The actual previous target tap is bound into fresh NextN hnorm/EH with next-token embedding; same-token new target tap is not prematurely consumed.",
+    "selection": "Target verifies current pending while draft uses appropriate previous target/draft hidden. Actual target and draft results enter one StateDraft before publication. Partial/all accepted branches, rejected tail, correction token, next epoch fresh, old versions, stale CAS/cancel and independent base recomputation/direct-nx catchup passed.",
+    "executions_per_backend": {
+      "single_epoch": 7,
+      "cross_epoch": 14,
+      "target_plus_NextN": 26,
+      "target_submissions_within_combination": 12
+    },
+    "budgets": "NextN output pools default5 generations; target10 generations; combined StateStore512MiB actual root-capacity accounting, observed retained backing127777004B. This is state-budget accounting, not physical process/device memory measurement.",
+    "shared_test_code": "Existing KDA independent reference can consume arbitrary actual input/history/state; existing mHC math exposes its real collapse before enclosing a branch. Original default mathematical graphs and accuracy gates retained.",
+    "limits": "Preceding-layer4H and component parameters generated; no full45-layer original target, natural vocabulary acceptance or official encoded cache claim."
+  },
+  "DSpark": {
+    "selected": "Formal Flash0731 Q8_0 sidecar at fbbb5b93fb787c21338159b0af3318bb3f4d9768, matching formal target identity.",
+    "original_parameters": {
+      "repository": "unsloth/DeepSeek-V4-Flash-0731-GGUF",
+      "revision": "fbbb5b93fb787c21338159b0af3318bb3f4d9768",
+      "file": "dspark-DeepSeek-V4-Flash-0731-Q8_0.gguf",
+      "tensor_table_sha256": "44f30d92e3be1e3737b92dddcb737e6d85944b60804a7a7a810a2ac60c79de5f",
+      "tensor_data_offset": 5253152,
+      "whole_file_bytes": 10896057440,
+      "expected_etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+      "whole_file_download_allowed": false,
+      "roles": [
+        {
+          "role": {
+            "name": "fc.weight",
+            "GGUF_shape": [
+              12288,
+              4096
+            ],
+            "dtype": "Q8_0",
+            "dtype_code": 8,
+            "relative_offset": 10413334016,
+            "payload_bytes": 53477376,
+            "absolute_range_inclusive": [
+              10418587168,
+              10472064543
+            ],
+            "expected_content_range": "bytes 10418587168-10472064543/10896057440",
+            "payload_sha256": null,
+            "payload_hash_status": "No exact original body identified in inspected known role caches; calculate SHA256 while acquiring this exact range, do not substitute file ETag or table hash."
+          },
+          "absolute_range": [
+            10418587168,
+            10472064543
+          ],
+          "requested_bytes": 53477376,
+          "started_unix": 1792681315.812034,
+          "status": "ACQUIRED_EXACT_ROLE",
+          "http_status": 206,
+          "content_range": "bytes 10418587168-10472064543/10896057440",
+          "content_length": "53477376",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "payload": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mtp-catchup-20261022\\original-dspark-target\\fc.weight.q8_0",
+            "bytes": 53477376,
+            "sha256": "4516df35cd05ecd36b93e73ac2ae74c524ec6edda13b634a7895b7eabe0c8c04"
+          },
+          "finished_unix": 1792681371.2719567
+        },
+        {
+          "role": {
+            "name": "enc.output_norm.weight",
+            "GGUF_shape": [
+              4096
+            ],
+            "dtype": "F32",
+            "dtype_code": 0,
+            "relative_offset": 10413317632,
+            "payload_bytes": 16384,
+            "absolute_range_inclusive": [
+              10418570784,
+              10418587167
+            ],
+            "expected_content_range": "bytes 10418570784-10418587167/10896057440",
+            "payload_sha256": null,
+            "payload_hash_status": "No exact original body identified in inspected known role caches; calculate SHA256 while acquiring this exact range, do not substitute file ETag or table hash."
+          },
+          "absolute_range": [
+            10418570784,
+            10418587167
+          ],
+          "requested_bytes": 16384,
+          "started_unix": 1792681371.2724764,
+          "status": "ACQUIRED_EXACT_ROLE",
+          "http_status": 206,
+          "content_range": "bytes 10418570784-10418587167/10896057440",
+          "content_length": "16384",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "payload": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mtp-catchup-20261022\\original-dspark-target\\enc.output_norm.weight.f32",
+            "bytes": 16384,
+            "sha256": "0f99d64b4fa46264c9bd2efdffcb66d3ec0cdd0ca61109f929ed958bcb843f0b"
+          },
+          "finished_unix": 1792681375.2516026
+        },
+        {
+          "role": {
+            "name": "blk.0.attn_kv.weight",
+            "GGUF_shape": [
+              4096,
+              512
+            ],
+            "dtype": "Q8_0",
+            "dtype_code": 8,
+            "relative_offset": 10267662592,
+            "payload_bytes": 2228224,
+            "absolute_range_inclusive": [
+              10272915744,
+              10275143967
+            ],
+            "expected_content_range": "bytes 10272915744-10275143967/10896057440",
+            "payload_sha256": null,
+            "payload_hash_status": "No exact original body identified in inspected known role caches; calculate SHA256 while acquiring this exact range, do not substitute file ETag or table hash."
+          },
+          "absolute_range": [
+            10272915744,
+            10275143967
+          ],
+          "requested_bytes": 2228224,
+          "started_unix": 1792681375.2516026,
+          "status": "ACQUIRED_EXACT_ROLE",
+          "http_status": 206,
+          "content_range": "bytes 10272915744-10275143967/10896057440",
+          "content_length": "2228224",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "payload": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mtp-catchup-20261022\\original-dspark-target\\blk.0.attn_kv.weight.q8_0",
+            "bytes": 2228224,
+            "sha256": "a52e49dc69f4eff1c8287b3887123dd7a583bdaee7d42efe55310f035bafd35f"
+          },
+          "finished_unix": 1792681386.8518133
+        },
+        {
+          "role": {
+            "name": "blk.0.attn_kv_a_norm.weight",
+            "GGUF_shape": [
+              512
+            ],
+            "dtype": "F32",
+            "dtype_code": 0,
+            "relative_offset": 10267656448,
+            "payload_bytes": 2048,
+            "absolute_range_inclusive": [
+              10272909600,
+              10272911647
+            ],
+            "expected_content_range": "bytes 10272909600-10272911647/10896057440",
+            "payload_sha256": null,
+            "payload_hash_status": "No exact original body identified in inspected known role caches; calculate SHA256 while acquiring this exact range, do not substitute file ETag or table hash."
+          },
+          "absolute_range": [
+            10272909600,
+            10272911647
+          ],
+          "requested_bytes": 2048,
+          "started_unix": 1792681386.8523262,
+          "status": "ACQUIRED_EXACT_ROLE",
+          "http_status": 206,
+          "content_range": "bytes 10272909600-10272911647/10896057440",
+          "content_length": "2048",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "payload": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mtp-catchup-20261022\\original-dspark-target\\blk.0.attn_kv_a_norm.weight.f32",
+            "bytes": 2048,
+            "sha256": "edbbd17729cfb3c0852c8b6cdb8c1044eb9f501d8864c7ef4444c568e56fc966"
+          },
+          "finished_unix": 1792681392.2902627
+        }
+      ],
+      "complete": true,
+      "payload_bytes": 55724032
+    },
+    "roles": "Original fc.weight Q8_0[4096,12288], enc.output_norm F32[4096], stage0 attn_kv Q8_0[512,4096], kv norm F32[512]; original packed bytes and norm bits retained.",
+    "dependency": "Actual generated HC producer ReadLeases -> qualified3-tap tuple -> ordinary mean/concat/originalfc/norm -> actual main_x ReadLease -> original stage0 wkv/norm512-wide pre-RoPE.",
+    "qualification": "Readonly parameter owners/layouts and whole target/session/branch/epoch/position/rows/layer tuple checked before binding. GGUF hidden-state layer41/42/43 maps to official block40/41/42; labels are caller provenance, not proof of trained execution.",
+    "reference": "Stock byte codec decodes one Q8 row at a time; independent compensated FP64 dot and original F32 norm. Actual-predecessor and whole-chain references; existing selected-sidecar gate unchanged. No native activation quantizer/vec-dot output is the oracle.",
+    "executions": "Generated and original cases each run3 generations9 Graph submissions per backend, zero input, retained old outputs, immutable parameters, bounded2-generation output pools.",
+    "limits": "HC captures generated; pre-RoPE only. No trained target captures, physical512-wide persistent rings, other original stages/shared LM or natural model acceptance claim."
+  },
+  "native_CPU_contract_correction": {
+    "initial_failure": {
+      "process": {
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mtp-catchup-20261022\\tests-link4\\glm-catchup-checks.exe",
+          "--gtest_filter=GlmMtpStateConsumer.*TargetPrefixAndNextNPublishAndReseedTogether",
+          "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\glm-mtp-catchup-20261022\\checks4\\results.xml"
+        ],
+        "cwd": "C:\\public\\project-hyle\\hyle",
+        "started": 1792681785.0820599,
+        "timeout_seconds": 600,
+        "throughput_evidence": false,
+        "memory_evidence": false,
+        "trace": false,
+        "profiler": false,
+        "pid": 24548,
+        "exit": 1,
+        "timed_out": false,
+        "finished": 1792681805.131205,
+        "process_wall_seconds": 20.048715099999754
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mtp-catchup-20261022\\tests-link4\\glm-catchup-checks.exe",
+        "bytes": 140781568,
+        "sha256": "8cacc1c352c4646ca8b6e7e27dfe7f4cf6554fd7eebac63e12b431870f2b2bcb"
+      },
+      "throughput_evidence": false,
+      "physical_memory_evidence": false,
+      "whole_original_model": false,
+      "tests": 2,
+      "failures": 1,
+      "errors": 0,
+      "disabled": 0,
+      "skips": 0,
+      "cases": [
+        {
+          "attributes": {
+            "name": "CudaTargetPrefixAndNextNPublishAndReseedTogether",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_mtp_state_consumer_test.cc",
+            "line": "1106",
+            "status": "run",
+            "result": "completed",
+            "time": "9.349",
+            "timestamp": "2026-10-22T23:09:45.395",
+            "classname": "GlmMtpStateConsumer"
+          },
+          "properties": {
+            "actual_submissions": "26",
+            "target_submissions": "12",
+            "state_budget_bytes": "536870912",
+            "peak_state_backing_bytes": "127777004",
+            "target_output_generations": "10",
+            "backend": "ordinary CUDA Graph",
+            "component_schema": "16 NextN/indexer resources plus epoch metadata and4 target resources: raw QKV history,KDA matrix,finalnorm tap,I32 cursor; one StateStore/Head/Draft",
+            "journey": "actual target warmup->A/B verify pending->accept1/2->accepted journal catchup->epoch8 real target-tap reseed; independent base recomputation/direct nx catchup; rejected tail,stale CAS,cancellation,old readonly leases",
+            "scope": "generated primary GGUF/F32 layer44 KDA/conv/two mHC branches/sparse FFN/finalnorm target tap composed with complete NextN; upper-layer4H remains generated; no full45-layer original model,natural acceptance,official FP8cache or throughput claim"
+          }
+        },
+        {
+          "attributes": {
+            "name": "CpuTargetPrefixAndNextNPublishAndReseedTogether",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_mtp_state_consumer_test.cc",
+            "line": "1125",
+            "status": "run",
+            "result": "completed",
+            "time": "10.122",
+            "timestamp": "2026-10-22T23:09:54.744",
+            "classname": "GlmMtpStateConsumer"
+          },
+          "properties": {
+            "actual_submissions": "26",
+            "target_submissions": "12",
+            "state_budget_bytes": "536870912",
+            "peak_state_backing_bytes": "127777004",
+            "target_output_generations": "10",
+            "backend": "ordinary CPU Graph",
+            "component_schema": "16 NextN/indexer resources plus epoch metadata and4 target resources: raw QKV history,KDA matrix,finalnorm tap,I32 cursor; one StateStore/Head/Draft",
+            "journey": "actual target warmup->A/B verify pending->accept1/2->accepted journal catchup->epoch8 real target-tap reseed; independent base recomputation/direct nx catchup; rejected tail,stale CAS,cancellation,old readonly leases",
+            "scope": "generated primary GGUF/F32 layer44 KDA/conv/two mHC branches/sparse FFN/finalnorm target tap composed with complete NextN; upper-layer4H remains generated; no full45-layer original model,natural acceptance,official FP8cache or throughput claim"
+          }
+        }
+      ]
+    },
+    "audit": {
+      "status": "Read-only source and retained-native-closure audit; no product edit, compilation, download or native execution by source agent.",
+      "evidence": {
+        "cpu_provider": {
+          "path": "src/compute_provider_ggml/ggml_cpu_provider.cc",
+          "bytes": 114557,
+          "sha256": "01f8a1da56a74679e420ec9646f35a9770e61b1e9b076f79e0b66a508877d955"
+        },
+        "cpu_execution": {
+          "path": "src/compute_ggml_runtime/cpu_execution.cc",
+          "bytes": 3907,
+          "sha256": "7afabc73d8ab541c98fde67e41f2e1384994c15cd123582ef218f89322a0d2db"
+        },
+        "cpu_selector": {
+          "path": "src/compute_ggml_runtime/cpu_program.cc",
+          "bytes": 2765,
+          "sha256": "546fb2fb051c0d133b3f7929c635f64ea0af126474fe246b237b26b4e5050a4c"
+        },
+        "old_constructor": {
+          "path": ".scratch/validation/cpu-final-f1/mixed-iq1/source/src/ggml.c",
+          "bytes": 261316,
+          "sha256": "c2165a1fd7984ab00a8d16b5f370631323a658808b5346b0cec202f4b45a9652"
+        },
+        "old_cpu_ops": {
+          "path": ".scratch/validation/cpu-final-f1/mixed-iq1/source/src/ggml-cpu/ops.cpp",
+          "bytes": 417812,
+          "sha256": "4a8c21f75d814721b5919dfc03a0d2a0cac8dc8532f64d5d10047d74325ce575"
+        },
+        "new_constructor": {
+          "path": ".scratch/build-compute-v2-dev/src/compute_ggml_runtime/source-e74fc9bb8964d04f/src/ggml.c",
+          "bytes": 262622,
+          "sha256": "b2ffd4d9b8d8975f19403637c4b4e11c33c7690106dd4c7a40e08de8c7aac327"
+        },
+        "active_overlay_ops": {
+          "path": ".scratch/perf-review-2026-10-18/cpu-native-causal/ffa4/ops.cpp",
+          "bytes": 430259,
+          "sha256": "bb9f80d985f91114907cfa26cd61f14e346e38f7dd4d9bc4a0f214af54a650c8"
+        },
+        "active_overlay_recipe": {
+          "path": ".scratch/perf-review-2026-10-18/cpu-native-causal/commands.json",
+          "bytes": 77494,
+          "sha256": "c3efd01a4de35fac0b97d8d0c4943fb5047205ac24ba7be2971817774690d729"
+        },
+        "closure": {
+          "path": ".scratch/glm-mtp-catchup-20261022/tests-link4/link.command.json",
+          "bytes": 29338,
+          "sha256": "4275b35a6814900b7b5a26eb549d52eee6128a558e64c0b6f4a72cdb190d1ed8"
+        },
+        "runtime": {
+          "path": ".scratch/glm-mtp-catchup-20261022/tests-link4/runtime-environment.json",
+          "bytes": 9097,
+          "sha256": "ebcf6d41023fc003c2c024b5d001a68474afd04d5fb89706fe9a5765ab767acb"
+        },
+        "helper": {
+          "path": "tests/compute_models/d5_moe_semantic_fragments.h",
+          "bytes": 17811,
+          "sha256": "75b094320cc81125cfdf7b8ab473be5b51238b66b6403e8f142b14fbe00b5131"
+        },
+        "header": {
+          "path": "tests/compute_models/glm_mtp_target_component.h",
+          "bytes": 9517,
+          "sha256": "e3c6a3b3b5e490e832f3ae11f145c10447920bafde2d2a19229da5ad1cc902f9"
+        },
+        "checks": {
+          "path": ".scratch/glm-mtp-catchup-20261022/checks4/summary.json",
+          "bytes": 3987,
+          "sha256": "d5411a515f0c0de402b1d755835c8e6165cdd64826dc6297c1731f1c548b8f45"
+        }
+      },
+      "observation": "checks4: CUDA Target case passed26 submissions; CPU Target case completed26 submissions with numerical failures. First topological failure is attn-collapsed: rmse equals reference_rms0.76827348585378075, consistent with all-zero actual. Earlier normalized/mix/combine diagnostics do not fail. Later KDA/history/state/FFN/tap errors can follow from that first boundary.",
+      "root_cause": {
+        "class": "Mixed third-party native operation descriptor contracts between graph constructor and selected CPU worker overlay.",
+        "old_constructor": "The linked reference-windows header advertises ggml_dsv4_hc_pre(ctx,x,weights), same3C arguments as the newer pin. mixed-iq1/source/src/ggml.c:6546-6570 creates F32 result, assigns op/src only and leaves op_params at their defaultzero.",
+        "new_worker": "The actual retained AVX2 selector requests hyle_ggml_cpu_append_hyca.dll. Its staged SHA4b574bc5b1b90d223cc0dd3fa29013320d1198b871a9f401b7b0205542755546 originates in cpu-native-causal/ffa4 and commands.json compiles ffa4/ops.cpp. That function:11555 reads float scale from op_params slot0, :11556 reads gated from slot1, and :11597 writes scale*sum. Zero old params therefore force collapsed outputs tozero even with correct weighted sum.",
+        "new_matched_constructor": "source-e74fc9bb8964d04f/src/ggml.c:6555-6597 writes op_params slot0=scale and slot1=gated, and ordinary ggml_dsv4_hc_pre delegates with scale1.0,false. This matches the retained overlay worker and explains why the same C symbol and sizeof checks did not detect the semantic mismatch.",
+        "confidence": "Source establishes an exact all-zero mechanism consistent with the first observed failing boundary. Root owns native confirmation of the selected DLL and actual first8 op_params bytes. This source audit does not relabel an unrun confirmation as passed."
+      },
+      "ruled_out_by_source": [
+        "Public dense residual[T,4,D] reverses correctly to ggml[D,4,T,1] in create_tensor_input:370-378; dense gate[T,4] to[4,T,1,1]. HyperConnectionPre provider:1127-1129 passes these direct tensors.",
+        "Old matched CPU kernel ops.cpp:11269-11312 correctly reads all byte strides and accumulates four stream products per output. It has no scale parameter and would not independently force allzero.",
+        "Independent helper hyper_reference computes sum_s residual_s*(sigmoid(mix_s*scale0+base_s)+1e-6), matching fixed06992. CUDA pass supports the composition and oracle, though it is not proof of CPU carrier ABI.",
+        "HyperConnectionPre public traits are pure, noalias and dense-F32; no source evidence requires an API/model equation or numerical tolerance change."
+      ],
+      "lifetime_and_scheduling": {
+        "facts": "CPU provider build marks graph inputs/output roots, ggml allocator reserves caller-owned roots, run binds input/output mapped pointers then bind_views before execution. No definite alias/stride defect was identified in these paths. Sigmoid is a separate supported carrier boundary rather than a native ggml unary in this provider; inspecting its pre4 inputs remains useful only if descriptor confirmation contradicts the scale-zero mechanism.",
+        "anchors": [
+          "ggml_cpu_provider.cc:1417-1470",
+          "ggml_cpu_provider.cc:416-510",
+          "ggml_cpu_provider.cc:1555-1568,1605-1626"
+        ]
+      },
+      "minimal_next_step": [
+        "Root may confirm selected module and HC_PRE op_params first8bytes: old construction predicts00000000/00000000; matched ordinary new contract requires3f800000/00000000.",
+        "Use a coherent constructor/worker native pin or regenerate the narrow original CPU closure from the same pinned source. Keep product mathematics and numerical gates unchanged. Do not teach a test oracle that zero scale is acceptable.",
+        "Any temporary descriptor normalization used purely to confirm this mechanism must be labelled diagnostic, not a model precision change or permanent compatibility policy.",
+        "An eventual native-program identity check should bind operation/descriptor semantic source identity, because ABI number and tensor/cplan sizeof alone do not cover this drift. This finding does not require expanding the current C2 test matrix."
+      ]
+    },
+    "source_control": {
+      "active": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\cpu-native-causal\\ffa4\\ops.cpp",
+        "bytes": 430259,
+        "sha256": "bb9f80d985f91114907cfa26cd61f14e346e38f7dd4d9bc4a0f214af54a650c8"
+      },
+      "selected_pin": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-final-f1\\mixed-iq1\\source\\src\\ggml-cpu\\ops.cpp",
+        "bytes": 417812,
+        "sha256": "4a8c21f75d814721b5919dfc03a0d2a0cac8dc8532f64d5d10047d74325ce575"
+      },
+      "source": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mtp-catchup-20261022\\native-cpu-hc\\ops.cpp",
+        "bytes": 442223,
+        "sha256": "0964875a581e349f979d360c7b7f39c31a82b4165452316ad7dee825df7a32c5"
+      },
+      "only_replaced_function": "ggml_compute_forward_dsv4_hc_pre_f32",
+      "constructor": "Retained old3-argument constructor does not initialize scale/gated slots; its matching reader has no such extension.",
+      "other_functions_unchanged": true,
+      "product_compatibility_code_added": false,
+      "full_SDK_builds": 0,
+      "native_CPU_ops_TUs": 1,
+      "native_ABI_export_TUs": 1
+    },
+    "matched_worker": {
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mtp-catchup-20261022\\native-cpu-hc\\hyle_ggml_cpu_append_hyca.dll",
+        "bytes": 1357824,
+        "sha256": "5581bf8442abfa1262ca99e564b03401c993537ab04a38ea7893bf07dac2dba7"
+      },
+      "source": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mtp-catchup-20261022\\native-cpu-hc\\ops.cpp",
+        "bytes": 442223,
+        "sha256": "0964875a581e349f979d360c7b7f39c31a82b4165452316ad7dee825df7a32c5"
+      },
+      "export_source": {
+        "path": "C:\\public\\project-hyle\\hyle\\src\\compute_ggml_runtime\\cpu_program_export.cc",
+        "bytes": 659,
+        "sha256": "bd540cc20d4bfb5da869b17ed1cae0bb07b104b6fd2e6488a244ac68b4b79d23"
+      },
+      "full_SDK_builds": 0,
+      "CPU_ops_TUs": 1,
+      "CPU_export_TUs": 1,
+      "NVCC_builds": 0,
+      "shader_builds": 0
+    },
+    "controlled_result": "Same140781568B EXE SHA8cacc1c352c4646ca8b6e7e27dfe7f4cf6554fd7eebac63e12b431870f2b2bcb. Old worker4b574bc5... interpreted defaultzero op_params as scale0. Matching copied HC_PRE function to the actually linked constructor removes only that extension. Replacing the worker on the same EXE yields all10 cases passing.",
+    "only_replaced_native_math_function": "ggml_compute_forward_dsv4_hc_pre_f32",
+    "COMB_POST_audit": "COMB functions identical across pins; POST nonnull-combine formula/stride agrees for the declared public operation. Other retained overlay functions preserved.",
+    "confirmation": "Source-grounded explanation plus same-EXE controlled native rerun; no direct op_params memory dump was performed.",
+    "product_provider_or_tolerance_changed": false,
+    "build_scope": "One native CPU ops TU and tiny current ABI export compiled; retained17 objects/libraries reused for DLL link. No fullSDK,NVCC,shader rebuild; old DLL/cache files retained."
+  },
+  "source_audit": {
+    "status": "Fixed-source audit plus authorized new test-local target component header; no product/CMake/docs edit, build, download or native execution.",
+    "authority": {
+      "repository": "C:/public/project-hyle/sglang",
+      "revision": "06992c92ad4494fe9f9636e75be3e35040512447",
+      "read_method": "git show exact revision; neither current checkout HEAD nor older 7224 snapshot was substituted",
+      "sources": {
+        "python/sglang/srt/models/glm5_next.py": {
+          "sha256": "12c5157b07fb7c6d93f34e84c43a37866d2e382e703729e2205aed9f8961f9c2",
+          "anchors": [
+            {
+              "line": 458,
+              "text": "self.o_norm = FusedRMSNormGated("
+            },
+            {
+              "line": 491,
+              "text": "def forward_qkvbfg(self, hidden_states: torch.Tensor, forward_batch: ForwardBatch):"
+            },
+            {
+              "line": 657,
+              "text": "self.input_layernorm = RMSNorm(config.hidden_size, eps=config.rms_norm_eps)"
+            },
+            {
+              "line": 709,
+              "text": "def _hc_pre("
+            },
+            {
+              "line": 850,
+              "text": "class Glm5NextModel(nn.Module):"
+            },
+            {
+              "line": 954,
+              "text": "def _prepare_aux_hidden_state("
+            },
+            {
+              "line": 1071,
+              "text": "hidden_states = self.norm(hidden_states)"
+            },
+            {
+              "line": 1362,
+              "text": "return self.logits_processor("
+            }
+          ]
+        },
+        "python/sglang/srt/layers/communicator_mhc.py": {
+          "sha256": "d1b8b711df8e486fa9fd6a0028ddcb0d2a863bb23300337b5d3cc2407d168fcf",
+          "anchors": [
+            {
+              "line": 84,
+              "text": "def attn_split(self, hidden_states, out_norm: Optional[torch.nn.Module] = None):"
+            },
+            {
+              "line": 94,
+              "text": "def attn_to_mlp("
+            },
+            {
+              "line": 107,
+              "text": "def mlp_combine(self, hidden_states, residual):"
+            },
+            {
+              "line": 302,
+              "text": "hidden_states = hc_contract(hidden_states, mhc.hc_mult)"
+            },
+            {
+              "line": 345,
+              "text": "hidden_states = hc_contract(hidden_states, mhc.hc_mult)"
+            },
+            {
+              "line": 361,
+              "text": "hidden_states = hc_contract(hidden_states, mhc.hc_mult)"
+            },
+            {
+              "line": 459,
+              "text": "def prepare_attn("
+            },
+            {
+              "line": 503,
+              "text": "def prepare_mlp("
+            }
+          ]
+        },
+        "python/sglang/kernels/ops/layernorm/mhc.py": {
+          "sha256": "37c79625167e7e6fdaab562a41e95220b73b2372aeaf5c474699848665b9db8b",
+          "anchors": [
+            {
+              "line": 1766,
+              "text": "def hc_contract(x: torch.Tensor, n: int) -> torch.Tensor:"
+            },
+            {
+              "line": 1770,
+              "text": "def _mhc_pre_torch("
+            },
+            {
+              "line": 1811,
+              "text": "def _mhc_post_torch("
+            }
+          ]
+        },
+        "python/sglang/srt/models/deepseek_nextn.py": {
+          "sha256": "56cf0d2267400050765fe6c870a2b89068bc7e032a24fd493d31da7ffc52d84f",
+          "anchors": [
+            {
+              "line": 193,
+              "text": "previous_hidden_states = forward_batch.spec_info.hidden_states"
+            },
+            {
+              "line": 195,
+              "text": "previous_hidden_states = torch.matmul("
+            },
+            {
+              "line": 199,
+              "text": "eh_input = fused_eh_norm("
+            },
+            {
+              "line": 207,
+              "text": "eh_input = torch.cat("
+            },
+            {
+              "line": 217,
+              "text": "hidden_states = self.eh_proj(eh_input)"
+            },
+            {
+              "line": 234,
+              "text": "hidden_states = self.shared_head.norm(hidden_states)"
+            }
+          ]
+        },
+        "python/sglang/kernels/ops/attention/fla/fused_sigmoid_gating_recurrent.py": {
+          "sha256": "0cf7b4dbed432cec721c60b69629a4cb53d1600b865699f461da82618098b505",
+          "anchors": [
+            {
+              "line": 145,
+              "text": "b_h += tl.load(p_h0, mask=mask_h, other=0).to(tl.float32)"
+            },
+            {
+              "line": 206,
+              "text": "b_g = lower_bound * tl.sigmoid(tl.exp(b_A_log) * x)"
+            },
+            {
+              "line": 219,
+              "text": "b_beta = 1.0 / (1.0 + tl.exp(-b_b))"
+            },
+            {
+              "line": 286,
+              "text": "b_q = b_q / (tl.sqrt(tl.sum(b_q * b_q) + 1e-6))"
+            },
+            {
+              "line": 289,
+              "text": "b_q = b_q * scale"
+            },
+            {
+              "line": 293,
+              "text": "b_h *= tl.exp(b_g[:, None])"
+            },
+            {
+              "line": 295,
+              "text": "b_h *= tl.exp(b_g)"
+            },
+            {
+              "line": 298,
+              "text": "b_v -= tl.sum(b_h * b_k[:, None], 0)"
+            },
+            {
+              "line": 304,
+              "text": "b_h += b_k[:, None] * b_v[None, :]"
+            },
+            {
+              "line": 307,
+              "text": "b_o = tl.sum(b_h * b_q[:, None], 0)"
+            }
+          ]
+        },
+        "python/sglang/srt/speculative/eagle_worker_v2.py": {
+          "sha256": "8fc9285c458d746874c96da7b16bef2733509dea3d1170cbad9e787bcde67754",
+          "anchors": [
+            {
+              "line": 803,
+              "text": "hidden_states = logits_output.hidden_states"
+            },
+            {
+              "line": 897,
+              "text": "torch.cat((input_ids[1:], tail_tokens[i].reshape(1)))"
+            },
+            {
+              "line": 912,
+              "text": "hidden_states=target_hidden_states,"
+            },
+            {
+              "line": 930,
+              "text": "return_hidden_states_before_norm=False,"
+            },
+            {
+              "line": 1043,
+              "text": "return_hidden_states_before_norm=False,"
+            }
+          ]
+        },
+        "python/sglang/srt/layers/attention/hybrid_linear_attn_backend.py": {
+          "sha256": "59c07e19bc63f7300f5aea03cef348ad956cfa24cbcb79a7e274c479384e6e13",
+          "anchors": [
+            {
+              "line": 1340,
+              "text": "def update_mamba_state_after_mtp_verify("
+            },
+            {
+              "line": 1388,
+              "text": "accept_lens=last_correct_step_indices + 1,"
+            }
+          ]
+        }
+      }
+    },
+    "conclusions": [
+      {
+        "topic": "Correct last-block shape",
+        "fact": "Selected Flash configuration has 45 target layers. Layer44 is KDA, with H4096,64 heads,D128,K4 conv, mHC4, and sparse FFN. A generated-parameter layer44 component is a natural bounded target-to-NextN consumer; it is not all45 layers or original full-model generation."
+      },
+      {
+        "topic": "Attention branch",
+        "fact": "4H residual streams -> flattened RMS normalization for hc_attn_fn mixing -> affine pre/post and Sinkhorn20 -> actual pre-weighted H collapse -> separate input_layernorm(eps1e-5) -> full KDA projection/conv/recurrence/gated output projection -> attention hc_post using the same original 4H residual, combine and post coefficients.",
+        "anchors": [
+          "communicator_mhc.py:84-92",
+          "glm5_next.py:657-660,709-725",
+          "mhc.py:1770-1821"
+        ]
+      },
+      {
+        "topic": "FFN branch",
+        "fact": "Attention hc_post produces the FFN residual4H. Recompute hc_ffn_fn mixing from that residual, collapse -> post_attention_layernorm(eps1e-5) -> existing GLM sparse MoE -> FFN hc_post. Attention and FFN mHC parameters are distinct checkpoint roles even when a generated fixture deliberately shares its deterministic mixing construction.",
+        "anchors": [
+          "communicator_mhc.py:94-108",
+          "glm5_next.py:666-684,744-751,805-847"
+        ]
+      },
+      {
+        "topic": "Target MTP tap",
+        "fact": "At last layer, hc_contract is four-stream mean, followed by target model.norm. Wrapper supplies no hidden_states_before_norm override; ordinary capture returns this final-normalized target hidden. NextN then applies its own hnorm again. DFLASH auxiliary capture is a different tap and must not be substituted.",
+        "anchors": [
+          "communicator_mhc.py:298-302",
+          "mhc.py:1766-1767",
+          "glm5_next.py:1069-1073,1362-1364",
+          "logits_processor.py:756-796",
+          "deepseek_nextn.py:193-217"
+        ]
+      },
+      {
+        "topic": "Token alignment",
+        "fact": "For target hidden h_t, the matching NextN embedding is token x_(t+1), not x_t. Prefill worker shifts per-request input_ids left and appends the target next-token id while keeping target hidden rows in original order. Later draft steps use the actual previous draft normalized hidden; each draft step advances its absolute-position cursor. Do not merge target token position, shifted NextN cache position, and lagging indexer produced-through cursor into a single unlabelled number.",
+        "anchors": [
+          "eagle_worker_v2.py:881-913,930,772-803",
+          "deepseek_nextn.py:193-217"
+        ]
+      },
+      {
+        "topic": "mHC lifetime",
+        "fact": "mHC4 streams are per-token residual data across layers. They are prefix results/taps, not temporal recurrence for the next token. Next token consumes its own actual preceding-layer streams; only KDA matrix and raw conv history feed back temporally in this target component."
+      }
+    ],
+    "existing_kda": {
+      "source": "tests/compute_models/d5_kda_full_fragments.h::complete(profile,Reference*)",
+      "confirmed": [
+        "f_a->f_b and g_a->g_b have no intervening activation.",
+        "Q/K normalization is x/sqrt(sum(x*x)+1e-6). Existing RMSNorm epsilon1e-6/128 and gamma1/sqrt128 is mathematically equivalent.",
+        "KDA gate is per-key-channel -5*sigmoid(exp(A_log_head)*(forget_projection+dt_bias_channel)); beta is sigmoid of one scalar per value head.",
+        "Recurrence state is FP32 [B,Hv,Dv,Dk], decayed along key axis. GatedDeltaNet already applies output 1/sqrt(Dk), so do not add a second scale.",
+        "Output per-head RMSNorm eps1e-5 then sigmoid(g_b(g_a(input))) then o_proj.",
+        "Conv state must contain the last three raw projected QKV rows [3,24576], not convolved or SiLU outputs."
+      ],
+      "bounded_precision": "This C2 chooses the existing primary GGUF/F32 generated-parameter profile. This does not qualify official BF16/FP8 activation/cache byte boundaries or original weights. In particular, do not infer source execution dtype from fragment helper names alone.",
+      "anchors": [
+        "glm5_next.py:458-487,491-557",
+        "fused_sigmoid_gating_recurrent.py:206,219,285-307",
+        "l2norm.py:73-75",
+        "include/hyle/compute/operation.h:433-445"
+      ]
+    },
+    "prefix_state": {
+      "reusable": "tests/compute_state/kda_prefix_consumer.h demonstrates exact chronological GatedDeltaNet snapshots, raw-history prefix subranges, immutable old leases and StateHead publication. It begins after projections and has no target mHC/FFN/tap by itself.",
+      "selection": "If accepted=c actual verified tokens, select S_c from chronological state snapshot c-1 (base S_0 when c=0), and raw projected QKV history window rows c..c+2 of concatenated old history+candidate projections. Select target tap/position from that same c frontier; no rejected candidate rows may remain valid.",
+      "offset_warning": "SGLang chain commit input last_correct_step_indices is zero-based and accept_lens=last_correct_step_indices+1. Hyle test-local accepted count must explicitly include the actually processed target verification input tokens; do not silently equate this to only accepted draft proposals.",
+      "atomic_publication": "One StateSchema/StateHead for target recurrence/history/cursor/tap, complete NextN cache/hidden/pending, lag/catchup journal/indexer pool/tail/cursors, IDs and epoch. No two-head sequential publication. Per-token mHC scratch need not become temporal state, but retained prefix tap must have correct ownership.",
+      "anchors": [
+        "kda_prefix_consumer.h:145-234",
+        "hybrid_linear_attn_backend.py:1340-1425"
+      ]
+    },
+    "minimal_design": {
+      "public_api_gap": "No demonstrated missing public API. Existing ordinary Graph ops, Fragment attachment, GatedDeltaNet snapshots, ReadLease, StateDraft and StateHead express the bounded composition.",
+      "implementation": "New test-local glm_mtp_target_component.h may return Fragment plus named output ports and independent Reference(residual4H,history,state). Use actual mHC collapse as complete KDA input, actual KDA output as attn post input, then second mHC preparation -> existing MoE -> post -> mean -> final norm. Root composes produced tap lease with C1/NextN and publishes all accepted members together.",
+      "bounded_scenario": "Reuse two candidate tokens and partial/all accepted retained branches. Continue from selected actual leases and compare against independently recomputed accepted sequence. Root owns serialized CPU/CUDA native execution.",
+      "not_claimed": [
+        "Full45-layer target inference",
+        "Natural vocabulary acceptance/task quality",
+        "Official original BF16/FP8 pooled-cache bytes",
+        "All selected models/platforms/shapes"
+      ]
+    },
+    "same_epoch_carry_tail": {
+      "fact": "The carried tensor is the complete expanded2051 I32 token-ID row including its producer-time tail. The attention backend does not append new tail IDs according to the skipped token seq_len.",
+      "boundary_case": "freshA at absolute position2054 publishes tail2052,2053,2054. skipB at2055 preserves those same three IDs even though current logical length crosses a pool boundary. Only next-epoch fresh reseed produces a new row.",
+      "anchors": [
+        "dsa_indexer_kpool.py:637-674 _topk_from_kpool_logits passes seq_lens to indexer output construction",
+        "kpool_fp8_index.py:584-602 invokes fast_kpool_topk_transform_fused",
+        "python/sglang/kernels/ops/moe/kpool_topk_transform.py: out_cols=topk+(pool_size-1 if seq_lens is not None else0)",
+        "python/sglang/srt/models/deepseek_common/attention_forward_methods/forward_mla.py:136-155,381-384,453-456 reuses maybe_capture_indexer_topk(prev_topk_indices) without tail replacement",
+        "python/sglang/srt/layers/attention/dsa_backend.py:773-778,2255-2273 only pads rows/maps selected indices; fused table is the same tensor"
+      ],
+      "scope": "06992 source semantics of explicit within-iteration reuse; no claim that stale carry is a fresh logical-current selection."
+    },
+    "implementation": {
+      "path": "tests/compute_models/glm_mtp_target_component.h",
+      "sha256": "e3c6a3b3b5e490e832f3ae11f145c10447920bafde2d2a19229da5ad1cc902f9",
+      "lines": 185,
+      "interface": "glm_mtp_target_component::build() -> Recipe{fragment,ports,evaluate}; evaluate(residual4H,priorhistory,priorstate) ->21 same-order outputs; observe(recipe,residual4H,priorhistory,priorstate,read_output(port)) retains established profile numerical gate.",
+      "native_status": "Not compiled or executed by source agent; root owns serial integration and native verification.",
+      "actual_dependencies": "Actual mHC attention collapsed output -> input norm -> existing complete KDA -> attention post -> distinct FFN mixing role -> actual FFN collapse -> post-attention norm -> existing sparse MoE -> FFN post ->mean -> final target norm.",
+      "state_ports": "Only input1->history and input2->state; mHC/tap are retained prefix outputs and never temporal mHC feedback.",
+      "scope": "Selected primary-GGUF/F32 generated parameters at real layer44 topology. No original full45-layer target or natural acceptance claim."
+    }
+  },
+  "actual_remaining": {
+    "status": "Read-only audit of current sources; no product edits, compilation, native execution or downloads. C2 implementation is present, but this report does not certify its native result.",
+    "source_snapshot": {
+      "reference_revision": "SGLang 06992c92ad4494fe9f9636e75be3e35040512447, read from existing local git objects",
+      "consumer": "tests/compute_models/glm_mtp_state_consumer_test.cc",
+      "consumer_sha256": "413e9acc71e3f71d8a2484a1124ed166c27b76ca2a2cdd650899baec2514c137",
+      "target_component": "tests/compute_models/glm_mtp_target_component.h",
+      "target_component_sha256": "e3c6a3b3b5e490e832f3ae11f145c10447920bafde2d2a19229da5ad1cc902f9",
+      "reused_fragments": "tests/compute_models/d5_glm_remaining_fragments.h",
+      "reused_fragments_sha256": "12dbf546cb1050470dd6db65fe4d1f0a70364781a22d9df466699e7b10cde742",
+      "native_evidence": ".scratch/glm-mtp-catchup-20261022/checks2/summary.json: C1 and prior NextN CPU/CUDA 4/4 passed, zero skips; not C2 evidence and not throughput evidence"
+    },
+    "important_correction_target43_is_not_the_normal_nextn_seed": {
+      "answer": "No. The pinned reference normally seeds the next draft-decode iteration from the NextN draft-extend indexer at the last accepted/verified position, not directly from target layer43's I32 selection.",
+      "anchors": [
+        "python/sglang/srt/models/glm5_next.py:790-793: a KDA attention Tensor return sets local topk_indices=None; final target layer44 therefore does not naturally return layer43's selection through that local variable.",
+        "python/sglang/srt/speculative/eagle_worker_v2.py:286-302: configuration belongs to draft_runner and explicitly selects draft-extend seeding; topk==1 is required by this reference reuse policy.",
+        "python/sglang/srt/speculative/eagle_worker_v2.py:909-990: prefill draft-extend receives target hidden states, executes draft_runner.forward, captures the last position per request, then places the actual capture in EagleDraftInput.dsa_topk_indices.",
+        "python/sglang/srt/speculative/eagle_worker_v2.py:1094-1103,1152-1153: decode draft-extend selects the last accepted position from its actual capture and stores it in next_draft_input.dsa_topk_indices.",
+        "python/sglang/srt/models/deepseek_nextn.py and layers/attention/index_topk_share.py: NextN consumes spec_info carry, then publishes its own decoder's actual selection; mtp_iteration retains a real explicit keep_carry_seed and clears/disables it on exit."
+      ],
+      "consequence": "Do not add a target43-to-NextN IDs connection merely to tick a completeness box. Layer43 remains necessary as an actual upstream target MLA/indexer state-composition boundary if claiming more than last-target44 coverage; its banks and provenance must be separate from NextN's banks."
+    },
+    "what_c1_and_c2_actually_cover": {
+      "C1": "Generated selected Flash primary-GGUF/F32 NextN, finite base2054 prefix1/2 journey: real full I32 selection, same-epoch entire-indexer skip, actual nx journal, accepted-only catchup, fresh new epoch selection, independent base recomputation and one atomic accepted version. Each new CPU/CUDA case passed 14 submissions. Fresh-at-step0 without a carried seed is a legitimate fallback, not the reference's normal draft-extend-seeded path.",
+      "C2_source": "Actual generated last target44 KDA/conv, attention and FFN mHC branches, FFN, final stream contract and model.norm tap; previous target tap feeds fresh NextN, while target verifies current pending token. Four target members and all NextN members share one StateStore/StateHead/StateDraft. The preceding target four-stream residual is still generated; layer43 MLA/indexer is not present. Source expects26 submissions per backend, including12 target submissions; native result remains root-owned.",
+      "not_a_new_gap": "mHC streams are per-token depth residuals, not an extra recurrent time cache. Do not feed the previous token's final mHC stream back as a new token input. The final normalized target tap and actual KDA/conv temporal states are the required exposed boundaries here."
+    },
+    "shortest_remaining_deliveries": [
+      {
+        "id": "GLM-normal-seed-handoff",
+        "kind": "Uncovered normal consumer protocol, with existing ordinary Graph/state mechanisms; not evidence of a missing public primitive",
+        "implementation": "Give one finite accepted draft-extend NextN execution an explicit seed-producer role. Retain its actual full2051 I32 selection and draft hidden as the next-iteration initial carry; tag the selected accepted position and epoch. Start draft-decode step0 with the existing skip recipe, preserving the entire indexer bank/cursor leases. Following skipped steps still journal actual nx; acceptance and catchup remain atomic. Avoid a redundant fresh indexer at step0 when the qualified seed is already present.",
+        "reuse": "Existing build(true), build(false), Recipe/state selection ports, actual ReadLease ownership, epoch qualification and StateHead publication. Initial/stage already accept actual resources. Extend only the consumer handoff; no worker framework or second executor.",
+        "finite_check": "One real seed producer plus two reuse steps and prefix1/2 continuation compared with an independent accepted-prefix execution; retain existing numeric gates. Existing C1 cases cover fallback and need not be rerun as a new expanded matrix."
+      },
+      {
+        "id": "GLM-target-MLA-indexer-before-KDA",
+        "kind": "Actual target state-kind composition coverage still absent after C2; not a requirement to test every target tensor/layer separately",
+        "implementation": "Add one preceding Flash target43 component: attention mHC pre and norm -> existing absorbed MLA projections plus actual indexer/pool/IDs -> attention mHC post -> FFN mHC pre/norm/MoE/post. Its actual four-stream output becomes target44's same-token input, replacing the generated residual. Keep target43 latent/raw-key/gate/pool/counters/selection members distinct from NextN, and include them with target44 and NextN in the same accepted-prefix version.",
+        "reuse": "Extract only the ordinary MLA/indexer subgraph assembly from current build and append_history into a small test-local helper if needed; supply normalized target input instead of NextN EH, retain the existing projection/score/pool/selection equations and independent references. d5_glm_remaining_fragments::mla, indexer, head_projection, norm, hyper_connection helpers and current Program executor already provide the relevant pieces. Do not paste a second executor, reuse NextN's weights/banks as target state, or restore the old rolling-row indexer fixture as a production cache policy.",
+        "finite_check": "Continue C2's existing prefix1/2 journey with actual43->44->normalized target tap->NextN. Check the one combined accepted version against independent base recomputation. This demonstrates target MLA/indexer plus KDA/conv composition, not a full45-layer original model."
+      },
+      {
+        "id": "GLM-official-cache-reader",
+        "kind": "Real unconnected reader/encoding contract, not merely another missing weight download",
+        "implementation": "Bind one explicit pinned official reader: pooled F32 math -> BF16 boundary -> normalized Hadamard128 -> BF16 boundary -> E4 codes and per-row F32 scale with floor1e-4 and that reader's selected scale-rounding rule. Bind the matching rotated/quantized query and scaled index-score path. Store actual codes and scales with raw rings/counters, then use actual scores/IDs in MLA and accept/reject/catchup publication. Distinguish logical rows from a native page-footer layout; no need to reproduce a vendor page ABI unless an interoperability goal requires it.",
+        "already_available": "Hadamard, Cast, Reduce/Binary, MatMul, Scatter/Gather, typed resource leases and arbitrary StateSchema members exist. FP8 weight import/dense/grouped execution already exist; they do not by themselves encode runtime pooled cache. Existing CacheStorage::float8 has one lifetime-wide scalar, and RowCacheEncoding's128-depth FP4/512-depth FP8-tail formats are explicitly Hyle-specific, so neither is this official128-depth E4 plus per-row F32 scale contract.",
+        "boundary": "Start with an ordinary Graph composition and independent selected-reader oracle; add or optimize a provider candidate only if that real composition exposes an unsupported operation or measured cost. This audit proves the GLM consumer connection is absent, not that a new public operator is necessarily required."
+      }
+    ],
+    "weight_supply_vs_missing_architecture": {
+      "already_exercised_original_payload": "Separate original GLM Flash layer45 input/query chain has actual EH, hnorm, enorm, inputnorm, E4 q_a plus original F32 block128 scale and q_a norm; actual qnorm output feeds a real successor. It does not supply all other projections, experts, shared vocabulary, target parameters or runtime cache encoding.",
+      "same_contract_role_supply": "Replacing generated Q8_0/Q4_K/Q5_K/BF16/F32 parameters with exact recorded roles, and supplying additional E4 plus original F32 block128 roles after checking orientation and selected scale/activation policy, is mostly normal cold binding/loading. Do not turn every same-codec tensor into a separate API or unique test task. Preserve original bytes and make any decode/absorption preparation explicit.",
+      "not_automatic_equivalence": "An E4 weight name does not select its activation quantization or output-rounding policy; existing original q_a Divide path does not certify every SGLang runtime branch. Original expert banks still require selected IDs and the actual resident/working-set route; generated sparse9-expert MoE does not mean original288 experts are loaded. Final shared head/vocabulary must be truly bound for natural generation/acceptance claims.",
+      "profile_scope": "Current complete state consumer is Flash primary-GGUF/F32. GLM Pro and fidelity/official artifacts share mechanisms but have real geometry/reader differences: Pro hidden6144/queryRank2048, RoPE64 and non-K4 indexer differ from Flash hidden4096/queryRank1536/no-RoPE/K4. Existing six-case fragments cover component equations; they are not a connected full-state Pro execution. Parameterize actual differences once and reuse mechanisms, rather than create six engines or infer all-profile success from Flash."
+    },
+    "convergence": "After C2, report the new target44+NextN boundary as completed only if root's native run passes. Normal draft-extend seed handoff, actual target MLA/indexer composition, selected official cache contract and original role/full-generation supply remain distinct. None of this read-only audit justifies another public executor, generic parameter framework, exhaustive per-tensor matrix or a claim of complete original GLM MTP, natural acceptance, quality, throughput or memory behavior."
+  },
+  "validation": {
+    "platform": "Windows CPU/CUDA; no new Apple/Linux/Vulkan run or combination matrix.",
+    "consumer_host_TU_compilations": 4,
+    "native_CPU_ops_TUs": 1,
+    "native_CPU_ABI_export_TUs": 1,
+    "full_SDK_builds": 0,
+    "NVCC_builds": 0,
+    "shader_builds": 0,
+    "throughput_evidence": false,
+    "physical_memory_evidence": false,
+    "performance_section": {
+      "final_cases": 10,
+      "actual_Graph_submissions": 130,
+      "performance_section_unchanged": true,
+      "performance_utf8_sha256": "80b8672315911a74039a14cd137659bc67289273dc9c3707cd267b2d06de2551"
+    }
+  },
+  "cleanup": {
+    "Removed": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mtp-state-20261022\\tests-link2\\glm-state-checks.exe",
+        "bytes": 140743680,
+        "sha256": "7307a8756196d97249368d79c1abf9843821939ab4397b1329ef25d7ddb0746e",
+        "file_id": 1688849864262056,
+        "device": 49715911566842052,
+        "links": 1
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mtp-state-20261022\\tests-link2\\glm-state-checks.map",
+        "bytes": 60029276,
+        "sha256": "fb19af26baee5216bf545f70daf80b762adcf9960ae2622095a696d928e6494d",
+        "file_id": 1688849864262060,
+        "device": 49715911566842052,
+        "links": 1
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mtp-catchup-20261022\\tests-link1\\glm-catchup-checks.exe",
+        "bytes": 140297216,
+        "sha256": "9cd9cf8128b4673507dc043ec3f31d9d248b0a3e9209d1019a9ecf9c07e18402",
+        "file_id": 49821070882044036,
+        "device": 49715911566842052,
+        "links": 1
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mtp-catchup-20261022\\tests-link1\\glm-catchup-checks.map",
+        "bytes": 57950072,
+        "sha256": "c94aff495f311200f8fb1406870d6ecf7db39766efa2a5cba3bcd0dbb41eaaa8",
+        "file_id": 30680772465719685,
+        "device": 49715911566842052,
+        "links": 1
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mtp-catchup-20261022\\tests-link2\\glm-catchup-checks.exe",
+        "bytes": 140647424,
+        "sha256": "68c78f36328d6af554088c9f83ff9aa2e42c6f26def027e19099001d8ca1e9a4",
+        "file_id": 21673573210979429,
+        "device": 49715911566842052,
+        "links": 1
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mtp-catchup-20261022\\tests-link2\\glm-catchup-checks.map",
+        "bytes": 58743293,
+        "sha256": "89982ceeb5097d34a73a2effd8e28e70d12824bbf108d2f1dcc41f0bbc8c75a6",
+        "file_id": 21955048187690093,
+        "device": 49715911566842052,
+        "links": 1
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mtp-catchup-20261022\\tests-link3\\glm-catchup-checks.exe",
+        "bytes": 140330496,
+        "sha256": "1f48bb3b9141b63a44d383611552f74b411a1d3b03a0b496a9ef60194eae477d",
+        "file_id": 2251799817267464,
+        "device": 49715911566842052,
+        "links": 1
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mtp-catchup-20261022\\tests-link3\\glm-catchup-checks.map",
+        "bytes": 58043348,
+        "sha256": "92b8bd6141fe098e396da7dbe485cc0996d70f64f48e13315eb22c42c7584486",
+        "file_id": 9851624188536372,
+        "device": 49715911566842052,
+        "links": 1
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mtp-catchup-20261022\\tests-link4\\glm-catchup-checks.exe",
+        "bytes": 140781568,
+        "sha256": "8cacc1c352c4646ca8b6e7e27dfe7f4cf6554fd7eebac63e12b431870f2b2bcb",
+        "file_id": 21110623257559565,
+        "device": 49715911566842052,
+        "links": 2
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mtp-catchup-20261022\\tests-link4\\glm-catchup-checks.map",
+        "bytes": 59065999,
+        "sha256": "3b21871b0f915388e990edd27ad3edf80cd1cd3a4738fe21d05238c77a82e786",
+        "file_id": 18295873490453009,
+        "device": 49715911566842052,
+        "links": 2
+      }
+    ],
+    "RemovedPathBytes": 996632372,
+    "KnownReclaimableUniqueBytes": 796784805,
+    "ProtectedInputsRetained": [
+      true,
+      true,
+      true
+    ],
+    "Retained": "Final matched-worker image/map; all old source/objects/link inputs/plans/DLLs and original role bodies; actual AV Qwen benchmark image/map.",
+    "HardlinkNote": "The final image/map share file IDs with retired link4 names; removing those names does not reclaim their protected physical bytes."
+  },
+  "remaining": [
+    "GLM normal accepted draft-extend capture->next-epoch step0 direct reuse; upstream target MLA/indexer state composition; official cache/query/scorer and applicable original role/profile suppliers.",
+    "DSpark actual qualified target taps, remaining original stage/shared-head suppliers,512-wide verified-main rings and complete actual-parameter journey.",
+    "Q27/Q24 applicable role/codec and complete state combination; confirmed-MTP selected quantized formats.",
+    "Focused remaining regressions and final ordinary/MTP prefill/decode/combined/physical-memory comparison; image encoder/projector afterward."
+  ],
+  "large_original_payloads_archived": false,
+  "original_payload_retention": "All4 exact role bodies retained locally under original-dspark-target; archive includes authenticated ranges/hashes/commands and small F32 norms, not another55MiB packed-weight copy.",
+  "sources_commands_and_results": {
+    "path": "docs/evidence/correctness/mtp-target-state-2026-10-22.logs.zip",
+    "bytes": 775979,
+    "sha256": "ff80590d2c168d5312e257422511dae08c7bc5ea37cc8a4f41aef87d36a7ea05"
+  }
+}

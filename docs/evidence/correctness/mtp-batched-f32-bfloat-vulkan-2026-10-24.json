@@ -1,0 +1,192 @@
+{
+  "date": "2026-10-24",
+  "scope": "Finite direct Vulkan exact-batch F32 activation / original BF16 weight boundary.",
+  "validation": {
+    "passed": true,
+    "process": {
+      "command": [
+        "C:\\public\\project-hyle\\hyle\\.scratch\\gdn-vulkan-output-scale-20261024\\batched\\link1\\batched-bfloat-vulkan.exe",
+        "--gtest_filter=BatchedBfloatVulkan.*",
+        "--gtest_throw_on_failure=1",
+        "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\gdn-vulkan-output-scale-20261024\\batched\\checks1\\results.xml"
+      ],
+      "cwd": "C:\\public\\project-hyle\\hyle",
+      "started": 1792798580.1985312,
+      "timeout_seconds": 600,
+      "throughput_evidence": false,
+      "memory_evidence": false,
+      "trace": false,
+      "profiler": false,
+      "pid": 37116,
+      "exit": 0,
+      "timed_out": false,
+      "finished": 1792798580.81905,
+      "process_wall_seconds": 0.6190012000006391
+    },
+    "cases": 2,
+    "failures": 0,
+    "skips": 0,
+    "xml": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\gdn-vulkan-output-scale-20261024\\batched\\checks1\\results.xml",
+      "bytes": 901,
+      "sha256": "8efd477ee12fef9561ed041e4cdfeb40f5e199ca073a47b8431ae9b19272d179"
+    },
+    "case_names": [
+      "BatchedBfloatVulkan.OriginalFloat32RowsAndBatchOffsets",
+      "BatchedBfloatVulkan.ColdDomainAndBfloatActivationRejection"
+    ],
+    "HTTP": 0,
+    "model_data": 0,
+    "throughput_evidence": false
+  },
+  "build": {
+    "test_translation_units": 1,
+    "product_translation_units": 0,
+    "native_translation_units": 0,
+    "SDK_builds": 0,
+    "shader_builds": 0,
+    "NVCC": 0,
+    "compile_record": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\gdn-vulkan-output-scale-20261024\\batched\\compile1\\identity.json",
+      "bytes": 64325,
+      "sha256": "5477551ff8e24e55f4cd2a4c7373a38ee4d5674acf63239d9bae3b0ca50dbf93"
+    },
+    "actual_link": {
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\gdn-vulkan-output-scale-20261024\\batched\\link1\\batched-bfloat-vulkan.exe",
+        "bytes": 47126528,
+        "sha256": "49f8fbc4df7016d0099ae76cd625ec7349c09c533d60b2b38ef6e59ed410a449"
+      },
+      "plan": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\gdn-vulkan-output-scale-20261024\\batched\\link1\\plan.json",
+        "bytes": 31591,
+        "sha256": "2b69d343ae617613999ad16b6a0f937dcab45f355a5eb32471fadd3e4e0fd8ab"
+      },
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\gdn-vulkan-output-scale-20261024\\batched\\link1\\run\\process.json",
+        "bytes": 3971,
+        "sha256": "d114454253412ecce91d08c5bce8b55398ff46fea480515c0d5c68d44e3fa272"
+      },
+      "runtime": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\gdn-vulkan-output-scale-20261024\\batched\\link1\\runtime.json",
+        "bytes": 6151,
+        "sha256": "013e8a69e62ebb19715aa834055ee34f9d3d74966dd7a879126dd3032a73c140"
+      },
+      "filter": "BatchedBfloatVulkan.*",
+      "expected_cases": 2,
+      "native_executed": false
+    },
+    "retained_current_objects": 75,
+    "owning_native_family": "Vulkan9ac7; identical to parent GDN focused closure"
+  },
+  "parent_current_closure": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\mtp-gdn-output-scale-vulkan-2026-10-24.json",
+    "bytes": 36801,
+    "sha256": "ede2eac025864e3b63f2aa4c1ad453fb0c307b91536d97c3f2aa51889a6c4ae1"
+  },
+  "source_changes": {
+    "before_cmake": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\gdn-vulkan-output-scale-20261024\\batched\\CMakeLists-before.txt",
+      "bytes": 5128,
+      "sha256": "8595f20694bf7aeed8b8c45c2001e8f34a9fc19c88c395a05d091234a27f5839"
+    },
+    "after_cmake": {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\CMakeLists.txt",
+      "bytes": 5349,
+      "sha256": "94a6545119117c3fef0004d6b2a51a11a09b411afc2149c328cda666a3cf3233"
+    },
+    "new_source": {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\batched_bfloat_linear_test.cc",
+      "bytes": 5345,
+      "sha256": "5b272e514bdcb341428ddadc5b205b74cc5dc84498aef1bde45a4c2e37cf80b6"
+    },
+    "patch": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\gdn-vulkan-output-scale-20261024\\batched\\source.patch",
+      "bytes": 6462,
+      "sha256": "c8ff03f75dc416ff1dd605e94177af7e73ab65f13f014a5c37db15c59253cb61"
+    },
+    "product_source_changes": 0
+  },
+  "covered": {
+    "actual_projection": {
+      "activation": [
+        3,
+        2,
+        66
+      ],
+      "weight": [
+        3,
+        4,
+        66
+      ],
+      "output": [
+        3,
+        2,
+        4
+      ],
+      "activation_dtype": "F32",
+      "weight_dtype": "BF16",
+      "output_dtype": "F32",
+      "checks": [
+        "Exact dyadic F32 cancellation values below BF16/TF32 input resolution.",
+        "Distinct original BF16 coefficients per batch and output column.",
+        "Dense output shape/order and unchanged original activation and BF16 payload."
+      ]
+    },
+    "cold_descriptor_only": [
+      {
+        "activation": [
+          64,
+          1,
+          256
+        ],
+        "weight": [
+          64,
+          512,
+          256
+        ],
+        "output": [
+          64,
+          1,
+          512
+        ]
+      },
+      {
+        "activation": [
+          64,
+          1,
+          512
+        ],
+        "weight": [
+          64,
+          256,
+          512
+        ],
+        "output": [
+          64,
+          1,
+          256
+        ]
+      }
+    ],
+    "rejected": [
+      "BF16 rank3 A is permitted by public inference and returns Unimplemented during Vulkan prepare.",
+      "Unequal explicit batch identities fail public inference; no implicit broadcast."
+    ]
+  },
+  "boundaries": [
+    "Only the two named canonical cases; no extra shape matrix or model data.",
+    "64-head checks build descriptors/programs only: no original 16MiB fixture weight payload is materialized, uploaded or submitted.",
+    "No Graph, full-model, throughput, memory peak or other-device claim.",
+    "Parent SDK, generated programs, shaders, product/native objects and all binaries stay in their existing caches."
+  ],
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\mtp-batched-f32-bfloat-vulkan-2026-10-24.zip",
+    "bytes": 69282,
+    "sha256": "c493cb2630da60390832ca7b7a315519348c89c3f17ef77320a06172417745c1"
+  },
+  "archive_entries": 36,
+  "network_bytes": 0,
+  "automatic_downloads": false,
+  "model_scope_changed": false
+}

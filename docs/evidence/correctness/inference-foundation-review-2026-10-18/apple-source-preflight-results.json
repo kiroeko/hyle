@@ -1,0 +1,105 @@
+{
+  "status": "old_two_fail_current_19_and_original_native_pending_pass",
+  "hardware": {
+    "model": "Mac16,12",
+    "cpu": "Apple M4",
+    "memory": "17179869184",
+    "system": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+    "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin"
+  },
+  "old_control": {
+    "link": "003-old-link",
+    "run": "004-old-run",
+    "tests": 2,
+    "passed": 0,
+    "failed": 2,
+    "product_provenance": "baseline-links.json and previous frozen-source proof; no new product objects",
+    "reason": "outer source Cancelled masked original native decoder success in both cases"
+  },
+  "current": {
+    "link": "012-current-link",
+    "run": "013-current-run",
+    "tests": 19,
+    "passed": 19,
+    "failed": 0,
+    "new_cases": [
+      "LateCancelledWritingPhaseMustFailNativeDecoder",
+      "SuccessfulIndependentLatestPhaseCannotMaskFailedPageSource"
+    ],
+    "assertions": [
+      "native decoder returns Cancelled and has no result",
+      "outer Graph Cancelled and no published output",
+      "Runtime remains unpoisoned",
+      "original Update controls recover after actual retirement"
+    ]
+  },
+  "native": {
+    "link": "014-native-link",
+    "run": "015-native-run",
+    "exit": 0,
+    "checks": [
+      "F16 and BF16 each 64 steps",
+      "active Q2/18 and two slots each",
+      "two page nodes share one Update",
+      "CPU Abs/Cast to native to Cast/Neg",
+      "exact pages, untouched history, same generation",
+      "196608 dirty bytes each dtype"
+    ]
+  },
+  "fresh_product_host_tus": 6,
+  "fresh_test_tus": 1,
+  "retained_prior_objects": 12,
+  "actual_current_link_inputs": {
+    "003-old-link": 143,
+    "012-current-link": 144,
+    "014-native-link": 140
+  },
+  "selected_owners": "results/selected-current-owners.json",
+  "leased_symbol_owner": "008-leased explicit object; old SDK member not selected in current links",
+  "no_sdk_air_metallib_build": true,
+  "retained_original_mlx_math": [
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/f32-partials/mlx.metallib",
+      "bytes": 1666552,
+      "sha256": "cabb611108c741e6132c3b518d832dc0b8c730868415d3c44789526823095636"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/f32-partials/native-host.f32.o",
+      "bytes": 123032,
+      "sha256": "f5fffb14d1ddbff88737830677125b6be027f41c0bf29eb601b95aaf41fafd02"
+    }
+  ],
+  "source_count": 122,
+  "dependency_count": 122,
+  "source_drift": [],
+  "cleanup": {
+    "manifest": "cleanup-mac.json",
+    "files": 6,
+    "bytes": 56175643
+  },
+  "retained_stage_objects": 7,
+  "live_process": false,
+  "not_claimed": [
+    "Direct materialized late-source-failure injection coverage",
+    "all possible failure races or cancellation interleavings",
+    "performance improvement or zero warm allocations"
+  ],
+  "archive": "apple-source-preflight.zip",
+  "defect": "FIFO ordering allowed an accepted native decoder to run after copy source failure; final DependentCompletion failure only hid publication.",
+  "fix": "Original Apple Job invokes a borrowed, fixed source predicate before resolve_inputs/evaluate. CopyStreamAccess checks every original CopyRecording under the existing observations lock, without consuming public Completion observers.",
+  "lifetime": "Original CopyOutcomeSource fixed heap payload is retained by the existing source/suffix DependentCompletion. The Job clears its two borrowed fields before execution and any finish callback; enqueue rejection clears them too.",
+  "consumers": "Selected row Graph uses PagedBatchAccess::submit_pending; page Graph and Direct materialized receiver select the same capability through their actual trait. Other traits keep their original submit implementation.",
+  "cases": [
+    "A: after Graph acceptance, cancel only the original writing phase behind the FIFO gate; native copy calls=0.",
+    "B: cancel phase0 that writes the pending page; independent phase1 successfully copies 4 bytes elsewhere (one native copy call). The last successful prefix cannot stand for the whole Update.",
+    "Both: original physical page has valid unpublished sentinel bytes; outer Graph is Cancelled, actual selected native decoder has no result and reports Cancelled, Runtime remains healthy, failed page cannot be published."
+  ],
+  "interpretation": "Actual native outcome probes plus source control flow establish the execution-before-read fix. This is not a hardware trace of individual GPU loads.",
+  "limits": [
+    "No new Direct materialized late-failure injection or exhaustive cancellation interleavings.",
+    "No Vulkan worker-failure claim, new Linux journey, complete-model precision or throughput acceptance.",
+    "Original SDK/native host/metallib reused. Necessary original MLX tracing/JIT, metadata and native costs remain.",
+    "Old leased implementation came from the identified cached SDK archive member; its current Windows source is not asserted to be its original compile source."
+  ],
+  "broader_goal": "active and incomplete"
+}

@@ -1,0 +1,345 @@
+{
+  "date": "2026-10-21",
+  "created_utc": "2026-10-21T16:05:34.164987+00:00",
+  "status": "Typed attention/MLA and row-cache ready-frame composition/projection implemented; finite Windows CPU/CUDA module checks passed.",
+  "sources": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\paged_arena.h",
+      "bytes": 14088,
+      "sha256": "24d54cdae3a2c46f28126fffbfce06fc28ee6acb44c677324ce4f8fbaf67d458"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_batch\\paged_arena.cc",
+      "bytes": 50053,
+      "sha256": "95fa8b24e1727d9902778ee34a0a7d3f31d7d8aec053be3c5f10e1ee0b4f0bc6"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_batch\\paged_arena_test.cc",
+      "bytes": 44371,
+      "sha256": "64d5f589ba19230cb910edea44bf0ecb3e729e214b26c6bbea946209f1ea32e4"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_batch\\row_cache_paged_test.cc",
+      "bytes": 17734,
+      "sha256": "3d124b600984bfc7adda0ee93d1f7f94e8ac3cf5f87f4d2e16dcce4c59b59fb0"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\graph_batch\\paged_append_graph_test.cc",
+      "bytes": 44641,
+      "sha256": "d7a39e0c9ace64ca0b16341751aeab4ab475ffb557e882ca95dadb541b646093"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\graph_batch\\paged_append_cuda_consumer.cc",
+      "bytes": 50572,
+      "sha256": "0932744da45c4412c26a74c6f6b37661cb158756f7bcb167d4fdecdcd10e8f30"
+    }
+  ],
+  "docs": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\user\\batch-attention.md",
+      "bytes": 67099,
+      "sha256": "829d8f715561ddff22d28b3a7cab88239c7b2eca14414fe6a90f66b1ff238a5e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\architecture\\compute-design.md",
+      "bytes": 115144,
+      "sha256": "80770e6e1f6f3904977a4fa1e917de06425b8fbf3a5bd519080bf4bc75ed0a28"
+    }
+  ],
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\paged-frame-reframe-2026-10-21.zip",
+    "bytes": 843617,
+    "sha256": "5ea2d39f21420f6707f4375b58168619575ea91535f49e8caf8e703268345e30"
+  },
+  "archive_file_count": 228,
+  "correctness": {
+    "arena-tests": {
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multisequence-batch-20261021\\arena-tests-run2\\result.json",
+        "bytes": 1014,
+        "sha256": "2fb38baeaf82405e65ca63ae5ca800489cdad0de2f0992e83bba43e077eed726"
+      },
+      "ready": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multisequence-batch-20261021\\arena-tests-ready-attempt2.json",
+        "bytes": 1468,
+        "sha256": "aff47ebf08504cdc1da49ef16d47cf5cb1e6ed0714c4c2f5e668ef32866183b2"
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multisequence-batch-20261021\\arena-tests-link2\\arena-tests.exe",
+        "bytes": 138978816,
+        "sha256": "7a55b74da8e2503d182eb2e0951fcd762a65290808d5dc8e5bf672ac7940fc40"
+      },
+      "observed": {
+        "gtest_cases": 27,
+        "failures": 0,
+        "xml": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multisequence-batch-20261021\\arena-tests-run2\\gtest.xml",
+          "bytes": 7692,
+          "sha256": "9187bef4f0cd9e3cd215f26ae438af84f0b73cee1af9dffae513bf008620f634"
+        }
+      },
+      "stdout": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multisequence-batch-20261021\\arena-tests-run2\\stdout.log",
+        "bytes": 5314,
+        "sha256": "91b7e5fef0114bd2921711f4bd1f4ea9c26ecc62f24527b61d62e7ec76428449"
+      },
+      "stderr": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multisequence-batch-20261021\\arena-tests-run2\\stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "link_plan": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multisequence-batch-20261021\\arena-tests-link2\\link-plan.json",
+        "bytes": 86756,
+        "sha256": "447a02ed47dbb14402d3ab0067b21679d0ae5acee049218feead6dd035d21b7a"
+      }
+    },
+    "row-tests": {
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multisequence-batch-20261021\\row-tests-run1\\result.json",
+        "bytes": 965,
+        "sha256": "4ee47d90f5e5a438832a6b9f7ad8948cc32c4606df475f7aaf6d088f224f17a8"
+      },
+      "ready": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multisequence-batch-20261021\\row-tests-ready-attempt1.json",
+        "bytes": 1468,
+        "sha256": "dc777d0973006bc99a3aa8bb4a0c31a8588ede3975a7b2bf9a15544ac1880b38"
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multisequence-batch-20261021\\row-tests-link1\\row-tests.exe",
+        "bytes": 138756608,
+        "sha256": "16e9b037cdc0f1823d4c9faecda0bf17adb23be9aec59ea35d123d727ebb618d"
+      },
+      "observed": {
+        "gtest_cases": 7,
+        "failures": 0,
+        "xml": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multisequence-batch-20261021\\row-tests-run1\\gtest.xml",
+          "bytes": 2300,
+          "sha256": "0b6483913905e23a8d4656a0cdabb1d84060b79e00e98f1cd2507a3a97c38c38"
+        }
+      },
+      "stdout": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multisequence-batch-20261021\\row-tests-run1\\stdout.log",
+        "bytes": 1776,
+        "sha256": "5c3feba513126876f79ddf86b8748a89ab9dbf332237f054b6dc63cabf668cfe"
+      },
+      "stderr": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multisequence-batch-20261021\\row-tests-run1\\stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "link_plan": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multisequence-batch-20261021\\row-tests-link1\\link-plan.json",
+        "bytes": 86728,
+        "sha256": "c8ebb46dbf9c08548e007ff6b2f11539a402cfb15bfcb906649bd2cf0f7d1ae3"
+      }
+    },
+    "cpu": {
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multisequence-batch-20261021\\cpu-run2\\result.json",
+        "bytes": 810,
+        "sha256": "17edc4ae4669a795142f7fe9a2fc3b2149afa9d90f5bee98c891096233d35cc5"
+      },
+      "ready": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multisequence-batch-20261021\\cpu-ready-attempt2.json",
+        "bytes": 1446,
+        "sha256": "3ce4202a7378d686f6ea844fb3878c4516b18a400544a3b9472a12d9256c49c3"
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multisequence-batch-20261021\\cpu-link2\\cpu.exe",
+        "bytes": 139616256,
+        "sha256": "30c3e315698caee66103fa1fe1030c21dd8f7552a540aac969c4e887b17eb4d7"
+      },
+      "observed": {
+        "success_journey_statements": 11
+      },
+      "stdout": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multisequence-batch-20261021\\cpu-run2\\stdout.log",
+        "bytes": 1044,
+        "sha256": "a7a91b84ffa79db1386e2a1fbd7537ccd6ecef4ace112aa71ad648f76e05da41"
+      },
+      "stderr": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multisequence-batch-20261021\\cpu-run2\\stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "link_plan": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multisequence-batch-20261021\\cpu-link2\\link-plan.json",
+        "bytes": 86476,
+        "sha256": "651fa551fbf0bdc8f438ae872d44635f4daf23aff25484e0aa7d7565bc2f8227"
+      }
+    },
+    "cuda": {
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multisequence-batch-20261021\\cuda-run2\\result.json",
+        "bytes": 816,
+        "sha256": "e4f2ca0471efe1d569c5ca24737fe05b2bab4b63d46862de2893d79afc0b3048"
+      },
+      "ready": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multisequence-batch-20261021\\cuda-ready-attempt2.json",
+        "bytes": 1456,
+        "sha256": "8e7d804e014a71146bdffe05ad4a8e2e54578cbc1eee65b344ab8b5022f3517b"
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multisequence-batch-20261021\\cuda-link2\\cuda.exe",
+        "bytes": 139428352,
+        "sha256": "67373cf0ba3777262a1cb1497d3a428030f1b62ec97a06ca52d4be823f925791"
+      },
+      "observed": {
+        "success_journey_statements": 8
+      },
+      "stdout": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multisequence-batch-20261021\\cuda-run2\\stdout.log",
+        "bytes": 684,
+        "sha256": "933340f8c163bb424cdc7b36259e4837e99325a8642153500d67cf6e67f58882"
+      },
+      "stderr": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multisequence-batch-20261021\\cuda-run2\\stderr.log",
+        "bytes": 151,
+        "sha256": "88dd5e35d67fb5c0c371390a98a66a5e061e4c0bef2d890a7b74781363216092"
+      },
+      "link_plan": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multisequence-batch-20261021\\cuda-link2\\link-plan.json",
+        "bytes": 85265,
+        "sha256": "26da18983b28bbdac4005abb0bc3bd70643586c2b9ac1b184e77026531c8f4be"
+      }
+    }
+  },
+  "final_independent_review": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multisequence-batch-20261021\\review\\final-runtime-review.json",
+    "bytes": 22008,
+    "sha256": "39f6e67254a7eb8aa4e2286b503ee22474cbcaf0b999eab86e6a7b58e2fc40f0"
+  },
+  "compiled_records": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multisequence-batch-20261021\\compile2\\arena\\identity.json",
+      "bytes": 41142,
+      "sha256": "7b4423df51cad0bd3f7a544de23ebc05d17a40afb91451ef8004dee1bd06bd16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multisequence-batch-20261021\\compile2\\arena-tests\\identity.json",
+      "bytes": 60923,
+      "sha256": "c3d793ef076ccc6f98d84ba6af0522c4dab13a78ba19fa24bc5f2514dc05dddb"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multisequence-batch-20261021\\compile1\\row-tests\\identity.json",
+      "bytes": 62415,
+      "sha256": "2a0e76d88c352ad5b8d091858d83c95dcc71744efe92862783fe16f5ac16e707"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multisequence-batch-20261021\\compile3\\cpu-test\\identity.json",
+      "bytes": 42750,
+      "sha256": "682a1dd71e7a9b1e36dc4f155cb1a5408e7090cc0f04068a6e5a0a03b5408fda"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multisequence-batch-20261021\\compile2\\cuda-test\\identity.json",
+      "bytes": 45107,
+      "sha256": "41f8e464a9482e57850ff28953826a45b1740d268e59156f3c81401315f0f6c9"
+    }
+  ],
+  "host_compile_attempts": [
+    {
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multisequence-batch-20261021\\compile1\\arena\\compile.result.json",
+        "bytes": 2207,
+        "sha256": "c2b6b2cc6783923a8f56d826a1e3fbc82ca5b7685a31568bc8e238353280048b"
+      },
+      "exit": 0
+    },
+    {
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multisequence-batch-20261021\\compile1\\arena-tests\\compile.result.json",
+        "bytes": 1935,
+        "sha256": "6c6459bfd7660f739d052c88765a42d0e20048f7398584336ca5f4e6c947cd39"
+      },
+      "exit": 0
+    },
+    {
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multisequence-batch-20261021\\compile1\\cpu-test\\compile.result.json",
+        "bytes": 2270,
+        "sha256": "6ac37b97b5cd156d89c19b7542b79a434bc99e5214d3be70a02321ad9d2bf1ce"
+      },
+      "exit": 2
+    },
+    {
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multisequence-batch-20261021\\compile1\\cuda-test\\compile.result.json",
+        "bytes": 2289,
+        "sha256": "d046f096ba1f842fc5c068162f85f6ced66c2ce20ef41d5b0d745216458e90fb"
+      },
+      "exit": 0
+    },
+    {
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multisequence-batch-20261021\\compile1\\row-tests\\compile.result.json",
+        "bytes": 1928,
+        "sha256": "006f33bada157234aaf7d4a8fe4c2352fe9e0942fa29a09c364fb66f73b38b36"
+      },
+      "exit": 0
+    },
+    {
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multisequence-batch-20261021\\compile2\\arena\\compile.result.json",
+        "bytes": 2207,
+        "sha256": "606465654d19f4970336b06a6096b9816f89603703c431cdb9064d2e7cc4b897"
+      },
+      "exit": 0
+    },
+    {
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multisequence-batch-20261021\\compile2\\arena-tests\\compile.result.json",
+        "bytes": 1935,
+        "sha256": "0aa9258ce7d4a998e05ad37c06d9a8ec5036c36e0ff97dd6b8f97eec5b3f6b01"
+      },
+      "exit": 0
+    },
+    {
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multisequence-batch-20261021\\compile2\\cpu-test\\compile.result.json",
+        "bytes": 2273,
+        "sha256": "974994067c833e0de05b4219f942b70d6c5cecbdb763b40e8c01d07e81c0a1c4"
+      },
+      "exit": 0
+    },
+    {
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multisequence-batch-20261021\\compile2\\cuda-test\\compile.result.json",
+        "bytes": 2289,
+        "sha256": "52177719b029245c305626cf9a3e5242eec1537468727074dfdaa9298201f705"
+      },
+      "exit": 0
+    },
+    {
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multisequence-batch-20261021\\compile3\\cpu-test\\compile.result.json",
+        "bytes": 2274,
+        "sha256": "39af141f8e06ee0f49194830f39947639c98bee06ff66b182fb84006d00b30d3"
+      },
+      "exit": 0
+    }
+  ],
+  "retained_first_warning_failure": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multisequence-batch-20261021\\compile1\\cpu-test\\compile.result.json",
+    "bytes": 2270,
+    "sha256": "6ac37b97b5cd156d89c19b7542b79a434bc99e5214d3be70a02321ad9d2bf1ce"
+  },
+  "cleanup_plan": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multisequence-batch-20261021\\cleanup-plan.json",
+    "bytes": 7761,
+    "sha256": "8e3bbe92161dce6afae8d685b1ad12a4a28556ad5f9d2c7fa78443465e67207d"
+  },
+  "reproduction": {
+    "commands": "Archived compile.command/result, sourceDependencies/identity, link-plan/result/runtime-environment and run command/result records are authoritative.",
+    "cache": "Reuse their exact fixed compiler/gtest/native DLL/SDK/object cache paths. The archive does not duplicate SDKs or retained object closures. B/build.py and B/run.py are preserved; their existing helper imports and all referenced caches must remain available.",
+    "inherited_inputs": "Exact recorded input hashes retained in link-plan files; not rehashed or copied into this module archive.",
+    "final_runs": "arena-tests-run2, row-tests-run1, cpu-run2, cuda-run2; initial source/compile failure and revision1 records remain unchanged."
+  },
+  "limits": [
+    "27 attention arena and7row gtest cases; CPU11/CUDA8 are success journey statements, not additional formal gtest-case counts.",
+    "Reframe grants no new page authority: target prefix is bounded by supplied immutable source layout and original guards; output retains only selected pages. Row and attention public types remain distinct.",
+    "Full Qwen B2 batching, its recurrent/conv state/positions/publication, serving scheduling, throughput and other native backends remain unimplemented or unvalidated here.",
+    "This script only publishes bounded evidence. It does not run a consumer, rebuild, query devices, alter source/docs content or delete any file. Existing published outputs are never overwritten."
+  ]
+}

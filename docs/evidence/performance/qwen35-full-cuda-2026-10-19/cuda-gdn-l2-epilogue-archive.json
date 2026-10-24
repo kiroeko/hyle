@@ -1,0 +1,8 @@
+{
+  "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\qwen35-full-cuda-2026-10-19\\cuda-gdn-l2-epilogue.zip",
+  "bytes": 36342221,
+  "sha256": "193d8f1f06ad5566694a54aa83acad6e29e152407c703fb0ee29f5c7007716f6",
+  "payloads": 330,
+  "CRC_and_payload_SHA_verified": true,
+  "SDKs_models_objects_executables_excluded": true
+}

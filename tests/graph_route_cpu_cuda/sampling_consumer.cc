@@ -2,7 +2,10 @@
 #include <hyle/graph/cpu.h>
 #include <hyle/graph/cuda.h>
 #include <hyle/graph/cpu_cuda.h>
+#include <hyle/graph/progress.h>
+#include <hyle/graph/result.h>
 #include <hyle/mem/buffer.h>
+#include <hyle/sched/blocking.h>
 
 namespace {
 namespace t=sampling_test;
@@ -17,6 +20,7 @@ void run() {
   auto device=t::take(c::cuda::MemoryResource::create(cuda,c::cuda::MemoryKind::kDevice));
   auto staging=t::take(c::cuda::MemoryResource::create(cuda,c::cuda::MemoryKind::kPinnedHost));
   hyle::sched::Scheduler scheduler(2,m::system_allocator(),64);
+  hyle::sched::BlockingPool pool(m::system_allocator(),2);
   const auto logits_desc=t::dense(c::DataType::kFloat32,{rows,width});
   const auto key_desc=t::dense(c::DataType::kUInt32,{rows,4});
   const auto output_desc=t::dense(c::DataType::kFloat32,{rows});
@@ -60,23 +64,33 @@ void run() {
   auto compiled=t::take(b::compile(logical,{.cpu=&cpu,.cuda=&cuda,.staging=&staging,.device=&device,
       .staging_workspace_budget_bytes=512},{.constants=constants,.node_placements=placements,
       .value_placements=locations,.external_resources=external}));
+  std::size_t staging_copy_count=0,staging_copy_bytes=0;
+  for(std::size_t i=0;i<compiled.report.step_count();++i) {
+    const auto step=t::take(compiled.report.step(i));
+    if(step.kind==g::CompileStepKind::kCopy &&
+       (step.source_storage==b::kStagingStorage||step.destination_storage==b::kStagingStorage)) {
+      ++staging_copy_count;staging_copy_bytes+=step.copy_bytes;
+    }
+  }
+  t::check(staging_copy_count==4&&staging_copy_bytes==rows*16,
+           "CUDA joint did not restrict migration to two small selection outputs (two-hop staging charged)");
   std::array<c::Queue,2> gpu_queues,cpu_queues;
   std::array<m::Buffer,2> outputs;
-  std::array<b::Invocation,2> slots;
+  std::array<g::Invocation,2> slots;
+  std::array<std::array<g::QueueBinding,2>,2> queues;
   for(std::size_t bank=0;bank<slots.size();++bank) {
     gpu_queues[bank]=t::take(cuda.create_queue());cpu_queues[bank]=t::take(cpu.create_queue());
     outputs[bank]=t::take(m::Buffer::create(m::system_resource(),rows*sizeof(float),256));
-    auto ordinary=t::take(compiled.executable.create_invocation());
-    const std::array queues{g::QueueBinding{g::ExecutionLaneId{0},&gpu_queues[bank]},
-                            g::QueueBinding{g::ExecutionLaneId{1},&cpu_queues[bank]}};
-    slots[bank]=t::take(b::Invocation::create(std::move(ordinary),scheduler,queues));
+    slots[bank]=t::take(compiled.executable.create_invocation());
+    queues[bank]={g::QueueBinding{g::ExecutionLaneId{0},&gpu_queues[bank]},
+                  g::QueueBinding{g::ExecutionLaneId{1},&cpu_queues[bank]}};
+    t::require(g::prepare_progress(slots[bank],scheduler,pool));
     t::require(slots[bank].bind(x,input_view));t::require(slots[bank].bind(key,key_view));
     t::require(slots[bank].bind(sum,t::take(c::TensorView::create(output_desc,outputs[bank].view()))));
-    t::require(slots[bank].prepare_replay({.mode=g::ReplayMode::kCommands,.host_wait=g::HostWaitPolicy::kAllow}));
+    t::require(slots[bank].prepare_replay(queues[bank],
+        {.mode=g::ReplayMode::kCommands,.host_wait=g::HostWaitPolicy::kAllow}));
     const auto replay=t::take(slots[bank].replay_report());
-    t::check(replay.staging_copy_count==4&&replay.staging_copy_bytes==rows*16,
-             "CUDA joint did not restrict migration to two small selection outputs (two-hop staging charged)");
-    t::check(replay.graph.host_wait_dependency_count>0,
+    t::check(replay.host_wait_dependency_count>0,
              "CUDA -> CPU boundary omitted its actual host wait from the report");
   }
   Drain drain{scheduler};
@@ -89,8 +103,10 @@ void run() {
     const auto identities=t::identities(rows,0xffffffffULL+std::uint64_t(step));
     t::require(input.view().write(std::as_bytes(std::span(logits))));
     t::require(keys.view().write(std::as_bytes(std::span(identities))));
-    auto work=t::take(slots[std::size_t(step%2)].submit());auto lease=t::take(work.wait());
-    const auto view=t::take(lease->output(sum));std::array<float,rows> actual;
+    const auto bank=std::size_t(step%2);
+    auto work=t::take(slots[bank].submit(queues[bank]));t::require(work.wait());
+    auto lease=t::take(slots[bank].result(sum));
+    const auto view=t::take(lease.tensor());std::array<float,rows> actual;
     t::require(view.storage().read(std::as_writable_bytes(std::span(actual))));
     for(int r=0;r<rows;++r) {
       const int first=(step*7+r*13)%width,second=(first+65)%width;
@@ -99,7 +115,7 @@ void run() {
       t::check(error<2e-5,"CUDA selection -> CPU lookup/add independent oracle differs");
     }
   }
-  for(auto &slot:slots)t::require(slot.close());
+  for(auto &slot:slots)t::require(slot.drain());
   t::require(cuda.close());t::require(cpu.close());
   std::puts("PASS CPU+CUDA: GPU producer/categorical -> 24-byte CPU lookup+add; 65 steps/two slots; staging and host wait charged");
 }

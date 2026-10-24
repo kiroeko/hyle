@@ -1,0 +1,216 @@
+{
+  "completed": true,
+  "windows_removed": 5,
+  "windows_bytes": 292913497.0,
+  "windows_kept_objects": 2,
+  "mac": {
+    "removed": 6,
+    "bytes": 59363397,
+    "kept_objects": 8
+  },
+  "evidence_sha256": "331a7acff0228797319d101413550f9b83b9c33da8cc5f325f455f3fa567ad13",
+  "archive_sha256": "634cd82d12fb4c5ba270607eada159fe5e7209595140d5788944b81961e064fe",
+  "exact_plan": {
+    "allowed_windows": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\delivery2-gpu-state-lifetime-2026-10-21",
+    "remove_windows": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\delivery2-gpu-state-lifetime-2026-10-21\\cuda\\checks\\link1\\cuda-state-native.exe",
+        "bytes": 138409472,
+        "sha256": "225a053d95acbd901a3deb1e607b9f5474cf13a5242a35b5a6943ef46c4e2cab"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\delivery2-gpu-state-lifetime-2026-10-21\\cuda\\checks\\link1\\cuda-state-native.map",
+        "bytes": 56166512,
+        "sha256": "4703d4ce10607b5cccf1c7a8abe6b5746f0b9b8a9f2321deb25893cafafaf7c0"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\delivery2-gpu-state-lifetime-2026-10-21\\vulkan\\checks\\link1\\vulkan-state-native.exe",
+        "bytes": 67248128,
+        "sha256": "2fa50a979acf8ec4771e262d5047d0d8d5d6947dad296832da316fd97dea4b1e"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\delivery2-gpu-state-lifetime-2026-10-21\\vulkan\\checks\\link1\\vulkan-state-native.map",
+        "bytes": 29731049,
+        "sha256": "c499c2c3421ae488fb68ae570f0ffc4c2d65e8a86670503e0893d03e78aa2696"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\delivery2-gpu-state-lifetime-2026-10-21\\cuda\\checks\\link1\\hyle_ggml_cpu_avx2_ffa4e8b8_e74fc9bb8964d04f.dll",
+        "bytes": 1358336,
+        "sha256": "09828878dd44d62eb6ae844827e20382ee2b457d0dbd76594b6577bea3ad5434"
+      }
+    ],
+    "keep_windows": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\delivery2-gpu-state-lifetime-2026-10-21\\windows\\checks\\attempt1\\cuda\\cuda-native-consumer.obj",
+        "bytes": 1019528,
+        "sha256": "801cef7ce5374c738599311bfd250d1202b9c0190256397132d6356ddf017a64"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\delivery2-gpu-state-lifetime-2026-10-21\\windows\\checks\\attempt1\\vulkan\\vulkan-native-consumer.obj",
+        "bytes": 880850,
+        "sha256": "922166abeb820814d86690e933dd827364d602ee13b2b019d80b1c2bcf3f2998"
+      }
+    ],
+    "keep_runtime_cache": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_ggml_cpu_avx2_ffa4e8b8_e74fc9bb8964d04f.dll",
+        "bytes": 1358336,
+        "sha256": "09828878dd44d62eb6ae844827e20382ee2b457d0dbd76594b6577bea3ad5434"
+      }
+    ],
+    "evidence": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\state-native-lifetimes-2026-10-21.json",
+      "bytes": 7073,
+      "sha256": "331a7acff0228797319d101413550f9b83b9c33da8cc5f325f455f3fa567ad13"
+    },
+    "archive": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\state-native-lifetimes-2026-10-21.zip",
+      "bytes": 491962,
+      "sha256": "634cd82d12fb4c5ba270607eada159fe5e7209595140d5788944b81961e064fe"
+    },
+    "evidence_sets": [
+      {
+        "report": {
+          "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\state-native-lifetimes-2026-10-21.json",
+          "bytes": 7073,
+          "sha256": "331a7acff0228797319d101413550f9b83b9c33da8cc5f325f455f3fa567ad13"
+        },
+        "archive": {
+          "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\state-native-lifetimes-2026-10-21.zip",
+          "bytes": 491962,
+          "sha256": "634cd82d12fb4c5ba270607eada159fe5e7209595140d5788944b81961e064fe"
+        }
+      },
+      {
+        "report": {
+          "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\apple-affine-constant-preparation-reference-2026-10-21.json",
+          "bytes": 14987,
+          "sha256": "260d5132e47bb3f3142a510c606071cc7a7818d644f03d0f1026249e95798e5e"
+        },
+        "archive": {
+          "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\apple-affine-constant-preparation-reference-2026-10-21.zip",
+          "bytes": 631452,
+          "sha256": "554d8fa1d178ddeebeb94250c7865d291dc955916ede3b4b8d6e94f4dd31b7e3"
+        }
+      },
+      {
+        "report": {
+          "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\apple-affine-metadata-preparation-2026-10-21.json",
+          "bytes": 14819,
+          "sha256": "630d41813599f61970cc8bc2fce33bad2fbdec8dff3690b923a5d57133fa61c3"
+        },
+        "archive": {
+          "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\apple-affine-metadata-preparation-2026-10-21.zip",
+          "bytes": 193834,
+          "sha256": "b6ad66d513c9a7ddedb74caaaa8af6e1d8e362586f6e3fa70c3d95e6208988a0"
+        }
+      }
+    ],
+    "mac": {
+      "allowed_mac": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation",
+      "remove_mac": [
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/delivery2-gpu-state-lifetime-2026-10-21/apple/apple-state-native",
+          "bytes": 14909632,
+          "sha256": "c660f001deabb8a41281c88985a155238f5ac4249679ec4ad09e02b909311087",
+          "symlink": false,
+          "resolved": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/delivery2-gpu-state-lifetime-2026-10-21/apple/apple-state-native"
+        },
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/delivery2-gpu-state-lifetime-2026-10-21/apple/apple-state-native.map",
+          "bytes": 4351539,
+          "sha256": "dd3e5f63b47aff8b42a61dacddf87c7769cb14b32e232f2d10c851ff8a6b64a9",
+          "symlink": false,
+          "resolved": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/delivery2-gpu-state-lifetime-2026-10-21/apple/apple-state-native.map"
+        },
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-affine-constant-preparation-2026-10-21/apple/affine-constant-preparation",
+          "bytes": 15548280,
+          "sha256": "757971ac92e5733ed7415f21c505a6096ee279a321157848852bf21e1b1dc3a3",
+          "symlink": false,
+          "resolved": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-affine-constant-preparation-2026-10-21/apple/affine-constant-preparation"
+        },
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-affine-constant-preparation-2026-10-21/apple/affine-constant-preparation.map",
+          "bytes": 4557143,
+          "sha256": "b441f139f21e14629b52aa0725020c933ba6c610c5ca69edb1628f107ef551ed",
+          "symlink": false,
+          "resolved": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-affine-constant-preparation-2026-10-21/apple/affine-constant-preparation.map"
+        },
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-immutable-materialization-2026-10-21/apple/immutable-materialization-diagnostic",
+          "bytes": 15466168,
+          "sha256": "d5ebf618a673be8b23817ec8d1fd7c62781476ea16dac2c2f6a41469e3590f48",
+          "symlink": false,
+          "resolved": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-immutable-materialization-2026-10-21/apple/immutable-materialization-diagnostic"
+        },
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-immutable-materialization-2026-10-21/apple/immutable-materialization-diagnostic.map",
+          "bytes": 4530635,
+          "sha256": "ff264455ea664a2101fa83cb4768881364e24b1d839cc1719e75cf7f78501265",
+          "symlink": false,
+          "resolved": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-immutable-materialization-2026-10-21/apple/immutable-materialization-diagnostic.map"
+        }
+      ],
+      "keep_mac": [
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/delivery2-gpu-state-lifetime-2026-10-21/apple/objects/tests--compute_state--native_fault_consumer.cc.o",
+          "bytes": 112696,
+          "sha256": "439d9d4850f80a3da9702ec81894b77db24b963616151cfec8fcb2f57e09c528",
+          "symlink": false,
+          "resolved": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/delivery2-gpu-state-lifetime-2026-10-21/apple/objects/tests--compute_state--native_fault_consumer.cc.o"
+        },
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-affine-constant-preparation-2026-10-21/apple/objects/src--graph_route_apple--native_region.cc.o",
+          "bytes": 192984,
+          "sha256": "c3bafb413d50af5dec5e2df8de2202e199f3222852f649aa0b7ffd80d70ea5bd",
+          "symlink": false,
+          "resolved": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-affine-constant-preparation-2026-10-21/apple/objects/src--graph_route_apple--native_region.cc.o"
+        },
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-affine-constant-preparation-2026-10-21/apple/objects/tests--graph_route_apple--affine_metadata_test.cc.o",
+          "bytes": 189056,
+          "sha256": "15d55ccd26778da5632d4835d290385f119e6450c8315156702a0e8f29069763",
+          "symlink": false,
+          "resolved": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-affine-constant-preparation-2026-10-21/apple/objects/tests--graph_route_apple--affine_metadata_test.cc.o"
+        },
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-affine-constant-preparation-2026-10-21/apple/objects/src--compute_route_apple--apple_operations.cc.o",
+          "bytes": 171672,
+          "sha256": "82f121e9c4baaed101eb8af54678619bad4b1c514d21671ee1acad3f748c7e82",
+          "symlink": false,
+          "resolved": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-affine-constant-preparation-2026-10-21/apple/objects/src--compute_route_apple--apple_operations.cc.o"
+        },
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-affine-constant-preparation-2026-10-21/apple/objects/src--compute_route_apple--apple_tensor.cc.o",
+          "bytes": 150200,
+          "sha256": "2d85f2f65166f1af51619dc99d1eff3a9c83bb5033db6a7a8bf8fc892c145e8c",
+          "symlink": false,
+          "resolved": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-affine-constant-preparation-2026-10-21/apple/objects/src--compute_route_apple--apple_tensor.cc.o"
+        },
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-affine-constant-preparation-2026-10-21/apple/objects/src--graph_route_apple--apple_lowering.cc.o",
+          "bytes": 297488,
+          "sha256": "aeaba298b41d378ed3ee1e9583147480afa66186062909790af7130a79073dee",
+          "symlink": false,
+          "resolved": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-affine-constant-preparation-2026-10-21/apple/objects/src--graph_route_apple--apple_lowering.cc.o"
+        },
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-immutable-materialization-2026-10-21/apple/objects/src--compute_route_apple--apple_context.cc.o",
+          "bytes": 317672,
+          "sha256": "cab2c6c98a53b63e95cc26aadf549bfbf4d2c0df685834bdc1007bec396aa0a6",
+          "symlink": false,
+          "resolved": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-immutable-materialization-2026-10-21/apple/objects/src--compute_route_apple--apple_context.cc.o"
+        },
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-immutable-materialization-2026-10-21/apple/objects/tests--graph_route_apple--glm_flash_mixed_mlx_test.cc.o",
+          "bytes": 318752,
+          "sha256": "e9e7898e98b9c57de559510b1bd5f917fe4aa3dabfff1f774e86804aecd9bf20",
+          "symlink": false,
+          "resolved": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-immutable-materialization-2026-10-21/apple/objects/tests--graph_route_apple--glm_flash_mixed_mlx_test.cc.o"
+        }
+      ]
+    }
+  },
+  "source_script": "# Exact Native state and Apple affine test-artifact cleanup. No recursive directory removal.\n$ErrorActionPreference = 'Stop'\n$plan = Get-Content -LiteralPath 'C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\delivery2-gpu-state-lifetime-2026-10-21\\root\\cleanup-plan.json' -Raw | ConvertFrom-Json\n$separator = [IO.Path]::DirectorySeparatorChar\n$allowed = [IO.Path]::GetFullPath($plan.allowed_windows).TrimEnd($separator) + $separator\nfunction Assert-Identity($row) {\n  $file = Get-Item -LiteralPath $row.path -ErrorAction Stop\n  if ($file.PSIsContainer -or ($file.Attributes -band [IO.FileAttributes]::ReparsePoint)) { throw \"Not a regular file: $($row.path)\" }\n  if ($file.Length -ne $row.bytes -or (Get-FileHash -LiteralPath $row.path -Algorithm SHA256).Hash.ToLowerInvariant() -ne $row.sha256) { throw \"Identity changed: $($row.path)\" }\n}\nAssert-Identity $plan.evidence\nAssert-Identity $plan.archive\nforeach ($set in $plan.evidence_sets) { Assert-Identity $set.report; Assert-Identity $set.archive }\nforeach ($row in $plan.remove_windows) {\n  $full = [IO.Path]::GetFullPath($row.path)\n  if (-not $full.StartsWith($allowed, [StringComparison]::OrdinalIgnoreCase) -or [IO.Path]::GetExtension($full) -notin '.exe','.map','.dll') { throw \"Outside exact artifact scope: $full\" }\n  Assert-Identity $row\n}\nforeach ($row in $plan.keep_windows) { Assert-Identity $row }\nforeach ($row in $plan.keep_runtime_cache) { Assert-Identity $row }\n$active = @(Get-CimInstance Win32_Process | Where-Object { $_.ExecutablePath -and $_.ExecutablePath.StartsWith($allowed, [StringComparison]::OrdinalIgnoreCase) })\nif ($active.Count) { throw 'A test executable in this exact workspace is still running' }\nforeach ($row in $plan.remove_windows) { Remove-Item -LiteralPath $row.path -Force }\nforeach ($row in $plan.keep_windows) { Assert-Identity $row }\nforeach ($row in $plan.keep_runtime_cache) { Assert-Identity $row }\n$macProgram = @'\nimport pathlib,hashlib,json,subprocess\nplan=json.loads('{\"allowed_mac\": \"/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation\", \"remove_mac\": [{\"path\": \"/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/delivery2-gpu-state-lifetime-2026-10-21/apple/apple-state-native\", \"bytes\": 14909632, \"sha256\": \"c660f001deabb8a41281c88985a155238f5ac4249679ec4ad09e02b909311087\", \"symlink\": false, \"resolved\": \"/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/delivery2-gpu-state-lifetime-2026-10-21/apple/apple-state-native\"}, {\"path\": \"/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/delivery2-gpu-state-lifetime-2026-10-21/apple/apple-state-native.map\", \"bytes\": 4351539, \"sha256\": \"dd3e5f63b47aff8b42a61dacddf87c7769cb14b32e232f2d10c851ff8a6b64a9\", \"symlink\": false, \"resolved\": \"/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/delivery2-gpu-state-lifetime-2026-10-21/apple/apple-state-native.map\"}, {\"path\": \"/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-affine-constant-preparation-2026-10-21/apple/affine-constant-preparation\", \"bytes\": 15548280, \"sha256\": \"757971ac92e5733ed7415f21c505a6096ee279a321157848852bf21e1b1dc3a3\", \"symlink\": false, \"resolved\": \"/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-affine-constant-preparation-2026-10-21/apple/affine-constant-preparation\"}, {\"path\": \"/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-affine-constant-preparation-2026-10-21/apple/affine-constant-preparation.map\", \"bytes\": 4557143, \"sha256\": \"b441f139f21e14629b52aa0725020c933ba6c610c5ca69edb1628f107ef551ed\", \"symlink\": false, \"resolved\": \"/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-affine-constant-preparation-2026-10-21/apple/affine-constant-preparation.map\"}, {\"path\": \"/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-immutable-materialization-2026-10-21/apple/immutable-materialization-diagnostic\", \"bytes\": 15466168, \"sha256\": \"d5ebf618a673be8b23817ec8d1fd7c62781476ea16dac2c2f6a41469e3590f48\", \"symlink\": false, \"resolved\": \"/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-immutable-materialization-2026-10-21/apple/immutable-materialization-diagnostic\"}, {\"path\": \"/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-immutable-materialization-2026-10-21/apple/immutable-materialization-diagnostic.map\", \"bytes\": 4530635, \"sha256\": \"ff264455ea664a2101fa83cb4768881364e24b1d839cc1719e75cf7f78501265\", \"symlink\": false, \"resolved\": \"/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-immutable-materialization-2026-10-21/apple/immutable-materialization-diagnostic.map\"}], \"keep_mac\": [{\"path\": \"/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/delivery2-gpu-state-lifetime-2026-10-21/apple/objects/tests--compute_state--native_fault_consumer.cc.o\", \"bytes\": 112696, \"sha256\": \"439d9d4850f80a3da9702ec81894b77db24b963616151cfec8fcb2f57e09c528\", \"symlink\": false, \"resolved\": \"/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/delivery2-gpu-state-lifetime-2026-10-21/apple/objects/tests--compute_state--native_fault_consumer.cc.o\"}, {\"path\": \"/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-affine-constant-preparation-2026-10-21/apple/objects/src--graph_route_apple--native_region.cc.o\", \"bytes\": 192984, \"sha256\": \"c3bafb413d50af5dec5e2df8de2202e199f3222852f649aa0b7ffd80d70ea5bd\", \"symlink\": false, \"resolved\": \"/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-affine-constant-preparation-2026-10-21/apple/objects/src--graph_route_apple--native_region.cc.o\"}, {\"path\": \"/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-affine-constant-preparation-2026-10-21/apple/objects/tests--graph_route_apple--affine_metadata_test.cc.o\", \"bytes\": 189056, \"sha256\": \"15d55ccd26778da5632d4835d290385f119e6450c8315156702a0e8f29069763\", \"symlink\": false, \"resolved\": \"/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-affine-constant-preparation-2026-10-21/apple/objects/tests--graph_route_apple--affine_metadata_test.cc.o\"}, {\"path\": \"/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-affine-constant-preparation-2026-10-21/apple/objects/src--compute_route_apple--apple_operations.cc.o\", \"bytes\": 171672, \"sha256\": \"82f121e9c4baaed101eb8af54678619bad4b1c514d21671ee1acad3f748c7e82\", \"symlink\": false, \"resolved\": \"/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-affine-constant-preparation-2026-10-21/apple/objects/src--compute_route_apple--apple_operations.cc.o\"}, {\"path\": \"/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-affine-constant-preparation-2026-10-21/apple/objects/src--compute_route_apple--apple_tensor.cc.o\", \"bytes\": 150200, \"sha256\": \"2d85f2f65166f1af51619dc99d1eff3a9c83bb5033db6a7a8bf8fc892c145e8c\", \"symlink\": false, \"resolved\": \"/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-affine-constant-preparation-2026-10-21/apple/objects/src--compute_route_apple--apple_tensor.cc.o\"}, {\"path\": \"/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-affine-constant-preparation-2026-10-21/apple/objects/src--graph_route_apple--apple_lowering.cc.o\", \"bytes\": 297488, \"sha256\": \"aeaba298b41d378ed3ee1e9583147480afa66186062909790af7130a79073dee\", \"symlink\": false, \"resolved\": \"/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-affine-constant-preparation-2026-10-21/apple/objects/src--graph_route_apple--apple_lowering.cc.o\"}, {\"path\": \"/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-immutable-materialization-2026-10-21/apple/objects/src--compute_route_apple--apple_context.cc.o\", \"bytes\": 317672, \"sha256\": \"cab2c6c98a53b63e95cc26aadf549bfbf4d2c0df685834bdc1007bec396aa0a6\", \"symlink\": false, \"resolved\": \"/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-immutable-materialization-2026-10-21/apple/objects/src--compute_route_apple--apple_context.cc.o\"}, {\"path\": \"/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-immutable-materialization-2026-10-21/apple/objects/tests--graph_route_apple--glm_flash_mixed_mlx_test.cc.o\", \"bytes\": 318752, \"sha256\": \"e9e7898e98b9c57de559510b1bd5f917fe4aa3dabfff1f774e86804aecd9bf20\", \"symlink\": false, \"resolved\": \"/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-immutable-materialization-2026-10-21/apple/objects/tests--graph_route_apple--glm_flash_mixed_mlx_test.cc.o\"}]}')\nbase=pathlib.Path(plan['allowed_mac']); assert base.is_dir() and not base.is_symlink()\ndef verify(row):\n p=pathlib.Path(row['path']); assert p.is_absolute() and not p.is_symlink() and p.resolve().is_relative_to(base.resolve())\n assert p.resolve()==p; assert p.is_file() and p.stat().st_size==row['bytes'] and hashlib.sha256(p.read_bytes()).hexdigest()==row['sha256'],str(p)\n return p\npaths=[verify(x) for x in plan['remove_mac']]\nfor row in plan['keep_mac']:verify(row)\nactive=subprocess.check_output(['ps','-axo','command='],text=True)\nassert not any(str(p) in command for p in paths for command in active.splitlines() if not command.startswith('python3 -')), 'test executable is running'\nfor p in paths:p.unlink()\nfor row in plan['keep_mac']:verify(row)\nprint(json.dumps(dict(removed=len(paths),bytes=sum(x['bytes'] for x in plan['remove_mac']),kept_objects=len(plan['keep_mac']))))\n'@\n$macResult = $macProgram | & ssh kiro@172.22.10.198 python3 -\nif ($LASTEXITCODE -ne 0) { throw 'Mac exact-file cleanup failed; do not report both platforms completed' }\n$result = [ordered]@{\n  completed = $true\n  windows_removed = @($plan.remove_windows).Count\n  windows_bytes = [double]($plan.remove_windows | Measure-Object -Property bytes -Sum).Sum\n  windows_kept_objects = @($plan.keep_windows).Count\n  mac = ($macResult | ConvertFrom-Json)\n  evidence_sha256 = $plan.evidence.sha256\n  archive_sha256 = $plan.archive.sha256\n  exact_plan = $plan\n  source_script = [IO.File]::ReadAllText($PSCommandPath)\n}\n$result | ConvertTo-Json -Depth 18 | Set-Content -LiteralPath 'C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\state-native-lifetimes-2026-10-21.cleanup.json' -Encoding utf8\n$result | ConvertTo-Json -Depth 18 | Set-Content -LiteralPath 'C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\apple-affine-constant-preparation-reference-2026-10-21.cleanup.json' -Encoding utf8\n$result | ConvertTo-Json -Depth 18 | Set-Content -LiteralPath 'C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\apple-affine-metadata-preparation-2026-10-21.cleanup.json' -Encoding utf8\n[pscustomobject]$result | Select-Object completed,windows_removed,windows_bytes,windows_kept_objects,mac | ConvertTo-Json -Depth 5\n"
+}

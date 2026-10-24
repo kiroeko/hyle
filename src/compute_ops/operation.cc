@@ -6,6 +6,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <limits>
+#include <optional>
 #include <span>
 #include <type_traits>
 #include <utility>
@@ -288,30 +289,86 @@ Status validate_broadcast_to(std::span<const std::int64_t> source,
   return Status::Ok();
 }
 
+Result<TensorDesc> infer_reshape(const TensorShape &shape,
+                                const TensorDesc &input) noexcept {
+  if (!shape.valid()) {
+    return std::unexpected(
+        Status::InvalidArgument("reshape target shape is invalid"));
+  }
+  if (!input.is_plain()) {
+    return std::unexpected(Status::Unimplemented(
+        "generic zero-copy reshape requires a plain input"));
+  }
+  auto source_count = input.element_count();
+  if (!source_count)
+    return std::unexpected(std::move(source_count).error());
+  auto target_count = shape.element_count();
+  if (!target_count)
+    return std::unexpected(std::move(target_count).error());
+  if (*source_count != *target_count) {
+    return std::unexpected(Status::InvalidArgument(
+        "reshape source and target element counts differ"));
+  }
+  if (*source_count <= 1 || input.is_dense())
+    return TensorDesc::dense(input.data_type(), shape.dimensions());
+
+  // A reshape may split/merge a contiguous stride chunk, but may not cross
+  // a gap, permutation or partial broadcast. Singleton axes contribute no
+  // address and do not split a chunk. Work only on metadata: never Copy.
+  std::array<std::int64_t, kMaxTensorRank> strides{};
+  std::size_t target_axis = shape.rank();
+  std::size_t chunk_elements = 1, target_elements = 1;
+  auto base_stride = static_cast<std::size_t>(input.byte_strides().back());
+  for (std::size_t end = input.rank(); end != 0; --end) {
+    const auto axis = end - 1;
+    // Both total element counts were checked above. All partial products
+    // of these nonempty shapes fit size_t as well.
+    chunk_elements *= static_cast<std::size_t>(input.dimensions()[axis]);
+    const auto span = math::try_multiply(chunk_elements, base_stride);
+    const bool boundary =
+        axis == 0 ||
+        (input.dimensions()[axis - 1] != 1 &&
+         (!span ||
+          static_cast<std::size_t>(input.byte_strides()[axis - 1]) != *span));
+    if (!boundary)
+      continue;
+    while (target_axis != 0 &&
+           (target_elements < chunk_elements ||
+            shape.dimensions()[target_axis - 1] == 1)) {
+      --target_axis;
+      const auto bytes = math::try_multiply(target_elements, base_stride);
+      const auto stride = bytes ? math::try_integer_cast<std::int64_t>(*bytes)
+                                 : std::nullopt;
+      if (!stride && shape.dimensions()[target_axis] != 1)
+        return std::unexpected(
+            Status::OutOfRange("reshape byte stride exceeds int64"));
+      // A singleton's unused stride need not overflow just because a whole
+      // chunk span is larger than INT64_MAX. Zero names the same address.
+      strides[target_axis] = stride.value_or(0);
+      target_elements *=
+          static_cast<std::size_t>(shape.dimensions()[target_axis]);
+    }
+    if (target_elements != chunk_elements)
+      return std::unexpected(Status::Unimplemented(
+          "reshape crosses non-contiguous stride chunks; Copy is required"));
+    if (axis != 0) {
+      base_stride = static_cast<std::size_t>(input.byte_strides()[axis - 1]);
+      chunk_elements = target_elements = 1;
+    }
+  }
+  if (target_axis != 0)
+    return std::unexpected(Status::Unimplemented(
+        "reshape cannot preserve the input's logical element order"));
+  return TensorDesc::strided_bytes(
+      input.data_type(), shape.dimensions(),
+      std::span<const std::int64_t>(strides.data(), shape.rank()));
+}
+
 Result<TensorDesc> infer_view(const View &view,
                               const TensorDesc &input) noexcept {
   switch (view.kind()) {
-  case ViewKind::kReshape: {
-    if (!view.shape().valid()) {
-      return std::unexpected(
-          Status::InvalidArgument("reshape target shape is invalid"));
-    }
-    if (!input.is_plain() || !input.is_dense()) {
-      return std::unexpected(Status::Unimplemented(
-          "generic zero-copy reshape requires a dense plain input"));
-    }
-    auto source_count = input.element_count();
-    if (!source_count)
-      return std::unexpected(std::move(source_count).error());
-    auto target_count = view.shape().element_count();
-    if (!target_count)
-      return std::unexpected(std::move(target_count).error());
-    if (*source_count != *target_count) {
-      return std::unexpected(Status::InvalidArgument(
-          "reshape source and target element counts differ"));
-    }
-    return TensorDesc::dense(input.data_type(), view.shape().dimensions());
-  }
+  case ViewKind::kReshape:
+    return infer_reshape(view.shape(), input);
   case ViewKind::kSlice: {
     if (!input.is_plain()) {
       return std::unexpected(Status::Unimplemented(
@@ -1564,10 +1621,9 @@ Status infer_output_descriptions(const Operation &operation,
   }
   case OperationKind::kTopK: {
     const TopK &top_k = *operation.get_if<TopK>();
-    if (!is_numeric(inputs[0].data_type()) || inputs[0].rank() == 0 ||
-        top_k.count == 0) {
+    if (!is_numeric(inputs[0].data_type()) || inputs[0].rank() == 0) {
       first = std::unexpected(Status::InvalidArgument(
-          "TopK requires numeric rank >= 1 input and positive count"));
+          "TopK requires numeric rank >= 1 input"));
       break;
     }
     auto axis = normalize_axis(top_k.axis, inputs[0].rank());
@@ -1607,6 +1663,9 @@ Status infer_output_descriptions(const Operation &operation,
         infer_attention(*operation.get_if<ScaledDotProductAttention>(), inputs);
     break;
   case OperationKind::kGatedDeltaNet:
+    if (const auto scale = operation.get_if<GatedDeltaNet>()->output_scale;
+        scale && !std::isfinite(*scale))
+      return Status::InvalidArgument("GatedDeltaNet output_scale must be finite");
     first = infer_gated_delta_net(inputs);
     if (first) {
       const auto snapshots = operation.get_if<GatedDeltaNet>()->snapshot_count;

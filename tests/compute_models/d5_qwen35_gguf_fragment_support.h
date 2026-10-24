@@ -153,10 +153,18 @@ inline void expect_close(std::span<const float> actual,
                          std::span<const float> expected, float absolute,
                          float relative = 0.0F) {
   ASSERT_EQ(actual.size(), expected.size());
-  for (std::size_t index = 0; index < actual.size(); ++index)
-    EXPECT_NEAR(actual[index], expected[index],
-                absolute + relative * std::abs(expected[index]))
-        << index;
+  for (std::size_t index = 0; index < actual.size(); ++index) {
+    if (std::isnan(expected[index])) {
+      EXPECT_TRUE(std::isnan(actual[index])) << index;
+    } else if (std::isinf(expected[index])) {
+      EXPECT_EQ(actual[index], expected[index]) << index;
+    } else {
+      ASSERT_TRUE(std::isfinite(actual[index])) << index;
+      EXPECT_NEAR(actual[index], expected[index],
+                  absolute + relative * std::abs(expected[index]))
+          << index;
+    }
+  }
 }
 
 } // namespace d5_qwen35_gguf_fragment

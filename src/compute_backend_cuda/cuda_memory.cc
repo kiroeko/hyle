@@ -30,12 +30,14 @@ mem::MemoryProperties CudaResourceBase::properties() const noexcept {
     break;
   case MemoryKind::kPinnedHost:
     flags = mem::MemoryProperty::kHostAccessible |
-            mem::MemoryProperty::kHostPinned;
+            mem::MemoryProperty::kHostPinned |
+            mem::MemoryProperty::kHostAddressIdentity;
     break;
   case MemoryKind::kManaged:
     flags = mem::MemoryProperty::kHostAccessible |
             mem::MemoryProperty::kDeviceAccessible |
-            mem::MemoryProperty::kManaged;
+            mem::MemoryProperty::kManaged |
+            mem::MemoryProperty::kHostAddressIdentity;
     break;
   }
   const auto domain_value =

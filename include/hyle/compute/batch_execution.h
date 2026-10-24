@@ -8,6 +8,7 @@ namespace hyle::compute {
 struct BatchProgramOptions final {
   mem::MemoryResourceRef resource;
   mem::MemoryResourceRef host_workspace = mem::system_resource();
+  // Hard caps. Caller-owned scratch is sized during cold layout preparation.
   std::size_t max_float_workspace_bytes = 64u*1024u*1024u;
   std::size_t max_int_workspace_bytes = 8u*1024u*1024u;
   std::uint32_t max_invocations = 2;
@@ -26,18 +27,21 @@ struct BatchPlanReport final {
   std::size_t metadata_staging_bytes = 0;
   std::size_t float_workspace_bytes = 0, int_workspace_bytes = 0;
   std::uint32_t cta_tile_q = 0, padded_batch_size = 0;
+  // For Graph, capture_compatible reports the actual prepared slot's cold
+  // recording qualification, not creation/replay of a physical graph artifact.
   bool split_kv = false, native_metadata_unknown = true, capture_compatible = false;
   bool bf16_partials = false;
   bool reused_native_plan = false;
   std::uint32_t host_waits = 0;
   CopyBatchReport metadata_upload{};
 };
-namespace detail { struct BatchProgramData; struct BatchInvocationData; struct PagedReceiverData; struct BatchGraphAccess; }
+namespace detail { class ContextRef; class ProviderExtensionRef; struct BatchProgramData; struct BatchInvocationData; struct PagedReceiverData; struct BatchGraphAccess; struct BeforeCommandChange; }
 class BatchInvocation;
 class PreparedBatch;
 class PagedArenaRead;
 class PagedArenaPendingRead;
 class PagedBatchReceiver;
+struct MlaBatchInputs final { ReadLease query, cache; };
 // Cold, immutable native domain. Only explicit batch users acquire buffers,
 // slots or planning; ordinary operation and Graph v19 contracts are unchanged.
 class BatchProgram final {
@@ -54,7 +58,8 @@ public:
 private:
   friend class BatchInvocation;
   friend struct detail::BatchGraphAccess;
-  static Result<BatchProgram> prepare(const Context&,BatchSchema,BatchProgramOptions,ProviderInstanceId) noexcept;
+  static Result<BatchProgram> prepare(const detail::ContextRef&,const detail::ProviderExtensionRef&,
+      BatchSchema,BatchProgramOptions) noexcept;
   explicit BatchProgram(detail::BatchProgramData *p) noexcept:data_(p){}
   detail::BatchProgramData *data_=nullptr;
 };
@@ -93,7 +98,8 @@ private:
   explicit BatchInvocation(detail::BatchInvocationData *p) noexcept:data_(p){}
   detail::BatchInvocationData *data_=nullptr;
   Result<PreparedBatch> prepare(const BatchLayoutVersion &,bool update,
-      const BatchInvocation *metadata_source=nullptr) noexcept;
+      const BatchInvocation *metadata_source=nullptr,
+      const detail::BeforeCommandChange *before_change=nullptr) noexcept;
 };
 class PreparedBatch final {
 public:
@@ -111,11 +117,15 @@ public:
   // Original input/page permissions are admitted again on every actual run;
   // idle captures do not retain them. Unsupported/empty capture rejects here.
   HYLE_COMPUTE_BATCH_API Status prepare_replay(std::span<const ReadLease> inputs) noexcept;
+  HYLE_COMPUTE_BATCH_API Status prepare_replay(MlaBatchInputs) noexcept;
+  HYLE_COMPUTE_BATCH_API Status prepare_replay(const ReadLease&query,const PagedArenaRead&cache) noexcept;
   HYLE_COMPUTE_BATCH_API Status prepare_replay(const ReadLease&query,
       const PagedArenaRead&keys,const PagedArenaRead&values) noexcept;
   // Q/K/V exact capacity descriptions; actual rows are from this layout.
   // Runs this prepared plan once. No plan/JIT/metadata reread occurs here.
   HYLE_COMPUTE_BATCH_API Result<Completion> run(std::span<const ReadLease> inputs) noexcept;
+  HYLE_COMPUTE_BATCH_API Result<Completion> run(MlaBatchInputs) noexcept;
+  HYLE_COMPUTE_BATCH_API Result<Completion> run(const ReadLease&query,const PagedArenaRead&cache) noexcept;
   // Explicit paged arena footprint: Q is an ordinary lease, K/V retain only
   // this prepared layout's actual physical pages through native retirement.
   HYLE_COMPUTE_BATCH_API Result<Completion> run(const ReadLease&query,
@@ -152,6 +162,9 @@ public:
   // accepted wait/math prefix returns its real aggregate Completion instead.
   HYLE_COMPUTE_BATCH_API Result<Completion> submit(const ReadLease&query,
       const PagedArenaPendingRead&keys,const PagedArenaPendingRead&values,CopyBatchUpdate&&)noexcept;
+  // Typed MLA consumes one compact cache and the same original copy outcome.
+  HYLE_COMPUTE_BATCH_API Result<Completion> submit(const ReadLease&query,
+      const PagedArenaPendingRead&cache,CopyBatchUpdate&&)noexcept;
   // Nonblocking; only successfully observed aggregate work publishes output.
   HYLE_COMPUTE_BATCH_API Result<ReadLease> output()noexcept;
   HYLE_COMPUTE_BATCH_API Result<CopyBatchUpdate> take_update()noexcept;
@@ -159,6 +172,8 @@ public:
   HYLE_COMPUTE_BATCH_API Status close()noexcept;
   HYLE_COMPUTE_BATCH_API Status drain()noexcept;
 private:
+  Result<Completion> submit_pages(const ReadLease&query,
+      std::span<const PagedArenaPendingRead>,CopyBatchUpdate&&)noexcept;
   explicit PagedBatchReceiver(detail::PagedReceiverData*p)noexcept:data_(p){}
   detail::PagedReceiverData*data_=nullptr;
 };

@@ -1,0 +1,201 @@
+{
+  "created_at": "2026-10-23T18:12:15.489355+00:00",
+  "identity": {
+    "id": "Q01",
+    "repository": "Vishva007/Qwen3.5-2B-W4A16-AutoRound-GPTQ",
+    "revision": "8ec79a3b08636bc68fd40d69df80e97ff1263995",
+    "variant": "GPTQ-v1-int4-group32"
+  },
+  "scope": "Actual original GPTQ target23, BF16 NextN24 and own original tied BF16 full vocabulary in existing K1/12-resource controller",
+  "original_roles": 49,
+  "original_bytes": 1169172480,
+  "executions": [
+    {
+      "backend": "CPU",
+      "case": "QwenMtpStateConsumer.CpuQ01OriginalGptqTargetAndBFloatNextNFullVocabularyVerifierPublishesRepairedPrefix",
+      "tests": 1,
+      "failures": 0,
+      "skips": 0,
+      "graphs": 23,
+      "summary": {
+        "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q01/native-integration/checks1/summary.json",
+        "bytes": 3988,
+        "sha256": "0c9276e462b0d9360f431a4a7f07cb429a1539f9a7ced7d3f336fe2e2db5bb1e"
+      },
+      "properties": {
+        "original_manifest_sha256": "8e769399627fbb5a1ad5fb5394f99a22aacbbc52a0936ad1d4f4bcef5eb105f5",
+        "original_acquisition_sha256": "f59aba7a4aa6d819345590e3fc06ad9305ecfc1b6bd7e8cf5e9dbfebde414c97",
+        "target_projection_contract": "original GPTQ-v1 Q/Z/F16 SF/g_idx; F16 scale product then BF16 W, BF16 A/F32 dot/BF16 return; seven packed contractions required",
+        "vocabulary_binding": "one original tied BF16 bank, same readonly lease for Gather and draft/target fullV heads",
+        "artifact_repository": "Vishva007/Qwen3.5-2B-W4A16-AutoRound-GPTQ",
+        "artifact_revision": "8ec79a3b08636bc68fd40d69df80e97ff1263995",
+        "artifact_variant": "GPTQ-v1-int4-group32",
+        "original_role_count": "49",
+        "original_role_bytes": "1169172480",
+        "full_head_provider": "ggml-cpu",
+        "full_head_encoded_bytes": "1017118720",
+        "target_packed_contractions": "7",
+        "target_packed_recipe_nodes": "4",
+        "target_dense_weight_materializations": "0",
+        "actual_submissions": "23",
+        "target_submissions": "10",
+        "nextn_submissions": "10",
+        "target_verifier_submissions": "3",
+        "accepted_target_conditioned_repairs": "1",
+        "actual_accepted_kv_repair_submissions": "1",
+        "accepted_zero_drafts": "2",
+        "accepted_one_draft": "1",
+        "actual_pending_embedding_feedback_checks": "10",
+        "whole_state_publications": "6",
+        "cancelled_unpublished_drafts": "3",
+        "rejected_stale_publishes": "3",
+        "actual_target_reseed_checks": "7",
+        "original_native_reference_submissions": "0",
+        "natural_k1_trials": "1",
+        "controlled_matching_trials": "1",
+        "controlled_rejection_trials": "1",
+        "natural_accepted_drafts": "0",
+        "natural_proposal": "61",
+        "complete_target_draft_resources": "12",
+        "original_target_roles": "33",
+        "original_target_source_bytes": "30397440",
+        "first_full_target_projection_values": "21504",
+        "first_full_target_verifier_values": "496640",
+        "target_verifier_full_vocabulary": "248320",
+        "target_verifier_matmuls": "1",
+        "target_verifier_rows": "2",
+        "target_verifier_provider": "ggml-cpu",
+        "first_full_nextn_head_values": "248320",
+        "state_budget_bytes": "21815552",
+        "peak_state_backing_bytes": "21789700",
+        "scope": "original GPTQ-v1 target layer and complete BF16 NextN with explicitly supplied original vocabulary roles; upstream target input/history fixture,not a full trained trunk; original F16 scale product then BF16 W and BF16 A/F32 dot/BF16 result; all seven public recipes contract without whole-W materialization; draft/target use their explicitly supplied original vocabulary contracts; targettap follows globalnorm and shifts to next-token NextN input; one M2 verifier,natural K1 and separate actualTop1/Top2 controls; accept0 keeps aftercurrent,accept1 repairs recursive draft KV with actualtargettap before12member sameHead publication; no full-model quality,natural acceptance-rate or TPS claim"
+      }
+    },
+    {
+      "backend": "CUDA",
+      "case": "QwenMtpStateConsumer.CudaQ01OriginalGptqTargetAndBFloatNextNFullVocabularyVerifierPublishesRepairedPrefix",
+      "tests": 1,
+      "failures": 0,
+      "skips": 0,
+      "graphs": 23,
+      "summary": {
+        "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q01/native-integration/checks2/summary.json",
+        "bytes": 3989,
+        "sha256": "639707863679dee09c66e31ab1a8854c924238db7f7d29108612673657b63cd8"
+      },
+      "properties": {
+        "original_manifest_sha256": "8e769399627fbb5a1ad5fb5394f99a22aacbbc52a0936ad1d4f4bcef5eb105f5",
+        "original_acquisition_sha256": "f59aba7a4aa6d819345590e3fc06ad9305ecfc1b6bd7e8cf5e9dbfebde414c97",
+        "target_projection_contract": "original GPTQ-v1 Q/Z/F16 SF/g_idx; F16 scale product then BF16 W, BF16 A/F32 dot/BF16 return; seven packed contractions required",
+        "vocabulary_binding": "one original tied BF16 bank, same readonly lease for Gather and draft/target fullV heads",
+        "artifact_repository": "Vishva007/Qwen3.5-2B-W4A16-AutoRound-GPTQ",
+        "artifact_revision": "8ec79a3b08636bc68fd40d69df80e97ff1263995",
+        "artifact_variant": "GPTQ-v1-int4-group32",
+        "original_role_count": "49",
+        "original_role_bytes": "1169172480",
+        "full_head_provider": "cublasLt",
+        "full_head_encoded_bytes": "1017118720",
+        "target_packed_contractions": "7",
+        "target_packed_recipe_nodes": "4",
+        "target_dense_weight_materializations": "0",
+        "actual_submissions": "23",
+        "target_submissions": "10",
+        "nextn_submissions": "10",
+        "target_verifier_submissions": "3",
+        "accepted_target_conditioned_repairs": "1",
+        "actual_accepted_kv_repair_submissions": "1",
+        "accepted_zero_drafts": "2",
+        "accepted_one_draft": "1",
+        "actual_pending_embedding_feedback_checks": "10",
+        "whole_state_publications": "6",
+        "cancelled_unpublished_drafts": "3",
+        "rejected_stale_publishes": "3",
+        "actual_target_reseed_checks": "7",
+        "original_native_reference_submissions": "0",
+        "natural_k1_trials": "1",
+        "controlled_matching_trials": "1",
+        "controlled_rejection_trials": "1",
+        "natural_accepted_drafts": "0",
+        "natural_proposal": "61",
+        "complete_target_draft_resources": "12",
+        "original_target_roles": "33",
+        "original_target_source_bytes": "30397440",
+        "first_full_target_projection_values": "21504",
+        "first_full_target_verifier_values": "496640",
+        "target_verifier_full_vocabulary": "248320",
+        "target_verifier_matmuls": "1",
+        "target_verifier_rows": "2",
+        "target_verifier_provider": "cublasLt",
+        "first_full_nextn_head_values": "248320",
+        "state_budget_bytes": "21815552",
+        "peak_state_backing_bytes": "21789700",
+        "scope": "original GPTQ-v1 target layer and complete BF16 NextN with explicitly supplied original vocabulary roles; upstream target input/history fixture,not a full trained trunk; original F16 scale product then BF16 W and BF16 A/F32 dot/BF16 result; all seven public recipes contract without whole-W materialization; draft/target use their explicitly supplied original vocabulary contracts; targettap follows globalnorm and shifts to next-token NextN input; one M2 verifier,natural K1 and separate actualTop1/Top2 controls; accept0 keeps aftercurrent,accept1 repairs recursive draft KV with actualtargettap before12member sameHead publication; no full-model quality,natural acceptance-rate or TPS claim"
+      }
+    }
+  ],
+  "target_precision": "Original Q/Z/F16 scales/I32 g_idx; GPTQ-v1 zero nibble+1, F16 product then BF16 W, BF16 A/F32 dot/BF16 result.",
+  "packed_execution": "All seven four-node DecodeF16/CastBF16/View/MatMul recipes contract before Invocation; dense weight materializations0.",
+  "source_plan": {
+    "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q01/roles-plan.json",
+    "bytes": 32463,
+    "sha256": "b793c1071c2d62a05bacba58228c7a820dc9c1ad2cce0d436e9687d0b5524755"
+  },
+  "acquisition": {
+    "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q01/original-roles/acquisition.json",
+    "bytes": 205765,
+    "sha256": "f59aba7a4aa6d819345590e3fc06ad9305ecfc1b6bd7e8cf5e9dbfebde414c97"
+  },
+  "manifest": {
+    "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q01/original-roles/manifest.json",
+    "bytes": 25032,
+    "sha256": "8e769399627fbb5a1ad5fb5394f99a22aacbbc52a0936ad1d4f4bcef5eb105f5"
+  },
+  "actual_pins": {
+    "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q01/generated/qwen_q01_original_pins.json",
+    "bytes": 1051,
+    "sha256": "d6fc3cc71efb72184df5916124d870f2fbf2c7eff054019b09d730e643610d02"
+  },
+  "build": {
+    "host_translation_units": 1,
+    "SDK_builds": 0,
+    "NVCC_builds": 0,
+    "compiled": {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q01/native-integration/compile1/qwen-state/identity.json",
+      "bytes": 111845,
+      "sha256": "83b7c480e986260b78d16cb68c575d9dca054ed2e07541636d75d8e2b76ea3c7"
+    },
+    "link": {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q01/native-integration/tests-link1/link-plan.json",
+      "bytes": 34570,
+      "sha256": "817b046127ff96a1effc0da6f74e5a9dc6c463ffca763283ca728f38d908b45d"
+    },
+    "note": "Fresh current-header Qwen TU, current batched-BF16 CPU/CUDA/cuBLAS host objects; unused Pro consumer removed. No legacy comment-equivalence proof."
+  },
+  "transport": {
+    "endpoint": "https://hf-mirror.net",
+    "cross_origin_redirects": "rejected before send",
+    "requested_unique_body_bytes": 1169172480,
+    "reserved_request_bytes": 1169172480,
+    "HF_reserved_bytes": 0,
+    "receipt": {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q01/prefetch1/selected49-net/summary.json",
+      "bytes": 976,
+      "sha256": "0c93ad8e37286abc4e38c6eaa0c1db05eb57f82f85709d33a03d93cc02be4999"
+    },
+    "reservations_are_exact_wire_bytes": false
+  },
+  "limits": [
+    "Layer22 upstream inputs and finite initial histories remain fixtures, not full trained trunk or model task quality.",
+    "One natural accepted0 trial and separate match/rejection controls are not an acceptance-rate measurement.",
+    "No TPS, load speed, physical CPU/GPU memory peak, Linux/macOS or all-device inference claim."
+  ],
+  "archive": {
+    "path": "docs/evidence/correctness/mtp-qwen35-gptq-target-verifier-2026-10-24.zip",
+    "bytes": 744069,
+    "sha256": "846889c727fcea3221fc16ab4bef38fa58304679f589f312b76f458740be181a"
+  },
+  "archived_files": 203,
+  "whole_original_model": false,
+  "throughput_evidence": false,
+  "memory_evidence": false
+}

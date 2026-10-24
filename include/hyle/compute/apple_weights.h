@@ -11,9 +11,10 @@
 
 #include "hyle/compute/completion.h"
 #include "hyle/compute/tensor.h"
+#include "hyle/compute/weight_assembly.h"
 
 namespace hyle::compute::apple {
-namespace detail { struct WeightState; }
+namespace detail { struct WeightState; struct WeightAccess; }
 
 struct WeightSpec final {
   std::uint64_t id = 0;
@@ -30,6 +31,7 @@ struct WeightFragment final {
 struct WeightSlotOptions final {
   mem::AllocatorRef allocator = mem::system_allocator();
   ResourceBudget resource_budget{};
+  std::size_t max_fragments = 64;
 };
 
 // Owns the selected native backing and real Metal transfer. binding() is a
@@ -53,11 +55,13 @@ public:
   binding(std::uint64_t id) const noexcept;
   HYLE_COMPUTE_ROUTE_APPLE_API Result<CompletionPoll> poll() const noexcept;
   HYLE_COMPUTE_ROUTE_APPLE_API Status wait() const noexcept;
+  HYLE_COMPUTE_ROUTE_APPLE_API Result<WeightUploadReport> report() const noexcept;
   // Cold completion owner; abandoning it keeps attached lifetimes until the
   // native command terminates. Cancellation cannot preempt an accepted blit.
   HYLE_COMPUTE_ROUTE_APPLE_API Result<Completion> completion() const noexcept;
 private:
   friend class WeightSlots;
+  friend struct detail::WeightAccess;
   explicit WeightBatch(std::shared_ptr<detail::WeightState> state) noexcept
       : state_(std::move(state)) {}
   std::shared_ptr<detail::WeightState> state_;
@@ -84,6 +88,12 @@ public:
          WeightSlotOptions options = {}) noexcept;
   HYLE_COMPUTE_ROUTE_APPLE_API Result<WeightBatch>
   upload(std::size_t slot, std::span<const WeightFragment> selection) noexcept;
+  // Complete physical banks assembled from bounded, canonical host fragments.
+  // Plain dense banks retain their scalar type; encoded banks accept only dense
+  // U8 fragments at explicit byte offsets, without interpreting their encoding.
+  HYLE_COMPUTE_ROUTE_APPLE_API Result<WeightBatch>
+  upload_slices(std::size_t slot, std::span<const compute::WeightSlice> slices) noexcept;
+  HYLE_COMPUTE_ROUTE_APPLE_API Result<WeightUploadReport> report(std::size_t slot) const noexcept;
   HYLE_COMPUTE_ROUTE_APPLE_API Status close() noexcept;
 private:
   std::shared_ptr<detail::WeightState> states_[2];

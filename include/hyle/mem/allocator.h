@@ -18,16 +18,11 @@ namespace hyle::mem {
 inline constexpr std::size_t kDefaultAlignment = alignof(std::max_align_t);
 
 // ---- runtime-erased allocator callbacks ------------------------------------
-// THREE function pointers (alloc/free/realloc), each carrying alignment. clay
-// used ONE 5-arg realloc_func for all three "to minimize symbols" -- but that
-// is a PERFORMANCE bug, not a virtue: on the Win64 ABI only 4 integer args land
-// in registers, so the 5th (alignment) SPILLS TO THE STACK on every call, and
-// one-function-does-three forces a dispatch branch (ptr==null? new==0?) on the
-// hot path. Splitting remains trivially copyable within one matching C++ build
-// (the same basic erased shape used by jemalloc/pmr/cudaMalloc) AND
-// register-friendly: alloc is 3 args (all in registers), free is 4 (all in
-// registers), no dispatch branch. This is a source-level C++ contract, not a
-// stable foreign ABI. Measured: removes the spill + branch tax.
+// Three callbacks (alloc/free/realloc), each carrying alignment. Allocation and
+// free have direct hot-path calls without a combined-operation dispatch branch;
+// realloc carries the additional old/new sizes on its cold path. The erased
+// callbacks remain trivially copyable within one matching C++ build. This is a
+// source-level C++ contract, not a stable foreign ABI.
 // Returns nullptr on OOM (allocation is a hot path; failure is a value, not a
 // Status).
 //   AllocFn  (state, size, alignment)                 -> ptr (nullptr on
@@ -110,12 +105,8 @@ public:
   void *state() const noexcept { return state_; }
 
   // ---- typed convenience layer --------------------------------------------
-  // Header-inline (hot path, no DLL hop). Names chosen for C++ clarity, NOT
-  // clay parity: clay called these callocate/release, but `release` collides
-  // with unique_ptr::release (which does the OPPOSITE -- gives up ownership
-  // WITHOUT freeing), so it's a real confusion source. HYLE uses
-  // allocate_zeroed / deallocate_n instead (paired with allocate_n; behavior
-  // unchanged).
+  // Header-inline typed helpers (hot path, no DLL hop). allocate_zeroed names
+  // zero-initialized storage explicitly; deallocate_n pairs with allocate_n.
 
   // Raw storage for `numel` T's, aligned for T. No construction.
   template <class T>

@@ -1,0 +1,546 @@
+{
+  "date": "2026-10-21",
+  "status": "interim_D4_observation_not_complete",
+  "scope": "Windows RTX4070 real24-layer Qwen3.5-2B text consumer; original source weights and teacher-forced inputs. No product changes.",
+  "delivery4_complete": false,
+  "result": {
+    "smoke": {
+      "processes": 1,
+      "vectors": 64,
+      "all_byte_equal": true
+    },
+    "unmonitored_timing_processes": {
+      "short": 9,
+      "long": 9,
+      "cached16": 6,
+      "total": 24
+    },
+    "independent_memory_processes": 2,
+    "all_process_exits_zero": true,
+    "source_or_product_math_changes": 0,
+    "current_image_fresh_CXX": 3,
+    "continuation_adapter_CXX": 2,
+    "total_CXX": 5,
+    "links": 3,
+    "NVCC": 0,
+    "SDK_builds": 0
+  },
+  "measurements": {
+    "short": {
+      "passed": true,
+      "groups": {
+        "current": {
+          "prefill_tokens_per_second": {
+            "samples": [
+              1909.307875894988,
+              2070.416816960596,
+              2072.8342121286714
+            ],
+            "median": 2070.416816960596
+          },
+          "full_decode_tokens_per_second": {
+            "samples": [
+              103.14035772403167,
+              103.80950754443968,
+              103.25461889552864
+            ],
+            "median": 103.25461889552864
+          },
+          "stable_decode_tokens_per_second": {
+            "samples": [
+              106.60244366913672,
+              107.6717407333393,
+              106.89242346502479
+            ],
+            "median": 106.89242346502479
+          }
+        },
+        "D1": {
+          "prefill_tokens_per_second": {
+            "samples": [
+              1959.1486886713756,
+              1955.939408664506,
+              2016.885110030537
+            ],
+            "median": 1959.1486886713756
+          },
+          "full_decode_tokens_per_second": {
+            "samples": [
+              103.90944191579514,
+              103.3052687353269,
+              104.35040191735447
+            ],
+            "median": 103.90944191579514
+          },
+          "stable_decode_tokens_per_second": {
+            "samples": [
+              107.31557389364083,
+              107.06573922040724,
+              107.97195838674345
+            ],
+            "median": 107.31557389364083
+          }
+        },
+        "llama": {
+          "prefill_tokens_per_second": {
+            "samples": [
+              1284.0563339589764,
+              1300.0216331724894,
+              1283.274917589689
+            ],
+            "median": 1284.0563339589764
+          },
+          "full_decode_tokens_per_second": {
+            "samples": [
+              103.79497880071264,
+              104.10866526646109,
+              103.72728957915497
+            ],
+            "median": 103.79497880071264
+          },
+          "stable_decode_tokens_per_second": {
+            "samples": [
+              105.68916309824823,
+              106.53076182278394,
+              105.30323963310667
+            ],
+            "median": 105.68916309824823
+          }
+        }
+      },
+      "Hyle_predictions_match_D1": true,
+      "processes": 9,
+      "fresh_processes_per_arm": 3,
+      "current_over_D1": {
+        "prefill_tokens_per_second": 1.0567941213102505,
+        "full_decode_tokens_per_second": 0.9936981374532148,
+        "stable_decode_tokens_per_second": 0.996056952283222
+      },
+      "current_over_llama": {
+        "prefill_tokens_per_second": 1.6124034142467323,
+        "full_decode_tokens_per_second": 0.9947939687311705,
+        "stable_decode_tokens_per_second": 1.0113848982384128
+      },
+      "statistical_significance": false,
+      "independent_quality_acceptance": false
+    },
+    "long": {
+      "passed": true,
+      "groups": {
+        "current": {
+          "prefill_tokens_per_second": {
+            "samples": [
+              1991.7343026440271,
+              1925.79664791021,
+              1914.3249835861589
+            ],
+            "median": 1925.79664791021
+          },
+          "full_decode_tokens_per_second": {
+            "samples": [
+              106.81786469069878,
+              106.56869283680489,
+              106.00407055630937
+            ],
+            "median": 106.56869283680489
+          },
+          "stable_decode_tokens_per_second": {
+            "samples": [
+              107.86461404169066,
+              107.55267792390622,
+              106.92470927525018
+            ],
+            "median": 107.55267792390622
+          }
+        },
+        "D1": {
+          "prefill_tokens_per_second": {
+            "samples": [
+              2067.3337048073586,
+              2024.7942381948958,
+              2083.2790812739254
+            ],
+            "median": 2067.3337048073586
+          },
+          "full_decode_tokens_per_second": {
+            "samples": [
+              106.6584967937784,
+              107.02638318327308,
+              106.32756156072786
+            ],
+            "median": 106.6584967937784
+          },
+          "stable_decode_tokens_per_second": {
+            "samples": [
+              107.62598600079447,
+              107.891938644262,
+              107.17295287702693
+            ],
+            "median": 107.62598600079447
+          }
+        },
+        "llama": {
+          "prefill_tokens_per_second": {
+            "samples": [
+              1360.986885615432,
+              1282.7437889645953,
+              1369.5215127221059
+            ],
+            "median": 1360.986885615432
+          },
+          "full_decode_tokens_per_second": {
+            "samples": [
+              106.45180055257704,
+              105.97673752199017,
+              105.88124459651326
+            ],
+            "median": 105.97673752199017
+          },
+          "stable_decode_tokens_per_second": {
+            "samples": [
+              107.05515596653332,
+              106.47583381357455,
+              106.41390930052292
+            ],
+            "median": 106.47583381357455
+          }
+        }
+      },
+      "Hyle_predictions_match_D1": true,
+      "processes": 9,
+      "fresh_processes_per_arm": 3,
+      "current_over_D1": {
+        "prefill_tokens_per_second": 0.9315364246381609,
+        "full_decode_tokens_per_second": 0.9991580234142325,
+        "stable_decode_tokens_per_second": 0.9993188626686522
+      },
+      "current_over_llama": {
+        "prefill_tokens_per_second": 1.4150001504528633,
+        "full_decode_tokens_per_second": 1.0055857099270666,
+        "stable_decode_tokens_per_second": 1.0101135071852743
+      },
+      "statistical_significance": false,
+      "independent_quality_acceptance": false
+    },
+    "cached16": {
+      "all_processes_exit_zero": true,
+      "groups": {
+        "current": {
+          "prefill_tokens_per_second": {
+            "samples": [
+              1974.866735066999,
+              2038.1678781557766,
+              2028.8573253637283
+            ],
+            "median": 2028.8573253637283
+          },
+          "cached_continuation_tokens_per_second": {
+            "samples": [
+              811.4577839087922,
+              754.4963265460101,
+              893.2459441051351
+            ],
+            "median": 811.4577839087922
+          },
+          "complete_decode_tokens_per_second": {
+            "samples": [
+              96.55405031367192,
+              96.1897323232129,
+              96.78062477700131
+            ],
+            "median": 96.55405031367192
+          }
+        },
+        "llama": {
+          "prefill_tokens_per_second": {
+            "samples": [
+              1232.3867383633326,
+              1303.3654321012796,
+              1334.8419828660517
+            ],
+            "median": 1303.3654321012796
+          },
+          "cached_continuation_tokens_per_second": {
+            "samples": [
+              914.9183149491934,
+              1018.7838268067494,
+              999.8625189036507
+            ],
+            "median": 999.8625189036507
+          },
+          "complete_decode_tokens_per_second": {
+            "samples": [
+              94.3323845591722,
+              94.22749784533121,
+              98.0116058809577
+            ],
+            "median": 94.3323845591722
+          }
+        }
+      },
+      "same_arm_grouped_and_sequential_predictions_equal": true,
+      "all_prefix_and_input_boundaries_verified": true,
+      "independent_model_quality_acceptance": false,
+      "statistical_significance": false
+    }
+  },
+  "interpretation": [
+    "Short full decode median103.25 vs103.79token/s; long106.57 vs105.98. These small opposing differences do not establish a stable decode winner.",
+    "Short prefill2070 vs1284token/s; long1926 vs1361. Retain the finite window and different preparation/math boundaries.",
+    "New cachedT16 median811.46 vs999.86token/s (-18.84% throughput, slower). All3 current samples are below all3 peer samples; this is a genuine finite-window disadvantage, not a D4 completion claim.",
+    "The16-token continuation runs once in the original context after128-token prefill, followed by15 original singleton inputs. It is not a144-token fresh prefill or16 singleton decodes.",
+    "Do not pool short/long/cached or monitored/unmonitored calls. No statistical significance, quality equivalence, or all-workload performance claim is established."
+  ],
+  "cached16_gap": {
+    "current_token_per_second": [
+      811.4577839087922,
+      754.4963265460101,
+      893.2459441051351
+    ],
+    "peer_token_per_second": [
+      914.9183149491934,
+      1018.7838268067494,
+      999.8625189036507
+    ],
+    "current_median": 811.4577839087922,
+    "peer_median": 999.8625189036507,
+    "current_over_peer": 0.8115693593540797,
+    "throughput_percent": -18.84306406459203,
+    "no_sample_overlap": true,
+    "all_current_slower": true
+  },
+  "measurement_contract": {
+    "metric": "complete host-token step_seconds",
+    "Hyle": "Input writes + batch/layout/replay preparation + submit + Completion.wait +4B selected-token read. Separate constructor/shape-family preparation and startup buckets are retained.",
+    "peer": "Original public backend greedy plus token fastpath; engine sampled_logits readback remains included. Actual phase metadata reports248320sampled logits; consumer never calls CPUargmax or requests raw logits.",
+    "precision": "Same original source weight provenance, but Hyle BF16 intermediate boundaries/F32 accumulation differ from peer F32 intermediates. Matching finite predictions are not numerical-tree/model-quality equivalence.",
+    "OS_page_cache": "uncontrolled",
+    "warmup": "no extra invisible warmup; all complete-call samples retained",
+    "capture": "Original prefer-capture consumer and per-slot first preparation retained; no new blanket capture claim."
+  },
+  "build_and_input_identities": {
+    "current": {
+      "status": "current_retained_Qwen_consumer_compiled_and_linked_not_run",
+      "CXX": 3,
+      "links": 1,
+      "NVCC": 0,
+      "SDK_builds": 0,
+      "GPU_runs": 0,
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\checks\\link1\\qwen.exe",
+        "bytes": 139475456,
+        "sha256": "2382fd84efbf92a93c4750944a191ff5e465d79aca9c558e7869efffacfd97e0"
+      },
+      "link_plan": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\checks\\link1\\link-plan.json",
+        "bytes": 91634,
+        "sha256": "212a113fa92b1ff15a89403deab478d1be87524bbd13b3d277a546f8778be9d9"
+      },
+      "runtime_environment": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\checks\\link1\\runtime-environment.json",
+        "bytes": 6572,
+        "sha256": "e6e059e8d0184bd4a15652681958b034b93e3ca207bc2eb0c2bf18fea59a628c"
+      },
+      "PE_runtime_audit": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\checks\\link1\\PE-imports-and-runtime.json",
+        "bytes": 2335,
+        "sha256": "7a06c0585ba0a46a0d13a6e51cff455b18e945b19d4f165a59b2a3925df2ecf3"
+      },
+      "base": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\quark-block128-scale-2026-10-21\\cuda\\checks\\link1\\link-plan.json",
+        "bytes": 83579,
+        "sha256": "ba184e4e3ed616b89ccdde787e11c39eda9857fa4057bad197a9b0697640aa15"
+      },
+      "source_byte_identical_to_D1": true,
+      "math_policy": "Retained source declares the D1 BF16 arithmetic graph and F32 Top1. Current provider route, numerics and throughput remain unexecuted.",
+      "retained_D1_baseline": "decode-prepare-cost/candidate/qwen.exe"
+    },
+    "adapter": {
+      "status": "adapter_compiled_and_linked_not_executed",
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\peer-continuation\\checks\\attempt2\\peer.exe",
+        "bytes": 35817984,
+        "sha256": "ce37992ff3e2ec15979e8a0af4ab260b32fa9a92b2bd9903086a0b09e8da0eae"
+      },
+      "source": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\peer-continuation\\peer_benchmark.cpp",
+        "bytes": 16586,
+        "sha256": "3dccce77e6f1b142fad166f2c06f6fed230a3aa8c26a12321a2a2117600ea9c2"
+      },
+      "object": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\peer-continuation\\checks\\attempt2\\peer.obj",
+        "bytes": 4185331,
+        "sha256": "0e79dacafb6e10d1d888dbfc3010b6424056b1343ae497622f1261aa7ea4d718"
+      },
+      "compile_identity": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\peer-continuation\\checks\\attempt2\\identity.json",
+        "bytes": 63128,
+        "sha256": "0af8c4482ccdc255610fff9fd9cc0f3c370b003a1638a0e5283273ffbd6da17d"
+      },
+      "link_plan": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\peer-continuation\\checks\\attempt2\\link-plan.json",
+        "bytes": 5166,
+        "sha256": "ec7f7869b769dda2051f8fd84e998ad9362224e7912c833b464a58865e19823f"
+      },
+      "runtime_environment": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\peer-continuation\\checks\\attempt2\\runtime-environment.json",
+        "bytes": 6107,
+        "sha256": "e04e3dcf38402c1d703c01b557446476da87a58c327832b444058797c9157c2b"
+      },
+      "original_source": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\peer-continuation\\original-peer_benchmark.cpp",
+        "bytes": 15282,
+        "sha256": "562e5061008f182efc8ae6465182d31abfaac41427437ce4fd1ca035a92cb6cb"
+      },
+      "source_diff": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\peer-continuation\\peer-continuation.diff",
+        "bytes": 5652,
+        "sha256": "ab4918f767a4f38e0258bf8ac443ba4e3c54b2d531090af57c9b4cd17a62ce8b"
+      },
+      "CXX": 1,
+      "links": 1,
+      "NVCC": 0,
+      "SDK_builds": 0,
+      "GPU_runs": 0,
+      "scope": "Only optional consumer continuation phase; original llama/ggml binaries and math remain unchanged.",
+      "latest_attempt": "attempt2",
+      "metadata_fix": {
+        "change": "Only stable_window_candidate tests decode_index>=7 instead of step.index>=7; count continuation as its own phase without shifting the decode7 cutoff.",
+        "math_timing_or_tokens_changed": false,
+        "previous_attempt": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\peer-continuation\\revisions\\attempt1\\ready-for-root.json",
+          "bytes": 2689,
+          "sha256": "ec8ef8491796911f0d318c3a4c5094ad2c512e6a30e90f3238d10b7ae9d45c8f"
+        },
+        "source_diff": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\peer-continuation\\stable-window-marker-fix.diff",
+          "bytes": 943,
+          "sha256": "0930cfc4d74f4d9873df2ac2885db20ce9b36b5c2c8983e9b73aeaec6aa7347c"
+        },
+        "old_source_snapshot": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\peer-continuation\\revisions\\attempt1\\peer_benchmark.cpp",
+          "bytes": 16584,
+          "sha256": "e54a63929d49b7bcf6592d68adfb7cb70d5694d328b6aaf792ce1fca0c3c1986"
+        },
+        "prior_attempt_status": "Compiled/linked successfully and not GPU-run by this agent; review detected metadata off-by-one. Preserved, not relabeled as runtime failure."
+      }
+    },
+    "actual_windows_build_report": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\build-report.json",
+      "bytes": 7566,
+      "sha256": "2adb1674a73f6763c6f4b5e9c3bb54478f085ca9f877f8a19a377555e2b9b081"
+    },
+    "actual_cached_inputs": {
+      "order": [
+        "current",
+        "llama",
+        "llama",
+        "current",
+        "current",
+        "llama"
+      ],
+      "fixed_inputs": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\inputs\\cached16-fixed-inputs.json",
+        "bytes": 3235,
+        "sha256": "297d500ea3628d44b5adbb8e08b5ac4ef6136f26d6e4b5692ac896d26326ca13"
+      },
+      "current": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\checks\\link1\\qwen.exe",
+        "bytes": 139475456,
+        "sha256": "2382fd84efbf92a93c4750944a191ff5e465d79aca9c558e7869efffacfd97e0"
+      },
+      "peer": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\peer-continuation\\checks\\attempt2\\peer.exe",
+        "bytes": 35817984,
+        "sha256": "ce37992ff3e2ec15979e8a0af4ab260b32fa9a92b2bd9903086a0b09e8da0eae"
+      },
+      "prompt": 128,
+      "continuation": 16,
+      "decode": 15,
+      "same_native_context": true,
+      "context_capacity": 256,
+      "profiler": false,
+      "memory_monitor": false,
+      "page_cache": "uncontrolled; not cold disk",
+      "metric": "complete host token step; cached continuation excludes cold family/model preparation"
+    }
+  },
+  "corrections": [
+    {
+      "kind": "adapter_metadata_only",
+      "finding": "Continuation shifted phase index, so index>=7 included decode6.",
+      "fix": "decode_index>=7, original flags; attempt2 fresh1CXX+1link exit0; math/input/step timing unchanged. Attempt1 retained, not a GPU failure."
+    },
+    {
+      "kind": "driver_before_launch",
+      "finding": "Root reported one incorrect peer-continuation/inputs path before Popen.",
+      "fix": "Use stage inputs path. No model process launched; not a product or numerical failure. Empty original directory remains. Separate raw failure record was not provided."
+    }
+  ],
+  "memory": {
+    "throughput_evidence": false,
+    "processes_per_arm": 1,
+    "current": {
+      "sampled_max_working_set_bytes": 1127501824,
+      "observed_os_peak_working_set_bytes": 1127510016,
+      "sampled_max_private_commit_bytes": 5873680384,
+      "observed_os_peak_commit_bytes": 5873680384,
+      "sampled_peak_gpu_dedicated_bytes": 4084281344,
+      "sampled_peak_gpu_shared_bytes": 96468992,
+      "sampled_peak_gpu_total_bytes": 4166070272
+    },
+    "reference": {
+      "sampled_max_working_set_bytes": 4368740352,
+      "observed_os_peak_working_set_bytes": 4368740352,
+      "sampled_max_private_commit_bytes": 5242560512,
+      "observed_os_peak_commit_bytes": 5242560512,
+      "sampled_peak_gpu_dedicated_bytes": 4237389824,
+      "sampled_peak_gpu_shared_bytes": 85983232,
+      "sampled_peak_gpu_total_bytes": 4323373056
+    },
+    "actual_sample_count": {
+      "current": 43,
+      "reference": 49
+    },
+    "caveats": [
+      "Independent short128+31 processes, not cachedT16 or the throughput processes.",
+      "Working set, private commit and WDDM dedicated/shared samples are different metrics; unavailable GPU samples stay null. These are finite sampled peaks, not proven allocation bounds.",
+      "Sample cadence about47.5ms; reference post-load preparation has0samples. Do not fill missing intervals or infer zero memory."
+    ]
+  },
+  "independent_review": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\independent-measurement-review.json",
+    "bytes": 101284,
+    "sha256": "569ca6d58a059921dab21140a4b57fe980660eceafa364417d24c5eb12c68e0e"
+  },
+  "related_evidence": [
+    "../performance/qwen-first-prepare-2026-10-20.json",
+    "../performance/qwen-decode-rebenchmark-2026-10-20.json",
+    "../performance/qwen-pinned-weight-load-2026-10-20.json",
+    "../performance/qwen-bf16-top1-2026-10-20.json",
+    "../performance/qwen-memory-current-2026-10-20.json",
+    "../correctness/linux-current-package-install-2026-10-21.json",
+    "../correctness/apple-current-sdk-reference-2026-10-21.json"
+  ],
+  "current_sources": {
+    "count": 183,
+    "inventory_member": "current-source-inventory.json"
+  },
+  "limitations": [
+    "D4 remains open because cached continuation is slower in this bounded comparison.",
+    "Full-checkpoint quality, all platforms/models/lengths, cold-disk IO and steady slot initialization equivalence are not signed.",
+    "Root cached16-trace diagnostics are a separate experiment and deliberately excluded from this frozen intermediate package.",
+    "This archive stores binary/runtime/input identities and small reproducible sources/commands, not executables, objects, SDKs, weights, or duplicate64vectors."
+  ],
+  "cleanup": "No deletion performed; objects, SDK/cache, current binaries and raw source results remain separately managed by root.",
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\qwen-current-delivery-2026-10-21.zip",
+    "bytes": 1831006,
+    "sha256": "8f132dfb2c898750c506b66280ea858da94c252ec5d207b5116a4c00d79f27c2",
+    "members": 456,
+    "source_count": 183,
+    "manifest": "manifest.json",
+    "CRC_checked": true,
+    "all_payload_SHA256_checked": true
+  }
+}

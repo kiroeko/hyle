@@ -12,6 +12,7 @@ struct PagedRead final {
   float scale=1.F;
   bool causal=true;
   std::int32_t window_left=-1;
+  float key_scale=1.F,value_scale=1.F;
   static constexpr OperationId operation_id{0x48594c4543505546ULL,0x5041474544524401ULL};
   static constexpr std::string_view operation_name="ggml-cpu-paged-read";
   constexpr OperationTraits operation_traits()const noexcept {
@@ -24,6 +25,12 @@ struct PagedRead final {
        inputs[1].rank()!=4 || inputs[2].rank()!=4 ||
        (causal && inputs[0].dimensions()[1]>logical_rows))
       return Status::InvalidArgument("CPU paged read domain");
+    const bool e4=inputs[1].data_type()==DataType::kFloat8E4M3FN;
+    if(e4 != (inputs[2].data_type()==DataType::kFloat8E4M3FN) ||
+       !std::isfinite(key_scale) || key_scale<=0 ||
+       !std::isfinite(value_scale) || value_scale<=0 ||
+       (!e4 && (key_scale!=1.F || value_scale!=1.F)))
+      return Status::InvalidArgument("CPU paged cache interpretation differs");
     HYLE_RETURN_IF_ERROR(validate_batch_attention_options(causal,window_left));
     const auto q=inputs[0].dimensions(),k=inputs[1].dimensions(),v=inputs[2].dimensions();
     if(q[0]!=1 || k[0]!=1 || v[0]!=1 || q[1]<=0 || k[1]<=0 ||
@@ -38,6 +45,7 @@ struct PagedRead final {
 };
 static_assert(detail::InlineCustomOperationDescriptor<PagedRead>);
 const detail::BatchProviderVTable *native_batch_table() noexcept;
+const detail::BatchProviderVTable *native_mla_batch_table() noexcept;
 std::size_t native_invocation_bytes(void *, void *) noexcept;
 bool native_invocation_reads_kv(void *) noexcept;
 bool native_invocation_reads_pages(void *,std::span<const std::int32_t>,

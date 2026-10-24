@@ -1,7 +1,7 @@
 find_package(Threads REQUIRED)
 
 hyle_add_header_self_contained_test(graph)
-hyle_add_test(graph SOURCES graph_test.cc lease_submission_test.cc native_variants_test.cc effect_preflight_test.cc joint_pipeline_test.cc)
+hyle_add_test(graph SOURCES graph_test.cc lease_submission_test.cc native_analysis_test.cc effect_preflight_test.cc)
 if(_HYLE_COMPUTE_HAVE_CUDA AND TARGET hyle_compute_provider_cublas)
   hyle_add_test(graph NAME native_retirement
     SOURCES aggregate_native_retirement_test.cc
@@ -15,7 +15,13 @@ if(_HYLE_COMPUTE_REQUEST_CPU AND HYLE_GGML_CPU_ENABLED
    AND TARGET hyle_compute_provider_ggml)
   hyle_add_test(graph NAME executable SOURCES
     executable_test.cc
+    alias_liveness_test.cc
+    constant_artifact_cache_test.cc
+    configuration_input_test.cc
+    execution_source_test.cc
     custom_kernel_test.cc
+    input_source_frontier_test.cc
+    invocation_unbind_test.cc
     region_provider_test.cc
     DEPS hyle_compute_backend_cpu hyle_compute_provider_native
          hyle_compute_provider_ggml Threads::Threads)

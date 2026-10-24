@@ -1,0 +1,57 @@
+{
+  "created_at": "2026-10-23T17:53:37.336643+00:00",
+  "scope": "Shared BFloatLinearF32 exact aligned batched F32 activation and original BF16 weight capability required by the MLX source",
+  "public_contract": "Dense rank2 A[M,K],W[N,K]->F32Y[M,N]; rank3 A[B,M,K],W[B,N,K]->F32Y[B,M,N]. No implicit batch broadcasting or F32-A narrowing.",
+  "native_lowering": "Metadata-only A[K,1,M,B],W[K,N,1,B]->Y[N,1,M,B], single native mul_mat; CPU mixed SIMD dot uses actual batch weight pitch.",
+  "original_weights_retained": true,
+  "full_float32_weight_shadow": false,
+  "actual_windows": {
+    "tests": 6,
+    "failures": 0,
+    "skips": 0,
+    "summary": {
+      "path": ".scratch/glm-mlx-flash-original-20261024/batched-bfloat-linear-validation/checks1/summary.json",
+      "bytes": 1539,
+      "sha256": "f686b3769fee2b93fa64e2e083ecfc2f9008a458f87f33940acf636dae35f452"
+    },
+    "xml": {
+      "path": ".scratch/glm-mlx-flash-original-20261024/batched-bfloat-linear-validation/checks1/results.xml",
+      "bytes": 2205,
+      "sha256": "d9d89f2e7430a37ee4cc2b21f7e02e6f1a242f0b124038e7734fac8be7145eba"
+    },
+    "link": {
+      "path": ".scratch/glm-mlx-flash-original-20261024/batched-bfloat-linear-validation/tests-link1/link-plan.json",
+      "bytes": 34747,
+      "sha256": "e786e92d6b1c2d8b538cc0f1e1f11c7549a0af3b15827668c798b7ce814c7200"
+    },
+    "source_shape": "Distinct actual test weight banks, F32 cancellation rows, M1/M2/M17; existing rank2 and BF16 paths also checked.",
+    "host_translation_units": 5,
+    "SDK_builds": 0,
+    "NVCC_builds": 0
+  },
+  "cold_only": "Actual Q32 K/V-sized batch64 16MiB descriptors and unsupported CUDA N513/batch selector boundary are preparation checks, not original Q32 tensor execution.",
+  "limits": [
+    "CUDA B<=65535,M<=65535,evenK and B>1 requires N<=512 to retain native F32-A matvec without whole-W expansion.",
+    "Metal paired-row and I16 batch-broadcast bounds retained; Metal/Vulkan code changed but not compiled or executed in this Windows batch.",
+    "New rank3 BF16-A mathematical inference is accepted; ggml CUDA/Metal/Vulkan explicitly decline that domain. Other providers retain their own cold admission; existing BF16-A rank2 behavior retained.",
+    "No actual Q32 original weights/quality or end-to-end performance result."
+  ],
+  "source_proposal": {
+    "path": ".scratch/glm-mlx-flash-original-20261024/batched-bfloat-linear-proposal/proposal.json",
+    "bytes": 6295,
+    "sha256": "90838b52d0b7b729ad7e45487258fc1b961ee2e981ac73e4171ff3991e0195c5"
+  },
+  "source_patch": {
+    "path": ".scratch/glm-mlx-flash-original-20261024/batched-bfloat-linear-proposal/source.patch",
+    "bytes": 18343,
+    "sha256": "e0ec6c82a2b583da841df65a609c2abab4fdfdaaccb0042be38957da8976ffe2"
+  },
+  "archive": {
+    "path": "docs/evidence/correctness/mtp-batched-f32-bfloat-linear-2026-10-24.zip",
+    "bytes": 320385,
+    "sha256": "a7ddc5b35958b91ff5e4b1a9cb135c4f42d1a4cce7406a5d50ef638049805a08"
+  },
+  "archived_files": 72,
+  "throughput_evidence": false,
+  "memory_evidence": false
+}

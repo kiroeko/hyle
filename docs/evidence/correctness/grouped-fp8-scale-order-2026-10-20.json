@@ -1,0 +1,1373 @@
+{
+  "date": "2026-10-20",
+  "scope": "GroupedFloat8Linear canonical block128 SM89 F32/BF16 native variants; admitted finite-zero weight case.",
+  "defect": "The native grouped kernel formed As*Bs before scaling its code dot. Two individually finite F32 scales could overflow, turning an exactly zero weight/dot result into NaN.",
+  "witness": {
+    "E": 1,
+    "T": 1,
+    "S": 1,
+    "N": 128,
+    "K": 128,
+    "activation": "896 at index0, positive zero elsewhere; both F32 and BF16 inputs",
+    "weight_codes": "All positive zero E4M3FN",
+    "weight_scale": "F32 2^127 finite",
+    "exact_activation_scale": 2,
+    "independent_arithmetic": "dot=0; (dot*As)*Bs=0, but As*Bs=Inf and dot*Inf=NaN",
+    "before": "Actual SM89: successful Completion but 128 NaNs for each output dtype; same staged gtest exits1 as expected.",
+    "after": "Actual SM89 with new AOT: both output dtypes contain 128 zeros; original staged test object is reused."
+  },
+  "fix": "Keep pinned original_kernels.py unchanged. Apply existing runtime_top_k adaptation, then an independently hashed scale_order replacement: FP8 code dot, explicit mul.rn.f32 by As, explicit mul.rn.f32 by Bs, then original F32 outer accumulation/output conversion. No scale-domain narrowing, widened tolerance, new public precision policy, extra copy or executor.",
+  "actual_before": {
+    "executed": true,
+    "defect_confirmed": true,
+    "cases": 1,
+    "properties": {
+      "f32_nan_count": "128",
+      "f32_infinite_count": "0",
+      "f32_finite_nonzero_count": "0",
+      "f32_first_f32_bits": "2147483647",
+      "bf16_nan_count": "128",
+      "bf16_infinite_count": "0",
+      "bf16_finite_nonzero_count": "0",
+      "bf16_first_f32_bits": "2147418112"
+    },
+    "exit": 1,
+    "failures": [
+      "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\test.cc:136\nExpected equality of these values:\n  nan_count\n    Which is: 128\n  0\nFinite input and finite scaled zero weights produced NaN\nGoogle Test trace:\nC:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\test.cc(79): f32\n",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\test.cc:136\nExpected equality of these values:\n  nan_count\n    Which is: 128\n  0\nFinite input and finite scaled zero weights produced NaN\nGoogle Test trace:\nC:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\test.cc(79): bf16\n"
+    ],
+    "expected_red": true,
+    "no_product_edit": true,
+    "native_or_SDK_compilations": 0
+  },
+  "actual_after": {
+    "passed": true,
+    "cases": 5,
+    "skipped": 0,
+    "failures": [],
+    "properties": {
+      "f32_nan_count": "0",
+      "f32_infinite_count": "0",
+      "f32_finite_nonzero_count": "0",
+      "f32_first_f32_bits": "0",
+      "bf16_nan_count": "0",
+      "bf16_infinite_count": "0",
+      "bf16_finite_nonzero_count": "0",
+      "bf16_first_f32_bits": "0"
+    },
+    "actual": [
+      "CudaGroupedFp8.RuntimeSlotsAndExactRowsDirect",
+      "CudaGroupedFp8.RuntimeSlotsAndExactRowsGraph",
+      "CudaGroupedFp8.CheckedIdsFailCompletionAndFreshInvocationRecovers",
+      "CudaGroupedFp8.ZeroCodesAndFiniteScalesKeepZeroProducts",
+      "CudaGroupedFp8ScaleOrder.ZeroCodesAndFiniteScalesKeepZeroProducts"
+    ],
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\checks\\tests.exe",
+      "bytes": 119503360,
+      "sha256": "d16a97aaadc1de0f76010d39365fc44c8f5a31cc1594104f785ed5989b57d0b6"
+    },
+    "limits": "Actual SM89 Direct, common Graph, checked IDs and finite-zero scale witness. No new Qwen/model quality, throughput or cross-platform run."
+  },
+  "build": {
+    "passed": true,
+    "host_TUs": 2,
+    "native_TUs": 0,
+    "offline_Triton_jobs": 2,
+    "SDK_rebuild": false,
+    "fresh_state_header_owner_reused": true
+  },
+  "canonical_regeneration": {
+    "result": {
+      "tag": "canonical-gemm-rebuild",
+      "command": [
+        "wsl.exe",
+        "-d",
+        "Ubuntu-24.04",
+        "--cd",
+        "/mnt/c/public/project-hyle/hyle",
+        "--",
+        "env",
+        "TRITON_CACHE_DIR=/mnt/c/public/project-hyle/hyle/.scratch/architecture-refactor-2026-10-18/grouped-fp8-scale-order/aot/cache",
+        "PYTHONDONTWRITEBYTECODE=1",
+        "python3",
+        "third_party/sglang_activation/fp8/grouped/rebuild.py",
+        "--stage",
+        "gemm",
+        "--output",
+        ".scratch/architecture-refactor-2026-10-18/grouped-fp8-scale-order/aot",
+        "--triton-path",
+        ".scratch/tools/d5-triton/unpacked"
+      ],
+      "cwd": "C:\\public\\project-hyle\\hyle",
+      "started": 1792464961.946625,
+      "exit": 0,
+      "pid": 42868,
+      "finished": 1792464968.7651427,
+      "terminal": true
+    },
+    "description": "Actual product rebuild.py --stage gemm under WSL Triton3.8 completed successfully using the existing cache, with both new cubin SHA256 assertions inside the canonical script. No SDK rebuild.",
+    "records": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\native-inspection\\canonical-gemm-rebuild.command.json",
+        "bytes": 712,
+        "sha256": "83e1da768b93f76ac7bf6d088987224db6d497b5f112ba4a013f08d3c2e65453"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\native-inspection\\canonical-gemm-rebuild.result.json",
+        "bytes": 782,
+        "sha256": "ed4270ff93d794f58c58604805eb1d980d5f6f9cdca753ca726b86600081d86e"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\native-inspection\\canonical-gemm-rebuild.stdout.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\native-inspection\\canonical-gemm-rebuild.stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    ]
+  },
+  "same_test_object": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\reproduction\\scale-test.obj",
+    "bytes": 1099987,
+    "sha256": "c5a2d26d826084f8dcb4b2b272788b451a5b77edbe299260cce28c3e69785ec5"
+  },
+  "source_freeze": {
+    "product_sources": [
+      {
+        "relative": "third_party/sglang_activation/fp8/grouped/source.json",
+        "before": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\before-source-fix\\third_party\\sglang_activation\\fp8\\grouped\\source.json",
+          "bytes": 1584,
+          "sha256": "929efbfc187ca06b8923447ca2b115adb387cbdac93a8bce4b498cc7c05149ee"
+        },
+        "after": {
+          "path": "C:\\public\\project-hyle\\hyle\\third_party\\sglang_activation\\fp8\\grouped\\source.json",
+          "bytes": 3155,
+          "sha256": "0f08fe661326c126ff3ae711db45ea4158083c3443820dce32ce25eb9473437f"
+        },
+        "snapshot": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\source-fix\\third_party\\sglang_activation\\fp8\\grouped\\source.json",
+          "bytes": 3155,
+          "sha256": "0f08fe661326c126ff3ae711db45ea4158083c3443820dce32ce25eb9473437f"
+        }
+      },
+      {
+        "relative": "third_party/sglang_activation/fp8/grouped/rebuild.py",
+        "before": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\before-source-fix\\third_party\\sglang_activation\\fp8\\grouped\\rebuild.py",
+          "bytes": 4485,
+          "sha256": "1e110f56dfba9345645091ce07df5fe43785d7c63ea3aa260de594e9b5e794b2"
+        },
+        "after": {
+          "path": "C:\\public\\project-hyle\\hyle\\third_party\\sglang_activation\\fp8\\grouped\\rebuild.py",
+          "bytes": 4671,
+          "sha256": "a89e55d9da5935e7514ab66379afc78d9163e588b49212b774511d2c0ac443f7"
+        },
+        "snapshot": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\source-fix\\third_party\\sglang_activation\\fp8\\grouped\\rebuild.py",
+          "bytes": 4671,
+          "sha256": "a89e55d9da5935e7514ab66379afc78d9163e588b49212b774511d2c0ac443f7"
+        }
+      },
+      {
+        "relative": "third_party/sglang_activation/NOTICE",
+        "before": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\before-source-fix\\third_party\\sglang_activation\\NOTICE",
+          "bytes": 3749,
+          "sha256": "d43e9d166ac89a715a7764d00aa6c7d14bba53bcb3e4eed40ab8d22df98f1eb2"
+        },
+        "after": {
+          "path": "C:\\public\\project-hyle\\hyle\\third_party\\sglang_activation\\NOTICE",
+          "bytes": 3986,
+          "sha256": "45af70281cffa5100083e343c79ea237347370c4167698efa45c402024b9a317"
+        },
+        "snapshot": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\source-fix\\third_party\\sglang_activation\\NOTICE",
+          "bytes": 3986,
+          "sha256": "45af70281cffa5100083e343c79ea237347370c4167698efa45c402024b9a317"
+        }
+      },
+      {
+        "relative": "docs/user/compute.md",
+        "before": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\before-source-fix\\docs\\user\\compute.md",
+          "bytes": 99529,
+          "sha256": "427a6a53867193870a9ab24c2d02e221eafb581bf312bdd3d30ce3fd876e6208"
+        },
+        "after": {
+          "path": "C:\\public\\project-hyle\\hyle\\docs\\user\\compute.md",
+          "bytes": 98661,
+          "sha256": "b28bb3902208e8dc9cfb48b67b657ed6129d2d6947d5216543fa100d5f092081"
+        },
+        "snapshot": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\source-fix\\docs\\user\\compute.md",
+          "bytes": 98661,
+          "sha256": "b28bb3902208e8dc9cfb48b67b657ed6129d2d6947d5216543fa100d5f092081"
+        }
+      },
+      {
+        "relative": "tests/compute_provider_cuda/grouped_fp8_test.cc",
+        "before": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\before-source-fix\\tests\\compute_provider_cuda\\grouped_fp8_test.cc",
+          "bytes": 14792,
+          "sha256": "63e424db8aac64f4136829bffefc11c0f7cca65861e42ebb7601060aada13cd8"
+        },
+        "after": {
+          "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_cuda\\grouped_fp8_test.cc",
+          "bytes": 19587,
+          "sha256": "2525d7bd6008ccdf0357488d0ffc72f1274c0ced4f21af6e02481aae327cfdcb"
+        },
+        "snapshot": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\source-fix\\tests\\compute_provider_cuda\\grouped_fp8_test.cc",
+          "bytes": 19587,
+          "sha256": "2525d7bd6008ccdf0357488d0ffc72f1274c0ced4f21af6e02481aae327cfdcb"
+        }
+      }
+    ],
+    "upstream_unchanged": {
+      "path": "C:\\public\\project-hyle\\hyle\\third_party\\sglang_activation\\fp8\\grouped\\original_kernels.py",
+      "bytes": 20344,
+      "sha256": "8c1ab58b5362d0d419f6127418771c54bac313013c940633eae2a04653d2833d"
+    },
+    "adapted_module": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\adapted-kernels.py",
+      "bytes": 21093,
+      "sha256": "16d9d20c557868941bec8494873484be0f2958537a9cd5c4a1eee29b7e97cc44"
+    },
+    "source_adapter_sha256": "16d9d20c557868941bec8494873484be0f2958537a9cd5c4a1eee29b7e97cc44",
+    "build_executed": false,
+    "GPU_executed": false,
+    "AOT_header_updated": false,
+    "compilation_json_updated": false,
+    "lock_update": "Root must update sglang vendored tree and NOTICE SHA256 after final AOT/header and compilation.json.",
+    "AST_and_two_adapter_hashes_checked": true,
+    "actual_before_reproduction": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\reproduction\\summary.json",
+      "bytes": 1290,
+      "sha256": "f1e37011c30f14541d578b8a2cad64a53b35856b5b93fd6837fd136eb1211a5e"
+    }
+  },
+  "generated_AOT_freeze": {
+    "files": [
+      {
+        "relative": "third_party/sglang_activation/fp8/grouped/compilation.json",
+        "original": {
+          "path": "C:\\public\\project-hyle\\hyle\\third_party\\sglang_activation\\fp8\\grouped\\compilation.json",
+          "bytes": 7191,
+          "sha256": "124a82f0a26b31cd034beecdd8fbe358c3c831e9ee9d50343cd17bf63fb57912"
+        },
+        "snapshot": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\before-aot\\third_party\\sglang_activation\\fp8\\grouped\\compilation.json",
+          "bytes": 7191,
+          "sha256": "124a82f0a26b31cd034beecdd8fbe358c3c831e9ee9d50343cd17bf63fb57912"
+        },
+        "after": {
+          "path": "C:\\public\\project-hyle\\hyle\\third_party\\sglang_activation\\fp8\\grouped\\compilation.json",
+          "bytes": 7191,
+          "sha256": "6e6e3f45b12030530edf80a9895a05ed82fa164882e0d4fe8d2bec768c61168d"
+        },
+        "frozen": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\product-aot\\third_party\\sglang_activation\\fp8\\grouped\\compilation.json",
+          "bytes": 7191,
+          "sha256": "6e6e3f45b12030530edf80a9895a05ed82fa164882e0d4fe8d2bec768c61168d"
+        }
+      },
+      {
+        "relative": "third_party/sglang_activation/fp8/grouped/sglang_grouped_fp8_sm89.h",
+        "original": {
+          "path": "C:\\public\\project-hyle\\hyle\\third_party\\sglang_activation\\fp8\\grouped\\sglang_grouped_fp8_sm89.h",
+          "bytes": 3397726,
+          "sha256": "6d1338a91b804f84225856c64a4672cdffb68eeec880b2d0d1c9a58756dc9c03"
+        },
+        "snapshot": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\before-aot\\third_party\\sglang_activation\\fp8\\grouped\\sglang_grouped_fp8_sm89.h",
+          "bytes": 3397726,
+          "sha256": "6d1338a91b804f84225856c64a4672cdffb68eeec880b2d0d1c9a58756dc9c03"
+        },
+        "after": {
+          "path": "C:\\public\\project-hyle\\hyle\\third_party\\sglang_activation\\fp8\\grouped\\sglang_grouped_fp8_sm89.h",
+          "bytes": 3466838,
+          "sha256": "389a7c354432a8a93cb26d8b1c7c19a7fbc0b43d56afd6f0ea509aa1d537d387"
+        },
+        "frozen": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\product-aot\\third_party\\sglang_activation\\fp8\\grouped\\sglang_grouped_fp8_sm89.h",
+          "bytes": 3466838,
+          "sha256": "389a7c354432a8a93cb26d8b1c7c19a7fbc0b43d56afd6f0ea509aa1d537d387"
+        }
+      },
+      {
+        "relative": "cmake/HyleDependencyLock.json",
+        "original": {
+          "path": "C:\\public\\project-hyle\\hyle\\cmake\\HyleDependencyLock.json",
+          "bytes": 77554,
+          "sha256": "610cbcb060d874857bb6fa59b222a6b8a082afb7a54d02a2792432196d9c7edf"
+        },
+        "snapshot": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\before-aot\\cmake\\HyleDependencyLock.json",
+          "bytes": 77554,
+          "sha256": "610cbcb060d874857bb6fa59b222a6b8a082afb7a54d02a2792432196d9c7edf"
+        },
+        "after": {
+          "path": "C:\\public\\project-hyle\\hyle\\cmake\\HyleDependencyLock.json",
+          "bytes": 77554,
+          "sha256": "482b99de1bcec14882f21a771e30f0f246378b01e58f5fbdbecf1a61ed853ff2"
+        },
+        "frozen": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\product-aot\\cmake\\HyleDependencyLock.json",
+          "bytes": 77554,
+          "sha256": "482b99de1bcec14882f21a771e30f0f246378b01e58f5fbdbecf1a61ed853ff2"
+        }
+      }
+    ],
+    "fixed_source": {
+      "path": "C:\\public\\project-hyle\\hyle\\third_party\\sglang_activation\\fp8\\grouped\\original_kernels.py",
+      "bytes": 20344,
+      "sha256": "8c1ab58b5362d0d419f6127418771c54bac313013c940633eae2a04653d2833d"
+    },
+    "adapted_module": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\aot\\adapted_kernels.py",
+      "bytes": 21093,
+      "sha256": "16d9d20c557868941bec8494873484be0f2958537a9cd5c4a1eee29b7e97cc44"
+    },
+    "new_compilation": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\new-compilation.json",
+      "bytes": 7191,
+      "sha256": "6e6e3f45b12030530edf80a9895a05ed82fa164882e0d4fe8d2bec768c61168d"
+    },
+    "checked_align_unchanged": true,
+    "job_geometry_and_ABI_unchanged": true,
+    "header_command": [
+      "C:\\Program Files\\Python312\\python.exe",
+      "C:\\public\\project-hyle\\hyle\\third_party\\sglang_activation\\fp8\\grouped\\rebuild.py",
+      "--stage",
+      "header",
+      "--output",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\aot"
+    ],
+    "old_tree_reconstructed_and_verified": true,
+    "new_vendored_tree": "b72bd26df72cdc056d4baaa8f1edf7cf474d8b8ec7a2f63377fa20449a8c4426"
+  },
+  "independent_native_review": {
+    "status": "independent_source_and_actual_native_artifact_review_complete",
+    "blocking_findings": [],
+    "reviewer_execution": {
+      "compiled": false,
+      "GPU_executed": false,
+      "product_modified": false,
+      "method": "Offline reads, exact source adapter reproduction/hash checks, frozen ABI comparison, embedded cubin extraction, PTX dataflow and existing actual nvdisasm logs."
+    },
+    "sources": [
+      {
+        "path": "third_party\\sglang_activation\\fp8\\grouped\\original_kernels.py",
+        "bytes": 20344,
+        "sha256": "8c1ab58b5362d0d419f6127418771c54bac313013c940633eae2a04653d2833d"
+      },
+      {
+        "path": "third_party\\sglang_activation\\fp8\\grouped\\source.json",
+        "bytes": 3155,
+        "sha256": "0f08fe661326c126ff3ae711db45ea4158083c3443820dce32ce25eb9473437f"
+      },
+      {
+        "path": "third_party\\sglang_activation\\fp8\\grouped\\rebuild.py",
+        "bytes": 4671,
+        "sha256": "a89e55d9da5935e7514ab66379afc78d9163e588b49212b774511d2c0ac443f7"
+      },
+      {
+        "path": ".scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\source-fix.json",
+        "bytes": 6023,
+        "sha256": "cef57717a7b132949567bbf9926fa1103ff012ce8ab19607d0eb2ddf7843c878"
+      },
+      {
+        "path": ".scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\aot-product-freeze.json",
+        "bytes": 5100,
+        "sha256": "aa9dcdc0e4a7887315f7e0a2958960cf560a7c835e6bf69b899d001b4b4341b3"
+      }
+    ],
+    "adapters": [
+      {
+        "name": "runtime_top_k",
+        "sha256": "f095301b2c70b12d1040eabe62845030833cab9ac07b546fb1c45b274946dd02"
+      },
+      {
+        "name": "scale_order",
+        "sha256": "16d9d20c557868941bec8494873484be0f2958537a9cd5c4a1eee29b7e97cc44"
+      }
+    ],
+    "native_variants": [
+      {
+        "label": "grouped_fp32",
+        "cubin": {
+          "path": ".scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\aot\\grouped_fp32.cubin",
+          "bytes": 324640,
+          "sha256": "83b452307b5cf5b41ca7734dbcc6a1b03c0f6c851f6ddeb35743c0f62c4ede34"
+        },
+        "PTX": {
+          "path": ".scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\aot\\grouped_fp32.ptx",
+          "bytes": 282885,
+          "sha256": "869fb619e36d2bb5bc5cac20d647154f7f785f24281605b99f4f4e448bafd593"
+        },
+        "actual_disassembly": {
+          "path": ".scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\native-inspection\\grouped_fp32.stdout.log",
+          "bytes": 2062831,
+          "sha256": "693b078b669f56c773a36e35511911d3ebc68c4f2a156e2c86142dd63eca9867"
+        },
+        "embedded_bytes_match": true,
+        "signature_constexpr_options_unchanged": true,
+        "ptx_mma_to_first_scale_to_second_scale_to_outer_add": {
+          "first_mul_count": 64,
+          "second_mul_count": 64,
+          "unique_second_results_in_add": 64,
+          "first": {
+            "line": 6539,
+            "dst": "%r827",
+            "left": "%r691",
+            "right": "%r828"
+          },
+          "second": {
+            "line": 6860,
+            "dst": "%r899",
+            "left": "%r827",
+            "right": "%r900"
+          }
+        },
+        "PTX_ftz_modifiers": 0,
+        "native_float_operations": {
+          "FMUL": 128,
+          "FADD": 64
+        },
+        "native_FP8_MMA_count": 64
+      },
+      {
+        "label": "grouped_bf16",
+        "cubin": {
+          "path": ".scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\aot\\grouped_bf16.cubin",
+          "bytes": 325408,
+          "sha256": "daa2204310283488d64db7b1ed80183c9f4b784ccdc05d0f0ac47f1e2e18b223"
+        },
+        "PTX": {
+          "path": ".scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\aot\\grouped_bf16.ptx",
+          "bytes": 282733,
+          "sha256": "c432ad64f7b2e74140efa3b862f5c17ba2614877807e407a56a265d155b548b1"
+        },
+        "actual_disassembly": {
+          "path": ".scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\native-inspection\\grouped_bf16.stdout.log",
+          "bytes": 2068122,
+          "sha256": "d826f7ce12fc366fc5ac5b2304bbc528d88aaa19c225568d9babb7021c94b71c"
+        },
+        "embedded_bytes_match": true,
+        "signature_constexpr_options_unchanged": true,
+        "ptx_mma_to_first_scale_to_second_scale_to_outer_add": {
+          "first_mul_count": 64,
+          "second_mul_count": 64,
+          "unique_second_results_in_add": 64,
+          "first": {
+            "line": 6507,
+            "dst": "%r827",
+            "left": "%r691",
+            "right": "%r828"
+          },
+          "second": {
+            "line": 6828,
+            "dst": "%r899",
+            "left": "%r827",
+            "right": "%r900"
+          }
+        },
+        "PTX_ftz_modifiers": 0,
+        "native_float_operations": {
+          "FMUL": 128,
+          "FADD": 64
+        },
+        "native_FP8_MMA_count": 64
+      }
+    ],
+    "checked_align_embedded_bytes_unchanged": true,
+    "source_contract_assessment": [
+      "The pinned original module is untouched and exactly hash-qualified. runtime_top_k then scale_order each apply to exactly one occurrence with before/after module hashes, including the intermediate input hash.",
+      "The changed branch is compiled only for the two qualified block128 FP8 jobs. Other source branches, quantizer, tl.dot, output conversion, sorting and actual launch signature/constexprs/options are unchanged.",
+      "Explicit mul.rn.f32 boundaries survive both PTX and inspected native images: no scale-product reassociation, no multiplication-plus-outer-add contraction, and no FTZ modifier on these arithmetic operations. The disassembly contains FTZ modifiers on unrelated float-to-integer indexing conversions; this is not evidence that scale arithmetic uses FTZ.",
+      "Logical scaling order agrees with the existing CPU dot-then-activation-scale-then-weight-scale path, but this review does not establish universal CPU/GPU bit parity."
+    ],
+    "test_assessment": {
+      "file": {
+        "path": "tests\\compute_provider_cuda\\grouped_fp8_test.cc",
+        "bytes": 19587,
+        "sha256": "2525d7bd6008ccdf0357488d0ffc72f1274c0ced4f21af6e02481aae327cfdcb"
+      },
+      "semantic_witness": "Positive zero FP8 weight codes, finite Bs=2^127, exact finite As=2 and exact quantizer input 896 avoid ordinary FP8 dot accuracy ambiguity. Dot-first zero remains zero, whereas As*Bs overflows before zero multiplication.",
+      "actual_before_evidence": {
+        "path": ".scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\reproduction\\summary.json",
+        "bytes": 1290,
+        "sha256": "f1e37011c30f14541d578b8a2cad64a53b35856b5b93fd6837fd136eb1211a5e"
+      },
+      "recorded_before": "Root actual expected-red reports 128 NaNs for each F32 and BF16 output. The new product test calls actual SGLang prepare/submit/Completion and checks all outputs, not an emulated kernel.",
+      "after_execution": "Not run by this reviewer; root owns current focused test execution."
+    },
+    "limits": [
+      "The FP8 MMA retains its original native numerical contract. F32 accumulator naming does not prove equivalence to IEEE sequential F32 multiplication and addition of decoded values.",
+      "This change guarantees the explicit two scale-multiply boundaries in the inspected SM89 variants, not finite output for every finite nonzero input or universal error bounds. Intermediate dot, first scaled product or final nonzero sum can overflow; underflow and native dot rounding remain possible.",
+      "The output conversion and outer add remain their original operations; no global fast-math or enable_fp_fusion setting was loosened, and no existing numerical tolerance was enlarged.",
+      "Source-fix.json records its pre-AOT handoff state; later aot-product-freeze.json and actual native logs are the evidence for generated artifacts.",
+      "No performance, end-model quality, other GPU architecture or full model claim is made."
+    ]
+  },
+  "numerical_boundaries": {
+    "PTX_and_SASS": "Both actual new variants retain 128 FMUL and64 FADD instructions around the original64 FP8 MMA instructions; reviewer verified scale dataflow and no FTZ on these arithmetic operations.",
+    "unchanged": "Pinned source, quantizer, FP8 MMA, two job signatures/constexprs/options, sorting, tile geometry, launch ABI and checked align payload.",
+    "public_header": "model_ops.h was not modified. CUDA user documentation describes the two scale multiplies and correct runtime slot domain."
+  },
+  "tooling_failure": {
+    "record": {
+      "exit": 1,
+      "stage": "old vendored tree identity pre-mutation check",
+      "product_generated_files_mutated": false,
+      "reason": "Path sorting on Windows folds case; the CMake contract sorts portable relative strings case-sensitively."
+    },
+    "resolution": "Match CMake portable relative-string case-sensitive sorting. Old vendored tree reconstructed before mutation, new source tree verified by actual CMake script.",
+    "old_and_corrected_scripts": "finalize_aot-before-path-sort.py and finalize_aot.py are archived."
+  },
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\grouped-fp8-scale-order-2026-10-20.zip",
+    "bytes": 1545197,
+    "sha256": "7ecadab86a78bfc7edc4df9ec2581e1f93a49d22a5bc949a115816ec1f3aaf16"
+  },
+  "payload_count": 135,
+  "payloads": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\adapted-kernels.py",
+      "bytes": 21093,
+      "sha256": "16d9d20c557868941bec8494873484be0f2958537a9cd5c4a1eee29b7e97cc44",
+      "member": "adapted-kernels.py"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\aot-product-freeze.json",
+      "bytes": 5100,
+      "sha256": "aa9dcdc0e4a7887315f7e0a2958960cf560a7c835e6bf69b899d001b4b4341b3",
+      "member": "aot-product-freeze.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\aot\\adapted_kernels.py",
+      "bytes": 21093,
+      "sha256": "16d9d20c557868941bec8494873484be0f2958537a9cd5c4a1eee29b7e97cc44",
+      "member": "aot/adapted_kernels.py"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\aot\\grouped_bf16.llir",
+      "bytes": 338914,
+      "sha256": "ecf770a9cb3f78fb7214bce363c04049dc23a49eacea129604733c60b8dae34a",
+      "member": "aot/grouped_bf16.llir"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\aot\\grouped_bf16.ptx",
+      "bytes": 282733,
+      "sha256": "c432ad64f7b2e74140efa3b862f5c17ba2614877807e407a56a265d155b548b1",
+      "member": "aot/grouped_bf16.ptx"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\aot\\grouped_bf16.ttgir",
+      "bytes": 38856,
+      "sha256": "43258f512f881be2d6f8e6bae5edd0d261ccc3f92e98da4558e94911f30d5744",
+      "member": "aot/grouped_bf16.ttgir"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\aot\\grouped_bf16.ttir",
+      "bytes": 33193,
+      "sha256": "a395c804f992cebb038505710af7ac837ba7b418ad9bf368472f43bea91b16fa",
+      "member": "aot/grouped_bf16.ttir"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\aot\\grouped_fp32.llir",
+      "bytes": 342407,
+      "sha256": "85c0e99e8ef42b101110cc60bca7d4807034fb80a140ad5862e704f46779cc2c",
+      "member": "aot/grouped_fp32.llir"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\aot\\grouped_fp32.ptx",
+      "bytes": 282885,
+      "sha256": "869fb619e36d2bb5bc5cac20d647154f7f785f24281605b99f4f4e448bafd593",
+      "member": "aot/grouped_fp32.ptx"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\aot\\grouped_fp32.ttgir",
+      "bytes": 38534,
+      "sha256": "8b1b8677bf39991a42dd1d2daf0e45fcbd693f66bec9e0c5d593b75aa385133d",
+      "member": "aot/grouped_fp32.ttgir"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\aot\\grouped_fp32.ttir",
+      "bytes": 32801,
+      "sha256": "aea53fdad5c0dc62cfc542729ed7e514256fc5900f7bb2ecac1b64640381cb6f",
+      "member": "aot/grouped_fp32.ttir"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\apply_source_fix.py",
+      "bytes": 10626,
+      "sha256": "d9094c9d099a03c7c942d04a42db09f8663bf7f6f50083f1a5b6cfe829a4fa46",
+      "member": "apply_source_fix.py"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\before-aot\\cmake\\HyleDependencyLock.json",
+      "bytes": 77554,
+      "sha256": "610cbcb060d874857bb6fa59b222a6b8a082afb7a54d02a2792432196d9c7edf",
+      "member": "before-aot/cmake/HyleDependencyLock.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\before-aot\\third_party\\sglang_activation\\fp8\\grouped\\compilation.json",
+      "bytes": 7191,
+      "sha256": "124a82f0a26b31cd034beecdd8fbe358c3c831e9ee9d50343cd17bf63fb57912",
+      "member": "before-aot/third_party/sglang_activation/fp8/grouped/compilation.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\before-aot\\third_party\\sglang_activation\\fp8\\grouped\\sglang_grouped_fp8_sm89.h",
+      "bytes": 3397726,
+      "sha256": "6d1338a91b804f84225856c64a4672cdffb68eeec880b2d0d1c9a58756dc9c03",
+      "member": "before-aot/third_party/sglang_activation/fp8/grouped/sglang_grouped_fp8_sm89.h"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\before-source-fix\\docs\\user\\compute.md",
+      "bytes": 99529,
+      "sha256": "427a6a53867193870a9ab24c2d02e221eafb581bf312bdd3d30ce3fd876e6208",
+      "member": "before-source-fix/docs/user/compute.md"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\before-source-fix\\tests\\compute_provider_cuda\\grouped_fp8_test.cc",
+      "bytes": 14792,
+      "sha256": "63e424db8aac64f4136829bffefc11c0f7cca65861e42ebb7601060aada13cd8",
+      "member": "before-source-fix/tests/compute_provider_cuda/grouped_fp8_test.cc"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\before-source-fix\\third_party\\sglang_activation\\NOTICE",
+      "bytes": 3749,
+      "sha256": "d43e9d166ac89a715a7764d00aa6c7d14bba53bcb3e4eed40ab8d22df98f1eb2",
+      "member": "before-source-fix/third_party/sglang_activation/NOTICE"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\before-source-fix\\third_party\\sglang_activation\\fp8\\grouped\\rebuild.py",
+      "bytes": 4485,
+      "sha256": "1e110f56dfba9345645091ce07df5fe43785d7c63ea3aa260de594e9b5e794b2",
+      "member": "before-source-fix/third_party/sglang_activation/fp8/grouped/rebuild.py"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\before-source-fix\\third_party\\sglang_activation\\fp8\\grouped\\source.json",
+      "bytes": 1584,
+      "sha256": "929efbfc187ca06b8923447ca2b115adb387cbdac93a8bce4b498cc7c05149ee",
+      "member": "before-source-fix/third_party/sglang_activation/fp8/grouped/source.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\build_after.py",
+      "bytes": 4281,
+      "sha256": "283750e66a75fa15b1ccce2eb1f20ccda8ba743612ed4282f405b6aade459b0d",
+      "member": "build_after.py"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\checks\\grouped-provider-compile.command.json",
+      "bytes": 1941,
+      "sha256": "b8183754cc8ffe90479b957ec8da94b5844e5e623cd4e54d5c1bedbdd2d4d029",
+      "member": "checks/grouped-provider-compile.command.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\checks\\grouped-provider-compile.result.json",
+      "bytes": 2011,
+      "sha256": "700735cfbb854cfbb76fcf8a11b0a6a48cac8a5b05e5fcd9bd5f48174860b8b2",
+      "member": "checks/grouped-provider-compile.result.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\checks\\grouped-provider-compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "member": "checks/grouped-provider-compile.stderr.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\checks\\grouped-provider-compile.stdout.log",
+      "bytes": 25,
+      "sha256": "a4a14504b537867cd07645d4d0c719b3786609fbc0c3541ccb51adc22558ed15",
+      "member": "checks/grouped-provider-compile.stdout.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\checks\\grouped-provider-deps.json",
+      "bytes": 20214,
+      "sha256": "cfc9e82d8ee9ebaf4b69f0f079379bee3a4d576960223a00562118bf5b629204",
+      "member": "checks/grouped-provider-deps.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\checks\\grouped-provider-identity.json",
+      "bytes": 43109,
+      "sha256": "7be9503fb283faf1a89cd5d0ef492de2573557c3dc449db2a6d9cbc6c8f46596",
+      "member": "checks/grouped-provider-identity.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\checks\\grouped-test-compile.command.json",
+      "bytes": 4135,
+      "sha256": "a5a9b4254e94cb6b3b4199f61ee3e81a84ff6d3672eb7d65de42f6c3dd62b943",
+      "member": "checks/grouped-test-compile.command.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\checks\\grouped-test-compile.result.json",
+      "bytes": 4205,
+      "sha256": "cc568c0b9f3c8694ed62e0c48e3fb244d474b163926bde79d1402677b5bf20f3",
+      "member": "checks/grouped-test-compile.result.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\checks\\grouped-test-compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "member": "checks/grouped-test-compile.stderr.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\checks\\grouped-test-compile.stdout.log",
+      "bytes": 21,
+      "sha256": "968bb6877c471ade411bd38050644b25e61dc34362ae03c033418409914cb7fd",
+      "member": "checks/grouped-test-compile.stdout.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\checks\\grouped-test-deps.json",
+      "bytes": 31166,
+      "sha256": "bc531d945780a57c0e67a2769438f3566fe64ee3ff2c461836f036cbd02e1e04",
+      "member": "checks/grouped-test-deps.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\checks\\grouped-test-identity.json",
+      "bytes": 66393,
+      "sha256": "53994ad8db8515b8ad0f739dcaccc76ce27d8ddabf4ba27bfae2bd7d7dc9b6ce",
+      "member": "checks/grouped-test-identity.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\checks\\live.json",
+      "bytes": 23036,
+      "sha256": "4cb85e9d07e54a196980b0a5e27216f37ea323bd878553384b17b351265bf3f9",
+      "member": "checks/live.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\checks\\plan.json",
+      "bytes": 77348,
+      "sha256": "2c817699fd888975f690bd3dad3e8f9c9142430ef3bc0b72effffb39a5b3bccd",
+      "member": "checks/plan.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\checks\\runtime-environment.json",
+      "bytes": 6546,
+      "sha256": "65978bdaca44187ebcfeea3917a7f611c8aa2ba22b2974947ebb34983daae5a2",
+      "member": "checks/runtime-environment.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\checks\\summary.json",
+      "bytes": 160,
+      "sha256": "ce56725912e382b7e1620b1329007a56ed9dd69d7fbe0bbe856c1dea8c60cd2c",
+      "member": "checks/summary.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\checks\\tests-image.json",
+      "bytes": 242,
+      "sha256": "4a6a14eae7d4f05cda13007b2f261b686c5edf0edee9e041e2138b41e73799c6",
+      "member": "checks/tests-image.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\checks\\tests-link-plan.json",
+      "bytes": 65036,
+      "sha256": "5a359d3fbda33bd2e2bd2d608857f5167df3d86f080dc12194bd4dba6f23c459",
+      "member": "checks/tests-link-plan.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\checks\\tests-link.command.json",
+      "bytes": 22966,
+      "sha256": "85ce27a8ce4d06374b252198dfa005be5d720b31968b39148abdfa7e189cd5d1",
+      "member": "checks/tests-link.command.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\checks\\tests-link.result.json",
+      "bytes": 23036,
+      "sha256": "4cb85e9d07e54a196980b0a5e27216f37ea323bd878553384b17b351265bf3f9",
+      "member": "checks/tests-link.result.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\checks\\tests-link.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "member": "checks/tests-link.stderr.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\checks\\tests-link.stdout.log",
+      "bytes": 254,
+      "sha256": "155f651dcd96584ca273ca733888644ca89c18b2fbc41a033ec77dc4ddffadfa",
+      "member": "checks/tests-link.stdout.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\compile_aot.py",
+      "bytes": 2947,
+      "sha256": "d4316a6de465209c8f495fdc6bc849e1d0bd638cf30dd02ae27d09595c4c3176",
+      "member": "compile_aot.py"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\documentation-freeze.json",
+      "bytes": 1177,
+      "sha256": "09c0bd48b90dbea38586b064ff87dbd4beb0057c1a9ce93ab37d2dacadf9bb46",
+      "member": "documentation-freeze.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\documentation\\docs\\developer\\current-work.md",
+      "bytes": 25405,
+      "sha256": "26e62351281a8d49819be1fc7b2f83de54cc616d11d73a29bc319d8045a61b94",
+      "member": "documentation/docs/developer/current-work.md"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\documentation\\docs\\implementation\\model-operators.md",
+      "bytes": 58597,
+      "sha256": "cc13f310878fb818ce862e5e4eb8c5ee26574e680d7471a98b0c4be3a30401a1",
+      "member": "documentation/docs/implementation/model-operators.md"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\final-owner-inventory.json",
+      "bytes": 93841,
+      "sha256": "09fa18b95d909fe1dca0d4c119267c027772970b3414f1eed749a5b37aa5d003",
+      "member": "final-owner-inventory.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\finalize-initial-result.json",
+      "bytes": 246,
+      "sha256": "92d0fec2b8ce9dab0869e14d2898e0d62d72b3df0a7f3fce92a2eccd80c6d8c7",
+      "member": "finalize-initial-result.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\finalize_aot-before-path-sort.py",
+      "bytes": 4429,
+      "sha256": "1c44a29ee3344c825140c230d118b628053a3cf7fb3e5c913add7e0116870a5a",
+      "member": "finalize_aot-before-path-sort.py"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\finalize_aot.py",
+      "bytes": 4541,
+      "sha256": "7083c513c6dea4334d60d2347582d88e5b9bb72b1d30aedce3bf98e02b68ab94",
+      "member": "finalize_aot.py"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\gpu-owner-inventory.json",
+      "bytes": 46227,
+      "sha256": "8c94f28f72f7e6bb35a8b7622511d6db66a2312e04d11525379dff84541149ed",
+      "member": "gpu-owner-inventory.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\independent-native-review.json",
+      "bytes": 7934,
+      "sha256": "f3e0bae832fc2dbd06dd5a16830c8b337c4a0e876396c53bfa5405c1c0a7985c",
+      "member": "independent-native-review.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\inspect_aot.py",
+      "bytes": 1228,
+      "sha256": "e6aea7c65e08a291eb36addae759185bbd98995e185f9fdc120252872c85a888",
+      "member": "inspect_aot.py"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\native-inspection\\canonical-gemm-rebuild.command.json",
+      "bytes": 712,
+      "sha256": "83e1da768b93f76ac7bf6d088987224db6d497b5f112ba4a013f08d3c2e65453",
+      "member": "native-inspection/canonical-gemm-rebuild.command.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\native-inspection\\canonical-gemm-rebuild.result.json",
+      "bytes": 782,
+      "sha256": "ed4270ff93d794f58c58604805eb1d980d5f6f9cdca753ca726b86600081d86e",
+      "member": "native-inspection/canonical-gemm-rebuild.result.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\native-inspection\\canonical-gemm-rebuild.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "member": "native-inspection/canonical-gemm-rebuild.stderr.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\native-inspection\\canonical-gemm-rebuild.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "member": "native-inspection/canonical-gemm-rebuild.stdout.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\native-inspection\\grouped_bf16.command.json",
+      "bytes": 368,
+      "sha256": "c6dcbf40ee4837904da277e8ea2d4d0dfc32c6daa3a6410fc05037bdccda21bd",
+      "member": "native-inspection/grouped_bf16.command.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\native-inspection\\grouped_bf16.result.json",
+      "bytes": 436,
+      "sha256": "46fee1cd39c5e2e728be5320ea27c91eccd21eab6c1da00c92cd457ed3f3e92f",
+      "member": "native-inspection/grouped_bf16.result.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\native-inspection\\grouped_bf16.stderr.log",
+      "bytes": 196,
+      "sha256": "7fc343db83087fb8710f474bf699be3d55cc9b7b66dcea58e0fc007768454eaa",
+      "member": "native-inspection/grouped_bf16.stderr.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\native-inspection\\grouped_bf16.stdout.log",
+      "bytes": 2068122,
+      "sha256": "d826f7ce12fc366fc5ac5b2304bbc528d88aaa19c225568d9babb7021c94b71c",
+      "member": "native-inspection/grouped_bf16.stdout.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\native-inspection\\grouped_fp32.command.json",
+      "bytes": 366,
+      "sha256": "c9752b6323c48cb56c9f1be775c7505157ec14a0650e3ef2dfd9606baf4e5cda",
+      "member": "native-inspection/grouped_fp32.command.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\native-inspection\\grouped_fp32.result.json",
+      "bytes": 436,
+      "sha256": "4cbce4dbe1d7c526449bfad22623089be59be3b7a4f3334731371d12434cbdea",
+      "member": "native-inspection/grouped_fp32.result.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\native-inspection\\grouped_fp32.stderr.log",
+      "bytes": 196,
+      "sha256": "7fc343db83087fb8710f474bf699be3d55cc9b7b66dcea58e0fc007768454eaa",
+      "member": "native-inspection/grouped_fp32.stderr.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\native-inspection\\grouped_fp32.stdout.log",
+      "bytes": 2062831,
+      "sha256": "693b078b669f56c773a36e35511911d3ebc68c4f2a156e2c86142dd63eca9867",
+      "member": "native-inspection/grouped_fp32.stdout.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\native-inspection\\inputs.json",
+      "bytes": 1469,
+      "sha256": "a5583c39e636002cf616b3692cccfab199771524a199dfa6b4f0566863d81e29",
+      "member": "native-inspection/inputs.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\native-inspection\\live.json",
+      "bytes": 782,
+      "sha256": "ed4270ff93d794f58c58604805eb1d980d5f6f9cdca753ca726b86600081d86e",
+      "member": "native-inspection/live.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\native-inspection\\vendored.command.json",
+      "bytes": 334,
+      "sha256": "46b8848a2c3fcadd23d8c4b942b2c09f9cf56c954e1c13c046b7b42b5f039852",
+      "member": "native-inspection/vendored.command.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\native-inspection\\vendored.result.json",
+      "bytes": 403,
+      "sha256": "c11357d5f7073d6573399e950d6966d9bc89ad74d855a59d2d0fe2af70e2b7aa",
+      "member": "native-inspection/vendored.result.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\native-inspection\\vendored.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "member": "native-inspection/vendored.stderr.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\native-inspection\\vendored.stdout.log",
+      "bytes": 110,
+      "sha256": "0aa059933f209b245ca8e011fec2529bc81154aa1dcad03e1ea23d369e55079f",
+      "member": "native-inspection/vendored.stdout.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\new-compilation.json",
+      "bytes": 7191,
+      "sha256": "6e6e3f45b12030530edf80a9895a05ed82fa164882e0d4fe8d2bec768c61168d",
+      "member": "new-compilation.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\product-aot\\cmake\\HyleDependencyLock.json",
+      "bytes": 77554,
+      "sha256": "482b99de1bcec14882f21a771e30f0f246378b01e58f5fbdbecf1a61ed853ff2",
+      "member": "product-aot/cmake/HyleDependencyLock.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\product-aot\\third_party\\sglang_activation\\fp8\\grouped\\compilation.json",
+      "bytes": 7191,
+      "sha256": "6e6e3f45b12030530edf80a9895a05ed82fa164882e0d4fe8d2bec768c61168d",
+      "member": "product-aot/third_party/sglang_activation/fp8/grouped/compilation.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\product-aot\\third_party\\sglang_activation\\fp8\\grouped\\sglang_grouped_fp8_sm89.h",
+      "bytes": 3466838,
+      "sha256": "389a7c354432a8a93cb26d8b1c7c19a7fbc0b43d56afd6f0ea509aa1d537d387",
+      "member": "product-aot/third_party/sglang_activation/fp8/grouped/sglang_grouped_fp8_sm89.h"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\publish.py",
+      "bytes": 9796,
+      "sha256": "4030cb2cffcc7f2d7c56b2a7f550a2b29e0f88c8735551d1471319f8fcd19634",
+      "member": "publish.py"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\recipe-sources.json",
+      "bytes": 4008,
+      "sha256": "b9750fd5bc8d3c538f861063436c2b1f62618c9a8af125e5b2b854b9434ce710",
+      "member": "recipe-sources.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\record_review.py",
+      "bytes": 9128,
+      "sha256": "d25310cf9403f3d48b7b4e75a863e7b076b64eeb97570d5c5829846a219e38a9",
+      "member": "record_review.py"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\reproduce.py",
+      "bytes": 3172,
+      "sha256": "8abd012ba6f13285d4da29a8611ef49131cafb6c52dd4053c18d7d3af3878eb9",
+      "member": "reproduce.py"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\reproduction\\image.json",
+      "bytes": 248,
+      "sha256": "549f2e5d79c3153dd8533e486ba3c3203dd3b208d9c26128c520d2be56e28763",
+      "member": "reproduction/image.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\reproduction\\inputs.json",
+      "bytes": 5203,
+      "sha256": "6c682fe9ad983f678cea6b17764d105642c9a8dd092039ec6a5cb24bd796add9",
+      "member": "reproduction/inputs.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\reproduction\\link-plan.json",
+      "bytes": 64686,
+      "sha256": "b798fb25a5ed7a069abecd51787dd6b8d3db4a4b3aed1f022a83c789da7be8e9",
+      "member": "reproduction/link-plan.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\reproduction\\live.json",
+      "bytes": 547,
+      "sha256": "91d36dbceebe616dd55400514e83221f18750f87fa10211d74757adcf739d13a",
+      "member": "reproduction/live.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\reproduction\\results.xml",
+      "bytes": 2857,
+      "sha256": "29c8b6f9977b5c507bef031ca6b8aa87d5a2c65b1b211d1e0611ac1c3feea98c",
+      "member": "reproduction/results.xml"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\reproduction\\scale-test-compile.command.json",
+      "bytes": 4172,
+      "sha256": "ddf89a1df2ddf3b321323cb26b849dcca65f0c0de4e5b658ddcc1c061c494a70",
+      "member": "reproduction/scale-test-compile.command.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\reproduction\\scale-test-compile.result.json",
+      "bytes": 4241,
+      "sha256": "af2085839a1e2f2db591506bfd14e31400d836af505b1a0f90f364b22c69d66b",
+      "member": "reproduction/scale-test-compile.result.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\reproduction\\scale-test-compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "member": "reproduction/scale-test-compile.stderr.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\reproduction\\scale-test-compile.stdout.log",
+      "bytes": 9,
+      "sha256": "3a8fa41d266c392e141829f3bc86de689ee9025a9da5c81c4552aa9f3ff25bfa",
+      "member": "reproduction/scale-test-compile.stdout.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\reproduction\\scale-test-deps.json",
+      "bytes": 29976,
+      "sha256": "d781adc8bfa819c0bb0f92b985140da6535451c661fc927f43d1c4b9fae63e95",
+      "member": "reproduction/scale-test-deps.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\reproduction\\scale-test-identity.json",
+      "bytes": 63551,
+      "sha256": "55b54920fc33abae6b01f74041697263c9507cfa58bf31f24d4481061417b324",
+      "member": "reproduction/scale-test-identity.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\reproduction\\summary.json",
+      "bytes": 1290,
+      "sha256": "f1e37011c30f14541d578b8a2cad64a53b35856b5b93fd6837fd136eb1211a5e",
+      "member": "reproduction/summary.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\reproduction\\tests-link.command.json",
+      "bytes": 22867,
+      "sha256": "a351ab808ed0dbfe4a8c3ae91253589863b94b3bb386dc8e731642f716b3deb8",
+      "member": "reproduction/tests-link.command.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\reproduction\\tests-link.result.json",
+      "bytes": 22937,
+      "sha256": "f88bddc3b1c8f42ba0c835294451bb56e173255d8e97980c2400dfae22c62041",
+      "member": "reproduction/tests-link.result.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\reproduction\\tests-link.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "member": "reproduction/tests-link.stderr.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\reproduction\\tests-link.stdout.log",
+      "bytes": 266,
+      "sha256": "533269b757a49db4a4f21b0adf32f5cbb54e3ca34a46ffe65d9eabfce1879b9f",
+      "member": "reproduction/tests-link.stdout.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\reproduction\\tests.command.json",
+      "bytes": 477,
+      "sha256": "5ca89e8078f63357be3a440da103429a07bea67615e7420828d5bcc742ad983b",
+      "member": "reproduction/tests.command.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\reproduction\\tests.result.json",
+      "bytes": 547,
+      "sha256": "91d36dbceebe616dd55400514e83221f18750f87fa10211d74757adcf739d13a",
+      "member": "reproduction/tests.result.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\reproduction\\tests.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "member": "reproduction/tests.stderr.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\reproduction\\tests.stdout.log",
+      "bytes": 1603,
+      "sha256": "cde5e3d937f505a936d8f7935ed0b361bd6de294c0c9b28da12b50963ffb7f90",
+      "member": "reproduction/tests.stdout.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\review.json",
+      "bytes": 4120,
+      "sha256": "e0e413cd68a610c136d9fc8c8dafc8a45b8efc34ecedf365b97ebe9a1a4c2df5",
+      "member": "review.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\run_after.py",
+      "bytes": 2019,
+      "sha256": "9af9b969ab490b11d2e2824d013c1e114ae0812c3252b2107614bda7471c4a11",
+      "member": "run_after.py"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\source-fix.diff",
+      "bytes": 12879,
+      "sha256": "f89425b9946ced4f825dd434d61d5f18b550f4c08726c3043f511779a5a3cf0c",
+      "member": "source-fix.diff"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\source-fix.json",
+      "bytes": 6023,
+      "sha256": "cef57717a7b132949567bbf9926fa1103ff012ce8ab19607d0eb2ddf7843c878",
+      "member": "source-fix.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\source-fix\\docs\\user\\compute.md",
+      "bytes": 98661,
+      "sha256": "b28bb3902208e8dc9cfb48b67b657ed6129d2d6947d5216543fa100d5f092081",
+      "member": "source-fix/docs/user/compute.md"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\source-fix\\tests\\compute_provider_cuda\\grouped_fp8_test.cc",
+      "bytes": 19587,
+      "sha256": "2525d7bd6008ccdf0357488d0ffc72f1274c0ced4f21af6e02481aae327cfdcb",
+      "member": "source-fix/tests/compute_provider_cuda/grouped_fp8_test.cc"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\source-fix\\third_party\\sglang_activation\\NOTICE",
+      "bytes": 3986,
+      "sha256": "45af70281cffa5100083e343c79ea237347370c4167698efa45c402024b9a317",
+      "member": "source-fix/third_party/sglang_activation/NOTICE"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\source-fix\\third_party\\sglang_activation\\fp8\\grouped\\rebuild.py",
+      "bytes": 4671,
+      "sha256": "a89e55d9da5935e7514ab66379afc78d9163e588b49212b774511d2c0ac443f7",
+      "member": "source-fix/third_party/sglang_activation/fp8/grouped/rebuild.py"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\source-fix\\third_party\\sglang_activation\\fp8\\grouped\\source.json",
+      "bytes": 3155,
+      "sha256": "0f08fe661326c126ff3ae711db45ea4158083c3443820dce32ce25eb9473437f",
+      "member": "source-fix/third_party/sglang_activation/fp8/grouped/source.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\source\\docs\\user\\compute.md",
+      "bytes": 99529,
+      "sha256": "427a6a53867193870a9ab24c2d02e221eafb581bf312bdd3d30ce3fd876e6208",
+      "member": "source/docs/user/compute.md"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\source\\include\\hyle\\compute\\model_ops.h",
+      "bytes": 58701,
+      "sha256": "8b86341a0ffb0be1dacf897e637a26f469b8adbab776c0f959a88dc0b368bfe5",
+      "member": "source/include/hyle/compute/model_ops.h"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\source\\include\\hyle\\compute\\operation.h",
+      "bytes": 28108,
+      "sha256": "35b7c862143839e4b8ce0c9a49753b7add2f325ec424bf5f91a1afeec0101506",
+      "member": "source/include/hyle/compute/operation.h"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\source\\src\\compute_ops\\low_precision.cc",
+      "bytes": 15337,
+      "sha256": "2d1754ef9a2f91b6987bc9abc31b1063427741aac89767b48e7f51fcb7b02bce",
+      "member": "source/src/compute_ops/low_precision.cc"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\source\\src\\compute_provider_cuda\\fp8_provider.cc",
+      "bytes": 18437,
+      "sha256": "42b2af1c1324468bf74da4b5460be93e0a9732e1585e1f9aa752cf0d64036e38",
+      "member": "source/src/compute_provider_cuda/fp8_provider.cc"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\source\\src\\compute_provider_cuda\\grouped_fp8_provider.cc",
+      "bytes": 14436,
+      "sha256": "45a5bfd478dfaa4fc4a56304ec058721700154f5851900ed9205d29d0e3de30c",
+      "member": "source/src/compute_provider_cuda/grouped_fp8_provider.cc"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\source\\src\\compute_provider_native\\torch_cpu_program.cc",
+      "bytes": 40012,
+      "sha256": "3615323e30a3fb4389e1e68bf404451f106e864e5e11135fa96524f8fabaf687",
+      "member": "source/src/compute_provider_native/torch_cpu_program.cc"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\source\\tests\\compute_provider_cuda\\grouped_fp8_test.cc",
+      "bytes": 14792,
+      "sha256": "63e424db8aac64f4136829bffefc11c0f7cca65861e42ebb7601060aada13cd8",
+      "member": "source/tests/compute_provider_cuda/grouped_fp8_test.cc"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\source\\third_party\\sglang_activation\\fp8\\grouped\\compilation.json",
+      "bytes": 7191,
+      "sha256": "124a82f0a26b31cd034beecdd8fbe358c3c831e9ee9d50343cd17bf63fb57912",
+      "member": "source/third_party/sglang_activation/fp8/grouped/compilation.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\source\\third_party\\sglang_activation\\fp8\\grouped\\original_kernels.py",
+      "bytes": 20344,
+      "sha256": "8c1ab58b5362d0d419f6127418771c54bac313013c940633eae2a04653d2833d",
+      "member": "source/third_party/sglang_activation/fp8/grouped/original_kernels.py"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\source\\third_party\\sglang_activation\\fp8\\grouped\\rebuild.py",
+      "bytes": 4485,
+      "sha256": "1e110f56dfba9345645091ce07df5fe43785d7c63ea3aa260de594e9b5e794b2",
+      "member": "source/third_party/sglang_activation/fp8/grouped/rebuild.py"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\source\\third_party\\sglang_activation\\fp8\\grouped\\source.json",
+      "bytes": 1584,
+      "sha256": "929efbfc187ca06b8923447ca2b115adb387cbdac93a8bce4b498cc7c05149ee",
+      "member": "source/third_party/sglang_activation/fp8/grouped/source.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\source\\third_party\\sglang_activation\\fp8\\original_kernels.py",
+      "bytes": 5749,
+      "sha256": "45e8867045ec54eddd5bbe91bc7229214148f8f0f1adb66a35253324e6ff145b",
+      "member": "source/third_party/sglang_activation/fp8/original_kernels.py"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\source\\third_party\\sglang_activation\\fp8\\source.json",
+      "bytes": 947,
+      "sha256": "98f588d40dee6a8b122ae9ffe52c002bf48b2fbfe00088936d348cc47f0d82fe",
+      "member": "source/third_party/sglang_activation/fp8/source.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\source\\third_party\\torchao_cpu\\torchao_cpu.h",
+      "bytes": 2798,
+      "sha256": "f171f3bd5d25eff82a31d9890884658f6c0d57b97624f84b790de56a8daac47c",
+      "member": "source/third_party/torchao_cpu/torchao_cpu.h"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\sourceids.json",
+      "bytes": 16738,
+      "sha256": "a5b7511b9f16763fca57083b11d0dad4e135b986bafbb2d535161895a2094614",
+      "member": "sourceids.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\test.cc",
+      "bytes": 6528,
+      "sha256": "2111bfc7e5d93c9a23c0e8e52b04fbc69eb8b13cf8f52ba2cd0df852df3b6287",
+      "member": "test.cc"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\tests\\inputs.json",
+      "bytes": 1041,
+      "sha256": "5640c658813b95f58fbee55786a21f1a797b058e0f2f0315d93049bafaf17357",
+      "member": "tests/inputs.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\tests\\live.json",
+      "bytes": 550,
+      "sha256": "38f89a9ea7685a7b49e7073e2db7ccfa6cc114ff3c7ce5269730f9b6fb6ed407",
+      "member": "tests/live.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\tests\\results.xml",
+      "bytes": 2913,
+      "sha256": "e3035ad805519719a3e543dbfff2548db2978ff0a150cbe77f712c5c064614ea",
+      "member": "tests/results.xml"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\tests\\summary.json",
+      "bytes": 1116,
+      "sha256": "9ea95c91be7d3cd21fd00c1664299e6029ab3588d53255220efa8202dce0af3d",
+      "member": "tests/summary.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\tests\\tests.command.json",
+      "bytes": 481,
+      "sha256": "aeeb1d868c97ea9d2ab324ab2da6949f81636b48c5f3278bbbb82489e1608057",
+      "member": "tests/tests.command.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\tests\\tests.result.json",
+      "bytes": 550,
+      "sha256": "38f89a9ea7685a7b49e7073e2db7ccfa6cc114ff3c7ce5269730f9b6fb6ed407",
+      "member": "tests/tests.result.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\tests\\tests.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "member": "tests/tests.stderr.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\tests\\tests.stdout.log",
+      "bytes": 1397,
+      "sha256": "69c657ab9aec040393c7aff5cb106cb801c3ed4cb7b022b74fbef3848b3f19d6",
+      "member": "tests/tests.stdout.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-fp8-scale-order\\verify-vendored.cmake",
+      "bytes": 930,
+      "sha256": "7098bba5f353eed8a8d5e3e1a8d7bf0491cc91cb57d54d2e1b5ef286f2998013",
+      "member": "verify-vendored.cmake"
+    }
+  ],
+  "archive_verified": {
+    "CRC": true,
+    "all_payload_SHA256": true
+  },
+  "archive_policy": "Includes old-red logs/XML, same-test green logs/XML, recipes/identities, old/new source and embedded AOT headers, compilation/lock records, actual PTX/SASS and independent review. Excludes executables, objects, libraries, maps, scratch cache and cleanup records. Standalone cubins are not duplicated because their exact bytes are present in archived embedded headers.",
+  "limits": [
+    "Five actual CUDA cases, zero skips: existing Direct/Graph/runtime-slot/checked-ID coverage, product semantic regression and original staged witness.",
+    "CPU source establishes the scaling order; this batch did not execute new CPU, Apple or Vulkan tests and does not prove universal cross-platform bit parity.",
+    "Native FP8 MMA keeps its original numerical behavior. F32 accumulation naming does not prove ordinary decoded IEEE F32 MatMul equivalence.",
+    "This fixes an admitted finite-zero-weight defect. Nonzero dot, scaled products or sums can still overflow; no finite-output guarantee for all finite inputs is claimed.",
+    "No selected FP8 artifact/full model execution, model quality evaluation, throughput test, other GPU architecture or peak-memory measurement was performed for this fix."
+  ],
+  "cleanup": {
+    "executed": true,
+    "actual": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\state-clone-observer-close-2026-10-20.cleanup.json",
+      "bytes": 12709,
+      "sha256": "b1795395c0b4f8a39f85c46fc3ce5b534cb1c223620ac23227a76d8ebe285e74"
+    },
+    "removed_bytes": 441667075,
+    "scope": "Shared cleanup of both correctness batches; count these bytes once."
+  }
+}

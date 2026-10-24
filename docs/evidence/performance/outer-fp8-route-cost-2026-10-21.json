@@ -1,0 +1,1204 @@
+{
+  "date": "2026-10-21",
+  "status": "finite_local_role_cost_observation_complete_no_product_change",
+  "scope": "Windows CPU and CUDA, M1/M2 N128 K7168 fixed-header f_a_proj geometry; finite artificial bytes and original ordinary graph. No Qwen decode or model throughput claim.",
+  "question": "Can the existing public workspace budget naturally recover the admitted bounded static FP8 candidate, and what are the local complete-call costs?",
+  "result": {
+    "natural_budget_selection": true,
+    "workspace_budget_bytes": 3145728,
+    "forced_candidate_used": false,
+    "all_optimization_limited": false,
+    "product_changes": 0,
+    "priority_changes": 0,
+    "independent_processes": {
+      "cpu": 1,
+      "cuda": 3,
+      "total": 4
+    },
+    "case_executions": 8,
+    "distinct_backend_geometry_cases": 4,
+    "unique_numeric_geometries": 2,
+    "failed": 0,
+    "skipped": 0,
+    "per_process_warm_samples_per_arm_and_geometry": 11
+  },
+  "space": {
+    "default_to_budget_workspace_bytes": {
+      "cpu_M1": [
+        3763328,
+        35848
+      ],
+      "cpu_M2": [
+        3856512,
+        71692
+      ],
+      "cuda_M1": [
+        3771392,
+        43008
+      ],
+      "cuda_M2": [
+        3872256,
+        86016
+      ]
+    },
+    "original_materialized_E4_constant_bytes_both_arms": 917504,
+    "removed_NK_F32_intermediate_bytes": 3670016,
+    "alias": "Default transpose aliases the W Cast span; do not count it as a second allocation.",
+    "private": "Known provider persistent metadata is recorded per process. Unknown-private counts remain CPU2 and CUDA2 after budgeting; workspace is not total private bytes/RSS/physical traffic."
+  },
+  "interpretation": [
+    "The existing natural resource-limited compile selects exactly one bounded static policy for every backend/shape/process. No forced constraint was needed. This is a resource policy, not a product/default-routing fix.",
+    "CPU has one process only: M1 median1523.8->1440.4us (-5.47%), M2 median2182.7->2915.6us (+33.58%, slower). Bounded storage has a real CPU tradeoff; do not globally promote the candidate.",
+    "CUDA arm medians are lower in all three processes for M1 and M2, but budget M1 has 431.6/543.4/363.2us tail samples. Its means are slightly slower in processes1 and2. All raw samples, means and paired differences are retained.",
+    "CUDA process3 M2 is slower for both arms (180.2->117.4us medians) than earlier processes. Keep processes separate; no pooled latency, stable tail or whole-model speedup claim.",
+    "Cold order is not randomized and includes first module/thread/library effects. Preserve compile/prepare/first-call buckets separately; do not call the M1 cold difference a proven cold-start benefit.",
+    "No global default, provider rank, graph candidate cut, numerical contract or executor changed. The observation supports using the explicit existing workspace limit when this finite role must meet a small workspace requirement."
+  ],
+  "measurement": {
+    "replay": "Commands on both arms; no capture claim",
+    "order": "Within each process M1 then M2; compile default before budget; warm calls alternate arm order by repetition; slots alternate.",
+    "boundary": "Old result release + complete submit + Completion.wait + GraphOutput/tensor + exact output read; no device-only event substitution.",
+    "cold": "compile / allocate-bind / prepare slot0 / prepare slot1 / first complete call all separate",
+    "pairing": "Same repetition index is a nearby interleaved comparison, not an independent process. No raw samples are pooled across processes."
+  },
+  "processes": [
+    {
+      "backend": "cpu",
+      "process": 1,
+      "pid": 77236,
+      "start_unix": 1792549841.9758227,
+      "end_unix": 1792549842.3873677,
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\outer-fp8-default-routing-2026-10-21\\cpu\\validation\\attempt1\\tests.result.json",
+        "bytes": 603,
+        "sha256": "2140f2b549180a11c1ccd285c5de9879599d89275db77261081d697d1455c614"
+      },
+      "xml": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\outer-fp8-default-routing-2026-10-21\\cpu\\validation\\attempt1\\tests.xml",
+        "bytes": 12426,
+        "sha256": "fabd68d2bba97404357593a27b2889b8b985caf0756f4aa824c576cd3e03be57"
+      },
+      "receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\outer-fp8-default-routing-2026-10-21\\cpu\\validation\\attempt1\\receipt.json",
+        "bytes": 15625,
+        "sha256": "68dd60232d6fa25321db51856ea7d9eddc01b83a2e18cfd8c5a899bf2c7fc388"
+      },
+      "cases": [
+        {
+          "test": "CpuOuterFp8RouteBench.M1",
+          "M": 1,
+          "arms": {
+            "default": {
+              "complete_call_us": {
+                "raw_11_samples": [
+                  1484.7,
+                  1493.2,
+                  1523.8,
+                  1543.8,
+                  1516.5,
+                  1569.6,
+                  1653.2,
+                  1781.5,
+                  1726.8,
+                  1489.9,
+                  1450.4
+                ],
+                "median": 1523.8,
+                "mean": 1566.6727272727273,
+                "minimum": 1450.4,
+                "maximum": 1781.5
+              },
+              "cold_us": {
+                "compile": 1018.2,
+                "allocate_bind": 1397.9,
+                "prepare_slots": [
+                  12.0,
+                  1.1
+                ],
+                "first_complete_call": 8811.7
+              },
+              "compile": {
+                "forced": false,
+                "workspace_budget_bytes": 18446744073709551615,
+                "workspace_bytes": 3763328,
+                "original_E4_materialized_bytes": 917504,
+                "provider_persistent_known_bytes": 2496,
+                "unknown_provider_private_count": 4,
+                "packed_steps": 0,
+                "search_states": 9,
+                "plan_rejections": 0,
+                "placement_attempts": 8,
+                "optimization_limited": false
+              }
+            },
+            "budget3MiB": {
+              "complete_call_us": {
+                "raw_11_samples": [
+                  1459.6,
+                  1421.2,
+                  1475.2,
+                  1413.6,
+                  1440.4,
+                  1430.6,
+                  1479.6,
+                  1489.3,
+                  1456.0,
+                  1399.7,
+                  1420.2
+                ],
+                "median": 1440.4,
+                "mean": 1444.1272727272726,
+                "minimum": 1399.7,
+                "maximum": 1489.3
+              },
+              "cold_us": {
+                "compile": 2711.2,
+                "allocate_bind": 91.8,
+                "prepare_slots": [
+                  2.5,
+                  0.6
+                ],
+                "first_complete_call": 1506.2
+              },
+              "compile": {
+                "forced": false,
+                "workspace_budget_bytes": 3145728,
+                "workspace_bytes": 35848,
+                "original_E4_materialized_bytes": 917504,
+                "provider_persistent_known_bytes": 1096,
+                "unknown_provider_private_count": 2,
+                "packed_steps": 1,
+                "search_states": 163,
+                "plan_rejections": 72,
+                "placement_attempts": 676,
+                "optimization_limited": false
+              }
+            }
+          },
+          "comparison": {
+            "budget_minus_default_median_us": -83.39999999999986,
+            "median_change_percent": -5.473159207245038,
+            "mean_change_percent": -7.822020030870302,
+            "same_repetition_budget_minus_default_us": [
+              -25.100000000000136,
+              -72.0,
+              -48.59999999999991,
+              -130.20000000000005,
+              -76.09999999999991,
+              -139.0,
+              -173.60000000000014,
+              -292.20000000000005,
+              -270.79999999999995,
+              -90.20000000000005,
+              -30.200000000000045
+            ],
+            "paired_difference_median_us": -90.20000000000005
+          }
+        },
+        {
+          "test": "CpuOuterFp8RouteBench.M2",
+          "M": 2,
+          "arms": {
+            "default": {
+              "complete_call_us": {
+                "raw_11_samples": [
+                  2637.2,
+                  2440.2,
+                  2182.7,
+                  2140.3,
+                  1997.9,
+                  2091.2,
+                  2052.3,
+                  2244.1,
+                  2131.7,
+                  2290.3,
+                  2423.8
+                ],
+                "median": 2182.7,
+                "mean": 2239.2454545454543,
+                "minimum": 1997.9,
+                "maximum": 2637.2
+              },
+              "cold_us": {
+                "compile": 369.0,
+                "allocate_bind": 134.1,
+                "prepare_slots": [
+                  4.4,
+                  0.8
+                ],
+                "first_complete_call": 2581.0
+              },
+              "compile": {
+                "forced": false,
+                "workspace_budget_bytes": 18446744073709551615,
+                "workspace_bytes": 3856512,
+                "original_E4_materialized_bytes": 917504,
+                "provider_persistent_known_bytes": 2496,
+                "unknown_provider_private_count": 4,
+                "packed_steps": 0,
+                "search_states": 9,
+                "plan_rejections": 0,
+                "placement_attempts": 8,
+                "optimization_limited": false
+              }
+            },
+            "budget3MiB": {
+              "complete_call_us": {
+                "raw_11_samples": [
+                  2879.8,
+                  2910.3,
+                  2915.6,
+                  2923.5,
+                  2897.1,
+                  3015.0,
+                  2967.5,
+                  2988.0,
+                  2868.0,
+                  2893.3,
+                  2926.3
+                ],
+                "median": 2915.6,
+                "mean": 2925.8545454545456,
+                "minimum": 2868.0,
+                "maximum": 3015.0
+              },
+              "cold_us": {
+                "compile": 2355.7,
+                "allocate_bind": 61.7,
+                "prepare_slots": [
+                  2.0,
+                  0.6
+                ],
+                "first_complete_call": 2981.2
+              },
+              "compile": {
+                "forced": false,
+                "workspace_budget_bytes": 3145728,
+                "workspace_bytes": 71692,
+                "original_E4_materialized_bytes": 917504,
+                "provider_persistent_known_bytes": 1096,
+                "unknown_provider_private_count": 2,
+                "packed_steps": 1,
+                "search_states": 163,
+                "plan_rejections": 72,
+                "placement_attempts": 676,
+                "optimization_limited": false
+              }
+            }
+          },
+          "comparison": {
+            "budget_minus_default_median_us": 732.9000000000001,
+            "median_change_percent": 33.577679021395525,
+            "mean_change_percent": 30.66252024829794,
+            "same_repetition_budget_minus_default_us": [
+              242.60000000000036,
+              470.10000000000036,
+              732.9000000000001,
+              783.1999999999998,
+              899.1999999999998,
+              923.8000000000002,
+              915.1999999999998,
+              743.9000000000001,
+              736.3000000000002,
+              603.0,
+              502.5
+            ],
+            "paired_difference_median_us": 736.3000000000002
+          }
+        }
+      ]
+    },
+    {
+      "backend": "cuda",
+      "process": 1,
+      "pid": 18400,
+      "start_unix": 1792549849.4884927,
+      "end_unix": 1792549850.1818213,
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\outer-fp8-default-routing-2026-10-21\\cuda\\validation\\attempt1\\tests.result.json",
+        "bytes": 607,
+        "sha256": "f5457a0c4d3aa23853c7ed6f5e53d9c8217a05b37259294ae41909ce39304ad0"
+      },
+      "xml": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\outer-fp8-default-routing-2026-10-21\\cuda\\validation\\attempt1\\tests.xml",
+        "bytes": 13836,
+        "sha256": "e9b6c77ab00ca5700e9a0050ddf59677dc71c9b723b7cb09d58f7d012e2db672"
+      },
+      "receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\outer-fp8-default-routing-2026-10-21\\cuda\\validation\\attempt1\\receipt.json",
+        "bytes": 17041,
+        "sha256": "f3b6df1ee9717174cdcb5971dc24d5b9f71171681c794a6440cdc0b6c3aab823"
+      },
+      "cases": [
+        {
+          "test": "CudaOuterFp8RouteBench.M1",
+          "M": 1,
+          "arms": {
+            "default": {
+              "complete_call_us": {
+                "raw_11_samples": [
+                  80.5,
+                  171.9,
+                  84.2,
+                  80.5,
+                  73.4,
+                  78.9,
+                  78.5,
+                  80.1,
+                  71.8,
+                  77.9,
+                  81.4
+                ],
+                "median": 80.1,
+                "mean": 87.19090909090909,
+                "minimum": 71.8,
+                "maximum": 171.9
+              },
+              "cold_us": {
+                "compile": 42798.9,
+                "allocate_bind": 718.3,
+                "prepare_slots": [
+                  319.8,
+                  6.5
+                ],
+                "first_complete_call": 5725.6
+              },
+              "compile": {
+                "forced": false,
+                "workspace_budget_bytes": 18446744073709551615,
+                "workspace_bytes": 3771392,
+                "original_E4_materialized_bytes": 917504,
+                "provider_persistent_known_bytes": 2360,
+                "unknown_provider_private_count": 6,
+                "packed_steps": 0,
+                "search_states": 14,
+                "plan_rejections": 0,
+                "placement_attempts": 13,
+                "optimization_limited": false
+              }
+            },
+            "budget3MiB": {
+              "complete_call_us": {
+                "raw_11_samples": [
+                  61.4,
+                  431.6,
+                  62.4,
+                  47.5,
+                  70.7,
+                  47.0,
+                  47.0,
+                  58.0,
+                  55.9,
+                  46.7,
+                  56.9
+                ],
+                "median": 56.9,
+                "mean": 89.55454545454546,
+                "minimum": 46.7,
+                "maximum": 431.6
+              },
+              "cold_us": {
+                "compile": 10934.4,
+                "allocate_bind": 184.5,
+                "prepare_slots": [
+                  5.7,
+                  1.3
+                ],
+                "first_complete_call": 78.6
+              },
+              "compile": {
+                "forced": false,
+                "workspace_budget_bytes": 3145728,
+                "workspace_bytes": 43008,
+                "original_E4_materialized_bytes": 917504,
+                "provider_persistent_known_bytes": 2632,
+                "unknown_provider_private_count": 2,
+                "packed_steps": 1,
+                "search_states": 329,
+                "plan_rejections": 160,
+                "placement_attempts": 2214,
+                "optimization_limited": false
+              }
+            }
+          },
+          "comparison": {
+            "budget_minus_default_median_us": -23.199999999999996,
+            "median_change_percent": -28.96379525593008,
+            "mean_change_percent": 2.7108747784381215,
+            "same_repetition_budget_minus_default_us": [
+              -19.1,
+              259.70000000000005,
+              -21.800000000000004,
+              -33.0,
+              -2.700000000000003,
+              -31.900000000000006,
+              -31.5,
+              -22.099999999999994,
+              -15.899999999999999,
+              -31.200000000000003,
+              -24.500000000000007
+            ],
+            "paired_difference_median_us": -22.099999999999994
+          }
+        },
+        {
+          "test": "CudaOuterFp8RouteBench.M2",
+          "M": 2,
+          "arms": {
+            "default": {
+              "complete_call_us": {
+                "raw_11_samples": [
+                  86.6,
+                  127.4,
+                  76.2,
+                  96.6,
+                  83.9,
+                  74.1,
+                  84.1,
+                  94.9,
+                  84.4,
+                  75.7,
+                  83.2
+                ],
+                "median": 84.1,
+                "mean": 87.91818181818182,
+                "minimum": 74.1,
+                "maximum": 127.4
+              },
+              "cold_us": {
+                "compile": 3652.2,
+                "allocate_bind": 711.7,
+                "prepare_slots": [
+                  296.2,
+                  10.8
+                ],
+                "first_complete_call": 169.6
+              },
+              "compile": {
+                "forced": false,
+                "workspace_budget_bytes": 18446744073709551615,
+                "workspace_bytes": 3872256,
+                "original_E4_materialized_bytes": 917504,
+                "provider_persistent_known_bytes": 2360,
+                "unknown_provider_private_count": 6,
+                "packed_steps": 0,
+                "search_states": 14,
+                "plan_rejections": 0,
+                "placement_attempts": 13,
+                "optimization_limited": false
+              }
+            },
+            "budget3MiB": {
+              "complete_call_us": {
+                "raw_11_samples": [
+                  47.2,
+                  93.5,
+                  55.7,
+                  55.8,
+                  57.4,
+                  45.9,
+                  55.2,
+                  55.5,
+                  55.7,
+                  56.2,
+                  66.7
+                ],
+                "median": 55.7,
+                "mean": 58.61818181818182,
+                "minimum": 45.9,
+                "maximum": 93.5
+              },
+              "cold_us": {
+                "compile": 9768.5,
+                "allocate_bind": 230.5,
+                "prepare_slots": [
+                  6.3,
+                  1.3
+                ],
+                "first_complete_call": 61.9
+              },
+              "compile": {
+                "forced": false,
+                "workspace_budget_bytes": 3145728,
+                "workspace_bytes": 86016,
+                "original_E4_materialized_bytes": 917504,
+                "provider_persistent_known_bytes": 2632,
+                "unknown_provider_private_count": 2,
+                "packed_steps": 1,
+                "search_states": 329,
+                "plan_rejections": 160,
+                "placement_attempts": 2214,
+                "optimization_limited": false
+              }
+            }
+          },
+          "comparison": {
+            "budget_minus_default_median_us": -28.39999999999999,
+            "median_change_percent": -33.769322235434,
+            "mean_change_percent": -33.32643987178162,
+            "same_repetition_budget_minus_default_us": [
+              -39.39999999999999,
+              -33.900000000000006,
+              -20.5,
+              -40.8,
+              -26.500000000000007,
+              -28.199999999999996,
+              -28.89999999999999,
+              -39.400000000000006,
+              -28.700000000000003,
+              -19.5,
+              -16.5
+            ],
+            "paired_difference_median_us": -28.700000000000003
+          }
+        }
+      ]
+    },
+    {
+      "backend": "cuda",
+      "process": 2,
+      "pid": 48488,
+      "start_unix": 1792549944.7729523,
+      "end_unix": 1792549945.423599,
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\outer-fp8-default-routing-2026-10-21\\cuda\\validation\\attempt2\\tests.result.json",
+        "bytes": 606,
+        "sha256": "f190bb84c1a664ddb85eb2d8f4f2e8469e92d17fae4614e75c41d7a5d382eefc"
+      },
+      "xml": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\outer-fp8-default-routing-2026-10-21\\cuda\\validation\\attempt2\\tests.xml",
+        "bytes": 13841,
+        "sha256": "c0193feb9d68cc159c7a44fd99750c530bebfb151af1faf0d0f3c25e71290178"
+      },
+      "receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\outer-fp8-default-routing-2026-10-21\\cuda\\validation\\attempt2\\receipt.json",
+        "bytes": 17046,
+        "sha256": "922c3b138d14705ed8c074674eb7e2504676a65d329d14950b381dab600a05bb"
+      },
+      "cases": [
+        {
+          "test": "CudaOuterFp8RouteBench.M1",
+          "M": 1,
+          "arms": {
+            "default": {
+              "complete_call_us": {
+                "raw_11_samples": [
+                  181.2,
+                  188.2,
+                  106.5,
+                  116.2,
+                  84.5,
+                  84.0,
+                  79.8,
+                  82.7,
+                  89.5,
+                  97.6,
+                  77.9
+                ],
+                "median": 89.5,
+                "mean": 108.0090909090909,
+                "minimum": 77.9,
+                "maximum": 188.2
+              },
+              "cold_us": {
+                "compile": 43452.0,
+                "allocate_bind": 4376.2,
+                "prepare_slots": [
+                  318.1,
+                  30.7
+                ],
+                "first_complete_call": 5722.4
+              },
+              "compile": {
+                "forced": false,
+                "workspace_budget_bytes": 18446744073709551615,
+                "workspace_bytes": 3771392,
+                "original_E4_materialized_bytes": 917504,
+                "provider_persistent_known_bytes": 2360,
+                "unknown_provider_private_count": 6,
+                "packed_steps": 0,
+                "search_states": 14,
+                "plan_rejections": 0,
+                "placement_attempts": 13,
+                "optimization_limited": false
+              }
+            },
+            "budget3MiB": {
+              "complete_call_us": {
+                "raw_11_samples": [
+                  113.9,
+                  543.4,
+                  58.2,
+                  51.9,
+                  59.1,
+                  56.4,
+                  61.3,
+                  59.6,
+                  45.8,
+                  76.5,
+                  65.4
+                ],
+                "median": 59.6,
+                "mean": 108.31818181818181,
+                "minimum": 45.8,
+                "maximum": 543.4
+              },
+              "cold_us": {
+                "compile": 11551.9,
+                "allocate_bind": 243.3,
+                "prepare_slots": [
+                  5.2,
+                  1.3
+                ],
+                "first_complete_call": 122.4
+              },
+              "compile": {
+                "forced": false,
+                "workspace_budget_bytes": 3145728,
+                "workspace_bytes": 43008,
+                "original_E4_materialized_bytes": 917504,
+                "provider_persistent_known_bytes": 2632,
+                "unknown_provider_private_count": 2,
+                "packed_steps": 1,
+                "search_states": 329,
+                "plan_rejections": 160,
+                "placement_attempts": 2214,
+                "optimization_limited": false
+              }
+            }
+          },
+          "comparison": {
+            "budget_minus_default_median_us": -29.9,
+            "median_change_percent": -33.407821229050285,
+            "mean_change_percent": 0.2861711977106385,
+            "same_repetition_budget_minus_default_us": [
+              -67.29999999999998,
+              355.2,
+              -48.3,
+              -64.30000000000001,
+              -25.4,
+              -27.6,
+              -18.5,
+              -23.1,
+              -43.7,
+              -21.099999999999994,
+              -12.5
+            ],
+            "paired_difference_median_us": -25.4
+          }
+        },
+        {
+          "test": "CudaOuterFp8RouteBench.M2",
+          "M": 2,
+          "arms": {
+            "default": {
+              "complete_call_us": {
+                "raw_11_samples": [
+                  105.5,
+                  110.5,
+                  76.1,
+                  74.8,
+                  98.1,
+                  100.6,
+                  74.4,
+                  97.1,
+                  84.9,
+                  74.3,
+                  84.8
+                ],
+                "median": 84.9,
+                "mean": 89.19090909090909,
+                "minimum": 74.3,
+                "maximum": 110.5
+              },
+              "cold_us": {
+                "compile": 3859.2,
+                "allocate_bind": 859.0,
+                "prepare_slots": [
+                  312.4,
+                  7.5
+                ],
+                "first_complete_call": 160.2
+              },
+              "compile": {
+                "forced": false,
+                "workspace_budget_bytes": 18446744073709551615,
+                "workspace_bytes": 3872256,
+                "original_E4_materialized_bytes": 917504,
+                "provider_persistent_known_bytes": 2360,
+                "unknown_provider_private_count": 6,
+                "packed_steps": 0,
+                "search_states": 14,
+                "plan_rejections": 0,
+                "placement_attempts": 13,
+                "optimization_limited": false
+              }
+            },
+            "budget3MiB": {
+              "complete_call_us": {
+                "raw_11_samples": [
+                  57.0,
+                  60.2,
+                  72.1,
+                  64.9,
+                  74.6,
+                  46.2,
+                  57.4,
+                  59.8,
+                  60.7,
+                  57.3,
+                  57.2
+                ],
+                "median": 59.8,
+                "mean": 60.67272727272727,
+                "minimum": 46.2,
+                "maximum": 74.6
+              },
+              "cold_us": {
+                "compile": 10172.0,
+                "allocate_bind": 203.7,
+                "prepare_slots": [
+                  4.8,
+                  1.3
+                ],
+                "first_complete_call": 66.1
+              },
+              "compile": {
+                "forced": false,
+                "workspace_budget_bytes": 3145728,
+                "workspace_bytes": 86016,
+                "original_E4_materialized_bytes": 917504,
+                "provider_persistent_known_bytes": 2632,
+                "unknown_provider_private_count": 2,
+                "packed_steps": 1,
+                "search_states": 329,
+                "plan_rejections": 160,
+                "placement_attempts": 2214,
+                "optimization_limited": false
+              }
+            }
+          },
+          "comparison": {
+            "budget_minus_default_median_us": -25.10000000000001,
+            "median_change_percent": -29.564193168433462,
+            "mean_change_percent": -31.974314544898586,
+            "same_repetition_budget_minus_default_us": [
+              -48.5,
+              -50.3,
+              -4.0,
+              -9.899999999999991,
+              -23.5,
+              -54.39999999999999,
+              -17.000000000000007,
+              -37.3,
+              -24.200000000000003,
+              -17.0,
+              -27.599999999999994
+            ],
+            "paired_difference_median_us": -24.200000000000003
+          }
+        }
+      ]
+    },
+    {
+      "backend": "cuda",
+      "process": 3,
+      "pid": 89988,
+      "start_unix": 1792549948.6248078,
+      "end_unix": 1792549949.2669644,
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\outer-fp8-default-routing-2026-10-21\\cuda\\validation\\attempt3\\tests.result.json",
+        "bytes": 607,
+        "sha256": "1deafcaebe542cfaf2cabef81437c1317556b3d4319942c5168185a4d35f2730"
+      },
+      "xml": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\outer-fp8-default-routing-2026-10-21\\cuda\\validation\\attempt3\\tests.xml",
+        "bytes": 13857,
+        "sha256": "0e86add550bd4408bbd1e52a36c3b79fac62a48c67af8d53cad121d04da01a95"
+      },
+      "receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\outer-fp8-default-routing-2026-10-21\\cuda\\validation\\attempt3\\receipt.json",
+        "bytes": 17062,
+        "sha256": "d22c1d2d64d7bd675f97ce3a66fd76253ac1b136829fe5419e4b00ee1dd3fa44"
+      },
+      "cases": [
+        {
+          "test": "CudaOuterFp8RouteBench.M1",
+          "M": 1,
+          "arms": {
+            "default": {
+              "complete_call_us": {
+                "raw_11_samples": [
+                  82.9,
+                  157.5,
+                  85.8,
+                  79.1,
+                  86.3,
+                  85.5,
+                  80.7,
+                  81.4,
+                  92.1,
+                  79.1,
+                  81.4
+                ],
+                "median": 82.9,
+                "mean": 90.16363636363636,
+                "minimum": 79.1,
+                "maximum": 157.5
+              },
+              "cold_us": {
+                "compile": 43381.8,
+                "allocate_bind": 718.1,
+                "prepare_slots": [
+                  307.5,
+                  7.5
+                ],
+                "first_complete_call": 6745.8
+              },
+              "compile": {
+                "forced": false,
+                "workspace_budget_bytes": 18446744073709551615,
+                "workspace_bytes": 3771392,
+                "original_E4_materialized_bytes": 917504,
+                "provider_persistent_known_bytes": 2360,
+                "unknown_provider_private_count": 6,
+                "packed_steps": 0,
+                "search_states": 14,
+                "plan_rejections": 0,
+                "placement_attempts": 13,
+                "optimization_limited": false
+              }
+            },
+            "budget3MiB": {
+              "complete_call_us": {
+                "raw_11_samples": [
+                  57.3,
+                  363.2,
+                  59.8,
+                  49.9,
+                  54.5,
+                  55.4,
+                  56.3,
+                  46.8,
+                  56.9,
+                  46.7,
+                  56.2
+                ],
+                "median": 56.2,
+                "mean": 82.0909090909091,
+                "minimum": 46.7,
+                "maximum": 363.2
+              },
+              "cold_us": {
+                "compile": 11131.0,
+                "allocate_bind": 212.1,
+                "prepare_slots": [
+                  7.4,
+                  1.8
+                ],
+                "first_complete_call": 81.4
+              },
+              "compile": {
+                "forced": false,
+                "workspace_budget_bytes": 3145728,
+                "workspace_bytes": 43008,
+                "original_E4_materialized_bytes": 917504,
+                "provider_persistent_known_bytes": 2632,
+                "unknown_provider_private_count": 2,
+                "packed_steps": 1,
+                "search_states": 329,
+                "plan_rejections": 160,
+                "placement_attempts": 2214,
+                "optimization_limited": false
+              }
+            }
+          },
+          "comparison": {
+            "budget_minus_default_median_us": -26.700000000000003,
+            "median_change_percent": -32.20747889022919,
+            "mean_change_percent": -8.953418027828185,
+            "same_repetition_budget_minus_default_us": [
+              -25.60000000000001,
+              205.7,
+              -26.0,
+              -29.199999999999996,
+              -31.799999999999997,
+              -30.1,
+              -24.400000000000006,
+              -34.60000000000001,
+              -35.199999999999996,
+              -32.39999999999999,
+              -25.200000000000003
+            ],
+            "paired_difference_median_us": -29.199999999999996
+          }
+        },
+        {
+          "test": "CudaOuterFp8RouteBench.M2",
+          "M": 2,
+          "arms": {
+            "default": {
+              "complete_call_us": {
+                "raw_11_samples": [
+                  166.9,
+                  296.9,
+                  192.4,
+                  182.4,
+                  179.0,
+                  183.6,
+                  180.3,
+                  179.7,
+                  179.3,
+                  179.7,
+                  180.2
+                ],
+                "median": 180.2,
+                "mean": 190.94545454545454,
+                "minimum": 166.9,
+                "maximum": 296.9
+              },
+              "cold_us": {
+                "compile": 3697.0,
+                "allocate_bind": 828.5,
+                "prepare_slots": [
+                  281.6,
+                  30.4
+                ],
+                "first_complete_call": 279.9
+              },
+              "compile": {
+                "forced": false,
+                "workspace_budget_bytes": 18446744073709551615,
+                "workspace_bytes": 3872256,
+                "original_E4_materialized_bytes": 917504,
+                "provider_persistent_known_bytes": 2360,
+                "unknown_provider_private_count": 6,
+                "packed_steps": 0,
+                "search_states": 14,
+                "plan_rejections": 0,
+                "placement_attempts": 13,
+                "optimization_limited": false
+              }
+            },
+            "budget3MiB": {
+              "complete_call_us": {
+                "raw_11_samples": [
+                  593.2,
+                  323.3,
+                  130.9,
+                  117.1,
+                  129.0,
+                  115.8,
+                  129.1,
+                  116.0,
+                  117.4,
+                  115.9,
+                  115.6
+                ],
+                "median": 117.4,
+                "mean": 182.11818181818182,
+                "minimum": 115.6,
+                "maximum": 593.2
+              },
+              "cold_us": {
+                "compile": 10418.1,
+                "allocate_bind": 284.2,
+                "prepare_slots": [
+                  4.8,
+                  1.2
+                ],
+                "first_complete_call": 134.6
+              },
+              "compile": {
+                "forced": false,
+                "workspace_budget_bytes": 3145728,
+                "workspace_bytes": 86016,
+                "original_E4_materialized_bytes": 917504,
+                "provider_persistent_known_bytes": 2632,
+                "unknown_provider_private_count": 2,
+                "packed_steps": 1,
+                "search_states": 329,
+                "plan_rejections": 160,
+                "placement_attempts": 2214,
+                "optimization_limited": false
+              }
+            }
+          },
+          "comparison": {
+            "budget_minus_default_median_us": -62.79999999999998,
+            "median_change_percent": -34.850166481687005,
+            "mean_change_percent": -4.622928965911244,
+            "same_repetition_budget_minus_default_us": [
+              426.30000000000007,
+              26.400000000000034,
+              -61.5,
+              -65.30000000000001,
+              -50.0,
+              -67.8,
+              -51.20000000000002,
+              -63.69999999999999,
+              -61.900000000000006,
+              -63.79999999999998,
+              -64.6
+            ],
+            "paired_difference_median_us": -61.900000000000006
+          }
+        }
+      ]
+    }
+  ],
+  "current_sources": [
+    {
+      "repository_path": "tests/compute_models/fp8_outer_scale_fixture.h",
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\fp8_outer_scale_fixture.h",
+      "bytes": 22241,
+      "sha256": "df62449003a0f5d34df21d55ce3a1dbc0df69267e55ac0497aea6bdc597b81ad"
+    },
+    {
+      "repository_path": "tests/compute_models/static_fp8_reference_fixture.h",
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\static_fp8_reference_fixture.h",
+      "bytes": 19426,
+      "sha256": "53353ba911056fe2d1295d66f348b0825b8a0945da13539bb4224c705fb0b406"
+    },
+    {
+      "repository_path": "tests/compute_provider_native/half_test_support.h",
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_native\\half_test_support.h",
+      "bytes": 4399,
+      "sha256": "5f6d8f7b70d07e44600bb6d6d592f66af5dac9970a730695956a1afcfc3cd0b8"
+    },
+    {
+      "repository_path": "src/compute_packed_shared/static_fp8_linear.h",
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_packed_shared\\static_fp8_linear.h",
+      "bytes": 3504,
+      "sha256": "454fd995f6bddf96cb517c656f21b793c32f175dd7ad82a07ab87bd705ad2ce8"
+    },
+    {
+      "repository_path": "src/graph/static_fp8_region.h",
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\static_fp8_region.h",
+      "bytes": 6986,
+      "sha256": "f22a0ac2ce8cecae75a283a6470402ba1d672cdf4087cc780ac5d8c742f1d95f"
+    },
+    {
+      "repository_path": "src/graph/closed_region.h",
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\closed_region.h",
+      "bytes": 4100,
+      "sha256": "10808caf4bd8aa36bf397a09b92c187b377af899f04f314c822f1659726889a4"
+    },
+    {
+      "repository_path": "src/graph/mapped_pattern_region.h",
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\mapped_pattern_region.h",
+      "bytes": 10781,
+      "sha256": "3835efcf4d597c940d6d9a14cdea8bb66440fc7d837c86cf7aaa67bfb2734ad4"
+    },
+    {
+      "repository_path": "src/graph/region_discovery.h",
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\region_discovery.h",
+      "bytes": 4544,
+      "sha256": "87305150cbdc893ccf8e394f93c4a10b89def5ce4b4dff213afc94671641ff43"
+    },
+    {
+      "repository_path": "src/graph/executable.cc",
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\executable.cc",
+      "bytes": 462934,
+      "sha256": "7817d7e80752912a3daac41cd87511e15a2df3beeb0651c91f1b73d666b2674e"
+    },
+    {
+      "repository_path": "src/graph/resources.cc",
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\resources.cc",
+      "bytes": 70350,
+      "sha256": "40f38a4b5d2d5e316fe9cae57b2360cd1598446a31acee63740ba297990fa57c"
+    },
+    {
+      "repository_path": "src/graph_route_cpu/ggml_region.cc",
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph_route_cpu\\ggml_region.cc",
+      "bytes": 18477,
+      "sha256": "3f765811abae2e5df2790959d9cd54595b1bbefe2834176fe4585c126033ff37"
+    },
+    {
+      "repository_path": "src/graph_provider_ggml_cuda/ggml_cuda_region.cc",
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph_provider_ggml_cuda\\ggml_cuda_region.cc",
+      "bytes": 67992,
+      "sha256": "9f843fe512da771f7bc590ba3c48d211848c76f0b8caa4b2ad31bb4e31fdd44d"
+    },
+    {
+      "repository_path": "src/compute_provider_native/static_fp8.cc",
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_native\\static_fp8.cc",
+      "bytes": 9456,
+      "sha256": "aae79be16b2353687e707338d9f05930ed9deedc21f51fbb56319f385e9e2777"
+    },
+    {
+      "repository_path": "src/compute_provider_torch_cuda/artifact_provider.cc",
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_torch_cuda\\artifact_provider.cc",
+      "bytes": 39279,
+      "sha256": "db2e9dada361708ad89d9690a9ad41219ed23a15b6db6db5a0a36c26b43a1035"
+    },
+    {
+      "repository_path": "src/compute_provider_torch_cuda/mlx_packed_kernel.cu",
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_torch_cuda\\mlx_packed_kernel.cu",
+      "bytes": 22280,
+      "sha256": "de76c2c530281bba175ce9d7eb71bbb9291a2e14cfe751b253fcfa8fdce42cac"
+    },
+    {
+      "repository_path": "src/compute_provider_torch_cuda/mlx_packed_kernel.h",
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_torch_cuda\\mlx_packed_kernel.h",
+      "bytes": 2412,
+      "sha256": "f71835b3d857acc3ec3b3d1a31de04aea76e8e7785d94fe042ff81b7de5f3a2f"
+    },
+    {
+      "repository_path": "src/compute_route_cpu/default_policy.cc",
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_route_cpu\\default_policy.cc",
+      "bytes": 6578,
+      "sha256": "3b0d5aca67390514cce2d4ede5749ce567cb5debd0219811976ad420167d603a"
+    },
+    {
+      "repository_path": "src/compute_route_cuda/default_policy.cc",
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_route_cuda\\default_policy.cc",
+      "bytes": 7172,
+      "sha256": "2e47bb3456470b9f51dda885291d36f330006fad3af3e3faeed37e73420f328f"
+    },
+    {
+      "repository_path": "include/hyle/graph/executable.h",
+      "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\graph\\executable.h",
+      "bytes": 49762,
+      "sha256": "6305dd557606b26119fc60de9dbb68c979a1f8fe54755a191378c49742ef4714"
+    },
+    {
+      "repository_path": "include/hyle/graph/result.h",
+      "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\graph\\result.h",
+      "bytes": 1646,
+      "sha256": "90861eafec4f3a0aa73014416bd2817dfe3892ac001ea206bebf907e1d3cf182"
+    },
+    {
+      "repository_path": "include/hyle/compute/model_ops.h",
+      "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\model_ops.h",
+      "bytes": 75815,
+      "sha256": "91ef5991618307e1be23c4d36f8b07aca09d9ff41473098b3d50ada4feb6b5cb"
+    }
+  ],
+  "related_evidence": [
+    {
+      "path": "../correctness/fp8-outer-scale-reference-2026-10-21.json",
+      "identity": {
+        "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\fp8-outer-scale-reference-2026-10-21.json",
+        "bytes": 10556,
+        "sha256": "86e7dd82685cbc8c26669d26d5a6c73d2c9731539acfef91b6c98c31aece844b"
+      }
+    }
+  ],
+  "limitations": [
+    "CPU n=1 process; CUDA n=3 short processes. No steady clocks, wide shape sweep or tail guarantee.",
+    "No complete model/checkpoint/Linux/quality/AMD tuned-kernel equivalence or Qwen decode conclusion.",
+    "No SDK/NVCC/product build for this experiment: two focused test CXX and two links against recorded current Z closures."
+  ],
+  "source_review": "analysis/post-probe-source-review.json",
+  "cleanup_inventory": "cleanup/cleanup-windows-inventory.json",
+  "archive": {
+    "file": "outer-fp8-route-cost-2026-10-21.zip",
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\outer-fp8-route-cost-2026-10-21.zip",
+    "bytes": 408600,
+    "sha256": "bbd27883bb5578b7264ba2a430d8ad92bfaa5fe70e760ddce0e969cd06c168e2",
+    "members": 106,
+    "manifest": "manifest.json",
+    "sources": 21
+  }
+}

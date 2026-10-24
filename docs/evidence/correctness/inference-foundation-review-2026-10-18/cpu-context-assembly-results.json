@@ -1,0 +1,13 @@
+{
+  "archive": {
+    "path": "docs/evidence/correctness/inference-foundation-review-2026-10-18/cpu-context-assembly.zip",
+    "bytes": 193856,
+    "sha256": "61bd9f0b37812c14c604199adc9e0c24031144299a7efbf386e17fad85b834e9"
+  },
+  "cleanup": {
+    "files": 4,
+    "archive_verified": true,
+    "retained_objects": 5,
+    "bytes": 97915473.0
+  }
+}

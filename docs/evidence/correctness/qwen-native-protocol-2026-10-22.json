@@ -1,0 +1,1539 @@
+{
+  "date": "2026-10-22",
+  "status": "PASS_LIMITED_THREE_BACKEND_PREFIX_AND_RETIREMENT_VULKAN_QUOTA_RETRY",
+  "scope": "Same original Qwen BF16 K1 consumer, first23 fixture, complete prefix Snapshot and original Graph/commit/retirement chain; same-partition controls only.",
+  "prefix": {
+    "cuda": {
+      "summary": {
+        "status": "PASS_BYTE_EXACT",
+        "actual_graph_calls": 15,
+        "full_hits": 3,
+        "full_hit_head_vectors": 156,
+        "old_prefix_full_byte_checks": 7,
+        "peak_live_snapshot_versions": 3,
+        "final_live_snapshot_versions": 0,
+        "all_vectors_byte_equal": true,
+        "all_finite": true,
+        "negative_rejected": true,
+        "negative_bound_banks": 14,
+        "retry_same_carrier_slot": true,
+        "peak_retained_output_backing_bytes": 0,
+        "vector_comparisons": 534,
+        "cache": {
+          "cache_budget_scope": "shared_pools_and_retained_output_backing",
+          "cache_shared_backing_bytes": 80240691,
+          "cache_retained_output_backing_bytes": 0,
+          "cache_live_requested_bytes": 80240691,
+          "cache_peak_requested_bytes": 80240691,
+          "cache_requested_byte_limit": 268435456
+        },
+        "quality_pass": false,
+        "performance_comparison": false
+      },
+      "execution": {
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-native-protocol-20261022\\cuda-prefix-link1\\probe.exe",
+          "--inputs",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\prepared",
+          "--scenario",
+          "prefix",
+          "--output",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-native-protocol-20261022\\cuda-prefix-run1\\vectors"
+        ],
+        "cwd": "C:\\public\\project-hyle\\hyle",
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-native-protocol-20261022\\cuda-prefix-link1\\probe.exe",
+          "bytes": 140387328,
+          "sha256": "51dbe36fec54f58396d052483921840a314cc6c3da49845a34b0facf4374e8bc"
+        },
+        "inputs": [
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\prepared\\weights.tsv",
+            "bytes": 28872,
+            "sha256": "bdfddf019139b4c791d8acad55a1c18b32fdef95e34f667ecf99f6658a856967"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\prepared\\prompt.ids",
+            "bytes": 113,
+            "sha256": "0459156ffd8f318a1e1e2049e18a063c1b760fed77013afa689584fcc1d20d30"
+          }
+        ],
+        "started": 1792646551.5923932,
+        "performance_comparison": false,
+        "pid": 29488,
+        "state": "terminal",
+        "exit": 0,
+        "seconds": 4.215801239013672
+      },
+      "raw_observation": {
+        "path": ".scratch/qwen-native-protocol-20261022/cuda-prefix-run1/vectors/observation.json",
+        "bytes": 437946,
+        "sha256": "a529d2f96f27187da42687c1816e7133bd28b7eb6e15bfd33d177911c8e1b686"
+      }
+    },
+    "vulkan": {
+      "summary": {
+        "status": "PASS_BYTE_EXACT",
+        "actual_graph_calls": 15,
+        "full_hits": 3,
+        "full_hit_head_vectors": 156,
+        "old_prefix_full_byte_checks": 7,
+        "peak_live_snapshot_versions": 3,
+        "final_live_snapshot_versions": 0,
+        "all_vectors_byte_equal": true,
+        "all_finite": true,
+        "negative_rejected": true,
+        "negative_bound_banks": 14,
+        "retry_same_carrier_slot": true,
+        "peak_retained_output_backing_bytes": 62259200,
+        "vector_comparisons": 534,
+        "cache": {
+          "cache_budget_scope": "shared_pools_and_retained_output_backing",
+          "cache_shared_backing_bytes": 41148467,
+          "cache_retained_output_backing_bytes": 0,
+          "cache_live_requested_bytes": 41148467,
+          "cache_peak_requested_bytes": 132601907,
+          "cache_requested_byte_limit": 268435456
+        },
+        "quality_pass": false,
+        "performance_comparison": false
+      },
+      "execution": {
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-native-protocol-20261022\\vulkan-prefix-link1\\probe.exe",
+          "--inputs",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\prepared",
+          "--scenario",
+          "prefix",
+          "--output",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-native-protocol-20261022\\vulkan-prefix-run1\\vectors"
+        ],
+        "cwd": "C:\\public\\project-hyle\\hyle",
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-native-protocol-20261022\\vulkan-prefix-link1\\probe.exe",
+          "bytes": 68903424,
+          "sha256": "12635fe76030ceb2c5155f4c6cb8a5e72fe331eb78a1ccfde355bc4415c0c8d4"
+        },
+        "inputs": [
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\prepared\\weights.tsv",
+            "bytes": 28872,
+            "sha256": "bdfddf019139b4c791d8acad55a1c18b32fdef95e34f667ecf99f6658a856967"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\prepared\\prompt.ids",
+            "bytes": 113,
+            "sha256": "0459156ffd8f318a1e1e2049e18a063c1b760fed77013afa689584fcc1d20d30"
+          }
+        ],
+        "started": 1792646312.3129914,
+        "performance_comparison": false,
+        "pid": 35872,
+        "state": "terminal",
+        "exit": 0,
+        "seconds": 20.592875003814697
+      },
+      "raw_observation": {
+        "path": ".scratch/qwen-native-protocol-20261022/vulkan-prefix-run1/vectors/observation.json",
+        "bytes": 440902,
+        "sha256": "755b0e4ee5461ec55aff2653004de7205acaef205b9aa59f13fe1d0bce56b582"
+      }
+    },
+    "apple": {
+      "summary": {
+        "status": "PASS_BYTE_EXACT",
+        "actual_graph_calls": 15,
+        "full_hits": 3,
+        "full_hit_head_vectors": 156,
+        "old_prefix_full_byte_checks": 7,
+        "peak_live_snapshot_versions": 3,
+        "final_live_snapshot_versions": 0,
+        "all_vectors_byte_equal": true,
+        "all_finite": true,
+        "negative_rejected": true,
+        "negative_bound_banks": 14,
+        "retry_same_carrier_slot": true,
+        "peak_retained_output_backing_bytes": 44556288,
+        "vector_comparisons": 534,
+        "cache": {
+          "cache_budget_scope": "shared_pools_and_retained_output_backing",
+          "cache_shared_backing_bytes": 41148467,
+          "cache_retained_output_backing_bytes": 0,
+          "cache_live_requested_bytes": 41148467,
+          "cache_peak_requested_bytes": 106942515,
+          "cache_requested_byte_limit": 268435456
+        },
+        "quality_pass": false,
+        "performance_comparison": false
+      },
+      "execution": {
+        "command": [
+          "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/qwen-native-protocol-20261022/prefix1/probe",
+          "--inputs",
+          "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/qwen-native-protocol-20261022/prefix-run1/inputs",
+          "--scenario",
+          "prefix",
+          "--output",
+          "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/qwen-native-protocol-20261022/prefix-run1/vectors"
+        ],
+        "cwd": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/qwen-native-protocol-20261022/prefix1",
+        "image": {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/qwen-native-protocol-20261022/prefix1/probe",
+          "bytes": 12838920,
+          "sha256": "973c06d19c0343e9566bbb25a11f4f1a53b445ad4f2fb3f8d1f3dc4e220d9753"
+        },
+        "started": 1792646638.7273831,
+        "performance_comparison": false,
+        "prompt": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\prepared\\prompt.ids",
+          "bytes": 113,
+          "sha256": "0459156ffd8f318a1e1e2049e18a063c1b760fed77013afa689584fcc1d20d30"
+        },
+        "pid": 2961,
+        "state": "terminal",
+        "exit": 0,
+        "seconds": 21.857277870178223
+      },
+      "raw_observation": {
+        "path": ".scratch/qwen-native-protocol-20261022/apple-prefix-run1.json",
+        "bytes": 726708,
+        "sha256": "5c2db14b5dedb22c788170cef082c86460a91d6c2f90aaf7fbf2b3f7fa3d5e2f"
+      }
+    }
+  },
+  "probe_source": {
+    "path": "tools/qwen35_text/mtp_session_probe.cc",
+    "bytes": 113106,
+    "sha256": "39362a7c515ba9bd2843713bf162c919544a6dcbd3760f44c92e9683038db5f6"
+  },
+  "source_change": {
+    "status": "SOURCE_FROZEN_NOT_BUILT_OR_RUN",
+    "file": "tools/qwen35_text/mtp_session_probe.cc",
+    "before": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-native-protocol-20261022\\before\\tools\\qwen35_text\\mtp_session_probe.cc",
+    "before_sha256": "1f79b9822f878a163ee69a26c93b9f86e079e189e98ed15b01a5ce9652d980d7",
+    "after_sha256": "39362a7c515ba9bd2843713bf162c919544a6dcbd3760f44c92e9683038db5f6",
+    "scope": [
+      "Prefix scenario reads actual completed native Graph logits/hidden through independently exported readonly storage leases before original finish revokes output observation; leases expire within the same commit.",
+      "Prefix budget observation uses actual Model cache accounting and explicit 256MiB retention limit; CUDA retains exact caller-pool formula assertion; unknown private execution/physical memory remains unknown.",
+      "Native entry explicitly supports prefix only. CUDA gate helpers/cancellation batch remain CUDA-only; all original CUDA scenarios retain definitions/dispatch."
+    ],
+    "preserved": [
+      "Original 52-component Snapshot and 54-component commit comparisons",
+      "Physical page identities and all old logical KV/recurrent/carry/prior bytes",
+      "Three full hits with 156 head vectors and15 actual Graphs",
+      "Negative teacher-forced branch and original retired slot retry",
+      "Natural mathematical inputs, IDs/acceptance observations and numeric comparisons"
+    ],
+    "verification": [
+      "Before/after diff inspected",
+      "Whitespace check passed",
+      "CUDA identifiers are confined to HYLE_COMPUTE_CUDA guards",
+      "No compilation, model inference or native execution by this agent"
+    ]
+  },
+  "remaining": [
+    "Current Qwen BF16 K1 numerical differences across T, batch width and prefill source: identify unintended computation/state differences and check complete task quality.",
+    "Actual applicable selected artifact adapters: Q27/Q24 loader/geometry/state/acceptance, GLM NextN payload and complete state, formal DSpark roles/optional sidecars and complete state/acceptance. Existing finite operators/fragments are not wholly missing.",
+    "Complete current plain/MTP Hyle/llama four-arm speed, independent CPU/GPU memory sampling and actual hotspot decisions; no new TPS in this batch."
+  ],
+  "limitations": [
+    "Byte-exact results are compared to each backend own identical-partition reference, not cross-backend payload equality.",
+    "Cache requested bytes do not measure native execution private allocation or physical VRAM peak.",
+    "No full quality or throughput conclusion.",
+    "Apple cancellation proves Model Job acceptance in its original native FIFO, not Model GPU commands already submitted.",
+    "No device-failure injection. Native cancellation checks use one finite T2 branch; no all-shape or all-artifact claim.",
+    "Raw retirement managed_backing_bytes is the caller-pool plan. Only managed_bytes_while_native_pending is this probe actual cache usage; neither is physical VRAM/private native peak.",
+    "The speculative same-delegated-lane Graph change and test were reverted because the current compiler rejects that plan shape. Its construction-stage test failure is not a product-fix pass."
+  ],
+  "full_goal_complete": false,
+  "retirement": {
+    "cuda": {
+      "execution": {
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-native-protocol-20261022\\cuda-retirement-link1\\probe.exe",
+          "--inputs",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\prepared",
+          "--mtp",
+          "on"
+        ],
+        "cwd": "C:\\public\\project-hyle\\hyle",
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-native-protocol-20261022\\cuda-retirement-link1\\probe.exe",
+          "bytes": 140235264,
+          "sha256": "fab743553ffb9af4d6eedd1f3f51a44a5c8afe01969f353a34593e04d2422ced"
+        },
+        "inputs": [
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\prepared\\weights.tsv",
+            "bytes": 28872,
+            "sha256": "bdfddf019139b4c791d8acad55a1c18b32fdef95e34f667ecf99f6658a856967"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\prepared\\prompt.ids",
+            "bytes": 113,
+            "sha256": "0459156ffd8f318a1e1e2049e18a063c1b760fed77013afa689584fcc1d20d30"
+          }
+        ],
+        "started": 1792649739.0108924,
+        "performance_comparison": false,
+        "pid": 5408,
+        "state": "terminal",
+        "exit": 0,
+        "seconds": 2.8356049060821533
+      },
+      "report": {
+        "status": "PASS",
+        "backend": "cuda",
+        "native_gate": "original_cuda_host_callback",
+        "scheduled_progress": false,
+        "model_native_submission_observed": true,
+        "gate_watchdog_opened": false,
+        "mtp": true,
+        "weight_tensors": 335,
+        "capacity": 64,
+        "resident_snapshot_limit": 2,
+        "candidate_capacity": 3,
+        "actual_graph_submissions": 6,
+        "natural_lag1_seed": true,
+        "old_target_tokens": 17,
+        "old_draft_frontier": 16,
+        "pending_target_query_rows": 2,
+        "writer_only_draft": false,
+        "pending_draft_query_rows": 2,
+        "bound_append_banks": 14,
+        "cancelled_candidate_target_tokens": 19,
+        "cancelled_candidate_draft_frontier": 18,
+        "busy_prepare_rejections": 3,
+        "collector_calls": 5,
+        "dropped_live_public_completion": true,
+        "managed_bytes_while_native_pending": 80240691,
+        "managed_backing_bytes": 80240691,
+        "old_prefix_logical_lease_bytes": 19972096,
+        "all14_native_permissions_retained_until_actual_retirement": true,
+        "same_slot_rebuilt_after_close": true,
+        "old_target_and_draft_kv_bytes_unchanged": true,
+        "old_recurrent_resources_byte_unchanged": 36,
+        "old_carry_and_prior_bytes_unchanged": true,
+        "selector_failed_after_successful_terminal": true,
+        "selector_failure_published_head": false,
+        "selector_abort_reclaimed_all14_dirty_banks": true,
+        "retry_target_tokens": 18,
+        "final_target_tokens": 18,
+        "final_draft_frontier": 18,
+        "native_error_injected": false,
+        "host_policy_error_injected": true,
+        "cancel_means_native_preemption": false,
+        "timing_comparison": false
+      },
+      "scope": "Original CUDA Queue submission / Vulkan Runtime pending Run was accepted before cancellation; finite T2 lag1 branch only."
+    },
+    "vulkan": {
+      "execution": {
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-native-protocol-20261022\\vulkan-retirement-link6\\probe.exe",
+          "--inputs",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\prepared",
+          "--mtp",
+          "on"
+        ],
+        "cwd": "C:\\public\\project-hyle\\hyle",
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-native-protocol-20261022\\vulkan-retirement-link6\\probe.exe",
+          "bytes": 68826624,
+          "sha256": "0a780ecb83a845fad7897ac97a1d97b350fc7ba1d371dcb3e40cb05cf636fae9"
+        },
+        "inputs": [
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\prepared\\weights.tsv",
+            "bytes": 28872,
+            "sha256": "bdfddf019139b4c791d8acad55a1c18b32fdef95e34f667ecf99f6658a856967"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\prepared\\prompt.ids",
+            "bytes": 113,
+            "sha256": "0459156ffd8f318a1e1e2049e18a063c1b760fed77013afa689584fcc1d20d30"
+          }
+        ],
+        "started": 1792649261.0817795,
+        "performance_comparison": false,
+        "pid": 97796,
+        "state": "terminal",
+        "exit": 0,
+        "seconds": 6.838981628417969
+      },
+      "report": {
+        "status": "PASS",
+        "backend": "vulkan",
+        "native_gate": "original_vulkan_queue_host_signaled_timeline",
+        "scheduled_progress": true,
+        "model_native_submission_observed": true,
+        "gate_watchdog_opened": false,
+        "mtp": true,
+        "weight_tensors": 335,
+        "capacity": 64,
+        "resident_snapshot_limit": 2,
+        "candidate_capacity": 3,
+        "actual_graph_submissions": 6,
+        "natural_lag1_seed": true,
+        "old_target_tokens": 17,
+        "old_draft_frontier": 16,
+        "pending_target_query_rows": 2,
+        "writer_only_draft": false,
+        "pending_draft_query_rows": 2,
+        "bound_append_banks": 14,
+        "cancelled_candidate_target_tokens": 19,
+        "cancelled_candidate_draft_frontier": 18,
+        "busy_prepare_rejections": 3,
+        "collector_calls": 4,
+        "dropped_live_public_completion": true,
+        "managed_bytes_while_native_pending": 74213427,
+        "managed_backing_bytes": 80240691,
+        "old_prefix_logical_lease_bytes": 19972096,
+        "all14_native_permissions_retained_until_actual_retirement": true,
+        "same_slot_rebuilt_after_close": true,
+        "old_target_and_draft_kv_bytes_unchanged": true,
+        "old_recurrent_resources_byte_unchanged": 36,
+        "old_carry_and_prior_bytes_unchanged": true,
+        "selector_failed_after_successful_terminal": true,
+        "selector_failure_published_head": false,
+        "selector_abort_reclaimed_all14_dirty_banks": true,
+        "retry_target_tokens": 18,
+        "final_target_tokens": 18,
+        "final_draft_frontier": 18,
+        "native_error_injected": false,
+        "host_policy_error_injected": true,
+        "cancel_means_native_preemption": false,
+        "timing_comparison": false
+      },
+      "scope": "Original CUDA Queue submission / Vulkan Runtime pending Run was accepted before cancellation; finite T2 lag1 branch only."
+    },
+    "apple": {
+      "execution": {
+        "command": [
+          "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/qwen-native-protocol-20261022/retirement3/probe",
+          "--inputs",
+          "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/qwen-native-protocol-20261022/prefix-run1/inputs",
+          "--mtp",
+          "on",
+          "--verify-rows",
+          "2"
+        ],
+        "cwd": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/qwen-native-protocol-20261022/retirement3",
+        "image": {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/qwen-native-protocol-20261022/retirement3/probe",
+          "bytes": 12787352,
+          "sha256": "570c7fcfb4ba513b05abaeb84600f6262c960bfbc2b8458b187cd42d2a056629"
+        },
+        "inputs": [
+          {
+            "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/qwen-native-protocol-20261022/prefix-run1/inputs/weights.tsv",
+            "bytes": 28868,
+            "sha256": "0e8c3cbf144b446d87680854c4b972e3e38cf2098d7609956ed49e1fb13fdb72"
+          },
+          {
+            "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/qwen-native-protocol-20261022/prefix-run1/inputs/prompt.ids",
+            "bytes": 112,
+            "sha256": "bf50c1da9f22c75ad4de124b1815067e666e5c4e1b19b306ddb94586bdf04777"
+          }
+        ],
+        "hardware": {
+          "hw.model": "Mac16,12",
+          "hw.memsize": "17179869184"
+        },
+        "started": 1792649994.806834,
+        "performance_comparison": false,
+        "model_admission_proof": "original_fifo_accepted_job",
+        "model_gpu_submission_proven": false,
+        "pid": 3257,
+        "state": "terminal",
+        "exit": 0,
+        "seconds": 2.138899087905884
+      },
+      "status": "PASS_LIMITED_APPLE_FIFO_RETIREMENT_RETRY",
+      "report": {
+        "status": "PASS",
+        "backend": "apple",
+        "native_gate": "original_apple_fifo_and_stream_shared_event",
+        "scheduled_progress": true,
+        "model_native_submission_observed": true,
+        "gate_watchdog_opened": false,
+        "mtp": true,
+        "weight_tensors": 335,
+        "capacity": 64,
+        "resident_snapshot_limit": 2,
+        "candidate_capacity": 3,
+        "actual_graph_submissions": 6,
+        "natural_lag1_seed": true,
+        "old_target_tokens": 17,
+        "old_draft_frontier": 16,
+        "pending_target_query_rows": 2,
+        "writer_only_draft": false,
+        "pending_draft_query_rows": 2,
+        "bound_append_banks": 14,
+        "cancelled_candidate_target_tokens": 19,
+        "cancelled_candidate_draft_frontier": 18,
+        "busy_prepare_rejections": 3,
+        "collector_calls": 4,
+        "dropped_live_public_completion": true,
+        "managed_bytes_while_native_pending": 61210675,
+        "managed_backing_bytes": 80240691,
+        "old_prefix_logical_lease_bytes": 19972096,
+        "all14_native_permissions_retained_until_actual_retirement": true,
+        "same_slot_rebuilt_after_close": true,
+        "old_target_and_draft_kv_bytes_unchanged": true,
+        "old_recurrent_resources_byte_unchanged": 36,
+        "old_carry_and_prior_bytes_unchanged": true,
+        "selector_failed_after_successful_terminal": true,
+        "selector_failure_published_head": false,
+        "selector_abort_reclaimed_all14_dirty_banks": true,
+        "retry_target_tokens": 18,
+        "final_target_tokens": 18,
+        "final_draft_frontier": 18,
+        "native_error_injected": false,
+        "host_policy_error_injected": true,
+        "cancel_means_native_preemption": false,
+        "timing_comparison": false
+      },
+      "model_admission_proof": "original_fifo_accepted_job",
+      "model_fifo_job_admitted": true,
+      "model_gpu_submission_proven": false,
+      "scope": "Original Metal command was Committed with its event unsignaled; original Runtime FIFO accepted the Model Job behind that real native wait. Model GPU submission, GPU preemption and device-failure injection are not proved.",
+      "budget_scope": "Reported managed pending bytes are cache accounting, not private/physical memory peak. The raw managed_backing_bytes field describes the caller-pool plan.",
+      "quality_pass": false,
+      "performance_comparison": false
+    }
+  },
+  "vulkan_retention_budget": {
+    "execution": {
+      "command": [
+        "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-native-protocol-20261022\\vulkan-budget-link2\\probe.exe",
+        "--inputs",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\prepared",
+        "--out",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-native-protocol-20261022\\vulkan-budget-run1\\vectors"
+      ],
+      "cwd": "C:\\public\\project-hyle\\hyle",
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-native-protocol-20261022\\vulkan-budget-link2\\probe.exe",
+        "bytes": 68790784,
+        "sha256": "5d985226d2e003a8d923e462f482009c21926f71bc61c5aaa226766dbc46f90e"
+      },
+      "inputs": [
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\prepared\\weights.tsv",
+          "bytes": 28872,
+          "sha256": "bdfddf019139b4c791d8acad55a1c18b32fdef95e34f667ecf99f6658a856967"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\prepared\\prompt.ids",
+          "bytes": 113,
+          "sha256": "0459156ffd8f318a1e1e2049e18a063c1b760fed77013afa689584fcc1d20d30"
+        }
+      ],
+      "started": 1792649378.81056,
+      "performance_comparison": false,
+      "pid": 31288,
+      "state": "terminal",
+      "exit": 0,
+      "seconds": 6.7763450145721436
+    },
+    "report": {
+      "status": "PASS_LIMITED_NATIVE_RETENTION_REJECTION_RETRY",
+      "backend": "vulkan",
+      "capacity": 64,
+      "resident_limit": 1,
+      "active_sequences": 1,
+      "cache_limit_bytes": 268435456,
+      "seed_rounds": 1,
+      "old_target_rows": 17,
+      "old_draft_rows": 16,
+      "old_lag": 1,
+      "complete_old_components": 52,
+      "old_whole_snapshot_unchanged_checks": 3,
+      "native_completed_before_quota_pressure": true,
+      "pressure_allocates_device_memory": false,
+      "quota_pressure_bytes": 214681549,
+      "bytes_before_pressure": 53753907,
+      "bytes_after_rejection_with_pressure": 268435456,
+      "bytes_after_pressure_release": 53753907,
+      "rejection": "cache retained-state admission failed before snapshot publication: shared resource budget is exhausted; live=268435456, limit=268435456; increase --cache-bytes or reduce retained sessions/context; old snapshots remain valid",
+      "rejected_head_and_ledger_unpublished": true,
+      "rejected_candidate_and_slot_retired": true,
+      "retry_same_model_phase_slot_base": true,
+      "retry_matches_reference_whole_payload": true,
+      "cache_shared_backing_bytes": 20688947,
+      "actual_retained_output_backing_bytes": 67110912,
+      "cache_live_requested_bytes": 87799859,
+      "cache_peak_requested_bytes": 268435456,
+      "native_private_bytes_unknown": true,
+      "physical_memory_cap_known": false,
+      "timing_comparison": false,
+      "fingerprint": "FNV1a64 diagnostic; equality compares full byte arrays",
+      "old_components": [
+        {
+          "name": "layer0.conv.bf16",
+          "bytes": 36864,
+          "fnv1a64": "2dc6c606fb67e256"
+        },
+        {
+          "name": "layer0.gdn.f32",
+          "bytes": 1048576,
+          "fnv1a64": "b83ad90d9b8b510e"
+        },
+        {
+          "name": "layer1.conv.bf16",
+          "bytes": 36864,
+          "fnv1a64": "57dba117d717dcd6"
+        },
+        {
+          "name": "layer1.gdn.f32",
+          "bytes": 1048576,
+          "fnv1a64": "ec06b4f9ea8b97d7"
+        },
+        {
+          "name": "layer2.conv.bf16",
+          "bytes": 36864,
+          "fnv1a64": "d4e637986ce85b6a"
+        },
+        {
+          "name": "layer2.gdn.f32",
+          "bytes": 1048576,
+          "fnv1a64": "966e1f16cb6385eb"
+        },
+        {
+          "name": "layer4.conv.bf16",
+          "bytes": 36864,
+          "fnv1a64": "0282039811a4a969"
+        },
+        {
+          "name": "layer4.gdn.f32",
+          "bytes": 1048576,
+          "fnv1a64": "3dd3bb908f8f5ad5"
+        },
+        {
+          "name": "layer5.conv.bf16",
+          "bytes": 36864,
+          "fnv1a64": "d2cad81875915330"
+        },
+        {
+          "name": "layer5.gdn.f32",
+          "bytes": 1048576,
+          "fnv1a64": "dcbb5610aeece10a"
+        },
+        {
+          "name": "layer6.conv.bf16",
+          "bytes": 36864,
+          "fnv1a64": "2d7072ace47ed8dd"
+        },
+        {
+          "name": "layer6.gdn.f32",
+          "bytes": 1048576,
+          "fnv1a64": "c18ec8458e844db8"
+        },
+        {
+          "name": "layer8.conv.bf16",
+          "bytes": 36864,
+          "fnv1a64": "1f222240667ed025"
+        },
+        {
+          "name": "layer8.gdn.f32",
+          "bytes": 1048576,
+          "fnv1a64": "7f4d7ca5f9387cd7"
+        },
+        {
+          "name": "layer9.conv.bf16",
+          "bytes": 36864,
+          "fnv1a64": "481873dda25e8743"
+        },
+        {
+          "name": "layer9.gdn.f32",
+          "bytes": 1048576,
+          "fnv1a64": "af55a3a8fb932e03"
+        },
+        {
+          "name": "layer10.conv.bf16",
+          "bytes": 36864,
+          "fnv1a64": "79354dd50d643d3d"
+        },
+        {
+          "name": "layer10.gdn.f32",
+          "bytes": 1048576,
+          "fnv1a64": "ae0290e9c2fb83e7"
+        },
+        {
+          "name": "layer12.conv.bf16",
+          "bytes": 36864,
+          "fnv1a64": "a2848221a267e9e0"
+        },
+        {
+          "name": "layer12.gdn.f32",
+          "bytes": 1048576,
+          "fnv1a64": "2e748eab17adf2b3"
+        },
+        {
+          "name": "layer13.conv.bf16",
+          "bytes": 36864,
+          "fnv1a64": "e992c420e59dbaa5"
+        },
+        {
+          "name": "layer13.gdn.f32",
+          "bytes": 1048576,
+          "fnv1a64": "7e41419c7d3442bd"
+        },
+        {
+          "name": "layer14.conv.bf16",
+          "bytes": 36864,
+          "fnv1a64": "250d7e525f59bb2c"
+        },
+        {
+          "name": "layer14.gdn.f32",
+          "bytes": 1048576,
+          "fnv1a64": "113959c1b668be0c"
+        },
+        {
+          "name": "layer16.conv.bf16",
+          "bytes": 36864,
+          "fnv1a64": "213fa060b30914b8"
+        },
+        {
+          "name": "layer16.gdn.f32",
+          "bytes": 1048576,
+          "fnv1a64": "80c4fd34d5ca98a9"
+        },
+        {
+          "name": "layer17.conv.bf16",
+          "bytes": 36864,
+          "fnv1a64": "43b5aba108826135"
+        },
+        {
+          "name": "layer17.gdn.f32",
+          "bytes": 1048576,
+          "fnv1a64": "3a66443bb2fb04b8"
+        },
+        {
+          "name": "layer18.conv.bf16",
+          "bytes": 36864,
+          "fnv1a64": "2bf3526b086bea4c"
+        },
+        {
+          "name": "layer18.gdn.f32",
+          "bytes": 1048576,
+          "fnv1a64": "97be28e9cc1dcd55"
+        },
+        {
+          "name": "layer20.conv.bf16",
+          "bytes": 36864,
+          "fnv1a64": "6dd1ce68fbef68a7"
+        },
+        {
+          "name": "layer20.gdn.f32",
+          "bytes": 1048576,
+          "fnv1a64": "edd2e254758ffb97"
+        },
+        {
+          "name": "layer21.conv.bf16",
+          "bytes": 36864,
+          "fnv1a64": "0636351fd9051202"
+        },
+        {
+          "name": "layer21.gdn.f32",
+          "bytes": 1048576,
+          "fnv1a64": "1c8405fbb810506a"
+        },
+        {
+          "name": "layer22.conv.bf16",
+          "bytes": 36864,
+          "fnv1a64": "c29ded1d1ace8cf3"
+        },
+        {
+          "name": "layer22.gdn.f32",
+          "bytes": 1048576,
+          "fnv1a64": "a68434883beec8d7"
+        },
+        {
+          "name": "target0.key.bf16",
+          "bytes": 17408,
+          "fnv1a64": "b62ed9493d0219db"
+        },
+        {
+          "name": "target0.value.bf16",
+          "bytes": 17408,
+          "fnv1a64": "4669552111b3d50c"
+        },
+        {
+          "name": "target1.key.bf16",
+          "bytes": 17408,
+          "fnv1a64": "6fa583a99f1effd6"
+        },
+        {
+          "name": "target1.value.bf16",
+          "bytes": 17408,
+          "fnv1a64": "9639ff58242d99d0"
+        },
+        {
+          "name": "target2.key.bf16",
+          "bytes": 17408,
+          "fnv1a64": "8f749ede9aed341c"
+        },
+        {
+          "name": "target2.value.bf16",
+          "bytes": 17408,
+          "fnv1a64": "42898dfcdc96ded6"
+        },
+        {
+          "name": "target3.key.bf16",
+          "bytes": 17408,
+          "fnv1a64": "dbf299e78d6c6403"
+        },
+        {
+          "name": "target3.value.bf16",
+          "bytes": 17408,
+          "fnv1a64": "926e125a84730d77"
+        },
+        {
+          "name": "target4.key.bf16",
+          "bytes": 17408,
+          "fnv1a64": "9f8256b60e697fba"
+        },
+        {
+          "name": "target4.value.bf16",
+          "bytes": 17408,
+          "fnv1a64": "d38082ff7b8298b8"
+        },
+        {
+          "name": "target5.key.bf16",
+          "bytes": 17408,
+          "fnv1a64": "048de918b98cadc4"
+        },
+        {
+          "name": "target5.value.bf16",
+          "bytes": 17408,
+          "fnv1a64": "ec8f0128d55236d4"
+        },
+        {
+          "name": "draft.key.bf16",
+          "bytes": 16384,
+          "fnv1a64": "d19a7bc2874dba1a"
+        },
+        {
+          "name": "draft.value.bf16",
+          "bytes": 16384,
+          "fnv1a64": "b3e2daad765d0e3c"
+        },
+        {
+          "name": "carry.bf16",
+          "bytes": 4096,
+          "fnv1a64": "058578911ca9992b"
+        },
+        {
+          "name": "prior.bf16",
+          "bytes": 4096,
+          "fnv1a64": "e67f3fbb8c8b995a"
+        }
+      ],
+      "reference_and_retry_emitted": [
+        271
+      ]
+    }
+  },
+  "changes": [
+    {
+      "scope": "Real consumer environment/session retirement",
+      "source_freeze": {
+        "status": "source-frozen-awaiting-root-attempt3-native-result",
+        "sources": [
+          {
+            "source": {
+              "path": "tools/qwen35_text/main.cc",
+              "bytes": 279737,
+              "sha256": "fa49e3b276410b6ab24d076a2b93dd8785ce95a2acca2f587b117be5248eab93"
+            },
+            "before": {
+              "path": ".scratch/qwen-native-protocol-20261022/retirement-progress-fix/before/tools/qwen35_text/main.cc",
+              "bytes": 279543,
+              "sha256": "551e3d24d82aeaa1cd4b88f01c13ddb13f5273e39f0f5a84cd01beb077d9a0c3"
+            },
+            "after": {
+              "path": ".scratch/qwen-native-protocol-20261022/retirement-progress-fix/after/tools/qwen35_text/main.cc",
+              "bytes": 279737,
+              "sha256": "fa49e3b276410b6ab24d076a2b93dd8785ce95a2acca2f587b117be5248eab93"
+            }
+          },
+          {
+            "source": {
+              "path": "tools/qwen35_text/backend.h",
+              "bytes": 9628,
+              "sha256": "d1b8d0cd36614061c7306194c557a3cf9c7c7af681aa49bad1b182936a66390d"
+            },
+            "before": {
+              "path": ".scratch/qwen-native-protocol-20261022/retirement-progress-fix/before/tools/qwen35_text/backend.h",
+              "bytes": 9162,
+              "sha256": "9ad8ac5f8784eca74b8c0898e9fdb19f28fd1170685cc00ff895e33a0de0b92e"
+            },
+            "after": {
+              "path": ".scratch/qwen-native-protocol-20261022/retirement-progress-fix/after/tools/qwen35_text/backend.h",
+              "bytes": 9628,
+              "sha256": "d1b8d0cd36614061c7306194c557a3cf9c7c7af681aa49bad1b182936a66390d"
+            }
+          }
+        ],
+        "diff": {
+          "path": ".scratch/qwen-native-protocol-20261022/retirement-progress-fix/changes.diff",
+          "bytes": 2970,
+          "sha256": "211e5577bbd8b9bdf7363333e2b6dee796be0f8566276bfe9a49edaec1b2c4c0"
+        },
+        "before_runtime_observation": {
+          "run": ".scratch/qwen-native-protocol-20261022/vulkan-retirement-run1",
+          "pid": 79516,
+          "result": "Run hung after actual original Vulkan Model native Run admission; this is not a passing retirement test. Terminal exit not asserted here.",
+          "thread_snapshot_scope": "Root captured bounded raw-stack candidate scan, not a full unwound stack. Main candidates include wait_progress -> Invocation.drain -> StepState.abort -> ReleaseAndDrain; scheduler worker appeared idle and watchdog thread was absent.",
+          "raw_identities": [
+            {
+              "path": ".scratch/qwen-native-protocol-20261022/vulkan-retirement-run1/stderr.log",
+              "bytes": 2540,
+              "sha256": "fa75ca48662b82013269eafe9ca5f9b0b479efaf350bb31e2cdd67d111784552"
+            },
+            {
+              "path": ".scratch/qwen-native-protocol-20261022/vulkan-retirement-run1/thread-snapshot1.json",
+              "bytes": 41789,
+              "sha256": "efb50c377c76cf92037cd96587f9851d94e5b99ffb4cb0b6a753a3347f8128c0"
+            }
+          ]
+        },
+        "cause": {
+          "fact": "Vulkan original Completion destruction retains abandoned lifetime/Run in Runtime.pending. Unlike CUDA background reaper or Apple FIFO worker, original Vulkan retirement is driven explicitly by Context.collect or a surviving native observer.",
+          "missing_progress": "Probe dropped its public Completion. StepState.try_abort then only checked Graph in_flight, and old StepState.abort entered run.drain/wait_progress. Graph observation could no longer poll the destroyed original Vulkan handle, while no one collected the pending native Run to fire original retirement callbacks.",
+          "interpretation": "A real consumer lifecycle gap, not evidence of a timeline-signal lock cycle, GPU fault, kernel failure, or a general Graph progress lost-wakeup.",
+          "source_evidence": [
+            "src/compute_route_vulkan/vulkan_device.cc:469",
+            "src/compute_route_vulkan/vulkan_run.cc:417",
+            "src/compute_route_vulkan/vulkan_run.cc:446",
+            "src/compute_route_vulkan/vulkan_run.cc:680",
+            "src/compute/retained_completion.cc:174",
+            "src/graph_progress/progress.cc:327"
+          ]
+        },
+        "fix_review": {
+          "blockers": [],
+          "backend": "Cold Backend.collect_retired uses the original Vulkan Context.collect, with Apple-first/CUDA-second branch precedence matching Backend assembly. Apple/CUDA remain no-op because original worker/reaper supplies progress; no Context is closed.",
+          "model": "try_retire_episode accumulates collection status into active_step.terminal before unchanged try_abort. Collection success/error is never permission or retirement proof. Cancelled status is preserved without skipping actual cleanup.",
+          "blocking_cleanup": "abort_episode loops the same try_retire_episode; false waits 1 ms, hard Result error returns while owners stay retained, true runs original detach_episode/error propagation. Old private StepState.abort was removed so no known path first waits a Graph whose native observer was dropped.",
+          "preserved": "Original Graph phase, all14 take/outcome gates, appender rollback, writer reset/discard, old Snapshot ownership, budget/native-use release, and serial carrier admission. No cancellation policy, math, provider, public library API, second reaper/executor or new Runtime fields.",
+          "scope": "Model control remains externally serialized as before; native collection may invoke original retirement callbacks, which do not concurrently mutate Model.active_step."
+        },
+        "checks": [
+          "Read exact current-vs-before two-file diff",
+          "git diff --check passed",
+          "Checked ordinary/mixed-SDK Backend precedence and original terminal propagation"
+        ],
+        "build_or_native_by_reviewer": false,
+        "runtime_claim": "No pass claim. Root attempt3 compile/native validation remains required; prior hanging run and raw records retained."
+      },
+      "result": "Vulkan explicitly collects abandoned native work before original Graph/page retirement checks. Blocking abort uses the same path; Context remains open for retry."
+    },
+    {
+      "scope": "Vulkan clean asynchronous cancellation",
+      "source_freeze": {
+        "status": "source-frozen-not-built-or-run",
+        "sources": [
+          {
+            "source": {
+              "path": "src/compute_route_vulkan/vulkan_iree.cc",
+              "bytes": 32077,
+              "sha256": "dc67cadffc3ce3979a3d5503721cfaee31e5ebdd7a4717584532cdd4c471db33"
+            },
+            "before": {
+              "path": ".scratch/qwen-native-protocol-20261022/vulkan-cancel-fix/before/src/compute_route_vulkan/vulkan_iree.cc",
+              "bytes": 30991,
+              "sha256": "0a7e44e14c63be38341cbad4f6fb3b9bd304ce2006e18979de2fab47a3bb1df7"
+            },
+            "after": {
+              "path": ".scratch/qwen-native-protocol-20261022/vulkan-cancel-fix/after/src/compute_route_vulkan/vulkan_iree.cc",
+              "bytes": 32077,
+              "sha256": "dc67cadffc3ce3979a3d5503721cfaee31e5ebdd7a4717584532cdd4c471db33"
+            }
+          },
+          {
+            "source": {
+              "path": "src/compute_route_vulkan/vulkan_run.cc",
+              "bytes": 29430,
+              "sha256": "71c61643e9043cf31776dcd5cd244d4625af84fdf86df417439e6c5968290dbc"
+            },
+            "before": {
+              "path": ".scratch/qwen-native-protocol-20261022/vulkan-cancel-fix/before/src/compute_route_vulkan/vulkan_run.cc",
+              "bytes": 29274,
+              "sha256": "6f432bc851bfae1dc4c54cfd32a3f160e909c886657b405954e2870fc5f10361"
+            },
+            "after": {
+              "path": ".scratch/qwen-native-protocol-20261022/vulkan-cancel-fix/after/src/compute_route_vulkan/vulkan_run.cc",
+              "bytes": 29430,
+              "sha256": "71c61643e9043cf31776dcd5cd244d4625af84fdf86df417439e6c5968290dbc"
+            }
+          }
+        ],
+        "diff": {
+          "path": ".scratch/qwen-native-protocol-20261022/vulkan-cancel-fix/changes.diff",
+          "bytes": 2544,
+          "sha256": "b4b75e85a2fe277c2ec3a6c852035739018dab4a20dfce3908f3ed2bf455063b"
+        },
+        "report": {
+          "path": ".scratch/qwen-native-protocol-20261022/vulkan-cancel-fix/report.json",
+          "bytes": 3367,
+          "sha256": "a98a076ac07a283a9ca3eea3723d624cfa670895021df9057505ced9906f65cd"
+        }
+      },
+      "result": "Clean IREE cancellation formerly required blocking queue drain and never retired through nonblocking collect. Append one real empty submission on the original queue with the original Run fence; retain callback/managed-work retirement checks and restore normal completion fence on reuse."
+    },
+    {
+      "scope": "Apple diagnostic gate",
+      "source_freeze": {
+        "status": "source-frozen-not-built-or-run",
+        "source": {
+          "path": "tools/qwen35_text/native_gate_apple.mm",
+          "bytes": 8837,
+          "sha256": "3f5c447e03220b8eff4cc6f8d04148e4dba18b726e4d636d241f7d7430538600"
+        },
+        "before": {
+          "path": ".scratch/qwen-native-protocol-20261022/apple-gate-commit-fix/before/tools/qwen35_text/native_gate_apple.mm",
+          "bytes": 8851,
+          "sha256": "14a1f8b7661bcac04d90bf7d9e46701bbe7f2dd9074388845ff378c11c2cde07"
+        },
+        "after": {
+          "path": ".scratch/qwen-native-protocol-20261022/apple-gate-commit-fix/after/tools/qwen35_text/native_gate_apple.mm",
+          "bytes": 8837,
+          "sha256": "3f5c447e03220b8eff4cc6f8d04148e4dba18b726e4d636d241f7d7430538600"
+        },
+        "diff": {
+          "path": ".scratch/qwen-native-protocol-20261022/apple-gate-commit-fix/changes.diff",
+          "bytes": 1644,
+          "sha256": "5e2f3d0415eb4ebd28e0bd02435355ca1d401795125dfab66406078e22b35385"
+        },
+        "actual_diagnostic_reported_by_root": {
+          "after_commit_elapsed_seconds": 0.000111,
+          "after_commit_status": "Committed (2)",
+          "event_value": 0,
+          "wait_until_scheduled_elapsed_seconds": 5.00251,
+          "terminal_status": "Error (5)",
+          "error_domain": "MTLCommandBufferErrorDomain",
+          "error_code": 2,
+          "description": "Caused GPU Timeout",
+          "model_submitted": false
+        },
+        "change": [
+          "Remove pre-admission waitUntilScheduled. After the original commit returns, enter only while unreleased and actual status is Committed or Scheduled. Error/Completed do not license entered.",
+          "The original FIFO gate Job still waits until the original command actually completes; independent host release signals the same original shared event.",
+          "Error wording now says after commit and entry deadline says commit, matching the actual proof."
+        ],
+        "proof_scope": "Original shared-event command committed on the original stream; later original FIFO Model Job accepted. This does not prove Model GPU command submission.",
+        "unchanged": [
+          "watchdog and timeout",
+          "Runtime, stream, queue and event owners",
+          "Model and original permissions",
+          "release-before-drain cleanup"
+        ],
+        "static_checks": {
+          "no_wait_until_scheduled": true,
+          "original_wait_until_completed_retained": true,
+          "committed_or_scheduled_entry_only": true
+        },
+        "validation": {
+          "build": false,
+          "native": false,
+          "gpu": false
+        }
+      },
+      "result": "Waiting for Scheduled before notifying the releasing host hit the actual Metal 5s GPU timeout. Notify only after actual Committed/Scheduled acceptance, then retain the original FIFO/native wait until release; no Model computation or state-policy change."
+    }
+  ],
+  "failed_attempts": [
+    {
+      "execution": {
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-native-protocol-20261022\\vulkan-retirement-link1\\probe.exe",
+          "--inputs",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\prepared",
+          "--mtp",
+          "on"
+        ],
+        "cwd": "C:\\public\\project-hyle\\hyle",
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-native-protocol-20261022\\vulkan-retirement-link1\\probe.exe",
+          "bytes": 68823552,
+          "sha256": "ce936eba3decfb27c660d0959671d6af2b6a837aec734fae900a00b22ade08ec"
+        },
+        "inputs": [
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\prepared\\weights.tsv",
+            "bytes": 28872,
+            "sha256": "bdfddf019139b4c791d8acad55a1c18b32fdef95e34f667ecf99f6658a856967"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\prepared\\prompt.ids",
+            "bytes": 113,
+            "sha256": "0459156ffd8f318a1e1e2049e18a063c1b760fed77013afa689584fcc1d20d30"
+          }
+        ],
+        "started": 1792647692.3457398,
+        "performance_comparison": false,
+        "pid": 79516,
+        "state": "terminal",
+        "exit": 4294967295,
+        "seconds": 260.593088388443,
+        "forced_termination": {
+          "reason": "Native probe remained alive after gate watchdog bound; bounded thread snapshot found original cleanup abort waiting for graph progress. No PASS.",
+          "pid_identity_checked": true
+        }
+      },
+      "summary": "Actual failed/terminated retirement observation, not PASS."
+    },
+    {
+      "execution": {
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-native-protocol-20261022\\vulkan-retirement-link3\\probe.exe",
+          "--inputs",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\prepared",
+          "--mtp",
+          "on"
+        ],
+        "cwd": "C:\\public\\project-hyle\\hyle",
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-native-protocol-20261022\\vulkan-retirement-link3\\probe.exe",
+          "bytes": 68826112,
+          "sha256": "736aedf2e0f90e27712d841e76f1d9d923db1a44332d5f48249ee8df3f20126c"
+        },
+        "inputs": [
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\prepared\\weights.tsv",
+            "bytes": 28872,
+            "sha256": "bdfddf019139b4c791d8acad55a1c18b32fdef95e34f667ecf99f6658a856967"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\prepared\\prompt.ids",
+            "bytes": 113,
+            "sha256": "0459156ffd8f318a1e1e2049e18a063c1b760fed77013afa689584fcc1d20d30"
+          }
+        ],
+        "started": 1792648143.926043,
+        "performance_comparison": false,
+        "pid": 91648,
+        "state": "terminal",
+        "exit": 4294967295,
+        "seconds": 178.7368769645691,
+        "forced_termination": {
+          "reason": "Original gate released without watchdog; native retirement assertion hit 30s bound, then cleanup polling retained Graph lifetime. Exact PID/image checked before stopping.",
+          "pid_identity_checked": true
+        }
+      },
+      "summary": "Actual failed/terminated retirement observation, not PASS."
+    },
+    {
+      "execution": {
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-native-protocol-20261022\\vulkan-retirement-link4\\probe.exe",
+          "--inputs",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\prepared",
+          "--mtp",
+          "on"
+        ],
+        "cwd": "C:\\public\\project-hyle\\hyle",
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-native-protocol-20261022\\vulkan-retirement-link4\\probe.exe",
+          "bytes": 68826112,
+          "sha256": "9510883d7cfcf4597ee3a0b4388dd3ddf39d3b68674b2c0924889867af7d8033"
+        },
+        "inputs": [
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\prepared\\weights.tsv",
+            "bytes": 28872,
+            "sha256": "bdfddf019139b4c791d8acad55a1c18b32fdef95e34f667ecf99f6658a856967"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\prepared\\prompt.ids",
+            "bytes": 113,
+            "sha256": "0459156ffd8f318a1e1e2049e18a063c1b760fed77013afa689584fcc1d20d30"
+          }
+        ],
+        "started": 1792648559.6146176,
+        "performance_comparison": false,
+        "pid": 68804,
+        "state": "terminal",
+        "exit": 4294967295,
+        "seconds": 102.70430588722229,
+        "forced_termination": {
+          "reason": "Original gate released without watchdog; 30s native retirement assertion failed; cleanup still retained owner. Exact PID/image checked before stopping.",
+          "pid_identity_checked": true
+        }
+      },
+      "summary": "Actual failed/terminated retirement observation, not PASS."
+    },
+    {
+      "execution": {
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-native-protocol-20261022\\vulkan-retirement-link5\\probe.exe",
+          "--inputs",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\prepared",
+          "--mtp",
+          "on"
+        ],
+        "cwd": "C:\\public\\project-hyle\\hyle",
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-native-protocol-20261022\\vulkan-retirement-link5\\probe.exe",
+          "bytes": 68827648,
+          "sha256": "0e8281218c2afbea5b4db2bcc4ab3dfd144cc4a0348d70a120ce6f9bf7501ff4"
+        },
+        "inputs": [
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\prepared\\weights.tsv",
+            "bytes": 28872,
+            "sha256": "bdfddf019139b4c791d8acad55a1c18b32fdef95e34f667ecf99f6658a856967"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\prepared\\prompt.ids",
+            "bytes": 113,
+            "sha256": "0459156ffd8f318a1e1e2049e18a063c1b760fed77013afa689584fcc1d20d30"
+          }
+        ],
+        "started": 1792648787.596399,
+        "performance_comparison": false,
+        "pid": 84616,
+        "state": "terminal",
+        "exit": 4294967295,
+        "seconds": 257.22243094444275,
+        "forced_termination": {
+          "reason": "Original gate released without watchdog; 30s native retirement assertion failed; cleanup still retained owner. Exact PID/image checked before stopping.",
+          "pid_identity_checked": true
+        }
+      },
+      "summary": "Actual failed/terminated retirement observation, not PASS."
+    },
+    {
+      "execution": {
+        "command": [
+          "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/qwen-native-protocol-20261022/retirement1/probe",
+          "--inputs",
+          "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/qwen-native-protocol-20261022/prefix-run1/inputs",
+          "--mtp",
+          "on",
+          "--verify-rows",
+          "2"
+        ],
+        "cwd": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/qwen-native-protocol-20261022/retirement1",
+        "image": {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/qwen-native-protocol-20261022/retirement1/probe",
+          "bytes": 12787064,
+          "sha256": "232276b7e3eef10e7a79e60d59cb5eecc59103b09b93ae992ae8180f53e0b391"
+        },
+        "inputs": [
+          {
+            "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/qwen-native-protocol-20261022/prefix-run1/inputs/weights.tsv",
+            "bytes": 28868,
+            "sha256": "0e8c3cbf144b446d87680854c4b972e3e38cf2098d7609956ed49e1fb13fdb72"
+          },
+          {
+            "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/qwen-native-protocol-20261022/prefix-run1/inputs/prompt.ids",
+            "bytes": 112,
+            "sha256": "bf50c1da9f22c75ad4de124b1815067e666e5c4e1b19b306ddb94586bdf04777"
+          }
+        ],
+        "hardware": {
+          "hw.model": "Mac16,12",
+          "hw.memsize": "17179869184"
+        },
+        "started": 1792649535.432634,
+        "performance_comparison": false,
+        "model_admission_proof": "original_fifo_accepted_job",
+        "model_gpu_submission_proven": false,
+        "pid": 3154,
+        "state": "terminal",
+        "exit": 1,
+        "seconds": 24.501120805740356
+      },
+      "summary": "Tool gate failed before Model native admission; command ended normally with error. Attempt3 records MTLCommandBufferErrorDomain code2 after 5.00251s waiting for Scheduled."
+    },
+    {
+      "execution": {
+        "command": [
+          "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/qwen-native-protocol-20261022/retirement2/probe",
+          "--inputs",
+          "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/qwen-native-protocol-20261022/prefix-run1/inputs",
+          "--mtp",
+          "on",
+          "--verify-rows",
+          "2"
+        ],
+        "cwd": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/qwen-native-protocol-20261022/retirement2",
+        "image": {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/qwen-native-protocol-20261022/retirement2/probe",
+          "bytes": 12787352,
+          "sha256": "0874962413cac4cec6958044a0a97474196e588a2cdac4c77e028d2d3600b404"
+        },
+        "inputs": [
+          {
+            "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/qwen-native-protocol-20261022/prefix-run1/inputs/weights.tsv",
+            "bytes": 28868,
+            "sha256": "0e8c3cbf144b446d87680854c4b972e3e38cf2098d7609956ed49e1fb13fdb72"
+          },
+          {
+            "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/qwen-native-protocol-20261022/prefix-run1/inputs/prompt.ids",
+            "bytes": 112,
+            "sha256": "bf50c1da9f22c75ad4de124b1815067e666e5c4e1b19b306ddb94586bdf04777"
+          }
+        ],
+        "hardware": {
+          "hw.model": "Mac16,12",
+          "hw.memsize": "17179869184"
+        },
+        "started": 1792649822.472512,
+        "performance_comparison": false,
+        "model_admission_proof": "original_fifo_accepted_job",
+        "model_gpu_submission_proven": false,
+        "pid": 3214,
+        "state": "terminal",
+        "exit": 1,
+        "seconds": 7.629967212677002
+      },
+      "summary": "Tool gate failed before Model native admission; command ended normally with error. Attempt3 records MTLCommandBufferErrorDomain code2 after 5.00251s waiting for Scheduled."
+    }
+  ],
+  "rejected_graph_candidate": {
+    "status": "REJECTED_CURRENT_VALID_PLAN_INVARIANT",
+    "reason": "Current Graph compiler creates one distinct delegated lane per command and rejects multiple delegated command endpoints on a lane. The proposed same-lane test failed at construction; no legal counterexample established, and native trace had one accepted child. Restore the speculative common Graph and test changes; keep current actual Vulkan cancellation work.",
+    "actual_test_exit": 1,
+    "source_locations": [
+      "src/graph/executable.cc:5981",
+      "src/graph/executable.cc:8917"
+    ],
+    "core_fix_retained_in_product": false,
+    "regression_test_retained_in_product": false,
+    "product_sources_restored": true
+  },
+  "artifact_review": {
+    "date": "2026-10-22",
+    "scope": "Read-only audit of the already selected model/profile map and existing source/evidence; no new model, profile, draft-depth or sampling-policy commitment.",
+    "conclusion": "Qwen3.5-2B official BF16 greedy K1 is the existing real-payload consumer. Other applicable selected artifacts require specific loader/role/state/acceptance integration; existing finite model fragments must not be relabeled as wholly unimplemented MTP operators. Do not count every profile or discovered repository as another MTP task.",
+    "authority": {
+      "current_models": "docs/implementation/tasks/compute/llm-moe-provider-demand-matrix.json#/current_scope",
+      "human_map": "docs/implementation/model-operators.md",
+      "quantization_inventory_limit": "docs/implementation/model-quantizations.json says discovery/downloads are not a rule making every repository mandatory and metadata/operator checks do not establish artifact execution.",
+      "artifact_presence_meaning": "Published files/config/index or saved tensor headers are distinguished below from locally available checkpoint payload and an actual running model. Catalog weights_present is not proof that all payloads are local."
+    },
+    "existing_real_consumer": {
+      "model": "Qwen/Qwen3.5-2B@15852e8c16360a2fea060d615a32b45270f8a8fc",
+      "profile": "official-bf16",
+      "artifact_evidence": "docs/implementation/tasks/compute/qwen35-2b-local-input.json lists the actual local checkpoint and 15 original BF16 mtp.* tensors; current consumer selects 320 target + 15 MTP tensors.",
+      "implementation": [
+        "tools/qwen35_text/prepare.py:MTP_SHAPES/select_weights",
+        "tools/qwen35_text/main.cc:load_weights/prepare_family/finish_mtp_rounds",
+        "tools/qwen35_text/mtp_graph.h"
+      ],
+      "limit": "The loader and graph are deliberately Qwen3.5-2B geometry-specific (D2048/Hq8/Hkv2/Dhead256, 248320 vocabulary); this is not a generic adapter for the other model sizes or codecs.",
+      "remaining_type": "Existing-consumer lifetime/quota recovery validation, numerical/task quality and final performance are tracked separately from adding another artifact adapter."
+    },
+    "explicit_exclusions": [
+      {
+        "profiles": [
+          "qwen35_2b/primary_gguf:UD-Q4_K_XL",
+          "qwen35_2b/fidelity_gguf:UD-Q8_K_XL"
+        ],
+        "fact": "Both fixed Unsloth profiles explicitly have excluded_regions=[R13]. Do not invent MTP work for these two files.",
+        "source": "docs/implementation/tasks/compute/llm-moe-provider-demand-matrix.json#/profile_catalog/0"
+      },
+      {
+        "model": "Kimi-K3",
+        "fact": "Pinned official config has num_nextn_predict_layers=0 and D.R13 omits Kimi; its three baseline profiles are not an MTP-head requirement.",
+        "source": "docs/implementation/tasks/compute/llm-moe-model-sources.json#/models/2/text_configuration_summary"
+      },
+      {
+        "models": [
+          "deepseek_v4_pro preview",
+          "deepseek_v4_flash preview"
+        ],
+        "fact": "Excluded by current_scope; their old single-NextN contracts and old Flash GGUF R13 exclusions cannot be applied to the separately pinned GA releases."
+      }
+    ],
+    "remaining_adapter_families": [
+      {
+        "family": "Other selected Qwen MTP geometry and real encoded artifacts",
+        "source_confirmed": [
+          "Qwen3.8-27B official config at 1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0 declares mtp_num_hidden_layers=1.",
+          "Qwen3.8-2.4T-A95B official config at 207bd685a7e3696cfaff12ded7c6a7ea0f88c996 declares mtp_num_hidden_layers=1.",
+          "Saved fixed Unsloth Q27 publication includes independent MTP/mtp-Qwen3.8-27B-Q4_0.gguf at 4ca720788d1e01f1bff70c033e0d0028fd02e502; it is a sidecar, not automatic MTP inclusion in either main GGUF profile.",
+          "Existing Q24 GGUF fixture records Q8_0 blk.92.nextn.eh_proj.weight for its two deployment profiles."
+        ],
+        "already_available": [
+          "tests/compute_models/cpu_c4_qwen_mtp.h contains a full-width mixed-codec Q27 sidecar decoder, embedding/head and actual prior-output feedback consumer.",
+          "tests/compute_models/cpu_c5_qwen_nextn.h contains a Q24 encoded NextN consumer; tests/compute_models/d5_qwen38_24t_semantic_fragments.h:mtp covers the input projection boundary."
+        ],
+        "concrete_remaining": [
+          "Bind the exact chosen publisher payload/index, shared embedding/head, dimensions and per-role codec through the real loader; do not repurpose the Q35 fixed 15-tensor inventory.",
+          "Parameterize or supply the correct full target/recurrent/draft snapshot, accepted-prefix/catch-up and replay adapter on the common cache/lifetime mechanisms.",
+          "Exercise that real adapter with its own numerical contract; finite synthetic-role consumers do not prove the giant checkpoint or publisher payload has run."
+        ],
+        "evidence_missing": [
+          "The reviewed official config declaration is not proof that all Q27/Q24 MTP payload/header roles were inspected.",
+          "No evidence here establishes an embedded MTP head in both selected Q27 main GGUF variants."
+        ],
+        "can_implement": "Yes: the model branch and sidecar/role sources are concrete; real artifact binding and end-to-end state integration are substantive consumer work, not a missing generic K1 algorithm."
+      },
+      {
+        "family": "GLM-5.3 and GLM-5.3-Flash NextN",
+        "source_confirmed": [
+          "tests/compute_models/d5_glm_mtp_facts.json records official NextN layer78/layer45 mixed BF16/FP8/F32 tensor domains.",
+          "The same facts file records current pinned GLM GGUF primary/fidelity headers, including Q8_0 eh_proj and F32 enorm/hnorm/shared_head_norm for all four profiles."
+        ],
+        "already_available": [
+          "tests/compute_models/d5_glm_remaining_fragments.h:mtp_decoder/check_mtp_head/check_index_carry",
+          "docs/evidence/correctness/llm-moe-d5-real-fragments/glm-four-gguf-batch/README.md records finite synthetic full-width decoder, all154880 logits, independent index contexts, carry/reuse/reset and real output feedback on four routes."
+        ],
+        "concrete_remaining": [
+          "Bind actual selected official/encoded payloads rather than generated format-valid test weights.",
+          "Integrate model-specific MLA/DSA or Flash pool/tail cache plus cross-layer/NextN index carry, positions and validity as one complete snapshot; wire proposal/verification/accepted-prefix through that adapter.",
+          "Validate the original dtype/rounding/scale policy of the chosen official or quantized roles; do not call the already-covered full-head/carry fragments unimplemented."
+        ],
+        "can_implement": "Yes: NextN roles and four GGUF header identities are concrete. This is model/artifact/state-adapter work beyond the Q35 consumer."
+      },
+      {
+        "family": "DeepSeek-V4-Pro-0813 / Flash-0731 DSpark",
+        "source_confirmed": [
+          "Current fixed GA inference source constructs three DSpark stages with main_proj/main_norm, Markov embedding/head, confidence and HC roles; top-level num_nextn_predict_layers=1 is not its actual stage topology.",
+          "Flash fixed Unsloth revision fbbb5b93fb787c21338159b0af3318bb3f4d9768 publishes optional Q8_0 and BF16 DSpark sidecars. Main GGUF codec/DSpark inclusion still needs its own exact header mapping."
+        ],
+        "already_available": [
+          "tests/compute_models/cpu_c4_model_branch_tests.h:CompleteThreeStageDsparkWithSharedEmbeddingAndConfidence",
+          "tests/compute_models/cpu_c4_model_branches.h and cpu_c4_flash_sidecars.h carry finite original-topology math/state feedback/reset consumers.",
+          "docs/evidence/correctness/cpu-final-f3/README.md records finite complete Q8/BF16 sidecars and three-stage model fragments; those generated-weight fragments are not publisher payload inference."
+        ],
+        "concrete_remaining": [
+          "Bind exact GA mtp.* role payloads and dtype/scale boundaries or exact matching optional sidecar/shared weights; do not inherit the removed preview single-MTPBlock contract.",
+          "Join actual target hidden extraction, DSpark proposal/verify outputs and confidence policy to complete SWA/compressor/index/draft state and accepted-prefix publication/replay."
+        ],
+        "evidence_missing": [
+          "Main GA primary/fidelity GGUF format and DSpark inclusion cannot be inferred from a matching repository, variant name or the separate optional sidecar.",
+          "Saved GA source bundle explicitly contains no checkpoint payload."
+        ],
+        "can_implement": "The fixed official topology and finite consumers provide a concrete adapter target. Main-GGUF/sidecar-specific execution first needs exact artifact-role binding. These stages are the original model contract, not a new request for deeper Qwen drafts."
+      }
+    ],
+    "specific_quantized_evidence_not_a_new_matrix": [
+      {
+        "artifact": "cdiamond/Qwen3.8-27B-iMatrix-NVFP4-MTP-GGUF@ac343e8f44caef0896f79d372ecc07ef7ab34ec8",
+        "fact": "All866 headers mapped; one embedded MTP layer, MTP roles use8 NVFP4 +7 F32 tensors. Packed operator support exists across four backends, while actual selected payload loader/full-model/MTP execution is explicitly unverified.",
+        "source": "docs/implementation/model-quantizations.json#/artifacts/14/provider_coverage/header_evidence",
+        "remaining": "Real hybrid role importer plus the Q27 model/state adapter; this is a concrete optional selected-artifact path, not proof every NVFP4 profile has the same MTP format."
+      },
+      {
+        "artifact": "amd/GLM-5.3-Flash-Quark-MXFP4@b5688f25491202978c19c4d036eef579f61bbe07",
+        "fact": "Fixed metadata records871 NextN layer45 FP8 overrides and329 original-header W/F32-block-scale pairs; the block128 MultiplyReciprocal finite operator reference is already implemented.",
+        "source": "docs/implementation/model-quantizations.json#/artifacts/30/provider_coverage",
+        "remaining": "Exact payload/role binding and complete GLM adapter; do not substitute the ordinary MXFP4 expert domain for these FP8 NextN roles."
+      },
+      {
+        "fact": "ModelOpt/GPTQ/CT ignore, exclude_modules or modules_to_not_convert entries for mtp often exclude quantization, not checkpoint tensor presence. They do not alone prove either absence or an encoded-MTP requirement. Q35 GPTQ metadata also records an unresolved config/sidecar precedence issue.",
+        "remaining": "Inspect exact selected header roles only when that artifact adapter is selected; do not label all33 discovery rows as missing MTP."
+      }
+    ],
+    "finish_boundary": [
+      "Close the existing Q35 official BF16 greedy K1 consumer on its declared platforms/state/quality/performance contract.",
+      "Keep the above concrete additional model/artifact adapter work explicitly named; do not report all models/profiles supported from Q35 success, and do not make unknown discovery rows an unbounded blocker.",
+      "No new model, deeper draft, non-greedy policy, or per-profile cache manager was added by this audit."
+    ],
+    "operations": {
+      "product_or_test_edits": 0,
+      "builds": 0,
+      "native_runs": 0,
+      "network": 0,
+      "model_payload_reads": 0
+    },
+    "read_source_sha256": {
+      "docs/implementation/model-operators.md": "fdd201d9045848bde56dda8d211444262e3d69da9d59cfb1def17c0dba46a9a0",
+      "docs/implementation/tasks/compute/llm-moe-provider-demand-matrix.json": "3a803704977def58bba3202652f27380e0a72197752ff3989eab42b2d68a1fd3",
+      "docs/implementation/tasks/compute/llm-moe-model-sources.json": "4bec1832d8d786ff6beb7fcc93d69f2dedf051211c1cc4eab6808e179b6650f3",
+      "docs/implementation/model-quantizations.json": "80424c64a0bbabbc7be2b2e1cc638768b6de971d769020cead471baae7e24563",
+      "tests/compute_models/d5_glm_mtp_facts.json": "4eacb8a153e9c44b519cd80ae6501a531c17699ddf1be6436248cf7e726d3891"
+    }
+  },
+  "current_sources": [
+    {
+      "path": "tools\\qwen35_text\\main.cc",
+      "bytes": 279737,
+      "sha256": "fa49e3b276410b6ab24d076a2b93dd8785ce95a2acca2f587b117be5248eab93"
+    },
+    {
+      "path": "tools\\qwen35_text\\backend.h",
+      "bytes": 9628,
+      "sha256": "d1b8d0cd36614061c7306194c557a3cf9c7c7af681aa49bad1b182936a66390d"
+    },
+    {
+      "path": "tools\\qwen35_text\\CMakeLists.txt",
+      "bytes": 2602,
+      "sha256": "abee0f77a4ecfb9744c0ea502e7d23de92597b0f49eccc6690a5ee2608aa9ecb"
+    },
+    {
+      "path": "tools\\qwen35_text\\mtp_session_probe.cc",
+      "bytes": 113106,
+      "sha256": "39362a7c515ba9bd2843713bf162c919544a6dcbd3760f44c92e9683038db5f6"
+    },
+    {
+      "path": "tools\\qwen35_text\\retirement_probe.cc",
+      "bytes": 40547,
+      "sha256": "1ab0eec53b37afc7625b9fe08eb94f96bb69e14cdb4e4a07e76ae847b790f447"
+    },
+    {
+      "path": "tools\\qwen35_text\\retained_budget_probe.cc",
+      "bytes": 19614,
+      "sha256": "7af14cff78fc21c45c2af06de0cbacfaeb2c96a2f4d059bf272d700dd92a054d"
+    },
+    {
+      "path": "tools\\qwen35_text\\native_gate.h",
+      "bytes": 1050,
+      "sha256": "3faba12291c2cf0b20bf3cb5593e1410167313c16989e98820611a629d56ab8e"
+    },
+    {
+      "path": "tools\\qwen35_text\\native_gate.cc",
+      "bytes": 11066,
+      "sha256": "9fba275b89d616cf92b514368df5511985e361256407ba255fd04abc4d0d9433"
+    },
+    {
+      "path": "tools\\qwen35_text\\native_gate_apple.mm",
+      "bytes": 8837,
+      "sha256": "3f5c447e03220b8eff4cc6f8d04148e4dba18b726e4d636d241f7d7430538600"
+    },
+    {
+      "path": "src\\compute_route_vulkan\\vulkan_run.cc",
+      "bytes": 29430,
+      "sha256": "71c61643e9043cf31776dcd5cd244d4625af84fdf86df417439e6c5968290dbc"
+    },
+    {
+      "path": "src\\compute_route_vulkan\\vulkan_iree.cc",
+      "bytes": 32077,
+      "sha256": "dc67cadffc3ce3979a3d5503721cfaee31e5ebdd7a4717584532cdd4c471db33"
+    }
+  ],
+  "logs_archive": {
+    "path": "docs/evidence/correctness/qwen-native-protocol-2026-10-22.logs.zip",
+    "bytes": 878903,
+    "sha256": "9674258d1c22820676cb18deb9abf62fda2b411547cfaaba9b4b0e1c498792e8"
+  },
+  "cleanup": {
+    "result": {
+      "physical_free_space_gain_claimed": false,
+      "files": 9,
+      "logical_bytes": 692901888.0,
+      "status": "REMOVED_EXACT_REBUILDABLE_FILES"
+    },
+    "script_sha256": "caac9e3c6e37c366cd51b48f573c8b40f5399529169202f5d814d372f9a41cc3",
+    "script_executed_once": true,
+    "current_images_retained": [
+      "cuda-retirement-link1/probe.exe",
+      "vulkan-retirement-link6/probe.exe",
+      "vulkan-budget-link2/probe.exe"
+    ],
+    "source_objects_commands_results_and_prefix_payloads_retained": true
+  },
+  "verification_method": {
+    "build": "Focused direct cached compiler/linker commands; no SDK/shader/NVCC rebuild.",
+    "standalone_CMake_configuration": "Not run in this batch; CMake source target registration is not reported as configured/built.",
+    "source_whitespace": "git diff --check passed for selected changed files; no full suite run.",
+    "no_live_model_or_build_process_at_cleanup": true
+  }
+}

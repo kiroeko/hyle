@@ -1,0 +1,257 @@
+{
+  "status": "complete",
+  "removed_files": 24,
+  "removed_bytes": 632237911,
+  "targets": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-grouped-space\\cpu-cuda\\checks\\link-cpu\\attempt1\\cpu.exe",
+      "bytes": 27899392,
+      "sha256": "dc2a65cdb5599b69a19546885155ebe276b69ed2eca8ba2c21ec31f59087bc21"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-grouped-space\\cpu-cuda\\checks\\link-cpu\\attempt1\\cpu.exp",
+      "bytes": 25025,
+      "sha256": "349660590b50bbe98a7cb74a723005d30199073f9f38a8301c16195ef52fc23c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-grouped-space\\cpu-cuda\\checks\\link-cpu\\attempt1\\cpu.lib",
+      "bytes": 41298,
+      "sha256": "1a72c22d3a6dec39cca5118fd99aa738ff5f4202c029fc8a48afb6c3d20e909d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-grouped-space\\cpu-cuda\\checks\\link-cpu\\attempt1\\cpu.map",
+      "bytes": 42992491,
+      "sha256": "6326aa881b1d3ec45704c57347ee50c353f1cc04e7d48c99e1c9fd6c60a31b72"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-grouped-space\\cpu-cuda\\checks\\link-cpu\\attempt2\\cpu.exe",
+      "bytes": 27899392,
+      "sha256": "646e47c1157785ae5183d3c1fe9daeb37fbd3b65043d81110f8ce7a4f8e76470"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-grouped-space\\cpu-cuda\\checks\\link-cpu\\attempt2\\cpu.exp",
+      "bytes": 25025,
+      "sha256": "9aad60017b5b1bb6fe103a2b23e197703ccad71da0ea1542c7a7152089f8526e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-grouped-space\\cpu-cuda\\checks\\link-cpu\\attempt2\\cpu.lib",
+      "bytes": 41298,
+      "sha256": "1a72c22d3a6dec39cca5118fd99aa738ff5f4202c029fc8a48afb6c3d20e909d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-grouped-space\\cpu-cuda\\checks\\link-cpu\\attempt2\\cpu.map",
+      "bytes": 42992491,
+      "sha256": "b88b3e92e01cdf9e68e097f553c6509059bdb2e2315250c9f7d3b46709d2c630"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-grouped-space\\cpu-cuda\\checks\\link-cuda\\attempt1\\cuda.exe",
+      "bytes": 123212800,
+      "sha256": "033e0383116f2130fb313e7f1b9a333845f27b952880ad1e69609bd46afab21d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-grouped-space\\cpu-cuda\\checks\\link-cuda\\attempt1\\cuda.exp",
+      "bytes": 25029,
+      "sha256": "9cb02b323f3256bb4e33beebf7d3abf6b5a10e2d438441484e2a602c8db37f41"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-grouped-space\\cpu-cuda\\checks\\link-cuda\\attempt1\\cuda.lib",
+      "bytes": 41384,
+      "sha256": "097299e17e955c077a99f65f363d3484d564c016359baeb643f4e47c6b737d59"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-grouped-space\\cpu-cuda\\checks\\link-cuda\\attempt1\\cuda.map",
+      "bytes": 46021751,
+      "sha256": "0033656e3ecdaca87ea3cd209f9b031f1e3ea064e2f8552712678f6a25c857ef"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-grouped-space\\vulkan\\checks\\attempt2\\ct-grouped-reference-test.exe",
+      "bytes": 69163520,
+      "sha256": "d626606f76289d4f13ca98bbc46c501b6449c2930fa7d74a56f3948d76cdd04b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-grouped-space\\vulkan\\checks\\attempt2\\ct-grouped-reference-test.exp",
+      "bytes": 25058,
+      "sha256": "9994280345a1610483dcbd6dfb233fd9798c7f95ac7b9b6736382000489c23be"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-grouped-space\\vulkan\\checks\\attempt2\\ct-grouped-reference-test.lib",
+      "bytes": 43324,
+      "sha256": "8d2c5acfbd09eacefe02a45705b0b09397d0c5dc328dc1cc18279de1ca2911ab"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-grouped-space\\vulkan\\checks\\attempt2\\ct-grouped-reference-test.map",
+      "bytes": 37774946,
+      "sha256": "cecdff6aaaaa01b74eb9f6d1f44bb728aa8eff1d8239d18a64abb6318636de03"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-grouped-space\\vulkan\\checks\\attempt3\\ct-grouped-reference-test.exe",
+      "bytes": 69163520,
+      "sha256": "b674b062f09d67c001b73b55df9061ccd68f8d97f8b2833d4407394d9063312f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-grouped-space\\vulkan\\checks\\attempt3\\ct-grouped-reference-test.exp",
+      "bytes": 25058,
+      "sha256": "740c5b9f52983a16ac36d03abee0ff5bbb894f9541a7d0325d6f70742ebfe642"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-grouped-space\\vulkan\\checks\\attempt3\\ct-grouped-reference-test.lib",
+      "bytes": 43324,
+      "sha256": "8d2c5acfbd09eacefe02a45705b0b09397d0c5dc328dc1cc18279de1ca2911ab"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-grouped-space\\vulkan\\checks\\attempt3\\ct-grouped-reference-test.map",
+      "bytes": 37774946,
+      "sha256": "a1de108664e2bbeb3d0677e8f2aec5b1f50adc20e9e42c0d0c75a8d04273ea7b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-grouped-space\\vulkan\\checks\\ct-grouped-reference-test.exe",
+      "bytes": 69163520,
+      "sha256": "2593499af383fd03efc74e631da69f6ec458cfde34ff060bad4ab3afc27cd8f5"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-grouped-space\\vulkan\\checks\\ct-grouped-reference-test.exp",
+      "bytes": 25049,
+      "sha256": "74920eed5a3287433dec862c54d511af22099de7d4fae83fe25f6d0fb22f81f6"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-grouped-space\\vulkan\\checks\\ct-grouped-reference-test.lib",
+      "bytes": 43324,
+      "sha256": "8d2c5acfbd09eacefe02a45705b0b09397d0c5dc328dc1cc18279de1ca2911ab"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-grouped-space\\vulkan\\checks\\ct-grouped-reference-test.map",
+      "bytes": 37774946,
+      "sha256": "4878e4ea27d79be8ba9e557ad12042118028420bcec32b3a5290d1a5ef1aeae5"
+    }
+  ],
+  "protected": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-grouped-space\\cpu-cuda\\checks\\direct-neighbors\\attempt1\\ct-direct-test\\ct-direct-test.obj",
+      "bytes": 940744,
+      "sha256": "579be135bea441141ebe0d3e8d975ad12bf0d40e95a3f44e90f862eb603860cd"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-grouped-space\\cpu-cuda\\checks\\direct-neighbors\\attempt1\\gptq-direct-test\\gptq-direct-test.obj",
+      "bytes": 1346807,
+      "sha256": "4e494f7a074af586108735c3bfa5cdb1eacd663b923cc56668a70c92a0f5665e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-grouped-space\\cpu-cuda\\checks\\old-neighbor-cpu\\attempt1\\ct-linear-test\\ct-linear-test.obj",
+      "bytes": 2583999,
+      "sha256": "982c9def0493ca3b59f609aa62a0b3bc98b32652c2944c9661cd9f94015e5275"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-grouped-space\\cpu-cuda\\checks\\old-neighbor-cuda\\attempt1\\ct-linear-test\\ct-linear-test.obj",
+      "bytes": 2565990,
+      "sha256": "30e5486520e575f85095254ba0da26fb94b1a23f273c4f2d328f3d7637201c84"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-grouped-space\\cpu-cuda\\checks\\product-native\\attempt2\\mlx-packed-kernel\\mlx-packed-kernel.obj",
+      "bytes": 769790,
+      "sha256": "fafefde62032928a9c0e42a916e6c5d63c9f9478c69bc44392b5b075b704ff55"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-grouped-space\\cpu-cuda\\checks\\products-cpu\\attempt1\\ct-packed\\ct-packed.obj",
+      "bytes": 853778,
+      "sha256": "18373d1d0d896a4f53989f6c045568eeb3077c3b612705f118fbfaad2de4b1d5"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-grouped-space\\cpu-cuda\\checks\\products-cpu\\attempt1\\native-provider\\native-provider.obj",
+      "bytes": 740179,
+      "sha256": "0302eca0c9f8aab60bcba2a4adec2260a4ca4d9fe6f8e954999f411924b01a10"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-grouped-space\\cpu-cuda\\checks\\products-cuda\\attempt1\\artifact-provider\\artifact-provider.obj",
+      "bytes": 1378036,
+      "sha256": "1907be0dad0799dfe4bebdb46907d41d6b8b9bd8532e09a43e95d0279314807f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-grouped-space\\cpu-cuda\\checks\\region-cpu\\attempt1\\packed-region\\packed-region.obj",
+      "bytes": 1133074,
+      "sha256": "16a066494724db8c284250410cfe4de166b7f35b7e31bdd036ebc655d78eb9dd"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-grouped-space\\cpu-cuda\\checks\\region-cuda\\attempt1\\packed-region\\packed-region.obj",
+      "bytes": 1133520,
+      "sha256": "d9b922d7e0c96e2bc4464a20c849830068f4483fde4bf169604a76f1238126d7"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-grouped-space\\cpu-cuda\\checks\\tests-cpu\\attempt1\\grouped-test\\grouped-test.obj",
+      "bytes": 2097681,
+      "sha256": "600f17fdfc990f5255cf400a455a26f1c17422efab9a9281d5fdf0c5c359c9e9"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-grouped-space\\cpu-cuda\\checks\\tests-cpu\\attempt2\\grouped-test\\grouped-test.obj",
+      "bytes": 2097793,
+      "sha256": "74dc71912652cc6b80e22046c5f31762c111d6d9f67281d194f53b125b05c147"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-grouped-space\\cpu-cuda\\checks\\tests-cpu\\attempt3\\grouped-test\\grouped-test.obj",
+      "bytes": 2097776,
+      "sha256": "545b750d1485035a17f854c26b3aa0db981813659be3e21039adfc0f9b9e30ba"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-grouped-space\\cpu-cuda\\checks\\tests-cuda\\attempt1\\grouped-test\\grouped-test.obj",
+      "bytes": 2226992,
+      "sha256": "e0d41fa8e624a1b197b9af128261f51aaba46903757b2130ccb26e6cb1120fa6"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-grouped-space\\cpu-cuda\\checks\\tests-cuda\\attempt2\\grouped-test\\grouped-test.obj",
+      "bytes": 2227104,
+      "sha256": "77d4aece5fe62498c34f2a5daaba292567464178c33d7522cd6dae0679386dfb"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-grouped-space\\vulkan\\checks\\attempt2\\grouped-test.obj",
+      "bytes": 2556120,
+      "sha256": "436d6306fb863630a49c1d3b09e73c12e5673299a26e5a565ad18ea9128914fb"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-grouped-space\\vulkan\\checks\\attempt3\\grouped-test.obj",
+      "bytes": 2556120,
+      "sha256": "340d918a7222d06f9eec752b0376f8bd3de58417582098b28315e8a705016930"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-grouped-space\\vulkan\\checks\\ct-test.obj",
+      "bytes": 2464479,
+      "sha256": "6eab445c81cee60f367b28dcedf6f1674b96f08e59378662f384748f525197da"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-grouped-space\\vulkan\\checks\\grouped-test.obj",
+      "bytes": 2556000,
+      "sha256": "b6a5ed991b09c8814279e709880275853d35e0819d2a5f8633c6c7c337f0e970"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-grouped-space\\vulkan\\checks\\native_region.obj",
+      "bytes": 2626325,
+      "sha256": "a142ebef721a04ca3eb2708a8412995af5a3e97985b6dcd9a0ecb1c8185c454c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-grouped-space\\vulkan\\checks\\vulkan_ct_packed.obj",
+      "bytes": 415274,
+      "sha256": "5a5d97376266fea29c40f972fdd4f7aaf7a49c4b546e65435ab4d0a20415d6d4"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-grouped-space\\vulkan\\checks\\vulkan_operations.obj",
+      "bytes": 266083,
+      "sha256": "8ac86a30d1f440a2f56a2193995b8573c17aef76e206054bf664e0c7526da11c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-grouped-space\\vulkan\\checks\\vulkan_shaders.obj",
+      "bytes": 669590,
+      "sha256": "5afd92a8b27d5f0e8462c9a24c96570f689094f9671d40fc91d7aa42214a4e5f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-prepare-cost\\candidate\\qwen.exe",
+      "bytes": 117832192,
+      "sha256": "6e09735e395e86412d4588cf67507fe5902d149e3e03f674b688ddde5cddf1f8"
+    }
+  ],
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\ct-packed-grouped-space-2026-10-21.zip",
+    "bytes": 6372876,
+    "sha256": "447adef0fd35895e16481c3b6ecf94967466417bbfcf68b5d25638cc03b8ef05"
+  },
+  "cleanup_script_sha256": "530240111a6095d97ade39800ececbb0cf4e2efc6a702631d8ef7a485a2b59cc",
+  "cleanup_script": "$ErrorActionPreference = 'Stop'\r\n$workspaceRoot = 'C:\\public\\project-hyle\\hyle'\r\n$planPath = Join-Path $workspaceRoot '.scratch\\architecture-refactor-2026-10-18\\ct-packed-grouped-space\\root\\cleanup-plan.json'\r\n$receiptPath = Join-Path $workspaceRoot 'docs\\evidence\\correctness\\ct-packed-grouped-space-2026-10-21.cleanup.json'\r\nif (Test-Path -LiteralPath $receiptPath) { throw 'This exact cleanup already has a receipt; do not rerun.' }\r\n$plan = Get-Content -LiteralPath $planPath -Raw -Encoding UTF8 | ConvertFrom-Json\r\n$allowedRoot = (Resolve-Path -LiteralPath $plan.root).ProviderPath.TrimEnd('\\') + '\\'\r\n$expectedRoot = (Join-Path $workspaceRoot '.scratch\\architecture-refactor-2026-10-18\\ct-packed-grouped-space').TrimEnd('\\') + '\\'\r\nif ($allowedRoot -ine $expectedRoot) { throw 'Unexpected cleanup root.' }\r\nfunction Assert-Identity($entry) {\r\n    $item = Get-Item -LiteralPath $entry.path\r\n    if ($item.PSIsContainer -or ($item.Attributes -band [IO.FileAttributes]::ReparsePoint)) { throw 'Expected an ordinary exact file.' }\r\n    if ($item.Length -ne $entry.bytes) { throw \"Size changed: $($entry.path)\" }\r\n    if ((Get-FileHash -LiteralPath $entry.path -Algorithm SHA256).Hash -ine $entry.sha256) { throw \"Hash changed: $($entry.path)\" }\r\n}\r\nAssert-Identity $plan.artifact\r\nforeach ($entry in $plan.protected) { Assert-Identity $entry }\r\nforeach ($entry in $plan.targets) {\r\n    $resolved = (Resolve-Path -LiteralPath $entry.path).ProviderPath\r\n    if (-not $resolved.StartsWith($allowedRoot, [StringComparison]::OrdinalIgnoreCase)) { throw 'Target escapes the exact batch directory.' }\r\n    if ([IO.Path]::GetExtension($resolved) -notin @('.exe','.map','.lib','.exp')) { throw 'Unexpected deletion extension.' }\r\n    Assert-Identity $entry\r\n}\r\nforeach ($entry in $plan.targets) { Remove-Item -LiteralPath $entry.path -Force }\r\nforeach ($entry in $plan.protected) { Assert-Identity $entry }\r\nforeach ($entry in $plan.targets) { if (Test-Path -LiteralPath $entry.path) { throw 'Deletion incomplete.' } }\r\n$receipt = [ordered]@{\r\n    status = 'complete'\r\n    removed_files = @($plan.targets).Count\r\n    removed_bytes = $plan.reclaim_bytes\r\n    targets = $plan.targets\r\n    protected = $plan.protected\r\n    archive = $plan.artifact\r\n    cleanup_script_sha256 = (Get-FileHash -LiteralPath $PSCommandPath -Algorithm SHA256).Hash.ToLowerInvariant()\r\n    cleanup_script = Get-Content -LiteralPath $PSCommandPath -Raw\r\n    scope = $plan.scope\r\n}\r\n$receipt | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath $receiptPath -Encoding utf8\r\nWrite-Output \"Removed $(@($plan.targets).Count) exact rebuildable files, $($plan.reclaim_bytes) bytes; all protected objects and current Qwen consumer remain unchanged.\"\r\n",
+  "scope": "Only this completed Windows CT grouped package executable/map/import files; retain all current increment objects, commands, sources/results and the unchanged Qwen consumer. No recursive removal or Mac operation."
+}

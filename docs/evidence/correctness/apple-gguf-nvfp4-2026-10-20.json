@@ -1,0 +1,139 @@
+{
+  "passed": true,
+  "recorded_utc": "2026-10-19T21:56:50.001998+00:00",
+  "scope": "This Apple original GGUF NVFP4 batch only; not completion of the architecture goal.",
+  "changes": [
+    "Original block64/36 packed MV/MM/MVID/MMID and checked selected-row decoding; no whole-bank floating expansion.",
+    "Preserved F32 activation, typed12KiB F32 matrix tiles, F32 accumulation/output and actual source pitches.",
+    "Backend-local cold PSO selection checks actual threads, SIMD width and static+dynamic shared memory; preserves OOM/resource failure classification.",
+    "Private decoder dependencies cover embedded, ordinary AIR and tensor AIR builds; no public operation, ABI or common executor added.",
+    "Exact patch materialization can create a new private header with pinned content and absent-source checks.",
+    "Positive test replaces the obsolete prepare-rejection test; support documents and the artifact coverage table retain full-model limitations."
+  ],
+  "hardware": {
+    "model": "Mac16,12",
+    "gpu": "Apple M4",
+    "details": "validation/inventory.json in the evidence archive"
+  },
+  "results": {
+    "native_domains": 12,
+    "ordinary_common_graph_journeys": 1,
+    "legacy_F32_Q8_control_domains": 16,
+    "actual_exit": 0,
+    "command": {
+      "argv": [
+        "/Users/kiro/hyle-scratch/compute-unified/apple-nvfp4-20261020/checks-final-fixture/nvfp4-tests"
+      ],
+      "pid": 87011,
+      "started": 1792446702.809602,
+      "exit": 0,
+      "elapsed": 14.159493923187256
+    },
+    "final_image": {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/apple-nvfp4-20261020/checks-final-fixture/nvfp4-tests",
+      "bytes": 12045576,
+      "sha256": "f8d066bde2d6b2b52b5abb3e41f20633afff9626ebaebd027791dea8e4b68b60"
+    },
+    "consumer_source": {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/apple-nvfp4-20261020/checks-final-fixture/compiled-gguf_nvfp4_test.cc",
+      "bytes": 23725,
+      "sha256": "3069a39181006668eef7fc2cab07fff29a880ff78e7f0bbcd849d0d7ae0c138c"
+    },
+    "native_freeze": {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/apple-nvfp4-20261020/native-source-freeze.json",
+      "bytes": 4836,
+      "sha256": "9564bd5a9fac90be26f24c10f13875c75d835b48269597d6361746e1c8d8e4fc"
+    },
+    "tests_freeze": {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/apple-nvfp4-20261020/tests-source-freeze.json",
+      "bytes": 7367,
+      "sha256": "9044e057e93f6f52665a7e007162548af41d0f3b9fb6d493532ae435778107d2"
+    }
+  },
+  "numerical": {
+    "codec": "all legal128scale bytes x16nibbles; exact selected-row bits including signed zero",
+    "matrix": "independent F64 forward bound plus exact source F32 onehot 1+2^-20 witness",
+    "source_activation_precision": "F32, no half narrowing in new NV MM/MMID",
+    "weight_expansion": "original tile only; no full-bank expansion"
+  },
+  "module_closure": {
+    "baseline_host_objects": 147,
+    "final_host_objects": 160,
+    "fresh_unique_hyle_host_owners": 14,
+    "new_original_graph_module_owners": 13,
+    "consumer_tu": 1,
+    "native_unique_owners": 6,
+    "native_changed_source_files": 9,
+    "shared_sdk_rebuilt": false
+  },
+  "failure_history": [
+    {
+      "stage": "checks",
+      "kind": "compile closure",
+      "exit": 1,
+      "reason": "Missing mixed CPU IQ1 header layer; device.cpp existing IQ1 enum undeclared",
+      "resolution": "Use actual prepare_mixed_cpu_manifest -> Metal -> Metal IQ1 composition; no mathematical change"
+    },
+    {
+      "stage": "checks-mixed",
+      "kind": "link closure",
+      "exit": 1,
+      "reason": "147 old native-Graph-only owner closure lacks common Apple ExecutionSource module",
+      "resolution": "Compile seven existing graph_route_apple owners, original module configuration"
+    },
+    {
+      "stage": "checks-final",
+      "kind": "link closure",
+      "exit": 1,
+      "reason": "Common Apple ExecutionSource introduces actual graph_batch dependency absent from old closure",
+      "resolution": "Compile all six existing graph_batch target owners as a module; no implementation changes"
+    },
+    {
+      "stage": "checks-closure",
+      "kind": "first Metal JIT",
+      "exit": 1,
+      "reason": "NV-only constant-if branch still type-checked under legacy BF16 specialization; implicit F32->bfloat assignment rejected",
+      "resolution": "Explicit (S1) cast: identity for NV float, old legacy branch remains false; only MM embed refreshed"
+    },
+    {
+      "stage": "checks-shader-fix preparation attempt",
+      "kind": "runner metadata",
+      "exit": 1,
+      "reason": "Inherited native-objects receipt missing in fully-reused intermediate output",
+      "resolution": "Persist inherited native receipt and resume actual checks-final owners; no compile or GPU occurred in this failed attempt"
+    },
+    {
+      "stage": "checks-shader-fix",
+      "kind": "common Graph fixture",
+      "exit": 1,
+      "reason": "Twelve native domains passed; common Graph owned bindings lacked ResourceOptions",
+      "resolution": "Test author specified existing factory.resources; only consumer TU/image refreshed, no math/implementation/tolerance change"
+    }
+  ],
+  "limitations": [
+    "No selected real-model artifact payload or whole-model inference executed; artifact_execution_verified remains false",
+    "MacBook Air Apple M4 only; Metal4/M5 SIMD specialization source-qualified but not hardware-executed",
+    "No throughput, profiling or full-platform claim",
+    "Old F32/Q8 controls are bounded dyadic regressions, not proof of general old half-operand MM equivalence",
+    "Cold resource/OOM handling source-reviewed; no exhaustive allocation fault injection"
+  ],
+  "root_checks": "root-final-check.json in the evidence archive",
+  "source_identity_check": "source-identity-check.json in the evidence archive",
+  "full_goal_status": "active",
+  "next_gap_research": "docs/evidence/research/ct-packed-graph-seam-2026-10-20.json",
+  "evidence_archive": {
+    "path": "docs/evidence/correctness/apple-gguf-nvfp4-2026-10-20.zip",
+    "bytes": 3871705,
+    "sha256": "ed9915f802e6bfcc6498e109e9c7d3f0fd05ffaae6673995b793340bb52f32cd",
+    "payload_files": 883,
+    "CRC_and_payload_hashes_verified": true,
+    "SDK_or_binary_payloads": false
+  },
+  "cleanup": {
+    "passed": true,
+    "reclaimed_bytes": 83192097,
+    "receipt": "docs/evidence/correctness/apple-gguf-nvfp4-2026-10-20.cleanup.json",
+    "receipt_sha256": "3c8698e1fa3acae7f7f1d4bb3e0ad4fbb0523d3fc77739d9e2b8d3240d87e014",
+    "final_image_and_objects_retained": true
+  }
+}

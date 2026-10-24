@@ -8,10 +8,9 @@
 #include "hyle/core/compiler.h"
 #include "hyle/core/detail/preprocessor.h"
 
-// Go-style `defer`: run a cleanup callable when the enclosing scope exits (clay
-// scope_guard). C++23 still has no std defer; this stays. Unlike clay we need NO
-// scope_guard()/finally() factory functions -- class template argument deduction
-// (CTAD, C++17+) deduces the callable directly: `ScopeGuard g{[&]{ ... }};`.
+// Go-style `defer`: run a cleanup callable when the enclosing scope exits.
+// Class template argument deduction deduces the callable directly:
+// `ScopeGuard g{[&]{ ... }};`.
 
 namespace hyle::util {
 

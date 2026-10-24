@@ -1,3 +1,4 @@
+#include "gated_delta_scale.h"
 #include "cpu_program.h"
 #include "hyle/core/environment.h"
 
@@ -34,14 +35,14 @@ Result<const CpuProgram *> load_avx2_program() noexcept {
     return std::unexpected(status_from_win32(GetLastError(),
                                              "ggml CPU AVX2 program"));
   const auto entry = reinterpret_cast<Entry>(
-      GetProcAddress(library, "hyle_ggml_cpu_program_v2"));
+      GetProcAddress(library, "hyle_ggml_cpu_program_v3"));
 #else
   const auto library =
       dlopen(HYLE_GGML_CPU_PROGRAM_LIBRARY, RTLD_NOW | RTLD_LOCAL);
   if (library == nullptr)
     return std::unexpected(Status::NotFound("ggml CPU AVX2 program"));
   const auto entry =
-      reinterpret_cast<Entry>(dlsym(library, "hyle_ggml_cpu_program_v2"));
+      reinterpret_cast<Entry>(dlsym(library, "hyle_ggml_cpu_program_v3"));
 #endif
   const auto *program = entry == nullptr ? nullptr : entry();
   if (program == nullptr || program->abi != kCpuProgramAbi ||
@@ -65,6 +66,8 @@ Result<const CpuProgram *> load_avx2_program() noexcept {
 } // namespace
 
 Result<const CpuProgram *> select_cpu_program() noexcept {
+  if (ggml_hyle_cpu_gdn_output_scale_contract() != kGdnOutputScaleContract)
+    return std::unexpected(Status::FailedPrecondition("ggml CPU GDN scale contract"));
 #if defined(HYLE_GGML_CPU_AVX2_PROGRAM)
   if (cpu_avx2_program_eligible(platform::cpu_features())) {
     static const auto optimized = load_avx2_program();

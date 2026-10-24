@@ -177,7 +177,7 @@ TEST(ConcurrentVector, StableAcrossGrowth) {
   }
 }
 
-// Move-only T: clay's copy-on-grow couldn't hold these; HYLE's no-copy growth can.
+// Growth supports move-only elements without copying them.
 TEST(ConcurrentVector, MoveOnlyType) {
   ConcurrentVector<std::unique_ptr<int>> v(2);
   for (int i = 0; i < 100; ++i) v.emplace_back(std::make_unique<int>(i));

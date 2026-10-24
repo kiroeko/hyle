@@ -1,5 +1,18 @@
 #include <ggml.h>
 #include <gtest/gtest.h>
+#include "../graph_ggml_constant_cast_test.h"
+#include "hyle/graph/cpu.h"
+
+TEST(CpuDefaultGraph, ImmutableBfloatCastFeedsOriginalGemmRoute) {
+  auto context=hyle::graph::cpu::create_context().value();
+  ggml_constant_cast_test::exercise(context,hyle::mem::system_resource());
+}
+
+TEST(CpuDefaultGraph, PreparedCastKeepsIncomingControlForDataOnlyConsumer) {
+  auto first=hyle::graph::cpu::create_context().value();
+  auto second=hyle::graph::cpu::create_context().value();
+  ggml_constant_cast_test::exercise_incoming_control(first,second,hyle::mem::system_resource());
+}
 
 #include <algorithm>
 #include <array>
@@ -14,6 +27,11 @@
 #include "../compute_models/d5_qwen35_fixture.h"
 #include "../compute_models/d5_qwen38_gdn_fixture.h"
 #include "../compute_models/d5_qwen38_profile_cases.h"
+#include "../compute_models/gdn_region_test.h"
+#include "../compute_models/batched_rope_fixture.h"
+#include "../graph_ggml_constant_test.h"
+#include "../graph_ggml_discovery_test.h"
+#include "../graph_batched_sink_test.h"
 #include "../compute_provider_native/half_test_support.h"
 #include "../model_fragment_test_support.h"
 #include "../sparse_fragment_test_support.h"
@@ -30,6 +48,73 @@ namespace compute = hyle::compute;
 namespace graph = hyle::graph;
 
 #if defined(HYLE_TEST_GGML_CPU)
+TEST(CpuDefaultGraph, SelectedKvSetsFeedOneBatchedSinkAttention) {
+  auto context = graph::cpu::create_context().value();
+  batched_sink_graph_test::exercise(context, hyle::mem::system_resource());
+}
+
+TEST(CpuDefaultGraph, NativeRegionsSurviveOtherProviderBoundaries) {
+  auto context = graph::cpu::create_context().value();
+  ggml_discovery_test::exercise(context, hyle::mem::system_resource());
+}
+
+TEST(CpuDefaultGraph, BatchedRopePositionsAndFrequenciesUseOriginalNativeOps) {
+  namespace fixture = batched_rope_test;
+  auto context = compute::Context::create(compute::cpu::device(), compute::ggml_cpu::provider()).value();
+  const auto exercise = [&]<class T>() {
+    const auto input_desc = compute::TensorDesc::dense(half_test::data_type<T>(),
+        std::array<std::int64_t, 4>{2, 3, 2, 8}).value();
+    for (const bool requests : {false, true}) for (const bool token_frequency : {false, true})
+      for (const auto layout : {compute::RopeLayout::kHalfSplit, compute::RopeLayout::kInterleaved}) {
+        SCOPED_TRACE(::testing::Message() << requests << '/' << token_frequency << '/' << int(layout));
+        const auto positions_desc = requests ? compute::TensorDesc::dense(compute::DataType::kInt32,
+            std::array<std::int64_t, 2>{2, 3}).value() : compute::TensorDesc::dense(
+                compute::DataType::kInt32, std::array<std::int64_t, 1>{3}).value();
+        const auto frequencies_desc = token_frequency ? compute::TensorDesc::dense(compute::DataType::kFloat32,
+            std::array<std::int64_t, 2>{3, 2}).value() : compute::TensorDesc::dense(
+                compute::DataType::kFloat32, std::array<std::int64_t, 1>{2}).value();
+        auto data = hyle::mem::Buffer::create(hyle::mem::system_resource(), *input_desc.required_bytes(), 256).value();
+        auto output = hyle::mem::Buffer::create(hyle::mem::system_resource(), *input_desc.required_bytes(), 256).value();
+        auto positions = half_test::buffer<std::int32_t>(std::span(fixture::kPositions).first(requests ? 6 : 3));
+        auto frequencies = half_test::buffer<float>(std::span(fixture::kFrequencies).first(token_frequency ? 6 : 2));
+        const std::array inputs{compute::ConstTensorView::create(input_desc, data.view()).value(),
+            compute::ConstTensorView::create(positions_desc, positions.view()).value(),
+            compute::ConstTensorView::create(frequencies_desc, frequencies.view()).value()};
+        const auto target = compute::TensorView::create(input_desc, output.view()).value();
+        auto prepared = compute::prepare(context, compute::Operation{compute::RoPE{
+            .rotary_dimensions = 4, .sequence_axis = -3, .layout = layout}}, inputs, std::array{target});
+        ASSERT_TRUE(prepared) << prepared.error().message();
+        EXPECT_EQ(prepared->provider().id, compute::ggml_cpu::kProviderId);
+        auto invocation = prepared->create_invocation().value();
+        auto queue = context.create_queue().value();
+        for (int phase = 0; phase < 2; ++phase) {
+          const auto source = fixture::data(phase);
+          std::vector<T> encoded; for (const auto value : source) encoded.push_back(half_test::encode<T>(value));
+          ASSERT_TRUE(data.view().write(std::as_bytes(std::span(encoded))).ok());
+          auto done = invocation.submit(queue, inputs, std::array{target});
+          ASSERT_TRUE(done) << done.error().message(); ASSERT_TRUE(done->wait().ok());
+          const auto expected = fixture::reference(source, fixture::kPositions, requests, token_frequency, layout);
+          const auto actual = half_test::read<T>(output);
+          for (std::size_t i = 0; i < actual.size(); ++i) half_test::expect_near(actual[i], expected[i]);
+        }
+      }
+  };
+  exercise.template operator()<float>();
+  exercise.template operator()<hyle::simd::float16_t>();
+  exercise.template operator()<hyle::simd::bfloat16_t>();
+}
+
+TEST(CpuDefaultGraph, ConstantDenseRhsPacksWithoutChangingOtherConsumersOrDynamicInputs) {
+  auto context = graph::cpu::create_context().value();
+  ggml_constant_test::dense_rhs(context, hyle::mem::system_resource());
+}
+
+TEST(CpuDefaultGraph, GatedDeltaNetRegionsKeepBothSnapshotOutputs) {
+  auto context = graph::cpu::create_context().value();
+  gdn_region_test::exercise(context, hyle::mem::system_resource(),
+      [&](const graph::Graph &logical) { return graph::compile(logical, context); });
+}
+
 template <class T> void stable_gate_region() {
   constexpr std::int64_t rows = 3, hidden = 7, columns = 2;
   const auto dtype = half_test::data_type<T>();

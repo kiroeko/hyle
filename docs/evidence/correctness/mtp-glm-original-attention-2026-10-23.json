@@ -1,0 +1,809 @@
+{
+  "date": "2026-10-23",
+  "stage": "BO",
+  "goal_complete": false,
+  "conclusion": "Nine original GLM-5.3-Flash attention/postnorm roles now feed the complete NextN indexer, shared vocabulary and accepted-state journey on CPU/CUDA, including original BF16 storage boundaries.",
+  "artifact": {
+    "repository": "zai-org/GLM-5.3-Flash",
+    "revision": "eb9eb208eb0d988989d07a6a12d0fdeb5f52574a",
+    "original_roles": 26,
+    "original_role_bytes": 2753893888,
+    "additional_original_roles": 9,
+    "additional_original_payload_bytes": 127958528,
+    "acquisition": {
+      "repository": "zai-org/GLM-5.3-Flash",
+      "revision": "eb9eb208eb0d988989d07a6a12d0fdeb5f52574a",
+      "source_plan": ".scratch/glm-original-attention-20261023/roles-plan.json",
+      "expected_role_payload_bytes": 127958528,
+      "complete": true,
+      "original_roles": 9,
+      "whole_shard_downloaded": false,
+      "chunk_bytes": 134217728,
+      "stream_buffer_bytes": 1048576,
+      "requests": [
+        {
+          "role": "model.language_model.layers.45.self_attn.q_b_proj.weight",
+          "first": 4993492112,
+          "last": 5018657935,
+          "requested_bytes": 25165824,
+          "complete": true,
+          "started_utc": "2026-10-22T21:56:13.105523+00:00",
+          "http_status": 206,
+          "bytes": 25165824,
+          "content_range": "bytes 4993492112-5018657935/5320647824",
+          "etag": "\"3b634445603c457deae3497697213cdf620af6560dd1c33d64048ba4d710340d\"",
+          "sha256": "c5b33a523ec8aa477e0a1a3f02049ed8f122c83e70dc77b9777741cd076a79d9",
+          "finished_utc": "2026-10-22T21:56:18.234888+00:00"
+        },
+        {
+          "role": "model.language_model.layers.45.self_attn.q_b_proj.weight_scale_inv",
+          "first": 1282272,
+          "last": 1288415,
+          "requested_bytes": 6144,
+          "complete": true,
+          "started_utc": "2026-10-22T21:56:18.256949+00:00",
+          "http_status": 206,
+          "bytes": 6144,
+          "content_range": "bytes 1282272-1288415/5320647824",
+          "etag": "\"3b634445603c457deae3497697213cdf620af6560dd1c33d64048ba4d710340d\"",
+          "sha256": "58f7973cd4f6cd70dc2e05ebfc307dd2c0998f41ea12e84267590f1f443463a1",
+          "finished_utc": "2026-10-22T21:56:19.633553+00:00"
+        },
+        {
+          "role": "model.language_model.layers.45.self_attn.kv_a_proj_with_mqa.weight",
+          "first": 4917994640,
+          "last": 4920091791,
+          "requested_bytes": 2097152,
+          "complete": true,
+          "started_utc": "2026-10-22T21:56:19.642355+00:00",
+          "http_status": 206,
+          "bytes": 2097152,
+          "content_range": "bytes 4917994640-4920091791/5320647824",
+          "etag": "\"3b634445603c457deae3497697213cdf620af6560dd1c33d64048ba4d710340d\"",
+          "sha256": "c1b6d576b22544c67a0a5d99c3cfdb0a70a56a38e96d68970d15490074c8ceb4",
+          "finished_utc": "2026-10-22T21:56:22.230200+00:00"
+        },
+        {
+          "role": "model.language_model.layers.45.self_attn.kv_a_proj_with_mqa.weight_scale_inv",
+          "first": 1263840,
+          "last": 1264351,
+          "requested_bytes": 512,
+          "complete": true,
+          "started_utc": "2026-10-22T21:56:22.240193+00:00",
+          "http_status": 206,
+          "bytes": 512,
+          "content_range": "bytes 1263840-1264351/5320647824",
+          "etag": "\"3b634445603c457deae3497697213cdf620af6560dd1c33d64048ba4d710340d\"",
+          "sha256": "6a262630b028697ea60d85d7da1042de2b8b2e4e3f37b52246b17798bc6ede8d",
+          "finished_utc": "2026-10-22T21:56:23.522169+00:00"
+        },
+        {
+          "role": "model.language_model.layers.45.self_attn.o_proj.weight",
+          "first": 4920091792,
+          "last": 4987200655,
+          "requested_bytes": 67108864,
+          "complete": true,
+          "started_utc": "2026-10-22T21:56:23.531858+00:00",
+          "http_status": 206,
+          "bytes": 67108864,
+          "content_range": "bytes 4920091792-4987200655/5320647824",
+          "etag": "\"3b634445603c457deae3497697213cdf620af6560dd1c33d64048ba4d710340d\"",
+          "sha256": "c6402d1f100e7e99776a97bd1ce33618f960e98c63f56c4ddd0ced8cc494c2dd",
+          "finished_utc": "2026-10-22T21:56:31.409775+00:00"
+        },
+        {
+          "role": "model.language_model.layers.45.self_attn.o_proj.weight_scale_inv",
+          "first": 1264352,
+          "last": 1280735,
+          "requested_bytes": 16384,
+          "complete": true,
+          "started_utc": "2026-10-22T21:56:31.453835+00:00",
+          "http_status": 206,
+          "bytes": 16384,
+          "content_range": "bytes 1264352-1280735/5320647824",
+          "etag": "\"3b634445603c457deae3497697213cdf620af6560dd1c33d64048ba4d710340d\"",
+          "sha256": "346ca13b45aca744256624a84a5d39740d10be9f2ba31714bd8daf8378b09237",
+          "finished_utc": "2026-10-22T21:56:32.831671+00:00"
+        },
+        {
+          "role": "model.language_model.layers.45.self_attn.kv_b_proj.weight",
+          "first": 18740880,
+          "last": 52295311,
+          "requested_bytes": 33554432,
+          "complete": true,
+          "started_utc": "2026-10-22T21:56:32.840183+00:00",
+          "http_status": 206,
+          "bytes": 33554432,
+          "content_range": "bytes 18740880-52295311/5320647824",
+          "etag": "\"3b634445603c457deae3497697213cdf620af6560dd1c33d64048ba4d710340d\"",
+          "sha256": "2c9d7ecb2b3863a52d5b27bc113b7241471a5d955f5046557b24b7e3b8289dc9",
+          "finished_utc": "2026-10-22T21:56:38.209539+00:00"
+        },
+        {
+          "role": "model.language_model.layers.45.self_attn.kv_a_layernorm.weight",
+          "first": 18739856,
+          "last": 18740879,
+          "requested_bytes": 1024,
+          "complete": true,
+          "started_utc": "2026-10-22T21:56:38.236214+00:00",
+          "http_status": 206,
+          "bytes": 1024,
+          "content_range": "bytes 18739856-18740879/5320647824",
+          "etag": "\"3b634445603c457deae3497697213cdf620af6560dd1c33d64048ba4d710340d\"",
+          "sha256": "937e8ba89741a026ddefd5d2db42d3066aab723ab43995b0ed3b53bf4c3811e7",
+          "finished_utc": "2026-10-22T21:56:40.202271+00:00"
+        },
+        {
+          "role": "model.language_model.layers.45.post_attention_layernorm.weight",
+          "first": 3787920,
+          "last": 3796111,
+          "requested_bytes": 8192,
+          "complete": true,
+          "started_utc": "2026-10-22T21:56:40.211788+00:00",
+          "http_status": 206,
+          "bytes": 8192,
+          "content_range": "bytes 3787920-3796111/5320647824",
+          "etag": "\"3b634445603c457deae3497697213cdf620af6560dd1c33d64048ba4d710340d\"",
+          "sha256": "85d70bee15e028083a5a38ab63fbaabb6fabafa64d9a66d9a61ab4604c2a52dc",
+          "finished_utc": "2026-10-22T21:56:41.600956+00:00"
+        }
+      ],
+      "roles": [
+        {
+          "name": "model.language_model.layers.45.self_attn.q_b_proj.weight",
+          "filename": "q_b.weight.e4m3",
+          "dtype": "F8_E4M3",
+          "shape": [
+            16384,
+            1536
+          ],
+          "bytes": 25165824,
+          "data_relative_half_open": [
+            4993331248,
+            5018497072
+          ],
+          "absolute_inclusive": [
+            4993492112,
+            5018657935
+          ],
+          "url": "https://huggingface.co/zai-org/GLM-5.3-Flash/resolve/eb9eb208eb0d988989d07a6a12d0fdeb5f52574a/model-00002-of-00062.safetensors",
+          "etag": "\"3b634445603c457deae3497697213cdf620af6560dd1c33d64048ba4d710340d\"",
+          "whole_file_bytes": 5320647824,
+          "complete": true,
+          "chunks": [
+            {
+              "offset": 0,
+              "bytes": 25165824,
+              "sha256": "c5b33a523ec8aa477e0a1a3f02049ed8f122c83e70dc77b9777741cd076a79d9",
+              "absolute_range_inclusive": [
+                4993492112,
+                5018657935
+              ]
+            }
+          ],
+          "payload": {
+            "path": ".scratch/glm-original-attention-20261023/original-attention/q_b.weight.e4m3",
+            "bytes": 25165824,
+            "sha256": "c5b33a523ec8aa477e0a1a3f02049ed8f122c83e70dc77b9777741cd076a79d9"
+          }
+        },
+        {
+          "name": "model.language_model.layers.45.self_attn.q_b_proj.weight_scale_inv",
+          "filename": "q_b.weight_scale.f32",
+          "dtype": "F32",
+          "shape": [
+            128,
+            12
+          ],
+          "bytes": 6144,
+          "data_relative_half_open": [
+            1121408,
+            1127552
+          ],
+          "absolute_inclusive": [
+            1282272,
+            1288415
+          ],
+          "url": "https://huggingface.co/zai-org/GLM-5.3-Flash/resolve/eb9eb208eb0d988989d07a6a12d0fdeb5f52574a/model-00002-of-00062.safetensors",
+          "etag": "\"3b634445603c457deae3497697213cdf620af6560dd1c33d64048ba4d710340d\"",
+          "whole_file_bytes": 5320647824,
+          "complete": true,
+          "chunks": [
+            {
+              "offset": 0,
+              "bytes": 6144,
+              "sha256": "58f7973cd4f6cd70dc2e05ebfc307dd2c0998f41ea12e84267590f1f443463a1",
+              "absolute_range_inclusive": [
+                1282272,
+                1288415
+              ]
+            }
+          ],
+          "payload": {
+            "path": ".scratch/glm-original-attention-20261023/original-attention/q_b.weight_scale.f32",
+            "bytes": 6144,
+            "sha256": "58f7973cd4f6cd70dc2e05ebfc307dd2c0998f41ea12e84267590f1f443463a1"
+          }
+        },
+        {
+          "name": "model.language_model.layers.45.self_attn.kv_a_proj_with_mqa.weight",
+          "filename": "kv_a.weight.e4m3",
+          "dtype": "F8_E4M3",
+          "shape": [
+            512,
+            4096
+          ],
+          "bytes": 2097152,
+          "data_relative_half_open": [
+            4917833776,
+            4919930928
+          ],
+          "absolute_inclusive": [
+            4917994640,
+            4920091791
+          ],
+          "url": "https://huggingface.co/zai-org/GLM-5.3-Flash/resolve/eb9eb208eb0d988989d07a6a12d0fdeb5f52574a/model-00002-of-00062.safetensors",
+          "etag": "\"3b634445603c457deae3497697213cdf620af6560dd1c33d64048ba4d710340d\"",
+          "whole_file_bytes": 5320647824,
+          "complete": true,
+          "chunks": [
+            {
+              "offset": 0,
+              "bytes": 2097152,
+              "sha256": "c1b6d576b22544c67a0a5d99c3cfdb0a70a56a38e96d68970d15490074c8ceb4",
+              "absolute_range_inclusive": [
+                4917994640,
+                4920091791
+              ]
+            }
+          ],
+          "payload": {
+            "path": ".scratch/glm-original-attention-20261023/original-attention/kv_a.weight.e4m3",
+            "bytes": 2097152,
+            "sha256": "c1b6d576b22544c67a0a5d99c3cfdb0a70a56a38e96d68970d15490074c8ceb4"
+          }
+        },
+        {
+          "name": "model.language_model.layers.45.self_attn.kv_a_proj_with_mqa.weight_scale_inv",
+          "filename": "kv_a.weight_scale.f32",
+          "dtype": "F32",
+          "shape": [
+            4,
+            32
+          ],
+          "bytes": 512,
+          "data_relative_half_open": [
+            1102976,
+            1103488
+          ],
+          "absolute_inclusive": [
+            1263840,
+            1264351
+          ],
+          "url": "https://huggingface.co/zai-org/GLM-5.3-Flash/resolve/eb9eb208eb0d988989d07a6a12d0fdeb5f52574a/model-00002-of-00062.safetensors",
+          "etag": "\"3b634445603c457deae3497697213cdf620af6560dd1c33d64048ba4d710340d\"",
+          "whole_file_bytes": 5320647824,
+          "complete": true,
+          "chunks": [
+            {
+              "offset": 0,
+              "bytes": 512,
+              "sha256": "6a262630b028697ea60d85d7da1042de2b8b2e4e3f37b52246b17798bc6ede8d",
+              "absolute_range_inclusive": [
+                1263840,
+                1264351
+              ]
+            }
+          ],
+          "payload": {
+            "path": ".scratch/glm-original-attention-20261023/original-attention/kv_a.weight_scale.f32",
+            "bytes": 512,
+            "sha256": "6a262630b028697ea60d85d7da1042de2b8b2e4e3f37b52246b17798bc6ede8d"
+          }
+        },
+        {
+          "name": "model.language_model.layers.45.self_attn.o_proj.weight",
+          "filename": "o.weight.e4m3",
+          "dtype": "F8_E4M3",
+          "shape": [
+            4096,
+            16384
+          ],
+          "bytes": 67108864,
+          "data_relative_half_open": [
+            4919930928,
+            4987039792
+          ],
+          "absolute_inclusive": [
+            4920091792,
+            4987200655
+          ],
+          "url": "https://huggingface.co/zai-org/GLM-5.3-Flash/resolve/eb9eb208eb0d988989d07a6a12d0fdeb5f52574a/model-00002-of-00062.safetensors",
+          "etag": "\"3b634445603c457deae3497697213cdf620af6560dd1c33d64048ba4d710340d\"",
+          "whole_file_bytes": 5320647824,
+          "complete": true,
+          "chunks": [
+            {
+              "offset": 0,
+              "bytes": 67108864,
+              "sha256": "c6402d1f100e7e99776a97bd1ce33618f960e98c63f56c4ddd0ced8cc494c2dd",
+              "absolute_range_inclusive": [
+                4920091792,
+                4987200655
+              ]
+            }
+          ],
+          "payload": {
+            "path": ".scratch/glm-original-attention-20261023/original-attention/o.weight.e4m3",
+            "bytes": 67108864,
+            "sha256": "c6402d1f100e7e99776a97bd1ce33618f960e98c63f56c4ddd0ced8cc494c2dd"
+          }
+        },
+        {
+          "name": "model.language_model.layers.45.self_attn.o_proj.weight_scale_inv",
+          "filename": "o.weight_scale.f32",
+          "dtype": "F32",
+          "shape": [
+            32,
+            128
+          ],
+          "bytes": 16384,
+          "data_relative_half_open": [
+            1103488,
+            1119872
+          ],
+          "absolute_inclusive": [
+            1264352,
+            1280735
+          ],
+          "url": "https://huggingface.co/zai-org/GLM-5.3-Flash/resolve/eb9eb208eb0d988989d07a6a12d0fdeb5f52574a/model-00002-of-00062.safetensors",
+          "etag": "\"3b634445603c457deae3497697213cdf620af6560dd1c33d64048ba4d710340d\"",
+          "whole_file_bytes": 5320647824,
+          "complete": true,
+          "chunks": [
+            {
+              "offset": 0,
+              "bytes": 16384,
+              "sha256": "346ca13b45aca744256624a84a5d39740d10be9f2ba31714bd8daf8378b09237",
+              "absolute_range_inclusive": [
+                1264352,
+                1280735
+              ]
+            }
+          ],
+          "payload": {
+            "path": ".scratch/glm-original-attention-20261023/original-attention/o.weight_scale.f32",
+            "bytes": 16384,
+            "sha256": "346ca13b45aca744256624a84a5d39740d10be9f2ba31714bd8daf8378b09237"
+          }
+        },
+        {
+          "name": "model.language_model.layers.45.self_attn.kv_b_proj.weight",
+          "filename": "kv_b.weight.bf16",
+          "dtype": "BF16",
+          "shape": [
+            32768,
+            512
+          ],
+          "bytes": 33554432,
+          "data_relative_half_open": [
+            18580016,
+            52134448
+          ],
+          "absolute_inclusive": [
+            18740880,
+            52295311
+          ],
+          "url": "https://huggingface.co/zai-org/GLM-5.3-Flash/resolve/eb9eb208eb0d988989d07a6a12d0fdeb5f52574a/model-00002-of-00062.safetensors",
+          "etag": "\"3b634445603c457deae3497697213cdf620af6560dd1c33d64048ba4d710340d\"",
+          "whole_file_bytes": 5320647824,
+          "complete": true,
+          "chunks": [
+            {
+              "offset": 0,
+              "bytes": 33554432,
+              "sha256": "2c9d7ecb2b3863a52d5b27bc113b7241471a5d955f5046557b24b7e3b8289dc9",
+              "absolute_range_inclusive": [
+                18740880,
+                52295311
+              ]
+            }
+          ],
+          "payload": {
+            "path": ".scratch/glm-original-attention-20261023/original-attention/kv_b.weight.bf16",
+            "bytes": 33554432,
+            "sha256": "2c9d7ecb2b3863a52d5b27bc113b7241471a5d955f5046557b24b7e3b8289dc9"
+          }
+        },
+        {
+          "name": "model.language_model.layers.45.self_attn.kv_a_layernorm.weight",
+          "filename": "kv_a_layernorm.weight.bf16",
+          "dtype": "BF16",
+          "shape": [
+            512
+          ],
+          "bytes": 1024,
+          "data_relative_half_open": [
+            18578992,
+            18580016
+          ],
+          "absolute_inclusive": [
+            18739856,
+            18740879
+          ],
+          "url": "https://huggingface.co/zai-org/GLM-5.3-Flash/resolve/eb9eb208eb0d988989d07a6a12d0fdeb5f52574a/model-00002-of-00062.safetensors",
+          "etag": "\"3b634445603c457deae3497697213cdf620af6560dd1c33d64048ba4d710340d\"",
+          "whole_file_bytes": 5320647824,
+          "complete": true,
+          "chunks": [
+            {
+              "offset": 0,
+              "bytes": 1024,
+              "sha256": "937e8ba89741a026ddefd5d2db42d3066aab723ab43995b0ed3b53bf4c3811e7",
+              "absolute_range_inclusive": [
+                18739856,
+                18740879
+              ]
+            }
+          ],
+          "payload": {
+            "path": ".scratch/glm-original-attention-20261023/original-attention/kv_a_layernorm.weight.bf16",
+            "bytes": 1024,
+            "sha256": "937e8ba89741a026ddefd5d2db42d3066aab723ab43995b0ed3b53bf4c3811e7"
+          }
+        },
+        {
+          "name": "model.language_model.layers.45.post_attention_layernorm.weight",
+          "filename": "post_attention_layernorm.weight.bf16",
+          "dtype": "BF16",
+          "shape": [
+            4096
+          ],
+          "bytes": 8192,
+          "data_relative_half_open": [
+            3627056,
+            3635248
+          ],
+          "absolute_inclusive": [
+            3787920,
+            3796111
+          ],
+          "url": "https://huggingface.co/zai-org/GLM-5.3-Flash/resolve/eb9eb208eb0d988989d07a6a12d0fdeb5f52574a/model-00002-of-00062.safetensors",
+          "etag": "\"3b634445603c457deae3497697213cdf620af6560dd1c33d64048ba4d710340d\"",
+          "whole_file_bytes": 5320647824,
+          "complete": true,
+          "chunks": [
+            {
+              "offset": 0,
+              "bytes": 8192,
+              "sha256": "85d70bee15e028083a5a38ab63fbaabb6fabafa64d9a66d9a61ab4604c2a52dc",
+              "absolute_range_inclusive": [
+                3787920,
+                3796111
+              ]
+            }
+          ],
+          "payload": {
+            "path": ".scratch/glm-original-attention-20261023/original-attention/post_attention_layernorm.weight.bf16",
+            "bytes": 8192,
+            "sha256": "85d70bee15e028083a5a38ab63fbaabb6fabafa64d9a66d9a61ab4604c2a52dc"
+          }
+        }
+      ],
+      "role_payload_bytes": 127958528,
+      "successful_request_body_bytes": 127958528,
+      "finished_utc": "2026-10-22T21:56:41.611510+00:00"
+    },
+    "weight_bodies_archived": false
+  },
+  "implementation": {
+    "projection": "Original q_b/kv_a/o E4 codes plus F32 block128 scales enter the existing canonical importer and dynamic A128 Divide/floor1e-10 projection. Actual BF16 input and output boundaries remain explicit.",
+    "absorption": "One original BF16 kv_b[32768,512] supplies both per-head key/value matrices. One ordinary cold Graph prepares dense BF16 layouts, shared by all hot recipes. The original device kv_b source retires after preparation; no whole F32 weight shadow or hot per-head repacking.",
+    "attention": "64 heads, NoPE256, latent512, value256, no RoPE; scale remains1/16. Existing selected IDs and compact CKV Gather/SDPA stay shared. The F32 cache carrier stores exact widening of actual BF16 latent rows, not unrounded F32 values; actual attention return stores BF16 before value absorption.",
+    "residual": "Post-attention norm uses the actual F32 EH+O sum and original BF16 gamma. The separate residual return stores BF16 for subsequent FFN addition; the norm does not consume a prematurely rounded residual.",
+    "state": "The same complete state store, one atomic Head, accepted prefixes0/1/2, target bonus policy, epoch seed, indexer skip, journal/direct catchup, full-vocabulary greedy feedback and old readonly results remain."
+  },
+  "validation": {
+    "tests": 4,
+    "failures": 0,
+    "errors": 0,
+    "skips": 0,
+    "graph_submissions": 114,
+    "new_graph_submissions": 58,
+    "new_cold_weight_layout_graphs": 2,
+    "related_graph_submissions": 56,
+    "new_full_local_projection_outputs": 140288,
+    "new_full_f64_head_scores": 309760,
+    "new_attention_and_prediction_episodes": 40,
+    "new_cases": [
+      {
+        "attributes": {
+          "name": "CudaOriginalAttentionSharedLmSeedsSkipsCatchesUpAndFeedsBack",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_mtp_state_consumer_test.cc",
+          "line": "2519",
+          "status": "run",
+          "result": "completed",
+          "time": "24.053",
+          "timestamp": "2026-10-23T06:10:39.114",
+          "classname": "GlmMtpStateConsumer"
+        },
+        "properties": {
+          "shared_lm_head_provider": "cublasLt",
+          "original_attention_provider_query_b": "sglang-cuda",
+          "original_attention_provider_kv_a": "sglang-cuda",
+          "original_attention_provider_output": "sglang-cuda",
+          "original_attention_provider_key_bmm": "ggml-cuda",
+          "original_attention_provider_value_bmm": "ggml-cuda",
+          "initialization_submissions": "3",
+          "logical_index_state_bytes": "71052",
+          "actual_submissions": "29",
+          "draft_extend_submissions": "12",
+          "skip_submissions": "8",
+          "catchup_submissions": "4",
+          "policy_submissions": "2",
+          "backend": "ordinary CUDA Graph",
+          "journey": "draft-extend A2054/B2055->last accepted row1/2 actual hidden+full2051IDs->step0 immediately skips entire indexer->accepted nx catchup->actual epoch8 extend->step0 skip; independent accepted-only base execution/direct nx reference",
+          "original_roles": "26",
+          "original_role_bytes": "2753893888",
+          "original_runtime_bank_bytes": "2754157568",
+          "shared_lm_bank_capacity_bytes": "2537562112",
+          "state_output_pool_backing_bound": "234278912",
+          "state_initial_independent_backing_bound": "4287744",
+          "state_metadata_backing_bound": "16384",
+          "state_budget_bytes": "238583040",
+          "peak_state_backing_bytes": "151924044",
+          "state_max_versions": "16",
+          "shared_lm_full_f64_scores_checked": "154880",
+          "shared_lm_greedy_scores_observed": "3097600",
+          "shared_lm_prediction_to_pending_checks": "20",
+          "shared_lm_pending_embedding_checks": "20",
+          "attention_original_roles": "9",
+          "attention_original_bytes": "127958528",
+          "attention_cold_layout_submissions": "1",
+          "attention_prepared_kv_bf16_capacity_bytes": "33554432",
+          "attention_raw_kv_device_bank_retained": "0",
+          "main_journey_submissions": "28",
+          "attention_full_local_projection_values_checked": "70144",
+          "attention_calls_checked": "20",
+          "scope": "official GLM-5.3-Flash eb9eb208 original26 physical roles: original14 prefix/indexer, untied original3 fullV shared LM, original9 complete MLA attention/postnorm. Dynamic E4 A128 Divide floor1e-10 projections have actual BF16 stores; original single BF16 KV_b cold-split once into shared BF16 K/V ready banks, original raw device bank retired; ordinary BF16 BMM with F32 accumulation, compact selected same-CKV MQA scale1/16 with BF16 output; original kvnorm/postnorm. F32 cache carrier contains only BF16-widened latent values, not vendor page ABI. Postnorm consumes actual F32 EH+O sum and separately returns actual BF16 residual; generated F32 MoE output then enters existing original sharednorm/fullVhead/actualpending feedback. First complete local projection checks, subsequent actual boundaries plus bounded local projection samples; accept0/1/2, explicit targetbonus, journal/directcatchup/epoch8 and one StateHead preserved. Targethidden, initial maincache/index history and MoE remain declared generated boundaries; no full original target/model, natural acceptance, quality or TPS claim. Capacities are readybank bytes, not measured peak."
+        }
+      },
+      {
+        "attributes": {
+          "name": "CpuOriginalAttentionSharedLmSeedsSkipsCatchesUpAndFeedsBack",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_mtp_state_consumer_test.cc",
+          "line": "2570",
+          "status": "run",
+          "result": "completed",
+          "time": "26.145",
+          "timestamp": "2026-10-23T06:11:31.423",
+          "classname": "GlmMtpStateConsumer"
+        },
+        "properties": {
+          "shared_lm_head_provider": "ggml-cpu",
+          "original_attention_provider_query_b": "hyle-native",
+          "original_attention_provider_kv_a": "hyle-native",
+          "original_attention_provider_output": "hyle-native",
+          "original_attention_provider_key_bmm": "ggml-cpu",
+          "original_attention_provider_value_bmm": "ggml-cpu",
+          "initialization_submissions": "3",
+          "logical_index_state_bytes": "71052",
+          "actual_submissions": "29",
+          "draft_extend_submissions": "12",
+          "skip_submissions": "8",
+          "catchup_submissions": "4",
+          "policy_submissions": "2",
+          "backend": "ordinary CPU Graph",
+          "journey": "draft-extend A2054/B2055->last accepted row1/2 actual hidden+full2051IDs->step0 immediately skips entire indexer->accepted nx catchup->actual epoch8 extend->step0 skip; independent accepted-only base execution/direct nx reference",
+          "original_roles": "26",
+          "original_role_bytes": "2753893888",
+          "original_runtime_bank_bytes": "2754157568",
+          "shared_lm_bank_capacity_bytes": "2537562112",
+          "state_output_pool_backing_bound": "234278912",
+          "state_initial_independent_backing_bound": "4287744",
+          "state_metadata_backing_bound": "16384",
+          "state_budget_bytes": "238583040",
+          "peak_state_backing_bytes": "151924044",
+          "state_max_versions": "16",
+          "shared_lm_full_f64_scores_checked": "154880",
+          "shared_lm_greedy_scores_observed": "3097600",
+          "shared_lm_prediction_to_pending_checks": "20",
+          "shared_lm_pending_embedding_checks": "20",
+          "attention_original_roles": "9",
+          "attention_original_bytes": "127958528",
+          "attention_cold_layout_submissions": "1",
+          "attention_prepared_kv_bf16_capacity_bytes": "33554432",
+          "attention_raw_kv_device_bank_retained": "0",
+          "main_journey_submissions": "28",
+          "attention_full_local_projection_values_checked": "70144",
+          "attention_calls_checked": "20",
+          "scope": "official GLM-5.3-Flash eb9eb208 original26 physical roles: original14 prefix/indexer, untied original3 fullV shared LM, original9 complete MLA attention/postnorm. Dynamic E4 A128 Divide floor1e-10 projections have actual BF16 stores; original single BF16 KV_b cold-split once into shared BF16 K/V ready banks, original raw device bank retired; ordinary BF16 BMM with F32 accumulation, compact selected same-CKV MQA scale1/16 with BF16 output; original kvnorm/postnorm. F32 cache carrier contains only BF16-widened latent values, not vendor page ABI. Postnorm consumes actual F32 EH+O sum and separately returns actual BF16 residual; generated F32 MoE output then enters existing original sharednorm/fullVhead/actualpending feedback. First complete local projection checks, subsequent actual boundaries plus bounded local projection samples; accept0/1/2, explicit targetbonus, journal/directcatchup/epoch8 and one StateHead preserved. Targethidden, initial maincache/index history and MoE remain declared generated boundaries; no full original target/model, natural acceptance, quality or TPS claim. Capacities are readybank bytes, not measured peak."
+        }
+      }
+    ],
+    "related_cases": [
+      {
+        "attributes": {
+          "name": "CudaOriginalSharedLmPredictsAndFeedsBackAcrossSeedAndCatchup",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_mtp_state_consumer_test.cc",
+          "line": "2525",
+          "status": "run",
+          "result": "completed",
+          "time": "25.18",
+          "timestamp": "2026-10-23T06:12:24.397",
+          "classname": "GlmMtpStateConsumer"
+        },
+        "properties": {
+          "shared_lm_head_provider": "cublasLt",
+          "initialization_submissions": "2",
+          "logical_index_state_bytes": "71052",
+          "actual_submissions": "28",
+          "draft_extend_submissions": "12",
+          "skip_submissions": "8",
+          "catchup_submissions": "4",
+          "policy_submissions": "2",
+          "backend": "ordinary CUDA Graph",
+          "journey": "draft-extend A2054/B2055->last accepted row1/2 actual hidden+full2051IDs->step0 immediately skips entire indexer->accepted nx catchup->actual epoch8 extend->step0 skip; independent accepted-only base execution/direct nx reference",
+          "original_roles": "17",
+          "original_role_bytes": "2625935360",
+          "original_runtime_bank_bytes": "2626199040",
+          "shared_lm_bank_capacity_bytes": "2537562112",
+          "state_output_pool_backing_bound": "220598272",
+          "state_initial_independent_backing_bound": "4287744",
+          "state_metadata_backing_bound": "16384",
+          "state_budget_bytes": "224902400",
+          "peak_state_backing_bytes": "143373644",
+          "state_max_versions": "16",
+          "shared_lm_full_f64_scores_checked": "154880",
+          "shared_lm_greedy_scores_observed": "3097600",
+          "shared_lm_prediction_to_pending_checks": "20",
+          "shared_lm_pending_embedding_checks": "20",
+          "scope": "official GLM-5.3-Flash eb9eb208 original14 prefix/indexer plus untied fullV154880 BF16 embedding/head and original BF16 sharednorm; actual generated residualF32+FFN_F32 add -> originalgamma exactwiden RMS eps1e-5 -> BF16store -> fullV BFloatLinearF32 -> stableTop1 actualI32pending -> next fullV embedding Gather. Shared three banks uploaded once per Context/owner, capacity not measured peak. Firsthead independent fullV F64 bound, subsequent actualTop4/selectedrow dots and allV strictgreedy everyhead, exact BF16stores/embedding/feedback. Acceptance0/1/2, explicit targetbonus, originalseed/skip/journal/directcatchup/epoch8 and atomicStateHead/oldleases remain. Targethidden,remaining MLA/MoE stay generated F32 boundaries; not original BF16 decoder/fullmodel,quality,naturalacceptance or throughput."
+        }
+      },
+      {
+        "attributes": {
+          "name": "CpuOriginalSharedLmPredictsAndFeedsBackAcrossSeedAndCatchup",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_mtp_state_consumer_test.cc",
+          "line": "2575",
+          "status": "run",
+          "result": "completed",
+          "time": "27.256",
+          "timestamp": "2026-10-23T06:12:49.577",
+          "classname": "GlmMtpStateConsumer"
+        },
+        "properties": {
+          "shared_lm_head_provider": "ggml-cpu",
+          "initialization_submissions": "2",
+          "logical_index_state_bytes": "71052",
+          "actual_submissions": "28",
+          "draft_extend_submissions": "12",
+          "skip_submissions": "8",
+          "catchup_submissions": "4",
+          "policy_submissions": "2",
+          "backend": "ordinary CPU Graph",
+          "journey": "draft-extend A2054/B2055->last accepted row1/2 actual hidden+full2051IDs->step0 immediately skips entire indexer->accepted nx catchup->actual epoch8 extend->step0 skip; independent accepted-only base execution/direct nx reference",
+          "original_roles": "17",
+          "original_role_bytes": "2625935360",
+          "original_runtime_bank_bytes": "2626199040",
+          "shared_lm_bank_capacity_bytes": "2537562112",
+          "state_output_pool_backing_bound": "220598272",
+          "state_initial_independent_backing_bound": "4287744",
+          "state_metadata_backing_bound": "16384",
+          "state_budget_bytes": "224902400",
+          "peak_state_backing_bytes": "143373644",
+          "state_max_versions": "16",
+          "shared_lm_full_f64_scores_checked": "154880",
+          "shared_lm_greedy_scores_observed": "3097600",
+          "shared_lm_prediction_to_pending_checks": "20",
+          "shared_lm_pending_embedding_checks": "20",
+          "scope": "official GLM-5.3-Flash eb9eb208 original14 prefix/indexer plus untied fullV154880 BF16 embedding/head and original BF16 sharednorm; actual generated residualF32+FFN_F32 add -> originalgamma exactwiden RMS eps1e-5 -> BF16store -> fullV BFloatLinearF32 -> stableTop1 actualI32pending -> next fullV embedding Gather. Shared three banks uploaded once per Context/owner, capacity not measured peak. Firsthead independent fullV F64 bound, subsequent actualTop4/selectedrow dots and allV strictgreedy everyhead, exact BF16stores/embedding/feedback. Acceptance0/1/2, explicit targetbonus, originalseed/skip/journal/directcatchup/epoch8 and atomicStateHead/oldleases remain. Targethidden,remaining MLA/MoE stay generated F32 boundaries; not original BF16 decoder/fullmodel,quality,naturalacceptance or throughput."
+        }
+      }
+    ],
+    "results": [
+      {
+        "path": ".scratch/glm-original-attention-20261023/checks1/summary.json",
+        "bytes": 4953,
+        "sha256": "40cf597bc9b581e6ecabb18d1d36aee7b851b709a6e9fc3a5f1fc312eabd81ce"
+      },
+      {
+        "path": ".scratch/glm-original-attention-20261023/checks2/summary.json",
+        "bytes": 4946,
+        "sha256": "a767c3c51dc7476bacad3d037af7c489d78faccc839d52521f9ef11ddcaa0d78"
+      },
+      {
+        "path": ".scratch/glm-original-attention-20261023/checks3/summary.json",
+        "bytes": 6504,
+        "sha256": "8aab6884695f2348a3e7ad02fbd44b2f808e82d8b654bf125b1287164a5da403"
+      }
+    ],
+    "source_freeze": {
+      "path": ".scratch/glm-original-attention-20261023/source2/freeze.json",
+      "bytes": 4127,
+      "sha256": "a8fb2ddb4b7cf22dcad6b07350d6033ba187f58b514de23183dfdc69dc1e654e"
+    },
+    "linked_inputs": {
+      "path": ".scratch/glm-original-attention-20261023/tests-link2/link-plan.json",
+      "bytes": 88259,
+      "sha256": "f7a9f9c2dae8ae785dcb971098df12c867ffa86d5c0cda42d79b95aac91e22b1"
+    },
+    "host_translation_units": 1,
+    "host_compile_attempts": 2,
+    "prior_attempts": [],
+    "SDK_builds": 0,
+    "native_CPU_builds": 0,
+    "NVCC_builds": 0,
+    "shaders": 0
+  },
+  "limitations": [
+    "Finite Windows CPU/CUDA journey, not all systems/shapes/codecs.",
+    "Target hidden/taps/verifier and MoE/FFN remain explicit generated boundaries; not the full trained45-layer model.",
+    "F32 cache carrier and generated initial history are not a vendor FP8 page ABI or original target capture.",
+    "Pro6144 geometry, other original roles and confirmed quantization combinations remain unfinished.",
+    "No new quality, natural acceptance, TPS/loading or physical memory/VRAM peak claim; latestAV comparison is unchanged.",
+    "MTP and the broader goal remain incomplete."
+  ],
+  "remaining": "Original MoE/FFN roles, real target taps, actual Pro geometry and confirmed applicable quantization combinations; final necessary regressions and complete ordinary/MTP performance comparison before images.",
+  "final_image": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-original-attention-20261023\\tests-link2\\glm-original-attention-checks.exe",
+    "bytes": 141149184,
+    "sha256": "4ec70ff5a5365cbb1bf23aca6fb54f4986865f2be6e9e2c034649fc2768aea95"
+  },
+  "sources": [
+    {
+      "path": "tests/compute_models/glm_original_attention_roles.h",
+      "bytes": 13045,
+      "sha256": "c77f07bd1e4a7343f57aab13eb9af7e1949b47f743af8fcb3dff784b8fa38da5"
+    },
+    {
+      "path": "tests/compute_models/glm_original_attention_reference.h",
+      "bytes": 14906,
+      "sha256": "bad7c49a79c200cb411f2d439750c9b072c02871c8ab2458a5fa750b8e9f2625"
+    },
+    {
+      "path": "tests/compute_models/glm_mtp_state_consumer_test.cc",
+      "bytes": 188211,
+      "sha256": "5d5f0185fb800fd0596d825d209d2589a0e7800b5cbc1ca9ad0f079190db2eea"
+    },
+    {
+      "path": "docs/developer/current-work.md",
+      "bytes": 24628,
+      "sha256": "ad72fc34f1ab20f94d74db2002ff9b65183958f7f63d8d791718d3b53b7c13ec"
+    },
+    {
+      "path": "docs/implementation/model-operators.md",
+      "bytes": 97143,
+      "sha256": "9281eab7db321e90cdab221f9e44872a18494100ce7a6ee19d8306b780df1279"
+    }
+  ],
+  "source_metadata": [
+    {
+      "path": ".scratch/glm-mtp-carry-20261022/original-glm-q-a/header.json",
+      "bytes": 160856,
+      "sha256": "4727368ca83ad19ddfea0bfcb0fbf4427087b5b0bf648968b863962454e85c15"
+    },
+    {
+      "path": ".scratch/glm-mtp-carry-20261022/original-glm-q-a/acquisition.json",
+      "bytes": 3722,
+      "sha256": "aff6fefe6c5064e3eb3903bc0a90bca073b6fd048293cc48b231e299c171bb76"
+    },
+    {
+      "path": ".scratch/glm-encoded-state-20261023/review/fixed-source/models/deepseek_nextn.py",
+      "bytes": 12508,
+      "sha256": "56cf0d2267400050765fe6c870a2b89068bc7e032a24fd493d31da7ffc52d84f"
+    },
+    {
+      "path": ".scratch/glm-encoded-state-20261023/review/fixed-source/models/glm5_next.py",
+      "bytes": 61466,
+      "sha256": "12c5157b07fb7c6d93f34e84c43a37866d2e382e703729e2205aed9f8961f9c2"
+    }
+  ],
+  "performance_tail_sha256": "80b8672315911a74039a14cd137659bc67289273dc9c3707cd267b2d06de2551",
+  "archive": {
+    "path": "docs/evidence/correctness/mtp-glm-original-attention-2026-10-23.zip",
+    "bytes": 462611,
+    "sha256": "bd3de2d128c7558346a50b5e96a3c3d3ce76d8e9d4c113a1a06534743ad3bd70"
+  },
+  "archive_items": 80
+}

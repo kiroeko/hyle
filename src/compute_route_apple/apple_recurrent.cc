@@ -2,6 +2,8 @@
 
 #include <array>
 #include <new>
+#include <optional>
+#include <utility>
 
 #include <mlx/allocator.h>
 #include <mlx/ops.h>
@@ -49,12 +51,16 @@ ggml_metal::BufferView view(const mx::array &value) {
 } // namespace
 
 Result<std::unique_ptr<Recurrent>>
-Recurrent::create(Operation operation, std::span<const TensorDesc> inputs) noexcept {
+Recurrent::create(Operation operation, std::span<const TensorDesc> inputs,
+                  std::size_t proven_index_port, std::int64_t proven_index_extent) noexcept {
   try {
     HYLE_ASSIGN_OR_RETURN(
         auto native, ggml_metal::NativeProgram::create(operation, inputs));
     auto result = std::make_unique<Recurrent>();
     result->program = std::move(native);
+    result->input_descriptions.assign(inputs.begin(), inputs.end());
+    result->proven_index_port = proven_index_port;
+    result->proven_index_extent = proven_index_extent;
     result->output_shapes.resize(result->program->output_count());
     for (std::size_t port = 0; port < result->program->output_count(); ++port)
       for (auto d : result->program->output_description(port).dimensions())
@@ -65,32 +71,71 @@ Recurrent::create(Operation operation, std::span<const TensorDesc> inputs) noexc
   }
 }
 
+void Recurrent::detach_inputs() noexcept { program->detach_bindings(); }
+
 Result<std::vector<mx::array>>
 Recurrent::run(std::span<const mx::array> inputs, mx::Stream stream) {
-  std::vector<mx::array> dense(inputs.begin(), inputs.end());
-  bool copied = false;
-  for (std::size_t i = 0; i < dense.size(); ++i) {
-    auto &input = dense[i];
+  if (inputs.size() > 8)
+    return std::unexpected(Status::InvalidArgument(
+        "Apple native region exceeds eight input buffers"));
+  if (inputs.size() != input_descriptions.size())
+    return std::unexpected(Status::InvalidArgument(
+        "Apple native region input count differs from preparation"));
+  // NativeProgram admits at most eight inputs. Keep only owners of actual
+  // CONT copies; already-dense inputs remain owned by the caller's span.
+  std::array<std::optional<mx::array>, 8> dense;
+  std::size_t copied = 0;
+  for (std::size_t i = 0; i < inputs.size(); ++i) {
+    const auto &input = inputs[i];
+    const auto &description = input_descriptions[i];
+    if (description.is_plain() && !description.is_dense()) {
+      // A non-dense native port was qualified at cold preparation. It must
+      // retain its actual carrier layout: a CONT would expand shared slots
+      // while the native program still addresses their original A1 storage.
+      bool matches = description.is_plain() &&
+          description.data_type() == DataType::kFloat32 &&
+          input.dtype() == mx::float32 &&
+          static_cast<std::size_t>(input.ndim()) == description.rank();
+      for (std::size_t axis = 0; matches && axis < description.rank(); ++axis) {
+        matches = input.shape(axis) == description.dimensions()[axis];
+        if (matches && description.dimensions()[axis] > 1) {
+          const auto stride = description.byte_strides()[axis];
+          matches = stride % sizeof(float) == 0 &&
+              std::cmp_equal(input.strides()[axis], static_cast<std::size_t>(stride / sizeof(float)));
+        }
+      }
+      if (!matches)
+        return std::unexpected(Status::InvalidArgument(
+            "Apple native strided input differs from its prepared layout"));
+      continue;
+    }
     if (!input.flags().row_contiguous) {
       if (program->input_is_packed(i))
         return std::unexpected(Status::InvalidArgument(
             "Apple packed GGUF input must be row-contiguous"));
-      input = mx::contiguous(input, false, stream);
-      copied = true;
+      dense[i] = mx::contiguous(input, false, stream);
+      ++copied;
     }
   }
   if (copied) {
-    mx::async_eval(dense);
+    std::vector<mx::array> pending;
+    pending.reserve(copied);
+    for (auto &input : dense)
+      if (input) pending.push_back(*input);
+    mx::async_eval(std::move(pending));
     mx::synchronize(stream);
     for (auto &input : dense)
-      input.wait();
+      if (input) input->wait();
   }
   auto packed = packed_array(program->output_bytes());
-  std::vector<ggml_metal::BufferView> ports(dense.size() + 1);
-  for (std::size_t i = 0; i < dense.size(); ++i)
-    ports[i] = view(dense[i]);
-  ports.back() = view(packed);
-  HYLE_RETURN_IF_ERROR(program->run(ports));
+  std::array<ggml_metal::BufferView, 9> ports;
+  for (std::size_t i = 0; i < inputs.size(); ++i)
+    ports[i] = view(dense[i] ? *dense[i] : inputs[i]);
+  ports[inputs.size()] = view(packed);
+  const auto active_ports = std::span(ports).first(inputs.size() + 1);
+  HYLE_RETURN_IF_ERROR(proven_index_extent > 0
+      ? program->run_with_proven_indices(active_ports, proven_index_port, proven_index_extent)
+      : program->run(active_ports));
   packed.set_status(mx::array::available);
   std::vector<mx::array> outputs;
   outputs.reserve(output_shapes.size());

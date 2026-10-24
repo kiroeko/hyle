@@ -1,0 +1,443 @@
+{
+  "summary": {
+    "passed": true,
+    "build_plan": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cccl-single-row-topk\\checks\\20261019T185912-host\\plan.json",
+      "bytes": 206352,
+      "sha256": "6b3832f6b47bde529133585a4c96cc4856a4a7fa2ac3e663f446eedb694f61f3"
+    },
+    "current_image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cccl-single-row-topk\\checks\\20261019T185912-host\\qwen.exe",
+      "bytes": 116948480,
+      "sha256": "e71ab8002c5af5e38f053788cd3673e07314c6fd1e88d00799e6ad816254d4d4"
+    },
+    "product_changes": [
+      "src/compute_provider_cuda/collectives.cu",
+      "tests/compute_provider_cuda/collectives_test.cc"
+    ],
+    "linked_native_object_changes": 1,
+    "tests_passed": 6,
+    "tests_skipped": 0,
+    "model_equal_vectors": 64,
+    "exact_finite_model_outputs": true,
+    "microbenchmark_processes": 6,
+    "microbenchmark": {
+      "after-bench": {
+        "host_wall_us_median": 36.55,
+        "stream_event_us_median": 19.96800024
+      },
+      "before-bench": {
+        "host_wall_us_median": 129.9,
+        "stream_event_us_median": 121.8559965
+      }
+    },
+    "model_profile": {
+      "kernels_per_warm_step": 650,
+      "single_row_fast_reduce_per_step": 1,
+      "warm_fast_reduce_us_median": 3.392,
+      "throughput_claim": false
+    },
+    "speed_window_beijing": [
+      "2026-10-20T03:01:54.49025+08:00",
+      "2026-10-20T03:02:20.718256+08:00"
+    ],
+    "rotation_processes": 9,
+    "current_over_baseline": {
+      "load_seconds": 0.9765846313114677,
+      "prepare_seconds": 0.9764032599248971,
+      "startup_to_ready_seconds": 0.9862915236007115,
+      "ttft_seconds": 0.9885899958445356,
+      "prefill_seconds": 1.0325176469842938,
+      "prefill_tokens_per_second": 0.9685064491834411,
+      "full31_seconds": 0.9915348952793647,
+      "full31_tokens_per_second": 1.0085373744897301,
+      "warm7_31_seconds": 0.9882666126712581,
+      "warm7_31_tokens_per_second": 1.011872694249001
+    },
+    "current_over_llama": {
+      "load_seconds": 0.6524144433405341,
+      "prepare_seconds": 59.85438775363672,
+      "startup_to_ready_seconds": 1.1418746625332408,
+      "ttft_seconds": 1.1195717076045522,
+      "prefill_seconds": 0.6935667126957209,
+      "prefill_tokens_per_second": 1.441822367906397,
+      "full31_seconds": 1.0446896211825203,
+      "full31_tokens_per_second": 0.9572221066655813,
+      "warm7_31_seconds": 1.026732767329794,
+      "warm7_31_tokens_per_second": 0.9739632666060544
+    },
+    "groups": {
+      "baseline": {
+        "load_seconds": {
+          "samples": [
+            1.06381,
+            1.06255,
+            1.04494
+          ],
+          "median": 1.06255,
+          "min": 1.04494,
+          "max": 1.06381
+        },
+        "prepare_seconds": {
+          "samples": [
+            0.426881,
+            0.417671,
+            0.430072
+          ],
+          "median": 0.426881,
+          "min": 0.417671,
+          "max": 0.430072
+        },
+        "startup_to_ready_seconds": {
+          "samples": [
+            1.95303,
+            1.93384,
+            1.91892
+          ],
+          "median": 1.93384,
+          "min": 1.91892,
+          "max": 1.95303
+        },
+        "ttft_seconds": {
+          "samples": [
+            2.01656,
+            1.99737,
+            1.98443
+          ],
+          "median": 1.99737,
+          "min": 1.98443,
+          "max": 2.01656
+        },
+        "prefill_seconds": {
+          "samples": [
+            0.0631411,
+            0.0627769,
+            0.0649371
+          ],
+          "median": 0.0631411,
+          "min": 0.0627769,
+          "max": 0.0649371
+        },
+        "prefill_tokens_per_second": {
+          "samples": [
+            2027.205734458221,
+            2038.966562541317,
+            1971.1382245280433
+          ],
+          "median": 2027.205734458221,
+          "min": 1971.1382245280433,
+          "max": 2038.966562541317
+        },
+        "full31_seconds": {
+          "samples": [
+            0.3146801,
+            0.3144753,
+            0.3173898
+          ],
+          "median": 0.3146801,
+          "min": 0.3144753,
+          "max": 0.3173898
+        },
+        "full31_tokens_per_second": {
+          "samples": [
+            98.51274357673077,
+            98.57689936220746,
+            97.67169581379112
+          ],
+          "median": 98.51274357673077,
+          "min": 97.67169581379112,
+          "max": 98.57689936220746
+        },
+        "warm7_31_seconds": {
+          "samples": [
+            0.2442417,
+            0.2449591,
+            0.2483418
+          ],
+          "median": 0.2449591,
+          "min": 0.2442417,
+          "max": 0.2483418
+        },
+        "warm7_31_tokens_per_second": {
+          "samples": [
+            102.35762361627846,
+            102.0578537396651,
+            100.66770877878794
+          ],
+          "median": 102.0578537396651,
+          "min": 100.66770877878794,
+          "max": 102.35762361627846
+        }
+      },
+      "current": {
+        "load_seconds": {
+          "samples": [
+            1.03732,
+            1.07663,
+            1.03767
+          ],
+          "median": 1.03767,
+          "min": 1.03732,
+          "max": 1.07663
+        },
+        "prepare_seconds": {
+          "samples": [
+            0.416808,
+            0.413008,
+            0.425539
+          ],
+          "median": 0.416808,
+          "min": 0.413008,
+          "max": 0.425539
+        },
+        "startup_to_ready_seconds": {
+          "samples": [
+            1.90053,
+            1.9398,
+            1.90733
+          ],
+          "median": 1.90733,
+          "min": 1.90053,
+          "max": 1.9398
+        },
+        "ttft_seconds": {
+          "samples": [
+            1.96313,
+            2.00539,
+            1.97458
+          ],
+          "median": 1.97458,
+          "min": 1.96313,
+          "max": 2.00539
+        },
+        "prefill_seconds": {
+          "samples": [
+            0.0619751,
+            0.0651943,
+            0.0665429
+          ],
+          "median": 0.0651943,
+          "min": 0.0619751,
+          "max": 0.0665429
+        },
+        "prefill_tokens_per_second": {
+          "samples": [
+            2065.345598474226,
+            1963.3618276444415,
+            1923.5711097652793
+          ],
+          "median": 1963.3618276444415,
+          "min": 1923.5711097652793,
+          "max": 2065.345598474226
+        },
+        "full31_seconds": {
+          "samples": [
+            0.3120163,
+            0.3112282,
+            0.3124921
+          ],
+          "median": 0.3120163,
+          "min": 0.3112282,
+          "max": 0.3124921
+        },
+        "full31_tokens_per_second": {
+          "samples": [
+            99.35378376065609,
+            99.60536995040937,
+            99.20250783939818
+          ],
+          "median": 99.35378376065609,
+          "min": 99.20250783939818,
+          "max": 99.60536995040937
+        },
+        "warm7_31_seconds": {
+          "samples": [
+            0.2421202,
+            0.2419817,
+            0.2420849
+          ],
+          "median": 0.2420849,
+          "min": 0.2419817,
+          "max": 0.2421202
+        },
+        "warm7_31_tokens_per_second": {
+          "samples": [
+            103.25449921154863,
+            103.31359768114696,
+            103.26955543282543
+          ],
+          "median": 103.26955543282543,
+          "min": 103.25449921154863,
+          "max": 103.31359768114696
+        }
+      },
+      "llama": {
+        "load_seconds": {
+          "samples": [
+            1.5905074,
+            1.5821245,
+            1.595055
+          ],
+          "median": 1.5905074,
+          "min": 1.5821245,
+          "max": 1.595055
+        },
+        "prepare_seconds": {
+          "samples": [
+            0.0069637,
+            0.0068299,
+            0.0076573
+          ],
+          "median": 0.0069637,
+          "min": 0.0068299,
+          "max": 0.0076573
+        },
+        "startup_to_ready_seconds": {
+          "samples": [
+            1.6703497,
+            1.6650442,
+            1.6708063
+          ],
+          "median": 1.6703497,
+          "min": 1.6650442,
+          "max": 1.6708063
+        },
+        "ttft_seconds": {
+          "samples": [
+            1.7636923,
+            1.7591631,
+            1.7648689
+          ],
+          "median": 1.7636923,
+          "min": 1.7591631,
+          "max": 1.7648689
+        },
+        "prefill_seconds": {
+          "samples": [
+            0.0932894,
+            0.094058,
+            0.0939986
+          ],
+          "median": 0.0939986,
+          "min": 0.0932894,
+          "max": 0.094058
+        },
+        "prefill_tokens_per_second": {
+          "samples": [
+            1372.0744264621705,
+            1360.8624465755172,
+            1361.7224086316178
+          ],
+          "median": 1361.7224086316178,
+          "min": 1360.8624465755172,
+          "max": 1372.0744264621705
+        },
+        "full31_seconds": {
+          "samples": [
+            0.2986689,
+            0.298435,
+            0.2997856
+          ],
+          "median": 0.2986689,
+          "min": 0.298435,
+          "max": 0.2997856
+        },
+        "full31_tokens_per_second": {
+          "samples": [
+            103.79386671996983,
+            103.87521570861327,
+            103.40723503730666
+          ],
+          "median": 103.79386671996983,
+          "min": 103.40723503730666,
+          "max": 103.87521570861327
+        },
+        "warm7_31_seconds": {
+          "samples": [
+            0.23670270000000002,
+            0.2357818,
+            0.2357119
+          ],
+          "median": 0.2357818,
+          "min": 0.2357119,
+          "max": 0.23670270000000002
+        },
+        "warm7_31_tokens_per_second": {
+          "samples": [
+            105.61772214681116,
+            106.0302364304624,
+            106.06167953336255
+          ],
+          "median": 106.0302364304624,
+          "min": 105.61772214681116,
+          "max": 106.06167953336255
+        }
+      }
+    },
+    "contract": "Only actual dense one-row reduction replaces layout iterator with byte-aligned linear loads. Same CCCL ArgPair/ArgBest/initial reduction and original selected-value bits, tie/NaN/signed-zero rules. Generic/multirow and Commands replay contract unchanged.",
+    "limits": [
+      "One independent rotated window, not long-run statistical significance.",
+      "Prefill median regressed3.15%; sample ranges overlap and cause is unassigned.",
+      "Hyle BF16 activation/output versus peer F32 remains different intermediate math.",
+      "No independent model quality, cross-platform or total memory-peak acceptance.",
+      "Microbenchmark event interval includes submit gaps, not kernel-only.",
+      "Old/new profile durations came from different windows; not throughput evidence.",
+      "Two-row dual projection candidate is scratch-only and uncompiled/unrun."
+    ],
+    "goal_complete": false
+  },
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\cccl-single-row-topk-cuda-2026-10-20.zip",
+    "bytes": 2911237,
+    "sha256": "148953dd01db00412df249428772c050ef2082b8acddaa282eb7424d529c441a",
+    "entries": 290,
+    "CRC_and_every_payload_SHA_verified": true,
+    "crc_verified": true,
+    "payload_sha256_verified": true,
+    "verification_passes": 1,
+    "tests": 6,
+    "equal_vectors": 64,
+    "micro_processes": 6,
+    "rotation_processes": 9,
+    "duplicate_raw_vectors_omitted": true,
+    "SDK_rebuilt": false,
+    "cleanup_executed": false
+  },
+  "cleanup": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\cccl-single-row-topk-cuda-2026-10-20-reclaim.zip",
+    "bytes": 16831,
+    "sha256": "f32a872891c6bb1cc49598438175a2c34a0a24a5e584fa292fb773a53ad80ec8",
+    "entries": 9,
+    "crc_verified": true,
+    "payload_sha256_verified": true,
+    "deleted_files": 76,
+    "deleted_bytes": 483112857,
+    "retained_images": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cccl-single-row-topk\\checks\\20261019T185912-host\\qwen.exe",
+        "bytes": 116948480,
+        "sha256": "e71ab8002c5af5e38f053788cd3673e07314c6fd1e88d00799e6ad816254d4d4"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ga-dense-indexer\\checks\\20261019T184046-metadata-boundaries\\qwen.exe",
+        "bytes": 116258816,
+        "sha256": "124076e142a04c33c0a227dedf8072caa6313be0ff7b8448f708f48e78ea3a90"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\binding-port-reuse\\checks\\20261019T174851\\cpu.exe",
+        "bytes": 25206784,
+        "sha256": "460536c52494dd17195b8abe6738259e392b70f97cf5c4e2bac66a11bba560e4"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-explicit-rope\\performance-prepared\\peer.exe",
+        "bytes": 35814400,
+        "sha256": "fb169f0282f2a834a61b3e887edaba92d8699814558b0c5f1a13aaf07e0de969"
+      }
+    ],
+    "retained_reference_vectors": 64,
+    "all_link_inputs_retained": true,
+    "recursive": false
+  },
+  "goal_status": "active",
+  "next": "Compile and measure scratch-only two-row dual-matvec candidate; do not apply without actual evidence."
+}

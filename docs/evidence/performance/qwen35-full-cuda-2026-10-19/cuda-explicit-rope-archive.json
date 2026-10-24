@@ -1,0 +1,8 @@
+{
+  "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\qwen35-full-cuda-2026-10-19\\cuda-explicit-rope.zip",
+  "bytes": 40294823,
+  "sha256": "2eec09d3ba28a9a7aca80ff3cacbd869457335ed5f3e785bb462c2aa7e284785",
+  "payloads": 364,
+  "CRC_and_payload_SHA_verified": true,
+  "SDKs_models_objects_executables_excluded": true
+}

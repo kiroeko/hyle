@@ -12,7 +12,7 @@
 #include <sys/resource.h>
 #endif
 
-#include "hyle/compute/cpu.h"
+#include "hyle/compute/cpu_file_stream.h"
 #include "hyle/mem/quota_allocator.h"
 #include "hyle/mem/stats.h"
 #include "hyle/platform/fs.h"
@@ -110,6 +110,36 @@ TEST(FileStream, RealPositionalReadWriteReloadAcrossTwoSlotsAndMultipleChunks) {
   EXPECT_LE(report.peak_slots, 2u); EXPECT_GE(report.native_calls, 24u); EXPECT_GE(report.io_calls, 24u);
   EXPECT_EQ(report.active_backing_bytes, 64u + 1024u); EXPECT_FALSE(report.native_metadata_unknown);
   ASSERT_TRUE(runtime.pipeline.drain().ok());
+}
+
+TEST(FileStream, SingleCollectReleasesWritebackAliasesBeforeReadOutputs) {
+  for (const bool keep_output : {false, true}) {
+    Runtime runtime;
+    const auto input = bytes();
+    auto source = runtime.file(input); auto sink = runtime.file({}, input.size());
+    auto pool = LeasePool::create(m::system_resource(), input.size()).value();
+    ReadLease exported;
+    {
+      auto ranges = read_ranges(pool); auto groups = read_groups(ranges);
+      auto read = runtime.pipeline.read(StreamSource::file(source), groups).value();
+      ASSERT_TRUE(read.wait().status.ok());
+      auto first = read.next_ready().value(); auto second = read.next_ready().value();
+      std::array writes{StreamWriteRange::ready(first.output(0).value(), 0, 0, 128),
+                        StreamWriteRange::ready(second.output(0).value(), 128, 0, 128)};
+      std::array<StreamWriteGroup, 1> writing{{{20, writes}}};
+      auto write = runtime.pipeline.write(sink, writing).value();
+      ASSERT_TRUE(write.wait().status.ok());
+      if (keep_output) exported = write.next_ready()->output(0).value();
+    }
+    ASSERT_TRUE(runtime.pipeline.collect().ok());
+    EXPECT_EQ(runtime.pipeline.report().live_requests, keep_output ? 1u : 0u);
+    if (keep_output) expect_bytes(exported, std::span(input).first(128));
+    exported.reset();
+    if (keep_output) ASSERT_TRUE(runtime.pipeline.collect().ok());
+    EXPECT_EQ(runtime.pipeline.report().live_requests, 0u);
+    EXPECT_EQ(pool.stats().allocated_bytes, 0u);
+    EXPECT_TRUE(pool.allocate(input.size()).has_value());
+  }
 }
 
 TEST(FileStream, RetainedReadyAndExportedLeaseKeepRequestAndBackingCapacity) {

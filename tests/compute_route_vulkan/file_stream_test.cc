@@ -1,6 +1,7 @@
 #include "../compute_stream/native_journey.h"
 #include "fixture.h"
 #include "hyle/compute/vulkan_memory.h"
+#include "hyle/compute/vulkan_file_stream.h"
 #include "vulkan_copy_internal.h"
 #include "hyle/compute/detail/retained_completion.h"
 #include <chrono>

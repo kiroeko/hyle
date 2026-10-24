@@ -1,0 +1,29 @@
+{
+  "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\qwen35-full-cuda-2026-10-19\\prepare-replay-cold-index.zip",
+  "bytes": 2537962,
+  "sha256": "d026c8d01f1d1d89b6ba1a6448090ebc0045715dbd125ea21d0dfbca5280875c",
+  "entries": 503,
+  "payloads": 501,
+  "build_plan": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\prepare-replay-cold-index\\checks\\20261019T173829\\plan.json",
+    "bytes": 195378,
+    "sha256": "cff007ff8571d9e87c7479deebc6c65d662cfc88ef1c09ff3869e901bc966c19"
+  },
+  "source_freeze": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\prepare-replay-cold-index\\source-freeze.json",
+    "bytes": 756,
+    "sha256": "c8767a826b6579dbdce07cb92297febbfca761e73d79360de6aab0b55eb841fe"
+  },
+  "host_TUs": 9,
+  "native_TUs": 0,
+  "CPU_tests": 20,
+  "equal_vectors": 64,
+  "unprofiled_processes": 9,
+  "new_profile": false,
+  "crc_verified": true,
+  "payload_sha256_verified": true,
+  "verification_passes": 1,
+  "CRC_and_every_payload_SHA_verified": true,
+  "duplicate_raw_vectors_omitted": true,
+  "cleanup_executed": false
+}

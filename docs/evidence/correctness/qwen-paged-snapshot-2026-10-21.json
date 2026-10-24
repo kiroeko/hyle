@@ -1,0 +1,3904 @@
+{
+  "schema": "hyle.qwen-paged-snapshot.v1",
+  "date": "2026-10-21",
+  "status": "Executed CUDA paged complete-state consumer and final CPU ownership tests passed; prefix lookup/fork not yet executed",
+  "scope": {
+    "model": "qwen35_2b official BF16; F32 GDN",
+    "device": "Windows RTX 4070 12GB",
+    "one_original_queue": true,
+    "concurrent_gpu_execution": false,
+    "throughput_evidence": false
+  },
+  "image": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\link1\\qwen.exe",
+    "bytes": 139648000,
+    "sha256": "51e10e79f388257c382098a946e68b63d51d321076a94e6319ab5503ba2c4426"
+  },
+  "link_inputs": 192,
+  "all_link_input_SHA_match": true,
+  "product": [
+    {
+      "path": "include/hyle/compute/detail/apple_batch_access.h",
+      "bytes": 5071,
+      "sha256": "db2c7bd5ca0c6cf09e75f795916115736ffe06fec21610419f1edc9901401bbe"
+    },
+    {
+      "path": "include/hyle/compute/detail/generated_result.h",
+      "bytes": 9908,
+      "sha256": "62630311da5b77306f7faef12f4d2cbf7f67e35ff8d2eb5ad9b56460b9089cb6"
+    },
+    {
+      "path": "include/hyle/compute/detail/vulkan_batch_access.h",
+      "bytes": 3601,
+      "sha256": "fc1e189d69688f18e0d69ab5218cdea736f85586af76ec833603ad28af764e83"
+    },
+    {
+      "path": "include/hyle/graph/detail/region_access.h",
+      "bytes": 15121,
+      "sha256": "011bf90e148de02f36c39463f8ae3f8ef5f8b94790d034cd93569054f0ba7bf9"
+    },
+    {
+      "path": "include/hyle/graph/executable.h",
+      "bytes": 50386,
+      "sha256": "aa3a55ed1869f84149ad0a6a558d6541880d71ba0bf4c6789480724564cdc0b0"
+    },
+    {
+      "path": "src/compute/result.cc",
+      "bytes": 6171,
+      "sha256": "71d732bb8caf3aaa955cb9d03bbb1b6f5e24a40a2979290b1107840889090146"
+    },
+    {
+      "path": "src/compute_provider_ggml_metal/native_program.cc",
+      "bytes": 29232,
+      "sha256": "d365279701912c597d4713c249926748b1bd7f4526d8e33e6b05323c5a919025"
+    },
+    {
+      "path": "src/compute_provider_ggml_metal/native_program.h",
+      "bytes": 3461,
+      "sha256": "42cea340877532e348dc723ec042cf705bcc0931db977780e9fb1e8d1228b240"
+    },
+    {
+      "path": "src/compute_provider_ggml_vulkan/region.cc",
+      "bytes": 106641,
+      "sha256": "f3f3a8d642906f2f17fa6293241a2a70c9c552988ebcdcd1b1a6247de25915d5"
+    },
+    {
+      "path": "src/compute_provider_ggml_vulkan/region.h",
+      "bytes": 4445,
+      "sha256": "881646e1790479656d934748ab1fc7231aced0365ad5d93bfff0d08b6f1c6118"
+    },
+    {
+      "path": "src/compute_route_apple/apple_carrier.h",
+      "bytes": 4068,
+      "sha256": "4f6e02785642541c1e450958b3f6f1be29ae023511ed174544d3537dd85deaf2"
+    },
+    {
+      "path": "src/compute_route_apple/apple_context.cc",
+      "bytes": 71622,
+      "sha256": "6ad7cfdf5bf7e010d455806aebbfd68128d7a329191aa75ae4cc4d57e8d3f9f1"
+    },
+    {
+      "path": "src/compute_route_apple/apple_recurrent.cc",
+      "bytes": 5976,
+      "sha256": "58abaa21dc7be466e8c6276f54033f3eb3e857cb06c59cb6baa38e5478657b9d"
+    },
+    {
+      "path": "src/compute_route_apple/apple_recurrent.h",
+      "bytes": 1016,
+      "sha256": "e7c29a477946e5690f9f348b1066ea0a80f1080759faf4c8f5d31fc9605e3187"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_program.cc",
+      "bytes": 59030,
+      "sha256": "c3eb7908a9eb446f8573bf59c85471025cded4e0ade5c421afafaf5977ad54bc"
+    },
+    {
+      "path": "src/graph/executable.cc",
+      "bytes": 463668,
+      "sha256": "b5cfb444768c862a7bf2e4a939b416e13c9045e7fb73f15f7e986b5a8e4355fe"
+    },
+    {
+      "path": "src/graph/resources.cc",
+      "bytes": 84608,
+      "sha256": "1964c93ded4976340a4cad837418201ab2ec35621b89056d080c193fcc1dd9bb"
+    },
+    {
+      "path": "src/graph_provider_ggml_cuda/ggml_cuda_region.cc",
+      "bytes": 68939,
+      "sha256": "145727c7d2ed891f98d5cc2e15f2a2d9e62dd4c79e36521f52a8aae0ec1001c4"
+    },
+    {
+      "path": "src/graph_route_apple/native_paged_region.cc",
+      "bytes": 33449,
+      "sha256": "5b04fc63b0b3e997c04b208874af77b5d18bb005567f4acff9f60c00dd3634d3"
+    },
+    {
+      "path": "src/graph_route_apple/native_ragged_region.cc",
+      "bytes": 22032,
+      "sha256": "dbdc968fa07ff5579a01a2a85c672dacf7cdc2ab257ae7374be1963dd374029f"
+    },
+    {
+      "path": "src/graph_route_apple/native_region.cc",
+      "bytes": 48823,
+      "sha256": "963fc052f7b885b3d6af1967f51a8e100b0d2a19d6bdb9c4351acde9784994c8"
+    },
+    {
+      "path": "src/graph_route_vulkan/native_paged_region.cc",
+      "bytes": 31999,
+      "sha256": "666ec25284ea509a7ccc57525184c0a37204daf8daba869e52b8353f0f8ab518"
+    },
+    {
+      "path": "src/graph_route_vulkan/native_ragged_region.cc",
+      "bytes": 21299,
+      "sha256": "49a6caeff235ac8fc7142e9cd8ce0d7e76ee4576fc388b064fb006b50dc1f920"
+    },
+    {
+      "path": "src/graph_route_vulkan/native_region.cc",
+      "bytes": 50342,
+      "sha256": "a6d518650c9dec1fe1ccd8f876d0ae446886e274fc06a3fcb3a4fcbdb61bacdb"
+    },
+    {
+      "path": "tests/graph/CMakeLists.txt",
+      "bytes": 1873,
+      "sha256": "350e71933a37dad05c25a26764e655527ea139c17739fca5e2453280b86f2c4e"
+    },
+    {
+      "path": "tests/graph/invocation_unbind_test.cc",
+      "bytes": 9726,
+      "sha256": "b8766b26ad9709de879f9235eab0301f02d666b40ac700dd07d981ba78f1d022"
+    },
+    {
+      "path": "tools/qwen35_text/CMakeLists.txt",
+      "bytes": 701,
+      "sha256": "9411d7d9fb8421de22fd0203686a7ca11bc9ed2a412b2ba0aba76259756dc0d6"
+    },
+    {
+      "path": "tools/qwen35_text/main.cc",
+      "bytes": 104468,
+      "sha256": "d888d817f67b057670ba141b932a97038981f1b12af98afc39b6806309f17e74"
+    },
+    {
+      "path": "tools/qwen35_text/session_cache.h",
+      "bytes": 7287,
+      "sha256": "f5f6a16e9aee3668cc9692933c25e092983657d678295d3faf0ed1f0598c4000"
+    },
+    {
+      "path": "tools/qwen35_text/session_state.h",
+      "bytes": 7388,
+      "sha256": "7f7b373daf263884822889a31a99d09715647c188803c8b5819bf73a4687e3c1"
+    }
+  ],
+  "actual": {
+    "single": {
+      "vector_count": 18,
+      "byte_identical": true,
+      "result": {
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\link1\\qwen.exe",
+          "--inputs",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-gpu-comparison\\128-prefill\\inputs",
+          "--schedule",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\multi-session-isolation-2026-10-21\\inputs\\alice\\schedule.txt",
+          "--capacity",
+          "256",
+          "--progress",
+          "direct",
+          "--replay",
+          "auto",
+          "--trace",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\first-run1\\trace",
+          "--trace-level",
+          "decisions"
+        ],
+        "cwd": "C:\\public\\project-hyle\\hyle",
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\link1\\qwen.exe",
+          "bytes": 139648000,
+          "sha256": "51e10e79f388257c382098a946e68b63d51d321076a94e6319ab5503ba2c4426"
+        },
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\linked-ready.json",
+          "bytes": 2072,
+          "sha256": "b314914869454ec9d39e32831cb4d9ed370b948c95b7cfd552da4bbd8e27a42f"
+        },
+        "runtime_environment": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\link1\\runtime-environment.json",
+          "bytes": 7839,
+          "sha256": "3a592eef6860b35e2ca7e067e3da3ef63dafaa435300f92d6d186f8cad851d46"
+        },
+        "purpose": "session isolation correctness",
+        "throughput_evidence": false,
+        "gpu_concurrent_execution": false,
+        "started_unix_ns": 1792574988429486100,
+        "pid": 101092,
+        "exit": 0,
+        "finished_unix_ns": 1792574990885455700
+      }
+    },
+    "multi": {
+      "session_count": 4,
+      "retained_sessions": 2,
+      "vector_count": 72,
+      "byte_identical": true,
+      "evictions": [
+        "bob",
+        "alice",
+        "carol",
+        "dave",
+        "alice",
+        "bob"
+      ],
+      "restored_calls": 18,
+      "restored_tokens": 185,
+      "result": {
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\link1\\qwen.exe",
+          "--inputs",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-gpu-comparison\\128-prefill\\inputs",
+          "--session-schedules",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\multi-session-isolation-2026-10-21\\inputs\\sessions4.txt",
+          "--max-sessions",
+          "2",
+          "--active-sequences",
+          "2",
+          "--cache-bytes",
+          "168886272",
+          "--capacity",
+          "256",
+          "--progress",
+          "direct",
+          "--replay",
+          "auto",
+          "--trace",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\multi-run1\\trace",
+          "--trace-level",
+          "decisions"
+        ],
+        "cwd": "C:\\public\\project-hyle\\hyle",
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\link1\\qwen.exe",
+          "bytes": 139648000,
+          "sha256": "51e10e79f388257c382098a946e68b63d51d321076a94e6319ab5503ba2c4426"
+        },
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\linked-ready.json",
+          "bytes": 2072,
+          "sha256": "b314914869454ec9d39e32831cb4d9ed370b948c95b7cfd552da4bbd8e27a42f"
+        },
+        "runtime_environment": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\link1\\runtime-environment.json",
+          "bytes": 7839,
+          "sha256": "3a592eef6860b35e2ca7e067e3da3ef63dafaa435300f92d6d186f8cad851d46"
+        },
+        "purpose": "session isolation correctness",
+        "throughput_evidence": false,
+        "gpu_concurrent_execution": false,
+        "started_unix_ns": 1792575047059104300,
+        "pid": 34380,
+        "exit": 0,
+        "finished_unix_ns": 1792575050648426700
+      }
+    },
+    "vector_proofs": [
+      {
+        "vector": "round1_decode1/hidden.bf16",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\alice\\trace\\round1_decode1\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "e40060187d8c6376d00e58794643dd3f444dceefe29eb675c6ee2b0899131210"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\first-run1\\trace\\round1_decode1\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "e40060187d8c6376d00e58794643dd3f444dceefe29eb675c6ee2b0899131210"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round1_decode1/logits.f32",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\alice\\trace\\round1_decode1\\logits.f32",
+          "bytes": 993280,
+          "sha256": "54999d39e6a46f665fe6f7fc5d22b5136eb5e9b73ae179e5b908b33d7009f326"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\first-run1\\trace\\round1_decode1\\logits.f32",
+          "bytes": 993280,
+          "sha256": "54999d39e6a46f665fe6f7fc5d22b5136eb5e9b73ae179e5b908b33d7009f326"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round1_decode2/hidden.bf16",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\alice\\trace\\round1_decode2\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "f6d075ad86e2e0550617e6dfd6201ae335228ee6808ab8ae8bb3681159663424"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\first-run1\\trace\\round1_decode2\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "f6d075ad86e2e0550617e6dfd6201ae335228ee6808ab8ae8bb3681159663424"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round1_decode2/logits.f32",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\alice\\trace\\round1_decode2\\logits.f32",
+          "bytes": 993280,
+          "sha256": "772199ca4b0550c00635c25bd8036a9b5334cb0c22bb79ce86f6fbd81520df67"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\first-run1\\trace\\round1_decode2\\logits.f32",
+          "bytes": 993280,
+          "sha256": "772199ca4b0550c00635c25bd8036a9b5334cb0c22bb79ce86f6fbd81520df67"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round1_decode3/hidden.bf16",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\alice\\trace\\round1_decode3\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "227c7e6548e2159393ddf350d7dfbd1dda87040994ade315075c005ce7798889"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\first-run1\\trace\\round1_decode3\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "227c7e6548e2159393ddf350d7dfbd1dda87040994ade315075c005ce7798889"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round1_decode3/logits.f32",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\alice\\trace\\round1_decode3\\logits.f32",
+          "bytes": 993280,
+          "sha256": "aff61c4c7ec366a0b25cf583427df267859aca70ab3c9e264268a30f2d45f3d4"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\first-run1\\trace\\round1_decode3\\logits.f32",
+          "bytes": 993280,
+          "sha256": "aff61c4c7ec366a0b25cf583427df267859aca70ab3c9e264268a30f2d45f3d4"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round1_decode4/hidden.bf16",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\alice\\trace\\round1_decode4\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "f7d8474a362ca19268b3481791345307fee1026f0a4c871e1227ce3315e7021e"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\first-run1\\trace\\round1_decode4\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "f7d8474a362ca19268b3481791345307fee1026f0a4c871e1227ce3315e7021e"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round1_decode4/logits.f32",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\alice\\trace\\round1_decode4\\logits.f32",
+          "bytes": 993280,
+          "sha256": "0ab4e55caa9276fd56d4353c36121014f07342989b570eb9c3f7dfddc21a2bba"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\first-run1\\trace\\round1_decode4\\logits.f32",
+          "bytes": 993280,
+          "sha256": "0ab4e55caa9276fd56d4353c36121014f07342989b570eb9c3f7dfddc21a2bba"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round1_prefill/hidden.bf16",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\alice\\trace\\round1_prefill\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "441f8e0eea6b8deea8b640bb76efc9dcc1267f3ee4de9e936bcc9fa9110a8ee1"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\first-run1\\trace\\round1_prefill\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "441f8e0eea6b8deea8b640bb76efc9dcc1267f3ee4de9e936bcc9fa9110a8ee1"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round1_prefill/logits.f32",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\alice\\trace\\round1_prefill\\logits.f32",
+          "bytes": 993280,
+          "sha256": "3f9f6f36cbefdeae7dc1e5e89b8af0729c2d9d6f59dab28e040a4771d9609b43"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\first-run1\\trace\\round1_prefill\\logits.f32",
+          "bytes": 993280,
+          "sha256": "3f9f6f36cbefdeae7dc1e5e89b8af0729c2d9d6f59dab28e040a4771d9609b43"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round2_decode1/hidden.bf16",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\alice\\trace\\round2_decode1\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "8871fcd2d7757fe35a648f1c251c469af39bbabf6aedaa1140ca265fc83c6f89"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\first-run1\\trace\\round2_decode1\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "8871fcd2d7757fe35a648f1c251c469af39bbabf6aedaa1140ca265fc83c6f89"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round2_decode1/logits.f32",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\alice\\trace\\round2_decode1\\logits.f32",
+          "bytes": 993280,
+          "sha256": "66db711343338eeeb14cdb3fc6218ea0fc4f81945071835096814859681fcabe"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\first-run1\\trace\\round2_decode1\\logits.f32",
+          "bytes": 993280,
+          "sha256": "66db711343338eeeb14cdb3fc6218ea0fc4f81945071835096814859681fcabe"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round2_decode2/hidden.bf16",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\alice\\trace\\round2_decode2\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "4b61582cd57ec864b3d377722a2d60668b4fcb554c2ae2becf72113b3bd1ba14"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\first-run1\\trace\\round2_decode2\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "4b61582cd57ec864b3d377722a2d60668b4fcb554c2ae2becf72113b3bd1ba14"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round2_decode2/logits.f32",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\alice\\trace\\round2_decode2\\logits.f32",
+          "bytes": 993280,
+          "sha256": "29cf46dc8de81a798853d10cec118bc91770b7fae999036123e7c9398b6a1d6b"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\first-run1\\trace\\round2_decode2\\logits.f32",
+          "bytes": 993280,
+          "sha256": "29cf46dc8de81a798853d10cec118bc91770b7fae999036123e7c9398b6a1d6b"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round2_decode3/hidden.bf16",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\alice\\trace\\round2_decode3\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "ef73bdc8381e86f039d3cd2b3b041e783e31b8c99933b27f7a90527045d0382c"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\first-run1\\trace\\round2_decode3\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "ef73bdc8381e86f039d3cd2b3b041e783e31b8c99933b27f7a90527045d0382c"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round2_decode3/logits.f32",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\alice\\trace\\round2_decode3\\logits.f32",
+          "bytes": 993280,
+          "sha256": "fb86e1771034cbdb301309d9f8115d0df3b480bd58bcff8613c48fe0f109eca3"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\first-run1\\trace\\round2_decode3\\logits.f32",
+          "bytes": 993280,
+          "sha256": "fb86e1771034cbdb301309d9f8115d0df3b480bd58bcff8613c48fe0f109eca3"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round2_prefill/hidden.bf16",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\alice\\trace\\round2_prefill\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "841bac7fa804558dac57deec0721853bcb308007d82c1a422fc600db04dc25c6"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\first-run1\\trace\\round2_prefill\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "841bac7fa804558dac57deec0721853bcb308007d82c1a422fc600db04dc25c6"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round2_prefill/logits.f32",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\alice\\trace\\round2_prefill\\logits.f32",
+          "bytes": 993280,
+          "sha256": "958bfc71c22a9517e6039108481211b8b4e5b11b0db2d1650c469ccf7824db3d"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\first-run1\\trace\\round2_prefill\\logits.f32",
+          "bytes": 993280,
+          "sha256": "958bfc71c22a9517e6039108481211b8b4e5b11b0db2d1650c469ccf7824db3d"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round1_decode1/hidden.bf16",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\alice\\trace\\round1_decode1\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "e40060187d8c6376d00e58794643dd3f444dceefe29eb675c6ee2b0899131210"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\multi-run1\\trace\\session0_alice\\round1_decode1\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "e40060187d8c6376d00e58794643dd3f444dceefe29eb675c6ee2b0899131210"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round1_decode1/logits.f32",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\alice\\trace\\round1_decode1\\logits.f32",
+          "bytes": 993280,
+          "sha256": "54999d39e6a46f665fe6f7fc5d22b5136eb5e9b73ae179e5b908b33d7009f326"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\multi-run1\\trace\\session0_alice\\round1_decode1\\logits.f32",
+          "bytes": 993280,
+          "sha256": "54999d39e6a46f665fe6f7fc5d22b5136eb5e9b73ae179e5b908b33d7009f326"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round1_decode2/hidden.bf16",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\alice\\trace\\round1_decode2\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "f6d075ad86e2e0550617e6dfd6201ae335228ee6808ab8ae8bb3681159663424"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\multi-run1\\trace\\session0_alice\\round1_decode2\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "f6d075ad86e2e0550617e6dfd6201ae335228ee6808ab8ae8bb3681159663424"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round1_decode2/logits.f32",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\alice\\trace\\round1_decode2\\logits.f32",
+          "bytes": 993280,
+          "sha256": "772199ca4b0550c00635c25bd8036a9b5334cb0c22bb79ce86f6fbd81520df67"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\multi-run1\\trace\\session0_alice\\round1_decode2\\logits.f32",
+          "bytes": 993280,
+          "sha256": "772199ca4b0550c00635c25bd8036a9b5334cb0c22bb79ce86f6fbd81520df67"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round1_decode3/hidden.bf16",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\alice\\trace\\round1_decode3\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "227c7e6548e2159393ddf350d7dfbd1dda87040994ade315075c005ce7798889"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\multi-run1\\trace\\session0_alice\\round1_decode3\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "227c7e6548e2159393ddf350d7dfbd1dda87040994ade315075c005ce7798889"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round1_decode3/logits.f32",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\alice\\trace\\round1_decode3\\logits.f32",
+          "bytes": 993280,
+          "sha256": "aff61c4c7ec366a0b25cf583427df267859aca70ab3c9e264268a30f2d45f3d4"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\multi-run1\\trace\\session0_alice\\round1_decode3\\logits.f32",
+          "bytes": 993280,
+          "sha256": "aff61c4c7ec366a0b25cf583427df267859aca70ab3c9e264268a30f2d45f3d4"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round1_decode4/hidden.bf16",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\alice\\trace\\round1_decode4\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "f7d8474a362ca19268b3481791345307fee1026f0a4c871e1227ce3315e7021e"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\multi-run1\\trace\\session0_alice\\round1_decode4\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "f7d8474a362ca19268b3481791345307fee1026f0a4c871e1227ce3315e7021e"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round1_decode4/logits.f32",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\alice\\trace\\round1_decode4\\logits.f32",
+          "bytes": 993280,
+          "sha256": "0ab4e55caa9276fd56d4353c36121014f07342989b570eb9c3f7dfddc21a2bba"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\multi-run1\\trace\\session0_alice\\round1_decode4\\logits.f32",
+          "bytes": 993280,
+          "sha256": "0ab4e55caa9276fd56d4353c36121014f07342989b570eb9c3f7dfddc21a2bba"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round1_prefill/hidden.bf16",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\alice\\trace\\round1_prefill\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "441f8e0eea6b8deea8b640bb76efc9dcc1267f3ee4de9e936bcc9fa9110a8ee1"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\multi-run1\\trace\\session0_alice\\round1_prefill\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "441f8e0eea6b8deea8b640bb76efc9dcc1267f3ee4de9e936bcc9fa9110a8ee1"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round1_prefill/logits.f32",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\alice\\trace\\round1_prefill\\logits.f32",
+          "bytes": 993280,
+          "sha256": "3f9f6f36cbefdeae7dc1e5e89b8af0729c2d9d6f59dab28e040a4771d9609b43"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\multi-run1\\trace\\session0_alice\\round1_prefill\\logits.f32",
+          "bytes": 993280,
+          "sha256": "3f9f6f36cbefdeae7dc1e5e89b8af0729c2d9d6f59dab28e040a4771d9609b43"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round2_decode1/hidden.bf16",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\alice\\trace\\round2_decode1\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "8871fcd2d7757fe35a648f1c251c469af39bbabf6aedaa1140ca265fc83c6f89"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\multi-run1\\trace\\session0_alice\\round2_decode1\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "8871fcd2d7757fe35a648f1c251c469af39bbabf6aedaa1140ca265fc83c6f89"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round2_decode1/logits.f32",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\alice\\trace\\round2_decode1\\logits.f32",
+          "bytes": 993280,
+          "sha256": "66db711343338eeeb14cdb3fc6218ea0fc4f81945071835096814859681fcabe"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\multi-run1\\trace\\session0_alice\\round2_decode1\\logits.f32",
+          "bytes": 993280,
+          "sha256": "66db711343338eeeb14cdb3fc6218ea0fc4f81945071835096814859681fcabe"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round2_decode2/hidden.bf16",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\alice\\trace\\round2_decode2\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "4b61582cd57ec864b3d377722a2d60668b4fcb554c2ae2becf72113b3bd1ba14"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\multi-run1\\trace\\session0_alice\\round2_decode2\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "4b61582cd57ec864b3d377722a2d60668b4fcb554c2ae2becf72113b3bd1ba14"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round2_decode2/logits.f32",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\alice\\trace\\round2_decode2\\logits.f32",
+          "bytes": 993280,
+          "sha256": "29cf46dc8de81a798853d10cec118bc91770b7fae999036123e7c9398b6a1d6b"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\multi-run1\\trace\\session0_alice\\round2_decode2\\logits.f32",
+          "bytes": 993280,
+          "sha256": "29cf46dc8de81a798853d10cec118bc91770b7fae999036123e7c9398b6a1d6b"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round2_decode3/hidden.bf16",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\alice\\trace\\round2_decode3\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "ef73bdc8381e86f039d3cd2b3b041e783e31b8c99933b27f7a90527045d0382c"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\multi-run1\\trace\\session0_alice\\round2_decode3\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "ef73bdc8381e86f039d3cd2b3b041e783e31b8c99933b27f7a90527045d0382c"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round2_decode3/logits.f32",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\alice\\trace\\round2_decode3\\logits.f32",
+          "bytes": 993280,
+          "sha256": "fb86e1771034cbdb301309d9f8115d0df3b480bd58bcff8613c48fe0f109eca3"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\multi-run1\\trace\\session0_alice\\round2_decode3\\logits.f32",
+          "bytes": 993280,
+          "sha256": "fb86e1771034cbdb301309d9f8115d0df3b480bd58bcff8613c48fe0f109eca3"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round2_prefill/hidden.bf16",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\alice\\trace\\round2_prefill\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "841bac7fa804558dac57deec0721853bcb308007d82c1a422fc600db04dc25c6"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\multi-run1\\trace\\session0_alice\\round2_prefill\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "841bac7fa804558dac57deec0721853bcb308007d82c1a422fc600db04dc25c6"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round2_prefill/logits.f32",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\alice\\trace\\round2_prefill\\logits.f32",
+          "bytes": 993280,
+          "sha256": "958bfc71c22a9517e6039108481211b8b4e5b11b0db2d1650c469ccf7824db3d"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\multi-run1\\trace\\session0_alice\\round2_prefill\\logits.f32",
+          "bytes": 993280,
+          "sha256": "958bfc71c22a9517e6039108481211b8b4e5b11b0db2d1650c469ccf7824db3d"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round1_decode1/hidden.bf16",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\bob\\trace\\round1_decode1\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "c1fb63adae3b189e294daea3046c23c794372922e632a7c05b302a73c5d50d07"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\multi-run1\\trace\\session1_bob\\round1_decode1\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "c1fb63adae3b189e294daea3046c23c794372922e632a7c05b302a73c5d50d07"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round1_decode1/logits.f32",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\bob\\trace\\round1_decode1\\logits.f32",
+          "bytes": 993280,
+          "sha256": "1ef495bbd5091ffb4ae49c78b81e3ff2e74c0d20b22ab17b2da795548b3c2268"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\multi-run1\\trace\\session1_bob\\round1_decode1\\logits.f32",
+          "bytes": 993280,
+          "sha256": "1ef495bbd5091ffb4ae49c78b81e3ff2e74c0d20b22ab17b2da795548b3c2268"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round1_decode2/hidden.bf16",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\bob\\trace\\round1_decode2\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "2c7718cf2ad792e7ec9fee314ffe87cd1ebed2873e24526e531d17225885f5cf"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\multi-run1\\trace\\session1_bob\\round1_decode2\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "2c7718cf2ad792e7ec9fee314ffe87cd1ebed2873e24526e531d17225885f5cf"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round1_decode2/logits.f32",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\bob\\trace\\round1_decode2\\logits.f32",
+          "bytes": 993280,
+          "sha256": "a05a567732f027fb6285122d2838afcf6cf4a65e1633808731be2016ae424f8e"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\multi-run1\\trace\\session1_bob\\round1_decode2\\logits.f32",
+          "bytes": 993280,
+          "sha256": "a05a567732f027fb6285122d2838afcf6cf4a65e1633808731be2016ae424f8e"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round1_decode3/hidden.bf16",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\bob\\trace\\round1_decode3\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "c3de9823666def2d7d6b26d5dbc05ddc80f3cc91b134d21f12e8b12cb3f9ad55"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\multi-run1\\trace\\session1_bob\\round1_decode3\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "c3de9823666def2d7d6b26d5dbc05ddc80f3cc91b134d21f12e8b12cb3f9ad55"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round1_decode3/logits.f32",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\bob\\trace\\round1_decode3\\logits.f32",
+          "bytes": 993280,
+          "sha256": "14140b027af3cb85c24a3e22cad01338f34d6320b50a23c98739f12c9b536d46"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\multi-run1\\trace\\session1_bob\\round1_decode3\\logits.f32",
+          "bytes": 993280,
+          "sha256": "14140b027af3cb85c24a3e22cad01338f34d6320b50a23c98739f12c9b536d46"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round1_prefill/hidden.bf16",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\bob\\trace\\round1_prefill\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "d1625d53fbb1c918aa90b829c69ff5ae4f44683eb0352a7745e54d4879b82c11"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\multi-run1\\trace\\session1_bob\\round1_prefill\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "d1625d53fbb1c918aa90b829c69ff5ae4f44683eb0352a7745e54d4879b82c11"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round1_prefill/logits.f32",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\bob\\trace\\round1_prefill\\logits.f32",
+          "bytes": 993280,
+          "sha256": "c217c3a1db43fb0dea77b1860c2833b4454202c70b511575dafd466af20e54c5"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\multi-run1\\trace\\session1_bob\\round1_prefill\\logits.f32",
+          "bytes": 993280,
+          "sha256": "c217c3a1db43fb0dea77b1860c2833b4454202c70b511575dafd466af20e54c5"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round2_decode1/hidden.bf16",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\bob\\trace\\round2_decode1\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "a344f9d9e86e1c0d7d9dc137ba62e77d6fd231a981266980308206f43b9d6377"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\multi-run1\\trace\\session1_bob\\round2_decode1\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "a344f9d9e86e1c0d7d9dc137ba62e77d6fd231a981266980308206f43b9d6377"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round2_decode1/logits.f32",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\bob\\trace\\round2_decode1\\logits.f32",
+          "bytes": 993280,
+          "sha256": "43038cb6c66287ff6ba5bcfcb275a3682652fdf552c33a951e29c12ee6e254f7"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\multi-run1\\trace\\session1_bob\\round2_decode1\\logits.f32",
+          "bytes": 993280,
+          "sha256": "43038cb6c66287ff6ba5bcfcb275a3682652fdf552c33a951e29c12ee6e254f7"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round2_decode2/hidden.bf16",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\bob\\trace\\round2_decode2\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "61b22f9721e2b3c76e6cfcf38d21f76e2d027cbd30de8efe108cf622804fdd43"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\multi-run1\\trace\\session1_bob\\round2_decode2\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "61b22f9721e2b3c76e6cfcf38d21f76e2d027cbd30de8efe108cf622804fdd43"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round2_decode2/logits.f32",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\bob\\trace\\round2_decode2\\logits.f32",
+          "bytes": 993280,
+          "sha256": "e5842947c3e71c457b24fce41e09e8856c5dd6b92fbf52897774b0334b8b8fee"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\multi-run1\\trace\\session1_bob\\round2_decode2\\logits.f32",
+          "bytes": 993280,
+          "sha256": "e5842947c3e71c457b24fce41e09e8856c5dd6b92fbf52897774b0334b8b8fee"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round2_decode3/hidden.bf16",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\bob\\trace\\round2_decode3\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "f9afe5a0536ea38afd168784628002e00596b806df723ab355a8c9acf4eb14dc"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\multi-run1\\trace\\session1_bob\\round2_decode3\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "f9afe5a0536ea38afd168784628002e00596b806df723ab355a8c9acf4eb14dc"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round2_decode3/logits.f32",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\bob\\trace\\round2_decode3\\logits.f32",
+          "bytes": 993280,
+          "sha256": "3a4dcda1d2421b6069adc2df37a7b53f05e8fa8f3c7c57188c79443d4ca0e406"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\multi-run1\\trace\\session1_bob\\round2_decode3\\logits.f32",
+          "bytes": 993280,
+          "sha256": "3a4dcda1d2421b6069adc2df37a7b53f05e8fa8f3c7c57188c79443d4ca0e406"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round2_decode4/hidden.bf16",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\bob\\trace\\round2_decode4\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "56d0c88b87a8ece5e1101fe6f1017a3e82dcf5715c2f0bad276efdd991e389ec"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\multi-run1\\trace\\session1_bob\\round2_decode4\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "56d0c88b87a8ece5e1101fe6f1017a3e82dcf5715c2f0bad276efdd991e389ec"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round2_decode4/logits.f32",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\bob\\trace\\round2_decode4\\logits.f32",
+          "bytes": 993280,
+          "sha256": "6e22f0dc7915477ea20531f75ef025fdf046000ff4b09f3d3ccbc7698c7be430"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\multi-run1\\trace\\session1_bob\\round2_decode4\\logits.f32",
+          "bytes": 993280,
+          "sha256": "6e22f0dc7915477ea20531f75ef025fdf046000ff4b09f3d3ccbc7698c7be430"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round2_prefill/hidden.bf16",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\bob\\trace\\round2_prefill\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "c782df548da6e2e97dcf41ab2236f9b49e8d9819c92e56aa04e27fc69d7912f3"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\multi-run1\\trace\\session1_bob\\round2_prefill\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "c782df548da6e2e97dcf41ab2236f9b49e8d9819c92e56aa04e27fc69d7912f3"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round2_prefill/logits.f32",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\bob\\trace\\round2_prefill\\logits.f32",
+          "bytes": 993280,
+          "sha256": "6e5de8e07c6d0edcec55ced0d3f45662486ed6f5113565505df83da21fd2793f"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\multi-run1\\trace\\session1_bob\\round2_prefill\\logits.f32",
+          "bytes": 993280,
+          "sha256": "6e5de8e07c6d0edcec55ced0d3f45662486ed6f5113565505df83da21fd2793f"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round1_decode1/hidden.bf16",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\carol\\trace\\round1_decode1\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "5172a304d03fa040565d6bdce2e30b4ac94336abcab89a43639523759a4a6e0b"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\multi-run1\\trace\\session2_carol\\round1_decode1\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "5172a304d03fa040565d6bdce2e30b4ac94336abcab89a43639523759a4a6e0b"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round1_decode1/logits.f32",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\carol\\trace\\round1_decode1\\logits.f32",
+          "bytes": 993280,
+          "sha256": "a72482129fd89df992e29705c55820a83e3bd1676e4cce67d1b3679feeef87ce"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\multi-run1\\trace\\session2_carol\\round1_decode1\\logits.f32",
+          "bytes": 993280,
+          "sha256": "a72482129fd89df992e29705c55820a83e3bd1676e4cce67d1b3679feeef87ce"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round1_decode2/hidden.bf16",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\carol\\trace\\round1_decode2\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "2c5cf20082dc8e607448b10e493377cf5a40b7921e87eaec80b6d77858159e0c"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\multi-run1\\trace\\session2_carol\\round1_decode2\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "2c5cf20082dc8e607448b10e493377cf5a40b7921e87eaec80b6d77858159e0c"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round1_decode2/logits.f32",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\carol\\trace\\round1_decode2\\logits.f32",
+          "bytes": 993280,
+          "sha256": "23842835b454bd81872a46e167ee177acb9e873e80f13d8513dbcf696f2613e7"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\multi-run1\\trace\\session2_carol\\round1_decode2\\logits.f32",
+          "bytes": 993280,
+          "sha256": "23842835b454bd81872a46e167ee177acb9e873e80f13d8513dbcf696f2613e7"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round1_prefill/hidden.bf16",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\carol\\trace\\round1_prefill\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "f8ba4c2fb63b09d799ec0f9c94c65768c0499458ad67034855e299c5a3edaf3a"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\multi-run1\\trace\\session2_carol\\round1_prefill\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "f8ba4c2fb63b09d799ec0f9c94c65768c0499458ad67034855e299c5a3edaf3a"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round1_prefill/logits.f32",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\carol\\trace\\round1_prefill\\logits.f32",
+          "bytes": 993280,
+          "sha256": "1506e6681e8695e9554545d87c10b95bb9a00902831d1b0320406373a37959a0"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\multi-run1\\trace\\session2_carol\\round1_prefill\\logits.f32",
+          "bytes": 993280,
+          "sha256": "1506e6681e8695e9554545d87c10b95bb9a00902831d1b0320406373a37959a0"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round2_decode1/hidden.bf16",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\carol\\trace\\round2_decode1\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "95194016e002a1caec06f064417670aeacb10f15aeed0218134c805731baaafb"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\multi-run1\\trace\\session2_carol\\round2_decode1\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "95194016e002a1caec06f064417670aeacb10f15aeed0218134c805731baaafb"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round2_decode1/logits.f32",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\carol\\trace\\round2_decode1\\logits.f32",
+          "bytes": 993280,
+          "sha256": "3e636ac9e255850d2f5ea760827fe953cf991b15b544d861acba0bfb4dfe13c0"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\multi-run1\\trace\\session2_carol\\round2_decode1\\logits.f32",
+          "bytes": 993280,
+          "sha256": "3e636ac9e255850d2f5ea760827fe953cf991b15b544d861acba0bfb4dfe13c0"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round2_decode2/hidden.bf16",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\carol\\trace\\round2_decode2\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "f626e094e053562d5a76c455c05a7eeb7a6e6b38c2f3d9ed2aaa053d6ccec92c"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\multi-run1\\trace\\session2_carol\\round2_decode2\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "f626e094e053562d5a76c455c05a7eeb7a6e6b38c2f3d9ed2aaa053d6ccec92c"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round2_decode2/logits.f32",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\carol\\trace\\round2_decode2\\logits.f32",
+          "bytes": 993280,
+          "sha256": "4f73bab81e42f817064cd66dbd88ef669ef4d06a496f4c12f7d1cffc4065d2d3"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\multi-run1\\trace\\session2_carol\\round2_decode2\\logits.f32",
+          "bytes": 993280,
+          "sha256": "4f73bab81e42f817064cd66dbd88ef669ef4d06a496f4c12f7d1cffc4065d2d3"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round2_decode3/hidden.bf16",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\carol\\trace\\round2_decode3\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "a1ec39aa07417d08c6c1a1484cc7538bed8d73192e47eb21f2f6de98330d13ac"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\multi-run1\\trace\\session2_carol\\round2_decode3\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "a1ec39aa07417d08c6c1a1484cc7538bed8d73192e47eb21f2f6de98330d13ac"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round2_decode3/logits.f32",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\carol\\trace\\round2_decode3\\logits.f32",
+          "bytes": 993280,
+          "sha256": "298b519720ff394dbce16210a51d586a0ae3de2358bf5723687e14898cfba09c"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\multi-run1\\trace\\session2_carol\\round2_decode3\\logits.f32",
+          "bytes": 993280,
+          "sha256": "298b519720ff394dbce16210a51d586a0ae3de2358bf5723687e14898cfba09c"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round2_decode4/hidden.bf16",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\carol\\trace\\round2_decode4\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "73e30f4b2095f2b62efad1e00dc9974d956981dc19a3abda721ceedc7fe3a2f0"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\multi-run1\\trace\\session2_carol\\round2_decode4\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "73e30f4b2095f2b62efad1e00dc9974d956981dc19a3abda721ceedc7fe3a2f0"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round2_decode4/logits.f32",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\carol\\trace\\round2_decode4\\logits.f32",
+          "bytes": 993280,
+          "sha256": "6eb1bb7643999c2f5dcfbedc7c5d08e063b71baa8345372540bc3bccbffbd581"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\multi-run1\\trace\\session2_carol\\round2_decode4\\logits.f32",
+          "bytes": 993280,
+          "sha256": "6eb1bb7643999c2f5dcfbedc7c5d08e063b71baa8345372540bc3bccbffbd581"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round2_decode5/hidden.bf16",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\carol\\trace\\round2_decode5\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "73b5c30222a714c31ad5c7809979bf41071cf899e3a5780092f91abdefa41c02"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\multi-run1\\trace\\session2_carol\\round2_decode5\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "73b5c30222a714c31ad5c7809979bf41071cf899e3a5780092f91abdefa41c02"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round2_decode5/logits.f32",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\carol\\trace\\round2_decode5\\logits.f32",
+          "bytes": 993280,
+          "sha256": "0dade3f04570847d6da172fcf5182759722da298d5c1c3beb3230a79783bcaab"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\multi-run1\\trace\\session2_carol\\round2_decode5\\logits.f32",
+          "bytes": 993280,
+          "sha256": "0dade3f04570847d6da172fcf5182759722da298d5c1c3beb3230a79783bcaab"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round2_prefill/hidden.bf16",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\carol\\trace\\round2_prefill\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "f2a7173d3c99ac9d343924e782a171b2c8f1e0b0ba81940942ac3c605b674268"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\multi-run1\\trace\\session2_carol\\round2_prefill\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "f2a7173d3c99ac9d343924e782a171b2c8f1e0b0ba81940942ac3c605b674268"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round2_prefill/logits.f32",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\carol\\trace\\round2_prefill\\logits.f32",
+          "bytes": 993280,
+          "sha256": "5f62a2ad05d4b5aa2f07a1f4cd222d5649e180d26b1eb3d367cd8961599ae7e2"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\multi-run1\\trace\\session2_carol\\round2_prefill\\logits.f32",
+          "bytes": 993280,
+          "sha256": "5f62a2ad05d4b5aa2f07a1f4cd222d5649e180d26b1eb3d367cd8961599ae7e2"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round1_decode1/hidden.bf16",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\dave\\trace\\round1_decode1\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "c371698e4a23b7029c909a95345f5b1db631c0e00f2de8160cbd6b9dc5295b41"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\multi-run1\\trace\\session3_dave\\round1_decode1\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "c371698e4a23b7029c909a95345f5b1db631c0e00f2de8160cbd6b9dc5295b41"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round1_decode1/logits.f32",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\dave\\trace\\round1_decode1\\logits.f32",
+          "bytes": 993280,
+          "sha256": "a2060c5e6c7c97c20e82ae21ea6b476e3253b7104c46f6fb634b5d244640898d"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\multi-run1\\trace\\session3_dave\\round1_decode1\\logits.f32",
+          "bytes": 993280,
+          "sha256": "a2060c5e6c7c97c20e82ae21ea6b476e3253b7104c46f6fb634b5d244640898d"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round1_decode2/hidden.bf16",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\dave\\trace\\round1_decode2\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "d79da8ee7b70578888362faeceb8ac94a60ae077451f1ba4fbc03a717cb53bef"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\multi-run1\\trace\\session3_dave\\round1_decode2\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "d79da8ee7b70578888362faeceb8ac94a60ae077451f1ba4fbc03a717cb53bef"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round1_decode2/logits.f32",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\dave\\trace\\round1_decode2\\logits.f32",
+          "bytes": 993280,
+          "sha256": "f41462cb67bcbf7ec1b9a69eb80b402ea228c3a3b4228f835d7a1dd23c0af6b0"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\multi-run1\\trace\\session3_dave\\round1_decode2\\logits.f32",
+          "bytes": 993280,
+          "sha256": "f41462cb67bcbf7ec1b9a69eb80b402ea228c3a3b4228f835d7a1dd23c0af6b0"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round1_decode3/hidden.bf16",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\dave\\trace\\round1_decode3\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "96b2fc84a155b5e87d1bb5f9f4b71e57d966ca3a5b40796b0ec65fee68d7a349"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\multi-run1\\trace\\session3_dave\\round1_decode3\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "96b2fc84a155b5e87d1bb5f9f4b71e57d966ca3a5b40796b0ec65fee68d7a349"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round1_decode3/logits.f32",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\dave\\trace\\round1_decode3\\logits.f32",
+          "bytes": 993280,
+          "sha256": "566475fbfdcb8ba29aa55edad74a497cd393567d4844772be4642f9629bbd300"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\multi-run1\\trace\\session3_dave\\round1_decode3\\logits.f32",
+          "bytes": 993280,
+          "sha256": "566475fbfdcb8ba29aa55edad74a497cd393567d4844772be4642f9629bbd300"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round1_decode4/hidden.bf16",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\dave\\trace\\round1_decode4\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "675ce5d3c828126d33fd9eb8c7bec0e121ec2f5d06320651452c1a7f21377e42"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\multi-run1\\trace\\session3_dave\\round1_decode4\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "675ce5d3c828126d33fd9eb8c7bec0e121ec2f5d06320651452c1a7f21377e42"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round1_decode4/logits.f32",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\dave\\trace\\round1_decode4\\logits.f32",
+          "bytes": 993280,
+          "sha256": "e05936fefaa30771f1ae3259da500e87ef67979ca61077f7e367ce8cde399288"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\multi-run1\\trace\\session3_dave\\round1_decode4\\logits.f32",
+          "bytes": 993280,
+          "sha256": "e05936fefaa30771f1ae3259da500e87ef67979ca61077f7e367ce8cde399288"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round1_decode5/hidden.bf16",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\dave\\trace\\round1_decode5\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "09d6258e5b5d9c2dca4706133182b5a6eaaf879b38741ed66865717fa7813bb3"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\multi-run1\\trace\\session3_dave\\round1_decode5\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "09d6258e5b5d9c2dca4706133182b5a6eaaf879b38741ed66865717fa7813bb3"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round1_decode5/logits.f32",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\dave\\trace\\round1_decode5\\logits.f32",
+          "bytes": 993280,
+          "sha256": "ac112b588c60bd99d6893751cc111ca95c971358c8f85eac4154f5bcaa546643"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\multi-run1\\trace\\session3_dave\\round1_decode5\\logits.f32",
+          "bytes": 993280,
+          "sha256": "ac112b588c60bd99d6893751cc111ca95c971358c8f85eac4154f5bcaa546643"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round1_prefill/hidden.bf16",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\dave\\trace\\round1_prefill\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "0172b7b395f4575cea0c2605abe541c7c02a2ea5a726c866e91856838fb60339"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\multi-run1\\trace\\session3_dave\\round1_prefill\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "0172b7b395f4575cea0c2605abe541c7c02a2ea5a726c866e91856838fb60339"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round1_prefill/logits.f32",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\dave\\trace\\round1_prefill\\logits.f32",
+          "bytes": 993280,
+          "sha256": "48320738232fab2e8af380cd27bea31c373fb1343269c44c7ea0380bb0816adc"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\multi-run1\\trace\\session3_dave\\round1_prefill\\logits.f32",
+          "bytes": 993280,
+          "sha256": "48320738232fab2e8af380cd27bea31c373fb1343269c44c7ea0380bb0816adc"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round2_decode1/hidden.bf16",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\dave\\trace\\round2_decode1\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "051045c7f819396be4bfabdf541a8e7b1fec4ef0013d2362aff3c66e4f58510b"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\multi-run1\\trace\\session3_dave\\round2_decode1\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "051045c7f819396be4bfabdf541a8e7b1fec4ef0013d2362aff3c66e4f58510b"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round2_decode1/logits.f32",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\dave\\trace\\round2_decode1\\logits.f32",
+          "bytes": 993280,
+          "sha256": "b5523daa1cb2ca63c0de9ab30c66ad414ca6e599fc1b48a78901f8986c157e7a"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\multi-run1\\trace\\session3_dave\\round2_decode1\\logits.f32",
+          "bytes": 993280,
+          "sha256": "b5523daa1cb2ca63c0de9ab30c66ad414ca6e599fc1b48a78901f8986c157e7a"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round2_decode2/hidden.bf16",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\dave\\trace\\round2_decode2\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "2b2489fc1949e68ba648012888122300012b37d50b245d3adf5fecdc77585ec8"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\multi-run1\\trace\\session3_dave\\round2_decode2\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "2b2489fc1949e68ba648012888122300012b37d50b245d3adf5fecdc77585ec8"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round2_decode2/logits.f32",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\dave\\trace\\round2_decode2\\logits.f32",
+          "bytes": 993280,
+          "sha256": "9ded2ca0018542a4db3795d999520b944dfbff1faaac95daefb19e1c44d36f7a"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\multi-run1\\trace\\session3_dave\\round2_decode2\\logits.f32",
+          "bytes": 993280,
+          "sha256": "9ded2ca0018542a4db3795d999520b944dfbff1faaac95daefb19e1c44d36f7a"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round2_prefill/hidden.bf16",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\dave\\trace\\round2_prefill\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "4ca82b2f951b2f57b7fd6bb86d6b80c9b89e44ef1af28ec4c92a18d3dc9e3507"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\multi-run1\\trace\\session3_dave\\round2_prefill\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "4ca82b2f951b2f57b7fd6bb86d6b80c9b89e44ef1af28ec4c92a18d3dc9e3507"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round2_prefill/logits.f32",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\dave\\trace\\round2_prefill\\logits.f32",
+          "bytes": 993280,
+          "sha256": "de031ae06577e766eadeac3dbd75978c1a42da8876b283d251bc4ae0895ad89a"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\multi-run1\\trace\\session3_dave\\round2_prefill\\logits.f32",
+          "bytes": 993280,
+          "sha256": "de031ae06577e766eadeac3dbd75978c1a42da8876b283d251bc4ae0895ad89a"
+        },
+        "byte_equal": true
+      }
+    ],
+    "final_CPU": {
+      "tests": 4,
+      "passed": 4,
+      "failures": 0,
+      "skipped": 0,
+      "review": {
+        "path": ".scratch/paged-append-20261021/qwen-snapshot/unbind-tests/final-core-review.json",
+        "bytes": 9853,
+        "sha256": "172369b2d5945fd844eb2eda6f8d10f85a38c0271aa651e7d29241c7a0767c0b"
+      }
+    },
+    "native_Vulkan_host": {
+      "TUs_passed": 5,
+      "links": 0,
+      "GPU_runs": 0,
+      "report": {
+        "path": ".scratch/paged-append-20261021/unbind-native/host-compile-report.json",
+        "bytes": 8563,
+        "sha256": "1ee0219f48ae8fb12d868e511e10920e5bb7133a84b85aa5ba459868a8608d64"
+      }
+    },
+    "native_Apple_host": {
+      "report": {
+        "path": ".scratch/paged-append-20261021/unbind-native/apple-host/report.json",
+        "bytes": 10548,
+        "sha256": "db2b7b41b93c9f249280b2f61925127836f79b896dff080362a2b2b32b3d241e"
+      },
+      "scope": "Actual host TU compilation only; no linking, GPU or full model execution"
+    }
+  },
+  "accounting": {
+    "cache_requested_byte_limit": 168886272,
+    "effective_cache_sessions": 2,
+    "cache_recurrent_payload_bytes_per_snapshot": 19537920,
+    "cache_shared_backing_bytes": 65101872,
+    "cache_page_rows": 16,
+    "cache_max_physical_pages": 33,
+    "cache_live_snapshot_versions": 2,
+    "cache_live_requested_bytes": 65101872,
+    "cache_peak_requested_bytes": 65101872,
+    "cache_retained_sessions": 2
+  },
+  "design": [
+    "One symbolic finite-family replaces the old dense Scatter/Ragged path with 12 ordinary Graph append nodes and six paged readers; no second executor.",
+    "All 12 ready KV frames, 36 conv/GDN leases, next ID and position are collected before one immutable head replacement. Original writes retire/recover before reuse.",
+    "Selective caller unbind validates all affected slots before mutation, withdraws actual imports in reverse dependency order, and preserves unrelated caller ports.",
+    "Shared actual arena/pool backing is charged once. N+1 distinct versions includes the serial candidate; retained old checkpoints still consume capacity."
+  ],
+  "reviews": {
+    "consumer": {
+      "path": ".scratch/paged-append-20261021/qwen-snapshot/review/paged-snapshot-source-review.json",
+      "bytes": 18272,
+      "sha256": "66547b8bd0c9d6526957ac0e193f4a83679758049036732f7c172d41e48302c9"
+    },
+    "replay": {
+      "path": ".scratch/paged-append-20261021/qwen-snapshot/replay-review/review.json",
+      "bytes": 16180,
+      "sha256": "92e05e7612ff28d852b8f846fe68ef037a7cbfc636c671f619123dabdd122c2b"
+    },
+    "model_families": {
+      "path": "docs/evidence/research/model-state-integration-2026-10-21.json",
+      "bytes": 27384,
+      "sha256": "354f3a629daa650a2168c784a0ca87716a228f11cdd59d23e1e1dc4e62485949"
+    }
+  },
+  "known_limits": [
+    "create_session(prefix) is source-integrated only at a complete evaluated boundary; no actual prefix lookup or fork journey yet. Arbitrary cuts/rollback are not supported by this proof.",
+    "The successful consumer was executed; complete-consumer failure/cancel injection was not. Primitive accepted-write cleanup and common unbind failure gates have separate finite evidence.",
+    "Diagnostic T1 after first uses still records six reader ranges and reuses one. take_append release unconditionally invalidates reader recordings; not a measured throughput conclusion.",
+    "The actual linked FlashInfer provider is the retained ac20 source/object, preceding the later workspace-sizing facts reuse. Current provider source improvements are not claimed executed by this image.",
+    "Fresh/COW append only on existing shared CPU/CUDA plain path; no native Apple/Vulkan append, encoded writer or exclusive in-place append claim.",
+    "Native imported-owner cleanup has Vulkan host-only compilation. Apple host results, if available, are explicitly separate. No native runtime result from these compiles.",
+    "Vulkan fixed outputs aliasing imported inputs cannot safely detach and explicitly return Unimplemented; escaped independent result owners must remain valid.",
+    "Graph IO/workspace/capture, weights, vendor-private memory and driver allocations are outside the cache backing quota.",
+    "Earlier dense capacity tests and eight-model source-family audit are historical evidence; other seven models are not promoted to complete consumers.",
+    "This correctness window does not replace the latest full prefill/decode/memory/whole-session comparison in current-work."
+  ],
+  "regression_history": "The first host-test run had three pass/one failing test expectation: successful Completion.wait already settles its observation. Corrected the test, retained original source/log/XML, and final same four cases passed with final three core objects; no product gate weakened.",
+  "parents": [
+    "docs/evidence/correctness/paged-append-graph-2026-10-21.json",
+    "docs/evidence/correctness/paged-append-symbolic-2026-10-21.json",
+    "docs/evidence/correctness/qwen-session-capacity-2026-10-21.json"
+  ],
+  "archive": {
+    "path": "docs/evidence/correctness/qwen-paged-snapshot-2026-10-21.zip",
+    "bytes": 2503425,
+    "sha256": "470a5a72f1ea190feb7b8b067fbe820ab7f3f2d64a54f48106bf492455a06385"
+  },
+  "members": [
+    {
+      "member": ".scratch/architecture-refactor-2026-10-18/d4-windows-preparation-2026-10-21/first-decode-startup-2026-10-21/multi-session-isolation-2026-10-21/inputs/alice/01-prompt.ids",
+      "bytes": 631,
+      "sha256": "5e56597bffba5cab7e6b229a15c128998b7093f6cb621f217c46dd95dbacdb8d"
+    },
+    {
+      "member": ".scratch/architecture-refactor-2026-10-18/d4-windows-preparation-2026-10-21/first-decode-startup-2026-10-21/multi-session-isolation-2026-10-21/inputs/alice/02-decode.ids",
+      "bytes": 20,
+      "sha256": "cb51301cd7ab94010011e7cf798b98d4de2475eb81d03282bc0d6156fc691990"
+    },
+    {
+      "member": ".scratch/architecture-refactor-2026-10-18/d4-windows-preparation-2026-10-21/first-decode-startup-2026-10-21/multi-session-isolation-2026-10-21/inputs/alice/03-prompt.ids",
+      "bytes": 74,
+      "sha256": "ee5309a719f7d5fc8a01cc98b3d549deda409cb4cb3eba662f2f93d5bc3a5538"
+    },
+    {
+      "member": ".scratch/architecture-refactor-2026-10-18/d4-windows-preparation-2026-10-21/first-decode-startup-2026-10-21/multi-session-isolation-2026-10-21/inputs/alice/04-decode.ids",
+      "bytes": 16,
+      "sha256": "454665255dbcf4f0feb7c19e9ea7153c9e991ae328c31630b4e0876c6f1862b7"
+    },
+    {
+      "member": ".scratch/architecture-refactor-2026-10-18/d4-windows-preparation-2026-10-21/first-decode-startup-2026-10-21/multi-session-isolation-2026-10-21/inputs/alice/schedule.txt",
+      "bytes": 84,
+      "sha256": "a5175935849379a6ffb13032bd563136fd58df3345bd5ffc983e61c8d0cfefe0"
+    },
+    {
+      "member": ".scratch/architecture-refactor-2026-10-18/d4-windows-preparation-2026-10-21/first-decode-startup-2026-10-21/multi-session-isolation-2026-10-21/inputs/bob/01-prompt.ids",
+      "bytes": 118,
+      "sha256": "13cb7f144c945478d0167a346578a18832ce7480865a2098abe6b73fbe5071ed"
+    },
+    {
+      "member": ".scratch/architecture-refactor-2026-10-18/d4-windows-preparation-2026-10-21/first-decode-startup-2026-10-21/multi-session-isolation-2026-10-21/inputs/bob/02-decode.ids",
+      "bytes": 12,
+      "sha256": "25409c3664d87800b71f836cdccb8c082610fb16313c7df29ff5386ff634d165"
+    },
+    {
+      "member": ".scratch/architecture-refactor-2026-10-18/d4-windows-preparation-2026-10-21/first-decode-startup-2026-10-21/multi-session-isolation-2026-10-21/inputs/bob/03-prompt.ids",
+      "bytes": 19,
+      "sha256": "8d67d1e09ec3a9e87bedce43fa0adac34d0dff35b7823a9f46071e7ad154f2e7"
+    },
+    {
+      "member": ".scratch/architecture-refactor-2026-10-18/d4-windows-preparation-2026-10-21/first-decode-startup-2026-10-21/multi-session-isolation-2026-10-21/inputs/bob/04-decode.ids",
+      "bytes": 19,
+      "sha256": "45a933111897ca0ac30f27098c98fcc6c8b81e1984be6ba1ef4a02db67f15dc3"
+    },
+    {
+      "member": ".scratch/architecture-refactor-2026-10-18/d4-windows-preparation-2026-10-21/first-decode-startup-2026-10-21/multi-session-isolation-2026-10-21/inputs/bob/schedule.txt",
+      "bytes": 84,
+      "sha256": "a5175935849379a6ffb13032bd563136fd58df3345bd5ffc983e61c8d0cfefe0"
+    },
+    {
+      "member": ".scratch/architecture-refactor-2026-10-18/d4-windows-preparation-2026-10-21/first-decode-startup-2026-10-21/multi-session-isolation-2026-10-21/inputs/carol/01-prompt.ids",
+      "bytes": 80,
+      "sha256": "d35fbf005ebf0e5f13fcbde4bf31bb66c2f046969a55bdf4b6015134d1460cfa"
+    },
+    {
+      "member": ".scratch/architecture-refactor-2026-10-18/d4-windows-preparation-2026-10-21/first-decode-startup-2026-10-21/multi-session-isolation-2026-10-21/inputs/carol/02-decode.ids",
+      "bytes": 8,
+      "sha256": "941a0c85a724035c6d2659867257f05a2a49e65432a3f5fefa53c86587815370"
+    },
+    {
+      "member": ".scratch/architecture-refactor-2026-10-18/d4-windows-preparation-2026-10-21/first-decode-startup-2026-10-21/multi-session-isolation-2026-10-21/inputs/carol/03-prompt.ids",
+      "bytes": 19,
+      "sha256": "a19cd768757c656732d3bc8f4ab2068c1784eeff40323bf20603ecf780cf3d4d"
+    },
+    {
+      "member": ".scratch/architecture-refactor-2026-10-18/d4-windows-preparation-2026-10-21/first-decode-startup-2026-10-21/multi-session-isolation-2026-10-21/inputs/carol/04-decode.ids",
+      "bytes": 21,
+      "sha256": "19a08cb8a73b8cbf2b43c3a2447590dfaca0142e25ba98cd991774f9313acd6e"
+    },
+    {
+      "member": ".scratch/architecture-refactor-2026-10-18/d4-windows-preparation-2026-10-21/first-decode-startup-2026-10-21/multi-session-isolation-2026-10-21/inputs/carol/schedule.txt",
+      "bytes": 84,
+      "sha256": "a5175935849379a6ffb13032bd563136fd58df3345bd5ffc983e61c8d0cfefe0"
+    },
+    {
+      "member": ".scratch/architecture-refactor-2026-10-18/d4-windows-preparation-2026-10-21/first-decode-startup-2026-10-21/multi-session-isolation-2026-10-21/inputs/dave/01-prompt.ids",
+      "bytes": 19,
+      "sha256": "c59419c98b91ac28b6171190ee6aad204dd9b9684fdf81394028195d45682301"
+    },
+    {
+      "member": ".scratch/architecture-refactor-2026-10-18/d4-windows-preparation-2026-10-21/first-decode-startup-2026-10-21/multi-session-isolation-2026-10-21/inputs/dave/02-decode.ids",
+      "bytes": 25,
+      "sha256": "10166b73315fc3da29453e2938372af4e0fb3ad6a82aec667548b2f6dbed08c6"
+    },
+    {
+      "member": ".scratch/architecture-refactor-2026-10-18/d4-windows-preparation-2026-10-21/first-decode-startup-2026-10-21/multi-session-isolation-2026-10-21/inputs/dave/03-prompt.ids",
+      "bytes": 79,
+      "sha256": "ea1005db5d50502773f834d333ca0bd1a377043652f60d0b23a6807ee7ba3291"
+    },
+    {
+      "member": ".scratch/architecture-refactor-2026-10-18/d4-windows-preparation-2026-10-21/first-decode-startup-2026-10-21/multi-session-isolation-2026-10-21/inputs/dave/04-decode.ids",
+      "bytes": 8,
+      "sha256": "82ad2ab9d8fe8adc3e22dead9922351e93771aefea94eb1d0921e3ecc9f4f083"
+    },
+    {
+      "member": ".scratch/architecture-refactor-2026-10-18/d4-windows-preparation-2026-10-21/first-decode-startup-2026-10-21/multi-session-isolation-2026-10-21/inputs/dave/schedule.txt",
+      "bytes": 84,
+      "sha256": "a5175935849379a6ffb13032bd563136fd58df3345bd5ffc983e61c8d0cfefe0"
+    },
+    {
+      "member": ".scratch/architecture-refactor-2026-10-18/d4-windows-preparation-2026-10-21/first-decode-startup-2026-10-21/multi-session-isolation-2026-10-21/inputs/plan.json",
+      "bytes": 14609,
+      "sha256": "02f0ecac5730ebfa4c37ea8e67012e2c3bc7be1741df98e9b6bd84805571d08d"
+    },
+    {
+      "member": ".scratch/architecture-refactor-2026-10-18/d4-windows-preparation-2026-10-21/first-decode-startup-2026-10-21/multi-session-isolation-2026-10-21/inputs/sessions2.txt",
+      "bytes": 46,
+      "sha256": "99483df99430495e129aef635a3007bef35f7ec78bf25af998e052dad836f7dd"
+    },
+    {
+      "member": ".scratch/architecture-refactor-2026-10-18/d4-windows-preparation-2026-10-21/first-decode-startup-2026-10-21/multi-session-isolation-2026-10-21/inputs/sessions4.txt",
+      "bytes": 94,
+      "sha256": "37f25f0186aa105878493b34ed0909e07a3ad251383639162555893ec25395ec"
+    },
+    {
+      "member": ".scratch/architecture-refactor-2026-10-18/d4-windows-preparation-2026-10-21/first-decode-startup-2026-10-21/multi-session-isolation-2026-10-21/run.py",
+      "bytes": 8994,
+      "sha256": "053cba7042ac4f9d4968396dc0bae3a87dc0801a9cb4fcd63ed8b701e1467c75"
+    },
+    {
+      "member": ".scratch/multi-session-20261021/attempt2/baseline/alice/command.json",
+      "bytes": 2164,
+      "sha256": "159b567490a14e65195d301770eadd61aa639f72bb3d22f2ff502a88d2f79bbf"
+    },
+    {
+      "member": ".scratch/multi-session-20261021/attempt2/baseline/alice/observation.json",
+      "bytes": 1845,
+      "sha256": "806266c7f00e93ad81413502a8f4286e0ecda56a4c86955dbd41197572eba07a"
+    },
+    {
+      "member": ".scratch/multi-session-20261021/attempt2/baseline/alice/result.json",
+      "bytes": 2239,
+      "sha256": "d87a587334634f8d1b0617396cc0e6296eef96c64acd0ef4e138c9d63b2b5087"
+    },
+    {
+      "member": ".scratch/multi-session-20261021/attempt2/baseline/bob/command.json",
+      "bytes": 2160,
+      "sha256": "5d477ab934c9c766eb5d1a2e86c46fe18c67aa0d0601859f2072eaaeb5431e0b"
+    },
+    {
+      "member": ".scratch/multi-session-20261021/attempt2/baseline/bob/observation.json",
+      "bytes": 1820,
+      "sha256": "a5e4c5bb2fb75c6517339ebc33e2934e14274a6e039d15663e964b8fd669a131"
+    },
+    {
+      "member": ".scratch/multi-session-20261021/attempt2/baseline/bob/result.json",
+      "bytes": 2234,
+      "sha256": "72313b47fe72a6d335bab06a36704fdb1f457f1a3a9b075b4b92ba96425da929"
+    },
+    {
+      "member": ".scratch/multi-session-20261021/attempt2/baseline/carol/command.json",
+      "bytes": 2164,
+      "sha256": "6e3fd26b14b4534a3d804eef2105ddfcdf4c2ed6f075e4a0eaa6b41dfbd6395b"
+    },
+    {
+      "member": ".scratch/multi-session-20261021/attempt2/baseline/carol/observation.json",
+      "bytes": 1822,
+      "sha256": "6360469df9da75942b7b0f32897bc008360543f7bc39631a7c885bd775ee2d53"
+    },
+    {
+      "member": ".scratch/multi-session-20261021/attempt2/baseline/carol/result.json",
+      "bytes": 2240,
+      "sha256": "ba47d708dc86d280a4cc71ee06c49d15f91be59630c5cc4580023d21f7dccd1f"
+    },
+    {
+      "member": ".scratch/multi-session-20261021/attempt2/baseline/dave/command.json",
+      "bytes": 2162,
+      "sha256": "ca11a3e030fb5bd3d143ab79f616d1f35e439271fb1ffb4f404368d3d0f9780d"
+    },
+    {
+      "member": ".scratch/multi-session-20261021/attempt2/baseline/dave/observation.json",
+      "bytes": 1800,
+      "sha256": "2243c375d38183379f87e0b25cadaacb2598ca5aa3ea3aa48aa76cb06e81601d"
+    },
+    {
+      "member": ".scratch/multi-session-20261021/attempt2/baseline/dave/result.json",
+      "bytes": 2237,
+      "sha256": "09fd9653a8beb0727465e28411b32b1aac889104cba2b576e9be9b0d53296521"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/before/main.cc",
+      "bytes": 91984,
+      "sha256": "d47b4247610e55259259b40c1e5fc3b4dcabe70d7767b0ea58ebea43a41fe306"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/build.py",
+      "bytes": 1570,
+      "sha256": "ba3c03f06db58b8613f71745a177160de00d059a76e15874d3a0771cb3bd49e0"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/build_unbind_test.py",
+      "bytes": 2185,
+      "sha256": "41348395bd9bad9345a64ed8ed144a6c714ee6c7487af67d5c65f1c7400f6ad9"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/checks/attempt1/compile-plan.json",
+      "bytes": 2775,
+      "sha256": "0cbd9a2e3d22404f15bb5e5ac2647d01d7abc5d2e525fa2aa220f0e345bcf45e"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/checks/attempt1/compile.command.json",
+      "bytes": 2163,
+      "sha256": "6cd2fceaf7e2b56c31a6996ae5ee80e1cfe30b8aba5dcc71f54936aa1caf14da"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/checks/attempt1/compile.result.json",
+      "bytes": 2234,
+      "sha256": "91f73927ec7a346fb34a91edd8a035bf9e5ea12f92e8c2bf946962d3bf9a109c"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/checks/attempt1/compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/checks/attempt1/compile.stdout.log",
+      "bytes": 353,
+      "sha256": "681db3effb26837fb43b385cb71e283d1440f5a316432e424b8c8685e31fb5f9"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/checks/attempt1/live.json",
+      "bytes": 2234,
+      "sha256": "91f73927ec7a346fb34a91edd8a035bf9e5ea12f92e8c2bf946962d3bf9a109c"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/checks/attempt1/main-deps.json",
+      "bytes": 32150,
+      "sha256": "c582864816e4c1d56437e19edcee97f6ca51175b1bdca1cffb102ad073feb5ee"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/checks/attempt2/compile-plan.json",
+      "bytes": 2775,
+      "sha256": "541836e8393fe7de92f6f99e09413b39f0f74450d95dda6fa610bff38618f2ec"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/checks/attempt2/compile.command.json",
+      "bytes": 2163,
+      "sha256": "6569b43258323798d9d20e5e2c982bc64a8d27d52be115c93065d68a23722e2a"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/checks/attempt2/compile.result.json",
+      "bytes": 2233,
+      "sha256": "97bcd69d6d69fc1cc6a5409ac90cae32a38bf55a683ffb9cde62c65c266f615e"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/checks/attempt2/compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/checks/attempt2/compile.stdout.log",
+      "bytes": 9,
+      "sha256": "f197b2519eedf02e571357ddc67cf5ca097ec055c64ddd28a980d92394b07b5d"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/checks/attempt2/identity.json",
+      "bytes": 69636,
+      "sha256": "362b0583e0a27729b5494ccdc9791cdffed4be632ecefaa033a8feedd46869d8"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/checks/attempt2/live.json",
+      "bytes": 2233,
+      "sha256": "97bcd69d6d69fc1cc6a5409ac90cae32a38bf55a683ffb9cde62c65c266f615e"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/checks/attempt2/main-deps.json",
+      "bytes": 32150,
+      "sha256": "c582864816e4c1d56437e19edcee97f6ca51175b1bdca1cffb102ad073feb5ee"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/checks/attempt3/compile-plan.json",
+      "bytes": 2775,
+      "sha256": "1bfdd5e4b00652603474149f316866995846946b0ba44dbc3dac722c9f33397e"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/checks/attempt3/compile.command.json",
+      "bytes": 2161,
+      "sha256": "a24ae010a768991ae5e9b0adfceb509f71ec6ca8862f21f71530fc4808388852"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/checks/attempt3/compile.result.json",
+      "bytes": 2231,
+      "sha256": "241b2a0e96df5dc76e4e0700df3f91c8e1db48756a8c4f96e620cc723d8db1d6"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/checks/attempt3/compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/checks/attempt3/compile.stdout.log",
+      "bytes": 9,
+      "sha256": "f197b2519eedf02e571357ddc67cf5ca097ec055c64ddd28a980d92394b07b5d"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/checks/attempt3/identity.json",
+      "bytes": 69636,
+      "sha256": "71111e2bc18aecbfee1b44d349a9c66428d109ac25d0cb1af219e630df89a236"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/checks/attempt3/live.json",
+      "bytes": 2231,
+      "sha256": "241b2a0e96df5dc76e4e0700df3f91c8e1db48756a8c4f96e620cc723d8db1d6"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/checks/attempt3/main-deps.json",
+      "bytes": 32150,
+      "sha256": "c582864816e4c1d56437e19edcee97f6ca51175b1bdca1cffb102ad073feb5ee"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/compiled.json",
+      "bytes": 69636,
+      "sha256": "71111e2bc18aecbfee1b44d349a9c66428d109ac25d0cb1af219e630df89a236"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/design.json",
+      "bytes": 519,
+      "sha256": "d9865d26af3f99e0430e69c851a9d54d7bb2e1832263fdf2945be459f6aac6a1"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/first-run1/command.json",
+      "bytes": 1708,
+      "sha256": "7620bea2b1042589ab3f899c4ff1209a9b0af0427adea458e91cd438fed1b859"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/first-run1/observation.json",
+      "bytes": 1956,
+      "sha256": "e36c69e62dce10f32f2b9a4b7bf783a5d56ad1bed5a1e8e636de64dea367b418"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/first-run1/result.json",
+      "bytes": 1784,
+      "sha256": "8bf8f2ccff242d2aa5ab0ed98d1eb677c5f70e9d63f86c24c1bccb0cd646f4d6"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/first-run1/stderr.log",
+      "bytes": 4043,
+      "sha256": "21deb01df268c1e7b674f8cef0a3c1b500db194e1ca662e82989aeef7bcabbb5"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/first-run1/stdout.log",
+      "bytes": 1441,
+      "sha256": "a8e600ef98884730eeadc8a27b5b3a34484eeaa61c5938b8aab7f78950305937"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/first-run1/summary.json",
+      "bytes": 12664,
+      "sha256": "ea4348d4c409abbb57bdc4d2fa203c48b9e3112799031b30a413ee3d1862f025"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/first-run1/trace/routes/default-T1.boundaries.tsv",
+      "bytes": 339,
+      "sha256": "9e50e74e57b4bb9a68a7bd4433a0b7c9fa40c08ec911c7bb2c445ca07b1e0d36"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/first-run1/trace/routes/default-T1.route.tsv",
+      "bytes": 35583,
+      "sha256": "c6e4c61044443ede6d6cf4860c02a68b8ef571a6fd155f4488fe2aa5e23a6287"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/first-run1/trace/routes/default-T128.boundaries.tsv",
+      "bytes": 357,
+      "sha256": "d95051bed8b0971dbd4b955f171830fb3b8b09691f67b6c082b080a3652c6308"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/first-run1/trace/routes/default-T128.route.tsv",
+      "bytes": 36819,
+      "sha256": "b25513ea9b3ea272b68f7d10c78d72da8766ba6de69fa6660d9e56f0c2260444"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/first-run1/trace/routes/default-T16.boundaries.tsv",
+      "bytes": 348,
+      "sha256": "943177a4b01535685d5a2ecb0d33ca5e6375aaed9d6cf615446084ca9332146a"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/first-run1/trace/routes/default-T16.route.tsv",
+      "bytes": 36819,
+      "sha256": "b25513ea9b3ea272b68f7d10c78d72da8766ba6de69fa6660d9e56f0c2260444"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/first_run.py",
+      "bytes": 1914,
+      "sha256": "6cacbcc3b01987fd18b2fb4bbb7d26ad6c526eb7378ebbd3f81345f3c7ebef7a"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/link.py",
+      "bytes": 3312,
+      "sha256": "ae0b8b08b70f32f9802bc8520824b6561325460b477a3ec5beeb0033ecd48e48"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/link1/link-plan.json",
+      "bytes": 85467,
+      "sha256": "cf9ef8d9ccb35ff3e5e2a4d70cfa25677f6e02ef1aec63ebb409a6f24f0e480a"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/link1/link.command.json",
+      "bytes": 29603,
+      "sha256": "265f9644690843b7408c07ca3344b6597c3a56a2c03a25366a91190270db2452"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/link1/link.result.json",
+      "bytes": 29674,
+      "sha256": "4a014833f831df4ab7575318e41875360cab409cf7bde6951cd48dddf3957017"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/link1/link.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/link1/link.stdout.log",
+      "bytes": 208,
+      "sha256": "cf3ca8953d6a0d081a8b4875f72be589612c4cefa03564a6359fabdca6e52a84"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/link1/live.json",
+      "bytes": 29674,
+      "sha256": "4a014833f831df4ab7575318e41875360cab409cf7bde6951cd48dddf3957017"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/link1/runtime-environment.json",
+      "bytes": 7839,
+      "sha256": "3a592eef6860b35e2ca7e067e3da3ef63dafaa435300f92d6d186f8cad851d46"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/link_run_unbind_test.py",
+      "bytes": 3592,
+      "sha256": "8a480a246b4c8c49d24535769a5bb7e23a1a923469d242e227d190d556e4f18b"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/linked-ready.json",
+      "bytes": 2072,
+      "sha256": "b314914869454ec9d39e32831cb4d9ed370b948c95b7cfd552da4bbd8e27a42f"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/main.diff",
+      "bytes": 47495,
+      "sha256": "d7e746a5c007aac7025eb56d4f73ab1c542ad601dd27bfd19a45789420b1f07f"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/multi-run1/command.json",
+      "bytes": 1821,
+      "sha256": "4b0cdecbef01ff944a480df16d5a908c3ff1aa71da4fa4c7e122be9dae0b7508"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/multi-run1/observation.json",
+      "bytes": 11032,
+      "sha256": "495f8673a405e50cbdbe95827906c6ff321967b092c8b7615d501ddf175e8db5"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/multi-run1/result.json",
+      "bytes": 1896,
+      "sha256": "b1216b82faf0181c2ea9d337453d9c6ea19d78c8756ba6fbc789a9be9c68a587"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/multi-run1/stderr.log",
+      "bytes": 15984,
+      "sha256": "2fcf2c01c0a6e7acd99906003fc5aa58078502db57ec7228ff2575ae27895c21"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/multi-run1/stdout.log",
+      "bytes": 6965,
+      "sha256": "56a43eb23cc258c3908c95fe3b2958ee5758952e42c9bce584bf05ea183c9cf0"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/multi-run1/summary.json",
+      "bytes": 54245,
+      "sha256": "489d7de149a9b82d27235f367609839fdf1ed34ef3fa553ae9e418ca554fc60e"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/multi-run1/trace/routes/default-T1.boundaries.tsv",
+      "bytes": 339,
+      "sha256": "9e50e74e57b4bb9a68a7bd4433a0b7c9fa40c08ec911c7bb2c445ca07b1e0d36"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/multi-run1/trace/routes/default-T1.route.tsv",
+      "bytes": 35583,
+      "sha256": "c6e4c61044443ede6d6cf4860c02a68b8ef571a6fd155f4488fe2aa5e23a6287"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/multi-run1/trace/routes/default-T128.boundaries.tsv",
+      "bytes": 357,
+      "sha256": "d95051bed8b0971dbd4b955f171830fb3b8b09691f67b6c082b080a3652c6308"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/multi-run1/trace/routes/default-T128.route.tsv",
+      "bytes": 36819,
+      "sha256": "b25513ea9b3ea272b68f7d10c78d72da8766ba6de69fa6660d9e56f0c2260444"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/multi-run1/trace/routes/default-T16.boundaries.tsv",
+      "bytes": 348,
+      "sha256": "943177a4b01535685d5a2ecb0d33ca5e6375aaed9d6cf615446084ca9332146a"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/multi-run1/trace/routes/default-T16.route.tsv",
+      "bytes": 36819,
+      "sha256": "b25513ea9b3ea272b68f7d10c78d72da8766ba6de69fa6660d9e56f0c2260444"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/multi-run1/trace/routes/default-T23.boundaries.tsv",
+      "bytes": 348,
+      "sha256": "b967005a7e84193d9012e1e696e4ee38a9f0a1c346caeeeaeb4692751a2848dd"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/multi-run1/trace/routes/default-T23.route.tsv",
+      "bytes": 36819,
+      "sha256": "b25513ea9b3ea272b68f7d10c78d72da8766ba6de69fa6660d9e56f0c2260444"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/multi-run1/trace/routes/default-T4.boundaries.tsv",
+      "bytes": 339,
+      "sha256": "2beff2527cecfd28801552c09b6b4bcc8b38040151a6bfa107e06d061d646afc"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/multi-run1/trace/routes/default-T4.route.tsv",
+      "bytes": 36819,
+      "sha256": "b25513ea9b3ea272b68f7d10c78d72da8766ba6de69fa6660d9e56f0c2260444"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/multi_run.py",
+      "bytes": 2492,
+      "sha256": "8b4661ed00c549d295b8c259f12607a625a4a2df3ece7094fafc7a9fea72a298"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/publish.py",
+      "bytes": 10598,
+      "sha256": "12a7accbea1cfb876540928160c0f0a5a13e7d5e78edc42728f90ab3270445b8"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/ready-for-root.json",
+      "bytes": 1506,
+      "sha256": "c4b178c3a94119e059c220ce102fe7851210c0c4a58fa10abca1df72747e81e4"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/relink_final_unbind_test.py",
+      "bytes": 3259,
+      "sha256": "649a417f2bbd7843b46ff806be23ff5aa519d526e4d1e1f8feac0c4af937567c"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/replay-review/review.json",
+      "bytes": 16180,
+      "sha256": "92e05e7612ff28d852b8f846fe68ef037a7cbfc636c671f619123dabdd122c2b"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/report.json",
+      "bytes": 7399,
+      "sha256": "9963416c0ade826fdaedf431f654c6bab3ec3f9bb24e3993ef4a8d4d9b8855d5"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/result-detach/before/include/hyle/compute/detail/generated_result.h",
+      "bytes": 8681,
+      "sha256": "5099bec5a08e515145d43630050e9a1595d12f9f7a5f4eaa216ec40c10b946de"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/result-detach/before/src/compute/result.cc",
+      "bytes": 4927,
+      "sha256": "9e974aa39ff14d064902ed37525bba8363332ffe702bb0a0f4a2cfee83cf289c"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/result-detach/checks/attempt1/compile-plan.json",
+      "bytes": 2622,
+      "sha256": "c4b7e40ce57d6d6121a9ae424b60584291be0f058fb0229ef214f8149ec1775e"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/result-detach/checks/attempt1/compile.command.json",
+      "bytes": 2202,
+      "sha256": "459bf7403926972fa3187209785ddd6938e56c115e23043a2fcabd937859b342"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/result-detach/checks/attempt1/compile.result.json",
+      "bytes": 2272,
+      "sha256": "b0eb219110136048fa0c7378c42fdae34603665a10651b5ba0a1e6b1ee0207da"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/result-detach/checks/attempt1/compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/result-detach/checks/attempt1/compile.stdout.log",
+      "bytes": 11,
+      "sha256": "ba3e11e844f955df1fda837d2bdcc6b742f66f16809900fc0627547e6fe3aa13"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/result-detach/checks/attempt1/identity.json",
+      "bytes": 34944,
+      "sha256": "9af33cb0d9e209e7908789f7b7793d7de929c7c5cd3a273d2ef8c2ed9ca93219"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/result-detach/checks/attempt1/live.json",
+      "bytes": 2272,
+      "sha256": "b0eb219110136048fa0c7378c42fdae34603665a10651b5ba0a1e6b1ee0207da"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/result-detach/checks/attempt1/result-deps.json",
+      "bytes": 15671,
+      "sha256": "481982214bf7389307a33c1a80bb3aa7ad429d1e28e802b903e026399ef9fc4f"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/result-detach/source-freeze.json",
+      "bytes": 2076,
+      "sha256": "6a7b06f21a207c33dea943d7663c3e8dacc6da83924b1d5857972ac2319aaf09"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/result-detach/source.diff",
+      "bytes": 3836,
+      "sha256": "6688113c4d981fbbe8381f62d55c578d5dcc22fb0f6598f31d2c7cf8ce5e1639"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/review/paged-snapshot-source-review.json",
+      "bytes": 18272,
+      "sha256": "66547b8bd0c9d6526957ac0e193f4a83679758049036732f7c172d41e48302c9"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/source/tools/qwen35_text/main.cc",
+      "bytes": 104468,
+      "sha256": "d888d817f67b057670ba141b932a97038981f1b12af98afc39b6806309f17e74"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/source/tools/qwen35_text/session_state.h",
+      "bytes": 7388,
+      "sha256": "7f7b373daf263884822889a31a99d09715647c188803c8b5819bf73a4687e3c1"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind-review.json",
+      "bytes": 6994,
+      "sha256": "6013093d526a561d305e0cce00a78dc5281076126b9d228f7ad63a0ff2d11053"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind-tests/attempt1/compile-plan.json",
+      "bytes": 2621,
+      "sha256": "1a3e91c4743c4d0df9f288524e4dfcc9ffa902b8e725c1a32305b59ff07f91bf"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind-tests/attempt1/compile.command.json",
+      "bytes": 2185,
+      "sha256": "a117d6e816d5ad5f8604bcce555fd2c7720e106b74e35746973a1d9788184796"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind-tests/attempt1/compile.result.json",
+      "bytes": 2255,
+      "sha256": "4940486314d7f1f65927ba3c3691fa2591770b94a88369e58759175360d394b5"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind-tests/attempt1/compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind-tests/attempt1/compile.stdout.log",
+      "bytes": 27,
+      "sha256": "e54c173f03c686b3e467b929c62275629294dc709ebb81ac25dd998e94918406"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind-tests/attempt1/identity.json",
+      "bytes": 62392,
+      "sha256": "9c5d7b9d7231bb2137896d23a48edb7b77afba253c77bea529a333f14395f47c"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind-tests/attempt1/live.json",
+      "bytes": 2255,
+      "sha256": "4940486314d7f1f65927ba3c3691fa2591770b94a88369e58759175360d394b5"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind-tests/attempt1/test-deps.json",
+      "bytes": 29402,
+      "sha256": "85fedb952bf8b6bac2f9bb9e224069abecccc6a6020d1841d95d7ff7ca472940"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind-tests/attempt2/compile-plan.json",
+      "bytes": 2621,
+      "sha256": "a0b60ea24b2ef3c51f5da7322f7f67fed5b6c1081e93947fe752988181313e18"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind-tests/attempt2/compile.command.json",
+      "bytes": 2185,
+      "sha256": "d57e481be218fe12aaf2c90ff727e0a06b0a7c277674871ce11279a8e5d4d4dc"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind-tests/attempt2/compile.result.json",
+      "bytes": 2255,
+      "sha256": "8d340ea1835acc3c1203cbc9a1c9db5d1a72de2140cccbc0fbe5addb347295b9"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind-tests/attempt2/compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind-tests/attempt2/compile.stdout.log",
+      "bytes": 27,
+      "sha256": "e54c173f03c686b3e467b929c62275629294dc709ebb81ac25dd998e94918406"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind-tests/attempt2/identity.json",
+      "bytes": 62818,
+      "sha256": "412112cd998c62ba9095a5615ff6a2be565033988088c28f15af6ee0309275a0"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind-tests/attempt2/live.json",
+      "bytes": 2255,
+      "sha256": "8d340ea1835acc3c1203cbc9a1c9db5d1a72de2140cccbc0fbe5addb347295b9"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind-tests/attempt2/source/invocation_unbind_test.cc",
+      "bytes": 9640,
+      "sha256": "94f9b9b591f1feab5925d8b95d7b1f6cd77e72bb25cb20f0b883d6f0d5ecca45"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind-tests/attempt2/test-deps.json",
+      "bytes": 29582,
+      "sha256": "5a069eabc7855ac59994baece7b4b9fb31d08f131baa6d0df739307cd49a3781"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind-tests/attempt3/compile-plan.json",
+      "bytes": 2621,
+      "sha256": "09da599f9548c8a931ae3ef67377e2ed9a2d2845a767a980f3bee0f7bd08b71c"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind-tests/attempt3/compile.command.json",
+      "bytes": 2184,
+      "sha256": "a9459e4bac418fba0d4e942f2fe09d434afbfc991118cf74d932111a0c756bad"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind-tests/attempt3/compile.result.json",
+      "bytes": 2254,
+      "sha256": "4f8740f505ed6c1b1d6c5d47f116b18c86c3e82b9618070bd94afabd2c5553a2"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind-tests/attempt3/compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind-tests/attempt3/compile.stdout.log",
+      "bytes": 27,
+      "sha256": "e54c173f03c686b3e467b929c62275629294dc709ebb81ac25dd998e94918406"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind-tests/attempt3/identity.json",
+      "bytes": 62818,
+      "sha256": "781ef306248159a411df66376477846e95a53e4830f7707f2f364d282ae87ca9"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind-tests/attempt3/live.json",
+      "bytes": 2254,
+      "sha256": "4f8740f505ed6c1b1d6c5d47f116b18c86c3e82b9618070bd94afabd2c5553a2"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind-tests/attempt3/test-deps.json",
+      "bytes": 29582,
+      "sha256": "5a069eabc7855ac59994baece7b4b9fb31d08f131baa6d0df739307cd49a3781"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind-tests/final-core-review.json",
+      "bytes": 9853,
+      "sha256": "172369b2d5945fd844eb2eda6f8d10f85a38c0271aa651e7d29241c7a0767c0b"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind-tests/final-review.json",
+      "bytes": 8055,
+      "sha256": "7e92f15775086c661357b71092f7d4d2eaf5f531b0387da7169fb5631f5889e6"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind-tests/link1/link-plan.json",
+      "bytes": 86759,
+      "sha256": "e5ae2b4bca3577ce6d3698044836f1de72ec9a6c8162850371adf2a3273a3275"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind-tests/link1/link.command.json",
+      "bytes": 30081,
+      "sha256": "1e28c5f9d362ad7352de2d03a42e4048e1725a5954e4e10d97e3982d9ee91d01"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind-tests/link1/link.result.json",
+      "bytes": 30150,
+      "sha256": "9af79ffcff964b3292776e824dc16a75e57c2a6b37eba8b8bc8538c970500b94"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind-tests/link1/link.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind-tests/link1/link.stdout.log",
+      "bytes": 248,
+      "sha256": "03f1ef72c10d61c70c24c05386ddd1ab4e3deb3e2c319ca2d627b5a50177941b"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind-tests/link1/live.json",
+      "bytes": 30150,
+      "sha256": "9af79ffcff964b3292776e824dc16a75e57c2a6b37eba8b8bc8538c970500b94"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind-tests/link1/runtime-environment.json",
+      "bytes": 6804,
+      "sha256": "60f9e235404f31051c916a9694d8b77287353a919700ee97d093efc2deec813f"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind-tests/link2/link-plan.json",
+      "bytes": 86759,
+      "sha256": "d00b9f7fcdb32fa305bfabac7580cd68f2cddab6c29db4e4c03bf553f112dfa6"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind-tests/link2/link.command.json",
+      "bytes": 30081,
+      "sha256": "82f90d1c523116ae84a4fabec9b6b3f3cae5a0f62f9fe6979a89a25a69978e06"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind-tests/link2/link.result.json",
+      "bytes": 30150,
+      "sha256": "4e88a77f890eee63f81bc8997db8e7eb38a48be618d4ba673768115f0ffde7a9"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind-tests/link2/link.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind-tests/link2/link.stdout.log",
+      "bytes": 248,
+      "sha256": "3a920a987e2411c10fdd1ce9770044c783a2622b742cf3398253864a19f33c63"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind-tests/link2/live.json",
+      "bytes": 30150,
+      "sha256": "4e88a77f890eee63f81bc8997db8e7eb38a48be618d4ba673768115f0ffde7a9"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind-tests/link2/runtime-environment.json",
+      "bytes": 6804,
+      "sha256": "60f9e235404f31051c916a9694d8b77287353a919700ee97d093efc2deec813f"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind-tests/link3/link-plan.json",
+      "bytes": 87162,
+      "sha256": "f52597abe3df0f59c2f53593c6e0b94d5a05c2e65c0627082a3ae0c2a7baa4cf"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind-tests/link3/link.command.json",
+      "bytes": 30104,
+      "sha256": "7bc6e5ff175b3974d15944a53318d16296a5211c87927347f6ea03f487386e7e"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind-tests/link3/link.result.json",
+      "bytes": 30174,
+      "sha256": "e07c87c1f09f2982a3a1afe4b772b329e33812f0117405ddb3f9e535c255d008"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind-tests/link3/link.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind-tests/link3/link.stdout.log",
+      "bytes": 248,
+      "sha256": "8f6a4ed0a2cb8802dd4561013ca32d959853a520c162f3ab79dc16272380367a"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind-tests/link3/live.json",
+      "bytes": 30174,
+      "sha256": "e07c87c1f09f2982a3a1afe4b772b329e33812f0117405ddb3f9e535c255d008"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind-tests/link3/runtime-environment.json",
+      "bytes": 6798,
+      "sha256": "52c511d1ca893800cd04a634317a98fdbee91f230edbd313742e041f70171d25"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind-tests/ready-and-result.json",
+      "bytes": 1462,
+      "sha256": "f1998a803b8901237cf8a18c3f015ee83250afa4921e675f5fd6bf3d84de2d54"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind-tests/ready-final.json",
+      "bytes": 1749,
+      "sha256": "fa3b509a222cbfa824711e5d5ee90f4916dd8135be4b76d47ae18c580630fa16"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind-tests/validation/attempt1/image.json",
+      "bytes": 240,
+      "sha256": "a7081698100cf8a34367fc841b5fb342f58e222dda67bf3a1806036e40a00e95"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind-tests/validation/attempt1/live.json",
+      "bytes": 530,
+      "sha256": "d793103b39a23d12d29225ebc741495ecbc0f69f8d3d3969f0f766345ce9b5e9"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind-tests/validation/attempt1/tests.command.json",
+      "bytes": 460,
+      "sha256": "0657bf59070bdde962641d9ff989b63347dc321a34b7738865697414683d8c04"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind-tests/validation/attempt1/tests.result.json",
+      "bytes": 530,
+      "sha256": "d793103b39a23d12d29225ebc741495ecbc0f69f8d3d3969f0f766345ce9b5e9"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind-tests/validation/attempt1/tests.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind-tests/validation/attempt1/tests.stdout.log",
+      "bytes": 1627,
+      "sha256": "c4996163e2d07988a4005dadea1774e9d6456860f2cccb28858ac7e9b33a7feb"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind-tests/validation/attempt1/tests.xml",
+      "bytes": 2102,
+      "sha256": "b13057f7333010e73d1486d8eca6bdbb5709637bd06470ca04c46893d9fd3cd0"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind-tests/validation/attempt2/image.json",
+      "bytes": 240,
+      "sha256": "caee0375d939bae9ca55490a6718030bdf337808c84bd19c74a71092ed8282ba"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind-tests/validation/attempt2/live.json",
+      "bytes": 529,
+      "sha256": "6f02f21da5f8bccb4809cf1123f68134685d8db067386c838b8762f19968450a"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind-tests/validation/attempt2/tests.command.json",
+      "bytes": 459,
+      "sha256": "d3b4615941bb7890b3bd02257dea05160c6c91c54dcc0c30889a1be2d506d5ed"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind-tests/validation/attempt2/tests.result.json",
+      "bytes": 529,
+      "sha256": "6f02f21da5f8bccb4809cf1123f68134685d8db067386c838b8762f19968450a"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind-tests/validation/attempt2/tests.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind-tests/validation/attempt2/tests.stdout.log",
+      "bytes": 1214,
+      "sha256": "7bb8be038a5b110353d55bfc20082d8a76fc9c320dbb8e1ce04514f232a381a4"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind-tests/validation/attempt2/tests.xml",
+      "bytes": 1417,
+      "sha256": "4ef708b760f76d35bd332d5ca15999a3ed6d09f21fbd5d942c9835a3316a0833"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind-tests/validation/attempt3/image.json",
+      "bytes": 240,
+      "sha256": "15355e69a8767812c0aad1da1cdbe59c1289174b9cf008dd1b97de077024c4f7"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind-tests/validation/attempt3/live.json",
+      "bytes": 529,
+      "sha256": "ef3904b4489be225b53d8ed5a89eb133e594542f9c3c911bf515d0904ca700e5"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind-tests/validation/attempt3/tests.command.json",
+      "bytes": 460,
+      "sha256": "4ff4524836eb3fdfd190cd9f53008329174135b707513216bdbf9bb22dc4db46"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind-tests/validation/attempt3/tests.result.json",
+      "bytes": 529,
+      "sha256": "ef3904b4489be225b53d8ed5a89eb133e594542f9c3c911bf515d0904ca700e5"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind-tests/validation/attempt3/tests.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind-tests/validation/attempt3/tests.stdout.log",
+      "bytes": 1214,
+      "sha256": "7bb8be038a5b110353d55bfc20082d8a76fc9c320dbb8e1ce04514f232a381a4"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind-tests/validation/attempt3/tests.xml",
+      "bytes": 1417,
+      "sha256": "b8c8a4a992c43a0d9a5a0eea8fca9fc6d8c53db7e8d681507eefa282a7f20d54"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind/build_core.py",
+      "bytes": 2452,
+      "sha256": "08dbb949c56bceb5a822a184821961fa79bc23a5f520fce91779fd090894784a"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind/checks/attempt1/graph--resources/compile-plan.json",
+      "bytes": 2649,
+      "sha256": "ef5cc307291cb7fff9864423e1f6a7294ba4cc0a33b95863f903568d19c44cb3"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind/checks/attempt1/graph--resources/compile.command.json",
+      "bytes": 2266,
+      "sha256": "ee46931516d91709ccbc6af4e4ff29cf35a4594c79e74fbf6c1150eb32d59513"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind/checks/attempt1/graph--resources/compile.result.json",
+      "bytes": 2336,
+      "sha256": "860ec6eb71ca84d445b2d43fdb1cde1a1cd035fba2827942dcd8230e6ec745a7"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind/checks/attempt1/graph--resources/compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind/checks/attempt1/graph--resources/compile.stdout.log",
+      "bytes": 14,
+      "sha256": "672f8debd5dcc4a361c440145e99c21bf022590cbfb43129aa89acf894aac842"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind/checks/attempt1/graph--resources/graph--resources-deps.json",
+      "bytes": 23497,
+      "sha256": "4905aba36ce1fd976491bc2c5a1eed6b06d8e64e9cfb6938171df18d030ba17a"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind/checks/attempt1/graph--resources/identity.json",
+      "bytes": 52400,
+      "sha256": "53692b5b82eb559f8f42a2cbb1cd1f22a1263ecdce7a3d48b182f61f46d9a73e"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind/checks/attempt1/graph--resources/live.json",
+      "bytes": 2336,
+      "sha256": "860ec6eb71ca84d445b2d43fdb1cde1a1cd035fba2827942dcd8230e6ec745a7"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind/checks/attempt1/graph_provider_ggml_cuda--ggml_cuda_region/compile-plan.json",
+      "bytes": 3302,
+      "sha256": "c1dac39c2b4135d5297db6c754fd0afe38bec3e1bd38f7041d45cf940526c729"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind/checks/attempt1/graph_provider_ggml_cuda--ggml_cuda_region/compile.command.json",
+      "bytes": 2859,
+      "sha256": "a5fdeedfb0dd3180c29fe796c52f5a4fe9acf3353d677e653080ec999bcfa37f"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind/checks/attempt1/graph_provider_ggml_cuda--ggml_cuda_region/compile.result.json",
+      "bytes": 2929,
+      "sha256": "0cdbef508db5cff4a70ced664f4869be66453fa98961cffbd6e157270309a249"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind/checks/attempt1/graph_provider_ggml_cuda--ggml_cuda_region/compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind/checks/attempt1/graph_provider_ggml_cuda--ggml_cuda_region/compile.stdout.log",
+      "bytes": 21,
+      "sha256": "15e15e3c0800a97a15c4157632f2e96d65c2cae32a9a8fa9adda2ef27d6bef6f"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind/checks/attempt1/graph_provider_ggml_cuda--ggml_cuda_region/graph_provider_ggml_cuda--ggml_cuda_region-deps.json",
+      "bytes": 19902,
+      "sha256": "62a2d0efe9eeeb771a310f6988bbb8c6857951306214983c7dabfc584c85e0cf"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind/checks/attempt1/graph_provider_ggml_cuda--ggml_cuda_region/identity.json",
+      "bytes": 45380,
+      "sha256": "11863005b4f3358becb0c032ae68d4236facde6280544fdf28a4c122745c1d1e"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind/checks/attempt1/graph_provider_ggml_cuda--ggml_cuda_region/live.json",
+      "bytes": 2929,
+      "sha256": "0cdbef508db5cff4a70ced664f4869be66453fa98961cffbd6e157270309a249"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind/checks/attempt2/graph--executable/compile-plan.json",
+      "bytes": 2659,
+      "sha256": "8ae1caf3ad7a9c754c7b86ce4f16963292d4243c86ed8ff3da8d604e7ae947b3"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind/checks/attempt2/graph--executable/compile.command.json",
+      "bytes": 2273,
+      "sha256": "aef63a3f7843601ec2fa260bf974dea425e7389c6365f42548244fa8004a06fb"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind/checks/attempt2/graph--executable/compile.result.json",
+      "bytes": 2343,
+      "sha256": "b9a32a13e563b5a93521a1525a56e7198bffd857eb504a3b25add9929dd32eaf"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind/checks/attempt2/graph--executable/compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind/checks/attempt2/graph--executable/compile.stdout.log",
+      "bytes": 15,
+      "sha256": "e7f3ca2d037330ccc61c3339535287ba36312762361a62ef5c649884d8973e34"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind/checks/attempt2/graph--executable/graph--executable-deps.json",
+      "bytes": 23971,
+      "sha256": "310c8f299c5dc0d6785190dfce2580781ad3be9646a350182c845b0ba3a40e25"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind/checks/attempt2/graph--executable/identity.json",
+      "bytes": 53624,
+      "sha256": "8d0c692efc41aceacc89d26b25e160f4038f95a697200cd5a570189a4d6d6d3e"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind/checks/attempt2/graph--executable/live.json",
+      "bytes": 2343,
+      "sha256": "b9a32a13e563b5a93521a1525a56e7198bffd857eb504a3b25add9929dd32eaf"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind/checks/attempt2/graph--resources/compile-plan.json",
+      "bytes": 2649,
+      "sha256": "0217156737774d347f5d750c1a4c450aca8be5ef79970637bedcb0770a183459"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind/checks/attempt2/graph--resources/compile.command.json",
+      "bytes": 2266,
+      "sha256": "44ebdaa20a583bbc6157bcfe67e70892451140a2adbbfab214758a2aac67c95b"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind/checks/attempt2/graph--resources/compile.result.json",
+      "bytes": 2336,
+      "sha256": "4f081453c5813356cf1492981276d77cf1c9b09e2faf342f11ab96f83fd1147a"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind/checks/attempt2/graph--resources/compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind/checks/attempt2/graph--resources/compile.stdout.log",
+      "bytes": 14,
+      "sha256": "672f8debd5dcc4a361c440145e99c21bf022590cbfb43129aa89acf894aac842"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind/checks/attempt2/graph--resources/graph--resources-deps.json",
+      "bytes": 23497,
+      "sha256": "4905aba36ce1fd976491bc2c5a1eed6b06d8e64e9cfb6938171df18d030ba17a"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind/checks/attempt2/graph--resources/identity.json",
+      "bytes": 52400,
+      "sha256": "f7780237e896dd9e193ee3f028906457061d5abae12d81173705ff03f313cb67"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind/checks/attempt2/graph--resources/live.json",
+      "bytes": 2336,
+      "sha256": "4f081453c5813356cf1492981276d77cf1c9b09e2faf342f11ab96f83fd1147a"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind/checks/attempt2/graph_provider_ggml_cuda--ggml_cuda_region/compile-plan.json",
+      "bytes": 3302,
+      "sha256": "bd06cd6cf0221d7399e3e420c8cef3d5d1d653bd4edca73aa8047d924d3af16b"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind/checks/attempt2/graph_provider_ggml_cuda--ggml_cuda_region/compile.command.json",
+      "bytes": 2858,
+      "sha256": "daf5ba4c8a9b03aeb7bd9827237407b8ad1bd3da15c56b7f0db08eb61a19bfa5"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind/checks/attempt2/graph_provider_ggml_cuda--ggml_cuda_region/compile.result.json",
+      "bytes": 2928,
+      "sha256": "e7ad215ccf73639c5aafff4607146b35341b9414d4f1170ae8c4a84d5e8ca1cd"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind/checks/attempt2/graph_provider_ggml_cuda--ggml_cuda_region/compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind/checks/attempt2/graph_provider_ggml_cuda--ggml_cuda_region/compile.stdout.log",
+      "bytes": 21,
+      "sha256": "15e15e3c0800a97a15c4157632f2e96d65c2cae32a9a8fa9adda2ef27d6bef6f"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind/checks/attempt2/graph_provider_ggml_cuda--ggml_cuda_region/graph_provider_ggml_cuda--ggml_cuda_region-deps.json",
+      "bytes": 19902,
+      "sha256": "62a2d0efe9eeeb771a310f6988bbb8c6857951306214983c7dabfc584c85e0cf"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind/checks/attempt2/graph_provider_ggml_cuda--ggml_cuda_region/identity.json",
+      "bytes": 45380,
+      "sha256": "82db457e38011f733a92a50bdf6f922ad735f256c72dc6d7ade070d940d1d653"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind/checks/attempt2/graph_provider_ggml_cuda--ggml_cuda_region/live.json",
+      "bytes": 2928,
+      "sha256": "e7ad215ccf73639c5aafff4607146b35341b9414d4f1170ae8c4a84d5e8ca1cd"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind/compile-final.json",
+      "bytes": 164538,
+      "sha256": "47f5cedf21313be4a07cec1a2903ab34d7f148cf9c1976b46d2265176f05a2aa"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/qwen-snapshot/unbind/compile.json",
+      "bytes": 106265,
+      "sha256": "4c4317b81653550cc159036717e36909a3203a8a07ca40673d7e621e4496328a"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/apple-host/audit.py",
+      "bytes": 6726,
+      "sha256": "1d2f0cde95080e90d03540aec4fbb8065a029383b1bf2d8ebb1f44ecd242248b"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/apple-host/build_remote.py",
+      "bytes": 2668,
+      "sha256": "cc908d4e330bce532503301b20faaeeed562a8d6e401a7789f694d93aa54625b"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/apple-host/build_remote_final.py",
+      "bytes": 2670,
+      "sha256": "3e1bcb26bba0f2bee180c5355fc8414d4b1e59a2960ef6c5621941599b5c4c23"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/apple-host/cache-probe.json",
+      "bytes": 51763,
+      "sha256": "a7a6c224b2859c8c14b839e78aeb562e5b00f5ff83156de7bf238bce09dae31f"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/apple-host/canonical-manifest.json",
+      "bytes": 25749,
+      "sha256": "403d57aa5632213ba7cbb55a035ae5613f2b2a22d3dcfb02b03a1b7f8e65b805"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/apple-host/dependency-audit.json",
+      "bytes": 13328,
+      "sha256": "b2315f22ea1ac7c5a6f15ffc18b56eb67ec5dfd2b7d8d0ca9941f2e95581707f"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/apple-host/plan-attempt1.json",
+      "bytes": 230463,
+      "sha256": "48fea19f059e4a0982abaae3fc456edbd9fc55110b8bb1dbddc69c58f7a03e2f"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/apple-host/plan.json",
+      "bytes": 208379,
+      "sha256": "161750fc2692652d65d4cff1f40f2afe95f509d6ff00a240e8ebc61d29cf261f"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/apple-host/prepare.py",
+      "bytes": 7374,
+      "sha256": "e5bb65d68aa3feda40de122025c89db1fe8d5f1827e76c6401b53df9c59b5086"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/apple-host/ready-for-root.json",
+      "bytes": 1733,
+      "sha256": "102c1051439128077bcac70aec291a29aea223556b8bdcbbeb7ad98ef6d54484"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/apple-host/report.json",
+      "bytes": 10548,
+      "sha256": "db2b7b41b93c9f249280b2f61925127836f79b896dff080362a2b2b32b3d241e"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/apple-host/results/src--compute--result.cc.command.json",
+      "bytes": 8775,
+      "sha256": "de635e75a481ce662747065b85bfe0b984b2af8fd700c681e805c635af773925"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/apple-host/results/src--compute--result.cc.result.json",
+      "bytes": 200995,
+      "sha256": "532e404a89bcb92521dcee24427d16e92bd26aef45e011b1dd30db6182717944"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/apple-host/results/src--compute--result.cc.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/apple-host/results/src--compute--result.cc.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/apple-host/results/src--compute_provider_ggml_metal--native_program.cc.command.json",
+      "bytes": 6391,
+      "sha256": "6d910db7a88404414500fac1a81300f5ab8f7ee307390f661d4531ccf355e8e3"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/apple-host/results/src--compute_provider_ggml_metal--native_program.cc.result.json",
+      "bytes": 219943,
+      "sha256": "cb6814bbf00eb34ace256b967a21739d6177260f745840abcc600f56d936aa2c"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/apple-host/results/src--compute_provider_ggml_metal--native_program.cc.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/apple-host/results/src--compute_provider_ggml_metal--native_program.cc.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/apple-host/results/src--compute_route_apple--apple_context.cc.command.json",
+      "bytes": 8881,
+      "sha256": "77c43c1a8412c4e560a9ada32f844362db46556bf4dbe5d03df0eef4ffe9f486"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/apple-host/results/src--compute_route_apple--apple_context.cc.result.json",
+      "bytes": 8927,
+      "sha256": "f39f57e1466e1fb915697fca95f2447d8ce8d321da5df744048f30f1b004080b"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/apple-host/results/src--compute_route_apple--apple_context.cc.stderr.log",
+      "bytes": 5719,
+      "sha256": "16dfa7e75f8da5aa7163cf38f134e0951b53388805e5101077f9098e7c37cf76"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/apple-host/results/src--compute_route_apple--apple_context.cc.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/apple-host/results/src--compute_route_apple--apple_recurrent.cc.command.json",
+      "bytes": 6559,
+      "sha256": "264b5edf71fffb8106d9ee05b073da7942c0ab7f0ec147cb73361e0131d0f5fc"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/apple-host/results/src--compute_route_apple--apple_recurrent.cc.result.json",
+      "bytes": 6605,
+      "sha256": "60b50dab4222bbd383285119932a1af5073830e87527e389713bfcc1a051ff25"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/apple-host/results/src--compute_route_apple--apple_recurrent.cc.stderr.log",
+      "bytes": 6556,
+      "sha256": "8ba11f028f50b018e7c8ddde465e0998171b5b75ac4586dff93ed7836e556161"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/apple-host/results/src--compute_route_apple--apple_recurrent.cc.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/apple-host/results/src--graph--executable.cc.command.json",
+      "bytes": 8149,
+      "sha256": "30c1cca8fa864c3b116536825b24066d7705720746c03f06ec71fdd8257c38e9"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/apple-host/results/src--graph--executable.cc.result.json",
+      "bytes": 256445,
+      "sha256": "48f174cfbc1e494821bd20fb55de6fb257ce4383d559ae06224e8a2acd552ed5"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/apple-host/results/src--graph--executable.cc.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/apple-host/results/src--graph--executable.cc.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/apple-host/results/src--graph--resources.cc.command.json",
+      "bytes": 8780,
+      "sha256": "050bb309268efb515f9df26b34cc88681427ab4b4a7c127eef23b0bed4ec456c"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/apple-host/results/src--graph--resources.cc.result.json",
+      "bytes": 253113,
+      "sha256": "83eb7d9a5fb51401a7f7af25923bb704f58d9360303c9587473ce978c4a323d6"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/apple-host/results/src--graph--resources.cc.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/apple-host/results/src--graph--resources.cc.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/apple-host/results/src--graph_route_apple--native_paged_region.cc.command.json",
+      "bytes": 7210,
+      "sha256": "7ca43c3b1669362c1160bc4381ae773b256b09a4051ff2658f2e4fdeff2bf055"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/apple-host/results/src--graph_route_apple--native_paged_region.cc.result.json",
+      "bytes": 7256,
+      "sha256": "2a3ead78871c54c8e91a4834db58f6b0e3007efe3608e727938eeb500c986d95"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/apple-host/results/src--graph_route_apple--native_paged_region.cc.stderr.log",
+      "bytes": 4234,
+      "sha256": "4a44a9163c5dd7472c44b8e8b2771fc2df715ee701ed6a85e081e6c1dcc3b49f"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/apple-host/results/src--graph_route_apple--native_paged_region.cc.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/apple-host/results/src--graph_route_apple--native_ragged_region.cc.command.json",
+      "bytes": 8253,
+      "sha256": "cbd44a00e14f8c781c95d2e9b1c11ced8176f2cb69226365a67caf0797310103"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/apple-host/results/src--graph_route_apple--native_ragged_region.cc.result.json",
+      "bytes": 8299,
+      "sha256": "9b29e72fd5b2391eb4ff61bb973822e8a5caacc9d46f73e81f9a54e5113a38bb"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/apple-host/results/src--graph_route_apple--native_ragged_region.cc.stderr.log",
+      "bytes": 3491,
+      "sha256": "b5296721db678dc53ac9b5895e90f93524e0cb170f38ab22d1b811e6734fc056"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/apple-host/results/src--graph_route_apple--native_ragged_region.cc.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/apple-host/results/src--graph_route_apple--native_region.cc.command.json",
+      "bytes": 8876,
+      "sha256": "3f51139f536bdb5b29b0888e5820f7d02818c5ce59edb323d6e26dea812278ac"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/apple-host/results/src--graph_route_apple--native_region.cc.result.json",
+      "bytes": 8922,
+      "sha256": "ea75c1fb2e2a5c571bf1418dc999d5d1d98c49a294bdcaeb179b462a2807411c"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/apple-host/results/src--graph_route_apple--native_region.cc.stderr.log",
+      "bytes": 3477,
+      "sha256": "b6efda701c065a988e6ad94ab1a7b67181fa0c59b341fc1d19e01496420443ec"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/apple-host/results/src--graph_route_apple--native_region.cc.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/apple-host/results/summary.json",
+      "bytes": 5571,
+      "sha256": "847b4a8fd3ff53137d45aeb395e5b0911949c8ccca01b822f93d30a896e274db"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/apple-host/results2/src--compute--result.cc.command.json",
+      "bytes": 6379,
+      "sha256": "59c67bc273c00ac57bc34f88dda761cf1255d2e13a4942700dded237a16ab1da"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/apple-host/results2/src--compute--result.cc.result.json",
+      "bytes": 198601,
+      "sha256": "0004600745f81f5d2de3784d0636437afea737e777991ce5a1299345370d98a7"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/apple-host/results2/src--compute--result.cc.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/apple-host/results2/src--compute--result.cc.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/apple-host/results2/src--compute_provider_ggml_metal--native_program.cc.command.json",
+      "bytes": 3995,
+      "sha256": "8b6571a98b8ebe7f87ba870de915d74be93b051f874aee2d426324bc8e484717"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/apple-host/results2/src--compute_provider_ggml_metal--native_program.cc.result.json",
+      "bytes": 217549,
+      "sha256": "9b22b7cf564c468f13256ab41d9cf86cc038fc6b30e08895d9d801fc3cb75b0e"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/apple-host/results2/src--compute_provider_ggml_metal--native_program.cc.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/apple-host/results2/src--compute_provider_ggml_metal--native_program.cc.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/apple-host/results2/src--compute_route_apple--apple_context.cc.command.json",
+      "bytes": 6487,
+      "sha256": "4834843cbb09e6d6bfd61340ec76393b9ea3495c208fc54cd3f4c84bfe9163ea"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/apple-host/results2/src--compute_route_apple--apple_context.cc.result.json",
+      "bytes": 272604,
+      "sha256": "2b32e1012d8a2f01756a5272344b9604dac308346a1e742f6a070c67fb1b29d9"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/apple-host/results2/src--compute_route_apple--apple_context.cc.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/apple-host/results2/src--compute_route_apple--apple_context.cc.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/apple-host/results2/src--compute_route_apple--apple_recurrent.cc.command.json",
+      "bytes": 4162,
+      "sha256": "cf3b16ff5820f245d22874713ed400d7284a3f94c43409fedc39e68927819904"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/apple-host/results2/src--compute_route_apple--apple_recurrent.cc.result.json",
+      "bytes": 236709,
+      "sha256": "5de871e49dc6452a5d7a7211306d0c041cf71d1084a496a37bb46f93719483c0"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/apple-host/results2/src--compute_route_apple--apple_recurrent.cc.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/apple-host/results2/src--compute_route_apple--apple_recurrent.cc.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/apple-host/results2/src--graph--executable.cc.command.json",
+      "bytes": 5751,
+      "sha256": "9492f9cd5f1c452267f6c933f2bde29ba7320f81a10028e9a286fd91f9347844"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/apple-host/results2/src--graph--executable.cc.result.json",
+      "bytes": 254048,
+      "sha256": "315e76b7b42f01ed865fc01355272361f17faaa6c84094bd7e01e403148445b9"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/apple-host/results2/src--graph--executable.cc.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/apple-host/results2/src--graph--executable.cc.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/apple-host/results2/src--graph--resources.cc.command.json",
+      "bytes": 6384,
+      "sha256": "389ce991e7552a92e5efbb22e3c283f163153936f6b011e7b2460b310d6ce725"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/apple-host/results2/src--graph--resources.cc.result.json",
+      "bytes": 250717,
+      "sha256": "485751e70ccd0d5f778dac31c57e16e4aef9bd942477b79fcde16f63ffff5285"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/apple-host/results2/src--graph--resources.cc.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/apple-host/results2/src--graph--resources.cc.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/apple-host/results2/src--graph_route_apple--native_paged_region.cc.command.json",
+      "bytes": 4813,
+      "sha256": "3629d79405ece911cfced1eebd82ddba3b86dfe2dc1d70eb202375a629b468bb"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/apple-host/results2/src--graph_route_apple--native_paged_region.cc.result.json",
+      "bytes": 266674,
+      "sha256": "b3eabc3aa267f560bce58583b35e34413f8ba1f2f7d01f61c8999a9c7cf7ba1f"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/apple-host/results2/src--graph_route_apple--native_paged_region.cc.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/apple-host/results2/src--graph_route_apple--native_paged_region.cc.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/apple-host/results2/src--graph_route_apple--native_ragged_region.cc.command.json",
+      "bytes": 5856,
+      "sha256": "0422f6b2e6ba23c4c51b9bef069199da5b6153a5424dbe314157d940e295cb20"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/apple-host/results2/src--graph_route_apple--native_ragged_region.cc.result.json",
+      "bytes": 265050,
+      "sha256": "0546003d46dcbb83379587a728761db04f10ee075a1d0d2c09b319bbcea84ed5"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/apple-host/results2/src--graph_route_apple--native_ragged_region.cc.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/apple-host/results2/src--graph_route_apple--native_ragged_region.cc.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/apple-host/results2/src--graph_route_apple--native_region.cc.command.json",
+      "bytes": 6478,
+      "sha256": "220828173a595237bc6e79ce6cf93b2796f1d0858f812d666303d64df204c57b"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/apple-host/results2/src--graph_route_apple--native_region.cc.result.json",
+      "bytes": 274632,
+      "sha256": "d3edb247447446a4e1f0ab75bcda58f1f98ce6934d9a28fac09c65cc5d1d95b3"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/apple-host/results2/src--graph_route_apple--native_region.cc.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/apple-host/results2/src--graph_route_apple--native_region.cc.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/apple-host/results2/summary.json",
+      "bytes": 7278,
+      "sha256": "3843d8fcbd0b6c56c05702a8971799e6ee73b19207de74ea5afc7089d4c30827"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/apple-host/sync.py",
+      "bytes": 2238,
+      "sha256": "071aa22ad6a40776ba37f5ed33871d9e6066c1125a18388deb08cf4d93cea21d"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/apple-host/sync.result.json",
+      "bytes": 250,
+      "sha256": "bc8fdfb9876fae20d1fa2b45cae25e0428603fe40dcb380f6c8ae18437be51a1"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/apple-host/sync.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/apple-host/sync.stdout.log",
+      "bytes": 231,
+      "sha256": "595eb5cfcf2345145e861760b6606c9dab696c35ebfb36c9f7c293d23a271843"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/before-identity.json",
+      "bytes": 3152,
+      "sha256": "057c3c8c66f1db67e2b62cecadf05fa8360f0ce97ace48a2e6e7d3f25be91b2c"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/before/include/hyle/compute/detail/apple_batch_access.h",
+      "bytes": 4635,
+      "sha256": "0897bec26d927ba9defa95a1cda1fd9ff377b7d47fe47f06f609823fe1b43387"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/before/include/hyle/compute/detail/vulkan_batch_access.h",
+      "bytes": 3163,
+      "sha256": "822b0f672405f0d10f14b857126c31d36755dfe7c2f995ee6022218bc6df3cff"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/before/src/compute_provider_ggml_metal/native_program.cc",
+      "bytes": 28817,
+      "sha256": "29eba24896a30711c4fbc699f157bb9307fecdc64a3a7721b5ddfd171d82bc68"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/before/src/compute_provider_ggml_metal/native_program.h",
+      "bytes": 3248,
+      "sha256": "7634a0ec4a0b260cb06e6e1faf6acfc5481552b1e7eb105d9525013dedf30f8b"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/before/src/compute_provider_ggml_vulkan/region.cc",
+      "bytes": 105872,
+      "sha256": "d76fd202636a65774bb63e8a2a27cbd636c8fa36c070768c09bbefbb9e001bd3"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/before/src/compute_provider_ggml_vulkan/region.h",
+      "bytes": 4150,
+      "sha256": "bd35704f9d93e879ecf28dfa0aa2eb8dd4b4fed2d6cbb38b9114efb105825f20"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/before/src/compute_route_apple/apple_carrier.h",
+      "bytes": 3792,
+      "sha256": "ff1cede731db50e0277754bdd058fc54a31bb67d40ce38c1450f0fc03b4b0d1f"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/before/src/compute_route_apple/apple_context.cc",
+      "bytes": 69922,
+      "sha256": "7115214b54144d45b67a5cb9c267b8e50f331c64b5428dbc165107e5ffbba404"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/before/src/compute_route_apple/apple_recurrent.cc",
+      "bytes": 5902,
+      "sha256": "c104695b158731b746206255819467a0432366f5118d38bebc924da42013afe1"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/before/src/compute_route_apple/apple_recurrent.h",
+      "bytes": 983,
+      "sha256": "09fb901ec347bfa34c3ff55a18f2dbf204de77bb09ace6caf38d6b9ea902f9c4"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/before/src/compute_route_vulkan/vulkan_program.cc",
+      "bytes": 56037,
+      "sha256": "dd5a66d823c09f1e0c2ef7a1d3c0194ef605b72bd60bb7c6fa46b6c473788e52"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/before/src/graph_route_apple/native_paged_region.cc",
+      "bytes": 32337,
+      "sha256": "8535f3fd0e306271f8cfbd8058f7394fa94a026712ee518ee776db13ca39eb73"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/before/src/graph_route_apple/native_ragged_region.cc",
+      "bytes": 21229,
+      "sha256": "494c0e60a82ea2751d930cabe6bedd572b051b9fd9da8bf54e255a57d103bc1d"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/before/src/graph_route_apple/native_region.cc",
+      "bytes": 47996,
+      "sha256": "5c33e93e22e49156a556eaefafa6b11f8c0bb583f1dcb8236f332e0715141d2d"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/before/src/graph_route_vulkan/native_paged_region.cc",
+      "bytes": 30982,
+      "sha256": "2affb6f3b21f51b1101b7e7590ec8306e137eced2197b3dd1a57872096311741"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/before/src/graph_route_vulkan/native_ragged_region.cc",
+      "bytes": 20504,
+      "sha256": "6b79d4aaab9e3c93d3ee8e2599c42a06291d5eedd9620860dc95b0582b25268c"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/before/src/graph_route_vulkan/native_region.cc",
+      "bytes": 49496,
+      "sha256": "a3b19ed1fab5323d542faca9abda4a6e80ce4ab91d1c6775e58294bb123bf426"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/build_vulkan.py",
+      "bytes": 4829,
+      "sha256": "0af9e1333e636228a971ece063b8f7370ef7c991e4989460fdbd052a425eba41"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/changed-current.json",
+      "bytes": 3153,
+      "sha256": "6d4dbad10233098f48008c5f8b6b2b082fe6df218eae20aca186dbdbc724ef13"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/checks/attempt1/compile-plan.json",
+      "bytes": 22075,
+      "sha256": "664001ca492a0d822b478dd59461c75686d6cc960919072382b1a50e3fcb9437"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/checks/attempt1/native-paged/compile-plan.json",
+      "bytes": 4085,
+      "sha256": "47d2997650d809a3b8df75be935bb645b86c089c3ad569fb00e0217154cada32"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/checks/attempt1/native-paged/identity.json",
+      "bytes": 63015,
+      "sha256": "7f8be1e338f11bc6d805c0ff9cbdfe9e046f9e00ffca896511eb262ea63f853d"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/checks/attempt1/native-paged/receipt.json",
+      "bytes": 3189,
+      "sha256": "85836959c42f635978278ffd5c24b0affb82b6b62153106e511c13700461de49"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/checks/attempt1/native-paged/source-deps.json",
+      "bytes": 27729,
+      "sha256": "27e4f8364a91b5994f88d7c40d04b333cfde73645f15c4d6e6faf45cbb75b5cd"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/checks/attempt1/native-paged/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/checks/attempt1/native-paged/stdout.log",
+      "bytes": 24,
+      "sha256": "59e7f482fcd17db813718a9c729af683ed9c25ebd33b8a838382e5248d5cc934"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/checks/attempt1/native-ragged/compile-plan.json",
+      "bytes": 3977,
+      "sha256": "8ee052d8e864c83daa8802727298982457edac41ec6544990dea3179e936616a"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/checks/attempt1/native-ragged/identity.json",
+      "bytes": 61782,
+      "sha256": "46404cd3e73e88d107293a31ed09e5bd1e17be62d565064b473da1a9c0d14641"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/checks/attempt1/native-ragged/receipt.json",
+      "bytes": 3195,
+      "sha256": "bffd7bf77289463a58ba3ad4541ebda81c30e74bbc96c6df0198d62b5e2d8167"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/checks/attempt1/native-ragged/source-deps.json",
+      "bytes": 27217,
+      "sha256": "3484d00a3326c281a71077109fa1ea90a9944a905f6f62e7382f42ee995bac31"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/checks/attempt1/native-ragged/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/checks/attempt1/native-ragged/stdout.log",
+      "bytes": 25,
+      "sha256": "cc91e5b5f9a90c9696b5c72867043afd478479565b27a25098110228e367207e"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/checks/attempt1/native-region/compile-plan.json",
+      "bytes": 4582,
+      "sha256": "6f300f05f143e16516a1df953107796058f13b644f20838c37b16138a7834c92"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/checks/attempt1/native-region/identity.json",
+      "bytes": 66701,
+      "sha256": "a50a05ba0e38b68d0c41032d9278704a0bbbcd3d1abc1fd2048cd3ce6c110a2e"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/checks/attempt1/native-region/receipt.json",
+      "bytes": 3766,
+      "sha256": "781cd2819bebb6cdc6ffc4ee551371435580e0bcea31346817999ce85403b132"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/checks/attempt1/native-region/source-deps.json",
+      "bytes": 29065,
+      "sha256": "d422f7935207675e8803ea404953650083656a6ab44252aa92cd518dd8873364"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/checks/attempt1/native-region/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/checks/attempt1/native-region/stdout.log",
+      "bytes": 18,
+      "sha256": "cd92761f19d0844ec339ae81072829ee2fc25abf635b25839b3d189ea3be5db2"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/checks/attempt1/objects-ready.json",
+      "bytes": 316256,
+      "sha256": "2853bace589d480983c0b09e1b0729150b0b34ac410a2bae30364bb0922dca3b"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/checks/attempt1/program/compile-plan.json",
+      "bytes": 4227,
+      "sha256": "49c4a1434359020b83b3fedbbd5a52d5ecac9f1501140e53c6bf6a55b28c9f4c"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/checks/attempt1/program/identity.json",
+      "bytes": 57093,
+      "sha256": "1e632f65f5f49278d1abb8f420be997adc6ae188aed667d70ac97eaeccd1a948"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/checks/attempt1/program/receipt.json",
+      "bytes": 3425,
+      "sha256": "dd7e5ab2f93032f7439a3cc2ba227b5f069b9c677ed48ef0a325169ea2d2e3ca"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/checks/attempt1/program/source-deps.json",
+      "bytes": 25123,
+      "sha256": "c3ddd38581632316f653fda35ac4f57654a8e559557aeadce0606f5c42d950f5"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/checks/attempt1/program/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/checks/attempt1/program/stdout.log",
+      "bytes": 19,
+      "sha256": "85c70ef5af29eab3f1f445537df3d5f74367b1c0d4a13fec0bd395950cead9f0"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/checks/attempt1/provider-region/compile-plan.json",
+      "bytes": 2667,
+      "sha256": "b4bc1f698f72aec2bbe03de9e54e1284a8c16ce64cd943e14268133384c05f88"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/checks/attempt1/provider-region/identity.json",
+      "bytes": 42940,
+      "sha256": "45eaf1f49a10459446621f6b93f9530efafd5be32cbe1cdd6e15900eebae9b59"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/checks/attempt1/provider-region/receipt.json",
+      "bytes": 1871,
+      "sha256": "041b91db8840a5fca4a04d0b75f96979160f3f6d9252d0639c0bd3e57e3d9db3"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/checks/attempt1/provider-region/source-deps.json",
+      "bytes": 19549,
+      "sha256": "3085fb194e8e7c52794c7c5fd563e47e00e4005e6cbf3e002daaf1922f8200a2"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/checks/attempt1/provider-region/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/checks/attempt1/provider-region/stdout.log",
+      "bytes": 11,
+      "sha256": "802823f1a0e4e0d0883175973a38d8fdf67f622eee2816fa2f5e3c10a249f1b8"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/host-compile-report.json",
+      "bytes": 8563,
+      "sha256": "1ee0219f48ae8fb12d868e511e10920e5bb7133a84b85aa5ba459868a8608d64"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/implementation.diff",
+      "bytes": 25763,
+      "sha256": "7777421ca984e48cd9394f1cdfe97ebbf921bdc52df50f634a5b582c16152bbe"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/source-final/include/hyle/compute/detail/apple_batch_access.h",
+      "bytes": 5071,
+      "sha256": "db2c7bd5ca0c6cf09e75f795916115736ffe06fec21610419f1edc9901401bbe"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/source-final/include/hyle/compute/detail/vulkan_batch_access.h",
+      "bytes": 3601,
+      "sha256": "fc1e189d69688f18e0d69ab5218cdea736f85586af76ec833603ad28af764e83"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/source-final/src/compute_provider_ggml_metal/native_program.cc",
+      "bytes": 29232,
+      "sha256": "d365279701912c597d4713c249926748b1bd7f4526d8e33e6b05323c5a919025"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/source-final/src/compute_provider_ggml_metal/native_program.h",
+      "bytes": 3461,
+      "sha256": "42cea340877532e348dc723ec042cf705bcc0931db977780e9fb1e8d1228b240"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/source-final/src/compute_provider_ggml_vulkan/region.cc",
+      "bytes": 106641,
+      "sha256": "f3f3a8d642906f2f17fa6293241a2a70c9c552988ebcdcd1b1a6247de25915d5"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/source-final/src/compute_provider_ggml_vulkan/region.h",
+      "bytes": 4445,
+      "sha256": "881646e1790479656d934748ab1fc7231aced0365ad5d93bfff0d08b6f1c6118"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/source-final/src/compute_route_apple/apple_carrier.h",
+      "bytes": 4068,
+      "sha256": "4f6e02785642541c1e450958b3f6f1be29ae023511ed174544d3537dd85deaf2"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/source-final/src/compute_route_apple/apple_context.cc",
+      "bytes": 71622,
+      "sha256": "6ad7cfdf5bf7e010d455806aebbfd68128d7a329191aa75ae4cc4d57e8d3f9f1"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/source-final/src/compute_route_apple/apple_recurrent.cc",
+      "bytes": 5976,
+      "sha256": "58abaa21dc7be466e8c6276f54033f3eb3e857cb06c59cb6baa38e5478657b9d"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/source-final/src/compute_route_apple/apple_recurrent.h",
+      "bytes": 1016,
+      "sha256": "e7c29a477946e5690f9f348b1066ea0a80f1080759faf4c8f5d31fc9605e3187"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/source-final/src/compute_route_vulkan/vulkan_program.cc",
+      "bytes": 59030,
+      "sha256": "c3eb7908a9eb446f8573bf59c85471025cded4e0ade5c421afafaf5977ad54bc"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/source-final/src/graph_route_apple/native_paged_region.cc",
+      "bytes": 33449,
+      "sha256": "5b04fc63b0b3e997c04b208874af77b5d18bb005567f4acff9f60c00dd3634d3"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/source-final/src/graph_route_apple/native_ragged_region.cc",
+      "bytes": 22032,
+      "sha256": "dbdc968fa07ff5579a01a2a85c672dacf7cdc2ab257ae7374be1963dd374029f"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/source-final/src/graph_route_apple/native_region.cc",
+      "bytes": 48823,
+      "sha256": "963fc052f7b885b3d6af1967f51a8e100b0d2a19d6bdb9c4351acde9784994c8"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/source-final/src/graph_route_vulkan/native_paged_region.cc",
+      "bytes": 31999,
+      "sha256": "666ec25284ea509a7ccc57525184c0a37204daf8daba869e52b8353f0f8ab518"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/source-final/src/graph_route_vulkan/native_ragged_region.cc",
+      "bytes": 21299,
+      "sha256": "49a6caeff235ac8fc7142e9cd8ce0d7e76ee4576fc388b064fb006b50dc1f920"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/source-final/src/graph_route_vulkan/native_region.cc",
+      "bytes": 50342,
+      "sha256": "a6d518650c9dec1fe1ccd8f876d0ae446886e274fc06a3fcb3a4fcbdb61bacdb"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/source-first/include/hyle/compute/detail/apple_batch_access.h",
+      "bytes": 5071,
+      "sha256": "db2c7bd5ca0c6cf09e75f795916115736ffe06fec21610419f1edc9901401bbe"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/source-first/include/hyle/compute/detail/vulkan_batch_access.h",
+      "bytes": 3601,
+      "sha256": "fc1e189d69688f18e0d69ab5218cdea736f85586af76ec833603ad28af764e83"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/source-first/src/compute_provider_ggml_metal/native_program.cc",
+      "bytes": 29232,
+      "sha256": "d365279701912c597d4713c249926748b1bd7f4526d8e33e6b05323c5a919025"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/source-first/src/compute_provider_ggml_metal/native_program.h",
+      "bytes": 3461,
+      "sha256": "42cea340877532e348dc723ec042cf705bcc0931db977780e9fb1e8d1228b240"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/source-first/src/compute_provider_ggml_vulkan/region.cc",
+      "bytes": 106726,
+      "sha256": "25531d47e9f415e69e849b5bc0e4e9926fbe3c0ca74d2b04f81fa0d6b487ab06"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/source-first/src/compute_provider_ggml_vulkan/region.h",
+      "bytes": 4445,
+      "sha256": "881646e1790479656d934748ab1fc7231aced0365ad5d93bfff0d08b6f1c6118"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/source-first/src/compute_route_apple/apple_carrier.h",
+      "bytes": 4068,
+      "sha256": "4f6e02785642541c1e450958b3f6f1be29ae023511ed174544d3537dd85deaf2"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/source-first/src/compute_route_apple/apple_context.cc",
+      "bytes": 71622,
+      "sha256": "6ad7cfdf5bf7e010d455806aebbfd68128d7a329191aa75ae4cc4d57e8d3f9f1"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/source-first/src/compute_route_apple/apple_recurrent.cc",
+      "bytes": 5976,
+      "sha256": "58abaa21dc7be466e8c6276f54033f3eb3e857cb06c59cb6baa38e5478657b9d"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/source-first/src/compute_route_apple/apple_recurrent.h",
+      "bytes": 1016,
+      "sha256": "e7c29a477946e5690f9f348b1066ea0a80f1080759faf4c8f5d31fc9605e3187"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/source-first/src/compute_route_vulkan/vulkan_program.cc",
+      "bytes": 59030,
+      "sha256": "c3eb7908a9eb446f8573bf59c85471025cded4e0ade5c421afafaf5977ad54bc"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/source-first/src/graph_route_apple/native_paged_region.cc",
+      "bytes": 33449,
+      "sha256": "5b04fc63b0b3e997c04b208874af77b5d18bb005567f4acff9f60c00dd3634d3"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/source-first/src/graph_route_apple/native_ragged_region.cc",
+      "bytes": 22032,
+      "sha256": "dbdc968fa07ff5579a01a2a85c672dacf7cdc2ab257ae7374be1963dd374029f"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/source-first/src/graph_route_apple/native_region.cc",
+      "bytes": 48823,
+      "sha256": "963fc052f7b885b3d6af1967f51a8e100b0d2a19d6bdb9c4351acde9784994c8"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/source-first/src/graph_route_vulkan/native_paged_region.cc",
+      "bytes": 31999,
+      "sha256": "666ec25284ea509a7ccc57525184c0a37204daf8daba869e52b8353f0f8ab518"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/source-first/src/graph_route_vulkan/native_ragged_region.cc",
+      "bytes": 21299,
+      "sha256": "49a6caeff235ac8fc7142e9cd8ce0d7e76ee4576fc388b064fb006b50dc1f920"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/source-first/src/graph_route_vulkan/native_region.cc",
+      "bytes": 50342,
+      "sha256": "a6d518650c9dec1fe1ccd8f876d0ae446886e274fc06a3fcb3a4fcbdb61bacdb"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/source-freeze-final.json",
+      "bytes": 10146,
+      "sha256": "310ebbb5a0b0a958ebfa5b48ddd1d1b79fbf9010c52725182ae98ca590746c93"
+    },
+    {
+      "member": ".scratch/paged-append-20261021/unbind-native/source-freeze-first.json",
+      "bytes": 9142,
+      "sha256": "c51658a2e8ad8ae06570f77f45592b21a37ed58c441a4b5d772196a2afbd7a07"
+    },
+    {
+      "member": "documentation/docs/architecture/compute-design.md",
+      "bytes": 111886,
+      "sha256": "a5ebfb68a2b3f7c09b1e1837c501ef77c279e55a6513a11c72e8b8ad13a9c406"
+    },
+    {
+      "member": "documentation/docs/developer/current-work.md",
+      "bytes": 16790,
+      "sha256": "abcc53ec6a0d80bf0c4d51a51b9fa618ba694299905c710b3d8b36be46021bef"
+    },
+    {
+      "member": "documentation/docs/implementation/model-operators.md",
+      "bytes": 87994,
+      "sha256": "fdd201d9045848bde56dda8d211444262e3d69da9d59cfb1def17c0dba46a9a0"
+    },
+    {
+      "member": "documentation/tools/qwen35_text/README.md",
+      "bytes": 12460,
+      "sha256": "bac6900a9fdd7a8a37c559b841ff6d8c04d2272bac904de36c088171045156e4"
+    },
+    {
+      "member": "product/include/hyle/compute/detail/apple_batch_access.h",
+      "bytes": 5071,
+      "sha256": "db2c7bd5ca0c6cf09e75f795916115736ffe06fec21610419f1edc9901401bbe"
+    },
+    {
+      "member": "product/include/hyle/compute/detail/generated_result.h",
+      "bytes": 9908,
+      "sha256": "62630311da5b77306f7faef12f4d2cbf7f67e35ff8d2eb5ad9b56460b9089cb6"
+    },
+    {
+      "member": "product/include/hyle/compute/detail/vulkan_batch_access.h",
+      "bytes": 3601,
+      "sha256": "fc1e189d69688f18e0d69ab5218cdea736f85586af76ec833603ad28af764e83"
+    },
+    {
+      "member": "product/include/hyle/graph/detail/region_access.h",
+      "bytes": 15121,
+      "sha256": "011bf90e148de02f36c39463f8ae3f8ef5f8b94790d034cd93569054f0ba7bf9"
+    },
+    {
+      "member": "product/include/hyle/graph/executable.h",
+      "bytes": 50386,
+      "sha256": "aa3a55ed1869f84149ad0a6a558d6541880d71ba0bf4c6789480724564cdc0b0"
+    },
+    {
+      "member": "product/src/compute/result.cc",
+      "bytes": 6171,
+      "sha256": "71d732bb8caf3aaa955cb9d03bbb1b6f5e24a40a2979290b1107840889090146"
+    },
+    {
+      "member": "product/src/compute_provider_ggml_metal/native_program.cc",
+      "bytes": 29232,
+      "sha256": "d365279701912c597d4713c249926748b1bd7f4526d8e33e6b05323c5a919025"
+    },
+    {
+      "member": "product/src/compute_provider_ggml_metal/native_program.h",
+      "bytes": 3461,
+      "sha256": "42cea340877532e348dc723ec042cf705bcc0931db977780e9fb1e8d1228b240"
+    },
+    {
+      "member": "product/src/compute_provider_ggml_vulkan/region.cc",
+      "bytes": 106641,
+      "sha256": "f3f3a8d642906f2f17fa6293241a2a70c9c552988ebcdcd1b1a6247de25915d5"
+    },
+    {
+      "member": "product/src/compute_provider_ggml_vulkan/region.h",
+      "bytes": 4445,
+      "sha256": "881646e1790479656d934748ab1fc7231aced0365ad5d93bfff0d08b6f1c6118"
+    },
+    {
+      "member": "product/src/compute_route_apple/apple_carrier.h",
+      "bytes": 4068,
+      "sha256": "4f6e02785642541c1e450958b3f6f1be29ae023511ed174544d3537dd85deaf2"
+    },
+    {
+      "member": "product/src/compute_route_apple/apple_context.cc",
+      "bytes": 71622,
+      "sha256": "6ad7cfdf5bf7e010d455806aebbfd68128d7a329191aa75ae4cc4d57e8d3f9f1"
+    },
+    {
+      "member": "product/src/compute_route_apple/apple_recurrent.cc",
+      "bytes": 5976,
+      "sha256": "58abaa21dc7be466e8c6276f54033f3eb3e857cb06c59cb6baa38e5478657b9d"
+    },
+    {
+      "member": "product/src/compute_route_apple/apple_recurrent.h",
+      "bytes": 1016,
+      "sha256": "e7c29a477946e5690f9f348b1066ea0a80f1080759faf4c8f5d31fc9605e3187"
+    },
+    {
+      "member": "product/src/compute_route_vulkan/vulkan_program.cc",
+      "bytes": 59030,
+      "sha256": "c3eb7908a9eb446f8573bf59c85471025cded4e0ade5c421afafaf5977ad54bc"
+    },
+    {
+      "member": "product/src/graph/executable.cc",
+      "bytes": 463668,
+      "sha256": "b5cfb444768c862a7bf2e4a939b416e13c9045e7fb73f15f7e986b5a8e4355fe"
+    },
+    {
+      "member": "product/src/graph/resources.cc",
+      "bytes": 84608,
+      "sha256": "1964c93ded4976340a4cad837418201ab2ec35621b89056d080c193fcc1dd9bb"
+    },
+    {
+      "member": "product/src/graph_provider_ggml_cuda/ggml_cuda_region.cc",
+      "bytes": 68939,
+      "sha256": "145727c7d2ed891f98d5cc2e15f2a2d9e62dd4c79e36521f52a8aae0ec1001c4"
+    },
+    {
+      "member": "product/src/graph_route_apple/native_paged_region.cc",
+      "bytes": 33449,
+      "sha256": "5b04fc63b0b3e997c04b208874af77b5d18bb005567f4acff9f60c00dd3634d3"
+    },
+    {
+      "member": "product/src/graph_route_apple/native_ragged_region.cc",
+      "bytes": 22032,
+      "sha256": "dbdc968fa07ff5579a01a2a85c672dacf7cdc2ab257ae7374be1963dd374029f"
+    },
+    {
+      "member": "product/src/graph_route_apple/native_region.cc",
+      "bytes": 48823,
+      "sha256": "963fc052f7b885b3d6af1967f51a8e100b0d2a19d6bdb9c4351acde9784994c8"
+    },
+    {
+      "member": "product/src/graph_route_vulkan/native_paged_region.cc",
+      "bytes": 31999,
+      "sha256": "666ec25284ea509a7ccc57525184c0a37204daf8daba869e52b8353f0f8ab518"
+    },
+    {
+      "member": "product/src/graph_route_vulkan/native_ragged_region.cc",
+      "bytes": 21299,
+      "sha256": "49a6caeff235ac8fc7142e9cd8ce0d7e76ee4576fc388b064fb006b50dc1f920"
+    },
+    {
+      "member": "product/src/graph_route_vulkan/native_region.cc",
+      "bytes": 50342,
+      "sha256": "a6d518650c9dec1fe1ccd8f876d0ae446886e274fc06a3fcb3a4fcbdb61bacdb"
+    },
+    {
+      "member": "product/tests/graph/CMakeLists.txt",
+      "bytes": 1873,
+      "sha256": "350e71933a37dad05c25a26764e655527ea139c17739fca5e2453280b86f2c4e"
+    },
+    {
+      "member": "product/tests/graph/invocation_unbind_test.cc",
+      "bytes": 9726,
+      "sha256": "b8766b26ad9709de879f9235eab0301f02d666b40ac700dd07d981ba78f1d022"
+    },
+    {
+      "member": "product/tools/qwen35_text/CMakeLists.txt",
+      "bytes": 701,
+      "sha256": "9411d7d9fb8421de22fd0203686a7ca11bc9ed2a412b2ba0aba76259756dc0d6"
+    },
+    {
+      "member": "product/tools/qwen35_text/main.cc",
+      "bytes": 104468,
+      "sha256": "d888d817f67b057670ba141b932a97038981f1b12af98afc39b6806309f17e74"
+    },
+    {
+      "member": "product/tools/qwen35_text/session_cache.h",
+      "bytes": 7287,
+      "sha256": "f5f6a16e9aee3668cc9692933c25e092983657d678295d3faf0ed1f0598c4000"
+    },
+    {
+      "member": "product/tools/qwen35_text/session_state.h",
+      "bytes": 7388,
+      "sha256": "7f7b373daf263884822889a31a99d09715647c188803c8b5819bf73a4687e3c1"
+    },
+    {
+      "member": "research/model-state-integration-2026-10-21.json",
+      "bytes": 27384,
+      "sha256": "354f3a629daa650a2168c784a0ca87716a228f11cdd59d23e1e1dc4e62485949"
+    }
+  ]
+}

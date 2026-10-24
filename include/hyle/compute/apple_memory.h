@@ -32,6 +32,7 @@ public:
   HYLE_COMPUTE_ROUTE_APPLE_API void reset() noexcept;
 private:
   friend class CopyBatchInvocation;
+  friend struct detail::CopyStreamAccess;
   explicit CopyBatchProgram(detail::CopyProgramState *state) noexcept : state_(state) {}
   detail::CopyProgramState *state_ = nullptr;
 };
@@ -152,7 +153,9 @@ public:
   HYLE_COMPUTE_ROUTE_APPLE_API Result<mlx::core::array>
   binding(ReadLease source, const TensorDesc &description,
           LeaseImportOptions options = {}) const noexcept;
-  // Successfully ready dense native carrier. Retains the real MLX array,
+  // Successfully ready native carrier. Plain views must match actual byte
+  // strides and full address span; encoded carriers remain exactly dense.
+  // Retains the real MLX array,
   // exports permanently readonly bytes; no inferred producer fence/copy.
   // Options cover new metadata and acknowledge opaque native descriptors;
   // existing native backing accounting is kept, never charged a second time.

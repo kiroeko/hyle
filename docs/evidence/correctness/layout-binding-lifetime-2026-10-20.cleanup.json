@@ -1,0 +1,270 @@
+{
+  "date": "2026-10-20",
+  "status": "executed",
+  "scope": "Exact superseded images/maps/import libraries only after both evidence archives sealed. Keep all SDKs, objects, sources, actual current and comparison images, unique vectors, models, commands and results.",
+  "actual": {
+    "status": "executed",
+    "files": 28,
+    "reclaimed_bytes": 674379721,
+    "protected_files": 21,
+    "exact_targets": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-grouped-shared-activation\\checks\\cpu.exe",
+        "bytes": 26346496,
+        "sha256": "297b959266355e9aaad764ca440d58d4254955caf09bc6a1fae68aa564d48323"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-grouped-shared-activation\\checks\\cpu.map",
+        "bytes": 37663739,
+        "sha256": "3aafa85fa5a7c8944292813270984765a02c67217d514c269858de34364a7aa0"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-grouped-shared-activation\\checks\\cpu.lib",
+        "bytes": 41298,
+        "sha256": "1a72c22d3a6dec39cca5118fd99aa738ff5f4202c029fc8a48afb6c3d20e909d"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-grouped-shared-activation\\checks\\cpu.exp",
+        "bytes": 25004,
+        "sha256": "3765bdfebde9127c87c8202ea522d7aa7ecf4b5c62d2216275223e62fd95eddd"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-grouped-shared-activation\\checks\\cuda.exe",
+        "bytes": 119891456,
+        "sha256": "b7afc38a608cdcf2261f5851f4f6b77e2abdc926c728909557692ea755cc3adc"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-grouped-shared-activation\\checks\\cuda.map",
+        "bytes": 39780689,
+        "sha256": "c23214f1663b4df11846404d2721127dc78093ee077c0582832a6cec8c9ebcdd"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-grouped-shared-activation\\checks\\cuda.lib",
+        "bytes": 41384,
+        "sha256": "097299e17e955c077a99f65f363d3484d564c016359baeb643f4e47c6b737d59"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-grouped-shared-activation\\checks\\cuda.exp",
+        "bytes": 25007,
+        "sha256": "2218721a3b253548838df9b76ab2c05a803fc64341fa0695bd835f4b369cbff5"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-grouped-shared-activation\\reproduction\\tests.exe",
+        "bytes": 26341376,
+        "sha256": "b9807b7a9215858cf08b59291820ea7f4485a3cd471f0461390c9edfeedee780"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-grouped-shared-activation\\reproduction\\tests.map",
+        "bytes": 37724934,
+        "sha256": "2249fe806d83c86f6e25afbd11315fe16f90b1dfcc976319c607578453758a95"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-grouped-shared-activation\\reproduction\\tests.lib",
+        "bytes": 41474,
+        "sha256": "eb94a4b61486dd914abc7fea7de972f2f36d30506b483ec4765f2d276d689b15"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-grouped-shared-activation\\reproduction\\tests.exp",
+        "bytes": 25014,
+        "sha256": "d25ab27035533e50164fcbe9ccff2ca533c168d27f55e66308904a085a3d8d5f"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-grouped-shared-activation\\apple-vulkan\\host\\vulkan.exe",
+        "bytes": 67055104,
+        "sha256": "b4fed19fe189daeeee0a2467c13adb507855014ff0cd71ad91772843a5282c43"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-grouped-shared-activation\\apple-vulkan\\host\\vulkan.map",
+        "bytes": 31450433,
+        "sha256": "be61904668233e52ebe4c8bc0839cd56b95bda2d96036d5f9860f49c266eb4bf"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-grouped-shared-activation\\apple-vulkan\\host\\vulkan.lib",
+        "bytes": 41560,
+        "sha256": "fed51f80d367206935c20d5a34eb77b477832f71dd84a1440dfdc0c7d9c6ce7d"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-grouped-shared-activation\\apple-vulkan\\host\\vulkan.exp",
+        "bytes": 25022,
+        "sha256": "7d6f902400ed7fddffb39b6c662f7804d1996d38e0f0ca08724a71218102c3db"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-output-tail\\checks\\cpu.exe",
+        "bytes": 26330112,
+        "sha256": "e718bde631bbffcd77f13defa69401e5c4a1fd3a2175bc6bd87855e31a6c8cd3"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-output-tail\\checks\\cpu.map",
+        "bytes": 37694234,
+        "sha256": "c24ef7784f4be90cbfac7ca2bc49f5baa5442a9f09f8be3a122f707706618ca3"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-output-tail\\checks\\cpu.lib",
+        "bytes": 41298,
+        "sha256": "1a72c22d3a6dec39cca5118fd99aa738ff5f4202c029fc8a48afb6c3d20e909d"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-output-tail\\checks\\cpu.exp",
+        "bytes": 24992,
+        "sha256": "68e91568245c4ca8401b5882bb69ed0f8401d138a0f49df09d48ed628ed77461"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-output-tail\\checks\\cuda.exe",
+        "bytes": 119860736,
+        "sha256": "110527c068cd127675730b07d104f0ca14e0624a5d427191a907d3ba3d62188e"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-output-tail\\checks\\cuda.map",
+        "bytes": 39760034,
+        "sha256": "c99c17fbd342f0d358871b9095d4b9605ce6d10941e4f3b57c4e906a6962de81"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-output-tail\\checks\\cuda.lib",
+        "bytes": 41384,
+        "sha256": "097299e17e955c077a99f65f363d3484d564c016359baeb643f4e47c6b737d59"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-output-tail\\checks\\cuda.exp",
+        "bytes": 24995,
+        "sha256": "7fee84a39da4888ab11def4b52f8e07c5416a60aa56e7210acfcf2d379d92f89"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\layout-binding-lifetime\\reproduction\\cpu-before.exe",
+        "bytes": 26362368,
+        "sha256": "49664c11e2255723309aa366517a61f59f111f5bd990d48b9aa68ff3c5b5cb4d"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\layout-binding-lifetime\\reproduction\\cpu-before.map",
+        "bytes": 37652647,
+        "sha256": "81d4e3f4d0e70698e1ee80740c08dfad56eca693e2cb8b4f680e60794b87e007"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\layout-binding-lifetime\\reproduction\\cpu-before.lib",
+        "bytes": 41912,
+        "sha256": "a25db5263535882a34e4ad341e755255eb86015ec1df71fc81270ac22d17e86b"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\layout-binding-lifetime\\reproduction\\cpu-before.exp",
+        "bytes": 25019,
+        "sha256": "9f033e7b2d67199e28b7924d1f4e51167a43fd53b2f5ebbbe87cf1fdf02924ac"
+      }
+    ],
+    "plan_sha256": "41380ecf13e13db0f915fc908d96ee328f472205a05f1c6f36af26ffb7779eda",
+    "finished_utc": "2026-10-20T05:10:02.7298507Z"
+  },
+  "protected_files": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-grouped-shared-activation\\checks\\tests\\cpu.exe",
+      "bytes": 26360832,
+      "sha256": "dd827491db6f5e98b853ef31193d305f4192a1559d9a462f410ef12f6fb3be00"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-grouped-shared-activation\\checks\\tests\\cuda.exe",
+      "bytes": 120052736,
+      "sha256": "bcd5c4a6899ba1b0a511199d539cc729f669355823f9586d1af2f2a53accbe3b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-grouped-shared-activation\\apple-vulkan\\test-checks\\vulkan-mlx.exe",
+      "bytes": 67681280,
+      "sha256": "eb3c9365303edc391fa7eb31003c12687a5d8023ebcc34dafd96823e968c70ef"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\layout-binding-lifetime\\checks\\cpu.exe",
+      "bytes": 26512896,
+      "sha256": "efe295fc31ce6dae192757d3fd282db5f581beca0978c82fc7083fa5812530b5"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\layout-binding-lifetime\\cuda\\capture.exe",
+      "bytes": 120055808,
+      "sha256": "d0ad2c73868bbcaa5a8587ce7ff8d7d1974b3cc2749b1fa84763c3253c555123"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\product-checks\\qwen.exe",
+      "bytes": 117475840,
+      "sha256": "b7081baab2d24d37f512c7fff6fae09501b5b35a413b239a5058e018f4f31e43"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-pinned-weight-load\\product-checks\\qwen.exe",
+      "bytes": 117435904,
+      "sha256": "a487d7e22a55b1461a0ed8a704a9e0fb97f656c503b58d59a662cd3d345458b6"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-explicit-rope\\performance-prepared\\peer.exe",
+      "bytes": 35814400,
+      "sha256": "fb169f0282f2a834a61b3e887edaba92d8699814558b0c5f1a13aaf07e0de969"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\layout-binding-lifetime\\checks\\compute-custom_kernel.obj",
+      "bytes": 581815,
+      "sha256": "ced3100ddc82c48037df110aae5dbef692721810764a33a4c9d42b6cbdff9508"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\layout-binding-lifetime\\checks\\configuration_input_test.obj",
+      "bytes": 1918003,
+      "sha256": "c681222fd195daa135b7ef0d4e602dfcef969fbcbbb99a0dd2414ccbf1c8e23a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\layout-binding-lifetime\\checks\\graph-executable.obj",
+      "bytes": 5027345,
+      "sha256": "867d41fa3210b1f4712da7b198e540a7958faab56b4864644dc8c676209e0c13"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\layout-binding-lifetime\\checks\\graph-input_sources.obj",
+      "bytes": 727004,
+      "sha256": "5d1a14a64a3dc7a63287b405734f311eed186d1362598989f4bdd92e0abda0ca"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\layout-binding-lifetime\\checks\\graph-resources.obj",
+      "bytes": 895605,
+      "sha256": "7fe7d302916790f8e168ec5a45dc2b2c10276efda83204273728b7c7453a896c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\layout-binding-lifetime\\checks\\graph_batch-batch.obj",
+      "bytes": 2053452,
+      "sha256": "3bb7c4e02d22aa1256e29e37f18c29b17d355d7a685214b1b2418b20ef15cf99"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\layout-binding-lifetime\\checks\\input_source_frontier_test.obj",
+      "bytes": 1943145,
+      "sha256": "6a530aea28c9536a7315a8a45273c6557ccfbde6f08844fb3ae795e7cddc47cf"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\layout-binding-lifetime\\cuda\\graph_batch-batch_capture_test.obj",
+      "bytes": 1834380,
+      "sha256": "9bbfb4a646e546bb983f47337eb727719ce28b7132788d519aec96ef0e35beaf"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\layout-binding-lifetime\\reproduction\\typed-test.obj",
+      "bytes": 1742741,
+      "sha256": "8160ab5d0fba4a6a777a10d885dd42fceeea5af104ad16e8d4039bdea9279d88"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\mlx-grouped-shared-activation-2026-10-20.json",
+      "bytes": 5538,
+      "sha256": "e478e242465d8319113eb58eaaf83f042a5c1eda1cbe713b9d7154a0cf92438a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\mlx-grouped-shared-activation-2026-10-20.zip",
+      "bytes": 4057412,
+      "sha256": "bf995c72b7bc1a5a22c30e8ec581bdfa497715867e227f7255678b3e7847ccd4"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\layout-binding-lifetime-2026-10-20.json",
+      "bytes": 5018,
+      "sha256": "3ea3567d60e8d3f6a4e2171fb95ea978f470d389746624f02ace0610b387be30"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\layout-binding-lifetime-2026-10-20.zip",
+      "bytes": 2499701,
+      "sha256": "65e85ab64d7ad6ccf69fd204109c14e7ffd87dd528a10d354cc9f8c0622165e2"
+    }
+  ],
+  "script": {
+    "path": "C:\\public\\project-hyle\\hyle\\test.ps1",
+    "bytes": 2254,
+    "sha256": "bbd8e91019a5162eaece97a936a2237735f812715f755ae1e8efb11b33de16fb"
+  },
+  "script_content": "$ErrorActionPreference = 'Stop'\r\n$repoRoot = [IO.Path]::GetFullPath($PSScriptRoot)\r\n$planPath = Join-Path $repoRoot '.scratch/architecture-refactor-2026-10-18/layout-binding-lifetime/cleanup/cleanup-plan.json'\r\n$plan = Get-Content -LiteralPath $planPath -Raw | ConvertFrom-Json\r\nif ($repoRoot -ne $plan.workspace) { throw 'Unexpected workspace' }\r\n$allowedRoot = [IO.Path]::GetFullPath((Join-Path $repoRoot '.scratch/architecture-refactor-2026-10-18')) + [IO.Path]::DirectorySeparatorChar\r\nfunction Assert-ExactFile($row, [bool]$requireScratch = $false) {\r\n    $resolved = (Resolve-Path -LiteralPath $row.path).ProviderPath\r\n    if (-not $resolved.StartsWith($repoRoot + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)) { throw \"Outside workspace: $resolved\" }\r\n    if ($requireScratch -and -not $resolved.StartsWith($allowedRoot, [StringComparison]::OrdinalIgnoreCase)) { throw \"Outside workspace scratch: $resolved\" }\r\n    if ($resolved -ne [IO.Path]::GetFullPath($row.path)) { throw \"Changed resolved path: $resolved\" }\r\n    $item = Get-Item -LiteralPath $resolved\r\n    if ($item.PSIsContainer -or $item.Length -ne $row.bytes) { throw \"Changed file size: $resolved\" }\r\n    if ((Get-FileHash -LiteralPath $resolved -Algorithm SHA256).Hash -ne $row.sha256) { throw \"Changed file hash: $resolved\" }\r\n}\r\nforeach ($row in $plan.delete) { Assert-ExactFile $row $true }\r\nforeach ($row in $plan.protected) { Assert-ExactFile $row }\r\nforeach ($row in $plan.delete) { Remove-Item -LiteralPath $row.path -Force }\r\nforeach ($row in $plan.delete) { if (Test-Path -LiteralPath $row.path) { throw \"Deletion incomplete: $($row.path)\" } }\r\nforeach ($row in $plan.protected) { Assert-ExactFile $row }\r\n$receipt = [ordered]@{ status='executed'; files=$plan.target_count; reclaimed_bytes=$plan.target_bytes; protected_files=@($plan.protected).Count; exact_targets=$plan.delete; plan_sha256=(Get-FileHash -LiteralPath $planPath -Algorithm SHA256).Hash.ToLower(); finished_utc=[DateTime]::UtcNow.ToString('o') }\r\n$receipt | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path (Split-Path -Parent $planPath) 'cleanup-executed.json') -Encoding utf8\r\nWrite-Output \"CLEANUP_EXECUTED files=$($plan.target_count) bytes=$($plan.target_bytes)\"\r\n",
+  "plan_sha256": "41380ecf13e13db0f915fc908d96ee328f472205a05f1c6f36af26ffb7779eda",
+  "limitation": "Only exact superseded files listed here were removed. Native objects, SDKs, models, unique vectors and current/comparison images remain."
+}

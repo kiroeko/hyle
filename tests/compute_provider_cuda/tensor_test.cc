@@ -315,6 +315,129 @@ TEST(CudaTensor, FloatStorageConversionsMatchIndependentRounding) {
   cast_case<B, B>(fixture);
 }
 
+TEST(CudaTensor, Int32ToFloat32RoundsTiesToEvenAndPreservesInputOnReplay) {
+  Fixture fixture;
+  constexpr std::array<std::int32_t, 13> values{
+      0, 1, -1, 16777215, 16777216, 16777217, -16777215, -16777216,
+      -16777217, 16777219, -16777219,
+      std::numeric_limits<std::int32_t>::min(),
+      std::numeric_limits<std::int32_t>::max()};
+  // Hard-coded IEEE754 bits, including both directions of halfway rounding.
+  // INT32_MAX rounds to +2^31, while INT32_MIN is exactly representable.
+  constexpr std::array<std::uint32_t, values.size()> expected{
+      0x00000000U, 0x3f800000U, 0xbf800000U, 0x4b7fffffU, 0x4b800000U,
+      0x4b800000U, 0xcb7fffffU, 0xcb800000U, 0xcb800000U, 0x4b800002U,
+      0xcb800002U, 0xcf000000U, 0x4f000000U};
+  constexpr std::array<std::int64_t, 1> shape{
+      static_cast<std::int64_t>(values.size())};
+  for (const bool strided : {false, true}) {
+    SCOPED_TRACE(strided);
+    const auto input_desc = TensorDesc::strided_bytes(
+        DataType::kInt32, shape,
+        std::array<std::int64_t, 1>{strided ? 5 : 4}).value();
+    const auto output_desc = TensorDesc::dense(DataType::kFloat32, shape).value();
+    Tensor input(input_desc, fixture.resource.ref()),
+        output(output_desc, fixture.resource.ref());
+    ASSERT_TRUE(input.write<std::int32_t>(values).ok());
+    std::vector<std::byte> original(input.storage.size());
+    ASSERT_TRUE(input.storage.view().read(original).ok());
+    auto program = prepare(fixture.owner, Cast{DataType::kFloat32}, input_desc,
+                           fixture.resource.ref());
+    ASSERT_TRUE(program.has_value()) << program.error().message();
+    EXPECT_EQ(program->workspace_requirement().size, 0U);
+    EXPECT_EQ(program->invocation_private_bytes(), 0U);
+    EXPECT_TRUE(program->capture_compatible());
+    auto slot = program->create_invocation().value();
+    const std::vector<std::uint32_t> wanted(expected.begin(), expected.end());
+    const std::vector<std::uint32_t> poison(values.size(), 0x7fc12345U);
+    for (int repeat = 0; repeat < 2; ++repeat) {
+      ASSERT_TRUE(output.write<std::uint32_t>(poison).ok());
+      auto done = slot.submit(fixture.queue, input.view.as_const(), output.view);
+      ASSERT_TRUE(done.has_value()) << done.error().message();
+      ASSERT_TRUE(done->wait().ok());
+      EXPECT_EQ(output.read<std::uint32_t>(), wanted);
+      std::vector<std::byte> unchanged(input.storage.size());
+      ASSERT_TRUE(input.storage.view().read(unchanged).ok());
+      EXPECT_EQ(unchanged, original);
+    }
+  }
+}
+
+template <class T> void bool_cast_case(Fixture &fixture, bool strided) {
+  constexpr std::int64_t count = 129;
+  constexpr auto type = half_test::data_type<T>();
+  const std::array shape{count};
+  const auto input_desc =
+      TensorDesc::strided_bytes(
+          type, shape,
+          std::array{static_cast<std::int64_t>(sizeof(T) + (strided ? 1 : 0))})
+          .value();
+  const auto bool_desc = TensorDesc::dense(DataType::kBool, shape).value();
+  Tensor input(input_desc, fixture.resource.ref());
+  std::vector<T> values(count);
+  const std::array<double, 10> edges{
+      0, -0.0, NAN, INFINITY, -INFINITY, 1, -1,
+      0x1p-24, 0x1p-133, 0x1p-149};
+  for (std::size_t i = 0; i < values.size(); ++i)
+    values[i] = half_test::encode<T>(edges[i % edges.size()]);
+  ASSERT_TRUE(input.write<T>(values).ok());
+
+  // Keep guards outside the submitted view, including the partial final block.
+  auto mask_storage =
+      mem::Buffer::create(fixture.resource.ref(), count + 32, 256).value();
+  std::vector<std::byte> mask_bytes(count + 32, std::byte{0xa5});
+  ASSERT_TRUE(mask_storage.view().write(mask_bytes).ok());
+  const auto mask = TensorView::create(
+      bool_desc, mask_storage.view().subview(16, count).value()).value();
+  auto status = fixture.execute(Operation(Cast{DataType::kBool}),
+                                std::array{input.view.as_const()}, mask);
+  ASSERT_TRUE(status.ok()) << status.message();
+  ASSERT_TRUE(mask_storage.view().read(mask_bytes).ok());
+  for (std::size_t i = 0; i < mask_bytes.size(); ++i)
+    EXPECT_EQ(mask_bytes[i], i < 16 || i >= 16 + count
+                                ? std::byte{0xa5}
+                                : std::byte(half_test::decode(values[i - 16]) != 0));
+
+  const auto strided_bool = TensorDesc::strided_bytes(
+      DataType::kBool, shape, std::array<std::int64_t, 1>{strided ? 3 : 1}).value();
+  Tensor flags(strided_bool, fixture.resource.ref());
+  std::vector<std::uint8_t> flag_values(count);
+  constexpr std::array<std::uint8_t, 5> flags_to_repeat{0, 1, 2, 0x80, 0xff};
+  for (std::size_t i = 0; i < flag_values.size(); ++i)
+    flag_values[i] = flags_to_repeat[i % flags_to_repeat.size()];
+  ASSERT_TRUE(flags.write<std::uint8_t>(flag_values).ok());
+  const auto output_desc = TensorDesc::dense(type, shape).value();
+  auto result_storage = mem::Buffer::create(
+      fixture.resource.ref(), count * sizeof(T) + 32, 256).value();
+  std::vector<std::byte> result_bytes(result_storage.size(), std::byte{0xa5});
+  ASSERT_TRUE(result_storage.view().write(result_bytes).ok());
+  const auto output = TensorView::create(
+      output_desc, result_storage.view().subview(16, count * sizeof(T)).value()).value();
+  status = fixture.execute(Operation(Cast{type}),
+                           std::array{flags.view.as_const()}, output);
+  ASSERT_TRUE(status.ok()) << status.message();
+  ASSERT_TRUE(result_storage.view().read(result_bytes).ok());
+  for (std::size_t i = 0; i < result_bytes.size(); ++i) {
+    if (i < 16 || i >= 16 + count * sizeof(T))
+      EXPECT_EQ(result_bytes[i], std::byte{0xa5});
+  }
+  for (std::size_t i = 0; i < flag_values.size(); ++i) {
+    T actual;
+    std::memcpy(&actual, result_bytes.data() + 16 + i * sizeof(T), sizeof(T));
+    EXPECT_EQ(half_test::decode(actual), flag_values[i] != 0 ? 1 : 0);
+  }
+}
+
+TEST(CudaTensor, BoolConversionsPreserveNonzeroBitsAndNormalizeTruthValues) {
+  Fixture fixture;
+  for (const bool strided : {false, true}) {
+    SCOPED_TRACE(strided);
+    bool_cast_case<float>(fixture, strided);
+    bool_cast_case<hyle::simd::float16_t>(fixture, strided);
+    bool_cast_case<hyle::simd::bfloat16_t>(fixture, strided);
+  }
+}
+
 TEST(CudaTensor, SelectCopyFillPreserveBitsWithBroadcastMaskAndOddStride) {
   Fixture fixture;
   for (const auto type :

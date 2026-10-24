@@ -1,0 +1,684 @@
+{
+  "status": "bounded_static_stored_scale_FP8_reference_and_ordinary_graph_correctness_verified",
+  "scope": "Single-machine Windows CPU/CUDA/Vulkan and macOS Apple primitive math/lifetime regression; original stored E4M3FN weights and two independent F32 scalar scales.",
+  "contract": {
+    "inputs": [
+      "F32/F16/BF16 A[M,K]",
+      "E4M3FN W[N,K]",
+      "F32 SA[] or[1]",
+      "F32 SW[] or[1]"
+    ],
+    "arithmetic": "F32 A * F32(1/SA), SATFINITE nearest-even E4M3FN Cast, widen codes to F32; F32 code-dot with backend reduction tree; separate F32 MulSA then MulSW; descriptor F32/F16/BF16 output rounding.",
+    "IEEE": "All scalar IEEE values remain legal; signed zero, NaN class, Inf and subnormal boundaries are exercised. No positivity/finite scale guard, scale precombination or weight-scale predecode.",
+    "integration": "Existing12-node ordinary graph may contract under the shared closed reader/publication/control proof. Published codes/weight escapes retain the original ordinary graph. Original bytes remain canonical; no persistent NK decoded bank or new executor."
+  },
+  "validation": {
+    "windows_cpu": {
+      "tests": 31,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "cases": [
+        {
+          "suite": "AtenCpuCast",
+          "name": "AllTwentyFiveStoragePairsPreserveExactContractAcrossOddBytes",
+          "properties": {}
+        },
+        {
+          "suite": "AtenCpuCast",
+          "name": "BfloatNanPayloadMatchesNativeE5m2StorageContract",
+          "properties": {}
+        },
+        {
+          "suite": "AtenCpuCast",
+          "name": "ScalarRankEightEmptyAndZeroStrideHaveRealStorageResults",
+          "properties": {}
+        },
+        {
+          "suite": "AtenCpuCast",
+          "name": "PrivatePackingReplaysRejectsAliasAndClosesWithoutLeaks",
+          "properties": {}
+        },
+        {
+          "suite": "AtenCpuCast",
+          "name": "FiniteTailAndInfiniteValueGateUsesStableF32Activation",
+          "properties": {}
+        },
+        {
+          "suite": "NativeCast",
+          "name": "BfloatNanPayloadPreservesE5m2UpperPayloadAndQuietBit",
+          "properties": {}
+        },
+        {
+          "suite": "NativeCast",
+          "name": "ReplaysAllFourQualifiedStoragePairs",
+          "properties": {}
+        },
+        {
+          "suite": "NativeCast",
+          "name": "BooleanConversionsKeepSignedZerosTinyValuesAndByteStrides",
+          "properties": {}
+        },
+        {
+          "suite": "MatureCast",
+          "name": "CoversCompleteInferenceStorageConversionGraph",
+          "properties": {}
+        },
+        {
+          "suite": "MatureCast",
+          "name": "ConvertsDenseFloat32ToFloat16Bits",
+          "properties": {}
+        },
+        {
+          "suite": "MatureCast",
+          "name": "MaterializesStridedFloat16ToFloat32",
+          "properties": {}
+        },
+        {
+          "suite": "MatureCast",
+          "name": "RejectsUnfrozenIntegerConversionSemantics",
+          "properties": {}
+        },
+        {
+          "suite": "MatureCast",
+          "name": "RejectsOverlappingInputAndOutputStorage",
+          "properties": {}
+        },
+        {
+          "suite": "CpuCtPackedLinear",
+          "name": "PublicChainsKeepSourceRoundsAndTypedCastWitnesses",
+          "properties": {}
+        },
+        {
+          "suite": "CpuCtPackedLinear",
+          "name": "CapturedDynamicInputsRebindAcrossOwnedSlotsAndRetainResults",
+          "properties": {}
+        },
+        {
+          "suite": "CpuCtPackedLinear",
+          "name": "PublishedViewAndControlEscapesExecuteTheOriginalDecomposition",
+          "properties": {}
+        },
+        {
+          "suite": "CpuCtPackedLinear",
+          "name": "OriginalPackedConstantsDoNotRetainOrWorkspaceADenseWeightBank",
+          "properties": {
+            "compiled_known_bytes": "472",
+            "workspace_bytes": "0",
+            "excluded_dense_f32_bank_bytes": "1052672"
+          }
+        },
+        {
+          "suite": "CpuCtPackedLinear",
+          "name": "DefaultMultirowKeepsOriginalRouteAndPreparedCanSelectPacked",
+          "properties": {
+            "default_packed_regions": "0",
+            "prepared_packed_regions": "1"
+          }
+        },
+        {
+          "suite": "NativeCtPackedLinear",
+          "name": "SourceDecodeAndOperandRoundsWithPackedOutputAxisZeroTail",
+          "properties": {}
+        },
+        {
+          "suite": "NativeCtPackedLinear",
+          "name": "DynamicInputsUseIndependentSlotsAndRejectReadWriteAlias",
+          "properties": {}
+        },
+        {
+          "suite": "NativeCtPackedLinear",
+          "name": "RealQ27GeometryPreparesWithoutADenseWeightWorkspace",
+          "properties": {}
+        },
+        {
+          "suite": "NativeGptq",
+          "name": "OriginalSchemaDefaultAndPackedCapacityDoNotAllocateDenseBank",
+          "properties": {}
+        },
+        {
+          "suite": "NativeGptq",
+          "name": "BoundedPackedReadsOriginalWordsScalesAndCurrentGroupIndices",
+          "properties": {
+            "actual_submissions": "6"
+          }
+        },
+        {
+          "suite": "NativeGptq",
+          "name": "OriginalFourPortDecoderKeepsHalfProductBeforeRequestedFloatOutput",
+          "properties": {}
+        },
+        {
+          "suite": "CpuGptqReferenceGraph",
+          "name": "PackedSourceHalfRoundAndDynamicIndicesSurviveSlots",
+          "properties": {
+            "actual_submissions": "12"
+          }
+        },
+        {
+          "suite": "CpuGptqReferenceGraph",
+          "name": "ChecksAllIndicesOnEachSubmissionAndRetainsScaleDomain",
+          "properties": {
+            "successful_submissions": "10",
+            "failed_completions": "4"
+          }
+        },
+        {
+          "suite": "CpuGptqReferenceGraph",
+          "name": "PublishedDecodeKeepsTheOriginalFourPortPath",
+          "properties": {
+            "actual_submissions": "2"
+          }
+        },
+        {
+          "suite": "CpuStaticFloat8ReferenceGraph",
+          "name": "OriginalBanksAndCurrentScalarsSurviveIndependentSlots",
+          "properties": {
+            "actual_submissions": "16"
+          }
+        },
+        {
+          "suite": "CpuStaticFloat8ReferenceGraph",
+          "name": "ExceptionalScalesKeepTheOrdinaryIEEEOperationOrder",
+          "properties": {
+            "successful_submissions": "22",
+            "failed_completions": "0"
+          }
+        },
+        {
+          "suite": "CpuStaticFloat8ReferenceGraph",
+          "name": "PublishedCodesExecuteTheOriginalDecomposition",
+          "properties": {
+            "actual_submissions": "7"
+          }
+        },
+        {
+          "suite": "CpuStaticFloat8ReferenceDirect",
+          "name": "DescriptorWorkspaceAndRejectedAliasPreserveOriginalBytes",
+          "properties": {}
+        }
+      ],
+      "xml": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\static-fp8-reference\\common-cpu\\checks\\forced-native-provider\\tests.xml",
+        "bytes": 11590,
+        "sha256": "96d73c366fbd18defd90502a831fa79bb3720f92c09f60f866a5c77e24e2231e"
+      }
+    },
+    "windows_vulkan_static": {
+      "tests": 4,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "cases": [
+        {
+          "suite": "VulkanStaticFp8ReferenceGraph",
+          "name": "StoredScalesAndTypedOutputsSurviveSlotsAndUpdates",
+          "properties": {
+            "device": "NVIDIA GeForce RTX 4070",
+            "actual_submissions": "16"
+          }
+        },
+        {
+          "suite": "VulkanStaticFp8ReferenceGraph",
+          "name": "IeeeScaleAndCodeBoundariesRetainTheDeclaredTree",
+          "properties": {
+            "device": "NVIDIA GeForce RTX 4070",
+            "successful_submissions": "22",
+            "failed_completions": "0"
+          }
+        },
+        {
+          "suite": "VulkanStaticFp8ReferenceGraph",
+          "name": "PublishedCodesAndControlEscapesUseTheOriginalGraph",
+          "properties": {
+            "device": "NVIDIA GeForce RTX 4070",
+            "actual_submissions": "7"
+          }
+        },
+        {
+          "suite": "VulkanStaticFp8ReferenceGraph",
+          "name": "OddStorageCastWordsRespectExplicitPaddingOwnership",
+          "properties": {}
+        }
+      ],
+      "xml": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\static-fp8-reference\\vulkan\\validation\\static\\tests.xml",
+        "bytes": 2152,
+        "sha256": "38a5c2f13cc821326da601de12e8231af6ed086e1e91eb46ed88b852110a2d3c"
+      }
+    },
+    "windows_vulkan_neighbors": {
+      "tests": 12,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "cases": [
+        {
+          "suite": "VulkanGptqReferenceGraph",
+          "name": "OriginalQuartetAndTypedProductsSurviveSlotsAndUpdates",
+          "properties": {
+            "device": "NVIDIA GeForce RTX 4070",
+            "actual_submissions": "12"
+          }
+        },
+        {
+          "suite": "VulkanGptqReferenceGraph",
+          "name": "AllGroupIndicesValidateBeforeAnySourceAddress",
+          "properties": {
+            "device": "NVIDIA GeForce RTX 4070",
+            "successful_submissions": "10",
+            "failed_completions": "4"
+          }
+        },
+        {
+          "suite": "VulkanGptqReferenceGraph",
+          "name": "PublishedDecodeRetainsTheOriginalCheckedPath",
+          "properties": {
+            "device": "NVIDIA GeForce RTX 4070",
+            "actual_submissions": "2"
+          }
+        },
+        {
+          "suite": "VulkanGroupedNvfp4ReferenceGraph",
+          "name": "SelectedPackedExpertsAndSlotDependentQdqSurviveLifetimes",
+          "properties": {
+            "device": "NVIDIA GeForce RTX 4070",
+            "actual_submissions": "24"
+          }
+        },
+        {
+          "suite": "VulkanGroupedNvfp4ReferenceGraph",
+          "name": "OnlySelectedExpertsAreValidatedAndInvalidIdsFail",
+          "properties": {
+            "device": "NVIDIA GeForce RTX 4070",
+            "successful_submissions": "26",
+            "failed_completions": "20"
+          }
+        },
+        {
+          "suite": "VulkanCtPackedLinear",
+          "name": "PublicGraphPreservesTypedWeightBoundariesAndOriginalControl",
+          "properties": {
+            "device": "NVIDIA GeForce RTX 4070"
+          }
+        },
+        {
+          "suite": "VulkanCtPackedLinear",
+          "name": "LegalNonfiniteAndAmplifiedSubnormalWeightsKeepIeeeClasses",
+          "properties": {
+            "device": "NVIDIA GeForce RTX 4070"
+          }
+        },
+        {
+          "suite": "VulkanCtPackedLinear",
+          "name": "IndependentSlotsRebindOriginalBytesAndRetainResults",
+          "properties": {
+            "device": "NVIDIA GeForce RTX 4070",
+            "actual_submissions": "4"
+          }
+        },
+        {
+          "suite": "VulkanCtPackedLinear",
+          "name": "PublishedDataAndControlEscapesUseOriginalDecomposition",
+          "properties": {
+            "device": "NVIDIA GeForce RTX 4070"
+          }
+        },
+        {
+          "suite": "VulkanCtPackedLinear",
+          "name": "OriginalConstantBanksSurviveSlotsWithoutDenseNativeStorage",
+          "properties": {
+            "device": "NVIDIA GeForce RTX 4070",
+            "native_payload_storage_bytes": "3084",
+            "raw_constant_capacity_bytes": "152256"
+          }
+        },
+        {
+          "suite": "VulkanNvfp4ReferenceGraph",
+          "name": "OriginalPackedBanksAndBfloatBoundariesSurviveSlotsAndUpdates",
+          "properties": {
+            "device": "NVIDIA GeForce RTX 4070",
+            "actual_submissions": "8"
+          }
+        },
+        {
+          "suite": "VulkanNvfp4ReferenceGraph",
+          "name": "RuntimeDomainFailuresRecoverWithoutChangingTheReferenceTree",
+          "properties": {
+            "device": "NVIDIA GeForce RTX 4070",
+            "successful_submissions": "25",
+            "failed_completions": "18"
+          }
+        }
+      ],
+      "xml": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\static-fp8-reference\\vulkan\\validation\\neighbors\\tests.xml",
+        "bytes": 6657,
+        "sha256": "71d60f1c7336b04a95114a01d8a63478a685980ae4f82ad9a58ac97a2b52eb85"
+      }
+    },
+    "macos_apple": {
+      "tests": 11,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "cases": [
+        {
+          "suite": "AppleStaticFloat8ReferenceGraph",
+          "name": "OriginalCodesAndSeparateStoredScalesSurviveSlotsAndUpdates",
+          "properties": {
+            "device": "Apple M4",
+            "actual_submissions": "16"
+          }
+        },
+        {
+          "suite": "AppleStaticFloat8ReferenceGraph",
+          "name": "IeeeScalarsAndCastBoundariesKeepTheCodeDomainTree",
+          "properties": {
+            "device": "Apple M4",
+            "successful_submissions": "22",
+            "failed_completions": "0"
+          }
+        },
+        {
+          "suite": "AppleStaticFloat8ReferenceGraph",
+          "name": "PublishedCodeOrWidenedWeightKeepsTheOrdinaryGraph",
+          "properties": {
+            "device": "Apple M4",
+            "actual_submissions": "7"
+          }
+        },
+        {
+          "suite": "AppleFloatingStorage",
+          "name": "ScalarMultiplyAndCastPreserveSubnormalStorageBits",
+          "properties": {
+            "device": "Apple M4",
+            "mul0_f32_bits": "524288",
+            "mul1_f32_bits": "1048576",
+            "cast_product0_bf16_bits": "8",
+            "cast_direct_bf16_bits": "8"
+          }
+        },
+        {
+          "suite": "AppleCtPackedLinear",
+          "name": "PublicChainsKeepSourceRoundsAndTypedCastWitnesses",
+          "properties": {
+            "device": "Apple M4"
+          }
+        },
+        {
+          "suite": "AppleCtPackedLinear",
+          "name": "DynamicInputsRebindAcrossOwnedSlotsAndRetainResults",
+          "properties": {
+            "device": "Apple M4",
+            "actual_submissions": "4"
+          }
+        },
+        {
+          "suite": "AppleCtPackedLinear",
+          "name": "PublishedViewAndControlEscapesExecuteOriginalDecomposition",
+          "properties": {
+            "device": "Apple M4"
+          }
+        },
+        {
+          "suite": "AppleCtPackedLinear",
+          "name": "OriginalPackedConstantsKeepTheirExplicitCallerLifetime",
+          "properties": {
+            "device": "Apple M4",
+            "logical_dense_weight_elements": "263168"
+          }
+        },
+        {
+          "suite": "AppleGptqReferenceGraph",
+          "name": "OriginalPackedBanksKeepSourceRoundsSlotsAndIndexUpdates",
+          "properties": {
+            "device": "Apple M4",
+            "actual_submissions": "12"
+          }
+        },
+        {
+          "suite": "AppleGptqReferenceGraph",
+          "name": "CompleteIndexValidationPrecedesSelectedScaleAndZeroAccess",
+          "properties": {
+            "device": "Apple M4",
+            "successful_submissions": "10",
+            "failed_completions": "4"
+          }
+        },
+        {
+          "suite": "AppleGptqReferenceGraph",
+          "name": "PublishedDecodeRetainsOriginalF16ProductAndCheckedFailure",
+          "properties": {
+            "device": "Apple M4",
+            "actual_submissions": "2"
+          }
+        }
+      ],
+      "xml": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\static-fp8-reference\\apple\\mac\\remote\\ieee-binary-v2\\results\\tests.xml",
+        "bytes": 7022,
+        "sha256": "1f5db477fd5566a569b2835220700e01a9dfca5f8832cc272caa2ab75fdcb11e"
+      }
+    },
+    "windows_cuda": {
+      "tests": 13,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "processes": {
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\static-fp8-reference\\cuda\\validation\\scalar-fixed-static\\tests.xml": {
+          "tests": 3,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "cases": [
+            {
+              "suite": "CudaStaticFp8ReferenceGraph",
+              "name": "StoredCodesScalesAndCodeDotSurviveSlotsAndUpdates",
+              "properties": {
+                "actual_submissions": "16"
+              }
+            },
+            {
+              "suite": "CudaStaticFp8ReferenceGraph",
+              "name": "IeeeScalarUpdatesKeepReciprocalAndSeparateScaleRounds",
+              "properties": {
+                "successful_submissions": "22",
+                "failed_completions": "0"
+              }
+            },
+            {
+              "suite": "CudaStaticFp8ReferenceGraph",
+              "name": "PublishedCodeValuesKeepTheOriginalCapturedDecomposition",
+              "properties": {
+                "actual_submissions": "7"
+              }
+            }
+          ],
+          "xml": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\static-fp8-reference\\cuda\\validation\\scalar-fixed-static\\tests.xml",
+            "bytes": 1646,
+            "sha256": "5140140d301394f311983e38211ea1a9072a569fe730505dd436fc2910cfc707"
+          }
+        },
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\static-fp8-reference\\cuda\\validation\\scalar-fixed-neighbors\\tests.xml": {
+          "tests": 8,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "cases": [
+            {
+              "suite": "CudaGptqReferenceGraph",
+              "name": "OriginalPackedBanksKeepSourceRoundsSlotsAndIndexUpdates",
+              "properties": {
+                "actual_submissions": "12"
+              }
+            },
+            {
+              "suite": "CudaGptqReferenceGraph",
+              "name": "CompleteIndexValidationPrecedesSelectedScaleAndZeroAccess",
+              "properties": {
+                "successful_submissions": "10",
+                "failed_completions": "4"
+              }
+            },
+            {
+              "suite": "CudaGptqReferenceGraph",
+              "name": "PublishedDecodedWeightsKeepTheOriginalCapturedDecomposition",
+              "properties": {
+                "actual_submissions": "2"
+              }
+            },
+            {
+              "suite": "CudaCtPackedLinear",
+              "name": "PublicChainsKeepSourceRoundsAndTypedCastWitnesses",
+              "properties": {}
+            },
+            {
+              "suite": "CudaCtPackedLinear",
+              "name": "CapturedDynamicInputsRebindAcrossOwnedSlotsAndRetainResults",
+              "properties": {}
+            },
+            {
+              "suite": "CudaCtPackedLinear",
+              "name": "PublishedViewAndControlEscapesExecuteTheOriginalDecomposition",
+              "properties": {}
+            },
+            {
+              "suite": "CudaCtPackedLinear",
+              "name": "OriginalPackedConstantsDoNotRetainOrWorkspaceADenseWeightBank",
+              "properties": {
+                "compiled_known_bytes": "1664",
+                "workspace_bytes": "0",
+                "excluded_dense_f32_bank_bytes": "1052672"
+              }
+            },
+            {
+              "suite": "CudaGroupedShared",
+              "name": "PackedSharedInputsRetainOriginalQuantizationAndCapture",
+              "properties": {}
+            }
+          ],
+          "xml": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\static-fp8-reference\\cuda\\validation\\scalar-fixed-neighbors\\tests.xml",
+            "bytes": 3645,
+            "sha256": "5e0b8a07adb7a2f2714458f26a1d65648300af5c97568786773ed88db8ec9f51"
+          }
+        },
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\static-fp8-reference\\cuda\\validation\\scalar-probe-final-v2\\tests.xml": {
+          "tests": 2,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "cases": [
+            {
+              "suite": "CudaScalarFloatGraph",
+              "name": "MultiplyKeepsSubnormalBeforeAndAfterBfloatCast",
+              "properties": {
+                "selected_steps": "step=0,node=0,count=1,provider=hyle-cuda,provider_namespace=5213281902894514177,provider_id=4851859220787974657,implementation=3,preference=300;step=1,node=1,count=2,provider=ggml-cuda,provider_namespace=5213281902894514177,provider_id=5136147933535731713,implementation=2,preference=300;",
+                "actual_submissions": "1"
+              }
+            },
+            {
+              "suite": "CudaScalarFloatGraph",
+              "name": "ScalarLeftDivideKeepsSubnormalBeforeBfloatCast",
+              "properties": {
+                "selected_steps": "step=0,node=0,count=1,provider=hyle-cuda,provider_namespace=5213281902894514177,provider_id=4851859220787974657,implementation=3,preference=300;step=1,node=1,count=2,provider=ggml-cuda,provider_namespace=5213281902894514177,provider_id=5136147933535731713,implementation=2,preference=300;",
+                "actual_submissions": "1"
+              }
+            }
+          ],
+          "xml": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\static-fp8-reference\\cuda\\validation\\scalar-probe-final-v2\\tests.xml",
+            "bytes": 1806,
+            "sha256": "7b91323f8f7c0a01d2e78fbda206de746cd7b3b82bd5423e837aae7bfe860b0b"
+          }
+        }
+      },
+      "final_receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\static-fp8-reference\\cuda\\final-validation.json",
+        "bytes": 15059,
+        "sha256": "b2b966e805198936315b9abb9c4283a1280df03c6fe0acd3d71b70bfed5bf38e"
+      }
+    }
+  },
+  "total_passed": 71,
+  "final_source_freeze": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\static-fp8-reference\\root\\final-source-freeze.json",
+    "bytes": 12254,
+    "sha256": "e98d56d00cd38d13dde59ab4c6a3d1f19094f5610885f901f70d169d407c98a6"
+  },
+  "source_counts": {
+    "final_root_freeze_entries": 52,
+    "final_root_freeze_unique": 50,
+    "current_source_members": 54
+  },
+  "research": {
+    "report": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\research\\static-fp8-stored-scale-contract-2026-10-20.json",
+      "bytes": 15062,
+      "sha256": "87e4ded2ee82b3eeaeb925ef6f5c4d7f0c0237715e2a1ae80e29cb9af0a7b80e"
+    },
+    "archive": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\research\\static-fp8-stored-scale-contract-2026-10-20.zip",
+      "bytes": 282740,
+      "sha256": "78dbaf7cbb4d6742ac168a3d53595efb43c5f10f068a53491d1f03adc9de5179"
+    },
+    "status": "Header/source-only research; no artifact tensor payload execution."
+  },
+  "backend_receipts": {
+    "common-cpu": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\static-fp8-reference\\common-cpu\\final-validation.json",
+      "bytes": 8310,
+      "sha256": "e84bb5a60631115e18aab0149e2ec45857da1efb6b3a401f9399b9a42eb127fd"
+    },
+    "cuda": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\static-fp8-reference\\cuda\\final-validation.json",
+      "bytes": 15059,
+      "sha256": "b2b966e805198936315b9abb9c4283a1280df03c6fe0acd3d71b70bfed5bf38e"
+    },
+    "vulkan": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\static-fp8-reference\\vulkan\\final-validation.json",
+      "bytes": 13951,
+      "sha256": "6d1eba1b2634310bf23ff2f5214e14812c67953fee8add6fad6b173e2f70f741"
+    },
+    "apple": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\static-fp8-reference\\apple\\final-validation.json",
+      "bytes": 10545,
+      "sha256": "07aa8e8627b850db7c8acbd5d4fcc962b1db3d47fc664f5fbd38c6aa25321516"
+    }
+  },
+  "corrections": [
+    "CPU initial two policy assertions failed because an existing ggml preference100 prefix won; raw pattern, closed proof and proposal were actually true. Test-only public native ProviderId constraints select the real packed candidate; product ranking/matcher remain unchanged and ordinary escape retains the default route.",
+    "Apple initial ordinary subnormal escape and a minimal public Mul/Cast probe failed: F32 scalar Multiply flushed its product to zero while the original BF16 storage Cast correctly retained0x0008. The generic dense F32 scalar Mul/Divide bridge fixes that arithmetic path, and the same red test object passed in the final process.",
+    "CUDA initial ordinary escape produced zero for a nonzero BF16 subnormal. One default_policy CXX routes the existing admitted dense F32 scalar Multiply/Divide domain to the existing native leaf, whose actual retained kernel recipe has no fast-math FTZ flag; no new scalar executor, CUDA kernel, SDK rebuild or relaxed oracle. Original failing image/logs and final same-object tests are retained.",
+    "The first two-case CUDA scalar probe process failed during owned-output binding because its test invocation omitted the required resource episode. It never reached arithmetic and is not numerical FTZ evidence. The test-only resource option correction, first source/object identities and final same-object old/new-policy processes are retained separately.",
+    "With that setup corrected, the two-case minimal CUDA probe actually reproduced zero from ordinary F32 scalar Multiply/Divide while independent BF16 Cast retained0x0008. The same test object passed both cases after changing only the policy object; actual old/new selected provider records and link-input identity comparison are retained.",
+    "Private native MLX, ArtifactPackedLinear and checked GPTQ decode paths no longer allocate an unused per-invocation ATen result holder and report zero for that holder. Static FP8 still owns a small encoded-activation pointer holder and reports its actual sizeof(Invocation); ordinary ATen result paths retain their holder. This does not make opaque SDK allocations known."
+  ],
+  "selection": "Positive contracted tests select actual existing proposals using test-only source/provider constraints; this does not establish default static-contraction selection or performance. Vulkan/Apple retain ordinary200 before bounded201, and CPU/CUDA static candidate ranking is unchanged. CUDA ordinary plain dense F32 Multiply/Divide with a rank0 or rank1[1] scalar and peer shape equal to output now prefers the existing admitted native leaf. Other scalar dtypes, non-scalar tensor domains and unrelated rankings retain their previous behavior.",
+  "limits": [
+    "No publisher tensor payload/full artifact execution, full-model importer/quality, performance, native tensor-core FP8 scaled-mm equivalence, Linux or all-installed-build claim.",
+    "This implements the selected compositional stored-scale reference tree, not a claim that every producer/exporter or deployment GEMM has the same reduction and rounding behavior.",
+    "Ordinary FP8 storage Cast is a numeric bridge, not admission for arbitrary FP8 arithmetic. Direct dtype coverage and physical address limits are recorded per backend.",
+    "Native F32 code-dot reduction order is backend-specific; sparse independent witnesses do not certify identical arbitrary reduction sums.",
+    "Actual integer/grid/storage-buffer limits remain. Opaque private allocations are unknown, actual OOM does not automatically reselect, and no measured peak-memory or throughput gain is claimed.",
+    "Vulkan standard run did not enable validation layers. Shader/host mathematical source checks supplement and do not replace the actual GPU test processes."
+  ],
+  "archive": {
+    "identity": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\static-fp8-reference-2026-10-20.zip",
+      "bytes": 1306374,
+      "sha256": "bf7bd8c3f770c6ee631898150c96d6933fa9228197623f45ce3759e31a12e472"
+    },
+    "members": 594,
+    "uncompressed_bytes": 5797978,
+    "inventory": {
+      "member": "inventory.json",
+      "bytes": 305188,
+      "sha256": "94bde6e7f6cf84004a4b5579ba7421f1028754206cee1a7b1235ca19515defd4"
+    },
+    "verification": "CRC plus every member exact bytes and SHA inventory verified after writing."
+  }
+}

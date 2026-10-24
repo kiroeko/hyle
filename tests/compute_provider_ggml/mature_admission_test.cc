@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <array>
+#include <climits>
 #include <cmath>
 #include <cstdint>
 #include <limits>
@@ -10,6 +11,7 @@
 
 #include "../compute_provider_native/half_test_support.h"
 #include "hyle/compute/backends/cpu.h"
+#include "hyle/compute/low_precision.h"
 #include "hyle/compute/prepared_operation.h"
 #include "hyle/compute/providers/ggml_cpu.h"
 #include "hyle/mem/stats.h"
@@ -169,5 +171,39 @@ TEST(GgmlCpuProvider, F32BatchMatMulAdmitsLeftBroadcastThroughOriginalRepeat) {
   auto context = Context::create(cpu::device(), ggml_cpu::provider()).value();
   const auto prepared = prepare(context, Operation(MatMul{}), sources, std::span(&output, 1), hyle::mem::system_resource());
   ASSERT_TRUE(prepared) << prepared.error().message();
+}
+
+TEST(GgmlCpuProvider, LargeEncodedMatMulRhsKeepsLogicalAndStrideBounds) {
+  auto context = Context::create(cpu::device(), ggml_cpu::provider()).value();
+  constexpr auto f32 = DataType::kFloat32;
+  constexpr std::int64_t k = 8192, n = 248320;
+  const auto weight = gguf_weight_description(GgufQuantizedType::kQ8_0, f32, k, n).value();
+  ASSERT_EQ(weight.required_bytes().value(), 2161377280ULL);
+  ASSERT_GT(weight.required_bytes().value(), std::size_t{INT32_MAX});
+  const auto request = [&](std::int64_t rows, const TensorDesc &rhs) {
+    const auto a = TensorDesc::dense(f32, std::array{rows, k}).value();
+    const auto y = TensorDesc::dense(f32, std::array{rows, rhs.dimensions()[1]}).value();
+    return prepare(context, Operation(MatMul{}), std::array{a, rhs},
+                   std::array{y}, hyle::mem::system_resource());
+  };
+  for (const std::int64_t rows : {1, 2}) {
+    const auto prepared = request(rows, weight);
+    ASSERT_TRUE(prepared) << prepared.error().message();
+    EXPECT_EQ(prepared->provider().id, ggml_cpu::kProviderId);
+  }
+  const auto declined = [&](const TensorDesc &rhs) {
+    const auto prepared = request(1, rhs);
+    ASSERT_FALSE(prepared);
+    EXPECT_TRUE(prepared.error().IsUnimplemented()) << prepared.error().message();
+  };
+  // Encoding bytes can exceed I32; logical element and individual stride
+  // limits still apply, and this exception never admits padded W rows.
+  declined(gguf_weight_description(GgufQuantizedType::kQ8_0, f32, k, 262144).value());
+  declined(TensorDesc::blocked_strided(f32, weight.dimensions(), weight.storage_format(), 0,
+      std::array{weight.byte_strides()[0], weight.byte_strides()[1] + 34}).value());
+  declined(TensorDesc::blocked_strided(f32, weight.dimensions(), weight.storage_format(), 0,
+      std::array{weight.byte_strides()[0], std::int64_t{INT32_MAX} + 1}).value());
+  // Preparation allocates only program metadata. No W/Y Buffer, Invocation,
+  // Queue or payload is created; original-head execution checks real bytes.
 }
 } // namespace

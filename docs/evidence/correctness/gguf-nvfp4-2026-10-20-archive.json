@@ -1,0 +1,13 @@
+{
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\gguf-nvfp4-2026-10-20.zip",
+    "bytes": 22957143,
+    "sha256": "3666e736a90b3113d1660a7441478c9a563cc6ae37a78d6babcade61094becb8"
+  },
+  "payload_entries": 1667,
+  "manifest_entries": 1,
+  "CRC_and_payload_SHA_verified_once": true,
+  "binaries_objects_SDKs_and_duplicate_vectors_archived": false,
+  "complete_actual_header_and_failed_runs_retained": true,
+  "maps_compressed": true
+}

@@ -12,7 +12,7 @@
 #include "hyle/mem/allocator.h"
 #include "hyle/mem/pool_loan.h"
 
-// Growable single-threaded object pool (clay utils/memory_pool). Fast
+// Growable single-threaded object pool. Fast
 // create/destroy of many objects with slot reuse, growing on demand. The niche
 // it fills versus the other HYLE pools:
 //   * mem::ObjectPool : FIXED capacity, LOCK-FREE (over ConcurrentBlockPool). Use when
@@ -36,9 +36,8 @@
 //   ctor/dtor
 //     around the core's raw slots. This is the primary C++ product surface.
 //
-// Fixes a real clay bug: clay's move-assignment (memory_pool.h:61) swapped the
-// block list but NEVER transferred allocator_, so a move-assigned pool freed
-// blocks through a stale/null allocator. HYLE's move transfers every field.
+// Move assignment transfers the block list and its allocator together, so
+// deallocation always uses the backing that owns those blocks.
 //
 // Lifetime contract: the core tracks a live COUNT but not WHICH slots are live,
 // so it cannot run leftover destructors on teardown. For non-trivially-

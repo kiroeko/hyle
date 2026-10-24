@@ -1,0 +1,867 @@
+{
+  "status": "same-input-first-full-attention-discriminant-completed-not-model-acceptance",
+  "product_math_changed": false,
+  "original_results": {
+    "count": 50,
+    "bytes": 20928512,
+    "byte_identical": 50
+  },
+  "graph": {
+    "nodes": 1878,
+    "selected_steps": 1204,
+    "route_byte_identical": true,
+    "default_workspace_per_slot": 4151296,
+    "published_workspace_per_slot": 4292608,
+    "performance_measurement": false
+  },
+  "rope": {
+    "f32_final_bf16_mismatch": {
+      "query": 0,
+      "key": 0
+    },
+    "fp64_final_bf16_mismatch": {
+      "query": 0,
+      "key": 0
+    },
+    "official_eager_bf16_mismatch": {
+      "query": 1604,
+      "key": 389
+    }
+  },
+  "attention": {
+    "native_vs_unrounded_fp64": {
+      "shape": [
+        23,
+        8,
+        256
+      ],
+      "elements": 47104,
+      "actual_dtype": "torch.bfloat16",
+      "reference_dtype": "torch.float64",
+      "bf16_bit_mismatches": 6678,
+      "numeric_mismatches": 45052,
+      "actual_nonfinite": 0,
+      "reference_nonfinite": 0,
+      "max_abs": 0.008218306373524609,
+      "relative_l2": 0.0016708273689302632,
+      "bf16_ulp": {
+        "maximum": 29272,
+        "mean": 2.1874575407608696,
+        "p50_p95_p99": [
+          0.0,
+          1.0,
+          4.0
+        ],
+        "definition": "absolute monotonic BF16 code distance after Torch BF16 storage conversion; signed zeros adjacent; maxAbs/relL2 retain the unrounded reference dtype"
+      },
+      "first_coordinates": [
+        {
+          "coordinate": [
+            1,
+            0,
+            5
+          ],
+          "actual": -0.208984375,
+          "reference": -0.20986704865551167,
+          "actual_bf16": "0xbe56",
+          "reference_bf16": "0xbe57",
+          "bf16_ulp": 1
+        },
+        {
+          "coordinate": [
+            1,
+            0,
+            8
+          ],
+          "actual": 0.36328125,
+          "reference": 0.36223312349259656,
+          "actual_bf16": "0x3eba",
+          "reference_bf16": "0x3eb9",
+          "bf16_ulp": 1
+        },
+        {
+          "coordinate": [
+            1,
+            0,
+            12
+          ],
+          "actual": 0.0166015625,
+          "reference": 0.01630893489632229,
+          "actual_bf16": "0x3c88",
+          "reference_bf16": "0x3c86",
+          "bf16_ulp": 2
+        },
+        {
+          "coordinate": [
+            1,
+            0,
+            14
+          ],
+          "actual": -0.0162353515625,
+          "reference": -0.016065650499847678,
+          "actual_bf16": "0xbc85",
+          "reference_bf16": "0xbc84",
+          "bf16_ulp": 1
+        },
+        {
+          "coordinate": [
+            1,
+            0,
+            22
+          ],
+          "actual": 0.051025390625,
+          "reference": 0.05134617724739385,
+          "actual_bf16": "0x3d51",
+          "reference_bf16": "0x3d52",
+          "bf16_ulp": 1
+        },
+        {
+          "coordinate": [
+            1,
+            0,
+            27
+          ],
+          "actual": 0.05322265625,
+          "reference": 0.05296080836905683,
+          "actual_bf16": "0x3d5a",
+          "reference_bf16": "0x3d59",
+          "bf16_ulp": 1
+        },
+        {
+          "coordinate": [
+            1,
+            0,
+            32
+          ],
+          "actual": 0.053466796875,
+          "reference": 0.0532800935505486,
+          "actual_bf16": "0x3d5b",
+          "reference_bf16": "0x3d5a",
+          "bf16_ulp": 1
+        },
+        {
+          "coordinate": [
+            1,
+            0,
+            34
+          ],
+          "actual": -0.259765625,
+          "reference": -0.25865062129278715,
+          "actual_bf16": "0xbe85",
+          "reference_bf16": "0xbe84",
+          "bf16_ulp": 1
+        },
+        {
+          "coordinate": [
+            1,
+            0,
+            35
+          ],
+          "actual": -0.043212890625,
+          "reference": -0.043410981229433,
+          "actual_bf16": "0xbd31",
+          "reference_bf16": "0xbd32",
+          "bf16_ulp": 1
+        },
+        {
+          "coordinate": [
+            1,
+            0,
+            36
+          ],
+          "actual": 0.056884765625,
+          "reference": 0.056484857873949836,
+          "actual_bf16": "0x3d69",
+          "reference_bf16": "0x3d67",
+          "bf16_ulp": 2
+        },
+        {
+          "coordinate": [
+            1,
+            0,
+            37
+          ],
+          "actual": -0.00250244140625,
+          "reference": -0.0028027275474223658,
+          "actual_bf16": "0xbb24",
+          "reference_bf16": "0xbb38",
+          "bf16_ulp": 20
+        },
+        {
+          "coordinate": [
+            1,
+            0,
+            39
+          ],
+          "actual": 0.1240234375,
+          "reference": 0.1242867864015053,
+          "actual_bf16": "0x3dfe",
+          "reference_bf16": "0x3dff",
+          "bf16_ulp": 1
+        },
+        {
+          "coordinate": [
+            1,
+            0,
+            47
+          ],
+          "actual": -0.05810546875,
+          "reference": -0.05830180872423046,
+          "actual_bf16": "0xbd6e",
+          "reference_bf16": "0xbd6f",
+          "bf16_ulp": 1
+        },
+        {
+          "coordinate": [
+            1,
+            0,
+            51
+          ],
+          "actual": 0.0230712890625,
+          "reference": 0.02339537411281534,
+          "actual_bf16": "0x3cbd",
+          "reference_bf16": "0x3cc0",
+          "bf16_ulp": 3
+        },
+        {
+          "coordinate": [
+            1,
+            0,
+            55
+          ],
+          "actual": -0.01031494140625,
+          "reference": -0.010233342525688497,
+          "actual_bf16": "0xbc29",
+          "reference_bf16": "0xbc28",
+          "bf16_ulp": 1
+        },
+        {
+          "coordinate": [
+            1,
+            0,
+            60
+          ],
+          "actual": 0.022705078125,
+          "reference": 0.022908382446888823,
+          "actual_bf16": "0x3cba",
+          "reference_bf16": "0x3cbc",
+          "bf16_ulp": 2
+        }
+      ],
+      "actual_bf16_sha256": "e8acfebc491caa17175706d5e46d84e506c48dbe2f2e0034dbb86fe1f3def02a",
+      "reference_bf16_sha256": "64966ab8cbbf84a9fd61abe83c62e9e2ed88025cbfbd051d4ce94151c6296bd5"
+    },
+    "native_vs_eager_bf16": {
+      "shape": [
+        23,
+        8,
+        256
+      ],
+      "elements": 47104,
+      "actual_dtype": "torch.bfloat16",
+      "reference_dtype": "torch.bfloat16",
+      "bf16_bit_mismatches": 27666,
+      "numeric_mismatches": 27666,
+      "actual_nonfinite": 0,
+      "reference_nonfinite": 0,
+      "max_abs": 0.03125,
+      "relative_l2": 0.0047099438146329725,
+      "bf16_ulp": {
+        "maximum": 30536,
+        "mean": 34.7080078125,
+        "p50_p95_p99": [
+          1.0,
+          9.0,
+          45.0
+        ],
+        "definition": "absolute monotonic BF16 code distance after Torch BF16 storage conversion; signed zeros adjacent; maxAbs/relL2 retain the unrounded reference dtype"
+      },
+      "first_coordinates": [
+        {
+          "coordinate": [
+            1,
+            0,
+            2
+          ],
+          "actual": -0.3125,
+          "reference": -0.310546875,
+          "actual_bf16": "0xbea0",
+          "reference_bf16": "0xbe9f",
+          "bf16_ulp": 1
+        },
+        {
+          "coordinate": [
+            1,
+            0,
+            3
+          ],
+          "actual": 0.07080078125,
+          "reference": 0.0712890625,
+          "actual_bf16": "0x3d91",
+          "reference_bf16": "0x3d92",
+          "bf16_ulp": 1
+        },
+        {
+          "coordinate": [
+            1,
+            0,
+            5
+          ],
+          "actual": -0.208984375,
+          "reference": -0.20703125,
+          "actual_bf16": "0xbe56",
+          "reference_bf16": "0xbe54",
+          "bf16_ulp": 2
+        },
+        {
+          "coordinate": [
+            1,
+            0,
+            12
+          ],
+          "actual": 0.0166015625,
+          "reference": 0.017578125,
+          "actual_bf16": "0x3c88",
+          "reference_bf16": "0x3c90",
+          "bf16_ulp": 8
+        },
+        {
+          "coordinate": [
+            1,
+            0,
+            14
+          ],
+          "actual": -0.0162353515625,
+          "reference": -0.0167236328125,
+          "actual_bf16": "0xbc85",
+          "reference_bf16": "0xbc89",
+          "bf16_ulp": 4
+        },
+        {
+          "coordinate": [
+            1,
+            0,
+            16
+          ],
+          "actual": -0.12109375,
+          "reference": -0.1220703125,
+          "actual_bf16": "0xbdf8",
+          "reference_bf16": "0xbdfa",
+          "bf16_ulp": 2
+        },
+        {
+          "coordinate": [
+            1,
+            0,
+            18
+          ],
+          "actual": -0.07958984375,
+          "reference": -0.08056640625,
+          "actual_bf16": "0xbda3",
+          "reference_bf16": "0xbda5",
+          "bf16_ulp": 2
+        },
+        {
+          "coordinate": [
+            1,
+            0,
+            20
+          ],
+          "actual": 0.08251953125,
+          "reference": 0.0830078125,
+          "actual_bf16": "0x3da9",
+          "reference_bf16": "0x3daa",
+          "bf16_ulp": 1
+        },
+        {
+          "coordinate": [
+            1,
+            0,
+            21
+          ],
+          "actual": -0.044189453125,
+          "reference": -0.0439453125,
+          "actual_bf16": "0xbd35",
+          "reference_bf16": "0xbd34",
+          "bf16_ulp": 1
+        },
+        {
+          "coordinate": [
+            1,
+            0,
+            22
+          ],
+          "actual": 0.051025390625,
+          "reference": 0.050537109375,
+          "actual_bf16": "0x3d51",
+          "reference_bf16": "0x3d4f",
+          "bf16_ulp": 2
+        },
+        {
+          "coordinate": [
+            1,
+            0,
+            24
+          ],
+          "actual": 0.09716796875,
+          "reference": 0.0966796875,
+          "actual_bf16": "0x3dc7",
+          "reference_bf16": "0x3dc6",
+          "bf16_ulp": 1
+        },
+        {
+          "coordinate": [
+            1,
+            0,
+            26
+          ],
+          "actual": -0.1845703125,
+          "reference": -0.185546875,
+          "actual_bf16": "0xbe3d",
+          "reference_bf16": "0xbe3e",
+          "bf16_ulp": 1
+        },
+        {
+          "coordinate": [
+            1,
+            0,
+            27
+          ],
+          "actual": 0.05322265625,
+          "reference": 0.0537109375,
+          "actual_bf16": "0x3d5a",
+          "reference_bf16": "0x3d5c",
+          "bf16_ulp": 2
+        },
+        {
+          "coordinate": [
+            1,
+            0,
+            32
+          ],
+          "actual": 0.053466796875,
+          "reference": 0.053955078125,
+          "actual_bf16": "0x3d5b",
+          "reference_bf16": "0x3d5d",
+          "bf16_ulp": 2
+        },
+        {
+          "coordinate": [
+            1,
+            0,
+            33
+          ],
+          "actual": -0.08837890625,
+          "reference": -0.0888671875,
+          "actual_bf16": "0xbdb5",
+          "reference_bf16": "0xbdb6",
+          "bf16_ulp": 1
+        },
+        {
+          "coordinate": [
+            1,
+            0,
+            35
+          ],
+          "actual": -0.043212890625,
+          "reference": -0.04296875,
+          "actual_bf16": "0xbd31",
+          "reference_bf16": "0xbd30",
+          "bf16_ulp": 1
+        }
+      ],
+      "actual_bf16_sha256": "e8acfebc491caa17175706d5e46d84e506c48dbe2f2e0034dbb86fe1f3def02a",
+      "reference_bf16_sha256": "a03596f26a504cdd1737c98d9706b53058c2436e87a0afc500b82a45445670a6"
+    },
+    "independent_online_control": {
+      "unrounded_output": {
+        "elements": 47104,
+        "max_abs": 0.007831096649169922,
+        "relative_l2": 0.001637405463634701,
+        "bf16_projection_mismatches": 51,
+        "first_mismatches": [
+          {
+            "coordinate": [
+              6,
+              4,
+              59
+            ],
+            "actual": 0.2392578125,
+            "reference": 0.23876953125
+          },
+          {
+            "coordinate": [
+              12,
+              1,
+              1
+            ],
+            "actual": -0.1162109375,
+            "reference": -0.11582645773887634
+          },
+          {
+            "coordinate": [
+              12,
+              1,
+              6
+            ],
+            "actual": -0.0145263671875,
+            "reference": -0.014659196138381958
+          },
+          {
+            "coordinate": [
+              12,
+              1,
+              16
+            ],
+            "actual": -0.150390625,
+            "reference": -0.15087895095348358
+          },
+          {
+            "coordinate": [
+              12,
+              1,
+              23
+            ],
+            "actual": 0.0185546875,
+            "reference": 0.018906431272625923
+          },
+          {
+            "coordinate": [
+              12,
+              1,
+              28
+            ],
+            "actual": 0.054443359375,
+            "reference": 0.05406149476766586
+          },
+          {
+            "coordinate": [
+              12,
+              1,
+              29
+            ],
+            "actual": 0.4921875,
+            "reference": 0.4911472201347351
+          },
+          {
+            "coordinate": [
+              12,
+              1,
+              37
+            ],
+            "actual": -0.0966796875,
+            "reference": -0.09640887379646301
+          },
+          {
+            "coordinate": [
+              12,
+              1,
+              42
+            ],
+            "actual": 0.042724609375,
+            "reference": 0.042875781655311584
+          },
+          {
+            "coordinate": [
+              12,
+              1,
+              44
+            ],
+            "actual": 0.373046875,
+            "reference": 0.3740829527378082
+          },
+          {
+            "coordinate": [
+              12,
+              1,
+              47
+            ],
+            "actual": 0.095703125,
+            "reference": 0.09595616161823273
+          },
+          {
+            "coordinate": [
+              12,
+              1,
+              48
+            ],
+            "actual": 0.036865234375,
+            "reference": 0.036508623510599136
+          },
+          {
+            "coordinate": [
+              12,
+              1,
+              49
+            ],
+            "actual": 0.005706787109375,
+            "reference": 0.00581042654812336
+          },
+          {
+            "coordinate": [
+              12,
+              1,
+              50
+            ],
+            "actual": 0.390625,
+            "reference": 0.39166927337646484
+          },
+          {
+            "coordinate": [
+              12,
+              1,
+              51
+            ],
+            "actual": -0.400390625,
+            "reference": -0.401469349861145
+          },
+          {
+            "coordinate": [
+              12,
+              1,
+              53
+            ],
+            "actual": 0.189453125,
+            "reference": 0.18893487751483917
+          }
+        ],
+        "actual_nonfinite": 0,
+        "reference_nonfinite": 0,
+        "actual_bf16_sha256": "e8acfebc491caa17175706d5e46d84e506c48dbe2f2e0034dbb86fe1f3def02a",
+        "reference_bf16_sha256": "d6814d43b29286dabe5fc934bfd1139df21dc9a05eea45849636a419e23c699f"
+      },
+      "final_bf16_output": {
+        "elements": 47104,
+        "max_abs": 0.001953125,
+        "relative_l2": 5.137475155609417e-05,
+        "bf16_projection_mismatches": 51,
+        "first_mismatches": [
+          {
+            "coordinate": [
+              6,
+              4,
+              59
+            ],
+            "actual": 0.2392578125,
+            "reference": 0.23828125
+          },
+          {
+            "coordinate": [
+              12,
+              1,
+              1
+            ],
+            "actual": -0.1162109375,
+            "reference": -0.11572265625
+          },
+          {
+            "coordinate": [
+              12,
+              1,
+              6
+            ],
+            "actual": -0.0145263671875,
+            "reference": -0.0146484375
+          },
+          {
+            "coordinate": [
+              12,
+              1,
+              16
+            ],
+            "actual": -0.150390625,
+            "reference": -0.1513671875
+          },
+          {
+            "coordinate": [
+              12,
+              1,
+              23
+            ],
+            "actual": 0.0185546875,
+            "reference": 0.0189208984375
+          },
+          {
+            "coordinate": [
+              12,
+              1,
+              28
+            ],
+            "actual": 0.054443359375,
+            "reference": 0.053955078125
+          },
+          {
+            "coordinate": [
+              12,
+              1,
+              29
+            ],
+            "actual": 0.4921875,
+            "reference": 0.490234375
+          },
+          {
+            "coordinate": [
+              12,
+              1,
+              37
+            ],
+            "actual": -0.0966796875,
+            "reference": -0.09619140625
+          },
+          {
+            "coordinate": [
+              12,
+              1,
+              42
+            ],
+            "actual": 0.042724609375,
+            "reference": 0.04296875
+          },
+          {
+            "coordinate": [
+              12,
+              1,
+              44
+            ],
+            "actual": 0.373046875,
+            "reference": 0.375
+          },
+          {
+            "coordinate": [
+              12,
+              1,
+              47
+            ],
+            "actual": 0.095703125,
+            "reference": 0.09619140625
+          },
+          {
+            "coordinate": [
+              12,
+              1,
+              48
+            ],
+            "actual": 0.036865234375,
+            "reference": 0.03662109375
+          },
+          {
+            "coordinate": [
+              12,
+              1,
+              49
+            ],
+            "actual": 0.005706787109375,
+            "reference": 0.00579833984375
+          },
+          {
+            "coordinate": [
+              12,
+              1,
+              50
+            ],
+            "actual": 0.390625,
+            "reference": 0.392578125
+          },
+          {
+            "coordinate": [
+              12,
+              1,
+              51
+            ],
+            "actual": -0.400390625,
+            "reference": -0.40234375
+          },
+          {
+            "coordinate": [
+              12,
+              1,
+              53
+            ],
+            "actual": 0.189453125,
+            "reference": 0.1884765625
+          }
+        ],
+        "actual_nonfinite": 0,
+        "reference_nonfinite": 0,
+        "actual_bf16_sha256": "e8acfebc491caa17175706d5e46d84e506c48dbe2f2e0034dbb86fe1f3def02a",
+        "reference_bf16_sha256": "d6814d43b29286dabe5fc934bfd1139df21dc9a05eea45849636a419e23c699f"
+      }
+    },
+    "online_partition": [
+      16,
+      7
+    ],
+    "conclusion": "Storage precision and native online evaluation explain the main first-attention boundary differences; remaining native instruction-order residuals and whole-model accuracy remain unaccepted."
+  },
+  "build": {
+    "fresh_cpp_translation_units": 1,
+    "native_translation_units": 0,
+    "full_model_prefill_runs": 1,
+    "independent_torch_replays": 1,
+    "independent_cpu_replays": 2,
+    "rebuilt_sdk": false
+  },
+  "limits": [
+    "Only layer3 first full-attention prefill T23, not all six full-attention layers or continuation/decode.",
+    "The diagnostic retained additional outputs, so its workspace/timing are not performance comparisons.",
+    "CPU online controls are not native SFU/MMA/reciprocal instruction simulators; 51/47104 BF16 values still differ in the stated F32 control.",
+    "No changed numerical tolerance, provider pinning, precision policy, acceptance criterion or candidate oracle input.",
+    "Prior whole-model logits relative L2 ~2.151%/1.957%/2.459%, independent acceptance and fair sustained throughput remain unfinished."
+  ],
+  "files": {
+    "guard.json": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-first-attention\\guard.json",
+      "bytes": 3840,
+      "sha256": "1d527507add1014d9a9b589228d986ae3ab32f4b8a0d6edea981d76428d91274"
+    },
+    "probe-manifest.json": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-first-attention\\probe-manifest.json",
+      "bytes": 3224,
+      "sha256": "703f38463dc66b7097c41aedd34f38807203438be2489c78d3d59ffab347e30e"
+    },
+    "analysis/replay.json": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-first-attention\\analysis\\replay.json",
+      "bytes": 77211,
+      "sha256": "4ab6d1a765f94289f6c52edf65d0f878c64bf966137a88ff6e5f4845cdda7b54"
+    },
+    "analysis-unnormalized.json": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-first-attention\\analysis-unnormalized.json",
+      "bytes": 10645,
+      "sha256": "526542a1a8c462230c57cac146009cd5db1d2d2a695a7c7841c09c3814496f09"
+    },
+    "analysis-online.json": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-first-attention\\analysis-online.json",
+      "bytes": 52754,
+      "sha256": "5ee6803987cd460d912537682980f2cabb1542bfd3531f45502179faadcd10fb"
+    },
+    "precision-contract-review.json": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-first-attention\\precision-contract-review.json",
+      "bytes": 13134,
+      "sha256": "71885c00195f3e463b866120ebbbf2cae857c153e645b07d6ff7f73e7ab978be"
+    },
+    "native-attention-precision-review.json": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-first-attention\\native-attention-precision-review.json",
+      "bytes": 26369,
+      "sha256": "dfa8a01ce44506ab341ebb56bd760b3baf9c7c1e0947893b2dc1d085cb11e632"
+    }
+  },
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\inference-foundation-review-2026-10-18\\qwen-first-attention.zip",
+    "bytes": 443574,
+    "sha256": "bca265bfca774175f8798327459a3c2d9a4f20f7662cc5f87dc2a322efb01fb7"
+  },
+  "cleanup": {
+    "archive_verified": true,
+    "files": 54,
+    "bytes": 170197711.0,
+    "retained_objects": 1,
+    "retained_original_trace": 50,
+    "retained_unique_probe": 8,
+    "other_cache_retained": true,
+    "root_script": {
+      "path": "C:\\public\\project-hyle\\hyle\\test.ps1",
+      "bytes": 2910,
+      "sha256": "aa4eff90cb45e84e079ed06243e53fad61ad393f803ffb8704f91f66d2459e5b"
+    }
+  }
+}

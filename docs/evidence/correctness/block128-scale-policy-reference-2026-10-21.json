@@ -1,0 +1,795 @@
+{
+  "passed": true,
+  "scope": "Explicit block128 FP8 scale policies and finite original-bank consumers in the existing four backend execution systems",
+  "cases": 27,
+  "new_cases": 17,
+  "neighbors": 10,
+  "schema_cases": 0,
+  "successful_submissions": 172,
+  "successful_submissions_accounting": "Only numeric properties present in the actual XML are summed here; CUDA pair counts absent from XML stay null and are separately source-counted.",
+  "source_counted_additional_submissions": 38,
+  "cases_without_XML_submission_count": 3,
+  "expected_failed_completions": 8,
+  "failed": 0,
+  "skipped": 0,
+  "main_four_backend": {
+    "cases": 24,
+    "new_cases": 16,
+    "neighbors": 8,
+    "successful_submissions": 172,
+    "expected_failed_completions": 8
+  },
+  "runs": [
+    {
+      "backend": "cpu",
+      "passed": true,
+      "tests": [
+        {
+          "name": "CpuFp8ScalePolicy.ThreePoliciesKeepDistinctFiniteQuantizers",
+          "classification": "new",
+          "successful_submissions": 12,
+          "expected_failed_completions": 0,
+          "properties": {
+            "successful_submissions": "12",
+            "policy_witness": "450/tiny: Divide3c01,MultiplyReciprocal3bc1;Wcode1/SF1"
+          }
+        },
+        {
+          "name": "CpuFp8ScalePolicy.FixedHeaderRoleKeepsOriginalBlockAxes",
+          "classification": "new",
+          "successful_submissions": 4,
+          "expected_failed_completions": 0,
+          "properties": {
+            "successful_submissions": "4",
+            "role_scope": "catalog30 layer45 expert0 gate_proj:BF16A[1,4096],E4W[2048,4096],F32SF[16,32];artificial bytes;no payload/fullmodel/AMDrcpf claim"
+          }
+        },
+        {
+          "name": "CpuFp8ScalePolicy.GroupedSharedAndPerSlotInputsKeepReciprocalPolicy",
+          "classification": "new",
+          "successful_submissions": 8,
+          "expected_failed_completions": 0,
+          "properties": {
+            "actual_submissions": "8"
+          }
+        },
+        {
+          "name": "CpuFp8ScalePolicy.InvalidIdsFailAndFreshInvocationRecovers",
+          "classification": "new",
+          "successful_submissions": 3,
+          "expected_failed_completions": 2,
+          "properties": {
+            "successful_submissions": "3",
+            "expected_failed_completions": "2"
+          }
+        },
+        {
+          "name": "CpuFp8ScalePolicy.OriginalPowerOfTwoNeighbor",
+          "classification": "neighbor",
+          "successful_submissions": 8,
+          "expected_failed_completions": 0,
+          "properties": {
+            "actual_submissions": "8"
+          }
+        },
+        {
+          "name": "CpuFp8ScalePolicy.OriginalDivideNeighbor",
+          "classification": "neighbor",
+          "successful_submissions": 8,
+          "expected_failed_completions": 0,
+          "properties": {
+            "actual_submissions": "8"
+          }
+        }
+      ],
+      "cases": 6,
+      "successful_submissions": 43,
+      "source_counted_additional_submissions": 0,
+      "expected_failed_completions": 2,
+      "receipt": {
+        "path": ".scratch/architecture-refactor-2026-10-18/quark-block128-scale-2026-10-21/cpu/validation/attempt1/receipt.json",
+        "bytes": 3101,
+        "sha256": "aa1606e9aa48cbdfa54c8fbd8069fca55032602ba55df51940f46cabc21a1097"
+      },
+      "xml": {
+        "path": ".scratch/architecture-refactor-2026-10-18/quark-block128-scale-2026-10-21/cpu/validation/attempt1/tests.xml",
+        "bytes": 2972,
+        "sha256": "a1d95fa8704526efb4079f3d23ad956738347ed87089c3c3036b647f6d61e302"
+      },
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "backend": "cuda",
+      "passed": true,
+      "tests": [
+        {
+          "name": "CudaFp8ScalePolicy.ThreePoliciesKeepDistinctFiniteQuantizers",
+          "classification": "new",
+          "successful_submissions": 12,
+          "expected_failed_completions": 0,
+          "properties": {
+            "successful_submissions": "12",
+            "policy_witness": "450/tiny: Divide3c01,MultiplyReciprocal3bc1;Wcode1/SF1"
+          }
+        },
+        {
+          "name": "CudaFp8ScalePolicy.FixedHeaderRoleKeepsOriginalBlockAxes",
+          "classification": "new",
+          "successful_submissions": 4,
+          "expected_failed_completions": 0,
+          "properties": {
+            "successful_submissions": "4",
+            "role_scope": "catalog30 layer45 expert0 gate_proj:BF16A[1,4096],E4W[2048,4096],F32SF[16,32];artificial bytes;no payload/fullmodel/AMDrcpf claim"
+          }
+        },
+        {
+          "name": "CudaFp8ScalePolicy.GroupedSharedAndPerSlotInputsKeepReciprocalPolicy",
+          "classification": "new",
+          "successful_submissions": 8,
+          "expected_failed_completions": 0,
+          "properties": {
+            "actual_submissions": "8"
+          }
+        },
+        {
+          "name": "CudaFp8ScalePolicy.InvalidIdsFailAndFreshInvocationRecovers",
+          "classification": "new",
+          "successful_submissions": 3,
+          "expected_failed_completions": 2,
+          "properties": {
+            "successful_submissions": "3",
+            "expected_failed_completions": "2"
+          }
+        },
+        {
+          "name": "CudaFp8ScalePolicy.OriginalPowerOfTwoNeighbor",
+          "classification": "neighbor",
+          "successful_submissions": 8,
+          "expected_failed_completions": 0,
+          "properties": {
+            "actual_submissions": "8"
+          }
+        },
+        {
+          "name": "CudaFp8ScalePolicy.OriginalDivideNeighbor",
+          "classification": "neighbor",
+          "successful_submissions": 8,
+          "expected_failed_completions": 0,
+          "properties": {
+            "actual_submissions": "8"
+          }
+        }
+      ],
+      "cases": 6,
+      "successful_submissions": 43,
+      "source_counted_additional_submissions": 0,
+      "expected_failed_completions": 2,
+      "receipt": {
+        "path": ".scratch/architecture-refactor-2026-10-18/quark-block128-scale-2026-10-21/cuda/validation/attempt1/receipt.json",
+        "bytes": 3118,
+        "sha256": "d6214ec5a2d318ec3f656ca4c96873e6f956b0fa73d157d5c5072c49edb7feeb"
+      },
+      "xml": {
+        "path": ".scratch/architecture-refactor-2026-10-18/quark-block128-scale-2026-10-21/cuda/validation/attempt1/tests.xml",
+        "bytes": 2987,
+        "sha256": "e2e0b503447a5759a3a2dd6f7b3e3e1de0b2a920509cc5167695f8d912ca4b16"
+      },
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "backend": "vulkan",
+      "passed": true,
+      "tests": [
+        {
+          "name": "VulkanFp8ScalePolicy.ThreePoliciesKeepDistinctFiniteQuantizers",
+          "classification": "new",
+          "successful_submissions": 12,
+          "expected_failed_completions": 0,
+          "properties": {
+            "device": "NVIDIA GeForce RTX 4070",
+            "successful_submissions": "12",
+            "policy_witness": "450/tiny: Divide3c01,MultiplyReciprocal3bc1;Wcode1/SF1"
+          }
+        },
+        {
+          "name": "VulkanFp8ScalePolicy.FixedHeaderRoleKeepsOriginalBlockAxes",
+          "classification": "new",
+          "successful_submissions": 4,
+          "expected_failed_completions": 0,
+          "properties": {
+            "device": "NVIDIA GeForce RTX 4070",
+            "successful_submissions": "4",
+            "role_scope": "catalog30 layer45 expert0 gate_proj:BF16A[1,4096],E4W[2048,4096],F32SF[16,32];artificial bytes;no payload/fullmodel/AMDrcpf claim"
+          }
+        },
+        {
+          "name": "VulkanFp8ScalePolicy.GroupedSharedAndPerSlotInputsKeepReciprocalPolicy",
+          "classification": "new",
+          "successful_submissions": 8,
+          "expected_failed_completions": 0,
+          "properties": {
+            "device": "NVIDIA GeForce RTX 4070",
+            "actual_submissions": "8"
+          }
+        },
+        {
+          "name": "VulkanFp8ScalePolicy.InvalidIdsFailAndFreshInvocationRecovers",
+          "classification": "new",
+          "successful_submissions": 3,
+          "expected_failed_completions": 2,
+          "properties": {
+            "device": "NVIDIA GeForce RTX 4070",
+            "successful_submissions": "3",
+            "expected_failed_completions": "2"
+          }
+        },
+        {
+          "name": "VulkanFp8ScalePolicy.OriginalPowerOfTwoNeighbor",
+          "classification": "neighbor",
+          "successful_submissions": 8,
+          "expected_failed_completions": 0,
+          "properties": {
+            "device": "NVIDIA GeForce RTX 4070",
+            "actual_submissions": "8"
+          }
+        },
+        {
+          "name": "VulkanFp8ScalePolicy.OriginalDivideNeighbor",
+          "classification": "neighbor",
+          "successful_submissions": 8,
+          "expected_failed_completions": 0,
+          "properties": {
+            "device": "NVIDIA GeForce RTX 4070",
+            "actual_submissions": "8"
+          }
+        }
+      ],
+      "cases": 6,
+      "successful_submissions": 43,
+      "source_counted_additional_submissions": 0,
+      "expected_failed_completions": 2,
+      "receipt": {
+        "path": ".scratch/architecture-refactor-2026-10-18/quark-block128-scale-2026-10-21/vulkan/validation/attempt1/receipt.json",
+        "bytes": 3739,
+        "sha256": "b818ffec3b946665386cf4f2ca287764db12dc3673ff64dbc8c85be58f9d89b0"
+      },
+      "xml": {
+        "path": ".scratch/architecture-refactor-2026-10-18/quark-block128-scale-2026-10-21/vulkan/validation/attempt1/tests.xml",
+        "bytes": 3414,
+        "sha256": "2773f88cd3c1801897ed1a2f51226f36ed33bf11ed21130b1f2fda8648ae5d4d"
+      },
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "backend": "apple",
+      "passed": true,
+      "tests": [
+        {
+          "name": "AppleFp8ScalePolicy.DensePoliciesKeepSeparateRoundingTrees",
+          "classification": "new",
+          "successful_submissions": 12,
+          "expected_failed_completions": 0,
+          "properties": {
+            "device": "Apple M4",
+            "successful_submissions": "12",
+            "policy_witness": "450/tiny: Divide3c01,MultiplyReciprocal3bc1;Wcode1/SF1"
+          }
+        },
+        {
+          "name": "AppleFp8ScalePolicy.FixedSourceRoleKeepsOriginalBlock128Bank",
+          "classification": "new",
+          "successful_submissions": 4,
+          "expected_failed_completions": 0,
+          "properties": {
+            "device": "Apple M4",
+            "successful_submissions": "4",
+            "role_scope": "catalog30 layer45 expert0 gate_proj:BF16A[1,4096],E4W[2048,4096],F32SF[16,32];artificial bytes;no payload/fullmodel/AMDrcpf claim"
+          }
+        },
+        {
+          "name": "AppleFp8ScalePolicy.GroupedReciprocalMathRetainsOldResults",
+          "classification": "new",
+          "successful_submissions": 8,
+          "expected_failed_completions": 0,
+          "properties": {
+            "device": "Apple M4",
+            "actual_submissions": "8"
+          }
+        },
+        {
+          "name": "AppleFp8ScalePolicy.CheckedIdsFailAndFreshInvocationRecovers",
+          "classification": "new",
+          "successful_submissions": 3,
+          "expected_failed_completions": 2,
+          "properties": {
+            "device": "Apple M4",
+            "successful_submissions": "3",
+            "expected_failed_completions": "2"
+          }
+        },
+        {
+          "name": "AppleFp8ScalePolicy.OriginalGroupedPowerKeepsItsQuantizer",
+          "classification": "neighbor",
+          "successful_submissions": 8,
+          "expected_failed_completions": 0,
+          "properties": {
+            "device": "Apple M4",
+            "actual_submissions": "8"
+          }
+        },
+        {
+          "name": "AppleFp8ScalePolicy.OriginalGroupedDivideKeepsItsQuantizer",
+          "classification": "neighbor",
+          "successful_submissions": 8,
+          "expected_failed_completions": 0,
+          "properties": {
+            "device": "Apple M4",
+            "actual_submissions": "8"
+          }
+        }
+      ],
+      "cases": 6,
+      "successful_submissions": 43,
+      "source_counted_additional_submissions": 0,
+      "expected_failed_completions": 2,
+      "receipt": {
+        "path": ".scratch/architecture-refactor-2026-10-18/quark-block128-scale-2026-10-21/apple/final-validation.json",
+        "bytes": 7663,
+        "sha256": "f660acc170efbbcb7ac870767245c549e69eaab42eaf03809877a6f4220ab918"
+      },
+      "xml": {
+        "path": ".scratch/architecture-refactor-2026-10-18/quark-block128-scale-2026-10-21/apple/mac/final/results/tests.xml",
+        "bytes": 3908,
+        "sha256": "3b031b65b75bbf1e3a92c3d4639333006f43292704f6f4a06672b9c7a92023ca"
+      },
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "backend": "cuda",
+      "passed": true,
+      "tests": [
+        {
+          "name": "CudaFp8SharedPrologue.BfloatSiblingsKeepBothOriginalLinearResultsAcrossCapturedSlots",
+          "classification": "neighbor",
+          "successful_submissions": null,
+          "expected_failed_completions": 0,
+          "properties": {},
+          "source_counted_submissions": 12,
+          "source_counted_detail": "Source-counted only:4 captured Graph submits +8 original direct-linear comparisons; XML has no count property.",
+          "submission_count_not_reported_by_XML": true
+        },
+        {
+          "name": "CudaFp8SharedPrologue.DifferentContractsOrValueIdsAndPackedSingleLinearStayStandalone",
+          "classification": "neighbor",
+          "successful_submissions": null,
+          "expected_failed_completions": 0,
+          "properties": {},
+          "source_counted_submissions": 14,
+          "source_counted_detail": "Source-counted only:5 standalone Graph submits +9 original direct-linear comparisons; includes new same-floor/different-policy boundary; XML has no count property.",
+          "submission_count_not_reported_by_XML": true
+        }
+      ],
+      "cases": 2,
+      "successful_submissions": 0,
+      "source_counted_additional_submissions": 26,
+      "expected_failed_completions": 0,
+      "receipt": {
+        "path": ".scratch/architecture-refactor-2026-10-18/quark-block128-scale-2026-10-21/cuda/validation/pair-attempt1/receipt.json",
+        "bytes": 1768,
+        "sha256": "f1810bffdc35f24b157016380347efb202f0622c1decaf0ae07e93a432343bf9"
+      },
+      "xml": {
+        "path": ".scratch/architecture-refactor-2026-10-18/quark-block128-scale-2026-10-21/cuda/validation/pair-attempt1/tests.xml",
+        "bytes": 950,
+        "sha256": "25e87bc29a78d52c857b5d28ca6bfd27519be46813157dda5830401e17434332"
+      },
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "backend": "cuda",
+      "passed": true,
+      "tests": [
+        {
+          "name": "CudaFp8SharedPrologue.MultiplyReciprocalBfloatSiblingsKeepTheirOriginalQuantizerAcrossCapturedSlots",
+          "classification": "new",
+          "successful_submissions": null,
+          "expected_failed_completions": 0,
+          "properties": {},
+          "source_counted_submissions": 12,
+          "source_counted_detail": "Source-counted only:4 captured Graph submits +8 original direct-linear comparisons; XML has no count property.",
+          "submission_count_not_reported_by_XML": true
+        }
+      ],
+      "cases": 1,
+      "successful_submissions": 0,
+      "source_counted_additional_submissions": 12,
+      "expected_failed_completions": 0,
+      "receipt": {
+        "path": ".scratch/architecture-refactor-2026-10-18/quark-block128-scale-2026-10-21/cuda/validation/pair-reciprocal-attempt1/receipt.json",
+        "bytes": 1407,
+        "sha256": "1b0d3bb9cfbc2a972668f8102cfed3a4e386f62670d84942e0e4415bcd9a0eef"
+      },
+      "xml": {
+        "path": ".scratch/architecture-refactor-2026-10-18/quark-block128-scale-2026-10-21/cuda/validation/pair-reciprocal-attempt1/tests.xml",
+        "bytes": 664,
+        "sha256": "fc483abe78c90fb050361caee79afe8704c0ecf0411a9b9f69f1e8946774ecde"
+      },
+      "failed": 0,
+      "skipped": 0
+    }
+  ],
+  "tests": [
+    {
+      "backend": "cpu",
+      "name": "CpuFp8ScalePolicy.ThreePoliciesKeepDistinctFiniteQuantizers",
+      "classification": "new",
+      "successful_submissions": 12,
+      "expected_failed_completions": 0,
+      "properties": {
+        "successful_submissions": "12",
+        "policy_witness": "450/tiny: Divide3c01,MultiplyReciprocal3bc1;Wcode1/SF1"
+      }
+    },
+    {
+      "backend": "cpu",
+      "name": "CpuFp8ScalePolicy.FixedHeaderRoleKeepsOriginalBlockAxes",
+      "classification": "new",
+      "successful_submissions": 4,
+      "expected_failed_completions": 0,
+      "properties": {
+        "successful_submissions": "4",
+        "role_scope": "catalog30 layer45 expert0 gate_proj:BF16A[1,4096],E4W[2048,4096],F32SF[16,32];artificial bytes;no payload/fullmodel/AMDrcpf claim"
+      }
+    },
+    {
+      "backend": "cpu",
+      "name": "CpuFp8ScalePolicy.GroupedSharedAndPerSlotInputsKeepReciprocalPolicy",
+      "classification": "new",
+      "successful_submissions": 8,
+      "expected_failed_completions": 0,
+      "properties": {
+        "actual_submissions": "8"
+      }
+    },
+    {
+      "backend": "cpu",
+      "name": "CpuFp8ScalePolicy.InvalidIdsFailAndFreshInvocationRecovers",
+      "classification": "new",
+      "successful_submissions": 3,
+      "expected_failed_completions": 2,
+      "properties": {
+        "successful_submissions": "3",
+        "expected_failed_completions": "2"
+      }
+    },
+    {
+      "backend": "cpu",
+      "name": "CpuFp8ScalePolicy.OriginalPowerOfTwoNeighbor",
+      "classification": "neighbor",
+      "successful_submissions": 8,
+      "expected_failed_completions": 0,
+      "properties": {
+        "actual_submissions": "8"
+      }
+    },
+    {
+      "backend": "cpu",
+      "name": "CpuFp8ScalePolicy.OriginalDivideNeighbor",
+      "classification": "neighbor",
+      "successful_submissions": 8,
+      "expected_failed_completions": 0,
+      "properties": {
+        "actual_submissions": "8"
+      }
+    },
+    {
+      "backend": "cuda",
+      "name": "CudaFp8ScalePolicy.ThreePoliciesKeepDistinctFiniteQuantizers",
+      "classification": "new",
+      "successful_submissions": 12,
+      "expected_failed_completions": 0,
+      "properties": {
+        "successful_submissions": "12",
+        "policy_witness": "450/tiny: Divide3c01,MultiplyReciprocal3bc1;Wcode1/SF1"
+      }
+    },
+    {
+      "backend": "cuda",
+      "name": "CudaFp8ScalePolicy.FixedHeaderRoleKeepsOriginalBlockAxes",
+      "classification": "new",
+      "successful_submissions": 4,
+      "expected_failed_completions": 0,
+      "properties": {
+        "successful_submissions": "4",
+        "role_scope": "catalog30 layer45 expert0 gate_proj:BF16A[1,4096],E4W[2048,4096],F32SF[16,32];artificial bytes;no payload/fullmodel/AMDrcpf claim"
+      }
+    },
+    {
+      "backend": "cuda",
+      "name": "CudaFp8ScalePolicy.GroupedSharedAndPerSlotInputsKeepReciprocalPolicy",
+      "classification": "new",
+      "successful_submissions": 8,
+      "expected_failed_completions": 0,
+      "properties": {
+        "actual_submissions": "8"
+      }
+    },
+    {
+      "backend": "cuda",
+      "name": "CudaFp8ScalePolicy.InvalidIdsFailAndFreshInvocationRecovers",
+      "classification": "new",
+      "successful_submissions": 3,
+      "expected_failed_completions": 2,
+      "properties": {
+        "successful_submissions": "3",
+        "expected_failed_completions": "2"
+      }
+    },
+    {
+      "backend": "cuda",
+      "name": "CudaFp8ScalePolicy.OriginalPowerOfTwoNeighbor",
+      "classification": "neighbor",
+      "successful_submissions": 8,
+      "expected_failed_completions": 0,
+      "properties": {
+        "actual_submissions": "8"
+      }
+    },
+    {
+      "backend": "cuda",
+      "name": "CudaFp8ScalePolicy.OriginalDivideNeighbor",
+      "classification": "neighbor",
+      "successful_submissions": 8,
+      "expected_failed_completions": 0,
+      "properties": {
+        "actual_submissions": "8"
+      }
+    },
+    {
+      "backend": "vulkan",
+      "name": "VulkanFp8ScalePolicy.ThreePoliciesKeepDistinctFiniteQuantizers",
+      "classification": "new",
+      "successful_submissions": 12,
+      "expected_failed_completions": 0,
+      "properties": {
+        "device": "NVIDIA GeForce RTX 4070",
+        "successful_submissions": "12",
+        "policy_witness": "450/tiny: Divide3c01,MultiplyReciprocal3bc1;Wcode1/SF1"
+      }
+    },
+    {
+      "backend": "vulkan",
+      "name": "VulkanFp8ScalePolicy.FixedHeaderRoleKeepsOriginalBlockAxes",
+      "classification": "new",
+      "successful_submissions": 4,
+      "expected_failed_completions": 0,
+      "properties": {
+        "device": "NVIDIA GeForce RTX 4070",
+        "successful_submissions": "4",
+        "role_scope": "catalog30 layer45 expert0 gate_proj:BF16A[1,4096],E4W[2048,4096],F32SF[16,32];artificial bytes;no payload/fullmodel/AMDrcpf claim"
+      }
+    },
+    {
+      "backend": "vulkan",
+      "name": "VulkanFp8ScalePolicy.GroupedSharedAndPerSlotInputsKeepReciprocalPolicy",
+      "classification": "new",
+      "successful_submissions": 8,
+      "expected_failed_completions": 0,
+      "properties": {
+        "device": "NVIDIA GeForce RTX 4070",
+        "actual_submissions": "8"
+      }
+    },
+    {
+      "backend": "vulkan",
+      "name": "VulkanFp8ScalePolicy.InvalidIdsFailAndFreshInvocationRecovers",
+      "classification": "new",
+      "successful_submissions": 3,
+      "expected_failed_completions": 2,
+      "properties": {
+        "device": "NVIDIA GeForce RTX 4070",
+        "successful_submissions": "3",
+        "expected_failed_completions": "2"
+      }
+    },
+    {
+      "backend": "vulkan",
+      "name": "VulkanFp8ScalePolicy.OriginalPowerOfTwoNeighbor",
+      "classification": "neighbor",
+      "successful_submissions": 8,
+      "expected_failed_completions": 0,
+      "properties": {
+        "device": "NVIDIA GeForce RTX 4070",
+        "actual_submissions": "8"
+      }
+    },
+    {
+      "backend": "vulkan",
+      "name": "VulkanFp8ScalePolicy.OriginalDivideNeighbor",
+      "classification": "neighbor",
+      "successful_submissions": 8,
+      "expected_failed_completions": 0,
+      "properties": {
+        "device": "NVIDIA GeForce RTX 4070",
+        "actual_submissions": "8"
+      }
+    },
+    {
+      "backend": "apple",
+      "name": "AppleFp8ScalePolicy.DensePoliciesKeepSeparateRoundingTrees",
+      "classification": "new",
+      "successful_submissions": 12,
+      "expected_failed_completions": 0,
+      "properties": {
+        "device": "Apple M4",
+        "successful_submissions": "12",
+        "policy_witness": "450/tiny: Divide3c01,MultiplyReciprocal3bc1;Wcode1/SF1"
+      }
+    },
+    {
+      "backend": "apple",
+      "name": "AppleFp8ScalePolicy.FixedSourceRoleKeepsOriginalBlock128Bank",
+      "classification": "new",
+      "successful_submissions": 4,
+      "expected_failed_completions": 0,
+      "properties": {
+        "device": "Apple M4",
+        "successful_submissions": "4",
+        "role_scope": "catalog30 layer45 expert0 gate_proj:BF16A[1,4096],E4W[2048,4096],F32SF[16,32];artificial bytes;no payload/fullmodel/AMDrcpf claim"
+      }
+    },
+    {
+      "backend": "apple",
+      "name": "AppleFp8ScalePolicy.GroupedReciprocalMathRetainsOldResults",
+      "classification": "new",
+      "successful_submissions": 8,
+      "expected_failed_completions": 0,
+      "properties": {
+        "device": "Apple M4",
+        "actual_submissions": "8"
+      }
+    },
+    {
+      "backend": "apple",
+      "name": "AppleFp8ScalePolicy.CheckedIdsFailAndFreshInvocationRecovers",
+      "classification": "new",
+      "successful_submissions": 3,
+      "expected_failed_completions": 2,
+      "properties": {
+        "device": "Apple M4",
+        "successful_submissions": "3",
+        "expected_failed_completions": "2"
+      }
+    },
+    {
+      "backend": "apple",
+      "name": "AppleFp8ScalePolicy.OriginalGroupedPowerKeepsItsQuantizer",
+      "classification": "neighbor",
+      "successful_submissions": 8,
+      "expected_failed_completions": 0,
+      "properties": {
+        "device": "Apple M4",
+        "actual_submissions": "8"
+      }
+    },
+    {
+      "backend": "apple",
+      "name": "AppleFp8ScalePolicy.OriginalGroupedDivideKeepsItsQuantizer",
+      "classification": "neighbor",
+      "successful_submissions": 8,
+      "expected_failed_completions": 0,
+      "properties": {
+        "device": "Apple M4",
+        "actual_submissions": "8"
+      }
+    },
+    {
+      "backend": "cuda",
+      "name": "CudaFp8SharedPrologue.BfloatSiblingsKeepBothOriginalLinearResultsAcrossCapturedSlots",
+      "classification": "neighbor",
+      "successful_submissions": null,
+      "expected_failed_completions": 0,
+      "properties": {},
+      "source_counted_submissions": 12,
+      "source_counted_detail": "Source-counted only:4 captured Graph submits +8 original direct-linear comparisons; XML has no count property.",
+      "submission_count_not_reported_by_XML": true
+    },
+    {
+      "backend": "cuda",
+      "name": "CudaFp8SharedPrologue.DifferentContractsOrValueIdsAndPackedSingleLinearStayStandalone",
+      "classification": "neighbor",
+      "successful_submissions": null,
+      "expected_failed_completions": 0,
+      "properties": {},
+      "source_counted_submissions": 14,
+      "source_counted_detail": "Source-counted only:5 standalone Graph submits +9 original direct-linear comparisons; includes new same-floor/different-policy boundary; XML has no count property.",
+      "submission_count_not_reported_by_XML": true
+    },
+    {
+      "backend": "cuda",
+      "name": "CudaFp8SharedPrologue.MultiplyReciprocalBfloatSiblingsKeepTheirOriginalQuantizerAcrossCapturedSlots",
+      "classification": "new",
+      "successful_submissions": null,
+      "expected_failed_completions": 0,
+      "properties": {},
+      "source_counted_submissions": 12,
+      "source_counted_detail": "Source-counted only:4 captured Graph submits +8 original direct-linear comparisons; XML has no count property.",
+      "submission_count_not_reported_by_XML": true
+    }
+  ],
+  "semantics": {
+    "public": "Float8ScalePolicy:uint32 {kDivide=0,kPowerOfTwo=1,kMultiplyReciprocal=2}; dense descriptor ID2 and grouped ID3, both8B; no compatibility alias",
+    "divide": "Original F32 maximum/floor divided by448; original normalization tree retained",
+    "power": "Original F32 maximum/floor times F32 reciprocal448, ceil power2, original normalization retained",
+    "multiply_reciprocal": "F32 max(abs(A),floor)*F32literal(1/448), strict F32 reciprocal, then a separate strict F32 A*reciprocal before SATFINITE E4 RNE; not direct division",
+    "dot": "Original E4 code dot, separate activation-scale then block-weight-scale F32 products, per-group F32 accumulation and original final dtype",
+    "activation": "Dense and grouped BF16/F32 activation contracts; shared A1 quantized before slot broadcast",
+    "witnesses": "Finite BF16 maximum450 plus tiny0.006866455078125 yields Divide0x3c01 versus MultiplyReciprocal0x3bc1 at final BF16"
+  },
+  "source_role": {
+    "artifact": 30,
+    "role": "layer45 expert0 gate_proj",
+    "A": "BF16[1,4096]",
+    "W": "original E4[2048,4096]",
+    "SF": "stored F32[16,32]",
+    "carrier_bytes": 8390656,
+    "kind": "finite artificial original bytes at fixed header geometry",
+    "original_checkpoint_payload": false,
+    "full_artifact_execution": false,
+    "AMD_rcpf_bit_equivalence": false
+  },
+  "resources": {
+    "full_floating_weight_bank": false,
+    "Apple": "Original dense SF repeat remains: source role logical262144B repeatedSF versus2048B storedSF, no physical allocation count measured. Grouped native compactSF remains selected-indexed without S expansion.",
+    "note": "Correctness/lease tests do not measure hot allocation frequency, traffic or throughput."
+  },
+  "source_reader_contract": {
+    "path": ".scratch/architecture-refactor-2026-10-18/quark-fp8-side-2026-10-21/review/selected-reader-contract.json",
+    "bytes": 25293,
+    "sha256": "6255dd1d81628b8e1931fb63562a4d30b0bc2d71518cdbb85ace126e8d2353d2"
+  },
+  "independent_reciprocal_review": {
+    "path": ".scratch/architecture-refactor-2026-10-18/quark-block128-scale-2026-10-21/root/reciprocal-review.json",
+    "bytes": 997,
+    "sha256": "b3f58834de15bb88bf01765f41ebf83015ee407a44b72b71d6ef935a2351318e"
+  },
+  "retained_failures": [
+    "Windows initial3 CXX all succeeded, then the driver failed saving metadata because cpu/ did not exist; that driver attempt did not link. No Windows compiler failure is claimed.",
+    "Vulkan offline attempt1 used False as i32 and failed MLIR parsing. Attempt2 succeeded but had no tiny-input guard; attempt3 is the final successful native program.",
+    "Apple RANK template argument was size_t but the original MLX template API accepts int; explicit int conversion fixed the compile error without changing math.",
+    "CUDA pair-attempt1 filter misspelled the new test name, so only2 existing tests ran. The actual new test was then run once in pair-reciprocal-attempt1; neither attempt is reported as first-run3PASS."
+  ],
+  "no_new_decode_measurement": true,
+  "not_verified": [
+    "Original checkpoint payload or complete model/artifact",
+    "Linux",
+    "AMD approximate reciprocal/FTZ hardware equivalence",
+    "Every possible native GEMM reduction bit pattern",
+    "Quality or throughput"
+  ],
+  "remaining": [
+    "Delivery3: bounded resource/import/ordinary consumer integration, warm metadata conversion and default route costs",
+    "Final end-to-end comparison, then MTP and mmproj"
+  ],
+  "archive": {
+    "path": "docs/evidence/correctness/block128-scale-policy-reference-2026-10-21.zip",
+    "bytes": 4951296,
+    "sha256": "e22783ffd4b2ea44b43faeaf7b70508fd423f9cc3c7b55218b7be51d0738ec11"
+  },
+  "source_freeze": {
+    "path": ".scratch/architecture-refactor-2026-10-18/quark-block128-scale-2026-10-21/root/source-freeze.json",
+    "bytes": 9783,
+    "sha256": "118de375a8ea099c436a024d473b1c204645fb3fec807fcf1418bc7d792d322f"
+  },
+  "manifest_members": 386,
+  "source_members": 44,
+  "evidence_aliases": 289,
+  "compacted_dependency_records": 32,
+  "shared_identity_records": 11013,
+  "package_scope": "Finite sources, locked native code/data, actual commands/failures/XML/receipts and source identities; no images/objects/maps/SDK or model payload."
+}

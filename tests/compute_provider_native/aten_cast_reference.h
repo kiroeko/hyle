@@ -43,8 +43,11 @@ std::uint32_t encode(float value, const Format &f, bool negative_nan) {
   const std::uint32_t nan = f.width == 1       ? (f.infinity ? 0x7e : 0x7f)
                             : f.mantissa == 10 ? 0x7fff
                                                : 0x7fc0;
-  if (std::isnan(value))
+  if (std::isnan(value)) {
+    if (f.width == 2 && f.mantissa == 7)
+      return sign | ((std::bit_cast<std::uint32_t>(value) >> 16) & 0x7fffU) | 0x40U;
     return sign | nan;
+  }
   const auto infinity = ((1U << f.exponent) - 1) << f.mantissa;
   const auto maximum = f.infinity ? infinity - 1 : 0x7e;
   if (std::isinf(value))

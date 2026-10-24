@@ -2,11 +2,63 @@
 #include "../graph_provider_ggml_cuda/softmax_test_support.h"
 #include "../graph_provider_ggml_cuda/tensor_test_support.h"
 #include "hyle/compute/low_precision.h"
+#include "hyle/compute/providers/cublas.h"
 #include "hyle/graph/cuda.h"
+#include "../graph_ggml_constant_cast_test.h"
+
+TEST(CudaDefaultGraph, ImmutableBfloatCastFeedsOriginalGemmRoute) {
+  auto context=hyle::graph::cuda::create_context().value();
+  auto memory=hyle::compute::StorageOwner::adopt(context,
+      hyle::compute::cuda::MemoryResource::create(context,
+          hyle::compute::cuda::MemoryKind::kDevice).value()).value();
+  ggml_constant_cast_test::exercise(context,memory.ref(),memory);
+}
+
+TEST(CudaDefaultGraph, PreparedCastKeepsIncomingControlForDataOnlyConsumer) {
+  auto first=hyle::graph::cuda::create_context().value();
+  auto second=hyle::graph::cuda::create_context().value();
+  auto memory=hyle::compute::StorageOwner::adopt(second,
+      hyle::compute::cuda::MemoryResource::create(first,
+          hyle::compute::cuda::MemoryKind::kDevice).value()).value();
+  ggml_constant_cast_test::exercise_incoming_control(first,second,memory.ref(),memory);
+}
+#include "../graph_ggml_discovery_test.h"
+#include "ggml_gate_projection_test.h"
+#include "../compute_models/batched_sink_fixture.h"
+#include "../graph_batched_sink_test.h"
+#include "hyle/compute/cuda.h"
 #include <ggml.h>
 
 #include <algorithm>
 #include <vector>
+
+TEST(CudaDefaultGraph, BatchedSinkMasksAndHeadDenominatorsReplay) {
+  auto context = hyle::compute::cuda::create_context().value();
+  auto memory = hyle::compute::cuda::MemoryResource::create(context,
+      hyle::compute::cuda::MemoryKind::kDevice).value();
+  batched_sink_test::direct(context, memory.ref());
+}
+
+TEST(CudaDefaultGraph, SelectedKvSetsFeedOneBatchedSinkAttention) {
+  auto context = hyle::graph::cuda::create_context().value();
+  auto memory = hyle::compute::cuda::MemoryResource::create(context,
+      hyle::compute::cuda::MemoryKind::kDevice).value();
+  batched_sink_graph_test::exercise(context, memory.ref());
+}
+
+TEST(CudaDefaultGraph, NativeRegionsSurviveOtherProviderBoundaries) {
+  auto context = hyle::graph::cuda::create_context().value();
+  auto memory = hyle::compute::cuda::MemoryResource::create(context,
+      hyle::compute::cuda::MemoryKind::kDevice).value();
+  ggml_discovery_test::exercise(context, memory.ref());
+}
+
+TEST(CudaDefaultGraph, SharedQ8GateUpSwiGluPreservesPublishedIntermediates) {
+  auto context = hyle::graph::cuda::create_context().value();
+  auto memory = hyle::compute::cuda::MemoryResource::create(context,
+      hyle::compute::cuda::MemoryKind::kDevice).value();
+  ggml_gate_projection_test::exercise(context, memory.ref());
+}
 
 TEST(CudaDefaultGraph, OriginalTensorRegionThroughOrdinaryEntry) {
   using namespace ggml_cuda_graph_test;
@@ -26,12 +78,17 @@ TEST(CudaDefaultGraph, OriginalSoftmaxRegionThroughOrdinaryEntry) {
   });
 }
 
-TEST(CudaDefaultGraph, OriginalGgmlRegionComposesWithCublas) {
+TEST(CudaDefaultGraph, RequiredCublasProjectionComposesWithGgmlRegion) {
   using namespace ggml_cuda_graph_test;
   auto context = graph::cuda::create_context().value();
   exercise(context, true,
            [&](const graph::Graph &logical, mem::MemoryResourceRef resource) {
-             return graph::cuda::compile(logical, context, resource);
+             const auto projection =
+                 logical.producer(logical.output_id(0).value()).value();
+             const std::array required{graph::NodeProviderConstraint{
+                 projection, compute::cublas::kProviderId}};
+             return graph::cuda::compile(logical, context, resource,
+                                         {.node_providers = required});
            });
 }
 
@@ -178,7 +235,7 @@ TEST(CudaDefaultGraph, MatureHalfLinearAndHadamardUseOneGgmlRegion) {
     half_test::expect_near(actual[i], expected[i]);
 }
 
-TEST(CudaDefaultGraph, UnrelatedCublasNodeDoesNotSplitGgmlRegion) {
+TEST(CudaDefaultGraph, RequiredUnrelatedCublasNodeDoesNotSplitGgmlRegion) {
   using namespace ggml_cuda_graph_test;
   auto context = graph::cuda::create_context().value();
   auto memory =
@@ -196,10 +253,31 @@ TEST(CudaDefaultGraph, UnrelatedCublasNodeDoesNotSplitGgmlRegion) {
   ASSERT_TRUE(builder.publish(y).ok());
   ASSERT_TRUE(builder.publish(independent).ok());
   auto logical = std::move(builder).finish().value();
-  auto compiled = graph::cuda::compile(logical, context, memory.ref());
+  const std::array required{graph::NodeProviderConstraint{
+      logical.producer(independent).value(), compute::cublas::kProviderId}};
+  auto compiled = graph::cuda::compile(logical, context, memory.ref(),
+                                       {.node_providers = required});
   ASSERT_TRUE(compiled) << compiled.error().message();
   ASSERT_EQ(compiled->report.step_count(), 2u);
   EXPECT_TRUE(compiled->report.mixed_providers());
+  ASSERT_EQ(compiled->report.region_count(), 1U);
+  for (std::size_t step_index = 0; step_index < 2; ++step_index) {
+    const auto step = compiled->report.step(step_index);
+    ASSERT_TRUE(step);
+    if (step->provider.id == compute::ggml_cuda::kProviderId) {
+      EXPECT_EQ(step->kind, graph::CompileStepKind::kProviderRegion);
+      ASSERT_EQ(step->node_count, 2U);
+      EXPECT_EQ(compiled->report.step_node(step_index, 0).value(),
+                logical.producer(norm).value());
+      EXPECT_EQ(compiled->report.step_node(step_index, 1).value(),
+                logical.producer(y).value());
+    } else {
+      EXPECT_EQ(step->provider.id, compute::cublas::kProviderId);
+      ASSERT_EQ(step->node_count, 1U);
+      EXPECT_EQ(compiled->report.step_node(step_index, 0).value(),
+                logical.producer(independent).value());
+    }
+  }
   auto invocation = compiled->executable.create_invocation().value();
   ASSERT_TRUE(invocation.bind(x, input.view.as_const()).ok());
   ASSERT_TRUE(invocation.bind(w, weights.view.as_const()).ok());

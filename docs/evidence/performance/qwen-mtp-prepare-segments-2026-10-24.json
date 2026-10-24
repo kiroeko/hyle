@@ -1,0 +1,232 @@
+{
+  "schema": "hyle.performance.finite-preparation-diagnostic.v1",
+  "date": "2026-10-24",
+  "status": "one_instrumented_process_completed_no_product_change",
+  "scope": "One original natural two-turn Q35 MTP journey with existing PreparationObservation and encompassing wall timers. No fresh model/profiler run by the publisher.",
+  "baseline": {
+    "published": "docs/evidence/performance/qwen-mtp-single-and-multiturn-2026-10-24.json",
+    "selected_work_record": {
+      "path": ".scratch/qwen-mtp-final-window-20261024/current-window2/natural-timing1/12-hyle_mtp/stdout.log",
+      "bytes": 57275,
+      "sha256": "9c43bee08a95a3c29d084fa74843207a9e566518b7fcc5da290149024f0189db"
+    },
+    "same_selected_work_fields": {
+      "generated_tokens": 128,
+      "verified_target_rows": 132,
+      "draft_rounds": 66,
+      "accepted_drafts": 60,
+      "actual_graph_calls": 68,
+      "decode_graph_calls": 66,
+      "logical_prompt_tokens": 309,
+      "pending_flushed_tokens": 1
+    },
+    "scope": "Selected work counters match, not a claim of identical hidden states or a new throughput comparison."
+  },
+  "instrumentation": {
+    "before_source": {
+      "path": "C:/public/project-hyle/hyle/tools/qwen35_text/main.cc",
+      "bytes": 288566,
+      "sha256": "f6a688610e1156e26e5300e2477a5f4f939210983fdbded3ed6fe697071dee9f"
+    },
+    "overlay_source": {
+      "path": "C:/public/project-hyle/hyle/.scratch/qwen-mtp-final-window-20261024/preparation-segments-proposal/main.cc",
+      "bytes": 290208,
+      "sha256": "4a35c62f9b8d504033ce286d1a821ea7e584a64f7e8201f0230a77f44654329f"
+    },
+    "patch": {
+      "path": ".scratch/qwen-mtp-final-window-20261024/preparation-segments-proposal/source.patch",
+      "bytes": 2808,
+      "sha256": "b3b1e49ec003623382592107383ff4253ac709a0a7b685c02b3cf8ee97b7c1a9"
+    },
+    "entry": {
+      "path": ".scratch/qwen-mtp-final-window-20261024/preparation-segments-proposal/build.py",
+      "bytes": 934,
+      "sha256": "cb5150ed1d615edd7de776552c0d280ae476cc17c4b857f716b6d5d8a18d808b"
+    },
+    "original_native_source_id": "4068044d8571635d8a86f1e96a43dad104efc7089169065f735601e350008155",
+    "source_id_limit": "The unchanged printed model source_id does not identify the diagnostic overlay; its separate source/patch SHA does.",
+    "timers": "Existing layout/batch_prepare/replay_prepare plus enclosing prepare/submit/finish/total wall; stderr emitted after the original host endpoint.",
+    "report_snapshots_added": false,
+    "canonical_changes": 0,
+    "math_or_algorithm_changes": 0
+  },
+  "observations": {
+    "process": {
+      "command": [
+        "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-final-window-20261024\\preparation-segments-proposal\\actual\\hyle-link1\\qwen.exe",
+        "--inputs",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-window-20261022\\inputs\\mtp",
+        "--capacity",
+        "1024",
+        "--max-sessions",
+        "1",
+        "--active-sequences",
+        "1",
+        "--prefix-cache",
+        "off",
+        "--progress",
+        "direct",
+        "--replay",
+        "auto",
+        "--mtp",
+        "on",
+        "--schedule",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-final-window-20261024\\natural-inputs\\performance64.txt"
+      ],
+      "cwd": "C:\\public\\project-hyle\\hyle",
+      "started": 1792800658.6915758,
+      "timeout_seconds": 120,
+      "throughput_evidence": false,
+      "memory_evidence": false,
+      "trace": false,
+      "profiler": false,
+      "pid": 21844,
+      "exit": 0,
+      "timed_out": false,
+      "finished": 1792800662.3759384,
+      "process_wall_seconds": 3.6835623999941163
+    },
+    "actual_work": {
+      "generated_tokens": 128,
+      "verified_target_rows": 132,
+      "draft_rounds": 66,
+      "accepted_drafts": 60,
+      "actual_graph_calls": 68,
+      "decode_graph_calls": 66,
+      "logical_prompt_tokens": 309,
+      "pending_flushed_tokens": 1
+    },
+    "total_preparation_rows": 68,
+    "decode_rows": 66,
+    "window": "Last24 actual decode calls in execution order",
+    "window_calls": 24,
+    "window_roles": [
+      "4"
+    ],
+    "segments": {
+      "layout_seconds": {
+        "median_us": 102.55,
+        "range_us": [
+          80.9,
+          168.5
+        ]
+      },
+      "batch_prepare_seconds": {
+        "median_us": 151.5,
+        "range_us": [
+          121.3,
+          220.20000000000002
+        ]
+      },
+      "replay_prepare_seconds": {
+        "median_us": 238.3,
+        "range_us": [
+          183.20000000000002,
+          430.6
+        ]
+      },
+      "prepare_wall_seconds": {
+        "median_us": 560.5500000000001,
+        "range_us": [
+          414.3,
+          759.0
+        ]
+      },
+      "submit_wall_seconds": {
+        "median_us": 92.85,
+        "range_us": [
+          74.2,
+          119.0
+        ]
+      },
+      "finish_wall_seconds": {
+        "median_us": 13674.65,
+        "range_us": [
+          13090.8,
+          14557.4
+        ]
+      },
+      "total_wall_seconds": {
+        "median_us": 14314.8,
+        "range_us": [
+          13705.3,
+          15326.0
+        ]
+      }
+    },
+    "segment_medians_are_not_additive": true
+  },
+  "findings": [
+    "The median batch_prepare envelope is151.5us for these final24 calls. It contains reset_configuration plus cached layout/native preparation, queue/read-reservation checks and other binding work; the reset scan was not timed separately.",
+    "Source confirms batch prepare calls reset_configuration, which includes step-binding and resource/alias bookkeeping. This is an investigation boundary, not evidence that all151.5us is a redundant scan or recoverable.",
+    "prepare wall also includes setup outside the three inner timers. Segment medians cannot be summed or subtracted as if they described one common call.",
+    "finish wall includes GPU execution/wait/retirement, not CPU self-time. Printing after an endpoint can perturb the next turn/call.",
+    "The prior trace0.856ms API gap comes from another instrumented process and is not used as a timing subtraction or full-gap causal attribution."
+  ],
+  "limits": [
+    "Background static HTTP was active, one diagnostic process only, no TPS or memory claim.",
+    "No new algorithm, precision, provider, resource-lifetime or runtime optimization was adopted.",
+    "The latest formal single-/two-turn four-arm baseline remains unchanged."
+  ],
+  "execution": {
+    "compile": {
+      "path": ".scratch/qwen-mtp-final-window-20261024/preparation-segments-proposal/actual/compile1/qwen/identity.json",
+      "bytes": 72065,
+      "sha256": "ea440ce10882e5f2f88d7ad432a28a1037628bab0318334b227db14a45ad82d3"
+    },
+    "compile_result": {
+      "path": ".scratch/qwen-mtp-final-window-20261024/preparation-segments-proposal/actual/compile1/qwen/compile.result.json",
+      "bytes": 2234,
+      "sha256": "add75c35e6c47b70340cf0907ee7ccb52c6d8520c5716209a0d1cf14cc4d7d88"
+    },
+    "link": {
+      "path": ".scratch/qwen-mtp-final-window-20261024/preparation-segments-proposal/actual/hyle-link1/ready.json",
+      "bytes": 1941,
+      "sha256": "3efef2087822a2d7674e0439d066552b9610fd203501719229d57375e94019c9"
+    },
+    "link_result": {
+      "path": ".scratch/qwen-mtp-final-window-20261024/preparation-segments-proposal/actual/hyle-link1/link.result.json",
+      "bytes": 33016,
+      "sha256": "411956c24cd72f6787fd2f0186aa4addae53600a4a25dda6937fcb1e3b992ea2"
+    },
+    "native_summary": {
+      "path": ".scratch/qwen-mtp-final-window-20261024/preparation-segments-proposal/run1/summary.json",
+      "bytes": 119114,
+      "sha256": "0b1dec7a93aa6218b8e34a8f7eb6fce472630ace6fbc81b2757bf3d5ef005011"
+    },
+    "actual_compile_exit": 0,
+    "actual_link_exit": 0,
+    "actual_native_exit": 0,
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-final-window-20261024\\preparation-segments-proposal\\actual\\hyle-link1\\qwen.exe",
+      "bytes": 140952064,
+      "sha256": "4f447b7e85f399b6f652291cf749ff45f5b69ba5d6ab15fca657d392ecc5c696"
+    },
+    "fresh_main_translation_units": 1,
+    "other_product_TUs_rebuilt": 0,
+    "SDK_builds": 0,
+    "NVCC_builds": 0,
+    "HTTP_requests_by_this_diagnostic": 0,
+    "background_static_HTTP": true
+  },
+  "history": {
+    "metadata_setup_failure_before_compiler": {
+      "message": "Prepared unchanged main source differs",
+      "cause": "Prepared source used POSIX path separators; existing helper identity uses Windows-native separators.",
+      "compiler_started": false,
+      "actual_CXX_compiles": 0,
+      "preserved": "metadata-failure1"
+    },
+    "old_metadata_preserved": "metadata-failure1",
+    "correction": "Only the prepared source path spelling was changed to the existing helper native-Windows identity format; source content/hash unchanged."
+  },
+  "throughput_evidence": false,
+  "memory_evidence": false,
+  "product_changes": 0,
+  "archive": {
+    "path": "docs/evidence/performance/qwen-mtp-prepare-segments-2026-10-24.zip",
+    "bytes": 122057,
+    "sha256": "4b47d77beca147e44dd819f045b39b036bc9089b5bd517d5afa488a5cf8c5b28"
+  },
+  "archive_scope": "Only patch/thin entry/small original metadata failure, actual compile/link/native records/logs, parsed diagnostic rows and narrow source anchors. No weights, SDK, object, image or full product-source closure."
+}

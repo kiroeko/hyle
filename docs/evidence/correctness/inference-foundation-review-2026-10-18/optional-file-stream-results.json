@@ -1,0 +1,28 @@
+{
+  "archives": {
+    "service": {
+      "path": "docs/evidence/correctness/inference-foundation-review-2026-10-18/optional-file-stream.zip",
+      "bytes": 3049385,
+      "sha256": "afdc8a17e0b0cf6b449ba46af4893678faaf944374c4306f1531babd4d5535a9"
+    },
+    "numerical": {
+      "path": "docs/evidence/correctness/inference-foundation-review-2026-10-18/qwen-rmsnorm-f32.zip",
+      "bytes": 872736,
+      "sha256": "ddc3e6019534469c6e5c11f5bb0efd2234ce8decbe55409b4928340aff3474c6"
+    }
+  },
+  "cleanup": {
+    "windows": {
+      "retained_objects": 112,
+      "bytes": 733039297.0,
+      "files": 319
+    },
+    "mac": {
+      "files": 4,
+      "bytes": 37059629,
+      "retained_objects": 124
+    },
+    "archive_verified": true,
+    "retained_build_cache": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\optional-file-stream\\cpu-service-build"
+  }
+}

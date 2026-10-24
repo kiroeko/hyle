@@ -15,6 +15,7 @@
 
 namespace hyle::compute::detail {
 struct RetainedCompletionState final : util::RefCounted<RetainedCompletionState> {
+  enum class Phase : unsigned char { Unpublished, Pending, Installing, Installed };
   explicit RetainedCompletionState(mem::AllocatorRef selected) noexcept : allocator(selected) {}
   void destroy() noexcept {
     const auto selected = allocator;
@@ -26,12 +27,56 @@ struct RetainedCompletionState final : util::RefCounted<RetainedCompletionState>
   CompletionRetention retention;
   CompletionLifetime forwarded;
   util::SpinLock lock;
+  std::atomic<std::uint64_t> revision{0};
+  RetainedCompletionControl control;
+  std::size_t control_users = 0;
   Status retired_terminal, forwarded_hint;
   bool retired = false;
   bool deferred_prepared = false;
+  bool deferred_retirement = false;
+  Phase phase = Phase::Unpublished;
+  bool native_active = false;
+  bool abandoned = false;
+  bool cancel_requested = false;
+  bool control_closing = false;
   Status terminal;
 };
 namespace {
+using RetainedPhase = RetainedCompletionState::Phase;
+// A control reference stays in the state until handoff has closed hook entry
+// and all outstanding hook calls have left. No arbitrary hook runs under lock.
+RetainedCompletionControl borrow_control(RetainedCompletionState &state) noexcept {
+  std::lock_guard guard(state.lock);
+  if (!state.control.state || state.control_closing) return {};
+  ++state.control_users;
+  return state.control;
+}
+void return_control(RetainedCompletionState &state,
+                    RetainedCompletionControl borrowed) noexcept {
+  if (!borrowed.state) return;
+  RetainedCompletionControl release;
+  {
+    std::lock_guard guard(state.lock);
+    HYLE_FATAL_ASSERT(state.control_users);
+    if (--state.control_users == 0 && state.control_closing)
+      release = std::exchange(state.control, {});
+  }
+  if (release.state) release.release(release.state);
+}
+void notify_observers(RetainedCompletionState &state,
+                      RetainedCompletionControl control = {}) noexcept {
+  state.revision.fetch_add(1, std::memory_order_release);
+  state.revision.notify_all();
+  if (control.notify) control.notify(control.state);
+}
+void wait_for_change(RetainedCompletionState &state,
+                     std::uint64_t revision) noexcept {
+  auto control = borrow_control(state);
+  if (control.wait) control.wait(control.state, state.revision, revision);
+  else state.revision.wait(revision, std::memory_order_acquire);
+  return_control(state, control);
+}
+
 void native_terminal(void *opaque, const Status &terminal) noexcept {
   auto &state = *static_cast<RetainedCompletionState *>(opaque);
   CompletionLifetime lifetime;
@@ -40,6 +85,7 @@ void native_terminal(void *opaque, const Status &terminal) noexcept {
     std::lock_guard guard(state.lock);
     state.retired = true;
     state.retired_terminal = terminal;
+    state.terminal.Update(terminal);
     lifetime = std::exchange(state.forwarded, {});
     final = terminal;
     final.Update(state.forwarded_hint);
@@ -52,20 +98,100 @@ void native_terminal(void *opaque, const Status &terminal) noexcept {
 void native_release(void *opaque) noexcept {
   static_cast<RetainedCompletionState *>(opaque)->decref();
 }
+
+// Borrow the move-only native handle, not its callbacks, under the short state
+// lock. Native calls and Completion destruction may invoke retirement inline.
+bool borrow_native(RetainedCompletionState &state, Completion &native) noexcept {
+  std::lock_guard guard(state.lock);
+  if (state.phase != RetainedPhase::Installed || state.native_active) return false;
+  state.native_active = true;
+  native = std::move(state.original); // original is empty until returned
+  return true;
+}
+void return_native(RetainedCompletionState &state, Completion native,
+                   const Status &terminal = Status::Ok()) noexcept {
+  bool abandoned = false;
+  Status hint;
+  {
+    std::lock_guard guard(state.lock);
+    HYLE_FATAL_ASSERT(state.native_active && !state.original.valid());
+    state.terminal.Update(terminal);
+    abandoned = state.abandoned;
+    hint = state.terminal;
+    if (!abandoned) state.original = std::move(native);
+    state.native_active = false;
+  }
+  if (abandoned) {
+    CompletionAccess::append_terminal(native, hint);
+    native = {};
+  }
+  notify_observers(state);
+}
+Status wait_retained(RetainedCompletionState &state) noexcept {
+  for (;;) {
+    const auto revision = state.revision.load(std::memory_order_acquire);
+    Completion native;
+    if (borrow_native(state, native)) {
+      const auto terminal = native.valid() ? native.wait() : Status::Ok();
+      return_native(state, std::move(native), terminal);
+      std::lock_guard guard(state.lock);
+      return state.terminal;
+    }
+    wait_for_change(state, revision);
+  }
+}
+Status cancel_retained(RetainedCompletionState &state) noexcept {
+  Completion native;
+  bool borrowed = false;
+  RetainedCompletionControl control;
+  {
+    std::lock_guard guard(state.lock);
+    const bool first = !std::exchange(state.cancel_requested, true);
+    if (first && state.control.state && !state.control_closing) {
+      ++state.control_users;
+      control = state.control;
+    }
+    // Decide which side owns cancellation under the installation lock. A
+    // pre-handoff request must not also cancel again after handoff publishes.
+    if (state.phase == RetainedPhase::Installed && !state.native_active) {
+      state.native_active = true;
+      native = std::move(state.original);
+      borrowed = true;
+    }
+  }
+  if (control.request_cancel) control.request_cancel(control.state);
+  notify_observers(state, control);
+  return_control(state, control);
+  if (!borrowed) return Status::Ok();
+  const auto result = native.valid() ? native.request_cancel() : Status::Ok();
+  return_native(state, std::move(native));
+  return result;
+}
 const CompletionVTable proxy_vtable{
     .destroy = [](void *opaque, CompletionLifetime lifetime, Status hint) noexcept {
       auto *state = static_cast<RetainedCompletionState *>(opaque);
-      CompletionAccess::append_terminal(state->original, hint);
-      if (lifetime.valid()) {
-        bool retired;
-        Status terminal;
-        {
-          std::lock_guard guard(state->lock);
+      Completion original;
+      bool retired = false;
+      Status terminal;
+      {
+        std::lock_guard guard(state->lock);
+        state->abandoned = true;
+        state->terminal.Update(hint);
+        if (state->phase == RetainedPhase::Installed && !state->native_active)
+          original = std::move(state->original);
+        if (lifetime.valid()) {
           HYLE_FATAL_ASSERT(!state->forwarded.valid());
           retired = state->retired;
-          if (retired) { terminal = state->retired_terminal; terminal.Update(hint); }
-          else { state->forwarded = lifetime; state->forwarded_hint = hint; }
+          if (retired) {
+            terminal = state->retired_terminal;
+            terminal.Update(hint);
+          } else {
+            state->forwarded = lifetime;
+            state->forwarded_hint = hint;
+          }
         }
+      }
+      if (lifetime.valid()) {
         if (retired) {
           lifetime.terminal(lifetime.state, terminal);
           lifetime.release(lifetime.state);
@@ -73,26 +199,43 @@ const CompletionVTable proxy_vtable{
       }
       // Never infer retirement from a proxy error. The original native destroy
       // receives both the original and forwarded attachments and its hint.
-      state->original = {};
+      CompletionAccess::append_terminal(original, hint);
+      original = {};
       state->decref(); // public proxy
     },
     .poll = [](void *opaque) noexcept -> Result<CompletionPoll> {
       auto &state = *static_cast<RetainedCompletionState *>(opaque);
-      auto ready = state.original.poll();
-      if (!ready) state.terminal.Update(ready.error());
+      Completion native;
+      if (!borrow_native(state, native)) return CompletionPoll::kPending;
+      auto ready = native.valid() ? native.poll() : Result<CompletionPoll>(CompletionPoll::kComplete);
+      return_native(state, std::move(native),
+                    ready ? Status::Ok() : Status{ready.error()});
+      if (ready && *ready == CompletionPoll::kComplete) {
+        std::lock_guard guard(state.lock);
+        if (!state.terminal.ok()) return std::unexpected(state.terminal);
+      }
       return ready;
     },
     .wait = [](void *opaque) noexcept {
-      auto &state = *static_cast<RetainedCompletionState *>(opaque);
-      const auto terminal = state.original.wait();
-      state.terminal.Update(terminal);
-      return terminal;
+      return wait_retained(*static_cast<RetainedCompletionState *>(opaque));
     },
     .request_cancel = [](void *opaque) noexcept {
-      return static_cast<RetainedCompletionState *>(opaque)->original.request_cancel();
+      return cancel_retained(*static_cast<RetainedCompletionState *>(opaque));
     }};
 } // namespace
 
+RetainedCompletionHandoff::RetainedCompletionHandoff(RetainedCompletionHandoff &&other) noexcept
+    : state_(std::exchange(other.state_, nullptr)) {}
+RetainedCompletionHandoff &RetainedCompletionHandoff::operator=(RetainedCompletionHandoff &&other) noexcept {
+  if (this != &other) {
+    HYLE_FATAL_ASSERT(!state_);
+    state_ = std::exchange(other.state_, nullptr);
+  }
+  return *this;
+}
+RetainedCompletionHandoff::~RetainedCompletionHandoff() {
+  HYLE_FATAL_ASSERT(!state_);
+}
 RetainedCompletion::RetainedCompletion(RetainedCompletion &&other) noexcept
     : state_(std::exchange(other.state_, nullptr)) {}
 RetainedCompletion &RetainedCompletion::operator=(RetainedCompletion &&other) noexcept {
@@ -111,11 +254,19 @@ CompletionLifetime RetainedCompletion::reserve_retirement() noexcept {
   HYLE_FATAL_ASSERT(available());
   {
     std::lock_guard guard(state_->lock);
+    HYLE_FATAL_ASSERT(state_->phase != RetainedPhase::Pending &&
+                      state_->phase != RetainedPhase::Installing);
+    HYLE_FATAL_ASSERT(!state_->original.valid() && !state_->native_active &&
+                      !state_->control.state && !state_->control_users);
     state_->retired = false;
     state_->retired_terminal = Status::Ok();
     state_->forwarded_hint = Status::Ok();
+    state_->terminal = Status::Ok();
+    state_->phase = RetainedPhase::Unpublished;
+    state_->abandoned = false;
+    state_->cancel_requested = false;
+    state_->control_closing = false;
   }
-  state_->terminal = Status::Ok();
   state_->deferred_prepared = true;
   state_->incref();
   return {state_, &native_terminal, &native_release};
@@ -133,13 +284,110 @@ Completion RetainedCompletion::publish(Completion completion, bool deferred_reti
   // unknown observation may cache an error without firing this callback.
   if (!deferred_retirement)
     HYLE_FATAL_ASSERT(CompletionAccess::attach_retention(state_->original, state_->retention).ok());
+  {
+    std::lock_guard guard(state_->lock);
+    state_->phase = RetainedPhase::Installed;
+  }
   state_->incref();
   return CompletionAccess::make(&proxy_vtable, state_);
 }
+RetainedCompletionPending RetainedCompletion::publish_pending(
+    RetainedCompletionControl control, bool deferred_retirement) noexcept {
+  HYLE_FATAL_ASSERT(state_);
+  HYLE_FATAL_ASSERT(control.state ? control.release != nullptr :
+      !control.request_cancel && !control.wait && !control.notify && !control.release);
+  HYLE_FATAL_ASSERT(!control.wait || control.notify);
+  if (!deferred_retirement) state_->retention.own = reserve_retirement();
+  HYLE_FATAL_ASSERT(state_->deferred_prepared);
+  {
+    std::lock_guard guard(state_->lock);
+    state_->deferred_prepared = false;
+    state_->deferred_retirement = deferred_retirement;
+    state_->phase = RetainedPhase::Pending;
+    state_->control = control;
+  }
+  state_->incref(); // original posted progress driver, consumed by handoff
+  state_->incref(); // public proxy
+  return {CompletionAccess::make(&proxy_vtable, state_), RetainedCompletionHandoff(state_)};
+}
+Status RetainedCompletionHandoff::handoff(Completion &&completion) noexcept {
+  if (!state_ || !completion.valid())
+    return Status::FailedPrecondition("pending completion handoff is invalid");
+  auto &state = *state_;
+  bool deferred;
+  {
+    std::lock_guard guard(state.lock);
+    if (state.phase != RetainedPhase::Pending)
+      return Status::FailedPrecondition("completion handoff is not pending");
+    state.phase = RetainedPhase::Installing;
+    deferred = state.deferred_retirement;
+  }
+  // From here every path installs the actual completion. Callbacks may destroy
+  // the ticket's enclosing owner; only the local state/driver reference remains.
+  state_ = nullptr;
+  Completion original = std::move(completion);
+  if (!deferred)
+    HYLE_FATAL_ASSERT(CompletionAccess::attach_retention(original, state.retention).ok());
+  bool cancelled = false;
+  bool abandoned = false;
+  Status hint;
+  RetainedCompletionControl control;
+  for (;;) {
+    bool cancel;
+    {
+      std::lock_guard guard(state.lock);
+      cancel = state.cancel_requested && !cancelled;
+      if (!cancel) {
+        abandoned = state.abandoned;
+        hint = state.terminal;
+        if (!abandoned) state.original = std::move(original);
+        state.phase = RetainedPhase::Installed;
+        // Pin the existing owner for notify before closing new hook entry.
+        control = state.control;
+        if (control.state) ++state.control_users;
+        state.control_closing = true;
+      }
+    }
+    if (!cancel) break;
+    // Cancellation of the driver was already accepted. A native prefix may
+    // not support cancel; it must still be installed and actually retired.
+    (void)original.request_cancel();
+    cancelled = true;
+  }
+  notify_observers(state, control);
+  return_control(state, control);
+  if (abandoned) {
+    CompletionAccess::append_terminal(original, hint);
+    original = {};
+  }
+  state.decref(); // posted progress driver
+  return Status::Ok();
+}
+Result<CompletionPoll> RetainedCompletion::poll() noexcept {
+  auto *const state = state_;
+  if (!state) return CompletionPoll::kComplete;
+  {
+    std::lock_guard guard(state->lock);
+    if (state->phase == RetainedPhase::Unpublished) {
+      if (!state->terminal.ok()) return std::unexpected(state->terminal);
+      return CompletionPoll::kComplete;
+    }
+  }
+  auto ready = proxy_vtable.poll(state);
+  if (!ready || *ready == CompletionPoll::kPending) return ready;
+  // The public proxy may already have settled and cleared original. Preserve
+  // the same cached verdict as root.wait(), without inferring actual retirement.
+  std::lock_guard guard(state->lock);
+  if (!state->terminal.ok()) return std::unexpected(state->terminal);
+  return CompletionPoll::kComplete;
+}
 Status RetainedCompletion::wait() noexcept {
   if (!state_) return Status::Ok();
-  if (state_->original.valid()) state_->terminal.Update(state_->original.wait());
-  return state_->terminal;
+  {
+    std::lock_guard guard(state_->lock);
+    if (state_->phase == RetainedPhase::Unpublished) return state_->terminal;
+  }
+  return wait_retained(*state_);
 }
 void RetainedCompletion::reset() noexcept {
   if (auto *state = std::exchange(state_, nullptr)) state->decref();
@@ -157,6 +405,9 @@ Result<CompletionDependency> RetainedCompletion::native_dependency(const Complet
       return dependency;
     }
     auto &state = *static_cast<RetainedCompletionState *>(dependency.state);
+    std::lock_guard guard(state.lock);
+    if (state.phase != RetainedPhase::Installed || state.native_active)
+      return std::unexpected(Status::Unavailable("copy producer completion handoff is pending"));
     if (!error && !state.terminal.ok()) error = &state.terminal;
     // Read an identity, never poll/wait or infer retirement from cached status.
     dependency = CompletionAccess::dependency(state.original);

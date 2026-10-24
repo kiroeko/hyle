@@ -1,0 +1,986 @@
+{
+  "date": "2026-10-20",
+  "scope": "One TypedStateCopy explicit-observer exclusion defect in common StateClone cancellation/close/retirement.",
+  "defect": "CloneTicket::wait pins a slot under the StateStore monitor then waits outside that monitor. Old cancel/close could concurrently inspect/cancel/close the same original thread-compatible F2 handles; collect inspected them before checking observers.",
+  "fix": "Keep logical abandoned/disabled/closed changes under the existing monitor, reject native access while an observer is present, and clean up after it leaves. Existing wait_lock still serializes explicit waits. No hidden close wait, deferred-action queue, new API, production hook or alternate executor.",
+  "actual_witness": {
+    "before": "Freshly compiled old header plus new transparent actual-CPU-copy regression exits1 as expected; both cancel and close branches record4 forbidden accesses. The wrapper withholds those accesses to avoid native UB.",
+    "after": "The fixed header passes33 StateVersions/StateClone cases with zero skips. Gate notification proves actual observer pinning; close/cancel return before release; join, retirement, cold rearm, copied16-byte contents and retained old state are checked.",
+    "build": {
+      "passed": true,
+      "host_TUs": 6,
+      "native_TUs": 0,
+      "SDK_rebuild": false,
+      "actual_header_owners": 3,
+      "before_header_selected_in_all3_actual_dependency_files": true
+    },
+    "header_witnesses": [
+      {
+        "arm": "before",
+        "owner": {
+          "path": "C:\\public\\project-hyle\\hyle\\src\\compute_state\\state_versions.cc",
+          "bytes": 39702,
+          "sha256": "c7438a4604bcf0a6f0c3419afceedc50552d3751f873675ccfb497978c054ff7"
+        },
+        "selected_header": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\before\\include\\hyle\\compute\\state_clone.h",
+          "bytes": 14192,
+          "sha256": "1e20c2363bb1fc6c1aa7b6b72247d5f1a2fde4d4f5ab04e5c2e7791c14d64b3f"
+        },
+        "compiler_dependencies": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\checks\\before-state_versions-deps.json",
+          "bytes": 18862,
+          "sha256": "b420885a414de2ec25e974c9a1198ecce53fdb12a26616ba667ab2a49510e539"
+        },
+        "object_receipt": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\checks\\before-state_versions-identity.json",
+          "bytes": 40548,
+          "sha256": "2be53fe6a3864122359774e2abf4117e292a206722812608771ccf6c5f97441b"
+        }
+      },
+      {
+        "arm": "before",
+        "owner": {
+          "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_state\\state_versions_test.cc",
+          "bytes": 24020,
+          "sha256": "02ae8aec4ab06842d9e64d0cfa400d03f1f5a61da80f8586939977362a714c80"
+        },
+        "selected_header": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\before\\include\\hyle\\compute\\state_clone.h",
+          "bytes": 14192,
+          "sha256": "1e20c2363bb1fc6c1aa7b6b72247d5f1a2fde4d4f5ab04e5c2e7791c14d64b3f"
+        },
+        "compiler_dependencies": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\checks\\before-state_versions_test-deps.json",
+          "bytes": 28413,
+          "sha256": "ea689ae0bfdaa22c95443597fa8339f70496d255f67d03830b1e09367dc6be49"
+        },
+        "object_receipt": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\checks\\before-state_versions_test-identity.json",
+          "bytes": 59136,
+          "sha256": "6801d2866264b9cd01068f5b1671e75ca1ca0f5eadd57bb1d3ce7f188f6e6da9"
+        }
+      },
+      {
+        "arm": "before",
+        "owner": {
+          "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_state\\state_clone_test.cc",
+          "bytes": 15826,
+          "sha256": "0886f7e935dacaeef280c0720e80aa754c92457d7f933a2cdee78dd306ccfeb4"
+        },
+        "selected_header": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\before\\include\\hyle\\compute\\state_clone.h",
+          "bytes": 14192,
+          "sha256": "1e20c2363bb1fc6c1aa7b6b72247d5f1a2fde4d4f5ab04e5c2e7791c14d64b3f"
+        },
+        "compiler_dependencies": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\checks\\before-state_clone_test-deps.json",
+          "bytes": 28410,
+          "sha256": "616a5b0427258189b4bb895461254c8a9ecfd0228bd8cdb671f94ce0e9f26e02"
+        },
+        "object_receipt": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\checks\\before-state_clone_test-identity.json",
+          "bytes": 59115,
+          "sha256": "3d1ed249f91682602fbff6c62f3a026e53a14b486e12c5486e4f79ed5c89c1e4"
+        }
+      },
+      {
+        "arm": "after",
+        "owner": {
+          "path": "C:\\public\\project-hyle\\hyle\\src\\compute_state\\state_versions.cc",
+          "bytes": 39702,
+          "sha256": "c7438a4604bcf0a6f0c3419afceedc50552d3751f873675ccfb497978c054ff7"
+        },
+        "selected_header": {
+          "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\state_clone.h",
+          "bytes": 14580,
+          "sha256": "cc553cab84174cf0e220e3ceafea4f21120a08d74f8062aaf6b75f535485ef5a"
+        },
+        "compiler_dependencies": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\checks\\after-state_versions-deps.json",
+          "bytes": 18782,
+          "sha256": "6e14f1618ae287b6665a13306b1e8df020c01795676a6a956089674cdec21ee8"
+        },
+        "object_receipt": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\checks\\after-state_versions-identity.json",
+          "bytes": 40334,
+          "sha256": "e846942ffa0e6d7058d97e4446c94dc1356d529e038114f26e53c0a4e32f0792"
+        }
+      },
+      {
+        "arm": "after",
+        "owner": {
+          "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_state\\state_versions_test.cc",
+          "bytes": 24020,
+          "sha256": "02ae8aec4ab06842d9e64d0cfa400d03f1f5a61da80f8586939977362a714c80"
+        },
+        "selected_header": {
+          "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\state_clone.h",
+          "bytes": 14580,
+          "sha256": "cc553cab84174cf0e220e3ceafea4f21120a08d74f8062aaf6b75f535485ef5a"
+        },
+        "compiler_dependencies": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\checks\\after-state_versions_test-deps.json",
+          "bytes": 28333,
+          "sha256": "03185e443568f42ed870d39a6565668f23f26524c74f0d74a3f46eecee0b576f"
+        },
+        "object_receipt": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\checks\\after-state_versions_test-identity.json",
+          "bytes": 58922,
+          "sha256": "169b1bfde7a16ca55a713ea7d08cb5be7797a743db2cc7955c49daf04edb81e9"
+        }
+      },
+      {
+        "arm": "after",
+        "owner": {
+          "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_state\\state_clone_test.cc",
+          "bytes": 15826,
+          "sha256": "0886f7e935dacaeef280c0720e80aa754c92457d7f933a2cdee78dd306ccfeb4"
+        },
+        "selected_header": {
+          "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\state_clone.h",
+          "bytes": 14580,
+          "sha256": "cc553cab84174cf0e220e3ceafea4f21120a08d74f8062aaf6b75f535485ef5a"
+        },
+        "compiler_dependencies": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\checks\\after-state_clone_test-deps.json",
+          "bytes": 28330,
+          "sha256": "d615fe6d625524d717f82115f5e3dd0e8ff9567f5440abe5eff30b3f5d78cef0"
+        },
+        "object_receipt": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\checks\\after-state_clone_test-identity.json",
+          "bytes": 58901,
+          "sha256": "b9c1c00dd6d2286c6f38e9e51035fec9f26424920097d6015df28c37c6cfeb77"
+        }
+      }
+    ],
+    "initial_failure": "Two first test-TU attempts failed MSVC C2445 due Status/ErrorProxy conditional-expression ambiguity; the exact failed test/freeze/diff and compiler logs are retained. Only that conditional changed to explicit if/else; four successful owner objects were reused and two test TUs recompiled."
+  },
+  "freeze": {
+    "status": "source_frozen_not_compiled_or_tested_by_agent",
+    "scope": "One TypedStateCopy observer exclusion fix; no other product source edits.",
+    "files": [
+      {
+        "relative": "include/hyle/compute/state_clone.h",
+        "before": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\before\\include\\hyle\\compute\\state_clone.h",
+          "bytes": 14192,
+          "sha256": "1e20c2363bb1fc6c1aa7b6b72247d5f1a2fde4d4f5ab04e5c2e7791c14d64b3f"
+        },
+        "current": {
+          "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\state_clone.h",
+          "bytes": 14580,
+          "sha256": "cc553cab84174cf0e220e3ceafea4f21120a08d74f8062aaf6b75f535485ef5a"
+        },
+        "frozen": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\source\\include\\hyle\\compute\\state_clone.h",
+          "bytes": 14580,
+          "sha256": "cc553cab84174cf0e220e3ceafea4f21120a08d74f8062aaf6b75f535485ef5a"
+        }
+      },
+      {
+        "relative": "tests/compute_state/state_clone_test.cc",
+        "before": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\before\\tests\\compute_state\\state_clone_test.cc",
+          "bytes": 8614,
+          "sha256": "6ab9e748f0af893e981236c33fe1b2f00cdd6b9211f427dbd1c7f144d1c3c52b"
+        },
+        "current": {
+          "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_state\\state_clone_test.cc",
+          "bytes": 15826,
+          "sha256": "0886f7e935dacaeef280c0720e80aa754c92457d7f933a2cdee78dd306ccfeb4"
+        },
+        "frozen": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\source\\tests\\compute_state\\state_clone_test.cc",
+          "bytes": 15826,
+          "sha256": "0886f7e935dacaeef280c0720e80aa754c92457d7f933a2cdee78dd306ccfeb4"
+        }
+      }
+    ],
+    "diff": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\product-changes.diff",
+      "bytes": 10866,
+      "sha256": "dabab4604f886664489652a4a7384bda1815e9261334ca6357363646a4c8afc8"
+    },
+    "test_design": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\test-design.json",
+      "bytes": 2250,
+      "sha256": "bfa9f23d0292c6eb431d62cfaf2ef7bc21e955a798d6fb28d6c038d1994e8801"
+    },
+    "unchanged_owner_context": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\src\\compute_state\\state_versions.cc",
+        "bytes": 39702,
+        "sha256": "c7438a4604bcf0a6f0c3419afceedc50552d3751f873675ccfb497978c054ff7"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_state\\state_versions_test.cc",
+        "bytes": 24020,
+        "sha256": "02ae8aec4ab06842d9e64d0cfa400d03f1f5a61da80f8586939977362a714c80"
+      }
+    ],
+    "entry_point_review": {
+      "start": "Observer check precedes live/disabled and every native bind/prepare/submit.",
+      "take_cleanup_report": "Existing observer check already precedes native handle inspection; preserved.",
+      "cancel": "Records abandoned/disabled first, then returns Unavailable for an observer before Submission::valid/request_cancel.",
+      "collect": "Observer check precedes Invocation::in_flight and cleanup.",
+      "close": "Permanently closes route admission; observed slot records logical cancellation and never touches original Invocation::close or waits for it.",
+      "rearm": "Observer check precedes replacing a disabled original Invocation. No deferred-action queue or added native flags.",
+      "wait_drain": "Original explicit waits retain their existing wait_lock and observer admission; no new store-lock wait."
+    }
+  },
+  "independent_source_review": {
+    "status": "source_review_no_blockers_not_a_build_or_runtime_result",
+    "reviewer": "/root/k3_article_architecture_mapping",
+    "source_freeze_sha256": "f8a9b22331c656f4f20792210ca6e91147db287dfaea1cdff8e11a2370baa629",
+    "product_header_sha256": "cc553cab84174cf0e220e3ceafea4f21120a08d74f8062aaf6b75f535485ef5a",
+    "test_sha256": "0886f7e935dacaeef280c0720e80aa754c92457d7f933a2cdee78dd306ccfeb4",
+    "findings": [
+      "The gate entered notification occurs inside the route wait callback, proving CloneTicket has already incremented the slot observer count under the store monitor.",
+      "Old-header potentially overlapping native accesses are counted and withheld by a transparent wrapper; expected-red does not depend on executing native undefined behavior.",
+      "The new observer-first checks allow logical cancellation/close, collect/report/rearm rejection and attempted slot reuse to complete before the gate is released.",
+      "After join, old public controls are dropped before cleanup/cold rearm; subsequent original CPU copy/publication checks retained old bytes and new state bytes.",
+      "The borrowed Queue endpoint and observation boundary outlive route and original native controls.",
+      "Permanent logical route.closed and slot.disabled preserve admission semantics without a deferred native-close queue. No evidence requires replaying native close after the observer to prevent a lifetime defect.",
+      "The reviewer inspected the exact old/new test no-index diff for the compiler correction: conditional Status/ErrorProxy expression changed only to explicit if/else. This does not change synchronization, oracle or resource lifetime; no-blocker conclusion applies to the final freeze."
+    ],
+    "limits": [
+      "The new start/rearm guards for an idle slot with an observer are source-reviewed; this CPU public regression does not directly create that slot state.",
+      "CPU/CUDA/Vulkan in_flight currently reads atomic pending and was not itself identified as a current native data race; guarding it consistently preserves the generic thread-compatible owner contract.",
+      "No CUDA, Apple or Vulkan pending runtime was built or executed by either source-review agent.",
+      "The independent stale route-slot episode candidate in next-slot-episode-review.json remains untested and unfixed. This is not a claim that all State lifetime issues are eliminated.",
+      "Root owns all actual compiler, expected-red and green regression results."
+    ]
+  },
+  "test_design": {
+    "test": "StateClone.ExplicitObserverExcludesNativeCancellationCollectionAndClose",
+    "status": "source_only_not_compiled_or_run_by_agent",
+    "real_execution": "Original CPU CopyBatchProgram/CopyBatchInvocation/CopyBatchSubmission perform every copy, binding, output publication, completion and retirement.",
+    "boundary": "Transparent test forwarding wrapper gates only Submission::wait. Its entered notification happens after CloneTicket::take has incremented slot.observers under the StateStore monitor.",
+    "determinism": "The test thread waits for that original route wait callback, then runs cancel/close, collect, report, rearm and attempted slot reuse before releasing the callback. No thread-start flag, timeout, poll count or native data race is the failure oracle.",
+    "old_header_failure": "The wrapper records and withholds any overlapping native handle access. The old cancel path reads Submission::valid and calls request_cancel; close also calls Invocation::close; collect/rearm call Invocation::in_flight before checking observers. forbidden_accesses must remain zero.",
+    "branches": [
+      "StateDraft::cancel while its distinct CloneTicket is in wait: candidate remains cancelled; slot cannot be reused; after wait exits, drop old controls, collect, explicitly cold rearm and copy/publish another 16-byte state with old state retained.",
+      "StateStore::close while CloneTicket is in wait: close returns Unavailable before gate release, closes admission, preserves existing base; after wait exits no writer is returned, controls drop, collect retires and drain succeeds."
+    ],
+    "limits": [
+      "CPU payload copy itself is synchronous and has already run; the gate deterministically exercises the public explicit-observer lifetime, not native GPU pending duration.",
+      "Wrapper guards avoid executing undefined concurrent native Completion access in the expected-red arm.",
+      "No production test hook, new public API, native executor or alternate copy implementation.",
+      "No CUDA/Vulkan/Apple claim from this CPU source-only handoff.",
+      "Existing failure controls are dropped before cold rearm; stale route-slot generation handling is a separate reported candidate, not part of this change."
+    ]
+  },
+  "actual_tests": {
+    "passed": true,
+    "arms": {
+      "before": {
+        "passed": true,
+        "expected_red": true,
+        "cases": 1,
+        "expected_cases": 1,
+        "skipped": 0,
+        "failures": [
+          {
+            "name": "StateClone.ExplicitObserverExcludesNativeCancellationCollectionAndClose",
+            "details": [
+              "C:\\public\\project-hyle\\hyle\\tests\\compute_state\\state_clone_test.cc:158\nExpected equality of these values:\n  observation.forbidden_accesses.load(std::memory_order_relaxed)\n    Which is: 4\n  0u\n    Which is: 0\nGoogle Test trace:\nC:\\public\\project-hyle\\hyle\\tests\\compute_state\\state_clone_test.cc(118): false\n",
+              "C:\\public\\project-hyle\\hyle\\tests\\compute_state\\state_clone_test.cc:181\nExpected equality of these values:\n  observation.forbidden_accesses.load(std::memory_order_relaxed)\n    Which is: 4\n  0u\n    Which is: 0\nGoogle Test trace:\nC:\\public\\project-hyle\\hyle\\tests\\compute_state\\state_clone_test.cc(118): false\n",
+              "C:\\public\\project-hyle\\hyle\\tests\\compute_state\\state_clone_test.cc:158\nExpected equality of these values:\n  observation.forbidden_accesses.load(std::memory_order_relaxed)\n    Which is: 4\n  0u\n    Which is: 0\nGoogle Test trace:\nC:\\public\\project-hyle\\hyle\\tests\\compute_state\\state_clone_test.cc(118): true\n",
+              "C:\\public\\project-hyle\\hyle\\tests\\compute_state\\state_clone_test.cc:181\nExpected equality of these values:\n  observation.forbidden_accesses.load(std::memory_order_relaxed)\n    Which is: 4\n  0u\n    Which is: 0\nGoogle Test trace:\nC:\\public\\project-hyle\\hyle\\tests\\compute_state\\state_clone_test.cc(118): true\n"
+            ]
+          }
+        ],
+        "actual": [
+          "StateClone.ExplicitObserverExcludesNativeCancellationCollectionAndClose"
+        ]
+      },
+      "after": {
+        "passed": true,
+        "expected_red": false,
+        "cases": 33,
+        "expected_cases": 33,
+        "skipped": 0,
+        "failures": [],
+        "actual": [
+          "StateVersions.SchemaIdentityAndCompleteImportAreCheckedBeforeConsumption",
+          "StateVersions.SharedBranchReplacementAndExpectedBaseKeepOldVersion",
+          "StateVersions.MetadataSnapshotIsOwnedAndSeparateFromResource",
+          "StateVersions.EscapedReaderKeepsBackingCapacityAfterDirectoryRelease",
+          "StateVersions.BackingCapacityDeduplicatesDifferentBlocksOfOnePool",
+          "StateVersions.MixedRootsMetadataAndCollectedPrefixKeepExactAccounting",
+          "StateVersions.IndependentRootsPreserveMembersAndEscapedReadersAcrossCollection",
+          "StateVersions.CapacityCancelCloseAndCrossStoreAreExplicit",
+          "StateVersions.MetadataQuotaFailureLeavesSourceAndReturnsAllocation",
+          "StateVersions.HeadConcurrentExpectedBaseHasExactlyOneWinner",
+          "StateVersions.EmptySchemaHasAnActualEmptyVersion",
+          "StateVersions.PendingAdmittedUseKeepsBackingLedgerUntilReleased",
+          "StateVersions.HostSnapshotCapacityRejectsBeforeAnyDirectoryPublication",
+          "StateVersions.FailedSnapshotReplacementLeavesTheSharedBaseIntact",
+          "StateVersions.HostSnapshotsReuseOnlyRetiredExactBlocksWithoutWarmAllocations",
+          "StateVersions.EscapedHostSnapshotsSurviveRecordsStoreAndNewNativeReadAdmission",
+          "StateVersions.HostSnapshotReuseWaitsForActualNativeUseAndPreservesFailure",
+          "StateVersions.IdleHostSnapshotCapacityIsChargedAndReclaimedUnderPressure",
+          "StateVersions.HostSnapshotAllocationFailureKeepsTheBaseAndDirectoryIntact",
+          "StateVersions.ResourceConstraintRejectsForeignBackingBeforeImport",
+          "StateVersions.SlicedCloneWriterCannotPublishAnIncompleteMember",
+          "StateClone.ExplicitObserverExcludesNativeCancellationCollectionAndClose",
+          "StateClone.OnlyDirtyMemberIsCopiedAndWriterCannotModifyOldVersion",
+          "StateClone.AbandonedTicketCancelsCandidateAndExplicitColdRearmRestoresSlot",
+          "StateClone.AbandonedWriterNeverPublishesAndPoolOutlivesStoreHandle",
+          "StateClone.NativeConsumerMustReturnTheExactWriterRootAndGeneration",
+          "StateClone.RegistrationCapacityIsCheckedBeforeOriginalFactory",
+          "StateClone.ForeignMutableReplacementCannotBePublishedAsOriginalClone",
+          "StateClone.AcceptedProducerFailurePreventsReadyVersionAndPreservesOriginal",
+          "StateClone.UnfinishedWriterUseRejectsPublishWithoutConsumingPermission",
+          "StateClone.CancelledCandidateDoesNotAdmitUnstartedSuffixClone",
+          "StateClone.NewReadonlyResultRetainsClonePoolAfterCallerStoreAndRouteDrop",
+          "StateClone.OpaqueReadonlyMemberSharesButCannotBeRawCloned"
+        ]
+      }
+    },
+    "GPU_run": false,
+    "model_run": false,
+    "limits": "Actual CPU copy with a deterministic test-only observation boundary; original header red and fixed header33 related cases. Not a claim of all native/cross-platform journey coverage."
+  },
+  "next_candidate": {
+    "status": "source_review_only_not_reproduced_or_fixed",
+    "record": "next-slot-episode-review.json in the archive",
+    "issue": "Retained old failed Ticket/Draft may still target a reused native route-slot episode after actual retirement and explicit cold rearm. Audit old wait as well as cancellation/destruction separately."
+  },
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\state-clone-observer-close-2026-10-20.zip",
+    "bytes": 279450,
+    "sha256": "e4bae0215f03e2ea85c1b51cc1828a2683d6ef13fd9e039ad862590522d99a62"
+  },
+  "payloads": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\actual-header-witnesses.json",
+      "bytes": 6856,
+      "sha256": "801099fac2185b50f2302c14b98661acea85c21e1d924e91d6ef0a41d46b3a72",
+      "member": "actual-header-witnesses.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\archive-context.json",
+      "bytes": 1101,
+      "sha256": "52578be19867189a4c00fa710d0c83699aac6b4058f036608f7d3b7cdbf68cbf",
+      "member": "archive-context.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\before\\include\\hyle\\compute\\state_clone.h",
+      "bytes": 14192,
+      "sha256": "1e20c2363bb1fc6c1aa7b6b72247d5f1a2fde4d4f5ab04e5c2e7791c14d64b3f",
+      "member": "before/include/hyle/compute/state_clone.h"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\before\\tests\\compute_state\\state_clone_test.cc",
+      "bytes": 8614,
+      "sha256": "6ab9e748f0af893e981236c33fe1b2f00cdd6b9211f427dbd1c7f144d1c3c52b",
+      "member": "before/tests/compute_state/state_clone_test.cc"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\build.py",
+      "bytes": 4774,
+      "sha256": "1c1b6c32a2831c906c9838f1b285f6a78dae0eeffd4d8e3ce029bd7ee5b7c165",
+      "member": "build.py"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\checks\\after-image.json",
+      "bytes": 244,
+      "sha256": "2c68448b9ed5fc9edb07df4d5d03f2fcfdf2e22f3a9f10e0b51aa58ed3e32e1a",
+      "member": "checks/after-image.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\checks\\after-link-plan.json",
+      "bytes": 50051,
+      "sha256": "81b1edbbc4e8bf6174a64182ac597329c2e23b0ac2c90573491702c5497e6fe2",
+      "member": "checks/after-link-plan.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\checks\\after-link.command.json",
+      "bytes": 17698,
+      "sha256": "1196b5aee3b9790272585cd8805691bfb660bd5d9a3393006c2fc3e6af651b32",
+      "member": "checks/after-link.command.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\checks\\after-link.result.json",
+      "bytes": 17768,
+      "sha256": "319794831b93be6148c97b3947690c2f7b1fb49951a414b28248a7adfd08ae46",
+      "member": "checks/after-link.result.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\checks\\after-link.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "member": "checks/after-link.stderr.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\checks\\after-link.stdout.log",
+      "bytes": 260,
+      "sha256": "5c5e07ee411773ee2f8b64afd20ff181a8607d0425700973e90a62832be7b3f9",
+      "member": "checks/after-link.stdout.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\checks\\after-state_clone_test-compile.command.json",
+      "bytes": 1574,
+      "sha256": "93975ae6dc20f0ffc91e3368d98cd976f53e5729042e0c263e32fde49046270a",
+      "member": "checks/after-state_clone_test-compile.command.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\checks\\after-state_clone_test-compile.result.json",
+      "bytes": 1642,
+      "sha256": "ebf8db15d662e968cb7fd2889118004eb39004ecaa477e8e1ce736d2bb1c3205",
+      "member": "checks/after-state_clone_test-compile.result.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\checks\\after-state_clone_test-compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "member": "checks/after-state_clone_test-compile.stderr.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\checks\\after-state_clone_test-compile.stdout.log",
+      "bytes": 28548,
+      "sha256": "62be2faa7287298f520ba4b1468535ae3b7a1d5e27d2e4bca13c1246f1bc5e6f",
+      "member": "checks/after-state_clone_test-compile.stdout.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\checks\\after-state_clone_test-deps.json",
+      "bytes": 28330,
+      "sha256": "d615fe6d625524d717f82115f5e3dd0e8ff9567f5440abe5eff30b3f5d78cef0",
+      "member": "checks/after-state_clone_test-deps.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\checks\\after-state_clone_test-identity.json",
+      "bytes": 58901,
+      "sha256": "b9c1c00dd6d2286c6f38e9e51035fec9f26424920097d6015df28c37c6cfeb77",
+      "member": "checks/after-state_clone_test-identity.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\checks\\after-state_versions-compile.command.json",
+      "bytes": 1332,
+      "sha256": "6bba3ded5e5f48a595935595224e0897d0a4e9f0b13b7f41a5d265eb83b86f3f",
+      "member": "checks/after-state_versions-compile.command.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\checks\\after-state_versions-compile.result.json",
+      "bytes": 1402,
+      "sha256": "6098d1c792fe834cf763d774f86aca94a2fab6b088fcf5832d300e3de3c00988",
+      "member": "checks/after-state_versions-compile.result.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\checks\\after-state_versions-compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "member": "checks/after-state_versions-compile.stderr.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\checks\\after-state_versions-compile.stdout.log",
+      "bytes": 19277,
+      "sha256": "48b107d16b7940253c6d9580c3bcffb735f01b0a3807292808bef1eb1a8e2bfd",
+      "member": "checks/after-state_versions-compile.stdout.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\checks\\after-state_versions-deps.json",
+      "bytes": 18782,
+      "sha256": "6e14f1618ae287b6665a13306b1e8df020c01795676a6a956089674cdec21ee8",
+      "member": "checks/after-state_versions-deps.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\checks\\after-state_versions-identity.json",
+      "bytes": 40334,
+      "sha256": "e846942ffa0e6d7058d97e4446c94dc1356d529e038114f26e53c0a4e32f0792",
+      "member": "checks/after-state_versions-identity.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\checks\\after-state_versions_test-compile.command.json",
+      "bytes": 1589,
+      "sha256": "da767631dc21c1b6e89fb79799acc55e8cd9b3fbbcaef14e312cea34d75d9e74",
+      "member": "checks/after-state_versions_test-compile.command.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\checks\\after-state_versions_test-compile.result.json",
+      "bytes": 1659,
+      "sha256": "0ac82b7ad7ad625aea3f62ea50d569366cbc4fe594fae7ebaa987af788c3e8c6",
+      "member": "checks/after-state_versions_test-compile.result.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\checks\\after-state_versions_test-compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "member": "checks/after-state_versions_test-compile.stderr.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\checks\\after-state_versions_test-compile.stdout.log",
+      "bytes": 28527,
+      "sha256": "3281cbca2f912393b52e29074691a8652b9b7ce00408a63b55e4f58d50f62f78",
+      "member": "checks/after-state_versions_test-compile.stdout.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\checks\\after-state_versions_test-deps.json",
+      "bytes": 28333,
+      "sha256": "03185e443568f42ed870d39a6565668f23f26524c74f0d74a3f46eecee0b576f",
+      "member": "checks/after-state_versions_test-deps.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\checks\\after-state_versions_test-identity.json",
+      "bytes": 58922,
+      "sha256": "169b1bfde7a16ca55a713ea7d08cb5be7797a743db2cc7955c49daf04edb81e9",
+      "member": "checks/after-state_versions_test-identity.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\checks\\before-image.json",
+      "bytes": 245,
+      "sha256": "bfb7f38c72f92cc00fefdc03d66bed871f5b00fd86011d559f51af0292b3b1fe",
+      "member": "checks/before-image.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\checks\\before-link-plan.json",
+      "bytes": 50060,
+      "sha256": "37e1bde974ba79b5426539165042971dac1494afaaf68b39e6460698ff627d01",
+      "member": "checks/before-link-plan.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\checks\\before-link.command.json",
+      "bytes": 17705,
+      "sha256": "976ce7fd530a134dede48d05b3772a06a468c82d6b53f380cdeaa2bed6a6d365",
+      "member": "checks/before-link.command.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\checks\\before-link.result.json",
+      "bytes": 17774,
+      "sha256": "990eb4a71e984e3e7bba634be00462c49868b6b7d71e37a1cf6653088ed00c9c",
+      "member": "checks/before-link.result.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\checks\\before-link.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "member": "checks/before-link.stderr.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\checks\\before-link.stdout.log",
+      "bytes": 262,
+      "sha256": "41b79b2d08dd226dfc7ffce683eacdd54313161d9c59de9e9fb5a979ac07ee38",
+      "member": "checks/before-link.stdout.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\checks\\before-state_clone_test-compile.command.json",
+      "bytes": 1709,
+      "sha256": "b035c5b783536bd35a455c71272aa4eef54bda0cfca86487496c94579d060c3f",
+      "member": "checks/before-state_clone_test-compile.command.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\checks\\before-state_clone_test-compile.result.json",
+      "bytes": 1779,
+      "sha256": "f217bf04c3f848e73ffa48f8b2f1b93a5f10d708bcf142cdfa4988127829e8a0",
+      "member": "checks/before-state_clone_test-compile.result.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\checks\\before-state_clone_test-compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "member": "checks/before-state_clone_test-compile.stderr.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\checks\\before-state_clone_test-compile.stdout.log",
+      "bytes": 28624,
+      "sha256": "b1ec7a3c699dbe64cbffe46e77ba35469b8411b8c1306c8ce74728156390fbf9",
+      "member": "checks/before-state_clone_test-compile.stdout.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\checks\\before-state_clone_test-deps.json",
+      "bytes": 28410,
+      "sha256": "616a5b0427258189b4bb895461254c8a9ecfd0228bd8cdb671f94ce0e9f26e02",
+      "member": "checks/before-state_clone_test-deps.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\checks\\before-state_clone_test-identity.json",
+      "bytes": 59115,
+      "sha256": "3d1ed249f91682602fbff6c62f3a026e53a14b486e12c5486e4f79ed5c89c1e4",
+      "member": "checks/before-state_clone_test-identity.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\checks\\before-state_versions-compile.command.json",
+      "bytes": 1466,
+      "sha256": "534a489f9867ec2497155e511d4de5f4e38ae953d9cd718732b12818708e8374",
+      "member": "checks/before-state_versions-compile.command.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\checks\\before-state_versions-compile.result.json",
+      "bytes": 1535,
+      "sha256": "51af29263e86cb66f276c97619d3a1781a3ed52817dfbe4710a88f37ecbc7918",
+      "member": "checks/before-state_versions-compile.result.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\checks\\before-state_versions-compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "member": "checks/before-state_versions-compile.stderr.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\checks\\before-state_versions-compile.stdout.log",
+      "bytes": 19353,
+      "sha256": "8746e54efc84daa7848eaa8d57c73f2e12cd1dc93ea3d069bfedd208920cbf0d",
+      "member": "checks/before-state_versions-compile.stdout.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\checks\\before-state_versions-deps.json",
+      "bytes": 18862,
+      "sha256": "b420885a414de2ec25e974c9a1198ecce53fdb12a26616ba667ab2a49510e539",
+      "member": "checks/before-state_versions-deps.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\checks\\before-state_versions-identity.json",
+      "bytes": 40548,
+      "sha256": "2be53fe6a3864122359774e2abf4117e292a206722812608771ccf6c5f97441b",
+      "member": "checks/before-state_versions-identity.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\checks\\before-state_versions_test-compile.command.json",
+      "bytes": 1724,
+      "sha256": "63dda6b670d1ffc9bb577a9a99e1dab7bc0e920b4a6c701fe895d5da4fb13349",
+      "member": "checks/before-state_versions_test-compile.command.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\checks\\before-state_versions_test-compile.result.json",
+      "bytes": 1794,
+      "sha256": "fc7c4e4717c245630b2264f287bf8024e97ee69dde6045d8d6d5dcca2fbc2e10",
+      "member": "checks/before-state_versions_test-compile.result.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\checks\\before-state_versions_test-compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "member": "checks/before-state_versions_test-compile.stderr.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\checks\\before-state_versions_test-compile.stdout.log",
+      "bytes": 28603,
+      "sha256": "1b0f483042f0538e831de54321faef9b182f0276907b14a7efd31e7426e30ee8",
+      "member": "checks/before-state_versions_test-compile.stdout.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\checks\\before-state_versions_test-deps.json",
+      "bytes": 28413,
+      "sha256": "ea689ae0bfdaa22c95443597fa8339f70496d255f67d03830b1e09367dc6be49",
+      "member": "checks/before-state_versions_test-deps.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\checks\\before-state_versions_test-identity.json",
+      "bytes": 59136,
+      "sha256": "6801d2866264b9cd01068f5b1671e75ca1ca0f5eadd57bb1d3ce7f188f6e6da9",
+      "member": "checks/before-state_versions_test-identity.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\checks\\compile-summary.json",
+      "bytes": 41,
+      "sha256": "7c153ec7e6eb2583c3f5d8a64feeab13c02e8cdc343aae47fa4ddb1c1ce1896e",
+      "member": "checks/compile-summary.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\checks\\initial-compile-failure\\after-state_clone_test-compile.command.json",
+      "bytes": 1575,
+      "sha256": "59cd0e43d8b925dea6b3a04255940f03e3d0c947743ba7c169e8bcbc3bff2551",
+      "member": "checks/initial-compile-failure/after-state_clone_test-compile.command.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\checks\\initial-compile-failure\\after-state_clone_test-compile.result.json",
+      "bytes": 1645,
+      "sha256": "913633eacf925890a96bf6614ae333a1d141a8c7cba9d144d7dd402c39fa94ca",
+      "member": "checks/initial-compile-failure/after-state_clone_test-compile.result.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\checks\\initial-compile-failure\\after-state_clone_test-compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "member": "checks/initial-compile-failure/after-state_clone_test-compile.stderr.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\checks\\initial-compile-failure\\after-state_clone_test-compile.stdout.log",
+      "bytes": 29124,
+      "sha256": "15c23f196deebf4b08a236675a58bbe1940f005954f788e12c54e44000178633",
+      "member": "checks/initial-compile-failure/after-state_clone_test-compile.stdout.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\checks\\initial-compile-failure\\before-state_clone_test-compile.command.json",
+      "bytes": 1709,
+      "sha256": "85dac35de97208ac6311cbcf31d26009368c34b588091a1100e61deb57bc3079",
+      "member": "checks/initial-compile-failure/before-state_clone_test-compile.command.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\checks\\initial-compile-failure\\before-state_clone_test-compile.result.json",
+      "bytes": 1778,
+      "sha256": "aa3ad7cb9979406409587bfcddb7696dec091dd9c8ca82324e693905111b0f4a",
+      "member": "checks/initial-compile-failure/before-state_clone_test-compile.result.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\checks\\initial-compile-failure\\before-state_clone_test-compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "member": "checks/initial-compile-failure/before-state_clone_test-compile.stderr.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\checks\\initial-compile-failure\\before-state_clone_test-compile.stdout.log",
+      "bytes": 29200,
+      "sha256": "6417fe974606356d163621a4c653e32a3716494cabef4a52e949d2d05ac54aa8",
+      "member": "checks/initial-compile-failure/before-state_clone_test-compile.stdout.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\checks\\initial-compile-failure\\compile-summary.json",
+      "bytes": 438,
+      "sha256": "905d27dfa539f283e2a1b6668b5f86be6909a4a31b535634238599188d082daf",
+      "member": "checks/initial-compile-failure/compile-summary.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\checks\\initial-compile-failure\\plan.json",
+      "bytes": 16226,
+      "sha256": "7f8dfa8959f7d705ecc037d00aad5ca918d46d72de5888192791b673a2971571",
+      "member": "checks/initial-compile-failure/plan.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\checks\\live.json",
+      "bytes": 17768,
+      "sha256": "319794831b93be6148c97b3947690c2f7b1fb49951a414b28248a7adfd08ae46",
+      "member": "checks/live.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\checks\\plan.json",
+      "bytes": 122596,
+      "sha256": "e18ebb8d01b94d85dfb918fda6d7c545ab7b64c2c8ccadff9318a54e8461e1a4",
+      "member": "checks/plan.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\checks\\runtime-environment.json",
+      "bytes": 8168,
+      "sha256": "ffa7511b42a3f62727f82445924ebcdb6f60d66460dae34f50df6150ca1c80c2",
+      "member": "checks/runtime-environment.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\checks\\summary.json",
+      "bytes": 184,
+      "sha256": "3ae086118fa4ecbbbf55499cc3b9a5bbf90763eba390039a68ba0f629d803f49",
+      "member": "checks/summary.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\cpu-owner-inventory.json",
+      "bytes": 180587,
+      "sha256": "5981d7f07a46b442b54d336a53fe2178969c021ccc310c5a19a6c94557206f49",
+      "member": "cpu-owner-inventory.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\first-test-compile-failure\\product-changes.diff",
+      "bytes": 10840,
+      "sha256": "5a5fa6f655b7454a7357d3fb52c0968ceb8a4e17609bd19183350f650c955265",
+      "member": "first-test-compile-failure/product-changes.diff"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\first-test-compile-failure\\source-freeze.json",
+      "bytes": 3888,
+      "sha256": "1a88254d3dc664033d3a852a2ea7aca6888a9000534ee421ebde585bad9b754d",
+      "member": "first-test-compile-failure/source-freeze.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\first-test-compile-failure\\state_clone_test.cc",
+      "bytes": 15802,
+      "sha256": "2232b03152730f09d9a39fc4e017eb28f5e38145c4dc4f280eefacdc44c97aa5",
+      "member": "first-test-compile-failure/state_clone_test.cc"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\independent-source-review.json",
+      "bytes": 2466,
+      "sha256": "2c3515b77c30949b07af0035d79e7d35f6de6bc7074a1d161e424c62d0babcd3",
+      "member": "independent-source-review.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\next-slot-episode-review.json",
+      "bytes": 5479,
+      "sha256": "1c1ea29bd56f4a65c8e324ee181602b8f5c9707cc002b2067b97d6ef656252d8",
+      "member": "next-slot-episode-review.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\product-changes.diff",
+      "bytes": 10866,
+      "sha256": "dabab4604f886664489652a4a7384bda1815e9261334ca6357363646a4c8afc8",
+      "member": "product-changes.diff"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\publish.py",
+      "bytes": 8546,
+      "sha256": "16c3710f958bf5aca1b1002f8c9b422209d03437fdff0e6a3b7650b6eee554b7",
+      "member": "publish.py"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\run_tests.py",
+      "bytes": 2765,
+      "sha256": "492a9804d446d7727f42aeff228359f7cf02a7fa45f3805e7df6d38100ec6d8c",
+      "member": "run_tests.py"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\seal_source.py",
+      "bytes": 5109,
+      "sha256": "c50d3db88f66285966071b0d31b86cac4c56e3593ce75f48ac5d69f2c622bfca",
+      "member": "seal_source.py"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\source\\context\\src\\compute_state\\state_versions.cc",
+      "bytes": 39702,
+      "sha256": "c7438a4604bcf0a6f0c3419afceedc50552d3751f873675ccfb497978c054ff7",
+      "member": "source/context/src/compute_state/state_versions.cc"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\source\\context\\tests\\compute_state\\state_versions_test.cc",
+      "bytes": 24020,
+      "sha256": "02ae8aec4ab06842d9e64d0cfa400d03f1f5a61da80f8586939977362a714c80",
+      "member": "source/context/tests/compute_state/state_versions_test.cc"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\source\\include\\hyle\\compute\\state_clone.h",
+      "bytes": 14580,
+      "sha256": "cc553cab84174cf0e220e3ceafea4f21120a08d74f8062aaf6b75f535485ef5a",
+      "member": "source/include/hyle/compute/state_clone.h"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\source\\tests\\compute_state\\state_clone_test.cc",
+      "bytes": 15826,
+      "sha256": "0886f7e935dacaeef280c0720e80aa754c92457d7f933a2cdee78dd306ccfeb4",
+      "member": "source/tests/compute_state/state_clone_test.cc"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\source-freeze.json",
+      "bytes": 3888,
+      "sha256": "f8a9b22331c656f4f20792210ca6e91147db287dfaea1cdff8e11a2370baa629",
+      "member": "source-freeze.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\test-design.json",
+      "bytes": 2250,
+      "sha256": "bfa9f23d0292c6eb431d62cfaf2ef7bc21e955a798d6fb28d6c038d1994e8801",
+      "member": "test-design.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\tests\\after\\inputs.json",
+      "bytes": 1839,
+      "sha256": "c67d9f238d00f3cf7d314121911bb9226656b2109efd85c036fb15efdedddcde",
+      "member": "tests/after/inputs.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\tests\\after\\live.json",
+      "bytes": 549,
+      "sha256": "ffdcc80aee080d82342595e06cd17e7e201600ef910934a4508e834c85f12e25",
+      "member": "tests/after/live.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\tests\\after\\results.xml",
+      "bytes": 9430,
+      "sha256": "52a968ed7d83642bd9ba5b73afefc5443797712766bc5f4d7ea8d5b9d8dc0790",
+      "member": "tests/after/results.xml"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\tests\\after\\summary.json",
+      "bytes": 2653,
+      "sha256": "21c1e858388a8d69e75c4916219f90f91137199350190169e101f2e41dca527f",
+      "member": "tests/after/summary.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\tests\\after\\tests.command.json",
+      "bytes": 479,
+      "sha256": "deb9d8b30586dba0c9f56007df487c9c434a9c4e8dafae9ea1ab0f93133ecad1",
+      "member": "tests/after/tests.command.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\tests\\after\\tests.result.json",
+      "bytes": 549,
+      "sha256": "ffdcc80aee080d82342595e06cd17e7e201600ef910934a4508e834c85f12e25",
+      "member": "tests/after/tests.result.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\tests\\after\\tests.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "member": "tests/after/tests.stderr.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\tests\\after\\tests.stdout.log",
+      "bytes": 6261,
+      "sha256": "87feeeabe25d70a17f224fa2c44e9359a1bed1b15da7e32101f66a348ccd6cc9",
+      "member": "tests/after/tests.stdout.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\tests\\before\\inputs.json",
+      "bytes": 1883,
+      "sha256": "d274830b2895deb2bd9a615630006ee717c2b5b7c6d09853a899c15ae117e440",
+      "member": "tests/before/inputs.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\tests\\before\\live.json",
+      "bytes": 594,
+      "sha256": "6a98fe0b340ec53553eeea3a0a7455e2702152dc505a683112a71058dbab32b8",
+      "member": "tests/before/live.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\tests\\before\\results.xml",
+      "bytes": 3513,
+      "sha256": "5f17674645115a366e3df3566dc728af4d0227c2c77e7f627d54adaee76a22ce",
+      "member": "tests/before/results.xml"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\tests\\before\\summary.json",
+      "bytes": 1722,
+      "sha256": "97185e318f10acc490a646f3c9d58028c014ec66b21b9e5405f46f157b0990a5",
+      "member": "tests/before/summary.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\tests\\before\\tests.command.json",
+      "bytes": 524,
+      "sha256": "bc2b23cbd1688dc925456f745b3ac03a7388e49af7255a8c7832983af28c7f6e",
+      "member": "tests/before/tests.command.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\tests\\before\\tests.result.json",
+      "bytes": 594,
+      "sha256": "6a98fe0b340ec53553eeea3a0a7455e2702152dc505a683112a71058dbab32b8",
+      "member": "tests/before/tests.result.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\tests\\before\\tests.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "member": "tests/before/tests.stderr.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\tests\\before\\tests.stdout.log",
+      "bytes": 2176,
+      "sha256": "768cf6c5d011039f0bc2e0ab0617f35a254858a62d9f878220c6ccc5bf0aec26",
+      "member": "tests/before/tests.stdout.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-observer-close\\tests\\summary.json",
+      "bytes": 4936,
+      "sha256": "7d9115d99d812ed8958ae8a1fe857b060c16980249ead659a4d400fb7aac49ca",
+      "member": "tests/summary.json"
+    }
+  ],
+  "archive_verified": {
+    "CRC": true,
+    "all_payload_SHA256": true
+  },
+  "limits": [
+    "Actual Windows CPU source/header before-after only; no CUDA/Vulkan/Apple native run, model run, GPU profiling or throughput experiment for this batch.",
+    "Original CPU payload copy is synchronous; the deterministic test-only boundary blocks the explicit host observation, not pending GPU work.",
+    "Idle-slot observer start/rearm guards are source-reviewed and are not directly produced by the current public CPU regression.",
+    "Current CPU/CUDA/Vulkan in_flight reads atomic pending; the actual current defect concerns concurrent mutable Completion/native control observation. Consistent observer-first native access also preserves the generic thread-compatible contract.",
+    "This closes one concrete race; neither all State lifetime behavior nor the broad inference-architecture goal is declared complete.",
+    "No binary/object/library/map payloads and no cleanup receipts/scripts are archived. No files were deleted by publishing."
+  ],
+  "cleanup": {
+    "executed": true,
+    "actual": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\state-clone-observer-close-2026-10-20.cleanup.json",
+      "bytes": 12709,
+      "sha256": "b1795395c0b4f8a39f85c46fc3ce5b534cb1c223620ac23227a76d8ebe285e74"
+    },
+    "removed_bytes": 441667075,
+    "scope": "Shared cleanup of both correctness batches; count these bytes once."
+  }
+}

@@ -64,20 +64,34 @@ template<class T,class Policy=MaterializedMetadataPolicy>struct MaterializedNati
       std::array<BatchLayoutVersion,2>,FixedNativePreparation> mirror_layouts;
   int native_bank=-1,prepared_bank=0;
   bool prepared=false,bound=false,closed=false,failed=false;
+  // Ordinary Graph already owns and uploads explicit layout metadata. Its
+  // original input lease supplies the page-table subrange; do not mirror it.
+  bool external_metadata=false;
   LeaseImportOptions import;
 
   Status initialize(const typename T::Context&selected_context,typename T::Program program,
       typename Policy::Recipe common,const typename T::Memory&d,const typename T::Memory&h,
-      typename Policy::Options options,const WorkloadContext&selected_workload={})noexcept{
+      typename Policy::Options options,const WorkloadContext&selected_workload={},
+      bool external_metadata_input=false)noexcept{
     if((!Policy::prepare_native && !program.valid()) || !common.valid() || !d.valid() || !h.valid())return Status::InvalidArgument("native batch program/resources invalid");
+    if(external_metadata_input && !Policy::prepare_native)return Status::InvalidArgument("external metadata needs a native paged recipe");
     recipe=std::move(common);
     if constexpr(Policy::prepare_native){preparation.context=&selected_context;preparation.workload=selected_workload;}
     device=&d;staging=&h;import={.allocator=allocator,.resource_budget=options.resource_budget};
+    external_metadata=external_metadata_input;
+    const auto refs=recipe.schema().capacity().max_page_refs;
+    if(refs>(UINT32_MAX-input_count)/2)return Status::ResourceExhausted("native batch page use capacity");
+    HYLE_RETURN_IF_ERROR(page_reads.reserve(input_count+2*refs));
+    HYLE_ASSIGN_OR_RETURN(uses,LeaseUsePool::create({.max_batches=1,.max_resources_per_batch=std::uint32_t(input_count)+2*refs,.allocator=allocator,.resource_budget=options.resource_budget}));
+    if(program.valid()){HYLE_ASSIGN_OR_RETURN(native,T::invocation(program,allocator));}
+    if(external_metadata){
+      if constexpr(Policy::prepare_native){report={};report.device_banks=0;}
+      return Status::Ok();
+    }
     const auto lengths=Policy::lengths(recipe);std::size_t bytes=0;
     for(const auto length:lengths){if(length>SIZE_MAX-bytes)return Status::OutOfRange("native metadata size overflow");bytes+=length;}
     constexpr std::size_t padding=3*metadata_count*63;
     if(bytes>(SIZE_MAX-padding)/3 || 3*bytes+padding>options.max_metadata_backing_bytes)return Status::ResourceExhausted("native metadata fixed backing cap");
-    if(program.valid()){HYLE_ASSIGN_OR_RETURN(native,T::invocation(program,allocator));}
     HYLE_ASSIGN_OR_RETURN(auto hp,LeasePool::create(h.ref(),bytes+metadata_count*63,{.max_blocks=std::uint32_t(metadata_count),.allocator=allocator,.resource_budget=options.resource_budget}));
     HYLE_ASSIGN_OR_RETURN(auto dp,LeasePool::create(d.ref(),2*bytes+2*metadata_count*63,{.max_blocks=std::uint32_t(2*metadata_count),.allocator=allocator,.resource_budget=options.resource_budget}));
     for(std::size_t i=0;i<metadata_count;++i){HYLE_ASSIGN_OR_RETURN(staging_writers[i],hp.allocate(lengths[i],64));for(auto&bank:mirror_writers){HYLE_ASSIGN_OR_RETURN(bank[i],dp.allocate(lengths[i],64));}}
@@ -91,10 +105,7 @@ template<class T,class Policy=MaterializedMetadataPolicy>struct MaterializedNati
     std::array<CopyResourceSpec,2*metadata_count> specs;
     for(std::size_t i=0;i<metadata_count;++i){specs[i]={h.ref(),lengths[i]};specs[i+metadata_count]={d.ref(),lengths[i]};}
     HYLE_ASSIGN_OR_RETURN(auto copy,T::copy_program(selected_context,specs,{.max_resources=std::uint32_t(2*metadata_count),.max_copies=std::uint32_t(metadata_count),.max_phases=1,.max_bytes=bytes,.allocator=allocator,.resource_budget=options.resource_budget}));
-    HYLE_ASSIGN_OR_RETURN(upload,T::copy_invocation(copy));const auto refs=recipe.schema().capacity().max_page_refs;
-    if(refs>(UINT32_MAX-input_count)/2)return Status::ResourceExhausted("native batch page use capacity");
-    HYLE_RETURN_IF_ERROR(page_reads.reserve(input_count+2*refs));
-    HYLE_ASSIGN_OR_RETURN(uses,LeaseUsePool::create({.max_batches=1,.max_resources_per_batch=std::uint32_t(input_count)+2*refs,.allocator=allocator,.resource_budget=options.resource_budget}));
+    HYLE_ASSIGN_OR_RETURN(upload,T::copy_invocation(copy));
     if constexpr(Policy::prepare_native){
       // Device allocations need not be host-mappable. Initialize both banks
       // through the original checked F2 path at cold controller creation.
@@ -114,7 +125,14 @@ template<class T,class Policy=MaterializedMetadataPolicy>struct MaterializedNati
   Status open()const noexcept{return closed || failed?Status::FailedPrecondition("native batch controller closed/failed"):Status::Ok();}
   Status prepare(BatchLayoutVersion layout)noexcept{
     HYLE_RETURN_IF_ERROR(open());HYLE_ASSIGN_OR_RETURN(auto next,recipe.version(std::move(layout)));
-    if(native.valid()){HYLE_RETURN_IF_ERROR(T::reuse_gate(native));}if(uses.active_batches())return Status::Unavailable("native batch actual permission use retained");
+    if(native.valid()){
+      // Graph can prepare a new output backing after actual retirement while
+      // old readonly storage survives. Replay still uses the strict gate.
+      if constexpr(requires{T::prepare_gate(native);}){
+        HYLE_RETURN_IF_ERROR(T::prepare_gate(native));
+      }else{HYLE_RETURN_IF_ERROR(T::reuse_gate(native));}
+    }
+    if(uses.active_batches())return Status::Unavailable("native batch actual permission use retained");
     [[maybe_unused]] bool reused_native=false;
     if constexpr(Policy::prepare_native){
       const auto old=version.layout(),current=next.layout();const auto a=old.host(),b=current.host();
@@ -126,15 +144,21 @@ template<class T,class Policy=MaterializedMetadataPolicy>struct MaterializedNati
         HYLE_ASSIGN_OR_RETURN(auto prepared_native,T::invocation(program,allocator));
         // Commit a cold replacement only after this non-mutating admission
         // gate. All later accepted upload failures poison the original slot.
-        HYLE_RETURN_IF_ERROR(upload.reset());native=std::move(prepared_native);
-      }else{HYLE_RETURN_IF_ERROR(upload.reset());}
+        if(!external_metadata)HYLE_RETURN_IF_ERROR(upload.reset());
+        native=std::move(prepared_native);
+      }else if(!external_metadata){HYLE_RETURN_IF_ERROR(upload.reset());}
     }else{HYLE_RETURN_IF_ERROR(upload.reset());}
     prepared=false;bound=false;reads={};keys={};values={};version={};
-    prepared_bank=native_bank==0?1:0;
+    prepared_bank=external_metadata?-1:(native_bank==0?1:0);
     const auto transfer=[&]()noexcept->Status{
       if constexpr(Policy::prepare_native){
         if(reused_native)HYLE_RETURN_IF_ERROR(T::release_inputs(native));
         HYLE_RETURN_IF_ERROR(T::update_layout(native,next.layout()));
+        if(external_metadata){
+          report.layout_generation=next.layout().generation();
+          report.uploaded_bytes=0;report.upload_host_waits=0;
+          report.reused_native_plan=reused_native;return Status::Ok();
+        }
         const auto current=next.layout();const auto pages=current.host().page_indices;
         const auto equal=[](auto a,auto b){return a.size()==b.size()&&std::equal(a.begin(),a.end(),b.begin());};
         // An unchanged table can keep the current readonly bank even while the
@@ -183,7 +207,8 @@ template<class T,class Policy=MaterializedMetadataPolicy>struct MaterializedNati
       }
     };
     const auto status=transfer();if(!status.ok()){failed=true;return status;}
-    for(std::size_t i=0;i<metadata_count;++i)reads[3+i]=mirror_ready[prepared_bank][i];version=std::move(next);prepared=true;return Status::Ok();
+    if(!external_metadata)for(std::size_t i=0;i<metadata_count;++i)reads[3+i]=mirror_ready[prepared_bank][i];
+    version=std::move(next);prepared=true;return Status::Ok();
   }
   // Native producers may export a permanently readonly resource owner.
   // Only an explicit route trait can qualify it; all original consumers keep
@@ -194,15 +219,55 @@ template<class T,class Policy=MaterializedMetadataPolicy>struct MaterializedNati
     else return storage.resource()==device->ref()?Status::Ok():
         Status::InvalidArgument("native batch Q resource differs");
   }
+  Result<TensorDesc> input_description(std::size_t port)const noexcept{
+    if constexpr(Policy::prepare_native)return recipe.input_description(version.layout(),port);
+    else{
+      const auto descriptions=recipe.descriptions();
+      if(port>=descriptions.size())return std::unexpected(Status::InvalidArgument("native batch input port is outside its recipe"));
+      return descriptions[port];
+    }
+  }
   Status bind(ReadLease query,PagedArenaRead k,PagedArenaRead v)noexcept{
+    if(recipe.schema().mla_layout()!=MlaCacheLayout::kNone)return Status::InvalidArgument("MLA binds one compact cache frame");
     return bind_pages(std::move(query),std::move(k),std::move(v));
+  }
+  Status bind(ReadLease query,PagedArenaRead cache)noexcept{
+    return bind_mla_pages(std::move(query),std::move(cache));
+  }
+  template<class Frame>Status bind_mla_pages(ReadLease query,Frame cache)noexcept{
+    HYLE_RETURN_IF_ERROR(open());
+    if constexpr(!Policy::prepare_native)return Status::InvalidArgument("MLA requires a native page recipe");
+    if(!prepared || bound || recipe.schema().mla_layout()==MlaCacheLayout::kNone)
+      return Status::FailedPrecondition("MLA needs an unbound prepared compact-cache episode");
+    HYLE_ASSIGN_OR_RETURN(auto query_description,input_description(0));
+    HYLE_ASSIGN_OR_RETURN(auto qt,query.tensor(query_description));HYLE_RETURN_IF_ERROR(query_resource(qt.storage()));
+    HYLE_ASSIGN_OR_RETURN(auto q,T::binding(*device,query,query_description,import));
+    if(version.layout().facts().query_rows==0 && version.layout().facts().page_refs==0){
+      if(cache.valid())return Status::InvalidArgument("empty MLA episode needs no cache frame");
+      const std::array inputs{std::move(q)};HYLE_RETURN_IF_ERROR(native.bind(inputs));
+    }else{
+      if(cache.layout()!=version.layout())return Status::InvalidArgument("MLA cache frame differs from prepared generation");
+      HYLE_RETURN_IF_ERROR(PagedArenaAccess::validate_storage(cache,recipe.schema().capacity().key_storage));
+      HYLE_ASSIGN_OR_RETURN(auto ct,PagedArenaAccess::tensor(cache));
+      HYLE_ASSIGN_OR_RETURN(auto cache_description,input_description(1));
+      if(ct.description()!=cache_description)return Status::InvalidArgument("MLA cache physical geometry differs");
+      HYLE_ASSIGN_OR_RETURN(auto cn,T::paged_binding(*device,cache,import));
+      HYLE_ASSIGN_OR_RETURN(auto metadata_description,input_description(2));
+      HYLE_ASSIGN_OR_RETURN(auto metadata,T::binding(*device,reads[3],metadata_description,import));
+      const std::array inputs{std::move(q),std::move(cn),std::move(metadata)};
+      const auto status=native.bind(inputs);if(!status.ok()){failed=true;return status;}
+    }
+    reads[0]=std::move(query);
+    if constexpr(std::is_same_v<Frame,PagedArenaRead>)keys=std::move(cache);
+    native_bank=prepared_bank;bound=true;return Status::Ok();
   }
   template<class Frame> Status bind_pages(ReadLease query,Frame k,Frame v)noexcept{
     HYLE_RETURN_IF_ERROR(open());if(!prepared || bound)return Status::FailedPrecondition("native batch needs an unbound prepared episode");
+    if(recipe.schema().mla_layout()!=MlaCacheLayout::kNone)return Status::InvalidArgument("MLA requires its single-cache binding");
     if constexpr(Policy::prepare_native){
       if(version.layout().facts().query_rows==0 && version.layout().facts().page_refs==0){
         if(k.valid() || v.valid())return Status::InvalidArgument("empty native page episode needs no KV frames");
-        const auto description=recipe.descriptions()[0];HYLE_ASSIGN_OR_RETURN(auto qt,query.tensor(description));
+        HYLE_ASSIGN_OR_RETURN(auto description,input_description(0));HYLE_ASSIGN_OR_RETURN(auto qt,query.tensor(description));
         HYLE_RETURN_IF_ERROR(query_resource(qt.storage()));
         HYLE_ASSIGN_OR_RETURN(auto q,T::binding(*device,query,description,import));
         const std::array inputs{std::move(q)};const auto status=native.bind(inputs);
@@ -214,11 +279,11 @@ template<class T,class Policy=MaterializedMetadataPolicy>struct MaterializedNati
     const auto capacity=recipe.schema().capacity();
     HYLE_RETURN_IF_ERROR(PagedArenaAccess::validate_storage(k,capacity.key_storage));
     HYLE_RETURN_IF_ERROR(PagedArenaAccess::validate_storage(v,capacity.value_storage));
-    const auto descriptions=recipe.descriptions();HYLE_ASSIGN_OR_RETURN(auto qt,query.tensor(descriptions[0]));HYLE_RETURN_IF_ERROR(query_resource(qt.storage()));
-    HYLE_ASSIGN_OR_RETURN(auto q,T::binding(*device,query,descriptions[0],import));HYLE_ASSIGN_OR_RETURN(auto kn,T::paged_binding(*device,k,import));HYLE_ASSIGN_OR_RETURN(auto vn,T::paged_binding(*device,v,import));
+    HYLE_ASSIGN_OR_RETURN(auto query_description,input_description(0));HYLE_ASSIGN_OR_RETURN(auto qt,query.tensor(query_description));HYLE_RETURN_IF_ERROR(query_resource(qt.storage()));
+    HYLE_ASSIGN_OR_RETURN(auto q,T::binding(*device,query,query_description,import));HYLE_ASSIGN_OR_RETURN(auto kn,T::paged_binding(*device,k,import));HYLE_ASSIGN_OR_RETURN(auto vn,T::paged_binding(*device,v,import));
     std::array<std::optional<typename T::View>,input_count> views;
     views[0]=std::move(q);views[1]=std::move(kn);views[2]=std::move(vn);
-    for(std::size_t i=3;i<input_count;++i){HYLE_ASSIGN_OR_RETURN(views[i],T::binding(*device,reads[i],descriptions[i],import));}
+    for(std::size_t i=3;i<input_count;++i){HYLE_ASSIGN_OR_RETURN(auto description,input_description(i));HYLE_ASSIGN_OR_RETURN(views[i],T::binding(*device,reads[i],description,import));}
     const auto inputs=native_input_array(views,std::make_index_sequence<input_count>{});
     const auto status=native.bind(inputs);if(!status.ok()){failed=true;return status;}
     reads[0]=std::move(query);
@@ -228,21 +293,32 @@ template<class T,class Policy=MaterializedMetadataPolicy>struct MaterializedNati
   Status bind(ReadLease query,ReadLease k,ReadLease v)noexcept{
     HYLE_RETURN_IF_ERROR(open());if(!prepared || bound)return Status::FailedPrecondition("native batch needs an unbound prepared episode");
     if(recipe.schema().capacity().storage!=BatchStorage::kRagged)return Status::InvalidArgument("native paged batch needs exact page frames");
-    const std::array sources{query,k,v};const auto descriptions=recipe.descriptions();
+    const std::array sources{query,k,v};
     std::array<std::optional<typename T::View>,input_count> views;
-    for(std::size_t i=0;i<3;++i){HYLE_ASSIGN_OR_RETURN(auto tensor,sources[i].tensor(descriptions[i]));if(tensor.storage().resource()!=device->ref())return Status::InvalidArgument("native batch source resource differs");HYLE_ASSIGN_OR_RETURN(views[i],T::binding(*device,sources[i],descriptions[i],import));}
-    for(std::size_t i=3;i<input_count;++i){HYLE_ASSIGN_OR_RETURN(views[i],T::binding(*device,reads[i],descriptions[i],import));}
+    for(std::size_t i=0;i<3;++i){HYLE_ASSIGN_OR_RETURN(auto description,input_description(i));HYLE_ASSIGN_OR_RETURN(auto tensor,sources[i].tensor(description));if(tensor.storage().resource()!=device->ref())return Status::InvalidArgument("native batch source resource differs");HYLE_ASSIGN_OR_RETURN(views[i],T::binding(*device,sources[i],description,import));}
+    for(std::size_t i=3;i<input_count;++i){HYLE_ASSIGN_OR_RETURN(auto description,input_description(i));HYLE_ASSIGN_OR_RETURN(views[i],T::binding(*device,reads[i],description,import));}
     const auto inputs=native_input_array(views,std::make_index_sequence<input_count>{});const auto status=native.bind(inputs);if(!status.ok()){failed=true;return status;}
     for(std::size_t i=0;i<3;++i)reads[i]=sources[i];
     native_bank=prepared_bank;bound=true;return Status::Ok();
   }
-  auto submit()noexcept->Result<typename T::Submission>{
+  template<bool ConsumePreparation>auto submit_bound()noexcept->Result<typename T::Submission>{
     HYLE_RETURN_IF_ERROR(open());if(!prepared || !bound)return std::unexpected(Status::FailedPrecondition("native batch is not prepared/bound"));
     HYLE_ASSIGN_OR_RETURN(auto batch,uses.begin());page_reads.reset();for(const auto&lease:reads)if(lease.valid())HYLE_RETURN_IF_ERROR(page_reads.add(lease));
     for(const auto&page:PagedArenaAccess::pages(keys))HYLE_RETURN_IF_ERROR(page_reads.add(page));
     for(const auto&page:PagedArenaAccess::pages(values))HYLE_RETURN_IF_ERROR(page_reads.add(page));
     HYLE_RETURN_IF_ERROR(page_reads.admit(batch));
-    auto submitted=T::submit(native,std::move(batch));prepared=false;bound=false;if(!submitted)failed=true;return submitted;
+    auto submitted=T::submit(native,std::move(batch));
+    if constexpr(ConsumePreparation){prepared=false;bound=false;}
+    if(!submitted){failed=true;prepared=false;bound=false;}return submitted;
+  }
+  auto submit()noexcept->Result<typename T::Submission>{return submit_bound<true>();}
+  // Ordinary Graph keeps these exact cold layout/frame/native bindings until
+  // its original reset/rebind gate. Every replay still admits a fresh real
+  // permission use and the same native result writer; no flags are restored
+  // after acceptance and no binding/planning happens on this path.
+  auto replay_ready()noexcept->Result<typename T::Submission>{
+    HYLE_RETURN_IF_ERROR(T::reuse_gate(native));
+    return submit_bound<false>();
   }
   template<class Update,class Access>
   auto submit_pending(const PagedArenaPendingRead&k,const PagedArenaPendingRead&v,
@@ -251,14 +327,21 @@ template<class T,class Policy=MaterializedMetadataPolicy>struct MaterializedNati
     if(!prepared || !bound)return std::unexpected(Status::FailedPrecondition("native pending batch is not prepared/bound"));
     HYLE_ASSIGN_OR_RETURN(auto batch,uses.begin());
     for(const auto&lease:reads)if(lease.valid())HYLE_RETURN_IF_ERROR(batch.read(lease));
-    page_reads.reset();HYLE_RETURN_IF_ERROR((PagedArenaAccess::collect_reads<Update,Access>(page_reads,k,update)));
-    HYLE_RETURN_IF_ERROR((PagedArenaAccess::collect_reads<Update,Access>(page_reads,v,update)));
+    page_reads.reset();
+    if(k.valid())HYLE_RETURN_IF_ERROR((PagedArenaAccess::collect_reads<Update,Access>(page_reads,k,update)));
+    else for(const auto&page:PagedArenaAccess::pages(keys))HYLE_RETURN_IF_ERROR(page_reads.add(page));
+    if(v.valid())HYLE_RETURN_IF_ERROR((PagedArenaAccess::collect_reads<Update,Access>(page_reads,v,update)));
+    else for(const auto&page:PagedArenaAccess::pages(values))HYLE_RETURN_IF_ERROR(page_reads.add(page));
     HYLE_RETURN_IF_ERROR(page_reads.admit(batch));
-    auto submitted=T::submit(native,std::move(batch));
+    auto submitted=[&](){
+      if constexpr(requires{T::submit_pending(native,std::move(batch),update);})
+        return T::submit_pending(native,std::move(batch),update);
+      else return T::submit(native,std::move(batch));
+    }();
     prepared=false;bound=false;if(!submitted)failed=true;return submitted;
   }
-  Status close()noexcept{closed=true;upload.close().IgnoreError();return uses.close();}
-  Status drain()noexcept{close().IgnoreError();auto status=native.valid()?T::wait_native(native):Status::Ok();status.Update(upload.drain());status.Update(uses.drain());return status;}
+  Status close()noexcept{closed=true;if(upload.valid())upload.close().IgnoreError();return uses.close();}
+  Status drain()noexcept{close().IgnoreError();auto status=native.valid()?T::wait_native(native):Status::Ok();if(upload.valid())status.Update(upload.drain());status.Update(uses.drain());return status;}
 };
 
 // Explicit opt-in extension: owns the one original controller, source controls

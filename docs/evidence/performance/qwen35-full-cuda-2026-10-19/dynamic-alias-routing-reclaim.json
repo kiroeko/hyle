@@ -1,0 +1,57 @@
+{
+  "deleted_files": 90,
+  "deleted_bytes": 938986967,
+  "MiB": 895.487753868103,
+  "recursive": false,
+  "all_link_inputs_retained": true,
+  "retained_reference_vectors": 64,
+  "retained_images": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-next-cold\\checks\\20261019T155819\\cpu.exe",
+      "bytes": 25207296,
+      "sha256": "29b46d14939dfeed999e170ab410c828414cea2786b70ec1ac9034256a6a0daf"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-next-cold\\checks\\20261019T155819\\qwen.exe",
+      "bytes": 116013056,
+      "sha256": "88e738542418eeb3980f09118f014a2a87be145800a3884123d195f5eae3fab5"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\checks\\20261019T151408-fixture-include\\qwen.exe",
+      "bytes": 116009472,
+      "sha256": "f5a500207996ce63d9a0d5528972d5eb4b1e359fd639ef06191f7c5de154ca54"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-explicit-rope\\performance-prepared\\peer.exe",
+      "bytes": 35814400,
+      "sha256": "fb169f0282f2a834a61b3e887edaba92d8699814558b0c5f1a13aaf07e0de969"
+    }
+  ],
+  "evidence_archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\qwen35-full-cuda-2026-10-19\\dynamic-alias-routing.zip",
+    "bytes": 9317477,
+    "sha256": "4d0fcfaf0e9031cb809e46d94e36b0613275c6c735d97998a37aed690bec9a50"
+  },
+  "reclaim_archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\qwen35-full-cuda-2026-10-19\\dynamic-alias-routing-reclaim.zip",
+    "bytes": 11916,
+    "sha256": "f75ea5882104ac12209bb244ed1549909a379743b9221c637b46379b4bbb7dec"
+  },
+  "reclaim_payload_CRC_SHA_verified": true,
+  "script": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-next-cold\\executed-reclaim.ps1",
+    "bytes": 2703,
+    "sha256": "fcde92b2e9a3739f54b2973d3c6896abb3f5e913fa65aa32f6224ce41ea01b49"
+  },
+  "cleanup_plan": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-next-cold\\cleanup-plan.json",
+    "bytes": 45706,
+    "sha256": "2f873d4b67ece63ffd542106e83359725ac955f4d37c4c65441c4b55f88e8bad"
+  },
+  "cleanup_result": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-next-cold\\cleanup-result.json",
+    "bytes": 27102,
+    "sha256": "df7eeb20e38d0e3acb283cc4396b42b238f4a28fb35685dee4c1fa3c1f099780"
+  },
+  "scope": "Only disposable FI/router test images, older superseded CPU/Qwen images and current64 byte-identical duplicate vectors. All object/SDK/model/source/command/result/reference-vector files retained."
+}

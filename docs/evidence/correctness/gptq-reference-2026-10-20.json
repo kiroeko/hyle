@@ -1,0 +1,505 @@
+{
+  "scope": "Bounded GPTQ-v1 INT4 original decode and same-Graph packed linear capability with four typed carriers; synthetic math/lifetime regression only.",
+  "contract": {
+    "inputs": [
+      "I32 Q[K/8,N]",
+      "I32 Z[G,N/8]",
+      "F16 SF[G,N]",
+      "I32 g_idx[K]"
+    ],
+    "index_validation": "All K indices are validated on each execution before any indexed Z/SF source access; invalid index fails Completion.",
+    "numerical": "Unsigned Q nibble minus (unsigned raw Z nibble + 1), including 15->16; exact integer subtraction, F16 product, then decode and operand rounding; F32 accumulation.",
+    "storage": "Bounded packed region consumes original banks without a persistent N*K decoded bank. Published decode escapes keep the checked original decomposition."
+  },
+  "validation": {
+    "windows_cpu": {
+      "tests": 14,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "cases": [
+        {
+          "suite": "CpuCtPackedLinear",
+          "name": "PublicChainsKeepSourceRoundsAndTypedCastWitnesses",
+          "properties": {}
+        },
+        {
+          "suite": "CpuCtPackedLinear",
+          "name": "CapturedDynamicInputsRebindAcrossOwnedSlotsAndRetainResults",
+          "properties": {}
+        },
+        {
+          "suite": "CpuCtPackedLinear",
+          "name": "PublishedViewAndControlEscapesExecuteTheOriginalDecomposition",
+          "properties": {}
+        },
+        {
+          "suite": "CpuCtPackedLinear",
+          "name": "OriginalPackedConstantsDoNotRetainOrWorkspaceADenseWeightBank",
+          "properties": {
+            "compiled_known_bytes": "472",
+            "workspace_bytes": "0",
+            "excluded_dense_f32_bank_bytes": "1052672"
+          }
+        },
+        {
+          "suite": "CpuCtPackedLinear",
+          "name": "DefaultMultirowKeepsOriginalRouteAndPreparedCanSelectPacked",
+          "properties": {
+            "default_packed_regions": "0",
+            "prepared_packed_regions": "1"
+          }
+        },
+        {
+          "suite": "NativeCtPackedLinear",
+          "name": "SourceDecodeAndOperandRoundsWithPackedOutputAxisZeroTail",
+          "properties": {}
+        },
+        {
+          "suite": "NativeCtPackedLinear",
+          "name": "DynamicInputsUseIndependentSlotsAndRejectReadWriteAlias",
+          "properties": {}
+        },
+        {
+          "suite": "NativeCtPackedLinear",
+          "name": "RealQ27GeometryPreparesWithoutADenseWeightWorkspace",
+          "properties": {}
+        },
+        {
+          "suite": "NativeGptq",
+          "name": "OriginalSchemaDefaultAndPackedCapacityDoNotAllocateDenseBank",
+          "properties": {}
+        },
+        {
+          "suite": "NativeGptq",
+          "name": "BoundedPackedReadsOriginalWordsScalesAndCurrentGroupIndices",
+          "properties": {
+            "actual_submissions": "6"
+          }
+        },
+        {
+          "suite": "NativeGptq",
+          "name": "OriginalFourPortDecoderKeepsHalfProductBeforeRequestedFloatOutput",
+          "properties": {}
+        },
+        {
+          "suite": "CpuGptqReferenceGraph",
+          "name": "PackedSourceHalfRoundAndDynamicIndicesSurviveSlots",
+          "properties": {
+            "actual_submissions": "12"
+          }
+        },
+        {
+          "suite": "CpuGptqReferenceGraph",
+          "name": "ChecksAllIndicesOnEachSubmissionAndRetainsScaleDomain",
+          "properties": {
+            "successful_submissions": "10",
+            "failed_completions": "4"
+          }
+        },
+        {
+          "suite": "CpuGptqReferenceGraph",
+          "name": "PublishedDecodeKeepsTheOriginalFourPortPath",
+          "properties": {
+            "actual_submissions": "2"
+          }
+        }
+      ],
+      "xml": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gptq-reference\\common-cpu\\checks\\mapped-helper-refresh2\\tests.xml",
+        "bytes": 5737,
+        "sha256": "1c7eda00d06b7f02bbaa7ffbe34f977ba446e567c8a44f62ebcb4106d32d4821"
+      }
+    },
+    "windows_vulkan": {
+      "tests": 12,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "cases": [
+        {
+          "suite": "VulkanGptqReferenceGraph",
+          "name": "OriginalQuartetAndTypedProductsSurviveSlotsAndUpdates",
+          "properties": {
+            "device": "NVIDIA GeForce RTX 4070",
+            "actual_submissions": "12"
+          }
+        },
+        {
+          "suite": "VulkanGptqReferenceGraph",
+          "name": "AllGroupIndicesValidateBeforeAnySourceAddress",
+          "properties": {
+            "device": "NVIDIA GeForce RTX 4070",
+            "successful_submissions": "10",
+            "failed_completions": "4"
+          }
+        },
+        {
+          "suite": "VulkanGptqReferenceGraph",
+          "name": "PublishedDecodeRetainsTheOriginalCheckedPath",
+          "properties": {
+            "device": "NVIDIA GeForce RTX 4070",
+            "actual_submissions": "2"
+          }
+        },
+        {
+          "suite": "VulkanGroupedNvfp4ReferenceGraph",
+          "name": "SelectedPackedExpertsAndSlotDependentQdqSurviveLifetimes",
+          "properties": {
+            "device": "NVIDIA GeForce RTX 4070",
+            "actual_submissions": "24"
+          }
+        },
+        {
+          "suite": "VulkanGroupedNvfp4ReferenceGraph",
+          "name": "OnlySelectedExpertsAreValidatedAndInvalidIdsFail",
+          "properties": {
+            "device": "NVIDIA GeForce RTX 4070",
+            "successful_submissions": "26",
+            "failed_completions": "20"
+          }
+        },
+        {
+          "suite": "VulkanCtPackedLinear",
+          "name": "PublicGraphPreservesTypedWeightBoundariesAndOriginalControl",
+          "properties": {
+            "device": "NVIDIA GeForce RTX 4070"
+          }
+        },
+        {
+          "suite": "VulkanCtPackedLinear",
+          "name": "LegalNonfiniteAndAmplifiedSubnormalWeightsKeepIeeeClasses",
+          "properties": {
+            "device": "NVIDIA GeForce RTX 4070"
+          }
+        },
+        {
+          "suite": "VulkanCtPackedLinear",
+          "name": "IndependentSlotsRebindOriginalBytesAndRetainResults",
+          "properties": {
+            "device": "NVIDIA GeForce RTX 4070",
+            "actual_submissions": "4"
+          }
+        },
+        {
+          "suite": "VulkanCtPackedLinear",
+          "name": "PublishedDataAndControlEscapesUseOriginalDecomposition",
+          "properties": {
+            "device": "NVIDIA GeForce RTX 4070"
+          }
+        },
+        {
+          "suite": "VulkanCtPackedLinear",
+          "name": "OriginalConstantBanksSurviveSlotsWithoutDenseNativeStorage",
+          "properties": {
+            "device": "NVIDIA GeForce RTX 4070",
+            "native_payload_storage_bytes": "3084",
+            "raw_constant_capacity_bytes": "152256"
+          }
+        },
+        {
+          "suite": "VulkanNvfp4ReferenceGraph",
+          "name": "OriginalPackedBanksAndBfloatBoundariesSurviveSlotsAndUpdates",
+          "properties": {
+            "device": "NVIDIA GeForce RTX 4070",
+            "actual_submissions": "8"
+          }
+        },
+        {
+          "suite": "VulkanNvfp4ReferenceGraph",
+          "name": "RuntimeDomainFailuresRecoverWithoutChangingTheReferenceTree",
+          "properties": {
+            "device": "NVIDIA GeForce RTX 4070",
+            "successful_submissions": "25",
+            "failed_completions": "18"
+          }
+        }
+      ],
+      "xml": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gptq-reference\\vulkan\\validation\\tests.xml",
+        "bytes": 6658,
+        "sha256": "cbc71ce989705dcd15b3ba5b5bac41792ba453cf8e419a6c3c26d669d7da9178"
+      }
+    },
+    "macos_apple": {
+      "tests": 7,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "cases": [
+        {
+          "suite": "AppleCtPackedLinear",
+          "name": "PublicChainsKeepSourceRoundsAndTypedCastWitnesses",
+          "properties": {
+            "device": "Apple M4"
+          }
+        },
+        {
+          "suite": "AppleCtPackedLinear",
+          "name": "DynamicInputsRebindAcrossOwnedSlotsAndRetainResults",
+          "properties": {
+            "device": "Apple M4",
+            "actual_submissions": "4"
+          }
+        },
+        {
+          "suite": "AppleCtPackedLinear",
+          "name": "PublishedViewAndControlEscapesExecuteOriginalDecomposition",
+          "properties": {
+            "device": "Apple M4"
+          }
+        },
+        {
+          "suite": "AppleCtPackedLinear",
+          "name": "OriginalPackedConstantsKeepTheirExplicitCallerLifetime",
+          "properties": {
+            "device": "Apple M4",
+            "logical_dense_weight_elements": "263168"
+          }
+        },
+        {
+          "suite": "AppleGptqReferenceGraph",
+          "name": "OriginalPackedBanksKeepSourceRoundsSlotsAndIndexUpdates",
+          "properties": {
+            "device": "Apple M4",
+            "actual_submissions": "12"
+          }
+        },
+        {
+          "suite": "AppleGptqReferenceGraph",
+          "name": "CompleteIndexValidationPrecedesSelectedScaleAndZeroAccess",
+          "properties": {
+            "device": "Apple M4",
+            "successful_submissions": "10",
+            "failed_completions": "4"
+          }
+        },
+        {
+          "suite": "AppleGptqReferenceGraph",
+          "name": "PublishedDecodeRetainsOriginalF16ProductAndCheckedFailure",
+          "properties": {
+            "device": "Apple M4",
+            "actual_submissions": "2"
+          }
+        }
+      ],
+      "xml": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gptq-reference\\apple\\mac\\remote\\results\\tests.xml",
+        "bytes": 4218,
+        "sha256": "e4b62eea7fc53f30b802cf345df6ddf6827a2b9fdcc150e27e70610a1fdbb47e"
+      }
+    },
+    "windows_cuda": {
+      "tests": 15,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "processes": {
+        "windows_cuda_gptq_ct": {
+          "tests": 7,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "cases": [
+            {
+              "suite": "CudaGptqReferenceGraph",
+              "name": "OriginalPackedBanksKeepSourceRoundsSlotsAndIndexUpdates",
+              "properties": {
+                "actual_submissions": "12"
+              }
+            },
+            {
+              "suite": "CudaGptqReferenceGraph",
+              "name": "CompleteIndexValidationPrecedesSelectedScaleAndZeroAccess",
+              "properties": {
+                "successful_submissions": "10",
+                "failed_completions": "4"
+              }
+            },
+            {
+              "suite": "CudaGptqReferenceGraph",
+              "name": "PublishedDecodedWeightsKeepTheOriginalCapturedDecomposition",
+              "properties": {
+                "actual_submissions": "2"
+              }
+            },
+            {
+              "suite": "CudaCtPackedLinear",
+              "name": "PublicChainsKeepSourceRoundsAndTypedCastWitnesses",
+              "properties": {}
+            },
+            {
+              "suite": "CudaCtPackedLinear",
+              "name": "CapturedDynamicInputsRebindAcrossOwnedSlotsAndRetainResults",
+              "properties": {}
+            },
+            {
+              "suite": "CudaCtPackedLinear",
+              "name": "PublishedViewAndControlEscapesExecuteTheOriginalDecomposition",
+              "properties": {}
+            },
+            {
+              "suite": "CudaCtPackedLinear",
+              "name": "OriginalPackedConstantsDoNotRetainOrWorkspaceADenseWeightBank",
+              "properties": {
+                "compiled_known_bytes": "1664",
+                "workspace_bytes": "0",
+                "excluded_dense_f32_bank_bytes": "1052672"
+              }
+            }
+          ],
+          "xml": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gptq-reference\\cuda\\tests-mapped\\tests.xml",
+            "bytes": 3187,
+            "sha256": "0a8c0d547f78b5691de1b367b56cd7b34b20898efd0afef29f9f4b27642d3b83"
+          }
+        },
+        "windows_cuda_mapped_neighbors": {
+          "tests": 8,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "cases": [
+            {
+              "suite": "CudaDenseIndexer",
+              "name": "DyadicStagesAndMaskKeepThreeBfloatRoundsAndNonfiniteValues",
+              "properties": {}
+            },
+            {
+              "suite": "CudaDenseIndexer",
+              "name": "PaddedBatchKeysKeepIndependentSlotsAndRetainedResults",
+              "properties": {}
+            },
+            {
+              "suite": "CudaDenseIndexer",
+              "name": "EscapingCoreIntermediatesKeepOrdinaryBoundaries",
+              "properties": {}
+            },
+            {
+              "suite": "CudaDenseIndexer",
+              "name": "EmptyBatchTokenAndHistoryProduceNoWork",
+              "properties": {}
+            },
+            {
+              "suite": "CudaFp8SharedPrologue",
+              "name": "FloatSiblingsKeepBothOriginalLinearResultsAcrossCapturedSlots",
+              "properties": {}
+            },
+            {
+              "suite": "CudaFp8SharedPrologue",
+              "name": "BfloatSiblingsKeepBothOriginalLinearResultsAcrossCapturedSlots",
+              "properties": {}
+            },
+            {
+              "suite": "CudaFp8SharedPrologue",
+              "name": "PowerOfTwoBfloatSiblingsKeepTheirOriginalScaleLayoutAcrossCapturedSlots",
+              "properties": {}
+            },
+            {
+              "suite": "CudaFp8SharedPrologue",
+              "name": "DifferentContractsOrValueIdsAndPackedSingleLinearStayStandalone",
+              "properties": {}
+            }
+          ],
+          "xml": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gptq-reference\\cuda\\tests-mapped\\mapped-neighbors\\tests.xml",
+            "bytes": 2837,
+            "sha256": "c27b9520588f94a52b393e3520f6355493afa575132fa27d1679dbab13523e0d"
+          }
+        }
+      }
+    }
+  },
+  "process_results": {
+    "windows_cpu": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gptq-reference\\common-cpu\\checks\\mapped-helper-refresh2\\tests.result.json",
+      "bytes": 637,
+      "sha256": "1848edb8c3e92d5cb5ab2ec77a109c52947c565e4daa87744b34c42d8267e5a7"
+    },
+    "windows_cuda_gptq_ct": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gptq-reference\\cuda\\tests-mapped\\result.json",
+      "bytes": 821,
+      "sha256": "07bcfd3e19df59d309bd7fcc97eb1a86107fe9eb090b35eb16c94645e86f7a83"
+    },
+    "windows_cuda_mapped_neighbors": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gptq-reference\\cuda\\tests-mapped\\mapped-neighbors\\result.json",
+      "bytes": 572,
+      "sha256": "360538bedd6c79eeb060b2215047649d580c0752591f5b23de557c4e9c57d904"
+    },
+    "windows_vulkan": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gptq-reference\\vulkan\\validation\\result.json",
+      "bytes": 874,
+      "sha256": "6d1a5afa33ca88338bded7c71fc602c1d71a542522c2d090b98c08197470f9f6"
+    },
+    "macos_apple": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gptq-reference\\apple\\mac\\remote\\results\\validation.json",
+      "bytes": 1216,
+      "sha256": "a9be348943222e5b46a8f8ce8e733f91ab7c4bab78f264223f4f0bdb33b66274"
+    }
+  },
+  "final_source_freeze": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gptq-reference\\root\\final-source-freeze.json",
+    "bytes": 4288,
+    "sha256": "250931b6a697a89de5f1907577713cc47d2f1a669935858a7ac42a06e5a15ea4"
+  },
+  "total_passed": 48,
+  "test_breakdown": {
+    "new_GPTQ_cases": 15,
+    "CT_neighbors": 21,
+    "NVFP4_neighbors": 4,
+    "mapped_adapter_FP8_and_scores_neighbors": 8
+  },
+  "header_only_target_artifacts": [
+    {
+      "model": "qwen35_2b",
+      "repository": "Vishva007/Qwen3.5-2B-W4A16-AutoRound-GPTQ",
+      "revision": "8ec79a3b08636bc68fd40d69df80e97ff1263995",
+      "group_size": 32,
+      "complete_header_roles": 150,
+      "header_file": "q35/header.json"
+    },
+    {
+      "model": "qwen38_27b",
+      "repository": "Vishva007/Qwen3.8-27B-W4A16-AutoRound-GPTQ",
+      "revision": "1b9d56b428e9f841d7ad566f87660b5f47553c97",
+      "group_size": 64,
+      "index_roles": 400,
+      "complete_header_roles_in_shard2": 73,
+      "header_file": "q27/shard2-header-curl.json",
+      "limit": "shards3-5 headers not inspected; index confirms carriers/names, not their tensor dtypes or values"
+    }
+  ],
+  "corrections": [
+    "Actual old three-port inline ArtifactWeightDecode traits COMDAT selected from a historical test object; actual emitting owners were refreshed or unrelated old test owners omitted, not a codec arithmetic change.",
+    "Existing mapped_native_region fixed four-port metadata rejected GPTQ A+four-bank boundary; cold-sized SmallVector mapping replaces that private adapter limit, with original submission and tracked allocator.",
+    "First helper refresh compile error and both genuine CPU red test processes are retained alongside successful corrections.",
+    "CUDA first link failed because a task-local temporary directory did not exist; original LNK1104 log and corrected link command remain. This was not a product or numerical failure.",
+    "Actual emitting mapped-adapter owners were refreshed on CPU/CUDA. Vulkan only uses the non-template packed discovery and its own whole-region native path; the adapter is neither defined nor referenced in its actual objects. Apple follows its independent native lowering; source and symbol audits retain this boundary."
+  ],
+  "backend_scope": [
+    "Windows CPU, CUDA and Vulkan and macOS Apple M4 on the actual retained toolchains; exact commands, original process logs and image identities retained.",
+    "Positive packed tests choose existing region proposals through test-only source/provider selection. Vulkan/Apple conservatively retain original-route priority for GPTQ; CPU/CUDA inherit their existing provider and row-dependent candidate ranking. No GPTQ throughput benefit was measured."
+  ],
+  "limits": [
+    "No full model weight payload execution, end-to-end model quality, performance, Linux, all installed configurations or native tensor-core INT4 claim.",
+    "No SDK rebuild or payload download. No validation-layer claim for the standard Vulkan run.",
+    "Backend actual address, native integer and storage-buffer limits remain; no blanket multi-GiB packed-bank claim.",
+    "Opaque backend private allocations remain unknown. Actual runtime OOM does not cause automatic route reselection.",
+    "Source/header-only artifact research does not certify uninspected shards or payload values."
+  ],
+  "archive": {
+    "identity": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\gptq-reference-2026-10-20.zip",
+      "bytes": 1252968,
+      "sha256": "bd87e7cda78bc8f80f62f92e4221b64a09a39fb2a22dcef1f0e1ed6408795eb1"
+    },
+    "members": 507,
+    "uncompressed_bytes": 5869500,
+    "inventory": {
+      "member": "inventory.json",
+      "bytes": 257761,
+      "sha256": "c79be563b2749203096e329cf79a542bffeea9a1be27524de0009e55bfaf5e8f"
+    },
+    "verification": "CRC plus every member exact bytes/SHA inventory verified after writing."
+  }
+}

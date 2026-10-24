@@ -1,0 +1,166 @@
+{
+  "status": "read_only_source_design_review",
+  "product_modified": false,
+  "build_or_GPU_run": false,
+  "decision": {
+    "full_conv_cast_stable_silu_one_kernel": "feasible only after an explicit mixed-math implementation; not a safe matcher-only change",
+    "smallest_actionable_step": "Fuse the private F32-to-BF16 Cast and ordinary BF16 stable SiLU in the existing strict unary TU; leave the current convolution kernel and its F32 output unchanged.",
+    "precision_policy_change": false,
+    "throughput_claim": false
+  },
+  "evidence": {
+    "consumer": {
+      "codepath": "tools/qwen35_text/main.cc:360",
+      "facts": [
+        "Concatenated BF16 samples also feed the published next-history Copy; this source need not be private.",
+        "CausalConv has F32 public inputs/output, then an explicit BF16 Cast and ordinary Unary SiLU (lines364-366).",
+        "This is a current consumer witness, not a model name or dimensions admission rule."
+      ]
+    },
+    "physical_baseline": {
+      "identity": {
+        "path": ".scratch/architecture-refactor-2026-10-18/conv-typed-load/profile/analysis.json",
+        "bytes": 523655,
+        "sha256": "38272c281aa1c6a56a74b81b6d10e0c3f518afcb85271156fdccdd9b81a6b332"
+      },
+      "observed": {
+        "decode7_total_kernels": 668,
+        "BF16_to_F32": 55,
+        "F32_to_BF16": 54,
+        "Conv_BF16": 18,
+        "transpose_F32": 0
+      },
+      "important_actual_provider": [
+        "The 18 ordinary BF16 activations actually use hyle::compute::cuda_native::sglang_vendor::act_kernel<__nv_bfloat16,ActivationKind0,false>.",
+        "The other 18 unary_gated_op_kernel<&op_hyle_stable_silu,float,true> instances are not evidence that the convolution activation already uses ggml strict unary.",
+        "Source roles plus symbol counts establish a candidate; no new graph-node mapping or performance measurement was run."
+      ]
+    },
+    "deferred_reason": {
+      "identity": {
+        "path": "docs/evidence/research/conv-typed-load-design-2026-10-20.json",
+        "bytes": 12590,
+        "sha256": "b5d1567e008564e26425edaeeb26f3f098653778a5aa5c8c6bc6e73860caf012"
+      },
+      "facts": [
+        "The input-load batch explicitly deferred output/SiLU fusion.",
+        "It preserved F32 convolution MAC and output under the original fast-math TU, followed by the original BF16 Cast and stable activation."
+      ]
+    },
+    "source_identities": [
+      {
+        "path": "src/compute_provider_ggml_cuda/tensor_program.cc",
+        "bytes": 53800,
+        "sha256": "5b40859f737bc76ce07ed734320d6d154f0b0d637c1ff5907def52f86097a389"
+      },
+      {
+        "path": "src/graph_provider_ggml_cuda/ggml_cuda_region.cc",
+        "bytes": 50034,
+        "sha256": "36f0a8f086a2f24b5f403319c989efd1f84427f320fefc88a0572dc1c011ee9c"
+      },
+      {
+        "path": "third_party/sglang_activation/activation.cuh",
+        "bytes": 5044,
+        "sha256": "0b506dba90352358987fee6eb831728b0dc648022194cf74719f638ec493d292"
+      },
+      {
+        "path": "src/compute_provider_cuda/sglang_device_compat.cuh",
+        "bytes": 3006,
+        "sha256": "d00436240c18890bfd942c4db8667f2ab964a3789e478cf8b4a5dd51074ad906"
+      },
+      {
+        "path": ".scratch/architecture-refactor-2026-10-18/conv-typed-load/native-source/src/ggml-cuda/ssm-conv.cu",
+        "bytes": 13830,
+        "sha256": "4796fc2bab782c4ae5cb5484eb87de806e17c53e184d79b13a4552c7b17f3f81"
+      },
+      {
+        "path": ".scratch/architecture-refactor-2026-10-18/cuda-fusion-precision/native-source/src/ggml-cuda/unary.cu",
+        "bytes": 45436,
+        "sha256": "7a283d50fe91f958c544ede60b27fdbdb579ae413ac3b86893b5d5eb57b6b13b"
+      }
+    ]
+  },
+  "current_math": {
+    "convolution": {
+      "codepaths": [
+        ".scratch/architecture-refactor-2026-10-18/conv-typed-load/native-source/src/ggml-cuda/ssm-conv.cu:85",
+        ".scratch/architecture-refactor-2026-10-18/conv-typed-load/native-source/src/ggml-cuda/ssm-conv.cu:173"
+      ],
+      "contract": "Float samples/weights/shared window; ascending original j-order sumf += x*w, followed by sumf += b, F32 output. BF16 source is widened exactly at load.",
+      "compiled_recipe": ".scratch/architecture-refactor-2026-10-18/conv-typed-load/checks/20261019T171411/native-conv-identity.json",
+      "compiler_domain": "-use_fast_math -extended-lambda. Existing native-inspection/conclusions.json records FFMA.FTZ and final FADD.FTZ, not just an algebraic float-dot claim."
+    },
+    "cast_and_activation": {
+      "codepaths": [
+        "src/compute_provider_ggml_cuda/tensor_program.cc:706",
+        "src/compute_provider_ggml_cuda/tensor_program.cc:711",
+        "src/compute_provider_ggml_cuda/tensor_program.cc:746",
+        "third_party/sglang_activation/activation.cuh:98",
+        "third_party/sglang_activation/activation.cuh:119",
+        ".scratch/architecture-refactor-2026-10-18/cuda-fusion-precision/native-source/src/ggml-cuda/unary.cu:50"
+      ],
+      "recipe": "q=BF16_RNE(conv_f32); x=exact_F32(q); if negative infinity return +0; else e=expf(-fabsf(x)), s=(x>=0 ? 1/(1+e) : e/(1+e)), y=x*s; out=BF16_RNE(y).",
+      "actual_provider_note": "SGLang ordinary unary uses apply_unary_activation_f32, not its separately defined packed apply_activation_f32. Its SiLU specialization has the same written stable expression as the ggml strict helper; this review does not prove the cached objects are bit-equivalent for every exceptional input.",
+      "compiler_evidence": "src/compute_ggml_runtime/CMakeLists.txt:272 removes -use_fast_math only for unary.cu; actual unary-identity.json has no -use_fast_math. src/compute_provider_cuda/CMakeLists.txt adds no fast-math flag for sglang_kernel.cu. The precise original cached SGLang command/object was not independently reconstructed in this read-only review."
+    },
+    "incompatible_existing_shortcut": {
+      "codepaths": [
+        ".scratch/architecture-refactor-2026-10-18/conv-typed-load/native-source/src/ggml-cuda/unary.cuh:98",
+        ".scratch/architecture-refactor-2026-10-18/conv-typed-load/native-source/src/ggml-cuda/ggml-cuda.cu:3703",
+        ".scratch/architecture-refactor-2026-10-18/conv-typed-load/native-source/src/ggml-cuda/ssm-conv.cu:253"
+      ],
+      "reason": "Legacy conv fused SiLU computes x/(1+expf(-x)) in fast math with F32 destination. It neither rounds the conv result to BF16 first nor implements the ordinary stable tails/negative-infinity contract. Current main intentionally rejects marked stable SiLU from this old fuser."
+    }
+  },
+  "bounded_exact_epilogue": {
+    "location": "existing strict unary.cu and its private declaration/matcher; no public operation or executor",
+    "kernel": "Load original F32 conv result; explicit __float2bfloat16_rn; exact __bfloat162float; reuse op_hyle_stable_silu; explicit BF16 RNE store. Keep the intermediate conversion observable to the compiler as needed, as in existing explicit-RoPE conversion boundaries.",
+    "existing_template_limit": ".scratch/architecture-refactor-2026-10-18/cuda-fusion-precision/native-source/src/ggml-cuda/unary.cu:142 uses the same T for source and destination; a small private mixed-input epilogue adapter is needed, not a false BF16 pointer alias.",
+    "cold_pattern": [
+      "Exact Cast(F32->BF16) output consumed only by the exact ordinary stable SiLU, same logical shape and supported dense native layout.",
+      "Keep original dtype and public result descriptors; accept the actual stable marker, never infer this from a function enum alone.",
+      "Reuse generic ordinary-region rank/cost and exact whole accepted reservation. Native CPY has a self-reference: preserve the existing private CPY use-count convention, published readers and VIEW/OP_NONE aliases.",
+      "A published/extra-read BF16 Cast output, intervening real operation/View alias/control edge, mismatched shape/layout or unsupported provider contract keeps the original chain.",
+      "F32 conv escape/publication does not by itself forbid Cast+SiLU fusion because this smaller step still materializes F32 conv. Full Conv fusion must decline when that F32 value escapes."
+    ],
+    "region_notes": [
+      "src/graph_provider_ggml_cuda/ggml_cuda_region.cc:527 provides accepted whole-suffix reservation; lines583-612 currently reserve only sample widening+Conv.",
+      "A Cast+SiLU pair can take the F32 convolution as an external frontier. If it combines with the existing sample-Cast+Conv proposal, submit one coherent candidate; do not let overlapping pairs steal nodes.",
+      "src/compute_provider_ggml_cuda/tensor_program.cc:211 only folds the exact immediately inverse zero-offset reshape. Do not silently peel arbitrary View/CPY chains to force a native pattern."
+    ],
+    "binding_and_lifetime": "At encode use real owners/device/capacity/alignment/overflow checks and require F32 source span disjoint from BF16 output under current restrict promises. Preserve all real external read dependencies; no alias-policy expansion or shadow payload.",
+    "conditional_effect": {
+      "kernels_if_all_18_pairs_admitted": 650,
+      "F32_to_BF16_standalone_kernels": 36,
+      "BF16_to_F32_standalone_kernels": 55,
+      "rounding_operations_removed": 0,
+      "F32_conv_workspace_eliminated": false
+    },
+    "validation_needed": [
+      "Small exact oracle must compare actual current SGLang unary and ggml strict epilogue on identical BF16 rounded inputs, including signed zero/subnormals/finite tails/Inf/NaN. Do not assume source-expression equality is compiled equivalence.",
+      "Cast output publication, actual extra reader/View/control, F32 escape, padded/alias negative controls, rebinding/two invocations/held output.",
+      "One physical trace must establish actual matches, then paired timing if the implementation is otherwise correct. No launch-count speed assertion."
+    ]
+  },
+  "full_single_kernel_later": {
+    "possible_shape": "Share the existing short/long conv template with a private epilogue/math policy rather than duplicate the convolution algorithm. Instantiate the strict stable-output variant in the strict TU, with the original j-order MAC and bias explicitly preserving the original RN+FTZ contracted operations, then both BF16 RNE boundaries and the exact stable helper.",
+    "hard_requirement": "Moving original source arithmetic to strict compilation changes the compiler domain; inserting stable exp/div into the existing fast-math TU also changes the compiler domain. Either is insufficient without explicit math and compiled-object checks.",
+    "existing_precedent": ".scratch/architecture-refactor-2026-10-18/cuda-fusion-precision/native-source/src/ggml-cuda/unary.cu:908 uses explicit RN+FTZ PTX to preserve a fast-math primitive within the strict TU. This is a design precedent, not a completed conv proof.",
+    "eligibility": [
+      "All eliminated F32 Conv and BF16 Cast values must be private with exact data/control readers and no escaping alias/history/published use.",
+      "Keep real BF16 sample/history readers and F32 weight/bias identities. Preserve existing K/stride/grid/owner/device restrictions and long-tile load guard.",
+      "Private native matcher may target BF16 final destination only after its wrapper has truthful mixed dtype metadata and range checks; current conv wrapper explicitly requires F32 output.",
+      "Coordinate full candidate with current private input widening reservation; do not reintroduce the earlier disconnected-region zero-hit failure."
+    ],
+    "unconfirmed": [
+      "Exact fused FMA/subnormal/NaN operand and final bias signed-zero behavior under a new explicit-math implementation has not been compiled or tested.",
+      "No claim that newly proposed full fusion would be faster. Register pressure, strict exp cost, changed memory access and prefill/decode tradeoffs remain empirical."
+    ],
+    "not_recommended": "A cross-TU strict device call requiring new RDC/device-link build machinery is disproportionate for this batch and is not the current cached closure."
+  },
+  "scope_limits": [
+    "No product change, compilation, GPU/profile run, new precision mode or model whitelist.",
+    "This is a next-step design review; original Conv/source/compiler evidence remains in conv-typed-load.zip.",
+    "18 candidate pairs are bounded by the current consumer; generic admission must be based on actual graph/dtype/layout/contract rather than the number18."
+  ]
+}

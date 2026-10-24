@@ -1,0 +1,371 @@
+#version 450
+
+// Exact software-reference scalar arithmetic is shared with the Metal path.
+// Buffers retain their original bytes; only A's BF16 QDQ tensor is materialized.
+layout(local_size_x = 64) in;
+layout(binding = 0) readonly buffer A { uint a[]; };
+layout(binding = 1) readonly buffer B { uint b[]; };
+layout(binding = 2) buffer Status { uint c[]; };
+layout(binding = 3) readonly buffer D { uint d[]; };
+#ifdef HYLE_MXFP4
+#define HYLE_FP4_GROUP 32
+#define HYLE_FP4_GROUP_U 32u
+#define HYLE_FP4_PAIRS_U 16u
+#ifdef HYLE_NVFP4_GROUPED
+layout(binding = 4) readonly buffer E { uint e[]; };
+layout(binding = 5) writeonly buffer F { uint f[]; };
+layout(push_constant) uniform Origins { uint a; uint b; uint c; uint d; uint e; } origin;
+#else
+layout(binding = 4) writeonly buffer E { uint e[]; };
+layout(push_constant) uniform Origins { uint a; uint b; uint c; uint d; } origin;
+#endif
+#else
+#define HYLE_FP4_GROUP 16
+#define HYLE_FP4_GROUP_U 16u
+#define HYLE_FP4_PAIRS_U 8u
+layout(binding = 4) readonly buffer E { uint e[]; };
+#ifdef HYLE_NVFP4_GROUPED
+layout(binding = 5) readonly buffer F { uint f[]; };
+layout(binding = 6) writeonly buffer G { uint g[]; };
+layout(push_constant) uniform Origins { uint a; uint b; uint c; uint d; uint e; uint f; } origin;
+#else
+layout(binding = 5) writeonly buffer F { uint f[]; };
+layout(push_constant) uniform Origins { uint a; uint b; uint c; uint d; uint e; } origin;
+#endif
+#endif
+layout(constant_id = 0) const uint phase = 0;
+layout(constant_id = 1) const uint rows = 1;
+layout(constant_id = 2) const uint columns = 1;
+layout(constant_id = 3) const uint depth = 16;
+#ifdef HYLE_NVFP4_LOCAL
+layout(constant_id = 8) const bool round_input = false;
+#endif
+#ifdef HYLE_NVFP4_GROUPED
+layout(constant_id = 4) const uint slots = 1;
+layout(constant_id = 5) const uint experts = 1;
+layout(constant_id = 6) const uint token_stride = 0;
+layout(constant_id = 7) const uint slot_stride = 0;
+#ifdef HYLE_MXFP4
+layout(constant_id = 8) const uint quant_slots = 1;
+#endif
+#endif
+
+uint hyle_mul_hi(uint x, uint y) {
+  uint high, low;
+  umulExtended(x, y, high, low);
+  return high;
+}
+uint hyle_clz(uint value) { return value == 0u ? 32u : 31u - uint(findMSB(value)); }
+
+// HYLE_NVFP4_F32_SOURCE
+
+uint word(uint port, uint index) {
+#ifdef HYLE_MXFP4
+#ifdef HYLE_NVFP4_GROUPED
+  if (port == 4u) return e[index];
+#endif
+  return port == 0u ? a[index] : port == 1u ? b[index] : d[index];
+#else
+#ifdef HYLE_NVFP4_GROUPED
+  if (port == 5u) return f[index];
+#endif
+  return port == 0u ? a[index] : port == 1u ? b[index] : port == 3u ? d[index] : e[index];
+#endif
+}
+uint load_bytes(uint port, uint offset, uint bytes) {
+  uint shift = (offset & 3u) * 8u;
+  uint value = word(port, offset / 4u) >> shift;
+  if (shift + bytes * 8u > 32u)
+    value |= word(port, offset / 4u + 1u) << (32u - shift);
+  return bytes == 4u ? value : value & ((1u << (bytes * 8u)) - 1u);
+}
+uint bfloat(uint value) {
+  if ((value & 0x7fffffffu) > 0x7f800000u) return (value >> 16u) | 0x40u;
+  return (value + 0x7fffu + ((value >> 16u) & 1u)) >> 16u;
+}
+uint shift_rne(uint value, uint shift) {
+  if (shift > 24u) return 0u;
+  uint high = value >> shift;
+  uint low = value & ((1u << shift) - 1u), midpoint = 1u << (shift - 1u);
+  return high + uint(low > midpoint || (low == midpoint && (high & 1u) != 0u));
+}
+uint e4_encode(uint value) {
+  if (value == 0u) return 0u;
+  // Positive input is already clipped to448. Tiny values below the first
+  // midpoint have no FP8 contribution, even when the F32 bits are subnormal.
+  if (value <= 0x3a800000u) return 0u; // 2^-10, tie to even zero.
+  uint mantissa = (value & 0x7fffffu) | 0x800000u;
+  int exponent = int(value >> 23u) - 120;
+  if (exponent <= 0) return shift_rne(mantissa, uint(21 - exponent));
+  uint rounded = shift_rne(mantissa, 20u);
+  return min(uint(exponent - 1) * 8u + rounded, 126u);
+}
+uint e4_decode(uint code) {
+  uint magnitude = code & 127u, sign_bit = (code & 128u) << 24u;
+  if (magnitude == 0u) return sign_bit;
+  if (magnitude == 127u) return sign_bit | 0x7fc00000u;
+  uint exponent = magnitude >> 3u, mantissa = magnitude & 7u;
+  if (exponent != 0u) return sign_bit | ((exponent + 120u) << 23u) | (mantissa << 20u);
+  int power = -6;
+  while (mantissa < 8u) { mantissa <<= 1u; --power; }
+  return sign_bit | (uint(power + 127) << 23u) | ((mantissa & 7u) << 20u);
+}
+uint e2_nearest(uint magnitude) {
+  if (magnitude <= 0x3e800000u) return 0u; // .25
+  if (magnitude < 0x3f400000u) return 0x3f000000u;
+  if (magnitude <= 0x3fa00000u) return 0x3f800000u;
+  if (magnitude < 0x3fe00000u) return 0x3fc00000u;
+  if (magnitude <= 0x40200000u) return 0x40000000u;
+  if (magnitude < 0x40600000u) return 0x40400000u;
+  return magnitude <= 0x40a00000u ? 0x40800000u : 0x40c00000u;
+}
+uint e2_decode(uint code) {
+  const uint values[8] = uint[8](0u, 0x3f000000u, 0x3f800000u, 0x3fc00000u,
+      0x40000000u, 0x40400000u, 0x40800000u, 0x40c00000u);
+#if defined(HYLE_NVFP4_LOCAL) || defined(HYLE_MXFP4)
+  return values[code & 7u] | ((code & 8u) << 28u);
+#else
+  // The pinned non-fast producer table maps code8 to +0, not native FP4 -0.
+  return code == 8u ? 0u : values[code & 7u] | ((code & 8u) << 28u);
+#endif
+}
+bool positive_finite(uint value) { return value != 0u && value < 0x7f800000u; }
+void invalid() { atomicOr(c[origin.c / 4u], 4u); }
+bool failed() {
+#if defined(HYLE_NVFP4_GROUPED) || defined(HYLE_MXFP4)
+  // Another invocation can report a bad selected scale in this dispatch.
+  return atomicOr(c[origin.c / 4u], 0u) != 0u;
+#else
+  return c[origin.c / 4u] != 0u;
+#endif
+}
+void store_word(uint index, uint value) {
+#ifdef HYLE_MXFP4
+#ifdef HYLE_NVFP4_GROUPED
+  f[index] = value;
+#else
+  e[index] = value;
+#endif
+#else
+#ifdef HYLE_NVFP4_GROUPED
+  g[index] = value;
+#else
+  f[index] = value;
+#endif
+#endif
+}
+
+#ifdef HYLE_MXFP4
+uint mx_scale(uint code) {
+  // E8M0 code0 is 2^-127, a nonzero BF16 subnormal. Code255 is rejected
+  // before this helper and is not silently treated as a NaN/Inf scale.
+  return code == 0u ? 0x00400000u : code << 23u;
+}
+uint mx_activation_scale(uint maximum) {
+  uint rounded = ((maximum >> 16u) + 0x20u) & 0x7f80u;
+  if (rounded == 0u) return mx_scale(0u);
+  if (rounded == 0x7f80u) return mx_scale(254u);
+  int exponent = clamp(int(rounded >> 7u) - 129, -127, 127);
+  return mx_scale(uint(exponent + 127));
+}
+#endif
+
+void quantize(uint work) {
+#ifdef HYLE_MXFP4
+#ifdef HYLE_NVFP4_GROUPED
+  uint quant_rows = (rows / slots) * quant_slots;
+  if (work >= quant_rows * (depth / HYLE_FP4_GROUP_U)) return;
+  uint row = work / (depth / HYLE_FP4_GROUP_U);
+#else
+  if (work < columns * (depth / HYLE_FP4_GROUP_U) &&
+      load_bytes(3u, origin.d + work, 1u) == 255u) invalid();
+  if (work >= rows * (depth / HYLE_FP4_GROUP_U)) return;
+#endif
+#else
+#ifdef HYLE_NVFP4_GROUPED
+  if (work >= rows * (depth / HYLE_FP4_GROUP_U)) return;
+  uint row = work / (depth / HYLE_FP4_GROUP_U);
+  uint expert = load_bytes(5u, origin.f + row * 4u, 4u);
+  uint input_global = load_bytes(1u, origin.b + expert * 4u, 4u);
+  uint weight_global = load_bytes(3u, origin.d + expert * 4u, 4u);
+#else
+  uint input_global = load_bytes(1u, origin.b, 4u);
+  uint weight_global = load_bytes(3u, origin.d, 4u);
+#endif
+  if (!positive_finite(input_global) || !positive_finite(weight_global)) {
+    invalid(); return;
+  }
+#ifndef HYLE_NVFP4_GROUPED
+  if (work < columns * (depth / HYLE_FP4_GROUP_U)) {
+    uint scale = load_bytes(4u, origin.e + work, 1u);
+    if ((scale & 127u) == 127u || ((scale & 128u) != 0u && (scale & 127u) != 0u))
+      invalid();
+  }
+  if (work >= rows * (depth / HYLE_FP4_GROUP_U)) return;
+#endif
+#endif
+#ifdef HYLE_MXFP4_WEIGHT_ONLY
+  // A16 performs only finite validation here, without activation QDQ/storage.
+  // Shared/zero-slot-stride rows are checked once per token.
+  for (uint i = 0u; i < HYLE_FP4_GROUP_U; ++i) {
+#ifdef HYLE_NVFP4_GROUPED
+    uint input_offset = (row / quant_slots) * token_stride + (row % quant_slots) * slot_stride +
+        ((work % (depth / HYLE_FP4_GROUP_U)) * HYLE_FP4_GROUP_U + i) * 2u;
+#else
+    uint input_offset = (work * HYLE_FP4_GROUP_U + i) * 2u;
+#endif
+    uint value = load_bytes(0u, origin.a + input_offset, 2u) << 16u;
+    if ((value & 0x7fffffffu) >= 0x7f800000u) { invalid(); return; }
+  }
+#else
+  uint values[HYLE_FP4_GROUP], maximum = 0u;
+  bool finite = true;
+  for (uint i = 0u; i < HYLE_FP4_GROUP_U; ++i) {
+#ifdef HYLE_NVFP4_GROUPED
+#ifdef HYLE_MXFP4
+    uint input_offset = (row / quant_slots) * token_stride + (row % quant_slots) * slot_stride +
+        ((work % (depth / HYLE_FP4_GROUP_U)) * HYLE_FP4_GROUP_U + i) * 2u;
+#else
+    uint input_offset = (row / slots) * token_stride + (row % slots) * slot_stride +
+        ((work % (depth / HYLE_FP4_GROUP_U)) * HYLE_FP4_GROUP_U + i) * 2u;
+#endif
+#else
+    uint input_offset = (work * HYLE_FP4_GROUP_U + i) * 2u;
+#endif
+    values[i] = load_bytes(0u, origin.a + input_offset, 2u) << 16u;
+    uint magnitude = values[i] & 0x7fffffffu;
+    maximum = max(maximum, magnitude);
+    finite = finite && magnitude < 0x7f800000u;
+  }
+  if (!finite) { invalid(); return; }
+#ifdef HYLE_MXFP4
+  uint scale = mx_activation_scale(maximum);
+#elif defined(HYLE_NVFP4_LOCAL)
+  // CT local scaling first rounds absmax/6 to BF16. Globals are original
+  // quantization multipliers, not pre-inverted ModelOpt dequantization scales.
+  uint local_maximum = bfloat(hyle_f32_div(maximum, 0x40c00000u)) << 16u;
+  uint ratio = min(hyle_f32_mul(input_global, local_maximum), 0x43e00000u);
+  uint scale_code = e4_encode(ratio);
+  if (scale_code == 0u) scale_code = 32u; // Exactly-zero SF becomes0.125.
+  uint scale = hyle_f32_div(e4_decode(scale_code), input_global);
+#else
+  uint denominator = hyle_f32_mul(0x40c00000u, input_global);
+  uint ratio = min(hyle_f32_div(maximum, denominator), 0x43e00000u);
+  uint scale = hyle_f32_mul(e4_decode(e4_encode(ratio)), input_global);
+  if (scale < 0x3727c5acu) scale = 0x3f800000u; // F32 1e-5 guard.
+#endif
+  for (uint pair = 0u; pair < HYLE_FP4_PAIRS_U; ++pair) {
+    uint output_word = 0u;
+    for (uint component = 0u; component < 2u; ++component) {
+      uint value = values[pair * 2u + component];
+#ifdef HYLE_MXFP4
+      // The portable BF16 reference rounds the division before the E2M1
+      // thresholds, preserves explicit signed zero, then rounds the product.
+      uint normalized = bfloat(hyle_f32_div(value, scale)) << 16u;
+      uint rounded = e2_nearest(normalized & 0x7fffffffu) | (normalized & 0x80000000u);
+      uint restored = hyle_f32_mul(rounded, scale);
+#elif defined(HYLE_NVFP4_LOCAL)
+      uint normalized = hyle_f32_div(value, scale);
+      normalized = (normalized & 0x80000000u) |
+          min(normalized & 0x7fffffffu, 0x40c00000u);
+      if (round_input) normalized = bfloat(normalized) << 16u;
+      uint magnitude = normalized & 0x7fffffffu;
+      uint rounded = e2_nearest(magnitude);
+      // Portable sign(v), after the optional BF16 rounding: either signed
+      // explicit zero maps+0; a negative nonzero value rounding to0 keeps-0.
+      if (magnitude != 0u) rounded ^= normalized & 0x80000000u;
+      uint restored = hyle_f32_mul(rounded, scale);
+#else
+      uint magnitude = value & 0x7fffffffu;
+      uint rounded = e2_nearest(hyle_f32_div(magnitude, scale));
+      uint restored = hyle_f32_mul(rounded, scale);
+      if (magnitude != 0u) restored ^= value & 0x80000000u;
+#endif
+      output_word |= bfloat(restored) << (component * 16u);
+    }
+    store_word(work * HYLE_FP4_PAIRS_U + pair, output_word);
+  }
+#endif
+}
+
+uint dot(uint index) {
+  uint row = index / columns, column = index % columns;
+#ifdef HYLE_NVFP4_GROUPED
+#ifdef HYLE_MXFP4
+  uint expert = load_bytes(4u, origin.e + row * 4u, 4u);
+  uint bank_row = expert * columns + column, result = 0u;
+#else
+  uint expert = load_bytes(5u, origin.f + row * 4u, 4u);
+  uint bank_row = expert * columns + column;
+  uint global = load_bytes(4u, origin.e + expert * 4u, 4u), result = 0u;
+#endif
+#else
+  uint bank_row = column;
+#ifdef HYLE_MXFP4
+  uint result = 0u;
+#else
+  uint global = load_bytes(4u, origin.e, 4u), result = 0u;
+#endif
+#endif
+  for (uint group = 0u; group < depth / HYLE_FP4_GROUP_U; ++group) {
+    uint scale_code = load_bytes(3u,
+        origin.d + bank_row * (depth / HYLE_FP4_GROUP_U) + group, 1u);
+#ifdef HYLE_MXFP4
+    if (scale_code == 255u) { invalid(); return 0u; }
+    uint scale = mx_scale(scale_code);
+#else
+#ifdef HYLE_NVFP4_GROUPED
+    // Validate only the selected expert's accessed scales, not the whole bank.
+    if ((scale_code & 127u) == 127u ||
+        ((scale_code & 128u) != 0u && (scale_code & 127u) != 0u)) {
+      invalid(); return 0u;
+    }
+#endif
+#ifdef HYLE_NVFP4_LOCAL
+    uint scale = hyle_f32_div(e4_decode(scale_code), global);
+#else
+    uint scale = hyle_f32_mul(e4_decode(scale_code), global);
+#endif
+#endif
+    for (uint i = 0u; i < HYLE_FP4_GROUP_U; ++i) {
+      uint k = group * HYLE_FP4_GROUP_U + i;
+      uint code = load_bytes(1u, origin.b + bank_row * (depth / 2u) + k / 2u, 1u);
+      code = (code >> (4u * (k & 1u))) & 15u;
+      uint weight = bfloat(hyle_f32_mul(e2_decode(code), scale)) << 16u;
+#if defined(HYLE_MXFP4_WEIGHT_ONLY) && defined(HYLE_NVFP4_GROUPED)
+      uint input_offset = (row / slots) * token_stride + (row % slots) * slot_stride + k * 2u;
+      uint activation = load_bytes(0u, origin.a + input_offset, 2u) << 16u;
+#elif defined(HYLE_MXFP4) && defined(HYLE_NVFP4_GROUPED)
+      uint qrow = (row / slots) * quant_slots + (quant_slots == 1u ? 0u : row % slots);
+      uint activation = load_bytes(0u, origin.a + (qrow * depth + k) * 2u, 2u) << 16u;
+#else
+      uint activation = load_bytes(0u, origin.a + (row * depth + k) * 2u, 2u) << 16u;
+#endif
+      result = hyle_f32_add(result, hyle_f32_mul(activation, weight));
+    }
+  }
+  return bfloat(result);
+}
+void main() {
+  uint work = (gl_WorkGroupID.y * gl_NumWorkGroups.x + gl_WorkGroupID.x) * 64u + gl_LocalInvocationID.x;
+#ifdef HYLE_NVFP4_GROUPED
+  if (phase == 2u) {
+    // Separate dispatch and barrier: no expert pointer is formed until every
+    // signed ID has passed. Negative I32 encodings also compare >= experts.
+#ifdef HYLE_MXFP4
+    if (work < rows && load_bytes(4u, origin.e + work * 4u, 4u) >= experts) invalid();
+#else
+    if (work < rows && load_bytes(5u, origin.f + work * 4u, 4u) >= experts) invalid();
+#endif
+    return;
+  }
+  if (failed()) return;
+  if (phase == 3u) { quantize(work); return; }
+#else
+  if (phase == 0u) { quantize(work); return; }
+#endif
+  if (failed() || work >= (rows * columns + 1u) / 2u) return;
+  uint value = dot(work * 2u);
+  if (work * 2u + 1u < rows * columns) value |= dot(work * 2u + 1u) << 16u;
+  store_word(work, value);
+}

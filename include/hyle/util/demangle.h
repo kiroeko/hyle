@@ -8,20 +8,19 @@
 
 #include "hyle/visibility.h"
 
-// Runtime symbol demangling (clay sys/demangle). Turns a mangled C++ symbol --
+// Runtime symbol demangling. Turns a mangled C++ symbol --
 // e.g. "_Z1gv" -> "g()" -- into something human-readable, for diagnostics and
 // backtraces. This is the RUNTIME complement to util/type_name<T> (compile-time,
 // static type, no RTTI): demangle handles names known only at run time -- frames
 // pulled from a backtrace, or typeid(x).name() on a polymorphic reference whose
 // dynamic type isn't a compile-time T.
 //
-// Two improvements over clay:
+// Ownership and platform behavior:
 //  * explicit ownership in both natural C++ shapes. Full text returns a
 //    caller-owned std::string; bounded text writes into the caller's buffer,
 //    snprintf-style. HYLE frees platform temporaries internally. Itanium
 //    demangling still performs an internal malloc/free.
-//  * MSVC actually demangles (UnDecorateSymbolName). clay's non-Itanium path just
-//    echoed the mangled name back.
+//  * MSVC demangles through UnDecorateSymbolName.
 
 namespace hyle::util {
 

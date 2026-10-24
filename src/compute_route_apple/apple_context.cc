@@ -19,6 +19,7 @@
 #include <mlx/transforms.h>
 
 #include "apple_checks.h"
+#include "apple_carrier.h"
 #include "apple_completion_internal.h"
 #include "apple_internal.h"
 #include "apple_runtime_internal.h"
@@ -29,6 +30,8 @@
 #include "hyle/compute/detail/apple_batch_access.h"
 #include "hyle/compute/detail/lease_access.h"
 #include "hyle/compute/detail/generated_result.h"
+#include "hyle/compute/low_precision.h"
+#include "hyle/compute/model_ops.h"
 #include "hyle/container/flat_hash_set.h"
 #include "hyle/platform/thread.h"
 #include "hyle/platform/wait.h"
@@ -290,7 +293,8 @@ struct RuntimeBatchFunction {
 // private fusion and do not expose its internal node/value table to replay.
 std::vector<mx::array> prepare_mlx(MlxProgram &program, RegionFunction region,
                                   std::span<const InputSpec> inputs,
-                                  mx::Stream stream) {
+                                  mx::Stream stream,
+                                  std::span<const std::size_t> descriptor_inputs = {}) {
   program.compiled = mx::compile(
       [fn = std::move(region), checks = program.checks,
        stream](const std::vector<mx::array> &arguments) {
@@ -303,8 +307,23 @@ std::vector<mx::array> prepare_mlx(MlxProgram &program, RegionFunction region,
       }, false);
   std::vector<mx::array> isolated;
   isolated.reserve(inputs.size());
-  for (const auto &spec : inputs)
-    isolated.push_back(mx::zeros(spec.shape, spec.dtype, stream));
+  for (const auto &spec : inputs) {
+    const auto storage = spec.logical_description.storage_format().id();
+    if (spec.dtype == mx::uint8 &&
+        (std::ranges::find(descriptor_inputs, isolated.size()) != descriptor_inputs.end() ||
+         storage == kFloat8GroupedWeightFloat32Block128 ||
+         storage == kFloat4GroupedWeightFloat32Group32)) {
+      // Canonical banks may exceed the native flat-index range. The traced
+      // program is shape/dtype specialized; real bindings retain their full
+      // capacity and strides. Declared row-bank ports also need only
+      // one zero byte, including fused regions with other boundary ports.
+      // Ordinary U8/opaque regions retain their original warmup allocation.
+      isolated.push_back(mx::broadcast_to(mx::array(std::uint8_t{0}),
+                                          spec.shape, stream));
+    } else {
+      isolated.push_back(mx::zeros(spec.shape, spec.dtype, stream));
+    }
+  }
   mx::async_eval(isolated);
   mx::synchronize(stream);
   for (auto &input : isolated)
@@ -355,6 +374,7 @@ struct ProgramState : MlxProgram {
   std::shared_ptr<Runtime> runtime;
   WorkloadContext workload;
   std::vector<InputSpec> inputs;
+  std::vector<InputSpec> outputs;
   std::unique_ptr<PreparedPlan> native;
 };
 
@@ -363,12 +383,23 @@ struct ResultValues {
 };
 
 struct InvocationState : Job {
+  struct PreparedInput final {
+    InputBinding binding;
+    std::uint64_t expected_epoch = 0;
+    std::uint64_t consumed_epoch = 0;
+    bool pinned = false;
+  };
   std::atomic<std::uint32_t> refs{1};
   std::shared_ptr<ProgramState> program;
   std::shared_ptr<ResultValues> values;
   cd::ResultSlot<Results> result_slot;
   LeaseUseBatch native_uses;
+  // Only this accepted Job borrows the original receiver's stable Update.
+  // Its existing source/suffix retirement owner keeps the payload alive.
+  Status (*source_preflight)(const void *) noexcept = nullptr;
+  const void *pending_source = nullptr;
   std::vector<mx::array> inputs;
+  std::vector<PreparedInput> prepared_inputs;
   std::vector<std::unique_ptr<Recurrent>> recurrent;
   std::vector<std::optional<mx::array>> native_values;
   std::vector<mx::array> arguments;
@@ -380,6 +411,11 @@ struct InvocationState : Job {
   std::atomic<bool> cancel{false};
   std::atomic<bool> retired{false};
   bool bound = false;
+  bool source_bindings = false;
+  // Cold source-edge preparation may sample the baseline without acquiring
+  // another slot's binding lock while holding the Runtime DAG monitor.
+  std::atomic<std::uint64_t> submitted_epoch{0};
+  std::size_t source_readers = 0; // Protected by binding_mutex.
   Status terminal;
   cd::CompletionLifetime abandoned;
   CompletionNotification notification;
@@ -389,6 +425,67 @@ struct InvocationState : Job {
       : program(std::move(p)), values(std::make_shared<ResultValues>()),
         result_slot(std::move(slot)) {
     inputs.reserve(program->inputs.size());
+  }
+
+  // Source snapshots are taken at native submission, not at cold binding.
+  // Counts belong to each producer; unrelated slots need not run equally often.
+  Status snapshot_sources() noexcept {
+    for (auto &input : prepared_inputs) {
+      auto *producer = input.binding.source.state_;
+      if (!producer) continue;
+      std::lock_guard lock(producer->binding_mutex);
+      const auto epoch = producer->submitted_epoch.load(std::memory_order_acquire);
+      if (epoch == 0 || epoch <= input.consumed_epoch)
+        return Status::FailedPrecondition("Apple late input has no new producer submission");
+      if (producer->done.load(std::memory_order_acquire) != 0 &&
+          !producer->terminal.ok())
+        return producer->terminal;
+      if (producer->source_readers == SIZE_MAX)
+        return Status::ResourceExhausted("Apple late input reader capacity");
+      input.expected_epoch = epoch;
+      ++producer->source_readers;
+      input.pinned = true;
+    }
+    return Status::Ok();
+  }
+
+  void release_source_pins() noexcept {
+    for (auto &input : prepared_inputs) {
+      if (!input.pinned) continue;
+      auto &producer = *input.binding.source.state_;
+      // Never hold two producer monitors, and never wait for native work.
+      std::lock_guard lock(producer.binding_mutex);
+      HYLE_FATAL_ASSERT(producer.source_readers != 0);
+      --producer.source_readers;
+      input.pinned = false;
+    }
+  }
+
+  Status resolve_inputs() {
+    if (!source_bindings) return Status::Ok();
+    inputs.clear();
+    for (const auto &input : prepared_inputs) {
+      const auto &binding = input.binding;
+      if (binding.value) {
+        inputs.push_back(*binding.value);
+        continue;
+      }
+      auto &producer = *binding.source.state_;
+      std::lock_guard lock(producer.binding_mutex);
+      if (producer.submitted_epoch.load(std::memory_order_acquire) != input.expected_epoch ||
+          producer.done.load(std::memory_order_acquire) == 0)
+        return Status::FailedPrecondition("Apple late input producer epoch is not ready");
+      if (!producer.terminal.ok()) return producer.terminal;
+      if (binding.source.port_ >= producer.values->arrays.size())
+        return Status::Internal("Apple late input producer output is absent");
+      const auto &value = producer.values->arrays[binding.source.port_];
+      const auto &spec = program->inputs[inputs.size()];
+      if (value.status() != mx::array::available || value.shape() != spec.shape ||
+          value.dtype() != spec.dtype)
+        return Status::Internal("Apple late input producer output differs from its prepared carrier");
+      inputs.push_back(value); // Copies a ready native owner; capacity is cold.
+    }
+    return Status::Ok();
   }
 };
 
@@ -455,7 +552,12 @@ Status evaluate_attention_blocks(const AttentionBlocks &program, InvocationState
       args.push_back(mx::greater_equal(mx::expand_dims(query_indices, 1, stream),
           mx::expand_dims(*key_indices, 0, stream), stream));
     } else if (!program.ordinary) {
-      args.push_back(mx::slice(ports[3],{begin,0},{end,ports[3].shape(1)},stream));
+      auto mask_begin = mx::Shape(ports[3].ndim(), 0);
+      auto mask_end = ports[3].shape();
+      const int mask_query_axis = ports[3].ndim() - 2;
+      mask_begin[mask_query_axis] = begin;
+      mask_end[mask_query_axis] = end;
+      args.push_back(mx::slice(ports[3], mask_begin, mask_end, stream));
       args.push_back(ports[4]);
     }
     const auto &part=end-begin==128 ? program.full : *program.tail;
@@ -525,6 +627,25 @@ void release(InvocationState *state) noexcept {
   }
 }
 
+InputSource::InputSource(InvocationState *state, std::size_t port) noexcept
+    : state_(state), port_(port) { retain(state_); }
+InputSource::InputSource(const InputSource &other) noexcept
+    : state_(other.state_), port_(other.port_) { if (state_) retain(state_); }
+InputSource &InputSource::operator=(const InputSource &other) noexcept {
+  if (this != &other) { InputSource copy(other); *this = std::move(copy); }
+  return *this;
+}
+InputSource::InputSource(InputSource &&other) noexcept
+    : state_(std::exchange(other.state_, nullptr)), port_(other.port_) {}
+InputSource &InputSource::operator=(InputSource &&other) noexcept {
+  if (this != &other) {
+    reset(); state_ = std::exchange(other.state_, nullptr); port_ = other.port_;
+  }
+  return *this;
+}
+InputSource::~InputSource() { reset(); }
+void InputSource::reset() noexcept { release(std::exchange(state_, nullptr)); port_ = 0; }
+
 void finish(InvocationState &state, Status terminal) noexcept {
   cd::CompletionLifetime abandoned;
   CompletionNotification notification;
@@ -557,6 +678,10 @@ template<class Evaluate>
 void execute_with(InvocationState& state, Evaluate evaluate) noexcept {
   HYLE_TRACE_ZONE_NAMED("hyle.apple.execute");
   auto &runtime = *state.program->runtime;
+  // Clear borrowed fields before any finish/retirement callback can return the
+  // source controls. Locals are used only before resolve/eval in this Job.
+  const auto preflight = std::exchange(state.source_preflight, nullptr);
+  const auto *source = std::exchange(state.pending_source, nullptr);
   Status terminal;
   {
     std::lock_guard lock(runtime.queue_mutex);
@@ -567,7 +692,9 @@ void execute_with(InvocationState& state, Evaluate evaluate) noexcept {
         Status::Cancelled("Apple submission cancelled before native execution");
   if (terminal.ok()) {
     try {
-      terminal = evaluate(*runtime.stream);
+      if (preflight) terminal = preflight(source);
+      if (terminal.ok()) terminal = state.resolve_inputs();
+      if (terminal.ok()) terminal = evaluate(*runtime.stream);
     } catch (...) {
       terminal = native_exception();
       // Native construction/eval may already have accepted a prefix. Keep
@@ -586,6 +713,8 @@ void execute_with(InvocationState& state, Evaluate evaluate) noexcept {
   // evaluate_mlx/execute_with have drained every accepted prefix before
   // temporary block owners are released. Whole-Job ports/uses retire in finish.
   state.block_arguments.clear();state.block_outputs.clear();state.output_blocks.clear();
+  if (state.source_bindings) state.inputs.clear();
+  state.release_source_pins();
   finish(state, std::move(terminal));
   release(&state); // admitted worker reference
 }
@@ -759,34 +888,47 @@ Result<Program>
 Context::compile(RegionFunction region,
                  std::span<const InputSpec> inputs,
                  const WorkloadContext &workload) const noexcept {
+  return detail::ContextAccess::compile(state_, std::move(region), inputs, workload);
+}
+
+Result<Program> detail::ContextAccess::compile(std::shared_ptr<Runtime> runtime,
+                 RegionFunction region, std::span<const InputSpec> inputs,
+                 const WorkloadContext &workload,
+                 std::span<const std::size_t> descriptor_inputs) noexcept {
   HYLE_TRACE_ZONE_NAMED("hyle.apple.prepare");
-  if (!state_ || !region)
+  if (!runtime || !region)
     return std::unexpected(
         Status::InvalidArgument("invalid Apple Context or region"));
   if (!workload.valid())
     return std::unexpected(Status::InvalidArgument("invalid Apple workload"));
+  for (const auto port : descriptor_inputs)
+    if (port >= inputs.size() || inputs[port].dtype != mx::uint8)
+      return std::unexpected(Status::InvalidArgument("Apple descriptor-only warmup port differs"));
   try {
     auto program = std::make_shared<detail::ProgramState>();
-    program->runtime = state_;
+    program->runtime = runtime;
     program->workload = workload;
     program->inputs.assign(inputs.begin(), inputs.end());
     auto prepare = std::make_shared<detail::ColdJob>([&]() -> Status {
-      const auto stream = *state_->stream;
+      const auto stream = *runtime->stream;
       try {
-        (void)detail::prepare_mlx(*program, std::move(region),
-                                   program->inputs, stream);
+        auto outputs = detail::prepare_mlx(*program, std::move(region),
+                                           program->inputs, stream, descriptor_inputs);
+        program->outputs.reserve(outputs.size());
+        for (const auto &output : outputs)
+          program->outputs.push_back({output.shape(), output.dtype()});
         return Status::Ok();
       } catch (...) {
         const Status failure = native_exception();
         try {
           mx::synchronize(stream);
         } catch (...) {
-          state_->poison(native_exception());
+          runtime->poison(native_exception());
         }
         return failure;
       }
     });
-    const Status status = detail::run_cold(*state_, prepare);
+    const Status status = detail::run_cold(*runtime, prepare);
     if (!status.ok())
       return std::unexpected(status);
     return Program(std::move(program));
@@ -801,12 +943,23 @@ WorkloadContext Program::workload() const noexcept {
 
 Result<Program> detail::ContextAccess::compile(const Context &context,
                                                RegionPlan plan) noexcept {
-  if (!context.state_ || !plan.workload.valid() || plan.regions.empty() ||
+  return compile(context.state_, std::move(plan));
+}
+
+Result<Program> detail::ContextAccess::compile(std::shared_ptr<Runtime> runtime,
+                                               RegionPlan plan,
+                                               std::span<const std::size_t> descriptor_values) noexcept {
+  if (!runtime || !plan.workload.valid() || plan.regions.empty() ||
       plan.outputs.empty() || plan.constants.size() != plan.constant_values.size())
     return std::unexpected(Status::InvalidArgument("invalid Apple native region plan"));
+  for (const auto value : descriptor_values)
+    if (value >= plan.values.size() || plan.values[value].dtype != mx::uint8 ||
+        (std::ranges::find(plan.inputs, value) == plan.inputs.end() &&
+         std::ranges::find(plan.constants, value) == plan.constants.end()))
+      return std::unexpected(Status::InvalidArgument("Apple descriptor-only warmup value differs"));
   try {
     auto program = std::make_shared<ProgramState>();
-    program->runtime = context.state_;
+    program->runtime = runtime;
     program->workload = plan.workload;
     program->native = std::make_unique<PreparedPlan>();
     auto &prepared = *program->native;
@@ -833,6 +986,16 @@ Result<Program> detail::ContextAccess::compile(const Context &context,
     }
     for (std::size_t i = 0; i < plan.regions.size(); ++i) {
       const auto &region = plan.regions[i];
+      if ((region.proven_index_port != static_cast<std::size_t>(-1)) !=
+              (region.proven_index_extent > 0) ||
+          (region.proven_index_extent > 0 &&
+           (region.kind != RegionKind::kGgml ||
+            !region.operation.custom_as<model_ops::GroupedMatMul>() ||
+            region.inputs.size() != 3 || region.native_inputs.size() != 3 ||
+            region.native_inputs[0].rank() != 3 ||
+            region.proven_index_port != 2 ||
+            region.proven_index_extent != region.native_inputs[0].dimensions()[0])))
+        return std::unexpected(Status::InvalidArgument("Apple native index proof has the wrong port/extent"));
       if (region.outputs.empty())
         return std::unexpected(Status::InvalidArgument("Apple region has no outputs"));
       for (auto id : region.inputs) {
@@ -887,12 +1050,13 @@ Result<Program> detail::ContextAccess::compile(const Context &context,
       if (id >= defined.size() || !defined[id])
         return std::unexpected(Status::InvalidArgument("Apple native output has no definition"));
       prepared.last_use[id] = plan.regions.size();
+      program->outputs.push_back(plan.values[id]);
     }
     prepared.description = std::move(plan);
     prepared.mlx.resize(prepared.description.regions.size());
     prepared.attention_blocks.resize(prepared.description.regions.size());
     auto prepare = std::make_shared<ColdJob>([&]() -> Status {
-      const auto stream = *context.state_->stream;
+      const auto stream = *runtime->stream;
       try {
         for (std::size_t i = 0; i < prepared.description.regions.size(); ++i) {
           auto &region = prepared.description.regions[i];
@@ -901,7 +1065,8 @@ Result<Program> detail::ContextAccess::compile(const Context &context,
             // invocation subsequently owns an independent backend/metadata.
             HYLE_ASSIGN_OR_RETURN(
                 auto probe,
-                Recurrent::create(region.operation, region.native_inputs));
+                Recurrent::create(region.operation, region.native_inputs,
+                    region.proven_index_port, region.proven_index_extent));
             continue;
           }
           std::vector<InputSpec> specs;
@@ -934,7 +1099,7 @@ Result<Program> detail::ContextAccess::compile(const Context &context,
               } else if (blocks.ordinary && blocks.causal) {
                 part_specs.push_back({{rows, specs[1].shape[blocks.query_axis]}, mx::bool_});
               } else if (!blocks.ordinary) {
-                part_specs[3].shape[0] = rows;
+                part_specs[3].shape[part_specs[3].shape.size() - 2] = rows;
                 part_specs[3].logical_description = {};
               }
               auto outputs = prepare_mlx(part, build, part_specs, stream);
@@ -951,7 +1116,12 @@ Result<Program> detail::ContextAccess::compile(const Context &context,
             continue;
           }
           auto &mlx = prepared.mlx[i].emplace();
-          auto outputs = prepare_mlx(mlx, std::move(region.mlx), specs, stream);
+          std::vector<std::size_t> descriptor_inputs;
+          for (std::size_t port = 0; port < region.inputs.size(); ++port)
+            if (std::ranges::find(descriptor_values, region.inputs[port]) != descriptor_values.end())
+              descriptor_inputs.push_back(port);
+          auto outputs = prepare_mlx(mlx, std::move(region.mlx), specs, stream,
+              descriptor_inputs);
           if (outputs.size() != region.outputs.size())
             return Status::InvalidArgument("Apple MLX region output count mismatch");
           for (std::size_t port = 0; port < outputs.size(); ++port) {
@@ -966,12 +1136,12 @@ Result<Program> detail::ContextAccess::compile(const Context &context,
         try {
           mx::synchronize(stream);
         } catch (...) {
-          context.state_->poison(native_exception());
+          runtime->poison(native_exception());
         }
         return failure;
       }
     });
-    HYLE_RETURN_IF_ERROR(run_cold(*context.state_, prepare));
+    HYLE_RETURN_IF_ERROR(run_cold(*runtime, prepare));
     return Program(std::move(program));
   } catch (...) {
     return std::unexpected(native_exception());
@@ -1013,7 +1183,9 @@ Program::create_invocation(mem::AllocatorRef allocator) const noexcept {
           if (plan.regions[i].kind == detail::RegionKind::kGgml) {
             HYLE_ASSIGN_OR_RETURN(state->recurrent[i],
                 detail::Recurrent::create(plan.regions[i].operation,
-                                          plan.regions[i].native_inputs));
+                                          plan.regions[i].native_inputs,
+                                          plan.regions[i].proven_index_port,
+                                          plan.regions[i].proven_index_extent));
           }
         return Status::Ok();
       });
@@ -1046,6 +1218,8 @@ Status Invocation::bind(std::span<const mx::array> inputs) noexcept {
       state_->retired.load(std::memory_order_acquire))
     return Status::FailedPrecondition(
         "Apple Invocation is in flight or failed");
+  if (state_->source_readers != 0)
+    return Status::Unavailable("Apple outputs are retained by a pending native consumer");
   if (inputs.size() != state_->program->inputs.size())
     return Status::InvalidArgument(
         "Apple input count differs from prepared region");
@@ -1059,29 +1233,249 @@ Status Invocation::bind(std::span<const mx::array> inputs) noexcept {
           "Apple bind requires successfully evaluated inputs");
   }
   // Capacity was reserved at slot creation. array copies retain native owners.
+  // All source-edge changes use this original Runtime's cold monitor. It lets
+  // prepare_inputs prove a DAG without taking locks along arbitrary edges.
+  std::lock_guard source_lock(state_->program->runtime->queue_mutex);
+  state_->prepared_inputs.clear();
+  state_->source_bindings = false;
   state_->inputs.assign(inputs.begin(), inputs.end());
   state_->bound = true;
   return Status::Ok();
+}
+
+Result<detail::InputSource> detail::InvocationAccess::source(
+    const Invocation &invocation, std::size_t port) noexcept {
+  auto *state = invocation.state_;
+  if (!state) return std::unexpected(Status::FailedPrecondition("empty Apple source invocation"));
+  if (port >= state->program->outputs.size())
+    return std::unexpected(Status::OutOfRange("Apple source output port"));
+  return InputSource(state, port);
+}
+
+Result<std::uint64_t> detail::InvocationAccess::source_epoch(
+    const InputSource &source, const std::shared_ptr<Runtime> &runtime) noexcept {
+  auto *state = source.state_;
+  if (!state || state->program->runtime != runtime || source.port_ >= state->program->outputs.size())
+    return std::unexpected(Status::InvalidArgument("Apple source Runtime/output port differs"));
+  return state->submitted_epoch.load(std::memory_order_acquire);
+}
+Result<std::uint64_t> detail::InvocationAccess::pin_source(const InputSource &source,
+    const std::shared_ptr<Runtime> &runtime, std::uint64_t consumed_epoch) noexcept {
+  auto qualified = source_epoch(source, runtime);
+  if (!qualified) return std::unexpected(std::move(qualified).error());
+  auto &state = *source.state_;
+  std::lock_guard lock(state.binding_mutex);
+  const auto epoch = state.submitted_epoch.load(std::memory_order_acquire);
+  if (!epoch || epoch <= consumed_epoch)
+    return std::unexpected(Status::FailedPrecondition("Apple copy has no new producer submission"));
+  if (state.done.load(std::memory_order_acquire) != 0 && !state.terminal.ok())
+    return std::unexpected(state.terminal);
+  if (state.source_readers == SIZE_MAX)
+    return std::unexpected(Status::ResourceExhausted("Apple copy producer reader capacity"));
+  ++state.source_readers;
+  return epoch;
+}
+Result<mx::array> detail::InvocationAccess::source_output(const InputSource &source,
+    const std::shared_ptr<Runtime> &runtime, std::uint64_t expected_epoch) noexcept {
+  auto qualified = source_epoch(source, runtime);
+  if (!qualified) return std::unexpected(std::move(qualified).error());
+  if (runtime->owner_id.load(std::memory_order_acquire) != platform::this_thread::get_id())
+    return std::unexpected(Status::FailedPrecondition("Apple source resolution requires its original FIFO owner"));
+  auto &state = *source.state_;
+  std::lock_guard lock(state.binding_mutex);
+  if (!expected_epoch || state.submitted_epoch.load(std::memory_order_acquire) != expected_epoch ||
+      state.done.load(std::memory_order_acquire) == 0 || !state.source_readers)
+    return std::unexpected(Status::FailedPrecondition("Apple copy producer epoch is not ready/pinned"));
+  if (!state.terminal.ok()) return std::unexpected(state.terminal);
+  if (source.port_ >= state.values->arrays.size())
+    return std::unexpected(Status::Internal("Apple copy producer output is absent"));
+  const auto &value = state.values->arrays[source.port_];
+  const auto &spec = state.program->outputs[source.port_];
+  if (value.status() != mx::array::available || value.shape() != spec.shape || value.dtype() != spec.dtype)
+    return std::unexpected(Status::Internal("Apple copy output differs from its prepared carrier"));
+  return value;
+}
+void detail::InvocationAccess::release_source(const InputSource &source) noexcept {
+  HYLE_FATAL_ASSERT(source.state_ != nullptr);
+  std::lock_guard lock(source.state_->binding_mutex);
+  HYLE_FATAL_ASSERT(source.state_->source_readers != 0);
+  --source.state_->source_readers;
+}
+
+Status detail::InvocationAccess::prepare_inputs(Invocation &invocation,
+    std::span<const InputBinding> inputs) noexcept {
+  auto *state = invocation.state_;
+  if (!state) return Status::FailedPrecondition("empty Apple native invocation");
+  try {
+    std::lock_guard lock(state->binding_mutex);
+    if (!state->done.load(std::memory_order_acquire) || state->retired.load(std::memory_order_acquire))
+      return Status::Unavailable("Apple native slot in flight or failed");
+    if (state->source_readers != 0)
+      return Status::Unavailable("Apple outputs are retained by a pending native consumer");
+    HYLE_ASSIGN_OR_RETURN(auto writer, state->result_slot.begin());
+    if (inputs.size() != state->program->inputs.size())
+      return Status::InvalidArgument("Apple source input arity differs");
+    std::lock_guard source_lock(state->program->runtime->queue_mutex);
+    if (!state->program->runtime->accepting)
+      return Status::FailedPrecondition("Apple Context is closed");
+    if (!state->program->runtime->failure.ok()) return state->program->runtime->failure;
+    std::vector<InvocationState::PreparedInput> candidate;
+    candidate.reserve(inputs.size());
+    std::vector<InvocationState *> pending;
+    pending.reserve(inputs.size());
+    for (std::size_t port = 0; port < inputs.size(); ++port) {
+      const auto &input = inputs[port];
+      if (input.value.has_value() == input.source.valid())
+        return Status::InvalidArgument("Apple input requires exactly one ready value or producer");
+      const auto &spec = state->program->inputs[port];
+      if (input.value) {
+        if (input.value->status() != mx::array::available ||
+            input.value->shape() != spec.shape || input.value->dtype() != spec.dtype)
+          return Status::InvalidArgument("Apple ready input differs from its prepared carrier");
+      } else {
+        auto *producer = input.source.state_;
+        if (producer->program->runtime != state->program->runtime)
+          return Status::Unimplemented("Apple late inputs require the same native Runtime");
+        if (input.source.port_ >= producer->program->outputs.size())
+          return Status::OutOfRange("Apple late input output port");
+        const auto &output = producer->program->outputs[input.source.port_];
+        if (output.shape != spec.shape || output.dtype != spec.dtype)
+          return Status::InvalidArgument("Apple late input carrier differs");
+        pending.push_back(producer);
+      }
+      InvocationState::PreparedInput prepared{input};
+      if (input.source.valid())
+        prepared.consumed_epoch = input.source.state_->submitted_epoch.load(std::memory_order_acquire);
+      if (port < state->prepared_inputs.size()) {
+        const auto &previous = state->prepared_inputs[port];
+        if (input.source.valid() && input.source.state_ == previous.binding.source.state_ &&
+            input.source.port_ == previous.binding.source.port_)
+          prepared.consumed_epoch = std::max(prepared.consumed_epoch, previous.consumed_epoch);
+      }
+      candidate.push_back(std::move(prepared));
+    }
+    container::FlatHashSet<InvocationState *> visited;
+    while (!pending.empty()) {
+      auto *producer = pending.back(); pending.pop_back();
+      if (producer == state) return Status::InvalidArgument("Apple late input graph contains a cycle");
+      const auto inserted = visited.try_insert(producer);
+      if (inserted == decltype(visited)::InsertResult::kOutOfMemory)
+        return Status::ResourceExhausted("Apple source DAG metadata");
+      if (inserted == decltype(visited)::InsertResult::kAlreadyPresent) continue;
+      for (const auto &input : producer->prepared_inputs)
+        if (input.binding.source.valid()) pending.push_back(input.binding.source.state_);
+    }
+    state->prepared_inputs = std::move(candidate);
+    state->source_bindings = true;
+    state->inputs.clear();
+    state->bound = true;
+    return Status::Ok();
+  } catch (...) { return native_exception(); }
+}
+
+Status detail::InvocationAccess::release_inputs(Invocation &invocation) noexcept {
+  return PagedBatchAccess::release_inputs(invocation);
+}
+Status detail::InvocationAccess::can_detach_inputs(const Invocation &invocation,
+    const cd::ResultStorageOwner &result) noexcept {
+  return PagedBatchAccess::can_detach_inputs(invocation, result);
+}
+void detail::InvocationAccess::detach_inputs(Invocation &invocation) noexcept {
+  PagedBatchAccess::detach_inputs(invocation);
+}
+Status detail::InvocationAccess::reuse_gate(Invocation &invocation) noexcept {
+  return PagedBatchAccess::reuse_gate(invocation);
+}
+Result<OwnedResult<Results>> detail::InvocationAccess::submit_ordered(
+    Invocation &invocation, LeaseUseBatch uses,
+    Status (*preflight)(const void *) noexcept, const void *source) noexcept {
+  return invocation.submit_guarded(std::move(uses), preflight, source);
+}
+Result<mx::array> detail::InvocationAccess::output(const Invocation &invocation,
+    std::size_t port) noexcept {
+  auto *state = invocation.state_;
+  if (!state) return std::unexpected(Status::FailedPrecondition("empty Apple native invocation"));
+  std::lock_guard lock(state->binding_mutex);
+  if (state->done.load(std::memory_order_acquire) == 0 ||
+      state->submitted_epoch.load(std::memory_order_acquire) == 0)
+    return std::unexpected(Status::FailedPrecondition("Apple output requires a completed submission"));
+  if (!state->terminal.ok()) return std::unexpected(state->terminal);
+  if (port >= state->values->arrays.size())
+    return std::unexpected(Status::OutOfRange("Apple native output port"));
+  return state->values->arrays[port];
+}
+std::shared_ptr<detail::Runtime> detail::InvocationAccess::runtime(
+    const Invocation &invocation) noexcept {
+  return invocation.state_ ? invocation.state_->program->runtime : nullptr;
 }
 
 Status detail::PagedBatchAccess::reuse_gate(Invocation&invocation)noexcept{
   auto*state=invocation.state_;if(!state)return Status::FailedPrecondition("empty Apple batch native slot");
   std::lock_guard lock(state->binding_mutex);
   if(!state->done.load(std::memory_order_acquire) || state->retired.load(std::memory_order_acquire))return Status::Unavailable("Apple batch native slot in flight/failed");
+  if(state->source_readers)return Status::Unavailable("Apple outputs retained by pending native consumer");
   HYLE_ASSIGN_OR_RETURN(auto writer,state->result_slot.begin());return Status::Ok();
 }
+bool detail::PagedBatchAccess::empty_cache_reads(const Invocation&invocation)noexcept{
+  auto*state=invocation.state_;
+  if(!state || state->execute!=execute_batch_invocation)return false;
+  std::lock_guard lock(state->binding_mutex);
+  if(!state->done.load(std::memory_order_acquire) || state->retired.load(std::memory_order_acquire) ||
+      state->program->inputs.size()!=1)return false;
+  const auto&layout=static_cast<const RuntimeBatchInvocationState*>(state)->layout;
+  const auto*function=state->program->compiled.target<RuntimeBatchFunction>();
+  return function && function->initial.schema().owns(layout) &&
+      layout.schema().capacity().storage==BatchStorage::kPaged &&
+      !layout.facts().query_rows && !layout.facts().page_refs;
+}
 Status detail::PagedBatchAccess::release_inputs(Invocation&invocation)noexcept{
-  HYLE_RETURN_IF_ERROR(reuse_gate(invocation));auto&state=*invocation.state_;
+  if(!invocation.state_)return Status::FailedPrecondition("empty Apple native slot");
+  auto&state=*invocation.state_;
   std::lock_guard lock(state.binding_mutex);
+  if(!state.done.load(std::memory_order_acquire) || state.retired.load(std::memory_order_acquire))return Status::Unavailable("Apple native slot in flight/failed");
+  if(state.source_readers)return Status::Unavailable("Apple outputs retained by pending native consumer");
+  HYLE_ASSIGN_OR_RETURN(auto writer,state.result_slot.begin());
+  std::lock_guard source_lock(state.program->runtime->queue_mutex);
+  state.prepared_inputs.clear();state.source_bindings=false;
   state.bound=false;state.inputs.clear();state.values->arrays.clear();
   for(auto&value:state.native_values)value.reset();
   state.arguments.clear();state.region_outputs.clear();return Status::Ok();
 }
+Status detail::PagedBatchAccess::can_detach_inputs(const Invocation &invocation,
+    const cd::ResultStorageOwner &result) noexcept {
+  auto *state = invocation.state_;
+  if (!state) return Status::FailedPrecondition("empty Apple native slot");
+  std::lock_guard lock(state->binding_mutex);
+  if (!state->done.load(std::memory_order_acquire) || state->source_readers)
+    return Status::Unavailable("Apple native inputs are still in use");
+  // done is published only after native/source/page uses retire. Failed or
+  // closed slots may be cleaned; this does not reopen execution admission.
+  return cd::can_detach_retired(state->result_slot, result);
+}
+void detail::PagedBatchAccess::detach_inputs(Invocation &invocation) noexcept {
+  auto &state = *invocation.state_;
+  std::lock_guard lock(state.binding_mutex);
+  cd::discard_retired_payload(state.result_slot);
+  std::lock_guard source_lock(state.program->runtime->queue_mutex);
+  state.prepared_inputs.clear(); state.source_bindings = false;
+  state.bound = false; state.inputs.clear(); state.values->arrays.clear();
+  for (auto &value : state.native_values) value.reset();
+  state.arguments.clear(); state.region_outputs.clear();
+  state.block_arguments.clear(); state.block_outputs.clear(); state.output_blocks.clear();
+  for (auto &recurrent : state.recurrent)
+    if (recurrent) recurrent->detach_inputs();
+}
 Result<Program> detail::PagedBatchAccess::prepare_runtime_program(const Context& context,
     BatchLayoutVersion initial,std::span<const InputSpec> inputs,RuntimeFunction build,
     const WorkloadContext& workload,bool causal,std::int32_t window_left) noexcept {
+  return prepare_runtime_program(ContextAccess::runtime(context),std::move(initial),inputs,
+      std::move(build),workload,causal,window_left);
+}
+Result<Program> detail::PagedBatchAccess::prepare_runtime_program(std::shared_ptr<Runtime> runtime,
+    BatchLayoutVersion initial,std::span<const InputSpec> inputs,RuntimeFunction build,
+    const WorkloadContext& workload,bool causal,std::int32_t window_left) noexcept {
   try {
-    HYLE_ASSIGN_OR_RETURN(auto program,context.compile(
+    HYLE_ASSIGN_OR_RETURN(auto program,ContextAccess::compile(std::move(runtime),
         [initial,build](const std::vector<mx::array>& args,mx::Stream stream){return build(initial,args,stream);},
         inputs,workload));
     auto& compiled=program.state_->compiled;
@@ -1135,18 +1529,31 @@ Result<OwnedResult<Results>> Invocation::submit() noexcept {
   return submit_guarded({});
 }
 
-Result<OwnedResult<Results>> Invocation::submit_guarded(LeaseUseBatch uses) noexcept {
+Result<OwnedResult<Results>> Invocation::submit_guarded(LeaseUseBatch uses,
+    Status (*preflight)(const void *) noexcept, const void *source) noexcept {
   HYLE_TRACE_ZONE_NAMED("hyle.apple.submit");
   if (!state_)
     return std::unexpected(
         Status::FailedPrecondition("invalid Apple Invocation"));
+  if (bool(preflight) != bool(source))
+    return std::unexpected(Status::InvalidArgument("Apple source preflight/payload differs"));
   std::lock_guard lock(state_->binding_mutex);
   if (!state_->bound || state_->retired.load(std::memory_order_acquire))
     return std::unexpected(
         Status::FailedPrecondition("Apple Invocation is unbound or failed"));
+  if (state_->source_readers != 0)
+    return std::unexpected(Status::Unavailable("Apple outputs retained by pending native consumer"));
+  if (state_->submitted_epoch.load(std::memory_order_relaxed) == UINT64_MAX)
+    return std::unexpected(Status::ResourceExhausted("Apple native submission epoch exhausted"));
   auto writer = state_->result_slot.begin();
   if (!writer)
     return std::unexpected(std::move(writer).error());
+  struct SourcePins final {
+    detail::InvocationState &state;
+    bool admitted = false;
+    ~SourcePins() { if (!admitted) state.release_source_pins(); }
+  } pins{*state_};
+  HYLE_RETURN_IF_ERROR(state_->snapshot_sources());
   state_->values->arrays.clear();
   const Status populated = writer->emplace(Results(state_->values));
   if (!populated.ok())
@@ -1163,13 +1570,22 @@ Result<OwnedResult<Results>> Invocation::submit_guarded(LeaseUseBatch uses) noex
     detail::finish(*state_, result.error());
     return std::unexpected(std::move(result).error());
   }
+  const auto previous_epoch = state_->submitted_epoch.fetch_add(1, std::memory_order_release);
+  state_->source_preflight = preflight;
+  state_->pending_source = source;
   detail::retain(state_); // worker reference exists before queue admission
   const Status admitted = state_->program->runtime->enqueue(*state_);
   if (!admitted.ok()) {
+    state_->source_preflight = nullptr;
+    state_->pending_source = nullptr;
+    state_->submitted_epoch.store(previous_epoch, std::memory_order_release);
     detail::finish(*state_, admitted);
     detail::release(state_);
     return std::unexpected(admitted);
   }
+  for (auto &input : state_->prepared_inputs)
+    if (input.binding.source.valid()) input.consumed_epoch = input.expected_epoch;
+  pins.admitted = true; // The original Job now releases pins after its drain.
   return result;
 }
 

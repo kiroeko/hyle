@@ -1,0 +1,435 @@
+# CUDA decode 性能提升计划
+
+本页维护当前 Qwen3.5-2B BF16、纯文本、单 CUDA GPU 测试消费者的性能工作。
+模型与算子范围见[覆盖说明](../../implementation/model-operators.md)，测量方法沿用[性能指南](README.md)。
+这里只保留当前基线、待验证假设、执行顺序和完成条件；原始实验留在 `docs/evidence`。
+每次完整对比固定报告prefill、decode、显存变化和多轮会话综合速度，定义见[统一测量口径](README.md#推理对比固定报告)。
+
+## 目标与当前基线
+
+目标是查清并消除可重复的额外成本，在相同权重、输入及明确的计算和完成边界下追平 llama.cpp，
+再根据实际热点争取反超。同时保持数值、状态、寿命和资源限制正确，检查 prefill、启动和内存是否退化。
+每批改动以真实 tokens/s 判断收益；kernel 数减少和微基准变快只用于解释。
+
+**当前优先项（2026-10-24）：用已完成的单轮／真实两轮窗口定位普通公共成本及MTP增量。** 当前源码、匹配原权重与原P154输入；单轮64输出，两轮在同一会话各追加P154并各生成64，保自然greedy／EOS。每种负载各12个交错新进程测速，另4个进程独立旁采内存，两窗和历史样本不合池。
+
+| 当前负载／模式 | Hyle prefill | Hyle decode | Hyle综合 | peer prefill | peer decode | peer综合 |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| 单轮普通 | 2285.823 | 98.093 | 90.373 | 1563.944 | 101.998 | 89.335 |
+| 单轮MTP | 2087.841 | 120.508 | 107.284 | 1461.629 | 135.747 | 112.387 |
+| 真实两轮普通 | 3301.684 | 98.082 | 92.967 | 2410.144 | 101.590 | 93.534 |
+| 真实两轮MTP | 2792.392 | 125.465 | 114.806 | 2245.021 | 139.519 | 123.383 |
+
+单位tok/s，中位数；全部samples、范围、加载和端点见[最新两窗证据](../../evidence/performance/qwen-mtp-single-and-multiturn-2026-10-24.json)。单轮普通／MTP decode落后3.83%／11.23%，两轮落后3.45%／10.07%；两轮综合落后0.61%／6.95%。两轮Hyle自身MTP decode提升27.92%，参考自身提升37.34%；总余差不能都算作MTP逻辑或纯GPU问题。
+
+两轮prefill以309行实际target输入计速，另列308枚新增用户token；decode以126枚输出计速，综合128枚输出／连续会话时间，加载分列。只补前一pending及新输入，未重算历史；额外draft catchup不记用户token。Hyle MTP接受60／66，验证132行；peer接受61／64，另有一次无proposal尾步，共65次decode调用、验证129行。两边自然续文不同，不按每轮均摊把全部墙差归于接受率，也不要求强制同token。
+
+单轮Hyle普通／MTP dedicated采样峰3.888／4.048GiB，两轮4.023／4.191GiB；peer两窗均3.728／3.896GiB。它们来自独立PSAPI／PDH旁采，是采样下界；ready基线均null，WS／commit／shared不相加为物理RAM。实际采样最大间隔24.72ms，不能按请求10ms解释为精确分配计费。
+
+本窗完成当前产品闭包与真实两轮驱动对照，不是隔离MMQ、capture或某个算子改动的收益实验；与AV的跨窗变化不作因果归因。[两轮有限功能与构建](../../evidence/correctness/mtp-qwen-natural-multiturn-2026-10-24.json)已保留实际pending／cursor／续算。后续优先依据少量当前热点决定改动，普通与MTP分开计账；不重开已拒绝的行拆、Top1或旧capture候选。
+
+[当前MTP的CUDA节点诊断](../../evidence/performance/qwen-mtp-current-cuda-structure-2026-10-24.json)已各跑1个插桩进程。Hyle132次Graph launch对应66轮的draft／target两段；参考116次只覆盖部分调用，其余走eager，不能直接按launch数比较总工作。目标图738／727个kernel，草拟图37或41／34个；Hyle目标图另有135次D2D、载荷中位约39.73MB，拷贝活动中位约0.137ms。它是后续减少搬运的调查入口，尚未证明可删除，也不足以解释全部速度差。
+
+该轨迹中Hyle的2458次`cuMemAlloc`有2357次在首次decode launch之前，余下101次集中在首次shape／slot及第二轮边界；最后24次decode没有新增分配或图实例化，未发现“每token重新分配”的事实。runtime与driver分配API可能嵌套，分别计数。两臂节点采样有额外开销，静态下载仍在后台，图内统计也不含eager工作；此诊断不替换上面的正式速度窗口，不把余差全部归于分配、capture或某个kernel。
+
+[快照复制源码核对](../../evidence/performance/mtp-qwen-snapshot-copy-review-2026-10-24.json)已关闭“直接删除36次1MiB复制”的候选：18层各自把两个GDN快照物化为可独立回收的caller状态块，保留接受前缀和旧读者；这36项的GPU活动中位60.75µs，与全部135项的136.88µs分开计。共享2MiB父块会使选中一半仍持有整块，N=R=1时每层下一轮需4MiB，超过当前3MiB池；同容量下18层共需增18MiB。保留默认独立快照，不新增拆分租约抽象或扩展K1融合；本次只核既有trace与源码，没有产品改动或新吞吐测量。
+
+[MTP准备分段诊断](../../evidence/performance/qwen-mtp-prepare-segments-2026-10-24.json)另复用现有计时点，仅增量编译一个scratch消费者。实际两轮128输出、132行verify、66轮／60接受与本窗Hyle工作一致；最后24轮prepare整段中位560.55µs，内含layout102.55、batch151.5、replay准备238.3µs，submit中位92.85µs。batch包含重置配置及append绑定，未单独测得全图扫描成本；finish含GPU等待，各段中位不可相加。后台下载和端点后的诊断输出仍可能影响调度，不与另进程trace的空闲区间相减，也不作TPS或可直接回收时长结论。
+
+历史[AV组装窗口](../../evidence/performance/qwen-mtp-assembly-2026-10-22.json)及[29项相关检查](../../evidence/correctness/mtp-consumer-wiring-2026-10-22.json)保留输入ReadLease候选表懒建、F32 Add对齐与冷alias准入的原结论；[AU有界capture](../../evidence/performance/qwen-capture-variants-2026-10-22.json)保留两份变体及真实失效／权限／退休门。这些历史实现与结果不充当本窗热点比例或新增收益证明。
+
+变体实现前的[每步诊断](../../evidence/performance/qwen-capture-recording-cost-2026-10-22.json)中，63步prepare总113.41ms，新record86.17ms，占75.98%；中位prepare／record／bindings／end为1.7801／1.3629／0.1677／0.2202ms。GGML当时未每步重建原生图或重分workspace；72份caller状态端口仅两组物理tuple交替，由此进一步核全参数和私有资源后实现本批变体。该历史比例不用于解释当前全部余差，带日志的4进程也不混入正式TPS。
+
+本轮热点调查、候选决策及最后B07原制品CPU／CUDA有限流程均已完成。Lt冷算法筛选与typed MMVF整消费者候选均已拒绝；当前没有挂起等待验证的候选。有限制品检查不代签完整模型，当前窗口也不表示GPU余差已全部定位。原稳态矩阵投影占累计kernel时长92.466%，该历史GPU占比不能解释当前完整wall差距。最新prefill、decode、启动、空间和完整边界统一见[最新完整窗口](../../evidence/performance/qwen-mtp-single-and-multiturn-2026-10-24.json)。
+
+[早期carrier窗](../../evidence/performance/qwen-mtp-divergence-2026-10-22.json)仅懒建未使用的T1执行载体及prefill另一槽，family冷编与数学不变。修改前／后／原peer完整decode为123.01／122.50／140.68tok/s，综合109.33／108.32／117.07；前后范围重叠，不声明速度改善。ready中位1.644→1.613s、含启动总时长2.233→2.204s，dedicated采样峰4.120→4.069GiB；原peer仍生成不同续文。当时record／reuse两条Hyle均18／50；这些历史值保留在原证据，不混入后续四臂或单槽结论。
+
+peer首处分歧的固定控制已完成：B165 live pending与恢复同逻辑状态后T1的36份R/S、hidden／logits逐字节一致，未见该恢复分支额外误差。精确重放C171 T2复现原round9；同一RS1状态的T1[11906]使11／271均为23.793373107910156、选11，T2[11906,271]为23.788818359375／23.805431365966797、选271，GPU greedy与logits一致。该形状数值差足以翻转本次相近top2，不是sampler行错位；不推为通用算法bug、全部rollback或质量通过。Hyle相应BF16两项均23.75，不据此改dtype、容忍值或选择规则。目标T1的writer-only草拟KV取消／策略异常已实际通过6次Graph、14份权限退休与重试，策略异常不冒充设备故障。
+
+[前批可录制写页](../../evidence/performance/qwen-capturable-append-2026-10-21.json)已实现，原Queue、Graph effect、逐页权限和whole-state提交不变。该批真实99个完成ID／96次decode核对：每步**1次Graph launch、596个kernel、0次录制外eager D2D**，90次不重录；[前一原生调查](../../evidence/performance/qwen-paged-native-cost-2026-10-21.json)分页路径为7／584及2232次eager D2D总量。descriptor动态内容可变化，实际载体变化仍先销毁旧录制；不能只翻capture标志。本批未重采物理trace。
+
+独占尾页与Radix的[本批实现及完整对照](../../evidence/performance/qwen-exclusive-radix-2026-10-21.json)已完成相关检查：142份真实向量逐字节一致，同页失败回退、旧快照边界、真实CUDA取消退休通过；Radix目录4项host检查包括800次oracle对照。只命中已有完整状态边界，未制造检查点。
+
+此前[执行资源复用窗口](../../evidence/performance/qwen-shared-execution-2026-10-21.json)各臂3新进程测速、另1进程显存旁采。单会话current／before／dense／llama完整decode为**101.25／101.40／105.34／105.38tok/s**，综合**90.86／90.84／93.67／91.89tok/s**，本批基本不变；对参考decode仍慢3.92%、综合慢1.13%。共享前缀多会话实际prefill为**1217.26／721.04／1201.40tok/s**，综合**91.99／86.13／95.12tok/s**；相对before中位＋68.82%／＋6.80%，当前保留一明显慢进程、范围重叠，不签稳定普遍收益。完整四项、范围及准备子桶迁移见[最新完整窗口](../../evidence/performance/qwen-mtp-single-and-multiturn-2026-10-24.json)，不混算两种负载或历史窗口。
+
+| 剩余项 | 已知事实与下一步 |
+| --- | --- |
+| 宽多行TopK1 | **已修**：旧2CTA分段归约约1.2ms，新分块＋末级直接写原值／索引约32.72µs；12相关测试和90份同B向量通过。只在Provider内改算法，Model／公共接口不加专线；prepared／capture接线和14项相关检查已完成，吞吐近持平 |
+| B2后续归因 | 当前GPU无活动区间仍比参考长，状态concat约0.215ms，small-M融合也有候选；已有实测和源码记录，尚不把整个余差归为某函数或状态复制 |
+| 分页相对dense的成本 | 独占尾页已实现，同页只写新后缀，分支保COW。最新单会话窗比原dense完整decode慢约3.88%。此前按decode wall中位数选取各臂实际进程，分页额外0.424ms／步，其中完整准备区间多0.201ms、其余多0.223ms；后者含输入／replay／submit／device／token，不是纯GPU。该历史区间差不当作当前成本或可消除承诺 |
+| 主机页组织 | 当前仍有随历史页数增长的验证、权限及发布工作。本批单尾权改固定单槽、fresh只预留实际数量；descriptor分组／发布用同Invocation的K个原selected slots，替换全计划S扫描。未缓存权限、epoch或ready事实，上传等待未删除 |
+| descriptor上传 | 新路径每次真正上传并等待退休后发布，冷准备有额外成本。沿原依赖／F1机制减少不必要等待，不伪造ready或保旧权限来换速度；完整准备桶不是单函数计时 |
+| Radix与共享输入 | 有界压缩树／LRU／多读者pin已接通并核真实复用。查找最坏O(L＋E)，替换旧重复token比较O(E×L)；按实际请求增加完整检查点仍须符合版本／字节预算和冷shape域。命中收益另测，不能冒充无命中decode收益 |
+| 多会话执行资源 | **重复构造已修**：Phase／Invocation／IO／workspace归Model按实际执行并发复用，Session只保完整状态。142份向量和真实借用／退休／提交后异常检查通过。完整多会话窗dedicated峰少88MiB；单会话基本不变。前缀首次T1槽准备仍在首次D，旧版在P接纳内先建，因此D中位−1.60%不等于kernel退化；全请求／全程wall保留必要工作 |
+| cached-prefill首用与拓扑变化 | 三轮窗口的第2／3轮prefill仍低于参考。已区分slot首用与KV分块拓扑变化造成的合法重准备，不能统称重复规划bug；资源复用后再核实际重录、使用次数与完整请求墙时，不绕过拓扑失效 |
+| 多会话显存阶段采样 | **标记解析已修并实际旁采**：新窗收到各会话9phase的18边界，动态统计峰与邻样变化；实际约15ms间隔，fullhit及部分短P无样本，精确边界增量仍未知。旧窗不重写、不补造 |
+
+上表区分已修项、已测慢项及候选方向。分页剩余墙差尚未全部归因，descriptor等待也不是可直接删除的开销。少量合法MatMul冷算法、量化融合及packed计算仍是后文的候选方向，不算已经证实的性能缺陷或收益。
+
+顺序：**可录制写页、独占续写、Radix、执行资源复用、typed页帧、真实批次及CLI完整对照均已完成列明范围 → 宽多行TopK1慢项及已准备能力接线已修 → CUDA单会话K1 MTP有限实现及自然四臂窗口**。Conv／GDN独立B维、页帧组合／投影、完整状态／结果分流与N＋R预算已接通，8项host及实际批次／淘汰检查有结果。精确快照命中与原token重算分别报告；跨B重算允许实际数值差异，未签完整质量。单会话延迟、缓存命中收益和多人吞吐分开；其它系统原生写页与图片仍有必要实现，不扩大成重复全量验证。
+
+此前窗口和归因留在[上一轮提交／发布证据](../../evidence/performance/qwen-retirement-publication-2026-10-21.json)及其回链；下面D1/D2是此前dense路线的已结调查，不充当当前分页性能。
+
+当前选用的 D1 基线是 **2026-10-20 18:39:26–18:39:46 与 18:40:15–18:40:43，北京时间**两组同窗。
+固定 128-token prompt、context 256；每窗修改前／当前／llama 各 3 个新进程交错运行。
+
+| 负载与指标 | 修改前 Hyle | 当前 Hyle | llama.cpp | 当前相对修改前 |
+|---|---:|---:|---:|---:|
+| 完整 31 步 decode | 102.56 | 103.99 | 104.13 | +1.39% |
+| 稳态第 7–31 步 | 106.34 | 107.74 | 106.28 | +1.31% |
+| 完整 127 步 decode | 105.93 | 107.07 | 106.31 | +1.08% |
+| 稳态第 7–127 步 | 106.86 | 108.03 | 106.85 | +1.10% |
+
+单位均为 tok/s。短窗当前相对 llama 完整 −0.13%、稳态 +1.37%；长窗完整 +0.71%、稳态 +1.10%。
+本批修复后两种长度均有约 1.1%–1.4% 的中位提升；每臂仍仅 3 个进程，不签稳定全面胜出。
+短窗 prefill 为当前 2039.84／参考 1335.99，长窗为 2084.23／1347.16 tok/s。
+相对修改前 prefill 分别 −1.13%／−0.008%；保留全部样本，不由此签回归或无回归。
+
+长窗将原 31-token 固定输入带重复并截取到 127，最终可见 255 tokens；参考消费者仅放开有界阶段数，
+底层 llama 实现和采样路径不变。它用于延长固定负载观察，不代表自然生成或质量验收；两窗不合池。
+本次保留原 BF16 图闭包，只替换两个通用 Graph 实现对象；后续量化能力对象未全部重编，不能称为完整当前源码交付。
+“无插桩”指没有新增 D1 计时或外部采样，原计时、日志和参考的粗粒度 memory snapshot 仍保留。
+[源码、原始样本、独立复算与限制](../../evidence/performance/qwen-prepare-bindings-2026-10-20.json)；
+[此前 16:27 窗口](../../evidence/performance/qwen-decode-rebenchmark-2026-10-20.json)保留为历史依据，不与本批合算增益。
+
+### 尚需明确的比较边界
+
+- 两端使用同一组 BF16 权重和固定输入；Hyle 的 activation/output 主要为 BF16，参考 decode
+  多处使用 F32 中间计算。当前结果是两种实际计算路线的比较，尚非逐算子同数学比较。
+- 下述旧D1普通消费者两端都计到host token可见。该固定参考路径每步还自动回传约0.99MB logits，
+  Hyle通常只回传4B token；这是该历史配置的实际行为，不能沿用为当前MTP的拷贝计数。MTP另有
+  target双行输出、draft和hidden carry，其实际工作分别计账。主比较保留双方自然token路线，
+  不移动计时端点或从参考时间里估算扣除拷贝。
+  如需诊断输出差异，另测双方都交付 host F32 logits 和 token 的负载，使用预分配缓冲并完整计时；
+  这个补充结果不能替换 token 主结果，也不能抹平中间计算精度差异。
+- 当前固定序列的 hidden/logits 与 Hyle 既有基线逐字节相同，用于回归；它不构成独立模型质量验收。
+- 当前短序列用于保留前后可比性。较长 decode 另列结果，明确增加后的上下文长度；不能把不同
+  KV 工作量的样本合成一组，也不能把进程内各 token 当作独立进程样本。
+
+## 执行顺序
+
+| 步骤 | 当前状态 | 做什么 | 本步结束条件 |
+|---|---|---|---|
+| D1：每步准备 | 已定位并修复本批重复绑定准备 | 同物理配置复用已构造的 spans，新权限和 seal 仍准备；18 CPU＋6 CUDA、64 份向量和两窗复测已完成 | 当前这条调查结束，后续仅在新证据指出冗余时重开；metadata 上传等待保持原合同 |
+| D2：投影计算 | 已完成真实后缀对照，默认保留 D1 的 F32 Top1；直接 BF16 消费者候选本轮不采用，已结项 | 3 个独立进程和 1 次结构 trace 的数值、配对、空间和失败记录见下文 | 无挂起候选；不因 kernel 数减少或选择有利统计量自动采用 |
+| D3：吞吐复测 | 本批 31／127 步各一组完成，仍为有限样本 | 后续有新热点改动时再比较，复用本批短长负载 | 报完整与稳态吞吐、分布和失败，确认收益及剩余可重复慢项 |
+| D4：最终整机性能对比 | 进行中，初轮及auto修复后比较已完成 | 当前源码统一比较加载、prefill、cached continuation、decode、内存和显存 | 性能、资源、正确性和公平性结论均有对应实际证据；未解决项明确保留 |
+
+Top1 的这次有限决策已完成，接下来推进总体计划中的格式／功能补全。格式补全使用独立的功能清单推进；
+CT/NVFP4 的新增能力没有进入当前 BF16 Qwen 图，不计为本图的 decode 优化。
+
+2026-10-20的[DeepInfer源码调研](../../evidence/research/deepseek-runtime-inspiration-2026-10-20.json)另提供一个有限检查方向：
+D4前核一条真实投影→residual链能否保原BF16舍入、读者与alias而直接写最终输出，减少一次实体搬运。
+先核实际native epilogue与数值边界，有成立的完整候选再测吞吐；否则记录具体不采用原因并关闭本轮候选。
+这不是已证明的额外开销或提速，不重开已结项的Top1实验。FP8输出布局仍按实际消费者候选推进；MTP的GPU metadata、独立草拟frontier和同图验证已接通，不再列为未接线项。
+
+[TensorRT-LLM固定源码研究](../../evidence/research/tensorrt-llm-inspiration-2026-10-20.json)另核冷准备、共享量化及执行重叠：
+已读源码的SM89普通BF16投影沿F.linear／cuBLAS路径；可见的low-M／persistent特化有SM100条件，
+CUDA-core GEMM的已读公开调用者则要求FP8输入。它们不能直接解释当前4070 BF16 Qwen还能快多少。
+D4前沿现真实热点只检查同dtype／shape的选路、实际权重读取和host-token空隙；已有共享FP8 prologue与有限图族不重做。
+只有发现新前提或可执行候选才做配对测量；保持同权重、精度、上下文与结果可见边界，
+区分单请求decode、并发总吞吐和MTP，不将大batch或B200的收益挪入本基线。
+
+### D1：查清每步准备
+
+诊断构建先拆消费者，再只拆 replay：三个新进程中 replay 准备中位约 92–97 µs，
+其中绑定准备约 91–95 µs，累计约占 replay 桶的 98%。这些插桩结果用于归因，不作吞吐排名。
+实际冗余是配置撤销后重新扫描整图、构造未改变的物理 TensorView spans。
+现已复用同址、同描述、同范围的配置事实；普通绑定、命令变化、失败准备和 full reset 撤销候选，
+source、opaque/native owner、派生 alias 和投影等仍保守走完整准备，未知 identity hook 照常执行。
+
+无新增插桩窗口中，稳态准备桶的“各进程中位再取中位”短窗 **165.3→64.3 µs**，长窗 **156.4→60.9 µs**。
+18 CPU 与 6 CUDA 定向回归通过、0 skip；64 份 hidden/logits 和 4 份冷图 route/boundary TSV 与保留基线逐字节相同。
+本批没有新测显存／内存峰值、能耗或物理 kernel trace。
+`submit_seconds` 已包含在后续提交到结果可见的时间内，不能再相加。
+
+本轮沿[消费者 evaluate](../../../tools/qwen35_text/main.cc)分段，保持原调用和等待顺序：
+
+1. 既有输入写入，包括 token/position 两次 H2D；它们在 `cold_batch_seconds` 桶外，但在完整 step 内。
+2. layout 版本创建及六个 reader 的布局装配。
+3. `batch::prepare` 的配置撤销、权限/别名检查、metadata 绑定及上传。
+4. `Invocation::prepare_replay` 的绑定准备、capture 检查/复用和退休查询。
+5. 原提交、等待及 host token 读回，作为完整 step 的核对边界。
+
+绑定重建假设已经确认并修复。共享 metadata 只有首个 owner 执行实际上传和等待，
+其余 reader 使用共享准备，不能按六次上传计算成本。capture 已复用也不等于绑定准备已经跳过。
+本轮没有额外调用 `batch::prepare_replay` 或改变现有捕获旅程。
+若要复用缓存，缓存身份必须覆盖布局、来源、权限、alias 和旧结果存活，不能绕过 idle/owner 检查。
+
+插桩只用于归因；吞吐收益由去掉插桩后的同窗确认。若剩余工作都是必要检查、实际上传或 capture
+依赖，就在这里结束这条线，不把这些行为悄悄挪出完整 step 计时。
+
+### D2：按投影角色优化
+
+历史匹配 trace 中，投影约占双方 kernel 累计时间的 92%；head、gate/up、down 占每步逻辑权重
+字节的约 75.2%。这说明它们值得优先核查，但累计 kernel 时间不是可直接相加回收的 wall 时间。
+
+先在当前图确认热点角色，再检查：
+
+- 同一实际矩阵形状和 operand/output dtype 下，是否有额外读写、repack、转换或中间落地。
+- 同 A 投影和 FFN 融合是否保留规定的 BF16 舍入，是否重复读权重或复制权重 bank。
+- 实际带宽、cache 命中、launch 和完成等待中，哪部分解释了当前差异；由此选择现有 provider、
+  融合候选或实现修复。一般机制留在底座，模型角色和生成策略留在测试消费者。
+
+当前总 kernel 是 **596 对 558**；395 是参考非投影部分，不能再用作总数。
+以前测过的整批 MMVF 替换、通用大投影替换、FFN 两行 CTA 未证实收益，
+只有新证据改变其前提时才重开。历史图内空隙、GraphLaunch 主机区间也不能直接承诺为可回收预算。
+[热点与计数](../../evidence/performance/decode-major-hotspots-2026-10-20.json)、
+[busy union 与归因限制](../../evidence/performance/decode-busy-union-2026-10-20.json)。
+
+若更大提升需要降低权重精度，单列相同量化与质量检查的比较，保留 BF16 结果；
+硬件 FP8/FP4 数学也不能自动当作现有 QDQ 路径的等价融合。
+
+#### 本轮 D2 结论
+
+head/down 沿既有 cuBLAS BF16 输入、权重和输出及 F32 累积；gate/up 保留严格 BF16 舍入的双输出融合。
+当前核查未找到额外热 repack、全权重 bank 扩宽或可确证的大投影缺陷。原来 FFN 的 DRAM store
+现象也不能据逻辑 store 次数解释为隐藏中间副本或 spill；没有新前提时不重开旧负结果。
+
+消费者另试了直接 BF16 Top1，移除 head 后整行 BF16→F32 Cast。3 项 CUDA 回归通过、0 skip，
+64 份 hidden/logits 保持逐字节相同；结构 trace 是 596→595 kernels、55→54 Cast。
+这证明测试范围内的数学和结构变化，不构成吞吐或模型质量结论。
+
+| 同窗完整 decode（tok/s） | D1 | Top1 候选 | 候选相对 D1 |
+|---|---:|---:|---:|
+| 31 步 | 104.89 | 103.90 | −0.945% |
+| 127 步 | 99.31 | 98.50 | −0.815% |
+
+每臂各 3 个新进程，长窗 D1 样本 max/min 跨度达 8.22%；没有确证真实退化幅度或根因，不能称为单纯计时器分辨率。
+原投影 kernel、路由前缀及其余 149 个链接输入均不变；未发现 D1 全图绑定重建重新出现的明确证据。
+
+一次固定的同进程局部对照，使用原 decode7 的 248320 个实际 logits、相同 Commands 路线、
+32 次／臂预热及 ABBA/BAAB 的 128 次／臂相关样本，计时含 submit、wait 和实际 4 B host token：
+直接 BF16 的耗时中位 39.95 µs，Cast＋F32 Top1 为 44.05 µs，每 cycle 的配对节省中位 2.25 µs。
+这次局部观察中直接 BF16 更快，不能把整模型窗口的负号归因于 BF16 Top1 更慢。
+原模型 Cast 位于更大的捕获段，这个 Commands 对照并不等价于模型后缀；辅助 stream event 还包含 host
+admission 空隙，不当纯 kernel 时间，也不据此换算整模型收益。
+
+已完成的第一轮保持 D1 基线，保存候选和全部正／负结果，保留新增的大词表 Top1 测试；
+未提升基线不等于证明优化方向错误。真实 head 后缀的最终选择见下文，完整模型窗口没有继续扩张寻找正号。
+[源码、完整样本、局部对照和选择依据](../../evidence/performance/qwen-bf16-top1-2026-10-20.json)。
+归档核验后通过根 `test.ps1` 精确回收本轮 76 个可重建镜像／链接副产物和重复向量，约 464 MiB；
+保留当前 D1 程序、参考、源码、对象和输入，[清理实录](../../evidence/performance/qwen-bf16-top1-2026-10-20.cleanup.json)。
+
+最终对照保持真实公共投影与 capture／host-token 边界：两图共享同一原始 BF16 `[248320,2048]`
+权重和 decode7 的真实 hidden，经过相同 Copy 并发布 caller hidden／logits／ID，TopK value 不发布。
+原臂保留 private BF16 head→Cast→caller F32 logits，候选直接写 caller BF16 logits，保留真实存储差异。
+3 个独立进程各做 32 次／臂预热、64 个 ABBA/BAAB cycle，128 个相关样本／臂；全部 768 个计时提交保留。
+
+| 进程 | 原臂中位 µs | BF16 候选中位 µs | cycle 配对节省中位 µs | 候选均值多耗时 µs |
+|---|---:|---:|---:|---:|
+| 1 | 2156.00 | 2151.95 | −6.20 | +50.515 |
+| 2 | 2157.50 | 2151.00 | −0.55 | +8.105 |
+| 3 | 2154.55 | 2147.70 | +5.00 | +2.821 |
+
+预定的配对方向未在独立进程间重复，不能换用普通中位数较好来签收益；均值也未改善。
+独立复算未发现计时不公平或可确证的周期噪声机制。另一次结构 trace 确认两臂 head 全部被捕获，
+符号与 `62080×1×1 / 16×4×1` 几何和整模型相同；4 个 CUB kernel 均为 eager 尾。
+Cast 本身中位约 3.04 µs，尾部确有小节省，但 head 和完成边界的变化覆盖了它。
+profiler 的时间只用于归因，不混入无 profiler 的性能结论。
+
+4 个进程的完整 logits 和 hidden 与原始向量逐字节一致、token 均为 10462，capture 均实际复用。
+后缀 workspace 从 508416 降到 11778 B，caller logits 从 993280 降到 496640 B；
+这些组件的空间减少是真实结果，未据此签整模型峰值或吞吐改善。
+
+**本轮决定：默认保留原 D1／F32 Top1，直接 BF16 消费者候选不采用并结项，无挂起候选。**
+保留通用 BF16 Top1 能力、新增测试和已完成实验记录；这不是对其它硬件、负载或 BF16 Top1 算法的普遍否定。
+[最终决策、真实输入身份、失败编译、全部样本和结构归因](../../evidence/performance/qwen-top1-real-suffix-2026-10-20.json)。
+
+权重流式读取占主导时，小算子或 host 调度的改善可能被总耗时和漂移掩盖；减少实际 DRAM 读写或提高复用仍有价值。
+保留的历史单节点 NCU 中，LM head 为 97.55% sustained DRAM peak（实际总流量约 491.22 GB/s），
+FFN 双投影为 92.71%、L2 hit 0.89%；这支持这些大投影受带宽限制，不能代签当前整步始终饱和。
+不能只凭投影占比或 GPU 利用率就声称整步达到显存带宽上限。按 NVIDIA 的
+[Nsight Compute 归因方法](https://docs.nvidia.com/nsight-compute/ComputeTriage/)，
+分别看实际 DRAM bytes／持续带宽、L2 命中与吞吐及延迟／dispatch，再对照绝对耗时；数值正确性仍独立验证。
+
+### D3/D4：确认实际收益并收工
+
+复用已有权重、参考程序、构建对象和原始输入，只增量构建受影响部分。先运行相关数值/寿命回归，
+再运行无 profiler 的吞吐对照；设备分析和内存旁采另开观察，不混入吞吐样本。
+
+每轮保留当前/前版/参考的必要同窗；记录硬件、driver、工具链、源码和二进制身份。
+交换顺序，保存慢进程和失败，按需要增加独立样本及同路径 A/A，先解释波动再增加重复。
+已有证据未受改动影响时直接引用，不重跑跨后端、格式、shape 的笛卡尔积。
+
+最终报告至少包含：
+
+| 结果 | 完成边界 |
+|---|---|
+| 加载、ready、TTFT | 文件读取/解码、上传、准备及必要清理分别可解释；OS 热页缓存不称冷盘 |
+| prefill 与 cached continuation | 相同 token 输入、context 和状态，输出实际可见 |
+| 完整 decode 与稳态 decode | 首次 capture 保留在完整结果中，稳态另列；报告样本数和分布 |
+| 内存、显存、workspace、搬运 | 说明采集区间与已知/未知，workspace 为零不等于总分配为零 |
+| 数值与状态 | 改动相关的独立数学/生命周期检查、固定序列回归及尚未完成的质量验证 |
+
+“追平”需要反复独立同窗不再出现超过实际测量波动的持续落后；未测出显著差异不能直接宣称等价。
+若仍有可重复的小输，继续按本页具体热点调查；没有证据时保留不确定结论，不制造任意容忍值。
+反超幅度由测量决定，目前不承诺额外 15% 或 50%。
+
+完成本轮以后，将本页更新为实际结果与剩余问题；已否定的方向留简短结论和证据链接，
+避免重新从旧假设开始。本轮功能与交付结论见[最终工作快照](../../evidence/planning/current-work-final-2026-10-24.md#mtp本轮结果与边界)，后续工作按用户当前指令推进。
+
+### 2026-10-21：D4 实测与一次性 capture 修复
+
+首次实际测128-token前缀后的16-token续算，发现811.46对999.86 tok/s、慢18.84%，三对三样本无交叠。
+[首轮证据](../../evidence/performance/qwen-current-delivery-2026-10-21.json)保留全部负结果及当时源码，不由后续数据覆盖。
+两次同负载Nsight诊断确认该一次性调用付出了capture准备成本；当前trace的图内kernel不可见，未将整段图span冒称busy union，或将API耗时之和当可回收收益。
+现有全局Commands对照使续算更快，却使decode变慢；因此仅改测试消费者的使用政策，复用库原有ReplayMode：
+按完整计划冷统计每个exact child的两个全局parity槽，一次性槽Commands、预计复用的槽PreferCapture。
+没有按shape／模型／Provider特殊判断，热路径只读预选数组，没有虚假预热或移走首次执行；生成提前结束时使用数是请求上界。
+
+新默认auto的64份hidden／logits与原基线逐字节相同，固定预测一致。以下各窗每臂3个新进程，均无profiler或外部旁采，保完整host-token step。
+同源BF16权重、固定tokens、context256；中间精度及原引擎采样读回仍不同，不能推出数学或模型质量等价。
+参考消费者沿原backend greedy／public sampler，不读raw logits或做CPU argmax；引擎额外sampled-logits读回留在实际计时内。
+
+| 输入窗／指标，tok/s中位 | Hyle auto | llama.cpp |
+| --- | ---: | ---: |
+| 128 prefill，短窗 | 2217.97 | 1401.10 |
+| 31步完整decode | 103.63 | 105.22 |
+| 短窗decode7起 | 107.91 | 107.64 |
+| 128 prefill，长窗 | 2300.60 | 1284.26 |
+| 127步完整decode | 107.12 | 106.47 |
+| 长窗decode7起 | 108.00 | 107.04 |
+| 缓存后一次追加16 | 1020.63 | 977.54 |
+| 续算后15步完整decode | 100.34 | 102.74 |
+| 续算后decode7起 | 107.09 | 106.36 |
+
+16-token续算在这次同窗中从旧capture策略835.94提高至1020.63，约22.09%；此前811.46属于另一窗口，不混作这一提速比例。
+缓存续算输入为原31-token tape拆成16＋15，沿同一状态从128→144→159；17个可见前缀分别与各自逐token旅程预测一致。
+**D4仍未结项**：完整31步与续算后15步仍小输，稳态较快不能代签完整调用。下一动作只分解最初两槽的capture启动代价，保初始调用，不靠删样本或另设任意容忍值收工。
+现有样本的均值差额集中在前两次decode：31步前两次多5.84ms、全窗多3.88ms；续算后15步前两次多4.68ms、全窗多4.21ms。
+既有trace中Hyle前两M1各实例化一次、参考在decode2实例化一次；原迹不是新auto实采，API耗时差不能直接当可回收收益。
+[修复源码、完整同窗／旁采、独立复算与首次成本分析](../../evidence/performance/qwen-auto-replay-policy-2026-10-21.json)保留实际边界及尚未解决项。
+
+短窗同次进程的加载／ready／TTFT中位：Hyle约0.792／1.134／1.192s，参考1.432／1.511／1.602s；加载子边界不同，OS页缓存未控制，不称冷盘加载。
+独立50ms PSAPI／PDH旁采各1个新进程：当前／参考驻留working-set观测峰约1.05／4.07GiB，private commit约5.47／4.88GiB，GPU dedicated采样峰约3.80／3.95GiB。
+commit不是驻留RAM，各类内存不相加；GPU峰是采样下界，启动缺失实例保留null，过短阶段没有样本不推测phase峰。
+
+### 首次capture的资源消冗（2026-10-21）
+
+新auto的实际node trace确认前两M1各596个kernel，参考各558个；Hyle的记录／实例化在首次执行中，不能据此合并两份固定绑定制品。
+已复用Queue中未被capture引用的状态字，并在原退休链已有同context／stream完成证明、无需原生查询时省去context guard。
+新迹每个首M1的push／pop由各1313次降至945次；第二次capture少一次malloc，两次各少一次free，数学kernel数不变。
+5项定向回归、64份原向量逐字节检查、Linux原安装SDK的两个消费者通过；仅增量编译两份产品C++，没有重建SDK。
+
+另一次无profiler短窗每臂3个新进程：旧auto／当前／参考完整decode为93.04／92.29／95.79 tok/s，稳态96.64／96.18／98.27；
+前两步合计中位33.67／32.05／26.35ms。样本波动较大，**没有证明吞吐提升或回归**，不与上表较快窗口混算。
+[原始样本、三次node trace、数值和安装消费者实录](../../evidence/performance/qwen-capture-resource-reuse-2026-10-21.json)保留源码及限制。
+接下来结合本地参考引擎调查具体的计算／搬运缺口；不因减少API次数宣告D4完成。
+
+### 本地引擎研究与下一批
+
+[7个本地仓库的源码对照](../../evidence/research/local-inference-optimization-2026-10-21.json)将23条机制记录归并为5个方向，尚未作为提速结果。
+当前BF16 Qwen已确认T1的103／187个MatMul选direct Lt，包括down／head；T128为187／187。原provider只取一个heuristic，
+下一步只选一个真实热点形状，比较少量合法冷算法；保输入、累积／舍入及workspace边界，实际会话变快才采用，不建通用调优系统。
+之后处理保BF16／F16舍入的norm／activation→quant融合，以及数学合同匹配的4bit packed分块MMA。
+后两者服务实际量化模型，不会自动加速当前未用该格式的BF16 Qwen。
+
+图池／资源复用已有主体机制，只调查实际重复；expert流式驻留与CPU/GPU重叠留给需要它们的真实消费者。
+不将SM100／多GPU结果外推4070，不用覆写旧结果的共享输出换取显存，源码研究不代签吞吐收益。
+两侧消费者现已支持同一有序多轮phase输入和显式容量，沿原缓存记录完整会话；首轮四项比较见下节。
+
+### 三轮共享缓存的四项基线（2026-10-21）
+
+已完成上一段的消费者扩展。双方沿一个缓存执行`(256输入＋32单token decode)×3`，上下文0→256→288→544→576→832→864，容量均为1024。
+每臂3个新进程交错测速，另各1个新进程独立旁采显存；重复原固定ID带，是合成teacher-forced性能回放。
+99个host预测（3个prompt首token＋96个decode输出）在全部8进程一致。
+
+| 阶段 | Hyle tok/s | llama.cpp tok/s | Hyle显存峰 GiB | llama.cpp显存峰 GiB |
+| --- | ---: | ---: | ---: | ---: |
+| 第1轮输入256 | 3279.28 | 2286.93 | 3.956 | 4.191 |
+| 第1轮完整decode32 | 101.69 | 102.30 | 3.972 | 4.194 |
+| 第2轮追加256 | 7527.04 | 8903.17 | 4.077 | 4.194 |
+| 第2轮完整decode32 | 103.55 | 103.10 | 4.081 | 4.194 |
+| 第3轮追加256 | 8410.15 | 8681.64 | 4.081 | 4.194 |
+| 第3轮完整decode32 | 102.88 | 103.45 | 4.085 | 4.194 |
+| 综合输出 `99/session` | 91.78 | 89.67 | 4.085（全程） | 4.194（全程） |
+
+速度为各进程值的中位数；显存列是独立旁采进程的GPU dedicated阶段观测峰，采样下界，不是精确阶段边界占用。
+完整会话中位1.07872对1.10410s，描述性综合输出差约+2.35%；第二／三轮输入仍为−15.46%／−3.13%，各3样本均较慢。
+本窗无独占GPU／固定频率，不签稳定胜出或统计显著性；不与过去短窗合并计算增益。
+加载／ready、完整decode与稳态分布、working-set／commit及shared GPU值在[完整数据](../../evidence/performance/qwen-multiturn-current-2026-10-21.json)。
+内部启动到末输出约2.25549对2.70460s，从消费者入口计时，不包括OS装载DLL；进程wall还包括销毁，两者分列。
+
+请求旁采间隔10ms，实际中位约15.2ms；两端ready到首prefill没有样本，因此加载后基线及严格阶段边界增量均为unknown。
+不能将相邻样本跨下一阶段／退出清理的变化称为本阶段释放；dedicated和shared的独立峰也不能相加。
+
+第二轮Hyle的完整输入约34.01ms，combined batch/replay准备约5.12ms，准备后到host token约28.82ms；参考完整28.75ms。
+第三轮prefill仍record1／reuse0；每轮decode均record2／reuse30。FlashInfer按实际KV分片拓扑决定是否可复用，源码存在重规划→失效原capture范围的合法链，
+但本次没有记录实际拒绝gate，尚不能认定根因。下一步只细分两项准备时间并记录已有六份公开BatchPlanReport。
+
+新单轮schedule与原消费者64份向量逐字节一致。短多轮与逐token共享端点25个ID一致，追加后32／50份向量不同；独立Torch同计划25个ID也一致、全部值有限，
+相对L2误差约1%量级及其变化已完整保留，未设事后门限、不签模型质量通过。此诊断不计入速度窗口。
+
+### 新阶段首轮与准备诊断（2026-10-21）
+
+最新完整四项对比集中在[最新完整窗口](../../evidence/performance/qwen-mtp-single-and-multiturn-2026-10-24.json)，[原始数据与源码](../../evidence/performance/qwen-next-phase-first-2026-10-21.json)保留本次窗口及前窗限制。
+本窗各3个进程测速、另各1个显存旁采；两端均比前窗慢，不将跨窗变化归因本批workspace查询消冗，也不签稳定胜出。
+
+独立的一次host诊断已拆开准备成本：第二轮T256使用slot1，属于该槽首次native plan，batch／replay约3.926／0.559ms；
+第三轮回slot0，KV256→832按固定FlashInfer分块规则必改拓扑，batch／replay约0.542／3.623ms。
+每轮decode首两次native计划均不复用，随后30次复用；等同workspace／CTA尺寸不能证明整个原生计划可复用。
+已在同一BatchSlot的准备事务中一次性交接精确workspace sizing facts，保原生materialize、容量与退休检查，未单独证明吞吐收益。
+下一步检查capture在实际拓扑寿命内的复用与摊销，避免只有一次使用的重录；不通过放宽计划或页权限失效规则换取速度。
+
+### MTP额外重录定因：2026-10-22
+
+[当前镜像的一次完整P154／64诊断](../../evidence/performance/qwen-capture-cause-2026-10-22.json)已补首次失效step／port，64自然ID、34轮决策及计算量与未插桩镜像相同。18record＝4组role／slot首次各2段＋10次真实失效，另50reuse。10次首变化端口中9次是prior／carry hidden、1次是layer0 conv history；resource／handle／shape／strides／span相同，仅池内offset变化。不是旧冷图反复规划或本窗native plan／Queue／权限失效。完整物理参数改变后，当前捕获记录必须销毁；同一allocation不授权沿用旧子范围指针。
+
+这些失效只出现在第4～15轮；其7个调用的冷准备桶合计18.1936ms，包含其它准备和插桩，不能当重录自耗或可回收收益。34轮冷桶总57.2235ms，其中4个首次调用29.6260ms；不能将整个冷桶归到额外10次。range大小也不同：53步5次、55步1次、1269步4次，不按数量等价换算耗时。本批未做新TPS窗口，最新四项仍见[最新完整窗口](../../evidence/performance/qwen-mtp-single-and-multiturn-2026-10-24.json)。
+
+**本轮不采用强留状态块、额外影子复制或放宽失效，相关候选按本次决定结项。** 当前LeasePool没有指定offset接口；接受前缀、旧快照／前缀pin和真实退休决定哪块实际可写，不能只按role／parity宣称地址稳定。CUDA参数更新也没有现成的通用捕获合同；旧artifact与native所有者必须先正确分离，不能仅因为工具链有`cudaGraphExecUpdate`便直接复用旧记录。没有证据支持为这10次先重构36份状态池或增加公共API。
+
+后续一次有限热点分析已完成，见下。capture定因已结束，本轮不继续扩捕获系统调查；参考引擎续文不同，仍不签同token速度胜负。
+
+### MTP稳态投影与行批候选：2026-10-22
+
+[完整有限排查](../../evidence/performance/qwen-mtp-steady-profile-2026-10-22.json)只对当前普通镜像采1次Nsight。34轮各2次Graph launch均与实际GPU kernel correlation关联，64ID、接受决策和实际计算量与原记录一致。第16～34轮全部reuse2；19段中位GPU读回完成锚间隔14.043566ms、kernel duration和13.004021ms、kernel／copy／memset活动并集13.149329ms、非活动区间0.886171ms。区间不等于消费者端点wall，非活动不等于CPU自耗；CUDA13.4驱动由CUPTI13.3软件trace采集，诊断不作TPS。
+
+矩阵投影占稳态累计kernel duration92.4658%。BF16 WMMA两类普通小投影累计约94.817／47.631ms，末分数draft GEMV约42.463ms、target大WMMA约42.218ms。完整符号、grid和每段明细留在证据中；`Kernel2`短名不能单独区分公共cuBLAS Provider与GGML融合内部的cuBLAS调用。GDN／Top1／状态搬运不作为本窗主要耗时解释。
+
+唯一候选仅将普通rank2／两行BF16 MatMul的内部native布局改为2批单行矩阵共享原权重，保原dtype、F32累积、跨度／输出不重叠校验、32MiB workspace上限和退休；scores自定义、F32／FP16、原rank>2均不改。只编Provider和测试2个host TU，重用Qwen194／195链接输入；12项测试通过，含非方阵列主权重、两行独立重放。原P154／64各1个未插桩进程的64ID／34决策／全部选定工作字段也相同。
+
+| 初筛指标 | 默认 | 行批候选 |
+| --- | ---: | ---: |
+| prefill tok/s | 2348.10 | 2351.07 |
+| 完整decode tok/s | 122.62 | 93.52 |
+| 综合64输出／session wall tok/s | 110.46 | 86.59 |
+| 入口至末输出s | 2.188 | 2.358 |
+
+**行批候选拒绝并结项，默认产品源码不改。** 各1进程仅作有限筛选，没有显存旁采，不认定普遍23.7%退化或完整模型质量；不再追加全窗／profile来寻找有利样本。后续若再查普通小行数投影，只选少量原形状合法冷算法，保原数学、工作量、布局和资源合同；有明确候选收益才做四项完整对比。图片encoder／projector实现与底座功能继续推进，不以这次候选失败扩大运行时调优框架。
+
+### 历史AF普通／MTP四臂完整窗口：2026-10-22
+
+当时使用默认Hyle镜像和原native llama.cpp消费者跑12次交错测速、4次独立内存旁采。相同P154／64、C1024／N1／R1、prefix off，两个Hyle模式均保BF16输入→F32末分数政策；无新编译、无profiler。
+
+| 模式 | Hyle prefill／decode／综合 tok/s | llama.cpp prefill／decode／综合 tok/s |
+| --- | ---: | ---: |
+| 普通 | 2266.01／90.95／84.14 | 1507.63／96.03／85.03 |
+| MTP K1 | 2168.72／112.27／101.24 | 1454.02／126.18／105.10 |
+
+普通decode相对慢5.29%，MTP慢11.03%；prefill分别快50.30%／49.15%。同一模式的每臂输出／工作／决策可重复，但两对跨引擎续文都从第19枚分歧，不称同token严格差距或质量验收。两端绝对速度均低于前窗，不据非固定频率的跨窗值签代码回归。该窗完整范围、加载／启动、显存／内存、原始命令与采样限制见[AF证据](../../evidence/performance/qwen-mtp-steady-profile-2026-10-22.json)；[最新完整窗口](../../evidence/performance/qwen-mtp-single-and-multiturn-2026-10-24.json)已更新为2026-10-24单轮／真实两轮窗口。只用各窗自己的4臂互比，拒绝候选的单对初筛不混入。
+
+### 当前MTP数值与功能边界：2026-10-22
+
+[本轮4个有限诊断进程](../../evidence/correctness/qwen-mtp-current-numerics-2026-10-22.json)保持当前默认镜像／精度政策；无新TPS窗口。MTP19与MTP20在index18对应调用分别自然选Single／Round，两者均选11，普通20选271；MTP20该Round拒绝后仍有最后一轮Single，不能把index18的Round误叫整个进程最后一轮。三者prefill公开hidden／logits逐字节相同，不据此推全部状态相同。
+
+同一完整P154和自然L171旧Snapshot分别fork T1／T2，T2显式使用真实草拟、quota1按原政策只发布首边界，未强迫接受或替换proposal。33次真实Graph包含自然前缀、4次分支及19次allSingle调用；旧52份状态保护通过。两点各自T1／T2首ID相同，target hidden和分数不同；P154首层conv history的新qkv行已经不同，差异发生在causal conv／GDN前。沿相同P154保完整MTP状态、连续真实quota1的20输出与普通版相同，不能只把第19枚分歧归到末步形状，也不能拿ID一致代签模型质量。当前不因此改dtype／归约政策、强制T1或取消MTP。
+
+当时源审确认的Apple／Vulkan同Graph分页writer effect接线缺口已在后续补齐；F32 scores和GDN多快照也有实现。此段保留2026-10-22数值调查背景，当前后端结果见工作计划及后续证据。功能补齐与质量评估单列，不以数值诊断的计时当吞吐。
+
+### M2 FFN-down有限冷算法筛选：2026-10-24
+
+[实际叶诊断](../../evidence/performance/qwen-m2-down-lt-screen-2026-10-24.json)保持原M2／K6144／N2048、BF16输入和输出、F32累积、原权重布局、32MiB workspace上限及COMPUTE_TYPE归约。只比较默认request1与两种合法配置；原24MiB权重范围只读取一次，复制成4个GPU bank共96MiB，大于实际36MiB L2的两倍。每个配置用含64次串行M2的Graph轮转bank，5次交错试验，每次仅一次host launch，event除以64。
+
+默认、split1 stage19、splitK16的每叶中位耗时分别为63.920／63.168／64.704µs，范围分别为59.856–71.200／59.965–66.621／60.096–68.528µs。范围重叠，约1.2%的最佳中位差没有给出明确可采用收益。stage19与默认BF16逐位相同；splitK16有20／4096个BF16值不同，仍通过独立F64点积、固定F32误差界及向外BF16 RNE端点门，不能称逐位等价。
+
+**保留默认配置，本次有限叶候选结项，不继续搜索。** 这只是有界轮转工作集近似，未测PMU cache miss，不签绝对冷带宽、真实decode收益或最新四臂差距的完整归因。compile2／link2成功；run2在环境准备阶段失败、没有启动native，run3才实际退出0。原记录的`loaded_cublasLt`路径实为import-address所在exe，DLL完整路径未知；API版本130600为实际值，同进程配置比较仍成立。产品源码未改，最新单轮／真实两轮四臂数据保持不变。
+
+### typed MMVF双行候选：2026-10-24
+
+[后续有限叶对照](../../evidence/performance/qwen-m2-typed-mmvf-leaf-screen-2026-10-24.json)直接实例化已有MMVF模板，一次计算完整M2，共享权重读取，保BF16输入／权重／输出、F32累积与最终一次BF16舍入。这是新算法候选，不重开行拆或Lt参数搜索。沿用同一原24MiB down权重范围、保留的两行真实prefill输入、独立数学门及4bank／64叶／5次交错协议。
+
+默认Lt与候选中位耗时为63.4345／58.4000µs，范围60.0935–77.0240／53.2000–58.6030µs；该叶耗时减少7.94%，五次范围未重叠。各4096个输出均过原数学门，候选有22个BF16位差异，不称逐位等价。首次link缺少原GGML abort所有者，补已有base库和原CRT链接合同后，仅复用两成功对象重链，run2实际退出0。
+
+**整消费者筛选后拒绝，本轮结项，产品源码不改。** [六进程交错对照](../../evidence/performance/qwen-m2-typed-mmvf-consumer-screen-2026-10-24.json)中，默认／候选decode中位数为125.779／124.156 tok/s，综合速度为114.849／113.474 tok/s；三对候选均更慢。两臂128个输出ID与总工作量相同，但第12–14轮局部MTP决策不同，不能把全部差值归因于该kernel。独立结构trace确认候选确已执行，两次target各24个新双行kernel，仍各有738个kernel、135次D2D／39,731,200B。本次只用于采用／拒绝筛选，不替换正式四臂速度与内存表，不追加样本或参数搜索。

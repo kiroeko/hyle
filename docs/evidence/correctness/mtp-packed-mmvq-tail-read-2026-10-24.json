@@ -1,0 +1,270 @@
+{
+  "schema": "hyle.correctness.packed-mmvq-tail.v1",
+  "date": "2026-10-24",
+  "status": "passed",
+  "summary": "Source-derived tail read fix plus three generated small Q8 public MatMul numeric regressions on RTX4070.",
+  "source_defect": "Small-K M1 and ordinary M2 row tiles read nonexistent packed rows before their existing output-store guard. K%512 does not reserve N-tail rows. Indexed multi-token pair kernel has the same missing read guard.",
+  "fix": "Three uniform row guards cover ordinary and fused-gate dots, Spark prefetch and fused-gate prefetch, and indexed main/gate pair dots. Selectors, launch geometry, AQ/W decoding, valid-row arithmetic, barriers and stores are unchanged.",
+  "actual_tests": {
+    "tests": 3,
+    "failures": 0,
+    "skips": 0,
+    "shapes": [
+      "Q8_0 K512 N1 M1",
+      "Q8_0 K512 N3 M1",
+      "Q8_0 K512 N3 M2"
+    ],
+    "reference": "Original F16 scale1 and int8 code(column+1), F32 A+/-127 yields AQ8_1 scale1/code+/-127 and exact output +/-65024*(column+1).",
+    "original_weight_bytes": [
+      544,
+      1632
+    ],
+    "XML": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\tail-read-proposal\\checks1\\results.xml",
+      "bytes": 2214,
+      "sha256": "9cfe0caf2b967eea1714137ef6236d1f2718e0b192f2abfcf79d4f55c393c384"
+    },
+    "process": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\tail-read-proposal\\checks1\\run\\process.json",
+      "bytes": 678,
+      "sha256": "5e7ace70540648db25ea7af6e39271303968f9e95eedced4aaa6d1030c3ae749"
+    }
+  },
+  "hardware": {
+    "device": "NVIDIA GeForce RTX4070",
+    "compute_capability": "8.9",
+    "source": "checks1/run/stderr.log"
+  },
+  "build": {
+    "native_TUs": 1,
+    "test_TUs": 1,
+    "product_host_TUs": 0,
+    "SDK_builds": 0,
+    "SDK_copies": 0,
+    "HTTP_requests": 0,
+    "native": {
+      "command": [
+        "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\bin\\nvcc.exe",
+        "-IC:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-fusion-precision\\native-source\\include",
+        "-IC:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-fusion-precision\\native-source\\src",
+        "-IC:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-fusion-precision\\native-source\\src\\ggml-cuda",
+        "-forward-unknown-to-host-compiler",
+        "-DGGML_CUDA_FA_BF16_BF16=1",
+        "-DGGML_CUDA_FA_BF16_F16=0",
+        "-DGGML_CUDA_FA_BF16_Q4_0=0",
+        "-DGGML_CUDA_FA_BF16_Q4_1=0",
+        "-DGGML_CUDA_FA_BF16_Q5_0=0",
+        "-DGGML_CUDA_FA_BF16_Q5_1=0",
+        "-DGGML_CUDA_FA_BF16_Q8_0=0",
+        "-DGGML_CUDA_FA_F16_BF16=0",
+        "-DGGML_CUDA_FA_F16_F16=1",
+        "-DGGML_CUDA_FA_F16_Q4_0=0",
+        "-DGGML_CUDA_FA_F16_Q4_1=0",
+        "-DGGML_CUDA_FA_F16_Q5_0=0",
+        "-DGGML_CUDA_FA_F16_Q5_1=0",
+        "-DGGML_CUDA_FA_F16_Q8_0=0",
+        "-DGGML_CUDA_FA_Q4_0_BF16=0",
+        "-DGGML_CUDA_FA_Q4_0_F16=0",
+        "-DGGML_CUDA_FA_Q4_0_Q4_0=1",
+        "-DGGML_CUDA_FA_Q4_0_Q4_1=0",
+        "-DGGML_CUDA_FA_Q4_0_Q5_0=0",
+        "-DGGML_CUDA_FA_Q4_0_Q5_1=0",
+        "-DGGML_CUDA_FA_Q4_0_Q8_0=0",
+        "-DGGML_CUDA_FA_Q4_1_BF16=0",
+        "-DGGML_CUDA_FA_Q4_1_F16=0",
+        "-DGGML_CUDA_FA_Q4_1_Q4_0=0",
+        "-DGGML_CUDA_FA_Q4_1_Q4_1=0",
+        "-DGGML_CUDA_FA_Q4_1_Q5_0=0",
+        "-DGGML_CUDA_FA_Q4_1_Q5_1=0",
+        "-DGGML_CUDA_FA_Q4_1_Q8_0=0",
+        "-DGGML_CUDA_FA_Q5_0_BF16=0",
+        "-DGGML_CUDA_FA_Q5_0_F16=0",
+        "-DGGML_CUDA_FA_Q5_0_Q4_0=0",
+        "-DGGML_CUDA_FA_Q5_0_Q4_1=0",
+        "-DGGML_CUDA_FA_Q5_0_Q5_0=0",
+        "-DGGML_CUDA_FA_Q5_0_Q5_1=0",
+        "-DGGML_CUDA_FA_Q5_0_Q8_0=0",
+        "-DGGML_CUDA_FA_Q5_1_BF16=0",
+        "-DGGML_CUDA_FA_Q5_1_F16=0",
+        "-DGGML_CUDA_FA_Q5_1_Q4_0=0",
+        "-DGGML_CUDA_FA_Q5_1_Q4_1=0",
+        "-DGGML_CUDA_FA_Q5_1_Q5_0=0",
+        "-DGGML_CUDA_FA_Q5_1_Q5_1=0",
+        "-DGGML_CUDA_FA_Q5_1_Q8_0=0",
+        "-DGGML_CUDA_FA_Q8_0_BF16=0",
+        "-DGGML_CUDA_FA_Q8_0_F16=0",
+        "-DGGML_CUDA_FA_Q8_0_Q4_0=0",
+        "-DGGML_CUDA_FA_Q8_0_Q4_1=0",
+        "-DGGML_CUDA_FA_Q8_0_Q5_0=0",
+        "-DGGML_CUDA_FA_Q8_0_Q5_1=0",
+        "-DGGML_CUDA_FA_Q8_0_Q8_0=1",
+        "-DGGML_CUDA_FA_QUANTS=\"q4_0-q4_0,q8_0-q8_0,f16-f16,bf16-bf16\"",
+        "-DGGML_CUDA_USE_GRAPHS",
+        "-DGGML_SCHED_MAX_COPIES=4",
+        "-D_CRT_SECURE_NO_WARNINGS",
+        "-D_XOPEN_SOURCE=600",
+        "-IC:\\public\\project-hyle\\hyle\\src\\compute_provider_ggml_cuda",
+        "-isystem",
+        "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\include",
+        "-isystem",
+        "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\include\\cccl",
+        "-D_WINDOWS",
+        "-Xcompiler= /EHsc",
+        "-Xcompiler=-O2 -Ob2",
+        "-DNDEBUG",
+        "-std=c++17",
+        "--generate-code=arch=compute_89,code=[sm_89]",
+        "-Xcompiler=-MD",
+        "-use_fast_math",
+        "-extended-lambda",
+        "-compress-mode=size",
+        "-Xcompiler",
+        "/Zc:preprocessor",
+        "-MD",
+        "-x",
+        "cu",
+        "-ccbin",
+        "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64",
+        "-MT",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\tail-read-proposal\\native1\\mmvq.obj",
+        "-MF",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\tail-read-proposal\\native1\\mmvq.d",
+        "-c",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\tail-read-proposal\\generated\\src\\ggml-cuda\\mmvq.cu",
+        "-o",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\tail-read-proposal\\native1\\mmvq.obj",
+        "-Xcompiler=-FdC:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\tail-read-proposal\\native1\\mmvq.pdb,-FS"
+      ],
+      "source": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\tail-read-proposal\\generated\\src\\ggml-cuda\\mmvq.cu",
+        "bytes": 75834,
+        "sha256": "1c2a40e1c9867acef58da2b00d98a747487e80b6659ceacac3b93a3ddee2fe3e"
+      },
+      "object": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\tail-read-proposal\\native1\\mmvq.obj",
+        "bytes": 4632463,
+        "sha256": "602b4938b5a2d5cb2bbaa67f156d35ecc3d8fc6c41a6dffce591d5c322363cf4"
+      },
+      "dependencies_file": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\tail-read-proposal\\native1\\mmvq.d",
+        "bytes": 24741,
+        "sha256": "6768df6b1d90e87ab45a03ef587d2db37981919c1d52ec4f387f5dbdce02cf5c"
+      },
+      "recipe": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-fusion-precision\\checks\\20261019T111328\\mmvq-identity.json",
+        "bytes": 4516,
+        "sha256": "92e69fb1b2cdda2159e8d1542388fed9c08a51fe8e363eb81e4ade38cab2d8c9"
+      },
+      "retired_object": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-fusion-precision\\checks\\20261019T111328\\mmvq.obj",
+        "bytes": 4470159,
+        "sha256": "0acbbf5934963ec9db3980fea6afaf4b0c4e84dd71d9e02197445b4132025a8e"
+      },
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\tail-read-proposal\\native1\\run\\process.json",
+        "bytes": 4184,
+        "sha256": "207cab341823b83ca1b5bb1eee5120bde5cb1d68ea93f7a4e26894b01e2c96a9"
+      }
+    },
+    "actual_dependencies": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\tail-read-proposal\\native1\\dependencies.json",
+      "bytes": 29835,
+      "sha256": "35645f64e3f50740d2f9c92fc322daa553d9f044cea016c6896d690d89b3c797"
+    },
+    "current_link_base": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\current-integration\\current-link1\\link-plan.json",
+      "bytes": 56366,
+      "sha256": "fe8da626b5fd0c4c4d38476c77d3b9bbba54bf4f2ea61ada61092df3e270186c"
+    },
+    "link_plan": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\tail-read-proposal\\tests-link1\\link-plan.json",
+      "bytes": 95195,
+      "sha256": "def52d5bfcd708144a2a28a68b9fc3461b907a88756adefb571a42143d00645d"
+    },
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\tail-read-proposal\\tests-link1\\mmvq-tail-checks.exe",
+      "bytes": 139387904,
+      "sha256": "ce310806861ead31799287d7a45a9623d2a91d3cf4f2975ebc19741aaebb921b"
+    }
+  },
+  "future_link_input": {
+    "object": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\tail-read-proposal\\native1\\mmvq.obj",
+      "bytes": 4632463,
+      "sha256": "602b4938b5a2d5cb2bbaa67f156d35ecc3d8fc6c41a6dffce591d5c322363cf4"
+    },
+    "record": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\tail-read-proposal\\native1\\identity.json",
+      "bytes": 5426,
+      "sha256": "317f1ed89bd0aa11bcecdae67db4584f206afa70f95855b5114e36ccaeb9d2c9"
+    },
+    "dependencies": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\tail-read-proposal\\native1\\dependencies.json",
+      "bytes": 29835,
+      "sha256": "35645f64e3f50740d2f9c92fc322daa553d9f044cea016c6896d690d89b3c797"
+    },
+    "replace_exactly": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-fusion-precision\\checks\\20261019T111328\\mmvq.obj",
+      "bytes": 4470159,
+      "sha256": "0acbbf5934963ec9db3980fea6afaf4b0c4e84dd71d9e02197445b4132025a8e"
+    },
+    "ABI_change": false,
+    "required_product_host_refresh_for_parent_parity_change": [
+      "src/compute_provider_ggml_cuda/tensor_program.cc"
+    ],
+    "provider_refresh_required": false
+  },
+  "permanent_test_proposal": {
+    "status": "proposal_only_not_applied",
+    "patch": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\tail-read-proposal\\test.patch",
+      "bytes": 5783,
+      "sha256": "0beee135699267c4896b3d670778d35b95a200ffccfdd59ef3d06eb6cb0583c6"
+    },
+    "cmake_before": {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_ggml_cuda\\CMakeLists.txt",
+      "bytes": 1682,
+      "sha256": "e0b147cd90d896c249633643583a30c4ecdac1d037d2f755c75616a95c3cb99d"
+    },
+    "cmake_after": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\tail-read-proposal\\next-source\\tests\\compute_provider_ggml_cuda\\CMakeLists.txt",
+      "bytes": 1709,
+      "sha256": "dfd8d31b8988561a35b073a2d9057e67b75883b550abd461dcbc86a1c95f5660"
+    },
+    "test": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\tail-read-proposal\\next-source\\tests\\compute_provider_ggml_cuda\\packed_matmul_tail_test.cc",
+      "bytes": 4531,
+      "sha256": "aeee5adbdcb140d52c651a11aa00d14586a57a17a14dd97f7cee70c00e3337da"
+    },
+    "scope": "Three generated legal Q8 public MatMul numeric regressions, not an allocation-boundary instrumentation test."
+  },
+  "link_map": {
+    "full": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\tail-read-proposal\\tests-link1\\mmvq-tail-checks.map",
+      "bytes": 57024611,
+      "sha256": "1fe71dbfaae06f65fed70178cb0c2b8a7322c5c4b7ecdaa338fcbcc06fd14b3e"
+    },
+    "excerpt": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\tail-read-proposal\\link-map-excerpt.txt",
+      "bytes": 1323,
+      "sha256": "20bc8c33e07a520b28f2b76bbc3cf69960fbedd8ec295f72bcb0808b6e7c6ca1"
+    }
+  },
+  "limits": [
+    "Numeric tests are not a memcheck/guard-page proof; no instrumented before-failure/after-pass was run.",
+    "No original model/MTP quality, throughput or peak-memory conclusion.",
+    "Host parity-removal proposal is separate and was not applied by this task. After root applies it only tensor_program.cc needs its host refresh; this same new native object remains usable."
+  ],
+  "retained_preflight_failures": [
+    {
+      "kind": "script_library_classification",
+      "reason": "Initial link preparation treated bare Windows SDK library names as absolute files. It stopped before launching the linker. Final command preserves normal LIB lookup and succeeds; no C++ or native arithmetic change."
+    }
+  ],
+  "archive": {
+    "path": "docs/evidence/correctness/mtp-packed-mmvq-tail-read-2026-10-24.zip",
+    "bytes": 294112,
+    "sha256": "ab3e0710e9689d25cff6b35ae6681e68d8bed1a9dbb1abf0a7f52a3a80ff4e08"
+  },
+  "archive_files": 55
+}

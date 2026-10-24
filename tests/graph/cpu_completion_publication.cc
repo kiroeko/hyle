@@ -1,5 +1,5 @@
 // Private source test: observe the owner through CompletionDependency, never
-// concurrently settle the same move-only Completion/OwnedResult wrapper.
+// concurrently settle the same move-only Completion wrapper.
 #define main hyle_publication_sample_main
 #if defined(HYLE_COMPLETION_PUBLICATION_APPLE)
 #include "../../samples/package/graph/cpu_apple/main.cc"
@@ -96,18 +96,26 @@ struct Cleanup final {
   }
 };
 
-template <class CreateInvocation>
-Status run(b::Environment environment, CreateInvocation create) {
+Result<g::GraphOutput> run_once(g::Invocation &invocation,
+    std::span<const g::QueueBinding> queues, g::ValueId output) {
+  HYLE_ASSIGN_OR_RETURN(auto work, invocation.submit(queues));
+  HYLE_RETURN_IF_ERROR(work.wait());
+  return invocation.result(output);
+}
+
+template <class CompileGraph>
+Status run(CompileGraph compile) {
   CpuGate cpu_gate;
   HYLE_ASSIGN_OR_RETURN(auto cpu, g::cpu::create_context(
       {.executor = c::ParallelExecutorRef{&cpu_gate, 2, &CpuGate::execute}}));
-  environment.cpu = &cpu;
   hyle::sched::Scheduler scheduler(1, m::system_allocator(), 32);
+  hyle::sched::BlockingPool workers(m::system_allocator(), 1);
   HYLE_ASSIGN_OR_RETURN(auto queue, cpu.create_queue());
   HYLE_ASSIGN_OR_RETURN(auto desc, c::TensorDesc::dense(c::DataType::kFloat32,
       std::array<std::int64_t, 2>{64, 64}));
   HYLE_ASSIGN_OR_RETURN(auto input, tensor(desc));
   HYLE_ASSIGN_OR_RETURN(auto weight, tensor(desc));
+  HYLE_ASSIGN_OR_RETURN(auto destination, tensor(desc));
   std::array<float, 4096> values, diagonal{};
   values.fill(1.0f);
   for (std::size_t i = 0; i < 64; ++i) diagonal[64 * i + i] = 2.0f;
@@ -122,20 +130,23 @@ Status run(b::Environment environment, CreateInvocation create) {
   HYLE_ASSIGN_OR_RETURN(auto graph, std::move(builder).finish());
   // Exercise the real joint Graph owner without submitting a GPU command.
   const std::array placements{
-      g::NodePlacement{*graph.node_id(0), b::kCpuTarget, g::PlacementStrength::kRequired},
-      g::NodePlacement{*graph.node_id(1), b::kCpuTarget, g::PlacementStrength::kRequired}};
-  HYLE_ASSIGN_OR_RETURN(auto program, b::compile(graph, environment,
-      {.node_placements = placements}));
+      g::NodePlacement{*graph.node_id(0), kCpuTarget, g::PlacementStrength::kRequired},
+      g::NodePlacement{*graph.node_id(1), kCpuTarget, g::PlacementStrength::kRequired}};
+  HYLE_ASSIGN_OR_RETURN(auto program, compile(graph, cpu,
+      g::CompileOptions{.node_placements = placements}));
+  HYLE_ASSIGN_OR_RETURN(auto queues, cpu_queues(program.report, queue));
 
   for (bool close_observer : {false, true}) {
-    HYLE_ASSIGN_OR_RETURN(auto invocation, create(program, scheduler, queue));
+    HYLE_ASSIGN_OR_RETURN(auto invocation, program.executable.create_invocation());
+    HYLE_RETURN_IF_ERROR(g::prepare_progress(invocation, scheduler, workers));
     const auto prepare = [&]() -> Status {
       HYLE_RETURN_IF_ERROR(invocation.bind(x, input.view.as_const()));
       HYLE_RETURN_IF_ERROR(invocation.bind(w, weight.view.as_const()));
-      return invocation.prepare_replay();
+      HYLE_RETURN_IF_ERROR(invocation.bind(output, destination.view));
+      return invocation.prepare_replay(queues);
     };
     HYLE_RETURN_IF_ERROR(prepare());
-    { HYLE_ASSIGN_OR_RETURN(auto warm, invocation.run()); }
+    { HYLE_ASSIGN_OR_RETURN(auto warm, run_once(invocation, queues, output)); }
     HYLE_RETURN_IF_ERROR(check(cpu_gate.calls.load(std::memory_order_relaxed) != 0,
         "CPU MatMul did not reach the real executor gate"));
 
@@ -149,14 +160,14 @@ Status run(b::Environment environment, CreateInvocation create) {
     Cleanup cleanup{cpu_gate, tail, scheduler, external, closer};
     HYLE_RETURN_IF_ERROR(prepare());
     cpu_gate.arm();
-    HYLE_ASSIGN_OR_RETURN(auto work, invocation.submit());
+    HYLE_ASSIGN_OR_RETURN(auto work, invocation.submit(queues));
     HYLE_RETURN_IF_ERROR(check(cpu_gate.entered.wait_for(watchdog),
         "CPU prefix did not reach the controlled gate"));
-    const auto source = c::detail::CompletionAccess::dependency(work.completion());
+    const auto source = c::detail::CompletionAccess::dependency(work);
     HYLE_RETURN_IF_ERROR(check(source.pending(), "joint Graph did not expose its pending owner"));
     HYLE_RETURN_IF_ERROR(c::detail::CompletionAccess::attach_retention(
-        c::detail::ResultAccess::completion(work), tail.retention));
-    work = {}; // Registers the real abandoned callback, keeping result retention.
+        work, tail.retention));
+    work = {}; // The original observation retains its real retirement callback.
     cpu_gate.release.signal();
     HYLE_RETURN_IF_ERROR(check(tail.entered.wait_for(watchdog),
         "abandoned completion did not enter its callback tail"));
@@ -179,7 +190,10 @@ Status run(b::Environment environment, CreateInvocation create) {
     if (close_observer) {
       HYLE_ASSIGN_OR_RETURN(closer, hyle::platform::Thread::spawn([&] {
         close_entered.signal();
-        close_terminal = invocation.close();
+        // Ordinary close only stops admission. The original waiting contract
+        // belongs to drain, including the accepted callback tail.
+        invocation.close().IgnoreError();
+        close_terminal = invocation.drain();
         close_returned.store(true, std::memory_order_release);
         close_done.signal();
       }));
@@ -193,7 +207,7 @@ Status run(b::Environment environment, CreateInvocation create) {
       HYLE_RETURN_IF_ERROR(check(!observer.returned.load(std::memory_order_acquire),
           "owner observer escaped the live callback tail"));
     HYLE_RETURN_IF_ERROR(check(!close_returned.load(std::memory_order_acquire),
-        "close escaped the live callback tail"));
+        "drain escaped the live callback tail"));
 
     tail.release.signal();
     for (auto &observer : observers) {
@@ -202,7 +216,7 @@ Status run(b::Environment environment, CreateInvocation create) {
     }
     HYLE_RETURN_IF_ERROR(check(tail.released.wait_for(watchdog), "callback release tail did not finish"));
     if (close_observer) {
-      HYLE_RETURN_IF_ERROR(check(close_done.wait_for(watchdog), "close did not join the callback tail"));
+      HYLE_RETURN_IF_ERROR(check(close_done.wait_for(watchdog), "drain did not join the callback tail"));
       HYLE_RETURN_IF_ERROR(close_terminal);
     } else {
       // Reuse immediately after the owner observers return. The old publisher
@@ -211,8 +225,8 @@ Status run(b::Environment environment, CreateInvocation create) {
       HYLE_RETURN_IF_ERROR(input.buffer.view().write(std::as_bytes(std::span(values))));
       HYLE_RETURN_IF_ERROR(prepare());
       {
-        HYLE_ASSIGN_OR_RETURN(auto next, invocation.run());
-        HYLE_ASSIGN_OR_RETURN(auto actual, next->output(output));
+        HYLE_ASSIGN_OR_RETURN(auto next, run_once(invocation, queues, output));
+        HYLE_ASSIGN_OR_RETURN(auto actual, next.tensor());
         HYLE_RETURN_IF_ERROR(actual.storage().read(std::as_writable_bytes(std::span(values))));
         for (auto value : values)
           HYLE_RETURN_IF_ERROR(check(value == 6.0f, "reused episode lost its changed-input result"));
@@ -228,24 +242,20 @@ Status run(b::Environment environment, CreateInvocation create) {
 } // namespace publication_cases
 
 Status publication_contracts() {
-  HYLE_ASSIGN_OR_RETURN(auto cpu, g::cpu::create_context());
 #if defined(HYLE_COMPLETION_PUBLICATION_APPLE)
   HYLE_ASSIGN_OR_RETURN(auto native, a::Context::create());
   HYLE_ASSIGN_OR_RETURN(auto memory, a::MemoryResource::create(native));
-  const b::Environment environment{.cpu = &cpu, .apple = &native, .native = &memory};
-  return publication_cases::run(environment,
-      [](const b::Executable &program, hyle::sched::Scheduler &scheduler, c::Queue &queue) {
-        return program.create_invocation(scheduler, queue);
+  return publication_cases::run(
+      [&](const g::Graph &graph, const c::Context &cpu, g::CompileOptions options) {
+        return compile_graph(graph, cpu, native, memory, options);
       });
 #else
   HYLE_ASSIGN_OR_RETURN(auto native, v::Context::create());
   HYLE_ASSIGN_OR_RETURN(auto device, v::MemoryResource::create(native, v::MemoryKind::kDevice));
   HYLE_ASSIGN_OR_RETURN(auto staging, v::MemoryResource::create(native, v::MemoryKind::kStaging));
-  const b::Environment environment{.cpu = &cpu, .vulkan = &native, .device = &device, .staging = &staging};
-  hyle::sched::BlockingPool pool(m::system_allocator(), 1);
-  return publication_cases::run(environment,
-      [&](const b::Executable &program, hyle::sched::Scheduler &scheduler, c::Queue &queue) {
-        return program.create_invocation(scheduler, queue, pool);
+  return publication_cases::run(
+      [&](const g::Graph &graph, const c::Context &cpu, g::CompileOptions options) {
+        return compile_graph(graph, Resources{cpu, native, device, staging}, options);
       });
 #endif
 }

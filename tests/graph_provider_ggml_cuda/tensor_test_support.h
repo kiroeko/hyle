@@ -73,11 +73,16 @@ void exercise_tensor_graph(compute::Context &context, Compile compile) {
       graph::QueueBinding{graph::ExecutionLaneId{0}, &first_queue}};
   const std::array q2{
       graph::QueueBinding{graph::ExecutionLaneId{0}, &second_queue}};
-  EXPECT_FALSE(
-      first
-          .prepare_replay(q1, {.mode = graph::ReplayMode::kRequireCapture,
-                               .host_wait = graph::HostWaitPolicy::kReject})
-          .ok());
+  const auto required = first.prepare_replay(
+      q1, {.mode = graph::ReplayMode::kRequireCapture,
+           .host_wait = graph::HostWaitPolicy::kReject});
+  if (compiled->report.step(0)->runtime.capture_compatible) {
+    ASSERT_TRUE(required.ok()) << required.message();
+    EXPECT_EQ(first.replay_route(), graph::ReplayRoute::kCaptured);
+  } else {
+    EXPECT_FALSE(required.ok());
+    EXPECT_TRUE(required.IsUnimplemented()) << required.message();
+  }
   ASSERT_TRUE(first.prepare_replay(q1).ok());
   ASSERT_TRUE(second.prepare_replay(q2).ok());
   std::vector<T> values(description.element_count().value());

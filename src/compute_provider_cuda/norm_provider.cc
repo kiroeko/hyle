@@ -1,7 +1,6 @@
 #include "norm_provider.h"
 
 #include <array>
-#include <algorithm>
 #include <climits>
 #include <new>
 #include <type_traits>
@@ -103,13 +102,13 @@ Status create_invocation(void *, mem::AllocatorRef, mem::BufferView,
 void destroy_invocation(void *, mem::AllocatorRef) noexcept {}
 
 template <bool Sglang>
-detail::EnqueueResult submit(void *state, void *, Queue &queue,
+detail::EnqueueResult submit(void *state, void *, detail::QueueSequence &sequence,
                              std::span<const ConstTensorView> inputs,
                              std::span<const TensorView> outputs) noexcept {
   const auto &prepared = *static_cast<const Prepared<Sglang> *>(state);
   if (prepared.program.rows == 0)
     return detail::EnqueueResult::no_op();
-  auto stream = cuda::stream(queue);
+  auto stream = cuda::stream(sequence);
   if (!stream)
     return detail::EnqueueResult::rejected(std::move(stream).error());
   std::array<const void *, 3> pointers{};
@@ -218,7 +217,7 @@ prepare_impl(void *state, const detail::ProviderPrepareRequest &request,
   void *storage =
       allocator.allocate(sizeof(Prepared<Sglang>), alignof(Prepared<Sglang>));
   if (storage == nullptr)
-    return ProviderPrepareOutcome::resource_declined(
+    return ProviderPrepareOutcome::error(
         Status::ResourceExhausted("CUDA norm program allocation failed"));
   auto *prepared =
       ::new (storage) Prepared<Sglang>{.primary = primary, .program = program};
@@ -250,11 +249,6 @@ ProviderPrepareOutcome prepare(void *state,
                                mem::AllocatorRef allocator,
                                detail::ProviderPrepared *output) noexcept {
   return prepare_impl<false>(state, request, allocator, output);
-}
-void require_alignment(detail::ProviderPrepared &artifact, std::size_t alignment) noexcept {
-  auto &prepared = *static_cast<Prepared<false> *>(artifact.state);
-  for (auto &value : prepared.alignment)
-    value = (std::max)(value, alignment);
 }
 ProviderPrepareOutcome
 sglang_prepare(void *state, const detail::ProviderPrepareRequest &request,

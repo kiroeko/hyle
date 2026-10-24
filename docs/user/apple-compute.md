@@ -5,7 +5,8 @@ Apple 路线保留 MLX 的原生 arrays、编译融合与内存管理；原版 g
 
 可选[模型与阶段信息](compute.md#可选模型与阶段信息)作为最后一个参数传给
 `Context::prepare(operation, inputs, workload)` 或 `Context::compile(region, inputs, workload)`；
-Graph 使用 `graph::apple::CompileOptions::workload`。原生 `Program::workload()` 保留绑定身份，
+普通 Graph 使用 `graph::CompileOptions::workload`；原生整段编译使用
+`graph::apple::CompileOptions::workload`。原生 `Program::workload()` 保留绑定身份，
 Graph 的 typed lowering 收到同一份冷信息。无注解继续使用合法 MLX baseline；这不声明新增了模型
 专用算法。改变身份后重新编译，MLX replay 不读取模型信息或重选规则。
 
@@ -39,7 +40,15 @@ F32→BF16 转换保留次正规数和最近偶数舍入，实际转换 dispatch
 也考虑 GPU 验证后的编译资源。默认 tile 超过设备上限时改用较小 tile，仍不满足则报原生错误。
 它约束每个线程组的临时空间，不是模型、KV、GPU buffer 或整机内存上限。
 
+低维 vector attention 的两阶段归约保留 F32 partial，最后才转回输出存储类型；普通、ragged 和分页调用共用该数学路径。
+Q/K/V 不因此整体宽化。F16/BF16 的 partial 从每项 2 字节变为 4 字节，额外载荷为
+`2 * B * Hq * Q * blocks * Dv` 字节；原生分配、布局整理及其他临时开销仍须另计。
+
 不等长/分页 KV 的准备、布局更新和结果释放统一见[批次 attention](batch-attention.md)。
+普通分页另支持E4 K/V和各自固定scale：`CacheEncode`复用精确字节编码，原Steel核直接读引用页；
+普通页仅活跃Q／partial使用F32，不展开整套缓存。BF16 D64→128、多请求及Q1布局增长已实测。
+紧凑E4 MLA另接BF16 Q／输出、512／576单缓存的paged/ragged路径；V为原CKV前512项的strided view。
+576维保原BF16共享Q tile以满足32KiB限制，KV／QK／softmax／PV仍F32。数学与寿命范围见[紧凑MLA](batch-attention.md#紧凑-mla只存一份-cache)。
 `prepare_ragged_batch()` 接 host-owned 布局；改变 Q 拓扑需重新准备，同拓扑更新 KV 长度后重新绑定。
 变化长度可能在 MLX worker 上建立 managed 图，不意味着 capture 或零分配。
 
@@ -140,17 +149,23 @@ Apple 的普通 `Context::prepare()` 和 Graph 支持 canonical E4M3FN/F32 block
 
 动态线性接受 BF16/F32 activation，按 K128 分组量化后执行各块 F32 点积、缩放和累加，
 输出保留 activation 类型；存储为 BF16 不代表省略中间 FP8。默认普通 scale floor 为1e-10，
-DeepSeek 的 power2 scale 和1e-4 floor 由操作描述显式选择。grouped 权重保留全部专家的
+DeepSeek 的 power2 scale 和1e-4 floor 由操作描述显式选择，dense 与 grouped 工厂均用
+`(Float8ScalePolicy::kPowerOfTwo, 1e-4F)`。
+`kMultiplyReciprocal` 则保 F32 `max*F32(1/448)`、`1/scale`、`A*inverse` 三步舍入，
+供 GLM Quark block128 的参考使用；dense 与 grouped 均显式选择该策略。
+grouped 权重保留全部专家的
 压缩存储，仅对本次选择的专家解码；负值或越界 ID 通过 Completion 返回 OutOfRange，
 不发布输出。原生 F32 运算允许 fused/unfused 舍入差异，不承诺与 CUDA 逐位一致。
 
 FP8 点积通过 MLX Safe custom Metal 程序直接读取 packed codes/scales，在 tile 内解码并用
 原生 SIMDgroup F32 矩阵运算累加。每128元素先点积，再乘 activation scale、weight scale，
 最后按 K block 顺序加入 F32 结果；不生成完整 F32 权重或全部 block dots 临时张量。
+dense和grouped均直接索引每128列共享的原F32 weight scale，不展开成逐列SF；
+显式`Float8WeightDecode`仍输出调用者请求的完整浮点权重。
 量化、选中 codes/scales、scale 广播、结果和必要复制仍由 MLX 管理并计入费用，
 这不是硬件原生 FP8 GEMM 或零分配保证。编译/JIT 属于冷准备，Graph/native 完成与数组
 寿命仍由原 MLX owner 管理。
-Graph 捕获常量时的折叠由 MLX 管理，HYLE 不提供隐式权重缓存。
+Graph 捕获常量时的折叠由 MLX 管理，HYLE 不按模型文件或运行时地址建立全局权重缓存。
 FP8 group64/128 roundtrip 也可用。FP4 group32 roundtrip接BF16二维输入，保留原E2M1
 最近偶数舍入、power2 scale/floor及最终BF16存储；极小值和零符号由GPU位视图适配保真。
 `model_ops::grouped_float4_linear()`消费canonical原E2M1 nibble/F32 group32专家权重、
@@ -179,27 +194,51 @@ HYLE 不加载 GGUF、不量化、不解码成常驻浮点副本，也不在 sub
 examples overload 只能看到 `uint8`，无法猜出 Q4_K/IQ4_XS 等语义；压缩权重必须用上述 spec overload。
 
 当前 ggml Metal 路线接入 Q4_0、Q4_1、Q2_K、Q3_K、Q4_K、Q5_K、Q6_K、Q8_0、
-IQ2_XXS、IQ2_XS、IQ2_S、IQ3_XXS、IQ3_S、IQ4_NL、IQ4_XS、IQ1_S、IQ1_M、MXFP4，
+IQ2_XXS、IQ2_XS、IQ2_S、IQ3_XXS、IQ3_S、IQ4_NL、IQ4_XS、IQ1_S、IQ1_M、MXFP4、NVFP4，
 以及原Anemll IQ1_XS/IQ1_XXS/IQ1_XXXS的二维 MatMul 与 `[E,N,K]` GroupedMatMul。
 后三类保留原MV程序；无原MM时按原MV承载，不调用不存在的kernel。checked embedding
-接入上述前18类；窄IQ1三类没有原GetRows，不声明支持。Q4_K精确行选择使用原ggml
+接入上述前19类；窄IQ1三类没有原GetRows，不声明支持。Q4_K精确行选择使用原ggml
 F32 row-decode公式的MLX GPU承载，只取所选行，避免原Metal half高nibble精度损失。
 准备期调用固定上游 capability 检查；设备/形状不支持时明确拒绝，不展开到 F32 或转去 CPU。
 这些格式与前述 MLX affine Q4 的 `uint32 + scale/bias` 合同不同，不能交换 carrier。
+GGUF NVFP4 保持原 64 值／36 字节编码，MatMul、GroupedMatMul 和 checked embedding 均直接读取
+原压缩权重；激活、点积累加和输出为 F32。准备期编译实际原生变体，并检查线程数、SIMD 宽度与
+线程组内存；设备资源不支持返回 `Unimplemented`，编译失败返回 `Unavailable`，分配失败返回
+`ResourceExhausted`。不建立整库浮点权重副本。实际数值与寿命范围见
+[本轮验证](../evidence/correctness/apple-gguf-nvfp4-2026-10-20.json)。
+
+普通 `GroupedMatMul` 的共享激活合同见[Compute](compute.md)：`[T,1,K]` 或零 slot 步幅的
+`[T,S,K]` View 都可供各专家读取，原独立分支输入仍为 `[T,S,K]`。用 `apple::input_spec(desc)`
+保留实际描述；绑定 array 的 dtype、shape 和活动轴步幅须与准备时一致，原 array owner 保活到完成。
+该共享 View 直接导入原 backing，不先物化 S 份激活；输出的原生附加存储由后端按真实需要分配。
 
 ### 模型制品的 native packed 与冷准备
 
-`model_ops::MlxQuantized`表达原MLX affine4/MXFP4/MXFP8线性及grouped，affine4另有
-checked embedding；实际group、scale dtype、bias与端口以模型制品及公共schema为准。
-普通prepare和Graph均接原MLX qmm/gather_qmm/take/dequantize，无需选择内部Provider。
-U32 words按低bits在先存储；MX的U8 E8M0 scales与GGUF或官方F32 scales不同。
+`model_ops::MlxQuantized{format, kind, bits, group_size}`承载线性、选中专家和 affine checked embedding。
+affine 支持 bits4/5/6/8、group32/64/128；MXFP4 固定 bits4/group32，MXFP8 固定 bits8/group32。
+使用 `mlx_quantized_matmul(format,bits,group)`、`mlx_grouped_matmul(format,bits,group)` 或
+`mlx_quantized_embedding(bits,group)`；实际 scale dtype、bias 与端口须匹配公共 schema。
+每行 U32 words 是低位在先的连续位流，末轴为 `(K/32)*bits`，5/6 位码允许跨 word；
+MX 的 U8 E8M0 scales 与 integer affine8、GGUF 或官方 F32 scales 不可互换。
+普通 prepare 和 Graph 接原 MLX qmm/gather_qmm/take/dequantize，无需选择内部 Provider。
 
-NF4/nested NF4、AWQ GEMM4和compressed-tensors symmetric4使用
+affine 点积将 activation/scales/bias 扩宽到 F32，保留 packed weights，最后按声明输出 dtype 舍入。
+Graph中的不可变F16/BF16 scale／bias常量会在冷编译时提升一次，同一SSA来源去重；原logical类型与公开输出不变。
+两种Graph入口共用该准备，普通输入／可换代WeightSlots仍按原就绪边界执行。公共Graph的派生存储计入constant预算，
+实际数组owner保有reservation；[4项数值、预算与寿命检查](../evidence/performance/apple-affine-constant-preparation-reference-2026-10-21.json)通过，不代表吞吐或物理分配测量。
+[Air 上 5 项 Direct 回归](../evidence/correctness/mlx-affine-widths-apple-2026-10-19.zip)覆盖定向位宽、
+跨 word、分组及既有数值反例；本次没有运行 Apple Graph 或完整制品。
+原生 decode 乘加可能收缩，QMV 可能重排 scale/bias 与归约；typed embedding 的一般两次独立舍入、
+跨后端逐 bit 等价及完整模型数值意图仍未证明。
+
+NF4/nested NF4、AWQ GEMM4和compressed-tensors symmetric/asymmetric4使用
 `model_ops::artifact_weight_decode(format, group_size, output_type)`在GPU冷准备。
 输入按[公共端口合同](../../include/hyle/compute/model_ops.h)给出真实packing/scales/zeros/
 codebook；结果[N,K]保留为ready常量，再用于成熟MatMul或Gather。HYLE不加载模型、不按
 文件名猜格式，也不把该准备放在每次decode内。原NF4 codebook/nested offset、AWQ列顺序
 和zero、CT减8及源存储舍入均保留。
+CT asymmetric4 的 zero 沿输出行打包为 I32 `[ceil(N/8),K/group]`，与 AWQ 的列排列不同；
+源 dtype 的减法、乘法分别舍入，再转换到请求的输出类型。它仍是显式冷解码，不是 packed INT4 MatMul。
 
 这些接口表达具体张量与模型片段，不负责完整模型常驻；准备前仍须核对内存容量与实际设备。
 
@@ -231,7 +270,7 @@ Graph 使用 `add_node(GatedDeltaNet{}, inputs)` 和 `result(node, 0/1)`，自�
 整理布局并计入执行成本。没有 CPU 数学 fallback，也不声明 event-only 或无分配 replay。
 `Environment::ggml_revision` 与 MLX、设备、OS/SDK/Metal 编译器身份一起用于冷规则诊断。
 
-## Graph 整段编译
+## Graph 整段编译（原生 expert）
 
 用普通 `GraphBuilder` 的 typed operation 构图，再调用：
 
@@ -259,6 +298,8 @@ HYLE 逻辑描述推断实际 MLX 分配或声称任意 native View 都零拷贝
 沿传入的同一 stream 执行。它支持同 runtime 扩展，不承诺任意外部 MTLBuffer/Queue 的零拷贝互通。
 
 ## 所有权、线程与成本
+
+以下是原生 Direct `Program`／`Invocation` 的合同；普通 Graph 的槽、完成与结果合同见下节。
 
 - 一个 Context 拥有一个固定提交线程与 GPU stream，按 FIFO 执行完整 region；独立 Context 可并发。
   冷 compile、隔离零输入暖机、native eval 和 checked synchronize 都在该 owner 上完成。
@@ -299,28 +340,59 @@ if (!program) {
 下列字段保留本后端特有的成本边界。
 
 `declared_constant_count` 与 `logical_constant_bytes` 按声明 views 统计，重复引用也重复计数；
-它们不是实际驻留内存。`private_storage_bytes` 保持 unknown，MLX 内部融合、私有 heap 和 driver
+它们不是实际驻留内存。`prepared_constant_count`／`prepared_constant_bytes`另记去重后的F32派生常量及逻辑载荷，
+不与原views混算；公共Graph报告使用已有prepared/packed常量字段。这两个原生报告字段扩展了结构布局，库和使用该结构的消费者须一起重新编译。
+`private_storage_bytes` 保持 unknown，MLX 内部融合、私有 heap 和 driver
 分配不能从逻辑 shape 精确推断。
 
 主机调用跟踪的开启方式与解释边界见 [Graph 跟踪](graph.md#可选主机跟踪)。
 
 ## CPU/Apple组合与权重片段迁移
 
-选择`HYLE_COMPUTE_ROUTES="cpu;apple"`并链接`hyle::graph`即可取得`graph::cpu_apple`。
-普通入口为`compile → create_invocation(Scheduler, CPU Queue) → bind → prepare_replay → submit`，
-成功`OwnedResult`给出result lease。CPU/Sched与MLX原owner/stream分别保留，固定CPU/Apple
-片段沿各自已绑定规则执行，完整MLX/ggml region不被逐kernel拆开。仅准入fixed pure DAG；
-符号、effects或显式control edges不能被假装支持，普通单路线入口仍独立。
+选择 `HYLE_COMPUTE_ROUTES="cpu;apple"`，使用 `hyle/graph/cpu.h`、`hyle/graph/apple.h`
+和普通 Graph API。`graph::apple::execution_source(apple_context)` 保留实际 MLX Runtime，
+`graph::ExecutionSource::acquire(cpu_context)` 保留实际 CPU Context；将二者及主存／Apple
+存储域传给 `graph::compile`。需要固定 CPU／Apple 分工时显式设置 Required placement，
+不能把未约束的默认选择当作 GPU 路由。
 
-Direct只需要`hyle::compute`与`apple_weights.h`：固定catalog/两槽，普通host源按ID和精确
-TensorDesc上传，`WeightBatch::binding`只发布成功ready的原生array。array alias、Graph绑定与
-旧结果保留native backing并禁止覆盖；`close`排空本owner，不关闭调用者的Context/Queue。
-图绑定/重置使冷准备和报告失效，动态payload更新不重新挑选Provider。共享存储不能省略执行排序。
+编译结果仍是原 `Executable`。只给报告中 `queue_required` 的 shared CPU lane 绑定真实
+CPU Queue；Apple lane 使用原 Runtime/stream。需要异步主机推进时选择 Sched，冷调用
+`prepare_progress`，Scheduler 推进同一槽的依赖前沿，BlockingPool 只执行实际阻塞的粗片段：
 
-原生边界目前明确使用checked host completion，`HostWaitPolicy::kReject`拒绝该路径。相互独立的
-Metal传输与MLX计算可以重叠，但硬件/调度/带宽可能降低收益，不承诺每次都有吞吐提升。
-`ResourceBudget`按requested bytes管理host/native/metadata与旧lease；MLX私有分配需要显式partial，
-原生backing观察先按MTLBuffer去重，不能加到scope usage里冒充总显存或系统级预留。
+```cpp
+namespace g = hyle::graph;
+auto compiled = g::compile(graph, environment, options).value();
+auto run = compiled.executable.create_invocation({
+    .resources = g::ResourceOptions{}}).value();
+HYLE_RETURN_IF_ERROR(g::prepare_progress(run, scheduler, workers));
+HYLE_RETURN_IF_ERROR(run.bind(x, input_description, input_lease));
+HYLE_RETURN_IF_ERROR(run.bind(y, output_description, std::move(output_writer)));
+HYLE_RETURN_IF_ERROR(run.prepare_replay(queues));
+auto done = run.submit(queues).value();
+HYLE_RETURN_IF_ERROR(done.wait());
+auto result = run.result(y).value(); // GraphOutput
+auto view = result.tensor().value();
+```
+
+CPU caller 输出需绑定实际存储并保活；Apple generated 输出保留原生数组 owner，成功后才可观察，
+不复制到影子输出。`GraphOutput` 保留原 Invocation；`output()` 返回借用视图，原生 expert
+`OwnedResult<Results>` 则属于前述 Direct 接口。旧结果未释放时不能重绑、重置或重放同一槽。
+
+权重仍用 `compute::apple::WeightSlots` 的固定 catalog／双槽上传；普通 Graph 调用
+`graph::apple::bind(run, weight_id, batch, catalog_id)` 保留原 `WeightBatch` 与上传来源，
+无需调用者先 wait。`WeightBatch::binding` 是另一个只发布 ready array 的原生访问入口。
+修改绑定后显式重新 `prepare_replay`；固定布局和绑定可严格重放，不在热提交中重选实现。
+分页布局更新按[批次 attention](batch-attention.md#同一分页图用于-cpu-与-gpu)执行冷准备。
+
+`Completion::request_cancel()` 请求停止后继，已接纳工作仍须实际退休；`Invocation::close()`
+只停止该槽的新接纳，`drain()` 等待该槽退休并返回首错，不关闭调用者的 Context/Queue。
+Scheduler、BlockingPool 须活过已接纳工作和 drain；资源及 allocator 还须活到最后一个保留结果
+或导出 lease 释放。关闭 Apple Context 会排空原 Runtime；成功结果仍可读。
+原生 host frontier 可由 `HostWaitPolicy::kReject` 冷拒绝。
+
+`ResourceBudget` 按 requested bytes 管理已知 backing、metadata 与旧 lease；MLX 私有分配
+需要显式 `allow_unattributed=true`。原生 backing 观察须按真实 owner 去重，不能再加到 scope usage。
+managed 图、数组和 Scheduler 任务仍有实际成本，不承诺零 warm allocation 或必然 CPU/GPU 重叠。
 
 [Direct样例](../../samples/package/compute/apple_weights/README.md)和
 [完整CPU→Q4 FFN→CPU/正交分块样例](../../samples/package/graph/cpu_apple/README.md)

@@ -10,9 +10,10 @@
 | 维护依赖、共享缓存或离线介质 | [依赖](setup/dependencies.md)、[离线构建](setup/offline.md) |
 | 定位崩溃、挂起、数值或测量异常 | [排障](debugging/README.md) |
 | 比较性能、定位慢项 | [性能测量](performance/README.md) |
+| 查询 CUDA decode 测量结果与调查边界 | [decode 记录](performance/decode.md) |
 | 修改 SIMD 实现或生成路由 | [SIMD 维护](maintenance/simd-dispatch-guide.md) |
 | 了解模块边界和设计取舍 | [架构](../architecture/README.md) |
-| 查当前用户任务 | [当前工作](current-work.md) |
+| 查询已验证模型、算子与边界 | [模型与算子覆盖](../implementation/model-operators.md) |
 
 用户如何调用库放在[用户手册](../user/README.md)，本页只讲维护代码所需的约定。
 工作区、验证机器和操作限制以根目录 [AGENTS.md](../../AGENTS.md) 为准。

@@ -1,0 +1,87 @@
+{
+  "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\qwen35-full-cuda-2026-10-19\\dynamic-alias-routing.zip",
+  "bytes": 9317477,
+  "sha256": "4d0fcfaf0e9031cb809e46d94e36b0613275c6c735d97998a37aed690bec9a50",
+  "entries": 952,
+  "payloads": 951,
+  "CRC_and_every_payload_SHA_verified": true,
+  "verification_passes": 1,
+  "crc_verified": true,
+  "payload_sha256_verified": true,
+  "build_plan": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-next-cold\\checks\\20261019T155819\\plan.json",
+    "bytes": 506937,
+    "sha256": "e9f488aae07d553928baf256ef5c8dd2fe7cc7f3404a445197a8b2f066f1498d"
+  },
+  "fresh_host_TUs": 45,
+  "fresh_native_TUs": 1,
+  "tests": {
+    "cpu": {
+      "tests": 17,
+      "expected_failure": false,
+      "names": [
+        "GraphRegions.TensorBindingCannotHideAnEffectAliasInEitherBindingOrder",
+        "GraphRegions.CapturesAndReplaysACommandSegmentWithoutRewalkingItsSteps",
+        "GraphRegions.UnknownCaptureIdentityRepreparesAfterSameTupleBindingEpisode",
+        "GraphRegions.ExclusiveDeferredInputDoesNotCaptureItsUpgradeableReader",
+        "GraphResources.FixedBindingIndexKeepsRebindGenerationAndResultLeaseGuards",
+        "GraphInvocationStorage.OptInCountsMetadataAndWorkspaceExactlyOnce",
+        "GraphInvocationStorage.HardLimitRejectsConcurrentOwnersAndAllowsRetry",
+        "GraphInvocationStorage.BackingFailureReturnsAllReservationsAndMetadata",
+        "Invocation.AllowsOnlyLifetimeSafeExactExternalInPlaceAlias",
+        "Invocation.ImmutableConstantsAndTheirViewsNeverUseDestructiveAliases",
+        "Invocation.ImmutableAllocationGroupsKeepViewOffsetsAcrossReset",
+        "Invocation.PublishedViewReusesItsSourceBinding",
+        "Invocation.RepeatedOutputBindingKeepsAliasChecksForChangedInputsAndRanges",
+        "Invocation.DynamicAliasGroupsTrackRangeChangesFailedBindsAndReset",
+        "GraphViews.EmptySliceAndOverflowUseTheConcreteCheckedSchema",
+        "SqrtSoftplusRouting.CompleteRegionMetadataAndRejections",
+        "SqrtSoftplusHashRouting.PreservesTableDomainAndRejectsMalformedPorts"
+      ],
+      "processes": 1
+    },
+    "router": {
+      "tests": 9,
+      "expected_failure": false,
+      "names": [
+        "CudaMoeFragments.D5OriginalRouterNativeBoundaries",
+        "CudaMoeFragments.D5OriginalRouterRejectsBindingsAndReusesIndependentLanes",
+        "CudaMoeFragments.D5OriginalRouterPreparationOomReleasesPartialState",
+        "CudaMoeFragments.D5DeepSeekTokenTableRouting",
+        "CudaMoeFragments.D5NativeHashRouterWarpTailsAndScoreBoundaries",
+        "CudaGraphMoeFragments.D5OriginalRouterNativeBoundaries",
+        "CudaGraphMoeFragments.D5DeepSeekTokenTableRouting",
+        "CudaGraphMoeFragments.D5NativeHashRouterWarpTailsAndScoreBoundaries",
+        "CudaDefaultGraph.HashRouterCaptureChecksIndicesAndKeepsInvocationErrorsIndependent"
+      ],
+      "processes": 2
+    },
+    "old-math-control": {
+      "tests": 2,
+      "expected_failure": true,
+      "names": [
+        "CudaMoeFragments.D5OriginalRouterNativeBoundaries",
+        "CudaMoeFragments.D5NativeHashRouterWarpTailsAndScoreBoundaries"
+      ],
+      "processes": 1
+    }
+  },
+  "equal_vectors": 64,
+  "unprofiled_processes": 9,
+  "duplicate_raw_vectors_omitted": true,
+  "raw_vector_provenance": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\qwen35-full-cuda-2026-10-19\\batch-graph-capture.zip",
+    "bytes": 6792231,
+    "sha256": "57bf5e9077e5163f739b3dbc6b4d95d47432291dc765c2feaeaad97cd0e6688c",
+    "payloads": 531,
+    "crc_verified": true,
+    "payload_sha256_verified": true,
+    "CPU_tests": 12,
+    "CUDA_capture_tests": 1,
+    "equal_vectors": 64,
+    "equal_greedy_ids": 32,
+    "unprofiled_processes": 9,
+    "raw_duplicate_vectors_omitted": true
+  },
+  "cleanup_executed": false
+}

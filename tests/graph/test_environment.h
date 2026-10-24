@@ -32,14 +32,15 @@ public:
         });
       }
 
+      const auto source = ExecutionSource::acquire(*specification.context).value();
       std::size_t target = 0;
       while (target < targets_.size() &&
-             targets_[target].context != specification.context) {
+             !targets_[target].source.same_owner(source)) {
         ++target;
       }
       if (target == targets_.size()) {
         targets_.push_back(ExecutionTarget{
-            .context = specification.context,
+            .source = source,
             .default_storage =
                 StorageDomainId{static_cast<std::uint32_t>(storage)},
         });

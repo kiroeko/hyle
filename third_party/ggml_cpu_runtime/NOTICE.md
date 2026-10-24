@@ -57,3 +57,23 @@ negative-infinity values. Bottom-right positions use the query index within
 each head/batch. Native tiled/split selection, QK/softmax/PV arithmetic and
 workspace remain unchanged, including the vector path's original Half PV.
 The separate boxed-window tag retains its existing reference-path semantics.
+
+# CPU sink denominator validation
+
+The original softmax already includes each head's sink in the maximum. Its
+positive-sum assertion now checks the complete denominator after adding the
+sink contribution. A fully masked row with a finite sink therefore retains
+its valid zero output in assertion-enabled builds. The exponential, sink
+addition, reciprocal, normalization and ordinary no-sink arithmetic are
+unchanged. The same exact edit is composed onto the mixed CPU core.
+
+# CPU E4 page storage
+
+Private boxed page readers may interpret their original I8 carrier bytes as
+E4M3FN using an explicit private tag and independent fixed K/V scales. Only
+addressed rows are decoded: K values are scaled in F32 before the F32 dot,
+and V values enter the existing bounded F32 tile before the original online
+softmax/PV reduction. Each storage multiplication has an F32 boundary. Plain,
+Q8 and ordinary untagged attention retain their existing paths. This adds no
+resident decoded-cache bank or separate executor; page ownership and Q1 layout
+updates retain the original flash operation.

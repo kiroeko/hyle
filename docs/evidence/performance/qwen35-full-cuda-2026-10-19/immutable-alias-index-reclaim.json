@@ -1,0 +1,49 @@
+{
+  "old_baseline_relinkable": true,
+  "bytes": 207617040.0,
+  "recursive": false,
+  "targets": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\immutable-alias-index\\checks\\20261019T111822\\cpu.exe",
+      "bytes": 24433152,
+      "sha256": "565c7a303698ae208e39f22c9de41b129cf48a3a9886c79b10b95433e5a064ed"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-fusion-precision\\checks\\20261019T111328\\qwen.exe",
+      "bytes": 116335616,
+      "sha256": "f4b6d381d60b6b0d4a2c83dcf5129389c3683736000cd63f54e3b144984352e1"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\immutable-alias-index\\checks\\20261019T111822\\cpu.exp",
+      "bytes": 25012,
+      "sha256": "29ca88d197ba1747a7fb14706b43be77f9f138c021ad0327f3f8b257a8f9d264"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\immutable-alias-index\\checks\\20261019T111822\\cpu.lib",
+      "bytes": 41298,
+      "sha256": "1a72c22d3a6dec39cca5118fd99aa738ff5f4202c029fc8a48afb6c3d20e909d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\immutable-alias-index\\checks\\20261019T111822\\cpu.map",
+      "bytes": 33032694,
+      "sha256": "9a6a81d313e21150ab25489572b65759f9402a6484a526cd981aab7ec6080e92"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\immutable-alias-index\\checks\\20261019T111822\\qwen.exp",
+      "bytes": 25015,
+      "sha256": "0c000ab355612af663dbcb2961063460bf13a37870bad7c4439cdb220837446e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\immutable-alias-index\\checks\\20261019T111822\\qwen.lib",
+      "bytes": 41384,
+      "sha256": "339d3ce297534ebac8825c27a011f2f4f9dfe366c657ebfc45dbbfdc8412a2cb"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\immutable-alias-index\\checks\\20261019T111822\\qwen.map",
+      "bytes": 33682869,
+      "sha256": "b5babda11f1dd47ee5e971e859fb284951a8c40c1a4ca85da0d8967c17119545"
+    }
+  ],
+  "objects_retained": true,
+  "latest_qwen_cuda_and_shared_peer_retained": true
+}

@@ -1,0 +1,154 @@
+{
+  "created_at": "2026-10-23T17:02:46.234574+00:00",
+  "scope": "Shared actual selected-source and arithmetic integration for Quark Flash; affected official Flash CPU regression only",
+  "actual_quark_original_executed": false,
+  "changes": [
+    "Compose existing prefix/indexer/attention/vocabulary/MoE source loaders with exact34 typed original roles",
+    "Explicit immutable six-plane original ExpertSet attached after actualTop8; no whole-bank request",
+    "Preserve explicit Divide versus MultiplyReciprocal arithmetic/floor in graph, report and independent references",
+    "Same resident two-phase Fragment/Program and StateHead controller"
+  ],
+  "validation": {
+    "process_exit": 0,
+    "case": "GlmMtpStateConsumer.CpuOriginalMoeCompletesNextNAndFeedsBackAcrossSeedAndCatchup",
+    "tests": 1,
+    "failures": 0,
+    "errors": 0,
+    "skips": 0,
+    "graphs": 49,
+    "compiled_record": {
+      "path": ".scratch/glm-quark-selected-20261024/Q30/regression/compile2/glm-state/identity.json",
+      "bytes": 84056,
+      "sha256": "4039149eade85836dc4284db1189b8d4fab6814b9ebdb862f7c2a9b585b3ada9"
+    },
+    "summary": {
+      "path": ".scratch/glm-quark-selected-20261024/Q30/regression/checks2/summary.json",
+      "bytes": 5910,
+      "sha256": "1396b4718ef9a6f63b854bf5fc00774c332dfa32f5902ac1b6b31638ec1e78ad"
+    }
+  },
+  "not_verified": [
+    "Quark original body/pins/native identity execution",
+    "Quark own target43/44 plus full-vocabulary verifier",
+    "Full large-model quality, acceptance rate, TPS or measured memory"
+  ],
+  "build": {
+    "host_translation_units": 1,
+    "product_rebuilds": 0,
+    "SDK_builds": 0,
+    "NVCC_builds": 0,
+    "link_retry": "First link attempt lacked its temporary directory; retained LNK1104, added the directory in a new attempt. No product code change required."
+  },
+  "archive": {
+    "path": "docs/evidence/correctness/mtp-quark-source-wiring-2026-10-24.zip",
+    "bytes": 162971,
+    "sha256": "0796b0d7c1a8839c449e9ca98fa1f6d870da7ae445f52730e987c44b74470a62"
+  },
+  "files": [
+    {
+      "path": ".scratch/glm-quark-selected-20261024/Q30/wiring-proposal/source.patch",
+      "bytes": 55792,
+      "sha256": "46b3d6097f42e9c85c7359cc091b39358e6a8c5c4a0492b5f0e43a8b4349faa3"
+    },
+    {
+      "path": ".scratch/glm-quark-selected-20261024/Q30/wiring-proposal/identities.json",
+      "bytes": 3340,
+      "sha256": "b76de367e1e39c1d2a77dad400d43e197e63f87bb1855476b2a7628ccf21697c"
+    },
+    {
+      "path": ".scratch/glm-quark-selected-20261024/Q30/wiring-proposal/applied.json",
+      "bytes": 2837,
+      "sha256": "0388b94db0f0d40920179d3e84df1627c53ce548da2736cda2ed2334cf2875e2"
+    },
+    {
+      "path": ".scratch/glm-quark-selected-20261024/Q30/wiring-proposal/usage.txt",
+      "bytes": 2694,
+      "sha256": "824ca9d204b542489e6480557e3d6cea6fde6092f4c97092099e59e24fc365c5"
+    },
+    {
+      "path": ".scratch/glm-quark-selected-20261024/Q30/regression/compile2/glm-state/identity.json",
+      "bytes": 84056,
+      "sha256": "4039149eade85836dc4284db1189b8d4fab6814b9ebdb862f7c2a9b585b3ada9"
+    },
+    {
+      "path": ".scratch/glm-quark-selected-20261024/Q30/regression/compile2/glm-state/compile.stdout.log",
+      "bytes": 32,
+      "sha256": "067a67209aef45e4f1047a64985481b1db78afe7dd4d283715f0e8963df40662"
+    },
+    {
+      "path": ".scratch/glm-quark-selected-20261024/Q30/regression/compile2/glm-state/compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".scratch/glm-quark-selected-20261024/Q30/regression/tests-link3/link-plan.json",
+      "bytes": 89626,
+      "sha256": "0c2897bec50f0e1ca143deb373affc08fd5a2f8235f83a6ee5dd7dbea97ea843"
+    },
+    {
+      "path": ".scratch/glm-quark-selected-20261024/Q30/regression/tests-link3/link.result.json",
+      "bytes": 29756,
+      "sha256": "1253029b3b6c2de4c0ee8bb458c9df71d395230c5f6abe1a89a5e80f4659377b"
+    },
+    {
+      "path": ".scratch/glm-quark-selected-20261024/Q30/regression/checks2/summary.json",
+      "bytes": 5910,
+      "sha256": "1396b4718ef9a6f63b854bf5fc00774c332dfa32f5902ac1b6b31638ec1e78ad"
+    },
+    {
+      "path": ".scratch/glm-quark-selected-20261024/Q30/regression/checks2/results.xml",
+      "bytes": 6335,
+      "sha256": "4c0b3d70530fa40b4c1d65bba43d97461c3a5d97a47259ca231cd42d81aaefc2"
+    },
+    {
+      "path": ".scratch/glm-quark-selected-20261024/Q30/regression/checks2/process/stdout.log",
+      "bytes": 108294,
+      "sha256": "886f1f5ab1c2f291328c135c33f88adf14b0b83383e08c33d2da63d74c724390"
+    },
+    {
+      "path": ".scratch/glm-quark-selected-20261024/Q30/regression/checks2/process/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "tests/compute_models/glm_fp8_arithmetic.h",
+      "bytes": 888,
+      "sha256": "38b468a31e367bfdce507f4c1b7aa1e4911b52fe752b9f67b3bdec6c9d397e41"
+    },
+    {
+      "path": "tests/compute_models/glm_mtp_state_consumer_test.cc",
+      "bytes": 284548,
+      "sha256": "09310172ea9b4d80afc532c603718c15585d7d8497c5767ae9e00990d04841a4"
+    },
+    {
+      "path": "tests/compute_models/glm_original_artifact_source.h",
+      "bytes": 9127,
+      "sha256": "2a33f8478623a89689fef8f741252f1cf55bf52ae2d53e2418d3680480695a23"
+    },
+    {
+      "path": "tests/compute_models/glm_original_attention_reference.h",
+      "bytes": 17795,
+      "sha256": "1e8bf56f06ecf8a29347956e1a44f2f640d2f90f50be2639da952937e349e3b7"
+    },
+    {
+      "path": "tests/compute_models/glm_original_moe_fragment.h",
+      "bytes": 9121,
+      "sha256": "172924bcbaf9706d3ef00db8b69e259e5a16f6439603995f63fab8333817713a"
+    },
+    {
+      "path": "tests/compute_models/glm_original_moe_reference.h",
+      "bytes": 16731,
+      "sha256": "2fbf01735019d5c8667f6c3f09d7ad640e31e4f7015b8adad8de2c589ac930f2"
+    },
+    {
+      "path": "tests/compute_models/glm_original_moe_roles.h",
+      "bytes": 23765,
+      "sha256": "69f785c27bcc30d23f8eab3aaa2ce7e8491a3f02c3a9917e24d845d05443a2d7"
+    },
+    {
+      "path": "tests/compute_models/glm_original_mtp_roles.h",
+      "bytes": 18300,
+      "sha256": "b4a0ed7bdb5c18dd1d56224b75bc403a40d2bf8dcd05c36486267c01c2c91b85"
+    }
+  ]
+}

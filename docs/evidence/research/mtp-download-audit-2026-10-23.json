@@ -1,0 +1,208 @@
+{
+  "audit_utc": "2026-10-23T13:26:43.594496+00:00",
+  "window": {
+    "start_utc": "2026-10-22T13:26:43.594496+00:00",
+    "end_utc": "2026-10-23T13:26:43.594496+00:00",
+    "basis": "Recorded request start time; counter window supplied by user is not independently known."
+  },
+  "method": {
+    "small_metadata_files_read": 1755,
+    "copied_request_records_deduplicated": 83,
+    "event_key": "normalized original URL + exact range + request start timestamp",
+    "no_network_or_model_body_reads": true
+  },
+  "model_weight": {
+    "requests": 3443,
+    "successful_requests": 3412,
+    "successful_body_bytes": 148325085388,
+    "successful_unique_source_range_bytes": 148325085388,
+    "successful_repeated_range_bytes": 0,
+    "successful_requests_without_received_byte_count": 0,
+    "failed_or_cancelled_requests": 31,
+    "failed_known_received_bytes": 0,
+    "failed_unknown_received_requests": 31,
+    "failed_unknown_received_bytes": null,
+    "failed_unknown_requested_body_upper_bound_bytes": 1242169344,
+    "failed_unbounded_requests": 0
+  },
+  "model_metadata": {
+    "requests": 38,
+    "successful_requests": 38,
+    "successful_body_bytes": 30259016,
+    "successful_unique_source_range_bytes": 25005864,
+    "successful_repeated_range_bytes": 5253152,
+    "successful_requests_without_received_byte_count": 0,
+    "failed_or_cancelled_requests": 0,
+    "failed_known_received_bytes": 0,
+    "failed_unknown_received_requests": 0,
+    "failed_unknown_received_bytes": 0,
+    "failed_unknown_requested_body_upper_bound_bytes": 0,
+    "failed_unbounded_requests": 0
+  },
+  "total_timestamped_successful_body_bytes": 148355344404,
+  "failed_or_incomplete": {
+    "requests": 31,
+    "actual_received_bytes": null,
+    "intended_body_upper_bound_bytes": 1242169344,
+    "note": "Unknown is not zero. This bounds the requested application bodies only, not TCP/TLS/redirect/transport traffic."
+  },
+  "successful_repeat_proven": {
+    "bytes": 5253152,
+    "kind": "S03 GGUF header refetch after schema validation failure",
+    "weight_repeat_proven_bytes_in_timestamped_ledger": 0,
+    "note": "Zero observed weight-repeat bytes is not proof that unlogged or untimed attempts never repeated weights."
+  },
+  "dependencies": {
+    "directly_proven_download_bytes": null,
+    "note": "No dependency request evidence was established by this bounded metadata pass; do not interpret as zero network traffic."
+  },
+  "top5_stages": [
+    {
+      "stage": "qwen-bfloat-selected-20261023",
+      "successful_body_bytes": 25034036720,
+      "artifacts": [
+        {
+          "repository": "Qwen/Qwen3.8-27B",
+          "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+          "role_group": "B02 29 static NextN/target/vocabulary roles",
+          "bytes": 6679513088,
+          "embedding_plus_head_bytes": 5085593600
+        },
+        {
+          "repository": "Qwen/Qwen3.8-2.4T-A95B",
+          "revision": "207bd685a7e3696cfaff12ded7c6a7ea0f88c996",
+          "role_group": "B05 33 static roles; separate actual selected expert planes",
+          "static_bytes": 10301376512,
+          "embedding_plus_head_bytes": 8136949760,
+          "selected_expert_bytes": 8053063680,
+          "selected_section_global_pairs": 80
+        }
+      ],
+      "interpretation": "B05 expert bodies are 80 selected (section,global) pairs, not full 512-expert banks. BF16 B02/B05 vocabularies are distinct source artifacts/shapes, not duplicate copies of one HTTP event.",
+      "groups": {
+        "metadata": 83440,
+        "B02 static29": 6679513088,
+        "B05 selected experts": 8053063680,
+        "B05 static33": 10301376512
+      }
+    },
+    {
+      "stage": "q24-original-nextn-20261023",
+      "successful_body_bytes": 17257268224,
+      "repository": "unsloth/Qwen3.8-2.4T-A95B-GGUF",
+      "revision": "567d3e6ac26c5474b18311e619c04350fb9a5556",
+      "role_group": "Complete original blk.92 NextN supply plus two vocabularies",
+      "full_expert_banks": {
+        "roles": [
+          "blk.92.ffn_down_exps.weight",
+          "blk.92.ffn_gate_exps.weight",
+          "blk.92.ffn_up_exps.weight"
+        ],
+        "bytes_each": 4831838208,
+        "total_bytes": 14495514624
+      },
+      "embedding_plus_head_bytes": 2288517120,
+      "interpretation": "Actual successful range records cover three complete expert-bank roles; this is not only selected-expert transfer."
+    },
+    {
+      "stage": "dspark-pro-target-draft-20261023",
+      "successful_body_bytes": 15969861524,
+      "artifacts": [
+        {
+          "repository": "deepseek-ai/DeepSeek-V4-Pro-0813",
+          "revision": "72e1d3230f6c080a530b0a1d46f8eb4602340597",
+          "dense_bytes": 6504119672,
+          "selected_expert_bytes": 7720796160,
+          "selected_stage_section_global_pairs": 220
+        },
+        {
+          "repository": "deepseek-ai/DeepSeek-V4-Flash-0731",
+          "revision": "7872f01b1d1fe23eabc4c98b48bffcef5a386062",
+          "dense_bytes": 595182108,
+          "selected_expert_bytes": 1149763584,
+          "selected_stage_section_global_pairs": 86
+        }
+      ],
+      "interpretation": "Dense target/draft/vocabulary roles plus individual selected experts; no complete formal expert bank was added by these sparse-cache requests.",
+      "groups": {
+        "Flash dense": 595182108,
+        "Flash sparse experts": 1149763584,
+        "Pro dense": 6504119672,
+        "Pro sparse experts": 7720796160
+      }
+    },
+    {
+      "stage": "q24-target-verifier-20261023",
+      "successful_body_bytes": 14032308224,
+      "repository": "unsloth/Qwen3.8-2.4T-A95B-GGUF",
+      "revision": "567d3e6ac26c5474b18311e619c04350fb9a5556",
+      "role_group": "Original target91 17 roles",
+      "full_expert_banks": {
+        "roles": [
+          "blk.91.ffn_down_exps.weight",
+          "blk.91.ffn_gate_exps.weight",
+          "blk.91.ffn_up_exps.weight"
+        ],
+        "bytes_each": 4563402752,
+        "total_bytes": 13690208256
+      },
+      "other_static_bytes": 342099968,
+      "interpretation": "Three complete IQ4_XS expert banks were downloaded as authenticated role ranges. This is distinct layer91 source, not a repeat of layer92 NextN banks."
+    },
+    {
+      "stage": "glm-pro-nextn-20261023",
+      "successful_body_bytes": 13838963840,
+      "repository": "zai-org/GLM-5.3",
+      "revision": "aca966e4e02791568aa6a4ced368624b3d897f42",
+      "role_group": "Complete original Pro NextN static27 plus MoE1544 roles",
+      "static_and_vocabulary_bytes": 4132023424,
+      "full_moe_bytes": 9706940416,
+      "interpretation": "The full 256-expert NextN MoE source was downloaded, not only the currently selected experts."
+    }
+  ],
+  "running_fetch_processes": {
+    "observed_utc": "2026-10-23T13:28:39.550542+00:00",
+    "matching_pids": [],
+    "basis": "Read-only Win32_Process snapshot: python/pythonw/curl/wget/aria2/powershell command lines naming fetch_*.py, acquire.py or run_with_supply.py. No processes were killed."
+  },
+  "unattributed": {
+    "user_reported_bytes_if_decimal_GB": 262000000000,
+    "difference_from_proven_successful_bodies_bytes": 113644655596,
+    "attribution": "Unknown. Counter unit/time window, dependency downloads, other programs and transport traffic are not established by these receipts."
+  },
+  "excluded_from_traffic_sum": [
+    "Whole source shard/file capacity",
+    "Cached bundle/catalog/role sizes as a second count",
+    "Copied/archived versions of the same request event",
+    "Untimed certificates without independently attributable request timing"
+  ],
+  "supporting_files": [
+    "summary.json",
+    "request-ledger.json",
+    "metadata-inventory.json",
+    "audit.py"
+  ],
+  "evidence_archive": {
+    "path": "docs/evidence/research/mtp-download-audit-2026-10-23.zip",
+    "bytes": 241760,
+    "sha256": "d9b099777766dc3db5616a9008443bd01a98802986799332c851b5831b74685b"
+  },
+  "download_policy": {
+    "new_cumulative_limit_bytes": 50000000000,
+    "reserved_range_body_limit_bytes": 48000000000,
+    "each_retry_charged_before_HTTP": true,
+    "new_downloads_since_limit": 0,
+    "automatic_native_expert_fetch": false,
+    "limiter_source": {
+      "path": ".scratch/mtp-download-budget-20261023/budget.py",
+      "bytes": 5772,
+      "sha256": "1e352ac6967620ec0516ebf299e491ae1873ef652ed2ede0424257056be1c9f2"
+    },
+    "offline_limiter_checks": {
+      "path": ".scratch/mtp-download-budget-20261023/offline-check/result.json",
+      "bytes": 344,
+      "sha256": "fb390a935e991c04f3d89796835823efe4ccd6d9fa00ad173003aaf9d2b49f4a"
+    },
+    "historical_cache_reuse": true
+  }
+}

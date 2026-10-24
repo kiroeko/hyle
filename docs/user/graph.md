@@ -3,9 +3,10 @@
 Graph 用于把多个 Compute operation 编成可复用执行计划：推导中间值、选择实现、规划 workspace，
 然后用不同输入重复执行。只需要一个固定 operation 时先用 [Compute](compute.md)。
 
-普通 CPU/CUDA 路径使用共享 Queue 的 Executable；[Apple](apple-compute.md) 与
-[Vulkan](vulkan-compute.md) 还使用各自的原生 Program 和运行槽。它们的创建、形状与资源能力
-各有边界，不需要把所有后端强行套进同一种执行器。Graph 不拥有模型加载、请求循环或 offload 策略。
+普通 CPU/CUDA 路径使用共享 Queue 片段；[Vulkan](vulkan-compute.md) 与
+[Apple](apple-compute.md) 同一 Runtime 的固定纯图也可通过实际 ExecutionSource 进入同一
+Executable／Invocation，内部继续使用原生 Program、结果与完成机制。其余混合运行时仍在迁移。
+Graph 不拥有模型加载、请求循环或 offload 策略。
 
 先看下面的两节点例子和[生命周期](#四个生命周期对象)，再按需要选择：
 
@@ -126,10 +127,13 @@ cuBLASLt/ggml CUDA/kernel artifact；captured 热执行直接重放原生程序�
 重复执行；bind/reset 改变绑定会使 preparation 失效，需要重新冷准备。两个并发 run 各有独立
 scratch/captured pointers，外部 input/output 不应产生未排序的冲突访问。
 
-CUDA13.3/CCCL3.3.4/SM89的普通Scan/TopK/Gather由原版CCCL承载，Graph为每个invocation规划独立workspace。
-它们属于managed commands，`kRequirePrepared`编译策略会跳过这些候选；普通prefer-capture如实
-报告commands。I32 Scan与checked Gather需要等待GPU的两个验证标量，Provider以`blocks_host=true`
-如实声明；非法索引保留整个Gather输出并使该invocation退役，下一次请求须创建新invocation。
+CUDA的Scan／TopK以CCCL primitive为基础，Graph为每个invocation规划独立workspace。
+宽多行TopK1使用冷准备的分块选择与每行合并，保NaN、稳定选序和原值位模式，可用于
+`kRequirePrepared`及capture；每个invocation持有独立workspace。单行仍用设备归约。
+其它非空Scan／TopK路径仍声明managed commands，`kRequirePrepared`会跳过这些候选，prefer-capture如实报告
+节点的commands路线。Gather也使用已准备的CUDA kernel，可参与capture；checked模式先在设备验证全部索引，
+错误时保留整个输出，在Completion边界报错并退役该invocation。I32 Scan的溢出摘要仍需要host等待，
+以`blocks_host=true`声明；发生上述错误后的新请求使用新的invocation。
 `HostWaitPolicy`控制跨队列依赖的host等待，不取消Provider内部的必要检查；普通单队列入口仍可
 使用默认选项。执行期不临时改选Provider。
 
@@ -142,55 +146,77 @@ CUDA13.3/CCCL3.3.4/SM89的普通Scan/TopK/Gather由原版CCCL承载，Graph为�
 
 ## CPU 与 GPU 组合
 
-HYLE 提供CPU与一个GPU的显式粗片段组合机制；引擎仍负责模型加载、offload比例/层/专家策略、
-KV和请求循环。CPU+CUDA使用`hyle/graph/cpu_cuda.h`；CPU+MLX/Metal使用
-`hyle/graph/cpu_apple.h`与[可运行样例](../../samples/package/graph/cpu_apple/README.md)；CPU+Vulkan使用
-`hyle/graph/cpu_vulkan.h`与[可运行样例](../../samples/package/graph/cpu_vulkan/README.md)。
-组合必须选择对应的CPU与GPU路线，并显式给出允许的片段位置、资源和借用owner。GPU-only
-任务缺能力不会隐式转CPU。
-`hybrid replay`仍只表示capture与普通命令组合，和CPU/GPU放置是不同的轴。
+HYLE 提供CPU与一个GPU的显式粗片段组合；引擎负责模型加载、offload比例、KV和请求循环。
+构建选择对应CPU/GPU路线，冷编译显式给出执行端点、存储与placement。
+CPU+CUDA可使用普通`graph::compile`装配环境，也可用`hyle/graph/cpu_cuda.h`中的
+`cpu_cuda::compile`冷环境helper。两者返回相同`CompiledGraph`，执行均使用普通`graph::Invocation`。
+`hybrid replay`表示capture与普通命令组合，与CPU/GPU放置是不同的轴。
 
-联合调用继续使用调用者原有的Scheduler和各路线的Queue。一个DAG内的独立CPU/GPU支路按真实
-依赖推进，后续join不会把独立前缀变成额外等待；必要的数据、control/effect、别名及内存复用顺序仍有效。
-两个在途microbatch分别创建Invocation，使用独立可变workspace/结果slot；可共享只读输入。
-每个实际Queue仍遵守原producer合同。物理copy/compute并发取决于原native路线和硬件。
+下面接在编译、创建CPU/CUDA Queue和上传`WeightBatch`之后。`cpu_cuda::compile`默认CUDA lane为0、CPU lane为1；
+自行装配环境时按实际lane表绑定：
 
-CPU+Vulkan 的冷创建入口为 `create_invocation(scheduler, cpu_queue, completion_waiters)`；
-`completion_waiters` 是调用方持有的 `sched::BlockingPool`，供原生完成等待使用。两个在途slots通常
-配置容量2，池的线程/栈另计；CPU+Apple与CPU+CUDA保留原创建入口。池必须活过全部Invocation、
-已接纳原生工作、等待任务销毁尾部和Scheduler的drain。先关闭Graph并drain，再shutdown池；
-不要在池worker中同步等待依赖同池完成等待的Graph结果。容量1不保证跨slot乱序完成。
+```cpp
+#include <hyle/graph/cuda.h>
+#include <hyle/graph/result.h>
 
-冷准备建立有限依赖表与每slot状态。实际阶段可并行时，每次submit最多增加一个原Sched CPU
-coarse fiber；活动依赖完全成链时使用inline路径。边界repack/复制和必要native观察继续计费，
-Apple共享内存复制仍是原同步调用，provider-private/UMA未知成本不变成0。
-依赖表有界不代表总观察成本线性：实际推进仍可能扫描在途native工作或重查segment依赖；
-Apple由原完成者通知，Vulkan借调用方池执行阻塞等待。锁、通知、池入场和线程费用随实际工作变化。
-prepare_replay与ResourceReport也可能
-分配或枚举原资源，不能据此假定整个联合调用零分配。
-取消或首错停止新入场；已经接收的CPU与native工作按原完成合同退休。结果与借用资源须保活至真实
-退休；全部公开owner释放后，用原Scheduler的drain观察回调尾部和最终物理回收。
+HYLE_ASSIGN_OR_RETURN(auto run, compiled.executable.create_invocation());
+const std::array queues{
+    graph::QueueBinding{graph::ExecutionLaneId{0}, &cuda_queue},
+    graph::QueueBinding{graph::ExecutionLaneId{1}, &cpu_queue}};
+HYLE_RETURN_IF_ERROR(run.bind(input_id, input_view));
+HYLE_RETURN_IF_ERROR(graph::cuda::bind(run, weight_id, weight_batch, 7));
+HYLE_RETURN_IF_ERROR(run.bind(output_id, output_view));
+HYLE_RETURN_IF_ERROR(run.prepare_replay(queues));
+HYLE_ASSIGN_OR_RETURN(auto sources, run.input_source_report());
+HYLE_ASSIGN_OR_RETURN(auto done, run.submit(queues));
+HYLE_RETURN_IF_ERROR(done.wait());
+HYLE_ASSIGN_OR_RETURN(auto result, run.result(output_id)); // GraphOutput
+HYLE_ASSIGN_OR_RETURN(auto readonly, result.tensor());
+```
+
+`graph::cuda::bind`保留实际权重selection及其上传依赖，允许上传仍pending；只读owner与分页资源附件独立，
+不需要另一种Invocation或Results。实际CUDA Queue在首次读取时导入依赖，同batch多port和同Queue多lane去重；
+不能原生导入的读者使用显式HostWait，`HostWaitPolicy::kReject`在冷准备拒绝该路线。
+直接发布输入或其metadata View也会等待真实source就绪。成功设备后缀实际退休后保留原上传的晚错诊断；
+失败或取消的图不会额外等待未消费的外部上传。reset或重绑释放相应selection，旧GraphOutput仍阻止槽被覆盖。
+
+`input_source_report()`报告保留source与设备／主机等待路线；`replay_report()`报告共同片段和搬运事实。
+配置共享`ResourceBudget`后，`resource_report()`按实际StorageDomain报告usage与boundary范围；
+边界可能已被计费，不能直接加到live字节。完整工程见[CPU+CUDA sample](../../samples/package/graph/cpu_cuda/README.md)。
+
+需要提交线程异步返回并推进独立CPU/GPU支路时，冷调用[prepare_progress](#可选主机异步推进)，
+继续使用同一Invocation和显式QueueBinding；纯GPU或允许同步提交时无需Scheduler。
+并发请求各建Invocation和可变workspace／输出，实际copy/compute重叠取决于原生路线与硬件。
+取消或首错停止后继，已接纳工作仍须实际退休。释放旧结果与Completion后才能重放或重绑。
+
+CPU+MLX/Metal与CPU+Vulkan也以共同环境、Invocation和GraphOutput组合，分别见
+[Apple sample](../../samples/package/graph/cpu_apple/README.md)与
+[Vulkan sample](../../samples/package/graph/cpu_vulkan/README.md)。原专用合同、流水线和分页风险消费者也已迁入共同入口；
+这些定向检查不代表全部模型和数学域已覆盖。
+原生私有字节、UMA和任务／线程成本按实际合同报告，不能从有限依赖表推断整条调用零分配。
 
 ## 原生精确形状与副作用
 
-`ExactNativeVariants` 只覆盖 caller 明确列出的精确点；例如 bounds 为 1..4、表只有 1 和 4，
-选择 2 会返回 Unimplemented。先选择 artifact，再调用原 create_invocation；reset/submit
-不改变形状，不运行 JIT。每个 slot 继续拥有自己的原生资源和旧结果权限。
-共同 [native_variants.h](../../include/hyle/graph/native_variants.h) 提供相同形状校验，
-`specialize_exact` 复用原 Graph 的 guards、输出推导和 symbolic ViewSpec，保留原 ValueId/NodeId。
+共同编译入口的 `kFiniteExact` 只覆盖明确列出的精确点；例如 bounds 为 1..4、表只有 1 和 4，
+选择 2 会返回 Unimplemented。在 `create_invocation` 传入形状，得到已编译入口的原执行槽；
+reset/submit 不改变形状，不运行 JIT。各槽继续拥有自己的原生资源和旧结果权限。
 
 ```cpp
 const std::array small{graph::ShapeBinding{batch, 1}};
 const std::array large{graph::ShapeBinding{batch, 4}};
 const std::array points{graph::ExactShapeVariant{small}, graph::ExactShapeVariant{large}};
-auto family = graph::vulkan::compile_variants(context, logical_graph, points);
-auto program = family->select(large);
-auto invocation = program->create_invocation(); // 原 native Vulkan 槽
+auto family = graph::compile(logical_graph, environment,
+    {.shape_policy = graph::CompileShapePolicy::kFiniteExact, .exact_variants = points});
+auto invocation = family->executable.create_invocation({.shape = large});
 ```
 
 各原生常量必须对所列每个形状都合法，任一点校验/准备失败则整表失败，原 caller tensor 不被消费。
-table/signature/artifact 的 allocator 和 native Context 按原合同保活；共享 ResourceBudget
-累计原 artifact 收费，MLX/driver 私有字节仍 UNKNOWN。精确表不证明 general/capture/零复制。
+共同编译先验证完整形状表，并累计编译及槽配额；共享 ResourceBudget 仍按实际资源收费，
+MLX/driver 私有字节仍 UNKNOWN。精确表不证明 general/capture/零复制。
+CPU＋Vulkan 的固定／有限形状数据链已接入共同入口，配置实际 host、device 与 staging 域即可选择双向
+搬运；原生 Copy 在冷绑定录制，同址改内容后可直接重复 submit。当前原生复制要求跨度和偏移满足4字节对齐，
+原生数学域仍由实际 lowerer 决定。Apple也通过实际Source准备共同固定／有限形状入口，
+不能拿局部数据链推导全部混合／分页／custom 路线已经覆盖。
 pure control 前驱通过冷可达性保留，并在原生完成/barrier 边界排序；只有控制用途的输出可能需要
 物化，Apple managed region 与 hybrid 会有显式等待。hybrid `prepare_replay` 的
 `HostWaitPolicy::kReject` 仍可拒绝这些拓扑。外部 effects/resource ports 仍需真实 qualified carrier，
@@ -202,8 +228,7 @@ GPU native admission 明确拒绝未资格 carrier。CPU+Apple/Vulkan 可将 eff
 接受后失败保留实际写入的前缀，停止后继，不能假报 rollback。固定 footprint/backing 由 caller
 保活并跨 invocation 同步。普通公开 C++ 消费示例见
 [public_effect_consumer.cc](../../tests/graph/public_effect_consumer.cc)。
-CPU+CUDA 的既有 effect 能力保持原规则；其新增 `compile_variants` 返回原 Executable，
-显式有限表使用共享 ResourceBudget，不能将原 family-wide compiler 配额偷偷按点重置。
+CPU+CUDA 的既有 effect 能力保持原规则；有限形状表使用同一份累计编译配额，不能按点重置。
 该形状表不增加未声明的动态域、任意 GPU mutation 或 capture 能力。
 
 ## 当前运行时能力
@@ -234,8 +259,8 @@ Provider-private layout 只能留在一个 region 内，公开 region boundary �
 
 对于 ggml、MLX 或 TensorRT 这类自己 host 图/engine 的 runtime，adapter 在 compile 冷路径把一个
 HYLE region 翻译成 provider-native artifact；单节点 region 可以像函数一样重复提交，多节点 region 可以
-保留融合。Graph 不会因为库已链接就自动发现这些能力，也不会进入第三方黑盒逐 kernel 替换。只有显式
-安装且通过当前 backend/storage/completion 审计的 Provider 才能提案。
+保留融合。Graph 不会因为库已链接就自动发现这些能力，也不会进入第三方黑盒逐 kernel 替换。
+实际 Source／Provider 提案自身能力，冷编译核对所选存储、端口和完成依赖；普通入口负责装配已支持的实现。
 当前普通CUDA Graph入口已组装`graph::ggml_cuda::provider()`：在Compute指南限定的浮点张量域，
 把可合法收缩的Copy/Cast/Concat、广播/Unary、norm/归约及无mask/浮点mask Softmax节点集合交给同一原版ggml程序；无关节点的插入位置不拆散片段，
 离开再进入集合的路径不强行融合。它可与同设备cuBLAS片段串接，共用真实Completion。
@@ -250,6 +275,8 @@ commands，ggml保留自己的内部capture。它不是全算子覆盖或其他�
 再由 `prepare_replay(..., {.mode = ReplayMode::kRequireCapture})` 验证实际 capture 支持。
 prepared 本身不是 capture 保证；编译完的 managed artifact 不会在 replay 时临时改选 Provider。
 普通允许 managed 的入口继续保留原版 ggml 内部融合/capture 和真实 commands 完成边界。
+`kCommands`只规定Graph外层的重放方式，不保证Provider内部已经预热。当前ggml CUDA程序会在本槽图属性稳定后延迟建立自己的capture；
+性能测量应分别保留每槽首次执行、内部准备和稳态调用，不能把槽0已预热视为槽1也已预热。
 
 第三方的 `compile` 不必然意味着每次调用零分配：Provider 分别声明 prepared/managed/unknown 成本，
 严格使用者可在 compile 要求 prepared-only；它与 `ReplayMode` 的 command/capture 选择互相独立。
@@ -377,6 +404,7 @@ return done->wait();
 Provider 另有 packed representation，也不因此缩短借用期。
 
 模型加载后要释放 staging buffer 或 mapping 时，显式选择物化：
+下面的借用 view 写法适用于同步即时搬运；CUDA 等 queued-direct 路径须提供下文的 owner 与 ready lease。
 
 ```cpp
 const std::array constants{ConstantBinding{
@@ -390,19 +418,41 @@ if (!compiled) return compiled.error();
 物化把完整 TensorDesc 所需的字节复制一次，保留 dtype、encoding、shape、strides 和 padding；它不是
 重新量化或 Provider packing。目标为 constant 的 external storage 域（默认 0，也可由
 `ExternalResourceContract`/value placement 指定），无需与源相同。配置的某个 target 必须支持这条
-Compute transfer；没有明确 copy route 就失败，不偷偷用 host staging。零字节常量不提交复制。
+实际 Queue 复制或原生冷搬运；缺少搬运能力即失败。原生冷搬运所需 staging 计入编译峰值，零字节常量不提交复制。
 
 源必须在调用前 ready，并在整个 `compile()` 期间保持不变；冷编译等待自有复制到终态，不执行用户
-Graph，也不替用户等待此前独立 Queue 的工作。最终 Provider prepare 只看到有效副本；路线回退不重复
-复制。编译失败不会接管或修改源，已接纳复制也会等待后再清理。副本资源的 `MemoryResource` owner
-仍由调用者保活；“可释放 source allocation”不等于“可销毁仍承载副本的 resource 对象”。
+Graph，也不替用户等待此前独立 Queue 的工作。最终 Provider prepare 只看到有效副本；候选重试复用
+资源、描述和对齐要求都兼容的 ready 副本，换资源或提高对齐要求则准备相应副本。编译失败不修改源，
+也不发布未完成的副本。queued-direct 冷复制在首次提交前要求源 ready lease、源／目的 StorageOwner
+和实际 metadata allocator owner；缺少时返回带原因的 FailedPrecondition，不静默降为 Borrow。
+同一 target 的复制合成一条原 QueueSequence。等待错误若未证明实际退役，已接纳批次保留所用源、
+canonical 副本、资源及预算到原完成机制确认退役；调用者可释放自己的 owner/lease 句柄。
+同步借用路径的副本 `MemoryResource` 对象仍须由调用者保活；提供 StorageDomain::owner 时则由副本共享该所有者。
 
-同一次 declared-domain compile 的 general/exact variants 共享同 Graph slot、同描述、同 external storage
-的唯一 canonical 副本；取得的 exact 子路线可以比父表活得更久。不同 Executable 编译之间不隐式共享。
+同一次 compile 的 general/exact 或 finite-exact 路线，按同一 Graph slot、精确描述、实际目标资源和足够的
+分配对齐共享 canonical 副本；不同目标资源分别持有，不按设备名字或 coherence domain 混用。
+取得的 exact 子路线可以比父表活得更久。不同 Executable 编译之间不隐式共享。
 Region Provider 可通过下述入口共享兼容 packing，未接入的 Provider 仍独立持有并计费。每条路线的
 `materialized_constant_bytes()` 都描述它借用的 canonical 副本，不能把各路线的数值相加当成物理总量。
 
-### Region 作者：复用不可变 packing
+同一计划的不同存储域消费同一常量时，各域需要的不可变副本也在编译期间准备，重放不重复复制。
+metadata View 共享目的域中的完整常量根，再按具体形状和偏移取子范围。region 与 packing factory 取得的是
+本片段实际使用的副本。`kBorrow` 的主绑定仍借用原源，其寿命要求不因已有其他副本而缩短。
+Apple 原生源可同步复制 ready 主机／共享 Metal 来源至真正可写的共享 Metal 分配，无需 CPU Context；
+readonly 原生导入只能作源。Vulkan 冷能力支持主机上传、下载和四字节对齐的同 Runtime D2D，
+原生尾部 padding 仅供完整逻辑根使用，裁短的范围不能借此扩大权限。实际源读取、设备完成或目标写入失败即返回原错。
+
+### 常量所有权与不可变 packing
+
+需要让冷准备的失败前缀独立保活时，可将真实资源移入
+`compute::StorageOwner::adopt(context, std::move(resource))`；资源的 `.ref()` 保持同一身份。
+把该 owner 放进 `StorageDomain::owner`，将上传完成的 Buffer 交给 `owner.adopt_buffer()`，再把
+返回的 ready lease 与 owner 放进 `ConstantBinding`。这不复制权重，lease 只读且必须覆盖绑定的
+真实 resource/handle/子范围。CUDA 简单入口也接受 `compile(graph, context, owner, options)`。
+默认采用系统 metadata allocator；自定义 allocator 传其真实 `std::shared_ptr<Allocator>` 给
+`StorageOwner::adopt` 的第三参数，`.ref()` 必须与原 Context allocator 完整匹配。
+手工构造 ready lease 时，其 metadata 或 ResourceBudget 的实际 allocator 必须由该 owner 持有，
+或为进程系统 allocator；仅保留不拥有 allocator 对象的 AllocatorRef 不足以满足异步寿命。
 
 `region_provider.h` 的 `RegionCompileRequest::constant_artifacts` 只在 `compile` 回调有效，resource query
 不提供它。`get_or_create(constant, declaration, factory, context, &view)` 返回 Compute 的显式 prepare
@@ -416,9 +466,13 @@ resident/peak 上界。persistent 未知不等于零；它是制品分类计数�
 的 exact regions 可以复用同一权重格式，但不同格式、设备实例或 storage 不误共享。普通 Graph 用户
 无需设置缓存或添加开关；采用该入口的是 Provider 作者。
 
-factory 仅在 miss 执行，返回 `ConstantArtifactPayload{state, destroy}`，必须拥有 replay 需要的全部内容，
-不能借用 caller scratch；准备完成后才能返回，也不能递归调用此 access。失败也可以交回带 destroy 的
-部分 payload，Graph 会清理。成功的 `ConstantArtifactView` 是只读借用，直到使用它的 compiled region
+factory 仅在 miss 执行，接收 `ConstantArtifactPrepareRequest` 并返回拥有 replay 全部内容的
+`ConstantArtifactPayload{state, destroy, retire_preparation}`，不能借用 caller scratch 或递归使用 access。
+同步准备直接结束；`queue_preparation=true` 时，将 accepted prefix 记录到 request.sequence，
+由 Graph 完成原序列并在首次等待前保留真实所有者。先用 `can_prepare_queued` 查询资格，缺少 owner
+时保留原 runtime 运算；提交后错误按原错误传播。失败 partial payload 同样保活到实际退役，
+可选 retire_preparation 此时释放 native 临时程序/workspace，destroy 随 immutable payload 最后释放。
+等待报错不等于退役。成功的 `ConstantArtifactView` 是只读借用，直到使用它的 compiled region
 销毁都有效；可变 Invocation/workspace/capture 不在此共享。不同 compile 不以源地址做全局缓存，borrow
 常量原有生命周期也不缩短。
 
@@ -645,7 +699,7 @@ if (!output3d) return output3d.error();
 公开可运行的 slice→permute→broadcast→Copy→reshape 例子见
 [`custom_kernel` sample](../../samples/package/graph/custom_kernel/README.md)，source/static/shared 使用相同 API。
 
-### 有限精确变体与通用回退
+### 有限精确变体
 
 常见尺寸需要 exact Provider、独立 workspace 布局或精确 capture，而其它合法尺寸仍要能运行时，在
 同一次冷编译中列出有限表；它不是自动增长的缓存：
@@ -678,11 +732,19 @@ auto selected = run->executable(); // 独立保活实际路线，用来查询 Qu
 - 常量副本共享不等于全部内存共享。workspace 仍由各 Invocation 独占，现有 storage workspace 上限是
   逐路线、逐 Invocation 的，不是所有变体和并发的总上限；不能据此宣称完整 aggregate budget 已交付。
 
-## Symbol 与同设备的 target/storage/lane
+只支持有限尺寸、没有完整域路线时，同一个入口改用 `CompileShapePolicy::kFiniteExact`，仍传
+`exact_variants`，不另传单个 `shape`。整表在准备任何子路线前校验，全部成功后才发布 family；未命中
+直接返回 Unimplemented，不临时编译或要求先有 general。这适用于只支持固定形状的原生实现。
+父 `Executable/CompileReport.has_execution_route()` 为 false，只保存形状索引和已编好的子路线，
+其 step／workspace／queue 查询不代表可执行路线；通过 `create_invocation(shape)` 或 `exact_variant(i)`
+取得实际路线后查询。累计编译预算、共享 Invocation 配额和常量的原所有权合同仍有效。
 
-共同 Compute-backed 编译要求所有计算 target 属于同一 `Device`，异设备在调用 Provider 前拒绝。
-同设备不同 Context/Provider/lane 可组合，host storage、上传下载和同步仍可使用。普通单 Context
-调用 `compile(graph, context, options)`；下例展示需要显式资源约束时的同 CUDA 设备双 Context。
+## Symbol 与 target/storage/lane
+
+共同编译按每个实际 source 的计算、资源和搬运能力选择路线，不要求所有 target 属于同一 `Device`，
+也不需要用后端 ID 为 CPU＋GPU 开特例。默认 storage、原 owner、跨域 copy 和完成依赖仍逐项检查；
+某个组合缺少实际桥接时明确拒绝该路线。普通单 Context 调用 `compile(graph, context, options)`；
+下例展示需要显式资源约束时的同 CUDA 设备双 Context。
 
 symbolic graph 在 compile 时产生 concrete specialization；Graph 本身不维护无界 cache。推理引擎可用
 `SpecializationSignature` 管理 decode/prefill 等有限 Executable 集合：
@@ -700,10 +762,12 @@ const std::array storage{
     StorageDomain{.resource = device_resource,
                   .workspace_budget_bytes = device_budget},
 };
+HYLE_ASSIGN_OR_RETURN(auto source_a, ExecutionSource::acquire(cuda_context_a));
+HYLE_ASSIGN_OR_RETURN(auto source_b, ExecutionSource::acquire(cuda_context_b));
 const std::array targets{
-    ExecutionTarget{.context = &cuda_context_a,
+    ExecutionTarget{.source = source_a,
                     .default_storage = StorageDomainId{1}},
-    ExecutionTarget{.context = &cuda_context_b,
+    ExecutionTarget{.source = source_b,
                     .default_storage = StorageDomainId{1}},
 };
 const std::array lanes{
@@ -908,9 +972,9 @@ segment 可 cold capture 并 warm replay。普通 CUDA FFN 还验证了 cuBLASLt
   symbolic View 也有独立条目；不保留 custom Operation payload；
 - specialization、target/device/backend、storage workspace/budget，以及每 lane runtime mode/role/Queue/capture 需求；
 - physical value、external/constant/workspace/alias ownership；
-- `constant(index)` 按 Graph 常量顺序给出 value、borrow/materialize policy、storage、TensorDesc 和
-  canonical owned bytes；`borrowed_constant_count()`、`materialized_constant_count()` 和
-  `materialized_constant_bytes()` 给汇总，报告本身不保活这些 allocation；
+- `constant(index)` 按 Graph 常量顺序给出主绑定的 value、borrow/materialize policy、storage、TensorDesc，
+  owned bytes 包含本路线为该常量持有的全部 canonical 副本。两个 count 统计主绑定政策，
+  `materialized_constant_bytes()` 汇总实际副本字节；借用主绑定也可能有其他域的副本。报告不保活 allocation；
 - operation fallback、provider region 和真实 copy step；
 - leaf 的 `kRegionDeclined` 表示本轮曾安全拒绝包含该 node 的 region，不是 Provider 执行出错后重跑；
 - shared/delegated segment、dependency、为 workspace budget 新增的 serialization edge、potential
@@ -1012,15 +1076,19 @@ Region 编译收到按域合并的访问集与 backing 声明。Provider 必须�
 
 ## 所有权与常见陷阱
 
-- `ExecutionTarget` 的 Context runtime 会被 plan 内部 artifact 保活，但这不保持新任务准入：销毁或
-  `close()` 外层 Context 后，已有 Invocation 的新 submit 同样失败。要重复执行，应保留开放的 Context；
-  内部保活只保证制品与已接纳工作可以安全完成和释放。`StorageDomain` 中 `MemoryResourceRef` 的 provider
+- `ExecutionTarget.source` 是可复制的 `ExecutionSource`，保留实际 Compute Context 或 native Runtime，
+  plan 和内部 artifact 继续保留同一 owner。销毁或 `close()` 原端点后，已有 Invocation 的新 submit
+  同样失败；重复执行需要保持原端点开放。内部保活保证制品与已接纳工作可以安全完成和释放。
+  `StorageDomain` 中 `MemoryResourceRef` 的 provider
   仍是 caller borrow，必须活过 Executable、Invocation 和全部 in-flight work。
 - Tensor view 不拥有 payload。输入、输出、shared Queue、external resource 与 native kernel 参数都必须活到
   Completion 真终态；delegated provider invocation 由 Graph Completion 保活，丢弃 pending Completion 不会隐式等待。
 - `output_ownership()` 为 `kCaller` 的计算结果绑定 mutable `TensorView`；`kSourceAlias` 借用原输入/
   常量，`kInvocation` 使用本次运行的私有 storage，`kExecutable` 则是已物化常量或它的零拷贝 View。
   后三种不接受重新绑定；成功完成后用 `Invocation::output()` 取得借用 view，不得活过对应 owner。
+  原生生成结果也属于 `kInvocation`，直接使用原生 backing，不重复申请 Graph workspace。
+  `GraphOutput::description()` 不要求 Mem 表示；`tensor()` 只返回真实存在的内存投影，独立只读 owner 用
+  `storage_lease()` 导出。旧 GraphOutput 或导出的原生 lease 仍会阻止覆盖。
 - `reset()` 保留已规划 workspace，但清 external bindings；in-flight 时失败。失败终态后的 Invocation
   已退役，submit/bind/reset/prepare_replay 均拒绝；需从 Executable 创建新槽。未接纳工作的拒绝仍可
   修正参数后重试。设备/Provider 的恢复限制另按其 owner 合同处理。正常 bind/reset 后 replay route
@@ -1037,43 +1105,103 @@ Native FFI，也不承诺跨编译器/STL 的 C++ ABI。
 
 ## 外部租约绑定与只读结果
 
-`hyle/graph/leased_invocation.h` 提供 opt-in `LeasedInvocation`，包中随 `hyle::graph` 交付，
-不用额外构建开关。
+同一个 `Invocation` 可在创建时通过 `InvocationOptions::resources`，或在空闲时调用
+`prepare_resources()` 冷准备租约管理；接口随 `hyle::graph` 交付，不需要额外构建开关。
 独立消费者见 [`resource_leases`](../../samples/package/graph/resource_leases/)；同一 CMake 工程只链接
-`hyle::graph`，按启用路线调用公开 Direct/Graph 租约接口。源码集成传 `HYLE_SAMPLE_SOURCE`，
-安装包集成传 `CMAKE_PREFIX_PATH`，两者使用相同的 `HYLE_COMPUTE_ROUTES` 选择。
-输入可以绑定 `ReadLease`，独占输入/输出可移动一个 `WriteLease`；描述、资源与 alias 仍由原计划检查。
+`hyle::graph`。输入可以绑定 `ReadLease`，独占输入/输出可移动一个 `WriteLease`；描述、资源与 alias
+仍由原计划检查。
 
 ```cpp
-auto run = hyle::graph::LeasedInvocation::create(executable).value();
+auto run = executable.create_invocation({
+    .resources = hyle::graph::ResourceOptions{}}).value();
 HYLE_RETURN_IF_ERROR(run.bind(input_id, input_description, input_read_lease));
 HYLE_RETURN_IF_ERROR(run.bind(output_id, output_description, std::move(output_write_lease)));
 auto done = run.submit(queue).value();
 if (auto status = done.wait(); !status.ok()) return status;
-auto result = run.output(output_id).value();
+auto result = run.result(output_id).value();
 auto readonly_tensor = result.tensor().value();
 ```
 
 示例的 `executable` 已按原 Graph 合同编译，pool、Context、资源、Queue 与 allocator 保持有效。
-成功写绑定才接管原 WriteLease。接口自动保留每段已接受的 native use，不用逐 token 手写 guard；
-观察失败或丢弃 Completion 也不能提前复用 backing。
+成功写绑定才接管原 WriteLease。每段已接受的 native use 自动保活；观察失败或丢弃 Completion
+不能提前复用 backing。混合使用普通 TensorView 绑定时，该绑定明确借用存储，调用方负责保持其有效。
 
-结果保留原 Invocation 和绑定数据。旧结果在时，replay/reset/rebind 会拒绝；普通 caller/source-alias 输出
+`result()` 返回保留原 Invocation 和绑定数据的 `GraphOutput`；`output()` 返回借用的 ConstTensorView，
+两者所有权不同。旧 GraphOutput 在时，replay/reset/rebind 会拒绝；普通 caller/source-alias 输出
 可用 `result.storage_lease()` 导出 ReadLease 再交 Direct，独立导出的读者同样阻止对应块覆盖。
+`output()` 的借用视图本身不保活 backing 或阻止 reset/rebind；其可用期和覆盖规则仍取决于原存储 owner，不能把它当成结果租约。
 内部 workspace 与物化常量保留原 Graph owner，`tensor()` 可读，`storage_lease()` 不伪造独立 Buffer 所有权。
-`close()` 停接纳、无隐藏全设备 wait，`drain()` 先永久停止接纳，再等待本实例的实际退役并保留首错；
-旧结果仍可读取。需要继续重放时等待本次 Completion。
-编译时借用常量与固定 effect footprint 保持原寿命合同，不因这个运行绑定 adapter 自动获得拥有权。
-wrapper options 的 budget 计自身 metadata；原程序/workspace 预算仍在 `CompileOptions` 中设置。
-控制与 public Completion 观察须串行化。每实例一个冷完成观察槽，旧 Completion 未观察/放弃时拒绝新提交；
-drain 能主动观察原 Completion，调用方仍持有该 public handle 时也能等待真正的 prefix 退休。
 
-CPU+CUDA 的 `cpu_cuda::compile` 返回共同 Executable，直接用上述 LeasedInvocation 与原全部 QueueBinding
-即可保护 host/device 输入和 caller 输出；原混合计划/资源域与成熟计算保持不变。
-CPU+Apple/Vulkan 的纯图 Invocation 提供 `bind(value_id, description, read_lease)`，同 native resource
-优先保留原 cold native binding，否则沿原合法 host 输入。bind/prepare 后重复 submit 不再创建 wrapper。
-每已接受 prefix 在观察前保活，原 Results 保留 source leases；来源 alias 在 adapter 放弃后仍由结果保护。
-其他借用 bind、编译时借用常量和 Context/resource/allocator 寿命仍需调用方遵守。
+需要把完成的状态留在缓存时，可显式调用`result.storage_lease(cache_budget)`，将原完整backing纳入保留预算。
+这不复制数据、不改变读权限；同预算／同存储域内，能证明同一backing的别名共用一份费用，
+原池已有费用直接保留，无法证明跨owner身份时保守分别收费。只想保留状态时，对状态／carry调用，
+不必把分数、诊断输出和全部中间值都纳入缓存预算。超额返回失败，原结果及其权限仍可使用。
+费用跟随原租约域及其在途使用，可能晚于移除会话或释放最后一个业务句柄才退还。
+这是完成结果的保留准入，不预留Provider尚未执行的分配，也不约束驱动、原生缓存或未知私有峰值。
+需要独立存储租约时，可在保持计算顺序和舍入边界的前提下，把纯元数据 reshape 放在最终 Cast 等物化操作之前，发布并绑定物化结果；最终 View 若根在私有 workspace，仍不能独立导出。
+`close()` 停止新接纳且不隐藏全设备 wait；`drain()` 关闭接纳后等待本实例实际退役并保留首错，
+旧结果仍可读取。需要继续重放时等待本次 Completion，不调用 close/drain。
+
+Invocation的资源准备和`CompileOptions`中的原程序／workspace预算各按其实际范围计费，
+保留结果预算由上述导出显式选择，不把它们当成整设备内存上限。
+控制与 public Completion 观察须串行化。每实例一个冷完成观察槽；旧 Completion 未观察/放弃时拒绝新提交，
+drain 能主动观察原 Completion，并等待真正的 accepted prefix 退休。
+编译时借用常量、固定 effect footprint 及 Context/resource/allocator 保持各自原寿命合同。
+
+CPU+CUDA同样使用本节的GraphOutput与资源合同，pending权重的typed绑定见
+[CPU与GPU组合](#cpu-与-gpu-组合)。
+Vulkan 的固定纯图可先把实际端点装入普通编译环境，后续仍使用上述绑定、准备、提交和 GraphOutput：
+
+```cpp
+auto source = graph::vulkan::execution_source(native_context).value();
+const std::array domains{graph::StorageDomain{device_memory.ref()}};
+const std::array targets{graph::ExecutionTarget{source, graph::StorageDomainId{0}}};
+auto compiled = graph::compile(logical_graph,
+    graph::CompileEnvironment{.storage_domains = domains, .targets = targets});
+```
+
+这里的 Context 与 MemoryResource 按 [Vulkan Compute](vulkan-compute.md) 初始化，资源须活过所有槽与导出 lease。
+当前已接通创建时／冷绑定后可用的真实 backing、native device 上的借用常量，以及 `kMaterialize` 的 CPU→Vulkan
+常量物化。物化在 compile 内按源批量完成，复用 staging／命令资源；返回成功后可释放源 buffer，submit 不再上传。
+staging 按批中最大所需容量计入编译峰值，实际读取／原生完成失败直接返回。
+Apple同样用`graph::apple::execution_source(native_context)`装配实际端点，保留原FIFO晚生成结果；
+可传`{.custom = lowering}`接纯custom算子的冷lowering。捕获资源须活过冷编译，重放不调用lowering。
+
+两端的`graph::apple::bind`／`graph::vulkan::bind(run, input, batch, id)`保留真实WeightBatch和选中范围，
+绑定不等待上传；原提交在实际reader处按HostWaitPolicy处理依赖。共享Metal存储可直接供CPU读取，
+不要求CPU reader一定落在普通主机allocation；copy报告应按实际physical reader和每条搬运边解释。
+需要主机异步推进时继续使用下面的可选服务。原生私有分配与managed执行成本仍须按实际报告判断。
+
+CUDA、Apple、Vulkan还提供`bind(run, span<const graph::WeightBinding>, batch)`，一次绑定同一上传代的
+权重、scale与显式ID映射。全部输入的tensor、owner与最终alias范围检查通过才提交绑定；失败保留原绑定与准备状态。
+用`WeightSlots::upload_slices()`可从分立tensor装配有界bank；选择哪些专家、何时换入与global/local映射由调用者决定，
+Graph只执行普通checked Gather和grouped算子。装配、字节报告与打包要求见[有界专家权重工作集](compute.md#有界专家权重工作集)。
+
+普通owned-layout分页通过`batch::prepare`／`batch::bind`绑定实际页权限；Apple／Vulkan的typed
+`submit(run, queues, std::move(update))`把原CopyBatchUpdate控制交给同一次Graph提交。
+实际退休并释放结果与Completion观察后，用相应`take_update(run)`回收；接纳前拒绝保留调用方原update，
+producer失败不发布可写页或成功结果。其余历史专用消费者仍在迁移，不代表所有原生数学域均已补齐。
+
+## 可选主机异步推进
+
+需要CPU计算不占用提交线程，或让独立CPU／GPU片段同时推进时，构建选择`graph;graph_progress`，
+应用链接`hyle::graph`与`hyle::graph_progress`，包含`hyle/graph/progress.h`。
+进度服务公开提供Scheduler与BlockingPool的依赖。仅选择`graph;sched`不会启用该服务；
+SDK即使同时安装了它，仅`find_package(Hyle COMPONENTS graph)`也保持普通Graph的依赖闭包。
+仍使用同一个Invocation、QueueBinding、绑定和结果接口：
+
+```cpp
+// scheduler 和 blocking_pool 由应用持有；先按原合同绑定、prepare_replay。
+HYLE_RETURN_IF_ERROR(hyle::graph::prepare_progress(run, scheduler, blocking_pool));
+auto done = run.submit(queues).value();
+HYLE_RETURN_IF_ERROR(done.wait());
+auto result = run.result(output_id).value();
+```
+
+两个运行时及原借用资源须活过所有已接纳工作和`drain()`。准备只增加固定推进元数据，
+每次提交仍使用Scheduler原有任务／stack分配。`Invocation::drain()`支持Scheduler fiber等待；
+交接后的`Completion::wait()`继续遵守原Compute完成对象的等待合同。
+取消不会抢占已经进入的CPU算子或GPU工作。不需要主机异步推进时沿用普通提交即可。
 
 ## 可选主机跟踪
 

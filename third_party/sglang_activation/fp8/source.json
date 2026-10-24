@@ -28,5 +28,13 @@
       "sha256": "a6a841ea90a6a891dbd92df11fc7ff6a9e80684d8ba4991d6bf772aee16cf5d2"
     }
   ],
-  "module_sha256": "45e8867045ec54eddd5bbe91bc7229214148f8f0f1adb66a35253324e6ff145b"
+  "module_sha256": "45e8867045ec54eddd5bbe91bc7229214148f8f0f1adb66a35253324e6ff145b",
+  "adaptation": {
+    "function": "_w8a8_block_fp8_matmul",
+    "purpose": "Use exact finite E4M3FN-to-BF16 register tiles for the SM89 dot so its F32 accumulation satisfies the declared precision. This changes native dot arithmetic, not packed storage, quantization policy, block scales or output dtype.",
+    "before": "tl.dot(a, b)",
+    "after": "tl.dot(a.to(tl.bfloat16), b.to(tl.bfloat16))",
+    "occurrences": 1,
+    "adapted_module_sha256": "d13e43b7ef3511e6a0843375e8facf22a17823d7c5dfe85015f12e376bfe628c"
+  }
 }

@@ -1,0 +1,285 @@
+{
+  "schema": 1,
+  "created_utc": "2026-10-19T21:27:01.501549+00:00",
+  "status": "read_only_source_grounded_design; not implemented/compiled/run",
+  "scope": "Apple GGUF NVFP4 original64-value/36-byte packed MatMul/GroupedMatMul/GetRows, independent of HF/MLX NVFP4",
+  "decision": "Implement original GGUF NVFP4 decoder plus full existing MV/MVID, MM/MMID and selected-row carriers in three Metal kinds. New NV paths retain F32 activation/weight tile/MAC/output; do not inherit the old half-operand matrix recipe. No whole-bank F32 decode or second executor.",
+  "current_state": {
+    "public_identity_and_Hyle_mapping": "Already present: kNvfp4 maps GGML_TYPE_NVFP4 at native_program.cc120-121; canonical MatMul/Gather/Grouped ports use the original NativeProgram. No new public enum/operation/Graph pattern is needed.",
+    "still_missing": "Current full replay still explicitly rejects NVFP4 MatMul/ID in ggml-metal-device.m1539 and GetRows1946; no NV decoder or named pipeline in the three Metal kernel kinds.",
+    "previous_report_updates": "next-apple-nvfp4-review.json is historical. Its MMID duplicate-ID and extra-output-capacity blockers were actually repaired in grouped-shared-activation/apple; retain those repairs rather than recreate map logic. Actual selected GGUF header is now read:866 tensors/374NVFP4, protected mixed encodings, no NVFP4 embedding/head in that file. Artifact payload/execution remains unverified.",
+    "unchanged_native_qualification": "Hyle current packed MatMul is dense F32 A[M,K] + GGUF F32 W[K,N]; Grouped packed W[E,N,K] plus F32 A1/AS/qualifiedslot0; checked Gather F32 table[N,K]+dense I32 indices. Do not widen those public/private domains accidentally."
+  },
+  "codec": {
+    "layout": "block_nvfp4 d[4] then qs[32], QK64. Four independent groups of16. In subgroup g, qs[g*8+j] low nibble is logicalg*16+j, high nibble is +8, j0..7. Preserve original encoded rows/expert offsets (rowbytes=K/64*36), no repack.",
+    "scale": "Match pinned ggml_ue4m3_to_fp32 exactly, accounting for its returned half-scale with doubled integer E2M1 table. The existing Metal LUT is actual E2M1, so a Metal scale helper used with it must return FULL UE4M3. Preserve byte0/0x7f ->+0 and source exponent/mantissa behavior; do not borrow MLX E4M3FN interpretation or mask bytes to another contract.",
+    "decoder_tile16": "dequantize_nvfp4(block, il0..3, float4x4/half4x4&) reads scale d[il] and logical16 subgroup in contiguous order (first8low, second8high). Generic MM nl=4 naturally advances il0/1 then2/3 over two NK32 iterations; GetRows ind/4 and ind%4 are already correct for block64.",
+    "decoder_tile4": "dequantize_nvfp4_t4(block, il0..15, float4&) uses group=il/4 and chunk=il%4; chunks0/1 select low nibbles of four bytes, chunks2/3 high nibbles of the same eight bytes. This reuses existing generic q4 float4 carrier with chpb16.",
+    "numeric_source_domain_proof": {
+      "legal_scale_bytes": "0..127, including0/127specialzeros",
+      "combinations": 2048,
+      "all_decoded_values_exactly_F16_representable": true,
+      "maximum_absolute_decoded_weight": 2688.0,
+      "minimum_nonzero_weight": "2^-10",
+      "method": "Exhaustive source-formula F32-bit vs IEEE half roundtrip on2048 constants, not a Metal/backend test. Weight products have <=8 significant integer bits, so assigning decoded weights to half tile adds no value rounding in this legal domain.",
+      "limits": "Signedzero in actual Metal fast-math code still requires compiled GetRows witness; full GPU/backend equivalence is not established. Match original helper for raw byte behavior rather than silently aliasing other FP8 codecs."
+    }
+  },
+  "minimal_implementation": [
+    {
+      "owner": "new private src/ggml-metal/kernels/dequantize_nvfp4.h, included only by mul_mv.metal/mul_mm.metal/quantize.metal",
+      "change": "Add exact scale/tile16/tile4 helpers in a new private header. block_nvfp4 already exists in pinned ggml-common.h under the existing Metal declaration mode, and existing E2M1 LUT is available in common.h. Neither shared block/args header nor existing common.h/dequantize.h needs modification. Update original kind-specific embedding input and non-embed file copy for only this header; runtime source loader already recursively inlines quoted includes.",
+      "line": 348
+    },
+    {
+      "owner": "src/ggml-metal/kernels/quantize.metal",
+      "change": "Instantiate kernel_get_rows_q<block_nvfp4,4,dequantize_nvfp4> with kernel_get_rows_nvfp4 name. Existing selected-row args/ne00t/checked-index flow already reads only selected rows into F32 output.",
+      "line": 256
+    },
+    {
+      "owner": "src/ggml-metal/kernels/mul_mv.metal",
+      "change": "Reuse generic q4 float4 accumulation/reduction for new NVFP4. Narrow parameterization of its args type permits the same body to receive the existing single-MV args; expose normal MV and existing MVID wrapper entries. Keep original old instantiations/math untouched. K64 tail-safe simple geometry is nxpsg4/chunks_per_thread4 (one64-value block per iteration), nr0=32/4=8 rows perSIMDgroup; tune later by actual evidence. For ordinary smallbatch2..8, existing ext dispatcher can get explicit NV64/t4 instantiations only if its original K%128 eligibility and chunk capacity are satisfied.",
+      "source_lines": [
+        603,
+        3545
+      ],
+      "layout_boundary": "Real F32 row pitch/offset remains authoritative. Existing generic ext uses float4 pointers: a new typed use must either prove16-byte active alignment or use an NV-only packed_float4/scalar load trait with identical four F32 lane values. Do not regress the now-supported4-byte-aligned shared/padded input domain."
+    },
+    {
+      "owner": "src/ggml-metal/kernels/mul_mm.metal",
+      "change": "Instantiate original MM/MMID tile body with S0=float, float4x4, simdgroup_float8x8 and S1=float, float2x4, simdgroup_float8x8; block_nvfp4/nl4 and F32 source/output. Factor/reuse existing SIMD body so it is selectable for this actual float-operand specialization even when GGML_METAL_HAS_TENSOR is enabled. Retain old entries, loop order and old source type instantiations; reuse existing compact occurrence map/offsets/TS grid.",
+      "source_lines": [
+        18,
+        787,
+        848
+      ],
+      "precision_decision": "Chosen design preserves F32 source activation; old half S0/S1 is not an acceptable NV default. Existing FA_TYPES_F32 and SSM provide source evidence for float operand simdgroup MMA, but actual NV template compilation/runtime remains untested. Derive new float shared-memory offsets/host requirement before admitting the path; do not only rename the export or change its template arguments."
+    },
+    {
+      "owner": "src/ggml-metal/ggml-metal-device.cpp + ggml-metal-ops.cpp + ggml-metal-device.m",
+      "change": "Add actual MV/MVID tuning and F32-MM specialization selection/resource parameters; enable optional smallbatch membership only with its exports. Remove NV-specific rejection only after all selected routes exist. Matrix/GetRows export names are already dtype-derived. Choose the original SIMD carrier locally for actual float-operand NV MM even on Metal4; do not globally mutate device has_tensor or add a public precision flag. Keep K%64, input origin/pitch, encoded span, device/subgroup/pipeline resource limits truthful."
+    }
+  ],
+  "build_owner_boundary": {
+    "full_existing_fast_routes": {
+      "metal_kind_objects": [
+        "mul_mv",
+        "mul_mm",
+        "quantize"
+      ],
+      "native_host_owners": [
+        "ggml-metal-device.cpp (tuning/F32 carrier geometry/smem)",
+        "ggml-metal-device.m (truthful NV/device resource admission)",
+        "ggml-metal-ops.cpp (selected routes, optional smallbatch; only if actual entry selection requires it)"
+      ],
+      "Hyle_owner_refresh": "No Hyle source/header changes inherently required: mapping, real backend supports_op, checked IDs, physical output allocation and Recurrent zero-slot carrier are already connected. Any actual added dependency must still be refreshed from sourceDeps."
+    },
+    "one_or_two_objects": "No artificial object cap: implement all three original kinds. Do not deliver only MV to fit a1–2 object target.",
+    "cache_reuse": "Use actual Mac Air fixed build/cache and original .d/assembly embed recipe from current grouped-shared-activation/apple closure. All unmodified SDK host objects/kernel kinds stay cached. Do not copy SDK or rebuild whole default.metallib.",
+    "embedding_mode": "Pinned CMake emits one .s/.incbin source object per Metal kind. Add new dequantize_nvfp4.h only to the three consuming kinds: conditional HEADERS_FOR_SRC, strip that quoted include in generated embed, and per-kind additional dependency; configure/install the private header for non-embed source mode. Existing recursive quoted-include loader resolves it. Do not alter shared ggml-common.h, ggml-metal-impl.h, common.h or existing dequantize.h just for one decoder. Existing generic CMake dependencies on shared headers need not trigger unrelated owners when those files remain unchanged. Targeted validation regenerates only3effective sources/objects plus changed native host owners.",
+    "avoid_expanded_ABI": "Keep new tuning constants local instead of adding fields to ggml-metal-impl.h/shared args. NativeProgram/GGML buffer ownership, Completion and per-invocation program remain original.",
+    "provenance_updates_if_implemented": "Append exact full-patch replay deltas to ggml_runtime/metal-patches.json + NOTICE; selected central lock vendor/notice identities updated byroot. No public compatibility API, alternate storage identity, global precision option or MLX mode alias."
+  },
+  "memory_and_lifetime": [
+    "Retain block64/36 packed bank in original Metal buffer, only tile/threadgroup/register decode. K64/128/320 partialrow and oddN cannot assume extra input padding.",
+    "A1 and slot0 continue cold folding to[K,1,T] with positive slot pitch and actual token pitch; do not create S activation copies.",
+    "Use existing compact MMID counts+offsets2E and TS map entries with occurrence grid. NativeProgram must continue allocating real buft_get_alloc_size beyond logical output, including INT32 MLX carrier capacity checks.",
+    "Gather keeps original checked-ID preparation/completion/failure publication. Two invocations, rebind and retained old result remain current owner contracts. No wholebank decode or persistent unpacked shadow array."
+  ],
+  "MLX_alternative": {
+    "decision": "Do not route GGUF bytes to existing MLX nvfp4 mode.",
+    "proof": "Locked MLX mode group16 reads separate packed-code/scales arrays, adjacent-nibble stream, ordinary fp8_e4m3 scale where0x7f=480; GGUF uses interleaved4scale+32code blocks, low8/high8nibble order and0x7f=0. Zero-copy substitution is wrong. Converting layout would duplicate/repack bank and be a larger alternate path.",
+    "archive": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-gaps\\g04-g05\\metal-lifetime\\mlx-1f8e74e3f12f31365464a6867c6579f0e9b29d85.tar.gz",
+      "bytes": 4415184,
+      "sha256": "cb988a5bdc38c798918d042b9b1c6edda3ccc5f23a2155138d3aa5c1b2acc301"
+    },
+    "members_read": [
+      {
+        "archive_member": "mlx-1f8e74e3f12f31365464a6867c6579f0e9b29d85/mlx/backend/metal/kernels/fp_quantized.h",
+        "bytes": 67144,
+        "sha256": "bdf6d419b623cdfd7493ff58fbf9c70b4a2c2c39511330d6a61646093148225e"
+      },
+      {
+        "archive_member": "mlx-1f8e74e3f12f31365464a6867c6579f0e9b29d85/mlx/backend/metal/kernels/fp8.h",
+        "bytes": 2469,
+        "sha256": "3ee75c58a1e125ee9eaed3961ef89719d47ce4c8446bb930390d7a4579f08439"
+      },
+      {
+        "archive_member": "mlx-1f8e74e3f12f31365464a6867c6579f0e9b29d85/mlx/backend/metal/quantized.cpp",
+        "bytes": 58218,
+        "sha256": "44483286a359afb7f35d8a9c1658ffaec6ff6c01a7ab34ac7bb35cf6438804a6"
+      }
+    ],
+    "lines": "fp_quantized.h31-36,84-91,201-215;fp8.h32-37;quantized.cpp54-58"
+  },
+  "minimum_followup_evidence_not_run": [
+    "Kernel export/admission/source recipe consistency first, then a small synthetic original-byte fixture. Existing gguf_nvfp4_fixture.h is a suitable independent writer/oracle; no model weight download.",
+    "GetRows K64/128/320, all4subgroup scales, low/high lanes, legal0/127zero/subnormal/max and signedzero; rebound/repeated/invalid IDs with output publication checks.",
+    "MatMul MV and real MM plus MMID: include the explicit nonhalf F32 activation witness1+2^-20 with decoded weight1, enoughM/T to force matrix selection, partial output tile and all12KiB shared layout. No old-half oracle substitution. Smallbatch NV route only if its actual export was wired.",
+    "Grouped T31(MVID)/T32(MMID), A1/AS/slot0 and repeated IDs, oddN5, two slots/retained results. Confirm actual selected pipeline; do not infer physical dispatch from logical route count.",
+    "No full selected27B/MTP payload execution, throughput, quality or allApple-device support follows from those operator cases."
+  ],
+  "source_identities": {
+    "upstream_revision": "456172ec733a135778adcd32d00e576a58232e45",
+    "manifest_order": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\third_party\\ggml_runtime\\patches.json",
+        "bytes": 29320,
+        "sha256": "4d32abad8adbbe8a48b49eb3a6bfa7e7b9ef2743a4728d222591723c7b1c760f"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\third_party\\ggml_runtime\\metal-patches.json",
+        "bytes": 43053,
+        "sha256": "12791509935d106729df6785b645faff41be6c59e9e589bdeabf8eac6b3f8a28"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\third_party\\ggml_metal_iq1\\patches.json",
+        "bytes": 42868,
+        "sha256": "11783d52d3584fa89838be711c913443f8525944372c853002e7f4f67e2ab19c"
+      }
+    ],
+    "full_replayed_sources": [
+      {
+        "path": "src/ggml-common.h",
+        "normalized_lf_bytes": 157792,
+        "sha256": "418691e67c16a71a737f388600871a0321f48b2beebeb9d543c5cc438f97351e",
+        "patches_replayed_in_memory": true
+      },
+      {
+        "path": "src/ggml-impl.h",
+        "normalized_lf_bytes": 25821,
+        "sha256": "43564db0238aebb7ed68501e346c194866b5dac218d1d37b26baff9f458c00d3",
+        "patches_replayed_in_memory": true
+      },
+      {
+        "path": "src/ggml-metal/kernels/common.h",
+        "normalized_lf_bytes": 3481,
+        "sha256": "525d4d7f9dbdaef3702195be92235ba2cc7cc86d5c97101d374a52b06117215e",
+        "patches_replayed_in_memory": true
+      },
+      {
+        "path": "src/ggml-metal/kernels/dequantize.h",
+        "normalized_lf_bytes": 27954,
+        "sha256": "2dd5d69e65deb3718dd01a7e04d6ce529f008955fecfb1d1d8abab3245e43d25",
+        "patches_replayed_in_memory": true
+      },
+      {
+        "path": "src/ggml-metal/kernels/mul_mv.metal",
+        "normalized_lf_bytes": 144285,
+        "sha256": "aa6a190f2dacbeaf0fdfe57a1ccb3c1ba0ca395ab65411a46c920e5739b6e033",
+        "patches_replayed_in_memory": true
+      },
+      {
+        "path": "src/ggml-metal/kernels/mul_mm.metal",
+        "normalized_lf_bytes": 53541,
+        "sha256": "4f6a400b5fa9ec2b2bbe0096c15e5015f6ed9d08e2ac865926df612775727676",
+        "patches_replayed_in_memory": true
+      },
+      {
+        "path": "src/ggml-metal/kernels/quantize.metal",
+        "normalized_lf_bytes": 26211,
+        "sha256": "086ecff024c605e28c8ab0f0cec276ac3f74ec82471af003e0022dc2d7daa2a4",
+        "patches_replayed_in_memory": true
+      },
+      {
+        "path": "src/ggml-metal/ggml-metal-device.m",
+        "normalized_lf_bytes": 95697,
+        "sha256": "13e5a2b4b0509a474de1c3008f8bf7584b2cd881548c8e8389ee131876e59b57",
+        "patches_replayed_in_memory": true
+      },
+      {
+        "path": "src/ggml-metal/ggml-metal-device.cpp",
+        "normalized_lf_bytes": 81950,
+        "sha256": "aa0a913eda70f19b105c36a703e57039c4e8e4a8f35ef49ef70820ba8c55a23d",
+        "patches_replayed_in_memory": true
+      },
+      {
+        "path": "src/ggml-metal/ggml-metal-ops.cpp",
+        "normalized_lf_bytes": 197132,
+        "sha256": "4046db2406469c0b1a2a590d51ee583839718c9e50c828bc911cbeebc85b892a",
+        "patches_replayed_in_memory": true
+      },
+      {
+        "path": "src/ggml-metal/ggml-metal-common.cpp",
+        "normalized_lf_bytes": 14095,
+        "sha256": "5c093c670e5f5598bed384797b8637722936cf02a3020758a3902ee8ac461376",
+        "patches_replayed_in_memory": true
+      },
+      {
+        "path": "src/ggml-metal/CMakeLists.txt",
+        "normalized_lf_bytes": 11007,
+        "sha256": "0f042e911c804fbae3dabefb5f5446bbeb39ac3148ad1e5f8b0310990a4941f8",
+        "patches_replayed_in_memory": true
+      },
+      {
+        "path": "src/ggml-metal/kernels/fa.metal",
+        "normalized_lf_bytes": 190800,
+        "sha256": "88939f93ec5a38bb6a860dffee60d01885de65ca4464d87c14c31bbc511fda64",
+        "patches_replayed_in_memory": true
+      },
+      {
+        "path": "src/ggml-metal/kernels/ssm.metal",
+        "normalized_lf_bytes": 20065,
+        "sha256": "9cd9708e306ab756a334da0aba3a489973000ef6bd81d8a43e927dedf76b85d9",
+        "patches_replayed_in_memory": true
+      }
+    ],
+    "Hyle_native_program": {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_ggml_metal\\native_program.cc",
+      "bytes": 28384,
+      "sha256": "65767710f81ceedd67ebd01d3cd4e4479f863e786965e072b576c3dc799f483c"
+    },
+    "current_Apple_result": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-shared-activation\\apple\\summary.json",
+      "bytes": 4729,
+      "sha256": "00463a8890e62dd48ccd8c95ebc311bb4556c0fed92b758efdd542dcb1b549b1"
+    },
+    "fixture": {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\gguf_nvfp4_fixture.h",
+      "bytes": 3365,
+      "sha256": "b75573cffa3906c26623252c9d9cf8c5cf4791485addd2e0c9f09fac513fcb26"
+    }
+  },
+  "not_done": [
+    "No product/source/lock/docs edit",
+    "No build or GPU/Metal execution",
+    "No new SDK or weight payload",
+    "No Apple NVFP4 support/performance claim"
+  ],
+  "F32_matrix_precision_review": {
+    "current_actual_source": "Full mixed-resource + Metal + IQ1 replay was scanned. No MM/MVID host selection consumes GGML_PREC/source precision parameters, and no full float-operand MM/MMID export was found. native_program.cc400 sets accumulator precision; existing F32 accumulator alone does not prevent half activation loading.",
+    "legacy_gap": {
+      "scope": "Existing GGUF quantized MM/MMID and ordinary kernel_mul_mm_f32_f32 use half S0/S1 despite F32 source/output. This is an independently recorded precision/admission question, not evidence that their general F32 behavior is correct. Toy dyadic fixtures cannot expose it. Do not rewrite every codec in this bounded NV followup.",
+      "code": "mul_mm.metal768,773-806,841..867 and activation stores266/279,589/602; ggml-metal-device.cpp762-820,1084-1109 have no actual operand-precision branch."
+    },
+    "available_primitive": {
+      "code": [
+        "kernels/fa.metal915-921: FA_TYPES_F32 uses float4x4 and simdgroup_float8x8 operands",
+        "kernels/ssm.metal393-400: actual float pointer simdgroup_load plus float×float simdgroup_multiply_accumulate"
+      ],
+      "meaning": "Float operand SIMD MMA is already used in pinned mature native code; adding the NV specialization does not require a new external provider/executor. It is still not evidence that the proposed NV entry has compiled or has measured performance."
+    },
+    "shared_memory": {
+      "tile": "NR0=64,NR1=32,NK=32 in current SIMD MM/MMID",
+      "old_hardcoded_boundary": "sa at0, sb at4096 in both bodies (pinned mul_mm.metal160-161 and441-442)",
+      "F32_A_bytes": 8192,
+      "F32_B_bytes": 4096,
+      "F32_AB_bytes": 12288,
+      "F32_full_output_tile_bytes": 8192,
+      "required_bytes": 12288,
+      "required_change": "Move/derive sb offset from sizeof(S0)*NR0*NK, and derive total max(A+B, output scratch) for the actual selected specialization. Old half variants retain their exact4096/6144/8192 values. Update get_pipeline_mul_mm and _id res.smem and geometry; reject before submission if actual device/pipeline cannot support the12KiB+thread requirements. No new shared argument struct field is required."
+    },
+    "Metal4_tensor_branch": {
+      "source": "mul_mm.metal12..143 and MMID506..530; ggml-metal-device.m440-447 enables GGML_METAL_HAS_TENSOR in kind compilation; device.cpp774-816 uses tensor geometry/resources.",
+      "constraint": "Changing S0/S1 to float does not prove mpp tensor API preserves them or supports that combination. Keep/reuse original SIMD implementation selectable for actual float-operand NV entry under both preprocessor modes; its kernel-export/cold selector must return SIMD64x32 geometry and12KiB scratch. This is a kernel-local template/capability choice, not a second Graph/Queue path or a global disable."
+    },
+    "minimal_nonhalf_witness": "NV weight decoded exactly1, one nonzero activation1+2^-20, otherwisezero, enoughM/T to force actual MM/MMID. Correct F32 output retains the2^-20 bit; half activation loses it. Combine with a partial output tile to cover12KiB shared layout. Also retain normal dyadic codec/row-map checks."
+  },
+  "private_header_boundary": {
+    "block_already_present": "src/ggml-common.h25 selects GGML_COMMON_DECL_METAL declaration mode; block_nvfp4/QK64/subgroup16/sizeof36 is already at221-227. Metal receives it through existing common/impl embedding. No duplicate struct or common header edit.",
+    "new_header": "kernels/dequantize_nvfp4.h private helper only; includes existing types/LUT from earlier common.h and is itself included by exactlythree existing .metal files.",
+    "CMake_owner": "src/ggml-metal/CMakeLists.txt kind generator71-108 must concatenate/strip/depend on the new helper only for those kinds; non-embed configure-file/install includes it. CMake change adds no host/native by-value ABI and no new executor.",
+    "device_source_loader": "ggml-metal-device.m196-265 already recursively inlines quoted includes. It needs no new include parser/global compiler option solely for the new header."
+  }
+}

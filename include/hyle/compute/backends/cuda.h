@@ -104,6 +104,10 @@ HYLE_COMPUTE_BACKEND_CUDA_API Result<CUcontext>
 primary_context(const Context &context) noexcept;
 HYLE_COMPUTE_BACKEND_CUDA_API Result<cudaStream_t>
 stream(const Queue &queue) noexcept;
+// The original admitted sequence owns the Queue state through this borrow.
+// It does not acquire another producer or reopen admission after close.
+HYLE_COMPUTE_BACKEND_CUDA_API Result<cudaStream_t>
+stream(const compute::detail::QueueSequence &sequence) noexcept;
 
 // Import an existing non-default stream from the exact primary execution
 // context. Borrow never destroys it; adopt destroys it after all retained

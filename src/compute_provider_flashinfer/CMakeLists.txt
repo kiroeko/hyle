@@ -1,6 +1,6 @@
-# The bounded native qualification admitted this pin on Linux. Windows uses
-# the ggml CUDA attention route; CUDA-OFF never fetches these headers.
-if(NOT _HYLE_COMPUTE_HAVE_CUDA OR NOT CMAKE_SYSTEM_NAME STREQUAL "Linux")
+# Both supported CUDA hosts use the same pinned native attention implementation.
+# CUDA-OFF never fetches these headers.
+if(NOT _HYLE_COMPUTE_HAVE_CUDA OR NOT CMAKE_SYSTEM_NAME MATCHES "^(Windows|Linux)$")
   hyle_add_module(compute_provider_flashinfer OPTIONAL_ABSENT)
   set_property(TARGET hyle_compute_provider_flashinfer PROPERTY
     HYLE_INTERNAL_ONLY_ABSENT TRUE)
@@ -40,15 +40,20 @@ endif()
 
 hyle_add_module(compute_provider_flashinfer
   SOURCES flashinfer_provider.cc native_attention.cu native_batch.cu
-    native_cache.cu native_cache_encoder.cu)
+    native_cache.cu native_cache_encoder.cu native_highdim.cu native_mla.cu)
 target_include_directories(hyle_compute_provider_flashinfer BEFORE PRIVATE
   "${_cache_source}/include")
 set_target_properties(hyle_compute_provider_flashinfer PROPERTIES
   CUDA_STANDARD 17 CUDA_STANDARD_REQUIRED ON CUDA_RUNTIME_LIBRARY Shared)
 # CMake's CXX visibility settings do not cover nvcc's generated host code.
 # Only the public C++ factory belongs in the shared SDK's export surface.
-target_compile_options(hyle_compute_provider_flashinfer PRIVATE
-  "$<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=-fvisibility=hidden,-fvisibility-inlines-hidden>")
+if(WIN32 AND (MSVC OR CMAKE_CXX_SIMULATE_ID STREQUAL "MSVC"))
+  target_compile_options(hyle_compute_provider_flashinfer PRIVATE
+    "$<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=/Zc:preprocessor,/utf-8>")
+else()
+  target_compile_options(hyle_compute_provider_flashinfer PRIVATE
+    "$<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=-fvisibility=hidden,-fvisibility-inlines-hidden>")
+endif()
 if(NOT HYLE_SANITIZER STREQUAL "off")
   target_compile_options(hyle_compute_provider_flashinfer PRIVATE
     "$<$<COMPILE_LANGUAGE:CUDA>:--forward-unknown-to-host-compiler>")

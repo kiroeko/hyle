@@ -28,7 +28,10 @@ TEST(GgmlCudaIq1, OriginalDecodeMmvqAndMmqExecuteAndReplay) {
       auto prepared = prepare(ctx, Operation(MatMul{}), inputs, std::span(&view, 1));
       ASSERT_TRUE(prepared) << prepared.error().message();
       EXPECT_EQ(prepared->provider().id, ggml_cuda::kProviderId);
-      auto invocation = prepared->create_invocation().value();
+      auto invocation_workspace =
+          ggml_cuda_test::workspace_buffer(*prepared, memory.ref());
+      auto invocation =
+          prepared->create_invocation(invocation_workspace.view()).value();
       auto queue = ctx.create_queue().value();
       for (int replay = 0; replay < 2; ++replay) {
         auto done = invocation.submit(queue, inputs, std::span(&view, 1));

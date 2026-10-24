@@ -1,0 +1,1766 @@
+{
+  "schema": "hyle.qwen-mtp-weights.v1",
+  "date": "2026-10-22",
+  "status": "Real MTP input/weight loading slice completed; MTP inference remains unimplemented",
+  "sources": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tools\\qwen35_text\\main.cc",
+      "bytes": 159868,
+      "sha256": "d94177a69b60c7333e1ccbe5b8d934f1970c4417d2f4836488f9bea3794854f9"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tools\\qwen35_text\\prepare.py",
+      "bytes": 7446,
+      "sha256": "8582fdc96cfe1a50a45ac0386637a16484ca39890e437ae35bc1b01251d2ad4d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tools\\qwen35_text\\README.md",
+      "bytes": 20959,
+      "sha256": "77785c4d0bf7a64f418eed18a50b1c2c7ce965ce2bbf0a5231b0e1d9e5847ffb"
+    }
+  ],
+  "archives": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\qwen-mtp-weights-2026-10-22.data.part01.zip",
+      "bytes": 21327879,
+      "sha256": "56b90ac57a1169d4a2b61ab1bb880e74b910cfc1f6aef3f3b756fa22b7fa7ad4"
+    }
+  ],
+  "archive_files": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\batch-run1\\identity.json",
+      "bytes": 1180,
+      "sha256": "3f7b16686fb706d9bd857ba94e5bf5e2110a02f8f8efa845c7022579f711316f",
+      "entry": ".scratch/qwen-mtp-weights-20261022/batch-run1/identity.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\batch-run1\\live.json",
+      "bytes": 1037,
+      "sha256": "5fd063623b1b3bb02ae9cbc6e381d890725f8ad9897dc281c6d83cb62f3dfe73",
+      "entry": ".scratch/qwen-mtp-weights-20261022/batch-run1/live.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\batch-run1\\plan.json",
+      "bytes": 888,
+      "sha256": "8eab219649759ece0bea1706627b4033d393e24955b539787955352f7e919b7d",
+      "entry": ".scratch/qwen-mtp-weights-20261022/batch-run1/plan.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\batch-run1\\run.command.json",
+      "bytes": 967,
+      "sha256": "f6024b7c06b8028a53eec942f98143e74a766c1a5786b4568ae3861ec967fb52",
+      "entry": ".scratch/qwen-mtp-weights-20261022/batch-run1/run.command.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\batch-run1\\run.result.json",
+      "bytes": 1037,
+      "sha256": "5fd063623b1b3bb02ae9cbc6e381d890725f8ad9897dc281c6d83cb62f3dfe73",
+      "entry": ".scratch/qwen-mtp-weights-20261022/batch-run1/run.result.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\batch-run1\\run.stderr.log",
+      "bytes": 12625,
+      "sha256": "289a44bf9d9f188ab1ad5440c170486abdb7b90ec881972aad4919513ca7da1a",
+      "entry": ".scratch/qwen-mtp-weights-20261022/batch-run1/run.stderr.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\batch-run1\\run.stdout.log",
+      "bytes": 14203,
+      "sha256": "385f94707af8d0b648638ae3c2adf469b6d777ad9a26cc18ca4404a84b10e10c",
+      "entry": ".scratch/qwen-mtp-weights-20261022/batch-run1/run.stdout.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\batch-run1\\trace\\routes\\default-R1-T1.boundaries.tsv",
+      "bytes": 339,
+      "sha256": "9e50e74e57b4bb9a68a7bd4433a0b7c9fa40c08ec911c7bb2c445ca07b1e0d36",
+      "entry": ".scratch/qwen-mtp-weights-20261022/batch-run1/trace/routes/default-R1-T1.boundaries.tsv"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\batch-run1\\trace\\routes\\default-R1-T1.route.tsv",
+      "bytes": 35583,
+      "sha256": "c6e4c61044443ede6d6cf4860c02a68b8ef571a6fd155f4488fe2aa5e23a6287",
+      "entry": ".scratch/qwen-mtp-weights-20261022/batch-run1/trace/routes/default-R1-T1.route.tsv"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\batch-run1\\trace\\routes\\default-R1-T128.boundaries.tsv",
+      "bytes": 357,
+      "sha256": "d95051bed8b0971dbd4b955f171830fb3b8b09691f67b6c082b080a3652c6308",
+      "entry": ".scratch/qwen-mtp-weights-20261022/batch-run1/trace/routes/default-R1-T128.boundaries.tsv"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\batch-run1\\trace\\routes\\default-R1-T128.route.tsv",
+      "bytes": 36819,
+      "sha256": "b25513ea9b3ea272b68f7d10c78d72da8766ba6de69fa6660d9e56f0c2260444",
+      "entry": ".scratch/qwen-mtp-weights-20261022/batch-run1/trace/routes/default-R1-T128.route.tsv"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\batch-run1\\trace\\routes\\default-R1-T16.boundaries.tsv",
+      "bytes": 348,
+      "sha256": "943177a4b01535685d5a2ecb0d33ca5e6375aaed9d6cf615446084ca9332146a",
+      "entry": ".scratch/qwen-mtp-weights-20261022/batch-run1/trace/routes/default-R1-T16.boundaries.tsv"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\batch-run1\\trace\\routes\\default-R1-T16.route.tsv",
+      "bytes": 36819,
+      "sha256": "b25513ea9b3ea272b68f7d10c78d72da8766ba6de69fa6660d9e56f0c2260444",
+      "entry": ".scratch/qwen-mtp-weights-20261022/batch-run1/trace/routes/default-R1-T16.route.tsv"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\batch-run1\\trace\\routes\\default-R1-T23.boundaries.tsv",
+      "bytes": 348,
+      "sha256": "b967005a7e84193d9012e1e696e4ee38a9f0a1c346caeeeaeb4692751a2848dd",
+      "entry": ".scratch/qwen-mtp-weights-20261022/batch-run1/trace/routes/default-R1-T23.boundaries.tsv"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\batch-run1\\trace\\routes\\default-R1-T23.route.tsv",
+      "bytes": 36819,
+      "sha256": "b25513ea9b3ea272b68f7d10c78d72da8766ba6de69fa6660d9e56f0c2260444",
+      "entry": ".scratch/qwen-mtp-weights-20261022/batch-run1/trace/routes/default-R1-T23.route.tsv"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\batch-run1\\trace\\routes\\default-R1-T4.boundaries.tsv",
+      "bytes": 339,
+      "sha256": "2beff2527cecfd28801552c09b6b4bcc8b38040151a6bfa107e06d061d646afc",
+      "entry": ".scratch/qwen-mtp-weights-20261022/batch-run1/trace/routes/default-R1-T4.boundaries.tsv"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\batch-run1\\trace\\routes\\default-R1-T4.route.tsv",
+      "bytes": 36819,
+      "sha256": "b25513ea9b3ea272b68f7d10c78d72da8766ba6de69fa6660d9e56f0c2260444",
+      "entry": ".scratch/qwen-mtp-weights-20261022/batch-run1/trace/routes/default-R1-T4.route.tsv"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\batch-run1\\trace\\routes\\default-R2-T1.boundaries.tsv",
+      "bytes": 342,
+      "sha256": "3aa40e5d74b96fb16393e762933c63de8f6fe453e35a21939070de14ebecbae5",
+      "entry": ".scratch/qwen-mtp-weights-20261022/batch-run1/trace/routes/default-R2-T1.boundaries.tsv"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\batch-run1\\trace\\routes\\default-R2-T1.route.tsv",
+      "bytes": 40404,
+      "sha256": "03537d968fcd2d286ad01b8fdbfefb4362cf5437259a8b188e79cf8359c5bb7a",
+      "entry": ".scratch/qwen-mtp-weights-20261022/batch-run1/trace/routes/default-R2-T1.route.tsv"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\batch-run1\\trace\\session0_alice\\round1_decode1\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "2da66274c62e00fc8bf9d9250c3d86ec4a3ab4f7aa7b7f45143771777caeba10",
+      "entry": ".scratch/qwen-mtp-weights-20261022/batch-run1/trace/session0_alice/round1_decode1/hidden.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\batch-run1\\trace\\session0_alice\\round1_decode1\\logits.f32",
+      "bytes": 993280,
+      "sha256": "abfd568a4e7a9ac63924d3101bcd872129bcc12eeacbbcef194ddd8755143d6c",
+      "entry": ".scratch/qwen-mtp-weights-20261022/batch-run1/trace/session0_alice/round1_decode1/logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\batch-run1\\trace\\session0_alice\\round1_decode2\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "63473b6371aa5bab48cd0693e767ce31fb786de1bd6fab89498bee58d2c26dfc",
+      "entry": ".scratch/qwen-mtp-weights-20261022/batch-run1/trace/session0_alice/round1_decode2/hidden.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\batch-run1\\trace\\session0_alice\\round1_decode2\\logits.f32",
+      "bytes": 993280,
+      "sha256": "dc73c1b31ddee65ed3c3ef5671ef2b851f5de1b70cf0460211d1d43c5aac1073",
+      "entry": ".scratch/qwen-mtp-weights-20261022/batch-run1/trace/session0_alice/round1_decode2/logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\batch-run1\\trace\\session0_alice\\round1_decode3\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "f50d257156fd33e746cc10e4033c6c287a5a6d1e2b1c21397d03de9a3826685e",
+      "entry": ".scratch/qwen-mtp-weights-20261022/batch-run1/trace/session0_alice/round1_decode3/hidden.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\batch-run1\\trace\\session0_alice\\round1_decode3\\logits.f32",
+      "bytes": 993280,
+      "sha256": "3d44c79716f84088bec6141e2be47eec061e06a7471a2a4695ea93740eb4a61a",
+      "entry": ".scratch/qwen-mtp-weights-20261022/batch-run1/trace/session0_alice/round1_decode3/logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\batch-run1\\trace\\session0_alice\\round1_decode4\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "6458bd79e33333c62d404be9ce5613cb90b459699cf9d8859f752607fa7e5a0d",
+      "entry": ".scratch/qwen-mtp-weights-20261022/batch-run1/trace/session0_alice/round1_decode4/hidden.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\batch-run1\\trace\\session0_alice\\round1_decode4\\logits.f32",
+      "bytes": 993280,
+      "sha256": "f1a62f8d3fa46eda620c6c5ab5f3cae8e30d120ee0fe76ee280622657d0c7ad8",
+      "entry": ".scratch/qwen-mtp-weights-20261022/batch-run1/trace/session0_alice/round1_decode4/logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\batch-run1\\trace\\session0_alice\\round1_prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "441f8e0eea6b8deea8b640bb76efc9dcc1267f3ee4de9e936bcc9fa9110a8ee1",
+      "entry": ".scratch/qwen-mtp-weights-20261022/batch-run1/trace/session0_alice/round1_prefill/hidden.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\batch-run1\\trace\\session0_alice\\round1_prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "3f9f6f36cbefdeae7dc1e5e89b8af0729c2d9d6f59dab28e040a4771d9609b43",
+      "entry": ".scratch/qwen-mtp-weights-20261022/batch-run1/trace/session0_alice/round1_prefill/logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\batch-run1\\trace\\session0_alice\\round2_decode1\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "5276330584226e4852bda60150ee26ce481d283110214004aae0596315c4c467",
+      "entry": ".scratch/qwen-mtp-weights-20261022/batch-run1/trace/session0_alice/round2_decode1/hidden.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\batch-run1\\trace\\session0_alice\\round2_decode1\\logits.f32",
+      "bytes": 993280,
+      "sha256": "258a64e46f8416dabf402a9228f70cd0cc0977d3becf539d88ad43a3447327fa",
+      "entry": ".scratch/qwen-mtp-weights-20261022/batch-run1/trace/session0_alice/round2_decode1/logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\batch-run1\\trace\\session0_alice\\round2_decode2\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "3b75c1eb2197cfa462a93b1a2ab011a86afb6ef18064e3d69d8bd99d09cefbf2",
+      "entry": ".scratch/qwen-mtp-weights-20261022/batch-run1/trace/session0_alice/round2_decode2/hidden.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\batch-run1\\trace\\session0_alice\\round2_decode2\\logits.f32",
+      "bytes": 993280,
+      "sha256": "0613e4b44294e6962a7dac2d9aa2523dd0c8b88e2a44903a8f8929278b6529cd",
+      "entry": ".scratch/qwen-mtp-weights-20261022/batch-run1/trace/session0_alice/round2_decode2/logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\batch-run1\\trace\\session0_alice\\round2_decode3\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "db3e06fa27f0905d971ae1a51119684dce0308ca235d1b30ae7f925297d3c792",
+      "entry": ".scratch/qwen-mtp-weights-20261022/batch-run1/trace/session0_alice/round2_decode3/hidden.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\batch-run1\\trace\\session0_alice\\round2_decode3\\logits.f32",
+      "bytes": 993280,
+      "sha256": "a6285f9567555630264f37c0bfafd5a590d5551429d5e0f66e57e33079b7f802",
+      "entry": ".scratch/qwen-mtp-weights-20261022/batch-run1/trace/session0_alice/round2_decode3/logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\batch-run1\\trace\\session0_alice\\round2_prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "f2752b1f3743ed291af7854fda48301f286aa652d9ae53d0ca2635f7eaef487c",
+      "entry": ".scratch/qwen-mtp-weights-20261022/batch-run1/trace/session0_alice/round2_prefill/hidden.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\batch-run1\\trace\\session0_alice\\round2_prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "ec519ced96625ee206a0d0467e4881364acd816b51699d34041f68c5c41a40cd",
+      "entry": ".scratch/qwen-mtp-weights-20261022/batch-run1/trace/session0_alice/round2_prefill/logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\batch-run1\\trace\\session1_bob\\round1_decode1\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "d188f46248ecc38eb41348ea19e4dd1b6c9b381af2daddc8e78f4acbf095475f",
+      "entry": ".scratch/qwen-mtp-weights-20261022/batch-run1/trace/session1_bob/round1_decode1/hidden.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\batch-run1\\trace\\session1_bob\\round1_decode1\\logits.f32",
+      "bytes": 993280,
+      "sha256": "a9dfddef6c3de35dde34b4a4d83862793f40256b0094528601593f17deca8277",
+      "entry": ".scratch/qwen-mtp-weights-20261022/batch-run1/trace/session1_bob/round1_decode1/logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\batch-run1\\trace\\session1_bob\\round1_decode2\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "efc393ee97ce0080103af63d70b18474e8f30935088aa3209cf454c925c077b3",
+      "entry": ".scratch/qwen-mtp-weights-20261022/batch-run1/trace/session1_bob/round1_decode2/hidden.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\batch-run1\\trace\\session1_bob\\round1_decode2\\logits.f32",
+      "bytes": 993280,
+      "sha256": "2b0dab944c3876bcc0315f56a7d274e4eed5f1cef32bc2f90c5157b4d01d91d9",
+      "entry": ".scratch/qwen-mtp-weights-20261022/batch-run1/trace/session1_bob/round1_decode2/logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\batch-run1\\trace\\session1_bob\\round1_decode3\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "8c19533ed140d711e26fdf951576ab52253f5b757556f292091be788a59e9984",
+      "entry": ".scratch/qwen-mtp-weights-20261022/batch-run1/trace/session1_bob/round1_decode3/hidden.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\batch-run1\\trace\\session1_bob\\round1_decode3\\logits.f32",
+      "bytes": 993280,
+      "sha256": "01e2353a39586a2c54e1ca40512b5fae3aa130be20f6a5c4f88f5a2bf1816bcf",
+      "entry": ".scratch/qwen-mtp-weights-20261022/batch-run1/trace/session1_bob/round1_decode3/logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\batch-run1\\trace\\session1_bob\\round1_prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "d1625d53fbb1c918aa90b829c69ff5ae4f44683eb0352a7745e54d4879b82c11",
+      "entry": ".scratch/qwen-mtp-weights-20261022/batch-run1/trace/session1_bob/round1_prefill/hidden.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\batch-run1\\trace\\session1_bob\\round1_prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "c217c3a1db43fb0dea77b1860c2833b4454202c70b511575dafd466af20e54c5",
+      "entry": ".scratch/qwen-mtp-weights-20261022/batch-run1/trace/session1_bob/round1_prefill/logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\batch-run1\\trace\\session1_bob\\round2_decode1\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "38b2e55b463c15d186ab529deb88bca491da3a269dd7ae036f1ec94d34f07cd9",
+      "entry": ".scratch/qwen-mtp-weights-20261022/batch-run1/trace/session1_bob/round2_decode1/hidden.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\batch-run1\\trace\\session1_bob\\round2_decode1\\logits.f32",
+      "bytes": 993280,
+      "sha256": "ae1a3291f08e869c805e90c2a9fc272fc22a9bdb18e8e0c3c8bb43ff844b7294",
+      "entry": ".scratch/qwen-mtp-weights-20261022/batch-run1/trace/session1_bob/round2_decode1/logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\batch-run1\\trace\\session1_bob\\round2_decode2\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "7999f3cc3b025085962120fef2ec042a306e340f1c1325677b91d4d5c9e80e0f",
+      "entry": ".scratch/qwen-mtp-weights-20261022/batch-run1/trace/session1_bob/round2_decode2/hidden.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\batch-run1\\trace\\session1_bob\\round2_decode2\\logits.f32",
+      "bytes": 993280,
+      "sha256": "b40e2014cc03803811a843b20c2c1e1333565f01db127e059d4c4953027ee369",
+      "entry": ".scratch/qwen-mtp-weights-20261022/batch-run1/trace/session1_bob/round2_decode2/logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\batch-run1\\trace\\session1_bob\\round2_decode3\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "f5b80761cf96f38e13567cff881288939b50bf4f32de4160d2686f0904cc3d8e",
+      "entry": ".scratch/qwen-mtp-weights-20261022/batch-run1/trace/session1_bob/round2_decode3/hidden.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\batch-run1\\trace\\session1_bob\\round2_decode3\\logits.f32",
+      "bytes": 993280,
+      "sha256": "7655f6c186bdce4f3efb0f3025a6c2aa82c286735ef8fe747e9e89f2d5466652",
+      "entry": ".scratch/qwen-mtp-weights-20261022/batch-run1/trace/session1_bob/round2_decode3/logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\batch-run1\\trace\\session1_bob\\round2_decode4\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "7c6224729bea9c031f829a161bebc1f88ca04977bbe4b08c8a91fb3ede6b16a0",
+      "entry": ".scratch/qwen-mtp-weights-20261022/batch-run1/trace/session1_bob/round2_decode4/hidden.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\batch-run1\\trace\\session1_bob\\round2_decode4\\logits.f32",
+      "bytes": 993280,
+      "sha256": "909e4be4750f482d6c861964bd82d36830383dbd20fb0e683d36254dced394f8",
+      "entry": ".scratch/qwen-mtp-weights-20261022/batch-run1/trace/session1_bob/round2_decode4/logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\batch-run1\\trace\\session1_bob\\round2_prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "11a35896e67b255f5d93b70a42dac03f9a9688105d8787562937011b7f9ea600",
+      "entry": ".scratch/qwen-mtp-weights-20261022/batch-run1/trace/session1_bob/round2_prefill/hidden.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\batch-run1\\trace\\session1_bob\\round2_prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "0bad5f5c42294ae4b7e9eb80120112aeb6151351bbc02c57de229b9a231a24f5",
+      "entry": ".scratch/qwen-mtp-weights-20261022/batch-run1/trace/session1_bob/round2_prefill/logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\batch-run1\\trace\\session2_carol\\round1_decode1\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "10d189d8e0442fa02ba201c8bbffc7a4c330a298099048106d33a44b38297b7c",
+      "entry": ".scratch/qwen-mtp-weights-20261022/batch-run1/trace/session2_carol/round1_decode1/hidden.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\batch-run1\\trace\\session2_carol\\round1_decode1\\logits.f32",
+      "bytes": 993280,
+      "sha256": "524fd2094046f6557392919205df2c42ceeffe47e3653914187fd8e28044647e",
+      "entry": ".scratch/qwen-mtp-weights-20261022/batch-run1/trace/session2_carol/round1_decode1/logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\batch-run1\\trace\\session2_carol\\round1_decode2\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "b7ec1928eecfa46b1c16c962a08753412d6190cc5d6a84f96e0e64bf1d482325",
+      "entry": ".scratch/qwen-mtp-weights-20261022/batch-run1/trace/session2_carol/round1_decode2/hidden.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\batch-run1\\trace\\session2_carol\\round1_decode2\\logits.f32",
+      "bytes": 993280,
+      "sha256": "d9aaff259c11bd53c556079054bb519ca887444dab35c666f4c6e4d26fc97213",
+      "entry": ".scratch/qwen-mtp-weights-20261022/batch-run1/trace/session2_carol/round1_decode2/logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\batch-run1\\trace\\session2_carol\\round1_prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "f8ba4c2fb63b09d799ec0f9c94c65768c0499458ad67034855e299c5a3edaf3a",
+      "entry": ".scratch/qwen-mtp-weights-20261022/batch-run1/trace/session2_carol/round1_prefill/hidden.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\batch-run1\\trace\\session2_carol\\round1_prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "1506e6681e8695e9554545d87c10b95bb9a00902831d1b0320406373a37959a0",
+      "entry": ".scratch/qwen-mtp-weights-20261022/batch-run1/trace/session2_carol/round1_prefill/logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\batch-run1\\trace\\session2_carol\\round2_decode1\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "9f0dbf23886d7f6e1dcf0edd9bdf0514e2c821ae78cdef52c65b3e405096547e",
+      "entry": ".scratch/qwen-mtp-weights-20261022/batch-run1/trace/session2_carol/round2_decode1/hidden.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\batch-run1\\trace\\session2_carol\\round2_decode1\\logits.f32",
+      "bytes": 993280,
+      "sha256": "56ea271b1e1aa03ccd7af7859013dd55780945dc686d4d097ed11da00a637fdb",
+      "entry": ".scratch/qwen-mtp-weights-20261022/batch-run1/trace/session2_carol/round2_decode1/logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\batch-run1\\trace\\session2_carol\\round2_decode2\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "c6671e8dddc31f69b56901489f42369897e0d6b166cffefbf4a6c19636745cf9",
+      "entry": ".scratch/qwen-mtp-weights-20261022/batch-run1/trace/session2_carol/round2_decode2/hidden.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\batch-run1\\trace\\session2_carol\\round2_decode2\\logits.f32",
+      "bytes": 993280,
+      "sha256": "6493fda917dc6338b321c6e7b86db14687defe6956a4dbca33f343fc66e18bd0",
+      "entry": ".scratch/qwen-mtp-weights-20261022/batch-run1/trace/session2_carol/round2_decode2/logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\batch-run1\\trace\\session2_carol\\round2_decode3\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "5bbd9fc24c1bb4fc7fb585a4fb5562e7b47b4ea5186e62967c6d41cdbf59a6cc",
+      "entry": ".scratch/qwen-mtp-weights-20261022/batch-run1/trace/session2_carol/round2_decode3/hidden.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\batch-run1\\trace\\session2_carol\\round2_decode3\\logits.f32",
+      "bytes": 993280,
+      "sha256": "e6347e38573a4878e71bc7be4c552dbc710202e029db6a1a127780e04d6395a1",
+      "entry": ".scratch/qwen-mtp-weights-20261022/batch-run1/trace/session2_carol/round2_decode3/logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\batch-run1\\trace\\session2_carol\\round2_decode4\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "8bf410741244fdc5f13ebc24671fd004cafbcdc97d7884c938fb90680ce9804a",
+      "entry": ".scratch/qwen-mtp-weights-20261022/batch-run1/trace/session2_carol/round2_decode4/hidden.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\batch-run1\\trace\\session2_carol\\round2_decode4\\logits.f32",
+      "bytes": 993280,
+      "sha256": "aa1698e520ca5135d3217967afe93f6881f5f78fc7004765d3fee1700f277a0a",
+      "entry": ".scratch/qwen-mtp-weights-20261022/batch-run1/trace/session2_carol/round2_decode4/logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\batch-run1\\trace\\session2_carol\\round2_decode5\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "8eb20e4f50ebb5d16181b4cd01fdee671fb5b3295698b1b6f8078cf4d34b4033",
+      "entry": ".scratch/qwen-mtp-weights-20261022/batch-run1/trace/session2_carol/round2_decode5/hidden.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\batch-run1\\trace\\session2_carol\\round2_decode5\\logits.f32",
+      "bytes": 993280,
+      "sha256": "19b61572692e6fcfa410ed0c83ac9809acbe213468a7cd81f578a376512ae06e",
+      "entry": ".scratch/qwen-mtp-weights-20261022/batch-run1/trace/session2_carol/round2_decode5/logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\batch-run1\\trace\\session2_carol\\round2_prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "d77b37d104220a0a15c9258f92cedea0b8c5160fadbf2018d85340b93050af4f",
+      "entry": ".scratch/qwen-mtp-weights-20261022/batch-run1/trace/session2_carol/round2_prefill/hidden.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\batch-run1\\trace\\session2_carol\\round2_prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "619890aa536e979e3a1232b6d12322988f0296a76cb91c9436741b6000507767",
+      "entry": ".scratch/qwen-mtp-weights-20261022/batch-run1/trace/session2_carol/round2_prefill/logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\batch-run1\\trace\\session3_dave\\round1_decode1\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "a0492edc94c6890d7815a6c3c7e2db7cb56f368d882f5cc169d86974fb2480ce",
+      "entry": ".scratch/qwen-mtp-weights-20261022/batch-run1/trace/session3_dave/round1_decode1/hidden.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\batch-run1\\trace\\session3_dave\\round1_decode1\\logits.f32",
+      "bytes": 993280,
+      "sha256": "389394483a3b00b22ec3baa90f4271a5aff7a66d155a697f5d22f2c8157333aa",
+      "entry": ".scratch/qwen-mtp-weights-20261022/batch-run1/trace/session3_dave/round1_decode1/logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\batch-run1\\trace\\session3_dave\\round1_decode2\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "7107c146f06591c00f4ffb7472287662268cac1e056115e6d24706d7d25d8057",
+      "entry": ".scratch/qwen-mtp-weights-20261022/batch-run1/trace/session3_dave/round1_decode2/hidden.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\batch-run1\\trace\\session3_dave\\round1_decode2\\logits.f32",
+      "bytes": 993280,
+      "sha256": "ec44a2714e0ab27fe8d49e5fdd782dd7b0619259f56bb8586d69f8c26d45fa2e",
+      "entry": ".scratch/qwen-mtp-weights-20261022/batch-run1/trace/session3_dave/round1_decode2/logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\batch-run1\\trace\\session3_dave\\round1_decode3\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "e029d86fb854d61b9c029c54798babfcec96814d8efeff9e9c6fe21d331bebe4",
+      "entry": ".scratch/qwen-mtp-weights-20261022/batch-run1/trace/session3_dave/round1_decode3/hidden.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\batch-run1\\trace\\session3_dave\\round1_decode3\\logits.f32",
+      "bytes": 993280,
+      "sha256": "d9e875c5ad0cce3f0036451da4ed3b044d5980223d16568c7986d59835177f61",
+      "entry": ".scratch/qwen-mtp-weights-20261022/batch-run1/trace/session3_dave/round1_decode3/logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\batch-run1\\trace\\session3_dave\\round1_decode4\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "39451cc509c92e948c4661c13d02c3d538f754ea044a47cfd3e5d19775922cbd",
+      "entry": ".scratch/qwen-mtp-weights-20261022/batch-run1/trace/session3_dave/round1_decode4/hidden.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\batch-run1\\trace\\session3_dave\\round1_decode4\\logits.f32",
+      "bytes": 993280,
+      "sha256": "95da5ef94acce88141272ab647517225c05dd181363d6173799709c5f02f7d5a",
+      "entry": ".scratch/qwen-mtp-weights-20261022/batch-run1/trace/session3_dave/round1_decode4/logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\batch-run1\\trace\\session3_dave\\round1_decode5\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "cfbc33ebac45d2869b1d9bfecefb4c4512750c52b40909a4fecb7ea2c337b96b",
+      "entry": ".scratch/qwen-mtp-weights-20261022/batch-run1/trace/session3_dave/round1_decode5/hidden.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\batch-run1\\trace\\session3_dave\\round1_decode5\\logits.f32",
+      "bytes": 993280,
+      "sha256": "d1ba2c6e071db84e0c289436de02a1672d9424f486597ae1435158f091261baf",
+      "entry": ".scratch/qwen-mtp-weights-20261022/batch-run1/trace/session3_dave/round1_decode5/logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\batch-run1\\trace\\session3_dave\\round1_prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "0172b7b395f4575cea0c2605abe541c7c02a2ea5a726c866e91856838fb60339",
+      "entry": ".scratch/qwen-mtp-weights-20261022/batch-run1/trace/session3_dave/round1_prefill/hidden.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\batch-run1\\trace\\session3_dave\\round1_prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "48320738232fab2e8af380cd27bea31c373fb1343269c44c7ea0380bb0816adc",
+      "entry": ".scratch/qwen-mtp-weights-20261022/batch-run1/trace/session3_dave/round1_prefill/logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\batch-run1\\trace\\session3_dave\\round2_decode1\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "e6a8e9e17c3b34f54320c5615220b616c955b8d31229540372e954f7124da9d9",
+      "entry": ".scratch/qwen-mtp-weights-20261022/batch-run1/trace/session3_dave/round2_decode1/hidden.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\batch-run1\\trace\\session3_dave\\round2_decode1\\logits.f32",
+      "bytes": 993280,
+      "sha256": "c95fa68c6ca9633a8cdb47aced4ee781268e25c73240851bd2f642ed53e79a2f",
+      "entry": ".scratch/qwen-mtp-weights-20261022/batch-run1/trace/session3_dave/round2_decode1/logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\batch-run1\\trace\\session3_dave\\round2_decode2\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "a7551088511fac54bca96447c4b9b1a37002c6464264264e0fbf40273775379b",
+      "entry": ".scratch/qwen-mtp-weights-20261022/batch-run1/trace/session3_dave/round2_decode2/hidden.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\batch-run1\\trace\\session3_dave\\round2_decode2\\logits.f32",
+      "bytes": 993280,
+      "sha256": "9f3727939a9aa57370bc67d0b94a3a284ee4ba476d5ff59d6407f5c65c530600",
+      "entry": ".scratch/qwen-mtp-weights-20261022/batch-run1/trace/session3_dave/round2_decode2/logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\batch-run1\\trace\\session3_dave\\round2_prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "d59d5ab37af38ce8d0f8da70a6545922e1ab82e1b6a3f7118f8cabb20ed8eb54",
+      "entry": ".scratch/qwen-mtp-weights-20261022/batch-run1/trace/session3_dave/round2_prefill/hidden.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\batch-run1\\trace\\session3_dave\\round2_prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "1e120e6f41f6ca7233739400b27c77ece57611faa6d0d02834a18cc12baa3f4f",
+      "entry": ".scratch/qwen-mtp-weights-20261022/batch-run1/trace/session3_dave/round2_prefill/logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\before\\source-identity.json",
+      "bytes": 320,
+      "sha256": "c99a9ee3d0cd10caf4d10e8d519f13eb93984752b6069a910bdc1f6afcd25b68",
+      "entry": ".scratch/qwen-mtp-weights-20261022/before/source-identity.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\before\\tools\\qwen35_text\\main.cc",
+      "bytes": 157203,
+      "sha256": "0ff952f87541665f3c734390dedd33c75ed88ab93a93e6d03be49507c82d4c4c",
+      "entry": ".scratch/qwen-mtp-weights-20261022/before/tools/qwen35_text/main.cc"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\before\\tools\\qwen35_text\\prepare.py",
+      "bytes": 5310,
+      "sha256": "7fd93acc1c12b80b625f4d129f79c33f4f5ab37a5539e539e8baf1218e04c654",
+      "entry": ".scratch/qwen-mtp-weights-20261022/before/tools/qwen35_text/prepare.py"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\build.py",
+      "bytes": 3666,
+      "sha256": "906224b30fda89cbfb2f59886ce10f594041b2d358ea8f8c1e718eb758f6fc16",
+      "entry": ".scratch/qwen-mtp-weights-20261022/build.py"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\check_metadata.py",
+      "bytes": 6199,
+      "sha256": "2254a40e871954c6ac5d6f2dbda2fe81c03220dd5a3af97dc18c344598036b93",
+      "entry": ".scratch/qwen-mtp-weights-20261022/check_metadata.py"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\compile1\\probe\\compile.command.json",
+      "bytes": 2155,
+      "sha256": "cba5ac31d075b380f0f8ccdd35a300e3516a9bd70afff1e63da3b7ffd2a3b4e0",
+      "entry": ".scratch/qwen-mtp-weights-20261022/compile1/probe/compile.command.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\compile1\\probe\\compile.result.json",
+      "bytes": 2223,
+      "sha256": "0bc56bad78a5f156be026ff5b44c88dbb41358811849b869fbe2fd8d2514f7e1",
+      "entry": ".scratch/qwen-mtp-weights-20261022/compile1/probe/compile.result.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\compile1\\probe\\compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "entry": ".scratch/qwen-mtp-weights-20261022/compile1/probe/compile.stderr.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\compile1\\probe\\compile.stdout.log",
+      "bytes": 17,
+      "sha256": "20370289a83464e9165a7e8b417bda8749218c1e5ba830923287a7ac6ecaac99",
+      "entry": ".scratch/qwen-mtp-weights-20261022/compile1/probe/compile.stdout.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\compile1\\probe\\identity.json",
+      "bytes": 71096,
+      "sha256": "d788d464d3b707a020e5016451f968f6025a436f704c6b28b6608f87d4ae4615",
+      "entry": ".scratch/qwen-mtp-weights-20261022/compile1/probe/identity.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\compile1\\probe\\live.json",
+      "bytes": 2223,
+      "sha256": "0bc56bad78a5f156be026ff5b44c88dbb41358811849b869fbe2fd8d2514f7e1",
+      "entry": ".scratch/qwen-mtp-weights-20261022/compile1/probe/live.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\compile1\\probe\\plan.json",
+      "bytes": 2744,
+      "sha256": "359caa429914b3ad6635850c4e78e3c02e5be3f323a291f45988ebec4941129d",
+      "entry": ".scratch/qwen-mtp-weights-20261022/compile1/probe/plan.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\compile1\\probe\\probe-deps.json",
+      "bytes": 32734,
+      "sha256": "5732284bdf0a485dbbf0fa7dc5687e9b7fdf691edb13c2b6d325e0ca9153c815",
+      "entry": ".scratch/qwen-mtp-weights-20261022/compile1/probe/probe-deps.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\compile1\\probe\\source\\.scratch\\qwen-mtp-weights-20261022\\loader_probe.cc",
+      "bytes": 4543,
+      "sha256": "33f24e2a651ffdad0b0f5081d108c8a3131e769ee118a25a7a152482d532c121",
+      "entry": ".scratch/qwen-mtp-weights-20261022/compile1/probe/source/.scratch/qwen-mtp-weights-20261022/loader_probe.cc"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\compile1\\qwen\\compile.command.json",
+      "bytes": 2124,
+      "sha256": "1eb1edea504f152cb1de39465fed2a522f1b8dc4b4cb75821cf51e93a8ed3431",
+      "entry": ".scratch/qwen-mtp-weights-20261022/compile1/qwen/compile.command.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\compile1\\qwen\\compile.result.json",
+      "bytes": 2195,
+      "sha256": "e61fa22024c2fcebc841c8d3613b17bcd32c95b09f7186943e9e483e4ad1cf37",
+      "entry": ".scratch/qwen-mtp-weights-20261022/compile1/qwen/compile.result.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\compile1\\qwen\\compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "entry": ".scratch/qwen-mtp-weights-20261022/compile1/qwen/compile.stderr.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\compile1\\qwen\\compile.stdout.log",
+      "bytes": 9,
+      "sha256": "f197b2519eedf02e571357ddc67cf5ca097ec055c64ddd28a980d92394b07b5d",
+      "entry": ".scratch/qwen-mtp-weights-20261022/compile1/qwen/compile.stdout.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\compile1\\qwen\\identity.json",
+      "bytes": 70816,
+      "sha256": "f5bd81993e5665ebd3f7a9c95e9e57755b7bb049b1dafcc2f0a2db246af48fda",
+      "entry": ".scratch/qwen-mtp-weights-20261022/compile1/qwen/identity.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\compile1\\qwen\\live.json",
+      "bytes": 2195,
+      "sha256": "e61fa22024c2fcebc841c8d3613b17bcd32c95b09f7186943e9e483e4ad1cf37",
+      "entry": ".scratch/qwen-mtp-weights-20261022/compile1/qwen/live.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\compile1\\qwen\\plan.json",
+      "bytes": 2690,
+      "sha256": "6a3177077cbbe9377c9ed000d76e58554cbdb4ef679af67cfe9448fa43106672",
+      "entry": ".scratch/qwen-mtp-weights-20261022/compile1/qwen/plan.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\compile1\\qwen\\qwen-deps.json",
+      "bytes": 32633,
+      "sha256": "59e8e92a6f7e9caf1c87a61c582b783656d4665eb3ec21d96177785b76dbe82f",
+      "entry": ".scratch/qwen-mtp-weights-20261022/compile1/qwen/qwen-deps.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\compile1\\qwen\\source\\tools\\qwen35_text\\main.cc",
+      "bytes": 159868,
+      "sha256": "d94177a69b60c7333e1ccbe5b8d934f1970c4417d2f4836488f9bea3794854f9",
+      "entry": ".scratch/qwen-mtp-weights-20261022/compile1/qwen/source/tools/qwen35_text/main.cc"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\implementation.diff",
+      "bytes": 13841,
+      "sha256": "c58f4d5db20e26e5566b815c9ffdb3ecab600679ff67687a7341ae95230b998b",
+      "entry": ".scratch/qwen-mtp-weights-20261022/implementation.diff"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\inputs\\weights-mtp.tsv",
+      "bytes": 28872,
+      "sha256": "bdfddf019139b4c791d8acad55a1c18b32fdef95e34f667ecf99f6658a856967",
+      "entry": ".scratch/qwen-mtp-weights-20261022/inputs/weights-mtp.tsv"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\inputs\\weights-text.tsv",
+      "bytes": 27889,
+      "sha256": "bb8900a6ebe1572f97f02121c83e807ea9ba140d18fe6ee15f20815aa4a73890",
+      "entry": ".scratch/qwen-mtp-weights-20261022/inputs/weights-text.tsv"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\loader_probe.cc",
+      "bytes": 4543,
+      "sha256": "33f24e2a651ffdad0b0f5081d108c8a3131e769ee118a25a7a152482d532c121",
+      "entry": ".scratch/qwen-mtp-weights-20261022/loader_probe.cc"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\metadata-check.json",
+      "bytes": 2191,
+      "sha256": "0e40bae51b5414c7da440a89d0f5f6e4e969382d74312377b8cf941ca6cc8707",
+      "entry": ".scratch/qwen-mtp-weights-20261022/metadata-check.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\prepare-run1\\live.json",
+      "bytes": 503,
+      "sha256": "37f86e06dc255851ecb2b0caa1e7a9f06e2d1c1b59dd74b60878561302946069",
+      "entry": ".scratch/qwen-mtp-weights-20261022/prepare-run1/live.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\prepare-run1\\plan.json",
+      "bytes": 355,
+      "sha256": "31fb0129dd38f012cd49e736658ebe738e4726d3b442e1ef46473317c388944a",
+      "entry": ".scratch/qwen-mtp-weights-20261022/prepare-run1/plan.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\prepare-run1\\run.command.json",
+      "bytes": 433,
+      "sha256": "0375be7b062dae96204a0d3aae1a2379e10037e1315d689beb8e267aee7d3242",
+      "entry": ".scratch/qwen-mtp-weights-20261022/prepare-run1/run.command.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\prepare-run1\\run.result.json",
+      "bytes": 503,
+      "sha256": "37f86e06dc255851ecb2b0caa1e7a9f06e2d1c1b59dd74b60878561302946069",
+      "entry": ".scratch/qwen-mtp-weights-20261022/prepare-run1/run.result.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\prepare-run1\\run.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "entry": ".scratch/qwen-mtp-weights-20261022/prepare-run1/run.stderr.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\prepare-run1\\run.stdout.log",
+      "bytes": 179,
+      "sha256": "e7944a9ce6f53d7a8a81064ff3ebd697225369797b50fcd63c76295ecd8a929c",
+      "entry": ".scratch/qwen-mtp-weights-20261022/prepare-run1/run.stdout.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\prepared\\continuation.ids",
+      "bytes": 2,
+      "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+      "entry": ".scratch/qwen-mtp-weights-20261022/prepared/continuation.ids"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\prepared\\input.json",
+      "bytes": 3159,
+      "sha256": "ef11e2594193267f741ad2cd1a0d09ecfb86cf8f0d1e0d1fa951c02f3ec231bc",
+      "entry": ".scratch/qwen-mtp-weights-20261022/prepared/input.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\prepared\\prompt.ids",
+      "bytes": 113,
+      "sha256": "0459156ffd8f318a1e1e2049e18a063c1b760fed77013afa689584fcc1d20d30",
+      "entry": ".scratch/qwen-mtp-weights-20261022/prepared/prompt.ids"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\prepared\\weights.tsv",
+      "bytes": 28872,
+      "sha256": "bdfddf019139b4c791d8acad55a1c18b32fdef95e34f667ecf99f6658a856967",
+      "entry": ".scratch/qwen-mtp-weights-20261022/prepared/weights.tsv"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\probe-link1\\link-plan.json",
+      "bytes": 83983,
+      "sha256": "206326f09338e542ed1af8c5b4c8d8de669936733cf6680fc741a62f3c30aeef",
+      "entry": ".scratch/qwen-mtp-weights-20261022/probe-link1/link-plan.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\probe-link1\\link.command.json",
+      "bytes": 29274,
+      "sha256": "6911989b2425c36cb23c5e799b8119601bbee15545fcc9469f83a77a1cbba255",
+      "entry": ".scratch/qwen-mtp-weights-20261022/probe-link1/link.command.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\probe-link1\\link.result.json",
+      "bytes": 29344,
+      "sha256": "b33b2b12bd85aa6093beb72f64dccd33b6b6bee5e7661b997d9ae513ff0dec33",
+      "entry": ".scratch/qwen-mtp-weights-20261022/probe-link1/link.result.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\probe-link1\\link.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "entry": ".scratch/qwen-mtp-weights-20261022/probe-link1/link.stderr.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\probe-link1\\link.stdout.log",
+      "bytes": 202,
+      "sha256": "8965b59463ab82b2f66907fa16c89c41b18e1402a824e735684d0cbd5b0d8063",
+      "entry": ".scratch/qwen-mtp-weights-20261022/probe-link1/link.stdout.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\probe-link1\\live.json",
+      "bytes": 29344,
+      "sha256": "b33b2b12bd85aa6093beb72f64dccd33b6b6bee5e7661b997d9ae513ff0dec33",
+      "entry": ".scratch/qwen-mtp-weights-20261022/probe-link1/live.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\probe-link1\\runtime-environment.json",
+      "bytes": 8838,
+      "sha256": "0db0aa7745136d9ea93153a24bc7c6c0e3cb8413961e7a6fd530feb5480e3d6d",
+      "entry": ".scratch/qwen-mtp-weights-20261022/probe-link1/runtime-environment.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\probe-ready-attempt1.json",
+      "bytes": 1207,
+      "sha256": "24da28591dd8eff9f1d089fa380cd9a25d2ac421eab7bcab555e25f631d8d321",
+      "entry": ".scratch/qwen-mtp-weights-20261022/probe-ready-attempt1.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\probe-run1\\identity.json",
+      "bytes": 1207,
+      "sha256": "24da28591dd8eff9f1d089fa380cd9a25d2ac421eab7bcab555e25f631d8d321",
+      "entry": ".scratch/qwen-mtp-weights-20261022/probe-run1/identity.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\probe-run1\\live.json",
+      "bytes": 407,
+      "sha256": "7fa249d2c485b613cde7b3878959841eb04eb771c01b34c62f226ae0f82a3813",
+      "entry": ".scratch/qwen-mtp-weights-20261022/probe-run1/live.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\probe-run1\\plan.json",
+      "bytes": 258,
+      "sha256": "b7e029a963868c8f329a926e35cced5674185ada4df46116d7b71ca528461371",
+      "entry": ".scratch/qwen-mtp-weights-20261022/probe-run1/plan.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\probe-run1\\run.command.json",
+      "bytes": 337,
+      "sha256": "7e964b745b9e3b364c97d66ea09ea505cdbdce8579d3be1e23620a4384775bb4",
+      "entry": ".scratch/qwen-mtp-weights-20261022/probe-run1/run.command.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\probe-run1\\run.result.json",
+      "bytes": 407,
+      "sha256": "7fa249d2c485b613cde7b3878959841eb04eb771c01b34c62f226ae0f82a3813",
+      "entry": ".scratch/qwen-mtp-weights-20261022/probe-run1/run.result.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\probe-run1\\run.stderr.log",
+      "bytes": 1139,
+      "sha256": "a47fdab31003f55174b230649fd50e9aabb0cd262649c9f05b9522d4c948d5a8",
+      "entry": ".scratch/qwen-mtp-weights-20261022/probe-run1/run.stderr.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\probe-run1\\run.stdout.log",
+      "bytes": 355,
+      "sha256": "f370b6f127694c21a29c5dbe02edc4ac93f1c9e0859c7af82a9e3dbb8c93b9f1",
+      "entry": ".scratch/qwen-mtp-weights-20261022/probe-run1/run.stdout.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\qwen-link1\\link-plan.json",
+      "bytes": 83972,
+      "sha256": "40893c3e5f8f4205453a64f22ab644e5815dcdaf1e215816189b6b92b3c338fb",
+      "entry": ".scratch/qwen-mtp-weights-20261022/qwen-link1/link-plan.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\qwen-link1\\link.command.json",
+      "bytes": 29265,
+      "sha256": "f7873f1ade073025e56699dbff4c383ae56009546c647afd69d91b4b609d7b40",
+      "entry": ".scratch/qwen-mtp-weights-20261022/qwen-link1/link.command.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\qwen-link1\\link.result.json",
+      "bytes": 29336,
+      "sha256": "08009394080f52be4afc66ca5a79fd102ccd1deb3053bcbaad0000805448a08f",
+      "entry": ".scratch/qwen-mtp-weights-20261022/qwen-link1/link.result.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\qwen-link1\\link.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "entry": ".scratch/qwen-mtp-weights-20261022/qwen-link1/link.stderr.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\qwen-link1\\link.stdout.log",
+      "bytes": 198,
+      "sha256": "f1397861d5c21dbc656f3fd5ebdcb1e6066ef09f8b9acf9f589eb84583bd6d52",
+      "entry": ".scratch/qwen-mtp-weights-20261022/qwen-link1/link.stdout.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\qwen-link1\\live.json",
+      "bytes": 29336,
+      "sha256": "08009394080f52be4afc66ca5a79fd102ccd1deb3053bcbaad0000805448a08f",
+      "entry": ".scratch/qwen-mtp-weights-20261022/qwen-link1/live.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\qwen-link1\\runtime-environment.json",
+      "bytes": 8837,
+      "sha256": "79ba2039de10963ceb33bafd4326a1a73132140ee334e42d014fff4b76698916",
+      "entry": ".scratch/qwen-mtp-weights-20261022/qwen-link1/runtime-environment.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\qwen-ready-attempt1.json",
+      "bytes": 1180,
+      "sha256": "3f7b16686fb706d9bd857ba94e5bf5e2110a02f8f8efa845c7022579f711316f",
+      "entry": ".scratch/qwen-mtp-weights-20261022/qwen-ready-attempt1.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\r1-run1\\identity.json",
+      "bytes": 1180,
+      "sha256": "3f7b16686fb706d9bd857ba94e5bf5e2110a02f8f8efa845c7022579f711316f",
+      "entry": ".scratch/qwen-mtp-weights-20261022/r1-run1/identity.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\r1-run1\\live.json",
+      "bytes": 924,
+      "sha256": "8b4d5a722f1f346ce2b448d8b4c2343943f16c51daeebcff77ba92d1f6207f83",
+      "entry": ".scratch/qwen-mtp-weights-20261022/r1-run1/live.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\r1-run1\\plan.json",
+      "bytes": 777,
+      "sha256": "0cb4d96cd857865a9342598992a0f9a9bf3d5a1b993fb89c944c72a41dbad249",
+      "entry": ".scratch/qwen-mtp-weights-20261022/r1-run1/plan.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\r1-run1\\run.command.json",
+      "bytes": 856,
+      "sha256": "6fe021ebd25f9002514c77a4754fc3fcf64bafeaa9f6f9542322bfe73bf5946c",
+      "entry": ".scratch/qwen-mtp-weights-20261022/r1-run1/run.command.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\r1-run1\\run.result.json",
+      "bytes": 924,
+      "sha256": "8b4d5a722f1f346ce2b448d8b4c2343943f16c51daeebcff77ba92d1f6207f83",
+      "entry": ".scratch/qwen-mtp-weights-20261022/r1-run1/run.result.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\r1-run1\\run.stderr.log",
+      "bytes": 4214,
+      "sha256": "f898429c6b3c72cd072078226a4681c7865065c48368ccf28ebeca65a6987d61",
+      "entry": ".scratch/qwen-mtp-weights-20261022/r1-run1/run.stderr.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\r1-run1\\run.stdout.log",
+      "bytes": 3903,
+      "sha256": "bc42321006b82f29a405d75e927a061c7fdc9fe95437c7695a4954b5d176259e",
+      "entry": ".scratch/qwen-mtp-weights-20261022/r1-run1/run.stdout.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\r1-run1\\trace\\round1_decode1\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "e40060187d8c6376d00e58794643dd3f444dceefe29eb675c6ee2b0899131210",
+      "entry": ".scratch/qwen-mtp-weights-20261022/r1-run1/trace/round1_decode1/hidden.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\r1-run1\\trace\\round1_decode1\\logits.f32",
+      "bytes": 993280,
+      "sha256": "54999d39e6a46f665fe6f7fc5d22b5136eb5e9b73ae179e5b908b33d7009f326",
+      "entry": ".scratch/qwen-mtp-weights-20261022/r1-run1/trace/round1_decode1/logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\r1-run1\\trace\\round1_decode2\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "f6d075ad86e2e0550617e6dfd6201ae335228ee6808ab8ae8bb3681159663424",
+      "entry": ".scratch/qwen-mtp-weights-20261022/r1-run1/trace/round1_decode2/hidden.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\r1-run1\\trace\\round1_decode2\\logits.f32",
+      "bytes": 993280,
+      "sha256": "772199ca4b0550c00635c25bd8036a9b5334cb0c22bb79ce86f6fbd81520df67",
+      "entry": ".scratch/qwen-mtp-weights-20261022/r1-run1/trace/round1_decode2/logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\r1-run1\\trace\\round1_decode3\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "227c7e6548e2159393ddf350d7dfbd1dda87040994ade315075c005ce7798889",
+      "entry": ".scratch/qwen-mtp-weights-20261022/r1-run1/trace/round1_decode3/hidden.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\r1-run1\\trace\\round1_decode3\\logits.f32",
+      "bytes": 993280,
+      "sha256": "aff61c4c7ec366a0b25cf583427df267859aca70ab3c9e264268a30f2d45f3d4",
+      "entry": ".scratch/qwen-mtp-weights-20261022/r1-run1/trace/round1_decode3/logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\r1-run1\\trace\\round1_decode4\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "f7d8474a362ca19268b3481791345307fee1026f0a4c871e1227ce3315e7021e",
+      "entry": ".scratch/qwen-mtp-weights-20261022/r1-run1/trace/round1_decode4/hidden.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\r1-run1\\trace\\round1_decode4\\logits.f32",
+      "bytes": 993280,
+      "sha256": "0ab4e55caa9276fd56d4353c36121014f07342989b570eb9c3f7dfddc21a2bba",
+      "entry": ".scratch/qwen-mtp-weights-20261022/r1-run1/trace/round1_decode4/logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\r1-run1\\trace\\round1_prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "441f8e0eea6b8deea8b640bb76efc9dcc1267f3ee4de9e936bcc9fa9110a8ee1",
+      "entry": ".scratch/qwen-mtp-weights-20261022/r1-run1/trace/round1_prefill/hidden.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\r1-run1\\trace\\round1_prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "3f9f6f36cbefdeae7dc1e5e89b8af0729c2d9d6f59dab28e040a4771d9609b43",
+      "entry": ".scratch/qwen-mtp-weights-20261022/r1-run1/trace/round1_prefill/logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\r1-run1\\trace\\round2_decode1\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "8871fcd2d7757fe35a648f1c251c469af39bbabf6aedaa1140ca265fc83c6f89",
+      "entry": ".scratch/qwen-mtp-weights-20261022/r1-run1/trace/round2_decode1/hidden.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\r1-run1\\trace\\round2_decode1\\logits.f32",
+      "bytes": 993280,
+      "sha256": "66db711343338eeeb14cdb3fc6218ea0fc4f81945071835096814859681fcabe",
+      "entry": ".scratch/qwen-mtp-weights-20261022/r1-run1/trace/round2_decode1/logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\r1-run1\\trace\\round2_decode2\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "4b61582cd57ec864b3d377722a2d60668b4fcb554c2ae2becf72113b3bd1ba14",
+      "entry": ".scratch/qwen-mtp-weights-20261022/r1-run1/trace/round2_decode2/hidden.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\r1-run1\\trace\\round2_decode2\\logits.f32",
+      "bytes": 993280,
+      "sha256": "29cf46dc8de81a798853d10cec118bc91770b7fae999036123e7c9398b6a1d6b",
+      "entry": ".scratch/qwen-mtp-weights-20261022/r1-run1/trace/round2_decode2/logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\r1-run1\\trace\\round2_decode3\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "ef73bdc8381e86f039d3cd2b3b041e783e31b8c99933b27f7a90527045d0382c",
+      "entry": ".scratch/qwen-mtp-weights-20261022/r1-run1/trace/round2_decode3/hidden.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\r1-run1\\trace\\round2_decode3\\logits.f32",
+      "bytes": 993280,
+      "sha256": "fb86e1771034cbdb301309d9f8115d0df3b480bd58bcff8613c48fe0f109eca3",
+      "entry": ".scratch/qwen-mtp-weights-20261022/r1-run1/trace/round2_decode3/logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\r1-run1\\trace\\round2_prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "841bac7fa804558dac57deec0721853bcb308007d82c1a422fc600db04dc25c6",
+      "entry": ".scratch/qwen-mtp-weights-20261022/r1-run1/trace/round2_prefill/hidden.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\r1-run1\\trace\\round2_prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "958bfc71c22a9517e6039108481211b8b4e5b11b0db2d1650c469ccf7824db3d",
+      "entry": ".scratch/qwen-mtp-weights-20261022/r1-run1/trace/round2_prefill/logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\r1-run1\\trace\\routes\\default-R1-T1.boundaries.tsv",
+      "bytes": 339,
+      "sha256": "9e50e74e57b4bb9a68a7bd4433a0b7c9fa40c08ec911c7bb2c445ca07b1e0d36",
+      "entry": ".scratch/qwen-mtp-weights-20261022/r1-run1/trace/routes/default-R1-T1.boundaries.tsv"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\r1-run1\\trace\\routes\\default-R1-T1.route.tsv",
+      "bytes": 35583,
+      "sha256": "c6e4c61044443ede6d6cf4860c02a68b8ef571a6fd155f4488fe2aa5e23a6287",
+      "entry": ".scratch/qwen-mtp-weights-20261022/r1-run1/trace/routes/default-R1-T1.route.tsv"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\r1-run1\\trace\\routes\\default-R1-T128.boundaries.tsv",
+      "bytes": 357,
+      "sha256": "d95051bed8b0971dbd4b955f171830fb3b8b09691f67b6c082b080a3652c6308",
+      "entry": ".scratch/qwen-mtp-weights-20261022/r1-run1/trace/routes/default-R1-T128.boundaries.tsv"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\r1-run1\\trace\\routes\\default-R1-T128.route.tsv",
+      "bytes": 36819,
+      "sha256": "b25513ea9b3ea272b68f7d10c78d72da8766ba6de69fa6660d9e56f0c2260444",
+      "entry": ".scratch/qwen-mtp-weights-20261022/r1-run1/trace/routes/default-R1-T128.route.tsv"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\r1-run1\\trace\\routes\\default-R1-T16.boundaries.tsv",
+      "bytes": 348,
+      "sha256": "943177a4b01535685d5a2ecb0d33ca5e6375aaed9d6cf615446084ca9332146a",
+      "entry": ".scratch/qwen-mtp-weights-20261022/r1-run1/trace/routes/default-R1-T16.boundaries.tsv"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\r1-run1\\trace\\routes\\default-R1-T16.route.tsv",
+      "bytes": 36819,
+      "sha256": "b25513ea9b3ea272b68f7d10c78d72da8766ba6de69fa6660d9e56f0c2260444",
+      "entry": ".scratch/qwen-mtp-weights-20261022/r1-run1/trace/routes/default-R1-T16.route.tsv"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\report.json",
+      "bytes": 5496,
+      "sha256": "2aac45767ea7549ef76689f76bda2a9e3fe75e7cf0dd727698a0054f0512c425",
+      "entry": ".scratch/qwen-mtp-weights-20261022/report.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\review\\check_model_regression.py",
+      "bytes": 8772,
+      "sha256": "9facacea6f5b474809a39bc457b1bcffa6bdc62acab2b5082d4d8664d651c94b",
+      "entry": ".scratch/qwen-mtp-weights-20261022/review/check_model_regression.py"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\review\\loader-review.json",
+      "bytes": 8347,
+      "sha256": "c0485b3ec7677450dd4804ff44e70cc131b6c7b870c620b392adbaa7c89bef3e",
+      "entry": ".scratch/qwen-mtp-weights-20261022/review/loader-review.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\review\\topone-model-regression.json",
+      "bytes": 4615,
+      "sha256": "da4dfe77363bc2ec62587f4db5a8755ed6c88c9ae04593a5f9f523c53a1591d4",
+      "entry": ".scratch/qwen-mtp-weights-20261022/review/topone-model-regression.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\run.py",
+      "bytes": 1295,
+      "sha256": "627493fb9ab3121ac2df04a0688bcc5ed7535fd6c9a7f2d5a2d510f98fcb5f04",
+      "entry": ".scratch/qwen-mtp-weights-20261022/run.py"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\source-freeze.json",
+      "bytes": 1695,
+      "sha256": "b820c0cb2f9b7e1104b16b583672751d68113466c12b6fe4dee8835c8791ab47",
+      "entry": ".scratch/qwen-mtp-weights-20261022/source-freeze.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\source\\tools\\qwen35_text\\main.cc",
+      "bytes": 159868,
+      "sha256": "d94177a69b60c7333e1ccbe5b8d934f1970c4417d2f4836488f9bea3794854f9",
+      "entry": ".scratch/qwen-mtp-weights-20261022/source/tools/qwen35_text/main.cc"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\source\\tools\\qwen35_text\\prepare.py",
+      "bytes": 7446,
+      "sha256": "8582fdc96cfe1a50a45ac0386637a16484ca39890e437ae35bc1b01251d2ad4d",
+      "entry": ".scratch/qwen-mtp-weights-20261022/source/tools/qwen35_text/prepare.py"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tools\\qwen35_text\\README.md",
+      "bytes": 20959,
+      "sha256": "77785c4d0bf7a64f418eed18a50b1c2c7ce965ce2bbf0a5231b0e1d9e5847ffb",
+      "entry": "tools/qwen35_text/README.md"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tools\\qwen35_text\\main.cc",
+      "bytes": 159868,
+      "sha256": "d94177a69b60c7333e1ccbe5b8d934f1970c4417d2f4836488f9bea3794854f9",
+      "entry": "tools/qwen35_text/main.cc"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tools\\qwen35_text\\prepare.py",
+      "bytes": 7446,
+      "sha256": "8582fdc96cfe1a50a45ac0386637a16484ca39890e437ae35bc1b01251d2ad4d",
+      "entry": "tools/qwen35_text/prepare.py"
+    }
+  ],
+  "archive_layout": "Ordinary ZIP volumes below100MiB, repository-relative entries; CRC and every entry SHA verified. No models, SDKs, objects or executables duplicated.",
+  "implementation": [
+    "prepare.py --mtp explicitly selects335 original text+MTP tensors with distinct signature; default320 manifest preserved.",
+    "The same FileResourcePipeline uploads335 groups into335 original device allocations with two8MiB staging slots. Only15 tensors/121656320B added; original tied embedding/head shared. No second loader or inference executor.",
+    "Recipe absolute-name lookup and target relative wrapper share one constant cache. Default Model/CLI still text-only, explicitly rejects MTP manifest before upload. No fake MTP inference option."
+  ],
+  "actual_prepare": {
+    "result": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\prepare-run1\\run.result.json",
+      "bytes": 503,
+      "sha256": "37f86e06dc255851ecb2b0caa1e7a9f06e2d1c1b59dd74b60878561302946069"
+    },
+    "receipt": {
+      "kind": "qwen35_text_input_preparation_no_model_execution",
+      "source_id": "4068044d8571635d8a86f1e96a43dad104efc7089169065f735601e350008155",
+      "original_files": [
+        {
+          "path": "LICENSE",
+          "size_bytes": 11544,
+          "sha256": "bbedc3fda3305820b977265f01b8619d87570a6739de3a5582c3464840f1e57a"
+        },
+        {
+          "path": "README.md",
+          "size_bytes": 62814,
+          "sha256": "c0e83a849c776e6fa843d011f023132d942a0f0140d903205bf1c363adad2275"
+        },
+        {
+          "path": "chat_template.jinja",
+          "size_bytes": 7755,
+          "sha256": "273d8e0e683b885071fb17e08d71e5f2a5ddfb5309756181681de4f5a1822d80"
+        },
+        {
+          "path": "config.json",
+          "size_bytes": 2908,
+          "sha256": "ed1c1723241f23f7f4e23430759cbd7dcfb4103cbdfe052bfe7626b57c2615b4"
+        },
+        {
+          "path": "gitattributes",
+          "size_bytes": 1570,
+          "sha256": "34448b82c17d60fec9b65b1f093c115ddbaadc04beb1b0140b6bfed2e012a930"
+        },
+        {
+          "path": "merges.txt",
+          "size_bytes": 3353259,
+          "sha256": "a9d356d7bdf1ef4949e3e748e95b8e10ad9d4e2e838eddc38a0a7b6b94d1db8d"
+        },
+        {
+          "path": "model.safetensors-00001-of-00001.safetensors",
+          "size_bytes": 4548221488,
+          "sha256": "aa33250c4fc64891ddfaba3a314fd9542ea371843c387178b425fbcc5ed680b1"
+        },
+        {
+          "path": "model.safetensors.index.json",
+          "size_bytes": 64460,
+          "sha256": "aca8afed9da75b0f050b408d270766fd77627f1af401e240f61c3b47d0db02f9"
+        },
+        {
+          "path": "preprocessor_config.json",
+          "size_bytes": 390,
+          "sha256": "27225450ac9c6529872ee1924fcb0962ff5634834f817040f444118116f4e516"
+        },
+        {
+          "path": "tokenizer.json",
+          "size_bytes": 12807982,
+          "sha256": "5f9e4d4901a92b997e463c1f46055088b6cca5ca61a6522d1b9f64c4bb81cb42"
+        },
+        {
+          "path": "tokenizer_config.json",
+          "size_bytes": 16709,
+          "sha256": "49e2b6e395f959f077f1e992b338919c0d4a9732fc6e613995e06557f843500c"
+        },
+        {
+          "path": "video_preprocessor_config.json",
+          "size_bytes": 385,
+          "sha256": "7768af27c1fafa9cc9011c1dc20067e03f8915e03b63504550e11d5066986d13"
+        },
+        {
+          "path": "vocab.json",
+          "size_bytes": 6722759,
+          "sha256": "ce99b4cb2983d118806ce0a8b777a35b093e2000a503ebde25853284c9dfa003"
+        }
+      ],
+      "text_tensor_count": 320,
+      "text_weight_bytes": 3763655360,
+      "prompt": "Please calculate 2 + 3. Answer briefly.",
+      "prompt_ids": [
+        248045,
+        846,
+        198,
+        5328,
+        10724,
+        220,
+        17,
+        478,
+        220,
+        18,
+        13,
+        21134,
+        25899,
+        13,
+        248046,
+        198,
+        248045,
+        74455,
+        198,
+        248068,
+        271,
+        248069,
+        271
+      ],
+      "continuation_ids": [],
+      "checkpoint": "C:\\Users\\kiro\\Downloads\\Qwen3.5-2B\\model.safetensors-00001-of-00001.safetensors",
+      "script_sha256": "8582fdc96cfe1a50a45ac0386637a16484ca39890e437ae35bc1b01251d2ad4d",
+      "weight_selection": "text+mtp",
+      "manifest_signature": "HYLE_QWEN35_TEXT_MTP_V1",
+      "selected_tensor_count": 335,
+      "selected_weight_bytes": 3885311680,
+      "mtp_tensor_count": 15,
+      "mtp_weight_bytes": 121656320
+    },
+    "metadata_check": {
+      "status": "PASS",
+      "kind": "host_metadata_check_no_payload_or_execution",
+      "prepare": {
+        "path": "C:\\public\\project-hyle\\hyle\\tools\\qwen35_text\\prepare.py",
+        "bytes": 7446,
+        "sha256": "8582fdc96cfe1a50a45ac0386637a16484ca39890e437ae35bc1b01251d2ad4d"
+      },
+      "script": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\check_metadata.py",
+        "bytes": 6199,
+        "sha256": "2254a40e871954c6ac5d6f2dbda2fe81c03220dd5a3af97dc18c344598036b93"
+      },
+      "metadata_read_bytes": 76656,
+      "header_sha256": "ccba2c1f645fe59268f89ee7ea552e02ce6bf0c8a087bf332fb0e3bd99bfee9d",
+      "default_selection_and_manifest_equal_original": true,
+      "text": {
+        "tensors": 320,
+        "bytes": 3763655360,
+        "manifest": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\inputs\\weights-text.tsv",
+          "bytes": 27889,
+          "sha256": "bb8900a6ebe1572f97f02121c83e807ea9ba140d18fe6ee15f20815aa4a73890"
+        }
+      },
+      "text_plus_mtp": {
+        "tensors": 335,
+        "bytes": 3885311680,
+        "manifest": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\inputs\\weights-mtp.tsv",
+          "bytes": 28872,
+          "sha256": "bdfddf019139b4c791d8acad55a1c18b32fdef95e34f667ecf99f6658a856967"
+        }
+      },
+      "mtp": {
+        "tensors": 15,
+        "bytes": 121656320,
+        "audit_exact": true,
+        "cpp_python_shape_tables_equal": true
+      },
+      "rejection_cases": [
+        {
+          "case": "missing_mtp",
+          "error": "identified MTP tensor inventory differs"
+        },
+        {
+          "case": "unknown_mtp",
+          "error": "identified MTP tensor differs: mtp.unknown.weight"
+        },
+        {
+          "case": "same_bytes_wrong_shape",
+          "error": "identified MTP tensor differs: mtp.fc.weight"
+        },
+        {
+          "case": "wrong_mtp_dtype",
+          "error": "unsupported original tensor: mtp.fc.weight"
+        },
+        {
+          "case": "out_of_file_mtp",
+          "error": "unsupported original tensor: mtp.norm.weight"
+        }
+      ],
+      "not_executed": [
+        "prepare.py main/full original-file digest/tokenizer",
+        "C++ compilation/loader",
+        "GPU",
+        "MTP inference"
+      ]
+    }
+  },
+  "actual_loader": {
+    "result": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\probe-run1\\run.result.json",
+      "bytes": 407,
+      "sha256": "7fa249d2c485b613cde7b3878959841eb04eb771c01b34c62f226ae0f82a3813"
+    },
+    "probe": {
+      "status": "PASS real MTP weights only",
+      "total_tensors": 335,
+      "total_bytes": 3885311680,
+      "mtp_tensors": 15,
+      "mtp_bytes": 121656320,
+      "all_mtp_device_bytes_equal_original": true,
+      "default_text_rejects_mtp_manifest_before_upload": true,
+      "absolute_and_relative_constants_deduplicated": true,
+      "staging_bytes": 16777216,
+      "load_seconds": 0.836301,
+      "MTP_inference_executed": false
+    },
+    "scope": "Actual335 tensor upload and15 complete MTP device byte comparisons against original local shard. Probe load_seconds is one diagnostic observation, not MTP inference/performance benchmark."
+  },
+  "ordinary_text_regression": {
+    "image": {
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\qwen-link1\\qwen.exe",
+        "bytes": 140145664,
+        "sha256": "e8283218fb196876c51a9142b8f095519e0baa6b185637b4a689b63a7872ff04"
+      },
+      "source": {
+        "path": "C:\\public\\project-hyle\\hyle\\tools\\qwen35_text\\main.cc",
+        "bytes": 159868,
+        "sha256": "d94177a69b60c7333e1ccbe5b8d934f1970c4417d2f4836488f9bea3794854f9"
+      },
+      "main": {
+        "path": "C:\\public\\project-hyle\\hyle\\tools\\qwen35_text\\main.cc",
+        "bytes": 159868,
+        "sha256": "d94177a69b60c7333e1ccbe5b8d934f1970c4417d2f4836488f9bea3794854f9"
+      },
+      "link_plan": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\qwen-link1\\link-plan.json",
+        "bytes": 83972,
+        "sha256": "40893c3e5f8f4205453a64f22ab644e5815dcdaf1e215816189b6b92b3c338fb"
+      },
+      "runtime_environment": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\qwen-link1\\runtime-environment.json",
+        "bytes": 8837,
+        "sha256": "79ba2039de10963ceb33bafd4326a1a73132140ee334e42d014fff4b76698916"
+      },
+      "SDK_builds": 0,
+      "native_rebuilds": 0
+    },
+    "vectors": {
+      "status": "PASS same-B before/after MTP weight opt-in, ordinary text finite model regression",
+      "current_ready": ".scratch\\qwen-mtp-weights-20261022\\qwen-ready-attempt1.json",
+      "baseline_manifest": "docs\\evidence\\performance\\qwen-cli-batch-2026-10-22.json",
+      "archives": [
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\qwen-cli-batch-2026-10-22.data.part01.zip",
+          "bytes": 90517873,
+          "sha256": "83f98859e0b0f929baa067942ba8bf3f3dc87284f72cf1512a8998385106fc4f"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\qwen-cli-batch-2026-10-22.data.part02.zip",
+          "bytes": 38026133,
+          "sha256": "1c57ffa551358562235022b40796c0c8d532a27d1a72b4cbf9adf3520eb60344"
+        }
+      ],
+      "selected_ZIP_entries_SHA256_verified": 94,
+      "runs": [
+        {
+          "current": ".scratch\\qwen-mtp-weights-20261022\\r1-run1",
+          "baseline_ZIP_prefix": ".scratch/qwen-cli-batch-20261022/r1-run1/",
+          "terminal_exits": [
+            0,
+            0
+          ],
+          "same_input_and_configuration_except_image_trace_path": true,
+          "current_image": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\qwen-link1\\qwen.exe",
+            "bytes": 140145664,
+            "sha256": "e8283218fb196876c51a9142b8f095519e0baa6b185637b4a689b63a7872ff04"
+          },
+          "baseline_image": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\qwen-link2\\qwen.exe",
+            "bytes": 139852800,
+            "sha256": "388e67844b27cdc97101d6c53dced317cc4c086b1b96e4673c6a33fe5da5f547"
+          },
+          "vectors": {
+            "files": 18,
+            "all_byte_exact": true,
+            "all_finite": true,
+            "types": {
+              "BF16": {
+                "files": 9,
+                "elements": 18432
+              },
+              "F32": {
+                "files": 9,
+                "elements": 2234880
+              }
+            }
+          },
+          "all_ids_contexts_and_execution_shape_ledgers_equal": true,
+          "ledger": {
+            "actual_graph_calls": 9,
+            "actual_graph_tokens": 151,
+            "graph_participations": 9,
+            "max_batch_requests": 1,
+            "processed_tokens": 151,
+            "generated_tokens": 9
+          }
+        },
+        {
+          "current": ".scratch\\qwen-mtp-weights-20261022\\batch-run1",
+          "baseline_ZIP_prefix": ".scratch/qwen-cli-batch-20261022/batch-run2/",
+          "terminal_exits": [
+            0,
+            0
+          ],
+          "same_input_and_configuration_except_image_trace_path": true,
+          "current_image": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\qwen-link1\\qwen.exe",
+            "bytes": 140145664,
+            "sha256": "e8283218fb196876c51a9142b8f095519e0baa6b185637b4a689b63a7872ff04"
+          },
+          "baseline_image": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\qwen-link3\\qwen.exe",
+            "bytes": 139852800,
+            "sha256": "da0567327a3a0acc222ce103fdd783a1f4cb7a58e741a56ce0c214ce83f66cd0"
+          },
+          "vectors": {
+            "files": 72,
+            "all_byte_exact": true,
+            "all_finite": true,
+            "types": {
+              "BF16": {
+                "files": 36,
+                "elements": 73728
+              },
+              "F32": {
+                "files": 36,
+                "elements": 8939520
+              }
+            }
+          },
+          "all_ids_contexts_and_execution_shape_ledgers_equal": true,
+          "ledger": {
+            "actual_graph_calls": 26,
+            "actual_graph_tokens": 239,
+            "graph_participations": 36,
+            "max_batch_requests": 2,
+            "processed_tokens": 239,
+            "generated_tokens": 36
+          }
+        }
+      ],
+      "total_vector_pairs": 90,
+      "scope": [
+        "Exactly R1-to-R1 (18) and B2 CLI-to-B2 CLI (72); no comparison between different B values.",
+        "Selected original archive bytes were checked against the published per-entry SHA256 and CRC. No complete archive was extracted or re-hashed.",
+        "Finite BF16/F32 follows raw exponent bits. Byte equality therefore proves both copies finite for these vectors.",
+        "JSON signatures preserve every generated/consumed ID, per-Session phase/context, Graph count/participation/token ledger and batch/wave grouping. Timing/capture latency is deliberately excluded.",
+        "This is a finite same-image-input regression, not broad quality, arbitrary-model support or a throughput result."
+      ],
+      "activity": {
+        "native_processes": 0,
+        "GPU_runs": 0,
+        "builds": 0,
+        "product_edits": 0,
+        "archives_extracted": 0
+      }
+    },
+    "scope": "Updated default320 consumer rebuilt, R1 and B2 actual runs compare90 raw files byteexact to their same-B baselines; no extra full timing window claimed."
+  },
+  "review": {
+    "schema": 1,
+    "reviewed_at": "2026-10-21T18:02:43.428724+00:00",
+    "scope": "Read-only narrow review of original TEXT+MTP weight selection/loading and absolute-name lookup. This is not MTP inference.",
+    "assessment": "No substantive defect found in the reviewed loading slice.",
+    "blocking_findings": [],
+    "sources": {
+      "current": [
+        {
+          "path": "tools/qwen35_text/prepare.py",
+          "bytes": 7446,
+          "sha256": "8582fdc96cfe1a50a45ac0386637a16484ca39890e437ae35bc1b01251d2ad4d"
+        },
+        {
+          "path": "tools/qwen35_text/main.cc",
+          "bytes": 159868,
+          "sha256": "d94177a69b60c7333e1ccbe5b8d934f1970c4417d2f4836488f9bea3794854f9"
+        }
+      ],
+      "before": [
+        {
+          "path": ".scratch/qwen-mtp-weights-20261022/before/tools/qwen35_text/prepare.py",
+          "bytes": 5310,
+          "sha256": "7fd93acc1c12b80b625f4d129f79c33f4f5ab37a5539e539e8baf1218e04c654"
+        },
+        {
+          "path": ".scratch/qwen-mtp-weights-20261022/before/tools/qwen35_text/main.cc",
+          "bytes": 157203,
+          "sha256": "0ff952f87541665f3c734390dedd33c75ed88ab93a93e6d03be49507c82d4c4c"
+        }
+      ],
+      "frozen_sources_match": true
+    },
+    "checks": [
+      {
+        "topic": "Selection and manifest identity",
+        "anchors": [
+          "tools/qwen35_text/prepare.py:17",
+          "tools/qwen35_text/prepare.py:36",
+          "tools/qwen35_text/prepare.py:88",
+          "tools/qwen35_text/prepare.py:117",
+          "tools/qwen35_text/main.cc:590"
+        ],
+        "result": "Explicit --mtp selects exactly the known 15 BF16 MTP names/shapes in addition to original TEXT320; missing/unknown/wrong-shape/wrong-dtype metadata rejects. Original file digests and text geometry are checked before writing the prepared manifest. Distinct TEXT_MTP signature and C++ opt-in prevent accidental upload by the default Model."
+      },
+      {
+        "topic": "Types, extents and inventory",
+        "anchors": [
+          "tools/qwen35_text/main.cc:627",
+          "tools/qwen35_text/main.cc:647",
+          "tools/qwen35_text/main.cc:659",
+          "tools/qwen35_text/main.cc:684"
+        ],
+        "result": "C++ shape table matches Python. Rank is checked before indexing dimensions; short-circuit rank mismatch protects columns access. Required-byte and file bounds checks precede tensor allocation; duplicate names reject, and count/byte/MTP totals are checked before pipeline upload."
+      },
+      {
+        "topic": "Group capacity and real source ownership",
+        "anchors": [
+          "tools/qwen35_text/main.cc:626",
+          "tools/qwen35_text/main.cc:675",
+          "tools/qwen35_text/main.cc:691",
+          "tools/qwen35_text/main.cc:702",
+          "tools/qwen35_text/main.cc:724"
+        ],
+        "result": "One range/group/allocation/ready lease per selected tensor; max_groups_per_request is 320 or335 according to the same selection. Largest tensor target capacity is calculated across the selected set; total bytes plus the original two8MiB staging slots has an overflow guard. Actual delivered group tags, sizes, completion/retirement and copied/read byte totals remain checked; drain and explicit source close are unchanged."
+      },
+      {
+        "topic": "No duplicated embedding/head or lookup constants",
+        "anchors": [
+          "tools/qwen35_text/main.cc:249",
+          "tools/qwen35_text/main.cc:256",
+          "tools/qwen35_text/main.cc:263"
+        ],
+        "result": "The15 MTP names contain no embedding or vocabulary head. weight(relative) delegates to weight_absolute(full target name), using one full-name cache and the same original Tensor/ReadLease. The probe checks relative/absolute target embedding identity and repeated mtp.fc identity without adding duplicate constants."
+      },
+      {
+        "topic": "Default path and math remain unchanged",
+        "anchors": [
+          "tools/qwen35_text/main.cc:595",
+          "tools/qwen35_text/main.cc:832"
+        ],
+        "result": "Model still invokes the default kText loader. Independently compared exact source sections: class Model declaration through EOF, Recipe scalar/math through WeightLoadReport, and loader Drain-through-close tail are all byte-equivalent text to before. Prepared TEXT records retain the exact320 old records/order/ranges. No MTP model/CLI/executor was introduced."
+      }
+    ],
+    "independent_small_metadata_recheck": {
+      "manifest": {
+        "path": ".scratch/qwen-mtp-weights-20261022/prepared/weights.tsv",
+        "bytes": 28872,
+        "sha256": "bdfddf019139b4c791d8acad55a1c18b32fdef95e34f667ecf99f6658a856967"
+      },
+      "signature": "HYLE_QWEN35_TEXT_MTP_V1",
+      "total_tensors": 335,
+      "total_bytes": 3885311680,
+      "text_tensors": 320,
+      "text_bytes": 3763655360,
+      "mtp_tensors": 15,
+      "mtp_bytes": 121656320,
+      "unique_names": true,
+      "cpp_python_prepared_shape_tables_equal": true,
+      "text_records_equal_original_default_manifest": true,
+      "embedding_weight_entries": 1,
+      "mtp_embedding_or_head_entries": 0,
+      "unchanged_source_sections": {
+        "Model_through_EOF": true,
+        "Recipe_scalar_math_through_WeightLoadReport": true,
+        "loader_drain_retirement_close_tail": true
+      }
+    },
+    "existing_actual_evidence_reviewed": {
+      "preparation": {
+        "terminal": {
+          "path": ".scratch/qwen-mtp-weights-20261022/prepare-run1/run.result.json",
+          "bytes": 503,
+          "sha256": "37f86e06dc255851ecb2b0caa1e7a9f06e2d1c1b59dd74b60878561302946069"
+        },
+        "exit": 0,
+        "command": {
+          "path": ".scratch/qwen-mtp-weights-20261022/prepare-run1/run.command.json",
+          "bytes": 433,
+          "sha256": "0375be7b062dae96204a0d3aae1a2379e10037e1315d689beb8e267aee7d3242"
+        },
+        "scope": "Root ran full original identity/tokenizer preparation with --mtp."
+      },
+      "loader_probe": {
+        "ready": {
+          "path": ".scratch/qwen-mtp-weights-20261022/probe-ready-attempt1.json",
+          "bytes": 1207,
+          "sha256": "24da28591dd8eff9f1d089fa380cd9a25d2ac421eab7bcab555e25f631d8d321"
+        },
+        "terminal": {
+          "path": ".scratch/qwen-mtp-weights-20261022/probe-run1/run.result.json",
+          "bytes": 407,
+          "sha256": "7fa249d2c485b613cde7b3878959841eb04eb771c01b34c62f226ae0f82a3813"
+        },
+        "stdout": {
+          "path": ".scratch/qwen-mtp-weights-20261022/probe-run1/run.stdout.log",
+          "bytes": 355,
+          "sha256": "f370b6f127694c21a29c5dbe02edc4ac93f1c9e0859c7af82a9e3dbb8c93b9f1"
+        },
+        "stderr": {
+          "path": ".scratch/qwen-mtp-weights-20261022/probe-run1/run.stderr.log",
+          "bytes": 1139,
+          "sha256": "a47fdab31003f55174b230649fd50e9aabb0cd262649c9f05b9522d4c948d5a8"
+        },
+        "exit": 0,
+        "image_sha256": "950675a66425ee3986b4dafbc43ff3bace1a82e7c695ca70f9ef1e417e15f981",
+        "compiled_main_matches_reviewed_source": true,
+        "uploaded_tensors": 335,
+        "uploaded_bytes": 3885311680,
+        "mtp_payload_equality_entries": 15,
+        "mtp_payload_equality_bytes": 121656320,
+        "all_mtp_device_bytes_equal_original": true,
+        "staging_bytes": 16777216,
+        "MTP_inference_executed": false
+      },
+      "ordinary_text_regression": {
+        "report": {
+          "path": ".scratch/qwen-mtp-weights-20261022/review/topone-model-regression.json",
+          "bytes": 4615,
+          "sha256": "da4dfe77363bc2ec62587f4db5a8755ed6c88c9ae04593a5f9f523c53a1591d4"
+        },
+        "vector_pairs": 90,
+        "same_B_18_R1_and_72_B2_all_byte_exact_and_finite": true,
+        "note": "Reviewed existing checker/report and actual run receipts; this reviewer did not rerun GPU or independently recompute the90 large vector pairs."
+      }
+    },
+    "limits": [
+      "This establishes the original15 parameter loading slice and unchanged ordinary text path only. Draft projection/attention/FFN/head, draft frontier/catch-up, target verification, accept/reject publication, and MTP numerical/performance behavior remain unimplemented here.",
+      "The C++ consumer continues to trust the prepared manifest identification, as before; it does not newly hash the full original shard at every startup."
+    ],
+    "review_activity": {
+      "product_edits": 0,
+      "builds": 0,
+      "GPU_runs": 0,
+      "checkpoint_payload_bytes_read_by_reviewer": 0
+    }
+  },
+  "not_completed": [
+    "Real MTP block mathematics/independent numeric reference, shifted prefill catchup and draft KV/frontier.",
+    "Target all-row hidden/IDs, T2 accepted conv/GDN boundary material outputs, independent carry ownership and full budget.",
+    "Single original Graph draft-ID device edge to target verification, accepted/rejected state selection and atomic composite publication via original Invocation/Completion.",
+    "Natural acceptance/rejection, emitted stream/quality, failure/cancellation retirement, matched real MTP peer speed and memory."
+  ],
+  "research": "docs/evidence/research/qwen35-mtp-next-2026-10-22.json",
+  "incidents": [
+    "Initial preparation of the capture regression checker wrote run_checks.py then stopped because its review directory did not yet exist. Created exact stage directory, generated checker; actual runs and checks all separately completed exit0. No native process restarted or result hidden."
+  ],
+  "cleanup": {
+    "receipt": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\qwen-mtp-weights-2026-10-22.cleanup.json",
+      "bytes": 35358,
+      "sha256": "480f37f31cbe5b5da9a7ef7255c352c76cea8654026ed8a7e15db7c8bb799509"
+    },
+    "deleted_leaf_count": 97,
+    "deleted_bytes": 298955404,
+    "plan": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\cleanup-plan.json",
+      "bytes": 26650,
+      "sha256": "e4b4d31d8fedbae70282c82a5b6ba03175e1d123f1de36e91118e1f3c5ecfe08"
+    },
+    "script": {
+      "path": "C:\\public\\project-hyle\\hyle\\test.ps1",
+      "bytes": 2560,
+      "sha256": "068afadf7e78349b6101eb50f052c9adf2e7d04c0ee36a9b57c95faa7aa13bff"
+    },
+    "note": "Completed exact-leaf cleanup. Raw payloads remain in the already CRC/SHA-verified ZIP. Final images, sources, logs and all object/dependency caches retained. Root test.ps1 must not be rerun."
+  }
+}

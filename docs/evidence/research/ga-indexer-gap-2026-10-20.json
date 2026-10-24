@@ -1,0 +1,362 @@
+{
+  "status": "read-only source review; no product edit, build, GPU or full-model claim",
+  "archive": {
+    "path": "docs/evidence/research/deepseek-v4-ga-2026-10-19.zip",
+    "bytes": 131088,
+    "sha256": "e7388fd80750107cd0702d413aceaa8d07e644265d275eaee864ee62293f51b0"
+  },
+  "models": [
+    {
+      "repository": "deepseek-ai/DeepSeek-V4-Flash-0731",
+      "revision": "7872f01b1d1fe23eabc4c98b48bffcef5a386062",
+      "archive_entry": "flash-0731/inference-model.py",
+      "source_sha256": "c0c19e6c9fa439bac7fbb1c5bc1868232dfd5aa2f439a548d0e33dcc2a9edd3f",
+      "config_entry": "flash-0731/inference-config.json",
+      "config_sha256": "c90861f3d10a9e4ef5954f8f1a34c529d480da1c5799f84660028f4e38e14e71",
+      "heads": 64,
+      "dimension": 128,
+      "topk": 512,
+      "q_lora_rank": 1024,
+      "fixed_link": "https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash-0731/blob/7872f01b1d1fe23eabc4c98b48bffcef5a386062/inference/model.py",
+      "facts": [
+        {
+          "lines": "399-405",
+          "fact": "wq_b is default FP8 projection with BF16 output; weights_proj explicitly BF16; learned compressor owns BF16 QAT-value cache"
+        },
+        {
+          "lines": "417-427",
+          "fact": "RoPE -> normalized Hadamard -> FP4 group32 in-place QAT; prescaled BF16 weights; BF16 visible dot, ReLU/product and head-sum outputs"
+        },
+        {
+          "lines": "430-438",
+          "fact": "prefill causal compressed-key mask then min(profile topk,L); invalid early positions become -1; valid IDs add offset; decode no extra prefill mask"
+        },
+        {
+          "lines": "18-19,75-77,375-382,950",
+          "fact": "BF16 supplied entry-point default and cache, FP4 block32, common H64/D128; cache physically stores BF16 simulation values, not Hyle packed 68-byte rows"
+        }
+      ]
+    },
+    {
+      "repository": "deepseek-ai/DeepSeek-V4-Pro-0813",
+      "revision": "72e1d3230f6c080a530b0a1d46f8eb4602340597",
+      "archive_entry": "pro-0813/current/inference/model.py",
+      "source_sha256": "c0c19e6c9fa439bac7fbb1c5bc1868232dfd5aa2f439a548d0e33dcc2a9edd3f",
+      "config_entry": "pro-0813/current/inference/config.json",
+      "config_sha256": "801bc719d08cd5be57cddc185cac621417522810e29d0314849c939bf0176ee7",
+      "heads": 64,
+      "dimension": 128,
+      "topk": 1024,
+      "q_lora_rank": 1536,
+      "fixed_link": "https://huggingface.co/deepseek-ai/DeepSeek-V4-Pro-0813/blob/72e1d3230f6c080a530b0a1d46f8eb4602340597/inference/model.py",
+      "facts": [
+        {
+          "lines": "399-405",
+          "fact": "wq_b is default FP8 projection with BF16 output; weights_proj explicitly BF16; learned compressor owns BF16 QAT-value cache"
+        },
+        {
+          "lines": "417-427",
+          "fact": "RoPE -> normalized Hadamard -> FP4 group32 in-place QAT; prescaled BF16 weights; BF16 visible dot, ReLU/product and head-sum outputs"
+        },
+        {
+          "lines": "430-438",
+          "fact": "prefill causal compressed-key mask then min(profile topk,L); invalid early positions become -1; valid IDs add offset; decode no extra prefill mask"
+        },
+        {
+          "lines": "18-19,75-77,375-382,950",
+          "fact": "BF16 supplied entry-point default and cache, FP4 block32, common H64/D128; cache physically stores BF16 simulation values, not Hyle packed 68-byte rows"
+        }
+      ]
+    }
+  ],
+  "conclusions": [
+    {
+      "point": "Real math gap, not a missing model-named op",
+      "evidence": [
+        "model_ops.h:1001-1045 forces F32 Q/K/W, F16 mask, F32 output and H64/D128",
+        "ggml.c:6459-6491 fixes F32 Q/W and F16 mask",
+        "tensor_program.cc:499-510/931-934; CPU provider:2067; Vulkan region:678; Metal native_program.cc:438 all call old ggml scorer"
+      ],
+      "finding": "Widening official BF16 Q/K/W then calling old scorer omits BF16 dot/product/head-sum boundaries. Final-only BF16 cast cannot repair the chain."
+    },
+    {
+      "point": "F16 mask is not the GA blocker",
+      "evidence": [
+        "GA model.py:430-432 uses only 0/-Inf mask",
+        "existing LightningIndexer mask broadcasts [Sm,1,T,L] across B"
+      ],
+      "finding": "0 and -Inf are exactly F16 representable. Generic nonzero finite additive-mask semantics would need explicit output-rounding definition; do not demand a new BF16-mask API solely for these GA profiles."
+    },
+    {
+      "point": "Existing BF16 scorer math can be reused",
+      "evidence": [
+        "model_ops.h:161-203 RowCacheIndexerScores",
+        "CUDA provider:136-202/441-468; tensor_kernel.cu:24-25/65-66/129-136; reduction_kernel.cu:91-114",
+        "CPU torch_cpu_program.cc:368-373/415-419",
+        "Apple apple_row_cache_indexer.cc:32-62/96-118",
+        "Vulkan row_cache_indexer.comp:154-173"
+      ],
+      "finding": "All four implementations have BF16 dot output, BF16 weighted product and BF16 final head-sum then F32 widening. Current custom entry is Q[T,64,128], U8 row-inline bank[L,68], weights[T,64], I32 ranges: not dense official BF16 K. Packed/paged source access, safety and capture qualification must stay separate."
+    },
+    {
+      "point": "Old native implementations have additional operand domains",
+      "evidence": [
+        "CUDA lightning-indexer.cu:244-381 float vec path; F16/quantK path:~69-183 narrows Q/K to half before F32 WMMA",
+        "Metal kernels/fa.metal:2330-2423 always stages K/Q as half even for F32 K specialization",
+        "CPU ops.cpp:12105-12200 F32 dot/product/head sum; Vulkan lightning_indexer.comp:~100-153 F32 score accumulation"
+      ],
+      "finding": "F32 accumulation is not a BF16 staged contract, nor universally F32 operands. Preserve old qualified behavior; do not silently advertise BF16 GA by broadening supports alone."
+    }
+  ],
+  "concrete_domains": [
+    {
+      "kind": "numeric",
+      "missing": "BF16 dot RNE before ReLU; BF16 product RNE before head reduction; BF16 head-sum RNE before mask/TopK; keep prescaled BF16 weights as actual operand, no moved head scaling"
+    },
+    {
+      "kind": "storage",
+      "missing": "Dense BF16 cache / real strides. Existing packed Hyle FP4 bank cannot stand in for official BF16 QAT simulation cache, even though their finite decoded values may overlap."
+    },
+    {
+      "kind": "shape",
+      "missing": "Official start_pos=0 with S<compress_ratio yields L=0 and empty TopK output; LightningIndexer schema rejects L=0. Row-cache scorer already supports empty axes and checked ranges."
+    },
+    {
+      "kind": "layout",
+      "missing": "GA cache[:B,:L] is a prefix of [max_B,max_L,D]. With B>1 and L<max_L it has a padded batch stride, while public LightningIndexer only accepts dense descriptors. B1 active axes can be dense; do not infer every GA boundary is noncontiguous."
+    },
+    {
+      "kind": "not_missing",
+      "missing": "Both GA H64/D128 already match current scorer dimensions. Pro Top1024 and Flash Top512 are caller TopK policy, not a scorer hardware whitelist. Prefill -1 padding, offset and multi-rank all_reduce remain model/state/distributed composition, not evidence of a missing scorer primitive."
+    }
+  ],
+  "proposal": {
+    "preferred": "Use one typed score mathematical recipe/region based on actual dtype, not a GA/model-name branch. First express/reference with existing BF16 MatMul(F32 accumulation) -> BF16 ReLU -> BF16 Multiply -> ReduceSum(F32 accumulation, BF16 result), then mask and caller TopK. For efficient dense carrier, add a BF16 domain to the existing scorer or match this chain provider-locally; never route it to the unchanged old ggml scorer.",
+    "api": "No new global precision knob or model-specific descriptor. Existing LightningIndexer can remain the old F32 domain; if it is extended, infer type/layout algebraically and version its explicit typed math contract. Same-typed operands and declared rounding are the discriminator; native H/D/layout limits belong in provider supports.",
+    "implementation": "Reuse the current bounded-tile BF16 row-cache scoring core with dense BF16 key access, skipping packed decode. Keep decode, range/page permissions and token status in the existing packed wrappers. CPU ATen and Apple MLX already provide BF16 matmul/product/sum; CUDA reuses Lt plus existing typed pointwise/reduction kernels; Vulkan can share the explicit BF16 rounding arithmetic in its scorer shader.",
+    "qualification": "Do not claim the ordinary chain is already supported on every backend: current Vulkan ggml View rejects BF16 and Cast to BF16 from F32 is declined (region.cc:599-623). Existing row-cache shader proves available arithmetic, not dense GA wiring. Each actual provider must implement or decline its typed/layout domain.",
+    "concrete_seams": [
+      {
+        "scope": "public math only if descriptor domain is expanded",
+        "files": [
+          "include/hyle/compute/model_ops.h"
+        ],
+        "change": "Define BF16 stage semantics inferred from actual operand dtype and version contract. No model/profile field; no broad support claim from infer alone."
+      },
+      {
+        "scope": "CPU",
+        "files": [
+          "src/compute_provider_native/torch_cpu_program.cc"
+        ],
+        "change": "Reuse current BF16 matmul/relu/product/sum helper on dense key tensors; real supports selects this path instead of old ggml F32 scorer."
+      },
+      {
+        "scope": "CUDA",
+        "files": [
+          "src/compute_provider_cuda/row_cache_indexer_provider.cc",
+          "src/compute_provider_cuda/cuda_provider.cc"
+        ],
+        "change": "Extract/reuse bounded tile Lt plus typed pointwise/reduction sequence with dense keys. Packed decoding/range validation remains in packed wrapper; no new CUDA arithmetic TU needed for initial math path."
+      },
+      {
+        "scope": "Apple",
+        "files": [
+          "src/compute_route_apple/apple_row_cache_indexer.cc",
+          "src/compute_route_apple/apple_mature_float.cc"
+        ],
+        "change": "Reuse BF16 MLX dot and explicit no-contraction finish on dense keys; do not send BF16 domain to half-staging ggml Metal Lightning kernel."
+      },
+      {
+        "scope": "Vulkan",
+        "files": [
+          "src/compute_route_vulkan/shaders/row_cache_indexer.comp",
+          "src/compute_route_vulkan/vulkan_row_cache_indexer.cc",
+          "src/compute_route_vulkan/vulkan_operations.cc"
+        ],
+        "change": "Share explicit BF16 arithmetic with a real dense-key access path, preserving actual strides/capacities. Existing packed shader is arithmetic evidence, not a ready dense entry."
+      }
+    ]
+  },
+  "minimal_tests": [
+    "Reuse sparse_fragment_test_support as a layout/entry harness but replace its dyadic F32-only values with BF16 post-QAT-boundary witnesses; its existing all-ones case cannot detect this gap.",
+    "Reuse row_cache_indexer_fixture.expected(true) vs expected(false) and decode its tiny finite keys to dense BF16 without relabeling the encoded artifact. Add staged dot/product/head-sum witnesses, NaN/ReLU classification, negative weights and mask 0/-Inf.",
+    "One tiny B1 dense two-slot/rebind/capture case; one B>1 padded-prefix case must either be correctly supported or explicitly rejected; L=0 must return empty outputs without payload reads. Preserve range/page/accepted-error tests in their existing wrappers.",
+    "Use independent staged operations for numeric oracle; do not demand arbitrary full-model bitwise Torch identity because the fixed model.py does not prescribe dot or head-sum reduction tree. TopK tied membership/order needs separate defined comparison."
+  ],
+  "witnesses": [
+    {
+      "stage": "dot_rounding",
+      "dots_f32": [
+        1.00390625,
+        1
+      ],
+      "weights_bf16": [
+        1,
+        -1
+      ],
+      "rounded_dots": [
+        1.0,
+        1.0
+      ],
+      "rounded_products": [
+        1.0,
+        -1.0
+      ],
+      "typed_bf16_score_widened": 0.0,
+      "f32_chain_score": 0.00390625,
+      "f32_chain_then_bf16": 0.00390625
+    },
+    {
+      "stage": "product_rounding",
+      "dots_f32": [
+        1.0078125,
+        1
+      ],
+      "weights_bf16": [
+        1.0078125,
+        -1.015625
+      ],
+      "rounded_dots": [
+        1.0078125,
+        1.0
+      ],
+      "rounded_products": [
+        1.015625,
+        -1.015625
+      ],
+      "typed_bf16_score_widened": 0.0,
+      "f32_chain_score": 6.103515625e-05,
+      "f32_chain_then_bf16": 6.103515625e-05
+    },
+    {
+      "stage": "head_sum_rounding",
+      "dots_f32": [
+        1,
+        0.00390625
+      ],
+      "weights_bf16": [
+        1,
+        1
+      ],
+      "rounded_dots": [
+        1.0,
+        0.00390625
+      ],
+      "rounded_products": [
+        1.0,
+        0.00390625
+      ],
+      "typed_bf16_score_widened": 1.0,
+      "f32_chain_score": 1.00390625,
+      "f32_chain_then_bf16": 1.0
+    }
+  ],
+  "limits": [
+    "No definite new small correctness bug was established in the existing BF16 row-cache scorer; it already preserves NaN and staged boundaries. The old Lightning F32/native variants are not being rewritten under an unstated GA contract.",
+    "The source establishes visible BF16 tensor boundaries; exact physical Torch accumulation/reassociation and distributed all_reduce algorithm are not established by model.py.",
+    "No whole GA, artifact, GGUF cache codec or all-eight-model runtime journey was validated."
+  ],
+  "source_identities": [
+    {
+      "path": "include/hyle/compute/model_ops.h",
+      "bytes": 58127,
+      "sha256": "318ae09994dd528ac933b86e9e5882a1c589e7b834af1a4897d7198cd93c5834"
+    },
+    {
+      "path": "include/hyle/compute/operation.h",
+      "bytes": 28108,
+      "sha256": "35b7c862143839e4b8ce0c9a49753b7add2f325ec424bf5f91a1afeec0101506"
+    },
+    {
+      "path": "src/compute_provider_ggml_cuda/tensor_program.cc",
+      "bytes": 50582,
+      "sha256": "5688800238b4ad42ef7ac8a6831b4bfeb06206334381f28c25307def61b5b764"
+    },
+    {
+      "path": "src/compute_provider_ggml/ggml_cpu_provider.cc",
+      "bytes": 111269,
+      "sha256": "f302948d2ce900c3894914dfce673d96e9684c8bcb1f0c1999fc961dc12b4145"
+    },
+    {
+      "path": "src/compute_provider_ggml_vulkan/region.cc",
+      "bytes": 93483,
+      "sha256": "afc13c95237244615fa45a645f4970659b757acd3a854b1148641e00cf2f6e77"
+    },
+    {
+      "path": "src/compute_provider_ggml_metal/native_program.cc",
+      "bytes": 26010,
+      "sha256": "13f077d1f8f9c824d8c923306dcba6f67ff321ad8895ba459676b2af383d1bb7"
+    },
+    {
+      "path": "src/compute_provider_cuda/row_cache_indexer_provider.cc",
+      "bytes": 29095,
+      "sha256": "2213ada15081c7c928f32f80410c162404bd4393dd964135e999aa222e82a581"
+    },
+    {
+      "path": "src/compute_provider_cuda/tensor_kernel.cu",
+      "bytes": 10642,
+      "sha256": "95181b72d1b833ea36db284b4b86b2ad038e87fed962ad8000326d5274a5ed7c"
+    },
+    {
+      "path": "src/compute_provider_cuda/reduction_kernel.cu",
+      "bytes": 11357,
+      "sha256": "1922bf5717a7cb00cc6c42bdf3814243e1ef6dd7c31ba6be42d7265aa6e614d7"
+    },
+    {
+      "path": "src/compute_provider_native/torch_cpu_program.cc",
+      "bytes": 39061,
+      "sha256": "5e03d12af186caff2ba7bea8e278dc4573d9eefd38accff47035fee78394369d"
+    },
+    {
+      "path": "src/compute_route_apple/apple_row_cache_indexer.cc",
+      "bytes": 15140,
+      "sha256": "b50155ecf2b4c69bd2776db65b9b763abb683482365506e4afaaaa1ee4e29f20"
+    },
+    {
+      "path": "src/compute_route_vulkan/shaders/row_cache_indexer.comp",
+      "bytes": 7131,
+      "sha256": "0b6d247fb80145b82d8026c29b1970208655d6174cb4822af21ec4532ba7945e"
+    },
+    {
+      "path": "tests/sparse_fragment_test_support.h",
+      "bytes": 2373,
+      "sha256": "90020770ad636c8f4832d9167d8556edd1b6ec210fe5764b5c2e865dce0bde27"
+    },
+    {
+      "path": "tests/compute_models/row_cache_indexer_fixture.h",
+      "bytes": 4605,
+      "sha256": "7600943981932f42cf84114199e73b751ae896d9f046c58f03b67132c0fec8d6"
+    }
+  ],
+  "native_source_provenance": {
+    "upstream_revision": "456172ec733a135778adcd32d00e576a58232e45",
+    "note": "Read retained locked mixed source. Current mixed/CUDA patch manifests contain no lightning kernel edits; this is source review, not a fresh compiled artifact proof.",
+    "files": [
+      {
+        "path": ".scratch/validation/cpu-final-f1/mixed-iq1/source/src/ggml.c",
+        "bytes": 261316,
+        "sha256": "c2165a1fd7984ab00a8d16b5f370631323a658808b5346b0cec202f4b45a9652"
+      },
+      {
+        "path": ".scratch/validation/cpu-final-f1/mixed-iq1/source/src/ggml-cpu/ops.cpp",
+        "bytes": 417812,
+        "sha256": "4a8c21f75d814721b5919dfc03a0d2a0cac8dc8532f64d5d10047d74325ce575"
+      },
+      {
+        "path": ".scratch/validation/cpu-final-f1/mixed-iq1/source/src/ggml-cuda/lightning-indexer.cu",
+        "bytes": 24211,
+        "sha256": "7a2464ebab9af8321c4e53b7ff73765279ce994850e02e8105fbf39e6b7e1cae"
+      },
+      {
+        "path": ".scratch/validation/cpu-final-f1/mixed-iq1/source/src/ggml-metal/kernels/fa.metal",
+        "bytes": 190800,
+        "sha256": "88939f93ec5a38bb6a860dffee60d01885de65ca4464d87c14c31bbc511fda64"
+      },
+      {
+        "path": ".scratch/validation/cpu-final-f1/mixed-iq1/source/src/ggml-vulkan/vulkan-shaders/lightning_indexer.comp",
+        "bytes": 4698,
+        "sha256": "11e0c399806887bd1d53f636e45f36dd7a8815e29c6582bef9ca19d2fa492139"
+      }
+    ]
+  }
+}

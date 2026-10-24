@@ -1,0 +1,29 @@
+{
+  "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\qwen35-full-cuda-2026-10-19\\binding-port-reuse.zip",
+  "bytes": 1349281,
+  "sha256": "7ec32516ae91c96064d4a87086184f7a61b7d8dfe356fbac9bb07b20547c9452",
+  "entries": 315,
+  "payloads": 313,
+  "build_plan": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\binding-port-reuse\\checks\\20261019T174851\\plan.json",
+    "bytes": 169943,
+    "sha256": "43d2f8def57ae0a6057fba1cccdb474325fe1a2cc37937a799bb78407a6c4d62"
+  },
+  "source_freeze": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\binding-port-reuse\\source-freeze.json",
+    "bytes": 452,
+    "sha256": "bce132bb00881db958a0cec40e2572a06de3be87e33f251f41cafd43a3c0655d"
+  },
+  "host_TUs": 1,
+  "native_TUs": 0,
+  "CPU_tests": 21,
+  "equal_vectors": 64,
+  "unprofiled_processes": 9,
+  "new_profile": false,
+  "crc_verified": true,
+  "payload_sha256_verified": true,
+  "verification_passes": 1,
+  "CRC_and_every_payload_SHA_verified": true,
+  "duplicate_raw_vectors_omitted": true,
+  "cleanup_executed": false
+}

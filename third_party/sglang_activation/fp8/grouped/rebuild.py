@@ -34,7 +34,19 @@ if args.stage == 'gemm':
     assert triton.__version__ == '3.8.0'
     original = root/'original_kernels.py'
     assert hashlib.sha256(original.read_bytes()).hexdigest() == source['module_sha256']
-    spec = importlib.util.spec_from_file_location('grouped_original', original)
+    # Preserve the pinned body; prove the exact indexing and numeric adapters
+    # in sequence before importing the final module for either output dtype.
+    text = original.read_text(encoding='utf-8').replace('\r\n', '\n')
+    for name in ('runtime_top_k', 'scale_order', 'dot_precision'):
+        adapter = source[name]
+        if 'input_module_sha256' in adapter:
+            assert hashlib.sha256(text.encode()).hexdigest() == adapter['input_module_sha256']
+        assert text.count(adapter['before']) == 1
+        text = text.replace(adapter['before'], adapter['after'])
+        assert hashlib.sha256(text.encode()).hexdigest() == adapter['module_sha256']
+    adapted = args.output/'adapted_kernels.py'
+    adapted.write_text(text, encoding='utf-8', newline='\n')
+    spec = importlib.util.spec_from_file_location('grouped_adapted', adapted)
     module = importlib.util.module_from_spec(spec)
     sys.modules[spec.name] = module
     spec.loader.exec_module(module)
@@ -55,8 +67,7 @@ elif args.stage == 'align':
     if os.name == 'nt': command += ['-Xcompiler=/utf-8']
     subprocess.run(command, check=True, creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0)
 else:
-    names = {'grouped_fp32_top1':'kGroupedF32Top1', 'grouped_fp32_top8':'kGroupedF32Top8',
-             'grouped_bf16_top1':'kGroupedBf16Top1', 'grouped_bf16_top8':'kGroupedBf16Top8',
+    names = {'grouped_fp32':'kGroupedF32', 'grouped_bf16':'kGroupedBf16',
              'checked_original_align':'kCheckedAlign'}
     hashes = {job['label']:job['cubin_sha256'] for job in jobs}
     hashes['checked_original_align'] = align['cubin_sha256']
@@ -66,6 +77,9 @@ else:
         blob = (args.output/(label+'.cubin')).read_bytes()
         digest = hashlib.sha256(blob).hexdigest()
         assert digest == hashes[label], label
+        if label != 'checked_original_align':
+            shared = next(job['metadata']['shared'] for job in jobs if job['label'] == label)
+            lines += [f'inline constexpr unsigned {name}SharedBytes = {shared};']
         lines += ['// SHA256 cubin: '+digest, f'alignas(16) inline constexpr unsigned char {name}[] = {{']
         lines += ['  '+','.join(f'0x{x:02x}' for x in blob[i:i+32])+',' for i in range(0,len(blob),32)]
         lines += ['};']

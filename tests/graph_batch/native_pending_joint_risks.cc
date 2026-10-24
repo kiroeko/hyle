@@ -1,4 +1,6 @@
 #include "native_paged_joint_risk_fixture.h"
+#include <chrono>
+#include <thread>
 #if defined(HYLE_PENDING_MULTI_NATIVE_PRODUCERS)
 #if defined(HYLE_G01_PAGE_RISK_APPLE)
 #include <hyle/graph/apple.h>
@@ -15,7 +17,7 @@
 #endif
 
 namespace {
-namespace jr=hyle_joint_page_risk;namespace r=jr::r;namespace c=r::c;namespace n=r::n;namespace g=jr::g;namespace joint=jr::joint;
+namespace jr=hyle_joint_page_risk;namespace r=jr::r;namespace c=r::c;namespace n=r::n;namespace g=jr::g;namespace route=jr::route;
 using hyle::Status;
 #if defined(HYLE_PENDING_MULTI_NATIVE_PRODUCERS)
 constexpr std::size_t source_capacity=4,cancel_source=1;
@@ -47,27 +49,26 @@ Status episode(Mode mode){
         c::ResourceBudgetLimit{device.ref(),SIZE_MAX},c::ResourceBudgetLimit{staging.ref(),SIZE_MAX}};
     HYLE_ASSIGN_OR_RETURN(budget,c::ResourceBudget::create({.limits=limits,.allocator=allocator.ref(),.allow_unattributed=true}));
   }
-  HYLE_ASSIGN_OR_RETURN(auto program,jr::compile(shape,jr::environment(cpu,context,device,staging),allocator.ref(),budget));
+  HYLE_ASSIGN_OR_RETURN(auto env,jr::environment(cpu,context,device,staging));
+  HYLE_ASSIGN_OR_RETURN(auto program,jr::compile(shape,env,allocator.ref(),budget));
   hyle::sched::Scheduler scheduler(1,hyle::mem::system_allocator(),32);
-#if !defined(HYLE_G01_PAGE_RISK_APPLE)
   hyle::sched::BlockingPool completion_waiters(hyle::mem::system_allocator(),1);
-#endif
   jr::Drain drain{scheduler};
   HYLE_ASSIGN_OR_RETURN(auto cpu_queue,cpu.create_queue());
   HYLE_ASSIGN_OR_RETURN(auto query,jr::query(shape));
-#if defined(HYLE_G01_PAGE_RISK_APPLE)
-  HYLE_ASSIGN_OR_RETURN(auto receiver,program.create_invocation(scheduler,cpu_queue));
-#else
-  HYLE_ASSIGN_OR_RETURN(auto receiver,program.create_invocation(scheduler,cpu_queue,completion_waiters));
-#endif
+  HYLE_ASSIGN_OR_RETURN(auto lanes,jr::queues(program.report,cpu_queue));
+  HYLE_ASSIGN_OR_RETURN(auto outputs,jr::output_pools(shape));
+  HYLE_ASSIGN_OR_RETURN(auto receiver,jr::create(program,scheduler,completion_waiters,allocator.ref(),budget));
   std::vector<g::batch::NodeLayout> versions;
-  for(const auto&node:shape.bindings)versions.push_back({node.node,layout});
-  HYLE_RETURN_IF_ERROR(receiver.prepare_batch(versions));
+  for(const auto&node:shape.layouts)versions.push_back({node.node,layout});
+  const auto prepare_sources=[&](std::size_t capacity){return g::batch::prepare(receiver,lanes,versions,
+      {.allocator=allocator.ref(),.resource_budget=budget,.max_source_completions=capacity});};
+  HYLE_RETURN_IF_ERROR(prepare_sources(0));
   const auto baseline=allocator.live.load();
   if(mode==Mode::budget){
     HYLE_ASSIGN_OR_RETURN(auto before,budget.usage(hyle::mem::system_resource()));
     HYLE_ASSIGN_OR_RETURN(auto full,budget.reserve(hyle::mem::system_resource(),before.limit_bytes-before.live_bytes));
-    const auto refused=receiver.reserve_pending_sources(2);
+    const auto refused=prepare_sources(source_capacity);
     HYLE_RETURN_IF_ERROR(r::require(refused.IsResourceExhausted() && allocator.live==baseline,
         "joint pending cold source bypassed shared metadata budget or leaked allocation"));
     full.reset();HYLE_ASSIGN_OR_RETURN(auto after,budget.usage(hyle::mem::system_resource()));
@@ -76,14 +77,19 @@ Status episode(Mode mode){
   if(mode==Mode::allocation){
     bool complete=false;std::size_t count=0;
     for(std::size_t nth=0;nth<32;++nth){allocator.fail=allocator.attempts+nth;
-      auto status=receiver.reserve_pending_sources(2);allocator.fail=SIZE_MAX;
+      auto status=prepare_sources(source_capacity);allocator.fail=SIZE_MAX;
       if(status.ok()){complete=true;count=nth;break;}
+      if(!status.IsResourceExhausted() || allocator.live!=baseline)
+        std::fprintf(stderr,"pending reserve OOM nth=%zu code=%u live=%zu baseline=%zu attempts=%zu message=%.*s\n",
+            nth,unsigned(status.code()),allocator.live.load(),baseline,allocator.attempts.load(),
+            int(status.message().size()),status.message().data());
       HYLE_RETURN_IF_ERROR(r::require(status.IsResourceExhausted() && allocator.live==baseline,
           "joint pending reserve OOM leaked metadata or consumed original result slot"));}
     HYLE_RETURN_IF_ERROR(r::require(complete,"joint pending reserve has no finite allocation boundary"));
     std::fprintf(stderr,"%s joint pending all %zu reserve allocation refusals rollback PASS\n",r::route,count);
-  }else HYLE_RETURN_IF_ERROR(receiver.reserve_pending_sources(mode==Mode::capacity?1:source_capacity));
+  }else HYLE_RETURN_IF_ERROR(prepare_sources(mode==Mode::capacity?1:source_capacity));
   HYLE_RETURN_IF_ERROR(receiver.bind(shape.query,shape.query_desc,query.read));
+  HYLE_RETURN_IF_ERROR(jr::bind_outputs(receiver,shape,outputs));
   HYLE_ASSIGN_OR_RETURN(auto kw,data.keys.acquire(1));HYLE_ASSIGN_OR_RETURN(auto vw,data.values.acquire(1));
   HYLE_ASSIGN_OR_RETURN(auto pool,c::LeasePool::create(staging.ref(),1024));
   HYLE_ASSIGN_OR_RETURN(auto host,pool.allocate(512));HYLE_RETURN_IF_ERROR(host.view()->fill(std::byte{0}));
@@ -171,6 +177,7 @@ Status episode(Mode mode){
     return masked.load()?VK_NOT_READY:real;
   };
   const auto release_native=[&]{masked=false;};
+  struct Release final {std::atomic<bool>& masked;~Release(){masked=false;}}release{masked};
 #endif
 #if defined(HYLE_PENDING_MULTI_NATIVE_PRODUCERS)
   HYLE_ASSIGN_OR_RETURN(auto key_result,key_producer.submit());
@@ -195,26 +202,29 @@ Status episode(Mode mode){
 #if !defined(HYLE_G01_PAGE_RISK_APPLE)
   if(mode==Mode::native_rejection)boundary.fail_at=boundary.submits+1;
 #endif
-  if(mode==Mode::closed){release_native();HYLE_RETURN_IF_ERROR(update.wait());HYLE_RETURN_IF_ERROR(context.close());}
+  if(mode==Mode::closed){release_native();HYLE_RETURN_IF_ERROR(update.wait());}
   if(mode==Mode::allocation){
     const auto before=allocator.live.load();allocator.fail=allocator.attempts.load();
-    const auto refused=receiver.bind(shape.key,k);allocator.fail=SIZE_MAX;
+    const auto refused=g::batch::bind(receiver,shape.key,k);allocator.fail=SIZE_MAX;
     HYLE_RETURN_IF_ERROR(r::require(refused.IsResourceExhausted() && allocator.live==before && update.valid() && k.valid(),
         "joint pending binding OOM changed source/permission or leaked metadata"));
   }
   if(mode==Mode::budget){
     HYLE_ASSIGN_OR_RETURN(auto before,budget.usage(hyle::mem::system_resource()));
     HYLE_ASSIGN_OR_RETURN(auto full,budget.reserve(hyle::mem::system_resource(),before.limit_bytes-before.live_bytes));
-    const auto refused=receiver.bind(shape.key,k);
+    const auto refused=g::batch::bind(receiver,shape.key,k);
     HYLE_RETURN_IF_ERROR(r::require(refused.IsResourceExhausted() && update.valid() && k.valid(),
         "joint pending binding bypassed shared metadata budget or consumed source"));
     full.reset();HYLE_ASSIGN_OR_RETURN(auto after,budget.usage(hyle::mem::system_resource()));
     HYLE_RETURN_IF_ERROR(r::require(after.live_bytes==before.live_bytes,"joint pending binding rejection leaked budget charges"));
   }
-  HYLE_RETURN_IF_ERROR(r::require(!receiver.bind(shape.query,k).ok(),"joint pending capacity accepted as ordinary query"));
-  HYLE_RETURN_IF_ERROR(receiver.bind(shape.key,k));HYLE_RETURN_IF_ERROR(receiver.bind(shape.value,v));
-  HYLE_RETURN_IF_ERROR(receiver.prepare_replay());
-  auto result=receiver.submit(std::move(update));
+  HYLE_RETURN_IF_ERROR(r::require(!g::batch::bind(receiver,shape.query,k).ok(),"joint pending capacity accepted as ordinary query"));
+  HYLE_RETURN_IF_ERROR(g::batch::bind(receiver,shape.key,k));HYLE_RETURN_IF_ERROR(g::batch::bind(receiver,shape.value,v));
+  HYLE_RETURN_IF_ERROR(receiver.prepare_replay(lanes));
+  // Ordinary replay preparation validates the live Source. Close only after
+  // cold binding so this control still reaches actual typed submit admission.
+  if(mode==Mode::closed)HYLE_RETURN_IF_ERROR(context.close());
+  auto result=route::submit(receiver,lanes,std::move(update));
   if(mode==Mode::hole || mode==Mode::cancel_before || mode==Mode::capacity || mode==Mode::closed){
     HYLE_RETURN_IF_ERROR(r::require(!result && update.valid(),"receiver admission failure consumed caller Update"));
     HYLE_RETURN_IF_ERROR(r::require(mode==Mode::hole?result.error().IsOutOfRange():
@@ -224,8 +234,15 @@ Status episode(Mode mode){
     release_native();update.wait().IgnoreError();
     std::fprintf(stderr,"%s joint pending rejection mode=%u preserves original Update PASS\n",r::route,unsigned(mode));return Status::Ok();
   }
-  HYLE_RETURN_IF_ERROR(r::require(result.has_value() && !update.valid() && !receiver.take_update() &&
-      query.pool.stats().active_uses>0,"accepted receiver lost source/native page guard"));
+  HYLE_RETURN_IF_ERROR(r::require(result.has_value() && !update.valid() && !route::take_update(receiver),
+      "accepted receiver lost its original source controls"));
+  // Progress admission is asynchronous. Wait only for the real query guard,
+  // while the original native source remains gated and cannot retire.
+  const auto accepted_deadline=std::chrono::steady_clock::now()+std::chrono::seconds(3);
+  while(!query.pool.stats().active_uses && std::chrono::steady_clock::now()<accepted_deadline)
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+  HYLE_RETURN_IF_ERROR(r::require(query.pool.stats().active_uses>0,
+      "accepted receiver never admitted its actual query use"));
   // With independent producers, cancel only the second source; the first stays OK.
   if(mode==Mode::cancel_after)HYLE_RETURN_IF_ERROR(original_sources[cancel_source]->request_cancel());
 #if !defined(HYLE_G01_PAGE_RISK_APPLE)
@@ -241,7 +258,7 @@ Status episode(Mode mode){
     // The existing dependent observer records the original error, but remains
     // pending until actual retirement. Its final wait must return that error.
     HYLE_RETURN_IF_ERROR(r::require(diagnosis && *diagnosis==c::CompletionPoll::kPending &&
-        !boundary.fail_poll.load() && query.pool.stats().active_uses>0 && !receiver.take_update(),
+        !boundary.fail_poll.load() && query.pool.stats().active_uses>0 && !route::take_update(receiver),
         "unknown receiver observation fabricated retirement or released source"));
   }
 #endif
@@ -253,43 +270,49 @@ Status episode(Mode mode){
 #endif
     HYLE_RETURN_IF_ERROR(r::require((native_owner_sources || pool.stats().active_uses>0) && query.pool.stats().active_uses>0,
         "abandoned receiver dropped source/guards before actual suffix retirement"));
-    release_native();HYLE_RETURN_IF_ERROR(context.close());
+    release_native();HYLE_RETURN_IF_ERROR(context.close());scheduler.drain();
     HYLE_RETURN_IF_ERROR(r::require(pool.stats().active_uses==0 && query.pool.stats().active_uses==0,
         "abandoned original work did not retire all source/suffix guards"));
   }else{
-    release_native();auto outcome=result->wait();
-    HYLE_RETURN_IF_ERROR(r::require(mode==Mode::cancel_after?!outcome && outcome.error().IsCancelled():
-        (mode==Mode::unknown || mode==Mode::native_rejection)?!outcome && outcome.error().IsResourceExhausted():outcome.has_value(),
-        "receiver original result did not merge the expected source/suffix terminal"));
-    const auto observed=result->completion().wait();
-    HYLE_RETURN_IF_ERROR(r::require(mode==Mode::cancel_after?observed.IsCancelled():
-        (mode==Mode::unknown || mode==Mode::native_rejection)?observed.IsResourceExhausted():observed.ok(),
-        "public completion differs from original result observation"));
-#if defined(HYLE_PENDING_MULTI_NATIVE_PRODUCERS)
-    if(mode==Mode::success){
+    release_native();const auto outcome=result->wait();
+    HYLE_RETURN_IF_ERROR(r::require(mode==Mode::cancel_after?outcome.IsCancelled():
+        (mode==Mode::unknown || mode==Mode::native_rejection)?outcome.IsResourceExhausted():outcome.ok(),
+        "receiver original completion did not merge the expected source/suffix terminal"));
+    const auto observed=result->wait();
+    HYLE_RETURN_IF_ERROR(r::require(observed.code()==outcome.code(),
+        "repeated original completion observation changed its cached terminal"));
+    std::vector<g::GraphOutput> held_outputs;
+    if(outcome.ok()){
       for(const auto output:shape.outputs){
-        HYLE_ASSIGN_OR_RETURN(auto tensor,(*outcome)->output(output));
+        HYLE_ASSIGN_OR_RETURN(auto owner,receiver.result(output));
+        HYLE_ASSIGN_OR_RETURN(auto tensor,owner.tensor());
         HYLE_ASSIGN_OR_RETURN(auto bytes,tensor.description().required_bytes());
         std::vector<float> actual(bytes/sizeof(float));
         HYLE_RETURN_IF_ERROR(tensor.storage().read(std::as_writable_bytes(std::span(actual))));
-        for(auto value:actual)HYLE_RETURN_IF_ERROR(r::require(value==-.25F,
-            "two real native Abs producers and joint CPU suffix differ from independent constant-value oracle"));
+        for(auto value:actual)HYLE_RETURN_IF_ERROR(r::require(native_owner_sources?value==-.25F:value==0.F,
+            "actual pending sources and Graph CPU suffix differ from independent constant-value oracle"));
+        held_outputs.push_back(std::move(owner));
       }
     }
-#endif
-    HYLE_RETURN_IF_ERROR(r::require(query.pool.stats().active_uses==0 && !receiver.take_update(),
-        "retained public outcome allowed original source reuse"));
-    if(outcome)*outcome={};*result={};
-    const auto unrecovered=receiver.prepare_batch(versions);
+    // A terminal Completion observes work; only successful GraphOutput owners
+    // retain result reuse. Failed/cancelled work cannot publish such an owner.
+    HYLE_RETURN_IF_ERROR(r::require(query.pool.stats().active_uses==0,
+        "completed pending Graph retained query guards"));
+    if(outcome.ok())HYLE_RETURN_IF_ERROR(r::require(!route::take_update(receiver),
+        "retained GraphOutput allowed original source reuse"));
+    else for(auto output:shape.outputs)HYLE_RETURN_IF_ERROR(r::require(!receiver.result(output),
+        "failed/cancelled pending Graph published an output"));
+    held_outputs.clear();*result={};
+    const auto unrecovered=prepare_sources(source_capacity);
     if(native_owner_sources && mode==Mode::cancel_after)std::fprintf(stderr,"independent cancelled source reuse status=%u: %.*s\n",
         unsigned(unrecovered.code()),int(unrecovered.message().size()),unrecovered.message().data());
     HYLE_RETURN_IF_ERROR(r::require(mode==Mode::success || mode==Mode::allocation || mode==Mode::budget?
         unrecovered.IsUnavailable():native_owner_sources && mode==Mode::cancel_after?
         (unrecovered.IsUnavailable() || unrecovered.IsFailedPrecondition()):unrecovered.IsFailedPrecondition(),
         "unrecovered/failed original source permitted joint slot reuse"));
-    HYLE_ASSIGN_OR_RETURN(update,receiver.take_update());
+    HYLE_ASSIGN_OR_RETURN(update,route::take_update(receiver));
 #if defined(HYLE_PENDING_MULTI_NATIVE_PRODUCERS)
-    if(mode==Mode::cancel_after)HYLE_RETURN_IF_ERROR(r::require(receiver.prepare_batch(versions).IsFailedPrecondition() &&
+    if(mode==Mode::cancel_after)HYLE_RETURN_IF_ERROR(r::require(prepare_sources(source_capacity).IsFailedPrecondition() &&
         !update.take_mutable({1}) && !update.take_mutable({2}),
         "source-only failure was washed away after control recovery or published successful page writers"));
 #endif

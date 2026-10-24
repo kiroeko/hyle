@@ -1,0 +1,181 @@
+{
+  "completed": true,
+  "windows_removed": 16,
+  "windows_bytes": 919381728.0,
+  "windows_kept_objects": 7,
+  "mac": {
+    "removed": 2,
+    "bytes": 22313088,
+    "kept_objects": 4
+  },
+  "evidence_sha256": "96632fd9f87a873acdd9df763665e805695187bb0e39770876c99f12ef7ca697",
+  "archive_sha256": "8cedcdc7d243ff9e6b22ba659b1613e6d1c24d39b565f28862737e84430ec197",
+  "exact_plan": {
+    "allowed_windows": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-head-payload-2026-10-21",
+    "allowed_mac": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/mlx-head-payload-2026-10-21/apple",
+    "remove_windows": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-head-payload-2026-10-21\\cpu\\checks\\link1\\cpu.exe",
+        "bytes": 28795392,
+        "sha256": "12d8cc7e9bb4962b3449fc89149ac8d24b124237e234099792ad0009b64be217"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-head-payload-2026-10-21\\cpu\\checks\\link1\\cpu.map",
+        "bytes": 47190408,
+        "sha256": "0d61970bec48348a91e15fc6dba0eda09f9b08909df915d7d252c7a1bf50f172"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-head-payload-2026-10-21\\cpu\\checks\\link2\\cpu.exe",
+        "bytes": 28795392,
+        "sha256": "fe12ed6a6f0938c228e0dc05a4b6c0e2b1c84ec613aa020955a1760cf2fe8a74"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-head-payload-2026-10-21\\cpu\\checks\\link2\\cpu.map",
+        "bytes": 47190408,
+        "sha256": "43d5139d599f1fdd6bdee83b4183ac8f47a997bc1294bea148b3ea15efeb852b"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-head-payload-2026-10-21\\cpu\\checks\\link3\\cpu.exe",
+        "bytes": 28796416,
+        "sha256": "79b870589ba516ec78b8bab4414d597aeb53cab031163d5f52da95793a435940"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-head-payload-2026-10-21\\cpu\\checks\\link3\\cpu.map",
+        "bytes": 47192992,
+        "sha256": "6a4aa35de8d4d22cae2adea5e307271b8aadea32a7e4aebdc8b8bfc93326e824"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-head-payload-2026-10-21\\cuda\\checks\\link1\\cuda.exe",
+        "bytes": 125336064,
+        "sha256": "e98416f012eb6e45f4732c3767db2eb39956a9f889ef1697cb7fc1a749ee9f81"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-head-payload-2026-10-21\\cuda\\checks\\link1\\cuda.map",
+        "bytes": 50198810,
+        "sha256": "5ceda97370f0451e803172505baccd6d2003c71d59ec951706b2624ca0cde305"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-head-payload-2026-10-21\\cuda\\checks\\link2\\cuda.exe",
+        "bytes": 125336064,
+        "sha256": "54bce7f0d956da59a80d84d8c385ac66ce48d64dc9f549a0123995191a8ab79d"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-head-payload-2026-10-21\\cuda\\checks\\link2\\cuda.map",
+        "bytes": 50198810,
+        "sha256": "e65f9aca534da07297a61d14f4c74ee0255ee46968fb5fad19243d58d722eb33"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-head-payload-2026-10-21\\vulkan\\checks\\link1\\vulkan.exe",
+        "bytes": 70511104,
+        "sha256": "9e12a371ccfe10d0f8e4621f4c28ad4e45e668a37713581f28af77172ebeca74"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-head-payload-2026-10-21\\vulkan\\checks\\link1\\vulkan.map",
+        "bytes": 42938216,
+        "sha256": "c8c6642b31f3e31b937c3983cfcdf69c8f2820b523eb0ccf2496e0aaaaebecff"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-head-payload-2026-10-21\\vulkan\\checks\\link2\\vulkan.exe",
+        "bytes": 70511104,
+        "sha256": "c431d99b1443fc362d517342164e9e817f7c429de3d49305b16ed8c415f95397"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-head-payload-2026-10-21\\vulkan\\checks\\link2\\vulkan.map",
+        "bytes": 42938216,
+        "sha256": "24bd98151152871df36ff262ebce4352f6d50a377e18e23ea3a5a26ae8f8dd20"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-head-payload-2026-10-21\\vulkan\\checks\\link3\\vulkan.exe",
+        "bytes": 70511616,
+        "sha256": "aa8ba932b7347b8ddbff8f60ab0460f5631170a01046c4cc318ce464da82b3a7"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-head-payload-2026-10-21\\vulkan\\checks\\link3\\vulkan.map",
+        "bytes": 42940716,
+        "sha256": "c667da8184a8189227635b9f2e3492bdfc1f8c9c239c350cdb470174d310f8f1"
+      }
+    ],
+    "keep_windows": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-head-payload-2026-10-21\\common\\checks\\operation-refresh\\operation.obj",
+        "bytes": 318981,
+        "sha256": "e19949c8742a4b1df6afab61b560c229e8222988e4459c27fca466139890e9a8"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-head-payload-2026-10-21\\cpu\\checks\\attempt2\\payload-test.obj",
+        "bytes": 2234852,
+        "sha256": "eb216bea7f1f01c80f0a1ccb87754d82951a04f0f01bb8a25c1cbd69d32ecb30"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-head-payload-2026-10-21\\cpu\\checks\\attempt3\\payload-test.obj",
+        "bytes": 2234853,
+        "sha256": "faf92bb583df3e4100fda12b5f3e78ed367b2de0f75cf29a19e78570d9088e6e"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-head-payload-2026-10-21\\cuda\\checks\\attempt2\\payload-test.obj",
+        "bytes": 2372014,
+        "sha256": "3e60d5c1e9b3c7c9ad48a473ee6b8f5ff8e7773943d4cf774c942b3d773006bd"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-head-payload-2026-10-21\\cuda\\checks\\attempt3\\payload-test.obj",
+        "bytes": 2372015,
+        "sha256": "7c57647cbdf13544b9470c88cdcfdd6b40f3a5acc81c926b5dd943f01be32c9e"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-head-payload-2026-10-21\\vulkan\\checks\\attempt2\\payload-test.obj",
+        "bytes": 2326481,
+        "sha256": "22d5072fbd7e98b5cc723f12c94d00c41f9c05016ae06d84ce92690dbf7342a8"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-head-payload-2026-10-21\\vulkan\\checks\\attempt3\\payload-test.obj",
+        "bytes": 2326482,
+        "sha256": "35f18bc4b94ec412ea651a06d278d85cc4f423ceb4f97a1ccbaed0795a3cda05"
+      }
+    ],
+    "remove_mac": [
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/mlx-head-payload-2026-10-21/apple/mlx-head-payload",
+        "bytes": 17206000,
+        "sha256": "a6409486d2c80b2bcc08ee0fbd2da69a9efb632dcef2149b0b37c2ffe7476a0f"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/mlx-head-payload-2026-10-21/apple/mlx-head-payload.map",
+        "bytes": 5107088,
+        "sha256": "e96ab67599a428d590dd3e53bad01e0d7bfd8469aaeefec4a0717396c11aa0fd"
+      }
+    ],
+    "keep_mac": [
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/mlx-head-payload-2026-10-21/apple/objects/src--compute_route_apple--apple_memory.mm.o",
+        "bytes": 126288,
+        "sha256": "bbcb3ca3b17ad43c88ff4618c8626b6a7d41809e0a2cb4ea3fe87732eaf49ae7"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/mlx-head-payload-2026-10-21/apple/objects/src--graph_route_apple--native_region.cc.o",
+        "bytes": 192600,
+        "sha256": "6a3482f566290e44ae856243d757c5f4603e627dad20be286daf7555905f1dba"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/mlx-head-payload-2026-10-21/apple/objects/tests--graph_route_apple--mlx_head_payload_test.cc.o",
+        "bytes": 229088,
+        "sha256": "e04f162897b91e73eab6069624c4e20d3d90ed91cc9c109e527bac8d3580e9b1"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/mlx-head-payload-2026-10-21/apple/objects/tests--graph_route_apple--native_region_test.cc.o",
+        "bytes": 319752,
+        "sha256": "b73658b903ff0ca938cb64b7a4c9a3f7b4536d91ecb4992fc13e282b656cc851"
+      }
+    ],
+    "evidence": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\mlx-head-payload-reference-2026-10-21.json",
+      "bytes": 116174,
+      "sha256": "96632fd9f87a873acdd9df763665e805695187bb0e39770876c99f12ef7ca697"
+    },
+    "archive": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\mlx-head-payload-reference-2026-10-21.zip",
+      "bytes": 11866366,
+      "sha256": "8cedcdc7d243ff9e6b22ba659b1613e6d1c24d39b565f28862737e84430ec197"
+    }
+  },
+  "source_script": "# Exact MLX head payload test-artifact cleanup. No recursive directory removal.\r\n$ErrorActionPreference = 'Stop'\r\n$plan = Get-Content -LiteralPath 'C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-head-payload-2026-10-21\\root\\cleanup-plan.json' -Raw | ConvertFrom-Json\r\n$separator = [IO.Path]::DirectorySeparatorChar\r\n$allowed = [IO.Path]::GetFullPath($plan.allowed_windows).TrimEnd($separator) + $separator\r\nfunction Assert-Identity($row) {\r\n  $file = Get-Item -LiteralPath $row.path -ErrorAction Stop\r\n  if ($file.PSIsContainer -or ($file.Attributes -band [IO.FileAttributes]::ReparsePoint)) { throw \"Not a regular file: $($row.path)\" }\r\n  if ($file.Length -ne $row.bytes -or (Get-FileHash -LiteralPath $row.path -Algorithm SHA256).Hash.ToLowerInvariant() -ne $row.sha256) { throw \"Identity changed: $($row.path)\" }\r\n}\r\nAssert-Identity $plan.evidence\r\nAssert-Identity $plan.archive\r\nforeach ($row in $plan.remove_windows) {\r\n  $full = [IO.Path]::GetFullPath($row.path)\r\n  if (-not $full.StartsWith($allowed, [StringComparison]::OrdinalIgnoreCase) -or [IO.Path]::GetExtension($full) -notin '.exe','.map') { throw \"Outside exact artifact scope: $full\" }\r\n  Assert-Identity $row\r\n}\r\nforeach ($row in $plan.keep_windows) { Assert-Identity $row }\r\n$active = @(Get-CimInstance Win32_Process | Where-Object { $_.ExecutablePath -and $_.ExecutablePath.StartsWith($allowed, [StringComparison]::OrdinalIgnoreCase) })\r\nif ($active.Count) { throw 'A test executable in this exact workspace is still running' }\r\nforeach ($row in $plan.remove_windows) { Remove-Item -LiteralPath $row.path -Force }\r\nforeach ($row in $plan.keep_windows) { Assert-Identity $row }\r\n$macProgram = @'\r\nimport pathlib,hashlib,json,subprocess\r\nplan=json.loads('{\"allowed_mac\": \"/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/mlx-head-payload-2026-10-21/apple\", \"remove_mac\": [{\"path\": \"/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/mlx-head-payload-2026-10-21/apple/mlx-head-payload\", \"bytes\": 17206000, \"sha256\": \"a6409486d2c80b2bcc08ee0fbd2da69a9efb632dcef2149b0b37c2ffe7476a0f\"}, {\"path\": \"/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/mlx-head-payload-2026-10-21/apple/mlx-head-payload.map\", \"bytes\": 5107088, \"sha256\": \"e96ab67599a428d590dd3e53bad01e0d7bfd8469aaeefec4a0717396c11aa0fd\"}], \"keep_mac\": [{\"path\": \"/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/mlx-head-payload-2026-10-21/apple/objects/src--compute_route_apple--apple_memory.mm.o\", \"bytes\": 126288, \"sha256\": \"bbcb3ca3b17ad43c88ff4618c8626b6a7d41809e0a2cb4ea3fe87732eaf49ae7\"}, {\"path\": \"/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/mlx-head-payload-2026-10-21/apple/objects/src--graph_route_apple--native_region.cc.o\", \"bytes\": 192600, \"sha256\": \"6a3482f566290e44ae856243d757c5f4603e627dad20be286daf7555905f1dba\"}, {\"path\": \"/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/mlx-head-payload-2026-10-21/apple/objects/tests--graph_route_apple--mlx_head_payload_test.cc.o\", \"bytes\": 229088, \"sha256\": \"e04f162897b91e73eab6069624c4e20d3d90ed91cc9c109e527bac8d3580e9b1\"}, {\"path\": \"/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/mlx-head-payload-2026-10-21/apple/objects/tests--graph_route_apple--native_region_test.cc.o\", \"bytes\": 319752, \"sha256\": \"b73658b903ff0ca938cb64b7a4c9a3f7b4536d91ecb4992fc13e282b656cc851\"}]}')\r\nbase=pathlib.Path(plan['allowed_mac']); assert base.is_dir() and not base.is_symlink()\r\ndef verify(row):\r\n p=pathlib.Path(row['path']); assert p.is_absolute() and not p.is_symlink() and p.resolve().is_relative_to(base.resolve())\r\n assert p.is_file() and p.stat().st_size==row['bytes'] and hashlib.sha256(p.read_bytes()).hexdigest()==row['sha256'],str(p)\r\n return p\r\npaths=[verify(x) for x in plan['remove_mac']]\r\nfor row in plan['keep_mac']:verify(row)\r\nactive=subprocess.check_output(['ps','-axo','command='],text=True)\r\nassert not any(str(p) in command for p in paths for command in active.splitlines() if not command.startswith('python3 -')), 'test executable is running'\r\nfor p in paths:p.unlink()\r\nfor row in plan['keep_mac']:verify(row)\r\nprint(json.dumps(dict(removed=len(paths),bytes=sum(x['bytes'] for x in plan['remove_mac']),kept_objects=len(plan['keep_mac']))))\r\n'@\r\n$macResult = $macProgram | & ssh kiro@172.22.10.198 python3 -\r\nif ($LASTEXITCODE -ne 0) { throw 'Mac exact-file cleanup failed; do not report both platforms completed' }\r\n$result = [ordered]@{\r\n  completed = $true\r\n  windows_removed = @($plan.remove_windows).Count\r\n  windows_bytes = ($plan.remove_windows | Measure-Object -Property bytes -Sum).Sum\r\n  windows_kept_objects = @($plan.keep_windows).Count\r\n  mac = ($macResult | ConvertFrom-Json)\r\n  evidence_sha256 = $plan.evidence.sha256\r\n  archive_sha256 = $plan.archive.sha256\r\n  exact_plan = $plan\r\n  source_script = [IO.File]::ReadAllText($PSCommandPath)\r\n}\r\n$result | ConvertTo-Json -Depth 18 | Set-Content -LiteralPath 'C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\mlx-head-payload-reference-2026-10-21.cleanup.json' -Encoding utf8\r\n[pscustomobject]$result | Select-Object completed,windows_removed,windows_bytes,windows_kept_objects,mac | ConvertTo-Json -Depth 5\r\n"
+}

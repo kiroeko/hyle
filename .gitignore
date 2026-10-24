@@ -50,3 +50,37 @@ _build.bat
 # OS
 .DS_Store
 Thumbs.db
+
+# Large raw experiment payloads stay local; compact records and metadata are tracked.
+# See docs/evidence/README.md and local-archives.json.
+/docs/evidence/**/*.data*.zip
+/docs/evidence/correctness/qwen-multisequence-2026-10-22.part*.zip
+/docs/evidence/correctness/ct-asymmetric-int4-2026-10-20.zip
+/docs/evidence/correctness/gguf-nvfp4-2026-10-20.zip
+/docs/evidence/correctness/grouped-shared-activation-2026-10-20.zip
+/docs/evidence/correctness/inference-foundation-review-2026-10-18/cold-constant-retirement.zip
+/docs/evidence/correctness/inference-foundation-review-2026-10-18/cold-copy-retirement.zip
+/docs/evidence/correctness/inference-foundation-review-2026-10-18/derived-constant-cast.zip
+/docs/evidence/correctness/inference-foundation-review-2026-10-18/qwen-capture-current.zip
+/docs/evidence/correctness/inference-foundation-review-2026-10-18/qwen-fixed-decode.zip
+/docs/evidence/correctness/inference-foundation-review-2026-10-18/recurrent-gdn-schema.zip
+/docs/evidence/performance/qwen35-full-cuda-2026-10-19/batch-layout-query-reuse.zip
+/docs/evidence/performance/qwen35-full-cuda-2026-10-19/cuda-bf16-dual-projection.zip
+/docs/evidence/performance/qwen35-full-cuda-2026-10-19/cuda-bfloat-matvec.zip
+/docs/evidence/performance/qwen35-full-cuda-2026-10-19/cuda-constant-expressions.zip
+/docs/evidence/performance/qwen35-full-cuda-2026-10-19/cuda-constant-view-origins.zip
+/docs/evidence/performance/qwen35-full-cuda-2026-10-19/cuda-explicit-rope.zip
+/docs/evidence/performance/qwen35-full-cuda-2026-10-19/cuda-fusion-allocation.zip
+/docs/evidence/performance/qwen35-full-cuda-2026-10-19/cuda-fusion-layout.zip
+/docs/evidence/performance/qwen35-full-cuda-2026-10-19/cuda-fusion-precision.zip
+/docs/evidence/performance/qwen35-full-cuda-2026-10-19/cuda-gdn-l2-epilogue.zip
+/docs/evidence/performance/qwen35-full-cuda-2026-10-19/cuda-gdn-l2-fusion.zip
+/docs/evidence/performance/qwen35-full-cuda-2026-10-19/cuda-grouped-fusion.zip
+/docs/evidence/performance/qwen35-full-cuda-2026-10-19/cuda-hot-prepare-selection.zip
+/docs/evidence/performance/qwen35-full-cuda-2026-10-19/cuda-native-matvec-rejected.zip
+/docs/evidence/performance/qwen35-full-cuda-2026-10-19/cuda-rms-candidate-frontier.zip
+/docs/evidence/performance/qwen35-full-cuda-2026-10-19/cuda-rms-cast-fusion.zip
+/docs/evidence/performance/qwen35-full-cuda-2026-10-19/cuda-rms-inplace.zip
+/docs/evidence/performance/qwen35-full-cuda-2026-10-19/ggml-cuda-caller-workspace.zip
+/docs/evidence/performance/qwen35-full-cuda-2026-10-19/ggml-cuda-liveness.zip
+/docs/evidence/performance/qwen35-full-cuda-2026-10-19/immutable-alias-index.zip

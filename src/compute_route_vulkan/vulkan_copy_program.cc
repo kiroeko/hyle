@@ -191,11 +191,15 @@ CopyBatchProgram::~CopyBatchProgram() { reset(); }
 void CopyBatchProgram::reset() noexcept { if (auto *state = std::exchange(state_, nullptr)) state->decref(); }
 Result<CopyBatchProgram> CopyBatchProgram::prepare(const Context &context,
     std::span<const CopyResourceSpec> specs, CopyBatchOptions options) noexcept {
-  if (!context.valid() || !options.allocator.valid() || options.max_resources == 0 ||
+  if(!context.valid())return std::unexpected(Status::InvalidArgument("Vulkan copy Context is empty"));
+  return detail::CopyStreamAccess::prepare_program(detail::Access::runtime(context),specs,std::move(options));
+}
+Result<CopyBatchProgram> detail::CopyStreamAccess::prepare_program(const std::shared_ptr<Runtime>&runtime,
+    std::span<const CopyResourceSpec> specs, CopyBatchOptions options) noexcept {
+  if (!runtime || !options.allocator.valid() || options.max_resources == 0 ||
       options.max_copies == 0 || options.max_copies > UINT32_MAX / 2 || options.max_phases == 0 ||
       options.max_phases > 64 || options.max_bytes == 0 || specs.size() > options.max_resources)
     return std::unexpected(Status::InvalidArgument("Vulkan copy program limits are invalid"));
-  const auto &runtime = detail::Access::runtime(context);
   { std::lock_guard lock(runtime->mutex);
     if (runtime->closed) return std::unexpected(Status::FailedPrecondition("Vulkan copy Context is closed"));
     if (!runtime->failure.ok()) return std::unexpected(runtime->failure); }

@@ -1,0 +1,191 @@
+{
+  "date": "2026-10-20",
+  "status": "executed",
+  "batches": [
+    "vulkan-view-root-owner",
+    "vulkan-mlx-constant-bank-reuse"
+  ],
+  "files": 19,
+  "bytes": 440775330,
+  "removed": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-moe-typed-inputs\\vulkan\\checks\\vulkan.exe",
+      "bytes": 67820032,
+      "sha256": "f3a0f8e3413eec96f9ec448778c45bf4681f4c4652a060af135025ed0b879a19"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\vulkan-mlx-constant-bank-reuse\\before-checks\\bank-before.exp",
+      "bytes": 25028,
+      "sha256": "ac0d6ac9de83798ba764199e6c3b9477a4cd61f40e4651679471dc2e98610248"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\vulkan-mlx-constant-bank-reuse\\before-checks\\bank-before.lib",
+      "bytes": 42002,
+      "sha256": "468ac7f4f28f8c81be717e1635af75d16be4b57dba64cfe773ae32b613bd725b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\vulkan-mlx-constant-bank-reuse\\before-checks\\bank-before.map",
+      "bytes": 33659817,
+      "sha256": "15ff00fcfa6c92f8247aa1d6252969f46ed21ada6d310dfb63b2dffd3889e385"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\vulkan-mlx-constant-bank-reuse\\checks\\vulkan.exp",
+      "bytes": 25012,
+      "sha256": "f2c45185a972cd6dbb087772370e20c4bd4fbb21cb7d59c695ef3f542c215c4f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\vulkan-mlx-constant-bank-reuse\\checks\\vulkan.lib",
+      "bytes": 41560,
+      "sha256": "fed51f80d367206935c20d5a34eb77b477832f71dd84a1440dfdc0c7d9c6ce7d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\vulkan-mlx-constant-bank-reuse\\checks\\vulkan.map",
+      "bytes": 33662998,
+      "sha256": "4b4c5257a5b80ce6c7d08ee7ad1c9c883cd1f92bd60141cd139409c598a9722b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\vulkan-view-root-owner\\checks\\vulkan.exe",
+      "bytes": 68043264,
+      "sha256": "e5611ffd73b1842a88b674d98308736963ca24263ff0d6dcad28409689077bb8"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\vulkan-view-root-owner\\checks\\vulkan.exp",
+      "bytes": 25004,
+      "sha256": "22e169e2d21f01e0d1e9bbab6aa72fe7d8c9a7e12ef959b349ee9ca2a3f6a359"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\vulkan-view-root-owner\\checks\\vulkan.lib",
+      "bytes": 41560,
+      "sha256": "fed51f80d367206935c20d5a34eb77b477832f71dd84a1440dfdc0c7d9c6ce7d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\vulkan-view-root-owner\\checks\\vulkan.map",
+      "bytes": 33709292,
+      "sha256": "c440ea409fde68caeeb6254d40b20f5defc353ecab82fdeb470e06eaaf5bbd8a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\vulkan-view-root-owner\\reproduction\\vulkan.exe",
+      "bytes": 68043776,
+      "sha256": "fd1cb281aabff60a631cd2fd375da4a1600a1a203778a9f23dee24d81e66c6e5"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\vulkan-view-root-owner\\reproduction\\vulkan.exp",
+      "bytes": 25010,
+      "sha256": "6eef0356c21bcbcd09bb1b6ee3fdc681d7f19c4b36b9926df6e6c3b639888f64"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\vulkan-view-root-owner\\reproduction\\vulkan.lib",
+      "bytes": 41560,
+      "sha256": "fed51f80d367206935c20d5a34eb77b477832f71dd84a1440dfdc0c7d9c6ce7d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\vulkan-view-root-owner\\reproduction\\vulkan.map",
+      "bytes": 33730055,
+      "sha256": "2a28b84287bb4c0c9ac647c1be2e7df481847c4257e505de60a1cc4e53407ecb"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\vulkan-view-root-owner\\reproduction-final\\vulkan.exe",
+      "bytes": 68042752,
+      "sha256": "412f9a1adf7237a8d697e3862e906c71ec51e32b181901f4f55e44eea414acf1"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\vulkan-view-root-owner\\reproduction-final\\vulkan.exp",
+      "bytes": 25016,
+      "sha256": "23776c8d6f02644c2bed46c7e6abc43e0b8978b132572e5f22c5de8427ad4d0d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\vulkan-view-root-owner\\reproduction-final\\vulkan.lib",
+      "bytes": 41560,
+      "sha256": "fed51f80d367206935c20d5a34eb77b477832f71dd84a1440dfdc0c7d9c6ce7d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\vulkan-view-root-owner\\reproduction-final\\vulkan.map",
+      "bytes": 33730032,
+      "sha256": "af5c13a14331cbaf1ac7cc9859cad74f72e371a3b8f94ca94ba5a9249426f205"
+    }
+  ],
+  "protected": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\vulkan-mlx-constant-bank-reuse\\checks\\vulkan.exe",
+      "bytes": 68069888,
+      "sha256": "12442d11de5b92cdd4591797231c7f20553d2e31e4aecfefbc0597c6aa926416"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\vulkan-mlx-constant-bank-reuse\\before-checks\\bank-before.exe",
+      "bytes": 68068864,
+      "sha256": "611c6ddb327379d3efaf9f2fdce378c5fbdbd8c941fdf73625c77d4a0da25b45"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-moe-typed-inputs\\checks\\cpu.exe",
+      "bytes": 26577408,
+      "sha256": "20b52c21fa4550642c39e603c6aaa4c83dbedb2cfdb731b7c821e75f8c91f734"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-moe-typed-inputs\\checks\\cuda.exe",
+      "bytes": 120109056,
+      "sha256": "d6bf01df2591365aed65745431d605c5083c035e92d6b936bb41e5d0635318a2"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\layout-binding-lifetime\\checks\\cpu.exe",
+      "bytes": 26512896,
+      "sha256": "efe295fc31ce6dae192757d3fd282db5f581beca0978c82fc7083fa5812530b5"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\layout-binding-lifetime\\cuda\\capture.exe",
+      "bytes": 120055808,
+      "sha256": "d0ad2c73868bbcaa5a8587ce7ff8d7d1974b3cc2749b1fa84763c3253c555123"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\product-checks\\qwen.exe",
+      "bytes": 117475840,
+      "sha256": "b7081baab2d24d37f512c7fff6fae09501b5b35a413b239a5058e018f4f31e43"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-pinned-weight-load\\product-checks\\qwen.exe",
+      "bytes": 117435904,
+      "sha256": "a487d7e22a55b1461a0ed8a704a9e0fb97f656c503b58d59a662cd3d345458b6"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-explicit-rope\\performance-prepared\\peer.exe",
+      "bytes": 35814400,
+      "sha256": "fb169f0282f2a834a61b3e887edaba92d8699814558b0c5f1a13aaf07e0de969"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\vulkan-view-root-owner-2026-10-20.json",
+      "bytes": 14380,
+      "sha256": "cd1ce5f20abf3279e2aec9daf3af02d46a4520df5eb13c4ded9e5b724d2fa517"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\vulkan-view-root-owner-2026-10-20.zip",
+      "bytes": 263749,
+      "sha256": "d4897c03e4933d1ac7eb8be67a4d1f81473508531fc085d7a8002f1acd6719dd"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\vulkan-mlx-constant-bank-reuse-2026-10-20.json",
+      "bytes": 17876,
+      "sha256": "f424d53304efae6283afd9379669b3d2c2d3dd2bcc5ce776aa4801255e413b49"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\vulkan-mlx-constant-bank-reuse-2026-10-20.zip",
+      "bytes": 340518,
+      "sha256": "d8063a10c66146a7fc5292477db4eeb01efc53ca3709a99732d9a9b0bbdb3b7f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\mlx-moe-typed-inputs-2026-10-20.json",
+      "bytes": 87220,
+      "sha256": "030976ee10775e8ebe154749416b53909652c6b25c59d49a18250d4b623f2b27"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\mlx-moe-typed-inputs-2026-10-20.zip",
+      "bytes": 4282723,
+      "sha256": "1939fa4d5d67369c6469f00f914f3fdecacfe52db25d3f9908892b0bfa0eb68a"
+    }
+  ],
+  "script": {
+    "path": "C:\\public\\project-hyle\\hyle\\test.ps1",
+    "bytes": 2274,
+    "sha256": "ac63657464e521048909ed4e3188eec3bd153719ee841a12692d602e1cef1606"
+  },
+  "script_text": "$ErrorActionPreference = 'Stop'\n$repo = [IO.Path]::GetFullPath($PSScriptRoot)\n$scope = [IO.Path]::GetFullPath((Join-Path $repo '.scratch/architecture-refactor-2026-10-18'))\n$planFile = Join-Path $scope 'vulkan-mlx-constant-bank-reuse/cleanup/plan.json'\n$plan = Get-Content -Raw -LiteralPath $planFile | ConvertFrom-Json\nif ($plan.scope -ne $scope) { throw 'Cleanup plan scope mismatch' }\n$protectedPaths = @($plan.protected | ForEach-Object { [IO.Path]::GetFullPath($_.path) })\nforeach ($row in @($plan.protected) + @($plan.files)) {\n    $resolved = (Resolve-Path -LiteralPath $row.path).ProviderPath\n    if ([IO.Path]::GetFullPath($row.path) -ne $resolved) { throw \"Unexpected resolved path: $resolved\" }\n    $file = Get-Item -LiteralPath $resolved\n    if ($file.PSIsContainer -or $file.Length -ne $row.bytes) { throw \"Changed cleanup proof: $resolved\" }\n    if ((Get-FileHash -Algorithm SHA256 -LiteralPath $resolved).Hash.ToLowerInvariant() -ne $row.sha256) { throw \"Changed hash: $resolved\" }\n}\nforeach ($row in $plan.files) {\n    $path = [IO.Path]::GetFullPath($row.path)\n    if (-not $path.StartsWith($scope + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)) { throw \"Outside cleanup scope: $path\" }\n    if ($protectedPaths -contains $path) { throw \"Protected file: $path\" }\n    if ([IO.Path]::GetExtension($path) -notin @('.map','.lib','.exp','.exe')) { throw \"Unexpected cleanup type: $path\" }\n}\n$removed = @()\nforeach ($row in $plan.files) {\n    Remove-Item -LiteralPath $row.path -Force\n    if (Test-Path -LiteralPath $row.path) { throw \"Removal failed: $($row.path)\" }\n    $removed += $row\n}\nforeach ($row in $plan.protected) {\n    if ((Get-FileHash -Algorithm SHA256 -LiteralPath $row.path).Hash.ToLowerInvariant() -ne $row.sha256) { throw \"Protected file changed: $($row.path)\" }\n}\n$result = [ordered]@{ completed = $true; files = $removed.Count; bytes = $plan.total_bytes; removed = $removed; protected = $plan.protected }\n$result | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $scope 'vulkan-mlx-constant-bank-reuse/cleanup/executed.json') -Encoding utf8\nWrite-Output \"Removed $($removed.Count) rebuildable files, $($plan.total_bytes) bytes; protected images and evidence unchanged.\"\n",
+  "scope": "Only exact obsolete test images and rebuildable maps/import/export libraries. Current bank image, direct bank comparison, CPU/CUDA/model images, objects, SDKs and numerical evidence retained."
+}

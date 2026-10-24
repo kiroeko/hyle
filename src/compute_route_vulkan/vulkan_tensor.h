@@ -7,6 +7,15 @@
 namespace hyle::compute::vulkan::detail {
 std::optional<std::uint32_t> tensor_storage_type(DataType type) noexcept;
 Status lower_tensor(ProgramState &program, const PlanStep &step);
+Status lower_nvfp4(ProgramState &program, const PlanStep &step) noexcept;
+Status lower_blockwise_w4a8(ProgramState &program, const PlanStep &step) noexcept;
+Status lower_ct_packed(ProgramState &program, const PlanStep &step) noexcept;
+Status lower_gptq_decode(ProgramState &program, const PlanStep &step) noexcept;
+Status lower_static_fp8(ProgramState &program, const PlanStep &step) noexcept;
+Status lower_row_cache(ProgramState &program, const PlanStep &step,
+                       RowCacheAccessFacts * = nullptr) noexcept;
+Status lower_row_cache_indexer(ProgramState &program, const PlanStep &step,
+                              RowCacheAccessFacts * = nullptr) noexcept;
 Status lower_cache_encoder(ProgramState &program, const PlanStep &step,
                            std::span<const std::size_t> last_uses);
 Status lower_index_check(ProgramState &program, std::uint32_t input,

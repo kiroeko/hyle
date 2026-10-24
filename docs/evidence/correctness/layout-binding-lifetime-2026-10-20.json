@@ -1,0 +1,88 @@
+{
+  "date": "2026-10-20",
+  "status": "CPU_CUDA_layout_binding_lifetime_fix_executed",
+  "problem": "batch::prepare reset the whole Invocation, dropping stable caller inputs/outputs/leases/InputSource owners on every layout change.",
+  "behavior": "Existing batch::prepare revokes configuration and projected permissions, retains caller bindings and their owners. Explicit Invocation::reset still clears all bindings.",
+  "implementation": {
+    "changed_CXX_owners": 4,
+    "new_user_modes": 0,
+    "new_executors": 0,
+    "public_PlanState_InvocationState_or_vtable_layout_changed": false,
+    "binding_scope": "Private ResourceEpisode Caller/Configuration/Projected lifetime; all ready, pending, empty and generic projected commits are explicit.",
+    "prepared_source": "Reset derived source preparation, retain binding owners, reroute under complete cold preparation.",
+    "mutation": "Original result/observation/retirement/source-control gates; invalidate affected native imports before releasing owners; rebuild original alias index.",
+    "complexity": "One native step/input-port pass resolving aliases and existing binding_slots, no per-configuration-port whole-graph scan or new index.",
+    "cleanup": "One enclosing batch configuration transaction, selective failure cleanup, original strict replay remains revoked until successful preparation."
+  },
+  "actual": {
+    "before": {
+      "cases": 1,
+      "failures": 1,
+      "skipped": 0,
+      "identity": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\layout-binding-lifetime\\reproduction\\results.xml",
+        "bytes": 1043,
+        "sha256": "ce5a290cf1115cd76556dba39c5c9b8bd3b327c103b300494664b4a2ea70b270"
+      }
+    },
+    "cpu": {
+      "cases": 11,
+      "failures": 0,
+      "skipped": 0,
+      "identity": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\layout-binding-lifetime\\checks\\results.xml",
+        "bytes": 3740,
+        "sha256": "21c1e53833220fb3ffc660e6435f5df4ad1a0ad61928688a56509dad8b94bf6e"
+      }
+    },
+    "cuda": {
+      "cases": 4,
+      "failures": 0,
+      "skipped": 0,
+      "identity": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\layout-binding-lifetime\\cuda\\results.xml",
+        "bytes": 1641,
+        "sha256": "2de3ffa5e1d9711b346b4a0a323377ac89be212af5bb46705f31194619a51ae5"
+      }
+    },
+    "unchanged_red_test_object": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\layout-binding-lifetime\\reproduction\\typed-test.obj",
+      "bytes": 1742741,
+      "sha256": "8160ab5d0fba4a6a777a10d885dd42fceeea5af104ad16e8d4039bdea9279d88"
+    },
+    "cpu_summary": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\layout-binding-lifetime\\checks\\summary.json",
+      "bytes": 1438,
+      "sha256": "bc320d9b87aa5e0ad6bdcf5d2b4df9251bca45c888f666f8b55545b2dca65e02"
+    },
+    "cuda_summary": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\layout-binding-lifetime\\cuda\\summary.json",
+      "bytes": 557,
+      "sha256": "732c9969334ebb8024d20972dc39ab245c6150d4af4a45105d126e77b66cf751"
+    },
+    "core_freeze": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\layout-binding-lifetime\\core\\source-freeze.json",
+      "bytes": 2107,
+      "sha256": "b0ff966c936a0cd9f52bfc5f2c5bae489966fe865e6285d0aca5286db3a34636"
+    }
+  },
+  "diagnostics": {
+    "stale_factory": "Existing custom_kernel.obj used Provider contract16 while Context requires17. Recompiled only the original factory owner; no factory product source or version check changed.",
+    "fixture_errors": "Initial Status assertion required .ok(); readonly adopted ReadLease is never writable, so promotion witness now uses an actual writable LeasePool. Original errors and sources retained.",
+    "rejected_candidate": "Initial per-port recording invalidation was replaced before compilation with one shared pass."
+  },
+  "scope_limits": [
+    "Only Windows CPU/CUDA ran for the layout change; Apple/Linux/Vulkan still require relevant next-batch validation.",
+    "The separately sealed four-backend shared-MLX batch predates this common change and is not cross-platform proof for this lifecycle change.",
+    "No new whole-model, throughput, memory-peak or independent-quality conclusion.",
+    "No whole-cache source freshness claim; this batch records actual compiled owners and link inputs."
+  ],
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\layout-binding-lifetime-2026-10-20.zip",
+    "bytes": 2499701,
+    "sha256": "65e85ab64d7ad6ccf69fd204109c14e7ffd87dd528a10d354cc9f8c0622165e2",
+    "payloads": 232,
+    "CRC_checked": true,
+    "all_payload_SHA256_checked": true
+  }
+}

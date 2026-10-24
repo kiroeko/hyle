@@ -1,0 +1,68 @@
+{
+  "completed": true,
+  "windows_removed": 5,
+  "windows_bytes": 246083529.0,
+  "windows_kept_objects": 2,
+  "evidence_sha256": "2d778e4e0bd175dfa24925669201174b08c5b52127009f21c570db9ac45d02ec",
+  "archive_sha256": "bbd27883bb5578b7264ba2a430d8ad92bfaa5fe70e760ddce0e969cd06c168e2",
+  "exact_plan": {
+    "allowed_windows": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\outer-fp8-default-routing-2026-10-21",
+    "remove_windows": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\outer-fp8-default-routing-2026-10-21\\cpu\\checks\\link1\\cpu-outer-route-bench.exe",
+        "bytes": 21457920,
+        "sha256": "ad590fa159cae6e0feaa4289663baa263ab23de2ff8867134805cb5b80649342"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\outer-fp8-default-routing-2026-10-21\\cpu\\checks\\link1\\cpu-outer-route-bench.map",
+        "bytes": 26330214,
+        "sha256": "c42bb5680f865186c4867ceb04127a7fc19df0b8b70b1614df27b30ce0177a1b"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\outer-fp8-default-routing-2026-10-21\\cuda\\checks\\link1\\cuda-outer-route-bench.exe",
+        "bytes": 139246080,
+        "sha256": "85058b0fa3097fef97ccdafb1b4b2dd851dd7be18ad01d4396cb598179833cb6"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\outer-fp8-default-routing-2026-10-21\\cuda\\checks\\link1\\cuda-outer-route-bench.map",
+        "bytes": 57690979,
+        "sha256": "b4354e8e2b7e3f768ced16d63646872b48e11578ca2ce04253c206b723c71371"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\outer-fp8-default-routing-2026-10-21\\cuda\\checks\\link1\\hyle_ggml_cpu_avx2_ffa4e8b8_e74fc9bb8964d04f.dll",
+        "bytes": 1358336,
+        "sha256": "09828878dd44d62eb6ae844827e20382ee2b457d0dbd76594b6577bea3ad5434"
+      }
+    ],
+    "keep_windows": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\outer-fp8-default-routing-2026-10-21\\cpu\\checks\\attempt1\\cpu-outer-route-bench.obj",
+        "bytes": 1725423,
+        "sha256": "a64f7b39daaa54f34647f48fae1c161c4a3b4ba2785a537ab2d15d89fc06e54a"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\outer-fp8-default-routing-2026-10-21\\cuda\\checks\\attempt1\\cuda-outer-route-bench.obj",
+        "bytes": 1814694,
+        "sha256": "3f6566babf1ba9374b51ad82257961f946a9e675c8953631ea4ffe75576b393f"
+      }
+    ],
+    "keep_runtime_cache": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_ggml_cpu_avx2_ffa4e8b8_e74fc9bb8964d04f.dll",
+        "bytes": 1358336,
+        "sha256": "09828878dd44d62eb6ae844827e20382ee2b457d0dbd76594b6577bea3ad5434"
+      }
+    ],
+    "evidence": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\outer-fp8-route-cost-2026-10-21.json",
+      "bytes": 44522,
+      "sha256": "2d778e4e0bd175dfa24925669201174b08c5b52127009f21c570db9ac45d02ec"
+    },
+    "archive": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\outer-fp8-route-cost-2026-10-21.zip",
+      "bytes": 408600,
+      "sha256": "bbd27883bb5578b7264ba2a430d8ad92bfaa5fe70e760ddce0e969cd06c168e2"
+    }
+  },
+  "source_script": "# Exact Outer FP8 local role cost test-artifact cleanup. No recursive directory removal.\n$ErrorActionPreference = 'Stop'\n$plan = Get-Content -LiteralPath 'C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\outer-fp8-default-routing-2026-10-21\\root\\cleanup-plan.json' -Raw | ConvertFrom-Json\n$separator = [IO.Path]::DirectorySeparatorChar\n$allowed = [IO.Path]::GetFullPath($plan.allowed_windows).TrimEnd($separator) + $separator\nfunction Assert-Identity($row) {\n  $file = Get-Item -LiteralPath $row.path -ErrorAction Stop\n  if ($file.PSIsContainer -or ($file.Attributes -band [IO.FileAttributes]::ReparsePoint)) { throw \"Not a regular file: $($row.path)\" }\n  if ($file.Length -ne $row.bytes -or (Get-FileHash -LiteralPath $row.path -Algorithm SHA256).Hash.ToLowerInvariant() -ne $row.sha256) { throw \"Identity changed: $($row.path)\" }\n}\nAssert-Identity $plan.evidence\nAssert-Identity $plan.archive\nforeach ($row in $plan.remove_windows) {\n  $full = [IO.Path]::GetFullPath($row.path)\n  if (-not $full.StartsWith($allowed, [StringComparison]::OrdinalIgnoreCase) -or [IO.Path]::GetExtension($full) -notin '.exe','.map','.dll') { throw \"Outside exact artifact scope: $full\" }\n  Assert-Identity $row\n}\nforeach ($row in $plan.keep_windows) { Assert-Identity $row }\nforeach ($row in $plan.keep_runtime_cache) { Assert-Identity $row }\n$active = @(Get-CimInstance Win32_Process | Where-Object { $_.ExecutablePath -and $_.ExecutablePath.StartsWith($allowed, [StringComparison]::OrdinalIgnoreCase) })\nif ($active.Count) { throw 'A test executable in this exact workspace is still running' }\nforeach ($row in $plan.remove_windows) { Remove-Item -LiteralPath $row.path -Force }\nforeach ($row in $plan.keep_windows) { Assert-Identity $row }\nforeach ($row in $plan.keep_runtime_cache) { Assert-Identity $row }\n$result = [ordered]@{\n  completed = $true\n  windows_removed = @($plan.remove_windows).Count\n  windows_bytes = [double]($plan.remove_windows | Measure-Object -Property bytes -Sum).Sum\n  windows_kept_objects = @($plan.keep_windows).Count\n  evidence_sha256 = $plan.evidence.sha256\n  archive_sha256 = $plan.archive.sha256\n  exact_plan = $plan\n  source_script = [IO.File]::ReadAllText($PSCommandPath)\n}\n$result | ConvertTo-Json -Depth 18 | Set-Content -LiteralPath 'C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\outer-fp8-route-cost-2026-10-21.cleanup.json' -Encoding utf8\n[pscustomobject]$result | Select-Object completed,windows_removed,windows_bytes,windows_kept_objects | ConvertTo-Json\n"
+}

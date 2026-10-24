@@ -1,0 +1,4578 @@
+{
+  "schema": "hyle.qwen-paged-recording.v1",
+  "date": "2026-10-21",
+  "status": "Conditional dormant recording preservation implemented and executed; full comparison completed; speed target and full cache feature remain unfinished",
+  "implementation": {
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\qwen-link2\\qwen.exe",
+      "bytes": 139651072,
+      "sha256": "ff42c5325a8a469f5ca6a50de7480130b5f894e02e1df833543758f5c4a6a7af"
+    },
+    "product": [
+      {
+        "path": "include/hyle/graph/detail/region_access.h",
+        "bytes": 15483,
+        "sha256": "81824e4a1cde1e074ffe50b7886cddb9db8939092ff49b3ae42298190dc679ad"
+      },
+      {
+        "path": "src/compute_provider_flashinfer/flashinfer_provider.cc",
+        "bytes": 46732,
+        "sha256": "7f7d4d036c187fd206955a61f9e9f7a7873d2ab56f4eb8ee6e5476f44f9674e7"
+      },
+      {
+        "path": "src/graph/executable.cc",
+        "bytes": 463668,
+        "sha256": "b5cfb444768c862a7bf2e4a939b416e13c9045e7fb73f15f7e986b5a8e4355fe"
+      },
+      {
+        "path": "src/graph/resources.cc",
+        "bytes": 84147,
+        "sha256": "0c25c4bd29bb28c1fd330a1e2d873a6b3ef10a3fe408aed45ca14c31ebd503ab"
+      },
+      {
+        "path": "src/graph_batch/batch.cc",
+        "bytes": 86873,
+        "sha256": "6f87953dd89b517eb07899e1c7b97b42a6f23d3e76d271cdacbba85eee91fc27"
+      },
+      {
+        "path": "src/graph_batch/native_batch_regions.cc",
+        "bytes": 14004,
+        "sha256": "4b08a1f1eb2fb36e847b737cd17b11d3315c511f24dbbad78fb4ffa4df653cbd"
+      },
+      {
+        "path": "src/graph_batch/native_pending_regions.cc",
+        "bytes": 5006,
+        "sha256": "e9ddd17ea37140b0124a56bffdb32dc946cbcfa0bfd8d1ef93c5cb4dcb25039f"
+      },
+      {
+        "path": "src/graph_batch/paged_append.cc",
+        "bytes": 22621,
+        "sha256": "549c94e8aa4f252aa00355f15e26ffd6f9277eb24bc6e251a937e0433ce10a67"
+      },
+      {
+        "path": "tests/graph_batch/paged_append_cuda_consumer.cc",
+        "bytes": 13814,
+        "sha256": "23e9841d61a3b5378edd233855b2dddccb9c9b42bdb717f43cefcbd4995adc49"
+      },
+      {
+        "path": "tools/qwen35_text/main.cc",
+        "bytes": 104468,
+        "sha256": "d888d817f67b057670ba141b932a97038981f1b12af98afc39b6806309f17e74"
+      },
+      {
+        "path": "tools/qwen35_text/session_state.h",
+        "bytes": 7388,
+        "sha256": "7f7b373daf263884822889a31a99d09715647c188803c8b5819bf73a4687e3c1"
+      }
+    ],
+    "host_CXX": 7,
+    "NVCC": 0,
+    "SDK_builds": 0,
+    "links": 3,
+    "unexecuted_intermediate_image": "qwen-link1/4e459435: retained closure before current provider integration; actual model/performance uses qwen-link2/ff42c532"
+  },
+  "correctness": {
+    "append_CUDA_exit": 0,
+    "stale_submit": "FailedPrecondition required after take without rebind/prepare; original success oracle also passed",
+    "single_vectors": 18,
+    "four_session_vectors": 72,
+    "all_byte_identical": true,
+    "vector_pairs": [
+      {
+        "vector": "round1_decode1/hidden.bf16",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\alice\\trace\\round1_decode1\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "e40060187d8c6376d00e58794643dd3f444dceefe29eb675c6ee2b0899131210"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\single-run1\\trace\\round1_decode1\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "e40060187d8c6376d00e58794643dd3f444dceefe29eb675c6ee2b0899131210"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round1_decode1/logits.f32",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\alice\\trace\\round1_decode1\\logits.f32",
+          "bytes": 993280,
+          "sha256": "54999d39e6a46f665fe6f7fc5d22b5136eb5e9b73ae179e5b908b33d7009f326"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\single-run1\\trace\\round1_decode1\\logits.f32",
+          "bytes": 993280,
+          "sha256": "54999d39e6a46f665fe6f7fc5d22b5136eb5e9b73ae179e5b908b33d7009f326"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round1_decode2/hidden.bf16",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\alice\\trace\\round1_decode2\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "f6d075ad86e2e0550617e6dfd6201ae335228ee6808ab8ae8bb3681159663424"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\single-run1\\trace\\round1_decode2\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "f6d075ad86e2e0550617e6dfd6201ae335228ee6808ab8ae8bb3681159663424"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round1_decode2/logits.f32",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\alice\\trace\\round1_decode2\\logits.f32",
+          "bytes": 993280,
+          "sha256": "772199ca4b0550c00635c25bd8036a9b5334cb0c22bb79ce86f6fbd81520df67"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\single-run1\\trace\\round1_decode2\\logits.f32",
+          "bytes": 993280,
+          "sha256": "772199ca4b0550c00635c25bd8036a9b5334cb0c22bb79ce86f6fbd81520df67"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round1_decode3/hidden.bf16",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\alice\\trace\\round1_decode3\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "227c7e6548e2159393ddf350d7dfbd1dda87040994ade315075c005ce7798889"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\single-run1\\trace\\round1_decode3\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "227c7e6548e2159393ddf350d7dfbd1dda87040994ade315075c005ce7798889"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round1_decode3/logits.f32",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\alice\\trace\\round1_decode3\\logits.f32",
+          "bytes": 993280,
+          "sha256": "aff61c4c7ec366a0b25cf583427df267859aca70ab3c9e264268a30f2d45f3d4"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\single-run1\\trace\\round1_decode3\\logits.f32",
+          "bytes": 993280,
+          "sha256": "aff61c4c7ec366a0b25cf583427df267859aca70ab3c9e264268a30f2d45f3d4"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round1_decode4/hidden.bf16",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\alice\\trace\\round1_decode4\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "f7d8474a362ca19268b3481791345307fee1026f0a4c871e1227ce3315e7021e"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\single-run1\\trace\\round1_decode4\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "f7d8474a362ca19268b3481791345307fee1026f0a4c871e1227ce3315e7021e"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round1_decode4/logits.f32",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\alice\\trace\\round1_decode4\\logits.f32",
+          "bytes": 993280,
+          "sha256": "0ab4e55caa9276fd56d4353c36121014f07342989b570eb9c3f7dfddc21a2bba"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\single-run1\\trace\\round1_decode4\\logits.f32",
+          "bytes": 993280,
+          "sha256": "0ab4e55caa9276fd56d4353c36121014f07342989b570eb9c3f7dfddc21a2bba"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round1_prefill/hidden.bf16",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\alice\\trace\\round1_prefill\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "441f8e0eea6b8deea8b640bb76efc9dcc1267f3ee4de9e936bcc9fa9110a8ee1"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\single-run1\\trace\\round1_prefill\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "441f8e0eea6b8deea8b640bb76efc9dcc1267f3ee4de9e936bcc9fa9110a8ee1"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round1_prefill/logits.f32",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\alice\\trace\\round1_prefill\\logits.f32",
+          "bytes": 993280,
+          "sha256": "3f9f6f36cbefdeae7dc1e5e89b8af0729c2d9d6f59dab28e040a4771d9609b43"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\single-run1\\trace\\round1_prefill\\logits.f32",
+          "bytes": 993280,
+          "sha256": "3f9f6f36cbefdeae7dc1e5e89b8af0729c2d9d6f59dab28e040a4771d9609b43"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round2_decode1/hidden.bf16",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\alice\\trace\\round2_decode1\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "8871fcd2d7757fe35a648f1c251c469af39bbabf6aedaa1140ca265fc83c6f89"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\single-run1\\trace\\round2_decode1\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "8871fcd2d7757fe35a648f1c251c469af39bbabf6aedaa1140ca265fc83c6f89"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round2_decode1/logits.f32",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\alice\\trace\\round2_decode1\\logits.f32",
+          "bytes": 993280,
+          "sha256": "66db711343338eeeb14cdb3fc6218ea0fc4f81945071835096814859681fcabe"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\single-run1\\trace\\round2_decode1\\logits.f32",
+          "bytes": 993280,
+          "sha256": "66db711343338eeeb14cdb3fc6218ea0fc4f81945071835096814859681fcabe"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round2_decode2/hidden.bf16",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\alice\\trace\\round2_decode2\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "4b61582cd57ec864b3d377722a2d60668b4fcb554c2ae2becf72113b3bd1ba14"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\single-run1\\trace\\round2_decode2\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "4b61582cd57ec864b3d377722a2d60668b4fcb554c2ae2becf72113b3bd1ba14"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round2_decode2/logits.f32",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\alice\\trace\\round2_decode2\\logits.f32",
+          "bytes": 993280,
+          "sha256": "29cf46dc8de81a798853d10cec118bc91770b7fae999036123e7c9398b6a1d6b"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\single-run1\\trace\\round2_decode2\\logits.f32",
+          "bytes": 993280,
+          "sha256": "29cf46dc8de81a798853d10cec118bc91770b7fae999036123e7c9398b6a1d6b"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round2_decode3/hidden.bf16",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\alice\\trace\\round2_decode3\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "ef73bdc8381e86f039d3cd2b3b041e783e31b8c99933b27f7a90527045d0382c"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\single-run1\\trace\\round2_decode3\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "ef73bdc8381e86f039d3cd2b3b041e783e31b8c99933b27f7a90527045d0382c"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round2_decode3/logits.f32",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\alice\\trace\\round2_decode3\\logits.f32",
+          "bytes": 993280,
+          "sha256": "fb86e1771034cbdb301309d9f8115d0df3b480bd58bcff8613c48fe0f109eca3"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\single-run1\\trace\\round2_decode3\\logits.f32",
+          "bytes": 993280,
+          "sha256": "fb86e1771034cbdb301309d9f8115d0df3b480bd58bcff8613c48fe0f109eca3"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round2_prefill/hidden.bf16",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\alice\\trace\\round2_prefill\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "841bac7fa804558dac57deec0721853bcb308007d82c1a422fc600db04dc25c6"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\single-run1\\trace\\round2_prefill\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "841bac7fa804558dac57deec0721853bcb308007d82c1a422fc600db04dc25c6"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round2_prefill/logits.f32",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\alice\\trace\\round2_prefill\\logits.f32",
+          "bytes": 993280,
+          "sha256": "958bfc71c22a9517e6039108481211b8b4e5b11b0db2d1650c469ccf7824db3d"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\single-run1\\trace\\round2_prefill\\logits.f32",
+          "bytes": 993280,
+          "sha256": "958bfc71c22a9517e6039108481211b8b4e5b11b0db2d1650c469ccf7824db3d"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round1_decode1/hidden.bf16",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\alice\\trace\\round1_decode1\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "e40060187d8c6376d00e58794643dd3f444dceefe29eb675c6ee2b0899131210"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\multi-run1\\trace\\session0_alice\\round1_decode1\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "e40060187d8c6376d00e58794643dd3f444dceefe29eb675c6ee2b0899131210"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round1_decode1/logits.f32",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\alice\\trace\\round1_decode1\\logits.f32",
+          "bytes": 993280,
+          "sha256": "54999d39e6a46f665fe6f7fc5d22b5136eb5e9b73ae179e5b908b33d7009f326"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\multi-run1\\trace\\session0_alice\\round1_decode1\\logits.f32",
+          "bytes": 993280,
+          "sha256": "54999d39e6a46f665fe6f7fc5d22b5136eb5e9b73ae179e5b908b33d7009f326"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round1_decode2/hidden.bf16",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\alice\\trace\\round1_decode2\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "f6d075ad86e2e0550617e6dfd6201ae335228ee6808ab8ae8bb3681159663424"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\multi-run1\\trace\\session0_alice\\round1_decode2\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "f6d075ad86e2e0550617e6dfd6201ae335228ee6808ab8ae8bb3681159663424"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round1_decode2/logits.f32",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\alice\\trace\\round1_decode2\\logits.f32",
+          "bytes": 993280,
+          "sha256": "772199ca4b0550c00635c25bd8036a9b5334cb0c22bb79ce86f6fbd81520df67"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\multi-run1\\trace\\session0_alice\\round1_decode2\\logits.f32",
+          "bytes": 993280,
+          "sha256": "772199ca4b0550c00635c25bd8036a9b5334cb0c22bb79ce86f6fbd81520df67"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round1_decode3/hidden.bf16",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\alice\\trace\\round1_decode3\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "227c7e6548e2159393ddf350d7dfbd1dda87040994ade315075c005ce7798889"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\multi-run1\\trace\\session0_alice\\round1_decode3\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "227c7e6548e2159393ddf350d7dfbd1dda87040994ade315075c005ce7798889"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round1_decode3/logits.f32",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\alice\\trace\\round1_decode3\\logits.f32",
+          "bytes": 993280,
+          "sha256": "aff61c4c7ec366a0b25cf583427df267859aca70ab3c9e264268a30f2d45f3d4"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\multi-run1\\trace\\session0_alice\\round1_decode3\\logits.f32",
+          "bytes": 993280,
+          "sha256": "aff61c4c7ec366a0b25cf583427df267859aca70ab3c9e264268a30f2d45f3d4"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round1_decode4/hidden.bf16",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\alice\\trace\\round1_decode4\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "f7d8474a362ca19268b3481791345307fee1026f0a4c871e1227ce3315e7021e"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\multi-run1\\trace\\session0_alice\\round1_decode4\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "f7d8474a362ca19268b3481791345307fee1026f0a4c871e1227ce3315e7021e"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round1_decode4/logits.f32",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\alice\\trace\\round1_decode4\\logits.f32",
+          "bytes": 993280,
+          "sha256": "0ab4e55caa9276fd56d4353c36121014f07342989b570eb9c3f7dfddc21a2bba"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\multi-run1\\trace\\session0_alice\\round1_decode4\\logits.f32",
+          "bytes": 993280,
+          "sha256": "0ab4e55caa9276fd56d4353c36121014f07342989b570eb9c3f7dfddc21a2bba"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round1_prefill/hidden.bf16",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\alice\\trace\\round1_prefill\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "441f8e0eea6b8deea8b640bb76efc9dcc1267f3ee4de9e936bcc9fa9110a8ee1"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\multi-run1\\trace\\session0_alice\\round1_prefill\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "441f8e0eea6b8deea8b640bb76efc9dcc1267f3ee4de9e936bcc9fa9110a8ee1"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round1_prefill/logits.f32",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\alice\\trace\\round1_prefill\\logits.f32",
+          "bytes": 993280,
+          "sha256": "3f9f6f36cbefdeae7dc1e5e89b8af0729c2d9d6f59dab28e040a4771d9609b43"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\multi-run1\\trace\\session0_alice\\round1_prefill\\logits.f32",
+          "bytes": 993280,
+          "sha256": "3f9f6f36cbefdeae7dc1e5e89b8af0729c2d9d6f59dab28e040a4771d9609b43"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round2_decode1/hidden.bf16",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\alice\\trace\\round2_decode1\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "8871fcd2d7757fe35a648f1c251c469af39bbabf6aedaa1140ca265fc83c6f89"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\multi-run1\\trace\\session0_alice\\round2_decode1\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "8871fcd2d7757fe35a648f1c251c469af39bbabf6aedaa1140ca265fc83c6f89"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round2_decode1/logits.f32",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\alice\\trace\\round2_decode1\\logits.f32",
+          "bytes": 993280,
+          "sha256": "66db711343338eeeb14cdb3fc6218ea0fc4f81945071835096814859681fcabe"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\multi-run1\\trace\\session0_alice\\round2_decode1\\logits.f32",
+          "bytes": 993280,
+          "sha256": "66db711343338eeeb14cdb3fc6218ea0fc4f81945071835096814859681fcabe"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round2_decode2/hidden.bf16",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\alice\\trace\\round2_decode2\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "4b61582cd57ec864b3d377722a2d60668b4fcb554c2ae2becf72113b3bd1ba14"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\multi-run1\\trace\\session0_alice\\round2_decode2\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "4b61582cd57ec864b3d377722a2d60668b4fcb554c2ae2becf72113b3bd1ba14"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round2_decode2/logits.f32",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\alice\\trace\\round2_decode2\\logits.f32",
+          "bytes": 993280,
+          "sha256": "29cf46dc8de81a798853d10cec118bc91770b7fae999036123e7c9398b6a1d6b"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\multi-run1\\trace\\session0_alice\\round2_decode2\\logits.f32",
+          "bytes": 993280,
+          "sha256": "29cf46dc8de81a798853d10cec118bc91770b7fae999036123e7c9398b6a1d6b"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round2_decode3/hidden.bf16",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\alice\\trace\\round2_decode3\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "ef73bdc8381e86f039d3cd2b3b041e783e31b8c99933b27f7a90527045d0382c"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\multi-run1\\trace\\session0_alice\\round2_decode3\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "ef73bdc8381e86f039d3cd2b3b041e783e31b8c99933b27f7a90527045d0382c"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round2_decode3/logits.f32",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\alice\\trace\\round2_decode3\\logits.f32",
+          "bytes": 993280,
+          "sha256": "fb86e1771034cbdb301309d9f8115d0df3b480bd58bcff8613c48fe0f109eca3"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\multi-run1\\trace\\session0_alice\\round2_decode3\\logits.f32",
+          "bytes": 993280,
+          "sha256": "fb86e1771034cbdb301309d9f8115d0df3b480bd58bcff8613c48fe0f109eca3"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round2_prefill/hidden.bf16",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\alice\\trace\\round2_prefill\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "841bac7fa804558dac57deec0721853bcb308007d82c1a422fc600db04dc25c6"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\multi-run1\\trace\\session0_alice\\round2_prefill\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "841bac7fa804558dac57deec0721853bcb308007d82c1a422fc600db04dc25c6"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round2_prefill/logits.f32",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\alice\\trace\\round2_prefill\\logits.f32",
+          "bytes": 993280,
+          "sha256": "958bfc71c22a9517e6039108481211b8b4e5b11b0db2d1650c469ccf7824db3d"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\multi-run1\\trace\\session0_alice\\round2_prefill\\logits.f32",
+          "bytes": 993280,
+          "sha256": "958bfc71c22a9517e6039108481211b8b4e5b11b0db2d1650c469ccf7824db3d"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round1_decode1/hidden.bf16",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\bob\\trace\\round1_decode1\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "c1fb63adae3b189e294daea3046c23c794372922e632a7c05b302a73c5d50d07"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\multi-run1\\trace\\session1_bob\\round1_decode1\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "c1fb63adae3b189e294daea3046c23c794372922e632a7c05b302a73c5d50d07"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round1_decode1/logits.f32",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\bob\\trace\\round1_decode1\\logits.f32",
+          "bytes": 993280,
+          "sha256": "1ef495bbd5091ffb4ae49c78b81e3ff2e74c0d20b22ab17b2da795548b3c2268"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\multi-run1\\trace\\session1_bob\\round1_decode1\\logits.f32",
+          "bytes": 993280,
+          "sha256": "1ef495bbd5091ffb4ae49c78b81e3ff2e74c0d20b22ab17b2da795548b3c2268"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round1_decode2/hidden.bf16",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\bob\\trace\\round1_decode2\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "2c7718cf2ad792e7ec9fee314ffe87cd1ebed2873e24526e531d17225885f5cf"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\multi-run1\\trace\\session1_bob\\round1_decode2\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "2c7718cf2ad792e7ec9fee314ffe87cd1ebed2873e24526e531d17225885f5cf"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round1_decode2/logits.f32",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\bob\\trace\\round1_decode2\\logits.f32",
+          "bytes": 993280,
+          "sha256": "a05a567732f027fb6285122d2838afcf6cf4a65e1633808731be2016ae424f8e"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\multi-run1\\trace\\session1_bob\\round1_decode2\\logits.f32",
+          "bytes": 993280,
+          "sha256": "a05a567732f027fb6285122d2838afcf6cf4a65e1633808731be2016ae424f8e"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round1_decode3/hidden.bf16",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\bob\\trace\\round1_decode3\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "c3de9823666def2d7d6b26d5dbc05ddc80f3cc91b134d21f12e8b12cb3f9ad55"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\multi-run1\\trace\\session1_bob\\round1_decode3\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "c3de9823666def2d7d6b26d5dbc05ddc80f3cc91b134d21f12e8b12cb3f9ad55"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round1_decode3/logits.f32",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\bob\\trace\\round1_decode3\\logits.f32",
+          "bytes": 993280,
+          "sha256": "14140b027af3cb85c24a3e22cad01338f34d6320b50a23c98739f12c9b536d46"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\multi-run1\\trace\\session1_bob\\round1_decode3\\logits.f32",
+          "bytes": 993280,
+          "sha256": "14140b027af3cb85c24a3e22cad01338f34d6320b50a23c98739f12c9b536d46"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round1_prefill/hidden.bf16",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\bob\\trace\\round1_prefill\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "d1625d53fbb1c918aa90b829c69ff5ae4f44683eb0352a7745e54d4879b82c11"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\multi-run1\\trace\\session1_bob\\round1_prefill\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "d1625d53fbb1c918aa90b829c69ff5ae4f44683eb0352a7745e54d4879b82c11"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round1_prefill/logits.f32",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\bob\\trace\\round1_prefill\\logits.f32",
+          "bytes": 993280,
+          "sha256": "c217c3a1db43fb0dea77b1860c2833b4454202c70b511575dafd466af20e54c5"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\multi-run1\\trace\\session1_bob\\round1_prefill\\logits.f32",
+          "bytes": 993280,
+          "sha256": "c217c3a1db43fb0dea77b1860c2833b4454202c70b511575dafd466af20e54c5"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round2_decode1/hidden.bf16",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\bob\\trace\\round2_decode1\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "a344f9d9e86e1c0d7d9dc137ba62e77d6fd231a981266980308206f43b9d6377"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\multi-run1\\trace\\session1_bob\\round2_decode1\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "a344f9d9e86e1c0d7d9dc137ba62e77d6fd231a981266980308206f43b9d6377"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round2_decode1/logits.f32",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\bob\\trace\\round2_decode1\\logits.f32",
+          "bytes": 993280,
+          "sha256": "43038cb6c66287ff6ba5bcfcb275a3682652fdf552c33a951e29c12ee6e254f7"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\multi-run1\\trace\\session1_bob\\round2_decode1\\logits.f32",
+          "bytes": 993280,
+          "sha256": "43038cb6c66287ff6ba5bcfcb275a3682652fdf552c33a951e29c12ee6e254f7"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round2_decode2/hidden.bf16",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\bob\\trace\\round2_decode2\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "61b22f9721e2b3c76e6cfcf38d21f76e2d027cbd30de8efe108cf622804fdd43"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\multi-run1\\trace\\session1_bob\\round2_decode2\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "61b22f9721e2b3c76e6cfcf38d21f76e2d027cbd30de8efe108cf622804fdd43"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round2_decode2/logits.f32",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\bob\\trace\\round2_decode2\\logits.f32",
+          "bytes": 993280,
+          "sha256": "e5842947c3e71c457b24fce41e09e8856c5dd6b92fbf52897774b0334b8b8fee"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\multi-run1\\trace\\session1_bob\\round2_decode2\\logits.f32",
+          "bytes": 993280,
+          "sha256": "e5842947c3e71c457b24fce41e09e8856c5dd6b92fbf52897774b0334b8b8fee"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round2_decode3/hidden.bf16",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\bob\\trace\\round2_decode3\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "f9afe5a0536ea38afd168784628002e00596b806df723ab355a8c9acf4eb14dc"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\multi-run1\\trace\\session1_bob\\round2_decode3\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "f9afe5a0536ea38afd168784628002e00596b806df723ab355a8c9acf4eb14dc"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round2_decode3/logits.f32",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\bob\\trace\\round2_decode3\\logits.f32",
+          "bytes": 993280,
+          "sha256": "3a4dcda1d2421b6069adc2df37a7b53f05e8fa8f3c7c57188c79443d4ca0e406"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\multi-run1\\trace\\session1_bob\\round2_decode3\\logits.f32",
+          "bytes": 993280,
+          "sha256": "3a4dcda1d2421b6069adc2df37a7b53f05e8fa8f3c7c57188c79443d4ca0e406"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round2_decode4/hidden.bf16",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\bob\\trace\\round2_decode4\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "56d0c88b87a8ece5e1101fe6f1017a3e82dcf5715c2f0bad276efdd991e389ec"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\multi-run1\\trace\\session1_bob\\round2_decode4\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "56d0c88b87a8ece5e1101fe6f1017a3e82dcf5715c2f0bad276efdd991e389ec"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round2_decode4/logits.f32",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\bob\\trace\\round2_decode4\\logits.f32",
+          "bytes": 993280,
+          "sha256": "6e22f0dc7915477ea20531f75ef025fdf046000ff4b09f3d3ccbc7698c7be430"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\multi-run1\\trace\\session1_bob\\round2_decode4\\logits.f32",
+          "bytes": 993280,
+          "sha256": "6e22f0dc7915477ea20531f75ef025fdf046000ff4b09f3d3ccbc7698c7be430"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round2_prefill/hidden.bf16",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\bob\\trace\\round2_prefill\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "c782df548da6e2e97dcf41ab2236f9b49e8d9819c92e56aa04e27fc69d7912f3"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\multi-run1\\trace\\session1_bob\\round2_prefill\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "c782df548da6e2e97dcf41ab2236f9b49e8d9819c92e56aa04e27fc69d7912f3"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round2_prefill/logits.f32",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\bob\\trace\\round2_prefill\\logits.f32",
+          "bytes": 993280,
+          "sha256": "6e5de8e07c6d0edcec55ced0d3f45662486ed6f5113565505df83da21fd2793f"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\multi-run1\\trace\\session1_bob\\round2_prefill\\logits.f32",
+          "bytes": 993280,
+          "sha256": "6e5de8e07c6d0edcec55ced0d3f45662486ed6f5113565505df83da21fd2793f"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round1_decode1/hidden.bf16",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\carol\\trace\\round1_decode1\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "5172a304d03fa040565d6bdce2e30b4ac94336abcab89a43639523759a4a6e0b"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\multi-run1\\trace\\session2_carol\\round1_decode1\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "5172a304d03fa040565d6bdce2e30b4ac94336abcab89a43639523759a4a6e0b"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round1_decode1/logits.f32",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\carol\\trace\\round1_decode1\\logits.f32",
+          "bytes": 993280,
+          "sha256": "a72482129fd89df992e29705c55820a83e3bd1676e4cce67d1b3679feeef87ce"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\multi-run1\\trace\\session2_carol\\round1_decode1\\logits.f32",
+          "bytes": 993280,
+          "sha256": "a72482129fd89df992e29705c55820a83e3bd1676e4cce67d1b3679feeef87ce"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round1_decode2/hidden.bf16",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\carol\\trace\\round1_decode2\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "2c5cf20082dc8e607448b10e493377cf5a40b7921e87eaec80b6d77858159e0c"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\multi-run1\\trace\\session2_carol\\round1_decode2\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "2c5cf20082dc8e607448b10e493377cf5a40b7921e87eaec80b6d77858159e0c"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round1_decode2/logits.f32",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\carol\\trace\\round1_decode2\\logits.f32",
+          "bytes": 993280,
+          "sha256": "23842835b454bd81872a46e167ee177acb9e873e80f13d8513dbcf696f2613e7"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\multi-run1\\trace\\session2_carol\\round1_decode2\\logits.f32",
+          "bytes": 993280,
+          "sha256": "23842835b454bd81872a46e167ee177acb9e873e80f13d8513dbcf696f2613e7"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round1_prefill/hidden.bf16",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\carol\\trace\\round1_prefill\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "f8ba4c2fb63b09d799ec0f9c94c65768c0499458ad67034855e299c5a3edaf3a"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\multi-run1\\trace\\session2_carol\\round1_prefill\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "f8ba4c2fb63b09d799ec0f9c94c65768c0499458ad67034855e299c5a3edaf3a"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round1_prefill/logits.f32",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\carol\\trace\\round1_prefill\\logits.f32",
+          "bytes": 993280,
+          "sha256": "1506e6681e8695e9554545d87c10b95bb9a00902831d1b0320406373a37959a0"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\multi-run1\\trace\\session2_carol\\round1_prefill\\logits.f32",
+          "bytes": 993280,
+          "sha256": "1506e6681e8695e9554545d87c10b95bb9a00902831d1b0320406373a37959a0"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round2_decode1/hidden.bf16",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\carol\\trace\\round2_decode1\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "95194016e002a1caec06f064417670aeacb10f15aeed0218134c805731baaafb"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\multi-run1\\trace\\session2_carol\\round2_decode1\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "95194016e002a1caec06f064417670aeacb10f15aeed0218134c805731baaafb"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round2_decode1/logits.f32",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\carol\\trace\\round2_decode1\\logits.f32",
+          "bytes": 993280,
+          "sha256": "3e636ac9e255850d2f5ea760827fe953cf991b15b544d861acba0bfb4dfe13c0"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\multi-run1\\trace\\session2_carol\\round2_decode1\\logits.f32",
+          "bytes": 993280,
+          "sha256": "3e636ac9e255850d2f5ea760827fe953cf991b15b544d861acba0bfb4dfe13c0"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round2_decode2/hidden.bf16",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\carol\\trace\\round2_decode2\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "f626e094e053562d5a76c455c05a7eeb7a6e6b38c2f3d9ed2aaa053d6ccec92c"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\multi-run1\\trace\\session2_carol\\round2_decode2\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "f626e094e053562d5a76c455c05a7eeb7a6e6b38c2f3d9ed2aaa053d6ccec92c"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round2_decode2/logits.f32",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\carol\\trace\\round2_decode2\\logits.f32",
+          "bytes": 993280,
+          "sha256": "4f73bab81e42f817064cd66dbd88ef669ef4d06a496f4c12f7d1cffc4065d2d3"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\multi-run1\\trace\\session2_carol\\round2_decode2\\logits.f32",
+          "bytes": 993280,
+          "sha256": "4f73bab81e42f817064cd66dbd88ef669ef4d06a496f4c12f7d1cffc4065d2d3"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round2_decode3/hidden.bf16",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\carol\\trace\\round2_decode3\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "a1ec39aa07417d08c6c1a1484cc7538bed8d73192e47eb21f2f6de98330d13ac"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\multi-run1\\trace\\session2_carol\\round2_decode3\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "a1ec39aa07417d08c6c1a1484cc7538bed8d73192e47eb21f2f6de98330d13ac"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round2_decode3/logits.f32",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\carol\\trace\\round2_decode3\\logits.f32",
+          "bytes": 993280,
+          "sha256": "298b519720ff394dbce16210a51d586a0ae3de2358bf5723687e14898cfba09c"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\multi-run1\\trace\\session2_carol\\round2_decode3\\logits.f32",
+          "bytes": 993280,
+          "sha256": "298b519720ff394dbce16210a51d586a0ae3de2358bf5723687e14898cfba09c"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round2_decode4/hidden.bf16",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\carol\\trace\\round2_decode4\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "73e30f4b2095f2b62efad1e00dc9974d956981dc19a3abda721ceedc7fe3a2f0"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\multi-run1\\trace\\session2_carol\\round2_decode4\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "73e30f4b2095f2b62efad1e00dc9974d956981dc19a3abda721ceedc7fe3a2f0"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round2_decode4/logits.f32",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\carol\\trace\\round2_decode4\\logits.f32",
+          "bytes": 993280,
+          "sha256": "6eb1bb7643999c2f5dcfbedc7c5d08e063b71baa8345372540bc3bccbffbd581"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\multi-run1\\trace\\session2_carol\\round2_decode4\\logits.f32",
+          "bytes": 993280,
+          "sha256": "6eb1bb7643999c2f5dcfbedc7c5d08e063b71baa8345372540bc3bccbffbd581"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round2_decode5/hidden.bf16",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\carol\\trace\\round2_decode5\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "73b5c30222a714c31ad5c7809979bf41071cf899e3a5780092f91abdefa41c02"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\multi-run1\\trace\\session2_carol\\round2_decode5\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "73b5c30222a714c31ad5c7809979bf41071cf899e3a5780092f91abdefa41c02"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round2_decode5/logits.f32",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\carol\\trace\\round2_decode5\\logits.f32",
+          "bytes": 993280,
+          "sha256": "0dade3f04570847d6da172fcf5182759722da298d5c1c3beb3230a79783bcaab"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\multi-run1\\trace\\session2_carol\\round2_decode5\\logits.f32",
+          "bytes": 993280,
+          "sha256": "0dade3f04570847d6da172fcf5182759722da298d5c1c3beb3230a79783bcaab"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round2_prefill/hidden.bf16",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\carol\\trace\\round2_prefill\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "f2a7173d3c99ac9d343924e782a171b2c8f1e0b0ba81940942ac3c605b674268"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\multi-run1\\trace\\session2_carol\\round2_prefill\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "f2a7173d3c99ac9d343924e782a171b2c8f1e0b0ba81940942ac3c605b674268"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round2_prefill/logits.f32",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\carol\\trace\\round2_prefill\\logits.f32",
+          "bytes": 993280,
+          "sha256": "5f62a2ad05d4b5aa2f07a1f4cd222d5649e180d26b1eb3d367cd8961599ae7e2"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\multi-run1\\trace\\session2_carol\\round2_prefill\\logits.f32",
+          "bytes": 993280,
+          "sha256": "5f62a2ad05d4b5aa2f07a1f4cd222d5649e180d26b1eb3d367cd8961599ae7e2"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round1_decode1/hidden.bf16",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\dave\\trace\\round1_decode1\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "c371698e4a23b7029c909a95345f5b1db631c0e00f2de8160cbd6b9dc5295b41"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\multi-run1\\trace\\session3_dave\\round1_decode1\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "c371698e4a23b7029c909a95345f5b1db631c0e00f2de8160cbd6b9dc5295b41"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round1_decode1/logits.f32",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\dave\\trace\\round1_decode1\\logits.f32",
+          "bytes": 993280,
+          "sha256": "a2060c5e6c7c97c20e82ae21ea6b476e3253b7104c46f6fb634b5d244640898d"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\multi-run1\\trace\\session3_dave\\round1_decode1\\logits.f32",
+          "bytes": 993280,
+          "sha256": "a2060c5e6c7c97c20e82ae21ea6b476e3253b7104c46f6fb634b5d244640898d"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round1_decode2/hidden.bf16",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\dave\\trace\\round1_decode2\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "d79da8ee7b70578888362faeceb8ac94a60ae077451f1ba4fbc03a717cb53bef"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\multi-run1\\trace\\session3_dave\\round1_decode2\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "d79da8ee7b70578888362faeceb8ac94a60ae077451f1ba4fbc03a717cb53bef"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round1_decode2/logits.f32",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\dave\\trace\\round1_decode2\\logits.f32",
+          "bytes": 993280,
+          "sha256": "f41462cb67bcbf7ec1b9a69eb80b402ea228c3a3b4228f835d7a1dd23c0af6b0"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\multi-run1\\trace\\session3_dave\\round1_decode2\\logits.f32",
+          "bytes": 993280,
+          "sha256": "f41462cb67bcbf7ec1b9a69eb80b402ea228c3a3b4228f835d7a1dd23c0af6b0"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round1_decode3/hidden.bf16",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\dave\\trace\\round1_decode3\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "96b2fc84a155b5e87d1bb5f9f4b71e57d966ca3a5b40796b0ec65fee68d7a349"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\multi-run1\\trace\\session3_dave\\round1_decode3\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "96b2fc84a155b5e87d1bb5f9f4b71e57d966ca3a5b40796b0ec65fee68d7a349"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round1_decode3/logits.f32",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\dave\\trace\\round1_decode3\\logits.f32",
+          "bytes": 993280,
+          "sha256": "566475fbfdcb8ba29aa55edad74a497cd393567d4844772be4642f9629bbd300"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\multi-run1\\trace\\session3_dave\\round1_decode3\\logits.f32",
+          "bytes": 993280,
+          "sha256": "566475fbfdcb8ba29aa55edad74a497cd393567d4844772be4642f9629bbd300"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round1_decode4/hidden.bf16",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\dave\\trace\\round1_decode4\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "675ce5d3c828126d33fd9eb8c7bec0e121ec2f5d06320651452c1a7f21377e42"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\multi-run1\\trace\\session3_dave\\round1_decode4\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "675ce5d3c828126d33fd9eb8c7bec0e121ec2f5d06320651452c1a7f21377e42"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round1_decode4/logits.f32",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\dave\\trace\\round1_decode4\\logits.f32",
+          "bytes": 993280,
+          "sha256": "e05936fefaa30771f1ae3259da500e87ef67979ca61077f7e367ce8cde399288"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\multi-run1\\trace\\session3_dave\\round1_decode4\\logits.f32",
+          "bytes": 993280,
+          "sha256": "e05936fefaa30771f1ae3259da500e87ef67979ca61077f7e367ce8cde399288"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round1_decode5/hidden.bf16",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\dave\\trace\\round1_decode5\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "09d6258e5b5d9c2dca4706133182b5a6eaaf879b38741ed66865717fa7813bb3"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\multi-run1\\trace\\session3_dave\\round1_decode5\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "09d6258e5b5d9c2dca4706133182b5a6eaaf879b38741ed66865717fa7813bb3"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round1_decode5/logits.f32",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\dave\\trace\\round1_decode5\\logits.f32",
+          "bytes": 993280,
+          "sha256": "ac112b588c60bd99d6893751cc111ca95c971358c8f85eac4154f5bcaa546643"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\multi-run1\\trace\\session3_dave\\round1_decode5\\logits.f32",
+          "bytes": 993280,
+          "sha256": "ac112b588c60bd99d6893751cc111ca95c971358c8f85eac4154f5bcaa546643"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round1_prefill/hidden.bf16",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\dave\\trace\\round1_prefill\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "0172b7b395f4575cea0c2605abe541c7c02a2ea5a726c866e91856838fb60339"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\multi-run1\\trace\\session3_dave\\round1_prefill\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "0172b7b395f4575cea0c2605abe541c7c02a2ea5a726c866e91856838fb60339"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round1_prefill/logits.f32",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\dave\\trace\\round1_prefill\\logits.f32",
+          "bytes": 993280,
+          "sha256": "48320738232fab2e8af380cd27bea31c373fb1343269c44c7ea0380bb0816adc"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\multi-run1\\trace\\session3_dave\\round1_prefill\\logits.f32",
+          "bytes": 993280,
+          "sha256": "48320738232fab2e8af380cd27bea31c373fb1343269c44c7ea0380bb0816adc"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round2_decode1/hidden.bf16",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\dave\\trace\\round2_decode1\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "051045c7f819396be4bfabdf541a8e7b1fec4ef0013d2362aff3c66e4f58510b"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\multi-run1\\trace\\session3_dave\\round2_decode1\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "051045c7f819396be4bfabdf541a8e7b1fec4ef0013d2362aff3c66e4f58510b"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round2_decode1/logits.f32",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\dave\\trace\\round2_decode1\\logits.f32",
+          "bytes": 993280,
+          "sha256": "b5523daa1cb2ca63c0de9ab30c66ad414ca6e599fc1b48a78901f8986c157e7a"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\multi-run1\\trace\\session3_dave\\round2_decode1\\logits.f32",
+          "bytes": 993280,
+          "sha256": "b5523daa1cb2ca63c0de9ab30c66ad414ca6e599fc1b48a78901f8986c157e7a"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round2_decode2/hidden.bf16",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\dave\\trace\\round2_decode2\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "2b2489fc1949e68ba648012888122300012b37d50b245d3adf5fecdc77585ec8"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\multi-run1\\trace\\session3_dave\\round2_decode2\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "2b2489fc1949e68ba648012888122300012b37d50b245d3adf5fecdc77585ec8"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round2_decode2/logits.f32",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\dave\\trace\\round2_decode2\\logits.f32",
+          "bytes": 993280,
+          "sha256": "9ded2ca0018542a4db3795d999520b944dfbff1faaac95daefb19e1c44d36f7a"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\multi-run1\\trace\\session3_dave\\round2_decode2\\logits.f32",
+          "bytes": 993280,
+          "sha256": "9ded2ca0018542a4db3795d999520b944dfbff1faaac95daefb19e1c44d36f7a"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round2_prefill/hidden.bf16",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\dave\\trace\\round2_prefill\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "4ca82b2f951b2f57b7fd6bb86d6b80c9b89e44ef1af28ec4c92a18d3dc9e3507"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\multi-run1\\trace\\session3_dave\\round2_prefill\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "4ca82b2f951b2f57b7fd6bb86d6b80c9b89e44ef1af28ec4c92a18d3dc9e3507"
+        },
+        "byte_equal": true
+      },
+      {
+        "vector": "round2_prefill/logits.f32",
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multi-session-20261021\\attempt2\\baseline\\dave\\trace\\round2_prefill\\logits.f32",
+          "bytes": 993280,
+          "sha256": "de031ae06577e766eadeac3dbd75978c1a42da8876b283d251bc4ae0895ad89a"
+        },
+        "actual": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\multi-run1\\trace\\session3_dave\\round2_prefill\\logits.f32",
+          "bytes": 993280,
+          "sha256": "de031ae06577e766eadeac3dbd75978c1a42da8876b283d251bc4ae0895ad89a"
+        },
+        "byte_equal": true
+      }
+    ],
+    "model_image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\qwen-link2\\qwen.exe",
+      "bytes": 139651072,
+      "sha256": "ff42c5325a8a469f5ca6a50de7480130b5f894e02e1df833543758f5c4a6a7af"
+    },
+    "restored_calls": 18,
+    "restored_tokens": 185
+  },
+  "workload": {
+    "plan": {
+      "manifest": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\multiturn\\inputs\\long\\schedule.txt",
+        "bytes": 150,
+        "sha256": "021cc801629a31b25350204ef64229294f61e92515b31e9db0ccaf32599372b6"
+      },
+      "capacity": 1024,
+      "phases": [
+        {
+          "turn": 1,
+          "kind": "prefill",
+          "name": "round1_prefill",
+          "input_tokens": 256,
+          "calls": 1,
+          "generated_tokens": 1,
+          "visible_before": 0,
+          "visible_tokens": 256,
+          "first_call": 0,
+          "source": "Original128 prompt; repeated exactly for initial256.",
+          "ids": [
+            2052,
+            1720,
+            11969,
+            4649,
+            494,
+            37728,
+            1472,
+            7022,
+            71163,
+            13,
+            88233,
+            4964,
+            23927,
+            22952,
+            1320,
+            33170,
+            85099,
+            321,
+            8059,
+            3328,
+            7317,
+            4649,
+            310,
+            12355,
+            18090,
+            13,
+            9664,
+            16229,
+            54683,
+            11,
+            321,
+            22817,
+            369,
+            5698,
+            948,
+            2919,
+            33470,
+            513,
+            6507,
+            13,
+            74248,
+            7318,
+            21426,
+            264,
+            78676,
+            19556,
+            3808,
+            264,
+            37274,
+            11,
+            10377,
+            449,
+            46535,
+            310,
+            7936,
+            64307,
+            13,
+            6728,
+            23698,
+            7892,
+            17191,
+            2279,
+            421,
+            8346,
+            5335,
+            12141,
+            38182,
+            1083,
+            16845,
+            30126,
+            13,
+            561,
+            12141,
+            10458,
+            31966,
+            1439,
+            33448,
+            23698,
+            440,
+            58801,
+            11,
+            66144,
+            11,
+            321,
+            279,
+            16078,
+            13,
+            35794,
+            11,
+            2919,
+            11,
+            3000,
+            11,
+            321,
+            23380,
+            17509,
+            628,
+            1754,
+            3798,
+            5819,
+            6310,
+            13,
+            357,
+            13668,
+            9064,
+            4203,
+            799,
+            2876,
+            1345,
+            9976,
+            279,
+            3672,
+            28092,
+            11,
+            321,
+            11173,
+            20934,
+            1438,
+            30982,
+            264,
+            12594,
+            1965,
+            494,
+            4055,
+            22273,
+            13,
+            56197,
+            1048,
+            2052,
+            1720,
+            11969,
+            4649,
+            494,
+            37728,
+            1472,
+            7022,
+            71163,
+            13,
+            88233,
+            4964,
+            23927,
+            22952,
+            1320,
+            33170,
+            85099,
+            321,
+            8059,
+            3328,
+            7317,
+            4649,
+            310,
+            12355,
+            18090,
+            13,
+            9664,
+            16229,
+            54683,
+            11,
+            321,
+            22817,
+            369,
+            5698,
+            948,
+            2919,
+            33470,
+            513,
+            6507,
+            13,
+            74248,
+            7318,
+            21426,
+            264,
+            78676,
+            19556,
+            3808,
+            264,
+            37274,
+            11,
+            10377,
+            449,
+            46535,
+            310,
+            7936,
+            64307,
+            13,
+            6728,
+            23698,
+            7892,
+            17191,
+            2279,
+            421,
+            8346,
+            5335,
+            12141,
+            38182,
+            1083,
+            16845,
+            30126,
+            13,
+            561,
+            12141,
+            10458,
+            31966,
+            1439,
+            33448,
+            23698,
+            440,
+            58801,
+            11,
+            66144,
+            11,
+            321,
+            279,
+            16078,
+            13,
+            35794,
+            11,
+            2919,
+            11,
+            3000,
+            11,
+            321,
+            23380,
+            17509,
+            628,
+            1754,
+            3798,
+            5819,
+            6310,
+            13,
+            357,
+            13668,
+            9064,
+            4203,
+            799,
+            2876,
+            1345,
+            9976,
+            279,
+            3672,
+            28092,
+            11,
+            321,
+            11173,
+            20934,
+            1438,
+            30982,
+            264,
+            12594,
+            1965,
+            494,
+            4055,
+            22273,
+            13,
+            56197,
+            1048
+          ],
+          "file": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\multiturn\\inputs\\long\\round1_prompt.ids",
+            "bytes": 1262,
+            "sha256": "d5d0fa284b9ee1c25d0987969a02279b75332ebd7ae10c30dae4aa0899d328eb"
+          }
+        },
+        {
+          "turn": 1,
+          "kind": "decode",
+          "name": "round1_decode",
+          "input_tokens": 32,
+          "calls": 32,
+          "generated_tokens": 32,
+          "visible_before": 256,
+          "visible_tokens": 288,
+          "first_call": 1,
+          "source": {
+            "source": "Original31 decode tape repeated",
+            "begin": 0,
+            "end": 32
+          },
+          "ids": [
+            30729,
+            71163,
+            369,
+            279,
+            1817,
+            539,
+            864,
+            10462,
+            11,
+            65562,
+            11,
+            321,
+            1010,
+            22434,
+            5335,
+            3000,
+            4649,
+            494,
+            279,
+            6797,
+            1083,
+            11153,
+            4649,
+            13,
+            11615,
+            411,
+            12355,
+            11,
+            781,
+            1831,
+            303,
+            30729
+          ],
+          "file": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\multiturn\\inputs\\long\\round1_decode.ids",
+            "bytes": 151,
+            "sha256": "9f17f29f72fed89007ef62204543bd00967c161c574f1d9f52ac9762b644a54d"
+          }
+        },
+        {
+          "turn": 2,
+          "kind": "prefill",
+          "name": "round2_prefill",
+          "input_tokens": 256,
+          "calls": 1,
+          "generated_tokens": 1,
+          "visible_before": 288,
+          "visible_tokens": 544,
+          "first_call": 33,
+          "source": {
+            "source": "Original31 decode tape repeated",
+            "begin": 32,
+            "end": 288
+          },
+          "ids": [
+            71163,
+            369,
+            279,
+            1817,
+            539,
+            864,
+            10462,
+            11,
+            65562,
+            11,
+            321,
+            1010,
+            22434,
+            5335,
+            3000,
+            4649,
+            494,
+            279,
+            6797,
+            1083,
+            11153,
+            4649,
+            13,
+            11615,
+            411,
+            12355,
+            11,
+            781,
+            1831,
+            303,
+            30729,
+            71163,
+            369,
+            279,
+            1817,
+            539,
+            864,
+            10462,
+            11,
+            65562,
+            11,
+            321,
+            1010,
+            22434,
+            5335,
+            3000,
+            4649,
+            494,
+            279,
+            6797,
+            1083,
+            11153,
+            4649,
+            13,
+            11615,
+            411,
+            12355,
+            11,
+            781,
+            1831,
+            303,
+            30729,
+            71163,
+            369,
+            279,
+            1817,
+            539,
+            864,
+            10462,
+            11,
+            65562,
+            11,
+            321,
+            1010,
+            22434,
+            5335,
+            3000,
+            4649,
+            494,
+            279,
+            6797,
+            1083,
+            11153,
+            4649,
+            13,
+            11615,
+            411,
+            12355,
+            11,
+            781,
+            1831,
+            303,
+            30729,
+            71163,
+            369,
+            279,
+            1817,
+            539,
+            864,
+            10462,
+            11,
+            65562,
+            11,
+            321,
+            1010,
+            22434,
+            5335,
+            3000,
+            4649,
+            494,
+            279,
+            6797,
+            1083,
+            11153,
+            4649,
+            13,
+            11615,
+            411,
+            12355,
+            11,
+            781,
+            1831,
+            303,
+            30729,
+            71163,
+            369,
+            279,
+            1817,
+            539,
+            864,
+            10462,
+            11,
+            65562,
+            11,
+            321,
+            1010,
+            22434,
+            5335,
+            3000,
+            4649,
+            494,
+            279,
+            6797,
+            1083,
+            11153,
+            4649,
+            13,
+            11615,
+            411,
+            12355,
+            11,
+            781,
+            1831,
+            303,
+            30729,
+            71163,
+            369,
+            279,
+            1817,
+            539,
+            864,
+            10462,
+            11,
+            65562,
+            11,
+            321,
+            1010,
+            22434,
+            5335,
+            3000,
+            4649,
+            494,
+            279,
+            6797,
+            1083,
+            11153,
+            4649,
+            13,
+            11615,
+            411,
+            12355,
+            11,
+            781,
+            1831,
+            303,
+            30729,
+            71163,
+            369,
+            279,
+            1817,
+            539,
+            864,
+            10462,
+            11,
+            65562,
+            11,
+            321,
+            1010,
+            22434,
+            5335,
+            3000,
+            4649,
+            494,
+            279,
+            6797,
+            1083,
+            11153,
+            4649,
+            13,
+            11615,
+            411,
+            12355,
+            11,
+            781,
+            1831,
+            303,
+            30729,
+            71163,
+            369,
+            279,
+            1817,
+            539,
+            864,
+            10462,
+            11,
+            65562,
+            11,
+            321,
+            1010,
+            22434,
+            5335,
+            3000,
+            4649,
+            494,
+            279,
+            6797,
+            1083,
+            11153,
+            4649,
+            13,
+            11615,
+            411,
+            12355,
+            11,
+            781,
+            1831,
+            303,
+            30729,
+            71163,
+            369,
+            279,
+            1817,
+            539,
+            864,
+            10462,
+            11
+          ],
+          "file": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\multiturn\\inputs\\long\\round2_prompt.ids",
+            "bytes": 1196,
+            "sha256": "d6ffb52046107538afefac72879886eecbb22aedc93273673a5b2699a1f702ed"
+          }
+        },
+        {
+          "turn": 2,
+          "kind": "decode",
+          "name": "round2_decode",
+          "input_tokens": 32,
+          "calls": 32,
+          "generated_tokens": 32,
+          "visible_before": 544,
+          "visible_tokens": 576,
+          "first_call": 34,
+          "source": {
+            "source": "Original31 decode tape repeated",
+            "begin": 288,
+            "end": 320
+          },
+          "ids": [
+            65562,
+            11,
+            321,
+            1010,
+            22434,
+            5335,
+            3000,
+            4649,
+            494,
+            279,
+            6797,
+            1083,
+            11153,
+            4649,
+            13,
+            11615,
+            411,
+            12355,
+            11,
+            781,
+            1831,
+            303,
+            30729,
+            71163,
+            369,
+            279,
+            1817,
+            539,
+            864,
+            10462,
+            11,
+            65562
+          ],
+          "file": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\multiturn\\inputs\\long\\round2_decode.ids",
+            "bytes": 151,
+            "sha256": "8313e2928b0666a6ec5092387408c684b93a8398a7c56c7e1c231d40027962cf"
+          }
+        },
+        {
+          "turn": 3,
+          "kind": "prefill",
+          "name": "round3_prefill",
+          "input_tokens": 256,
+          "calls": 1,
+          "generated_tokens": 1,
+          "visible_before": 576,
+          "visible_tokens": 832,
+          "first_call": 66,
+          "source": {
+            "source": "Original31 decode tape repeated",
+            "begin": 320,
+            "end": 576
+          },
+          "ids": [
+            11,
+            321,
+            1010,
+            22434,
+            5335,
+            3000,
+            4649,
+            494,
+            279,
+            6797,
+            1083,
+            11153,
+            4649,
+            13,
+            11615,
+            411,
+            12355,
+            11,
+            781,
+            1831,
+            303,
+            30729,
+            71163,
+            369,
+            279,
+            1817,
+            539,
+            864,
+            10462,
+            11,
+            65562,
+            11,
+            321,
+            1010,
+            22434,
+            5335,
+            3000,
+            4649,
+            494,
+            279,
+            6797,
+            1083,
+            11153,
+            4649,
+            13,
+            11615,
+            411,
+            12355,
+            11,
+            781,
+            1831,
+            303,
+            30729,
+            71163,
+            369,
+            279,
+            1817,
+            539,
+            864,
+            10462,
+            11,
+            65562,
+            11,
+            321,
+            1010,
+            22434,
+            5335,
+            3000,
+            4649,
+            494,
+            279,
+            6797,
+            1083,
+            11153,
+            4649,
+            13,
+            11615,
+            411,
+            12355,
+            11,
+            781,
+            1831,
+            303,
+            30729,
+            71163,
+            369,
+            279,
+            1817,
+            539,
+            864,
+            10462,
+            11,
+            65562,
+            11,
+            321,
+            1010,
+            22434,
+            5335,
+            3000,
+            4649,
+            494,
+            279,
+            6797,
+            1083,
+            11153,
+            4649,
+            13,
+            11615,
+            411,
+            12355,
+            11,
+            781,
+            1831,
+            303,
+            30729,
+            71163,
+            369,
+            279,
+            1817,
+            539,
+            864,
+            10462,
+            11,
+            65562,
+            11,
+            321,
+            1010,
+            22434,
+            5335,
+            3000,
+            4649,
+            494,
+            279,
+            6797,
+            1083,
+            11153,
+            4649,
+            13,
+            11615,
+            411,
+            12355,
+            11,
+            781,
+            1831,
+            303,
+            30729,
+            71163,
+            369,
+            279,
+            1817,
+            539,
+            864,
+            10462,
+            11,
+            65562,
+            11,
+            321,
+            1010,
+            22434,
+            5335,
+            3000,
+            4649,
+            494,
+            279,
+            6797,
+            1083,
+            11153,
+            4649,
+            13,
+            11615,
+            411,
+            12355,
+            11,
+            781,
+            1831,
+            303,
+            30729,
+            71163,
+            369,
+            279,
+            1817,
+            539,
+            864,
+            10462,
+            11,
+            65562,
+            11,
+            321,
+            1010,
+            22434,
+            5335,
+            3000,
+            4649,
+            494,
+            279,
+            6797,
+            1083,
+            11153,
+            4649,
+            13,
+            11615,
+            411,
+            12355,
+            11,
+            781,
+            1831,
+            303,
+            30729,
+            71163,
+            369,
+            279,
+            1817,
+            539,
+            864,
+            10462,
+            11,
+            65562,
+            11,
+            321,
+            1010,
+            22434,
+            5335,
+            3000,
+            4649,
+            494,
+            279,
+            6797,
+            1083,
+            11153,
+            4649,
+            13,
+            11615,
+            411,
+            12355,
+            11,
+            781,
+            1831,
+            303,
+            30729,
+            71163,
+            369,
+            279,
+            1817,
+            539,
+            864,
+            10462,
+            11,
+            65562,
+            11,
+            321,
+            1010,
+            22434,
+            5335,
+            3000,
+            4649,
+            494
+          ],
+          "file": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\multiturn\\inputs\\long\\round3_prompt.ids",
+            "bytes": 1197,
+            "sha256": "7d9e8b2015b22c02d538a45da7ca7bf02ecee92021aecbec1ddc492973298a1c"
+          }
+        },
+        {
+          "turn": 3,
+          "kind": "decode",
+          "name": "round3_decode",
+          "input_tokens": 32,
+          "calls": 32,
+          "generated_tokens": 32,
+          "visible_before": 832,
+          "visible_tokens": 864,
+          "first_call": 67,
+          "source": {
+            "source": "Original31 decode tape repeated",
+            "begin": 576,
+            "end": 608
+          },
+          "ids": [
+            279,
+            6797,
+            1083,
+            11153,
+            4649,
+            13,
+            11615,
+            411,
+            12355,
+            11,
+            781,
+            1831,
+            303,
+            30729,
+            71163,
+            369,
+            279,
+            1817,
+            539,
+            864,
+            10462,
+            11,
+            65562,
+            11,
+            321,
+            1010,
+            22434,
+            5335,
+            3000,
+            4649,
+            494,
+            279
+          ],
+          "file": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\multiturn\\inputs\\long\\round3_decode.ids",
+            "bytes": 149,
+            "sha256": "341b6743c6373cc0725364ba28e4e670ea8d1909b6020e8f094d8e2648d33d8d"
+          }
+        }
+      ],
+      "processed_tokens": 864,
+      "generated_tokens": 99,
+      "phase_count": 6,
+      "turn_count": 3,
+      "synthetic": true,
+      "teacher_forced": true,
+      "natural_conversation": false,
+      "prefix_reset": false,
+      "generated_token_definition": "One returned last-row sampled token per prompt call and per decode call; not free-running generation."
+    },
+    "images": {
+      "current": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\qwen-link2\\qwen.exe",
+        "bytes": 139651072,
+        "sha256": "ff42c5325a8a469f5ca6a50de7480130b5f894e02e1df833543758f5c4a6a7af"
+      },
+      "dense": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\layout-workspace-facts-reuse-2026-10-21\\checks\\attempt1\\qwen.exe",
+        "bytes": 139511296,
+        "sha256": "ff74869467413bd91ecbee3b59d4c9111fe18595af574e51e1e8c1cfa08128e1"
+      },
+      "peer": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\peer-continuation\\multiround\\checks\\attempt3\\peer.exe",
+        "bytes": 35865088,
+        "sha256": "9b2591375f2abc320af17f2df530dfd6f4cccfd79211ba12c3f2551a3c79e699"
+      }
+    },
+    "order": [
+      "dense",
+      "current",
+      "peer",
+      "peer",
+      "dense",
+      "current",
+      "current",
+      "peer",
+      "dense"
+    ],
+    "commands": [
+      {
+        "variant": "dense",
+        "arm": "hyle",
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\layout-workspace-facts-reuse-2026-10-21\\checks\\attempt1\\qwen.exe",
+          "--inputs",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-gpu-comparison\\128-prefill\\inputs",
+          "--schedule",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\multiturn\\inputs\\long\\schedule.txt",
+          "--capacity",
+          "1024",
+          "--progress",
+          "direct",
+          "--replay",
+          "auto"
+        ]
+      },
+      {
+        "variant": "current",
+        "arm": "hyle",
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\qwen-link2\\qwen.exe",
+          "--inputs",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-gpu-comparison\\128-prefill\\inputs",
+          "--schedule",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\multiturn\\inputs\\long\\schedule.txt",
+          "--capacity",
+          "1024",
+          "--progress",
+          "direct",
+          "--replay",
+          "auto"
+        ]
+      },
+      {
+        "variant": "peer",
+        "arm": "peer",
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\peer-continuation\\multiround\\checks\\attempt3\\peer.exe",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\llama-matched-consumer\\Qwen3.5-2B-text-BF16.gguf",
+          "--schedule",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\multiturn\\inputs\\long\\schedule.txt",
+          "--capacity",
+          "1024",
+          "--result",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\performance\\timing\\03-peer\\peer-result.json"
+        ]
+      },
+      {
+        "variant": "peer",
+        "arm": "peer",
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\peer-continuation\\multiround\\checks\\attempt3\\peer.exe",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\llama-matched-consumer\\Qwen3.5-2B-text-BF16.gguf",
+          "--schedule",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\multiturn\\inputs\\long\\schedule.txt",
+          "--capacity",
+          "1024",
+          "--result",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\performance\\timing\\04-peer\\peer-result.json"
+        ]
+      },
+      {
+        "variant": "dense",
+        "arm": "hyle",
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\layout-workspace-facts-reuse-2026-10-21\\checks\\attempt1\\qwen.exe",
+          "--inputs",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-gpu-comparison\\128-prefill\\inputs",
+          "--schedule",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\multiturn\\inputs\\long\\schedule.txt",
+          "--capacity",
+          "1024",
+          "--progress",
+          "direct",
+          "--replay",
+          "auto"
+        ]
+      },
+      {
+        "variant": "current",
+        "arm": "hyle",
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\qwen-link2\\qwen.exe",
+          "--inputs",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-gpu-comparison\\128-prefill\\inputs",
+          "--schedule",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\multiturn\\inputs\\long\\schedule.txt",
+          "--capacity",
+          "1024",
+          "--progress",
+          "direct",
+          "--replay",
+          "auto"
+        ]
+      },
+      {
+        "variant": "current",
+        "arm": "hyle",
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\qwen-link2\\qwen.exe",
+          "--inputs",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-gpu-comparison\\128-prefill\\inputs",
+          "--schedule",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\multiturn\\inputs\\long\\schedule.txt",
+          "--capacity",
+          "1024",
+          "--progress",
+          "direct",
+          "--replay",
+          "auto"
+        ]
+      },
+      {
+        "variant": "peer",
+        "arm": "peer",
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\peer-continuation\\multiround\\checks\\attempt3\\peer.exe",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\llama-matched-consumer\\Qwen3.5-2B-text-BF16.gguf",
+          "--schedule",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\multiturn\\inputs\\long\\schedule.txt",
+          "--capacity",
+          "1024",
+          "--result",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\performance\\timing\\08-peer\\peer-result.json"
+        ]
+      },
+      {
+        "variant": "dense",
+        "arm": "hyle",
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\layout-workspace-facts-reuse-2026-10-21\\checks\\attempt1\\qwen.exe",
+          "--inputs",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-gpu-comparison\\128-prefill\\inputs",
+          "--schedule",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\multiturn\\inputs\\long\\schedule.txt",
+          "--capacity",
+          "1024",
+          "--progress",
+          "direct",
+          "--replay",
+          "auto"
+        ]
+      }
+    ],
+    "driver": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\performance.py",
+      "bytes": 4728,
+      "sha256": "2f884b92a9fbad731ed2ca0eee2c6ffb111724f30e2624eecfa07dc0d4a13d27"
+    },
+    "original_driver": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\multiturn\\multiturn_run.py",
+      "bytes": 26658,
+      "sha256": "aaca35030839ad8a6bb501e776315ab1298e3e52910f8f185140600512cf245d"
+    },
+    "ready_receipts": {
+      "current": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\qwen-ready.json",
+        "bytes": 1485,
+        "sha256": "beb4152391a9bf6ac432142882658064346c45eac029a448b290a7b7746141cb"
+      },
+      "dense": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\layout-workspace-facts-reuse-2026-10-21\\ready-for-root.json",
+        "bytes": 2179,
+        "sha256": "2881d4609d18ef988e86ea05d15b28875ec6866f0a4d6fb2a1748d4fb37156f2"
+      },
+      "peer": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\peer-continuation\\multiround\\ready-for-root.json",
+        "bytes": 2796,
+        "sha256": "8ffcacf0cea15859544005516129bec1aacdb06268c951f38fadc0974dc237a0"
+      }
+    },
+    "environments": {
+      "current": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\qwen-link2\\runtime-environment.json",
+        "bytes": 7862,
+        "sha256": "29656431f2b0a3e8ef28a45035230685f66a6cccb1d31ca14b0b10516e108b59"
+      },
+      "dense": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\layout-workspace-facts-reuse-2026-10-21\\checks\\attempt1\\runtime-environment.json",
+        "bytes": 7477,
+        "sha256": "be3c1f1cdb2e0c7e367703fcb58647257be7556d2f2131dc1f6a2ee286f5377f"
+      },
+      "peer": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\peer-continuation\\multiround\\checks\\attempt3\\runtime-environment.json",
+        "bytes": 6107,
+        "sha256": "e04e3dcf38402c1d703c01b557446476da87a58c327832b444058797c9157c2b"
+      }
+    },
+    "throughput_evidence": true,
+    "memory_monitor": false,
+    "profiler": false,
+    "diagnostic": false,
+    "concurrent_GPU": false,
+    "purpose": "Compare full current paged model to prior dense Hyle and matched llama.cpp. This is not an isolated causal estimate of the one recording patch.",
+    "requested_memory_interval_seconds": null
+  },
+  "groups": {
+    "current": {
+      "metrics": {
+        "session_seconds": {
+          "count": 3,
+          "min": 1.543673,
+          "median": 1.7813662,
+          "max": 1.8423332,
+          "samples": [
+            1.543673,
+            1.7813662,
+            1.8423332
+          ]
+        },
+        "startup_total_seconds": {
+          "count": 3,
+          "min": 3.0794945,
+          "median": 3.3317335,
+          "max": 3.3577904,
+          "samples": [
+            3.0794945,
+            3.3317335,
+            3.3577904
+          ]
+        },
+        "processed_tokens_per_second": {
+          "count": 3,
+          "min": 468.97054235357643,
+          "median": 485.02099119204127,
+          "max": 559.7040305816063,
+          "samples": [
+            559.7040305816063,
+            485.02099119204127,
+            468.97054235357643
+          ]
+        },
+        "output_tokens_per_second": {
+          "count": 3,
+          "min": 53.73620797801397,
+          "median": 55.5753219074214,
+          "max": 64.13275350414239,
+          "samples": [
+            64.13275350414239,
+            55.5753219074214,
+            53.73620797801397
+          ]
+        },
+        "cold_processed_tokens_per_second": {
+          "count": 3,
+          "min": 257.312070461575,
+          "median": 259.3244627759093,
+          "max": 280.5655278812805,
+          "samples": [
+            280.5655278812805,
+            259.3244627759093,
+            257.312070461575
+          ]
+        },
+        "cold_output_tokens_per_second": {
+          "count": 3,
+          "min": 29.4836747403888,
+          "median": 29.71426135973961,
+          "max": 32.14813340306339,
+          "samples": [
+            32.14813340306339,
+            29.71426135973961,
+            29.4836747403888
+          ]
+        },
+        "compute_step_sum_seconds": {
+          "count": 3,
+          "min": 1.5432609000000002,
+          "median": 1.7809026999999997,
+          "max": 1.8418972999999998,
+          "samples": [
+            1.5432609000000002,
+            1.7809026999999997,
+            1.8418972999999998
+          ]
+        },
+        "session_minus_step_sum_seconds": {
+          "count": 3,
+          "min": 0.0004120999999999153,
+          "median": 0.0004359000000000446,
+          "max": 0.0004635000000001721,
+          "samples": [
+            0.0004120999999999153,
+            0.0004635000000001721,
+            0.0004359000000000446
+          ]
+        }
+      },
+      "phases": {
+        "round1_prefill": {
+          "count": 3,
+          "min": 2549.3818247001236,
+          "median": 2582.277306321637,
+          "max": 2905.4953585846606,
+          "samples": [
+            2905.4953585846606,
+            2549.3818247001236,
+            2582.277306321637
+          ]
+        },
+        "round1_decode": {
+          "count": 3,
+          "min": 58.80855701259882,
+          "median": 61.61367762029493,
+          "max": 84.46385118736379,
+          "samples": [
+            84.46385118736379,
+            61.61367762029493,
+            58.80855701259882
+          ]
+        },
+        "round2_prefill": {
+          "count": 3,
+          "min": 4906.893610496152,
+          "median": 4963.856916824372,
+          "max": 6465.789407218447,
+          "samples": [
+            6465.789407218447,
+            4963.856916824372,
+            4906.893610496152
+          ]
+        },
+        "round2_decode": {
+          "count": 3,
+          "min": 58.53318758569624,
+          "median": 61.49363031682095,
+          "max": 67.48016821118931,
+          "samples": [
+            67.48016821118931,
+            61.49363031682095,
+            58.53318758569624
+          ]
+        },
+        "round3_prefill": {
+          "count": 3,
+          "min": 4782.418633498601,
+          "median": 5119.569956123686,
+          "max": 5654.109831083469,
+          "samples": [
+            4782.418633498601,
+            5119.569956123686,
+            5654.109831083469
+          ]
+        },
+        "round3_decode": {
+          "count": 3,
+          "min": 57.68162411264933,
+          "median": 59.31887472836126,
+          "max": 62.84368869671812,
+          "samples": [
+            62.84368869671812,
+            59.31887472836126,
+            57.68162411264933
+          ]
+        }
+      },
+      "loading": {
+        "model_load_seconds": {
+          "count": 3,
+          "min": 1.12435,
+          "median": 1.15704,
+          "max": 1.17307,
+          "samples": [
+            1.15704,
+            1.17307,
+            1.12435
+          ]
+        },
+        "model_seconds": {
+          "count": 3,
+          "min": 1.21869,
+          "median": 1.23762,
+          "max": 1.26144,
+          "samples": [
+            1.23762,
+            1.26144,
+            1.21869
+          ]
+        },
+        "shape_prepare_seconds": {
+          "count": 3,
+          "min": 0.28834,
+          "median": 0.296192,
+          "max": 0.297586,
+          "samples": [
+            0.297586,
+            0.28834,
+            0.296192
+          ]
+        },
+        "startup_to_ready_seconds": {
+          "count": 3,
+          "min": 1.51535,
+          "median": 1.53572,
+          "max": 1.55026,
+          "samples": [
+            1.53572,
+            1.55026,
+            1.51535
+          ]
+        },
+        "first_token_elapsed_seconds": {
+          "count": 3,
+          "min": 1.61459,
+          "median": 1.62393,
+          "max": 1.65078,
+          "samples": [
+            1.62393,
+            1.65078,
+            1.61459
+          ]
+        }
+      },
+      "complete_decode_tps": {
+        "count": 3,
+        "samples": [
+          70.47042532425205,
+          60.79021196533742,
+          58.33716120313832
+        ],
+        "median": 60.79021196533742,
+        "min": 58.33716120313832,
+        "max": 70.47042532425205
+      },
+      "memory_peaks": {
+        "sampled_max_working_set_bytes": 1121943552,
+        "observed_os_peak_working_set_bytes": 1121951744,
+        "sampled_max_private_commit_bytes": 6180679680,
+        "observed_os_peak_commit_bytes": 6180679680,
+        "sampled_peak_gpu_dedicated_bytes": 4417732608,
+        "sampled_peak_gpu_shared_bytes": 96468992,
+        "sampled_peak_gpu_total_bytes": 4499521536
+      },
+      "memory_gap_ms": {
+        "count": 305,
+        "min": 0.1318,
+        "median": 15.0993,
+        "max": 22.6022
+      },
+      "phase_dedicated_peak_bytes": {
+        "round1_decode": 4300292096,
+        "round1_prefill": 4289806336,
+        "round2_decode": 4415635456,
+        "round2_prefill": 4413538304,
+        "round3_decode": 4417732608,
+        "round3_prefill": 4415635456
+      }
+    },
+    "dense": {
+      "metrics": {
+        "session_seconds": {
+          "count": 3,
+          "min": 1.2920043,
+          "median": 1.6066918,
+          "max": 1.7375265,
+          "samples": [
+            1.2920043,
+            1.7375265,
+            1.6066918
+          ]
+        },
+        "startup_total_seconds": {
+          "count": 3,
+          "min": 2.7391236,
+          "median": 3.1607977,
+          "max": 3.3748814,
+          "samples": [
+            2.7391236,
+            3.3748814,
+            3.1607977
+          ]
+        },
+        "processed_tokens_per_second": {
+          "count": 3,
+          "min": 497.2586029623145,
+          "median": 537.750923979322,
+          "max": 668.7284245106614,
+          "samples": [
+            668.7284245106614,
+            497.2586029623145,
+            537.750923979322
+          ]
+        },
+        "output_tokens_per_second": {
+          "count": 3,
+          "min": 56.977548256098544,
+          "median": 61.61729337263065,
+          "max": 76.62513197517995,
+          "samples": [
+            76.62513197517995,
+            56.977548256098544,
+            61.61729337263065
+          ]
+        },
+        "cold_processed_tokens_per_second": {
+          "count": 3,
+          "min": 256.00899634576786,
+          "median": 273.3487182681764,
+          "max": 315.4293584999231,
+          "samples": [
+            315.4293584999231,
+            256.00899634576786,
+            273.3487182681764
+          ]
+        },
+        "cold_output_tokens_per_second": {
+          "count": 3,
+          "min": 29.334364164619238,
+          "median": 31.321207301561884,
+          "max": 36.142947328116186,
+          "samples": [
+            36.142947328116186,
+            29.334364164619238,
+            31.321207301561884
+          ]
+        },
+        "compute_step_sum_seconds": {
+          "count": 3,
+          "min": 1.2916436,
+          "median": 1.6062872,
+          "max": 1.7373009,
+          "samples": [
+            1.2916436,
+            1.7373009,
+            1.6062872
+          ]
+        },
+        "session_minus_step_sum_seconds": {
+          "count": 3,
+          "min": 0.00022560000000004798,
+          "median": 0.0003607000000001026,
+          "max": 0.0004045999999999772,
+          "samples": [
+            0.0003607000000001026,
+            0.00022560000000004798,
+            0.0004045999999999772
+          ]
+        }
+      },
+      "phases": {
+        "round1_prefill": {
+          "count": 3,
+          "min": 2751.877403861658,
+          "median": 2911.641904441278,
+          "max": 3116.231794085246,
+          "samples": [
+            3116.231794085246,
+            2911.641904441278,
+            2751.877403861658
+          ]
+        },
+        "round1_decode": {
+          "count": 3,
+          "min": 65.73611714833437,
+          "median": 65.82774688902182,
+          "max": 93.45133901167031,
+          "samples": [
+            93.45133901167031,
+            65.82774688902182,
+            65.73611714833437
+          ]
+        },
+        "round2_prefill": {
+          "count": 3,
+          "min": 4474.077439988815,
+          "median": 5189.865975765759,
+          "max": 7169.201558181151,
+          "samples": [
+            7169.201558181151,
+            4474.077439988815,
+            5189.865975765759
+          ]
+        },
+        "round2_decode": {
+          "count": 3,
+          "min": 58.928050875532726,
+          "median": 70.59246046050109,
+          "max": 85.0616803509645,
+          "samples": [
+            85.0616803509645,
+            58.928050875532726,
+            70.59246046050109
+          ]
+        },
+        "round3_prefill": {
+          "count": 3,
+          "min": 5319.12683208597,
+          "median": 5438.280823474679,
+          "max": 6173.464712379244,
+          "samples": [
+            6173.464712379244,
+            5319.12683208597,
+            5438.280823474679
+          ]
+        },
+        "round3_decode": {
+          "count": 3,
+          "min": 62.14082119871975,
+          "median": 67.0825645916003,
+          "max": 77.31928248672342,
+          "samples": [
+            77.31928248672342,
+            62.14082119871975,
+            67.0825645916003
+          ]
+        }
+      },
+      "loading": {
+        "model_load_seconds": {
+          "count": 3,
+          "min": 1.05151,
+          "median": 1.15918,
+          "max": 1.26068,
+          "samples": [
+            1.05151,
+            1.26068,
+            1.15918
+          ]
+        },
+        "model_seconds": {
+          "count": 3,
+          "min": 1.14127,
+          "median": 1.25806,
+          "max": 1.37303,
+          "samples": [
+            1.14127,
+            1.37303,
+            1.25806
+          ]
+        },
+        "shape_prepare_seconds": {
+          "count": 3,
+          "min": 0.263696,
+          "median": 0.279057,
+          "max": 0.295508,
+          "samples": [
+            0.279057,
+            0.263696,
+            0.295508
+          ]
+        },
+        "startup_to_ready_seconds": {
+          "count": 3,
+          "min": 1.44702,
+          "median": 1.55406,
+          "max": 1.63731,
+          "samples": [
+            1.44702,
+            1.63731,
+            1.55406
+          ]
+        },
+        "first_token_elapsed_seconds": {
+          "count": 3,
+          "min": 1.52927,
+          "median": 1.64713,
+          "max": 1.72528,
+          "samples": [
+            1.52927,
+            1.72528,
+            1.64713
+          ]
+        }
+      },
+      "complete_decode_tps": {
+        "count": 3,
+        "samples": [
+          84.76895294713835,
+          62.17166802116712,
+          67.74278431734784
+        ],
+        "median": 67.74278431734784,
+        "min": 62.17166802116712,
+        "max": 84.76895294713835
+      },
+      "memory_peaks": {
+        "sampled_max_working_set_bytes": 1131491328,
+        "observed_os_peak_working_set_bytes": 1131491328,
+        "sampled_max_private_commit_bytes": 6170210304,
+        "observed_os_peak_commit_bytes": 6170210304,
+        "sampled_peak_gpu_dedicated_bytes": 4386275328,
+        "sampled_peak_gpu_shared_bytes": 96468992,
+        "sampled_peak_gpu_total_bytes": 4468064256
+      },
+      "memory_gap_ms": {
+        "count": 308,
+        "min": 0.1403,
+        "median": 15.0705,
+        "max": 19.6241
+      },
+      "phase_dedicated_peak_bytes": {
+        "round1_decode": 4264640512,
+        "round1_prefill": 4247863296,
+        "round2_decode": 4382081024,
+        "round2_prefill": 4377886720,
+        "round3_decode": 4386275328,
+        "round3_prefill": 4382081024
+      }
+    },
+    "peer": {
+      "metrics": {
+        "session_seconds": {
+          "count": 3,
+          "min": 1.1040574,
+          "median": 1.5871091,
+          "max": 1.6451854,
+          "samples": [
+            1.5871091,
+            1.1040574,
+            1.6451854
+          ]
+        },
+        "startup_total_seconds": {
+          "count": 3,
+          "min": 2.9024193,
+          "median": 3.5103928,
+          "max": 3.8411396,
+          "samples": [
+            3.5103928,
+            2.9024193,
+            3.8411396
+          ]
+        },
+        "processed_tokens_per_second": {
+          "count": 3,
+          "min": 525.1687742913352,
+          "median": 544.3860160590094,
+          "max": 782.5680077865517,
+          "samples": [
+            544.3860160590094,
+            782.5680077865517,
+            525.1687742913352
+          ]
+        },
+        "output_tokens_per_second": {
+          "count": 3,
+          "min": 60.17558872088216,
+          "median": 62.377564340094835,
+          "max": 89.66925089220904,
+          "samples": [
+            62.377564340094835,
+            89.66925089220904,
+            60.17558872088216
+          ]
+        },
+        "cold_processed_tokens_per_second": {
+          "count": 3,
+          "min": 224.9332463730295,
+          "median": 246.1263024468373,
+          "max": 297.6826952604677,
+          "samples": [
+            246.1263024468373,
+            297.6826952604677,
+            224.9332463730295
+          ]
+        },
+        "cold_output_tokens_per_second": {
+          "count": 3,
+          "min": 25.77360114690963,
+          "median": 28.20197215536677,
+          "max": 34.10947549859526,
+          "samples": [
+            28.20197215536677,
+            34.10947549859526,
+            25.77360114690963
+          ]
+        },
+        "compute_step_sum_seconds": {
+          "count": 3,
+          "min": 1.1039221,
+          "median": 1.5869411999999998,
+          "max": 1.6450245,
+          "samples": [
+            1.5869411999999998,
+            1.1039221,
+            1.6450245
+          ]
+        },
+        "session_minus_step_sum_seconds": {
+          "count": 3,
+          "min": 0.0001353000000001714,
+          "median": 0.00016090000000001936,
+          "max": 0.00016790000000010963,
+          "samples": [
+            0.00016790000000010963,
+            0.0001353000000001714,
+            0.00016090000000001936
+          ]
+        }
+      },
+      "phases": {
+        "round1_prefill": {
+          "count": 3,
+          "min": 1845.5491626181133,
+          "median": 2313.4237315705527,
+          "max": 2414.269843694889,
+          "samples": [
+            2313.4237315705527,
+            2414.269843694889,
+            1845.5491626181133
+          ]
+        },
+        "round1_decode": {
+          "count": 3,
+          "min": 62.13537939959748,
+          "median": 68.52772256894157,
+          "max": 104.35843207978202,
+          "samples": [
+            62.13537939959748,
+            104.35843207978202,
+            68.52772256894157
+          ]
+        },
+        "round2_prefill": {
+          "count": 3,
+          "min": 5476.931634628756,
+          "median": 6784.080730560693,
+          "max": 8651.951589627122,
+          "samples": [
+            6784.080730560693,
+            8651.951589627122,
+            5476.931634628756
+          ]
+        },
+        "round2_decode": {
+          "count": 3,
+          "min": 62.52472901880138,
+          "median": 67.41913443522886,
+          "max": 98.41227176425832,
+          "samples": [
+            62.52472901880138,
+            98.41227176425832,
+            67.41913443522886
+          ]
+        },
+        "round3_prefill": {
+          "count": 3,
+          "min": 4745.7501436701705,
+          "median": 5414.689036100746,
+          "max": 8981.79432392701,
+          "samples": [
+            4745.7501436701705,
+            8981.79432392701,
+            5414.689036100746
+          ]
+        },
+        "round3_decode": {
+          "count": 3,
+          "min": 67.97514573765035,
+          "median": 89.4143222184811,
+          "max": 103.87853223529396,
+          "samples": [
+            89.4143222184811,
+            103.87853223529396,
+            67.97514573765035
+          ]
+        }
+      },
+      "loading": {
+        "backend_setup_seconds": {
+          "count": 3,
+          "min": 0.0224377,
+          "median": 0.0231306,
+          "max": 0.0319353,
+          "samples": [
+            0.0224377,
+            0.0319353,
+            0.0231306
+          ]
+        },
+        "model_load_seconds": {
+          "count": 3,
+          "min": 1.6728523,
+          "median": 1.8325732,
+          "max": 2.0990358,
+          "samples": [
+            1.8325732,
+            1.6728523,
+            2.0990358
+          ]
+        },
+        "context_prepare_seconds": {
+          "count": 3,
+          "min": 0.0076999,
+          "median": 0.0086888,
+          "max": 0.0087886,
+          "samples": [
+            0.0087886,
+            0.0076999,
+            0.0086888
+          ]
+        },
+        "startup_to_ready_seconds": {
+          "count": 3,
+          "min": 1.7983044,
+          "median": 1.9232148,
+          "max": 2.1958791,
+          "samples": [
+            1.9232148,
+            1.7983044,
+            2.1958791
+          ]
+        },
+        "first_token_elapsed_seconds": {
+          "count": 3,
+          "min": 1.9043981,
+          "median": 2.0339422,
+          "max": 2.3346663,
+          "samples": [
+            2.0339422,
+            1.9043981,
+            2.3346663
+          ]
+        }
+      },
+      "complete_decode_tps": {
+        "count": 3,
+        "samples": [
+          69.32977247918572,
+          102.14392653808802,
+          67.97098743365129
+        ],
+        "median": 69.32977247918572,
+        "min": 67.97098743365129,
+        "max": 102.14392653808802
+      },
+      "memory_peaks": {
+        "sampled_max_working_set_bytes": 4374478848,
+        "observed_os_peak_working_set_bytes": 4374478848,
+        "sampled_max_private_commit_bytes": 5519056896,
+        "observed_os_peak_commit_bytes": 5519056896,
+        "sampled_peak_gpu_dedicated_bytes": 4503732224,
+        "sampled_peak_gpu_shared_bytes": 88080384,
+        "sampled_peak_gpu_total_bytes": 4591812608
+      },
+      "memory_gap_ms": {
+        "count": 349,
+        "min": 0.1209,
+        "median": 15.1271,
+        "max": 24.8594
+      },
+      "phase_dedicated_peak_bytes": {
+        "round1_decode": 4503732224,
+        "round1_prefill": 4499537920,
+        "round2_decode": 4503732224,
+        "round2_prefill": 4503732224,
+        "round3_decode": 4503732224,
+        "round3_prefill": 4503732224
+      }
+    }
+  },
+  "timing_processes": 9,
+  "memory_processes": 3,
+  "per_arm_timing_processes": 3,
+  "statistical_significance": false,
+  "independent_quality_acceptance": false,
+  "diagnosis": {
+    "short": "Hot T1 6 recorded/1 reused before; 0/7 after",
+    "long": "Each current process: 90 of 96 decode calls 0/7; 2 first uses 7/0 and 4 other calls 6/1. Genuine boundary/physical changes retain invalidation.",
+    "source_cost_review": {
+      "path": ".scratch/paged-recording-20261021/performance/paged-cost-source-review.json",
+      "bytes": 62799,
+      "sha256": "1b6d03c39b1e95d3fb398a2f47c1a54c98ea57d63e64fcb96f51c6b7233f1639"
+    },
+    "independent_review": {
+      "path": ".scratch/paged-recording-20261021/performance/independent-review.json",
+      "bytes": 132188,
+      "sha256": "9907064fc5df9207f25cb0f2547730ffd0d5073e03bc8d4cd5b0d3c5cd083f9d"
+    },
+    "next": "Skip unused lease lookup for proven borrowed TensorView carriers; remove quadratic page identity scans; then evaluate real COW/commit/metadata costs. No old dense executor fallback."
+  },
+  "interpretation": [
+    "The stable-capture and selected-reader facts preserve only dormant physical commands. All old guards, binding and replay/output readiness are still withdrawn; fresh actual permission/token/topology/physical arguments remain required.",
+    "This complete window is a three-program comparison, not an isolated speed estimate of the single recording patch. Current also integrates the earlier workspace-sizing provider fix.",
+    "Current full-window medians trail both prior dense Hyle and llama.cpp. Samples are broad and overlap; before/after GPU utilization53/57% disallows idle/exclusive or stable gap claims. No sample discarded or rerun merely to obtain a favorable result.",
+    "Sampled current dedicated peak is30MiB above dense and below llama.cpp. Cache backing, IO/workspace/capture/vendor-private and driver allocations are distinct; difference is not attributed entirely to cache payload.",
+    "Same fixed tokens, weights, BF16/F32-GDN policy and host-token timing boundary. Reference has its original F32 intermediates and greedy/logits readback; no estimated cost subtracted.",
+    "Single session, no prefix hits or eviction in performance workload; four-session correctness is serial interleaving, not a concurrent throughput measurement.",
+    "Native Apple/Vulkan host results in the parent batch do not qualify native paged writers. No new Linux/Apple/Vulkan runtime execution in this change."
+  ],
+  "parent": "docs/evidence/correctness/qwen-paged-snapshot-2026-10-21.json",
+  "previous_full": "docs/evidence/performance/qwen-next-phase-first-2026-10-21.json",
+  "archive": {
+    "path": "docs/evidence/performance/qwen-paged-recording-2026-10-21.zip",
+    "bytes": 1145284,
+    "sha256": "a93bd083f9b60836cc90be33bdcf6f67178b95e213dc23a8fdf0c36cd4faa3fc"
+  },
+  "members": [
+    {
+      "member": ".scratch/paged-recording-20261021/before-identity.json",
+      "bytes": 534,
+      "sha256": "6fdd5c0c80df3b161be4c1ec99f3ef23655d38aa44ad2fb4505fb589e700fd3e"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/before/include/hyle/graph/detail/region_access.h",
+      "bytes": 15121,
+      "sha256": "011bf90e148de02f36c39463f8ae3f8ef5f8b94790d034cd93569054f0ba7bf9"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/before/src/graph/resources.cc",
+      "bytes": 84608,
+      "sha256": "1964c93ded4976340a4cad837418201ab2ec35621b89056d080c193fcc1dd9bb"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/before/src/graph_batch/batch.cc",
+      "bytes": 86625,
+      "sha256": "4ab8bd211cc2ef5f93f85e0a96e5528630d1e1e1dfb5db724b256cf6fbc81276"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/build.py",
+      "bytes": 2695,
+      "sha256": "2e7ee658a73b340aa9e6d5db905b7cf8dd62f83c5d8a99c3fc1bb2a81faebd92"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/build_provider.py",
+      "bytes": 1494,
+      "sha256": "84f5bca050baebc79f515724c338c5db0ef70e139439bf03cd4bc68a15603b68"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/checks/attempt1/graph--resources/compile-plan.json",
+      "bytes": 2612,
+      "sha256": "d70cfe07f6d4c5a52798ddc51ccfe9a019c832ba78bacb8a852f1a97ef12fd53"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/checks/attempt1/graph--resources/compile.command.json",
+      "bytes": 2206,
+      "sha256": "58cc07fc404820385892fab8cba57894acb69f16801ca54dc0e3cda7c21a13aa"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/checks/attempt1/graph--resources/compile.result.json",
+      "bytes": 2276,
+      "sha256": "f2bb1a78c87d3fab368301dfe5e2869b36a2f54bc441ef2f70997ee79652d951"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/checks/attempt1/graph--resources/compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/checks/attempt1/graph--resources/compile.stdout.log",
+      "bytes": 14,
+      "sha256": "672f8debd5dcc4a361c440145e99c21bf022590cbfb43129aa89acf894aac842"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/checks/attempt1/graph--resources/graph--resources-deps.json",
+      "bytes": 23497,
+      "sha256": "4905aba36ce1fd976491bc2c5a1eed6b06d8e64e9cfb6938171df18d030ba17a"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/checks/attempt1/graph--resources/identity.json",
+      "bytes": 52320,
+      "sha256": "88bf19496d02614fd56f37db8ea97bcc718973599bb93eb2609b239ccd06353f"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/checks/attempt1/graph--resources/live.json",
+      "bytes": 2276,
+      "sha256": "f2bb1a78c87d3fab368301dfe5e2869b36a2f54bc441ef2f70997ee79652d951"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/checks/attempt1/graph_batch--batch/compile-plan.json",
+      "bytes": 2622,
+      "sha256": "ca60ef91efd6fa3ad878e1325cd475023dab051d94fc1a1bcb7cc20ff854b969"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/checks/attempt1/graph_batch--batch/compile.command.json",
+      "bytes": 2220,
+      "sha256": "ef3c73eec33ef37a491cae80661cdac1d2abead83d75d71c85c35f4d3b562b8c"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/checks/attempt1/graph_batch--batch/compile.result.json",
+      "bytes": 2289,
+      "sha256": "d2c2bc325a148834b93fb02a74bab1ce1fde71d765543bff106b9c4ed00437db"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/checks/attempt1/graph_batch--batch/compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/checks/attempt1/graph_batch--batch/compile.stdout.log",
+      "bytes": 10,
+      "sha256": "f78e890749312f5ce2777295c394d4b71f47fac9e89486bdcb48d5fa361974fd"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/checks/attempt1/graph_batch--batch/graph_batch--batch-deps.json",
+      "bytes": 21443,
+      "sha256": "95851f048170c876b88f13eb21e607e7a43bb05a39838e6b0626307085a4604b"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/checks/attempt1/graph_batch--batch/identity.json",
+      "bytes": 48284,
+      "sha256": "291f84249023cea59378c1c78b52aa3f6959742c5c396881aa603639f4bbbe9f"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/checks/attempt1/graph_batch--batch/live.json",
+      "bytes": 2289,
+      "sha256": "d2c2bc325a148834b93fb02a74bab1ce1fde71d765543bff106b9c4ed00437db"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/checks/attempt1/graph_batch--native_batch_regions/compile-plan.json",
+      "bytes": 3022,
+      "sha256": "dad63a37ecd0da36a99d58a7316373e2f7559764ab53508f432e1be088f5707a"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/checks/attempt1/graph_batch--native_batch_regions/compile.command.json",
+      "bytes": 2553,
+      "sha256": "541b7ed59ad719dafdcd885cb540301d0f26ba97ffaec8f68c72510fb1bab8c9"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/checks/attempt1/graph_batch--native_batch_regions/compile.result.json",
+      "bytes": 2623,
+      "sha256": "a6a72e1b7846b396d9409a168313e0c9d56e6661ff1b694b09d90eba35aa656a"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/checks/attempt1/graph_batch--native_batch_regions/compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/checks/attempt1/graph_batch--native_batch_regions/compile.stdout.log",
+      "bytes": 25,
+      "sha256": "0157163721738fd93a1ca3e3826f43421a7774e627bff522bfe627aebea91608"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/checks/attempt1/graph_batch--native_batch_regions/graph_batch--native_batch_regions-deps.json",
+      "bytes": 20069,
+      "sha256": "d69af37eec6cd5c2a50413a234c54b11cd6ef7421e22ca730ac91a5d9de469e1"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/checks/attempt1/graph_batch--native_batch_regions/identity.json",
+      "bytes": 45439,
+      "sha256": "0919dcedf83ae4a486a723e19fbc87d42c1d0598af9abc2b4c4b5db9f3a6741a"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/checks/attempt1/graph_batch--native_batch_regions/live.json",
+      "bytes": 2623,
+      "sha256": "a6a72e1b7846b396d9409a168313e0c9d56e6661ff1b694b09d90eba35aa656a"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/checks/attempt1/graph_batch--native_pending_regions/compile-plan.json",
+      "bytes": 2900,
+      "sha256": "190f22866491bdab56c66dcfb7e987b1ebd215bc6229fd7ceac76115b56c7538"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/checks/attempt1/graph_batch--native_pending_regions/compile.command.json",
+      "bytes": 2426,
+      "sha256": "0c206c7e241e0764d88eb7149fc221355ffc358acb3a753a4b4a9ae4dac35a54"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/checks/attempt1/graph_batch--native_pending_regions/compile.result.json",
+      "bytes": 2495,
+      "sha256": "29963de4af52b99acb68d0bb466e96ba3c83f2dd6aa72bce21cd882782ee3d2b"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/checks/attempt1/graph_batch--native_pending_regions/compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/checks/attempt1/graph_batch--native_pending_regions/compile.stdout.log",
+      "bytes": 27,
+      "sha256": "ad94e173ad21f87b1d79213f5465b5a2e4468763687486be5538b89b8c3cf496"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/checks/attempt1/graph_batch--native_pending_regions/graph_batch--native_pending_regions-deps.json",
+      "bytes": 19686,
+      "sha256": "76d3c427a03db0ac8148cb76c0cb8767540f0411426efc39ffaf03603c073710"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/checks/attempt1/graph_batch--native_pending_regions/identity.json",
+      "bytes": 44441,
+      "sha256": "373f30321aa8ad008e290c53106dfe10bd0d46ada8475321be126c357fe41f03"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/checks/attempt1/graph_batch--native_pending_regions/live.json",
+      "bytes": 2495,
+      "sha256": "29963de4af52b99acb68d0bb466e96ba3c83f2dd6aa72bce21cd882782ee3d2b"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/checks/attempt1/graph_batch--paged_append/compile-plan.json",
+      "bytes": 2685,
+      "sha256": "c19f66db0a49592a292869de188e9c7d12f204385e43e907b291a8bc498e351b"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/checks/attempt1/graph_batch--paged_append/compile.command.json",
+      "bytes": 2269,
+      "sha256": "4fcb623b891d4b9dfd987c49224e28204d9f1bb7ba4211b8c1de9182e97e60d6"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/checks/attempt1/graph_batch--paged_append/compile.result.json",
+      "bytes": 2339,
+      "sha256": "72e4191ff421dc5d9c2a334055e4564e12586b242aac713db3036e67082f0fc8"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/checks/attempt1/graph_batch--paged_append/compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/checks/attempt1/graph_batch--paged_append/compile.stdout.log",
+      "bytes": 17,
+      "sha256": "d603c718335c17dd70dce3272dc46b28f8fe49da285d5ebb4daaa091a14f0987"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/checks/attempt1/graph_batch--paged_append/graph_batch--paged_append-deps.json",
+      "bytes": 20134,
+      "sha256": "e86612e0d62ac29a22e3d28207e9279f5fd340ced5ef4d8135c0ade89d9a8a7a"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/checks/attempt1/graph_batch--paged_append/identity.json",
+      "bytes": 45320,
+      "sha256": "3270143b802ed8eb02dd9e69afca98d1296dc80f0621f4a6bcb5f5c0a4cc4d8e"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/checks/attempt1/graph_batch--paged_append/live.json",
+      "bytes": 2339,
+      "sha256": "72e4191ff421dc5d9c2a334055e4564e12586b242aac713db3036e67082f0fc8"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/checks/attempt1/graph_batch--paged_append_cuda_consumer/compile-plan.json",
+      "bytes": 2811,
+      "sha256": "a7748975048ce10f0dec9ae00a1eb326129e7e0973faa829507465afc4152d84"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/checks/attempt1/graph_batch--paged_append_cuda_consumer/compile.command.json",
+      "bytes": 2411,
+      "sha256": "17bdb28ae127163af167fa0e0177edbacba87e324f70d7506353167046df1320"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/checks/attempt1/graph_batch--paged_append_cuda_consumer/compile.result.json",
+      "bytes": 2481,
+      "sha256": "880e4ce66781d957c11ba86da22557f345a68ac26f4d41bcc96cefd4e0ac33e9"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/checks/attempt1/graph_batch--paged_append_cuda_consumer/compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/checks/attempt1/graph_batch--paged_append_cuda_consumer/compile.stdout.log",
+      "bytes": 31,
+      "sha256": "915cdae765651d0324348ddcddf751dc30e82f9c98f618b8dd7359ef401c92e5"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/checks/attempt1/graph_batch--paged_append_cuda_consumer/graph_batch--paged_append_cuda_consumer-deps.json",
+      "bytes": 20634,
+      "sha256": "feb16da6f444e2fcc511674dbf39914e8b4884d61318f5693359a1d9746d7b40"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/checks/attempt1/graph_batch--paged_append_cuda_consumer/identity.json",
+      "bytes": 45144,
+      "sha256": "7cd5ac90076258c4bade4101f68d985a698c924d2d77ba6511d40413be3cb14f"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/checks/attempt1/graph_batch--paged_append_cuda_consumer/live.json",
+      "bytes": 2481,
+      "sha256": "880e4ce66781d957c11ba86da22557f345a68ac26f4d41bcc96cefd4e0ac33e9"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/checks/provider/compile-plan.json",
+      "bytes": 2461,
+      "sha256": "bd8c63cb2b5aa6f7e371dd66c210d9fa841d89446db7676597d803f7fba49a5f"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/checks/provider/compile.command.json",
+      "bytes": 1944,
+      "sha256": "be0bdd21b2463f6af943a602c8e01cefe11aae64ea0b45b124c253382c8ccfd7"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/checks/provider/compile.result.json",
+      "bytes": 2014,
+      "sha256": "ed3066155af233c4d6856fe0f2bf766ad7e99b8d3fecd0edea8b3e9690107bb5"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/checks/provider/compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/checks/provider/compile.stdout.log",
+      "bytes": 24,
+      "sha256": "3c9311d2a1524f82f39fd17e6b425d25672a94f050c73aee84799059455bb910"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/checks/provider/identity.json",
+      "bytes": 44585,
+      "sha256": "decc75952f54cb017d55bd9e1e3e10b861b1f66a870d64840ec30dbb16cea7f7"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/checks/provider/live.json",
+      "bytes": 2014,
+      "sha256": "ed3066155af233c4d6856fe0f2bf766ad7e99b8d3fecd0edea8b3e9690107bb5"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/checks/provider/provider-deps.json",
+      "bytes": 21159,
+      "sha256": "86639727c9e575e8a214185fcdade088340a41d2773673f39aad45d1039d622a"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/compiled.json",
+      "bytes": 305269,
+      "sha256": "02d6b5bc0c5a08ba801b319723d4ae6446c563bbbb2f2ba9b7c99a2c05d43d7d"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/cuda-link1/link-plan.json",
+      "bytes": 85091,
+      "sha256": "04b0d6d3aab4e9d0f7100173a0d0b9ed71e22ff68c1a0bd1d67e9fdf397e831f"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/cuda-link1/link.command.json",
+      "bytes": 29318,
+      "sha256": "6a88e002fb19204b2f00445c95130176da3e72e3cb6f3fe7ca1882c392a9b839"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/cuda-link1/link.result.json",
+      "bytes": 29388,
+      "sha256": "ea596c7d8b45773cbd2096bac7f191fa99fd43be495a52ae5bc55b9d1efb3b0d"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/cuda-link1/link.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/cuda-link1/link.stdout.log",
+      "bytes": 196,
+      "sha256": "a699a4cedeb2428070f699a09cda5ff5e16274094dc614c36015f32247d80db6"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/cuda-link1/live.json",
+      "bytes": 29388,
+      "sha256": "ea596c7d8b45773cbd2096bac7f191fa99fd43be495a52ae5bc55b9d1efb3b0d"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/cuda-link1/runtime-environment.json",
+      "bytes": 7862,
+      "sha256": "9769de9bda1ff9f0190c49e42b3498f78ab89192c7671eec6111d8147a627dc9"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/cuda-ready.json",
+      "bytes": 1504,
+      "sha256": "c1095d7c18fa4f367cae5c14dfb83071fea77e6cf8ea9c9d2af34ed41003fa6e"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/cuda-run1/command.json",
+      "bytes": 768,
+      "sha256": "335fcdead3fa779eeba09e5cb23c17da8e5cd7771baa2ea9b95e3eee3b22cc04"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/cuda-run1/result.json",
+      "bytes": 843,
+      "sha256": "79958cc8bd46bc78d13a1a466149fc7f9e215bd63544824a326ce78a1672be87"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/cuda-run1/stderr.log",
+      "bytes": 151,
+      "sha256": "88dd5e35d67fb5c0c371390a98a66a5e061e4c0bef2d890a7b74781363216092"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/cuda-run1/stdout.log",
+      "bytes": 165,
+      "sha256": "ab7c128f7cde578599bd0b3923e94e19cd6f939f67de0f3c2019ff57ddf05d81"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/implementation/implementation.diff",
+      "bytes": 5112,
+      "sha256": "8fef57ea2b6049fb32b96c76c08efcf69790a6022854ace0391080559492efe5"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/implementation/source-freeze.json",
+      "bytes": 3943,
+      "sha256": "16f00eb2c1bbcfdd328986301ade5454b0ce81b3aff0af98a1792dc3a3a6df2e"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/implementation/source/include/hyle/graph/detail/region_access.h",
+      "bytes": 15483,
+      "sha256": "81824e4a1cde1e074ffe50b7886cddb9db8939092ff49b3ae42298190dc679ad"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/implementation/source/src/graph/resources.cc",
+      "bytes": 84147,
+      "sha256": "0c25c4bd29bb28c1fd330a1e2d873a6b3ef10a3fe408aed45ca14c31ebd503ab"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/implementation/source/src/graph_batch/batch.cc",
+      "bytes": 86873,
+      "sha256": "6f87953dd89b517eb07899e1c7b97b42a6f23d3e76d271cdacbba85eee91fc27"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/link.py",
+      "bytes": 4066,
+      "sha256": "37eb2a2bf672098a4c337b408616556254e3753782158bb70d6c980693238d51"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/multi-run1/command.json",
+      "bytes": 1774,
+      "sha256": "1f1245a2d142280b007c7b959df3ff00e62c08abc106c7e45125b57f81bd5e73"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/multi-run1/observation.json",
+      "bytes": 11002,
+      "sha256": "901df72fe8f5921b5ee71696a86c2b6eec79bc05376022615756f8b67767bca3"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/multi-run1/result.json",
+      "bytes": 1849,
+      "sha256": "6f70f9556f06b0facf6258b5511f837e2e75a43076b609b91319a8e3d104a554"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/multi-run1/stderr.log",
+      "bytes": 15993,
+      "sha256": "597e5cd458f919fbbb178fa2354a731001a003c6bf5b88a3eb3e92e0f269fa17"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/multi-run1/stdout.log",
+      "bytes": 6998,
+      "sha256": "ece2ce2c608fb6f50b1eed2901cec7d1bf6568abdf730a58fc5359298d67155e"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/multi-run1/summary.json",
+      "bytes": 50229,
+      "sha256": "b89e80bc3eef89d9584a2f693ff256f32b777c1369a71a8e5f03f479b3a53aaf"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/multi-run1/trace/routes/default-T1.boundaries.tsv",
+      "bytes": 339,
+      "sha256": "9e50e74e57b4bb9a68a7bd4433a0b7c9fa40c08ec911c7bb2c445ca07b1e0d36"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/multi-run1/trace/routes/default-T1.route.tsv",
+      "bytes": 35583,
+      "sha256": "c6e4c61044443ede6d6cf4860c02a68b8ef571a6fd155f4488fe2aa5e23a6287"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/multi-run1/trace/routes/default-T128.boundaries.tsv",
+      "bytes": 357,
+      "sha256": "d95051bed8b0971dbd4b955f171830fb3b8b09691f67b6c082b080a3652c6308"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/multi-run1/trace/routes/default-T128.route.tsv",
+      "bytes": 36819,
+      "sha256": "b25513ea9b3ea272b68f7d10c78d72da8766ba6de69fa6660d9e56f0c2260444"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/multi-run1/trace/routes/default-T16.boundaries.tsv",
+      "bytes": 348,
+      "sha256": "943177a4b01535685d5a2ecb0d33ca5e6375aaed9d6cf615446084ca9332146a"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/multi-run1/trace/routes/default-T16.route.tsv",
+      "bytes": 36819,
+      "sha256": "b25513ea9b3ea272b68f7d10c78d72da8766ba6de69fa6660d9e56f0c2260444"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/multi-run1/trace/routes/default-T23.boundaries.tsv",
+      "bytes": 348,
+      "sha256": "b967005a7e84193d9012e1e696e4ee38a9f0a1c346caeeeaeb4692751a2848dd"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/multi-run1/trace/routes/default-T23.route.tsv",
+      "bytes": 36819,
+      "sha256": "b25513ea9b3ea272b68f7d10c78d72da8766ba6de69fa6660d9e56f0c2260444"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/multi-run1/trace/routes/default-T4.boundaries.tsv",
+      "bytes": 339,
+      "sha256": "2beff2527cecfd28801552c09b6b4bcc8b38040151a6bfa107e06d061d646afc"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/multi-run1/trace/routes/default-T4.route.tsv",
+      "bytes": 36819,
+      "sha256": "b25513ea9b3ea272b68f7d10c78d72da8766ba6de69fa6660d9e56f0c2260444"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/performance.py",
+      "bytes": 4728,
+      "sha256": "2f884b92a9fbad731ed2ca0eee2c6ffb111724f30e2624eecfa07dc0d4a13d27"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/performance/independent-review.json",
+      "bytes": 132188,
+      "sha256": "9907064fc5df9207f25cb0f2547730ffd0d5073e03bc8d4cd5b0d3c5cd083f9d"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/performance/memory/01-dense/command.json",
+      "bytes": 1250,
+      "sha256": "1fc0f413e1a5383eba868e8a178fb0949fac01b7170768c5af0fc57c0fa02a97"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/performance/memory/01-dense/memory-summary.json",
+      "bytes": 54662,
+      "sha256": "cc5886f07ec0f662cd44ac37608433e9909cba7b3428180488815cb6964eb18b"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/performance/memory/01-dense/memory.json",
+      "bytes": 420464,
+      "sha256": "3306a1bcd215547141dc37cee08091edc42347bf01b34b4c024f7578d6fac1ae"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/performance/memory/01-dense/result.json",
+      "bytes": 3511,
+      "sha256": "68be1f92d74c568685bebd63687853e4029066e3ee34743a1bf07b37c93312a4"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/performance/memory/01-dense/stderr.log",
+      "bytes": 24674,
+      "sha256": "4c26e88d5211fc84b5e0cc7ab6d9f7d79e870c323f800f31f9191491e2d02d47"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/performance/memory/01-dense/stdout.log",
+      "bytes": 2569,
+      "sha256": "3457501405732579705c74f3522ff23f46d8d261937b102fe323284e938fd215"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/performance/memory/02-current/command.json",
+      "bytes": 1004,
+      "sha256": "302432bba9a37be306757ad65d48ea0703d84a9c10924f69db877e515d1c38ca"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/performance/memory/02-current/memory-summary.json",
+      "bytes": 54321,
+      "sha256": "30194983601920b0d68db654abe3264b98c76cb34e69943b63f3713834b5e1c6"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/performance/memory/02-current/memory.json",
+      "bytes": 417256,
+      "sha256": "ec6ea688036755502df8256e6b769fa5955dc8aec7dbd0c8fb24e41c7432255c"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/performance/memory/02-current/result.json",
+      "bytes": 3265,
+      "sha256": "f6b8c74cabe46d8e3ea408e3765e31a75fb9c2a90e64051c74214bf712656bdb"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/performance/memory/02-current/stderr.log",
+      "bytes": 25018,
+      "sha256": "940c7a7080d2321e261076b7bf416fcf9349786b03c8e87f48a788cd8bee0977"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/performance/memory/02-current/stdout.log",
+      "bytes": 2727,
+      "sha256": "e0eec9d7c20df0311da8df7df8e48c05ad19ab038f64ec87046295bf23c6acc4"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/performance/memory/03-peer/command.json",
+      "bytes": 1231,
+      "sha256": "e031b6d4f7743b5b0b814e8665ad810dd8e578f168119e62d3bc3279757bc933"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/performance/memory/03-peer/memory-summary.json",
+      "bytes": 54769,
+      "sha256": "88dd271497526cabcf15d60c207ed15ed2e9988993463e93f51f9543d1b42acf"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/performance/memory/03-peer/memory.json",
+      "bytes": 465327,
+      "sha256": "7d5052b921b51778dcd513591931761cc47e1c875555c0b985b2eae4ec17ad1c"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/performance/memory/03-peer/peer-result.json",
+      "bytes": 58415,
+      "sha256": "50c583d8fc78c4dd6f0b18ec327c6248c92b956406730bb19f8f32a7317fe633"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/performance/memory/03-peer/result.json",
+      "bytes": 4345,
+      "sha256": "50b186b1ceeaf31341b9e8e1248fb545941d714f37ecd96f95e7af42c1e8e7f8"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/performance/memory/03-peer/stderr.log",
+      "bytes": 76293,
+      "sha256": "5082a439a04783cb2d39f0cd7fdd838504071379e32bedfd6aea1cc3a9c1a7d3"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/performance/memory/03-peer/stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/performance/memory/inputs.json",
+      "bytes": 26056,
+      "sha256": "6a8827f99b988cda420c98831e363e148346dcb55a75474436372a7b434e2e42"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/performance/memory/runs.json",
+      "bytes": 406676,
+      "sha256": "991697165900430e95f9f6698ba76d6a4f7014af9f29bfdc4c2dd168bee16126"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/performance/memory/summary.json",
+      "bytes": 190553,
+      "sha256": "907a3b797bbaed77aaca4bb387f089800e6b41b4c2c74bb60b7b7e367cb6a256"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/performance/memory/window-after-compute_apps.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/performance/memory/window-after-compute_apps.stdout.log",
+      "bytes": 1573,
+      "sha256": "180d1a5af956f2a8fb222520da1988d57d92eab814ea38315708f9d16d9746b3"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/performance/memory/window-after-gpu.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/performance/memory/window-after-gpu.stdout.log",
+      "bytes": 79,
+      "sha256": "f7df1d2ba00c481a34039d62f73b00679923506034f449bd88c92c085d2cecab"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/performance/memory/window-after.json",
+      "bytes": 621,
+      "sha256": "a9ae81dd056cfd3ae362842f2ffabdd6f93265bf66f735d7c59ba348c54d2cf9"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/performance/memory/window-before-compute_apps.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/performance/memory/window-before-compute_apps.stdout.log",
+      "bytes": 1573,
+      "sha256": "180d1a5af956f2a8fb222520da1988d57d92eab814ea38315708f9d16d9746b3"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/performance/memory/window-before-gpu.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/performance/memory/window-before-gpu.stdout.log",
+      "bytes": 78,
+      "sha256": "1c9fbfe84fc011aa6c37e7ac49667a98276f9eb03ee86d2578af96f99c6a887a"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/performance/memory/window-before.json",
+      "bytes": 622,
+      "sha256": "1b9e0ae6ad2e93b6a452d90d7d153a47af3905d1f122b70fd533f90c6215b93c"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/performance/paged-cost-source-review.json",
+      "bytes": 62799,
+      "sha256": "1b6d03c39b1e95d3fb398a2f47c1a54c98ea57d63e64fcb96f51c6b7233f1639"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/performance/review_calculate.py",
+      "bytes": 23852,
+      "sha256": "94168f0c698335a7e7862b12dcc9dfccec021712e740750832a9c6196a93e14f"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/performance/review_paged_cost.py",
+      "bytes": 18020,
+      "sha256": "12d578512212a9ffb411b3aa3445059efb285b0d1b2f1de8f78d55056459933e"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/performance/timing/01-dense/command.json",
+      "bytes": 1250,
+      "sha256": "c0d899a14a658ab4ef319e120abd110482731524e168f6f7f8b259684bf9b9b6"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/performance/timing/01-dense/result.json",
+      "bytes": 1465,
+      "sha256": "b877a0e5a1fa6c68ecf10aea9d118f25562d582d75fb50a3438266aa871ec221"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/performance/timing/01-dense/stderr.log",
+      "bytes": 24634,
+      "sha256": "29e170917a6e4fecb3612d035905b8f0d5ce823262964bb8d728a2368f3c5ea5"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/performance/timing/01-dense/stdout.log",
+      "bytes": 2592,
+      "sha256": "a56f4578a78687fe5a77324a82388a33468fd25cd1ed7e145eeee540ae42ac78"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/performance/timing/02-current/command.json",
+      "bytes": 1004,
+      "sha256": "3d576a22e658842ba5a30873c222e208687f13e4b403f208b4e861950fdebbf6"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/performance/timing/02-current/result.json",
+      "bytes": 1219,
+      "sha256": "f69586768cbcc9b414c7a021069e971738e17c87550b6cd80fa44695eccd43ca"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/performance/timing/02-current/stderr.log",
+      "bytes": 25025,
+      "sha256": "af5dd173d875a1f8b2a47fbcaf6b19e3daefd4c219dbdc9472ba6d26613b4405"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/performance/timing/02-current/stdout.log",
+      "bytes": 2718,
+      "sha256": "1876d08ab3dac78828c9a6be3bd798cd557f80ec178a50b593f0973e5b60fdc7"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/performance/timing/03-peer/command.json",
+      "bytes": 1231,
+      "sha256": "91d1f4714aff3c7a61d45681806c860fe3f4e9f9f7e86a311bc47fca752c267c"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/performance/timing/03-peer/peer-result.json",
+      "bytes": 58381,
+      "sha256": "adf0bccf20a0225769aa57fccc9bf59789e37a5574c6115d143ee98021c1ac23"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/performance/timing/03-peer/result.json",
+      "bytes": 1445,
+      "sha256": "4f4cfb3365107c9c0c59525290693c4799bcfa78bd376e382baa51817a1d0292"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/performance/timing/03-peer/stderr.log",
+      "bytes": 76296,
+      "sha256": "36a6715417b2608f4e1e323f8208a4f701f0eca40c6e01cb8f90ff6179b4c113"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/performance/timing/03-peer/stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/performance/timing/04-peer/command.json",
+      "bytes": 1231,
+      "sha256": "b1a1c4140f0f9af685791439ff5e098a359c02b40a1dd51d3f278315edeeeaec"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/performance/timing/04-peer/peer-result.json",
+      "bytes": 58332,
+      "sha256": "fbc19c90ee53790712ebdea8293f32b5161db0794758d0ad80a213b4a22641e2"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/performance/timing/04-peer/result.json",
+      "bytes": 1445,
+      "sha256": "d600607fe279e013d652e3e16449952fdb2a0a1d1b58d3eb6ccd47a7aedc9e68"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/performance/timing/04-peer/stderr.log",
+      "bytes": 76292,
+      "sha256": "bdda856268f1c98c572d78694644e944855d1bff0e4f9276c2f80e9708c197e7"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/performance/timing/04-peer/stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/performance/timing/05-dense/command.json",
+      "bytes": 1250,
+      "sha256": "523d20944cecee7a5b33ca02d5399c2924cf7377277ccf306f314e23c04defff"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/performance/timing/05-dense/result.json",
+      "bytes": 1464,
+      "sha256": "6d032cab3759dc83a9563611983692a71a10890f8772e463e8eac1659ece5e5c"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/performance/timing/05-dense/stderr.log",
+      "bytes": 24608,
+      "sha256": "36f890a22c6aeabecba8ab164b3ac24a9c36694bc910fba716254ee611b39876"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/performance/timing/05-dense/stdout.log",
+      "bytes": 2581,
+      "sha256": "eefc3abe9bcb7f524464da03bc5fb9eafe1f2da3beabd23f120f4cc2b24efb7b"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/performance/timing/06-current/command.json",
+      "bytes": 1004,
+      "sha256": "84dafa529774f21d62402387cce3059b7cfb570f44f169abff6421aa8adad5f6"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/performance/timing/06-current/result.json",
+      "bytes": 1218,
+      "sha256": "a519f30a182c83b7517976efb1ea880a5030f89e4995dafbe3d628d336be74bf"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/performance/timing/06-current/stderr.log",
+      "bytes": 25033,
+      "sha256": "b2343237e0d16d53b1d45503720ea2a1126e4c86946b039e8cf68771a5133759"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/performance/timing/06-current/stdout.log",
+      "bytes": 2725,
+      "sha256": "3cbb236722b6c3f2ddbb7d29b758dd7e85f56479e0b451f2b3dbc0eb6553226b"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/performance/timing/07-current/command.json",
+      "bytes": 1004,
+      "sha256": "db54ead9ddf112fa1bfe747ca9c882b76ed4a0607523adbd64fd241ba6b9b272"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/performance/timing/07-current/result.json",
+      "bytes": 1218,
+      "sha256": "00c75883daef4a4403dde159d15e810ca4b3419ee4cec02d2f460bc81abb0d39"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/performance/timing/07-current/stderr.log",
+      "bytes": 25028,
+      "sha256": "25b35c717b63723fdaad2c9e3e53171d82dc5e4ab025c39501c6d7eba11db5c8"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/performance/timing/07-current/stdout.log",
+      "bytes": 2717,
+      "sha256": "1c0a66d570512e241cd8429df41a0e259b9c2534cc5404bba614c2eef37d8d1b"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/performance/timing/08-peer/command.json",
+      "bytes": 1231,
+      "sha256": "0e38870ee91a8c6428f03e4d7e64babc2e87553e9f6b5ef3bb363c4eb305f387"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/performance/timing/08-peer/peer-result.json",
+      "bytes": 58390,
+      "sha256": "4a2c591c8c358827e225522ec3daa49c3cdb198064b8cb50cdf0391823df9734"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/performance/timing/08-peer/result.json",
+      "bytes": 1446,
+      "sha256": "7f4bc1f8df6e2418d7a21a7e7762567eea0f46db0f639da43b89c6a4abe0a9f3"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/performance/timing/08-peer/stderr.log",
+      "bytes": 76288,
+      "sha256": "4d384fe17feaaef609f1a494b88660d0f4bb5b91fe3f62ec1b80f5992b9b2f5b"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/performance/timing/08-peer/stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/performance/timing/09-dense/command.json",
+      "bytes": 1250,
+      "sha256": "e92a1a380939efa776e271190c6597d2a34a8612cb697cee05da5818338f5b19"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/performance/timing/09-dense/result.json",
+      "bytes": 1464,
+      "sha256": "cb49bde75ac7b1a676f26a366c8d28f1e3b0f6005c2c375f6f08ce8436f9408b"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/performance/timing/09-dense/stderr.log",
+      "bytes": 24654,
+      "sha256": "a0408a5bb47298319a30c2a39af63dc60d0cfadf67f0a189c59784aef49594fa"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/performance/timing/09-dense/stdout.log",
+      "bytes": 2600,
+      "sha256": "d31f608ce6ccf7bfd75c72bf040f377b34d9975254f37faf2becf0bebc5f0d23"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/performance/timing/inputs.json",
+      "bytes": 30742,
+      "sha256": "1bae1f5a1e9569706c826fe786470d0200c1af86cae94dd223399759b784124e"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/performance/timing/runs.json",
+      "bytes": 1195986,
+      "sha256": "136eaa9cffc2b53b68f47b5a2cee4cab344eff81611e5e721333bb99b7adc591"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/performance/timing/summary.json",
+      "bytes": 17583,
+      "sha256": "bef75289e4458ec0c89c090b29085e064d57bbced827a96816b9f0bffd95314e"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/performance/timing/window-after-compute_apps.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/performance/timing/window-after-compute_apps.stdout.log",
+      "bytes": 1514,
+      "sha256": "ba402921c550fe4ba69d6525a896011f36c5c0a7b4c22490bea9565ff567b4e2"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/performance/timing/window-after-gpu.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/performance/timing/window-after-gpu.stdout.log",
+      "bytes": 79,
+      "sha256": "eb9ff401df784078212df4ad655a1ecf610b71712eea4458ee79eea2a237c724"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/performance/timing/window-after.json",
+      "bytes": 621,
+      "sha256": "d303a03ac23adfc6a8265b020c46ece8d81e56b2ce80b642e773c5f4522e644c"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/performance/timing/window-before-compute_apps.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/performance/timing/window-before-compute_apps.stdout.log",
+      "bytes": 1573,
+      "sha256": "23ee610d2e6ae422825ee3e013229119df8bea204b365a85cc4ad7af3d40dc16"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/performance/timing/window-before-gpu.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/performance/timing/window-before-gpu.stdout.log",
+      "bytes": 78,
+      "sha256": "9fae6ba0f0d6e47d08d72b00eb2f468eb787c6123a928f8086d72d625b7a224a"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/performance/timing/window-before.json",
+      "bytes": 622,
+      "sha256": "9a563dfb629065d0a6b66ec695d014b148dac825417b68746cf9a9da567ff9b3"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/publish.py",
+      "bytes": 12364,
+      "sha256": "2d43051a200018f1a83992b197d1976006413497f0a2640529ce32e4d0cbefc6"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/qwen-link1/link-plan.json",
+      "bytes": 85205,
+      "sha256": "19c583773d77f925283b7a396aca98499956a450efe8df6c64c44e249572545a"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/qwen-link1/link.command.json",
+      "bytes": 29467,
+      "sha256": "d2c0eb01b059505d84529688da85c6e99f164f4a015c5542a458812d3591691a"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/qwen-link1/link.result.json",
+      "bytes": 29537,
+      "sha256": "7415e00f6526a558505f637475da7fbe94fbc787e85309f4a7e47208730673be"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/qwen-link1/link.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/qwen-link1/link.stdout.log",
+      "bytes": 196,
+      "sha256": "35a8fc40db9f66c993231274a38e445c512ec4031008be522ce86b5e65406b92"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/qwen-link1/live.json",
+      "bytes": 29537,
+      "sha256": "7415e00f6526a558505f637475da7fbe94fbc787e85309f4a7e47208730673be"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/qwen-link1/runtime-environment.json",
+      "bytes": 7862,
+      "sha256": "376783c964edc40277e6da98b490f00176f15fde3af05f62e9a6a6a8a54b420c"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/qwen-link2/link-plan.json",
+      "bytes": 85335,
+      "sha256": "d52eef407481cccbf7a91a388168af1495991a2c7b37bfe3b45ae9762ee9a973"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/qwen-link2/link.command.json",
+      "bytes": 29412,
+      "sha256": "1a29b094542623938535970df72e55498f9116ac8104921f80aa44bdce6a57e8"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/qwen-link2/link.result.json",
+      "bytes": 29482,
+      "sha256": "60442a167420edf1f119fa40c04cafb6fffad3a216ea100f220525f3cf72466d"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/qwen-link2/link.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/qwen-link2/link.stdout.log",
+      "bytes": 196,
+      "sha256": "4620537f6763de6c5b67778dfcfc6c9a318eeb1d850c5c1a0690957f9b586cc6"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/qwen-link2/live.json",
+      "bytes": 29482,
+      "sha256": "60442a167420edf1f119fa40c04cafb6fffad3a216ea100f220525f3cf72466d"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/qwen-link2/runtime-environment.json",
+      "bytes": 7862,
+      "sha256": "29656431f2b0a3e8ef28a45035230685f66a6cccb1d31ca14b0b10516e108b59"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/qwen-ready.json",
+      "bytes": 1485,
+      "sha256": "beb4152391a9bf6ac432142882658064346c45eac029a448b290a7b7746141cb"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/run_checks.py",
+      "bytes": 3139,
+      "sha256": "1afb82c5438154e0df725766130596e0ec781054c579f169ca34608879489987"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/run_cuda_check.py",
+      "bytes": 1955,
+      "sha256": "2adce9bde4ec95b4a325585535f81b45fb84acb21d8bab837c2ed347fc36a90b"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/single-run1/command.json",
+      "bytes": 1662,
+      "sha256": "867a4b13bdcd0c91148759151fda736c022dd6b2ac116ff5a98cae98c53d4efb"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/single-run1/observation.json",
+      "bytes": 1965,
+      "sha256": "cc323cc5f9c26522e67e25aed33dd7ea01747cd51fd644c3da484857720f6884"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/single-run1/result.json",
+      "bytes": 1738,
+      "sha256": "fe0a0f088c3d4918d8381613d7ac22f4f8d40e0e0374a6cee65c38a788b32bc3"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/single-run1/stderr.log",
+      "bytes": 4041,
+      "sha256": "6a2942d8c9e723da95d7a256389084766c21ba952ba66e16d937213b86950fee"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/single-run1/stdout.log",
+      "bytes": 1429,
+      "sha256": "72fa5db65884400de89d89130ab55db481ff18d96b0d8024b2148090955d3b80"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/single-run1/summary.json",
+      "bytes": 11844,
+      "sha256": "74b4eedcff302dc05a4e075a8475c10cd411c3c49b6872f9589b356a8a631791"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/single-run1/trace/routes/default-T1.boundaries.tsv",
+      "bytes": 339,
+      "sha256": "9e50e74e57b4bb9a68a7bd4433a0b7c9fa40c08ec911c7bb2c445ca07b1e0d36"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/single-run1/trace/routes/default-T1.route.tsv",
+      "bytes": 35583,
+      "sha256": "c6e4c61044443ede6d6cf4860c02a68b8ef571a6fd155f4488fe2aa5e23a6287"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/single-run1/trace/routes/default-T128.boundaries.tsv",
+      "bytes": 357,
+      "sha256": "d95051bed8b0971dbd4b955f171830fb3b8b09691f67b6c082b080a3652c6308"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/single-run1/trace/routes/default-T128.route.tsv",
+      "bytes": 36819,
+      "sha256": "b25513ea9b3ea272b68f7d10c78d72da8766ba6de69fa6660d9e56f0c2260444"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/single-run1/trace/routes/default-T16.boundaries.tsv",
+      "bytes": 348,
+      "sha256": "943177a4b01535685d5a2ecb0d33ca5e6375aaed9d6cf615446084ca9332146a"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/single-run1/trace/routes/default-T16.route.tsv",
+      "bytes": 36819,
+      "sha256": "b25513ea9b3ea272b68f7d10c78d72da8766ba6de69fa6660d9e56f0c2260444"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/source-review.json",
+      "bytes": 16180,
+      "sha256": "92e05e7612ff28d852b8f846fe68ef037a7cbfc636c671f619123dabdd122c2b"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/test-review/before-identity.json",
+      "bytes": 167,
+      "sha256": "02a8f32b7cbfe050cbe22705200f553ed646bc01e013c076d5f0f6af56d564c1"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/test-review/before/paged_append_cuda_consumer.cc",
+      "bytes": 13233,
+      "sha256": "de3c3168bd9137f48a63796e26cfaa2e23cc2cb0bfa662b71c0d7443116675aa"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/test-review/consumer.diff",
+      "bytes": 1207,
+      "sha256": "d076df48aaf74216503e350e1ce4dc965548846b90b6ab6797d3c97febbfa89a"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/test-review/product-source-review.json",
+      "bytes": 5787,
+      "sha256": "1bea52b84b65399978d1bbe6011d1dfa60fe546528231e8b091238e1177c6862"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/test-review/source-freeze.json",
+      "bytes": 1021,
+      "sha256": "16ac6f54e1717e6703570866be92cb2c882341290734a2fdf904e48307755f63"
+    },
+    {
+      "member": ".scratch/paged-recording-20261021/test-review/source/paged_append_cuda_consumer.cc",
+      "bytes": 13814,
+      "sha256": "23e9841d61a3b5378edd233855b2dddccb9c9b42bdb717f43cefcbd4995adc49"
+    },
+    {
+      "member": "documentation/docs/architecture/compute-design.md",
+      "bytes": 111886,
+      "sha256": "a5ebfb68a2b3f7c09b1e1837c501ef77c279e55a6513a11c72e8b8ad13a9c406"
+    },
+    {
+      "member": "documentation/docs/developer/current-work.md",
+      "bytes": 18070,
+      "sha256": "8f49639c17e95d96814862282f750163a9ea441bbbdba6b5849b04aa875e58b3"
+    },
+    {
+      "member": "documentation/docs/developer/performance/decode.md",
+      "bytes": 29280,
+      "sha256": "562d827b83f89f35e29caa7baa9fdc9e193f9998d6fc6145ed81814452edc29f"
+    },
+    {
+      "member": "documentation/tools/qwen35_text/README.md",
+      "bytes": 12460,
+      "sha256": "bac6900a9fdd7a8a37c559b841ff6d8c04d2272bac904de36c088171045156e4"
+    },
+    {
+      "member": "product/include/hyle/graph/detail/region_access.h",
+      "bytes": 15483,
+      "sha256": "81824e4a1cde1e074ffe50b7886cddb9db8939092ff49b3ae42298190dc679ad"
+    },
+    {
+      "member": "product/src/compute_provider_flashinfer/flashinfer_provider.cc",
+      "bytes": 46732,
+      "sha256": "7f7d4d036c187fd206955a61f9e9f7a7873d2ab56f4eb8ee6e5476f44f9674e7"
+    },
+    {
+      "member": "product/src/graph/executable.cc",
+      "bytes": 463668,
+      "sha256": "b5cfb444768c862a7bf2e4a939b416e13c9045e7fb73f15f7e986b5a8e4355fe"
+    },
+    {
+      "member": "product/src/graph/resources.cc",
+      "bytes": 84147,
+      "sha256": "0c25c4bd29bb28c1fd330a1e2d873a6b3ef10a3fe408aed45ca14c31ebd503ab"
+    },
+    {
+      "member": "product/src/graph_batch/batch.cc",
+      "bytes": 86873,
+      "sha256": "6f87953dd89b517eb07899e1c7b97b42a6f23d3e76d271cdacbba85eee91fc27"
+    },
+    {
+      "member": "product/src/graph_batch/native_batch_regions.cc",
+      "bytes": 14004,
+      "sha256": "4b08a1f1eb2fb36e847b737cd17b11d3315c511f24dbbad78fb4ffa4df653cbd"
+    },
+    {
+      "member": "product/src/graph_batch/native_pending_regions.cc",
+      "bytes": 5006,
+      "sha256": "e9ddd17ea37140b0124a56bffdb32dc946cbcfa0bfd8d1ef93c5cb4dcb25039f"
+    },
+    {
+      "member": "product/src/graph_batch/paged_append.cc",
+      "bytes": 22621,
+      "sha256": "549c94e8aa4f252aa00355f15e26ffd6f9277eb24bc6e251a937e0433ce10a67"
+    },
+    {
+      "member": "product/tests/graph_batch/paged_append_cuda_consumer.cc",
+      "bytes": 13814,
+      "sha256": "23e9841d61a3b5378edd233855b2dddccb9c9b42bdb717f43cefcbd4995adc49"
+    },
+    {
+      "member": "product/tools/qwen35_text/main.cc",
+      "bytes": 104468,
+      "sha256": "d888d817f67b057670ba141b932a97038981f1b12af98afc39b6806309f17e74"
+    },
+    {
+      "member": "product/tools/qwen35_text/session_state.h",
+      "bytes": 7388,
+      "sha256": "7f7b373daf263884822889a31a99d09715647c188803c8b5819bf73a4687e3c1"
+    }
+  ],
+  "goal_complete": false
+}

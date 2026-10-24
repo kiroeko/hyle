@@ -1,0 +1,354 @@
+{
+  "date": "2026-10-20",
+  "scope": "Offline analysis of retained actual current596 and peer558 traces, without a new profiler or benchmark run.",
+  "conclusion": "No new high-share source-proven mathematical/resource/routing defect was found in the current BF16 decode. Projection matrix streaming is the dominant work in both arms. One genuine low-budget resource seam remains: GDN packed state is copied into the already distinct caller output page. Do not inflate it, kernel-count differences or software-profiler GraphLaunch intervals into a large wall-time claim.",
+  "kernel_counts": {
+    "hyle": {
+      "trace": {
+        "path": ".scratch\\architecture-refactor-2026-10-18\\paired-projection-route\\profile\\capture.sqlite",
+        "bytes": 6389760,
+        "sha256": "d4717157d882245a06eaf9663f0ecd2dc0d1666eabdda3325c226b07cb8a0c3f"
+      },
+      "total": 596,
+      "physical_projection": 145,
+      "nonprojection": 451,
+      "projection_breakdown": {
+        "cuBLAS": 103,
+        "native_complete_FFN": 24,
+        "native_two_output_pair": 18
+      }
+    },
+    "peer": {
+      "trace": {
+        "path": ".scratch\\architecture-refactor-2026-10-18\\decode-critical-path\\peer\\decode.sqlite",
+        "bytes": 2539520,
+        "sha256": "31904014634e1731ec2dad091807b4a43f8441fdb75319633054e974d2b7601c"
+      },
+      "total": 558,
+      "physical_projection": 163,
+      "nonprojection": 395
+    },
+    "validation": "All25 decode7..31 phases have these exact counts. 395 is peer nonprojection, not total. 596 vs395 was an apples-to-oranges count. Hyle has38 more physical kernels total,56 more nonprojection kernels, and18 fewer projection launches due to the a/b pair.",
+    "logical_work": "The same163 projection-role entries read the same matrices. Hyle18 a/b pairs each evaluate two logical MatMul values in one kernel, so physical145 does not mean less weight math.",
+    "phase": "decode7 is after the6th generated4B token D2H endpoint and through the7th; same named fixed-input phase in both retained traces."
+  },
+  "comparison_contract": {
+    "inputs": "Same128 prompt tokens,31 forced decode input IDs and capacity256. Current trace target tape matches its current correctness/performance plan; peer trace was the latest retained matched peer capture. No free-generation token divergence is used to explain timing.",
+    "precision": "All observed projection matrices are BF16 in both. Hyle A/Y BF16 with F32 accumulation and explicit public BF16 rounding; peer native MMVF A/Y F32 with F32 accumulation, predominantly F32 pointwise intermediates. Same weights do not prove same intermediate mathematics or error.",
+    "outputs": "Both return a GPU-selected token to host. Peer additionally downloads248320 F32 logits (993280B) every phase, while current Hyle does not. The analysis retains both token-to-token intervals and a peer core interval beginning after the previous extra logits download. It does not silently delete that extra work from a benchmark wall-time number.",
+    "capture": "Both have one reused GraphLaunch per warm step. Current591 kernels are graph nodes and5 are eager; peer all558 are graph nodes. Physical graph node count also includes memcpy nodes and cannot be inferred from kernel count alone.",
+    "time": "These are distinct noncontemporaneous software-instrumented processes. Profiler diagnostics retain unsupported-driver fallback and software tracing notices. Neither frequency/power control nor exclusive GPU use is established. Phase minima/medians/ranges are attribution, not a speed comparison.",
+    "same_window_unprofiled": {
+      "evidence": {
+        "path": ".scratch\\architecture-refactor-2026-10-18\\paired-projection-route\\performance-rotation\\summary.json",
+        "bytes": 20421,
+        "sha256": "edfb1483c172aaf27653088daba053f693a9a83236504a2976bdf2437a3c40c9"
+      },
+      "processes": 9,
+      "current_warm_tok_s": {
+        "samples": [
+          91.59008819392771,
+          93.182645813136,
+          67.31975807971737
+        ],
+        "median": 91.59008819392771,
+        "min": 67.31975807971737,
+        "max": 93.182645813136
+      },
+      "peer_warm_tok_s": {
+        "samples": [
+          92.96400099211182,
+          93.48901373204029,
+          84.3717812165466
+        ],
+        "median": 92.96400099211182,
+        "min": 84.3717812165466,
+        "max": 93.48901373204029
+      },
+      "interpretation": "Current median91.590 vs peer92.964 in this rotated window, with broad overlapping process ranges. This does not establish a stable1.5percent defect; historical larger gaps cannot be combined with current profile durations."
+    }
+  },
+  "large_work": {
+    "logical_weight_bytes_per_decode": 3762552832,
+    "hyle_projection_share_of_mean_kernel_elapsed": 0.9242467220629518,
+    "peer_projection_share_of_mean_kernel_elapsed": 0.9226938110240485,
+    "head_gateup_down_share_of_weight_bytes": 0.7518985577927959,
+    "roles": [
+      {
+        "role": "FFN_gate_up",
+        "weight_bytes": 1207959552,
+        "hyle_physical_kernels": 24,
+        "peer_physical_kernels": 24,
+        "hyle_profiled_us": {
+          "mean": 2946.65772,
+          "median": 2903.718,
+          "min": 2653.0289999999995,
+          "max": 3756.091
+        },
+        "peer_profiled_us": {
+          "mean": 3157.8732,
+          "median": 2865.0279999999993,
+          "min": 2647.208,
+          "max": 4886.002
+        }
+      },
+      {
+        "role": "LM_head",
+        "weight_bytes": 1017118720,
+        "hyle_physical_kernels": 1,
+        "peer_physical_kernels": 1,
+        "hyle_profiled_us": {
+          "mean": 2368.53364,
+          "median": 2120.396,
+          "min": 2076.748,
+          "max": 4412.341
+        },
+        "peer_profiled_us": {
+          "mean": 2513.52216,
+          "median": 2206.443,
+          "min": 2086.796,
+          "max": 4756.242
+        }
+      },
+      {
+        "role": "FFN_down",
+        "weight_bytes": 603979776,
+        "hyle_physical_kernels": 24,
+        "peer_physical_kernels": 24,
+        "hyle_profiled_us": {
+          "mean": 1368.56064,
+          "median": 1330.1629999999998,
+          "min": 1305.874,
+          "max": 1704.0109999999997
+        },
+        "peer_profiled_us": {
+          "mean": 1508.39828,
+          "median": 1364.306,
+          "min": 1292.9809999999998,
+          "max": 2873.4120000000007
+        }
+      },
+      {
+        "role": "GDN_qkv",
+        "weight_bytes": 452984832,
+        "hyle_physical_kernels": 18,
+        "peer_physical_kernels": 18,
+        "hyle_profiled_us": {
+          "mean": 1061.41068,
+          "median": 978.199,
+          "min": 967.7650000000002,
+          "max": 1760.017
+        },
+        "peer_profiled_us": {
+          "mean": 1114.99924,
+          "median": 1003.352,
+          "min": 964.4999999999998,
+          "max": 2400.552
+        }
+      },
+      {
+        "role": "GDN_z",
+        "weight_bytes": 150994944,
+        "hyle_physical_kernels": 18,
+        "peer_physical_kernels": 18,
+        "hyle_profiled_us": {
+          "mean": 416.31204,
+          "median": 352.7660000000001,
+          "min": 344.73299999999995,
+          "max": 1577.934
+        },
+        "peer_profiled_us": {
+          "mean": 398.87292,
+          "median": 353.211,
+          "min": 342.16999999999996,
+          "max": 1043.0940000000003
+        }
+      },
+      {
+        "role": "GDN_output",
+        "weight_bytes": 150994944,
+        "hyle_physical_kernels": 18,
+        "peer_physical_kernels": 18,
+        "hyle_profiled_us": {
+          "mean": 385.54632,
+          "median": 347.967,
+          "min": 344.414,
+          "max": 781.562
+        },
+        "peer_profiled_us": {
+          "mean": 451.19756,
+          "median": 352.76500000000004,
+          "min": 341.243,
+          "max": 1204.1169999999997
+        }
+      },
+      {
+        "role": "dense_Q",
+        "weight_bytes": 100663296,
+        "hyle_physical_kernels": 6,
+        "peer_physical_kernels": 6,
+        "hyle_profiled_us": {
+          "mean": 220.224,
+          "median": 219.77299999999997,
+          "min": 217.952,
+          "max": 224.286
+        },
+        "peer_profiled_us": {
+          "mean": 259.14448,
+          "median": 225.31,
+          "min": 216.09400000000002,
+          "max": 780.0250000000001
+        }
+      },
+      {
+        "role": "dense_output",
+        "weight_bytes": 50331648,
+        "hyle_physical_kernels": 6,
+        "peer_physical_kernels": 6,
+        "hyle_profiled_us": {
+          "mean": 115.78384,
+          "median": 115.58399999999999,
+          "min": 114.526,
+          "max": 117.47099999999998
+        },
+        "peer_profiled_us": {
+          "mean": 191.07783999999998,
+          "median": 117.631,
+          "min": 113.18299999999999,
+          "max": 837.5279999999999
+        }
+      },
+      {
+        "role": "dense_KV",
+        "weight_bytes": 25165824,
+        "hyle_physical_kernels": 12,
+        "peer_physical_kernels": 12,
+        "hyle_profiled_us": {
+          "mean": 78.76124,
+          "median": 70.974,
+          "min": 70.39999999999999,
+          "max": 264.18899999999996
+        },
+        "peer_profiled_us": {
+          "mean": 124.7048,
+          "median": 71.936,
+          "min": 69.40799999999999,
+          "max": 1343.9530000000002
+        }
+      },
+      {
+        "role": "GDN_ab_pair",
+        "weight_bytes": 2359296,
+        "hyle_physical_kernels": 18,
+        "peer_physical_kernels": 36,
+        "hyle_profiled_us": {
+          "mean": 37.99128000000001,
+          "median": 30.368000000000013,
+          "min": 29.792000000000012,
+          "max": 222.71699999999996
+        },
+        "peer_profiled_us": {
+          "mean": 57.132600000000004,
+          "median": 50.11200000000001,
+          "min": 49.15200000000001,
+          "max": 94.495
+        }
+      }
+    ],
+    "interpretation": "Both arms spend about92percent of summed kernel elapsed time on projection carriers; gate/up, head and down alone account for75.19percent of logical matrix bytes. Current no-copy W views are dense row banks and remain BF16. No repeated hot projection weight widen/pack/CONT is present in the mapped current145 projection kernels.",
+    "not_a_bandwidth_counter": "Bytes divided by kernel duration is nominal logical matrix throughput, not measured DRAM traffic. L2 reuse, repeated A loads, cache writeback and concurrent work require counters. No claim that all logical bytes hit DRAM each step.",
+    "historical_counter_evidence": {
+      "source": {
+        "path": ".scratch\\architecture-refactor-2026-10-18\\projection-hotspot-review\\review.json",
+        "bytes": 76191,
+        "sha256": "962dd06fed26c42e9be0f93c1486118766d5f6a1d26c686d7d2b1ef004e5c979"
+      },
+      "head": [
+        {
+          "arm": "hyle",
+          "source": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-current-peer\\ncu\\with-runtime\\hyle.stdout.log",
+            "bytes": 14929,
+            "sha256": "8ff436eeab2f31dcfb2b27080776329647beb7830eb7cb1b7c358a8cd8f1c682"
+          },
+          "kernel": "enable_if<!T7, void>::type kernel<int, int, __nv_bfloat16, __nv_bfloat16, __nv_bfloat16, float, 0, 1, 1, 0, 6, 0, cublasGemvParamsEx<int, cublasGemvTensorStridedBatched<const __nv_bfloat16>, cublasGemvTensorStridedBatched<const __nv_bfloat16>, cublasGemvTensorStridedBatched<__nv_bfloat16>, float>>(T13)",
+          "grid": "(62080, 1, 1)",
+          "block": "(16, 4, 1)",
+          "duration_ns": 2077472.0,
+          "dram_total_bytes": 1020501120.0,
+          "dram_pct_peak": 97.55,
+          "replay_passes": 7.0,
+          "memory_backup_max_bytes": 3898367243.0,
+          "cache_control": "none",
+          "clock_control": "none",
+          "measured_total_GB_s": 491.222562807104
+        },
+        {
+          "arm": "peer",
+          "source": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-current-peer\\ncu\\with-runtime\\peer.stdout.log",
+            "bytes": 14372,
+            "sha256": "bd7ba7fd6d9ce6319e0f123e4b6c8675a63f828a5235927184c65f3d4538bbee"
+          },
+          "kernel": "void mul_mat_vec_f<__nv_bfloat16, float, 1, 256, 0, 0>(const T1 *, const float *, const int *, ggml_cuda_mm_fusion_args_device, float *, int, uint3, int, int, int, uint3, int, int, int, uint3, int, int, int, int)",
+          "grid": "(248320, 1, 1)",
+          "block": "(256, 1, 1)",
+          "duration_ns": 2208160.0,
+          "dram_total_bytes": 1079090688.0,
+          "dram_pct_peak": 97.04,
+          "replay_passes": 7.0,
+          "memory_backup_max_bytes": 4078481884.0,
+          "cache_control": "none",
+          "clock_control": "none",
+          "measured_total_GB_s": 488.683196869792
+        }
+      ],
+      "dual_summary": "Retained original N6144 dual collection measured92.71percent and peer93.96percent DRAM peak. Single-node replay/cache-none/clock-none and different arithmetic limit any cross-engine speed claim. Head retained~97percent DRAM peak in both arms. These are evidence against large untapped bandwidth, not current normalized counters."
+    }
+  },
+  "full_review": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-major-hotspots\\review.json",
+    "bytes": 35494,
+    "sha256": "1d76b340466f20535f29198667bc6be67f047558782afdada8aeb7a917c6a3ef"
+  },
+  "retained_trace_rule": "Actual SQLite traces stay in their original stages/previous evidence bundles. This archive retains commands, hashes and offline sample analysis without another SDK or trace copy.",
+  "limits": [
+    "These profiled durations are attribution from different instrumented processes, not contemporaneous throughput or recoverable wall time.",
+    "No new high-share defect found is not proof that all remaining architecture or performance work is complete."
+  ],
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\decode-major-hotspots-2026-10-20.zip",
+    "bytes": 55766,
+    "sha256": "3c334637a4c160129f8b1da8493547aa8f87a60d81a219d28b206f428a87d673"
+  },
+  "payloads": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-major-hotspots\\analyze.py",
+      "bytes": 11416,
+      "sha256": "65ec8b1dd5d69002460c43f3583575ac92a10b95ce61eba0b2b814143bde7c45",
+      "member": "decode-major-hotspots/analyze.py"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-major-hotspots\\api-intersections.json",
+      "bytes": 76654,
+      "sha256": "d1ea598cc4bc521ef6a0acc4752df0d12e3b1fe846cefb52fb502301b58c4d6c",
+      "member": "decode-major-hotspots/api-intersections.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-major-hotspots\\review.json",
+      "bytes": 35494,
+      "sha256": "1d76b340466f20535f29198667bc6be67f047558782afdada8aeb7a917c6a3ef",
+      "member": "decode-major-hotspots/review.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-major-hotspots\\trace-analysis.json",
+      "bytes": 540137,
+      "sha256": "0ffc239b2efe7712d219c11cb279d565df1b8c5f0c08126aa4bf34a02a3dede7",
+      "member": "decode-major-hotspots/trace-analysis.json"
+    }
+  ],
+  "archive_verified": {
+    "CRC": true,
+    "all_payload_SHA256": true
+  }
+}

@@ -1,0 +1,802 @@
+{
+  "date": "2026-10-20",
+  "status": "three_current_memory_observations_executed",
+  "observations": {
+    "executed": true,
+    "terminal_zero": 3,
+    "arms": {
+      "baseline": {
+        "executed": true,
+        "exit": 0,
+        "pid": 92172,
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-pinned-weight-load\\product-checks\\qwen.exe",
+          "bytes": 117435904,
+          "sha256": "a487d7e22a55b1461a0ed8a704a9e0fb97f656c503b58d59a662cd3d345458b6"
+        },
+        "same_fixed_predictions": true,
+        "peaks": {
+          "sampled_max_working_set_bytes": 1134718976,
+          "observed_os_peak_working_set_bytes": 1134727168,
+          "sampled_max_private_commit_bytes": 5877514240,
+          "observed_os_peak_commit_bytes": 5877514240,
+          "sampled_peak_gpu_dedicated_bytes": 4086378496,
+          "sampled_peak_gpu_shared_bytes": 96468992,
+          "sampled_peak_gpu_total_bytes": 4168167424
+        },
+        "samples": 225,
+        "running_samples": 206,
+        "max_sample_gap_ms": 16.0952,
+        "sample_cost_ms": {
+          "samples": 206,
+          "min": 0.0498,
+          "median": 0.1278,
+          "max": 0.2794
+        },
+        "adapter_instances": [
+          "0x00000002_0x8aba7177_phys_0"
+        ],
+        "missing_GPU_while_decode": 0,
+        "marker_windows": {
+          "loading": {
+            "start_ns": 693120923881100,
+            "end_ns": 693122266922700,
+            "sample_count": 128,
+            "working_set_bytes": {
+              "samples": 128,
+              "min": 2215936,
+              "median": 618487808.0,
+              "max": 618487808
+            },
+            "private_commit_bytes": {
+              "samples": 128,
+              "min": 1028096,
+              "median": 5006049280.0,
+              "max": 5006049280
+            },
+            "gpu_dedicated_bytes": {
+              "samples": 103,
+              "min": 24576,
+              "median": 3908149248,
+              "max": 3908149248
+            },
+            "gpu_shared_bytes": {
+              "samples": 103,
+              "min": 0,
+              "median": 96468992,
+              "max": 96468992
+            }
+          },
+          "post_load_preparation": {
+            "start_ns": 693122266922700,
+            "end_ns": 693122614949800,
+            "sample_count": 33,
+            "working_set_bytes": {
+              "samples": 33,
+              "min": 607756288,
+              "median": 866344960,
+              "max": 1026650112
+            },
+            "private_commit_bytes": {
+              "samples": 33,
+              "min": 5048000512,
+              "median": 5349212160,
+              "max": 5674287104
+            },
+            "gpu_dedicated_bytes": {
+              "samples": 33,
+              "min": 3950059520,
+              "median": 3960545280,
+              "max": 4038139904
+            },
+            "gpu_shared_bytes": {
+              "samples": 33,
+              "min": 79691776,
+              "median": 79691776,
+              "max": 79691776
+            }
+          },
+          "prefill": {
+            "start_ns": 693122614949800,
+            "end_ns": 693122682520300,
+            "sample_count": 6,
+            "working_set_bytes": {
+              "samples": 6,
+              "min": 1058570240,
+              "median": 1095403520.0,
+              "max": 1125539840
+            },
+            "private_commit_bytes": {
+              "samples": 6,
+              "min": 5735354368,
+              "median": 5804707840.0,
+              "max": 5868462080
+            },
+            "gpu_dedicated_bytes": {
+              "samples": 6,
+              "min": 4038139904,
+              "median": 4049676288.0,
+              "max": 4069601280
+            },
+            "gpu_shared_bytes": {
+              "samples": 6,
+              "min": 79691776,
+              "median": 80740352.0,
+              "max": 81788928
+            }
+          },
+          "decode": {
+            "start_ns": 693122682520300,
+            "end_ns": 693123030027300,
+            "sample_count": 34,
+            "working_set_bytes": {
+              "samples": 34,
+              "min": 1126100992,
+              "median": 1134718976.0,
+              "max": 1134718976
+            },
+            "private_commit_bytes": {
+              "samples": 34,
+              "min": 5868924928,
+              "median": 5877514240.0,
+              "max": 5877514240
+            },
+            "gpu_dedicated_bytes": {
+              "samples": 34,
+              "min": 4071698432,
+              "median": 4086378496.0,
+              "max": 4086378496
+            },
+            "gpu_shared_bytes": {
+              "samples": 34,
+              "min": 81788928,
+              "median": 81788928.0,
+              "max": 81788928
+            }
+          }
+        }
+      },
+      "current": {
+        "executed": true,
+        "exit": 0,
+        "pid": 52436,
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\product-checks\\qwen.exe",
+          "bytes": 117475840,
+          "sha256": "b7081baab2d24d37f512c7fff6fae09501b5b35a413b239a5058e018f4f31e43"
+        },
+        "same_fixed_predictions": true,
+        "peaks": {
+          "sampled_max_working_set_bytes": 1128960000,
+          "observed_os_peak_working_set_bytes": 1128968192,
+          "sampled_max_private_commit_bytes": 5881364480,
+          "observed_os_peak_commit_bytes": 5881364480,
+          "sampled_peak_gpu_dedicated_bytes": 4084281344,
+          "sampled_peak_gpu_shared_bytes": 96468992,
+          "sampled_peak_gpu_total_bytes": 4166070272
+        },
+        "samples": 216,
+        "running_samples": 197,
+        "max_sample_gap_ms": 16.7089,
+        "sample_cost_ms": {
+          "samples": 197,
+          "min": 0.0494,
+          "median": 0.1233,
+          "max": 0.235
+        },
+        "adapter_instances": [
+          "0x00000002_0x8aba7177_phys_0"
+        ],
+        "missing_GPU_while_decode": 0,
+        "marker_windows": {
+          "loading": {
+            "start_ns": 693123363344000,
+            "end_ns": 693124674205800,
+            "sample_count": 125,
+            "working_set_bytes": {
+              "samples": 125,
+              "min": 2215936,
+              "median": 618860544,
+              "max": 618860544
+            },
+            "private_commit_bytes": {
+              "samples": 125,
+              "min": 1036288,
+              "median": 5008400384,
+              "max": 5008400384
+            },
+            "gpu_dedicated_bytes": {
+              "samples": 97,
+              "min": 24576,
+              "median": 3908149248,
+              "max": 3908149248
+            },
+            "gpu_shared_bytes": {
+              "samples": 97,
+              "min": 0,
+              "median": 96468992,
+              "max": 96468992
+            }
+          },
+          "post_load_preparation": {
+            "start_ns": 693124674205800,
+            "end_ns": 693124954749800,
+            "sample_count": 27,
+            "working_set_bytes": {
+              "samples": 27,
+              "min": 602144768,
+              "median": 722518016,
+              "max": 1004965888
+            },
+            "private_commit_bytes": {
+              "samples": 27,
+              "min": 4993425408,
+              "median": 5195493376,
+              "max": 5637189632
+            },
+            "gpu_dedicated_bytes": {
+              "samples": 27,
+              "min": 3910213632,
+              "median": 3954253824,
+              "max": 4036042752
+            },
+            "gpu_shared_bytes": {
+              "samples": 27,
+              "min": 79691776,
+              "median": 79691776,
+              "max": 79691776
+            }
+          },
+          "prefill": {
+            "start_ns": 693124954749800,
+            "end_ns": 693125022991900,
+            "sample_count": 8,
+            "working_set_bytes": {
+              "samples": 8,
+              "min": 1041469440,
+              "median": 1087721472.0,
+              "max": 1120182272
+            },
+            "private_commit_bytes": {
+              "samples": 8,
+              "min": 5720522752,
+              "median": 5841051648.0,
+              "max": 5872668672
+            },
+            "gpu_dedicated_bytes": {
+              "samples": 8,
+              "min": 3941670912,
+              "median": 4038139904.0,
+              "max": 4069601280
+            },
+            "gpu_shared_bytes": {
+              "samples": 8,
+              "min": 79691776,
+              "median": 79691776.0,
+              "max": 81788928
+            }
+          },
+          "decode": {
+            "start_ns": 693125022991900,
+            "end_ns": 693125363914700,
+            "sample_count": 33,
+            "working_set_bytes": {
+              "samples": 33,
+              "min": 1124597760,
+              "median": 1128960000,
+              "max": 1128960000
+            },
+            "private_commit_bytes": {
+              "samples": 33,
+              "min": 5877018624,
+              "median": 5881364480,
+              "max": 5881364480
+            },
+            "gpu_dedicated_bytes": {
+              "samples": 33,
+              "min": 4075892736,
+              "median": 4084281344,
+              "max": 4084281344
+            },
+            "gpu_shared_bytes": {
+              "samples": 33,
+              "min": 81788928,
+              "median": 81788928,
+              "max": 81788928
+            }
+          }
+        }
+      },
+      "llama": {
+        "executed": true,
+        "exit": 0,
+        "pid": 11780,
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-explicit-rope\\performance-prepared\\peer.exe",
+          "bytes": 35814400,
+          "sha256": "fb169f0282f2a834a61b3e887edaba92d8699814558b0c5f1a13aaf07e0de969"
+        },
+        "same_fixed_predictions": true,
+        "peaks": {
+          "sampled_max_working_set_bytes": 4368982016,
+          "observed_os_peak_working_set_bytes": 4368982016,
+          "sampled_max_private_commit_bytes": 5242982400,
+          "observed_os_peak_commit_bytes": 5242982400,
+          "sampled_peak_gpu_dedicated_bytes": 4237389824,
+          "sampled_peak_gpu_shared_bytes": 85983232,
+          "sampled_peak_gpu_total_bytes": 4323373056
+        },
+        "samples": 281,
+        "running_samples": 272,
+        "max_sample_gap_ms": 16.4918,
+        "sample_cost_ms": {
+          "samples": 272,
+          "min": 0.0483,
+          "median": 0.11805,
+          "max": 0.2252
+        },
+        "adapter_instances": [
+          "0x00000002_0x8aba7177_phys_0"
+        ],
+        "missing_GPU_while_decode": 0,
+        "marker_windows": {
+          "loading": {
+            "start_ns": 693125639243300,
+            "end_ns": 693127617447200,
+            "sample_count": 189,
+            "working_set_bytes": {
+              "samples": 189,
+              "min": 2072576,
+              "median": 998612992,
+              "max": 4156841984
+            },
+            "private_commit_bytes": {
+              "samples": 189,
+              "min": 1359872,
+              "median": 4414656512,
+              "max": 4414656512
+            },
+            "gpu_dedicated_bytes": {
+              "samples": 180,
+              "min": 0,
+              "median": 3910209536.0,
+              "max": 3910209536
+            },
+            "gpu_shared_bytes": {
+              "samples": 180,
+              "min": 0,
+              "median": 77594624.0,
+              "max": 77594624
+            }
+          },
+          "post_load_preparation": {
+            "start_ns": 693127617447200,
+            "end_ns": 693127625213400,
+            "sample_count": 2,
+            "working_set_bytes": {
+              "samples": 2,
+              "min": 4162379776,
+              "median": 4162445312.0,
+              "max": 4162510848
+            },
+            "private_commit_bytes": {
+              "samples": 2,
+              "min": 4651581440,
+              "median": 4651581440.0,
+              "max": 4651581440
+            },
+            "gpu_dedicated_bytes": {
+              "samples": 2,
+              "min": 3935383552,
+              "median": 3935383552.0,
+              "max": 3935383552
+            },
+            "gpu_shared_bytes": {
+              "samples": 2,
+              "min": 81788928,
+              "median": 81788928.0,
+              "max": 81788928
+            }
+          },
+          "prefill": {
+            "start_ns": 693127625213400,
+            "end_ns": 693127724330000,
+            "sample_count": 9,
+            "working_set_bytes": {
+              "samples": 9,
+              "min": 4178104320,
+              "median": 4315734016,
+              "max": 4360450048
+            },
+            "private_commit_bytes": {
+              "samples": 9,
+              "min": 4945567744,
+              "median": 5097000960,
+              "max": 5234319360
+            },
+            "gpu_dedicated_bytes": {
+              "samples": 9,
+              "min": 4212211712,
+              "median": 4214308864,
+              "max": 4233195520
+            },
+            "gpu_shared_bytes": {
+              "samples": 9,
+              "min": 83886080,
+              "median": 83886080,
+              "max": 85983232
+            }
+          },
+          "decode": {
+            "start_ns": 693127724330000,
+            "end_ns": 693128058793700,
+            "sample_count": 33,
+            "working_set_bytes": {
+              "samples": 33,
+              "min": 4363419648,
+              "median": 4368982016,
+              "max": 4368982016
+            },
+            "private_commit_bytes": {
+              "samples": 33,
+              "min": 5237624832,
+              "median": 5242982400,
+              "max": 5242982400
+            },
+            "gpu_dedicated_bytes": {
+              "samples": 33,
+              "min": 4233195520,
+              "median": 4237389824,
+              "max": 4237389824
+            },
+            "gpu_shared_bytes": {
+              "samples": 33,
+              "min": 85983232,
+              "median": 85983232,
+              "max": 85983232
+            }
+          }
+        }
+      }
+    },
+    "throughput_claim": false,
+    "units": "bytes; MiB=2^20; CPU working set/private commit and GPU shared usage are separate, overlapping accounting views, never added.",
+    "method": "Reused PSAPI/PDH external sampler initialized before target creation, 10ms requested interval. No CUDA/NVML context, new synchronization or tensor access.",
+    "limits": [
+      "One fresh process per image; no statistical memory distribution or causally isolated allocation attribution.",
+      "Sampled GPU peaks are lower bounds, not exact maxima; actual timestamp gaps and missing-counter windows retained.",
+      "Marker arrival windows include stderr delivery delay. Engine loading/preparation sub-boundaries differ.",
+      "Working set includes mapped/shared resident pages; private commit is commit charge. Neither measures disk pagefile occupancy.",
+      "Per-process WDDM GPU counters can include cross-process shared resources; do not sum PIDs as card usage.",
+      "No throughput samples from these monitored runs enter the existing unmonitored performance windows."
+    ],
+    "primary_metric_definitions": [
+      "https://learn.microsoft.com/en-us/windows/win32/api/psapi/ns-psapi-process_memory_counters_ex",
+      "https://devblogs.microsoft.com/directx/gpus-in-the-task-manager/"
+    ]
+  },
+  "current_product": {
+    "path": "C:\\public\\project-hyle\\hyle\\tools\\qwen35_text\\main.cc",
+    "bytes": 57719,
+    "sha256": "883dcaecb78294b14bb0502c8488c59efcb6d8661aabb9c6820e4c6c736c1579"
+  },
+  "input_freshness": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-memory-current\\source-input-freshness.json",
+    "bytes": 1746,
+    "sha256": "e6cc1dabedcf4e46cd140790e7df19e4139828ca3bfeb7f1f1e7619ce7fca69f"
+  },
+  "interpretation": {
+    "GPU": "Sampled dedicated GPU peaks: current Hyle3895.074MiB, prior pinned Hyle3897.074MiB, peer4041.090MiB. Current/prior near-equality is not evidence of a stable2MiB saving.",
+    "resident_process": "Observed OS peak working set: current1076.668MiB, peer4166.586MiB. Includes resident mapped/shared pages; this is not whole-machine physical RAM saved.",
+    "private_commit": "Observed OS peak private commit: current5608.906MiB, peer5000.098MiB. Current is higher; commit is not resident RAM and must not be added to GPU counters.",
+    "engine_boundary": "FileResourcePipeline versus peer loader/mmap can change which process owns resident file pages; global file cache is outside a per-process-only comparison. The numbers alone do not isolate allocation causes.",
+    "resolution": "10ms requested, actual largest running-sample gaps16.095/16.709/16.492ms for prior/current/peer; prefill windows only6/8/9 samples. GPU peaks are sampled lower bounds.",
+    "throughput": "No monitored-run timings are admitted into prior unmonitored throughput windows; the same31 fixed decode inputs and all32 predictions matched."
+  },
+  "source_attribution": {
+    "date": "2026-10-20",
+    "scope": {
+      "source_only": true,
+      "new_builds": 0,
+      "new_GPU_runs": 0,
+      "new_model_runs": 0,
+      "product_edits": 0
+    },
+    "inputs": [
+      {
+        "path": "tools\\qwen35_text\\main.cc",
+        "bytes": 57719,
+        "sha256": "883dcaecb78294b14bb0502c8488c59efcb6d8661aabb9c6820e4c6c736c1579"
+      },
+      {
+        "path": "src\\graph\\executable.cc",
+        "bytes": 459246,
+        "sha256": "883b7db05dd5081ea67ea783e39513f44a40fb0b2fb58092f0f37c2f9b18902b"
+      },
+      {
+        "path": "src\\graph\\constant_artifact.cc",
+        "bytes": 29679,
+        "sha256": "b50d46af957c5cca6e60feb211a28535ba2afe02f4a6f7359d8bd1743f104670"
+      },
+      {
+        "path": "src\\graph_provider_ggml_cuda\\ggml_cuda_region.cc",
+        "bytes": 67992,
+        "sha256": "9f843fe512da771f7bc590ba3c48d211848c76f0b8caa4b2ad31bb4e31fdd44d"
+      },
+      {
+        "path": "src\\graph_provider_ggml_cuda\\constant_expressions.h",
+        "bytes": 13840,
+        "sha256": "dd022607aa5f177f344a8204ad035f6b40316d0f9d6500465f3318af50e1b0d5"
+      },
+      {
+        "path": "src\\graph_ggml_shared\\constant_packing.h",
+        "bytes": 11968,
+        "sha256": "57c17d5692700c8426c227af60872c985ee6f8cd997d7d7916fb389a2c55165f"
+      },
+      {
+        "path": "src\\compute_provider_ggml_cuda\\ggml_cuda_provider.cc",
+        "bytes": 72593,
+        "sha256": "3100b6d7fe7ac4f86d1aea45508134af5d9ebeefa8d321ccb864bb6965dde09f"
+      },
+      {
+        "path": "src\\compute_provider_ggml_cuda\\native_bridge_impl.h",
+        "bytes": 13109,
+        "sha256": "ebd8f22fcb89d1d3858bf7717eac78c88b78e843184b40bf1d028ba16ae89feb"
+      },
+      {
+        "path": "src\\graph_route_cuda\\cuda_context.cc",
+        "bytes": 3417,
+        "sha256": "63878262c789986703035870e329bea081fdf89b58630311d76178850e83fbac"
+      },
+      {
+        "path": "src\\io_core\\file.cc",
+        "bytes": 48235,
+        "sha256": "d5e6714d6a64fa57ca1b298dae28367cce23435bdf0dd1dc94857fe824a420e1"
+      },
+      {
+        "path": "include\\hyle\\io\\file.h",
+        "bytes": 12585,
+        "sha256": "d70b57f52cb4cd9da312c4ac116e69680f9bfcd1a8afe7331144e6744b9d8905"
+      },
+      {
+        "path": ".scratch\\architecture-refactor-2026-10-18\\qwen-gpu-comparison\\128-prefill\\inputs\\weights.tsv",
+        "bytes": 27889,
+        "sha256": "bb8900a6ebe1572f97f02121c83e807ea9ba140d18fe6ee15f20815aa4a73890"
+      },
+      {
+        "path": ".scratch\\architecture-refactor-2026-10-18\\qwen-gpu-comparison\\128-prefill\\peer_benchmark.cpp",
+        "bytes": 15162,
+        "sha256": "7fc3f38f1940ec0958bbab18cb30f9ff75f44d1fb96bdb259ae0da1703d377c5"
+      },
+      {
+        "path": ".scratch\\architecture-refactor-2026-10-18\\cuda-explicit-rope\\performance-prepared\\peer-link-plan.json",
+        "bytes": 4222,
+        "sha256": "a36407bb5bd53ffd6b8c14254ef1df5b21e600eef577199f6d9e1583730c5e55"
+      },
+      {
+        "path": ".scratch\\architecture-refactor-2026-10-18\\llama-matched-consumer\\host-snapshot.json",
+        "bytes": 280751,
+        "sha256": "d42cfab75d2d04ee8b592352412b1203c9d510db132816e52494a5f5e602dd09"
+      },
+      {
+        "path": ".scratch\\architecture-refactor-2026-10-18\\llama-matched-consumer\\source\\src\\llama-mmap.cpp",
+        "bytes": 27187,
+        "sha256": "3ca6869dfccbdbbafad0802e1a3d7db52174347d36174a982c1a662d7034b9c6"
+      },
+      {
+        "path": ".scratch\\architecture-refactor-2026-10-18\\llama-matched-consumer\\source\\src\\llama-model-loader.cpp",
+        "bytes": 77881,
+        "sha256": "5ef07476310d4678df18a61a6ec0a1ebcbb58c7534ac3c624b9fe0f315a4ab01"
+      },
+      {
+        "path": ".scratch\\architecture-refactor-2026-10-18\\llama-matched-consumer\\source\\src\\llama-model.cpp",
+        "bytes": 153436,
+        "sha256": "dc852c79709927631135ff9482e7fa7597d9b975a1867eb49003c14f93594ad3"
+      },
+      {
+        "path": ".scratch\\architecture-refactor-2026-10-18\\qwen-memory-current\\observations\\summary.json",
+        "bytes": 15014,
+        "sha256": "b56262eda8eecce31b90beae85b3d154ed8e7533addede263831618c16f94536"
+      },
+      {
+        "path": ".scratch\\architecture-refactor-2026-10-18\\qwen-memory-current\\observations\\inputs.json",
+        "bytes": 3077,
+        "sha256": "19b955eeea8e4b60f2958255bf795e9498a741a0e94ff91c3e457d11afc26de6"
+      },
+      {
+        "path": ".scratch\\architecture-refactor-2026-10-18\\qwen-memory-current\\observations\\current\\stderr.log",
+        "bytes": 8281,
+        "sha256": "dca91ccb46f4d3a72da235347c25fd5310894bbbe91790c8e6f2ec51abb4e63d"
+      },
+      {
+        "path": ".scratch\\architecture-refactor-2026-10-18\\qwen-memory-current\\observations\\llama\\stderr.log",
+        "bytes": 60798,
+        "sha256": "4b3851a2ed642cbb07ab504b4ea1576bdc12e8343d93577455fa50ccc3a78960"
+      }
+    ],
+    "raw_weight_inventory": {
+      "tensors": 320,
+      "bytes": 3763655360,
+      "MiB": 3589.3014526367188,
+      "dtype_counts": {
+        "BF16": 284,
+        "F32": 36
+      },
+      "dtype_bytes": {
+        "BF16": 3763644992,
+        "F32": 10368
+      },
+      "meaning": "Original logical device payload only; not process/device allocator or driver peak."
+    },
+    "raw_weight_ownership_chain": [
+      {
+        "anchor": "tools/qwen35_text/main.cc:383",
+        "fact": "Each manifest tensor creates one device Tensor buffer, then LeasePool::adopt consumes that same buffer. File pipeline fills it in bounded 2x8MiB host-pinned staging and returns its original ready lease. weights map and weight_pools retain these original320 allocations."
+      },
+      {
+        "anchor": "tools/qwen35_text/main.cc:138",
+        "fact": "Recipe::constant freezes only an unfrozen buffer, records kBorrow with original StorageOwner/ReadLease; Recipe::weight deduplicates named weights within the one logical family. Loader-produced weights already have ready leases, so freeze does not allocate another buffer."
+      },
+      {
+        "anchor": "src/graph/executable.cc:1851",
+        "fact": "bind_constants stores original tensor views and retains kBorrow owner/lease. needs_canonical_constant only demands a separate canonical owner for an additional physical storage instance or explicit materialize policy."
+      },
+      {
+        "anchor": "src/compute_provider_ggml_cuda/ggml_cuda_provider.cc:732",
+        "fact": "Native recipe constants are external roots. Each gets bridge::binding_buffer metadata and binds cuda::detail::const_pointer(original storage); this path does not ggml_backend_tensor_set the raw weight payload."
+      },
+      {
+        "anchor": "src/compute_provider_ggml_cuda/native_bridge_impl.h:331",
+        "fact": "binding_buffer sets owns_payload=false and initializes context with nullptr; bind_buffer installs the existing device pointer. Extra ggml handles are not extra full weight allocations."
+      },
+      {
+        "anchor": "src/graph_provider_ggml_cuda/ggml_cuda_region.cc:1225",
+        "fact": "Routes3/5 import original BF16/transposed RHS boundaries without packing. Other routes may prepare immutable expressions or pack a qualifying matrix; generic packing is guarded by actual layout, immutable ownership and prepared artifact cache keys."
+      },
+      {
+        "anchor": "src/graph_ggml_shared/constant_packing.h:197",
+        "fact": "For MatMul packing, the input must be plain dense and its transpose must not already be dense. Qwen linear explicitly permutes original dense [N,K] to metadata [K,N] RHS, so its usual RHS is already the correct physical orientation and does not create a second dense weight bank."
+      },
+      {
+        "anchor": "src/graph_provider_ggml_cuda/constant_expressions.h:218",
+        "fact": "Constant expression payloads allocate only prepared frontier values. Family-local key names original roots, actual View offsets, folded node IDs, descriptors and frontier, preserving dtype/rounding and preventing invalid alias sharing."
+      },
+      {
+        "anchor": "src/graph/executable.cc:10072",
+        "fact": "One ConstantArtifactCache packing is used across all finite children. Separate reports/slots can retain the same original raw payload and same proven prepared artifact rather than duplicating ownership capacity."
+      }
+    ],
+    "fixed_additional_logical_payload_at_observed_context256": {
+      "state_bytes": {
+        "kv_key_and_value_6_layers_at_context256": 3145728,
+        "conv_history_18_layers_2_slots": 1327104,
+        "gdn_state_18_layers_2_slots": 37748736
+      },
+      "state_total_bytes": 42221568,
+      "state_total_MiB": 40.265625,
+      "fixed_constant_frontier_elements_bytes": {
+        "48_input_and_post_attention_norm_F32_scale_vectors": 393216,
+        "12_q_k_norm_F32_scale_vectors": 12288,
+        "1_final_norm_F32_scale_vector": 8192,
+        "18_conv1d_F32_weights": 1769472,
+        "18_dt_bias_F32_vectors": 1152,
+        "18_neg_exp_A_log_F32_vectors": 1152
+      },
+      "fixed_constant_frontier_total_bytes": 2185472,
+      "fixed_constant_frontier_total_MiB": 2.084228515625,
+      "frontier_limit": "Source inventory of fixed F32 transform values; this is not a measured native allocation ledger, does not include all control/literal backing or temporary cold intermediates, and does not establish an opaque provider peak.",
+      "actual_child_report_workspace_bytes_per_slot": {
+        "T128": 26910720,
+        "T1": 1807616
+      },
+      "two_slots_each_total_workspace_bytes": 57436672,
+      "two_slots_each_total_workspace_MiB": 54.77587890625,
+      "workspace_limit": "Original requested child workspace capacity from observed stderr; does not include capture/native auxiliary pools, allocator rounding, driver storage, host metadata or external state/raw weights.",
+      "observed_family_known_compiled_bytes": 2205824,
+      "observed_each_child_known_compiled_bytes": 2195648,
+      "compiled_report_limit": "Known immutable artifact capacity only. Child figures must not be summed as deduplicated family usage. unknown_provider counts were not converted to bytes or used to infer peak."
+    },
+    "mmap_vs_FileIO": {
+      "actual_peer_load_mode": "observations/llama/stderr.log:158 explicitly logs load_mode=mmap; model buffer is CUDA0,3590.35MiB at line908.",
+      "peer_load_policy": "Actual128 peer_benchmark.cpp starts from llama_model_default_params, sets CUDA device/layers and tied embedding override, leaves load_mode default. Pinned llama-model.cpp default is AUTO; actual logged decision is mmap.",
+      "peer_windows_mapping": "Pinned llama-mmap.cpp:579-595 uses readonly CreateFileMappingA and MapViewOfFile, optionally PrefetchVirtualMemory. Windows unmap_fragment at625 is explicitly a no-op. llama-model.cpp:1853 moves loader mappings into model pimpl, whose ownership remains until model teardown. The three inspected peer source hashes match its retained host-snapshot.json at commit d9e03f1074dbd2979126d91dce1b5d304ec8394e.",
+      "peer_effect": "Offloaded GPU weights do not imply the Windows input-file mapping disappears. Touched mapped pages can remain resident and attributed to the process working set; retaining mapping does not guarantee every page stays resident and there is no mlock claim.",
+      "hyle_file_path": "open_weight_source passes access=kRead only. FileOpenOptions default cache=kBuffered; io_core/file.cc only adds FILE_FLAG_NO_BUFFERING for explicit kDirect. Thus this is buffered overlapped FileIO, not whole-file process mmap and not direct cache bypass.",
+      "hyle_staging_lifetime": "Only2x8MiB pinned staging is declared by the weight pipeline; pipeline drain and pipeline={} release staging/native/source owners before loader return. Temporary file/scheduler/IO handles then close; original device ready leases remain.",
+      "system_cache_limit": "Buffered ReadFile may populate or retain Windows file-cache/standby pages outside this process working set, including after File close. No systemwide cache/standby/residency or cold-cache experiment was observed here.",
+      "allowed_comparison": "Report lower observed process working set in this actual loading configuration. Do not equate its difference with systemwide physical RAM saved, infer an extra anonymous full CPU weight bank in the peer, or call Hyle cache-free.",
+      "commit_limit": "Private commit/PrivateUsage is committed virtual backing/accounting, not a measurement of resident CPU RAM. The observed larger Hyle commit cannot be labelled larger host residency. Exact heap/pinned/driver/reservation attribution was not measured."
+    },
+    "existing_root_observations": {
+      "baseline": {
+        "sampled_gpu_dedicated_peak_bytes": 4086378496,
+        "sampled_gpu_dedicated_peak_MiB": 3897.07421875,
+        "OS_peak_process_working_set_bytes": 1134727168,
+        "OS_peak_process_working_set_MiB": 1082.16015625,
+        "OS_peak_private_commit_bytes": 5877514240,
+        "OS_peak_private_commit_MiB": 5605.234375,
+        "provenance": "Existing root memory-only observation; not rerun by this source review."
+      },
+      "current": {
+        "sampled_gpu_dedicated_peak_bytes": 4084281344,
+        "sampled_gpu_dedicated_peak_MiB": 3895.07421875,
+        "OS_peak_process_working_set_bytes": 1128968192,
+        "OS_peak_process_working_set_MiB": 1076.66796875,
+        "OS_peak_private_commit_bytes": 5881364480,
+        "OS_peak_private_commit_MiB": 5608.90625,
+        "provenance": "Existing root memory-only observation; not rerun by this source review."
+      },
+      "llama": {
+        "sampled_gpu_dedicated_peak_bytes": 4237389824,
+        "sampled_gpu_dedicated_peak_MiB": 4041.08984375,
+        "OS_peak_process_working_set_bytes": 4368982016,
+        "OS_peak_process_working_set_MiB": 4166.5859375,
+        "OS_peak_private_commit_bytes": 5242982400,
+        "OS_peak_private_commit_MiB": 5000.09765625,
+        "provenance": "Existing root memory-only observation; not rerun by this source review."
+      }
+    },
+    "conclusion": "Source paths retain one raw320 device weight bank and provider external pointers; no systematic full raw-bank duplication was found. Existing~3895MiB sampled dedicated GPU peak is consistent with3589.3MiB raw weights plus states/workspace/artifacts and auxiliary allocations. This source review does not reconstruct or prove every opaque/private GPU allocation, physical peak, cache state or commit attribution.",
+    "limits": [
+      "Observed peaks are different metrics and may occur at different instants; do not add or subtract host commit, process working set, dedicated GPU and shared GPU as one physical ledger.",
+      "A sampled GPU peak can miss brief allocations and WDDM accounting/eviction details. Source pointer ownership plus measurements support the qualitative no-full-bank-copy conclusion; not a universal no-copy or no-paging guarantee.",
+      "Finite-family constant sharing requires exact native/cache identity. Different providers/layouts or different folded frontiers can legitimately retain different artifacts; no all-model/all-provider packing claim.",
+      "No new compilation/model/GPU run or memory instrumentation was introduced by this review."
+    ],
+    "common_chain_review": {
+      "path": ".scratch\\architecture-refactor-2026-10-18\\common-chain-review-2026-10-20\\source-review.json",
+      "sha256": "436715360911865d0ef89a2913ff9dc7f2f5baf2e49097fd9218c167aeefe8f4",
+      "new_builds": 0,
+      "new_GPU_runs": 0
+    },
+    "attribution_status": "source review complete within recorded files and limits; existing root observations only"
+  },
+  "attribution_limits": "Raw320 weights borrow original device pointers; no full duplicate bank was found in the inspected route. Loader mmap lifetime is confirmed. Exact heap/pinned/driver/commit byte decomposition and systemwide file-cache residency remain unmeasured.",
+  "scoped_common_chain_review": {
+    "identity": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\common-chain-review-2026-10-20\\source-review.json",
+      "bytes": 14939,
+      "sha256": "436715360911865d0ef89a2913ff9dc7f2f5baf2e49097fd9218c167aeefe8f4"
+    },
+    "new_confirmed_omission": null,
+    "builds": 0,
+    "GPU_runs": 0,
+    "limits": "Focused source-only common family/result/state/retirement review; not whole-platform runtime validation or overall completion."
+  },
+  "documentation": [
+    {
+      "relative": "docs/developer/current-work.md",
+      "current": {
+        "path": "C:\\public\\project-hyle\\hyle\\docs\\developer\\current-work.md",
+        "bytes": 31239,
+        "sha256": "276874691cbeb32832ef1ddad8223312918f27fae43cd5232438c9602afcb6bc"
+      },
+      "snapshot": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-memory-current\\documentation\\docs\\developer\\current-work.md",
+        "bytes": 31239,
+        "sha256": "276874691cbeb32832ef1ddad8223312918f27fae43cd5232438c9602afcb6bc"
+      }
+    },
+    {
+      "relative": "tools/qwen35_text/README.md",
+      "current": {
+        "path": "C:\\public\\project-hyle\\hyle\\tools\\qwen35_text\\README.md",
+        "bytes": 4369,
+        "sha256": "251b9fe87d971158a9dec226f26c8ce30c47d397d0e5595d7ef4baea7c477f4e"
+      },
+      "snapshot": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-memory-current\\documentation\\tools\\qwen35_text\\README.md",
+        "bytes": 4369,
+        "sha256": "251b9fe87d971158a9dec226f26c8ce30c47d397d0e5595d7ef4baea7c477f4e"
+      }
+    }
+  ],
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\qwen-memory-current-2026-10-20.zip",
+    "bytes": 327398,
+    "sha256": "bf8623085f756caaa57117c130137636c0b59878082948eb56be1191f83eee33",
+    "payloads": 50,
+    "CRC_checked": true,
+    "all_payload_SHA256_checked": true
+  }
+}

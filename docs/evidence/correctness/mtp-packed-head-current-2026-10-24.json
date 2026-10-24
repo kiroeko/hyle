@@ -1,0 +1,156 @@
+{
+  "schema": "hyle.mtp-packed-head-current.v1",
+  "date": "2026-10-24",
+  "status": "passed",
+  "scope": {
+    "backend": "Windows x64 CUDA",
+    "device": "NVIDIA GeForce RTX 4070",
+    "compute_capability": "8.9",
+    "canonical_provider_changes": "Large packed banks beyond I32 total bytes and codec-specific Orin MMVQ row bounds are applied; this execution is SM8.9.",
+    "executed_test_source": "The reused probe includes the frozen candidate bounds source. It has no dependency on the four changed canonical sources and all its actual dependencies match. Those bounds are applicable on SM8.9; this run does not execute Orin-specific branches of the final canonical bounds test.",
+    "original_model_payload": false,
+    "original_artifact_completion": false,
+    "model_quality": false,
+    "throughput": false,
+    "Orin_verified": false
+  },
+  "validation": {
+    "cases": 4,
+    "failures": 0,
+    "skipped": 0,
+    "process_exit": 0,
+    "case_names": [
+      "GgmlCudaPackedBounds.FullVocabularySmallBatchPreparesWithoutWeightStorage",
+      "GgmlCudaPackedBounds.LargeHeadsDeclineFallbackAndPaddedLayouts",
+      "GgmlCudaPackedBounds.EncodedAndLogicalLimitsKeepOtherPortsBounded",
+      "GgmlCudaPackedLargeRead.GeneratedQ8TailBeyondI32RunsM1AndM2"
+    ],
+    "process_wall_seconds": 0.6319528000021819,
+    "generated_Q8": {
+      "weight_bytes": 2161377280,
+      "tail_block_offset": 2161377246,
+      "full_vocabulary": 248320,
+      "reduction": 8192,
+      "rows": [
+        1,
+        2
+      ],
+      "full_output": "exact checks of every output; first/last weight rows nonzero, all other rows zero",
+      "prepared_workspace_bytes": {
+        "M1": 0,
+        "M2": 0
+      }
+    }
+  },
+  "actual_source_identity": {
+    "canonical": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_ggml_cuda\\tensor_program.h",
+        "bytes": 3615,
+        "sha256": "215f2982aaaae8a4915048e1b3b21a6b451430e341a3027592bedba8cc340cc6"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_ggml_cuda\\ggml_cuda_provider.cc",
+        "bytes": 76973,
+        "sha256": "43876efb87d792fcf5a60e9526c8a5e7eb4a474f0766e87a1f2eca4634607eb2"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_ggml_cuda\\tensor_program.cc",
+        "bytes": 62872,
+        "sha256": "3ec8bff18c6de028023f0ce1442c2f15c1311ef4ac3d5c72f20c0fcbdfb39d76"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_ggml_cuda\\packed_matmul_bounds_test.cc",
+        "bytes": 7410,
+        "sha256": "90693785aa29cf828703f685e3a249b6670c5c2f8a5f17ba2b325dc380079658"
+      }
+    ],
+    "compiled_provider_records": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\current-integration\\compile1\\provider\\identity.json",
+        "bytes": 52584,
+        "sha256": "b55e09779a6ca32571061736490e03c78845f6a4c4c6902fdb75b548f5133c06"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\current-integration\\compile1\\tensor-program\\identity.json",
+        "bytes": 42478,
+        "sha256": "1a129c02db764c93688e61cc3a34add0d8ccd65f7cc1bc141570633c1c8539c4"
+      }
+    ],
+    "reused_probe_record": {
+      "path": ".scratch/mtp-packed-head-20261024/focused/compile1/probe/identity.json",
+      "bytes": 62106,
+      "sha256": "71de70feaca79dab2b78cebc0ec0059e714077a98c602480656d488d045378ec"
+    },
+    "probe_source": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\focused\\packed_head_boundary_probe_test.cc",
+      "bytes": 5300,
+      "sha256": "fafb92b6573aad989527ac4b1f0867771053388c1f56f1276638cc8247e79f54"
+    },
+    "probe_object": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\focused\\compile1\\probe\\probe.obj",
+      "bytes": 655530,
+      "sha256": "131cffe91c54dd61a2033ebf353d80fb3210e6d40966dfcebd61580600a5bb6b"
+    },
+    "canonical_bounds_test_freshly_compiled": false
+  },
+  "actual_execution": {
+    "summary": {
+      "path": ".scratch/mtp-packed-head-20261024/current-replay/run1/summary.json",
+      "bytes": 4003,
+      "sha256": "b5a659150bf540e9f5ee788401d540152602e6c9f33ae6a94479820cadaf722e"
+    },
+    "gtest": {
+      "path": ".scratch/mtp-packed-head-20261024/current-replay/run1/gtest.xml",
+      "bytes": 2414,
+      "sha256": "95a09d03e5db0ae2753064bdd2fa444689325d31fac13cd1262f59115b424008"
+    },
+    "link_plan": {
+      "path": ".scratch/mtp-packed-head-20261024/current-replay/tests-link1/link-plan.json",
+      "bytes": 98738,
+      "sha256": "d5fd061c35b5981c4765eb19cc2a94d4e3bae44a0cc117f2393757c601a39ffd"
+    },
+    "ready": {
+      "path": ".scratch/mtp-packed-head-20261024/current-replay/tests-link1/ready.json",
+      "bytes": 2130,
+      "sha256": "10eaa9bff94972f4d18bababf57bc6e8dd1289f44ae50c596fd772ca5c56931b"
+    },
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\current-replay\\tests-link1\\packed-head-current.exe",
+      "bytes": 139257344,
+      "sha256": "b609b49ec57e799b03e0b33688f06329a484f402fb61fd492ad59fff0acd0704"
+    },
+    "runtime": {
+      "path": ".scratch/mtp-packed-head-20261024/current-replay/tests-link1/runtime-environment.json",
+      "bytes": 8855,
+      "sha256": "f95bb5951dbe5ce3af7cbcbb2fb6ca3da65763a557f15f2ae1f62f04afd667ba"
+    },
+    "staged_DLLs": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\current-replay\\tests-link1\\hyle_ggml_cpu_gdn_scale_v3.dll",
+        "bytes": 1191424,
+        "sha256": "a020c6c3bd0d51bd50319fbe6924826979fec0b11cdd0e9db8457c132c136092"
+      }
+    ],
+    "pids": {
+      "link": 16576,
+      "native": 13864
+    }
+  },
+  "build_scope": {
+    "root_current_product_host_TUs": 2,
+    "this_replay_rebuilt_TUs": 0,
+    "this_replay_links": 1,
+    "this_replay_native_processes": 1,
+    "SDK_builds": 0,
+    "NVCC_builds": 0,
+    "HTTP": 0
+  },
+  "remaining": "Orin K-quant M2 still needs a native-authoritative MMQ admission path and independent MMQ numerical evidence on Orin. This proof does not claim it complete.",
+  "previous_proofs_unchanged": true,
+  "archive": {
+    "path": "docs/evidence/correctness/mtp-packed-head-current-2026-10-24.zip",
+    "bytes": 189258,
+    "sha256": "ff42671c3326d4f2215622082df9e54820f96afae03e988cf7de2e04f16b43d0"
+  }
+}

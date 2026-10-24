@@ -31,9 +31,7 @@ struct Widget : RefCounted<Widget> {
   ~Widget() { live.fetch_sub(1); }
 };
 
-// Subclass with a CUSTOM destroy() -- the clay-bug regression guard. clay's
-// unqualified destroy() in decref would call the BASE version; HYLE static_casts
-// to the subclass, so this custom path must actually run.
+// Subclass teardown must run on final release rather than the base destroy().
 struct CustomTeardown : RefCounted<CustomTeardown> {
   static inline std::atomic<int> custom_destroys{0};
   // destroy() must be reachable by RefCounted<CustomTeardown>.
@@ -111,7 +109,7 @@ TEST(RefCounted, CustomDestroyDispatchesViaCRTP) {
     Ref<CustomTeardown> r = make_ref<CustomTeardown>();
     EXPECT_EQ(CustomTeardown::custom_destroys.load(), 0);
   }
-  // If decref called the base destroy (clay's bug), this would be 0.
+  // If decref called the base destroy, this would be 0.
   EXPECT_EQ(CustomTeardown::custom_destroys.load(), 1);
 }
 

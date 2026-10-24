@@ -1,0 +1,1109 @@
+{
+  "status": "completed; do not rerun",
+  "recursive": false,
+  "removed_files": 155,
+  "removed_logical_bytes": 751430546,
+  "kept_images": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\qwen-link1\\qwen.exe",
+      "bytes": 140240384,
+      "sha256": "749f0586687b044ddc101f677877cadea7fd66629dfcfbd08c1ef677f8fea6a1"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-window-20261022\\peer\\checks\\attempt1\\peer.exe",
+      "bytes": 35795456,
+      "sha256": "f353371459d63d168ee88e4e57115ba9af4258b871f5adf02dd289e34cd2b421"
+    }
+  ],
+  "model_cache_untouched": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\llama-matched-consumer\\Qwen3.5-2B-text-MTP-BF16.gguf",
+    "bytes": 3897387936,
+    "sha256": "8c744017e119657f75d2d154350104ce5291500b0f9f0a115374d5bfe482642d"
+  },
+  "verified_archives": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\qwen-mtp-divergence-2026-10-22.data.zip",
+      "bytes": 170163584,
+      "sha256": "f6f6c28b2acdaa7fa78cf5ec5cd670f24376bde7e24b206370458d37f5a37c5d"
+    }
+  ],
+  "removed": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\__pycache__\\performance.cpython-312.pyc",
+      "bytes": 18887,
+      "sha256": "ceb609fff7c8f05538acfcd2b0dca73c443a0a2e0e0e4b3e837c7009ac2c7b4d",
+      "kind": "rebuildable obsolete image/link output"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\control\\checks\\attempt1\\peer.exe",
+      "bytes": 35843072,
+      "sha256": "8cc6276ebdaed1fcc4b5e151e192c6cdd2c266fc0702bcd9745353e5a7b148cb",
+      "kind": "rebuildable obsolete image/link output"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\control\\checks\\attempt1\\peer.map",
+      "bytes": 22829608,
+      "sha256": "7ca5a55b8c2f7f43f8c3d6f77e9cc4017d7ec42fc6d877d9a62fb5c65b9d0662",
+      "kind": "rebuildable obsolete image/link output"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\control-run1\\diagnostic\\A165.partial-state.bin",
+      "bytes": 20201932,
+      "sha256": "9062674b5ae200d3aafdd08190114b8877ca735bf128cc56cd1f2b4333bdb172",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/control-run1/diagnostic/A165.partial-state.bin"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\control-run1\\diagnostic\\A166.partial-state.bin",
+      "bytes": 20201932,
+      "sha256": "3eaefdec5e2134ccfe3177ae91aec3ad509eabe786070a798f5b875658720b99",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/control-run1/diagnostic/A166.partial-state.bin"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\control-run1\\diagnostic\\A_T1_11.hidden.f32",
+      "bytes": 8192,
+      "sha256": "7edfc74697d1f53c3505a3e82472961a935f9527ffa0a0a5bb5d9e2ebb460261",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/control-run1/diagnostic/A_T1_11.hidden.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\control-run1\\diagnostic\\A_T1_11_row_0.candidates.i32",
+      "bytes": 993280,
+      "sha256": "04e2cf36c8dbca2187a72a00956b204113e8a107478e8301c3982b6d960a29a2",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/control-run1/diagnostic/A_T1_11_row_0.candidates.i32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\control-run1\\diagnostic\\A_T1_11_row_0.logits.f32",
+      "bytes": 993280,
+      "sha256": "17c18dd3cc5aab98d2da3937ffbde7f9eb1bae5f1c56a5c8d5fb238ef67bc383",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/control-run1/diagnostic/A_T1_11_row_0.logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\control-run1\\diagnostic\\A_T1_51338.hidden.f32",
+      "bytes": 8192,
+      "sha256": "c0eba9958ae1caf7473cb63fdc45ff83a6af82304913319242c0198e26605b1d",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/control-run1/diagnostic/A_T1_51338.hidden.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\control-run1\\diagnostic\\A_T1_51338_row_0.candidates.i32",
+      "bytes": 993280,
+      "sha256": "04e2cf36c8dbca2187a72a00956b204113e8a107478e8301c3982b6d960a29a2",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/control-run1/diagnostic/A_T1_11_row_0.candidates.i32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\control-run1\\diagnostic\\A_T1_51338_row_0.logits.f32",
+      "bytes": 993280,
+      "sha256": "7d39d73c9eb8e43c08667a4801eb54ef95a81404468202440e4ac9e115e21d2a",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/control-run1/diagnostic/A_T1_51338_row_0.logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\control-run1\\diagnostic\\B165_after_trim.partial-state.bin",
+      "bytes": 20201932,
+      "sha256": "372c4962cc9c118f7554f54472b810a9d23ce620012e1c6eef16bc96b7a3fbba",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/control-run1/diagnostic/B165_after_trim.partial-state.bin"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\control-run1\\diagnostic\\B166.partial-state.bin",
+      "bytes": 20201932,
+      "sha256": "138787e4b4901968d0d99386c66d8bd6e9b56222e58dbeeb8356292875f0212b",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/control-run1/diagnostic/B166.partial-state.bin"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\control-run1\\diagnostic\\B_T1_51338_after_trim.hidden.f32",
+      "bytes": 8192,
+      "sha256": "b55edb2da995a1a22c1a23041c05f7db080750d79d2344a0146096432863c98e",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/control-run1/diagnostic/B_T1_51338_after_trim.hidden.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\control-run1\\diagnostic\\B_T1_51338_after_trim_row_0.candidates.i32",
+      "bytes": 993280,
+      "sha256": "04e2cf36c8dbca2187a72a00956b204113e8a107478e8301c3982b6d960a29a2",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/control-run1/diagnostic/A_T1_11_row_0.candidates.i32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\control-run1\\diagnostic\\B_T1_51338_after_trim_row_0.logits.f32",
+      "bytes": 993280,
+      "sha256": "f031f58d5635b351797bcd84bda3a50748b3a87d8e0d066b1845435c8eae49a3",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/control-run1/diagnostic/B_T1_51338_after_trim_row_0.logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\control-run1\\diagnostic\\B_T2_11_36760.hidden.f32",
+      "bytes": 16384,
+      "sha256": "85e4f451ff98ac4400bd9158f60f30eadd65bae051d69dd7f2a1265d5c765184",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/control-run1/diagnostic/B_T2_11_36760.hidden.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\control-run1\\diagnostic\\B_T2_11_36760_row_0.candidates.i32",
+      "bytes": 993280,
+      "sha256": "04e2cf36c8dbca2187a72a00956b204113e8a107478e8301c3982b6d960a29a2",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/control-run1/diagnostic/A_T1_11_row_0.candidates.i32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\control-run1\\diagnostic\\B_T2_11_36760_row_0.logits.f32",
+      "bytes": 993280,
+      "sha256": "0d010c84cadcefb90e2dc01b818d8f9c2bdd2fa852c4835e780c853b21ddab44",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/control-run1/diagnostic/B_T2_11_36760_row_0.logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\control-run1\\diagnostic\\B_T2_11_36760_row_1.candidates.i32",
+      "bytes": 993280,
+      "sha256": "04e2cf36c8dbca2187a72a00956b204113e8a107478e8301c3982b6d960a29a2",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/control-run1/diagnostic/A_T1_11_row_0.candidates.i32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\control-run1\\diagnostic\\B_T2_11_36760_row_1.logits.f32",
+      "bytes": 993280,
+      "sha256": "056e1282037457f9e5b0f6ccc90beca67f9e5bf7f4c10d204d4ceb5e5bf0813a",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/control-run1/diagnostic/B_T2_11_36760_row_1.logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\control-run1\\diagnostic\\C.full-state.bin",
+      "bytes": 22221260,
+      "sha256": "bdaec66f05dae6b65ccb83e68380cf0584b821fd6f2465d8abc68aedb94aa047",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/control-run1/diagnostic/C.full-state.bin"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\control-run1\\diagnostic\\prefill.candidates.i32",
+      "bytes": 993280,
+      "sha256": "04e2cf36c8dbca2187a72a00956b204113e8a107478e8301c3982b6d960a29a2",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/control-run1/diagnostic/A_T1_11_row_0.candidates.i32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\control-run1\\diagnostic\\prefill.logits.f32",
+      "bytes": 993280,
+      "sha256": "ebfda827ca0b95755d9c1a7860d88e677ed46a5000214fd7ee4b682674eab7a1",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/control-run1/diagnostic/prefill.logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\control2\\checks\\attempt1\\peer.exe",
+      "bytes": 35853312,
+      "sha256": "43cc5a2d0bd3612a24b316f1a9dc72028bf927480338cc159b2e4714796f8dda",
+      "kind": "rebuildable obsolete image/link output"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\control2\\checks\\attempt1\\peer.map",
+      "bytes": 22905693,
+      "sha256": "7849e242a531b7d9172308c7d5b065ce1421e6a2bd27025fca1a0f9184a25576",
+      "kind": "rebuildable obsolete image/link output"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\control2-run1\\diagnostic\\A165.partial-state.bin",
+      "bytes": 20201932,
+      "sha256": "9062674b5ae200d3aafdd08190114b8877ca735bf128cc56cd1f2b4333bdb172",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/control-run1/diagnostic/A165.partial-state.bin"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\control2-run1\\diagnostic\\A166.partial-state.bin",
+      "bytes": 20201932,
+      "sha256": "3eaefdec5e2134ccfe3177ae91aec3ad509eabe786070a798f5b875658720b99",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/control-run1/diagnostic/A166.partial-state.bin"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\control2-run1\\diagnostic\\A_T1_11.hidden.f32",
+      "bytes": 8192,
+      "sha256": "7edfc74697d1f53c3505a3e82472961a935f9527ffa0a0a5bb5d9e2ebb460261",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/control-run1/diagnostic/A_T1_11.hidden.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\control2-run1\\diagnostic\\A_T1_11_row_0.candidates.i32",
+      "bytes": 993280,
+      "sha256": "04e2cf36c8dbca2187a72a00956b204113e8a107478e8301c3982b6d960a29a2",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/control-run1/diagnostic/A_T1_11_row_0.candidates.i32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\control2-run1\\diagnostic\\A_T1_11_row_0.logits.f32",
+      "bytes": 993280,
+      "sha256": "17c18dd3cc5aab98d2da3937ffbde7f9eb1bae5f1c56a5c8d5fb238ef67bc383",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/control-run1/diagnostic/A_T1_11_row_0.logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\control2-run1\\diagnostic\\A_T1_51338.hidden.f32",
+      "bytes": 8192,
+      "sha256": "c0eba9958ae1caf7473cb63fdc45ff83a6af82304913319242c0198e26605b1d",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/control-run1/diagnostic/A_T1_51338.hidden.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\control2-run1\\diagnostic\\A_T1_51338_row_0.candidates.i32",
+      "bytes": 993280,
+      "sha256": "04e2cf36c8dbca2187a72a00956b204113e8a107478e8301c3982b6d960a29a2",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/control-run1/diagnostic/A_T1_11_row_0.candidates.i32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\control2-run1\\diagnostic\\A_T1_51338_row_0.logits.f32",
+      "bytes": 993280,
+      "sha256": "7d39d73c9eb8e43c08667a4801eb54ef95a81404468202440e4ac9e115e21d2a",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/control-run1/diagnostic/A_T1_51338_row_0.logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\control2-run1\\diagnostic\\B165.full-state.bin",
+      "bytes": 22233572,
+      "sha256": "750e1066d0a3996f9efeebc0b76a0519c58af999773111fca03e8b69765eea23",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/control2-run1/diagnostic/B165.full-state.bin"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\control2-run1\\diagnostic\\B165_after_trim.partial-state.bin",
+      "bytes": 20201932,
+      "sha256": "372c4962cc9c118f7554f54472b810a9d23ce620012e1c6eef16bc96b7a3fbba",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/control-run1/diagnostic/B165_after_trim.partial-state.bin"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\control2-run1\\diagnostic\\B166.partial-state.bin",
+      "bytes": 20201932,
+      "sha256": "138787e4b4901968d0d99386c66d8bd6e9b56222e58dbeeb8356292875f0212b",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/control-run1/diagnostic/B166.partial-state.bin"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\control2-run1\\diagnostic\\B166_canonical.partial-state.bin",
+      "bytes": 20201932,
+      "sha256": "138787e4b4901968d0d99386c66d8bd6e9b56222e58dbeeb8356292875f0212b",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/control-run1/diagnostic/B166.partial-state.bin"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\control2-run1\\diagnostic\\B_canonical_T1_51338.hidden.f32",
+      "bytes": 8192,
+      "sha256": "b55edb2da995a1a22c1a23041c05f7db080750d79d2344a0146096432863c98e",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/control-run1/diagnostic/B_T1_51338_after_trim.hidden.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\control2-run1\\diagnostic\\B_canonical_T1_51338_row_0.candidates.i32",
+      "bytes": 993280,
+      "sha256": "04e2cf36c8dbca2187a72a00956b204113e8a107478e8301c3982b6d960a29a2",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/control-run1/diagnostic/A_T1_11_row_0.candidates.i32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\control2-run1\\diagnostic\\B_canonical_T1_51338_row_0.logits.f32",
+      "bytes": 993280,
+      "sha256": "f031f58d5635b351797bcd84bda3a50748b3a87d8e0d066b1845435c8eae49a3",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/control-run1/diagnostic/B_T1_51338_after_trim_row_0.logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\control2-run1\\diagnostic\\B_T1_51338_after_trim.hidden.f32",
+      "bytes": 8192,
+      "sha256": "b55edb2da995a1a22c1a23041c05f7db080750d79d2344a0146096432863c98e",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/control-run1/diagnostic/B_T1_51338_after_trim.hidden.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\control2-run1\\diagnostic\\B_T1_51338_after_trim_row_0.candidates.i32",
+      "bytes": 993280,
+      "sha256": "04e2cf36c8dbca2187a72a00956b204113e8a107478e8301c3982b6d960a29a2",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/control-run1/diagnostic/A_T1_11_row_0.candidates.i32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\control2-run1\\diagnostic\\B_T1_51338_after_trim_row_0.logits.f32",
+      "bytes": 993280,
+      "sha256": "f031f58d5635b351797bcd84bda3a50748b3a87d8e0d066b1845435c8eae49a3",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/control-run1/diagnostic/B_T1_51338_after_trim_row_0.logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\control2-run1\\diagnostic\\B_T2_11_36760.hidden.f32",
+      "bytes": 16384,
+      "sha256": "85e4f451ff98ac4400bd9158f60f30eadd65bae051d69dd7f2a1265d5c765184",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/control-run1/diagnostic/B_T2_11_36760.hidden.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\control2-run1\\diagnostic\\B_T2_11_36760_row_0.candidates.i32",
+      "bytes": 993280,
+      "sha256": "04e2cf36c8dbca2187a72a00956b204113e8a107478e8301c3982b6d960a29a2",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/control-run1/diagnostic/A_T1_11_row_0.candidates.i32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\control2-run1\\diagnostic\\B_T2_11_36760_row_0.logits.f32",
+      "bytes": 993280,
+      "sha256": "0d010c84cadcefb90e2dc01b818d8f9c2bdd2fa852c4835e780c853b21ddab44",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/control-run1/diagnostic/B_T2_11_36760_row_0.logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\control2-run1\\diagnostic\\B_T2_11_36760_row_1.candidates.i32",
+      "bytes": 993280,
+      "sha256": "04e2cf36c8dbca2187a72a00956b204113e8a107478e8301c3982b6d960a29a2",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/control-run1/diagnostic/A_T1_11_row_0.candidates.i32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\control2-run1\\diagnostic\\B_T2_11_36760_row_1.logits.f32",
+      "bytes": 993280,
+      "sha256": "056e1282037457f9e5b0f6ccc90beca67f9e5bf7f4c10d204d4ceb5e5bf0813a",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/control-run1/diagnostic/B_T2_11_36760_row_1.logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\control2-run1\\diagnostic\\C.full-state.bin",
+      "bytes": 22221260,
+      "sha256": "bdaec66f05dae6b65ccb83e68380cf0584b821fd6f2465d8abc68aedb94aa047",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/control-run1/diagnostic/C.full-state.bin"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\control2-run1\\diagnostic\\C171.full-state.bin",
+      "bytes": 22307444,
+      "sha256": "d80e4702303fd73a4e2454c073c230bbaa34523e9d8add7aadce3b4c6da810eb",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/control2-run1/diagnostic/C171.full-state.bin"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\control2-run1\\diagnostic\\C171_T1_11906.hidden.f32",
+      "bytes": 8192,
+      "sha256": "05389b056dc89f8192d12decd4f04c92558637d6ceff7fc45c1c42f41d22a0d1",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/control2-run1/diagnostic/C171_T1_11906.hidden.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\control2-run1\\diagnostic\\C171_T1_11906_row_0.candidates.i32",
+      "bytes": 993280,
+      "sha256": "04e2cf36c8dbca2187a72a00956b204113e8a107478e8301c3982b6d960a29a2",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/control-run1/diagnostic/A_T1_11_row_0.candidates.i32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\control2-run1\\diagnostic\\C171_T1_11906_row_0.logits.f32",
+      "bytes": 993280,
+      "sha256": "8723ca0bfa1c2e973043832e6211291f1537d1f693e9ca9310518a4b8a2b0d31",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/control2-run1/diagnostic/C171_T1_11906_row_0.logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\control2-run1\\diagnostic\\C171_T2_11906_271.hidden.f32",
+      "bytes": 16384,
+      "sha256": "2e0a4bde66d9903b2a7f7867a75552385212772082c3c1ff35e2ec2bacfe419e",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/control2-run1/diagnostic/C171_T2_11906_271.hidden.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\control2-run1\\diagnostic\\C171_T2_11906_271_row_0.candidates.i32",
+      "bytes": 993280,
+      "sha256": "04e2cf36c8dbca2187a72a00956b204113e8a107478e8301c3982b6d960a29a2",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/control-run1/diagnostic/A_T1_11_row_0.candidates.i32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\control2-run1\\diagnostic\\C171_T2_11906_271_row_0.logits.f32",
+      "bytes": 993280,
+      "sha256": "61c70cd945386491937c0f7a7f4de61c4c9c20353c8b457214d266752f4e3f66",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/control2-run1/diagnostic/C171_T2_11906_271_row_0.logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\control2-run1\\diagnostic\\C171_T2_11906_271_row_1.candidates.i32",
+      "bytes": 993280,
+      "sha256": "04e2cf36c8dbca2187a72a00956b204113e8a107478e8301c3982b6d960a29a2",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/control-run1/diagnostic/A_T1_11_row_0.candidates.i32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\control2-run1\\diagnostic\\C171_T2_11906_271_row_1.logits.f32",
+      "bytes": 993280,
+      "sha256": "e68991a3d4427f9b7584d7c570ccffd9b5e897560b14f5e9048b303e0879c246",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/control2-run1/diagnostic/C171_T2_11906_271_row_1.logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\control2-run1\\diagnostic\\prefill.candidates.i32",
+      "bytes": 993280,
+      "sha256": "04e2cf36c8dbca2187a72a00956b204113e8a107478e8301c3982b6d960a29a2",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/control-run1/diagnostic/A_T1_11_row_0.candidates.i32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\control2-run1\\diagnostic\\prefill.logits.f32",
+      "bytes": 993280,
+      "sha256": "ebfda827ca0b95755d9c1a7860d88e677ed46a5000214fd7ee4b682674eab7a1",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/control-run1/diagnostic/prefill.logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\control2-run1\\diagnostic\\R5_T2_11_36760.hidden.f32",
+      "bytes": 16384,
+      "sha256": "85e4f451ff98ac4400bd9158f60f30eadd65bae051d69dd7f2a1265d5c765184",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/control-run1/diagnostic/B_T2_11_36760.hidden.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\control2-run1\\diagnostic\\R5_T2_11_36760_row_0.candidates.i32",
+      "bytes": 993280,
+      "sha256": "04e2cf36c8dbca2187a72a00956b204113e8a107478e8301c3982b6d960a29a2",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/control-run1/diagnostic/A_T1_11_row_0.candidates.i32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\control2-run1\\diagnostic\\R5_T2_11_36760_row_0.logits.f32",
+      "bytes": 993280,
+      "sha256": "0d010c84cadcefb90e2dc01b818d8f9c2bdd2fa852c4835e780c853b21ddab44",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/control-run1/diagnostic/B_T2_11_36760_row_0.logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\control2-run1\\diagnostic\\R5_T2_11_36760_row_1.candidates.i32",
+      "bytes": 993280,
+      "sha256": "04e2cf36c8dbca2187a72a00956b204113e8a107478e8301c3982b6d960a29a2",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/control-run1/diagnostic/A_T1_11_row_0.candidates.i32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\control2-run1\\diagnostic\\R5_T2_11_36760_row_1.logits.f32",
+      "bytes": 993280,
+      "sha256": "056e1282037457f9e5b0f6ccc90beca67f9e5bf7f4c10d204d4ceb5e5bf0813a",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/control-run1/diagnostic/B_T2_11_36760_row_1.logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\control2-run1\\diagnostic\\R6_T2_51338_11.hidden.f32",
+      "bytes": 16384,
+      "sha256": "4b722fca17dd9e433c7ce8356cd536302f196cd3a8de8043fc6952bfecd4c7c3",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/control2-run1/diagnostic/R6_T2_51338_11.hidden.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\control2-run1\\diagnostic\\R6_T2_51338_11_row_0.candidates.i32",
+      "bytes": 993280,
+      "sha256": "04e2cf36c8dbca2187a72a00956b204113e8a107478e8301c3982b6d960a29a2",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/control-run1/diagnostic/A_T1_11_row_0.candidates.i32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\control2-run1\\diagnostic\\R6_T2_51338_11_row_0.logits.f32",
+      "bytes": 993280,
+      "sha256": "9141e19462bf6c249acc15dd2e97f5f48caff86b82b511c2da6f84765cdad698",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/control2-run1/diagnostic/R6_T2_51338_11_row_0.logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\control2-run1\\diagnostic\\R6_T2_51338_11_row_1.candidates.i32",
+      "bytes": 993280,
+      "sha256": "04e2cf36c8dbca2187a72a00956b204113e8a107478e8301c3982b6d960a29a2",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/control-run1/diagnostic/A_T1_11_row_0.candidates.i32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\control2-run1\\diagnostic\\R6_T2_51338_11_row_1.logits.f32",
+      "bytes": 993280,
+      "sha256": "4b6503b73ef8b550628e5ee08b789d955ee335b1b2cd62ae39017351d1e0ad25",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/control2-run1/diagnostic/R6_T2_51338_11_row_1.logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\control2-run1\\diagnostic\\R7_T2_36760_11.hidden.f32",
+      "bytes": 16384,
+      "sha256": "bc5e101dd07f3e46397d7955598399e2b47fabae109c3614ea497975b2f1851c",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/control2-run1/diagnostic/R7_T2_36760_11.hidden.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\control2-run1\\diagnostic\\R7_T2_36760_11_row_0.candidates.i32",
+      "bytes": 993280,
+      "sha256": "04e2cf36c8dbca2187a72a00956b204113e8a107478e8301c3982b6d960a29a2",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/control-run1/diagnostic/A_T1_11_row_0.candidates.i32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\control2-run1\\diagnostic\\R7_T2_36760_11_row_0.logits.f32",
+      "bytes": 993280,
+      "sha256": "8dbd94476f770227a741c214802e90ccd21144b00070fcf47231cbc61b49846d",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/control2-run1/diagnostic/R7_T2_36760_11_row_0.logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\control2-run1\\diagnostic\\R7_T2_36760_11_row_1.candidates.i32",
+      "bytes": 993280,
+      "sha256": "04e2cf36c8dbca2187a72a00956b204113e8a107478e8301c3982b6d960a29a2",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/control-run1/diagnostic/A_T1_11_row_0.candidates.i32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\control2-run1\\diagnostic\\R7_T2_36760_11_row_1.logits.f32",
+      "bytes": 993280,
+      "sha256": "71a2a39a3e4ea41f4b021285b8bb672e77b833fbb6cbb5a5883bdff44cc290fa",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/control2-run1/diagnostic/R7_T2_36760_11_row_1.logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\control2-run1\\diagnostic\\R8_T2_1697_11.hidden.f32",
+      "bytes": 16384,
+      "sha256": "230f5d64752ff11b1a2e5af48010fcbe560e461d6c590a2a1470b7673d1ff87b",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/control2-run1/diagnostic/R8_T2_1697_11.hidden.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\control2-run1\\diagnostic\\R8_T2_1697_11_row_0.candidates.i32",
+      "bytes": 993280,
+      "sha256": "04e2cf36c8dbca2187a72a00956b204113e8a107478e8301c3982b6d960a29a2",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/control-run1/diagnostic/A_T1_11_row_0.candidates.i32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\control2-run1\\diagnostic\\R8_T2_1697_11_row_0.logits.f32",
+      "bytes": 993280,
+      "sha256": "e713937eccf0e1d06dc46d813aa062089cdb0a1b4b0092336a03b13c25a83132",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/control2-run1/diagnostic/R8_T2_1697_11_row_0.logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\control2-run1\\diagnostic\\R8_T2_1697_11_row_1.candidates.i32",
+      "bytes": 993280,
+      "sha256": "04e2cf36c8dbca2187a72a00956b204113e8a107478e8301c3982b6d960a29a2",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/control-run1/diagnostic/A_T1_11_row_0.candidates.i32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\control2-run1\\diagnostic\\R8_T2_1697_11_row_1.logits.f32",
+      "bytes": 993280,
+      "sha256": "243b58dddc67e99ecf13666caa6fdb0edb7938e8b58b51fe3704c74ebcb9164e",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/control2-run1/diagnostic/R8_T2_1697_11_row_1.logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\hyle-trace1\\trace\\mtp1\\hidden.bf16",
+      "bytes": 8192,
+      "sha256": "e0a423e6653c46f16779f06634f866c9ed1921249021f29db5cdaa7d9482af1d",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/hyle-trace1/trace/mtp1/hidden.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\hyle-trace1\\trace\\mtp1\\logits.f32",
+      "bytes": 1986560,
+      "sha256": "9e85381283f0d2119ec6c068c768219752a1f791e5b103944b6e2ebc63365261",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/hyle-trace1/trace/mtp1/logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\hyle-trace1\\trace\\mtp10\\hidden.bf16",
+      "bytes": 8192,
+      "sha256": "eafad04b9380f8c9c1b50a78d7263b045c3533fbd6970b82fa5c30cac8e61859",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/hyle-trace1/trace/mtp10/hidden.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\hyle-trace1\\trace\\mtp10\\logits.f32",
+      "bytes": 1986560,
+      "sha256": "fbe56c5ba6843700b889da7221a6bdd0dfc462971b8148ce942b4a7e8154a542",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/hyle-trace1/trace/mtp10/logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\hyle-trace1\\trace\\mtp11\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "d9c761dd51cc7a48f8ab4bf03a78a7f3e0379d06a9803c34653b76defcf246ad",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/hyle-trace1/trace/mtp11/hidden.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\hyle-trace1\\trace\\mtp11\\logits.f32",
+      "bytes": 993280,
+      "sha256": "5ff8ba315021191b4cdcfeff29390189159cd50889fe9542f96b0c593558616a",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/hyle-trace1/trace/mtp11/logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\hyle-trace1\\trace\\mtp2\\hidden.bf16",
+      "bytes": 8192,
+      "sha256": "96afb18214cc49492401bd656e05aa332a70a6a57989738af798c44698551ee0",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/hyle-trace1/trace/mtp2/hidden.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\hyle-trace1\\trace\\mtp2\\logits.f32",
+      "bytes": 1986560,
+      "sha256": "e93ce508aa4ce1db3ba3718912855eaf48b9870b60514dc0423e4f74fbca8d0a",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/hyle-trace1/trace/mtp2/logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\hyle-trace1\\trace\\mtp3\\hidden.bf16",
+      "bytes": 8192,
+      "sha256": "f09311c5a9dd6a22b9fea30fad6918902d3c67491c9844b95cf9ab175d9afe46",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/hyle-trace1/trace/mtp3/hidden.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\hyle-trace1\\trace\\mtp3\\logits.f32",
+      "bytes": 1986560,
+      "sha256": "2b475eb38217e33cc95429927ed0ebfcc8d58a36c44d9ef66601af00761c5f34",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/hyle-trace1/trace/mtp3/logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\hyle-trace1\\trace\\mtp4\\hidden.bf16",
+      "bytes": 8192,
+      "sha256": "a442e73e46844bde7784c0697e13e72376776666d18fac7af7c2dbbd43864225",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/hyle-trace1/trace/mtp4/hidden.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\hyle-trace1\\trace\\mtp4\\logits.f32",
+      "bytes": 1986560,
+      "sha256": "f4dfd0882d2c6fdebee876c8916a89bb40d7897baa26fbcb3ab94a8f81249ec8",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/hyle-trace1/trace/mtp4/logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\hyle-trace1\\trace\\mtp5\\hidden.bf16",
+      "bytes": 8192,
+      "sha256": "f4d1b4125893f8309ec99ddf50c112385da6a0b92d90808b1a8292cbe03c60eb",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/hyle-trace1/trace/mtp5/hidden.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\hyle-trace1\\trace\\mtp5\\logits.f32",
+      "bytes": 1986560,
+      "sha256": "a8660e6a91865688efbc018ea06d3af87129c485c2bc2500d415def2a0a76877",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/hyle-trace1/trace/mtp5/logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\hyle-trace1\\trace\\mtp6\\hidden.bf16",
+      "bytes": 8192,
+      "sha256": "dfbceb383c879c536e18587b23542b96ace2fe6f9d57d0b85d7ccaa024ad4b9f",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/hyle-trace1/trace/mtp6/hidden.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\hyle-trace1\\trace\\mtp6\\logits.f32",
+      "bytes": 1986560,
+      "sha256": "695921e614ec4d1d12151c6e1a35c292490e7c2cd0e573eba442c7ff9532304f",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/hyle-trace1/trace/mtp6/logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\hyle-trace1\\trace\\mtp7\\hidden.bf16",
+      "bytes": 8192,
+      "sha256": "0a85c8d334005d8abd0d027cb64d505e56a2c3459604d0c9f571df80b1bc006d",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/hyle-trace1/trace/mtp7/hidden.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\hyle-trace1\\trace\\mtp7\\logits.f32",
+      "bytes": 1986560,
+      "sha256": "617a5975e4dc14b374827ed9d163764e87c23a8092295789031e7f954e97ffe7",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/hyle-trace1/trace/mtp7/logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\hyle-trace1\\trace\\mtp8\\hidden.bf16",
+      "bytes": 8192,
+      "sha256": "1d5612106c0fe80a27f7f5d726e24ab5dfc5731cd4db8e6d638809f991f6e5ee",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/hyle-trace1/trace/mtp8/hidden.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\hyle-trace1\\trace\\mtp8\\logits.f32",
+      "bytes": 1986560,
+      "sha256": "3ad10881434449ec1c4e6db22b8c3e63c7d9148e029327eb24645f7ca088cc87",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/hyle-trace1/trace/mtp8/logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\hyle-trace1\\trace\\mtp9\\hidden.bf16",
+      "bytes": 8192,
+      "sha256": "c182934c11836a2bcade2badea0b255acde889aebd41b2f3805ebc406c4c1a1b",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/hyle-trace1/trace/mtp9/hidden.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\hyle-trace1\\trace\\mtp9\\logits.f32",
+      "bytes": 1986560,
+      "sha256": "79e0cb8b42fbb6dd01882e37e7d3a06ce6a34487df2660dfca58a5063cd9bad4",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/hyle-trace1/trace/mtp9/logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\hyle-trace1\\trace\\prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "e82761bbb3ec64fe2154fdf41ce019c5548a24a52945d87906f45a43c19098cc",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/hyle-trace1/trace/prefill/hidden.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\hyle-trace1\\trace\\prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "4a717427916b19c2bf7b1ebd00567a3173a42b3c03547866f1ca623f73906a76",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/hyle-trace1/trace/prefill/logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\lazy-cases1\\p1-before\\trace\\prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "b66d428380942287a4fc8092542155df31c5a209333ffaedf91fbaa62f775223",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/lazy-cases1/p1-before/trace/prefill/hidden.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\lazy-cases1\\p1-before\\trace\\prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "5e419230f1a3a11d4789e6656de1851b2939adc7225e896d3b4a34a305020209",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/lazy-cases1/p1-before/trace/prefill/logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\lazy-cases1\\p1-current\\trace\\prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "b66d428380942287a4fc8092542155df31c5a209333ffaedf91fbaa62f775223",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/lazy-cases1/p1-before/trace/prefill/hidden.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\lazy-cases1\\p1-current\\trace\\prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "5e419230f1a3a11d4789e6656de1851b2939adc7225e896d3b4a34a305020209",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/lazy-cases1/p1-before/trace/prefill/logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\lazy-cases1\\p15-before\\trace\\mtp1\\hidden.bf16",
+      "bytes": 8192,
+      "sha256": "9834dda78a03552c7c848f9f3069fba410b212e156666d2743eee07a1df45ca9",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/lazy-cases1/p15-before/trace/mtp1/hidden.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\lazy-cases1\\p15-before\\trace\\mtp1\\logits.f32",
+      "bytes": 1986560,
+      "sha256": "c96228b0acc7ca2d12804bf3c934d6397824ac7898f76519ba14ee027159e79d",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/lazy-cases1/p15-before/trace/mtp1/logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\lazy-cases1\\p15-before\\trace\\mtp2\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "54ee293f8c6c4ec6f0164d3a966366e1ddbf90b81d001c2135646d3d1283d4b7",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/lazy-cases1/p15-before/trace/mtp2/hidden.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\lazy-cases1\\p15-before\\trace\\mtp2\\logits.f32",
+      "bytes": 993280,
+      "sha256": "d6dcda63b75becf8034fe23a4b8daf6b3752898475fe4734149978c0a517c960",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/lazy-cases1/p15-before/trace/mtp2/logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\lazy-cases1\\p15-before\\trace\\prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "707731a2d8666c5f942515db83fa25074f0ffbabd6acb6528721aaebad039b9d",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/lazy-cases1/p15-before/trace/prefill/hidden.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\lazy-cases1\\p15-before\\trace\\prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "f6947e46facdabeb58caeb32abc93d3d260c934031102a2a0693ad510cafdd42",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/lazy-cases1/p15-before/trace/prefill/logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\lazy-cases1\\p15-current\\trace\\mtp1\\hidden.bf16",
+      "bytes": 8192,
+      "sha256": "9834dda78a03552c7c848f9f3069fba410b212e156666d2743eee07a1df45ca9",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/lazy-cases1/p15-before/trace/mtp1/hidden.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\lazy-cases1\\p15-current\\trace\\mtp1\\logits.f32",
+      "bytes": 1986560,
+      "sha256": "c96228b0acc7ca2d12804bf3c934d6397824ac7898f76519ba14ee027159e79d",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/lazy-cases1/p15-before/trace/mtp1/logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\lazy-cases1\\p15-current\\trace\\mtp2\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "54ee293f8c6c4ec6f0164d3a966366e1ddbf90b81d001c2135646d3d1283d4b7",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/lazy-cases1/p15-before/trace/mtp2/hidden.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\lazy-cases1\\p15-current\\trace\\mtp2\\logits.f32",
+      "bytes": 993280,
+      "sha256": "d6dcda63b75becf8034fe23a4b8daf6b3752898475fe4734149978c0a517c960",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/lazy-cases1/p15-before/trace/mtp2/logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\lazy-cases1\\p15-current\\trace\\prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "707731a2d8666c5f942515db83fa25074f0ffbabd6acb6528721aaebad039b9d",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/lazy-cases1/p15-before/trace/prefill/hidden.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\lazy-cases1\\p15-current\\trace\\prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "f6947e46facdabeb58caeb32abc93d3d260c934031102a2a0693ad510cafdd42",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/lazy-cases1/p15-before/trace/prefill/logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\peer\\checks\\attempt1\\peer.exe",
+      "bytes": 35816960,
+      "sha256": "c31389f1909e0273ff12957a3211773d95071ff04a9d3d94cb8c55c33d4a199b",
+      "kind": "rebuildable obsolete image/link output"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\peer\\checks\\attempt1\\peer.map",
+      "bytes": 22734884,
+      "sha256": "665dba349ae6f6bee44cec649b39aedc04218e809ef561fb9d1c816b71015482",
+      "kind": "rebuildable obsolete image/link output"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\peer-off-run1\\diagnostic\\prefill.candidates.i32",
+      "bytes": 993280,
+      "sha256": "04e2cf36c8dbca2187a72a00956b204113e8a107478e8301c3982b6d960a29a2",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/control-run1/diagnostic/A_T1_11_row_0.candidates.i32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\peer-off-run1\\diagnostic\\prefill.logits.f32",
+      "bytes": 993280,
+      "sha256": "ebfda827ca0b95755d9c1a7860d88e677ed46a5000214fd7ee4b682674eab7a1",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/control-run1/diagnostic/prefill.logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\peer-off-run1\\diagnostic\\round_10_row_0.candidates.i32",
+      "bytes": 993280,
+      "sha256": "04e2cf36c8dbca2187a72a00956b204113e8a107478e8301c3982b6d960a29a2",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/control-run1/diagnostic/A_T1_11_row_0.candidates.i32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\peer-off-run1\\diagnostic\\round_10_row_0.logits.f32",
+      "bytes": 993280,
+      "sha256": "c0a192db91bb5cb092676b449e5ce563f2bcffa9729e26b04072bdd0c8ddd248",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/peer-off-run1/diagnostic/round_10_row_0.logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\peer-off-run1\\diagnostic\\round_11_row_0.candidates.i32",
+      "bytes": 993280,
+      "sha256": "04e2cf36c8dbca2187a72a00956b204113e8a107478e8301c3982b6d960a29a2",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/control-run1/diagnostic/A_T1_11_row_0.candidates.i32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\peer-off-run1\\diagnostic\\round_11_row_0.logits.f32",
+      "bytes": 993280,
+      "sha256": "701d3303b40185f84b26b33ab21b4ee48e59c6e1d035c0c68ca7c2fa044cc4d7",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/peer-off-run1/diagnostic/round_11_row_0.logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\peer-off-run1\\diagnostic\\round_12_row_0.candidates.i32",
+      "bytes": 993280,
+      "sha256": "04e2cf36c8dbca2187a72a00956b204113e8a107478e8301c3982b6d960a29a2",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/control-run1/diagnostic/A_T1_11_row_0.candidates.i32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\peer-off-run1\\diagnostic\\round_12_row_0.logits.f32",
+      "bytes": 993280,
+      "sha256": "13ad6d2e958b72bf17ce3096b2b48604626c4faadd0b593d0dfdcbbe2a2d2999",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/peer-off-run1/diagnostic/round_12_row_0.logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\peer-off-run1\\diagnostic\\round_17_row_0.candidates.i32",
+      "bytes": 993280,
+      "sha256": "04e2cf36c8dbca2187a72a00956b204113e8a107478e8301c3982b6d960a29a2",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/control-run1/diagnostic/A_T1_11_row_0.candidates.i32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\peer-off-run1\\diagnostic\\round_17_row_0.logits.f32",
+      "bytes": 993280,
+      "sha256": "d72b117b0a3473078450c69fdea6cb77ce8ad172fb77af1aa7dc9dfe669e9fbe",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/peer-off-run1/diagnostic/round_17_row_0.logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\peer-off-run1\\diagnostic\\round_18_row_0.candidates.i32",
+      "bytes": 993280,
+      "sha256": "04e2cf36c8dbca2187a72a00956b204113e8a107478e8301c3982b6d960a29a2",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/control-run1/diagnostic/A_T1_11_row_0.candidates.i32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\peer-off-run1\\diagnostic\\round_18_row_0.logits.f32",
+      "bytes": 993280,
+      "sha256": "fe88839596033998714b98a8fee38ebaa35e283a25cf35a39c31c3415de2ee30",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/peer-off-run1/diagnostic/round_18_row_0.logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\peer-on-run1\\diagnostic\\prefill.candidates.i32",
+      "bytes": 993280,
+      "sha256": "04e2cf36c8dbca2187a72a00956b204113e8a107478e8301c3982b6d960a29a2",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/control-run1/diagnostic/A_T1_11_row_0.candidates.i32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\peer-on-run1\\diagnostic\\prefill.logits.f32",
+      "bytes": 993280,
+      "sha256": "ebfda827ca0b95755d9c1a7860d88e677ed46a5000214fd7ee4b682674eab7a1",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/control-run1/diagnostic/prefill.logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\peer-on-run1\\diagnostic\\round_5_row_0.candidates.i32",
+      "bytes": 993280,
+      "sha256": "04e2cf36c8dbca2187a72a00956b204113e8a107478e8301c3982b6d960a29a2",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/control-run1/diagnostic/A_T1_11_row_0.candidates.i32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\peer-on-run1\\diagnostic\\round_5_row_0.logits.f32",
+      "bytes": 993280,
+      "sha256": "0d010c84cadcefb90e2dc01b818d8f9c2bdd2fa852c4835e780c853b21ddab44",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/control-run1/diagnostic/B_T2_11_36760_row_0.logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\peer-on-run1\\diagnostic\\round_5_row_1.candidates.i32",
+      "bytes": 993280,
+      "sha256": "04e2cf36c8dbca2187a72a00956b204113e8a107478e8301c3982b6d960a29a2",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/control-run1/diagnostic/A_T1_11_row_0.candidates.i32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\peer-on-run1\\diagnostic\\round_5_row_1.logits.f32",
+      "bytes": 993280,
+      "sha256": "056e1282037457f9e5b0f6ccc90beca67f9e5bf7f4c10d204d4ceb5e5bf0813a",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/control-run1/diagnostic/B_T2_11_36760_row_1.logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\peer-on-run1\\diagnostic\\round_6_row_0.candidates.i32",
+      "bytes": 993280,
+      "sha256": "04e2cf36c8dbca2187a72a00956b204113e8a107478e8301c3982b6d960a29a2",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/control-run1/diagnostic/A_T1_11_row_0.candidates.i32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\peer-on-run1\\diagnostic\\round_6_row_0.logits.f32",
+      "bytes": 993280,
+      "sha256": "9141e19462bf6c249acc15dd2e97f5f48caff86b82b511c2da6f84765cdad698",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/control2-run1/diagnostic/R6_T2_51338_11_row_0.logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\peer-on-run1\\diagnostic\\round_6_row_1.candidates.i32",
+      "bytes": 993280,
+      "sha256": "04e2cf36c8dbca2187a72a00956b204113e8a107478e8301c3982b6d960a29a2",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/control-run1/diagnostic/A_T1_11_row_0.candidates.i32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\peer-on-run1\\diagnostic\\round_6_row_1.logits.f32",
+      "bytes": 993280,
+      "sha256": "4b6503b73ef8b550628e5ee08b789d955ee335b1b2cd62ae39017351d1e0ad25",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/control2-run1/diagnostic/R6_T2_51338_11_row_1.logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\peer-on-run1\\diagnostic\\round_9_row_0.candidates.i32",
+      "bytes": 993280,
+      "sha256": "04e2cf36c8dbca2187a72a00956b204113e8a107478e8301c3982b6d960a29a2",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/control-run1/diagnostic/A_T1_11_row_0.candidates.i32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\peer-on-run1\\diagnostic\\round_9_row_0.logits.f32",
+      "bytes": 993280,
+      "sha256": "61c70cd945386491937c0f7a7f4de61c4c9c20353c8b457214d266752f4e3f66",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/control2-run1/diagnostic/C171_T2_11906_271_row_0.logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\peer-on-run1\\diagnostic\\round_9_row_1.candidates.i32",
+      "bytes": 993280,
+      "sha256": "04e2cf36c8dbca2187a72a00956b204113e8a107478e8301c3982b6d960a29a2",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/control-run1/diagnostic/A_T1_11_row_0.candidates.i32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\peer-on-run1\\diagnostic\\round_9_row_1.logits.f32",
+      "bytes": 993280,
+      "sha256": "e68991a3d4427f9b7584d7c570ccffd9b5e897560b14f5e9048b303e0879c246",
+      "kind": "verified archived raw diagnostic/state payload",
+      "archive_entry": ".scratch/qwen-mtp-divergence-20261022/control2-run1/diagnostic/C171_T2_11906_271_row_1.logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\qwen-link1\\qwen.exp",
+      "bytes": 24977,
+      "sha256": "eefa1d129bc7d2d89f223891b3b8e5200e1f1f67cf4f149b1f1a4329382930c4",
+      "kind": "rebuildable obsolete image/link output"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\qwen-link1\\qwen.lib",
+      "bytes": 41384,
+      "sha256": "339d3ce297534ebac8825c27a011f2f4f9dfe366c657ebfc45dbbfdc8412a2cb",
+      "kind": "rebuildable obsolete image/link output"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\qwen-link1\\qwen.map",
+      "bytes": 58681783,
+      "sha256": "db9a998724a4f6da498549f3fc0ae3f8b82ab5e231cc90c87bbb59dddbf0ccde",
+      "kind": "rebuildable obsolete image/link output"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\review\\__pycache__\\check_logits.cpython-312.pyc",
+      "bytes": 19486,
+      "sha256": "3a51acfd28dfe1c077d856b4e686f946ce88b74a92cf18efb401e3aa6981fb8a",
+      "kind": "rebuildable obsolete image/link output"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-divergence-20261022\\review\\__pycache__\\read_partial_state.cpython-312.pyc",
+      "bytes": 20216,
+      "sha256": "a617048cb4fd1a1816c8b0cf85672db835ae0783a20c6a31bf5454633270bd16",
+      "kind": "rebuildable obsolete image/link output"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-window-20261022\\qwen-link1\\qwen.exe",
+      "bytes": 140240384,
+      "sha256": "b09548496e1541674ba8a739c63f6be2cc9f94a970ede684f7e081fdd2f6dd10",
+      "kind": "superseded original Hyle image; frozen V object closure retained",
+      "ready_record": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-window-20261022\\qwen-ready-attempt1.json",
+        "bytes": 1177,
+        "sha256": "6aebe634ceb3067f073e4752a095fe0eb83c9e0a860c30f78c45c8af87468564"
+      }
+    }
+  ]
+}

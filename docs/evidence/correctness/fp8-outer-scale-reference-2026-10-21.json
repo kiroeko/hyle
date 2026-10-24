@@ -1,0 +1,249 @@
+{
+  "passed": true,
+  "scope": "Portable stored-scale FP8 outer-axis software references and the explicitly recorded finite role; not full artifact/model, Linux, AMD hardware equivalence, quality or throughput.",
+  "cases": 28,
+  "new_cases": 16,
+  "scalar_neighbors": 12,
+  "successful_submissions": 252,
+  "skipped": 0,
+  "backends": {
+    "cpu": {
+      "passed": true,
+      "cases": 7,
+      "new_cases": 4,
+      "scalar_neighbors": 3,
+      "successful_submissions": 63,
+      "skipped": 0,
+      "receipt": {
+        "path": ".scratch\\architecture-refactor-2026-10-18\\quark-fp8-side-2026-10-21\\cpu\\validation\\final-current\\receipt.json",
+        "bytes": 10905,
+        "sha256": "009887382d1f9b33892b3b6dc6d4a33f05219c216d71c2be8bb71a97ec81c8e2"
+      },
+      "xml": {
+        "path": ".scratch\\architecture-refactor-2026-10-18\\quark-fp8-side-2026-10-21\\cpu\\validation\\final-current\\tests.xml",
+        "bytes": 10439,
+        "sha256": "e0780f2618f4527e5cac78de6d644c3a5ce72537b24aa55ffe2941b565e114b5"
+      },
+      "tests": [
+        {
+          "name": "CpuFp8OuterScale.RowAndChannelScalesKeepWeightThenActivationOrder",
+          "successful_submissions": 4
+        },
+        {
+          "name": "CpuFp8OuterScale.DynamicRowPrologueKeepsActivationThenWeightOrder",
+          "successful_submissions": 4
+        },
+        {
+          "name": "CpuFp8OuterScale.PublishedCodesKeepTheOrdinaryOuterScaleGraph",
+          "successful_submissions": 2
+        },
+        {
+          "name": "CpuFp8OuterScale.OriginalScalarLifetimeNeighbor",
+          "successful_submissions": 16
+        },
+        {
+          "name": "CpuFp8OuterScale.OriginalScalarIeeeNeighbor",
+          "successful_submissions": 22
+        },
+        {
+          "name": "CpuFp8OuterScale.OriginalScalarPublishedCodesNeighbor",
+          "successful_submissions": 7
+        },
+        {
+          "name": "CpuFp8OuterScale.SourceBoundFaProjectionKeepsStoredCodesAndOuterScales",
+          "successful_submissions": 8
+        }
+      ]
+    },
+    "cuda": {
+      "passed": true,
+      "cases": 7,
+      "new_cases": 4,
+      "scalar_neighbors": 3,
+      "successful_submissions": 63,
+      "skipped": 0,
+      "receipt": {
+        "path": ".scratch\\architecture-refactor-2026-10-18\\quark-fp8-side-2026-10-21\\cuda\\validation\\final-current\\receipt.json",
+        "bytes": 13354,
+        "sha256": "e4c84b3ef4db21bff89288084fdbecd1ac0b194bb211227af19c6902f9055462"
+      },
+      "xml": {
+        "path": ".scratch\\architecture-refactor-2026-10-18\\quark-fp8-side-2026-10-21\\cuda\\validation\\final-current\\tests.xml",
+        "bytes": 12900,
+        "sha256": "e7c9985e95de43418df2e947a520610fed26bcf4d6690c1a268a080b4047c17f"
+      },
+      "tests": [
+        {
+          "name": "CudaFp8OuterScale.RowAndChannelScalesKeepWeightThenActivationOrder",
+          "successful_submissions": 4
+        },
+        {
+          "name": "CudaFp8OuterScale.DynamicRowPrologueKeepsActivationThenWeightOrder",
+          "successful_submissions": 4
+        },
+        {
+          "name": "CudaFp8OuterScale.PublishedCodesKeepTheOrdinaryOuterScaleGraph",
+          "successful_submissions": 2
+        },
+        {
+          "name": "CudaFp8OuterScale.OriginalScalarLifetimeNeighbor",
+          "successful_submissions": 16
+        },
+        {
+          "name": "CudaFp8OuterScale.OriginalScalarIeeeNeighbor",
+          "successful_submissions": 22
+        },
+        {
+          "name": "CudaFp8OuterScale.OriginalScalarPublishedCodesNeighbor",
+          "successful_submissions": 7
+        },
+        {
+          "name": "CudaFp8OuterScale.SourceBoundFaProjectionKeepsStoredCodesAndOuterScales",
+          "successful_submissions": 8
+        }
+      ]
+    },
+    "vulkan": {
+      "passed": true,
+      "cases": 7,
+      "new_cases": 4,
+      "scalar_neighbors": 3,
+      "successful_submissions": 63,
+      "skipped": 0,
+      "receipt": {
+        "path": ".scratch\\architecture-refactor-2026-10-18\\quark-fp8-side-2026-10-21\\vulkan\\validation\\final-current\\receipt.json",
+        "bytes": 5072,
+        "sha256": "b5aad0b5fefb01df0591c065eab8bd39f319561b6bdd4c449e2cc9f791137119"
+      },
+      "xml": {
+        "path": ".scratch\\architecture-refactor-2026-10-18\\quark-fp8-side-2026-10-21\\vulkan\\validation\\final-current\\tests.xml",
+        "bytes": 4641,
+        "sha256": "c2401f50ce5adea9100a200ea13f9ad5ff91e45ffc203ce2aad0d87ea80ae60e"
+      },
+      "tests": [
+        {
+          "name": "VulkanFp8OuterScale.RowAndChannelScalesKeepWeightThenActivationOrder",
+          "successful_submissions": 4
+        },
+        {
+          "name": "VulkanFp8OuterScale.DynamicRowPrologueKeepsActivationThenWeightOrder",
+          "successful_submissions": 4
+        },
+        {
+          "name": "VulkanFp8OuterScale.PublishedCodesKeepTheOrdinaryOuterScaleGraph",
+          "successful_submissions": 2
+        },
+        {
+          "name": "VulkanFp8OuterScale.OriginalScalarLifetimeNeighbor",
+          "successful_submissions": 16
+        },
+        {
+          "name": "VulkanFp8OuterScale.OriginalScalarIeeeNeighbor",
+          "successful_submissions": 22
+        },
+        {
+          "name": "VulkanFp8OuterScale.OriginalScalarPublishedCodesNeighbor",
+          "successful_submissions": 7
+        },
+        {
+          "name": "VulkanFp8OuterScale.SourceBoundFaProjectionKeepsStoredCodesAndOuterScales",
+          "successful_submissions": 8
+        }
+      ]
+    },
+    "apple": {
+      "passed": true,
+      "cases": 7,
+      "new_cases": 4,
+      "scalar_neighbors": 3,
+      "successful_submissions": 63,
+      "skipped": 0,
+      "receipt": {
+        "path": ".scratch\\architecture-refactor-2026-10-18\\quark-fp8-side-2026-10-21\\apple\\final-validation.json",
+        "bytes": 7634,
+        "sha256": "550e6390db2e15a40a3014b642071c8895256c86d93c9c2f17f7d7f010e9e489"
+      },
+      "xml": {
+        "path": ".scratch\\architecture-refactor-2026-10-18\\quark-fp8-side-2026-10-21\\apple\\mac\\current7\\results\\current7-tests.xml",
+        "bytes": 5430,
+        "sha256": "00b250f7822f0351095dceaa57ba2533cf23f65e3bf6f05974b7a5f0cff80f8f"
+      },
+      "tests": [
+        {
+          "name": "AppleFp8OuterScaleGraph.CurrentRowsAndChannelsKeepScaleOrder",
+          "successful_submissions": 4
+        },
+        {
+          "name": "AppleFp8OuterScaleGraph.DynamicRowScalePrologueKeepsBoundedBank",
+          "successful_submissions": 4
+        },
+        {
+          "name": "AppleFp8OuterScaleGraph.PublishedActivationCodesKeepOrdinaryFallback",
+          "successful_submissions": 2
+        },
+        {
+          "name": "AppleFp8OuterScaleGraph.SourceRoleKeepsOriginalOuterScalesAndReciprocalTree",
+          "successful_submissions": 8
+        },
+        {
+          "name": "AppleStaticFloat8ReferenceGraph.OriginalCodesAndSeparateStoredScalesSurviveSlotsAndUpdates",
+          "successful_submissions": 16
+        },
+        {
+          "name": "AppleStaticFloat8ReferenceGraph.IeeeScalarsAndCastBoundariesKeepTheCodeDomainTree",
+          "successful_submissions": 22
+        },
+        {
+          "name": "AppleStaticFloat8ReferenceGraph.PublishedCodeOrWidenedWeightKeepsTheOrdinaryGraph",
+          "successful_submissions": 7
+        }
+      ]
+    }
+  },
+  "semantics": {
+    "SA": "F32 scalar or explicit [M,1]",
+    "SW": "F32 scalar, [N] or [1,N]",
+    "order": "Both explicit code-dot->SA->SW and code-dot->SW->SA; two F32 RNE boundaries retained",
+    "weights": "Original E4 bytes; no N*K floating weight expansion on the qualified candidate",
+    "native_activation_workspace": "CPU/CUDA M*K encoded bytes and bounded64-element CPU weight tile; Vulkan/Metal quantize inside the bounded code-dot kernel",
+    "role": "Catalog23 fixed header f_a_proj: M1/M2,N128,K7168; finite artificial E4/F32 bytes; no-floor F32 maximum times F32 reciprocal448, strict F32 reciprocal, SW then SA, BF16 output"
+  },
+  "selection": {
+    "proof": "Executions explicitly select the available native candidate using existing test constraints/adapters; no production preference changes",
+    "default_compile": "CPU9/CUDA14 steps for both M1/M2; no static-FP8 policy selected; one3,670,016-byte F32 weight workspace view plus its transpose alias",
+    "caveat": "Compile-only observations do not measure allocation frequency, traffic or throughput. Default selection and its memory/time tradeoff remain delivery3 work."
+  },
+  "fixes": [
+    "Private8B descriptor revision2 and common closed12-node pattern; cold outer axes and original scale order",
+    "Vulkan half/BF16 writer now ignores fully padded two-dimensional grid pairs; source-level defect found independently, not reproduced as a local out-of-bounds run"
+  ],
+  "retained_failures": [
+    "CPU/CUDA initial test wrapper constrained the entire new prologue to a limited provider; compilation of the graph correctly rejected unsupported unary",
+    "Unconstrained default executed correct values but did not select the candidate, so strict selection tests failed; final tests constrain only the12-node candidate",
+    "Two Windows diagnostic-wrapper C2039 compilation failures fixed to the actual Result error API",
+    "Shader-independent build metadata assertion after a concurrent shader source update; all actual compiler exits were0, exact shader and embedding refreshed"
+  ],
+  "new_decode_measurement": false,
+  "remaining": [
+    "GLM catalog30 block128 reciprocal-multiply scale policy and related backend wiring",
+    "Three delivery packages, final end-to-end comparison, then MTP and mmproj"
+  ],
+  "not_verified": [
+    "Original numerical checkpoint payload or complete model/artifact",
+    "Linux",
+    "AMD rcpf/FTZ and every native GEMM bit equivalence",
+    "Default automatic contraction benefit",
+    "Quality or throughput"
+  ],
+  "archive": {
+    "path": "docs\\evidence\\correctness\\fp8-outer-scale-reference-2026-10-21.zip",
+    "bytes": 9017327,
+    "sha256": "556c5b203aa3a71ab5d14ea5d0449ca7c129ec354fcfa862f190d0e60bd2924d"
+  },
+  "manifest_members": 1062,
+  "source_freeze": {
+    "path": ".scratch\\architecture-refactor-2026-10-18\\quark-fp8-side-2026-10-21\\root\\source-freeze.json",
+    "bytes": 8589,
+    "sha256": "39f2a66f7cc5d975c33b90de3a32a87cc59eedd8c10e20e9ea31a667729fce90"
+  }
+}

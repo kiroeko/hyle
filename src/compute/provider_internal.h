@@ -20,8 +20,21 @@
 namespace hyle::compute::detail {
 
 struct ContextState;
+class ContextRef;
 
-inline constexpr std::uint32_t kProviderContractVersion = 14;
+// Operation now retains owned inline schemas. Requests/prepared state require
+// the same nontrivial copy/destruction ABI even though their byte size matches.
+inline constexpr std::uint32_t kProviderContractVersion = 18;
+
+// Only capture compatibility is an upper bound during discovery. All other
+// runtime ownership, threading and replay facts must remain exactly unchanged.
+constexpr bool prepared_runtime_matches(ProviderRuntimeProperties actual,
+                                        ProviderRuntimeProperties proposal) noexcept {
+  if (actual.capture_compatible && !proposal.capture_compatible)
+    return false;
+  actual.capture_compatible = proposal.capture_compatible;
+  return actual == proposal;
+}
 
 struct ProviderInstanceAccess final {
   static constexpr ProviderInstanceId make(std::uint64_t value) noexcept {
@@ -144,6 +157,11 @@ struct ProviderVTable final {
 // one configured provider without leaking provider state or retaining caller
 // spans. Exact preparation revalidates the proposal identity and resources.
 struct OperationPreparationAccess final {
+  HYLE_COMPUTE_API static Result<OperationPreparedAccess>
+  inspect_access(const PreparedOperation &, ProviderExtensionId) noexcept;
+  // Cold selected-artifact proof; missing/declined capability is false.
+  HYLE_COMPUTE_API static Result<bool>
+  preserves_capture_bindings(const OperationInvocation &) noexcept;
   // Validate a cold proposal before any exact storage has been selected.
   HYLE_COMPUTE_API static Status
   validate_requirement(const ResourceBindingRequirement &requirement) noexcept;
@@ -156,7 +174,7 @@ struct OperationPreparationAccess final {
                  mem::MemoryResourceRef resource) noexcept;
 
   HYLE_COMPUTE_API static Result<ProviderOperationProposal>
-  propose(const Context &context, std::size_t provider_index,
+  propose(const ContextRef &context, std::size_t provider_index,
           Operation operation, std::span<const TensorDesc> inputs,
           std::span<const TensorDesc> outputs,
           std::span<ResourceBindingRequirement> input_requirements,
@@ -166,7 +184,7 @@ struct OperationPreparationAccess final {
           const WorkloadContext &workload = {}) noexcept;
 
   HYLE_COMPUTE_API static Result<ProviderPrepareAttempt> prepare_candidate(
-      const Context &context, const ProviderOperationProposal &proposal,
+      const ContextRef &context, const ProviderOperationProposal &proposal,
       Operation operation, std::span<const TensorDesc> inputs,
       std::span<const TensorDesc> outputs,
       std::span<const ResourceBindingRequirement> input_requirements,

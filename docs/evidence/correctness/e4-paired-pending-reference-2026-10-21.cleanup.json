@@ -1,0 +1,243 @@
+﻿{
+    "completed":  true,
+    "windows_removed":  24,
+    "windows_bytes":  1338374608,
+    "windows_kept_objects":  13,
+    "mac":  {
+                "removed":  2,
+                "bytes":  22318925,
+                "kept_objects":  1
+            },
+    "evidence_sha256":  "181f24e58b8d4e8d809163a57dfc850a2795f65a55ee4116b2fbe9a842c3a9cc",
+    "archive_sha256":  "d09695877b899a0ce9073279404679b427bc02dbc3bf1802d10e1e4d04064161",
+    "exact_plan":  {
+                       "allowed_windows":  "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\e4-paired-pending-2026-10-21",
+                       "allowed_mac":  "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/e4-paired-pending-2026-10-21/apple",
+                       "remove_windows":  [
+                                              {
+                                                  "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\e4-paired-pending-2026-10-21\\cpu\\checks\\final-link1\\cpu.exe",
+                                                  "bytes":  29238272,
+                                                  "sha256":  "3b6be10b80ca285e9df34f1e6bbcc59021d7d6939368cbd5a6ffa00590ba7f2f"
+                                              },
+                                              {
+                                                  "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\e4-paired-pending-2026-10-21\\cpu\\checks\\final-link1\\cpu.map",
+                                                  "bytes":  47554255,
+                                                  "sha256":  "5f2b001dd05ef50263eeb7cdee85a1a9c4d334217dbae6bff06eb2bc2cfa1f23"
+                                              },
+                                              {
+                                                  "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\e4-paired-pending-2026-10-21\\cpu\\checks\\final-link2\\cpu.exe",
+                                                  "bytes":  29238784,
+                                                  "sha256":  "94ddb0a562ee8b42a242af8fc4b05db9368e8c83d49f860f85212ce33baae6ab"
+                                              },
+                                              {
+                                                  "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\e4-paired-pending-2026-10-21\\cpu\\checks\\final-link2\\cpu.map",
+                                                  "bytes":  47555174,
+                                                  "sha256":  "b9e3964cb1a6418d3ee9136ee46ec0bedaec2eb96d1f7cafc448a4c4a4476abc"
+                                              },
+                                              {
+                                                  "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\e4-paired-pending-2026-10-21\\cpu\\checks\\link1\\cpu.exe",
+                                                  "bytes":  29234688,
+                                                  "sha256":  "f7cf2ad9361362ac6de7df073b7b26e74926d4311d9780361205b2eb856ab0a3"
+                                              },
+                                              {
+                                                  "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\e4-paired-pending-2026-10-21\\cpu\\checks\\link1\\cpu.map",
+                                                  "bytes":  47552421,
+                                                  "sha256":  "dd22501b64d1d1f2d08c42d3602abdb957f7b878870b279254a4ac21c6c2efa4"
+                                              },
+                                              {
+                                                  "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\e4-paired-pending-2026-10-21\\cpu\\checks\\link2-diagnostic\\cpu.exe",
+                                                  "bytes":  29235712,
+                                                  "sha256":  "57bf46b6bcf7d90addcdb6e59991b5a5636346191768e8347f2fa6851eadc74a"
+                                              },
+                                              {
+                                                  "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\e4-paired-pending-2026-10-21\\cpu\\checks\\link2-diagnostic\\cpu.map",
+                                                  "bytes":  47553062,
+                                                  "sha256":  "c20b7b5c6f43d026b87b0c58ce6ca8f3954e8904b865e31ce9066d3152ce203a"
+                                              },
+                                              {
+                                                  "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\e4-paired-pending-2026-10-21\\cpu\\checks\\link3-stage\\cpu.exe",
+                                                  "bytes":  29236224,
+                                                  "sha256":  "8fcbb658a7013c27d1ffba91040d82b234e37075fd3036ae6fcc52d8e11c7c2b"
+                                              },
+                                              {
+                                                  "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\e4-paired-pending-2026-10-21\\cpu\\checks\\link3-stage\\cpu.map",
+                                                  "bytes":  47553674,
+                                                  "sha256":  "1bdbdc9c03606fc84bbf46e58d09b768cc195e4102b38efb7bb22e64510bd43f"
+                                              },
+                                              {
+                                                  "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\e4-paired-pending-2026-10-21\\cpu\\checks\\stage-diagnostic-link\\cpu.exe",
+                                                  "bytes":  29236224,
+                                                  "sha256":  "20f137e2273020c683db15d209068f5ec2b75e2a592d69dd335a8d45facae47e"
+                                              },
+                                              {
+                                                  "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\e4-paired-pending-2026-10-21\\cpu\\checks\\stage-diagnostic-link\\cpu.map",
+                                                  "bytes":  47553674,
+                                                  "sha256":  "ea46003cc2362b2a5035728d880e0edfcd6547d48c463ebcb62e3a8bf0a5585b"
+                                              },
+                                              {
+                                                  "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\e4-paired-pending-2026-10-21\\cuda\\checks\\final-link1\\cuda.exe",
+                                                  "bytes":  143977984,
+                                                  "sha256":  "38944f04f0a20c6b89d260264a7ae06606601b4d39a854df236668880221cee4"
+                                              },
+                                              {
+                                                  "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\e4-paired-pending-2026-10-21\\cuda\\checks\\final-link1\\cuda.map",
+                                                  "bytes":  72457508,
+                                                  "sha256":  "e5d5175f03040969cc50634a0da2185618143e5dd264ef7ecf19d7713055a429"
+                                              },
+                                              {
+                                                  "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\e4-paired-pending-2026-10-21\\cuda\\checks\\final-link2\\cuda.exe",
+                                                  "bytes":  143978496,
+                                                  "sha256":  "9f743fab0e23f27c2b7dd2c66d1ad06dc15483ff27416e8aa3a4172bee0cb7fe"
+                                              },
+                                              {
+                                                  "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\e4-paired-pending-2026-10-21\\cuda\\checks\\final-link2\\cuda.map",
+                                                  "bytes":  72458439,
+                                                  "sha256":  "33dd104bc6ac791a99a0d40bde53ee2a631515d7143ef667b31d036b6f1ffbc5"
+                                              },
+                                              {
+                                                  "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\e4-paired-pending-2026-10-21\\cuda\\checks\\link1\\cuda.map",
+                                                  "bytes":  0,
+                                                  "sha256":  "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                                              },
+                                              {
+                                                  "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\e4-paired-pending-2026-10-21\\cuda\\checks\\link2\\cuda.exe",
+                                                  "bytes":  143977984,
+                                                  "sha256":  "2d5752b4a3b343fb7a6155fc69d3b2dc558a19d7e578ff11c04218dd1c9a1e76"
+                                              },
+                                              {
+                                                  "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\e4-paired-pending-2026-10-21\\cuda\\checks\\link2\\cuda.map",
+                                                  "bytes":  72456871,
+                                                  "sha256":  "92b1e1d4bb2028c3e9ba91777e5e26e1041f6bd4cc9b986e6ab194d007e37948"
+                                              },
+                                              {
+                                                  "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\e4-paired-pending-2026-10-21\\vulkan\\checks\\final-link1\\vulkan.exe",
+                                                  "bytes":  70517248,
+                                                  "sha256":  "f8d6dd7670e8b53e2bd736b4997632dbe885b5f16bda2a59d0760abf046f5f58"
+                                              },
+                                              {
+                                                  "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\e4-paired-pending-2026-10-21\\vulkan\\checks\\final-link1\\vulkan.map",
+                                                  "bytes":  42965333,
+                                                  "sha256":  "c7ef1f0a436b75a8766526893f8383d84c8fd284fe88439531132809fddcfb48"
+                                              },
+                                              {
+                                                  "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\e4-paired-pending-2026-10-21\\vulkan\\checks\\link1\\vulkan.exe",
+                                                  "bytes":  70517248,
+                                                  "sha256":  "a4bf7d5d675ebc9ff7e7fb6aa814020070ca977f17f838ceb68d7d1dc3b161d4"
+                                              },
+                                              {
+                                                  "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\e4-paired-pending-2026-10-21\\vulkan\\checks\\link1\\vulkan.map",
+                                                  "bytes":  42966997,
+                                                  "sha256":  "a98c11ffc4fadf84fcb9bb8786007916390328732424e77db68ecef5ac6e20ca"
+                                              },
+                                              {
+                                                  "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\e4-paired-pending-2026-10-21\\cuda\\checks\\final-link2\\hyle_ggml_cpu_avx2_ffa4e8b8_e74fc9bb8964d04f.dll",
+                                                  "bytes":  1358336,
+                                                  "sha256":  "09828878dd44d62eb6ae844827e20382ee2b457d0dbd76594b6577bea3ad5434"
+                                              }
+                                          ],
+                       "keep_windows":  [
+                                            {
+                                                "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\e4-paired-pending-2026-10-21\\common\\checks\\final-common\\batch-transfer.obj",
+                                                "bytes":  787327,
+                                                "sha256":  "f5aae0e18e9d6c2495de5557ca0d562d29ebc56f2fb5718892fc7e0799a676ef"
+                                            },
+                                            {
+                                                "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\e4-paired-pending-2026-10-21\\cpu\\checks\\attempt2\\encoded-page.obj",
+                                                "bytes":  2524656,
+                                                "sha256":  "c5cf7530db2067bfbd58753787c1571c1e001feac346fb49c196f735252a133a"
+                                            },
+                                            {
+                                                "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\e4-paired-pending-2026-10-21\\cpu\\checks\\attempt3-diagnostic\\encoded-page.obj",
+                                                "bytes":  2526677,
+                                                "sha256":  "5776a3aafb2b025f7b86e643e385a066180b765ad8704104a79f2c24d02e8ae3"
+                                            },
+                                            {
+                                                "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\e4-paired-pending-2026-10-21\\cpu\\checks\\attempt4-stage\\encoded-page.obj",
+                                                "bytes":  2527996,
+                                                "sha256":  "4d25b80d027714d1fdbcbcb6c3766186cd3d51921255258162406f1ff4aa8508"
+                                            },
+                                            {
+                                                "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\e4-paired-pending-2026-10-21\\cpu\\checks\\final-common\\encoded-page.obj",
+                                                "bytes":  2533671,
+                                                "sha256":  "b9be1fd69715073a7124a3e04e9ccfa50804a534e75279fd68783444c2f9800b"
+                                            },
+                                            {
+                                                "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\e4-paired-pending-2026-10-21\\cpu\\checks\\final-common2\\encoded-page.obj",
+                                                "bytes":  2535129,
+                                                "sha256":  "bbeebb3a5b09a58c8ee0cdf3de4ca5d717ba668a0d23684f3d14f50b00e3c92c"
+                                            },
+                                            {
+                                                "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\e4-paired-pending-2026-10-21\\cpu\\checks\\stage-diagnostic\\encoded-page.obj",
+                                                "bytes":  2527996,
+                                                "sha256":  "a81d09c109bba94576c44527483efa439db19b6fc75b834c1edde5f1a3dc2611"
+                                            },
+                                            {
+                                                "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\e4-paired-pending-2026-10-21\\cuda\\checks\\attempt1\\encoded-page.obj",
+                                                "bytes":  2287287,
+                                                "sha256":  "a5514ddac4d7a5a910a46d7764be6293013fcd925586ee7f60d443c76d8d7463"
+                                            },
+                                            {
+                                                "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\e4-paired-pending-2026-10-21\\cuda\\checks\\attempt2\\encoded-page.obj",
+                                                "bytes":  2287287,
+                                                "sha256":  "aa2a24199179b7118aafb96acf40c85baab31073d54202bf1bc29ceedd46d20e"
+                                            },
+                                            {
+                                                "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\e4-paired-pending-2026-10-21\\cuda\\checks\\final-common\\encoded-page.obj",
+                                                "bytes":  2288613,
+                                                "sha256":  "5b366ff2f4da58e777335826002575de277971e7200f0fc9ba17eab607779cfe"
+                                            },
+                                            {
+                                                "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\e4-paired-pending-2026-10-21\\cuda\\checks\\final-common2\\encoded-page.obj",
+                                                "bytes":  2290967,
+                                                "sha256":  "3e257a615a6ce39fa3fca4dd473a91a5a582ee0bea983eb99c90a686ac2cda99"
+                                            },
+                                            {
+                                                "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\e4-paired-pending-2026-10-21\\cuda\\checks\\mixed-helper\\cpu-cuda-compile.obj",
+                                                "bytes":  65763,
+                                                "sha256":  "6b8ec0c14981b779202957fe633fa5b8139c3132e2915ab9c7b353df51b1d412"
+                                            },
+                                            {
+                                                "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\e4-paired-pending-2026-10-21\\vulkan\\checks\\attempt1\\encoded-page.obj",
+                                                "bytes":  2338669,
+                                                "sha256":  "d49fd82e5e01dd2e74c47920d557e0fd437106f29a2814c993b91e2a8549228b"
+                                            }
+                                        ],
+                       "keep_runtime_cache":  [
+                                                  {
+                                                      "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_ggml_cpu_avx2_ffa4e8b8_e74fc9bb8964d04f.dll",
+                                                      "bytes":  1358336,
+                                                      "sha256":  "09828878dd44d62eb6ae844827e20382ee2b457d0dbd76594b6577bea3ad5434"
+                                                  }
+                                              ],
+                       "remove_mac":  [
+                                          {
+                                              "path":  "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/e4-paired-pending-2026-10-21/apple/e4-paired-pending",
+                                              "bytes":  17208496,
+                                              "sha256":  "00e4b15041f5d42ca092abfb1825e21b375349e9e77e82489e4226a8942f50c4"
+                                          },
+                                          {
+                                              "path":  "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/e4-paired-pending-2026-10-21/apple/e4-paired-pending.map",
+                                              "bytes":  5110429,
+                                              "sha256":  "62a26b552e8436b871b7434ccbc3a7d38db08b3cc446bf2df6f032c240e1f9f2"
+                                          }
+                                      ],
+                       "keep_mac":  [
+                                        {
+                                            "path":  "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/e4-paired-pending-2026-10-21/apple/objects/tests--compute_batch--encoded_page_native_consumer.cc.o",
+                                            "bytes":  221408,
+                                            "sha256":  "adca974d53ab7db5caac565397660e342050fbf79befa503e8f308d16c2ad13b"
+                                        }
+                                    ],
+                       "evidence":  {
+                                        "path":  "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\e4-paired-pending-reference-2026-10-21.json",
+                                        "bytes":  97326,
+                                        "sha256":  "181f24e58b8d4e8d809163a57dfc850a2795f65a55ee4116b2fbe9a842c3a9cc"
+                                    },
+                       "archive":  {
+                                       "path":  "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\e4-paired-pending-reference-2026-10-21.zip",
+                                       "bytes":  1781624,
+                                       "sha256":  "d09695877b899a0ce9073279404679b427bc02dbc3bf1802d10e1e4d04064161"
+                                   }
+                   },
+    "source_script":  "# Exact ordinary E4 pending test-artifact cleanup. No recursive directory removal.\r\n$ErrorActionPreference = \u0027Stop\u0027\r\n$plan = Get-Content -LiteralPath \u0027C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\e4-paired-pending-2026-10-21\\root\\cleanup-plan.json\u0027 -Raw | ConvertFrom-Json\r\n$separator = [IO.Path]::DirectorySeparatorChar\r\n$allowed = [IO.Path]::GetFullPath($plan.allowed_windows).TrimEnd($separator) + $separator\r\nfunction Assert-Identity($row) {\r\n  $file = Get-Item -LiteralPath $row.path -ErrorAction Stop\r\n  if ($file.PSIsContainer -or ($file.Attributes -band [IO.FileAttributes]::ReparsePoint)) { throw \"Not a regular file: $($row.path)\" }\r\n  if ($file.Length -ne $row.bytes -or (Get-FileHash -LiteralPath $row.path -Algorithm SHA256).Hash.ToLowerInvariant() -ne $row.sha256) { throw \"Identity changed: $($row.path)\" }\r\n}\r\nAssert-Identity $plan.evidence\r\nAssert-Identity $plan.archive\r\nforeach ($row in $plan.remove_windows) {\r\n  $full = [IO.Path]::GetFullPath($row.path)\r\n  if (-not $full.StartsWith($allowed, [StringComparison]::OrdinalIgnoreCase) -or [IO.Path]::GetExtension($full) -notin \u0027.exe\u0027,\u0027.map\u0027,\u0027.dll\u0027) { throw \"Outside exact artifact scope: $full\" }\r\n  Assert-Identity $row\r\n}\r\nforeach ($row in $plan.keep_windows) { Assert-Identity $row }\r\nforeach ($row in $plan.keep_runtime_cache) { Assert-Identity $row }\r\n$active = @(Get-CimInstance Win32_Process | Where-Object { $_.ExecutablePath -and $_.ExecutablePath.StartsWith($allowed, [StringComparison]::OrdinalIgnoreCase) })\r\nif ($active.Count) { throw \u0027A test executable in this exact workspace is still running\u0027 }\r\nforeach ($row in $plan.remove_windows) { Remove-Item -LiteralPath $row.path -Force }\r\nforeach ($row in $plan.keep_windows) { Assert-Identity $row }\r\nforeach ($row in $plan.keep_runtime_cache) { Assert-Identity $row }\r\n$macProgram = @\u0027\r\nimport pathlib,hashlib,json,subprocess\r\nplan=json.loads(\u0027{\"allowed_mac\": \"/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/e4-paired-pending-2026-10-21/apple\", \"remove_mac\": [{\"path\": \"/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/e4-paired-pending-2026-10-21/apple/e4-paired-pending\", \"bytes\": 17208496, \"sha256\": \"00e4b15041f5d42ca092abfb1825e21b375349e9e77e82489e4226a8942f50c4\"}, {\"path\": \"/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/e4-paired-pending-2026-10-21/apple/e4-paired-pending.map\", \"bytes\": 5110429, \"sha256\": \"62a26b552e8436b871b7434ccbc3a7d38db08b3cc446bf2df6f032c240e1f9f2\"}], \"keep_mac\": [{\"path\": \"/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/e4-paired-pending-2026-10-21/apple/objects/tests--compute_batch--encoded_page_native_consumer.cc.o\", \"bytes\": 221408, \"sha256\": \"adca974d53ab7db5caac565397660e342050fbf79befa503e8f308d16c2ad13b\"}]}\u0027)\r\nbase=pathlib.Path(plan[\u0027allowed_mac\u0027]); assert base.is_dir() and not base.is_symlink()\r\ndef verify(row):\r\n p=pathlib.Path(row[\u0027path\u0027]); assert p.is_absolute() and not p.is_symlink() and p.resolve().is_relative_to(base.resolve())\r\n assert p.is_file() and p.stat().st_size==row[\u0027bytes\u0027] and hashlib.sha256(p.read_bytes()).hexdigest()==row[\u0027sha256\u0027],str(p)\r\n return p\r\npaths=[verify(x) for x in plan[\u0027remove_mac\u0027]]\r\nfor row in plan[\u0027keep_mac\u0027]:verify(row)\r\nactive=subprocess.check_output([\u0027ps\u0027,\u0027-axo\u0027,\u0027command=\u0027],text=True)\r\nassert not any(str(p) in command for p in paths for command in active.splitlines() if not command.startswith(\u0027python3 -\u0027)), \u0027test executable is running\u0027\r\nfor p in paths:p.unlink()\r\nfor row in plan[\u0027keep_mac\u0027]:verify(row)\r\nprint(json.dumps(dict(removed=len(paths),bytes=sum(x[\u0027bytes\u0027] for x in plan[\u0027remove_mac\u0027]),kept_objects=len(plan[\u0027keep_mac\u0027]))))\r\n\u0027@\r\n$macResult = $macProgram | \u0026 ssh kiro@172.22.10.198 python3 -\r\nif ($LASTEXITCODE -ne 0) { throw \u0027Mac exact-file cleanup failed; do not report both platforms completed\u0027 }\r\n$result = [ordered]@{\r\n  completed = $true\r\n  windows_removed = @($plan.remove_windows).Count\r\n  windows_bytes = ($plan.remove_windows | Measure-Object -Property bytes -Sum).Sum\r\n  windows_kept_objects = @($plan.keep_windows).Count\r\n  mac = ($macResult | ConvertFrom-Json)\r\n  evidence_sha256 = $plan.evidence.sha256\r\n  archive_sha256 = $plan.archive.sha256\r\n  exact_plan = $plan\r\n  source_script = [IO.File]::ReadAllText($PSCommandPath)\r\n}\r\n$result | ConvertTo-Json -Depth 18 | Set-Content -LiteralPath \u0027C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\e4-paired-pending-reference-2026-10-21.cleanup.json\u0027 -Encoding utf8\r\n[pscustomobject]$result | Select-Object completed,windows_removed,windows_bytes,windows_kept_objects,mac | ConvertTo-Json -Depth 5\r\n"
+}

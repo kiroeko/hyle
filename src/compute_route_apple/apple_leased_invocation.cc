@@ -1,5 +1,6 @@
 #include "hyle/compute/apple_memory.h"
 #include "hyle/compute/detail/apple_batch_access.h"
+#include "apple_file_stream_access.h"
 
 #include <memory>
 #include <new>
@@ -13,6 +14,13 @@ namespace hyle::compute::apple {
 namespace detail {
 Result<OwnedResult<Results>> PagedBatchAccess::submit(Invocation&invocation,LeaseUseBatch uses)noexcept{
   return invocation.submit_guarded(std::move(uses));
+}
+Result<OwnedResult<Results>> PagedBatchAccess::submit_pending(Invocation&invocation,
+    LeaseUseBatch uses,const CopyBatchUpdate&source)noexcept{
+  return invocation.submit_guarded(std::move(uses),
+      [](const void*opaque)noexcept{
+        return CopyStreamAccess::preflight(*static_cast<const CopyBatchUpdate*>(opaque));
+      }, &source);
 }
 Status PagedBatchAccess::wait_native(Invocation&invocation)noexcept{return invocation.wait_native();}
 struct LeasedInvocationState final {

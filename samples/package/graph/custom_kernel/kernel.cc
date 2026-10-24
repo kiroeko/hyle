@@ -32,7 +32,7 @@ struct AffineKernel final {
     return {output == 0 && input == 0, 0};
   }
   KernelCommandResult
-  enqueue(Invocation &, Queue &, std::span<const ConstTensorView> inputs,
+  enqueue(Invocation &, detail::QueueSequence &, std::span<const ConstTensorView> inputs,
           std::span<const TensorView> outputs) const noexcept {
     auto input = inputs[0].storage().map_host();
     if (!input)

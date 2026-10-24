@@ -1,0 +1,880 @@
+{
+  "status": "completed",
+  "time_utc": "2026-10-21T14:44:48.2949254Z",
+  "deleted_files": 173,
+  "deleted_bytes": 1513688529.0,
+  "targets": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\cpu-link1\\cpu.exe",
+      "bytes": 139591680,
+      "sha256": "e0dee84167ac706a99c4f103b952080202ac45fe53404d6a9bccd5eeda9f33e9"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\cpu-link1\\cpu.exp",
+      "bytes": 24972,
+      "sha256": "85630c263172f7c13c58aad492c48ecb30fad4ca3c6b5b2d8eb8b6dedd532838"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\cpu-link1\\cpu.lib",
+      "bytes": 41298,
+      "sha256": "1a72c22d3a6dec39cca5118fd99aa738ff5f4202c029fc8a48afb6c3d20e909d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\cpu-link1\\cpu.map",
+      "bytes": 57506540,
+      "sha256": "705d673e3cf730c86c903a32a157c13ac5352d66aa47c26dfc9a8b9713bc0ab7"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\cuda-link1\\cuda.exe",
+      "bytes": 139412992,
+      "sha256": "8c25a8eb841a4a52a994a867794941655fe70540916d3d1ec1a13ecb1fbcda80"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\cuda-link1\\cuda.exp",
+      "bytes": 24976,
+      "sha256": "1a3627cc1c5b46968368c8a7cd0e10246f2097b3f50eeae490749d0f46e91e93"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\cuda-link1\\cuda.lib",
+      "bytes": 41384,
+      "sha256": "097299e17e955c077a99f65f363d3484d564c016359baeb643f4e47c6b737d59"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\cuda-link1\\cuda.map",
+      "bytes": 57468686,
+      "sha256": "5ab79b0d9f43aa7748db1983aa34236231fbeeb9c189feba3dda915763f3ed9e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\probe-link1\\probe.exe",
+      "bytes": 139704320,
+      "sha256": "0bee76d21be46350b9469f4707d89e63b9a0a84b4ea15aec116f9dbcaa9b4b4c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\probe-link1\\probe.exp",
+      "bytes": 24978,
+      "sha256": "4d1e5fca2f4629b798b275a959a7c5fa83c1e51d34d6b99eff454651de19d1d8"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\probe-link1\\probe.lib",
+      "bytes": 41474,
+      "sha256": "d97664b9bfac874c565d303c78aaddedc46408bb52d748c1e55eff080d46dac2"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\probe-link1\\probe.map",
+      "bytes": 58227274,
+      "sha256": "8d76e5a96ca23df4f0fd469de2bfbd0926cce10c247bd60fce627ac83e9f078d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\probe-link2\\probe.exe",
+      "bytes": 139704832,
+      "sha256": "fcf656b0326cf530161c88298b5b7000d04b31238fb899b287386cb9d0bd5eeb"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\probe-link2\\probe.exp",
+      "bytes": 24978,
+      "sha256": "c96246c58c1079cee3fa7f45036fa08e63f6a0929b2ed400bf2a88c487e8f72f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\probe-link2\\probe.lib",
+      "bytes": 41474,
+      "sha256": "d97664b9bfac874c565d303c78aaddedc46408bb52d748c1e55eff080d46dac2"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\probe-link2\\probe.map",
+      "bytes": 58227487,
+      "sha256": "d2aed7d601abb45a9ed882c05d5fbb170b47028d6f24a06963f400401c34afc7"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\probe-link3\\probe.exe",
+      "bytes": 139703808,
+      "sha256": "471da75bdfc8c84aa0569f3c22b7ee5d52dcb3d190251f4b06364b9dda9da899"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\probe-link3\\probe.exp",
+      "bytes": 24978,
+      "sha256": "4e5cbdc110468a205bd3e0cbece72f1108a5402cd98f18a31f1f15e5e615e5cb"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\probe-link3\\probe.lib",
+      "bytes": 41474,
+      "sha256": "d97664b9bfac874c565d303c78aaddedc46408bb52d748c1e55eff080d46dac2"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\probe-link3\\probe.map",
+      "bytes": 58223343,
+      "sha256": "576ad5a7361f1313e6a14083f2fbfaf714feb962d8ac9eb97399581e750b0695"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\qwen-link1\\qwen.exe",
+      "bytes": 139774464,
+      "sha256": "a0ba2d5ac05776a0846bc25c3d06ec783fecd3454a200780fb72220f2c437601"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\qwen-link1\\qwen.exp",
+      "bytes": 24976,
+      "sha256": "7bcf72765938d4c5d33b4d55230e7f436a99bc456d31c019efa2a59da0aef74e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\qwen-link1\\qwen.lib",
+      "bytes": 41384,
+      "sha256": "339d3ce297534ebac8825c27a011f2f4f9dfe366c657ebfc45dbbfdc8412a2cb"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\qwen-link1\\qwen.map",
+      "bytes": 58342363,
+      "sha256": "6aa9ff3679d5ac6750b2d4fc631973ef1700fbafa89aa05d128bcdf385f189ac"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\qwen-link2\\qwen.exe",
+      "bytes": 139774976,
+      "sha256": "2c9db6eaf17a17082cf5b6007c75c02768be60da2602a132ee408935e1b9ed9d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\qwen-link2\\qwen.exp",
+      "bytes": 24976,
+      "sha256": "80bf3cae7e55445d649a4ecd2ea8a161fc6c24e3faf39731ab5b619dbe2319d2"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\qwen-link2\\qwen.lib",
+      "bytes": 41384,
+      "sha256": "339d3ce297534ebac8825c27a011f2f4f9dfe366c657ebfc45dbbfdc8412a2cb"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\qwen-link2\\qwen.map",
+      "bytes": 58342573,
+      "sha256": "7ba59cde62564a7bf77a34a8f3c065836d7843a4bc0fd7dfec22e8731b4ef666"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\qwen-link3\\qwen.exp",
+      "bytes": 24976,
+      "sha256": "4242a4d9ba049f1cf6e29602afcbf73b8580d078be5e40b35a521d4960e317e6"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\qwen-link3\\qwen.lib",
+      "bytes": 41384,
+      "sha256": "339d3ce297534ebac8825c27a011f2f4f9dfe366c657ebfc45dbbfdc8412a2cb"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\qwen-link3\\qwen.map",
+      "bytes": 58338429,
+      "sha256": "34dbbe3ab24572ead2272cb285a28764fe8627d578b1024c56a6597895810788"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\single-run2\\trace\\round1_decode1\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "e40060187d8c6376d00e58794643dd3f444dceefe29eb675c6ee2b0899131210"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\single-run2\\trace\\round1_decode1\\logits.f32",
+      "bytes": 993280,
+      "sha256": "54999d39e6a46f665fe6f7fc5d22b5136eb5e9b73ae179e5b908b33d7009f326"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\single-run2\\trace\\round1_decode2\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "f6d075ad86e2e0550617e6dfd6201ae335228ee6808ab8ae8bb3681159663424"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\single-run2\\trace\\round1_decode2\\logits.f32",
+      "bytes": 993280,
+      "sha256": "772199ca4b0550c00635c25bd8036a9b5334cb0c22bb79ce86f6fbd81520df67"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\single-run2\\trace\\round1_decode3\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "227c7e6548e2159393ddf350d7dfbd1dda87040994ade315075c005ce7798889"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\single-run2\\trace\\round1_decode3\\logits.f32",
+      "bytes": 993280,
+      "sha256": "aff61c4c7ec366a0b25cf583427df267859aca70ab3c9e264268a30f2d45f3d4"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\single-run2\\trace\\round1_decode4\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "f7d8474a362ca19268b3481791345307fee1026f0a4c871e1227ce3315e7021e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\single-run2\\trace\\round1_decode4\\logits.f32",
+      "bytes": 993280,
+      "sha256": "0ab4e55caa9276fd56d4353c36121014f07342989b570eb9c3f7dfddc21a2bba"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\single-run2\\trace\\round1_prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "441f8e0eea6b8deea8b640bb76efc9dcc1267f3ee4de9e936bcc9fa9110a8ee1"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\single-run2\\trace\\round1_prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "3f9f6f36cbefdeae7dc1e5e89b8af0729c2d9d6f59dab28e040a4771d9609b43"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\single-run2\\trace\\round2_decode1\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "8871fcd2d7757fe35a648f1c251c469af39bbabf6aedaa1140ca265fc83c6f89"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\single-run2\\trace\\round2_decode1\\logits.f32",
+      "bytes": 993280,
+      "sha256": "66db711343338eeeb14cdb3fc6218ea0fc4f81945071835096814859681fcabe"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\single-run2\\trace\\round2_decode2\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "4b61582cd57ec864b3d377722a2d60668b4fcb554c2ae2becf72113b3bd1ba14"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\single-run2\\trace\\round2_decode2\\logits.f32",
+      "bytes": 993280,
+      "sha256": "29cf46dc8de81a798853d10cec118bc91770b7fae999036123e7c9398b6a1d6b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\single-run2\\trace\\round2_decode3\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "ef73bdc8381e86f039d3cd2b3b041e783e31b8c99933b27f7a90527045d0382c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\single-run2\\trace\\round2_decode3\\logits.f32",
+      "bytes": 993280,
+      "sha256": "fb86e1771034cbdb301309d9f8115d0df3b480bd58bcff8613c48fe0f109eca3"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\single-run2\\trace\\round2_prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "841bac7fa804558dac57deec0721853bcb308007d82c1a422fc600db04dc25c6"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\single-run2\\trace\\round2_prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "958bfc71c22a9517e6039108481211b8b4e5b11b0db2d1650c469ccf7824db3d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\multi-run2\\trace\\session0_alice\\round1_decode1\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "e40060187d8c6376d00e58794643dd3f444dceefe29eb675c6ee2b0899131210"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\multi-run2\\trace\\session0_alice\\round1_decode1\\logits.f32",
+      "bytes": 993280,
+      "sha256": "54999d39e6a46f665fe6f7fc5d22b5136eb5e9b73ae179e5b908b33d7009f326"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\multi-run2\\trace\\session0_alice\\round1_decode2\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "f6d075ad86e2e0550617e6dfd6201ae335228ee6808ab8ae8bb3681159663424"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\multi-run2\\trace\\session0_alice\\round1_decode2\\logits.f32",
+      "bytes": 993280,
+      "sha256": "772199ca4b0550c00635c25bd8036a9b5334cb0c22bb79ce86f6fbd81520df67"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\multi-run2\\trace\\session0_alice\\round1_decode3\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "227c7e6548e2159393ddf350d7dfbd1dda87040994ade315075c005ce7798889"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\multi-run2\\trace\\session0_alice\\round1_decode3\\logits.f32",
+      "bytes": 993280,
+      "sha256": "aff61c4c7ec366a0b25cf583427df267859aca70ab3c9e264268a30f2d45f3d4"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\multi-run2\\trace\\session0_alice\\round1_decode4\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "f7d8474a362ca19268b3481791345307fee1026f0a4c871e1227ce3315e7021e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\multi-run2\\trace\\session0_alice\\round1_decode4\\logits.f32",
+      "bytes": 993280,
+      "sha256": "0ab4e55caa9276fd56d4353c36121014f07342989b570eb9c3f7dfddc21a2bba"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\multi-run2\\trace\\session0_alice\\round1_prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "441f8e0eea6b8deea8b640bb76efc9dcc1267f3ee4de9e936bcc9fa9110a8ee1"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\multi-run2\\trace\\session0_alice\\round1_prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "3f9f6f36cbefdeae7dc1e5e89b8af0729c2d9d6f59dab28e040a4771d9609b43"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\multi-run2\\trace\\session0_alice\\round2_decode1\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "8871fcd2d7757fe35a648f1c251c469af39bbabf6aedaa1140ca265fc83c6f89"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\multi-run2\\trace\\session0_alice\\round2_decode1\\logits.f32",
+      "bytes": 993280,
+      "sha256": "66db711343338eeeb14cdb3fc6218ea0fc4f81945071835096814859681fcabe"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\multi-run2\\trace\\session0_alice\\round2_decode2\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "4b61582cd57ec864b3d377722a2d60668b4fcb554c2ae2becf72113b3bd1ba14"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\multi-run2\\trace\\session0_alice\\round2_decode2\\logits.f32",
+      "bytes": 993280,
+      "sha256": "29cf46dc8de81a798853d10cec118bc91770b7fae999036123e7c9398b6a1d6b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\multi-run2\\trace\\session0_alice\\round2_decode3\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "ef73bdc8381e86f039d3cd2b3b041e783e31b8c99933b27f7a90527045d0382c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\multi-run2\\trace\\session0_alice\\round2_decode3\\logits.f32",
+      "bytes": 993280,
+      "sha256": "fb86e1771034cbdb301309d9f8115d0df3b480bd58bcff8613c48fe0f109eca3"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\multi-run2\\trace\\session0_alice\\round2_prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "841bac7fa804558dac57deec0721853bcb308007d82c1a422fc600db04dc25c6"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\multi-run2\\trace\\session0_alice\\round2_prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "958bfc71c22a9517e6039108481211b8b4e5b11b0db2d1650c469ccf7824db3d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\multi-run2\\trace\\session1_bob\\round1_decode1\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "c1fb63adae3b189e294daea3046c23c794372922e632a7c05b302a73c5d50d07"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\multi-run2\\trace\\session1_bob\\round1_decode1\\logits.f32",
+      "bytes": 993280,
+      "sha256": "1ef495bbd5091ffb4ae49c78b81e3ff2e74c0d20b22ab17b2da795548b3c2268"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\multi-run2\\trace\\session1_bob\\round1_decode2\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "2c7718cf2ad792e7ec9fee314ffe87cd1ebed2873e24526e531d17225885f5cf"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\multi-run2\\trace\\session1_bob\\round1_decode2\\logits.f32",
+      "bytes": 993280,
+      "sha256": "a05a567732f027fb6285122d2838afcf6cf4a65e1633808731be2016ae424f8e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\multi-run2\\trace\\session1_bob\\round1_decode3\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "c3de9823666def2d7d6b26d5dbc05ddc80f3cc91b134d21f12e8b12cb3f9ad55"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\multi-run2\\trace\\session1_bob\\round1_decode3\\logits.f32",
+      "bytes": 993280,
+      "sha256": "14140b027af3cb85c24a3e22cad01338f34d6320b50a23c98739f12c9b536d46"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\multi-run2\\trace\\session1_bob\\round1_prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "d1625d53fbb1c918aa90b829c69ff5ae4f44683eb0352a7745e54d4879b82c11"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\multi-run2\\trace\\session1_bob\\round1_prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "c217c3a1db43fb0dea77b1860c2833b4454202c70b511575dafd466af20e54c5"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\multi-run2\\trace\\session1_bob\\round2_decode1\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "a344f9d9e86e1c0d7d9dc137ba62e77d6fd231a981266980308206f43b9d6377"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\multi-run2\\trace\\session1_bob\\round2_decode1\\logits.f32",
+      "bytes": 993280,
+      "sha256": "43038cb6c66287ff6ba5bcfcb275a3682652fdf552c33a951e29c12ee6e254f7"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\multi-run2\\trace\\session1_bob\\round2_decode2\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "61b22f9721e2b3c76e6cfcf38d21f76e2d027cbd30de8efe108cf622804fdd43"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\multi-run2\\trace\\session1_bob\\round2_decode2\\logits.f32",
+      "bytes": 993280,
+      "sha256": "e5842947c3e71c457b24fce41e09e8856c5dd6b92fbf52897774b0334b8b8fee"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\multi-run2\\trace\\session1_bob\\round2_decode3\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "f9afe5a0536ea38afd168784628002e00596b806df723ab355a8c9acf4eb14dc"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\multi-run2\\trace\\session1_bob\\round2_decode3\\logits.f32",
+      "bytes": 993280,
+      "sha256": "3a4dcda1d2421b6069adc2df37a7b53f05e8fa8f3c7c57188c79443d4ca0e406"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\multi-run2\\trace\\session1_bob\\round2_decode4\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "56d0c88b87a8ece5e1101fe6f1017a3e82dcf5715c2f0bad276efdd991e389ec"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\multi-run2\\trace\\session1_bob\\round2_decode4\\logits.f32",
+      "bytes": 993280,
+      "sha256": "6e22f0dc7915477ea20531f75ef025fdf046000ff4b09f3d3ccbc7698c7be430"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\multi-run2\\trace\\session1_bob\\round2_prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "c782df548da6e2e97dcf41ab2236f9b49e8d9819c92e56aa04e27fc69d7912f3"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\multi-run2\\trace\\session1_bob\\round2_prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "6e5de8e07c6d0edcec55ced0d3f45662486ed6f5113565505df83da21fd2793f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\multi-run2\\trace\\session2_carol\\round1_decode1\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "5172a304d03fa040565d6bdce2e30b4ac94336abcab89a43639523759a4a6e0b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\multi-run2\\trace\\session2_carol\\round1_decode1\\logits.f32",
+      "bytes": 993280,
+      "sha256": "a72482129fd89df992e29705c55820a83e3bd1676e4cce67d1b3679feeef87ce"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\multi-run2\\trace\\session2_carol\\round1_decode2\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "2c5cf20082dc8e607448b10e493377cf5a40b7921e87eaec80b6d77858159e0c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\multi-run2\\trace\\session2_carol\\round1_decode2\\logits.f32",
+      "bytes": 993280,
+      "sha256": "23842835b454bd81872a46e167ee177acb9e873e80f13d8513dbcf696f2613e7"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\multi-run2\\trace\\session2_carol\\round1_prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "f8ba4c2fb63b09d799ec0f9c94c65768c0499458ad67034855e299c5a3edaf3a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\multi-run2\\trace\\session2_carol\\round1_prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "1506e6681e8695e9554545d87c10b95bb9a00902831d1b0320406373a37959a0"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\multi-run2\\trace\\session2_carol\\round2_decode1\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "95194016e002a1caec06f064417670aeacb10f15aeed0218134c805731baaafb"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\multi-run2\\trace\\session2_carol\\round2_decode1\\logits.f32",
+      "bytes": 993280,
+      "sha256": "3e636ac9e255850d2f5ea760827fe953cf991b15b544d861acba0bfb4dfe13c0"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\multi-run2\\trace\\session2_carol\\round2_decode2\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "f626e094e053562d5a76c455c05a7eeb7a6e6b38c2f3d9ed2aaa053d6ccec92c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\multi-run2\\trace\\session2_carol\\round2_decode2\\logits.f32",
+      "bytes": 993280,
+      "sha256": "4f73bab81e42f817064cd66dbd88ef669ef4d06a496f4c12f7d1cffc4065d2d3"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\multi-run2\\trace\\session2_carol\\round2_decode3\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "a1ec39aa07417d08c6c1a1484cc7538bed8d73192e47eb21f2f6de98330d13ac"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\multi-run2\\trace\\session2_carol\\round2_decode3\\logits.f32",
+      "bytes": 993280,
+      "sha256": "298b519720ff394dbce16210a51d586a0ae3de2358bf5723687e14898cfba09c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\multi-run2\\trace\\session2_carol\\round2_decode4\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "73e30f4b2095f2b62efad1e00dc9974d956981dc19a3abda721ceedc7fe3a2f0"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\multi-run2\\trace\\session2_carol\\round2_decode4\\logits.f32",
+      "bytes": 993280,
+      "sha256": "6eb1bb7643999c2f5dcfbedc7c5d08e063b71baa8345372540bc3bccbffbd581"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\multi-run2\\trace\\session2_carol\\round2_decode5\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "73b5c30222a714c31ad5c7809979bf41071cf899e3a5780092f91abdefa41c02"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\multi-run2\\trace\\session2_carol\\round2_decode5\\logits.f32",
+      "bytes": 993280,
+      "sha256": "0dade3f04570847d6da172fcf5182759722da298d5c1c3beb3230a79783bcaab"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\multi-run2\\trace\\session2_carol\\round2_prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "f2a7173d3c99ac9d343924e782a171b2c8f1e0b0ba81940942ac3c605b674268"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\multi-run2\\trace\\session2_carol\\round2_prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "5f62a2ad05d4b5aa2f07a1f4cd222d5649e180d26b1eb3d367cd8961599ae7e2"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\multi-run2\\trace\\session3_dave\\round1_decode1\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "c371698e4a23b7029c909a95345f5b1db631c0e00f2de8160cbd6b9dc5295b41"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\multi-run2\\trace\\session3_dave\\round1_decode1\\logits.f32",
+      "bytes": 993280,
+      "sha256": "a2060c5e6c7c97c20e82ae21ea6b476e3253b7104c46f6fb634b5d244640898d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\multi-run2\\trace\\session3_dave\\round1_decode2\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "d79da8ee7b70578888362faeceb8ac94a60ae077451f1ba4fbc03a717cb53bef"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\multi-run2\\trace\\session3_dave\\round1_decode2\\logits.f32",
+      "bytes": 993280,
+      "sha256": "f41462cb67bcbf7ec1b9a69eb80b402ea228c3a3b4228f835d7a1dd23c0af6b0"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\multi-run2\\trace\\session3_dave\\round1_decode3\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "96b2fc84a155b5e87d1bb5f9f4b71e57d966ca3a5b40796b0ec65fee68d7a349"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\multi-run2\\trace\\session3_dave\\round1_decode3\\logits.f32",
+      "bytes": 993280,
+      "sha256": "566475fbfdcb8ba29aa55edad74a497cd393567d4844772be4642f9629bbd300"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\multi-run2\\trace\\session3_dave\\round1_decode4\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "675ce5d3c828126d33fd9eb8c7bec0e121ec2f5d06320651452c1a7f21377e42"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\multi-run2\\trace\\session3_dave\\round1_decode4\\logits.f32",
+      "bytes": 993280,
+      "sha256": "e05936fefaa30771f1ae3259da500e87ef67979ca61077f7e367ce8cde399288"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\multi-run2\\trace\\session3_dave\\round1_decode5\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "09d6258e5b5d9c2dca4706133182b5a6eaaf879b38741ed66865717fa7813bb3"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\multi-run2\\trace\\session3_dave\\round1_decode5\\logits.f32",
+      "bytes": 993280,
+      "sha256": "ac112b588c60bd99d6893751cc111ca95c971358c8f85eac4154f5bcaa546643"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\multi-run2\\trace\\session3_dave\\round1_prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "0172b7b395f4575cea0c2605abe541c7c02a2ea5a726c866e91856838fb60339"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\multi-run2\\trace\\session3_dave\\round1_prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "48320738232fab2e8af380cd27bea31c373fb1343269c44c7ea0380bb0816adc"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\multi-run2\\trace\\session3_dave\\round2_decode1\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "051045c7f819396be4bfabdf541a8e7b1fec4ef0013d2362aff3c66e4f58510b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\multi-run2\\trace\\session3_dave\\round2_decode1\\logits.f32",
+      "bytes": 993280,
+      "sha256": "b5523daa1cb2ca63c0de9ab30c66ad414ca6e599fc1b48a78901f8986c157e7a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\multi-run2\\trace\\session3_dave\\round2_decode2\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "2b2489fc1949e68ba648012888122300012b37d50b245d3adf5fecdc77585ec8"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\multi-run2\\trace\\session3_dave\\round2_decode2\\logits.f32",
+      "bytes": 993280,
+      "sha256": "9ded2ca0018542a4db3795d999520b944dfbff1faaac95daefb19e1c44d36f7a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\multi-run2\\trace\\session3_dave\\round2_prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "4ca82b2f951b2f57b7fd6bb86d6b80c9b89e44ef1af28ec4c92a18d3dc9e3507"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\multi-run2\\trace\\session3_dave\\round2_prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "de031ae06577e766eadeac3dbd75978c1a42da8876b283d251bc4ae0895ad89a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\main-run2\\trace\\session0_seed\\round1_decode1\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "e40060187d8c6376d00e58794643dd3f444dceefe29eb675c6ee2b0899131210"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\main-run2\\trace\\session0_seed\\round1_decode1\\logits.f32",
+      "bytes": 993280,
+      "sha256": "54999d39e6a46f665fe6f7fc5d22b5136eb5e9b73ae179e5b908b33d7009f326"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\main-run2\\trace\\session0_seed\\round1_prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "441f8e0eea6b8deea8b640bb76efc9dcc1267f3ee4de9e936bcc9fa9110a8ee1"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\main-run2\\trace\\session0_seed\\round1_prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "3f9f6f36cbefdeae7dc1e5e89b8af0729c2d9d6f59dab28e040a4771d9609b43"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\main-run2\\trace\\session0_seed\\round2_decode1\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "cf4aa420dcab098effc3352a8444cad88f8a44ba4e3add693fac5b76fcb1c169"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\main-run2\\trace\\session0_seed\\round2_decode1\\logits.f32",
+      "bytes": 993280,
+      "sha256": "b6b54649953db2e946f05c270d51434ae2c2925ab4137eae0784bc7a2db2300c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\main-run2\\trace\\session0_seed\\round2_decode2\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "02482e5a8a6fa102fa373e55ff04af9f7b21657491dff36bf8d9b7deb0c4bf11"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\main-run2\\trace\\session0_seed\\round2_decode2\\logits.f32",
+      "bytes": 993280,
+      "sha256": "f252fea79b7d02b28cc26986403762c309f7f07b8690863e09cc448ff466811b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\main-run2\\trace\\session0_seed\\round2_prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "dd72a3f20adab822fccbf819e728810f2ec2c5fae7c7737dd768c24cf54b5a10"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\main-run2\\trace\\session0_seed\\round2_prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "b6831289fbc1efc4d43ec7b2ca2a877ef9803c1ccdc35d8e27828412dfcd41a0"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\main-run2\\trace\\session1_branch_a\\round1_decode1\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "b201b697286da5cfe51fe54b40a35173fd840aaa5e3e7f45d2dff05931046918"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\main-run2\\trace\\session1_branch_a\\round1_decode1\\logits.f32",
+      "bytes": 993280,
+      "sha256": "74694634e12ca11db5f70c99a477623b6e73da9292968e257422394fc96b08c1"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\main-run2\\trace\\session1_branch_a\\round1_decode2\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "a620ef7e154bf9b6fb92563781010b23d82ed6fc75d63ee91b00a70cfafa9e04"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\main-run2\\trace\\session1_branch_a\\round1_decode2\\logits.f32",
+      "bytes": 993280,
+      "sha256": "7c6dc085297182c7246039c003c9196df41209679d3d3245da2cf259bc0eeb35"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\main-run2\\trace\\session1_branch_a\\round1_prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "8d8aa1a5058fbfd5346350e5d92e2a2ffd754f5e9ee963dc1cc0869d68b8bf7c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\main-run2\\trace\\session1_branch_a\\round1_prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "4e34af9ced099c79406b6f116fffe13353c9c2332ea3202d5a6b6754a35b02b7"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\main-run2\\trace\\session2_branch_b\\round1_decode1\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "d6958e7c891086e833b452c4bf83050c2814e1a910b253f1469d1f4bc28ce035"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\main-run2\\trace\\session2_branch_b\\round1_decode1\\logits.f32",
+      "bytes": 993280,
+      "sha256": "fd62b81d07a067e26247e45e4427662a8fb45f5308b829bdad4d30e4d26e8b33"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\main-run2\\trace\\session2_branch_b\\round1_decode2\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "8ab1d4590da5aba078a5a3e5152f52ce1b6917a276a6bdc1b0adcdc87a00c251"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\main-run2\\trace\\session2_branch_b\\round1_decode2\\logits.f32",
+      "bytes": 993280,
+      "sha256": "14daed12bda8e89fb06b33a3b732cef4d1ba474bee420be6b7f0401e2eb62245"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\main-run2\\trace\\session2_branch_b\\round1_prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "569252b65feade617ff413cd9e9982a121c4997b207810c9327a23e73393debc"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\main-run2\\trace\\session2_branch_b\\round1_prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "75d7a0f6c9d73cf4c8b3cbb38d2bb88bb60b1ed832236a7babb2a44dec46072f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\pressure-run2\\trace\\session0_seed\\round1_decode1\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "e40060187d8c6376d00e58794643dd3f444dceefe29eb675c6ee2b0899131210"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\pressure-run2\\trace\\session0_seed\\round1_decode1\\logits.f32",
+      "bytes": 993280,
+      "sha256": "54999d39e6a46f665fe6f7fc5d22b5136eb5e9b73ae179e5b908b33d7009f326"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\pressure-run2\\trace\\session0_seed\\round1_prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "441f8e0eea6b8deea8b640bb76efc9dcc1267f3ee4de9e936bcc9fa9110a8ee1"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\pressure-run2\\trace\\session0_seed\\round1_prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "3f9f6f36cbefdeae7dc1e5e89b8af0729c2d9d6f59dab28e040a4771d9609b43"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\pressure-run2\\trace\\session0_seed\\round2_decode1\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "c9546e8c6bfaa1451377f82fb53a3c290013111832744e96253d690cafeb6deb"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\pressure-run2\\trace\\session0_seed\\round2_decode1\\logits.f32",
+      "bytes": 993280,
+      "sha256": "51c85698d5886eadd59dddb8d9bd8b4efcc924b28cddb914cf68d96dad59a73e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\pressure-run2\\trace\\session0_seed\\round2_decode2\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "59f76e55e07a4ea0fbbbe95795c8db68a6d405fd79caee3b0571d018d3eadd27"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\pressure-run2\\trace\\session0_seed\\round2_decode2\\logits.f32",
+      "bytes": 993280,
+      "sha256": "4cf83284367074267e6f4f0d38cf6df8eb275c71b15118cc69237d629a277c77"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\pressure-run2\\trace\\session0_seed\\round2_prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "da92d11d370f9fc85f593cf212ae4121b3af3dd2221384a16e670a9e921b0b4c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\pressure-run2\\trace\\session0_seed\\round2_prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "c52043bcade883c1f11708c6e7727901e6b9dd89b0652929fea4ca254078dbc4"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\pressure-run2\\trace\\session1_branch_a\\round1_decode1\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "b201b697286da5cfe51fe54b40a35173fd840aaa5e3e7f45d2dff05931046918"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\pressure-run2\\trace\\session1_branch_a\\round1_decode1\\logits.f32",
+      "bytes": 993280,
+      "sha256": "74694634e12ca11db5f70c99a477623b6e73da9292968e257422394fc96b08c1"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\pressure-run2\\trace\\session1_branch_a\\round1_decode2\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "a620ef7e154bf9b6fb92563781010b23d82ed6fc75d63ee91b00a70cfafa9e04"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\pressure-run2\\trace\\session1_branch_a\\round1_decode2\\logits.f32",
+      "bytes": 993280,
+      "sha256": "7c6dc085297182c7246039c003c9196df41209679d3d3245da2cf259bc0eeb35"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\pressure-run2\\trace\\session1_branch_a\\round1_prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "8d8aa1a5058fbfd5346350e5d92e2a2ffd754f5e9ee963dc1cc0869d68b8bf7c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\pressure-run2\\trace\\session1_branch_a\\round1_prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "4e34af9ced099c79406b6f116fffe13353c9c2332ea3202d5a6b6754a35b02b7"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\pressure-run2\\trace\\session1_branch_a\\round2_decode1\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "42737939a31d069e16ba127cf8dd4a15ab16abcc5bdb6c268cc58353c8374bc7"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\pressure-run2\\trace\\session1_branch_a\\round2_decode1\\logits.f32",
+      "bytes": 993280,
+      "sha256": "bb957c0453a02dcf024672458bfe1964c12f5e56a1bc4f93da2bd27ee8bce632"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\pressure-run2\\trace\\session1_branch_a\\round2_prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "8771db15619c775b672753a2db40710855ba71ed0e1cd936bfe71f39c4aab571"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\pressure-run2\\trace\\session1_branch_a\\round2_prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "b37988646956016643edf4b255c90e2a2e3662feafae48b3bc8e9350de526b0c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\pressure-run2\\trace\\session2_branch_b\\round1_decode1\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "b102a3f5ec69ad04596e72d38c40be2a8deb5bcd8c5f1d07838fefc0ac3a5fc6"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\pressure-run2\\trace\\session2_branch_b\\round1_decode1\\logits.f32",
+      "bytes": 993280,
+      "sha256": "5e6a06138118a52b26e392313b5840eb4686579e5438b8dc5439f7de3899a671"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\pressure-run2\\trace\\session2_branch_b\\round1_decode2\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "356eea0ae6de7e19503115197804a52168f396f82179a08638c74a72dc190b0f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\pressure-run2\\trace\\session2_branch_b\\round1_decode2\\logits.f32",
+      "bytes": 993280,
+      "sha256": "53d3fc80b0ac98db2f314aa1996b5da9e9777575b301ca8db7024f6b27061186"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\pressure-run2\\trace\\session2_branch_b\\round1_prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "818c0b48009c335685c5f82097f8629e369e083cf9a3a3e49d1732b32c647f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\pressure-run2\\trace\\session2_branch_b\\round1_prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "4a53b35a2590598d338ed98f1f15581a96c8350fbfcad7ec82aa51ab53333456"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\pressure-run2\\trace\\session3_full_hit\\round1_prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "5143f1a066c545460ebc33d72b46533a47a0093e807f1e57653bde5ae47e5111"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\pressure-run2\\trace\\session3_full_hit\\round1_prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "e281613cc93ca91a2abe930a931a7c7411fe056dba73c5213bba4d30be1cdee5"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\pressure-run2\\trace\\session4_changed\\round1_prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "c54e2a3c4a4f46af578735dd1fa804d34f11c7b46238a19282f45690b097dbcb"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\pressure-run2\\trace\\session4_changed\\round1_prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "f759e8dfafa5bc2b9625c3d7cbf39e02f1a0759b299586003b4d35d74e0fe78f"
+    }
+  ],
+  "reason": "Only superseded/host-fixture images, maps/import stubs and the superseded main-only run2 decision payload. Final run3 vectors and current Qwen3 retained. Relink commands/objects and source/failure/pass evidence retained.",
+  "kept": [
+    "Currente7a759 Qwen3, prior8a400/dense/llama matched images; final3 actual142 vectors and oracles, all changed objects, before/frozen source/commands/reviews, dependencies/SDK/models and new multi-session peer image. No recursive deletion or cross-stage deletion."
+  ],
+  "recursive_delete": false,
+  "plan_sha256": "3aed18979e2352d2ab5c71f8585f8ecea3ef7cce91004ce99884a096d6aa60ec",
+  "script_sha256": "2b00e4de528d541ce8334e45cc32829ea6aa3741a3a83731ba7f8b5538631d6d"
+}

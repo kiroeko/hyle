@@ -1,1 +1,1 @@
-hyle_add_module(compute_batch SOURCES batch_layout.cc batch_execution.cc batch_materialize.cc batch_paged_native.cc materialized_invocation.cc paged_arena.cc)
+hyle_add_module(compute_batch SOURCES batch_layout.cc batch_execution.cc batch_materialize.cc batch_paged_native.cc materialized_invocation.cc paged_arena.cc paged_append_program.cc row_cache_paged_reader.cc)

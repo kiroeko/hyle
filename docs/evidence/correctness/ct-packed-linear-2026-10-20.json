@@ -1,0 +1,96 @@
+{
+  "passed": true,
+  "recorded_utc": "2026-10-19T22:28:47.193819+00:00",
+  "scope": "CT symmetric/asymmetric INT4 packed CUDA linear and backend-local Prepared sharing; not overall architecture completion",
+  "changes": [
+    "Ordinary public same-graph Decode[/Cast]/exact transpose View/MatMul can contract to original packed CT input execution",
+    "Preserve scale-type product rounding, decode-type cast, actual operand-type cast, F32 accumulation and output rounding; the reduction tree may differ from dense MatMul",
+    "Three/four semantic inputs share deduplicated Graph boundaries; escape/published/extra-reader chains retain the original decomposition",
+    "One packed kernel; no retained whole dense weight bank, workspace, repack or implicit ATen temporary in this native path",
+    "A single private mapped Prepared helper replaces actual duplicate CT/scorer ownership, alias translation, partial cleanup and shared_submit forwarding",
+    "Public operations, shared Graph executor and caller-owned resource/permission contracts unchanged"
+  ],
+  "hardware": {
+    "gpu": "NVIDIA GeForce RTX4070",
+    "device_memory_MiB": 12282,
+    "driver": "617.14",
+    "CUDA": "13.3",
+    "target": "compute89/sm89",
+    "host": "MSVC14.50.35717"
+  },
+  "results": {
+    "initial_CT_cases": 4,
+    "related_MLX_cases": 5,
+    "after_private_forwarding_CT_plus_dense_scorer_cases": 8,
+    "all_actual_cases_skipped": 0,
+    "actual_final_image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-linear\\checks\\mapped-prepared\\ct-packed-tests.exe",
+      "bytes": 117193216,
+      "sha256": "f7feaeedc3d8d2d1c59b9aca36324c711c0bde77b4a9b5e9f5fd7ac53e1ae034"
+    },
+    "actual_trace_image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-linear\\checks\\attempt2\\ct-packed-tests.exe",
+      "bytes": 117110272,
+      "sha256": "7e414745fd0364257e595a33c8dc597b0fd59113165dbae8709ed2d3d08ef8bb"
+    }
+  },
+  "physical_trace": {
+    "kernels": 1,
+    "graph_launches": 1,
+    "kernel": "void hyle::compute::torch_cuda::native::<unnamed>::ct_packed<float, (unsigned int)4>(hyle::compute::torch_cuda::native::CtPacked, const void *, const unsigned int *, const unsigned int *, const void *, void *)",
+    "launch_interval_allocation_or_free_API": 0,
+    "launch_interval_copies": 0,
+    "inputs_H2D": 4,
+    "output_D2H": 1,
+    "interpretation": "One correctness invocation before the mechanical forwarding extraction; not a throughput benchmark or proof all prepare/bind phases allocate nothing"
+  },
+  "space_fixture": {
+    "M": 3,
+    "N": 257,
+    "K": 1024,
+    "compiled_known_metadata_and_storage_bytes": 1512,
+    "caller_workspace_bytes": 0,
+    "excluded_dense_F32_bank_bytes": 1052672,
+    "interpretation": "Known compiled metadata/storage excludes caller-borrowed packed inputs; not total device/host memory or measured peak"
+  },
+  "emitted_code": {
+    "CT_entries": 6,
+    "explicit_mul_rn_F32": true,
+    "explicit_FMA_rn_F32": true,
+    "explicit_F16_BF16_RNE": true,
+    "FTZ_modifier_present": false,
+    "interpretation": "Actual emitted compute89 PTX only, not exhaustive float/subnormal payload coverage"
+  },
+  "preserved_failures": [
+    "Pre-build test output fixture used immutable adopted buffers; corrected to existing public LeasePool mutable writers",
+    "First actual run: 1/4 passed; Direct ATen fixture supplied workspace to a provider-owned route and dynamic fixture changed the fixed StorageDomain",
+    "Corrected fixture ownership/workspace calls without changing numeric oracle or tolerance; final CT 4/4 passed",
+    "Earlier review double-counted allocator-backed Invocation metadata as outside-allocator private bytes; public contract reread, mistaken judgment withdrawn and original snapshots retained"
+  ],
+  "limitations": [
+    "Selected publisher 27B tensor payload/importer/full-model execution, quality, throughput and peak memory not verified",
+    "Small shared operation fixtures primarily group32; this batch does not execute all supported natural groups or model roles",
+    "This warp-row packed carrier is not a mature tensor-core prefill GEMM; no all-shape speedup claimed",
+    "CPU/Apple/Vulkan CT packed execution, GPTQ/permutation/other packing, W4A4 and packed expert/FFN remain separate gaps",
+    "A separately cold-decoded dense constant has no original codec recipe for automatic packed contraction",
+    "No Linux run, updated full-Qwen throughput or whole-model numerical quality acceptance in this batch"
+  ],
+  "root_checks": "root-final-check.json in archive",
+  "full_goal_status": "active",
+  "evidence_archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\ct-packed-linear-2026-10-20.zip",
+    "bytes": 2431160,
+    "sha256": "e627ebf48dc547b64817a264962bce5a8af4f274b5755edf0ac9f05b372be9d5",
+    "payload_files": 428,
+    "CRC_and_payload_hashes_verified": true,
+    "SDK_executable_object_or_library_payloads": false,
+    "actual_Nsight_trace_and_SQLite_included": true
+  },
+  "cleanup": {
+    "passed": true,
+    "reclaimed_bytes": 487222471.0,
+    "receipt": "docs/evidence/correctness/ct-packed-linear-2026-10-20.cleanup.json",
+    "receipt_sha256": "d6dcc53ae937a3f79cc46871e7abfbbaf64ecb33a37591980b18421973a9582c",
+    "final_image_and_link_inputs_retained": true
+  }
+}

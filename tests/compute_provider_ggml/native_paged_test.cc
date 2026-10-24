@@ -342,12 +342,14 @@ double q8_value(std::span<const std::uint8_t> bytes,std::size_t element){
       static_cast<std::int8_t>(bytes[block*34+2+within]);
 }
 template<class T>void boxed_case(bool paged,bool quantized,unsigned depth,unsigned value_depth,
-                                bool causal,int window,bool long_precision=false,bool long_prefill=false){
+                                bool causal,int window,bool long_precision=false,bool long_prefill=false,
+                                bool short_continuation=false){
   SCOPED_TRACE(::testing::Message()<<"paged="<<paged<<" quantized="<<quantized<<" depth="<<depth
       <<" value_depth="<<value_depth<<" window="<<window<<" long_prefill="<<long_prefill);
-  const unsigned query_rows=long_precision?1u:(long_prefill?66u:(causal?18u:68u));
+  const unsigned query_rows=short_continuation?3u:(long_precision?1u:(long_prefill?66u:(causal?18u:68u)));
   const unsigned physical_rows=long_precision?4096u:(long_prefill?(paged?256u:274u):64u);
-  const unsigned heads=long_precision?1u:8u,kv_heads=long_precision?1u:2u;
+  const unsigned heads=short_continuation?(depth==576?96u:64u):(long_precision?1u:8u);
+  const unsigned kv_heads=(short_continuation || long_precision)?1u:2u;
   const auto storage=quantized?c::CacheStorage::q8_0().value():
       c::CacheStorage::plain(half_test::data_type<T>()).value();
   const c::BatchCapacity cap{.storage=paged?c::BatchStorage::kPaged:c::BatchStorage::kRagged,
@@ -358,8 +360,9 @@ template<class T>void boxed_case(bool paged,bool quantized,unsigned depth,unsign
     .qk_head_dim=depth,.value_head_dim=value_depth,.page_size=paged?16u:1u};
   auto context=c::Context::create(c::cpu::device(),c::ggml_cpu::provider({.native_threads=long_precision?1u:3u})).value();
   auto queue=context.create_queue().value();auto schema=c::BatchSchema::create(cap).value();
-  const std::vector<std::int32_t> qp=long_precision?std::vector<std::int32_t>{0,1}:
-      (long_prefill?std::vector<std::int32_t>{0,1,66}:(causal?std::vector<std::int32_t>{0,1,18}:std::vector<std::int32_t>{0,33,68}));
+  const std::vector<std::int32_t> qp=short_continuation?std::vector<std::int32_t>{0,2,3}:
+      (long_precision?std::vector<std::int32_t>{0,1}:
+      (long_prefill?std::vector<std::int32_t>{0,1,66}:(causal?std::vector<std::int32_t>{0,1,18}:std::vector<std::int32_t>{0,33,68})));
   const std::vector<std::int32_t> kp=long_precision?std::vector<std::int32_t>{0,4096}:
       (long_prefill?(paged?std::vector<std::int32_t>{0,9,19}:std::vector<std::int32_t>{0,129,274}):
        (paged?std::vector<std::int32_t>{0,2,5}:std::vector<std::int32_t>{0,31,64}));
@@ -413,6 +416,7 @@ template<class T>void boxed_case(bool paged,bool quantized,unsigned depth,unsign
   ASSERT_TRUE(done)<<done.error().message();ASSERT_TRUE(done->wait().ok());auto result=slot.output().value();
   std::vector<T> actual(std::size_t(query_rows)*heads*value_depth);
   ASSERT_TRUE(result.view()->read(std::as_writable_bytes(std::span(actual))).ok());
+  double worst=0;
   for(unsigned request=0;request<cap.max_requests;++request){
     const int queries=qp[request+1]-qp[request],keys=long_precision?4096:(long_prefill?(request?145:129):(request?33:31));
     for(int row=0;row<queries;++row)for(unsigned head=0;head<heads;++head){
@@ -427,11 +431,22 @@ template<class T>void boxed_case(bool paged,bool quantized,unsigned depth,unsign
           expected+=weights[static_cast<std::size_t>(j)]*value_at(false,(std::size_t(physical)*kv_heads+head/(heads/kv_heads))*value_depth+d);}
         // Q8 CPU converts Q to its vec-dot type; tolerate that bounded extra
         // quantization as well as the declared output rounding.
-        EXPECT_NEAR(half_test::decode(actual[(std::size_t(qp[request]+row)*heads+head)*value_depth+d]),expected/sum,
+        const auto observed=half_test::decode(actual[(std::size_t(qp[request]+row)*heads+head)*value_depth+d]);
+        ASSERT_TRUE(std::isfinite(observed));
+        worst=std::max(worst,std::abs(observed-expected/sum));
+        EXPECT_NEAR(observed,expected/sum,
                     long_precision?.0006:.0025);}
     }
   }
+  if(short_continuation)std::printf("CPU native highdim paged=%d dtype=%s QK=%u VO=%u H=%u KV=%u Q=2/1 max_abs=%.12g\n",
+      paged,half_test::data_type<T>()==c::DataType::kBFloat16?"BF16":"F16",depth,value_depth,heads,kv_heads,worst);
   result.reset();*done={};*prepared={};ASSERT_TRUE(slot.close().ok());ASSERT_TRUE(context.drain().ok());
+}
+TEST(GgmlCpuBoxed, PlainHighdimMixedContinuationUsesOriginalPagesAndRaggedRoots){
+  for(bool paged:{false,true})for(unsigned depth:{512u,576u}){
+    boxed_case<hyle::simd::float16_t>(paged,false,depth,512,true,-1,false,false,true);
+    boxed_case<hyle::simd::bfloat16_t>(paged,false,depth,512,true,-1,false,false,true);
+  }
 }
 TEST(GgmlCpuBoxed, QuantizedPagedAndRaggedIndependentValueDepthAndWindow){
   for(bool paged:{false,true})for(int window:{-1,0,15,16}){

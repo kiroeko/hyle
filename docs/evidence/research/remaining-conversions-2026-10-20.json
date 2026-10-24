@@ -1,0 +1,391 @@
+{
+  "review": "existing_trace_conversion_neighbors_and_two_source_qualified_candidates",
+  "execution": "Read-only existing SQLite and source. No builds, GPU/profiler invocation, network or product modification.",
+  "trace": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-critical-path\\hyle\\decode.sqlite",
+    "phase": "decode7",
+    "kernel_count": 740,
+    "widen_BF16_to_F32": 109,
+    "narrow_F32_to_BF16": 54,
+    "neighbor_groups": [
+      {
+        "conversion": "widen_BF16_to_F32",
+        "count": 18,
+        "before": "BF16_L2_to_F32",
+        "after": "GDN_F32",
+        "ordinals_zero_based": [
+          19,
+          53,
+          87,
+          141,
+          175,
+          209,
+          263,
+          297,
+          331,
+          385,
+          419,
+          453,
+          507,
+          541,
+          575,
+          629,
+          663,
+          697
+        ]
+      },
+      {
+        "conversion": "widen_BF16_to_F32",
+        "count": 18,
+        "before": "BF16_RMS",
+        "after": "bin_mul_F32",
+        "ordinals_zero_based": [
+          23,
+          57,
+          91,
+          145,
+          179,
+          213,
+          267,
+          301,
+          335,
+          389,
+          423,
+          457,
+          511,
+          545,
+          579,
+          633,
+          667,
+          701
+        ]
+      },
+      {
+        "conversion": "widen_BF16_to_F32",
+        "count": 18,
+        "before": "cuBLAS_BF16_projection",
+        "after": "cuBLAS_BF16_projection",
+        "ordinals_zero_based": [
+          10,
+          44,
+          78,
+          132,
+          166,
+          200,
+          254,
+          288,
+          322,
+          376,
+          410,
+          444,
+          498,
+          532,
+          566,
+          620,
+          654,
+          688
+        ]
+      },
+      {
+        "conversion": "widen_BF16_to_F32",
+        "count": 18,
+        "before": "cuBLAS_BF16_projection",
+        "after": "void unary_gated_op_kernel<&op_hyle_stable_silu, float, (bool)1",
+        "ordinals_zero_based": [
+          26,
+          60,
+          94,
+          148,
+          182,
+          216,
+          270,
+          304,
+          338,
+          392,
+          426,
+          460,
+          514,
+          548,
+          582,
+          636,
+          670,
+          704
+        ]
+      },
+      {
+        "conversion": "widen_BF16_to_F32",
+        "count": 18,
+        "before": "void concat_cont",
+        "after": "void cpy_scalar_transpose",
+        "ordinals_zero_based": [
+          4,
+          38,
+          72,
+          126,
+          160,
+          194,
+          248,
+          282,
+          316,
+          370,
+          404,
+          438,
+          492,
+          526,
+          560,
+          614,
+          648,
+          682
+        ]
+      },
+      {
+        "conversion": "widen_BF16_to_F32",
+        "count": 18,
+        "before": "void unary_op_kernel<&op_sigmoid, __nv_bfloat16",
+        "after": "BF16_L2_to_F32",
+        "ordinals_zero_based": [
+          16,
+          50,
+          84,
+          138,
+          172,
+          206,
+          260,
+          294,
+          328,
+          382,
+          416,
+          450,
+          504,
+          538,
+          572,
+          626,
+          660,
+          694
+        ]
+      },
+      {
+        "conversion": "widen_BF16_to_F32",
+        "count": 1,
+        "before": "cuBLAS_BF16_projection",
+        "after": "void cub::_V_300304_SM_890::detail::reduce::DeviceReduceKernel",
+        "ordinals_zero_based": [
+          735
+        ]
+      },
+      {
+        "conversion": "narrow_F32_to_BF16",
+        "count": 18,
+        "before": "GDN_F32",
+        "after": "BF16_RMS",
+        "ordinals_zero_based": [
+          21,
+          55,
+          89,
+          143,
+          177,
+          211,
+          265,
+          299,
+          333,
+          387,
+          421,
+          455,
+          509,
+          543,
+          577,
+          631,
+          665,
+          699
+        ]
+      },
+      {
+        "conversion": "narrow_F32_to_BF16",
+        "count": 18,
+        "before": "SSM_conv_F32",
+        "after": "SiLU_BF16",
+        "ordinals_zero_based": [
+          7,
+          41,
+          75,
+          129,
+          163,
+          197,
+          251,
+          285,
+          319,
+          373,
+          407,
+          441,
+          495,
+          529,
+          563,
+          617,
+          651,
+          685
+        ]
+      },
+      {
+        "conversion": "narrow_F32_to_BF16",
+        "count": 18,
+        "before": "void unary_gated_op_kernel<&op_hyle_stable_silu, float, (bool)1",
+        "after": "cuBLAS_BF16_projection",
+        "ordinals_zero_based": [
+          28,
+          62,
+          96,
+          150,
+          184,
+          218,
+          272,
+          306,
+          340,
+          394,
+          428,
+          462,
+          516,
+          550,
+          584,
+          638,
+          672,
+          706
+        ]
+      }
+    ],
+    "proof_limit": "The neighbors are actual time-ordered kernels. Assignment of casts to named tensor ports below is corroborated by the caller and native lowering, rather than recorded device-pointer arguments; adjacency alone does not prove data dependence."
+  },
+  "role_map": [
+    {
+      "count": 18,
+      "conversion": "widen",
+      "role": "Convolution samples after BF16 concat, before F32 transpose and SSM-conv",
+      "caller": "tools/qwen35_text/main.cc:361",
+      "cast_caller": "tools/qwen35_text/main.cc:364"
+    },
+    {
+      "count": 18,
+      "conversion": "widen",
+      "role": "Projection a, before F32 dt-bias/softplus/decay arithmetic",
+      "caller": "tools/qwen35_text/main.cc:370"
+    },
+    {
+      "count": 18,
+      "conversion": "widen",
+      "role": "BF16 sigmoid beta, before F32 GDN consumption",
+      "caller": "tools/qwen35_text/main.cc:377"
+    },
+    {
+      "count": 18,
+      "conversion": "widen",
+      "role": "BF16 V, before F32 GDN consumption",
+      "caller": "tools/qwen35_text/main.cc:380"
+    },
+    {
+      "count": 18,
+      "conversion": "widen",
+      "role": "Rounded BF16 RMS result, before F32 norm-scale product",
+      "caller": "tools/qwen35_text/main.cc:384",
+      "scale_caller": "tools/qwen35_text/main.cc:387"
+    },
+    {
+      "count": 18,
+      "conversion": "widen",
+      "role": "BF16 z projection, before stable F32 SiLU and F32 gating product",
+      "caller": "tools/qwen35_text/main.cc:388"
+    },
+    {
+      "count": 1,
+      "conversion": "widen",
+      "role": "BF16 LM head output consumed by F32 sampling/reduction",
+      "caller": "tools/qwen35_text/main.cc:431"
+    },
+    {
+      "count": 18,
+      "conversion": "narrow",
+      "role": "F32 convolution output must round to BF16 before BF16 SiLU",
+      "caller": "tools/qwen35_text/main.cc:366"
+    },
+    {
+      "count": 18,
+      "conversion": "narrow",
+      "role": "F32 GDN output must round to BF16 before the following RMS boundary",
+      "caller": "tools/qwen35_text/main.cc:382"
+    },
+    {
+      "count": 18,
+      "conversion": "narrow",
+      "role": "F32 normalized/scaled y times stable SiLU(z), then BF16 before projection",
+      "caller": "tools/qwen35_text/main.cc:389"
+    }
+  ],
+  "candidate_1": {
+    "priority": 1,
+    "name": "Fold exact BF16 V/beta widen loads into the existing GDN carrier",
+    "trace_applicability": "Two source-qualified widen conversions per GDN layer, 18 layers:36/109 widen kernels in this retained decode. This is a potential eliminated launch count, not a speed estimate.",
+    "cold_recipe": "Match an already selected ordinary GDN and its private BF16-to-F32 Cast (possibly metadata-only View chain) for V and/or beta. Carry actual original source tensor identity, per-port carrier type, shape/byte strides and bound allocation proof. Elide only private Cast outputs with closed reader/control/output sets. Keep public F32 GDN ports and all original Q/K/g/state/output/snapshot semantics.",
+    "native_change_boundary": [
+      {
+        "source": "C:/public/tools/hyle-dependencies/v1/sources/ggml-456172ec733a-41b7e10fd424/src/ggml-cuda/gated_delta_net.cu:66",
+        "fact": "V currently loads through float*. A typed carrier can widen each BF16 source value exactly at the original load, without changing F32 delta/state/attention arithmetic."
+      },
+      {
+        "source": "C:/public/tools/hyle-dependencies/v1/sources/ggml-456172ec733a-41b7e10fd424/src/ggml-cuda/gated_delta_net.cu:69",
+        "fact": "beta currently loads float. Preserve beta as the already BF16-rounded sigmoid result before exact widening; do not recompute an unrounded sigmoid in GDN."
+      },
+      {
+        "source": "C:/public/tools/hyle-dependencies/v1/sources/ggml-456172ec733a-41b7e10fd424/src/ggml-cuda/gated_delta_net.cu:91",
+        "fact": "Original accumulation loop, warp_reduce_sum, update and output remain unchanged at91-107."
+      },
+      {
+        "source": "C:/public/tools/hyle-dependencies/v1/sources/ggml-456172ec733a-41b7e10fd424/src/ggml-cuda/gated_delta_net.cu:270",
+        "fact": "V/beta strides currently divide by sizeof(float); beta element offset is also reused for g. A typed beta path must use its own element-size stride, while g keeps independent F32 indexing. Changing only src tensor dtype would be unsafe."
+      }
+    ],
+    "qualification": "Keep original backend depth/batch/integer/stride qualifications. A cold matcher must expose actual BF16 read roots to allocation dependencies and repeat bound overlap/alias checks; retaining the old Cast output allocation does not keep the actual raw source live automatically.",
+    "not_done_in_prior_batches": "The reviewed fusion-precision/dual/projection batches handled Q/K BF16 L2 paths and FFN math; their actual GDN V/beta carrier remains F32 only.",
+    "limits": "Source-qualified numerical equivalence of exact loads is not an executed correctness proof; NaN/Inf/subnormal and typed strides still need a small actual witness before adoption."
+  },
+  "candidate_2": {
+    "priority": 2,
+    "name": "Fold convolution-sample BF16 widen and layout materialization into typed SSM-conv input loads",
+    "trace_applicability": "18 widen kernels are followed by18 F32 transpose/copy kernels before18 SSM-conv kernels. This is the actual existing neighbor pattern, not a model-size admission rule.",
+    "cold_recipe": "Match selected existing F32 SSM-conv with a private BF16-to-F32 Cast and its exact permutation/contiguous materialization chain. Retain original raw BF16 sample source with truthful logical time/channel/batch byte strides; keep weights F32, original float MAC sequence and F32 output. Do not promise skipping the transpose unless the direct typed source indexing is actually supported.",
+    "native_change_boundary": [
+      {
+        "source": "C:/public/tools/hyle-dependencies/v1/sources/ggml-456172ec733a-41b7e10fd424/src/ggml-cuda/ssm-conv.cu:21",
+        "fact": "Input block pointer currently becomes float*, channel strides divide by sizeof(float); per-filter/time reads at45/48 assume unit element spacing."
+      },
+      {
+        "source": "C:/public/tools/hyle-dependencies/v1/sources/ggml-456172ec733a-41b7e10fd424/src/ggml-cuda/ssm-conv.cu:53",
+        "fact": "Keep float rolling-window values, identical loop/MAC/bias/output order. Only scalar input decode/indexing should change."
+      },
+      {
+        "source": "C:/public/tools/hyle-dependencies/v1/sources/ggml-456172ec733a-41b7e10fd424/src/ggml-cuda/ssm-conv.cu:181",
+        "fact": "Host entry requires F32 input with unit time stride and contiguous rows. New typed/strided cold qualification is necessary; simply rewiring raw BF16 storage to this entry is invalid."
+      }
+    ],
+    "prior_work_boundary": "Current native main explicitly blocks marked stable SiLU from the older conv+SiLU fuser (cuda-grouped-fusion/native-source/src/ggml-cuda/ggml-cuda.cu:3573). Keep the caller convolution->BF16 RNE->SiLU BF16 boundary; enabling old F32 conv+SiLU would change the math.",
+    "weight_limit": "The caller casts constant convolution weights during cold construction; no warm weight-conversion kernel is counted here. Do not claim per-token savings from typed weight loads.",
+    "performance_limit": "Changing source layout/load coalescing can change performance even with identical arithmetic. No timing gain is inferred from the launch count."
+  },
+  "preserve_rounding_and_existing_work": [
+    "109 widening conversions are exact numerical promotions, but their F32 consuming arithmetic must remain F32. Removing their storage launch is only safe when the consuming carrier performs an exact typed load.",
+    "54 narrowing conversions are real public BF16 RNE boundaries. They cannot be deleted as arithmetic operations. A future fused final store may realize them only with identical placement, including before SiLU/RMS/projection.",
+    "Do not replace BF16-rounded RMS value then F32 scale with unrounded F32 RMS followed by scale. The scale is an original F32 checkpoint tensor.",
+    "Do not reuse the FFN dual epilogue for z gating: FFN dual has BF16 internal SiLU/Mul RNE, whereas the z-gating SiLU and product here are F32 before one final BF16 round.",
+    "Already implemented BF16 ordinary/dual MMVF, stable SiLU/Mul and Q/K RMS/L2 fusion are not new candidates. Rejected cuBLAS-to-MMVF route widening remains rejected."
+  ],
+  "prior_source_review": {
+    "agent": "cast_history_review",
+    "references": [
+      ".scratch/architecture-refactor-2026-10-18/cuda-ffn-projection-review/projection-fusion-review.json:35",
+      ".scratch/architecture-refactor-2026-10-18/cuda-projection-fusion/summary.json:20",
+      ".scratch/architecture-refactor-2026-10-18/cuda-fusion-precision/native-source/src/ggml-cuda/unary.cu:314",
+      ".scratch/architecture-refactor-2026-10-18/cuda-fusion-precision/native-source/src/ggml-cuda/unary.cu:790",
+      "third_party/ggml_cuda_runtime/NOTICE.md:89",
+      "third_party/ggml_cuda_runtime/NOTICE.md:108",
+      "third_party/ggml_cuda_runtime/NOTICE.md:144"
+    ]
+  },
+  "scope": "Only two prioritized generic cold recipes are proposed for later implementation; no model predicate, public schema expansion, permission cache, new model kernel or performance claim."
+}

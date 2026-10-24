@@ -77,7 +77,7 @@ Status make_request(Slot &slot,std::int32_t nq,std::int32_t nk,std::int32_t qsta
   s.qbytes=std::size_t(nq)*cap.query_heads*cap.qk_head_dim*2;s.kbytes=std::size_t(nk)*cap.kv_heads*cap.qk_head_dim*2;
   slot.known+=s.known;slot.requests.push_back(std::move(request));return Status::Ok();
 }
-d::EnqueueResult plan(void *p,c::Queue &,const c::BatchLayoutVersion &layout,d::BatchWorkspaceViews,c::BatchPlanReport *r)noexcept{
+d::EnqueueResult plan(void *p,d::QueueSequence &,const c::BatchLayoutVersion &layout,d::BatchWorkspaceViews,c::BatchPlanReport *r)noexcept{
   auto &s=*static_cast<Slot *>(p);s.requests.clear();s.layout={};s.known=0;
   try{const auto h=layout.host();for(unsigned i=0;i<layout.facts().requests;++i){const auto nq=h.query_indptr[i+1]-h.query_indptr[i],nk=h.kv_indptr[i+1]-h.kv_indptr[i];if(!nq)continue;
     if(!nk||(s.options.causal&&nk<nq))return d::EnqueueResult::rejected(Status::Unimplemented("original ragged empty/short KV"));
@@ -86,7 +86,7 @@ d::EnqueueResult plan(void *p,c::Queue &,const c::BatchLayoutVersion &layout,d::
     s.layout=layout;*r=report(s);return d::EnqueueResult::accepted_command();
   }catch(const std::bad_alloc &){s.requests.clear();return d::EnqueueResult::rejected(Status::ResourceExhausted("original ragged cold allocations"));}
 }
-d::EnqueueResult run(void *p,c::Queue &,std::span<const c::ConstTensorView> inputs,d::BatchWorkspaceViews workspace)noexcept{
+d::EnqueueResult run(void *p,d::QueueSequence &,std::span<const c::ConstTensorView> inputs,d::BatchWorkspaceViews workspace)noexcept{
   auto &slot=*static_cast<Slot *>(p);bool accepted=false;
   for(auto &owned:slot.requests){auto &s=*owned;std::array<mem::HostMapping,3> maps;
     for(unsigned port=0;port<3;++port){auto sub=inputs[port].storage().subview(port?s.koffset:s.qoffset,port?s.kbytes:s.qbytes);if(!sub)return {accepted,sub.error()};auto mapped=sub->map_host();if(!mapped)return {accepted,mapped.error()};maps[port]=std::move(*mapped);s.inputs[port]->data=const_cast<std::byte *>(maps[port].bytes().data());}

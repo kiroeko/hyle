@@ -1,0 +1,316 @@
+{
+  "status": "executed",
+  "files": 24,
+  "bytes": 591764596.0,
+  "protected_verified": 8,
+  "plan": {
+    "files": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cpu-native\\validation\\cpu.exe",
+        "bytes": 27068416,
+        "sha256": "22df74df29b11e624c81b19af5ef83b837d123cca6c0b6925c76fba53243b673"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cpu-native\\validation\\cpu.exp",
+        "bytes": 24999,
+        "sha256": "1f7097b6119c56fe02fabe4fda08513a0015a7b108bb35789d83899b9afb1328"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cpu-native\\validation\\cpu.lib",
+        "bytes": 41298,
+        "sha256": "1a72c22d3a6dec39cca5118fd99aa738ff5f4202c029fc8a48afb6c3d20e909d"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cpu-native\\validation\\cpu.map",
+        "bytes": 39338098,
+        "sha256": "7bb75206ee6fc1337947dc64e3e36ae0312f93b413fb06d6bd5358e6658ddfe1"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cpu-native\\validation-final\\cpu.exe",
+        "bytes": 27069952,
+        "sha256": "e985a20a4e2fc9e13fa7beb1e9389abe5a6f67c547af3fb49ba0a02a1d21375b"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cpu-native\\validation-final\\cpu.exp",
+        "bytes": 25005,
+        "sha256": "7653928c584442b7e6b7297edc17d640fa275d445561c362ff8e7f78c71a0f8e"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cpu-native\\validation-final\\cpu.lib",
+        "bytes": 41298,
+        "sha256": "1a72c22d3a6dec39cca5118fd99aa738ff5f4202c029fc8a48afb6c3d20e909d"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cpu-native\\validation-final\\cpu.map",
+        "bytes": 39342443,
+        "sha256": "cb716eb7248861e4c71bd630f76c45f814ac3538ac5f30f10667ea1eafd74c66"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cross-platform\\cpu-green\\cpu.exp",
+        "bytes": 25002,
+        "sha256": "af41f2244955f3c69828f0257c15f9078db15d6f81737d1962fa1d73316caad7"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cross-platform\\cpu-green\\cpu.lib",
+        "bytes": 41298,
+        "sha256": "1a72c22d3a6dec39cca5118fd99aa738ff5f4202c029fc8a48afb6c3d20e909d"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cross-platform\\cpu-green\\cpu.map",
+        "bytes": 39570200,
+        "sha256": "19704c6f96a2dd0d145d09318f55449774b0bf508a4046908290a0b67325259d"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cross-platform\\cpu-red\\cpu.exe",
+        "bytes": 27043840,
+        "sha256": "4bef6427691d90cd051cbd8b3de2007460a89feae0f156546a2d1224bcfaf8c8"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cross-platform\\cpu-red\\cpu.exp",
+        "bytes": 25000,
+        "sha256": "09e445f23caef38deee1b279654b60f7044a9631a4e1dc85ca4df46b39c10713"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cross-platform\\cpu-red\\cpu.lib",
+        "bytes": 41298,
+        "sha256": "1a72c22d3a6dec39cca5118fd99aa738ff5f4202c029fc8a48afb6c3d20e909d"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cross-platform\\cpu-red\\cpu.map",
+        "bytes": 39424743,
+        "sha256": "c99d96526c3ae67e3bf3c5e699512c4ae66f33bb59bae1df0aa166703e5ef572"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cross-platform\\cuda-final\\cuda.exp",
+        "bytes": 25006,
+        "sha256": "8a91089402b1f9b59e5e4f9516b22d84e2cd2bf00ce91d92013ba81f67bfe326"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cross-platform\\cuda-final\\cuda.lib",
+        "bytes": 41384,
+        "sha256": "097299e17e955c077a99f65f363d3484d564c016359baeb643f4e47c6b737d59"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cross-platform\\cuda-final\\cuda.map",
+        "bytes": 41661273,
+        "sha256": "aea20472c533d089d2bb221920ba60d2684d5e626cbc22086e4c5fffda99e2b7"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cross-platform\\cuda-green\\cuda.exe",
+        "bytes": 121086976,
+        "sha256": "b2a4af41cd44f39126d8963cd9a4bfd48afaec398b7663b5a24234ff90fa51be"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cross-platform\\cuda-green\\cuda.exp",
+        "bytes": 25006,
+        "sha256": "78e98589eed841aca4061a46eb5b914e47ff8358da0a0f7418b1b6cda9415303"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cross-platform\\cuda-green\\cuda.lib",
+        "bytes": 41384,
+        "sha256": "097299e17e955c077a99f65f363d3484d564c016359baeb643f4e47c6b737d59"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cross-platform\\cuda-green\\cuda.map",
+        "bytes": 41829029,
+        "sha256": "3292888b0e5bb6340f1b37707a4e68b4626ca6b342985a4773a4119ef4cf65b7"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-cross-backend-reference\\cpu\\cpu.exe",
+        "bytes": 26924544,
+        "sha256": "8ed4cf06ed9af03a5018dba9b8a988108e35a4975094c5a6016f747a8bb80c89"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-cross-backend-reference\\cuda\\cuda.exe",
+        "bytes": 121007104,
+        "sha256": "94179bfaffa8813223d304581708104dafcb83b5f6dcd42e1416ff0cbf298e11"
+      }
+    ],
+    "protected": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cross-platform\\cpu-green\\cpu.exe",
+        "bytes": 27183104,
+        "sha256": "03144ff1d305f8f2bbb5c09d6153da6bf5e84d041997c00308b02d2f47e043e2"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cross-platform\\cuda-final\\cuda.exe",
+        "bytes": 121014272,
+        "sha256": "b3a4adb7ee2ef850aa6a9dd211503fefcd8102fb8d3a0a06240b987797b85fe3"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-explicit-rope\\performance-prepared\\peer.exe",
+        "bytes": 35814400,
+        "sha256": "fb169f0282f2a834a61b3e887edaba92d8699814558b0c5f1a13aaf07e0de969"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-current-rebenchmark\\build\\qwen.exe",
+        "bytes": 117831168,
+        "sha256": "a9b7a934060a846d0c9b15227acd894f2ddf53c68a066449d152a3c76a415722"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-retirement-query-reuse\\final-test-build\\retirement-tests.exe",
+        "bytes": 120950272,
+        "sha256": "0fa8d33ce2a4343296d8136a42d787bca27807dcaef2ef15fc7576762dcb56fa"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-stable-bind\\ab\\before\\qwen.exe",
+        "bytes": 117827584,
+        "sha256": "84d6ec6b0ed171244d4067657d4ec533ac7f2bfab2bb45da44310da5594461d2"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-stable-bind\\ab\\current\\qwen.exe",
+        "bytes": 117830656,
+        "sha256": "f798042c7a2550d5edca4144a97ef7a8c13045bcb352db46b35717ebc627e3bb"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-vulkan-reference\\checks\\vulkan.exe",
+        "bytes": 68569600,
+        "sha256": "e1774d6c9556f0e67db711fa371e17d5c859a08bdbdd2405600d1ea305827505"
+      }
+    ],
+    "proofs": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\ct-packed-cpu-2026-10-20.json",
+        "bytes": 16204,
+        "sha256": "902af2e80f463794ec29bdf875c8b2d306e126b276cd675c70aec38b255fd16f"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\ct-packed-cpu-2026-10-20.zip",
+        "bytes": 1255930,
+        "sha256": "dfbb48c7e076cb80047c9f47c1c4ea4b93ca74d92aa4fbc611a92d17e6200f93"
+      }
+    ]
+  },
+  "execution": {
+    "files": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cpu-native\\validation\\cpu.exe",
+        "bytes": 27068416,
+        "sha256": "22df74df29b11e624c81b19af5ef83b837d123cca6c0b6925c76fba53243b673"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cpu-native\\validation\\cpu.exp",
+        "bytes": 24999,
+        "sha256": "1f7097b6119c56fe02fabe4fda08513a0015a7b108bb35789d83899b9afb1328"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cpu-native\\validation\\cpu.lib",
+        "bytes": 41298,
+        "sha256": "1a72c22d3a6dec39cca5118fd99aa738ff5f4202c029fc8a48afb6c3d20e909d"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cpu-native\\validation\\cpu.map",
+        "bytes": 39338098,
+        "sha256": "7bb75206ee6fc1337947dc64e3e36ae0312f93b413fb06d6bd5358e6658ddfe1"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cpu-native\\validation-final\\cpu.exe",
+        "bytes": 27069952,
+        "sha256": "e985a20a4e2fc9e13fa7beb1e9389abe5a6f67c547af3fb49ba0a02a1d21375b"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cpu-native\\validation-final\\cpu.exp",
+        "bytes": 25005,
+        "sha256": "7653928c584442b7e6b7297edc17d640fa275d445561c362ff8e7f78c71a0f8e"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cpu-native\\validation-final\\cpu.lib",
+        "bytes": 41298,
+        "sha256": "1a72c22d3a6dec39cca5118fd99aa738ff5f4202c029fc8a48afb6c3d20e909d"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cpu-native\\validation-final\\cpu.map",
+        "bytes": 39342443,
+        "sha256": "cb716eb7248861e4c71bd630f76c45f814ac3538ac5f30f10667ea1eafd74c66"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cross-platform\\cpu-green\\cpu.exp",
+        "bytes": 25002,
+        "sha256": "af41f2244955f3c69828f0257c15f9078db15d6f81737d1962fa1d73316caad7"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cross-platform\\cpu-green\\cpu.lib",
+        "bytes": 41298,
+        "sha256": "1a72c22d3a6dec39cca5118fd99aa738ff5f4202c029fc8a48afb6c3d20e909d"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cross-platform\\cpu-green\\cpu.map",
+        "bytes": 39570200,
+        "sha256": "19704c6f96a2dd0d145d09318f55449774b0bf508a4046908290a0b67325259d"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cross-platform\\cpu-red\\cpu.exe",
+        "bytes": 27043840,
+        "sha256": "4bef6427691d90cd051cbd8b3de2007460a89feae0f156546a2d1224bcfaf8c8"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cross-platform\\cpu-red\\cpu.exp",
+        "bytes": 25000,
+        "sha256": "09e445f23caef38deee1b279654b60f7044a9631a4e1dc85ca4df46b39c10713"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cross-platform\\cpu-red\\cpu.lib",
+        "bytes": 41298,
+        "sha256": "1a72c22d3a6dec39cca5118fd99aa738ff5f4202c029fc8a48afb6c3d20e909d"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cross-platform\\cpu-red\\cpu.map",
+        "bytes": 39424743,
+        "sha256": "c99d96526c3ae67e3bf3c5e699512c4ae66f33bb59bae1df0aa166703e5ef572"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cross-platform\\cuda-final\\cuda.exp",
+        "bytes": 25006,
+        "sha256": "8a91089402b1f9b59e5e4f9516b22d84e2cd2bf00ce91d92013ba81f67bfe326"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cross-platform\\cuda-final\\cuda.lib",
+        "bytes": 41384,
+        "sha256": "097299e17e955c077a99f65f363d3484d564c016359baeb643f4e47c6b737d59"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cross-platform\\cuda-final\\cuda.map",
+        "bytes": 41661273,
+        "sha256": "aea20472c533d089d2bb221920ba60d2684d5e626cbc22086e4c5fffda99e2b7"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cross-platform\\cuda-green\\cuda.exe",
+        "bytes": 121086976,
+        "sha256": "b2a4af41cd44f39126d8963cd9a4bfd48afaec398b7663b5a24234ff90fa51be"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cross-platform\\cuda-green\\cuda.exp",
+        "bytes": 25006,
+        "sha256": "78e98589eed841aca4061a46eb5b914e47ff8358da0a0f7418b1b6cda9415303"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cross-platform\\cuda-green\\cuda.lib",
+        "bytes": 41384,
+        "sha256": "097299e17e955c077a99f65f363d3484d564c016359baeb643f4e47c6b737d59"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cross-platform\\cuda-green\\cuda.map",
+        "bytes": 41829029,
+        "sha256": "3292888b0e5bb6340f1b37707a4e68b4626ca6b342985a4773a4119ef4cf65b7"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-cross-backend-reference\\cpu\\cpu.exe",
+        "bytes": 26924544,
+        "sha256": "8ed4cf06ed9af03a5018dba9b8a988108e35a4975094c5a6016f747a8bb80c89"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-cross-backend-reference\\cuda\\cuda.exe",
+        "bytes": 121007104,
+        "sha256": "94179bfaffa8813223d304581708104dafcb83b5f6dcd42e1416ff0cbf298e11"
+      }
+    ],
+    "bytes": 591764596.0,
+    "protected_verified": 8
+  },
+  "script": {
+    "path": "C:\\public\\project-hyle\\hyle\\test.ps1",
+    "bytes": 1511,
+    "sha256": "54752a1832566befc5537a55e7b0f816e92204393c9e5cc5c3f75fcd6b165b22"
+  },
+  "scope": "Superseded CPU/CUDA diagnostics and linker sidecars only; current/direct-before/reference images, all objects, SDKs, commands and results retained."
+}

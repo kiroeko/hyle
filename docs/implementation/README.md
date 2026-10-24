@@ -1,11 +1,12 @@
 # 实施材料与追溯
 
 这里保留仍被测试或调查使用的结构化输入、来源与原始资产，不维护逐轮任务卡、资格表或施工计划。
-当前用法见[用户手册](../user/README.md)，设计理由见[架构](../architecture/README.md)，
-实际待办见[当前工作](../developer/current-work.md)。
+当前用法见[用户手册](../user/README.md)，设计理由见[架构](../architecture/README.md)。
 
 ## 仍在使用的材料
 
+- [现行模型、量化制品与算子需求](model-operators.md)：当前支持范围、计算子图和反向依赖审查入口；
+  与历史实现、运行结果分开，不将需求清单视为已通过的支持表。
 - [Qwen3.5-2B 本地输入身份](tasks/compute/qwen35-2b-local-input.json)，对应
   [独立文本参考](../../tests/compute_models/qwen35_reference.py)。这是输入记录，不是完整 Hyle 引擎通过证明。
 - [模型来源](tasks/compute/llm-moe-model-sources.json)、

@@ -3,14 +3,160 @@
 #include <algorithm>
 
 #include "../compute_models/d5_qwen35_fixture.h"
+#include "../compute_models/batched_rope_fixture.h"
 #include "../compute/workload_fixture.h"
 #include "gate_norm_test_support.h"
 #include "vulkan_program_internal.h"
 #include "vulkan_policy.h"
+#include "hyle/graph/vulkan.h"
+#include "../compute_models/derived_cast_fixture.h"
 
 namespace {
 using namespace vulkan_gate_norm_test;
 namespace d = v::detail;
+
+TEST(VulkanManaged, ImmutableBfloatCastCapturesOneReadyPayloadAndKeepsPublicValues) {
+  namespace f = derived_cast_test;
+  auto context = vulkan_test::context().value();
+  for (int mode = 0; mode < 6; ++mode) {
+    SCOPED_TRACE(mode);
+    f::Fixture fixture(mode);
+    auto weight_values = f::weights(0);
+    const auto weight = make(context, f::description(c::DataType::kBFloat16, f::columns, f::width), weight_values);
+    const auto scale_desc = c::TensorDesc::dense(c::DataType::kFloat32, std::array{f::width}).value();
+    const auto scale = make(context, scale_desc, std::vector<double>(f::width, 1));
+    std::vector<v::Tensor> constants;
+    if (mode != 1) constants.push_back(weight);
+    constants.push_back(scale);
+    auto program = hyle::graph::vulkan::compile(context, fixture.graph, constants);
+    ASSERT_TRUE(program) << program.error().message();
+    std::array slots{program->create_invocation().value(), program->create_invocation().value()};
+    v::Tensor previous; std::vector<std::uint64_t> previous_bits;
+    for (int phase = 0; phase < 2; ++phase) {
+      const auto input_values = f::inputs(phase);
+      const auto input = make(context, f::description(c::DataType::kFloat32, f::rows, f::width), input_values);
+      if (mode == 1) weight_values = f::weights(phase);
+      std::vector<v::Tensor> arguments{input};
+      if (mode == 1) arguments.push_back(make(context, weight.description(), weight_values));
+      ASSERT_TRUE(slots[phase].bind(arguments).ok());
+      auto work = slots[phase].submit(); ASSERT_TRUE(work) << work.error().message();
+      auto result = work->wait(); ASSERT_TRUE(result) << result.error().message();
+      const auto tensors = result->get()->tensors();
+      expect(context, tensors[0], f::reference(input_values, weight_values));
+      if (mode == 2 || mode == 4) expect(context, tensors[1], weight_values, true);
+      if (mode == 3) {
+        std::vector<double> transposed(f::columns * f::width);
+        for (std::int64_t n = 0; n < f::columns; ++n)
+          for (std::int64_t k = 0; k < f::width; ++k)
+            transposed[k * f::columns + n] = weight_values[n * f::width + k];
+        expect(context, tensors[1], transposed, true);
+      }
+      if (!phase) { previous = tensors[0]; previous_bits = bits(context, previous); }
+      else EXPECT_EQ(bits(context, previous), previous_bits);
+    }
+  }
+}
+
+TEST(VulkanManaged, BatchedRopePositionsAndPerTokenFrequenciesReplay) {
+  namespace f = batched_rope_test;
+  auto context = vulkan_test::context().value();
+  for (const auto type : {c::DataType::kFloat32, c::DataType::kFloat16})
+    for (bool per_request : {false, true})
+      for (bool per_token_frequency : {false, true})
+        for (const auto layout : {c::RopeLayout::kInterleaved, c::RopeLayout::kHalfSplit}) {
+          const auto data_desc = dense(type, {2, 3, 2, 8});
+          const auto position_desc = per_request ? dense(c::DataType::kInt32, {2, 3})
+                                                 : dense(c::DataType::kInt32, {3});
+          const auto frequency_desc = per_token_frequency ? dense(c::DataType::kFloat32, {3, 2})
+                                                          : dense(c::DataType::kFloat32, {2});
+          const std::vector<double> frequency_values(f::kFrequencies.begin(),
+              f::kFrequencies.begin() + (per_token_frequency ? 6 : 2));
+          const auto frequency = make(context, frequency_desc, frequency_values);
+          auto program = v::prepare(context,
+              c::RoPE{.rotary_dimensions=4, .sequence_axis=-3, .layout=layout},
+              data_desc, position_desc, frequency_desc);
+          ASSERT_TRUE(program) << program.error().message();
+          auto slot = program->create_invocation().value();
+          for (int seed : {0, 11}) {
+            auto positions = f::kPositions;
+            positions[0] = seed;
+            const auto position = context.upload(position_desc,
+                std::as_bytes(std::span(positions).first(per_request ? 6 : 3))).value();
+            const auto source = f::data(seed);
+            const auto data = make(context, data_desc, source);
+            ASSERT_TRUE(slot.bind(data, position, frequency).ok());
+            auto work = slot.submit().value();
+            auto result = work.wait();
+            ASSERT_TRUE(result) << result.error().message();
+            expect(context, result->get()->tensors()[0],
+                f::reference(source, positions, per_request, per_token_frequency, layout));
+          }
+        }
+}
+
+TEST(VulkanManaged, DenseConstantRhsPacksOnceAndKeepsOtherConsumersAndDynamicWeights) {
+  namespace g = hyle::graph;
+  auto context = vulkan_test::context().value();
+  constexpr std::size_t rows = 6, k = 37, n = 7;
+  for (const auto type : {c::DataType::kFloat32, c::DataType::kFloat16, c::DataType::kBFloat16})
+    for (const bool constant : {true, false}) {
+      SCOPED_TRACE(::testing::Message() << int(type) << '/' << constant);
+      const auto a_desc = dense(type, {2, 3, k});
+      const auto w_desc = dense(type, {k, n});
+      auto builder = g::GraphBuilder::create().value();
+      const auto a = builder.input(a_desc).value();
+      const auto w = (constant ? builder.constant(w_desc) : builder.input(w_desc)).value();
+      const auto product = builder.add(c::MatMul{}, a, w).value();
+      const auto negative = builder.add(c::Unary{c::UnaryKind::kNeg}, w).value();
+      ASSERT_TRUE(builder.publish(product).ok());
+      ASSERT_TRUE(builder.publish(negative).ok());
+      const auto graph = std::move(builder).finish().value();
+      std::vector<double> weights(k * n);
+      const auto set_weights = [&](int phase) {
+        for (std::size_t i = 0; i < weights.size(); ++i)
+          weights[i] = rounded((int((i * 19 + phase * 13) % 47) - 23) * .01371, type);
+      };
+      set_weights(0);
+      const auto captured = make(context, w_desc, weights);
+      const std::array constants{captured};
+      g::vulkan::CompileReport report;
+      auto program = g::vulkan::compile(context, graph,
+          constant ? std::span(constants) : std::span<const v::Tensor>{}, {.report = &report});
+      ASSERT_TRUE(program) << program.error().message();
+      EXPECT_EQ(report.retained_constant_owner_count, constant ? 2u : 0u);
+      std::array slots{program->create_invocation().value(), program->create_invocation().value()};
+      v::Tensor previous;
+      std::vector<double> previous_values;
+      for (int phase = 0; phase < 2; ++phase) {
+        if (!constant && phase) set_weights(phase);
+        std::vector<double> input(rows * k);
+        for (std::size_t i = 0; i < input.size(); ++i)
+          input[i] = rounded((int((i * 11 + phase * 7) % 43) - 21) * .01913, type);
+        const auto activation = make(context, a_desc, input);
+        const auto weight = constant ? captured : make(context, w_desc, weights);
+        const std::array bindings{activation, weight};
+        ASSERT_TRUE(slots[phase].bind(std::span(bindings).first(constant ? 1 : 2)).ok());
+        auto work = slots[phase].submit();
+        ASSERT_TRUE(work) << work.error().message();
+        auto result = work->wait();
+        ASSERT_TRUE(result) << result.error().message();
+        std::vector<double> expected(rows * n), negative_weights(weights.size());
+        for (std::size_t row = 0; row < rows; ++row)
+          for (std::size_t col = 0; col < n; ++col)
+            for (std::size_t inner = 0; inner < k; ++inner)
+              expected[row * n + col] += input[row * k + inner] * weights[inner * n + col];
+        for (std::size_t i = 0; i < weights.size(); ++i) negative_weights[i] = -weights[i];
+        expect(context, result->get()->tensors()[0], expected);
+        expect(context, result->get()->tensors()[1], negative_weights, true);
+        if (!phase) {
+          previous = result->get()->tensors()[0];
+          previous_values = values(context, previous);
+        } else {
+          EXPECT_EQ(values(context, previous), previous_values);
+        }
+      }
+    }
+}
 
 TEST(VulkanManaged, ColdRulesMatchFullConditionAxesAndUnknownDefault) {
   auto context=vulkan_test::context().value();

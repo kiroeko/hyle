@@ -27,5 +27,18 @@
       "bytes": 15026,
       "sha256": "8ca4574a212f14cbec4c446826474583ef0bf1e2cb1630574fd730c77af03b33"
     }
-  ]
+  ],
+  "adaptation": {
+    "affine_bits": [
+      4,
+      5,
+      6,
+      8
+    ],
+    "packing": "Continuous low-first U32 rows; words=(K/32)*bits. Bit5/6 extraction joins adjacent words with unsigned I64 values; only current selected K group or selected embedding rows are decoded.",
+    "preserved": "F32 affine multiply then add and dot/group order; embedding typed product then typed add; MX4/8 cast and group-scale formula unchanged.",
+    "source_basis": "Original CPU extract_bits and MLX affine dequantize equations pinned above; ATen owns bitwise/index and numeric execution.",
+    "grouped_activation": "A[T,1,K] and zero-slot-stride views collapse the shared axis before conversion; per-slot selected current-group dots reuse token rows without T*S*K activation expansion. Existing A[T,S,K] math, typed scale/bias and MX order remain unchanged.",
+    "matrix_orientation": "Affine A*W^T retains the original K-group branch. Explicit A*W keeps physical W[N,K] and K groups, decodes only selected Ntile<=64 x Kgroup tiles, then accumulates F32 products before the declared final cast. N is not required to divide a quantization group. No full NK/ENK floating bank."
+  }
 }

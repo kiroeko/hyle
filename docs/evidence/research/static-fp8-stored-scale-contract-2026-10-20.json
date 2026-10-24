@@ -1,0 +1,181 @@
+{
+  "status": "bounded_contract_research_complete_no_implementation",
+  "scope": "Selected static-calibrated ModelOpt FP8 Linear roles in artifacts7/17/28 only; no model scope expansion, payload, build, GPU or performance run.",
+  "facts": {
+    "artifact_headers": {
+      "path": ".scratch\\architecture-refactor-2026-10-18\\static-fp8-contract-review\\artifact-header-facts.json",
+      "bytes": 18477,
+      "sha256": "40b95a772487228d919d89ccd3e1025375a6ae9ca7688f22e5883a2ac116b778"
+    },
+    "primary_sources": {
+      "path": ".scratch\\architecture-refactor-2026-10-18\\static-fp8-contract-review\\primary-source-identities.json",
+      "bytes": 6718,
+      "sha256": "560909733deeec17965687767fe57e0f5079321ea1d33514c5f6b94aac1f4698"
+    },
+    "configured_output_default": "All three saved model configs are BF16; local deployment Linear preserves activation dtype. This is a default model path, not a claim that safetensors specifies GEMM output dtype.",
+    "storage": "Observed true FP8 Linear weights are plain F8_E4M3[N,K], with one independent F32 weight_scale and input_scale per original role. Q27/GLM use rank0 scalars; sampled Q24 uses[1]. No block128/F32 attached scale layout or per-token computed scale is indicated by these inspected roles.",
+    "examples": [
+      {
+        "artifact": 7,
+        "role": "model.language_model.layers.0.linear_attn.in_proj_qkv",
+        "W": [
+          10240,
+          5120
+        ],
+        "SA": "F32[]",
+        "SW": "F32[]"
+      },
+      {
+        "artifact": 17,
+        "role": "model.layers.0.linear_attn.in_proj_a",
+        "W": [
+          128,
+          8192
+        ],
+        "SA": "F32[1]",
+        "SW": "F32[1]",
+        "note": "Three fields lie in different sampled shards140/181/184."
+      },
+      {
+        "artifact": 28,
+        "role": "model.layers.0.mlp.gate_proj",
+        "W": [
+          12288,
+          6144
+        ],
+        "SA": "F32[]",
+        "SW": "F32[]"
+      }
+    ],
+    "important_exclusions": [
+      "F8_E4M3 weight_scale for U8 NVFP4 weights is not an FP8 weight role.",
+      "Sample Q24 shard200 is207 BF16 MTP tensors, zeroFP8; retained as a negative observation, not treated as static FP8 evidence.",
+      "Static FP8 KV and conv1d targets are not established by these Linear headers.",
+      "No scale numeric value, finite/positive bound, equality, clipping incidence or gapped physical payload was inferred from metadata."
+    ]
+  },
+  "producer_contract": {
+    "artifact7": {
+      "producer_version": "0.47.0.dev80+g913f5e224",
+      "fixed_commit": "913f5e224cb2a9a7754bd2f17edd50395aad7bf7",
+      "provenance": "Full commit resolved by GitHubAPI and official commit page; dev suffix is stronger than a guessed current producer, but does not prove an unmodified installed wheel."
+    },
+    "artifact17": {
+      "producer_version": "0.42.0",
+      "fixed_release_commit": "e2a4a8bf682bf3ddb30a64363a791650b9e4f11f",
+      "provenance": "Official tag0.42.0 resolved with git ls-remote. Original mistaken v0.42.0 lookup422 retained; source release inspected, not proof of publisher local patches."
+    },
+    "artifact28": {
+      "producer_version": "0.0.0",
+      "provenance": "No exact exporter commit can be recovered from saved version; do not silently bind to either inspected release."
+    },
+    "scale_export": {
+      "source": "quant_utils.py::get_scaling_factor; unified_export_hf.py::_export_quantized_weight in both fixed versions",
+      "formula": "F32 exported scaling_factor = F32(export_amax / maxbound448); positive assertion appears in helper. W exporter emits float8_e4m3fn(weight / weight_scale); exporter source uses plain per-tensor or per-channel branches, but inspected actual roles have only scalar scales.",
+      "limits": "Stored input_scale alone cannot reconstruct the exact pre-export calibrated amax, nor the original scale=448/amax and its reciprocal rounding pair. Tensor promotion/output of weight/scale division depends on the source tensor rank/dtype; do not retroactively re-encode stored W to mimic it."
+    },
+    "calibration_fake_QDQ": {
+      "normal_case": "Cast source to F32; compute scale=F32(448/amax), normalize F32(x*scale), convert E4M3, widen to F32, multiply by F32(1/scale), return original dtype(BF16 in these configs). This is fake QDQ for original normal Linear, not serialized-code GEMM.",
+      "0.42_difference": "0.42 eager code has no explicit clamp or tiny-amax replacement; CUDA extension uses __nv_fp8_e4m3 constructor SATFINITE and F32 multiply/dequant. Eager/special/out-of-range equivalence is not established.",
+      "913f_difference": "913f eager adds amax<=2^-24 ->safe_amax1 and explicit[-448,448] clamp; CUDA extension has same tiny-amax replacement and saturating FP8 constructor. NaN and all zero edge domains need an explicit chosen public policy.",
+      "RNE_evidence": "CUDA __nv_fp8_e4m3 constructor delegates to __nv_cvt_float_to_fp8 with __NV_SATFINITE; standard conversion is nearest-even. No compilation/execution of the exporter kernel was performed."
+    }
+  },
+  "deployment_contract": {
+    "source_commit": "234ccba7f625e12639e621044496bcc6197c3758",
+    "source": "modelopt_quant.py:531-687; fp8_kernel.py:852-955; fp8_utils.py:2197-2229,2254-2510",
+    "activation": "For supplied scalar input_scale: load A as F32, compute reciprocal1/SA, multiply, clamp to FP8 bounds, cast E4M3. No row absmax, epsilon floor, block128 or token recomputation. The Triton source tree is established; actual PTX reciprocal precision is not signed here.",
+    "weight": "Keep existing serialized FP8 codes. Cold transpose[N,K] to a logical[K,N] column-major view can be metadata-only; fused logical projections may requantize to max scale during consumer loading, which is an explicit numerical operation, not free aliasing.",
+    "dot_output": "Deployment per-tensor path passes quantized A/W and separate SA/SW to torch._scaled_mm, out_dtype=input_dtype(BF16 here). Generic fallback explicitly obtains F32 raw code dot then F32 output*SA*SW, adds optional bias, and finally casts to input dtype. Native GEMM exact accumulation/scale epilogue and CUTLASS paths are implementation-specific and not measured/proved identical by this research.",
+    "fast_accum": "Pinned installed Torch2.8 header declares use_fast_accum=false by default; SGLang per-tensor call omits this flag. This is API selection, not a proof of every TensorCore intermediate sum or kernel.",
+    "different_paths": [
+      "ModelOpt from_quantized_weight converts both codes and scale to target dtype before multiplication, so its BF16 fallback is another explicit rounding tree.",
+      "SGLang Marlin FP8 weight-only branch deletes input_scale and leaves A unquantized; it is W8A16 and cannot witness W8A8 calibrated activation support.",
+      "BF16 fake-QDQ operands, code-domain F32 dot+scales and hardware scaled_mm cannot be declared equal merely because all sayFP8."
+    ],
+    "arithmetic_witness": {
+      "path": ".scratch\\architecture-refactor-2026-10-18\\static-fp8-contract-review\\scalar-boundary-witness.json",
+      "bytes": 475,
+      "sha256": "0d8007dfe4306afefa68ec0fa93a05fee99df7c36451b99e856a2593098ca618"
+    }
+  },
+  "current_hyle": {
+    "existing_semantics": [
+      "DataType::kFloat8E4M3FN plain storage, Cast, Binary reciprocal/divide/multiply, min/max, transpose View, F32 MatMul and final Cast can express an explicit static software reference.",
+      "Existing Float8BlockLinear/GroupedFloat8Linear choose dynamic block128 activations and attached scales; they are different operations.",
+      "Existing CT channel/token fixture is BF16 per-token QDQ with BF16 channel SW, a zero-only epsilon and operand dequant before dot; it is not this artifact contract."
+    ],
+    "actual_gaps": [
+      "No currently declared calibrated static FP8 code-dot/scale recipe or bounded native region for these plain codes+scalar scales.",
+      "Ordinary MatMul output has the operand dtype; raw FP8 MatMul cannot simply request BF16 output by setting accumulation_type. Explicit F32 code widening/dot/scales/final Cast expresses the intended reference instead.",
+      "Apple logical raw E4M3 bridge is explicitly admitted only to typed NVFP4 consumers (apple_operations.cc:365-375); generic FP8 Cast cannot be presumed supported there. Vulkan generic scalar carrier likewise has no demonstrated plain FP8 Cast path.",
+      "HYLE elementwise min/max have fmin/fmax one-NaN semantics; upstream clamp NaN propagation is different. A generic min/max chain needs an explicit NaN-preserving selection, or a stated validated input domain, before claiming full special-value parity."
+    ],
+    "source_anchors": [
+      "include/hyle/compute/tensor_desc.h:20",
+      "src/compute_ops/operation.cc:580-617",
+      "include/hyle/compute/model_ops.h:447-568",
+      "tests/compute_models/fp8_channel_token_qdq_fixture.h:92-118",
+      "src/compute_provider_cuda/tensor_kernel.cu:74-96",
+      "src/compute_provider_native/aten_cpu_provider.cc:98-124",
+      "src/compute_route_apple/apple_operations.cc:365-375",
+      "src/compute_route_apple/apple_tensor.cc:188-201,742-750"
+    ]
+  },
+  "minimal_next_package": {
+    "recommendation": "First declare one ordinary Graph software-reference code-domain recipe in the shared fixture; no new public storage ID/ArtifactWeightDecode enum or static-mode extension to dynamic Float8BlockLinear. Supply bounded cold native contraction/lowering of that exact recipe, preserving the public graph.",
+    "four_external_ports": [
+      "A BF16[M,K] (or later explicitly selected F16/F32)",
+      "W plain E4M3FN[N,K]",
+      "SA F32 scalar, accepting rank0/[1] canonical scalar forms",
+      "SW F32 scalar, independent of SA"
+    ],
+    "exact_chosen_reference_needed_before_implementation": "Select and document normalize F32(A)*F32(1/SA) -> NaN-preserving clamp448 -> E4M3RNE; F32 code dot; separate F32 multiply by SA thenSW; final BF16RNE. This is stored-scale software reference, not bitwise recreation of unavailable calibrated amax or native scaled_mm. Preserve signed zeros/NaN class and full positive finite scale domain including subnormal if accepted; do not silently precombine SA*SW.",
+    "ordinary_graph": "Cast A toF32 -> reciprocal SA/multiply -> explicit clamp+FP8 Cast -> CastF32; Cast W toF32 -> exact transpose; MatMul(accumF32) -> Mul SA -> Mul SW -> CastBF16. Keep quantized code values and rounding nodes visible.",
+    "bounded_lowering": "One private prepared composite of the exact closed graph can store MK FP8 activation bytes and bounded W tiles, retain original immutable NK FP8 bank/scalars and own perInvocation status/workspace. No dense N*K float array, newexecutor or globalcache. Escaping published intermediates retain the original decomposition.",
+    "when_public_typed_op_is_justified": "A future general scaled MatMul taking FP8 operands with independently declared output dtype/scales is a genuine typed behavior missing from MatMul. It is not required merely to express the software graph; introduce it only if selected as a stable public mathematical contract, not as an artifact-name shortcut.",
+    "bounded_tests": [
+      "Small non-square geometry plus actual-role descriptor[N128,K8192] or[N10240,K5120] without large payload; normal finite scales and positive/negative E4M3 codes.",
+      "Independent scalar activation ties/clipping/signedzero, BF16-QDQ-vs-code-dot witness, separate scale-order overflow witness, zero/NaN/Inf scale rejection or explicit documented behavior; actual numeric artifact values remain unread.",
+      "Two slots, in-place dynamic A/SA/SW updates, immutable original W owner and retained output lifetime; published intermediate fallback.",
+      "Existing dynamic block128 and CT channel/token paths remain separate neighbors. No whole-model or throughput claim in this package."
+    ]
+  },
+  "deepinfer_layout_lesson": {
+    "prior_review": {
+      "path": ".scratch\\architecture-refactor-2026-10-18\\deepseek-runtime-inspiration-2026-10-20\\deepinfer-review.json",
+      "bytes": 22330,
+      "sha256": "7143150fc1314ede9ef0ece93e464454c0aefc7ad401911c110ed5194313f154"
+    },
+    "actual_upstream": "layers/linear.py:13-79 and layers/tilelang_ops/cuda/norm.py:231-324 at commit774ce244b87cc0eb8d4b94ab9f5de2ab22049f01",
+    "bounded_application": "These actual Linear roles have scalar F32 scales and plain row-major[N,K] FP8 codes. Do not copy DeepInfer block32/UE8M0 swizzles or scale padding. Bind original immutable code bank once, use zero-copy transpose where accepted, and emit activation code bytes directly into the selected consumer layout only after the BF16/F32 normalization contract is explicit.",
+    "later_revisit": "After this static reference is numerically and lifetime-complete, inspect one real supported norm/projection producer to remove intermediate representation writes. No capture/config/pool redesign or currentBF16Qwen performance claim."
+  },
+  "unknowns": [
+    "Actual scale and weight bytes were not read; axes and shape do not prove finite values, calibration ranges, or model quality.",
+    "Artifact28 producer0.0.0 is not exact-source pinned. Versions on other two artifacts do not prove local wheel patches.",
+    "Native scaled_mm/CUTLASS/TensorCore accumulation and epilogue order are not equivalent to the selected software graph by metadata; later native lowering needs explicit numerical-policy evidence.",
+    "Full publisher importer, all role headers including FP8 convolution/KV, and complete model execution remain open."
+  ],
+  "verification": {
+    "product_files_edited": 0,
+    "builds": 0,
+    "GPU_runs": 0,
+    "SDK_downloads": 0,
+    "weight_payload_bytes": 0,
+    "new_header_bytes": 1544456,
+    "new_header_length_bytes": 48,
+    "new_index_prefix_bytes": 65536,
+    "source_requests": "Only fixed official ModelOpt commits and pinned HF metadata. Earliercached82f sources are prior background, not substituted for these producers.",
+    "stopped_research_after_fixed_sources": "No broader producer/version/kernel matrix is required for the next package."
+  },
+  "observation_phase": "Research performed before product implementation; current implementation progress belongs to current-work.md and later correctness receipts.",
+  "archive": {
+    "file": "static-fp8-stored-scale-contract-2026-10-20.zip",
+    "bytes": 282740,
+    "sha256": "78dbaf7cbb4d6742ac168a3d53595efb43c5f10f068a53491d1f03adc9de5179",
+    "members": 69,
+    "manifest": "manifest.json"
+  },
+  "chosen_ordinary_reference": "F32(A) * F32(1/SA), then existing SATFINITE E4M3FN storage Cast (equivalent to NaN-preserving clamp448 followed by RNE), widen codes toF32, F32 code-dot, multiply SA thenSW separately, final declared floating Cast. Literal1 is a typed Fill with the same scalar shape as SA, not an external artifact port."
+}

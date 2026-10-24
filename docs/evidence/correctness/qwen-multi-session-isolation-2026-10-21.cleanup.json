@@ -1,0 +1,33 @@
+{
+  "completed_utc": "2026-10-21T07:24:05.0107191Z",
+  "reclaimed_bytes": 452813392.0,
+  "deleted": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\multi-session-isolation-2026-10-21\\checks\\attempt1\\qwen.exe",
+      "bytes": 139516928,
+      "sha256": "9192813a0c3e42f479469308f7272d549025f8f121cadcd90241f6dc760912f0"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\multi-session-isolation-2026-10-21\\checks\\attempt1\\qwen.map",
+      "bytes": 57896972,
+      "sha256": "29c623a5ff457c394102f855b7280d679d9adda21865d6663640a818d5925c22"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\multi-session-isolation-2026-10-21\\cli\\checks\\attempt1\\qwen.exe",
+      "bytes": 139528192,
+      "sha256": "b37a4214b5ca563cb9a617af47552344f408eec3d996063dc3a1f352239f2bda"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\multi-session-isolation-2026-10-21\\cli\\checks\\attempt1\\qwen.map",
+      "bytes": 57933228,
+      "sha256": "af18311cc42c89642b0674b16d25c46c5af8b48872f6484781763c0c395fda52"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\multi-session-isolation-2026-10-21\\cli\\checks\\attempt2\\qwen.map",
+      "bytes": 57938072,
+      "sha256": "84d6d851141b7924463c9d2bb3bbeb5166389dc949c14565420d2b02e9e485d7"
+    }
+  ],
+  "retained_current_image": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\multi-session-isolation-2026-10-21\\cli\\checks\\attempt2\\qwen.exe",
+  "retained": "All compiler objects, link plans, dependency cache, frozen source, commands/logs/inputs, canonical regression vectors, previous full-performance baseline and final validated image."
+}

@@ -1,8 +1,83 @@
 #pragma once
-#include "hyle/graph/leased_invocation.h"
+#include "hyle/graph/executable.h"
 #include "hyle/compute/detail/provider_extension.h"
 #include "hyle/compute/detail/queue_sequence.h"
+#include "hyle/compute/detail/operation_access.h"
+namespace hyle::graph { struct ProviderRegionPreparedVTable; struct ProviderRegionPrepared; }
+namespace hyle::compute::detail { class AppendLease; }
 namespace hyle::graph::detail {
+struct PlanState;
+struct InvocationState;
+class PreparedRegion;
+class RegionInvocation;
+// Cold cleanup of the actual selected slot, queried through its existing
+// artifact extension table. Does not change the prepared-vtable ABI.
+inline constexpr compute::ProviderExtensionId kRegionBindingReleaseExtensionId{
+    0x48594c4552494d50ULL, 0x52454c4541534501ULL, 1};
+struct RegionBindingReleaseVTable final {
+  // Pure validation: no generation changes, new work or owner withdrawal.
+  Status (*validate)(void *prepared, void *invocation) noexcept = nullptr;
+  // Called only after every affected slot validated and recordings whose
+  // carriers may change were destroyed. Retired cleanup must not fail, allocate, submit
+  // work or invalidate independently escaped output owners. The next ordinary
+  // prepare_bindings reinstalls all inputs of this original slot.
+  void (*release)(void *prepared, void *invocation) noexcept = nullptr;
+  // This exact carrier uses only borrowed TensorView metadata, never input
+  // lease owners, native references or input-derived generated output handles.
+  // Release leaves those physical argument identities unchanged. Actual
+  // backend capture identity and all fresh permissions are still revalidated.
+  bool borrows_tensor_views_only = false;
+};
+// Positive proof from an exact selected slot, separate from borrowed input
+// metadata. Ordinary TensorView rebinding preserves all recorded private
+// carriers. Any cold configuration/carrier change must invalidate commands
+// before replacing them. This grants neither admission nor page permission.
+inline constexpr compute::ProviderExtensionId kRegionCaptureBindingsExtensionId{
+    0x48594c4543415054ULL, 0x42494e44494e4701ULL, 1};
+struct RegionCaptureBindingsVTable final {
+  bool (*preserves_private_arguments)(void *prepared,
+                                      void *invocation) noexcept = nullptr;
+};
+// Optional cold interface of the exact selected prepared artifact. It inspects the real
+// compiled region, including private imports/lowering, rather than Graph math.
+inline constexpr compute::ProviderExtensionId kRegionProjectedReadExtensionId{
+    0x48594c4550524f4aULL, 0x524541445245474eULL, 3};
+struct RegionNodeAccess final {
+  compute::detail::OperationPreparedAccess access{};
+  // Only a real pending owner/importer can opt in. Ready indexed reads do not
+  // by themselves establish source ordering or retain pending page controls.
+  bool allows_pending = false;
+};
+struct RegionProjectedReadVTable final {
+  // Exact original slot, borrowed only through this cold inspection. An empty
+  // footprint must be true of its actual configured computation, not merely
+  // supported by the schema or possible in another layout.
+  Status (*inspect)(const ProviderRegionPrepared &, void *invocation,
+                    std::uint32_t input_port,
+                    compute::detail::OperationPreparedAccess *) noexcept = nullptr;
+  // The original logical node may share its selected region with other access
+  // nodes. projected_input indexes that region's Graph boundary, not a native
+  // Program input or the logical node's input list. kNoInput qualifies an
+  // access-chain node that does not itself receive the projected capacity.
+  // A null invocation requests immutable artifact facts only; actual empty
+  // footprint claims must be checked against the supplied original slot.
+  Status (*inspect_node)(const ProviderRegionPrepared &, void *invocation,
+                        std::uint32_t original_node_ordinal,
+                        compute::ProviderExtensionId capability,
+                        RegionNodeAccess *) noexcept = nullptr;
+  // Cold idle only, under the original Source admission gate. Configuration
+  // borrows this call; any needed facts belong to the original selected slot.
+  // false means no configuration is required, true means it was applied.
+  Result<bool> (*configure_node)(const ProviderRegionPrepared &, void *invocation,
+                                std::uint32_t original_node_ordinal,
+                                compute::ProviderExtensionId capability,
+                                const void *configuration) noexcept = nullptr;
+};
+struct ReadProjection final {
+  ValueId capacity;
+  std::span<const ValueId> aliases;
+  std::span<const NodeId> readers;
+};
 struct RegionAccessView final {
   std::uint32_t step=0;
   std::uint64_t graph_generation=0;
@@ -15,11 +90,68 @@ struct RegionAccessView final {
   // for this cold callback; no tensor execution or ready permission is implied.
   std::span<const compute::ConstTensorView> inputs{};
   std::span<const compute::TensorView> outputs{};
+  // Object-local implementation identity for trusted cold configuration.
+  // A source capability/provider family alone never authorizes casting a
+  // prepared artifact or configuring a sibling implementation's slot.
+  const ProviderRegionPreparedVTable *prepared_vtable = nullptr;
 };
 using RegionAccessFn=Status(*)(void*,const RegionAccessView&) noexcept;
+// Borrowed cold proof from the exact selected prepared implementation. The
+// typed module qualifies its mathematical reader and actual physical port;
+// core independently verifies every real consumer against this artifact.
+// Neither a provider family nor a source capability alone grants page access.
+struct ProjectedReader final {
+  std::uint32_t step = 0;
+  const ProviderRegionPreparedVTable *implementation = nullptr;
+  const void *prepared = nullptr;
+  std::uint32_t input_port = 0;
+  // Trusted cold fact of this exact selected reader, not permission to run:
+  // replacing/releasing its page guards alone does not change native command
+  // arguments or release private carriers. Actual topology/workspace changes
+  // must still invalidate through the original before-command-change gate.
+  bool permission_changes_preserve_commands = false;
+};
+// An exact selected singleton implementation with an external write. Typed
+// adapters retain its original page writers in that Invocation's real slot.
+struct ProjectedWriter final {
+  NodeId node;
+  std::uint32_t step=0;
+  const ProviderRegionPreparedVTable *implementation=nullptr;
+  const void *prepared=nullptr;
+};
+// Pure query of the exact selected writer slot, after actual retirement. True
+// only preserves its recorded native arguments/carriers when page permissions
+// are withdrawn. It grants no write permission, readiness or future admission.
+// Any subsequent native argument/resource change still invalidates commands
+// before that change; device metadata content alone may change in cold prepare.
+inline constexpr compute::ProviderExtensionId kRegionProjectedWriteExtensionId{
+    0x48594c4552494d50ULL, 0x5752495445520101ULL, 1};
+struct RegionProjectedWriteVTable final {
+  bool (*preserves_commands)(const ProviderRegionPrepared &,
+                             void *invocation) noexcept = nullptr;
+};
+// Explicit qualification of an original native external-write artifact. This
+// is separate from release/capture preservation and never grants page rights.
+// A null reader endpoint qualifies writer-only use; otherwise the actual
+// native writer must support that same ordered reader Runtime. No work runs.
+inline constexpr compute::ProviderExtensionId kRegionOrderedWriteExtensionId{
+    0x48594c454f524457ULL, 0x5249544545464601ULL, 1};
+struct RegionOrderedWriteVTable final {
+  Status (*qualify)(const ProviderRegionPrepared &, void *invocation,
+      const compute::detail::CompletionEndpoint *reader) noexcept = nullptr;
+};
+// A typed module validates the logical access chain. Core independently checks
+// these exact selected implementations and their physical prepared input port.
+struct ResourceProjection final {
+  ValueId capacity, metadata;
+  NodeId reader;
+  std::span<const NodeId> access_nodes;
+  compute::ProviderExtensionId capability;
+};
 struct OrderedGraphSubmission final {
-  // Runs in each original shared-lane sequence, before any consumer command.
-  // Record source ordering before admitting exact pending reads to uses.
+  // Optional shared-Queue admission, before any consumer command. A delegated
+  // native implementation admits its own exact pending reads and real source
+  // ordering in its original guarded submit, without inventing a Queue.
   Status (*admit)(void*,ExecutionLaneId,compute::detail::QueueSequence&,
                   compute::LeaseUseBatch&) noexcept = nullptr;
   // Infallible after cold capacity/lifetime qualification. Maps the actual
@@ -29,45 +161,152 @@ struct OrderedGraphSubmission final {
   // Only these exact inputs defer their missing ready permission to admit.
   // Every other binding still goes through the ordinary lease checks.
   bool (*pending_input)(void*,ValueId) noexcept = nullptr;
+  bool valid() const noexcept {
+    const bool mapped = map && pending_input && owner;
+    return mapped || (!admit && !map && !pending_input && !owner);
+  }
+};
+// One optional typed resource owner, destroyed after borrowing native slots.
+// This carries layouts/frames/source controls, never another execution slot.
+struct ResourcePayloadVTable final {
+  // Reject retained source controls before mutation, then revoke preparation
+  // before changing native resources, including changes that may partly fail.
+  // Invalidate selected commands before releasing their native configuration
+  // owners. This grants no new work admission.
+  Status (*reset)(void *, Invocation &) noexcept = nullptr;
+  void (*destroy)(void *) noexcept = nullptr;
 };
 // Explicit cold/idle opt-in only. Views borrow the callback scope, never a
 // different execution slot. Ordinary compile/submit do not call this visitor.
 struct RegionAccess final {
+  HYLE_GRAPH_API static bool borrows_tensor_views_only(const PreparedRegion &) noexcept;
+  HYLE_GRAPH_API static bool preserves_capture_bindings(
+      const RegionInvocation &) noexcept;
+  HYLE_GRAPH_API static Status withdraw_bindings(Invocation &,
+      std::span<const ValueId>) noexcept;
+  // Private cold bridge for the exact selected implementation of an original
+  // logical node, whether singleton or region. It never exposes provider state
+  // or changes public graph topology.
+  HYLE_GRAPH_API static Result<bool> configure_node(
+      Invocation &, NodeId,
+      compute::ProviderExtensionId, const void *) noexcept;
+  // Cold/idle only. Call before mutating a selected slot's native resources,
+  // including callbacks that may fail after a partial configuration change.
+  // Discards only the covering recording and revokes prepared replay.
+  HYLE_GRAPH_API static Status invalidate_commands(
+      Invocation &, std::uint32_t selected_step) noexcept;
+  // Revoke this episode's readiness without discarding qualified physical
+  // recordings. Still call invalidate_commands BEFORE replacing any native
+  // command resource or argument. Submit requires complete preparation again.
+  HYLE_GRAPH_API static Status revoke_preparation(Invocation &) noexcept;
+  // Original idle/result/source-control gates; expires cold configuration and
+  // projected permissions while retaining ordinary caller bindings/sources.
+  HYLE_GRAPH_API static Status reset_configuration(Invocation &) noexcept;
   // Cold adapter check against the retained target Context, independent of
   // tensor bindings. Replay preparation still owns the complete topology.
   HYLE_GRAPH_API static Status validate_queue(const Executable&,ExecutionLaneId,
       const compute::Queue&) noexcept;
+  // Retains the original lane target; it creates no Queue or transfer runtime
+  // and grants no work admission after Source close.
+  HYLE_GRAPH_API static Result<ExecutionSource> execution_source(
+      const Executable &, ExecutionLaneId) noexcept;
+  // Actual planned external-input carrier, without choosing an implementation
+  // or creating transfer state. Published inputs are not configuration ports.
+  HYLE_GRAPH_API static Result<mem::MemoryResourceRef> input_resource(
+      const Executable &, ValueId) noexcept;
+  // Borrowed inspection does not invalidate recordings. An adapter changing
+  // native configuration must first invalidate_commands for the selected step.
   HYLE_GRAPH_API static Status visit(const Executable&,RegionAccessFn,void*) noexcept;
   HYLE_GRAPH_API static Status visit(Invocation&,RegionAccessFn,void*) noexcept;
-  HYLE_GRAPH_API static Status visit(LeasedInvocation&,RegionAccessFn,void*) noexcept;
+  // Same gate, indexed through the original Plan's selected logical node.
+  HYLE_GRAPH_API static Status visit(Invocation&,NodeId,RegionAccessFn,void*) noexcept;
+  // Observation only after actual retirement, also for failed/closed recovery.
+  // Does not reopen Source admission or authorize configuration/execution.
+  HYLE_GRAPH_API static Status visit_retired(Invocation&,RegionAccessFn,void*) noexcept;
+  HYLE_GRAPH_API static Status visit_retired(Invocation&,NodeId,RegionAccessFn,void*) noexcept;
   // Requires complete current bindings and the same original idle/result gate.
   // Uses the invocation's existing preallocated port arrays, without copying.
   HYLE_GRAPH_API static Status visit_bound(Invocation&,RegionAccessFn,void*) noexcept;
-  HYLE_GRAPH_API static Status visit_bound(LeasedInvocation&,RegionAccessFn,void*) noexcept;
-  // Cold opt-in capacity; ordinary leased invocations retain their old cost.
-  HYLE_GRAPH_API static Status reserve_reads(LeasedInvocation&,std::uint32_t,
-      LeasedInvocationOptions) noexcept;
+  HYLE_GRAPH_API static Result<void *> resource_payload(
+      Invocation &, const ResourcePayloadVTable *) noexcept;
+  // Takes payload ownership only after successful cold admission.
+  HYLE_GRAPH_API static Status attach_resource_payload(
+      Invocation &, const ResourcePayloadVTable *, void *) noexcept;
+  // Cold opt-in capacity; ordinary borrowed invocations need no lease table.
+  HYLE_GRAPH_API static Status reserve_reads(Invocation&,std::uint32_t,
+      ResourceOptions) noexcept;
+  // Owns immutable input metadata of the selected cold configuration. Only
+  // this idle/result-gated path may replace it until the original reset.
+  // Rejection preserves the previous binding and prepared replay.
+  HYLE_GRAPH_API static Status bind_configuration(Invocation &, ValueId,
+      compute::TensorDesc, compute::ReadLease) noexcept;
   // Trusted adapters supply the exact footprint and qualify every reader.
   // Rejects copies, ordinary operations, aliases and published capacity views.
-  HYLE_GRAPH_API static Status bind_projected(LeasedInvocation&,ValueId,
+  HYLE_GRAPH_API static Status bind_projected(Invocation&,ValueId,
       compute::ConstTensorView,std::span<const compute::ReadLease>,
-      compute::ProviderId,std::span<const std::uint32_t> reader_steps) noexcept;
+      std::span<const ProjectedReader>) noexcept;
   // No ready permission is manufactured. The trusted adapter owns the typed
   // pending frame and supplies all exact guards in OrderedGraphSubmission.
-  HYLE_GRAPH_API static Status bind_pending_projected(LeasedInvocation&,ValueId,
-      compute::ConstTensorView,compute::ProviderId,
-      std::span<const std::uint32_t> reader_steps) noexcept;
-  HYLE_GRAPH_API static Result<compute::Completion> submit(LeasedInvocation&,
+  HYLE_GRAPH_API static Status bind_pending_projected(Invocation&,ValueId,
+      compute::ConstTensorView,std::span<const ProjectedReader>) noexcept;
+  // Same-Graph write then read. Checks the original Graph control edges and
+  // exact selected artifacts; only the supplied independent page writers are
+  // admitted to the original resource episode. No whole-bank write is granted.
+  HYLE_GRAPH_API static Status bind_written_projection(Invocation&,const Graph&,
+      ValueId,compute::ConstTensorView,std::span<const compute::ReadLease>,
+      std::span<const compute::WriteLease*const>,
+      std::span<const compute::detail::AppendLease*const>,ProjectedWriter,
+      std::span<const ProjectedReader>,std::span<const compute::ReadLease> controls,
+      ResourceOptions) noexcept;
+  // Actual retired outcome only, including failure/closed recovery. Revokes
+  // the original preparation before an adapter takes back its page owners.
+  HYLE_GRAPH_API static Status release_written_projection(Invocation&,ValueId) noexcept;
+  // Standalone typed write effect. Capacity is only a range bound, never an
+  // external input or whole-bank permission; the exact node owns anonymous
+  // ready/prefix, mutable-page and program-control uses in the same episode.
+  HYLE_GRAPH_API static Status bind_write_effect(Invocation&,const Graph&,
+      compute::ConstTensorView,std::span<const compute::ReadLease>,
+      std::span<const compute::WriteLease*const>,
+      std::span<const compute::detail::AppendLease*const>,ProjectedWriter,
+      std::span<const compute::ReadLease> controls,ResourceOptions) noexcept;
+  // Actual retirement, including failed/closed recovery. Withdraws only this
+  // original node's anonymous uses, after revoking its current preparation.
+  HYLE_GRAPH_API static Status release_write_effect(Invocation&,NodeId) noexcept;
+  HYLE_GRAPH_API static bool successful_outcome(const Invocation&) noexcept;
+  HYLE_GRAPH_API static Result<compute::Completion> submit(Invocation&,
       std::span<const QueueBinding>,OrderedGraphSubmission) noexcept;
   // Observation/result gate only; failed or closed episodes may still return
   // their original source controls after actual retirement.
-  HYLE_GRAPH_API static bool outcome_available(const LeasedInvocation&) noexcept;
-  // Same immutable Graph, uniquely qualified dense reshape -> checked Gather.
-  HYLE_GRAPH_API static Status bind_gather(LeasedInvocation&,const Graph&,
-      ValueId capacity,ValueId indices,compute::ConstTensorView,
-      std::span<const compute::ReadLease>) noexcept;
+  HYLE_GRAPH_API static bool outcome_available(const Invocation&) noexcept;
+  // Typed modules prove the logical access chain. Core checks this same plan,
+  // each selected implementation/physical port, transparent aliases and bytes.
+  HYLE_GRAPH_API static Status bind_read_projection(Invocation&,ReadProjection,
+      compute::ConstTensorView,std::span<const compute::ReadLease>) noexcept;
+  // No whole-capacity lease is minted. Only the actual selected prepared
+  // implementation may authorize its projected physical input/empty footprint.
+  HYLE_GRAPH_API static Result<mem::MemoryResourceRef> projection_resource(
+      const Executable&,ResourceProjection,
+      ExecutionLaneId* reader_lane=nullptr)noexcept;
+  HYLE_GRAPH_API static Status bind_projection(Invocation&,
+      ResourceProjection,
+      compute::ConstTensorView,std::span<const compute::ReadLease>,bool pending=false)noexcept;
   // Cold successful idle caller output only; empty after readonly publication.
   HYLE_GRAPH_API static Result<compute::WriteLease> take_write(
-      LeasedInvocation&,ValueId caller_output) noexcept;
+      Invocation&,ValueId caller_output) noexcept;
+private:
+  static Status validate_projected_writer(InvocationState&,const Graph&,
+      ProjectedWriter) noexcept;
+  static Status qualify_ordered_writer(InvocationState&,std::uint32_t,
+      const compute::detail::CompletionEndpoint*) noexcept;
+  static Status release_writer_preparation(Invocation&,std::uint32_t) noexcept;
+  static Result<RegionNodeAccess>
+  inspect_projection_node(const PlanState &, const InvocationState *, NodeId,
+                          compute::ProviderExtensionId) noexcept;
+  static Result<RegionNodeAccess>
+  projection_access(const PlanState &, const InvocationState *,
+                    ResourceProjection) noexcept;
+  static Status bind_projected_impl(Invocation&,ValueId,
+      compute::ConstTensorView,std::span<const compute::ReadLease>,
+      std::span<const ProjectedReader>,bool pending) noexcept;
 };
 } // namespace hyle::graph::detail

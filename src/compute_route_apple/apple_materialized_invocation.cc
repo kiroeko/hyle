@@ -22,6 +22,9 @@ struct BatchTraits final {
   static auto paged_binding(const Memory&m,PagedArenaPendingRead r,LeaseImportOptions o){return PagedBatchAccess::binding(m,std::move(r),o);}
   static Status qualify_source(const Context&c,compute::detail::CompletionDependency p){return qualify_recording_dependency(ContextAccess::runtime(c),p);}
   static auto submit(Invocation&i,LeaseUseBatch u){return PagedBatchAccess::submit(i,std::move(u));}
+  static auto submit_pending(Invocation&i,LeaseUseBatch u,const CopyBatchUpdate&source){
+    return PagedBatchAccess::submit_pending(i,std::move(u),source);
+  }
   static Status wait_native(Invocation&i){return PagedBatchAccess::wait_native(i);}
   static Status reuse_gate(Invocation&i){return PagedBatchAccess::reuse_gate(i);}
   static Status release_inputs(Invocation&i){return PagedBatchAccess::release_inputs(i);}
@@ -71,8 +74,7 @@ Result<PagedBatchInvocation> PagedBatchInvocation::create(const Context& context
   if(!context.valid() || !recipe.valid() || !workload.valid())
     return std::unexpected(Status::InvalidArgument("Apple paged context/recipe/workload invalid"));
   const auto c=recipe.schema().capacity();
-  if((c.query_type!=DataType::kFloat16 && c.query_type!=DataType::kBFloat16) ||
-      (c.qk_head_dim!=64 && c.qk_head_dim!=128 && c.qk_head_dim!=256))
+  if(!detail::PagedBatchAccess::cache_domain(c))
     return std::unexpected(Status::Unimplemented("Apple paged qualified flash dtype/depth"));
   auto allocator=options.allocator;
   if(!allocator.valid())return std::unexpected(Status::InvalidArgument("Apple paged allocator invalid"));
@@ -85,6 +87,9 @@ Result<PagedBatchInvocation> PagedBatchInvocation::create(const Context& context
 }
 Status PagedBatchInvocation::prepare_batch(BatchLayoutVersion v) noexcept {return data_?data_->prepare(std::move(v)):Status::FailedPrecondition("empty Apple paged controller");}
 Status PagedBatchInvocation::bind(ReadLease q,PagedArenaRead k,PagedArenaRead v) noexcept {return data_?data_->bind(std::move(q),std::move(k),std::move(v)):Status::FailedPrecondition("empty Apple paged controller");}
+Status PagedBatchInvocation::bind(ReadLease q,PagedArenaRead cache)noexcept{
+  return data_?data_->bind(std::move(q),std::move(cache)):Status::FailedPrecondition("empty apple paged MLA controller");
+}
 Result<OwnedResult<Results>> PagedBatchInvocation::submit() noexcept {if(!data_)return std::unexpected(Status::FailedPrecondition("empty Apple paged controller"));return data_->submit();}
 NativePagedBatchReport PagedBatchInvocation::report() const noexcept {return data_?data_->report:NativePagedBatchReport{};}
 Status PagedBatchInvocation::close() noexcept {return data_?data_->close():Status::Ok();}

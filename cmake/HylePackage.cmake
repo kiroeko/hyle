@@ -75,7 +75,7 @@ function(hyle_install_package)
   set_property(GLOBAL PROPERTY HYLE_COMPUTE_BUILD_RECIPE_ID
     "${HYLE_PACKAGE_COMPUTE_RECIPE_ID}")
 
-  foreach(_product IN ITEMS compute graph)
+  foreach(_product IN ITEMS compute graph compute_stream)
     if(TARGET hyle_product_${_product})
       set_target_properties(hyle_product_${_product} PROPERTIES
         HYLE_COMPUTE_ROUTES "${HYLE_PACKAGE_COMPUTE_ROUTES}"

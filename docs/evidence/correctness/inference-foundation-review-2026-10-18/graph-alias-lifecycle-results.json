@@ -1,0 +1,40 @@
+{
+  "archive": {
+    "path": "docs/evidence/correctness/inference-foundation-review-2026-10-18/graph-alias-lifecycle.zip",
+    "bytes": 656932,
+    "sha256": "af3f6626e458f87ecc24688430d4ee4372680d85635c88cafbdee98c873cb6f7"
+  },
+  "source_entries": 106,
+  "changes": [
+    "Required View aliases are established before optional destructive alias selection; all readers and published Views contribute to shared storage liveness.",
+    "Optional writes require every actual reader to happen-before the write, using the existing bounded segment clocks. Cold reader lists retain future output readers after union.",
+    "Producer-first workspace request roots reuse the parent root in linear time.",
+    "Vulkan paged seal releases its completed internal result owner before the original native reuse gate. External GraphOutput and escaped native owners remain protected."
+  ],
+  "checks": {
+    "original_numeric_controls": "Both defects reproduced: {3,5} instead of {1,1}; published private View {2,3} instead of {-2,-3}.",
+    "intermediate_group_only_control": "3/4 PASS; real two-context/two-lane compiled plan still selected a destructive alias despite an unordered earlier reader. Test verifies actual segment ancestors and physical alias, without relying on a probabilistic race.",
+    "final_alias_and_cold_controls": "8/8 PASS: four alias tests plus four existing route retry, budget and exhaustive allocation-failure rollback controls.",
+    "same_lane_reuse": "The ordinary in-place chain retains its single 16-byte workspace payload.",
+    "original_vulkan_page": "Existing strict submit passed; added unchanged prepare_replay reproduced result-is-still-retained rejection.",
+    "combined_final": "Fresh common Graph core and final page owner/test linked together; same public Graph passes CPU/Vulkan Q18/Q2/Q0, two slots, retained output rejection and explicit replay after release, original FP64 tolerance 0.002.",
+    "build": "Related strict /W4 /WX host TUs only; existing SDK, native math, shaders and other object closure reused.",
+    "whitespace": "Relevant git diff --check PASS"
+  },
+  "cleanup": {
+    "archive_verified": true,
+    "files": 24,
+    "bytes": 588400442.0,
+    "retained_objects": 5,
+    "other_cache_retained": true
+  },
+  "limits": [
+    "No new full-model numerical acceptance or fair tokens/s comparison.",
+    "No new Apple/Linux runtime validation in this round.",
+    "Cold alias group/read-list metadata has a real memory cost; no new warm analysis or Plan/Invocation ABI fields. Compile latency and throughput were not measured.",
+    "Cross-lane regression proves the compiled dependency/alias contract; it does not claim a measured concurrent hardware race.",
+    "Vulkan ordinary dense BF16 SDPA already has a widening route. Typed BF16 paged/ragged/compact MLA wiring is only investigated and documented in this archive, not implemented here.",
+    "Immutable input-source preparation scratch still has an observed repeated allocation opportunity; unchanged here."
+  ],
+  "goal": "active; broader architecture, model coverage, numerical acceptance and performance work remains"
+}

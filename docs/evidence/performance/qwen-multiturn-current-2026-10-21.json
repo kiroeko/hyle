@@ -1,0 +1,1183 @@
+{
+  "schema": "hyle.qwen.multiturn-current.v1",
+  "date": "2026-10-21",
+  "status": "Shared-schedule comparison complete; two cached-prefill losses remain; D4/goal open",
+  "implementation": "Consumer-only ordered prompt/decode schedule and explicit context capacity. One original cache per arm; no provider/kernel/API change. Per-call diagnostic logs are preallocated and emitted after the last host-token endpoint.",
+  "source_inventory": [
+    {
+      "path": "tools/qwen35_text/main.cc",
+      "bytes": 68512,
+      "sha256": "aebe4689d50a6fe89fa341968d179c95272ed0e2bfcb63f73b2f67f59eae4e75"
+    },
+    {
+      "path": "tools/qwen35_text/schedule.h",
+      "bytes": 3853,
+      "sha256": "69599bc74db252c766d5f61cc585bc9f4e8e427a03fe1d570a0e04c3590be798"
+    },
+    {
+      "path": "tools/qwen35_text/reference.py",
+      "bytes": 12283,
+      "sha256": "71b7e5106ee4a44f6f94a90187a020b33bc5531755e8bc0e0a610333982ebdc0"
+    },
+    {
+      "path": "tools/qwen35_text/README.md",
+      "bytes": 7445,
+      "sha256": "06be2fa12d3d5171cf65f95e4514dd945f9f039496e18808b6dd920f56cfec17"
+    }
+  ],
+  "current_images": {
+    "hyle": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\multiturn\\hyle\\checks\\attempt1\\qwen.exe",
+      "bytes": 139500544,
+      "sha256": "8e01f4e50b70fc908b7f8b99732c76226e5cdda695b1dd5fd167e70a9edafba5"
+    },
+    "peer": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\peer-continuation\\multiround\\checks\\attempt3\\peer.exe",
+      "bytes": 35865088,
+      "sha256": "9b2591375f2abc320af17f2df530dfd6f4cccfd79211ba12c3f2551a3c79e699"
+    }
+  },
+  "source_reference_peer_commit": "d9e03f1074dbd2979126d91dce1b5d304ec8394e",
+  "workload": {
+    "timing_processes": 6,
+    "timing_processes_per_arm": 3,
+    "independent_memory_processes": 2,
+    "GPU_runs_by_reviewer": 0,
+    "builds_by_reviewer": 0,
+    "workload": "(256P + 32D) x3, one persistent native context, capacity1024",
+    "processed_tokens": 864,
+    "returned_generated_tokens": 99,
+    "M1_decode_calls": 96,
+    "initial_prompt": "Original128 prompt IDs repeated twice",
+    "remaining_inputs": "Original31 fixed decode tape repeated; synthetic teacher-forced, not natural conversation",
+    "precision": "Same BF16 source weights and BF16 KV; intermediate arithmetic/greedy transfers differ."
+  },
+  "context_boundaries": [
+    0,
+    256,
+    288,
+    544,
+    576,
+    832,
+    864
+  ],
+  "primary_metrics": [
+    {
+      "label": "After-load session output TPS (99/session)",
+      "units": "tokens/s",
+      "hyle": {
+        "n": 3,
+        "median": 91.77540352439799,
+        "min": 91.7151992929592,
+        "max": 91.86959639737553,
+        "samples": [
+          91.86959639737553,
+          91.77540352439799,
+          91.7151992929592
+        ]
+      },
+      "peer": {
+        "n": 3,
+        "median": 89.66588047501904,
+        "min": 89.6366943290938,
+        "max": 89.98621574786043,
+        "samples": [
+          89.98621574786043,
+          89.66588047501904,
+          89.6366943290938
+        ]
+      },
+      "hyle_over_peer": 1.0235264856398378,
+      "hyle_change_percent": 2.3526485639837835
+    },
+    {
+      "label": "After-load session processed TPS (864/session)",
+      "units": "tokens/s",
+      "hyle": {
+        "n": 3,
+        "median": 800.9489762129278,
+        "min": 800.4235574658258,
+        "max": 801.7710231043683,
+        "samples": [
+          801.7710231043683,
+          800.9489762129278,
+          800.4235574658258
+        ]
+      },
+      "peer": {
+        "n": 3,
+        "median": 782.5385932365298,
+        "min": 782.2838777811822,
+        "max": 785.334246526782,
+        "samples": [
+          785.334246526782,
+          782.5385932365298,
+          782.2838777811822
+        ]
+      },
+      "hyle_over_peer": 1.0235264856398378,
+      "hyle_change_percent": 2.3526485639837835
+    },
+    {
+      "label": "After-load session wall",
+      "units": "seconds",
+      "hyle": {
+        "n": 3,
+        "median": 1.0787204,
+        "min": 1.0776144,
+        "max": 1.0794285,
+        "samples": [
+          1.0776144,
+          1.0787204,
+          1.0794285
+        ]
+      },
+      "peer": {
+        "n": 3,
+        "median": 1.1040989,
+        "min": 1.1001685,
+        "max": 1.1044584,
+        "samples": [
+          1.1001685,
+          1.1040989,
+          1.1044584
+        ]
+      },
+      "hyle_over_peer": 0.9770142873976233,
+      "hyle_change_percent": -2.2985712602376696
+    },
+    {
+      "label": "Cold startup through final endpoint",
+      "units": "seconds",
+      "hyle": {
+        "n": 3,
+        "median": 2.2554906,
+        "min": 2.2483629,
+        "max": 2.2577134,
+        "samples": [
+          2.2554906,
+          2.2577134,
+          2.2483629
+        ]
+      },
+      "peer": {
+        "n": 3,
+        "median": 2.7045981,
+        "min": 2.697445,
+        "max": 2.7249362,
+        "samples": [
+          2.7045981,
+          2.7249362,
+          2.697445
+        ]
+      },
+      "hyle_over_peer": 0.8339466776967712,
+      "hyle_change_percent": -16.60533223032288
+    },
+    {
+      "label": "round1_prefill P256",
+      "units": "tokens/s",
+      "hyle": {
+        "n": 3,
+        "median": 3279.284910934109,
+        "min": 3170.855870975893,
+        "max": 3371.308844813123,
+        "samples": [
+          3279.284910934109,
+          3170.855870975893,
+          3371.308844813123
+        ]
+      },
+      "peer": {
+        "n": 3,
+        "median": 2286.931259848991,
+        "min": 2251.8996004637506,
+        "max": 2293.7999304691893,
+        "samples": [
+          2286.931259848991,
+          2293.7999304691893,
+          2251.8996004637506
+        ]
+      },
+      "hyle_change_percent": 43.392369001534604,
+      "hyle_wall_ms": {
+        "median": 78.06580000000001,
+        "min": 75.9349,
+        "max": 80.7353
+      },
+      "peer_wall_ms": {
+        "median": 111.9404,
+        "min": 111.6052,
+        "max": 113.6818
+      }
+    },
+    {
+      "label": "round1_decode D32",
+      "units": "tokens/s",
+      "hyle": {
+        "n": 3,
+        "median": 101.68850586218348,
+        "min": 101.16696089391127,
+        "max": 102.06125461348765,
+        "samples": [
+          101.68850586218348,
+          101.16696089391127,
+          102.06125461348765
+        ]
+      },
+      "peer": {
+        "n": 3,
+        "median": 102.29923934121847,
+        "min": 101.97747062730167,
+        "max": 102.50982492603276,
+        "samples": [
+          102.50982492603276,
+          101.97747062730167,
+          102.29923934121847
+        ]
+      },
+      "hyle_change_percent": -0.597006862385252,
+      "hyle_wall_ms": {
+        "median": 314.68649999999997,
+        "min": 313.53720000000004,
+        "max": 316.3088
+      },
+      "peer_wall_ms": {
+        "median": 312.80780000000004,
+        "min": 312.16519999999997,
+        "max": 313.7948
+      },
+      "stable_decode7_through32": {
+        "hyle": {
+          "n": 3,
+          "median": 105.13227459741414,
+          "min": 105.04685493756581,
+          "max": 106.00994862594797,
+          "samples": [
+            105.04685493756581,
+            106.00994862594797,
+            105.13227459741414
+          ]
+        },
+        "peer": {
+          "n": 3,
+          "median": 104.40576255559607,
+          "min": 104.1692959397613,
+          "max": 105.36950857687538,
+          "samples": [
+            105.36950857687538,
+            104.40576255559607,
+            104.1692959397613
+          ]
+        }
+      }
+    },
+    {
+      "label": "round2_prefill P256",
+      "units": "tokens/s",
+      "hyle": {
+        "n": 3,
+        "median": 7527.042960009644,
+        "min": 7494.649815414972,
+        "max": 7715.700546428323,
+        "samples": [
+          7494.649815414972,
+          7527.042960009644,
+          7715.700546428323
+        ]
+      },
+      "peer": {
+        "n": 3,
+        "median": 8903.171059129576,
+        "min": 8773.012021768036,
+        "max": 9051.309611359393,
+        "samples": [
+          8903.171059129576,
+          9051.309611359393,
+          8773.012021768036
+        ]
+      },
+      "hyle_change_percent": -15.456606303310426,
+      "hyle_wall_ms": {
+        "median": 34.0107,
+        "min": 33.179100000000005,
+        "max": 34.1577
+      },
+      "peer_wall_ms": {
+        "median": 28.7538,
+        "min": 28.2832,
+        "max": 29.1804
+      }
+    },
+    {
+      "label": "round2_decode D32",
+      "units": "tokens/s",
+      "hyle": {
+        "n": 3,
+        "median": 103.54696906696091,
+        "min": 102.89743087623914,
+        "max": 103.65775836210376,
+        "samples": [
+          103.54696906696091,
+          103.65775836210376,
+          102.89743087623914
+        ]
+      },
+      "peer": {
+        "n": 3,
+        "median": 103.09710136055955,
+        "min": 102.7386594980767,
+        "max": 103.73729825932055,
+        "samples": [
+          103.09710136055955,
+          103.73729825932055,
+          102.7386594980767
+        ]
+      },
+      "hyle_change_percent": 0.4363533993337443,
+      "hyle_wall_ms": {
+        "median": 309.0385,
+        "min": 308.7082,
+        "max": 310.9893
+      },
+      "peer_wall_ms": {
+        "median": 310.387,
+        "min": 308.4715,
+        "max": 311.4699
+      },
+      "stable_decode7_through32": {
+        "hyle": {
+          "n": 3,
+          "median": 105.89087212536828,
+          "min": 105.65133029247133,
+          "max": 106.1016184169557,
+          "samples": [
+            105.65133029247133,
+            105.89087212536828,
+            106.1016184169557
+          ]
+        },
+        "peer": {
+          "n": 3,
+          "median": 103.698031332759,
+          "min": 103.53722999680627,
+          "max": 105.57179511438095,
+          "samples": [
+            103.698031332759,
+            105.57179511438095,
+            103.53722999680627
+          ]
+        }
+      }
+    },
+    {
+      "label": "round3_prefill P256",
+      "units": "tokens/s",
+      "hyle": {
+        "n": 3,
+        "median": 8410.152631129393,
+        "min": 8174.68275205804,
+        "max": 8416.816536414239,
+        "samples": [
+          8410.152631129393,
+          8416.816536414239,
+          8174.68275205804
+        ]
+      },
+      "peer": {
+        "n": 3,
+        "median": 8681.644764730818,
+        "min": 8581.504176778986,
+        "max": 9303.373563155734,
+        "samples": [
+          9303.373563155734,
+          8681.644764730818,
+          8581.504176778986
+        ]
+      },
+      "hyle_change_percent": -3.127196988114067,
+      "hyle_wall_ms": {
+        "median": 30.4394,
+        "min": 30.4153,
+        "max": 31.316200000000002
+      },
+      "peer_wall_ms": {
+        "median": 29.4875,
+        "min": 27.5169,
+        "max": 29.831599999999998
+      }
+    },
+    {
+      "label": "round3_decode D32",
+      "units": "tokens/s",
+      "hyle": {
+        "n": 3,
+        "median": 102.87682172346967,
+        "min": 101.80791772902168,
+        "max": 103.77029925408611,
+        "samples": [
+          102.87682172346967,
+          103.77029925408611,
+          101.80791772902168
+        ]
+      },
+      "peer": {
+        "n": 3,
+        "median": 103.45059458229237,
+        "min": 102.44205861158358,
+        "max": 104.09659122699954,
+        "samples": [
+          103.45059458229237,
+          102.44205861158358,
+          104.09659122699954
+        ]
+      },
+      "hyle_change_percent": -0.55463466511666,
+      "hyle_wall_ms": {
+        "median": 311.0516,
+        "min": 308.3734,
+        "max": 314.3174
+      },
+      "peer_wall_ms": {
+        "median": 309.3264,
+        "min": 307.4068,
+        "max": 312.3717
+      },
+      "stable_decode7_through32": {
+        "hyle": {
+          "n": 3,
+          "median": 105.62205908579233,
+          "min": 104.4375515660411,
+          "max": 106.37788616502401,
+          "samples": [
+            105.62205908579233,
+            106.37788616502401,
+            104.4375515660411
+          ]
+        },
+        "peer": {
+          "n": 3,
+          "median": 104.17718455549198,
+          "min": 103.15745120156609,
+          "max": 104.7541882537517,
+          "samples": [
+            104.17718455549198,
+            103.15745120156609,
+            104.7541882537517
+          ]
+        }
+      }
+    }
+  ],
+  "memory": {
+    "hyle": {
+      "sampled_peaks": {
+        "sampled_max_working_set_bytes": 1133182976,
+        "observed_os_peak_working_set_bytes": 1133187072,
+        "sampled_max_private_commit_bytes": 6175535104,
+        "observed_os_peak_commit_bytes": 6175535104,
+        "sampled_peak_gpu_dedicated_bytes": 4386275328,
+        "sampled_peak_gpu_shared_bytes": 96468992,
+        "sampled_peak_gpu_total_bytes": 4468064256
+      },
+      "ready_baseline_unknown": true,
+      "phase_sampled_peaks": {
+        "round1_decode": {
+          "working_set_bytes": 1129701376,
+          "private_commit_bytes": 6058532864,
+          "gpu_dedicated_bytes": 4264640512,
+          "gpu_shared_bytes": 81788928,
+          "gpu_total_bytes": 4346429440
+        },
+        "round1_prefill": {
+          "working_set_bytes": 1120342016,
+          "private_commit_bytes": 6049222656,
+          "gpu_dedicated_bytes": 4247863296,
+          "gpu_shared_bytes": 81788928,
+          "gpu_total_bytes": 4329652224
+        },
+        "round2_decode": {
+          "working_set_bytes": 1132589056,
+          "private_commit_bytes": 6174957568,
+          "gpu_dedicated_bytes": 4382081024,
+          "gpu_shared_bytes": 81788928,
+          "gpu_total_bytes": 4463869952
+        },
+        "round2_prefill": {
+          "working_set_bytes": 1132105728,
+          "private_commit_bytes": 6174515200,
+          "gpu_dedicated_bytes": 4377886720,
+          "gpu_shared_bytes": 81788928,
+          "gpu_total_bytes": 4459675648
+        },
+        "round3_decode": {
+          "working_set_bytes": 1133182976,
+          "private_commit_bytes": 6175535104,
+          "gpu_dedicated_bytes": 4386275328,
+          "gpu_shared_bytes": 81788928,
+          "gpu_total_bytes": 4468064256
+        },
+        "round3_prefill": {
+          "working_set_bytes": 1133178880,
+          "private_commit_bytes": 6175535104,
+          "gpu_dedicated_bytes": 4382081024,
+          "gpu_shared_bytes": 81788928,
+          "gpu_total_bytes": 4463869952
+        }
+      },
+      "requested_interval_ms": 10,
+      "actual_gap_ms": {
+        "median": 15.2127,
+        "min": 0.0912,
+        "max": 19.415
+      },
+      "strict_phase_boundary_delta": null
+    },
+    "peer": {
+      "sampled_peaks": {
+        "sampled_max_working_set_bytes": 4374753280,
+        "observed_os_peak_working_set_bytes": 4374753280,
+        "sampled_max_private_commit_bytes": 5519302656,
+        "observed_os_peak_commit_bytes": 5519302656,
+        "sampled_peak_gpu_dedicated_bytes": 4503732224,
+        "sampled_peak_gpu_shared_bytes": 88080384,
+        "sampled_peak_gpu_total_bytes": 4591812608
+      },
+      "ready_baseline_unknown": true,
+      "phase_sampled_peaks": {
+        "round1_decode": {
+          "working_set_bytes": 4373180416,
+          "private_commit_bytes": 5517713408,
+          "gpu_dedicated_bytes": 4503732224,
+          "gpu_shared_bytes": 88080384,
+          "gpu_total_bytes": 4591812608
+        },
+        "round1_prefill": {
+          "working_set_bytes": 4362506240,
+          "private_commit_bytes": 5506097152,
+          "gpu_dedicated_bytes": 4499537920,
+          "gpu_shared_bytes": 88080384,
+          "gpu_total_bytes": 4587618304
+        },
+        "round2_decode": {
+          "working_set_bytes": 4374585344,
+          "private_commit_bytes": 5519114240,
+          "gpu_dedicated_bytes": 4503732224,
+          "gpu_shared_bytes": 88080384,
+          "gpu_total_bytes": 4591812608
+        },
+        "round2_prefill": {
+          "working_set_bytes": 4373192704,
+          "private_commit_bytes": 5517725696,
+          "gpu_dedicated_bytes": 4503732224,
+          "gpu_shared_bytes": 88080384,
+          "gpu_total_bytes": 4591812608
+        },
+        "round3_decode": {
+          "working_set_bytes": 4374753280,
+          "private_commit_bytes": 5519302656,
+          "gpu_dedicated_bytes": 4503732224,
+          "gpu_shared_bytes": 88080384,
+          "gpu_total_bytes": 4591812608
+        },
+        "round3_prefill": {
+          "working_set_bytes": 4374654976,
+          "private_commit_bytes": 5519192064,
+          "gpu_dedicated_bytes": 4503732224,
+          "gpu_shared_bytes": 88080384,
+          "gpu_total_bytes": 4591812608
+        }
+      },
+      "requested_interval_ms": 10,
+      "actual_gap_ms": {
+        "median": 15.2582,
+        "min": 0.0864,
+        "max": 16.514
+      },
+      "strict_phase_boundary_delta": null
+    }
+  },
+  "correctness": {
+    "single_original_64_vectors_byte_equal": true,
+    "short25_predictions_equal_across_new_and_old": true,
+    "short_prefix_vectors_byte_equal": false,
+    "short_prefix_changed_vectors": 32,
+    "all_long_99_predictions_equal": true,
+    "independent_Torch": {
+      "status": "independent_reference_completed_diagnostic_comparison_no_quality_gate",
+      "scope": "One short schedule: 128 prompt + 8 forced decode + 16 prompt + 15 forced decode, context167/capacity256; compare all hidden/logit elements at the 25 common visible-prefix endpoints.",
+      "sources": {
+        "reference_receipt": {
+          "path": ".scratch/architecture-refactor-2026-10-18/d4-windows-preparation-2026-10-21/first-decode-startup-2026-10-21/multiturn/reference/short/attempt1/reference.json",
+          "bytes": 10939,
+          "sha256": "162ec4457df961543f6a0e3b81911f89234ffd4479c58f5b135af2c772c4a2d4"
+        },
+        "reference_execution": {
+          "path": ".scratch/architecture-refactor-2026-10-18/d4-windows-preparation-2026-10-21/first-decode-startup-2026-10-21/multiturn/reference/execution/result.json",
+          "bytes": 1258,
+          "sha256": "dd9ac84cdd88e7094aea5d2efb9343f131335aadaae6d9ff9b5ad09f5e4af5fd"
+        },
+        "hyle_prefix_summary": {
+          "path": ".scratch/architecture-refactor-2026-10-18/d4-windows-preparation-2026-10-21/first-decode-startup-2026-10-21/multiturn/validation/short-prefix/attempt1/summary.json",
+          "bytes": 86920,
+          "sha256": "9e32e1e966daf56b88adfc1f511da8218672354bda992afde6490916a30ddf96"
+        },
+        "source": {
+          "path": "tools/qwen35_text/reference.py",
+          "bytes": 12283,
+          "sha256": "71b7e5106ee4a44f6f94a90187a020b33bc5531755e8bc0e0a610333982ebdc0"
+        },
+        "source_model": {
+          "path": "C:\\Program Files\\Python312\\Lib\\site-packages\\transformers\\models\\qwen3_5\\modeling_qwen3_5.py",
+          "sha256": "0e7410f5251e5c324a5628c5340ee3551f7a6a505ce398569fcc3b5f3ac07f7a"
+        },
+        "torch": "2.8.0+cu129",
+        "gpu": "NVIDIA GeForce RTX 4070",
+        "source_id": "4068044d8571635d8a86f1e96a43dad104efc7089169065f735601e350008155",
+        "text_tensors": 320,
+        "text_weight_bytes": 3763655360
+      },
+      "protocol": {
+        "reference_uses_hyle_values": false,
+        "reference_uses_its_own_original_cache": true,
+        "fixed_recurrent_formula_unchanged": true,
+        "forced_input_ids": true,
+        "model_runs_by_reviewer": 0,
+        "original_single_schedule_64_vector_check_not_replaced": true,
+        "relative_l2_denominator": "named reference/right-hand vector",
+        "numeric_acceptance_threshold": null
+      },
+      "predicted_ids": {
+        "count": 25,
+        "all_three_equal": true,
+        "torch": [
+          958,
+          71163,
+          369,
+          279,
+          1817,
+          539,
+          864,
+          10462,
+          11,
+          1061,
+          7022,
+          1817,
+          11,
+          10462,
+          958,
+          303,
+          12141,
+          71163,
+          369,
+          279,
+          1817,
+          539,
+          864,
+          10462,
+          11
+        ]
+      },
+      "finite": {
+        "vectors_per_arm": 50,
+        "values_per_arm": {
+          "schedule": 6259200,
+          "legacy": 6259200,
+          "torch": 6259200
+        },
+        "nonfinite_per_arm": {
+          "schedule": 0,
+          "legacy": 0,
+          "torch": 0
+        },
+        "raw_streams_hashed": 150
+      },
+      "windows": {
+        "before_second_prompt": {
+          "hidden_bf16": {
+            "schedule_vs_torch": {
+              "vectors": 9,
+              "relative_l2_min": 0.010813864378212076,
+              "relative_l2_median": 0.011494913078158737,
+              "relative_l2_max": 0.014138323234784674,
+              "max_abs": 0.5
+            },
+            "legacy_vs_same_chunked_torch": {
+              "vectors": 9,
+              "relative_l2_min": 0.010813864378212076,
+              "relative_l2_median": 0.011494913078158737,
+              "relative_l2_max": 0.014138323234784674,
+              "max_abs": 0.5
+            },
+            "schedule_vs_legacy": {
+              "vectors": 9,
+              "relative_l2_min": 0.0,
+              "relative_l2_median": 0.0,
+              "relative_l2_max": 0.0,
+              "max_abs": 0.0
+            }
+          },
+          "logits_f32": {
+            "schedule_vs_torch": {
+              "vectors": 9,
+              "relative_l2_min": 0.009310937474533005,
+              "relative_l2_median": 0.011338536710544788,
+              "relative_l2_max": 0.016363910267268484,
+              "max_abs": 0.15625
+            },
+            "legacy_vs_same_chunked_torch": {
+              "vectors": 9,
+              "relative_l2_min": 0.009310937474533005,
+              "relative_l2_median": 0.011338536710544788,
+              "relative_l2_max": 0.016363910267268484,
+              "max_abs": 0.15625
+            },
+            "schedule_vs_legacy": {
+              "vectors": 9,
+              "relative_l2_min": 0.0,
+              "relative_l2_median": 0.0,
+              "relative_l2_max": 0.0,
+              "max_abs": 0.0
+            }
+          }
+        },
+        "after_second_prompt": {
+          "hidden_bf16": {
+            "schedule_vs_torch": {
+              "vectors": 16,
+              "relative_l2_min": 0.010333557312585642,
+              "relative_l2_median": 0.011451168786678876,
+              "relative_l2_max": 0.01316226100138467,
+              "max_abs": 0.25
+            },
+            "legacy_vs_same_chunked_torch": {
+              "vectors": 16,
+              "relative_l2_min": 0.010826130143782425,
+              "relative_l2_median": 0.01188465136418326,
+              "relative_l2_max": 0.015701744742437698,
+              "max_abs": 0.5
+            },
+            "schedule_vs_legacy": {
+              "vectors": 16,
+              "relative_l2_min": 0.009615485426617717,
+              "relative_l2_median": 0.0109970534496919,
+              "relative_l2_max": 0.013265035445932591,
+              "max_abs": 0.375
+            }
+          },
+          "logits_f32": {
+            "schedule_vs_torch": {
+              "vectors": 16,
+              "relative_l2_min": 0.00973331314519172,
+              "relative_l2_median": 0.012182601234124835,
+              "relative_l2_max": 0.014977681243306083,
+              "max_abs": 0.1875
+            },
+            "legacy_vs_same_chunked_torch": {
+              "vectors": 16,
+              "relative_l2_min": 0.0099627021550466,
+              "relative_l2_median": 0.012039937235078357,
+              "relative_l2_max": 0.018012122612209497,
+              "max_abs": 0.1875
+            },
+            "schedule_vs_legacy": {
+              "vectors": 16,
+              "relative_l2_min": 0.008981694408742141,
+              "relative_l2_median": 0.010962785277233787,
+              "relative_l2_max": 0.016245472919741762,
+              "max_abs": 0.1875
+            }
+          }
+        }
+      },
+      "selected_endpoints": [
+        {
+          "name": "round1_prefill",
+          "visible_tokens": 128,
+          "torch_id": 958,
+          "schedule_id": 958,
+          "legacy_id": 958,
+          "hidden_bf16": {
+            "schedule_vs_torch": {
+              "max_abs": 0.28125,
+              "relative_l2": 0.01122935058886191,
+              "l2": 1.7677314525334338,
+              "different_elements": 1756,
+              "elements": 2048,
+              "all_finite": true
+            },
+            "legacy_vs_same_chunked_torch": {
+              "max_abs": 0.28125,
+              "relative_l2": 0.01122935058886191,
+              "l2": 1.7677314525334338,
+              "different_elements": 1756,
+              "elements": 2048,
+              "all_finite": true
+            },
+            "schedule_vs_legacy": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "l2": 0.0,
+              "different_elements": 0,
+              "elements": 2048,
+              "all_finite": true
+            }
+          },
+          "logits_f32": {
+            "schedule_vs_torch": {
+              "max_abs": 0.15625,
+              "relative_l2": 0.009310937474533005,
+              "l2": 12.936318829721152,
+              "different_elements": 206840,
+              "elements": 248320,
+              "all_finite": true
+            },
+            "legacy_vs_same_chunked_torch": {
+              "max_abs": 0.15625,
+              "relative_l2": 0.009310937474533005,
+              "l2": 12.936318829721152,
+              "different_elements": 206840,
+              "elements": 248320,
+              "all_finite": true
+            },
+            "schedule_vs_legacy": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "l2": 0.0,
+              "different_elements": 0,
+              "elements": 248320,
+              "all_finite": true
+            }
+          }
+        },
+        {
+          "name": "round1_decode8",
+          "visible_tokens": 136,
+          "torch_id": 11,
+          "schedule_id": 11,
+          "legacy_id": 11,
+          "hidden_bf16": {
+            "schedule_vs_torch": {
+              "max_abs": 0.15625,
+              "relative_l2": 0.011494913078158737,
+              "l2": 1.7519612003974103,
+              "different_elements": 1748,
+              "elements": 2048,
+              "all_finite": true
+            },
+            "legacy_vs_same_chunked_torch": {
+              "max_abs": 0.15625,
+              "relative_l2": 0.011494913078158737,
+              "l2": 1.7519612003974103,
+              "different_elements": 1748,
+              "elements": 2048,
+              "all_finite": true
+            },
+            "schedule_vs_legacy": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "l2": 0.0,
+              "different_elements": 0,
+              "elements": 2048,
+              "all_finite": true
+            }
+          },
+          "logits_f32": {
+            "schedule_vs_torch": {
+              "max_abs": 0.125,
+              "relative_l2": 0.010097660413421146,
+              "l2": 12.053208770753582,
+              "different_elements": 206196,
+              "elements": 248320,
+              "all_finite": true
+            },
+            "legacy_vs_same_chunked_torch": {
+              "max_abs": 0.125,
+              "relative_l2": 0.010097660413421146,
+              "l2": 12.053208770753582,
+              "different_elements": 206196,
+              "elements": 248320,
+              "all_finite": true
+            },
+            "schedule_vs_legacy": {
+              "max_abs": 0.0,
+              "relative_l2": 0.0,
+              "l2": 0.0,
+              "different_elements": 0,
+              "elements": 248320,
+              "all_finite": true
+            }
+          }
+        },
+        {
+          "name": "round2_prefill",
+          "visible_tokens": 152,
+          "torch_id": 1061,
+          "schedule_id": 1061,
+          "legacy_id": 1061,
+          "hidden_bf16": {
+            "schedule_vs_torch": {
+              "max_abs": 0.25,
+              "relative_l2": 0.011052234083930784,
+              "l2": 1.7437713083594053,
+              "different_elements": 1667,
+              "elements": 2048,
+              "all_finite": true
+            },
+            "legacy_vs_same_chunked_torch": {
+              "max_abs": 0.1875,
+              "relative_l2": 0.010826130143782425,
+              "l2": 1.708097655363676,
+              "different_elements": 1725,
+              "elements": 2048,
+              "all_finite": true
+            },
+            "schedule_vs_legacy": {
+              "max_abs": 0.25,
+              "relative_l2": 0.009699052146562871,
+              "l2": 1.5300918479271906,
+              "different_elements": 1675,
+              "elements": 2048,
+              "all_finite": true
+            }
+          },
+          "logits_f32": {
+            "schedule_vs_torch": {
+              "max_abs": 0.125,
+              "relative_l2": 0.010821044405204502,
+              "l2": 12.312262455178255,
+              "different_elements": 210771,
+              "elements": 248320,
+              "all_finite": true
+            },
+            "legacy_vs_same_chunked_torch": {
+              "max_abs": 0.12890625,
+              "relative_l2": 0.010421419405065155,
+              "l2": 11.857566244616562,
+              "different_elements": 208713,
+              "elements": 248320,
+              "all_finite": true
+            },
+            "schedule_vs_legacy": {
+              "max_abs": 0.125,
+              "relative_l2": 0.009526741524779194,
+              "l2": 10.835097058382901,
+              "different_elements": 205243,
+              "elements": 248320,
+              "all_finite": true
+            }
+          }
+        },
+        {
+          "name": "round2_decode1",
+          "visible_tokens": 153,
+          "torch_id": 7022,
+          "schedule_id": 7022,
+          "legacy_id": 7022,
+          "hidden_bf16": {
+            "schedule_vs_torch": {
+              "max_abs": 0.25,
+              "relative_l2": 0.011393371431354674,
+              "l2": 1.7696890160670145,
+              "different_elements": 1687,
+              "elements": 2048,
+              "all_finite": true
+            },
+            "legacy_vs_same_chunked_torch": {
+              "max_abs": 0.1875,
+              "relative_l2": 0.011400367174518328,
+              "l2": 1.7707756382236373,
+              "different_elements": 1735,
+              "elements": 2048,
+              "all_finite": true
+            },
+            "schedule_vs_legacy": {
+              "max_abs": 0.375,
+              "relative_l2": 0.010693708674058113,
+              "l2": 1.66189621932475,
+              "different_elements": 1706,
+              "elements": 2048,
+              "all_finite": true
+            }
+          },
+          "logits_f32": {
+            "schedule_vs_torch": {
+              "max_abs": 0.125,
+              "relative_l2": 0.011007432282289923,
+              "l2": 12.60125971038182,
+              "different_elements": 211731,
+              "elements": 248320,
+              "all_finite": true
+            },
+            "legacy_vs_same_chunked_torch": {
+              "max_abs": 0.1328125,
+              "relative_l2": 0.011813693296408877,
+              "l2": 13.524263747355567,
+              "different_elements": 214237,
+              "elements": 248320,
+              "all_finite": true
+            },
+            "schedule_vs_legacy": {
+              "max_abs": 0.125,
+              "relative_l2": 0.010397559270371875,
+              "l2": 11.894866592605819,
+              "different_elements": 209009,
+              "elements": 248320,
+              "all_finite": true
+            }
+          }
+        },
+        {
+          "name": "round2_decode15",
+          "visible_tokens": 167,
+          "torch_id": 11,
+          "schedule_id": 11,
+          "legacy_id": 11,
+          "hidden_bf16": {
+            "schedule_vs_torch": {
+              "max_abs": 0.15625,
+              "relative_l2": 0.012016015442516575,
+              "l2": 1.8047300172855782,
+              "different_elements": 1712,
+              "elements": 2048,
+              "all_finite": true
+            },
+            "legacy_vs_same_chunked_torch": {
+              "max_abs": 0.25,
+              "relative_l2": 0.014123308587579328,
+              "l2": 2.1212322065769045,
+              "different_elements": 1787,
+              "elements": 2048,
+              "all_finite": true
+            },
+            "schedule_vs_legacy": {
+              "max_abs": 0.15625,
+              "relative_l2": 0.011972515186063286,
+              "l2": 1.7975895469012018,
+              "different_elements": 1703,
+              "elements": 2048,
+              "all_finite": true
+            }
+          },
+          "logits_f32": {
+            "schedule_vs_torch": {
+              "max_abs": 0.1328125,
+              "relative_l2": 0.011736535815628446,
+              "l2": 12.630378975676734,
+              "different_elements": 213155,
+              "elements": 248320,
+              "all_finite": true
+            },
+            "legacy_vs_same_chunked_torch": {
+              "max_abs": 0.171875,
+              "relative_l2": 0.015656135862154683,
+              "l2": 16.848491951976264,
+              "different_elements": 222994,
+              "elements": 248320,
+              "all_finite": true
+            },
+            "schedule_vs_legacy": {
+              "max_abs": 0.140625,
+              "relative_l2": 0.015008591942244083,
+              "l2": 16.12511081397363,
+              "different_elements": 223639,
+              "elements": 248320,
+              "all_finite": true
+            }
+          }
+        }
+      ],
+      "descriptive_window_observation": {
+        "hidden_bf16": {
+          "observed_post_relative_l2_range_inside_observed_pre_range": false,
+          "observed_post_max_abs_not_above_observed_pre_max": true,
+          "interpretation": "Descriptive comparison of this finite tape, not a tolerance or significance test."
+        },
+        "logits_f32": {
+          "observed_post_relative_l2_range_inside_observed_pre_range": true,
+          "observed_post_max_abs_not_above_observed_pre_max": false,
+          "interpretation": "Descriptive comparison of this finite tape, not a tolerance or significance test."
+        }
+      },
+      "conclusion": [
+        "Torch-vs-Hyle differences already exist before the new second prompt: hidden relative L2 1.0814%-1.4138%, logits 0.9311%-1.6364%. Both Hyle runs are byte-identical to one another there.",
+        "After the second prompt, schedule-vs-Torch hidden relative L2 is 1.0334%-1.3162%, logits 0.9733%-1.4978%. The observed post-window relative-L2 maxima remain below their initial-window maxima; these are descriptive ranges, not acceptance thresholds. Logits maxabs nevertheless increases from0.15625 to0.1875 and its relative-L2 median increases from1.13385% to1.21826%; hidden maxabs falls from0.5 to0.25 and its relative-L2 median is approximately1.14949% versus1.14512%. No global improvement is claimed.",
+        "At visible136/152/167, schedule-vs-Torch hidden relative L2 is approximately1.1495%/1.1052%/1.2016%, logits1.0098%/1.0821%/1.1737%. At167 legacy-vs-the-same-chunked-Torch hidden/logit is1.4123%/1.5656%; old sequential Hyle is not an exact reference.",
+        "All25 argmax IDs match and all18777600 decoded values are finite. This is independent finite numeric evidence; it does not establish mathematical or bitwise equivalence, model quality, or a permissible full-domain error envelope.",
+        "The actual same-shape Hyle source/route preservation and this independent same-schedule reference give no observed evidence of a new driver reset. The first divergent layer/operation is not localized; an underlying block/state bug is not proved or exhaustively excluded."
+      ],
+      "limits": [
+        "Only one independent Torch run and one finite teacher-forced short tape; no statistical or quality evaluation.",
+        "Legacy after the split is compared to the same chunked Torch cache, not a separately executed sequential Torch cache. Do not treat these metrics as each algorithm's error against its own exact-matching grouping.",
+        "Torch uses the original fixed-recurrent forward, eager attention and its own backend arithmetic; it is not a claimed bit-exact implementation of every Hyle low-dtype or fusion boundary.",
+        "Long performance remains measurement/regression evidence; no model-quality pass or global tolerance has been inferred."
+      ],
+      "full_details": {
+        "path": ".scratch/architecture-refactor-2026-10-18/d4-windows-preparation-2026-10-21/first-decode-startup-2026-10-21/multiturn/reference/independent-comparison-details.json",
+        "bytes": 96280,
+        "sha256": "d0abd9e626d153f405d56bdb3207113ea9934e5ea681005149b57d6d4c6a3db4"
+      },
+      "analysis_script": {
+        "path": ".scratch/architecture-refactor-2026-10-18/d4-windows-preparation-2026-10-21/first-decode-startup-2026-10-21/multiturn/reference/compare_independent.py",
+        "bytes": 9054,
+        "sha256": "3f118f08a6ddf8fcb6662f7ab0dc8152fe614f282fa40cf29f4284ab5cb740ac"
+      }
+    },
+    "quality_threshold": null,
+    "independent_quality_acceptance": false
+  },
+  "build": {
+    "hyle_CXX": 1,
+    "hyle_links": 1,
+    "peer_CXX": 3,
+    "peer_links": 3,
+    "Linux_header_CXX17_parser_cases": 7,
+    "SDK_rebuilds": 0,
+    "product_NVCC": 0,
+    "scope": "Original reference flags; Hyle strict /W4 /WX /MD /O2. Three peer consumer revisions retain actual first builds and timer-field fix. No CUDA/CPU/native SDK compilation."
+  },
+  "observed_costs": {
+    "second_prefill_cold_prepare_ms": [
+      5.0935,
+      5.1533,
+      5.1242
+    ],
+    "P256_capture_recorded_per_round": [
+      1,
+      0,
+      1
+    ],
+    "P256_capture_reused_per_round": [
+      0,
+      0,
+      0
+    ],
+    "each_D32_capture_recorded": 2,
+    "each_D32_capture_reused": 30,
+    "scope": "Same counts in all three Hyle timing processes; batches switch shape and visible history. Original FlashInfer reuse proof may require replanning. Actual reuse rejection gate is not yet instrumented."
+  },
+  "next_action": "One diagnostic consumer compile/run splits batch::prepare from prepare_replay and records the six existing public BatchPlanReports. Determine actual topology/workspace/metadata changes before altering reuse. Tactic tuning follows this concrete preparation issue.",
+  "limits": [
+    "Each arm has3 interleaved fresh timing processes and1 separate memory process; no statistical-significance or stable-winner claim.",
+    "Synthetic repeated fixed IDs,3 rounds, actual context grows to864 with capacity1024. Not natural chat or arbitrary long-context validation.",
+    "Same original BF16 weights/KV, but intermediate arithmetic and natural sampled-logits transfers differ between engines.",
+    "Source session ends at the last host-token endpoint. Internal startup timer begins at Hyle main / peer run entry, not OS process creation; process wall includes DLL startup and teardown and is separate.",
+    "GPU sampled peaks are lower bounds. Both ready baselines and strict phase-boundary deltas are unknown. Adjacent samples may cross the next phase or final teardown; do not infer phase allocation changes from them.",
+    "Dedicated/shared independent peaks must not be added. The total is the peak of simultaneous values. CPU commit and resident WS remain separate.",
+    "No memory observer/profiler/build in the timing window. Desktop GPU use is retained, not exclusive or fixed-clock.",
+    "64 same-shape byte regressions and25/99 sampled IDs do not replace independent model quality acceptance. Chunk/sequential vector differences and finite Torch errors are preserved."
+  ],
+  "independent_review": {
+    "path": ".scratch/architecture-refactor-2026-10-18/d4-windows-preparation-2026-10-21/first-decode-startup-2026-10-21/multiturn/independent-measurement-review.json",
+    "bytes": 135983,
+    "sha256": "a878bdf4f1170d52ba22f6c41e44d09bea4cbcd220e313fb2674d1c9018696dc"
+  },
+  "archive": {
+    "path": "docs/evidence/performance/qwen-multiturn-current-2026-10-21.zip",
+    "bytes": 830031,
+    "sha256": "5ce8dd632c109fbd36da93e2f8846827bfde25fc07090a642608167fb5a17369",
+    "members": 264
+  },
+  "D4_complete": false,
+  "goal_complete": false
+}

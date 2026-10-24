@@ -1,0 +1,355 @@
+{
+  "status": "implemented_and_focused_execution_passed",
+  "scope": "New five-input ModelOpt group16 BF16 software-reference linear; not hardware-native FP4 GEMM, whole artifact, quality or throughput acceptance.",
+  "public_contract": {
+    "operation": "model_ops::Nvfp4Linear / nvfp4_linear()",
+    "name": "nvfp4-reference-linear",
+    "inputs": [
+      "BF16[M,K] activation",
+      "U8[N,K/2] adjacent low-first E2M1 codes",
+      "E4M3FN[N,K/16] group scales",
+      "F32 scalar weight global",
+      "F32 scalar calibrated input global"
+    ],
+    "output": "BF16[M,N]",
+    "geometry": "Positive M/N/K, complete16 groups, plain dense ports; globals scalar[] or [1].",
+    "arithmetic": "Pinned ModelOpt Hopper runtime A16 QDQ with E4M3 scale and tiny guard -> BF16; nonfast W=BF16(q*F32(groupScale*weightGlobal)); F32 backend reduction, final BF16. Both producer weight zero codes are +0. A uses x>=0 sign comparison.",
+    "domain": "Finite BF16 A, finite nonnegative E4M3 group scales including both zero signs, strictly positive finite F32 globals including subnormal. Finite input may produce IEEE NaN/Inf after chosen scaling/rounding.",
+    "failure": "Completion failure; failed output unusable, no rollback guarantee. Failed Graph Invocation is terminal; recreate from same Executable, bind and prepare to recover."
+  },
+  "architecture": {
+    "core_changes": false,
+    "old_duplicate_executor_added": false,
+    "integration": "Ordinary custom operation inference -> existing native providers -> PreparedOperation/Invocation/QueueSequence/Completion/Graph result ownership.",
+    "cpu": "Original NativePlan layout unchanged; existing caller workspace and parallel executor; A quantized once into2*M*K BF16 bytes, W stack tile16 BF16 values, existing SIMD dot.",
+    "cuda": "Prepared/shared Queue, caller device workspace2*M*K bytes, no provider-private invocation/result allocation or host wait. A quantized once; original packed W read in bounded rows/groups. RequireCapture executed.",
+    "row_reuse": "Moved existing MLX/CT packed_rows body to shared private header, only Scalar template deduction and namespace qualification changed. Existing MLX and CT codecs, rounding and launch geometries preserved;26 related CUDA cases executed.",
+    "resource_fix": "Explicit workspace device requirement on CUDA; both backends reject workspace aliasing inputs/outputs. CPU Direct tests A/W alias with sufficiently large/aligned physical backing and verifies every input byte unchanged, followed by normal output20.625."
+  },
+  "validation": {
+    "cpu": {
+      "tests": 5,
+      "failures": 0,
+      "skipped": 0,
+      "xml": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-reference-linear\\cpu-final\\tests.xml",
+        "bytes": 2659,
+        "sha256": "d5df0da71c2502900d866b3ea4cdd274263b528321a074dcbb56870b18e793d9"
+      },
+      "new_operation_cases": [
+        {
+          "name": "OriginalPackedBanksAndBfloatBoundariesSurviveSlotsAndUpdates",
+          "properties": {
+            "actual_submissions": "8"
+          }
+        },
+        {
+          "name": "RuntimeDomainFailuresRecoverWithoutChangingTheReferenceTree",
+          "properties": {
+            "successful_submissions": "24",
+            "failed_completions": "18"
+          }
+        }
+      ]
+    },
+    "cuda": {
+      "tests": 26,
+      "failures": 0,
+      "skipped": 0,
+      "xml": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-reference-linear\\cuda-final\\tests.xml",
+        "bytes": 11221,
+        "sha256": "fa995e95e459a51f15f5d78c4eb93da71b0bfa932114431cb9be99f8fd7a0743"
+      },
+      "new_operation_cases": [
+        {
+          "name": "OriginalPackedBanksAndBfloatBoundariesSurviveSlotsAndUpdates",
+          "properties": {
+            "actual_submissions": "8"
+          }
+        },
+        {
+          "name": "RuntimeDomainFailuresRecoverWithoutChangingTheReferenceTree",
+          "properties": {
+            "successful_submissions": "24",
+            "failed_completions": "18"
+          }
+        }
+      ]
+    }
+  },
+  "per_backend_new_op": {
+    "lifetime_successes": 8,
+    "runtime_successes": 24,
+    "failed_completions": 18,
+    "geometries": [
+      "M2/N3/K32",
+      "M2/N16/K2048"
+    ],
+    "boundaries": "Independent table/bit-RNE oracle isolates pointwise BF16 boundaries with sparse exact dot witnesses; tiny guard, subnormal globals, scale zero signs and scale-first0*Inf NaN tested. Not universal bitwise reduction or independent visibility of every internal signed zero."
+  },
+  "observed_failures": {
+    "cuda_old_products": "Two actual missing-route red cases; new common inference only, old CUDA provider products. First reference test objects were later corrected for terminal failure lifecycle; math/payload unchanged.",
+    "initial_lifecycle": "CPU3pass/1fail and CUDA9pass/1fail: fixture wrongly retried a failed Graph Invocation. Fixed test to assert terminal state and recreate, not by changing product failure policy.",
+    "compile": "Initial new CUDA provider CXX rejected designated initialization of optional workspace; corrected to explicit WorkspaceRequirement. Original command/error retained.",
+    "ptx": "Real-SM89 object has no PTX. Empty dump-ptx is not arithmetic evidence; actual SASS was separately inspected and support-code FTZ instructions are retained without claiming global no-FTZ."
+  },
+  "build_scope": "Only focused CXX/NVCC owners and test TUs plus relinks, with retained dependencies and actual link inputs. Native CUDA includes an unchanged mathematical kernel recompilation during line-ending normalization; no SDK, full build or CI run. CMake source/license wiring updated, not a new CMake configure/install acceptance.",
+  "source_freeze": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\model_ops.h",
+      "bytes": 60890,
+      "sha256": "60e694b3d25ff7e894d4d3c6e0885900081066b50ad54e0f5fb8cf3a89cdbb8c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_ops\\weight_decode.cc",
+      "bytes": 11895,
+      "sha256": "e1ac45b6561b022ad7106a7f0bb17f0bf85d9c4e29b5daa0ac1d20287341ddbc"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_native\\native_provider.cc",
+      "bytes": 38005,
+      "sha256": "61372072176f4818461b94e2640206e0d6cf9bd10de75fe658d31b17f85bbbdd"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_native\\native_plan.h",
+      "bytes": 10207,
+      "sha256": "564b562be9b641f17207897a22e34a1e8ddee8cfa3edf662ed3addbd4e617909"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_native\\nvfp4.cc",
+      "bytes": 10456,
+      "sha256": "da4b8a1906ac1cee6a3ad6db1159dc224286ae2aa213ee246d36e3ac37bc609c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_native\\CMakeLists.txt",
+      "bytes": 4715,
+      "sha256": "fad60715c08805ce1519429698e2132c6916c685ea8cb9d29c1d8f4d9733a056"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_cuda\\cuda_provider.cc",
+      "bytes": 21012,
+      "sha256": "ec108750f00ba9c57953f497e93baf2553714c8931735a95a65c8d799ec47120"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_cuda\\CMakeLists.txt",
+      "bytes": 6514,
+      "sha256": "beff576ab878eb38d29e91f220f70245fa24a24f19e0dbebd2f504f4705b2be2"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_cuda\\nvfp4_provider.cc",
+      "bytes": 8041,
+      "sha256": "1cd106366d4b626e14055a6928977f574e5895e696b166d98bd39471cd4a5481"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_cuda\\nvfp4_provider.h",
+      "bytes": 608,
+      "sha256": "033aeee57cd1917abdd671a1288f7edbdff55124427a53e429774ff841371b4c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_cuda\\nvfp4_kernel.cu",
+      "bytes": 5444,
+      "sha256": "6bf616556568959627321fa6336cc54a80967adc7ea4e70ca021d30cce216aec"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_cuda\\nvfp4_kernel.h",
+      "bytes": 430,
+      "sha256": "070aabfcab97079f21ac36624ce32f17ad7d5788426cc3118796470863f700c5"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_cuda\\packed_rows.cuh",
+      "bytes": 2372,
+      "sha256": "819fa8e32d3c703a69f11de663adc4c1bab6fb2c0743bd1ca708df195a373d01"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_torch_cuda\\mlx_packed_kernel.cu",
+      "bytes": 10234,
+      "sha256": "d1edc995b56a4ab32209b3882b73b3d964bbf106cefaa5b7ee64d56c4e595190"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_native\\nvfp4_test.cc",
+      "bytes": 4842,
+      "sha256": "203f2d7353d5bd6a447e5e5d7c8d7c63af886c57f04a7eb26fd60840e050548f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_native\\CMakeLists.txt",
+      "bytes": 1414,
+      "sha256": "56521c7dc3e837b20c0bae8ebdd5bfecbaa8a1635aa3ed26f576d6cb360034fb"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\nvfp4_reference_fixture.h",
+      "bytes": 21562,
+      "sha256": "7a8137b648470b67ed89cde3f04df62e81fe416fb072e97931b312aea522ea89"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_cpu\\nvfp4_reference_test.cc",
+      "bytes": 1489,
+      "sha256": "db440cf6cdb41c253c4ff3d7516532d612e9f2a6bac1a272b5ea450ac00ee530"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_cpu\\CMakeLists.txt",
+      "bytes": 3101,
+      "sha256": "72cb407dcbc4d296f150d12cb25cbb6af26b41b2c13325fff02d8a9a632cf937"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_cuda\\nvfp4_reference_test.cc",
+      "bytes": 2002,
+      "sha256": "52edcf7ab9a615ca1a36988675998f1e3641878414a7bd2514a6731b2793de70"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_cuda\\CMakeLists.txt",
+      "bytes": 2269,
+      "sha256": "9efca4b17db15574d666a0b828262d2473cf8b825ad1cc0fbbcd904dbd21af26"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\user\\compute.md",
+      "bytes": 100604,
+      "sha256": "80a76f5afc25d39a2bab3924e9d8d6c7287d7490a284d32b95acaede374f6db0"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\architecture\\compute-design.md",
+      "bytes": 102385,
+      "sha256": "9e149bac78f8e8fbb6807413211b3a1281efe7c8b91d4a96b5eaff85ad9be55b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\developer\\current-work.md",
+      "bytes": 38163,
+      "sha256": "223456a5c0633f90605415fbc5923b2e21648f3a020e61aaa81b03df2eb1b113"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\implementation\\model-operators.md",
+      "bytes": 59367,
+      "sha256": "46c92db9e50e00f69c6bbd962d9aa6e05b79f70e9e993a59b77981b160ef2f2a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\implementation\\model-quantizations.json",
+      "bytes": 336712,
+      "sha256": "de280a876786cdcf5dfb9500cb33122134ce9a381d97a76ae7a7a74b813dbaa8"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\third_party\\mlx_cuda_quant\\mlx_cuda_quant.h",
+      "bytes": 2159,
+      "sha256": "c390f4a047ec1af47182cbac7e1c39438fcf4a5c83fcedbea8ef3a6095d06ea5"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\third_party\\mlx_cuda_quant\\LICENSE",
+      "bytes": 1066,
+      "sha256": "ccfab7ccb2ea306f71531c8ca77bb55507606cd90768b1e32b8b52ab5b48cf01"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\third_party\\mlx_cuda_quant\\NOTICE.md",
+      "bytes": 2022,
+      "sha256": "cd7a3fef64000ead34a903cb98e8c7f5739c0fb9cab480c04575008b992c67a9"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\third_party\\mlx_cuda_quant\\SOURCE.json",
+      "bytes": 1740,
+      "sha256": "be9e2602d3fc1a0dce3990f2200ef99c6d7002d2e1ca5b9e77cd90e6adace5a9"
+    }
+  ],
+  "owner_receipts": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-reference-linear\\cuda\\weight-decode-identity.json",
+      "bytes": 34115,
+      "sha256": "ac834b929fc28748da581d36f1fedc3b978c6c3f6adc9f829a13f2b2f8c52e2b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-reference-linear\\cuda\\cuda-provider-identity.json",
+      "bytes": 46810,
+      "sha256": "12c820c8deb82e8c4993856858dbf0b804923c8800546712b6a8258c32709716"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-reference-linear\\cuda\\nvfp4-provider-identity.json",
+      "bytes": 42574,
+      "sha256": "a17d5bf3559bfa9e43fb6c18a28a47bc6189152553be49aba93f66c05b8e2c65"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-reference-linear\\cuda\\nvfp4-kernel-identity.json",
+      "bytes": 2950,
+      "sha256": "17c05379c2bdc6772cdec3a6dcaf86815d88eab0388825c08dae5a5f04ac3003"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-reference-linear\\cuda\\mlx-kernel-identity.json",
+      "bytes": 3783,
+      "sha256": "87f3e6f64aad1ea99007f9e6e0216161cb47a01f848410e8fb1630f25be30fa3"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-reference-linear\\cpu\\native_provider-identity.json",
+      "bytes": 42313,
+      "sha256": "a6d357f7228f692b1c8bf54175d8a0a13f9186f8766b6585189a398169a3cb90"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-reference-linear\\cpu\\nvfp4-identity.json",
+      "bytes": 39109,
+      "sha256": "8c7d4facb720b23297d79dfa12a58681ec19b862fa71b625ab123e1671c6c0ab"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-reference-linear\\cpu\\workspace-alias-test-identity.json",
+      "bytes": 58708,
+      "sha256": "59658ae752f720a9ae35d6f342194ee842259e1a6b92efc0545d1897ae2f902d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-reference-linear\\tests\\failure-lifecycle-fix\\cpu\\test-identity.json",
+      "bytes": 63201,
+      "sha256": "bd766e547c905f983bec9b1e4566a6d2b48fcb07be3940d0070d207aba02f91e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-reference-linear\\tests\\failure-lifecycle-fix\\cuda\\test-identity.json",
+      "bytes": 66811,
+      "sha256": "7c5ca02a3f0b0c3a97432f7111f87000dbacd50b656f7fc724d81f6ea6c7646b"
+    }
+  ],
+  "final_images": {
+    "cpu": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-reference-linear\\cpu-final\\cpu.exe",
+      "bytes": 26924032,
+      "sha256": "4ee89745df150d11394b7d08c338b1ce0b1d951e74c6b9c244978467f0a64361"
+    },
+    "cuda": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-reference-linear\\cuda-final\\cuda.exe",
+      "bytes": 121006080,
+      "sha256": "c4ecfc4a286987c52832a687f1ec4e41d92a8ffea9eb7a2a2be06258a5ca5477"
+    }
+  },
+  "final_link_plans": {
+    "cpu": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-reference-linear\\cpu-final\\link-plan.json",
+      "bytes": 55796,
+      "sha256": "5b509ae89e539c1a8d1087b0348ae6062979b114f758c4c61f9dce3fa832107c"
+    },
+    "cuda": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-reference-linear\\cuda-final\\link-plan.json",
+      "bytes": 69615,
+      "sha256": "fd42fb67684b714faa3f07a3c921a9d5056b8795aebb3c03d1dc8b7bcad69fe0"
+    }
+  },
+  "final_actual_link_inputs_checked": {
+    "cpu": 132,
+    "cuda": 162
+  },
+  "research": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-reference-linear\\tests\\research-summary.json",
+    "bytes": 12839,
+    "sha256": "e891c2393015d01470c1056891a640aeaf5eedb24cbbb0a502264b54f59f9a69"
+  },
+  "SASS": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-reference-linear\\cuda\\sass-review.json",
+    "bytes": 2980,
+    "sha256": "9a0697150af0711548c2cf74a02f947a3407564c101c21f2bf1347850fc79cc2"
+  },
+  "execution_limits": [
+    "Windows CPU/CUDA SM89 only this batch; no Linux/macOS run or Apple/Vulkan lowering.",
+    "No original artifact tensor/global values or full186-role loading; complete artifact_execution_verified remains false.",
+    "No hardware-native FP4 GEMM equivalence, model quality, throughput, physical kernel trace or peak-memory acceptance.",
+    "Qwen first-prepare diagnostics are an independent report and establish no new stable decode improvement."
+  ],
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\nvfp4-reference-linear-2026-10-20.zip",
+    "bytes": 766716,
+    "sha256": "b3684da08897d37fe3fe0ac657fbd34bc234cbba175afd80adb0f6f2e8e3787a",
+    "payloads": 238,
+    "CRC_checked": true,
+    "all_payload_SHA256_checked": true,
+    "excluded": "No SDK, binary, object, full linker maps, weight payload or duplicated full dependency cache."
+  }
+}

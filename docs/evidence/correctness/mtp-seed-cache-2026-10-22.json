@@ -1,0 +1,2241 @@
+{
+  "date": "2026-10-23",
+  "round_started": "2026-10-22",
+  "status": "FINITE_NORMAL_SEED_AND_ENCODED_CACHE_CONSUMERS_PASS",
+  "goal_complete": false,
+  "changes": [
+    {
+      "path": "src/compute_provider_ggml_cuda/tensor_program.cc",
+      "bytes": 55766,
+      "sha256": "dd2c55d2302acec38018d06c3fb1934707b6a410fc945348926a72635bbe8fa6"
+    },
+    {
+      "path": "src/compute_provider_ggml_cuda/ggml_cuda_provider.cc",
+      "bytes": 76522,
+      "sha256": "45ab5bed53a01ba78c1728c4c8ee8ea9314c88c971aaf940d64725cb6f0f7d4c"
+    },
+    {
+      "path": "tests/compute_models/glm_mtp_state_consumer_test.cc",
+      "bytes": 90578,
+      "sha256": "c44d64753cc943f15bf08f72cab63bb0d9e49baa97b44d9c90c1f391bda2f196"
+    },
+    {
+      "path": "tests/compute_models/glm_official_index_cache.h",
+      "bytes": 16103,
+      "sha256": "e2c36618edec4a0ba3449e7eed47fe62ac8174e4b993a18c53279e60c2adfb98"
+    },
+    {
+      "path": "tests/compute_models/glm_official_index_cache_test.cc",
+      "bytes": 23943,
+      "sha256": "a0823c00ce9038a71bba6f09298a4006a7cf41bb3210c61b43c18a97d7fe60c4"
+    },
+    {
+      "path": "tests/compute_models/dspark_target_binding.h",
+      "bytes": 11822,
+      "sha256": "a3708b6e8e5650b3dda9c5ede0f9dd133ceb2827f1a8c494d8c61d5af7fde672"
+    },
+    {
+      "path": "tests/compute_models/dspark_main_history.h",
+      "bytes": 12463,
+      "sha256": "ccd3c9463de65cbc41c539c166dda48a885dba526240a15de59adcc2850c9f05"
+    },
+    {
+      "path": "tests/compute_models/dspark_main_history_test.cc",
+      "bytes": 34307,
+      "sha256": "b2e1c0d349d7d85848b3a07f4c300eb4758ee5f756871213db51cd22d910c669"
+    },
+    {
+      "path": "tests/graph_route_cpu/CMakeLists.txt",
+      "bytes": 9969,
+      "sha256": "2f8ba80d67371a3a110adcf01e42af2a52ebbc9df46cd74e42fbb0a14c38ebe8"
+    },
+    {
+      "path": "tests/graph_route_cuda/CMakeLists.txt",
+      "bytes": 11353,
+      "sha256": "99652a15652cb76909b0ce2023b21baf6b1b897a1a4b302b66c0788107bc2fb0"
+    },
+    {
+      "path": "docs/developer/current-work.md",
+      "bytes": 22840,
+      "sha256": "c77deb205410b4e253a0f85d1264f92f3fb2e8d920e4bd02802937acfc4cc0a5"
+    },
+    {
+      "path": "docs/implementation/model-operators.md",
+      "bytes": 93345,
+      "sha256": "094dc8e2aeea4fb775bc6dffe59aeff39950af2126071c06484e30432f9245f0"
+    }
+  ],
+  "checks": {
+    "process": {
+      "command": [
+        "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mtp-seed-cache-20261022\\tests-link8\\mtp-seed-cache-checks.exe",
+        "--gtest_filter=*",
+        "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\glm-mtp-seed-cache-20261022\\checks6\\results.xml"
+      ],
+      "cwd": "C:\\public\\project-hyle\\hyle",
+      "started": 1792686286.3229306,
+      "timeout_seconds": 600,
+      "throughput_evidence": false,
+      "memory_evidence": false,
+      "trace": false,
+      "profiler": false,
+      "pid": 33544,
+      "exit": 0,
+      "timed_out": false,
+      "finished": 1792686364.4484649,
+      "process_wall_seconds": 78.12560750000011
+    },
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mtp-seed-cache-20261022\\tests-link8\\mtp-seed-cache-checks.exe",
+      "bytes": 141045760,
+      "sha256": "27d815b9a521e8620e8ab29b1820513a4472071641666e36ed388253a6ec7b0a"
+    },
+    "throughput_evidence": false,
+    "physical_memory_evidence": false,
+    "whole_original_model": false,
+    "tests": 16,
+    "failures": 0,
+    "errors": 0,
+    "disabled": 0,
+    "skips": 0,
+    "cases": [
+      {
+        "attributes": {
+          "name": "CudaWholeNextNPrefixPublishesAndContinuesWithoutRejectedTail",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_mtp_state_consumer_test.cc",
+          "line": "1291",
+          "status": "run",
+          "result": "completed",
+          "time": "3.963",
+          "timestamp": "2026-10-23T00:24:46.627",
+          "classname": "GlmMtpStateConsumer"
+        },
+        "properties": {
+          "actual_submissions": "7",
+          "backend": "ordinary CUDA Graph",
+          "component_schema": "16 native resources plus explicit iteration policy; complete NextN/indexer state and bounded nx journal/lag count",
+          "scope": "generated primary GGUF/F32 single complete NextN component; fresh K4 closepool->actual I32 sparse MLA/MoE; same-epoch entire-indexer skip; no original checkpoint/full target/KDA/mHC/official FP8cache/natural acceptance",
+          "prefixes": "0 retained;1 corrected-pending atomic publish and independent base recomputation;2 independent branch; rejected tail/cancel/stale publish/old readonly ownership",
+          "uncovered": "this case is single-epoch; cross-epoch catchup is covered by the separate AcceptedJournal cases; target KDA/conv/mHC, original encodings and vocabulary/natural acceptance remain separate"
+        }
+      },
+      {
+        "attributes": {
+          "name": "CudaAcceptedJournalCatchesUpAndReseedsNextIteration",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_mtp_state_consumer_test.cc",
+          "line": "1297",
+          "status": "run",
+          "result": "completed",
+          "time": "7.861",
+          "timestamp": "2026-10-23T00:24:50.591",
+          "classname": "GlmMtpStateConsumer"
+        },
+        "properties": {
+          "actual_submissions": "14",
+          "fresh_submissions": "8",
+          "skip_submissions": "3",
+          "catchup_submissions": "2",
+          "policy_submissions": "1",
+          "backend": "ordinary CUDA Graph",
+          "journal": "actual nx[2,4096] with I32 valid lag count; selected StateVersion determines accepted input; no eager indexer during skip",
+          "journey": "base2054 tail2; accept1 rejects B and fresh2055 closes pool; accept2 catches actual accepted B2055 then fresh2056 appends tail1; independent actual nx direct-input reference",
+          "scope": "generated selected GGUF/F32 NextN cross-epoch accepted-feature catchup and fresh seed; no target KDA/conv/mHC, original FP8cache or natural acceptance claim"
+        }
+      },
+      {
+        "attributes": {
+          "name": "CudaTargetPrefixAndNextNPublishAndReseedTogether",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_mtp_state_consumer_test.cc",
+          "line": "1303",
+          "status": "run",
+          "result": "completed",
+          "time": "9.441",
+          "timestamp": "2026-10-23T00:24:58.453",
+          "classname": "GlmMtpStateConsumer"
+        },
+        "properties": {
+          "actual_submissions": "26",
+          "target_submissions": "12",
+          "state_budget_bytes": "536870912",
+          "peak_state_backing_bytes": "127777004",
+          "target_output_generations": "10",
+          "backend": "ordinary CUDA Graph",
+          "component_schema": "16 NextN/indexer resources plus epoch metadata and4 target resources: raw QKV history,KDA matrix,finalnorm tap,I32 cursor; one StateStore/Head/Draft",
+          "journey": "actual target warmup->A/B verify pending->accept1/2->accepted journal catchup->epoch8 real target-tap reseed; independent base recomputation/direct nx catchup; rejected tail,stale CAS,cancellation,old readonly leases",
+          "scope": "generated primary GGUF/F32 layer44 KDA/conv/two mHC branches/sparse FFN/finalnorm target tap composed with complete NextN; upper-layer4H remains generated; no full45-layer original model,natural acceptance,official FP8cache or throughput claim"
+        }
+      },
+      {
+        "attributes": {
+          "name": "CudaDraftExtendLastAcceptedSeedSkipsDecodeStepZero",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_mtp_state_consumer_test.cc",
+          "line": "1309",
+          "status": "run",
+          "result": "completed",
+          "time": "15.062",
+          "timestamp": "2026-10-23T00:25:07.894",
+          "classname": "GlmMtpStateConsumer"
+        },
+        "properties": {
+          "actual_submissions": "24",
+          "draft_extend_submissions": "11",
+          "skip_submissions": "8",
+          "catchup_submissions": "4",
+          "policy_submissions": "1",
+          "backend": "ordinary CUDA Graph",
+          "journey": "draft-extend A2054/B2055->last accepted row1/2 actual hidden+full2051IDs->step0 immediately skips entire indexer->accepted nx catchup->actual epoch8 extend->step0 skip; independent accepted-only base execution/direct nx reference",
+          "scope": "generated selected Flash primary GGUF/F32 sequential M1 draft-extend seed protocol; generated per-position target-hidden boundary; no target43 MLA/indexer composition,batched vendor extend kernel,full target,original weights,official FP8cache,natural acceptance or throughput claim"
+        }
+      },
+      {
+        "attributes": {
+          "name": "CpuWholeNextNPrefixPublishesAndContinuesWithoutRejectedTail",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_mtp_state_consumer_test.cc",
+          "line": "1318",
+          "status": "run",
+          "result": "completed",
+          "time": "3.982",
+          "timestamp": "2026-10-23T00:25:22.957",
+          "classname": "GlmMtpStateConsumer"
+        },
+        "properties": {
+          "actual_submissions": "7",
+          "backend": "ordinary CPU Graph",
+          "component_schema": "16 native resources plus explicit iteration policy; complete NextN/indexer state and bounded nx journal/lag count",
+          "scope": "generated primary GGUF/F32 single complete NextN component; fresh K4 closepool->actual I32 sparse MLA/MoE; same-epoch entire-indexer skip; no original checkpoint/full target/KDA/mHC/official FP8cache/natural acceptance",
+          "prefixes": "0 retained;1 corrected-pending atomic publish and independent base recomputation;2 independent branch; rejected tail/cancel/stale publish/old readonly ownership",
+          "uncovered": "this case is single-epoch; cross-epoch catchup is covered by the separate AcceptedJournal cases; target KDA/conv/mHC, original encodings and vocabulary/natural acceptance remain separate"
+        }
+      },
+      {
+        "attributes": {
+          "name": "CpuAcceptedJournalCatchesUpAndReseedsNextIteration",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_mtp_state_consumer_test.cc",
+          "line": "1323",
+          "status": "run",
+          "result": "completed",
+          "time": "7.858",
+          "timestamp": "2026-10-23T00:25:26.939",
+          "classname": "GlmMtpStateConsumer"
+        },
+        "properties": {
+          "actual_submissions": "14",
+          "fresh_submissions": "8",
+          "skip_submissions": "3",
+          "catchup_submissions": "2",
+          "policy_submissions": "1",
+          "backend": "ordinary CPU Graph",
+          "journal": "actual nx[2,4096] with I32 valid lag count; selected StateVersion determines accepted input; no eager indexer during skip",
+          "journey": "base2054 tail2; accept1 rejects B and fresh2055 closes pool; accept2 catches actual accepted B2055 then fresh2056 appends tail1; independent actual nx direct-input reference",
+          "scope": "generated selected GGUF/F32 NextN cross-epoch accepted-feature catchup and fresh seed; no target KDA/conv/mHC, original FP8cache or natural acceptance claim"
+        }
+      },
+      {
+        "attributes": {
+          "name": "CpuTargetPrefixAndNextNPublishAndReseedTogether",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_mtp_state_consumer_test.cc",
+          "line": "1328",
+          "status": "run",
+          "result": "completed",
+          "time": "9.806",
+          "timestamp": "2026-10-23T00:25:34.798",
+          "classname": "GlmMtpStateConsumer"
+        },
+        "properties": {
+          "actual_submissions": "26",
+          "target_submissions": "12",
+          "state_budget_bytes": "536870912",
+          "peak_state_backing_bytes": "127777004",
+          "target_output_generations": "10",
+          "backend": "ordinary CPU Graph",
+          "component_schema": "16 NextN/indexer resources plus epoch metadata and4 target resources: raw QKV history,KDA matrix,finalnorm tap,I32 cursor; one StateStore/Head/Draft",
+          "journey": "actual target warmup->A/B verify pending->accept1/2->accepted journal catchup->epoch8 real target-tap reseed; independent base recomputation/direct nx catchup; rejected tail,stale CAS,cancellation,old readonly leases",
+          "scope": "generated primary GGUF/F32 layer44 KDA/conv/two mHC branches/sparse FFN/finalnorm target tap composed with complete NextN; upper-layer4H remains generated; no full45-layer original model,natural acceptance,official FP8cache or throughput claim"
+        }
+      },
+      {
+        "attributes": {
+          "name": "CpuDraftExtendLastAcceptedSeedSkipsDecodeStepZero",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_mtp_state_consumer_test.cc",
+          "line": "1333",
+          "status": "run",
+          "result": "completed",
+          "time": "15.475",
+          "timestamp": "2026-10-23T00:25:44.604",
+          "classname": "GlmMtpStateConsumer"
+        },
+        "properties": {
+          "actual_submissions": "24",
+          "draft_extend_submissions": "11",
+          "skip_submissions": "8",
+          "catchup_submissions": "4",
+          "policy_submissions": "1",
+          "backend": "ordinary CPU Graph",
+          "journey": "draft-extend A2054/B2055->last accepted row1/2 actual hidden+full2051IDs->step0 immediately skips entire indexer->accepted nx catchup->actual epoch8 extend->step0 skip; independent accepted-only base execution/direct nx reference",
+          "scope": "generated selected Flash primary GGUF/F32 sequential M1 draft-extend seed protocol; generated per-position target-hidden boundary; no target43 MLA/indexer composition,batched vendor extend kernel,full target,original weights,official FP8cache,natural acceptance or throughput claim"
+        }
+      },
+      {
+        "attributes": {
+          "name": "CudaEncodedLeaseSelectsAndPublishesMlaPrefix",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_official_index_cache_test.cc",
+          "line": "343",
+          "status": "run",
+          "result": "completed",
+          "time": "1.029",
+          "timestamp": "2026-10-23T00:26:00.080",
+          "classname": "GlmOfficialIndexCache"
+        },
+        "properties": {
+          "actual_submissions": "12",
+          "persistent_index_bytes": "67848",
+          "f32_index_comparison_bytes": "263168",
+          "peak_state_backing_bytes": "2721536",
+          "reader": "fixed SGLang06992; K4 pooledF32->BF16->normalizedHadamard128->BF16; absmax-floor1e-4 then /448; unrounded F32 scale; E4 RNE; matching query and TileLang scorer logical math",
+          "journey": "actual encoded lease->scorer->TopK512 I32->2048-token MLA; one StateHead code/scale/cursor/IDs/MLA; acceptA,rejectB,continueC,independent base recomputation,stale CAS,cancel,old readonly versions",
+          "scope": "generated raw K4/query/headweights/latent boundary; complete closed-pool chunks; logical E4+F32scale storage,not vendor pagefooter ABI; partial raw tails covered separately; no original/full model,natural token acceptance,or throughput claim"
+        }
+      },
+      {
+        "attributes": {
+          "name": "CpuEncodedLeaseSelectsAndPublishesMlaPrefix",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_official_index_cache_test.cc",
+          "line": "352",
+          "status": "run",
+          "result": "completed",
+          "time": "1.147",
+          "timestamp": "2026-10-23T00:26:01.109",
+          "classname": "GlmOfficialIndexCache"
+        },
+        "properties": {
+          "actual_submissions": "12",
+          "persistent_index_bytes": "67848",
+          "f32_index_comparison_bytes": "263168",
+          "peak_state_backing_bytes": "2721536",
+          "reader": "fixed SGLang06992; K4 pooledF32->BF16->normalizedHadamard128->BF16; absmax-floor1e-4 then /448; unrounded F32 scale; E4 RNE; matching query and TileLang scorer logical math",
+          "journey": "actual encoded lease->scorer->TopK512 I32->2048-token MLA; one StateHead code/scale/cursor/IDs/MLA; acceptA,rejectB,continueC,independent base recomputation,stale CAS,cancel,old readonly versions",
+          "scope": "generated raw K4/query/headweights/latent boundary; complete closed-pool chunks; logical E4+F32scale storage,not vendor pagefooter ABI; partial raw tails covered separately; no original/full model,natural token acceptance,or throughput claim"
+        }
+      },
+      {
+        "attributes": {
+          "name": "CpuThreeOriginalStagesPublishPhysicalAcceptedHistoryAndContinue",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_main_history_test.cc",
+          "line": "522",
+          "status": "run",
+          "result": "completed",
+          "time": "0.173",
+          "timestamp": "2026-10-23T00:26:02.483",
+          "classname": "DSparkMainHistory"
+        },
+        "properties": {
+          "actual_submissions": "16",
+          "original_role_count": "8",
+          "original_role_bytes": "60184576",
+          "physical_ring_row_bytes": "584",
+          "numerical_checks": "original decoded Q8/F32 independent dot/norm with established profile gate; actual postnorm -> BF16/last64 RoPE F32 gate; actual joined F32 -> exact BF16 bits; actual BF16 entry -> exact584B row and selected ring; exact old-ring preservation; actual carrier -> independent attention oracle",
+          "scope": "original Flash0731 Q8 fc/norm + three distinct stage wkv/norm; generated HC -> original main projection lease -> F32 norm -> BF16 -> last64 RoPE -> BF16 -> group64 QDQ physical128x584 three-rings -> actual gather-decode/attention; artificial prefix0/1/2 and fresh own-head/old-branch continuation; not original target, full official BF16 arithmetic or full DSpark MTP"
+        }
+      },
+      {
+        "attributes": {
+          "name": "CudaThreeOriginalStagesPublishPhysicalAcceptedHistoryAndContinue",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_main_history_test.cc",
+          "line": "528",
+          "status": "run",
+          "result": "completed",
+          "time": "0.17",
+          "timestamp": "2026-10-23T00:26:02.657",
+          "classname": "DSparkMainHistory"
+        },
+        "properties": {
+          "actual_submissions": "16",
+          "original_role_count": "8",
+          "original_role_bytes": "60184576",
+          "physical_ring_row_bytes": "584",
+          "numerical_checks": "original decoded Q8/F32 independent dot/norm with established profile gate; actual postnorm -> BF16/last64 RoPE F32 gate; actual joined F32 -> exact BF16 bits; actual BF16 entry -> exact584B row and selected ring; exact old-ring preservation; actual carrier -> independent attention oracle",
+          "scope": "original Flash0731 Q8 fc/norm + three distinct stage wkv/norm; generated HC -> original main projection lease -> F32 norm -> BF16 -> last64 RoPE -> BF16 -> group64 QDQ physical128x584 three-rings -> actual gather-decode/attention; artificial prefix0/1/2 and fresh own-head/old-branch continuation; not original target, full official BF16 arithmetic or full DSpark MTP"
+        }
+      },
+      {
+        "attributes": {
+          "name": "CpuActualCaptureLeasesReachSameStageMainKv",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_target_binding_test.cc",
+          "line": "352",
+          "status": "run",
+          "result": "completed",
+          "time": "0.258",
+          "timestamp": "2026-10-23T00:26:02.828",
+          "classname": "DSparkTargetBinding"
+        },
+        "properties": {
+          "actual_submissions": "9",
+          "scope": "formal Flash0731 selected Q8 role types, generated parameters; actual raw HC producer leases -> mean/concat/main projection/norm -> same stage0 wkv/norm 512-wide pre-RoPE; no trained payload/physical ring/full-model claim",
+          "backend": "ordinary CPU Graph"
+        }
+      },
+      {
+        "attributes": {
+          "name": "CudaActualCaptureLeasesReachSameStageMainKv",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_target_binding_test.cc",
+          "line": "364",
+          "status": "run",
+          "result": "completed",
+          "time": "0.261",
+          "timestamp": "2026-10-23T00:26:03.087",
+          "classname": "DSparkTargetBinding"
+        },
+        "properties": {
+          "actual_submissions": "9",
+          "scope": "formal Flash0731 selected Q8 role types, generated parameters; actual raw HC producer leases -> mean/concat/main projection/norm -> same stage0 wkv/norm 512-wide pre-RoPE; no trained payload/physical ring/full-model claim",
+          "backend": "ordinary CUDA Graph"
+        }
+      },
+      {
+        "attributes": {
+          "name": "CpuOriginalCaptureProjectionFeedsSameStageMainKv",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_target_binding_test.cc",
+          "line": "357",
+          "status": "run",
+          "result": "completed",
+          "time": "0.316",
+          "timestamp": "2026-10-23T00:26:03.556",
+          "classname": "DSparkOriginalTargetBinding"
+        },
+        "properties": {
+          "actual_submissions": "9",
+          "scope": "formal Flash0731 four original Q8/F32 roles; generated raw HC producer leases -> original main projection/norm -> original stage0 wkv/norm 512-wide pre-RoPE; no original target captures/physical ring/full-model claim",
+          "original_role_count": "4",
+          "original_role_bytes": "55724032",
+          "fc_sha256": "4516df35cd05ecd36b93e73ac2ae74c524ec6edda13b634a7895b7eabe0c8c04",
+          "main_norm_sha256": "0f99d64b4fa46264c9bd2efdffcb66d3ec0cdd0ca61109f929ed958bcb843f0b",
+          "wkv_sha256": "a52e49dc69f4eff1c8287b3887123dd7a583bdaee7d42efe55310f035bafd35f",
+          "kv_norm_sha256": "edbbd17729cfb3c0852c8b6cdb8c1044eb9f501d8864c7ef4444c568e56fc966",
+          "backend": "ordinary CPU Graph"
+        }
+      },
+      {
+        "attributes": {
+          "name": "CudaOriginalCaptureProjectionFeedsSameStageMainKv",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_target_binding_test.cc",
+          "line": "370",
+          "status": "run",
+          "result": "completed",
+          "time": "0.322",
+          "timestamp": "2026-10-23T00:26:03.872",
+          "classname": "DSparkOriginalTargetBinding"
+        },
+        "properties": {
+          "actual_submissions": "9",
+          "scope": "formal Flash0731 four original Q8/F32 roles; generated raw HC producer leases -> original main projection/norm -> original stage0 wkv/norm 512-wide pre-RoPE; no original target captures/physical ring/full-model claim",
+          "original_role_count": "4",
+          "original_role_bytes": "55724032",
+          "fc_sha256": "4516df35cd05ecd36b93e73ac2ae74c524ec6edda13b634a7895b7eabe0c8c04",
+          "main_norm_sha256": "0f99d64b4fa46264c9bd2efdffcb66d3ec0cdd0ca61109f929ed958bcb843f0b",
+          "wkv_sha256": "a52e49dc69f4eff1c8287b3887123dd7a583bdaee7d42efe55310f035bafd35f",
+          "kv_norm_sha256": "edbbd17729cfb3c0852c8b6cdb8c1044eb9f501d8864c7ef4444c568e56fc966",
+          "backend": "ordinary CUDA Graph"
+        }
+      }
+    ]
+  },
+  "actual_Graph_submissions": 234,
+  "predecessor": {
+    "path": "docs/evidence/correctness/mtp-target-state-2026-10-22.json",
+    "bytes": 74794,
+    "sha256": "d66dcc93e1a883b86fa3137e7175a18ea45b6ed67df84802dc158a9c6864e070"
+  },
+  "GLM": {
+    "normal_seed": "Actual sequential draft-extend last-accepted whole-version hidden/selection/frontier -> next-epoch decode step0 whole-indexer skip, without a handoff submission or changing resource/epoch labels. Accepted-only nx journal catchup and actual next producer precede the subsequent handoff; independent accepted-prefix base recomputation.",
+    "logical_cache": "Pinned06992 scale_fmt=None reader: pooled F32 -> BF16 -> normalized Hadamard128 -> BF16 -> E4 codes and per-row F32 scale max(absmax,1e-4)/448. Matching query rotation/quantization and code-domain ReLU/scaled-head score -> TopK512 -> actual expanded I32 IDs -> MLA.",
+    "persistence": "Actual E4 code bank and per-row F32 scale, not a retained F32 shadow. Temporary scorer decoding is explicit ordinary Graph work.",
+    "composition": "Independent finite cache consumer and full NextN normal-seed consumer. Cache storage must still be composed into complete NextN/target state; target43 upstream MLA/indexer remains uncovered.",
+    "limits": "Generated logical cache inputs and sequential single-row seed protocol, not vendor page ABI, batched vendor extend, original45-layer model, original full vocabulary, natural acceptance, quality, throughput or physical memory."
+  },
+  "DSpark": {
+    "original_parameters": [
+      {
+        "repository": "unsloth/DeepSeek-V4-Flash-0731-GGUF",
+        "revision": "fbbb5b93fb787c21338159b0af3318bb3f4d9768",
+        "file": "dspark-DeepSeek-V4-Flash-0731-Q8_0.gguf",
+        "tensor_table_sha256": "44f30d92e3be1e3737b92dddcb737e6d85944b60804a7a7a810a2ac60c79de5f",
+        "tensor_data_offset": 5253152,
+        "whole_file_bytes": 10896057440,
+        "expected_etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+        "whole_file_download_allowed": false,
+        "roles": [
+          {
+            "role": {
+              "name": "fc.weight",
+              "GGUF_shape": [
+                12288,
+                4096
+              ],
+              "dtype": "Q8_0",
+              "dtype_code": 8,
+              "relative_offset": 10413334016,
+              "payload_bytes": 53477376,
+              "absolute_range_inclusive": [
+                10418587168,
+                10472064543
+              ],
+              "expected_content_range": "bytes 10418587168-10472064543/10896057440",
+              "payload_sha256": null,
+              "payload_hash_status": "No exact original body identified in inspected known role caches; calculate SHA256 while acquiring this exact range, do not substitute file ETag or table hash."
+            },
+            "absolute_range": [
+              10418587168,
+              10472064543
+            ],
+            "requested_bytes": 53477376,
+            "started_unix": 1792681315.812034,
+            "status": "ACQUIRED_EXACT_ROLE",
+            "http_status": 206,
+            "content_range": "bytes 10418587168-10472064543/10896057440",
+            "content_length": "53477376",
+            "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+            "payload": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mtp-catchup-20261022\\original-dspark-target\\fc.weight.q8_0",
+              "bytes": 53477376,
+              "sha256": "4516df35cd05ecd36b93e73ac2ae74c524ec6edda13b634a7895b7eabe0c8c04"
+            },
+            "finished_unix": 1792681371.2719567
+          },
+          {
+            "role": {
+              "name": "enc.output_norm.weight",
+              "GGUF_shape": [
+                4096
+              ],
+              "dtype": "F32",
+              "dtype_code": 0,
+              "relative_offset": 10413317632,
+              "payload_bytes": 16384,
+              "absolute_range_inclusive": [
+                10418570784,
+                10418587167
+              ],
+              "expected_content_range": "bytes 10418570784-10418587167/10896057440",
+              "payload_sha256": null,
+              "payload_hash_status": "No exact original body identified in inspected known role caches; calculate SHA256 while acquiring this exact range, do not substitute file ETag or table hash."
+            },
+            "absolute_range": [
+              10418570784,
+              10418587167
+            ],
+            "requested_bytes": 16384,
+            "started_unix": 1792681371.2724764,
+            "status": "ACQUIRED_EXACT_ROLE",
+            "http_status": 206,
+            "content_range": "bytes 10418570784-10418587167/10896057440",
+            "content_length": "16384",
+            "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+            "payload": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mtp-catchup-20261022\\original-dspark-target\\enc.output_norm.weight.f32",
+              "bytes": 16384,
+              "sha256": "0f99d64b4fa46264c9bd2efdffcb66d3ec0cdd0ca61109f929ed958bcb843f0b"
+            },
+            "finished_unix": 1792681375.2516026
+          },
+          {
+            "role": {
+              "name": "blk.0.attn_kv.weight",
+              "GGUF_shape": [
+                4096,
+                512
+              ],
+              "dtype": "Q8_0",
+              "dtype_code": 8,
+              "relative_offset": 10267662592,
+              "payload_bytes": 2228224,
+              "absolute_range_inclusive": [
+                10272915744,
+                10275143967
+              ],
+              "expected_content_range": "bytes 10272915744-10275143967/10896057440",
+              "payload_sha256": null,
+              "payload_hash_status": "No exact original body identified in inspected known role caches; calculate SHA256 while acquiring this exact range, do not substitute file ETag or table hash."
+            },
+            "absolute_range": [
+              10272915744,
+              10275143967
+            ],
+            "requested_bytes": 2228224,
+            "started_unix": 1792681375.2516026,
+            "status": "ACQUIRED_EXACT_ROLE",
+            "http_status": 206,
+            "content_range": "bytes 10272915744-10275143967/10896057440",
+            "content_length": "2228224",
+            "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+            "payload": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mtp-catchup-20261022\\original-dspark-target\\blk.0.attn_kv.weight.q8_0",
+              "bytes": 2228224,
+              "sha256": "a52e49dc69f4eff1c8287b3887123dd7a583bdaee7d42efe55310f035bafd35f"
+            },
+            "finished_unix": 1792681386.8518133
+          },
+          {
+            "role": {
+              "name": "blk.0.attn_kv_a_norm.weight",
+              "GGUF_shape": [
+                512
+              ],
+              "dtype": "F32",
+              "dtype_code": 0,
+              "relative_offset": 10267656448,
+              "payload_bytes": 2048,
+              "absolute_range_inclusive": [
+                10272909600,
+                10272911647
+              ],
+              "expected_content_range": "bytes 10272909600-10272911647/10896057440",
+              "payload_sha256": null,
+              "payload_hash_status": "No exact original body identified in inspected known role caches; calculate SHA256 while acquiring this exact range, do not substitute file ETag or table hash."
+            },
+            "absolute_range": [
+              10272909600,
+              10272911647
+            ],
+            "requested_bytes": 2048,
+            "started_unix": 1792681386.8523262,
+            "status": "ACQUIRED_EXACT_ROLE",
+            "http_status": 206,
+            "content_range": "bytes 10272909600-10272911647/10896057440",
+            "content_length": "2048",
+            "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+            "payload": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mtp-catchup-20261022\\original-dspark-target\\blk.0.attn_kv_a_norm.weight.f32",
+              "bytes": 2048,
+              "sha256": "edbbd17729cfb3c0852c8b6cdb8c1044eb9f501d8864c7ef4444c568e56fc966"
+            },
+            "finished_unix": 1792681392.2902627
+          }
+        ],
+        "complete": true,
+        "payload_bytes": 55724032
+      },
+      {
+        "repository": "unsloth/DeepSeek-V4-Flash-0731-GGUF",
+        "revision": "fbbb5b93fb787c21338159b0af3318bb3f4d9768",
+        "file": "dspark-DeepSeek-V4-Flash-0731-Q8_0.gguf",
+        "tensor_table_sha256": "44f30d92e3be1e3737b92dddcb737e6d85944b60804a7a7a810a2ac60c79de5f",
+        "tensor_data_offset": 5253152,
+        "whole_file_bytes": 10896057440,
+        "expected_etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+        "whole_file_download_allowed": false,
+        "roles": [
+          {
+            "name": "blk.1.attn_kv.weight.q8_0",
+            "absolute_range": [
+              10472070944,
+              10474299167
+            ],
+            "requested_bytes": 2228224,
+            "started_unix": 1792683801.4466326,
+            "status": "ACQUIRED_EXACT_ROLE",
+            "http_status": 206,
+            "content_range": "bytes 10472070944-10474299167/10896057440",
+            "content_length": "2228224",
+            "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+            "payload": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mtp-seed-cache-20261022\\original-dspark-history\\blk.1.attn_kv.weight.q8_0",
+              "bytes": 2228224,
+              "sha256": "0a707c0a1eb00673838914bb12b070fe45d70c851efdfe8931e6b914979eb09d"
+            },
+            "finished_unix": 1792683808.6208458
+          },
+          {
+            "name": "blk.1.attn_kv_a_norm.weight.f32",
+            "absolute_range": [
+              10472064800,
+              10472066847
+            ],
+            "requested_bytes": 2048,
+            "started_unix": 1792683808.6213517,
+            "status": "ACQUIRED_EXACT_ROLE",
+            "http_status": 206,
+            "content_range": "bytes 10472064800-10472066847/10896057440",
+            "content_length": "2048",
+            "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+            "payload": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mtp-seed-cache-20261022\\original-dspark-history\\blk.1.attn_kv_a_norm.weight.f32",
+              "bytes": 2048,
+              "sha256": "733bdaab61d5b429b3a0caa6f74d082d34d7e993f1cb27d508e403eff4baf569"
+            },
+            "finished_unix": 1792683810.042449
+          },
+          {
+            "name": "blk.2.attn_kv.weight.q8_0",
+            "absolute_range": [
+              10617732384,
+              10619960607
+            ],
+            "requested_bytes": 2228224,
+            "started_unix": 1792683810.042449,
+            "status": "ACQUIRED_EXACT_ROLE",
+            "http_status": 206,
+            "content_range": "bytes 10617732384-10619960607/10896057440",
+            "content_length": "2228224",
+            "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+            "payload": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mtp-seed-cache-20261022\\original-dspark-history\\blk.2.attn_kv.weight.q8_0",
+              "bytes": 2228224,
+              "sha256": "8624943fb84a7d82a235d65d262e79ccf93823b6af67afbcc9e2ff83c1856138"
+            },
+            "finished_unix": 1792683816.8510096
+          },
+          {
+            "name": "blk.2.attn_kv_a_norm.weight.f32",
+            "absolute_range": [
+              10617726240,
+              10617728287
+            ],
+            "requested_bytes": 2048,
+            "started_unix": 1792683816.852022,
+            "status": "ACQUIRED_EXACT_ROLE",
+            "http_status": 206,
+            "content_range": "bytes 10617726240-10617728287/10896057440",
+            "content_length": "2048",
+            "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+            "payload": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mtp-seed-cache-20261022\\original-dspark-history\\blk.2.attn_kv_a_norm.weight.f32",
+              "bytes": 2048,
+              "sha256": "1e49befb7879c1a6fd05311bc7c23f5436b1818238b33bcf272f4f54cc53b556"
+            },
+            "finished_unix": 1792683820.8214047
+          }
+        ],
+        "complete": true,
+        "payload_bytes": 4460544
+      }
+    ],
+    "distinct_original_roles": 8,
+    "original_payload_bytes": 60184576,
+    "main_history": "Actual projection result lease -> three stage-specific original Q8 wkv/F32norm -> declared BF16 cache boundary and last64 interleaved positive RoPE(base10000,noYaRN) -> actual row-inline E4 group64/UE8M0 plus BF16tail encoded128-slot rings. Prefix selection publishes all three rings, last main and explicit frontier under one StateHead. Actual decode/attention successor must read selected state.",
+    "maintenance": "Standalone main KV and embedded main history share append_main_kv math/role qualification; no reliance on graph node count/order, no second executor or loader.",
+    "limits": "Generated target HC taps; selected Q8/F32 projection route and explicit cache boundaries do not certify original BF16-weight computation, full target captures, complete draft state/shared LM, natural acceptance or all profiles."
+  },
+  "source_reviews": {
+    "review/cache-hadamard-failure.json": {
+      "finding": "Initial test oracle incorrectly required F32 Hadamard to have bit-identical butterfly evaluation order. Current public operation only specifies orthonormal Sylvester transform/F32 accumulation; CPU custom transform and CUDA F32 Hadamard matrix MatMul use different legal F32 order. The failed rotated values at mathematical0 are finite1e-8..1e-6, BF16 preserves their nonzero magnitude and E4 yields signed0; signed-zero differences remain exact codec obligations for those actual inputs.",
+      "source_anchors": [
+        "include/hyle/compute/operation.h:394-401 Hadamard",
+        "src/compute_provider_ggml_cuda/tensor_program.cc:1049-1113 F32 normalized matrix MatMul + precision/source F32",
+        "src/compute_provider_ggml/ggml_cpu_provider.cc:1182-1188 custom F32 transform"
+      ],
+      "checks": [
+        "Source K4 BF16 keys+F32 gates independent scalar pool oracle stays existing strict8e-5abs/4e-5rel gate.",
+        "Independently pooled F32 -> BF16 RNE -> F32 and original BF16 query -> F32 compare bitwise to newly exposed actual transform-input ports. No actual pooled/Hadamard result substitutes for that upstream oracle.",
+        "F64 Sylvester signs parity(popcount(row&column)) and original BF16-rounded source values independently form exact mathematical reference. Fixed pre-observation bound gamma129=sum-rounding bound129*u/(1-129*u),u=2^-24, times row sumabs/sqrt128. Zero-input row bound0; NaN/Inf always fail.",
+        "Actual post-Hadamard F32 -> BF16 RNE bitwise equality to actual rotated F32 widened values, including sign of0.",
+        "Independently enumerate finite E4 values and exact nearest-even, floor absmax1e-4 then F32 multiply reciprocal448 and F32 divide using actual separately checked rotated input. Compare all actual E4 code bytes and F32scales exactly; preserve signed0.",
+        "Independent scorer uses verified query quantizer oracle codes/scales and actual verified persistent cache code/scales, retains original strict F32 score/MLA gate. Actual state acceptance/recompute remains byte-exact."
+      ],
+      "not_changed": [
+        "no provider implementation",
+        "no model/quantizer mathematical policy",
+        "no F32 score/attention tolerance relaxation",
+        "no clipping transform residuals",
+        "no signed-zero code normalization",
+        "no new native matrix/scenario"
+      ],
+      "source": {
+        "files": [
+          {
+            "path": "tests/compute_models/glm_official_index_cache.h",
+            "bytes": 16103,
+            "sha256": "e2c36618edec4a0ba3449e7eed47fe62ac8174e4b993a18c53279e60c2adfb98"
+          },
+          {
+            "path": "tests/compute_models/glm_official_index_cache_test.cc",
+            "bytes": 23943,
+            "sha256": "a0823c00ce9038a71bba6f09298a4006a7cf41bb3210c61b43c18a97d7fe60c4"
+          }
+        ],
+        "supersedes_source": "cache-source/freeze.json; initial native checks1 retained as failed evidence",
+        "change": "Decompose public F32 Hadamard math and exact dtype/quantizer boundaries; no product math or tolerance change, no zero snapping or signed-zero suppression",
+        "new_diagnostic_ports": "Producer transformed7/input8; Consumer transformed7/input8; explicit Copy input materialization",
+        "runtime_scope": "same 12-submit journey, extra diagnostic outputs counted by existing pool footprint",
+        "build_or_native_run": false
+      }
+    },
+    "review/cuda-strided-rope.json": {
+      "status": "Updated read-only source audit after root's actual cold rejection. Initial layout widening was insufficient for a logically contiguous one-row suffix with noncanonical singleton strides; the current source adds a conditional metadata-only normalization. No compilation, native execution or product edit by reviewer.",
+      "change": {
+        "source": "src/compute_provider_ggml_cuda/tensor_program.cc",
+        "sha256": "dd2c55d2302acec38018d06c3fb1934707b6a410fc945348926a72635bbe8fa6",
+        "initial_widening_sha256": "2c85a483f829d104d1e0ac215bfc5a5914d4fb0a622d8df05eb2cc6a2ad00755",
+        "before": ".scratch/glm-mtp-seed-cache-20261022/provider-source/before.cc",
+        "before_sha256": "6edcfe378983d4f371cede7a0ec463ae17c2e11f307b81ab8f61a0c0d917a4b2",
+        "scope": "RoPE input0 may use an existing representable nonnegative-stride layout. Lowering inserts ggml_cont only when the actual ggml input is not contiguous. After the existing rank3 head reshape, it checks canonical nb on all four axes and adds a same-shape ggml_reshape_4d view only if needed, before the unchanged private explicit-frequency operation."
+      },
+      "actual_closure_and_root_cause": {
+        "failure_evidence": ".scratch/glm-mtp-seed-cache-20261022/checks3/stdout.log and checks4/stdout.log: the one DSpark CUDA case is rejected cold at ROPE f32, value3. Enhanced check4 reports X=64/1/1/1 P=1/1 F=32/1, ggml_is_contiguous true for all four tensors and reserved param1=0. This is a failed native preparation, not a pass.",
+        "link_evidence": ".scratch/glm-mtp-seed-cache-20261022/tests-link5/link-plan.json and mtp-seed-cache-checks.map: ggml_cuda_supports_hyle_explicit_rope and ggml_cuda_op_hyle_explicit_rope resolve to paired-projection-route/checks/native1/unary.obj (SHA85d63ab61523489461c5aaa09df2efedab906ab77e0a9ec40f88af08f6d235e6), while ggml_backend_cuda_device_supports_op resolves to gdn-direct-state-output/checks/native1/native-main.obj (SHA827e2876cc20224c0fa6a5dc1fc6340d1a4ff5541173dd22b6b8cd7d0e98758b). They do not resolve to mmvq.obj or an old archive RoPE implementation.",
+        "old_dimensions_suspicion_excluded": "The unary identity's source SHA matches the retained actual source d096ab57174ef13f45f40d6cb9b8b9a5c6e88553317b56436378198ca0b55130. Its support code already requires reserved param1=0 and derives pairs from frequencies->ne[0]; its launch dimensions are2*frequencies->ne[0]. Its recorded numerical_contract.h dependency SHA60a90737cf10d75f076ee140b5f68a5250efd647b7b9c77560b95bf52ea23039 matches current source. The native-main actual source also matches its identity and delegates the explicit marker to that helper. mmvq's retained actual source contains no such explicit-RoPE symbols. No legacy dimensions carrier or compatibility fallback is needed.",
+        "strict_singleton_mismatch": "unary.cu:1222-1279 first requires ggml_are_same_layout(data,dst), then hyle_rope_dense_bytes checks nb[d]==cumulative_dense_extent for EVERY axis, including ne[d]==1. ggml_is_contiguous ignores irrelevant singleton strides. A one-row final64 slice of a512-wide row can consequently be logically contiguous while retaining the old row stride on unused axes; ggml_dup_tensor constructs canonical destination strides. The exact unused nb discrepancy is inferred from that view construction and the strict native checks; check4 printed dimensions/contiguity, not all nb values. The multi-row path materializes CONT and is canonical already, explaining why the remaining rejection occurs on history1.",
+        "current_fix_review": "The new lowering preserves the actual data/position/frequency carrier contract. A same-shape reshape creates a new canonical view after logical-contiguity normalization, rather than mutating shared source nb or adding an unnecessary one-row copy. Its dimensions and dtype are unchanged; the public representable element/byte bounds keep the cumulative-stride product within size_t. The view retains its source dependency and introduces no payload allocation."
+      },
+      "rejection_and_math": [
+        "The common tensor_operation_supports preamble still checks input TensorDesc validity, nonempty bounded element count, required-byte extent<=INT32_MAX, floating plain storage, rank limits, stride alignment and INT32_MAX stride bounds, and inferred dense outputs. The RoPE-specific branch additionally rejects negative data strides and preserves ranks3/4, allowed sequence axes, F32/F16/BF16 data, dense I32 positions and dense F32 explicit frequencies.",
+        "Nonnegative zero strides describe readonly broadcast input. The original CUDA contiguous-copy scalar path calculates each source offset from its actual strides, including zero; it creates a dense logical copy without changing values or adding numeric casts. Negative offsets are not cast into ggml size_t strides by this new RoPE route.",
+        "ggml_cont retains shape and dtype and has the original input as src0. Rank3's implicit-head reshape occurs after contiguous materialization. The added same-shape rank4 view normalizes only otherwise irrelevant singleton-axis metadata; already canonical dense inputs retain their old path. Explicit-frequency/layout marker, F32 kernel arithmetic and final dtype rounding remain unchanged."
+      ],
+      "workspace_and_lifetime": [
+        "The new CONT is an ordinary dependency of the actual native graph. Invocation::build traverses published outputs, checks every resulting native node for backend support, and includes it in the existing allocation plan. Unsupported CONT/native combinations still decline during cold preparation.",
+        "Provider preparation builds the actual lowered graph in metadata-only mode, reserves it through NativeWorkspace's measurement callback, records its chunks/span and returns that measured caller-owned workspace requirement. The extra logical-input-sized dense buffer is therefore measured rather than hidden in an eager/private allocation. Runtime initialization checks caller capacity/alignment and repeats reserve against the exact measured chunks/layout before binding.",
+        "The graph allocator handles the CONT temporary's liveness. Its src edge preserves the original input/view dependency; external readonly roots and published roots remain protected by the existing graph allocation/binding logic. Each invocation retains its own arena/allocator/workspace. Finish-bind installs only reserved addresses; reset/rebind behavior is unchanged. Destruction drains the backend before freeing allocator/buffers.",
+        "The metadata arena's existing per-recipe-node allowance is64 native tensors, so this RoPE's additional CONT and at most one canonical view remain within the already reserved construction allowance. Capture compatibility is refined from the actual graph, including the copy/view; no new custom stream, synchronization, state API or executor is introduced."
+      ],
+      "conclusion": "The actual closure excludes an old dimensions ABI. Conditional same-shape metadata normalization is the minimal correction for the identified strict-singleton mismatch; do not weaken native support checks or restore an old carrier. The physical-span guard and native workspace measurement remain effective. No source-level reason found to block the root's next finite native run.",
+      "limits": "This is not an independent native pass, an exhaustive strided-layout qualification or a performance claim. Noncontiguous inputs may incur bounded copy traffic/workspace; singleton canonicalization is a view. Root owns compile7/link7 and the subsequent native verification; this source audit does not sign their result."
+    },
+    "review/dspark-history-source-audit.json": {
+      "status": "Read-only source audit of the completed header/test. No hard contract error found; the author may freeze without waiting for further review. No native run or product edit by reviewer.",
+      "source_snapshot": {
+        "tests/compute_models/dspark_main_history.h": "1759a5e94ed4837abea5ef52d410d871aac32aa1ccba64b3fbd921779c706cd9",
+        "tests/compute_models/dspark_main_history_test.cc": "05db1b3f9d0c8aaf1efd25678cefd403e8501540d29499da1f8ca5eab7594c5c",
+        "tests/compute_models/dspark_target_binding.h": "a3708b6e8e5650b3dda9c5ede0f9dd133ceb2827f1a8c494d8c61d5af7fde672"
+      },
+      "authority": {
+        "repository": "deepseek-ai/DeepSeek-V4-Flash-0731",
+        "revision": "7872f01b1d1fe23eabc4c98b48bffcef5a386062",
+        "provenance": ".scratch/model-scope-2026-10-19/flash-0731/retrieval.json",
+        "inference_model": ".scratch/model-scope-2026-10-19/flash-0731/inference-model.py",
+        "inference_model_sha256": "c0c19e6c9fa439bac7fbb1c5bc1868232dfd5aa2f439a548d0e33dcc2a9edd3f",
+        "inference_kernel_sha256": "59b325083d7103975cba025bd0d60ea343bb82d8fff53088afb7c04bd380c0c2",
+        "sidecar": "unsloth/DeepSeek-V4-Flash-0731-GGUF@fbbb5b93fb787c21338159b0af3318bb3f4d9768/dspark-DeepSeek-V4-Flash-0731-Q8_0.gguf"
+      },
+      "reviewed_contract": [
+        "inference-model.py:750-762: each DSpark stage consumes the same stage0 projected and normalized main_x, but applies its own wkv and kv_norm. Attention mHC/attn_norm for draft rows must not be inserted into this main-history path.",
+        "inference-model.py:479-487 and inference-config.json: all three DSpark stages have compress_ratio0. Pure sliding-window RoPE disables YaRN, uses base10000, positive/in-place forward rotation, interleaved adjacent pairs and only final64 of512 dimensions. Frequencies are 10000^(-pair/32). Do not use compressed base160000 or factor16 interpolation.",
+        "inference-model.py:758,773-784: main history uses position start_pos+row; the draft query/KV positions are start_pos+main_length+row. Main ring slots are absolute_main_position modulo128, not draft positions or a row-local index.",
+        "Header reuses append_main_kv, shared with make_main_kv, without importing graph nodes by their ordinal. It explicitly rounds postnorm to BF16, widens for RoPE, preserves the first448 values, rotates only last64, rounds to BF16 again, and uses the existing584B RowCacheEncode. Sequential Scatter/Copy publishes three independently backed physical rings plus actual last-main-row prefixes. Persistent versions protect prefix1 from later overwritten physical slots."
+      ],
+      "precision_boundary": {
+        "observed": "The frozen official source applies group64 FP8 simulation/QDQ to main_kv[..., :-64] after RoPE (inference-model.py:762). inference-kernel.py:41-123 uses BF16 input/output, absmax floor1e-4, power2 scale for scale_fmt=ue8m0, saturated nearest-even E4 codes and BF16 dequantization. Last64 remains the rotated BF16 suffix.",
+        "current_declared_boundary": "Selected original Q8_0 projection plus F32 norm -> BF16 -> last64 F32 RoPE -> BF16 -> existing RowCacheEncode(float8_block64_tail64). This physical row stores448 E4 codes, seven UE8 scales,64 original BF16 tail values and zero padding in584B. CPU/CUDA implementation and the independent existing row-cache definition oracle have the matching group64/floor/power2/QDQ math. The upstream original official BF16-weight arithmetic is not claimed.",
+        "actual_reader": "The completed test takes actual selected StateVersion carrier leases through RowCacheGatherDecode -> F32 -> real SDPA with a query sliced from its actual main carry. It verifies outputs against an independent decode and two-key softmax reference. These finite queries are not claimed to be the complete draft attention query/projection/LM chain.",
+        "layout_limit": "584B is Hyle's provider-independent carrier, not the official framework's physical page/cache ABI. Matching selected QDQ math does not claim vendor page interoperability."
+      },
+      "original_roles_and_journey": {
+        "receipts": [
+          ".scratch/glm-mtp-catchup-20261022/original-dspark-target/acquisition.json",
+          ".scratch/glm-mtp-seed-cache-20261022/original-dspark-history/acquisition.json"
+        ],
+        "roles": "Original fc/main_norm plus three separate stage wkv/norm roles:8 roles,60184576B. Stage1/2 hashes and lengths match the new exact-range receipt; stage0/fc/main_norm match the earlier fixed receipt. Test uses the distinct original Q8 banks and F32 gamma values as retained constants, not generated replacements.",
+        "actual_inputs": "Generated actual Graph-produced four-stream target-boundary values -> same-row original fc/norm -> actual main ReadLease -> all three stage banks. Physical position inputs derive from the same checked CaptureFrame; test covers127->128 wrap, atomic prefix0/1/2, stale CAS/cancel, rejected tail, immutable old versions and each old/accepted branch's fresh own-head continuation.",
+        "expected_native": "Two CPU/CUDA cases, each16 actual submissions:12 source/projection/history submissions plus4 real encoded-history successor submissions. This expectation is not a native pass result."
+      },
+      "result": "No hard order, geometry, source-role, position, RoPE-base/layout, BF16/QDQ-boundary, physical-prefix or actual-reader connection error found in the recorded source snapshot.",
+      "limits": "Read-only source review, not numeric/native success, throughput, memory, a complete original target model, natural acceptance, full official BF16 arithmetic or complete DSpark MTP."
+    },
+    "review/next-state-composition.json": {
+      "status": "source-only next finite composition design; no C++/CMake/docs mutation, download, build or native execution",
+      "authority": {
+        "sglang_revision": "06992c92ad4494fe9f9636e75be3e35040512447",
+        "sources": [
+          {
+            "path": "python/sglang/srt/models/glm5_next.py",
+            "sha256": "12c5157b07fb7c6d93f34e84c43a37866d2e382e703729e2205aed9f8961f9c2",
+            "anchors": [
+              {
+                "line": 150,
+                "text": "def forward(self, x: torch.Tensor):"
+              },
+              {
+                "line": 178,
+                "text": "def forward(self, x: torch.Tensor):"
+              },
+              {
+                "line": 523,
+                "text": "def forward("
+              },
+              {
+                "line": 581,
+                "text": "self.is_linear_attn = config.is_kda_layer(layer_id)"
+              },
+              {
+                "line": 612,
+                "text": "skip_rope=True,"
+              },
+              {
+                "line": 764,
+                "text": "def forward("
+              },
+              {
+                "line": 847,
+                "text": "return hidden_states, residual, topk_indices"
+              },
+              {
+                "line": 966,
+                "text": "def forward("
+              },
+              {
+                "line": 1044,
+                "text": "prev_topk_indices=topk_indices,"
+              },
+              {
+                "line": 1071,
+                "text": "hidden_states = self.norm(hidden_states)"
+              },
+              {
+                "line": 1336,
+                "text": "def forward("
+              }
+            ]
+          },
+          {
+            "path": "python/sglang/srt/models/deepseek_v2.py",
+            "sha256": "70e3b1e96b683a68261e914ad19e1ca2244bdb2622d6952ad27891688798c3be",
+            "anchors": [
+              {
+                "line": 1768,
+                "text": "self.q_lora_rank + self.kv_lora_rank + self.qk_rope_head_dim,"
+              },
+              {
+                "line": 1795,
+                "text": "self.kv_lora_rank + self.qk_rope_head_dim,"
+              },
+              {
+                "line": 1809,
+                "text": "self.skip_topk = True"
+              },
+              {
+                "line": 1812,
+                "text": "self.skip_topk = dsa_layer_skips_topk(config, layer_id)"
+              },
+              {
+                "line": 1829,
+                "text": "scale_fmt=\"ue8m0\","
+              },
+              {
+                "line": 1885,
+                "text": "self.kv_lora_rank + self.qk_rope_head_dim,"
+              },
+              {
+                "line": 1897,
+                "text": "self.kv_lora_rank + self.qk_rope_head_dim,"
+              }
+            ]
+          },
+          {
+            "path": "python/sglang/srt/configs/model_config.py",
+            "sha256": "85c36b134e3e4a39bce382d9172aa4fe4819f02996d55cbdf779846da4cfb8c8",
+            "anchors": [
+              {
+                "line": 311,
+                "text": "def dsa_layer_skips_topk(config: PretrainedConfig, layer_id: int) -> bool:"
+              },
+              {
+                "line": 318,
+                "text": "0 <= layer_id < len(indexer_types) and indexer_types[layer_id] == \"shared\""
+              }
+            ]
+          },
+          {
+            "path": "python/sglang/srt/layers/communicator_mhc.py",
+            "sha256": "d1b8b711df8e486fa9fd6a0028ddcb0d2a863bb23300337b5d3cc2407d168fcf",
+            "anchors": [
+              {
+                "line": 84,
+                "text": "def attn_split(self, hidden_states, out_norm: Optional[torch.nn.Module] = None):"
+              },
+              {
+                "line": 94,
+                "text": "def attn_to_mlp("
+              },
+              {
+                "line": 107,
+                "text": "def mlp_combine(self, hidden_states, residual):"
+              },
+              {
+                "line": 299,
+                "text": "if not is_last_layer:"
+              },
+              {
+                "line": 302,
+                "text": "hidden_states = hc_contract(hidden_states, mhc.hc_mult)"
+              },
+              {
+                "line": 342,
+                "text": "if not is_last_layer:"
+              },
+              {
+                "line": 345,
+                "text": "hidden_states = hc_contract(hidden_states, mhc.hc_mult)"
+              },
+              {
+                "line": 361,
+                "text": "hidden_states = hc_contract(hidden_states, mhc.hc_mult)"
+              }
+            ]
+          },
+          {
+            "path": "python/sglang/srt/layers/attention/dsa/dsa_indexer_kpool.py",
+            "sha256": "90620a0d6cbcda89cecf02983eea419ab3ea13d8f556d6988de467057108fe82",
+            "anchors": [
+              {
+                "line": 156,
+                "text": "self.scale_fmt = scale_fmt"
+              },
+              {
+                "line": 213,
+                "text": "round_scale=self.scale_fmt is not None,"
+              },
+              {
+                "line": 258,
+                "text": "round_scale=self.scale_fmt is not None,"
+              },
+              {
+                "line": 370,
+                "text": "round_scale=self.scale_fmt is not None,"
+              },
+              {
+                "line": 533,
+                "text": "def _get_q_k_bf16("
+              },
+              {
+                "line": 593,
+                "text": "query = rotate_activation(query)"
+              },
+              {
+                "line": 985,
+                "text": "(token_nums, self.index_topk + tail_pool),"
+              },
+              {
+                "line": 1331,
+                "text": "round_scale=self.scale_fmt is not None,"
+              },
+              {
+                "line": 1342,
+                "text": "q_fp8, q_scale = act_quant(query, self.block_size, self.scale_fmt)"
+              },
+              {
+                "line": 1350,
+                "text": "q_fp8, q_scale = act_quant(query, self.block_size, self.scale_fmt)"
+              },
+              {
+                "line": 1505,
+                "text": "q_fp8, q_scale = act_quant(query, self.block_size, self.scale_fmt)"
+              },
+              {
+                "line": 1509,
+                "text": "q_fp8, q_scale = act_quant(query, self.block_size, self.scale_fmt)"
+              }
+            ]
+          },
+          {
+            "path": "python/sglang/srt/models/glm5_next_nextn.py",
+            "sha256": "ae00f0aa187d3f797a011e0691d9540e5a9ad84c350660670fc69ff78a40c153",
+            "anchors": [
+              {
+                "line": 49,
+                "text": "\"using BF16 draft modules\","
+              },
+              {
+                "line": 76,
+                "text": "self, nextn_weights, is_nextn=True"
+              }
+            ]
+          },
+          {
+            "path": "python/sglang/srt/layers/attention/index_topk_share.py",
+            "sha256": "e4b2218c1b0ef472c5dc51c87e889c10742d33360d3fc7215458b64b6d3deebe",
+            "anchors": [
+              {
+                "line": 42,
+                "text": "return spec_info.dsa_seed_topk_capture"
+              },
+              {
+                "line": 62,
+                "text": "def publish(self) -> None:"
+              },
+              {
+                "line": 69,
+                "text": "sel = self._forward_batch.spec_info.dsa_seed_topk_select"
+              }
+            ]
+          },
+          {
+            "path": "python/sglang/srt/models/deepseek_common/attention_forward_methods/forward_mla.py",
+            "sha256": "8d0a74b2729a4636b268528c2f1944521381556d7b9ebc605b2f151fcf1cc554",
+            "anchors": [
+              {
+                "line": 155,
+                "text": "return not self.skip_topk or (self.is_nextn and prev_topk_indices is None)"
+              },
+              {
+                "line": 183,
+                "text": "def _split_q_nope_pe("
+              },
+              {
+                "line": 490,
+                "text": "torch.bmm(q_nope.transpose(0, 1), self.w_kc_qrep)"
+              },
+              {
+                "line": 568,
+                "text": "q_nope_out = torch.bmm(q_nope.transpose(0, 1), self.w_kc)"
+              },
+              {
+                "line": 927,
+                "text": "if not self.next_skip_topk:"
+              }
+            ]
+          }
+        ],
+        "selected_model_metadata": "docs/implementation/tasks/compute/llm-moe-model-sources.json models[id=glm53_flash]: zai-org/GLM-5.3-Flash eb9eb208eb0d988989d07a6a12d0fdeb5f52574a; config_sha256 bb8f01c42cb92a52ca72e65afb4d5bd8d11aef083cd210e8de25dfb904f23e9f; recorded config is source identity evidence, not new execution evidence"
+      },
+      "minimal_scope": "Only last full target layer43 DSA/MLA+its two mHC/FFN branches -> actual four-stream output -> existing target44 KDA/conv+two mHC/FFN branches -> contract+finalnorm -> actual NextN draft-extend seed -> same-epoch skip and accepted catchup. Input to43 remains explicitly generated preceding-layer42 output for each token. Not 45-layer target engine or another executor.",
+      "fixed_shapes": {
+        "hidden": 4096,
+        "streams": 4,
+        "target43_input_output": [
+          1,
+          4,
+          4096
+        ],
+        "qrank": 1536,
+        "mla_query_pre_absorb": [
+          1,
+          64,
+          256
+        ],
+        "mla_absorbed_query": [
+          1,
+          1,
+          64,
+          512
+        ],
+        "mla_cache": [
+          "token_capacity",
+          512
+        ],
+        "mla_value_pre_output": [
+          1,
+          64,
+          256
+        ],
+        "index_query": [
+          32,
+          128
+        ],
+        "index_raw_key": [
+          1,
+          128
+        ],
+        "pool_size": 4,
+        "index_closed_pool_codes": [
+          "pool_capacity",
+          128
+        ],
+        "index_closed_pool_scales": [
+          "pool_capacity",
+          1
+        ],
+        "selection": [
+          "I32 2051 fixed carrier",
+          "2048 closed-pool token IDs +0..3 actual tail IDs, remaining=-1"
+        ],
+        "target44_history": [
+          3,
+          24576
+        ],
+        "target44_kda_matrix": [
+          1,
+          64,
+          128,
+          128
+        ],
+        "rope": "Flash config qk_rope_head_dim=0, skip_rope=True; no 64-column RoPE tail; do not import full GLM-5.3 6144/2048/576 shapes"
+      },
+      "reuse_map": [
+        {
+          "reuse": "glm_mtp_state_consumer_test.cc::Program::create/execute",
+          "purpose": "ordinary compiled Graph+Invocation+caller LeasePool, move Fragment and its constant bank; do not introduce model executor/Store/Head wrapper"
+        },
+        {
+          "reuse": "State::create(extra_specs),initial(extra_members),stage(extra_members),image,StateHead::publish",
+          "purpose": "append target43 independent state entries to existing target44+NextN schema; one Draft stages all actual target/draft outputs, then one accepted Head publication"
+        },
+        {
+          "reuse": "glm_mtp_target_component.h::build and Ports::mhc/tap/history/state; evaluate/observe",
+          "purpose": "44 takes actual43 4H lease as input0, prior44 history/state as inputs1/2, keeps existing final contract+norm. Existing target44 4H output is intra-token diagnostic, not next-token residual."
+        },
+        {
+          "reuse": "core::hyper_connection_prepare, model_ops::hyper_connection_post, glm::norm; glm::moe::moe_chain",
+          "purpose": "construct43 two mHC branches exactly like44 but attention branch uses sparse MLA, and return FFN post 4H without contract or model finalnorm (43 is not last layer)"
+        },
+        {
+          "reuse": "d5_glm_remaining_fragments.h::projection/head_projection,glm::attach,glm::layer_norm; existing build(...) qa/qnorm/qb/kva/latent/absorb/vb/output wiring",
+          "purpose": "reuse actual [4096->1536->64x256], [4096->512] and64head absorb math. Build target43 branch from pre-normalized mHC-collapse, not glm::mla as-is (that helper normalizes again and keeps only3 historical rows)."
+        },
+        {
+          "reuse": "glm_mtp_state_consumer_test.cc::append_history/observe_history,build_catchup,activate_extend_seed,run_seed_handoff",
+          "purpose": "reuse pool-close/cursor/rawring/tail and accepted-journal protocol, replace F32 closed-pool storage and plain score with official code+scale components. Target43 itself is full producer each token; NextN alone skips indexer within its carry epoch."
+        },
+        {
+          "reuse": "glm_official_index_cache.h::quantize,producer,consumer and independent encode_rows/pool_reference/score_reference/mla_reference",
+          "purpose": "factor/use existing graph construction expressions at closed-pool emission and query/scorer boundary. Header consumer bundles query quant+scorer+TopK+MLA and assumes no partial tails; full NextN must attach partial tail IDs before selected Gather, and use new generic rounded quantizer first."
+        }
+      ],
+      "target43_state_members": [
+        {
+          "name": "T43MlaCache",
+          "shape": "[token_capacity,512] BF16 for official activation path or F32 for explicitly generated GGUF reader",
+          "update": "actual current kv_a->RMSNorm latent scattered at actual cursor before sparse attention; independent bank from NextN MLA, not shared by matching shape"
+        },
+        {
+          "name": "T43MlaCursor",
+          "shape": "I32[1]",
+          "update": "actual Scan+Gather increment, identifies first unwritten token"
+        },
+        {
+          "name": "T43RawKeyRing",
+          "shape": "BF16[6,128] for pool4+two-token rollback bound",
+          "update": "actual wk+LayerNorm key BF16 row; preserve paired gate same logical slot; only accepted version may survive"
+        },
+        {
+          "name": "T43RawGateRing",
+          "shape": "F32[6,128]",
+          "update": "actual F32 compression-gate projection; no quantization with key; pool APE applied once at consumption"
+        },
+        {
+          "name": "T43PoolCodes",
+          "shape": "E4[pool_capacity,128]",
+          "update": "only newly closed K4 pool writes actual BF16->Hadamard->BF16->roundedE4 code row"
+        },
+        {
+          "name": "T43PoolScales",
+          "shape": "F32[pool_capacity,1]",
+          "update": "same pool ordinal and same StateDraft as code row; not host metadata and not one lifetime scalar"
+        },
+        {
+          "name": "T43IndexCursor/T43PoolCount/T43RingOffset/T43TailValid/T43TailStart",
+          "shape": "five I32[1] resources",
+          "update": "existing actual indexer cursor/pool/tail equations, with tailvalid0..3 and absolute tailstart; keep independent of NextN cursors"
+        },
+        {
+          "name": "T43Selection (optional checkpoint diagnostic/carry)",
+          "shape": "I32[2051]",
+          "update": "actual target43 TopK expanded full selection with fixed padding; does not become NextN seed"
+        },
+        {
+          "name": "T43 mHC4H/qnorm/absorbed-query/current-key/output ports",
+          "shape": "named activation outputs, not recurrent temporal members",
+          "update": "actual43 FFN mHC post feeds44 input0 in same token; may retain lease in accepted checkpoint for diagnostics but must never feed as next token43 residual"
+        }
+      ],
+      "exact_dataflow": [
+        "R42(t)[1,4,H] explicit this-token boundary -> target43 mHC attn prepare collapse -> input RMSNorm -> qa/qnorm. qr also feeds indexer wq_b, while nx feeds wk+LayerNorm, compression gate and headweights; no independent generated branch attached only for coverage.",
+        "target43 current latent actual update and raw key/gate actual update -> if pool closes encode new pooled row; scorer reads selected version actual E4+F32scale and BF16 rotated/quantized actual query -> TopK512 -> expand pool IDs and append only source-valid raw tail IDs -> checked Gather actual T43MlaCache -> sparse MLA -> perhead V-b projection -> o_proj.",
+        "target43 attention post uses pre-attention four-stream residual and original combine/post weights -> fresh FFN mHC pre/postnorm -> actual MoE -> FFN mHC post -> Y43(t)[1,4,H]. No mean, no final target model norm at43.",
+        "Bind Y43(t) actual lease to existing target44 Recipe input0; bind prior44 history/state leases from same source StateVersion. target44 actual KDA/conv updates -> two mHC branches -> mean streams -> target model final RMSNorm H_t. Only44 histories/KDA are temporal feedback.",
+        "NextN draft-extend row for input x_(t+1) consumes actual H_t through its own hnorm, embedding x_(t+1) through enorm, EH, own decoder norm, own qa/qnorm, MLA/MoE and official indexer with independent caches/weights. target43 IDs do not seed NextN; normalized NextN hidden and same-row NextN expanded2051 IDs form real seed.",
+        "Select last accepted extend row including policy bonus (index=count-1), transfer entire actual producer resources under same epoch. Decode step0 immediately uses complete carried IDs and normalized draft hidden, skips entire indexer. Accepted skip nx journal catches up own NextN official key/gate/cache before new epoch; fresh draft-extend genuinely produces next epoch seed."
+      ],
+      "shape_and_math_adaptations": [
+        "Current header cache has pool_capacity514, latent rows2056, selectedIDs2048 and complete K4 input batches. Existing state TU has token_capacity2060,pool_capacity515 and I32 IDs2051; parameterize bounded cache capacity/valid extent or attach graph primitives at existing cursor instead of reshape/copy truncation. Must not pad dynamic tail with real future token IDs.",
+        "Partial K4 needs rawring BF16 keys+F32 gates. Full current state TU uses F32 key ring and F32 closed-pool bank, so encoding only its old F32 bank after scoring is insufficient. Insert BF16 boundary before raw key persistence and source-required BF16 before/after rotation; do not BF16-round F32 gate/headweight projection.",
+        "Expose pre-Hadamard BF16 query input to codec exactly once; dsa_indexer_kpool._get_q_k_bf16 already rotates query at source line593. Avoid double Hadamard by choosing a single attachment side. A same-shaped F32 wq_b output requires explicit CastBF16 at declared boundary.",
+        "Official default scale_fmt=ue8m0 requires kPowerOfTwo for BOTH key/query. None branch remains a legal finite reader component but cannot sign off this default full chain. New generic op is real functionality needed, not added regression bureaucracy.",
+        "Keep ReLU before head weighting and Kscale after head sum, weights*nheads^-0.5*qscale*head_dim^-0.5 order. Plain F32 scorer from existing build has no rotation/quantization and is not equivalent merely because shapes match.",
+        "Layer43 and NextN have separate parameter roles and independent model caches. Generated GGUF/F32 target math plus explicit official index-cache semantics must be described as mixed generated reader composition, not claim original BF16/FP8 whole checkpoint. Original NextN weight storage follows actual per-module ignore/quantization metadata, not global dtype assumption."
+      ],
+      "accepted_prefix_and_alias_boundaries": [
+        "One existing StateStore/StateHead across target43 state + target44 KDA/conv/tap/cursor + complete NextN cache/hidden/qnorm/pending/indexer/journal/epoch. One Draft replacement set per candidate prefix; no target-only publish followed by draft-only publish.",
+        "A/B both run from their correct predecessor versions. Accept1 selects all target43/44/NextN members of A, preserving A tail after B closes a pool; reject B rawring/code/scale/cursor/MLA cannot leak. Accept2 selects all B members. Bonus pending may be corrected by actual tiny Graph without replacing coherent hidden/IDs/history.",
+        "Candidate leases are readonly snapshots; Scatter outputs write fresh caller storage. Metadata cursor changes cannot authorize old storage under new epoch. A fresh encoded code row and its F32 scale are inseparable under the selected version. Original scales are not inverted or inferred from decoded bank.",
+        "Same-epoch carried selection includes actual old expanded tail; skip does not append a new seqLen tail, rerun topK or borrow target43 selection. Catchup consumes only accepted journal rows, preserves MLA/draft hidden/old IDs/epoch until genuine new producer.",
+        "Do not reuse Invocation result permission after reset. Preserve backing roots while actual upstream leases flow through43->44->NextN; use Copy only where public outputs require materialization of a view, not to reupload observed values. Capacity budgets account retained backing roots and temporary program generations, not logical schema bytes alone.",
+        "Independent base->accepted prefix->continuation recomputation must compare all state members including E4 bytes,F32scale bits,I32IDs/cursors,KDA/history and final hidden, while verifying source-defined numerical boundaries. Existing partial/full acceptance and old snapshot/CAS/cancel tests can be reused without an artificial tensor matrix."
+      ],
+      "next_finite_implementation_order": [
+        "Add standalone generic dynamic group128 E4 codes+scales with existing numeric policy; implement minimum CPU/CUDA paths and explicit Vulkan/Apple reuse ports, no fake success on unavailable routes.",
+        "Replace F32 pooled-cache/query score in existing NextN actual recipe with rounded official code/scales + partial-tail expansion; keep seed->step0 skip/journal catchup path unchanged at protocol level and run one bounded accepted-prefix journey.",
+        "Build target43 mHC+independent MLA/indexer state branch and bind actual Y43 output to current44 input0; reuse same Program and one head. Generate only layer42 this-token 4H input boundary; no upper42-layer engine expansion.",
+        "One finite accept1/2 journey crossing one pool closure and one epoch reseed; preserve strict existing gates and independent base recomputation, avoid shape/precision matrices or unrelated performance runs."
+      ],
+      "real_functional_gap": {
+        "id": "GLM-default-rounded-dynamic-E4-codes-and-scales",
+        "classification": "real functional gap, not merely missing validation",
+        "evidence": "fixed06992 deepseek_v2.py:1829 passes scale_fmt=\"ue8m0\". dsa_indexer_kpool.py:156 keeps it; :213/:258/:370/:1331 use round_scale=self.scale_fmt is not None and :1342/:1350/:1505/:1509 pass same scale_fmt to act_quant. Thus default full GLM key/query use power-of-two scales.",
+        "current_delivery": "Frozen glm_official_index_cache.h implements valid unrounded round_scale=False/act_quant(scale_fmt=None) source branch; exact source branch has independent code/scale oracle and persistent E4+F32 storage. Do not discard or relabel this valid finite deliverable.",
+        "missing": "No standalone public dynamic E4 group128 quantizer returns actual codes AND per-group F32 scales with kPowerOfTwo. Float8BlockLinear/GroupedFloat8Linear hide intermediate output, BlockQuantizationRoundtrip returns BF16 QDQ, CacheEncode has one fixed lifetime scalar scale. Unary has no ceil/log2/exp2; a bespoke graph workaround would obscure shared quantization semantics.",
+        "required_next": "Implement generic two-output dynamic E4 quantizer from existing Float8ScalePolicy/floor/normalization and reuse native quantization formulas. Then use kPowerOfTwo in both GLM key and query, with actual persistent code/scales bound onward. Keep None branch test as separate exact reader policy.",
+        "proposed_contract": {
+          "name_proposal": "model_ops::Float8BlockQuantize (name provisional; reuse existing Float8ScalePolicy and absmax_floor, not a GLM-specific operation)",
+          "input": "one dense finite BF16/F32 matrix [M,K], M>0, K>0, K%128==0; the caller owns all pooling, RMS/LayerNorm, Hadamard, and BF16 boundaries explicitly",
+          "outputs": [
+            "plain E4M3FN codes [M,K], physical row-major saturated nearest-even bytes",
+            "plain F32 scales [M,K/128], physical row-major group order; positive finite scale per contiguous 128-value group"
+          ],
+          "descriptor": "Float8ScalePolicy scale_policy=kDivide; float absmax_floor=1e-10F; same enum/floor validation as Float8BlockLinear (known policy, finite positive floor, floor/448 normal); no provider/model names or page ABI knobs",
+          "math": [
+            "F32 absmax per contiguous128; maximum=max(absmax,absmax_floor), never floor scale itself.",
+            "kDivide: stored F32(maximum/448), original divide-based normalization, saturated nearest-even E4.",
+            "kMultiplyReciprocal: stored F32(maximum*F32(1/448)); reciprocal=F32(1/scale), normalized=F32(input*reciprocal), same two separate F32 stages as existing contract.",
+            "kPowerOfTwo: form multiply-based raw F32 scale, round upward to power-of-two preserving an exact power, then retain original divide normalization; no implicit BF16 round inserted.",
+            "Official default GLM KPool caller chooses kPowerOfTwo,floor1e-4 after its BF16 rotate boundary; both key and query choose identical policy. Do not silently map current multiply-literal+divide None branch onto kMultiplyReciprocal."
+          ],
+          "ownership": "pure operation; no input mutation/alias, two distinct caller-owned outputs participating in ordinary Graph/Invocation/LeasePool/StateDraft; no private executor, persistent provider F32 bank or scale host readback",
+          "nonfinite_and_failure": "native finite-input enforcement follows existing dynamic FP8 contracts; binding/range/device checks before accepted native work; failed Completion grants no usable outputs; no partial state publish",
+          "layout_risk": "Existing CUDA power2 quantizer writes colmajor scales [K/128,M], whereas proposed public output is row-major [M,K/128]. K=128 GLM matches trivially; wider K must use a qualified output-layout specialization or bounded transpose/pack before granting public output, never reinterpret bytes. Existing encoded activation carrier also must not be assumed identical to two plain outputs.",
+          "qualification_risk": "Existing CUDA power2 AOT is only qualified for BF16. It forms raw amax/448 in its fixed Triton source, while generic descriptor says multiply-based raw scale. For BF16 maxima the power2 decision is stable; do not widen to arbitrary F32 input without validating boundary cases or using the exact policy source. Decline unqualified dtype/SM rather than changing math."
+        },
+        "backend_reuse": [
+          {
+            "backend": "CPU",
+            "entry": "src/compute_provider_native/torch_cpu_program.cc:194-215 quantize(const at::Tensor&,const Shape&) already returns Quantized{codes,scales,ids}; third_party/torchao_cpu/torchao_cpu.h:11-26 f32_to_e8m0_rceil/e8m0 reciprocal and :54-61 choose_scale/quantize_affine",
+            "route_work": "Add pure two-output quantization kind/selection to native_provider.cc + torch_cpu_program.cc; current describe/submit assumes one result (lines87,634), so deliberately extend port inference/bind/copy/retirement for two outputs. Reuse existing ATen formulas; no GEMM, QDQ, host rebuild, or new scalar quantizer.",
+            "rejection": "ds4_quantization.cc handles roundtrip group64/group32 and explicitly declines group128; it is not the selected standalone group128 implementation."
+          },
+          {
+            "backend": "CUDA",
+            "entry": "src/compute_provider_cuda/fp8_provider.cc:191-218 launch_quantizer and :338-348 exact module/symbol loading; same quantizer also used by grouped_fp8_provider.cc; cuda_provider.cc:154-158 routes dynamic FP8 ops",
+            "native_assets": "third_party/sglang_activation/fp8/sglang_fp8_quantize_cuda_sm89.h for existing divide/multiply-reciprocal BF16/F32; sglang_fp8_dynamic_sm89.h kSglangFp8QuantizeBf16Pow2/_per_token_group_quant_8bit_colmajor; source original_kernels.py and rebuild.py/rebuild_cuda_quant.py",
+            "route_work": "Extract common quantizer prepare/launch descriptor used by standalone/linear/grouped, retain same primary stream/capture/concurrent lifetime. Bind codes/scales as true output pointers rather than require one adjacent scratch carrier; current helper derives scales=encoded+M*K. No GEMM needed. Preserve existing BF16 power2 and SM89 qualification; wider SM capability is separate work.",
+            "layout": "scale_stride=M writes colmajor only for power2, row-major otherwise; public two-output layout must be honest. GLM width128 has one group, so no extra materialization."
+          },
+          {
+            "backend": "Vulkan",
+            "entry": "src/compute_route_vulkan/vulkan_official.cc:79 official_float_operation/:89 lower_official_float; src/compute_provider_iree_vulkan/native_program.h ProgramKind, native_program.cc:224 official_entry/:796 official argument binding; native_device.cc:208 existing official VM module",
+            "native_assets": "third_party/iree_vulkan_runtime/programs/generate_official.py:168 quantize(dtype), :194 integer-exponent power2 logic, :234 existing RNE E4 codec; generated official.mlir already has private quant_f32/quant_bf16 returning actual tensor<?x?xi8> and tensor<?x?xf32>",
+            "route_work": "Expose a small public IREE entry returning those two tensors; add two-output ProgramKind/argument/result binding and logical E4 output storage. Current official_float_operation immediately declines outputs.size()!=1; merely changing its whitelist is insufficient. Regenerate only official program asset using compile_official.py, preserve original numeric features/index/buffer-range checks.",
+            "cost": "No full floating cache bank; temporary F32 input/group reduction allowed and encoded outputs persistent."
+          },
+          {
+            "backend": "Apple/MLX",
+            "entry": "src/compute_route_apple/apple_mature_float.cc:235 quantize(input,group,floor,policy,stream) already returns Quantized{mx::to_fp8(normalized),scale}; :239-266 power2 bit-exponent raise; :674 QDQ/:729 Float8BlockLinear show current consumers; apple_mature_float.h/route dispatch integrate model operations",
+            "route_work": "Expose existing Quantized codes+scales as two typed results and reshape scale group dimension to public [M,K/128], respecting actual E4 code storage and F32 scale descriptors. Reuse default MLX stream/eval/resource lifetime; no Array-to-host serialization, no new Metal kernel.",
+            "qualification": "Use current Float8ScalePolicy semantics including multiply-reciprocal specialized kernel; verify actual E4 port materialization instead of returning decoded F32."
+          }
+        ],
+        "status": "not implemented or native-validated in this source-only design task"
+      },
+      "unimplemented_status": "This file is a review/design, not implementation or verification. Current BD frozen cache source remains unchanged; root owns native execution and public gap work."
+    },
+    "review/official-index-cache.json": {
+      "revision": "06992c92ad4494fe9f9636e75be3e35040512447",
+      "sources": [
+        {
+          "path": "python/sglang/srt/layers/attention/dsa/kpool_fp8_index.py",
+          "sha256": "11c56f46a76c4a666cdd638ab9a4a6cf2016aebf58e1722a2792a1a79b9bee58"
+        },
+        {
+          "path": "python/sglang/srt/layers/attention/dsa/dsa_indexer_kpool.py",
+          "sha256": "90620a0d6cbcda89cecf02983eea419ab3ea13d8f556d6988de467057108fe82"
+        },
+        {
+          "path": "python/sglang/srt/layers/attention/dsa/dsa_indexer.py",
+          "sha256": "2f9634d275bde01c6eaffa0fabc339d592d2de67fa397b2e97af673f78ffbbfc"
+        },
+        {
+          "path": "python/sglang/kernels/ops/attention/dsa/triton_kernel.py",
+          "sha256": "b846c763cfa1b445c8097c547ecb4859398374173dd6aa314b4b1bb9fec875eb"
+        },
+        {
+          "path": "python/sglang/kernels/ops/attention/dsa/tilelang_kernel.py",
+          "sha256": "ea9afa8b2dfeed08a4840c0d82622909bac15bf8a752f084ba9d260421c573bf"
+        }
+      ],
+      "contract": [
+        "kpool_fp8_index.py:833-851 orthonormal Sylvester Hadamard128, seven butterfly strides then factor0.08838834764831845",
+        "kpool_fp8_index.py:1139-1151 pooledF32 -> BF16 -> F32 -> Hadamard128 -> BF16 -> F32 -> absmax max(1e-4) -> scale=absmax*(1/448), E4 SATFINITE/RNE",
+        "triton_kernel.py::_act_quant_kernel round_scale=False (act_quant scale_fmt=None): same absmax floor before multiply reciprocal448, unrounded F32 scale",
+        "dsa_indexer.py:193-206 rotate_activation preserves BF16 boundary; dsa_indexer_kpool.py:170-175 folds weights*nheads^-0.5*qscale*head_dim^-0.5",
+        "tilelang_kernel.py fp8_paged_mqa_logits_kernel: FP32 code-domain dot -> ReLU -> F32 head gate -> sumheads -> keyscale"
+      ],
+      "implementation": {
+        "persistent_cache": "E4[514,128] + F32scale[514,1] = 67848 bytes; no mutable F32 key bank",
+        "scorer_temporary": "E4 numerical CastF32 operands are ephemeral; q and k scales factored in source order",
+        "journey": "Graph producer512->actual bank/scales/cursor->actual Graph query/scorer/TopK512->I32 expansion2048->MLA64x512; one StateStore/Head/Draft containing code,scale,cursor,IDs,MLA",
+        "acceptance": "A accepted; B rejected by stale CAS; partial splice cancelled; C recomputed from actual accepted A resources; independent base->A->C entire state byte comparison; old snapshots readonly",
+        "oracle": "Independent upstream pool -> exact BF16 transform input; independent F64 Sylvester Hadamard math within predeclared F32 gamma129 bound; exact BF16 conversion of checked transform; independent exact E4+F32scale quantizer on checked actual rotated input; original strict F32 score/MLA gate. No fixed F32 butterfly bit-order claim.",
+        "fixture": "all four K4 raw BF16 slots differ; dyadic gates+APE make equal .25 softmax to isolate layout/codec; zero base pool and zero C exercise absmax floor; independent TopK membership source-derived; no vendor bit-order claim",
+        "limits": "not partial raw tails (separately C1), not full original model, not natural token acceptance or throughput; no vendor pagefooter ABI"
+      },
+      "freeze": {
+        "files": [
+          {
+            "path": "tests/compute_models/glm_official_index_cache.h",
+            "bytes": 14631,
+            "sha256": "de2e2250d1080cacdb8635ff118f293504bb7741d45450db1ec19ea00462e79d",
+            "lines": 266
+          },
+          {
+            "path": "tests/compute_models/glm_official_index_cache_test.cc",
+            "bytes": 21004,
+            "sha256": "51e88bbc787b695a2072e513057c95e92a792eaac6fd4f99b1e83c69bf8d72d8",
+            "lines": 314
+          }
+        ],
+        "macros": [
+          "HYLE_TEST_GLM_CACHE_CPU",
+          "HYLE_TEST_GLM_CACHE_CUDA"
+        ],
+        "test_filter": "GlmOfficialIndexCache.*",
+        "source_only": true,
+        "native_run": false,
+        "compilation_run": false,
+        "actual_submissions_per_case": 12,
+        "scope": "complete closed K4 pool chunks; generated raw key/query/headweight/latent boundaries; logical E4+F32scale cache; not vendor page ABI or full original model"
+      },
+      "real_functional_gap": {
+        "id": "GLM-default-rounded-dynamic-E4-codes-and-scales",
+        "classification": "real functional gap, not merely missing validation",
+        "evidence": "fixed06992 deepseek_v2.py:1829 passes scale_fmt=\"ue8m0\". dsa_indexer_kpool.py:156 keeps it; :213/:258/:370/:1331 use round_scale=self.scale_fmt is not None and :1342/:1350/:1505/:1509 pass same scale_fmt to act_quant. Thus default full GLM key/query use power-of-two scales.",
+        "current_delivery": "Frozen glm_official_index_cache.h implements valid unrounded round_scale=False/act_quant(scale_fmt=None) source branch; exact source branch has independent code/scale oracle and persistent E4+F32 storage. Do not discard or relabel this valid finite deliverable.",
+        "missing": "No standalone public dynamic E4 group128 quantizer returns actual codes AND per-group F32 scales with kPowerOfTwo. Float8BlockLinear/GroupedFloat8Linear hide intermediate output, BlockQuantizationRoundtrip returns BF16 QDQ, CacheEncode has one fixed lifetime scalar scale. Unary has no ceil/log2/exp2; a bespoke graph workaround would obscure shared quantization semantics.",
+        "required_next": "Implement generic two-output dynamic E4 quantizer from existing Float8ScalePolicy/floor/normalization and reuse native quantization formulas. Then use kPowerOfTwo in both GLM key and query, with actual persistent code/scales bound onward. Keep None branch test as separate exact reader policy.",
+        "proposed_contract": {
+          "name_proposal": "model_ops::Float8BlockQuantize (name provisional; reuse existing Float8ScalePolicy and absmax_floor, not a GLM-specific operation)",
+          "input": "one dense finite BF16/F32 matrix [M,K], M>0, K>0, K%128==0; the caller owns all pooling, RMS/LayerNorm, Hadamard, and BF16 boundaries explicitly",
+          "outputs": [
+            "plain E4M3FN codes [M,K], physical row-major saturated nearest-even bytes",
+            "plain F32 scales [M,K/128], physical row-major group order; positive finite scale per contiguous 128-value group"
+          ],
+          "descriptor": "Float8ScalePolicy scale_policy=kDivide; float absmax_floor=1e-10F; same enum/floor validation as Float8BlockLinear (known policy, finite positive floor, floor/448 normal); no provider/model names or page ABI knobs",
+          "math": [
+            "F32 absmax per contiguous128; maximum=max(absmax,absmax_floor), never floor scale itself.",
+            "kDivide: stored F32(maximum/448), original divide-based normalization, saturated nearest-even E4.",
+            "kMultiplyReciprocal: stored F32(maximum*F32(1/448)); reciprocal=F32(1/scale), normalized=F32(input*reciprocal), same two separate F32 stages as existing contract.",
+            "kPowerOfTwo: form multiply-based raw F32 scale, round upward to power-of-two preserving an exact power, then retain original divide normalization; no implicit BF16 round inserted.",
+            "Official default GLM KPool caller chooses kPowerOfTwo,floor1e-4 after its BF16 rotate boundary; both key and query choose identical policy. Do not silently map current multiply-literal+divide None branch onto kMultiplyReciprocal."
+          ],
+          "ownership": "pure operation; no input mutation/alias, two distinct caller-owned outputs participating in ordinary Graph/Invocation/LeasePool/StateDraft; no private executor, persistent provider F32 bank or scale host readback",
+          "nonfinite_and_failure": "native finite-input enforcement follows existing dynamic FP8 contracts; binding/range/device checks before accepted native work; failed Completion grants no usable outputs; no partial state publish",
+          "layout_risk": "Existing CUDA power2 quantizer writes colmajor scales [K/128,M], whereas proposed public output is row-major [M,K/128]. K=128 GLM matches trivially; wider K must use a qualified output-layout specialization or bounded transpose/pack before granting public output, never reinterpret bytes. Existing encoded activation carrier also must not be assumed identical to two plain outputs.",
+          "qualification_risk": "Existing CUDA power2 AOT is only qualified for BF16. It forms raw amax/448 in its fixed Triton source, while generic descriptor says multiply-based raw scale. For BF16 maxima the power2 decision is stable; do not widen to arbitrary F32 input without validating boundary cases or using the exact policy source. Decline unqualified dtype/SM rather than changing math."
+        },
+        "backend_reuse": [
+          {
+            "backend": "CPU",
+            "entry": "src/compute_provider_native/torch_cpu_program.cc:194-215 quantize(const at::Tensor&,const Shape&) already returns Quantized{codes,scales,ids}; third_party/torchao_cpu/torchao_cpu.h:11-26 f32_to_e8m0_rceil/e8m0 reciprocal and :54-61 choose_scale/quantize_affine",
+            "route_work": "Add pure two-output quantization kind/selection to native_provider.cc + torch_cpu_program.cc; current describe/submit assumes one result (lines87,634), so deliberately extend port inference/bind/copy/retirement for two outputs. Reuse existing ATen formulas; no GEMM, QDQ, host rebuild, or new scalar quantizer.",
+            "rejection": "ds4_quantization.cc handles roundtrip group64/group32 and explicitly declines group128; it is not the selected standalone group128 implementation."
+          },
+          {
+            "backend": "CUDA",
+            "entry": "src/compute_provider_cuda/fp8_provider.cc:191-218 launch_quantizer and :338-348 exact module/symbol loading; same quantizer also used by grouped_fp8_provider.cc; cuda_provider.cc:154-158 routes dynamic FP8 ops",
+            "native_assets": "third_party/sglang_activation/fp8/sglang_fp8_quantize_cuda_sm89.h for existing divide/multiply-reciprocal BF16/F32; sglang_fp8_dynamic_sm89.h kSglangFp8QuantizeBf16Pow2/_per_token_group_quant_8bit_colmajor; source original_kernels.py and rebuild.py/rebuild_cuda_quant.py",
+            "route_work": "Extract common quantizer prepare/launch descriptor used by standalone/linear/grouped, retain same primary stream/capture/concurrent lifetime. Bind codes/scales as true output pointers rather than require one adjacent scratch carrier; current helper derives scales=encoded+M*K. No GEMM needed. Preserve existing BF16 power2 and SM89 qualification; wider SM capability is separate work.",
+            "layout": "scale_stride=M writes colmajor only for power2, row-major otherwise; public two-output layout must be honest. GLM width128 has one group, so no extra materialization."
+          },
+          {
+            "backend": "Vulkan",
+            "entry": "src/compute_route_vulkan/vulkan_official.cc:79 official_float_operation/:89 lower_official_float; src/compute_provider_iree_vulkan/native_program.h ProgramKind, native_program.cc:224 official_entry/:796 official argument binding; native_device.cc:208 existing official VM module",
+            "native_assets": "third_party/iree_vulkan_runtime/programs/generate_official.py:168 quantize(dtype), :194 integer-exponent power2 logic, :234 existing RNE E4 codec; generated official.mlir already has private quant_f32/quant_bf16 returning actual tensor<?x?xi8> and tensor<?x?xf32>",
+            "route_work": "Expose a small public IREE entry returning those two tensors; add two-output ProgramKind/argument/result binding and logical E4 output storage. Current official_float_operation immediately declines outputs.size()!=1; merely changing its whitelist is insufficient. Regenerate only official program asset using compile_official.py, preserve original numeric features/index/buffer-range checks.",
+            "cost": "No full floating cache bank; temporary F32 input/group reduction allowed and encoded outputs persistent."
+          },
+          {
+            "backend": "Apple/MLX",
+            "entry": "src/compute_route_apple/apple_mature_float.cc:235 quantize(input,group,floor,policy,stream) already returns Quantized{mx::to_fp8(normalized),scale}; :239-266 power2 bit-exponent raise; :674 QDQ/:729 Float8BlockLinear show current consumers; apple_mature_float.h/route dispatch integrate model operations",
+            "route_work": "Expose existing Quantized codes+scales as two typed results and reshape scale group dimension to public [M,K/128], respecting actual E4 code storage and F32 scale descriptors. Reuse default MLX stream/eval/resource lifetime; no Array-to-host serialization, no new Metal kernel.",
+            "qualification": "Use current Float8ScalePolicy semantics including multiply-reciprocal specialized kernel; verify actual E4 port materialization instead of returning decoded F32."
+          }
+        ],
+        "status": "not implemented or native-validated in this source-only design task"
+      },
+      "default_full_chain_status": "DEFAULT ue8m0 POWER-OF-TWO BRANCH STILL MISSING actual exposed codes/scales. Frozen unrounded kernel branch is legal finite delivery, not full default official NextN sign-off.",
+      "hadamard_oracle_correction": {
+        "finding": "Initial test oracle incorrectly required F32 Hadamard to have bit-identical butterfly evaluation order. Current public operation only specifies orthonormal Sylvester transform/F32 accumulation; CPU custom transform and CUDA F32 Hadamard matrix MatMul use different legal F32 order. The failed rotated values at mathematical0 are finite1e-8..1e-6, BF16 preserves their nonzero magnitude and E4 yields signed0; signed-zero differences remain exact codec obligations for those actual inputs.",
+        "source_anchors": [
+          "include/hyle/compute/operation.h:394-401 Hadamard",
+          "src/compute_provider_ggml_cuda/tensor_program.cc:1049-1113 F32 normalized matrix MatMul + precision/source F32",
+          "src/compute_provider_ggml/ggml_cpu_provider.cc:1182-1188 custom F32 transform"
+        ],
+        "checks": [
+          "Source K4 BF16 keys+F32 gates independent scalar pool oracle stays existing strict8e-5abs/4e-5rel gate.",
+          "Independently pooled F32 -> BF16 RNE -> F32 and original BF16 query -> F32 compare bitwise to newly exposed actual transform-input ports. No actual pooled/Hadamard result substitutes for that upstream oracle.",
+          "F64 Sylvester signs parity(popcount(row&column)) and original BF16-rounded source values independently form exact mathematical reference. Fixed pre-observation bound gamma129=sum-rounding bound129*u/(1-129*u),u=2^-24, times row sumabs/sqrt128. Zero-input row bound0; NaN/Inf always fail.",
+          "Actual post-Hadamard F32 -> BF16 RNE bitwise equality to actual rotated F32 widened values, including sign of0.",
+          "Independently enumerate finite E4 values and exact nearest-even, floor absmax1e-4 then F32 multiply reciprocal448 and F32 divide using actual separately checked rotated input. Compare all actual E4 code bytes and F32scales exactly; preserve signed0.",
+          "Independent scorer uses verified query quantizer oracle codes/scales and actual verified persistent cache code/scales, retains original strict F32 score/MLA gate. Actual state acceptance/recompute remains byte-exact."
+        ],
+        "not_changed": [
+          "no provider implementation",
+          "no model/quantizer mathematical policy",
+          "no F32 score/attention tolerance relaxation",
+          "no clipping transform residuals",
+          "no signed-zero code normalization",
+          "no new native matrix/scenario"
+        ],
+        "source": {
+          "files": [
+            {
+              "path": "tests/compute_models/glm_official_index_cache.h",
+              "bytes": 16103,
+              "sha256": "e2c36618edec4a0ba3449e7eed47fe62ac8174e4b993a18c53279e60c2adfb98"
+            },
+            {
+              "path": "tests/compute_models/glm_official_index_cache_test.cc",
+              "bytes": 23943,
+              "sha256": "a0823c00ce9038a71bba6f09298a4006a7cf41bb3210c61b43c18a97d7fe60c4"
+            }
+          ],
+          "supersedes_source": "cache-source/freeze.json; initial native checks1 retained as failed evidence",
+          "change": "Decompose public F32 Hadamard math and exact dtype/quantizer boundaries; no product math or tolerance change, no zero snapping or signed-zero suppression",
+          "new_diagnostic_ports": "Producer transformed7/input8; Consumer transformed7/input8; explicit Copy input materialization",
+          "runtime_scope": "same 12-submit journey, extra diagnostic outputs counted by existing pool footprint",
+          "build_or_native_run": false
+        }
+      }
+    }
+  },
+  "source_freezes": {
+    "cache-source/freeze.json": {
+      "files": [
+        {
+          "path": "tests/compute_models/glm_official_index_cache.h",
+          "bytes": 14631,
+          "sha256": "de2e2250d1080cacdb8635ff118f293504bb7741d45450db1ec19ea00462e79d",
+          "lines": 266
+        },
+        {
+          "path": "tests/compute_models/glm_official_index_cache_test.cc",
+          "bytes": 21004,
+          "sha256": "51e88bbc787b695a2072e513057c95e92a792eaac6fd4f99b1e83c69bf8d72d8",
+          "lines": 314
+        }
+      ],
+      "macros": [
+        "HYLE_TEST_GLM_CACHE_CPU",
+        "HYLE_TEST_GLM_CACHE_CUDA"
+      ],
+      "test_filter": "GlmOfficialIndexCache.*",
+      "source_only": true,
+      "native_run": false,
+      "compilation_run": false,
+      "actual_submissions_per_case": 12,
+      "scope": "complete closed K4 pool chunks; generated raw key/query/headweight/latent boundaries; logical E4+F32scale cache; not vendor page ABI or full original model"
+    },
+    "cache-source2/freeze.json": {
+      "files": [
+        {
+          "path": "tests/compute_models/glm_official_index_cache.h",
+          "bytes": 16103,
+          "sha256": "e2c36618edec4a0ba3449e7eed47fe62ac8174e4b993a18c53279e60c2adfb98"
+        },
+        {
+          "path": "tests/compute_models/glm_official_index_cache_test.cc",
+          "bytes": 23943,
+          "sha256": "a0823c00ce9038a71bba6f09298a4006a7cf41bb3210c61b43c18a97d7fe60c4"
+        }
+      ],
+      "supersedes_source": "cache-source/freeze.json; initial native checks1 retained as failed evidence",
+      "change": "Decompose public F32 Hadamard math and exact dtype/quantizer boundaries; no product math or tolerance change, no zero snapping or signed-zero suppression",
+      "new_diagnostic_ports": "Producer transformed7/input8; Consumer transformed7/input8; explicit Copy input materialization",
+      "runtime_scope": "same 12-submit journey, extra diagnostic outputs counted by existing pool footprint",
+      "build_or_native_run": false
+    },
+    "history-source/freeze.json": {
+      "status": "source frozen; not compiled or run by subagent",
+      "sources": [
+        {
+          "path": "tests/compute_models/dspark_main_history.h",
+          "bytes": 11372,
+          "sha256": "1759a5e94ed4837abea5ef52d410d871aac32aa1ccba64b3fbd921779c706cd9"
+        },
+        {
+          "path": "tests/compute_models/dspark_main_history_test.cc",
+          "bytes": 31173,
+          "sha256": "05db1b3f9d0c8aaf1efd25678cefd403e8501540d29499da1f8ca5eab7594c5c"
+        }
+      ],
+      "source_only_audit": "glm_original_chain independently reviewed source and role receipts; no hard errors reported",
+      "selected_contract": "Original formal Flash0731 Q8 fc and stage0/1/2 wkv; original F32 norms; F32 selected projection/norm then explicit postnorm BF16, last64 base10000 forward RoPE, BF16 row entry, existing seven-group E4/UE8 and64 BF16 tail row cache",
+      "actual_chain": "generated HC Graph leases -> original fc/main norm -> original distinct three stage wkv/norm -> RoPE -> encode -> physical128x584 rings -> atomic three-ring/carry state prefix -> actual gather decode -> attention with query from actual selected carry",
+      "state_members": "three independent rings + main carry + boundary metadata; prefix0/1/2, ring wrap127/0, old branch actual continuation, failure and stale publication, unchanged original banks and old versions",
+      "actual_submissions_per_backend": 16,
+      "distinct_graphs_per_backend": 7,
+      "original_roles": 8,
+      "original_role_bytes": 60184576,
+      "macros": [
+        "HYLE_TEST_DSPARK_HISTORY_CPU",
+        "HYLE_TEST_DSPARK_HISTORY_CUDA"
+      ],
+      "environment": [
+        "HYLE_DSPARK_TARGET_ROLES_DIR",
+        "HYLE_DSPARK_HISTORY_ROLES_DIR"
+      ],
+      "limitations": [
+        "generated target captures and artificial accepted prefixes",
+        "selected Q8/F32 upstream does not sign full official BF16 arithmetic",
+        "finite selected-reader successor query is not the complete draft attention block",
+        "not original complete target/stages/LM or full natural MTP acceptance",
+        "no TPS or physical memory measurements"
+      ]
+    },
+    "history-source/freeze2.json": {
+      "status": "final corrected source frozen; compilation passed; native execution in progress, no pass claim",
+      "previous_freeze": "history-source/freeze.json; initial files and patch retained byte-for-byte",
+      "sources": [
+        {
+          "path": "tests/compute_models/dspark_main_history.h",
+          "bytes": 11522,
+          "sha256": "daf2095c20794589826e7b383682a4505e9d3bf9a787ee11b96397e0a218deca"
+        },
+        {
+          "path": "tests/compute_models/dspark_main_history_test.cc",
+          "bytes": 31316,
+          "sha256": "2962984d37f6bdecc7a092f842cb1b7a46310bb4290b5511ee652c044c7f6f5d"
+        }
+      ],
+      "corrections": [
+        "View::reshape receives TensorShape::create output at four sites",
+        "rope_frequencies explicitly receives false,false",
+        "BF16 tail little-endian reconstruction explicitly narrows uint16 after integer promotion for W4/WX"
+      ],
+      "compilation": {
+        "evidence": "compile3/dspark-history/compile.result.json",
+        "exit": 0,
+        "owner": "root",
+        "flags": "/W4 /WX",
+        "native_test_status": "root running tests-link3; not yet claimed passed"
+      },
+      "supporting_shared_builder": {
+        "path": "tests/compute_models/dspark_target_binding.h",
+        "bytes": 11822,
+        "sha256": "a3708b6e8e5650b3dda9c5ede0f9dd133ceb2827f1a8c494d8c61d5af7fde672",
+        "change": "root extracted append_main_kv semantic builder, shared by make_main_kv and history; avoids relying on standalone graph node count/order",
+        "regression": "root reports existing target TU compiled successfully after extraction; native pending"
+      },
+      "audit_revision": "Initial independent review confirmed role receipts, math boundaries and state/consumer wiring only. It missed ordinary API spelling/narrowing errors caught by actual compilation. It was not compilation or runtime validation; corrected source is the one identified above.",
+      "unchanged_scope": "8 original roles,60184576B; generated HC and artificial prefix0/1/2; original Q8/F32 upstream with explicit postnorm BF16/RoPE/BF16 encoded cache; actual consumer query from carry first512; not full original target/draft/LM, natural acceptance, all-official-BF16 equivalence, TPS or physical memory measurement"
+    },
+    "history-source/freeze3.json": {
+      "status": "CPU oracle correction source frozen, not compiled or executed",
+      "source": {
+        "path": "tests/compute_models/dspark_main_history_test.cc",
+        "bytes": 32717,
+        "sha256": "2dbeeb38b326b87dbc58b37ac09d2bd96dde651488a21beeea79193bc74fc48a"
+      },
+      "native_failure_evidence": "checks1/results.xml DSparkMainHistory.CpuThreeOriginalStagesPublishPhysicalAcceptedHistoryAndContinue; eight failures in written-row quantized-chain max gate; no consumer/state failures reported",
+      "observed_normalized_max_errors": [
+        0.0625,
+        0.0416666567,
+        0.0625,
+        0.0416666865,
+        0.0625,
+        0.0714286,
+        0.0416666865,
+        0.0625
+      ],
+      "old_log_limit": "Old diagnostics reported only aggregate normalized maximum error, not stage/actual/expected values. Cannot claim the exact failing coordinate or verified cause from that log.",
+      "source_contract_findings": [
+        "CPU native Q8_0 MatMul consumes Q8_0-encoded activations; native ggml type traits declare vec_dot_type=Q8_0",
+        "old keys_reference decoded only weights and retained F32 activations, so it omitted a declared input codec before BF16/E4 discontinuous rounding",
+        "existing cpu_c4_flash_sidecars::activation_encode independently describes the selected CPU AVX2 RNE/reciprocal contract"
+      ],
+      "correction": "CPU reference now encodes then independently decodes actual predecessor activations before its independent compensated FP64 dot; no native MatMul/vec_dot is used as the oracle. CUDA reference unchanged. Existing BF16/RoPE/group64 reference and all accuracy gates retained.",
+      "diagnostic": "SCOPED_TRACE reports stage, accepted count, first position, token, physical row, worst column and actual/expected values on any future failure",
+      "unchanged": [
+        "original 8 payloads and hashes",
+        "all 16 submissions and state/consumer coverage",
+        "existing maximum-error and RMSE thresholds",
+        "header untouched by this subagent; root separately owns CUDA RoPE layout correction"
+      ]
+    },
+    "history-source/freeze4.json": {
+      "status": "layered numerical check source frozen; not compiled or executed",
+      "sources": [
+        {
+          "path": "tests/compute_models/dspark_main_history.h",
+          "bytes": 12463,
+          "sha256": "ccd3c9463de65cbc41c539c166dda48a885dba526240a15de59adcc2850c9f05"
+        },
+        {
+          "path": "tests/compute_models/dspark_main_history_test.cc",
+          "bytes": 34307,
+          "sha256": "b2e1c0d349d7d85848b3a07f4c300eb4758ee5f756871213db51cd22d910c669"
+        }
+      ],
+      "diagnostic_ports": "three actual ordinary Graph Copy outputs per stage: postnorm F32, joined/post-RoPE F32, cache-entry BF16; appended after prefix outputs; diagnostics never enter StateSchema",
+      "prefix_state": "State.select receives only the original first4*rows prefix result span; diagnostic outputs are not treated as published immutable state members",
+      "numerical_checks": [
+        "Original Q8 weight decode, independent compensated FP64 dot over actual F32 predecessor and original norm; unchanged established profile maximum/RMSE gate before discrete stages",
+        "Round actual norm to BF16 independently; first448 post-RoPE elements exact; last64 RoPE independent reference with existing3e-6+3e-6*abs F32 gate from ga_ratio4_producer_fixture.h",
+        "Actual joined F32 -> exact independent BF16 bits",
+        "Actual verified BF16 entry -> existing independent table/distance encode oracle -> exact584B code/scale/tail/pad and exact selected physical ring rows",
+        "Untouched old ring/carry and actual GatherDecode->attention checks retained"
+      ],
+      "backend_coupling_removed": "No CPU activation_encode or backend-specific CUDA quantizer called/replicated in the final oracle. Public native activation quantization remains within the unchanged pre-codec Q8/F32 profile gate.",
+      "superseded_freeze3_audit": "The prior CPU oracle called cpu_c4_flash_sidecars::activation_encode: its eligible AVX2 branch is independent scalar RNE math but its else branch delegates to native from_float. Its independence therefore did not extend to every CPU or OS. It passed this Windows CPU checks2, but is superseded here; no Linux/macOS run is claimed.",
+      "CUDA_source_findings": "MMVQ quantize_q8_1 uses32-wide absmax,d=amax/127 inF32,q=roundf(x/d) ties-away,HALF RNE scale; Q8_0 dot ignores activation sum. MMQ Q8_0 uses D4 F32scale and reciprocal/multiply quantization, so a single guessed CPU codec would not describe all CUDA routes. Final layered checks avoid this internal coupling.",
+      "unchanged": [
+        "8 exact original payloads60184576B",
+        "three real512-depth128-row584B rings",
+        "prefix0/1/2,old branch continuation,stale publication/cancellation/immutability",
+        "7 distinct graphs and16 submissions per backend",
+        "no actual oracle values uploaded into candidate execution",
+        "no full original target/draft/LM or natural acceptance, TPS or physical-memory claim"
+      ]
+    },
+    "seed-source/freeze.json": {
+      "status": "source frozen; no native compile/run by child",
+      "source": "tests/compute_models/glm_mtp_state_consumer_test.cc",
+      "sha256": "508c234f5aaae1fb22495694de11314cdcb64f0830e5b4aa20e61ac65cc5b131",
+      "bytes": 90326,
+      "before_sha256": "413e9acc71e3f71d8a2484a1124ed166c27b76ca2a2cdd650899baec2514c137",
+      "new_cases": [
+        "GlmMtpStateConsumer.CpuDraftExtendLastAcceptedSeedSkipsDecodeStepZero",
+        "GlmMtpStateConsumer.CudaDraftExtendLastAcceptedSeedSkipsDecodeStepZero"
+      ],
+      "per_new_case": {
+        "actual_submissions": 24,
+        "draft_extend_submissions": 11,
+        "skip_submissions": 8,
+        "catchup_submissions": 4,
+        "policy_submissions": 1,
+        "handoff_submissions": 0
+      },
+      "old_cases": "Six existing CPU/CUDA cases retained; default catchup position2055 and default decode workload remain unchanged",
+      "changed": "Actual draft-extend A/B prefix1/2 selection carries same original actual hidden/I32/history leases; zero-submission handoff checks current accepted head epoch/position/frontier/lag and resource identities; step0 skips entire indexer; accepted-only journal catchup generalized to finite selected position; actual new epoch producer precedes next handoff; independent accepted-prefix base recomputation",
+      "limits": [
+        "generated Flash primary GGUF/F32",
+        "explicit generated per-position target-hidden input boundary, h_t with x_(t+1)",
+        "sequential M1 extend, not batched vendor kernel",
+        "not target43 composition,full original model,official FP8cache,natural acceptance,quality or throughput"
+      ],
+      "owned_only": [
+        "tests/compute_models/glm_mtp_state_consumer_test.cc",
+        ".scratch/glm-mtp-seed-cache-20261022/seed-source"
+      ]
+    },
+    "seed-source/freeze3.json": {
+      "status": "frozen minimal source fix; no child compile/native run",
+      "source": "tests/compute_models/glm_mtp_state_consumer_test.cc",
+      "sha256": "c44d64753cc943f15bf08f72cab63bb0d9e49baa97b44d9c90c1f391bda2f196",
+      "bytes": 90578,
+      "before_sha256": "508c234f5aaae1fb22495694de11314cdcb64f0830e5b4aa20e61ac65cc5b131",
+      "evidence": ".scratch/glm-mtp-seed-cache-20261022/checks1/results.xml",
+      "diagnosis": "Both new CPU/CUDA cases completed24 actual submissions. Their six assertions each are solely native_handle/offset/generation identity checks from same_storage(caught.selection,seed.selection), once per prefix1/2 branch. The existing skip recipe intentionally Copy-publishes the same whole I32 array; catchup correctly preserves the accepted step0 Copy lease. Numeric,epoch and full-state independent-recomputation assertions did not fail in these two cases.",
+      "fix": "Require actual caught.selection storage to equal accepted step0.selection storage, and strictly require its ID bytes to equal the earlier seed IDs. Retain all numeric gates and runtime math.",
+      "patch": ".scratch/glm-mtp-seed-cache-20261022/seed-source/repair3/change.diff",
+      "actual_submissions_per_new_case": 24,
+      "submission_change": 0,
+      "new_cases": [
+        "GlmMtpStateConsumer.CpuDraftExtendLastAcceptedSeedSkipsDecodeStepZero",
+        "GlmMtpStateConsumer.CudaDraftExtendLastAcceptedSeedSkipsDecodeStepZero"
+      ],
+      "unmodified": "Other old6 cases, providers, CMake, docs, DSpark and official cache sources",
+      "after_native_status": "not run by child; root owns serial native verification"
+    }
+  },
+  "initial_native_failure": {
+    "process": {
+      "command": [
+        "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mtp-seed-cache-20261022\\tests-link3\\mtp-seed-cache-checks.exe",
+        "--gtest_filter=*",
+        "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\glm-mtp-seed-cache-20261022\\checks1\\results.xml"
+      ],
+      "cwd": "C:\\public\\project-hyle\\hyle",
+      "started": 1792684965.3986301,
+      "timeout_seconds": 600,
+      "throughput_evidence": false,
+      "memory_evidence": false,
+      "trace": false,
+      "profiler": false,
+      "pid": 26600,
+      "exit": 1,
+      "timed_out": false,
+      "finished": 1792685042.3823862,
+      "process_wall_seconds": 76.98335659999975
+    },
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mtp-seed-cache-20261022\\tests-link3\\mtp-seed-cache-checks.exe",
+      "bytes": 141027328,
+      "sha256": "fca35a60aa2f73995e723c5b57a365b9708e1779aa0ebde9fa4e6795b55311ef"
+    },
+    "throughput_evidence": false,
+    "physical_memory_evidence": false,
+    "whole_original_model": false,
+    "tests": 16,
+    "failures": 6,
+    "errors": 0,
+    "disabled": 0,
+    "skips": 0,
+    "cases": [
+      {
+        "attributes": {
+          "name": "CudaWholeNextNPrefixPublishesAndContinuesWithoutRejectedTail",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_mtp_state_consumer_test.cc",
+          "line": "1288",
+          "status": "run",
+          "result": "completed",
+          "time": "3.992",
+          "timestamp": "2026-10-23T00:02:45.722",
+          "classname": "GlmMtpStateConsumer"
+        },
+        "properties": {
+          "actual_submissions": "7",
+          "backend": "ordinary CUDA Graph",
+          "component_schema": "16 native resources plus explicit iteration policy; complete NextN/indexer state and bounded nx journal/lag count",
+          "scope": "generated primary GGUF/F32 single complete NextN component; fresh K4 closepool->actual I32 sparse MLA/MoE; same-epoch entire-indexer skip; no original checkpoint/full target/KDA/mHC/official FP8cache/natural acceptance",
+          "prefixes": "0 retained;1 corrected-pending atomic publish and independent base recomputation;2 independent branch; rejected tail/cancel/stale publish/old readonly ownership",
+          "uncovered": "this case is single-epoch; cross-epoch catchup is covered by the separate AcceptedJournal cases; target KDA/conv/mHC, original encodings and vocabulary/natural acceptance remain separate"
+        }
+      },
+      {
+        "attributes": {
+          "name": "CudaAcceptedJournalCatchesUpAndReseedsNextIteration",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_mtp_state_consumer_test.cc",
+          "line": "1294",
+          "status": "run",
+          "result": "completed",
+          "time": "7.509",
+          "timestamp": "2026-10-23T00:02:49.714",
+          "classname": "GlmMtpStateConsumer"
+        },
+        "properties": {
+          "actual_submissions": "14",
+          "fresh_submissions": "8",
+          "skip_submissions": "3",
+          "catchup_submissions": "2",
+          "policy_submissions": "1",
+          "backend": "ordinary CUDA Graph",
+          "journal": "actual nx[2,4096] with I32 valid lag count; selected StateVersion determines accepted input; no eager indexer during skip",
+          "journey": "base2054 tail2; accept1 rejects B and fresh2055 closes pool; accept2 catches actual accepted B2055 then fresh2056 appends tail1; independent actual nx direct-input reference",
+          "scope": "generated selected GGUF/F32 NextN cross-epoch accepted-feature catchup and fresh seed; no target KDA/conv/mHC, original FP8cache or natural acceptance claim"
+        }
+      },
+      {
+        "attributes": {
+          "name": "CudaTargetPrefixAndNextNPublishAndReseedTogether",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_mtp_state_consumer_test.cc",
+          "line": "1300",
+          "status": "run",
+          "result": "completed",
+          "time": "9.084",
+          "timestamp": "2026-10-23T00:02:57.224",
+          "classname": "GlmMtpStateConsumer"
+        },
+        "properties": {
+          "actual_submissions": "26",
+          "target_submissions": "12",
+          "state_budget_bytes": "536870912",
+          "peak_state_backing_bytes": "127777004",
+          "target_output_generations": "10",
+          "backend": "ordinary CUDA Graph",
+          "component_schema": "16 NextN/indexer resources plus epoch metadata and4 target resources: raw QKV history,KDA matrix,finalnorm tap,I32 cursor; one StateStore/Head/Draft",
+          "journey": "actual target warmup->A/B verify pending->accept1/2->accepted journal catchup->epoch8 real target-tap reseed; independent base recomputation/direct nx catchup; rejected tail,stale CAS,cancellation,old readonly leases",
+          "scope": "generated primary GGUF/F32 layer44 KDA/conv/two mHC branches/sparse FFN/finalnorm target tap composed with complete NextN; upper-layer4H remains generated; no full45-layer original model,natural acceptance,official FP8cache or throughput claim"
+        }
+      },
+      {
+        "attributes": {
+          "name": "CudaDraftExtendLastAcceptedSeedSkipsDecodeStepZero",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_mtp_state_consumer_test.cc",
+          "line": "1306",
+          "status": "run",
+          "result": "completed",
+          "time": "15.007",
+          "timestamp": "2026-10-23T00:03:06.308",
+          "classname": "GlmMtpStateConsumer"
+        },
+        "properties": {
+          "actual_submissions": "24",
+          "draft_extend_submissions": "11",
+          "skip_submissions": "8",
+          "catchup_submissions": "4",
+          "policy_submissions": "1",
+          "backend": "ordinary CUDA Graph",
+          "journey": "draft-extend A2054/B2055->last accepted row1/2 actual hidden+full2051IDs->step0 immediately skips entire indexer->accepted nx catchup->actual epoch8 extend->step0 skip; independent accepted-only base execution/direct nx reference",
+          "scope": "generated selected Flash primary GGUF/F32 sequential M1 draft-extend seed protocol; generated per-position target-hidden boundary; no target43 MLA/indexer composition,batched vendor extend kernel,full target,original weights,official FP8cache,natural acceptance or throughput claim"
+        }
+      },
+      {
+        "attributes": {
+          "name": "CpuWholeNextNPrefixPublishesAndContinuesWithoutRejectedTail",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_mtp_state_consumer_test.cc",
+          "line": "1315",
+          "status": "run",
+          "result": "completed",
+          "time": "3.955",
+          "timestamp": "2026-10-23T00:03:21.316",
+          "classname": "GlmMtpStateConsumer"
+        },
+        "properties": {
+          "actual_submissions": "7",
+          "backend": "ordinary CPU Graph",
+          "component_schema": "16 native resources plus explicit iteration policy; complete NextN/indexer state and bounded nx journal/lag count",
+          "scope": "generated primary GGUF/F32 single complete NextN component; fresh K4 closepool->actual I32 sparse MLA/MoE; same-epoch entire-indexer skip; no original checkpoint/full target/KDA/mHC/official FP8cache/natural acceptance",
+          "prefixes": "0 retained;1 corrected-pending atomic publish and independent base recomputation;2 independent branch; rejected tail/cancel/stale publish/old readonly ownership",
+          "uncovered": "this case is single-epoch; cross-epoch catchup is covered by the separate AcceptedJournal cases; target KDA/conv/mHC, original encodings and vocabulary/natural acceptance remain separate"
+        }
+      },
+      {
+        "attributes": {
+          "name": "CpuAcceptedJournalCatchesUpAndReseedsNextIteration",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_mtp_state_consumer_test.cc",
+          "line": "1320",
+          "status": "run",
+          "result": "completed",
+          "time": "7.906",
+          "timestamp": "2026-10-23T00:03:25.271",
+          "classname": "GlmMtpStateConsumer"
+        },
+        "properties": {
+          "actual_submissions": "14",
+          "fresh_submissions": "8",
+          "skip_submissions": "3",
+          "catchup_submissions": "2",
+          "policy_submissions": "1",
+          "backend": "ordinary CPU Graph",
+          "journal": "actual nx[2,4096] with I32 valid lag count; selected StateVersion determines accepted input; no eager indexer during skip",
+          "journey": "base2054 tail2; accept1 rejects B and fresh2055 closes pool; accept2 catches actual accepted B2055 then fresh2056 appends tail1; independent actual nx direct-input reference",
+          "scope": "generated selected GGUF/F32 NextN cross-epoch accepted-feature catchup and fresh seed; no target KDA/conv/mHC, original FP8cache or natural acceptance claim"
+        }
+      },
+      {
+        "attributes": {
+          "name": "CpuTargetPrefixAndNextNPublishAndReseedTogether",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_mtp_state_consumer_test.cc",
+          "line": "1325",
+          "status": "run",
+          "result": "completed",
+          "time": "9.821",
+          "timestamp": "2026-10-23T00:03:33.178",
+          "classname": "GlmMtpStateConsumer"
+        },
+        "properties": {
+          "actual_submissions": "26",
+          "target_submissions": "12",
+          "state_budget_bytes": "536870912",
+          "peak_state_backing_bytes": "127777004",
+          "target_output_generations": "10",
+          "backend": "ordinary CPU Graph",
+          "component_schema": "16 NextN/indexer resources plus epoch metadata and4 target resources: raw QKV history,KDA matrix,finalnorm tap,I32 cursor; one StateStore/Head/Draft",
+          "journey": "actual target warmup->A/B verify pending->accept1/2->accepted journal catchup->epoch8 real target-tap reseed; independent base recomputation/direct nx catchup; rejected tail,stale CAS,cancellation,old readonly leases",
+          "scope": "generated primary GGUF/F32 layer44 KDA/conv/two mHC branches/sparse FFN/finalnorm target tap composed with complete NextN; upper-layer4H remains generated; no full45-layer original model,natural acceptance,official FP8cache or throughput claim"
+        }
+      },
+      {
+        "attributes": {
+          "name": "CpuDraftExtendLastAcceptedSeedSkipsDecodeStepZero",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_mtp_state_consumer_test.cc",
+          "line": "1330",
+          "status": "run",
+          "result": "completed",
+          "time": "15.217",
+          "timestamp": "2026-10-23T00:03:42.999",
+          "classname": "GlmMtpStateConsumer"
+        },
+        "properties": {
+          "actual_submissions": "24",
+          "draft_extend_submissions": "11",
+          "skip_submissions": "8",
+          "catchup_submissions": "4",
+          "policy_submissions": "1",
+          "backend": "ordinary CPU Graph",
+          "journey": "draft-extend A2054/B2055->last accepted row1/2 actual hidden+full2051IDs->step0 immediately skips entire indexer->accepted nx catchup->actual epoch8 extend->step0 skip; independent accepted-only base execution/direct nx reference",
+          "scope": "generated selected Flash primary GGUF/F32 sequential M1 draft-extend seed protocol; generated per-position target-hidden boundary; no target43 MLA/indexer composition,batched vendor extend kernel,full target,original weights,official FP8cache,natural acceptance or throughput claim"
+        }
+      },
+      {
+        "attributes": {
+          "name": "CudaEncodedLeaseSelectsAndPublishesMlaPrefix",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_official_index_cache_test.cc",
+          "line": "299",
+          "status": "run",
+          "result": "completed",
+          "time": "0.977",
+          "timestamp": "2026-10-23T00:03:58.217",
+          "classname": "GlmOfficialIndexCache"
+        },
+        "properties": {
+          "actual_submissions": "12",
+          "persistent_index_bytes": "67848",
+          "f32_index_comparison_bytes": "263168",
+          "peak_state_backing_bytes": "1995520",
+          "reader": "fixed SGLang06992; K4 pooledF32->BF16->normalizedHadamard128->BF16; absmax-floor1e-4 then /448; unrounded F32 scale; E4 RNE; matching query and TileLang scorer logical math",
+          "journey": "actual encoded lease->scorer->TopK512 I32->2048-token MLA; one StateHead code/scale/cursor/IDs/MLA; acceptA,rejectB,continueC,independent base recomputation,stale CAS,cancel,old readonly versions",
+          "scope": "generated raw K4/query/headweights/latent boundary; complete closed-pool chunks; logical E4+F32scale storage,not vendor pagefooter ABI; partial raw tails covered separately; no original/full model,natural token acceptance,or throughput claim"
+        }
+      },
+      {
+        "attributes": {
+          "name": "CpuEncodedLeaseSelectsAndPublishesMlaPrefix",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_official_index_cache_test.cc",
+          "line": "308",
+          "status": "run",
+          "result": "completed",
+          "time": "1.102",
+          "timestamp": "2026-10-23T00:03:59.195",
+          "classname": "GlmOfficialIndexCache"
+        },
+        "properties": {
+          "actual_submissions": "12",
+          "persistent_index_bytes": "67848",
+          "f32_index_comparison_bytes": "263168",
+          "peak_state_backing_bytes": "1995520",
+          "reader": "fixed SGLang06992; K4 pooledF32->BF16->normalizedHadamard128->BF16; absmax-floor1e-4 then /448; unrounded F32 scale; E4 RNE; matching query and TileLang scorer logical math",
+          "journey": "actual encoded lease->scorer->TopK512 I32->2048-token MLA; one StateHead code/scale/cursor/IDs/MLA; acceptA,rejectB,continueC,independent base recomputation,stale CAS,cancel,old readonly versions",
+          "scope": "generated raw K4/query/headweights/latent boundary; complete closed-pool chunks; logical E4+F32scale storage,not vendor pagefooter ABI; partial raw tails covered separately; no original/full model,natural token acceptance,or throughput claim"
+        }
+      },
+      {
+        "attributes": {
+          "name": "CpuThreeOriginalStagesPublishPhysicalAcceptedHistoryAndContinue",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_main_history_test.cc",
+          "line": "485",
+          "status": "run",
+          "result": "completed",
+          "time": "0.201",
+          "timestamp": "2026-10-23T00:04:00.539",
+          "classname": "DSparkMainHistory"
+        },
+        "properties": {
+          "actual_submissions": "16",
+          "original_role_count": "8",
+          "original_role_bytes": "60184576",
+          "physical_ring_row_bytes": "584",
+          "scope": "original Flash0731 Q8 fc/norm + three distinct stage wkv/norm; generated HC -> original main projection lease -> F32 norm -> BF16 -> last64 RoPE -> BF16 -> group64 QDQ physical128x584 three-rings -> actual gather-decode/attention; artificial prefix0/1/2 and fresh own-head/old-branch continuation; not original target, full official BF16 arithmetic or full DSpark MTP"
+        }
+      },
+      {
+        "attributes": {
+          "name": "CudaThreeOriginalStagesPublishPhysicalAcceptedHistoryAndContinue",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_main_history_test.cc",
+          "line": "491",
+          "status": "run",
+          "result": "completed",
+          "time": "0.012",
+          "timestamp": "2026-10-23T00:04:00.740",
+          "classname": "DSparkMainHistory"
+        },
+        "properties": {}
+      },
+      {
+        "attributes": {
+          "name": "CpuActualCaptureLeasesReachSameStageMainKv",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_target_binding_test.cc",
+          "line": "352",
+          "status": "run",
+          "result": "completed",
+          "time": "0.258",
+          "timestamp": "2026-10-23T00:04:00.754",
+          "classname": "DSparkTargetBinding"
+        },
+        "properties": {
+          "actual_submissions": "9",
+          "scope": "formal Flash0731 selected Q8 role types, generated parameters; actual raw HC producer leases -> mean/concat/main projection/norm -> same stage0 wkv/norm 512-wide pre-RoPE; no trained payload/physical ring/full-model claim",
+          "backend": "ordinary CPU Graph"
+        }
+      },
+      {
+        "attributes": {
+          "name": "CudaActualCaptureLeasesReachSameStageMainKv",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_target_binding_test.cc",
+          "line": "364",
+          "status": "run",
+          "result": "completed",
+          "time": "0.258",
+          "timestamp": "2026-10-23T00:04:01.013",
+          "classname": "DSparkTargetBinding"
+        },
+        "properties": {
+          "actual_submissions": "9",
+          "scope": "formal Flash0731 selected Q8 role types, generated parameters; actual raw HC producer leases -> mean/concat/main projection/norm -> same stage0 wkv/norm 512-wide pre-RoPE; no trained payload/physical ring/full-model claim",
+          "backend": "ordinary CUDA Graph"
+        }
+      },
+      {
+        "attributes": {
+          "name": "CpuOriginalCaptureProjectionFeedsSameStageMainKv",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_target_binding_test.cc",
+          "line": "357",
+          "status": "run",
+          "result": "completed",
+          "time": "0.319",
+          "timestamp": "2026-10-23T00:04:01.480",
+          "classname": "DSparkOriginalTargetBinding"
+        },
+        "properties": {
+          "actual_submissions": "9",
+          "scope": "formal Flash0731 four original Q8/F32 roles; generated raw HC producer leases -> original main projection/norm -> original stage0 wkv/norm 512-wide pre-RoPE; no original target captures/physical ring/full-model claim",
+          "original_role_count": "4",
+          "original_role_bytes": "55724032",
+          "fc_sha256": "4516df35cd05ecd36b93e73ac2ae74c524ec6edda13b634a7895b7eabe0c8c04",
+          "main_norm_sha256": "0f99d64b4fa46264c9bd2efdffcb66d3ec0cdd0ca61109f929ed958bcb843f0b",
+          "wkv_sha256": "a52e49dc69f4eff1c8287b3887123dd7a583bdaee7d42efe55310f035bafd35f",
+          "kv_norm_sha256": "edbbd17729cfb3c0852c8b6cdb8c1044eb9f501d8864c7ef4444c568e56fc966",
+          "backend": "ordinary CPU Graph"
+        }
+      },
+      {
+        "attributes": {
+          "name": "CudaOriginalCaptureProjectionFeedsSameStageMainKv",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_target_binding_test.cc",
+          "line": "370",
+          "status": "run",
+          "result": "completed",
+          "time": "0.318",
+          "timestamp": "2026-10-23T00:04:01.800",
+          "classname": "DSparkOriginalTargetBinding"
+        },
+        "properties": {
+          "actual_submissions": "9",
+          "scope": "formal Flash0731 four original Q8/F32 roles; generated raw HC producer leases -> original main projection/norm -> original stage0 wkv/norm 512-wide pre-RoPE; no original target captures/physical ring/full-model claim",
+          "original_role_count": "4",
+          "original_role_bytes": "55724032",
+          "fc_sha256": "4516df35cd05ecd36b93e73ac2ae74c524ec6edda13b634a7895b7eabe0c8c04",
+          "main_norm_sha256": "0f99d64b4fa46264c9bd2efdffcb66d3ec0cdd0ca61109f929ed958bcb843f0b",
+          "wkv_sha256": "a52e49dc69f4eff1c8287b3887123dd7a583bdaee7d42efe55310f035bafd35f",
+          "kv_norm_sha256": "edbbd17729cfb3c0852c8b6cdb8c1044eb9f501d8864c7ef4444c568e56fc966",
+          "backend": "ordinary CUDA Graph"
+        }
+      }
+    ]
+  },
+  "corrections": {
+    "seed": "The skip Graph intentionally copies selection into its own result lease; catchup must retain that actual accepted step0 lease, while seed ID bytes remain equal. Corrected test ownership assertion, not computation.",
+    "hadamard": "Public F32-accumulation Hadamard does not specify the native summation order. Independently validate raw typed input, mathematical F64 transform with a predeclared F32 dot error bound, exact BF16 conversion, then exact independent E4/scale quantization from that validated input. Signed zero remains checked; no zeroing or product gate change.",
+    "history_precision": "Q8 projection approximation is checked at its actual continuous postnorm boundary with the original gate. BF16, explicit RoPE, cache-entry rounding, independent row encoding and ring state are then checked at their actual boundaries; do not apply a continuous F32 tolerance after a discontinuous BF16/E4 roundtrip or couple the consumer oracle to every backend activation codec.",
+    "history_CUDA": "Real product wiring gap: RoPE previously rejected a valid strided last-axis suffix. Existing representability and size checks remain; nonnegative strides are accepted and the provider materializes only noncontiguous data. Canonicalize singleton-axis metadata by a conditional same-shape view before the strict explicit-frequency carrier, without copying a single row or editing shared metadata. Source/map audit excluded an old dimensions ABI mismatch. No platform copy policy in the model builder.",
+    "error_context": "Native cold rejection now identifies operation, type and value; RoPE adds relevant shape/layout metadata rather than only a generic decline.",
+    "consumer_compile": "Corrected new test TensorShape construction, rope_frequencies second argument and explicit uint16 narrowing; initial compile failures retained."
+  },
+  "validation": {
+    "platform": "Windows CPU and CUDA only in this round",
+    "scope": "Changed host consumer TUs plus two CUDA-provider host TUs compiled; other provider/native SDK objects and corrected CPU worker reused.",
+    "host_compile_attempts": 14,
+    "full_SDK_builds": 0,
+    "native_CPU_builds": 0,
+    "NVCC_builds": 0,
+    "shader_builds": 0,
+    "throughput_evidence": false,
+    "physical_memory_evidence": false,
+    "performance_section": {
+      "tests": 16,
+      "actual_Graph_submissions": 234,
+      "performance_section_unchanged": true,
+      "performance_utf8_sha256": "80b8672315911a74039a14cd137659bc67289273dc9c3707cd267b2d06de2551",
+      "performance_latest_window": "AV; no new throughput or physical-memory measurement",
+      "remaining": "Actual full-state composition and applicable role/codec supply remain, then final performance; images afterward."
+    }
+  },
+  "remaining": [
+    "Add actual dynamic E4 code+F32-scale output using existing power-of-two math: pinned default indexer construction selects scale_fmt=ue8m0, not the optional unrounded branch tested here. Then compose default cache and actual target43 MLA/indexer ->44 into complete NextN accepted state; applicable original GLM roles/codecs and geometry.",
+    "Compose DSpark actual main histories with complete draft stage state, qualified actual target taps/shared head and remaining applicable role suppliers.",
+    "Q27/Q24 actual role/codec and complete state combination, confirmed-MTP selected quantized artifacts.",
+    "Necessary related regressions and final ordinary/MTP prefill/decode/combined/physical-memory comparison; image chain afterward."
+  ],
+  "cleanup": {
+    "Removed": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mtp-catchup-20261022\\tests-link5\\glm-catchup-checks.exe",
+        "bytes": 140781568,
+        "sha256": "8cacc1c352c4646ca8b6e7e27dfe7f4cf6554fd7eebac63e12b431870f2b2bcb",
+        "file_id": 21110623257559565,
+        "device": 49715911566842052,
+        "links": 1
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mtp-catchup-20261022\\tests-link5\\glm-catchup-checks.map",
+        "bytes": 59065999,
+        "sha256": "3b21871b0f915388e990edd27ad3edf80cd1cd3a4738fe21d05238c77a82e786",
+        "file_id": 18295873490453009,
+        "device": 49715911566842052,
+        "links": 1
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mtp-seed-cache-20261022\\tests-link3\\mtp-seed-cache-checks.exe",
+        "bytes": 141027328,
+        "sha256": "fca35a60aa2f73995e723c5b57a365b9708e1779aa0ebde9fa4e6795b55311ef",
+        "file_id": 20547673301377912,
+        "device": 49715911566842052,
+        "links": 1
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mtp-seed-cache-20261022\\tests-link3\\mtp-seed-cache-checks.map",
+        "bytes": 59575695,
+        "sha256": "32a1d6bfadabd000e1dcbdf8fbfe8d69bf6dd369d16d6957d853cf26a41adfc9",
+        "file_id": 12103424000063361,
+        "device": 49715911566842052,
+        "links": 1
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mtp-seed-cache-20261022\\tests-link4\\mtp-seed-cache-checks.exe",
+        "bytes": 141038592,
+        "sha256": "6f813b3a4cab4d97e310a4b97e627812517f7a5349eb4f7d431efa0252ef5524",
+        "file_id": 4222124655732994,
+        "device": 49715911566842052,
+        "links": 1
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mtp-seed-cache-20261022\\tests-link4\\mtp-seed-cache-checks.map",
+        "bytes": 59584887,
+        "sha256": "3515904a3121fac411cab69816fbf7a1206213c002d1362a0d41e10f6190af25",
+        "file_id": 6473924469418246,
+        "device": 49715911566842052,
+        "links": 1
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mtp-seed-cache-20261022\\tests-link5\\mtp-seed-cache-checks.exe",
+        "bytes": 141038592,
+        "sha256": "ea807d0fc9eb6b8d605ad0554531f5d89f65aeba901dddbcfaaacb55db8bd107",
+        "file_id": 3096224748890843,
+        "device": 49715911566842052,
+        "links": 1
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mtp-seed-cache-20261022\\tests-link5\\mtp-seed-cache-checks.map",
+        "bytes": 59584638,
+        "sha256": "321b78a7a8a6e07d476c76ae8f40660ec95f9bb0b202c4e90270d149e48f4120",
+        "file_id": 3096224748890847,
+        "device": 49715911566842052,
+        "links": 1
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mtp-seed-cache-20261022\\tests-link6\\mtp-seed-cache-checks.exe",
+        "bytes": 141039104,
+        "sha256": "8e346ae4ad2e2926e86aada5eaa9893ec8d8f7dbfb87d22eae43c41296f35443",
+        "file_id": 1970324840523941,
+        "device": 49715911566842052,
+        "links": 1
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mtp-seed-cache-20261022\\tests-link6\\mtp-seed-cache-checks.map",
+        "bytes": 59584756,
+        "sha256": "4477e1d88c12e122e09991536b569a2f190a5a0ffd239e83bb3ccf4eeba85d44",
+        "file_id": 7036874421316758,
+        "device": 49715911566842052,
+        "links": 1
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mtp-seed-cache-20261022\\tests-link7\\mtp-seed-cache-checks.exe",
+        "bytes": 141039104,
+        "sha256": "0ecf8526cda9155f897627bdf3aaadc404414aba5452636d0d5bdbc8e73e56fb",
+        "file_id": 4222124655289530,
+        "device": 49715911566842052,
+        "links": 1
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mtp-seed-cache-20261022\\tests-link7\\mtp-seed-cache-checks.map",
+        "bytes": 59584756,
+        "sha256": "304f4beba23aac4569628b2a6f3ec5a3492962d9b356c7b46135b4d8636a9f0c",
+        "file_id": 2533274795025602,
+        "device": 49715911566842052,
+        "links": 1
+      }
+    ],
+    "RemovedPathBytes": 1202945019,
+    "KnownReclaimableUniqueBytes": 1202945019,
+    "ProtectedInputsRetained": [
+      true,
+      true,
+      true
+    ],
+    "Retained": "Final executable/map, all source/object/SDK/link inputs and corrected CPU worker DLLs, original roles, AV performance image."
+  },
+  "original_payloads_archived": false,
+  "payload_retention": "All exact original role bodies retained once locally; archived range/hash/command receipts and small F32 norms only.",
+  "sources_commands_and_results": {
+    "path": "docs/evidence/correctness/mtp-seed-cache-2026-10-22.logs.zip",
+    "bytes": 1248246,
+    "sha256": "08212ac12a3e6daa820084cba7cb22f5665e67d46c004ab87f6853ef9aec586b"
+  }
+}

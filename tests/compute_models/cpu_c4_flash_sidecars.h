@@ -109,10 +109,13 @@ inline std::vector<float> grouped_reference(const Grouped &w,std::span<const flo
 #if defined(HYLE_C4_GROUPED_REFERENCE)
   return HYLE_C4_GROUPED_REFERENCE(w.weight.description,w.weight.storage,w.n,w.k,input,ids,t);
 #else
+  // Plain BF16 weights retain the original F32 activation contract. Their
+  // logical sparse coefficients are already decoded when the fixture is made.
+  if(w.weight.description.is_plain())
+    return moe::project(input,w.weight,ids,w.n,w.k);
   ggml_cpu_init();
   std::vector<float> result(ids.size()*w.n);
-  const bool bf16=w.weight.description.is_plain();
-  const auto native=bf16?GGML_TYPE_BF16:d5_gguf_test::native_type(c::gguf_quantized_type(w.weight.description.storage_format()).value());
+  const auto native=d5_gguf_test::native_type(c::gguf_quantized_type(w.weight.description.storage_format()).value());
   const auto *traits=ggml_get_type_traits_cpu(native);
   const auto bytes=std::size_t(ggml_row_size(native,w.k));
   const auto encoded_bytes=std::size_t(ggml_row_size(traits->vec_dot_type,w.k));

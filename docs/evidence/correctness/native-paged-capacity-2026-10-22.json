@@ -1,0 +1,1181 @@
+{
+  "schema": 1,
+  "date": "2026-10-22",
+  "scope": "Apple/Vulkan native ordinary Graph capacity+explicit metadata; not full Qwen/MTP acceptance",
+  "result": "PASS_LIMITED_NATIVE_SCOPE",
+  "implementation": [
+    "Page classification uses immutable capacity storage and exact selected callbacks; capacity form never fabricates an owned-operation recipe.",
+    "Actual NodeLayout schema owns each original controller; cold schema replacement succeeds before swapping; old permissions/results gate reuse.",
+    "Explicit metadata consumes the original common upload and a retained page_indices sublease. No private page-table bank or copy program is allocated.",
+    "Physical Q/output rows remain fixed while active queries may be fewer. Only active math runs; the inactive output suffix is bitwise positive zero.",
+    "Vulkan capacity endpoint is stable from Invocation creation. Cold RuntimeQueueOnly compilation selects the existing native Cast and rejects asynchronous carriers; actual invocation capabilities are checked again.",
+    "Ordinary unconstrained compilation and owned Direct page defaults retain their original delegation choices. No new public knob, Plan field, executor or queue bridge."
+  ],
+  "native": {
+    "shape_domain": {
+      "query_type": "BF16",
+      "cache": "BF16",
+      "output": "BF16",
+      "page_rows": 16,
+      "depth": 256,
+      "query_heads": 2,
+      "kv_heads": 1,
+      "children": [
+        {
+          "physical": 1,
+          "active": 1
+        },
+        {
+          "physical": 2,
+          "active": 2
+        },
+        {
+          "physical": 2,
+          "active": 1
+        }
+      ]
+    },
+    "checks": [
+      "one logical Graph/one finite compile",
+      "native Cast -> dual PagedAppend -> causal compute::PagedAttention(Q,K,V,metadata)",
+      "independent 2.5/3.0 visible-row means",
+      "inactive NaN Q never becomes a live query; zero output suffix",
+      "COW and retained old entire page/NaN tail unchanged",
+      "dual-take success latch, guards, untaken reset and stale submit rejection"
+    ],
+    "apple": {
+      "hardware": {
+        "model": "Mac16,12",
+        "memory_bytes": "17179869184",
+        "cpu": "Apple M4"
+      },
+      "image": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/native-paged-capacity-20261022/native-append",
+        "bytes": 11845200,
+        "sha256": "e4333268d99f56f6c3b0a8c6c4046824e59d43040e419470f77e539e95aa2b59"
+      },
+      "cases": 3,
+      "run": {
+        "path": ".scratch/native-paged-capacity-20261022/apple/mac-native-run1.json",
+        "bytes": 807,
+        "sha256": "2145579d1f953a6d0203497f9601b446798f4403e340dbe4ca2f33877e8b0ca5"
+      }
+    },
+    "vulkan": {
+      "hardware": "Windows RTX 4070, driver 617.14, 12282 MiB",
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\native-paged-capacity-20261022\\vulkan-link2\\native-paged-capacity.exe",
+        "bytes": 68307968,
+        "sha256": "70ccf53ede2c171fadf1746f9b252a37560f7c3bba16badc49c683163223ba70"
+      },
+      "cases": 3,
+      "run": {
+        "path": ".scratch/native-paged-capacity-20261022/vulkan-run2/run.result.json",
+        "bytes": 329,
+        "sha256": "07a575dc851e7199664d86e2049d4a34c60083a30518d825c394defe6531c7b4"
+      }
+    }
+  },
+  "conversion": {
+    "tests": 2,
+    "ieee_boundaries": 19,
+    "input": "original buffer offset 4 bytes, stride 8 bytes, odd 19 elements",
+    "verified": [
+      "RNE positive/negative even/odd ties",
+      "signed zero/subnormal/overflow/infinity",
+      "quiet and signaling NaN payload/quieting",
+      "actual submission/readback with no async or IREE",
+      "original unconstrained dense Cast still creates its IREE carrier"
+    ],
+    "run": {
+      "path": ".scratch/native-paged-capacity-20261022/ordered-cast-run1/run.result.json",
+      "bytes": 369,
+      "sha256": "81814f2206106cfa0c8b674df7ddbbff225b3e8d082051db1e6173fb5c3abe1b"
+    }
+  },
+  "build": {
+    "windows_CXX": 11,
+    "apple_CXX": 7,
+    "windows_receipts": [
+      {
+        "path": ".scratch/native-paged-capacity-20261022/compile1/batch/compile.result.json",
+        "bytes": 2207,
+        "sha256": "96c9fc794f8adf14964ade64bb5c209e3a895589a6236a6a8f81b58dda55afe3"
+      },
+      {
+        "path": ".scratch/native-paged-capacity-20261022/compile1/native-batch/compile.result.json",
+        "bytes": 2492,
+        "sha256": "944c831fe8a363ea78e2c03a270f573d78bb5bf590987f18215e33593eed93a1"
+      },
+      {
+        "path": ".scratch/native-paged-capacity-20261022/compile1/ordered-cast/compile.result.json",
+        "bytes": 3822,
+        "sha256": "18f6bc75f59c591ac572421d6d7f83321e1072f47f69845fe77ce4aa3f9bbd27"
+      },
+      {
+        "path": ".scratch/native-paged-capacity-20261022/compile1/vk-batch/compile.result.json",
+        "bytes": 2870,
+        "sha256": "d71c4262aa659ac50513ab462a983610754ba50a8c58e6d330b1b67feb4a2a1b"
+      },
+      {
+        "path": ".scratch/native-paged-capacity-20261022/compile1/vk-materialized/compile.result.json",
+        "bytes": 3274,
+        "sha256": "0ad7617babd0ab3e5a9f370889b5e5ad892d7dda649818758ae19d69506fba8a"
+      },
+      {
+        "path": ".scratch/native-paged-capacity-20261022/compile1/vk-paged/compile.result.json",
+        "bytes": 3220,
+        "sha256": "7293ac70a4bfd07e90618201f00883a5fc2fe4f32b901ba2ffd698af8ee426c0"
+      },
+      {
+        "path": ".scratch/native-paged-capacity-20261022/compile1/vk-ragged/compile.result.json",
+        "bytes": 3225,
+        "sha256": "19a70057bf8680d39009bdf4a53868d5da96c3ca820df75c929e3c27afc87c24"
+      },
+      {
+        "path": ".scratch/native-paged-capacity-20261022/compile1/vk-test/compile.result.json",
+        "bytes": 3796,
+        "sha256": "06b77d3474020b58756c6239e743753b5a6fce38077df9e962289d0dfd41d15c"
+      },
+      {
+        "path": ".scratch/native-paged-capacity-20261022/compile2/vk-batch/compile.result.json",
+        "bytes": 2871,
+        "sha256": "ffec70e3c6a152cb3d62ac01d21fdbb2e079bd8084e07e6ef598b16db91759f0"
+      },
+      {
+        "path": ".scratch/native-paged-capacity-20261022/compile2/vk-paged/compile.result.json",
+        "bytes": 3219,
+        "sha256": "86ab73f6a5be3d4c1f8c96c155f1351d585c4163a8368880c5040be1b6dd8e0a"
+      },
+      {
+        "path": ".scratch/native-paged-capacity-20261022/compile2/vk-program/compile.result.json",
+        "bytes": 3491,
+        "sha256": "e4a13c1afda37938fa167aee9d644334e4d99229036247c31ef7a1bfc973c0ab"
+      }
+    ],
+    "SDK_builds": 0,
+    "NVCC": 0,
+    "shader_builds": 0,
+    "windows_current_link": {
+      "path": ".scratch/native-paged-capacity-20261022/vulkan-link2/link-plan.json",
+      "bytes": 76327,
+      "sha256": "ace9382a7f5adf03862c601675eef0d04336d5dfbce6fcb432fd5c7d6086f0c5"
+    },
+    "apple_current_plan": {
+      "path": ".scratch/native-paged-capacity-20261022/apple/mac-plan.json",
+      "bytes": 66282,
+      "sha256": "8817e43e288200b79d3dc059c1272aa03001dd26cc6b8707435c1e47a7ac7968"
+    },
+    "prior_current_closure": "native-paged-effects-2026-10-22.json"
+  },
+  "troubleshooting": {
+    "first_run": {
+      "path": ".scratch/native-paged-capacity-20261022/vulkan-run1/run.result.json",
+      "bytes": 330,
+      "sha256": "d4cebffeba753030fec9b32560ba5cb5bd6023e00f532b388ee03ec43463d20a"
+    },
+    "first_error": "native paged capacity: Vulkan append reader is not the same original compute Runtime",
+    "causes": [
+      "Graph caches delegated lane endpoints at Invocation creation; explicit capacity had no native program then, causing observed->Runtime identity drift.",
+      "BF16 output Cast actually selected IREE and created async state, so simply changing the endpoint would have been incorrect."
+    ],
+    "resolution": "stable original Runtime identity plus required native-queue cold plan and actual invocation qualification; preserve all original import/write gates"
+  },
+  "limitations": [
+    "No new tokens/s or memory benchmark; latest current-work performance table unchanged.",
+    "Not full Qwen plain/MTP, GDN snapshot composition, all models/quantizations, general speculative sampling or model-quality acceptance.",
+    "CPU/CUDA runtime regression was not rerun in this slice; prior AH CPU checks remain separate.",
+    "No device-loss, late GPU failure, in-flight cancellation or OOM fault injection in this slice.",
+    "Only the listed BF16/page16/D256 finite children and F32->BF16 conversion domain were actually executed."
+  ],
+  "next": {
+    "status": "bounded_read_only_source_review_no_build_or_gpu",
+    "scope": "Same Qwen3.5-2B plain/MTP logical graph on native Apple or Vulkan; at most five concrete integration items.",
+    "main_source": {
+      "path": "tools/qwen35_text/main.cc",
+      "sha256": "f2e1c6002042d8ccf08eaed3d2204fe7c459a2e9a37ae74d13c2ff93e3714131"
+    },
+    "items": [
+      {
+        "id": 1,
+        "owner": "Consumer cold backend/constant ownership assembly",
+        "source": [
+          "tools/qwen35_text/main.cc:908-912",
+          "tools/qwen35_text/main.cc:231-256",
+          "tools/qwen35_text/main.cc:1363",
+          "include/hyle/compute/storage_owner.h:34"
+        ],
+        "fact": "Model constructs only common CUDA Context/device/pinned resource/Queue and calls graph::cuda::compile. Recipe constants freeze through StorageOwner, whose adoption currently accepts common compute::Context, not native Apple/Vulkan Context.",
+        "minimal_change": "Cold assembly owns the actual native Context/resources and ExecutionSource, supplies original StorageDomains/target to graph::batch::compile, and keeps ready constant leases plus their actual resource/Context lifetime. ConstantBinding owner is optional; a Model-private native asset owner can preserve required lifetimes without adding provider-dependent model operations or a new public owner framework.",
+        "classification": "Consumer assembly gap, not an absent model arithmetic operator."
+      },
+      {
+        "id": 2,
+        "owner": "Consumer weight loader boundary",
+        "source": [
+          "tools/qwen35_text/main.cc:704-708",
+          "tools/qwen35_text/main.cc:810-818",
+          "include/hyle/compute/apple_file_stream.h:10-12",
+          "include/hyle/compute/vulkan_file_stream.h:10-12"
+        ],
+        "fact": "Loader signature takes common CUDA Context/Queue and directly creates the CUDA FileResourcePipeline. Native Apple/Vulkan file pipeline factories already exist and take their actual Context without common Queue.",
+        "minimal_change": "Keep one manifest/inventory/range/group loader and retirement checks; select only the cold pipeline factory and actual device/staging resource ownership. Reuse the same original 320/335 BF16/F32 bytes and no new weight copy/checkpoint conversion.",
+        "classification": "Existing facility needs consumer wiring."
+      },
+      {
+        "id": 3,
+        "owner": "Consumer input/initialization/result-readback I/O",
+        "source": [
+          "tools/qwen35_text/main.cc:176-181",
+          "tools/qwen35_text/main.cc:1465-1470",
+          "tools/qwen35_text/main.cc:1817-1818",
+          "tools/qwen35_text/main.cc:1930-1933",
+          "tools/qwen35_text/main.cc:1977-1980",
+          "tools/qwen35_text/main.cc:2028-2038",
+          "tools/qwen35_text/main.cc:2220-2233",
+          "src/compute_route_vulkan/vulkan_memory.cc:69-77"
+        ],
+        "fact": "Tensor writes/zero initialization and ID/trace reads directly use device BufferView operations; submit/preparation always supplies common Queue lane0. Vulkan device storage is not host-mappable and map_host accepts only staging. Apple shared storage has direct mapping, but native source still does not request a common Compute Queue.",
+        "minimal_change": "Use original public native CopyBatch for external input upload, initial state fill and final ID/optional trace download, with actual Completion retirement; use the compiled lane queue requirements. Keep all per-layer state/append/attention computations in the same ordinary Graph and original native Runtime.",
+        "classification": "Consumer boundary I/O gap; no per-layer host pipeline or device shadow state."
+      },
+      {
+        "id": 4,
+        "owner": "Consumer bindings/Graph output ownership integration",
+        "source": [
+          "tools/qwen35_text/main.cc:1506-1512",
+          "tools/qwen35_text/main.cc:1910-1925",
+          "tools/qwen35_text/main.cc:2062-2083",
+          "src/graph_route_apple/native_region.cc:721-724",
+          "src/graph_route_vulkan/native_region.cc:897-903",
+          "src/graph/executable.cc:9047-9051"
+        ],
+        "fact": "Current consumer unconditionally binds caller buffers for ID/hidden/logits and WriteLease destinations for recurrent/conv/carry alternatives. Native Apple outputs are DeferredGenerated/NativeOnly; Vulkan outputs are BoundGenerated or StableGenerated. The existing Graph contract rejects rebinding an invocation-owned/generated output as caller storage.",
+        "minimal_change": "Drive binding/readback from each concrete child Executable output_ownership and actual GraphOutput/storage_lease. Preserve exporting all selected ordinary state/carry results before ANY append take, then 12/14 takes, exact ready/reframe, unbind and one complete head publication. Existing Graph native output export is available; no fake destination or hidden output copy may impersonate its ownership.",
+        "classification": "Real consumer ownership assumption to fix; native output export itself is implemented."
+      },
+      {
+        "id": 5,
+        "owner": "Consumer state resource policy plus native generated-result backing owner where needed",
+        "source": [
+          "tools/qwen35_text/main.cc:1035-1050",
+          "tools/qwen35_text/main.cc:1499",
+          "tools/qwen35_text/session_state.h:85-94",
+          "src/compute_route_apple/apple_memory.mm:483-521",
+          "src/compute_route_vulkan/vulkan_program.cc:884-890",
+          "src/compute_route_vulkan/vulkan_memory.cc:295-324"
+        ],
+        "fact": "Current exact cache budget preallocates 36 state pools and hidden pools for caller-written outputs. Native generated state instead retains original MLX/Vulkan backing; simply retaining these in addition to the old preallocated destination pools misrepresents actual residency. Vulkan fixed native output backing cannot be overwritten while an old Snapshot/ReadLease retains it: its original reuse_gate explicitly rejects that case.",
+        "minimal_change": "Choose a bounded storage policy honoring selected native ownership, charge actual persistent state once, report native-private allocations as unknown where not measurable, and preserve old prefix/snapshot owners. Apple can first use independent readonly MLX output owners; Vulkan needs an explicit supported original backing rebind/rotation or equivalent independently owned result mechanism for recurrent state. Do not remove reuse/retirement gates, copy into a shadow bank, or create per-session executors to evade them.",
+        "classification": "Concrete bounded-owner/backing seam beyond changing includes. Exact native full-Qwen behavior and budgets have not been measured by this review."
+      }
+    ],
+    "already_present_not_missing_operators": [
+      "Four-input capacity+metadata paged reader and original same-Graph native append/write effect have current implementation; parent reports Apple BF16 D256 finite (1,1)/(2,2)/(2,1) actual passes.",
+      "Symbolic logical families use common finite-exact specialization; child native compiles see concrete dimensions.",
+      "F32 score output and GDN multiple snapshots have native implementations; they are integration/numerical acceptance items, not newly absent operators.",
+      "Typed PagedArena/reframe/exclusive suffix permission, writer-only draft append, original Completion and whole-head transaction mechanisms already exist."
+    ],
+    "first_backend": {
+      "choice": "Apple first is feasible with one original logical model graph and native ExecutionSource; current actual capacity fixture lowers risk, but full model is not claimed run.",
+      "minimum_vertical_slice": "Implement only cold asset/source/loader/I/O and output ownership/budget seams; run plain R1 prefill plus continuation, then the same MTP graph roles with a short natural stream and complete target/draft/conv/GDN/carry state checks. Do not force expected acceptance or cross-backend byte identity.",
+      "model_math": "No backend/provider branch inside Recipe/mtp_graph mathematical operations, no alternate executor. Backend choice is cold assembly and external I/O only.",
+      "vulkan_difference": "Device-only I/O and fixed generated output backing retention need explicit treatment; no claim that changing Context alone enables complete native sessions."
+    },
+    "unverified": "No full Apple/Vulkan Qwen family compile, all-model operation coverage, 14-bank numerical transaction, native in-flight cancellation or performance was executed by this agent. A complete cold compile can still reveal additional real unsupported combinations."
+  },
+  "sources": [
+    {
+      "path": "docs/architecture/graph-design.md",
+      "bytes": 17676,
+      "sha256": "595e0a60ffd8348bc2e00c04b0bfad88c40fc01547743085b9cb84e95ecb7d7e"
+    },
+    {
+      "path": "docs/developer/current-work.md",
+      "bytes": 38485,
+      "sha256": "be8fc6748094fd71078369094c471441f607c99178fe664c9ecee5190646828c"
+    },
+    {
+      "path": "docs/user/batch-attention.md",
+      "bytes": 68863,
+      "sha256": "881a4a916b927449d6fc23ef8b4d85d487d869d9cd4b1d3411b4fcd83337305c"
+    },
+    {
+      "path": "include/hyle/compute/apple.h",
+      "bytes": 11664,
+      "sha256": "5baedfd8caa3dd7bd54d9c4619f3c7e7c7e853189a6d8d7c20ab1ebeb2b7dbd5"
+    },
+    {
+      "path": "include/hyle/compute/apple_batch.h",
+      "bytes": 8214,
+      "sha256": "c22b73da2caa1031a99fe5cbcbd81e6c255eec7429cbf542c06b35cd82ad8e98"
+    },
+    {
+      "path": "include/hyle/compute/apple_memory.h",
+      "bytes": 11994,
+      "sha256": "b7a3f9714752cabab1ce2e9eb2a1c3d8473ac0d906498f22189ffa99e91ff0e4"
+    },
+    {
+      "path": "include/hyle/compute/apple_weights.h",
+      "bytes": 4606,
+      "sha256": "0f74446c0496272df3b902a52e0ec3f0897e6131ddc2f0bc1cdd95e81f228d4f"
+    },
+    {
+      "path": "include/hyle/compute/batch_execution.h",
+      "bytes": 10247,
+      "sha256": "4efe41eead34949a75dbb6fbae4ea7c3013b33e413b540d9d5e3b0d5396542c8"
+    },
+    {
+      "path": "include/hyle/compute/batch_layout.h",
+      "bytes": 10506,
+      "sha256": "db6c552379051f9b8132fc8dce775dd0826c9a8d1d0d7fd10eecd1f10b159921"
+    },
+    {
+      "path": "include/hyle/compute/batch_materialize.h",
+      "bytes": 7245,
+      "sha256": "9f57cfe9748faf89faae485b604a4b14d6f222bc3ce475bc40a1a265b405b50b"
+    },
+    {
+      "path": "include/hyle/compute/batch_ops.h",
+      "bytes": 6114,
+      "sha256": "d6dcf9e7c8559280a762d191bc41c4f7b56b0097844d0b31091b4fda361ea077"
+    },
+    {
+      "path": "include/hyle/compute/batch_paged_native.h",
+      "bytes": 4723,
+      "sha256": "b42b17bd38435422f06cd830f0b35f6c7deca256916d9d99bff52b9ec0d9f1ce"
+    },
+    {
+      "path": "include/hyle/compute/batch_transfer.h",
+      "bytes": 11416,
+      "sha256": "7bec296577c0439b0e0b48639ccff6b3bd95d137dba085c608f650dbb69fcd1b"
+    },
+    {
+      "path": "include/hyle/compute/completion.h",
+      "bytes": 1959,
+      "sha256": "98b34b9ee4665e9aedac719504c029a509f304b0a4f566bf6b7f76d88dc2ef34"
+    },
+    {
+      "path": "include/hyle/compute/detail/append_lease.h",
+      "bytes": 1944,
+      "sha256": "67b6e87fb0bfbc179d781174c2dc414f1e7487445925cb4c2a4faea579cb7ec5"
+    },
+    {
+      "path": "include/hyle/compute/detail/apple_batch_access.h",
+      "bytes": 5453,
+      "sha256": "027b7f331eeb81c513b9b5f5e4469ae143bb30374c368c11e2ef17c09bd67824"
+    },
+    {
+      "path": "include/hyle/compute/detail/apple_plan.h",
+      "bytes": 4485,
+      "sha256": "ff08cb8aac33a2026a93b2100814d1daab2d75177341461f9248ea462106fba4"
+    },
+    {
+      "path": "include/hyle/compute/detail/backend_extension.h",
+      "bytes": 3637,
+      "sha256": "f0f7dbadc6929cea96c7ddbda6516b14d5e90725b49de1daf55b3921d8fa0a92"
+    },
+    {
+      "path": "include/hyle/compute/detail/batch_graph_access.h",
+      "bytes": 3296,
+      "sha256": "033dcc15960d11ef03e68a828afcc46ac6a33376a8382b8a00871869e08f6062"
+    },
+    {
+      "path": "include/hyle/compute/detail/batch_provider.h",
+      "bytes": 5498,
+      "sha256": "bf2d93357c2db25109086b84a41f6e4c569aa5fe95fcdac28337cc39da0e856e"
+    },
+    {
+      "path": "include/hyle/compute/detail/completion_access.h",
+      "bytes": 4164,
+      "sha256": "8699638e39a1a7d5708cbb6a5e41f191228b3ac571b16b026eadcc1aa6765e34"
+    },
+    {
+      "path": "include/hyle/compute/detail/context_ref.h",
+      "bytes": 2563,
+      "sha256": "b1295a6d21d452b2730e3907891ca49993e512a741f8f3a9689976e56f5af3f1"
+    },
+    {
+      "path": "include/hyle/compute/detail/copy_backend.h",
+      "bytes": 1968,
+      "sha256": "6a6b2a44a81292297e5f5eb44eefe4e360a6003995a516676932de5e1b55b324"
+    },
+    {
+      "path": "include/hyle/compute/detail/copy_outcome_source.h",
+      "bytes": 6694,
+      "sha256": "b6a6d6648e6fa3a351cedace1a7f598fc086e1671414061bf1a2ab4e99dcdbfa"
+    },
+    {
+      "path": "include/hyle/compute/detail/copy_ranges.h",
+      "bytes": 1796,
+      "sha256": "86b711e8dd26d63bba37e0ebbd47956f28bfd58b28934ac8073f28df81c543e7"
+    },
+    {
+      "path": "include/hyle/compute/detail/copy_stream_access.h",
+      "bytes": 3611,
+      "sha256": "edc3c69aa398ee0f0ca1bbf47463925b0895b117edc8bed0a218b773cf52b681"
+    },
+    {
+      "path": "include/hyle/compute/detail/dependent_completion.h",
+      "bytes": 2699,
+      "sha256": "25aecc0c64d1edfad3d71523b04dc222f523ac7cd71f99e63193495a8431cc9b"
+    },
+    {
+      "path": "include/hyle/compute/detail/generated_result.h",
+      "bytes": 9908,
+      "sha256": "62630311da5b77306f7faef12f4d2cbf7f67e35ff8d2eb5ad9b56460b9089cb6"
+    },
+    {
+      "path": "include/hyle/compute/detail/lease_access.h",
+      "bytes": 5379,
+      "sha256": "a732cfce4cbc92f6de5d6cec7db99f71e1415ab814b29bd7af101f5c848d2ec7"
+    },
+    {
+      "path": "include/hyle/compute/detail/materialized_native_controller.h",
+      "bytes": 29926,
+      "sha256": "192b5bd239f8e8a53ff6db4142a9ee266f8a64122cab371290ac4e58f7d9c850"
+    },
+    {
+      "path": "include/hyle/compute/detail/operation_access.h",
+      "bytes": 992,
+      "sha256": "4bdd60939dea229e91907768308155716b7cd8b78d92150391edc771f2089f34"
+    },
+    {
+      "path": "include/hyle/compute/detail/paged_append_backend.h",
+      "bytes": 1442,
+      "sha256": "1a328e8b7a87f6416e4d0b272ecb952ecb906edeb7fac40ab7ca12e5e727ce29"
+    },
+    {
+      "path": "include/hyle/compute/detail/paged_append_wire.h",
+      "bytes": 1153,
+      "sha256": "5706d6d51ddda8887485f7dcc91c9d5c7e58ef3594ff8733ff49f6c21c995eb2"
+    },
+    {
+      "path": "include/hyle/compute/detail/paged_arena_access.h",
+      "bytes": 6415,
+      "sha256": "ffba6a67c84d912e5a95e287ff27579e300c2e46479f8532d58bf54ba531e2e7"
+    },
+    {
+      "path": "include/hyle/compute/detail/provider_extension.h",
+      "bytes": 4033,
+      "sha256": "1508099710fe63576cd04faeb6837288cad911a8952214fd070369c6c21c5e58"
+    },
+    {
+      "path": "include/hyle/compute/detail/queue_ref.h",
+      "bytes": 1551,
+      "sha256": "a50579827a0b1554ffa4595c3b2fff68cfcbcc9b75caba25c60f78028d49961b"
+    },
+    {
+      "path": "include/hyle/compute/detail/queue_sequence.h",
+      "bytes": 9214,
+      "sha256": "d8cc25b000e655468f3de3b1da3f5b17c388329f21d3f9d6f1d06d9e54de8a26"
+    },
+    {
+      "path": "include/hyle/compute/detail/resource_binding.h",
+      "bytes": 333,
+      "sha256": "5728b7fc8d0b9e6faf413dd5f8e5ba13e7ddf4d86354a722770f554c1591c6e5"
+    },
+    {
+      "path": "include/hyle/compute/detail/resource_budget_access.h",
+      "bytes": 527,
+      "sha256": "17f1adbcf9a15c6eadc20e4346bcbefb6b704e344d0e21f8cd44328c53b55004"
+    },
+    {
+      "path": "include/hyle/compute/detail/retained_completion.h",
+      "bytes": 4972,
+      "sha256": "3199644bf8ae58b283fdbea2f9a4fe43331a2b0297380bd948e1fb3780d34d29"
+    },
+    {
+      "path": "include/hyle/compute/detail/vulkan_batch_access.h",
+      "bytes": 3991,
+      "sha256": "e56c57bfe29a8a616de2b416bf6659b5460e6e4ca98541116daaa02deb2492a7"
+    },
+    {
+      "path": "include/hyle/compute/detail/vulkan_plan.h",
+      "bytes": 3107,
+      "sha256": "aad3bd31bdff4f7ef048bb1fdf8741b13c3b0dba6cb63339f1b6640a610ecd2f"
+    },
+    {
+      "path": "include/hyle/compute/device.h",
+      "bytes": 7702,
+      "sha256": "f966803f2293e03db1cde9b1327f847a92162f21adb53f69ef37f0c19b16a84a"
+    },
+    {
+      "path": "include/hyle/compute/low_precision.h",
+      "bytes": 10406,
+      "sha256": "0920a5a2faecb2991da60ecede680c496bab73411a305e559461ea41cea309cb"
+    },
+    {
+      "path": "include/hyle/compute/model_ops.h",
+      "bytes": 75815,
+      "sha256": "91ef5991618307e1be23c4d36f8b07aca09d9ff41473098b3d50ada4feb6b5cb"
+    },
+    {
+      "path": "include/hyle/compute/operation.h",
+      "bytes": 28108,
+      "sha256": "35b7c862143839e4b8ce0c9a49753b7add2f325ec424bf5f91a1afeec0101506"
+    },
+    {
+      "path": "include/hyle/compute/ops_visibility.h",
+      "bytes": 43,
+      "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+    },
+    {
+      "path": "include/hyle/compute/paged_arena.h",
+      "bytes": 14088,
+      "sha256": "24d54cdae3a2c46f28126fffbfce06fc28ee6acb44c677324ce4f8fbaf67d458"
+    },
+    {
+      "path": "include/hyle/compute/prepared_operation.h",
+      "bytes": 20281,
+      "sha256": "03895c56e8665daf2482f66fecf205fd8aacf92046e13c169d9d8ff86fff52d7"
+    },
+    {
+      "path": "include/hyle/compute/provider.h",
+      "bytes": 10281,
+      "sha256": "a9737ca3cf64eec23ce768e20b1112407fc7816a32f8031f0b668b16c49f816a"
+    },
+    {
+      "path": "include/hyle/compute/resource_budget.h",
+      "bytes": 4622,
+      "sha256": "578d440b6fc3f5b58809837506165de27ac0866ae39b2d132763f5dd1786b1ce"
+    },
+    {
+      "path": "include/hyle/compute/resource_leases.h",
+      "bytes": 8660,
+      "sha256": "4e5681ebfa7c2f2ad51e5788c8316f4b993883f595c04b33fe594d7294dab85b"
+    },
+    {
+      "path": "include/hyle/compute/resource_requirement.h",
+      "bytes": 749,
+      "sha256": "0a1260090ba84ed86cf26b27ec5d187c8ed5d39b1acda641b632a3b84d3acf76"
+    },
+    {
+      "path": "include/hyle/compute/result.h",
+      "bytes": 4704,
+      "sha256": "07a584147b7de3b3f3c1a238207df4ec548130308295b583fc8c93a4d36a4164"
+    },
+    {
+      "path": "include/hyle/compute/route_policy.h",
+      "bytes": 10464,
+      "sha256": "71a4fd38cb6702769cf9879e9c02a631797986f6c1f18417f014b65bb8d70926"
+    },
+    {
+      "path": "include/hyle/compute/sampling_ops.h",
+      "bytes": 3673,
+      "sha256": "887faba6ebe6249a0e2f766e2ea4b6bd83900bcf1e85165ad55e3e9be18528da"
+    },
+    {
+      "path": "include/hyle/compute/storage_owner.h",
+      "bytes": 8058,
+      "sha256": "549d881d8d4f96eedbb03c8ef9bd6892ede776e5da90a39025538bc50a0530d9"
+    },
+    {
+      "path": "include/hyle/compute/tensor.h",
+      "bytes": 1980,
+      "sha256": "ac00f221a66d0f9044a2b49a1123a6b99a6c425568790898129c31d81519c538"
+    },
+    {
+      "path": "include/hyle/compute/tensor_desc.h",
+      "bytes": 8700,
+      "sha256": "e5496e00c643bcce2efbb42666773f4172243d10458b756d6f9881b0e677eb9a"
+    },
+    {
+      "path": "include/hyle/compute/visibility.h",
+      "bytes": 43,
+      "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+    },
+    {
+      "path": "include/hyle/compute/vulkan.h",
+      "bytes": 16973,
+      "sha256": "36f6b90bc17bfbc6fe0cf34089cf151eb58cbae48c3b3692a9d596c74d890ed1"
+    },
+    {
+      "path": "include/hyle/compute/vulkan_batch.h",
+      "bytes": 8129,
+      "sha256": "204c9dab717224cd6522fb67a50f59c6a125d0fb10cacd1aa3673fac5a4b9cfe"
+    },
+    {
+      "path": "include/hyle/compute/vulkan_memory.h",
+      "bytes": 13215,
+      "sha256": "75b0550305217861af2e8ce8c88bc364d375c68f85957ef0ce666400ef6740a7"
+    },
+    {
+      "path": "include/hyle/compute/vulkan_weights.h",
+      "bytes": 3974,
+      "sha256": "f54d91b380e71b6d073c00175ffea08849442250b57844b23eac839472054bf0"
+    },
+    {
+      "path": "include/hyle/compute/weight_assembly.h",
+      "bytes": 2095,
+      "sha256": "c085186c2751371d8e642f29d1b338e53962236e50c9935ea1858a4b188ca3ac"
+    },
+    {
+      "path": "include/hyle/compute/workload.h",
+      "bytes": 5017,
+      "sha256": "2e7509d99d986e71b06788e4dd1dcb9595799e2ad972df48449ff0b58f0815ad"
+    },
+    {
+      "path": "include/hyle/container/small_vector.h",
+      "bytes": 30022,
+      "sha256": "cd04f94cac8c7be603600dfeb2a343a88a576bb5230c914d6d38ae5676b99cee"
+    },
+    {
+      "path": "include/hyle/core/assert.h",
+      "bytes": 16114,
+      "sha256": "5596728bc220ea27696be4f25e2f9eb9cf2705930f8eb0461747c4a862615790"
+    },
+    {
+      "path": "include/hyle/core/compiler.h",
+      "bytes": 4287,
+      "sha256": "e31151f0ed73c532e464c6568483acecd80a2da9c1ee7afc7e081db87d6fb687"
+    },
+    {
+      "path": "include/hyle/core/detail/compiler_attributes.h",
+      "bytes": 1913,
+      "sha256": "263c7691f9984073e198b69328092330bf572195113d3994d1ab54fe4564d88a"
+    },
+    {
+      "path": "include/hyle/core/detail/preprocessor.h",
+      "bytes": 409,
+      "sha256": "1d9872ef98db007dcbed7e0128771244640e1de4092830d52a7a83537f98eb84"
+    },
+    {
+      "path": "include/hyle/core/environment.h",
+      "bytes": 6712,
+      "sha256": "3d289765b1b677499a444b38d1dbe366bb5e99f89fcb7670af2d08106fd958fa"
+    },
+    {
+      "path": "include/hyle/error/result.h",
+      "bytes": 30856,
+      "sha256": "7718409ab2854eb76959215b356bf8077007134d87db1a24f9384a9b5deff2b5"
+    },
+    {
+      "path": "include/hyle/error/status.h",
+      "bytes": 18122,
+      "sha256": "4d6b4b0bfa5628947aad5449320513d4b071e0c84debfac47f7a7d264cecb7f4"
+    },
+    {
+      "path": "include/hyle/graph/apple.h",
+      "bytes": 6233,
+      "sha256": "f61ad9e69cb85f731112b2a1ca0ec9b0a1158714e02b911bfc3924fbb0ba03d0"
+    },
+    {
+      "path": "include/hyle/graph/batch.h",
+      "bytes": 18453,
+      "sha256": "1cf89548b6544889419045c54d859153d5fdb21e49cdac8357e0f653dbdf04a0"
+    },
+    {
+      "path": "include/hyle/graph/compile_report.h",
+      "bytes": 577,
+      "sha256": "c42c30527d581975c49ddfebb182b0ae7928d799eed91172cb631779a2ad5b4f"
+    },
+    {
+      "path": "include/hyle/graph/detail/execution_source.h",
+      "bytes": 2094,
+      "sha256": "2caa1aa7dd76f50240012df8dbbada3c18dda5161b1940de2f6c7c4cb652d306"
+    },
+    {
+      "path": "include/hyle/graph/detail/region_access.h",
+      "bytes": 18373,
+      "sha256": "f6e51fb66ccafd72a831267c850527f04230a1fda83eb4f2b7ca4d6cb015861d"
+    },
+    {
+      "path": "include/hyle/graph/detail/region_adapter.h",
+      "bytes": 1703,
+      "sha256": "cbc1a56573a6eca49081b65d6f90e5485dc23042ed8faf9049f60addf64621fa"
+    },
+    {
+      "path": "include/hyle/graph/executable.h",
+      "bytes": 50386,
+      "sha256": "aa3a55ed1869f84149ad0a6a558d6541880d71ba0bf4c6789480724564cdc0b0"
+    },
+    {
+      "path": "include/hyle/graph/execution_source.h",
+      "bytes": 1859,
+      "sha256": "b89de5c6fe8b84192c9618a6a4e4dcee8ac45393e04a9e335f17b5a2d3ecac3f"
+    },
+    {
+      "path": "include/hyle/graph/graph.h",
+      "bytes": 19988,
+      "sha256": "c7a93ccf9fd1c86fb9dec286e7d3345aabcb1810c2fb6793a66093480a5a2136"
+    },
+    {
+      "path": "include/hyle/graph/progress.h",
+      "bytes": 901,
+      "sha256": "0d39fc0706f5bfb3706f49e3d6f08d4471c9724cdb9aef13605a392e9f04f6d9"
+    },
+    {
+      "path": "include/hyle/graph/region_provider.h",
+      "bytes": 24812,
+      "sha256": "16558cc236133bd76a2306dc7144b9edd08c81e19600d1d1dc6f7c8bc5127949"
+    },
+    {
+      "path": "include/hyle/graph/resources.h",
+      "bytes": 430,
+      "sha256": "c9d3075babb4d863f3543c76576d093fe59f9868df67d50fc492db0aebe7015d"
+    },
+    {
+      "path": "include/hyle/graph/result.h",
+      "bytes": 1646,
+      "sha256": "90861eafec4f3a0aa73014416bd2817dfe3892ac001ea206bebf907e1d3cf182"
+    },
+    {
+      "path": "include/hyle/graph/visibility.h",
+      "bytes": 43,
+      "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+    },
+    {
+      "path": "include/hyle/graph/vulkan.h",
+      "bytes": 6893,
+      "sha256": "f9bd3b3d15e0bae59645d1244043b6cd18855b13af0860e032120f9916c1384d"
+    },
+    {
+      "path": "include/hyle/graph/weight_binding.h",
+      "bytes": 422,
+      "sha256": "ebcc3eea951953966a3b10b2951872e74d04921af6f0cc8de45ab52ab1ba32bd"
+    },
+    {
+      "path": "include/hyle/mem/alignment.h",
+      "bytes": 3499,
+      "sha256": "75388cd67ecb0f6d9bd48a85ea9994e97d8e1db6658a57a3aa24fc89690c76a8"
+    },
+    {
+      "path": "include/hyle/mem/allocator.h",
+      "bytes": 11090,
+      "sha256": "0369680d4769a0187bfb77ee8b565b5e8fb53a03909fabf233458d9c1cbcd011"
+    },
+    {
+      "path": "include/hyle/mem/buffer.h",
+      "bytes": 19273,
+      "sha256": "346a4f810babb8c5dacba49faaf57903d998a3cbb49af12b8c62acc85f7be72c"
+    },
+    {
+      "path": "include/hyle/mem/fiber_stack.h",
+      "bytes": 5697,
+      "sha256": "d53e766fdac6fe9ee6fa3d0ba6b730f4fe9aa7d28c43a6d0cd60a0c5131bad30"
+    },
+    {
+      "path": "include/hyle/mem/quota_allocator.h",
+      "bytes": 7124,
+      "sha256": "a88fe230dc5358ddde6209de96cc61a59e3f6e60d30b9e7534e986fab10224c9"
+    },
+    {
+      "path": "include/hyle/mem/resource.h",
+      "bytes": 7717,
+      "sha256": "84b0366e658ec63f999b4c9719cf8584ad758f4ff5340baf37f1c3ebd17145cd"
+    },
+    {
+      "path": "include/hyle/mem/std_allocator.h",
+      "bytes": 5150,
+      "sha256": "adee9ae71753fa27e001b7b71b1d57b61e14f7ebcfdea57bb3993d2a3e9550e4"
+    },
+    {
+      "path": "include/hyle/mem/system_inline.h",
+      "bytes": 8762,
+      "sha256": "d890fe66b1a83a5f1a8f2b22c368276e7b3fadcfd0946df5279692ce055164f1"
+    },
+    {
+      "path": "include/hyle/mem/visibility.h",
+      "bytes": 43,
+      "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+    },
+    {
+      "path": "include/hyle/obs/trace.h",
+      "bytes": 8554,
+      "sha256": "be0df49a044a0888d46c6c2411a292fdd04908b7bdc393557b87d68a70cf1f6f"
+    },
+    {
+      "path": "include/hyle/platform/cpu.h",
+      "bytes": 14870,
+      "sha256": "033953ef33ba5fd57c98af540818bb7c82b8189a4ca1e2502e3297dddde48342"
+    },
+    {
+      "path": "include/hyle/platform/numa.h",
+      "bytes": 8400,
+      "sha256": "e154f229dc7f6f5ceb1c44f20f769204b48bd422e57c5fed1e53c490607b8fde"
+    },
+    {
+      "path": "include/hyle/platform/thread.h",
+      "bytes": 8423,
+      "sha256": "fe5d5dd5ff4a7190f9f9d98e5cbbf924a6d44ce62c30d257556b96ff6f711d1d"
+    },
+    {
+      "path": "include/hyle/platform/thread_visibility.h",
+      "bytes": 43,
+      "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+    },
+    {
+      "path": "include/hyle/platform/virtual_memory.h",
+      "bytes": 10485,
+      "sha256": "1b01086d44f330a592a5d3b4946fb213e485095dce904db99bb71103e2a578b8"
+    },
+    {
+      "path": "include/hyle/platform/visibility.h",
+      "bytes": 43,
+      "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+    },
+    {
+      "path": "include/hyle/platform/wait.h",
+      "bytes": 4708,
+      "sha256": "460fa7b1cab2f50b65b37a3f738cf0065bb607cde34cabf975cecc6e88f8d61f"
+    },
+    {
+      "path": "include/hyle/sched/blocking.h",
+      "bytes": 11177,
+      "sha256": "6ac68f05f6f1dce2ada469956d823bc52827e11aea781a74cc896877f145db41"
+    },
+    {
+      "path": "include/hyle/sched/coro.h",
+      "bytes": 11737,
+      "sha256": "8694732bb1a069fde73f0359399b13f893d41c6981800f05cd824b293d93df54"
+    },
+    {
+      "path": "include/hyle/sched/fiber.h",
+      "bytes": 12046,
+      "sha256": "64f4dc01aedc6b5a3ae7a481dc8ac70d44dd2f032cf8a8c7dc479245d1eb2a79"
+    },
+    {
+      "path": "include/hyle/sched/join.h",
+      "bytes": 33859,
+      "sha256": "ddff411dbf716c7fa1566ef115e8ddbe8ab010f8db701d82c6ccfee4077f8df4"
+    },
+    {
+      "path": "include/hyle/sched/priority.h",
+      "bytes": 1391,
+      "sha256": "2e86acbc6a9f8b7d80a9692682be4eca2340f132aacec76b3456a90f2d9aee1e"
+    },
+    {
+      "path": "include/hyle/sched/scheduler.h",
+      "bytes": 20496,
+      "sha256": "8ab542f46ed961d13f497004579eba81ce6ad62acdb79a26486a8b55b2741829"
+    },
+    {
+      "path": "include/hyle/sched/sync.h",
+      "bytes": 78133,
+      "sha256": "dea8c4ba498d97223a8039718449e4bcf4a6ec9ee3dd5c26779725e49f73d1dc"
+    },
+    {
+      "path": "include/hyle/sched/waker.h",
+      "bytes": 3374,
+      "sha256": "85c40b6f63b1db04ceffc99681d590a59160ddd15cc1988a6161ad73396e61ed"
+    },
+    {
+      "path": "include/hyle/time/clock.h",
+      "bytes": 30458,
+      "sha256": "383955c82cb45d63addc85ec307fff4f0f5bfd6f44089a489b0ecc1529b4c689"
+    },
+    {
+      "path": "include/hyle/time/unix_timestamp.h",
+      "bytes": 11791,
+      "sha256": "bcd6bdc860d6ee1e73004ebd15e3b2b2a60ca3dff7a0818deecf9420f95b4496"
+    },
+    {
+      "path": "include/hyle/util/ref_counted.h",
+      "bytes": 15535,
+      "sha256": "f72298c5886b8287cfa8e2cbea13a78c25dc7e0a08de5838f4feb4f7cec0bdb4"
+    },
+    {
+      "path": "include/hyle/util/spin_lock.h",
+      "bytes": 4270,
+      "sha256": "3c0326e4fb09ec6a43b56eccea267b4b45886262094010bcd3dbac759696ea1b"
+    },
+    {
+      "path": "include/hyle/visibility.h",
+      "bytes": 11701,
+      "sha256": "893fa73589b6e46f00474c2258af74c28d662b52176b57012290c820812ed486"
+    },
+    {
+      "path": "src/compute_batch/row_cache_map.h",
+      "bytes": 5708,
+      "sha256": "3d8f7cb59a99031a70971f120980814c7b41fa2c111734125db16fde4a17865b"
+    },
+    {
+      "path": "src/compute_ggml_runtime/metadata_arena.h",
+      "bytes": 1843,
+      "sha256": "27d9639094db0f0fc72a7dd9c8b767d6e5b63f5bfd4cafe849cf0f97ec719dfb"
+    },
+    {
+      "path": "src/compute_ops/view_alias.h",
+      "bytes": 533,
+      "sha256": "a12e5a51e2cce3c30a95e87798e5d3a6995c31f3ce821caf118179c1622782d0"
+    },
+    {
+      "path": "src/compute_packed_shared/static_fp8_linear.h",
+      "bytes": 3504,
+      "sha256": "454fd995f6bddf96cb517c656f21b793c32f175dd7ad82a07ab87bd705ad2ce8"
+    },
+    {
+      "path": "src/compute_provider_ggml_vulkan/metadata_arena.h",
+      "bytes": 431,
+      "sha256": "43869fa1c1fcc4947687c07342adf5d4403104591cfce173687850a9e88f2652"
+    },
+    {
+      "path": "src/compute_provider_ggml_vulkan/native_bridge.h",
+      "bytes": 5858,
+      "sha256": "6dd90f6c4e927eb86f64cdf557a223cbd79290fd1f52eb78ca86acb546de4650"
+    },
+    {
+      "path": "src/compute_provider_ggml_vulkan/native_device.h",
+      "bytes": 5685,
+      "sha256": "f4c84a9883968760a7fb2efd65697fd46ef9719ac024ed74c874e6a8281bcdb9"
+    },
+    {
+      "path": "src/compute_provider_ggml_vulkan/region.h",
+      "bytes": 4445,
+      "sha256": "881646e1790479656d934748ab1fc7231aced0365ad5d93bfff0d08b6f1c6118"
+    },
+    {
+      "path": "src/compute_provider_iree_vulkan/native_device.h",
+      "bytes": 1091,
+      "sha256": "551009394f1daad65b4ec4e29553b7290ff83de3089854bad8219a252201efb1"
+    },
+    {
+      "path": "src/compute_provider_iree_vulkan/native_program.h",
+      "bytes": 9217,
+      "sha256": "bec584f8ff389573863d3de634544a1ebdc2bff040d9556bd8dff0bc8a2d51f0"
+    },
+    {
+      "path": "src/compute_route_apple/apple_batch.cc",
+      "bytes": 19052,
+      "sha256": "16cd248b1bd9f4717a09a43bab2db21f5b79e3ee9b1207c71e1d1ada95f1886b"
+    },
+    {
+      "path": "src/compute_route_apple/apple_carrier.h",
+      "bytes": 4414,
+      "sha256": "9f8215e4bc4e7fb347ff545d62df59ed624079655b486fc730f0a57d1d62099c"
+    },
+    {
+      "path": "src/compute_route_apple/apple_copy_internal.h",
+      "bytes": 6588,
+      "sha256": "2fe529e8e857567b37e672789125ba4691681b79f5e9d4703a092dee668aff3f"
+    },
+    {
+      "path": "src/compute_route_apple/apple_file_stream_access.h",
+      "bytes": 2512,
+      "sha256": "2e2f2191666aac05da14d023459dfe6efe002b27520b4eaacdcf08c7bceb13d8"
+    },
+    {
+      "path": "src/compute_route_apple/apple_materialized_invocation.cc",
+      "bytes": 11027,
+      "sha256": "007bdc340a059cd8710a6dda2dfa7c0faed2b1b6e679d3f68823b20982bdd3d4"
+    },
+    {
+      "path": "src/compute_route_apple/apple_runtime_internal.h",
+      "bytes": 1188,
+      "sha256": "d081f2b519f87e6420345c94e92475aaf93b1c9cade591fd46bbe8a01f4a398a"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_batch.cc",
+      "bytes": 18503,
+      "sha256": "7164c44a498caafa14cf7987c3a4709a2866a6875541d1af6515434bf1c9f170"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_carrier.h",
+      "bytes": 1917,
+      "sha256": "694060b83be449569d21e5b65a753c288ef51ad3f20976df22c775c5420dc425"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_composition_access.h",
+      "bytes": 681,
+      "sha256": "654250f6a197fa4aa68838d59f9503bcc3d3c56ead5e086eec9dc4f1064c676e"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_file_stream_access.h",
+      "bytes": 1936,
+      "sha256": "88f91c2d19df39606430e86e5a46384740e4771c91deaa23b1e50db891451f3e"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_internal.h",
+      "bytes": 15080,
+      "sha256": "467b4192c5690fd7c9e87e2a474de0585129728e3403c89b59c333e0163cda68"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_iq1.h",
+      "bytes": 328,
+      "sha256": "0292ab87e11ae5f53262be30009d3827e0494969f7b6fbd45e5cab5e6669a511"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_iree.h",
+      "bytes": 1155,
+      "sha256": "bba7bae3000fe5f335d77e12dba56a46f5e6b7e7ed310d0941bc648c74c68b80"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_materialized_invocation.cc",
+      "bytes": 10852,
+      "sha256": "d04847740801e529956fdf02cde370c824c2df41143229c33143aa358b901089"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_memory_internal.h",
+      "bytes": 3330,
+      "sha256": "a3f080a783b17a70f4832dfd4462d661f370c551bbe25451324765ca2b035fc0"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_policy.h",
+      "bytes": 2416,
+      "sha256": "0652c58c8dddd89d52c7eb2ad051be15c218d2b7dc5634b517913a535d37bec9"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_program.cc",
+      "bytes": 60188,
+      "sha256": "39a775e15f7df08c31ecda4e454c765a876cd9664034f129c9482ce6d82a8eab"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_program_internal.h",
+      "bytes": 7062,
+      "sha256": "b19c152c475fe434d57d79f89110363602808eddf1ff6487c90f020dd9538fd6"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_tensor.h",
+      "bytes": 1838,
+      "sha256": "061204ab279632cc577c44bebb794090d847948fb772a2e71d5f11bd71d2a8cd"
+    },
+    {
+      "path": "src/graph/compile_internal.h",
+      "bytes": 696,
+      "sha256": "e1850dcfa418d8e15fe0ea61c8b9ec9c4ce46cdb600d9fe1991e5d695b689baf"
+    },
+    {
+      "path": "src/graph/execution_source_internal.h",
+      "bytes": 6898,
+      "sha256": "63030a3f57bafa1bcdb49c572c034aeaad3c4b2f39d5cc99228d6cb9d54abc11"
+    },
+    {
+      "path": "src/graph_batch/batch.cc",
+      "bytes": 92904,
+      "sha256": "617efab5249d1b2137e303f2d47e7c2bd61d2518adc82d7cb891d4e549393233"
+    },
+    {
+      "path": "src/graph_batch/native_append_regions.h",
+      "bytes": 2461,
+      "sha256": "159128dc3daea9a253209d483d716f880c6921bc3aa94e4af100dacc9275d4cf"
+    },
+    {
+      "path": "src/graph_batch/native_batch_regions.cc",
+      "bytes": 15733,
+      "sha256": "732bbc158e240a8b478920c58ef33013c7e425211c7b7f1ce2ae2061af131f68"
+    },
+    {
+      "path": "src/graph_batch/native_batch_regions.h",
+      "bytes": 5771,
+      "sha256": "fc142e148afac101cfe4be53914fe653f3ca58d0f1d788a7864d8b4448235c3a"
+    },
+    {
+      "path": "src/graph_batch/native_pending_regions.h",
+      "bytes": 5214,
+      "sha256": "8e3481fdd0b69d152ac6e06ef2be6498727a83f096a3e4fe75ec4737f8edd15c"
+    },
+    {
+      "path": "src/graph_batch/paged_append.h",
+      "bytes": 1772,
+      "sha256": "4d1851107106162fd0bb4d139848bad81513c350976f334eab1dba0a42407fa4"
+    },
+    {
+      "path": "src/graph_batch/row_cache_node.h",
+      "bytes": 2064,
+      "sha256": "16744bb0c7df89b200841b3e6e0fac6a023b4c2a7ae258a5e1e39f428b6f63e1"
+    },
+    {
+      "path": "src/graph_route_apple/native_output.h",
+      "bytes": 1414,
+      "sha256": "e2fa8256fe053d87a9d15136a81b05201503626a44d6afa3e281be032b36bf09"
+    },
+    {
+      "path": "src/graph_route_apple/native_paged_pending.h",
+      "bytes": 1341,
+      "sha256": "3deb7fe2d41ceb4040a2be9a9962da8d79265bbb3d8287c29a7d6d1323c17c4e"
+    },
+    {
+      "path": "src/graph_route_apple/native_paged_region.cc",
+      "bytes": 48603,
+      "sha256": "a45d7914fa66044d0c141e3369efa9c88eea5e8176aa1b5e7c504f64670a3405"
+    },
+    {
+      "path": "src/graph_route_apple/native_paged_region.h",
+      "bytes": 741,
+      "sha256": "660a7dfa83fe9c6d43a87dd4dcf00d6a2c33fbc0041e383396cd8a92cc3506a1"
+    },
+    {
+      "path": "src/graph_route_apple/native_ragged_region.cc",
+      "bytes": 22032,
+      "sha256": "dbdc968fa07ff5579a01a2a85c672dacf7cdc2ab257ae7374be1963dd374029f"
+    },
+    {
+      "path": "src/graph_route_apple/native_ragged_region.h",
+      "bytes": 739,
+      "sha256": "9aa77760ff9c848cfd7e4189ecc0027eb78d26509bb7c267a5fe02b78d41743c"
+    },
+    {
+      "path": "src/graph_route_apple/native_region.h",
+      "bytes": 1204,
+      "sha256": "2bcbd1874eece2152f2e9c10329f4a103ea6dfcc80322be3d5c8e5290aa2e955"
+    },
+    {
+      "path": "src/graph_route_vulkan/native_paged_pending.h",
+      "bytes": 1408,
+      "sha256": "bea71512050045b3408129006eba12527287a0c39887d0609e74e7c5d9f25bb0"
+    },
+    {
+      "path": "src/graph_route_vulkan/native_paged_region.cc",
+      "bytes": 47602,
+      "sha256": "cfce25a5ded98d0ed5d025fbfe658f0ee12f179aa468846ea1c9a1dd081b6b2f"
+    },
+    {
+      "path": "src/graph_route_vulkan/native_paged_region.h",
+      "bytes": 681,
+      "sha256": "39d71f4051e6819bbcb81fa65702a6413d2d092e26344cdc83e2cbafd41b467a"
+    },
+    {
+      "path": "src/graph_route_vulkan/native_ragged_region.cc",
+      "bytes": 21299,
+      "sha256": "49a6caeff235ac8fc7142e9cd8ce0d7e76ee4576fc388b064fb006b50dc1f920"
+    },
+    {
+      "path": "src/graph_route_vulkan/native_ragged_region.h",
+      "bytes": 732,
+      "sha256": "b7dd4597f3c8c61c09577ff462cafffe05e5dd6a2f808f784de526eb09a4e841"
+    },
+    {
+      "path": "src/graph_route_vulkan/native_region.h",
+      "bytes": 641,
+      "sha256": "be27e96ac7f47ba81d3044bba834c33cb879b9811d0f138c3d20d0974f2e79ad"
+    },
+    {
+      "path": "src/graph_route_vulkan/vulkan_source.h",
+      "bytes": 993,
+      "sha256": "de18ecfb3b4f5138fcb8d6fa411ecb7b5efd76e097acdcf47ab00ec89694545c"
+    },
+    {
+      "path": "tests/compute_route_vulkan/CMakeLists.txt",
+      "bytes": 4785,
+      "sha256": "53a7c4e56662542e6e25d00066f5cde6a69cd70b99d8b37c9330853ae75f1e4a"
+    },
+    {
+      "path": "tests/compute_route_vulkan/fixture.h",
+      "bytes": 4792,
+      "sha256": "a623eeb8e1fca33f907dfa509a523f22e07954a2d640c0601c7f417afa050df3"
+    },
+    {
+      "path": "tests/compute_route_vulkan/ordered_cast_test.cc",
+      "bytes": 5191,
+      "sha256": "4732a3e72ccac78e913126d070dfa361bc646a9400e87710f5588c9ab3c756d5"
+    },
+    {
+      "path": "tests/graph_batch/CMakeLists.txt",
+      "bytes": 11108,
+      "sha256": "4fc43b0c77388b9d743c08be6b7748c18f4633b356148c1550e51e4c504598f8"
+    },
+    {
+      "path": "tests/graph_batch/native_paged_capacity_consumer.cc",
+      "bytes": 21068,
+      "sha256": "dddc2b6ce6f7736047782d030778397efb39f92598ac06bfbb891807c6849b48"
+    }
+  ],
+  "archive": {
+    "path": "docs/evidence/correctness/native-paged-capacity-2026-10-22-logs.zip",
+    "bytes": 1176699,
+    "sha256": "b4998a67ae16baf3b72af0c59003ffe1b2334ad359f7bc1cac1d081b0fb73517",
+    "unique_files": 356,
+    "mapped_files": 444
+  }
+}

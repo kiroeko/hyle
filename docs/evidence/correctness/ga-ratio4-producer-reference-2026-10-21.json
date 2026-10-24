@@ -1,0 +1,4546 @@
+{
+  "observed_on": "2026-10-21",
+  "status": "four_backend_projected_F32_ratio4_producer_to_BF16_cache_and_accepted_prefix_passed",
+  "scope": "Fixed formal GA ratio4 indexer. B2,128channels,64suffixRoPE, F32 windows[2,8,256], BF16 cache capacity3 active0->1->2. Start at original F32 projected KV/gate; no whole projection/checkpoint/model claim.",
+  "mathematics": "Gate+APE once, F32 channelwise8-row softmax/product/sum using previous first128/current last128, BF16 pool, mixed F32-gamma RMS thenBF16, suffixBF16->F32 explicit RoPE at block starts0/4->BF16, normalizedHadamard128 BF16, original group32FP4 QAT to decodedBF16 cache. Full256 KV/score state rolls at each boundary; current half stays intact.",
+  "oracle": "Independent scalar source formula, F32/BF16 rounding helpers and FP4 enumeration. Fixed finite low-rank asymmetric halves chosen before GPU execution; normalized FP4 midpoint margin0.205810546875. Original state words and final QAT/cache compare exactly; pooledF32 tolerance2e-6+2e-6*abs; typed intermediate stages allow oneBF16 ULP and record actual deviation. Formal compressed frequency configuration supplied, but this finite payload only activates its first suffix pair and does not certify all frequencies/input domain.",
+  "journey": "Main prefill3 then decodep3..7; first-empty selection, two emissions and actual produced-cache BF16 score/weighted sum/TopK/I32 map. Restore completed accepted4 generation and continuep4..7 with the same immutable plans. Main emit publishes stage audit outputs; accepted branch emit keeps all intermediates private, publishing only F32 windows/BF16 cache. No CPU payload readback feeds subsequent graph inputs.",
+  "ownership": "Original GraphOutput.storage_lease resources enter one StateVersion with F16 mask/I32 map/host geometry only after original successful Completion. StateHead CAS checks retained versions; first GraphOutput blocks its slot reset, ten independently precreated original producer Invocations preserve every retained generation; native fixed-backing reuse remains gated. Consumer plans without retained output leases still replay their original slot. Old windows/cache survive later emissions, branch continuation and caller owner teardown.",
+  "fixes": {
+    "natural_RoPE": "CUDA and Vulkan accept denseBSD sequence_axis1/-2 using original native metadata head insertion/removal. OriginalBSHD1/-3 path and physical kernel preserved; no newCopy or precision relaxation.",
+    "actual_output_lease": "Common output_storage first looks up the actual successful owned external resource/handle/coveredrange before following optional cold may-alias. Original permissions, mandatory alias preparation and native source-authorized fallback remain.",
+    "Apple_owned_stride": "Owned ReadLease keeps original Metal storage/permission/lifetime and imports its exact whole-element readonly stride/span through the same existing validator as borrowed input. No fallback to raw borrowed data or shadowCopy; stride-flag products checked for overflow.",
+    "Vulkan_singleton_pitch": "Actual diagnostic proved Hadamard succeeded, later BF16score promotedF32 MatMul withlength1 hit native dim01-contiguous mismatch (nb1=4 for ne0=128). Existing adapter now metadata-canonicalizes a contiguous RHS with singleton/noncanonical row or batch pitch; original F32precision and bytes remain.",
+    "native_retention_is_preserved": "A separate laterUnavailable was legitimate fixed-generated-output pinning by old StateVersion ReadLease. The consumer cold-precreates10 original Invocation generations on everybackend, no per-provider policy or gate removal.",
+    "catalog_consistency": "Six stale ordinaryE4-paired-pending-missing strings for2 artifacts now point to existing completed reference; exact payload binding and all33 whole-artifact falseflags preserved."
+  },
+  "build": {
+    "windows_report": ".scratch/architecture-refactor-2026-10-18/ga-ratio4-producer-2026-10-21/windows/build-report.json",
+    "windows": "15 strictCXX attempts:11success/4red,10links allsuccess. Includes3 wrapper revisions,2 canonicalbackend owners plusrowpitch refresh,1commonowner, temporarydiagnostic attempts. Final images contain one fresh wrapper/backend+correct changedowners. NoSDK/NVCC/shader rebuild.",
+    "apple": "Finalimage3 currentCXX owners(wrapper+memory+resources), last policychange refreshedonlywrapper. Whole actual4098dependencyreferences/117uniqueprojectfiles0drift; caches andSDK retained. Historicalheadercoherence errors and priorreuse-fixture results preserved.",
+    "scope": "Focused actual compile/link/run only; fourcanonical CMake targetsregistered, fullcanonical reconfigure/install/Linux closure notrun."
+  },
+  "regression": {
+    "total": 8,
+    "new_cases": 4,
+    "neighbors": 4,
+    "failed": 0,
+    "skipped": 0,
+    "successful_Graph_submissions": 60,
+    "producer_submissions": 40,
+    "consumer_submissions": 16,
+    "neighbor_submissions": 4,
+    "windows": [
+      {
+        "backend": "cpu",
+        "receipt": {
+          "path": ".scratch/architecture-refactor-2026-10-18/ga-ratio4-producer-2026-10-21/cpu/validation/final2/receipt.json",
+          "bytes": 3295,
+          "sha256": "e296ea455ce6fe173db73de546838590db77bee273c17a77e925d4eca7ea961d"
+        }
+      },
+      {
+        "backend": "cuda",
+        "receipt": {
+          "path": ".scratch/architecture-refactor-2026-10-18/ga-ratio4-producer-2026-10-21/cuda/validation/final2/receipt.json",
+          "bytes": 3304,
+          "sha256": "ba3b6fe02787ccaf5f64bad1472c5a3aefe602eaba71b3449cfbc380bf858b4e"
+        }
+      },
+      {
+        "backend": "vulkan",
+        "receipt": {
+          "path": ".scratch/architecture-refactor-2026-10-18/ga-ratio4-producer-2026-10-21/vulkan/validation/final2/receipt.json",
+          "bytes": 3517,
+          "sha256": "3ce08ae48a21955cc94f33a44b612721e444b8c800f0abf21d57bb23c36ecd52"
+        }
+      }
+    ],
+    "apple": {
+      "path": ".scratch/architecture-refactor-2026-10-18/ga-ratio4-producer-2026-10-21/apple/final-validation.json",
+      "bytes": 9458,
+      "sha256": "1419b814e1e8776f9082c15c1bae13dc5aea37f8984563c7950883b75a635ddb"
+    },
+    "cases": [
+      {
+        "backend": "cpu",
+        "name": "CpuGaRatio4.F32OverlapProducerFeedsTypedCacheAndAcceptedPrefix",
+        "neighbor": false,
+        "properties": {
+          "minimum_fp4_midpoint_distance": "0.205811",
+          "norm_early_rounding_differences": "2",
+          "successful_submissions": "14",
+          "maximum_bf16_ulp_stage0": "0",
+          "maximum_bf16_ulp_stage1": "0",
+          "maximum_bf16_ulp_stage2": "0",
+          "maximum_bf16_ulp_stage3": "0",
+          "producer_submissions": "10",
+          "cold_producer_generations": "10",
+          "consumer_submissions": "4",
+          "compression_emissions": "3",
+          "private_intermediate_emissions": "1",
+          "geometry": "B2/D128/RD64; F32 window8x256; BF16 cache capacity3 active0->1->2",
+          "state_feedback": "original GraphOutput.storage_lease; no host payload feedback; accepted4 continuation",
+          "scope": "projected F32 KV/gate producer and typed BF16 score/selection consumer; not full model/projection/prefill8/throughput"
+        }
+      },
+      {
+        "backend": "cpu",
+        "name": "CpuGaRatio4.ExistingMultiheadRopeKeepsOriginalGeometry",
+        "neighbor": true,
+        "properties": {
+          "successful_submissions": "1",
+          "geometry": "old B2/S3/H2/D8, rotary4, sequence_axis-3, batch positions and token frequencies"
+        }
+      },
+      {
+        "backend": "cuda",
+        "name": "CudaGaRatio4.F32OverlapProducerFeedsTypedCacheAndAcceptedPrefix",
+        "neighbor": false,
+        "properties": {
+          "minimum_fp4_midpoint_distance": "0.205811",
+          "norm_early_rounding_differences": "2",
+          "successful_submissions": "14",
+          "maximum_bf16_ulp_stage0": "0",
+          "maximum_bf16_ulp_stage1": "0",
+          "maximum_bf16_ulp_stage2": "0",
+          "maximum_bf16_ulp_stage3": "0",
+          "producer_submissions": "10",
+          "cold_producer_generations": "10",
+          "consumer_submissions": "4",
+          "compression_emissions": "3",
+          "private_intermediate_emissions": "1",
+          "geometry": "B2/D128/RD64; F32 window8x256; BF16 cache capacity3 active0->1->2",
+          "state_feedback": "original GraphOutput.storage_lease; no host payload feedback; accepted4 continuation",
+          "scope": "projected F32 KV/gate producer and typed BF16 score/selection consumer; not full model/projection/prefill8/throughput"
+        }
+      },
+      {
+        "backend": "cuda",
+        "name": "CudaGaRatio4.ExistingMultiheadRopeKeepsOriginalGeometry",
+        "neighbor": true,
+        "properties": {
+          "successful_submissions": "1",
+          "geometry": "old B2/S3/H2/D8, rotary4, sequence_axis-3, batch positions and token frequencies"
+        }
+      },
+      {
+        "backend": "vulkan",
+        "name": "VulkanGaRatio4.F32OverlapProducerFeedsTypedCacheAndAcceptedPrefix",
+        "neighbor": false,
+        "properties": {
+          "device": "NVIDIA GeForce RTX 4070",
+          "minimum_fp4_midpoint_distance": "0.205811",
+          "norm_early_rounding_differences": "2",
+          "successful_submissions": "14",
+          "maximum_bf16_ulp_stage0": "0",
+          "maximum_bf16_ulp_stage1": "0",
+          "maximum_bf16_ulp_stage2": "0",
+          "maximum_bf16_ulp_stage3": "0",
+          "producer_submissions": "10",
+          "cold_producer_generations": "10",
+          "consumer_submissions": "4",
+          "compression_emissions": "3",
+          "private_intermediate_emissions": "1",
+          "geometry": "B2/D128/RD64; F32 window8x256; BF16 cache capacity3 active0->1->2",
+          "state_feedback": "original GraphOutput.storage_lease; no host payload feedback; accepted4 continuation",
+          "scope": "projected F32 KV/gate producer and typed BF16 score/selection consumer; not full model/projection/prefill8/throughput"
+        }
+      },
+      {
+        "backend": "vulkan",
+        "name": "VulkanGaRatio4.ExistingMultiheadRopeKeepsOriginalGeometry",
+        "neighbor": true,
+        "properties": {
+          "device": "NVIDIA GeForce RTX 4070",
+          "successful_submissions": "1",
+          "geometry": "old B2/S3/H2/D8, rotary4, sequence_axis-3, batch positions and token frequencies"
+        }
+      },
+      {
+        "backend": "apple",
+        "name": "AppleGaRatio4.F32OverlapProducerFeedsTypedCacheAndAcceptedPrefix",
+        "neighbor": false,
+        "properties": {
+          "device": "Apple M4",
+          "minimum_fp4_midpoint_distance": "0.205811",
+          "norm_early_rounding_differences": "2",
+          "successful_submissions": "14",
+          "maximum_bf16_ulp_stage0": "0",
+          "maximum_bf16_ulp_stage1": "0",
+          "maximum_bf16_ulp_stage2": "0",
+          "maximum_bf16_ulp_stage3": "1",
+          "producer_submissions": "10",
+          "cold_producer_generations": "10",
+          "consumer_submissions": "4",
+          "compression_emissions": "3",
+          "private_intermediate_emissions": "1",
+          "geometry": "B2/D128/RD64; F32 window8x256; BF16 cache capacity3 active0->1->2",
+          "state_feedback": "original GraphOutput.storage_lease; no host payload feedback; accepted4 continuation",
+          "scope": "projected F32 KV/gate producer and typed BF16 score/selection consumer; not full model/projection/prefill8/throughput"
+        }
+      },
+      {
+        "backend": "apple",
+        "name": "AppleGaRatio4.ExistingMultiheadRopeKeepsOriginalGeometry",
+        "neighbor": true,
+        "properties": {
+          "device": "Apple M4",
+          "successful_submissions": "1",
+          "geometry": "old B2/S3/H2/D8, rotary4, sequence_axis-3, batch positions and token frequencies"
+        }
+      }
+    ]
+  },
+  "limitations": [
+    "Finite projected-boundary journey, not full checkpoint payload/model or projection. Full positive-length prefill8 branch, arbitrary IEEE inputs, other ratios/depths, ProTop1024 complete chain and Linux are not signed.",
+    "No capture/quality/throughput/zero-copy/fused-kernel claim. Out-of-place state/cache updates here are ordinary functional reference consumers; this finite capacity3 journey does not claim scalable large dense-cache append performance.",
+    "Explicit no-emission graph avoids invalid zero-row QAT; this is not a general lazy Select/control-flow implementation.",
+    "Capability7/8, delivery0/3 remain incomplete. All33 whole artifact_execution_verified flags remainfalse. Remaining finite required role actions are recorded in review/remaining-role-actions.json."
+  ],
+  "current_sources": [
+    {
+      "path": "docs/architecture/compute-design.md",
+      "bytes": 108588,
+      "sha256": "0f08c8b057caafda222c0269e07e7bbf53214152429762deb026b05afb743971"
+    },
+    {
+      "path": "docs/developer/current-work.md",
+      "bytes": 36105,
+      "sha256": "e796a4e61b6a841db9fd2baa1fc69c1477a519e7bb8ba91d2c4e95b5265092bc"
+    },
+    {
+      "path": "docs/implementation/model-operators.md",
+      "bytes": 78816,
+      "sha256": "80d955c64b531336790e82d8fd525e955848b42a208035a598fcaeb3568d0184"
+    },
+    {
+      "path": "docs/implementation/model-quantizations.json",
+      "bytes": 560459,
+      "sha256": "12b2b04e91ca74a79d0661671064aaea4f899cb7e3d496cc7ae62152fbb230d3"
+    },
+    {
+      "path": "docs/user/compute.md",
+      "bytes": 119299,
+      "sha256": "d0d3a47cd1545764006bd664da69382b10cb1f9b3a535e884bcb45e8ee7537ac"
+    },
+    {
+      "path": "include/hyle/compute/model_ops.h",
+      "bytes": 75341,
+      "sha256": "d3315100def9904a604dd3a1386000641cb03c2e8d36485ef3e55b98e4dde3e5"
+    },
+    {
+      "path": "include/hyle/compute/operation.h",
+      "bytes": 28108,
+      "sha256": "35b7c862143839e4b8ce0c9a49753b7add2f325ec424bf5f91a1afeec0101506"
+    },
+    {
+      "path": "include/hyle/compute/resource_leases.h",
+      "bytes": 8660,
+      "sha256": "4e5681ebfa7c2f2ad51e5788c8316f4b993883f595c04b33fe594d7294dab85b"
+    },
+    {
+      "path": "include/hyle/compute/state_versions.h",
+      "bytes": 8553,
+      "sha256": "a09cb66a216b56a0651f515f18d8a97772b0e6d281c171a82b8a6630b3e1c7d7"
+    },
+    {
+      "path": "include/hyle/graph/result.h",
+      "bytes": 1646,
+      "sha256": "90861eafec4f3a0aa73014416bd2817dfe3892ac001ea206bebf907e1d3cf182"
+    },
+    {
+      "path": "src/compute_ggml_runtime/explicit_rope.h",
+      "bytes": 3577,
+      "sha256": "356def1adf2f40dc2dcd1b342c45c0fc5cf2f015739783b8df0741b94cc5acff"
+    },
+    {
+      "path": "src/compute_provider_ggml_cuda/tensor_program.cc",
+      "bytes": 54758,
+      "sha256": "6edcfe378983d4f371cede7a0ec463ae17c2e11f307b81ab8f61a0c0d917a4b2"
+    },
+    {
+      "path": "src/compute_provider_ggml_vulkan/region.cc",
+      "bytes": 105872,
+      "sha256": "d76fd202636a65774bb63e8a2a27cbd636c8fa36c070768c09bbefbb9e001bd3"
+    },
+    {
+      "path": "src/compute_route_apple/apple_memory.mm",
+      "bytes": 35385,
+      "sha256": "1121b85f42976c813c21ddfa736cc338ec6724e100f466bf7144c21af13c52d0"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_program.cc",
+      "bytes": 56037,
+      "sha256": "dd5a66d823c09f1e0c2ef7a1d3c0194ef605b72bd60bb7c6fa46b6c473788e52"
+    },
+    {
+      "path": "src/graph/resources.cc",
+      "bytes": 70350,
+      "sha256": "40f38a4b5d2d5e316fe9cae57b2360cd1598446a31acee63740ba297990fa57c"
+    },
+    {
+      "path": "tests/compute_models/batched_rope_fixture.h",
+      "bytes": 1864,
+      "sha256": "2642e037693677e48b5dc341ac9dc930926f0899f961d9d1733dcd59e013301c"
+    },
+    {
+      "path": "tests/compute_models/ga_indexer_state_fixture.h",
+      "bytes": 26486,
+      "sha256": "c2055b3920c8ebc93ed30d2596d4eba049790e148b8dd3d59128e1ffda48ab84"
+    },
+    {
+      "path": "tests/compute_models/ga_ratio4_producer_fixture.h",
+      "bytes": 30026,
+      "sha256": "9fc21f2d6bb675227e59d5bbd0ecfae4fe47cdd162fbbf904ace3b5964119cce"
+    },
+    {
+      "path": "tests/compute_models/ga_ratio4_reference_fixture.h",
+      "bytes": 16624,
+      "sha256": "e87a6f7303e4db8979afd8da7ca4a416444b38839c5dca7ca390c239a7a89d7f"
+    },
+    {
+      "path": "tests/compute_models/nvfp4_reference_fixture.h",
+      "bytes": 22482,
+      "sha256": "cc94ec1f443511722ff4fc227b065af27b82573443735250951cdce934faa4d3"
+    },
+    {
+      "path": "tests/graph_route_apple/CMakeLists.txt",
+      "bytes": 7036,
+      "sha256": "5eedf41e56b8c6867aa21c41269b09a60a62509b2c9549ea152c765d14e71ceb"
+    },
+    {
+      "path": "tests/graph_route_apple/ga_ratio4_producer_test.cc",
+      "bytes": 1662,
+      "sha256": "6ac1c74f95641949cdf5a342785bc2ed12f2895d75d82c692e4aa2df9c07c014"
+    },
+    {
+      "path": "tests/graph_route_cpu/CMakeLists.txt",
+      "bytes": 4210,
+      "sha256": "92cc73cbca50e086c70eadaa56f9487e37c76dcbef4088afce271359ad548aa7"
+    },
+    {
+      "path": "tests/graph_route_cpu/ga_ratio4_producer_test.cc",
+      "bytes": 1217,
+      "sha256": "9a294437ba9862a7faa9c1b1c85ff771a00359749a0f957ac349d317ebb6392b"
+    },
+    {
+      "path": "tests/graph_route_cuda/CMakeLists.txt",
+      "bytes": 3282,
+      "sha256": "d1f7ec89a5fec265e52a719662603c46c1dc9b9bfcba0c7c88ab59ff96eb2736"
+    },
+    {
+      "path": "tests/graph_route_cuda/ga_ratio4_producer_test.cc",
+      "bytes": 1499,
+      "sha256": "157765c108fee375f5ca25620901b7f7b6d55649b7e34e007510079a0ec446f7"
+    },
+    {
+      "path": "tests/graph_route_vulkan/CMakeLists.txt",
+      "bytes": 6449,
+      "sha256": "d064b6d9625e7ab00a631e02f547204df2409ae645f23b14f01ab58c13063f19"
+    },
+    {
+      "path": "tests/graph_route_vulkan/ga_ratio4_producer_test.cc",
+      "bytes": 3417,
+      "sha256": "bdab741f36a97121d7cd1dfefc4e724537dd29ae4ed6c4bf56969a3851e494ae"
+    }
+  ],
+  "archive": {
+    "path": "docs/evidence/correctness/ga-ratio4-producer-reference-2026-10-21.zip",
+    "bytes": 4999419,
+    "sha256": "d6c4d0cb786dff38cc5de5e84b3bbe75f648305ce0bed78f6ee4d1315ffbb299",
+    "members": 838
+  },
+  "archive_entries": [
+    {
+      "entry": "provenance/compressor-next-design.json",
+      "bytes": 8997,
+      "sha256": "4ca1e6b6e47d3bc4942fadeba74f2196ce6944543a9a9014024515e118030451"
+    },
+    {
+      "entry": "provenance/deepseek-v4-ga-2026-10-19.zip",
+      "bytes": 131088,
+      "sha256": "e7388fd80750107cd0702d413aceaa8d07e644265d275eaee864ee62293f51b0"
+    },
+    {
+      "entry": "provenance/ratio4-producer-design.json",
+      "bytes": 7171,
+      "sha256": "c879d8b48439c5cb8a0eb90d9ce5f91cbdc5028117934b77bec66b0ad8a3cbe8"
+    },
+    {
+      "entry": "records/after/src/compute_provider_ggml_cuda/tensor_program.cc",
+      "bytes": 54758,
+      "sha256": "6edcfe378983d4f371cede7a0ec463ae17c2e11f307b81ab8f61a0c0d917a4b2"
+    },
+    {
+      "entry": "records/after/src/compute_provider_ggml_vulkan/region.cc",
+      "bytes": 105668,
+      "sha256": "6926ff2d2e76674eca3a81f29409e80cbe9ef30a561bf1fa413b8992984d1ef1"
+    },
+    {
+      "entry": "records/apple/actual-canonical-dependencies.json",
+      "bytes": 9740,
+      "sha256": "d8cfd2d63f1eeabc0e85d1b41fb8f67268a45bb10b2f9fd1a45c94fd8018a7b7"
+    },
+    {
+      "entry": "records/apple/actual-dependencies-canonical-audit.json",
+      "bytes": 1133711,
+      "sha256": "53717f13f3d82a5fcc99a412e6db0ece37da33b60103f3a4ee2e8b475429195a"
+    },
+    {
+      "entry": "records/apple/apple-memory-owned-stride.diff",
+      "bytes": 7136,
+      "sha256": "b302554e036e4969e0d1d8d44e6a6d587c7702d6f8a519d3362895bf1ecce81c"
+    },
+    {
+      "entry": "records/apple/apple-memory-product-change.json",
+      "bytes": 487,
+      "sha256": "9e38c74b4154e8060d09dfa7bf685a11282db5b37f1ca31abf53799bf5f74b5b"
+    },
+    {
+      "entry": "records/apple/attempt1/source-freeze.json",
+      "bytes": 867,
+      "sha256": "a6e6081727058c2f52aabaa2f8ba23fc4e04c213a2c85ad7b0139d269d1654e1"
+    },
+    {
+      "entry": "records/apple/attempt1/source/tests/compute_models/ga_ratio4_producer_fixture.h",
+      "bytes": 29170,
+      "sha256": "54c2a6401e6dca40e61d63a67b3229933a78883b9f9d915ffeb8a030ceffadf0"
+    },
+    {
+      "entry": "records/apple/attempt1/source/tests/compute_models/ga_ratio4_reference_fixture.h",
+      "bytes": 16624,
+      "sha256": "e87a6f7303e4db8979afd8da7ca4a416444b38839c5dca7ca390c239a7a89d7f"
+    },
+    {
+      "entry": "records/apple/attempt1/source/tests/graph_route_apple/CMakeLists.txt",
+      "bytes": 7036,
+      "sha256": "5eedf41e56b8c6867aa21c41269b09a60a62509b2c9549ea152c765d14e71ceb"
+    },
+    {
+      "entry": "records/apple/attempt1/source/tests/graph_route_apple/ga_ratio4_producer_test.cc",
+      "bytes": 1662,
+      "sha256": "6ac1c74f95641949cdf5a342785bc2ed12f2895d75d82c692e4aa2df9c07c014"
+    },
+    {
+      "entry": "records/apple/attempt2/source-freeze.json",
+      "bytes": 1364,
+      "sha256": "e3d32bba337fe2fe39b1005fbd449121d18ec396c2fcd721c73bb174447fe3d4"
+    },
+    {
+      "entry": "records/apple/attempt2/source/tests/compute_models/batched_rope_fixture.h",
+      "bytes": 1864,
+      "sha256": "2642e037693677e48b5dc341ac9dc930926f0899f961d9d1733dcd59e013301c"
+    },
+    {
+      "entry": "records/apple/attempt2/source/tests/compute_models/ga_indexer_state_fixture.h",
+      "bytes": 26486,
+      "sha256": "c2055b3920c8ebc93ed30d2596d4eba049790e148b8dd3d59128e1ffda48ab84"
+    },
+    {
+      "entry": "records/apple/attempt2/source/tests/compute_models/ga_ratio4_producer_fixture.h",
+      "bytes": 29476,
+      "sha256": "1a47df1bb4e88a31f7b7f43ba1bb547cab39481d4e67bc1ee348dbbdd2618529"
+    },
+    {
+      "entry": "records/apple/attempt2/source/tests/compute_models/ga_ratio4_reference_fixture.h",
+      "bytes": 16624,
+      "sha256": "e87a6f7303e4db8979afd8da7ca4a416444b38839c5dca7ca390c239a7a89d7f"
+    },
+    {
+      "entry": "records/apple/attempt2/source/tests/compute_models/nvfp4_reference_fixture.h",
+      "bytes": 22482,
+      "sha256": "cc94ec1f443511722ff4fc227b065af27b82573443735250951cdce934faa4d3"
+    },
+    {
+      "entry": "records/apple/attempt2/source/tests/graph_route_apple/CMakeLists.txt",
+      "bytes": 7036,
+      "sha256": "5eedf41e56b8c6867aa21c41269b09a60a62509b2c9549ea152c765d14e71ceb"
+    },
+    {
+      "entry": "records/apple/attempt2/source/tests/graph_route_apple/ga_ratio4_producer_test.cc",
+      "bytes": 1662,
+      "sha256": "6ac1c74f95641949cdf5a342785bc2ed12f2895d75d82c692e4aa2df9c07c014"
+    },
+    {
+      "entry": "records/apple/attempt3/actual-dependencies-canonical-audit.json",
+      "bytes": 286460,
+      "sha256": "6b0bb96b5028975407cf1a842998d96c2c760f66cfd18790754ee556b26631b2"
+    },
+    {
+      "entry": "records/apple/attempt3/source-freeze.json",
+      "bytes": 1537,
+      "sha256": "799c19fd2b1565d735f967bbd4ceedfbc6e4763905821d45520fbabbc6018ea0"
+    },
+    {
+      "entry": "records/apple/attempt3/source/include/hyle/compute/model_ops.h",
+      "bytes": 75341,
+      "sha256": "d3315100def9904a604dd3a1386000641cb03c2e8d36485ef3e55b98e4dde3e5"
+    },
+    {
+      "entry": "records/apple/attempt3/source/tests/compute_models/batched_rope_fixture.h",
+      "bytes": 1864,
+      "sha256": "2642e037693677e48b5dc341ac9dc930926f0899f961d9d1733dcd59e013301c"
+    },
+    {
+      "entry": "records/apple/attempt3/source/tests/compute_models/ga_indexer_state_fixture.h",
+      "bytes": 26486,
+      "sha256": "c2055b3920c8ebc93ed30d2596d4eba049790e148b8dd3d59128e1ffda48ab84"
+    },
+    {
+      "entry": "records/apple/attempt3/source/tests/compute_models/ga_ratio4_producer_fixture.h",
+      "bytes": 29547,
+      "sha256": "b85d8ab0fadadeb77eded970a4bc36680b7cc7154ee95363d5690848783564cf"
+    },
+    {
+      "entry": "records/apple/attempt3/source/tests/compute_models/ga_ratio4_reference_fixture.h",
+      "bytes": 16624,
+      "sha256": "e87a6f7303e4db8979afd8da7ca4a416444b38839c5dca7ca390c239a7a89d7f"
+    },
+    {
+      "entry": "records/apple/attempt3/source/tests/compute_models/nvfp4_reference_fixture.h",
+      "bytes": 22482,
+      "sha256": "cc94ec1f443511722ff4fc227b065af27b82573443735250951cdce934faa4d3"
+    },
+    {
+      "entry": "records/apple/attempt3/source/tests/graph_route_apple/CMakeLists.txt",
+      "bytes": 7036,
+      "sha256": "5eedf41e56b8c6867aa21c41269b09a60a62509b2c9549ea152c765d14e71ceb"
+    },
+    {
+      "entry": "records/apple/attempt3/source/tests/graph_route_apple/ga_ratio4_producer_test.cc",
+      "bytes": 1662,
+      "sha256": "6ac1c74f95641949cdf5a342785bc2ed12f2895d75d82c692e4aa2df9c07c014"
+    },
+    {
+      "entry": "records/apple/before-neighbor/tests/graph_route_apple/ga_ratio4_producer_test.cc",
+      "bytes": 1523,
+      "sha256": "bcf967b35ba7f5fbb321ba8e9437b29f07c18101e15ae39204b561911cb83f63"
+    },
+    {
+      "entry": "records/apple/before-product/src/compute_route_apple/apple_memory.mm",
+      "bytes": 35576,
+      "sha256": "be440abfcfb5a340ec9a410014a963aee46e65c8e7d1206bb067c9ad9ea387f4"
+    },
+    {
+      "entry": "records/apple/before/tests/graph_route_apple/CMakeLists.txt",
+      "bytes": 6850,
+      "sha256": "5ed5a1cf0c09d6c9667ceb12a8ac39a404083051d53057d9adea40c06356d205"
+    },
+    {
+      "entry": "records/apple/build_mac.py",
+      "bytes": 8174,
+      "sha256": "6cb73fb66af7d4c929c4c7e731ff81903679e5d32fce9488f82e5081ed5cbf51"
+    },
+    {
+      "entry": "records/apple/canonical-dependency-check-fix.json",
+      "bytes": 587,
+      "sha256": "2896ad8f5f23f7a3c8dcae9367779b5f78493860e3cc8898f8f72c1cb7018a53"
+    },
+    {
+      "entry": "records/apple/cleanup-readonly-inventory.json",
+      "bytes": 2048,
+      "sha256": "057baefbc478b917e004513947279ad15fa001338f5d4b14555f222ec8e424a6"
+    },
+    {
+      "entry": "records/apple/collect_mac.py",
+      "bytes": 996,
+      "sha256": "793b7596d3db4fa3e291ef9a059b6c3bcda6c2e29e346a59c4f39a9608f5f2be"
+    },
+    {
+      "entry": "records/apple/final-validation.json",
+      "bytes": 9458,
+      "sha256": "1419b814e1e8776f9082c15c1bae13dc5aea37f8984563c7950883b75a635ddb"
+    },
+    {
+      "entry": "records/apple/finalize_receipts.py",
+      "bytes": 9134,
+      "sha256": "7051592bbb1cd4bd33158b0f70752cd81c6df4ff0941bc07374fa1bf0d8590b1"
+    },
+    {
+      "entry": "records/apple/include-coherence-fix.json",
+      "bytes": 537,
+      "sha256": "1bb2c62fcd21c6a1173dad346a845ddde662d7542b9158fbc16597e674280067"
+    },
+    {
+      "entry": "records/apple/leaf-source-review.json",
+      "bytes": 2765,
+      "sha256": "47fdfcb58a61b282ffa11c4b9085c6fffba030355c0245ba1813c153edcf2aff"
+    },
+    {
+      "entry": "records/apple/mac/attempt1-red/hardware.json",
+      "bytes": 516,
+      "sha256": "072aadfd3b969664f72b96548ec50ef7d28164bbfd8521e4bf937daa2b8d7c97"
+    },
+    {
+      "entry": "records/apple/mac/attempt1-red/plan.json",
+      "bytes": 363002,
+      "sha256": "2395717d7afa36e7c73a671940b8e2a6da1e971a6e5f4cf69bde31c95155700a"
+    },
+    {
+      "entry": "records/apple/mac/attempt1-red/results/compile-summary.json",
+      "bytes": 308343,
+      "sha256": "5b7499978d813805b3dca1ff3c5983dbc201f39c4d62178e1c38d04aac2fa365"
+    },
+    {
+      "entry": "records/apple/mac/attempt1-red/results/tests--graph_route_apple--ga_ratio4_producer_test.cc-compile.command.json",
+      "bytes": 299590,
+      "sha256": "ae3ee1a78eb8d7035cb91472ce25aa8c41620358190fc28798178def88d82915"
+    },
+    {
+      "entry": "records/apple/mac/attempt1-red/results/tests--graph_route_apple--ga_ratio4_producer_test.cc-compile.result.json",
+      "bytes": 299636,
+      "sha256": "612af053ef8087410c54391fb9708247a202402a807800a6d8ce0eedcf3c9a8f"
+    },
+    {
+      "entry": "records/apple/mac/attempt1-red/results/tests--graph_route_apple--ga_ratio4_producer_test.cc-compile.stderr.log",
+      "bytes": 24746,
+      "sha256": "3b26ca0f47fb23429ff44fb6a1aec0a779d9314eef94e24807e7a5096f27a522"
+    },
+    {
+      "entry": "records/apple/mac/attempt1-red/results/tests--graph_route_apple--ga_ratio4_producer_test.cc-compile.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/mac/attempt1-red/results/tests--graph_route_apple--ga_ratio4_producer_test.cc-identity.json",
+      "bytes": 300395,
+      "sha256": "be7e468511106a0a8b8dd0223491b5939d73297f479b17f25cee01df49e22656"
+    },
+    {
+      "entry": "records/apple/mac/attempt1-red/reused-source-manifest.json",
+      "bytes": 19238,
+      "sha256": "a1c05cdcb30ee4fb957b31df666b97238f3ade4a74783c94029fbeaeea1ad8f2"
+    },
+    {
+      "entry": "records/apple/mac/attempt1-red/source-manifest.json",
+      "bytes": 697,
+      "sha256": "5d8dcdeb46a43b4370f14403d97fb611799eb45b42d0cfa1a26d7dc51c7944b6"
+    },
+    {
+      "entry": "records/apple/mac/attempt1-red/tests/compute_models/ga_ratio4_producer_fixture.h",
+      "bytes": 29170,
+      "sha256": "54c2a6401e6dca40e61d63a67b3229933a78883b9f9d915ffeb8a030ceffadf0"
+    },
+    {
+      "entry": "records/apple/mac/attempt1-red/tests/graph_route_apple/ga_ratio4_producer_test.cc",
+      "bytes": 1662,
+      "sha256": "6ac1c74f95641949cdf5a342785bc2ed12f2895d75d82c692e4aa2df9c07c014"
+    },
+    {
+      "entry": "records/apple/mac/attempt2-runtime-red/hardware.json",
+      "bytes": 516,
+      "sha256": "072aadfd3b969664f72b96548ec50ef7d28164bbfd8521e4bf937daa2b8d7c97"
+    },
+    {
+      "entry": "records/apple/mac/attempt2-runtime-red/plan.json",
+      "bytes": 363002,
+      "sha256": "2395717d7afa36e7c73a671940b8e2a6da1e971a6e5f4cf69bde31c95155700a"
+    },
+    {
+      "entry": "records/apple/mac/attempt2-runtime-red/results/compile-summary.json",
+      "bytes": 598531,
+      "sha256": "9347e5c1dea229ae479b40e19d1386cae364f1791c04790e6813c0666315f023"
+    },
+    {
+      "entry": "records/apple/mac/attempt2-runtime-red/results/link-inputs.json",
+      "bytes": 44535,
+      "sha256": "96a96496a40ad1c21cc2cd890112d140a7c5cbed938e1dd240f4f091d0ebe8a1"
+    },
+    {
+      "entry": "records/apple/mac/attempt2-runtime-red/results/link.command.json",
+      "bytes": 26240,
+      "sha256": "e72fe03bad7ac18c03fd82d67b52faf87175b49b623ace3c9092498f22870725"
+    },
+    {
+      "entry": "records/apple/mac/attempt2-runtime-red/results/link.result.json",
+      "bytes": 26287,
+      "sha256": "2ac8a9b3e7effeebae2f0446c785acb4627e1e6d768ff54ed84630bc8faa5269"
+    },
+    {
+      "entry": "records/apple/mac/attempt2-runtime-red/results/link.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/mac/attempt2-runtime-red/results/link.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/mac/attempt2-runtime-red/results/run.command.json",
+      "bytes": 440,
+      "sha256": "ae183f0119bf32f4b6323295b412ee7218786719683e99e5c8b65ca5c3d7b25b"
+    },
+    {
+      "entry": "records/apple/mac/attempt2-runtime-red/results/run.result.json",
+      "bytes": 486,
+      "sha256": "5e8b43d2b6818296f69d104fc5978eccfab08ccec515dac7eb166daf1b7082b7"
+    },
+    {
+      "entry": "records/apple/mac/attempt2-runtime-red/results/run.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/mac/attempt2-runtime-red/results/run.stdout.log",
+      "bytes": 1127,
+      "sha256": "31eaaa6c744b6bf274e5e201e62e58122f69b4614ba705edc2b7bc18c0a9155d"
+    },
+    {
+      "entry": "records/apple/mac/attempt2-runtime-red/results/tests--graph_route_apple--ga_ratio4_producer_test.cc-compile.command.json",
+      "bytes": 299589,
+      "sha256": "ab7ddc82c47d5d62e5652b80492e7fd79ce4f9731d68de376d4b82c6e4a3e1ff"
+    },
+    {
+      "entry": "records/apple/mac/attempt2-runtime-red/results/tests--graph_route_apple--ga_ratio4_producer_test.cc-compile.result.json",
+      "bytes": 299633,
+      "sha256": "9a94e8decaed3926f907df495218d8814989aae717d06a448a6b3ba4bc944a21"
+    },
+    {
+      "entry": "records/apple/mac/attempt2-runtime-red/results/tests--graph_route_apple--ga_ratio4_producer_test.cc-compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/mac/attempt2-runtime-red/results/tests--graph_route_apple--ga_ratio4_producer_test.cc-compile.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/mac/attempt2-runtime-red/results/tests--graph_route_apple--ga_ratio4_producer_test.cc-identity.json",
+      "bytes": 567572,
+      "sha256": "ffb859cf6733bfad496a490bc87c89dfb6dd5742fe54a59d79fb4fdd6c023228"
+    },
+    {
+      "entry": "records/apple/mac/attempt2-runtime-red/results/tests.xml",
+      "bytes": 1897,
+      "sha256": "3eedc6a4c170f23669ed515e521d9b994c6fe6f180998ed47ffb113459809235"
+    },
+    {
+      "entry": "records/apple/mac/attempt2-runtime-red/results/validation.json",
+      "bytes": 1252,
+      "sha256": "3c9f0a63b4ee87f569c9f7ab31fad6fbed7805cfaf4818c11a0ff9593a4df0de"
+    },
+    {
+      "entry": "records/apple/mac/attempt2-runtime-red/reused-source-manifest.json",
+      "bytes": 18488,
+      "sha256": "8514306701123278ddc5bccbaf0491b173708c82581908d6eeb59c6a8fc084a7"
+    },
+    {
+      "entry": "records/apple/mac/attempt2-runtime-red/source-manifest.json",
+      "bytes": 1042,
+      "sha256": "ce0b913f80b52bc30496d1b6f9d0d57392e50019b65b35629771a5a8032b82c3"
+    },
+    {
+      "entry": "records/apple/mac/attempt2-runtime-red/tests/compute_models/ga_ratio4_producer_fixture.h",
+      "bytes": 29476,
+      "sha256": "1a47df1bb4e88a31f7b7f43ba1bb547cab39481d4e67bc1ee348dbbdd2618529"
+    },
+    {
+      "entry": "records/apple/mac/attempt2-runtime-red/tests/graph_route_apple/ga_ratio4_producer_test.cc",
+      "bytes": 1662,
+      "sha256": "6ac1c74f95641949cdf5a342785bc2ed12f2895d75d82c692e4aa2df9c07c014"
+    },
+    {
+      "entry": "records/apple/mac/attempt3-dependency-red/hardware.json",
+      "bytes": 516,
+      "sha256": "072aadfd3b969664f72b96548ec50ef7d28164bbfd8521e4bf937daa2b8d7c97"
+    },
+    {
+      "entry": "records/apple/mac/attempt3-dependency-red/plan.json",
+      "bytes": 363002,
+      "sha256": "7b3b8d59798178c1217c5ffd286a6381e3ceca06dacaeaaeb6ff3f7af7fa2439"
+    },
+    {
+      "entry": "records/apple/mac/attempt3-dependency-red/results/compile-summary.json",
+      "bytes": 598531,
+      "sha256": "9347e5c1dea229ae479b40e19d1386cae364f1791c04790e6813c0666315f023"
+    },
+    {
+      "entry": "records/apple/mac/attempt3-dependency-red/results/link-inputs.json",
+      "bytes": 44535,
+      "sha256": "96a96496a40ad1c21cc2cd890112d140a7c5cbed938e1dd240f4f091d0ebe8a1"
+    },
+    {
+      "entry": "records/apple/mac/attempt3-dependency-red/results/link.command.json",
+      "bytes": 26240,
+      "sha256": "e72fe03bad7ac18c03fd82d67b52faf87175b49b623ace3c9092498f22870725"
+    },
+    {
+      "entry": "records/apple/mac/attempt3-dependency-red/results/link.result.json",
+      "bytes": 26287,
+      "sha256": "2ac8a9b3e7effeebae2f0446c785acb4627e1e6d768ff54ed84630bc8faa5269"
+    },
+    {
+      "entry": "records/apple/mac/attempt3-dependency-red/results/link.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/mac/attempt3-dependency-red/results/link.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/mac/attempt3-dependency-red/results/run.command.json",
+      "bytes": 440,
+      "sha256": "ae183f0119bf32f4b6323295b412ee7218786719683e99e5c8b65ca5c3d7b25b"
+    },
+    {
+      "entry": "records/apple/mac/attempt3-dependency-red/results/run.result.json",
+      "bytes": 486,
+      "sha256": "5e8b43d2b6818296f69d104fc5978eccfab08ccec515dac7eb166daf1b7082b7"
+    },
+    {
+      "entry": "records/apple/mac/attempt3-dependency-red/results/run.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/mac/attempt3-dependency-red/results/run.stdout.log",
+      "bytes": 1127,
+      "sha256": "31eaaa6c744b6bf274e5e201e62e58122f69b4614ba705edc2b7bc18c0a9155d"
+    },
+    {
+      "entry": "records/apple/mac/attempt3-dependency-red/results/tests--graph_route_apple--ga_ratio4_producer_test.cc-compile.command.json",
+      "bytes": 299589,
+      "sha256": "b5c8b92e03afec86cc94d3c9bac3ff96ae6e58ad545e30b9ffd0b957a1b38016"
+    },
+    {
+      "entry": "records/apple/mac/attempt3-dependency-red/results/tests--graph_route_apple--ga_ratio4_producer_test.cc-compile.result.json",
+      "bytes": 299634,
+      "sha256": "4f9f23682a5178ea485bde56e96d0711d7203bd5f940c8afd33141c78563cc59"
+    },
+    {
+      "entry": "records/apple/mac/attempt3-dependency-red/results/tests--graph_route_apple--ga_ratio4_producer_test.cc-compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/mac/attempt3-dependency-red/results/tests--graph_route_apple--ga_ratio4_producer_test.cc-compile.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/mac/attempt3-dependency-red/results/tests--graph_route_apple--ga_ratio4_producer_test.cc-identity.json",
+      "bytes": 568032,
+      "sha256": "30ce3adb0dc3040a22ae71a09828381290df4319d546165ff77fd0619f971300"
+    },
+    {
+      "entry": "records/apple/mac/attempt3-dependency-red/results/tests.xml",
+      "bytes": 1897,
+      "sha256": "3eedc6a4c170f23669ed515e521d9b994c6fe6f180998ed47ffb113459809235"
+    },
+    {
+      "entry": "records/apple/mac/attempt3-dependency-red/results/validation.json",
+      "bytes": 1252,
+      "sha256": "3c9f0a63b4ee87f569c9f7ab31fad6fbed7805cfaf4818c11a0ff9593a4df0de"
+    },
+    {
+      "entry": "records/apple/mac/attempt3-dependency-red/reused-source-manifest.json",
+      "bytes": 18142,
+      "sha256": "7f2e1d055e58bd6bf880ca2a8aa3453bfb82e67dd78bb04ab35d26ddea3e1eac"
+    },
+    {
+      "entry": "records/apple/mac/attempt3-dependency-red/source-manifest.json",
+      "bytes": 1200,
+      "sha256": "066e262c947971059e7e9704362c5aa81f30063b74d4703770d238bb6e807e4f"
+    },
+    {
+      "entry": "records/apple/mac/attempt3-dependency-red/tests/compute_models/ga_ratio4_producer_fixture.h",
+      "bytes": 29547,
+      "sha256": "b85d8ab0fadadeb77eded970a4bc36680b7cc7154ee95363d5690848783564cf"
+    },
+    {
+      "entry": "records/apple/mac/attempt3-dependency-red/tests/graph_route_apple/ga_ratio4_producer_test.cc",
+      "bytes": 1662,
+      "sha256": "6ac1c74f95641949cdf5a342785bc2ed12f2895d75d82c692e4aa2df9c07c014"
+    },
+    {
+      "entry": "records/apple/mac/attempt4-current-runtime-red/hardware.json",
+      "bytes": 516,
+      "sha256": "072aadfd3b969664f72b96548ec50ef7d28164bbfd8521e4bf937daa2b8d7c97"
+    },
+    {
+      "entry": "records/apple/mac/attempt4-current-runtime-red/plan.json",
+      "bytes": 363002,
+      "sha256": "7b3b8d59798178c1217c5ffd286a6381e3ceca06dacaeaaeb6ff3f7af7fa2439"
+    },
+    {
+      "entry": "records/apple/mac/attempt4-current-runtime-red/results/compile-summary.json",
+      "bytes": 598731,
+      "sha256": "0145090e1ed587850e17ba160d1950837634dc998d637c711e909b31de1f74e6"
+    },
+    {
+      "entry": "records/apple/mac/attempt4-current-runtime-red/results/link-inputs.json",
+      "bytes": 44535,
+      "sha256": "4c56db8f28e4fd765e7abc9040e428eb2ae2aff3b2d54cf26cbe5e13270dda62"
+    },
+    {
+      "entry": "records/apple/mac/attempt4-current-runtime-red/results/link.command.json",
+      "bytes": 26241,
+      "sha256": "630e3015279a83b383fc4233a06d3e8ac1227d293ab31e9871d0c0b0f8189c02"
+    },
+    {
+      "entry": "records/apple/mac/attempt4-current-runtime-red/results/link.result.json",
+      "bytes": 26288,
+      "sha256": "c7814afd998c0c62f7d2ca9326f43acdfb8e8269cda0e3dfe10427e8ebb64db2"
+    },
+    {
+      "entry": "records/apple/mac/attempt4-current-runtime-red/results/link.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/mac/attempt4-current-runtime-red/results/link.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/mac/attempt4-current-runtime-red/results/run.command.json",
+      "bytes": 440,
+      "sha256": "ea45610ca9d446d5331d602bae93a8a5ee0e21c5db76680139537bb034a9d05d"
+    },
+    {
+      "entry": "records/apple/mac/attempt4-current-runtime-red/results/run.result.json",
+      "bytes": 485,
+      "sha256": "16e0a5df0d3ce5c46b6d59c4a91b3a903598eb93f97bd186b06b3289ba94005c"
+    },
+    {
+      "entry": "records/apple/mac/attempt4-current-runtime-red/results/run.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/mac/attempt4-current-runtime-red/results/run.stdout.log",
+      "bytes": 1162,
+      "sha256": "349171181bbb6754a506117d5fdd3ad91cd1cfe7f8f0644af1c6a586512b93e2"
+    },
+    {
+      "entry": "records/apple/mac/attempt4-current-runtime-red/results/tests--graph_route_apple--ga_ratio4_producer_test.cc-compile.command.json",
+      "bytes": 299589,
+      "sha256": "6d005d04e5c1b3d472c2c604dd692992f7e507b56a0c11947e87cb10aeb44ec7"
+    },
+    {
+      "entry": "records/apple/mac/attempt4-current-runtime-red/results/tests--graph_route_apple--ga_ratio4_producer_test.cc-compile.result.json",
+      "bytes": 299634,
+      "sha256": "f4ed23d6503f90bc257cb1b9208121eed43be11e606218a7d22d3d367190b92a"
+    },
+    {
+      "entry": "records/apple/mac/attempt4-current-runtime-red/results/tests--graph_route_apple--ga_ratio4_producer_test.cc-compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/mac/attempt4-current-runtime-red/results/tests--graph_route_apple--ga_ratio4_producer_test.cc-compile.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/mac/attempt4-current-runtime-red/results/tests--graph_route_apple--ga_ratio4_producer_test.cc-identity.json",
+      "bytes": 567764,
+      "sha256": "abdaaad0017eb1dac46be4e020837d4122d714527f1760a8c283e3086e19c898"
+    },
+    {
+      "entry": "records/apple/mac/attempt4-current-runtime-red/results/tests.xml",
+      "bytes": 1972,
+      "sha256": "9845234c112781d97951d7928ff7ef6f4566a5b5426190e7f2bcdd5771793b53"
+    },
+    {
+      "entry": "records/apple/mac/attempt4-current-runtime-red/results/validation.json",
+      "bytes": 1253,
+      "sha256": "9615e8013ff719cff9789bc7b69c64e2514e67a67b4938c8bb6377241e0828a0"
+    },
+    {
+      "entry": "records/apple/mac/attempt4-current-runtime-red/reused-source-manifest.json",
+      "bytes": 17795,
+      "sha256": "76b3c7be18840b0aba8ccbd95cfbcd935cb12bf043139e4eaca1dbd03b97c756"
+    },
+    {
+      "entry": "records/apple/mac/attempt4-current-runtime-red/source-manifest.json",
+      "bytes": 1361,
+      "sha256": "f0ba4475a38cd2bc432e8e570873e48ae2cc36ada740e4a158a77bdb80871198"
+    },
+    {
+      "entry": "records/apple/mac/attempt4-current-runtime-red/tests/compute_models/ga_ratio4_producer_fixture.h",
+      "bytes": 29547,
+      "sha256": "b85d8ab0fadadeb77eded970a4bc36680b7cc7154ee95363d5690848783564cf"
+    },
+    {
+      "entry": "records/apple/mac/attempt4-current-runtime-red/tests/graph_route_apple/ga_ratio4_producer_test.cc",
+      "bytes": 1662,
+      "sha256": "6ac1c74f95641949cdf5a342785bc2ed12f2895d75d82c692e4aa2df9c07c014"
+    },
+    {
+      "entry": "records/apple/mac/final/hardware.json",
+      "bytes": 516,
+      "sha256": "072aadfd3b969664f72b96548ec50ef7d28164bbfd8521e4bf937daa2b8d7c97"
+    },
+    {
+      "entry": "records/apple/mac/final/plan.json",
+      "bytes": 437686,
+      "sha256": "afe75e89e95b402b2463f6a5f28e59f9d6f1640abb7ffb64d88c794e7a2626e8"
+    },
+    {
+      "entry": "records/apple/mac/final/results/compile-summary.json",
+      "bytes": 1630493,
+      "sha256": "0899f0d74d065cc3eab0e70a510f853f5b4d95c980f270280f926d1cc1300528"
+    },
+    {
+      "entry": "records/apple/mac/final/results/link-inputs.json",
+      "bytes": 44553,
+      "sha256": "90f8cb7347c8cd853ffce9f34ad1d159ea42e3e37877e1388ed9ed5d8e2f39a7"
+    },
+    {
+      "entry": "records/apple/mac/final/results/link.command.json",
+      "bytes": 26259,
+      "sha256": "6ad020ad619e2216cf3435ff7c2bad84f8936cf1d5161551313b580d25482108"
+    },
+    {
+      "entry": "records/apple/mac/final/results/link.result.json",
+      "bytes": 26306,
+      "sha256": "0cc61bb706505319c6af50849f817ad9e45cf077fe6e62879d7de7c35d7b7f08"
+    },
+    {
+      "entry": "records/apple/mac/final/results/link.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/mac/final/results/link.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/mac/final/results/run.command.json",
+      "bytes": 439,
+      "sha256": "0b3c7d2d4c34b086bc9f8312300517a8a8e9dd59472b4fbd6f8a5117376c24da"
+    },
+    {
+      "entry": "records/apple/mac/final/results/run.result.json",
+      "bytes": 485,
+      "sha256": "729c3fa00132c163113eed0f74b89d3649231590e81fe540f951baedf9d83571"
+    },
+    {
+      "entry": "records/apple/mac/final/results/run.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/mac/final/results/run.stdout.log",
+      "bytes": 811,
+      "sha256": "e84d4a09e62f0f116b72e09e61bcb54d5826e994ea7040df6d4393a96dd09084"
+    },
+    {
+      "entry": "records/apple/mac/final/results/src--compute_route_apple--apple_memory.mm-compile.command.json",
+      "bytes": 151255,
+      "sha256": "b5b88d525dbd2bdc2be0df3010ae5c33ccd9f03bbf3380701874ab209e5c2fcd"
+    },
+    {
+      "entry": "records/apple/mac/final/results/src--compute_route_apple--apple_memory.mm-compile.result.json",
+      "bytes": 151301,
+      "sha256": "36468958b44cd62854c7504da7c3213149ac6ff58a4313ae4972241c3776560a"
+    },
+    {
+      "entry": "records/apple/mac/final/results/src--compute_route_apple--apple_memory.mm-compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/mac/final/results/src--compute_route_apple--apple_memory.mm-compile.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/mac/final/results/src--compute_route_apple--apple_memory.mm-identity.json",
+      "bytes": 614663,
+      "sha256": "0d1d625681e0339819a814157eece71a45211802ae408ec788c238dbed2cf74a"
+    },
+    {
+      "entry": "records/apple/mac/final/results/src--graph--resources.cc-compile.command.json",
+      "bytes": 105560,
+      "sha256": "51a8d479309ac177f836dc06dc148b164ccebe52c498132d2409460b5f9a5928"
+    },
+    {
+      "entry": "records/apple/mac/final/results/src--graph--resources.cc-compile.result.json",
+      "bytes": 105606,
+      "sha256": "b01fa2cc55d6078b82fbf978d6af821b4b33d429658776029bfef0a1d93a1371"
+    },
+    {
+      "entry": "records/apple/mac/final/results/src--graph--resources.cc-compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/mac/final/results/src--graph--resources.cc-compile.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/mac/final/results/src--graph--resources.cc-identity.json",
+      "bytes": 351080,
+      "sha256": "1a8af762797dc7e6ea90271b59a86eb60425fbd6668eadd7ef1be258eae7e6a7"
+    },
+    {
+      "entry": "records/apple/mac/final/results/tests--graph_route_apple--ga_ratio4_producer_test.cc-compile.command.json",
+      "bytes": 299589,
+      "sha256": "d416ba0c4d7032cbbc4feca233f9ba6221b7bb1c38214a5fab155759b547e8a0"
+    },
+    {
+      "entry": "records/apple/mac/final/results/tests--graph_route_apple--ga_ratio4_producer_test.cc-compile.result.json",
+      "bytes": 299635,
+      "sha256": "0c9a91fe1a6400fe5cd447c381e1613101b3d4415a9ccbbe03819f60641c646a"
+    },
+    {
+      "entry": "records/apple/mac/final/results/tests--graph_route_apple--ga_ratio4_producer_test.cc-compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/mac/final/results/tests--graph_route_apple--ga_ratio4_producer_test.cc-compile.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/mac/final/results/tests--graph_route_apple--ga_ratio4_producer_test.cc-identity.json",
+      "bytes": 567765,
+      "sha256": "35f4d5d926c964506bd1a3fe6a8404ade9fb32c3de9a700a064628152a910a28"
+    },
+    {
+      "entry": "records/apple/mac/final/results/tests.xml",
+      "bytes": 2647,
+      "sha256": "5bd742847e3ca413facf0e28bac7d3802e8696759e5e15f3675ef992db06ca4f"
+    },
+    {
+      "entry": "records/apple/mac/final/results/validation.json",
+      "bytes": 796,
+      "sha256": "f827eeb35377a2fbbabf8c7d11eaa7e8c5f0cb4258876111b9118ed9f13413cc"
+    },
+    {
+      "entry": "records/apple/mac/final/reused-source-manifest.json",
+      "bytes": 19495,
+      "sha256": "539a1188196b393573e537e3387d18cc41de798e0921666d1dd2ef29a7791904"
+    },
+    {
+      "entry": "records/apple/mac/final/source-manifest.json",
+      "bytes": 9954,
+      "sha256": "919923fdca3fd14c2f01a9f6288d950727372ba2319f896900b757fef70e0f46"
+    },
+    {
+      "entry": "records/apple/mac/final/tests/compute_models/ga_ratio4_producer_fixture.h",
+      "bytes": 30026,
+      "sha256": "9fc21f2d6bb675227e59d5bbd0ecfae4fe47cdd162fbbf904ace3b5964119cce"
+    },
+    {
+      "entry": "records/apple/mac/final/tests/graph_route_apple/ga_ratio4_producer_test.cc",
+      "bytes": 1662,
+      "sha256": "6ac1c74f95641949cdf5a342785bc2ed12f2895d75d82c692e4aa2df9c07c014"
+    },
+    {
+      "entry": "records/apple/mac/plan.json",
+      "bytes": 441220,
+      "sha256": "db78c57455e4861ce083a987ccc3499958dcbd45b71cd35f3d56787db546bd6c"
+    },
+    {
+      "entry": "records/apple/mac/reused-source-manifest.json",
+      "bytes": 19833,
+      "sha256": "5eb1e017d5230051332fb3ececb20bd4c678ea6f9b7d66a739a358fb8b64f3ce"
+    },
+    {
+      "entry": "records/apple/mac/source-manifest.json",
+      "bytes": 10261,
+      "sha256": "c8d72be8b06ecbb1d2d8f641dbe045e59181a41e7799c4c10b3f8499f5ab005f"
+    },
+    {
+      "entry": "records/apple/mac/sync.result.json",
+      "bytes": 774,
+      "sha256": "daa9b19bad08dc62bd471a6a20dd2f7721f8df7d879fa3ef7984d2690a9e9c49"
+    },
+    {
+      "entry": "records/apple/prepare_mac.py",
+      "bytes": 5690,
+      "sha256": "17bbb0312a6e03284fdf91bb2611ff3bfb7e1ca67f890dccff0ed8ab5a22ac3f"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/actual-dependencies-canonical-audit.json",
+      "bytes": 1133711,
+      "sha256": "430d995c8d0b1b90ab182f4b174dc4b18c3af44515481a0608003e6d1e29ae8a"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/cleanup-readonly-inventory.json",
+      "bytes": 2048,
+      "sha256": "715a887e6cad424a254dd17a829a251dc3b0f9a3669604cc040eeaef7ffa6fa0"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/final-validation.json",
+      "bytes": 9061,
+      "sha256": "1d0dd8f4da6127897ac32501fa5b8f2bd487d4dac97181ee2d14fe39a86dd620"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/mac/final/hardware.json",
+      "bytes": 516,
+      "sha256": "072aadfd3b969664f72b96548ec50ef7d28164bbfd8521e4bf937daa2b8d7c97"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/mac/final/plan.json",
+      "bytes": 437686,
+      "sha256": "afe75e89e95b402b2463f6a5f28e59f9d6f1640abb7ffb64d88c794e7a2626e8"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/mac/final/results/compile-summary.json",
+      "bytes": 1630492,
+      "sha256": "d429f85b61d136b25381c8a9f950275a1fb31b4d383b48c7dbd99ce099cc2c7f"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/mac/final/results/link-inputs.json",
+      "bytes": 44553,
+      "sha256": "c43a0f8facde4914594ab428c5546f5e8a2c38296139a76e781136aff4d40a0f"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/mac/final/results/link.command.json",
+      "bytes": 26259,
+      "sha256": "37cc0159989baf654b068ff2491bc41c3b96e78c6692e5a0aac9e20d279c640d"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/mac/final/results/link.result.json",
+      "bytes": 26306,
+      "sha256": "e45adf77ef1932ea8d38748e57beb88792c1cee7e685ecdec96ed09e956227ac"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/mac/final/results/link.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/mac/final/results/link.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/mac/final/results/run.command.json",
+      "bytes": 439,
+      "sha256": "c70eea8f3ef71c4ad56c92bc31dfdda8562e0aba9af2bfe585bbfdadc8d59f90"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/mac/final/results/run.result.json",
+      "bytes": 484,
+      "sha256": "76cc6c3f216a45c7920182999bfa0169548531f53d1e78ac0a3106794265b162"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/mac/final/results/run.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/mac/final/results/run.stdout.log",
+      "bytes": 814,
+      "sha256": "239acbcd378439277b1427f68a18c823d5ef58fb731297d08c8481a1796216a0"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/mac/final/results/src--compute_route_apple--apple_memory.mm-compile.command.json",
+      "bytes": 151255,
+      "sha256": "b5b88d525dbd2bdc2be0df3010ae5c33ccd9f03bbf3380701874ab209e5c2fcd"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/mac/final/results/src--compute_route_apple--apple_memory.mm-compile.result.json",
+      "bytes": 151301,
+      "sha256": "36468958b44cd62854c7504da7c3213149ac6ff58a4313ae4972241c3776560a"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/mac/final/results/src--compute_route_apple--apple_memory.mm-compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/mac/final/results/src--compute_route_apple--apple_memory.mm-compile.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/mac/final/results/src--compute_route_apple--apple_memory.mm-identity.json",
+      "bytes": 614663,
+      "sha256": "0d1d625681e0339819a814157eece71a45211802ae408ec788c238dbed2cf74a"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/mac/final/results/src--graph--resources.cc-compile.command.json",
+      "bytes": 105560,
+      "sha256": "51a8d479309ac177f836dc06dc148b164ccebe52c498132d2409460b5f9a5928"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/mac/final/results/src--graph--resources.cc-compile.result.json",
+      "bytes": 105606,
+      "sha256": "b01fa2cc55d6078b82fbf978d6af821b4b33d429658776029bfef0a1d93a1371"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/mac/final/results/src--graph--resources.cc-compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/mac/final/results/src--graph--resources.cc-compile.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/mac/final/results/src--graph--resources.cc-identity.json",
+      "bytes": 351080,
+      "sha256": "1a8af762797dc7e6ea90271b59a86eb60425fbd6668eadd7ef1be258eae7e6a7"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/mac/final/results/tests--graph_route_apple--ga_ratio4_producer_test.cc-compile.command.json",
+      "bytes": 299589,
+      "sha256": "6d005d04e5c1b3d472c2c604dd692992f7e507b56a0c11947e87cb10aeb44ec7"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/mac/final/results/tests--graph_route_apple--ga_ratio4_producer_test.cc-compile.result.json",
+      "bytes": 299634,
+      "sha256": "f4ed23d6503f90bc257cb1b9208121eed43be11e606218a7d22d3d367190b92a"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/mac/final/results/tests--graph_route_apple--ga_ratio4_producer_test.cc-compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/mac/final/results/tests--graph_route_apple--ga_ratio4_producer_test.cc-compile.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/mac/final/results/tests--graph_route_apple--ga_ratio4_producer_test.cc-identity.json",
+      "bytes": 567764,
+      "sha256": "abdaaad0017eb1dac46be4e020837d4122d714527f1760a8c283e3086e19c898"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/mac/final/results/tests.xml",
+      "bytes": 2583,
+      "sha256": "6965d9ffe17a7d260b7eaf9f3a3fe209f67c9119d10f6f25ff7463aad2b848cb"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/mac/final/results/validation.json",
+      "bytes": 796,
+      "sha256": "3c71dc508a8086f01cacb952944bd724dd170abda5532ec9e3f965df158c5dcd"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/mac/final/reused-source-manifest.json",
+      "bytes": 19495,
+      "sha256": "539a1188196b393573e537e3387d18cc41de798e0921666d1dd2ef29a7791904"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/mac/final/source-manifest.json",
+      "bytes": 9954,
+      "sha256": "c23da98aae0e5ad67271e06077bce966e8ca13cc301b9f277c7a8910e19f7cc1"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/mac/final/tests/compute_models/ga_ratio4_producer_fixture.h",
+      "bytes": 29547,
+      "sha256": "b85d8ab0fadadeb77eded970a4bc36680b7cc7154ee95363d5690848783564cf"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/mac/final/tests/graph_route_apple/ga_ratio4_producer_test.cc",
+      "bytes": 1662,
+      "sha256": "6ac1c74f95641949cdf5a342785bc2ed12f2895d75d82c692e4aa2df9c07c014"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/preservation.json",
+      "bytes": 1356,
+      "sha256": "d936890ff3d15e42480baac281e231fa236285bef48f0c8f6d839ca486f88bf5"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source-freeze.json",
+      "bytes": 22643,
+      "sha256": "5fd3956a6e7349b441635088f6909715aadf2428a5a832a300702b4824ea503c"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/include/hyle/compute/apple.h",
+      "bytes": 11664,
+      "sha256": "5baedfd8caa3dd7bd54d9c4619f3c7e7c7e853189a6d8d7c20ab1ebeb2b7dbd5"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/include/hyle/compute/apple_batch.h",
+      "bytes": 8214,
+      "sha256": "c22b73da2caa1031a99fe5cbcbd81e6c255eec7429cbf542c06b35cd82ad8e98"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/include/hyle/compute/apple_memory.h",
+      "bytes": 11994,
+      "sha256": "b7a3f9714752cabab1ce2e9eb2a1c3d8473ac0d906498f22189ffa99e91ff0e4"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/include/hyle/compute/apple_weights.h",
+      "bytes": 4441,
+      "sha256": "44d1783728abc481f0cd699531d4f08a7188faf6f96dec11da70633c7ff3cb4b"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/include/hyle/compute/batch_layout.h",
+      "bytes": 10506,
+      "sha256": "db6c552379051f9b8132fc8dce775dd0826c9a8d1d0d7fd10eecd1f10b159921"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/include/hyle/compute/batch_materialize.h",
+      "bytes": 7245,
+      "sha256": "9f57cfe9748faf89faae485b604a4b14d6f222bc3ce475bc40a1a265b405b50b"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/include/hyle/compute/batch_ops.h",
+      "bytes": 6114,
+      "sha256": "d6dcf9e7c8559280a762d191bc41c4f7b56b0097844d0b31091b4fda361ea077"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/include/hyle/compute/batch_paged_native.h",
+      "bytes": 4723,
+      "sha256": "b42b17bd38435422f06cd830f0b35f6c7deca256916d9d99bff52b9ec0d9f1ce"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/include/hyle/compute/batch_transfer.h",
+      "bytes": 11416,
+      "sha256": "7bec296577c0439b0e0b48639ccff6b3bd95d137dba085c608f650dbb69fcd1b"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/include/hyle/compute/completion.h",
+      "bytes": 1959,
+      "sha256": "98b34b9ee4665e9aedac719504c029a509f304b0a4f566bf6b7f76d88dc2ef34"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/include/hyle/compute/detail/apple_batch_access.h",
+      "bytes": 4635,
+      "sha256": "0897bec26d927ba9defa95a1cda1fd9ff377b7d47fe47f06f609823fe1b43387"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/include/hyle/compute/detail/apple_plan.h",
+      "bytes": 4485,
+      "sha256": "ff08cb8aac33a2026a93b2100814d1daab2d75177341461f9248ea462106fba4"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/include/hyle/compute/detail/backend_extension.h",
+      "bytes": 3637,
+      "sha256": "f0f7dbadc6929cea96c7ddbda6516b14d5e90725b49de1daf55b3921d8fa0a92"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/include/hyle/compute/detail/command_capture.h",
+      "bytes": 3453,
+      "sha256": "e4691dfd82b4a158256d0216c3c64d3d4bc081a72a80e25bb2fc049e03f0c448"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/include/hyle/compute/detail/completion_access.h",
+      "bytes": 4164,
+      "sha256": "8699638e39a1a7d5708cbb6a5e41f191228b3ac571b16b026eadcc1aa6765e34"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/include/hyle/compute/detail/context_ref.h",
+      "bytes": 2563,
+      "sha256": "b1295a6d21d452b2730e3907891ca49993e512a741f8f3a9689976e56f5af3f1"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/include/hyle/compute/detail/copy_backend.h",
+      "bytes": 1968,
+      "sha256": "6a6b2a44a81292297e5f5eb44eefe4e360a6003995a516676932de5e1b55b324"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/include/hyle/compute/detail/copy_ranges.h",
+      "bytes": 1796,
+      "sha256": "86b711e8dd26d63bba37e0ebbd47956f28bfd58b28934ac8073f28df81c543e7"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/include/hyle/compute/detail/copy_stream_access.h",
+      "bytes": 3611,
+      "sha256": "edc3c69aa398ee0f0ca1bbf47463925b0895b117edc8bed0a218b773cf52b681"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/include/hyle/compute/detail/lease_access.h",
+      "bytes": 3996,
+      "sha256": "3df3c018e207f135ab6a5e21336360c68977416f2762dfb8688b6cce0abbb39f"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/include/hyle/compute/detail/operation_access.h",
+      "bytes": 992,
+      "sha256": "4bdd60939dea229e91907768308155716b7cd8b78d92150391edc771f2089f34"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/include/hyle/compute/detail/paged_arena_access.h",
+      "bytes": 4693,
+      "sha256": "15f3221da8e4c2ab7d8117c4587e201403b93aa770c288bf3950e5d0f5172879"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/include/hyle/compute/detail/prepared_callbacks.h",
+      "bytes": 3012,
+      "sha256": "a721592ad0985c92ec0a427973dd63ca20cf3d870cb8c1162b57f86afde514ae"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/include/hyle/compute/detail/provider_extension.h",
+      "bytes": 4033,
+      "sha256": "1508099710fe63576cd04faeb6837288cad911a8952214fd070369c6c21c5e58"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/include/hyle/compute/detail/queue_ref.h",
+      "bytes": 1551,
+      "sha256": "a50579827a0b1554ffa4595c3b2fff68cfcbcc9b75caba25c60f78028d49961b"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/include/hyle/compute/detail/queue_sequence.h",
+      "bytes": 9214,
+      "sha256": "d8cc25b000e655468f3de3b1da3f5b17c388329f21d3f9d6f1d06d9e54de8a26"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/include/hyle/compute/detail/resource_binding.h",
+      "bytes": 333,
+      "sha256": "5728b7fc8d0b9e6faf413dd5f8e5ba13e7ddf4d86354a722770f554c1591c6e5"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/include/hyle/compute/detail/resource_budget_access.h",
+      "bytes": 527,
+      "sha256": "17f1adbcf9a15c6eadc20e4346bcbefb6b704e344d0e21f8cd44328c53b55004"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/include/hyle/compute/detail/retained_completion.h",
+      "bytes": 4972,
+      "sha256": "3199644bf8ae58b283fdbea2f9a4fe43331a2b0297380bd948e1fb3780d34d29"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/include/hyle/compute/device.h",
+      "bytes": 7702,
+      "sha256": "f966803f2293e03db1cde9b1327f847a92162f21adb53f69ef37f0c19b16a84a"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/include/hyle/compute/low_precision.h",
+      "bytes": 10406,
+      "sha256": "0920a5a2faecb2991da60ecede680c496bab73411a305e559461ea41cea309cb"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/include/hyle/compute/model_ops.h",
+      "bytes": 75341,
+      "sha256": "d3315100def9904a604dd3a1386000641cb03c2e8d36485ef3e55b98e4dde3e5"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/include/hyle/compute/operation.h",
+      "bytes": 28108,
+      "sha256": "35b7c862143839e4b8ce0c9a49753b7add2f325ec424bf5f91a1afeec0101506"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/include/hyle/compute/ops_visibility.h",
+      "bytes": 43,
+      "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/include/hyle/compute/paged_arena.h",
+      "bytes": 10342,
+      "sha256": "004230261c2bcd629ac581ea2c6ce3fe7da928adc1b7827b8955e6e69f471fa0"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/include/hyle/compute/prepared_operation.h",
+      "bytes": 20281,
+      "sha256": "03895c56e8665daf2482f66fecf205fd8aacf92046e13c169d9d8ff86fff52d7"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/include/hyle/compute/provider.h",
+      "bytes": 10281,
+      "sha256": "a9737ca3cf64eec23ce768e20b1112407fc7816a32f8031f0b668b16c49f816a"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/include/hyle/compute/resource_budget.h",
+      "bytes": 4622,
+      "sha256": "578d440b6fc3f5b58809837506165de27ac0866ae39b2d132763f5dd1786b1ce"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/include/hyle/compute/resource_leases.h",
+      "bytes": 8660,
+      "sha256": "4e5681ebfa7c2f2ad51e5788c8316f4b993883f595c04b33fe594d7294dab85b"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/include/hyle/compute/resource_requirement.h",
+      "bytes": 749,
+      "sha256": "0a1260090ba84ed86cf26b27ec5d187c8ed5d39b1acda641b632a3b84d3acf76"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/include/hyle/compute/result.h",
+      "bytes": 4704,
+      "sha256": "07a584147b7de3b3f3c1a238207df4ec548130308295b583fc8c93a4d36a4164"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/include/hyle/compute/state_versions.h",
+      "bytes": 8553,
+      "sha256": "a09cb66a216b56a0651f515f18d8a97772b0e6d281c171a82b8a6630b3e1c7d7"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/include/hyle/compute/storage_owner.h",
+      "bytes": 8058,
+      "sha256": "549d881d8d4f96eedbb03c8ef9bd6892ede776e5da90a39025538bc50a0530d9"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/include/hyle/compute/tensor.h",
+      "bytes": 1980,
+      "sha256": "ac00f221a66d0f9044a2b49a1123a6b99a6c425568790898129c31d81519c538"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/include/hyle/compute/tensor_desc.h",
+      "bytes": 8700,
+      "sha256": "e5496e00c643bcce2efbb42666773f4172243d10458b756d6f9881b0e677eb9a"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/include/hyle/compute/visibility.h",
+      "bytes": 43,
+      "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/include/hyle/compute/weight_assembly.h",
+      "bytes": 1942,
+      "sha256": "f1625d4174c7077c1eee6427e20b80bd17f60c281832133ea028904ff6e77bb0"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/include/hyle/compute/workload.h",
+      "bytes": 5017,
+      "sha256": "2e7509d99d986e71b06788e4dd1dcb9595799e2ad972df48449ff0b58f0815ad"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/include/hyle/container/detail/flat_hash_probe.h",
+      "bytes": 11389,
+      "sha256": "9415366e42de93d3d7932745783b0964280e5d92f3a484f77b1d109a07d48582"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/include/hyle/container/detail/flat_hash_table.h",
+      "bytes": 44572,
+      "sha256": "fb0acb6e427642614f732330c6f2e8a316b3f04f9420f63344c01fc6ec0ba9d2"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/include/hyle/container/flat_hash_map.h",
+      "bytes": 65,
+      "sha256": "0043e05aca5e33ab67af266e59dc44336e65babca9ffeddba696b6741d694b20"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/include/hyle/container/hash.h",
+      "bytes": 28870,
+      "sha256": "4ff2c8bfaf8b2bb683f05c676c741f8bbeca1e4d926061ae0cc58cb524e4e0d0"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/include/hyle/container/small_vector.h",
+      "bytes": 30022,
+      "sha256": "cd04f94cac8c7be603600dfeb2a343a88a576bb5230c914d6d38ae5676b99cee"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/include/hyle/container/visibility.h",
+      "bytes": 180,
+      "sha256": "ba9e9fc47e67b7fcde0e9353f8acfe9384bf3ce440a412f3f950cf5ef1ce5cd3"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/include/hyle/core/assert.h",
+      "bytes": 16114,
+      "sha256": "5596728bc220ea27696be4f25e2f9eb9cf2705930f8eb0461747c4a862615790"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/include/hyle/core/cache.h",
+      "bytes": 3625,
+      "sha256": "96ec55f30f1e6ec2e46c32b0ec01063e2feb0d0ee72ee7a353d1cd29e03e7048"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/include/hyle/core/compiler.h",
+      "bytes": 4287,
+      "sha256": "e31151f0ed73c532e464c6568483acecd80a2da9c1ee7afc7e081db87d6fb687"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/include/hyle/core/detail/compiler_attributes.h",
+      "bytes": 1913,
+      "sha256": "263c7691f9984073e198b69328092330bf572195113d3994d1ab54fe4564d88a"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/include/hyle/core/detail/preprocessor.h",
+      "bytes": 409,
+      "sha256": "1d9872ef98db007dcbed7e0128771244640e1de4092830d52a7a83537f98eb84"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/include/hyle/core/environment.h",
+      "bytes": 6712,
+      "sha256": "3d289765b1b677499a444b38d1dbe366bb5e99f89fcb7670af2d08106fd958fa"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/include/hyle/error/result.h",
+      "bytes": 30856,
+      "sha256": "7718409ab2854eb76959215b356bf8077007134d87db1a24f9384a9b5deff2b5"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/include/hyle/error/status.h",
+      "bytes": 18122,
+      "sha256": "4d6b4b0bfa5628947aad5449320513d4b071e0c84debfac47f7a7d264cecb7f4"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/include/hyle/graph/apple.h",
+      "bytes": 5922,
+      "sha256": "8f4e5660d322a0450c9df544568f0ef818b7c0ee269a7bdd3c9579cb79e99298"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/include/hyle/graph/compile_report.h",
+      "bytes": 577,
+      "sha256": "c42c30527d581975c49ddfebb182b0ae7928d799eed91172cb631779a2ad5b4f"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/include/hyle/graph/detail/execution_source.h",
+      "bytes": 1782,
+      "sha256": "f4c451def6a23d4dcbe2d0cc5fa0c3bdf86d8ed508d786212c4473c0ebb435ad"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/include/hyle/graph/detail/region_access.h",
+      "bytes": 12293,
+      "sha256": "8c9c74a86cf1e0257f76d1e2a72de10987dc9698748e0d82d5a18e6822d6044f"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/include/hyle/graph/executable.h",
+      "bytes": 49762,
+      "sha256": "6305dd557606b26119fc60de9dbb68c979a1f8fe54755a191378c49742ef4714"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/include/hyle/graph/execution_source.h",
+      "bytes": 1859,
+      "sha256": "b89de5c6fe8b84192c9618a6a4e4dcee8ac45393e04a9e335f17b5a2d3ecac3f"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/include/hyle/graph/graph.h",
+      "bytes": 19988,
+      "sha256": "c7a93ccf9fd1c86fb9dec286e7d3345aabcb1810c2fb6793a66093480a5a2136"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/include/hyle/graph/region_provider.h",
+      "bytes": 24812,
+      "sha256": "16558cc236133bd76a2306dc7144b9edd08c81e19600d1d1dc6f7c8bc5127949"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/include/hyle/graph/resources.h",
+      "bytes": 430,
+      "sha256": "c9d3075babb4d863f3543c76576d093fe59f9868df67d50fc492db0aebe7015d"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/include/hyle/graph/result.h",
+      "bytes": 1646,
+      "sha256": "90861eafec4f3a0aa73014416bd2817dfe3892ac001ea206bebf907e1d3cf182"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/include/hyle/graph/visibility.h",
+      "bytes": 43,
+      "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/include/hyle/graph/weight_binding.h",
+      "bytes": 422,
+      "sha256": "ebcc3eea951953966a3b10b2951872e74d04921af6f0cc8de45ab52ab1ba32bd"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/include/hyle/mem/alignment.h",
+      "bytes": 3499,
+      "sha256": "75388cd67ecb0f6d9bd48a85ea9994e97d8e1db6658a57a3aa24fc89690c76a8"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/include/hyle/mem/allocator.h",
+      "bytes": 11090,
+      "sha256": "0369680d4769a0187bfb77ee8b565b5e8fb53a03909fabf233458d9c1cbcd011"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/include/hyle/mem/buffer.h",
+      "bytes": 19273,
+      "sha256": "346a4f810babb8c5dacba49faaf57903d998a3cbb49af12b8c62acc85f7be72c"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/include/hyle/mem/lifetime_plan.h",
+      "bytes": 7018,
+      "sha256": "72277c027d1b76a9c813bcfe7ef3420759274375f5647362ae915e8672bb3b1f"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/include/hyle/mem/quota_allocator.h",
+      "bytes": 7124,
+      "sha256": "a88fe230dc5358ddde6209de96cc61a59e3f6e60d30b9e7534e986fab10224c9"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/include/hyle/mem/resource.h",
+      "bytes": 7717,
+      "sha256": "84b0366e658ec63f999b4c9719cf8584ad758f4ff5340baf37f1c3ebd17145cd"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/include/hyle/mem/std_allocator.h",
+      "bytes": 5150,
+      "sha256": "adee9ae71753fa27e001b7b71b1d57b61e14f7ebcfdea57bb3993d2a3e9550e4"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/include/hyle/mem/system_inline.h",
+      "bytes": 8762,
+      "sha256": "d890fe66b1a83a5f1a8f2b22c368276e7b3fadcfd0946df5279692ce055164f1"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/include/hyle/mem/visibility.h",
+      "bytes": 43,
+      "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/include/hyle/obs/trace.h",
+      "bytes": 8554,
+      "sha256": "be0df49a044a0888d46c6c2411a292fdd04908b7bdc393557b87d68a70cf1f6f"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/include/hyle/platform/thread.h",
+      "bytes": 8423,
+      "sha256": "fe5d5dd5ff4a7190f9f9d98e5cbbf924a6d44ce62c30d257556b96ff6f711d1d"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/include/hyle/platform/thread_visibility.h",
+      "bytes": 43,
+      "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/include/hyle/platform/wait.h",
+      "bytes": 4708,
+      "sha256": "460fa7b1cab2f50b65b37a3f738cf0065bb607cde34cabf975cecc6e88f8d61f"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/include/hyle/time/clock.h",
+      "bytes": 30458,
+      "sha256": "383955c82cb45d63addc85ec307fff4f0f5bfd6f44089a489b0ecc1529b4c689"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/include/hyle/time/unix_timestamp.h",
+      "bytes": 11791,
+      "sha256": "bcd6bdc860d6ee1e73004ebd15e3b2b2a60ca3dff7a0818deecf9420f95b4496"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/include/hyle/util/ref_counted.h",
+      "bytes": 15535,
+      "sha256": "f72298c5886b8287cfa8e2cbea13a78c25dc7e0a08de5838f4feb4f7cec0bdb4"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/include/hyle/util/spin_lock.h",
+      "bytes": 4270,
+      "sha256": "3c0326e4fb09ec6a43b56eccea267b4b45886262094010bcd3dbac759696ea1b"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/include/hyle/visibility.h",
+      "bytes": 11701,
+      "sha256": "893fa73589b6e46f00474c2258af74c28d662b52176b57012290c820812ed486"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/src/compute/provider_internal.h",
+      "bytes": 11448,
+      "sha256": "d5fe8397f2f7e7818f48aa1547e549fbfe9c49446275d2a224f92c28d1cab3fb"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/src/compute/shape_domain.h",
+      "bytes": 4715,
+      "sha256": "2c50da6b169b550e737a4dd95d5be66ab5803ac1843ba628ebc5cc37f2507846"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/src/compute/shape_program.h",
+      "bytes": 3883,
+      "sha256": "1d58ee387d7c7bb21e14c7f9e6330ffa544aaf5eca91d3182b2c08f2927169f1"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/src/compute_route_apple/apple_carrier.h",
+      "bytes": 3792,
+      "sha256": "ff1cede731db50e0277754bdd058fc54a31bb67d40ce38c1450f0fc03b4b0d1f"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/src/compute_route_apple/apple_copy_internal.h",
+      "bytes": 5808,
+      "sha256": "f6f5d9912abf0fbdf6f1aa0b0c5ff3435e833aedac318a1d1df821a86470ae34"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/src/compute_route_apple/apple_internal.h",
+      "bytes": 242,
+      "sha256": "ee14ab5edf41c20aa9fd83767a6a8481fec83c8fd4510a6cd7c253caef633e1c"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/src/compute_route_apple/apple_memory.mm",
+      "bytes": 35385,
+      "sha256": "1121b85f42976c813c21ddfa736cc338ec6724e100f466bf7144c21af13c52d0"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/src/compute_route_apple/apple_runtime_internal.h",
+      "bytes": 1188,
+      "sha256": "d081f2b519f87e6420345c94e92475aaf93b1c9cade591fd46bbe8a01f4a398a"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/src/graph/constant_artifact.h",
+      "bytes": 9151,
+      "sha256": "4a97f7536d5c12931ec46bc829d218e8db1d24aa6f0ce69fa92269bf66be172c"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/src/graph/execution_source_internal.h",
+      "bytes": 6898,
+      "sha256": "63030a3f57bafa1bcdb49c572c034aeaad3c4b2f39d5cc99228d6cb9d54abc11"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/src/graph/graph_state.h",
+      "bytes": 9877,
+      "sha256": "e7b4b8e9c7d72c14e9e2990ba04727a83b4ca75ebd34c142cd92694779f76cce"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/src/graph/input_sources.h",
+      "bytes": 2749,
+      "sha256": "f82ab4411c2e9e6c683220111d986ff5e878c8f341df23c48e9f12fbda78400a"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/src/graph/plan_state.h",
+      "bytes": 57378,
+      "sha256": "e7c7347c8c6e84ea1420ea393a7998236ae59a662e81d07f368170496489cafa"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/src/graph/progress_internal.h",
+      "bytes": 2085,
+      "sha256": "d97358e9b3bfbe6190a204cdd192fa5d774b6b7c90c43ec319cb39a35a4367af"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/src/graph/resource_episode.h",
+      "bytes": 3243,
+      "sha256": "328c52a6aadb1535d36f124db937a7077ccb5d93bfe1fcd156181bebe9d9b23f"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/src/graph/resources.cc",
+      "bytes": 70350,
+      "sha256": "40f38a4b5d2d5e316fe9cae57b2360cd1598446a31acee63740ba297990fa57c"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/src/graph/storage_budget.h",
+      "bytes": 9959,
+      "sha256": "22bcacde96a3edabc8e7989fca948cc62e84c7a8633b975883703e06237b385b"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/src/graph/submission_internal.h",
+      "bytes": 8059,
+      "sha256": "d35b02445a8ab77581de34cce13281a135ba1ff3248229d9a38efc61f2266700"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/src/graph/submission_lifetime.h",
+      "bytes": 3453,
+      "sha256": "0ba69ead747e95ca6889467ca1866f314557dc78a3dcae29e24d14857a78f9c6"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/tests/compute_models/batched_rope_fixture.h",
+      "bytes": 1864,
+      "sha256": "2642e037693677e48b5dc341ac9dc930926f0899f961d9d1733dcd59e013301c"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/tests/compute_models/ga_indexer_state_fixture.h",
+      "bytes": 26486,
+      "sha256": "c2055b3920c8ebc93ed30d2596d4eba049790e148b8dd3d59128e1ffda48ab84"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/tests/compute_models/ga_ratio4_producer_fixture.h",
+      "bytes": 29547,
+      "sha256": "b85d8ab0fadadeb77eded970a4bc36680b7cc7154ee95363d5690848783564cf"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/tests/compute_models/ga_ratio4_reference_fixture.h",
+      "bytes": 16624,
+      "sha256": "e87a6f7303e4db8979afd8da7ca4a416444b38839c5dca7ca390c239a7a89d7f"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/tests/compute_models/nvfp4_reference_fixture.h",
+      "bytes": 22482,
+      "sha256": "cc94ec1f443511722ff4fc227b065af27b82573443735250951cdce934faa4d3"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/tests/graph_route_apple/CMakeLists.txt",
+      "bytes": 7036,
+      "sha256": "5eedf41e56b8c6867aa21c41269b09a60a62509b2c9549ea152c765d14e71ceb"
+    },
+    {
+      "entry": "records/apple/prior-reuse-fixture/source/tests/graph_route_apple/ga_ratio4_producer_test.cc",
+      "bytes": 1662,
+      "sha256": "6ac1c74f95641949cdf5a342785bc2ed12f2895d75d82c692e4aa2df9c07c014"
+    },
+    {
+      "entry": "records/apple/source-freeze.json",
+      "bytes": 22795,
+      "sha256": "17cb17a0e1dfe060e4956a8dc27c04ab59783c73d7d25c4d20dfd36406877357"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/apple.h",
+      "bytes": 11664,
+      "sha256": "5baedfd8caa3dd7bd54d9c4619f3c7e7c7e853189a6d8d7c20ab1ebeb2b7dbd5"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/apple_batch.h",
+      "bytes": 8214,
+      "sha256": "c22b73da2caa1031a99fe5cbcbd81e6c255eec7429cbf542c06b35cd82ad8e98"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/apple_memory.h",
+      "bytes": 11994,
+      "sha256": "b7a3f9714752cabab1ce2e9eb2a1c3d8473ac0d906498f22189ffa99e91ff0e4"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/apple_weights.h",
+      "bytes": 4441,
+      "sha256": "44d1783728abc481f0cd699531d4f08a7188faf6f96dec11da70633c7ff3cb4b"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/batch_layout.h",
+      "bytes": 10506,
+      "sha256": "db6c552379051f9b8132fc8dce775dd0826c9a8d1d0d7fd10eecd1f10b159921"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/batch_materialize.h",
+      "bytes": 7245,
+      "sha256": "9f57cfe9748faf89faae485b604a4b14d6f222bc3ce475bc40a1a265b405b50b"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/batch_ops.h",
+      "bytes": 6114,
+      "sha256": "d6dcf9e7c8559280a762d191bc41c4f7b56b0097844d0b31091b4fda361ea077"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/batch_paged_native.h",
+      "bytes": 4723,
+      "sha256": "b42b17bd38435422f06cd830f0b35f6c7deca256916d9d99bff52b9ec0d9f1ce"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/batch_transfer.h",
+      "bytes": 11416,
+      "sha256": "7bec296577c0439b0e0b48639ccff6b3bd95d137dba085c608f650dbb69fcd1b"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/completion.h",
+      "bytes": 1959,
+      "sha256": "98b34b9ee4665e9aedac719504c029a509f304b0a4f566bf6b7f76d88dc2ef34"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/detail/apple_batch_access.h",
+      "bytes": 4635,
+      "sha256": "0897bec26d927ba9defa95a1cda1fd9ff377b7d47fe47f06f609823fe1b43387"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/detail/apple_plan.h",
+      "bytes": 4485,
+      "sha256": "ff08cb8aac33a2026a93b2100814d1daab2d75177341461f9248ea462106fba4"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/detail/backend_extension.h",
+      "bytes": 3637,
+      "sha256": "f0f7dbadc6929cea96c7ddbda6516b14d5e90725b49de1daf55b3921d8fa0a92"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/detail/command_capture.h",
+      "bytes": 3453,
+      "sha256": "e4691dfd82b4a158256d0216c3c64d3d4bc081a72a80e25bb2fc049e03f0c448"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/detail/completion_access.h",
+      "bytes": 4164,
+      "sha256": "8699638e39a1a7d5708cbb6a5e41f191228b3ac571b16b026eadcc1aa6765e34"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/detail/context_ref.h",
+      "bytes": 2563,
+      "sha256": "b1295a6d21d452b2730e3907891ca49993e512a741f8f3a9689976e56f5af3f1"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/detail/copy_backend.h",
+      "bytes": 1968,
+      "sha256": "6a6b2a44a81292297e5f5eb44eefe4e360a6003995a516676932de5e1b55b324"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/detail/copy_ranges.h",
+      "bytes": 1796,
+      "sha256": "86b711e8dd26d63bba37e0ebbd47956f28bfd58b28934ac8073f28df81c543e7"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/detail/copy_stream_access.h",
+      "bytes": 3611,
+      "sha256": "edc3c69aa398ee0f0ca1bbf47463925b0895b117edc8bed0a218b773cf52b681"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/detail/lease_access.h",
+      "bytes": 3996,
+      "sha256": "3df3c018e207f135ab6a5e21336360c68977416f2762dfb8688b6cce0abbb39f"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/detail/operation_access.h",
+      "bytes": 992,
+      "sha256": "4bdd60939dea229e91907768308155716b7cd8b78d92150391edc771f2089f34"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/detail/paged_arena_access.h",
+      "bytes": 4693,
+      "sha256": "15f3221da8e4c2ab7d8117c4587e201403b93aa770c288bf3950e5d0f5172879"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/detail/prepared_callbacks.h",
+      "bytes": 3012,
+      "sha256": "a721592ad0985c92ec0a427973dd63ca20cf3d870cb8c1162b57f86afde514ae"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/detail/provider_extension.h",
+      "bytes": 4033,
+      "sha256": "1508099710fe63576cd04faeb6837288cad911a8952214fd070369c6c21c5e58"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/detail/queue_ref.h",
+      "bytes": 1551,
+      "sha256": "a50579827a0b1554ffa4595c3b2fff68cfcbcc9b75caba25c60f78028d49961b"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/detail/queue_sequence.h",
+      "bytes": 9214,
+      "sha256": "d8cc25b000e655468f3de3b1da3f5b17c388329f21d3f9d6f1d06d9e54de8a26"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/detail/resource_binding.h",
+      "bytes": 333,
+      "sha256": "5728b7fc8d0b9e6faf413dd5f8e5ba13e7ddf4d86354a722770f554c1591c6e5"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/detail/resource_budget_access.h",
+      "bytes": 527,
+      "sha256": "17f1adbcf9a15c6eadc20e4346bcbefb6b704e344d0e21f8cd44328c53b55004"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/detail/retained_completion.h",
+      "bytes": 4972,
+      "sha256": "3199644bf8ae58b283fdbea2f9a4fe43331a2b0297380bd948e1fb3780d34d29"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/device.h",
+      "bytes": 7702,
+      "sha256": "f966803f2293e03db1cde9b1327f847a92162f21adb53f69ef37f0c19b16a84a"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/low_precision.h",
+      "bytes": 10406,
+      "sha256": "0920a5a2faecb2991da60ecede680c496bab73411a305e559461ea41cea309cb"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/model_ops.h",
+      "bytes": 75341,
+      "sha256": "d3315100def9904a604dd3a1386000641cb03c2e8d36485ef3e55b98e4dde3e5"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/operation.h",
+      "bytes": 28108,
+      "sha256": "35b7c862143839e4b8ce0c9a49753b7add2f325ec424bf5f91a1afeec0101506"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/ops_visibility.h",
+      "bytes": 43,
+      "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/paged_arena.h",
+      "bytes": 10342,
+      "sha256": "004230261c2bcd629ac581ea2c6ce3fe7da928adc1b7827b8955e6e69f471fa0"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/prepared_operation.h",
+      "bytes": 20281,
+      "sha256": "03895c56e8665daf2482f66fecf205fd8aacf92046e13c169d9d8ff86fff52d7"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/provider.h",
+      "bytes": 10281,
+      "sha256": "a9737ca3cf64eec23ce768e20b1112407fc7816a32f8031f0b668b16c49f816a"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/resource_budget.h",
+      "bytes": 4622,
+      "sha256": "578d440b6fc3f5b58809837506165de27ac0866ae39b2d132763f5dd1786b1ce"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/resource_leases.h",
+      "bytes": 8660,
+      "sha256": "4e5681ebfa7c2f2ad51e5788c8316f4b993883f595c04b33fe594d7294dab85b"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/resource_requirement.h",
+      "bytes": 749,
+      "sha256": "0a1260090ba84ed86cf26b27ec5d187c8ed5d39b1acda641b632a3b84d3acf76"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/result.h",
+      "bytes": 4704,
+      "sha256": "07a584147b7de3b3f3c1a238207df4ec548130308295b583fc8c93a4d36a4164"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/state_versions.h",
+      "bytes": 8553,
+      "sha256": "a09cb66a216b56a0651f515f18d8a97772b0e6d281c171a82b8a6630b3e1c7d7"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/storage_owner.h",
+      "bytes": 8058,
+      "sha256": "549d881d8d4f96eedbb03c8ef9bd6892ede776e5da90a39025538bc50a0530d9"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/tensor.h",
+      "bytes": 1980,
+      "sha256": "ac00f221a66d0f9044a2b49a1123a6b99a6c425568790898129c31d81519c538"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/tensor_desc.h",
+      "bytes": 8700,
+      "sha256": "e5496e00c643bcce2efbb42666773f4172243d10458b756d6f9881b0e677eb9a"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/visibility.h",
+      "bytes": 43,
+      "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/weight_assembly.h",
+      "bytes": 1942,
+      "sha256": "f1625d4174c7077c1eee6427e20b80bd17f60c281832133ea028904ff6e77bb0"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/workload.h",
+      "bytes": 5017,
+      "sha256": "2e7509d99d986e71b06788e4dd1dcb9595799e2ad972df48449ff0b58f0815ad"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/container/detail/flat_hash_probe.h",
+      "bytes": 11389,
+      "sha256": "9415366e42de93d3d7932745783b0964280e5d92f3a484f77b1d109a07d48582"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/container/detail/flat_hash_table.h",
+      "bytes": 44572,
+      "sha256": "fb0acb6e427642614f732330c6f2e8a316b3f04f9420f63344c01fc6ec0ba9d2"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/container/flat_hash_map.h",
+      "bytes": 65,
+      "sha256": "0043e05aca5e33ab67af266e59dc44336e65babca9ffeddba696b6741d694b20"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/container/hash.h",
+      "bytes": 28870,
+      "sha256": "4ff2c8bfaf8b2bb683f05c676c741f8bbeca1e4d926061ae0cc58cb524e4e0d0"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/container/small_vector.h",
+      "bytes": 30022,
+      "sha256": "cd04f94cac8c7be603600dfeb2a343a88a576bb5230c914d6d38ae5676b99cee"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/container/visibility.h",
+      "bytes": 180,
+      "sha256": "ba9e9fc47e67b7fcde0e9353f8acfe9384bf3ce440a412f3f950cf5ef1ce5cd3"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/core/assert.h",
+      "bytes": 16114,
+      "sha256": "5596728bc220ea27696be4f25e2f9eb9cf2705930f8eb0461747c4a862615790"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/core/cache.h",
+      "bytes": 3625,
+      "sha256": "96ec55f30f1e6ec2e46c32b0ec01063e2feb0d0ee72ee7a353d1cd29e03e7048"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/core/compiler.h",
+      "bytes": 4287,
+      "sha256": "e31151f0ed73c532e464c6568483acecd80a2da9c1ee7afc7e081db87d6fb687"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/core/detail/compiler_attributes.h",
+      "bytes": 1913,
+      "sha256": "263c7691f9984073e198b69328092330bf572195113d3994d1ab54fe4564d88a"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/core/detail/preprocessor.h",
+      "bytes": 409,
+      "sha256": "1d9872ef98db007dcbed7e0128771244640e1de4092830d52a7a83537f98eb84"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/core/environment.h",
+      "bytes": 6712,
+      "sha256": "3d289765b1b677499a444b38d1dbe366bb5e99f89fcb7670af2d08106fd958fa"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/error/result.h",
+      "bytes": 30856,
+      "sha256": "7718409ab2854eb76959215b356bf8077007134d87db1a24f9384a9b5deff2b5"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/error/status.h",
+      "bytes": 18122,
+      "sha256": "4d6b4b0bfa5628947aad5449320513d4b071e0c84debfac47f7a7d264cecb7f4"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/graph/apple.h",
+      "bytes": 5922,
+      "sha256": "8f4e5660d322a0450c9df544568f0ef818b7c0ee269a7bdd3c9579cb79e99298"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/graph/compile_report.h",
+      "bytes": 577,
+      "sha256": "c42c30527d581975c49ddfebb182b0ae7928d799eed91172cb631779a2ad5b4f"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/graph/detail/execution_source.h",
+      "bytes": 1782,
+      "sha256": "f4c451def6a23d4dcbe2d0cc5fa0c3bdf86d8ed508d786212c4473c0ebb435ad"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/graph/detail/region_access.h",
+      "bytes": 12293,
+      "sha256": "8c9c74a86cf1e0257f76d1e2a72de10987dc9698748e0d82d5a18e6822d6044f"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/graph/executable.h",
+      "bytes": 49762,
+      "sha256": "6305dd557606b26119fc60de9dbb68c979a1f8fe54755a191378c49742ef4714"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/graph/execution_source.h",
+      "bytes": 1859,
+      "sha256": "b89de5c6fe8b84192c9618a6a4e4dcee8ac45393e04a9e335f17b5a2d3ecac3f"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/graph/graph.h",
+      "bytes": 19988,
+      "sha256": "c7a93ccf9fd1c86fb9dec286e7d3345aabcb1810c2fb6793a66093480a5a2136"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/graph/region_provider.h",
+      "bytes": 24812,
+      "sha256": "16558cc236133bd76a2306dc7144b9edd08c81e19600d1d1dc6f7c8bc5127949"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/graph/resources.h",
+      "bytes": 430,
+      "sha256": "c9d3075babb4d863f3543c76576d093fe59f9868df67d50fc492db0aebe7015d"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/graph/result.h",
+      "bytes": 1646,
+      "sha256": "90861eafec4f3a0aa73014416bd2817dfe3892ac001ea206bebf907e1d3cf182"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/graph/visibility.h",
+      "bytes": 43,
+      "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/graph/weight_binding.h",
+      "bytes": 422,
+      "sha256": "ebcc3eea951953966a3b10b2951872e74d04921af6f0cc8de45ab52ab1ba32bd"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/mem/alignment.h",
+      "bytes": 3499,
+      "sha256": "75388cd67ecb0f6d9bd48a85ea9994e97d8e1db6658a57a3aa24fc89690c76a8"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/mem/allocator.h",
+      "bytes": 11090,
+      "sha256": "0369680d4769a0187bfb77ee8b565b5e8fb53a03909fabf233458d9c1cbcd011"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/mem/buffer.h",
+      "bytes": 19273,
+      "sha256": "346a4f810babb8c5dacba49faaf57903d998a3cbb49af12b8c62acc85f7be72c"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/mem/lifetime_plan.h",
+      "bytes": 7018,
+      "sha256": "72277c027d1b76a9c813bcfe7ef3420759274375f5647362ae915e8672bb3b1f"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/mem/quota_allocator.h",
+      "bytes": 7124,
+      "sha256": "a88fe230dc5358ddde6209de96cc61a59e3f6e60d30b9e7534e986fab10224c9"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/mem/resource.h",
+      "bytes": 7717,
+      "sha256": "84b0366e658ec63f999b4c9719cf8584ad758f4ff5340baf37f1c3ebd17145cd"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/mem/std_allocator.h",
+      "bytes": 5150,
+      "sha256": "adee9ae71753fa27e001b7b71b1d57b61e14f7ebcfdea57bb3993d2a3e9550e4"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/mem/system_inline.h",
+      "bytes": 8762,
+      "sha256": "d890fe66b1a83a5f1a8f2b22c368276e7b3fadcfd0946df5279692ce055164f1"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/mem/visibility.h",
+      "bytes": 43,
+      "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/obs/trace.h",
+      "bytes": 8554,
+      "sha256": "be0df49a044a0888d46c6c2411a292fdd04908b7bdc393557b87d68a70cf1f6f"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/platform/thread.h",
+      "bytes": 8423,
+      "sha256": "fe5d5dd5ff4a7190f9f9d98e5cbbf924a6d44ce62c30d257556b96ff6f711d1d"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/platform/thread_visibility.h",
+      "bytes": 43,
+      "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/platform/wait.h",
+      "bytes": 4708,
+      "sha256": "460fa7b1cab2f50b65b37a3f738cf0065bb607cde34cabf975cecc6e88f8d61f"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/time/clock.h",
+      "bytes": 30458,
+      "sha256": "383955c82cb45d63addc85ec307fff4f0f5bfd6f44089a489b0ecc1529b4c689"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/time/unix_timestamp.h",
+      "bytes": 11791,
+      "sha256": "bcd6bdc860d6ee1e73004ebd15e3b2b2a60ca3dff7a0818deecf9420f95b4496"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/util/ref_counted.h",
+      "bytes": 15535,
+      "sha256": "f72298c5886b8287cfa8e2cbea13a78c25dc7e0a08de5838f4feb4f7cec0bdb4"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/util/spin_lock.h",
+      "bytes": 4270,
+      "sha256": "3c0326e4fb09ec6a43b56eccea267b4b45886262094010bcd3dbac759696ea1b"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/visibility.h",
+      "bytes": 11701,
+      "sha256": "893fa73589b6e46f00474c2258af74c28d662b52176b57012290c820812ed486"
+    },
+    {
+      "entry": "records/apple/source/src/compute/provider_internal.h",
+      "bytes": 11448,
+      "sha256": "d5fe8397f2f7e7818f48aa1547e549fbfe9c49446275d2a224f92c28d1cab3fb"
+    },
+    {
+      "entry": "records/apple/source/src/compute/shape_domain.h",
+      "bytes": 4715,
+      "sha256": "2c50da6b169b550e737a4dd95d5be66ab5803ac1843ba628ebc5cc37f2507846"
+    },
+    {
+      "entry": "records/apple/source/src/compute/shape_program.h",
+      "bytes": 3883,
+      "sha256": "1d58ee387d7c7bb21e14c7f9e6330ffa544aaf5eca91d3182b2c08f2927169f1"
+    },
+    {
+      "entry": "records/apple/source/src/compute_route_apple/apple_carrier.h",
+      "bytes": 3792,
+      "sha256": "ff1cede731db50e0277754bdd058fc54a31bb67d40ce38c1450f0fc03b4b0d1f"
+    },
+    {
+      "entry": "records/apple/source/src/compute_route_apple/apple_copy_internal.h",
+      "bytes": 5808,
+      "sha256": "f6f5d9912abf0fbdf6f1aa0b0c5ff3435e833aedac318a1d1df821a86470ae34"
+    },
+    {
+      "entry": "records/apple/source/src/compute_route_apple/apple_internal.h",
+      "bytes": 242,
+      "sha256": "ee14ab5edf41c20aa9fd83767a6a8481fec83c8fd4510a6cd7c253caef633e1c"
+    },
+    {
+      "entry": "records/apple/source/src/compute_route_apple/apple_memory.mm",
+      "bytes": 35385,
+      "sha256": "1121b85f42976c813c21ddfa736cc338ec6724e100f466bf7144c21af13c52d0"
+    },
+    {
+      "entry": "records/apple/source/src/compute_route_apple/apple_runtime_internal.h",
+      "bytes": 1188,
+      "sha256": "d081f2b519f87e6420345c94e92475aaf93b1c9cade591fd46bbe8a01f4a398a"
+    },
+    {
+      "entry": "records/apple/source/src/graph/constant_artifact.h",
+      "bytes": 9151,
+      "sha256": "4a97f7536d5c12931ec46bc829d218e8db1d24aa6f0ce69fa92269bf66be172c"
+    },
+    {
+      "entry": "records/apple/source/src/graph/execution_source_internal.h",
+      "bytes": 6898,
+      "sha256": "63030a3f57bafa1bcdb49c572c034aeaad3c4b2f39d5cc99228d6cb9d54abc11"
+    },
+    {
+      "entry": "records/apple/source/src/graph/graph_state.h",
+      "bytes": 9877,
+      "sha256": "e7b4b8e9c7d72c14e9e2990ba04727a83b4ca75ebd34c142cd92694779f76cce"
+    },
+    {
+      "entry": "records/apple/source/src/graph/input_sources.h",
+      "bytes": 2749,
+      "sha256": "f82ab4411c2e9e6c683220111d986ff5e878c8f341df23c48e9f12fbda78400a"
+    },
+    {
+      "entry": "records/apple/source/src/graph/plan_state.h",
+      "bytes": 57378,
+      "sha256": "e7c7347c8c6e84ea1420ea393a7998236ae59a662e81d07f368170496489cafa"
+    },
+    {
+      "entry": "records/apple/source/src/graph/progress_internal.h",
+      "bytes": 2085,
+      "sha256": "d97358e9b3bfbe6190a204cdd192fa5d774b6b7c90c43ec319cb39a35a4367af"
+    },
+    {
+      "entry": "records/apple/source/src/graph/resource_episode.h",
+      "bytes": 3243,
+      "sha256": "328c52a6aadb1535d36f124db937a7077ccb5d93bfe1fcd156181bebe9d9b23f"
+    },
+    {
+      "entry": "records/apple/source/src/graph/resources.cc",
+      "bytes": 70350,
+      "sha256": "40f38a4b5d2d5e316fe9cae57b2360cd1598446a31acee63740ba297990fa57c"
+    },
+    {
+      "entry": "records/apple/source/src/graph/storage_budget.h",
+      "bytes": 9959,
+      "sha256": "22bcacde96a3edabc8e7989fca948cc62e84c7a8633b975883703e06237b385b"
+    },
+    {
+      "entry": "records/apple/source/src/graph/submission_internal.h",
+      "bytes": 8059,
+      "sha256": "d35b02445a8ab77581de34cce13281a135ba1ff3248229d9a38efc61f2266700"
+    },
+    {
+      "entry": "records/apple/source/src/graph/submission_lifetime.h",
+      "bytes": 3453,
+      "sha256": "0ba69ead747e95ca6889467ca1866f314557dc78a3dcae29e24d14857a78f9c6"
+    },
+    {
+      "entry": "records/apple/source/tests/compute_models/batched_rope_fixture.h",
+      "bytes": 1864,
+      "sha256": "2642e037693677e48b5dc341ac9dc930926f0899f961d9d1733dcd59e013301c"
+    },
+    {
+      "entry": "records/apple/source/tests/compute_models/ga_indexer_state_fixture.h",
+      "bytes": 26486,
+      "sha256": "c2055b3920c8ebc93ed30d2596d4eba049790e148b8dd3d59128e1ffda48ab84"
+    },
+    {
+      "entry": "records/apple/source/tests/compute_models/ga_ratio4_producer_fixture.h",
+      "bytes": 30026,
+      "sha256": "9fc21f2d6bb675227e59d5bbd0ecfae4fe47cdd162fbbf904ace3b5964119cce"
+    },
+    {
+      "entry": "records/apple/source/tests/compute_models/ga_ratio4_reference_fixture.h",
+      "bytes": 16624,
+      "sha256": "e87a6f7303e4db8979afd8da7ca4a416444b38839c5dca7ca390c239a7a89d7f"
+    },
+    {
+      "entry": "records/apple/source/tests/compute_models/nvfp4_reference_fixture.h",
+      "bytes": 22482,
+      "sha256": "cc94ec1f443511722ff4fc227b065af27b82573443735250951cdce934faa4d3"
+    },
+    {
+      "entry": "records/apple/source/tests/graph_route_apple/CMakeLists.txt",
+      "bytes": 7036,
+      "sha256": "5eedf41e56b8c6867aa21c41269b09a60a62509b2c9549ea152c765d14e71ceb"
+    },
+    {
+      "entry": "records/apple/source/tests/graph_route_apple/ga_ratio4_producer_test.cc",
+      "bytes": 1662,
+      "sha256": "6ac1c74f95641949cdf5a342785bc2ed12f2895d75d82c692e4aa2df9c07c014"
+    },
+    {
+      "entry": "records/apple/wrapper-registration-change.json",
+      "bytes": 599,
+      "sha256": "7878250b7bcbc113e77a13fa101dfb3ea86b655e94af08aa1616b74ab9bd9ddc"
+    },
+    {
+      "entry": "records/before/src/compute_provider_ggml_cuda/tensor_program.cc",
+      "bytes": 54309,
+      "sha256": "c57dad52c7216fcdac052ff126c7c67ea4fd01d2252bf23da6e4cbf365ee42ad"
+    },
+    {
+      "entry": "records/before/src/compute_provider_ggml_vulkan/region.cc",
+      "bytes": 104940,
+      "sha256": "ad2ab090090f014a21f1d276055b7cdf84acbb9633304692bd06f6d2496645ed"
+    },
+    {
+      "entry": "records/common/checks/attempt1/cuda-tensor/compile-plan.json",
+      "bytes": 3703,
+      "sha256": "70e778969b6de345db8dfc6e63caacb2508988bbea5b2c92184041523e2afc46"
+    },
+    {
+      "entry": "records/common/checks/attempt1/cuda-tensor/compile.command.json",
+      "bytes": 2917,
+      "sha256": "41f116d46e041629f0836453ed73132504106edb58b55348cb9d874da9ead041"
+    },
+    {
+      "entry": "records/common/checks/attempt1/cuda-tensor/compile.result.json",
+      "bytes": 2987,
+      "sha256": "24d905ef9c289fcb22992038730c31e57613295c19696346a728909e291a38bf"
+    },
+    {
+      "entry": "records/common/checks/attempt1/cuda-tensor/compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/common/checks/attempt1/cuda-tensor/compile.stdout.log",
+      "bytes": 19,
+      "sha256": "af0441dbee37064a856a700771d091789232bba62895a6d69a27732cb5b7db99"
+    },
+    {
+      "entry": "records/common/checks/attempt1/cuda-tensor/cuda-tensor-deps.json",
+      "bytes": 18584,
+      "sha256": "cd0d5ccae31cc17698beafe5a4ab48e3d3932883db8a088ce7ea3fafe4a22ea3"
+    },
+    {
+      "entry": "records/common/checks/attempt1/cuda-tensor/identity.json",
+      "bytes": 43052,
+      "sha256": "0da095651b58c2a5c33019b8fa1e474fa46d883a3414d19d5df405c9613d1438"
+    },
+    {
+      "entry": "records/common/checks/attempt1/cuda-tensor/live.json",
+      "bytes": 2987,
+      "sha256": "24d905ef9c289fcb22992038730c31e57613295c19696346a728909e291a38bf"
+    },
+    {
+      "entry": "records/common/checks/attempt1/vulkan-provider-region/compile-plan.json",
+      "bytes": 2861,
+      "sha256": "2fc4471037e8bebf1dd4e67c83d953edfdc1c41911ef66fafa7b4e4c305fa032"
+    },
+    {
+      "entry": "records/common/checks/attempt1/vulkan-provider-region/compile.command.json",
+      "bytes": 2046,
+      "sha256": "0223ddc7eee448a2ff827f3154b69a93adefbaeb028e8dbd67cc830756d0ce17"
+    },
+    {
+      "entry": "records/common/checks/attempt1/vulkan-provider-region/compile.result.json",
+      "bytes": 2116,
+      "sha256": "06048d430c404a7830ddd89ab6d3959528320cbc64e162a9a36756a3e61cc4e7"
+    },
+    {
+      "entry": "records/common/checks/attempt1/vulkan-provider-region/compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/common/checks/attempt1/vulkan-provider-region/compile.stdout.log",
+      "bytes": 11,
+      "sha256": "802823f1a0e4e0d0883175973a38d8fdf67f622eee2816fa2f5e3c10a249f1b8"
+    },
+    {
+      "entry": "records/common/checks/attempt1/vulkan-provider-region/identity.json",
+      "bytes": 42861,
+      "sha256": "c6623e99aca38c805711e2f605722384c454d04ac7ed4e30d15839ff083047ce"
+    },
+    {
+      "entry": "records/common/checks/attempt1/vulkan-provider-region/live.json",
+      "bytes": 2116,
+      "sha256": "06048d430c404a7830ddd89ab6d3959528320cbc64e162a9a36756a3e61cc4e7"
+    },
+    {
+      "entry": "records/common/checks/attempt1/vulkan-provider-region/vulkan-provider-region-deps.json",
+      "bytes": 19549,
+      "sha256": "3085fb194e8e7c52794c7c5fd563e47e00e4005e6cbf3e002daaf1922f8200a2"
+    },
+    {
+      "entry": "records/common/checks/root-resources1/compile-plan.json",
+      "bytes": 2958,
+      "sha256": "add169cd72774b5c5974c336e26f66aa3a91138b632aed80648ba45bbc0bc601"
+    },
+    {
+      "entry": "records/common/checks/root-resources1/compile.command.json",
+      "bytes": 2311,
+      "sha256": "207da75c5e66384b6afd82f68124fefa09a1f7bac45c4dde2dea7b633855f333"
+    },
+    {
+      "entry": "records/common/checks/root-resources1/compile.result.json",
+      "bytes": 2381,
+      "sha256": "ae9b7d31ea41aa23787be505bab03c575470dcc431f1bd4f59578246e3a27ec3"
+    },
+    {
+      "entry": "records/common/checks/root-resources1/compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/common/checks/root-resources1/compile.stdout.log",
+      "bytes": 14,
+      "sha256": "672f8debd5dcc4a361c440145e99c21bf022590cbfb43129aa89acf894aac842"
+    },
+    {
+      "entry": "records/common/checks/root-resources1/graph-resources-deps.json",
+      "bytes": 23497,
+      "sha256": "4905aba36ce1fd976491bc2c5a1eed6b06d8e64e9cfb6938171df18d030ba17a"
+    },
+    {
+      "entry": "records/common/checks/root-resources1/identity.json",
+      "bytes": 53025,
+      "sha256": "11c18d8819621ae1b1bbd09be3f331539a1d06b311fc46ed411d67d3b769cd2c"
+    },
+    {
+      "entry": "records/common/checks/root-resources1/live.json",
+      "bytes": 2381,
+      "sha256": "ae9b7d31ea41aa23787be505bab03c575470dcc431f1bd4f59578246e3a27ec3"
+    },
+    {
+      "entry": "records/cpu/checks/attempt1/compile-plan.json",
+      "bytes": 3433,
+      "sha256": "d19a5f57a479f1eb63111611cdcf9bf347d9892624123c4d55804a22889e0e7f"
+    },
+    {
+      "entry": "records/cpu/checks/attempt1/compile.command.json",
+      "bytes": 2200,
+      "sha256": "62f6ce0fbe9b814dad8db4980b96cae291922be8f27eea3813b9ce074cb18726"
+    },
+    {
+      "entry": "records/cpu/checks/attempt1/compile.result.json",
+      "bytes": 2270,
+      "sha256": "5472df81e148e850a91be1f954fc6a14c7a1e3fa6734518f295517edceb68eb9"
+    },
+    {
+      "entry": "records/cpu/checks/attempt1/compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/cpu/checks/attempt1/compile.stdout.log",
+      "bytes": 6307,
+      "sha256": "a047ba85cf8f39accf40c5e82f43b5594d67515b611ddfdb7367c8458b472eae"
+    },
+    {
+      "entry": "records/cpu/checks/attempt1/ga-ratio4-test-deps.json",
+      "bytes": 30513,
+      "sha256": "b524c52fd12440f2bd3a2f6edffe74de552647332eb9c10e91d2ea627f06b2a3"
+    },
+    {
+      "entry": "records/cpu/checks/attempt1/live.json",
+      "bytes": 2270,
+      "sha256": "5472df81e148e850a91be1f954fc6a14c7a1e3fa6734518f295517edceb68eb9"
+    },
+    {
+      "entry": "records/cpu/checks/attempt2/compile-plan.json",
+      "bytes": 3433,
+      "sha256": "edaf2d948cc12787b18f8d7cae4446f129a73f71c10f449c2c1e39d520728ec2"
+    },
+    {
+      "entry": "records/cpu/checks/attempt2/compile.command.json",
+      "bytes": 2200,
+      "sha256": "8312860a9e11e2632133e37a1a13151caf642888839171e423e5e1e6778e1a09"
+    },
+    {
+      "entry": "records/cpu/checks/attempt2/compile.result.json",
+      "bytes": 2270,
+      "sha256": "6d623d75f906ddbe94c6eb73e44085100255cd9809d864ed4cea9552c95a8f95"
+    },
+    {
+      "entry": "records/cpu/checks/attempt2/compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/cpu/checks/attempt2/compile.stdout.log",
+      "bytes": 28,
+      "sha256": "8645ffc54cc1bb350c67adbc0385db44421b8c9a2181efd599f668da927967c0"
+    },
+    {
+      "entry": "records/cpu/checks/attempt2/ga-ratio4-test-deps.json",
+      "bytes": 30513,
+      "sha256": "b524c52fd12440f2bd3a2f6edffe74de552647332eb9c10e91d2ea627f06b2a3"
+    },
+    {
+      "entry": "records/cpu/checks/attempt2/identity.json",
+      "bytes": 65809,
+      "sha256": "815049492592b0c27a6872551a46f4c1a78efcc9ddfc968f6b135a5ea98ec9e7"
+    },
+    {
+      "entry": "records/cpu/checks/attempt2/live.json",
+      "bytes": 2270,
+      "sha256": "6d623d75f906ddbe94c6eb73e44085100255cd9809d864ed4cea9552c95a8f95"
+    },
+    {
+      "entry": "records/cpu/checks/attempt3/compile-plan.json",
+      "bytes": 3433,
+      "sha256": "30c911459ecae55417f2ff596acf4f848db73a8f3b5e436b54bdd1ae767cfa68"
+    },
+    {
+      "entry": "records/cpu/checks/attempt3/compile.command.json",
+      "bytes": 2201,
+      "sha256": "2330d0702cc63c2370dcdbed122431768b03b60f9aeaa4eec487e9eceb6e520f"
+    },
+    {
+      "entry": "records/cpu/checks/attempt3/compile.result.json",
+      "bytes": 2271,
+      "sha256": "d9c84d21483a82e21d967666c1d11db6486d9fbc2523501189360eda1bb998f4"
+    },
+    {
+      "entry": "records/cpu/checks/attempt3/compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/cpu/checks/attempt3/compile.stdout.log",
+      "bytes": 28,
+      "sha256": "8645ffc54cc1bb350c67adbc0385db44421b8c9a2181efd599f668da927967c0"
+    },
+    {
+      "entry": "records/cpu/checks/attempt3/ga-ratio4-test-deps.json",
+      "bytes": 30513,
+      "sha256": "b524c52fd12440f2bd3a2f6edffe74de552647332eb9c10e91d2ea627f06b2a3"
+    },
+    {
+      "entry": "records/cpu/checks/attempt3/identity.json",
+      "bytes": 65809,
+      "sha256": "60f95497bbb336eae85adfa1b500045b158d649f74dcfc687bc894d235572ce1"
+    },
+    {
+      "entry": "records/cpu/checks/attempt3/live.json",
+      "bytes": 2271,
+      "sha256": "d9c84d21483a82e21d967666c1d11db6486d9fbc2523501189360eda1bb998f4"
+    },
+    {
+      "entry": "records/cpu/checks/final-link1/image.json",
+      "bytes": 263,
+      "sha256": "a49911b25e10c6ab4d89567b1d41697514c7da3630a70db38e998b88c91766ef"
+    },
+    {
+      "entry": "records/cpu/checks/final-link1/link-plan.json",
+      "bytes": 52562,
+      "sha256": "e4ddbc6f4670cc0550e120a3a10a4a74ef70f460e30399362c6ddd34128205a7"
+    },
+    {
+      "entry": "records/cpu/checks/final-link1/link.command.json",
+      "bytes": 18414,
+      "sha256": "06195b985619e75a17c18eac3b5ec27a37e1547588ca38ab4729f2f1e9d0c9e4"
+    },
+    {
+      "entry": "records/cpu/checks/final-link1/link.result.json",
+      "bytes": 18484,
+      "sha256": "875e925c1857dd5ec4eae29f08d70da9b2e3af7e67e9379dab5c7ca093eec59d"
+    },
+    {
+      "entry": "records/cpu/checks/final-link1/link.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/cpu/checks/final-link1/link.stdout.log",
+      "bytes": 294,
+      "sha256": "ea018beba2a87cccbfc3d297b8651f79ca54d8c57fbd424b709b516aace90ad6"
+    },
+    {
+      "entry": "records/cpu/checks/final-link1/live.json",
+      "bytes": 18484,
+      "sha256": "875e925c1857dd5ec4eae29f08d70da9b2e3af7e67e9379dab5c7ca093eec59d"
+    },
+    {
+      "entry": "records/cpu/checks/final-link1/runtime-environment.json",
+      "bytes": 8168,
+      "sha256": "0d6c2a4b1a37637f38e620d06cdf1c16aa9e603fea74bbb2c4ef57aa8c532b17"
+    },
+    {
+      "entry": "records/cpu/checks/link1/image.json",
+      "bytes": 257,
+      "sha256": "2832ac010e5ab5a32d69fd913dedd4f05ceb2190e87bc96accd49408b6ff6ece"
+    },
+    {
+      "entry": "records/cpu/checks/link1/link-plan.json",
+      "bytes": 53316,
+      "sha256": "6a636f4dd6a85f7adecf854455824daee1bc686ae16f2df8d16ca313ef67f7c6"
+    },
+    {
+      "entry": "records/cpu/checks/link1/link.command.json",
+      "bytes": 18369,
+      "sha256": "874b96a75ace28053e76dddae606509d06cf23ea573ca2fab6cfd058498e56bc"
+    },
+    {
+      "entry": "records/cpu/checks/link1/link.result.json",
+      "bytes": 18439,
+      "sha256": "fc8cc884e839def20e8ee7b78beb27326456224b60b8fc2ee793440c550b231b"
+    },
+    {
+      "entry": "records/cpu/checks/link1/link.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/cpu/checks/link1/link.stdout.log",
+      "bytes": 282,
+      "sha256": "0a7e8f855a74c9b0a572fa9ac6837800870627dfc0a67d28534c20c1981ab228"
+    },
+    {
+      "entry": "records/cpu/checks/link1/live.json",
+      "bytes": 18439,
+      "sha256": "fc8cc884e839def20e8ee7b78beb27326456224b60b8fc2ee793440c550b231b"
+    },
+    {
+      "entry": "records/cpu/checks/link1/runtime-environment.json",
+      "bytes": 8168,
+      "sha256": "0d6c2a4b1a37637f38e620d06cdf1c16aa9e603fea74bbb2c4ef57aa8c532b17"
+    },
+    {
+      "entry": "records/cpu/checks/link2/image.json",
+      "bytes": 257,
+      "sha256": "011aa5bbd1b0e723f5b1927dab9120d27e3467fa20859e45d9ec50762ea6e473"
+    },
+    {
+      "entry": "records/cpu/checks/link2/link-plan.json",
+      "bytes": 52184,
+      "sha256": "87ad0dea7cd85c3117ae779f1853ea9d08edb6ae69e63a5c503baf5d554500d9"
+    },
+    {
+      "entry": "records/cpu/checks/link2/link.command.json",
+      "bytes": 18396,
+      "sha256": "5f46f3ddac4ae9dfee9b690d1b909b3571ab9a450d58fc70d87ba005a86e93fd"
+    },
+    {
+      "entry": "records/cpu/checks/link2/link.result.json",
+      "bytes": 18466,
+      "sha256": "f8f613b8ef4f3521d5449c1705d7f31ed467aa57cecd32dc0540fe3d66432b71"
+    },
+    {
+      "entry": "records/cpu/checks/link2/link.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/cpu/checks/link2/link.stdout.log",
+      "bytes": 282,
+      "sha256": "0be9ff2badbc0d2b71962bebbcde012ba788df0529fe07ee736eb43f9b92ef7f"
+    },
+    {
+      "entry": "records/cpu/checks/link2/live.json",
+      "bytes": 18466,
+      "sha256": "f8f613b8ef4f3521d5449c1705d7f31ed467aa57cecd32dc0540fe3d66432b71"
+    },
+    {
+      "entry": "records/cpu/checks/link2/runtime-environment.json",
+      "bytes": 8168,
+      "sha256": "0d6c2a4b1a37637f38e620d06cdf1c16aa9e603fea74bbb2c4ef57aa8c532b17"
+    },
+    {
+      "entry": "records/cpu/validation/final2/image-before.json",
+      "bytes": 263,
+      "sha256": "a49911b25e10c6ab4d89567b1d41697514c7da3630a70db38e998b88c91766ef"
+    },
+    {
+      "entry": "records/cpu/validation/final2/live.json",
+      "bytes": 565,
+      "sha256": "7369898f6b1bb4493cff141a5df287e5cf9da2a8c5c52c815b1050959b7ee756"
+    },
+    {
+      "entry": "records/cpu/validation/final2/receipt.json",
+      "bytes": 3295,
+      "sha256": "e296ea455ce6fe173db73de546838590db77bee273c17a77e925d4eca7ea961d"
+    },
+    {
+      "entry": "records/cpu/validation/final2/runtime-environment.json",
+      "bytes": 8265,
+      "sha256": "31b793f62a5310d02178e16b38342034577bcbd1f136c0ada0ee69968f9979d9"
+    },
+    {
+      "entry": "records/cpu/validation/final2/tests.command.json",
+      "bytes": 495,
+      "sha256": "faed89f380c7c5f1ee256496130ab38b1a102be6e588f9161fb019aa6efd5849"
+    },
+    {
+      "entry": "records/cpu/validation/final2/tests.result.json",
+      "bytes": 565,
+      "sha256": "7369898f6b1bb4493cff141a5df287e5cf9da2a8c5c52c815b1050959b7ee756"
+    },
+    {
+      "entry": "records/cpu/validation/final2/tests.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/cpu/validation/final2/tests.stdout.log",
+      "bytes": 812,
+      "sha256": "ca9795147de5009679a52619e39c6050348a5081669a723f369b58f0faaba51a"
+    },
+    {
+      "entry": "records/cpu/validation/final2/tests.xml",
+      "bytes": 2358,
+      "sha256": "bf209216f1dbf696f9fad7bbb557f2f1d2eef8b42516766517c51a2cc49da4dd"
+    },
+    {
+      "entry": "records/cpu/validation/first1/image-before.json",
+      "bytes": 257,
+      "sha256": "2832ac010e5ab5a32d69fd913dedd4f05ceb2190e87bc96accd49408b6ff6ece"
+    },
+    {
+      "entry": "records/cpu/validation/first1/live.json",
+      "bytes": 556,
+      "sha256": "632d1373878e987a4981a101c0353ba39344801319188734d84ebc136caa7e4c"
+    },
+    {
+      "entry": "records/cpu/validation/first1/receipt.json",
+      "bytes": 2005,
+      "sha256": "1eed0c1a3bfbe2ab6e2ceba42d1bcd00f53eb99b5e8e2986e4cd8b80871afb86"
+    },
+    {
+      "entry": "records/cpu/validation/first1/runtime-environment.json",
+      "bytes": 8265,
+      "sha256": "31b793f62a5310d02178e16b38342034577bcbd1f136c0ada0ee69968f9979d9"
+    },
+    {
+      "entry": "records/cpu/validation/first1/tests.command.json",
+      "bytes": 488,
+      "sha256": "ca3ed17b4c3175bcb3d516dba5d205a9030da8d00a33f195e6b7cc8935e61b6b"
+    },
+    {
+      "entry": "records/cpu/validation/first1/tests.result.json",
+      "bytes": 556,
+      "sha256": "632d1373878e987a4981a101c0353ba39344801319188734d84ebc136caa7e4c"
+    },
+    {
+      "entry": "records/cpu/validation/first1/tests.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/cpu/validation/first1/tests.stdout.log",
+      "bytes": 1102,
+      "sha256": "824b3e592f6ea58d1db2c182ef913cd5622df03887fa9d4c1860a7ac40e77c26"
+    },
+    {
+      "entry": "records/cpu/validation/first1/tests.xml",
+      "bytes": 1514,
+      "sha256": "63ef1cbc7fd93744af54ac23b2c4964f778914e940eaf5bcc2aec5b86ecc3a53"
+    },
+    {
+      "entry": "records/cpu/validation/second1/image-before.json",
+      "bytes": 257,
+      "sha256": "011aa5bbd1b0e723f5b1927dab9120d27e3467fa20859e45d9ec50762ea6e473"
+    },
+    {
+      "entry": "records/cpu/validation/second1/live.json",
+      "bytes": 559,
+      "sha256": "d98066b360292c7da30d9f90bfe77fb45cdba865bb5c76cc4083b71d0a8b47d4"
+    },
+    {
+      "entry": "records/cpu/validation/second1/receipt.json",
+      "bytes": 3188,
+      "sha256": "3c002befb44c9024df36fab7ad8827b86b9a732fb54dedf480eec62cdef85dbf"
+    },
+    {
+      "entry": "records/cpu/validation/second1/runtime-environment.json",
+      "bytes": 8265,
+      "sha256": "31b793f62a5310d02178e16b38342034577bcbd1f136c0ada0ee69968f9979d9"
+    },
+    {
+      "entry": "records/cpu/validation/second1/tests.command.json",
+      "bytes": 489,
+      "sha256": "2043261043926c2a1d43577fbe6cca177deebeb20dba5ec40f83cc0487ef6e6a"
+    },
+    {
+      "entry": "records/cpu/validation/second1/tests.result.json",
+      "bytes": 559,
+      "sha256": "d98066b360292c7da30d9f90bfe77fb45cdba865bb5c76cc4083b71d0a8b47d4"
+    },
+    {
+      "entry": "records/cpu/validation/second1/tests.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/cpu/validation/second1/tests.stdout.log",
+      "bytes": 812,
+      "sha256": "9c7cabcee638e7cbd5168355c0c95c066219856589285a98412c2e83077e28d9"
+    },
+    {
+      "entry": "records/cpu/validation/second1/tests.xml",
+      "bytes": 2293,
+      "sha256": "4cf4421cbbf0617781f69599c485589e0817f5dadb326569e31378781bdbaf20"
+    },
+    {
+      "entry": "records/cuda/checks/attempt1/compile-plan.json",
+      "bytes": 5467,
+      "sha256": "afc5a61da100a43db0e848d345a8a5ef917e51d7e5569c96f459953f9e86a98d"
+    },
+    {
+      "entry": "records/cuda/checks/attempt1/compile.command.json",
+      "bytes": 4231,
+      "sha256": "cd1ff7fdc40cbd4e62e8be63278654242292b1a85c259d6306612a5ffd1bfd13"
+    },
+    {
+      "entry": "records/cuda/checks/attempt1/compile.result.json",
+      "bytes": 4302,
+      "sha256": "8859d5be3f76ffe06793fc262ec064a0f919f419732221648053bd1508346bb2"
+    },
+    {
+      "entry": "records/cuda/checks/attempt1/compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/cuda/checks/attempt1/compile.stdout.log",
+      "bytes": 6414,
+      "sha256": "ac8f5b0526e0acfbcd1f7e481fdd8b1502af60caf0f3a9703fae478b299fe293"
+    },
+    {
+      "entry": "records/cuda/checks/attempt1/ga-ratio4-test-deps.json",
+      "bytes": 32151,
+      "sha256": "c16c03312646a2f1ea331778f8d3c815e63fc5d3738c3c903fd2f7304f9038f1"
+    },
+    {
+      "entry": "records/cuda/checks/attempt1/live.json",
+      "bytes": 4302,
+      "sha256": "8859d5be3f76ffe06793fc262ec064a0f919f419732221648053bd1508346bb2"
+    },
+    {
+      "entry": "records/cuda/checks/attempt2/compile-plan.json",
+      "bytes": 5467,
+      "sha256": "7182ec4ac2722670080749551620cb7a614051ee5c85e7d0e07d0b72229623ab"
+    },
+    {
+      "entry": "records/cuda/checks/attempt2/compile.command.json",
+      "bytes": 4232,
+      "sha256": "2d18218662dcef6daffc55d584b281d31b2627e6eacc205db714765be9b68f31"
+    },
+    {
+      "entry": "records/cuda/checks/attempt2/compile.result.json",
+      "bytes": 4302,
+      "sha256": "45f12eaf9ca894bbe52d913e4cb9aa8fde08c1e09ef259457c5fa024d5053deb"
+    },
+    {
+      "entry": "records/cuda/checks/attempt2/compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/cuda/checks/attempt2/compile.stdout.log",
+      "bytes": 28,
+      "sha256": "8645ffc54cc1bb350c67adbc0385db44421b8c9a2181efd599f668da927967c0"
+    },
+    {
+      "entry": "records/cuda/checks/attempt2/ga-ratio4-test-deps.json",
+      "bytes": 32151,
+      "sha256": "c16c03312646a2f1ea331778f8d3c815e63fc5d3738c3c903fd2f7304f9038f1"
+    },
+    {
+      "entry": "records/cuda/checks/attempt2/identity.json",
+      "bytes": 70096,
+      "sha256": "4b8e1d9237cc7bc4bf057341a92f6e2660dc1228523a8bf9965b6e8cd44eb53e"
+    },
+    {
+      "entry": "records/cuda/checks/attempt2/live.json",
+      "bytes": 4302,
+      "sha256": "45f12eaf9ca894bbe52d913e4cb9aa8fde08c1e09ef259457c5fa024d5053deb"
+    },
+    {
+      "entry": "records/cuda/checks/attempt3/compile-plan.json",
+      "bytes": 5467,
+      "sha256": "08508fc8642c01ac68abf290649942632f89dfdd3c0456d7ad78052d722027f3"
+    },
+    {
+      "entry": "records/cuda/checks/attempt3/compile.command.json",
+      "bytes": 4232,
+      "sha256": "19ddd00c27af0fe1e7bbd3d1c64dbe6e9c8fbf92181b3017ec37af66ec6dac99"
+    },
+    {
+      "entry": "records/cuda/checks/attempt3/compile.result.json",
+      "bytes": 4302,
+      "sha256": "220e5df18b30074180730f4ede83e46df6610294def4d1fa24f04a56822952f7"
+    },
+    {
+      "entry": "records/cuda/checks/attempt3/compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/cuda/checks/attempt3/compile.stdout.log",
+      "bytes": 28,
+      "sha256": "8645ffc54cc1bb350c67adbc0385db44421b8c9a2181efd599f668da927967c0"
+    },
+    {
+      "entry": "records/cuda/checks/attempt3/ga-ratio4-test-deps.json",
+      "bytes": 32151,
+      "sha256": "c16c03312646a2f1ea331778f8d3c815e63fc5d3738c3c903fd2f7304f9038f1"
+    },
+    {
+      "entry": "records/cuda/checks/attempt3/identity.json",
+      "bytes": 70096,
+      "sha256": "d710fcfac4488a7e3d78ed556834236f0bff3d0f9ad275fe6b9d348742911452"
+    },
+    {
+      "entry": "records/cuda/checks/attempt3/live.json",
+      "bytes": 4302,
+      "sha256": "220e5df18b30074180730f4ede83e46df6610294def4d1fa24f04a56822952f7"
+    },
+    {
+      "entry": "records/cuda/checks/final-link1/image.json",
+      "bytes": 266,
+      "sha256": "ad215cc8029a7f404f611aba6ee81148cf67155d88b06ef83711630fe0f3bcce"
+    },
+    {
+      "entry": "records/cuda/checks/final-link1/link-plan.json",
+      "bytes": 78714,
+      "sha256": "c15caab115c37049f4e3c2aa52e90f7333f69bdc82449c76298f39a8595ef90f"
+    },
+    {
+      "entry": "records/cuda/checks/final-link1/link.command.json",
+      "bytes": 27542,
+      "sha256": "c1f47aa556e0ccbe5c4ba8397a5ff6f791defd13c4b51069288bb8dbc71be5dc"
+    },
+    {
+      "entry": "records/cuda/checks/final-link1/link.result.json",
+      "bytes": 27610,
+      "sha256": "3115ae4a740a58f9bfab7657c408c6ae4a5018fcd74f6024cab3e29716f9b816"
+    },
+    {
+      "entry": "records/cuda/checks/final-link1/link.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/cuda/checks/final-link1/link.stdout.log",
+      "bytes": 298,
+      "sha256": "183d43c09dddfbc1edc143d9baa252b4e4696085f664ce5922097f9f2c08ab0b"
+    },
+    {
+      "entry": "records/cuda/checks/final-link1/live.json",
+      "bytes": 27610,
+      "sha256": "3115ae4a740a58f9bfab7657c408c6ae4a5018fcd74f6024cab3e29716f9b816"
+    },
+    {
+      "entry": "records/cuda/checks/final-link1/runtime-environment.json",
+      "bytes": 6716,
+      "sha256": "dfa7fce4c49931f9f117c1b01f427d788bd6109326c34114b95201794d0e8e7d"
+    },
+    {
+      "entry": "records/cuda/checks/link1/image.json",
+      "bytes": 260,
+      "sha256": "03d3e857e3e97ac2dc723dbd17abcaa44cd0f30450e8f9824dfed4bb634e868e"
+    },
+    {
+      "entry": "records/cuda/checks/link1/link-plan.json",
+      "bytes": 79942,
+      "sha256": "6eab9714a46cb8d15c7f4730fba86d51918f426da6375d1077850f938c079531"
+    },
+    {
+      "entry": "records/cuda/checks/link1/link.command.json",
+      "bytes": 27496,
+      "sha256": "cf153733d49d3367e910ceda70fb8724df9bcf0dd392a73c2885b133466a224f"
+    },
+    {
+      "entry": "records/cuda/checks/link1/link.result.json",
+      "bytes": 27566,
+      "sha256": "017069c5cfe5d2db5a620d723ee7617834e4562be0a83a0829245f0f266670a3"
+    },
+    {
+      "entry": "records/cuda/checks/link1/link.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/cuda/checks/link1/link.stdout.log",
+      "bytes": 286,
+      "sha256": "8700ab7178b0f3de8b0318aede6d6a840f76be6778e865183355e223df1d6067"
+    },
+    {
+      "entry": "records/cuda/checks/link1/live.json",
+      "bytes": 27566,
+      "sha256": "017069c5cfe5d2db5a620d723ee7617834e4562be0a83a0829245f0f266670a3"
+    },
+    {
+      "entry": "records/cuda/checks/link1/runtime-environment.json",
+      "bytes": 6716,
+      "sha256": "dfa7fce4c49931f9f117c1b01f427d788bd6109326c34114b95201794d0e8e7d"
+    },
+    {
+      "entry": "records/cuda/checks/link2/image.json",
+      "bytes": 260,
+      "sha256": "e1ad43ed41bf425f7d8d99d93f3ffaa538a47cf0d3b73651e8898208c8f1fe0c"
+    },
+    {
+      "entry": "records/cuda/checks/link2/link-plan.json",
+      "bytes": 78334,
+      "sha256": "ed2793a96bc1a01aa15921139f32634095b0b13c36785a96bdb3e4eb356a9bb3"
+    },
+    {
+      "entry": "records/cuda/checks/link2/link.command.json",
+      "bytes": 27524,
+      "sha256": "e4634a89e3f9a2074fdb6b52bd7c8c048f50de6020cbb98ddda5da0e635696b8"
+    },
+    {
+      "entry": "records/cuda/checks/link2/link.result.json",
+      "bytes": 27594,
+      "sha256": "72e4aeabcd59fda9ea40b716b1d855b992bd40900d269c3cf8c97b14b06e6132"
+    },
+    {
+      "entry": "records/cuda/checks/link2/link.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/cuda/checks/link2/link.stdout.log",
+      "bytes": 286,
+      "sha256": "39ba17d7ff68fd268d66cd85d97315935a28a6f5231ef04d2175af2f92470d7b"
+    },
+    {
+      "entry": "records/cuda/checks/link2/live.json",
+      "bytes": 27594,
+      "sha256": "72e4aeabcd59fda9ea40b716b1d855b992bd40900d269c3cf8c97b14b06e6132"
+    },
+    {
+      "entry": "records/cuda/checks/link2/runtime-environment.json",
+      "bytes": 6716,
+      "sha256": "dfa7fce4c49931f9f117c1b01f427d788bd6109326c34114b95201794d0e8e7d"
+    },
+    {
+      "entry": "records/cuda/validation/final2/image-before.json",
+      "bytes": 266,
+      "sha256": "ad215cc8029a7f404f611aba6ee81148cf67155d88b06ef83711630fe0f3bcce"
+    },
+    {
+      "entry": "records/cuda/validation/final2/live.json",
+      "bytes": 570,
+      "sha256": "f8e6d4e29caa88edfc9904c9b5099d4392f196339f17d94e640170ce6764d162"
+    },
+    {
+      "entry": "records/cuda/validation/final2/receipt.json",
+      "bytes": 3304,
+      "sha256": "ba3b6fe02787ccaf5f64bad1472c5a3aefe602eaba71b3449cfbc380bf858b4e"
+    },
+    {
+      "entry": "records/cuda/validation/final2/runtime-environment.json",
+      "bytes": 7601,
+      "sha256": "885dabe3677289edfb41a0058e32b5b5be371e7438f026d35e1fd9129699c245"
+    },
+    {
+      "entry": "records/cuda/validation/final2/tests.command.json",
+      "bytes": 499,
+      "sha256": "8c6fbbd4d07394b3225844fc6378711bbc1983f397b213ceb9147e6bb0ec6542"
+    },
+    {
+      "entry": "records/cuda/validation/final2/tests.result.json",
+      "bytes": 570,
+      "sha256": "f8e6d4e29caa88edfc9904c9b5099d4392f196339f17d94e640170ce6764d162"
+    },
+    {
+      "entry": "records/cuda/validation/final2/tests.stderr.log",
+      "bytes": 273,
+      "sha256": "5d2bc1ac725cf2f0e82a84dc48f618a83ad205f04637bf8ef5af013247807e8b"
+    },
+    {
+      "entry": "records/cuda/validation/final2/tests.stdout.log",
+      "bytes": 822,
+      "sha256": "c68bef87b4341a3dd3a01074217d23b491400492b83c4d55de3afb018cdaefce"
+    },
+    {
+      "entry": "records/cuda/validation/final2/tests.xml",
+      "bytes": 2366,
+      "sha256": "ac38ba26c57c86d8f3bead23da98715efff8e7d0b59c8ce64dba0d4a2100773d"
+    },
+    {
+      "entry": "records/cuda/validation/first1/image-before.json",
+      "bytes": 260,
+      "sha256": "03d3e857e3e97ac2dc723dbd17abcaa44cd0f30450e8f9824dfed4bb634e868e"
+    },
+    {
+      "entry": "records/cuda/validation/first1/live.json",
+      "bytes": 563,
+      "sha256": "487d16c301f65113d115ad6a01415d62c06ff940d751dea2a61227f8be4380e3"
+    },
+    {
+      "entry": "records/cuda/validation/first1/receipt.json",
+      "bytes": 2016,
+      "sha256": "a739153273240d7e333800781a44e33d5be34ef6daaa80d415a83968647a3d80"
+    },
+    {
+      "entry": "records/cuda/validation/first1/runtime-environment.json",
+      "bytes": 7595,
+      "sha256": "10e3986502551a670c3c3ac519e25fd483253704c24abb4a9d92fbf5a3c00fe2"
+    },
+    {
+      "entry": "records/cuda/validation/first1/tests.command.json",
+      "bytes": 492,
+      "sha256": "73b0e98b97bf2598818cdbe215d7c473182cffd941243b77b9db360f1d3db01a"
+    },
+    {
+      "entry": "records/cuda/validation/first1/tests.result.json",
+      "bytes": 563,
+      "sha256": "487d16c301f65113d115ad6a01415d62c06ff940d751dea2a61227f8be4380e3"
+    },
+    {
+      "entry": "records/cuda/validation/first1/tests.stderr.log",
+      "bytes": 151,
+      "sha256": "88dd5e35d67fb5c0c371390a98a66a5e061e4c0bef2d890a7b74781363216092"
+    },
+    {
+      "entry": "records/cuda/validation/first1/tests.stdout.log",
+      "bytes": 1113,
+      "sha256": "965a162b5ceb1bd9d73b14996d8c5887ff7c124a1c7d269d8d9c99343e6fc43c"
+    },
+    {
+      "entry": "records/cuda/validation/first1/tests.xml",
+      "bytes": 1522,
+      "sha256": "2f69fc81c087b1b98f74e4d08c10c3d9df2be0363c8353b3c204a51fa0c75570"
+    },
+    {
+      "entry": "records/cuda/validation/second1/image-before.json",
+      "bytes": 260,
+      "sha256": "e1ad43ed41bf425f7d8d99d93f3ffaa538a47cf0d3b73651e8898208c8f1fe0c"
+    },
+    {
+      "entry": "records/cuda/validation/second1/live.json",
+      "bytes": 562,
+      "sha256": "d273af2bb51c6d40e42b0d7948f2e79a5967321d0b09dc136356f44cb00af17c"
+    },
+    {
+      "entry": "records/cuda/validation/second1/receipt.json",
+      "bytes": 3197,
+      "sha256": "642cf9ef3f55a8cfc85ddf95b03d612a89d68f6b8ea7186b87c956c050e865bc"
+    },
+    {
+      "entry": "records/cuda/validation/second1/runtime-environment.json",
+      "bytes": 7595,
+      "sha256": "725edcacfe42d4015ed6e52e8ed71399e8e6fd3b463218e33baaeafc5f9a8496"
+    },
+    {
+      "entry": "records/cuda/validation/second1/tests.command.json",
+      "bytes": 492,
+      "sha256": "fe1ae834e5e4b6aabc1e1cdd0d0f21caff80feae81350674799d90ec80678572"
+    },
+    {
+      "entry": "records/cuda/validation/second1/tests.result.json",
+      "bytes": 562,
+      "sha256": "d273af2bb51c6d40e42b0d7948f2e79a5967321d0b09dc136356f44cb00af17c"
+    },
+    {
+      "entry": "records/cuda/validation/second1/tests.stderr.log",
+      "bytes": 334,
+      "sha256": "c7f37a327e2ee0e0ebec20cf2e8f91d8ca175dbcd4a4251908c00c6c2ec3291c"
+    },
+    {
+      "entry": "records/cuda/validation/second1/tests.stdout.log",
+      "bytes": 822,
+      "sha256": "91b10460948fcdbc0db91851be36d9da75a0e4b68383d3d6f7308a82d39610f9"
+    },
+    {
+      "entry": "records/cuda/validation/second1/tests.xml",
+      "bytes": 2300,
+      "sha256": "d139060b131cbe5e7505fdaa6029f0726768c014d9d1360204af33c4780299a6"
+    },
+    {
+      "entry": "records/oracle/after/tests/compute_models/ga_ratio4_reference_fixture.h",
+      "bytes": 16624,
+      "sha256": "e87a6f7303e4db8979afd8da7ca4a416444b38839c5dca7ca390c239a7a89d7f"
+    },
+    {
+      "entry": "records/oracle/before.json",
+      "bytes": 137,
+      "sha256": "40167ea85bd0086f7287ded380915271bf6845e6f808a87067dabf00eac14db0"
+    },
+    {
+      "entry": "records/oracle/payload-plan.json",
+      "bytes": 12506,
+      "sha256": "ecd3c422cac1dcadf3932ce5202556ebf39060724f6671390b6b2ab71c514c50"
+    },
+    {
+      "entry": "records/oracle/plan_payload.py",
+      "bytes": 4598,
+      "sha256": "13b34f5aabbb65c74096c49eeaf814c297d21e86d7495b777e2d3cf6887b684c"
+    },
+    {
+      "entry": "records/oracle/source-freeze.json",
+      "bytes": 2785,
+      "sha256": "5ae111856c5c53bc76888de2f9714f94f5dd57078c509aef5e87b66daaaaa2ec"
+    },
+    {
+      "entry": "records/review/generation-reservation-source-review.json",
+      "bytes": 4039,
+      "sha256": "1d7dcf33ff947325573e60dc3865589ca296bb4d211c0cb5b1e91762945dc34a"
+    },
+    {
+      "entry": "records/review/graph-final-source-review.json",
+      "bytes": 4475,
+      "sha256": "45d45dee6506c283627a1d05e91c21c4890a14039b17c0fdc554850f4aba5b7d"
+    },
+    {
+      "entry": "records/review/graph-source-review.json",
+      "bytes": 4251,
+      "sha256": "6f9bc93b410445d291bdcf48eb6d40259b83c7e2786df5ca2ad7fda330679123"
+    },
+    {
+      "entry": "records/review/graph-warning-revision-review.json",
+      "bytes": 643,
+      "sha256": "28cc16fb900ec24e0550734c4dd25c755eafd85fb4ddf3e01baf61088593595e"
+    },
+    {
+      "entry": "records/review/output-storage-source-review.json",
+      "bytes": 6036,
+      "sha256": "78b7c46e9b0ce1230e56d475101291296d9924eea97e1dc12fd5e424f334ff50"
+    },
+    {
+      "entry": "records/review/remaining-role-actions.json",
+      "bytes": 12763,
+      "sha256": "2669eaa76019d3493f0b2e087621bf31f2a132f9e50c609954f71a3c868f50e0"
+    },
+    {
+      "entry": "records/review/vulkan-actual-pipeline-selection.json",
+      "bytes": 570,
+      "sha256": "4d6e72b58bf4af6789a3a8f00bb347e0e8443cf22b2f80e9b15103a2a7d69345"
+    },
+    {
+      "entry": "records/review/vulkan-actual-pipeline-selection.txt",
+      "bytes": 8003,
+      "sha256": "3c6d90328be964af0c317bc586beb9f27926ac67fb901dd8503baed4a7b6ac16"
+    },
+    {
+      "entry": "records/root/after/src/graph/resources.cc",
+      "bytes": 70350,
+      "sha256": "40f38a4b5d2d5e316fe9cae57b2360cd1598446a31acee63740ba297990fa57c"
+    },
+    {
+      "entry": "records/root/before/src/graph/resources.cc",
+      "bytes": 69851,
+      "sha256": "e80f2c829a90c26acb5bba4b3bee2eaf74b34d3b62755599a3bc849d462c896c"
+    },
+    {
+      "entry": "records/root/docs-before/compute.md",
+      "bytes": 118690,
+      "sha256": "d9ac3d743999a4fdacf0c9b7429657f812b6e8ab21dabf1020325637d2e729aa"
+    },
+    {
+      "entry": "records/root/docs-before/current-work.md",
+      "bytes": 34800,
+      "sha256": "88a6047aada989c7dbc4385b84864b2f2869d776f3577ad9b70b07e1815a566b"
+    },
+    {
+      "entry": "records/root/docs-before/model-operators.md",
+      "bytes": 78154,
+      "sha256": "b48eae855eed135cfb40ed7eb548472408243d334d379a42c78fed709aae9018"
+    },
+    {
+      "entry": "records/root/docs-before/model-quantizations.json",
+      "bytes": 560039,
+      "sha256": "52d6e73915ac8ce20f303216d013fc60a74a3757e0c1490ccc4d04e04351c80f"
+    },
+    {
+      "entry": "records/root/final-results.json",
+      "bytes": 2968,
+      "sha256": "13351707f4c99b54781a718fa96c7560b7439617a827a2c65a70f0f793c84d82"
+    },
+    {
+      "entry": "records/root/package.py",
+      "bytes": 8590,
+      "sha256": "c448151f55d6fb21eed55167a9bd575a0b5ca2c6dd2084a84b463664faa78832"
+    },
+    {
+      "entry": "records/root/prior-reuse-fixture/ga_ratio4_producer_fixture.h",
+      "bytes": 29547,
+      "sha256": "b85d8ab0fadadeb77eded970a4bc36680b7cc7154ee95363d5690848783564cf"
+    },
+    {
+      "entry": "records/root/producer-generation-reservation.diff",
+      "bytes": 3702,
+      "sha256": "426c8a6de861f7cbe77063bf27237437162b6ac1568554219e291b450fdada95"
+    },
+    {
+      "entry": "records/root/refresh_common.py",
+      "bytes": 1349,
+      "sha256": "3e0401bb129fb079c541f595acbfaea02c57c4eb85961db8569830f0d0105cf4"
+    },
+    {
+      "entry": "records/root/relink_common.py",
+      "bytes": 1596,
+      "sha256": "e9b29a98f910fb87f360ad048f43b80168c832a0d414abab60eaff6c2db23bf5"
+    },
+    {
+      "entry": "records/root/resources.diff",
+      "bytes": 856,
+      "sha256": "dad7f6f0baee01d21de3fb1b04a7272a54d84bbc9d3ae9fb4ca99f09f1d19830"
+    },
+    {
+      "entry": "records/root/run_windows.py",
+      "bytes": 3499,
+      "sha256": "e98a8d162cc9c041dd644ea223e5389a0e0d240f3f32319000ec7ad68aeeb4ae"
+    },
+    {
+      "entry": "records/root/update_docs.py",
+      "bytes": 5854,
+      "sha256": "17b2cb1030c2b4f0b107bcb31e334e4b0c3c6b0e6d72e93bb9aec5fa33b089b3"
+    },
+    {
+      "entry": "records/vulkan/checks/attempt1/compile-plan.json",
+      "bytes": 5884,
+      "sha256": "92fc42069b6d0a1d56f112453b3c9dc50f1a27f7e38c325d413de8208102cd80"
+    },
+    {
+      "entry": "records/vulkan/checks/attempt1/compile.command.json",
+      "bytes": 4643,
+      "sha256": "5583a2f718b4c615325928428225e0a766d4f9d01c99106ad682ddfb9bceeca3"
+    },
+    {
+      "entry": "records/vulkan/checks/attempt1/compile.result.json",
+      "bytes": 4713,
+      "sha256": "bb02b8166cd8dd95abf2aa38d254f3486d5e680a6dd02f4e5fba2715e02ac40f"
+    },
+    {
+      "entry": "records/vulkan/checks/attempt1/compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/vulkan/checks/attempt1/compile.stdout.log",
+      "bytes": 6379,
+      "sha256": "08a5f5e07be71250edf36362872736168f34fe9be819c2260f78232c1c199fe1"
+    },
+    {
+      "entry": "records/vulkan/checks/attempt1/ga-ratio4-test-deps.json",
+      "bytes": 34807,
+      "sha256": "3e9d6fd22117d3642e5daa9bece1ed4bf6a4ccc60219d42f0efe9fa781c553d3"
+    },
+    {
+      "entry": "records/vulkan/checks/attempt1/live.json",
+      "bytes": 4713,
+      "sha256": "bb02b8166cd8dd95abf2aa38d254f3486d5e680a6dd02f4e5fba2715e02ac40f"
+    },
+    {
+      "entry": "records/vulkan/checks/attempt2/compile-plan.json",
+      "bytes": 5884,
+      "sha256": "ba03dee5e8cbe86a0c85d4675c47c0d971bd3d86b9069c98278fec7d6574332e"
+    },
+    {
+      "entry": "records/vulkan/checks/attempt2/compile.command.json",
+      "bytes": 4643,
+      "sha256": "0af508b113c959ba570348475fa114e33ca3854c1c58ee23e854dddfeb184a62"
+    },
+    {
+      "entry": "records/vulkan/checks/attempt2/compile.result.json",
+      "bytes": 4712,
+      "sha256": "bbbb149d7a657d079eb2b49c8cb9e8243923a62b8784330c4286843f9bb8d1fb"
+    },
+    {
+      "entry": "records/vulkan/checks/attempt2/compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/vulkan/checks/attempt2/compile.stdout.log",
+      "bytes": 28,
+      "sha256": "8645ffc54cc1bb350c67adbc0385db44421b8c9a2181efd599f668da927967c0"
+    },
+    {
+      "entry": "records/vulkan/checks/attempt2/ga-ratio4-test-deps.json",
+      "bytes": 34807,
+      "sha256": "3e9d6fd22117d3642e5daa9bece1ed4bf6a4ccc60219d42f0efe9fa781c553d3"
+    },
+    {
+      "entry": "records/vulkan/checks/attempt2/identity.json",
+      "bytes": 77123,
+      "sha256": "671ce34062f2bea427a8cc2bd2582702eac92d89b014214dfa56124b9c4711ed"
+    },
+    {
+      "entry": "records/vulkan/checks/attempt2/live.json",
+      "bytes": 4712,
+      "sha256": "bbbb149d7a657d079eb2b49c8cb9e8243923a62b8784330c4286843f9bb8d1fb"
+    },
+    {
+      "entry": "records/vulkan/checks/attempt3/compile-plan.json",
+      "bytes": 5884,
+      "sha256": "ece79fe6664830bbdcc9ba0bf9ffa38ad9d46292ab777ffb4fa0b6a9e0efe5dd"
+    },
+    {
+      "entry": "records/vulkan/checks/attempt3/compile.command.json",
+      "bytes": 4643,
+      "sha256": "1673336e0935d62fb9709a6d0b07468fded03b3f1629e58e7e9c9267542668af"
+    },
+    {
+      "entry": "records/vulkan/checks/attempt3/compile.result.json",
+      "bytes": 4713,
+      "sha256": "1a7cc02cc94340c22dfb6be777b129fed10f724fce7d17fbbb0dee745d1bef83"
+    },
+    {
+      "entry": "records/vulkan/checks/attempt3/compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/vulkan/checks/attempt3/compile.stdout.log",
+      "bytes": 28,
+      "sha256": "8645ffc54cc1bb350c67adbc0385db44421b8c9a2181efd599f668da927967c0"
+    },
+    {
+      "entry": "records/vulkan/checks/attempt3/ga-ratio4-test-deps.json",
+      "bytes": 34807,
+      "sha256": "3e9d6fd22117d3642e5daa9bece1ed4bf6a4ccc60219d42f0efe9fa781c553d3"
+    },
+    {
+      "entry": "records/vulkan/checks/attempt3/identity.json",
+      "bytes": 77123,
+      "sha256": "3adc26601e89aec67b230a6303c2bc4e415f79df67c8e40a5a5c88d8bb449245"
+    },
+    {
+      "entry": "records/vulkan/checks/attempt3/live.json",
+      "bytes": 4713,
+      "sha256": "1a7cc02cc94340c22dfb6be777b129fed10f724fce7d17fbbb0dee745d1bef83"
+    },
+    {
+      "entry": "records/vulkan/checks/diagnostic1/compile-plan.json",
+      "bytes": 2835,
+      "sha256": "adc236a5dc322c6b0f418ceff138143a0f0075af438c9eae3cf887aa486b2c43"
+    },
+    {
+      "entry": "records/vulkan/checks/diagnostic1/compile.command.json",
+      "bytes": 2058,
+      "sha256": "f6f44eaadd942ed291ac8aca7d478000984935bf617cc81c05a77af7f11948d7"
+    },
+    {
+      "entry": "records/vulkan/checks/diagnostic1/compile.result.json",
+      "bytes": 2126,
+      "sha256": "a83f9337f12e8501dadd820e1507bf3f72c94c4def221fbed4f8220158c224ad"
+    },
+    {
+      "entry": "records/vulkan/checks/diagnostic1/compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/vulkan/checks/diagnostic1/compile.stdout.log",
+      "bytes": 2585,
+      "sha256": "efb4dd3826c96acd8fb5cd2affa8d19c1ea39644c8fa84a96fd5b2e4eb2d4dd7"
+    },
+    {
+      "entry": "records/vulkan/checks/diagnostic1/diagnostic.diff",
+      "bytes": 2483,
+      "sha256": "4f1f5db3f315a45bea606a1348789810ac685822c0f335d2ff57fb14581bc5d7"
+    },
+    {
+      "entry": "records/vulkan/checks/diagnostic1/live.json",
+      "bytes": 2126,
+      "sha256": "a83f9337f12e8501dadd820e1507bf3f72c94c4def221fbed4f8220158c224ad"
+    },
+    {
+      "entry": "records/vulkan/checks/diagnostic1/region.cc",
+      "bytes": 107029,
+      "sha256": "70ad5c78724d33c6df00a7d878acf1e195d6987f32f893386b75c760ded2e3cf"
+    },
+    {
+      "entry": "records/vulkan/checks/diagnostic1/vulkan-region-diagnostic-deps.json",
+      "bytes": 19618,
+      "sha256": "9bf21c69065b5a4ce6ba6ae0bf56976dbee739fe0b8f6ded7a613a546f1d3906"
+    },
+    {
+      "entry": "records/vulkan/checks/diagnostic2/compile-plan.json",
+      "bytes": 2835,
+      "sha256": "f14d9dd971574b90db76a2486a1d38b4d50d4b279b8d848e7ef7fe57bf491f35"
+    },
+    {
+      "entry": "records/vulkan/checks/diagnostic2/compile.command.json",
+      "bytes": 2058,
+      "sha256": "8b7c3dc875c952cf154cd67b4f398f716266b83573e272df21277441c675f572"
+    },
+    {
+      "entry": "records/vulkan/checks/diagnostic2/compile.result.json",
+      "bytes": 2128,
+      "sha256": "3af4b30bec3f5caf5d769e7d28400abf15085756d5c3fa7daa8f83eba868f889"
+    },
+    {
+      "entry": "records/vulkan/checks/diagnostic2/compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/vulkan/checks/diagnostic2/compile.stdout.log",
+      "bytes": 11,
+      "sha256": "802823f1a0e4e0d0883175973a38d8fdf67f622eee2816fa2f5e3c10a249f1b8"
+    },
+    {
+      "entry": "records/vulkan/checks/diagnostic2/diagnostic.diff",
+      "bytes": 2477,
+      "sha256": "d825cd179af63ac228601f77de7dccfd8bbe9d9564df6d212dd73b1dc64ca152"
+    },
+    {
+      "entry": "records/vulkan/checks/diagnostic2/identity.json",
+      "bytes": 41997,
+      "sha256": "1fc546096a001cc07cbc25ca65aa9df990267e00214658c3a8a42fc6b248ec9d"
+    },
+    {
+      "entry": "records/vulkan/checks/diagnostic2/image.json",
+      "bytes": 280,
+      "sha256": "599d4c42e96575e8838ef6eb1308b206cc4a0efe16d80a0c38eff41c8f14d16f"
+    },
+    {
+      "entry": "records/vulkan/checks/diagnostic2/link-plan.json",
+      "bytes": 76181,
+      "sha256": "72ab23ae815752a927a0e89e8b10eb4629947b41c17346a50f25cf40d76608a1"
+    },
+    {
+      "entry": "records/vulkan/checks/diagnostic2/link.command.json",
+      "bytes": 26675,
+      "sha256": "a9c31dc7bda7c58915c1cba5a5a809cd90d617ba9c1d5629a9a702651ee6a04f"
+    },
+    {
+      "entry": "records/vulkan/checks/diagnostic2/link.result.json",
+      "bytes": 26745,
+      "sha256": "80a78cf89be20bcb5a05e6bc0c2c5ae5ca2eee3679be4d8a3960a8dca5907810"
+    },
+    {
+      "entry": "records/vulkan/checks/diagnostic2/link.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/vulkan/checks/diagnostic2/link.stdout.log",
+      "bytes": 328,
+      "sha256": "44954e382399224154df58dfe4bb41994e3f2df6af3cc5fa1400267f80a8e72a"
+    },
+    {
+      "entry": "records/vulkan/checks/diagnostic2/live.json",
+      "bytes": 26745,
+      "sha256": "80a78cf89be20bcb5a05e6bc0c2c5ae5ca2eee3679be4d8a3960a8dca5907810"
+    },
+    {
+      "entry": "records/vulkan/checks/diagnostic2/region.cc",
+      "bytes": 107023,
+      "sha256": "8e232420fc48e6fe036f1db1d8f65895537a8af5c8fdb5d98175217ed984c431"
+    },
+    {
+      "entry": "records/vulkan/checks/diagnostic2/runtime-environment.json",
+      "bytes": 8168,
+      "sha256": "0d6c2a4b1a37637f38e620d06cdf1c16aa9e603fea74bbb2c4ef57aa8c532b17"
+    },
+    {
+      "entry": "records/vulkan/checks/diagnostic2/vulkan-region-diagnostic-deps.json",
+      "bytes": 19618,
+      "sha256": "bd0a59a151d8a899216d9f85367502aecea4a78747b18e3a521000f62a1f35f4"
+    },
+    {
+      "entry": "records/vulkan/checks/final-link1/image.json",
+      "bytes": 269,
+      "sha256": "a04b9d99d55e5f85ad026f0a01da989a3670816225e65e8368da2c3ace55438a"
+    },
+    {
+      "entry": "records/vulkan/checks/final-link1/link-plan.json",
+      "bytes": 75545,
+      "sha256": "52fb9447236cb380cacb19c2d0a41bb91833ac221dabf2fcc0fe9bf1aefa22af"
+    },
+    {
+      "entry": "records/vulkan/checks/final-link1/link.command.json",
+      "bytes": 26642,
+      "sha256": "a959d8172d3f724992eb666accec88b75f92ee13ceda7920d94cb119883ae11b"
+    },
+    {
+      "entry": "records/vulkan/checks/final-link1/link.result.json",
+      "bytes": 26712,
+      "sha256": "7caf1f2dd3efe4578b3504793a8d62279a5b3dfc52136c78825fbe8b961eb45f"
+    },
+    {
+      "entry": "records/vulkan/checks/final-link1/link.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/vulkan/checks/final-link1/link.stdout.log",
+      "bytes": 306,
+      "sha256": "9c021de341f51ea38f1b2d85c4fe385300e348e7be481cdf98195c71dece9903"
+    },
+    {
+      "entry": "records/vulkan/checks/final-link1/live.json",
+      "bytes": 26712,
+      "sha256": "7caf1f2dd3efe4578b3504793a8d62279a5b3dfc52136c78825fbe8b961eb45f"
+    },
+    {
+      "entry": "records/vulkan/checks/final-link1/runtime-environment.json",
+      "bytes": 8168,
+      "sha256": "0d6c2a4b1a37637f38e620d06cdf1c16aa9e603fea74bbb2c4ef57aa8c532b17"
+    },
+    {
+      "entry": "records/vulkan/checks/link1/image.json",
+      "bytes": 263,
+      "sha256": "e07589fe2b4babfcd9e376817d149c1c76c7e1b779f68fe7c8b172e0225f0d8b"
+    },
+    {
+      "entry": "records/vulkan/checks/link1/link-plan.json",
+      "bytes": 76851,
+      "sha256": "98e5f61902fb889f326582fa4c4e86ab4be6fae7622e638f9c530eaeca221963"
+    },
+    {
+      "entry": "records/vulkan/checks/link1/link.command.json",
+      "bytes": 26616,
+      "sha256": "918cb7007d40122a96af4e089cd11ef3676ff693b0c12b237ddb1d268310d5e6"
+    },
+    {
+      "entry": "records/vulkan/checks/link1/link.result.json",
+      "bytes": 26686,
+      "sha256": "3c692c19ba43ab7e760aac3b05631deff400e4fe7b04bcf95c12a7e92a9341c6"
+    },
+    {
+      "entry": "records/vulkan/checks/link1/link.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/vulkan/checks/link1/link.stdout.log",
+      "bytes": 294,
+      "sha256": "76a0c6d4f787435d29f7649d83c6c738f0ffde1a57b9ea513910a92bfeca5d1a"
+    },
+    {
+      "entry": "records/vulkan/checks/link1/live.json",
+      "bytes": 26686,
+      "sha256": "3c692c19ba43ab7e760aac3b05631deff400e4fe7b04bcf95c12a7e92a9341c6"
+    },
+    {
+      "entry": "records/vulkan/checks/link1/runtime-environment.json",
+      "bytes": 8168,
+      "sha256": "0d6c2a4b1a37637f38e620d06cdf1c16aa9e603fea74bbb2c4ef57aa8c532b17"
+    },
+    {
+      "entry": "records/vulkan/checks/rowpitch-fix1/compile-plan.json",
+      "bytes": 2798,
+      "sha256": "a430d49e49a5a56933c9e18bb30a147a3a2474570d8e298088454b0c4e52498d"
+    },
+    {
+      "entry": "records/vulkan/checks/rowpitch-fix1/compile.command.json",
+      "bytes": 1989,
+      "sha256": "c331dc4b302041b3e2c11969cc93ed0884e204cd1452804709ed873eedf90776"
+    },
+    {
+      "entry": "records/vulkan/checks/rowpitch-fix1/compile.result.json",
+      "bytes": 2058,
+      "sha256": "664e6fcb7985d14ceb29ae5e723870d64f7b2c0e29085c8558856393c98c791d"
+    },
+    {
+      "entry": "records/vulkan/checks/rowpitch-fix1/compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/vulkan/checks/rowpitch-fix1/compile.stdout.log",
+      "bytes": 11,
+      "sha256": "802823f1a0e4e0d0883175973a38d8fdf67f622eee2816fa2f5e3c10a249f1b8"
+    },
+    {
+      "entry": "records/vulkan/checks/rowpitch-fix1/identity.json",
+      "bytes": 42436,
+      "sha256": "b755c1ea68591228a8a0dd3884737c4de72ea37b440944d769b981fc7c65fbd5"
+    },
+    {
+      "entry": "records/vulkan/checks/rowpitch-fix1/image.json",
+      "bytes": 271,
+      "sha256": "4f13776fde18eebb648093a8ff08b896e272e4c4aa0d2f877529af94852efec3"
+    },
+    {
+      "entry": "records/vulkan/checks/rowpitch-fix1/implementation.diff",
+      "bytes": 1134,
+      "sha256": "cea0d27ec1dc9c53e7bd28850ace001ff53da35a38c3cf9a4e0460a56e04edaa"
+    },
+    {
+      "entry": "records/vulkan/checks/rowpitch-fix1/link-plan.json",
+      "bytes": 76099,
+      "sha256": "e8f6ed97b5404c9c8a89112e8f58840e06aea1b50a7fa024e6d5674ade9b3630"
+    },
+    {
+      "entry": "records/vulkan/checks/rowpitch-fix1/link.command.json",
+      "bytes": 26648,
+      "sha256": "7cb16d76cc67c57bc1d90ebe924dc29981721e63625dd3f9c24199c03dfd4e60"
+    },
+    {
+      "entry": "records/vulkan/checks/rowpitch-fix1/link.result.json",
+      "bytes": 26718,
+      "sha256": "7254f62e14d4b0d4be24c1d5e437b9213e876b29bd9b623848db977154a97dbd"
+    },
+    {
+      "entry": "records/vulkan/checks/rowpitch-fix1/link.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/vulkan/checks/rowpitch-fix1/link.stdout.log",
+      "bytes": 310,
+      "sha256": "ed7351c9be8df2ab079ae3bd05144d2bd645eb3baf1662daecba412fe78d8195"
+    },
+    {
+      "entry": "records/vulkan/checks/rowpitch-fix1/live.json",
+      "bytes": 26718,
+      "sha256": "7254f62e14d4b0d4be24c1d5e437b9213e876b29bd9b623848db977154a97dbd"
+    },
+    {
+      "entry": "records/vulkan/checks/rowpitch-fix1/ready.json",
+      "bytes": 737,
+      "sha256": "5888a54dfce93cf7b6c9b31d95e6aea7139be4f3fcf00b88459d715352196d21"
+    },
+    {
+      "entry": "records/vulkan/checks/rowpitch-fix1/runtime-environment.json",
+      "bytes": 8168,
+      "sha256": "0d6c2a4b1a37637f38e620d06cdf1c16aa9e603fea74bbb2c4ef57aa8c532b17"
+    },
+    {
+      "entry": "records/vulkan/checks/rowpitch-fix1/vulkan-provider-region-deps.json",
+      "bytes": 19549,
+      "sha256": "3085fb194e8e7c52794c7c5fd563e47e00e4005e6cbf3e002daaf1922f8200a2"
+    },
+    {
+      "entry": "records/vulkan/native-generated-output-contract.json",
+      "bytes": 2121,
+      "sha256": "8dd9d214b11b3a63e9764d7b45f29935b4fb9cd0219c8395dc1743a3981f994d"
+    },
+    {
+      "entry": "records/vulkan/revisions/first-native-assert/region.cc",
+      "bytes": 105668,
+      "sha256": "6926ff2d2e76674eca3a81f29409e80cbe9ef30a561bf1fa413b8992984d1ef1"
+    },
+    {
+      "entry": "records/vulkan/revisions/first-native-assert/source.json",
+      "bytes": 197,
+      "sha256": "dea2225c2f314ec05e78e25d3f4d0493c4737743184f2e7f510ac4dc5045bfc2"
+    },
+    {
+      "entry": "records/vulkan/rowpitch-root-cause.json",
+      "bytes": 5448,
+      "sha256": "81ae52b62e972547cf48d5293ccf80968400bf1241eb9b081645e8c0809be93c"
+    },
+    {
+      "entry": "records/vulkan/source-freeze-rowpitch1.json",
+      "bytes": 40997,
+      "sha256": "e84d264b9b747b389dd418b809ed1f1f1c5ca586216a6113cae021a033b9dd29"
+    },
+    {
+      "entry": "records/vulkan/validation/diagnostic2/image-before.json",
+      "bytes": 280,
+      "sha256": "599d4c42e96575e8838ef6eb1308b206cc4a0efe16d80a0c38eff41c8f14d16f"
+    },
+    {
+      "entry": "records/vulkan/validation/diagnostic2/live.json",
+      "bytes": 640,
+      "sha256": "99e6934d1ceb300bc8e5739a934d0c2eb8de237886df2e14e908d2eb6d0aeadd"
+    },
+    {
+      "entry": "records/vulkan/validation/diagnostic2/runtime-environment.json",
+      "bytes": 8265,
+      "sha256": "31b793f62a5310d02178e16b38342034577bcbd1f136c0ada0ee69968f9979d9"
+    },
+    {
+      "entry": "records/vulkan/validation/diagnostic2/tests.command.json",
+      "bytes": 571,
+      "sha256": "f58e1eb6d18484aecce52647889be2adb9378d132a02bc1e4cefbf8945ed4659"
+    },
+    {
+      "entry": "records/vulkan/validation/diagnostic2/tests.result.json",
+      "bytes": 640,
+      "sha256": "99e6934d1ceb300bc8e5739a934d0c2eb8de237886df2e14e908d2eb6d0aeadd"
+    },
+    {
+      "entry": "records/vulkan/validation/diagnostic2/tests.stderr.log",
+      "bytes": 33040,
+      "sha256": "541a78bbb9210ba6328d8e8c4e04ca23f2b92c007156f969d05ca02d0df70141"
+    },
+    {
+      "entry": "records/vulkan/validation/diagnostic2/tests.stdout.log",
+      "bytes": 453,
+      "sha256": "20ebe9866e8ce2d2159fca56694f259208bb03f18c93b4cff1a7904b18aa1d57"
+    },
+    {
+      "entry": "records/vulkan/validation/final1/image-before.json",
+      "bytes": 271,
+      "sha256": "4f13776fde18eebb648093a8ff08b896e272e4c4aa0d2f877529af94852efec3"
+    },
+    {
+      "entry": "records/vulkan/validation/final1/live.json",
+      "bytes": 579,
+      "sha256": "bc09d5d087089f18a5c9a26e73f603a08ea0b9376bf92a42f03b622b1aba1458"
+    },
+    {
+      "entry": "records/vulkan/validation/final1/receipt.json",
+      "bytes": 2256,
+      "sha256": "aebb2634f7ab79b68739765e98cd48550077ee30001412e62e872a6505e087d7"
+    },
+    {
+      "entry": "records/vulkan/validation/final1/runtime-environment.json",
+      "bytes": 8265,
+      "sha256": "31b793f62a5310d02178e16b38342034577bcbd1f136c0ada0ee69968f9979d9"
+    },
+    {
+      "entry": "records/vulkan/validation/final1/tests.command.json",
+      "bytes": 509,
+      "sha256": "4ea39e68b609c5b2dc85b1350a7f58e9fbb7a0b5ba202094aa5f395f426d8dfa"
+    },
+    {
+      "entry": "records/vulkan/validation/final1/tests.result.json",
+      "bytes": 579,
+      "sha256": "bc09d5d087089f18a5c9a26e73f603a08ea0b9376bf92a42f03b622b1aba1458"
+    },
+    {
+      "entry": "records/vulkan/validation/final1/tests.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/vulkan/validation/final1/tests.stdout.log",
+      "bytes": 1159,
+      "sha256": "35c53da50f867a6135a3adf9e603e66cd82656fcee9e3914672e6548d30fc12d"
+    },
+    {
+      "entry": "records/vulkan/validation/final1/tests.xml",
+      "bytes": 1765,
+      "sha256": "34c0c81dfae24538c585fd1b5b0b80038853dd41abe4f71d49ef1d1d9c93fd67"
+    },
+    {
+      "entry": "records/vulkan/validation/final2/image-before.json",
+      "bytes": 269,
+      "sha256": "a04b9d99d55e5f85ad026f0a01da989a3670816225e65e8368da2c3ace55438a"
+    },
+    {
+      "entry": "records/vulkan/validation/final2/live.json",
+      "bytes": 577,
+      "sha256": "1e4142600ee94bdd95d5e0dfe14215506ad280159d3442358a9d48b33d42d76c"
+    },
+    {
+      "entry": "records/vulkan/validation/final2/receipt.json",
+      "bytes": 3517,
+      "sha256": "3ce08ae48a21955cc94f33a44b612721e444b8c800f0abf21d57bb23c36ecd52"
+    },
+    {
+      "entry": "records/vulkan/validation/final2/runtime-environment.json",
+      "bytes": 8265,
+      "sha256": "31b793f62a5310d02178e16b38342034577bcbd1f136c0ada0ee69968f9979d9"
+    },
+    {
+      "entry": "records/vulkan/validation/final2/tests.command.json",
+      "bytes": 507,
+      "sha256": "db98582a21ece8d06b3aac762e1e0a4b2ee223ba3742c7e1a243aa969ba845b7"
+    },
+    {
+      "entry": "records/vulkan/validation/final2/tests.result.json",
+      "bytes": 577,
+      "sha256": "1e4142600ee94bdd95d5e0dfe14215506ad280159d3442358a9d48b33d42d76c"
+    },
+    {
+      "entry": "records/vulkan/validation/final2/tests.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/vulkan/validation/final2/tests.stdout.log",
+      "bytes": 837,
+      "sha256": "7eae4bd6e20068eefedc2c5602b0524ada367a6f58c6ec2ef4b50f686f381038"
+    },
+    {
+      "entry": "records/vulkan/validation/final2/tests.xml",
+      "bytes": 2510,
+      "sha256": "bb6815c155d8a7b062ca937a30fccfc75e8ea85400d41b678c7414dfb32eec18"
+    },
+    {
+      "entry": "records/vulkan/validation/first1/image-before.json",
+      "bytes": 263,
+      "sha256": "e07589fe2b4babfcd9e376817d149c1c76c7e1b779f68fe7c8b172e0225f0d8b"
+    },
+    {
+      "entry": "records/vulkan/validation/first1/live.json",
+      "bytes": 570,
+      "sha256": "5d74d5f11d2fb7268033fc03ebc72ecec19edfe90648162b574d23c72f6f7feb"
+    },
+    {
+      "entry": "records/vulkan/validation/first1/runtime-environment.json",
+      "bytes": 8265,
+      "sha256": "31b793f62a5310d02178e16b38342034577bcbd1f136c0ada0ee69968f9979d9"
+    },
+    {
+      "entry": "records/vulkan/validation/first1/tests.command.json",
+      "bytes": 501,
+      "sha256": "30cc056a64e70ead321c0e7ed0adfdb17169071dc0f360a1b5b449176d52774d"
+    },
+    {
+      "entry": "records/vulkan/validation/first1/tests.result.json",
+      "bytes": 570,
+      "sha256": "5d74d5f11d2fb7268033fc03ebc72ecec19edfe90648162b574d23c72f6f7feb"
+    },
+    {
+      "entry": "records/vulkan/validation/first1/tests.stderr.log",
+      "bytes": 201,
+      "sha256": "2d50886583be4e27b84c9aeeb5b80da6972d6306682eb90b84f69aeda1414b45"
+    },
+    {
+      "entry": "records/vulkan/validation/first1/tests.stdout.log",
+      "bytes": 406,
+      "sha256": "a35946d4bbf6c7541fb63257e69b591071bf26274e2c048a26d5fde2a420b735"
+    },
+    {
+      "entry": "records/windows/actual-source-dependency-audit.json",
+      "bytes": 92339,
+      "sha256": "6c4164c4ed5f7a62e6539acbb3f9268ce7e4c597e1d7fa9c05429992d15e4cda"
+    },
+    {
+      "entry": "records/windows/build-report.json",
+      "bytes": 10156,
+      "sha256": "bca765902fca6b635d592c2eab6690aa19b844249fb04af49cbb2510dc8bfa47"
+    },
+    {
+      "entry": "records/windows/build.py",
+      "bytes": 7818,
+      "sha256": "e6f6b22dd50f8d0a234ab2571644363802aa7341d10fcca89a8f4c5c29306ef2"
+    },
+    {
+      "entry": "records/windows/build_final.py",
+      "bytes": 4151,
+      "sha256": "b4e947522964f7e2760dff23b3b449f0648004f6ca987dc27e8ea89fbc0d56fa"
+    },
+    {
+      "entry": "records/windows/final-source-freeze.json",
+      "bytes": 7222,
+      "sha256": "598ccec80d7e9cef62763bf2ecf94ab6ea369566ffe51eb492a1ec77a8d654f7"
+    },
+    {
+      "entry": "records/windows/final-source/src/compute_provider_ggml_cuda/tensor_program.cc",
+      "bytes": 54758,
+      "sha256": "6edcfe378983d4f371cede7a0ec463ae17c2e11f307b81ab8f61a0c0d917a4b2"
+    },
+    {
+      "entry": "records/windows/final-source/src/compute_provider_ggml_vulkan/region.cc",
+      "bytes": 105872,
+      "sha256": "d76fd202636a65774bb63e8a2a27cbd636c8fa36c070768c09bbefbb9e001bd3"
+    },
+    {
+      "entry": "records/windows/final-source/src/graph/resources.cc",
+      "bytes": 70350,
+      "sha256": "40f38a4b5d2d5e316fe9cae57b2360cd1598446a31acee63740ba297990fa57c"
+    },
+    {
+      "entry": "records/windows/final-source/tests/compute_models/ga_ratio4_producer_fixture.h",
+      "bytes": 30026,
+      "sha256": "9fc21f2d6bb675227e59d5bbd0ecfae4fe47cdd162fbbf904ace3b5964119cce"
+    },
+    {
+      "entry": "records/windows/final-source/tests/compute_models/ga_ratio4_reference_fixture.h",
+      "bytes": 16624,
+      "sha256": "e87a6f7303e4db8979afd8da7ca4a416444b38839c5dca7ca390c239a7a89d7f"
+    },
+    {
+      "entry": "records/windows/final-source/tests/graph_route_cpu/CMakeLists.txt",
+      "bytes": 4210,
+      "sha256": "92cc73cbca50e086c70eadaa56f9487e37c76dcbef4088afce271359ad548aa7"
+    },
+    {
+      "entry": "records/windows/final-source/tests/graph_route_cpu/ga_ratio4_producer_test.cc",
+      "bytes": 1217,
+      "sha256": "9a294437ba9862a7faa9c1b1c85ff771a00359749a0f957ac349d317ebb6392b"
+    },
+    {
+      "entry": "records/windows/final-source/tests/graph_route_cuda/CMakeLists.txt",
+      "bytes": 3282,
+      "sha256": "d1f7ec89a5fec265e52a719662603c46c1dc9b9bfcba0c7c88ab59ff96eb2736"
+    },
+    {
+      "entry": "records/windows/final-source/tests/graph_route_cuda/ga_ratio4_producer_test.cc",
+      "bytes": 1499,
+      "sha256": "157765c108fee375f5ca25620901b7f7b6d55649b7e34e007510079a0ec446f7"
+    },
+    {
+      "entry": "records/windows/final-source/tests/graph_route_vulkan/CMakeLists.txt",
+      "bytes": 6449,
+      "sha256": "d064b6d9625e7ab00a631e02f547204df2409ae645f23b14f01ab58c13063f19"
+    },
+    {
+      "entry": "records/windows/final-source/tests/graph_route_vulkan/ga_ratio4_producer_test.cc",
+      "bytes": 3417,
+      "sha256": "bdab741f36a97121d7cd1dfefc4e724537dd29ae4ed6c4bf56969a3851e494ae"
+    },
+    {
+      "entry": "records/windows/final-validation.json",
+      "bytes": 6378,
+      "sha256": "d7d90f7ce4646ffb55247217fe5cede82a32a7c3e382e5ed4925016b14addc82"
+    },
+    {
+      "entry": "records/windows/final_metadata.py",
+      "bytes": 11020,
+      "sha256": "34f31f9e98c9fde2b0d7c0d6a0a6c67ce35e910c805ffff7d58c51790929ff57"
+    },
+    {
+      "entry": "records/windows/freeze_vulkan_rowpitch.py",
+      "bytes": 3496,
+      "sha256": "408c3ae1ba6c87c0f970914304d5d0a85bf4318557d6b82e877e6bc7086082a8"
+    },
+    {
+      "entry": "records/windows/leaf-review.json",
+      "bytes": 4646,
+      "sha256": "2b9d83cdcc719aeb5f2832c4046c9d16a5e8f88865bf3d2435d835568d084cf5"
+    },
+    {
+      "entry": "records/windows/preparation.json",
+      "bytes": 8736,
+      "sha256": "15622e4da7e9a0e1a4ac9be8d3c9b4d5c27e6cf2f668761b2487cdd6116bc6d0"
+    },
+    {
+      "entry": "records/windows/private-module-staging-proof.json",
+      "bytes": 4873,
+      "sha256": "bfb08772765e2ab6e072de834e582f3af9c1f7d2956975df9647507afbd67738"
+    },
+    {
+      "entry": "records/windows/product-final-vulkan.diff",
+      "bytes": 3411,
+      "sha256": "1f9922e5a938e00b8ed57211627ec40f9177eff4d0a3bb7a4f50bf82e4f57b09"
+    },
+    {
+      "entry": "records/windows/product-source-freeze.json",
+      "bytes": 3886,
+      "sha256": "a3966e0ef955b842b69e980a1553ab59071cac581a1c31b7f6e437f4af3a5b01"
+    },
+    {
+      "entry": "records/windows/product.diff",
+      "bytes": 3832,
+      "sha256": "d0185520fe4bd500f5ffab92d73b4a7a01154d3cad70de1277647ec03a5a4c1c"
+    },
+    {
+      "entry": "records/windows/ready-for-root-final-run.json",
+      "bytes": 3807,
+      "sha256": "582f9e9d7ddd81397f22a847c7d60cb318616a4674f0487766e98d4edb8c9816"
+    },
+    {
+      "entry": "records/windows/ready-for-root-run.json",
+      "bytes": 3511,
+      "sha256": "2ec9f26b3755ae642d7f041ed5ba4da1acaa8daff80aa63959d99c57fa74e01b"
+    },
+    {
+      "entry": "records/windows/revisions/pre-final-metadata/build-report.json",
+      "bytes": 7428,
+      "sha256": "3171631238c39ae25e5d378c3eeb1f58f46ada8b37c3aa77602951054d61289f"
+    },
+    {
+      "entry": "records/windows/revisions/pre-final-metadata/product-source-freeze.json",
+      "bytes": 955,
+      "sha256": "588012e2870d74d32106dd1583c6db0c99ac5d936414dfcd52eff3da86dc801e"
+    },
+    {
+      "entry": "records/windows/rope-geometry-source-review.json",
+      "bytes": 1677,
+      "sha256": "84eb2c92e11c650b69e4bd9319197ba7f4e3e96005cff65076767b4db80c9128"
+    },
+    {
+      "entry": "records/windows/source-attempt1/include/hyle/compute/model_ops.h",
+      "bytes": 75341,
+      "sha256": "d3315100def9904a604dd3a1386000641cb03c2e8d36485ef3e55b98e4dde3e5"
+    },
+    {
+      "entry": "records/windows/source-attempt1/src/compute_provider_ggml_cuda/tensor_program.cc",
+      "bytes": 54758,
+      "sha256": "6edcfe378983d4f371cede7a0ec463ae17c2e11f307b81ab8f61a0c0d917a4b2"
+    },
+    {
+      "entry": "records/windows/source-attempt1/src/compute_provider_ggml_vulkan/region.cc",
+      "bytes": 105668,
+      "sha256": "6926ff2d2e76674eca3a81f29409e80cbe9ef30a561bf1fa413b8992984d1ef1"
+    },
+    {
+      "entry": "records/windows/source-attempt1/tests/compute_models/ga_ratio4_producer_fixture.h",
+      "bytes": 29476,
+      "sha256": "1a47df1bb4e88a31f7b7f43ba1bb547cab39481d4e67bc1ee348dbbdd2618529"
+    },
+    {
+      "entry": "records/windows/source-attempt1/tests/compute_models/ga_ratio4_reference_fixture.h",
+      "bytes": 16624,
+      "sha256": "e87a6f7303e4db8979afd8da7ca4a416444b38839c5dca7ca390c239a7a89d7f"
+    },
+    {
+      "entry": "records/windows/source-attempt1/tests/graph_route_cpu/ga_ratio4_producer_test.cc",
+      "bytes": 1217,
+      "sha256": "9a294437ba9862a7faa9c1b1c85ff771a00359749a0f957ac349d317ebb6392b"
+    },
+    {
+      "entry": "records/windows/source-attempt1/tests/graph_route_cuda/ga_ratio4_producer_test.cc",
+      "bytes": 1499,
+      "sha256": "157765c108fee375f5ca25620901b7f7b6d55649b7e34e007510079a0ec446f7"
+    },
+    {
+      "entry": "records/windows/source-attempt1/tests/graph_route_vulkan/ga_ratio4_producer_test.cc",
+      "bytes": 3417,
+      "sha256": "bdab741f36a97121d7cd1dfefc4e724537dd29ae4ed6c4bf56969a3851e494ae"
+    },
+    {
+      "entry": "records/windows/source-attempt2/include/hyle/compute/model_ops.h",
+      "bytes": 75341,
+      "sha256": "d3315100def9904a604dd3a1386000641cb03c2e8d36485ef3e55b98e4dde3e5"
+    },
+    {
+      "entry": "records/windows/source-attempt2/src/compute_provider_ggml_cuda/tensor_program.cc",
+      "bytes": 54758,
+      "sha256": "6edcfe378983d4f371cede7a0ec463ae17c2e11f307b81ab8f61a0c0d917a4b2"
+    },
+    {
+      "entry": "records/windows/source-attempt2/src/compute_provider_ggml_vulkan/region.cc",
+      "bytes": 105668,
+      "sha256": "6926ff2d2e76674eca3a81f29409e80cbe9ef30a561bf1fa413b8992984d1ef1"
+    },
+    {
+      "entry": "records/windows/source-attempt2/tests/compute_models/ga_ratio4_producer_fixture.h",
+      "bytes": 29547,
+      "sha256": "b85d8ab0fadadeb77eded970a4bc36680b7cc7154ee95363d5690848783564cf"
+    },
+    {
+      "entry": "records/windows/source-attempt2/tests/compute_models/ga_ratio4_reference_fixture.h",
+      "bytes": 16624,
+      "sha256": "e87a6f7303e4db8979afd8da7ca4a416444b38839c5dca7ca390c239a7a89d7f"
+    },
+    {
+      "entry": "records/windows/source-attempt2/tests/graph_route_cpu/ga_ratio4_producer_test.cc",
+      "bytes": 1217,
+      "sha256": "9a294437ba9862a7faa9c1b1c85ff771a00359749a0f957ac349d317ebb6392b"
+    },
+    {
+      "entry": "records/windows/source-attempt2/tests/graph_route_cuda/ga_ratio4_producer_test.cc",
+      "bytes": 1499,
+      "sha256": "157765c108fee375f5ca25620901b7f7b6d55649b7e34e007510079a0ec446f7"
+    },
+    {
+      "entry": "records/windows/source-attempt2/tests/graph_route_vulkan/ga_ratio4_producer_test.cc",
+      "bytes": 3417,
+      "sha256": "bdab741f36a97121d7cd1dfefc4e724537dd29ae4ed6c4bf56969a3851e494ae"
+    },
+    {
+      "entry": "records/windows/source-freeze-attempt1.json",
+      "bytes": 3604,
+      "sha256": "e84ff35d0acf803ee903e9d0be46d48c48395d8871dfa8f23e84a5eccea6eb12"
+    },
+    {
+      "entry": "records/windows/source-freeze-attempt2.json",
+      "bytes": 3617,
+      "sha256": "391bee11d9127f4c03a2f62393bbdf182b9b74064dcf475ee2a3a1fb12b0e105"
+    },
+    {
+      "entry": "records/windows/vulkan_diagnostic.py",
+      "bytes": 5295,
+      "sha256": "e53ab8dada9aa19c7b30b308d48247de48816b048995e9705a6d951c9acfd18f"
+    },
+    {
+      "entry": "records/windows/vulkan_rowpitch_fix.py",
+      "bytes": 4699,
+      "sha256": "ea0f7de96d059a7c94ab3651695d13e4b7874da0644a0518ff995ff144b5f54c"
+    },
+    {
+      "entry": "source/docs/architecture/compute-design.md",
+      "bytes": 108588,
+      "sha256": "0f08c8b057caafda222c0269e07e7bbf53214152429762deb026b05afb743971"
+    },
+    {
+      "entry": "source/docs/developer/current-work.md",
+      "bytes": 36105,
+      "sha256": "e796a4e61b6a841db9fd2baa1fc69c1477a519e7bb8ba91d2c4e95b5265092bc"
+    },
+    {
+      "entry": "source/docs/implementation/model-operators.md",
+      "bytes": 78816,
+      "sha256": "80d955c64b531336790e82d8fd525e955848b42a208035a598fcaeb3568d0184"
+    },
+    {
+      "entry": "source/docs/implementation/model-quantizations.json",
+      "bytes": 560459,
+      "sha256": "12b2b04e91ca74a79d0661671064aaea4f899cb7e3d496cc7ae62152fbb230d3"
+    },
+    {
+      "entry": "source/docs/user/compute.md",
+      "bytes": 119299,
+      "sha256": "d0d3a47cd1545764006bd664da69382b10cb1f9b3a535e884bcb45e8ee7537ac"
+    },
+    {
+      "entry": "source/include/hyle/compute/model_ops.h",
+      "bytes": 75341,
+      "sha256": "d3315100def9904a604dd3a1386000641cb03c2e8d36485ef3e55b98e4dde3e5"
+    },
+    {
+      "entry": "source/include/hyle/compute/operation.h",
+      "bytes": 28108,
+      "sha256": "35b7c862143839e4b8ce0c9a49753b7add2f325ec424bf5f91a1afeec0101506"
+    },
+    {
+      "entry": "source/include/hyle/compute/resource_leases.h",
+      "bytes": 8660,
+      "sha256": "4e5681ebfa7c2f2ad51e5788c8316f4b993883f595c04b33fe594d7294dab85b"
+    },
+    {
+      "entry": "source/include/hyle/compute/state_versions.h",
+      "bytes": 8553,
+      "sha256": "a09cb66a216b56a0651f515f18d8a97772b0e6d281c171a82b8a6630b3e1c7d7"
+    },
+    {
+      "entry": "source/include/hyle/graph/result.h",
+      "bytes": 1646,
+      "sha256": "90861eafec4f3a0aa73014416bd2817dfe3892ac001ea206bebf907e1d3cf182"
+    },
+    {
+      "entry": "source/src/compute_ggml_runtime/explicit_rope.h",
+      "bytes": 3577,
+      "sha256": "356def1adf2f40dc2dcd1b342c45c0fc5cf2f015739783b8df0741b94cc5acff"
+    },
+    {
+      "entry": "source/src/compute_provider_ggml_cuda/tensor_program.cc",
+      "bytes": 54758,
+      "sha256": "6edcfe378983d4f371cede7a0ec463ae17c2e11f307b81ab8f61a0c0d917a4b2"
+    },
+    {
+      "entry": "source/src/compute_provider_ggml_vulkan/region.cc",
+      "bytes": 105872,
+      "sha256": "d76fd202636a65774bb63e8a2a27cbd636c8fa36c070768c09bbefbb9e001bd3"
+    },
+    {
+      "entry": "source/src/compute_route_apple/apple_memory.mm",
+      "bytes": 35385,
+      "sha256": "1121b85f42976c813c21ddfa736cc338ec6724e100f466bf7144c21af13c52d0"
+    },
+    {
+      "entry": "source/src/compute_route_vulkan/vulkan_program.cc",
+      "bytes": 56037,
+      "sha256": "dd5a66d823c09f1e0c2ef7a1d3c0194ef605b72bd60bb7c6fa46b6c473788e52"
+    },
+    {
+      "entry": "source/src/graph/resources.cc",
+      "bytes": 70350,
+      "sha256": "40f38a4b5d2d5e316fe9cae57b2360cd1598446a31acee63740ba297990fa57c"
+    },
+    {
+      "entry": "source/tests/compute_models/batched_rope_fixture.h",
+      "bytes": 1864,
+      "sha256": "2642e037693677e48b5dc341ac9dc930926f0899f961d9d1733dcd59e013301c"
+    },
+    {
+      "entry": "source/tests/compute_models/ga_indexer_state_fixture.h",
+      "bytes": 26486,
+      "sha256": "c2055b3920c8ebc93ed30d2596d4eba049790e148b8dd3d59128e1ffda48ab84"
+    },
+    {
+      "entry": "source/tests/compute_models/ga_ratio4_producer_fixture.h",
+      "bytes": 30026,
+      "sha256": "9fc21f2d6bb675227e59d5bbd0ecfae4fe47cdd162fbbf904ace3b5964119cce"
+    },
+    {
+      "entry": "source/tests/compute_models/ga_ratio4_reference_fixture.h",
+      "bytes": 16624,
+      "sha256": "e87a6f7303e4db8979afd8da7ca4a416444b38839c5dca7ca390c239a7a89d7f"
+    },
+    {
+      "entry": "source/tests/compute_models/nvfp4_reference_fixture.h",
+      "bytes": 22482,
+      "sha256": "cc94ec1f443511722ff4fc227b065af27b82573443735250951cdce934faa4d3"
+    },
+    {
+      "entry": "source/tests/graph_route_apple/CMakeLists.txt",
+      "bytes": 7036,
+      "sha256": "5eedf41e56b8c6867aa21c41269b09a60a62509b2c9549ea152c765d14e71ceb"
+    },
+    {
+      "entry": "source/tests/graph_route_apple/ga_ratio4_producer_test.cc",
+      "bytes": 1662,
+      "sha256": "6ac1c74f95641949cdf5a342785bc2ed12f2895d75d82c692e4aa2df9c07c014"
+    },
+    {
+      "entry": "source/tests/graph_route_cpu/CMakeLists.txt",
+      "bytes": 4210,
+      "sha256": "92cc73cbca50e086c70eadaa56f9487e37c76dcbef4088afce271359ad548aa7"
+    },
+    {
+      "entry": "source/tests/graph_route_cpu/ga_ratio4_producer_test.cc",
+      "bytes": 1217,
+      "sha256": "9a294437ba9862a7faa9c1b1c85ff771a00359749a0f957ac349d317ebb6392b"
+    },
+    {
+      "entry": "source/tests/graph_route_cuda/CMakeLists.txt",
+      "bytes": 3282,
+      "sha256": "d1f7ec89a5fec265e52a719662603c46c1dc9b9bfcba0c7c88ab59ff96eb2736"
+    },
+    {
+      "entry": "source/tests/graph_route_cuda/ga_ratio4_producer_test.cc",
+      "bytes": 1499,
+      "sha256": "157765c108fee375f5ca25620901b7f7b6d55649b7e34e007510079a0ec446f7"
+    },
+    {
+      "entry": "source/tests/graph_route_vulkan/CMakeLists.txt",
+      "bytes": 6449,
+      "sha256": "d064b6d9625e7ab00a631e02f547204df2409ae645f23b14f01ab58c13063f19"
+    },
+    {
+      "entry": "source/tests/graph_route_vulkan/ga_ratio4_producer_test.cc",
+      "bytes": 3417,
+      "sha256": "bdab741f36a97121d7cd1dfefc4e724537dd29ae4ed6c4bf56969a3851e494ae"
+    }
+  ]
+}

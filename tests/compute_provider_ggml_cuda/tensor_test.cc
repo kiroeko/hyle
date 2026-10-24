@@ -1,12 +1,16 @@
 #include "../compute_models/d5_gguf_test_support.h"
 #include "../compute_models/d5_qwen38_gdn_fixture.h"
 #include "../compute_models/gdn_snapshot_fixture.h"
+#include "../compute_models/batched_rope_fixture.h"
+#include "../compute_models/gather_elements_fixture.h"
 #include "../model_fragment_test_support.h"
 #include "../sparse_fragment_test_support.h"
 #include "softmax_test_support.h"
 #include "tensor_test_support.h"
+#include "bfloat_elementwise_test_support.h"
 
 #include <ggml.h>
+#include <cuda_runtime_api.h>
 
 #include <algorithm>
 #include <bit>
@@ -17,6 +21,78 @@
 
 namespace {
 using namespace ggml_cuda_tensor_test;
+
+TEST(GgmlCudaTensor, BfloatTypedElementwiseBroadcastsAndRebindsIndependentSlots) {
+  using bfloat_elementwise_test::BF16;
+  auto ctx = Context::create(cuda::device(0).value(), ggml_cuda::provider()).value();
+  auto memory = cuda::MemoryResource::create(ctx, cuda::MemoryKind::kDevice).value();
+  const auto description = dense(DataType::kBFloat16, {3, 17});
+  const auto row_description = dense(DataType::kBFloat16, {17});
+  std::array queues{ctx.create_queue().value(), ctx.create_queue().value()};
+  const auto operations = bfloat_elementwise_test::operations();
+  for (std::size_t op = 0; op < operations.size(); ++op) {
+    SCOPED_TRACE(op);
+    const std::array descriptions{description, row_description};
+    auto prepared = prepare(ctx, operations[op],
+        std::span(descriptions).first(op < 4 ? 2 : 1),
+        std::span(&description, 1), memory.ref());
+    ASSERT_TRUE(prepared) << prepared.error().message();
+    EXPECT_EQ(prepared->provider().id, ggml_cuda::kProviderId);
+    std::array workspaces{ggml_cuda_test::workspace_buffer(*prepared, memory.ref()),
+                          ggml_cuda_test::workspace_buffer(*prepared, memory.ref())};
+    std::array invocations{
+        prepared->create_invocation(workspaces[0].view()).value(),
+        prepared->create_invocation(workspaces[1].view()).value()};
+    Buffer old_output;
+    std::vector<Buffer> old_inputs;
+    std::vector<BF16> old_values;
+    for (std::size_t round = 0; round < 2; ++round) {
+      std::array<Buffer, 2> left, right, output;
+      std::array<std::vector<BF16>, 2> a, b;
+      std::array<Completion, 2> done;
+      for (std::size_t slot = 0; slot < 2; ++slot) {
+        a[slot].resize(51); b[slot].resize(17);
+        constexpr std::array points{0.25, 0.5, 1.0, 2.0, 4.0};
+        for (std::size_t i = 0; i < a[slot].size(); ++i)
+          a[slot][i] = half_test::encode<BF16>(points[(i + round + slot) % points.size()]);
+        for (std::size_t i = 0; i < b[slot].size(); ++i)
+          b[slot][i] = half_test::encode<BF16>(points[(i + round + slot + 2) % points.size()]);
+        left[slot] = upload<BF16>(memory.ref(), a[slot]);
+        right[slot] = upload<BF16>(memory.ref(), b[slot]);
+        output[slot] = output_buffer(memory.ref(), description);
+        const std::array inputs{
+            ConstTensorView::create(description, left[slot].view()).value(),
+            ConstTensorView::create(row_description, right[slot].view()).value()};
+        const auto target = TensorView::create(description, output[slot].view()).value();
+        auto submitted = invocations[slot].submit(queues[slot],
+            std::span(inputs).first(op < 4 ? 2 : 1), target);
+        ASSERT_TRUE(submitted) << submitted.error().message();
+        done[slot] = std::move(*submitted);
+      }
+      for (std::size_t slot = 0; slot < 2; ++slot) {
+        ASSERT_TRUE(done[slot].wait().ok());
+        const auto actual = half_test::read<BF16>(output[slot]);
+        ASSERT_EQ(actual.size(), 51u);
+        for (std::size_t i = 0; i < actual.size(); ++i)
+          bfloat_elementwise_test::expect_bits(actual[i],
+              bfloat_elementwise_test::reference(op, a[slot][i], b[slot][i % 17]), i);
+      }
+      if (round == 0) {
+        old_values = half_test::read<BF16>(output[0]);
+        old_output = std::move(output[0]);
+        for (std::size_t slot = 0; slot < 2; ++slot) {
+          old_inputs.push_back(std::move(left[slot]));
+          old_inputs.push_back(std::move(right[slot]));
+        }
+      } else {
+        const auto preserved = half_test::read<BF16>(old_output);
+        ASSERT_EQ(preserved.size(), old_values.size());
+        for (std::size_t i = 0; i < preserved.size(); ++i)
+          EXPECT_EQ(preserved[i].bits, old_values[i].bits) << i;
+      }
+    }
+  }
+}
 
 Context context() {
   return Context::create(cuda::device(0).value(), ggml_cuda::provider())
@@ -62,8 +138,14 @@ template <class T> void swiglu(Context &ctx) {
               std::span(&packed_result, 1));
   ASSERT_TRUE(packed_program) << packed_program.error().message();
   EXPECT_EQ(packed_program->provider().id, ggml_cuda::kProviderId);
-  auto separate_invocation = separate_program->create_invocation().value();
-  auto packed_invocation = packed_program->create_invocation().value();
+  auto separate_invocation_workspace =
+      ggml_cuda_test::workspace_buffer(*separate_program, memory.ref());
+  auto separate_invocation =
+      separate_program->create_invocation(separate_invocation_workspace.view()).value();
+  auto packed_invocation_workspace =
+      ggml_cuda_test::workspace_buffer(*packed_program, memory.ref());
+  auto packed_invocation =
+      packed_program->create_invocation(packed_invocation_workspace.view()).value();
   auto queue = ctx.create_queue().value();
   for (int seed : {3, 11}) {
     for (std::size_t row = 0; row < rows; ++row) {
@@ -137,7 +219,10 @@ void rope_type_boundary(Context &ctx, RopeLayout layout) {
       data_desc, position_desc, frequency_desc, resource);
   ASSERT_TRUE(prepared) << prepared.error().message();
   EXPECT_EQ(prepared->provider().id, ggml_cuda::kProviderId);
-  auto invocation = prepared->create_invocation().value();
+  auto invocation_workspace =
+      ggml_cuda_test::workspace_buffer(*prepared, memory.ref());
+  auto invocation =
+      prepared->create_invocation(invocation_workspace.view()).value();
   auto queue = ctx.create_queue().value();
   for (const int seed : {0, 7}) {
     for (std::size_t i = 0; i < values.size(); ++i)
@@ -209,6 +294,61 @@ TEST(GgmlCudaTensor, MatureRopeCoversQualifiedTypesAndLayouts) {
                           data, positions, frequencies);
   ASSERT_FALSE(rejected);
   EXPECT_TRUE(rejected.error().IsUnimplemented());
+}
+
+template<class Value> void batched_rope(Context &ctx) {
+  namespace f = batched_rope_test;
+  const auto data_desc = dense(half_test::data_type<Value>(), {2, 3, 2, 8});
+  auto memory = cuda::MemoryResource::create(ctx, cuda::MemoryKind::kDevice).value();
+  auto queue = ctx.create_queue().value();
+  for (bool per_request : {false, true})
+    for (bool per_token_frequency : {false, true})
+      for (const auto layout : {RopeLayout::kInterleaved, RopeLayout::kHalfSplit}) {
+        const auto position_desc = per_request ? dense(DataType::kInt32, {2, 3})
+                                               : dense(DataType::kInt32, {3});
+        const auto frequency_desc = per_token_frequency ? dense(DataType::kFloat32, {3, 2})
+                                                        : dense(DataType::kFloat32, {2});
+        auto positions = f::kPositions;
+        auto p = upload<std::int32_t>(memory.ref(), std::span(positions).first(per_request ? 6 : 3));
+        auto frequencies = upload<float>(memory.ref(), std::span(f::kFrequencies).first(per_token_frequency ? 6 : 2));
+        auto output = output_buffer(memory.ref(), data_desc);
+        auto prepared = prepare(ctx,
+            RoPE{.rotary_dimensions=4, .sequence_axis=-3, .layout=layout},
+            data_desc, position_desc, frequency_desc, memory.ref());
+        ASSERT_TRUE(prepared) << prepared.error().message();
+        auto invocation_workspace =
+            ggml_cuda_test::workspace_buffer(*prepared, memory.ref());
+        auto invocation =
+            prepared->create_invocation(invocation_workspace.view()).value();
+        for (int seed : {0, 11}) {
+          const auto source = f::data(seed);
+          std::array<Value, f::kElements> encoded{};
+          for (std::size_t i=0; i<encoded.size(); ++i)
+            encoded[i] = half_test::encode<Value>(source[i]);
+          auto data = upload<Value>(memory.ref(), encoded);
+          positions[0] = seed;
+          ASSERT_TRUE(p.view().write(std::as_bytes(std::span(positions).first(per_request ? 6 : 3))).ok());
+          const std::array inputs{
+              ConstTensorView::create(data_desc, data.view()).value(),
+              ConstTensorView::create(position_desc, p.view()).value(),
+              ConstTensorView::create(frequency_desc, frequencies.view()).value()};
+          const auto result = TensorView::create(data_desc, output.view()).value();
+          auto completion = invocation.submit(queue, inputs, std::span(&result, 1));
+          ASSERT_TRUE(completion) << completion.error().message();
+          ASSERT_TRUE(completion->wait().ok());
+          const auto actual = half_test::read<Value>(output);
+          const auto expected = f::reference(source, positions, per_request, per_token_frequency, layout);
+          for (std::size_t i=0; i<actual.size(); ++i)
+            half_test::expect_near(actual[i], expected[i]);
+        }
+      }
+}
+
+TEST(GgmlCudaTensor, BatchedRopePositionsAndPerTokenFrequenciesReplay) {
+  auto ctx = context();
+  batched_rope<float>(ctx);
+  batched_rope<hyle::simd::float16_t>(ctx);
+  batched_rope<hyle::simd::bfloat16_t>(ctx);
 }
 
 TEST(GgmlCudaTensor, MatureCausalConvUsesNaturalSequenceLayout) {
@@ -285,7 +425,10 @@ TEST(GgmlCudaTensor, MatureKdaPublishesScoresAndStateIndependently) {
   auto prepared = prepare(ctx, Operation(GatedDeltaNet{}), inputs, outputs);
   ASSERT_TRUE(prepared) << prepared.error().message();
   EXPECT_EQ(prepared->provider().id, ggml_cuda::kProviderId);
-  auto invocation = prepared->create_invocation().value();
+  auto invocation_workspace =
+      ggml_cuda_test::workspace_buffer(*prepared, memory.ref());
+  auto invocation =
+      prepared->create_invocation(invocation_workspace.view()).value();
   auto queue = ctx.create_queue().value();
   auto completion = invocation.submit(queue, inputs, outputs);
   ASSERT_TRUE(completion) << completion.error().message();
@@ -318,7 +461,10 @@ TEST(GgmlCudaTensor, GatedDeltaNetSnapshotsKeepChronologicalBatchesOnRebind) {
     auto prepared = prepare(
         ctx, Operation(GatedDeltaNet{.snapshot_count = count}), inputs, outputs);
     ASSERT_TRUE(prepared) << prepared.error().message();
-    auto invocation = prepared->create_invocation().value();
+    auto invocation_workspace =
+        ggml_cuda_test::workspace_buffer(*prepared, memory.ref());
+    auto invocation =
+        prepared->create_invocation(invocation_workspace.view()).value();
     for (const int seed : {0, 7}) {
       SCOPED_TRACE(::testing::Message() << "snapshots=" << count << " seed=" << seed);
       const gdn_snapshot_fixture::Fixture current(seed);
@@ -342,60 +488,101 @@ TEST(GgmlCudaTensor, GatedDeltaNetSnapshotsKeepChronologicalBatchesOnRebind) {
 }
 
 TEST(GgmlCudaTensor, RecurrentTokenBlockBroadcastsParametersAndPublishesSnapshots) {
-  gdn_snapshot_fixture::Fixture fixture(3, 1, 3, 16, 16, 128);
-  const auto parameter = dense(DataType::kFloat32, {1, 1, 16, 1});
-  std::array descriptions{fixture.inputs[0], fixture.inputs[1], fixture.inputs[2],
-                           fixture.inputs[3], fixture.inputs[4], parameter,
-                           parameter, fixture.inputs[5]};
-  std::vector<float> raw_a(fixture.data[3].size()), raw_b(raw_a.size());
-  std::vector<float> coefficient(16), bias(16);
-  for (std::size_t head = 0; head < coefficient.size(); ++head) {
-    coefficient[head] = -0.025F * float(head + 1);
-    bias[head] = 0.01F * float(head);
-  }
-  for (std::size_t i = 0; i < raw_a.size(); ++i) {
-    raw_a[i] = float(int(i % 11) - 5) / 16.F;
-    raw_b[i] = float(int(i % 7) - 3) / 8.F;
-    fixture.data[3][i] = float(
-        std::log1p(std::exp(double(raw_a[i]) + bias[i % 16])) *
-        coefficient[i % 16]);
-    fixture.data[4][i] = float(1.0 / (1.0 + std::exp(-double(raw_b[i]))));
-  }
-  const std::array<std::span<const float>, 8> values{
-      fixture.data[0], fixture.data[1], fixture.data[2], raw_a, raw_b,
-      coefficient, bias, fixture.data[5]};
-  auto ctx = context();
-  auto memory = cuda::MemoryResource::create(ctx, cuda::MemoryKind::kDevice).value();
-  const auto resource = memory.ref();
-  std::vector<Buffer> storage;
-  std::vector<ConstTensorView> inputs;
-  for (std::size_t i = 0; i < values.size(); ++i) {
-    storage.push_back(upload<float>(resource, values[i]));
-    inputs.push_back(
-        ConstTensorView::create(descriptions[i], storage.back().view()).value());
-  }
-  const auto output_desc = fixture.outputs(3);
-  std::array output_storage{output_buffer(resource, output_desc[0]),
-                            output_buffer(resource, output_desc[1])};
-  const std::array outputs{
-      TensorView::create(output_desc[0], output_storage[0].view()).value(),
-      TensorView::create(output_desc[1], output_storage[1].view()).value()};
-  auto prepared = prepare(ctx, model_ops::recurrent_gated_delta_net(3), inputs,
-                           outputs);
-  ASSERT_TRUE(prepared) << prepared.error().message();
-  auto invocation = prepared->create_invocation().value();
-  auto queue = ctx.create_queue().value();
-  auto completion = invocation.submit(queue, inputs, outputs);
-  ASSERT_TRUE(completion) << completion.error().message();
-  ASSERT_TRUE(completion->wait().ok());
-  const auto expected = fixture.oracle(3);
-  for (std::size_t port = 0; port < outputs.size(); ++port) {
-    const auto actual = half_test::read<float>(output_storage[port]);
-    ASSERT_EQ(actual.size(), expected[port].size());
-    for (std::size_t i = 0; i < actual.size(); ++i)
-      EXPECT_NEAR(actual[i], expected[port][i], 3.0e-6) << port << ':' << i;
+  const std::array<std::array<std::int64_t, 4>, 2> shapes{{
+      {1, 16, 16, 128}, {2, 2, 6, 32}}};
+  for (const auto &shape : shapes) {
+    SCOPED_TRACE(shape[0]);
+    SCOPED_TRACE(shape[2]);
+    SCOPED_TRACE(shape[3]);
+    gdn_snapshot_fixture::Fixture fixture(3, shape[0], 3, shape[1], shape[2], shape[3]);
+    const auto parameter = dense(DataType::kFloat32, {1, 1, shape[2], 1});
+    std::array descriptions{fixture.inputs[0], fixture.inputs[1], fixture.inputs[2],
+                             fixture.inputs[3], fixture.inputs[4], parameter,
+                             parameter, fixture.inputs[5]};
+    std::vector<float> raw_a(fixture.data[3].size()), raw_b(raw_a.size());
+    std::vector<float> coefficient(static_cast<std::size_t>(shape[2])), bias(coefficient.size());
+    for (std::size_t head = 0; head < coefficient.size(); ++head) {
+      coefficient[head] = -0.025F * float(head + 1);
+      bias[head] = 0.01F * float(head);
+    }
+    for (std::size_t i = 0; i < raw_a.size(); ++i) {
+      raw_a[i] = float(int(i % 11) - 5) / 16.F;
+      raw_b[i] = float(int(i % 7) - 3) / 8.F;
+      fixture.data[3][i] = float(
+          std::log1p(std::exp(double(raw_a[i]) + bias[i % bias.size()])) *
+          coefficient[i % coefficient.size()]);
+      fixture.data[4][i] = float(1.0 / (1.0 + std::exp(-double(raw_b[i]))));
+    }
+    const std::array<std::span<const float>, 8> values{
+        fixture.data[0], fixture.data[1], fixture.data[2], raw_a, raw_b,
+        coefficient, bias, fixture.data[5]};
+    auto ctx = context();
+    auto memory = cuda::MemoryResource::create(ctx, cuda::MemoryKind::kDevice).value();
+    const auto resource = memory.ref();
+    std::vector<Buffer> storage;
+    std::vector<ConstTensorView> inputs;
+    for (std::size_t i = 0; i < values.size(); ++i) {
+      storage.push_back(upload<float>(resource, values[i]));
+      inputs.push_back(
+          ConstTensorView::create(descriptions[i], storage.back().view()).value());
+    }
+    const auto output_desc = fixture.outputs(3);
+    std::array output_storage{output_buffer(resource, output_desc[0]),
+                              output_buffer(resource, output_desc[1])};
+    const std::array outputs{
+        TensorView::create(output_desc[0], output_storage[0].view()).value(),
+        TensorView::create(output_desc[1], output_storage[1].view()).value()};
+    auto prepared = prepare(ctx, model_ops::recurrent_gated_delta_net(3), inputs,
+                             outputs);
+    ASSERT_TRUE(prepared) << prepared.error().message();
+    auto invocation_workspace =
+        ggml_cuda_test::workspace_buffer(*prepared, memory.ref());
+    auto invocation =
+        prepared->create_invocation(invocation_workspace.view()).value();
+    auto queue = ctx.create_queue().value();
+    auto completion = invocation.submit(queue, inputs, outputs);
+    ASSERT_TRUE(completion) << completion.error().message();
+    ASSERT_TRUE(completion->wait().ok());
+    const auto expected = fixture.oracle(3);
+    for (std::size_t port = 0; port < outputs.size(); ++port) {
+      const auto actual = half_test::read<float>(output_storage[port]);
+      ASSERT_EQ(actual.size(), expected[port].size());
+      for (std::size_t i = 0; i < actual.size(); ++i)
+        EXPECT_NEAR(actual[i], expected[port][i], 3.0e-6) << port << ':' << i;
+    }
   }
 }
+
+TEST(GgmlCudaTensor, RecurrentSchemaDoesNotGrantUnavailableNativeDepthOrBatch) {
+  auto ctx = context();
+  auto memory = cuda::MemoryResource::create(ctx, cuda::MemoryKind::kDevice).value();
+  const auto f32 = DataType::kFloat32;
+  // Descriptor preparation must decline before native construction/launch.
+  // No tensor payload or large batch backing is allocated by this test.
+  for (const auto &shape : std::array<std::array<std::int64_t, 2>, 2>{{
+           {1, 24}, {65536, 16}}}) {
+    const auto b = shape[0], d = shape[1];
+    const auto raw = dense(f32, {b, 1, 1, 1});
+    const auto parameter = dense(f32, {1, 1, 1, 1});
+    const std::array inputs{dense(f32, {b, 1, 1, d}), dense(f32, {b, 1, 1, d}),
+        dense(f32, {b, 1, 1, d}), raw, raw, parameter, parameter,
+        dense(f32, {b, 1, d, d})};
+    const std::array ordinary{inputs[0], inputs[1], inputs[2],
+                               inputs[3], inputs[4], inputs[7]};
+    for (const bool composite : {false, true}) {
+      const auto operation = composite ? model_ops::recurrent_gated_delta_net()
+                                       : Operation(GatedDeltaNet{});
+      const auto selected = composite ? std::span<const TensorDesc>(inputs)
+                                      : std::span<const TensorDesc>(ordinary);
+      std::array<TensorDesc, 2> outputs;
+      ASSERT_TRUE(infer_output_descriptions(operation, selected, outputs).ok());
+      const auto prepared = prepare(ctx, operation, selected, outputs, memory.ref());
+      ASSERT_FALSE(prepared);
+      EXPECT_TRUE(prepared.error().IsUnimplemented()) << prepared.error().message();
+    }
+  }
+}
+
 
 TEST(GgmlCudaTensor, D5Qwen38GroupedHeadsUseMatureGatedDeltaNet) {
   const d5_qwen38_gdn_fixture::Fixture fixture;
@@ -427,7 +614,10 @@ TEST(GgmlCudaTensor, D5Qwen38GroupedHeadsUseMatureGatedDeltaNet) {
   const auto expected = fixture.oracle();
   auto queue = ctx.create_queue().value();
   for (int repeat = 0; repeat < 2; ++repeat) {
-    auto invocation = prepared->create_invocation().value();
+    auto invocation_workspace =
+        ggml_cuda_test::workspace_buffer(*prepared, memory.ref());
+    auto invocation =
+        prepared->create_invocation(invocation_workspace.view()).value();
     auto completion = invocation.submit(queue, inputs, outputs);
     ASSERT_TRUE(completion) << completion.error().message();
     ASSERT_TRUE(completion->wait().ok());
@@ -485,7 +675,10 @@ TEST(GgmlCudaTensor, MatureLightningIndexerUsesOrdinaryEntryAndReplays) {
   auto view = TensorView::create(test.output, output.view()).value();
   auto prepared = prepare(ctx, test.operation, inputs, std::span(&view, 1));
   ASSERT_TRUE(prepared) << prepared.error().message();
-  auto invocation = prepared->create_invocation().value();
+  auto invocation_workspace =
+      ggml_cuda_test::workspace_buffer(*prepared, memory.ref());
+  auto invocation =
+      prepared->create_invocation(invocation_workspace.view()).value();
   auto queue = ctx.create_queue().value();
   for (int repeat = 0; repeat < 2; ++repeat) {
     auto done = invocation.submit(queue, inputs, std::span(&view, 1));
@@ -669,9 +862,10 @@ TEST(GgmlCudaTensor, BalancedConcatRetainsPortOrderAndStorageBits) {
 TEST(GgmlCudaTensor, UnsupportedNumericDomainsDeclineBeforeNativeExecution) {
   auto ctx = context();
   const auto description = dense(DataType::kFloat32, {2, 31});
-  for (const auto kind :
-       {UnaryKind::kSilu, UnaryKind::kSoftplus})
-    EXPECT_FALSE(prepare(ctx, Unary{kind}, description));
+  EXPECT_FALSE(prepare(ctx, Unary{UnaryKind::kSoftplus}, description));
+  // Stable SiLU's typed F16 lowering is a separate, unqualified domain.
+  EXPECT_FALSE(prepare(ctx, Unary{UnaryKind::kSilu},
+                       dense(DataType::kFloat16, {2, 31})));
   const auto odd = TensorDesc::strided_bytes(DataType::kFloat32,
                                              std::array<std::int64_t, 1>{7},
                                              std::array<std::int64_t, 1>{5})
@@ -721,7 +915,9 @@ TEST(GgmlCudaTensor, IntegerConcatPreservesIndexBitsAcrossReplays) {
   auto program = prepare(ctx, Operation(Concat{.axis = 1}), inputs, std::span(&view, 1));
   ASSERT_TRUE(program) << program.error().message();
   EXPECT_EQ(program->provider().id, ggml_cuda::kProviderId);
-  auto created = program->create_invocation();
+  auto created_workspace =
+      ggml_cuda_test::workspace_buffer(*program, memory.ref());
+  auto created = program->create_invocation(created_workspace.view());
   ASSERT_TRUE(created) << created.error().message();
   auto invocation = std::move(*created);
   auto queue = ctx.create_queue().value();
@@ -878,7 +1074,10 @@ TEST(GgmlCudaTensor, NativeQ4KMatMulImportsGgufBytesAndReplays) {
         prepare(ctx, Operation(MatMul{}), inputs, std::span(&output_view, 1));
     ASSERT_TRUE(prepared) << prepared.error().message();
     EXPECT_EQ(prepared->provider().id, ggml_cuda::kProviderId);
-    auto invocation = prepared->create_invocation().value();
+    auto invocation_workspace =
+        ggml_cuda_test::workspace_buffer(*prepared, memory.ref());
+    auto invocation =
+        prepared->create_invocation(invocation_workspace.view()).value();
     auto queue = ctx.create_queue().value();
     for (int repeat = 0; repeat < 2; ++repeat) {
       auto done = invocation.submit(queue, inputs, std::span(&output_view, 1));
@@ -912,7 +1111,12 @@ TEST(GgmlCudaTensor, NativeEmbeddingRowsUseTargetGgufFormatsAndCheckBounds) {
       GgufQuantizedType::kQ4_0, GgufQuantizedType::kQ4_1,
       GgufQuantizedType::kQ2K, GgufQuantizedType::kQ3K,
       GgufQuantizedType::kQ4K, GgufQuantizedType::kQ5K,
-      GgufQuantizedType::kQ6K, GgufQuantizedType::kQ8_0};
+      GgufQuantizedType::kQ6K, GgufQuantizedType::kQ8_0,
+      GgufQuantizedType::kIq2Xxs, GgufQuantizedType::kIq2Xs,
+      GgufQuantizedType::kIq2S, GgufQuantizedType::kIq1S,
+      GgufQuantizedType::kIq1M, GgufQuantizedType::kIq3Xxs,
+      GgufQuantizedType::kIq3S, GgufQuantizedType::kIq4Nl,
+      GgufQuantizedType::kIq4Xs, GgufQuantizedType::kMxfp4};
   auto ctx = context();
   auto memory =
       cuda::MemoryResource::create(ctx, cuda::MemoryKind::kDevice).value();
@@ -940,7 +1144,10 @@ TEST(GgmlCudaTensor, NativeEmbeddingRowsUseTargetGgufFormatsAndCheckBounds) {
         prepare(ctx, Operation(Gather{}), inputs, std::span(&output_view, 1));
     ASSERT_TRUE(prepared) << prepared.error().message();
     EXPECT_EQ(prepared->provider().id, ggml_cuda::kProviderId);
-    auto invocation = prepared->create_invocation().value();
+    auto invocation_workspace =
+        ggml_cuda_test::workspace_buffer(*prepared, memory.ref());
+    auto invocation =
+        prepared->create_invocation(invocation_workspace.view()).value();
     auto queue = ctx.create_queue().value();
 
     for (int replay = 0; replay < 2; ++replay) {
@@ -965,6 +1172,102 @@ TEST(GgmlCudaTensor, NativeEmbeddingRowsUseTargetGgufFormatsAndCheckBounds) {
     ASSERT_TRUE(failed) << failed.error().message();
     EXPECT_FALSE(failed->wait().ok());
     EXPECT_EQ(half_test::read<float>(output), before_failure);
+  }
+
+  // Valid storage blocks do not imply the CUDA row decoder accepts this width.
+  for (const auto format : {GgufQuantizedType::kIq4Nl,
+                            GgufQuantizedType::kMxfp4}) {
+    SCOPED_TRACE(static_cast<int>(format));
+    const auto table_desc =
+        gguf_weight_description(format, DataType::kFloat32, 32, rows)
+            .value().transposed().value();
+    const std::array inputs{table_desc, dense(DataType::kInt32, {2})};
+    const auto output_desc = dense(DataType::kFloat32, {2, 32});
+    auto rejected = prepare(ctx, Operation(Gather{}), inputs,
+                            std::span(&output_desc, 1), memory.ref());
+    ASSERT_FALSE(rejected);
+    EXPECT_TRUE(rejected.error().IsUnimplemented());
+  }
+}
+
+TEST(GgmlCudaTensor, QuantizedGroupedBanksKeepNativeBlockCapacity) {
+  auto ctx = context();
+  auto memory = cuda::MemoryResource::create(ctx, cuda::MemoryKind::kDevice).value();
+  for (const auto format : {GgufQuantizedType::kIq4Xs,
+                            GgufQuantizedType::kQ8_0}) {
+    const auto weight = gguf_grouped_weight_description(
+        format, DataType::kFloat32, 512, 2048, 8192).value();
+    const std::array inputs{weight, dense(DataType::kFloat32, {1, 2, 8192}),
+                            dense(DataType::kInt32, {1, 2})};
+    const auto output = infer_single_output(model_ops::grouped_matmul(), inputs).value();
+    auto prepared = prepare(ctx, model_ops::grouped_matmul(), inputs,
+                            std::span(&output, 1), memory.ref());
+    ASSERT_TRUE(prepared) << prepared.error().message();
+    EXPECT_EQ(prepared->provider().id, ggml_cuda::kProviderId);
+  }
+}
+
+TEST(GgmlCudaTensor, FullIq4BankReadsLastExpertBeyondFourGiB) {
+  d5_gguf_test::QuantizerCleanup cleanup;
+  constexpr std::int64_t experts = 512, columns = 2048, reduction = 8192;
+  const auto weight_desc = gguf_grouped_weight_description(
+      GgufQuantizedType::kIq4Xs, DataType::kFloat32, experts, columns,
+      reduction).value();
+  const auto activation_desc = dense(DataType::kFloat32, {1, 2, reduction});
+  const auto ids_desc = dense(DataType::kInt32, {1, 2});
+  const std::array descriptions{weight_desc, activation_desc, ids_desc};
+  const auto output_desc =
+      infer_single_output(model_ops::grouped_matmul(), descriptions).value();
+  auto ctx = context();
+  auto memory = cuda::MemoryResource::create(ctx, cuda::MemoryKind::kDevice).value();
+  auto prepared = prepare(ctx, model_ops::grouped_matmul(), descriptions,
+                          std::span(&output_desc, 1), memory.ref());
+  ASSERT_TRUE(prepared) << prepared.error().message();
+  std::size_t free = 0, total = 0;
+  ASSERT_EQ(cudaMemGetInfo(&free, &total), cudaSuccess);
+  const auto bytes = *weight_desc.required_bytes();
+  if (free < bytes + (std::size_t{1} << 30))
+    GTEST_SKIP() << "Full IQ4 bank requires its bytes plus 1 GiB headroom";
+  auto weights = output_buffer(memory.ref(), weight_desc);
+  // Only the selected final expert is initialized. No full bank host copy,
+  // fill, or F32 conversion is needed by the native indexed quantized kernel.
+  const auto row_desc = gguf_weight_description(
+      GgufQuantizedType::kIq4Xs, DataType::kFloat32, reduction, 1).value();
+  const std::vector<float> row(reduction, 0.75F);
+  const auto packed = d5_gguf_test::pack(GgufQuantizedType::kIq4Xs, row, 1,
+                                       reduction, *row_desc.required_bytes());
+  std::vector<std::byte> selected(static_cast<std::size_t>(columns) * packed.bytes.size());
+  for (std::int64_t c = 0; c < columns; ++c)
+    std::copy(packed.bytes.begin(), packed.bytes.end(),
+              selected.begin() + static_cast<std::size_t>(c) * packed.bytes.size());
+  const auto offset = static_cast<std::size_t>(experts - 1) * selected.size();
+  ASSERT_GT(offset, UINT32_MAX);
+  ASSERT_TRUE(weights.view().subview(offset, selected.size())->write(selected).ok());
+  auto activation = output_buffer(memory.ref(), activation_desc);
+  const std::array<std::int32_t, 2> ids{experts - 1, experts - 1};
+  auto index = upload<std::int32_t>(memory.ref(), ids);
+  auto output = output_buffer(memory.ref(), output_desc);
+  const std::array inputs{ConstTensorView::create(weight_desc, weights.view()).value(),
+      ConstTensorView::create(activation_desc, activation.view()).value(),
+      ConstTensorView::create(ids_desc, index.view()).value()};
+  const auto result = TensorView::create(output_desc, output.view()).value();
+  auto invocation_workspace =
+      ggml_cuda_test::workspace_buffer(*prepared, memory.ref());
+  auto invocation =
+      prepared->create_invocation(invocation_workspace.view()).value();
+  auto queue = ctx.create_queue().value();
+  for (const float value : {0.25F, 0.5F}) {
+    const std::vector<float> x(2 * reduction, value);
+    ASSERT_TRUE(activation.view().write(std::as_bytes(std::span(x))).ok());
+    auto done = invocation.submit(queue, inputs, std::span(&result, 1));
+    ASSERT_TRUE(done) << done.error().message();
+    ASSERT_TRUE(done->wait().ok());
+    double expected = 0;
+    for (const float w : packed.decoded)
+      expected += static_cast<double>(w) * value;
+    const auto actual = half_test::read<float>(output);
+    for (const float y : actual)
+      EXPECT_NEAR(y, expected, std::abs(expected) * 0.002 + 1.0e-5);
   }
 }
 
@@ -1068,7 +1371,10 @@ TEST(GgmlCudaTensor, DenseBfloatGroupedExpertsUseNativeMulMatIdAndReplay) {
                           std::span(&output_view, 1));
   ASSERT_TRUE(prepared) << prepared.error().message();
   EXPECT_EQ(prepared->provider().id, ggml_cuda::kProviderId);
-  auto invocation = prepared->create_invocation().value();
+  auto invocation_workspace =
+      ggml_cuda_test::workspace_buffer(*prepared, memory.ref());
+  auto invocation =
+      prepared->create_invocation(invocation_workspace.view()).value();
   auto queue = ctx.create_queue().value();
   for (int replay = 1; replay <= 2; ++replay) {
     ids = replay == 1 ? std::array<std::int32_t, slots>{0, 2, 2}
@@ -1115,7 +1421,11 @@ TEST(GgmlCudaTensor, LargeGroupedF32RowsRetainNonTf32OperandsAndRepeatedIds) {
   const auto out=TensorView::create(ydesc,yb.view()).value();
   auto prepared=prepare(ctx,model_ops::grouped_matmul(),in,std::span(&out,1));
   ASSERT_TRUE(prepared)<<prepared.error().message();
-  auto call=prepared->create_invocation().value();auto queue=ctx.create_queue().value();
+  auto call_workspace =
+      ggml_cuda_test::workspace_buffer(*prepared, memory.ref());
+  auto call =
+      prepared->create_invocation(call_workspace.view()).value();
+  auto queue = ctx.create_queue().value();
   for(int replay=0;replay<2;++replay) {
     const std::array<std::int32_t,slots> ids=replay?std::array<std::int32_t,slots>{0,2,0}:
                                                     std::array<std::int32_t,slots>{2,0,2};
@@ -1160,7 +1470,10 @@ TEST(GgmlCudaTensor, BfloatRouterMatMulRetainsNativeF32Score) {
                           std::span(&output_view, 1));
   ASSERT_TRUE(prepared) << prepared.error().message();
   EXPECT_EQ(prepared->provider().id, ggml_cuda::kProviderId);
-  auto invocation = prepared->create_invocation().value();
+  auto invocation_workspace =
+      ggml_cuda_test::workspace_buffer(*prepared, memory.ref());
+  auto invocation =
+      prepared->create_invocation(invocation_workspace.view()).value();
   auto queue = ctx.create_queue().value();
   auto done = invocation.submit(queue, inputs, std::span(&output_view, 1));
   ASSERT_TRUE(done) << done.error().message();
@@ -1169,6 +1482,134 @@ TEST(GgmlCudaTensor, BfloatRouterMatMulRetainsNativeF32Score) {
   ASSERT_EQ(actual.size(), 2U);
   EXPECT_NEAR(actual[0], 1.001953125F, 1.0e-6F);
   EXPECT_NEAR(actual[1], 1.0F, 1.0e-6F);
+}
+
+TEST(GgmlCudaTensor, CheckedExpertIdsKeepOutputAndAllowRecreatedInvocationRetry) {
+  constexpr std::int64_t experts = 3, columns = 2, reduction = 32;
+  const auto wdesc = dense(DataType::kFloat32, {experts, columns, reduction});
+  const auto adesc = dense(DataType::kFloat32, {1, 2, reduction});
+  const auto idesc = dense(DataType::kInt32, {1, 2});
+  const std::array descriptions{wdesc, adesc, idesc};
+  const auto ydesc = infer_single_output(model_ops::grouped_matmul(), descriptions).value();
+  std::vector<float> weights(experts * columns * reduction);
+  for (std::size_t row = 0; row < std::size_t(experts * columns); ++row)
+    std::fill_n(weights.begin() + row * reduction, reduction, float(row + 1));
+  const std::vector<float> activation(2 * reduction, 0.25F);
+  const std::vector<float> sentinel(4, -917.25F);
+  auto ctx = context();
+  auto memory = cuda::MemoryResource::create(ctx, cuda::MemoryKind::kDevice).value();
+  auto w = upload<float>(memory.ref(), weights);
+  auto a = upload<float>(memory.ref(), activation);
+  auto ids = output_buffer(memory.ref(), idesc);
+  auto y = upload<float>(memory.ref(), sentinel);
+  const std::array inputs{ConstTensorView::create(wdesc, w.view()).value(),
+      ConstTensorView::create(adesc, a.view()).value(),
+      ConstTensorView::create(idesc, ids.view()).value()};
+  const auto output = TensorView::create(ydesc, y.view()).value();
+  auto prepared = prepare(ctx, model_ops::grouped_matmul(), inputs, std::span(&output, 1));
+  ASSERT_TRUE(prepared) << prepared.error().message();
+  EXPECT_EQ(prepared->provider().id, ggml_cuda::kProviderId);
+  auto queue = ctx.create_queue().value();
+  for (const auto bad : {-1, INT32_MAX}) {
+    auto invocation_workspace =
+        ggml_cuda_test::workspace_buffer(*prepared, memory.ref());
+    auto invocation =
+        prepared->create_invocation(invocation_workspace.view()).value();
+    const std::array<std::int32_t, 2> selected{2, bad};
+    ASSERT_TRUE(ids.view().write(std::as_bytes(std::span(selected))).ok());
+    auto done = invocation.submit(queue, inputs, std::span(&output, 1));
+    ASSERT_TRUE(done) << done.error().message();
+    EXPECT_TRUE(done->wait().IsOutOfRange());
+    EXPECT_EQ(half_test::read<float>(y), sentinel);
+    EXPECT_EQ(half_test::read<std::int32_t>(ids),
+              std::vector<std::int32_t>(selected.begin(), selected.end()));
+  }
+  const std::array<std::int32_t, 2> selected{2, 0};
+  ASSERT_TRUE(ids.view().write(std::as_bytes(std::span(selected))).ok());
+  auto invocation_workspace =
+      ggml_cuda_test::workspace_buffer(*prepared, memory.ref());
+  auto invocation =
+      prepared->create_invocation(invocation_workspace.view()).value();
+  auto done = invocation.submit(queue, inputs, std::span(&output, 1));
+  ASSERT_TRUE(done) << done.error().message();
+  ASSERT_TRUE(done->wait().ok());
+  EXPECT_EQ(half_test::read<float>(y), (std::vector<float>{40, 48, 8, 16}));
+}
+
+namespace {
+template <class T> void gather_elements_rows() {
+  namespace fixture = gather_elements_test;
+  const auto ddesc = dense(half_test::data_type<T>(),
+      {std::int64_t(fixture::kRows), std::int64_t(fixture::kColumns)});
+  const auto idesc = dense(DataType::kInt32,
+      {std::int64_t(fixture::kRows), std::int64_t(fixture::kSelected)});
+  const auto ydesc = TensorDesc::dense(half_test::data_type<T>(), idesc.dimensions()).value();
+  auto ctx = context();
+  auto memory = cuda::MemoryResource::create(ctx, cuda::MemoryKind::kDevice).value();
+  for (const auto bounds : {IndexBoundsPolicy::kChecked, IndexBoundsPolicy::kUnchecked}) {
+    SCOPED_TRACE(static_cast<int>(bounds));
+    auto data = output_buffer(memory.ref(), ddesc);
+    auto ids = output_buffer(memory.ref(), idesc);
+    std::array outputs{output_buffer(memory.ref(), ydesc), output_buffer(memory.ref(), ydesc)};
+    const std::array descs{ddesc, idesc};
+    auto prepared = prepare(ctx, model_ops::gather_elements(-1, bounds),
+                            descs, std::span(&ydesc, 1), memory.ref());
+    ASSERT_TRUE(prepared) << prepared.error().message();
+    EXPECT_EQ(prepared->provider().id, ggml_cuda::kProviderId);
+    std::array workspaces{
+        ggml_cuda_test::workspace_buffer(*prepared, memory.ref()),
+        ggml_cuda_test::workspace_buffer(*prepared, memory.ref())};
+    std::array calls{prepared->create_invocation(workspaces[0].view()).value(),
+                     prepared->create_invocation(workspaces[1].view()).value()};
+    std::array queues{ctx.create_queue().value(), ctx.create_queue().value()};
+    for (int phase = 0; phase < 2; ++phase) {
+      const auto source = fixture::data(phase);
+      const auto selected = fixture::indices(phase);
+      std::vector<T> stored;
+      for (const auto value : source) stored.push_back(half_test::encode<T>(value));
+      ASSERT_TRUE(data.view().write(std::as_bytes(std::span(stored))).ok());
+      ASSERT_TRUE(ids.view().write(std::as_bytes(std::span(selected))).ok());
+      const std::array inputs{ConstTensorView::create(ddesc, data.view()).value(),
+          ConstTensorView::create(idesc, ids.view()).value()};
+      auto out = TensorView::create(ydesc, outputs[phase].view()).value();
+      auto done = calls[phase].submit(queues[phase], inputs, std::span(&out, 1));
+      ASSERT_TRUE(done) << done.error().message();
+      ASSERT_TRUE(done->wait().ok());
+      const auto actual = half_test::read<T>(outputs[phase]);
+      const auto expected = fixture::reference(source, selected);
+      ASSERT_EQ(actual.size(), expected.size());
+      for (std::size_t i = 0; i < actual.size(); ++i)
+        EXPECT_EQ(half_test::decode(actual[i]), expected[i]) << i;
+      if (phase == 1) {
+        const auto old = half_test::read<T>(outputs[0]);
+        const auto reference = fixture::reference(fixture::data(), fixture::indices());
+        for (std::size_t i = 0; i < old.size(); ++i)
+          EXPECT_EQ(half_test::decode(old[i]), reference[i]) << i;
+      }
+    }
+    if (bounds == IndexBoundsPolicy::kChecked) {
+      const auto before = half_test::read<T>(outputs[0]);
+      auto invalid = fixture::indices();
+      invalid.back() = std::int32_t(fixture::kColumns);
+      ASSERT_TRUE(ids.view().write(std::as_bytes(std::span(invalid))).ok());
+      const std::array inputs{ConstTensorView::create(ddesc, data.view()).value(),
+          ConstTensorView::create(idesc, ids.view()).value()};
+      const auto out = TensorView::create(ydesc, outputs[0].view()).value();
+      auto done = calls[0].submit(queues[0], inputs, std::span(&out, 1));
+      ASSERT_TRUE(done) << done.error().message();
+      EXPECT_TRUE(done->wait().IsOutOfRange());
+      const auto after = half_test::read<T>(outputs[0]);
+      EXPECT_TRUE(std::ranges::equal(std::as_bytes(std::span(before)),
+                                    std::as_bytes(std::span(after))));
+    }
+  }
+}
+} // namespace
+
+TEST(GgmlCudaTensor, GatherElementsUsesPerRowIdsAndPreservesDtypeAndBounds) {
+  gather_elements_rows<float>();
+  gather_elements_rows<hyle::simd::float16_t>();
+  gather_elements_rows<hyle::simd::bfloat16_t>();
 }
 
 TEST(GgmlCudaTensor, MalformedNativeGgufFormatIsRejectedAtPrepare) {
@@ -1219,5 +1660,87 @@ TEST(GgmlCudaTensor, SoftmaxRejectsPartialOverlapAndMaskAlias) {
   EXPECT_FALSE(execute(ctx, Softmax{.mask = MaskKind::kAdditive}, inputs,
                        TensorView::create(description, first).value())
                    .ok());
+}
+
+TEST(GgmlCudaTensor, BatchedF32MatMulRebindsIndependentSlotsWithoutNarrowing) {
+  auto ctx = context();
+  auto memory = cuda::MemoryResource::create(ctx, cuda::MemoryKind::kDevice).value();
+  constexpr std::int64_t m = 17, k = 37, n = 19;
+  for (const int rank : {3, 4}) {
+    SCOPED_TRACE(rank);
+    const auto left_desc = rank == 3 ? dense(DataType::kFloat32, {2, m, k})
+        : dense(DataType::kFloat32, {2, 3, m, k});
+    const auto right_desc = rank == 3 ? dense(DataType::kFloat32, {1, k, n})
+        : dense(DataType::kFloat32, {1, 3, k, n});
+    const std::array descriptions{left_desc, right_desc};
+    const auto output_desc = infer_single_output(Operation(MatMul{}), descriptions).value();
+    auto prepared = prepare(ctx, Operation(MatMul{}), descriptions,
+                            std::span(&output_desc, 1), memory.ref());
+    ASSERT_TRUE(prepared) << prepared.error().message();
+    EXPECT_EQ(prepared->provider().id, ggml_cuda::kProviderId);
+    auto first_workspace =
+        ggml_cuda_test::workspace_buffer(*prepared, memory.ref());
+    auto first =
+        prepared->create_invocation(first_workspace.view()).value();
+    auto second_workspace =
+        ggml_cuda_test::workspace_buffer(*prepared, memory.ref());
+    auto second =
+        prepared->create_invocation(second_workspace.view()).value();
+    auto first_queue = ctx.create_queue().value();
+    auto second_queue = ctx.create_queue().value();
+    Buffer old_output;
+    std::vector<float> old_values;
+    const auto batches = *left_desc.element_count() / (m * k);
+    const auto right_batches = *right_desc.element_count() / (k * n);
+    for (const int phase : {0, 1}) {
+      SCOPED_TRACE(phase);
+      std::array<Buffer, 2> left, right, output;
+      std::array<std::vector<float>, 2> a, b;
+      for (std::size_t slot = 0; slot < 2; ++slot) {
+        a[slot].resize(*left_desc.element_count());
+        b[slot].resize(*right_desc.element_count());
+        // Actual F32 values deliberately retain bits that TF32 would discard.
+        for (std::size_t i = 0; i < a[slot].size(); ++i)
+          a[slot][i] = float(0.15 + double(i % 19) * 0.037 + phase * 0.013 + slot * 0.019);
+        for (std::size_t i = 0; i < b[slot].size(); ++i)
+          b[slot][i] = float(0.11 + double(i % 23) * 0.029 - phase * 0.007 + slot * 0.031);
+        left[slot] = upload<float>(memory.ref(), a[slot]);
+        right[slot] = upload<float>(memory.ref(), b[slot]);
+        output[slot] = output_buffer(memory.ref(), output_desc);
+      }
+      const auto inputs = [&](std::size_t slot) {
+        return std::array{ConstTensorView::create(left_desc, left[slot].view()).value(),
+                          ConstTensorView::create(right_desc, right[slot].view()).value()};
+      };
+      const auto destination = [&](std::size_t slot) {
+        return TensorView::create(output_desc, output[slot].view()).value();
+      };
+      auto one = first.submit(first_queue, inputs(0), destination(0));
+      ASSERT_TRUE(one) << one.error().message();
+      auto two = second.submit(second_queue, inputs(1), destination(1));
+      ASSERT_TRUE(two) << two.error().message();
+      ASSERT_TRUE(two->wait().ok());
+      ASSERT_TRUE(one->wait().ok());
+      for (std::size_t slot = 0; slot < 2; ++slot) {
+        const auto actual = half_test::read<float>(output[slot]);
+        for (std::size_t batch = 0; batch < batches; ++batch)
+          for (std::size_t row = 0; row < m; ++row)
+            for (std::size_t column = 0; column < n; ++column) {
+              double expected = 0;
+              for (std::size_t inner = 0; inner < k; ++inner)
+                expected += double(a[slot][(batch * m + row) * k + inner]) *
+                    b[slot][((batch % right_batches) * k + inner) * n + column];
+              EXPECT_NEAR(actual[(batch * m + row) * n + column], expected,
+                          2e-6 + 6e-6 * std::abs(expected));
+            }
+      }
+      if (phase == 0) {
+        old_values = half_test::read<float>(output[0]);
+        old_output = std::move(output[0]);
+      } else {
+        EXPECT_EQ(half_test::read<float>(old_output), old_values);
+      }
+    }
+  }
 }
 } // namespace

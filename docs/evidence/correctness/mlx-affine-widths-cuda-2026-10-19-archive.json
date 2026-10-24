@@ -1,0 +1,16 @@
+{
+  "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\mlx-affine-widths-cuda-2026-10-19.zip",
+  "bytes": 2063725,
+  "sha256": "70ab5f70ea3be4bfdf2c95708658667393097218b5ef75ab9187269389a2563c",
+  "CRC_and_every_payload_SHA_verified": true,
+  "payloads": 717,
+  "entries_including_manifest": 718,
+  "uncompressed_payload_bytes": 9660942,
+  "fresh_cuda_side_owners": 27,
+  "CUDA_gtests": 23,
+  "public_Direct_domains": 1,
+  "public_Graph_domains": 4,
+  "exact_model_vectors": 64,
+  "throughput_claim": false,
+  "repeated_vector_payloads_omitted": true
+}

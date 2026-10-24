@@ -12,6 +12,67 @@
 namespace {
 using namespace hyle::compute;
 
+TEST(ComputeOpsRowCache, EncodedRowsAndSelectedValuesKeepTheirOwnShapes) {
+  static_assert(sizeof(CacheStorage)==8);
+  static_assert(sizeof(RowCacheEncoding)==4);
+  for (const auto encoding : {RowCacheEncoding::float8_block64_tail64(),
+                             RowCacheEncoding::float4_block32()}) {
+    const auto rows=TensorDesc::dense(DataType::kBFloat16,
+        std::array<std::int64_t,2>{3,encoding.depth()}).value();
+    const auto carrier=row_cache_carrier_description(encoding,3);
+    ASSERT_TRUE(carrier);
+    EXPECT_EQ(carrier->data_type(),DataType::kUInt8);
+    EXPECT_EQ(carrier->dimensions()[1],encoding.row_bytes());
+    EXPECT_EQ(*carrier->required_bytes(),3u*encoding.row_bytes());
+    auto encoded=infer_single_output(model_ops::row_cache_encode(encoding),std::array{rows});
+    ASSERT_TRUE(encoded);
+    EXPECT_EQ(*encoded,*carrier);
+    // More selections than bank rows and repeated IDs are legitimate.
+    const auto ids=TensorDesc::dense(DataType::kInt32,std::array<std::int64_t,2>{2,5}).value();
+    auto selected=infer_single_output(model_ops::row_cache_gather_decode(encoding),std::array{*carrier,ids});
+    ASSERT_TRUE(selected);
+    EXPECT_EQ(*selected,TensorDesc::dense(DataType::kBFloat16,
+        std::array<std::int64_t,3>{2,5,encoding.depth()}).value());
+    const auto scalar=TensorDesc::dense(DataType::kInt32,std::span<const std::int64_t>{}).value();
+    EXPECT_EQ(*infer_single_output(model_ops::row_cache_gather_decode(encoding),std::array{*carrier,scalar}),
+        TensorDesc::dense(DataType::kBFloat16,std::array<std::int64_t,1>{encoding.depth()}).value());
+  }
+}
+
+TEST(ComputeOpsRowCache, RejectsMismatchedEncodingDtypeAndIndexRank) {
+  const auto encoding=RowCacheEncoding::float8_block64_tail64();
+  const auto bank=row_cache_carrier_description(encoding,3).value();
+  const auto ids=TensorDesc::dense(DataType::kInt32,std::array<std::int64_t,1>{2}).value();
+  const auto wrong_ids=TensorDesc::dense(DataType::kInt64,std::array<std::int64_t,1>{2}).value();
+  const auto wrong_rows=TensorDesc::dense(DataType::kFloat32,std::array<std::int64_t,2>{3,512}).value();
+  const auto wrong_depth=TensorDesc::dense(DataType::kBFloat16,std::array<std::int64_t,2>{3,511}).value();
+  EXPECT_FALSE(infer_single_output(model_ops::row_cache_encode(encoding),std::array{wrong_rows}));
+  EXPECT_FALSE(infer_single_output(model_ops::row_cache_encode(encoding),std::array{wrong_depth}));
+  EXPECT_FALSE(infer_single_output(model_ops::row_cache_gather_decode(encoding),std::array{bank,wrong_ids}));
+  EXPECT_FALSE(infer_single_output(model_ops::row_cache_gather_decode(RowCacheEncoding::float4_block32()),std::array{bank,ids}));
+  EXPECT_FALSE(infer_single_output(model_ops::row_cache_gather_decode(encoding,static_cast<IndexBoundsPolicy>(255)),std::array{bank,ids}));
+  std::array<std::int64_t,kMaxTensorRank> dimensions{}; dimensions.fill(1);
+  const auto full_rank=TensorDesc::dense(DataType::kInt32,dimensions).value();
+  EXPECT_FALSE(infer_single_output(model_ops::row_cache_gather_decode(encoding),std::array{bank,full_rank}));
+}
+
+TEST(ComputeOpsRowCache, EmptySelectionsAndCapacityOverflowAreDistinct) {
+  const auto encoding=RowCacheEncoding::float8_block64_tail64();
+  const auto empty=row_cache_carrier_description(encoding,0).value();
+  const auto no_ids=TensorDesc::dense(DataType::kInt32,std::array<std::int64_t,1>{0}).value();
+  const auto one_id=TensorDesc::dense(DataType::kInt32,std::array<std::int64_t,1>{1}).value();
+  const auto selected=infer_single_output(model_ops::row_cache_gather_decode(encoding),std::array{empty,no_ids});
+  ASSERT_TRUE(selected);
+  EXPECT_EQ(*selected->element_count(),0u);
+  EXPECT_FALSE(infer_single_output(model_ops::row_cache_gather_decode(encoding),std::array{empty,one_id}));
+  EXPECT_FALSE(row_cache_carrier_description(encoding,-1));
+  EXPECT_FALSE(row_cache_carrier_description(encoding,std::numeric_limits<std::int64_t>::max()));
+  const auto many_ids=TensorDesc::dense(DataType::kInt32,
+      std::array<std::int64_t,1>{std::numeric_limits<std::int64_t>::max()/4}).value();
+  const auto bank=row_cache_carrier_description(encoding,1).value();
+  EXPECT_FALSE(infer_single_output(model_ops::row_cache_gather_decode(encoding),std::array{bank,many_ids}));
+}
+
 TEST(ComputeOpsCacheStorage, CacheDepthBlocksAndRealCopyCarrier) {
   const auto storage = CacheStorage::q8_0();
   ASSERT_TRUE(storage);
@@ -228,7 +289,8 @@ TEST(ComputeOpsLowPrecision, GgufCatalogPreservesExactNativeBlocks) {
                              Case{GgufQuantizedType::kIq1M, kGgufIq1M, 56},
                              Case{GgufQuantizedType::kIq1Xxxs, kGgufIq1Xxxs, 38},
                              Case{GgufQuantizedType::kIq1Xxs, kGgufIq1Xxs, 42},
-                             Case{GgufQuantizedType::kIq1Xs, kGgufIq1Xs, 46}};
+                             Case{GgufQuantizedType::kIq1Xs, kGgufIq1Xs, 46},
+                             Case{GgufQuantizedType::kNvfp4, kGgufNvfp4, 36, 64}};
   for (const auto &[type, id, bytes, elements] : cases) {
     const auto weight =
         gguf_weight_description(type, DataType::kFloat32,
@@ -265,6 +327,38 @@ TEST(ComputeOpsLowPrecision, GgufGroupedWeightsKeepExpertRowAndKOrder) {
   EXPECT_EQ(weight->byte_strides()[1], 136);
   EXPECT_EQ(weight->byte_strides()[0], 408);
   EXPECT_EQ(*weight->required_bytes(), 1632u);
+}
+
+TEST(ComputeOpsLowPrecision, Nvfp4UsesItsOwnBlocksAndPreservesLogicalViews) {
+  EXPECT_NE(kGgufNvfp4, kMxfp4Weight);
+  for (const auto dtype : {DataType::kFloat32, DataType::kFloat16, DataType::kBFloat16}) {
+    const auto weight = gguf_weight_description(GgufQuantizedType::kNvfp4, dtype, 128, 3);
+    ASSERT_TRUE(weight);
+    EXPECT_EQ(weight->data_type(), dtype);
+    EXPECT_EQ(weight->block_axis(), 0u);
+    EXPECT_EQ(weight->byte_strides()[0], 36);
+    EXPECT_EQ(weight->byte_strides()[1], 72);
+    EXPECT_EQ(weight->required_bytes().value(), 216u);
+    const auto table = weight->transposed();
+    ASSERT_TRUE(table);
+    EXPECT_EQ(table->block_axis(), 1u);
+    EXPECT_EQ(table->required_bytes(), weight->required_bytes());
+    EXPECT_EQ(gguf_quantized_type(table->storage_format()), GgufQuantizedType::kNvfp4);
+  }
+  const auto grouped = gguf_grouped_weight_description(
+      GgufQuantizedType::kNvfp4, DataType::kFloat32, 2, 3, 128);
+  ASSERT_TRUE(grouped);
+  EXPECT_EQ(grouped->block_axis(), 2u);
+  EXPECT_EQ(grouped->byte_strides()[0], 216);
+  EXPECT_EQ(grouped->byte_strides()[1], 72);
+  EXPECT_EQ(grouped->byte_strides()[2], 36);
+  EXPECT_EQ(grouped->required_bytes().value(), 432u);
+  const auto wrong_block = StorageFormat::blocked(kGgufNvfp4, 32, 17).value();
+  EXPECT_FALSE(gguf_quantized_type(wrong_block));
+  EXPECT_FALSE(gguf_weight_description(GgufQuantizedType::kNvfp4, DataType::kFloat32, 96, 1));
+  EXPECT_FALSE(gguf_weight_description(GgufQuantizedType::kNvfp4, DataType::kUInt8, 64, 1));
+  EXPECT_FALSE(gguf_weight_description(GgufQuantizedType::kNvfp4, DataType::kFloat32,
+      64, (std::numeric_limits<std::int64_t>::max)()));
 }
 
 TEST(ComputeOpsLowPrecision, RejectsIncompleteBlocksAndOverflow) {

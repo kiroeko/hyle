@@ -892,7 +892,7 @@ void run_q24_semantic_fragment(
 TEST(CudaGraphMoeFragments, D5OriginalRouterNativeBoundaries) {
   for (auto experts : {256, 384})
     for (auto tokens : {1, 513})
-      for (int mode = 0; mode < 6; ++mode) {
+      for (int mode = 0; mode < 7; ++mode) {
         SCOPED_TRACE(experts);
         SCOPED_TRACE(tokens);
         SCOPED_TRACE(mode);

@@ -1,0 +1,15 @@
+{
+  "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\qwen35-full-cuda-2026-10-19\\immutable-alias-index.zip",
+  "bytes": 16021108,
+  "sha256": "feff6e6b20e61b236f77e3532bf2792e507e105c226bbafb1c065740ae294b5a",
+  "payloads": 268,
+  "entries_including_manifest": 269,
+  "uncompressed_payload_bytes": 38225457,
+  "CRC_and_every_payload_SHA_verified": true,
+  "applied_product_after_files_verified": 4,
+  "compiled_source_snapshots_verified": 11,
+  "private_header_snapshot_verified": true,
+  "build_CPU_model_and_nine_process_records_included": true,
+  "SDKs_models_objects_executables_maps_excluded": true,
+  "unapplied_GDN_overlays_excluded": true
+}

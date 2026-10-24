@@ -56,14 +56,14 @@ inline hyle::Result<v::Program> prepare(const v::Context &context,
   HYLE_ASSIGN_OR_RETURN(auto workload, sample_workload::create());
   auto program = gv::compile(
       context, graph, constants,
-      {.custom = [](const v::Context &owner, const c::Operation &operation,
+      {.custom = [&context](const c::Operation &operation,
                     std::span<const c::TensorDesc>,
                     const c::TensorDesc &description)
            -> hyle::Result<gv::CustomDispatch> {
          if (!operation.custom_as<Affine>())
            return std::unexpected(
                hyle::Status::Unimplemented("unknown application schema"));
-         HYLE_ASSIGN_OR_RETURN(auto kernel, s::affine(owner));
+         HYLE_ASSIGN_OR_RETURN(auto kernel, s::affine(context));
          HYLE_ASSIGN_OR_RETURN(auto elements, description.element_count());
          const auto count = static_cast<std::uint32_t>(elements);
          return gv::CustomDispatch{std::move(kernel),

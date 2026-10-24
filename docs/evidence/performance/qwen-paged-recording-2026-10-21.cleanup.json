@@ -1,0 +1,58 @@
+{
+  "scope": "Unexecuted intermediate Qwen image and reproducible linker maps/import metadata; keep actual current model/CUDA fixture images and all sources/objects/results/baselines",
+  "files": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\qwen-link1\\qwen.exe",
+      "bytes": 139648000,
+      "sha256": "4e459435e493a0cde8b24c810cf903c33beefddfeeb61587a864c7ef08685e91"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\qwen-link1\\qwen.exp",
+      "bytes": 24973,
+      "sha256": "3ca796c6ad8558b228382e8a0f0c040579b1fe10cb7fc662a62b7b014d793fdc"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\qwen-link1\\qwen.lib",
+      "bytes": 41384,
+      "sha256": "339d3ce297534ebac8825c27a011f2f4f9dfe366c657ebfc45dbbfdc8412a2cb"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\qwen-link1\\qwen.map",
+      "bytes": 58169606,
+      "sha256": "72e119e81a5d720a9d8d80b11cca618bbf6fa7c325251a158582c95f75005d8a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\qwen-link2\\qwen.exp",
+      "bytes": 24973,
+      "sha256": "e59036bbd459b1eb19ea48c96a5b36c4acc5f0ba2e04d07bafd5fe9f3fc97c4e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\qwen-link2\\qwen.lib",
+      "bytes": 41384,
+      "sha256": "339d3ce297534ebac8825c27a011f2f4f9dfe366c657ebfc45dbbfdc8412a2cb"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\qwen-link2\\qwen.map",
+      "bytes": 58171107,
+      "sha256": "227d6296679ca0b48a75f52db41c32b95803f25be9707f1541349fa677e02eb2"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\cuda-link1\\cuda.exp",
+      "bytes": 24973,
+      "sha256": "28644dd6d1f68afceb85c78c629e28714e891d3a72af134b29c35ed24257026b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\cuda-link1\\cuda.lib",
+      "bytes": 41384,
+      "sha256": "097299e17e955c077a99f65f363d3484d564c016359baeb643f4e47c6b737d59"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\cuda-link1\\cuda.map",
+      "bytes": 57322435,
+      "sha256": "a5ea4e4eb04797e09eb04f2c17166bd927f2acb90763b3a256daa0138f93d17e"
+    }
+  ],
+  "deleted_files": 10,
+  "removed_payload_bytes": 313510219.0,
+  "completed_utc": "2026-10-21T10:08:04.6904920Z"
+}

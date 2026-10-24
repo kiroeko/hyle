@@ -1,0 +1,105 @@
+{
+  "status": "completed",
+  "time_utc": "2026-10-21T11:51:49.3319247Z",
+  "deleted_files": 18,
+  "deleted_bytes": 708016347.0,
+  "targets": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-prefix-20261021\\cpu-link1\\cpu.exe",
+      "bytes": 139479040,
+      "sha256": "d4b3a433e436f0391e1bee020098f999323d59677711f0862e86191468104cb1"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-prefix-20261021\\cuda-link1\\cuda.exe",
+      "bytes": 139252224,
+      "sha256": "9cee13d060ee06c92de1b2c3073fb7009957d9ebee002e438eb775008e712655"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-retirement-20261021\\probe-link1\\probe.exe",
+      "bytes": 139631616,
+      "sha256": "f28b2fcff893c958581cfc8b629a8af75ee30e87f9e12303fb9722a9d0591a06"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-retirement-20261021\\qwen-link1\\qwen.map",
+      "bytes": 58254174,
+      "sha256": "fd34aae1ecd5261f5de68ed8986c3ed6689bb2e7eaeb311f5a6477ab0b2ed406"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-retirement-20261021\\qwen-link1\\qwen.lib",
+      "bytes": 41384,
+      "sha256": "339d3ce297534ebac8825c27a011f2f4f9dfe366c657ebfc45dbbfdc8412a2cb"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-retirement-20261021\\qwen-link1\\qwen.exp",
+      "bytes": 24974,
+      "sha256": "cf689f8c9eaef1525883ef4d48983507ee39da01d0cfe95b477de3004e5cc2b8"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-retirement-20261021\\cpu-link1\\cpu.map",
+      "bytes": 57446524,
+      "sha256": "d5de4256f8322c1363b537a867adb9253eb1ed65847e9cbb8eb44017e2e674d9"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-retirement-20261021\\cpu-link1\\cpu.lib",
+      "bytes": 41298,
+      "sha256": "1a72c22d3a6dec39cca5118fd99aa738ff5f4202c029fc8a48afb6c3d20e909d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-retirement-20261021\\cpu-link1\\cpu.exp",
+      "bytes": 24970,
+      "sha256": "b31d585caa879320bad02ca2f45400b29471767f2e64199a6a1c71a00df8f1fa"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-retirement-20261021\\cuda-link1\\cuda.map",
+      "bytes": 57342825,
+      "sha256": "3c3fd4e2890b0650ad81ad09d399e530ee1c40e0e6b8fca80013d9f6d3aca05e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-retirement-20261021\\cuda-link1\\cuda.lib",
+      "bytes": 41384,
+      "sha256": "097299e17e955c077a99f65f363d3484d564c016359baeb643f4e47c6b737d59"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-retirement-20261021\\cuda-link1\\cuda.exp",
+      "bytes": 24974,
+      "sha256": "39b7a26927c4e08872ad75582a44410a140695902229509d4f3cb7f0522f3524"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-retirement-20261021\\probe-link1\\probe.map",
+      "bytes": 58138970,
+      "sha256": "f576bd27bfdccfd706aa440da3c29fa76c4d754e4b097d830d137771fdd09a65"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-retirement-20261021\\probe-link1\\probe.lib",
+      "bytes": 41474,
+      "sha256": "d97664b9bfac874c565d303c78aaddedc46408bb52d748c1e55eff080d46dac2"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-retirement-20261021\\probe-link1\\probe.exp",
+      "bytes": 24976,
+      "sha256": "2b04bffe348de4fe20b63d7a084eef1c6e59db20faa0430fd9b6fc76f93daea7"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-retirement-20261021\\probe-link2\\probe.map",
+      "bytes": 58139090,
+      "sha256": "b2ba0128f234f4038d03851a6957b95294eb85bd405aac7ba4f0c9fee1c5175d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-retirement-20261021\\probe-link2\\probe.lib",
+      "bytes": 41474,
+      "sha256": "d97664b9bfac874c565d303c78aaddedc46408bb52d748c1e55eff080d46dac2"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-retirement-20261021\\probe-link2\\probe.exp",
+      "bytes": 24976,
+      "sha256": "2a447d8d7c791ea567b4d95111f95448ab4f128ee38c241b0d5988a95e0657cb"
+    }
+  ],
+  "reason": "Superseded CPU/CUDA fixture images, obsolete first probe and reconstructible link maps/import stubs only.",
+  "kept": [
+    "Current qwen2941 and prior e155/aa486 model images, final probe85c3, new CPU/CUDA fixtures, all original compile/link objects, cached native libraries/SDKs/weights, source snapshots, raw logs and vector baselines."
+  ],
+  "recursive_delete": false,
+  "plan_sha256": "a277cc5ae11be63fcacf77d008052ffed5bd04c22c771fee9bdadc8bb0d11e5f",
+  "script_sha256": "23d24129e5cc137ee9a5c14eb938882e0b21c261f2202c8862d47c09b0f89ff0"
+}

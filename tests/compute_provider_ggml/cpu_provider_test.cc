@@ -242,58 +242,87 @@ TEST(GgmlCpuProvider, GatedDeltaNetSnapshotsKeepChronologicalBatchesOnRebind) {
 }
 
 TEST(GgmlCpuProvider, RecurrentTokenBlockBroadcastsParametersAndPublishesSnapshots) {
-  gdn_snapshot_fixture::Fixture fixture(3, 1, 3, 16, 16, 128);
-  const auto parameter = dense(DataType::kFloat32, {1, 1, 16, 1});
-  std::array descriptions{fixture.inputs[0], fixture.inputs[1], fixture.inputs[2],
-                           fixture.inputs[3], fixture.inputs[4], parameter,
-                           parameter, fixture.inputs[5]};
-  std::vector<float> raw_a(fixture.data[3].size()), raw_b(raw_a.size());
-  std::vector<float> coefficient(16), bias(16);
-  for (std::size_t head = 0; head < coefficient.size(); ++head) {
-    coefficient[head] = -0.025F * float(head + 1);
-    bias[head] = 0.01F * float(head);
-  }
-  for (std::size_t i = 0; i < raw_a.size(); ++i) {
-    raw_a[i] = float(int(i % 11) - 5) / 16.F;
-    raw_b[i] = float(int(i % 7) - 3) / 8.F;
-    fixture.data[3][i] = float(
-        std::log1p(std::exp(double(raw_a[i]) + bias[i % 16])) *
-        coefficient[i % 16]);
-    fixture.data[4][i] = float(1.0 / (1.0 + std::exp(-double(raw_b[i]))));
-  }
-  const std::array<std::span<const float>, 8> values{
-      fixture.data[0], fixture.data[1], fixture.data[2], raw_a, raw_b,
-      coefficient, bias, fixture.data[5]};
-  std::vector<Buffer> storage;
-  std::vector<ConstTensorView> inputs;
-  for (std::size_t i = 0; i < values.size(); ++i) {
-    storage.push_back(half_test::buffer<float>(values[i]));
-    inputs.push_back(
-        ConstTensorView::create(descriptions[i], storage.back().view()).value());
-  }
-  const auto output_desc = fixture.outputs(3);
-  std::array output_storage{output_buffer(output_desc[0]),
-                            output_buffer(output_desc[1])};
-  const std::array outputs{
-      TensorView::create(output_desc[0], output_storage[0].view()).value(),
-      TensorView::create(output_desc[1], output_storage[1].view()).value()};
-  auto context = Context::create(cpu::device(), ggml_cpu::provider()).value();
-  auto prepared = prepare(context, model_ops::recurrent_gated_delta_net(3),
-                           inputs, outputs);
-  ASSERT_TRUE(prepared) << prepared.error().message();
-  auto invocation = prepared->create_invocation().value();
-  auto queue = context.create_queue().value();
-  auto completion = invocation.submit(queue, inputs, outputs);
-  ASSERT_TRUE(completion) << completion.error().message();
-  ASSERT_TRUE(completion->wait().ok());
-  const auto expected = fixture.oracle(3);
-  for (std::size_t port = 0; port < outputs.size(); ++port) {
-    const auto actual = half_test::read<float>(output_storage[port]);
-    ASSERT_EQ(actual.size(), expected[port].size());
-    for (std::size_t i = 0; i < actual.size(); ++i)
-      EXPECT_NEAR(actual[i], expected[port][i], 3.0e-6) << port << ':' << i;
+  const std::array<std::array<std::int64_t, 4>, 2> shapes{{
+      {1, 16, 16, 128}, {2, 2, 6, 32}}};
+  for (const auto &shape : shapes) {
+    SCOPED_TRACE(shape[0]);
+    SCOPED_TRACE(shape[2]);
+    SCOPED_TRACE(shape[3]);
+    gdn_snapshot_fixture::Fixture fixture(3, shape[0], 3, shape[1], shape[2], shape[3]);
+    const auto parameter = dense(DataType::kFloat32, {1, 1, shape[2], 1});
+    std::array descriptions{fixture.inputs[0], fixture.inputs[1], fixture.inputs[2],
+                             fixture.inputs[3], fixture.inputs[4], parameter,
+                             parameter, fixture.inputs[5]};
+    std::vector<float> raw_a(fixture.data[3].size()), raw_b(raw_a.size());
+    std::vector<float> coefficient(static_cast<std::size_t>(shape[2])), bias(coefficient.size());
+    for (std::size_t head = 0; head < coefficient.size(); ++head) {
+      coefficient[head] = -0.025F * float(head + 1);
+      bias[head] = 0.01F * float(head);
+    }
+    for (std::size_t i = 0; i < raw_a.size(); ++i) {
+      raw_a[i] = float(int(i % 11) - 5) / 16.F;
+      raw_b[i] = float(int(i % 7) - 3) / 8.F;
+      fixture.data[3][i] = float(
+          std::log1p(std::exp(double(raw_a[i]) + bias[i % bias.size()])) *
+          coefficient[i % coefficient.size()]);
+      fixture.data[4][i] = float(1.0 / (1.0 + std::exp(-double(raw_b[i]))));
+    }
+    const std::array<std::span<const float>, 8> values{
+        fixture.data[0], fixture.data[1], fixture.data[2], raw_a, raw_b,
+        coefficient, bias, fixture.data[5]};
+    std::vector<Buffer> storage;
+    std::vector<ConstTensorView> inputs;
+    for (std::size_t i = 0; i < values.size(); ++i) {
+      storage.push_back(half_test::buffer<float>(values[i]));
+      inputs.push_back(
+          ConstTensorView::create(descriptions[i], storage.back().view()).value());
+    }
+    const auto output_desc = fixture.outputs(3);
+    std::array output_storage{output_buffer(output_desc[0]),
+                              output_buffer(output_desc[1])};
+    const std::array outputs{
+        TensorView::create(output_desc[0], output_storage[0].view()).value(),
+        TensorView::create(output_desc[1], output_storage[1].view()).value()};
+    auto context = Context::create(cpu::device(), ggml_cpu::provider()).value();
+    auto prepared = prepare(context, model_ops::recurrent_gated_delta_net(3),
+                             inputs, outputs);
+    ASSERT_TRUE(prepared) << prepared.error().message();
+    auto invocation = prepared->create_invocation().value();
+    auto queue = context.create_queue().value();
+    auto completion = invocation.submit(queue, inputs, outputs);
+    ASSERT_TRUE(completion) << completion.error().message();
+    ASSERT_TRUE(completion->wait().ok());
+    const auto expected = fixture.oracle(3);
+    for (std::size_t port = 0; port < outputs.size(); ++port) {
+      const auto actual = half_test::read<float>(output_storage[port]);
+      ASSERT_EQ(actual.size(), expected[port].size());
+      for (std::size_t i = 0; i < actual.size(); ++i)
+        EXPECT_NEAR(actual[i], expected[port][i], 3.0e-6) << port << ':' << i;
+    }
   }
 }
+
+TEST(GgmlCpuProvider, RecurrentSchemaDoesNotGrantUnavailableNativeTypesOrState) {
+  auto context = Context::create(cpu::device(), ggml_cpu::provider()).value();
+  const auto f32 = DataType::kFloat32;
+  for (const auto type : {f32, DataType::kBFloat16}) {
+    const auto dk = std::int64_t{32};
+    const auto dv = std::int64_t{type == f32 ? 48 : 32};
+    const auto raw = dense(f32, {2, 3, 6, 1});
+    const auto parameter = dense(f32, {1, 1, 6, 1});
+    const std::array inputs{dense(type, {2, 3, 2, dk}), dense(type, {2, 3, 2, dk}),
+        dense(type, {2, 3, 6, dv}), raw, raw, parameter, parameter,
+        dense(f32, {2, 6, dv, dk})};
+    std::array<TensorDesc, 2> outputs;
+    const auto operation = model_ops::recurrent_gated_delta_net();
+    ASSERT_TRUE(infer_output_descriptions(operation, inputs, outputs).ok());
+    const auto prepared = prepare(context, operation, inputs, outputs,
+                                    hyle::mem::system_resource());
+    ASSERT_FALSE(prepared);
+    EXPECT_TRUE(prepared.error().IsUnimplemented()) << prepared.error().message();
+  }
+}
+
 
 TEST(GgmlCpuProvider, D5Qwen38GroupedHeadsUseMatureGatedDeltaNet) {
   const d5_qwen38_gdn_fixture::Fixture fixture;
@@ -1887,6 +1916,22 @@ TEST(GgmlCpuProvider, RepresentativeNativeGgufFormatsExecuteWithoutRepacking) {
   }
 }
 
+TEST(GgmlCpuProvider, QuantizedGroupedBanksKeepNativeBlockCapacity) {
+  auto context = Context::create(cpu::device(), ggml_cpu::provider()).value();
+  for (const auto format : {GgufQuantizedType::kIq4Xs,
+                            GgufQuantizedType::kQ8_0}) {
+    const auto weight = gguf_grouped_weight_description(
+        format, DataType::kFloat32, 512, 2048, 8192).value();
+    const std::array inputs{weight, dense(DataType::kFloat32, {1, 2, 8192}),
+                            dense(DataType::kInt32, {1, 2})};
+    const auto output = infer_single_output(model_ops::grouped_matmul(), inputs).value();
+    auto prepared = prepare(context, model_ops::grouped_matmul(), inputs,
+                            std::span(&output, 1), hyle::mem::system_resource());
+    ASSERT_TRUE(prepared) << prepared.error().message();
+    EXPECT_EQ(prepared->provider().id, ggml_cpu::kProviderId);
+  }
+}
+
 TEST(GgmlCpuProvider, NativeQ8GroupedExpertsUseExactExpertIds) {
   constexpr std::int64_t experts = 3;
   constexpr std::int64_t columns = 2;
@@ -1937,6 +1982,82 @@ TEST(GgmlCpuProvider, NativeQ8GroupedExpertsUseExactExpertIds) {
   EXPECT_NEAR(actual[1], 128.0F, 0.5F);
   EXPECT_NEAR(actual[2], -64.0F, 0.5F);
   EXPECT_NEAR(actual[3], 32.0F, 0.5F);
+}
+
+TEST(GgmlCpuProvider, BfloatWeightsPreserveFloat32ActivationCancellation) {
+  using BF16 = hyle::simd::bfloat16_t;
+  constexpr std::int64_t width = 66, columns = 3;
+  auto context = Context::create(cpu::device(), ggml_cpu::provider()).value();
+  for (const auto rows : {std::int64_t{1}, std::int64_t{2}, std::int64_t{17}}) {
+    SCOPED_TRACE(rows);
+    const auto ad = dense(DataType::kFloat32, {rows, width});
+    const auto wd = dense(DataType::kBFloat16, {columns, width});
+    const auto yd = dense(DataType::kFloat32, {rows, columns});
+    std::vector<float> a(std::size_t(rows * width), 0.0F);
+    std::vector<BF16> w(std::size_t(columns * width), half_test::encode<BF16>(0));
+    for (std::int64_t row = 0; row < rows; ++row) {
+      a[std::size_t(row * width)] = 1.0F + float(row % 3 + 1) / 262144.0F;
+      a[std::size_t(row * width + 1)] = -1.0F;
+    }
+    for (std::int64_t column = 0; column < columns; ++column) {
+      const float coefficient = column == 2 ? -1.0F : float(column + 1);
+      w[std::size_t(column * width)] = w[std::size_t(column * width + 1)] =
+          half_test::encode<BF16>(coefficient);
+    }
+    EXPECT_EQ(half_test::decode(half_test::encode<BF16>(a[0])), 1.0);
+    auto activation = half_test::buffer<float>(a), weights = half_test::buffer<BF16>(w);
+    auto output = output_buffer(yd);
+    const std::array inputs{ConstTensorView::create(ad, activation.view()).value(),
+                            ConstTensorView::create(wd, weights.view()).value()};
+    auto status = execute(context, model_ops::bfloat_linear_f32(), inputs,
+                          TensorView::create(yd, output.view()).value());
+    ASSERT_TRUE(status.ok()) << status.message();
+    const auto actual = half_test::read<float>(output);
+    for (std::int64_t row = 0; row < rows; ++row)
+      for (std::int64_t column = 0; column < columns; ++column) {
+        const float coefficient = column == 2 ? -1.0F : float(column + 1);
+        const float expected = coefficient * float(row % 3 + 1) / 262144.0F;
+        EXPECT_EQ(actual[std::size_t(row * columns + column)], expected);
+      }
+    const std::array ordinary_inputs{ad, wd.transposed().value()};
+    EXPECT_FALSE(infer_single_output(Operation(MatMul{}), ordinary_inputs));
+  }
+}
+
+TEST(GgmlCpuProvider, BatchedBfloatWeightsPreserveOriginalFloat32Rows) {
+  using BF16 = hyle::simd::bfloat16_t;
+  constexpr std::int64_t batches=3,width=66,columns=4;
+  auto context=Context::create(cpu::device(),ggml_cpu::provider()).value();
+  for(const auto rows:{std::int64_t{1},std::int64_t{2},std::int64_t{17}}) {
+    SCOPED_TRACE(rows);
+    const auto ad=dense(DataType::kFloat32,{batches,rows,width});
+    const auto wd=dense(DataType::kBFloat16,{batches,columns,width});
+    const auto yd=dense(DataType::kFloat32,{batches,rows,columns});
+    std::vector<float> a(std::size_t(batches*rows*width),0.F);
+    std::vector<BF16> w(std::size_t(batches*columns*width),half_test::encode<BF16>(0));
+    for(std::int64_t b=0;b<batches;++b) {
+      for(std::int64_t m=0;m<rows;++m) {
+        const auto start=std::size_t((b*rows+m)*width);
+        a[start]=1.F+float((b+m)%3+1)/262144.F;a[start+1]=-1.F;
+      }
+      for(std::int64_t n=0;n<columns;++n) {
+        const auto first=std::size_t((b*columns+n)*width);
+        w[first]=w[first+1]=half_test::encode<BF16>(float((b+1)*(n+1)));
+      }
+    }
+    auto activation=half_test::buffer<float>(a),weights=half_test::buffer<BF16>(w);
+    auto output=output_buffer(yd);
+    const std::array inputs{ConstTensorView::create(ad,activation.view()).value(),
+                            ConstTensorView::create(wd,weights.view()).value()};
+    const auto status=execute(context,model_ops::bfloat_linear_f32(),inputs,
+        TensorView::create(yd,output.view()).value());
+    ASSERT_TRUE(status.ok())<<status.message();
+    const auto actual=half_test::read<float>(output);
+    for(std::int64_t b=0;b<batches;++b)for(std::int64_t m=0;m<rows;++m)
+      for(std::int64_t n=0;n<columns;++n)
+        EXPECT_EQ(actual[std::size_t((b*rows+m)*columns+n)],
+            float((b+1)*(n+1))*float((b+m)%3+1)/262144.F);
+  }
 }
 
 TEST(GgmlCpuProvider, BfloatRouterMatMulRetainsNativeF32Score) {

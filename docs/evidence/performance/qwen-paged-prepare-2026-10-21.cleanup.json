@@ -1,0 +1,78 @@
+{
+  "scope": "Reproducible linker outputs and superseded correctness images with published source/command/result evidence; keep current CPU/CUDA/model images, paged-before ff42 and dense performance/multi-session baselines, all objects and source",
+  "files": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-prepare-20261021\\cpu-link1\\cpu.exp",
+      "bytes": 24967,
+      "sha256": "56003168f9fa2ddf546514bd69763afe63b08ed2f8bf72c358514cce8c9597b4"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-prepare-20261021\\cpu-link1\\cpu.lib",
+      "bytes": 41298,
+      "sha256": "1a72c22d3a6dec39cca5118fd99aa738ff5f4202c029fc8a48afb6c3d20e909d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-prepare-20261021\\cpu-link1\\cpu.map",
+      "bytes": 57442393,
+      "sha256": "5815af5517fcd4effc770c8a8804f00323b0e893f6ad05b949003fa6d2d7dd16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-prepare-20261021\\cuda-link1\\cuda.exp",
+      "bytes": 24971,
+      "sha256": "b50611531004cc2b01b045f2636d870e40be0cdde69f6fc4df80cb72b0808171"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-prepare-20261021\\cuda-link1\\cuda.lib",
+      "bytes": 41384,
+      "sha256": "097299e17e955c077a99f65f363d3484d564c016359baeb643f4e47c6b737d59"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-prepare-20261021\\cuda-link1\\cuda.map",
+      "bytes": 57338680,
+      "sha256": "477e4755f9275e164aef03914562302480e479d96086a7840f6058ee1ba19ed9"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-prepare-20261021\\qwen-link1\\qwen.exp",
+      "bytes": 24971,
+      "sha256": "6243ac39e8f5bdb9eb8f56d73caac98f098ce6d96b44e6e65acda4e59041fd4f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-prepare-20261021\\qwen-link1\\qwen.lib",
+      "bytes": 41384,
+      "sha256": "339d3ce297534ebac8825c27a011f2f4f9dfe366c657ebfc45dbbfdc8412a2cb"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-prepare-20261021\\qwen-link1\\qwen.map",
+      "bytes": 58186149,
+      "sha256": "0ec9771633e9fbdb1724c139c9506431877e42411aebef71c659b106ec2a1d6d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\symbolic-rows\\cpu-link2\\cpu.exe",
+      "bytes": 139300352,
+      "sha256": "6a89650018459d9f71d85ba80e3f7362313cf593f0061dd77b79977cba7a6394"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\symbolic-rows\\cuda-link1\\cuda.exe",
+      "bytes": 139241472,
+      "sha256": "f010c99f434840f6a176e5b082a8b447d0b2dfcbbdb132f688fb1ef9413ccf1c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\unbind-tests\\link3\\unbind-host.exe",
+      "bytes": 139219968,
+      "sha256": "75f0563dcefdf4b3b244649b333101b7efb0a15db2fed0cbc2693a10e60cf174"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\link1\\qwen.exe",
+      "bytes": 139648000,
+      "sha256": "51e10e79f388257c382098a946e68b63d51d321076a94e6319ab5503ba2c4426"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\cuda-link1\\cuda.exe",
+      "bytes": 139243008,
+      "sha256": "976315c5f6d8d7862bab6f71cabb10c0e3eed6e9a2e2e92f0c3ee07737739f6c"
+    }
+  ],
+  "deleted_files": 14,
+  "removed_payload_bytes": 869818997.0,
+  "completed_utc": "2026-10-21T10:27:17.4895492Z"
+}

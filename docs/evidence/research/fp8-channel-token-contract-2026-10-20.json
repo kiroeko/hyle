@@ -1,0 +1,81 @@
+{
+  "date": "2026-10-20",
+  "kind": "Read-only source-contract research snapshot",
+  "status": "read-only contract research; not supported or implemented",
+  "research_actions": {
+    "product_edits": 0,
+    "test_edits": 0,
+    "builds": 0,
+    "GPU_runs": 0,
+    "model_payload_bytes_read": 0,
+    "SDK_downloads": 0,
+    "new_goals": 0
+  },
+  "scope": "Preserves the original research and its correction. Packaging is not a new implementation, support claim, benchmark or runtime validation; subsequent Bool Cast changes and CT consumer runs are outside this snapshot.",
+  "conclusion": [
+    "The selected artifact is a real missing channel-weight/token-activation FP8 domain; existing block128 descriptors do not describe it. Metadata alone does not identify a unique deployment quantizer or dot accuracy contract.",
+    "There are mature source-level building blocks. Locked Torch has Linux SM89 rowwise FP8 but explicitly excludes Windows. Fixed cuBLAS13.3 documents native outer-vector FP8 scaling on SM90; SM89 tensorwide unit-scale FP8 dot plus ordered ordinary pointwise scales is a natural distinct deployment candidate.",
+    "The previous seven-shape native FP8 dot smoke failed the strict existing F32 dot bound. Therefore no mature FP8 Tensor Core candidate may silently replace Cast(FP8,F32)+ordinary F32 MatMul or fixed CT BF16 QDQ."
+  ],
+  "contract_boundaries": {
+    "ct_bf16_qdq_reference": "The fixed CT Python reference quantizes and dequantizes in the participating tensor/scale dtype. BF16 scales imply BF16 per-element dequantization rounding before ordinary linear arithmetic. Its zero-only epsilon substitution and typed divide must not be replaced by an arbitrary F32 minimum floor or reciprocal recipe. TOKEN rank behavior and all qualifications are retained in contract-review.json.",
+    "deployment_fp8_dot_candidate": "The distinct SM89 deployment candidate first performs an explicitly low-precision FP8 code dot to F32, then ordered RN32(S*As), RN32(P*Cast(Ws,F32)^T), and final BF16_RNE. It does not establish equivalence to CT BF16 QDQ or to strict Cast(FP8,F32)+F32 MatMul.",
+    "acceptance": "No deployment quantizer/version, model quality or accepted quantitative FP8 dot error contract was established by this read-only research."
+  },
+  "artifact": {
+    "repository": "Freesolo-Co/Qwen3.5-2B-FP8",
+    "revision": "e200465690a076860468c19bec107ac54a257953",
+    "metadata_only": true,
+    "fact": "All186 language-role weights are F8_E4M3 [N,K] codes with separate BF16[N,1] scales; all actual N,K are divisible16. Existing ignore list leaves mixed BF16 roles.",
+    "not_proven": "No weight values, scale positivity/finiteness, calibration quality, base-model commit or deployed runtime version inferred from headers."
+  },
+  "authoritative_report": {
+    "archive_path": "contract-review.json",
+    "source_path": ".scratch/architecture-refactor-2026-10-18/fp8-channel-token-contract-review/contract-review.json",
+    "bytes": 17493,
+    "sha256": "0d7c2e8f6065c2318df49f2b204c76e795328fe2cc27c966c61527f483b88e01",
+    "role": "Authoritative corrected read-only report; preserved byte-for-byte"
+  },
+  "superseded_report": {
+    "archive_path": "first-review.before-decorator-correction.json",
+    "source_path": ".scratch/architecture-refactor-2026-10-18/fp8-channel-token-contract-review/first-review.before-decorator-correction.json",
+    "bytes": 16561,
+    "sha256": "3021ec16ee7eebb8d4d66c48b9e72337cf94371ece73e3203d7de695b57ec248",
+    "role": "Superseded first report; its FlashInfer decorator eligibility reading is corrected by contract-review.json"
+  },
+  "review_correction": "Corrected one FlashInfer architecture-eligibility reading after tracing the actual decorator body: common-check CC metadata does not gate named-backend calls. No product/runtime claim changed.",
+  "existing_numeric_failure": {
+    "path": "docs/evidence/correctness/cuda-fp8-codedot-feasibility-2026-10-20.json",
+    "bytes": 25247,
+    "sha256": "90d5d0c0924c53be5bfb236170929f1f85492e60888c16de10f56d7c04046f75",
+    "archive_copy": "prior-evidence/cuda-fp8-codedot-feasibility-2026-10-20.json",
+    "conclusion": "Seven actual Windows SM89 shapes execute and capture/replay, but all violate the existing strict F32 coded-dot reference error bound. Do not replace the public FP8 Cast/Cast/F32 MatMul subgraph with this carrier.",
+    "api_execution_passed": true,
+    "strict_f32_passed": false,
+    "existing_archive": {
+      "path": "docs/evidence/correctness/cuda-fp8-codedot-feasibility-2026-10-20.zip",
+      "bytes": 75352,
+      "sha256": "03b6efe937cebea50f8fee4f44df3bc7acb5645cf5018fbb48104225dc0cd68c"
+    },
+    "not_rerun_for_packaging": true
+  },
+  "archive": {
+    "path": "docs/evidence/research/fp8-channel-token-contract-2026-10-20.zip",
+    "bytes": 153585,
+    "sha256": "88753ef36267e4edc9b18ce2f68a9b7afd6d263fda695c77a1c33a82be234ffa",
+    "entries": 17,
+    "uncompressed_bytes": 834109,
+    "identity": {
+      "path": "identity.json",
+      "bytes": 6797,
+      "sha256": "1e04ef9604e85d228d87b6e07582c53bad5188cd89579d6befe11d5e5a039c43"
+    },
+    "content": "Corrected and superseded reports, original source-download manifest, seven fixed upstream sources, two cached vLLM sources, artifact header/facts/recipe, existing code-dot failure receipt; no SDK, executable, object file or model payload."
+  },
+  "verification": {
+    "zip_integrity": "PASS",
+    "entry_bytes_match_inputs": true,
+    "recorded_source_and_metadata_sha256_match": true,
+    "report_bytes_preserved": true
+  }
+}

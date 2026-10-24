@@ -1,0 +1,107 @@
+{
+  "status": "complete",
+  "removed_files": 12,
+  "removed_bytes": 345725913,
+  "targets": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-channel-token-cross-backend\\cpu\\checks\\attempt2\\cpu.exe",
+      "bytes": 27749888,
+      "sha256": "ce2f0369be5ecf75764002680144dd1a7f8fe9fbb6a8abb64011549636b3339c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-channel-token-cross-backend\\cpu\\checks\\attempt2\\cpu.exp",
+      "bytes": 25018,
+      "sha256": "c38f2750d3de4ea07ea3817916ca832ad973ea4dfb6e42c275d24887e2788694"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-channel-token-cross-backend\\cpu\\checks\\attempt2\\cpu.lib",
+      "bytes": 41298,
+      "sha256": "1a72c22d3a6dec39cca5118fd99aa738ff5f4202c029fc8a48afb6c3d20e909d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-channel-token-cross-backend\\cpu\\checks\\attempt2\\cpu.map",
+      "bytes": 42731598,
+      "sha256": "10cfb0cdd09cf37ee7609a0254d464005b2fe5e11a38b1f73ef3270a59e835e3"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-channel-token-cross-backend\\cuda\\checks\\attempt1\\cuda.exe",
+      "bytes": 123093504,
+      "sha256": "dc1d8da94787596631e9ee8817dcb4e20a2fbf0c5ff1a4c1a347f23208d2b7e2"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-channel-token-cross-backend\\cuda\\checks\\attempt1\\cuda.exp",
+      "bytes": 25022,
+      "sha256": "e3a6304f41f27da842d26857bbb6df7861685d02cf08e210aabecdc63d2c5903"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-channel-token-cross-backend\\cuda\\checks\\attempt1\\cuda.lib",
+      "bytes": 41384,
+      "sha256": "097299e17e955c077a99f65f363d3484d564c016359baeb643f4e47c6b737d59"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-channel-token-cross-backend\\cuda\\checks\\attempt1\\cuda.map",
+      "bytes": 45828441,
+      "sha256": "832722448681477e593ca9f431a5bb7512daafd6eb58eb7a8b60219c620729ee"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-channel-token-cross-backend\\vulkan\\checks\\ct-qdq-reference-test.exe",
+      "bytes": 68962304,
+      "sha256": "12a5e047187e9eae154d931cee51436bd44f54f86fd8e12afcef39caadf3cfb0"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-channel-token-cross-backend\\vulkan\\checks\\ct-qdq-reference-test.exp",
+      "bytes": 25048,
+      "sha256": "5da091bcd4c56e8c4fe25172c462ff76a05d5b1cf3b42bc23e7cf2e1c7abe2a7"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-channel-token-cross-backend\\vulkan\\checks\\ct-qdq-reference-test.lib",
+      "bytes": 42968,
+      "sha256": "bf670fa3752af15c35f5c0adeb6cab02123fa41e433c759d0133791096ba09ee"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-channel-token-cross-backend\\vulkan\\checks\\ct-qdq-reference-test.map",
+      "bytes": 37159440,
+      "sha256": "a62c31761bab6ee82549a8999ee3076a849e8e7ab964d5eb12ac3039dcc30acc"
+    }
+  ],
+  "protected": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-channel-token-cross-backend\\cpu\\checks\\attempt2\\ct-qdq-test.obj",
+      "bytes": 1599312,
+      "sha256": "1b1ba814a079e1ad4333b454c8dcfd8c07dbf6799b029e0b3a6ddd2584509cb5"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-channel-token-cross-backend\\cuda\\checks\\attempt1\\ct-qdq-test.obj",
+      "bytes": 1729732,
+      "sha256": "fef4b838333ed037ebfdabbbd6c3ac5c242e5381da3b346b2835d0aee6b464e4"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-channel-token-cross-backend\\vulkan\\checks\\ct-qdq-test.obj",
+      "bytes": 2220800,
+      "sha256": "96fe80e2810d21d1e55554da7247a7bcc9e8c9b37b8d39f3422fd4818021ab77"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-channel-token-cross-backend\\vulkan\\checks\\vulkan_shaders.obj",
+      "bytes": 632916,
+      "sha256": "3646614c3fa04483711e0e69e62952f7c8483f3a8bc06c5f81e10c805ba24fb7"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-channel-token-cross-backend\\vulkan\\checks\\vulkan_tensor.obj",
+      "bytes": 1311630,
+      "sha256": "a48215409875e487a2a93b034b695fff51bdbdcc78381a866b5aa29442993efc"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-prepare-cost\\candidate\\qwen.exe",
+      "bytes": 117832192,
+      "sha256": "6e09735e395e86412d4588cf67507fe5902d149e3e03f674b688ddde5cddf1f8"
+    }
+  ],
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\ct-channel-token-cross-backend-2026-10-20.zip",
+    "bytes": 1845861,
+    "sha256": "1847350c0d87362d51a7f5c48ab62ef834cacdcb04ed1c2560bc16b5eb1d5e60"
+  },
+  "cleanup_script_sha256": "2e1d456e52491129583aec47bf8316109b6b5fe64b48ab0833a3b4ccd5e326eb",
+  "cleanup_script": "$ErrorActionPreference = 'Stop'\r\n$workspaceRoot = 'C:\\public\\project-hyle\\hyle'\r\n$planPath = Join-Path $workspaceRoot '.scratch\\architecture-refactor-2026-10-18\\ct-channel-token-cross-backend\\root\\cleanup-plan.json'\r\n$receiptPath = Join-Path $workspaceRoot 'docs\\evidence\\correctness\\ct-channel-token-cross-backend-2026-10-20.cleanup.json'\r\nif (Test-Path -LiteralPath $receiptPath) { throw 'This exact cleanup already has a receipt; do not rerun.' }\r\n$plan = Get-Content -LiteralPath $planPath -Raw -Encoding UTF8 | ConvertFrom-Json\r\n$allowedRoot = (Resolve-Path -LiteralPath $plan.root).ProviderPath.TrimEnd('\\') + '\\'\r\n$expectedRoot = (Join-Path $workspaceRoot '.scratch\\architecture-refactor-2026-10-18\\ct-channel-token-cross-backend').TrimEnd('\\') + '\\'\r\nif ($allowedRoot -ine $expectedRoot) { throw 'Unexpected cleanup root.' }\r\nfunction Assert-Identity($entry) {\r\n    $item = Get-Item -LiteralPath $entry.path\r\n    if ($item.PSIsContainer -or ($item.Attributes -band [IO.FileAttributes]::ReparsePoint)) { throw 'Expected an ordinary exact file.' }\r\n    if ($item.Length -ne $entry.bytes) { throw \"Size changed: $($entry.path)\" }\r\n    if ((Get-FileHash -LiteralPath $entry.path -Algorithm SHA256).Hash -ine $entry.sha256) { throw \"Hash changed: $($entry.path)\" }\r\n}\r\nAssert-Identity $plan.artifact\r\nforeach ($entry in $plan.protected) { Assert-Identity $entry }\r\nforeach ($entry in $plan.targets) {\r\n    $resolved = (Resolve-Path -LiteralPath $entry.path).ProviderPath\r\n    if (-not $resolved.StartsWith($allowedRoot, [StringComparison]::OrdinalIgnoreCase)) { throw 'Target escapes the exact batch directory.' }\r\n    if ([IO.Path]::GetExtension($resolved) -notin @('.exe','.map','.lib','.exp')) { throw 'Unexpected deletion extension.' }\r\n    Assert-Identity $entry\r\n}\r\nforeach ($entry in $plan.targets) { Remove-Item -LiteralPath $entry.path -Force }\r\nforeach ($entry in $plan.protected) { Assert-Identity $entry }\r\nforeach ($entry in $plan.targets) { if (Test-Path -LiteralPath $entry.path) { throw 'Deletion incomplete.' } }\r\n$receipt = [ordered]@{\r\n    status = 'complete'\r\n    removed_files = @($plan.targets).Count\r\n    removed_bytes = $plan.reclaim_bytes\r\n    targets = $plan.targets\r\n    protected = $plan.protected\r\n    archive = $plan.artifact\r\n    cleanup_script_sha256 = (Get-FileHash -LiteralPath $PSCommandPath -Algorithm SHA256).Hash.ToLowerInvariant()\r\n    cleanup_script = Get-Content -LiteralPath $PSCommandPath -Raw\r\n    scope = $plan.scope\r\n}\r\n$receipt | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath $receiptPath -Encoding utf8\r\nWrite-Output \"Removed $(@($plan.targets).Count) exact rebuildable files, $($plan.reclaim_bytes) bytes; all protected objects and current Qwen consumer remain unchanged.\"\r\n",
+  "scope": "Only this completed Windows CT QDQ package executable/map/import files; retain all current increment objects, commands, sources/results and the unchanged Qwen consumer. No recursive removal or Mac operation."
+}

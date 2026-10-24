@@ -5,14 +5,12 @@
 
 #include "hyle/core/compiler.h"
 
-// Compile-time alignment helpers (clay alignment.h, generalized). All take a
+// Compile-time alignment helpers. All take a
 // power-of-two alignment; bit tricks below are only valid for powers of two, so
 // each asserts it. Sizes and pointers both covered -- mem/ rounds block sizes,
 // simd/ aligns load/store addresses; PodVector aligns element storage.
 //
-// clay had only CLAY_ALIGNMENT + align_size() (which min-clamps to alignment, an
-// allocation-sizing quirk); HYLE provides the full up/down/is_aligned set with
-// no surprising clamp.
+// The up/down/is_aligned helpers do not clamp a size to the alignment.
 
 namespace hyle::mem {
 

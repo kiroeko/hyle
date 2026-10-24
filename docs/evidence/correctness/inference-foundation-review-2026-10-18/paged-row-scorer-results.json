@@ -1,0 +1,295 @@
+{
+  "status": "validated",
+  "broader_goal": "active and incomplete",
+  "windows": {
+    "status": "frozen-complete-no-live-process",
+    "hardware": {
+      "name": "NVIDIA GeForce RTX 4070",
+      "driver": "617.14",
+      "memory_mib": 12282
+    },
+    "results": {
+      "final_current": {
+        "tests": 18,
+        "failures": 0,
+        "run": "019-final-run",
+        "report": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\paged-row-scorer\\validation\\windows-current\\019-final-tests.json",
+          "bytes": 8814,
+          "sha256": "1632870538eb304ecd1ba58cf1c8757060393d48b450d179e1c7892ea8aa2a05"
+        }
+      },
+      "same_final_test_old_product_control": {
+        "tests": 6,
+        "failures": 6,
+        "expected": true,
+        "run": "021-old-product-final6-run",
+        "report": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\paged-row-scorer\\validation\\windows-current\\021-old-product-final6-tests.json",
+          "bytes": 4567,
+          "sha256": "0fd4a7e65a501744bb59d11efbfb8e075ac27537bdc8508b9b520a2e6d47f08a"
+        },
+        "failure": "Vulkan custom schema needs a cold native pipeline"
+      },
+      "initial_current": {
+        "tests": 18,
+        "failures": 2,
+        "run": "016-current-run",
+        "cause": "Two masked maximal candidates overlap unconstrained TopK, preventing exact cover. Root added ordinary masked fallback proposals; final source unchanged test passes."
+      }
+    },
+    "build": {
+      "strict": "/W4 /WX",
+      "initial_product_tus": 6,
+      "additional_region_tu_after_candidate_fix": 1,
+      "shader_variants_compiled": 1,
+      "shader_name": "row_cache_paged_indexer",
+      "shader_target": "vulkan1.2",
+      "tests_tus_final": 2,
+      "earlier_fixture_test_compile_retained": true,
+      "sdk_rebuilt": false,
+      "existing_native_shader_object_retained": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-foundation-review-2026-10-18\\native-row-cache-padded\\shaders.obj",
+      "baseline_reused_input_files": 150,
+      "baseline_input_drift": 0
+    },
+    "final_matched_plan": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\paged-row-scorer\\validation\\windows-current\\matched-link-plan.json",
+      "bytes": 103520,
+      "sha256": "b3866fdc0739f8fa3c058dabaca30133f51bcd0a16b0ae428e6ae1245667b698"
+    },
+    "selected_fresh_owners": [
+      {
+        "source": "src/compute_route_vulkan/vulkan_row_cache.cc",
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\paged-row-scorer\\validation\\windows-current\\src--compute_route_vulkan--vulkan_row_cache.obj",
+          "bytes": 304438,
+          "sha256": "4d99eaefe4877cf1478f908008d8542810772a829dd4015c9402cc67da902d3a"
+        }
+      },
+      {
+        "source": "src/compute_route_vulkan/vulkan_operations.cc",
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\paged-row-scorer\\validation\\windows-current\\src--compute_route_vulkan--vulkan_operations.obj",
+          "bytes": 237019,
+          "sha256": "fd76e08b5903ea8b8a81c85a1d25e4c8f616b65dec167f85002d0f255fc47b11"
+        }
+      },
+      {
+        "source": "src/compute_route_vulkan/vulkan_row_cache_indexer.cc",
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\paged-row-scorer\\validation\\windows-current\\src--compute_route_vulkan--vulkan_row_cache_indexer.obj",
+          "bytes": 259615,
+          "sha256": "d2de366f94140e4571beb3d5b22e707437817ad15ff9353048167ec102810cf0"
+        }
+      },
+      {
+        "source": "src/compute_route_vulkan/vulkan_program.cc",
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\paged-row-scorer\\validation\\windows-current\\src--compute_route_vulkan--vulkan_program.obj",
+          "bytes": 2434428,
+          "sha256": "370e1b0e9c2874242506dab4c412d8de36da120cd9c3ca3979a48bbb837af6b0"
+        }
+      },
+      {
+        "source": "src/graph_route_vulkan/native_region.cc",
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\paged-row-scorer\\validation\\windows-current\\src--graph_route_vulkan--native_region-fallback.obj",
+          "bytes": 2140986,
+          "sha256": "101707fbabbe1b5a86535a1614c7f897dd3c01d3d6cd1a35f11e8e4278154852"
+        }
+      },
+      {
+        "source": "src/graph_route_vulkan/vulkan_lowering.cc",
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\paged-row-scorer\\validation\\windows-current\\src--graph_route_vulkan--vulkan_lowering.obj",
+          "bytes": 1531998,
+          "sha256": "402a1491d2b62574193ca3410665147c53592b2672a9887ccb29d70368422977"
+        }
+      },
+      {
+        "source": "tests/graph_batch/native_row_cache_indexer_test.cc",
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\paged-row-scorer\\validation\\windows-current\\tests--graph_batch--native_row_cache_indexer_test-ownedlayout.obj",
+          "bytes": 2238973,
+          "sha256": "ce894ed3ed80cdb9e9c2475a0f4028d92995a05774ab7499f25fde7d29792fcf"
+        }
+      },
+      {
+        "source": "tests/compute_route_vulkan/row_cache_indexer_test.cc",
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\paged-row-scorer\\validation\\windows-current\\tests--compute_route_vulkan--row_cache_indexer_test.obj",
+          "bytes": 958547,
+          "sha256": "d77b51261a9c4775fa41e5feaa3d7264164416e825e6609fce29d6ee82918c90"
+        }
+      },
+      {
+        "source": "generated/row_cache_paged_indexer_shaders.cc",
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\paged-row-scorer\\validation\\windows-current\\row-cache-paged-shader.obj",
+          "bytes": 27962,
+          "sha256": "4874ff87278d992b6fb609121688acc5ff66a168907871cd3804f9666b979497"
+        }
+      }
+    ],
+    "source_identities": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\paged-row-scorer\\validation\\windows-current\\final-source-identities.json",
+      "bytes": 2862,
+      "sha256": "6df09dd25b99baaa8e5cb4aca2012ba4971af9340b0643cb221d59d74fb01b72"
+    },
+    "actual_headers": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\paged-row-scorer\\validation\\windows-current\\actual-compile-dependencies.json",
+      "bytes": 86586,
+      "sha256": "484ad1838d59b2fb18ecd3f3b6a00245a746988e8e82ac2d71625b5d4d1871fe"
+    },
+    "map_owner_text": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\paged-row-scorer\\validation\\windows-current\\final-map-selected-owners.txt",
+      "bytes": 729108,
+      "sha256": "085bd56bdf01399ec9962bc30936fa9d705a1cc7b5c4b4bdb244c7a28a973e3c"
+    },
+    "cleanup": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\paged-row-scorer\\validation\\windows-current\\cleanup-identities.json",
+      "bytes": 9276,
+      "sha256": "9eb3c96eca9debdb43666e1feab8348a76628a296288d6b626525a38d5cee9ef"
+    },
+    "not_claimed": [
+      "No performance or full-model result.",
+      "Scores retain O(T*C) output and declared temporary allocation costs.",
+      "Existing cached old four-port and remaining native shaders reused; only new paged variant compiled."
+    ],
+    "all_images_closed": true,
+    "cleanup_file_count": 16,
+    "retain_file_count": 15
+  },
+  "apple": {
+    "status": "current_scorer_6_pass_old_same_fixture_6_fail",
+    "hardware": {
+      "model": "Mac16,12",
+      "cpu": "Apple M4",
+      "memory": "17179869184",
+      "system": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+      "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin"
+    },
+    "current": {
+      "link": "026-current-link",
+      "run": "027-current-run",
+      "tests": 6,
+      "passed": 6,
+      "failed": 0
+    },
+    "adjacent": {
+      "run": "015-current-run",
+      "passed": 19,
+      "total": 19,
+      "note": "Earlier bounded run; its six new scorer cases failed cold Metal compilation. The 19 adjacent controls passed before the new-scorer-only helper and constrained proposal fixes. Not a final single 25/25 run."
+    },
+    "old_same_fixture": {
+      "link": "028-old-final-link",
+      "run": "029-old-final-run",
+      "tests": 6,
+      "passed": 0,
+      "failed": 6,
+      "same_object": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/paged-row-scorer/validation/021-layout-fixed-test.o",
+        "bytes": 306952,
+        "sha256": "b519f9afbd0b3757bd2b37c42e28694f2782807c10303096a634a0dc8ea96cc2"
+      },
+      "reason": "three complete/empty chains exhaust placement attempts; three standalone scorer routes have no admitted MLX lowering"
+    },
+    "original_old5": {
+      "run": "008-old-run",
+      "passed": 0,
+      "total": 5
+    },
+    "failures_retained": [
+      {
+        "tags": [
+          "002-test-v1-compile",
+          "004-test-api-fixed-compile"
+        ],
+        "reason": "TopK fixture API conversion errors"
+      },
+      {
+        "run": "015-current-run",
+        "reason": "Metal helper incorrectly referenced function template Q_OFFSET from global header"
+      },
+      {
+        "run": "019-current-run",
+        "reason": "Fixture created different owned LayoutVersion for prepare and bind"
+      },
+      {
+        "run": "023-current-run",
+        "reason": "Overlapping maximal proposals omitted a feasible constrained native cut"
+      }
+    ],
+    "fresh_products": [
+      "apple_row_cache_indexer.cc",
+      "apple_mature_float.cc",
+      "graph_route_apple/native_region.cc"
+    ],
+    "final_selected_owners": "results/selected-current-owners.json",
+    "source_count": 122,
+    "dependencies": 105,
+    "drift": [],
+    "no_sdk_air_or_prebuilt_metallib_rebuild": true,
+    "original_math_artifacts": [
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/f32-partials/mlx.metallib",
+        "bytes": 1666552,
+        "sha256": "cabb611108c741e6132c3b518d832dc0b8c730868415d3c44789526823095636"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/f32-partials/native-host.f32.o",
+        "bytes": 123032,
+        "sha256": "f5fffb14d1ddbff88737830677125b6be027f41c0bf29eb601b95aaf41fafd02"
+      }
+    ],
+    "runtime_metal": "New MLX metal_kernel source compiled naturally during cold preparation; no SDK/metallib replacement.",
+    "cleanup": {
+      "manifest": "cleanup-mac.json",
+      "files": 4,
+      "bytes": 38542260
+    },
+    "retained_stage_objects": 8,
+    "retained_original_math_artifacts": 2,
+    "live_process": false,
+    "not_claimed": [
+      "native page 64-step consumer rerun in this slice",
+      "full-model accuracy/performance",
+      "zero warm allocation",
+      "final one-run 25/25"
+    ]
+  },
+  "same_final_fixture": true,
+  "fixes": [
+    "Native five-input FP4 paged scorer on Apple and Vulkan, actual bank port1 and final native access proofs, original ready/pending permission and completion owners.",
+    "Apple bounded per-request key tiles, original BF16 gather_mm and sequential finish; Vulkan original numerical loop with paged address translation and whole metadata/range validation.",
+    "Constrained native-only sources append singleton fallbacks through the fixed original proposal writer so overlapping maximal regions can form a complete cover. Default unconstrained discovery is unchanged; no new hot dispatch or executor."
+  ],
+  "test_contract": "Shared source and independent FP4/BF16 oracle; exact page permissions; true empty bank access; full scorer/TopK/FP8 gather/Sink chain, fusion/split, original slots and pending copy Update.",
+  "costs": "Full O(T*C) scores remain, plus bounded key/dot tiles. No streamed TopK or native sparse Sink fusion. Original MLX runtime preparation and native allocations remain.",
+  "failed_attempts_retained": [
+    "Two TopK test API compile mistakes",
+    "Apple new Metal helper template scope failure, then one-TU fix",
+    "Fixture used new LayoutVersion owners for otherwise equal metadata; fixed to reuse the exact prepared version",
+    "Both platforms forced split could not cover overlapping maximal candidates; actual product discovery fix"
+  ],
+  "limits": [
+    "No new Linux journey or CPU/CUDA mathematical run in this slice.",
+    "No full-model accuracy or sustained llama.cpp throughput acceptance.",
+    "No new native 64-step loop or Direct late-source-failure injection.",
+    "Air adjacent19 passed before the final two narrowly scoped fixes; only final6 rerun after them.",
+    "Whole metadata checks establish no payload read on invalid input by native control flow; no hardware load trace."
+  ],
+  "artifacts": {
+    "canonical_source_manifest": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\paged-row-scorer\\final-source-identities.json",
+      "bytes": 3761,
+      "sha256": "c08798e6444491cc1af31e47174df1c927e540d09de34ad74b12614eed9aec8a"
+    },
+    "cleanup_plan": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\paged-row-scorer\\cleanup-plan.json",
+      "bytes": 578,
+      "sha256": "4a74841063cd00e8c8fc312eadc4bd3df83331f259bf9a45c3e95c1b7ad19391"
+    }
+  }
+}

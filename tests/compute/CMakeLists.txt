@@ -8,8 +8,9 @@ if(NOT HYLE_STATIC)
 endif()
 hyle_add_test(compute SOURCES
   completion_test.cc copy_ranges_test.cc provider_test.cc resource_leases_test.cc
+  shared_backing_budget_test.cc retained_lease_budget_test.cc
   route_policy_test.cc shape_domain_test.cc shape_program_test.cc tensor_test.cc
-  workload_test.cc)
+  weight_import_test.cc workload_test.cc)
 if(NOT HYLE_STATIC)
   target_link_libraries(hyle_compute_test PRIVATE hyle_compute_result_fixture)
 endif()

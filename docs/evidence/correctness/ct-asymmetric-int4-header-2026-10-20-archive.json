@@ -1,0 +1,13 @@
+{
+  "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\ct-asymmetric-int4-header-2026-10-20.zip",
+  "bytes": 318369,
+  "sha256": "42873cc1b4b06ca069a11844081f22bca72abea195a6fd5e224b0cd6bbe9429a",
+  "payload_entries": 72,
+  "total_entries": 73,
+  "crc_verified": true,
+  "payload_sha256_verified": true,
+  "tensor_payload_bytes_read": 0,
+  "build_or_GPU_run": false,
+  "includes": "Fixed config/index/API, five header+prefix pairs, HTTP receipts and first client parser failure, all399 roles, pinned CT source, relevant local source snapshots and read-only design.",
+  "limits": "No weight payload/weight_shape values/full shard rehash/provider execution/whole-model or quality claim."
+}

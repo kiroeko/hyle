@@ -1,0 +1,1179 @@
+{
+  "date": "2026-10-21",
+  "created_utc": "2026-10-21T14:44:23.344153+00:00",
+  "status": "Two host preparation changes implemented, related CPU/CUDA/realQwen checks and one finite four-arm comparison complete. Broader goal remains active.",
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\qwen-paged-host-prepare-2026-10-21.zip",
+    "bytes": 1593225,
+    "sha256": "3d957ee7e3d86eef5b194a08800a67ac091e247c5e0836f00cd5201c9b29e089"
+  },
+  "archive_file_count": 381,
+  "current_image": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\qwen-link3\\qwen.exe",
+    "bytes": 139773952,
+    "sha256": "e7a7597d4bf7064393ce40c82f835f0cda0af3cc4f0a2b3307463bc52dd69301"
+  },
+  "current_ready": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\qwen-ready-attempt3.json",
+    "bytes": 1410,
+    "sha256": "03fa1ae36203d51845a7770041a8c37b2f23bee951bc972e0d60631033e9eba0"
+  },
+  "source_freeze": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\implementation\\source-freeze.json",
+    "bytes": 1856,
+    "sha256": "adef584df658c85b71b9a22eaafc644fd41bd5a09d04a4fbb849a987b407bdb7"
+  },
+  "sources": [
+    {
+      "current": {
+        "path": "C:\\public\\project-hyle\\hyle\\tools\\qwen35_text\\main.cc",
+        "bytes": 131729,
+        "sha256": "f1a6ce9dab41e1845e7e9e2e74a6354d0729054abbf2237acaa51120daf3dea8"
+      },
+      "frozen": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\implementation\\source\\tools\\qwen35_text\\main.cc",
+        "bytes": 131729,
+        "sha256": "f1a6ce9dab41e1845e7e9e2e74a6354d0729054abbf2237acaa51120daf3dea8"
+      },
+      "before": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\before\\tools\\qwen35_text\\main.cc",
+        "bytes": 131385,
+        "sha256": "de6d7a8528325469240759150d9cabc52aecb895592a1be5e4e605309b0b113e"
+      }
+    },
+    {
+      "current": {
+        "path": "C:\\public\\project-hyle\\hyle\\src\\graph_batch\\paged_append.cc",
+        "bytes": 41901,
+        "sha256": "15c80e1f043a054db5a7e6b84236a46a5abd9ccf49d866bdad01d6a32ee40c32"
+      },
+      "frozen": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\implementation\\source\\src\\graph_batch\\paged_append.cc",
+        "bytes": 41901,
+        "sha256": "15c80e1f043a054db5a7e6b84236a46a5abd9ccf49d866bdad01d6a32ee40c32"
+      },
+      "before": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\append-index\\before\\paged_append.cc",
+        "bytes": 40839,
+        "sha256": "926458dafe9cc49e31b1e4c0166cd12a77a08094054673bc3aa5df626cd0d2cc"
+      }
+    }
+  ],
+  "docs": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\developer\\current-work.md",
+      "bytes": 26620,
+      "sha256": "b1ea8cfdbb1af4e5a569429660bb28470f08b651149b8662d93475aa8b487751"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\developer\\performance\\decode.md",
+      "bytes": 31904,
+      "sha256": "341d431189f3ff3f1bf9a040407cfc492b4c1ba07e89b5ca17b1c745f36a415c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\architecture\\graph-design.md",
+      "bytes": 15416,
+      "sha256": "7b25d95b92632fd61061cb07b80f77823bec0862ee90f3dfcf1caa9dfd019396"
+    }
+  ],
+  "implementation": [
+    "Single inherited tail per bank is inline in StepState, removing12 one-element vector allocations. Fresh writer vectors reserve only actual new pages; any failed tail reservation rolls back before COW fallback can allocate.",
+    "Each original Invocation cold-links its exact selected append Slots once, using two private nonowning pointers per Slot and no extra registry/container/allocation. Descriptor match/occupied checks and successful-outcome latch traverseK selected append slots rather thanS full plan regions. No page permission/epoch/ready fact is cached.",
+    "Original indexed node visitor/idle/native-retired/result/outcome gates remain. Full resolved old/new page mappings, Queue/resource/host/capacity equality, splitting, separate Invocation metadata, invalidation and actual upload wait unchanged. No public API, model math, native kernels, provider DLL or alternate executor changes."
+  ],
+  "build": {
+    "successful_host_compiles": 5,
+    "successful_links": 8,
+    "NVCC": 0,
+    "SDK_builds": 0,
+    "closure": "Exactlymain+append replaced,193 of195 inputs unchanged. Intermediate main-only images were checked but final3 alone supports final claims.",
+    "setup_correction": "Initial CPU/CUDA link helper selected nonexistentE ready2 instead of ready1, so no link launched. Corrected recipe selector; final actual CPU/CUDA builds and runs pass. No failed native/compiler command or ignored red test."
+  },
+  "correctness": {
+    "vector_count": 142,
+    "byte_equal": true,
+    "finite": true,
+    "independent_review": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\review\\runtime-comparison.json",
+      "bytes": 65769,
+      "sha256": "166ccda21ffce5da66cda3580d45ebf653e62214f2b925e4954b712429465944"
+    },
+    "native_retirement": {
+      "status": "PASS",
+      "capacity": 256,
+      "resident_limit": 1,
+      "old_prefix_tokens": 129,
+      "cancelled_candidate_tokens": 130,
+      "directory_reported_bytes": 0,
+      "old_prefix_logical_lease_bytes": 21307392,
+      "managed_bytes_while_native_pending": 42418224,
+      "managed_backing_bytes": 42418224,
+      "collector_calls": 75145,
+      "dropped_live_public_completion": true,
+      "same_page_exclusive_suffix": true,
+      "old_kv_guards_and_bytes_unchanged": true,
+      "cancel_means_native_preemption": false,
+      "timing_comparison": false
+    },
+    "cpu": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\cpu-run1\\result.json",
+      "bytes": 1067,
+      "sha256": "c7302015a3ef548e0587e0eeae950bbda0968e2afe3c6ce07d5dba68dd499f93"
+    },
+    "cuda": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\cuda-run1\\result.json",
+      "bytes": 1077,
+      "sha256": "3e6907146f10648b34c731533f462caea8f4f7acb96147b506cfe8aed6cf2c8b"
+    },
+    "limits": "WindowsCPU/CUDA tested shapes/journeys; not allOS/native backends, independent quality or simultaneous multiuser throughput."
+  },
+  "performance": {
+    "table": {
+      "status": "frozen finite unprofiled comparison; host independently recomputed",
+      "workload": "3*(256P+32D), capacity1024, same synthetic teacher-forced schedule,99 returned IDs; one process per sample",
+      "formulas": {
+        "prefill_tps": "768 / sum(this process three prefill phase walls)",
+        "full_decode_tps": "96 / sum(this process three decode phase walls)",
+        "session_output_tps": "99 / this process after-ready session_seconds",
+        "session_processed_tps": "864 / this process session_seconds"
+      },
+      "aggregation": "Compute each process rate first; median/min/max over3 separate processes per arm. Never pool processes or divide by sums of phase medians.",
+      "images": {
+        "current": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\qwen-link3\\qwen.exe",
+          "bytes": 139773952,
+          "sha256": "e7a7597d4bf7064393ce40c82f835f0cda0af3cc4f0a2b3307463bc52dd69301"
+        },
+        "before": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-exclusive-20261021\\qwen-link1\\qwen.exe",
+          "bytes": 139776000,
+          "sha256": "8a400ecf2d4603fa35c1cbcc256c8e4479ef2986d5df8627c608eb49df1827e2"
+        },
+        "dense": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\layout-workspace-facts-reuse-2026-10-21\\checks\\attempt1\\qwen.exe",
+          "bytes": 139511296,
+          "sha256": "ff74869467413bd91ecbee3b59d4c9111fe18595af574e51e1e8c1cfa08128e1"
+        },
+        "peer": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\peer-continuation\\multiround\\checks\\attempt3\\peer.exe",
+          "bytes": 35865088,
+          "sha256": "9b2591375f2abc320af17f2df530dfd6f4cccfd79211ba12c3f2551a3c79e699"
+        }
+      },
+      "timing": {
+        "current": {
+          "rates": {
+            "prefill_tps": {
+              "count": 3,
+              "min": 5359.718782255143,
+              "median": 5444.464687896771,
+              "max": 5519.6601959191885,
+              "samples": [
+                5359.718782255143,
+                5444.464687896771,
+                5519.6601959191885
+              ]
+            },
+            "full_decode_tps": {
+              "count": 3,
+              "min": 101.6017623672364,
+              "median": 101.64725733464374,
+              "max": 101.65431813777761,
+              "samples": [
+                101.65431813777761,
+                101.6017623672364,
+                101.64725733464374
+              ]
+            },
+            "session_output_tps": {
+              "count": 3,
+              "min": 91.00679995455175,
+              "median": 91.15412726552533,
+              "max": 91.34964112047808,
+              "samples": [
+                91.00679995455175,
+                91.15412726552533,
+                91.34964112047808
+              ]
+            },
+            "session_processed_tps": {
+              "count": 3,
+              "min": 794.2411632397243,
+              "median": 795.5269288627666,
+              "max": 797.2332315968997,
+              "samples": [
+                794.2411632397243,
+                795.5269288627666,
+                797.2332315968997
+              ]
+            }
+          },
+          "loading": {
+            "model_load_seconds": {
+              "count": 3,
+              "min": 0.813367,
+              "median": 0.827827,
+              "max": 0.844178,
+              "samples": [
+                0.844178,
+                0.827827,
+                0.813367
+              ]
+            },
+            "model_seconds": {
+              "count": 3,
+              "min": 0.893552,
+              "median": 0.904464,
+              "max": 0.927249,
+              "samples": [
+                0.927249,
+                0.904464,
+                0.893552
+              ]
+            },
+            "shape_prepare_seconds": {
+              "count": 3,
+              "min": 0.25964,
+              "median": 0.260541,
+              "max": 0.261045,
+              "samples": [
+                0.261045,
+                0.25964,
+                0.260541
+              ]
+            },
+            "startup_to_ready_seconds": {
+              "count": 3,
+              "min": 1.15464,
+              "median": 1.16463,
+              "max": 1.18883,
+              "samples": [
+                1.18883,
+                1.16463,
+                1.15464
+              ]
+            },
+            "first_token_elapsed_seconds": {
+              "count": 3,
+              "min": 1.22877,
+              "median": 1.24046,
+              "max": 1.26837,
+              "samples": [
+                1.26837,
+                1.24046,
+                1.22877
+              ]
+            }
+          },
+          "session_seconds": {
+            "count": 3,
+            "min": 1.0837481,
+            "median": 1.0860726,
+            "max": 1.0878308,
+            "samples": [
+              1.0878308,
+              1.0860726,
+              1.0837481
+            ]
+          },
+          "startup_total_seconds": {
+            "count": 3,
+            "min": 2.2385018,
+            "median": 2.2508134,
+            "max": 2.2767669,
+            "samples": [
+              2.2767669,
+              2.2508134,
+              2.2385018
+            ]
+          },
+          "cold_output_tps": {
+            "count": 3,
+            "min": 43.48271226184815,
+            "median": 43.984099259405504,
+            "max": 44.226008663473046,
+            "samples": [
+              43.48271226184815,
+              43.984099259405504,
+              44.226008663473046
+            ]
+          }
+        },
+        "before": {
+          "rates": {
+            "prefill_tps": {
+              "count": 3,
+              "min": 5294.91942828659,
+              "median": 5411.487997136421,
+              "max": 5495.6850285518,
+              "samples": [
+                5411.487997136421,
+                5294.91942828659,
+                5495.6850285518
+              ]
+            },
+            "full_decode_tps": {
+              "count": 3,
+              "min": 100.57828322090218,
+              "median": 100.83190523145333,
+              "max": 101.2946939095932,
+              "samples": [
+                101.2946939095932,
+                100.57828322090218,
+                100.83190523145333
+              ]
+            },
+            "session_output_tps": {
+              "count": 3,
+              "min": 90.02429837653455,
+              "median": 90.65869309724711,
+              "max": 90.84231471723494,
+              "samples": [
+                90.84231471723494,
+                90.02429837653455,
+                90.65869309724711
+              ]
+            },
+            "session_processed_tps": {
+              "count": 3,
+              "min": 785.6666040133924,
+              "median": 791.203139757793,
+              "max": 792.8056557140504,
+              "samples": [
+                792.8056557140504,
+                785.6666040133924,
+                791.203139757793
+              ]
+            }
+          },
+          "loading": {
+            "model_load_seconds": {
+              "count": 3,
+              "min": 0.819226,
+              "median": 0.826443,
+              "max": 0.828957,
+              "samples": [
+                0.819226,
+                0.828957,
+                0.826443
+              ]
+            },
+            "model_seconds": {
+              "count": 3,
+              "min": 0.896048,
+              "median": 0.905332,
+              "max": 0.905694,
+              "samples": [
+                0.896048,
+                0.905332,
+                0.905694
+              ]
+            },
+            "shape_prepare_seconds": {
+              "count": 3,
+              "min": 0.25328,
+              "median": 0.257315,
+              "max": 0.265617,
+              "samples": [
+                0.257315,
+                0.265617,
+                0.25328
+              ]
+            },
+            "startup_to_ready_seconds": {
+              "count": 3,
+              "min": 1.15392,
+              "median": 1.15945,
+              "max": 1.1715,
+              "samples": [
+                1.15392,
+                1.1715,
+                1.15945
+              ]
+            },
+            "first_token_elapsed_seconds": {
+              "count": 3,
+              "min": 1.22978,
+              "median": 1.23463,
+              "max": 1.25213,
+              "samples": [
+                1.22978,
+                1.25213,
+                1.23463
+              ]
+            }
+          },
+          "session_seconds": {
+            "count": 3,
+            "min": 1.0898005,
+            "median": 1.0920078,
+            "max": 1.0997031,
+            "samples": [
+              1.0898005,
+              1.0997031,
+              1.0920078
+            ]
+          },
+          "startup_total_seconds": {
+            "count": 3,
+            "min": 2.2438315,
+            "median": 2.2515627,
+            "max": 2.2713109,
+            "samples": [
+              2.2438315,
+              2.2713109,
+              2.2515627
+            ]
+          },
+          "cold_output_tps": {
+            "count": 3,
+            "min": 43.587163694763234,
+            "median": 43.96946174317064,
+            "max": 44.12096006317765,
+            "samples": [
+              44.12096006317765,
+              43.587163694763234,
+              43.96946174317064
+            ]
+          }
+        },
+        "dense": {
+          "rates": {
+            "prefill_tps": {
+              "count": 3,
+              "min": 5373.985292913687,
+              "median": 5472.061492291019,
+              "max": 5601.497233531379,
+              "samples": [
+                5373.985292913687,
+                5472.061492291019,
+                5601.497233531379
+              ]
+            },
+            "full_decode_tps": {
+              "count": 3,
+              "min": 104.77528647855283,
+              "median": 104.85058464030679,
+              "max": 104.89578112446311,
+              "samples": [
+                104.89578112446311,
+                104.85058464030679,
+                104.77528647855283
+              ]
+            },
+            "session_output_tps": {
+              "count": 3,
+              "min": 93.54987767644782,
+              "median": 93.7401555082899,
+              "max": 93.96828048487633,
+              "samples": [
+                93.54987767644782,
+                93.7401555082899,
+                93.96828048487633
+              ]
+            },
+            "session_processed_tps": {
+              "count": 3,
+              "min": 816.4352960853628,
+              "median": 818.0959026178027,
+              "max": 820.0868115043752,
+              "samples": [
+                816.4352960853628,
+                818.0959026178027,
+                820.0868115043752
+              ]
+            }
+          },
+          "loading": {
+            "model_load_seconds": {
+              "count": 3,
+              "min": 0.808051,
+              "median": 0.832233,
+              "max": 0.834882,
+              "samples": [
+                0.834882,
+                0.832233,
+                0.808051
+              ]
+            },
+            "model_seconds": {
+              "count": 3,
+              "min": 0.894261,
+              "median": 0.913705,
+              "max": 0.917511,
+              "samples": [
+                0.917511,
+                0.913705,
+                0.894261
+              ]
+            },
+            "shape_prepare_seconds": {
+              "count": 3,
+              "min": 0.255375,
+              "median": 0.258615,
+              "max": 0.2587,
+              "samples": [
+                0.258615,
+                0.2587,
+                0.255375
+              ]
+            },
+            "startup_to_ready_seconds": {
+              "count": 3,
+              "min": 1.15009,
+              "median": 1.17289,
+              "max": 1.17661,
+              "samples": [
+                1.17661,
+                1.17289,
+                1.15009
+              ]
+            },
+            "first_token_elapsed_seconds": {
+              "count": 3,
+              "min": 1.22339,
+              "median": 1.24885,
+              "max": 1.25636,
+              "samples": [
+                1.25636,
+                1.24885,
+                1.22339
+              ]
+            }
+          },
+          "session_seconds": {
+            "count": 3,
+            "min": 1.053547,
+            "median": 1.0561109,
+            "max": 1.058259,
+            "samples": [
+              1.058259,
+              1.0561109,
+              1.053547
+            ]
+          },
+          "startup_total_seconds": {
+            "count": 3,
+            "min": 2.2036898,
+            "median": 2.2290461,
+            "max": 2.2349209,
+            "samples": [
+              2.2349209,
+              2.2290461,
+              2.2036898
+            ]
+          },
+          "cold_output_tps": {
+            "count": 3,
+            "min": 44.29686974603889,
+            "median": 44.41361710733573,
+            "max": 44.92465318848416,
+            "samples": [
+              44.29686974603889,
+              44.41361710733573,
+              44.92465318848416
+            ]
+          }
+        },
+        "peer": {
+          "rates": {
+            "prefill_tps": {
+              "count": 3,
+              "min": 4629.526371723238,
+              "median": 4731.741669084907,
+              "max": 4742.631938414948,
+              "samples": [
+                4742.631938414948,
+                4629.526371723238,
+                4731.741669084907
+              ]
+            },
+            "full_decode_tps": {
+              "count": 3,
+              "min": 105.17431327746824,
+              "median": 105.17506224775104,
+              "max": 106.14566834454219,
+              "samples": [
+                105.17431327746824,
+                105.17506224775104,
+                106.14566834454219
+              ]
+            },
+            "session_output_tps": {
+              "count": 3,
+              "min": 91.77443364513775,
+              "median": 92.11096561506957,
+              "max": 92.80083029559033,
+              "samples": [
+                92.11096561506957,
+                91.77443364513775,
+                92.80083029559033
+              ]
+            },
+            "session_processed_tps": {
+              "count": 3,
+              "min": 800.9405118121113,
+              "median": 803.8775180951526,
+              "max": 809.8981553069701,
+              "samples": [
+                803.8775180951526,
+                800.9405118121113,
+                809.8981553069701
+              ]
+            }
+          },
+          "loading": {
+            "backend_setup_seconds": {
+              "count": 3,
+              "min": 0.0218063,
+              "median": 0.0223626,
+              "max": 0.0226229,
+              "samples": [
+                0.0226229,
+                0.0223626,
+                0.0218063
+              ]
+            },
+            "model_load_seconds": {
+              "count": 3,
+              "min": 1.5087793,
+              "median": 1.5216747,
+              "max": 1.5489936,
+              "samples": [
+                1.5087793,
+                1.5216747,
+                1.5489936
+              ]
+            },
+            "context_prepare_seconds": {
+              "count": 3,
+              "min": 0.0077249,
+              "median": 0.007921,
+              "max": 0.0081497,
+              "samples": [
+                0.007921,
+                0.0077249,
+                0.0081497
+              ]
+            },
+            "startup_to_ready_seconds": {
+              "count": 3,
+              "min": 1.5969545,
+              "median": 1.602081,
+              "max": 1.6324108,
+              "samples": [
+                1.5969545,
+                1.602081,
+                1.6324108
+              ]
+            },
+            "first_token_elapsed_seconds": {
+              "count": 3,
+              "min": 1.7021082,
+              "median": 1.7114673,
+              "max": 1.7382869,
+              "samples": [
+                1.7021082,
+                1.7114673,
+                1.7382869
+              ]
+            }
+          },
+          "session_seconds": {
+            "count": 3,
+            "min": 1.0668008,
+            "median": 1.0747906,
+            "max": 1.0787318,
+            "samples": [
+              1.0747906,
+              1.0787318,
+              1.0668008
+            ]
+          },
+          "startup_total_seconds": {
+            "count": 3,
+            "min": 2.6718145,
+            "median": 2.6808719,
+            "max": 2.6992718,
+            "samples": [
+              2.6718145,
+              2.6808719,
+              2.6992718
+            ]
+          },
+          "cold_output_tps": {
+            "count": 3,
+            "min": 36.67655847032522,
+            "median": 36.92828441373868,
+            "max": 37.05347059086625,
+            "samples": [
+              37.05347059086625,
+              36.92828441373868,
+              36.67655847032522
+            ]
+          }
+        }
+      },
+      "independent_memory": {
+        "before": {
+          "samples": 265,
+          "sampled_peak_bytes": {
+            "working_set_bytes": 1125638144,
+            "private_commit_bytes": 6190780416,
+            "gpu_dedicated_bytes": 4421926912,
+            "gpu_shared_bytes": 96468992,
+            "gpu_total_bytes": 4503715840
+          },
+          "requested_interval_seconds": 0.01,
+          "actual_sample_gaps_ms": {
+            "count": 264,
+            "min": 0.0792,
+            "median": 15.2268,
+            "max": 24.3545
+          },
+          "sample_cost_ms": {
+            "count": 265,
+            "min": 0.0466,
+            "median": 0.106,
+            "max": 0.9207
+          },
+          "null_sample_counts": {
+            "working_set_bytes": 0,
+            "private_commit_bytes": 0,
+            "gpu_dedicated_bytes": 33,
+            "gpu_shared_bytes": 33,
+            "gpu_total_bytes": 33
+          },
+          "nonnull_sample_counts": {
+            "working_set_bytes": 265,
+            "private_commit_bytes": 265,
+            "gpu_dedicated_bytes": 232,
+            "gpu_shared_bytes": 232,
+            "gpu_total_bytes": 232
+          },
+          "ready_baseline_unknown": true,
+          "ready_baseline_bytes": {
+            "working_set_bytes": null,
+            "private_commit_bytes": null,
+            "gpu_dedicated_bytes": null,
+            "gpu_shared_bytes": null,
+            "gpu_total_bytes": null
+          },
+          "approximate_phase_deltas": {
+            "round1_prefill": {
+              "sample_count": 7,
+              "gpu_dedicated_bytes": 153100288,
+              "gpu_shared_bytes": 2097152
+            },
+            "round1_decode": {
+              "sample_count": 31,
+              "gpu_dedicated_bytes": 125829120,
+              "gpu_shared_bytes": 0
+            },
+            "round2_prefill": {
+              "sample_count": 3,
+              "gpu_dedicated_bytes": 113246208,
+              "gpu_shared_bytes": 0
+            },
+            "round2_decode": {
+              "sample_count": 30,
+              "gpu_dedicated_bytes": 2097152,
+              "gpu_shared_bytes": 0
+            },
+            "round3_prefill": {
+              "sample_count": 3,
+              "gpu_dedicated_bytes": 2097152,
+              "gpu_shared_bytes": 0
+            },
+            "round3_decode": {
+              "sample_count": 30,
+              "gpu_dedicated_bytes": -35651584,
+              "gpu_shared_bytes": 0
+            }
+          }
+        },
+        "current": {
+          "samples": 263,
+          "sampled_peak_bytes": {
+            "working_set_bytes": 1124655104,
+            "private_commit_bytes": 6185086976,
+            "gpu_dedicated_bytes": 4421926912,
+            "gpu_shared_bytes": 96468992,
+            "gpu_total_bytes": 4503715840
+          },
+          "requested_interval_seconds": 0.01,
+          "actual_sample_gaps_ms": {
+            "count": 262,
+            "min": 0.0863,
+            "median": 15.27485,
+            "max": 22.218
+          },
+          "sample_cost_ms": {
+            "count": 263,
+            "min": 0.0466,
+            "median": 0.1094,
+            "max": 1.0632
+          },
+          "null_sample_counts": {
+            "working_set_bytes": 0,
+            "private_commit_bytes": 0,
+            "gpu_dedicated_bytes": 32,
+            "gpu_shared_bytes": 32,
+            "gpu_total_bytes": 32
+          },
+          "nonnull_sample_counts": {
+            "working_set_bytes": 263,
+            "private_commit_bytes": 263,
+            "gpu_dedicated_bytes": 231,
+            "gpu_shared_bytes": 231,
+            "gpu_total_bytes": 231
+          },
+          "ready_baseline_unknown": true,
+          "ready_baseline_bytes": {
+            "working_set_bytes": null,
+            "private_commit_bytes": null,
+            "gpu_dedicated_bytes": null,
+            "gpu_shared_bytes": null,
+            "gpu_total_bytes": null
+          },
+          "approximate_phase_deltas": {
+            "round1_prefill": {
+              "sample_count": 6,
+              "gpu_dedicated_bytes": 144711680,
+              "gpu_shared_bytes": 2097152
+            },
+            "round1_decode": {
+              "sample_count": 31,
+              "gpu_dedicated_bytes": 125829120,
+              "gpu_shared_bytes": 0
+            },
+            "round2_prefill": {
+              "sample_count": 3,
+              "gpu_dedicated_bytes": 113246208,
+              "gpu_shared_bytes": 0
+            },
+            "round2_decode": {
+              "sample_count": 30,
+              "gpu_dedicated_bytes": 2097152,
+              "gpu_shared_bytes": 0
+            },
+            "round3_prefill": {
+              "sample_count": 3,
+              "gpu_dedicated_bytes": 2097152,
+              "gpu_shared_bytes": 0
+            },
+            "round3_decode": {
+              "sample_count": 30,
+              "gpu_dedicated_bytes": -247463936,
+              "gpu_shared_bytes": 0
+            }
+          }
+        },
+        "dense": {
+          "samples": 259,
+          "sampled_peak_bytes": {
+            "working_set_bytes": 1131184128,
+            "private_commit_bytes": 6171369472,
+            "gpu_dedicated_bytes": 4386275328,
+            "gpu_shared_bytes": 96468992,
+            "gpu_total_bytes": 4468064256
+          },
+          "requested_interval_seconds": 0.01,
+          "actual_sample_gaps_ms": {
+            "count": 258,
+            "min": 0.0802,
+            "median": 15.30655,
+            "max": 17.1458
+          },
+          "sample_cost_ms": {
+            "count": 259,
+            "min": 0.0462,
+            "median": 0.1036,
+            "max": 0.8179
+          },
+          "null_sample_counts": {
+            "working_set_bytes": 0,
+            "private_commit_bytes": 0,
+            "gpu_dedicated_bytes": 32,
+            "gpu_shared_bytes": 32,
+            "gpu_total_bytes": 32
+          },
+          "nonnull_sample_counts": {
+            "working_set_bytes": 259,
+            "private_commit_bytes": 259,
+            "gpu_dedicated_bytes": 227,
+            "gpu_shared_bytes": 227,
+            "gpu_total_bytes": 227
+          },
+          "ready_baseline_unknown": true,
+          "ready_baseline_bytes": {
+            "working_set_bytes": null,
+            "private_commit_bytes": null,
+            "gpu_dedicated_bytes": null,
+            "gpu_shared_bytes": null,
+            "gpu_total_bytes": null
+          },
+          "approximate_phase_deltas": {
+            "round1_prefill": {
+              "sample_count": 8,
+              "gpu_dedicated_bytes": 153100288,
+              "gpu_shared_bytes": 2097152
+            },
+            "round1_decode": {
+              "sample_count": 29,
+              "gpu_dedicated_bytes": 130023424,
+              "gpu_shared_bytes": 0
+            },
+            "round2_prefill": {
+              "sample_count": 3,
+              "gpu_dedicated_bytes": 115343360,
+              "gpu_shared_bytes": 0
+            },
+            "round2_decode": {
+              "sample_count": 28,
+              "gpu_dedicated_bytes": 4194304,
+              "gpu_shared_bytes": 0
+            },
+            "round3_prefill": {
+              "sample_count": 3,
+              "gpu_dedicated_bytes": 2097152,
+              "gpu_shared_bytes": 0
+            },
+            "round3_decode": {
+              "sample_count": 30,
+              "gpu_dedicated_bytes": -310378496,
+              "gpu_shared_bytes": 0
+            }
+          }
+        },
+        "peer": {
+          "samples": 305,
+          "sampled_peak_bytes": {
+            "working_set_bytes": 4374495232,
+            "private_commit_bytes": 5518766080,
+            "gpu_dedicated_bytes": 4503732224,
+            "gpu_shared_bytes": 88080384,
+            "gpu_total_bytes": 4591812608
+          },
+          "requested_interval_seconds": 0.01,
+          "actual_sample_gaps_ms": {
+            "count": 304,
+            "min": 0.0728,
+            "median": 15.34235,
+            "max": 23.6183
+          },
+          "sample_cost_ms": {
+            "count": 305,
+            "min": 0.0466,
+            "median": 0.1018,
+            "max": 0.3195
+          },
+          "null_sample_counts": {
+            "working_set_bytes": 0,
+            "private_commit_bytes": 0,
+            "gpu_dedicated_bytes": 12,
+            "gpu_shared_bytes": 12,
+            "gpu_total_bytes": 12
+          },
+          "nonnull_sample_counts": {
+            "working_set_bytes": 305,
+            "private_commit_bytes": 305,
+            "gpu_dedicated_bytes": 293,
+            "gpu_shared_bytes": 293,
+            "gpu_total_bytes": 293
+          },
+          "ready_baseline_unknown": true,
+          "ready_baseline_bytes": {
+            "working_set_bytes": null,
+            "private_commit_bytes": null,
+            "gpu_dedicated_bytes": null,
+            "gpu_shared_bytes": null,
+            "gpu_total_bytes": null
+          },
+          "approximate_phase_deltas": {
+            "round1_prefill": {
+              "sample_count": 9,
+              "gpu_dedicated_bytes": 220221440,
+              "gpu_shared_bytes": 6291456
+            },
+            "round1_decode": {
+              "sample_count": 30,
+              "gpu_dedicated_bytes": 4194304,
+              "gpu_shared_bytes": 0
+            },
+            "round2_prefill": {
+              "sample_count": 2,
+              "gpu_dedicated_bytes": 0,
+              "gpu_shared_bytes": 0
+            },
+            "round2_decode": {
+              "sample_count": 29,
+              "gpu_dedicated_bytes": 0,
+              "gpu_shared_bytes": 0
+            },
+            "round3_prefill": {
+              "sample_count": 3,
+              "gpu_dedicated_bytes": 0,
+              "gpu_shared_bytes": 0
+            },
+            "round3_decode": {
+              "sample_count": 28,
+              "gpu_dedicated_bytes": -1778405376,
+              "gpu_shared_bytes": -8388608
+            }
+          }
+        }
+      },
+      "comparison": {
+        "before": {
+          "prefill_tps": {
+            "current_vs_other_median_percent": 0.6093830528276056,
+            "observed_ranges_overlap": true
+          },
+          "full_decode_tps": {
+            "current_vs_other_median_percent": 0.8086251086090401,
+            "observed_ranges_overlap": false
+          },
+          "session_output_tps": {
+            "current_vs_other_median_percent": 0.5464828041882086,
+            "observed_ranges_overlap": false
+          },
+          "session_processed_tps": {
+            "current_vs_other_median_percent": 0.5464828041882086,
+            "observed_ranges_overlap": false
+          }
+        },
+        "dense": {
+          "prefill_tps": {
+            "current_vs_other_median_percent": -0.5043218983033504,
+            "observed_ranges_overlap": true
+          },
+          "full_decode_tps": {
+            "current_vs_other_median_percent": -3.055135378264384,
+            "observed_ranges_overlap": false
+          },
+          "session_output_tps": {
+            "current_vs_other_median_percent": -2.758719813021726,
+            "observed_ranges_overlap": false
+          },
+          "session_processed_tps": {
+            "current_vs_other_median_percent": -2.758719813021715,
+            "observed_ranges_overlap": false
+          }
+        },
+        "peer": {
+          "prefill_tps": {
+            "current_vs_other_median_percent": 15.062593621043984,
+            "observed_ranges_overlap": false
+          },
+          "full_decode_tps": {
+            "current_vs_other_median_percent": -3.3542218447156102,
+            "observed_ranges_overlap": false
+          },
+          "session_output_tps": {
+            "current_vs_other_median_percent": -1.0387887513228944,
+            "observed_ranges_overlap": false
+          },
+          "session_processed_tps": {
+            "current_vs_other_median_percent": -1.0387887513228833,
+            "observed_ranges_overlap": false
+          }
+        }
+      },
+      "limits": [
+        "Only3 timing processes per arm and1 independent memory process per arm; no statistical-significance claim.",
+        "Normal shared Windows desktop GPU window, not exclusive/fixed clocks. Preserve range overlap and window-specific background variation.",
+        "Memory samples are exact reported byte counters, but sampled maxima are lower bounds, not physical allocations. Dedicated/shared maxima are separate; total is maximum simultaneously observed sum.",
+        "Memory phase deltas use neighboring parent-time samples, not allocation attribution or exact boundary values. Missing ready/phase values remain null.",
+        "Memory ready baselines unknown for4/4 arms: no sample in each such ready-to-prefill interval. Last-phase after brackets may include final-session cleanup; negative deltas are not proof of decode allocation release.",
+        "After-ready session TPS excludes weight loading; startup/load/ready/TTFT and cold startup_total_seconds are reported separately. Original per-engine host endpoints remain their recorded definitions, not interchangeable subphase costs. Independent memory or historical profiled time never enters timing denominators. Synthetic teacher-forced IDs are not free-running quality evidence."
+      ],
+      "conclusions": [
+        "Same-window currentF versus priorE: aggregate prefill median+0.6094%, full decode+0.8086%, session-output+0.5465%; overlapping observed ranges: prefill_tps. These are3-process observations, not a statistical-significance or universal-gain claim.",
+        "CurrentF full-decode median versus dense-3.0551% and versus peer-3.3542%. Session-output median versus dense-2.7587% and versus peer-1.0388%; observed losses remain explicit and are not dismissed as timer resolution.",
+        "Only2 source/object replacements (source2 main and append-index) distinguish currentF from inherited priorE closure;193 of195 input records are unchanged. The complete process measurements do not isolate either function self-cost.",
+        "No new native trace for F and no profile time enters TPS. Old traces from different images/windows cannot establish the mechanism or predict the measured delta here.",
+        "All12 timing processes and4 separate memory processes use the identical long schedule, capacity1024 and99 predicted IDs. Memory is one independent process per image/workload in this window. Exact observed bytes and nulls are preserved; sampled peaks, phase bracket deltas, driver granularity/migration/cache behavior do not identify physical allocations or causally attribute changes to this patch."
+      ],
+      "labels": {
+        "current": "F source2 fixed-tail/fresh-reserve and indexed append selected slots",
+        "before": "E exclusive append + radix prior image",
+        "dense": "retained dense consumer ff748694",
+        "peer": "retained llama consumer9b259137"
+      }
+    },
+    "independent_review": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\review\\performance-review.json",
+      "bytes": 109248,
+      "sha256": "1d33edc6061e3d2c85b9d131eeb39ca6701aba5c2a84400bc400467ec73ab2b2"
+    },
+    "preparation_buckets": {
+      "groups": {
+        "current": {
+          "1": {
+            "count": 90,
+            "median_ms": 0.21045,
+            "min_ms": 0.1479,
+            "max_ms": 0.3487
+          },
+          "2": {
+            "count": 90,
+            "median_ms": 0.2308,
+            "min_ms": 0.1774,
+            "max_ms": 0.5121
+          },
+          "3": {
+            "count": 90,
+            "median_ms": 0.24035,
+            "min_ms": 0.1926,
+            "max_ms": 0.4211
+          }
+        },
+        "before": {
+          "1": {
+            "count": 90,
+            "median_ms": 0.25525,
+            "min_ms": 0.1804,
+            "max_ms": 0.3518
+          },
+          "2": {
+            "count": 90,
+            "median_ms": 0.28295,
+            "min_ms": 0.2162,
+            "max_ms": 0.4733
+          },
+          "3": {
+            "count": 90,
+            "median_ms": 0.2953,
+            "min_ms": 0.20579999999999998,
+            "max_ms": 0.4475
+          }
+        }
+      },
+      "scope": "Complete cold bucket for90zero-record calls per turn; actual descriptor upload/wait included. No individual function attribution."
+    },
+    "conclusion": "VsE same-window fullD+0.8086%,output+0.5465%,3process observed ranges nonoverlap; P+0.6094%rangesoverlap. StillD-3.3542%/output-1.0388%vspeer andD-3.0551%/output-2.7587%vsdense. Small desktop window, not universal/stable/causal function effect. No F new native trace. Memory peaks unchanged vsE."
+  },
+  "prior_window_latency_decomposition": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\preparation-decomposition.json",
+    "bytes": 148836,
+    "sha256": "aaf99a3690c017198792ae4652a5252b8100a71a313aa772766eaffe1454f9cc"
+  },
+  "new_real_workload": "Matched multi-session shared-prefix comparison is separately published as qwen-multisession-prefix-2026-10-21.json. It exposes per-session execution-resource duplication; no per-token scanning or cache miss is assumed without evidence.",
+  "mtp_research": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\research\\qwen35-mtp-consumer-audit-2026-10-21.json",
+    "bytes": 26223,
+    "sha256": "99777c96e57f85587df6ac4ce2b732422d7d16b100c43c92639bf64e7376c495"
+  },
+  "cleanup_plan": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\cleanup-plan.json",
+    "bytes": 46623,
+    "sha256": "3aed18979e2352d2ab5c71f8585f8ecea3ef7cce91004ce99884a096d6aa60ec"
+  },
+  "cleanup_script": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-host-prepare-20261021\\cleanup-script.ps1",
+    "bytes": 2289,
+    "sha256": "2b00e4de528d541ce8334e45cc32829ea6aa3741a3a83731ba7f8b5538631d6d"
+  },
+  "remaining": "Model-owned finite execution bundles borrowed by actual active episodes, isolated Session snapshots/tails/history, no stop closing a sibling loan, native-retirement-safe failure replacement; then matched remeasure. MTP/images/other-native/all-model architecture work remain incomplete."
+}

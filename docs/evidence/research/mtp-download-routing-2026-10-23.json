@@ -1,0 +1,298 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-23",
+  "scope": "Actual bounded model-range transport and route observations; not model execution, complete-model download, quality, throughput or an attribution of all system network traffic.",
+  "artifact": {
+    "repository": "unsloth/DeepSeek-V4-Flash-0731-GGUF",
+    "revision": "fbbb5b93fb787c21338159b0af3318bb3f4d9768",
+    "file": "dspark/dspark-DeepSeek-V4-Flash-0731-BF16.gguf",
+    "whole_file_bytes_identity_only": 11314832480,
+    "etag": "\"0afbd396f916269afdf517851203735829c46c4601754671fabccdae23688b2e\"",
+    "whole_file_downloaded": false
+  },
+  "validation": {
+    "net_prefix64": {
+      "passed": true,
+      "range": [
+        0,
+        63
+      ],
+      "http_status": 206,
+      "received_body_bytes": 64,
+      "final_host": "hf-mirror.net",
+      "sha256": "43a85b500a37a5e15cdaab4486674baa77029857709bff724a06cb4c69c9d35e",
+      "original_bytes_match": true,
+      "original_etag_match": true,
+      "redirects": []
+    },
+    "net_middle256": {
+      "passed": true,
+      "range": [
+        562310176,
+        562310431
+      ],
+      "http_status": 206,
+      "received_body_bytes": 256,
+      "final_host": "hf-mirror.net",
+      "sha256": "e1e2ed160a451b583d1efbb80020383505527885edb657dc759fde028719f99b",
+      "original_bytes_match": true,
+      "original_etag_match": true
+    },
+    "actual_missing_expert_leg": {
+      "passed": true,
+      "section": "draft",
+      "stage": 1,
+      "global_id": 168,
+      "source_scope": "Only stage1/expert168 final missing leg; two authenticated legs reused",
+      "range": [
+        5317339168,
+        5321795615
+      ],
+      "http_status": 206,
+      "received_body_bytes": 4456448,
+      "sha256": "2614519e2b1f16568bd3d596a3515e9ddc17a7ee83c34cbcb39716f940c711fc",
+      "original_etag_match": true,
+      "whole_expert_cached_bytes": 13369344,
+      "new_body_bytes": 4456448,
+      "two_prior_authenticated_legs_reused": true,
+      "acquisition_exit": 0,
+      "batch_exit": 0,
+      "paused_after": true
+    },
+    "other_probe_routes": {
+      "hf-mirror.com": "Two successful64-byte probes redirected to cas-bridge.xethub.hf.co; other .com attempts timed out/failed. It is not the exclusive route now permitted.",
+      "hf-cdn.sufy.com": "Successful64-byte probe redirected to us.aws.cdn.hf.co; not the exclusive route now permitted."
+    },
+    "exclusive_net_offline": {
+      "passed": true,
+      "network_requests": 0,
+      "canonical_to_net_headers_preserved": true,
+      "external_initial_requests_blocked_before_handler": true,
+      "external_redirects_blocked_before_second_handler": true,
+      "pause_enforced": true,
+      "actual_host_accounting": true,
+      "non_hf_unlimited": true,
+      "hf_limit_retained": true,
+      "real_ledger_unchanged": true,
+      "source_sha256": "24b008fb7a91f0eba34739cd4817fbf97b42ca7f435032d76cfb6e97ea398a17"
+    },
+    "official_cli_compatibility": {
+      "library": "huggingface_hub",
+      "version": "1.8.0",
+      "endpoint": "https://hf-mirror.net",
+      "dry_run": true,
+      "HEAD_only": true,
+      "body_downloads_permitted": false,
+      "passed": false,
+      "error_type": "LocalEntryNotFoundError",
+      "cause_type": "FileMetadataError",
+      "observed_head_status": 200,
+      "missing_required_header": "X-Repo-Commit",
+      "x_repo_commit": null,
+      "explanation": "The local1.8.0 file_download.py1677-1680 requires metadata.commit_hash. The HEAD response lacked X-Repo-Commit and the dry_run raised FileMetadataError wrapped by LocalEntryNotFoundError. The CLI/download path was not demonstrated to succeed."
+    }
+  },
+  "clash_observation": {
+    "active_mode": "rule",
+    "active_tun_enabled": true,
+    "configuration_changed": false,
+    "observed_net_connections": 1,
+    "chains": [
+      "DIRECT"
+    ],
+    "rule": "DomainSuffix",
+    "rule_payload": "hf-mirror.net",
+    "matching_log_lines": [
+      "[2026-10-23 22:36:26.186] time=\"2026-10-23T22:36:26.186637900+08:00\" level=info msg=\"[TCP] 198.18.0.1:14406 --> hf-mirror.net:443 match DomainSuffix(hf-mirror.net) using DIRECT\""
+    ],
+    "observed_hf_connections": 0,
+    "maximum_observed_connection_download_bytes": 4455959,
+    "actual_body_bytes": 4456448,
+    "sampling_limit": "4,455,959B is the maximum sampled connection counter before disappearance, not the complete response-body or wire-byte count.",
+    "global_counters_before": {
+      "downloadTotal": 157361040532,
+      "uploadTotal": 2244873239
+    },
+    "global_counters_after": {
+      "downloadTotal": 157366113145,
+      "uploadTotal": 2245309612
+    },
+    "global_counters_include_unrelated_traffic": true,
+    "global_counter_interpretation": "Global totals/deltas include other traffic and cannot be labeled this model request or paid HF/proxy-line usage.",
+    "process": {
+      "command": [
+        "C:\\Program Files\\Python312\\python.exe",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-download-budget-20261023\\run_batch.py",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-download-budget-20261023\\clash-verify-20261023\\plan.json"
+      ],
+      "cwd": "C:\\public\\project-hyle\\hyle",
+      "started": 1792766184.1076682,
+      "timeout_seconds": 420,
+      "throughput_evidence": false,
+      "memory_evidence": false,
+      "trace": false,
+      "profiler": false,
+      "pid": 4856,
+      "exit": 0,
+      "timed_out": false,
+      "finished": 1792766299.1327856,
+      "process_wall_seconds": 115.02360429998953
+    },
+    "observation_errors": []
+  },
+  "current_download_policy": {
+    "allowed_network_origin": "https://hf-mirror.net:443 only; implicit443 allowed",
+    "canonical_identity": "Canonical Hugging Face source URLs, revision, exact range and ETag remain artifact identity; only transport origin is rewritten to net.",
+    "initial_and_redirect_guard": "Reject other schemes/hosts/ports/userinfo before the initial or redirected request opens. main binds guarded(new_opener.open) with MirrorRedirect, not the default global opener.",
+    "fallback_to_hf_or_cas": false,
+    "HF_CAS_total_limit_bytes": 50000000000,
+    "HF_CAS_reserved_request_body_limit_bytes": 48000000000,
+    "overhead_margin_bytes": 2000000000,
+    "non_HF_cumulative_cap": null,
+    "non_HF_cap_note": "No cumulative cap under the latest explicit user rule; origin restriction and necessary-fragment selection still apply.",
+    "accounting": "Full intended Range charged before each HTTP attempt; failures are not refunded. Actual HF/CAS final hosts are counted; an old .com attempt lacking final_host is conservatively counted as HF/CAS.",
+    "old_ledger_reset": false,
+    "pause_retained": true,
+    "wire_limit_note": "The48GB request-body limit plus2GB margin is not a proof of an exact NIC/TCP50GB bound."
+  },
+  "source_identity": {
+    "budget_guard": {
+      "path": ".scratch/mtp-download-budget-20261023/budget.py",
+      "bytes": 9307,
+      "sha256": "24b008fb7a91f0eba34739cd4817fbf97b42ca7f435032d76cfb6e97ea398a17",
+      "same_as_offline_check": true,
+      "same_as_actual_observed_acquisition": true
+    },
+    "archived_batch_runner": {
+      "path": ".scratch/mtp-download-budget-20261023/run_batch.py",
+      "bytes": 2561,
+      "sha256": "4155ff610dc603b3aa63d5332cd77ebf424c912d9f5e030146f07a894df9cb40",
+      "same_bytes_as_observed_run": false,
+      "change_after_observation": "Only summary/printed field names changed from non_mirror_reserved_request_bytes to hf_reserved_request_bytes and non_hf_reserved_request_bytes. The archived current source must not be represented as byte-identical to the older observed run; original observed summary and stdout are retained unchanged."
+    },
+    "official_library": {
+      "version": "1.8.0",
+      "commit_header_check": "file_download.py1677-1680",
+      "HF_ENDPOINT_import_time": "constants.py67-68",
+      "HF_HUB_DISABLE_XET_import_time": "constants.py284",
+      "HTTP_fallback": "file_download.py1824-1849"
+    }
+  },
+  "archive_manifest": [
+    {
+      "archive_path": "probes/transport-probe-results.json",
+      "path": ".scratch/mtp-download-budget-20261023/transport-probe-results.json",
+      "bytes": 4230,
+      "sha256": "8e832e98ef6731d628ff2d66262a2107f8df2c2f26a93f1f951371ea0583b7b6"
+    },
+    {
+      "archive_path": "probes/non-hf-range-confirm.json",
+      "path": ".scratch/mtp-download-budget-20261023/non-hf-range-confirm.json",
+      "bytes": 452,
+      "sha256": "8133d6d388e9651c50f589a7533e73eac5550d69692b2f83f5bd626f901d09b5"
+    },
+    {
+      "archive_path": "probes/official-cli-probe-result.json",
+      "path": ".scratch/mtp-download-budget-20261023/official-cli-probe-result.json",
+      "bytes": 793,
+      "sha256": "2bf2dd3e94f27d768190c750d217294ee85e4e58d009151699376ffb825536cb"
+    },
+    {
+      "archive_path": "offline/result.json",
+      "path": ".scratch/mtp-download-budget-20261023/exclusive-net-offline/result.json",
+      "bytes": 462,
+      "sha256": "7a1f245774629c6be9270df6a7032d4f825b7193442b116b60bc782e10775fea"
+    },
+    {
+      "archive_path": "clash/result.json",
+      "path": ".scratch/mtp-download-budget-20261023/clash-verify-20261023/result.json",
+      "bytes": 88230,
+      "sha256": "83446a77667e0e3f8b2d28155ea7d42598a81082f6eca926b183afda4b59bdcc"
+    },
+    {
+      "archive_path": "clash/plan.json",
+      "path": ".scratch/mtp-download-budget-20261023/clash-verify-20261023/plan.json",
+      "bytes": 559,
+      "sha256": "1bca6da3bdc2710d4597348717d358b339b2e5a5690cf747738024e6e9418b36"
+    },
+    {
+      "archive_path": "clash/observer-process.json",
+      "path": ".scratch/mtp-download-budget-20261023/clash-verify-20261023/runner/process.json",
+      "bytes": 624,
+      "sha256": "70dd3573cf62da089ba89083b6bcab5cf339f7b5411015c12d49567226319e96"
+    },
+    {
+      "archive_path": "clash/observer-command.json",
+      "path": ".scratch/mtp-download-budget-20261023/clash-verify-20261023/runner/command.json",
+      "bytes": 489,
+      "sha256": "171ccc9599c145c779965469e930eb539fc1188cac9c5e9a046d1d2d5743d042"
+    },
+    {
+      "archive_path": "clash/observer-stdout.log",
+      "path": ".scratch/mtp-download-budget-20261023/clash-verify-20261023/runner/stdout.log",
+      "bytes": 144,
+      "sha256": "4facd8bdae80afde31bfb8cea3be86a68b93d4968b9ad3ae0f9b902993dbd13f"
+    },
+    {
+      "archive_path": "clash/observer-stderr.log",
+      "path": ".scratch/mtp-download-budget-20261023/clash-verify-20261023/runner/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "archive_path": "acquisition/summary.json",
+      "path": ".scratch/dspark-gguf-selected-20261023/S03/prefetch-stage1-1/fetch2-expert168/summary.json",
+      "bytes": 982,
+      "sha256": "caa4c49cbf1c7e7d7b4d11ab29f441f4d5933d6ee575a2d6bfbb3afde7d3e0b3"
+    },
+    {
+      "archive_path": "acquisition/command.json",
+      "path": ".scratch/dspark-gguf-selected-20261023/S03/prefetch-stage1-1/fetch2-expert168/run/command.json",
+      "bytes": 551,
+      "sha256": "dc1e1c31b82756efb5791c4db1e0decccc678a49ab7817b47ac2ca4ba0b88372"
+    },
+    {
+      "archive_path": "acquisition/process.json",
+      "path": ".scratch/dspark-gguf-selected-20261023/S03/prefetch-stage1-1/fetch2-expert168/run/process.json",
+      "bytes": 686,
+      "sha256": "9312bb00bb5d4a13d50c65d1aca74d8ddaf6596d2d7b477a1fb1e9a3905ee53f"
+    },
+    {
+      "archive_path": "acquisition/stdout.log",
+      "path": ".scratch/dspark-gguf-selected-20261023/S03/prefetch-stage1-1/fetch2-expert168/run/stdout.log",
+      "bytes": 2236,
+      "sha256": "c29867048e12f66fbde78bfaf4427b3e66b225a72ffa95a22e748e0ae2583365"
+    },
+    {
+      "archive_path": "acquisition/stderr.log",
+      "path": ".scratch/dspark-gguf-selected-20261023/S03/prefetch-stage1-1/fetch2-expert168/run/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "archive_path": "acquisition/expert168-receipt.json",
+      "path": ".scratch/dspark-gguf-selected-20261023/S03/original-experts/draft/stage1/expert168/acquisition.json",
+      "bytes": 5761,
+      "sha256": "87090f8aa9fcc80d5274afd09ef82127e5c604570c2768527d556bb030efc6a3"
+    },
+    {
+      "archive_path": "source/budget.py",
+      "path": ".scratch/mtp-download-budget-20261023/budget.py",
+      "bytes": 9307,
+      "sha256": "24b008fb7a91f0eba34739cd4817fbf97b42ca7f435032d76cfb6e97ea398a17"
+    },
+    {
+      "archive_path": "source/run_batch-post-observation.py",
+      "path": ".scratch/mtp-download-budget-20261023/run_batch.py",
+      "bytes": 2561,
+      "sha256": "4155ff610dc603b3aa63d5332cd77ebf424c912d9f5e030146f07a894df9cb40"
+    }
+  ],
+  "archive_exclusions": [
+    "weight bodies and bundle roles.bin",
+    "entire budget ledger",
+    "Clash private configuration/controller credentials/secrets",
+    "SDK/executable/object/native binary trees"
+  ],
+  "provenance_note": "This publication reads existing completed local results only. Its author performed no network request, build or model/native execution."
+}

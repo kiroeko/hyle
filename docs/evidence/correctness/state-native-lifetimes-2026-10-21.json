@@ -1,0 +1,173 @@
+{
+  "schema": "hyle.state-native-lifetimes.v1",
+  "date": "2026-10-21",
+  "scope": "Finite native StateWriter/Clone ownership, publication, pending failure/cancellation, observers and original retirement.",
+  "decision": "This delivery-2 column is complete within the listed public-resource and native-copy scope.",
+  "changes": {
+    "product_mathematics": 0,
+    "common_state_product": 0,
+    "test_consumer": "Strengthen the existing original 256-byte native-copy consumer.",
+    "CMake": "Register one standalone consumer using already enabled backend routes; no new options."
+  },
+  "actual_validation": {
+    "standalone_GPU_processes": 3,
+    "exit_codes": [
+      0,
+      0,
+      0
+    ],
+    "stdout_PASS_journeys": {
+      "cuda": 5,
+      "vulkan": 4,
+      "apple": 6,
+      "total": 15
+    },
+    "skipped": 0,
+    "new_clone_reuse_journeys": 6,
+    "existing_pending_retirement_journeys": 9,
+    "count_kind": "Standalone program journeys, not GoogleTest cases.",
+    "Windows_execution_owner": "root",
+    "Apple_execution_owner": "Apple agent",
+    "windows_report": "evidence/windows/build-report.json",
+    "apple_report": "evidence/apple/final-validation.json"
+  },
+  "build": {
+    "CXX": 3,
+    "links": 3,
+    "product_CXX": 0,
+    "NVCC": 0,
+    "SDK_rebuilds": 0,
+    "current_consumer_and_state_headers_recompiled": true,
+    "selected_dependency_drift": 0
+  },
+  "witnesses": [
+    "Cancelled and failed-observation old Ticket/Draft survive original retirement and cold rearm; old controls cannot touch the new same-slot copy.",
+    "A successful writer publishes a new version; original and new readers retain distinct bytes after draft/version/route/store/schema teardown.",
+    "CUDA/Apple concurrent close/collection/rearm checks begin only after the explicit observer has entered the typed native wait-forwarding boundary.",
+    "Original CUDA pending serial/concurrent close, Apple MLX prefix failure and Vulkan unknown-retirement cancel/abandon remain real backend journeys."
+  ],
+  "reused_proof": {
+    "common_CPU_tests": 37,
+    "rerun_here": false,
+    "current_StateCore_source_matches_latest_CPU_proof": {
+      "relative": "src/compute_state/state_versions.cc",
+      "bytes": 41194,
+      "sha256": "1d344d6c0c37cd1e18b7ee765a56bb58e1ab9aa24095208f453a4c3065b5fe99"
+    },
+    "same_day_StateVersion_scope": "Existing GA indexer/ratio4/mHC journeys separately cover imported GraphOutput/read leases, old generations and teardown; they are not counted as clone tests here.",
+    "references": [
+      {
+        "relative": "docs/evidence/correctness/state-writer-slice-2026-10-20.json",
+        "bytes": 45762,
+        "sha256": "8b615c56afcd9ecdd05a27e799f26b36ae53ff17dca98a3fa10bb3d5e070c0bb"
+      },
+      {
+        "relative": "docs/evidence/correctness/state-clone-observer-close-2026-10-20.json",
+        "bytes": 60046,
+        "sha256": "119723db096a38ec6f581629f9691c9ab7dfbb10e6b1838acbbee7bf346e422d"
+      },
+      {
+        "relative": "docs/evidence/correctness/state-clone-slot-ownership-2026-10-20.json",
+        "bytes": 77736,
+        "sha256": "18e7f0fd8aaf4ff337f5862961bded97f998c93e9bf109d0cfb566431b3b860b"
+      },
+      {
+        "relative": "docs/evidence/correctness/ga-bf16-indexer-state-reference-2026-10-21.json",
+        "bytes": 75329,
+        "sha256": "e3f1a13b1eb1e787c08727525f89b54c146afae81cdef120ee8ef0356352eb7b"
+      },
+      {
+        "relative": "docs/evidence/correctness/ga-ratio4-producer-reference-2026-10-21.json",
+        "bytes": 186571,
+        "sha256": "05251ec6e315cf770bfc3970cbeb5ae268eb1bed82a23d8e3740729054834e79"
+      },
+      {
+        "relative": "docs/evidence/correctness/ga-mhc-reference-2026-10-21.json",
+        "bytes": 154899,
+        "sha256": "da192ef6d85f9c1d4cd52beacd0cf453deae6d27a5437bf8d226cf7a3f4262c2"
+      }
+    ]
+  },
+  "boundaries": [
+    "Borrowed Context/MemoryResource still outlive escaped device readers; no post-device-owner access is promised.",
+    "Failed-observation injection follows a successful original native wait; it does not manufacture a failing GPU kernel.",
+    "Vulkan unknown-fence handling uses the existing test-only dispatch observation boundary.",
+    "Existing post-wait metadata cleanup polling is not the observer-admission synchronization.",
+    "No full Goal/MTP/model, numerical/performance, Linux native-copy execution or complete SDK binary distribution is claimed."
+  ],
+  "sources": [
+    {
+      "relative": "tests/compute_state/native_fault_consumer.cc",
+      "bytes": 32209,
+      "sha256": "bfa11767652942aec202910530bb26bcd8df83e3e2896c0ba5bc917d055a7be2"
+    },
+    {
+      "relative": "tests/compute_state/CMakeLists.txt",
+      "bytes": 3293,
+      "sha256": "09bd9c2886742433834aaff080e9060953f624cef1956a38d1935c0f24ba44b0"
+    },
+    {
+      "relative": "include/hyle/compute/state_clone.h",
+      "bytes": 14637,
+      "sha256": "5117445bbb250a62443587d8d9f64a733970af7f430183f0cc2ef1e52abc2704"
+    },
+    {
+      "relative": "include/hyle/compute/state_versions.h",
+      "bytes": 8553,
+      "sha256": "a09cb66a216b56a0651f515f18d8a97772b0e6d281c171a82b8a6630b3e1c7d7"
+    },
+    {
+      "relative": "include/hyle/compute/detail/state_clone_access.h",
+      "bytes": 1714,
+      "sha256": "b56629d38582f595a9b46eb74d9e6d4b983868bf3a73cf91fb4a965248ee9608"
+    },
+    {
+      "relative": "src/compute_state/state_versions.cc",
+      "bytes": 41194,
+      "sha256": "1d344d6c0c37cd1e18b7ee765a56bb58e1ab9aa24095208f453a4c3065b5fe99"
+    },
+    {
+      "relative": "src/compute_state/state_internal.h",
+      "bytes": 4740,
+      "sha256": "055eda4db80e3099b726053ee0ab07931e4242ecd6207343a677a2d7c7405a7b"
+    },
+    {
+      "relative": "src/compute/batch_transfer.cc",
+      "bytes": 38730,
+      "sha256": "e605dc71db3c62ea8fda2673efb768e17c36d540dcccd4f54c7e0628674da38e"
+    },
+    {
+      "relative": "src/compute_backend_cuda/cuda_batch_transfer.cc",
+      "bytes": 9986,
+      "sha256": "34359c0336b2d664b6f70e33d502ea6d43889c4ba44dabca6254180798f3acac"
+    },
+    {
+      "relative": "src/compute_route_vulkan/vulkan_copy_program.cc",
+      "bytes": 37674,
+      "sha256": "46f415012d52d473072e66997830a16b6611da1fe44fc812b0a574d9e737ec5c"
+    },
+    {
+      "relative": "src/compute_route_apple/apple_copy_program.cc",
+      "bytes": 45088,
+      "sha256": "9081f3453f42f1ef7134ff0e070170bb82c0fe08990daf89fc480167fa827496"
+    },
+    {
+      "relative": "src/compute_backend_cuda/CMakeLists.txt",
+      "bytes": 2635,
+      "sha256": "b8a30320b4243dee691c848d1a9e1a81206f2eb20dca6908342021cc41bb70a2"
+    },
+    {
+      "relative": "src/compute_route_apple/CMakeLists.txt",
+      "bytes": 6024,
+      "sha256": "e132a88f2312a0863fda459824c13f12dba8a68fdc7816ec5769a48dd24cb101"
+    },
+    {
+      "relative": "src/compute_route_vulkan/CMakeLists.txt",
+      "bytes": 3250,
+      "sha256": "4210fd65dc1d3410057a0e56246e3dab8e5faaeda0b39f466fc0f678f79d7c3a"
+    }
+  ],
+  "current_source_count": 14,
+  "archive": "state-native-lifetimes-2026-10-21.zip",
+  "archived_binaries": false
+}

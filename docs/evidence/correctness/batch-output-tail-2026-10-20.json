@@ -1,0 +1,232 @@
+{
+  "date": "2026-10-20",
+  "status": "native_CPU_CUDA_tail_fix_executed",
+  "problem": "Active native attention math was correct but all192 inactive F16 elements retained previous sentinel bytes.",
+  "invariant": "Only output[A,R) is zeroed on the original execution sequence. A=R adds no fill command. A0/R>0 initializes the full real output.",
+  "implementation": {
+    "public_ABI_changed": false,
+    "common_CXX_changed": false,
+    "native_math_changed": false,
+    "owners": [
+      "src/compute_provider_ggml/native_batch.cc",
+      "src/compute_provider_flashinfer/flashinfer_provider.cc"
+    ],
+    "helper": "include/hyle/compute/detail/batch_output_extent.h",
+    "CPU": "Original synchronous sequence maps the exact tail; failure keeps accepted-prefix status.",
+    "CUDA": "Original stream cudaMemsetAsync, included in original capture; no implicit synchronization or extra executor.",
+    "output_permission": "TensorView::create already crops to required_bytes. A proposed second common crop was reviewed and removed before compilation."
+  },
+  "source_freeze": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-output-tail\\implementation\\source-freeze.json",
+    "bytes": 4248,
+    "sha256": "e010f417aa4f674f86e2909af84a12e06e3b3afef78f5710ab8f5ee0c92128db"
+  },
+  "test_freeze": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-output-tail\\tests\\source-freeze.json",
+    "bytes": 2817,
+    "sha256": "ee4fc1f0bbbf6ab41edd690e801b33980ec57891a1d06a17bb0f4191ec46b911"
+  },
+  "actual": {
+    "cpu": {
+      "before": {
+        "cases": 1,
+        "failures": 1,
+        "failure_elements": 1,
+        "skipped": 0,
+        "identity": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-output-tail\\cpu\\results.xml",
+          "bytes": 1374,
+          "sha256": "bc09359d56df82ca6c62668b9487b2078cef4fc99c145f6ba4569758d9dd48e5"
+        }
+      },
+      "after": {
+        "cases": 4,
+        "failures": 0,
+        "failure_elements": 0,
+        "skipped": 0,
+        "identity": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-output-tail\\checks\\cpu-results.xml",
+          "bytes": 1675,
+          "sha256": "6b6b35cd19d0209b391d0217c33d1e022e01ad8aba1d2c5dbd3b26424a8a4cfb"
+        }
+      },
+      "unchanged_red_test_object": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-output-tail\\cpu\\tail-test.obj",
+        "bytes": 575647,
+        "sha256": "fc71b4cb78b5dbe2eccfe9af9a1f369d5e0347342c05109251e2ae7088dd638e"
+      },
+      "actual_image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-output-tail\\checks\\cpu.exe",
+        "bytes": 26330112,
+        "sha256": "e718bde631bbffcd77f13defa69401e5c4a1fd3a2175bc6bd87855e31a6c8cd3"
+      },
+      "link": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-output-tail\\checks\\cpu-link-plan.json",
+        "bytes": 51822,
+        "sha256": "92e7ed41f625e80005df04961b0510458706606edb7f723671ea8d97e072474f"
+      }
+    },
+    "cuda": {
+      "before": {
+        "cases": 1,
+        "failures": 1,
+        "failure_elements": 1,
+        "skipped": 0,
+        "identity": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-output-tail\\cuda\\results.xml",
+          "bytes": 1374,
+          "sha256": "05d7855f6c6db160a57bbe13d7430e4a0b73472d6b3ad82ba912f36c046c2eec"
+        }
+      },
+      "after": {
+        "cases": 4,
+        "failures": 0,
+        "failure_elements": 0,
+        "skipped": 0,
+        "identity": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-output-tail\\checks\\cuda-results.xml",
+          "bytes": 1642,
+          "sha256": "9bfbd38f27d2a6d1a72243cb464fcc03eb94efa12d82934ec36565843f3abd3d"
+        }
+      },
+      "unchanged_red_test_object": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-output-tail\\cuda\\tail-test.obj",
+        "bytes": 579805,
+        "sha256": "58005cad09de71a3f7195eb74409b805b916bb7e35011abaa0145a6e748d4b07"
+      },
+      "actual_image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-output-tail\\checks\\cuda.exe",
+        "bytes": 119860736,
+        "sha256": "110527c068cd127675730b07d104f0ca14e0624a5d427191a907d3ba3d62188e"
+      },
+      "link": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-output-tail\\checks\\cuda-link-plan.json",
+        "bytes": 65348,
+        "sha256": "ba657a347d6bcc0131eb782f3f9fa1983567784fc5c56bf14f4374e3e649d60e"
+      }
+    }
+  },
+  "regression_geometry": {
+    "configurations": [
+      "F16 ragged",
+      "BF16 paged"
+    ],
+    "query_heads": 2,
+    "kv_heads": 1,
+    "Q_head_depth": 64,
+    "V_head_depth": 128,
+    "C": 128,
+    "episodes": [
+      {
+        "A": 1,
+        "R": 4
+      },
+      {
+        "A": 1,
+        "R": 1
+      },
+      {
+        "A": 0,
+        "R": 4
+      }
+    ],
+    "poisoned_submissions_per_episode": 2,
+    "offset_and_larger_backing_guards": true,
+    "CUDA_RequireCapture": true
+  },
+  "initial_fixture_failures": {
+    "initial-one-shot-token-misuse": {
+      "cases": 4,
+      "failures": 1,
+      "failure_elements": 1,
+      "skipped": 0,
+      "identity": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-output-tail\\tests\\initial-one-shot-token-misuse\\cpu-results.xml",
+        "bytes": 2677,
+        "sha256": "487bdd1f6a239b61c1524c4ea48340b36c374e588ae3a20632586e84b3a46502"
+      }
+    },
+    "initial-paged-descriptor-mismatch": {
+      "cases": 4,
+      "failures": 1,
+      "failure_elements": 1,
+      "skipped": 0,
+      "identity": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-output-tail\\tests\\initial-paged-descriptor-mismatch\\cpu-results.xml",
+        "bytes": 1949,
+        "sha256": "8cbcad0cc69896b914897d195271de4ba1668e522f8384b881a46f59ec434fb8"
+      }
+    }
+  },
+  "fixture_corrections": "Reacquire the existing one-shot token before every submit; use PagedAttention for paged storage. No product weakening.",
+  "build": {
+    "unique_host_sources": 4,
+    "product_host_sources": 2,
+    "new_native_compilations": 0,
+    "SDK_rebuild": false,
+    "initial_and_corrected_test_compilations": true,
+    "compiled_receipts": "checks/*-identity.json"
+  },
+  "limits": [
+    "This fix ran only Windows CPU/CUDA. Apple/Vulkan math was not changed or rerun.",
+    "No new MLA, Direct or owned-page model execution; those output extents were source-reviewed.",
+    "No model, throughput, memory-peak or independent quality claim."
+  ],
+  "documentation": [
+    {
+      "relative": "docs/user/batch-attention.md",
+      "current": {
+        "path": "C:\\public\\project-hyle\\hyle\\docs\\user\\batch-attention.md",
+        "bytes": 61662,
+        "sha256": "b1dae356a734c485c3ba55d9ccb221c0a1871d90b58a28b4f7e1ee8b56f07dc4"
+      },
+      "snapshot": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-output-tail\\documentation\\docs\\user\\batch-attention.md",
+        "bytes": 61662,
+        "sha256": "b1dae356a734c485c3ba55d9ccb221c0a1871d90b58a28b4f7e1ee8b56f07dc4"
+      }
+    },
+    {
+      "relative": "docs/architecture/graph-design.md",
+      "current": {
+        "path": "C:\\public\\project-hyle\\hyle\\docs\\architecture\\graph-design.md",
+        "bytes": 13129,
+        "sha256": "08c40368cbecafa6863c4c70ef13c208dadbc5cd2eadea5175c98667d4c04aab"
+      },
+      "snapshot": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-output-tail\\documentation\\docs\\architecture\\graph-design.md",
+        "bytes": 13129,
+        "sha256": "08c40368cbecafa6863c4c70ef13c208dadbc5cd2eadea5175c98667d4c04aab"
+      }
+    },
+    {
+      "relative": "docs/developer/current-work.md",
+      "current": {
+        "path": "C:\\public\\project-hyle\\hyle\\docs\\developer\\current-work.md",
+        "bytes": 29055,
+        "sha256": "cbdf59dc21ce51488a95034ddb9f8dc235b6abb4c1fcab3c0b663b93985be2c0"
+      },
+      "snapshot": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-output-tail\\documentation\\docs\\developer\\current-work.md",
+        "bytes": 29055,
+        "sha256": "cbdf59dc21ce51488a95034ddb9f8dc235b6abb4c1fcab3c0b663b93985be2c0"
+      }
+    }
+  ],
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\batch-output-tail-2026-10-20.zip",
+    "bytes": 397664,
+    "sha256": "9799fd2fdbb2de2a7f5a98d25fb14b6dad6e6f33e35d1415a8ba392bfbde8459",
+    "payloads": 145,
+    "CRC_checked": true,
+    "all_payload_SHA256_checked": true
+  },
+  "executed_cleanup": {
+    "relative": "docs/evidence/performance/qwen-finite-family-2026-10-20.cleanup.json",
+    "identity": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\qwen-finite-family-2026-10-20.cleanup.json",
+      "bytes": 124635,
+      "sha256": "90aa4d8d044223a46820aaddca144d5413a491f835f4e173d3fc3292283dc9e0"
+    }
+  }
+}

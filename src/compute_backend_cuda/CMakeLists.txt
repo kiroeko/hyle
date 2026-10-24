@@ -10,10 +10,12 @@ if(_HYLE_COMPUTE_HAVE_CUDA)
   hyle_add_module(compute_backend_cuda TESTING SOURCES
     cuda_backend.cc
     cuda_batch_transfer.cc
+    cuda_paged_append.cc
     driver_release.cc
     cuda_memory.cc
     cuda_device_status.cc
-    device_status_kernel.cu)
+    device_status_kernel.cu
+    cuda_paged_append.cu)
   set_target_properties(hyle_compute_backend_cuda PROPERTIES
     CUDA_STANDARD 20 CUDA_STANDARD_REQUIRED ON CUDA_RUNTIME_LIBRARY Shared)
   if(NOT MSVC AND NOT HYLE_SANITIZER STREQUAL "off")

@@ -6,10 +6,12 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
+#include <memory>
 #include <optional>
 #include <span>
 #include <string_view>
 #include <type_traits>
+#include <utility>
 #include <variant>
 
 #include "hyle/compute/ops_visibility.h"
@@ -284,6 +286,10 @@ struct Fill final {
   ScalarValue value{};
 };
 
+// Int32 -> Float32 rounds to nearest, ties to even, independently of the
+// ambient FP rounding mode. Every Int32 has a finite Float32 result (INT32_MAX
+// rounds to 2^31). This does not define reverse/integer-narrowing conversions
+// or require every Provider to implement this pair.
 struct Cast final {
   DataType output_type = DataType::kUnknown;
 };
@@ -430,7 +436,9 @@ struct ScaledDotProductAttention final {
 // their value heads, gates and state into this cyclic order.
 // For each token and head, with rows of S indexed by value channel:
 //   S *= exp(log_decay); d = beta * (v - S*k); S += outer(d,k);
-//   y = S*q / sqrt(Dk).
+//   y = (S*q) * scale, where scale is output_scale or 1/sqrt(Dk).
+// The F32 dot reduction precedes this scalar multiply; scale never changes
+// Q/K inputs or the recurrent state. Explicit 1 returns the raw dot.
 // Accumulation/state stay FP32; y has V's type and shape. Outputs are y and
 // state, both materialized. With snapshot_count == 1, state is the final
 // [B,Hv,Dv,Dk] state. With 1 < K = snapshot_count <= T, it is the last K
@@ -440,6 +448,9 @@ struct ScaledDotProductAttention final {
 // Backend support is qualified separately from this logical schema.
 struct GatedDeltaNet final {
   std::uint32_t snapshot_count = 1;
+  // Empty retains native 1/sqrt(Dk); every explicit value must be finite.
+  // Preserve signed zero and F32 bits; empty and explicit 1 are distinct.
+  std::optional<float> output_scale{};
 };
 
 struct OperationId final {
@@ -447,7 +458,7 @@ struct OperationId final {
   std::uint64_t operation_id = 0;
 
   // For a custom operation this identity names the complete schema version,
-  // including the inline descriptor layout. Reusing an ID after changing the
+  // including the descriptor layout and ownership. Reusing an ID after changing the
   // descriptor or its semantics is a contract violation.
   constexpr bool valid() const noexcept {
     return namespace_id != 0 || operation_id != 0;
@@ -468,6 +479,11 @@ struct CustomOperationVTable final {
                   std::span<TensorDesc> outputs) noexcept = nullptr;
   Result<ResourceAccess> (*resource_access)(
       const void *descriptor, std::size_t index) noexcept = nullptr;
+  // Null for ordinary trivial schemas. Owned inline schemas only retain their
+  // existing immutable owners; copying an Operation never allocates storage.
+  void (*copy)(void *destination, const void *source) noexcept = nullptr;
+  void (*move)(void *destination, void *source) noexcept = nullptr;
+  void (*destroy)(void *descriptor) noexcept = nullptr;
 };
 
 struct CustomOperationValue final {
@@ -476,11 +492,49 @@ struct CustomOperationValue final {
   std::uint8_t descriptor_size = 0;
   alignas(std::max_align_t)
       std::array<std::byte, kCustomOperationInlineBytes> descriptor{};
+
+  constexpr CustomOperationValue() noexcept = default;
+  constexpr CustomOperationValue(const CustomOperationValue &other) noexcept
+      : id(other.id), vtable(other.vtable), descriptor_size(other.descriptor_size) {
+    if (vtable && vtable->copy) vtable->copy(descriptor.data(), other.descriptor.data());
+    else descriptor = other.descriptor;
+  }
+  constexpr CustomOperationValue(CustomOperationValue &&other) noexcept
+      : id(other.id), vtable(other.vtable), descriptor_size(other.descriptor_size) {
+    if (vtable && vtable->move) vtable->move(descriptor.data(), other.descriptor.data());
+    else descriptor = other.descriptor;
+    other.reset();
+  }
+  constexpr CustomOperationValue &operator=(const CustomOperationValue &other) noexcept {
+    if (this != &other) {
+      reset(); id = other.id; vtable = other.vtable; descriptor_size = other.descriptor_size;
+      if (vtable && vtable->copy) vtable->copy(descriptor.data(), other.descriptor.data());
+      else descriptor = other.descriptor;
+    }
+    return *this;
+  }
+  constexpr CustomOperationValue &operator=(CustomOperationValue &&other) noexcept {
+    if (this != &other) {
+      reset(); id = other.id; vtable = other.vtable; descriptor_size = other.descriptor_size;
+      if (vtable && vtable->move) vtable->move(descriptor.data(), other.descriptor.data());
+      else descriptor = other.descriptor;
+      other.reset();
+    }
+    return *this;
+  }
+  constexpr ~CustomOperationValue() { reset(); }
+private:
+  constexpr void reset() noexcept {
+    if (vtable && vtable->destroy) vtable->destroy(descriptor.data());
+    id = {}; vtable = nullptr; descriptor_size = 0;
+  }
 };
 
 template <class Descriptor>
 concept InlineCustomOperationDescriptor =
-    std::is_trivially_copyable_v<Descriptor> &&
+    std::is_nothrow_copy_constructible_v<Descriptor> &&
+    std::is_nothrow_move_constructible_v<Descriptor> &&
+    std::is_nothrow_destructible_v<Descriptor> &&
     sizeof(Descriptor) <= kCustomOperationInlineBytes &&
     alignof(Descriptor) <= alignof(std::max_align_t) &&
     requires(const Descriptor &descriptor, std::span<const TensorDesc> inputs,
@@ -495,9 +549,13 @@ concept InlineCustomOperationDescriptor =
 
 template <InlineCustomOperationDescriptor Descriptor>
 Descriptor load_custom_descriptor(const void *storage) noexcept {
-  std::array<std::byte, sizeof(Descriptor)> bytes{};
-  std::memcpy(bytes.data(), storage, bytes.size());
-  return std::bit_cast<Descriptor>(bytes);
+  if constexpr (std::is_trivially_copyable_v<Descriptor>) {
+    std::array<std::byte, sizeof(Descriptor)> bytes{};
+    std::memcpy(bytes.data(), storage, bytes.size());
+    return std::bit_cast<Descriptor>(bytes);
+  } else {
+    return *std::launder(static_cast<const Descriptor *>(storage));
+  }
 }
 
 template <InlineCustomOperationDescriptor Descriptor>
@@ -528,18 +586,39 @@ struct CustomOperationModel final {
     }
   }
 
+  static void copy(void *destination, const void *source) noexcept {
+    std::construct_at(static_cast<Descriptor *>(destination),
+        *std::launder(static_cast<const Descriptor *>(source)));
+  }
+  static void move(void *destination, void *source) noexcept {
+    std::construct_at(static_cast<Descriptor *>(destination),
+        std::move(*std::launder(static_cast<Descriptor *>(source))));
+  }
+  static void destroy(void *storage) noexcept {
+    std::destroy_at(std::launder(static_cast<Descriptor *>(storage)));
+  }
   inline static const CustomOperationVTable vtable{
       std::string_view(Descriptor::operation_name), &traits, &infer,
-      &resource_access};
+      &resource_access,
+      std::is_trivially_copyable_v<Descriptor> ? nullptr : &copy,
+      std::is_trivially_copyable_v<Descriptor> ? nullptr : &move,
+      std::is_trivially_copyable_v<Descriptor> ? nullptr : &destroy};
 };
 
 } // namespace detail
 
-// Provider-neutral, heap-free typed schema. It is a cold build/prepare value;
+// Provider-neutral, inline typed schema. Owned schemas may retain immutable
+// recipe/layout handles; Operation itself never allocates. It is a cold value;
 // PreparedOperation owns the hot execution artifact in a separate header.
 class Operation final {
 public:
   constexpr Operation() noexcept = default;
+  // Every alternative has nonthrowing value semantics. Some standard
+  // libraries omit noexcept on variant's copy even for this closed set.
+  constexpr Operation(const Operation &) noexcept = default;
+  constexpr Operation &operator=(const Operation &) noexcept = default;
+  constexpr Operation(Operation &&) noexcept = default;
+  constexpr Operation &operator=(Operation &&) noexcept = default;
   constexpr explicit Operation(View value) noexcept : value_(value) {}
   constexpr explicit Operation(Copy value) noexcept : value_(value) {}
   constexpr explicit Operation(Fill value) noexcept : value_(value) {}
@@ -577,8 +656,12 @@ public:
     value.id = id;
     value.vtable = &detail::CustomOperationModel<Descriptor>::vtable;
     value.descriptor_size = static_cast<std::uint8_t>(sizeof(Descriptor));
-    std::memcpy(value.descriptor.data(), &descriptor, sizeof(descriptor));
-    return Operation(value);
+    if constexpr (std::is_trivially_copyable_v<Descriptor>)
+      std::memcpy(value.descriptor.data(), &descriptor, sizeof(descriptor));
+    else
+      std::construct_at(reinterpret_cast<Descriptor *>(value.descriptor.data()),
+          std::move(descriptor));
+    return Operation(std::move(value));
   }
 
   constexpr bool valid() const noexcept {
@@ -606,8 +689,11 @@ public:
     // A template-static vtable can have a different address in another shared
     // factor. OperationId is the schema/version identity; the exact byte size
     // catches accidental stale descriptor declarations before decoding.
+    // Nontrivial schemas use the same C++ descriptor definition on both sides;
+    // only trivial schemas permit equivalent independently declared structs.
     if (value == nullptr || value->id != Descriptor::operation_id ||
-        value->descriptor_size != sizeof(Descriptor)) {
+        value->descriptor_size != sizeof(Descriptor) ||
+        std::is_trivially_copyable_v<Descriptor> != (value->vtable->destroy == nullptr)) {
       return std::nullopt;
     }
     return detail::load_custom_descriptor<Descriptor>(value->descriptor.data());
@@ -622,9 +708,14 @@ private:
                    detail::CustomOperationValue>;
   static_assert(std::variant_size_v<Value> ==
                 static_cast<std::size_t>(OperationKind::kCustom) + 1);
+  static_assert([]<std::size_t... I>(std::index_sequence<I...>) {
+    return ((std::is_nothrow_copy_constructible_v<std::variant_alternative_t<I,Value>> &&
+        std::is_nothrow_move_constructible_v<std::variant_alternative_t<I,Value>> &&
+        std::is_nothrow_destructible_v<std::variant_alternative_t<I,Value>>) && ...);
+  }(std::make_index_sequence<std::variant_size_v<Value>>{}));
 
   explicit Operation(detail::CustomOperationValue value) noexcept
-      : value_(value) {}
+      : value_(std::move(value)) {}
 
   friend HYLE_COMPUTE_OPS_API std::string_view
   operation_name(const Operation &operation) noexcept;
@@ -662,7 +753,9 @@ infer_single_output(const Operation &operation,
                     std::span<const TensorDesc> inputs) noexcept;
 
 static_assert(static_cast<std::size_t>(OperationKind::kCustom) + 1 == 25);
-static_assert(std::is_trivially_copyable_v<Operation>);
+static_assert(std::is_nothrow_copy_constructible_v<Operation>);
+static_assert(std::is_nothrow_move_constructible_v<Operation>);
+static_assert(std::is_nothrow_destructible_v<Operation>);
 static_assert(sizeof(Operation) <= 256);
 
 } // namespace hyle::compute

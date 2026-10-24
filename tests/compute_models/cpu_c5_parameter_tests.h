@@ -81,17 +81,17 @@ TEST(HYLE_C5_PARAMETER_SUITE, QwenActualWidthsUseDeclaredFloatNormEpsilon) {
   }
 }
 TEST(HYLE_C5_PARAMETER_SUITE, Qwen24OriginalMtpCodecNormOrderAndCarry) {
-  for (unsigned profile : {48u, 49u}) {
-    const auto identity = cpu_c5_gguf_fixture::profile(profile);
+  for (const auto &parameters : cpu_c5_qwen_nextn::profiles) {
+    const auto identity = cpu_c5_gguf_fixture::profile(parameters.profile);
     SCOPED_TRACE(identity.variant);
     run_q24_semantic_fragment(cpu_c5_qwen_attention::mtp(&identity));
     ASSERT_FALSE(::testing::Test::HasFatalFailure());
   }
 }
 TEST(HYLE_C5_PARAMETER_SUITE, Qwen24CompleteNextNUsesMixedRolesCacheMoeAndFullHead) {
-  for (unsigned profile : {48u, 49u}) {
-    SCOPED_TRACE(profile);
-    cpu_c5_qwen_nextn::check(profile, run_q24_semantic_fragment);
+  for (const auto &parameters : cpu_c5_qwen_nextn::profiles) {
+    SCOPED_TRACE(parameters.variant);
+    cpu_c5_qwen_nextn::check(parameters, run_q24_semantic_fragment);
     ASSERT_FALSE(::testing::Test::HasFatalFailure());
   }
 }

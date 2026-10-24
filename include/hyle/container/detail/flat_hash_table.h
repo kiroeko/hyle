@@ -70,8 +70,7 @@ HYLE_CONTAINER_API void swiss_free(SwissStorage& s, std::size_t slot_size,
 }  // namespace detail
 
 // Open-addressing flat hash map with Abseil-style Swiss control bytes + SIMD
-// group probing + triangular group probing. This is the rewrite clay
-// only sketched (its hashmap.h is linear-probing; control bytes were a TODO).
+// group probing + triangular group probing.
 //
 // find + insert + grow/rehash + erase (tombstones) + for_each iteration are all
 // here. erase marks a tombstone, but RECLAIMS the slot to empty when its group
@@ -450,8 +449,8 @@ class FlatHashMap {
   }
 
   // Insert or assign. Returns true if a new key was inserted, false if updated.
-  // ONE hash + ONE probe walk in the common case (clay/abseil's fused
-  // find_or_prepare): the walk both checks for an existing key and records the
+  // One hash and one probe walk in the common case: the walk both checks for
+  // an existing key and records the
   // first empty/deleted slot to insert into. A second walk happens only when a
   // grow is actually triggered (amortized rare).
   enum class InsertResult : std::uint8_t {

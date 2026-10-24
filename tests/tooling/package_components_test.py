@@ -24,10 +24,10 @@ set(CMAKE_INSTALL_BINDIR bin)
 set(CMAKE_INSTALL_DATADIR share)
 set(HYLE_INSTALL_INCLUDEDIR include)
 set(HYLE_COMPUTE_ROUTE_LIST cpu)
-set(HYLE_KNOWN_COMPONENTS core mem compute compute_backend_cpu fixture_only)
-set(HYLE_KNOWN_PRODUCTS core mem compute fixture_only)
-set(HYLE_PRODUCTION_COMPONENT_LIST core mem compute compute_backend_cpu)
-set(HYLE_PRODUCTION_PRODUCT_LIST core mem compute)
+set(HYLE_KNOWN_COMPONENTS core mem compute compute_backend_cpu graph sched graph_progress fixture_only)
+set(HYLE_KNOWN_PRODUCTS core mem compute graph sched graph_progress fixture_only)
+set(HYLE_PRODUCTION_COMPONENT_LIST core mem compute compute_backend_cpu graph sched graph_progress)
+set(HYLE_PRODUCTION_PRODUCT_LIST core mem compute graph sched graph_progress)
 
 foreach(_foundation IN ITEMS build_contract trace testing)
   add_library(hyle_${_foundation} INTERFACE)
@@ -42,6 +42,10 @@ foreach(_factor IN LISTS HYLE_KNOWN_COMPONENTS)
 endforeach()
 target_link_libraries(hyle_mem INTERFACE hyle_core)
 target_link_libraries(hyle_compute INTERFACE hyle_core)
+target_link_libraries(hyle_graph INTERFACE hyle_compute)
+target_link_libraries(hyle_graph_progress INTERFACE hyle_graph hyle_sched)
+add_library(PackageSchedulerSDK::runtime INTERFACE IMPORTED GLOBAL)
+target_link_libraries(hyle_sched INTERFACE PackageSchedulerSDK::runtime)
 set_target_properties(hyle_compute PROPERTIES HYLE_COMPUTE_CAPABILITIES ggml_cpu)
 if(HYLE_STATIC)
   target_compile_definitions(hyle_core INTERFACE HYLE_STATIC)
@@ -98,6 +102,8 @@ hyle_register_package_dependency(NAME bundled_runtime OWNER core
 hyle_register_package_dependency(NAME cpu OWNER compute_backend_cpu
   EXPORT_TARGETS fake_cpu_vendor FIND_DEPENDENCIES PackageCpuSDK
   STATIC_FIND_DEPENDENCIES PackageStaticSDK)
+hyle_register_package_dependency(NAME scheduler OWNER sched
+  FIND_DEPENDENCIES PackageSchedulerSDK)
 file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/fixture-only.txt" "must not ship\n")
 hyle_register_package_dependency(NAME fixture OWNER fixture_only
   FEATURES fixture_only EXPORT_TARGETS fake_fixture_vendor
@@ -141,7 +147,7 @@ class PackageComponentsTest(unittest.TestCase):
             PRODUCER.replace("@ROOT@", ROOT.as_posix()), encoding="utf-8")
         cls.dependencies = cls.directory / "dependencies"
         for package in ("PackageCpuSDK", "PackageStaticSDK", "PackageTraceSDK",
-                        "PackageHeadersSDK"):
+                        "PackageHeadersSDK", "PackageSchedulerSDK"):
             destination = cls.dependencies / package
             destination.mkdir(parents=True)
             (destination / f"{package}Config.cmake").write_text(
@@ -220,6 +226,30 @@ if(NOT TARGET HyleFixtureRuntime::runtime OR NOT TARGET hyle::core)
   message(FATAL_ERROR "Hyle_DIR did not locate this SDK's private shim")
 endif()
 ''')
+
+    def test_graph_progress_service_does_not_pollute_graph_import(self):
+        for variant in ("static", "shared"):
+            self.consume("graph-only-" + variant, r'''
+set(CMAKE_DISABLE_FIND_PACKAGE_PackageSchedulerSDK TRUE)
+set(CMAKE_DISABLE_FIND_PACKAGE_PackageCpuSDK TRUE)
+find_package(Hyle 0.1.0 EXACT REQUIRED COMPONENTS graph)
+if(NOT TARGET hyle::graph OR TARGET hyle::sched OR TARGET hyle::graph_progress
+   OR TARGET hyle::_factor_sched OR TARGET hyle::_factor_graph_progress
+   OR TARGET PackageSchedulerSDK::runtime)
+  message(FATAL_ERROR "Graph imported an unrequested progress service")
+endif()
+''', variant=variant)
+            self.consume("graph-progress-" + variant, r'''
+find_package(Hyle 0.1.0 EXACT REQUIRED COMPONENTS graph sched)
+if(TARGET hyle::graph_progress OR TARGET hyle::_factor_graph_progress)
+  message(FATAL_ERROR "Graph + Sched implicitly imported progress")
+endif()
+find_package(Hyle 0.1.0 EXACT REQUIRED COMPONENTS graph_progress)
+if(NOT TARGET hyle::graph_progress OR NOT TARGET hyle::_factor_graph_progress
+   OR NOT TARGET hyle::sched OR NOT TARGET PackageSchedulerSDK::runtime)
+  message(FATAL_ERROR "The explicit service omitted its public Scheduler dependency")
+endif()
+''', variant=variant)
 
     def test_failed_quiet_compute_probe_allows_mem_retry_from_same_sdk(self):
         self.consume("quiet-retry", r'''

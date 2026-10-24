@@ -125,9 +125,9 @@ class ComputeRoutesTest(unittest.TestCase):
              "compute_backend_cpu;compute_provider_native;compute_route_vulkan;graph_route_cpu_cuda"),
             ("vulkan", "compute_route_vulkan;graph_route_vulkan;compute_provider_iree_vulkan",
              "compute_backend_cpu;compute_backend_cuda;compute_route_apple;graph_route_cpu_cuda"),
-            ("cpu;cuda", "graph_route_cpu_cuda;graph_route_cpu;graph_route_cuda;sched;compute_provider_onednn",
-             "compute_route_vulkan;compute_route_apple"),
-            ("cpu;vulkan", "graph_route_cpu_vulkan;graph_route_cpu;graph_route_vulkan;sched",
+            ("cpu;cuda", "graph_route_cpu_cuda;graph_route_cpu;graph_route_cuda;compute_provider_onednn",
+             "compute_route_vulkan;compute_route_apple;graph_progress"),
+            ("cpu;vulkan", "graph_route_cpu;graph_route_vulkan",
              "compute_backend_cuda;compute_route_apple;graph_route_cpu_cuda"),
         ):
             with self.subTest(routes=routes):
@@ -136,7 +136,7 @@ class ComputeRoutesTest(unittest.TestCase):
                 checks = ""
                 for factor in expected.split(";"):
                     checks += f'if(NOT HYLE_BUILD_{factor.upper()})\nmessage(FATAL_ERROR "missing {factor}")\nendif()\n'
-                for factor in absent.split(";"):
+                for factor in (absent + ";compute_stream;io_core;sched").split(";"):
                     checks += f'if(HYLE_BUILD_{factor.upper()})\nmessage(FATAL_ERROR "unselected {factor}")\nendif()\n'
                 (source / "CMakeLists.txt").write_text(
                     'cmake_minimum_required(VERSION 3.25)\nproject(route_metadata LANGUAGES NONE)\n'
@@ -144,6 +144,78 @@ class ComputeRoutesTest(unittest.TestCase):
                     'set(HYLE_TARGET_PROCESSOR x86_64)\nset(HYLE_FCONTEXT_SUPPORTED TRUE)\n'
                     'set(HYLE_COMPONENTS graph)\nset(HYLE_BUILD_TESTS OFF)\n'
                     f'set(HYLE_COMPUTE_ROUTES "{routes}")\n'
+                    f'include("{(ROOT / "cmake/HyleComponents.cmake").as_posix()}")\n'
+                    + checks, encoding="utf-8")
+                result = subprocess.run(["cmake", "-S", str(source), "-B", str(source / "build")],
+                                        capture_output=True, text=True, timeout=20, **NO_WINDOW)
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    def test_file_stream_is_an_explicit_route_scoped_service(self):
+        # The real product resolver only; no SDK, providers or generated targets.
+        cases = (
+            ("compute", "cpu", "Windows", "x86_64",
+             "compute_route_cpu", "compute_stream;io_core;sched"),
+            ("graph;compute_stream", "vulkan", "Windows", "x86_64",
+             "graph_route_vulkan;compute_stream;compute_stream_vulkan;io_core",
+             "compute_stream_cpu;compute_stream_cuda;compute_stream_apple;compute_backend_cpu;io_tls;io_http;graph_progress"),
+            ("compute_stream", "cpu", "Linux", "aarch64",
+             "compute_stream;compute_stream_cpu;compute_backend_cpu;io_core",
+             "compute_route_cpu;compute_provider_native;compute_provider_onednn;compute_provider_ggml;graph;io_tls;io_http"),
+        )
+        for ordinal, (products, routes, system, processor, expected, absent) in enumerate(cases):
+            with self.subTest(products=products, routes=routes):
+                source = self.directory / f"stream-{ordinal}"
+                source.mkdir()
+                checks = ""
+                for factor in expected.split(";"):
+                    checks += f'if(NOT HYLE_BUILD_{factor.upper()})\nmessage(FATAL_ERROR "missing {factor}")\nendif()\n'
+                for factor in absent.split(";"):
+                    checks += f'if(HYLE_BUILD_{factor.upper()})\nmessage(FATAL_ERROR "unselected {factor}")\nendif()\n'
+                (source / "CMakeLists.txt").write_text(
+                    'cmake_minimum_required(VERSION 3.25)\nproject(stream_metadata LANGUAGES NONE)\n'
+                    f'set(CMAKE_SYSTEM_NAME "{system}")\nset(HYLE_TARGET_PROCESSOR "{processor}")\n'
+                    f'set(HYLE_SOURCE_DIR "{ROOT.as_posix()}")\n'
+                    'set(HYLE_FCONTEXT_SUPPORTED TRUE)\nset(HYLE_BUILD_TESTS OFF)\n'
+                    f'set(HYLE_COMPONENTS "{products}")\nset(HYLE_COMPUTE_ROUTES "{routes}")\n'
+                    f'include("{(ROOT / "cmake/HyleComponents.cmake").as_posix()}")\n'
+                    + checks, encoding="utf-8")
+                result = subprocess.run(["cmake", "-S", str(source), "-B", str(source / "build")],
+                                        capture_output=True, text=True, timeout=20, **NO_WINDOW)
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    def test_graph_progress_is_an_explicit_route_neutral_service(self):
+        for ordinal, (products, enabled) in enumerate((
+            ("graph;sched", False), ("graph;graph_progress", True),
+            ("graph_progress", True),
+        )):
+            with self.subTest(products=products):
+                source = self.directory / f"progress-{ordinal}"
+                source.mkdir()
+                checks = f'''
+if(NOT HYLE_BUILD_SCHED OR NOT HYLE_BUILD_GRAPH)
+  message(FATAL_ERROR "missing service dependencies")
+endif()
+if(NOT HYLE_BUILD_GRAPH_PROGRESS STREQUAL "{'TRUE' if enabled else 'FALSE'}")
+  message(FATAL_ERROR "progress was not selected explicitly")
+endif()
+if("graph_progress" IN_LIST _HYLE_PRODUCT_FACTORS_GRAPH)
+  message(FATAL_ERROR "progress polluted the ordinary Graph facade")
+endif()
+'''
+                if products == "graph_progress":
+                    checks += '''
+if(HYLE_COMPUTE_ROUTE_LIST OR HYLE_BUILD_GRAPH_BATCH OR
+   HYLE_BUILD_COMPUTE_ROUTE_CPU OR HYLE_BUILD_COMPUTE_ROUTE_VULKAN OR
+   HYLE_BUILD_COMPUTE_PROVIDER_NATIVE OR HYLE_BUILD_IO_CORE)
+  message(FATAL_ERROR "standalone progress acquired a default route or IO")
+endif()
+'''
+                (source / "CMakeLists.txt").write_text(
+                    'cmake_minimum_required(VERSION 3.25)\nproject(progress_metadata LANGUAGES NONE)\n'
+                    f'set(HYLE_SOURCE_DIR "{ROOT.as_posix()}")\n'
+                    'set(HYLE_TARGET_PROCESSOR x86_64)\nset(HYLE_FCONTEXT_SUPPORTED TRUE)\n'
+                    'set(HYLE_BUILD_TESTS OFF)\nset(HYLE_COMPUTE_ROUTES vulkan)\n'
+                    f'set(HYLE_COMPONENTS "{products}")\n'
                     f'include("{(ROOT / "cmake/HyleComponents.cmake").as_posix()}")\n'
                     + checks, encoding="utf-8")
                 result = subprocess.run(["cmake", "-S", str(source), "-B", str(source / "build")],
@@ -161,7 +233,7 @@ class ComputeRoutesTest(unittest.TestCase):
             self.assertFalse(set(cache) & set(LEGACY))
             self.assertEqual(builds[name]["jobs"], 2)
 
-    def test_apple_composition_is_selected_only_with_cpu(self):
+    def test_apple_composition_uses_requested_endpoints_without_progress(self):
         # Factor selection only. Native Apple build/runtime use the actual Air.
         for routes, expected in (("apple", False), ("cpu;apple", True)):
             with self.subTest(routes=routes):
@@ -175,12 +247,10 @@ class ComputeRoutesTest(unittest.TestCase):
                     'set(HYLE_COMPONENTS graph)\nset(HYLE_BUILD_TESTS OFF)\n'
                     f'set(HYLE_COMPUTE_ROUTES "{routes}")\n'
                     f'include("{(ROOT / "cmake/HyleComponents.cmake").as_posix()}")\n'
-                    f'if({"NOT " if expected else ""}HYLE_BUILD_GRAPH_ROUTE_CPU_APPLE)\n'
-                    'message(FATAL_ERROR "CPU+Apple factor selection differs")\nendif()\n'
-                    + ('if(NOT HYLE_BUILD_SCHED OR NOT HYLE_BUILD_GRAPH_ROUTE_CPU)\n'
-                       'message(FATAL_ERROR "composition lacks CPU progress")\nendif()\n' if expected else
-                       'if(HYLE_BUILD_GRAPH_ROUTE_CPU)\n'
-                       'message(FATAL_ERROR "single Apple route acquired CPU route")\nendif()\n'),
+                    'if(NOT HYLE_BUILD_GRAPH_ROUTE_APPLE OR HYLE_BUILD_GRAPH_PROGRESS)\n'
+                    'message(FATAL_ERROR "Apple graph endpoint or optional progress differs")\nendif()\n'
+                    f'if({"NOT " if expected else ""}HYLE_BUILD_GRAPH_ROUTE_CPU)\n'
+                    'message(FATAL_ERROR "CPU endpoint differs from requested routes")\nendif()\n',
                     encoding="utf-8")
                 result = subprocess.run(["cmake", "-S", str(source), "-B", str(source / "build")],
                                         capture_output=True, text=True, timeout=20, **NO_WINDOW)

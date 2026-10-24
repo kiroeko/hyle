@@ -1,0 +1,103 @@
+{
+  "passed": true,
+  "date_utc": "2026-10-19T23:21:10.966087+00:00",
+  "reclaimed_bytes": 902430627,
+  "target_count": 12,
+  "removed": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\bf16-grouped-bank\\checks\\before\\control.exe",
+      "bytes": 116756992,
+      "sha256": "efbe1fd35665a46fe0183355f3ca4b393b55ecafe0bd6dffbf7d60e6d8119d84"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\bf16-grouped-bank\\checks\\before\\control.map",
+      "bytes": 33594327,
+      "sha256": "f0b5946592e5ff688ddf0a1bad43ac4b08e5d2ea47004f0ba3bd34163673838b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\bf16-grouped-bank\\checks\\constant\\control.exe",
+      "bytes": 116759552,
+      "sha256": "994e3e48434769bc093abc3297da8668d6cd5987ba55214e264dc5a8ebb84a49"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\bf16-grouped-bank\\checks\\constant\\control.map",
+      "bytes": 33596448,
+      "sha256": "f41065c8a664cdfb99d2a1bcac9259ad0ebf1b937deaf2091e3a436daa2f5d46"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\bf16-grouped-bank\\checks\\constant\\new.exe",
+      "bytes": 116788224,
+      "sha256": "2d453c12761a2592492d356950a42d50f53204ff5c73444689e290e445322e4e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\bf16-grouped-bank\\checks\\constant\\new.map",
+      "bytes": 33702530,
+      "sha256": "286226986e22f709e28715e6cabaf6a834ee095d2be5eae28648b6c73c9f4dfd"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\bf16-grouped-bank\\checks\\constant-owned\\control.exe",
+      "bytes": 116770816,
+      "sha256": "b4d3b50ccab28b864977b039aab39d5684efdd6ca75e8864b70cbb99ff347cf6"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\bf16-grouped-bank\\checks\\constant-owned\\control.map",
+      "bytes": 33623322,
+      "sha256": "6c8b0471e4df414f2c3243f0b9130b7de080c134cbbf463282149ff6ef9aaad8"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\bf16-grouped-bank\\checks\\native1\\control.exe",
+      "bytes": 116756992,
+      "sha256": "528dc3880eeb658e59c0f461bca2580545c2ee7546a11990b07064711e625d2d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\bf16-grouped-bank\\checks\\native1\\control.map",
+      "bytes": 33594327,
+      "sha256": "d877d5da582b3bccad81c10a63d574417d34c908b2d198dd14c0c56ac43318d6"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\bf16-grouped-bank\\checks\\native1\\new.exe",
+      "bytes": 116786688,
+      "sha256": "7b123d7b74e2ee730614016a9c4c5df00601b4174c0af2e2889fb2e54200a848"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\bf16-grouped-bank\\checks\\native1\\new.map",
+      "bytes": 33700409,
+      "sha256": "4eb8456f03c733e32869fee92b71766f9248ba609da7e146380fa641788315ae"
+    }
+  ],
+  "protected": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\bf16-grouped-bank\\checks\\native1\\tests.exe",
+      "bytes": 117938688,
+      "sha256": "81f83b834a6edd058b8ff769ee43103b11331bc196258807cfc02f4af25344e3"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\bf16-grouped-bank\\checks\\constant-owned\\new.exe",
+      "bytes": 116800000,
+      "sha256": "690346f7a284584fe079af88b64b4cbab0ab534d7b37ac37a6d06030e7ee592c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\bf16-grouped-bank\\checks\\native1\\tests.map",
+      "bytes": 36215143,
+      "sha256": "84b03378c8b05d4a982e133d179ee171f9c7f3e7c5a379387cff46c84d573fc8"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\bf16-grouped-bank\\checks\\constant-owned\\new.map",
+      "bytes": 33729404,
+      "sha256": "7031c2773b1057c1faecd86ad536e3139636841e355164d4f6e4fd591660800e"
+    }
+  ],
+  "actual_executed_script": {
+    "path": "C:\\public\\project-hyle\\hyle\\test.ps1",
+    "bytes": 2968,
+    "sha256": "cc309a4385122fb78f19eab4d1b0e566be37eafb4701653e53921e1788179f50"
+  },
+  "script_text": "$ErrorActionPreference = 'Stop'\n$bf16Workspace = (Resolve-Path -LiteralPath $PSScriptRoot).Path\n$bf16Stage = [System.IO.Path]::GetFullPath((Join-Path $bf16Workspace '.scratch/architecture-refactor-2026-10-18/bf16-grouped-bank'))\n$bf16StagePrefix = $bf16Stage.TrimEnd('\\') + '\\'\n$bf16Targets = @(\n    'C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\bf16-grouped-bank\\checks\\before\\control.exe'\n    'C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\bf16-grouped-bank\\checks\\before\\control.map'\n    'C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\bf16-grouped-bank\\checks\\constant\\control.exe'\n    'C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\bf16-grouped-bank\\checks\\constant\\control.map'\n    'C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\bf16-grouped-bank\\checks\\constant\\new.exe'\n    'C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\bf16-grouped-bank\\checks\\constant\\new.map'\n    'C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\bf16-grouped-bank\\checks\\constant-owned\\control.exe'\n    'C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\bf16-grouped-bank\\checks\\constant-owned\\control.map'\n    'C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\bf16-grouped-bank\\checks\\native1\\control.exe'\n    'C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\bf16-grouped-bank\\checks\\native1\\control.map'\n    'C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\bf16-grouped-bank\\checks\\native1\\new.exe'\n    'C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\bf16-grouped-bank\\checks\\native1\\new.map'\n)\n$bf16Protected = @(\n    'C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\bf16-grouped-bank\\checks\\native1\\tests.exe'\n    'C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\bf16-grouped-bank\\checks\\constant-owned\\new.exe'\n    'C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\bf16-grouped-bank\\checks\\native1\\tests.map'\n    'C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\bf16-grouped-bank\\checks\\constant-owned\\new.map'\n)\nforeach ($bf16Path in $bf16Targets) {\n    $bf16Resolved = (Resolve-Path -LiteralPath $bf16Path).Path\n    if (-not $bf16Resolved.StartsWith($bf16StagePrefix, [System.StringComparison]::OrdinalIgnoreCase)) { throw \"Target outside this batch: $bf16Resolved\" }\n    if ($bf16Protected -contains $bf16Resolved) { throw \"Protected target: $bf16Resolved\" }\n    if ((Get-Item -LiteralPath $bf16Resolved).PSIsContainer) { throw \"Only explicit files may be removed: $bf16Resolved\" }\n}\n[long]$bf16Reclaimed = 0\nforeach ($bf16Path in $bf16Targets) {\n    $bf16Reclaimed += (Get-Item -LiteralPath $bf16Path).Length\n    Remove-Item -LiteralPath $bf16Path -Force\n}\nWrite-Output \"BF16_GROUPED_RECLAIMED_BYTES=$bf16Reclaimed\"\n",
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\bf16-grouped-bank-2026-10-20.zip",
+    "bytes": 2543855,
+    "sha256": "4eb6017adfea85a773b6ec3e8cbdf71f7e1c16c321bc99a86f76795bb648bba1"
+  },
+  "retained": "Current actual tests and ready-constant new benchmark images/maps, all incremental objects, source/commands/failures/raw samples/traces and public archive; no SDK removed",
+  "script_status": "Already executed successfully; do not rerun the old deletion list"
+}

@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "../compute_provider_native/half_test_support.h"
+#include "../compute_models/ct_asymmetric_int4_fixture.h"
 #include "hyle/compute/cuda.h"
 #include "hyle/compute/model_ops.h"
 #include "hyle/compute/prepared_operation.h"
@@ -66,6 +67,10 @@ TEST_P(CudaArtifactLifecycle, ChangedPayloadTwoSlotsAndAcceptedWorkSurvivesOwner
     source.push_back(input(c::DataType::kInt32, {k,n/8}, bytes(std::vector<std::int32_t>(n*k/8,0x76543210))));
     source.push_back(input(c::DataType::kInt32, {k/group,n/8}, bytes(std::vector<std::int32_t>(n*k/group/8,0x33333333))));
     source.push_back(input(type, {k/group,n}, floating(type,std::vector<float>(n*k/group,.1f))));
+  } else if (format == Format::kCompressedTensorsAsymmetric4) {
+    source.push_back(input(c::DataType::kInt32, {n,k/8}, bytes(std::vector<std::int32_t>(n*k/8,0x76543210))));
+    source.push_back(input(c::DataType::kInt32, {n/8,k/group}, bytes(std::vector<std::int32_t>(n*k/group/8,0x33333333))));
+    source.push_back(input(type, {n,k/group}, floating(type,std::vector<float>(n*k/group,.1f))));
   } else {
     source.push_back(input(c::DataType::kInt32, {n,k/8}, bytes(std::vector<std::int32_t>(n*k/8,0x76543210))));
     source.push_back(input(type, {n,k/group}, floating(type,std::vector<float>(n*k/group,.1f))));
@@ -149,7 +154,8 @@ TEST_P(CudaArtifactLifecycle, ChangedPayloadTwoSlotsAndAcceptedWorkSurvivesOwner
     for(std::int64_t row=0;row<n;++row)for(std::int64_t col=0;col<k;++col) {
       float value;
       if(nf4)value=((col%2==0)^bool(pass))?.375f:-.375f;
-      else value=float(format==Format::kAwqGemm4?order[row%8]-3:int(col%8)-8)*scale;
+      else value=float(format==Format::kAwqGemm4?order[row%8]-3:
+          int(col%8)-(format==Format::kCompressedTensorsAsymmetric4?3:8))*scale;
       expected[row*k+col]=rounded(type,value);
     }
     const auto expected_bytes=floating(type,expected);
@@ -160,8 +166,109 @@ TEST_P(CudaArtifactLifecycle, ChangedPayloadTwoSlotsAndAcceptedWorkSurvivesOwner
   }
 }
 INSTANTIATE_TEST_SUITE_P(OriginalPrecision,CudaArtifactLifecycle,
-  ::testing::Combine(::testing::Values(Format::kNf4,Format::kNf4DoubleQuant,Format::kAwqGemm4,Format::kCompressedTensorsSymmetric4),
+  ::testing::Combine(::testing::Values(Format::kNf4,Format::kNf4DoubleQuant,Format::kAwqGemm4,Format::kCompressedTensorsSymmetric4,
+                                      Format::kCompressedTensorsAsymmetric4),
                     ::testing::Values(c::DataType::kFloat16,c::DataType::kBFloat16,c::DataType::kFloat32)));
+
+TEST(CudaArtifactDecode, CtAsymmetricAxesPaddingAndSourceRoundingSurviveRebinding) {
+  using Fixture = ct_asymmetric_test::Fixture;
+  auto context = g::cuda::create_context().value();
+  auto memory = c::cuda::MemoryResource::create(context, c::cuda::MemoryKind::kDevice).value();
+  auto queue = context.create_queue().value();
+  for (auto type : {c::DataType::kFloat16, c::DataType::kBFloat16, c::DataType::kFloat32}) {
+    for (auto requested : {c::DataType::kUnknown, c::DataType::kFloat32}) {
+      SCOPED_TRACE(static_cast<int>(type));
+      SCOPED_TRACE(static_cast<int>(requested));
+      const std::array descriptions{
+          c::TensorDesc::dense(c::DataType::kInt32,
+              std::array{Fixture::rows, Fixture::columns / 8}).value(),
+          c::TensorDesc::dense(c::DataType::kInt32,
+              std::array{(Fixture::rows + 7) / 8, Fixture::groups}).value(),
+          c::TensorDesc::dense(type,
+              std::array{Fixture::rows, Fixture::groups}).value()};
+      const auto operation = c::model_ops::artifact_weight_decode(
+          Format::kCompressedTensorsAsymmetric4, Fixture::group, requested);
+      std::array<c::TensorDesc, 1> output_desc;
+      ASSERT_TRUE(c::infer_output_descriptions(operation, descriptions, output_desc).ok());
+      EXPECT_EQ(output_desc[0].data_type(), requested == c::DataType::kUnknown ? type : requested);
+      // Keep every old input/output allocation until both invocations retire.
+      std::vector<mem::Buffer> retained;
+      struct Record { std::size_t index; std::vector<std::byte> expected; };
+      std::vector<Record> records;
+      auto prepared = c::prepare(context, operation, descriptions, output_desc, memory.ref()).value();
+      EXPECT_EQ(prepared.provider().id, c::torch_cuda::kProviderId);
+      EXPECT_FALSE(prepared.runtime_properties().capture_compatible);
+      auto direct = prepared.create_invocation().value();
+      auto builder = g::GraphBuilder::create().value();
+      std::array<g::ValueId, 3> ids;
+      for (std::size_t i = 0; i < ids.size(); ++i) ids[i] = builder.input(descriptions[i]).value();
+      const auto node = builder.add_node(operation, ids).value();
+      const auto result_id = builder.result(node).value();
+      ASSERT_TRUE(builder.publish(result_id).ok());
+      auto logical = std::move(builder).finish().value();
+      auto compiled = g::cuda::compile(logical, context, memory.ref()).value();
+      EXPECT_EQ(compiled.report.step(0)->provider.id, c::torch_cuda::kProviderId);
+      std::array slots{compiled.executable.create_invocation().value(),
+                       compiled.executable.create_invocation().value()};
+      for (unsigned round = 0; round < 2; ++round) {
+        const Fixture fixture(round);
+        const auto source_round = [type](double value) { return double(rounded(type, float(value))); };
+        const auto expected = fixture.expected(source_round);
+        std::vector<float> expected_floats;
+        for (double value : expected) expected_floats.push_back(static_cast<float>(value));
+        const auto expected_bytes = floating(output_desc[0].data_type(), expected_floats);
+        if (round == 0 && type != c::DataType::kFloat32 && requested == c::DataType::kFloat32) {
+          bool witness = false;
+          for (std::int64_t row = 0; row < Fixture::rows; ++row)
+            for (std::int64_t col = 0; col < Fixture::columns; ++col) {
+              const auto i = static_cast<std::size_t>(row * Fixture::columns + col);
+              const auto group = static_cast<std::size_t>(row * Fixture::groups + col / Fixture::group);
+              const auto unrounded = double(fixture.logical_codes[i] - fixture.logical_zero_points[group]) *
+                                     source_round(fixture.scales[group]);
+              witness |= unrounded != expected[i];
+            }
+          EXPECT_TRUE(witness) << "fixture must distinguish source-type rounding from direct F32 decode";
+        }
+        std::vector<float> scales;
+        for (double value : fixture.scales) scales.push_back(static_cast<float>(value));
+        const std::array payloads{bytes(fixture.codes), bytes(fixture.zero_points), floating(type, scales)};
+        for (std::size_t slot = 0; slot < slots.size(); ++slot) {
+          SCOPED_TRACE(round);
+          SCOPED_TRACE(slot);
+          if (round != 0) ASSERT_TRUE(slots[slot].reset().ok());
+          std::array<c::ConstTensorView, 3> views;
+          for (std::size_t i = 0; i < ids.size(); ++i) {
+            retained.push_back(mem::Buffer::create(memory.ref(), payloads[i].size(), 256).value());
+            ASSERT_TRUE(retained.back().view().write(payloads[i]).ok());
+            views[i] = c::ConstTensorView::create(descriptions[i], retained.back().view()).value();
+            ASSERT_TRUE(slots[slot].bind(ids[i], views[i]).ok());
+          }
+          retained.push_back(mem::Buffer::create(memory.ref(), expected_bytes.size(), 256).value());
+          const auto direct_index = retained.size() - 1;
+          const std::array destination{c::TensorView::create(output_desc[0], retained.back().view()).value()};
+          retained.push_back(mem::Buffer::create(memory.ref(), expected_bytes.size(), 256).value());
+          const auto graph_index = retained.size() - 1;
+          ASSERT_TRUE(slots[slot].bind(result_id,
+              c::TensorView::create(output_desc[0], retained.back().view()).value()).ok());
+          ASSERT_TRUE(g::cuda::prepare_replay(slots[slot], queue).ok());
+          EXPECT_EQ(slots[slot].replay_route(), g::ReplayRoute::kCommands);
+          auto direct_done = direct.submit(queue, views, destination).value();
+          ASSERT_TRUE(direct_done.wait().ok());
+          auto graph_done = slots[slot].submit(queue).value();
+          ASSERT_TRUE(graph_done.wait().ok());
+          records.push_back({direct_index, expected_bytes});
+          records.push_back({graph_index, expected_bytes});
+        }
+        for (const auto &record : records) {
+          std::vector<std::byte> actual(record.expected.size());
+          ASSERT_TRUE(retained[record.index].view().read(actual).ok());
+          EXPECT_EQ(actual, record.expected);
+        }
+      }
+    }
+  }
+}
+
 TEST(CudaArtifactAdmission, MetadataExhaustionReturnsErrorWithoutLeaking) {
   mem::QuotaAllocator quota(mem::system_allocator(), 0);
   auto rejected = g::cuda::create_context({.metadata_allocator = quota.get()});

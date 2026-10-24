@@ -1,0 +1,346 @@
+{
+  "date": "2026-10-21",
+  "created_utc": "2026-10-21T12:13:02.215342+00:00",
+  "status": "Two actual root-owned native traces analyzed; one related host-only redundancy removed and checked. Main append/capture and exclusive-suffix mechanisms remain unimplemented.",
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\qwen-paged-native-cost-2026-10-21.zip",
+    "bytes": 7431283,
+    "sha256": "36bd124ef7cefaca8f711e182ed5996fe53edc9e3a675b6fcad93b119632d093"
+  },
+  "archive_file_count": 127,
+  "native_scope": "Windows RTX4070; current2941 and olddenseff748; original3turn256prefill+32decode schedule,capacity1024,864inputs/99host-visible IDs/96decode calls. No MTP/images/concurrent users. Each arm profiled once, separately from the existing throughput window.",
+  "original_traces": {
+    "current": {
+      "nsys": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-native-cost-20261021\\current\\capture.nsys-rep",
+        "bytes": 4753590,
+        "sha256": "c7923f8e028996a94597ef8d547d804d3ce119eb634e11745d4c6a6cdba26355"
+      },
+      "sqlite": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-native-cost-20261021\\current\\capture.sqlite",
+        "bytes": 11980800,
+        "sha256": "f570b8b11c59bc93f1bf6b959c05174baf1463c9e799bc42975f4837b2a8e190"
+      },
+      "profile": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-native-cost-20261021\\current\\profile.result.json",
+        "bytes": 1157,
+        "sha256": "98a030d2ce77b80e033b50023bb62a713528bd37b1a14fab4c81722d43cffa6a"
+      },
+      "export": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-native-cost-20261021\\current\\export.result.json",
+        "bytes": 563,
+        "sha256": "0bb3439ec797075f5b79cd8f22d0abf4315036cc38d71537e93b7da56521bcc5"
+      }
+    },
+    "dense": {
+      "nsys": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-native-cost-20261021\\dense\\capture.nsys-rep",
+        "bytes": 4798551,
+        "sha256": "e27980d8ae0194a4fa64b3268b1fa31ad8f704c644a5f6db168275a6fac01835"
+      },
+      "sqlite": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-native-cost-20261021\\dense\\capture.sqlite",
+        "bytes": 12136448,
+        "sha256": "16eb86d7cfb10051f11988169373f6818ffaf4da3013673b7498ebe47b0918c4"
+      },
+      "profile": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-native-cost-20261021\\dense\\profile.result.json",
+        "bytes": 1276,
+        "sha256": "b2ebd5c6223e11d499992fb31a859da52cd098ee6d056321fd559dde8291a761"
+      },
+      "export": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-native-cost-20261021\\dense\\export.result.json",
+        "bytes": 559,
+        "sha256": "e91dd58b80823840de5c8e5a9d6f5fae2b574f6d48f9c0f9958c5862f5beff17"
+      }
+    }
+  },
+  "actual_native_results": {
+    "status": "frozen actual native evidence; no new target runs",
+    "detail": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-native-cost-20261021\\native-analysis.json",
+      "bytes": 1092568,
+      "sha256": "150f74389ed8a6c8cf524d4e9ca52fe43c4ca1ec0505f32d3c911aca04461435"
+    },
+    "discovery": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-native-cost-20261021\\profiler-discovery.json",
+      "bytes": 13528,
+      "sha256": "6227ed03248268abbb48b99cdf2ea39b26c67a3f96ffd87ecab4903b69a9e8a3"
+    },
+    "rows": {
+      "current": {
+        "all96decode": {
+          "calls": 96,
+          "per_call_mean_us": {
+            "envelope": 11337.53875,
+            "device_busy_union": 10113.1253125,
+            "kernel_union": 10037.511729166667,
+            "copy_union": 75.83525,
+            "eager_D2D_union": 23.28276041666667,
+            "no_traced_device": 1224.4134375,
+            "no_device_before_first_kernel": 913.3937604166666,
+            "no_device_inside_kernel_span": 146.4043125,
+            "no_device_after_last_kernel": 164.61536458333333,
+            "no_device_no_recorded_API": 487.6053645833333,
+            "GraphLaunch_API": 678.1901875,
+            "GraphLaunch_during_no_device": 152.1403125,
+            "non_token_Memcpy_API": 161.81319791666667,
+            "non_token_Memcpy_during_no_device": 52.5108125,
+            "inter_graph_kernel_range": 98.30110416666668,
+            "inter_graph_kernel_range_no_device": 75.01834375
+          },
+          "per_call_mean_counts": {
+            "kernel_count": 584.0,
+            "copy_count": 82.625,
+            "eager_D2D_count": 23.25,
+            "GraphLaunch_count": 7.0,
+            "EventCreate_count": 2.0,
+            "EventRecord_count": 2.7708333333333335,
+            "EventSync_count": 2.7708333333333335,
+            "StreamSync_count": 2.125
+          },
+          "device_busy_envelope_percent": 89.20035940340226,
+          "eager_copy_envelope_percent": 0.20535991920351024,
+          "eager_copy_total_bytes": 10027008
+        },
+        "pure90decode": {
+          "calls": 90,
+          "per_call_mean_us": {
+            "envelope": 10959.355166666666,
+            "device_busy_union": 10099.647911111111,
+            "kernel_union": 10026.3718,
+            "copy_union": 73.53424444444444,
+            "eager_D2D_union": 23.711433333333336,
+            "no_traced_device": 859.7072555555555,
+            "no_device_before_first_kernel": 564.6207111111111,
+            "no_device_inside_kernel_span": 145.29922222222223,
+            "no_device_after_last_kernel": 149.78732222222223,
+            "no_device_no_recorded_API": 364.82272222222224,
+            "GraphLaunch_API": 677.1506111111112,
+            "GraphLaunch_during_no_device": 151.4863222222222,
+            "non_token_Memcpy_API": 155.5042111111111,
+            "non_token_Memcpy_during_no_device": 44.87034444444445,
+            "inter_graph_kernel_range": 96.09696666666666,
+            "inter_graph_kernel_range_no_device": 72.38553333333334
+          },
+          "per_call_mean_counts": {
+            "kernel_count": 584.0,
+            "copy_count": 82.6,
+            "eager_D2D_count": 23.6,
+            "GraphLaunch_count": 7.0,
+            "EventCreate_count": 0.0,
+            "EventRecord_count": 2.0,
+            "EventSync_count": 2.0,
+            "StreamSync_count": 2.0
+          },
+          "device_busy_envelope_percent": 92.15549416474438,
+          "eager_copy_envelope_percent": 0.21635792409988355,
+          "eager_copy_total_bytes": 9916416
+        }
+      },
+      "dense": {
+        "all96decode": {
+          "calls": 96,
+          "per_call_mean_us": {
+            "envelope": 11522.593916666667,
+            "device_busy_union": 10062.128677083334,
+            "kernel_union": 10011.705135416665,
+            "copy_union": 50.637875,
+            "eager_D2D_union": 0.0,
+            "no_traced_device": 1460.4652395833332,
+            "no_device_before_first_kernel": 1202.4922916666667,
+            "no_device_inside_kernel_span": 73.24932291666667,
+            "no_device_after_last_kernel": 184.723625,
+            "no_device_no_recorded_API": 218.92054166666665,
+            "GraphLaunch_API": 599.3902604166666,
+            "GraphLaunch_during_no_device": 599.3902604166666,
+            "non_token_Memcpy_API": 40.29032291666667,
+            "non_token_Memcpy_during_no_device": 40.27198958333334,
+            "inter_graph_kernel_range": 0.0,
+            "inter_graph_kernel_range_no_device": 0.0
+          },
+          "per_call_mean_counts": {
+            "kernel_count": 596.0,
+            "copy_count": 59.375,
+            "eager_D2D_count": 0.0,
+            "GraphLaunch_count": 1.0,
+            "EventCreate_count": 2.0,
+            "EventRecord_count": 2.4375,
+            "EventSync_count": 2.4375,
+            "StreamSync_count": 2.125
+          },
+          "device_busy_envelope_percent": 87.32520428867264,
+          "eager_copy_envelope_percent": 0.0,
+          "eager_copy_total_bytes": 0
+        },
+        "pure90decode": {
+          "calls": 90,
+          "per_call_mean_us": {
+            "envelope": 11016.376722222221,
+            "device_busy_union": 9986.367855555554,
+            "kernel_union": 9936.711788888888,
+            "copy_union": 49.88397777777778,
+            "eager_D2D_union": 0.0,
+            "no_traced_device": 1030.0088666666668,
+            "no_device_before_first_kernel": 805.5169111111111,
+            "no_device_inside_kernel_span": 74.34872222222222,
+            "no_device_after_last_kernel": 150.14323333333334,
+            "no_device_no_recorded_API": 87.83473333333333,
+            "GraphLaunch_API": 595.3103666666667,
+            "GraphLaunch_during_no_device": 595.3103666666667,
+            "non_token_Memcpy_API": 31.6678,
+            "non_token_Memcpy_during_no_device": 31.648244444444444,
+            "inter_graph_kernel_range": 0.0,
+            "inter_graph_kernel_range_no_device": 0.0
+          },
+          "per_call_mean_counts": {
+            "kernel_count": 596.0,
+            "copy_count": 59.0,
+            "eager_D2D_count": 0.0,
+            "GraphLaunch_count": 1.0,
+            "EventCreate_count": 0.0,
+            "EventRecord_count": 2.0,
+            "EventSync_count": 2.0,
+            "StreamSync_count": 2.0
+          },
+          "device_busy_envelope_percent": 90.65020294205323,
+          "eager_copy_envelope_percent": 0.0,
+          "eager_copy_total_bytes": 0
+        }
+      }
+    },
+    "demonstrated_findings": [
+      {
+        "finding": "PagedAppend replaces exactly12dense scatter kernels per decode with native range copies and splits one captured graph into7 actual launches.",
+        "evidence": "all96:current56064vsdense57216kernels;672vs96GraphLaunch. pure90:584vs596kernels/call;7vs1launch/call. Exact counts, not estimated operation lists."
+      },
+      {
+        "finding": "The payload added by append/COW is small and physical copy GPU time is not the dominant measured bucket.",
+        "evidence": "96decode adds2232eagerD2Dcopies,10027008bytes and2235145ns device union (23.283us/call,0.205%current token envelope). Geometry independently predicts1152new-KV row copies=1179648bytes plus1080partial-tail prefix copies=8847360bytes. Count/byte total exactly matches trace; copies of the same size are not individually labelled by source."
+      },
+      {
+        "finding": "No recurring event-creation/synchronization explosion in the actual hot path.",
+        "evidence": "Both pure90 arms have0EventCreate;both have180EventRecord,180EventSynchronize,180StreamSynchronize. All96have192EventCreateeach, confined to actual recorded/cold calls;current extra32record/sync occur outside pure90."
+      },
+      {
+        "finding": "Extra submission work and captured-range transitions are directly visible.",
+        "evidence": "pure90 non-token memcpy API current155.504us/call vsdense31.668us;GraphLaunch inclusive677.151vs595.310us. Current6inter-range transitions total96.097us/call:23.711us actual eagercopy busy plus72.386us no-traced-device gaps. These CPU/GPU/gap buckets overlap and must not be added."
+      },
+      {
+        "finding": "Unmarked host-side intervals grow with history, but no function attribution is possible.",
+        "evidence": "pure current no-device/no-recorded-API mean315.638/357.827/421.003us across3turns;dense104.179/77.639/81.686us. This includes source control/publication/preparation, profiler effects and any untraced work. Source per-step cold bucket is separate, ends before submit, and cannot be used to name all of this gap."
+      }
+    ],
+    "interpretation": {
+      "priority": "Next natural target is native paged append submission/capture integration plus independently measured host state/permission control costs. Avoid spending the first iteration on copying payload bandwidth or recurring event construction, which these traces do not support as primary new costs.",
+      "cannot_close_unprofiled_gap": "Current96tokenAPI envelope is17.765296ms smaller than dense in this one instrumented pair, while the unprofiled median comparison has current slower. Thus these traces establish work/count/gap mechanisms, not the share of the unprofiled difference or a stable speedup.",
+      "software_instrumentation_overlap": "Dense GraphLaunch calls lie wholly in no-traced-device intervals; current multiple launches overlap earlier graph execution. That different tracing/enqueue overlap alone makes inclusive API sums unsuitable as predicted savings.",
+      "upper_bound_scope": "The recorded72.386us/call inter-graph no-device time is the observed gap bucket associated with6split boundaries, not a guaranteed recoverable gain. Some or all may remain required dependencies/profiler work. Similarly23.711us copy time is measured device work, not total host cost.",
+      "boundary": "DtoH hostAPI token endpoint precedes current snapshot publication. Previous publication can shift into next envelope and final publication is excluded. Original source phase/step clocks, unprofiled throughput and this timeline remain separate."
+    },
+    "limitations": [
+      "Exactly one instrumented native process per arm; no tokens/s result or unprofiled speedup attribution.",
+      "Both traces warn driver13.4 is not directly supported by this NSYS build and use13.3 collector/legacy software instrumentation; all warnings retained. No hardware tracing/counters were collected.",
+      "Device busy is interval union of actual kernels/copies/memsets across streams. API inclusive time, kernel sum and wall are not additive. EventSynchronize often overlaps actual GPU execution and is not removable overhead.",
+      "All96decode is primary;90pure reuse excludes only actual first2recording calls in each turn and is supplementary. Actual capture metadata from ProcessStreams decides this selection.",
+      "Each token envelope runs from previous4B DtoH hostAPI end to current4B DtoH hostAPI end. Snapshot publication is after token read and can be shifted into the next envelope; final publication is outside the last endpoint. These envelopes are not exact source phase/step clocks.",
+      "No traced device activity is a measurable union complement. An interval with no recorded API is not a CPU-function measurement, proof of CPU idleness or proof it is removable; CPU sampling is disabled.",
+      "Copy payload GPU durations/bytes are reported separately from memcpy submission API durations and GraphLaunch costs; overlapping time cannot be summed into a claimed total saving.",
+      "One run cannot isolate changed pointers/layout, clock/load variation and nonlinear software tracing overhead; any dominant-cost claim must remain bounded by these actual observed buckets.",
+      "No product/source build or GPU query/launch by this analyzer. SQLite opened mode=ro and query_only; only scratch reports/extracted logs are written."
+    ],
+    "expected_scope": {
+      "images": {
+        "current": "2941d9df0192ce2422b1d7b668f029800ce5b59134d11bcebaf3403f2f8f26e0",
+        "dense": "ff74869467413bd91ecbee3b59d4c9111fe18595af574e51e1e8c1cfa08128e1"
+      },
+      "IDs": "All99 from ProcessStreams match each other and exact last performance logs;96decode/6phase/864tokens confirmed.",
+      "GPU_run_owner": "root only; this agent ran pure host SQLite/file analysis."
+    }
+  },
+  "full_native_review": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-native-cost-20261021\\native-analysis.json",
+    "bytes": 1092568,
+    "sha256": "150f74389ed8a6c8cf524d4e9ca52fe43c4ca1ec0505f32d3c911aca04461435"
+  },
+  "source_change": {
+    "source": {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph_batch\\paged_append.cc",
+      "bytes": 24176,
+      "sha256": "6456d7d9a5a658e6f89daf19c98e3ba33042818b6e5a8c8deff1f0ae81390199"
+    },
+    "freeze": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-native-cost-20261021\\host-review\\implementation\\source-freeze.json",
+      "bytes": 4282,
+      "sha256": "db7b77c0a6db6c74f6e521091b9953a92d169eff64edc68c046184b1b5ae14e7"
+    },
+    "source_review": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-native-cost-20261021\\host-review\\source-review.json",
+      "bytes": 14628,
+      "sha256": "2fca5cb04544215b99d3fc2f0f31c600e123ac659d95ef06d27b1f735f02b8ad"
+    },
+    "change": "Borrow previous immutable layout canonical footprint already checked by original PagedArena.read_impl; retain owner/schema/count checks and all dynamic dirty/copy/ready/permission/retirement gates. Removes12private old-ID allocations and12*P page_id/view rechecks for nonempty T1 history. It does not remove every O(P) operation or solve capture fragmentation.",
+    "build": {
+      "CXX": 1,
+      "links": 3,
+      "NVCC": 0,
+      "SDK_builds": 0,
+      "ready": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-native-cost-20261021\\qwen-ready-attempt1.json",
+        "bytes": 1252,
+        "sha256": "4ffaa55e9645797aaffba04b7166cc75b3ecea89a99cd551cbe06c688388fbb7"
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-native-cost-20261021\\qwen-link1\\qwen.exe",
+        "bytes": 139699712,
+        "sha256": "38596ad8d5fac42002763b88a6691c4bf2705434bb076896f701ef87260eea57"
+      },
+      "changed_link_inputs": "Exactly one paged_append object versus2941, other191identical."
+    },
+    "numerical_regression": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-native-cost-20261021\\host-review\\runtime-comparison.json",
+      "bytes": 61604,
+      "sha256": "509a8d13edc0fd08569a56e1ea68105946697b843608e54e3fcd9a0b030a8da3"
+    },
+    "actual_vectors": 52,
+    "all_byte_equal": true,
+    "checked": "22prefix/branch/full-hit and30pressure/restore decision vectors; all non-time IDs/phase/dispatch/Graph/hit/restore/budget observations equal to prior2941. Original real CPU/CUDA append fixtures also exit0.",
+    "fixture_results": {
+      "cpu": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-native-cost-20261021\\cpu-run1\\result.json",
+        "bytes": 1065,
+        "sha256": "8939467c70f49182064f0be65191c711d81e8c0ef5d8c7d2a809a5cfd45953ed"
+      },
+      "cuda": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-native-cost-20261021\\cuda-run1\\result.json",
+        "bytes": 1073,
+        "sha256": "a458db0772e4acda2c81d64ed5ec32f506e48e672f5b8ade80c3dc9005304297"
+      }
+    },
+    "no_postpatch_full_throughput_window": true,
+    "distinction": "The native timeline is before this small source change, so neither timeline nor latest full throughput table certifies3859 speed."
+  },
+  "architecture": {
+    "exclusive_design": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-native-cost-20261021\\exclusive-design\\design.json",
+      "bytes": 29892,
+      "sha256": "5dc248240b9189a49e942fbfb6511b9587c165ed76edc791801474799c32f60c"
+    },
+    "capturable_append_design": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-native-cost-20261021\\paged-append-native-design.json",
+      "bytes": 17155,
+      "sha256": "d4c960c4ae7bab91b1e952aa547322a748d3791d03572364c2c4f35be4c7a482"
+    },
+    "scope": "Design constraints only, not delivered functionality. Compute batch narrow device-descriptor append program via actual backend extension; selected writer update proof plus actual capture identity; one original Graph effect/executor and ordinary fallback. Separate bounded committed-prefix reads and one move-only tail authority with append-epoch failure/actual-use isolation; shared branches retain COW.",
+    "source_review": "Do not flip capture_compatible, infer write permission from use_count, poison an old committed prefix on suffix failure, or bypass per-root native admission by retaining a frame owner."
+  },
+  "conclusions": [
+    "Actual extra payload-copy device time is about23us/decode, not evidence that copy bandwidth alone explains the unprofiled loss.",
+    "Seven graph submissions versus one and23.25eagerD2D copies/decode are real extra mechanisms. Six inter-capture transitions contain observed device gaps; they are not guaranteed recoverable time.",
+    "Recurring event construction is absent in90pure-reuse calls in both arms; do not optimize an imagined per-append EventCreate hotspot.",
+    "Unmarked no-device/no-API gaps grow with history in paged and remain lower in dense. CPU sampling was disabled, so no individual C++ function share is proven.",
+    "Instrumented total envelope reverses unprofiled ordering; counts and bounded gap mechanisms inform next implementation, not a tokens/s win or attribution of the full3% loss."
+  ],
+  "latest_full_throughput_evidence": "docs/evidence/performance/qwen-retirement-publication-2026-10-21.json",
+  "next": "Implement descriptor-driven capturable native append on the existing typed Graph write path first, preserving actual permission renewal and whole-state publication; then safe exclusive suffix support. Test and run one full comparison after a substantive hot-path batch."
+}

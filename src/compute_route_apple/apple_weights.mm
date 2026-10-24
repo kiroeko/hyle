@@ -1,10 +1,12 @@
 #include "hyle/compute/apple_weights.h"
+#include "apple_weights_internal.h"
 
 #import <Metal/Metal.h>
 
 #include <algorithm>
 #include <cstring>
 #include <mutex>
+#include <limits>
 #include <string>
 #include <vector>
 #include <utility>
@@ -13,6 +15,7 @@
 
 #include "apple_internal.h"
 #include "completion_internal.h"
+#include "../compute/weight_assembly.h"
 #include "hyle/mem/std_allocator.h"
 
 namespace hyle::compute::apple {
@@ -38,6 +41,7 @@ struct WeightProgress final {
   bool done = true;
   Status terminal;
   WeightCompletion *abandoned = nullptr;
+  WeightUploadReport report{};
 };
 
 struct WeightState final {
@@ -55,7 +59,7 @@ struct WeightState final {
   std::vector<SelectedWeight, mem::StdAllocator<SelectedWeight>> selected;
   std::shared_ptr<WeightBacking> backing;
   std::shared_ptr<WeightProgress> progress;
-  std::size_t count = 0, capacity = 0;
+  std::size_t count = 0, capacity = 0, max_fragments = 0;
   id<MTLCommandQueue> queue = nil;
   id<MTLSharedEvent> event = nil;
   id<MTLCommandBuffer> command = nil;
@@ -121,6 +125,12 @@ void finish_weight(WeightProgress &progress, Status status) noexcept {
     std::lock_guard lock(progress.mutex);
     progress.terminal = status;
     progress.done = true;
+    if (status.ok()) {
+      progress.report.completed_bytes = progress.report.submitted_bytes;
+      progress.report.copied_bytes_unknown = false;
+    } else if (progress.report.submitted_bytes != 0) {
+      progress.report.copied_bytes_unknown = true;
+    }
     abandoned = std::exchange(progress.abandoned, nullptr);
   }
   while (abandoned != nullptr) {
@@ -161,7 +171,122 @@ const cd::CompletionVTable weight_completion_vtable{
       return Status::Unimplemented("an accepted Metal blit cannot be preempted");
     }};
 
+Status submit_weight(WeightState &state, std::size_t used, std::size_t banks) noexcept {
+  id<MTLBuffer> source = (__bridge id<MTLBuffer>)state.backing->staging.native_handle();
+  id<MTLBuffer> destination = (__bridge id<MTLBuffer>)state.backing->destination.native_handle();
+  const auto transfer_bytes = (used + 3) & ~std::size_t{3};
+  @autoreleasepool {
+    id<MTLCommandBuffer> command = [state.queue commandBuffer];
+    id<MTLBlitCommandEncoder> blit = [command blitCommandEncoder];
+    if (command == nil || blit == nil)
+      return Status::ResourceExhausted("Metal weight command allocation failed");
+    if (transfer_bytes != 0)
+      [blit copyFromBuffer:source sourceOffset:0 toBuffer:destination destinationOffset:0 size:transfer_bytes];
+    [blit endEncoding];
+    [command encodeSignalEvent:state.event value:state.generation + 1];
+    // Capture backing and progress, never the slot owning this command. An
+    // abandoned Completion joins progress's fixed intrusive list until this
+    // already-registered callback breaks its pending lifetime attachment.
+    __block auto retained = state.backing;
+    __block auto progress = state.progress;
+    id<MTLSharedEvent> event = state.event;
+    const auto generation = state.generation + 1;
+    [command addCompletedHandler:^(id<MTLCommandBuffer> completed) {
+      finish_weight(*progress, metal_status(completed, event, generation));
+      retained.reset();
+      progress.reset();
+    }];
+    [state.command release];
+    state.command = [command retain];
+    ++state.generation;
+    state.count = banks;
+    {
+      std::lock_guard lock(state.progress->mutex);
+      state.progress->done = false;
+      state.progress->terminal = Status::Ok();
+      state.progress->report.submitted_bytes = transfer_bytes;
+      state.progress->report.copied_bytes_unknown = transfer_bytes != 0;
+    }
+    [command commit];
+  }
+  return Status::Ok();
+}
+
+Status writable_weight(WeightState &state) noexcept {
+  HYLE_ASSIGN_OR_RETURN(auto previous, poll_weight(state));
+  if (previous == CompletionPoll::kPending || state.backing.use_count() != 1)
+    return Status::FailedPrecondition("Apple weight transfer is still in flight");
+  if (state.generation == UINT64_MAX)
+    return Status::OutOfRange("Apple weight event generation exhausted");
+  state.count = 0;
+  std::lock_guard lock(state.progress->mutex);
+  state.progress->report = {};
+  return Status::Ok();
+}
+
+Status stage_weight(WeightState &state, ConstTensorView source,
+                    std::byte *destination, std::size_t bytes) noexcept {
+  HYLE_ASSIGN_OR_RETURN(auto range, source.storage().subview(0, bytes));
+  const auto status = range.read({destination, bytes});
+  std::lock_guard lock(state.progress->mutex);
+  if (status.ok()) state.progress->report.staged_bytes += bytes;
+  else state.progress->report.copied_bytes_unknown = true;
+  return status;
+}
+
+Status check_weight_aliases(const WeightState &state,
+    std::span<const WeightSlice> slices) noexcept {
+  id<MTLBuffer> staging = (__bridge id<MTLBuffer>)state.backing->staging.native_handle();
+  id<MTLBuffer> destination = (__bridge id<MTLBuffer>)state.backing->destination.native_handle();
+  const auto first = reinterpret_cast<std::uintptr_t>(staging.contents);
+  const auto second = reinterpret_cast<std::uintptr_t>(destination.contents);
+  if (!staging.contents || !destination.contents ||
+      staging.length > UINTPTR_MAX - first || destination.length > UINTPTR_MAX - second)
+    return Status::OutOfRange("Apple weight backing host address overflows");
+  for (const auto &slice : slices) {
+    HYLE_ASSIGN_OR_RETURN(auto bytes, slice.source.description().required_bytes());
+    HYLE_ASSIGN_OR_RETURN(auto range, slice.source.storage().subview(0, bytes));
+    HYLE_ASSIGN_OR_RETURN(auto mapping, range.map_host());
+    const auto address = reinterpret_cast<std::uintptr_t>(mapping.bytes().data());
+    Status status;
+    if (!mapping.bytes().data() || bytes > UINTPTR_MAX - address)
+      status = Status::OutOfRange("Apple weight source host address overflows");
+    else if ((address < first + staging.length && first < address + bytes) ||
+             (address < second + destination.length && second < address + bytes))
+      status = Status::InvalidArgument("Apple weight source aliases private staging/backing");
+    status.Update(mapping.close());
+    if (!status.ok()) return status;
+  }
+  return Status::Ok();
+}
+
 } // namespace detail
+
+Result<detail::WeightBinding> detail::WeightAccess::binding(
+    const WeightBatch &batch, std::uint64_t id) noexcept {
+  auto owner = batch.state_;
+  if (!owner)
+    return std::unexpected(Status::FailedPrecondition("empty Apple weight batch"));
+  for (std::size_t i = 0; i < owner->count; ++i) {
+    const auto &entry = owner->selected[i];
+    if (entry.spec.id != id) continue;
+    const auto &backing = owner->backing->destination;
+    HYLE_ASSIGN_OR_RETURN(auto storage, backing.view().subview(entry.offset, entry.bytes));
+    HYLE_ASSIGN_OR_RETURN(auto tensor, ConstTensorView::create(entry.spec.description, storage));
+    const auto allocator = owner->allocator;
+    return WeightBinding{std::move(owner), tensor, allocator};
+  }
+  return std::unexpected(Status::NotFound("Apple weight ID is not selected"));
+}
+Result<CompletionPoll> detail::WeightAccess::poll(WeightState *state) noexcept {
+  if (!state)
+    return std::unexpected(Status::FailedPrecondition("empty Apple weight source"));
+  return poll_weight(*state);
+}
+Status detail::WeightAccess::wait(WeightState *state) noexcept {
+  if (!state) return Status::FailedPrecondition("empty Apple weight source");
+  return wait_weight(*state);
+}
 
 WeightBatch::~WeightBatch() = default;
 WeightSlots::~WeightSlots() = default;
@@ -222,7 +347,10 @@ Result<WeightSlots> WeightSlots::create(
     const Context &context, const MemoryResource &memory,
     std::span<const WeightSpec> catalog, std::size_t capacity,
     WeightSlotOptions options) noexcept {
+  if (options.max_fragments > static_cast<std::size_t>(PTRDIFF_MAX) / sizeof(WeightSlice))
+    return std::unexpected(Status::OutOfRange("Apple weight fragment capacity exceeds addressable range"));
   if (!context.valid() || !memory.valid() || catalog.empty() || capacity == 0 ||
+      options.max_fragments == 0 ||
       capacity > static_cast<std::size_t>(INT64_MAX))
     return std::unexpected(Status::InvalidArgument("invalid Apple weight slot capacity/context"));
   auto allocator = options.allocator;
@@ -253,6 +381,7 @@ Result<WeightSlots> WeightSlots::create(
                 [](const auto &a, const auto &b) { return a.id < b.id; });
       state->selected.resize(catalog.size());
       state->capacity = capacity;
+      state->max_fragments = options.max_fragments;
       state->progress = std::allocate_shared<detail::WeightProgress>(mem::StdAllocator<detail::WeightProgress>(allocator));
       state->backing = std::allocate_shared<detail::WeightBacking>(mem::StdAllocator<detail::WeightBacking>(allocator));
       auto &backing = *state->backing;
@@ -281,13 +410,9 @@ Result<WeightBatch> WeightSlots::upload(
   if (owner.use_count() != 1)
     return std::unexpected(Status::FailedPrecondition("Apple weight selection is still retained"));
   auto &state = *owner;
-  HYLE_ASSIGN_OR_RETURN(auto previous, detail::poll_weight(state));
-  if (previous == CompletionPoll::kPending || state.backing.use_count() != 1)
-    return std::unexpected(Status::FailedPrecondition("Apple weight transfer is still in flight"));
+  HYLE_RETURN_IF_ERROR(detail::writable_weight(state));
   if (selection.size() > state.selected.size())
     return std::unexpected(Status::InvalidArgument("too many selected Apple weights"));
-  if (state.generation == UINT64_MAX)
-    return std::unexpected(Status::OutOfRange("Apple weight event generation exhausted"));
   const auto capacity = state.capacity;
   std::size_t used = 0;
   // Validate the entire bounded selection before host copy or Metal admission.
@@ -313,51 +438,69 @@ Result<WeightBatch> WeightSlots::upload(
     used += padding + bytes;
   }
   id<MTLBuffer> source = (__bridge id<MTLBuffer>)state.backing->staging.native_handle();
-  id<MTLBuffer> destination = (__bridge id<MTLBuffer>)state.backing->destination.native_handle();
+  {
+    std::lock_guard lock(state.progress->mutex);
+    for (std::size_t i = 0; i < selection.size(); ++i)
+      state.progress->report.logical_bytes += state.selected[i].bytes;
+  }
   auto *pointer = static_cast<std::byte *>(source.contents);
   std::size_t end = 0;
   for (std::size_t i = 0; i < selection.size(); ++i) {
     const auto &entry = state.selected[i];
     std::fill(pointer + end, pointer + entry.offset, std::byte{});
-    HYLE_RETURN_IF_ERROR(selection[i].source.storage().read({pointer + entry.offset, entry.bytes}));
+    HYLE_RETURN_IF_ERROR(detail::stage_weight(state, selection[i].source, pointer + entry.offset, entry.bytes));
     end = entry.offset + entry.bytes;
   }
   // macOS Metal blits require four-byte extents even for byte carriers. The
   // cold backings include this padding; tensor views preserve exact encoding.
   const auto transfer_bytes = (used + 3) & ~std::size_t{3};
   std::fill(pointer + used, pointer + transfer_bytes, std::byte{});
-  @autoreleasepool {
-    id<MTLCommandBuffer> command = [state.queue commandBuffer];
-    id<MTLBlitCommandEncoder> blit = [command blitCommandEncoder];
-    if (command == nil || blit == nil)
-      return std::unexpected(Status::ResourceExhausted("Metal weight command allocation failed"));
-    if (transfer_bytes != 0)
-      [blit copyFromBuffer:source sourceOffset:0 toBuffer:destination destinationOffset:0 size:transfer_bytes];
-    [blit endEncoding];
-    [command encodeSignalEvent:state.event value:state.generation + 1];
-    // Capture backing and progress, never the slot owning this command. An
-    // abandoned Completion joins progress's fixed intrusive list until this
-    // already-registered callback breaks its pending lifetime attachment.
-    __block auto retained = state.backing;
-    __block auto progress = state.progress;
-    id<MTLSharedEvent> event = state.event;
-    const auto generation = state.generation + 1;
-    [command addCompletedHandler:^(id<MTLCommandBuffer> completed) {
-      detail::finish_weight(*progress, detail::metal_status(completed, event, generation));
-      retained.reset();
-      progress.reset();
-    }];
-    [state.command release];
-    state.command = [command retain];
-    ++state.generation;
-    state.count = selection.size();
-    {
-      std::lock_guard lock(state.progress->mutex);
-      state.progress->done = false;
-      state.progress->terminal = Status::Ok();
-    }
-    [command commit];
+  HYLE_RETURN_IF_ERROR(detail::submit_weight(state, used, selection.size()));
+  return WeightBatch(owner);
+}
+
+Result<WeightUploadReport> WeightBatch::report() const noexcept {
+  if (!state_) return std::unexpected(Status::FailedPrecondition("empty Apple weight batch"));
+  std::lock_guard lock(state_->progress->mutex);
+  return state_->progress->report;
+}
+Result<WeightUploadReport> WeightSlots::report(std::size_t slot) const noexcept {
+  if (slot >= 2 || !states_[slot])
+    return std::unexpected(Status::FailedPrecondition("invalid Apple weight slot"));
+  std::lock_guard lock(states_[slot]->progress->mutex);
+  return states_[slot]->progress->report;
+}
+Result<WeightBatch> WeightSlots::upload_slices(
+    std::size_t slot, std::span<const compute::WeightSlice> slices) noexcept {
+  if (closed_ || slot >= 2 || !states_[slot])
+    return std::unexpected(Status::FailedPrecondition("invalid or closed Apple weight slot"));
+  auto &owner = states_[slot];
+  if (owner.use_count() != 1)
+    return std::unexpected(Status::FailedPrecondition("Apple weight selection is still retained"));
+  auto &state = *owner;
+  HYLE_RETURN_IF_ERROR(detail::writable_weight(state));
+  if (slices.size() > state.max_fragments)
+    return std::unexpected(Status::ResourceExhausted("too many Apple weight fragments"));
+  HYLE_ASSIGN_OR_RETURN(auto size, cd::prepare_weight_slices(
+      std::span<const WeightSpec>(state.catalog), slices,
+      std::span<detail::SelectedWeight>(state.selected), state.capacity, 16));
+  {
+    std::lock_guard lock(state.progress->mutex);
+    state.progress->report.logical_bytes = size.logical_bytes;
   }
+  HYLE_RETURN_IF_ERROR(detail::check_weight_aliases(state, slices));
+  id<MTLBuffer> staging = (__bridge id<MTLBuffer>)state.backing->staging.native_handle();
+  auto *pointer = static_cast<std::byte *>(staging.contents);
+  const auto transfer_bytes = (size.physical_bytes + 3) & ~std::size_t{3};
+  std::fill(pointer, pointer + transfer_bytes, std::byte{});
+  const auto banks = std::span<const detail::SelectedWeight>(state.selected.data(), size.banks);
+  for (const auto &slice : slices) {
+    HYLE_ASSIGN_OR_RETURN(auto offset, cd::weight_slice_offset(banks, slice.id));
+    HYLE_ASSIGN_OR_RETURN(auto bytes, slice.source.description().required_bytes());
+    HYLE_RETURN_IF_ERROR(detail::stage_weight(state, slice.source,
+        pointer + offset + slice.destination_offset, bytes));
+  }
+  HYLE_RETURN_IF_ERROR(detail::submit_weight(state, size.physical_bytes, size.banks));
   return WeightBatch(owner);
 }
 

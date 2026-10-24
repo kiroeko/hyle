@@ -606,6 +606,10 @@ Result<Completion> submit_locked(const std::shared_ptr<Run> &run,
     }
     return std::unexpected(status);
   }
+  if (!run->stages.empty()) {
+    const auto &last = run->stages.back();
+    run->completion_fence = last.managed ? last.managed->fence() : run->fence;
+  }
   if (run->completion_fence == run->fence) {
     status = native_status(
         device.fn.ResetFences(device.native.device, 1, &run->fence),

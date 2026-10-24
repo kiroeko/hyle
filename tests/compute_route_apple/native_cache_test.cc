@@ -58,7 +58,8 @@ double q8_value(std::span<const std::uint8_t> bytes,std::size_t index) {
 
 template<class T>void boxed_case(bool paged,bool quantized,unsigned dk,unsigned dv,
     bool causal,int window,bool long_prefill=false,bool large_values=false,bool bounded_long=false,
-    bool small_probability=false,bool subnormal_query=false) {
+    bool small_probability=false,bool subnormal_query=false,
+    unsigned query_heads=8,unsigned kv_heads=2) {
   SCOPED_TRACE(::testing::Message()<<"paged="<<paged<<" q8="<<quantized<<" dk="<<dk
       <<" dv="<<dv<<" window="<<window<<" long="<<long_prefill<<" large="<<large_values);
   const unsigned qr=large_values?(long_prefill?65:1):(long_prefill?66:(causal?18:68));
@@ -69,7 +70,7 @@ template<class T>void boxed_case(bool paged,bool quantized,unsigned dk,unsigned 
       .key_storage=storage,.value_storage=storage,.max_requests=large_values?1u:2u,
       .max_query_rows=qr,.max_kv_rows=large_values?physical:(long_prefill?274u:physical),
       .max_pages=paged?(long_prefill?16u:4u):0u,.max_page_refs=paged?(long_prefill?19u:5u):0u,
-      .query_heads=8,.kv_heads=2,.qk_head_dim=dk,.value_head_dim=dv,.page_size=paged?16u:1u};
+      .query_heads=query_heads,.kv_heads=kv_heads,.qk_head_dim=dk,.value_head_dim=dv,.page_size=paged?16u:1u};
   auto context=n::Context::create().value();auto memory=n::MemoryResource::create(context).value();
   auto staging=n::MemoryResource::create(context).value();
   auto schema=c::BatchSchema::create(cap).value();
@@ -84,8 +85,8 @@ template<class T>void boxed_case(bool paged,bool quantized,unsigned dk,unsigned 
   const std::vector<std::int32_t> tails=paged?(long_prefill?std::vector<std::int32_t>{1,1}:
       std::vector<std::int32_t>{15,1}):std::vector<std::int32_t>{};
   auto layout=schema.version({qp,kp,ids,tails}).value();
-  std::vector<T> query(std::size_t(qr)*8*dk);
-  std::vector<float> key(std::size_t(physical)*2*dk),value(std::size_t(physical)*2*dv);
+  std::vector<T> query(std::size_t(qr)*query_heads*dk);
+  std::vector<float> key(std::size_t(physical)*kv_heads*dk),value(std::size_t(physical)*kv_heads*dv);
   for(std::size_t i=0;i<query.size();++i)query[i]=half_test::encode<T>(large_values?0.F:float(.17*std::sin(double(i)*.23)));
   for(std::size_t i=0;i<key.size();++i)key[i]=large_values?0.F:float(.19*std::cos(double(i)*.13));
   for(std::size_t i=0;i<value.size();++i)value[i]=large_values&&!bounded_long?(i<value.size()/2?65504.F:-65504.F):
@@ -94,15 +95,15 @@ template<class T>void boxed_case(bool paged,bool quantized,unsigned dk,unsigned 
     ASSERT_TRUE(large_values&&long_prefill&&!paged&&quantized&&dk==64);
     std::fill(query.begin(),query.end(),half_test::encode<T>(1.F));
     std::fill(key.begin(),key.end(),0.F);
-    std::fill_n(key.begin(),2*dk,2.F);
+    std::fill_n(key.begin(),kv_heads*dk,2.F);
     std::fill(value.begin(),value.end(),60000.F);
-    std::fill_n(value.begin(),2*dv,0.F);
+    std::fill_n(value.begin(),kv_heads*dv,0.F);
   }
   if(subnormal_query) {
     ASSERT_TRUE(long_prefill&&paged&&quantized&&dk==256&&!large_values);
     std::fill(query.begin(),query.end(),half_test::encode<T>(std::ldexp(1.F,-20)));
-    for(std::size_t i=0;i<key.size();++i)key[i]=(i/(2*dk))%2? -65504.F:65504.F;
-    for(std::size_t i=0;i<value.size();++i)value[i]=(i/(2*dv))%2? -.125F:.125F;
+    for(std::size_t i=0;i<key.size();++i)key[i]=(i/(kv_heads*dk))%2? -65504.F:65504.F;
+    for(std::size_t i=0;i<value.size();++i)value[i]=(i/(kv_heads*dv))%2? -.125F:.125F;
   }
   std::vector<std::uint8_t> kb,vb;
   const auto cache_bytes=[&](std::span<const float> source,std::vector<std::uint8_t>& output) {
@@ -149,35 +150,39 @@ template<class T>void boxed_case(bool paged,bool quantized,unsigned dk,unsigned 
     ASSERT_TRUE(waited)<<waited.error().message();result=std::move(*waited);
   }
   auto description=c::batch_output_description(cap,qr).value();
-  auto output=memory.import_readonly(result->arrays()[0],description).value();std::vector<T> actual(std::size_t(qr)*8*dv);
+  auto output=memory.import_readonly(result->arrays()[0],description).value();std::vector<T> actual(std::size_t(qr)*query_heads*dv);
   ASSERT_TRUE(output.view()->read(std::as_writable_bytes(std::span(actual))).ok());
   const auto at=[&](bool k,std::size_t index) {
     if(quantized)return q8_value(k?kb:vb,index);
     return half_test::decode(half_test::encode<T>(k?key[index]:value[index]));
   };
+  double maximum_error=0;
   for(unsigned request=0;request<cap.max_requests;++request) {
     const int queries=qp[request+1]-qp[request],rows=large_values?8192:(long_prefill?(request?145:129):(request?33:31));
-    for(int row=0;row<queries;++row)for(unsigned head=0;head<8;++head) {
+    for(int row=0;row<queries;++row)for(unsigned head=0;head<query_heads;++head) {
       const int position=rows-queries+row,first=window<0?0:std::max(0,position-window),last=causal?position+1:rows;
       std::vector<double> weights(static_cast<std::size_t>(rows));double sum=0;
       for(int j=first;j<last;++j) {
         const auto physical_row=paged?unsigned(ids[kp[request]+j/16])*16u+unsigned(j%16):unsigned(kp[request]+j);
-        double dot=0;for(unsigned d=0;d<dk;++d)dot+=half_test::decode(query[(std::size_t(qp[request]+row)*8+head)*dk+d])*
-            at(true,(std::size_t(physical_row)*2+head/4)*dk+d);
+        double dot=0;for(unsigned d=0;d<dk;++d)dot+=half_test::decode(query[(std::size_t(qp[request]+row)*query_heads+head)*dk+d])*
+            at(true,(std::size_t(physical_row)*kv_heads+head/(query_heads/kv_heads))*dk+d);
         weights[static_cast<std::size_t>(j)]=std::exp(dot*scale);sum+=weights[static_cast<std::size_t>(j)];
       }
       for(unsigned d=0;d<dv;++d) {
         double expected=0;for(int j=first;j<last;++j) {
           const auto physical_row=paged?unsigned(ids[kp[request]+j/16])*16u+unsigned(j%16):unsigned(kp[request]+j);
-          expected+=weights[static_cast<std::size_t>(j)]/sum*at(false,(std::size_t(physical_row)*2+head/4)*dv+d);
+          expected+=weights[static_cast<std::size_t>(j)]/sum*at(false,(std::size_t(physical_row)*kv_heads+head/(query_heads/kv_heads))*dv+d);
         }
-        const double decoded=half_test::decode(actual[(std::size_t(qp[request]+row)*8+head)*dv+d]);
+        const double decoded=half_test::decode(actual[(std::size_t(qp[request]+row)*query_heads+head)*dv+d]);
+        maximum_error=std::max(maximum_error,std::abs(decoded-expected));
         if(small_probability)ASSERT_GT(expected,1.0);
         if(subnormal_query)ASSERT_GT(std::abs(expected),.025);
         ASSERT_TRUE(std::isfinite(decoded));EXPECT_NEAR(decoded,expected,(large_values&&!bounded_long?.75:(std::is_same_v<T,BF16>?.008:.0025)));
       }
     }
   }
+  if(dk>=512)std::printf("Apple highdim paged=%u dtype=%u D%u/%u H%u/KV%u max_abs=%.9g\n",
+      unsigned(paged),unsigned(cap.query_type),dk,dv,query_heads,kv_heads,maximum_error);
   output.reset();result={};ASSERT_TRUE(context.close().ok());
 }
 
@@ -196,6 +201,15 @@ TEST(AppleCache, OriginalPlainCoupledUnboundedPaths) {
   for(bool paged:{false,true})for(unsigned depth:{64u,128u,256u}) {
     boxed_case<F16>(paged,false,depth,depth,true,-1);
     boxed_case<BF16>(paged,false,depth,depth,true,-1);
+  }
+}
+TEST(AppleCache, PlainHighDimensionsKeepPageMappingAndIndependentValues) {
+  // The first request is Q1; the second is Q17, including the last tile.
+  // Keep the existing independent FP64 oracle and dtype-specific budgets.
+  for(bool paged:{false,true})for(unsigned dk:{512u,576u}) {
+    const unsigned heads=dk==512?64:96;
+    boxed_case<F16>(paged,false,dk,512,true,-1,false,false,false,false,false,heads,1);
+    boxed_case<BF16>(paged,false,dk,512,true,-1,false,false,false,false,false,heads,1);
   }
 }
 TEST(AppleCache, MainDepthsAndLongPrefill) {

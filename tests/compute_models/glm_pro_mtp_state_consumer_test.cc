@@ -1,0 +1,1991 @@
+#include <gtest/gtest.h>
+
+#include <algorithm>
+#include <array>
+#include <bit>
+#include <cmath>
+#include <cstddef>
+#include <cstdint>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <filesystem>
+#include <functional>
+#include <limits>
+#include <memory>
+#include <mutex>
+#include <numeric>
+#include <optional>
+#include <span>
+#include <stdexcept>
+#include <string>
+#include <utility>
+#include <vector>
+
+#include "hyle/compute/model_ops.h"
+#include "hyle/compute/resource_leases.h"
+#include "hyle/compute/storage_owner.h"
+#include "hyle/compute/state_versions.h"
+#if defined(HYLE_TEST_GLM_STATE_CPU)
+#include "hyle/graph/cpu.h"
+#endif
+#if defined(HYLE_TEST_GLM_STATE_CUDA)
+#include "hyle/compute/backends/cuda.h"
+#include "hyle/graph/cuda.h"
+#endif
+#include "glm_pro_mtp_fragment.h"
+#include "glm_pro_original_roles.h"
+#include "glm_pro_mtp_reference.h"
+#include "glm_pro_target_roles.h"
+#include "glm_pro_target_fragment.h"
+#include "glm_pro_target_reference.h"
+#include "glm_original_moe_roles.h"
+#include "glm_original_moe_reference.h"
+#include "glm_original_moe_resident_weights.h"
+#include "glm_shared_vocabulary.h"
+#include "glm_target_verifier_fragment.h"
+#include "model_graph_run.h"
+#include "model_resident_fragment.h"
+#include "glm_gguf_mtp_fragment.h"
+#include "glm_gguf_runtime_source.h"
+#include "glm_gguf_expert_frontier.h"
+#include "glm_gguf_mtp_reference.h"
+#if __has_include("glm_gguf_b09_artifacts.h")
+#include "glm_gguf_b09_artifacts.h"
+#define HYLE_TEST_GLM_B09_ACTUAL_PINS 1
+#endif
+#if __has_include("glm_gguf_b10_artifacts.h")
+#include "glm_gguf_b10_artifacts.h"
+#define HYLE_TEST_GLM_B10_ACTUAL_PINS 1
+#endif
+
+namespace {
+namespace c=hyle::compute;
+namespace g=hyle::graph;
+namespace m=hyle::mem;
+namespace sem=d5_qwen38_24t_semantic_fragments;
+namespace model=glm_pro_mtp_fragment;
+namespace own=glm_pro_original_roles;
+namespace target_own=glm_pro_target_roles;
+namespace target_model=glm_pro_target_fragment;
+namespace vocabulary=glm_shared_vocabulary;
+namespace expert=glm_original_moe_roles;
+namespace supply=glm_original_moe_resident_weights;
+namespace cut=model_resident_fragment;
+using Value=sem::ValueId;
+using Bytes=std::vector<std::byte>;
+using Readonly=vocabulary::ReadonlyRole;
+inline constexpr auto kMoe=glm_moe_geometry::kPro;
+inline constexpr std::int64_t kCapacity=2064,kBasePosition=2053,kSelected=2048,kJournalRows=3;
+
+template<class T> T take(hyle::Result<T> result,const char *where) {
+  if(!result)throw std::runtime_error(std::string(where)+": "+std::string(result.error().message()));
+  return std::move(*result);
+}
+void check(hyle::Status status,const char *where) {
+  if(!status.ok())throw std::runtime_error(std::string(where)+": "+std::string(status.message()));
+}
+Bytes read(const c::ReadLease &lease) {
+  Bytes bytes(lease.size());check(take(lease.view(),"read actual Pro lease").read(bytes),"read Pro bytes");return bytes;
+}
+template<class T> std::vector<T> values(const c::ReadLease &lease) {
+  const auto raw=read(lease);
+  if(raw.size()%sizeof(T))throw std::runtime_error("Pro typed lease byte extent");
+  std::vector<T> result(raw.size()/sizeof(T));std::memcpy(result.data(),raw.data(),raw.size());return result;
+}
+c::ReadLease upload(const c::StorageOwner &owner,std::span<const std::byte> bytes) {
+  auto buffer=take(m::Buffer::create(owner.ref(),bytes.size(),256),"initial/immutable Pro backing");
+  check(buffer.view().write(bytes),"initial/immutable Pro upload");
+  return take(owner.adopt_buffer(std::move(buffer)),"initial/immutable Pro permission");
+}
+std::string directory(const char *name) {
+#if defined(_WIN32)
+  char *value=nullptr;std::size_t count=0;
+  if(_dupenv_s(&value,&count,name))throw std::runtime_error("original Pro directory environment");
+  const std::unique_ptr<char,decltype(&std::free)> cleanup(value,&std::free);return value?value:"";
+#else
+  const auto *value=std::getenv(name);return value?value:"";
+#endif
+}
+
+struct External final {std::size_t slot;Readonly role;};
+struct Recipe final {
+  sem::Fragment fragment;
+  std::vector<External> external;
+};
+Value external(Recipe &recipe,const Readonly &role) {
+  const auto slot=recipe.fragment.constants.size();
+  const auto value=recipe.fragment.constant(role.description,{});
+  recipe.external.push_back({slot,role});return value;
+}
+
+// This holder compiles ordinary public Graphs. The shared model_graph_run
+// function owns their bind/prepare/submit/retire/reset procedure; model state,
+// original roles and expert frontiers are not part of an alternate executor.
+struct Native final {
+  Recipe recipe;
+  sem::GraphCase logical;
+  std::vector<c::ReadLease> parameters;
+  g::CompiledGraph compiled;
+  g::Invocation invocation;
+  c::LeasePool outputs;
+  std::vector<model_graph_run::Port> input_ports,output_ports;
+  std::size_t submissions=0;
+  static Native create(Recipe recipe,c::Context &context,const c::StorageOwner &owner,
+                       bool cuda,std::uint32_t generations=3) {
+    Native result;result.recipe=std::move(recipe);result.logical=sem::make_graph(result.recipe.fragment);
+    std::vector<g::ConstantBinding> constants;
+    for(std::size_t slot=0;slot<result.logical.constants.size();++slot) {
+      const auto found=std::find_if(result.recipe.external.begin(),result.recipe.external.end(),
+          [&](const External &entry){return entry.slot==slot;});
+      const auto &desc=result.recipe.fragment.description(result.recipe.fragment.constants[slot]);
+      if(found!=result.recipe.external.end()) {
+        if(found->role.description!=desc||found->role.owner.ref()!=owner.ref())
+          throw std::runtime_error("Pro immutable constant changed description or actual owner");
+        constants.push_back(take(found->role.binding(result.logical.constants[slot]),"actual ready Pro constant owner"));
+      } else {
+        result.parameters.push_back(upload(owner,result.recipe.fragment.constant_bytes[slot]));
+        constants.push_back({result.logical.constants[slot],take(result.parameters.back().tensor(desc),"actual generated Pro constant")});
+      }
+    }
+    const c::WorkloadContext workload{take(c::ModelArtifactProfile::create(*result.recipe.fragment.profile),"actual Pro artifact profile"),
+        c::WorkloadPhase::kDecode,{0x48594c454d4f444cULL,result.recipe.fragment.region,1}};
+    const g::CompileOptions options{.constants=constants,.workload=workload};
+    const auto compile=[&]()->hyle::Result<g::CompiledGraph> {
+#if defined(HYLE_TEST_GLM_STATE_CPU)
+      if(!cuda)return g::cpu::compile(result.logical.graph,context,options);
+#endif
+#if defined(HYLE_TEST_GLM_STATE_CUDA)
+      if(cuda)return g::cuda::compile(result.logical.graph,context,owner,options);
+#endif
+      throw std::runtime_error("original Pro native backend is unavailable");
+    };
+    result.compiled=take(compile(),"ordinary original Pro Graph compile");
+    // AQ references qualify the actual packed backend, not a model name.
+    // Inspect once at cold compilation, never route providers during replay.
+    for(std::size_t step=0;step<result.compiled.report.step_count();++step) {
+      const auto record=take(result.compiled.report.step(step),"actual packed projection certificate");
+      for(std::size_t i=0;i<record.node_count;++i) {
+        const auto node=take(result.compiled.report.step_node(step,i),"actual packed projection node");
+        const auto op=take(result.logical.graph.operation(node),"actual packed projection operation");
+        std::optional<std::size_t> weight;
+        if(op.get_if<c::MatMul>())weight=1;
+        else if(op.custom_as<c::model_ops::GroupedMatMul>())weight=0;
+        if(!weight)continue;
+        const auto value=take(result.logical.graph.node_input(node,*weight),"actual packed original weight");
+        const auto desc=take(result.logical.graph.value_description(value),"actual packed weight descriptor");
+        if(c::gguf_quantized_type(desc.storage_format())&&record.provider.name!=(cuda?"ggml-cuda":"ggml-cpu"))
+          throw std::runtime_error("actual packed projection provider does not match its AQ certificate");
+      }
+    }
+    for(std::size_t slot=0;slot<result.logical.inputs.size();++slot)
+      result.input_ports.push_back({result.logical.inputs[slot],result.recipe.fragment.description(result.recipe.fragment.inputs[slot])});
+    std::size_t capacity=0;
+    for(std::size_t slot=0;slot<result.logical.outputs.size();++slot) {
+      if(take(result.compiled.executable.output_ownership(slot),"Pro output ownership")!=g::OutputOwnership::kCaller)
+        throw std::runtime_error("Pro results must retain independent caller-owned storage");
+      const auto &desc=result.recipe.fragment.description(result.recipe.fragment.outputs[slot]);
+      const auto bytes=take(desc.required_bytes(),"Pro output extent");
+      if(bytes>std::numeric_limits<std::size_t>::max()-255||capacity>std::numeric_limits<std::size_t>::max()-(bytes+255)/256*256)
+        throw std::runtime_error("Pro output backing capacity overflow");
+      capacity+=(bytes+255)/256*256;
+      result.output_ports.push_back({result.logical.outputs[slot],desc});
+    }
+    if(!generations||capacity>std::numeric_limits<std::size_t>::max()/generations||
+        result.output_ports.size()>std::numeric_limits<std::uint32_t>::max()/generations)
+      throw std::runtime_error("Pro result generations exceed representable capacity");
+    result.invocation=take(result.compiled.executable.create_invocation({.resources=g::ResourceOptions{}}),"ordinary Pro Invocation");
+    result.outputs=take(c::LeasePool::create(owner.ref(),capacity*generations,
+        {.max_blocks=std::uint32_t(result.output_ports.size())*generations,.backing_alignment=256}),"bounded Pro result generations");
+    return result;
+  }
+  std::vector<c::ReadLease> execute(c::Queue &queue,std::span<const c::ReadLease> inputs,
+      std::span<const std::size_t> externally_bound={},const std::function<void(g::Invocation&)> &binder={}) {
+    return model_graph_run::execute(invocation,outputs,queue,input_ports,inputs,output_ports,submissions,externally_bound,binder);
+  }
+};
+
+// Parameter identity remains model-local. Only the actual bounded expert
+// generation, router selection and submission counters are shared by the
+// existing ordinary two-phase runner.
+struct ResidentSource {
+  static constexpr bool kPacked=false;
+  using CpuBatch=supply::CpuBatch;
+  expert::Roles experts;
+  std::unique_ptr<supply::CpuSupply> cpu_supply;
+#if defined(HYLE_TEST_GLM_STATE_CUDA)
+  std::unique_ptr<supply::CudaSupply> cuda_supply;
+#endif
+  bool moe_full_checked=false;
+  std::size_t episodes=0;
+  std::vector<expert::Selection> selections;
+};
+struct Source final:ResidentSource {
+  own::Bound parameters;
+  vocabulary::Vocabulary words;
+  std::array<Readonly,2> prepared;
+  c::LeasePool prepared_pool;
+  bool full_checked=false;
+  std::size_t cold_submissions=0,checked_steps=0;
+};
+struct TargetSource final:ResidentSource {
+  target_own::Bound parameters;
+  std::array<Readonly,2> prepared;
+  c::LeasePool prepared_pool;
+  bool full_checked=false;
+  std::size_t cold_submissions=0,checked_steps=0;
+};
+
+// Insert after Source in glm_pro_mtp_state_consumer_test.cc. This is observer
+// wiring only: every mathematical gate uses its existing independent helper.
+template<class Owner,class ReadValue>
+bool observe_moe(Owner &source,const glm_original_moe_fragment::Result &result,
+                 ReadValue actual) {
+  namespace ref=glm_original_moe_reference;
+  namespace boundary=glm_original_indexer_reference;
+  namespace lm=glm_shared_vocabulary_reference;
+  namespace bytes=glm_pro_mtp_reference::detail;
+  constexpr auto geometry=glm_moe_geometry::kPro;
+  if(!source.experts.source||source.experts.source->model()!=geometry||source.selections.empty()) {
+    ADD_FAILURE()<<"original Pro MoE observer requires the actual Pro source and resident selection";
+    return false;
+  }
+  const auto &data=*source.experts.source;
+  const auto &ports=result.ports;
+  const auto fp=[&](Value value){return bytes::floats(actual(value));};
+  const auto bf=[&](Value value){return bytes::bfloats(actual(value));};
+  const auto integer=[&](Value value){return bytes::integers(actual(value));};
+  const auto input=bf(ports.input);
+  const auto global=integer(ports.ids),local=integer(ports.local_ids),map=integer(ports.map);
+  const auto logits=fp(ports.logits),scores=fp(ports.scores),selection=fp(ports.selection);
+  const auto selected=fp(ports.selected_scores),sum=fp(ports.sum),denominator=fp(ports.denominator);
+  const auto normalized=fp(ports.normalized),weights=fp(ports.weights);
+  if(!ref::expect_router(logits,input,data.router_bytes(),geometry)||
+      !ref::expect_routing({logits,scores,selection,selected,sum,denominator,normalized,weights,global},
+          data.bias_bytes(),geometry))return false;
+  const auto &resident=source.selections.back();
+  if(map!=resident.map) {
+    ADD_FAILURE()<<"original Pro MoE actual map differs from the same resident generation";
+    return false;
+  }
+  if(!ref::expect_mapping(global,map,local,resident.globals,geometry))return false;
+  const bool full=!source.moe_full_checked;
+  const auto matrix=[&](expert::Leg leg,std::optional<std::int32_t> selected_expert=std::nullopt) {
+    const auto [outputs,width]=expert::geometry(leg,geometry);
+    return ref::Fp8Matrix{
+        selected_expert?data.expert_bytes(leg,*selected_expert,false):data.shared_bytes(leg,false),
+        selected_expert?data.expert_bytes(leg,*selected_expert,true):data.shared_bytes(leg,true),
+        std::size_t(outputs),std::size_t(width)};
+  };
+  const auto branch=[&](const glm_original_moe_fragment::ProjectionPorts &projection,bool routed) {
+    if(!projection.gate_raw||!projection.up_raw||!projection.down_raw||projection.down_stored)
+      throw std::runtime_error("original Pro E4 observer requires real F32 projection outputs");
+    const auto gate=fp(*projection.gate_raw),up=fp(*projection.up_raw),down=fp(*projection.down_raw);
+    const auto stored_gate=bf(projection.gate_stored),stored_up=bf(projection.up_stored);
+    const auto activated=bf(projection.activation_stored);
+    if(routed) {
+      if(!ref::expect_selected_projection(gate,input,global,
+              [&](std::int32_t id){return matrix(expert::Leg::kGate,id);},
+              "original Pro selected gate",full,geometry)||
+          !ref::expect_selected_projection(up,input,global,
+              [&](std::int32_t id){return matrix(expert::Leg::kUp,id);},
+              "original Pro selected up",full,geometry)||
+          !ref::expect_selected_projection(down,activated,global,
+              [&](std::int32_t id){return matrix(expert::Leg::kDown,id);},
+              "original Pro selected down",full,geometry))return false;
+    } else {
+      if(!ref::expect_fp8_projection(gate,input,matrix(expert::Leg::kGate),"original Pro shared gate",full)||
+          !ref::expect_fp8_projection(up,input,matrix(expert::Leg::kUp),"original Pro shared up",full)||
+          !ref::expect_fp8_projection(down,activated,matrix(expert::Leg::kDown),"original Pro shared down",full))return false;
+    }
+    const auto activation=fp(projection.activation_raw);
+    // kPro has no SwiGLU limit: these ports must retain the un-clipped actual
+    // BF16 predecessors. The same helper explicitly checks that profile.
+    return boundary::expect_bfloat_store(stored_gate,gate,"Pro actual gate BF16 store")&&
+        boundary::expect_bfloat_store(stored_up,up,"Pro actual up BF16 store")&&
+        ref::expect_activation(fp(projection.gate_clipped),fp(projection.up_clipped),
+            activation,stored_gate,stored_up,geometry)&&
+        boundary::expect_bfloat_store(activated,activation,"Pro actual SwiGLU BF16 store");
+  };
+  if(!branch(ports.routed,true)||!branch(ports.shared,false))return false;
+  const auto weighted=fp(ports.weighted_raw);
+  const auto weighted_stored=bf(ports.weighted_stored);
+  const auto routed_sum=fp(ports.routed_sum_raw);
+  const auto routed_stored=bf(ports.routed_sum_stored);
+  const auto shared_stored=bf(ports.shared_stored);
+  const auto merged=fp(ports.merge_raw);
+  const auto merged_stored=bf(ports.merge_stored);
+  if(!ref::expect_weighted_down(weighted,fp(ports.routed.down_raw.value()),weights,geometry)||
+      !boundary::expect_bfloat_store(weighted_stored,weighted,"Pro actual weighted down BF16 store")||
+      !ref::expect_routed_sum(routed_sum,weighted_stored,geometry)||
+      !boundary::expect_bfloat_store(routed_stored,routed_sum,"Pro actual routed sum BF16 store")||
+      !boundary::expect_bfloat_store(shared_stored,fp(ports.shared.down_raw.value()),"Pro actual shared down BF16 store")||
+      !lm::expect_sum(merged,bytes::widen(routed_stored),bytes::widen(shared_stored))||
+      !boundary::expect_bfloat_store(merged_stored,merged,"Pro actual shared/routed merge BF16 store")||
+      !bytes::same(bf(result.output),merged_stored,"Pro actual MoE returned BF16 merge"))return false;
+  source.moe_full_checked=true;
+  return true;
+}
+
+model::Parameters parameters(Recipe &recipe,const Source &source) {
+  const auto bank=[&](own::Role role){return external(recipe,source.parameters.at(role));};
+  return {.eh=bank(own::Role::kEh),.embedding_norm=bank(own::Role::kEmbeddingNorm),
+      .hidden_norm=bank(own::Role::kHiddenNorm),.input_norm=bank(own::Role::kInputNorm),
+      .post_norm=bank(own::Role::kPostNorm),.index_bias=bank(own::Role::kIndexBias),
+      .index_norm=bank(own::Role::kIndexNorm),.index_weights=bank(own::Role::kIndexWeights),
+      .index_key=bank(own::Role::kIndexKey),.index_query=bank(own::Role::kIndexQuery),
+      .kv_norm=bank(own::Role::kKvNorm),.kv_a=bank(own::Role::kKvA),.output=bank(own::Role::kOutput),
+      .query_norm=bank(own::Role::kQueryNorm),.query_a=bank(own::Role::kQueryA),.query_b=bank(own::Role::kQueryB),
+      .shared_norm=external(recipe,source.words.at(vocabulary::Role::kNorm)),
+      .head=external(recipe,source.words.at(vocabulary::Role::kHead)),
+      .prepared_key=external(recipe,source.prepared[0]),.prepared_value=external(recipe,source.prepared[1])};
+}
+
+// One router frontier cuts a pure model Fragment into the same two ordinary
+// native Graphs used by Flash. Only its actual8 global IDs reach the bounded
+// supplier. Activations and state cross the cut as original producer leases.
+template<class SourceType=ResidentSource>
+struct ResidentRun final {
+  std::shared_ptr<SourceType> source;
+  Recipe recipe;
+  cut::ResidentDraft<glm_original_moe_fragment::Boundary,1> plan;
+  std::vector<Native> phases;
+  static ResidentRun create(Recipe recipe,const glm_original_moe_fragment::Boundary &boundary,
+      std::shared_ptr<SourceType> source,c::Context &context,const c::StorageOwner &owner,bool cuda,
+      std::uint32_t generations=3) {
+    ResidentRun result;result.source=std::move(source);result.recipe=std::move(recipe);
+    result.plan=cut::split(result.recipe.fragment,std::array{boundary},0x474c4d50524f5048ULL);
+    std::vector<Readonly> ready;
+    for(std::size_t slot=0;slot<result.recipe.fragment.constants.size();++slot) {
+      const auto found=std::find_if(result.recipe.external.begin(),result.recipe.external.end(),
+          [&](const External &entry){return entry.slot==slot;});
+      if(found!=result.recipe.external.end())ready.push_back(found->role);
+      else ready.push_back({"Pro cold component constant",
+          result.recipe.fragment.description(result.recipe.fragment.constants[slot]),owner,
+          upload(owner,result.recipe.fragment.constant_bytes[slot])});
+    }
+    for(const auto &phase:result.plan.phases) {
+      Recipe local;local.fragment=phase.fragment;
+      for(std::size_t slot=0;slot<phase.original_constants.size();++slot) {
+        const auto original=phase.original_constants[slot];
+        const auto found=std::find_if(result.recipe.fragment.constants.begin(),result.recipe.fragment.constants.end(),
+            [&](Value value){return value.ordinal()==original.ordinal();});
+        if(found==result.recipe.fragment.constants.end())throw std::runtime_error("Pro cold cut lost immutable constant");
+        const auto index=std::size_t(found-result.recipe.fragment.constants.begin());
+        local.external.push_back({slot,ready.at(index)});
+      }
+      result.phases.push_back(Native::create(std::move(local),context,owner,cuda,generations));
+    }
+    return result;
+  }
+  std::vector<c::ReadLease> execute(c::Queue &queue,std::span<const c::ReadLease> inputs,bool cuda) {
+    (void)cuda;
+    if(inputs.size()+4!=recipe.fragment.inputs.size())throw std::runtime_error("Pro ordinary/resident input count");
+    std::vector<c::ReadLease> live(recipe.fragment.descriptions.size());
+    for(std::size_t i=0;i<inputs.size();++i)live.at(recipe.fragment.inputs[i].ordinal())=inputs[i];
+    std::array<std::vector<c::ReadLease>,2> completed;
+    for(std::size_t index=0;index<phases.size();++index) {
+      const auto &phase=plan.phases[index];
+      std::optional<typename SourceType::CpuBatch> cpu_batch;
+      std::optional<expert::Selection> selection;
+#if defined(HYLE_TEST_GLM_STATE_CUDA)
+      std::optional<c::cuda::WeightBatch> cuda_batch;
+      std::array<g::WeightBinding,4> bindings;
+#endif
+      std::array<std::size_t,4> dynamic{};
+      std::span<const std::size_t> external_ports;
+      std::function<void(g::Invocation&)> binder;
+      if(phase.resident_stage) {
+        const auto &frontier=plan.routers.at(*phase.resident_stage);
+        selection=expert::select(values<std::int32_t>(live.at(frontier.ids.ordinal())),kMoe);
+        if constexpr(SourceType::kPacked) {
+          if(!source->before_upload)throw std::runtime_error("packed source requires its explicit artifact frontier");
+          source->before_upload(selection->globals);
+        }
+        const std::array banks{frontier.banks[0],frontier.banks[1],frontier.banks[2],frontier.map};
+        for(std::size_t bank=0;bank<banks.size();++bank) {
+          const auto found=std::find_if(phase.original_inputs.begin(),phase.original_inputs.end(),
+              [&](Value value){return value.ordinal()==banks[bank].ordinal();});
+          if(found==phase.original_inputs.end())throw std::runtime_error("Pro cut lost actual compressed bank or map");
+          dynamic[bank]=std::size_t(found-phase.original_inputs.begin());
+#if defined(HYLE_TEST_GLM_STATE_CUDA)
+          bindings[bank]={phases[index].logical.inputs.at(dynamic[bank]),supply::kBankIds[bank]};
+#endif
+        }
+#if defined(HYLE_TEST_GLM_STATE_CUDA)
+        if constexpr(!SourceType::kPacked) {
+        if(cuda) {
+          if(!source->cuda_supply)throw std::runtime_error("Pro needs its actual shared CUDA supply");
+          cuda_batch.emplace(take(source->cuda_supply->upload(source->episodes%2,*selection,*source->experts.source,queue),
+              "same-generation original Pro experts/map"));
+          external_ports=dynamic;
+          binder=[&](g::Invocation &active){check(g::cuda::bind(active,bindings,*cuda_batch),"bind actual Pro expert generation");};
+        }
+        }
+#endif
+        if(!cuda||SourceType::kPacked) {
+          if(!source->cpu_supply)throw std::runtime_error("Pro needs its actual shared CPU supply");
+          cpu_batch.emplace(take(source->cpu_supply->upload(*selection,*source->experts.source),"actual Pro CPU expert generation"));
+          for(std::size_t bank=0;bank<banks.size();++bank)live.at(banks[bank].ordinal())=cpu_batch->banks[bank];
+        }
+      }
+      std::vector<c::ReadLease> arguments;
+      for(const auto original:phase.original_inputs)arguments.push_back(live.at(original.ordinal()));
+      completed[index]=phases[index].execute(queue,arguments,external_ports,binder);
+      for(std::size_t slot=0;slot<phase.original_outputs.size();++slot)
+        live.at(phase.original_outputs[slot].ordinal())=completed[index][slot];
+      if(selection) {
+        source->selections.push_back(std::move(*selection));
+#if defined(HYLE_TEST_GLM_STATE_CUDA)
+        if constexpr(!SourceType::kPacked) if(cuda_batch) {
+          const auto accounting=take(cuda_batch->report(),"actual Pro upload accounting");
+          const auto layout=source->cuda_supply->layout();
+          EXPECT_EQ(accounting.logical_bytes,layout.logical_bytes);EXPECT_EQ(accounting.staged_bytes,layout.logical_bytes);
+          EXPECT_EQ(accounting.completed_bytes,accounting.submitted_bytes);EXPECT_FALSE(accounting.copied_bytes_unknown);
+        }
+#endif
+      }
+      // The shared ordinary run helper has waited/reset before the compact
+      // generation can be dropped and either of the two slots reused.
+    }
+    std::vector<c::ReadLease> outputs;
+    for(const auto location:plan.full_outputs)outputs.push_back(completed.at(location.phase).at(location.port));
+    ++source->episodes;return outputs;
+  }
+  std::size_t native_submissions() const {
+    std::size_t result=0;for(const auto &phase:phases)result+=phase.submissions;return result;
+  }
+  std::size_t backing_capacity() const {
+    std::size_t result=0;for(const auto &phase:phases)result+=phase.outputs.stats().capacity_bytes;return result;
+  }
+};
+
+enum Entry:std::size_t {
+  kMain,kCodes,kScales,kHidden,kPending,kCursor,kIndexCursor,kSelection,
+  kJournal,kJournalPositions,kLag,kResources,kEpoch=kResources,kEntries
+};
+inline constexpr auto kTargetMain=static_cast<Entry>(kEntries);
+inline constexpr auto kTargetCursor=static_cast<Entry>(kEntries+1);
+inline constexpr auto kTargetTap=static_cast<Entry>(kEntries+2);
+std::array<c::TensorDesc,3> target_descriptions() {
+  return {sem::dense({kCapacity,model::kCacheDepth}),sem::dense({1},c::DataType::kInt32),
+      sem::dense({1,model::kHidden},c::DataType::kBFloat16)};
+}
+std::array<c::TensorDesc,kResources> descriptions() {
+  return {sem::dense({kCapacity,model::kCacheDepth}),
+      sem::dense({kCapacity,model::kIndexDepth},c::DataType::kFloat8E4M3FN),sem::dense({kCapacity,1}),
+      sem::dense({1,model::kHidden},c::DataType::kBFloat16),sem::dense({1},c::DataType::kInt32),
+      sem::dense({1},c::DataType::kInt32),sem::dense({1},c::DataType::kInt32),
+      sem::dense({kSelected},c::DataType::kInt32),
+      sem::dense({kJournalRows,model::kHidden},c::DataType::kBFloat16),
+      sem::dense({kJournalRows},c::DataType::kInt32),sem::dense({1},c::DataType::kInt32)};
+}
+struct StateLayout final {
+  std::vector<c::TensorDesc> resources;
+  std::array<std::optional<std::size_t>,kResources> slots;
+  std::array<c::TensorDesc,3> target;
+  std::size_t epoch()const noexcept{return resources.size();}
+  std::size_t first_target()const noexcept{return epoch()+1;}
+  std::size_t slot(Entry semantic)const {
+    if(semantic<kResources) {
+      if(!slots[semantic])throw std::runtime_error("this actual cache encoding has no requested state member");
+      return *slots[semantic];
+    }
+    if(semantic==kEpoch)return epoch();
+    if(semantic>=kTargetMain&&semantic<=kTargetTap)return first_target()+semantic-kTargetMain;
+    throw std::runtime_error("unknown GLM continuation semantic member");
+  }
+};
+StateLayout official_layout() {
+  StateLayout r;const auto d=descriptions();r.resources.assign(d.begin(),d.end());
+  for(std::size_t i=0;i<kResources;++i)r.slots[i]=i;r.target=target_descriptions();return r;
+}
+StateLayout converted_layout() {
+  namespace cache=glm_gguf_f32_cache_fragment;const auto &g=glm_gguf_named_parameters::kGeometry;
+  const auto actual=cache::unpooled_layout(g,kCapacity,kSelected,kJournalRows,
+      cache::IndexDescription::from(sem::dense({kCapacity,g.index_depth})));
+  StateLayout r;r.resources=actual.resources;
+  r.slots[kMain]=actual.main;r.slots[kCodes]=actual.index_keys;r.slots[kScales]=actual.index_scales;
+  r.slots[kHidden]=actual.hidden;r.slots[kPending]=actual.pending;r.slots[kCursor]=actual.cursor;
+  r.slots[kIndexCursor]=actual.index_cursor;r.slots[kSelection]=actual.selection;
+  r.slots[kJournal]=actual.journal;r.slots[kJournalPositions]=actual.journal_positions;r.slots[kLag]=actual.lag;
+  r.target=cache::target_descriptions(g,kCapacity);return r;
+}
+
+Value increment(sem::Fragment &f,Value value) {
+  const auto one=f.constant(sem::dense({1},c::DataType::kInt32),sem::bytes(std::vector<std::int32_t>{1}));
+  const auto scan=f.one(c::Operation(c::Scan{.axis=0}),
+      {f.one(c::Operation(c::Concat{.axis=0}),{value,one})});
+  return f.one(c::Operation(c::Gather{}),{scan,one});
+}
+constexpr auto kAbsent=std::numeric_limits<std::size_t>::max();
+struct Step final {
+  Recipe recipe;
+  std::optional<model::Result> model;
+  std::optional<model::IndexHistory> catchup;
+  std::optional<glm_gguf_mtp_fragment::Result> converted_model;
+  std::optional<glm_gguf_f32_cache_fragment::IndexHistory> converted_catchup;
+  std::vector<std::pair<Value,std::size_t>> observations;
+  std::vector<std::size_t> state_ports;
+  std::size_t ordinary_inputs=0,target_hidden=kAbsent;
+  std::int32_t position=0;
+  bool fresh=false;
+  Step():state_ports(kResources,kAbsent){}
+  bool has_model()const noexcept{return model.has_value()||converted_model.has_value();}
+  bool has_catchup()const noexcept{return catchup.has_value()||converted_catchup.has_value();}
+};
+std::size_t expose(Step &step,Value value) {
+  const auto found=std::find_if(step.observations.begin(),step.observations.end(),
+      [&](const auto &entry){return entry.first.ordinal()==value.ordinal();});
+  if(found!=step.observations.end())return found->second;
+  auto &f=step.recipe.fragment;const auto port=f.outputs.size();
+  f.outputs.push_back(f.one(c::Operation(c::Copy{}),{value}));
+  step.observations.push_back({value,port});return port;
+}
+void observe_port(Step &step,Value &value) {
+  const auto &inputs=step.recipe.fragment.inputs;
+  const auto found=std::find_if(inputs.begin(),inputs.end(),[&](Value input){return input.ordinal()==value.ordinal();});
+  if(found!=inputs.end()&&std::size_t(found-inputs.begin())<step.ordinary_inputs)return;
+  (void)expose(step,value);
+}
+Step build_step(const Source &source,bool fresh,std::int32_t position,bool target_conditioned=false) {
+  if(position<kBasePosition||position>=kCapacity)throw std::runtime_error("Pro step is outside the finite prepared domain");
+  Step result;result.fresh=fresh;result.position=position;
+  auto &r=result.recipe;auto &f=r.fragment;
+  f.profile=&d5_moe_semantic_fragments::profiles::glm53_official;
+  f.region=0x474c4d50524f5354ULL+std::uint64_t(position-kBasePosition)*2+std::uint64_t(fresh);f.quantized=true;
+  std::array<Value,kResources> state;
+  const auto desc=descriptions();
+  for(std::size_t i=0;i<state.size();++i)state[i]=f.input(desc[i]);
+  Value hidden=state[kHidden];
+  if(fresh||target_conditioned){result.target_hidden=f.inputs.size();hidden=f.input(sem::dense({1,model::kHidden},c::DataType::kBFloat16));}
+  result.ordinary_inputs=f.inputs.size();
+  const auto p=parameters(r,source);
+  const auto embedding=f.one(c::Operation(c::Gather{}),
+      {external(r,source.words.at(vocabulary::Role::kEmbedding)),state[kPending]});
+  const auto prefix=model::append_prefix(f,hidden,embedding,p);
+  glm_original_moe_fragment::Parameters moe;
+  moe.router=external(r,source.experts.router);moe.bias=external(r,source.experts.bias);
+  for(std::size_t leg=0;leg<3;++leg) {
+    moe.shared[leg]=external(r,source.experts.shared[leg]);
+    moe.banks[leg]=f.input(expert::resident_description(static_cast<expert::Leg>(leg),kMoe));
+  }
+  moe.map=f.input(sem::dense({kMoe.experts},c::DataType::kInt32));
+  result.model=model::append_step(f,prefix,
+      {.main=state[kMain],.codes=state[kCodes],.scales=state[kScales],.selection=state[kSelection],.positions=state[kCursor]},
+      p,moe,{.visible=std::int64_t(position)+1,.selected=kSelected,.fresh=fresh});
+  const auto change=[&](Entry entry,Value value){result.state_ports[entry]=expose(result,value);};
+  change(kMain,result.model->state.main);change(kHidden,result.model->hidden);change(kPending,result.model->pending);
+  const auto next=increment(f,state[kCursor]);change(kCursor,next);
+  if(fresh) {
+    change(kCodes,result.model->state.codes);change(kScales,result.model->state.scales);
+    change(kSelection,result.model->state.selection);change(kIndexCursor,next);
+    change(kLag,f.constant(sem::dense({1},c::DataType::kInt32),sem::bytes(std::vector<std::int32_t>{0})));
+  } else {
+    change(kJournal,f.one(c::Operation(c::Scatter{}),{state[kJournal],state[kLag],prefix.input_norm.stored}));
+    change(kJournalPositions,f.one(c::Operation(c::Scatter{}),{state[kJournalPositions],state[kLag],state[kCursor]}));
+    change(kLag,increment(f,state[kLag]));
+  }
+  const auto probe=[&](Value &value){observe_port(result,value);};
+  result.model->ports.visit_values(probe);
+  result.model->feed_forward.ports.visit_values(probe);
+  return result;
+}
+Step build_catchup(const Source &source) {
+  Step result;
+  auto &r=result.recipe;auto &f=r.fragment;
+  f.profile=&d5_moe_semantic_fragments::profiles::glm53_official;f.region=0x474c4d50524f4348ULL;f.quantized=true;
+  const auto desc=descriptions();
+  std::array<Value,kResources> state;
+  for(std::size_t i=0;i<state.size();++i)state[i]=f.input(desc[i]);
+  result.ordinary_inputs=f.inputs.size();
+  const auto zero=f.constant(sem::dense({1},c::DataType::kInt32),sem::bytes(std::vector<std::int32_t>{0}));
+  const auto input=f.one(c::Operation(c::Gather{}),{state[kJournal],zero});
+  const auto position=f.one(c::Operation(c::Gather{}),{state[kJournalPositions],zero});
+  result.catchup=model::append_index_history(f,input,position,state[kCodes],state[kScales],parameters(r,source));
+  result.state_ports[kCodes]=expose(result,result.catchup->codes);
+  result.state_ports[kScales]=expose(result,result.catchup->scales);
+  result.state_ports[kIndexCursor]=expose(result,increment(f,state[kIndexCursor]));
+  result.state_ports[kLag]=expose(result,zero);
+  const auto probe=[&](Value &value){observe_port(result,value);};result.catchup->visit_values(probe);
+  return result;
+}
+
+struct Epoch final {std::uint64_t epoch,selection_position,reuses;};
+static_assert(sizeof(Epoch)==24);
+struct State final {
+  c::StateSchema schema;
+  c::StateStore store;
+  std::vector<c::StateEntryId> entries;
+  std::size_t peak_backing=0;
+  StateLayout layout;
+  c::StateEntryId entry(Entry semantic)const{return entries.at(layout.slot(semantic));}
+  static State create(const c::StorageOwner &owner,std::size_t budget,const StateLayout &layout,bool with_target=false) {
+    State result;result.layout=layout;const auto &desc=layout.resources;
+    std::vector<c::StateEntrySpec> specs(layout.first_target()+(with_target?3:0));
+    result.entries.resize(specs.size());
+    for(std::size_t i=0;i<desc.size();++i)specs[i]={.description=desc[i],.resource=owner.ref()};
+    specs[layout.epoch()]={.kind=c::StateEntryKind::kHostMetadata,.metadata_bytes=sizeof(Epoch)};
+    if(with_target)for(std::size_t i=0;i<3;++i)specs[layout.first_target()+i]={.description=layout.target[i],.resource=owner.ref()};
+    result.schema=take(c::StateSchema::create(specs),"complete original Pro state schema");
+    result.store=take(c::StateStore::create(result.schema,{.max_versions=20,.max_drafts=2,.max_retained_blocks=192,
+        .max_backing_bytes=budget}),"bounded original Pro state store");
+    for(std::size_t i=0;i<result.entries.size();++i)result.entries[i]=take(result.schema.entry(i),"Pro state entry");
+    return result;
+  }
+  c::ReadLease member(const c::StateVersion &version,Entry entry) const {
+    return take(version.member(this->entry(entry)),"actual Pro continuation member");
+  }
+  c::ReadLease physical_member(const c::StateVersion &version,std::size_t slot)const {
+    return take(version.member(entries.at(slot)),"actual physical continuation member");
+  }
+  std::int32_t scalar(const c::StateVersion &version,Entry entry) const {return values<std::int32_t>(member(version,entry)).at(0);}
+  Epoch epoch(const c::StateVersion &version) const {
+    const auto raw=read(member(version,kEpoch));Epoch result{};
+    if(raw.size()!=sizeof(result))throw std::runtime_error("Pro state metadata extent");
+    std::memcpy(&result,raw.data(),raw.size());return result;
+  }
+  c::StateVersion stage(const c::StateVersion &from,const Step &step,std::span<const c::ReadLease> outputs,std::uint64_t iteration) {
+    auto draft=take(store.begin(from),"complete Pro candidate state");
+    for(std::size_t i=0;i<layout.resources.size();++i)
+      if(step.state_ports.at(i)!=kAbsent)check(draft.replace(entries[i],outputs[step.state_ports[i]]),"stage actual Pro result");
+    auto facts=epoch(from);
+    if(step.fresh)facts={iteration,std::uint64_t(scalar(from,kCursor)),0};
+    else if(step.has_model())++facts.reuses;
+    check(draft.replace_metadata(entry(kEpoch),std::as_bytes(std::span(&facts,1))),"stage Pro iteration identity");
+    auto result=take(draft.finalize(),"finalize complete Pro candidate");
+    peak_backing=std::max(peak_backing,store.stats().backing_bytes);return result;
+  }
+};
+
+void require_observed(bool passed,const char *where) {
+  if(!passed)throw std::runtime_error(std::string("original Pro observation: ")+where);
+}
+void same_storage(const c::ReadLease &first,const c::ReadLease &second) {
+  const auto a=take(first.view(),"first actual Pro storage"),b=take(second.view(),"second actual Pro storage");
+  EXPECT_EQ(a.resource(),b.resource());EXPECT_EQ(a.native_handle(),b.native_handle());
+  EXPECT_EQ(a.offset(),b.offset());EXPECT_EQ(a.size(),b.size());EXPECT_EQ(first.generation(),second.generation());
+}
+using Image=std::vector<Bytes>;
+Image image(const State &state,const c::StateVersion &version) {
+  Image result(state.entries.size());for(std::size_t i=0;i<result.size();++i)result[i]=read(state.physical_member(version,i));
+  return result;
+}
+std::vector<std::uint16_t> fixture_bfloat(std::size_t count,std::size_t salt) {
+  std::vector<std::uint16_t> result(count);
+  for(std::size_t i=0;i<count;++i)result[i]=glm_original_indexer_reference::detail::bfloat(
+      float(int((i*37+salt*17)%257)-128)/128.0F);
+  return result;
+}
+void add_bound(std::size_t &total,std::size_t bytes) {
+  if(bytes>std::numeric_limits<std::size_t>::max()-total)throw std::runtime_error("Pro bounded backing sum overflow");
+  total+=bytes;
+}
+std::size_t aligned_bound(std::size_t bytes) {
+  if(bytes>std::numeric_limits<std::size_t>::max()-255)throw std::runtime_error("Pro initial backing alignment overflow");
+  return (bytes+255)/256*256;
+}
+
+std::shared_ptr<Source> prepare_source(c::Context &context,const c::StorageOwner &owner,c::Queue &queue,bool cuda
+#if defined(HYLE_TEST_GLM_STATE_CUDA)
+    ,const c::cuda::MemoryResource *device
+#endif
+    ) {
+  const auto static_directory=directory("HYLE_GLM_PRO_DIR");
+  const auto moe_directory=directory("HYLE_GLM_PRO_MOE_DIR");
+  if(static_directory.empty()||moe_directory.empty())
+    throw std::runtime_error("set HYLE_GLM_PRO_DIR and HYLE_GLM_PRO_MOE_DIR to authenticated original Pro parameters");
+  auto result=std::make_shared<Source>();
+  auto original=std::make_shared<const own::Data>(own::Data::load(static_directory));
+  result->parameters=own::bind(original,owner);
+  result->words=vocabulary::Vocabulary::bind(
+      std::shared_ptr<const vocabulary::Data>(original,&original->vocabulary),owner);
+  auto experts=std::make_shared<const expert::Data>(expert::Data::load(moe_directory,own::kMoeIndexSha256,kMoe));
+  result->experts=expert::bind(std::move(experts),owner);
+  {
+    Recipe recipe;auto &f=recipe.fragment;
+    f.profile=&d5_moe_semantic_fragments::profiles::glm53_official;f.region=0x474c4d50524f4b56ULL;f.quantized=true;
+    const auto raw=external(recipe,result->parameters.at(own::Role::kKvB));
+    const auto prepared=model::append_prepare_kv(f,raw);
+    f.outputs={prepared.key,prepared.value};
+    auto cold=Native::create(std::move(recipe),context,owner,cuda,1);
+    const auto output=cold.execute(queue,{});
+    require_observed(glm_pro_mtp_reference::expect_prepared_kv(*original,
+        values<std::uint16_t>(output[0]),values<std::uint16_t>(output[1])),"global-macroblock KV decode and BF16 preparation");
+    result->prepared[0]={"original Pro prepared BF16 key",sem::dense({model::kHeads,model::kLatent,model::kNope},c::DataType::kBFloat16),owner,output[0]};
+    result->prepared[1]={"original Pro prepared BF16 value",sem::dense({model::kHeads,model::kValue,model::kLatent},c::DataType::kBFloat16),owner,output[1]};
+    result->cold_submissions=cold.submissions;result->prepared_pool=std::move(cold.outputs);
+  }
+  // All cold readers have retired; retain only the two compact BF16 layouts
+  // on device. Original mapped E4/SF bytes remain for identity and the oracle.
+  result->parameters.roles[own::index(own::Role::kKvB)].lease={};
+#if defined(HYLE_TEST_GLM_STATE_CUDA)
+  if(cuda) {
+    if(!device)throw std::runtime_error("original Pro experts need the same actual typed CUDA resource");
+    result->cuda_supply=std::make_unique<supply::CudaSupply>(take(
+        supply::CudaSupply::create(context,owner,*device,kMoe),"bounded original Pro CUDA expert supply"));
+  } else
+#endif
+  result->cpu_supply=std::make_unique<supply::CpuSupply>(take(supply::CpuSupply::create(owner,kMoe),
+      "bounded original Pro CPU expert supply"));
+  return result;
+}
+
+std::shared_ptr<TargetSource> prepare_target_source(c::Context &context,const c::StorageOwner &owner,
+    c::Queue &queue,bool cuda
+#if defined(HYLE_TEST_GLM_STATE_CUDA)
+    ,const c::cuda::MemoryResource *device
+#endif
+    ) {
+  const auto static_directory=directory("HYLE_GLM_PRO_TARGET_DIR");
+  const auto moe_directory=directory("HYLE_GLM_PRO_TARGET_MOE_DIR");
+  if(static_directory.empty()||moe_directory.empty())
+    throw std::runtime_error("set HYLE_GLM_PRO_TARGET_DIR/HYLE_GLM_PRO_TARGET_MOE_DIR to distinct original77 roles");
+  // CPU and CUDA borrow the same authenticated mappings, never rehashing the
+  // complete target expert source or substituting the distinct layer78 data.
+  static const auto original=std::make_shared<const target_own::Data>(target_own::Data::load(static_directory));
+  static const auto experts=std::make_shared<const expert::Data>(expert::Data::load(moe_directory,target_own::kMoeIndexSha256,kMoe));
+  auto result=std::make_shared<TargetSource>();
+  result->parameters=target_own::bind(original,owner);result->experts=expert::bind(experts,owner);
+  {
+    Recipe recipe;auto &f=recipe.fragment;
+    f.profile=&d5_moe_semantic_fragments::profiles::glm53_official;f.region=0x474c4d5037374b56ULL;f.quantized=true;
+    const auto prepared=model::append_prepare_kv(f,external(recipe,result->parameters.at(target_own::Role::kKvB)));
+    f.outputs={prepared.key,prepared.value};
+    auto cold=Native::create(std::move(recipe),context,owner,cuda,1);
+    const auto output=cold.execute(queue,{});
+    require_observed(glm_pro_mtp_reference::expect_prepared_kv_matrix(original->matrix(target_own::Role::kKvB),
+        values<std::uint16_t>(output[0]),values<std::uint16_t>(output[1])),"original77 global-grid KV preparation");
+    result->prepared[0]={"original77 prepared key",sem::dense({64,512,192},c::DataType::kBFloat16),owner,output[0]};
+    result->prepared[1]={"original77 prepared value",sem::dense({64,256,512},c::DataType::kBFloat16),owner,output[1]};
+    result->cold_submissions=cold.submissions;result->prepared_pool=std::move(cold.outputs);
+  }
+  result->parameters.roles[target_own::index(target_own::Role::kKvB)].lease={};
+#if defined(HYLE_TEST_GLM_STATE_CUDA)
+  if(cuda) {
+    if(!device)throw std::runtime_error("original77 requires the same typed CUDA resource");
+    result->cuda_supply=std::make_unique<supply::CudaSupply>(take(supply::CudaSupply::create(context,owner,*device,kMoe),
+        "bounded original77 CUDA supply"));
+  } else
+#endif
+  result->cpu_supply=std::make_unique<supply::CpuSupply>(take(supply::CpuSupply::create(owner,kMoe),"original77 CPU supply"));
+  return result;
+}
+template<class Outputs>
+Bytes observed(const Step&,std::span<const c::ReadLease>,const Outputs&,Value);
+struct TargetStep final {
+  Step step;
+  target_model::Result model;
+  std::optional<glm_gguf_mtp_fragment::TargetResult> converted;
+  std::array<std::size_t,3> state_ports{};
+};
+TargetStep build_target(const TargetSource &source,const Source &nextn) {
+  TargetStep result;auto &step=result.step;auto &r=step.recipe;auto &f=r.fragment;
+  f.profile=&d5_moe_semantic_fragments::profiles::glm53_official;f.region=0x474c4d5037375354ULL;f.quantized=true;
+  const auto token=f.input(sem::dense({1},c::DataType::kInt32));
+  const auto residual=f.input(sem::dense({1,model::kHidden},c::DataType::kBFloat16));
+  const auto main=f.input(target_descriptions()[0]),cursor=f.input(target_descriptions()[1]);
+  const auto ids=f.input(sem::dense({2048},c::DataType::kInt32));
+  step.ordinary_inputs=f.inputs.size();
+  // Explicit synthetic layer76 adapter: the REAL token lease selects its
+  // original embedding row. This is not a claim of computing layers0..76.
+  const auto hidden=f.one(c::Operation(c::Gather{}),{external(r,nextn.words.at(vocabulary::Role::kEmbedding)),token});
+  const auto bank=[&](target_own::Role role){return external(r,source.parameters.at(role));};
+  target_model::Parameters p;
+  p.attention={bank(target_own::Role::kKvNorm),bank(target_own::Role::kKvA),bank(target_own::Role::kOutput),
+      bank(target_own::Role::kPostNorm),bank(target_own::Role::kQueryB),external(r,source.prepared[0]),external(r,source.prepared[1])};
+  p.input_norm=bank(target_own::Role::kInputNorm);p.query_a=bank(target_own::Role::kQueryA);
+  p.query_norm=bank(target_own::Role::kQueryNorm);p.target_norm=bank(target_own::Role::kTargetNorm);
+  glm_original_moe_fragment::Parameters moe;
+  moe.router=external(r,source.experts.router);moe.bias=external(r,source.experts.bias);
+  for(std::size_t leg=0;leg<3;++leg) {
+    moe.shared[leg]=external(r,source.experts.shared[leg]);
+    moe.banks[leg]=f.input(expert::resident_description(static_cast<expert::Leg>(leg),kMoe));
+  }
+  moe.map=f.input(sem::dense({256},c::DataType::kInt32));
+  result.model=target_model::append(f,hidden,residual,main,ids,cursor,p,moe);
+  const std::array outputs{result.model.main,result.model.cursor,result.model.normalized_tap};
+  for(std::size_t i=0;i<outputs.size();++i)result.state_ports[i]=expose(step,outputs[i]);
+  const auto observe=[&](Value &value){observe_port(step,value);};
+  result.model.ports.visit_values(observe);result.model.feed_forward.ports.visit_values(observe);
+  return result;
+}
+struct TargetFrame final {std::vector<c::ReadLease> output;std::array<c::ReadLease,3> state;};
+TargetFrame execute_target(const TargetStep &step,ResidentRun<> &program,TargetSource &source,
+    const Source &nextn,const c::StorageOwner &owner,c::Queue &queue,bool cuda,
+    const c::ReadLease &token,const c::ReadLease &main,const c::ReadLease &cursor,
+    const c::ReadLease &upstream_ids) {
+  const auto position=values<std::int32_t>(cursor).at(0);
+  if(position<0||position>=kCapacity)throw std::runtime_error("actual target77 cursor exceeds declared finite history");
+  const std::array input{token,upload(owner,sem::bytes(fixture_bfloat(std::size_t(model::kHidden),std::size_t(position)+41))),
+      main,cursor,upstream_ids};
+  TargetFrame result;result.output=program.execute(queue,input,cuda);
+  const auto actual=[&](Value value){return observed(step.step,input,result.output,value);};
+  require_observed(glm_pro_target_reference::observe(*source.parameters.source,step.model,actual,!source.full_checked),
+      "original77 all actual MLA/residual/finalnorm predecessors");
+  require_observed(observe_moe(source,step.model.feed_forward,actual),"original77 actual selected expert mathematics");
+  const std::array input_token{values<std::int32_t>(token).at(0)};
+  require_observed(glm_shared_vocabulary_reference::expect_embedding(
+      glm_pro_mtp_reference::detail::bfloats(actual(step.model.ports.hidden)),
+      nextn.words.source->bytes(vocabulary::Role::kEmbedding),input_token,154880,6144),"actual token enters declared layer76 adapter");
+  for(std::size_t i=0;i<result.state.size();++i)result.state[i]=result.output.at(step.state_ports[i]);
+  source.full_checked=true;++source.checked_steps;return result;
+}
+c::StateVersion attach_target(State &state,const c::StateVersion &candidate,const TargetFrame &target) {
+  auto draft=take(state.store.begin(candidate),"joint original77/78 candidate");
+  const std::array entries{kTargetMain,kTargetCursor,kTargetTap};
+  for(std::size_t i=0;i<entries.size();++i)
+    check(draft.replace(state.entry(entries[i]),target.state[i]),"same-head original77 state output lease");
+  auto result=take(draft.finalize(),"all original77/78 state finalized");
+  state.peak_backing=std::max(state.peak_backing,state.store.stats().backing_bytes);return result;
+}
+
+struct Initial final {
+  Step step;
+  glm_official_index_cache::Quantized encoded;
+  std::size_t codes=0,scales=0;
+};
+Initial build_initial() {
+  Initial result;auto &f=result.step.recipe.fragment;
+  f.profile=&d5_moe_semantic_fragments::profiles::glm53_official;f.region=0x474c4d50524f494eULL;
+  const auto input=f.input(sem::dense({kBasePosition,model::kIndexDepth},c::DataType::kBFloat16));
+  result.step.ordinary_inputs=1;
+  result.encoded=glm_official_index_cache::quantize(f,model::cast(f,input,c::DataType::kFloat32),kBasePosition);
+  const auto old_codes=f.constant(sem::dense({kCapacity,model::kIndexDepth},c::DataType::kFloat8E4M3FN),
+      sem::bytes(std::vector<std::uint8_t>(std::size_t(kCapacity*model::kIndexDepth),0x7f)));
+  const auto old_scales=f.constant(sem::dense({kCapacity,1}),
+      sem::bytes(std::vector<float>(std::size_t(kCapacity),std::numeric_limits<float>::quiet_NaN())));
+  std::vector<std::int32_t> prefix(std::size_t(kBasePosition),0);std::iota(prefix.begin(),prefix.end(),0);
+  const auto indices=f.constant(sem::dense({kBasePosition},c::DataType::kInt32),sem::bytes(prefix));
+  result.codes=expose(result.step,f.one(c::Operation(c::Scatter{}),{old_codes,indices,result.encoded.codes}));
+  result.scales=expose(result.step,f.one(c::Operation(c::Scatter{}),{old_scales,indices,result.encoded.scale}));
+  for(const auto value:{result.encoded.codes,result.encoded.scale,result.encoded.rotated,
+      result.encoded.transformed,result.encoded.input})(void)expose(result.step,value);
+  return result;
+}
+std::array<c::ReadLease,kResources> initial_members(const c::StorageOwner &owner,
+    const Initial &initial,std::span<const c::ReadLease> output) {
+  std::array<c::ReadLease,kResources> result;
+  const auto desc=descriptions();
+  std::vector<float> main(std::size_t(kCapacity*model::kCacheDepth),std::numeric_limits<float>::quiet_NaN());
+  const auto finite=fixture_bfloat(std::size_t(kBasePosition*model::kCacheDepth),3);
+  for(std::size_t i=0;i<finite.size();++i)main[i]=glm_shared_vocabulary_reference::detail::finite_bfloat(finite[i]);
+  result[kMain]=upload(owner,sem::bytes(main));result[kCodes]=output[initial.codes];result[kScales]=output[initial.scales];
+  result[kHidden]=upload(owner,sem::bytes(fixture_bfloat(std::size_t(model::kHidden),5)));
+  const auto scalar=[&](Entry entry,std::int32_t value){result[entry]=upload(owner,sem::bytes(std::vector<std::int32_t>{value}));};
+  scalar(kPending,1);scalar(kCursor,std::int32_t(kBasePosition));scalar(kIndexCursor,std::int32_t(kBasePosition));
+  std::vector<std::int32_t> selected(std::size_t(kSelected),0);std::iota(selected.begin(),selected.end(),0);
+  result[kSelection]=upload(owner,sem::bytes(selected));
+  result[kJournal]=upload(owner,sem::bytes(std::vector<std::uint16_t>(std::size_t(kJournalRows*model::kHidden),0)));
+  result[kJournalPositions]=upload(owner,sem::bytes(std::vector<std::int32_t>(std::size_t(kJournalRows),-1)));
+  scalar(kLag,0);
+  for(std::size_t i=0;i<result.size();++i)EXPECT_EQ(result[i].size(),take(desc[i].required_bytes(),"initial Pro resource extent"));
+  return result;
+}
+
+template<class Outputs>
+Bytes observed(const Step &step,std::span<const c::ReadLease> input,const Outputs &output,Value value) {
+  const auto found=std::find_if(step.observations.begin(),step.observations.end(),
+      [&](const auto &entry){return entry.first.ordinal()==value.ordinal();});
+  if(found!=step.observations.end())return read(output.at(found->second));
+  const auto argument=std::find_if(step.recipe.fragment.inputs.begin(),step.recipe.fragment.inputs.end(),
+      [&](Value entry){return entry.ordinal()==value.ordinal();});
+  if(argument==step.recipe.fragment.inputs.end()||std::size_t(argument-step.recipe.fragment.inputs.begin())>=input.size())
+    throw std::runtime_error("Pro observation lost its actual ordinary input or independent Copy");
+  return read(input[std::size_t(argument-step.recipe.fragment.inputs.begin())]);
+}
+void exact_row(State &state,const c::StateVersion &before,const c::StateVersion &after,
+    Entry entry,std::size_t row,std::size_t row_bytes,std::span<const std::byte> actual_update) {
+  auto expected=read(state.member(before,entry));
+  if(row>=expected.size()/row_bytes||actual_update.size()!=row_bytes)throw std::runtime_error("Pro actual row update extent");
+  std::copy(actual_update.begin(),actual_update.end(),expected.begin()+std::ptrdiff_t(row*row_bytes));
+  EXPECT_EQ(read(state.member(after,entry)),expected)<<"only the actual produced absolute cache row may change";
+}
+std::vector<c::ReadLease> arguments(State &state,const c::StateVersion &version,const Step &step,
+    const c::ReadLease &target={}) {
+  std::vector<c::ReadLease> result;
+  for(std::size_t i=0;i<state.layout.resources.size();++i)result.push_back(state.physical_member(version,i));
+  if(step.target_hidden!=kAbsent) {
+    if(!target)throw std::runtime_error("Pro conditioned prefix requires its explicit previous target tap");
+    result.push_back(target);
+  }
+  return result;
+}
+void validate_step(State &state,const c::StateVersion &version,const Step &step) {
+  const auto cursor=state.scalar(version,kCursor),index=state.scalar(version,kIndexCursor),lag=state.scalar(version,kLag);
+  if(step.has_catchup()) {
+    if(lag!=1||index+1!=cursor||values<std::int32_t>(state.member(version,kJournalPositions)).at(0)!=index)
+      throw std::runtime_error("finite Pro catchup requires exactly one accepted pending index row");
+  } else {
+    if(cursor!=step.position||index+lag!=cursor||lag<0||lag>=kJournalRows)
+      throw std::runtime_error("actual Pro cursor/index frontier differs from this cold step");
+    if(step.fresh&&lag!=0)throw std::runtime_error("fresh Pro must catch up accepted journal rows first");
+  }
+}
+struct StepUpdates final {Bytes main,index,scales,journal;};
+template<class Actual> StepUpdates observe_step(glm_gguf_runtime_source::Source &,const Step &,Actual,std::int32_t);
+template<class Actual>
+StepUpdates observe_step(Source &source,const Step &step,Actual actual,std::int32_t token) {
+  if(step.model) {
+    require_observed(glm_pro_mtp_reference::observe(*source.parameters.source,*step.model,actual,!source.full_checked,token),
+        "original complete Pro NextN actual predecessors");
+    require_observed(observe_moe(source,step.model->feed_forward,actual),"original complete Pro MoE");
+    source.full_checked=true;++source.checked_steps;
+  } else if(step.catchup) {
+    require_observed(glm_pro_mtp_reference::observe_index_history(*source.parameters.source,*step.catchup,actual,false),
+        "accepted actual Pro journal catchup");
+  }
+  StepUpdates r;
+  if(step.model) {
+    const auto row=glm_pro_mtp_reference::detail::widen(glm_pro_mtp_reference::detail::bfloats(actual(step.model->ports.attention.row_stored)));
+    const auto span=sem::bytes(row);r.main.assign(span.begin(),span.end());
+    if(step.fresh) {r.index=actual(step.model->ports.index->history.encoded.codes);r.scales=actual(step.model->ports.index->history.encoded.scale);}
+    else r.journal=actual(step.model->ports.prefix.input_norm.stored);
+  } else {r.index=actual(step.catchup->encoded.codes);r.scales=actual(step.catchup->encoded.scale);}
+  return r;
+}
+template<class SourceType,class Execute>
+c::StateVersion execute_step(State &state,const c::StateVersion &before,const Step &step,
+    SourceType &source,std::uint64_t iteration,Execute execute,const c::ReadLease &target={}) {
+  validate_step(state,before,step);
+  if(!step.fresh&&state.epoch(before).epoch!=iteration)
+    throw std::runtime_error("Pro skip/catchup must retain its incoming iteration epoch");
+  const auto input=arguments(state,before,step,target);
+  const auto output=execute(input);
+  const auto actual=[&](Value value){return observed(step,input,output,value);};
+  const auto updates=observe_step(source,step,actual,state.scalar(before,kPending));
+  auto after=state.stage(before,step,output,iteration);
+
+  for(std::size_t i=0;i<state.layout.resources.size();++i) {
+    if(step.state_ports.at(i)==kAbsent)same_storage(state.physical_member(after,i),state.physical_member(before,i));
+    else same_storage(state.physical_member(after,i),output.at(step.state_ports[i]));
+  }
+  if(step.has_model()) {
+    exact_row(state,before,after,kMain,std::size_t(step.position),updates.main.size(),updates.main);
+    EXPECT_EQ(state.scalar(after,kCursor),step.position+1);
+    if(step.fresh) {
+      exact_row(state,before,after,kCodes,std::size_t(step.position),updates.index.size(),updates.index);
+      if(state.layout.slots[kScales])exact_row(state,before,after,kScales,std::size_t(step.position),4,updates.scales);
+      EXPECT_EQ(state.scalar(after,kIndexCursor),step.position+1);EXPECT_EQ(state.scalar(after,kLag),0);
+      EXPECT_EQ(state.epoch(after).epoch,iteration);EXPECT_EQ(state.epoch(after).reuses,0u);
+    } else {
+      const auto slot=std::size_t(state.scalar(before,kLag));
+      exact_row(state,before,after,kJournal,slot,updates.journal.size(),updates.journal);
+      const std::array<std::int32_t,1> position{step.position};
+      exact_row(state,before,after,kJournalPositions,slot,4,std::as_bytes(std::span(position)));
+      EXPECT_EQ(state.scalar(after,kLag),state.scalar(before,kLag)+1);
+      EXPECT_EQ(state.epoch(after).reuses,state.epoch(before).reuses+1);
+    }
+    const auto selected=values<std::int32_t>(state.member(after,kSelection));
+    EXPECT_EQ(selected.size(),std::size_t(kSelected));
+    for(const auto id:selected)if(id<0||id>step.position)throw std::runtime_error("Pro selected a future/unwritten absolute row");
+  } else {
+    const auto position=std::size_t(state.scalar(before,kIndexCursor));
+    exact_row(state,before,after,kCodes,position,updates.index.size(),updates.index);
+    if(state.layout.slots[kScales])exact_row(state,before,after,kScales,position,4,updates.scales);
+    EXPECT_EQ(state.scalar(after,kIndexCursor),state.scalar(before,kCursor));EXPECT_EQ(state.scalar(after,kLag),0);
+    same_storage(state.member(after,kMain),state.member(before,kMain));
+    same_storage(state.member(after,kSelection),state.member(before,kSelection));
+  }
+  return after;
+}
+
+struct Verifier final {
+  Recipe recipe;
+  std::array<std::size_t,2> pending{};
+  std::size_t logits=0,scores=0,ids=0,reject=0;
+};
+Verifier build_verifier(const Source &source,bool direct_rows=false,bool single_row=false) {
+  Verifier result;auto &f=result.recipe.fragment;
+  f.profile=&d5_moe_semantic_fragments::profiles::glm53_official;f.region=0x474c4d50524f5646ULL;
+  Value taps;
+  if(direct_rows) {
+    const auto first=f.input(sem::dense({1,model::kHidden},c::DataType::kBFloat16));
+    if(single_row)taps=first;
+    else taps=f.one(c::Operation(c::Concat{.axis=0}),{first,f.input(sem::dense({1,model::kHidden},c::DataType::kBFloat16))});
+  } else taps=f.input(sem::dense({2,model::kHidden},c::DataType::kBFloat16));
+  Value logits,scores,ids;std::array<Value,2> row_ids{};
+  const auto head=external(result.recipe,source.words.at(vocabulary::Role::kHead));
+  if(single_row) {
+    logits=f.one(c::model_ops::bfloat_linear_f32(),{taps,head});
+    const auto top=f.append(c::Operation(c::TopK{.count=1,.stable=true}),{logits},2);
+    scores=top[0];ids=top[1];row_ids[0]=model::reshape(f,ids,{1});
+  } else {
+    const auto p=glm_target_verifier_fragment::append(f,taps,head,model::kHidden,model::kVocabulary);
+    logits=p.logits;scores=p.scores;ids=p.ids;row_ids=p.row_ids;
+  }
+  const auto publish=[&](Value value) {
+    const auto port=f.outputs.size();f.outputs.push_back(f.one(c::Operation(c::Copy{}),{value}));return port;
+  };
+  result.logits=publish(logits);result.scores=publish(scores);result.ids=publish(ids);
+  for(std::size_t row=0;row<(single_row?1u:2u);++row)result.pending[row]=publish(row_ids[row]);
+  // The second ranked REAL target row supplies a distinct actual I32 proposal
+  // only to the explicit rejection control. It is never a hand-uploaded ID.
+  const auto first=model::slice(f,logits,0,0,1);
+  const auto top2=f.append(c::Operation(c::TopK{.count=2,.stable=true}),{first},2);
+  result.reject=publish(model::reshape(f,model::slice(f,top2[1],1,1,1),{1}));
+  return result;
+}
+
+void report_head(const Native &program,const Source &source,bool cuda) {
+  const auto &graph=program.logical.graph;
+  std::size_t heads=0;
+  for(const auto &constant:program.recipe.external) {
+    const auto &original_head=source.words.at(vocabulary::Role::kHead);
+    // Embedding is untied but has the SAME [V,H] description. Authenticate
+    // the explicit original role before checking its actual backing identity.
+    if(constant.role.name!=original_head.name)continue;
+    if(constant.role.description!=original_head.description)
+      throw std::runtime_error("original Pro head role changed its full vocabulary description");
+    same_storage(constant.role.lease,source.words.at(vocabulary::Role::kHead).lease);
+    const auto head=program.logical.constants.at(constant.slot);
+    for(std::size_t step=0;step<program.compiled.report.step_count();++step) {
+      const auto selected=take(program.compiled.report.step(step),"original Pro head selected provider");
+      for(std::size_t slot=0;slot<selected.node_count;++slot) {
+        const auto node=take(program.compiled.report.step_node(step,slot),"actual Pro head implementation node");
+        const auto operation=take(graph.operation(node),"actual Pro head operation");
+        if(!operation.custom_as<c::model_ops::BFloatLinearF32>())continue;
+        if(take(graph.node_input(node,1),"actual Pro head original readonly bank")!=head)continue;
+        const auto activation=take(graph.node_input(node,0),"actual Pro normalized BF16 head input");
+        const auto description=take(graph.value_description(activation),"actual Pro head BF16 input description");
+        if(description.data_type()!=c::DataType::kBFloat16||description.rank()!=2||description.dimensions()[1]!=model::kHidden||
+            (cuda&&selected.provider.name!="cublasLt"))
+          throw std::runtime_error("original Pro head must retain BF16 operands and its native full-V provider");
+        ++heads;::testing::Test::RecordProperty("head_provider",std::string(selected.provider.name));
+      }
+    }
+  }
+  if(heads!=1)throw std::runtime_error("each Pro prediction/verifier needs one shared full-V BF16 head implementation");
+}
+
+namespace converted=glm_gguf_mtp_fragment;
+namespace converted_source=glm_gguf_runtime_source;
+namespace converted_data=glm_gguf_named_parameters;
+namespace converted_ref=glm_gguf_mtp_reference;
+
+// Each explicit fixture owns its authenticated host source cache. No common
+// static Data can accidentally retain B09 while a B10 case changes its path.
+struct ConvertedFixture final {
+  const c::ModelArtifactProfileDescription *profile;
+  original_named_role_source::Identity identity;
+  std::span<const converted_data::Spec> statics,experts;
+  std::span<const original_named_role_source::PinnedFile> pins;
+  std::uint64_t static_bytes;
+  std::string_view expert_plan;
+  const char *role_env,*expert_env,*frontier_env,*wait_env;
+  mutable std::mutex mutex;
+  mutable std::filesystem::path loaded_directory;
+  mutable std::shared_ptr<const original_named_role_source::Data> loaded;
+  std::shared_ptr<const original_named_role_source::Data> data()const {
+    if(!profile||profile->artifact_repository!=identity.repository||profile->artifact_revision!=identity.revision||
+        profile->variant!=identity.variant||profile->format_family!="gguf"||statics.size()!=47||experts.size()!=6||
+        pins.size()!=statics.size()||!converted_data::actual_pin(expert_plan))
+      throw std::runtime_error("converted fixture profile/source/schema/pins differ");
+    const auto path=directory(role_env);if(path.empty())throw std::runtime_error("converted actual role directory is absent");
+    const auto canonical=std::filesystem::weakly_canonical(path);std::lock_guard lock(mutex);
+    if(loaded) {
+      if(canonical!=loaded_directory)throw std::runtime_error("converted fixture path changed after its authenticated source was cached");
+      return loaded;
+    }
+    loaded=original_named_role_source::Data::load(canonical,identity,converted_data::manifest(statics,pins,static_bytes));
+    loaded_directory=canonical;return loaded;
+  }
+};
+const ConvertedFixture &converted_b09_fixture() {
+#if !defined(HYLE_TEST_GLM_B09_ACTUAL_PINS)
+  throw std::runtime_error("B09 complete actual static47 payload pins are absent; metadata is not executable supply");
+#else
+  namespace artifact=glm_gguf_b09_artifacts;
+  static const ConvertedFixture fixture{&d5_moe_profile_cases::glm53_primary_gguf,
+      {converted_data::kRepository,converted_data::kRevision,converted_data::kVariant,converted_data::kFirstFile},
+      converted_data::kStaticSpecs,converted_data::kExpertSpecs,artifact::kStaticPins,converted_data::kStaticBytes,
+      artifact::kExpertSourcePlanSha256,"HYLE_GLM_GGUF_B09_DIR","HYLE_GLM_GGUF_B09_EXPERT_DIR",
+      "HYLE_GLM_GGUF_FRONTIER_FILE","HYLE_GLM_GGUF_WAIT_FOR_EXPERTS"};
+  return fixture;
+#endif
+}
+const ConvertedFixture &converted_b10_fixture() {
+#if !defined(HYLE_TEST_GLM_B10_ACTUAL_PINS)
+  throw std::runtime_error("B10 complete actual static47 payload pins are absent; metadata is not executable supply");
+#else
+  namespace artifact=glm_gguf_b10_artifacts;
+  static const ConvertedFixture fixture{&d5_moe_profile_cases::glm53_fidelity_gguf,
+      {artifact::kRepository,artifact::kRevision,artifact::kVariant,artifact::kFirstFile},
+      artifact::kStaticSpecs47,artifact::kExpertSpecs6,artifact::kStaticPins47,artifact::kStaticBytes,
+      artifact::kExpertSourcePlanSha256,"HYLE_GLM_GGUF_B10_DIR","HYLE_GLM_GGUF_B10_EXPERT_DIR",
+      "HYLE_GLM_GGUF_FRONTIER_FILE","HYLE_GLM_GGUF_WAIT_FOR_EXPERTS"};
+  return fixture;
+#endif
+}
+std::function<void(std::span<const std::int32_t>)> converted_frontier(std::shared_ptr<converted_source::Experts> selected,
+    const std::filesystem::path &expert_root,const std::filesystem::path &request,bool wait) {
+  if(expert_root.empty())throw std::runtime_error("converted explicit selected-expert cache directory is absent");
+  auto frontier=std::make_shared<glm_gguf_expert_frontier::Frontier>(glm_gguf_expert_frontier::Frontier{
+      std::move(selected),expert_root,request,wait});
+  return [frontier](std::span<const std::int32_t> actual_ids){frontier->ensure(actual_ids);};
+}
+const c::ModelArtifactProfileDescription *converted_profile(const converted_source::ResidentSource &source) {
+  if(!source.profile)throw std::runtime_error("converted cold Graph needs its bound artifact profile");return source.profile;
+}
+std::vector<float> converted_fixture(std::size_t count,std::size_t salt) {
+  std::vector<float> r(count);for(std::size_t i=0;i<count;++i)r[i]=float(int((i*37+salt*17)%257)-128)/127.0F;return r;
+}
+template<class SourceType>
+auto converted_parameters_for_reference(const SourceType &,const Step &step) {
+  return converted_data::parameter_values([&](std::string_view name) {
+    const auto found=std::find_if(step.recipe.external.begin(),step.recipe.external.end(),[&](const External &e){return e.role.name==name;});
+    if(found==step.recipe.external.end())throw std::runtime_error("converted original reference role is absent");
+    return step.recipe.fragment.constants.at(found->slot);
+  },converted_data::kTargetLayer,converted_data::kNextnLayer);
+}
+glm_gguf_named_parameters::Parameters converted_parameters(Recipe &r,const original_named_role_source::Roles &bound) {
+  auto connected=converted_data::connect(r.fragment,bound,converted_data::kTargetLayer,converted_data::kNextnLayer);
+  for(const auto &entry:connected.constants) {
+    const auto found=std::find_if(r.fragment.constants.begin(),r.fragment.constants.end(),
+        [&](Value v){return v.ordinal()==entry.value.ordinal();});
+    if(found==r.fragment.constants.end())throw std::runtime_error("converted constant disappeared from cold recipe");
+    r.external.push_back({std::size_t(found-r.fragment.constants.begin()),converted_source::readonly(entry.role)});
+  }
+  return connected.parameters;
+}
+Value converted_frequency(sem::Fragment &f) {
+  const auto &g=converted_data::kGeometry;std::vector<float> table(std::size_t(g.rope/2));
+  for(std::size_t i=0;i<table.size();++i)table[i]=float(std::pow(8000000.,-2*double(i)/double(g.rope)));
+  return f.constant(sem::dense({g.rope/2}),sem::bytes(table));
+}
+std::array<Value,3> converted_banks(sem::Fragment &f,const converted_source::ResidentSource &source) {
+  std::array<Value,3> banks;
+  for(std::size_t leg=0;leg<3;++leg)banks[leg]=f.input(source.cpu_supply->layout().resident(leg));return banks;
+}
+Step build_step(const converted_source::Source &source,bool fresh,std::int32_t position,bool target_conditioned=false) {
+  if(position<kBasePosition||position>=kCapacity)throw std::runtime_error("converted cold step position outside prepared history");
+  const auto layout=converted_layout();const auto &g=converted_data::kGeometry;
+  Step result;result.fresh=fresh;result.position=position;result.state_ports.assign(layout.resources.size(),kAbsent);
+  auto &r=result.recipe;auto &f=r.fragment;f.profile=converted_profile(source);
+  f.region=0x474c4d4747555354ULL+std::uint64_t(position-kBasePosition)*2+std::uint64_t(fresh);f.quantized=true;
+  std::array<Value,kResources> state{};
+  for(std::size_t e=0;e<kResources;++e)if(layout.slots[e])state[e]=f.input(layout.resources[*layout.slots[e]]);
+  auto hidden=state[kHidden];
+  if(fresh||target_conditioned){result.target_hidden=f.inputs.size();hidden=f.input(sem::dense({1,g.hidden}));}
+  result.ordinary_inputs=f.inputs.size();const auto p=converted_parameters(r,source.parameters).nextn();
+  const auto embedding=converted::compute::embedding_q8(f,state[kPending],p.embedding,g);
+  const auto prefix=converted::compute::append_f32_prefix(f,hidden,embedding,p,g,converted::leaf::PackedProjections{});
+  const auto banks=converted_banks(f,source);const auto map=f.input(sem::dense({kMoe.experts},c::DataType::kInt32));
+  result.converted_model=converted::append_step(f,prefix,{state[kMain],state[kCodes],state[kSelection],state[kCursor]},
+      p,g,kMoe,banks,map,converted_frequency(f),position+1,kSelected,fresh,converted::leaf::PackedProjections{});
+  const auto change=[&](Entry entry,Value value){result.state_ports.at(layout.slot(entry))=expose(result,value);};
+  change(kMain,result.converted_model->state.main);change(kHidden,result.converted_model->hidden);
+  change(kPending,result.converted_model->pending);const auto next=increment(f,state[kCursor]);change(kCursor,next);
+  if(fresh) {
+    change(kCodes,result.converted_model->state.keys);change(kSelection,result.converted_model->state.selection);
+    change(kIndexCursor,next);change(kLag,f.constant(sem::dense({1},c::DataType::kInt32),sem::bytes(std::vector<std::int32_t>{0})));
+  } else {
+    change(kJournal,f.one(c::Operation(c::Scatter{}),{state[kJournal],state[kLag],prefix.input_norm.output}));
+    change(kJournalPositions,f.one(c::Operation(c::Scatter{}),{state[kJournalPositions],state[kLag],state[kCursor]}));
+    change(kLag,increment(f,state[kLag]));
+  }
+  const auto probe=[&](Value &value){observe_port(result,value);};
+  result.converted_model->ports.visit_values(probe);result.converted_model->feed_forward.visit_values(probe);
+  return result;
+}
+Step build_catchup(const converted_source::Source &source) {
+  const auto layout=converted_layout();Step result;result.state_ports.assign(layout.resources.size(),kAbsent);
+  auto &r=result.recipe;auto &f=r.fragment;f.profile=converted_profile(source);
+  f.region=0x474c4d4747554348ULL;f.quantized=true;std::array<Value,kResources> state{};
+  for(std::size_t e=0;e<kResources;++e)if(layout.slots[e])state[e]=f.input(layout.resources[*layout.slots[e]]);
+  result.ordinary_inputs=f.inputs.size();const auto p=converted_parameters(r,source.parameters);
+  const auto zero=f.constant(sem::dense({1},c::DataType::kInt32),sem::bytes(std::vector<std::int32_t>{0}));
+  const auto input=f.one(c::Operation(c::Gather{}),{state[kJournal],zero});
+  const auto position=f.one(c::Operation(c::Gather{}),{state[kJournalPositions],zero});
+  result.converted_catchup=converted::cache::append_index_history(f,input,position,state[kCodes],p.block[1],
+      converted_data::kGeometry,converted_frequency(f),converted::leaf::PackedProjections{});
+  result.state_ports[layout.slot(kCodes)]=expose(result,result.converted_catchup->keys);
+  result.state_ports[layout.slot(kIndexCursor)]=expose(result,increment(f,state[kIndexCursor]));
+  result.state_ports[layout.slot(kLag)]=expose(result,zero);
+  const auto probe=[&](Value &value){observe_port(result,value);};result.converted_catchup->visit_values(probe);return result;
+}
+
+template<class SourceType> auto converted_original(const SourceType &source,const Step &step) {
+  return [&](Value weight)->std::pair<const original_named_role_source::Spec&,std::span<const std::byte>> {
+    const auto &r=step.recipe;
+    const auto found=std::find_if(r.fragment.constants.begin(),r.fragment.constants.end(),[&](Value v){return v.ordinal()==weight.ordinal();});
+    if(found==r.fragment.constants.end())throw std::runtime_error("original converted projection weight is not a constant");
+    const auto slot=std::size_t(found-r.fragment.constants.begin());
+    const auto external=std::find_if(r.external.begin(),r.external.end(),[&](const External &e){return e.slot==slot;});
+    if(external==r.external.end())throw std::runtime_error("original converted role has no immutable source lease");
+    const auto &data=*source.parameters.source;
+    return {data.spec(external->role.name),data.bytes(external->role.name)};
+  };
+}
+template<class Actual>
+bool observe_converted_model(converted_source::ResidentSource &source,const converted::Moe &moe,const sem::Fragment &f,
+    const glm_gguf_model_types::Block &p,Actual actual,const auto &original,bool full,bool cuda) {
+  const auto codec=cuda?converted_ref::base::ActivationCodec::kCudaMmvqQ8_1:converted_ref::base::ActivationCodec::kCpuAvx2;
+  const auto experts=[&](std::size_t leg,std::int32_t id) {
+    const auto &data=*source.experts.source;
+    return std::pair{data.native(expert::Leg(leg)),data.expert_bytes(expert::Leg(leg),id)};
+  };
+  return converted_ref::moe(moe,f,p,kMoe,actual,original,experts,full,codec);
+}
+template<class Actual>
+StepUpdates observe_step(converted_source::Source &source,const Step &step,Actual actual,std::int32_t token) {
+  const auto &f=step.recipe.fragment;const auto p=converted_parameters_for_reference(source,step);
+  const auto original=converted_original(source,step);
+  const auto codec=source.cuda?converted_ref::base::ActivationCodec::kCudaMmvqQ8_1:converted_ref::base::ActivationCodec::kCpuAvx2;
+  const auto &g=converted_data::kGeometry;StepUpdates updates;
+  if(step.converted_model) {
+    const auto &r=*step.converted_model;const auto &prefix=r.ports.prefix;
+    require_observed(qwen27_original_nextn_reference::expect_embedding(converted_ref::floats(actual(prefix.embedding_norm.input)),
+        source.parameters.source->bytes("token_embd.weight"),std::size_t(g.hidden),std::size_t(g.vocabulary),token,GGML_TYPE_Q8_0),"B09 exact original embedding feedback");
+    require_observed(converted_ref::norm(prefix.hidden_norm,p.hidden_norm,g,actual,original)&&
+        converted_ref::norm(prefix.embedding_norm,p.embedding_norm,g,actual,original)&&
+        converted_ref::projection(prefix.eh,f,actual,original,!source.full_checked,codec)&&
+        converted_ref::norm(prefix.input_norm,p.block[1].input_norm,g,actual,original)&&
+        converted_ref::projection(prefix.query,f,actual,original,!source.full_checked,codec)&&
+        converted_ref::norm(prefix.query_norm,p.block[1].query_norm,g,actual,original),"converted original EH/QA actual F32 predecessors");
+    require_observed(converted_ref::attention(r.ports.attention,r.ports.positions,r.state.main,r.state.selection,f,p.block[1],g,actual,original,!source.full_checked,codec)&&
+        observe_converted_model(source,r.feed_forward,f,p.block[1],actual,original,!source.moe_full_checked,source.cuda)&&
+        converted_ref::norm(r.ports.shared_norm,p.shared_norm,g,actual,original),"converted MLA/MoE/shared norm actual predecessors");
+    const auto hidden=converted_ref::floats(actual(r.hidden)),logits=converted_ref::floats(actual(r.ports.logits));
+    require_observed(qwen24_original_nextn_reference::expect_projection(logits,source.parameters.source->bytes("output.weight"),
+        std::size_t(g.vocabulary),std::size_t(g.hidden),GGML_TYPE_Q8_0,hidden,codec,"converted original NextN full head",!source.full_checked),"converted raw-byte fullV head");
+    const auto ids=converted_ref::integers(actual(r.pending));const auto scores=converted_ref::floats(actual(r.ports.top_values));
+    require_observed(qwen27_original_nextn_reference::expect_greedy(logits,scores.at(0),ids.at(0)),"converted strict fullV greedy");
+    if(r.ports.history) {
+      require_observed(converted_ref::history(*r.ports.history,f,p.block[1],g,actual,original,!source.full_checked,codec),"converted fresh key producer");
+      updates.index=actual(r.ports.history->transformed);
+      require_observed(converted_ref::projection(*r.ports.index_query,f,actual,original,!source.full_checked,codec)&&
+          converted_ref::projection(*r.ports.index_weights,f,actual,original,true,codec)&&
+          converted_ref::close(converted_ref::floats(actual(*r.ports.index_rotated)),converted_ref::rotate(
+              converted_ref::floats(actual(r.ports.index_query->output)),converted_ref::integers(actual(r.ports.positions)),
+              std::size_t(g.index_heads),std::size_t(g.index_depth),g),"B09 query index RoPE")&&
+          converted_ref::selection(*r.ports.index,*r.ports.index_rotated,r.state.keys,r.ports.index_weights->output,f,g,actual),
+          "B09 actual fresh index queries/scores/Top2048");
+    }
+    require_observed(converted_ref::add(converted_ref::floats(actual(r.ports.attention.residual_sum)),
+        converted_ref::floats(actual(prefix.eh.output)),converted_ref::floats(actual(r.ports.attention.output.output.output)),"B09 EH/O residual")&&
+        converted_ref::add(converted_ref::floats(actual(r.ports.combined)),converted_ref::floats(actual(r.ports.attention.residual_sum)),
+            converted_ref::floats(actual(r.feed_forward.output)),"B09 residual/FFN sum"),"B09 actual F32 residual sums");
+    updates.main=actual(r.ports.attention.row_stored);updates.journal=actual(prefix.input_norm.output);
+    source.full_checked=true;source.moe_full_checked=true;++source.checked_steps;
+  } else {
+    require_observed(converted_ref::history(*step.converted_catchup,f,p.block[1],g,actual,original,false,codec),"converted accepted actual journal catchup");
+    updates.index=actual(step.converted_catchup->transformed);
+  }
+  return updates;
+}
+
+TargetStep build_target(const converted_source::TargetSource &source,const converted_source::Source &nextn) {
+  const auto layout=converted_layout();const auto &g=converted_data::kGeometry;TargetStep result;
+  auto &step=result.step;auto &r=step.recipe;auto &f=r.fragment;f.profile=converted_profile(source);
+  f.region=0x474c4d4747373754ULL;f.quantized=true;
+  const auto token=f.input(sem::dense({1},c::DataType::kInt32)),residual=f.input(sem::dense({1,g.hidden}));
+  const auto main=f.input(layout.target[0]),cursor=f.input(layout.target[1]);
+  const auto ids=f.input(sem::dense({kSelected},c::DataType::kInt32));step.ordinary_inputs=f.inputs.size();
+  const auto p=converted_parameters(r,source.parameters);
+  const auto hidden=converted::compute::embedding_q8(f,token,p.embedding,g);
+  const auto banks=converted_banks(f,source);const auto map=f.input(sem::dense({kMoe.experts},c::DataType::kInt32));
+  result.converted=converted::append_target(f,hidden,residual,main,ids,cursor,p.block[0],p.target_norm,g,kMoe,
+      banks,map,converted_frequency(f),converted::leaf::PackedProjections{});
+  const std::array output{result.converted->main,result.converted->cursor,result.converted->normalized_tap};
+  for(std::size_t i=0;i<3;++i)result.state_ports[i]=expose(step,output[i]);
+  const auto probe=[&](Value &v){observe_port(step,v);};result.converted->visit_values(probe);
+  (void)nextn;return result;
+}
+TargetFrame execute_target(const TargetStep &step,ResidentRun<converted_source::ResidentSource> &program,
+    converted_source::TargetSource &source,const converted_source::Source &nextn,const c::StorageOwner &owner,
+    c::Queue &queue,bool cuda,const c::ReadLease &token,const c::ReadLease &main,const c::ReadLease &cursor,const c::ReadLease &ids) {
+  const auto position=values<std::int32_t>(cursor).at(0);
+  if(position<0||position>=kCapacity)throw std::runtime_error("converted target cursor outside actual main history");
+  const auto fixture=converted_fixture(std::size_t(converted_data::kGeometry.hidden),std::size_t(position)+41);
+  const std::array input{token,upload(owner,sem::bytes(fixture)),main,cursor,ids};
+  TargetFrame frame;frame.output=program.execute(queue,input,cuda);
+  const auto actual=[&](Value v){return observed(step.step,input,frame.output,v);};
+  const auto p=converted_parameters_for_reference(source,step.step);const auto original=converted_original(source,step.step);
+  const auto &r=*step.converted;const auto &g=converted_data::kGeometry;
+  const auto codec=cuda?converted_ref::base::ActivationCodec::kCudaMmvqQ8_1:converted_ref::base::ActivationCodec::kCpuAvx2;
+  require_observed(converted_ref::norm(r.input_norm,p.block[0].input_norm,g,actual,original)&&
+      converted_ref::projection(r.query,step.step.recipe.fragment,actual,original,!source.full_checked,codec)&&
+      converted_ref::norm(r.query_norm,p.block[0].query_norm,g,actual,original)&&
+      converted_ref::attention(r.attention,r.position,r.main,r.selection,step.step.recipe.fragment,p.block[0],g,actual,original,!source.full_checked,codec)&&
+      observe_converted_model(source,r.feed_forward,step.step.recipe.fragment,p.block[0],actual,original,!source.moe_full_checked,cuda)&&
+      converted_ref::norm(r.final_norm,p.target_norm,g,actual,original),"converted distinct77 MLA/MoE/finalnorm");
+  require_observed(qwen27_original_nextn_reference::expect_embedding(converted_ref::floats(actual(r.hidden)),
+      nextn.parameters.source->bytes("token_embd.weight"),std::size_t(g.hidden),std::size_t(g.vocabulary),values<std::int32_t>(token).at(0),GGML_TYPE_Q8_0)&&
+      converted_ref::add(converted_ref::floats(actual(r.input_sum)),converted_ref::floats(actual(r.hidden)),
+          converted_ref::floats(actual(r.residual)),"B09 target upstream rawsum")&&
+      converted_ref::add(converted_ref::floats(actual(r.attention.residual_sum)),converted_ref::floats(actual(r.input_sum)),
+          converted_ref::floats(actual(r.attention.output.output.output)),"B09 target O residual")&&
+      converted_ref::add(converted_ref::floats(actual(r.post_ffn)),converted_ref::floats(actual(r.attention.residual_sum)),
+          converted_ref::floats(actual(r.feed_forward.output)),"B09 target final FFN sum"),"B09 target original row/raw residual sums");
+  for(std::size_t i=0;i<3;++i)frame.state[i]=frame.output.at(step.state_ports[i]);
+  source.full_checked=true;source.moe_full_checked=true;++source.checked_steps;(void)nextn;return frame;
+}
+Verifier build_verifier(const converted_source::Source &source,bool direct_rows=false,bool single_row=false) {
+  Verifier r;auto &f=r.recipe.fragment;const auto &g=converted_data::kGeometry;
+  f.profile=converted_profile(source);f.region=0x474c4d4747564552ULL;
+  auto taps=f.input(sem::dense({direct_rows?1:2,g.hidden}));
+  if(direct_rows&&!single_row)taps=f.one(c::Operation(c::Concat{.axis=0}),{taps,f.input(sem::dense({1,g.hidden}))});
+  const auto head=external(r.recipe,source.words.at(vocabulary::Role::kHead));
+  const auto logits=converted::leaf::linear(f,taps,head).output;
+  const auto top=f.append(c::Operation(c::TopK{.count=1,.stable=true}),{logits},2);
+  const auto publish=[&](Value v){const auto port=f.outputs.size();f.outputs.push_back(converted::compute::copy(f,v));return port;};
+  r.logits=publish(logits);r.scores=publish(top[0]);r.ids=publish(top[1]);
+  for(std::size_t row=0;row<(single_row?1u:2u);++row)
+    r.pending[row]=publish(converted::compute::reshape(f,converted::compute::slice(f,top[1],0,std::int64_t(row),1),{1}));
+  const auto top2=f.append(c::Operation(c::TopK{.count=2,.stable=true}),{converted::compute::slice(f,logits,0,0,1)},2);
+  r.reject=publish(converted::compute::reshape(f,converted::compute::slice(f,top2[1],1,1,1),{1}));return r;
+}
+void report_head(const Native &program,const converted_source::Source &source,bool cuda) {
+  const auto &head=source.words.at(vocabulary::Role::kHead);std::size_t count=0;
+  for(const auto &entry:program.recipe.external)if(entry.role.name==head.name) {
+    same_storage(entry.role.lease,head.lease);const auto w=program.logical.constants.at(entry.slot);
+    for(std::size_t i=0;i<program.compiled.report.step_count();++i) {
+      const auto record=take(program.compiled.report.step(i),"converted original head provider");
+      for(std::size_t j=0;j<record.node_count;++j) {
+        const auto node=take(program.compiled.report.step_node(i,j),"converted head original node");
+        const auto op=take(program.logical.graph.operation(node),"converted head operation");
+        if(!op.get_if<c::MatMul>()||take(program.logical.graph.node_input(node,1),"converted head actual W").ordinal()!=w.ordinal())continue;
+        if(record.provider.name!=(cuda?"ggml-cuda":"ggml-cpu"))throw std::runtime_error("converted packed head lost its certified backend");
+        ++count;
+      }
+    }
+  }
+  if(count!=1)throw std::runtime_error("converted full vocabulary requires one original single MatMul");
+}
+
+struct OfficialRuntime final {
+  static constexpr bool kPacked=false;using Tap=std::uint16_t;using ResidentSource=::ResidentSource;using TargetSource=::TargetSource;
+  static auto layout(){return official_layout();}
+  static auto fixture(std::size_t n,std::size_t salt){return fixture_bfloat(n,salt);}
+  static auto build_initial(){return ::build_initial();}
+  static auto initial_members(const c::StorageOwner &owner,const Initial &i,std::span<const c::ReadLease> out){return ::initial_members(owner,i,out);}
+  static const auto &boundary(const Step &s){return s.model->feed_forward.boundary;}
+  static const auto &target_boundary(const TargetStep &s){return s.model.feed_forward.boundary;}
+  static auto prepare_source(auto &&...args){return ::prepare_source(args...);}
+  static auto prepare_target_source(const Source &,auto &&...args){return ::prepare_target_source(args...);}
+  static void check_initial(const Initial &i,std::span<const Tap> keys,const auto &actual) {
+    require_observed(glm_pro_mtp_reference::detail::quantized(i.encoded,keys,std::size_t(kBasePosition),actual),"actual initial encoded prefix");
+  }
+  static bool check_logits(const Source &source,std::span<const float> logits,std::span<const Tap> taps,bool full,
+      std::span<const std::int32_t> ids,bool) {
+    return glm_shared_vocabulary_reference::expect_logits(logits,taps,source.words.source->bytes(vocabulary::Role::kHead),
+        std::size_t(model::kVocabulary),std::size_t(model::kHidden),full,ids);
+  }
+};
+struct ConvertedRuntime final {
+  static constexpr bool kPacked=true;using Tap=float;
+  using ResidentSource=converted_source::ResidentSource;using TargetSource=converted_source::TargetSource;
+  static auto layout(){return converted_layout();}
+  static auto fixture(std::size_t n,std::size_t salt){return converted_fixture(n,salt);}
+  static const auto &boundary(const Step &s){return s.converted_model->feed_forward.boundary;}
+  static const auto &target_boundary(const TargetStep &s){return s.converted->feed_forward.boundary;}
+  static std::shared_ptr<converted_source::Source> prepare_source(c::Context &,const c::StorageOwner &owner,c::Queue &,bool cuda
+#if defined(HYLE_TEST_GLM_STATE_CUDA)
+      ,const c::cuda::MemoryResource *
+#endif
+      ,const ConvertedFixture *selected_fixture=nullptr) {
+    const auto &fixture=selected_fixture?*selected_fixture:converted_b09_fixture();
+    const auto expert_directory=directory(fixture.expert_env);
+    if(expert_directory.empty())throw std::runtime_error("converted selected-expert cache directory is absent");
+    const auto data=fixture.data();
+    auto source=std::make_shared<converted_source::Source>();source->parameters=original_named_role_source::bind(data,owner);
+    source->cuda=cuda;source->profile=fixture.profile;source->expert_directory=expert_directory;
+    source->frontier_file=directory(fixture.frontier_env);source->wait_for_experts=directory(fixture.wait_env)=="1";
+    source->words.source=data;
+    source->words.roles={converted_source::readonly(source->parameters.at("token_embd.weight")),
+        converted_source::readonly(source->parameters.at("output.weight")),converted_source::readonly(source->parameters.at("blk.78.nextn.shared_head_norm.weight"))};
+    source->target_contract=converted_source::contract(converted_source::Section::kTarget,
+        std::string(fixture.expert_plan),data->identity(),fixture.experts,converted_data::kTargetLayer);
+    auto selected=std::make_shared<converted_source::Experts>(converted_source::contract(converted_source::Section::kDraft,
+        std::string(fixture.expert_plan),data->identity(),fixture.experts,converted_data::kNextnLayer),kMoe);
+    source->experts.source=selected;
+    source->before_upload=converted_frontier(selected,source->expert_directory,source->frontier_file,source->wait_for_experts);
+    source->cpu_supply=std::make_unique<converted_source::Supply>(take(converted_source::Supply::create(owner,*selected),"converted packed selected native pool"));return source;
+  }
+  static std::shared_ptr<TargetSource> prepare_target_source(const converted_source::Source &nextn,c::Context &,
+      const c::StorageOwner &owner,c::Queue &,bool cuda
+#if defined(HYLE_TEST_GLM_STATE_CUDA)
+      ,const c::cuda::MemoryResource *
+#endif
+      ) {
+    if(!nextn.target_contract)throw std::runtime_error("converted distinct target source metadata was not prepared");
+    auto source=std::make_shared<TargetSource>();source->parameters=nextn.parameters;source->cuda=cuda;source->profile=nextn.profile;
+    auto selected=std::make_shared<converted_source::Experts>(*nextn.target_contract,kMoe);
+    source->experts.source=selected;
+    source->before_upload=converted_frontier(selected,nextn.expert_directory,nextn.frontier_file,nextn.wait_for_experts);
+    source->cpu_supply=std::make_unique<converted_source::Supply>(take(converted_source::Supply::create(owner,*selected),"converted distinct77 selected packed pool"));return source;
+  }
+  static Initial build_initial(const converted_source::Source &source) {
+    Initial i;auto &f=i.step.recipe.fragment;f.profile=converted_profile(source);f.region=0x474c4d4747494e49ULL;
+    const auto keys=f.input(sem::dense({kBasePosition,model::kIndexDepth}));i.step.ordinary_inputs=1;
+    const auto old=f.constant(sem::dense({kCapacity,model::kIndexDepth}),sem::bytes(std::vector<float>(std::size_t(kCapacity*model::kIndexDepth),std::numeric_limits<float>::quiet_NaN())));
+    std::vector<std::int32_t> prefix(std::size_t(kBasePosition),0);std::iota(prefix.begin(),prefix.end(),0);
+    const auto ids=f.constant(sem::dense({kBasePosition},c::DataType::kInt32),sem::bytes(prefix));
+    i.codes=expose(i.step,f.one(c::Operation(c::Scatter{}),{old,ids,keys}));i.scales=kAbsent;return i;
+  }
+  static void check_initial(const Initial &i,std::span<const float> keys,const auto &actual) {
+    const auto value=std::find_if(i.step.observations.begin(),i.step.observations.end(),[&](const auto &e){return e.second==i.codes;});
+    if(value==i.step.observations.end())throw std::runtime_error("B09 initial actual source output missing");
+    const auto rows=converted_ref::floats(actual(value->first));
+    if(rows.size()!=std::size_t(kCapacity*model::kIndexDepth)||!std::equal(keys.begin(),keys.end(),rows.begin()))
+      throw std::runtime_error("B09 finite external prefix changed during initial F32 storage");
+    for(std::size_t j=keys.size();j<rows.size();++j)if(!std::isnan(rows[j]))throw std::runtime_error("B09 future index poison changed");
+  }
+  static std::vector<c::ReadLease> initial_members(const c::StorageOwner &owner,const Initial &i,std::span<const c::ReadLease> outputs) {
+    const auto l=layout();std::vector<c::ReadLease> r(l.resources.size());
+    const auto put=[&](Entry e,const auto &v){r[l.slot(e)]=upload(owner,sem::bytes(v));};
+    std::vector<float> main(std::size_t(kCapacity*model::kCacheDepth),std::numeric_limits<float>::quiet_NaN());
+    const auto valid=fixture(std::size_t(kBasePosition*model::kCacheDepth),3);std::copy(valid.begin(),valid.end(),main.begin());
+    put(kMain,main);r[l.slot(kCodes)]=outputs[i.codes];put(kHidden,fixture(std::size_t(model::kHidden),5));
+    for(const auto [e,v]:std::array{std::pair{kPending,1},std::pair{kCursor,int(kBasePosition)},std::pair{kIndexCursor,int(kBasePosition)},std::pair{kLag,0}})
+      put(e,std::vector<std::int32_t>{v});
+    std::vector<std::int32_t> ids(std::size_t(kSelected),0);std::iota(ids.begin(),ids.end(),0);put(kSelection,ids);
+    put(kJournal,std::vector<float>(std::size_t(kJournalRows*model::kHidden),0));put(kJournalPositions,std::vector<std::int32_t>(std::size_t(kJournalRows),-1));
+    for(std::size_t slot=0;slot<r.size();++slot)if(r[slot].size()!=l.resources[slot].required_bytes().value())throw std::runtime_error("B09 initial actual resource extent differs");return r;
+  }
+  static bool check_logits(const converted_source::Source &source,std::span<const float> logits,std::span<const float> taps,bool full,
+      std::span<const std::int32_t> ids,bool cuda) {
+    const auto &g=converted_data::kGeometry;const auto codec=cuda?converted_ref::base::ActivationCodec::kCudaMmvqQ8_1:converted_ref::base::ActivationCodec::kCpuAvx2;
+    if(taps.size()!=ids.size()*std::size_t(g.hidden)||logits.size()!=ids.size()*std::size_t(g.vocabulary))return false;
+    for(std::size_t row=0;row<ids.size();++row)if(!qwen24_original_nextn_reference::expect_projection(logits.subspan(row*std::size_t(g.vocabulary),std::size_t(g.vocabulary)),
+        source.parameters.source->bytes("output.weight"),std::size_t(g.vocabulary),std::size_t(g.hidden),GGML_TYPE_Q8_0,
+        taps.subspan(row*std::size_t(g.hidden),std::size_t(g.hidden)),codec,"B09 actual fullV verifier",full))return false;return true;
+  }
+  static std::size_t ready(const converted_source::Source &source,const TargetSource &target,const c::StorageOwner &owner) {
+    std::size_t bytes=0;
+    for(const auto &[name,role]:source.parameters.roles) {
+      (void)name;if(role.owner.ref()!=owner.ref())throw std::runtime_error("B09 actual static source moved to another owner");
+      add_bound(bytes,role.lease.size());auto lease=role.lease;EXPECT_FALSE(lease.try_write());
+      same_storage(role.lease,target.parameters.at(role.name).lease);
+    }
+    return bytes;
+  }
+};
+
+template<class Runtime=OfficialRuntime>
+void run(c::Context &context,const c::StorageOwner &owner,bool cuda,bool use_target=false
+#if defined(HYLE_TEST_GLM_STATE_CUDA)
+    ,const c::cuda::MemoryResource *device=nullptr
+#endif
+    ,const ConvertedFixture *packed_fixture=nullptr) {
+  auto queue=take(context.create_queue(),"ordinary original Pro queue");
+  using Resident=ResidentRun<typename Runtime::ResidentSource>;
+  using Tap=typename Runtime::Tap;
+  const auto layout=Runtime::layout();
+  const auto resource_count=layout.resources.size();
+  auto source=[&] {
+    if constexpr(Runtime::kPacked)return Runtime::prepare_source(context,owner,queue,cuda
+#if defined(HYLE_TEST_GLM_STATE_CUDA)
+        ,device
+#endif
+        ,packed_fixture);
+    else {
+      if(packed_fixture)throw std::runtime_error("a converted fixture cannot replace an official source");
+      return Runtime::prepare_source(context,owner,queue,cuda
+#if defined(HYLE_TEST_GLM_STATE_CUDA)
+          ,device
+#endif
+          );
+    }
+  }();
+  std::shared_ptr<typename Runtime::TargetSource> target_source;
+  if(use_target)target_source=Runtime::prepare_target_source(*source,context,owner,queue,cuda
+#if defined(HYLE_TEST_GLM_STATE_CUDA)
+      ,device
+#endif
+      );
+  // Hold every ordinary Invocation inside this scope, before closing the
+  // shared bounded supplier. No completed Invocation retains a compact slot.
+  [&] {
+    auto initializer=[&] {
+      if constexpr(Runtime::kPacked)return Runtime::build_initial(*source);
+      else return Runtime::build_initial();
+    }();
+    auto initial_program=Native::create(initializer.step.recipe,context,owner,cuda,1);
+    const auto keys=Runtime::fixture(std::size_t(kBasePosition*model::kIndexDepth),7);
+    const auto key_lease=upload(owner,sem::bytes(keys));
+    const std::array initial_input{key_lease};
+    auto initial_output=initial_program.execute(queue,initial_input);
+    const auto initial_actual=[&](Value value){return observed(initializer.step,initial_input,initial_output,value);};
+    Runtime::check_initial(initializer,keys,initial_actual);
+    auto members=Runtime::initial_members(owner,initializer,initial_output);
+
+    auto first_step=build_step(*source,true,std::int32_t(kBasePosition));
+    auto second_step=build_step(*source,false,std::int32_t(kBasePosition+1));
+    auto continuation_zero=build_step(*source,true,std::int32_t(kBasePosition+1));
+    auto continuation_one=build_step(*source,true,std::int32_t(kBasePosition+2));
+    auto skip_zero=build_step(*source,false,std::int32_t(kBasePosition+2));
+    auto skip_one=build_step(*source,false,std::int32_t(kBasePosition+3));
+    const auto resident=[&](const Step &step) {
+      return Resident::create(step.recipe,Runtime::boundary(step),source,context,owner,cuda);
+    };
+    auto first_program=resident(first_step),second_program=resident(second_step);
+    auto continuation_zero_program=resident(continuation_zero),continuation_one_program=resident(continuation_one);
+    auto skip_zero_program=resident(skip_zero),skip_one_program=resident(skip_one);
+    std::array<Resident*,6> model_programs{&first_program,&second_program,&continuation_zero_program,
+        &continuation_one_program,&skip_zero_program,&skip_one_program};
+    for(const auto *program:model_programs) {
+      std::size_t heads=0;
+      for(const auto &phase:program->phases) {
+        const auto contains=std::any_of(phase.recipe.external.begin(),phase.recipe.external.end(),[&](const External &entry) {
+          return entry.role.name==source->words.at(vocabulary::Role::kHead).name;
+        });
+        if(contains){report_head(phase,*source,cuda);++heads;}
+      }
+      if(heads!=1)throw std::runtime_error("Pro cold cut changed full-V prediction ownership");
+    }
+    auto catchup_step=build_catchup(*source);
+    auto catchup_program=Native::create(catchup_step.recipe,context,owner,cuda);
+    auto verifier=build_verifier(*source,use_target);
+    auto verifier_program=Native::create(verifier.recipe,context,owner,cuda,use_target?2u:1u);
+    std::optional<Step> repair_step;
+    std::optional<Resident> repair_program,target_program;
+    std::optional<TargetStep> target_step;
+    std::optional<Verifier> policy;
+    std::optional<Native> policy_program;
+    c::ReadLease upstream_ids;
+    std::optional<TargetFrame> warm;
+    if(use_target) {
+      repair_step=build_step(*source,false,std::int32_t(kBasePosition+1),true);
+      repair_program=resident(*repair_step);
+      target_step=build_target(*target_source,*source);
+      target_program=Resident::create(target_step->step.recipe,Runtime::target_boundary(*target_step),
+          target_source,context,owner,cuda,5);
+      policy=build_verifier(*source,true,true);
+      policy_program=Native::create(policy->recipe,context,owner,cuda,1);
+      report_head(*policy_program,*source,cuda);
+      std::vector<std::int32_t> selected(std::size_t(kSelected),0);std::iota(selected.begin(),selected.end(),0);
+      upstream_ids=upload(owner,sem::bytes(selected));
+      std::vector<float> history(std::size_t(kCapacity*model::kCacheDepth),std::numeric_limits<float>::quiet_NaN());
+      const auto valid=fixture_bfloat(std::size_t((kBasePosition-1)*model::kCacheDepth),29);
+      for(std::size_t i=0;i<valid.size();++i)history[i]=glm_shared_vocabulary_reference::detail::finite_bfloat(valid[i]);
+      warm=execute_target(*target_step,*target_program,*target_source,*source,owner,queue,cuda,
+          upload(owner,sem::bytes(std::vector<std::int32_t>{0})),upload(owner,sem::bytes(history)),
+          upload(owner,sem::bytes(std::vector<std::int32_t>{std::int32_t(kBasePosition-1)})),upstream_ids);
+      members[layout.slot(kHidden)]=warm->state[2];
+    }
+    report_head(verifier_program,*source,cuda);
+
+    std::size_t pools=initial_program.outputs.stats().capacity_bytes;
+    for(const auto *program:model_programs)add_bound(pools,program->backing_capacity());
+    add_bound(pools,catchup_program.outputs.stats().capacity_bytes);
+    add_bound(pools,verifier_program.outputs.stats().capacity_bytes);
+    if(use_target) {
+      add_bound(pools,repair_program->backing_capacity());add_bound(pools,target_program->backing_capacity());
+      add_bound(pools,policy_program->outputs.stats().capacity_bytes);
+    }
+    std::size_t initial_bound=0;
+    for(std::size_t i=0;i<resource_count;++i)
+      if(i!=layout.slot(kCodes)&&(!layout.slots[kScales]||i!=*layout.slots[kScales])&&!(use_target&&i==layout.slot(kHidden)))
+        add_bound(initial_bound,aligned_bound(members[i].size()));
+    // Charge each real Program pool root ONCE, including all generations and
+    // diagnostic outputs in that root. The independent initial buffers have
+    // an aligned conservative bound; two encoded initial states share the
+    // initializer root already counted above. Readonly weights are not state.
+    constexpr std::size_t metadata_bound=16384;
+    std::size_t budget=pools;add_bound(budget,initial_bound);add_bound(budget,metadata_bound);
+    auto state=State::create(owner,budget,layout,use_target);
+    const auto target_before=use_target?warm->state[2]:upload(owner,sem::bytes(Runtime::fixture(std::size_t(model::kHidden),11)));
+    const std::array next_targets{
+        use_target?c::ReadLease{}:upload(owner,sem::bytes(Runtime::fixture(std::size_t(model::kHidden),13))),
+        use_target?c::ReadLease{}:upload(owner,sem::bytes(Runtime::fixture(std::size_t(model::kHidden),17)))};
+    std::vector<c::ReadLease> checked,policy_checked;
+    std::vector<std::int32_t> target_ids;
+    bool full_target_checked=false;
+    const auto check_verifier=[&](const Verifier &definition,std::span<const c::ReadLease> outputs,
+        std::span<const Tap> taps,bool full) {
+      const auto logits=values<float>(outputs[definition.logits]);
+      const auto scores=values<float>(outputs[definition.scores]);
+      const auto ids=values<std::int32_t>(outputs[definition.ids]);
+      require_observed(Runtime::check_logits(*source,logits,taps,full,ids,cuda),"actual full-V target projection");
+      require_observed(glm_shared_vocabulary_reference::expect_greedy(logits,ids,std::size_t(model::kVocabulary),scores),
+          "actual full-V target stable greedy");
+      for(std::size_t row=0;row<ids.size();++row)
+        EXPECT_EQ(values<std::int32_t>(outputs[definition.pending[row]]).at(0),ids[row]);
+      const auto top2=glm_shared_vocabulary_reference::detail::candidates(std::span<const float>(logits).first(std::size_t(model::kVocabulary)));
+      EXPECT_EQ(values<std::int32_t>(outputs[definition.reject]).at(0),std::int32_t(top2.at(1)));
+      return ids;
+    };
+    if(!use_target) {
+      const auto taps=Runtime::fixture(std::size_t(2*model::kHidden),19);
+      const std::array input{upload(owner,sem::bytes(taps))};
+      checked=verifier_program.execute(queue,input);
+      target_ids=check_verifier(verifier,checked,taps,true);full_target_checked=true;policy_checked=checked;
+    }
+    std::size_t repairs=0,repair_submissions=0;
+    std::size_t feedback=0,catchups=0,skips=0,cancelled=0,stale_publish=0;
+    std::array<std::size_t,2> accepted{};
+    std::uint32_t natural_accepted=0;std::int32_t natural_proposal=0;
+    {
+      Epoch initial_epoch{6,std::uint64_t(kBasePosition-1),0};
+      std::vector<c::StateMember> initial(state.entries.size());
+      for(std::size_t i=0;i<resource_count;++i)initial[i]={state.entries[i],members[i]};
+      initial[layout.epoch()]={state.entry(kEpoch),{},std::as_bytes(std::span(&initial_epoch,1))};
+      if(use_target) {
+        const std::array entries{kTargetMain,kTargetCursor,kTargetTap};
+        for(std::size_t i=0;i<entries.size();++i)initial[layout.slot(entries[i])]={state.entry(entries[i]),warm->state[i]};
+      }
+      const auto base=take(state.store.import(initial),"import complete original Pro continuation");
+      const auto base_image=image(state,base);
+      EXPECT_THROW(validate_step(state,base,catchup_step),std::runtime_error);
+      auto first=execute_step(state,base,first_step,*source,7,
+          [&](std::span<const c::ReadLease> input){return first_program.execute(queue,input,cuda);},target_before);
+      ++feedback;
+      if(use_target) {
+        const auto target=execute_target(*target_step,*target_program,*target_source,*source,owner,queue,cuda,
+            state.member(base,kPending),state.member(base,kTargetMain),state.member(base,kTargetCursor),upstream_ids);
+        first=attach_target(state,first,target);
+        const std::array input{state.member(first,kTargetTap)};
+        policy_checked=policy_program->execute(queue,input);
+        (void)check_verifier(*policy,policy_checked,values<Tap>(input[0]),false);
+      }
+      const auto first_image=image(state,first);
+      bool wrong_skip_submitted=false;
+      EXPECT_THROW((void)execute_step(state,first,second_step,*source,8,
+          [&](std::span<const c::ReadLease>) {
+            wrong_skip_submitted=true;return std::vector<c::ReadLease>{};
+          }),std::runtime_error);
+      EXPECT_FALSE(wrong_skip_submitted);
+      // One natural trial and two separately labelled controls. Matching uses
+      // the actual full-V Top1 lease; rejection uses the actual distinct Top2
+      // lease. The second real Graph consumes precisely that proposal lease.
+      for(int scenario=0;scenario<3;++scenario) {
+        SCOPED_TRACE(::testing::Message()<<"GLM Pro K1 scenario="<<scenario);
+        {
+          auto first_checkpoint=first;
+          if(scenario) {
+            auto controlled=take(state.store.begin(first),"explicit controlled proposal policy");
+            check(controlled.replace(state.entry(kPending),policy_checked[scenario==1?(use_target?policy->pending[0]:verifier.pending[0]):(use_target?policy->reject:verifier.reject)]),
+                "controlled proposal retains actual target Top1/Top2 I32 output");
+            first_checkpoint=take(controlled.finalize(),"controlled actual pending checkpoint");
+          }
+          const auto proposal=state.scalar(first_checkpoint,kPending);
+          const auto first_checkpoint_image=image(state,first_checkpoint);
+          auto second=execute_step(state,first_checkpoint,second_step,*source,7,
+              [&](std::span<const c::ReadLease> input){return second_program.execute(queue,input,cuda);});
+          ++feedback;++skips;
+          if(use_target) {
+            const auto target=execute_target(*target_step,*target_program,*target_source,*source,owner,queue,cuda,
+                state.member(first_checkpoint,kPending),state.member(first_checkpoint,kTargetMain),
+                state.member(first_checkpoint,kTargetCursor),upstream_ids);
+            second=attach_target(state,second,target);
+            const std::array input{state.member(first_checkpoint,kTargetTap),state.member(second,kTargetTap)};
+            checked=verifier_program.execute(queue,input);
+            auto taps=values<Tap>(input[0]);const auto tail=values<Tap>(input[1]);
+            taps.insert(taps.end(),tail.begin(),tail.end());
+            target_ids=check_verifier(verifier,checked,taps,!full_target_checked);full_target_checked=true;
+          }
+          const auto second_image=image(state,second);
+          if(scenario==0) {
+            bool wrong_catchup_submitted=false;
+            EXPECT_THROW((void)execute_step(state,second,catchup_step,*source,8,
+                [&](std::span<const c::ReadLease>) {
+                  wrong_catchup_submitted=true;return std::vector<c::ReadLease>{};
+                }),std::runtime_error);
+            EXPECT_FALSE(wrong_catchup_submitted);
+          }
+          const auto decision=glm_target_verifier_fragment::decide_k1(proposal,target_ids,model::kVocabulary);
+          if(scenario==0){natural_proposal=proposal;natural_accepted=decision.accepted_drafts;}
+          else EXPECT_EQ(decision.accepted_drafts,scenario==1?1u:0u);
+          ++accepted.at(decision.accepted_drafts);
+          auto checkpoint=decision.checkpoint==glm_target_verifier_fragment::Checkpoint::kAfterCurrent?
+              first_checkpoint:second;
+          if(use_target&&decision.accepted_drafts) {
+            const auto count=repair_program->native_submissions();
+            const auto repaired=execute_step(state,first_checkpoint,*repair_step,*source,7,
+                [&](std::span<const c::ReadLease> input){return repair_program->execute(queue,input,cuda);},
+                state.member(first_checkpoint,kTargetTap));
+            ++feedback;++skips;++repairs;add_bound(repair_submissions,repair_program->native_submissions()-count);
+            TargetFrame target;
+            const std::array entries{kTargetMain,kTargetCursor,kTargetTap};
+            for(std::size_t i=0;i<entries.size();++i)target.state[i]=state.member(second,entries[i]);
+            checkpoint=attach_target(state,repaired,target);
+          }
+          auto head=take(c::StateHead::create(state.store,base),"one atomic Pro accepted Head");
+          {
+            auto discarded=take(state.store.begin(checkpoint),"cancelled Pro acceptance draft");
+            check(discarded.replace(state.entry(kPending),checked[verifier.pending[decision.next_pending_row]]),"cancelled actual pending lease");
+            check(discarded.cancel(),"cancel whole uncommitted Pro acceptance");++cancelled;
+            EXPECT_EQ(image(state,take(head.current(),"cancelled Pro draft cannot change Head")),base_image);
+          }
+          auto acceptance=take(state.store.begin(checkpoint),"all-resource K1 Pro acceptance");
+          check(acceptance.replace(state.entry(kPending),checked[verifier.pending[decision.next_pending_row]]),"direct actual target row pending lease");
+          const auto published=take(acceptance.finalize(),"complete K1 Pro accepted checkpoint");
+          check(head.publish(base.identity(),published),"atomically publish Pro accepted prefix and pending");
+          EXPECT_FALSE(head.publish(base.identity(),second).ok());++stale_publish;
+          const auto published_image=image(state,published);
+          EXPECT_EQ(state.scalar(published,kCursor),std::int32_t(kBasePosition+1+decision.accepted_drafts));
+          EXPECT_EQ(state.scalar(published,kIndexCursor),std::int32_t(kBasePosition+1));
+          EXPECT_EQ(state.scalar(published,kLag),std::int32_t(decision.accepted_drafts));
+          EXPECT_EQ(state.scalar(published,kPending),decision.next_pending);
+          same_storage(state.member(published,kPending),checked[verifier.pending[decision.next_pending_row]]);
+          for(std::size_t i=0;i<resource_count;++i)if(i!=layout.slot(kPending))
+            same_storage(state.physical_member(published,i),state.physical_member(checkpoint,i));
+          if(use_target) {
+            for(const auto entry:{kTargetMain,kTargetCursor,kTargetTap})
+              same_storage(state.member(published,entry),state.member(checkpoint,entry));
+            EXPECT_EQ(state.scalar(published,kTargetCursor),state.scalar(published,kCursor));
+          }
+          auto caught=published;
+          if(decision.accepted_drafts) {
+            caught=execute_step(state,published,catchup_step,*source,7,
+                [&](std::span<const c::ReadLease> input){return catchup_program.execute(queue,input);});
+            ++catchups;check(head.publish(published.identity(),caught),"same accepted Head catches up its one journal row");
+          } else EXPECT_THROW(validate_step(state,published,catchup_step),std::runtime_error);
+          EXPECT_EQ(state.scalar(caught,kLag),0);EXPECT_EQ(state.scalar(caught,kCursor),state.scalar(caught,kIndexCursor));
+          if(use_target)for(const auto entry:{kTargetMain,kTargetCursor,kTargetTap})
+            same_storage(state.member(caught,entry),state.member(published,entry));
+          require_observed(glm_shared_vocabulary_reference::expect_feedback(values<std::int32_t>(state.member(caught,kPending)),
+              values<std::int32_t>(checked[verifier.pending[decision.next_pending_row]])),"actual target pending enters next embedding");
+          auto &next_step=decision.accepted_drafts?continuation_one:continuation_zero;
+          auto &next_program=decision.accepted_drafts?continuation_one_program:continuation_zero_program;
+          auto continued=execute_step(state,caught,next_step,*source,8,
+              [&](std::span<const c::ReadLease> input){return next_program.execute(queue,input,cuda);},use_target?state.member(caught,kTargetTap):next_targets[decision.accepted_drafts]);
+          ++feedback;
+          if(use_target) {
+            const auto target=execute_target(*target_step,*target_program,*target_source,*source,owner,queue,cuda,
+                state.member(caught,kPending),state.member(caught,kTargetMain),state.member(caught,kTargetCursor),upstream_ids);
+            continued=attach_target(state,continued,target);
+            EXPECT_EQ(state.scalar(continued,kTargetCursor),state.scalar(continued,kCursor));
+          }
+          check(head.publish(caught.identity(),continued),"publish actual accepted-frontier fresh seed in the same Head");
+          const auto continued_image=image(state,continued);
+          const auto seed=take(head.current(),"actual accepted fresh Pro seed");
+          EXPECT_EQ(seed.identity(),continued.identity());EXPECT_EQ(state.epoch(seed).epoch,8u);
+          EXPECT_EQ(state.epoch(seed).selection_position,std::uint64_t(next_step.position));
+          EXPECT_EQ(state.epoch(seed).reuses,0u);
+          auto &step_zero=decision.accepted_drafts?skip_one:skip_zero;
+          auto &zero_program=decision.accepted_drafts?skip_one_program:skip_zero_program;
+          const auto skipped=execute_step(state,seed,step_zero,*source,8,
+              [&](std::span<const c::ReadLease> input){return zero_program.execute(queue,input,cuda);});
+          ++feedback;++skips;
+          same_storage(state.member(skipped,kSelection),state.member(seed,kSelection));
+          same_storage(state.member(skipped,kCodes),state.member(seed,kCodes));
+          EXPECT_EQ(state.epoch(skipped).epoch,8u);EXPECT_EQ(state.epoch(skipped).reuses,1u);
+          EXPECT_EQ(state.scalar(skipped,kLag),1);
+          EXPECT_EQ(image(state,take(head.current(),"unverified step0 stays unpublished")),continued_image);
+          EXPECT_EQ(image(state,published),published_image);EXPECT_EQ(image(state,first_checkpoint),first_checkpoint_image);
+          EXPECT_EQ(image(state,second),second_image);EXPECT_EQ(image(state,base),base_image);EXPECT_EQ(image(state,first),first_image);
+          EXPECT_FALSE(state.member(published,kPending).try_write());EXPECT_FALSE(state.member(continued,kMain).try_write());
+          EXPECT_LE(state.peak_backing,budget);
+          std::printf("GLM Pro K1 scenario=%d proposal=%d target0=%d target1=%d accepted=%u frontier=%d pending=%d\n",
+              scenario,proposal,target_ids[0],target_ids[1],decision.accepted_drafts,state.scalar(published,kCursor),decision.next_pending);
+        }
+        check(state.store.collect(),"retire finite Pro scenario while retaining base/first readers");
+        EXPECT_EQ(state.store.stats().versions,2u);EXPECT_EQ(state.store.stats().drafts,0u);
+      }
+    }
+    members={};initial_output.clear();
+    check(state.store.collect(),"retire complete Pro state journey");
+    EXPECT_EQ(state.store.stats().versions,0u);EXPECT_EQ(state.store.stats().drafts,0u);
+    EXPECT_GT(accepted[0],0u);EXPECT_GT(accepted[1],0u);
+    EXPECT_EQ(source->checked_steps,source->episodes);EXPECT_EQ(feedback,source->checked_steps);
+    EXPECT_TRUE(source->full_checked);EXPECT_TRUE(source->moe_full_checked);
+    std::size_t submissions=source->cold_submissions;
+    add_bound(submissions,initial_program.submissions);add_bound(submissions,catchup_program.submissions);
+    add_bound(submissions,verifier_program.submissions);
+    for(const auto *program:model_programs)add_bound(submissions,program->native_submissions());
+    if(use_target) {
+      add_bound(submissions,target_source->cold_submissions);add_bound(submissions,target_program->native_submissions());
+      add_bound(submissions,repair_program->native_submissions());add_bound(submissions,policy_program->submissions);
+      EXPECT_TRUE(target_source->full_checked);EXPECT_TRUE(target_source->moe_full_checked);
+      EXPECT_EQ(target_source->episodes,target_source->checked_steps);EXPECT_GT(repairs,0u);
+      if constexpr(!Runtime::kPacked) {
+      ::testing::Test::RecordProperty("original_target_roles",1559);
+      ::testing::Test::RecordProperty("original_target_source_bytes","9872042432");
+      ::testing::Test::RecordProperty("actual_target_calls",std::to_string(target_source->checked_steps));
+      ::testing::Test::RecordProperty("actual_target_submissions",std::to_string(target_program->native_submissions()));
+      ::testing::Test::RecordProperty("actual_target_policy_submissions",std::to_string(policy_program->submissions));
+      ::testing::Test::RecordProperty("accepted_target_conditioned_repairs",std::to_string(repairs));
+      ::testing::Test::RecordProperty("actual_accepted_kv_repair_submissions",std::to_string(repair_submissions));
+      EXPECT_EQ(repair_submissions,repairs*2);
+      }
+    }
+    std::size_t ready=0;
+    if constexpr(Runtime::kPacked) {ready=Runtime::ready(*source,*target_source,owner);}
+    else {
+
+    for(const auto &role:source->parameters.roles)if(role.lease) {
+      add_bound(ready,role.lease.size());EXPECT_EQ(role.owner.ref(),owner.ref());
+      auto permission=role.lease;EXPECT_FALSE(permission.try_write());
+    }
+    for(const auto &role:source->words.roles) {
+      add_bound(ready,role.lease.size());EXPECT_EQ(role.owner.ref(),owner.ref());
+      auto permission=role.lease;EXPECT_FALSE(permission.try_write());
+    }
+    for(const auto &role:source->prepared){add_bound(ready,role.lease.size());auto permission=role.lease;EXPECT_FALSE(permission.try_write());}
+    EXPECT_FALSE(source->parameters.at(own::Role::kKvB).lease);
+    if(use_target) {
+      EXPECT_FALSE(target_source->parameters.at(target_own::Role::kKvB).lease);
+      for(const auto &role:target_source->parameters.roles)if(role.lease) {
+        EXPECT_EQ(role.owner.ref(),owner.ref());auto permission=role.lease;EXPECT_FALSE(permission.try_write());
+      }
+      ::testing::Test::RecordProperty("first_full_target_projection_reference_values",74304);
+      ::testing::Test::RecordProperty("original_target_checked_calls",std::to_string(target_source->checked_steps));
+      ::testing::Test::RecordProperty("original_target_expert_domain",256);
+      ::testing::Test::RecordProperty("original_target_resident_capacity",8);
+      ::testing::Test::RecordProperty("target_cache_members",3);
+      ::testing::Test::RecordProperty("source_target_index_policy","Original shared-index layer77 has no indexer roles. Explicit synthetic upstream74 Top2048 IDs; no appended self/draft-tail or cloned78 indexer.");
+    }
+    }
+    ::testing::Test::RecordProperty("actual_submissions",std::to_string(submissions));
+    if constexpr(Runtime::kPacked) {
+      const auto &artifact=source->parameters.source->identity();
+      ::testing::Test::RecordProperty("artifact_identity",std::string(artifact.repository)+"@"+std::string(artifact.revision)+" "+std::string(artifact.variant));
+      ::testing::Test::RecordProperty("artifact_repository",std::string(artifact.repository));
+      ::testing::Test::RecordProperty("artifact_revision",std::string(artifact.revision));
+      ::testing::Test::RecordProperty("artifact_variant",std::string(artifact.variant));
+      ::testing::Test::RecordProperty("artifact_first_file",std::string(artifact.file));
+      ::testing::Test::RecordProperty("expert_source_plan_sha256",source->experts.source->source_contract().plan_sha256);
+      ::testing::Test::RecordProperty("static_source_roles",std::to_string(source->parameters.source->size()));
+      std::size_t static_bytes=0;
+      for(std::size_t i=0;i<source->parameters.source->size();++i)
+        add_bound(static_bytes,source->parameters.source->spec(source->parameters.source->name(i)).bytes);
+      ::testing::Test::RecordProperty("static_source_bytes",std::to_string(static_bytes));
+      ::testing::Test::RecordProperty("actual_nextn_steps",std::to_string(source->checked_steps));
+      ::testing::Test::RecordProperty("actual_target_calls",std::to_string(target_source->checked_steps));
+      ::testing::Test::RecordProperty("actual_pending_embedding_feedback_checks",std::to_string(feedback));
+      ::testing::Test::RecordProperty("actual_index_catchup_steps",std::to_string(catchups));
+      ::testing::Test::RecordProperty("actual_skip_steps",std::to_string(skips));
+      ::testing::Test::RecordProperty("accepted_zero_draft_checkpoints",std::to_string(accepted[0]));
+      ::testing::Test::RecordProperty("accepted_one_draft_checkpoints",std::to_string(accepted[1]));
+      ::testing::Test::RecordProperty("accepted_target_conditioned_repairs",std::to_string(repairs));
+      ::testing::Test::RecordProperty("actual_accepted_kv_repair_submissions",std::to_string(repair_submissions));
+      ::testing::Test::RecordProperty("natural_k1_trials",1);
+      ::testing::Test::RecordProperty("natural_k1_accepted_drafts",int(natural_accepted));
+      ::testing::Test::RecordProperty("controlled_matching_trials",1);
+      ::testing::Test::RecordProperty("controlled_rejection_trials",1);
+      ::testing::Test::RecordProperty("cancelled_unpublished_drafts",std::to_string(cancelled));
+      ::testing::Test::RecordProperty("rejected_stale_publishes",std::to_string(stale_publish));
+      ::testing::Test::RecordProperty("state_budget_bytes",std::to_string(budget));
+      ::testing::Test::RecordProperty("peak_state_backing_bytes",std::to_string(state.peak_backing));
+      ::testing::Test::RecordProperty("target_first_full_reference_values",std::to_string(2*model::kVocabulary));
+      ::testing::Test::RecordProperty("first_full_nextn_head_reference_values",std::to_string(model::kVocabulary));
+      ::testing::Test::RecordProperty("ready_non_moe_bank_capacity_bytes",std::to_string(ready));
+      ::testing::Test::RecordProperty("component_schema","13 resources + Epoch24: 10 F32/plain-index NextN resources and distinct target main/cursor/F32tap; no index scales member");
+      ::testing::Test::RecordProperty("scope","Original converted target77+NextN78 packed roles with actual full-V Q8 verifier; explicit F32 compute/hidden/journal/main/index runtime, complete indexed fresh/skip/accepted-lag catchup. Upstream74 IDs/layer76 input+residual/initial histories are finite fixtures; not complete target-engine quality or TPS.");
+    } else {
+    ::testing::Test::RecordProperty("full_original_nextn_roles",1571);
+    ::testing::Test::RecordProperty("full_original_nextn_source_bytes","13838963840");
+    ::testing::Test::RecordProperty("actual_nextn_steps",std::to_string(source->checked_steps));
+    ::testing::Test::RecordProperty("actual_pending_embedding_feedback_checks",std::to_string(feedback));
+    ::testing::Test::RecordProperty("actual_index_catchup_steps",std::to_string(catchups));
+    ::testing::Test::RecordProperty("actual_skip_steps",std::to_string(skips));
+    ::testing::Test::RecordProperty("accepted_zero_draft_checkpoints",std::to_string(accepted[0]));
+    ::testing::Test::RecordProperty("accepted_one_draft_checkpoints",std::to_string(accepted[1]));
+    ::testing::Test::RecordProperty("natural_k1_trials",1);
+    ::testing::Test::RecordProperty("natural_k1_proposal",natural_proposal);
+    ::testing::Test::RecordProperty("natural_k1_accepted_drafts",int(natural_accepted));
+    ::testing::Test::RecordProperty("controlled_matching_trials",1);
+    ::testing::Test::RecordProperty("controlled_rejection_trials",1);
+    ::testing::Test::RecordProperty("cancelled_unpublished_drafts",std::to_string(cancelled));
+    ::testing::Test::RecordProperty("rejected_stale_publishes",std::to_string(stale_publish));
+    ::testing::Test::RecordProperty("first_full_nextn_head_reference_values",std::to_string(model::kVocabulary));
+    ::testing::Test::RecordProperty("target_first_full_reference_values",std::to_string(2*model::kVocabulary));
+    ::testing::Test::RecordProperty("target_verifier_submissions",std::to_string(verifier_program.submissions));
+    ::testing::Test::RecordProperty("state_budget_bytes",std::to_string(budget));
+    ::testing::Test::RecordProperty("state_pool_backing_bound",std::to_string(pools));
+    ::testing::Test::RecordProperty("state_initial_backing_bound",std::to_string(initial_bound));
+    ::testing::Test::RecordProperty("state_metadata_backing_bound",std::to_string(metadata_bound));
+    ::testing::Test::RecordProperty("peak_state_backing_bytes",std::to_string(state.peak_backing));
+    ::testing::Test::RecordProperty("ready_non_moe_bank_capacity_bytes",std::to_string(ready));
+    ::testing::Test::RecordProperty("prepared_kv_capacity_bytes",std::to_string(source->prepared[0].lease.size()+source->prepared[1].lease.size()));
+    ::testing::Test::RecordProperty("resident_expert_domain",int(kMoe.experts));
+    ::testing::Test::RecordProperty("resident_expert_capacity",int(kMoe.slots));
+    ::testing::Test::RecordProperty("resident_slot_capacity_bytes",std::to_string(glm_moe_geometry::layout(kMoe).slot_bytes));
+    std::string unions;
+    for(const auto &selected:source->selections){if(!unions.empty())unions+=",";unions+=std::to_string(selected.globals.size());}
+    ::testing::Test::RecordProperty("actual_resident_union_sizes",unions);
+    ::testing::Test::RecordProperty("component_schema",use_target?
+        "14 resources plus Epoch24: existing11 NextN plus original77 mainF32[2064,576] exactBF16widen, targetcursorI32 and normalizedtapBF16[1,6144]; one StateStore/Head":
+        "11 resources plus Epoch24 metadata: mainF32[2064,576] BF16widen CKV512+KPE64, unpooled E4[2064,128]+F32scale, BF16hidden6144, I32pending/cursors/2048absoluteIDs, BF16journal3 and positions/lag; one StateHead");
+    ::testing::Test::RecordProperty("pending_policy",use_target?
+        "Actual77 target-current/proposal taps enter one R2 full-V projection. Pending is direct stable row[accepted] lease; accept0 retains current; accept1 repairs proposal78 KV/journal from target-current tap and retains actual second target main/cursor/tap. Accepted lag is caught up; current bonus then runs real77+78 with targettap seed; unverified skip0 remains unpublished.":
+        "Natural K1 uses actual NextN proposal and full-V R2 target-tap head. Controlled match/reject consume real target Top1/Top2 proposal leases in the actual second Graph, separate from natural acceptance. accept0 retains after-current first; accept1 after-proposal second; pending directly retains target row[accepted]. Only accepted lag1 is caught up; next fresh epoch8 publishes before unverified skip0 remains unpublished.");
+    ::testing::Test::RecordProperty("scope",use_target?
+        "Distinct original GLM-5.3 aca966 target77 1559 roles including its model.norm, plus original78 complete1571 roles and the same untied154880 BF16 head/embedding. Shared-index77 uses explicit upstream74 Top2048; target main576/cursor/finalnormalizedtap and draft11 resources share one expected-base StateHead. Actual token leases select original embeddings only as a labelled synthetic layer76 hidden adapter; residual, upstream74 selection and finite initial caches remain fixtures. Warm/current/proposal/bonus real77 MLA and256-domain un-clipped MoE produce true model.norm taps. Natural K1 and real Top1/Top2 controls are separate. Accept0 keeps after-current; accept1 recomputes accepted proposal78 KV/journal with target-current tap before atomic publication and accepted index catchup. Same ordinary two-phase execution and bounded supplies. Not full78-layer target, task quality, vendor fusion-bit equivalence, TPS or measured physical peak.":
+        "Official original GLM-5.3 aca966 Pro layer78 complete1571 roles including untied full154880 BF16 vocabulary. Original H6144 Qrank2048 NoPE192+RoPE64/latent512/value256, unpooled indexTop2048 and non-fused Hadamard/BF16/UE8M0, BF16weights_proj F32acc, original256-domain Top8 MoE with actual selected E4/SF experts, scale2.5 and no Flash clip10. Ordinary two-phase Graphs, same native resource and bounded double-slot supply, direct activation/state leases, all actual store/route/merge/fullV gates. Initial prepared history and previous/final target taps are explicit synthetic external fixtures; not a complete78-layer trained target, vendor physical-cache ABI, quality/natural-acceptance benchmark or TPS. Capacity/upload accounting is not measured physical peak.");
+    }
+  }();
+#if defined(HYLE_TEST_GLM_STATE_CUDA)
+  if constexpr(!Runtime::kPacked) if(source->cuda_supply)check(source->cuda_supply->close(),"close original Pro uploads after all ordinary readers retire");
+#endif
+  if(source->cpu_supply) {
+    EXPECT_EQ(source->cpu_supply->stats().live_blocks,0u);EXPECT_EQ(source->cpu_supply->stats().active_uses,0u);
+  }
+  if(target_source) {
+#if defined(HYLE_TEST_GLM_STATE_CUDA)
+    if constexpr(!Runtime::kPacked) if(target_source->cuda_supply)check(target_source->cuda_supply->close(),"retire original77 bounded expert supply");
+#endif
+    if(target_source->cpu_supply) {
+      EXPECT_EQ(target_source->cpu_supply->stats().live_blocks,0u);EXPECT_EQ(target_source->cpu_supply->stats().active_uses,0u);
+    }
+  }
+}
+
+#if defined(HYLE_TEST_GLM_STATE_CUDA)
+struct SharedCudaDevice final {
+  std::shared_ptr<c::cuda::MemoryResource> resource;
+  m::MemoryResourceRef ref() noexcept{return resource->ref();}
+};
+TEST(GlmProMtpStateConsumer,CudaOriginalTarget77AndNextNFullVocabularyVerifier) {
+  auto context=take(g::cuda::create_context(),"original77/78 shared CUDA Context");
+  auto device=std::make_shared<c::cuda::MemoryResource>(take(c::cuda::MemoryResource::create(
+      context,c::cuda::MemoryKind::kDevice),"original77/78 same CUDA allocation domain"));
+  const auto owner=take(c::StorageOwner::adopt(context,SharedCudaDevice{device}),"original77/78 same CUDA owner");
+  run(context,owner,true,true,device.get());
+}
+TEST(GlmProMtpStateConsumer,CudaOriginalNextNFullVocabularyPublishesAndCatchesUp) {
+  auto context=take(g::cuda::create_context(),"original Pro CUDA Context");
+  auto device=std::make_shared<c::cuda::MemoryResource>(take(c::cuda::MemoryResource::create(
+      context,c::cuda::MemoryKind::kDevice),"same actual original Pro CUDA allocation domain"));
+  const auto owner=take(c::StorageOwner::adopt(context,SharedCudaDevice{device}),"shared original Pro CUDA owner");
+  run(context,owner,true,false,device.get());
+}
+TEST(GlmProMtpStateConsumer,CudaConvertedB09TargetAndNextNFullVocabularyVerifier) {
+  auto context=take(g::cuda::create_context(),"B09 CUDA Context");
+  auto device=std::make_shared<c::cuda::MemoryResource>(take(c::cuda::MemoryResource::create(context,c::cuda::MemoryKind::kDevice),"B09 actual device"));
+  const auto owner=take(c::StorageOwner::adopt(context,SharedCudaDevice{device}),"B09 actual shared owner");
+  run<ConvertedRuntime>(context,owner,true,true,device.get());
+}
+TEST(GlmProMtpStateConsumer,CudaConvertedB10TargetAndNextNFullVocabularyVerifier) {
+  const auto &fixture=converted_b10_fixture();
+  auto context=take(g::cuda::create_context(),"B10 CUDA Context");
+  auto device=std::make_shared<c::cuda::MemoryResource>(take(c::cuda::MemoryResource::create(context,c::cuda::MemoryKind::kDevice),"B10 actual device"));
+  const auto owner=take(c::StorageOwner::adopt(context,SharedCudaDevice{device}),"B10 actual shared owner");
+  run<ConvertedRuntime>(context,owner,true,true,device.get(),&fixture);
+}
+
+#endif
+#if defined(HYLE_TEST_GLM_STATE_CPU)
+struct SystemResource final {m::MemoryResourceRef ref() noexcept{return m::system_resource();}};
+TEST(GlmProMtpStateConsumer,CpuOriginalTarget77AndNextNFullVocabularyVerifier) {
+  auto context=take(g::cpu::create_context(),"original77/78 CPU Context");
+  const auto owner=take(c::StorageOwner::adopt(context,SystemResource{}),"original77/78 CPU owner");
+  run(context,owner,false,true);
+}
+TEST(GlmProMtpStateConsumer,CpuOriginalNextNFullVocabularyPublishesAndCatchesUp) {
+  auto context=take(g::cpu::create_context(),"original Pro CPU Context");
+  const auto owner=take(c::StorageOwner::adopt(context,SystemResource{}),"shared original Pro CPU owner");
+  run(context,owner,false);
+}
+TEST(GlmProMtpStateConsumer,CpuConvertedB09TargetAndNextNFullVocabularyVerifier) {
+  auto context=take(g::cpu::create_context(),"B09 CPU Context");
+  const auto owner=take(c::StorageOwner::adopt(context,SystemResource{}),"B09 actual CPU owner");
+  run<ConvertedRuntime>(context,owner,false,true);
+}
+TEST(GlmProMtpStateConsumer,CpuConvertedB10TargetAndNextNFullVocabularyVerifier) {
+  const auto &fixture=converted_b10_fixture();
+  auto context=take(g::cpu::create_context(),"B10 CPU Context");
+  const auto owner=take(c::StorageOwner::adopt(context,SystemResource{}),"B10 actual CPU owner");
+  run<ConvertedRuntime>(context,owner,false,true
+#if defined(HYLE_TEST_GLM_STATE_CUDA)
+      ,nullptr
+#endif
+      ,&fixture);
+}
+
+#endif
+
+} // namespace

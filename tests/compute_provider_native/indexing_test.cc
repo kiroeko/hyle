@@ -3,11 +3,15 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <cstring>
 #include <span>
 
 #include "../compute/native_context_fixture.h"
 #include "half_test_support.h"
 #include "hyle/compute/prepared_operation.h"
+#include "hyle/compute/cpu.h"
+#include "hyle/compute/model_ops.h"
+#include "../compute_models/gather_elements_fixture.h"
 #include "hyle/mem/buffer.h"
 #include "hyle/mem/resource.h"
 
@@ -248,6 +252,88 @@ TEST(AtenCpuIndexing,
     GTEST_SKIP() << "ATen CPU SDK is not enabled";
   expect_half_scatter<hyle::simd::float16_t>();
   expect_half_scatter<hyle::simd::bfloat16_t>();
+}
+
+template<class Value>void expect_gather_elements(bool ordinary){
+  namespace c=hyle::compute;namespace f=gather_elements_test;
+  auto context=(ordinary?c::cpu::create_context():c::Context::create(c::cpu::device(),c::aten_cpu::provider())).value();
+  auto queue=context.create_queue().value();
+  const auto source_desc=TensorDesc::dense(half_test::data_type<Value>(),std::array<std::int64_t,2>{f::kRows,f::kColumns}).value();
+  const auto ids_desc=TensorDesc::dense(DataType::kInt32,std::array<std::int64_t,2>{f::kRows,f::kSelected}).value();
+  const auto output_desc=TensorDesc::dense(half_test::data_type<Value>(),ids_desc.dimensions()).value();
+  std::array<Value,f::kRows*f::kColumns> source{};
+  std::array<Value,f::kRows*f::kSelected> poison{};poison.fill(half_test::encode<Value>(-99));
+  auto source_storage=make_buffer(source),ids_storage=make_buffer(f::indices()),output_storage=make_buffer(poison);
+  const std::array inputs{ConstTensorView::create(source_desc,source_storage.view()).value(),ConstTensorView::create(ids_desc,ids_storage.view()).value()};
+  const auto output=TensorView::create(output_desc,output_storage.view()).value();
+  for(auto bounds:{c::IndexBoundsPolicy::kChecked,c::IndexBoundsPolicy::kUnchecked}){
+    auto prepared=c::prepare(context,c::model_ops::gather_elements(-1,bounds),inputs,std::array{output});ASSERT_TRUE(prepared)<<prepared.error().message();
+    auto invocation=prepared->create_invocation().value();
+    for(int seed:{0,7}){
+      const auto values=f::data(seed);const auto ids=f::indices(seed);const auto expected=f::reference(values,ids);
+      for(std::size_t i=0;i<source.size();++i)source[i]=half_test::encode<Value>(values[i]);
+      ASSERT_TRUE(source_storage.view().write(std::as_bytes(std::span(source))).ok());
+      ASSERT_TRUE(ids_storage.view().write(std::as_bytes(std::span(ids))).ok());
+      auto done=invocation.submit(queue,inputs,output);ASSERT_TRUE(done);ASSERT_TRUE(done->wait().ok());
+      const auto actual=read_buffer<Value,f::kRows*f::kSelected>(output_storage);
+      for(std::size_t i=0;i<actual.size();++i)EXPECT_EQ(half_test::decode(actual[i]),expected[i]);
+    }
+  }
+  auto checked=c::prepare(context,c::model_ops::gather_elements(),inputs,std::array{output}).value();
+  for(std::int32_t bad:{-1,std::int32_t(f::kColumns)}){
+    auto invocation=checked.create_invocation().value();
+    auto ids=f::indices();ids.back()=bad;
+    ASSERT_TRUE(ids_storage.view().write(std::as_bytes(std::span(ids))).ok());
+    ASSERT_TRUE(output_storage.view().write(std::as_bytes(std::span(poison))).ok());
+    auto done=invocation.submit(queue,inputs,output);ASSERT_TRUE(done)<<done.error().message();EXPECT_TRUE(done->wait().IsOutOfRange());
+    const auto actual=read_buffer<Value,f::kRows*f::kSelected>(output_storage);
+    EXPECT_EQ(std::memcmp(actual.data(),poison.data(),sizeof(poison)),0);
+  }
+}
+TEST(AtenCpuIndexing, GatherElementsKeepsRowsAcrossChangedIdsAndChecksBeforeWriting){
+  if(!hyle::compute::aten_cpu::provider().valid())GTEST_SKIP()<<"ATen CPU SDK is not enabled";
+  expect_gather_elements<float>(false);expect_gather_elements<hyle::simd::float16_t>(false);expect_gather_elements<hyle::simd::bfloat16_t>(false);
+}
+TEST(AtenCpuIndexing, DefaultRouteAdmitsGatherElementsForAllThreeStorageTypes){
+  if(!hyle::compute::aten_cpu::provider().valid())GTEST_SKIP()<<"ATen CPU SDK is not enabled";
+  expect_gather_elements<float>(true);expect_gather_elements<hyle::simd::float16_t>(true);expect_gather_elements<hyle::simd::bfloat16_t>(true);
+}
+TEST(AtenCpuIndexing, GatherElementsPreservesBitsAndSupportsAxisZeroAndEmptyOutput){
+  namespace c=hyle::compute;
+  if(!c::aten_cpu::provider().valid())GTEST_SKIP()<<"ATen CPU SDK is not enabled";
+  auto context=c::cpu::create_context().value();auto queue=context.create_queue().value();
+  const auto source_desc=TensorDesc::dense(DataType::kFloat32,std::array<std::int64_t,2>{3,2}).value();
+  const auto ids_desc=TensorDesc::dense(DataType::kInt32,std::array<std::int64_t,2>{2,2}).value();
+  const auto output_desc=TensorDesc::dense(DataType::kFloat32,ids_desc.dimensions()).value();
+  const std::array<std::uint32_t,6> bits{0x7f800123,0x80000000,0x00000001,0x7fcabcde,0xff800123,0x3f800000};
+  const std::array<std::int32_t,4> ids{2,0,0,1};const std::array<std::uint32_t,4> expected{bits[4],bits[1],bits[0],bits[3]};
+  auto source=make_buffer(bits),indices=make_buffer(ids),result=make_buffer(std::array<std::uint32_t,4>{});
+  const std::array inputs{ConstTensorView::create(source_desc,source.view()).value(),ConstTensorView::create(ids_desc,indices.view()).value()};
+  auto prepared=c::prepare(context,c::model_ops::gather_elements(0),std::array{source_desc,ids_desc},std::array{output_desc},hyle::mem::system_resource()).value();auto invocation=prepared.create_invocation().value();
+  auto done=invocation.submit(queue,inputs,TensorView::create(output_desc,result.view()).value());ASSERT_TRUE(done);ASSERT_TRUE(done->wait().ok());
+  EXPECT_EQ((read_buffer<std::uint32_t,4>(result)),expected);
+  for(auto type:{DataType::kFloat16,DataType::kBFloat16}){
+    const auto half_desc=TensorDesc::dense(type,source_desc.dimensions()).value();
+    const auto half_output=TensorDesc::dense(type,output_desc.dimensions()).value();
+    const std::array<std::uint16_t,6> half_bits=type==DataType::kFloat16?
+        std::array<std::uint16_t,6>{0x7c01,0x8000,0x0001,0x7e35,0xfc01,0x3c00}:
+        std::array<std::uint16_t,6>{0x7f81,0x8000,0x0001,0x7fc5,0xff81,0x3f80};
+    const std::array<std::uint16_t,4> half_expected{half_bits[4],half_bits[1],half_bits[0],half_bits[3]};
+    auto half_source=make_buffer(half_bits),half_result=make_buffer(std::array<std::uint16_t,4>{});
+    const std::array half_inputs{ConstTensorView::create(half_desc,half_source.view()).value(),inputs[1]};
+    const auto half_view=TensorView::create(half_output,half_result.view()).value();
+    auto half_prepared=c::prepare(context,c::model_ops::gather_elements(0),half_inputs,std::array{half_view}).value();
+    auto half_invocation=half_prepared.create_invocation().value();
+    auto half_done=half_invocation.submit(queue,half_inputs,half_view);ASSERT_TRUE(half_done);ASSERT_TRUE(half_done->wait().ok());
+    EXPECT_EQ((read_buffer<std::uint16_t,4>(half_result)),half_expected);
+  }
+  const auto empty_ids=TensorDesc::dense(DataType::kInt32,std::array<std::int64_t,2>{3,0}).value();
+  const auto empty_output=TensorDesc::dense(DataType::kFloat32,empty_ids.dimensions()).value();
+  auto empty=c::prepare(context,c::model_ops::gather_elements(),std::array{source_desc,empty_ids},std::array{empty_output},hyle::mem::system_resource());ASSERT_TRUE(empty);
+  auto empty_invocation=empty->create_invocation().value();
+  auto empty_storage=Buffer::create(hyle::mem::system_resource(),0,64).value();
+  const std::array empty_inputs{inputs[0],ConstTensorView::create(empty_ids,empty_storage.view()).value()};
+  auto empty_done=empty_invocation.submit(queue,empty_inputs,TensorView::create(empty_output,empty_storage.view()).value());ASSERT_TRUE(empty_done);EXPECT_TRUE(empty_done->wait().ok());
 }
 
 } // namespace

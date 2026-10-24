@@ -1,4 +1,5 @@
 #include "../compute_provider_flashinfer/attention_test_support.h"
+#include "test_support.h"
 #include "hyle/compute/model_ops.h"
 #include "hyle/compute/providers/ggml_cuda.h"
 
@@ -139,8 +140,11 @@ void exercise_sink(int tokens, int keys, int heads) {
       compute::prepare(context, operation, a.inputs, outputs, memory.ref());
   ASSERT_TRUE(prepared) << prepared.error().message();
   EXPECT_EQ(prepared->provider().id, compute::ggml_cuda::kProviderId);
-  auto invocation = prepared->create_invocation(),
-       other = prepared->create_invocation();
+  auto workspace = ggml_cuda_test::workspace_buffer(*prepared, memory.ref());
+  auto other_workspace =
+      ggml_cuda_test::workspace_buffer(*prepared, memory.ref());
+  auto invocation = prepared->create_invocation(workspace.view());
+  auto other = prepared->create_invocation(other_workspace.view());
   ASSERT_TRUE(invocation) << invocation.error().message();
   ASSERT_TRUE(other) << other.error().message();
   auto queue = context.create_queue().value(),

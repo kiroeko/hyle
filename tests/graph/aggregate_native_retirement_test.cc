@@ -11,7 +11,7 @@
 #include "hyle/compute/backends/cuda.h"
 #include "hyle/compute/providers/cublas.h"
 #include "hyle/compute/resource_leases.h"
-#include "hyle/graph/leased_invocation.h"
+#include "hyle/graph/executable.h"
 
 namespace {
 namespace compute = hyle::compute;
@@ -115,8 +115,8 @@ TEST(GraphNativeRetirement, ObservationErrorKeepsAllAcceptedCublasBranchesAlive)
   auto definition = std::move(builder).finish().value();
   const std::array storage{graph::StorageDomain{resource.ref()}};
   const std::array targets{
-      graph::ExecutionTarget{&contexts[0], graph::StorageDomainId{0}},
-      graph::ExecutionTarget{&contexts[1], graph::StorageDomainId{0}}};
+      graph::ExecutionTarget{hyle::graph::ExecutionSource::acquire(contexts[0]).value(), graph::StorageDomainId{0}},
+      graph::ExecutionTarget{hyle::graph::ExecutionSource::acquire(contexts[1]).value(), graph::StorageDomainId{0}}};
   const std::array placements{
       graph::NodePlacement{definition.node_id(0).value(), graph::ExecutionTargetId{0},
                            graph::PlacementStrength::kRequired},
@@ -216,10 +216,9 @@ TEST(GraphNativeRetirement, LeasedGraphOwnsBindingsAndOldResultsPreventReplay) {
   ASSERT_TRUE(builder.publish(a_id).ok()); // source-alias result
   auto definition = std::move(builder).finish().value();
   const std::array storage{graph::StorageDomain{resource.ref()}};
-  const std::array targets{graph::ExecutionTarget{&owner, graph::StorageDomainId{0}}};
+  const std::array targets{graph::ExecutionTarget{hyle::graph::ExecutionSource::acquire(owner).value(), graph::StorageDomainId{0}}};
   auto compiled = graph::compile(definition, {.storage_domains = storage, .targets = targets}).value();
-  auto invocation = graph::LeasedInvocation::create(compiled.executable,
-      {.allocator = metadata.ref()}).value();
+  auto invocation = compiled.executable.create_invocation({.resources = graph::ResourceOptions{.allocator = metadata.ref()}}).value();
   ASSERT_TRUE(invocation.bind(a_id, desc, left).ok());
   ASSERT_TRUE(invocation.bind(b_id, desc, right).ok());
   const auto wrong = compute::TensorDesc::dense(compute::DataType::kFloat32,
@@ -228,13 +227,13 @@ TEST(GraphNativeRetirement, LeasedGraphOwnsBindingsAndOldResultsPreventReplay) {
   ASSERT_TRUE(destination.valid());
   ASSERT_TRUE(invocation.bind(product, desc, std::move(destination)).ok());
   EXPECT_FALSE(destination.valid());
-  EXPECT_FALSE(invocation.output(product).has_value());
+  EXPECT_FALSE(invocation.result(product).has_value());
   left.reset(); right.reset(); // bindings own the only business references
   auto warm = invocation.submit(queue).value();
   ASSERT_TRUE(warm.wait().ok());
   const auto cold_allocations = metadata.allocations;
   for (int iteration = 0; iteration < 8; ++iteration) {
-    auto result = invocation.output(product).value();
+    auto result = invocation.result(product).value();
     result = result;
     auto old_result = result;
     std::array<float, 4> observed{};
@@ -255,7 +254,7 @@ TEST(GraphNativeRetirement, LeasedGraphOwnsBindingsAndOldResultsPreventReplay) {
   ASSERT_EQ(cudaLaunchHostFunc(gate.stream, &Gate::wait, &gate), cudaSuccess);
   auto pending = invocation.submit(queue).value();
   EXPECT_TRUE(invocation.in_flight());
-  EXPECT_FALSE(invocation.output(product).has_value());
+  EXPECT_FALSE(invocation.result(product).has_value());
   EXPECT_TRUE(invocation.close().IsUnavailable());
   EXPECT_FALSE(invocation.submit(queue).has_value());
   // An unobserved held Completion must not prevent this adapter from draining.
@@ -265,7 +264,7 @@ TEST(GraphNativeRetirement, LeasedGraphOwnsBindingsAndOldResultsPreventReplay) {
   ASSERT_TRUE(pending.wait().ok());
   EXPECT_EQ(pool.stats().active_uses, 0u);
   EXPECT_EQ(metadata.allocations, cold_allocations);
-  auto alias = invocation.output(a_id).value();
+  auto alias = invocation.result(a_id).value();
   auto aliased_storage = alias.storage_lease().value();
   invocation = {};
   alias.reset();
@@ -296,15 +295,15 @@ TEST(GraphNativeRetirement, LeasedPrivateOutputRetainsOriginalWorkspaceAfterAdap
   ASSERT_TRUE(builder.publish(slice).ok());
   auto definition = std::move(builder).finish().value();
   const std::array storage{graph::StorageDomain{resource.ref()}};
-  const std::array targets{graph::ExecutionTarget{&owner, graph::StorageDomainId{0}}};
+  const std::array targets{graph::ExecutionTarget{hyle::graph::ExecutionSource::acquire(owner).value(), graph::StorageDomainId{0}}};
   auto compiled = graph::compile(definition, {.storage_domains = storage, .targets = targets}).value();
   EXPECT_EQ(compiled.executable.output_ownership().value(), graph::OutputOwnership::kInvocation);
-  auto invocation = graph::LeasedInvocation::create(compiled.executable).value();
+  auto invocation = compiled.executable.create_invocation({.resources = graph::ResourceOptions{}}).value();
   ASSERT_TRUE(invocation.bind(a_id, desc, left).ok());
   ASSERT_TRUE(invocation.bind(b_id, desc, right).ok());
   auto completion = invocation.submit(queue).value();
   ASSERT_TRUE(completion.wait().ok());
-  auto result = invocation.output(slice).value();
+  auto result = invocation.result(slice).value();
   EXPECT_FALSE(result.storage_lease().has_value());
   left.reset(); right.reset(); invocation = {}; compiled = {};
   std::array<float, 2> observed{};
@@ -313,6 +312,91 @@ TEST(GraphNativeRetirement, LeasedPrivateOutputRetainsOriginalWorkspaceAfterAdap
   EXPECT_EQ(pool.stats().live_blocks, 2u);
   result.reset();
   EXPECT_EQ(pool.stats().live_blocks, 0u);
+}
+
+TEST(GraphNativeRetirement, LeasedWaitRetiresEarlierQueuePrefixesBeforePublishingResults) {
+  auto context = compute::Context::create(cuda::device(0).value(), compute::cublas::provider()).value();
+  auto device = cuda::MemoryResource::create(context, cuda::MemoryKind::kDevice).value();
+  auto pinned = cuda::MemoryResource::create(context, cuda::MemoryKind::kPinnedHost).value();
+  std::array queues{context.create_queue().value(), context.create_queue().value()};
+  auto pool = compute::LeasePool::create(device.ref(), 1024, {.max_blocks = 4}).value();
+  auto host_pool = compute::LeasePool::create(pinned.ref(), 256, {.max_blocks = 1}).value();
+  auto left_write = pool.allocate(16).value(), right_write = pool.allocate(16).value();
+  auto remote_write = host_pool.allocate(16).value();
+  std::array destinations{pool.allocate(16).value(), pool.allocate(16).value()};
+  const std::array<float, 4> a{1, 2, 3, 4}, identity{1, 0, 0, 1};
+  ASSERT_TRUE(left_write.view()->write(std::as_bytes(std::span(a))).ok());
+  ASSERT_TRUE(right_write.view()->write(std::as_bytes(std::span(identity))).ok());
+  ASSERT_TRUE(remote_write.view()->write(std::as_bytes(std::span(a))).ok());
+  auto left = left_write.publish().value(), right = right_write.publish().value();
+  auto remote = remote_write.publish().value();
+  const auto desc = compute::TensorDesc::dense(compute::DataType::kFloat32,
+      std::array<std::int64_t, 2>{2, 2}).value();
+  auto builder = graph::GraphBuilder::create().value();
+  const auto a_id = builder.input(desc).value(), b_id = builder.input(desc).value();
+  const auto remote_id = builder.input(desc).value();
+  const std::array outputs{builder.add(compute::MatMul{}, a_id, b_id).value(),
+                           builder.add(compute::MatMul{}, remote_id, b_id).value()};
+  for (auto output : outputs) ASSERT_TRUE(builder.publish(output).ok());
+  auto definition = std::move(builder).finish().value();
+  const std::array storage{graph::StorageDomain{device.ref()}, graph::StorageDomain{pinned.ref()}};
+  const std::array targets{graph::ExecutionTarget{
+      hyle::graph::ExecutionSource::acquire(context).value(), graph::StorageDomainId{0}}};
+  const std::array lanes{
+      graph::ExecutionLane{graph::ExecutionTargetId{0}, graph::ExecutionLaneRole::kCompute},
+      graph::ExecutionLane{graph::ExecutionTargetId{0}, graph::ExecutionLaneRole::kTransfer}};
+  const std::array resources{graph::ExternalResourceContract{remote_id, graph::StorageDomainId{1}}};
+  auto compiled = graph::compile(definition, {.storage_domains = storage, .targets = targets, .lanes = lanes},
+      {.external_resources = resources}).value();
+  auto invocation = compiled.executable.create_invocation({.resources = graph::ResourceOptions{}}).value();
+  ASSERT_TRUE(invocation.bind(a_id, desc, left).ok());
+  ASSERT_TRUE(invocation.bind(b_id, desc, right).ok());
+  ASSERT_TRUE(invocation.bind(remote_id, desc, remote).ok());
+  for (std::size_t index = 0; index < outputs.size(); ++index)
+    ASSERT_TRUE(invocation.bind(outputs[index], desc, std::move(destinations[index])).ok());
+  const std::array bindings{
+      graph::QueueBinding{graph::ExecutionLaneId{0}, &queues[0]},
+      graph::QueueBinding{graph::ExecutionLaneId{1}, &queues[1]}};
+  ASSERT_TRUE(invocation.prepare_replay(bindings).ok());
+  const auto report = invocation.replay_report().value();
+  ASSERT_GT(report.device_wait_dependency_count, 0u);
+  ASSERT_GT(report.ordered_dependency_count, 0u);
+  ASSERT_EQ(report.host_wait_dependency_count, 0u);
+  auto *state = graph::detail::InvocationAccess::state(invocation);
+  ASSERT_EQ(state->plan->segments.size(), 3u);
+  ASSERT_EQ(state->plan->segments[0].lane, state->plan->segments[2].lane);
+  ASSERT_EQ(state->plan->terminal_segments.size(), 1u);
+  EXPECT_EQ(state->plan->terminal_segments[0], 2u);
+  ASSERT_EQ(state->plan->completion_segments.size(), 2u);
+  for (const auto last : state->plan->completion_segments) EXPECT_NE(last, 0u);
+  for (int iteration = 0; iteration < 2; ++iteration) {
+    auto completion = invocation.submit(bindings);
+    ASSERT_TRUE(completion.has_value());
+    // Device MatMul, queued H2D, then device MatMul use compute/transfer/compute.
+    // The first Completion has not been host-observed or settled by the copy's
+    // device dependency. The last compute prefix still cannot retire its guard.
+    EXPECT_TRUE(compute::detail::CompletionAccess::has_async_state(state->segment_completions[0]));
+    EXPECT_EQ(state->aggregate_completion.completion_count, 3u);
+    ASSERT_TRUE(completion->wait().ok());
+    EXPECT_FALSE(invocation.in_flight());
+    EXPECT_EQ(pool.stats().active_uses, 0u);
+    EXPECT_EQ(host_pool.stats().active_uses, 0u);
+    std::array results{invocation.result(outputs[0]), invocation.result(outputs[1])};
+    for (const auto &result : results) EXPECT_TRUE(result.has_value());
+    if (results[0] && results[1]) {
+      for (auto &result : results) {
+        std::array<float, 4> observed{};
+        ASSERT_TRUE(result->tensor()->storage().read(std::as_writable_bytes(std::span(observed))).ok());
+        EXPECT_EQ(observed, a);
+      }
+    } else {
+      // Before the fix, wait() leaves earlier native guards installed. This
+      // is test cleanup only, so the expected failure can exit without an
+      // Invocation/Completion retention cycle; consumers must not do this.
+      for (auto &earlier : state->segment_completions)
+        if (earlier.valid()) EXPECT_TRUE(earlier.wait().ok());
+    }
+  }
 }
 #if defined(HYLE_TESTING)
 TEST(GraphNativeRetirement, LeasedAcceptedPrefixSurvivesDependencyObservationRejection) {
@@ -339,8 +423,8 @@ TEST(GraphNativeRetirement, LeasedAcceptedPrefixSurvivesDependencyObservationRej
   auto definition = std::move(builder).finish().value();
   const std::array storage{graph::StorageDomain{resource.ref()}};
   const std::array targets{
-      graph::ExecutionTarget{&contexts[0], graph::StorageDomainId{0}},
-      graph::ExecutionTarget{&contexts[1], graph::StorageDomainId{0}}};
+      graph::ExecutionTarget{hyle::graph::ExecutionSource::acquire(contexts[0]).value(), graph::StorageDomainId{0}},
+      graph::ExecutionTarget{hyle::graph::ExecutionSource::acquire(contexts[1]).value(), graph::StorageDomainId{0}}};
   const std::array placements{
       graph::NodePlacement{definition.node_id(0).value(), graph::ExecutionTargetId{0},
                            graph::PlacementStrength::kRequired},
@@ -348,7 +432,7 @@ TEST(GraphNativeRetirement, LeasedAcceptedPrefixSurvivesDependencyObservationRej
                            graph::PlacementStrength::kRequired}};
   auto compiled = graph::compile(definition, {.storage_domains = storage, .targets = targets},
       {.node_placements = placements}).value();
-  auto invocation = graph::LeasedInvocation::create(compiled.executable).value();
+  auto invocation = compiled.executable.create_invocation({.resources = graph::ResourceOptions{}}).value();
   ASSERT_TRUE(invocation.bind(a_id, desc, left).ok());
   ASSERT_TRUE(invocation.bind(b_id, desc, right).ok());
   ASSERT_TRUE(invocation.bind(output, desc, std::move(destination)).ok());
@@ -406,7 +490,7 @@ TEST(GraphNativeRetirement, LeasedAcceptedPrefixSurvivesDependencyObservationRej
   EXPECT_EQ(root->releases.load(), 0u);
   EXPECT_TRUE(invocation.in_flight());
   EXPECT_EQ(pool.stats().active_uses, 3u);
-  EXPECT_FALSE(invocation.output(output).has_value());
+  EXPECT_FALSE(invocation.result(output).has_value());
   EXPECT_TRUE(invocation.close().IsUnavailable());
   left.reset(); right.reset(); completion = {};
   EXPECT_EQ(pool.stats().live_blocks, 3u);
@@ -417,7 +501,7 @@ TEST(GraphNativeRetirement, LeasedAcceptedPrefixSurvivesDependencyObservationRej
   EXPECT_EQ(pool.stats().active_uses, 0u);
   EXPECT_EQ(root->releases.load(), 1u);
   EXPECT_TRUE(root->failed.load());
-  EXPECT_FALSE(invocation.output(output).has_value());
+  EXPECT_FALSE(invocation.result(output).has_value());
   invocation = {};
   EXPECT_EQ(pool.stats().live_blocks, 0u);
 }

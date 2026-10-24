@@ -1,0 +1,48 @@
+{
+  "kind": "one-original-operand-numerical-regression",
+  "repository": "deepseek-ai/DeepSeek-V4-Flash-0731",
+  "revision": "7872f01b1d1fe23eabc4c98b48bffcef5a386062",
+  "capture": "target40,position2173,selected down projection output row1008",
+  "global_expert_id": "not recorded in this reduced fixture; exact original selected row byte hashes below",
+  "shape": {
+    "E": 1,
+    "T": 1,
+    "A": 1,
+    "S": 1,
+    "N": 4096,
+    "K": 2048
+  },
+  "payload_bytes": 5184,
+  "source_files": [
+    {
+      "name": "input.bf16",
+      "bytes": 4096,
+      "sha256": "2d5868b3567627377f95c932a6e8d85d86a3f7dbc7d02b45473f56cff9b8c128"
+    },
+    {
+      "name": "weight-row.e2m1",
+      "bytes": 1024,
+      "sha256": "9ba0e2732d7777eb1f06d43f527fa5ae6a13fc42968b3fcd0713914dc0eebe75"
+    },
+    {
+      "name": "weight-row.ue8",
+      "bytes": 64,
+      "sha256": "0c2c6c177f6e377ad8c7900a0126ebafaede138941c7e8989640ced3d192f9e4"
+    }
+  ],
+  "first_failure_metadata_sha256": "abff1bbc8e99f948de5328776c6ca50ce2c2f28f07242b9263dc912b4d0f5d59",
+  "frozen_original_reference": {
+    "N": 4096,
+    "K": 2048,
+    "row": 1008,
+    "actual_bf16": 47808,
+    "actual": -0.00146484375,
+    "original_sum": -0.0015189647674560547,
+    "zero_subnormal_sum": -0.0015169382095336914,
+    "bound": 3.665584717283555e-05,
+    "subnormal_codes": 10
+  },
+  "interval": "Outward F32 rounding of F64 center +/- derived original F32 bound, then BF16 RNE endpoints. Actual BF16 must lie in that interval; other4095 zero weight rows must return zero. No tolerance fitting or oracle change.",
+  "scope": "One concrete cancellation/subnormal-code counterexample. Does not prove all inputs or benchmark performance.",
+  "header_sha256": "ac597bfb3ec40a77502f5da7f45f6e13a0d090c5870f53c49311d76477affc45"
+}

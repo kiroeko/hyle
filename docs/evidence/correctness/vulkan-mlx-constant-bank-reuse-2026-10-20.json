@@ -1,0 +1,348 @@
+{
+  "date": "2026-10-20",
+  "status": "executed",
+  "problem": "Ready immutable MLX banks were copied into separate original-typed IREE input allocations for every Invocation.",
+  "fix": "Reuse the existing readonly BorrowedInput path for actual affine/MX bank ports; native shape/type validation and retained Buffer lifetime remain authoritative.",
+  "policy": "Only known owned ready immutable DeviceLocal roots qualify. Dynamic inputs and uncertain views/imports retain the original copy path. No runtime provider search, cache, executor, shader or precision changes.",
+  "observation": "The same regression object changes from zero to42 actual original VkBuffer aliases across nine small programs/two slots. Four explicit copied spans remain for view/import fallback. These counts are not whole-model peak memory or throughput.",
+  "actual": {
+    "passed": true,
+    "scope": "Vulkan immutable MLX original-bank native reuse; CPU/CUDA/Apple math paths unchanged.",
+    "before": {
+      "cases": 1,
+      "failed": [
+        "VulkanIree.ImmutableMlxBanksShareNativeStorageAcrossInvocationSlots"
+      ],
+      "skipped": [],
+      "exit": 1,
+      "names": [
+        "VulkanIree.ImmutableMlxBanksShareNativeStorageAcrossInvocationSlots"
+      ],
+      "properties": {
+        "mlx_bank_programs": "9",
+        "mlx_native_bank_aliases": "0",
+        "mlx_native_bank_copy_fallbacks": "4"
+      },
+      "XML": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\vulkan-mlx-constant-bank-reuse\\before-checks\\results.xml",
+        "bytes": 102938,
+        "sha256": "e938a5f1500ac46ebdfdf25ad5ec7f62817dac9c357102326571360de7247f1c"
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\vulkan-mlx-constant-bank-reuse\\before-checks\\tests.command.json",
+        "bytes": 540,
+        "sha256": "43ab060f06025f931894cebf753ec64d7426a714044e750a3d9742aaf99c97ca"
+      },
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\vulkan-mlx-constant-bank-reuse\\before-checks\\tests.result.json",
+        "bytes": 608,
+        "sha256": "8cee30646add4a2df10e58cafe850eeec966c21f44db1a9ec3917ad94f22204e"
+      },
+      "failure_count": 141,
+      "failure_locations": {
+        "101": 14,
+        "108": 42,
+        "111": 42,
+        "112": 42,
+        "156": 1
+      },
+      "mathematical_or_lifetime_failures": 0,
+      "proof": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\vulkan-mlx-constant-bank-reuse\\before-checks\\structural-red-proof.json",
+        "bytes": 3155,
+        "sha256": "7a3ac092459fa8964d8c4ccd8884a0294366b5b70077e84f1f77d4e3c19c7f02"
+      }
+    },
+    "after": {
+      "cases": 1,
+      "failed": [],
+      "skipped": [],
+      "exit": 0,
+      "names": [
+        "VulkanIree.ImmutableMlxBanksShareNativeStorageAcrossInvocationSlots"
+      ],
+      "properties": {
+        "mlx_bank_programs": "9",
+        "mlx_native_bank_aliases": "42",
+        "mlx_native_bank_copy_fallbacks": "4"
+      },
+      "XML": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\vulkan-mlx-constant-bank-reuse\\validation\\new\\tests.xml",
+        "bytes": 853,
+        "sha256": "2418c75b59fb6f6150369ee30e56ea1e4765500f98839707b5aafd769507979f"
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\vulkan-mlx-constant-bank-reuse\\validation\\new\\tests.command.json",
+        "bytes": 528,
+        "sha256": "30f52f3365e637e0ecbbdc6c364b025f7bde0049463e93b3fc89e42bfe63ca3d"
+      },
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\vulkan-mlx-constant-bank-reuse\\validation\\new\\tests.result.json",
+        "bytes": 598,
+        "sha256": "7d67ac35a776f9faacd596afdace79420d8aa9c2ed34c016cd58d1a31b351d03"
+      }
+    },
+    "neighbors": {
+      "cases": 11,
+      "failed": [],
+      "skipped": [],
+      "exit": 0,
+      "names": [
+        "VulkanIree.MlxGroupedSharesOriginalActivationAcrossSelectedExperts",
+        "VulkanIree.OriginalMlxBatchPreservesGroupsSourceTypesAndCheckedSlots",
+        "VulkanIree.OriginalMlxAffineWidthsUseContinuousBitstreamsAndCheckedRebinding",
+        "VulkanIree.OriginalMlxAffineWidthsKeepDecodedWeightsInF32BeforeDot",
+        "VulkanIree.OriginalMlxConstantsKeepBanksAcrossRebindingAndSlots",
+        "VulkanGraph.OrdinaryMixedMlxMoeUsesSharedInputsAndOnlyPublishesFinalResults",
+        "VulkanGraph.OfficialConstantBanksBorrowOwnedStorageAcrossSlots",
+        "VulkanGraph.MlxGroupedSharesOriginalActivationAcrossSelectedExperts",
+        "VulkanGraph.OriginalMlxBatchUsesOrdinaryTypedNodesAndCheckedSlots",
+        "VulkanGraph.OriginalMlxAffineWidthsUseContinuousBitstreamsAndCheckedRebinding",
+        "VulkanGraph.OriginalMlxConstantsKeepBanksAcrossRebindingAndSlots"
+      ],
+      "properties": {
+        "moe_device": "NVIDIA GeForce RTX 4070",
+        "moe_output_ownership_E3": "2",
+        "moe_output_ownership_E17": "2"
+      },
+      "XML": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\vulkan-mlx-constant-bank-reuse\\validation\\neighbors\\tests.xml",
+        "bytes": 3739,
+        "sha256": "1bc06c6a2eaf6c7c7df3e2df8814a145ec14e8f988440635d8feb068bf271db4"
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\vulkan-mlx-constant-bank-reuse\\validation\\neighbors\\tests.command.json",
+        "bytes": 1226,
+        "sha256": "ead3bf2ec0708062dd571d6bddb9ff2a6f6abc22e1283663f041b2674cf8fc9c"
+      },
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\vulkan-mlx-constant-bank-reuse\\validation\\neighbors\\tests.result.json",
+        "bytes": 1297,
+        "sha256": "40cbaa9ccc3bb6c6416e3fbd55ef0f2d4366bd15955504ea2e7fe2308e01557e"
+      }
+    },
+    "bank_journey": {
+      "actual_programs": 9,
+      "semantic_families": 7,
+      "family_ports": {
+        "affine linear/grouped": [
+          1,
+          2,
+          3
+        ],
+        "affine embedding": [
+          0,
+          1,
+          2
+        ],
+        "MX4/MX8 linear/grouped": [
+          1,
+          2
+        ]
+      },
+      "invocation_slots_per_program": 2,
+      "successful_submissions_per_bank_run": 27,
+      "retained_output_rejections_per_bank_run": 9,
+      "eligible_bank_aliases_before": 0,
+      "eligible_bank_aliases_after": 42,
+      "fallback_scenarios": 2,
+      "fallback_kind": [
+        "one affine-linear scale metadata View",
+        "one opaque borrow_ready scale metadata import"
+      ],
+      "fallback_input_spans_across_two_slots": 4,
+      "mutable_inputs": "Only A/IDs bind/rebind. Changed Inputs retains original codes/scales/biases/exponents before scalar oracle calculation.",
+      "lifetimes": "Argument/resident/Program copies dropped before replay; banks stay alive through slots; old outputs survive sibling replay and Invocation disposal; final bank weak owners expire."
+    },
+    "exact_same_test_object": {
+      "verified": true,
+      "source": {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\iree_test.cc",
+        "bytes": 40735,
+        "sha256": "ef021387653bb283fc488a81dd721c7ca045c2ed90494fe876e338e74e750519"
+      },
+      "object": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\vulkan-mlx-constant-bank-reuse\\before-checks\\bank-test.obj",
+        "bytes": 4652786,
+        "sha256": "5eb4f1724649e6b2cf6d705eb40a8e2ca40f3912df52179d3275fce833c1d79b"
+      },
+      "receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\vulkan-mlx-constant-bank-reuse\\before-checks\\bank-test-identity.json",
+        "bytes": 78769,
+        "sha256": "ca2f1b8839b8340a59c88ad0c9fdee8a8f0af2480538944953d6dcda11522bde"
+      },
+      "dependency_count": 310,
+      "current_dependency_drift": 0
+    },
+    "link_closure": {
+      "before": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\vulkan-mlx-constant-bank-reuse\\before-checks\\link-plan.json",
+        "bytes": 69339,
+        "sha256": "1ab1382029d95f7a9ec32e8dea6d6e268d0ea3eea5f1afec6a5aaf1dd3b1d0fb"
+      },
+      "after": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\vulkan-mlx-constant-bank-reuse\\checks\\link-plan.json",
+        "bytes": 69588,
+        "sha256": "46789bddcb452d66e1869987a12c214f9b4318c770cd5c5733f60ddf90ca67e0"
+      },
+      "actual_inputs_per_image": 160,
+      "changed_existing_input_bytes": [],
+      "removed_product_objects": [
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-moe-typed-inputs\\vulkan\\checks\\compute_provider_iree_vulkan-native_program.obj",
+          "bytes": 400542,
+          "sha256": "489ac3be78dc152addc9ace64ad77ba4af43fbbe15193bf6f4bb60acb9ae75a5"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-moe-typed-inputs\\vulkan\\checks\\compute_route_vulkan-vulkan_iree.obj",
+          "bytes": 999314,
+          "sha256": "0cb322b49c756773ec07e06484e874e7ac29cebad9c5a11b23e24911098a1735"
+        }
+      ],
+      "added_product_objects": [
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\vulkan-mlx-constant-bank-reuse\\checks\\compute_provider_iree_vulkan-native_program.obj",
+          "bytes": 402514,
+          "sha256": "cb7a38023ea2a327afe7a43fe1b509449985453be31154de1f43265c2824e8b8"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\vulkan-mlx-constant-bank-reuse\\checks\\compute_route_vulkan-vulkan_iree.obj",
+          "bytes": 1004252,
+          "sha256": "f3b0b93e2be750306459b0748bc6bd8ad22e14fe189b7c22b062b0693648f4f4"
+        }
+      ],
+      "all_actual_input_SHA_match": true,
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\vulkan-mlx-constant-bank-reuse\\checks\\vulkan.exe",
+        "bytes": 68069888,
+        "sha256": "12442d11de5b92cdd4591797231c7f20553d2e31e4aecfefbc0597c6aa926416"
+      }
+    },
+    "product_owners": [
+      {
+        "receipt": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\vulkan-mlx-constant-bank-reuse\\checks\\compute_route_vulkan-vulkan_iree-identity.json",
+          "bytes": 52786,
+          "sha256": "e81b52cd3f51484c740268a889ac8e2826c5315510da5b754ae4e613757880e2"
+        },
+        "source": {
+          "path": "C:\\public\\project-hyle\\hyle\\src\\compute_route_vulkan\\vulkan_iree.cc",
+          "bytes": 30967,
+          "sha256": "ed058ba8333b06e041a7ce6c0a02e1606aea149c215ffce40d3548756d248b98"
+        },
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\vulkan-mlx-constant-bank-reuse\\checks\\compute_route_vulkan-vulkan_iree.obj",
+          "bytes": 1004252,
+          "sha256": "f3b0b93e2be750306459b0748bc6bd8ad22e14fe189b7c22b062b0693648f4f4"
+        },
+        "dependencies": 206,
+        "compile_result": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\vulkan-mlx-constant-bank-reuse\\checks\\compute_route_vulkan-vulkan_iree-compile.result.json",
+          "bytes": 2890,
+          "sha256": "bbffc3ea7b4cd48330741c6330cb2f9da48b9a9b923bc552cb3b91574e28bb57"
+        }
+      },
+      {
+        "receipt": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\vulkan-mlx-constant-bank-reuse\\checks\\compute_provider_iree_vulkan-native_program-identity.json",
+          "bytes": 101267,
+          "sha256": "279cca0386c80de81734f6564eb33bd339151cce9c6c3f649a1e348780561fb7"
+        },
+        "source": {
+          "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_iree_vulkan\\native_program.cc",
+          "bytes": 55561,
+          "sha256": "cfb589afa02124f0c9753986502f66a46964ad4646b5f94ee46962660a515a0e"
+        },
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\vulkan-mlx-constant-bank-reuse\\checks\\compute_provider_iree_vulkan-native_program.obj",
+          "bytes": 402514,
+          "sha256": "cb7a38023ea2a327afe7a43fe1b509449985453be31154de1f43265c2824e8b8"
+        },
+        "dependencies": 382,
+        "compile_result": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\vulkan-mlx-constant-bank-reuse\\checks\\compute_provider_iree_vulkan-native_program-compile.result.json",
+          "bytes": 2739,
+          "sha256": "346cf3f3024bc1066a5dd9bbfd7c42fdc59bae857c287bfd0259ad2b04133349"
+        }
+      }
+    ],
+    "product_source_freeze": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\vulkan-mlx-constant-bank-reuse\\core\\source-freeze.json",
+      "bytes": 473,
+      "sha256": "38d2602a77fd44c07b159a9229841c02b115d9de17885ec8a6672f45e39c054b"
+    },
+    "test_source_freeze": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\vulkan-mlx-constant-bank-reuse\\test-source-freeze.json",
+      "bytes": 446,
+      "sha256": "7c5dd21dd7c9d02d49aecf17940adefd2f7d341e20150fef94bd6ebe01a67623"
+    },
+    "source_diff": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\vulkan-mlx-constant-bank-reuse\\core\\source.diff",
+      "bytes": 6140,
+      "sha256": "e7048b61657293b28c06a9209b0a36a5f83d39becec0e936c6e2337f8944d8b9"
+    },
+    "test_diff": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\vulkan-mlx-constant-bank-reuse\\test.diff",
+      "bytes": 7521,
+      "sha256": "a54fe3dd5a9fd5497d03fe79bf5d08cfa910557c70bc5a8e42ecfacc5ec390f6"
+    },
+    "actual_counts": {
+      "compiler_attempts": 4,
+      "successful_product_CXX": 2,
+      "successful_test_CXX": 1,
+      "failed_test_CXX": 1,
+      "distinct_translation_units": 3,
+      "links": 2,
+      "GPU_processes": 3,
+      "before_GPU_processes": 1,
+      "after_GPU_processes": 1,
+      "neighbors_GPU_processes": 1,
+      "new_green_gtests": 1,
+      "neighbor_green_gtests": 11,
+      "green_skips": 0,
+      "SDK_rebuilds": 0,
+      "NVCC": 0,
+      "module_regeneration": 0,
+      "header_changes": 0,
+      "ABI_changes": 0
+    },
+    "first_error": {
+      "kind": "Test called nonexistent Context::borrow; changed only to the existing Context::borrow_ready.",
+      "source": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\vulkan-mlx-constant-bank-reuse\\attempt1\\iree_test.cc",
+        "bytes": 40729,
+        "sha256": "4f2b81b8f12f61712e49c94533055428a765d899ca2d62f07b27306f4c2939fc"
+      },
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\vulkan-mlx-constant-bank-reuse\\attempt1\\bank-test-compile.result.json",
+        "bytes": 3612,
+        "sha256": "45f099365990c65a5397c765033a99d0540814e3ba97b480f321f275b8e3e578"
+      }
+    },
+    "independent_review": {
+      "blockers": [],
+      "design": "Existing BorrowedInput/input_view/HAL owner path reused only for semantic immutable bank ports, preserving original scalar dtype/shape and duplicate/range/device/alignment validation. A/IDs remain private dynamic inputs; View/import copies remain per-port fallbacks.",
+      "scope": "Source-only review plus independently re-read recorded XML/receipts; no new compiler or GPU execution."
+    },
+    "limitations": [
+      "Root-owned, ready immutable native bank buffers only. Lease/weight/View/opaque imports retain copy fallback.",
+      "Native VM context/input wrappers and selected-group workspaces remain per Invocation; no global cache or executor added.",
+      "No full artifact/model quality, throughput/latency, peak-memory measurement, other GPU or other platform acceptance.",
+      "The test records VkBuffer/offset/span identity and format/kind/counts, not the selected GPU UUID; actual hardware provenance remains the existing Windows Vulkan validation context."
+    ]
+  },
+  "limitations": [
+    "Root-owned, ready immutable native bank buffers only. Lease/weight/View/opaque imports retain copy fallback.",
+    "Native VM context/input wrappers and selected-group workspaces remain per Invocation; no global cache or executor added.",
+    "No full artifact/model quality, throughput/latency, peak-memory measurement, other GPU or other platform acceptance.",
+    "The test records VkBuffer/offset/span identity and format/kind/counts, not the selected GPU UUID; actual hardware provenance remains the existing Windows Vulkan validation context."
+  ],
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\vulkan-mlx-constant-bank-reuse-2026-10-20.zip",
+    "bytes": 340518,
+    "sha256": "d8063a10c66146a7fc5292477db4eeb01efc53ca3709a99732d9a9b0bbdb3b7f",
+    "payloads": 94,
+    "CRC_checked": true,
+    "all_payload_SHA256_checked": true
+  }
+}

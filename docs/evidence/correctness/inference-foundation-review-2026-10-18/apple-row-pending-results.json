@@ -1,0 +1,103 @@
+{
+  "status": "passed_current_17_plus_original_native_pending_consumer",
+  "hardware": {
+    "model": "Mac16,12",
+    "cpu": "Apple M4",
+    "memory": "17179869184",
+    "system": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+    "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+    "space": "Filesystem   1024-blocks      Used Available Capacity iused     ifree %iused  Mounted on\n/dev/disk3s5   239362496 170921612  40695676    81% 2242645 406956760    1%   /System/Volumes/Data"
+  },
+  "old_control": {
+    "run": "004-control-run",
+    "tests": 3,
+    "passed": 0,
+    "failed": 3,
+    "reason": "selected projected reader has no pending source admission"
+  },
+  "current": {
+    "link": "018-current-link",
+    "run": "019-current-run",
+    "tests": 17,
+    "passed": 17,
+    "failed": 0,
+    "groups": {
+      "new_pending": 3,
+      "ready_projection": 6,
+      "direct_row": 4,
+      "direct_paged": 1,
+      "indexer_direct_graph_empty": 3
+    }
+  },
+  "native": {
+    "link": "020-native-link",
+    "run": "021-native-run",
+    "exit": 0,
+    "checks": [
+      "F16 and BF16 each 64 steps",
+      "active Q2/18 and two slots each",
+      "two page nodes share one Update",
+      "CPU Abs/Cast to native to Cast/Neg",
+      "exact pages, untouched history, same generation",
+      "196608 dirty bytes each dtype"
+    ]
+  },
+  "fresh_product_host_tus": 8,
+  "fresh_existing_test_tus": 3,
+  "fresh_new_test_tus": 1,
+  "reused_ready_test_object": true,
+  "reused_native_main": true,
+  "typed_submit_take_update_owner": "013-page-pending",
+  "selected_map_owners": "results/selected-current-owners.json",
+  "no_sdk_air_or_metallib_build": true,
+  "retained_original_mlx_math": [
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/f32-partials/mlx.metallib",
+      "bytes": 1666552,
+      "sha256": "cabb611108c741e6132c3b518d832dc0b8c730868415d3c44789526823095636"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/f32-partials/native-host.f32.o",
+      "bytes": 123032,
+      "sha256": "f5fffb14d1ddbff88737830677125b6be027f41c0bf29eb601b95aaf41fafd02"
+    }
+  ],
+  "source_count": 144,
+  "source_drift": [],
+  "dependencies": "dependency-check.json",
+  "cleanup": {
+    "manifest": "cleanup-mac.json",
+    "files": 4,
+    "bytes": 37032558
+  },
+  "retained_stage_objects": 12,
+  "live_process": false,
+  "not_claimed": [
+    "new pending cancel-injection coverage",
+    "cancellation permits no read after accepted producer cancellation",
+    "performance improvement or zero warm allocations"
+  ],
+  "archive": "apple-row-pending.zip",
+  "scope": "Apple ordinary Graph ready/pending projected rows and cold Direct/Graph bank descriptor unification",
+  "changes": [
+    "One original CopyOutcomeSource factory/table, Runtime identity and typed submit/take_update shared by native page and row regions.",
+    "Original Invocation and native Run own exact ready/ordered page uses through actual retirement; consumed pending episode must reset.",
+    "Cold bank role comes from actual MLX math for Direct and Graph. Removed warmup decoder/indexer booleans, Direct single-region shell and fake decoder annotation.",
+    "Cold bank descriptors do not imply checked-reader permission; actual access facts, private boundary and final lowering proof remain independent."
+  ],
+  "test_scope": [
+    "FP8 D512 fused/split PaddedMap/Decode/Cast/View/Sink/Neg, original FP64 Sink budget; FP4 D128 exact BF16 rows/mask/Cast.",
+    "Short copy coverage rejects without consuming Update; original source and Graph Completion actually Pending behind original CPU FIFO gate.",
+    "Old GraphOutput blocks source recovery; original writer/copy invocation recovered after actual retirement; consumed frame cannot replay directly.",
+    "Original ready projection 6, Direct codecs 4 (checked/unchecked, errors, scalar/empty/reserved), Direct paged 1, Direct/Graph indexer 3.",
+    "Original native paging F16/BF16 each 64 steps, Q2/18, two slots/two nodes per Update and original CPU before/after fragments."
+  ],
+  "limits": [
+    "New pending tests do not inject cancellation or prove consumer math is skipped after accepted source-only failure.",
+    "Follow-up code review found a missing Apple worker-time source terminal check. A separate apple-source-preflight slice is investigating and fixing it; this green stage does not prove that failure boundary.",
+    "The gate delays original CPU FIFO work, not a claim of physical GPU stalling.",
+    "No Apple/Vulkan five-port paged scorer, full-model numerical acceptance, new Linux journey or throughput acceptance.",
+    "SDK/native host/metallib reused; original MLX cold trace/JIT and necessary metadata/copy costs remain."
+  ],
+  "broader_goal": "active and incomplete"
+}

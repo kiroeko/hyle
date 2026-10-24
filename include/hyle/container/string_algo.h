@@ -29,7 +29,7 @@ HYLE_FORCE_INLINE constexpr bool is_ascii_space(char c) noexcept {
 HYLE_FORCE_INLINE constexpr bool is_ascii_digit(char c) noexcept {
   return c >= '0' && c <= '9';
 }
-// Printable per Unix isprint, but locale-insensitive (clay isprint).
+// Printable per Unix isprint, but locale-insensitive.
 HYLE_FORCE_INLINE constexpr bool is_ascii_print(char c) noexcept {
   return static_cast<unsigned char>(c) > 0x1f &&
          static_cast<unsigned char>(c) < 0x7f;
@@ -38,8 +38,7 @@ HYLE_FORCE_INLINE constexpr bool is_hex_digit(char c) noexcept {
   return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') ||
          (c >= 'A' && c <= 'F');
 }
-// Value of a hex digit, or -1 if not hex (clay hex_to_int silently returned 0
-// for invalid input -- a bug that hid bad data; HYLE signals it).
+// Value of a hex digit, or -1 if the input is not a hex digit.
 HYLE_FORCE_INLINE constexpr int hex_value(char c) noexcept {
   if (c >= '0' && c <= '9') return c - '0';
   if (c >= 'a' && c <= 'f') return c - 'a' + 10;

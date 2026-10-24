@@ -1,7 +1,10 @@
 #include <gtest/gtest.h>
 #include <array>
+#include <limits>
+#include <string_view>
 #include <vector>
 #include "../compute_provider_native/half_test_support.h"
+#include "../compute_models/ct_asymmetric_int4_fixture.h"
 #include "hyle/compute/cpu.h"
 #include "hyle/compute/model_ops.h"
 #include "hyle/compute/prepared_operation.h"
@@ -99,13 +102,22 @@ void check(Format format, std::uint32_t group,
     ASSERT_TRUE(execute().ok());
     if(inferred[0].data_type()==c::DataType::kFloat32){
       const auto actual = half_test::read<float>(result);ASSERT_EQ(actual.size(),expected.size());
-      for(std::size_t i=0;i<actual.size();++i)EXPECT_EQ(actual[i],expected[i]);
+      for(std::size_t i=0;i<actual.size();++i){
+        EXPECT_EQ(actual[i],expected[i]);
+        if(expected[i]==0)EXPECT_EQ(std::signbit(actual[i]),std::signbit(expected[i]));
+      }
     }else if(inferred[0].data_type()==c::DataType::kBFloat16){
       const auto actual=half_test::read<hyle::simd::bfloat16_t>(result);ASSERT_EQ(actual.size(),expected.size());
-      for(std::size_t i=0;i<actual.size();++i)EXPECT_EQ(half_test::decode(actual[i]),half_test::decode(half_test::encode<hyle::simd::bfloat16_t>(expected[i])));
+      for(std::size_t i=0;i<actual.size();++i){
+        EXPECT_EQ(half_test::decode(actual[i]),half_test::decode(half_test::encode<hyle::simd::bfloat16_t>(expected[i])));
+        if(expected[i]==0)EXPECT_EQ(std::signbit(half_test::decode(actual[i])),std::signbit(expected[i]));
+      }
     }else{
       const auto actual=half_test::read<hyle::simd::float16_t>(result);ASSERT_EQ(actual.size(),expected.size());
-      for(std::size_t i=0;i<actual.size();++i)EXPECT_EQ(half_test::decode(actual[i]),half_test::decode(half_test::encode<hyle::simd::float16_t>(expected[i])));
+      for(std::size_t i=0;i<actual.size();++i){
+        EXPECT_EQ(half_test::decode(actual[i]),half_test::decode(half_test::encode<hyle::simd::float16_t>(expected[i])));
+        if(expected[i]==0)EXPECT_EQ(std::signbit(half_test::decode(actual[i])),std::signbit(expected[i]));
+      }
     }
   }
   if(inferred[0].data_type()==c::DataType::kFloat32)constant_math<float>(inferred[0],result,expected);
@@ -195,5 +207,81 @@ TEST(CpuArtifactDecode, OriginalScaleDtypeRoundsBeforeExplicitFloat32Output) {
   std::array ct_inputs{buffer<std::int32_t>(packed),buffer<Bfloat>(std::vector<Bfloat>(n*2,bs))};
   check(Format::kCompressedTensorsSymmetric4,group,ct_descs,ct_inputs,expected);
   check(Format::kCompressedTensorsSymmetric4,group,ct_descs,ct_inputs,expected,c::DataType::kUnknown);
+}
+
+template<class Scale> void asymmetric_ct() {
+  const ct_asymmetric_test::Fixture fixture;
+  const auto type = half_test::data_type<Scale>();
+  std::vector<Scale> scales;
+  for (auto value : fixture.scales) scales.push_back(half_test::encode<Scale>(value));
+  const auto expected_values = fixture.expected([](double value) {
+    return half_test::decode(half_test::encode<Scale>(value));
+  });
+  std::vector<float> expected;
+  expected.reserve(expected_values.size());
+  for (const auto value : expected_values) expected.push_back(static_cast<float>(value));
+  const std::array descriptions{
+      dense(c::DataType::kInt32, {fixture.rows, fixture.columns / 8}),
+      dense(c::DataType::kInt32, {(fixture.rows + 7) / 8, fixture.groups}),
+      dense(type, {fixture.rows, fixture.groups})};
+  std::array inputs{buffer<std::int32_t>(fixture.codes),
+      buffer<std::int32_t>(fixture.zero_points), buffer<Scale>(scales)};
+  check(Format::kCompressedTensorsAsymmetric4, fixture.group,
+        descriptions, inputs, expected, c::DataType::kUnknown);
+  check(Format::kCompressedTensorsAsymmetric4, fixture.group,
+        descriptions, inputs, expected, c::DataType::kFloat32);
+  if constexpr (std::is_same_v<Scale, hyle::simd::bfloat16_t>) {
+    EXPECT_EQ(expected[0], 0.30078125f);
+    EXPECT_NE(expected[0], 0.30029296875f);
+  } else if constexpr (std::is_same_v<Scale, hyle::simd::float16_t>) {
+    EXPECT_EQ(expected[fixture.group], 0.2998046875f);
+    EXPECT_NE(expected[fixture.group], 0.2999267578125f);
+  }
+}
+
+TEST(CpuArtifactDecode, CtAsymmetricPackedOutputAxisPreservesSourceRounding) {
+  asymmetric_ct<float>();
+  asymmetric_ct<hyle::simd::float16_t>();
+  asymmetric_ct<hyle::simd::bfloat16_t>();
+}
+
+TEST(CpuArtifactDecode, NativeExpandedCapacityIsCheckedWithoutPayloadAllocation) {
+  constexpr auto limit = (std::numeric_limits<std::int64_t>::max)();
+  for (const bool padded_zeros : {false, true}) {
+    const std::int64_t k = std::int64_t{1} << (padded_zeros ? 57 : 60);
+    const std::uint32_t group = padded_zeros ? 1 : 32;
+    const auto op = c::model_ops::artifact_weight_decode(
+        Format::kCompressedTensorsAsymmetric4, group, c::DataType::kFloat16);
+    const std::array descriptions{dense(c::DataType::kInt32, {1, k / 8}),
+        dense(c::DataType::kInt32, {1, k / group}),
+        dense(c::DataType::kFloat16, {1, k / group})};
+    std::array<c::TensorDesc, 1> outputs;
+    ASSERT_TRUE(c::infer_output_descriptions(op, descriptions, outputs).ok());
+    for (const auto &input : descriptions)
+      ASSERT_LE(input.required_bytes().value(), static_cast<std::uint64_t>(limit));
+    ASSERT_LE(outputs[0].required_bytes().value(), static_cast<std::uint64_t>(limit));
+    if (padded_zeros)
+      ASSERT_LE(outputs[0].element_count().value(), static_cast<std::uint64_t>(limit) / 8);
+    // Only descriptors are supplied: the native I64 intermediates overflow
+    // even though all true inputs and the output fit the native byte domain.
+#if defined(HYLE_TEST_GRAPH_ROUTE_CPU)
+    namespace g = hyle::graph;
+    auto context = g::cpu::create_context().value();
+    auto builder = g::GraphBuilder::create().value();
+    std::vector<g::ValueId> inputs;
+    for (const auto &input : descriptions)
+      inputs.push_back(builder.input(input).value());
+    const auto node = builder.add_node(op, inputs).value();
+    ASSERT_TRUE(builder.publish(builder.result(node).value()).ok());
+    auto prepared = g::compile(std::move(builder).finish().value(), context);
+#else
+    auto context = c::cpu::create_context().value();
+    auto prepared = c::prepare(context, op, descriptions, outputs, m::system_resource());
+#endif
+    ASSERT_FALSE(prepared);
+    EXPECT_TRUE(prepared.error().IsOutOfRange()) << prepared.error().message();
+    EXPECT_NE(prepared.error().message().find(padded_zeros ? "padded I64 zeros" : "I64 codes"),
+              std::string_view::npos);
+  }
 }
 } // namespace

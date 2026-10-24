@@ -127,6 +127,11 @@ provider adapter 解释，它不是通用 host pointer，不能解引用或做 p
 为 no-op。跨 resource copy 只走 provider native route 或两端可 host-map 的直接路线，不会暗中
 分配 staging buffer。
 
+自定义CPU资源若让 `map_host` 返回精确范围的稳定canonical进程地址，可声明
+`MemoryProperty::kHostAddressIdentity`。该坐标在allocation存活期间保持，重叠wrapper/alias也须
+给出重叠坐标；透明转发system mapping的资源可转发其properties。CPU批量搬运据此检查读写别名，
+无需资源身份白名单。仅host-accessible或coherent、会临时复制或改换映射地址的资源不能声明此能力。
+
 `system_resource()` 返回 HYLE generic Buffer resource；`system_memory_resource()` 返回
 `std::pmr::memory_resource*`。两者故意不是同一类型：前者承载 Buffer/provider 语义，后者只
 适配标准 PMR 容器。

@@ -1,0 +1,98 @@
+#version 450
+
+// Stored-scale reference: original E4M3 weight bytes, no decoded N*K bank.
+// Two 32-lane outputs own each complete half/BF16 output word.
+layout(local_size_x = 64) in;
+layout(binding = 0) readonly buffer A { uint a[]; };
+layout(binding = 1) readonly buffer W { uint w[]; };
+layout(binding = 2) readonly buffer SA { uint sa[]; };
+layout(binding = 3) readonly buffer SW { uint sw[]; };
+layout(binding = 4) writeonly buffer Y { uint y[]; };
+layout(push_constant) uniform Origins { uint a; uint w; uint sa; uint sw; } origin;
+layout(constant_id = 0) const uint rows = 1;
+layout(constant_id = 1) const uint columns = 1;
+layout(constant_id = 2) const uint depth = 1;
+layout(constant_id = 3) const uint input_type = 0;
+layout(constant_id = 4) const uint output_type = 0;
+layout(constant_id = 5) const uint activation_scale_stride = 0;
+layout(constant_id = 6) const uint weight_scale_stride = 0;
+layout(constant_id = 7) const uint weight_scale_first = 0;
+
+uint hyle_mul_hi(uint x, uint value) {
+    uint high, low;
+    umulExtended(x, value, high, low);
+    return high;
+}
+uint hyle_clz(uint value) { return value == 0u ? 32u : 31u - uint(findMSB(value)); }
+// HYLE_STATIC_FP8_F32_SOURCE
+#include "fp8_storage.glsl"
+
+shared uint partial[64];
+shared uint inverse_scale[2], activation_scale[2], weight_scale[2];
+
+uint word(uint port, uint index) {
+    return port == 0u ? a[index] : port == 1u ? w[index] : port == 2u ? sa[index] : sw[index];
+}
+uint load_bytes(uint port, uint offset, uint bytes) {
+    uint shift = (offset & 3u) * 8u;
+    uint value = word(port, offset / 4u) >> shift;
+    if (shift + bytes * 8u > 32u)
+        value |= word(port, offset / 4u + 1u) << (32u - shift);
+    return bytes == 4u ? value : value & ((1u << (bytes * 8u)) - 1u);
+}
+void main() {
+    uint local = gl_LocalInvocationID.x, lane = local & 31u, subgroup = local / 32u;
+    uint pair = gl_WorkGroupID.y * gl_NumWorkGroups.x + gl_WorkGroupID.x;
+    uint index = pair * 2u + local / 32u;
+    bool valid = index < rows * columns;
+    uint row = valid ? index / columns : 0u;
+    uint column = valid ? index % columns : 0u;
+    if (lane == 0u) {
+        activation_scale[subgroup] = load_bytes(2u,
+            origin.sa + row * activation_scale_stride * 4u, 4u);
+        weight_scale[subgroup] = load_bytes(3u,
+            origin.sw + column * weight_scale_stride * 4u, 4u);
+        inverse_scale[subgroup] = hyle_f32_div(0x3f800000u, activation_scale[subgroup]);
+    }
+    barrier();
+    precise float sum = 0.0;
+    if (valid) for (uint k = lane; k < depth; k += 32u) {
+        uint width = input_type == 0u ? 4u : 2u;
+        uint input_value = hyle_ct_widen(load_bytes(0u,
+            origin.a + (row * depth + k) * width, width), input_type);
+        uint normalized = hyle_f32_mul(input_value, inverse_scale[subgroup]);
+        uint code = f32_to_fp8_e4m3_bits(normalized);
+        uint weight = load_bytes(1u, origin.w + column * depth + k, 1u);
+        // Finite E4M3 products are exact F32 multiples of 2^-18, and their
+        // finite sum cannot overflow in the admitted U32 K domain. Ordinary
+        // code-dot therefore needs neither integer emulation nor FTZ fallback.
+        precise float product = uintBitsToFloat(fp8_e4m3_to_f32_bits(code)) *
+                                uintBitsToFloat(fp8_e4m3_to_f32_bits(weight));
+        sum = sum + product;
+    }
+    partial[local] = floatBitsToUint(sum);
+    barrier();
+    for (uint width = 16u; width != 0u; width >>= 1u) {
+        if (lane < width) {
+            precise float added = uintBitsToFloat(partial[local]) + uintBitsToFloat(partial[local + width]);
+            partial[local] = floatBitsToUint(added);
+        }
+        barrier();
+    }
+    if (lane == 0u) {
+        // Preserve both separate F32 scale boundaries; 0*Inf stays NaN.
+        uint first_scale = weight_scale_first != 0u ? weight_scale[subgroup] : activation_scale[subgroup];
+        uint second_scale = weight_scale_first != 0u ? activation_scale[subgroup] : weight_scale[subgroup];
+        uint scaled = hyle_f32_mul(partial[local], first_scale);
+        partial[local] = hyle_f32_mul(scaled, second_scale);
+    }
+    barrier();
+    if (output_type == 0u) {
+        if (lane == 0u && valid) y[index] = partial[local];
+    } else if (local == 0u && valid) {
+        uint result = hyle_ct_narrow(partial[0], output_type);
+        if (pair * 2u + 1u < rows * columns)
+            result |= hyle_ct_narrow(partial[32], output_type) << 16u;
+        y[pair] = result;
+    }
+}

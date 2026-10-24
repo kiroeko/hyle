@@ -7,7 +7,9 @@ import os
 from pathlib import Path
 import re
 import subprocess
+import sys
 
+sys.dont_write_bytecode = True
 from generate_official import generate
 
 
@@ -38,7 +40,8 @@ def main():
     run([str(recipe), *flags, '--compile-to=executable-configurations', '-o', str(configured)], 'configure.log')
     text = configured.read_text()
     pattern = re.compile(r'attributes \{translation_info = #iree_codegen.translation_info<pipeline = #iree_gpu.spirv_pipeline<BaseDistribute> workgroup_size = \[64, 1, 1\]>')
-    if len(pattern.findall(text)) != 24: raise ValueError('24 original official schedules differ')
+    schedules = len(pattern.findall(text))
+    if schedules == 0: raise ValueError('official math schedules missing')
     annotation = 'attributes {spirv.entry_point_abi = #spirv.entry_point_abi<workgroup_size = [64, 1, 1], target_width = 32>, translation_info'
     annotated = output / 'annotated.mlir'
     annotated.write_text(pattern.sub(lambda m:m.group().replace('attributes {translation_info', annotation), text), encoding='utf-8', newline='\n')
@@ -47,16 +50,24 @@ def main():
          '--iree-hal-dump-executable-files-to=' + str(output / 'spirv')], 'compile.log')
     modules = sorted((output / 'spirv').glob('*.spirv.mlir'))
     control = [p for p in modules if '"SignedZeroInfNanPreserve", 32' not in p.read_text()]
-    # Original global finite-bit reductions use one lane and integer tests;
-    # they contain no floating arithmetic to which IEEE32 mode would apply.
-    if len(modules) != 26 or len(control) != 2 or any(
-        '"LocalSize", 1, 1, 1' not in p.read_text() or
-        re.search(r'spirv\.(?:FAdd|FSub|FMul|FDiv|FConvert)', p.read_text())
+    # Finite-bit reductions and reciprocal significand division use only
+    # integer math/bit transport. Every actual floating operation still needs
+    # the original IEEE32 mode, independently of compiler deduplication/count.
+    floating = re.compile(r'spirv\.(?:F\w+|Convert\w*F\w*|GL\.(?:F\w+|Exp\w*|Log\w*|Pow|Sqrt|InverseSqrt|Sin|Cos|Tan|Tanh))\b')
+    if not modules or any(
+        not re.search(r'"LocalSize", (?:1|64), 1, 1', p.read_text()) or
+        floating.search(p.read_text())
         for p in control):
         raise ValueError('original official IEEE32 mode missing')
     exports = ['weight_decode_f32','weight_decode_bf16','fp8_roundtrip_64','fp8_roundtrip_128','fp4_roundtrip_32',
-        'linear_normal_f32','linear_power_f32', 'grouped8_f32','grouped4_f32','encoded_block128']
-    receipt = {'commands': commands, 'exports': exports, 'files': {}}
+        'linear_normal_f32','linear_power_f32', 'grouped8_f32','grouped4_f32','encoded_block128',
+        'grouped8_power_f32', 'linear_reciprocal_f32', 'grouped8_reciprocal_f32',
+        'quantize_normal_f32', 'quantize_power_f32', 'quantize_reciprocal_f32',
+        'quantize_normal_bf16', 'quantize_power_bf16', 'quantize_reciprocal_bf16']
+    actual_exports = re.findall(r'^func.func @(\w+)\(', recipe.read_text(), re.M)
+    if actual_exports != exports: raise ValueError('official exported entry set/order differs')
+    receipt = {'commands': commands, 'exports': exports, 'math_schedules': schedules,
+        'spirv_modules': len(modules), 'integer_only_modules': [p.name for p in control], 'files': {}}
     for file in [recipe, Path(__file__), recipe.with_name('generate_official.py'),
                  recipe.with_name('generate_mlx.py'), configured, annotated, binary, output / 'compiler-version.txt', *modules]:
         raw = file.read_bytes()

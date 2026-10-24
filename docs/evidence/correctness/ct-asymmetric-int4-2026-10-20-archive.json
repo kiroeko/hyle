@@ -1,0 +1,12 @@
+{
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\ct-asymmetric-int4-2026-10-20.zip",
+    "bytes": 15143713,
+    "sha256": "ebcbd74183c2f67e83fdeb835b6f686020a8f9daa6ca51fb2ea48fae07940cc9"
+  },
+  "payload_entries": 1375,
+  "manifest_entries": 1,
+  "CRC_and_each_payload_SHA_verified_once": true,
+  "retained_maps": true,
+  "binaries_and_duplicate_vectors_archived": false
+}

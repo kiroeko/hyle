@@ -10,19 +10,18 @@
 #  include <intrin.h>
 #endif
 
-// Thread-level spinlock (clay spin_mutex_t). Satisfies the C++ *Lockable* named
+// Thread-level spinlock. Satisfies the C++ *Lockable* named
 // requirement (lock/try_lock/unlock) so it composes with std::lock_guard /
-// std::scoped_lock -- no custom RAII wrapper needed (clay had spin_lock_t).
+// std::scoped_lock without a custom RAII wrapper.
 //
 // For VERY short critical sections only (a few instructions); a contended or
 // long hold should use a real mutex (a spinner burns a whole core). It blocks
 // the OS THREAD, not a fiber -- sched's fiber-aware sync (sched-05) is separate.
 //
-// Improvements over clay's naive test-and-set:
+// Contention handling:
 //   - TTAS (test-test-and-set): spin on a plain load and only issue the atomic
-//     RMW when the lock looks free. clay's RMW-every-spin bounces the cache line
-//     between cores (each test_and_set is a write); a relaxed load spins in the
-//     local cache until the owner's release flips it.
+//     RMW when the lock looks free. Repeated test_and_set would bounce the cache
+//     line between cores; a relaxed load spins locally until the owner's release.
 //   - cpu_relax() pause hint: cuts power, frees the sibling hyperthread, and
 //     speeds exit from the spin loop.
 //   - bounded exponential backoff: brief contention stays in CPU pause/yield

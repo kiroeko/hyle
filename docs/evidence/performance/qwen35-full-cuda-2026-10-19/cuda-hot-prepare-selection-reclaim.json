@@ -1,0 +1,109 @@
+{
+  "targets": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-hot-prepare-selection\\comparison\\baseline.exe",
+      "bytes": 116242944,
+      "sha256": "f0033dc1862aa897799335933bf145393f28a75f33adfd22a1f74c6bdb751efe"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-hot-prepare-selection\\comparison\\baseline.exp",
+      "bytes": 25016,
+      "sha256": "9a0f10703c85ecef74470f6478d8bd09718df6bd5775f415b522c27282f893e6"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-hot-prepare-selection\\comparison\\baseline.lib",
+      "bytes": 41736,
+      "sha256": "716c7bf4e9533f251a02b7669470b23b4e893859b4ada256dc3b7d54f4554a1f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-hot-prepare-selection\\comparison\\baseline.map",
+      "bytes": 33692882,
+      "sha256": "7a0ad2cd5a2bedf6fa1dc13b08b2422731881185b9d82bf17d61d335da52e728"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-hot-prepare-selection\\comparison\\peer.exe",
+      "bytes": 35814400,
+      "sha256": "12f0fa0fc33cd4b8c4e753802cca6a1c804433b3fea1e8c10fa7688d2e628887"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-hot-prepare-selection\\comparison\\peer.map",
+      "bytes": 22806334,
+      "sha256": "d93de94da71c38e871e43811a899da67ca2829565471b811eaddc52ce1df623f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-hot-prepare-selection\\checks\\20261019T082235\\qwen.exe",
+      "bytes": 116245504,
+      "sha256": "d84bbdb0fd1bdbbcda5e8de2fb2d6f1fd2a695fc34981ccbff6d1e1514755602"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-hot-prepare-selection\\checks\\20261019T082235\\qwen.exp",
+      "bytes": 25020,
+      "sha256": "8b244641fba8a19425128acbece1537b2a7cf54b07fcea18d2f6b027e9b06483"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-hot-prepare-selection\\checks\\20261019T082235\\qwen.lib",
+      "bytes": 41384,
+      "sha256": "339d3ce297534ebac8825c27a011f2f4f9dfe366c657ebfc45dbbfdc8412a2cb"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-hot-prepare-selection\\checks\\20261019T082235\\qwen.map",
+      "bytes": 33707929,
+      "sha256": "e5dacf5983ec4e81332b8c8cf21b588e86c2866c2e7b838add6be6697501ef92"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-hot-prepare-selection\\checks\\cpu-20261019T082439\\cpu.exe",
+      "bytes": 23601664,
+      "sha256": "a2e98fe9949b172384f31127244714377e3264a89604dab15b47a0a3b0df1c71"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-hot-prepare-selection\\checks\\cpu-20261019T082439\\cpu.exp",
+      "bytes": 25021,
+      "sha256": "291d27c5526c319ea5978752eaf347741f5e5e6f67a35f693293d3d4261a994e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-hot-prepare-selection\\checks\\cpu-20261019T082439\\cpu.lib",
+      "bytes": 41298,
+      "sha256": "1a72c22d3a6dec39cca5118fd99aa738ff5f4202c029fc8a48afb6c3d20e909d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-hot-prepare-selection\\checks\\cpu-20261019T082439\\cpu.map",
+      "bytes": 31606665,
+      "sha256": "c061ba90deeca3a95de8573d4752c3427794aebb97498bb6a0b03cbcac987927"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-hot-prepare-selection\\checks\\cpu-identity-20261019T082918\\cpu.exe",
+      "bytes": 23739392,
+      "sha256": "11e5976b0262c3e49a5d66a40988c7947e209f5b93281dca4560c361fa75a3d6"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-hot-prepare-selection\\checks\\cpu-identity-20261019T082918\\cpu.exp",
+      "bytes": 25030,
+      "sha256": "4c3dca9b0755c0aedfe04385f9129d7b7b9201fa27a6eab3d154ff5cb923ca0f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-hot-prepare-selection\\checks\\cpu-identity-20261019T082918\\cpu.lib",
+      "bytes": 41298,
+      "sha256": "1a72c22d3a6dec39cca5118fd99aa738ff5f4202c029fc8a48afb6c3d20e909d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-hot-prepare-selection\\checks\\cpu-identity-20261019T082918\\cpu.map",
+      "bytes": 31932143,
+      "sha256": "5394455cde10fe221cdf709978a5439115fd4af5577f918ee81e53eaaeb5c70d"
+    }
+  ],
+  "recursive": false,
+  "objects_retained": true,
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\qwen35-full-cuda-2026-10-19\\cuda-hot-prepare-selection.zip",
+    "bytes": 15515617,
+    "sha256": "fb7f506aa3c5f6c7f6deda7ddb96cdf43d3a338fb3874a446596071ccf3d55f5",
+    "entries": 321,
+    "CRC_and_payload_SHA_verified": true,
+    "reclaim_manifest": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-hot-prepare-selection\\reclaim-targets.json",
+      "bytes": 4859,
+      "sha256": "bf7b13f2c30f98b30e3302344b8c1b4cd272e3a25e7b3d3ad23961044b8154f0"
+    }
+  },
+  "raw_vectors_retained": true
+}

@@ -1,0 +1,17 @@
+{
+  "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\cccl-single-row-topk-cuda-2026-10-20.zip",
+  "bytes": 2911237,
+  "sha256": "148953dd01db00412df249428772c050ef2082b8acddaa282eb7424d529c441a",
+  "entries": 290,
+  "CRC_and_every_payload_SHA_verified": true,
+  "crc_verified": true,
+  "payload_sha256_verified": true,
+  "verification_passes": 1,
+  "tests": 6,
+  "equal_vectors": 64,
+  "micro_processes": 6,
+  "rotation_processes": 9,
+  "duplicate_raw_vectors_omitted": true,
+  "SDK_rebuilt": false,
+  "cleanup_executed": false
+}

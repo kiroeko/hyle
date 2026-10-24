@@ -1,0 +1,200 @@
+{
+  "status": "COMPLETED_DO_NOT_RERUN_SCRIPT",
+  "plan": {
+    "windows": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\native-paged-effects-20261022\\vulkan-link1\\native-paged-append.exe",
+        "bytes": 68268032,
+        "sha256": "0468d1c60b5550a47842d2508ce6a68f9342089a3a508d31b0dca18dc9716e0c"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\native-paged-effects-20261022\\vulkan-link1\\native-paged-append.map",
+        "bytes": 31069938,
+        "sha256": "ab11a7a6443aaac670e92642d7abab3302be55dc923ba191eb1bc93042bcd59b"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\native-paged-effects-20261022\\vulkan-link1\\native-paged-append.lib",
+        "bytes": 42790,
+        "sha256": "d521e0a4797742cb3ff0be8233137f8802f7ca3860cddf0c9d384b14e2b41f12"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\native-paged-effects-20261022\\vulkan-link1\\native-paged-append.exp",
+        "bytes": 25009,
+        "sha256": "8de97fd995e515394afb2a53998cd2dbcb0491557796fac25e66370c17c6839b"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\native-paged-capacity-20261022\\vulkan-link1\\native-paged-capacity.exe",
+        "bytes": 68304896,
+        "sha256": "bef91a26ee026681566eb3d685075efee5cfe1186f4cb66e8f93803e160d5dce"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\native-paged-capacity-20261022\\vulkan-link1\\native-paged-capacity.map",
+        "bytes": 31082543,
+        "sha256": "4f78284c45c2db74af5fb9ce596b1c593f20a15f95c9502cc24176b3eff01b15"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\native-paged-capacity-20261022\\vulkan-link1\\native-paged-capacity.lib",
+        "bytes": 42968,
+        "sha256": "33603872131ef30be2fd4ff62f45a1d604474ed29232f481a80759975f061478"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\native-paged-capacity-20261022\\vulkan-link1\\native-paged-capacity.exp",
+        "bytes": 25014,
+        "sha256": "46c8d371ffb5bccb0c5525614d0ed090a6fd8bf7fcc30b6e49be985762e242af"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\native-paged-capacity-20261022\\vulkan-link2\\native-paged-capacity.map",
+        "bytes": 31089961,
+        "sha256": "f6feeb81ede07ecff26b9e911be25b920dd27f78b3a9d47664422e82e82fe5d2"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\native-paged-capacity-20261022\\vulkan-link2\\native-paged-capacity.lib",
+        "bytes": 42968,
+        "sha256": "33603872131ef30be2fd4ff62f45a1d604474ed29232f481a80759975f061478"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\native-paged-capacity-20261022\\vulkan-link2\\native-paged-capacity.exp",
+        "bytes": 25014,
+        "sha256": "ad43283bba908410e71aa2601246d144a9f38d368988ccf8814f631dde9b6867"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\native-paged-capacity-20261022\\ordered-cast-link1\\ordered-cast.exe",
+        "bytes": 67466752,
+        "sha256": "1a60499298a21bd5c8a38848e71a75945ec431bb403c0df6a4c2d84e7850e862"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\native-paged-capacity-20261022\\ordered-cast-link1\\ordered-cast.map",
+        "bytes": 30258275,
+        "sha256": "5e32b266f8ddc5f7172640a09adcdeef597c3336d732f05fc8158edf5a6d2959"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\native-paged-capacity-20261022\\ordered-cast-link1\\ordered-cast.lib",
+        "bytes": 42166,
+        "sha256": "863c4d1eb8479853bce9d9b5a53222f802bff103655b60b620c4dcb7032fdff3"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\native-paged-capacity-20261022\\ordered-cast-link1\\ordered-cast.exp",
+        "bytes": 25003,
+        "sha256": "85d34d424293078fc6c45d38158627f6b6e6ea75d8c0817c2c350cd8eb705749"
+      }
+    ],
+    "mac": [
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/native-paged-effects-20261022/lowering-fix1/native-append",
+        "bytes": 11828592,
+        "sha256": "593860d1cafd94e1abb6f5cd77358bbf7086ca30542856f7cd06c20043c8ccea"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/native-paged-effects-20261022/lowering-fix1/libhyle_graph_route_apple.a",
+        "bytes": 1143736,
+        "sha256": "09e3496862f7a78699c03e3c8d43395bb9bb179500f830482e829ebf906810ad"
+      }
+    ],
+    "reason": "Superseded AH/failed first images, current link maps/import stubs and one-shot ordered test image. Keep current capacity image, objects, sources, commands/results, dependency caches and native libraries in use.",
+    "recursive_deletion": false
+  },
+  "windows": {
+    "Removed": [
+      {
+        "SHA256": "0468d1c60b5550a47842d2508ce6a68f9342089a3a508d31b0dca18dc9716e0c",
+        "Path": "C:\\public\\project-hyle\\hyle\\.scratch\\native-paged-effects-20261022\\vulkan-link1\\native-paged-append.exe",
+        "Bytes": 68268032
+      },
+      {
+        "SHA256": "ab11a7a6443aaac670e92642d7abab3302be55dc923ba191eb1bc93042bcd59b",
+        "Path": "C:\\public\\project-hyle\\hyle\\.scratch\\native-paged-effects-20261022\\vulkan-link1\\native-paged-append.map",
+        "Bytes": 31069938
+      },
+      {
+        "SHA256": "d521e0a4797742cb3ff0be8233137f8802f7ca3860cddf0c9d384b14e2b41f12",
+        "Path": "C:\\public\\project-hyle\\hyle\\.scratch\\native-paged-effects-20261022\\vulkan-link1\\native-paged-append.lib",
+        "Bytes": 42790
+      },
+      {
+        "SHA256": "8de97fd995e515394afb2a53998cd2dbcb0491557796fac25e66370c17c6839b",
+        "Path": "C:\\public\\project-hyle\\hyle\\.scratch\\native-paged-effects-20261022\\vulkan-link1\\native-paged-append.exp",
+        "Bytes": 25009
+      },
+      {
+        "SHA256": "bef91a26ee026681566eb3d685075efee5cfe1186f4cb66e8f93803e160d5dce",
+        "Path": "C:\\public\\project-hyle\\hyle\\.scratch\\native-paged-capacity-20261022\\vulkan-link1\\native-paged-capacity.exe",
+        "Bytes": 68304896
+      },
+      {
+        "SHA256": "4f78284c45c2db74af5fb9ce596b1c593f20a15f95c9502cc24176b3eff01b15",
+        "Path": "C:\\public\\project-hyle\\hyle\\.scratch\\native-paged-capacity-20261022\\vulkan-link1\\native-paged-capacity.map",
+        "Bytes": 31082543
+      },
+      {
+        "SHA256": "33603872131ef30be2fd4ff62f45a1d604474ed29232f481a80759975f061478",
+        "Path": "C:\\public\\project-hyle\\hyle\\.scratch\\native-paged-capacity-20261022\\vulkan-link1\\native-paged-capacity.lib",
+        "Bytes": 42968
+      },
+      {
+        "SHA256": "46c8d371ffb5bccb0c5525614d0ed090a6fd8bf7fcc30b6e49be985762e242af",
+        "Path": "C:\\public\\project-hyle\\hyle\\.scratch\\native-paged-capacity-20261022\\vulkan-link1\\native-paged-capacity.exp",
+        "Bytes": 25014
+      },
+      {
+        "SHA256": "f6feeb81ede07ecff26b9e911be25b920dd27f78b3a9d47664422e82e82fe5d2",
+        "Path": "C:\\public\\project-hyle\\hyle\\.scratch\\native-paged-capacity-20261022\\vulkan-link2\\native-paged-capacity.map",
+        "Bytes": 31089961
+      },
+      {
+        "SHA256": "33603872131ef30be2fd4ff62f45a1d604474ed29232f481a80759975f061478",
+        "Path": "C:\\public\\project-hyle\\hyle\\.scratch\\native-paged-capacity-20261022\\vulkan-link2\\native-paged-capacity.lib",
+        "Bytes": 42968
+      },
+      {
+        "SHA256": "ad43283bba908410e71aa2601246d144a9f38d368988ccf8814f631dde9b6867",
+        "Path": "C:\\public\\project-hyle\\hyle\\.scratch\\native-paged-capacity-20261022\\vulkan-link2\\native-paged-capacity.exp",
+        "Bytes": 25014
+      },
+      {
+        "SHA256": "1a60499298a21bd5c8a38848e71a75945ec431bb403c0df6a4c2d84e7850e862",
+        "Path": "C:\\public\\project-hyle\\hyle\\.scratch\\native-paged-capacity-20261022\\ordered-cast-link1\\ordered-cast.exe",
+        "Bytes": 67466752
+      },
+      {
+        "SHA256": "5e32b266f8ddc5f7172640a09adcdeef597c3336d732f05fc8158edf5a6d2959",
+        "Path": "C:\\public\\project-hyle\\hyle\\.scratch\\native-paged-capacity-20261022\\ordered-cast-link1\\ordered-cast.map",
+        "Bytes": 30258275
+      },
+      {
+        "SHA256": "863c4d1eb8479853bce9d9b5a53222f802bff103655b60b620c4dcb7032fdff3",
+        "Path": "C:\\public\\project-hyle\\hyle\\.scratch\\native-paged-capacity-20261022\\ordered-cast-link1\\ordered-cast.lib",
+        "Bytes": 42166
+      },
+      {
+        "SHA256": "85d34d424293078fc6c45d38158627f6b6e6ea75d8c0817c2c350cd8eb705749",
+        "Path": "C:\\public\\project-hyle\\hyle\\.scratch\\native-paged-capacity-20261022\\ordered-cast-link1\\ordered-cast.exp",
+        "Bytes": 25003
+      }
+    ],
+    "Recursive": false
+  },
+  "mac": {
+    "removed": [
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/native-paged-effects-20261022/lowering-fix1/native-append",
+        "bytes": 11828592,
+        "sha256": "593860d1cafd94e1abb6f5cd77358bbf7086ca30542856f7cd06c20043c8ccea"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/native-paged-effects-20261022/lowering-fix1/libhyle_graph_route_apple.a",
+        "bytes": 1143736,
+        "sha256": "09e3496862f7a78699c03e3c8d43395bb9bb179500f830482e829ebf906810ad"
+      }
+    ],
+    "recursive": false
+  },
+  "bytes_removed": 340783657,
+  "script": {
+    "path": "test.ps1",
+    "bytes": 4893,
+    "sha256": "34b125058de73d8029a709154defa5bf6f65a4af1f825abf1e527a5b072fff88"
+  },
+  "script_text": "$ErrorActionPreference = \"Stop\"\n$repo = (Resolve-Path -LiteralPath $PSScriptRoot).Path\n$targets = @(\n  @{ Relative = '.scratch/native-paged-effects-20261022/vulkan-link1/native-paged-append.exe'; Bytes = 68268032; SHA256 = '0468d1c60b5550a47842d2508ce6a68f9342089a3a508d31b0dca18dc9716e0c' }\n  @{ Relative = '.scratch/native-paged-effects-20261022/vulkan-link1/native-paged-append.map'; Bytes = 31069938; SHA256 = 'ab11a7a6443aaac670e92642d7abab3302be55dc923ba191eb1bc93042bcd59b' }\n  @{ Relative = '.scratch/native-paged-effects-20261022/vulkan-link1/native-paged-append.lib'; Bytes = 42790; SHA256 = 'd521e0a4797742cb3ff0be8233137f8802f7ca3860cddf0c9d384b14e2b41f12' }\n  @{ Relative = '.scratch/native-paged-effects-20261022/vulkan-link1/native-paged-append.exp'; Bytes = 25009; SHA256 = '8de97fd995e515394afb2a53998cd2dbcb0491557796fac25e66370c17c6839b' }\n  @{ Relative = '.scratch/native-paged-capacity-20261022/vulkan-link1/native-paged-capacity.exe'; Bytes = 68304896; SHA256 = 'bef91a26ee026681566eb3d685075efee5cfe1186f4cb66e8f93803e160d5dce' }\n  @{ Relative = '.scratch/native-paged-capacity-20261022/vulkan-link1/native-paged-capacity.map'; Bytes = 31082543; SHA256 = '4f78284c45c2db74af5fb9ce596b1c593f20a15f95c9502cc24176b3eff01b15' }\n  @{ Relative = '.scratch/native-paged-capacity-20261022/vulkan-link1/native-paged-capacity.lib'; Bytes = 42968; SHA256 = '33603872131ef30be2fd4ff62f45a1d604474ed29232f481a80759975f061478' }\n  @{ Relative = '.scratch/native-paged-capacity-20261022/vulkan-link1/native-paged-capacity.exp'; Bytes = 25014; SHA256 = '46c8d371ffb5bccb0c5525614d0ed090a6fd8bf7fcc30b6e49be985762e242af' }\n  @{ Relative = '.scratch/native-paged-capacity-20261022/vulkan-link2/native-paged-capacity.map'; Bytes = 31089961; SHA256 = 'f6feeb81ede07ecff26b9e911be25b920dd27f78b3a9d47664422e82e82fe5d2' }\n  @{ Relative = '.scratch/native-paged-capacity-20261022/vulkan-link2/native-paged-capacity.lib'; Bytes = 42968; SHA256 = '33603872131ef30be2fd4ff62f45a1d604474ed29232f481a80759975f061478' }\n  @{ Relative = '.scratch/native-paged-capacity-20261022/vulkan-link2/native-paged-capacity.exp'; Bytes = 25014; SHA256 = 'ad43283bba908410e71aa2601246d144a9f38d368988ccf8814f631dde9b6867' }\n  @{ Relative = '.scratch/native-paged-capacity-20261022/ordered-cast-link1/ordered-cast.exe'; Bytes = 67466752; SHA256 = '1a60499298a21bd5c8a38848e71a75945ec431bb403c0df6a4c2d84e7850e862' }\n  @{ Relative = '.scratch/native-paged-capacity-20261022/ordered-cast-link1/ordered-cast.map'; Bytes = 30258275; SHA256 = '5e32b266f8ddc5f7172640a09adcdeef597c3336d732f05fc8158edf5a6d2959' }\n  @{ Relative = '.scratch/native-paged-capacity-20261022/ordered-cast-link1/ordered-cast.lib'; Bytes = 42166; SHA256 = '863c4d1eb8479853bce9d9b5a53222f802bff103655b60b620c4dcb7032fdff3' }\n  @{ Relative = '.scratch/native-paged-capacity-20261022/ordered-cast-link1/ordered-cast.exp'; Bytes = 25003; SHA256 = '85d34d424293078fc6c45d38158627f6b6e6ea75d8c0817c2c350cd8eb705749' }\n)\n$scratch = [IO.Path]::GetFullPath((Join-Path $repo '.scratch')) + [IO.Path]::DirectorySeparatorChar\nforeach ($target in $targets) {\n  $path = [IO.Path]::GetFullPath((Join-Path $repo $target.Relative))\n  if (-not $path.StartsWith($scratch, [StringComparison]::OrdinalIgnoreCase)) { throw \"Outside workspace: $path\" }\n  $file = Get-Item -LiteralPath $path\n  if ($file.PSIsContainer -or ($file.Attributes -band [IO.FileAttributes]::ReparsePoint)) { throw \"Not an original file: $path\" }\n  if ($file.Length -ne $target.Bytes -or (Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash -ne $target.SHA256) { throw \"Changed target: $path\" }\n}\n$removed = @()\nforeach ($target in $targets) {\n  $path = [IO.Path]::GetFullPath((Join-Path $repo $target.Relative))\n  Remove-Item -LiteralPath $path -Force\n  $removed += @{ Path = $path; Bytes = $target.Bytes; SHA256 = $target.SHA256 }\n}\n$receipt = Join-Path $repo '.scratch/native-paged-capacity-20261022/cleanup-windows.json'\n@{ Removed = $removed; Recursive = $false } | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $receipt -Encoding utf8\n# Exact remote targets, validated by full path, size and SHA before unlink:\n# /Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/native-paged-effects-20261022/lowering-fix1/native-append SHA256 593860d1cafd94e1abb6f5cd77358bbf7086ca30542856f7cd06c20043c8ccea\n# /Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/native-paged-effects-20261022/lowering-fix1/libhyle_graph_route_apple.a SHA256 09e3496862f7a78699c03e3c8d43395bb9bb179500f830482e829ebf906810ad\n& python (Join-Path $repo '.scratch/native-paged-capacity-20261022/cleanup.py') remote\nif ($LASTEXITCODE -ne 0) { throw \"Remote cleanup failed; inspect its receipt\" }\nWrite-Output (\"Removed {0} exact Windows leaves; no recursive deletion\" -f $removed.Count)\n",
+  "recursive": false,
+  "retained": "Current capacity executable, original/new object caches, live Mac libraries/image, source/commands/results; no SDK or dependency deletion."
+}

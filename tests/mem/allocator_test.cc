@@ -251,7 +251,7 @@ TEST(AllocatorRef, AllocateZeroReturnsNull) {
   EXPECT_EQ(a.allocate(0), nullptr); // new_size==0 collapses to the free path
 }
 
-// The headline of mem-01: alignment is honored end-to-end (clay dropped it).
+// Alignment is honored end-to-end.
 TEST(AllocatorRef, RespectsExplicitAlignment) {
   AllocatorRef a = system_allocator();
   for (std::size_t align :
@@ -358,7 +358,7 @@ TEST(AllocatorRef, ManyDistinctNonOverlapping) {
     a.deallocate(p, 64, 64);
 }
 
-// ---- typed convenience layer (mem-01b, clay allocator.h parity) -------------
+// ---- typed convenience layer ----------------------------------------------
 namespace {
 std::atomic<int> g_typed_live{0};
 struct TCounted {

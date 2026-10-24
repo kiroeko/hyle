@@ -1,0 +1,21 @@
+{
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\mlx-affine-widths-vulkan-2026-10-19.zip",
+    "bytes": 1390207,
+    "sha256": "3e9d8c5d810da339a351fe2fe67d0a9823f6de5b72b4055845ba7ca8fd64b592"
+  },
+  "entries": 555,
+  "CRC_verified": true,
+  "payload_SHA256_verified": 554,
+  "summary": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-affine-widths\\vulkan\\summary.json",
+    "bytes": 2049,
+    "sha256": "bcf100ec48eec59fb11331480e1f44cf6cf158714788fe0f5b4c440937aaa99f"
+  },
+  "source_freeze": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-affine-widths\\vulkan\\source-freeze.json",
+    "bytes": 20456,
+    "sha256": "6e18d0c8935df619b8cb488437b501db496b7ed6727993fba19e07e2559b739e"
+  },
+  "cleanup_executed": false
+}

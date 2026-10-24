@@ -101,6 +101,12 @@ def prepare(source, flatcc, headers, vendor, output, generated):
         raise ValueError("build-local source has unexpected files")
     stamp.write_bytes((json.dumps({name: sha(data) for name, data in files.items()},
                                  sort_keys=True) + "\n").encode())
+    program_count = generate_programs(vendor, generated)
+    print(f"IREE source: {len(files)} files, {len(manifest['files'])} exact patches, {program_count} offline programs")
+
+
+def generate_programs(vendor, generated):
+    """Embed only authenticated offline programs; no upstream source copy."""
     generated.mkdir(parents=True, exist_ok=True)
     programs = json.loads((vendor / "programs/manifest.json").read_text(encoding="utf-8"))
     lines = ["// Embedded qualified upstream programs; generated, do not edit.",
@@ -120,7 +126,8 @@ def prepare(source, flatcc, headers, vendor, output, generated):
     data = ("\n".join(lines) + "\n").encode()
     if not path.exists() or path.read_bytes() != data:
         path.write_bytes(data)
-    print(f"IREE source: {len(files)} files, {len(manifest['files'])} exact patches, {len(programs['programs'])} offline programs")
+    return len(programs["programs"])
+
 
 
 if __name__ == "__main__":

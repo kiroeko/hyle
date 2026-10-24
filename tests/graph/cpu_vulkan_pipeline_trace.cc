@@ -12,8 +12,12 @@
 #include <mutex>
 #include <string_view>
 #if defined(_WIN32)
+#ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
+#endif
+#ifndef NOMINMAX
 #define NOMINMAX
+#endif
 #include <windows.h>
 #else
 #include <time.h>
@@ -125,7 +129,7 @@ Status exercise(const char *loader_path, const char *shader_path) {
   HYLE_RETURN_IF_ERROR(require(ready(&facts), "original device lacks qualified timestamp support"));
   HYLE_ASSIGN_OR_RETURN(auto device, n::MemoryResource::create(native, n::MemoryKind::kDevice));
   HYLE_ASSIGN_OR_RETURN(auto staging, n::MemoryResource::create(native, n::MemoryKind::kStaging));
-  const b::Environment environment{.cpu = &host, .vulkan = &native, .device = &device, .staging = &staging};
+  const PipelineResources environment{host,native,device,&staging};
   HYLE_RETURN_IF_ERROR(branches(environment, true, 2, true, 9, 1, &observe, true));
   phase_base = 100;
   HYLE_RETURN_IF_ERROR(branches(environment, false, 2, true, 9, 1, &observe, true));

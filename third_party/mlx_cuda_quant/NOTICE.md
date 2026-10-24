@@ -24,3 +24,8 @@ or temporary float weight tensor is used. Original MLX narrow Element weight
 rounding is not substituted for the widened CPU equation. Floating reduction
 association remains subject to the existing numerical tests, not bitwise SIMD
 lane-order identity. Embedding keeps its separate original dtype rounding.
+
+Grouped activation sharing preserves the original codec and numeric sequence.
+A token may supply one activation row for every selected expert, including a
+real zero-slot-stride view with token padding. IDs and outputs retain separate
+slots; no full T*S*K activation expansion or dense expert bank is introduced.

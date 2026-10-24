@@ -123,7 +123,7 @@ detail::TransferAccess::enqueue_copy(detail::QueueSequence &sequence,
     return detail::EnqueueResult::rejected(
         Status::FailedPrecondition("compute queue sequence is invalid"));
   }
-  detail::QueueState *state = detail::ContextAccess::state(sequence.queue());
+  detail::QueueState *state = detail::ContextAccess::state(sequence);
   if (state == nullptr) {
     return detail::EnqueueResult::rejected(
         Status::FailedPrecondition("queue is invalid"));
@@ -148,7 +148,7 @@ detail::EnqueueResult detail::TransferAccess::enqueue_prevalidated_copy(
     return detail::EnqueueResult::rejected(
         Status::FailedPrecondition("compute queue sequence is invalid"));
   }
-  detail::QueueState *state = detail::ContextAccess::state(sequence.queue());
+  detail::QueueState *state = detail::ContextAccess::state(sequence);
   if (state == nullptr || !destination.valid() || !source.valid() ||
       destination.size() != source.size()) {
     return detail::EnqueueResult::rejected(

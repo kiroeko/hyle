@@ -1,0 +1,165 @@
+{
+  "status": "completed",
+  "time_utc": "2026-10-21T14:02:45.2959728Z",
+  "deleted_files": 30,
+  "deleted_bytes": 1238461994.0,
+  "targets": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-exclusive-20261021\\cpu-link1\\cpu.exe",
+      "bytes": 139592704,
+      "sha256": "061dc6c1cbbc9ab0c5801372fd9a685ca960735fd14b2d6a0d2aed5b0fcb7c53"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-exclusive-20261021\\cpu-link1\\cpu.exp",
+      "bytes": 24969,
+      "sha256": "93be7d30c477d30aab0c23feca4d6f574b0225cb90253f4bdb9ea6ff078d6d10"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-exclusive-20261021\\cpu-link1\\cpu.lib",
+      "bytes": 41298,
+      "sha256": "1a72c22d3a6dec39cca5118fd99aa738ff5f4202c029fc8a48afb6c3d20e909d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-exclusive-20261021\\cpu-link1\\cpu.map",
+      "bytes": 57510684,
+      "sha256": "a02dd3e94539daea2a82a1dc8b53a0403a52b4a16999f8d46a76eb56999f738c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-exclusive-20261021\\cuda-link1\\cuda.exe",
+      "bytes": 139414016,
+      "sha256": "e8f7ef31b61990e19123f0114f9db41b87b4337d60a5507b74ce643df4105521"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-exclusive-20261021\\cuda-link1\\cuda.exp",
+      "bytes": 24973,
+      "sha256": "0d4fe40e507d280d3d76c8f11326b78e82eec3589c8db522db92d5f4b4a4cd9f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-exclusive-20261021\\cuda-link1\\cuda.lib",
+      "bytes": 41384,
+      "sha256": "097299e17e955c077a99f65f363d3484d564c016359baeb643f4e47c6b737d59"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-exclusive-20261021\\cuda-link1\\cuda.map",
+      "bytes": 57472830,
+      "sha256": "0eea9b1c42536baca7ab42fc14738b6fb24f78d3117450640a69481ce7956542"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-exclusive-20261021\\lease-link1\\lease.exe",
+      "bytes": 138681856,
+      "sha256": "bb355fbc9ec1883a95eb063e121162581254c6fa06ec59ffdffb9010f566a792"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-exclusive-20261021\\lease-link1\\lease.exp",
+      "bytes": 24975,
+      "sha256": "8f4dca66496d5f9c86141b58733c66a4241a38270c39bd71c4350867c14002ca"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-exclusive-20261021\\lease-link1\\lease.lib",
+      "bytes": 41474,
+      "sha256": "d8b59b1d1ac7d7d7dc54070feef6c7123ca4b57077ef380161236305df03e4a8"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-exclusive-20261021\\lease-link1\\lease.map",
+      "bytes": 56914091,
+      "sha256": "988aabdcfa017fd3f2e965062f281c7b4ca050e6f0fc02850b7ad0020e46afd7"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-exclusive-20261021\\probe-link1\\probe.exe",
+      "bytes": 139702272,
+      "sha256": "6273e45444a0f796c09f2cf44a620da35b1abaa43f440d2535ca50bbf290e2fa"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-exclusive-20261021\\probe-link1\\probe.exp",
+      "bytes": 24975,
+      "sha256": "36aca70abe7b12a482fd131c7bbb9f1a967cab586ab36477fa360eb49d31444a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-exclusive-20261021\\probe-link1\\probe.lib",
+      "bytes": 41474,
+      "sha256": "d97664b9bfac874c565d303c78aaddedc46408bb52d748c1e55eff080d46dac2"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-exclusive-20261021\\probe-link1\\probe.map",
+      "bytes": 58219683,
+      "sha256": "9119e65fc5e424627a924810320d6ff795c0b60cc89c83bec1362001c6386613"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-exclusive-20261021\\probe-link2\\probe.exe",
+      "bytes": 139705856,
+      "sha256": "4cd37118f7051b697b49042309d7931fb165f113fa98bf80fa0bf5d5510d0813"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-exclusive-20261021\\probe-link2\\probe.exp",
+      "bytes": 24975,
+      "sha256": "a438304603cbc1c6ee4d8da48fa3882edc430a7caeaff847f70bb1e25ab5ce17"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-exclusive-20261021\\probe-link2\\probe.lib",
+      "bytes": 41474,
+      "sha256": "d97664b9bfac874c565d303c78aaddedc46408bb52d748c1e55eff080d46dac2"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-exclusive-20261021\\probe-link2\\probe.map",
+      "bytes": 58231495,
+      "sha256": "d507e956ee84822ff7dbdcc530fdde9601bb5de223def488983ca98e4fee266a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-exclusive-20261021\\qwen-link1\\qwen.exp",
+      "bytes": 24973,
+      "sha256": "cf216debec748a4a8a11d2afa51fcc7b402f34e1231f38d7d555c2cb419e1ba5"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-exclusive-20261021\\qwen-link1\\qwen.lib",
+      "bytes": 41384,
+      "sha256": "339d3ce297534ebac8825c27a011f2f4f9dfe366c657ebfc45dbbfdc8412a2cb"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-exclusive-20261021\\qwen-link1\\qwen.map",
+      "bytes": 58346565,
+      "sha256": "62611eaa97aa9a093e54a2ed04b8c07955f9a6ddc96a4fc5ac67110c181ae965"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-exclusive-20261021\\radix-link1\\radix.exp",
+      "bytes": 24975,
+      "sha256": "906df710925b1a1e8157c0b62694767cad91a34100bdf0b2f87f0027e5565ab5"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-exclusive-20261021\\radix-link1\\radix.lib",
+      "bytes": 41474,
+      "sha256": "2e0904000f61bed32f99f31990814d02b5c39a527f71cfc6d227350e5a4c09a6"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-exclusive-20261021\\radix-link1\\radix.map",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-exclusive-20261021\\radix-link2\\radix.exe",
+      "bytes": 138306560,
+      "sha256": "b506cd3d17b6b6dcaf7dc52c28d36e821bc8e5acda1c1202b1afbe897b290f06"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-exclusive-20261021\\radix-link2\\radix.exp",
+      "bytes": 24975,
+      "sha256": "fe05a07ea63eb428e7c028800c3b62770ecdf0f91acdbf81e01c4533e37455d4"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-exclusive-20261021\\radix-link2\\radix.lib",
+      "bytes": 41474,
+      "sha256": "2e0904000f61bed32f99f31990814d02b5c39a527f71cfc6d227350e5a4c09a6"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-exclusive-20261021\\radix-link2\\radix.map",
+      "bytes": 55832156,
+      "sha256": "94c112d2a7cfcadc2f87e056fc86e7b828ea7621ad39ef642274ee351002bac7"
+    }
+  ],
+  "reason": "Current Qwen image retained for next matched performance window. CPU/CUDA/host/probe images and linker output can be relinked from kept objects and exact commands; all success/failure identities and logs retained.",
+  "kept": [
+    "Current8a400 Qwen and prior7b854/dense/llama comparison images; all changed objects, source/before/diffs, vector regression payload/oracles, native libraries/SDK/dependency caches, exact compile/link/run commands, failure/pass receipts and independent reviews. No recursive delete, SDK/cache/model deletion or cross-stage image deletion."
+  ],
+  "recursive_delete": false,
+  "plan_sha256": "9ede52e91864e9b810ec4b3bfc733b783befb0e7f6defe6ed5261b2db4aade0a",
+  "script_sha256": "55a2f4b43c4b42d05f08a7d69a18f1fe40de032255ab843f452fd977653f72db"
+}

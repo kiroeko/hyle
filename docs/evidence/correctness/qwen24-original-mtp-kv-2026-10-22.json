@@ -1,0 +1,829 @@
+{
+  "date": "2026-10-22",
+  "status": "ORIGINAL_Q24_SINGLE_LAYER_KV_PREFIX_AND_CONTINUATION_PASS",
+  "goal_complete": false,
+  "changes": [
+    {
+      "path": "tests/compute_models/qwen24_original_mtp_kv_test.cc",
+      "bytes": 29517,
+      "sha256": "763ad127a74968b1d91e3bbe9db2cec36beab110ea4f2d94addecf08a3dacedc"
+    },
+    {
+      "path": "tests/compute_models/original_role_input.h",
+      "bytes": 6332,
+      "sha256": "271f194b4544b8f4401f098070b3364d825a133c80c40b0bb2d7845e3596b05a"
+    },
+    {
+      "path": "tests/graph_route_cpu/CMakeLists.txt",
+      "bytes": 6617,
+      "sha256": "8e37d0f8c5c4cad14321a9f67ef448c9d2bf99f9d978f9c88b91304f7733a3f3"
+    },
+    {
+      "path": "tests/graph_route_cuda/CMakeLists.txt",
+      "bytes": 7809,
+      "sha256": "463cea01612f8b858a6e5df11da8dd4ed2ffb9a64e5904a3abae0b976238a8c6"
+    },
+    {
+      "path": "docs/developer/current-work.md",
+      "bytes": 20926,
+      "sha256": "e6c4c729ad3744a39f853ace6d48c8fb03306fc4f1a4d1c687696c7f6fabb293"
+    },
+    {
+      "path": "docs/implementation/model-operators.md",
+      "bytes": 91316,
+      "sha256": "1a00836e593e56c40fce99ff4323620820877f150a540512d99cb6632a902a14"
+    },
+    {
+      "path": "docs/evidence/planning/current-work-through-2026-10-22-ay.md",
+      "bytes": 55596,
+      "sha256": "2aa00a02a1111baae07da6a602ca1c41dee1e57603e1e75ca1ae94672c9f15f6"
+    }
+  ],
+  "final_checks": {
+    "process": {
+      "command": [
+        "C:\\public\\project-hyle\\hyle\\.scratch\\qwen24-original-mtp-20261022\\tests-link1\\qwen24-kv-checks.exe",
+        "--gtest_filter=*",
+        "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\qwen24-original-mtp-20261022\\checks1\\results.xml"
+      ],
+      "cwd": "C:\\public\\project-hyle\\hyle",
+      "started": 1792671513.04413,
+      "timeout_seconds": 600,
+      "throughput_evidence": false,
+      "memory_evidence": false,
+      "trace": false,
+      "profiler": false,
+      "pid": 84616,
+      "exit": 0,
+      "timed_out": false,
+      "finished": 1792671513.9669893,
+      "process_wall_seconds": 0.9220117999939248
+    },
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen24-original-mtp-20261022\\tests-link1\\qwen24-kv-checks.exe",
+      "bytes": 139825664,
+      "sha256": "623981c4c9ca3183327293227fa74b9e6b89c2e0e9db5e7f6bf5adde6d3c1fd8"
+    },
+    "throughput_evidence": false,
+    "memory_evidence": false,
+    "whole_original_model": false,
+    "tests": 2,
+    "failures": 0,
+    "errors": 0,
+    "disabled": 0,
+    "skips": 0,
+    "cases": [
+      {
+        "attributes": {
+          "name": "CudaOriginalPackedKvSelectsWholePrefixAndContinues",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\qwen24_original_mtp_kv_test.cc",
+          "line": "436",
+          "status": "run",
+          "result": "completed",
+          "time": "0.241",
+          "timestamp": "2026-10-22T20:18:33.436",
+          "classname": "Qwen24OriginalMtpKv"
+        },
+        "properties": {
+          "scope": "original Q24 primary blk92 K/V Q5_K and K-norm F32; normalized-H one-layer KV prefix boundary only, not complete MTP model",
+          "backend": "ordinary CUDA Graph",
+          "actual_submissions": "3",
+          "prefix_protocol": "cap6/valid2/pos37; T2 selector1 -> actualhead T1 freshH2 -> oldbase originalT2(H0,H2); K/V/position atomic",
+          "original_role_bytes": "11535360",
+          "key_sha256": "a75fa3037cd5ae6b6747e9f886f698661698c61eb11b3873aa3eddce232f3fb5",
+          "value_sha256": "0d2b7efd67d8cfbf3a42ef9a7553c3d3a01ce690f91e97e08770c96eb2c4174e",
+          "knorm_sha256": "815bc7300aad77fecbbb494b15e70949ecb0e43b8ccaf2958a40afdc39737125"
+        }
+      },
+      {
+        "attributes": {
+          "name": "CpuOriginalPackedKvSelectsWholePrefixAndContinues",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\qwen24_original_mtp_kv_test.cc",
+          "line": "444",
+          "status": "run",
+          "result": "completed",
+          "time": "0.139",
+          "timestamp": "2026-10-22T20:18:33.677",
+          "classname": "Qwen24OriginalMtpKv"
+        },
+        "properties": {
+          "scope": "original Q24 primary blk92 K/V Q5_K and K-norm F32; normalized-H one-layer KV prefix boundary only, not complete MTP model",
+          "backend": "ordinary CPU Graph",
+          "actual_submissions": "3",
+          "prefix_protocol": "cap6/valid2/pos37; T2 selector1 -> actualhead T1 freshH2 -> oldbase originalT2(H0,H2); K/V/position atomic",
+          "original_role_bytes": "11535360",
+          "key_sha256": "a75fa3037cd5ae6b6747e9f886f698661698c61eb11b3873aa3eddce232f3fb5",
+          "value_sha256": "0d2b7efd67d8cfbf3a42ef9a7553c3d3a01ce690f91e97e08770c96eb2c4174e",
+          "knorm_sha256": "815bc7300aad77fecbbb494b15e70949ecb0e43b8ccaf2958a40afdc39737125"
+        }
+      }
+    ]
+  },
+  "actual_graph_submissions": 6,
+  "original_roles": {
+    "repository": "unsloth/Qwen3.8-2.4T-A95B-GGUF",
+    "revision": "567d3e6ac26c5474b18311e619c04350fb9a5556",
+    "variant": "UD-IQ4_XS",
+    "sources": {
+      "first": {
+        "file": "UD-IQ4_XS/Qwen3.8-2.4T-A95B-UD-IQ4_XS-00001-of-00029.gguf",
+        "url": "https://huggingface.co/unsloth/Qwen3.8-2.4T-A95B-GGUF/resolve/567d3e6ac26c5474b18311e619c04350fb9a5556/UD-IQ4_XS/Qwen3.8-2.4T-A95B-UD-IQ4_XS-00001-of-00029.gguf?download=true",
+        "file_bytes": 10943296,
+        "etag": "\"1db8a7e3c5ca7b455d7dc3a73f6dbeb5fb99497eef52d605bcdb566e7d8f6eb1\"",
+        "format": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen24-original-mtp-20261022\\original-q24\\first-format.bin",
+          "bytes": 24,
+          "sha256": "7397229d3b4fb7f8ad9e71575934560d39fb0e0033c5244f1e014f74934e4da3"
+        },
+        "metadata_only": true,
+        "prefix": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen24-original-mtp-20261022\\original-q24\\first-header-prefix.bin",
+          "bytes": 10943296,
+          "sha256": "4b43a08dc65b82dcc5a0e79cd6ea90d6efbb48a467075b847d5f8e7ea4b92fce"
+        }
+      },
+      "last": {
+        "file": "UD-IQ4_XS/Qwen3.8-2.4T-A95B-UD-IQ4_XS-00029-of-00029.gguf",
+        "url": "https://huggingface.co/unsloth/Qwen3.8-2.4T-A95B-GGUF/resolve/567d3e6ac26c5474b18311e619c04350fb9a5556/UD-IQ4_XS/Qwen3.8-2.4T-A95B-UD-IQ4_XS-00029-of-00029.gguf",
+        "file_bytes": 42875265920,
+        "etag": "\"5974b826c7c85b93765464685bf45d9d331314b76e222497035e1e4f71ab9ebd\"",
+        "prefix": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen24-original-mtp-20261022\\original-q24\\last-header-prefix.bin",
+          "bytes": 2000000,
+          "sha256": "29189b64b6df24240a74db968d8e1f7c5c69800f98c500d03fa648e34be1840b"
+        }
+      }
+    },
+    "requests": [
+      {
+        "source": "last",
+        "first": 0,
+        "last": 1999999,
+        "bytes": 2000000,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 0-1999999/42875265920",
+        "etag": "\"5974b826c7c85b93765464685bf45d9d331314b76e222497035e1e4f71ab9ebd\"",
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen24-original-mtp-20261022\\original-q24\\last-header-prefix.bin",
+        "sha256": "29189b64b6df24240a74db968d8e1f7c5c69800f98c500d03fa648e34be1840b"
+      },
+      {
+        "source": "first",
+        "first": 0,
+        "last": 11999999,
+        "bytes": 12000000,
+        "complete": false
+      },
+      {
+        "source": "first",
+        "first": 0,
+        "last": 11999999,
+        "bytes": 12000000,
+        "complete": false,
+        "http_status": 206,
+        "content_range": "bytes 0-10943295/10943296",
+        "etag": "\"1db8a7e3c5ca7b455d7dc3a73f6dbeb5fb99497eef52d605bcdb566e7d8f6eb1\"",
+        "content_length": "10943296"
+      },
+      {
+        "source": "first",
+        "first": 0,
+        "last": 23,
+        "bytes": 24,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 0-23/10943296",
+        "etag": "\"1db8a7e3c5ca7b455d7dc3a73f6dbeb5fb99497eef52d605bcdb566e7d8f6eb1\"",
+        "content_length": "24",
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen24-original-mtp-20261022\\original-q24\\first-format.bin",
+        "sha256": "7397229d3b4fb7f8ad9e71575934560d39fb0e0033c5244f1e014f74934e4da3"
+      },
+      {
+        "source": "first",
+        "first": 0,
+        "last": 10943295,
+        "bytes": 10943296,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 0-10943295/10943296",
+        "etag": "\"1db8a7e3c5ca7b455d7dc3a73f6dbeb5fb99497eef52d605bcdb566e7d8f6eb1\"",
+        "content_length": "10943296",
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen24-original-mtp-20261022\\original-q24\\first-header-prefix.bin",
+        "sha256": "4b43a08dc65b82dcc5a0e79cd6ea90d6efbb48a467075b847d5f8e7ea4b92fce"
+      },
+      {
+        "source": "last",
+        "first": 27894979456,
+        "last": 27900746623,
+        "bytes": 5767168,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 27894979456-27900746623/42875265920",
+        "etag": "\"5974b826c7c85b93765464685bf45d9d331314b76e222497035e1e4f71ab9ebd\"",
+        "content_length": "5767168",
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen24-original-mtp-20261022\\original-q24\\attn_k.weight.q5_k",
+        "sha256": "a75fa3037cd5ae6b6747e9f886f698661698c61eb11b3873aa3eddce232f3fb5"
+      },
+      {
+        "source": "last",
+        "first": 28177605504,
+        "last": 28183372671,
+        "bytes": 5767168,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 28177605504-28183372671/42875265920",
+        "etag": "\"5974b826c7c85b93765464685bf45d9d331314b76e222497035e1e4f71ab9ebd\"",
+        "content_length": "5767168",
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen24-original-mtp-20261022\\original-q24\\attn_v.weight.q5_k",
+        "sha256": "0d2b7efd67d8cfbf3a42ef9a7553c3d3a01ce690f91e97e08770c96eb2c4174e"
+      },
+      {
+        "source": "last",
+        "first": 27900746624,
+        "last": 27900747647,
+        "bytes": 1024,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 27900746624-27900747647/42875265920",
+        "etag": "\"5974b826c7c85b93765464685bf45d9d331314b76e222497035e1e4f71ab9ebd\"",
+        "content_length": "1024",
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen24-original-mtp-20261022\\original-q24\\attn_k_norm.weight.f32",
+        "sha256": "815bc7300aad77fecbbb494b15e70949ecb0e43b8ccaf2958a40afdc39737125"
+      }
+    ],
+    "roles": [
+      {
+        "name": "blk.92.attn_k.weight",
+        "dtype": "Q5_K",
+        "GGUF_shape": [
+          8192,
+          1024
+        ],
+        "tensor_data_offset": 3456,
+        "relative_offset": 27894976000,
+        "absolute_start": 27894979456,
+        "payload": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen24-original-mtp-20261022\\original-q24\\attn_k.weight.q5_k",
+          "bytes": 5767168,
+          "sha256": "a75fa3037cd5ae6b6747e9f886f698661698c61eb11b3873aa3eddce232f3fb5"
+        }
+      },
+      {
+        "name": "blk.92.attn_v.weight",
+        "dtype": "Q5_K",
+        "GGUF_shape": [
+          8192,
+          1024
+        ],
+        "tensor_data_offset": 3456,
+        "relative_offset": 28177602048,
+        "absolute_start": 28177605504,
+        "payload": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen24-original-mtp-20261022\\original-q24\\attn_v.weight.q5_k",
+          "bytes": 5767168,
+          "sha256": "0d2b7efd67d8cfbf3a42ef9a7553c3d3a01ce690f91e97e08770c96eb2c4174e"
+        }
+      },
+      {
+        "name": "blk.92.attn_k_norm.weight",
+        "dtype": "F32",
+        "GGUF_shape": [
+          256
+        ],
+        "tensor_data_offset": 3456,
+        "relative_offset": 27900743168,
+        "absolute_start": 27900746624,
+        "payload": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen24-original-mtp-20261022\\original-q24\\attn_k_norm.weight.f32",
+          "bytes": 1024,
+          "sha256": "815bc7300aad77fecbbb494b15e70949ecb0e43b8ccaf2958a40afdc39737125"
+        }
+      }
+    ],
+    "complete": true,
+    "whole_weight_shard_download_allowed": false,
+    "model_metadata": {
+      "qwen35moe.block_count": 93,
+      "qwen35moe.context_length": 262144,
+      "qwen35moe.embedding_length": 8192,
+      "qwen35moe.attention.head_count": 64,
+      "qwen35moe.attention.head_count_kv": 4,
+      "qwen35moe.rope.dimension_sections": [
+        11,
+        11,
+        10,
+        0
+      ],
+      "qwen35moe.rope.freq_base": 10000000,
+      "qwen35moe.attention.layer_norm_rms_epsilon": 9.999999974752427e-07,
+      "qwen35moe.expert_count": 512,
+      "qwen35moe.expert_used_count": 10,
+      "qwen35moe.attention.key_length": 256,
+      "qwen35moe.attention.value_length": 256,
+      "qwen35moe.expert_feed_forward_length": 2048,
+      "qwen35moe.expert_shared_feed_forward_length": 2048,
+      "qwen35moe.nextn_predict_layers": 1,
+      "qwen35moe.ssm.conv_kernel": 4,
+      "qwen35moe.ssm.state_size": 128,
+      "qwen35moe.ssm.group_count": 16,
+      "qwen35moe.ssm.time_step_rank": 128,
+      "qwen35moe.ssm.inner_size": 16384,
+      "qwen35moe.full_attention_interval": 4,
+      "qwen35moe.rope.dimension_count": 64
+    }
+  },
+  "original_role_import": {
+    "parser": "Existing cached @huggingface/gguf parser applied to authenticated local prefixes; no parser network.",
+    "architecture": "qwen35moe; primary UD-IQ4_XS blk92 NextN K/V Q5_K and K-norm F32.",
+    "metadata": "H8192, KVheads4, key/value256, RoPE64, sections11/11/10/0, theta10000000, epsilon1e-6F.",
+    "first_file": "Verified24B zero-tensor format first, then exact10943296B metadata-only first shard. This is not a full weight shard.",
+    "last_file": "Parsed52 tensors and data base3456 from exact2MB prefix of shard29; each role fetched by its own exact HTTP206 physical range.",
+    "acquisition_corrections": "Initial12MB first-prefix requests were EOF-clamped and refused before payload. Verified zero-tensor metadata size then fetched exact range. Initial qwen35 assertion refused before roles; actual source architecture is qwen35moe. Receipts preserve these failures.",
+    "whole_weight_shard_download": false
+  },
+  "graph": {
+    "input": "F32 already-attention-normalized H boundary; original packed K/V -> reshape[1,T,4,256]; K RMSNorm with original gamma -> HalfSplit RoPE64, V reshape only.",
+    "text_positions": "Text MRoPE axes share positions; this finite case uses their equivalent HalfSplit RoPE. Nonrotary192F32/head bytes unchanged relative to K-normalized output.",
+    "constant_binding": "Each backend binds the three original roles once. Actual execution stays packed Q5_K, with no expanded weight bank.",
+    "reference": "Independent FP64 Neumaier dot after row-wise baseGGML Q5_K decode; independent F64 norm/RoPE equation. Oracle-only one-row decode; no ggml_cpu_init requirement in CUDA-only tests.",
+    "numerical_gates": "Existing F32 norm3e-5 abs+2e-5 rel and RoPE8e-5 abs+4e-5 rel, plus existing normalized quantized-chain gate, unchanged. CPU Q8_K and CUDA Q8_1 activation quantization need not be byte-equal.",
+    "numerical_observations": [
+      {
+        "backend": "CUDA",
+        "reference": "original K projection",
+        "max_absolute_error": 0.023375391960144043,
+        "RMSE": 0.005378919660136547
+      },
+      {
+        "backend": "CUDA",
+        "reference": "original V projection",
+        "max_absolute_error": 0.0242917463183403,
+        "RMSE": 0.005295567722703934
+      },
+      {
+        "backend": "CUDA",
+        "reference": "independent original K-to-norm-to-RoPE chain",
+        "max_absolute_error": 0.027356013655662537,
+        "RMSE": 0.006452592715125141
+      },
+      {
+        "backend": "CUDA",
+        "reference": "original K projection",
+        "max_absolute_error": 0.020623326301574707,
+        "RMSE": 0.005202983704783405
+      },
+      {
+        "backend": "CUDA",
+        "reference": "original V projection",
+        "max_absolute_error": 0.023027420043945312,
+        "RMSE": 0.005512544721315763
+      },
+      {
+        "backend": "CUDA",
+        "reference": "independent original K-to-norm-to-RoPE chain",
+        "max_absolute_error": 0.02693784236907959,
+        "RMSE": 0.006436818714793645
+      },
+      {
+        "backend": "CUDA",
+        "reference": "original K projection",
+        "max_absolute_error": 0.02220022678375244,
+        "RMSE": 0.005374017895736074
+      },
+      {
+        "backend": "CUDA",
+        "reference": "original V projection",
+        "max_absolute_error": 0.023027420043945312,
+        "RMSE": 0.0054211111814471465
+      },
+      {
+        "backend": "CUDA",
+        "reference": "independent original K-to-norm-to-RoPE chain",
+        "max_absolute_error": 0.02693784236907959,
+        "RMSE": 0.00656095207704634
+      },
+      {
+        "backend": "CPU",
+        "reference": "original K projection",
+        "max_absolute_error": 0.02069932222366333,
+        "RMSE": 0.005229661492220347
+      },
+      {
+        "backend": "CPU",
+        "reference": "original V projection",
+        "max_absolute_error": 0.02915334701538086,
+        "RMSE": 0.005409845529610267
+      },
+      {
+        "backend": "CPU",
+        "reference": "independent original K-to-norm-to-RoPE chain",
+        "max_absolute_error": 0.02280604839324951,
+        "RMSE": 0.00626835693876192
+      },
+      {
+        "backend": "CPU",
+        "reference": "original K projection",
+        "max_absolute_error": 0.02286851406097412,
+        "RMSE": 0.00535214012118334
+      },
+      {
+        "backend": "CPU",
+        "reference": "original V projection",
+        "max_absolute_error": 0.020814895629882812,
+        "RMSE": 0.005172528715196579
+      },
+      {
+        "backend": "CPU",
+        "reference": "independent original K-to-norm-to-RoPE chain",
+        "max_absolute_error": 0.028151750564575195,
+        "RMSE": 0.006567668110272565
+      },
+      {
+        "backend": "CPU",
+        "reference": "original K projection",
+        "max_absolute_error": 0.02286851406097412,
+        "RMSE": 0.0051869793764947
+      },
+      {
+        "backend": "CPU",
+        "reference": "original V projection",
+        "max_absolute_error": 0.02915334701538086,
+        "RMSE": 0.005191998369246204
+      },
+      {
+        "backend": "CPU",
+        "reference": "independent original K-to-norm-to-RoPE chain",
+        "max_absolute_error": 0.028151750564575195,
+        "RMSE": 0.006328710162039614
+      }
+    ]
+  },
+  "state": {
+    "layout": "Finite cap6 F32 K/V banks plus8B valid_rows/next_position; initial valid2/position37 with NaN-tagged unused tails.",
+    "journey": "Actual T2(H0@37,H1@38), artificial selector accepts prefix1 onlyH0; atomically publish complete K/V/position. Actual accepted head then supplies banks and position for T1(freshH2@38), publish valid4/position39. Retained old base separately replays original T2 Invocation withH0/H2.",
+    "checks": "Compare accepted-prefix continuation with old-base full branch; H1 rejected row never published. Earlier rows/tails remain byte-exact; only the fresh H2 cross-shape row uses finite existing F32 gate. Old base/selected/continued/results and original role bytes remain unchanged.",
+    "atomicity": "Wrong V extent after staging K, draft cancel, and stale prefix2 CAS after prefix1 must leave actual head unchanged. Read leases stay read-only.",
+    "budget": "Output pool22blocks/320KiB including10complete finite KV banks; initial base48KiB separate, StateStore512KiB. Final state versions/drafts and active pool uses/blocks return to0.",
+    "serving_cache": false,
+    "complete_model_state": false,
+    "natural_acceptance": false
+  },
+  "build": {
+    "scope": "One new host C++ test TU, incrementally compiled and linked against existing matched CPU/CUDA closure; no SDK/NVCC/shader/full-tree build.",
+    "CMake": "CPU and CUDA targets register the same source with independent HYLE_TEST_Q24_CPU/CUDA guards. Dedicated full CMake configurations were source-reviewed, not rebuilt.",
+    "cache": "Preserved AY fixed CPU-provider capability, CPU public compile and native CPU program ABI2 closure. No provider gate, production math or public API changed.",
+    "compile": {
+      "tag": "compile",
+      "command": [
+        "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\cl.exe",
+        "/external:IC:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-final-f1\\mixed-iq1\\source\\include",
+        "/external:IC:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-final-f1\\mixed-iq1\\source\\src",
+        "/DHYLE_IO_HAS_COROUTINE_TRANSPORT=1",
+        "/nologo",
+        "/c",
+        "/std:c++latest",
+        "/EHsc",
+        "/Zc:preprocessor",
+        "/Zc:__cplusplus",
+        "/utf-8",
+        "/O2",
+        "/Ob2",
+        "/MD",
+        "/DNDEBUG",
+        "/permissive-",
+        "/bigobj",
+        "/W4",
+        "/WX",
+        "/wd4324",
+        "/wd4702",
+        "/DHYLE_STATIC",
+        "/DNOMINMAX",
+        "/DGGML_USE_CUDA",
+        "/DHYLE_COMPUTE_CUDA=1",
+        "/DHYLE_COMPUTE_GGML_CUDA=1",
+        "/IC:\\public\\project-hyle\\hyle\\include",
+        "/IC:\\public\\project-hyle\\hyle\\src\\compute",
+        "/IC:\\public\\project-hyle\\hyle\\src\\compute_provider_ggml_cuda",
+        "/IC:\\public\\project-hyle\\hyle\\src\\compute_ggml_runtime",
+        "/IC:\\public\\project-hyle\\hyle\\src\\compute_backend_cuda",
+        "/IC:\\public\\project-hyle\\hyle\\tests\\compute_state",
+        "/external:IC:\\public\\project-hyle\\hyle\\.scratch\\validation\\cuda-final-u3-delivery\\reference-windows\\include",
+        "/external:IC:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\include",
+        "/external:IC:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\include\\cccl",
+        "/external:IC:\\Users\\kiro\\AppData\\Local\\hyle\\dependencies\\v1\\sources\\googletest-063de7e9578f-162765170ae6\\googletest\\include",
+        "/external:W0",
+        "/IC:\\public\\project-hyle\\hyle",
+        "/external:IC:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\extras\\CUPTI\\include",
+        "/IC:\\public\\project-hyle\\hyle\\src\\graph",
+        "/IC:\\public\\project-hyle\\hyle\\src\\compute_backend_cuda",
+        "/DHYLE_TEST_Q24_CPU=1",
+        "/DHYLE_TEST_Q24_CUDA=1",
+        "/sourceDependencies",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\qwen24-original-mtp-20261022\\compile1\\q24-kv\\q24-kv-deps.json",
+        "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\qwen24_original_mtp_kv_test.cc",
+        "/FoC:\\public\\project-hyle\\hyle\\.scratch\\qwen24-original-mtp-20261022\\compile1\\q24-kv\\q24-kv.obj",
+        "/FdC:\\public\\project-hyle\\hyle\\.scratch\\qwen24-original-mtp-20261022\\compile1\\q24-kv\\q24-kv.pdb"
+      ],
+      "cwd": "C:\\public\\project-hyle\\hyle",
+      "started": 1792671495.7066178,
+      "exit": 0,
+      "pid": 65340,
+      "finished": 1792671499.690022,
+      "terminal": true
+    },
+    "link": {
+      "tag": "link",
+      "command": [
+        "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\link.exe",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\qwen24-original-mtp-20261022\\compile1\\q24-kv\\q24-kv.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-original-mtp-20261022\\compile2\\cpu-compile\\cpu-compile.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-original-mtp-20261022\\compile2\\cpu-provider\\cpu-provider.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-natural-journey-20261022\\compile4\\cast\\cast.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\lib\\gtest_main.lib",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\lib\\gtest.lib",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-mtp-integration-20261022\\compile1\\cpu-context\\cpu-context.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-mtp-integration-20261022\\compile1\\cpu-packed\\cpu-packed.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-mtp-integration-20261022\\compile1\\cpu-ggml\\cpu-ggml.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-mtp-integration-20261022\\compile1\\cpu-onednn\\cpu-onednn.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\checks\\attempt7\\compute_ggml_runtime--cpu_program\\compute_ggml_runtime--cpu_program.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\cpu-native-causal\\ffa4\\native-baseline.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-pinned-weight-load\\checks\\cuda-stream.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-pinned-weight-load\\checks\\io-dns.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-pinned-weight-load\\checks\\io-endpoint.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-pinned-weight-load\\checks\\io-file.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-pinned-weight-load\\checks\\io-file_region.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-pinned-weight-load\\checks\\io-io_context.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-pinned-weight-load\\checks\\io-io_uring.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-pinned-weight-load\\checks\\io-local.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-pinned-weight-load\\checks\\io-operation.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-pinned-weight-load\\checks\\io-proactor.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-pinned-weight-load\\checks\\io-signal.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-pinned-weight-load\\checks\\io-tcp.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-pinned-weight-load\\checks\\io-udp.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-pinned-weight-load\\checks\\stream-file_stream.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-pinned-weight-load\\checks\\stream-stream_sources.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\e4-paired-pending-2026-10-21\\cuda\\checks\\mixed-helper\\cpu-cuda-compile.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fixed-role-binding-2026-10-21\\blockwise-w4a8\\cpu\\attempt1\\kernel\\kernel.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cross-platform\\checks\\src--compute_route_cpu--cpu_context.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-next-cold\\checks\\20261019T155819\\04-compute_provider_native-row_cache.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\quark-fp8-side-2026-10-21\\windows\\checks\\attempt1\\native-provider\\native-provider.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\quark-block128-scale-2026-10-21\\windows\\checks\\attempt1\\torch-cpu\\torch-cpu.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\compact-mla-e4-reference\\common\\checks\\attempt1\\compute_provider_ggml--native_batch-6700b7\\compute_provider_ggml--native_batch-6700b7.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\native-ready-pages\\windows\\compute_provider_native--indexing.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\bf16-nan-cast-contract\\green\\aten-cpu.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\native-ready-pages\\windows\\compute_route_cpu--default_policy.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-coarse-capture-tests\\compute_provider_onednn--onednn_provider.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-coarse-capture-tests\\compute_provider_onednn--normalization_internal.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ga-bf16-indexer-state-2026-10-21\\common\\checks\\attempt1\\standard-index\\standard-index.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\native-ready-pages\\windows\\compute_provider_native--elementwise.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-next-cold\\checks\\20261019T155819\\12-compute_provider_native-ds4_quantization.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\native-ready-pages\\windows\\compute_provider_native--normalization.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\native-ready-pages\\windows\\compute_provider_native--reduction.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\native-ready-pages\\windows\\compute_provider_native--sampling.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\native-ready-pages\\windows\\compute_provider_native--transform.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\native-ready-pages\\windows\\compute_provider_native--transformer.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\native-ready-pages\\windows\\compute_provider_native--default_rules.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\quark-fp8-side-2026-10-21\\windows\\checks\\attempt1\\native-static-fp8\\native-static-fp8.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_compute_route_cpu.lib",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_compute_provider_native.lib",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_compute_backend_cpu.lib",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_compute_provider_ggml.lib",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\build-cpu-final-mixed-probe\\ggml\\src\\ggml-cpu.lib",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_compute_provider_onednn.lib",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\dnnl.lib",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\expert-working-set-2026-10-21\\graph-adapters\\checks\\attempt1\\cuda-weight-binding.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\precise-role-consumers-2026-10-21\\common\\checks\\import1\\compute--weight_import-28eb7b\\compute--weight_import-28eb7b.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fixed-role-binding-2026-10-21\\blockwise-w4a8\\cuda\\checks\\attempt1\\blockwise-provider\\blockwise-provider.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fixed-role-binding-2026-10-21\\blockwise-w4a8\\cuda\\checks\\attempt3\\blockwise-kernel\\blockwise-kernel.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fixed-role-binding-2026-10-21\\blockwise-w4a8\\cpu\\attempt1\\schema\\schema.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-grouped-space\\cpu-cuda\\checks\\products-cpu\\attempt1\\ct-packed\\ct-packed.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mxfp4-weight-only-reference\\common\\checks\\attempt1\\compute_provider_native--nvfp4-9c3005\\compute_provider_native--nvfp4-9c3005.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\quark-block128-scale-2026-10-21\\cuda\\windows\\checks\\attempt1\\fp8-shared-prologue-region\\fp8-shared-prologue-region.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\glm-flash-mixed-mlx-2026-10-21\\cuda\\checks\\bank-alignment-product1\\cuda-weights.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\quark-fp8-side-2026-10-21\\windows\\checks\\attempt1\\cuda-packed-region\\cuda-packed-region.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\bf16-grouped-bank\\checks\\native1\\native--mmid.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gguf-nvfp4\\cpu-cuda\\checks\\20261019T201144\\native-getrows.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gguf-nvfp4\\cpu-cuda\\checks\\20261019T201144\\native-convert.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gptq-reference\\cuda\\checks\\mapped-refresh\\dense-bfloat-scores-region.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\bf16-grouped-bank\\checks\\native1\\native--ssm-conv.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\bf16-grouped-bank\\checks\\native1\\native--gated_delta_net.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\quark-fp8-side-2026-10-21\\windows\\checks\\attempt1\\cuda-mlx-packed-kernel\\cuda-mlx-packed-kernel.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-weight-orientation-2026-10-21\\common\\checks\\schema1\\compute_ops--weight_decode-25df34\\compute_ops--weight_decode-25df34.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-fusion-precision\\checks\\20261019T111328\\mmvq.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-hot-prepare-selection\\checks\\cpu-identity-20261019T082918\\mem-resource.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-gdn-l2-epilogue\\checks\\20261019T102437\\norm.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-bf16-block128-reference\\cuda-bfloat-binary\\checks\\attempt1\\binbcast.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\paired-projection-route\\checks\\native1\\unary.obj",
+        "/nologo",
+        "/MACHINE:X64",
+        "/SUBSYSTEM:CONSOLE",
+        "/INCREMENTAL:NO",
+        "/NODEFAULTLIB:LIBCMT",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-reuse-20261022\\compile1\\memory\\memory.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-reuse-20261022\\compile1\\batch_transfer\\batch_transfer.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-variants-20261022\\compile3\\input_sources\\input_sources.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-variants-20261022\\compile3\\resource_report\\resource_report.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-variants-20261022\\compile3\\progress\\progress.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\native-ready-pages\\windows\\compute--retained_completion.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-variants-20261022\\compile3\\resources\\resources.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-variants-20261022\\compile3\\graph-batch\\graph-batch.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-shared-activation\\windows-host\\checks\\current\\oaca62ba1--graph_batch--row_cache_node.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-variants-20261022\\compile3\\operation\\operation.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-next-20261022\\compile4\\executable\\executable.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-variants-20261022\\compile3\\constant_artifact\\constant_artifact.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-variants-20261022\\compile3\\submission\\submission.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-variants-20261022\\compile3\\region_access\\region_access.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\compact-mla-e4-reference\\common\\checks\\attempt1\\compute_batch--batch_layout-a6d556\\compute_batch--batch_layout-a6d556.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\multisequence-batch-20261021\\compile2\\arena\\arena.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-reuse-20261022\\compile1\\batch-execution\\batch-execution.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gguf-nvfp4\\windows-host\\checks\\20261019T201048\\oe6d1eed0--compute_ops--low_precision.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\compact-mla-e4-reference\\common\\checks\\attempt1\\graph_batch--native_paged_node-ee24b2\\graph_batch--native_paged_node-ee24b2.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gguf-nvfp4\\windows-host\\checks\\20261019T201048\\ob04410ba--compute_batch--batch_paged_native.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-reuse-20261022\\compile1\\device\\device.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\e4-paired-pending-2026-10-21\\common\\checks\\final-common\\batch-transfer.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gguf-nvfp4\\windows-host\\checks\\20261019T201048\\of951adc3--graph_batch--materialized_invocation.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\checks\\attempt2\\graph--execution_source\\graph--execution_source.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-variants-20261022\\compile3\\lease_submission\\lease_submission.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\layout-binding-lifetime\\checks\\compute-custom_kernel.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\native-ready-pages\\windows\\compute--transfer.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-reuse-20261022\\compile1\\capture\\capture.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\native-ready-pages\\schema\\graph.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\native-ready-pages\\windows\\graph--effect_order.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\native-ready-pages\\windows\\graph--view_domain.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ga-bf16-indexer-state-2026-10-21\\common\\checks\\attempt1\\operation\\operation.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\native-ready-pages\\schema\\sampling.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\native-paged-capacity-20261022\\compile1\\native-batch\\native-batch.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\inference-feature-completion-2026-10-18\\windows-batch\\native-batch-portable-llp64-posenc.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\inference-feature-completion-2026-10-18\\windows-batch\\native-cache-portable-llp64-posenc.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\inference-feature-completion-2026-10-18\\windows-batch\\native-attention-portable-llp64-posenc-decode.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\inference-feature-completion-2026-10-18\\windows-batch\\native_cache_encoder.current.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-batch-profile-20261022\\compile3\\native\\native.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\b-cuda-d5\\src\\compute_provider_cuda\\CMakeFiles\\hyle_compute_provider_cuda.dir\\native_kernel.cu.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\b-cuda-d5\\src\\compute_provider_cuda\\CMakeFiles\\hyle_compute_provider_cuda.dir\\norm_kernel.cu.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\b-cuda-d5\\src\\compute_provider_cuda\\CMakeFiles\\hyle_compute_provider_cuda.dir\\reduction_kernel.cu.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\b-cuda-d5\\src\\compute_provider_cuda\\CMakeFiles\\hyle_compute_provider_cuda.dir\\scatter_kernel.cu.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\b-cuda-d5\\src\\compute_provider_cuda\\CMakeFiles\\hyle_compute_provider_cuda.dir\\sglang_kernel.cu.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\b-cuda-d5\\src\\compute_provider_cuda\\CMakeFiles\\hyle_compute_provider_cuda.dir\\sglang_norm_kernel.cu.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-next-cold\\checks\\20261019T155819\\native-router.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-native-storage-cast\\dense\\tensor-kernel.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\inference-feature-completion-2026-10-18\\windows-batch\\concat_kernel.current.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\inference-feature-completion-2026-10-18\\windows-batch\\sampling_kernel.current.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\inference-fusion-quantization-2026-10-18\\cuda-device-indices\\guard.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\compact-mla-e4-reference\\cuda\\checks\\attempt1\\native-mla\\native-mla.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\inference-feature-completion-2026-10-18\\windows-batch\\highdim-review\\native_highdim.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\inference-foundation-review-2026-10-18\\cuda-paged-indexer\\row-codec.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ga-dense-indexer\\checks\\20261019T182917\\indexer-kernel.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gdn-direct-state-output\\checks\\native1\\native-main.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\generic-progress\\ggml-cache\\ggml-alloc.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-variants-20261022\\compile3\\cublas\\cublas.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-variants-20261022\\compile3\\cccl\\cccl.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-coarse-capture-tests\\compute_provider_cuda--concat_provider.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\quark-block128-scale-2026-10-21\\cuda\\windows\\checks\\attempt1\\cuda-provider\\cuda-provider.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fp8-shared-prologue\\checks\\host1\\compute_provider_cuda--deepseek_fp8_provider.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fp8-shared-prologue\\checks\\host1\\compute_provider_cuda--deepseek_grouped_fp4_provider.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\quark-block128-scale-2026-10-21\\cuda\\windows\\checks\\attempt1\\fp8-provider\\fp8-provider.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\quark-block128-scale-2026-10-21\\cuda\\windows\\checks\\attempt1\\grouped-fp8-provider\\grouped-fp8-provider.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fp8-shared-prologue\\checks\\host1\\compute_provider_cuda--norm_provider.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-coarse-capture-tests\\compute_provider_cuda--reduction_provider.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-shared-activation\\windows-host\\checks\\current\\o409973f2--compute_provider_cuda--router_provider.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-native-storage-cast\\green\\row-cache.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-shared-activation\\windows-host\\checks\\current\\oe24ab717--compute_provider_cuda--row_cache_provider.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-coarse-capture-tests\\compute_provider_cuda--sampling_provider.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-coarse-capture-tests\\compute_provider_cuda--scatter_provider.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-native-storage-cast\\green\\tensor-provider.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\checks\\provider\\provider.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-next-20261022\\compile3\\ggml-provider\\ggml-provider.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-variants-20261022\\compile3\\artifact\\artifact.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-next-20261022\\compile3\\ggml-region\\ggml-region.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-next-20261022\\compile3\\tensor-program\\tensor-program.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cublas-scores-20261022\\compile1\\policy\\policy.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fp8-shared-prologue\\checks\\host1\\compute_route_cuda--cuda_context.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-reuse-20261022\\compile1\\backend\\backend.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-reuse-20261022\\compile1\\device_status\\device_status.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fp8-shared-prologue\\checks\\host1\\graph_route_cuda--cuda_context.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\blocking-pool\\candidate.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_compute_backend_cuda.lib",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-slot-ownership\\checks\\after-state_versions.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_compute_batch.lib",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_compute_ggml_runtime.lib",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_compute_provider_torch_cuda.lib",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_compute.lib",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_compute_ops.lib",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_container.lib",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_mem.lib",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\mimalloc_static.lib",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_platform.lib",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_error.lib",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_platform_thread.lib",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_time.lib",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_simd.lib",
+        "C:\\Users\\kiro\\AppData\\Local\\hyle\\dependencies\\v1\\sdks\\torch-cpu\\Windows-bf0079104e068dcbd60b2f8de589dc725282cbe865a85016cc5b8aa46cab519d\\libtorch\\lib\\torch.lib",
+        "C:\\public\\tools\\hyle-dependencies\\v1\\sdks\\torch-cuda-leaf\\Windows-2bc729898e422b9f3da54349eed98f2f0b5dd415434508ee2ab2a13fb021815d\\torch\\lib\\c10_cuda.lib",
+        "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\lib\\x64\\cudart.lib",
+        "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\lib\\x64\\cuda.lib",
+        "C:\\Users\\kiro\\AppData\\Local\\hyle\\dependencies\\v1\\sdks\\torch-cpu\\Windows-bf0079104e068dcbd60b2f8de589dc725282cbe865a85016cc5b8aa46cab519d\\libtorch\\lib\\torch_cpu.lib",
+        "C:\\Users\\kiro\\AppData\\Local\\hyle\\dependencies\\v1\\sdks\\torch-cpu\\Windows-bf0079104e068dcbd60b2f8de589dc725282cbe865a85016cc5b8aa46cab519d\\libtorch\\lib\\c10.lib",
+        "C:\\public\\tools\\hyle-dependencies\\v1\\sdks\\torch-cuda-leaf\\Windows-2bc729898e422b9f3da54349eed98f2f0b5dd415434508ee2ab2a13fb021815d\\torch\\lib\\torch_cuda.lib",
+        "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\lib\\x64\\cublas.lib",
+        "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\lib\\x64\\cublasLt.lib",
+        "bcrypt.lib",
+        "PowrProf.lib",
+        "Synchronization.lib",
+        "advapi32.lib",
+        "user32.lib",
+        "shell32.lib",
+        "ole32.lib",
+        "ws2_32.lib",
+        "gdi32.lib",
+        "winspool.lib",
+        "oleaut32.lib",
+        "uuid.lib",
+        "comdlg32.lib",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cuda-final-u3-delivery\\reference-windows\\lib\\ggml.lib",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-sdpa-mask\\diagmask-current.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cuda-final-u3-delivery\\reference-windows\\lib\\ggml-cuda.lib",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cuda-final-u3-delivery\\reference-windows\\lib\\ggml-base.lib",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_sched.lib",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_mem_vm.lib",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\checks\\attempt1\\graph_batch--native_pending_regions\\graph_batch--native_pending_regions.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\native-state-ownership-20261022\\compile1\\budget\\budget.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\native-state-ownership-20261022\\compile2\\leases\\leases.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\paired-projection-route\\checks\\native1\\mmvf.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_platform_fs.lib",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mxfp4-weight-only-reference\\cuda\\checks\\attempt1\\nvfp4-provider.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mxfp4-weight-only-reference\\cuda\\checks\\attempt1\\nvfp4-kernel.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-variants-20261022\\compile3\\append\\append.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\result-detach\\checks\\attempt1\\result.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\paged-capture-20261021\\host\\checks2\\helper\\helper.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-reuse-20261022\\compile1\\paged_append\\paged_append.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\paged-capture-20261021\\cuda\\checks1\\kernel\\kernel.obj",
+        "/OUT:C:\\public\\project-hyle\\hyle\\.scratch\\qwen24-original-mtp-20261022\\tests-link1\\qwen24-kv-checks.exe",
+        "/MAP:C:\\public\\project-hyle\\hyle\\.scratch\\qwen24-original-mtp-20261022\\tests-link1\\qwen24-kv-checks.map",
+        "/IMPLIB:C:\\public\\project-hyle\\hyle\\.scratch\\qwen24-original-mtp-20261022\\tests-link1\\qwen24-kv-checks.lib"
+      ],
+      "cwd": "C:\\public\\project-hyle\\hyle",
+      "started": 1792671507.1897416,
+      "exit": 0,
+      "pid": 47716,
+      "finished": 1792671509.1897779,
+      "terminal": true
+    }
+  },
+  "remaining_scope_review": {
+    "path": ".scratch/qwen24-original-mtp-20261022/review/remaining-mtp.json",
+    "bytes": 29515,
+    "sha256": "b258408654359d3bbf875f02a01d7db6141c1224f151b1aa43ff7ad670f3d0b7"
+  },
+  "cleanup": {
+    "Removed": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-mtp-integration-20261022\\tests-link9\\dspark-checks.exe",
+        "bytes": 140262400,
+        "sha256": "35dac9d05ee8b4db2865d01202da83f4b2ecf307eaf8d82b23d7cb05c9239a32"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-mtp-integration-20261022\\tests-link9\\dspark-checks.map",
+        "bytes": 58773090,
+        "sha256": "37394472f523fdb6784b79bcbc163aef9abdbd31f22f749afae5dbab2b569de7"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-natural-journey-20261022\\tests-link4\\mtp-checks.exe",
+        "bytes": 140635136,
+        "sha256": "6a582bd4a58104c581d8370627b55dd80fbdd689ac3d60015b87c07a299db277"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-natural-journey-20261022\\tests-link4\\mtp-checks.map",
+        "bytes": 59368892,
+        "sha256": "5f24b65ed0486adfbca748d50687f947b505c055d34026bc5a0bfa00b003fab3"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-original-mtp-20261022\\tests-link3\\qwen-mtp-checks.exe",
+        "bytes": 141606912,
+        "sha256": "010aebfc58dfc13e0d6d973cd4f2ad6d2ed0109b0b164044e8b0926605bb1684"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-original-mtp-20261022\\tests-link3\\qwen-mtp-checks.map",
+        "bytes": 62047210,
+        "sha256": "02081188d12a3b64a27d9991de26f4ff22db8fb873a357b161c2081470ff8a81"
+      }
+    ],
+    "Bytes": 602693640,
+    "CurrentImageRetained": true,
+    "CurrentMapRetained": true,
+    "PriorReproductionInputsRetained": "All corresponding source snapshots, object/native inputs, exact link plans, commands, logs and original role data remain; the Qwen AV performance image is untouched."
+  },
+  "limits": [
+    "Windows CPU/CUDA one-layer KV component only; no complete original Q24 target/draft, natural proposal/acceptance, MLA or conv/GDN state claim.",
+    "Normalized H is supplied at the declared boundary; this check does not execute the preceding original NextN input component or following full attention/MLP/head.",
+    "No new TPS or physical GPU/CPU memory measurement. AV remains latest full four-arm performance window.",
+    "GLM actual index-carry source is in progress and uncompiled; its review/glm-carry-source subtree is deliberately excluded from this archive.",
+    "Other applicable original roles/codecs and complete model-specific state compositions remain incomplete; no new shared executor/API has been justified by this finite review."
+  ],
+  "next": "Close GLM same-iteration actual index-output lease -> skip-indexer consumer -> atomic state publication, then applicable original E4+F32-scale and DSpark stage/LM/target-hidden bindings.",
+  "sources_commands_results_and_cleanup": {
+    "path": "docs/evidence/correctness/qwen24-original-mtp-kv-2026-10-22.logs.zip",
+    "bytes": 230848,
+    "sha256": "65f18d8e8002f3213bb9f3e9e336968e3c998e2bf4fb8535db4dd18a48e2b539"
+  },
+  "large_original_payloads_archived": false
+}

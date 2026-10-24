@@ -20,8 +20,8 @@ struct RunDecorator final {
       auto&s=*active;const auto*result=s.base->query_extension(context,id);
       if(!result || id!=cd::kBatchPlanningExtensionId)return result;
       s.batch_base=static_cast<const cd::BatchProviderVTable*>(result);s.batch=*s.batch_base;
-      s.batch.run=[](void*native,c::Queue&queue,std::span<const c::ConstTensorView>inputs,cd::BatchWorkspaceViews views)noexcept{
-        auto&s=*active;auto result=s.batch_base->run(native,queue,inputs,views);++s.count;
+      s.batch.run=[](void*native,cd::QueueSequence&sequence,std::span<const c::ConstTensorView>inputs,cd::BatchWorkspaceViews views)noexcept{
+        auto&s=*active;auto result=s.batch_base->run(native,sequence,inputs,views);++s.count;
         if(s.fail_at && s.count==s.fail_at){HYLE_FATAL_ASSERT(result.accepted);std::printf("F5 Graph actual region run=%u accepted; inject error before suffix\n",s.count);result.status.Update(Status::Unavailable("F5 Graph injected accepted region error"));}
         return result;
       };return &s.batch;

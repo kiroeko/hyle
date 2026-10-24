@@ -15,7 +15,10 @@ class BorrowedMappedResource final : public MemoryResource {
     return MemoryProperties{
         .flags = MemoryProperty::kHostAccessible |
                  MemoryProperty::kHostDeviceCoherent |
-                 MemoryProperty::kPersistent,
+                 MemoryProperty::kPersistent |
+                 // The owner keeps this CPU address mapped; map_host/unmap_host
+                 // borrow that address without creating or removing a mapping.
+                 MemoryProperty::kHostAddressIdentity,
         .minimum_alignment = 1,
         .maximum_allocation = SIZE_MAX,
         .domain = MemoryDomainId{this, 0},

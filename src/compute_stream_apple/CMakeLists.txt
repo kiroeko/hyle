@@ -1,0 +1,6 @@
+if(_HYLE_COMPUTE_HAVE_APPLE)
+  hyle_add_module(compute_stream_apple SOURCES file_stream.cc)
+else()
+  hyle_add_module(compute_stream_apple OPTIONAL_ABSENT)
+  set_property(TARGET hyle_compute_stream_apple PROPERTY HYLE_INTERNAL_ONLY_ABSENT TRUE)
+endif()

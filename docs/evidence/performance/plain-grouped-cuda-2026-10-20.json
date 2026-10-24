@@ -1,0 +1,147 @@
+{
+  "passed": true,
+  "recorded_utc": "2026-10-19T22:55:40.699581+00:00",
+  "scope": "Plain NVIDIA CUDA grouped small-token execution and precision propagation; not completion of the full architecture goal",
+  "changes": [
+    "Existing GPU-ID MMVF carrier selected by common dispatch/capture qualification; no new public operator, Provider or executor",
+    "Preserve shared or independent activation, repeated experts, checked safe IDs, guarded publication and original Completion failure/recovery",
+    "New NVIDIA F32-ID no-fusion specialization uses explicit no-FTZ FMA and same-tree additions, retaining old default-false math",
+    "Restore actual parent accumulator and source-1 precision in fallback expert temporary; original memset had silently dropped both",
+    "Actual layout/indexing/pair alignment and initialized device launch limits qualify the new domain; other domains retain original decomposition"
+  ],
+  "native": {
+    "version": "hyle-ggml-cuda-resource-iq1-inference-v29",
+    "source_id": "44bb6a53f180e840",
+    "source_freeze": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\plain-grouped-cuda\\native-source-freeze.json",
+      "bytes": 5261,
+      "sha256": "8e865855387a636482a554e2b0909ec1365bf44cd0882d3904e70a27c8277f66"
+    },
+    "private_header_owners": [
+      "ggml-cuda.cu",
+      "mmvf.cu",
+      "unary.cu"
+    ]
+  },
+  "hardware": {
+    "command": [
+      "nvidia-smi",
+      "--query-gpu=name,driver_version,memory.total,temperature.gpu,clocks.sm,clocks.mem,power.draw",
+      "--format=csv,noheader"
+    ],
+    "exit": 0,
+    "stdout": "NVIDIA GeForce RTX 4070, 617.14, 12282 MiB, 52, 210 MHz, 10501 MHz, 22.84 W\n",
+    "stderr": ""
+  },
+  "verification": {
+    "public_grouped_TESTs_passed": 6,
+    "skipped": 0,
+    "actual_final_image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\plain-grouped-cuda\\checks\\native1\\tests.exe",
+      "bytes": 117138432,
+      "sha256": "e0f17820d2c7d4752474297ac1655c87ee83a486bd3408207e20c3c00102e0c9"
+    },
+    "SM89_strict_SASS_instantiations_without_FTZ": 16,
+    "PTX_claim": false,
+    "refreshed_native_owner_compiles": 4,
+    "refreshed_product_host_owners": 1,
+    "refreshed_test_TUs": 1,
+    "benchmark_TUs": 2,
+    "shared_SDK_rebuilt": false
+  },
+  "prior_failure": {
+    "expected_F32_bits": "0x3f800008",
+    "actual_bits": "0x3f800000",
+    "exit": 1,
+    "cause": "Fallback expert destination temporary lost parent accumulator/src1 precision markers",
+    "disposition": "Preserved as numerical counterexample; excluded from all accepted speed comparisons"
+  },
+  "comparison": {
+    "input": {
+      "T": 1,
+      "S": 4,
+      "E": 8,
+      "N": 512,
+      "K": 2048,
+      "shared_A": true
+    },
+    "caller_cpu": 2,
+    "boundary": "Already prepared commands: Invocation::submit through Completion::wait, not kernel duration or whole-model tokens/s",
+    "counts": {
+      "processes_per_arm": 3,
+      "warmup_per_process": 512,
+      "measured_samples_per_process": 512
+    },
+    "shared_inputs_except_main": 133,
+    "control": "Precision-fixed original sorting fallback; same new MMVF/unary/provider/benchmark objects as candidate",
+    "per_process_median_us": {
+      "control": [
+        145.1,
+        151.6,
+        151.6
+      ],
+      "new": [
+        58.9,
+        58.6,
+        32.3
+      ]
+    },
+    "median_of_process_medians_us": {
+      "control": 151.6,
+      "new": 58.6
+    },
+    "latency_reduction_fraction": 0.6134564643799472,
+    "unpinned_initial_series": {
+      "control": [
+        69.4,
+        72.3,
+        148.9
+      ],
+      "new": [
+        34.8,
+        62.5,
+        58.7
+      ]
+    },
+    "qualification": "Fixed CPU and fuller warmup reduce scheduling ambiguity; magnitude is sensitive to host configuration, not a generic engine speedup"
+  },
+  "physical_trace": {
+    "scope": "One already-bound T1/S4/E8/N512/K2048 command invocation per same-math arm",
+    "control_kernels": 6,
+    "new_kernels": 3,
+    "native_operation_stream_syncs_before": 2,
+    "native_operation_stream_syncs_after": 0,
+    "removed_full_ID_D2H_bytes": 16,
+    "removed_mapping_H2D_bytes": 32,
+    "retained_Completion_status_D2H_bytes": 4,
+    "removed_native_sorting_storage_for_fixture_bytes": 40992,
+    "removed_storage_formula": "4*T*S*(K+N)+8*T*S bytes before pool rounding/vendor workspace",
+    "caller_workspace_bytes_both": 8192,
+    "interpretation": "Sorting-storage count is source-derived before pool rounding; caller workspace is unchanged; no total memory peak claimed"
+  },
+  "larger_T_control": "T9 control and candidate exact unit/subnormal witnesses pass; native host sorting and synchronization still remain there",
+  "limitations": [
+    "One small synthetic grouped workload; no selected model throughput/quality, updated Qwen tokens/s or total memory peak",
+    "GPU power/clocks not locked; retain both unpinned and pinned process measurements and their spread",
+    "BF16 expert-bank cold F32 widening remains; ordinary non-ID MMVF default fast-math behavior is unchanged",
+    "Larger-T/general exact-F32 indirect grouped matrix carrier remains required to remove its native sorting banks and host synchronization",
+    "Windows RTX4070/SM89 executed; no new Linux/Apple run or exhaustive shape/dtype/device claim"
+  ],
+  "evidence_archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\plain-grouped-cuda-2026-10-20.zip",
+    "bytes": 2592381,
+    "sha256": "7d873e4e8063d50bec265f6b2757f357467c78442d5e844b425ee61e2f97eee6",
+    "payload_files": 553,
+    "CRC_and_payload_hashes_verified": true,
+    "SDK_executable_object_or_library_payloads": false,
+    "actual_profiler_traces_included": true
+  },
+  "full_goal_status": "active",
+  "cleanup": {
+    "passed": true,
+    "reclaimed_bytes": 416359655.0,
+    "receipt": "docs/evidence/performance/plain-grouped-cuda-2026-10-20.cleanup.json",
+    "receipt_sha256": "615412a7d21a2132a7bf3cd75bac94a949774c916304c9dbbd84e1ac915035a7",
+    "current_benchmark_test_images_and_objects_retained": true
+  }
+}

@@ -6,6 +6,7 @@
 
 #include "deepseek_quantization_sm89.h"
 #include "fp8_provider.h"
+#include "grouped_fp4_f32_kernel.h"
 #include "hyle/compute/model_ops.h"
 #include "native_context.h"
 
@@ -19,15 +20,15 @@ constexpr ProviderRuntimeProperties kRuntime{
     .supports_concurrent_invocations = true, .capture_compatible = true};
 struct Shape final {
   int e, n, k, slots, activation_slots, total_slots, rows;
-  const unsigned char *image;
   std::size_t scale_offset() const noexcept { return std::size_t(rows) * k; }
   std::size_t workspace() const noexcept { return scale_offset() + std::size_t(rows) * (k / 128) * 4; }
 };
 struct Prepared final {
   CUcontext primary;
   Shape shape;
-  CUmodule quant_module = nullptr, gemm_module = nullptr;
-  CUfunction quant = nullptr, gemm = nullptr;
+  CUmodule quant_module = nullptr;
+  CUfunction quant = nullptr;
+  native::Program gemm;
 };
 Result<Shape> select(const detail::ProviderOperationRequest &request) noexcept {
   const auto op = request.operation.custom_as<model_ops::GroupedFloat4Linear>();
@@ -39,17 +40,16 @@ Result<Shape> select(const detail::ProviderOperationRequest &request) noexcept {
     return std::unexpected(Status::InvalidArgument("DeepSeek FP4 output differs from inference"));
   const auto w = request.inputs[0].dimensions(), a = request.inputs[1].dimensions();
   const auto ids = request.inputs[2].dimensions();
-  const unsigned char *image = nullptr;
-  if (w[1] == 3072 && w[2] == 7168) image = kDeepSeekFp4_3072_7168;
-  else if (w[1] == 7168 && w[2] == 3072) image = kDeepSeekFp4_7168_3072;
-  else if (w[1] == 2048 && w[2] == 4096) image = kDeepSeekFp4_2048_4096;
-  else if (w[1] == 4096 && w[2] == 2048) image = kDeepSeekFp4_4096_2048;
-  if (!image || w[0] > INT32_MAX || ids[1] > 65535 || a[0] > 65535 / ids[1] ||
+  const bool supported = (w[1] == 3072 && w[2] == 7168) ||
+      (w[1] == 7168 && w[2] == 3072) ||
+      (w[1] == 2048 && w[2] == 4096) ||
+      (w[1] == 4096 && w[2] == 2048);
+  if (!supported || w[0] > INT32_MAX || ids[1] > 65535 || a[0] > 65535 / ids[1] ||
       a[0] * a[1] > INT32_MAX / w[2])
     return std::unexpected(Status::Unimplemented("DeepSeek FP4 native shape or grid capacity is unqualified"));
   return Shape{static_cast<int>(w[0]), static_cast<int>(w[1]), static_cast<int>(w[2]),
       static_cast<int>(ids[1]), static_cast<int>(a[1]), static_cast<int>(a[0] * ids[1]),
-      static_cast<int>(a[0] * a[1]), image};
+      static_cast<int>(a[0] * a[1])};
 }
 void destroy(void *state, mem::AllocatorRef allocator) noexcept {
   auto *p = static_cast<Prepared *>(state);
@@ -57,7 +57,6 @@ void destroy(void *state, mem::AllocatorRef allocator) noexcept {
   {
     cuda::detail::ScopedPrimaryContext scope(p->primary);
     if (scope && p->quant_module) (void)cuModuleUnload(p->quant_module);
-    if (scope && p->gemm_module) (void)cuModuleUnload(p->gemm_module);
   }
   p->~Prepared();
   allocator.deallocate(p, sizeof(Prepared), alignof(Prepared));
@@ -75,12 +74,12 @@ Status create_invocation(void *state, mem::AllocatorRef, mem::BufferView workspa
   return Status::Ok();
 }
 void destroy_invocation(void *, mem::AllocatorRef) noexcept {}
-detail::EnqueueResult submit(void *state, void *workspace, Queue &queue,
+detail::EnqueueResult submit(void *state, void *workspace, detail::QueueSequence &sequence,
                              std::span<const ConstTensorView> inputs,
                              std::span<const TensorView> outputs) noexcept {
   const auto &p = *static_cast<const Prepared *>(state);
   const auto &s = p.shape;
-  auto stream = cuda::stream(queue);
+  auto stream = cuda::stream(sequence);
   if (!stream) return detail::EnqueueResult::rejected(std::move(stream).error());
   std::array<CUdeviceptr, 3> in;
   for (std::size_t i = 0; i < in.size(); ++i) {
@@ -93,7 +92,7 @@ detail::EnqueueResult submit(void *state, void *workspace, Queue &queue,
   cuda::detail::ScopedPrimaryContext scope(p.primary);
   if (!scope) return detail::EnqueueResult::rejected(scope.status());
   unsigned *status_word = nullptr;
-  auto initialized = cuda::detail::acquire_device_status(queue, &status_word);
+  auto initialized = cuda::detail::acquire_device_status(sequence, &status_word);
   if (!initialized.status.ok()) return initialized;
   auto codes = reinterpret_cast<CUdeviceptr>(workspace);
   auto scales_a = codes + s.scale_offset();
@@ -104,12 +103,11 @@ detail::EnqueueResult submit(void *state, void *workspace, Queue &queue,
   auto result = cuLaunchKernel(p.quant, unsigned((std::uint64_t(groups) + 31) / 32), 1, 1,
       128, 1, 1, 8192, *stream, quant.data(), nullptr);
   if (result != CUDA_SUCCESS) return detail::EnqueueResult::accepted_command(cuda::status(result));
-  int experts = s.e, slots = s.slots, activation_slots = s.activation_slots;
-  std::array<void *, 10> args{&codes, &in[0], &out, &scales_a, &scales_b, &in[2],
-                             &status_word, &experts, &slots, &activation_slots};
-  return detail::EnqueueResult::accepted_command(cuda::status(cuLaunchKernel(
-      p.gemm, unsigned(s.n / 128), 1, unsigned(s.total_slots),
-      128, 1, 1, 10240, *stream, args.data(), nullptr)));
+  return detail::EnqueueResult::accepted_command(cuda::status(native::launch(p.gemm,
+      reinterpret_cast<const unsigned char *>(codes),reinterpret_cast<const unsigned char *>(in[0]),
+      reinterpret_cast<void *>(out),reinterpret_cast<const float *>(scales_a),
+      reinterpret_cast<const float *>(scales_b),reinterpret_cast<const int *>(in[2]),
+      status_word,*stream)));
 }
 const detail::ProviderPreparedVTable kVTable{
     .destroy_prepared = &destroy, .alias_support = &alias,
@@ -153,7 +151,7 @@ ProviderPrepareOutcome prepare(void *state, const detail::ProviderPrepareRequest
   cuda::detail::ScopedPrimaryContext scope(primary);
   if (!scope) return ProviderPrepareOutcome::error(scope.status());
   auto *memory = allocator.allocate(sizeof(Prepared), alignof(Prepared));
-  if (!memory) return ProviderPrepareOutcome::resource_declined(Status::ResourceExhausted("DeepSeek FP4 program allocation failed"));
+  if (!memory) return ProviderPrepareOutcome::error(Status::ResourceExhausted("DeepSeek FP4 program allocation failed"));
   auto *p = ::new (memory) Prepared{primary, *s};
   const auto load = [](CUmodule &module, CUfunction &function, const unsigned char *image,
                         const char *name) noexcept {
@@ -163,11 +161,18 @@ ProviderPrepareOutcome prepare(void *state, const detail::ProviderPrepareRequest
     return result;
   };
   auto result = load(p->quant_module, p->quant, kDeepSeekFp8Encoded, "act_quant_kernel__kernel");
-  if (result == CUDA_SUCCESS) result = load(p->gemm_module, p->gemm, s->image, "deepseek_indexed_fp4");
   if (result != CUDA_SUCCESS) {
     destroy(p, allocator);
     return result == CUDA_ERROR_OUT_OF_MEMORY ? ProviderPrepareOutcome::resource_declined(cuda::status(result))
                                              : ProviderPrepareOutcome::error(cuda::status(result));
+  }
+  p->gemm={.experts=s->e,.columns=s->n,.depth=s->k,.slots=s->slots,
+      .activation_slots=s->activation_slots,.rows=s->total_slots};
+  const auto configured=native::prepare(&p->gemm);
+  if(configured!=cudaSuccess) {
+    destroy(p,allocator);
+    return configured==cudaErrorMemoryAllocation?ProviderPrepareOutcome::resource_declined(cuda::status(configured)):
+        ProviderPrepareOutcome::error(cuda::status(configured));
   }
   *output = {.vtable = &kVTable, .state = p, .workspace = {s->workspace(), 16},
              .runtime = kRuntime, .persistent_bytes = std::nullopt, .invocation_private_bytes = 0};

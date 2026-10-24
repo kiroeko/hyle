@@ -121,7 +121,7 @@ struct Kernel {
   }
 
   c::KernelCommandResult
-  enqueue(Invocation &invocation, c::Queue &,
+  enqueue(Invocation &invocation, c::detail::QueueSequence &,
           std::span<const c::ConstTensorView> inputs,
           std::span<const c::TensorView> outputs) const noexcept {
     auto &state = *invocation.state;

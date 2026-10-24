@@ -7,8 +7,7 @@
 
 namespace hyle::compute::cuda_native::sglang_hash_vendor {
 namespace device = sglang_vendor::device;
-// Hash routing ignores scores, so an all-underflowed row would renorm 0/0 to NaN.
-constexpr float kRenormalizeSumEpsilon = 1e-20f;
+// Divide by the selected-score sum directly, including IEEE 0/0 for zero rows.
 
 [[maybe_unused]]
 HYLE_SGL_DEVICE float act_sqrt_softplus(float x) {
@@ -86,7 +85,7 @@ __global__ void moe_hash_topk_fused(const MoEHashTopKParams __grid_constant__ pa
     const auto output_offset = warp_id * topk_fused + lane_id;
     topk_ids[output_offset] = is_shared ? num_routed_experts + lane_id - topk : expert_id;
     topk_weights[output_offset] =
-        is_shared ? 1.0f / routed_scaling_factor : routed_weight / (routed_sum + kRenormalizeSumEpsilon);
+        is_shared ? 1.0f / routed_scaling_factor : routed_weight / routed_sum;
   }
 
   PDLTriggerSecondary<kUsePDL>();

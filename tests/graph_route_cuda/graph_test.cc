@@ -49,7 +49,12 @@ TEST(CudaDefaultGraph, BfloatGatesUseNormalDirectAndPreparedGraphEntries) {
                                 ? compute::ggml_cuda::kProviderId
                                 : compute::cuda_native::kProviderId;
       EXPECT_EQ(direct->provider().id, selected);
-      auto direct_slot = direct->create_invocation().value();
+      const auto requirement = direct->workspace_requirement();
+      auto workspace = requirement.size == 0
+          ? mem::Buffer{}
+          : mem::Buffer::create(resource.ref(), requirement.size,
+                                requirement.alignment).value();
+      auto direct_slot = direct->create_invocation(workspace.view()).value();
       auto builder = graph::GraphBuilder::create().value();
       const auto input_id = builder.input(input_desc).value();
       const auto output_id = builder.add(operation, input_id).value();

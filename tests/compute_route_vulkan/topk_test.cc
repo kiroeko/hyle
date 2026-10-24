@@ -439,7 +439,13 @@ TEST(VulkanTopK, EmptyDomainAndInvalidPreparationHaveNoPayloadFallback) {
   ASSERT_TRUE(outputs) << outputs.error().message();
   expect_pair(context, *outputs, {});
   const auto ordinary = dense(c::DataType::kFloat32, {2, 17});
-  EXPECT_FALSE(v::prepare(context, c::TopK{.count = 0}, ordinary));
+  for (const auto type :
+       {c::DataType::kFloat32, c::DataType::kFloat16, c::DataType::kBFloat16}) {
+    EXPECT_TRUE(v::prepare(context, c::TopK{.count = 0},
+                           dense(type, {2, 17})));
+    EXPECT_TRUE(v::prepare(context, c::TopK{.count = 0},
+                           dense(type, {2, 0})));
+  }
   EXPECT_FALSE(v::prepare(context, c::TopK{.count = 18}, ordinary));
   EXPECT_FALSE(v::prepare(context, c::TopK{.axis = 2}, ordinary));
   EXPECT_FALSE(

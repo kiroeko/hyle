@@ -1,0 +1,421 @@
+{
+  "schema": "hyle-focused-correctness-v1",
+  "date": "2026-10-24",
+  "status": "passed",
+  "scope": "Three CUDA packed descriptor-bound cases and three generated Q8 K512 numeric tail cases on the current tensor/MMVQ closure.",
+  "tests": {
+    "total": 6,
+    "passed": 6,
+    "failed": 0,
+    "skipped": 0,
+    "descriptor": 3,
+    "numeric": 3
+  },
+  "hardware": {
+    "device": "NVIDIA GeForce RTX 4070",
+    "compute_capability": "8.9",
+    "source": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\parity-focused-regression\\checks1\\run\\stderr.log",
+      "bytes": 151,
+      "sha256": "88dd5e35d67fb5c0c371390a98a66a5e061e4c0bef2d890a7b74781363216092"
+    }
+  },
+  "cases": [
+    [
+      "GgmlCudaPackedBounds",
+      "EncodedAndLogicalLimitsKeepOtherPortsBounded"
+    ],
+    [
+      "GgmlCudaPackedBounds",
+      "FullVocabularySmallBatchPreparesWithoutWeightStorage"
+    ],
+    [
+      "GgmlCudaPackedBounds",
+      "LargeHeadsDeclineFallbackAndPaddedLayouts"
+    ],
+    [
+      "GgmlCudaPackedTail",
+      "Q8K512N1M1"
+    ],
+    [
+      "GgmlCudaPackedTail",
+      "Q8K512N3M1"
+    ],
+    [
+      "GgmlCudaPackedTail",
+      "Q8K512N3M2"
+    ]
+  ],
+  "xml": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\parity-focused-regression\\checks1\\results.xml",
+    "bytes": 3259,
+    "sha256": "8a931b167b9a2af95699ca62dfe267f9b080068cdbb8183849c39b107eb91eb7"
+  },
+  "process": {
+    "command": [
+      "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\parity-focused-regression\\tests-link1\\packed-parity-tail-checks.exe",
+      "--gtest_filter=GgmlCudaPackedBounds.*:GgmlCudaPackedTail.*",
+      "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\parity-focused-regression\\checks1\\results.xml"
+    ],
+    "cwd": "C:\\public\\project-hyle\\hyle",
+    "started": 1792788568.950281,
+    "timeout_seconds": 180,
+    "throughput_evidence": false,
+    "memory_evidence": false,
+    "trace": false,
+    "profiler": false,
+    "pid": 50496,
+    "exit": 0,
+    "timed_out": false,
+    "finished": 1792788569.5232048,
+    "process_wall_seconds": 0.5725720999907935
+  },
+  "image": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\parity-focused-regression\\tests-link1\\packed-parity-tail-checks.exe",
+    "bytes": 139419648,
+    "sha256": "5fe6a14b69202fb7f57b5f3ee745e5869f8ac72ec0154e537d84107e558da9f2"
+  },
+  "tensor_record": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\parity-current-integration\\compile1\\tensor-program\\identity.json",
+    "bytes": 42516,
+    "sha256": "893d0e6850672f8cc1c4d847ad319c8b77bfe81b9ffcc01e0b02f6fca78f020c"
+  },
+  "tensor_object": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\parity-current-integration\\compile1\\tensor-program\\tensor-program.obj",
+    "bytes": 815103,
+    "sha256": "5e295fc00db56777beb7181c9ba78adf9d9889be6555f1ff0afdad7ebac3f1f3"
+  },
+  "mmvq_record": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\tail-read-proposal\\native1\\identity.json",
+    "bytes": 5426,
+    "sha256": "317f1ed89bd0aa11bcecdae67db4584f206afa70f95855b5114e36ccaeb9d2c9"
+  },
+  "mmvq_object": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\tail-read-proposal\\native1\\mmvq.obj",
+    "bytes": 4632463,
+    "sha256": "602b4938b5a2d5cb2bbaa67f156d35ecc3d8fc6c41a6dffce591d5c322363cf4"
+  },
+  "link_occurrences": {
+    "tensor": 1,
+    "mmvq": 1
+  },
+  "compile": {
+    "new_test_TUs": 1,
+    "reused_test_TUs": 1,
+    "product_host_TUs": 0,
+    "NVCC_commands": 0,
+    "SDK_builds": 0
+  },
+  "current_image": {
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\parity-current-integration\\current-link1\\hyle-current-flash.exe",
+      "bytes": 142272512,
+      "sha256": "276b1d2975ebd8518a6f714e375aa405b57f129e3da849eee2c13ce041693a65"
+    },
+    "link_plan": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\parity-current-integration\\current-link1\\link-plan.json",
+      "bytes": 56180,
+      "sha256": "57ee733f3b291cdd759abf876d43d03be05e849c8d604fe9327b3ed90ea1de31"
+    },
+    "runtime_environment": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\parity-current-integration\\current-link1\\runtime-environment.json",
+      "bytes": 8766,
+      "sha256": "0c47b9297662238c8031333a4627d46a42950774da240fbde27807b93f144f61"
+    },
+    "host_records": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\parity-current-integration\\current-link1\\host-records.json",
+      "bytes": 40400,
+      "sha256": "61e01782b3c02c87ed8040a15a54fadef76bab3d81674da9dd91950ab7ffe62e"
+    },
+    "consumer_record": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-gguf-selected-20261023\\flash-consumer-proposal\\compile2\\flash-state\\identity.json",
+      "bytes": 122050,
+      "sha256": "f721c4015b7bacfc0bff34794c0238ad6617ac3d82aa8d7d926022be290d9844"
+    },
+    "link_result": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\parity-current-integration\\current-link1\\link.result.json",
+      "bytes": 33043,
+      "sha256": "852e76fa089a8590df3308712f3227acca7d18de37c1216822314f00aa46cd33"
+    },
+    "native_result": false,
+    "Orin_native_verified": false
+  },
+  "link_plan": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\parity-focused-regression\\tests-link1\\link-plan.json",
+    "bytes": 76825,
+    "sha256": "416c8c055f097aa7651deeb6a3bae8e8700d9abba8822263847eed07fc96450f"
+  },
+  "runtime": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\parity-focused-regression\\tests-link1\\runtime-environment.json",
+    "bytes": 8877,
+    "sha256": "c057e0858c9933cc5743f644e778f7db8fdae294e246a24685adaa88f7aa7fbf"
+  },
+  "link_map": {
+    "full": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\parity-focused-regression\\tests-link1\\packed-parity-tail-checks.map",
+      "bytes": 57088628,
+      "sha256": "8b094f84b0b0c549181707076d9f9920111b971ba0a1ddc962c496d36dd521c9"
+    },
+    "excerpt": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\parity-focused-regression\\link-map-excerpt.txt",
+      "bytes": 1315,
+      "sha256": "b7fd59247d3aae952f50d8172e5329abca2395815c00f6935d0b58a6d1b15764"
+    }
+  },
+  "numeric_reference": "Exact Q8 scale1/code(row+1) times AQ8_1 scale1/codes +/-127: +/-65024*(row+1)",
+  "limitations": [
+    "No memcheck or sanitizer was run.",
+    "Descriptor tests allocate no full weight storage.",
+    "Generated numeric matrices cover K512 N1/M1 and N3/M1,M2; this is not an original-model or throughput result.",
+    "Execution is on the recorded local CUDA device; Orin remains source-only."
+  ],
+  "protected_previous_evidence": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\mtp-packed-mmvq-tail-read-2026-10-24.json",
+      "bytes": 13096,
+      "sha256": "06c075f0ca65020854d1997bdda7b95660bb8cc923e4626160dc7a95165cd7fa"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\mtp-packed-mmvq-tail-read-2026-10-24.zip",
+      "bytes": 294112,
+      "sha256": "ab3e0710e9689d25cff6b35ae6681e68d8bed1a9dbb1abf0a7f52a3a80ff4e08"
+    }
+  ],
+  "files": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\parity-current-integration\\build.py",
+      "bytes": 9959,
+      "sha256": "b42c3192fb68e66823eff742c09e167dc29bf83931e8c420a2d34b1469976330"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\parity-current-integration\\compile1\\tensor-program\\identity.json",
+      "bytes": 42516,
+      "sha256": "893d0e6850672f8cc1c4d847ad319c8b77bfe81b9ffcc01e0b02f6fca78f020c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\parity-current-integration\\current-link1\\host-records.json",
+      "bytes": 40400,
+      "sha256": "61e01782b3c02c87ed8040a15a54fadef76bab3d81674da9dd91950ab7ffe62e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\parity-current-integration\\current-link1\\link-plan.json",
+      "bytes": 56180,
+      "sha256": "57ee733f3b291cdd759abf876d43d03be05e849c8d604fe9327b3ed90ea1de31"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\parity-current-integration\\current-link1\\link.result.json",
+      "bytes": 33043,
+      "sha256": "852e76fa089a8590df3308712f3227acca7d18de37c1216822314f00aa46cd33"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\parity-current-integration\\current-link1\\ready.json",
+      "bytes": 1696,
+      "sha256": "e7368d0694da5115307dc5a82062f93b96026e554bddbed970d68d030f780bee"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\parity-current-integration\\inputs.json",
+      "bytes": 2593,
+      "sha256": "6082cf842d0792f123368ed8d156edb70c6246021402eecd8d0211a1db032ac4"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\parity-focused-regression\\build.py",
+      "bytes": 14048,
+      "sha256": "6b03d68058caa8d662a7ebf1b651fbd8158ffb91aca374e0124b0d7c658c2a41"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\parity-focused-regression\\checks1\\plan.json",
+      "bytes": 1522,
+      "sha256": "06f031bdbd251f1b909de1d59ea3325533e9571b217b33c9e259ff13970ed74e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\parity-focused-regression\\checks1\\results.xml",
+      "bytes": 3259,
+      "sha256": "8a931b167b9a2af95699ca62dfe267f9b080068cdbb8183849c39b107eb91eb7"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\parity-focused-regression\\checks1\\run\\command.json",
+      "bytes": 589,
+      "sha256": "e330d22f1774367142a1bd0695b0d1bf8b003e81bb65f980d312844599c8cb7c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\parity-focused-regression\\checks1\\run\\live.json",
+      "bytes": 606,
+      "sha256": "02c9e1c7270eab254bde8de8cf29a1bd4503270470d259953496d38ec3202289"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\parity-focused-regression\\checks1\\run\\process.json",
+      "bytes": 725,
+      "sha256": "8cf816c1e10f5d45411d5f271c968d56b9313d319c41a934a493178fc3a43a1d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\parity-focused-regression\\checks1\\run\\stderr.log",
+      "bytes": 151,
+      "sha256": "88dd5e35d67fb5c0c371390a98a66a5e061e4c0bef2d890a7b74781363216092"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\parity-focused-regression\\checks1\\run\\stdout.log",
+      "bytes": 1462,
+      "sha256": "541a76d849519ade1082684b59a4ff925e366a224bb1f16ab43c076d132df8aa"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\parity-focused-regression\\checks1\\summary.json",
+      "bytes": 2633,
+      "sha256": "04831a0e4b691f450776b238a30ecb87f0a9c6fc4a4512743de54ae4d39cfaed"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\parity-focused-regression\\compile1\\bounds-test\\identity.json",
+      "bytes": 63396,
+      "sha256": "77329dcdf83a15618bcb8f41beb3265a80e9102baabfa6586b511b151da0cfb1"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\parity-focused-regression\\compile1\\bounds-test\\plan.json",
+      "bytes": 3902,
+      "sha256": "76d562318e32528355752ca87572869a368f4ebba2e42c394916045257743fb4"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\parity-focused-regression\\compile1\\bounds-test\\run\\command.json",
+      "bytes": 2934,
+      "sha256": "dd2e404dc7cc4c1e564d77973ab81a1ae52a5da10e5bd1ca96491b0a30340290"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\parity-focused-regression\\compile1\\bounds-test\\run\\live.json",
+      "bytes": 2951,
+      "sha256": "c1ddcd8fc3276544d76e0214ef8c114ce3f89e59af202bfd4437b877d1cac5dc"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\parity-focused-regression\\compile1\\bounds-test\\run\\process.json",
+      "bytes": 3069,
+      "sha256": "cd80a213511ee0f7d28e3d5b923946b50d7c6926d3529759769dbcfe82a697fa"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\parity-focused-regression\\compile1\\bounds-test\\run\\stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\parity-focused-regression\\compile1\\bounds-test\\run\\stdout.log",
+      "bytes": 30,
+      "sha256": "72e8132c7e572ca6220364174412d16f39534a9568b98a7cf2f4cb989eac1617"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\parity-focused-regression\\compile1\\bounds-test\\source-deps.json",
+      "bytes": 29511,
+      "sha256": "c0cfd0abe7ee6c11c7eb4cfa98ca6fe8f974badb243ab03aa6fe2eed6ef3c33f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\parity-focused-regression\\link-map-excerpt.txt",
+      "bytes": 1315,
+      "sha256": "b7fd59247d3aae952f50d8172e5329abca2395815c00f6935d0b58a6d1b15764"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\parity-focused-regression\\tests-link1\\link\\command.json",
+      "bytes": 33198,
+      "sha256": "1dce948445ee1b8fb098b1d6b1d8989d245016299b93a61d19825998d8737d51"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\parity-focused-regression\\tests-link1\\link\\live.json",
+      "bytes": 33215,
+      "sha256": "fd946d065187ee3687296b7d25490e4f906fb0968507ea0a47100d24b27e84df"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\parity-focused-regression\\tests-link1\\link\\process.json",
+      "bytes": 33334,
+      "sha256": "ad9beb1a031bd877b0f5359f793cb26888bf735c059b7655523e5173658f0876"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\parity-focused-regression\\tests-link1\\link\\stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\parity-focused-regression\\tests-link1\\link\\stdout.log",
+      "bytes": 292,
+      "sha256": "4ca2294d74d3a67a4b755a58f2d1522ec9969d6c65a64518f6c03da96806da7d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\parity-focused-regression\\tests-link1\\link-plan.json",
+      "bytes": 76825,
+      "sha256": "416c8c055f097aa7651deeb6a3bae8e8700d9abba8822263847eed07fc96450f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\parity-focused-regression\\tests-link1\\ready.json",
+      "bytes": 34412,
+      "sha256": "a7d44c4c41cb12556833fd353dcfe680058a659e8eceeceab66c544cccc90c0a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\parity-focused-regression\\tests-link1\\runtime-environment.json",
+      "bytes": 8877,
+      "sha256": "c057e0858c9933cc5743f644e778f7db8fdae294e246a24685adaa88f7aa7fbf"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\parity-removal-proposal\\source.patch",
+      "bytes": 4450,
+      "sha256": "7b591cdd2c4fb3e14f1f98c5a710b0d0e999dee203766d0e13921d0b59bead2a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\tail-read-proposal\\generated\\src\\ggml-cuda\\mmvq.cu",
+      "bytes": 75834,
+      "sha256": "1c2a40e1c9867acef58da2b00d98a747487e80b6659ceacac3b93a3ddee2fe3e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\tail-read-proposal\\native.diff",
+      "bytes": 1481,
+      "sha256": "33421e6787882118294b073327b2b6d86f949853572eb0b1d63af39535bf4ca9"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\tail-read-proposal\\native1\\dependencies.json",
+      "bytes": 29835,
+      "sha256": "35645f64e3f50740d2f9c92fc322daa553d9f044cea016c6896d690d89b3c797"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\tail-read-proposal\\native1\\identity.json",
+      "bytes": 5426,
+      "sha256": "317f1ed89bd0aa11bcecdae67db4584f206afa70f95855b5114e36ccaeb9d2c9"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\tail-read-proposal\\source.patch",
+      "bytes": 3280,
+      "sha256": "13b67d9b82d5edc9314cc0f5bf3bf29b853d128c2230fc5167ae061704e88b0d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\tail-read-proposal\\test1\\identity.json",
+      "bytes": 62414,
+      "sha256": "1bd1eadc74a6b05bc5bf6c93b5e2f8248ef879c249148ef48143749ccfc2fba2"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\cmake\\HyleDependencyLock.json",
+      "bytes": 77554,
+      "sha256": "3fecd2998c011e492e97672b01a2169c38ef9f4d9be3fef9899dbf42c11b7320"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_ggml_cuda\\tensor_program.cc",
+      "bytes": 62210,
+      "sha256": "1acd1421bc179e10d7d31f9f87a530316de58dc10479c7e887b64ac1bf883825"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_ggml_cuda\\packed_matmul_bounds_test.cc",
+      "bytes": 8210,
+      "sha256": "bae262a7b9d90fc55b028392697b8bfcbd151e8c01e4ca6c199d735c2a82410e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_ggml_cuda\\packed_matmul_tail_test.cc",
+      "bytes": 4531,
+      "sha256": "aeee5adbdcb140d52c651a11aa00d14586a57a17a14dd97f7cee70c00e3337da"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\third_party\\ggml_cuda_runtime\\LICENSE",
+      "bytes": 1078,
+      "sha256": "94f29bbed6a22c35b992c5c6ebf0e7c92f13b836b90f36f461c9cf2f0f1d010d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\third_party\\ggml_cuda_runtime\\patches.json",
+      "bytes": 569538,
+      "sha256": "fb875c9d31db5ea3bfbe082ee00a9cbff673cd3bfade9f6e5010bd9047f3f3be"
+    }
+  ],
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\mtp-packed-mmvq-tail-integration-2026-10-24.zip",
+    "bytes": 245843,
+    "sha256": "ad8eeff1a0f9e15883898edd1e06e4a455583edc16dd979d3178525a9a9c43ca"
+  }
+}

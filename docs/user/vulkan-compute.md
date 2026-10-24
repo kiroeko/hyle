@@ -18,7 +18,7 @@ HYLE 在准备期绑定 ggml region、IREE 原生程序或 HYLE shader，Graph �
 拒绝。自然D64/128/256容量cache的合格view直接读取，额外query/KV Copy数为0。
 其他pitch仍走明确canonical Copy，不能用其数学通过证明零拷贝。该档借原全F32 scalar flash shader，保持F32输入和
 概率的精度；F32 accumulator本身不足以防止原native half内部缩窄。必要query转换、
-causal `Q×K` mask与float shared scratch仍是真成本，没有capture或全dtype/shape吞吐
+float shared scratch与split-KV暂存仍是真成本；该档的causal边界由shader处理，不物化完整`Q×K` mask。没有capture或全dtype/shape吞吐
 宣称。其他既有SDPA档保其原承载/费用，不因此签arbitrary page-table或整G01完成。
 ## 构建与运行条件
 
@@ -45,6 +45,24 @@ macOS 可用已安装的 loader/MoltenVK。非标准位置可通过 `ContextOpti
 不等长/分页 KV 的准备、更新和结果释放统一见[批次 attention](batch-attention.md)。
 `prepare_ragged_batch()` 绑定 host-owned 布局；改变 Q 拓扑需重新准备，更新 KV 后重新绑定输入。
 变化标量会让原录制失效并重新编码，不表示 capture；在途、失败或旧结果未释放的槽不能更新。
+
+当前typed分页/ragged承载的query、plain KV和output可独立选择F16或BF16，K/V保持相同格式；
+低维也接受Q8_0 cache。已接几何为D64/128/256同深度及64→128，
+512→512及576→512另接紧凑MLA的uniform E4缓存。`MlaBatchCapacity`用
+`query_type`／`output_type`／`cache_storage`分别描述Q、输出和共享CKV格式；同一固定scale同时解释CKV、KPE与V前缀。普通Graph的
+`batch::paged_attention`/`paged_mla_attention`选择同一原生实现。
+普通分页另接带独立固定K/V scale的E4；直接编码新行并按引用页解码，BF16 D64→128和Q1布局增长已实测。
+Q先转F32，原页/紧凑CKV中的F16、BF16或Q8_0直接由既有FullF32 flash读取。
+BF16 Q／输出的紧凑E4 MLA已接原paged/ragged路径；私有读取器从同根cache取strided的V前512项，
+保持原512／576字节行距，不展开V或整套浮点缓存。新几何只在该精确MLA路径准入，不放宽普通E4任意stride。
+各request输出及拼接保持F32，最后经既有Cast一次舍入到所选output dtype，BF16沿原IREE RNE转换。
+这条路径没有整段KV的F32影子或全局Q×KV score矩阵；仍有Q、输出、tile和split-K暂存，
+实际device/shared-memory/buffer与page16限制保留。D256的plain分页/ragged及Q8_0、
+576→512单CKV的Direct/Graph双槽已按独立FP64 oracle实测。D256另实测BF16 Q/F16 KV→BF16、
+F16 Q/BF16 KV→F16及→BF16，保同一页权限、双槽、旧结果和固定绑定重放；空结果也保持独立output dtype。
+普通三输入dense BSHD、无additive mask的BF16 SDPA已有另一条合法承载：先将Q/K/V宽化为F32，
+执行原ggml attention，再经原IREE转换舍入回BF16。D64/128/256可用上述FullF32 flash；
+其他合格宽维走原MatMul/Softmax组合，并有score暂存；其空间成本与上述typed页路径不同。
 
 ## 普通 Direct Compute
 
@@ -381,6 +399,16 @@ publish 两个端口。Graph 按每个输出的实际消费者和发布状态规
 Kernel 的 storage bindings 按输入顺序再接输出，使用一个 set 和一段 push constants。
 应用负责合法 SPIR-V、设备已启用的 feature、访问范围以及声明的 pure/shape 语义。
 
+普通`graph::compile`通过`graph::vulkan::execution_source(context, {.custom = lower})`
+携带同一冷lowering；`lower(operation, inputs, output)`显式捕获所需Context／Kernel。
+Source保留冷配置，原生Program只保留解析后的pipeline，重放不再调用callback。
+同一Runtime的不同custom配置具有独立Source身份，设备和完成顺序仍来自真实Runtime。
+
+`graph::vulkan::bind(invocation, value, weight_batch, id)`可冷绑定仍在上传的不可变权重，
+保留真实backing与上传所有者，同batch多端口去重依赖。当前Vulkan上传使用显式HostWait，
+`HostWaitPolicy::kReject`会在准备阶段拒绝；可选`prepare_progress`在原Invocation中异步推进。
+不将其视为CUDA Queue的设备端等待，也不额外复制权重payload。
+
 ## 资源、并发、失败与成本
 
 - 一个 Context 选择一个真实 compute queue/family；队列 host 访问由对象局部互斥保护。独立槽
@@ -432,13 +460,14 @@ fence 等待伪造跨队列可见性。`environment().distinct_transfer_queue`�
 `MemoryResource::storage_info().transfer_eligible`是冷能力事实，不是性能 WIN 或任意 GPU 的重叠保证。
 池的关闭或弃置继续用原 native retirement，接纳后失败必须保活到实际终态。
 
-选择 `HYLE_COMPUTE_ROUTES="cpu;vulkan"`自动加入 `hyle/graph/cpu_vulkan.h` 的粗片段组合和 Sched。
-组合 Executable 冷调用 `create_invocation(scheduler, cpu_queue, completion_waiters)`，其中
-`completion_waiters` 是调用方持有的 `sched::BlockingPool`。两个在途slots配置容量2；原生等待
-在池worker执行，Scheduler仍可推进独立CPU/native支路。池的线程/栈计入调用方预算，必须活过
-Invocation关闭、已接纳原生工作/等待任务尾部以及`scheduler.drain()`，随后才能shutdown。
-主存、device、staging 分域预算与已准备的上传/等待报告均由组合提供；普通入口与资源限制见
-[组合样例](../../samples/package/graph/cpu_vulkan/README.md)。模型层/offload 比例、KV和专家策略由引擎决定。
+CPU＋Vulkan使用普通`graph::compile`：冷装配实际CPU/Vulkan ExecutionSource与host/device/staging域，
+随后沿同一Executable、Invocation、prepare_replay、submit和GraphOutput消费。完整调用见
+[组合样例](../../samples/package/graph/cpu_vulkan/README.md)；ready原生分页见[批次说明](batch-attention.md#cpu-与原生分页组合)。
+模型层/offload比例、KV和专家策略由引擎决定，具体Provider在冷编译选择。
+需要异步推进时，为原Invocation调用`prepare_progress(invocation, scheduler, completion_waiters)`。
+调用方持有的`sched::BlockingPool`按实际阻塞工作配置容量；两个同时等待的槽可配置2。
+池必须活过Invocation关闭、已接纳任务尾部与`scheduler.drain()`，随后才能shutdown。
+原生pending分页及其余尚未迁移的消费者仍使用既有专用入口，其资格不能由ready链成功推导。
 
 ## 可选编译诊断
 

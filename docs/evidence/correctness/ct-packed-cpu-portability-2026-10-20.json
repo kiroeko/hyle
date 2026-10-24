@@ -1,0 +1,580 @@
+{
+  "scope": "CPU CT packed ordinary Graph and Direct portability on frozen Windows/Linux/macOS sources; shared discovery extraction; no complete model or Apple/Vulkan packed GPU claim in this report",
+  "final": {
+    "windows_cpu": {
+      "tests": 10,
+      "failures": 0,
+      "skipped": 0,
+      "xml": {
+        "path": ".scratch/architecture-refactor-2026-10-18/ct-packed-pattern-shared/portable-closure/cpu/tests.xml",
+        "bytes": 4272,
+        "sha256": "d8de600b7530ba9d4f3f3215ad412568c0f81e8696794a684879e18eb6cc3039"
+      },
+      "names": [
+        {
+          "suite": "CpuNvfp4ReferenceGraph",
+          "name": "OriginalPackedBanksAndBfloatBoundariesSurviveSlotsAndUpdates"
+        },
+        {
+          "suite": "CpuNvfp4ReferenceGraph",
+          "name": "RuntimeDomainFailuresRecoverWithoutChangingTheReferenceTree"
+        },
+        {
+          "suite": "CpuCtPackedLinear",
+          "name": "PublicChainsKeepSourceRoundsAndTypedCastWitnesses"
+        },
+        {
+          "suite": "CpuCtPackedLinear",
+          "name": "CapturedDynamicInputsRebindAcrossOwnedSlotsAndRetainResults"
+        },
+        {
+          "suite": "CpuCtPackedLinear",
+          "name": "PublishedViewAndControlEscapesExecuteTheOriginalDecomposition"
+        },
+        {
+          "suite": "CpuCtPackedLinear",
+          "name": "OriginalPackedConstantsDoNotRetainOrWorkspaceADenseWeightBank"
+        },
+        {
+          "suite": "CpuCtPackedLinear",
+          "name": "DefaultMultirowKeepsOriginalRouteAndPreparedCanSelectPacked"
+        },
+        {
+          "suite": "NativeCtPackedLinear",
+          "name": "SourceDecodeAndOperandRoundsWithPackedOutputAxisZeroTail"
+        },
+        {
+          "suite": "NativeCtPackedLinear",
+          "name": "DynamicInputsUseIndependentSlotsAndRejectReadWriteAlias"
+        },
+        {
+          "suite": "NativeCtPackedLinear",
+          "name": "RealQ27GeometryPreparesWithoutADenseWeightWorkspace"
+        }
+      ]
+    },
+    "windows_cuda_neighbors": {
+      "tests": 8,
+      "failures": 0,
+      "skipped": 0,
+      "xml": {
+        "path": ".scratch/architecture-refactor-2026-10-18/ct-packed-pattern-shared/portable-closure/cuda/tests.xml",
+        "bytes": 3882,
+        "sha256": "fcab7877748435d74f075e1b2d30fcc93d538b4f919911cbca4ccc55599b49f9"
+      },
+      "names": [
+        {
+          "suite": "CudaCtPackedLinear",
+          "name": "PublicChainsKeepSourceRoundsAndTypedCastWitnesses"
+        },
+        {
+          "suite": "CudaCtPackedLinear",
+          "name": "CapturedDynamicInputsRebindAcrossOwnedSlotsAndRetainResults"
+        },
+        {
+          "suite": "CudaCtPackedLinear",
+          "name": "PublishedViewAndControlEscapesExecuteTheOriginalDecomposition"
+        },
+        {
+          "suite": "CudaCtPackedLinear",
+          "name": "OriginalPackedConstantsDoNotRetainOrWorkspaceADenseWeightBank"
+        },
+        {
+          "suite": "CudaMlxMoeGraph",
+          "name": "MixedBitMoeKeepsTypedMetadataAndIndependentSlots"
+        },
+        {
+          "suite": "CudaMlxSharedActivation",
+          "name": "OriginalPayloadStridesAndCheckedIdsSurviveReuse"
+        },
+        {
+          "suite": "CudaNvfp4ReferenceGraph",
+          "name": "OriginalPackedBanksAndBfloatBoundariesSurviveSlotsAndUpdates"
+        },
+        {
+          "suite": "CudaNvfp4ReferenceGraph",
+          "name": "RuntimeDomainFailuresRecoverWithoutChangingTheReferenceTree"
+        }
+      ]
+    },
+    "linux_cpu": {
+      "status": "actual_gnu14_cpu_ct_direct_graph_and_context_neighbors_passed",
+      "remote_work_directory": "/root/hyle-scratch/compute-unified/linux-ct-packed-linear",
+      "base": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\linux-layout-current-review\\validation\\link-plan.json",
+        "bytes": 32527,
+        "sha256": "69c194fad92c828e3899599978f6929f32ece888f59c46411be30cd030c01cbe"
+      },
+      "toolchain": {
+        "gxx": "g++-14 (Ubuntu 14.2.0-4ubuntu2~24.04.1) 14.2.0"
+      },
+      "environment_inventory": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-linear-cpu\\linux\\environment-inventory.json",
+        "bytes": 18731,
+        "sha256": "4a9f2b324f330e4497809c5abf59f4335772243c925759abc68a4a701759455c"
+      },
+      "source_freeze": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-linear-cpu\\linux\\final-source-freeze.json",
+        "bytes": 1330,
+        "sha256": "06955a68bab3629f0aa1ca1d430573f9be678078359c848eee6a13fc701d6d63"
+      },
+      "source_manifest": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-linear-cpu\\linux\\source-manifest.json",
+        "bytes": 78967,
+        "sha256": "64522ecadbd64f8673a3cf417d1a12d04d2be9829ed11c459712158d9fffe9e9"
+      },
+      "source_overlay": {
+        "files": 140,
+        "bytes": 1166262,
+        "one_way_from_windows": true,
+        "sdk_copy_or_rebuild": false
+      },
+      "owner_inventory": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-linear-cpu\\linux\\owner-inventory.json",
+        "bytes": 1731,
+        "sha256": "2b17e5f99c6b073e0052cf14a0609a29480e478a2fd49a97b869d36d7cda8683"
+      },
+      "compile": {
+        "processes": 20,
+        "success": 18,
+        "failed": 2,
+        "distinct_success_product_owners": 14,
+        "distinct_success_test_owners": 3,
+        "strict_flags": [
+          "-std=c++23",
+          "-Wall",
+          "-Wextra",
+          "-Wpedantic",
+          "-Werror"
+        ],
+        "receipts": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-linear-cpu\\linux\\compile-results.json",
+          "bytes": 401988,
+          "sha256": "2f18aa020b669bb41f521294c106d46d5543b6e409aabd15472abb006da4fa85"
+        }
+      },
+      "preserved_first_failures": [
+        {
+          "source": "tests/graph_route_cpu/ct_packed_linear_test.cc",
+          "kind": "test",
+          "exit_code": 1,
+          "stderr": {
+            "path": "/root/hyle-scratch/compute-unified/linux-ct-packed-linear/logs/cxx-14-ct_packed_linear_test.cc.stderr.log",
+            "bytes": 4003,
+            "sha256": "de683bc51209a4546fbf9077970cd219de89b03151652b2f533f2b53f0a77b4a"
+          },
+          "explanation": "Eight gtest if-macro bodies needed explicit braces; canonical Windows fixture fixed with root authorization; no assertion/math changes."
+        },
+        {
+          "source": "src/graph_route_cpu/compile.cc",
+          "kind": "product",
+          "exit_code": 1,
+          "stderr": {
+            "path": "/root/hyle-scratch/compute-unified/linux-ct-packed-linear/logs/cxx-16-attempt1-compile.cc.stderr.log",
+            "bytes": 261,
+            "sha256": "2e61beba97a61b70bb70d8ca629a31ad639fd01f18ca1c9b1f1a70488ecb8422"
+          },
+          "explanation": "Validation overlay omitted new compile.cc literal include hyle/graph/batch.h; snapshot include closure repaired, product unchanged."
+        }
+      ],
+      "compatibility": {
+        "native_plan_proof": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-linear-cpu\\linux\\native-plan.diff",
+          "bytes": 808,
+          "sha256": "73caf83687a155a8a80ef53f94ff89270cec4a84c2445577e9d47f469ceb67ec"
+        },
+        "native_plan_fields": "Identical old/current; exact normalization removes only two added prepare function declarations. Other original Native math owners retained.",
+        "cpu_private_api": "Both 5-argument create_context owners refreshed.",
+        "stale_constructor_owner": "GraphCPU compile.cc also refreshed because public StorageDomain gained StorageOwner even though source bytes stayed equal.",
+        "factory_versions": "Native, ATen, oneDNN and Graph oneDNN factories refreshed to current compute17/Region30.",
+        "source_only_policy_move": "CtPackedRegion kPolicy moved to base, inherited name/value same; refreshed only GraphCPU CTregion and relinked same test objects."
+      },
+      "first_green": {
+        "xml": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-linear-cpu\\linux\\revisions\\first-green\\tests.xml",
+          "bytes": 4867,
+          "sha256": "0d374143f682d1e21676a0b976dd57f06e7724e5ac706398e011f212d9e2cc92"
+        },
+        "image": {
+          "path": "/root/hyle-scratch/compute-unified/linux-ct-packed-linear/ct-cpu",
+          "bytes": 45306224,
+          "sha256": "513df4a6d5591b7b44ee9aca3e55eb89e2269904eae1bea4f3804623a10a53bc"
+        },
+        "link_plan": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-linear-cpu\\linux\\revisions\\first-green\\link-plan.json",
+          "bytes": 43771,
+          "sha256": "a71fd6a80f9c8eb2d2e8239edf2405d78939ebac0ca0ca5c3ac5e3837f8b1fbb"
+        },
+        "tests": 12,
+        "failed": 0,
+        "skipped": 0
+      },
+      "final": {
+        "xml": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-linear-cpu\\linux\\tests.xml",
+          "bytes": 4870,
+          "sha256": "99057c0919a7881bf7b7aa7625accd280c20970fd20ebc46adbc6eac1fc224da"
+        },
+        "image": {
+          "path": "/root/hyle-scratch/compute-unified/linux-ct-packed-linear/ct-cpu",
+          "bytes": 45306224,
+          "sha256": "513df4a6d5591b7b44ee9aca3e55eb89e2269904eae1bea4f3804623a10a53bc"
+        },
+        "link_plan": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-linear-cpu\\linux\\link-plan.json",
+          "bytes": 43785,
+          "sha256": "418b2bae30fec8176b28c732f0b8d5eff79adb72d623ad7f789c2f81daf09e13"
+        },
+        "link_result": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-linear-cpu\\linux\\link-result.json",
+          "bytes": 14620,
+          "sha256": "a345586ed09e7acd59e09fc6cb92c3dd0f7795c9fa1368c605ff915237b94149"
+        },
+        "run_result": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-linear-cpu\\linux\\run-result.json",
+          "bytes": 1021,
+          "sha256": "9db2984f3e18f90167456c7c2566f00c0410d1411493005a16e2cf6114767307"
+        },
+        "input_recheck": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-linear-cpu\\linux\\final-input-recheck.json",
+          "bytes": 37137,
+          "sha256": "5e588d63059e4a0dc144c84fb7cf37815f2ec5eca3612215723a92794387771c"
+        },
+        "tests": 12,
+        "failed": 0,
+        "skipped": 0,
+        "groups": {
+          "NativeCtPackedLinear": 3,
+          "CpuCtPackedLinear": 5,
+          "CpuDefaultContext": 4
+        },
+        "cases": [
+          {
+            "suite": "NativeCtPackedLinear",
+            "name": "SourceDecodeAndOperandRoundsWithPackedOutputAxisZeroTail",
+            "status": "run",
+            "result": "completed",
+            "time": "0.001",
+            "properties": {}
+          },
+          {
+            "suite": "NativeCtPackedLinear",
+            "name": "DynamicInputsUseIndependentSlotsAndRejectReadWriteAlias",
+            "status": "run",
+            "result": "completed",
+            "time": "0.",
+            "properties": {}
+          },
+          {
+            "suite": "NativeCtPackedLinear",
+            "name": "RealQ27GeometryPreparesWithoutADenseWeightWorkspace",
+            "status": "run",
+            "result": "completed",
+            "time": "0.",
+            "properties": {}
+          },
+          {
+            "suite": "CpuCtPackedLinear",
+            "name": "PublicChainsKeepSourceRoundsAndTypedCastWitnesses",
+            "status": "run",
+            "result": "completed",
+            "time": "0.017",
+            "properties": {}
+          },
+          {
+            "suite": "CpuCtPackedLinear",
+            "name": "CapturedDynamicInputsRebindAcrossOwnedSlotsAndRetainResults",
+            "status": "run",
+            "result": "completed",
+            "time": "0.",
+            "properties": {}
+          },
+          {
+            "suite": "CpuCtPackedLinear",
+            "name": "PublishedViewAndControlEscapesExecuteTheOriginalDecomposition",
+            "status": "run",
+            "result": "completed",
+            "time": "0.001",
+            "properties": {}
+          },
+          {
+            "suite": "CpuCtPackedLinear",
+            "name": "OriginalPackedConstantsDoNotRetainOrWorkspaceADenseWeightBank",
+            "status": "run",
+            "result": "completed",
+            "time": "0.028",
+            "properties": {
+              "compiled_known_bytes": "376",
+              "workspace_bytes": "0",
+              "excluded_dense_f32_bank_bytes": "1052672"
+            }
+          },
+          {
+            "suite": "CpuCtPackedLinear",
+            "name": "DefaultMultirowKeepsOriginalRouteAndPreparedCanSelectPacked",
+            "status": "run",
+            "result": "completed",
+            "time": "0.",
+            "properties": {
+              "default_packed_regions": "0",
+              "prepared_packed_regions": "1"
+            }
+          },
+          {
+            "suite": "CpuDefaultContext",
+            "name": "MatureDefaultsHavePolicyWithoutModelOrHardwareProfile",
+            "status": "run",
+            "result": "completed",
+            "time": "0.",
+            "properties": {}
+          },
+          {
+            "suite": "CpuDefaultContext",
+            "name": "OneGgmlInstanceServesOrdinaryAndFusedGraphRoutes",
+            "status": "run",
+            "result": "completed",
+            "time": "0.",
+            "properties": {}
+          },
+          {
+            "suite": "CpuDefaultContext",
+            "name": "StableActivationDefaultUsesOriginalAtenProgram",
+            "status": "run",
+            "result": "completed",
+            "time": "0.",
+            "properties": {}
+          },
+          {
+            "suite": "CpuDefaultContext",
+            "name": "MatMulNeverFallsBackToLowerAccumulationPrecision",
+            "status": "run",
+            "result": "completed",
+            "time": "0.",
+            "properties": {}
+          }
+        ]
+      },
+      "actual_totals": {
+        "cxx": 20,
+        "cxx_success": 18,
+        "cxx_failure": 2,
+        "links": 2,
+        "links_success": 2,
+        "test_processes": 2,
+        "distinct_tests": 12,
+        "test_executions": 24,
+        "sdk_build": 0,
+        "sdk_download": 0,
+        "nvcc": 0,
+        "gpu": 0,
+        "model": 0,
+        "ci": 0
+      },
+      "coverage": [
+        "Exact source decode/operand rounds and padded packed-output zero tail",
+        "Dynamic inputs, independent invocation slots, old GraphOutput/ReadLease lifetime and illegal alias rejection",
+        "Published output/view/control escape executes original decomposition",
+        "Immutable original packed constants retained without dense decoded-bank workspace",
+        "Same tiny M3 graph defaults to original decomposition while RequirePrepared selects retained CT candidate",
+        "Original same-ggml context, ATen activation route, and no-lower-accumulation-precision neighbors"
+      ],
+      "limits": [
+        "CPU Commands replay only, despite inherited CapturedDynamic... test name; no CPU capture claim.",
+        "No Linux throughput measurements, full model, full suite or GPU backend validation.",
+        "Retained original Native math objects were not rebuilt merely for declaration-only native_plan changes.",
+        "Later parent-owned fixture resource-upload helper edits are outside this frozen source/test-object run."
+      ],
+      "product_edits_by_this_task": [],
+      "authorized_test_edit": "Eight braces in shared CT Graph fixture only; editing ownership released back to root.",
+      "cleanup": "No deletion performed; parent may clean rebuildable before image and maps via test.ps1 after evidence publication."
+    },
+    "macos_cpu": {
+      "status": "current_Mac_CPU_CT_focused_validation_passed",
+      "scope": "Mac16,12 CPU CT Direct and ordinary CPU Graph only; no Apple GPU CT/NVFP4 execution, performance or complete artifact claim",
+      "hardware": {
+        "uname": "Darwin Kiros-MacBook-Air.local 27.0.0 Darwin Kernel Version 27.0.0: Tue Aug 11 21:02:57 PDT 2026; root:xnu-13432.1.9~1/RELEASE_ARM64_T8132 arm64\n",
+        "model": "Mac16,12",
+        "memory": "17179869184",
+        "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434\n",
+        "clang": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin\n"
+      },
+      "source": {
+        "final_overlay_files": 95,
+        "final_manifest": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cross-platform\\apple-cpu\\final-source-manifest.json",
+          "bytes": 15690,
+          "sha256": "30efc8a22addf51abf36431a7f688473043f6b5a98c1b41785671fd16f5ec74c"
+        },
+        "final_source_capsule": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cross-platform\\apple-cpu\\final-source.zip",
+          "bytes": 211958,
+          "sha256": "c2110199d848c1d8e989c0e9463f0f8cfb36d8af078308eb7c3933d8ed226181"
+        },
+        "windows_authoritative_one_way_sync": true,
+        "ct_pattern_header_sha256": "c65ca1f103da30f1d7dc7ab76fc4ea602bc0a4f9bcdf5097133c0d3bbd90e69d",
+        "native_plan_reuse": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cross-platform\\apple-cpu\\native-plan-reuse.json",
+          "bytes": 1160,
+          "sha256": "bb96a8ba829b162eaf6a71883fdcdfbc07bde0a35a796b76b6677b0660a6ccab"
+        }
+      },
+      "validation": {
+        "before": {
+          "tests": 8,
+          "exit": 0,
+          "failed": [],
+          "skipped": [],
+          "xml": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cross-platform\\apple-cpu\\before-run\\remote\\results\\tests.xml",
+            "bytes": 3905,
+            "sha256": "c5c5e35874f0e6c70761eedd91363579600bdc67faf23f5a3cf2f4b315e6ec3a"
+          }
+        },
+        "final": {
+          "tests": 8,
+          "exit": 0,
+          "failed": [],
+          "skipped": [],
+          "names": [
+            "CpuCtPackedLinear.PublicChainsKeepSourceRoundsAndTypedCastWitnesses",
+            "CpuCtPackedLinear.CapturedDynamicInputsRebindAcrossOwnedSlotsAndRetainResults",
+            "CpuCtPackedLinear.PublishedViewAndControlEscapesExecuteTheOriginalDecomposition",
+            "CpuCtPackedLinear.OriginalPackedConstantsDoNotRetainOrWorkspaceADenseWeightBank",
+            "CpuCtPackedLinear.DefaultMultirowKeepsOriginalRouteAndPreparedCanSelectPacked",
+            "NativeCtPackedLinear.SourceDecodeAndOperandRoundsWithPackedOutputAxisZeroTail",
+            "NativeCtPackedLinear.DynamicInputsUseIndependentSlotsAndRejectReadWriteAlias",
+            "NativeCtPackedLinear.RealQ27GeometryPreparesWithoutADenseWeightWorkspace"
+          ],
+          "xml": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cross-platform\\apple-cpu\\final-run\\remote\\after-cold-pattern\\results\\tests.xml",
+            "bytes": 3905,
+            "sha256": "c50c390fae0ee8b9ecec1b36ea647ed8c39f216fc85b8a645283be3edb5ed18f"
+          }
+        },
+        "domains": [
+          "six typed source/decode/operand RNE profiles and legal nonfinite scales",
+          "N9 asymmetric output-axis packed-zero tail",
+          "twoDirectslots and actualdynamic A/codes/scales updates/oldoutput",
+          "input-output alias guard and descriptor-only actualQ27N17408/K5120 zeroWorkspace",
+          "ordinary Graph packed/mapping ownership/escaped published View/control fallback",
+          "ordinary multirow default noCT plus RequirePrepared selects CT with actualM3 math"
+        ]
+      },
+      "counts": {
+        "successful_product_CXX": 7,
+        "successful_test_CXX": 2,
+        "total_CXX": 9,
+        "compiler_failures": 0,
+        "links": 2,
+        "CPU_processes": 2,
+        "GPU_processes": 0,
+        "SDK_CXX": 0,
+        "Metal_CXX": 0,
+        "first_metadata_script_exit": 1,
+        "metadata_only_repair_extra_CXX": 0
+      },
+      "incremental_closure": {
+        "new_calls_require_CPU_nvfp4_symbol": "native_provider now references prepare_nvfp4, so nativeCPU nvfp4.cc compiled once; no newNvfp4runtimecoverage claimed",
+        "NativePlan": "Exact normalized old/new definition equality after removing two free function declarations; reused otherNativePlanowners",
+        "CPU_factories": "both current5arg privatecreate_context owner/caller refreshed; actualMacggml/Torch enabled; oneDNN baseline notenabled",
+        "initial_build": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cross-platform\\apple-cpu\\before-run\\remote\\results\\compile-summary.json",
+          "bytes": 1868194,
+          "sha256": "9488a8444815ca8898440a74782e199bfae4a552eb9d6467f15f1d26e5d54935"
+        },
+        "final_only_ct_region": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cross-platform\\apple-cpu\\final-run\\remote\\after-cold-pattern\\results\\ct-region-identity.json",
+          "bytes": 229524,
+          "sha256": "72a03503106c0043901194fea8cf0a5cfbf5659f66342e47221b9038f2349c9b"
+        },
+        "all_final_link_inputs": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cross-platform\\apple-cpu\\final-run\\remote\\after-cold-pattern\\results\\link-inputs.json",
+          "bytes": 45454,
+          "sha256": "be599c5ee3e39e83ea91203f1a1ec5f2a4d599e4fad0727ed6b82dc32b5fe980"
+        },
+        "link_reuse": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cross-platform\\apple-cpu\\final-link-reuse.json",
+          "bytes": 1421,
+          "sha256": "8e917741f63342fcb2f7814d1c13314530ef4a3904317afd1e00d232eeceabf6"
+        },
+        "actual_final_link": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cross-platform\\apple-cpu\\final-run\\remote\\after-cold-pattern\\results\\link.json",
+          "bytes": 26726,
+          "sha256": "2c83add9677ae66069595295e693c3c206a65cc44e4c1e4cf8d139e278d4618d"
+        },
+        "baseline_remote_link": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/ct-packed-cpu-20261020/after-cold-pattern/results/link.json"
+      },
+      "first_metadata_error": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cross-platform\\apple-cpu\\before-run\\remote\\results\\metadata-correction.json",
+        "bytes": 268,
+        "sha256": "dbfcd508678c431d880501a71b499d539a4009b6602b74b947f49fba4a9252d3"
+      },
+      "collected_before": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cross-platform\\apple-cpu\\before-run\\collected.json",
+        "bytes": 12972,
+        "sha256": "144e23d95c27ec330d1869d29e861ac4e9730674c35324add31ffa6fa24e625f"
+      },
+      "collected_final": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cross-platform\\apple-cpu\\final-run\\collected.json",
+        "bytes": 3517,
+        "sha256": "6d2e03dd0ad1090d160dc89bfc5e75d1fc857314cc623b6cd13bb3d3949e4c22"
+      },
+      "limitations": [
+        "No CPU timing, fullmodel, selectedartifactpayload/import, Linux or otherMacHardware verification",
+        "Compiled cache ownership and actualsource/dep identities are retained; no claim everyunrelatedlinkedalgorithm was resynced or rerun",
+        "No product/test/docs/lock edits by this Macverifier; no reverse Mac-to-Windows source sync"
+      ]
+    }
+  },
+  "source_boundaries": [
+    "Linux final uses its frozen eight-brace Graph fixture. Later native-resource upload overloads are outside that run.",
+    "Mac CPU final uses its exact source capsule with CtPackedPattern extraction before the same-valued policy constant moved to the common base.",
+    "Windows final recompiles the two CT region owners and two wrappers against the current shared policy and resource-upload fixture.",
+    "No numerical executor or NativePlan layout changed in the shared-pattern/policy extraction."
+  ],
+  "fixes": [
+    "One exact CT pattern/control/reader proof is now available without a ComputeProvider template instance for native lowerers.",
+    "Eight explicit braces make shared gtest conditional assertions compile under strict GNU warnings.",
+    "Native-only Graph tests can use their actual resource without fabricating a Compute Context; original CPU/CUDA owner-retaining overloads remain."
+  ],
+  "validation": {
+    "windows_cxx": 4,
+    "windows_links": 2,
+    "windows_processes": 2,
+    "windows_sdk_or_nvcc": 0,
+    "linux": {
+      "cxx": 20,
+      "cxx_success": 18,
+      "cxx_failure": 2,
+      "links": 2,
+      "links_success": 2,
+      "test_processes": 2,
+      "distinct_tests": 12,
+      "test_executions": 24,
+      "sdk_build": 0,
+      "sdk_download": 0,
+      "nvcc": 0,
+      "gpu": 0,
+      "model": 0,
+      "ci": 0
+    },
+    "macos": {}
+  },
+  "limits": [
+    "No Linux/macOS CPU throughput window or full-suite claim.",
+    "Earlier Windows CPU M1/M128 performance and default rank remain in ct-packed-cpu-policy-2026-10-20.json; not repeated or pooled here.",
+    "No artifact payload, importer, full model, native tensor-core/FFN/expert or universal precision-equivalence acceptance.",
+    "Apple/Vulkan packed GPU implementation and shared shader host oracle are validated separately."
+  ],
+  "archive": {
+    "path": "docs/evidence/correctness/ct-packed-cpu-portability-2026-10-20.zip",
+    "bytes": 3944798,
+    "sha256": "d09088b361dd46400d9c4a267f8d06965314893e0a52af4e4b3ab98ed18b88c8"
+  },
+  "archived_files": 400,
+  "payload_manifest": {
+    "path": ".scratch/architecture-refactor-2026-10-18/ct-packed-cpu-portability/payload-manifest.json",
+    "bytes": 97257,
+    "sha256": "9468ba64f4f0972d591b73554333131fdf0fe19e102e29a6807a98089052962d"
+  }
+}

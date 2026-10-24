@@ -1,0 +1,427 @@
+{
+  "date": "2026-10-23",
+  "stage": "BS",
+  "goal_complete": false,
+  "conclusion": "The complete original Flash NextN and a full-vocabulary target verifier now supply actual K1 decisions and pending-token leases to the existing complete-state journey on the listed CPU/CUDA cases.",
+  "artifact": {
+    "original_nextn_roles": 1762,
+    "original_nextn_source_bytes": 10030953088,
+    "vocabulary": 154880,
+    "hidden": 4096,
+    "verifier_rows": 2,
+    "reused_original_weights": true,
+    "new_weight_downloads": false,
+    "weight_bodies_archived": false
+  },
+  "implementation": {
+    "verifier": "Two actual final-normalized target taps cross an explicit BF16 store, then one BFloatLinearF32 projects both rows through the same original readonly full-V head used by NextN. StableTopK1 and independent I32[1] Copy outputs retain each predicted token as an actual output lease; no second sharednorm, F32 head shadow or per-Recipe vocabulary upload.",
+    "decision": "K1 compares the actual original NextN proposal with target_id0. Zero accepted drafts select first after consuming the mandatory current token; one accepted draft selects second after consuming that actual proposal. nextpending retains row_ids[accepted_drafts] directly. Zero acceptance never selects the pre-current base.",
+    "state": "Target43/44 and complete NextN outputs remain one34-resource StateDraft/expected-base StateHead. Fresh draft-extend uses the previous accepted target tap; accepted journal catchup precedes epoch8 fresh. The published fresh seed is activated and drives an actual same-epoch skip0 candidate, which remains unpublished pending verification.",
+    "controlled_cases": "One natural finite fixture trial per backend is recorded separately from one controlled match and one controlled reject. Each control recomputes its own second target/draft checkpoint using the corresponding actual policy token; controls do not contribute to natural acceptance.",
+    "numerical_scope": "Existing original-byte full-V BF16/F64 oracle checks both rows on the first verifier call; later actual candidates and every full-V greedy selection, stored tap, pending and original embedding feedback retain their local actual-predecessor checks. No new tolerance or native reference batches.",
+    "target_boundary": "Layer42 upstream four-stream inputs, target43/44 parameter values and finite initial histories remain explicitly generated. Computed target43 MLA/indexer/mHC/FFN and target44 KDA/conv/mHC/finalnorm are executable fixtures, not authenticated original target layers."
+  },
+  "validation": {
+    "tests": 4,
+    "failures": 0,
+    "errors": 0,
+    "skips": 0,
+    "graph_submissions": 218,
+    "new_graph_submissions": 120,
+    "related_graph_submissions": 98,
+    "new_cases": [
+      {
+        "attributes": {
+          "name": "CudaOriginalNextNFullVocabularyTargetVerifierPublishesActualPending",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_mtp_state_consumer_test.cc",
+          "line": "3371",
+          "status": "run",
+          "result": "completed",
+          "time": "53.559",
+          "timestamp": "2026-10-23T08:22:35.296",
+          "classname": "GlmMtpStateConsumer"
+        },
+        "properties": {
+          "shared_lm_head_provider": "cublasLt",
+          "original_attention_provider_query_b": "sglang-cuda",
+          "original_attention_provider_kv_a": "sglang-cuda",
+          "original_attention_provider_output": "sglang-cuda",
+          "original_attention_provider_key_bmm": "ggml-cuda",
+          "original_attention_provider_value_bmm": "ggml-cuda",
+          "original_moe_provider_router": "cublasLt",
+          "original_moe_provider_expert_gate": "sglang-cuda",
+          "original_moe_provider_shared_gate": "sglang-cuda",
+          "original_moe_provider_expert_up": "sglang-cuda",
+          "original_moe_provider_shared_up": "sglang-cuda",
+          "original_moe_provider_expert_down": "sglang-cuda",
+          "original_moe_provider_shared_down": "sglang-cuda",
+          "target_verifier_head_provider": "cublasLt",
+          "actual_submissions": "60",
+          "target_submissions": "13",
+          "target43_submissions": "13",
+          "target_verifier_submissions": "3",
+          "target_full_vocabulary": "154880",
+          "target_first_full_reference_values": "309760",
+          "natural_k1_trials": "1",
+          "natural_k1_proposal": "109480",
+          "natural_k1_accepted_drafts": "0",
+          "controlled_matching_trials": "1",
+          "controlled_rejection_trials": "1",
+          "accepted_zero_draft_checkpoints": "2",
+          "accepted_one_draft_checkpoints": "1",
+          "full_original_nextn_roles": "1762",
+          "full_original_nextn_source_bytes": "10030953088",
+          "shared_vocabulary_bank_capacity_bytes": "2537562112",
+          "actual_pending_embedding_feedback_checks": "12",
+          "state_budget_bytes": "213113088",
+          "state_pool_backing_bound": "204570880",
+          "state_initial_backing_bound": "8525824",
+          "peak_state_backing_bytes": "175206596",
+          "component_schema": "34 resources plus Epoch metadata:17 original NextN/indexer,13 independent generated target43 MLA/indexer,4 generated target44 KDA/conv/finalnormtap/cursor; same StateDraft/expected-base StateHead",
+          "pending_policy": "NaturalK1 compares actual original NextN proposal with target_id0 from full-V R2 head. accept0 keeps after-current first; accept1 keeps after-proposal second; nextpending directly retains target_ids[accepted_drafts] output lease. Matching/rejection controls are separate explicit policy fixtures,not natural acceptance.",
+          "scope": "Original1762-role layer45 NextN and shared full154880 vocabulary; actual generated target43->44 math yields finalnormalized F32 taps,explicit BF16 verifier boundary and same original head. Generated layer42 inputs/target43/44 weights and finite initial history remain; not a trained complete target model,task quality,natural acceptance benchmark or TPS claim. Fresh draft-extend uses PREVIOUS accepted target tap; skip uses actual same-epoch NextN hidden/selection,accepted journal catches up before epoch8 fresh; its published actual last-accepted fresh seed is activated and drives real skip0 without publishing the unverified next candidate."
+        }
+      },
+      {
+        "attributes": {
+          "name": "CpuOriginalNextNFullVocabularyTargetVerifierPublishesActualPending",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_mtp_state_consumer_test.cc",
+          "line": "3436",
+          "status": "run",
+          "result": "completed",
+          "time": "55.721",
+          "timestamp": "2026-10-23T08:24:10.790",
+          "classname": "GlmMtpStateConsumer"
+        },
+        "properties": {
+          "shared_lm_head_provider": "ggml-cpu",
+          "original_attention_provider_query_b": "hyle-native",
+          "original_attention_provider_kv_a": "hyle-native",
+          "original_attention_provider_output": "hyle-native",
+          "original_attention_provider_key_bmm": "ggml-cpu",
+          "original_attention_provider_value_bmm": "ggml-cpu",
+          "original_moe_provider_router": "ggml-cpu",
+          "original_moe_provider_expert_gate": "hyle-native",
+          "original_moe_provider_shared_gate": "hyle-native",
+          "original_moe_provider_expert_up": "hyle-native",
+          "original_moe_provider_shared_up": "hyle-native",
+          "original_moe_provider_expert_down": "hyle-native",
+          "original_moe_provider_shared_down": "hyle-native",
+          "target_verifier_head_provider": "ggml-cpu",
+          "actual_submissions": "60",
+          "target_submissions": "13",
+          "target43_submissions": "13",
+          "target_verifier_submissions": "3",
+          "target_full_vocabulary": "154880",
+          "target_first_full_reference_values": "309760",
+          "natural_k1_trials": "1",
+          "natural_k1_proposal": "109480",
+          "natural_k1_accepted_drafts": "0",
+          "controlled_matching_trials": "1",
+          "controlled_rejection_trials": "1",
+          "accepted_zero_draft_checkpoints": "2",
+          "accepted_one_draft_checkpoints": "1",
+          "full_original_nextn_roles": "1762",
+          "full_original_nextn_source_bytes": "10030953088",
+          "shared_vocabulary_bank_capacity_bytes": "2537562112",
+          "actual_pending_embedding_feedback_checks": "12",
+          "state_budget_bytes": "213113088",
+          "state_pool_backing_bound": "204570880",
+          "state_initial_backing_bound": "8525824",
+          "peak_state_backing_bytes": "175206596",
+          "component_schema": "34 resources plus Epoch metadata:17 original NextN/indexer,13 independent generated target43 MLA/indexer,4 generated target44 KDA/conv/finalnormtap/cursor; same StateDraft/expected-base StateHead",
+          "pending_policy": "NaturalK1 compares actual original NextN proposal with target_id0 from full-V R2 head. accept0 keeps after-current first; accept1 keeps after-proposal second; nextpending directly retains target_ids[accepted_drafts] output lease. Matching/rejection controls are separate explicit policy fixtures,not natural acceptance.",
+          "scope": "Original1762-role layer45 NextN and shared full154880 vocabulary; actual generated target43->44 math yields finalnormalized F32 taps,explicit BF16 verifier boundary and same original head. Generated layer42 inputs/target43/44 weights and finite initial history remain; not a trained complete target model,task quality,natural acceptance benchmark or TPS claim. Fresh draft-extend uses PREVIOUS accepted target tap; skip uses actual same-epoch NextN hidden/selection,accepted journal catches up before epoch8 fresh; its published actual last-accepted fresh seed is activated and drives real skip0 without publishing the unverified next candidate."
+        }
+      }
+    ],
+    "related_cases": [
+      {
+        "attributes": {
+          "name": "CudaOriginalMoeCompletesNextNAndFeedsBackAcrossSeedAndCatchup",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_mtp_state_consumer_test.cc",
+          "line": "3378",
+          "status": "run",
+          "result": "completed",
+          "time": "41.934",
+          "timestamp": "2026-10-23T08:23:28.855",
+          "classname": "GlmMtpStateConsumer"
+        },
+        "properties": {
+          "shared_lm_head_provider": "cublasLt",
+          "original_attention_provider_query_b": "sglang-cuda",
+          "original_attention_provider_kv_a": "sglang-cuda",
+          "original_attention_provider_output": "sglang-cuda",
+          "original_attention_provider_key_bmm": "ggml-cuda",
+          "original_attention_provider_value_bmm": "ggml-cuda",
+          "original_moe_provider_router": "cublasLt",
+          "original_moe_provider_expert_gate": "sglang-cuda",
+          "original_moe_provider_shared_gate": "sglang-cuda",
+          "original_moe_provider_expert_up": "sglang-cuda",
+          "original_moe_provider_shared_up": "sglang-cuda",
+          "original_moe_provider_expert_down": "sglang-cuda",
+          "original_moe_provider_shared_down": "sglang-cuda",
+          "initialization_submissions": "3",
+          "logical_index_state_bytes": "71052",
+          "actual_submissions": "49",
+          "draft_extend_submissions": "12",
+          "skip_submissions": "8",
+          "catchup_submissions": "4",
+          "policy_submissions": "2",
+          "backend": "ordinary CUDA Graph",
+          "journey": "draft-extend A2054/B2055->last accepted row1/2 actual hidden+full2051IDs->step0 immediately skips entire indexer->accepted nx catchup->actual epoch8 extend->step0 skip; independent accepted-only base execution/direct nx reference",
+          "original_roles": "1762",
+          "original_role_bytes": "10030953088",
+          "original_runtime_bank_bytes": "2781689984",
+          "shared_lm_bank_capacity_bytes": "2537562112",
+          "state_output_pool_backing_bound": "270456832",
+          "state_initial_independent_backing_bound": "4287744",
+          "state_metadata_backing_bound": "16384",
+          "state_budget_bytes": "274760960",
+          "peak_state_backing_bytes": "174535244",
+          "state_max_versions": "16",
+          "shared_lm_full_f64_scores_checked": "154880",
+          "shared_lm_greedy_scores_observed": "3097600",
+          "shared_lm_prediction_to_pending_checks": "20",
+          "shared_lm_pending_embedding_checks": "20",
+          "attention_original_roles": "9",
+          "attention_original_bytes": "127958528",
+          "attention_cold_layout_submissions": "1",
+          "attention_prepared_kv_bf16_capacity_bytes": "33554432",
+          "attention_raw_kv_device_bank_retained": "0",
+          "main_journey_submissions": "48",
+          "logical_journey_calls": "28",
+          "attention_full_local_projection_values_checked": "70144",
+          "attention_calls_checked": "20",
+          "moe_original_roles": "1736",
+          "moe_original_bytes": "7277059200",
+          "moe_completed_episodes": "20",
+          "moe_full_local_projection_values_checked": "74016",
+          "moe_resident_expert_capacity": "8",
+          "moe_global_expert_domain": "288",
+          "moe_resident_slot_logical_bytes": "201376896",
+          "moe_resident_slot_capacity_bytes": "201377024",
+          "moe_resident_slot_count": "2",
+          "moe_actual_union_sizes": "8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8",
+          "scope": "official GLM-5.3-Flash eb9eb208 complete original layer45 NextN1760 roles plus untied fullV embedding/head2=1762 original roles,10030953088 compressed source bytes. Actual original input/query/indexer/MLA/postnorm/router/sharedFFN/full288 expert domain with actual selected original experts/sharednorm/fullVhead execute in the same seed/skip/catchup/atomicStateHead journey. Two ordinary Graph phases cut after actual original288 sigmoid+bias Top8 and unbiased normalized weights(sum+1e-20,scale2.5once); only8 real globalI32IDs read to host for bounded E8 original E4/SF supply, map and3banks bound atomically on the same compiled resource, activations/state directleases. All actual BF16 projection/clip/activation/post-down-weighted/sum8/sharedmerge boundaries checked. First complete selected MoE projections, later fixed7rows/slot plus every actual boundary/router/LM/feedback. F32router BF16operand contract follows fixedCUDA path, not a vendorCPU bitwise claim. Original KV coldtranspose and F32cache exactBF16widen carrier retained. Targethidden and finite initial history remain explicitly generated external boundaries; no full target model, vendorphysicalcache ABI, naturalacceptance,quality or TPS claim. Readybank/slot capacities and upload API counters are not measured peakVRAM or bus traffic."
+        }
+      },
+      {
+        "attributes": {
+          "name": "CpuOriginalMoeCompletesNextNAndFeedsBackAcrossSeedAndCatchup",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_mtp_state_consumer_test.cc",
+          "line": "3441",
+          "status": "run",
+          "result": "completed",
+          "time": "45.961",
+          "timestamp": "2026-10-23T08:25:06.511",
+          "classname": "GlmMtpStateConsumer"
+        },
+        "properties": {
+          "shared_lm_head_provider": "ggml-cpu",
+          "original_attention_provider_query_b": "hyle-native",
+          "original_attention_provider_kv_a": "hyle-native",
+          "original_attention_provider_output": "hyle-native",
+          "original_attention_provider_key_bmm": "ggml-cpu",
+          "original_attention_provider_value_bmm": "ggml-cpu",
+          "original_moe_provider_router": "ggml-cpu",
+          "original_moe_provider_expert_gate": "hyle-native",
+          "original_moe_provider_shared_gate": "hyle-native",
+          "original_moe_provider_expert_up": "hyle-native",
+          "original_moe_provider_shared_up": "hyle-native",
+          "original_moe_provider_expert_down": "hyle-native",
+          "original_moe_provider_shared_down": "hyle-native",
+          "initialization_submissions": "3",
+          "logical_index_state_bytes": "71052",
+          "actual_submissions": "49",
+          "draft_extend_submissions": "12",
+          "skip_submissions": "8",
+          "catchup_submissions": "4",
+          "policy_submissions": "2",
+          "backend": "ordinary CPU Graph",
+          "journey": "draft-extend A2054/B2055->last accepted row1/2 actual hidden+full2051IDs->step0 immediately skips entire indexer->accepted nx catchup->actual epoch8 extend->step0 skip; independent accepted-only base execution/direct nx reference",
+          "original_roles": "1762",
+          "original_role_bytes": "10030953088",
+          "original_runtime_bank_bytes": "2781689984",
+          "shared_lm_bank_capacity_bytes": "2537562112",
+          "state_output_pool_backing_bound": "270456832",
+          "state_initial_independent_backing_bound": "4287744",
+          "state_metadata_backing_bound": "16384",
+          "state_budget_bytes": "274760960",
+          "peak_state_backing_bytes": "174535244",
+          "state_max_versions": "16",
+          "shared_lm_full_f64_scores_checked": "154880",
+          "shared_lm_greedy_scores_observed": "3097600",
+          "shared_lm_prediction_to_pending_checks": "20",
+          "shared_lm_pending_embedding_checks": "20",
+          "attention_original_roles": "9",
+          "attention_original_bytes": "127958528",
+          "attention_cold_layout_submissions": "1",
+          "attention_prepared_kv_bf16_capacity_bytes": "33554432",
+          "attention_raw_kv_device_bank_retained": "0",
+          "main_journey_submissions": "48",
+          "logical_journey_calls": "28",
+          "attention_full_local_projection_values_checked": "70144",
+          "attention_calls_checked": "20",
+          "moe_original_roles": "1736",
+          "moe_original_bytes": "7277059200",
+          "moe_completed_episodes": "20",
+          "moe_full_local_projection_values_checked": "74016",
+          "moe_resident_expert_capacity": "8",
+          "moe_global_expert_domain": "288",
+          "moe_resident_slot_logical_bytes": "201376896",
+          "moe_resident_slot_capacity_bytes": "201377024",
+          "moe_resident_slot_count": "2",
+          "moe_actual_union_sizes": "8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8",
+          "scope": "official GLM-5.3-Flash eb9eb208 complete original layer45 NextN1760 roles plus untied fullV embedding/head2=1762 original roles,10030953088 compressed source bytes. Actual original input/query/indexer/MLA/postnorm/router/sharedFFN/full288 expert domain with actual selected original experts/sharednorm/fullVhead execute in the same seed/skip/catchup/atomicStateHead journey. Two ordinary Graph phases cut after actual original288 sigmoid+bias Top8 and unbiased normalized weights(sum+1e-20,scale2.5once); only8 real globalI32IDs read to host for bounded E8 original E4/SF supply, map and3banks bound atomically on the same compiled resource, activations/state directleases. All actual BF16 projection/clip/activation/post-down-weighted/sum8/sharedmerge boundaries checked. First complete selected MoE projections, later fixed7rows/slot plus every actual boundary/router/LM/feedback. F32router BF16operand contract follows fixedCUDA path, not a vendorCPU bitwise claim. Original KV coldtranspose and F32cache exactBF16widen carrier retained. Targethidden and finite initial history remain explicitly generated external boundaries; no full target model, vendorphysicalcache ABI, naturalacceptance,quality or TPS claim. Readybank/slot capacities and upload API counters are not measured peakVRAM or bus traffic."
+        }
+      }
+    ],
+    "natural_trials": 2,
+    "controlled_matching_trials": 2,
+    "controlled_rejection_trials": 2,
+    "first_full_target_reference_values": 619520,
+    "results": [
+      {
+        "path": ".scratch/glm-target-verifier-20261023/checks1/summary.json",
+        "bytes": 18048,
+        "sha256": "3a5030e6bef750ed900a5f7fca523bf27263c7feea59a497a7c9ebdc0a7221e1"
+      }
+    ],
+    "source_freeze": {
+      "path": ".scratch/glm-target-verifier-20261023/source-final/freeze.json",
+      "bytes": 4302,
+      "sha256": "f605cfe54c70b0540da87a0013d5a59d457b38fbf1646ac2edc886e6c085dabe"
+    },
+    "linked_inputs": {
+      "path": ".scratch/glm-target-verifier-20261023/tests-link1/link-plan.json",
+      "bytes": 88238,
+      "sha256": "e3170f820a27d2954514ede2f3173c16d65334d2ab9939dafad0a142639f001b"
+    },
+    "runtime_cache": {
+      "path": ".scratch/glm-target-verifier-20261023/tests-link1/runtime-environment.json",
+      "bytes": 8317,
+      "sha256": "8b220f4f5731787c416c993650513e31a1de475edc2e8a645f60c54fc7657ca9"
+    },
+    "compiled_records": [
+      {
+        "path": ".scratch/glm-target-verifier-20261023/compile1/glm-state/identity.json",
+        "bytes": 80836,
+        "sha256": "9ff71e0309ff220644d7d5d6d65b4ad63cd3b01af8b1cb0b47d83db17a5bed92"
+      }
+    ],
+    "host_translation_units": 1,
+    "host_compile_attempts": 1,
+    "SDK_builds": 0,
+    "native_CPU_builds": 0,
+    "NVCC_builds": 0,
+    "shaders": 0
+  },
+  "limitations": [
+    "Finite Windows CPU/CUDA Flash H4096/V154880 R2 K1 integration only; parameterized helper support does not establish Pro execution.",
+    "Target43/44 parameters, upstream layer42 inputs and initial history remain generated; no original complete target engine or full-model task-quality result.",
+    "The single natural fixture is not a natural acceptance benchmark; controlled matching/rejection only cover decision/checkpoint branches.",
+    "Local actual-predecessor mathematical checks and state/lease correctness do not prove all inputs, systems, quantizations or complete task quality.",
+    "No new loading/TPS or measured memory/VRAM peak result. AV performance tail and the protected Qwen executable are unchanged.",
+    "MTP, image projection and the broader goal remain incomplete."
+  ],
+  "remaining": "Authenticated original target producers/taps and confirmed applicable artifact adapters, including actual Pro geometry; necessary related regressions and a complete ordinary/MTP performance comparison before image projection.",
+  "final_image": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-target-verifier-20261023\\tests-link1\\glm-target-verifier-checks.exe",
+    "bytes": 141429760,
+    "sha256": "6247860c835647e53887daf1f10b899e3a49b0c76a75cb4e842124681751deca"
+  },
+  "sources": [
+    {
+      "path": "tests/compute_models/glm_mtp_state_consumer_test.cc",
+      "bytes": 258552,
+      "sha256": "6f02b09b26faa04383f068ef8c324eb861ef0fa1b6d108845a4c3ff18812aca1"
+    },
+    {
+      "path": "tests/compute_models/glm_original_attention_reference.h",
+      "bytes": 15824,
+      "sha256": "fdc48b17f4c45af3acc6a3ad8001fdb50009f2aed3d21f42dbf48dbd880219cc"
+    },
+    {
+      "path": "tests/compute_models/glm_original_attention_roles.h",
+      "bytes": 13045,
+      "sha256": "c77f07bd1e4a7343f57aab13eb9af7e1949b47f743af8fcb3dff784b8fa38da5"
+    },
+    {
+      "path": "tests/compute_models/glm_original_indexer_roles.h",
+      "bytes": 5464,
+      "sha256": "604060c6a4ed021fe2b96cf982d2936a2fdb63e850e2fbd4e20a7b910b0b9a3e"
+    },
+    {
+      "path": "tests/compute_models/glm_original_moe_fragment.h",
+      "bytes": 8302,
+      "sha256": "f23cceee76ed0bc451a8e7239e6c3911503059b6e8751456bca3c416904af184"
+    },
+    {
+      "path": "tests/compute_models/glm_original_moe_reference.h",
+      "bytes": 15387,
+      "sha256": "68e66a9a17b13e53dc98a7aaea7205abd37eb61816d4e825b399fb64c0b3b646"
+    },
+    {
+      "path": "tests/compute_models/glm_original_moe_resident_weights.h",
+      "bytes": 8888,
+      "sha256": "62dea16459c5e16edf88089cdeae083eef65e4c467f0d4a297752eaae655a35e"
+    },
+    {
+      "path": "tests/compute_models/glm_original_moe_roles.h",
+      "bytes": 14226,
+      "sha256": "93e01d28cead5d57da079ef77c67396116e2778f043637bc29db2bc104cc5e9c"
+    },
+    {
+      "path": "tests/compute_models/glm_original_mtp_roles.h",
+      "bytes": 17100,
+      "sha256": "e5ddf53e5dd7b2b88a0a4e8532ed9215164879d1693285d105a069d7864f0938"
+    },
+    {
+      "path": "tests/compute_models/glm_shared_vocabulary.h",
+      "bytes": 13861,
+      "sha256": "930b11d95b8826c6a65d18dac34746d67238d0f4ab67a3909a024c182555c525"
+    },
+    {
+      "path": "tests/compute_models/glm_shared_vocabulary_reference.h",
+      "bytes": 14905,
+      "sha256": "f091ff25783e12b28ac6e233fa2aca7c84702b8feefc5a6afaebf9f4ca75e446"
+    },
+    {
+      "path": "tests/compute_models/glm_target_verifier_fragment.h",
+      "bytes": 4975,
+      "sha256": "0a8761c481fd8770053c380a5b41866b2ac6899649e85f592317c3ffb821e5d9"
+    },
+    {
+      "path": "tests/compute_models/model_resident_fragment.h",
+      "bytes": 8672,
+      "sha256": "138deaba975edb57d7c29622fef0df737b22f924db43846d3c5bd6d1001fe0cd"
+    }
+  ],
+  "reused_provenance": [
+    {
+      "path": "docs/evidence/correctness/mtp-glm-original-moe-2026-10-23.json",
+      "bytes": 131026,
+      "sha256": "08f47b560140d0449ef2201c6197d262045f3967d11476ad88869f333dbf4dcb"
+    },
+    {
+      "path": ".scratch/glm-original-moe-20261023/original-moe/acquisition.json",
+      "bytes": 73894,
+      "sha256": "3cc22e4db27fd5468c362ec2e6df25da8a349414012e2cfb0aa010c3c4022381"
+    }
+  ],
+  "performance_tail_sha256": "80b8672315911a74039a14cd137659bc67289273dc9c3707cd267b2d06de2551",
+  "protected_qwen_image": {
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-next-20261022\\hyle-link4\\qwen.exe",
+      "bytes": 140411392,
+      "sha256": "9dce4f40d2edb8004c0d79c58e20de6ca6cdc5d1477db3773d26b40d7a05d883"
+    }
+  },
+  "archive": {
+    "path": "docs/evidence/correctness/mtp-glm-target-verifier-2026-10-23.zip",
+    "bytes": 583555,
+    "sha256": "1dda6e82b1281557a7ff0d75058b672dd44c3192355ec8b235c4a14260f4ff26"
+  },
+  "archive_items": 76
+}

@@ -27,6 +27,11 @@ inline constexpr int kFlashAttentionCausalSlot = 8;
 inline constexpr int kFlashAttentionWindowSlot = 9;
 inline constexpr int kFlashAttentionCacheSlot = 10;
 inline constexpr std::int32_t kFlashAttentionCache = 0x48594348;
+// Slot11 belongs to the managed batch runtime request index.
+inline constexpr std::size_t kFlashAttentionStorageSlot = 12;
+inline constexpr std::int32_t kFlashAttentionE4M3 = 0x48594534;
+inline constexpr std::size_t kFlashAttentionKeyScaleSlot = 13;
+inline constexpr std::size_t kFlashAttentionValueScaleSlot = 14;
 inline constexpr int kCacheEncoderCopySlot = 4;
 inline constexpr std::int32_t kCacheEncoderCopyExact = 0x48595138;
 struct Runtime;

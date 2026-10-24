@@ -9,14 +9,14 @@
 
 // dtype.h -- AI numeric storage types fp16 (IEEE-754 binary16) and bf16 (bfloat16) +
 // their scalar <-> fp32 conversions (simd-design dtype layer). bf16 is the AI training/
-// inference workhorse; clay had ZERO support. fp16 has a hardware convert path (F16C);
+// inference workhorse. fp16 has a hardware convert path (F16C);
 // see dtype_ops.h for the dispatched batch conversions.
 //
 // The scalar conversions here are the ALWAYS-AVAILABLE reference + fallback: branch-exact
 // IEEE-754 semantics (subnormal / inf / nan / round-to-nearest-even), transcribed from
 // Google Highway's base.h (F32FromF16 / F16FromF32 / F32FromBF16 / BF16FromF32) -- NOT a
-// lookup table (clay's old approach) and NOT hand-derived (this bit-math is where bugs
-// hide). They are the oracle the F16C hardware path is cross-checked against.
+// lookup table or hand-derived bit math. They are the oracle against which the
+// F16C hardware path is cross-checked.
 
 namespace hyle::simd {
 

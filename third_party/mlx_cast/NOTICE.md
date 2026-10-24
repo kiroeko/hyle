@@ -53,6 +53,13 @@ paths remain original. Window loops restrict the effective row range; cache
 keys include encoding/paging/window function constants. These adapters retain
 the original MLX runtime, queues, MMA/softmax and completion ownership.
 
+Plain F16/BF16 private paged/ragged attention also admits QK512/576 with
+V512. It selects the existing compact Steel BQ8/BK8/WM1/WN1 template
+before pipeline creation, including Q1, and checks actual pipeline static
+threadgroup memory against the device limit. QK, online softmax and PV
+accumulate in F32; only the original output store narrows. Low-dimensional,
+Q8, ordinary attention and NAX selection remain unchanged.
+
 The same Apple integration carries `metal-shared-ptr.json` for Apple's
 Apache-2.0 metal-cpp at `f567ed836e4cbb85788c42115a2682bbe68097ee`:
 https://github.com/apple/metal-cpp/tree/f567ed836e4cbb85788c42115a2682bbe68097ee
@@ -87,3 +94,77 @@ noncausal attention. Causal attention still requires Q length not exceeding KV.
 Its actual pipeline threadgroup usage is checked before dispatch. HYLE uses
 the same known-generation guard; the existing D256, NAX and page routes remain
 unchanged. This reuses the original JIT template without adding a shader.
+
+The common reshape planner also preserves a nonempty one-stored-element
+broadcast as a zero-stride shared-buffer view. Its original empty and
+row-contiguous branches remain first. This avoids a full logical copy when
+large broadcast axes cannot be collapsed into one native int dimension;
+ordinary strided arrays and reshape arithmetic remain unchanged. HYLE uses
+this view for the isolated zero-valued preparation carriers of its two
+official grouped FP8/FP4 formats. Real bindings retain their required byte
+capacity.
+
+The GPU byte view also handles a single stored U8 byte broadcast as complete
+four-byte words when reinterpreting it as F32. It checks the physical byte
+count, zero strides on every nonsingleton axis, last-axis size and readable
+allocation range, then uses the original scalar copy to build one aligned
+four-byte word. The output shares that word with zero strides; it does not
+reinterpret the original one-byte allocation or accept general strided views.
+HYLE's grouped preparation retains the original one-byte code-bank carrier.
+Scale slices no longer request an additional contiguous allocation: real
+row-contiguous scales share the original bank and offset, while the bounded
+broadcast-byte case needs only one physical word. No numeric conversion,
+shader, or public binding-capacity change is introduced.
+
+The exact-match manifest also restores the original copyright symbol in four
+whole-file edit pairs for `scaled_dot_product_attention.cpp` and `sdpa_vector.h`.
+This corrects corrupted match text; replay produces the already authenticated
+source hashes, with no native body or shader change.
+
+The shared vector two-pass attention helper now stores its partial output in
+F32 for ordinary SDPA and private paged/ragged calls. The host intermediate
+uses float32; both the normal and optimized GQA first passes store their
+existing float accumulators through float pointers, and the second pass reads
+float partials. Query/key/value storage, page/window indexing, block selection,
+max/sum combination, launch order and final declared-type output cast remain
+unchanged. The one-pass, Steel and NAX paths are unchanged. This removes the
+intermediate F16/BF16 rounding/overflow boundary; low-precision output bits may
+therefore change, and numerical tolerances still require actual validation.
+
+The partial shape remains [B,Hq,Q,blocks,Dv]. F16/BF16 partial payload grows
+from 2 to 4 bytes per element, adding 2*B*Hq*Q*blocks*Dv requested bytes;
+F32 partial payload is unchanged. Sums/maxs were already F32. The original
+encoder retains this same temporary until completion; allocator rounding,
+cache and other private costs are not represented as zero. Host and base
+metallib must be rebuilt as a matching pair because these precompiled kernels
+share the revised partial-buffer contract. Kernel names, template parameters,
+function constants and public API are unchanged; no alternate shader,
+precision switch, executor or full-history KV copy is added.
+
+The existing optimized GQA first pass also includes the batch index in its
+K/V head address, matching the normal vector pass. The original host already
+ensures contiguous batch/head storage for multi-batch, multi-KV-head inputs;
+the combined batch/head index uses that existing stride contract. Ordinary
+B>1 calls no longer reuse batch0 K/V for later batches. Per-request B1 private
+paged/ragged calls retain their original physical addressing.
+
+Ordinary paged E4M3FN K/V use independent fixed positive finite scalar scales.
+The existing HylePagedAttention primitive selects its original F32 Steel tiles
+for both decode and prefill. Addressed bytes are decoded and scaled in F32 at
+the page loader, with no resident floating cache or intermediate BF16 cache.
+The loader shares HYLE's private integer IEEE F32 numerical source from
+`src/compute_shader_shared/nvfp4_f32.h`; function constants and pipeline keys
+include the exact K/V scale bits. The old plain/Q8 entries remain unchanged.
+
+Uniform E4 compact MLA reuses the same physical row for CKV512 and its optional
+KPE64 tail; V is a strided alias of the first512 values, with the same scalar
+interpretation. Original F16/BF16 query precision is retained in the small
+Steel shared-memory tile, while decoded K/V, QK, softmax and PV stay F32. BF16
+query fragments widen to F32; there is no BF16 cache/probability narrowing.
+The BQ8/BK8 D576 shared allocation is27,648 bytes with16-bit query storage,
+instead of36,864 bytes for two F32 tiles, within the actual32KiB Air limit.
+
+Compact ragged MLA uses the original ragged region with two payloads (Q and
+one shared cache), plus metadata. Per-request slices retain the physical
+CKV/KPE pitch and V is an internal prefix view. The original owned-layout
+update, input imports, native result observer and retirement gates are reused.

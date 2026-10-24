@@ -97,13 +97,13 @@ void destroy_invocation(void *state, mem::AllocatorRef allocator) noexcept {
   invocation->~Invocation();
   allocator.deallocate(invocation, sizeof(Invocation), alignof(Invocation));
 }
-detail::EnqueueResult submit(void *state, void *slot, Queue &queue,
+detail::EnqueueResult submit(void *state, void *slot, detail::QueueSequence &sequence,
     std::span<const ConstTensorView> inputs, std::span<const TensorView> outputs) noexcept {
   const auto &prepared = *static_cast<const Prepared *>(state);
   const auto &program = prepared.program;
   if (program.rows == 0 || program.width == 0)
     return detail::EnqueueResult::no_op();
-  auto stream = cuda::stream(queue);
+  auto stream = cuda::stream(sequence);
   if (!stream) return detail::EnqueueResult::rejected(std::move(stream).error());
   std::array<const void *, 2> input{};
   std::array<void *, 2> output{};
@@ -128,7 +128,7 @@ detail::EnqueueResult submit(void *state, void *slot, Queue &queue,
         "CUDA sampling has no external capture qualification"));
   unsigned *word = nullptr;
   if (!program.random_bits) {
-    auto initialized = cuda::detail::acquire_device_status(queue, &word);
+    auto initialized = cuda::detail::acquire_device_status(sequence, &word);
     if (!initialized.status.ok()) return initialized;
   }
   return detail::EnqueueResult::accepted_command(cuda::status(launch(program,
@@ -181,7 +181,7 @@ ProviderPrepareOutcome prepare(void *state, const detail::ProviderPrepareRequest
     return ProviderPrepareOutcome::error(Status::InvalidArgument("CUDA sampling route differs"));
   auto *memory = allocator.allocate(sizeof(Prepared), alignof(Prepared));
   if (!memory)
-    return ProviderPrepareOutcome::resource_declined(
+    return ProviderPrepareOutcome::error(
         Status::ResourceExhausted("CUDA sampling prepared allocation failed"));
   auto *prepared = ::new (memory) Prepared{static_cast<CUcontext>(state), program};
   *output = {.vtable = &kPrepared, .state = prepared,

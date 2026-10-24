@@ -1,0 +1,228 @@
+#version 450
+
+// The four original input carriers stay packed/typed. Each 32-thread row
+// computes one output; the two rows in a group own a complete output word.
+layout(local_size_x = 64) in;
+layout(binding = 0) readonly buffer A { uint a[]; };
+layout(binding = 1) readonly buffer W { uint w[]; };
+#if defined(HYLE_GPTQ_V1) || defined(HYLE_CT_GROUPED)
+layout(binding = 2) buffer Status { uint checked[]; };
+layout(binding = 3) readonly buffer Z { uint z[]; };
+layout(binding = 4) readonly buffer S { uint s[]; };
+layout(binding = 5) readonly buffer G { uint g[]; };
+layout(binding = 6) writeonly buffer Y { uint y[]; };
+layout(push_constant) uniform Origins { uint a; uint w; uint c; uint z; uint s; uint g; } origin;
+#else
+layout(binding = 2) readonly buffer Z { uint z[]; };
+layout(binding = 3) readonly buffer S { uint s[]; };
+layout(binding = 4) writeonly buffer Y { uint y[]; };
+layout(push_constant) uniform Origins { uint a; uint w; uint z; uint s; } origin;
+#endif
+layout(constant_id = 0) const uint rows = 1;
+layout(constant_id = 1) const uint columns = 1;
+layout(constant_id = 2) const uint depth = 32;
+layout(constant_id = 3) const uint group_size = 32;
+layout(constant_id = 4) const uint asymmetric = 0;
+layout(constant_id = 5) const uint scale_type = 0;
+layout(constant_id = 6) const uint decode_type = 0;
+layout(constant_id = 7) const uint operand_type = 0;
+#if defined(HYLE_GPTQ_V1) || defined(HYLE_CT_GROUPED)
+// GPTQ: 0 checks g_idx, 1 publishes decode, 2 consumes packed W.
+// Grouped CT: 0 checks all IDs, 1 consumes only selected packed experts.
+layout(constant_id = 8) const uint phase = 0;
+#endif
+#ifdef HYLE_CT_GROUPED
+layout(constant_id = 9) const uint experts = 1;
+layout(constant_id = 10) const uint slots = 1;
+layout(constant_id = 11) const uint token_stride = 4;
+layout(constant_id = 12) const uint slot_stride = 0;
+layout(constant_id = 13) const uint depth_stride = 4;
+#define HYLE_CT_ZERO_PORT 3u
+#define HYLE_CT_SCALE_PORT 4u
+#define HYLE_CT_COLUMN bank_column
+#else
+#define HYLE_CT_ZERO_PORT 2u
+#define HYLE_CT_SCALE_PORT 3u
+#define HYLE_CT_COLUMN column
+#endif
+
+uint hyle_mul_hi(uint x, uint v) {
+  uint high, low;
+  umulExtended(x, v, high, low);
+  return high;
+}
+uint hyle_clz(uint value) { return value == 0u ? 32u : 31u - uint(findMSB(value)); }
+// HYLE_CT_F32_SOURCE
+
+shared uint partial[64];
+shared uint exceptional[64];
+
+uint word(uint port, uint index) {
+#if defined(HYLE_GPTQ_V1) || defined(HYLE_CT_GROUPED)
+  return port == 0u ? a[index] : port == 1u ? w[index] :
+      port == 3u ? z[index] : port == 4u ? s[index] : g[index];
+#else
+  return port == 0u ? a[index] : port == 1u ? w[index] : port == 2u ? z[index] : s[index];
+#endif
+}
+uint load_bytes(uint port, uint offset, uint bytes) {
+  uint shift = (offset & 3u) * 8u;
+  uint value = word(port, offset / 4u) >> shift;
+  if (shift + bytes * 8u > 32u)
+    value |= word(port, offset / 4u + 1u) << (32u - shift);
+  return bytes == 4u ? value : value & 65535u;
+}
+uint load_scalar(uint port, uint offset, uint type) {
+  return hyle_ct_widen(load_bytes(port, offset, type == 0u ? 4u : 2u), type);
+}
+uint decoded_weight(uint column, uint k) {
+#ifdef HYLE_GPTQ_V1
+  uint block = load_bytes(5u, origin.g + k * 4u, 4u);
+  uint code = load_bytes(1u, origin.w + ((k / 8u) * columns + column) * 4u, 4u);
+  code = (code >> (4u * (k & 7u))) & 15u;
+  uint zero = load_bytes(3u, origin.z + (block * (columns / 8u) + column / 8u) * 4u, 4u);
+  // Original GPTQ-v1 stores zero-minus-one. Raw15 becomes16, not0.
+  zero = ((zero >> (4u * (column & 7u))) & 15u) + 1u;
+  uint scale = load_scalar(4u, origin.s + (block * columns + column) * 2u, 1u);
+  // Difference [-16,14] is exact; original F16 product precedes both casts.
+  return hyle_ct_product(floatBitsToUint(float(int(code) - int(zero))), scale,
+      1u, decode_type, operand_type);
+#else
+  uint groups = depth / group_size, block = k / group_size;
+  uint code = load_bytes(1u, origin.w + (column * (depth / 8u) + k / 8u) * 4u, 4u);
+  code = (code >> (4u * (k & 7u))) & 15u;
+  uint zero = 8u;
+  if (asymmetric != 0u) {
+    zero = load_bytes(HYLE_CT_ZERO_PORT, origin.z + ((column / 8u) * groups + block) * 4u, 4u);
+    zero = (zero >> (4u * (column & 7u))) & 15u;
+  }
+  uint scale = load_scalar(HYLE_CT_SCALE_PORT, origin.s + (column * groups + block) *
+      (scale_type == 0u ? 4u : 2u), scale_type);
+  // Three real operand-storage boundaries, in this order, before the dot.
+  return hyle_ct_product(floatBitsToUint(float(int(code) - int(zero))), scale,
+      scale_type, decode_type, operand_type);
+#endif
+}
+bool tiny_or_special(uint value) {
+  uint magnitude = value & 0x7fffffffu;
+  return (magnitude != 0u && magnitude < 0x00800000u) || magnitude >= 0x7f800000u;
+}
+bool unsafe_add(uint left, uint right, uint result) {
+  // A zero caused by cancellation may hide a flushed subnormal. The exact
+  // zero case also uses the rare strict path; it never changes acceptance.
+  return tiny_or_special(result) || ((result & 0x7fffffffu) == 0u &&
+      ((left | right) & 0x7fffffffu) != 0u);
+}
+void main() {
+#if defined(HYLE_GPTQ_V1) || defined(HYLE_CT_GROUPED)
+  if (phase == 0u) {
+    uint work = (gl_WorkGroupID.y * gl_NumWorkGroups.x + gl_WorkGroupID.x) * 64u +
+        gl_LocalInvocationID.x;
+#ifdef HYLE_CT_GROUPED
+    if (work < rows && load_bytes(5u, origin.g + work * 4u, 4u) >= experts)
+#else
+    if (work < depth && load_bytes(5u, origin.g + work * 4u, 4u) >= depth / group_size)
+#endif
+      atomicOr(checked[origin.c / 4u], 1u);
+    return;
+  }
+  // Every index has completed validation in the preceding dispatch. This is
+  // uniform while numerical kernels run: scale values are not range-rejected.
+  if (atomicOr(checked[origin.c / 4u], 0u) != 0u) return;
+#ifdef HYLE_GPTQ_V1
+  if (phase == 1u) {
+    uint pair = (gl_WorkGroupID.y * gl_NumWorkGroups.x + gl_WorkGroupID.x) * 64u +
+        gl_LocalInvocationID.x;
+    if (pair >= (columns * depth + 1u) / 2u) return;
+    uint index = pair * 2u;
+    uint first = decoded_weight(index / depth, index % depth);
+    uint second = index + 1u < columns * depth
+        ? decoded_weight((index + 1u) / depth, (index + 1u) % depth) : 0u;
+    if (operand_type == 0u) {
+      y[index] = first;
+      if (index + 1u < columns * depth) y[index + 1u] = second;
+    } else {
+      y[pair] = hyle_ct_narrow(first, operand_type) |
+          (hyle_ct_narrow(second, operand_type) << 16u);
+    }
+    return;
+  }
+#endif
+#endif
+  uint local = gl_LocalInvocationID.x, lane = local & 31u;
+  uint pair = gl_WorkGroupID.y * gl_NumWorkGroups.x + gl_WorkGroupID.x;
+  uint index = pair * 2u + local / 32u;
+  bool valid = index < rows * columns;
+  uint row = valid ? index / columns : 0u;
+  uint column = valid ? index % columns : 0u;
+#ifdef HYLE_CT_GROUPED
+  // IDs have all passed the preceding dispatch. Flat row addressing keeps
+  // asymmetric zero nibbles shared across expert boundaries exactly as stored.
+  uint bank_column = valid ? load_bytes(5u, origin.g + row * 4u, 4u) * columns + column : 0u;
+  uint activation_origin = origin.a + (row / slots) * token_stride + (row % slots) * slot_stride;
+#endif
+  uint sum = 0u, unusual = 0u;
+  if (valid) for (uint k = lane; k < depth; k += 32u) {
+#ifdef HYLE_CT_GROUPED
+    uint av = load_scalar(0u, activation_origin + k * depth_stride, 0u);
+#else
+    uint av = load_scalar(0u, origin.a + (row * depth + k) *
+        (operand_type == 0u ? 4u : 2u), operand_type);
+#endif
+    uint weight = decoded_weight(HYLE_CT_COLUMN, k);
+    uint ae = (av >> 23u) & 255u, we = (weight >> 23u) & 255u;
+    unusual |= uint(tiny_or_special(av) || tiny_or_special(weight) ||
+        (((av & 0x7fffffffu) != 0u && (weight & 0x7fffffffu) != 0u) && ae + we <= 127u));
+    precise float product = uintBitsToFloat(av) * uintBitsToFloat(weight);
+    uint term = floatBitsToUint(product);
+    precise float next = uintBitsToFloat(sum) + product;
+    uint next_bits = floatBitsToUint(next);
+    unusual |= uint(tiny_or_special(term) || unsafe_add(sum, term, next_bits));
+    sum = next_bits;
+  }
+  partial[local] = sum;
+  exceptional[local] = unusual;
+  barrier();
+  for (uint width = 16u; width != 0u; width >>= 1u) {
+    if (lane < width) {
+      uint left = partial[local], right = partial[local + width];
+      precise float added = uintBitsToFloat(left) + uintBitsToFloat(right);
+      uint result = floatBitsToUint(added);
+      exceptional[local] |= exceptional[local + width] | uint(unsafe_add(left, right, result));
+      partial[local] = result;
+    }
+    barrier();
+  }
+  // Uniform workgroup branch keeps every barrier converged. Ordinary finite
+  // dots stay native F32; only exceptional/FTZ-sensitive rows are recomputed.
+  if ((exceptional[0] | exceptional[32]) != 0u) {
+    sum = 0u;
+    if (valid) for (uint k = lane; k < depth; k += 32u) {
+#ifdef HYLE_CT_GROUPED
+      uint av = load_scalar(0u, activation_origin + k * depth_stride, 0u);
+#else
+      uint av = load_scalar(0u, origin.a + (row * depth + k) *
+          (operand_type == 0u ? 4u : 2u), operand_type);
+#endif
+      sum = hyle_f32_add(sum, hyle_f32_mul(av, decoded_weight(HYLE_CT_COLUMN, k)));
+    }
+    partial[local] = sum;
+    barrier();
+    for (uint width = 16u; width != 0u; width >>= 1u) {
+      if (lane < width) partial[local] = hyle_f32_add(partial[local], partial[local + width]);
+      barrier();
+    }
+  }
+#ifdef HYLE_CT_GROUPED
+  // GroupedMatMul keeps F32 A/Y even when its W operand rounds to BF16/F16.
+  if (lane == 0u && valid) y[index] = partial[local];
+#else
+  if (operand_type == 0u) {
+    if (lane == 0u && valid) y[index] = partial[local];
+  } else if (local == 0u && pair < (rows * columns + 1u) / 2u) {
+    uint result = hyle_ct_narrow(partial[0], operand_type);
+    if (pair * 2u + 1u < rows * columns) result |= hyle_ct_narrow(partial[32], operand_type) << 16u;
+    y[pair] = result;
+  }
+#endif
+}

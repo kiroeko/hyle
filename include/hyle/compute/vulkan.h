@@ -18,7 +18,6 @@
 #include <vulkan/vulkan_core.h>
 
 #include "hyle/compute/operation.h"
-#include "hyle/compute/file_stream.h"
 #include "hyle/compute/result.h"
 #include "hyle/compute/resource_leases.h"
 #include "hyle/compute/workload.h"
@@ -34,8 +33,10 @@ class MemoryResource;
 // separately unknown and requires explicit partial admission.
 struct InvocationAllocation final {
   ResourceBudget resource_budget{};
-  const MemoryResource *device = nullptr;
-  const MemoryResource *staging = nullptr;
+  mem::MemoryResourceRef device{};
+  // Required for a native checked-status buffer. An unused staging resource
+  // may be omitted; a supplied one must still belong to this exact Runtime.
+  mem::MemoryResourceRef staging{};
 };
 namespace detail {
 struct Buffer;
@@ -398,9 +399,5 @@ private:
   std::shared_ptr<detail::RecorderState> state_;
 };
 
-// Original Runtime/transfer families and fences, without a common Queue.
-HYLE_COMPUTE_ROUTE_VULKAN_API Result<FileResourcePipeline> create_file_pipeline(
-    io::IoContext &, const Context &, mem::MemoryResourceRef staging,
-    std::span<const CopyResourceSpec> targets, FileStreamOptions options = {}) noexcept;
 } // namespace hyle::compute::vulkan
 #endif

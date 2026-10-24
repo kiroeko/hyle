@@ -1,0 +1,450 @@
+{
+  "schema": "hyle.performance.finite-leaf-screen.v1",
+  "date": "2026-10-24",
+  "status": "positive_leaf_candidate_not_adopted",
+  "conclusion": {
+    "decision": "Retain the current product implementation. Preserve whole-M2 typed MMVF as a finite positive leaf candidate for separate integration review.",
+    "device_time_reduction_percent": 7.936525740912003,
+    "five_trial_device_ranges_do_not_overlap": true,
+    "product_source_changes": 0,
+    "full_model_performance_claim": false,
+    "acceptance_or_quality_claim": false
+  },
+  "scope": {
+    "device": "NVIDIA GeForce RTX 4070",
+    "operation": "BF16 A[2,6144] x original BF16 W[2048,6144] -> BF16 Y[2,2048], F32 accumulation and one final BF16 RNE store",
+    "source_activation_limit": "First2 rows of a retained real layer0 T23 prefill down-input trace. It is not a freshly captured MTP activation.",
+    "original_layout": {
+      "A": [
+        2,
+        6144
+      ],
+      "A_order": "row",
+      "lda": 6144,
+      "B": [
+        6144,
+        2048
+      ],
+      "B_order": "column",
+      "ldb": 6144,
+      "original_W": [
+        2048,
+        6144
+      ],
+      "C_D": [
+        2,
+        2048
+      ],
+      "C_D_order": "row",
+      "ldc": 2048,
+      "ldd": 2048,
+      "transpose": [
+        "N",
+        "N"
+      ],
+      "batch_count": 1,
+      "data_type": "BF16",
+      "compute": "CUBLAS_COMPUTE_32F",
+      "scale": "CUDA_R_32F",
+      "alpha": 1,
+      "beta": 0,
+      "alignment_bytes": 16,
+      "workspace_cap_bytes": 33554432,
+      "reduction": "CUBLASLT_REDUCTION_SCHEME_COMPUTE_TYPE"
+    },
+    "choices": 2,
+    "mechanism": "Direct instantiation of the existing mul_mat_vec_f<nv_bfloat16,float,2,256,false,false,nv_bfloat16,nv_bfloat16> body. One whole-M2 kernel; each W pair is shared by both activation rows. No row split, copied kernel algorithm, F32 weight shadow or hot Cast.",
+    "limits": "One fixed RTX4070 leaf and retained prefill inputs; no generic M2 speed, MTP decode, end-to-end, memory-peak or new shape-domain result."
+  },
+  "measurement": {
+    "weight_bank_count": 4,
+    "weight_working_set_bytes": 100663296,
+    "actual_L2_bytes": 37748736,
+    "graph_leaves": 64,
+    "host_graph_launches_per_trial": 1,
+    "trials": 5,
+    "order": "Choice order rotates by trial. Same serial64-leaf graph protocol; leaf j uses original W bank j%4. CUDA event and host intervals each divided by64.",
+    "limit": "Working-set rotation approximation only. No PMU cache-miss, absolute cold bandwidth or full-model TPS claim.",
+    "cublasLt_version": 130600,
+    "cublasLt_dll_path_known": false
+  },
+  "numerical_contract": {
+    "gate": "independent F64 dot + fixed gamma(2K+4) F32/FTZ bound + outward BF16 RNE endpoints",
+    "original_gate_literal_unchanged": true,
+    "outputs_per_choice": 4096,
+    "all_choices_passed": true,
+    "domain": "Actual finite normal/zero BF16 inputs; finite BF16 interval endpoints and no BF16-subnormal result-domain claim.",
+    "baseline_is_not_oracle": true,
+    "tolerance_changed": false,
+    "candidate_BF16_bit_differences": 22,
+    "byte_equivalent": false,
+    "original_gate_source": {
+      "path": ".scratch\\qwen-mtp-final-window-20261024\\m2-down-leaf-proposal\\m2_down_leaf.cc",
+      "bytes": 14961,
+      "sha256": "4565653d87bae241ca00584988cb1bdf88efc9fa9d2da3eda8870d9aee28c6d3"
+    }
+  },
+  "choices": [
+    {
+      "kind": "Lt_production_request1",
+      "device_us_per_leaf": [
+        77.02399790287018,
+        63.35999816656113,
+        60.09349972009659,
+        63.6959969997406,
+        63.43449652194977
+      ],
+      "device_us_median": 63.43449652194977,
+      "device_us_range": [
+        60.09349972009659,
+        77.02399790287018
+      ],
+      "host_us_per_leaf": [
+        77.5765625,
+        63.793749999999996,
+        60.495312500000004,
+        64.171875,
+        63.842187499999994
+      ],
+      "workspace_bytes": 0,
+      "lt_config": [
+        21,
+        5,
+        1,
+        0,
+        0,
+        0,
+        20,
+        0,
+        0
+      ],
+      "BF16_outputs_checked": 4096,
+      "BF16_bit_differences_from_baseline": 0
+    },
+    {
+      "kind": "whole_M2_typed_MMVF",
+      "device_us_per_leaf": [
+        58.57349932193756,
+        58.60299989581108,
+        58.400001376867294,
+        53.199999034404755,
+        53.488001227378845
+      ],
+      "device_us_median": 58.400001376867294,
+      "device_us_range": [
+        53.199999034404755,
+        58.60299989581108
+      ],
+      "host_us_per_leaf": [
+        59.057812500000004,
+        59.0359375,
+        58.8234375,
+        53.6,
+        53.8890625
+      ],
+      "workspace_bytes": 0,
+      "lt_config": null,
+      "BF16_outputs_checked": 4096,
+      "BF16_bit_differences_from_baseline": 22
+    }
+  ],
+  "inputs": {
+    "original_weight_range": {
+      "path": "C:\\Users\\kiro\\Downloads\\Qwen3.5-2B\\model.safetensors-00001-of-00001.safetensors",
+      "whole_file_bytes": 4548221488,
+      "role": "model.language_model.layers.0.mlp.down_proj.weight",
+      "dtype": "BF16",
+      "shape": [
+        2048,
+        6144
+      ],
+      "offset": 1059333136,
+      "bytes": 25165824,
+      "original_range_sha256": "computed from this range only immediately before an authorized run; no full-model hash/copy",
+      "actual_sha256": "fbafb4be6b6a3e93fb969b1679f7430a824cd912db98a83a7c4b9658e511d766"
+    },
+    "activation": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-execution-refactor-2026-10-18\\qwen35-layer0-probe\\candidate\\prefill\\04-down-proj-input.bf16",
+      "bytes": 282624,
+      "sha256": "69e7f737101e7fc14fb703bec46dd37b741bfb6355a808c2f838d90f9df4ce28"
+    },
+    "selected_activation_range": [
+      0,
+      24575
+    ],
+    "original_leaf_proof": "docs/evidence/performance/qwen-m2-down-lt-screen-2026-10-24.json",
+    "weight_or_activation_bodies_archived": false
+  },
+  "execution": {
+    "native": {
+      "command": [
+        "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-final-window-20261024\\typed-mmvf-m2-proposal\\link2\\typed-mmvf-m2.exe",
+        "C:\\Users\\kiro\\Downloads\\Qwen3.5-2B\\model.safetensors-00001-of-00001.safetensors",
+        "1059333136",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\compute-execution-refactor-2026-10-18\\qwen35-layer0-probe\\candidate\\prefill\\04-down-proj-input.bf16"
+      ],
+      "cwd": "C:\\public\\project-hyle\\hyle",
+      "started": 1792799889.8203554,
+      "timeout_seconds": 600,
+      "throughput_evidence": false,
+      "memory_evidence": false,
+      "trace": false,
+      "profiler": false,
+      "pid": 44560,
+      "exit": 0,
+      "timed_out": false,
+      "finished": 1792799890.2302072,
+      "process_wall_seconds": 0.4088867999962531
+    },
+    "host_compile": {
+      "command": [
+        "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\cl.exe",
+        "/nologo",
+        "/c",
+        "/std:c++20",
+        "/EHsc",
+        "/O2",
+        "/Ob2",
+        "/MD",
+        "/DNDEBUG",
+        "/DNOMINMAX",
+        "/permissive-",
+        "/Zc:preprocessor",
+        "/fp:precise",
+        "/W4",
+        "/WX",
+        "/external:IC:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\include",
+        "/external:W0",
+        "/sourceDependencies",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-final-window-20261024\\typed-mmvf-m2-proposal\\host1\\dependencies.json",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-final-window-20261024\\typed-mmvf-m2-proposal\\m2_typed_leaf.cc",
+        "/FoC:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-final-window-20261024\\typed-mmvf-m2-proposal\\host1\\probe.obj",
+        "/FdC:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-final-window-20261024\\typed-mmvf-m2-proposal\\host1\\probe.pdb"
+      ],
+      "cwd": "C:\\public\\project-hyle\\hyle",
+      "started": 1792799784.2653966,
+      "timeout_seconds": 600,
+      "throughput_evidence": false,
+      "memory_evidence": false,
+      "trace": false,
+      "profiler": false,
+      "pid": 13772,
+      "exit": 0,
+      "timed_out": false,
+      "finished": 1792799785.5447924,
+      "process_wall_seconds": 1.2790116999967722
+    },
+    "nvcc_compile": {
+      "command": [
+        "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\bin\\nvcc.exe",
+        "-IC:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\paired-projection-route\\native-source\\src\\ggml-cuda",
+        "-IC:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\paired-projection-route\\native-source\\src",
+        "-IC:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\paired-projection-route\\native-source\\include",
+        "-IC:\\public\\project-hyle\\hyle\\src\\compute_provider_ggml_cuda",
+        "-IC:\\public\\project-hyle\\hyle\\src\\compute_provider_ggml_cuda",
+        "-forward-unknown-to-host-compiler",
+        "-DGGML_CUDA_FA_BF16_BF16=1",
+        "-DGGML_CUDA_FA_BF16_F16=0",
+        "-DGGML_CUDA_FA_BF16_Q4_0=0",
+        "-DGGML_CUDA_FA_BF16_Q4_1=0",
+        "-DGGML_CUDA_FA_BF16_Q5_0=0",
+        "-DGGML_CUDA_FA_BF16_Q5_1=0",
+        "-DGGML_CUDA_FA_BF16_Q8_0=0",
+        "-DGGML_CUDA_FA_F16_BF16=0",
+        "-DGGML_CUDA_FA_F16_F16=1",
+        "-DGGML_CUDA_FA_F16_Q4_0=0",
+        "-DGGML_CUDA_FA_F16_Q4_1=0",
+        "-DGGML_CUDA_FA_F16_Q5_0=0",
+        "-DGGML_CUDA_FA_F16_Q5_1=0",
+        "-DGGML_CUDA_FA_F16_Q8_0=0",
+        "-DGGML_CUDA_FA_Q4_0_BF16=0",
+        "-DGGML_CUDA_FA_Q4_0_F16=0",
+        "-DGGML_CUDA_FA_Q4_0_Q4_0=1",
+        "-DGGML_CUDA_FA_Q4_0_Q4_1=0",
+        "-DGGML_CUDA_FA_Q4_0_Q5_0=0",
+        "-DGGML_CUDA_FA_Q4_0_Q5_1=0",
+        "-DGGML_CUDA_FA_Q4_0_Q8_0=0",
+        "-DGGML_CUDA_FA_Q4_1_BF16=0",
+        "-DGGML_CUDA_FA_Q4_1_F16=0",
+        "-DGGML_CUDA_FA_Q4_1_Q4_0=0",
+        "-DGGML_CUDA_FA_Q4_1_Q4_1=0",
+        "-DGGML_CUDA_FA_Q4_1_Q5_0=0",
+        "-DGGML_CUDA_FA_Q4_1_Q5_1=0",
+        "-DGGML_CUDA_FA_Q4_1_Q8_0=0",
+        "-DGGML_CUDA_FA_Q5_0_BF16=0",
+        "-DGGML_CUDA_FA_Q5_0_F16=0",
+        "-DGGML_CUDA_FA_Q5_0_Q4_0=0",
+        "-DGGML_CUDA_FA_Q5_0_Q4_1=0",
+        "-DGGML_CUDA_FA_Q5_0_Q5_0=0",
+        "-DGGML_CUDA_FA_Q5_0_Q5_1=0",
+        "-DGGML_CUDA_FA_Q5_0_Q8_0=0",
+        "-DGGML_CUDA_FA_Q5_1_BF16=0",
+        "-DGGML_CUDA_FA_Q5_1_F16=0",
+        "-DGGML_CUDA_FA_Q5_1_Q4_0=0",
+        "-DGGML_CUDA_FA_Q5_1_Q4_1=0",
+        "-DGGML_CUDA_FA_Q5_1_Q5_0=0",
+        "-DGGML_CUDA_FA_Q5_1_Q5_1=0",
+        "-DGGML_CUDA_FA_Q5_1_Q8_0=0",
+        "-DGGML_CUDA_FA_Q8_0_BF16=0",
+        "-DGGML_CUDA_FA_Q8_0_F16=0",
+        "-DGGML_CUDA_FA_Q8_0_Q4_0=0",
+        "-DGGML_CUDA_FA_Q8_0_Q4_1=0",
+        "-DGGML_CUDA_FA_Q8_0_Q5_0=0",
+        "-DGGML_CUDA_FA_Q8_0_Q5_1=0",
+        "-DGGML_CUDA_FA_Q8_0_Q8_0=1",
+        "-DGGML_CUDA_FA_QUANTS=\"q4_0-q4_0,q8_0-q8_0,f16-f16,bf16-bf16\"",
+        "-DGGML_CUDA_USE_GRAPHS",
+        "-DGGML_SCHED_MAX_COPIES=4",
+        "-D_CRT_SECURE_NO_WARNINGS",
+        "-D_XOPEN_SOURCE=600",
+        "-IC:\\public\\project-hyle\\hyle\\src\\compute_provider_ggml_cuda",
+        "-isystem",
+        "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\include",
+        "-isystem",
+        "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\include\\cccl",
+        "-D_WINDOWS",
+        "-Xcompiler= /EHsc",
+        "-Xcompiler=-O2 -Ob2",
+        "-DNDEBUG",
+        "-std=c++17",
+        "--generate-code=arch=compute_89,code=[sm_89]",
+        "-Xcompiler=-MD",
+        "-use_fast_math",
+        "-extended-lambda",
+        "-compress-mode=size",
+        "-Xcompiler",
+        "/Zc:preprocessor",
+        "-MD",
+        "-x",
+        "cu",
+        "-ccbin",
+        "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64",
+        "-MT",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-final-window-20261024\\typed-mmvf-m2-proposal\\native1\\typed.obj",
+        "-MF",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-final-window-20261024\\typed-mmvf-m2-proposal\\native1\\typed.d",
+        "-c",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-final-window-20261024\\typed-mmvf-m2-proposal\\typed_mmvf_m2.cu",
+        "-o",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-final-window-20261024\\typed-mmvf-m2-proposal\\native1\\typed.obj",
+        "-Xcompiler=-FdC:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-final-window-20261024\\typed-mmvf-m2-proposal\\native1\\typed.pdb,-FS"
+      ],
+      "cwd": "C:\\public\\project-hyle\\hyle",
+      "started": 1792799769.5291705,
+      "timeout_seconds": 600,
+      "throughput_evidence": false,
+      "memory_evidence": false,
+      "trace": false,
+      "profiler": false,
+      "pid": 42780,
+      "exit": 0,
+      "timed_out": false,
+      "finished": 1792799772.3807282,
+      "process_wall_seconds": 2.8512072000012267
+    },
+    "first_link": {
+      "process": {
+        "command": [
+          "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\link.exe",
+          "/NOLOGO",
+          "/MACHINE:X64",
+          "/SUBSYSTEM:CONSOLE",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-final-window-20261024\\typed-mmvf-m2-proposal\\host1\\probe.obj",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-final-window-20261024\\typed-mmvf-m2-proposal\\native1\\typed.obj",
+          "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\lib\\x64\\cuda.lib",
+          "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\lib\\x64\\cublasLt.lib",
+          "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\lib\\x64\\cudart.lib",
+          "/OUT:C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-final-window-20261024\\typed-mmvf-m2-proposal\\link1\\typed-mmvf-m2.exe",
+          "/MAP:C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-final-window-20261024\\typed-mmvf-m2-proposal\\link1\\typed-mmvf-m2.map"
+        ],
+        "cwd": "C:\\public\\project-hyle\\hyle",
+        "started": 1792799791.7079508,
+        "timeout_seconds": 600,
+        "throughput_evidence": false,
+        "memory_evidence": false,
+        "trace": false,
+        "profiler": false,
+        "pid": 41072,
+        "exit": 1120,
+        "timed_out": false,
+        "finished": 1792799791.7522337,
+        "process_wall_seconds": 0.043978299989248626
+      },
+      "passed": false,
+      "reason": "Unresolved ggml_abort from init_fastdiv_values; CUDA13.3 cuda.lib also requested LIBCMT while both TUs were MD."
+    },
+    "corrected_link": {
+      "process": {
+        "command": [
+          "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\link.exe",
+          "/NOLOGO",
+          "/MACHINE:X64",
+          "/SUBSYSTEM:CONSOLE",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-final-window-20261024\\typed-mmvf-m2-proposal\\host1\\probe.obj",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-final-window-20261024\\typed-mmvf-m2-proposal\\native1\\typed.obj",
+          "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\lib\\x64\\cuda.lib",
+          "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\lib\\x64\\cublasLt.lib",
+          "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\lib\\x64\\cudart.lib",
+          "/NODEFAULTLIB:LIBCMT",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cuda-final-u3-delivery\\reference-windows\\lib\\ggml-base.lib",
+          "/OUT:C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-final-window-20261024\\typed-mmvf-m2-proposal\\link2\\typed-mmvf-m2.exe",
+          "/MAP:C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-final-window-20261024\\typed-mmvf-m2-proposal\\link2\\typed-mmvf-m2.map"
+        ],
+        "cwd": "C:\\public\\project-hyle\\hyle",
+        "started": 1792799886.1667078,
+        "timeout_seconds": 600,
+        "throughput_evidence": false,
+        "memory_evidence": false,
+        "trace": false,
+        "profiler": false,
+        "pid": 21988,
+        "exit": 0,
+        "timed_out": false,
+        "finished": 1792799886.232338,
+        "process_wall_seconds": 0.06473199999891222
+      },
+      "reused_objects": [
+        "host1/probe.obj",
+        "native1/typed.obj"
+      ],
+      "change": "Add original Hyle link ggml-base.lib abort owner and /NODEFAULTLIB:LIBCMT. Neither successful TU was recompiled.",
+      "additional_archive": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cuda-final-u3-delivery\\reference-windows\\lib\\ggml-base.lib",
+        "bytes": 5591196,
+        "sha256": "c17aa8b55587caf8ad1aa07dc8c11dcad703a5e4335fc2471bef3c7615e7f20f"
+      }
+    },
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-final-window-20261024\\typed-mmvf-m2-proposal\\link2\\typed-mmvf-m2.exe",
+      "bytes": 491520,
+      "sha256": "b364d60e7816d82c4a3c3dffbd643bb1e2572e54192e28a7c61b12bd81fa730e"
+    }
+  },
+  "source_refs": [
+    {
+      "path": ".scratch\\qwen-mtp-final-window-20261024\\typed-mmvf-m2-proposal\\m2_typed_leaf.cc",
+      "bytes": 14970,
+      "sha256": "d08aac9be5badbc4a968964b849fbd681415ec3712af5dfa3242d6b5171761a9",
+      "role": "Two choices and original fixed oracle/measurement protocol"
+    },
+    {
+      "path": ".scratch\\qwen-mtp-final-window-20261024\\typed-mmvf-m2-proposal\\typed_mmvf_m2.cu",
+      "bytes": 1490,
+      "sha256": "975f3536f0c4e7dc9d21ef77e44549bf20e85c47bae1c69da10e82a740162ecc",
+      "role": "One original kernel template instantiation"
+    },
+    {
+      "path": ".scratch\\architecture-refactor-2026-10-18\\paired-projection-route\\native-source\\src\\ggml-cuda\\mmvf.cuh",
+      "bytes": 31654,
+      "sha256": "b579560db787fd1df1b67d9c2b631197670e25d5071be35facc46ccf9c20a604",
+      "role": "Original shared-W BF16 body, F32 reduce and final BF16 store"
+    }
+  ],
+  "archive": {
+    "path": "docs\\evidence\\performance\\qwen-m2-typed-mmvf-leaf-screen-2026-10-24.zip",
+    "bytes": 36031,
+    "sha256": "af1cd45ad4b9087e34ce72c6e9df241b79510e999678f8433c9ab20761eaf94e",
+    "entries": 32,
+    "contents": "Only two TUs, thin runners, owning mmvf.cuh, actual commands/identity/process/logs and input-range identities. No W/A bodies, SDK, objects, libraries or executable."
+  }
+}

@@ -67,7 +67,7 @@ hyle::mem::AllocatorRef metadata_backing(MetadataBackingState* state) {
 
 }  // namespace
 
-// clay bug reproduction: unsigned (0 - old_size) must NOT wrap counters.
+// Free accounting must not wrap an unsigned (0 - old_size) delta.
 TEST(AllocStats, FreeDoesNotUnderflow) {
   AllocStats st;
   st.record_alloc(1u << 20);  // 1 MiB
@@ -80,7 +80,7 @@ TEST(AllocStats, FreeDoesNotUnderflow) {
   EXPECT_EQ(end.live_count, 0u);
   EXPECT_EQ(end.live_bytes, 0u);
   EXPECT_EQ(end.total_frees, 1u);
-  // If clay-style unsigned (0 - size) were used, live_bytes would be ~2^64-1.
+  // An unsigned (0 - size) delta would make live_bytes approximately 2^64-1.
   EXPECT_LT(end.live_bytes, 1u << 30);
 }
 

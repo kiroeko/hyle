@@ -1,0 +1,725 @@
+{
+  "date": "2026-10-21",
+  "status": "finite_auto_policy_verified_D4_remaining_short_decode_gap",
+  "scope": "Windows RTX4070 real Qwen3.5-2B text consumer only; replay policy uses declared ordered calls and original library ReplayMode.",
+  "delivery4_complete": false,
+  "goal_complete": false,
+  "hardware": {
+    "observed_utc": "2026-10-21T04:38:34.8548305Z",
+    "observation_outside_timing_windows": true,
+    "cpu": {
+      "Name": "13th Gen Intel(R) Core(TM) i9-13900K",
+      "NumberOfCores": 24,
+      "NumberOfLogicalProcessors": 32
+    },
+    "os": {
+      "Caption": "Microsoft Windows 11 专业工作站版",
+      "Version": "10.0.26200",
+      "BuildNumber": "26200",
+      "TotalVisibleMemorySize": 66818848
+    },
+    "gpu_query": "nvidia-smi --query-gpu=name,driver_version,memory.total --format=csv,noheader",
+    "gpu_stdout": "NVIDIA GeForce RTX 4070, 617.14, 12282 MiB",
+    "toolkit": "CUDA 13.3, original retained SDKs; see exact compile/link/runtime identities",
+    "samples_scope": "One physical Windows RTX4070 shared with desktop; no fixed GPU clocks or isolated desktop claim"
+  },
+  "change": {
+    "source": {
+      "path": "C:\\public\\project-hyle\\hyle\\tools\\qwen35_text\\main.cc",
+      "bytes": 59668,
+      "sha256": "667c5fc8748dbed8994e8725c4708aff8deb146ea8092328c3593ea666cb9c84"
+    },
+    "before": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\auto-replay-policy\\before\\main.cc",
+      "bytes": 57917,
+      "sha256": "33a3e3de91050ad752935b81d1b5bb82fa9e09a8868ca04b0a028dd832b66a6c"
+    },
+    "diff": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\auto-replay-policy\\main.diff",
+      "bytes": 9946,
+      "sha256": "a4b12dae93bbac208a6b7a35b350cbda785aa5a1f28243e6039e0198ff705036"
+    },
+    "default": "--replay auto",
+    "controls": [
+      "--replay commands",
+      "--replay prefer-capture"
+    ],
+    "policy": "Cold-count exact child/global-parity slot uses from prompt, optional continuation, then requested singleton calls. At most1 expected use ->Commands; more than1 ->PreferCapture.",
+    "cold": "Family deduplicates exact shapes after counting every ordered call. Phase stores both counts and resolved per-slot modes.",
+    "hot": "Read Phase.replay_modes[parity]; no extra map lookup/provider search, no fake warmup or moved first execution.",
+    "shape_or_model_special_cases": false,
+    "Graph_Provider_public_API_changes": 0,
+    "early_stop": "Requested unforced generation is an upper-bound plan; EOS may run only a prefix, so reuse can be overestimated. No hidden adaptivity is claimed."
+  },
+  "actual": {
+    "new_CXX": 1,
+    "links": 1,
+    "NVCC": 0,
+    "SDK_builds": 0,
+    "numerical_processes": 1,
+    "vectors_byte_equal": 64,
+    "unmonitored_timing_processes": {
+      "short": 9,
+      "long": 9,
+      "cached16": 9,
+      "total": 27
+    },
+    "independent_memory_processes": 2,
+    "earlier_oneshot_attribution_processes": 6,
+    "earlier_profiled_diagnostic_processes": 2,
+    "all_actual_process_exits_zero": true,
+    "counts_are_process_executions_not_distinct_models": true
+  },
+  "result": {
+    "cached16": {
+      "auto": 1020.6294732276132,
+      "previous_capture": 835.9369285587403,
+      "reference": 977.5350232470048,
+      "auto_over_previous": 1.2209407652169475,
+      "throughput_gain_percent": 22.09407652169475,
+      "auto_over_reference": 1.0440848143092252,
+      "samples": "3fresh processes per arm in this same unprofiled9process window"
+    },
+    "short_complete_decode": {
+      "auto": 103.62635412066854,
+      "reference": 105.21592684031141
+    },
+    "cached_after_continuation_complete15_decode": {
+      "auto": 100.3369314156939,
+      "reference": 102.73705204933023
+    }
+  },
+  "interpretation": [
+    "T16 cached continuation improved22.09% in the same window: auto1020.63 vs old capture835.94 vs reference977.54token/s. Default auto smoke kept all64 full hidden/logits vectors byte-equal; same-arm predicted sequences match.",
+    "Short complete31-step decode still loses:103.63 vs105.22token/s. After continuation, complete15-step decode still loses:100.34 vs102.74. Do not replace these with the faster steady or longer-window metric.",
+    "Long complete127-step median107.12 vs106.47 is a small finite-window advantage; it does not establish overall performance dominance or complete D4. The3auto/reference T16 sample ranges overlap; no significance is claimed.",
+    "Original oneshot replay control on old2382... image supports choosing by declared reuse: global Commands improved T16 but hurt repeated decode. It changed prefill and graph history too, so it is not an isolated T16-only causal decomposition.",
+    "Two pre-policy capture/reference API traces locate recording/instantiate before the one-off current T16 execution. Captured current network interiors are opaque; unlike direct peer kernel sums are not an apples-to-apples kernel-speed comparison. Inclusive API/wait sums overlap and are not removable CPU cost.",
+    "Memory observations are separate1process-per-arm side samples; never mix their timings with the27unprofiled processes."
+  ],
+  "measurements": {
+    "short": {
+      "passed": true,
+      "groups": {
+        "capture": {
+          "prefill_tokens_per_second": {
+            "samples": [
+              2059.66594792907,
+              2094.809781452423,
+              2059.1126189821225
+            ],
+            "median": 2059.66594792907
+          },
+          "full_decode_tokens_per_second": {
+            "samples": [
+              104.41405359270233,
+              104.0948915599862,
+              104.195166285402
+            ],
+            "median": 104.195166285402
+          },
+          "stable_decode_tokens_per_second": {
+            "samples": [
+              108.08772918922098,
+              107.55949653550861,
+              107.66149331658981
+            ],
+            "median": 107.66149331658981
+          }
+        },
+        "auto": {
+          "prefill_tokens_per_second": {
+            "samples": [
+              2217.9749542109466,
+              2191.9684904529495,
+              2259.3405196836216
+            ],
+            "median": 2217.9749542109466
+          },
+          "full_decode_tokens_per_second": {
+            "samples": [
+              103.62635412066854,
+              103.41820520707327,
+              104.50870793524506
+            ],
+            "median": 103.62635412066854
+          },
+          "stable_decode_tokens_per_second": {
+            "samples": [
+              107.47866655947462,
+              107.91085872439868,
+              109.34683635546119
+            ],
+            "median": 107.91085872439868
+          }
+        },
+        "llama": {
+          "prefill_tokens_per_second": {
+            "samples": [
+              1401.0998633927634,
+              1406.8732352259076,
+              1382.3745090140537
+            ],
+            "median": 1401.0998633927634
+          },
+          "full_decode_tokens_per_second": {
+            "samples": [
+              104.93481347836904,
+              105.50282305134584,
+              105.21592684031141
+            ],
+            "median": 105.21592684031141
+          },
+          "stable_decode_tokens_per_second": {
+            "samples": [
+              106.54760610969545,
+              107.63757481349637,
+              107.72184667992651
+            ],
+            "median": 107.63757481349637
+          }
+        }
+      },
+      "Hyle_predictions_equal": true,
+      "processes": 9,
+      "independent_model_quality_acceptance": false,
+      "auto_over_capture": {
+        "prefill_tokens_per_second": 1.0768614961280742,
+        "full_decode_tokens_per_second": 0.9945408968092108,
+        "stable_decode_tokens_per_second": 1.0023161986716604
+      },
+      "auto_over_llama": {
+        "prefill_tokens_per_second": 1.5830241741942077,
+        "full_decode_tokens_per_second": 0.9848922804048915,
+        "stable_decode_tokens_per_second": 1.0025389266840676
+      },
+      "statistical_significance": false
+    },
+    "long": {
+      "passed": true,
+      "groups": {
+        "capture": {
+          "prefill_tokens_per_second": {
+            "samples": [
+              2061.513634174742,
+              2053.882318961506,
+              2064.949102231113
+            ],
+            "median": 2061.513634174742
+          },
+          "full_decode_tokens_per_second": {
+            "samples": [
+              106.85721242852031,
+              106.72149630596566,
+              106.47499602395537
+            ],
+            "median": 106.72149630596566
+          },
+          "stable_decode_tokens_per_second": {
+            "samples": [
+              107.91022048020048,
+              107.84968321161026,
+              107.40822965406295
+            ],
+            "median": 107.84968321161026
+          }
+        },
+        "auto": {
+          "prefill_tokens_per_second": {
+            "samples": [
+              2305.4298275790647,
+              2300.6024702719023,
+              2215.4412795558037
+            ],
+            "median": 2300.6024702719023
+          },
+          "full_decode_tokens_per_second": {
+            "samples": [
+              106.93417612058806,
+              107.15687251445627,
+              107.11681594842872
+            ],
+            "median": 107.11681594842872
+          },
+          "stable_decode_tokens_per_second": {
+            "samples": [
+              107.84335832417482,
+              108.18931413250186,
+              108.00443157356922
+            ],
+            "median": 108.00443157356922
+          }
+        },
+        "llama": {
+          "prefill_tokens_per_second": {
+            "samples": [
+              1248.0207171439047,
+              1284.2598900553135,
+              1310.7300664069098
+            ],
+            "median": 1284.2598900553135
+          },
+          "full_decode_tokens_per_second": {
+            "samples": [
+              106.58466641097537,
+              105.8077014176649,
+              106.47438008436124
+            ],
+            "median": 106.47438008436124
+          },
+          "stable_decode_tokens_per_second": {
+            "samples": [
+              107.21798568418367,
+              106.48946819159585,
+              107.04380055386764
+            ],
+            "median": 107.04380055386764
+          }
+        }
+      },
+      "Hyle_predictions_equal": true,
+      "processes": 9,
+      "independent_model_quality_acceptance": false,
+      "auto_over_capture": {
+        "prefill_tokens_per_second": 1.1159773246869025,
+        "full_decode_tokens_per_second": 1.0037042175770259,
+        "stable_decode_tokens_per_second": 1.001434852262434
+      },
+      "auto_over_llama": {
+        "prefill_tokens_per_second": 1.7913838842796956,
+        "full_decode_tokens_per_second": 1.0060337131200807,
+        "stable_decode_tokens_per_second": 1.0089741864052946
+      },
+      "statistical_significance": false
+    },
+    "cached16": {
+      "passed": true,
+      "groups": {
+        "capture": {
+          "prefill_tokens_per_second": {
+            "samples": [
+              2038.3626215254276,
+              2046.7490269947007,
+              2064.8958034219195
+            ],
+            "median": 2046.7490269947007
+          },
+          "full_decode_tokens_per_second": {
+            "samples": [
+              100.41767056443433,
+              100.24506577078765,
+              100.174771584825
+            ],
+            "median": 100.24506577078765
+          },
+          "stable_decode_tokens_per_second": {
+            "samples": [
+              107.77823550262978,
+              107.3100820206727,
+              106.5477120654629
+            ],
+            "median": 107.3100820206727
+          },
+          "cached_continuation_tokens_per_second": {
+            "samples": [
+              823.252774619117,
+              872.2958827634334,
+              835.9369285587403
+            ],
+            "median": 835.9369285587403
+          }
+        },
+        "auto": {
+          "prefill_tokens_per_second": {
+            "samples": [
+              2209.7806965297814,
+              2252.727912706793,
+              2169.2562162748445
+            ],
+            "median": 2209.7806965297814
+          },
+          "full_decode_tokens_per_second": {
+            "samples": [
+              100.3369314156939,
+              100.93125908381332,
+              99.2276122661205
+            ],
+            "median": 100.3369314156939
+          },
+          "stable_decode_tokens_per_second": {
+            "samples": [
+              106.33860812214289,
+              107.44895875989576,
+              107.09071416417483
+            ],
+            "median": 107.09071416417483
+          },
+          "cached_continuation_tokens_per_second": {
+            "samples": [
+              998.1596431579277,
+              1020.6294732276132,
+              1034.1127958532077
+            ],
+            "median": 1020.6294732276132
+          }
+        },
+        "llama": {
+          "prefill_tokens_per_second": {
+            "samples": [
+              1354.282389038777,
+              1319.1007854832958,
+              1321.0216864286695
+            ],
+            "median": 1321.0216864286695
+          },
+          "full_decode_tokens_per_second": {
+            "samples": [
+              102.73705204933023,
+              104.54054430776736,
+              101.92246146821346
+            ],
+            "median": 102.73705204933023
+          },
+          "stable_decode_tokens_per_second": {
+            "samples": [
+              106.28749586659738,
+              108.23552049259187,
+              106.35745796221475
+            ],
+            "median": 106.35745796221475
+          },
+          "cached_continuation_tokens_per_second": {
+            "samples": [
+              1007.2585569762097,
+              952.5283674854442,
+              977.5350232470048
+            ],
+            "median": 977.5350232470048
+          }
+        }
+      },
+      "Hyle_predictions_equal": true,
+      "processes": 9,
+      "independent_model_quality_acceptance": false,
+      "auto_over_capture": {
+        "prefill_tokens_per_second": 1.079653962154053,
+        "full_decode_tokens_per_second": 1.0009164106402633,
+        "stable_decode_tokens_per_second": 0.9979557572562883,
+        "cached_continuation_tokens_per_second": 1.2209407652169475
+      },
+      "auto_over_llama": {
+        "prefill_tokens_per_second": 1.6727815441878453,
+        "full_decode_tokens_per_second": 0.9766382178020458,
+        "stable_decode_tokens_per_second": 1.0068942621985246,
+        "cached_continuation_tokens_per_second": 1.0440848143092252
+      },
+      "statistical_significance": false
+    }
+  },
+  "correctness": {
+    "checks": {
+      "all64_vectors_equal": true,
+      "fixed_inputs_equal": true,
+      "predictions_equal": true,
+      "one_shot_commands_then_decode_capture": true
+    },
+    "summary": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\auto-replay-policy\\correctness\\summary.json",
+      "bytes": 60184,
+      "sha256": "c6802b3b6a2b49a35bee614fbbf40a4b03a059f60f56ec26ae57579ab467c54e"
+    },
+    "finite_numeric_regression": true,
+    "independent_model_quality_acceptance": false
+  },
+  "attribution": {
+    "original_global_replay_control": {
+      "groups": {
+        "capture": {
+          "prefill_tokens_per_second": {
+            "samples": [
+              2052.4957867713442,
+              1997.1010829592672,
+              2099.8477610373247
+            ],
+            "median": 2052.4957867713442
+          },
+          "continuation_tokens_per_second": {
+            "samples": [
+              845.9923754937158,
+              861.2244458558956,
+              857.9594506914617
+            ],
+            "median": 857.9594506914617
+          },
+          "decode_tokens_per_second": {
+            "samples": [
+              99.10036686955816,
+              100.57549297077881,
+              100.77265755637055
+            ],
+            "median": 100.57549297077881
+          }
+        },
+        "commands": {
+          "prefill_tokens_per_second": {
+            "samples": [
+              2268.051832072025,
+              2202.480199186803,
+              2188.3334473090335
+            ],
+            "median": 2202.480199186803
+          },
+          "continuation_tokens_per_second": {
+            "samples": [
+              1048.6989578554108,
+              1014.3016533116948,
+              1035.2703673268672
+            ],
+            "median": 1035.2703673268672
+          },
+          "decode_tokens_per_second": {
+            "samples": [
+              86.29527481593217,
+              85.59753068243488,
+              86.3892075690768
+            ],
+            "median": 86.29527481593217
+          }
+        }
+      },
+      "all_fixed_predictions_identical": true,
+      "independent_model_quality_acceptance": false,
+      "limitation": "Global replay switch also changes prefill/cuda graph history. Not an isolated T16-only causal decomposition."
+    },
+    "trace_summary": {
+      "scope": "Two existing all-CUDA-API instrumented traces only; no model execution/build or new profiling by this analyzer.",
+      "phase_identification": "Exactly 17 current 4-byte synchronous host-token copies and17 peer token+full-logits pairs map in order to extracted original phase records; T16 is phase ordinal1, with visible144 and the same actual predicted token4649.",
+      "asymmetry": "Current first T16 records/captures/instantiates a full replay graph; peer T16 launches direct kernels. Current network kernels are opaque in this graph-level trace, so current vs peer cumulative kernel/busy-union comparison is unavailable.",
+      "interpretation": "Capture/instantiate/enqueue and synchronization API durations can overlap one another and GPU execution. Inclusive API sums are not additive CPU cost or removable overhead. Instrumented wall times, graph spans and uncovered intervals are not no-profiler speedup estimates.",
+      "mapping_limit": "The host-token API envelope is a reliable phase bracket rather than exact source CPU timer; original logged step times are reported separately. Current startup child_prepare for T16 is outside this phase, distinct from logged cold_batch_seconds inside it.",
+      "comparison": {
+        "logged_current_step_ms": 21.5291,
+        "logged_peer_step_ms": 17.625600000000002,
+        "current_graph_span_ms": 12.015401,
+        "peer_direct_kernel_sum_ms": 10.84834
+      },
+      "activity_scope": "All unions concern recorded activities of the profiled process/device, not PMU-measured global GPU utilization or other processes. Captured graph interiors can hide kernels, copies and intra-graph gaps.",
+      "key_findings": [
+        {
+          "topic": "First-use recording before execution",
+          "fact": "Current logged cold_batch8.9623ms; capture recording envelope4.097153ms, one instantiate2.118740ms and graph destroy0.158456ms occur before one graph launch0.289497ms. The GPU graph starts9.489837ms after the preceding host-token API completion. The two-phase bracket differs from the exact current step timer by0.059887ms."
+        },
+        {
+          "topic": "Opaque graph versus direct launches",
+          "fact": "Current GPU graph duration12.015401ms hides internal kernels/gaps; only4 CUB/Top1 kernels totaling0.011456ms are individually visible outside it. Peer T16 has no graph launch/capture and708 visible kernels totaling/union10.848340ms, span16.759739ms. Those unlike measures must not be treated as a kernel-speed comparison."
+        },
+        {
+          "topic": "Peer major direct kernels",
+          "fact": "Peer150 mul_mat_f BF16-input matrix kernels total6.809757ms; one BF16-input mul_mat_vec_f kernel2.113227ms;36 CUTLASS BF16 kernels0.444061ms;18 GDN kernels0.325500ms. Current corresponding network kernel costs are unavailable in this capture."
+        },
+        {
+          "topic": "Uncovered intervals",
+          "fact": "Current longest interval without visible work or a graph envelope is7.629909ms, overlapping capture/instantiate before graph execution. Peer longest3.455358ms overlaps a1.969886ms cuLibraryLoadData and a1.270675ms cudaLaunchKernel call. These are instrumented observations, not proven no-profiler idle or recoverable savings."
+        },
+        {
+          "topic": "Host-token transfer and synchronization",
+          "fact": "Current one4B copy GPU duration0.001824ms. Peer one4B plus993280B sampled-logits copy durations0.001696+0.039488ms; its final stream synchronize4.562642ms includes pending network execution, so it cannot be charged entirely to logits transfer. Current final graph event wait12.135689ms similarly overlaps graph execution."
+        },
+        {
+          "topic": "Cold-start separation",
+          "fact": "Current stderr separately records T16 child_prepare22.0638ms before ready, outside this phase. Do not combine that startup preparation with cold_batch8.9623ms as if both were inside the T16 measured step."
+        }
+      ]
+    },
+    "traces": [
+      {
+        "arm": "current",
+        "omitted_nsys_rep": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\cached16-trace\\current\\capture.nsys-rep",
+          "bytes": 2231329,
+          "sha256": "22d7fbc66892ed2e006936864517c4eaa1dc65ddee5a3cee577ad25f2614f8ef"
+        },
+        "sqlite": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\cached16-trace\\current\\capture.sqlite",
+          "bytes": 4468736,
+          "sha256": "6264c2aa3d8afdf9002167992e8e8b3af9fecb8b0ea8dcec25f27f75bfb1ec4f"
+        },
+        "nsys_rep_archived": false,
+        "sqlite_archived": true
+      },
+      {
+        "arm": "llama",
+        "omitted_nsys_rep": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\cached16-trace\\llama\\capture.nsys-rep",
+          "bytes": 457056,
+          "sha256": "546cd6aa499c7cefa15bf9ad746b434b79eccf06a18208966ca3d1313318da28"
+        },
+        "sqlite": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\cached16-trace\\llama\\capture.sqlite",
+          "bytes": 1191936,
+          "sha256": "295e9a5bb478beab988c8be7eb5fe245bc5bbedfce1a2dd8252b251ed808d35f"
+        },
+        "nsys_rep_archived": false,
+        "sqlite_archived": true
+      }
+    ],
+    "profiled_throughput_claim": false
+  },
+  "remaining": {
+    "action": "Investigate the actual complete short-decode first-call costs using the retained unprofiled samples before further policy/library changes.",
+    "first_decode_cost_review": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\auto-replay-policy\\first-decode-capture-cost-review.json",
+      "bytes": 66196,
+      "sha256": "b14007df6a73c5bc47c7280c5f42deb7e8fc402ca55ccdfbad07a2b9b257365b"
+    },
+    "first_decode_observations": [
+      "Auto unprofiled logs show one recorded range on decode1 and decode2, then reuse on every decode3..end for all three workloads. The peer has no analogous unprofiled capture counter; its existing trace supplies the separate API evidence.",
+      "Mean Auto-minus-peer decode31 wall excess is3.882266667ms: first two+5.840000ms, decode3..6+0.065500ms, decode7..31-2.023233333ms. The full-window loss is concentrated in the first two calls and partially offset later.",
+      "Mean cached continuation-afterward decode15 excess is4.206800ms: first two+4.678400ms, decode3..6-0.467800ms, decode7..15-0.003800ms. That final group is effectively tied in the mean at this sample scale; independent medians differ and are retained.",
+      "Mean decode127 total is8.720200ms faster for Auto despite first two+4.107833333ms: decode3..6-1.344366667ms and decode7..127-11.483666667ms offset the front cost.",
+      "The existing explicit-capture trace records/instantiates both first M1 parity slots (two instantiations totaling3.565908ms). Peer decode1 is direct with no capture/instantiate, decode2 records one graph with1.550523ms instantiate. That establishes different first-use work, not that the2.015385ms API difference or whole cold preparation is removable.",
+      "The remaining observed31/15 loss lies in actual first-two-M1 preparation/replay execution rather than a persistent decode7+ regression. Isolating its cold preparation, capture/instantiate, provider first-use and execution components is still unresolved; no alias or single-slot design conclusion follows from these data."
+    ],
+    "first_decode_attribution": "Still unresolved. Observed front-two concentration is not proof that all capture/instantiate duration is removable; prior trace used the older explicit-capture image.",
+    "independent_measurement_review": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\auto-replay-policy\\independent-measurement-review.json",
+      "bytes": 159174,
+      "sha256": "b50ba8c060ac3a30746a48346d14d06d1ca1c3277e16a9ff35c503c770d1dd87"
+    },
+    "not_assumed": [
+      "A single-slot problem",
+      "An alias failure",
+      "A missing public API",
+      "A globally optimal replay rule"
+    ]
+  },
+  "memory": {
+    "throughput_evidence": false,
+    "current": {
+      "sampled_max_working_set_bytes": 1126162432,
+      "observed_os_peak_working_set_bytes": 1126170624,
+      "sampled_max_private_commit_bytes": 5873209344,
+      "observed_os_peak_commit_bytes": 5873209344,
+      "sampled_peak_gpu_dedicated_bytes": 4075892736,
+      "sampled_peak_gpu_shared_bytes": 96468992,
+      "sampled_peak_gpu_total_bytes": 4157681664
+    },
+    "reference": {
+      "sampled_max_working_set_bytes": 4368535552,
+      "observed_os_peak_working_set_bytes": 4368535552,
+      "sampled_max_private_commit_bytes": 5244018688,
+      "observed_os_peak_commit_bytes": 5244018688,
+      "sampled_peak_gpu_dedicated_bytes": 4237389824,
+      "sampled_peak_gpu_shared_bytes": 85983232,
+      "sampled_peak_gpu_total_bytes": 4323373056
+    },
+    "sample_counts": {
+      "current": 41,
+      "reference": 49
+    },
+    "limitations": "Working set, private commit and WDDM samples are separate metrics; unavailable intervals stay null. No proven physical allocation bound, cached16-specific memory attribution or pool-completion claim."
+  },
+  "measurement_contract": {
+    "metric": "Complete source step_seconds with unchanged token endpoint",
+    "Hyle": "Input writes, batch/replay preparation, submit, wait,4B token read; startup/exact-family preparation separate.",
+    "reference": "Original public backend greedy/token fastpath includes engine sampled-logit readback; no consumer CPUargmax. Intermediate F32/BF16 boundaries differ.",
+    "page_cache": "uncontrolled",
+    "no_hidden_warmup": true,
+    "no_profiler_in_timing": true,
+    "statistical_significance": false,
+    "independent_quality_acceptance": false
+  },
+  "metadata_correction": {
+    "fix": "Cached ordered_chunks example now[128,16,15singleton] rather than omitting16.",
+    "actual_counts_or_source_or_object_changed": false,
+    "original_metadata_archived": "auto-replay/revisions/plan-metadata-before/",
+    "source_review": "Apple review retains its original metadata note; reviewed source667c5fc8 and executable044288dd are unchanged."
+  },
+  "build": {
+    "status": "auto_consumer_compiled_and_linked_not_run",
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\auto-replay-policy\\checks\\attempt1\\qwen.exe",
+      "bytes": 139478016,
+      "sha256": "044288ddcfdd56421b0e174c66a96aa1e0a499973ad2c5e2559f2750e01d81b8"
+    },
+    "link_plan": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\auto-replay-policy\\checks\\attempt1\\link-plan.json",
+      "bytes": 84293,
+      "sha256": "9aa71de1ccac24c2435b1698134cc3963c5954b6e0b709f02249bcd509d34740"
+    },
+    "runtime_environment": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\auto-replay-policy\\checks\\attempt1\\runtime-environment.json",
+      "bytes": 7345,
+      "sha256": "a131c102df22b978e63e69ce304c07fb03fb054b3c6e1ca7ba2bf89cf9eed0de"
+    },
+    "source": {
+      "path": "C:\\public\\project-hyle\\hyle\\tools\\qwen35_text\\main.cc",
+      "bytes": 59668,
+      "sha256": "667c5fc8748dbed8994e8725c4708aff8deb146ea8092328c3593ea666cb9c84"
+    },
+    "source_freeze": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\auto-replay-policy\\source-freeze.json",
+      "bytes": 1645,
+      "sha256": "b4a2981c7c886dd3d7c1518fa252e8c69c21bd5d881ea205c64fe76625be72eb"
+    },
+    "compile_identity": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\auto-replay-policy\\checks\\attempt1\\identity.json",
+      "bytes": 70229,
+      "sha256": "4fdb7ef9e3ef61ff7c27b32f8035e858cd08dc4e8b213c34593200dc64f0a74f"
+    },
+    "previous_image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\checks\\link1\\qwen.exe",
+      "bytes": 139475456,
+      "sha256": "2382fd84efbf92a93c4750944a191ff5e465d79aca9c558e7869efffacfd97e0"
+    },
+    "CXX": 1,
+    "links": 1,
+    "NVCC": 0,
+    "SDK_builds": 0,
+    "GPU_runs": 0,
+    "policy": "Ordered requested calls cold-count each exact child/global-parity slot. Expecteduses<=1 Commands; expecteduses>1 PreferCapture. Explicit old modes override both slots.",
+    "limits": "Generation early stop can use fewer calls than the requested upper-bound plan; no fake warmup or first execution outside original timer. Numerics/capture/performance await root execution.",
+    "metadata_correction": "Cached16 host-plan example restored16 without changing actual counts, source, object or executable."
+  },
+  "source_review": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\auto-replay-policy\\independent-review.json",
+    "bytes": 5165,
+    "sha256": "487e21e117b6fac76e0092589e8063f232cb612ca1eed65cbcee877181760f95"
+  },
+  "source_closure": {
+    "current_source_count": 1,
+    "prior183source_bundle_copied": false,
+    "prior_report": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\qwen-current-delivery-2026-10-21.json",
+      "bytes": 22715,
+      "sha256": "2354e38fa5f7de43d01824b44a502352c974962437d5f64e859df5c83e37a20b"
+    },
+    "prior_archive": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\qwen-current-delivery-2026-10-21.zip",
+      "bytes": 1831006,
+      "sha256": "8f132dfb2c898750c506b66280ea858da94c252ec5d207b5116a4c00d79f27c2"
+    },
+    "dependency_proof": "Current main actual dependency identities and190input replacement plan are in this archive; all189 non-main inputs retain prior identities."
+  },
+  "related_evidence": [
+    "qwen-current-delivery-2026-10-21.json",
+    "../correctness/linux-current-package-install-2026-10-21.json",
+    "../correctness/apple-current-sdk-reference-2026-10-21.json"
+  ],
+  "limits": [
+    "This finite policy/workload evidence does not sign full checkpoint quality, all models/context shapes/platforms or overall D4/goal completion.",
+    "No Graph/Provider/public API or tensor arithmetic changed. No new SDK, native kernel or global route priority.",
+    "Binary/runtime/model identities are retained; executables/objects/SDK/weights/duplicate64vectors are not redistributed.",
+    "Original nsys-rep remains at its hashed scratch path; SQLite, commands, analysis and extracted stdout/stderr are archived."
+  ],
+  "cleanup": "No deletion performed by this package task.",
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\qwen-auto-replay-policy-2026-10-21.zip",
+    "bytes": 2589749,
+    "sha256": "2f14247439f54ac7c3dc735e58d007c775aa8de85c8977fa1c87acc4fdaa2aa6",
+    "members": 257,
+    "manifest": "manifest.json",
+    "CRC_checked": true,
+    "all_payload_SHA256_checked": true
+  }
+}

@@ -13,19 +13,12 @@
 #  include <intrin.h>  // _umul128 for the 64x64->128 multiply in Lemire's map
 #endif
 
-// Fast PRNG (clay random.h used xoroshiro128+). HYLE uses xoshiro256++ -- the
-// recommended general-purpose successor (better statistical quality, same speed
-// class, 256-bit state). NOT cryptographic. Header-only inline: an RNG is a hot
-// path, so every call must inline to a few instructions with no DLL hop.
+// Fast non-cryptographic PRNG using xoshiro256++ with 256-bit state.
+// Header-only inline: hot calls do not require a DLL hop.
 //
-// Improvements over clay:
-//  - xoshiro256++ (clay: xoroshiro128+, whose low bits are weak).
-//  - SplitMix64 seeding from a single u64 (avoids the all-zero state that breaks
-//    xoshiro; clay left seeding to the caller).
-//  - UNBIASED bounded range via Lemire's method (clay used `% (max+1-min)`,
-//    which is biased unless the range divides 2^64).
-//  - jump(): advance 2^128 steps for non-overlapping parallel streams (give each
-//    sched worker its own).
+//  - SplitMix64 seeds from a single u64 and avoids the all-zero state.
+//  - Bounded ranges use Lemire's method to avoid modulo bias.
+//  - jump() advances 2^128 steps for non-overlapping parallel streams.
 
 namespace hyle::util {
 

@@ -1,9 +1,9 @@
 if(_HYLE_COMPUTE_HAVE_APPLE)
   configure_file(apple_build.h.in apple_build.h @ONLY)
   hyle_add_module(compute_route_apple TRACE SOURCES
-    apple_context.cc apple_operations.cc apple_tensor.cc apple_leased_invocation.cc file_stream.cc apple_batch.cc apple_materialized_invocation.cc
+    apple_context.cc apple_operations.cc apple_tensor.cc apple_leased_invocation.cc apple_batch.cc apple_materialized_invocation.cc
     apple_environment.mm apple_memory.mm apple_copy_recording.mm apple_copy_program.cc apple_weights.mm apple_recurrent.cc apple_mature_indexing.cc
-    apple_sampling.cc apple_mature_reduction.cc apple_mature_float.cc apple_mature_artifact.cc apple_mature_gguf.cc)
+    apple_sampling.cc apple_mature_reduction.cc apple_mature_float.cc apple_nvfp4.cc apple_blockwise_w4a8.cc apple_ct_packed.cc apple_static_fp8.cc apple_row_cache.cc apple_row_cache_paged.cc apple_row_cache_indexer.cc apple_mature_artifact.cc apple_mature_gguf.cc)
   hyle_audit_in_tree_dependencies(bitsandbytes_apple awq_apple compressed_tensors_apple ggml_q4k_apple
     ds4_quantization deepseek_quantization)
   target_include_directories(hyle_compute_route_apple PRIVATE

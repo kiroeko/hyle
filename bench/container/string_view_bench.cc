@@ -289,7 +289,7 @@ int bench_string_view() {
     });
   }
 
-  // ---- count(char): full-scan accumulate, no early exit (clay cstrchar). std
+  // ---- count(char): full-scan accumulate, no early exit. std
   // has no direct string_view::count -> std::count over the range is the rival.
   {
     nb::Bench b;

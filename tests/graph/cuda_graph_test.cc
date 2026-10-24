@@ -74,7 +74,7 @@ TEST(GraphCudaReplay, MetadataViewAliasesDeviceStorageWithoutAKernelProvider) {
         StorageDomain{
             hyle::compute::cpu::memory_resource(cpu.device()).value()}};
     const std::array targets{ExecutionTarget{
-        on_cpu ? &cpu : &context, StorageDomainId{on_cpu ? 1u : 0u}}};
+        hyle::graph::ExecutionSource::acquire(*(on_cpu ? &cpu : &context)).value(), StorageDomainId{on_cpu ? 1u : 0u}}};
     const std::array external{
         ExternalResourceContract{input, StorageDomainId{0}}};
     auto compiled = hyle::graph::compile(
@@ -89,7 +89,7 @@ TEST(GraphCudaReplay, MetadataViewAliasesDeviceStorageWithoutAKernelProvider) {
     EXPECT_EQ(compiled->executable.required_queue_count(), 0u);
     for (std::int64_t offset : {0, 2, 5}) {
       const std::array shape{hyle::graph::ShapeBinding{start, offset}};
-      auto created = compiled->executable.create_invocation(shape);
+      auto created = compiled->executable.create_invocation({.shape = shape});
       ASSERT_TRUE(created) << created.error().message();
       auto run = std::move(*created);
       ASSERT_TRUE(
@@ -143,7 +143,7 @@ TEST(GraphCudaReplay, MaterializesConstantsThroughACompletedDeviceCopy) {
             .value(),
         hyle::graph::ConstantPolicy::kMaterialize}};
     const std::array storage{StorageDomain{target.ref()}};
-    const std::array targets{ExecutionTarget{&context, StorageDomainId{0}}};
+    const std::array targets{ExecutionTarget{hyle::graph::ExecutionSource::acquire(context).value(), StorageDomainId{0}}};
     auto compiled = hyle::graph::compile(
         graph, {.storage_domains = storage, .targets = targets},
         {.constants = constants});
@@ -190,9 +190,9 @@ TEST(GraphCudaReplay, RejectsCpuCudaComputePlacement) {
       StorageDomain{.resource = device.ref()},
   };
   const std::array targets{
-      ExecutionTarget{.context = &cpu_context,
+      ExecutionTarget{.source = hyle::graph::ExecutionSource::acquire(cpu_context).value(),
                       .default_storage = StorageDomainId{0}},
-      ExecutionTarget{.context = &cuda_context,
+      ExecutionTarget{.source = hyle::graph::ExecutionSource::acquire(cuda_context).value(),
                       .default_storage = StorageDomainId{1}},
   };
   const std::array lanes{
@@ -253,7 +253,7 @@ TEST(GraphCudaReplay, CaptureBudgetPreservesCommandsAndReportsUnknownStorage) {
   const auto graph = std::move(builder).finish().value();
   const std::array storage{StorageDomain{pinned.ref()},
                            StorageDomain{device.ref()}};
-  const std::array targets{ExecutionTarget{&context, StorageDomainId{1}}};
+  const std::array targets{ExecutionTarget{hyle::graph::ExecutionSource::acquire(context).value(), StorageDomainId{1}}};
   const std::array external{
       ExternalResourceContract{input, StorageDomainId{0}}};
   const std::array placements{hyle::graph::ValuePlacement{

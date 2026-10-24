@@ -1,0 +1,76 @@
+{
+  "reason": "Superseded focused test images and rebuildable maps; all objects, source, commands, failures and current images retained.",
+  "deleted": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cross-platform\\ranking\\cpu\\cpu.exe",
+      "bytes": 27189248,
+      "sha256": "359b4172d1c035c14176d7119bb257f4261cd1bf1fd9ff0e1c7c8587b1067aaf"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cross-platform\\ranking\\cuda\\cuda.exe",
+      "bytes": 121012736,
+      "sha256": "6f6216d6bcede15381b4e1eb9a02faa2a87d59c615da5476f25a57cde3e47493"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-pattern-shared\\cpu\\cpu.exe",
+      "bytes": 27189248,
+      "sha256": "208a7d6947689ae165ed06f00bf6644a0537ddbb5da27bada940fb53dbaac776"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-pattern-shared\\cpu\\cpu.exp",
+      "bytes": 24996,
+      "sha256": "0d20fdc04bf25c752c3069c0585621512ac7997a3e82689c99c29ad451de87c3"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-pattern-shared\\cpu\\cpu.lib",
+      "bytes": 41298,
+      "sha256": "1a72c22d3a6dec39cca5118fd99aa738ff5f4202c029fc8a48afb6c3d20e909d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-pattern-shared\\cpu\\cpu.map",
+      "bytes": 39574805,
+      "sha256": "8476fabdf42e4683ecf9562cecc8263ac2b4e26ea4a11d6962c9b944e433559b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-pattern-shared\\cuda\\cuda.exe",
+      "bytes": 121013248,
+      "sha256": "e9054c10304b037fc7b044d39f5919c4b94ad2869c86bb53ce482d2653948418"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-pattern-shared\\cuda\\cuda.exp",
+      "bytes": 25000,
+      "sha256": "cb84fccedb0b034d8188703e3c8fead9a0e39d3f9ee33e6390b282b73f3c638a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-pattern-shared\\cuda\\cuda.lib",
+      "bytes": 41384,
+      "sha256": "097299e17e955c077a99f65f363d3484d564c016359baeb643f4e47c6b737d59"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-pattern-shared\\cuda\\cuda.map",
+      "bytes": 41652566,
+      "sha256": "1cb1cd15d26868170cdd3470fb230327068de030499bace38930000c64d60fd6"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-linear-cpu\\linux\\ct-cpu.map",
+      "bytes": 31968626,
+      "sha256": "cadf113b6845731b173df9a8fd268db9821cdb20263f0cf53609744ca9507083"
+    }
+  ],
+  "bytes": 409733155.0,
+  "protected_verified": 5,
+  "proofs": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\ct-packed-cpu-portability-2026-10-20.json",
+      "bytes": 27445,
+      "sha256": "7f5b51b2c3e17374b59804cf1450553baa18d85961e7a84fbd29a4a20417917c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\ct-packed-cpu-portability-2026-10-20.zip",
+      "bytes": 3944798,
+      "sha256": "d09088b361dd46400d9c4a267f8d06965314893e0a52af4e4b3ab98ed18b88c8"
+    }
+  ],
+  "script": "test.ps1",
+  "objects_and_current_images_retained": true
+}

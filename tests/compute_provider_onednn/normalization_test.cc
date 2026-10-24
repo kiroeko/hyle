@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "hyle/compute/backends/cpu.h"
+#include "hyle/compute/detail/context_ref.h"
 #include "hyle/compute/prepared_operation.h"
 #include "hyle/compute/providers/onednn.h"
 #include "hyle/mem/buffer.h"
@@ -238,11 +239,13 @@ TEST(OneDnnNormalization, RejectsUnsupportedPrecisionAtBothColdStages) {
       TensorDesc::dense(DataType::kFloat32, std::array<std::int64_t, 1>{7})
           .value();
   auto context = Context::create(cpu::device(), onednn::provider()).value();
+  const auto context_ref =
+      hyle::compute::detail::ContextRef::acquire(context).value();
   const std::array inputs{data}, outputs{data};
   std::array<detail::ResourceBindingRequirement, 1> in{}, out{};
   auto proposal =
       detail::OperationPreparationAccess::propose(
-          context, 0, Operation(RmsNorm{}), inputs, outputs, in, out)
+          context_ref, 0, Operation(RmsNorm{}), inputs, outputs, in, out)
           .value();
   const std::array resources{hyle::mem::system_resource()};
   for (const auto precision : {DataType::kUnknown, DataType::kFloat64,
@@ -253,7 +256,7 @@ TEST(OneDnnNormalization, RejectsUnsupportedPrecisionAtBothColdStages) {
     ASSERT_FALSE(refused);
     EXPECT_TRUE(refused.error().IsUnimplemented());
     auto exact = detail::OperationPreparationAccess::prepare_candidate(
-        context, proposal, operation, inputs, outputs, in, out,
+        context_ref, proposal, operation, inputs, outputs, in, out,
         {resources, resources});
     ASSERT_TRUE(exact);
     EXPECT_FALSE(exact->succeeded());

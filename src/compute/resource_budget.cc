@@ -1,9 +1,12 @@
 #include "hyle/compute/resource_budget.h"
+#include "hyle/compute/detail/resource_budget_access.h"
 
 #include <atomic>
 #include <memory>
+#include <mutex>
 #include <utility>
 
+#include "hyle/core/assert.h"
 #include "hyle/util/ref_counted.h"
 
 namespace hyle::compute {
@@ -31,6 +34,8 @@ struct ResourceBudgetState final : util::RefCounted<ResourceBudgetState> {
   ResourceBudgetRow *metadata = nullptr;
   std::size_t count = 0, allocation_bytes = 0, unassigned_control = 0;
   std::atomic<std::size_t> unknown{0};
+  std::mutex backing_mutex;
+  SharedBackingRecord *backings = nullptr; // Non-owning; tokens own each record.
   bool allow_unattributed;
   ResourceBudgetRow *find(mem::MemoryResourceRef resource) const noexcept {
     for (std::size_t i = 0; i < count; ++i)
@@ -38,6 +43,7 @@ struct ResourceBudgetState final : util::RefCounted<ResourceBudgetState> {
     return nullptr;
   }
   void destroy() noexcept {
+    HYLE_FATAL_ASSERT(backings == nullptr);
     const auto backing = allocator;
     const auto bytes = allocation_bytes;
     if (metadata != nullptr)
@@ -50,7 +56,138 @@ struct ResourceBudgetState final : util::RefCounted<ResourceBudgetState> {
 };
 static_assert(alignof(ResourceBudgetState) >= alignof(ResourceBudgetRow));
 static_assert(sizeof(ResourceBudgetState) % alignof(ResourceBudgetRow) == 0);
+
+struct SharedBackingRecord final {
+  SharedBackingRecord(ResourceBudgetState *owner, mem::MemoryResourceRef selected,
+                      BackingIdentity original, std::size_t size, mem::AllocatorRef storage,
+                      ResourceBudget::Reservation reservation) noexcept
+      : scope(owner), resource(selected), allocation(original), bytes(size),
+        allocator(storage), charge(std::move(reservation)) {}
+  ResourceBudgetState *scope;
+  mem::MemoryResourceRef resource;
+  BackingIdentity allocation;
+  std::size_t bytes, holders = 1;
+  SharedBackingRecord *previous = nullptr, *next = nullptr;
+  mem::AllocatorRef allocator;
+  ResourceBudget::Reservation charge;
+};
+
+SharedBackingReservation::SharedBackingReservation(const SharedBackingReservation &other) noexcept
+    : record_(other.record_) {
+  if (record_) {
+    std::lock_guard lock(record_->scope->backing_mutex);
+    HYLE_FATAL_ASSERT(record_->holders != SIZE_MAX);
+    ++record_->holders;
+  }
+}
+SharedBackingReservation &SharedBackingReservation::operator=(
+    const SharedBackingReservation &other) noexcept {
+  if (this != &other) { SharedBackingReservation copy(other); *this = std::move(copy); }
+  return *this;
+}
+SharedBackingReservation::SharedBackingReservation(SharedBackingReservation &&other) noexcept
+    : record_(std::exchange(other.record_, nullptr)) {}
+SharedBackingReservation &SharedBackingReservation::operator=(
+    SharedBackingReservation &&other) noexcept {
+  if (this != &other) { reset(); record_ = std::exchange(other.record_, nullptr); }
+  return *this;
+}
+SharedBackingReservation::~SharedBackingReservation() { reset(); }
+bool SharedBackingReservation::same_scope(const ResourceBudget &budget) const noexcept {
+  return record_ && ResourceBudgetAccess::same_scope(record_->charge, budget);
+}
+void SharedBackingReservation::reset() noexcept {
+  auto *record = std::exchange(record_, nullptr);
+  if (!record) return;
+  {
+    std::lock_guard lock(record->scope->backing_mutex);
+    HYLE_FATAL_ASSERT(record->holders != 0);
+    if (--record->holders != 0) return;
+    if (record->previous) record->previous->next = record->next;
+    else record->scope->backings = record->next;
+    if (record->next) record->next->previous = record->previous;
+  }
+  // Unlink under the lookup lock, then release outside it. The metadata
+  // allocation retains the scope after charge destruction until deallocation.
+  const auto allocator = record->allocator;
+  std::destroy_at(record);
+  allocator.deallocate(record, sizeof(SharedBackingRecord), alignof(SharedBackingRecord));
+}
+namespace {
+Result<SharedBackingRecord *> reserve_backing_record(
+    const ResourceBudget &budget, ResourceBudgetState *scope,
+    mem::MemoryResourceRef nominated, BackingIdentity original_allocation,
+    std::size_t bytes, ResourceBudget::Reservation *existing) noexcept {
+  if (!scope || !nominated.valid() || !original_allocation.authority ||
+      !original_allocation.value || bytes == 0 || bytes == SIZE_MAX)
+    return std::unexpected(Status::InvalidArgument("shared backing requires a known nonempty allocation"));
+  if (!scope->find(nominated))
+    return std::unexpected(Status::InvalidArgument("resource is absent from budget"));
+  std::unique_lock lock(scope->backing_mutex);
+  for (auto *record = scope->backings; record; record = record->next) {
+    if (record->resource != nominated ||
+        record->allocation.authority != original_allocation.authority ||
+        record->allocation.value != original_allocation.value) continue;
+    if (record->bytes != bytes)
+      return std::unexpected(Status::InvalidArgument("shared backing byte extent changed"));
+    HYLE_FATAL_ASSERT(record->holders != SIZE_MAX);
+    ++record->holders;
+    lock.unlock();
+    if (existing) existing->reset();
+    return record;
+  }
+  HYLE_ASSIGN_OR_RETURN(auto allocator, budget.metadata_allocator());
+  ResourceBudget::Reservation charge;
+  if (!existing) {
+    HYLE_ASSIGN_OR_RETURN(charge,
+        budget.reserve(nominated, bytes, ResourceBudgetCategory::kExternal));
+  }
+  auto *memory = allocator.allocate(sizeof(SharedBackingRecord), alignof(SharedBackingRecord));
+  if (!memory) {
+    lock.unlock();
+    return std::unexpected(Status::ResourceExhausted("shared backing reservation metadata"));
+  }
+  auto *record = std::construct_at(static_cast<SharedBackingRecord *>(memory), scope,
+      nominated, original_allocation, bytes, allocator,
+      existing ? std::move(*existing) : std::move(charge));
+  record->next = scope->backings;
+  if (record->next) record->next->previous = record;
+  scope->backings = record;
+  return record;
+}
+} // namespace
 } // namespace detail
+mem::AllocatorRef detail::ResourceBudgetAccess::backing_allocator(
+    const ResourceBudget &budget) noexcept {
+  return budget.state_ ? budget.state_->allocator : mem::AllocatorRef{};
+}
+mem::AllocatorRef detail::ResourceBudgetAccess::backing_allocator(
+    const ResourceBudget::Reservation &reservation) noexcept {
+  return reservation.state_ ? reservation.state_->allocator : mem::AllocatorRef{};
+}
+bool detail::ResourceBudgetAccess::same_scope(const ResourceBudget::Reservation &reservation,
+                                             const ResourceBudget &budget) noexcept {
+  return reservation.state_ && reservation.state_ == budget.state_;
+}
+Result<detail::SharedBackingReservation> detail::ResourceBudgetAccess::reserve_backing(
+    const ResourceBudget &budget, mem::MemoryResourceRef nominated,
+    BackingIdentity original_allocation, std::size_t bytes) noexcept {
+  HYLE_ASSIGN_OR_RETURN(auto *record, detail::reserve_backing_record(
+      budget, budget.state_, nominated, original_allocation, bytes, nullptr));
+  return SharedBackingReservation(record);
+}
+Result<detail::SharedBackingReservation> detail::ResourceBudgetAccess::adopt_backing(
+    const ResourceBudget &budget, mem::MemoryResourceRef nominated,
+    BackingIdentity original_allocation, std::size_t bytes,
+    ResourceBudget::Reservation &existing) noexcept {
+  if (!same_scope(existing, budget) || existing.unknown_ || existing.row_ == SIZE_MAX ||
+      existing.category_ != ResourceBudgetCategory::kExternal ||
+      existing.state_->rows[existing.row_].resource != nominated || existing.charge_.size() != bytes)
+    return std::unexpected(Status::InvalidArgument("existing backing reservation does not match"));
+  HYLE_ASSIGN_OR_RETURN(auto *record, detail::reserve_backing_record(
+      budget, budget.state_, nominated, original_allocation, bytes, &existing));
+  return SharedBackingReservation(record);
+}
 namespace {
 void *allocate(void *opaque, std::size_t bytes, std::size_t alignment) noexcept {
   auto &row = *static_cast<detail::ResourceBudgetRow *>(opaque);

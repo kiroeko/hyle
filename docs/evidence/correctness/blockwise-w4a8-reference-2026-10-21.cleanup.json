@@ -1,0 +1,300 @@
+{
+  "status": "complete",
+  "Windows_removed_files": 28,
+  "Windows_removed_bytes": 769769485,
+  "Windows_targets": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fixed-role-binding-2026-10-21\\blockwise-w4a8\\cpu\\attempt2\\cpu.exe",
+      "bytes": 27959296,
+      "sha256": "1e74b2deb77a44233f2062bf165cc09f918f0bd41ed7c886b0ff0e61de6d8d35"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fixed-role-binding-2026-10-21\\blockwise-w4a8\\cpu\\attempt2\\cpu.exp",
+      "bytes": 25025,
+      "sha256": "095ebc79a9516e408f76bef0de12520a929be435c291d7ce7ced410b9f47dab7"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fixed-role-binding-2026-10-21\\blockwise-w4a8\\cpu\\attempt2\\cpu.lib",
+      "bytes": 41298,
+      "sha256": "1a72c22d3a6dec39cca5118fd99aa738ff5f4202c029fc8a48afb6c3d20e909d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fixed-role-binding-2026-10-21\\blockwise-w4a8\\cpu\\attempt2\\cpu.map",
+      "bytes": 43457296,
+      "sha256": "73b4b9186a1a3e79da926970240b607fe7bf0daf886ed28b28da01bf2b7b6c05"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fixed-role-binding-2026-10-21\\blockwise-w4a8\\cpu\\attempt3\\cpu.exe",
+      "bytes": 27959296,
+      "sha256": "57be25ac2194d68580c4227955e9c5024ddc590f36d74d7245db979f0442a162"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fixed-role-binding-2026-10-21\\blockwise-w4a8\\cpu\\attempt3\\cpu.exp",
+      "bytes": 25025,
+      "sha256": "3a34eed3207cb00ffa35650f23c6f8b3175bc8196485b1f63996b93a418c1fbb"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fixed-role-binding-2026-10-21\\blockwise-w4a8\\cpu\\attempt3\\cpu.lib",
+      "bytes": 41298,
+      "sha256": "1a72c22d3a6dec39cca5118fd99aa738ff5f4202c029fc8a48afb6c3d20e909d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fixed-role-binding-2026-10-21\\blockwise-w4a8\\cpu\\attempt3\\cpu.map",
+      "bytes": 43457296,
+      "sha256": "cee4704b7872f67a5ad35a928b4bcd7829b57e255b738a33284b6a581e335f0a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fixed-role-binding-2026-10-21\\blockwise-w4a8\\cpu\\attempt4\\cpu.exe",
+      "bytes": 27979264,
+      "sha256": "1446041b5452b44099d3e81c4d9d7dc443cdf9429ac33c3e50f2171722373daa"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fixed-role-binding-2026-10-21\\blockwise-w4a8\\cpu\\attempt4\\cpu.exp",
+      "bytes": 25025,
+      "sha256": "258eca1d560890870361f2cb24ec51f8c57976811aa4c2a989aba0a444abc82d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fixed-role-binding-2026-10-21\\blockwise-w4a8\\cpu\\attempt4\\cpu.lib",
+      "bytes": 41298,
+      "sha256": "1a72c22d3a6dec39cca5118fd99aa738ff5f4202c029fc8a48afb6c3d20e909d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fixed-role-binding-2026-10-21\\blockwise-w4a8\\cpu\\attempt4\\cpu.map",
+      "bytes": 43488203,
+      "sha256": "45704dc1b023dfca9a6d74794a9b8654dcc4ff1cbc2ec1721658706d3a7598ca"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fixed-role-binding-2026-10-21\\blockwise-w4a8\\cuda\\checks\\link-attempt1\\cuda.exe",
+      "bytes": 123338240,
+      "sha256": "66271d7733f460f3199090cbb63aefbab0aaa8e705e1a975c61baa74cdbc2239"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fixed-role-binding-2026-10-21\\blockwise-w4a8\\cuda\\checks\\link-attempt1\\cuda.exp",
+      "bytes": 25041,
+      "sha256": "63d9a4276fada4c637c2ca2149e298641d3e8ef5c2be52b8c5822a31d82a999a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fixed-role-binding-2026-10-21\\blockwise-w4a8\\cuda\\checks\\link-attempt1\\cuda.lib",
+      "bytes": 41384,
+      "sha256": "097299e17e955c077a99f65f363d3484d564c016359baeb643f4e47c6b737d59"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fixed-role-binding-2026-10-21\\blockwise-w4a8\\cuda\\checks\\link-attempt1\\cuda.map",
+      "bytes": 46556255,
+      "sha256": "96c82aeda0ed2592cebbf874fa57364b99f8b4c9b9d142ef60dd41b7955305b2"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fixed-role-binding-2026-10-21\\blockwise-w4a8\\cuda\\checks\\link-attempt2\\cuda.exe",
+      "bytes": 123338240,
+      "sha256": "ca03d6d0868af0f032784461e3ccf4658f4db0771ddf02ec3ec8d33a16462f82"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fixed-role-binding-2026-10-21\\blockwise-w4a8\\cuda\\checks\\link-attempt2\\cuda.exp",
+      "bytes": 25041,
+      "sha256": "c1839a95800183d52c9cd36718f4a367b290fcb0bfd162be0e70e964a32ee106"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fixed-role-binding-2026-10-21\\blockwise-w4a8\\cuda\\checks\\link-attempt2\\cuda.lib",
+      "bytes": 41384,
+      "sha256": "097299e17e955c077a99f65f363d3484d564c016359baeb643f4e47c6b737d59"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fixed-role-binding-2026-10-21\\blockwise-w4a8\\cuda\\checks\\link-attempt2\\cuda.map",
+      "bytes": 46556255,
+      "sha256": "fe9a01844954371f3c8bd563a6924e9d80b133304923e05cd750c45e36231690"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fixed-role-binding-2026-10-21\\blockwise-w4a8\\vulkan\\checks\\attempt2\\blockwise-w4a8-test.exe",
+      "bytes": 69303296,
+      "sha256": "4473b1089c62afa5be968ea7ebb84fb913cd5943c620daf3bb2660f15d6c2de4"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fixed-role-binding-2026-10-21\\blockwise-w4a8\\vulkan\\checks\\attempt2\\blockwise-w4a8-test.exp",
+      "bytes": 25067,
+      "sha256": "19e9e999a27c1c353cba1d528aa0a6371947621477cc2b6e1f682d41b3f31186"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fixed-role-binding-2026-10-21\\blockwise-w4a8\\vulkan\\checks\\attempt2\\blockwise-w4a8-test.lib",
+      "bytes": 42790,
+      "sha256": "e69366ebd14eaece4c0b0d5480624aea493f5e90ae3fda9eacc3925d042e3fdd"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fixed-role-binding-2026-10-21\\blockwise-w4a8\\vulkan\\checks\\attempt2\\blockwise-w4a8-test.map",
+      "bytes": 38302864,
+      "sha256": "d0e34cf1e57d8ecb9abe086f29fd525bd90c7673913492fc79176f457f70f94b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fixed-role-binding-2026-10-21\\blockwise-w4a8\\vulkan\\checks\\blockwise-w4a8-test.exe",
+      "bytes": 69303296,
+      "sha256": "383accedcac2f6f764ba5aeae6cb765a48a620f13508bc10ff095a2c1087c7c3"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fixed-role-binding-2026-10-21\\blockwise-w4a8\\vulkan\\checks\\blockwise-w4a8-test.exp",
+      "bytes": 25058,
+      "sha256": "ab44bafce23cd20ee608d4d4a6b6910b0e10b1e7880793f7ea05856941147689"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fixed-role-binding-2026-10-21\\blockwise-w4a8\\vulkan\\checks\\blockwise-w4a8-test.lib",
+      "bytes": 42790,
+      "sha256": "e69366ebd14eaece4c0b0d5480624aea493f5e90ae3fda9eacc3925d042e3fdd"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fixed-role-binding-2026-10-21\\blockwise-w4a8\\vulkan\\checks\\blockwise-w4a8-test.map",
+      "bytes": 38302864,
+      "sha256": "9b83de444c6bec3aa4034175593a6bd064ceec9ba19a6d4f77fb824f1d30f088"
+    }
+  ],
+  "Windows_protected": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fixed-role-binding-2026-10-21\\blockwise-w4a8\\cpu\\attempt1\\kernel\\kernel.obj",
+      "bytes": 216498,
+      "sha256": "358ee29b795f5e2ba3235a7668b4f83c9d8838f819847ab2c0b713fa7edabd53"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fixed-role-binding-2026-10-21\\blockwise-w4a8\\cpu\\attempt1\\native-provider\\native-provider.obj",
+      "bytes": 746488,
+      "sha256": "804805a6f57e82bfe2975292124a0c65f8d571b5a0698c39eb4f452443bb6e35"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fixed-role-binding-2026-10-21\\blockwise-w4a8\\cpu\\attempt1\\schema\\schema.obj",
+      "bytes": 47017,
+      "sha256": "bb0e45a88f2defa0558dbedcb76f8171e6d1f70782b7460fa42ec8da5a989882"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fixed-role-binding-2026-10-21\\blockwise-w4a8\\cpu\\attempt2\\test\\test.obj",
+      "bytes": 2378388,
+      "sha256": "65b53c09e0535e4bf776693d8b2800cb237f675319a9c97b7ae3ca88acf51a1d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fixed-role-binding-2026-10-21\\blockwise-w4a8\\cpu\\attempt3\\test\\test.obj",
+      "bytes": 2378705,
+      "sha256": "8b24c5a697ee3e96a055f3ee23c346ec88f59bc76f8a167c70caf02a3c3daeb6"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fixed-role-binding-2026-10-21\\blockwise-w4a8\\cpu\\attempt4\\test\\test.obj",
+      "bytes": 2594620,
+      "sha256": "7cbc35bab38c2f828a381ca2c386868f31c614dc5b2018f35dffa3b87b24b8e4"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fixed-role-binding-2026-10-21\\blockwise-w4a8\\cuda\\checks\\attempt1\\blockwise-provider\\blockwise-provider.obj",
+      "bytes": 114910,
+      "sha256": "9ccf4f450fb802f3138464b639732e6cdbef3848618cda32a7b7f1a30c929dd3"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fixed-role-binding-2026-10-21\\blockwise-w4a8\\cuda\\checks\\attempt1\\blockwise-test\\blockwise-test.obj",
+      "bytes": 2537545,
+      "sha256": "ec72dc1753b2d0c43f82061875817ac27d15ebbed569b09a43caa78321a1d4b7"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fixed-role-binding-2026-10-21\\blockwise-w4a8\\cuda\\checks\\attempt1\\cuda-provider\\cuda-provider.obj",
+      "bytes": 705477,
+      "sha256": "a4d6520aa9b3cfe174004d05c922c1cc729554aaac55b32c6362dfefd1d520e5"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fixed-role-binding-2026-10-21\\blockwise-w4a8\\cuda\\checks\\attempt2\\blockwise-test\\blockwise-test.obj",
+      "bytes": 2537862,
+      "sha256": "a87a8c60751736d12e0ae3661678b03fea4e3aa84643a4834d0f39c972e4268d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fixed-role-binding-2026-10-21\\blockwise-w4a8\\cuda\\checks\\attempt3\\blockwise-kernel\\blockwise-kernel.obj",
+      "bytes": 122758,
+      "sha256": "943fa546b6c8f31ae8e445cd42869d4cb4b1a6ca121386c907b9cef2d4c511f2"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fixed-role-binding-2026-10-21\\blockwise-w4a8\\vulkan\\checks\\attempt2\\vulkan_blockwise_w4a8.obj",
+      "bytes": 263038,
+      "sha256": "bdc7bc36bbeb986518091a9d8a1c2342fbee42268526c985883c06c8854fc328"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fixed-role-binding-2026-10-21\\blockwise-w4a8\\vulkan\\checks\\attempt2\\vulkan_shaders.obj",
+      "bytes": 741502,
+      "sha256": "7765533269b347446df77194e64b0b5e072efd76aa88831525c25c8128c89ad6"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fixed-role-binding-2026-10-21\\blockwise-w4a8\\vulkan\\checks\\blockwise-test.obj",
+      "bytes": 2495086,
+      "sha256": "373ac2850a8be9c30587fda109635d4b0b7de3a25efd465109879f1a964de984"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fixed-role-binding-2026-10-21\\blockwise-w4a8\\vulkan\\checks\\vulkan_blockwise_w4a8.obj",
+      "bytes": 263030,
+      "sha256": "8d2208b954a408c0a0d2009cfafadf13a429ba80530d7ca11bbd775c28152c06"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fixed-role-binding-2026-10-21\\blockwise-w4a8\\vulkan\\checks\\vulkan_operations.obj",
+      "bytes": 272225,
+      "sha256": "22af63c85910b30fe7228ea1933b7f79657ad9c57cd2e0b235e51a3dc38e4f6f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fixed-role-binding-2026-10-21\\blockwise-w4a8\\vulkan\\checks\\vulkan_shaders.obj",
+      "bytes": 741490,
+      "sha256": "879947650017fa0551f5d9c4ce758a8ad94ae3a87665dae93f024f44ce470e1d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-prepare-cost\\candidate\\qwen.exe",
+      "bytes": 117832192,
+      "sha256": "6e09735e395e86412d4588cf67507fe5902d149e3e03f674b688ddde5cddf1f8"
+    }
+  ],
+  "Mac": {
+    "status": "complete",
+    "removed_files": 2,
+    "removed_bytes": 20279094,
+    "targets": [
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/blockwise-w4a8/apple/blockwise-w4a8.map",
+        "bytes": 4639254,
+        "sha256": "9eacb3f2ff7bb71ae2efd9ce389e08ae91134625dc0f04792007b4fd29bec484"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/blockwise-w4a8/apple/blockwise-w4a8",
+        "bytes": 15639840,
+        "sha256": "e27727fabbc33934d1d2ce8a66af641ed57c2bb595f796966c815ab9a2fd2939"
+      }
+    ],
+    "retained_objects": [
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/blockwise-w4a8/apple/objects/src--compute_ops--blockwise_w4a8.cc.o",
+        "bytes": 8544,
+        "sha256": "a8eff663d26d81a9ba7fa2322983e89f45e5b7e1345bcd8a646097144a8f663f"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/blockwise-w4a8/apple/objects/src--compute_route_apple--apple_blockwise_w4a8.cc.o",
+        "bytes": 75584,
+        "sha256": "0a144e0dfbe1aa21e4db93863ffa1a48a5118bdcf509c0e2fb4a520929c045ff"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/blockwise-w4a8/apple/objects/src--compute_route_apple--apple_mature_float.cc.o",
+        "bytes": 137808,
+        "sha256": "05178ef69fd36a1cc1eedcccdbdb76684fbec12cd41d810f53c777fd0f63b13c"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/blockwise-w4a8/apple/objects/tests--graph_route_apple--blockwise_w4a8_test.cc.o",
+        "bytes": 211496,
+        "sha256": "fad561e00cf0adef158ed7e99bdfc8d0a2612e9fe26c4bf0cc022f1d5786d5eb"
+      }
+    ],
+    "shared_symlinks_preserved": [
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/blockwise-w4a8/apple/mlx.metallib",
+        "target": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/f32-partials/mlx.metallib"
+      }
+    ]
+  },
+  "archives": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\research\\fixed-role-binding-2026-10-21.zip",
+      "bytes": 3235093,
+      "sha256": "afc43569ab74af8b94fbba9a1f93265e687498cbc943c92f43804d56533268fd"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\blockwise-w4a8-reference-2026-10-21.zip",
+      "bytes": 2580605,
+      "sha256": "d3428d29038f18c554356bc1a8f524b834f086f2ebf71d32a6e9cd175626db75"
+    }
+  ],
+  "cleanup_script_sha256": "73b2dabc4f3ea68f1a723df26deb5bd21403b527cb0deda63657d10546035acd",
+  "cleanup_script": "$ErrorActionPreference = 'Stop'\r\n$workspaceRoot = 'C:\\public\\project-hyle\\hyle'\r\n$stageRoot = Join-Path $workspaceRoot '.scratch\\architecture-refactor-2026-10-18\\fixed-role-binding-2026-10-21\\root'\r\n$planPath = Join-Path $stageRoot 'cleanup-plan.json'\r\n$receiptPath = Join-Path $workspaceRoot 'docs\\evidence\\correctness\\blockwise-w4a8-reference-2026-10-21.cleanup.json'\r\nif (Test-Path -LiteralPath $receiptPath) { throw 'This exact cleanup has completed. Do not rerun.' }\r\n$plan = Get-Content -LiteralPath $planPath -Raw -Encoding UTF8 | ConvertFrom-Json\r\n$allowedRoot = (Resolve-Path -LiteralPath $plan.root).ProviderPath.TrimEnd('\\') + '\\'\r\n$expectedRoot = (Join-Path $workspaceRoot '.scratch\\architecture-refactor-2026-10-18\\fixed-role-binding-2026-10-21\\blockwise-w4a8').TrimEnd('\\') + '\\'\r\nif ($allowedRoot -ine $expectedRoot) { throw 'Unexpected exact cleanup root.' }\r\nfunction Assert-Identity($entry) {\r\n $item = Get-Item -LiteralPath $entry.path\r\n if ($item.PSIsContainer -or ($item.Attributes -band [IO.FileAttributes]::ReparsePoint)) { throw 'Expected an ordinary exact file.' }\r\n if ($item.Length -ne $entry.bytes) { throw \"Changed size: $($entry.path)\" }\r\n if ((Get-FileHash -LiteralPath $entry.path -Algorithm SHA256).Hash -ine $entry.sha256) { throw \"Changed hash: $($entry.path)\" }\r\n}\r\nforeach ($entry in $plan.archives) { Assert-Identity $entry }\r\nforeach ($entry in $plan.protected) { Assert-Identity $entry }\r\nforeach ($entry in $plan.targets) {\r\n $resolved = (Resolve-Path -LiteralPath $entry.path).ProviderPath\r\n if (-not $resolved.StartsWith($allowedRoot,[StringComparison]::OrdinalIgnoreCase)) { throw 'Target escapes the exact batch.' }\r\n if ([IO.Path]::GetExtension($resolved) -notin @('.exe','.map','.lib','.exp')) { throw 'Unexpected deletion extension.' }\r\n Assert-Identity $entry\r\n}\r\n$remoteText = Get-Content -LiteralPath (Join-Path $stageRoot 'cleanup_mac.py') -Raw -Encoding UTF8 | & ssh -o BatchMode=yes -o ConnectTimeout=15 kiro@172.22.10.198 python3 -\r\nif ($LASTEXITCODE -ne 0) { throw 'Mac exact-file cleanup failed; Windows files remain.' }\r\n$remoteReceipt = $remoteText | ConvertFrom-Json\r\nif ($remoteReceipt.status -ne 'complete') { throw 'Unexpected Mac cleanup receipt.' }\r\n$remoteText | Set-Content -LiteralPath (Join-Path $stageRoot 'cleanup-mac-result.json') -Encoding utf8\r\nforeach ($entry in $plan.targets) { Remove-Item -LiteralPath $entry.path -Force }\r\nforeach ($entry in $plan.protected) { Assert-Identity $entry }\r\nforeach ($entry in $plan.targets) { if (Test-Path -LiteralPath $entry.path) { throw 'Deletion incomplete.' } }\r\n$receipt = [ordered]@{\r\n status = 'complete'\r\n Windows_removed_files = @($plan.targets).Count\r\n Windows_removed_bytes = $plan.removed_bytes\r\n Windows_targets = $plan.targets\r\n Windows_protected = $plan.protected\r\n Mac = $remoteReceipt\r\n archives = $plan.archives\r\n cleanup_script_sha256 = (Get-FileHash -LiteralPath $PSCommandPath -Algorithm SHA256).Hash.ToLowerInvariant()\r\n cleanup_script = Get-Content -LiteralPath $PSCommandPath -Raw\r\n remote_cleanup_script = Get-Content -LiteralPath (Join-Path $stageRoot 'cleanup_mac.py') -Raw\r\n scope = $plan.scope\r\n}\r\n$receipt | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath $receiptPath -Encoding utf8\r\nWrite-Output \"Removed Windows $($plan.removed_bytes) bytes and Mac $($remoteReceipt.removed_bytes) bytes; all protected objects, Qwen consumer and shared caches remain.\"\r\n",
+  "remote_cleanup_script": "from pathlib import Path\r\nimport hashlib,json,subprocess\r\nplan={'remote_root': '/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/blockwise-w4a8/apple', 'root_is_symlink': False, 'removable_files': [{'path': '/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/blockwise-w4a8/apple/blockwise-w4a8.map', 'bytes': 4639254, 'sha256': '9eacb3f2ff7bb71ae2efd9ce389e08ae91134625dc0f04792007b4fd29bec484'}, {'path': '/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/blockwise-w4a8/apple/blockwise-w4a8', 'bytes': 15639840, 'sha256': 'e27727fabbc33934d1d2ce8a66af641ed57c2bb595f796966c815ab9a2fd2939'}], 'removable_total_bytes': 20279094, 'dsym_directories': [], 'retain_objects': [{'path': '/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/blockwise-w4a8/apple/objects/src--compute_ops--blockwise_w4a8.cc.o', 'bytes': 8544, 'sha256': 'a8eff663d26d81a9ba7fa2322983e89f45e5b7e1345bcd8a646097144a8f663f'}, {'path': '/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/blockwise-w4a8/apple/objects/src--compute_route_apple--apple_blockwise_w4a8.cc.o', 'bytes': 75584, 'sha256': '0a144e0dfbe1aa21e4db93863ffa1a48a5118bdcf509c0e2fb4a520929c045ff'}, {'path': '/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/blockwise-w4a8/apple/objects/src--compute_route_apple--apple_mature_float.cc.o', 'bytes': 137808, 'sha256': '05178ef69fd36a1cc1eedcccdbdb76684fbec12cd41d810f53c777fd0f63b13c'}, {'path': '/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/blockwise-w4a8/apple/objects/tests--graph_route_apple--blockwise_w4a8_test.cc.o', 'bytes': 211496, 'sha256': 'fad561e00cf0adef158ed7e99bdfc8d0a2612e9fe26c4bf0cc022f1d5786d5eb'}], 'retain_objects_total_bytes': 433432, 'symlinks_do_not_follow': [{'path': '/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/blockwise-w4a8/apple/mlx.metallib', 'target': '/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/f32-partials/mlx.metallib'}], 'active_processes': [], 'total_regular_file_bytes': 24211044, 'policy': 'Read-only audit only. Delete no object, SDK, dependency, source, receipt, or metallib symlink; root owns exact-file cleanup via test.ps1.'}\r\nroot=Path(plan['remote_root']);assert not root.is_symlink() and root.resolve()==root\r\nexpected=Path('/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/blockwise-w4a8/apple')\r\nassert root==expected\r\ndef check(row):\r\n p=Path(row['path']);assert p.is_relative_to(root) and p.resolve()==p and p.is_file() and not p.is_symlink()\r\n assert p.stat().st_size==row['bytes'] and hashlib.sha256(p.read_bytes()).hexdigest()==row['sha256']\r\nfor row in plan['removable_files']+plan['retain_objects']:check(row)\r\nactive=[s for s in subprocess.check_output(['ps','-axo','pid,args'],text=True).splitlines() if str(root/'blockwise-w4a8') in s]\r\nassert not active,active\r\nfor row in plan['removable_files']:Path(row['path']).unlink()\r\nfor row in plan['retain_objects']:check(row)\r\nfor row in plan['symlinks_do_not_follow']:assert Path(row['path']).is_symlink()\r\nassert all(not Path(row['path']).exists() for row in plan['removable_files'])\r\nprint(json.dumps(dict(status='complete',removed_files=len(plan['removable_files']),removed_bytes=plan['removable_total_bytes'],targets=plan['removable_files'],retained_objects=plan['retain_objects'],shared_symlinks_preserved=plan['symlinks_do_not_follow'])))\r\n",
+  "scope": "Only this wave exact test images/maps/import files. Retain Windows17increment objects and current Qwen consumer; retain Mac4increment objects, source/commands/receipts and shared metallib symlink. No SDK or source tree removed."
+}

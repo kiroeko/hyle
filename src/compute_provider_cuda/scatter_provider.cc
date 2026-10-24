@@ -152,13 +152,13 @@ void destroy_invocation(void *state, mem::AllocatorRef allocator) noexcept {
   invocation->~Invocation();
   allocator.deallocate(invocation, sizeof(Invocation), alignof(Invocation));
 }
-detail::EnqueueResult submit(void *state, void *lane, Queue &queue,
+detail::EnqueueResult submit(void *state, void *lane, detail::QueueSequence &sequence,
                              std::span<const ConstTensorView> inputs,
                              std::span<const TensorView> outputs) noexcept {
   const auto &prepared = *static_cast<const Prepared *>(state);
   if (prepared.program.layout.elements == 0)
     return detail::EnqueueResult::no_op();
-  auto stream = cuda::stream(queue);
+  auto stream = cuda::stream(sequence);
   if (!stream)
     return detail::EnqueueResult::rejected(std::move(stream).error());
   const void *pointers[3]{};
@@ -189,7 +189,7 @@ detail::EnqueueResult submit(void *state, void *lane, Queue &queue,
     return detail::EnqueueResult::rejected(scope.status());
   unsigned *word = nullptr;
   if (prepared.program.checked) {
-    auto initialized = cuda::detail::acquire_device_status(queue, &word);
+    auto initialized = cuda::detail::acquire_device_status(sequence, &word);
     if (!initialized.status.ok())
       return initialized;
   }
@@ -276,7 +276,7 @@ ProviderPrepareOutcome prepare(void *state,
     return ProviderPrepareOutcome::error(cuda::status(configured));
   void *storage = allocator.allocate(sizeof(Prepared), alignof(Prepared));
   if (storage == nullptr)
-    return ProviderPrepareOutcome::resource_declined(
+    return ProviderPrepareOutcome::error(
         Status::ResourceExhausted("CUDA Scatter program allocation failed"));
   auto *prepared = ::new (storage)
       Prepared{.primary = primary,

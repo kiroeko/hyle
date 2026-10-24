@@ -1,15 +1,18 @@
 # Pinned SGLang activation, normalization and model routing
 
 `hash_topk.cuh` retains the complete DeepSeek token-table routing program,
-stable sqrt-softplus, warp SUM and sum+1e-20 normalization. HYLE adds token
-and selected-expert bounds guards using its existing asynchronous device-status
-channel before either indirect payload read. Valid arithmetic and table order
-are unchanged. TVM host binding, PDL and fused shared experts are excluded;
-model output scaling stays in the consumer. D5-F32 qualification remains open.
+stable sqrt-softplus and warp SUM. HYLE adapts normalization to the official
+Gate formula: selected scores divide by their actual sum without epsilon or
+zero-sum fallback; all-zero score rows produce NaN weights. Token and
+selected-expert bounds guards use the existing asynchronous device-status
+channel before either indirect payload read. Table order and duplicate IDs
+are retained. TVM host binding, PDL and fused shared experts are excluded;
+model output scaling stays in the consumer.
 
 The complete `moe_gate.cuh` small/large-token programs now serve DeepSeek's
 sqrt-softplus routing. Score arithmetic, biased selection, unbiased weights,
-SUM reduction and launch policy are retained. The original score load that
+SUM reduction and launch policy are retained; normalization divides directly
+by the selected-score sum without a zero-sum fallback. The score load that
 preceded an expert-ID range check is moved inside that check to prevent an
 out-of-range read for invalid/extreme model data. TVM/Python host wrappers are
 replaced by the existing HYLE CUDA resource/stream/completion binding.

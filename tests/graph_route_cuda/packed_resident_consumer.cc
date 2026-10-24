@@ -9,6 +9,8 @@
 #include <utility>
 #include <vector>
 
+#include "../compute_models/mlx_affine_bitstream.h"
+
 #include <hyle/compute/backends/cuda.h>
 #include <hyle/compute/model_ops.h>
 #include <hyle/compute/providers/torch_cuda.h>
@@ -40,8 +42,9 @@ std::vector<float> read(mem::Buffer &buffer) {
 c::TensorDesc dense(c::DataType type, std::initializer_list<std::int64_t> shape) {
   return take(c::TensorDesc::dense(type, {shape.begin(), shape.size()}));
 }
-void run(std::int64_t rows) {
-  constexpr std::int64_t n = 9, k = 128, group = 64, experts = 2, slots = 2;
+void run(std::int64_t rows, unsigned bits, unsigned group) {
+  constexpr std::int64_t n = 9, k = 256, experts = 2, slots = 2;
+  const std::int64_t row_words = (k/32)*bits;
   auto context = take(g::cuda::create_context());
   auto memory = take(c::cuda::MemoryResource::create(context, c::cuda::MemoryKind::kDevice));
   auto queue = take(context.create_queue());
@@ -50,10 +53,10 @@ void run(std::int64_t rows) {
       dense(c::DataType::kFloat32, {rows,k}),
       dense(c::DataType::kFloat32, {1,slots,k}),
       dense(c::DataType::kFloat32, {1,slots,3}),
-      dense(c::DataType::kUInt32, {n,k/8}),
+      dense(c::DataType::kUInt32, {n,row_words}),
       dense(c::DataType::kFloat32, {n,k/group}),
       dense(c::DataType::kFloat32, {n,k/group}),
-      dense(c::DataType::kUInt32, {experts,n,k/8}),
+      dense(c::DataType::kUInt32, {experts,n,row_words}),
       dense(c::DataType::kFloat32, {experts,n,k/group}),
       dense(c::DataType::kFloat32, {experts,n,k/group})};
   // Linear and grouped inputs share the same original packed backing.
@@ -75,7 +78,7 @@ void run(std::int64_t rows) {
     linear[i] = take(mem::Buffer::create(memory.ref(), take(out_desc[0].required_bytes()), 256));
     selected[i] = take(mem::Buffer::create(memory.ref(), take(out_desc[1].required_bytes()), 256));
   }
-  std::vector<std::uint32_t> words(experts*n*k/8);
+  std::vector<std::uint32_t> codes(experts*n*k), words(experts*n*row_words);
   std::vector<float> scales(experts*n*k/group), biases(scales.size());
   std::vector<float> activation(rows*k), grouped(slots*k), scores(slots*3);
   std::vector<float> retained_linear, retained_selected;
@@ -84,14 +87,14 @@ void run(std::int64_t rows) {
     std::array<g::ValueId,9> ids;
     for (std::size_t i = 0; i < ids.size(); ++i) ids[i] = take(builder.input(desc[i]));
     const auto projection = take(builder.add(
-        c::model_ops::mlx_quantized_matmul(c::model_ops::MlxWeightFormat::kAffine4,group),
+        c::model_ops::mlx_quantized_matmul(c::model_ops::MlxWeightFormat::kAffine,bits,group),
         ids[0],ids[3],ids[4],ids[5]));
     const auto top = take(builder.add_node(c::Operation(c::TopK{.count=1}), std::array{ids[2]}));
     const auto produced = take(builder.result(top,1));
     const auto chosen = take(builder.add(take(c::View::reshape(
         take(c::TensorShape::create(std::array<std::int64_t,2>{1,slots})))), produced));
     const auto product = take(builder.add(
-        c::model_ops::mlx_grouped_matmul(c::model_ops::MlxWeightFormat::kAffine4,group),
+        c::model_ops::mlx_grouped_matmul(c::model_ops::MlxWeightFormat::kAffine,bits,group),
         ids[1],ids[6],ids[7],ids[8],chosen));
     require(builder.publish(projection));
     require(builder.publish(product));
@@ -122,14 +125,16 @@ void run(std::int64_t rows) {
       double result = 0;
       for (std::int64_t j = 0; j < k; ++j) {
         const auto wr = expert*n+column, scale_index = wr*(k/group)+j/group;
-        const auto code = (words[wr*(k/8)+j/8] >> (4*(j%8))) & 15U;
+        const auto code = codes[wr*k+j];
         result += double(a[row*k+j])*(double(code)*scales[scale_index]+biases[scale_index]);
       }
       return float(result);
     };
     for (int step = 0; step <= 64; ++step) {
-      for (std::size_t i = 0; i < words.size(); ++i)
-        words[i] = 0x11111111U*std::uint32_t((i+std::size_t(step))%16);
+      for (std::int64_t wr = 0; wr < experts*n; ++wr)
+        for (std::int64_t j = 0; j < k; ++j)
+          codes[wr*k+j] = unsigned(wr*7+j*13+step)&((1U<<bits)-1U);
+      words = mlx_affine_test::pack(codes,experts*n,k,bits);
       for (std::size_t i = 0; i < scales.size(); ++i) {
         scales[i] = .125F*float(1+(i+std::size_t(step))%4);
         biases[i] = .125F*float(int(i%3)-1);
@@ -167,6 +172,11 @@ void run(std::int64_t rows) {
           check(picked[s*n+column] == oracle(grouped,s,expected_ids[s],column), "Graph selected stored-byte oracle differs");
       if (step == 0) {
         retained_linear = actual; retained_selected = picked;
+        auto held = take(first.result(product));
+        check(first.reset().IsUnavailable(), "Held GraphOutput did not protect its original slot");
+        check(first.bind(product,take(c::TensorView::create(out_desc[1],selected[2].view()))).IsUnavailable(),
+            "Held GraphOutput allowed output rebinding");
+        held.reset();
         bind(first,queue,2); // One explicit cold rebind; subsequent runs keep two fixed banks.
       }
     }
@@ -179,14 +189,32 @@ void run(std::int64_t rows) {
     check(failed.wait().IsOutOfRange(), "Device-produced invalid expert was not checked");
     check(!first.output(product), "Failed Graph published a usable result");
     check(read(selected[2]) == before, "Checked selection changed output on invalid IDs");
+    // A failed invocation stays terminal; the public recovery path creates a
+    // fresh slot and queue after replacing the bad device-produced IDs.
+    for (std::int64_t s = 0; s < slots; ++s) {
+      scores[s*3] = 10.F; scores[s*3+1] = scores[s*3+2] = -1.F;
+    }
+    write(inputs[2],scores);
+    auto recovered = take(compiled.executable.create_invocation());
+    auto recovery_queue = take(context.create_queue());
+    for (std::size_t i = 0; i < ids.size(); ++i) require(recovered.bind(ids[i],views[i]));
+    bind(recovered,recovery_queue,2);
+    auto restored = take(recovered.submit(recovery_queue));require(restored.wait());
+    const auto recovered_values = read(selected[2]);
+    for (std::int64_t s = 0; s < slots; ++s)
+      for (std::int64_t col = 0; col < n; ++col)
+        check(recovered_values[s*n+col] == oracle(grouped,s,0,col), "Fresh Graph slot did not recover checked selection");
   }
   check(read(linear[0]) == retained_linear && read(selected[0]) == retained_selected,
         "Graph teardown changed caller-owned prior outputs");
-  std::printf("PASS CUDA Graph packed M=%lld:65 steps/two slots/shared backing/device IDs/checked failure/retained outputs\n",
-              static_cast<long long>(rows));
+  std::printf("PASS CUDA Graph packed M=%lld bits=%u group=%u:65 steps/two slots/shared backing/device IDs/checked failure/new-slot recovery/retained outputs\n",
+              static_cast<long long>(rows),bits,group);
 }
 } // namespace
 int main() {
-  try { for (const std::int64_t rows : {1,17,64}) run(rows); return 0; }
+  try {
+    run(1,4,32);run(17,5,64);run(1,6,128);run(64,8,32);
+    return 0;
+  }
   catch (const std::exception &e) { std::fprintf(stderr,"FAIL %s\n",e.what()); return 1; }
 }

@@ -47,7 +47,7 @@ void run() {
   require(buffers[1].view().write(std::as_bytes(std::span(words))));
   require(buffers[2].view().write(std::as_bytes(std::span(scales))));
   require(buffers[3].view().write(std::as_bytes(std::span(biases))));
-  const auto operation=c::model_ops::mlx_quantized_matmul(c::model_ops::MlxWeightFormat::kAffine4,group);
+  const auto operation=c::model_ops::mlx_quantized_matmul(c::model_ops::MlxWeightFormat::kAffine,4,group);
   std::array<c::TensorDesc,1> output_desc;
   require(c::infer_output_descriptions(operation,descriptions,output_desc));
   auto program=take(c::prepare(context,operation,descriptions,output_desc,memory.ref()));

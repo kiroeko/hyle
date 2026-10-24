@@ -1,0 +1,221 @@
+{
+  "schema": "hyle.multi-session-cache.source-review.v1",
+  "date": "2026-10-21",
+  "answer": "The existing library is a suitable base for a future multi-session engine: multiple request-local cache histories, exact page permissions and versioned state are already expressible. A user/session-aware serving engine, automatic cache policy and a multi-user Qwen service have not been delivered by the cited tests.",
+  "review_execution": {
+    "builds": 0,
+    "GPU_runs": 0,
+    "model_runs": 0,
+    "product_edits": 0
+  },
+  "facts": [
+    {
+      "id": "request_local_batches",
+      "fact": "One paged or ragged batch can describe several sequences with different query counts and KV histories. query_indptr groups query rows; kv_indptr groups page references or ragged KV rows; page_indices and last_page_lengths select each request's physical history. Immutable active-layout versions are bounded by a fixed schema. This is request-indexed math/layout, not user authentication or session naming.",
+      "anchors": [
+        "include/hyle/compute/batch_layout.h:29",
+        "include/hyle/compute/batch_layout.h:48",
+        "include/hyle/compute/batch_layout.h:70",
+        "include/hyle/compute/batch_layout.h:95",
+        "src/compute_batch/batch_layout.cc:32",
+        "tests/compute_models/paged_e4_kv_fixture.h:133",
+        "tests/compute_models/paged_e4_kv_fixture.h:229"
+      ],
+      "tested_scope": "Ordinary E4 CPU/CUDA/Apple/Vulkan reference: two requests with 1+3 query rows, independently bounded histories, nonmonotonic/repeated physical pages, separate K/V scales, independent invocation slots, retained old results, Q1 growth and fresh comparison. This proves the listed finite batching/layout/resource cases; it does not prove a dynamic serving scheduler.",
+      "tests": [
+        "Cpu/Cuda/Apple/VulkanPagedE4Kv.OrdinaryPagesKeepSeparateScalesAndOldResults",
+        "Cpu/Cuda/Apple/VulkanPagedE4Kv.FixedQ1GrowsHistoryThroughOriginalReader",
+        "tests/compute_batch/native_ragged_layout_test.h:112",
+        "tests/compute_batch/native_ragged_layout_test.h:118"
+      ]
+    },
+    {
+      "id": "page_ownership_and_explicit_branching",
+      "fact": "PagedArena owns a bounded physical arena with independent page blocks. Readers retain exact pages and initialized prefixes; repeated references share guards. A ready page can be reacquired only after other readers and actual native uses retire. Explicit copy-to-new-page plus a new layout supports branch/append without modifying an old version. Shared readonly prefix pages are representable; prefix lookup, automatic tail COW and eviction selection are caller policy.",
+      "anchors": [
+        "include/hyle/compute/paged_arena.h:25",
+        "include/hyle/compute/paged_arena.h:45",
+        "include/hyle/compute/paged_arena.h:52",
+        "include/hyle/compute/paged_arena.h:95",
+        "include/hyle/compute/paged_arena.h:103",
+        "tests/compute_batch/paged_arena_test.cc:191",
+        "tests/compute_batch/paged_arena_pending_test.cc:142"
+      ],
+      "important_boundary": "Dropping a session directory entry or observing cancellation does not make an in-flight page writable. Pages remain pinned through original permissions and actual Completion retirement. Arena acquisition does not silently grow the cache. Page choice/eviction is explicitly caller policy in the public header."
+    },
+    {
+      "id": "versioned_state_and_native_retirement",
+      "fact": "StateStore can retain resource ReadLeases and host metadata as one immutable StateVersion; StateDraft updates selected members, explicit clone_for_write creates writable copies, and StateHead publishes against an expected StateIdentity. A stale expected base returns Unavailable. Store/head methods are thread-safe, but each Draft/Writer/Ticket needs an externally synchronized owner. Separate in-flight requests need distinct admitted slots and bindings, not concurrent mutation of one Invocation.",
+      "anchors": [
+        "include/hyle/compute/state_versions.h:67",
+        "include/hyle/compute/state_versions.h:72",
+        "include/hyle/compute/state_versions.h:86",
+        "include/hyle/compute/state_versions.h:115",
+        "include/hyle/compute/state_versions.h:151",
+        "src/compute_state/state_versions.cc:537",
+        "include/hyle/compute/state_clone.h:27",
+        "include/hyle/compute/state_clone.h:172",
+        "include/hyle/compute/vulkan_batch.h:17",
+        "include/hyle/compute/apple_batch.h:17"
+      ],
+      "tested_scope": "Published native lifetime evidence contains 3 standalone CUDA/Vulkan/Apple processes, 15 PASS journeys (not gtest cases), including successful clone publication, distinct old/new readers after teardown, cancelled/failed old controls retained through actual retirement and cold rearm, and observer-aware close. Common CPU clone/page-version tests are separate evidence, not automatically a GPU page-COW execution claim.",
+      "tests": [
+        "tests/compute_state/native_fault_consumer.cc:72",
+        "tests/compute_state/state_clone_test.cc:127",
+        "tests/compute_state/state_clone_test.cc:196",
+        "tests/compute_state/state_clone_test.cc:388",
+        "tests/compute_batch/paged_arena_test.cc:191"
+      ]
+    },
+    {
+      "id": "cpu_gpu_and_mixed_are_real_bounded_paths",
+      "fact": "The existing producer-to-pending-page reader chain is not restricted to pure CUDA. The finite E4 chain was executed as CPU Direct/Graph, CUDA Direct/GPU Graph/CPU+GPU Graph, and Apple/Vulkan native plus CPU+GPU compositions. Owned page binding and accepted copy prefixes use the original Graph sequence/Completion. These are operation/consumer capabilities subject to native geometry, encoding and device limits, not complete model/service support on all paths.",
+      "anchors": [
+        "include/hyle/graph/batch.h:111",
+        "include/hyle/graph/batch.h:118",
+        "tests/compute_batch/encoded_page_common_consumer.cc:81",
+        "tests/compute_batch/encoded_page_common_consumer.cc:381",
+        "tests/compute_batch/encoded_page_common_consumer.cc:480",
+        "tests/compute_batch/encoded_page_common_consumer.cc:575",
+        "tests/compute_batch/encoded_page_native_consumer.cc:549"
+      ],
+      "tested_scope": "e4-paired-pending reference: 7 backend-scoped cases, 0 failure/skip; 9 success episodes, 18 expected-failure episodes, 54 update rounds. Two requests; each episode has six dirty-page updates, paired/independent encoders, old readers, no publication on failure and original retirement. No throughput/concurrent-client service claim."
+    },
+    {
+      "id": "qwen_hybrid_session_state",
+      "fact": "The current Qwen3.5 consumer is CUDA-only and single-session: one Model owns one length/parity and 24 layer state entries. Six attention layers retain K/V; eighteen linear-attention layers retain BF16 convolution history plus F32 GDN recurrent state with parity slots. Session restore/branch/interleave must preserve all these resources and position/geometry metadata together. Swapping only KV would be incorrect. The present multi-turn schedule exercises one persistent session, not multiple users or a Qwen mixed/CPU engine.",
+      "anchors": [
+        "tools/qwen35_text/main.cc:482",
+        "tools/qwen35_text/main.cc:492",
+        "tools/qwen35_text/main.cc:498",
+        "tools/qwen35_text/main.cc:529",
+        "tools/qwen35_text/main.cc:621",
+        "tools/qwen35_text/main.cc:835",
+        "tools/qwen35_text/main.cc:871",
+        "tools/qwen35_text/main.cc:890",
+        "tools/qwen35_text/main.cc:908"
+      ],
+      "weights": "Readonly resources and compiled artifacts can be shared according to their original contracts. The current Model constructor loads its own weights; creating one unchanged Model per user is not an implemented shared-weight serving design. No memory-saving claim follows from that shortcut."
+    }
+  ],
+  "engine_policy_to_supply": [
+    "A host session registry mapping user/session identity to the correct StateHead/version, page ownership, positions and hybrid state; request ordering and access policy are not encoded by a batch ordinal.",
+    "A bounded page allocator/free-page ledger and admission/quota/eviction policy. Existing capacity checks and ResourceBudget provide limits, not scheduling or fairness. Retired permissions, not request cancellation alone, permit physical reuse.",
+    "Prefix identity/lookup and explicit share-or-COW policy, including partially filled tail pages and non-KV hybrid states. Existing readonly sharing and clone primitives do not implement automatic prefix matching.",
+    "A changing active-request scheduler that constructs immutable per-step batch layouts and assigns original independent execution slots. Multi-request layouts do not themselves implement continuous batching or request cancellation orchestration.",
+    "A complete model-level publication/cancellation protocol joining page updates and conv/GDN/metadata versions, preserving old results until the original native work retires. No new executor is required by this source review."
+  ],
+  "smallest_next_consumer": "An engine-side bounded two-session journey could interleave requests, then join and remove requests from a shared batch while checking each against an isolated reference; retain one old result, cancel one accepted update, prove actual retirement before page reuse, and branch a shared readonly prefix with an explicit private tail. For Qwen include conv/GDN and positions in the same session version. This is a proposed next consumer, not a passed test or authorized implementation in this review.",
+  "published_evidence": [
+    {
+      "path": "docs/evidence/correctness/paged-e4-kv-reference-2026-10-21.json",
+      "scope": "Finite ordinary paged E4 encoding/reading, multi-request layout and retained results across four backends; later pending-chain proof is the separate newer evidence below."
+    },
+    {
+      "path": "docs/evidence/correctness/e4-paired-pending-reference-2026-10-21.json",
+      "scope": "Actual finite paired/independent encoder -> copy -> pending page reader on CPU/GPU/mixed routes, including expected failures."
+    },
+    {
+      "path": "docs/evidence/correctness/state-native-lifetimes-2026-10-21.json",
+      "scope": "Native version/clone ownership, old controls, failure/cancel, observers and retirement; no model/server claim."
+    }
+  ],
+  "claim_boundaries": [
+    "No multi-user server, automatic session namespace, continuous-batching policy, universal prefix cache or model-level hybrid-state integration is claimed delivered.",
+    "Public page/state handles preserve borrowing rules: Context/MemoryResource/allocator must outlive their native uses and escaped readers.",
+    "Different backends/formats/geometries retain actual qualification and reuse restrictions; a passing small multi-request case is not arbitrary request count, shape or concurrent throughput coverage.",
+    "This review ran no test, model, GPU or build and changed no product/source/test/documentation. It reuses named historical actual test evidence and reads current source."
+  ],
+  "read_identities": [
+    {
+      "path": "docs/evidence/correctness/e4-paired-pending-reference-2026-10-21.json",
+      "bytes": 97326,
+      "sha256": "181f24e58b8d4e8d809163a57dfc850a2795f65a55ee4116b2fbe9a842c3a9cc"
+    },
+    {
+      "path": "docs/evidence/correctness/paged-e4-kv-reference-2026-10-21.json",
+      "bytes": 158033,
+      "sha256": "96bf2626457809387c37e7fdc44cf4824b500834344f1ecba40d7ba0c00e365a"
+    },
+    {
+      "path": "docs/evidence/correctness/state-native-lifetimes-2026-10-21.json",
+      "bytes": 7073,
+      "sha256": "331a7acff0228797319d101413550f9b83b9c33da8cc5f325f455f3fa567ad13"
+    },
+    {
+      "path": "include/hyle/compute/apple_batch.h",
+      "bytes": 8214,
+      "sha256": "c22b73da2caa1031a99fe5cbcbd81e6c255eec7429cbf542c06b35cd82ad8e98"
+    },
+    {
+      "path": "include/hyle/compute/batch_layout.h",
+      "bytes": 10506,
+      "sha256": "db6c552379051f9b8132fc8dce775dd0826c9a8d1d0d7fd10eecd1f10b159921"
+    },
+    {
+      "path": "include/hyle/compute/paged_arena.h",
+      "bytes": 10342,
+      "sha256": "004230261c2bcd629ac581ea2c6ce3fe7da928adc1b7827b8955e6e69f471fa0"
+    },
+    {
+      "path": "include/hyle/compute/state_clone.h",
+      "bytes": 14637,
+      "sha256": "5117445bbb250a62443587d8d9f64a733970af7f430183f0cc2ef1e52abc2704"
+    },
+    {
+      "path": "include/hyle/compute/state_versions.h",
+      "bytes": 8553,
+      "sha256": "a09cb66a216b56a0651f515f18d8a97772b0e6d281c171a82b8a6630b3e1c7d7"
+    },
+    {
+      "path": "include/hyle/compute/vulkan_batch.h",
+      "bytes": 8129,
+      "sha256": "204c9dab717224cd6522fb67a50f59c6a125d0fb10cacd1aa3673fac5a4b9cfe"
+    },
+    {
+      "path": "include/hyle/graph/batch.h",
+      "bytes": 12881,
+      "sha256": "8ff99a3c07bf3fb9c963e78e96d14f86ca05222540fd14d9d3dfda1a68a26877"
+    },
+    {
+      "path": "src/compute_batch/batch_layout.cc",
+      "bytes": 26391,
+      "sha256": "d7d7ec6a08f0916c04387c7e783b89fc8a4c6be4c0bf3857adc7e3f8e0568780"
+    },
+    {
+      "path": "src/compute_state/state_versions.cc",
+      "bytes": 41194,
+      "sha256": "1d344d6c0c37cd1e18b7ee765a56bb58e1ab9aa24095208f453a4c3065b5fe99"
+    },
+    {
+      "path": "tests/compute_batch/encoded_page_common_consumer.cc",
+      "bytes": 43605,
+      "sha256": "5765d14190801b291120787a2f02369a2d14e5d25ff481fd756d4ebcaf4d7a2d"
+    },
+    {
+      "path": "tests/compute_batch/encoded_page_native_consumer.cc",
+      "bytes": 37698,
+      "sha256": "e6ecc313907f01211c451a1afc0fff3e0578aed457b4ee6b3447c482b30e6a96"
+    },
+    {
+      "path": "tests/compute_batch/paged_arena_pending_test.cc",
+      "bytes": 14586,
+      "sha256": "bd7cee67e859c84179f1204dc1703b2162e4f2955306188996ef192afa29f9b8"
+    },
+    {
+      "path": "tests/compute_batch/paged_arena_test.cc",
+      "bytes": 34053,
+      "sha256": "9476ba4d87bbb0ab7312d76ac698cb3c24570467b4c83cb279f3a5221261ca6c"
+    },
+    {
+      "path": "tests/compute_models/paged_e4_kv_fixture.h",
+      "bytes": 16464,
+      "sha256": "4b50a0f6119142c4d210550a5787795b850270d0b3d42d73e458cf3024f59c3d"
+    },
+    {
+      "path": "tools/qwen35_text/main.cc",
+      "bytes": 68512,
+      "sha256": "aebe4689d50a6fe89fa341968d179c95272ed0e2bfcb63f73b2f67f59eae4e75"
+    }
+  ]
+}

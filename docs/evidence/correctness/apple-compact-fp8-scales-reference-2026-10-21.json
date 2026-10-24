@@ -1,0 +1,199 @@
+{
+  "passed": true,
+  "tests": 8,
+  "new_cases": 1,
+  "Z_neighbors": 6,
+  "all_codes_neighbors": 1,
+  "failed": 0,
+  "skipped": 0,
+  "XML_successful_submissions": 45,
+  "source_counted_additional_submissions": 1,
+  "expected_failed_completions": 2,
+  "cases": [
+    {
+      "name": "ApplePackedFp8.AllCodesPreserveFiniteValuesAndReservedNan",
+      "classification": "all_codes_neighbor",
+      "XML_successful_submissions": null,
+      "source_counted_submissions": 1,
+      "properties": {}
+    },
+    {
+      "name": "ApplePackedFp8.EncodedDotAndExplicitDecodeKeepMacroblockScaleAxes",
+      "classification": "new_macroblock_axes",
+      "XML_successful_submissions": 2,
+      "source_counted_submissions": null,
+      "properties": {
+        "successful_submissions": "2"
+      }
+    },
+    {
+      "name": "AppleFp8ScalePolicy.DensePoliciesKeepSeparateRoundingTrees",
+      "classification": "Z_neighbor",
+      "XML_successful_submissions": 12,
+      "source_counted_submissions": null,
+      "properties": {
+        "device": "Apple M4",
+        "successful_submissions": "12",
+        "policy_witness": "450/tiny: Divide3c01,MultiplyReciprocal3bc1;Wcode1/SF1"
+      }
+    },
+    {
+      "name": "AppleFp8ScalePolicy.FixedSourceRoleKeepsOriginalBlock128Bank",
+      "classification": "Z_neighbor",
+      "XML_successful_submissions": 4,
+      "source_counted_submissions": null,
+      "properties": {
+        "device": "Apple M4",
+        "successful_submissions": "4",
+        "role_scope": "catalog30 layer45 expert0 gate_proj:BF16A[1,4096],E4W[2048,4096],F32SF[16,32];artificial bytes;no payload/fullmodel/AMDrcpf claim"
+      }
+    },
+    {
+      "name": "AppleFp8ScalePolicy.GroupedReciprocalMathRetainsOldResults",
+      "classification": "Z_neighbor",
+      "XML_successful_submissions": 8,
+      "source_counted_submissions": null,
+      "properties": {
+        "device": "Apple M4",
+        "actual_submissions": "8"
+      }
+    },
+    {
+      "name": "AppleFp8ScalePolicy.CheckedIdsFailAndFreshInvocationRecovers",
+      "classification": "Z_neighbor",
+      "XML_successful_submissions": 3,
+      "source_counted_submissions": null,
+      "properties": {
+        "device": "Apple M4",
+        "successful_submissions": "3",
+        "expected_failed_completions": "2"
+      }
+    },
+    {
+      "name": "AppleFp8ScalePolicy.OriginalGroupedPowerKeepsItsQuantizer",
+      "classification": "Z_neighbor",
+      "XML_successful_submissions": 8,
+      "source_counted_submissions": null,
+      "properties": {
+        "device": "Apple M4",
+        "actual_submissions": "8"
+      }
+    },
+    {
+      "name": "AppleFp8ScalePolicy.OriginalGroupedDivideKeepsItsQuantizer",
+      "classification": "Z_neighbor",
+      "XML_successful_submissions": 8,
+      "source_counted_submissions": null,
+      "properties": {
+        "device": "Apple M4",
+        "actual_submissions": "8"
+      }
+    }
+  ],
+  "CXX_jobs": 2,
+  "SDK_jobs": 0,
+  "new_links": 1,
+  "actual_GPU_runs": 1,
+  "source_freeze": {
+    "path": ".scratch/architecture-refactor-2026-10-18/apple-compact-fp8-scales-2026-10-21/apple/source-freeze.json",
+    "bytes": 1524,
+    "sha256": "44b08f28f80f49deea9d614c78e68480691eeb46708e371c1d6aaa25d0503fed"
+  },
+  "actual_dependency_drift": 0,
+  "hardware": {
+    "path": ".scratch/architecture-refactor-2026-10-18/apple-compact-fp8-scales-2026-10-21/apple/mac/final/hardware.json",
+    "bytes": 516,
+    "sha256": "e3d3b88dbbb5913e88624a2ef189a6e1418d217e00705e73cdc5f5181427e721"
+  },
+  "run": {
+    "argv": [
+      "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-compact-fp8-scales-2026-10-21/apple/compact-fp8-scales",
+      "--gtest_filter=AppleFp8ScalePolicy.*:ApplePackedFp8.EncodedDotAndExplicitDecodeKeepMacroblockScaleAxes:ApplePackedFp8.AllCodesPreserveFiniteValuesAndReservedNan",
+      "--gtest_output=xml:/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-compact-fp8-scales-2026-10-21/apple/results/tests.xml"
+    ],
+    "started": 1792549485.02185,
+    "environment": {},
+    "exit": 0,
+    "seconds": 2.607322931289673
+  },
+  "validation": {
+    "image": {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-compact-fp8-scales-2026-10-21/apple/compact-fp8-scales",
+      "bytes": 15498784,
+      "sha256": "80d90c566845dd320514998705b36ceaed41852d912b7e8d2db45659dbdecd06"
+    },
+    "tests": 8,
+    "failed": [],
+    "skipped": [],
+    "exit": 0,
+    "names": [
+      "ApplePackedFp8.AllCodesPreserveFiniteValuesAndReservedNan",
+      "ApplePackedFp8.EncodedDotAndExplicitDecodeKeepMacroblockScaleAxes",
+      "AppleFp8ScalePolicy.DensePoliciesKeepSeparateRoundingTrees",
+      "AppleFp8ScalePolicy.FixedSourceRoleKeepsOriginalBlock128Bank",
+      "AppleFp8ScalePolicy.GroupedReciprocalMathRetainsOldResults",
+      "AppleFp8ScalePolicy.CheckedIdsFailAndFreshInvocationRecovers",
+      "AppleFp8ScalePolicy.OriginalGroupedPowerKeepsItsQuantizer",
+      "AppleFp8ScalePolicy.OriginalGroupedDivideKeepsItsQuantizer"
+    ],
+    "source_manifest": {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-compact-fp8-scales-2026-10-21/apple/source-manifest.json",
+      "bytes": 1700,
+      "sha256": "02d1de0eaa4f21360a7e69b05d089df1434d97acc94f00bcb5adfda0b740882b"
+    }
+  },
+  "structural_space": {
+    "status": "source_and_actual_native_route_structure_not_allocation_or_speed_measurement",
+    "dense_call": "The encoded-A MatMul and Float8BlockLinear shared tail calls weight(...,compact_scales=true).",
+    "original_weight_helper": "compact_scales returns before mx::repeat and mx::slice; packed kernel uses (!FOUR ? column/128 : column) for SF row selection.",
+    "explicit_decode": "Float8WeightDecode still calls the original noncompact path, preserving full requested decoded-W output.",
+    "source_role": {
+      "N": 2048,
+      "K": 4096,
+      "groups": 32,
+      "old_repeated_SF_shape": [
+        1,
+        2048,
+        32,
+        1
+      ],
+      "old_logical_bytes": 262144,
+      "new_compact_SF_shape": [
+        1,
+        16,
+        32,
+        1
+      ],
+      "new_logical_bytes": 2048,
+      "reduction_factor": 128
+    },
+    "new_test": "M1N129K256 has distinct macroblock and K-group scales; encoded dot and explicit full decoding each submit once.",
+    "unchanged": "Original QDQ policies, scale multiplication/addition boundaries, grouped compact path, FP4 per-row scales and output casts.",
+    "not_measured": [
+      "Physical MTLBuffer allocations",
+      "Dispatch counts after fusion",
+      "Peak memory",
+      "Time or throughput"
+    ]
+  },
+  "link_map_audit": {
+    "path": ".scratch/architecture-refactor-2026-10-18/apple-compact-fp8-scales-2026-10-21/apple/link-map-audit.json",
+    "bytes": 1419,
+    "sha256": "fc13bfc49382f2b33bd5c8a542b69122105aa7f02b683f492616a40ed4d34e53"
+  },
+  "cleanup_inventory": {
+    "path": ".scratch/architecture-refactor-2026-10-18/apple-compact-fp8-scales-2026-10-21/apple/cleanup-inventory.json",
+    "bytes": 1723,
+    "sha256": "6156768892c05c6a4e5dd9414b1b313ee461e71933291f22d6e4cd19ceb57027"
+  },
+  "scope": "Apple-only dense packed block128 SF address/layout correction.8 actual distinct cases; Z6 neighbors use the same exact retained wrapper/object and original fixtures. No whole-artifact/payload, Linux, quality, physical allocation or throughput claim.",
+  "no_product_docs_edited": true,
+  "no_cleanup_performed": true,
+  "archive": {
+    "path": "C:/public/project-hyle/hyle/docs/evidence/correctness/apple-compact-fp8-scales-reference-2026-10-21.zip",
+    "bytes": 138327,
+    "sha256": "95dfbf50d6ce3fc51648bc4378392a767ed4ed6a9883693541fa2ec5768dff10"
+  },
+  "manifest_members": 41,
+  "source_members": 2
+}

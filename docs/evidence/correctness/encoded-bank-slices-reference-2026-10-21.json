@@ -1,0 +1,2243 @@
+{
+  "observed_on": "2026-10-21",
+  "status": "encoded_bank_slice_transport_and_original_FP4_selected_consumer_passed",
+  "scope": "Common copy-only weight-slice assembly supports complete physical byte fragments of already encoded catalog banks. Host metadata and three native original-FP4 resource consumers; this does not complete the formal GA routed/shared FFN role or capability8.",
+  "contract": "Plain banks preserve dense same-scalar-type rules. Valid encoded banks accept explicit dense plainU8 fragments of already formatted physical bytes,including blocked/opaque layouts. No codec interpretation,scale conversion,packing,weight expansion or dtype-based reinterpretation. Original exact bankextent,alignment,completecoverage,capacity,hostidentity andnative preflightalias rules remain.",
+  "mathematics": "The resource consumer uses existing GroupedFloat4Linear onFlash-admitted N2048/K4096,E7,T2,Top6. Original adjacentE2M1 codeplane andF32 group32power2scale tail;BF16onehot6 passes the original dynamicA128 floor1e-4/power2E4 boundary exactly. Independent source-code/table oracle expectsBF16 words without reading staged GPU data;not ModelOptNVFP4.",
+  "journey": "Sevenof256 nonidentityglobalexperts,typedI32 remap atomicallybound with the sameimmutable uploadbatch. Threeuploadgenerations across twooriginal slots;retainedbatch/consumer/output guards reject overwrite,release enablesreuse. Globallyvalid-but-absentID maps to-1,expectedfailedCompletion exposesnoresult,and freshInvocation recovers. Originalsources aredestroyed beforeCompute submit; oldresults survive publicbank/plan/invocation handles.",
+  "accounting": "Each new encodedgeneration transports36700160Bweight plus1024Bmap=36701184Blogical in16totalfragments,includingone-bytecode split andplainmap. The original report validatesstaged/submitted/completed bytes;pending/failed copies do not prove bytes completed. No measuredDRAM/bus/totalprivate-memory claim.",
+  "fixes": {
+    "common_encoded_fragments": "prepare_weight_slices retains plain dense banks with their original scalar type/alignment and accepts valid encoded banks only through explicit dense plain U8 physical-byte fragments. All required_bytes, complete coverage, overlap, host identity, bank alignment and fixed capacity checks remain. No format whitelist, codec interpretation, scale conversion or packed-bit transformation.",
+    "native_owners": "Refresh the existing CUDA weights.cc, Vulkan vulkan_weights.cc and Apple apple_weights.mm inline-helper owners. Existing native catalog, transfer, WeightBatch InputSource, atomic graph binding, retirement and math implementations are unchanged.",
+    "original_fp4_resource_journey": "Original FP4 E2M1/group32 plus F32 power-of-two SF tail, not ModelOptNVFP4. Seven selected experts of256 at admitted N2048/K4096, T2/Top6, nonidentity I32 map. Sixteen unordered source fragments include a one-byte split; no full global expert bank is allocated. Old immutable batches/results reject overwrite, release permits slot reuse; missing global ID maps to-1 and fails Completion, fresh invocation recovers.",
+    "coverage": "Three new host metadata cases plus three plain neighbors, and one new encoded native journey plus one existing plain NVFP4 neighbor on each of CUDA/Vulkan/Apple. Source sparse/normal-domain oracle and resource boundaries are independently reviewed. No product arithmetic or new execution layer.",
+    "remaining_work": "The complete source-bound GA routed/shared FFN consumer remains pending. Reuse existing moe_chain rather than duplicate its math; this batch removes an actual encoded-bank fragmented-upload blocker. Capability7/8 and delivery0/3 remain incomplete."
+  },
+  "build": {
+    "windows_report": ".scratch/architecture-refactor-2026-10-18/ga-route-ffn-2026-10-21/opaque-slices/build-report.json",
+    "windows": "Five strict CXX jobs: two native weights inline-helper owners, two focused GPU wrappers and the existing host weight_import_test owner. Three focused links retain U/T current closures, replacing only those owners. All5 CXX and3 links passed; actual1169 dependency references/324 unique files/0drift. Root sequential actual CPU6/CUDA2/Vulkan2 cases passed.",
+    "apple": "Only existing weights.mm and focused wrapper refreshed, no SDK/product-math changes. The prior actual green run is retained before public comment wording was aligned from opaque to encoded. Final current-source/dependency and execution identities are in apple/final-validation.json.",
+    "scope": "Related compile/link/run only. Three new native CMake test registrations; original host WeightAssembly tests remain in their existing compute target. Full canonical configure/install/Linux, whole FFN and performance were not run."
+  },
+  "regression": {
+    "total": 12,
+    "new_cases": 6,
+    "neighbors": 6,
+    "failed": 0,
+    "skipped": 0,
+    "host_metadata_cases": 6,
+    "successful_Graph_submissions": 18,
+    "expected_failed_Graph_completions": 3,
+    "windows": [
+      {
+        "backend": "cpu",
+        "receipt": {
+          "path": ".scratch/architecture-refactor-2026-10-18/ga-route-ffn-2026-10-21/cpu/validation/final1/receipt.json",
+          "bytes": 2241,
+          "sha256": "664cdaa3ba4fad7fb09afaace7758c15b030025d72c031497177b6917d49455b"
+        }
+      },
+      {
+        "backend": "cuda",
+        "receipt": {
+          "path": ".scratch/architecture-refactor-2026-10-18/ga-route-ffn-2026-10-21/cuda/validation/final1/receipt.json",
+          "bytes": 2616,
+          "sha256": "31bc13dfcbf2e6a72870cee22ddede44b49fc0a5eb0803920522e90de8a1bbe8"
+        }
+      },
+      {
+        "backend": "vulkan",
+        "receipt": {
+          "path": ".scratch/architecture-refactor-2026-10-18/ga-route-ffn-2026-10-21/vulkan/validation/final1/receipt.json",
+          "bytes": 2829,
+          "sha256": "5382ee3c18542256afa89486845beeceb1c252c64fb4483802a58ae16f0e3496"
+        }
+      }
+    ],
+    "apple": {
+      "path": ".scratch/architecture-refactor-2026-10-18/ga-route-ffn-2026-10-21/apple/final-validation.json",
+      "bytes": 8222,
+      "sha256": "03ba38c9470fa58f516ba496033afbd7079e6dac7db036dd7697e2cb016007a2"
+    },
+    "cases": [
+      {
+        "backend": "cpu",
+        "name": "WeightAssembly.UnorderedSlicesUseCatalogBankOrderAndExactAlignment",
+        "neighbor": true,
+        "properties": {}
+      },
+      {
+        "backend": "cpu",
+        "name": "WeightAssembly.InvalidCoverageTypeOffsetAndCapacityDoNotTouchSources",
+        "neighbor": true,
+        "properties": {}
+      },
+      {
+        "backend": "cpu",
+        "name": "WeightAssembly.CanonicalHostAddressFactIsRequiredBeforeSourceMapping",
+        "neighbor": true,
+        "properties": {}
+      },
+      {
+        "backend": "cpu",
+        "name": "WeightAssembly.EncodedBanksUseExplicitByteSlicesWithoutScalarReinterpretation",
+        "neighbor": false,
+        "properties": {}
+      },
+      {
+        "backend": "cpu",
+        "name": "WeightAssembly.EncodedBanksRejectTypedEncodedAndStridedSources",
+        "neighbor": false,
+        "properties": {}
+      },
+      {
+        "backend": "cpu",
+        "name": "WeightAssembly.EncodedCoverageAndOriginalBlockAlignmentStayExact",
+        "neighbor": false,
+        "properties": {}
+      },
+      {
+        "backend": "cuda",
+        "name": "CudaGaEncodedBank.NewEncodedOriginalFp4",
+        "neighbor": false,
+        "properties": {
+          "successful_submissions": "3",
+          "expected_failed_submissions": "1",
+          "selected_bank": "7 of256,original FP4 N2048/K4096,Top6,T2; encoded W+F32 scale tail and plain I32 map",
+          "byte_fragments": "16,one-byte split,out-of-order,original host sources destroyed before submit",
+          "scope": "encoded resource bridge and existing original FP4 math; complete routed/shared FFN remains separate"
+        }
+      },
+      {
+        "backend": "cuda",
+        "name": "CudaGaEncodedBank.PlainNvfp4Neighbor",
+        "neighbor": true,
+        "properties": {
+          "actual_selected_global_experts": "4",
+          "global_expert_domain": "512",
+          "successful_upload_generations": "3",
+          "actual_graph_submissions": "3",
+          "uploaded_logical_bytes": "113252448",
+          "original_fragment_slices_per_generation": "17"
+        }
+      },
+      {
+        "backend": "vulkan",
+        "name": "VulkanGaEncodedBank.NewEncodedOriginalFp4",
+        "neighbor": false,
+        "properties": {
+          "device": "NVIDIA GeForce RTX 4070",
+          "successful_submissions": "3",
+          "expected_failed_submissions": "1",
+          "selected_bank": "7 of256,original FP4 N2048/K4096,Top6,T2; encoded W+F32 scale tail and plain I32 map",
+          "byte_fragments": "16,one-byte split,out-of-order,original host sources destroyed before submit",
+          "scope": "encoded resource bridge and existing original FP4 math; complete routed/shared FFN remains separate"
+        }
+      },
+      {
+        "backend": "vulkan",
+        "name": "VulkanGaEncodedBank.PlainNvfp4Neighbor",
+        "neighbor": true,
+        "properties": {
+          "device": "NVIDIA GeForce RTX 4070",
+          "actual_selected_global_experts": "4",
+          "global_expert_domain": "512",
+          "successful_upload_generations": "3",
+          "actual_graph_submissions": "3",
+          "uploaded_logical_bytes": "113252448",
+          "original_fragment_slices_per_generation": "17"
+        }
+      },
+      {
+        "backend": "apple",
+        "name": "AppleGaEncodedBank.OriginalFp4EncodedFragmentsKeepMapGeneration",
+        "neighbor": false,
+        "properties": {
+          "device": "Apple M4",
+          "successful_submissions": "3",
+          "expected_failed_submissions": "1",
+          "selected_bank": "7 of256,original FP4 N2048/K4096,Top6,T2; encoded W+F32 scale tail and plain I32 map",
+          "byte_fragments": "16,one-byte split,out-of-order,original host sources destroyed before submit",
+          "scope": "encoded resource bridge and existing original FP4 math; complete routed/shared FFN remains separate"
+        }
+      },
+      {
+        "backend": "apple",
+        "name": "AppleGaEncodedBank.PlainNvfp4Neighbor",
+        "neighbor": true,
+        "properties": {
+          "device": "Apple M4",
+          "actual_selected_global_experts": "4",
+          "global_expert_domain": "512",
+          "successful_upload_generations": "3",
+          "actual_graph_submissions": "3",
+          "uploaded_logical_bytes": "113252448",
+          "original_fragment_slices_per_generation": "17"
+        }
+      }
+    ]
+  },
+  "limitations": [
+    "Complete formal GA routed+shared FFN remains pending. The existing originalFP4 primitive and source-bound math are reused;this is one finite encodedresource bridge,not a new operator or fullMoE implementation.",
+    "Synthetic original-format bytes and finite onehot data;no checkpointnumericpayload,full256expertbank,wholemodel,quality orperformance claim.",
+    "Only the common inlinevalidator andits actual nativeadapter owners needrefresh;no new transfer/Graph/executor implementation orSDK/AOT regeneration. Actualbuildcounts arein retainedreceipts,not inferred fromsourcecount.",
+    "Host testscover metadata/type/alignment/range andunchangedsourcebytes; GPUconsumers separately prove originaltransfer/lifetime/numerical behavior. Acceptedrawbytes arenot generalcodecvalidity certification.",
+    "No fullcanonical configure/install/Linux/device/dtype matrix. CUDA capture behavior is limited to the actual wrapper assertions recorded here,not a new general capturequalification.",
+    "Capability7/8 anddelivery0/3 remainincomplete;all33 artifact_execution_verified flagsremainfalse."
+  ],
+  "current_sources": [
+    {
+      "path": "docs/developer/current-work.md",
+      "bytes": 37857,
+      "sha256": "ca7325989be4561f3b58c166422ce8a12e3c840f03d8581d8c1d7c896ceffcc3"
+    },
+    {
+      "path": "docs/implementation/model-operators.md",
+      "bytes": 80083,
+      "sha256": "1127eaa92c627d3b06881b862a2ef71f8362781503a548054805b87ef23aafd3"
+    },
+    {
+      "path": "docs/implementation/model-quantizations.json",
+      "bytes": 560459,
+      "sha256": "12b2b04e91ca74a79d0661671064aaea4f899cb7e3d496cc7ae62152fbb230d3"
+    },
+    {
+      "path": "docs/user/compute.md",
+      "bytes": 120001,
+      "sha256": "a12b588c9702b6a1a247e7abc0c8f6a04c43bd61132b3f3836754dc14d38661e"
+    },
+    {
+      "path": "docs/user/graph.md",
+      "bytes": 89012,
+      "sha256": "b51d8e16b860e9f014d29afb1c32eef79514f9e886a1dc3be990e46a52d7d692"
+    },
+    {
+      "path": "include/hyle/compute/apple_weights.h",
+      "bytes": 4606,
+      "sha256": "0f74446c0496272df3b902a52e0ec3f0897e6131ddc2f0bc1cdd95e81f228d4f"
+    },
+    {
+      "path": "include/hyle/compute/cuda_weights.h",
+      "bytes": 5065,
+      "sha256": "1e3ca02148c67fc2d6d6744beb5a03ee93dcb7f7a61ffed16aa5b5e49d5a8079"
+    },
+    {
+      "path": "include/hyle/compute/model_ops.h",
+      "bytes": 75341,
+      "sha256": "d3315100def9904a604dd3a1386000641cb03c2e8d36485ef3e55b98e4dde3e5"
+    },
+    {
+      "path": "include/hyle/compute/resource_leases.h",
+      "bytes": 8660,
+      "sha256": "4e5681ebfa7c2f2ad51e5788c8316f4b993883f595c04b33fe594d7294dab85b"
+    },
+    {
+      "path": "include/hyle/compute/vulkan_weights.h",
+      "bytes": 3974,
+      "sha256": "f54d91b380e71b6d073c00175ffea08849442250b57844b23eac839472054bf0"
+    },
+    {
+      "path": "include/hyle/compute/weight_assembly.h",
+      "bytes": 2095,
+      "sha256": "c085186c2751371d8e642f29d1b338e53962236e50c9935ea1858a4b188ca3ac"
+    },
+    {
+      "path": "include/hyle/graph/result.h",
+      "bytes": 1646,
+      "sha256": "90861eafec4f3a0aa73014416bd2817dfe3892ac001ea206bebf907e1d3cf182"
+    },
+    {
+      "path": "include/hyle/graph/weight_binding.h",
+      "bytes": 422,
+      "sha256": "ebcc3eea951953966a3b10b2951872e74d04921af6f0cc8de45ab52ab1ba32bd"
+    },
+    {
+      "path": "src/compute/weight_assembly.h",
+      "bytes": 5757,
+      "sha256": "3acee3356f6241ea6bd3f40da5bc357e53d9d20d9652237f52374eeceb82b3ff"
+    },
+    {
+      "path": "src/compute_ops/low_precision.cc",
+      "bytes": 15337,
+      "sha256": "2d1754ef9a2f91b6987bc9abc31b1063427741aac89767b48e7f51fcb7b02bce"
+    },
+    {
+      "path": "src/compute_provider_cuda/deepseek_grouped_fp4_provider.cc",
+      "bytes": 10020,
+      "sha256": "146efe83698df512396530788381ab2b9d074f826c4a51cea48e47457371b232"
+    },
+    {
+      "path": "src/compute_route_apple/apple_weights.mm",
+      "bytes": 24029,
+      "sha256": "fdb6f5f6fc059657e7e0cd5302865d8fa7b9e4f6ba3fea41bcd2ed46fb0f0bd5"
+    },
+    {
+      "path": "src/compute_route_cuda/weights.cc",
+      "bytes": 23241,
+      "sha256": "d0554efedeb27f56d059ddf5f839d41c294c739962a97d628cdf59ff10dcd236"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_weights.cc",
+      "bytes": 15764,
+      "sha256": "1882f3c92605e369053db2d3217cd69c712e26964607fcc15d30c3cf03784e74"
+    },
+    {
+      "path": "src/graph_route_apple/weight_binding.cc",
+      "bytes": 3694,
+      "sha256": "c49db2528c69f60ae65f2b4770612328a802720b29b7528d259ec316116e5cea"
+    },
+    {
+      "path": "src/graph_route_cuda/weight_binding.cc",
+      "bytes": 2864,
+      "sha256": "5aac253f95f9e42b566e2eafc775eee56442c8d38c118c7399df6052a7eff8d1"
+    },
+    {
+      "path": "src/graph_route_vulkan/weight_binding.cc",
+      "bytes": 3914,
+      "sha256": "7e3937d230e472823c3a1b343199a2265ed96d61edb304f7a4b0b813171f1f73"
+    },
+    {
+      "path": "tests/compute/CMakeLists.txt",
+      "bytes": 865,
+      "sha256": "581ad6485b64ba6a3eccb2f1d0f87081994d99d96e2139fbf6d49fe5bcbef6cc"
+    },
+    {
+      "path": "tests/compute/weight_import_test.cc",
+      "bytes": 33941,
+      "sha256": "fd4551fb7a6a3e616c0aafc223aa6b1d4b73934feb282f375d82ae867f9ff93b"
+    },
+    {
+      "path": "tests/compute_models/ct_packed_graph_fixture.h",
+      "bytes": 25617,
+      "sha256": "3e5750bdaad93e36792f2ee9428af0ca9672a8fafa24800cd064790432c3ba32"
+    },
+    {
+      "path": "tests/compute_models/ct_packed_grouped_fixture.h",
+      "bytes": 16396,
+      "sha256": "dcadf216276544c7145c913200f38dd762f0cb76d41cce0776b165bac1d3b7b9"
+    },
+    {
+      "path": "tests/compute_models/expert_working_set_fixture.h",
+      "bytes": 25059,
+      "sha256": "7acdd3077cf034cf8656f831fe27e9247341e24095be2da52de9923098d4dc75"
+    },
+    {
+      "path": "tests/compute_models/ga_encoded_bank_fixture.h",
+      "bytes": 10225,
+      "sha256": "4a69ed816143bd15ee5b059be621ffb14eabab25c7c1b376dcd0e843f2b4099b"
+    },
+    {
+      "path": "tests/compute_models/nvfp4_reference_fixture.h",
+      "bytes": 22482,
+      "sha256": "cc94ec1f443511722ff4fc227b065af27b82573443735250951cdce934faa4d3"
+    },
+    {
+      "path": "tests/compute_route_vulkan/mlx_test_support.h",
+      "bytes": 18824,
+      "sha256": "dffc4ce6d586545204bdb3ed0b8e7cfd98ed632f248085cb915168d5c41a51ce"
+    },
+    {
+      "path": "tests/graph_route_apple/CMakeLists.txt",
+      "bytes": 7365,
+      "sha256": "30fbe7a3e9017839dc0af52c0233bfef4fa18254e21b9f89c6e36dc51c9cfb4c"
+    },
+    {
+      "path": "tests/graph_route_apple/ga_encoded_bank_test.cc",
+      "bytes": 2602,
+      "sha256": "f371244503f314035c3eee41e4928f50cdae55685bb4901d79d4811541b3d1c9"
+    },
+    {
+      "path": "tests/graph_route_cuda/CMakeLists.txt",
+      "bytes": 3775,
+      "sha256": "ba7740e2357864aeb3b8c7cfc5794771be5fbaad6e4c5d9ac66d3e32d1bb4884"
+    },
+    {
+      "path": "tests/graph_route_cuda/ga_encoded_bank_test.cc",
+      "bytes": 2768,
+      "sha256": "06c5dbaae6e033ed95e0cca3f37fa8d4dd7f7c44b37146948525a0cee845b21f"
+    },
+    {
+      "path": "tests/graph_route_vulkan/CMakeLists.txt",
+      "bytes": 6928,
+      "sha256": "e99269bd9b5755421942080fda69a8188fadf6a6992a1bda2395b1f70d82ad7a"
+    },
+    {
+      "path": "tests/graph_route_vulkan/ga_encoded_bank_test.cc",
+      "bytes": 4312,
+      "sha256": "4c90a8f98ed22241dab97ccc82f4125aeed17ece6c7611da3d0b8fd0cff1aa62"
+    }
+  ],
+  "archive": {
+    "path": "docs/evidence/correctness/encoded-bank-slices-reference-2026-10-21.zip",
+    "bytes": 2875225,
+    "sha256": "0a228652be3b87229dc713868db10527c09d2c038354132abdb7e4343cf961c8",
+    "members": 373
+  },
+  "archive_entries": [
+    {
+      "entry": "provenance/deepseek-v4-ga-2026-10-19.zip",
+      "bytes": 131088,
+      "sha256": "e7388fd80750107cd0702d413aceaa8d07e644265d275eaee864ee62293f51b0"
+    },
+    {
+      "entry": "records/apple/actual-dependencies-canonical-audit.json",
+      "bytes": 774241,
+      "sha256": "5bc82f0670440a46c3f06d927425d6158add4fe6e65cadd0a728891121f1bb62"
+    },
+    {
+      "entry": "records/apple/apple-header-change.json",
+      "bytes": 502,
+      "sha256": "17ffc02bde025b8a8c7b9d4fed6fa15b943522dc3d7a409560dda5500c6850e6"
+    },
+    {
+      "entry": "records/apple/attempt1/source-freeze.json",
+      "bytes": 1350,
+      "sha256": "8fb00cb1c4755d329be3cf33b9b935dac2094bdfbede9bbcb39b431b2c35d0bd"
+    },
+    {
+      "entry": "records/apple/attempt1/source/include/hyle/compute/apple_weights.h",
+      "bytes": 4605,
+      "sha256": "46d420d091967c4414706384e6ea115094bd13a1c142cae322061be1ec127dc9"
+    },
+    {
+      "entry": "records/apple/attempt1/source/include/hyle/compute/weight_assembly.h",
+      "bytes": 2095,
+      "sha256": "c085186c2751371d8e642f29d1b338e53962236e50c9935ea1858a4b188ca3ac"
+    },
+    {
+      "entry": "records/apple/attempt1/source/src/compute/weight_assembly.h",
+      "bytes": 5757,
+      "sha256": "3acee3356f6241ea6bd3f40da5bc357e53d9d20d9652237f52374eeceb82b3ff"
+    },
+    {
+      "entry": "records/apple/attempt1/source/src/compute_route_apple/apple_weights.mm",
+      "bytes": 24029,
+      "sha256": "fdb6f5f6fc059657e7e0cd5302865d8fa7b9e4f6ba3fea41bcd2ed46fb0f0bd5"
+    },
+    {
+      "entry": "records/apple/attempt1/source/tests/compute_models/ga_encoded_bank_fixture.h",
+      "bytes": 10225,
+      "sha256": "4a69ed816143bd15ee5b059be621ffb14eabab25c7c1b376dcd0e843f2b4099b"
+    },
+    {
+      "entry": "records/apple/attempt1/source/tests/graph_route_apple/CMakeLists.txt",
+      "bytes": 7365,
+      "sha256": "30fbe7a3e9017839dc0af52c0233bfef4fa18254e21b9f89c6e36dc51c9cfb4c"
+    },
+    {
+      "entry": "records/apple/attempt1/source/tests/graph_route_apple/ga_encoded_bank_test.cc",
+      "bytes": 2602,
+      "sha256": "f371244503f314035c3eee41e4928f50cdae55685bb4901d79d4811541b3d1c9"
+    },
+    {
+      "entry": "records/apple/attempt2/source-freeze.json",
+      "bytes": 1358,
+      "sha256": "d29813cc5834bf4f678f25e609f26cc2eb00d9a28a3049c39a94d826e81c3dcd"
+    },
+    {
+      "entry": "records/apple/attempt2/source/include/hyle/compute/apple_weights.h",
+      "bytes": 4606,
+      "sha256": "0f74446c0496272df3b902a52e0ec3f0897e6131ddc2f0bc1cdd95e81f228d4f"
+    },
+    {
+      "entry": "records/apple/attempt2/source/include/hyle/compute/weight_assembly.h",
+      "bytes": 2095,
+      "sha256": "c085186c2751371d8e642f29d1b338e53962236e50c9935ea1858a4b188ca3ac"
+    },
+    {
+      "entry": "records/apple/attempt2/source/src/compute/weight_assembly.h",
+      "bytes": 5757,
+      "sha256": "3acee3356f6241ea6bd3f40da5bc357e53d9d20d9652237f52374eeceb82b3ff"
+    },
+    {
+      "entry": "records/apple/attempt2/source/src/compute_route_apple/apple_weights.mm",
+      "bytes": 24029,
+      "sha256": "fdb6f5f6fc059657e7e0cd5302865d8fa7b9e4f6ba3fea41bcd2ed46fb0f0bd5"
+    },
+    {
+      "entry": "records/apple/attempt2/source/tests/compute_models/ga_encoded_bank_fixture.h",
+      "bytes": 10225,
+      "sha256": "4a69ed816143bd15ee5b059be621ffb14eabab25c7c1b376dcd0e843f2b4099b"
+    },
+    {
+      "entry": "records/apple/attempt2/source/tests/graph_route_apple/CMakeLists.txt",
+      "bytes": 7365,
+      "sha256": "30fbe7a3e9017839dc0af52c0233bfef4fa18254e21b9f89c6e36dc51c9cfb4c"
+    },
+    {
+      "entry": "records/apple/attempt2/source/tests/graph_route_apple/ga_encoded_bank_test.cc",
+      "bytes": 2602,
+      "sha256": "f371244503f314035c3eee41e4928f50cdae55685bb4901d79d4811541b3d1c9"
+    },
+    {
+      "entry": "records/apple/audit_dependencies.py",
+      "bytes": 3059,
+      "sha256": "5bb9272a8caf4e0fcf5a1331759682f8ca7357ce46d020bf8965b519aec3cd2e"
+    },
+    {
+      "entry": "records/apple/before/include/hyle/compute/apple_weights.h",
+      "bytes": 4441,
+      "sha256": "44d1783728abc481f0cd699531d4f08a7188faf6f96dec11da70633c7ff3cb4b"
+    },
+    {
+      "entry": "records/apple/before/src/compute/weight_assembly.h",
+      "bytes": 5441,
+      "sha256": "8037ad378e1a8627e9c10c6f97a69d9e9ea4b4a7badaee8a58422a6572ddca40"
+    },
+    {
+      "entry": "records/apple/before/src/compute_route_apple/apple_weights.mm",
+      "bytes": 24029,
+      "sha256": "fdb6f5f6fc059657e7e0cd5302865d8fa7b9e4f6ba3fea41bcd2ed46fb0f0bd5"
+    },
+    {
+      "entry": "records/apple/before/src/graph_route_apple/weight_binding.cc",
+      "bytes": 3694,
+      "sha256": "c49db2528c69f60ae65f2b4770612328a802720b29b7528d259ec316116e5cea"
+    },
+    {
+      "entry": "records/apple/before/tests/graph_route_apple/CMakeLists.txt",
+      "bytes": 7204,
+      "sha256": "8b46bad3af6427c7f02f3b60f6831734bd352fdac2020eb1a71b0a37a3d60d97"
+    },
+    {
+      "entry": "records/apple/build_mac.py",
+      "bytes": 8174,
+      "sha256": "6cb73fb66af7d4c929c4c7e731ff81903679e5d32fce9488f82e5081ed5cbf51"
+    },
+    {
+      "entry": "records/apple/cleanup-readonly-inventory.json",
+      "bytes": 1678,
+      "sha256": "8c2e5784de7b0e05851a1cbc55f7f6c124147b9bb6289f1ee5b15ca664737819"
+    },
+    {
+      "entry": "records/apple/collect_mac.py",
+      "bytes": 984,
+      "sha256": "1028622bc05d2c2a11aee7717bc33dd5788bd7faa2a30502ea19e3e2c03c9780"
+    },
+    {
+      "entry": "records/apple/existing-object-cache.json",
+      "bytes": 1498,
+      "sha256": "cfefc2496c3333f8a3cf83f5d3a37b8922c2a1ec392ac687051a26c95a3257b5"
+    },
+    {
+      "entry": "records/apple/ffn-source-review.json",
+      "bytes": 8492,
+      "sha256": "dfa447197c83f235c4a29dd43a47627e43c03a2f2e57730249f826805b17f8b0"
+    },
+    {
+      "entry": "records/apple/final-validation.json",
+      "bytes": 8222,
+      "sha256": "03ba38c9470fa58f516ba496033afbd7079e6dac7db036dd7697e2cb016007a2"
+    },
+    {
+      "entry": "records/apple/finalize_receipts.py",
+      "bytes": 7278,
+      "sha256": "bacf586ea13fb74b9e0ac84af0bf1dbd15ecdc360b89d049b287d211a1193a40"
+    },
+    {
+      "entry": "records/apple/inline-owner-cache-recipe.json",
+      "bytes": 23462,
+      "sha256": "f34b28f31a4fc75bed92afe412f95e045b5f3adb65d50144dab43b6c57b99397"
+    },
+    {
+      "entry": "records/apple/mac/attempt1-compiled/hardware.json",
+      "bytes": 516,
+      "sha256": "072aadfd3b969664f72b96548ec50ef7d28164bbfd8521e4bf937daa2b8d7c97"
+    },
+    {
+      "entry": "records/apple/mac/attempt1-compiled/plan.json",
+      "bytes": 627720,
+      "sha256": "f030b1e0af2eaf3562716bb3708ca4bf7ad7e17fb6fc5d4365063bd20327fd36"
+    },
+    {
+      "entry": "records/apple/mac/attempt1-compiled/results/compile-summary.json",
+      "bytes": 1436120,
+      "sha256": "73805f76a118de38c09512313ce1fb03dedac00ee5e49a51a6197dabb36c06ad"
+    },
+    {
+      "entry": "records/apple/mac/attempt1-compiled/results/src--compute_route_apple--apple_weights.mm-compile.command.json",
+      "bytes": 149435,
+      "sha256": "15e167d6bf3ecf91353857f4051be39dc97bd5ee83cae833ea9bce3841619998"
+    },
+    {
+      "entry": "records/apple/mac/attempt1-compiled/results/src--compute_route_apple--apple_weights.mm-compile.result.json",
+      "bytes": 149481,
+      "sha256": "1a76af8c66362265c9423e4c2e3a308f4127ef967b1090628531f776f8bc80ac"
+    },
+    {
+      "entry": "records/apple/mac/attempt1-compiled/results/src--compute_route_apple--apple_weights.mm-compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/mac/attempt1-compiled/results/src--compute_route_apple--apple_weights.mm-compile.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/mac/attempt1-compiled/results/src--compute_route_apple--apple_weights.mm-identity.json",
+      "bytes": 559829,
+      "sha256": "4a60e1fcb6e1beabb290be161ab813866b78a2c55ca45ac64460c01b1da6e93b"
+    },
+    {
+      "entry": "records/apple/mac/attempt1-compiled/results/tests--graph_route_apple--ga_encoded_bank_test.cc-compile.command.json",
+      "bytes": 536003,
+      "sha256": "d965abb6f5ba565a4325116e27e8e7216f9d6d9819e9445b467d2e14fc02b54b"
+    },
+    {
+      "entry": "records/apple/mac/attempt1-compiled/results/tests--graph_route_apple--ga_encoded_bank_test.cc-compile.result.json",
+      "bytes": 536048,
+      "sha256": "4d8209d864d0130e8f2ec7744c876feaa097f7d64c18240fb7766ad7c2439464"
+    },
+    {
+      "entry": "records/apple/mac/attempt1-compiled/results/tests--graph_route_apple--ga_encoded_bank_test.cc-compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/mac/attempt1-compiled/results/tests--graph_route_apple--ga_encoded_bank_test.cc-compile.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/mac/attempt1-compiled/results/tests--graph_route_apple--ga_encoded_bank_test.cc-identity.json",
+      "bytes": 801415,
+      "sha256": "8e6b5ca17ca3cecfa84be42705fb3475525011db1ac8bb85fd1ce8b2298044d6"
+    },
+    {
+      "entry": "records/apple/mac/attempt1-compiled/reused-source-manifest.json",
+      "bytes": 19168,
+      "sha256": "25faf3b0d1ec6395ee0624e22e1e120ea27afd33d06a4e26b23849e25b54e600"
+    },
+    {
+      "entry": "records/apple/mac/attempt1-compiled/source-manifest.json",
+      "bytes": 3812,
+      "sha256": "96a9d2682eb5f580909a4903e6da02d6c9bdee1273d04fddf1bcb44e5d8351ad"
+    },
+    {
+      "entry": "records/apple/mac/attempt1-compiled/tests/compute_models/ga_encoded_bank_fixture.h",
+      "bytes": 10225,
+      "sha256": "4a69ed816143bd15ee5b059be621ffb14eabab25c7c1b376dcd0e843f2b4099b"
+    },
+    {
+      "entry": "records/apple/mac/attempt1-compiled/tests/graph_route_apple/ga_encoded_bank_test.cc",
+      "bytes": 2602,
+      "sha256": "f371244503f314035c3eee41e4928f50cdae55685bb4901d79d4811541b3d1c9"
+    },
+    {
+      "entry": "records/apple/mac/final/hardware.json",
+      "bytes": 516,
+      "sha256": "e3d3b88dbbb5913e88624a2ef189a6e1418d217e00705e73cdc5f5181427e721"
+    },
+    {
+      "entry": "records/apple/mac/final/plan.json",
+      "bytes": 627720,
+      "sha256": "f030b1e0af2eaf3562716bb3708ca4bf7ad7e17fb6fc5d4365063bd20327fd36"
+    },
+    {
+      "entry": "records/apple/mac/final/results/compile-summary.json",
+      "bytes": 1436119,
+      "sha256": "69574b40cf4d5645fc34e2bd377aa02fc5efd24978ba77a145979118aa39f6de"
+    },
+    {
+      "entry": "records/apple/mac/final/results/link-inputs.json",
+      "bytes": 44538,
+      "sha256": "e976a23ac49e0a2816c0c9f42b762645e2e4fb0d5b69d35d2126367678dbf444"
+    },
+    {
+      "entry": "records/apple/mac/final/results/link.command.json",
+      "bytes": 26225,
+      "sha256": "ece33fd7c90a7bc511ec3ac43aecbda96130143abe4500b9884a09140bda777e"
+    },
+    {
+      "entry": "records/apple/mac/final/results/link.result.json",
+      "bytes": 26271,
+      "sha256": "9a14b84b9451e55ae0cd98be90ae21c2ff62cf1747e7042635a3d21d3fa47e5a"
+    },
+    {
+      "entry": "records/apple/mac/final/results/link.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/mac/final/results/link.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/mac/final/results/run.command.json",
+      "bytes": 430,
+      "sha256": "f9d403d1ce0749a83e76ceec4d8abb68ea56efe21303b230446bd8413ca0f48f"
+    },
+    {
+      "entry": "records/apple/mac/final/results/run.result.json",
+      "bytes": 476,
+      "sha256": "7f7a405e4c41fcd5c8584d9c297af256def224c35650d044a41abd9722319701"
+    },
+    {
+      "entry": "records/apple/mac/final/results/run.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/mac/final/results/run.stdout.log",
+      "bytes": 791,
+      "sha256": "3bdf39fecab514a7781302dcda58cc736d207afc0387ad5c3366bf562c26d60e"
+    },
+    {
+      "entry": "records/apple/mac/final/results/src--compute_route_apple--apple_weights.mm-compile.command.json",
+      "bytes": 149435,
+      "sha256": "71579fb3824ff79619d146bbceb115145d26354ac0dac9369f1d54e14a3b6bae"
+    },
+    {
+      "entry": "records/apple/mac/final/results/src--compute_route_apple--apple_weights.mm-compile.result.json",
+      "bytes": 149480,
+      "sha256": "c0e834cd0fbae420e13d0f19d1a43217ccb4b4eef45875732e80afb07619a825"
+    },
+    {
+      "entry": "records/apple/mac/final/results/src--compute_route_apple--apple_weights.mm-compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/mac/final/results/src--compute_route_apple--apple_weights.mm-compile.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/mac/final/results/src--compute_route_apple--apple_weights.mm-identity.json",
+      "bytes": 559828,
+      "sha256": "65c5342db91086a2fcb2126972f521dcbaf496880e199032b99b2d42ac3551c1"
+    },
+    {
+      "entry": "records/apple/mac/final/results/tests--graph_route_apple--ga_encoded_bank_test.cc-compile.command.json",
+      "bytes": 536003,
+      "sha256": "6d7436cd82444086009a37cae5f17ea51969eeebb8db42491c60335c4b919bac"
+    },
+    {
+      "entry": "records/apple/mac/final/results/tests--graph_route_apple--ga_encoded_bank_test.cc-compile.result.json",
+      "bytes": 536048,
+      "sha256": "a31e9152b0f5e28cf3dfbfd321682d1981e28a5a056b90a4e53135d0685d3461"
+    },
+    {
+      "entry": "records/apple/mac/final/results/tests--graph_route_apple--ga_encoded_bank_test.cc-compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/mac/final/results/tests--graph_route_apple--ga_encoded_bank_test.cc-compile.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/mac/final/results/tests--graph_route_apple--ga_encoded_bank_test.cc-identity.json",
+      "bytes": 801415,
+      "sha256": "a2c435c781801133c431f0ffd113f44fa9ede8e930ba1259158dc801a3d852f6"
+    },
+    {
+      "entry": "records/apple/mac/final/results/tests.xml",
+      "bytes": 2191,
+      "sha256": "33275763cf97a2f4f0ceb090356181f283fccf102e6d5dce333e9d41a10b03ae"
+    },
+    {
+      "entry": "records/apple/mac/final/results/validation.json",
+      "bytes": 761,
+      "sha256": "438bb34ccf2fc8e63ac356e6cef07dd54c541612caba1b9b5dbf820a072ae246"
+    },
+    {
+      "entry": "records/apple/mac/final/reused-source-manifest.json",
+      "bytes": 19168,
+      "sha256": "25faf3b0d1ec6395ee0624e22e1e120ea27afd33d06a4e26b23849e25b54e600"
+    },
+    {
+      "entry": "records/apple/mac/final/source-manifest.json",
+      "bytes": 3812,
+      "sha256": "d9f84d0a6011d90243aeb7c869237bedd11c27bae05a2f008b692d1dd5a6d8f0"
+    },
+    {
+      "entry": "records/apple/mac/final/tests/compute_models/ga_encoded_bank_fixture.h",
+      "bytes": 10225,
+      "sha256": "4a69ed816143bd15ee5b059be621ffb14eabab25c7c1b376dcd0e843f2b4099b"
+    },
+    {
+      "entry": "records/apple/mac/final/tests/graph_route_apple/ga_encoded_bank_test.cc",
+      "bytes": 2602,
+      "sha256": "f371244503f314035c3eee41e4928f50cdae55685bb4901d79d4811541b3d1c9"
+    },
+    {
+      "entry": "records/apple/mac/plan.json",
+      "bytes": 632347,
+      "sha256": "ad828fd0316b9f17d286240e83add395a4f029ae41d469227e059e9bf5730045"
+    },
+    {
+      "entry": "records/apple/mac/reused-source-manifest.json",
+      "bytes": 19500,
+      "sha256": "27d279c9e7c9006966faef92439931ec7c6e3a322874553915215e032e1cffae"
+    },
+    {
+      "entry": "records/apple/mac/source-manifest.json",
+      "bytes": 3929,
+      "sha256": "c813299ee4e0f8a133fd2276f0e230dc76eb6d43c134b53a7269b510a0da92fd"
+    },
+    {
+      "entry": "records/apple/mac/sync.result.json",
+      "bytes": 768,
+      "sha256": "a9156c4f7efc49df39ebd4b1d497153bcc6d195b6f6dca4974d5c7c835e87910"
+    },
+    {
+      "entry": "records/apple/prepare_mac.py",
+      "bytes": 5565,
+      "sha256": "fd46591bffd6c1ca451cefd4ef8a5ecb38d31f3562852774914203848dfd6aac"
+    },
+    {
+      "entry": "records/apple/prior-header-wording/actual-dependencies-canonical-audit.json",
+      "bytes": 774241,
+      "sha256": "5ff16c60bd60b39e2e3cdee96fb56fce25f791b7709ab6e656774266ded847b5"
+    },
+    {
+      "entry": "records/apple/prior-header-wording/mac/final/hardware.json",
+      "bytes": 516,
+      "sha256": "072aadfd3b969664f72b96548ec50ef7d28164bbfd8521e4bf937daa2b8d7c97"
+    },
+    {
+      "entry": "records/apple/prior-header-wording/mac/final/plan.json",
+      "bytes": 627720,
+      "sha256": "f030b1e0af2eaf3562716bb3708ca4bf7ad7e17fb6fc5d4365063bd20327fd36"
+    },
+    {
+      "entry": "records/apple/prior-header-wording/mac/final/results/compile-summary.json",
+      "bytes": 1436120,
+      "sha256": "73805f76a118de38c09512313ce1fb03dedac00ee5e49a51a6197dabb36c06ad"
+    },
+    {
+      "entry": "records/apple/prior-header-wording/mac/final/results/link-inputs.json",
+      "bytes": 44538,
+      "sha256": "e976a23ac49e0a2816c0c9f42b762645e2e4fb0d5b69d35d2126367678dbf444"
+    },
+    {
+      "entry": "records/apple/prior-header-wording/mac/final/results/link.command.json",
+      "bytes": 26225,
+      "sha256": "90f4cc64b2418cbb1399552ea5a4d76e38cbcf57c4ede6dca5d603c67c4fc348"
+    },
+    {
+      "entry": "records/apple/prior-header-wording/mac/final/results/link.result.json",
+      "bytes": 26272,
+      "sha256": "bc153b58a169e9678cd56b118162ae3790e4e6d9b2a64fffa7e9b681f89fc1d2"
+    },
+    {
+      "entry": "records/apple/prior-header-wording/mac/final/results/link.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/prior-header-wording/mac/final/results/link.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/prior-header-wording/mac/final/results/run.command.json",
+      "bytes": 430,
+      "sha256": "b7f61993102e62d06da1e50520816b8547103ebc71e2cc9a8f4b69d428ff7c46"
+    },
+    {
+      "entry": "records/apple/prior-header-wording/mac/final/results/run.result.json",
+      "bytes": 476,
+      "sha256": "97c5df1f553117944197645be56dfb96a2cf30c1f2b99af6d7864efeb0f11449"
+    },
+    {
+      "entry": "records/apple/prior-header-wording/mac/final/results/run.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/prior-header-wording/mac/final/results/run.stdout.log",
+      "bytes": 794,
+      "sha256": "4e86c6173e03e4cd60250d2c83188cffa12f66a8b95804b8d61112987015890f"
+    },
+    {
+      "entry": "records/apple/prior-header-wording/mac/final/results/src--compute_route_apple--apple_weights.mm-compile.command.json",
+      "bytes": 149435,
+      "sha256": "15e167d6bf3ecf91353857f4051be39dc97bd5ee83cae833ea9bce3841619998"
+    },
+    {
+      "entry": "records/apple/prior-header-wording/mac/final/results/src--compute_route_apple--apple_weights.mm-compile.result.json",
+      "bytes": 149481,
+      "sha256": "1a76af8c66362265c9423e4c2e3a308f4127ef967b1090628531f776f8bc80ac"
+    },
+    {
+      "entry": "records/apple/prior-header-wording/mac/final/results/src--compute_route_apple--apple_weights.mm-compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/prior-header-wording/mac/final/results/src--compute_route_apple--apple_weights.mm-compile.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/prior-header-wording/mac/final/results/src--compute_route_apple--apple_weights.mm-identity.json",
+      "bytes": 559829,
+      "sha256": "4a60e1fcb6e1beabb290be161ab813866b78a2c55ca45ac64460c01b1da6e93b"
+    },
+    {
+      "entry": "records/apple/prior-header-wording/mac/final/results/tests--graph_route_apple--ga_encoded_bank_test.cc-compile.command.json",
+      "bytes": 536003,
+      "sha256": "d965abb6f5ba565a4325116e27e8e7216f9d6d9819e9445b467d2e14fc02b54b"
+    },
+    {
+      "entry": "records/apple/prior-header-wording/mac/final/results/tests--graph_route_apple--ga_encoded_bank_test.cc-compile.result.json",
+      "bytes": 536048,
+      "sha256": "4d8209d864d0130e8f2ec7744c876feaa097f7d64c18240fb7766ad7c2439464"
+    },
+    {
+      "entry": "records/apple/prior-header-wording/mac/final/results/tests--graph_route_apple--ga_encoded_bank_test.cc-compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/prior-header-wording/mac/final/results/tests--graph_route_apple--ga_encoded_bank_test.cc-compile.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/prior-header-wording/mac/final/results/tests--graph_route_apple--ga_encoded_bank_test.cc-identity.json",
+      "bytes": 801415,
+      "sha256": "8e6b5ca17ca3cecfa84be42705fb3475525011db1ac8bb85fd1ce8b2298044d6"
+    },
+    {
+      "entry": "records/apple/prior-header-wording/mac/final/results/tests.xml",
+      "bytes": 2193,
+      "sha256": "6d338e037bdb2eee774d78fec6dcf9ac3fbe21523f52e45c88148f889dc87bce"
+    },
+    {
+      "entry": "records/apple/prior-header-wording/mac/final/results/validation.json",
+      "bytes": 761,
+      "sha256": "2c5fe385cac28e66581acd5e746cdd532c530c6ff0fc933dd88ad55abd8d899f"
+    },
+    {
+      "entry": "records/apple/prior-header-wording/mac/final/reused-source-manifest.json",
+      "bytes": 19168,
+      "sha256": "25faf3b0d1ec6395ee0624e22e1e120ea27afd33d06a4e26b23849e25b54e600"
+    },
+    {
+      "entry": "records/apple/prior-header-wording/mac/final/source-manifest.json",
+      "bytes": 3812,
+      "sha256": "96a9d2682eb5f580909a4903e6da02d6c9bdee1273d04fddf1bcb44e5d8351ad"
+    },
+    {
+      "entry": "records/apple/prior-header-wording/mac/final/tests/compute_models/ga_encoded_bank_fixture.h",
+      "bytes": 10225,
+      "sha256": "4a69ed816143bd15ee5b059be621ffb14eabab25c7c1b376dcd0e843f2b4099b"
+    },
+    {
+      "entry": "records/apple/prior-header-wording/mac/final/tests/graph_route_apple/ga_encoded_bank_test.cc",
+      "bytes": 2602,
+      "sha256": "f371244503f314035c3eee41e4928f50cdae55685bb4901d79d4811541b3d1c9"
+    },
+    {
+      "entry": "records/apple/prior-header-wording/preservation.json",
+      "bytes": 320,
+      "sha256": "0cc5f87ca275d3082eb5538027a612e07a24e3bad4f1f09690e1d22b1a05f090"
+    },
+    {
+      "entry": "records/apple/revisions/apple-header-opaque-wording-change.json",
+      "bytes": 415,
+      "sha256": "a9df5e9a1ecd2551d0f39e382a8504a16e726f81ffdad75a321c28c4e6cb7342"
+    },
+    {
+      "entry": "records/apple/source-freeze.json",
+      "bytes": 15091,
+      "sha256": "4161ffb087aef7a400f2cde37875ca5f98a050e53825fa94abbdaf2e3c67345a"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/apple.h",
+      "bytes": 11664,
+      "sha256": "5baedfd8caa3dd7bd54d9c4619f3c7e7c7e853189a6d8d7c20ab1ebeb2b7dbd5"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/apple_batch.h",
+      "bytes": 8214,
+      "sha256": "c22b73da2caa1031a99fe5cbcbd81e6c255eec7429cbf542c06b35cd82ad8e98"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/apple_memory.h",
+      "bytes": 11994,
+      "sha256": "b7a3f9714752cabab1ce2e9eb2a1c3d8473ac0d906498f22189ffa99e91ff0e4"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/apple_weights.h",
+      "bytes": 4606,
+      "sha256": "0f74446c0496272df3b902a52e0ec3f0897e6131ddc2f0bc1cdd95e81f228d4f"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/batch_layout.h",
+      "bytes": 10506,
+      "sha256": "db6c552379051f9b8132fc8dce775dd0826c9a8d1d0d7fd10eecd1f10b159921"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/batch_materialize.h",
+      "bytes": 7245,
+      "sha256": "9f57cfe9748faf89faae485b604a4b14d6f222bc3ce475bc40a1a265b405b50b"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/batch_ops.h",
+      "bytes": 6114,
+      "sha256": "d6dcf9e7c8559280a762d191bc41c4f7b56b0097844d0b31091b4fda361ea077"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/batch_paged_native.h",
+      "bytes": 4723,
+      "sha256": "b42b17bd38435422f06cd830f0b35f6c7deca256916d9d99bff52b9ec0d9f1ce"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/batch_transfer.h",
+      "bytes": 11416,
+      "sha256": "7bec296577c0439b0e0b48639ccff6b3bd95d137dba085c608f650dbb69fcd1b"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/completion.h",
+      "bytes": 1959,
+      "sha256": "98b34b9ee4665e9aedac719504c029a509f304b0a4f566bf6b7f76d88dc2ef34"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/detail/completion_access.h",
+      "bytes": 4164,
+      "sha256": "8699638e39a1a7d5708cbb6a5e41f191228b3ac571b16b026eadcc1aa6765e34"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/detail/context_ref.h",
+      "bytes": 2563,
+      "sha256": "b1295a6d21d452b2730e3907891ca49993e512a741f8f3a9689976e56f5af3f1"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/detail/lease_access.h",
+      "bytes": 3996,
+      "sha256": "3df3c018e207f135ab6a5e21336360c68977416f2762dfb8688b6cce0abbb39f"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/detail/resource_budget_access.h",
+      "bytes": 527,
+      "sha256": "17f1adbcf9a15c6eadc20e4346bcbefb6b704e344d0e21f8cd44328c53b55004"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/device.h",
+      "bytes": 7702,
+      "sha256": "f966803f2293e03db1cde9b1327f847a92162f21adb53f69ef37f0c19b16a84a"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/low_precision.h",
+      "bytes": 10406,
+      "sha256": "0920a5a2faecb2991da60ecede680c496bab73411a305e559461ea41cea309cb"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/model_ops.h",
+      "bytes": 75341,
+      "sha256": "d3315100def9904a604dd3a1386000641cb03c2e8d36485ef3e55b98e4dde3e5"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/operation.h",
+      "bytes": 28108,
+      "sha256": "35b7c862143839e4b8ce0c9a49753b7add2f325ec424bf5f91a1afeec0101506"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/ops_visibility.h",
+      "bytes": 43,
+      "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/paged_arena.h",
+      "bytes": 10342,
+      "sha256": "004230261c2bcd629ac581ea2c6ce3fe7da928adc1b7827b8955e6e69f471fa0"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/prepared_operation.h",
+      "bytes": 20281,
+      "sha256": "03895c56e8665daf2482f66fecf205fd8aacf92046e13c169d9d8ff86fff52d7"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/provider.h",
+      "bytes": 10281,
+      "sha256": "a9737ca3cf64eec23ce768e20b1112407fc7816a32f8031f0b668b16c49f816a"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/resource_budget.h",
+      "bytes": 4622,
+      "sha256": "578d440b6fc3f5b58809837506165de27ac0866ae39b2d132763f5dd1786b1ce"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/resource_leases.h",
+      "bytes": 8660,
+      "sha256": "4e5681ebfa7c2f2ad51e5788c8316f4b993883f595c04b33fe594d7294dab85b"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/result.h",
+      "bytes": 4704,
+      "sha256": "07a584147b7de3b3f3c1a238207df4ec548130308295b583fc8c93a4d36a4164"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/storage_owner.h",
+      "bytes": 8058,
+      "sha256": "549d881d8d4f96eedbb03c8ef9bd6892ede776e5da90a39025538bc50a0530d9"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/tensor.h",
+      "bytes": 1980,
+      "sha256": "ac00f221a66d0f9044a2b49a1123a6b99a6c425568790898129c31d81519c538"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/tensor_desc.h",
+      "bytes": 8700,
+      "sha256": "e5496e00c643bcce2efbb42666773f4172243d10458b756d6f9881b0e677eb9a"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/visibility.h",
+      "bytes": 43,
+      "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/weight_assembly.h",
+      "bytes": 2095,
+      "sha256": "c085186c2751371d8e642f29d1b338e53962236e50c9935ea1858a4b188ca3ac"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/weight_import.h",
+      "bytes": 3487,
+      "sha256": "19479024d3e80a6c7357dd55cc79e59347c20b22b621ce6f2779082afaaab6cb"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/workload.h",
+      "bytes": 5017,
+      "sha256": "2e7509d99d986e71b06788e4dd1dcb9595799e2ad972df48449ff0b58f0815ad"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/core/assert.h",
+      "bytes": 16114,
+      "sha256": "5596728bc220ea27696be4f25e2f9eb9cf2705930f8eb0461747c4a862615790"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/core/compiler.h",
+      "bytes": 4287,
+      "sha256": "e31151f0ed73c532e464c6568483acecd80a2da9c1ee7afc7e081db87d6fb687"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/core/detail/compiler_attributes.h",
+      "bytes": 1913,
+      "sha256": "263c7691f9984073e198b69328092330bf572195113d3994d1ab54fe4564d88a"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/core/detail/preprocessor.h",
+      "bytes": 409,
+      "sha256": "1d9872ef98db007dcbed7e0128771244640e1de4092830d52a7a83537f98eb84"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/core/environment.h",
+      "bytes": 6712,
+      "sha256": "3d289765b1b677499a444b38d1dbe366bb5e99f89fcb7670af2d08106fd958fa"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/error/result.h",
+      "bytes": 30856,
+      "sha256": "7718409ab2854eb76959215b356bf8077007134d87db1a24f9384a9b5deff2b5"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/error/status.h",
+      "bytes": 18122,
+      "sha256": "4d6b4b0bfa5628947aad5449320513d4b071e0c84debfac47f7a7d264cecb7f4"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/graph/apple.h",
+      "bytes": 5922,
+      "sha256": "8f4e5660d322a0450c9df544568f0ef818b7c0ee269a7bdd3c9579cb79e99298"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/graph/compile_report.h",
+      "bytes": 577,
+      "sha256": "c42c30527d581975c49ddfebb182b0ae7928d799eed91172cb631779a2ad5b4f"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/graph/executable.h",
+      "bytes": 49762,
+      "sha256": "6305dd557606b26119fc60de9dbb68c979a1f8fe54755a191378c49742ef4714"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/graph/execution_source.h",
+      "bytes": 1859,
+      "sha256": "b89de5c6fe8b84192c9618a6a4e4dcee8ac45393e04a9e335f17b5a2d3ecac3f"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/graph/graph.h",
+      "bytes": 19988,
+      "sha256": "c7a93ccf9fd1c86fb9dec286e7d3345aabcb1810c2fb6793a66093480a5a2136"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/graph/resources.h",
+      "bytes": 430,
+      "sha256": "c9d3075babb4d863f3543c76576d093fe59f9868df67d50fc492db0aebe7015d"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/graph/result.h",
+      "bytes": 1646,
+      "sha256": "90861eafec4f3a0aa73014416bd2817dfe3892ac001ea206bebf907e1d3cf182"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/graph/visibility.h",
+      "bytes": 43,
+      "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/graph/weight_binding.h",
+      "bytes": 422,
+      "sha256": "ebcc3eea951953966a3b10b2951872e74d04921af6f0cc8de45ab52ab1ba32bd"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/mem/alignment.h",
+      "bytes": 3499,
+      "sha256": "75388cd67ecb0f6d9bd48a85ea9994e97d8e1db6658a57a3aa24fc89690c76a8"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/mem/allocator.h",
+      "bytes": 11090,
+      "sha256": "0369680d4769a0187bfb77ee8b565b5e8fb53a03909fabf233458d9c1cbcd011"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/mem/buffer.h",
+      "bytes": 19273,
+      "sha256": "346a4f810babb8c5dacba49faaf57903d998a3cbb49af12b8c62acc85f7be72c"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/mem/quota_allocator.h",
+      "bytes": 7124,
+      "sha256": "a88fe230dc5358ddde6209de96cc61a59e3f6e60d30b9e7534e986fab10224c9"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/mem/resource.h",
+      "bytes": 7717,
+      "sha256": "84b0366e658ec63f999b4c9719cf8584ad758f4ff5340baf37f1c3ebd17145cd"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/mem/std_allocator.h",
+      "bytes": 5150,
+      "sha256": "adee9ae71753fa27e001b7b71b1d57b61e14f7ebcfdea57bb3993d2a3e9550e4"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/mem/system_inline.h",
+      "bytes": 8762,
+      "sha256": "d890fe66b1a83a5f1a8f2b22c368276e7b3fadcfd0946df5279692ce055164f1"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/mem/visibility.h",
+      "bytes": 43,
+      "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/obs/trace.h",
+      "bytes": 8554,
+      "sha256": "be0df49a044a0888d46c6c2411a292fdd04908b7bdc393557b87d68a70cf1f6f"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/simd/dtype.h",
+      "bytes": 12143,
+      "sha256": "04dc8a2e0a654250413a0edc4bdc667f98c8aa40d85da25264b6bb2054dd51e5"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/simd/types.h",
+      "bytes": 1658,
+      "sha256": "e79863029c8036f918f36f93dd0267b8d42857516e0d74678584d75f8926abbd"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/visibility.h",
+      "bytes": 11701,
+      "sha256": "893fa73589b6e46f00474c2258af74c28d662b52176b57012290c820812ed486"
+    },
+    {
+      "entry": "records/apple/source/src/compute/completion_internal.h",
+      "bytes": 762,
+      "sha256": "a1b80c32399f0b8c3bfa0927d72f94957f99abd30a134e78e3d226161e75cdec"
+    },
+    {
+      "entry": "records/apple/source/src/compute/weight_assembly.h",
+      "bytes": 5757,
+      "sha256": "3acee3356f6241ea6bd3f40da5bc357e53d9d20d9652237f52374eeceb82b3ff"
+    },
+    {
+      "entry": "records/apple/source/src/compute_route_apple/apple_internal.h",
+      "bytes": 242,
+      "sha256": "ee14ab5edf41c20aa9fd83767a6a8481fec83c8fd4510a6cd7c253caef633e1c"
+    },
+    {
+      "entry": "records/apple/source/src/compute_route_apple/apple_weights.mm",
+      "bytes": 24029,
+      "sha256": "fdb6f5f6fc059657e7e0cd5302865d8fa7b9e4f6ba3fea41bcd2ed46fb0f0bd5"
+    },
+    {
+      "entry": "records/apple/source/src/compute_route_apple/apple_weights_internal.h",
+      "bytes": 817,
+      "sha256": "ff51430df4e049f2ebe299ccf0076d7a439965a8ba8c63ee38fa427e0e633ef7"
+    },
+    {
+      "entry": "records/apple/source/tests/compute_models/ct_packed_graph_fixture.h",
+      "bytes": 25617,
+      "sha256": "3e5750bdaad93e36792f2ee9428af0ca9672a8fafa24800cd064790432c3ba32"
+    },
+    {
+      "entry": "records/apple/source/tests/compute_models/ct_packed_grouped_fixture.h",
+      "bytes": 16396,
+      "sha256": "dcadf216276544c7145c913200f38dd762f0cb76d41cce0776b165bac1d3b7b9"
+    },
+    {
+      "entry": "records/apple/source/tests/compute_models/ct_packed_linear_fixture.h",
+      "bytes": 4201,
+      "sha256": "621ad31932ce9fb55c029ca08891025d966032ec8383519081e1b168fd67f95d"
+    },
+    {
+      "entry": "records/apple/source/tests/compute_models/expert_working_set_fixture.h",
+      "bytes": 25059,
+      "sha256": "7acdd3077cf034cf8656f831fe27e9247341e24095be2da52de9923098d4dc75"
+    },
+    {
+      "entry": "records/apple/source/tests/compute_models/ga_encoded_bank_fixture.h",
+      "bytes": 10225,
+      "sha256": "4a69ed816143bd15ee5b059be621ffb14eabab25c7c1b376dcd0e843f2b4099b"
+    },
+    {
+      "entry": "records/apple/source/tests/compute_models/nvfp4_reference_fixture.h",
+      "bytes": 22482,
+      "sha256": "cc94ec1f443511722ff4fc227b065af27b82573443735250951cdce934faa4d3"
+    },
+    {
+      "entry": "records/apple/source/tests/compute_provider_native/half_test_support.h",
+      "bytes": 4399,
+      "sha256": "5f6d8f7b70d07e44600bb6d6d592f66af5dac9970a730695956a1afcfc3cd0b8"
+    },
+    {
+      "entry": "records/apple/source/tests/graph_route_apple/CMakeLists.txt",
+      "bytes": 7365,
+      "sha256": "30fbe7a3e9017839dc0af52c0233bfef4fa18254e21b9f89c6e36dc51c9cfb4c"
+    },
+    {
+      "entry": "records/apple/source/tests/graph_route_apple/ga_encoded_bank_test.cc",
+      "bytes": 2602,
+      "sha256": "f371244503f314035c3eee41e4928f50cdae55685bb4901d79d4811541b3d1c9"
+    },
+    {
+      "entry": "records/apple/weight-slice-source-review.json",
+      "bytes": 2107,
+      "sha256": "f5f38db8bd25d55ea3fd6570b829665d46a4f96b78e5f94662bda87fcf6d57f2"
+    },
+    {
+      "entry": "records/common-host/before/source.json",
+      "bytes": 155,
+      "sha256": "b6b11404397310fa6a7133193e4f226a99b8f748f198b87ea450fd20bfab985d"
+    },
+    {
+      "entry": "records/common-host/before/weight_import_test.cc",
+      "bytes": 28173,
+      "sha256": "f4780fab6fe1761503ae43cffdddb6ba587170e1e7a930b25a850f5ab57d7e5b"
+    },
+    {
+      "entry": "records/common-host/source-freeze.json",
+      "bytes": 3059,
+      "sha256": "12284397e52e4b7dae8294d6fcd7d557449c76ab8b4b5a7b658f6680e926e57e"
+    },
+    {
+      "entry": "records/common-host/tests.diff",
+      "bytes": 6186,
+      "sha256": "dde3cd38b94ae7a2a6eced70ca94c65ef5d6a0b789306c47632c186ed70780bc"
+    },
+    {
+      "entry": "records/common-host/weight_import_test.cc",
+      "bytes": 33941,
+      "sha256": "fd4551fb7a6a3e616c0aafc223aa6b1d4b73934feb282f375d82ae867f9ff93b"
+    },
+    {
+      "entry": "records/cpu/validation/final1/image-before.json",
+      "bytes": 266,
+      "sha256": "6fb3cb21c16dbd9e8621284eaf24359c7b4aa13db22e003579b2e221741a2710"
+    },
+    {
+      "entry": "records/cpu/validation/final1/live.json",
+      "bytes": 565,
+      "sha256": "2272e39d83b59ed65af748cb6974f721589d7abe36b5c225a2233a1aaaae308c"
+    },
+    {
+      "entry": "records/cpu/validation/final1/receipt.json",
+      "bytes": 2241,
+      "sha256": "664cdaa3ba4fad7fb09afaace7758c15b030025d72c031497177b6917d49455b"
+    },
+    {
+      "entry": "records/cpu/validation/final1/runtime-environment.json",
+      "bytes": 8265,
+      "sha256": "31b793f62a5310d02178e16b38342034577bcbd1f136c0ada0ee69968f9979d9"
+    },
+    {
+      "entry": "records/cpu/validation/final1/tests.command.json",
+      "bytes": 495,
+      "sha256": "2652d229d2c710592a6c71788d33be24eb803ea5246e8ecc0c724ecc842b094a"
+    },
+    {
+      "entry": "records/cpu/validation/final1/tests.result.json",
+      "bytes": 565,
+      "sha256": "2272e39d83b59ed65af748cb6974f721589d7abe36b5c225a2233a1aaaae308c"
+    },
+    {
+      "entry": "records/cpu/validation/final1/tests.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/cpu/validation/final1/tests.stdout.log",
+      "bytes": 1544,
+      "sha256": "af7566f4c8522ed3cb505587e5572db62cd5532cc43431dec481f5f124a734b3"
+    },
+    {
+      "entry": "records/cpu/validation/final1/tests.xml",
+      "bytes": 1929,
+      "sha256": "a0bf018f4e48d674731029d2946026c1d5d3d35c2db734e3eabce3f929860c34"
+    },
+    {
+      "entry": "records/cuda/validation/final1/image-before.json",
+      "bytes": 269,
+      "sha256": "df1ff5bf9831fa5ee67160559d6e43c05963f34fcfe597a3a98fe100d8cb6483"
+    },
+    {
+      "entry": "records/cuda/validation/final1/live.json",
+      "bytes": 571,
+      "sha256": "42be9add4b455e7ea3f48deba3cbb80ffb9c4d5368603a5f97f3c8a94c5396a6"
+    },
+    {
+      "entry": "records/cuda/validation/final1/receipt.json",
+      "bytes": 2616,
+      "sha256": "31bc13dfcbf2e6a72870cee22ddede44b49fc0a5eb0803920522e90de8a1bbe8"
+    },
+    {
+      "entry": "records/cuda/validation/final1/runtime-environment.json",
+      "bytes": 7604,
+      "sha256": "e400c784d33542b285b81d55c7f3f184293eaec381183a02e0955fc0cddb60a1"
+    },
+    {
+      "entry": "records/cuda/validation/final1/tests.command.json",
+      "bytes": 501,
+      "sha256": "4349bb6d3d6c4157673db6527513d81e3fb4a1c51ffafde3fca0760e6779e3bd"
+    },
+    {
+      "entry": "records/cuda/validation/final1/tests.result.json",
+      "bytes": 571,
+      "sha256": "42be9add4b455e7ea3f48deba3cbb80ffb9c4d5368603a5f97f3c8a94c5396a6"
+    },
+    {
+      "entry": "records/cuda/validation/final1/tests.stderr.log",
+      "bytes": 151,
+      "sha256": "88dd5e35d67fb5c0c371390a98a66a5e061e4c0bef2d890a7b74781363216092"
+    },
+    {
+      "entry": "records/cuda/validation/final1/tests.stdout.log",
+      "bytes": 753,
+      "sha256": "39f169ffeae59fff89e96b91cc10e64e91b417d0304ca73fc08c6c0cff223143"
+    },
+    {
+      "entry": "records/cuda/validation/final1/tests.xml",
+      "bytes": 1895,
+      "sha256": "0b66b8338689123194a875a86ca83f553d58a6f5b7edd425259d53aeb9b32b23"
+    },
+    {
+      "entry": "records/opaque-slices/after/include/hyle/compute/cuda_weights.h",
+      "bytes": 5065,
+      "sha256": "1e3ca02148c67fc2d6d6744beb5a03ee93dcb7f7a61ffed16aa5b5e49d5a8079"
+    },
+    {
+      "entry": "records/opaque-slices/after/include/hyle/compute/vulkan_weights.h",
+      "bytes": 3974,
+      "sha256": "f54d91b380e71b6d073c00175ffea08849442250b57844b23eac839472054bf0"
+    },
+    {
+      "entry": "records/opaque-slices/before/include/hyle/compute/cuda_weights.h",
+      "bytes": 4872,
+      "sha256": "4374d8cb05b6fff161ea4ab785f26587149c5e5f5c64ab21cc49f351a878098e"
+    },
+    {
+      "entry": "records/opaque-slices/before/include/hyle/compute/vulkan_weights.h",
+      "bytes": 3861,
+      "sha256": "4df022aaa85632bead93455637dc20d33b0624bdb6355f3b17c427145dadbd2d"
+    },
+    {
+      "entry": "records/opaque-slices/before/tests/graph_route_cuda/CMakeLists.txt",
+      "bytes": 3518,
+      "sha256": "40cfed13c328e72aa5edec2e80c7c9277d1ed74142444aa96c51b69fa5ced9cd"
+    },
+    {
+      "entry": "records/opaque-slices/before/tests/graph_route_vulkan/CMakeLists.txt",
+      "bytes": 6691,
+      "sha256": "61eaaf9e208a7ce84d102c93a4ed225ba61dd81cb9c1ae894c312acd6263b0cf"
+    },
+    {
+      "entry": "records/opaque-slices/build-report.json",
+      "bytes": 16661,
+      "sha256": "ca89c87fd4e96412d91216a3adefff0fd634c05205996819e432535be765f96e"
+    },
+    {
+      "entry": "records/opaque-slices/build_tests.py",
+      "bytes": 7589,
+      "sha256": "6421f5f3fcd60e193c218fde1d5ef07bc7fe3fbe3cf8aaae556e7b5f576667a0"
+    },
+    {
+      "entry": "records/opaque-slices/build_weights.py",
+      "bytes": 4927,
+      "sha256": "1f4f7d0e9abf3cd09eb78e577e134daa99b0e397f773b560844c0d5ff085a85b"
+    },
+    {
+      "entry": "records/opaque-slices/compile-plan.json",
+      "bytes": 9394,
+      "sha256": "4d2c57e0adc0ef2c6337a01fbc60eaf3a2b1e43e9f2625be06715be8d596ef34"
+    },
+    {
+      "entry": "records/opaque-slices/cpu/checks/link1/image.json",
+      "bytes": 266,
+      "sha256": "6fb3cb21c16dbd9e8621284eaf24359c7b4aa13db22e003579b2e221741a2710"
+    },
+    {
+      "entry": "records/opaque-slices/cpu/checks/link1/link-plan.json",
+      "bytes": 52813,
+      "sha256": "5705fd694972919771f25dcd79639c7e88087b44b42d55cb0a3669b80773ac08"
+    },
+    {
+      "entry": "records/opaque-slices/cpu/checks/link1/link.command.json",
+      "bytes": 18435,
+      "sha256": "0caa92a9b0d67847ed661841acf5ed36d545375b9ac08a24c6c658b0f986aca1"
+    },
+    {
+      "entry": "records/opaque-slices/cpu/checks/link1/link.result.json",
+      "bytes": 18505,
+      "sha256": "7dacb11428f750b82cd3a33254b85a1bc834d9b03d7bb9f006352cedd5bf304b"
+    },
+    {
+      "entry": "records/opaque-slices/cpu/checks/link1/link.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/opaque-slices/cpu/checks/link1/link.stdout.log",
+      "bytes": 298,
+      "sha256": "f8879ad0c6daf4f433110f0371ceae5ff4d62825edaa93da8f3c1e7d24dd6ccd"
+    },
+    {
+      "entry": "records/opaque-slices/cpu/checks/link1/live.json",
+      "bytes": 18505,
+      "sha256": "7dacb11428f750b82cd3a33254b85a1bc834d9b03d7bb9f006352cedd5bf304b"
+    },
+    {
+      "entry": "records/opaque-slices/cpu/checks/link1/runtime-environment.json",
+      "bytes": 8168,
+      "sha256": "0d6c2a4b1a37637f38e620d06cdf1c16aa9e603fea74bbb2c4ef57aa8c532b17"
+    },
+    {
+      "entry": "records/opaque-slices/cpu/checks/test1/compile-plan.json",
+      "bytes": 3611,
+      "sha256": "8646a2fc1640c4e0c605db7fa96d7944bc61fa971c66d100c81f766676c6b6ae"
+    },
+    {
+      "entry": "records/opaque-slices/cpu/checks/test1/compile.command.json",
+      "bytes": 2224,
+      "sha256": "6ffa7fea4c09a82f4e8e80b1c94ff037b30c3b4c7643b7028c52849c8d72d9bd"
+    },
+    {
+      "entry": "records/opaque-slices/cpu/checks/test1/compile.result.json",
+      "bytes": 2295,
+      "sha256": "5c4cd0f923da6591e2f21b109bd6b7875f6967fbb66192b0812e080cb3f5ee98"
+    },
+    {
+      "entry": "records/opaque-slices/cpu/checks/test1/compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/opaque-slices/cpu/checks/test1/compile.stdout.log",
+      "bytes": 23,
+      "sha256": "c849537c9661b7e4d20f37da058ba7aa2747c92e313be8c9b19f7c3320cb22ec"
+    },
+    {
+      "entry": "records/opaque-slices/cpu/checks/test1/identity.json",
+      "bytes": 58481,
+      "sha256": "d2c199a084835e75da0740bf2ff05d213e1f432b0b4815a956546fb5468adf9a"
+    },
+    {
+      "entry": "records/opaque-slices/cpu/checks/test1/live.json",
+      "bytes": 2295,
+      "sha256": "5c4cd0f923da6591e2f21b109bd6b7875f6967fbb66192b0812e080cb3f5ee98"
+    },
+    {
+      "entry": "records/opaque-slices/cpu/checks/test1/weight-assembly-test-deps.json",
+      "bytes": 27312,
+      "sha256": "243f39442b8e533159b2a3b64e509a270fee8f879babb25b6594dfcc4ae72e93"
+    },
+    {
+      "entry": "records/opaque-slices/cuda/checks/attempt1/compile.command.json",
+      "bytes": 2295,
+      "sha256": "08a20a04c42acad7af261a8a8f83f0b31d0e60967e2e97a4bb63b668e53cc1c5"
+    },
+    {
+      "entry": "records/opaque-slices/cuda/checks/attempt1/compile.result.json",
+      "bytes": 2364,
+      "sha256": "12170fe037438002669733a41c25a6e0970ae41a9f84cb88d2d22730fa0ebb6a"
+    },
+    {
+      "entry": "records/opaque-slices/cuda/checks/attempt1/compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/opaque-slices/cuda/checks/attempt1/compile.stdout.log",
+      "bytes": 12,
+      "sha256": "8449a15f1b4fc95b33dd2c76dcf6c64238ed3ca5deaecde19b79a34770696bf0"
+    },
+    {
+      "entry": "records/opaque-slices/cuda/checks/attempt1/cuda-weights-deps.json",
+      "bytes": 21500,
+      "sha256": "ab9ed98f1ba0dacb4549cd14ed41e50ee8e280dde229a7d36194256cd7528974"
+    },
+    {
+      "entry": "records/opaque-slices/cuda/checks/attempt1/identity.json",
+      "bytes": 48167,
+      "sha256": "e7f4c601f9f05ac66f17b83bee79af0178471319ff0b8a2547846872a682756d"
+    },
+    {
+      "entry": "records/opaque-slices/cuda/checks/attempt1/live.json",
+      "bytes": 2364,
+      "sha256": "12170fe037438002669733a41c25a6e0970ae41a9f84cb88d2d22730fa0ebb6a"
+    },
+    {
+      "entry": "records/opaque-slices/cuda/checks/link1/image.json",
+      "bytes": 269,
+      "sha256": "df1ff5bf9831fa5ee67160559d6e43c05963f34fcfe597a3a98fe100d8cb6483"
+    },
+    {
+      "entry": "records/opaque-slices/cuda/checks/link1/link-plan.json",
+      "bytes": 79583,
+      "sha256": "1d78edac3bc5bc48dea1d790335bfe87fbce3a2d872676efdda0d6c763a3463f"
+    },
+    {
+      "entry": "records/opaque-slices/cuda/checks/link1/link.command.json",
+      "bytes": 27572,
+      "sha256": "948f82723a6194f75b6cf25ab6bc82e41c4ceb5ae65f7755008643b0b365e8b1"
+    },
+    {
+      "entry": "records/opaque-slices/cuda/checks/link1/link.result.json",
+      "bytes": 27642,
+      "sha256": "539d0d6fa213b6025ce2021ed033791046ecb3000b0c7b82b4688246d184cdd8"
+    },
+    {
+      "entry": "records/opaque-slices/cuda/checks/link1/link.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/opaque-slices/cuda/checks/link1/link.stdout.log",
+      "bytes": 302,
+      "sha256": "a8c9eef9ff6bbb8aa700453988527ca9c680a4dd462dcc4844981995243c014c"
+    },
+    {
+      "entry": "records/opaque-slices/cuda/checks/link1/live.json",
+      "bytes": 27642,
+      "sha256": "539d0d6fa213b6025ce2021ed033791046ecb3000b0c7b82b4688246d184cdd8"
+    },
+    {
+      "entry": "records/opaque-slices/cuda/checks/link1/runtime-environment.json",
+      "bytes": 6716,
+      "sha256": "dfa7fce4c49931f9f117c1b01f427d788bd6109326c34114b95201794d0e8e7d"
+    },
+    {
+      "entry": "records/opaque-slices/cuda/checks/test1/compile-plan.json",
+      "bytes": 5632,
+      "sha256": "c1343f3489fd4b2c2614e8e154ea57d971322aa164d49678cc1682f54ecb6adf"
+    },
+    {
+      "entry": "records/opaque-slices/cuda/checks/test1/compile.command.json",
+      "bytes": 4265,
+      "sha256": "90349d435c52da78bcae5d2e978c7f60333a90dc6802fadcd310797000bee311"
+    },
+    {
+      "entry": "records/opaque-slices/cuda/checks/test1/compile.result.json",
+      "bytes": 4335,
+      "sha256": "15c2c5b23418ed9a8cfa5c4eb2ebd1e8340b75536800989f1b0f89adf12f985f"
+    },
+    {
+      "entry": "records/opaque-slices/cuda/checks/test1/compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/opaque-slices/cuda/checks/test1/compile.stdout.log",
+      "bytes": 25,
+      "sha256": "2bb1da0b88a5a443eb3c7a548da73546110ed08087be7e38394612771683e0ad"
+    },
+    {
+      "entry": "records/opaque-slices/cuda/checks/test1/ga-encoded-bank-test-deps.json",
+      "bytes": 32164,
+      "sha256": "d3b06e46927a1dfa82f47685f154fb107908bdfd375058026c9bc61f04bebd4a"
+    },
+    {
+      "entry": "records/opaque-slices/cuda/checks/test1/identity.json",
+      "bytes": 70402,
+      "sha256": "208cf4befbfa4f850fce958f410dcc9808786cb77f4cf6d0cf9598141d28e968"
+    },
+    {
+      "entry": "records/opaque-slices/cuda/checks/test1/live.json",
+      "bytes": 4335,
+      "sha256": "15c2c5b23418ed9a8cfa5c4eb2ebd1e8340b75536800989f1b0f89adf12f985f"
+    },
+    {
+      "entry": "records/opaque-slices/current-source-dependency-audit.json",
+      "bytes": 82435,
+      "sha256": "bd248ed645ceb4c3b7555cddf196323a2f71e81b7481d7299746785304a5a8b1"
+    },
+    {
+      "entry": "records/opaque-slices/design.json",
+      "bytes": 7353,
+      "sha256": "f281a4e397477a5d4e7d020228941c2f4b101e54cd8c0e56bbe6f716d6127862"
+    },
+    {
+      "entry": "records/opaque-slices/freeze.py",
+      "bytes": 8746,
+      "sha256": "0d778130e0a52d4edee68c4a5287733199a5695dcfb84d7a91bdb59e222250cf"
+    },
+    {
+      "entry": "records/opaque-slices/header-comments.diff",
+      "bytes": 2116,
+      "sha256": "ac2e33f1085ea04bfa6cad7bbfe84a9a768d602510c27aecf8a5350a333a6a3f"
+    },
+    {
+      "entry": "records/opaque-slices/objects-ready.json",
+      "bytes": 1659,
+      "sha256": "a08eccb6a5b46dcfde564f3df9c2ff67c96422251bd4a8c5642c8d72c9cddbbe"
+    },
+    {
+      "entry": "records/opaque-slices/owned-existing-files.diff",
+      "bytes": 3148,
+      "sha256": "fde427b55b7c88884fadbfad4790cef9501924d4757b67822b6b520ed60e6151"
+    },
+    {
+      "entry": "records/opaque-slices/private-module-staging-proof.json",
+      "bytes": 2753,
+      "sha256": "eaa0d9df5c419d52a6ef913301d367b4b5a54b19a0d3a502ec7e82e7d69e0345"
+    },
+    {
+      "entry": "records/opaque-slices/ready-for-root-run.json",
+      "bytes": 4456,
+      "sha256": "6624d92a1324864c9b4d37b7cc87258c5b0522e3798c76e83d92b5f3c41e69bd"
+    },
+    {
+      "entry": "records/opaque-slices/source-freeze.json",
+      "bytes": 7831,
+      "sha256": "8da4b8846029010bcc2e7470d395b6154a77eae39046b160ce738c7d106789ef"
+    },
+    {
+      "entry": "records/opaque-slices/source/include/hyle/compute/cuda_weights.h",
+      "bytes": 5065,
+      "sha256": "1e3ca02148c67fc2d6d6744beb5a03ee93dcb7f7a61ffed16aa5b5e49d5a8079"
+    },
+    {
+      "entry": "records/opaque-slices/source/include/hyle/compute/vulkan_weights.h",
+      "bytes": 3974,
+      "sha256": "f54d91b380e71b6d073c00175ffea08849442250b57844b23eac839472054bf0"
+    },
+    {
+      "entry": "records/opaque-slices/source/include/hyle/compute/weight_assembly.h",
+      "bytes": 2095,
+      "sha256": "c085186c2751371d8e642f29d1b338e53962236e50c9935ea1858a4b188ca3ac"
+    },
+    {
+      "entry": "records/opaque-slices/source/src/compute/weight_assembly.h",
+      "bytes": 5757,
+      "sha256": "3acee3356f6241ea6bd3f40da5bc357e53d9d20d9652237f52374eeceb82b3ff"
+    },
+    {
+      "entry": "records/opaque-slices/source/src/compute_route_cuda/weights.cc",
+      "bytes": 23241,
+      "sha256": "d0554efedeb27f56d059ddf5f839d41c294c739962a97d628cdf59ff10dcd236"
+    },
+    {
+      "entry": "records/opaque-slices/source/src/compute_route_vulkan/vulkan_weights.cc",
+      "bytes": 15764,
+      "sha256": "1882f3c92605e369053db2d3217cd69c712e26964607fcc15d30c3cf03784e74"
+    },
+    {
+      "entry": "records/opaque-slices/source/tests/compute/weight_import_test.cc",
+      "bytes": 33941,
+      "sha256": "fd4551fb7a6a3e616c0aafc223aa6b1d4b73934feb282f375d82ae867f9ff93b"
+    },
+    {
+      "entry": "records/opaque-slices/source/tests/compute_models/expert_working_set_fixture.h",
+      "bytes": 25059,
+      "sha256": "7acdd3077cf034cf8656f831fe27e9247341e24095be2da52de9923098d4dc75"
+    },
+    {
+      "entry": "records/opaque-slices/source/tests/compute_models/ga_encoded_bank_fixture.h",
+      "bytes": 10225,
+      "sha256": "4a69ed816143bd15ee5b059be621ffb14eabab25c7c1b376dcd0e843f2b4099b"
+    },
+    {
+      "entry": "records/opaque-slices/source/tests/graph_route_cuda/CMakeLists.txt",
+      "bytes": 3775,
+      "sha256": "ba7740e2357864aeb3b8c7cfc5794771be5fbaad6e4c5d9ac66d3e32d1bb4884"
+    },
+    {
+      "entry": "records/opaque-slices/source/tests/graph_route_cuda/ga_encoded_bank_test.cc",
+      "bytes": 2768,
+      "sha256": "06c5dbaae6e033ed95e0cca3f37fa8d4dd7f7c44b37146948525a0cee845b21f"
+    },
+    {
+      "entry": "records/opaque-slices/source/tests/graph_route_vulkan/CMakeLists.txt",
+      "bytes": 6928,
+      "sha256": "e99269bd9b5755421942080fda69a8188fadf6a6992a1bda2395b1f70d82ad7a"
+    },
+    {
+      "entry": "records/opaque-slices/source/tests/graph_route_vulkan/ga_encoded_bank_test.cc",
+      "bytes": 4312,
+      "sha256": "4c90a8f98ed22241dab97ccc82f4125aeed17ece6c7611da3d0b8fd0cff1aa62"
+    },
+    {
+      "entry": "records/opaque-slices/vulkan/checks/attempt1/compile.command.json",
+      "bytes": 2979,
+      "sha256": "0bdc4c86493d5be1e90d5270fe5278129de926ebbae6f5f1058276f0755c8b6a"
+    },
+    {
+      "entry": "records/opaque-slices/vulkan/checks/attempt1/compile.result.json",
+      "bytes": 3049,
+      "sha256": "f01cc27d3d0e41cd950f9032c7b5fa876f365ff1908eab1b04242a00d8eddd2b"
+    },
+    {
+      "entry": "records/opaque-slices/vulkan/checks/attempt1/compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/opaque-slices/vulkan/checks/attempt1/compile.stdout.log",
+      "bytes": 19,
+      "sha256": "7caf99bd4ce6e19bf725c3f1f9b71bdd745e9cab0dfd9124ccb80e8e3ba851ed"
+    },
+    {
+      "entry": "records/opaque-slices/vulkan/checks/attempt1/identity.json",
+      "bytes": 53676,
+      "sha256": "b7e33ac1e9d10d7083f083f39a4282fb56b94519d9d4a54d388f74a20be06b71"
+    },
+    {
+      "entry": "records/opaque-slices/vulkan/checks/attempt1/live.json",
+      "bytes": 3049,
+      "sha256": "f01cc27d3d0e41cd950f9032c7b5fa876f365ff1908eab1b04242a00d8eddd2b"
+    },
+    {
+      "entry": "records/opaque-slices/vulkan/checks/attempt1/vulkan-weights-deps.json",
+      "bytes": 23452,
+      "sha256": "43f84b9d47783039315620e6485d9e7eacf6539defc3bad2ad00e72edfbe5729"
+    },
+    {
+      "entry": "records/opaque-slices/vulkan/checks/link1/image.json",
+      "bytes": 272,
+      "sha256": "ce9ea5b6d6edf5c2c45f968eb49a4329c5bd5c311c7e25ef5b80adeb8d2c5b95"
+    },
+    {
+      "entry": "records/opaque-slices/vulkan/checks/link1/link-plan.json",
+      "bytes": 76412,
+      "sha256": "df7b77f93333358fade42ba9debaf752441d686e031432df82b8ec7440b28b1a"
+    },
+    {
+      "entry": "records/opaque-slices/vulkan/checks/link1/link.command.json",
+      "bytes": 26671,
+      "sha256": "e40b6d722c2da8032223502d8c84c896e566bd3f9a7f2eb07bf1c78e9de7269d"
+    },
+    {
+      "entry": "records/opaque-slices/vulkan/checks/link1/link.result.json",
+      "bytes": 26741,
+      "sha256": "76c095e140c013f11e32eba62f238e3e29fc84cccb4a91447e3ab38707d324c9"
+    },
+    {
+      "entry": "records/opaque-slices/vulkan/checks/link1/link.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/opaque-slices/vulkan/checks/link1/link.stdout.log",
+      "bytes": 310,
+      "sha256": "0b3a3d915064768d3db66d57ef028388420eb24f1bd2b1525e86ef24a4c5f090"
+    },
+    {
+      "entry": "records/opaque-slices/vulkan/checks/link1/live.json",
+      "bytes": 26741,
+      "sha256": "76c095e140c013f11e32eba62f238e3e29fc84cccb4a91447e3ab38707d324c9"
+    },
+    {
+      "entry": "records/opaque-slices/vulkan/checks/link1/runtime-environment.json",
+      "bytes": 8168,
+      "sha256": "0d6c2a4b1a37637f38e620d06cdf1c16aa9e603fea74bbb2c4ef57aa8c532b17"
+    },
+    {
+      "entry": "records/opaque-slices/vulkan/checks/test1/compile-plan.json",
+      "bytes": 5869,
+      "sha256": "5b878ebf7c45ce11bb28ad0d69784c9942f6208fccd9c51c86fb4a81647574f3"
+    },
+    {
+      "entry": "records/opaque-slices/vulkan/checks/test1/compile.command.json",
+      "bytes": 4494,
+      "sha256": "f5c160163fec737f35ea6371f5fce24982827f92cc1480455781725a8076142c"
+    },
+    {
+      "entry": "records/opaque-slices/vulkan/checks/test1/compile.result.json",
+      "bytes": 4563,
+      "sha256": "924cd0bba91a47bd346ec2c6acb0b2db4cf9c1c459b0749dfbe1c9e094e78e29"
+    },
+    {
+      "entry": "records/opaque-slices/vulkan/checks/test1/compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/opaque-slices/vulkan/checks/test1/compile.stdout.log",
+      "bytes": 25,
+      "sha256": "2bb1da0b88a5a443eb3c7a548da73546110ed08087be7e38394612771683e0ad"
+    },
+    {
+      "entry": "records/opaque-slices/vulkan/checks/test1/ga-encoded-bank-test-deps.json",
+      "bytes": 34909,
+      "sha256": "3e31d8f1ed589c9a2c57d9d8327ff8fc0edcba8801cbe511a808157bce713ed9"
+    },
+    {
+      "entry": "records/opaque-slices/vulkan/checks/test1/identity.json",
+      "bytes": 77462,
+      "sha256": "e0ed28e3afcb51b4f59608589cadaaec90e301f936f73b82aa80ce14f2f9f323"
+    },
+    {
+      "entry": "records/opaque-slices/vulkan/checks/test1/live.json",
+      "bytes": 4563,
+      "sha256": "924cd0bba91a47bd346ec2c6acb0b2db4cf9c1c459b0749dfbe1c9e094e78e29"
+    },
+    {
+      "entry": "records/review/encoded-bank-fixture-review.json",
+      "bytes": 4434,
+      "sha256": "f6403d40f50a8bcca1eaa341ff7e89e4f7a7b66c2fb4a1a27321b441b71e1b19"
+    },
+    {
+      "entry": "records/review/encoded-bank-slices-review.json",
+      "bytes": 4494,
+      "sha256": "3124d84d1e3e7f28113c71ad84dde5a8d12405de2c924acadc71fa51b17edfe7"
+    },
+    {
+      "entry": "records/review/kernel-act-quant-excerpt.txt",
+      "bytes": 4850,
+      "sha256": "2052ac79d746052311fcd61a00078105d51823cc9f6f1da7b37d568054a21845"
+    },
+    {
+      "entry": "records/review/kernel-fp4-gemm-excerpt.txt",
+      "bytes": 4720,
+      "sha256": "2c94cbcf857a49fccbca6a7299bb02c524cc6aef773cd7a3ca1aeec273b9e04d"
+    },
+    {
+      "entry": "records/review/kernel-fp8-gemm-excerpt.txt",
+      "bytes": 3425,
+      "sha256": "d5badeeb52b30599487d985865018e273753098f87bd2b5fbfdedd0d8f87c4d1"
+    },
+    {
+      "entry": "records/review/model-ffn-excerpt.txt",
+      "bytes": 5505,
+      "sha256": "5fc81475b318d5f864471f160f0e9e40cf6e8fd32dda3795a83a8a33f8b7347f"
+    },
+    {
+      "entry": "records/review/source-bound-reuse-design.json",
+      "bytes": 12619,
+      "sha256": "2b4f90017356e9c413c87663154601e0f177b83f10552a94df1759028b1e30e5"
+    },
+    {
+      "entry": "records/root/before/weight_assembly_internal.h",
+      "bytes": 5441,
+      "sha256": "8037ad378e1a8627e9c10c6f97a69d9e9ea4b4a7badaee8a58422a6572ddca40"
+    },
+    {
+      "entry": "records/root/before/weight_assembly_public.h",
+      "bytes": 1942,
+      "sha256": "f1625d4174c7077c1eee6427e20b80bd17f60c281832133ea028904ff6e77bb0"
+    },
+    {
+      "entry": "records/root/docs-before/compute.md",
+      "bytes": 119299,
+      "sha256": "d0d3a47cd1545764006bd664da69382b10cb1f9b3a535e884bcb45e8ee7537ac"
+    },
+    {
+      "entry": "records/root/docs-before/current-work.md",
+      "bytes": 36857,
+      "sha256": "475d81737a684cbbb0d66641575f6da7edabac69941aa9b1618fdd4fbf2dfb8a"
+    },
+    {
+      "entry": "records/root/docs-before/model-operators.md",
+      "bytes": 79479,
+      "sha256": "582d6b08c51df4f6b6862700d50f46262150e6ab33499cddc09c88e2c56d4998"
+    },
+    {
+      "entry": "records/root/final-results.json",
+      "bytes": 3266,
+      "sha256": "73f5d5d6b8e84d669f16cb040a494d63fd12da33ac6c85781d6720476e87df76"
+    },
+    {
+      "entry": "records/root/package.py",
+      "bytes": 10356,
+      "sha256": "9abbd86a8ff133c0ffad1af98118ed555b4539dba73210c715ccce968e0c7f12"
+    },
+    {
+      "entry": "records/root/prepare_cleanup.py",
+      "bytes": 6378,
+      "sha256": "8e56113203b7aea0b304fb148a4b0999b571db805d626e8b9ad8165448551723"
+    },
+    {
+      "entry": "records/root/run_windows.py",
+      "bytes": 3499,
+      "sha256": "e98a8d162cc9c041dd644ea223e5389a0e0d240f3f32319000ec7ad68aeeb4ae"
+    },
+    {
+      "entry": "records/vulkan/validation/final1/image-before.json",
+      "bytes": 272,
+      "sha256": "ce9ea5b6d6edf5c2c45f968eb49a4329c5bd5c311c7e25ef5b80adeb8d2c5b95"
+    },
+    {
+      "entry": "records/vulkan/validation/final1/live.json",
+      "bytes": 578,
+      "sha256": "03727c836e243c540fff360e9fa39a9bae64c14b970dc8c5dd97865bc10b7072"
+    },
+    {
+      "entry": "records/vulkan/validation/final1/receipt.json",
+      "bytes": 2829,
+      "sha256": "5382ee3c18542256afa89486845beeceb1c252c64fb4483802a58ae16f0e3496"
+    },
+    {
+      "entry": "records/vulkan/validation/final1/runtime-environment.json",
+      "bytes": 8265,
+      "sha256": "31b793f62a5310d02178e16b38342034577bcbd1f136c0ada0ee69968f9979d9"
+    },
+    {
+      "entry": "records/vulkan/validation/final1/tests.command.json",
+      "bytes": 509,
+      "sha256": "715e811fcdc5996adf9f61943106b5d19684469ab931c60b6f8a37f16e3c2ef2"
+    },
+    {
+      "entry": "records/vulkan/validation/final1/tests.result.json",
+      "bytes": 578,
+      "sha256": "03727c836e243c540fff360e9fa39a9bae64c14b970dc8c5dd97865bc10b7072"
+    },
+    {
+      "entry": "records/vulkan/validation/final1/tests.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/vulkan/validation/final1/tests.stdout.log",
+      "bytes": 769,
+      "sha256": "79d286f2da16c96de5d1e0886ac351f22266dc4c60ace05b963bbe6cd13b9f9b"
+    },
+    {
+      "entry": "records/vulkan/validation/final1/tests.xml",
+      "bytes": 2039,
+      "sha256": "6b3f28253414e823e05f38802c1a1595c6a96ef24ed155c614c08e2e2dd31108"
+    },
+    {
+      "entry": "records/windows/source-review.json",
+      "bytes": 11853,
+      "sha256": "53154519f697e1a2d5eacddd30298b32a6f9f61ac030e28d761e8e4466a5e2b8"
+    },
+    {
+      "entry": "records/windows/source_review.py",
+      "bytes": 9485,
+      "sha256": "7ac1b8e2ff0fc19c0f197d94672328f85a4290da12f5919f58b8a02c7e60df1a"
+    },
+    {
+      "entry": "review_source/d5_deepseek_official_fragments.h",
+      "bytes": 10048,
+      "sha256": "8498de64d8d3ce030de151aa7a63f248808921825b7bcd0aead59021653aa00d"
+    },
+    {
+      "entry": "review_source/d5_dynamic_fp8_fragments.h",
+      "bytes": 16239,
+      "sha256": "22487c44966621e5bc17618d25fde05539a3bb19bfcee70426d8f4c3b66cd9e7"
+    },
+    {
+      "entry": "review_source/d5_official_fp4_storage.h",
+      "bytes": 4623,
+      "sha256": "3f9d8a651e2d79dcf5f9ab2ac09cca4439a0d5ef2d4a2ea948c1768966e38846"
+    },
+    {
+      "entry": "source/docs/developer/current-work.md",
+      "bytes": 37857,
+      "sha256": "ca7325989be4561f3b58c166422ce8a12e3c840f03d8581d8c1d7c896ceffcc3"
+    },
+    {
+      "entry": "source/docs/implementation/model-operators.md",
+      "bytes": 80083,
+      "sha256": "1127eaa92c627d3b06881b862a2ef71f8362781503a548054805b87ef23aafd3"
+    },
+    {
+      "entry": "source/docs/implementation/model-quantizations.json",
+      "bytes": 560459,
+      "sha256": "12b2b04e91ca74a79d0661671064aaea4f899cb7e3d496cc7ae62152fbb230d3"
+    },
+    {
+      "entry": "source/docs/user/compute.md",
+      "bytes": 120001,
+      "sha256": "a12b588c9702b6a1a247e7abc0c8f6a04c43bd61132b3f3836754dc14d38661e"
+    },
+    {
+      "entry": "source/docs/user/graph.md",
+      "bytes": 89012,
+      "sha256": "b51d8e16b860e9f014d29afb1c32eef79514f9e886a1dc3be990e46a52d7d692"
+    },
+    {
+      "entry": "source/include/hyle/compute/apple_weights.h",
+      "bytes": 4606,
+      "sha256": "0f74446c0496272df3b902a52e0ec3f0897e6131ddc2f0bc1cdd95e81f228d4f"
+    },
+    {
+      "entry": "source/include/hyle/compute/cuda_weights.h",
+      "bytes": 5065,
+      "sha256": "1e3ca02148c67fc2d6d6744beb5a03ee93dcb7f7a61ffed16aa5b5e49d5a8079"
+    },
+    {
+      "entry": "source/include/hyle/compute/model_ops.h",
+      "bytes": 75341,
+      "sha256": "d3315100def9904a604dd3a1386000641cb03c2e8d36485ef3e55b98e4dde3e5"
+    },
+    {
+      "entry": "source/include/hyle/compute/resource_leases.h",
+      "bytes": 8660,
+      "sha256": "4e5681ebfa7c2f2ad51e5788c8316f4b993883f595c04b33fe594d7294dab85b"
+    },
+    {
+      "entry": "source/include/hyle/compute/vulkan_weights.h",
+      "bytes": 3974,
+      "sha256": "f54d91b380e71b6d073c00175ffea08849442250b57844b23eac839472054bf0"
+    },
+    {
+      "entry": "source/include/hyle/compute/weight_assembly.h",
+      "bytes": 2095,
+      "sha256": "c085186c2751371d8e642f29d1b338e53962236e50c9935ea1858a4b188ca3ac"
+    },
+    {
+      "entry": "source/include/hyle/graph/result.h",
+      "bytes": 1646,
+      "sha256": "90861eafec4f3a0aa73014416bd2817dfe3892ac001ea206bebf907e1d3cf182"
+    },
+    {
+      "entry": "source/include/hyle/graph/weight_binding.h",
+      "bytes": 422,
+      "sha256": "ebcc3eea951953966a3b10b2951872e74d04921af6f0cc8de45ab52ab1ba32bd"
+    },
+    {
+      "entry": "source/src/compute/weight_assembly.h",
+      "bytes": 5757,
+      "sha256": "3acee3356f6241ea6bd3f40da5bc357e53d9d20d9652237f52374eeceb82b3ff"
+    },
+    {
+      "entry": "source/src/compute_ops/low_precision.cc",
+      "bytes": 15337,
+      "sha256": "2d1754ef9a2f91b6987bc9abc31b1063427741aac89767b48e7f51fcb7b02bce"
+    },
+    {
+      "entry": "source/src/compute_provider_cuda/deepseek_grouped_fp4_provider.cc",
+      "bytes": 10020,
+      "sha256": "146efe83698df512396530788381ab2b9d074f826c4a51cea48e47457371b232"
+    },
+    {
+      "entry": "source/src/compute_route_apple/apple_weights.mm",
+      "bytes": 24029,
+      "sha256": "fdb6f5f6fc059657e7e0cd5302865d8fa7b9e4f6ba3fea41bcd2ed46fb0f0bd5"
+    },
+    {
+      "entry": "source/src/compute_route_cuda/weights.cc",
+      "bytes": 23241,
+      "sha256": "d0554efedeb27f56d059ddf5f839d41c294c739962a97d628cdf59ff10dcd236"
+    },
+    {
+      "entry": "source/src/compute_route_vulkan/vulkan_weights.cc",
+      "bytes": 15764,
+      "sha256": "1882f3c92605e369053db2d3217cd69c712e26964607fcc15d30c3cf03784e74"
+    },
+    {
+      "entry": "source/src/graph_route_apple/weight_binding.cc",
+      "bytes": 3694,
+      "sha256": "c49db2528c69f60ae65f2b4770612328a802720b29b7528d259ec316116e5cea"
+    },
+    {
+      "entry": "source/src/graph_route_cuda/weight_binding.cc",
+      "bytes": 2864,
+      "sha256": "5aac253f95f9e42b566e2eafc775eee56442c8d38c118c7399df6052a7eff8d1"
+    },
+    {
+      "entry": "source/src/graph_route_vulkan/weight_binding.cc",
+      "bytes": 3914,
+      "sha256": "7e3937d230e472823c3a1b343199a2265ed96d61edb304f7a4b0b813171f1f73"
+    },
+    {
+      "entry": "source/tests/compute/CMakeLists.txt",
+      "bytes": 865,
+      "sha256": "581ad6485b64ba6a3eccb2f1d0f87081994d99d96e2139fbf6d49fe5bcbef6cc"
+    },
+    {
+      "entry": "source/tests/compute/weight_import_test.cc",
+      "bytes": 33941,
+      "sha256": "fd4551fb7a6a3e616c0aafc223aa6b1d4b73934feb282f375d82ae867f9ff93b"
+    },
+    {
+      "entry": "source/tests/compute_models/ct_packed_graph_fixture.h",
+      "bytes": 25617,
+      "sha256": "3e5750bdaad93e36792f2ee9428af0ca9672a8fafa24800cd064790432c3ba32"
+    },
+    {
+      "entry": "source/tests/compute_models/ct_packed_grouped_fixture.h",
+      "bytes": 16396,
+      "sha256": "dcadf216276544c7145c913200f38dd762f0cb76d41cce0776b165bac1d3b7b9"
+    },
+    {
+      "entry": "source/tests/compute_models/expert_working_set_fixture.h",
+      "bytes": 25059,
+      "sha256": "7acdd3077cf034cf8656f831fe27e9247341e24095be2da52de9923098d4dc75"
+    },
+    {
+      "entry": "source/tests/compute_models/ga_encoded_bank_fixture.h",
+      "bytes": 10225,
+      "sha256": "4a69ed816143bd15ee5b059be621ffb14eabab25c7c1b376dcd0e843f2b4099b"
+    },
+    {
+      "entry": "source/tests/compute_models/nvfp4_reference_fixture.h",
+      "bytes": 22482,
+      "sha256": "cc94ec1f443511722ff4fc227b065af27b82573443735250951cdce934faa4d3"
+    },
+    {
+      "entry": "source/tests/compute_route_vulkan/mlx_test_support.h",
+      "bytes": 18824,
+      "sha256": "dffc4ce6d586545204bdb3ed0b8e7cfd98ed632f248085cb915168d5c41a51ce"
+    },
+    {
+      "entry": "source/tests/graph_route_apple/CMakeLists.txt",
+      "bytes": 7365,
+      "sha256": "30fbe7a3e9017839dc0af52c0233bfef4fa18254e21b9f89c6e36dc51c9cfb4c"
+    },
+    {
+      "entry": "source/tests/graph_route_apple/ga_encoded_bank_test.cc",
+      "bytes": 2602,
+      "sha256": "f371244503f314035c3eee41e4928f50cdae55685bb4901d79d4811541b3d1c9"
+    },
+    {
+      "entry": "source/tests/graph_route_cuda/CMakeLists.txt",
+      "bytes": 3775,
+      "sha256": "ba7740e2357864aeb3b8c7cfc5794771be5fbaad6e4c5d9ac66d3e32d1bb4884"
+    },
+    {
+      "entry": "source/tests/graph_route_cuda/ga_encoded_bank_test.cc",
+      "bytes": 2768,
+      "sha256": "06c5dbaae6e033ed95e0cca3f37fa8d4dd7f7c44b37146948525a0cee845b21f"
+    },
+    {
+      "entry": "source/tests/graph_route_vulkan/CMakeLists.txt",
+      "bytes": 6928,
+      "sha256": "e99269bd9b5755421942080fda69a8188fadf6a6992a1bda2395b1f70d82ad7a"
+    },
+    {
+      "entry": "source/tests/graph_route_vulkan/ga_encoded_bank_test.cc",
+      "bytes": 4312,
+      "sha256": "4c90a8f98ed22241dab97ccc82f4125aeed17ece6c7611da3d0b8fd0cff1aa62"
+    }
+  ]
+}

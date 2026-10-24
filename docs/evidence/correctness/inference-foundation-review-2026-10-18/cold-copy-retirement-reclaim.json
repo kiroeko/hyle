@@ -1,0 +1,79 @@
+{
+  "objects_retained": true,
+  "recursive": false,
+  "raw_trace_retained": true,
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\inference-foundation-review-2026-10-18\\cold-copy-retirement.zip",
+    "bytes": 15431389,
+    "sha256": "74cde937882506b721f0ffba1350fe47bc211381c9abbd24d438ad1cc75651b2",
+    "payload_files": 180,
+    "CRC_and_SHA256_verified": true,
+    "reclaim_manifest": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cold-copy-retirement\\reclaim-targets.json",
+      "bytes": 3361,
+      "sha256": "4e627ff2a34fbcb6d126b046ff661782b512b135f3ed3fc309a9ad15733e7f23"
+    }
+  },
+  "targets": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cold-copy-retirement\\checks\\20261019T053001-df70e294\\cold-tests.exe",
+      "bytes": 68829184,
+      "sha256": "956c3b687849ef0101e539169211d94a790256c5ce2aaea543412972dfbd0913"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cold-copy-retirement\\checks\\20261019T053001-df70e294\\cold-tests.exp",
+      "bytes": 25035,
+      "sha256": "23d6853a2c9a55d1666920b3fb05092ae00b1aa56d6a67ff29c4d4cba1f882e2"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cold-copy-retirement\\checks\\20261019T053001-df70e294\\cold-tests.lib",
+      "bytes": 41912,
+      "sha256": "6cea9032be3e0be5afd28777243d84b623372d77b7f717dba6342d36f4d17eb9"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cold-copy-retirement\\checks\\20261019T053001-df70e294\\cold-tests.map",
+      "bytes": 35782110,
+      "sha256": "bd2c67e6197f49239c1b6db23d483c40c150b65317129faa56de88c0b8129d7c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cold-copy-retirement\\relinks\\20261019T053106-dbca0667\\candidate.exe",
+      "bytes": 116143104,
+      "sha256": "c4c919b97751bbe0cf4cc0ed6cb47455e2afb201cc5da76840cb2dd5a6a0d609"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cold-copy-retirement\\relinks\\20261019T053106-dbca0667\\candidate.exp",
+      "bytes": 25033,
+      "sha256": "815d417be600b59d8779e4eea232127655968e1a15631850862e0f8b1ae3c0a2"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cold-copy-retirement\\relinks\\20261019T053106-dbca0667\\candidate.lib",
+      "bytes": 41826,
+      "sha256": "a17fe4c1ccde457403d9126a084aa4f236618e410d072f5513aca0806f2713a6"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cold-copy-retirement\\relinks\\20261019T053106-dbca0667\\candidate.map",
+      "bytes": 33603388,
+      "sha256": "88ed426253cc0ea6006ac895d0c564cbf75311d5476d8cbcde2f3f1111a0ec8c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cold-copy-retirement\\relinks\\20261019T053106-dbca0667\\fusion-tests.exe",
+      "bytes": 116933120,
+      "sha256": "860793917603f90ad051befcd0b2c0a91c3b41714f0e6c86ec622f792aee8dab"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cold-copy-retirement\\relinks\\20261019T053106-dbca0667\\fusion-tests.exp",
+      "bytes": 25040,
+      "sha256": "69dbb9b7cd3af6ccff7181aaf80092966c96f1f0e72d5130ed33db8db0b8c996"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cold-copy-retirement\\relinks\\20261019T053106-dbca0667\\fusion-tests.lib",
+      "bytes": 42166,
+      "sha256": "bc8a9121fabe065864b9d7b3f9b377d169ff3d0bf416946436dda717b60ec12f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cold-copy-retirement\\relinks\\20261019T053106-dbca0667\\fusion-tests.map",
+      "bytes": 35447747,
+      "sha256": "b3368c86c00342115cca62aa6739c7cb0cf0d62d8cc32208ab6f374364dfeaa0"
+    }
+  ]
+}

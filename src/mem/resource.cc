@@ -20,7 +20,8 @@ class SystemMemoryResource final : public MemoryResource {
   MemoryProperties properties() const noexcept override {
     return MemoryProperties{
         .flags = MemoryProperty::kHostAccessible |
-                 MemoryProperty::kHostDeviceCoherent,
+                 MemoryProperty::kHostDeviceCoherent |
+                 MemoryProperty::kHostAddressIdentity,
         .minimum_alignment = kDefaultAlignment,
         .maximum_allocation = SIZE_MAX,
         .domain = MemoryDomainId{this, 0},

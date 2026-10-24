@@ -1,0 +1,106 @@
+{
+  "status": "Bounded source/documentation research complete; no Hyle optimization or benchmark claimed",
+  "source_commit": "46d9966b54d9d11998b712e732fb20f64d4d35c0",
+  "source_commit_url": "https://github.com/NVIDIA/TensorRT-LLM/commit/46d9966b54d9d11998b712e732fb20f64d4d35c0",
+  "scope": {
+    "CUDA_sources": 8,
+    "official_documents": 4,
+    "source_and_document_bytes": 493545,
+    "source_directory_metadata_bytes": 91110,
+    "full_repository_clone": false,
+    "submodules": false,
+    "installed": false,
+    "Hyle_product_changes": false,
+    "builds": 0,
+    "GPU_runs": 0,
+    "throughput_measurements": 0,
+    "Hyle_source_snapshot_count": 10
+  },
+  "findings": [
+    {
+      "mechanism": "Current execution backend",
+      "fact": "The pinned migration guide removes the old TensorRT engine backend and makes PyTorch the sole execution backend; custom CUDA leaves and compilation remain distinct from the former engine-build workflow.",
+      "source": "docs/tensorrt-backend-removal.md"
+    },
+    {
+      "mechanism": "Cold shared-activation quantization and consumer layout",
+      "fact": "GatedMLP compares static gate/up scales after loading, shares quantization only when compatible, and can emit the two-input activation directly in the down-projection input dtype.",
+      "source": "cuda/sources/tensorrt_llm/_torch/modules/gated_mlp.py",
+      "Hyle": "Existing shared FP8 prologue already covers part of this principle. Quark shared A should use its expert-independent quantizer once per token. Preserve actual dtype rounding, aliases and published intermediates."
+    },
+    {
+      "mechanism": "Stable metadata and graph replay",
+      "fact": "Attention CUDA-graph metadata is preallocated at warmup; runtime graph handling separates capture/replay and actual request metadata.",
+      "sources": [
+        "docs/attention.md",
+        "cuda/sources/tensorrt_llm/_torch/pyexecutor/cuda_graph_runner.py"
+      ],
+      "Hyle": "Existing finite graph family and stable binding lifetime are the natural owners; no replacement executor or padding requirement follows from this review."
+    },
+    {
+      "mechanism": "Shape, dtype and architecture specific kernels",
+      "fact": "Read unquantized SM89 linear code retains F.linear or an explicit cuBLAS wrapper. The inspected low-M/persistent specialization has SM100 conditions; the inspected CUDA-core GEMM caller requires FP8 inputs even though the kernel source instantiates BF16.",
+      "sources": [
+        "cuda/sources/tensorrt_llm/_torch/modules/linear.py",
+        "cuda/sources/tensorrt_llm/_torch/modules/low_m_gemm.py",
+        "cuda/sources/cpp/tensorrt_llm/thop/cudaScaledMM.cpp"
+      ],
+      "Hyle": "Check real hot projection geometry and mathematical eligibility under the current cold planner. Neither a callable template nor SM100 results establish a4070 BF16 benefit. F.linear does not prove the exact internal cuBLAS algorithm selected at runtime."
+    },
+    {
+      "mechanism": "CPU/GPU overlap",
+      "fact": "The official architecture describes launching the next GPU step while processing previous CPU results, using device-side token dependencies and accepting an additional pipelined step.",
+      "source": "docs/overview.md",
+      "Hyle": "Inspect actual trace gaps and token visibility in D4; revisit GPU metadata and acceptance lengths with the actual MTP consumer in step6. Preserve stop, failure, old results and real Completion retirement."
+    }
+  ],
+  "performance_interpretation": {
+    "status": "Analytical explanation, not a measured ceiling",
+    "small_batch": "Decode can be constrained by weight/KV/state traffic, low parallelism and launch/synchronization gaps. Fewer kernels alone is not a throughput result.",
+    "large_batch": "Batching reuses weights across requests and changes arithmetic intensity; aggregate tokens/s is a different metric from one-request decode.",
+    "comparison": "Same GPU, weights/quantization, input/context, batch, speculative mode and token-visible timing boundary are required. Blackwell, FP4 and high-concurrency numbers cannot certify4070 BF16 behavior."
+  },
+  "next_actions": {
+    "existing_work": "Current-work steps3/4/5 and D4; step6 for actual MTP. No added capability-package count or independent executor project.",
+    "D4": "Inspect one actual hot projection/epilogue chain and host-token trace. Create a paired candidate only if a new routing, traffic or synchronization premise is demonstrated; otherwise record the specific decision and close this bounded review without reopening settled Top1 experiments.",
+    "implementation": "Use the existing cold region/provider selection and shared execution/resource core. Keep hardware kernels and mathematical layout policy in backend owners."
+  },
+  "detailed_source_map": "cuda-map.json",
+  "official_sources": [
+    {
+      "url": "https://raw.githubusercontent.com/NVIDIA/TensorRT-LLM/46d9966b54d9d11998b712e732fb20f64d4d35c0/docs/source/developer-guide/overview.md",
+      "member": "docs/overview.md",
+      "bytes": 10816,
+      "sha256": "954e43ab59ffea592d1badbd64ee138ddefb59b1bc25f431a59e8e4e3dcd98d1"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/NVIDIA/TensorRT-LLM/46d9966b54d9d11998b712e732fb20f64d4d35c0/docs/source/features/attention.md",
+      "member": "docs/attention.md",
+      "bytes": 20618,
+      "sha256": "32bbe590f740304d60b103dd49952fdba6645f591cbb2f054a929eab487beb1d"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/NVIDIA/TensorRT-LLM/46d9966b54d9d11998b712e732fb20f64d4d35c0/docs/source/legacy/tensorrt-backend-removal.md",
+      "member": "docs/tensorrt-backend-removal.md",
+      "bytes": 3246,
+      "sha256": "35235a39312e806effba30943179bb904b9a6cf84c309e74ab87ab673bd45213"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/NVIDIA/TensorRT-LLM/46d9966b54d9d11998b712e732fb20f64d4d35c0/docs/source/developer-guide/perf-benchmarking.md",
+      "member": "docs/perf-benchmarking.md",
+      "bytes": 22415,
+      "sha256": "ee05c0bca993336aeefd013d571a596a606cc0d3a3e7c68fac68fadfa334ed69"
+    }
+  ],
+  "limitations": [
+    "No TensorRT-LLM installation, model import or inference was executed.",
+    "No proof of whole-product RTX4070 support, exact model support, numerical equivalence or throughput gain is made.",
+    "The deployed latest docs observed at cc63e66 and the pinned main source are distinct revisions; the retained raw documents use the pinned source revision."
+  ],
+  "archive": {
+    "path": "docs/evidence/research/tensorrt-llm-inspiration-2026-10-20.zip",
+    "bytes": 307212,
+    "sha256": "3b944849bd4d47fd0c78a2b7fad38ba2c6bf8046afef00956f961ad2e6397a2b",
+    "members": 34
+  }
+}

@@ -1,0 +1,128 @@
+{
+  "status": "complete",
+  "removed_files": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-prepare-20261021\\cpu-link1\\cpu.exe",
+      "bytes": 139474944,
+      "sha256": "49a21d4f7c18170fb2d42328094bd0e02801aa1e7f2307793b7ea50604af0762"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-prepare-20261021\\cuda-link1\\cuda.exe",
+      "bytes": 139248640,
+      "sha256": "3a36c23f5d5819c3b1df9267b57b0e95eb74021979c0e434190855cd9ab0cba0"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-prefix-20261021\\checks\\attempt1\\qwen.exe",
+      "bytes": 139689472,
+      "sha256": "abb861b5c3041fbedcab884f5403eedc88589083a2e1e5c5c1dc6b04bf49ca91"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-prefix-20261021\\checks\\attempt1\\qwen.exp",
+      "bytes": 24974,
+      "sha256": "f9a086f3e473ba52ad4df0406c97db053895caee369a576f8f94f683a30a519a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-prefix-20261021\\checks\\attempt1\\qwen.lib",
+      "bytes": 41384,
+      "sha256": "339d3ce297534ebac8825c27a011f2f4f9dfe366c657ebfc45dbbfdc8412a2cb"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-prefix-20261021\\checks\\attempt1\\qwen.map",
+      "bytes": 58249654,
+      "sha256": "f44b17cac7d7ab41e4aaf6f5219576124ce616703f55ef10ac012b317b00608c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-prefix-20261021\\checks\\attempt2\\qwen.exe",
+      "bytes": 139691520,
+      "sha256": "5133e5ddb06aa21c47e8b28071f4c1471126d29c76bedc2ebc3390a5cae23034"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-prefix-20261021\\checks\\attempt2\\qwen.exp",
+      "bytes": 24974,
+      "sha256": "8d5993bf4d9ee2315912a88f8fa7f4df912ed8889324ad82e1cb7c21ee4104b7"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-prefix-20261021\\checks\\attempt2\\qwen.lib",
+      "bytes": 41384,
+      "sha256": "339d3ce297534ebac8825c27a011f2f4f9dfe366c657ebfc45dbbfdc8412a2cb"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-prefix-20261021\\checks\\attempt2\\qwen.map",
+      "bytes": 58250910,
+      "sha256": "eee919efa44afd9a53d543fac7ae509420f07f63552159dd4c93828cb1e4a9c0"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-prefix-20261021\\checks\\attempt3\\qwen.exp",
+      "bytes": 24974,
+      "sha256": "79c1718ea384b2e8c6ec9c0593afa0fd13aa8402e199319476c16f7d3a83b10c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-prefix-20261021\\checks\\attempt3\\qwen.lib",
+      "bytes": 41384,
+      "sha256": "339d3ce297534ebac8825c27a011f2f4f9dfe366c657ebfc45dbbfdc8412a2cb"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-prefix-20261021\\checks\\attempt3\\qwen.map",
+      "bytes": 58251215,
+      "sha256": "ac50df38735c7cce2a149f416066ab8d9408a6eb228977b9442c4e50b2e8b88e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-prefix-20261021\\core-checks\\diagnostic2\\qwen.exe",
+      "bytes": 139690496,
+      "sha256": "567d59652d11cf36a8d1a9dc9eb34cab7923baf8f5fc946d275c56edb4e743ea"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-prefix-20261021\\core-checks\\diagnostic2\\qwen.exp",
+      "bytes": 24982,
+      "sha256": "de610073d429ecd6735167126424f2b07ba2f58dd7c249bbd54071fb064411d2"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-prefix-20261021\\core-checks\\diagnostic2\\qwen.lib",
+      "bytes": 41384,
+      "sha256": "339d3ce297534ebac8825c27a011f2f4f9dfe366c657ebfc45dbbfdc8412a2cb"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-prefix-20261021\\core-checks\\diagnostic2\\qwen.map",
+      "bytes": 58250312,
+      "sha256": "cf2e6ffbfa385d57518f077f309b485c45cb3dd4568c9918bca8d52d51435541"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-prefix-20261021\\cpu-link1\\cpu.exp",
+      "bytes": 24965,
+      "sha256": "0ac3b6b7e0421dbe60ea987515f74d1627cd6fdddfc82a92a133e883ee1af055"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-prefix-20261021\\cpu-link1\\cpu.lib",
+      "bytes": 41298,
+      "sha256": "1a72c22d3a6dec39cca5118fd99aa738ff5f4202c029fc8a48afb6c3d20e909d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-prefix-20261021\\cpu-link1\\cpu.map",
+      "bytes": 57449870,
+      "sha256": "a79556d7a485d1034f1f1023a5b06cdc5ba413513f7038b30c821618f0c63f8e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-prefix-20261021\\cuda-link1\\cuda.exp",
+      "bytes": 24969,
+      "sha256": "478aa26073b0afc95e03f55a40d7e065f9c4da8fe27b812e2a6d28a52970b32c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-prefix-20261021\\cuda-link1\\cuda.lib",
+      "bytes": 41384,
+      "sha256": "097299e17e955c077a99f65f363d3484d564c016359baeb643f4e47c6b737d59"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-prefix-20261021\\cuda-link1\\cuda.map",
+      "bytes": 57346157,
+      "sha256": "c39a717c0c645c442b066cba0beb148f8364c4395d55446212c41ff59e1b0d28"
+    }
+  ],
+  "removed_bytes": 1045991246,
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\qwen-prefix-reuse-2026-10-21.zip",
+    "bytes": 2382945,
+    "sha256": "6d070618417d0cec9bc91da7cd974a9ec7472f34631ed9aa3e1c1b53ef64049a"
+  },
+  "script_sha256": "713B55D8C069FF5C3A3FC52B2B8237046D11C2E3F83D54719C08CC30DCF49421",
+  "completed_utc": "2026-10-21T11:22:32.4684474Z"
+}

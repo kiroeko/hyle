@@ -1,0 +1,13 @@
+{
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\grouped-shared-activation-2026-10-20.zip",
+    "bytes": 35822360,
+    "sha256": "817ee61aa64eec6b1c4cb9dfca4377b20a93c3cbc0a0e025402ed999c5a0bba3"
+  },
+  "payload_entries": 1519,
+  "manifest_entries": 1,
+  "CRC_and_payload_SHA_verified_once": true,
+  "binaries_objects_SDKs_and_duplicate_vectors_archived": false,
+  "complete_actual_header_and_failed_runs_retained": true,
+  "maps_compressed": true
+}

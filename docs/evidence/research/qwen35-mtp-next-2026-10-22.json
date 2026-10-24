@@ -1,0 +1,291 @@
+{
+  "status": "Read-only next implementation design; actual real-weight MTP remains unimplemented/unrun. No build/GPU/network/model payload read or copy.",
+  "fixed_prior_audit": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\research\\qwen35-mtp-consumer-audit-2026-10-21.json",
+    "bytes": 26223,
+    "sha256": "99777c96e57f85587df6ac4ce2b732422d7d16b100c43c92639bf64e7376c495"
+  },
+  "local_inventory": {
+    "checkpoint": "C:\\Users\\kiro\\Downloads\\Qwen3.5-2B\\model.safetensors-00001-of-00001.safetensors",
+    "file_bytes": 4548221488,
+    "metadata_read_bytes": 76656,
+    "header_sha256": "ccba2c1f645fe59268f89ee7ea552e02ce6bf0c8a087bf332fb0e3bd99bfee9d",
+    "audit_inventory_exact": true,
+    "mtp_tensors": 15,
+    "mtp_payload_bytes": 121656320,
+    "text_plus_mtp_tensors": 335,
+    "text_plus_mtp_payload_bytes": 3885311680,
+    "selected_tensors": [
+      {
+        "name": "mtp.fc.weight",
+        "dtype": "BF16",
+        "shape": [
+          2048,
+          4096
+        ],
+        "absolute_file_offset": 4426565168,
+        "bytes": 16777216
+      },
+      {
+        "name": "mtp.layers.0.input_layernorm.weight",
+        "dtype": "BF16",
+        "shape": [
+          2048
+        ],
+        "absolute_file_offset": 4443342384,
+        "bytes": 4096
+      },
+      {
+        "name": "mtp.layers.0.mlp.down_proj.weight",
+        "dtype": "BF16",
+        "shape": [
+          2048,
+          6144
+        ],
+        "absolute_file_offset": 4443346480,
+        "bytes": 25165824
+      },
+      {
+        "name": "mtp.layers.0.mlp.gate_proj.weight",
+        "dtype": "BF16",
+        "shape": [
+          6144,
+          2048
+        ],
+        "absolute_file_offset": 4468512304,
+        "bytes": 25165824
+      },
+      {
+        "name": "mtp.layers.0.mlp.up_proj.weight",
+        "dtype": "BF16",
+        "shape": [
+          6144,
+          2048
+        ],
+        "absolute_file_offset": 4493678128,
+        "bytes": 25165824
+      },
+      {
+        "name": "mtp.layers.0.post_attention_layernorm.weight",
+        "dtype": "BF16",
+        "shape": [
+          2048
+        ],
+        "absolute_file_offset": 4518843952,
+        "bytes": 4096
+      },
+      {
+        "name": "mtp.layers.0.self_attn.k_norm.weight",
+        "dtype": "BF16",
+        "shape": [
+          256
+        ],
+        "absolute_file_offset": 4518848048,
+        "bytes": 512
+      },
+      {
+        "name": "mtp.layers.0.self_attn.k_proj.weight",
+        "dtype": "BF16",
+        "shape": [
+          512,
+          2048
+        ],
+        "absolute_file_offset": 4518848560,
+        "bytes": 2097152
+      },
+      {
+        "name": "mtp.layers.0.self_attn.o_proj.weight",
+        "dtype": "BF16",
+        "shape": [
+          2048,
+          2048
+        ],
+        "absolute_file_offset": 4520945712,
+        "bytes": 8388608
+      },
+      {
+        "name": "mtp.layers.0.self_attn.q_norm.weight",
+        "dtype": "BF16",
+        "shape": [
+          256
+        ],
+        "absolute_file_offset": 4529334320,
+        "bytes": 512
+      },
+      {
+        "name": "mtp.layers.0.self_attn.q_proj.weight",
+        "dtype": "BF16",
+        "shape": [
+          4096,
+          2048
+        ],
+        "absolute_file_offset": 4529334832,
+        "bytes": 16777216
+      },
+      {
+        "name": "mtp.layers.0.self_attn.v_proj.weight",
+        "dtype": "BF16",
+        "shape": [
+          512,
+          2048
+        ],
+        "absolute_file_offset": 4546112048,
+        "bytes": 2097152
+      },
+      {
+        "name": "mtp.norm.weight",
+        "dtype": "BF16",
+        "shape": [
+          2048
+        ],
+        "absolute_file_offset": 4548209200,
+        "bytes": 4096
+      },
+      {
+        "name": "mtp.pre_fc_norm_embedding.weight",
+        "dtype": "BF16",
+        "shape": [
+          2048
+        ],
+        "absolute_file_offset": 4548213296,
+        "bytes": 4096
+      },
+      {
+        "name": "mtp.pre_fc_norm_hidden.weight",
+        "dtype": "BF16",
+        "shape": [
+          2048
+        ],
+        "absolute_file_offset": 4548217392,
+        "bytes": 4096
+      }
+    ],
+    "shared_embedding_head": "Original model.language_model.embed_tokens.weight; no dedicated MTP embedding/head tensor. Raw HF delta norms require the existing F32 +1 convention once."
+  },
+  "what_changed_since_audit": [
+    {
+      "anchor": "include/hyle/compute/paged_arena.h:57-78; src/compute_batch/paged_arena.cc:reframe_impl",
+      "fact": "The old audit missing accepted-prefix projection is now closed: reframe can project a ready T2 frame to the exact L+1 layout without widening source authority or pinning unrelated pages. No new public prefix projection API is needed."
+    },
+    {
+      "anchor": "tools/qwen35_text/main.cc:1321-1608",
+      "fact": "The actual execution chain is now one Model-owned R-member episode with original prepare/submit/finish/abort and native-retirement gates. Reuse this chain; MTP does not need another Model/executor or manual CUDA synchronization."
+    },
+    {
+      "anchor": "include/hyle/compute/operation.h:427-445; tests/compute_state/mtp_prefix_consumer.h:68-103",
+      "fact": "GDN snapshot_count2 already supplies both chronological post-token states; ordinary lease subviews and matching conv windows already express selecting either accepted prefix. Existing primitive coverage is not a real15-tensor MTP execution proof."
+    }
+  ],
+  "current_exact_seams": [
+    {
+      "owner": "prepare.py/load_weight_bank/Recipe",
+      "anchor": "tools/qwen35_text/prepare.py:70-101; main.cc:Recipe::weight,load_weight_bank:586-657",
+      "change": "Current preparation filters only model.language_model.*, loader insists320 tensors/3763655360B and pipeline max_groups320, and Recipe.weight prepends that prefix. Add explicit MTP opt-in inventory335/3885311680B,335 real upload groups and an absolute-name constant lookup. Share the original tied embedding/head and FileResourcePipeline; load only15 extra raw ranges, not a second target bank."
+    },
+    {
+      "owner": "target graph outputs",
+      "anchor": "main.cc:1025-1034,1179-1181",
+      "change": "Current graph publishes only one normalized BF16 hidden row and one greedy ID per request into reusable caller IO. Prefill catch-up needs all target normalized hidden rows on device; verifyT2 needs both hidden rows and both target IDs. Escaping carry hidden must be an independent owned material output/lease, not a view into reusable Phase.final_hidden."
+    },
+    {
+      "owner": "late result selection/publication",
+      "anchor": "main.cc:1534-1608",
+      "change": "Current finish waits, exports final state only, takes12 appends, unbinds and immediately swaps complete heads. Factor that same finish into collect-retired-results, select accepted-prefix outputs and the existing no-throw composite head swap. Do not call current finish then undo a published length or replace an old head."
+    },
+    {
+      "owner": "complete Session snapshot",
+      "anchor": "session_state.h:Snapshot; main.cc:PageInventory,state_pools,prepare_cache",
+      "change": "The atomic immutable head must additionally include MTP key/value frame, its independent frontier, actual target carry hidden, and optional one accepted catch-up token/hidden pair. Target-only prefix Snapshots cannot be treated as complete MTP continuation state. First milestone may explicitly use one Session/prefix off."
+    }
+  ],
+  "minimal_no_extra_draft_host_wait_route": {
+    "cold_graphs": "Use the same Model/context/weights and original Invocation lifecycle. Private role/output mode distinguishes ordinary target, prefill+MTP catch-up and one K1 round. Finite K1 round has target queryT2 plus MTP query1 or2; separate typed layouts describe each role frontier. No provider/model-specific public op or second executor.",
+    "prefill": "Compute original target prompt and all final normalized BF16 hidden rows H. On GPU form shifted hidden [zero,H[:-1]] paired with the original prompt IDs at their original positions. Run the real MTP input norms/fc/input norm/K/V(+K norm/RoPE) to fill its independent one-layer KV. Because this local checkpoint has only one MTP block, catch-up that only needs its K/V need not execute unused MTP attention/FFN/LM-head outputs. Commit the target+draft cache and last actual target hidden together; include all catch-up work in real prefill/startup.",
+    "round_start": "Target head has processed L tokens, carries h[L-1], and next_id x[L] was already returned but not yet fed. MTP frontier is L-lag, with lag0 or1 explicitly stored. lag1 also stores (accepted token x[L-1], target h[L-2]); these are real leases/IDs from the preceding verified round, not speculative hidden.",
+    "draft": "Build one MTP input stream of lag+1 rows: optional catch-up pair, then (h[L-1], embedding(x[L])). Its old frontier plus input rows always becomes L+1. Execute the real trained MTP block; take only its last greedy draft ID d1. Feed typed I32 Concat[x[L],d1] directly into the original24-layer target verifyT2 subgraph. This graph edge avoids reading d1 back to host or adding a draft-only Completion wait.",
+    "head_math": "RMS(delta+1) separately normalizes embedding and hidden; concat order is embedding then hidden; fc[2048,4096]; one gated full-attention block Hq8/Hkv2/D256, rotary64 and original positions, q/k norm, sigmoid attention gate, residual+SwiGLU6144+residual; mtp.norm and original tied LM head. Preserve the chosen Hyle BF16/F32 node boundaries. Local llama source defines alignment/structure, not bit identity with that tree.",
+    "one_terminal_boundary": "The original Graph Completion terminal observation reads small I32 results (draft plus both verify decisions, or verify decisions plus device acceptance metadata). No manual queue/device synchronization or host hidden/logits copy is needed. Existing finish already owns this terminal boundary; only publication becomes conditional.",
+    "accept": "For greedy K1 compare d1 to target row0 ID. If accepted and both outputs may be emitted, publish target state after2 inputs, emit d1 and target row1 bonus, retain target hidden row1. MTP cache has processed only through x[L], so record lag1 plus catch-up (d1,target hidden row0). The next round processes that pair and the new pending bonus in one MTP T2 prefix; no separate catch-up submit/wait is necessary.",
+    "reject": "If unequal, select target state after x[L] only, emit target row0 correction and keep target hidden row0. MTP frontierL+1 now equals target length, so lag0. This directly selected state avoids a T1 replay and its possible legal T2-versus-T1 greedy change. Use actual verified row0 state, not a final-state length rewrite.",
+    "stop_and_capacity": "Do not emit x[L] twice. EOS or a remaining output quota of one requires selecting the corresponding shorter committed prefix rather than blindly publishing the bonus row. If target L+2 exceeds capacity, use the original T1 path or stop by the declared capacity contract. Actual draft/verify/catch-up/committed/emitted counts stay separate."
+  },
+  "accepted_state_selection": [
+    "Verify graph requests GDN snapshot_count2 in each of18 recurrent layers. Expose independent material Copy outputs for post-row0 and post-row1 states, reshaping metadata BEFORE Copy where needed so both own storage leases.",
+    "For old conv history3 plus new qkv2, samples has5 rows. History after a accepted target inputs is samples[:,a:a+3,:] for a1 or2. Expose both material BF16 Copy histories; current final-only slice starts at2 and cannot represent reject.",
+    "Export BOTH complete36-member alternatives and target hidden rows/IDs before first take_append revokes output readiness. After native success project each of12 target KV frames to exact accepted length with reframe, trim PageRef inventories to the same footprint, choose corresponding36 leases/hidden/next_id and unbind original state ports before one composite swap.",
+    "A projected ready KV prefix does not rewind the physical append frontier. For partial acceptance drop the now-too-long mutable tail capability and use original COW next; never rollback a successfully committed frontier or widen an old bounded frame.",
+    "The MTP KV candidate contains only the already-known pending token and optional previously accepted catch-up token, never the new proposed d1; it remains valid for either accepted prefix. Failed/cancelled rounds publish neither target nor MTP candidate and retain every original native guard until true retirement."
+  ],
+  "budget_and_lifetime": [
+    "Current exact target-only cache_budget is fully reserved. Add explicit persistent one-layer MTP KV (2048 BF16 bytes/token for K+V), its page overhead/candidate capacity, independently owned carry/catch-up hidden (4096B per row), metadata mirrors and actual workspace. Do not charge these silently to the old target-only N+R formula.",
+    "Two GDN checkpoints across18 layers hold37748736B versus18874368B final-only, before graph temporaries. Selecting a subview of a packed2-state allocation does NOT release its other half. Either budget every retained whole backing, or publish separate one-state material outputs, discard the unselected leases and budget N committed-state slots plus 2R alternative-state slots and the actual GDN snapshot workspace; Snapshot VersionCount remains N+R. Conv alternatives add663552B per active request beyond one final history; all actual root allocations must be counted.",
+    "MTP draft frontier may lag target by one and can have a different last-page footprint. Use its own typed frames/layout/frontier and explicit bounded page inventory; never use target length to infer draft read authority. Composite head publication covers all state, counters, pending token and lag recipe.",
+    "Use the original StepState one-owner admission, append take/ready, unbind and abort/rollback/discard path for all target+MTP banks. Reusing addresses is not proof of permission. No slot can be returned while any original Completion/native use or output owner is pending."
+  ],
+  "private_interface_shape": [
+    "A small consumer-private GraphRole/output mode in the existing family/phase key; one build_target(...) helper reused by ordinary and verify graphs, and a build_mtp(...) helper using the same Recipe/absolute constant bank.",
+    "Snapshot optional MtpState{key,value,frontier,carry_hidden,optional catchup_token/catchup_hidden}; the existing next_id remains the pending target token. Session mutable tail ownership follows its corresponding draft frontier.",
+    "Model.prepare_mtp_round(Session&), existing submit, and finish_mtp_round that collects original ready results, decides greedy acceptance, selects a1/a2 and invokes the same atomic commit. This is a private consumer extension, not a second execution system or new public Graph API."
+  ],
+  "finite_validation_before_speed_claims": [
+    "Numerically check the real15-weight MTP projection/block against an independent chosen scalar/Torch math reference at explicit BF16/F32 boundaries; do not substitute fabricated logits or a second LM-head matmul.",
+    "One real prefill catch-up and several K1 rounds must cover natural accept/reject, old complete head continuation, true failure/cancellation retirement and exact state/position/hidden alignment. If forced rejection is needed, label it injected separately from natural acceptance rate.",
+    "Compare the actual emitted greedy stream to an ordinary target run on the same tested inputs, recording every mismatch. T2-versus-T1 legality and equal finite IDs do not establish an all-domain exact-output or model-quality guarantee. Do not restore the old audit assumption that a T1 replay must always equal verify row0.",
+    "Report original loading335 weights, prefill catch-up, draft/verify rows, accepted/rejected/correction/bonus counts, actual extra work, cold prepare, complete session/output rates and independent memory. Fixed teacher-forced tapes are not autonomous acceptance-rate evidence."
+  ],
+  "source_anchors": [
+    {
+      "source": {
+        "path": "C:\\public\\project-hyle\\hyle\\tools\\qwen35_text\\main.cc",
+        "bytes": 157203,
+        "sha256": "0ff952f87541665f3c734390dedd33c75ed88ab93a93e6d03be49507c82d4c4c"
+      },
+      "anchors": "Recipe::weight/norm; load_weight_bank586-657; prepare_family895-1034; prepare_cache842-870; finish1534-1608"
+    },
+    {
+      "source": {
+        "path": "C:\\public\\project-hyle\\hyle\\tools\\qwen35_text\\session_state.h",
+        "bytes": 8471,
+        "sha256": "4cf1293d48cfc1d95e0f41fdbc694644fc1e75028b504845eefe7bfe3cb86843"
+      },
+      "anchors": "Plan; VersionCount; Snapshot"
+    },
+    {
+      "source": {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\paged_arena.h",
+        "bytes": 14088,
+        "sha256": "24d54cdae3a2c46f28126fffbfce06fc28ee6acb44c677324ce4f8fbaf67d458"
+      },
+      "anchors": "reframe57-78"
+    },
+    {
+      "source": {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\operation.h",
+        "bytes": 28108,
+        "sha256": "35b7c862143839e4b8ce0c9a49753b7add2f325ec424bf5f91a1afeec0101506"
+      },
+      "anchors": "GatedDeltaNet427-445"
+    },
+    {
+      "source": {
+        "path": "C:\\public\\project-hyle\\llama.cpp\\src\\models\\qwen35.cpp",
+        "bytes": 28614,
+        "sha256": "6bd7c382bbc2c8ae04cbbe3905a333b1d88c5db170620690022a78d05dbe74a6"
+      },
+      "anchors": "graph_mtp500-655"
+    },
+    {
+      "source": {
+        "path": "C:\\public\\project-hyle\\llama.cpp\\common\\speculative.cpp",
+        "bytes": 120960,
+        "sha256": "d78b09fba32cd9b206d390e07129b5c8d464cc186b79129bf90e634c4d29fa2b"
+      },
+      "anchors": "pending_h1412; shifted pairing process(); draft(); accept1818-1832"
+    }
+  ],
+  "limits": [
+    "Only current source and76656 bytes of original checkpoint metadata were reread; payload, model copy/conversion, builds, links, GPU and network all0.",
+    "Source shape is an implementation proposal, not actual operator/provider admission, correctness, acceptance-rate or speed evidence.",
+    "Ordinary320-tensor CLI and peer no-MTP artifact remain ordinary references; neither is already an MTP result."
+  ]
+}

@@ -1,0 +1,63 @@
+{
+  "bytes": 244395075.0,
+  "recursive": false,
+  "latest_three_images_retained": true,
+  "targets": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-explicit-rope\\checks\\20261019T100154\\baseline.exe",
+      "bytes": 116293632,
+      "sha256": "e81f27362008102a775d5aa297e14b8976016f2f5a5d261ba71d3a12b05d75a9"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-explicit-rope\\checks\\20261019T100154\\baseline.exp",
+      "bytes": 25020,
+      "sha256": "e2db3c9eba0cd739fb7dff5dd4bf3c61b50cfb928f7ec49c44f20ef2aa84fcd6"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-explicit-rope\\checks\\20261019T100154\\baseline.lib",
+      "bytes": 41736,
+      "sha256": "716c7bf4e9533f251a02b7669470b23b4e893859b4ada256dc3b7d54f4554a1f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-explicit-rope\\checks\\20261019T100154\\baseline.map",
+      "bytes": 33731934,
+      "sha256": "c4467bab1a35abae957d4f7a2ab16bbf4583b8b66e346b81f701d9057dfb5d27"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-explicit-rope\\checks\\20261019T100154\\cuda.exp",
+      "bytes": 25012,
+      "sha256": "3781bb49cf3251c1da789951381acecf1f7acf425d1652347af845888c659cdb"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-explicit-rope\\checks\\20261019T100154\\cuda.lib",
+      "bytes": 41384,
+      "sha256": "097299e17e955c077a99f65f363d3484d564c016359baeb643f4e47c6b737d59"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-explicit-rope\\checks\\20261019T100154\\cuda.map",
+      "bytes": 37623588,
+      "sha256": "42227db5699869a30e2019f2b1dfbb9586366f35f60c5fe38559b3dcd710aa06"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-explicit-rope\\checks\\20261019T100154\\qwen.exp",
+      "bytes": 25012,
+      "sha256": "50597b30582b8ffbc68acf783d2291c6585131f3c25d436ddbad73a3b679d235"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-explicit-rope\\checks\\20261019T100154\\qwen.lib",
+      "bytes": 41384,
+      "sha256": "339d3ce297534ebac8825c27a011f2f4f9dfe366c657ebfc45dbbfdc8412a2cb"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-explicit-rope\\checks\\20261019T100154\\qwen.map",
+      "bytes": 33740039,
+      "sha256": "b541ae860d4b778cfbb751166fdbb109214ae920a273bc80260746aaed60ab35"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-explicit-rope\\performance-prepared\\peer.map",
+      "bytes": 22806334,
+      "sha256": "8b6f8f32da9c9288c2f4d7e75fd472c4156f46ac333f89e3247a79efc1eb0dd8"
+    }
+  ],
+  "objects_retained": true
+}

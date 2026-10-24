@@ -134,6 +134,8 @@ struct ProviderRuntimeProperties final {
   // its Invocations through terminal Completion, not just through enqueue.
   // Graph enforces the corresponding exclusion within one Executable.
   bool supports_concurrent_invocations = true;
+  // A cold proposal supplies an upper bound: compilation may narrow true to
+  // false after inspecting the actual program. The selected artifact is exact.
   bool capture_compatible = false;
 
   constexpr bool valid() const noexcept {

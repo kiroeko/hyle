@@ -6,13 +6,22 @@
 #include <cstdint>
 #include <limits>
 #include <stdexcept>
+#include <string>
 #include <utility>
 
 #include <mlx/ops.h>
 #include <mlx/fast.h>
 
 #include "apple_checks.h"
+#include "apple_ct_packed.h"
+#include "apple_blockwise_w4a8.h"
+#include "apple_static_fp8.h"
 #include "apple_internal.h"
+#include "apple_nvfp4.h"
+#include "apple_row_cache.h"
+#include "apple_row_cache_indexer.h"
+#include "../compute_packed_shared/artifact_packed_linear.h"
+#include "../compute_shader_shared/nvfp4_f32.h"
 
 namespace hyle::compute::apple::detail {
 namespace mx = mlx::core;
@@ -22,6 +31,8 @@ constexpr auto kMode = Float8ScaleMode::kFloat32Block128;
 Result<mx::array> encode_cache(const model_ops::CacheEncode &encode,
                              const mx::array &input, const TensorDesc &output,
                              mx::Stream stream) {
+  if (encode.storage.data_type() == DataType::kFloat8E4M3FN)
+    return lower_float8_cache_encode(encode.storage,input,output,stream);
   if (encode.storage != CacheStorage::q8_0().value())
     return std::unexpected(Status::Unimplemented("Apple cache encoder admits Q8_0 storage"));
   // Work only on the supplied new rows. Packing uses the same block32
@@ -141,8 +152,98 @@ struct Quantized {
   mx::array scales;
 };
 
-Quantized quantize(const mx::array &input, int group, float floor, bool power,
+Quantized quantize_exact(const mx::array &input, int group, float floor,
+                         model_ops::Float8ScalePolicy policy, mx::Stream s) {
+  auto shape = input.shape();
+  shape.back() /= group;
+  shape.push_back(group);
+  auto raw = mx::reshape(mx::view(input,
+      input.dtype() == mx::bfloat16 ? mx::uint16 : mx::uint32, s), shape, s);
+  const auto groups = input.size() / static_cast<std::size_t>(group);
+  if (groups == 0) {
+    auto scale_shape = shape;
+    scale_shape.back() = 1;
+    return {mx::zeros(shape, mx::uint8, s), mx::zeros(scale_shape, mx::float32, s)};
+  }
+  if (groups > static_cast<std::size_t>((std::numeric_limits<int>::max)()))
+    throw std::overflow_error("Apple reciprocal FP8 quantizer exceeds native template capacity");
+  const auto groups_x = groups < 65535 ? static_cast<int>(groups) : 65535;
+  const auto width = static_cast<std::size_t>(groups_x);
+  const auto groups_y = groups / width + (groups % width != 0);
+  if (groups_y > static_cast<std::size_t>((std::numeric_limits<int>::max)()))
+    throw std::overflow_error("Apple reciprocal FP8 quantizer grid exceeds native int axes");
+  static const auto header = std::string(R"METAL(
+    inline uint hyle_mul_hi(uint a, uint b) { return uint((ulong(a) * ulong(b)) >> 32); }
+    inline uint hyle_clz(uint a) { return clz(a); }
+  )METAL") + shader::kNvfp4F32;
+  static const auto kernel = mx::fast::metal_kernel("hyle_fp8_group_exact",
+      {"source", "floor"}, {"normalized", "scale"}, R"METAL(
+    const ulong group_index = ulong(threadgroup_position_in_grid.y) * GROUPS_X +
+        threadgroup_position_in_grid.x;
+    if (group_index >= GROUPS) return;
+    const uint lane = thread_index_in_simdgroup;
+    uint maximum = 0u;
+    for (uint item = lane; item < GROUP; item += 32) {
+      const ulong index = group_index * GROUP + item;
+      ulong remaining = index, offset = 0;
+      for (int axis = RANK - 1; axis >= 0; --axis) {
+        const ulong coordinate = remaining % ulong(source_shape[axis]);
+        remaining /= ulong(source_shape[axis]);
+        offset += coordinate * source_strides[axis];
+      }
+      const uint value = uint(source[offset]) << (BFLOAT ? 16u : 0u);
+      maximum = max(maximum, value & 0x7fffffffu);
+    }
+    maximum = max(simd_max(maximum), floor[0]);
+    uint inverse = 0u;
+    if (lane == 0) {
+      uint scale_bits = DIVIDE ? hyle_f32_div(maximum, 0x43e00000u)
+                               : hyle_f32_mul(maximum, 0x3b124925u);
+      if (POWER) scale_bits = ((scale_bits >> 23u) +
+          uint((scale_bits & 0x7fffffu) != 0u)) << 23u;
+      scale[group_index] = scale_bits;
+      inverse = RECIPROCAL ? hyle_f32_div(0x3f800000u, scale_bits) : scale_bits;
+    }
+    inverse = simd_broadcast_first(inverse);
+    for (uint item = lane; item < GROUP; item += 32) {
+      const ulong index = group_index * GROUP + item;
+      ulong remaining = index, offset = 0;
+      for (int axis = RANK - 1; axis >= 0; --axis) {
+        const ulong coordinate = remaining % ulong(source_shape[axis]);
+        remaining /= ulong(source_shape[axis]);
+        offset += coordinate * source_strides[axis];
+      }
+      const uint value = uint(source[offset]) << (BFLOAT ? 16u : 0u);
+      const uint product = RECIPROCAL ? hyle_f32_mul(value, inverse)
+                                      : hyle_f32_div(value, inverse);
+      // The original codec receives a saturated finite F32 value, with
+      // signed zero retained. Every preceding boundary is strict IEEE RNE.
+      normalized[index] = (product & 0x80000000u) |
+          min(product & 0x7fffffffu, 0x43e00000u);
+    }
+  )METAL", header, false, false, mx::CompileOptions{});
+  auto scale_shape = shape;
+  scale_shape.back() = 1;
+  auto floor_bits = mx::reshape(mx::view(mx::array(floor), mx::uint32, s), {1}, s);
+  auto outputs = kernel({raw, floor_bits}, {shape, scale_shape}, {mx::uint32, mx::uint32},
+      {groups_x * 32, static_cast<int>(groups_y), 1}, {32, 1, 1},
+      {{"GROUPS_X", groups_x}, {"GROUPS", static_cast<int>(groups)},
+       {"GROUP", group}, {"RANK", static_cast<int>(raw.ndim())},
+       {"BFLOAT", input.dtype() == mx::bfloat16},
+       {"DIVIDE", policy == model_ops::Float8ScalePolicy::kDivide},
+       {"POWER", policy == model_ops::Float8ScalePolicy::kPowerOfTwo},
+       {"RECIPROCAL", policy == model_ops::Float8ScalePolicy::kMultiplyReciprocal}},
+      std::nullopt, false, s);
+  return {mx::to_fp8(mx::view(outputs[0], mx::float32, s), s),
+          mx::view(outputs[1], mx::float32, s)};
+}
+
+Quantized quantize(const mx::array &input, int group, float floor,
+                   model_ops::Float8ScalePolicy policy,
                    mx::Stream s) {
+  if (policy == model_ops::Float8ScalePolicy::kMultiplyReciprocal)
+    return quantize_exact(input, group, floor, policy, s);
+  const bool power = policy == model_ops::Float8ScalePolicy::kPowerOfTwo;
   auto shape = input.shape();
   shape.back() /= group;
   shape.push_back(group);
@@ -169,54 +270,67 @@ Quantized quantize(const mx::array &input, int group, float floor, bool power,
 }
 
 Quantized weight(const mx::array &carrier, int count, int n, int k,
-                  mx::Stream s) {
-  const int payload = n * k, blocks = k / 128;
-  const int bytes = count * (payload + ((n + 127) / 128) * blocks * 4);
-  auto codes = mx::reshape(mx::slice(carrier, {0}, {count * payload}, s),
-                            {count, n, blocks, 128}, s);
-  auto scales = mx::view(
-      mx::contiguous(mx::slice(carrier, {count * payload}, {bytes}, s), false, s),
-      mx::float32, s);
+                  mx::Stream s, bool compact_scales = false) {
+  const int blocks = k / 128;
+  const auto payload = std::int64_t{count} * n * k;
+  const auto bytes = payload + std::int64_t{count} *
+      ((std::int64_t{n} + 127) / 128) * blocks * 4;
+  // Large grouped banks use four-byte rows. Explicit multidimensional views
+  // avoid flatten/as_strided, whose public flatten dimension is native int.
+  const bool wide = carrier.ndim() == 2;
+  auto code_bytes = wide
+      ? mx::slice(carrier, {0, 0}, {static_cast<int>(payload / 4), 4}, s)
+      : mx::slice(carrier, {0}, {static_cast<int>(payload)}, s);
+  auto codes = mx::reshape(code_bytes, {count, n, blocks, 128}, s);
+  auto scale_bytes = wide
+      ? mx::slice(carrier, {static_cast<int>(payload / 4), 0},
+                  {static_cast<int>(bytes / 4), 4}, s)
+      : mx::slice(carrier, {static_cast<int>(payload)},
+                  {static_cast<int>(bytes)}, s);
+  auto scales = mx::view(scale_bytes, mx::float32, s);
   scales = mx::reshape(scales, {count, (n + 127) / 128, blocks}, s);
+  // Grouped kernels read the canonical bank with safe expert IDs. Keep its
+  // scales compact instead of repeating or copying weights for every slot.
+  if (compact_scales) return {codes, mx::expand_dims(scales, -1, s)};
   scales = mx::slice(mx::repeat(scales, 128, 1, s), {0, 0, 0},
                       {count, n, blocks}, s);
   return {codes, mx::expand_dims(scales, -1, s)};
 }
 
 Quantized weight4(const mx::array &carrier, int count, int n, int k,
-                 const mx::array &ids, mx::Stream s) {
-  const int payload = count * n * (k / 2);
-  auto bytes = mx::reshape(mx::slice(carrier, {0}, {payload}, s), {count, n, k / 2}, s);
-  bytes = mx::take(bytes, ids, 0, s);
-  auto low = mx::bitwise_and(bytes, mx::array(std::uint8_t{15}), s);
-  auto high = mx::right_shift(bytes, mx::array(std::uint8_t{4}), s);
-  auto codes = mx::reshape(mx::concatenate({mx::expand_dims(low, -1, s),
-      mx::expand_dims(high, -1, s)}, -1, s), {int(ids.size()), n, k / 32, 32}, s);
-  // Original fp4_gemm_kernel casts E2M1 through F32 to E4M3FN. Every FP4
-  // code is exactly representable; preserve low-first packing and zero sign.
-  const mx::array e4m3({std::uint8_t{0}, std::uint8_t{0x30}, std::uint8_t{0x38},
-      std::uint8_t{0x3c}, std::uint8_t{0x40}, std::uint8_t{0x44}, std::uint8_t{0x48},
-      std::uint8_t{0x4c}, std::uint8_t{0x80}, std::uint8_t{0xb0}, std::uint8_t{0xb8},
-      std::uint8_t{0xbc}, std::uint8_t{0xc0}, std::uint8_t{0xc4}, std::uint8_t{0xc8}, std::uint8_t{0xcc}});
-  codes = mx::take(e4m3, codes, 0, s);
-  auto scales = mx::view(mx::contiguous(mx::slice(carrier, {payload},
-      {static_cast<int>(carrier.size())}, s), false, s), mx::float32, s);
-  scales = mx::reshape(scales, {count, n, k / 32}, s);
-  scales = mx::take(scales, ids, 0, s);
-  return {codes, mx::expand_dims(scales, -1, s)};
+                  mx::Stream s) {
+  const auto payload = std::int64_t{count} * n * (k / 2);
+  const auto bytes = payload + std::int64_t{count} * n * (k / 32) * 4;
+  const bool wide = carrier.ndim() == 2;
+  auto code_bytes = wide
+      ? mx::slice(carrier, {0, 0}, {static_cast<int>(payload / 4), 4}, s)
+      : mx::slice(carrier, {0}, {static_cast<int>(payload)}, s);
+  auto codes = mx::reshape(code_bytes, {count, n, k / 32, 16}, s);
+  auto scale_bytes = wide
+      ? mx::slice(carrier, {static_cast<int>(payload / 4), 0},
+                  {static_cast<int>(bytes / 4), 4}, s)
+      : mx::slice(carrier, {static_cast<int>(payload)},
+                  {static_cast<int>(bytes)}, s);
+  auto scales = mx::view(scale_bytes, mx::float32, s);
+  scales = mx::reshape(scales, {count, n, k / 32, 1}, s);
+  return {codes, scales};
 }
 
-mx::array packed_fp8_dot(const Quantized &a, const Quantized &b, mx::Stream s) {
-  // Original MLX SIMDgroup F32 matmul/FP8 decode, with the same per-block
-  // scale order as block_dot. Keep the small tile; larger M uses original
+mx::array packed_fp8_dot(const Quantized &a, const Quantized &b, mx::Stream s,
+                         const mx::array *expert_ids = nullptr,
+                         bool four = false) {
+  // Original MLX SIMDgroup F32 matmul and exact packed decode, with the
+  // original activation-scale, weight-scale, ordered F32 block accumulation.
+  // Keep the small tile; larger M uses original
   // MLX small-device NT64x32x32 / four-SIMDgroup reuse. Only a bounded tile
   // is staged, never float weights or the complete [Kblocks,M,N] dots.
   // MLX owns pipeline/stream/completion and cold template compilation.
   static const auto kernel = mx::fast::metal_kernel("hyle_fp8_block128_f32",
-      {"qa", "qw", "qs", "ws"}, {"out"}, R"METAL(
+      {"qa", "qw", "qs", "ws", "ids"}, {"out"}, R"METAL(
     const uint tid = thread_index_in_threadgroup;
     const uint sg = simdgroup_index_in_threadgroup;
     const uint batch = threadgroup_position_in_grid.z;
+    const ulong weight_batch = INDEXED ? ulong(ids[batch]) : ulong(batch);
     const uint row0 = threadgroup_position_in_grid.y * BM;
     const uint column0 = threadgroup_position_in_grid.x * BN;
     const uint rows = qa_shape[1], columns = qw_shape[1];
@@ -231,7 +345,7 @@ mx::array packed_fp8_dot(const Quantized &a, const Quantized &b, mx::Stream s) {
         for (uint ni = 0; ni < BN / 16; ++ni)
           partial[mi][ni] = make_filled_simdgroup_matrix<float, 8>(0.f);
       }
-      for (uint chunk = 0; chunk < 128; chunk += 32) {
+      for (uint chunk = 0; chunk < (FOUR ? 32 : 128); chunk += 32) {
         for (uint index = tid; index < BM * 32; index += 128) {
           const uint row = row0 + index / 32;
           const uint k = chunk + index % 32;
@@ -242,9 +356,16 @@ mx::array packed_fp8_dot(const Quantized &a, const Quantized &b, mx::Stream s) {
         for (uint index = tid; index < 32 * BN; index += 128) {
           const uint column = column0 + index % BN;
           const uint wk = chunk + index / BN;
-          right[index] = column < columns ? hyle_fp8_value(qw[
-              batch * qw_strides[0] + column * qw_strides[1] +
-              block * qw_strides[2] + wk * qw_strides[3]]) : 0.f;
+          if (column < columns) {
+            const uchar code = qw[weight_batch * qw_strides[0] +
+                column * qw_strides[1] + block * qw_strides[2] +
+                (FOUR ? wk / 2 : wk) * qw_strides[3]];
+            right[index] = FOUR
+                ? hyle_fp4_value((code >> ((wk & 1) * 4)) & 15)
+                : hyle_fp8_value(code);
+          } else {
+            right[index] = 0.f;
+          }
         }
         threadgroup_barrier(mem_flags::mem_threadgroup);
         for (uint k = 0; k < 32; k += 8) {
@@ -286,7 +407,10 @@ mx::array packed_fp8_dot(const Quantized &a, const Quantized &b, mx::Stream s) {
         if (row < rows && column < columns) {
           float value = left[index] * qs[batch * qs_strides[0] +
               row * qs_strides[1] + block * qs_strides[2]];
-          value = value * ws[batch * ws_strides[0] + column * ws_strides[1] +
+          // FP8 weights retain one scale per128 columns for both dense and
+          // indexed dots; FP4 keeps its original per-column group32 scales.
+          value = value * ws[weight_batch * ws_strides[0] +
+              (FOUR ? column : column / 128) * ws_strides[1] +
               block * ws_strides[2]];
           accumulated[part] = accumulated[part] + value;
         }
@@ -303,6 +427,12 @@ mx::array packed_fp8_dot(const Quantized &a, const Quantized &b, mx::Stream s) {
   )METAL", R"METAL(
     #include <metal_simdgroup_matrix>
     #pragma clang fp contract(off)
+    inline float hyle_fp4_value(uchar code) {
+      // Exact E2M1 values, low nibble first; unary minus retains negative zero.
+      const float values[8] = {0.f, .5f, 1.f, 1.5f, 2.f, 3.f, 4.f, 6.f};
+      const float value = values[code & 7];
+      return (code & 8) ? -value : value;
+    }
     inline float hyle_fp8_value(uchar code) {
       const uint exponent = (code >> 3) & 15;
       const uint mantissa = code & 7;
@@ -326,43 +456,41 @@ mx::array packed_fp8_dot(const Quantized &a, const Quantized &b, mx::Stream s) {
     throw std::overflow_error("Apple FP8 native grid exceeds int capacity");
   const int block_rows = rows <= 16 ? 16 : 64;
   const int block_columns = rows <= 16 ? 16 : 32;
-  return kernel({a.codes, b.codes, a.scales, b.scales}, {{batch, rows, columns}},
+  const auto ids = expert_ids ? *expert_ids
+                             : mx::reshape(mx::array(std::int32_t{0}), {1}, s);
+  return kernel({a.codes, b.codes, a.scales, b.scales, ids}, {{batch, rows, columns}},
       {mx::float32}, {(1 + (columns - 1) / block_columns) * 128,
                      1 + (rows - 1) / block_rows, batch},
-      {128, 1, 1}, {{"BM", block_rows}, {"BN", block_columns}},
+      {128, 1, 1}, {{"BM", block_rows}, {"BN", block_columns},
+                    {"INDEXED", expert_ids != nullptr}, {"FOUR", four}},
       std::nullopt, false, s)[0];
 }
 
-mx::array block_dot(const Quantized &a, const Quantized &b, mx::Stream s,
-                    bool packed_fp8 = true) {
-  if (packed_fp8) return packed_fp8_dot(a, b, s);
-  // [batch,M,Kblocks,128] x [batch,N,Kblocks,128]. Apply scales
-  // after each original F32 dot, before reducing Kblocks.
-  auto lhs = mx::transpose(decode(a.codes, s), {0, 2, 1, 3}, s);
-  auto rhs = mx::transpose(decode(b.codes, s), {0, 2, 3, 1}, s);
-  auto dots = mx::matmul(lhs, rhs, s);
-  auto scaled = mx::multiply(dots, mx::transpose(a.scales, {0, 2, 1, 3}, s), s);
-  auto weights = mx::transpose(b.scales, {0, 2, 3, 1}, s);
-  const int batch = dots.shape(0), rows = dots.shape(2), columns = dots.shape(3);
-  auto accumulated = mx::zeros({batch, 1, rows, columns}, mx::float32, s);
-  // SGLang applies the activation scale before the weight scale and the
-  // ordered F32 accumulation. Combining scales or a tree sum can cross a
-  // BF16 midpoint that a later dynamic quantizer makes observable. This loop
-  // builds native MLX nodes only at prepare/compile time; MLX owns fusion.
-  for (int block = 0; block < dots.shape(1); ++block) {
-    auto value = mx::slice(scaled, {0, block, 0, 0},
-                            {batch, block + 1, rows, columns}, s);
-    auto scale = mx::slice(weights, {0, block, 0, 0},
-                            {batch, block + 1, 1, columns}, s);
-    accumulated = mx::add(accumulated, mx::multiply(value, scale, s), s);
-  }
-  return mx::reshape(accumulated, {batch, rows, columns}, s);
-}
 } // namespace
 
 bool is_mlx_float_operation(const Operation &operation,
                             std::span<const TensorDesc> inputs) noexcept {
   return operation.custom_as<model_ops::CacheEncode>() ||
+         is_mlx_float8_cast(operation, inputs) ||
+         is_mlx_exact_binary(operation, inputs) ||
+         operation.custom_as<packed::internal::StaticFloat8Linear>() ||
+         operation.custom_as<packed::internal::ArtifactPackedLinear>() ||
+         operation.custom_as<model_ops::Mxfp4Linear>() ||
+         operation.custom_as<model_ops::GroupedMxfp4Linear>() ||
+         operation.custom_as<model_ops::BlockwiseW4A8Linear>() ||
+         operation.custom_as<model_ops::GroupedBlockwiseW4A8Linear>() ||
+         operation.custom_as<model_ops::Nvfp4Linear>() ||
+         operation.custom_as<model_ops::GroupedNvfp4Linear>() ||
+         operation.custom_as<model_ops::LocalNvfp4Linear>() ||
+         operation.custom_as<model_ops::GroupedLocalNvfp4Linear>() ||
+         operation.custom_as<model_ops::RowCacheIndexerScores>() ||
+         operation.custom_as<compute::detail::RowCachePagedIndexerScores>() ||
+         operation.custom_as<compute::detail::RowCacheMap>() ||
+         operation.custom_as<model_ops::RowCacheEncode>() ||
+         operation.custom_as<model_ops::RowCacheGatherDecode>() ||
+         operation.custom_as<model_ops::RowCacheGatherDecodePadded>() ||
+         operation.custom_as<compute::detail::RowCachePaddedMap>() ||
+         operation.custom_as<model_ops::Float8BlockQuantize>() ||
          operation.custom_as<model_ops::Float8BlockLinear>() ||
          operation.custom_as<model_ops::Float8WeightDecode>() ||
          operation.custom_as<model_ops::GroupedFloat8Linear>() ||
@@ -391,28 +519,182 @@ Result<InputSpec> mlx_float_input_spec(const TensorDesc &description) noexcept {
     if (description != *expected)
       return std::unexpected(Status::InvalidArgument("Apple FP8 requires canonical bytes and layout"));
     HYLE_ASSIGN_OR_RETURN(auto bytes, description.required_bytes());
-    if (bytes > static_cast<std::size_t>((std::numeric_limits<int>::max)()))
-      return std::unexpected(Status::OutOfRange("Apple FP8 carrier exceeds native int shape"));
+    if (bytes > static_cast<std::size_t>((std::numeric_limits<int>::max)())) {
+      // Keep each expert and every axis in the original native int domain;
+      // only the total grouped bank may exceed one axis. Four-byte alignment
+      // is part of this canonical F32 block-scale format.
+      const auto limit = (std::numeric_limits<int>::max)();
+      if ((id != kFloat8GroupedWeightFloat32Block128 &&
+           id != kFloat4GroupedWeightFloat32Group32) || dims.size() != 3 ||
+          dims[0] > limit || dims[1] > limit || dims[2] > limit ||
+          dims[1] > limit / dims[2] || bytes % 4 != 0 ||
+          bytes / 4 > static_cast<std::size_t>(limit))
+        return std::unexpected(Status::OutOfRange("Apple FP8 carrier exceeds native int shape"));
+      return InputSpec{{static_cast<int>(bytes / 4), 4}, mx::uint8, description};
+    }
     return InputSpec{{static_cast<int>(bytes)}, mx::uint8, description};
   } catch (...) {
     return std::unexpected(native_exception());
   }
 }
 
+std::optional<std::size_t> mlx_row_bank_input(const Operation &operation) noexcept {
+  if (operation.custom_as<model_ops::RowCacheGatherDecode>() ||
+      operation.custom_as<model_ops::RowCacheGatherDecodePadded>()) return 0;
+  if (operation.custom_as<model_ops::RowCacheIndexerScores>() ||
+      operation.custom_as<compute::detail::RowCachePagedIndexerScores>()) return 1;
+  return std::nullopt;
+}
+
+Result<std::optional<RowCacheAccessFacts>> analyze_mlx_row_access(
+    const Operation &operation, std::span<const TensorDesc> inputs) noexcept {
+  const auto map = operation.custom_as<compute::detail::RowCacheMap>();
+  const auto padded_map = operation.custom_as<compute::detail::RowCachePaddedMap>();
+  const auto decoder = operation.custom_as<model_ops::RowCacheGatherDecode>();
+  const auto padded_decoder = operation.custom_as<model_ops::RowCacheGatherDecodePadded>();
+  const auto scorer = operation.custom_as<compute::detail::RowCachePagedIndexerScores>();
+  if (!map && !padded_map && !decoder && !padded_decoder && !scorer) return std::nullopt;
+  if (decoder && decoder->bounds != IndexBoundsPolicy::kChecked) return std::nullopt;
+  std::array<TensorDesc, 2> outputs;
+  HYLE_RETURN_IF_ERROR(infer_output_descriptions(operation, inputs,
+      std::span(outputs).first(padded_map ? 2u : 1u)));
+  if (scorer) {
+    const auto &mapping = scorer->mapping;
+    if (mapping.metadata_bytes > INT32_MAX || !mapping.max_refs())
+      return std::unexpected(Status::Unimplemented("Apple paged indexer metadata exceeds native I32 carrier"));
+    return RowCacheAccessFacts{.kind = RowCacheAccessKind::kPagedIndexer,
+        .projected_input = 1,
+        .query_rows = static_cast<std::uint32_t>(inputs[0].dimensions()[0]),
+        .max_requests = mapping.max_requests(), .max_refs = mapping.max_refs(),
+        .page_size = mapping.page_size};
+  }
+  if (map || padded_map) {
+    const auto &mapping = map ? *map : padded_map->mapping;
+    if (mapping.metadata_bytes > INT32_MAX || !mapping.max_refs())
+      return std::unexpected(Status::Unimplemented("Apple row metadata exceeds native I32 carrier"));
+    return RowCacheAccessFacts{
+        .kind = padded_map ? RowCacheAccessKind::kPaddedMap : RowCacheAccessKind::kMap,
+        .query_rows = static_cast<std::uint32_t>(inputs[0].dimensions()[0]),
+        .max_requests = mapping.max_requests(), .max_refs = mapping.max_refs(),
+        .page_size = mapping.page_size};
+  }
+  // Only the rank-two typed page-map chain requests this permission. Other
+  // expert decoder shapes keep the original numerical implementation.
+  if (inputs[1].rank() != 2) return std::nullopt;
+  return RowCacheAccessFacts{
+      .kind = padded_decoder ? RowCacheAccessKind::kPaddedCheckedDecode
+                             : RowCacheAccessKind::kCheckedDecode,
+      .projected_input = 0,
+      .query_rows = static_cast<std::uint32_t>(inputs[1].dimensions()[0])};
+}
+
 Result<std::vector<mx::array>> lower_mlx_float(
     const Operation &operation, std::span<const TensorDesc> descriptions,
-    std::span<const mx::array> inputs, mx::Stream s) noexcept {
+    std::span<const mx::array> inputs, mx::Stream s, RowCacheAccessFacts *access) noexcept {
+  if (access) *access = {};
   try {
     if (s.device.type != mx::Device::gpu || inputs.size() != descriptions.size())
       return std::unexpected(Status::InvalidArgument("Apple FP8 lowering requires GPU and matching ports"));
-    HYLE_ASSIGN_OR_RETURN(auto output, infer_single_output(operation, descriptions));
+    if (is_mlx_float8_cast(operation, descriptions))
+      return lower_float8_cast(operation, descriptions, inputs, s);
+    if (is_mlx_exact_binary(operation, descriptions))
+      return lower_exact_binary(operation, descriptions, inputs, s);
+    if (const auto fp8 = operation.custom_as<packed::internal::StaticFloat8Linear>())
+      return lower_static_fp8(*fp8, descriptions, inputs, s);
+    if (const auto mx = operation.custom_as<model_ops::Mxfp4Linear>())
+      return lower_mxfp4(*mx, descriptions, inputs, s);
+    if (const auto mx = operation.custom_as<model_ops::GroupedMxfp4Linear>())
+      return lower_grouped_mxfp4(*mx, descriptions, inputs, s);
+    if (operation.custom_as<model_ops::BlockwiseW4A8Linear>())
+      return lower_blockwise_w4a8(descriptions, inputs, s, false);
+    if (operation.custom_as<model_ops::GroupedBlockwiseW4A8Linear>())
+      return lower_blockwise_w4a8(descriptions, inputs, s, true);
+    if (operation.custom_as<model_ops::Nvfp4Linear>())
+      return lower_nvfp4(descriptions, inputs, s);
+    if (operation.custom_as<model_ops::GroupedNvfp4Linear>())
+      return lower_grouped_nvfp4(descriptions, inputs, s);
+    if (const auto local = operation.custom_as<model_ops::LocalNvfp4Linear>())
+      return lower_local_nvfp4(*local, descriptions, inputs, s);
+    if (const auto local = operation.custom_as<model_ops::GroupedLocalNvfp4Linear>())
+      return lower_grouped_local_nvfp4(*local, descriptions, inputs, s);
+    if (const auto ct = operation.custom_as<packed::internal::ArtifactPackedLinear>())
+      return lower_ct_packed(*ct, descriptions, inputs, s);
+    if (const auto quantizer = operation.custom_as<model_ops::Float8BlockQuantize>()) {
+      std::array<TensorDesc, 2> output;
+      HYLE_RETURN_IF_ERROR(infer_output_descriptions(operation, descriptions, output));
+      HYLE_ASSIGN_OR_RETURN(auto spec, input_spec(descriptions[0]));
+      if (inputs[0].dtype() != spec.dtype || inputs[0].shape() != spec.shape)
+        return std::unexpected(Status::InvalidArgument("Apple FP8 quantizer input carrier differs"));
+      auto finite = mx::less_equal(mx::abs(mx::astype(inputs[0], mx::float32, s), s),
+          mx::array(std::numeric_limits<float>::max()), s);
+      auto safe = mx::where(finite, inputs[0], mx::array(0.F, inputs[0].dtype()), s);
+      // The same strict integer IEEE helpers used by reciprocal quantization
+      // retain subnormals and all three explicit F32 rounding boundaries.
+      auto q = quantize_exact(safe, 128, quantizer->absmax_floor, quantizer->scale_policy, s);
+      auto status = mx::where(mx::all(finite, false, s), mx::array(0),
+          mx::array(kInvalidNumericInput), s);
+      auto codes = mx::reshape(q.codes, spec.shape, s);
+      auto scales = mx::reshape(q.scales, {spec.shape[0], spec.shape[1] / 128}, s);
+      // Either published output must retain the check, including a graph that
+      // uses only the scale grid. Completion owns the check and both arrays.
+      HYLE_ASSIGN_OR_RETURN(codes, with_device_status(std::move(codes), status, s));
+      HYLE_ASSIGN_OR_RETURN(scales, with_device_status(std::move(scales), std::move(status), s));
+      return std::vector{std::move(codes), std::move(scales)};
+    }
+    TensorDesc output;
+    if(operation.custom_as<compute::detail::RowCachePaddedMap>()){
+      std::array<TensorDesc,2> inferred;HYLE_RETURN_IF_ERROR(infer_output_descriptions(operation,descriptions,inferred));output=inferred[0];
+    }else{HYLE_ASSIGN_OR_RETURN(output,infer_single_output(operation,descriptions));}
     for (std::size_t i = 0; i < inputs.size(); ++i) {
       HYLE_ASSIGN_OR_RETURN(auto spec, input_spec(descriptions[i]));
       if (inputs[i].dtype() != spec.dtype || inputs[i].shape() != spec.shape)
         return std::unexpected(Status::InvalidArgument("Apple FP8 carrier differs from logical input"));
       HYLE_ASSIGN_OR_RETURN(auto bytes, descriptions[i].required_bytes());
-      if (bytes > static_cast<std::size_t>((std::numeric_limits<int>::max)()))
+      bool checked_row_bank = false;
+      if (bytes > static_cast<std::size_t>((std::numeric_limits<int>::max)()) &&
+          mlx_row_bank_input(operation) == i) {
+        HYLE_ASSIGN_OR_RETURN(auto fact, analyze_mlx_row_access(operation, descriptions));
+        checked_row_bank = fact && fact->projected_input == i;
+      }
+      if (bytes > static_cast<std::size_t>((std::numeric_limits<int>::max)()) &&
+          !checked_row_bank && !operation.custom_as<model_ops::RowCacheIndexerScores>() &&
+          !(i == 0 && (operation.custom_as<model_ops::GroupedFloat8Linear>() ||
+                      operation.custom_as<model_ops::GroupedFloat4Linear>()) &&
+            spec.shape.size() == 2))
         return std::unexpected(Status::OutOfRange("Apple FP8 input exceeds native index range"));
+    }
+    if (operation.custom_as<model_ops::RowCacheIndexerScores>()) {
+      HYLE_ASSIGN_OR_RETURN(auto result,row_cache_indexer_scores(inputs,s));
+      return std::vector{std::move(result)};
+    }
+    const auto row_result = [&](std::vector<mx::array> result) -> Result<std::vector<mx::array>> {
+      if (access) {
+        HYLE_ASSIGN_OR_RETURN(auto fact, analyze_mlx_row_access(operation, descriptions));
+        if (fact) *access = *fact;
+      }
+      return result;
+    };
+    if (const auto scorer = operation.custom_as<compute::detail::RowCachePagedIndexerScores>()) {
+      HYLE_ASSIGN_OR_RETURN(auto result, row_cache_paged_indexer_scores(*scorer, inputs, s));
+      return row_result(std::vector{std::move(result)});
+    }
+    if(const auto map=operation.custom_as<compute::detail::RowCachePaddedMap>()){
+      HYLE_ASSIGN_OR_RETURN(auto result,map_row_cache_pages_padded(*map,inputs[0],inputs[1],inputs[2],s));
+      return row_result(std::move(result));
+    }
+    if(const auto gather=operation.custom_as<model_ops::RowCacheGatherDecodePadded>()){
+      HYLE_ASSIGN_OR_RETURN(auto result,gather_decode_row_cache_padded(gather->encoding,inputs[0],inputs[1],s));return row_result(std::vector{std::move(result)});
+    }
+    if (const auto map = operation.custom_as<compute::detail::RowCacheMap>()) {
+      HYLE_ASSIGN_OR_RETURN(auto result, map_row_cache_pages(*map,inputs[0],inputs[1],s));return row_result(std::vector{std::move(result)});
+    }
+    if (const auto encode = operation.custom_as<model_ops::RowCacheEncode>()) {
+      HYLE_ASSIGN_OR_RETURN(auto result, encode_row_cache(encode->encoding, inputs[0], s));
+      return std::vector{std::move(result)};
+    }
+    if (const auto gather = operation.custom_as<model_ops::RowCacheGatherDecode>()) {
+      HYLE_ASSIGN_OR_RETURN(auto result, gather_decode_row_cache(*gather, inputs[0], inputs[1], s));
+      return row_result(std::vector{std::move(result)});
     }
     if (const auto encode = operation.custom_as<model_ops::CacheEncode>()) {
       HYLE_ASSIGN_OR_RETURN(auto result, encode_cache(*encode, inputs[0], output, s));
@@ -423,7 +705,8 @@ Result<std::vector<mx::array>> lower_mlx_float(
       if (roundtrip->format == model_ops::BlockQuantizationFormat::kFloat4E2M1Block32)
         return std::vector{fp4_roundtrip(inputs[0], s)};
       const auto group = roundtrip->format == model_ops::BlockQuantizationFormat::kFloat8E4M3Block64 ? 64 : 128;
-      auto q = quantize(inputs[0], group, 1.0e-4F, true, s);
+      auto q = quantize(inputs[0], group, 1.0e-4F,
+                        model_ops::Float8ScalePolicy::kPowerOfTwo, s);
       return std::vector{mx::astype(mx::reshape(
           mx::multiply(decode(q.codes, s), q.scales, s), inputs[0].shape(), s), type, s)};
     }
@@ -446,12 +729,11 @@ Result<std::vector<mx::array>> lower_mlx_float(
       auto invalid = mx::logical_or(mx::less(inputs[2], mx::array(0), s),
                                     mx::greater_equal(inputs[2], mx::array(e), s), s);
       auto ids = mx::reshape(mx::where(invalid, mx::array(0), inputs[2], s), {rows}, s);
-      auto w = four ? weight4(inputs[0], e, n, k, ids, s) : weight(inputs[0], e, n, k, s);
-      if (!four) {
-        w.codes = mx::take(w.codes, ids, 0, s);
-        w.scales = mx::take(w.scales, ids, 0, s);
-      }
-      auto q = quantize(inputs[1], 128, four ? 1.0e-4F : grouped->absmax_floor, four, s);
+      auto w = four ? weight4(inputs[0], e, n, k, s)
+                    : weight(inputs[0], e, n, k, s, true);
+      const auto policy = four ? model_ops::Float8ScalePolicy::kPowerOfTwo
+                               : grouped->scale_policy;
+      auto q = quantize(inputs[1], 128, four ? 1.0e-4F : grouped->absmax_floor, policy, s);
       const int block = four ? 32 : 128;
       if (four) {
         q.codes = mx::reshape(q.codes, {t, a, k / 32, 32}, s);
@@ -463,7 +745,8 @@ Result<std::vector<mx::array>> lower_mlx_float(
       }
       q.codes = mx::reshape(q.codes, {rows, 1, k / block, block}, s);
       q.scales = mx::reshape(q.scales, {rows, 1, k / block, 1}, s);
-      auto value = mx::astype(mx::reshape(block_dot(q, w, s, !four), {t, slots, n}, s), type, s);
+      auto product = packed_fp8_dot(q, w, s, &ids, four);
+      auto value = mx::astype(mx::reshape(product, {t, slots, n}, s), type, s);
       auto status = mx::where(mx::any(invalid, s), mx::array(kIndexOutOfRange), mx::array(0), s);
       HYLE_ASSIGN_OR_RETURN(auto checked, with_device_status(std::move(value), std::move(status), s));
       return std::vector{std::move(checked)};
@@ -471,11 +754,10 @@ Result<std::vector<mx::array>> lower_mlx_float(
     const int m = static_cast<int>(descriptions[0].dimensions()[0]);
     const int k = static_cast<int>(descriptions[0].dimensions()[1]);
     const int n = static_cast<int>(descriptions[1].dimensions()[1]);
-    auto w = weight(inputs[1], 1, n, k, s);
+    auto w = weight(inputs[1], 1, n, k, s, true);
     Quantized q{inputs[0], inputs[0]};
     if (const auto linear = operation.custom_as<model_ops::Float8BlockLinear>()) {
-      q = quantize(inputs[0], 128, linear->absmax_floor,
-                   linear->scale_rounding == model_ops::Float8ScaleRounding::kPowerOfTwo, s);
+      q = quantize(inputs[0], 128, linear->absmax_floor, linear->scale_policy, s);
       q.codes = mx::expand_dims(q.codes, 0, s);
       q.scales = mx::expand_dims(q.scales, 0, s);
     } else if (operation.get_if<MatMul>()) {
@@ -488,7 +770,7 @@ Result<std::vector<mx::array>> lower_mlx_float(
     } else {
       return std::unexpected(Status::Unimplemented("Apple FP8 operation is not bound"));
     }
-    return std::vector{mx::astype(mx::reshape(block_dot(q, w, s), {m, n}, s), type, s)};
+    return std::vector{mx::astype(mx::reshape(packed_fp8_dot(q, w, s), {m, n}, s), type, s)};
   } catch (...) {
     return std::unexpected(native_exception());
   }

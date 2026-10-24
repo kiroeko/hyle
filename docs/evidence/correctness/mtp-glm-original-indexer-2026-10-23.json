@@ -1,0 +1,626 @@
+{
+  "date": "2026-10-23",
+  "stage": "BI",
+  "goal_complete": false,
+  "conclusion": "Original officialFlash input/query and all seven dense indexer roles now run in the same existing complete NextN accepted-state journey, including accepted-only catchup and same-epoch skip.",
+  "artifact": {
+    "repository": "zai-org/GLM-5.3-Flash",
+    "revision": "eb9eb208eb0d988989d07a6a12d0fdeb5f52574a",
+    "original_checkpoint_roles": 14,
+    "original_payload_bytes": 88373248,
+    "runtime_banks": 13,
+    "runtime_bank_bytes": 88636928,
+    "byte_scope": "Payload and post-load descriptor extents, not physical process/VRAM peak. q_a codes/scales form one packed carrier; selected original BF16 indexer parameters widen exactly to F32 according to the fixed reader.",
+    "new_payload_bytes": 14943744,
+    "reused_input_query_bytes": 73429504,
+    "acquisition": {
+      "repository": "zai-org/GLM-5.3-Flash",
+      "revision": "eb9eb208eb0d988989d07a6a12d0fdeb5f52574a",
+      "file": "model-00002-of-00062.safetensors",
+      "url": "https://huggingface.co/zai-org/GLM-5.3-Flash/resolve/eb9eb208eb0d988989d07a6a12d0fdeb5f52574a/model-00002-of-00062.safetensors",
+      "file_bytes": 5320647824,
+      "etag": "\"3b634445603c457deae3497697213cdf620af6560dd1c33d64048ba4d710340d\"",
+      "data_base": 160864,
+      "source_header": {
+        "path": ".scratch\\glm-mtp-carry-20261022\\original-glm-q-a\\header.json",
+        "bytes": 160856,
+        "sha256": "4727368ca83ad19ddfea0bfcb0fbf4427087b5b0bf648968b863962454e85c15"
+      },
+      "first": 3796112,
+      "last": 18739855,
+      "bytes": 14943744,
+      "complete": true,
+      "attempts": [
+        {
+          "started_utc": "2026-10-22T18:59:34.375049+00:00",
+          "complete": true,
+          "http_status": 206,
+          "content_range": "bytes 3796112-18739855/5320647824",
+          "etag": "\"3b634445603c457deae3497697213cdf620af6560dd1c33d64048ba4d710340d\"",
+          "content_length": "14943744",
+          "finished_utc": "2026-10-22T18:59:38.553716+00:00"
+        }
+      ],
+      "roles": [
+        {
+          "name": "model.language_model.layers.45.self_attn.indexer.index_kpool_compress_ape",
+          "dtype": "BF16",
+          "shape": [
+            4,
+            128
+          ],
+          "data_relative_offsets": [
+            3635248,
+            3636272
+          ],
+          "first": 3796112,
+          "last": 3797135,
+          "payload": {
+            "path": ".scratch\\glm-original-indexer-20261023\\original-indexer\\index_kpool_compress_ape.bf16",
+            "bytes": 1024,
+            "sha256": "5409e5d02ce7e14b2b8bca99ec7cb051dd4c2c11d6f9570f5e4dfb827cddbd29"
+          }
+        },
+        {
+          "name": "model.language_model.layers.45.self_attn.indexer.index_kpool_compress_gate",
+          "dtype": "BF16",
+          "shape": [
+            128,
+            4096
+          ],
+          "data_relative_offsets": [
+            3636272,
+            4684848
+          ],
+          "first": 3797136,
+          "last": 4845711,
+          "payload": {
+            "path": ".scratch\\glm-original-indexer-20261023\\original-indexer\\index_kpool_compress_gate.bf16",
+            "bytes": 1048576,
+            "sha256": "2c4a613a9c17143de1c939032d036b2276c465421837026eb406ef873ef7c229"
+          }
+        },
+        {
+          "name": "model.language_model.layers.45.self_attn.indexer.k_norm.bias",
+          "dtype": "BF16",
+          "shape": [
+            128
+          ],
+          "data_relative_offsets": [
+            4684848,
+            4685104
+          ],
+          "first": 4845712,
+          "last": 4845967,
+          "payload": {
+            "path": ".scratch\\glm-original-indexer-20261023\\original-indexer\\k_norm.bias.bf16",
+            "bytes": 256,
+            "sha256": "0550bb42f1eb03b957705e89b41bbe4892cf319961da7cc0559b6e07321b5185"
+          }
+        },
+        {
+          "name": "model.language_model.layers.45.self_attn.indexer.k_norm.weight",
+          "dtype": "BF16",
+          "shape": [
+            128
+          ],
+          "data_relative_offsets": [
+            4685104,
+            4685360
+          ],
+          "first": 4845968,
+          "last": 4846223,
+          "payload": {
+            "path": ".scratch\\glm-original-indexer-20261023\\original-indexer\\k_norm.weight.bf16",
+            "bytes": 256,
+            "sha256": "71fb05d01b44ab8b80da4190a803e4fce846bf31009bfd41d267365d392e9359"
+          }
+        },
+        {
+          "name": "model.language_model.layers.45.self_attn.indexer.weights_proj.weight",
+          "dtype": "BF16",
+          "shape": [
+            32,
+            4096
+          ],
+          "data_relative_offsets": [
+            4685360,
+            4947504
+          ],
+          "first": 4846224,
+          "last": 5108367,
+          "payload": {
+            "path": ".scratch\\glm-original-indexer-20261023\\original-indexer\\weights_proj.weight.bf16",
+            "bytes": 262144,
+            "sha256": "e31cf93353922020249dbf5b0ee7ca85813308048cac03cc838ca03462d1eada"
+          }
+        },
+        {
+          "name": "model.language_model.layers.45.self_attn.indexer.wk.weight",
+          "dtype": "BF16",
+          "shape": [
+            128,
+            4096
+          ],
+          "data_relative_offsets": [
+            4947504,
+            5996080
+          ],
+          "first": 5108368,
+          "last": 6156943,
+          "payload": {
+            "path": ".scratch\\glm-original-indexer-20261023\\original-indexer\\wk.weight.bf16",
+            "bytes": 1048576,
+            "sha256": "9348fb28363eed7797f751edf5dfd7be0bea2b397bfa62db1ea3aa4dac7842de"
+          }
+        },
+        {
+          "name": "model.language_model.layers.45.self_attn.indexer.wq_b.weight",
+          "dtype": "BF16",
+          "shape": [
+            4096,
+            1536
+          ],
+          "data_relative_offsets": [
+            5996080,
+            18578992
+          ],
+          "first": 6156944,
+          "last": 18739855,
+          "payload": {
+            "path": ".scratch\\glm-original-indexer-20261023\\original-indexer\\wq_b.weight.bf16",
+            "bytes": 12582912,
+            "sha256": "a3ce61c176747c383284a40d75634f70f3fa59dc0f94c523e933ef933cadb6da"
+          }
+        }
+      ],
+      "group_sha256": "872c0ca02c9e2ffaccd816f66e32c70484dbbd3cca592f760eeb0291aa334e79",
+      "downloaded_payload_bytes": 14943744,
+      "whole_shard_downloaded": false
+    },
+    "original_payloads_archived": false
+  },
+  "implementation": {
+    "prefix": "Extract previous seven-role authentication/canonical import, pure Fragment input/query builder and original F64/BF16 checks to one shared test helper. Old component tests retain9 Graph submits each and original math/gates. The complete NextN reuses this same builder inside its existing Graph.",
+    "bank_lifetime": "Upload13 runtime banks once per backend through existing StorageOwner/ReadLease. All fresh/journal/directcatchup graphs bind the same immutable roles rather than copying weight payload into every Recipe. Final exact stored bytes/readonly permissions retained.",
+    "precision": "Actual BF16 EH/inputnorm/q_a/qnorm feeds exact widened F32 nx/qr where the existing state/MLA contract needs it. Original BF16 wk,wq_b,compressgate use F32 accumulations then explicit BF16 stores; WK store precedes F32 LayerNorm with exact loaded norm/bias, followed by a BF16 raw-key store. weights_proj and APE widen once at load and preserve their F32 math. q_a explicitly retains Divide/floor1e-10; UE8M0 cache/query retains PowerOfTwo/floor1e-4.",
+    "state": "Same17 native NextN/indexer resources plus epoch metadata, ordinary StateStore/Head/Draft. Accepted1/2 determines actual seed; step0 skips the entire indexer, preserves its state and journals actual accepted nx; journal/directcatchup use the same original roles before epoch8 fresh seed. target43 offset roles remain distinct and are never populated by layer45 original coefficients.",
+    "product": "No new public API, provider, executor, dispatcher or product compatibility path. Existing public operations/resource/state mechanisms are reused."
+  },
+  "validation": {
+    "unique_tests": 8,
+    "failures": 0,
+    "errors": 0,
+    "skips": 0,
+    "model_graph_submissions": 204,
+    "new_original_model_graph_submissions": 52,
+    "related_regression_graph_submissions": 152,
+    "cases": [
+      {
+        "attributes": {
+          "name": "CudaOriginalIndexerPublishesCatchesUpAndReseeds",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_mtp_state_consumer_test.cc",
+          "line": "1960",
+          "status": "run",
+          "result": "completed",
+          "time": "16.208",
+          "timestamp": "2026-10-23T03:09:33.566",
+          "classname": "GlmMtpStateConsumer"
+        },
+        "properties": {
+          "initialization_submissions": "2",
+          "logical_index_state_bytes": "71052",
+          "actual_submissions": "26",
+          "draft_extend_submissions": "11",
+          "skip_submissions": "8",
+          "catchup_submissions": "4",
+          "policy_submissions": "1",
+          "backend": "ordinary CUDA Graph",
+          "journey": "draft-extend A2054/B2055->last accepted row1/2 actual hidden+full2051IDs->step0 immediately skips entire indexer->accepted nx catchup->actual epoch8 extend->step0 skip; independent accepted-only base execution/direct nx reference",
+          "original_roles": "14",
+          "original_role_bytes": "88373248",
+          "original_runtime_bank_bytes": "88636928",
+          "scope": "official HF GLM-5.3-Flash eb9eb208 layer45 original7 input/query+original7 indexer in the existing complete sequential M1 NextN seed/catchup journey; explicit generated target-hidden/embedding and MLA/MoE/head remainder; no primaryGGUF tensor equality,full target,original shared LM,natural acceptance,vendorpage ABI or throughput claim"
+        }
+      },
+      {
+        "attributes": {
+          "name": "CpuOriginalIndexerPublishesCatchesUpAndReseeds",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_mtp_state_consumer_test.cc",
+          "line": "1999",
+          "status": "run",
+          "result": "completed",
+          "time": "16.226",
+          "timestamp": "2026-10-23T03:09:49.775",
+          "classname": "GlmMtpStateConsumer"
+        },
+        "properties": {
+          "initialization_submissions": "2",
+          "logical_index_state_bytes": "71052",
+          "actual_submissions": "26",
+          "draft_extend_submissions": "11",
+          "skip_submissions": "8",
+          "catchup_submissions": "4",
+          "policy_submissions": "1",
+          "backend": "ordinary CPU Graph",
+          "journey": "draft-extend A2054/B2055->last accepted row1/2 actual hidden+full2051IDs->step0 immediately skips entire indexer->accepted nx catchup->actual epoch8 extend->step0 skip; independent accepted-only base execution/direct nx reference",
+          "original_roles": "14",
+          "original_role_bytes": "88373248",
+          "original_runtime_bank_bytes": "88636928",
+          "scope": "official HF GLM-5.3-Flash eb9eb208 layer45 original7 input/query+original7 indexer in the existing complete sequential M1 NextN seed/catchup journey; explicit generated target-hidden/embedding and MLA/MoE/head remainder; no primaryGGUF tensor equality,full target,original shared LM,natural acceptance,vendorpage ABI or throughput claim"
+        }
+      },
+      {
+        "attributes": {
+          "name": "CudaTarget43MlaFlowsThroughTarget44AndNextN",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_mtp_state_consumer_test.cc",
+          "line": "1966",
+          "status": "run",
+          "result": "completed",
+          "time": "17.159",
+          "timestamp": "2026-10-23T03:10:25.982",
+          "classname": "GlmMtpStateConsumer"
+        },
+        "properties": {
+          "initialization_submissions": "3",
+          "logical_index_state_bytes": "71052",
+          "actual_submissions": "41",
+          "target_submissions": "12",
+          "target43_submissions": "12",
+          "state_budget_bytes": "536870912",
+          "peak_state_backing_bytes": "208205556",
+          "target_output_generations": "10",
+          "backend": "ordinary CUDA Graph",
+          "component_schema": "34 resources plus epoch metadata:17 NextN,13 independent target43 MLA/indexer,4 target44 KDA/conv/tap/cursor; one StateStore/Head/Draft",
+          "journey": "actual target43 UE8M0 MLA/indexer->43 mHC/FFN->actual43mhc lease->44 KDA/conv/mHC/finalnorm->NextN; accept1/2 crosses pool close; NextN accepted journal catches up; epoch8 direct target-tap reseed; independent base replay; rejected/stale/cancel/old leases",
+          "scope": "generated primary GGUF/F32 layer42 four-stream input; actual13-state target43 attention at distinct immutable projection roles,34-resource joint43/44/NextN continuation; BF16 rings and default UE8M0 logical codec; no original checkpoint/full45-layer target,vendorpage ABI,natural acceptance or throughput claim"
+        }
+      },
+      {
+        "attributes": {
+          "name": "CudaDraftExtendLastAcceptedSeedSkipsDecodeStepZero",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_mtp_state_consumer_test.cc",
+          "line": "1990",
+          "status": "run",
+          "result": "completed",
+          "time": "14.936",
+          "timestamp": "2026-10-23T03:10:43.141",
+          "classname": "GlmMtpStateConsumer"
+        },
+        "properties": {
+          "initialization_submissions": "2",
+          "logical_index_state_bytes": "71052",
+          "actual_submissions": "26",
+          "draft_extend_submissions": "11",
+          "skip_submissions": "8",
+          "catchup_submissions": "4",
+          "policy_submissions": "1",
+          "backend": "ordinary CUDA Graph",
+          "journey": "draft-extend A2054/B2055->last accepted row1/2 actual hidden+full2051IDs->step0 immediately skips entire indexer->accepted nx catchup->actual epoch8 extend->step0 skip; independent accepted-only base execution/direct nx reference",
+          "scope": "generated selected Flash primary GGUF/F32 sequential M1 draft-extend seed protocol; generated per-position target-hidden boundary; default UE8M0 logical cache/query and BF16 raw rings; no target43 MLA/indexer composition,batched vendor extend kernel,full target,original weights,vendorpage ABI,natural acceptance or throughput claim"
+        }
+      },
+      {
+        "attributes": {
+          "name": "CpuTarget43MlaFlowsThroughTarget44AndNextN",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_mtp_state_consumer_test.cc",
+          "line": "2004",
+          "status": "run",
+          "result": "completed",
+          "time": "17.587",
+          "timestamp": "2026-10-23T03:10:58.078",
+          "classname": "GlmMtpStateConsumer"
+        },
+        "properties": {
+          "initialization_submissions": "3",
+          "logical_index_state_bytes": "71052",
+          "actual_submissions": "41",
+          "target_submissions": "12",
+          "target43_submissions": "12",
+          "state_budget_bytes": "536870912",
+          "peak_state_backing_bytes": "208205556",
+          "target_output_generations": "10",
+          "backend": "ordinary CPU Graph",
+          "component_schema": "34 resources plus epoch metadata:17 NextN,13 independent target43 MLA/indexer,4 target44 KDA/conv/tap/cursor; one StateStore/Head/Draft",
+          "journey": "actual target43 UE8M0 MLA/indexer->43 mHC/FFN->actual43mhc lease->44 KDA/conv/mHC/finalnorm->NextN; accept1/2 crosses pool close; NextN accepted journal catches up; epoch8 direct target-tap reseed; independent base replay; rejected/stale/cancel/old leases",
+          "scope": "generated primary GGUF/F32 layer42 four-stream input; actual13-state target43 attention at distinct immutable projection roles,34-resource joint43/44/NextN continuation; BF16 rings and default UE8M0 logical codec; no original checkpoint/full45-layer target,vendorpage ABI,natural acceptance or throughput claim"
+        }
+      },
+      {
+        "attributes": {
+          "name": "CpuDraftExtendLastAcceptedSeedSkipsDecodeStepZero",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_mtp_state_consumer_test.cc",
+          "line": "2024",
+          "status": "run",
+          "result": "completed",
+          "time": "15.038",
+          "timestamp": "2026-10-23T03:11:15.666",
+          "classname": "GlmMtpStateConsumer"
+        },
+        "properties": {
+          "initialization_submissions": "2",
+          "logical_index_state_bytes": "71052",
+          "actual_submissions": "26",
+          "draft_extend_submissions": "11",
+          "skip_submissions": "8",
+          "catchup_submissions": "4",
+          "policy_submissions": "1",
+          "backend": "ordinary CPU Graph",
+          "journey": "draft-extend A2054/B2055->last accepted row1/2 actual hidden+full2051IDs->step0 immediately skips entire indexer->accepted nx catchup->actual epoch8 extend->step0 skip; independent accepted-only base execution/direct nx reference",
+          "scope": "generated selected Flash primary GGUF/F32 sequential M1 draft-extend seed protocol; generated per-position target-hidden boundary; default UE8M0 logical cache/query and BF16 raw rings; no target43 MLA/indexer composition,batched vendor extend kernel,full target,original weights,vendorpage ABI,natural acceptance or throughput claim"
+        }
+      },
+      {
+        "attributes": {
+          "name": "CudaOriginalInputFeedsFp8QueryAndActualIndexerLease",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_original_mtp_chain_test.cc",
+          "line": "366",
+          "status": "run",
+          "result": "completed",
+          "time": "0.41",
+          "timestamp": "2026-10-23T03:11:31.014",
+          "classname": "GlmOriginalMtpChain"
+        },
+        "properties": {
+          "scope": "original layer45 NextN input->inputnorm->dynamic128 q_a->qnorm; actual qnorm lease->generated BF16 indexer wq_b; actual inputnorm lease->grouped E1/slot1 original q_a; no full-model/indexer/cache/natural-acceptance claim",
+          "backend": "ordinary CUDA Graph",
+          "actual_submissions": "9",
+          "grouped_submissions": "3",
+          "original_role_count": "7",
+          "original_role_bytes": "73429504",
+          "q_a_sha256": "615e317d19a83114b756e4634599ebba333c95241f3e775c77cc1633802d8be6",
+          "q_a_scale_sha256": "c93393c24ed2c12f5458fbf88a257df91e22f586acc58436b861465c56f4d3fb",
+          "input_norm_sha256": "34ebd6b797e89011997e3f8fa674e4d0b9bc322d88bee17a91fe0a5421263e0c",
+          "q_a_norm_sha256": "33fec4645dc799a2a96b870b48012fcd096e66c2003c528881d98cd397afa96a",
+          "producer_output_pool": "two generations;14 blocks;110592 bytes",
+          "successor_output_pool": "two generations;2 blocks;16384 bytes",
+          "grouped_output_pool": "two generations;2 blocks;6144 bytes"
+        }
+      },
+      {
+        "attributes": {
+          "name": "CpuOriginalInputFeedsFp8QueryAndActualIndexerLease",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_original_mtp_chain_test.cc",
+          "line": "375",
+          "status": "run",
+          "result": "completed",
+          "time": "0.353",
+          "timestamp": "2026-10-23T03:11:31.424",
+          "classname": "GlmOriginalMtpChain"
+        },
+        "properties": {
+          "scope": "original layer45 NextN input->inputnorm->dynamic128 q_a->qnorm; actual qnorm lease->generated BF16 indexer wq_b; actual inputnorm lease->grouped E1/slot1 original q_a; no full-model/indexer/cache/natural-acceptance claim",
+          "backend": "ordinary CPU Graph",
+          "actual_submissions": "9",
+          "grouped_submissions": "3",
+          "original_role_count": "7",
+          "original_role_bytes": "73429504",
+          "q_a_sha256": "615e317d19a83114b756e4634599ebba333c95241f3e775c77cc1633802d8be6",
+          "q_a_scale_sha256": "c93393c24ed2c12f5458fbf88a257df91e22f586acc58436b861465c56f4d3fb",
+          "input_norm_sha256": "34ebd6b797e89011997e3f8fa674e4d0b9bc322d88bee17a91fe0a5421263e0c",
+          "q_a_norm_sha256": "33fec4645dc799a2a96b870b48012fcd096e66c2003c528881d98cd397afa96a",
+          "producer_output_pool": "two generations;14 blocks;110592 bytes",
+          "successor_output_pool": "two generations;2 blocks;16384 bytes",
+          "grouped_output_pool": "two generations;2 blocks;6144 bytes"
+        }
+      }
+    ],
+    "related_regressions": "Old generated seed journey52 Graphs, generated target43->44->NextN34-resource composition82 Graphs, original input/query chain18 Graphs. These are separate scopes; original14 roles were tested in the17-resource NextN journey, not relabeled as an original full target43/44 model.",
+    "numerical": "Independent original-prefix checks unchanged. New dense indexer references start from actual checked BF16 inputs and original BF16 coefficients, use compensated F64 dots with explicit F64 oracle and F32 gammaK error bounds, prove finite/exact products and normal quantum/overflow conditions. Every actual F32->BF16 store checked bitwise. Local LayerNorm starts from actual roundedWK; pooling reads actual BF16 rings and originalAPE. No empirical tolerance widening.",
+    "numerical_observations": {
+      "GlmMtpStateConsumer.CudaOriginalIndexerPublishesCatchesUpAndReseeds": {
+        "original wk BF16 operands -> F32": {
+          "input_width": 4096,
+          "observations": 15,
+          "max_absolute_error": 7.699127309024335e-07,
+          "max_bound_ratio": 6.804927564690387e-05
+        },
+        "original compression gate BF16 operands -> F32": {
+          "input_width": 4096,
+          "observations": 15,
+          "max_absolute_error": 1.889566192403436e-07,
+          "max_bound_ratio": 3.4751094281739466e-05
+        },
+        "original wq_b BF16 operands -> F32": {
+          "input_width": 1536,
+          "observations": 11,
+          "max_absolute_error": 3.1874515116214756e-06,
+          "max_bound_ratio": 0.000370392636097033
+        },
+        "original widened-F32 weights_proj": {
+          "input_width": 4096,
+          "observations": 11,
+          "max_absolute_error": 2.1420419216156009e-07,
+          "max_bound_ratio": 2.9693774461650255e-05
+        }
+      },
+      "GlmMtpStateConsumer.CpuOriginalIndexerPublishesCatchesUpAndReseeds": {
+        "original wk BF16 operands -> F32": {
+          "input_width": 4096,
+          "observations": 15,
+          "max_absolute_error": 3.530549292918295e-07,
+          "max_bound_ratio": 3.435827746754934e-05
+        },
+        "original compression gate BF16 operands -> F32": {
+          "input_width": 4096,
+          "observations": 15,
+          "max_absolute_error": 1.837825038819574e-07,
+          "max_bound_ratio": 4.067931179226399e-05
+        },
+        "original wq_b BF16 operands -> F32": {
+          "input_width": 1536,
+          "observations": 11,
+          "max_absolute_error": 2.9318325687199835e-06,
+          "max_bound_ratio": 0.00020559942835238136
+        },
+        "original widened-F32 weights_proj": {
+          "input_width": 4096,
+          "observations": 11,
+          "max_absolute_error": 2.155375113943592e-07,
+          "max_bound_ratio": 3.00105500984007e-05
+        }
+      }
+    },
+    "commands_and_results": [
+      {
+        "path": ".scratch\\glm-original-indexer-20261023\\checks1\\summary.json",
+        "bytes": 4254,
+        "sha256": "3dd8fcc9054990ac8eefecce65d8c5452dd322e7bf8fdd8b5c9f510f9c7494b8"
+      },
+      {
+        "path": ".scratch\\glm-original-indexer-20261023\\checks2\\summary.json",
+        "bytes": 10304,
+        "sha256": "032992c46892b11ec03fe7395cbf436edaf963af7084cc93c3091f71ac3b8533"
+      }
+    ],
+    "compiled_host_translation_units": 2,
+    "SDK_builds": 0,
+    "native_CPU_builds": 0,
+    "NVCC_builds": 0,
+    "shaders": 0,
+    "first_native_run_failures": 0
+  },
+  "source_reviews": [
+    {
+      "path": ".scratch\\glm-original-indexer-20261023\\prefix-source\\freeze.json",
+      "bytes": 2576,
+      "sha256": "426cfd954bd336f443908a8c70240bac84b5d2feb2b610c896226c0c9ebf0126"
+    },
+    {
+      "path": ".scratch\\glm-original-indexer-20261023\\state-source\\freeze.json",
+      "bytes": 4641,
+      "sha256": "378f06b43a10af1a5cd3fa409eda71afe58a465e1e19b954adc0a78689c777cc"
+    },
+    {
+      "path": ".scratch\\glm-original-indexer-20261023\\reference-source\\freeze.json",
+      "bytes": 326,
+      "sha256": "e2edf2ea9116dcbe0d03de0e3a45b5cb835fb43b0addc30b8cb7144c981f3d69"
+    },
+    {
+      "path": ".scratch\\glm-original-indexer-20261023\\review\\glm-prefix-extraction-independent.json",
+      "bytes": 2815,
+      "sha256": "f16b6eef97cb15fe7c5cbb2c298fcd8bdca53a546330d6ea28963c3e9618321b"
+    },
+    {
+      "path": ".scratch\\glm-original-indexer-20261023\\review\\glm-indexer-reference-independent.json",
+      "bytes": 2642,
+      "sha256": "2ecd915775f13bd29ddbc1fdc17532d0bec5946852fe11b0f270775f7c55bfc5"
+    },
+    {
+      "path": ".scratch\\glm-original-indexer-20261023\\review\\glm-original-indexer-state-independent.json",
+      "bytes": 6679,
+      "sha256": "da9064e1ca8c68e286cad2ab0b38aade6926aceb6601345a2dfa29a0cced861e"
+    },
+    {
+      "path": ".scratch\\glm-original-indexer-20261023\\review\\glm-original-nextn-state-independent.json",
+      "bytes": 5414,
+      "sha256": "37118a8543e270a3fce886898e670289c1aff4d73d8c77fdec4d990d6ad3afc4"
+    }
+  ],
+  "source_metadata": [
+    {
+      "path": ".scratch\\dspark-natural-journey-20261022\\original-glm-input\\acquisition.json",
+      "bytes": 4445,
+      "sha256": "91854aa05031d305f9ecc4152cf2b86c44bb2df5fc5a418ef390aba08acebb8c"
+    },
+    {
+      "path": ".scratch\\dspark-natural-journey-20261022\\original-glm-input\\header.json",
+      "bytes": 93512,
+      "sha256": "e18e7ff23ee5bfbd2cf7bf9c931ad99972b50e7c9184babdff42db46ccaf8ab2"
+    },
+    {
+      "path": ".scratch\\glm-mtp-carry-20261022\\original-glm-q-a\\acquisition.json",
+      "bytes": 3722,
+      "sha256": "aff6fefe6c5064e3eb3903bc0a90bca073b6fd048293cc48b231e299c171bb76"
+    },
+    {
+      "path": ".scratch\\glm-mtp-carry-20261022\\original-glm-q-a\\header.json",
+      "bytes": 160856,
+      "sha256": "4727368ca83ad19ddfea0bfcb0fbf4427087b5b0bf648968b863962454e85c15"
+    },
+    {
+      "path": ".scratch\\glm-mtp-carry-20261022\\original-glm-q-a\\inputnorm-acquisition.json",
+      "bytes": 968,
+      "sha256": "60843760fbddc0a8d5aba6f81643638d356a5f03a36c8b504d11a4cc501da4d8"
+    },
+    {
+      "path": ".scratch\\glm-mtp-carry-20261022\\original-glm-q-a\\qnorm-acquisition.json",
+      "bytes": 962,
+      "sha256": "64a36a1ad73081b3cb181b304c445244b9444775956dfd06b5e06ac1a7839bef"
+    },
+    {
+      "path": ".scratch\\large-gguf-head-20261023\\review\\next-original-suppliers.json",
+      "bytes": 30383,
+      "sha256": "e8a5d920a2bf21dbd4c0ad487b34dad70128c8a98e6416baa343832777c77038"
+    },
+    {
+      "path": ".scratch\\large-gguf-head-20261023\\review\\fixed-source\\layernorm.py",
+      "bytes": 57159,
+      "sha256": "a0e2fe7d6523dd3a030111dac77642c7d7a52f67bf668b9559d7cd2acb5ae4e5"
+    },
+    {
+      "path": ".scratch\\glm-encoded-state-20261023\\review\\fixed-source\\layers\\attention\\dsa\\dsa_indexer_kpool.py",
+      "bytes": 60352,
+      "sha256": "90620a0d6cbcda89cecf02983eea419ab3ea13d8f556d6988de467057108fe82"
+    }
+  ],
+  "limitations": [
+    "WindowsCPU/CUDA only; no new Linux/Apple/Vulkan model run.",
+    "Target hidden/embedding and remaining MLA/MoE/head coefficients generated; no full45-layer checkpoint, original sharedLM, Progeometry or natural acceptance/generation quality claim.",
+    "Official HF mixed original/generated consumer identity is explicit; not primaryGGUF tensor equality or all quantization implementations.",
+    "Logical UE8M0 codes/scales/rings are tested, not vendor physical page/footer ABI.",
+    "Source role totals and bank descriptor bytes are not physical memory/VRAM peaks. No new loading, TPS or full four-arm benchmark; AV performance table retained.",
+    "Full MTP and broader architecture/performance/image goal remain incomplete."
+  ],
+  "next": "DSpark original13norm/sink+21HC roles9827740B, then remaining actual-role/sharedLM/targettap/Pro/confirmedquant work. Three original routerbiases require actual selected experts resident; never filter original IDs to fit the generated smallbank. Necessary final ordinary/MTP performance comparison remains before image chain.",
+  "final_image": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-original-indexer-20261023\\tests-link1\\glm-original-state-checks.exe",
+    "bytes": 141079552,
+    "sha256": "677e42b1c43e7e964a41877c2cd4800dea5c3e79173ef1c63c2cbeb8d7d434cd"
+  },
+  "sources": [
+    {
+      "path": "tests\\compute_models\\glm_mtp_state_consumer_test.cc",
+      "bytes": 137928,
+      "sha256": "37ecf149e95614bdb677e807a3ea6f1542e7df2341303c6559312e5a10127d65"
+    },
+    {
+      "path": "tests\\compute_models\\glm_original_mtp_chain_test.cc",
+      "bytes": 21655,
+      "sha256": "9d9dc732d5965ce1621a863dca7661dceeff09d46bd9743f87e50aae7c018fa8"
+    },
+    {
+      "path": "tests\\compute_models\\glm_original_mtp_roles.h",
+      "bytes": 17100,
+      "sha256": "e5ddf53e5dd7b2b88a0a4e8532ed9215164879d1693285d105a069d7864f0938"
+    },
+    {
+      "path": "tests\\compute_models\\glm_original_indexer_roles.h",
+      "bytes": 5464,
+      "sha256": "604060c6a4ed021fe2b96cf982d2936a2fdb63e850e2fbd4e20a7b910b0b9a3e"
+    },
+    {
+      "path": "tests\\compute_models\\glm_original_indexer_reference.h",
+      "bytes": 11617,
+      "sha256": "b6d4ab20192d490f6f6c63c3ce526c8556322a54300c990ea427afd0eb31ec12"
+    },
+    {
+      "path": "docs\\developer\\current-work.md",
+      "bytes": 24186,
+      "sha256": "6ebc4c87234cb76f2cb0a04c63a51b70e52d7043ac56ed8e1ac53ff16af747a6"
+    },
+    {
+      "path": "docs\\implementation\\model-operators.md",
+      "bytes": 93383,
+      "sha256": "8ff5b640ed72305322f552702e6b34ce51bddb9fc07c84b9e1d0ee284f7d396c"
+    }
+  ],
+  "performance_tail_sha256": "80b8672315911a74039a14cd137659bc67289273dc9c3707cd267b2d06de2551",
+  "cleanup": "One current executable/map and two host objects/recipes retained for replay and later incremental linking; no superseded BI image, whole shard or SDK copy was produced. No deletion required.",
+  "archive": {
+    "path": "docs\\evidence\\correctness\\mtp-glm-original-indexer-2026-10-23.zip",
+    "bytes": 424183,
+    "sha256": "b1975f8da9eaadecc186fc7ae0fe4dd47c99ea631236a9f47aaab91144367ef7"
+  },
+  "archive_items": 84
+}

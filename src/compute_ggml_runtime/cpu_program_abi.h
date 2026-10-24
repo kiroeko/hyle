@@ -22,6 +22,6 @@ struct CpuProgram {
   ggml_custom_op_t hadamard;
 };
 
-inline constexpr std::uint32_t kCpuProgramAbi = 2;
+inline constexpr std::uint32_t kCpuProgramAbi = 3;
 
 } // namespace hyle::compute::ggml_runtime

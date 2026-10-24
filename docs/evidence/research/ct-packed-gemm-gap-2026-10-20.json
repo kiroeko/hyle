@@ -1,0 +1,205 @@
+{
+  "status": "Read-only local source/header/cache review; no product edit, build, GPU, network request or payload read.",
+  "conclusion": "Exact symmetric/asymmetric CT4 decode already works through existing backend paths. Packed CT4 MatMul is still missing: this is a memory/execution-efficiency gap, not another missing decode operation. No reviewed locked mature kernel is a direct numerically equivalent plug-in.",
+  "target": {
+    "repository": "cyankiwi/Qwen3.8-27B-AWQ-INT4",
+    "revision": "6e134bae811fb5adac50ee042ae5f029ac6779aa",
+    "roles": 399,
+    "group": 32,
+    "metadata": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\ct-asymmetric-int4-header\\source-contract.json",
+      "bytes": 5037,
+      "sha256": "9acdce0609c691c5f0b774dd5c602fc582e1ce9af53c834d257c6fa0255ac92e"
+    },
+    "ports": [
+      "I32 codes[N,K/8], low-first nibble along K",
+      "I32 zero[ceil(N/8),K/32], low-first nibble along N",
+      "BF16 scale[N,K/32]; no g_idx in complete headers/index"
+    ],
+    "formula": "diff=int(code_nibble)-int(zero_nibble), exactly [-15,15]; W=BF16_RNE(float(diff)*float(scale)). Explicit F32 decode output is exact widening after this BF16 product.",
+    "lookup": "code_word=n*(K/8)+k/8; code_shift=4*(k%8); zero_word=(n/8)*(K/32)+k/32; zero_shift=4*(n%8). I32 containers must be treated as U32 bit patterns.",
+    "memory_from_headers_only": {
+      "quantized_elements": 24295505920,
+      "codes_Z_scales_bytes": 14045839360,
+      "dense_BF16_bytes": 48591011840,
+      "dense_F32_bytes": 97182023680,
+      "packed_GiB": 13.081207275390625,
+      "BF16_GiB": 45.25390625,
+      "F32_GiB": 90.5078125,
+      "largest_role_NK": [
+        5120,
+        17408
+      ],
+      "largest_BF16_bytes": 178257920,
+      "largest_F32_bytes": 356515840
+    },
+    "limit": "These sums exclude unquantized tensors, execution buffers, other model roles and possible lifetimes. They are not measured peak memory, proof this model fits a device, or artifact quality/payload validation."
+  },
+  "current_paths": [
+    {
+      "files": [
+        "include/hyle/compute/model_ops.h:238-248",
+        "src/compute_ops/weight_decode.cc:95-167",
+        "third_party/compressed_tensors_cpu/compressed_tensors_cpu.h:28-40",
+        "third_party/compressed_tensors_cuda/compressed_tensors_cuda.h:22-41"
+      ],
+      "fact": "Existing public ArtifactWeightDecode is explicitly cold dense [N,K]. Source-type subtraction/product precede final output conversion; asymmetric axes and padded N already implemented."
+    },
+    {
+      "files": [
+        "src/compute_provider_torch_cuda/artifact_provider.cc:353-406",
+        "src/compute_provider_native/torch_cpu_program.cc:505-525"
+      ],
+      "fact": "Current CT path uses original ATen decode, materializes dense output and copies/writes the real destination. Explicit consumer may retain it as an immutable constant for ordinary mature MatMul. CUDA cold carrier runtime is managed, rather than the existing MLX packed shared-submit carrier."
+    },
+    {
+      "files": [
+        "src/graph_provider_ggml_cuda/constant_expressions.h",
+        "src/compute_provider_ggml_cuda/tensor_program.cc"
+      ],
+      "fact": "ggml native constant-expression pass has no ArtifactWeightDecode lowerer. A format enum does not automatically fuse this Torch operation into ggml or recover CT identity after a consumer binds an already-decoded constant."
+    }
+  ],
+  "candidates": [
+    {
+      "name": "Existing MLX CUDA packed row-dot carrier",
+      "sources": [
+        "src/compute_provider_torch_cuda/mlx_packed_kernel.cu:45-113",
+        "src/compute_provider_torch_cuda/artifact_provider.cc:343-351",
+        "third_party/mlx_cuda_quant/mlx_cuda_quant.h:10-50"
+      ],
+      "reusable": "Original Queue/Completion/resources, dense activation typed loads, warp-row mapping, F32 FMA/reduction, output RNE, multi-row linear reuse and native launch boundary. It never expands the full W bank.",
+      "incompatible": "MLX affine decode is F32(code*scale)+bias before dot. CT requires centered code then scale-dtype product RNE. Its bias has a floating affine meaning and a different port, not packed integer zero. It cannot be reused by changing only the format name or bias=-zp*scale.",
+      "smallest_adaptation": "Share a private compile-time row-dot/decode-loader implementation with a distinct CT loader and exact physical ports; retain original MLX default arithmetic. CT loader performs typed product RNE before F32 dot. This is new CT math glue on an existing carrier, not adoption of a mature tensor-core CT GEMM.",
+      "limit": "Current scalar warp-row kernel is not an established efficient prefill GEMM; no speed/occupancy claim without one focused shape experiment. CMake currently does not request use_fast_math for this TU; actual future recipe and non-FTZ/RNE compiled behavior still need verification."
+    },
+    {
+      "name": "GGUF Q4_1 / related ggml packed MMVQ/MMQ",
+      "sources": [
+        "native cached dequantize.cuh:60-72",
+        "pinned ggml_cpu src/ggml-cpu/ggml-cpu.c:250-253"
+      ],
+      "reusable": "Mature compact kernels/layout/lifetime infrastructure only.",
+      "incompatible": "Q4_1 stores F16 d/m and computes q*d+m in F32; CPU vec_dot_type is Q8_1, and corresponding CUDA quantized paths quantize activation. CT BF16 weight product rounding and the original activation operands are not preserved.",
+      "witness": "BF16 scale0x3dcd=0.10009765625: diff1 gives0.10009765625, diff3 givesBF16_RNE=0.30078125, whereas3*diff1 is0.30029296875. An affine F32 scale/bias cannot in general represent all per-code rounded CT values. Whole-W requantization is lossy and changes the declared codec."
+    },
+    {
+      "name": "AWQ GEMM4 / Marlin",
+      "sources": [
+        "third_party/awq_cuda/awq_cuda.h:8-24",
+        "src/compute_provider_marlin/CMakeLists.txt:1-6",
+        "cmake/HyleDependencyLock.json"
+      ],
+      "status": "In-tree AWQ helper is dense decode with AWQ K/N orientation and reverse lane order; Marlin component is OPTIONAL_ABSENT, no current locked product implementation. Historical logs do not restore a current callable or provenance-qualified kernel.",
+      "incompatible": "Selected Q27 repository name says AWQ but fixed headers/config are CT pack-quantized. No AWQ/Marlin numerical/packing equivalence is established by the name."
+    },
+    {
+      "name": "Existing CPU and Vulkan/IREE carriers",
+      "sources": [
+        "third_party/mlx_cpu_quant/mlx_cpu_quant.h:65-103",
+        "third_party/iree_vulkan_runtime/programs/generate_mlx.py:90-150",
+        "third_party/iree_vulkan_runtime/programs/generate_artifacts.py:125-175"
+      ],
+      "reusable": "Existing prepared operation, original tensor primitives, typed decode barriers, bounded slice/group execution and mature F32 MatMul execution can support a streaming/tiled fallback without keeping a whole dense bank.",
+      "incompatible": "MLX affine equations widen code/scale/bias to F32; Vulkan MLX generator explicitly creates group-size F32 activation/weight tensors, not an already fused CT packed kernel. CT artifact generator is decode-only.",
+      "limit": "Streaming decode+GEMM is a bounded-memory fallback, not proof of a one-kernel packed GEMM. Appending linalg.matmul alone does not prove IREE avoids whole-W materialization; inspect compiled allocation/IR and real report before claiming it."
+    },
+    {
+      "name": "ATen int4pack operators in locked2.8 SDK",
+      "sources": [
+        "ATen/ops/_weight_int4pack_mm_ops.h:18-29",
+        "ATen/ops/_weight_int4pack_mm_for_cpu_ops.h:18-29"
+      ],
+      "status": "Current cached SDK exposes packed mm declarations and qScaleAndZeros arguments, but reviewed repo callers/helpers do not use them and local source review did not establish their packing, centered-zero convention, scale precision or per-weight BF16 rounding.",
+      "limit": "Declarations alone are insufficient to claim an exact CT backend. No runtime probe/build was performed; no new dependency or SDK rebuild proposed."
+    }
+  ],
+  "next_batch": {
+    "priority": "First prove an exact memory-bounded CT packed linear domain on the existing CUDA packed carrier; retain cold dense decode fallback.",
+    "mathematical_graph": "A, CT codes/Z/scales -> existing ArtifactWeightDecode -> legitimate metadata transpose -> same-dtype MatMul(F32acc). Selected initial domain BF16 A/BF16 decoded W/BF16 result, natural group32, no g_idx. A distinct F32 profile must explicitly preserve its Cast edges; never narrow A to suit a kernel.",
+    "selection": "Provider-private Graph region/prepared operation can collapse only the private Decode+View+MatMul chain and bind original packed ports. Do not add a second public CT operation, model name branch or Graph core rule. Published decoded W/extra consumers/unsupported layouts keep their original graph. If importer only supplies dense W, original packed provenance is unavailable; do not infer it from pointer or filename.",
+    "execution": "Use existing original provider identity/prepare/shared_submit/Queue/Completion and ownership. A typed CT load/decode functor inside the existing packed dot carrier avoids a persistent full W tensor; no extra executor/context or ownership side channel.",
+    "minimal_files": [
+      "src/compute_provider_torch_cuda/artifact_provider.cc",
+      "src/compute_provider_torch_cuda/mlx_packed_kernel.cu and private header (small shared loader/row-dot seam)",
+      "one private Graph adapter capability on the same provider, delegating all original hooks and identity",
+      "existing CT source/provenance notices if borrowed helper boundaries change",
+      "focused current CT fixture/test owner"
+    ],
+    "tests": [
+      "Reuse CT N9,K64,g32 fixture: BF16 rounding witness, N-padding garbage, high signed words, q==zp, +/-0, subnormal/Inf/NaN scale classes; independent decode then standalone mature MatMul oracle.",
+      "M1 and one small multi-row case, two invocations/rebind, published decode/control-reader fallback, caller workspace/capture and accepted-prefix lifetime. Assert report/allocation has no N*K dense resident bank, not just outputs.",
+      "Only after correctness, one M1 and one representative prefill shape from header inventory to compare bounded workspace and execution to mature dense baseline; no format/shape matrix or full-model claim."
+    ],
+    "followup_not_in_same_batch": "A high-throughput BF16 tensor-core CT GEMM or exact CPU/Vulkan packed carrier remains additional work. Bounded tile decode + existing cuBLAS/CPU GEMM is a practical memory fallback, but must be named as such and retain full-K F32 accumulation with a single final output RNE."
+  },
+  "safeguards": [
+    "No scale-after-dot factoring: per-weight BF16 rounding is not distributive. Integer subtraction may replace the exact typed [-15,15] subtraction, but not the typed product.",
+    "Preserve nonfinite and signed-zero behavior, including0*Inf->NaN; no finite/zero payload assumptions from config or unread headers. Verify subnormal decode not flushed by new compile flags.",
+    "Do not silently accept g_idx/permutation or AWQ packing. Current3-port CT schema rejects extra g_idx; actual selected artifact has none.",
+    "F32 accumulation does not promise a specific reduction tree, but does not authorize quantizing/narrowing declared activation or moving BF16 weight rounding past the dot."
+  ],
+  "not_claimed": [
+    "No exact prebuilt CT packed GEMM was verified in the reviewed locked/local implementations. This is not an exhaustive proof that no other cached source could contain one.",
+    "No new product implementation, SDK build, benchmark, profile or model/artifact payload execution.",
+    "Current decode functional coverage is not complete model loading/role-matrix/quality coverage."
+  ],
+  "source_identities": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\model_ops.h",
+      "bytes": 58701,
+      "sha256": "8b86341a0ffb0be1dacf897e637a26f469b8adbab776c0f959a88dc0b368bfe5"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_ops\\weight_decode.cc",
+      "bytes": 9098,
+      "sha256": "f6a0a257d1f78008619557c0ca405bcd05d3ce876ffb045643d8e9054e533837"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\third_party\\compressed_tensors_cpu\\compressed_tensors_cpu.h",
+      "bytes": 1960,
+      "sha256": "3452e7da15e370deb991b7795b18ade24077f4c93b6c66e64dae4705d7ffa692"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\third_party\\compressed_tensors_cuda\\compressed_tensors_cuda.h",
+      "bytes": 2045,
+      "sha256": "b5bf15f6c7deb809447cf0e2f7e1aed4468724cd0f1ecadbd02b2c7136788dfb"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_torch_cuda\\artifact_provider.cc",
+      "bytes": 26684,
+      "sha256": "909c2d4b81c9ec20cd0e9d9911b6117dfcd991e2f206977683e4e2650493baad"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_torch_cuda\\mlx_packed_kernel.cu",
+      "bytes": 7248,
+      "sha256": "c5297db6e7f11f0878ce7550f0ea5422a3b5cb2542fdd963ff4d857b38de74d2"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_torch_cuda\\mlx_packed_kernel.h",
+      "bytes": 661,
+      "sha256": "216753be685389bf7c152e2a72a473b6a8f1197142507dac53a3b316e827eff7"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\third_party\\mlx_cpu_quant\\mlx_cpu_quant.h",
+      "bytes": 4893,
+      "sha256": "ce03bcaae3ed27c6416c1bae6f7380f950956f53780d3c80aa3663251e917aa4"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\third_party\\iree_vulkan_runtime\\programs\\generate_artifacts.py",
+      "bytes": 10587,
+      "sha256": "c609f4d12eac7d3182f6cfe0841f962da08a8eb24dd8c5f7679d85d19a7aeeb7"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\third_party\\iree_vulkan_runtime\\programs\\generate_mlx.py",
+      "bytes": 15706,
+      "sha256": "6e00eeb0791ed66bb3256ae12746efb6801d0463757ffae0a6fe263bb530bc24"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_marlin\\CMakeLists.txt",
+      "bytes": 364,
+      "sha256": "bceaea88c6738a59a2f1473a4b3977fac0bfa5a5717e14064a081799f37b56f4"
+    }
+  ],
+  "symmetric_contract": "Existing symmetric4 uses I32[N,K/8] codes plus scales[N,K/group]: diff=int(nibble)-8, then scale-dtype product RNE before requested output Cast. The same private decode-loader seam can cover symmetric/asymmetric using their distinct actual port counts; do not infer other profiles group/dtype from the selected asymmetric header."
+}

@@ -1,0 +1,220 @@
+{
+  "schema": "hyle.correctness.gdn-output-scale.apple.v1",
+  "date": "2026-10-24",
+  "recorded_at_utc": "2026-10-23T20:24:09.366292+00:00",
+  "status": "passed",
+  "summary": "Mac16,12 CPU explicit Compute provider and direct Metal NativeProgram each pass three focused GDN output-scale cases.",
+  "hardware": [
+    {
+      "argv": [
+        "uname",
+        "-m"
+      ],
+      "exit_code": 0,
+      "stdout": "arm64\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "sysctl",
+        "-n",
+        "hw.model"
+      ],
+      "exit_code": 0,
+      "stdout": "Mac16,12\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "sysctl",
+        "-n",
+        "hw.memsize"
+      ],
+      "exit_code": 0,
+      "stdout": "17179869184\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "sysctl",
+        "-n",
+        "machdep.cpu.brand_string"
+      ],
+      "exit_code": 0,
+      "stdout": "Apple M4\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "sw_vers"
+      ],
+      "exit_code": 0,
+      "stdout": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/usr/bin/clang++",
+        "--version"
+      ],
+      "exit_code": 0,
+      "stdout": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin\n",
+      "stderr": ""
+    }
+  ],
+  "contracts": {
+    "cpu_program_abi": 3,
+    "cpu_provider_contract": 18,
+    "recurrent_custom_id": 9,
+    "native_gdn_scale_contract": "0x48594732"
+  },
+  "results": [
+    {
+      "backend": "cpu",
+      "tests": 3,
+      "failures": 0,
+      "skips": 0,
+      "interface": "Explicit Compute Context with ggml_cpu provider",
+      "image": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/gdn-output-scale-20261024/attempt2/cpu-gdn-scale-checks",
+        "bytes": 3710520,
+        "sha256": "118f2ddb62696d51d3b14880adb5190f45627913c78992910c61aa036a2915ca"
+      },
+      "xml": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/gdn-output-scale-20261024/attempt2/cpu-tests.xml",
+        "bytes": 1507,
+        "sha256": "c645bc7dd1183f8ec1698af5c63ea6b1e5461ec5886ca5de1628d838c1101af7",
+        "archive": "actual/cpu-tests.xml"
+      },
+      "run_record": "actual/logs/cpu-run/result.json",
+      "source_manifest": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/gdn-output-scale-20261024/attempt2/sync-manifest.json",
+        "bytes": 45613,
+        "sha256": "e0427774132685dd8bc3cda0f580756cc894f281586aef03212f9533866be55d"
+      },
+      "case_names": [
+        "RawDefaultAndFusedGatesKeepStateSnapshots",
+        "ColdParameterIdentityRetainsPresenceAndSignedFloatBits",
+        "PublicInferenceRejectsNonfiniteAndRetainsExplicitDomain"
+      ]
+    },
+    {
+      "backend": "metal",
+      "tests": 3,
+      "failures": 0,
+      "skips": 0,
+      "interface": "Direct ggml_metal::NativeProgram with retained shared MTLBuffers",
+      "image": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/gdn-output-scale-20261024/attempt2/metal-gdn-scale-checks",
+        "bytes": 3910776,
+        "sha256": "ea71f76ee877de0d40cc4e033035b12827d40201d068ff22dfad83af44c54610"
+      },
+      "xml": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/gdn-output-scale-20261024/attempt2/metal-tests.xml",
+        "bytes": 1507,
+        "sha256": "7e6e9f4c9ed58482345c1bdc6fa9aba3ce46d23a0b4c94ea2b69437166a28050",
+        "archive": "actual/metal-tests.xml"
+      },
+      "run_record": "actual/logs/metal-run/result.json",
+      "source_manifest": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/gdn-output-scale-20261024/attempt2/sync-manifest.json",
+        "bytes": 45613,
+        "sha256": "e0427774132685dd8bc3cda0f580756cc894f281586aef03212f9533866be55d"
+      },
+      "case_names": [
+        "RawDefaultAndFusedGatesKeepStateSnapshots",
+        "ColdParameterIdentityRetainsPresenceAndSignedFloatBits",
+        "PublicInferenceRejectsNonfiniteAndRetainsExplicitDomain"
+      ]
+    }
+  ],
+  "counts": {
+    "tests": 6,
+    "failures": 0,
+    "skips": 0,
+    "host_compile_commands_passed": 38,
+    "native_compile_commands_passed": 3,
+    "native_compile_recipe_failures_retained": 1,
+    "fresh_small_archives": 2,
+    "links_passed": 2,
+    "SDK_copies": 0,
+    "SDK_builds": 0,
+    "HTTP_requests": 0,
+    "model_weight_bytes_downloaded": 0
+  },
+  "numeric_scope": [
+    "D128/K2 independent cancellation fixture with actual F32 query 1+2^-20 and -1, default 1/sqrt(128) or explicit1 at the final dot output.",
+    "Scalar GDN, channel-decay KDA and raw-gate Recurrent execute with two state snapshots and retained original input state.",
+    "Cold optional presence and exact float bits cover explicit1, positive/negative zero and negative scale; inference rejects nonfinite scale. Runtime numeric execution covers default and explicit1.",
+    "The original Fixture/check/inference test bodies are unchanged; a focused-only Objective-C++ branch substitutes the existing direct Metal execution seam for MLX Context."
+  ],
+  "native_families": {
+    "cpu": {
+      "cache": "source-0bae7e9e90b384d8",
+      "before_ops_sha256": "afd767b646b754106589ac83876935fcf56baaaf68e194438ba8e18f0f159def",
+      "delta": "Only current manifest three GDN edits: shared scale metadata include, native contract query, final output scale selection. Arm64 baseline ABI3; no AVX2 module."
+    },
+    "metal": {
+      "cache": "source-d851e24e75c99c78",
+      "before_ops_sha256": "4046db2406469c0b1a2a590d51ee583839718c9e50c828bc911cbeebc85b892a",
+      "before_impl_sha256": "832bc4a3e7581dcb01c94a2f716d75b0d5d3fae7e029fd8120b2c80ef686c768",
+      "delta": "Apply only exact GDN kargs/ops/kernel edits to actual cache files. Preserve all other kargs. Compile one ops TU and one embedded GDN source ASM object; existing runtime MSL compilation, no offline Metal SDK."
+    },
+    "isolation": "CPU and Metal images retain their own original ggml libraries. Link maps confirm fresh ops/GDN embed members and no old replacement members; original cached sources were rehashed unchanged.",
+    "proof": "actual/native-preparation.json"
+  },
+  "retained_failures": [
+    {
+      "kind": "preparation_script_compatibility",
+      "scope": "Before any C++ compilation or test",
+      "reason": "Mac Python3.9 Path.write_text has no newline argument. Attempt1 retained; attempt2 uses write_bytes.",
+      "record": "actual/preparation-failure-attempt1/logs/same-family-native-overlay-and-single-GDN-embed/result.json"
+    },
+    {
+      "kind": "native_compile_recipe",
+      "scope": "Metal ops only; no source arithmetic change",
+      "reason": "Moving one cpp into overlay required an explicit original-family sibling-header include. First failure and corrected actual command are retained.",
+      "failure": "actual/logs/metal-native-ops/result.json",
+      "corrected": "actual/logs/metal-native-ops-recipe2/command.json"
+    }
+  ],
+  "dependencies": {
+    "actual": "actual/actual-dependencies.json",
+    "source_manifest": "actual/sync-manifest.json",
+    "commands": "actual/commands.json",
+    "host_records": "actual/logs/",
+    "focused_helper_before": {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_native\\gdn_output_scale_test.cc",
+      "bytes": 9918,
+      "sha256": "470636dd442a46cd535c0645ee2e76188ee1eb8c56dc888ebd964b50a7ff8a62"
+    },
+    "focused_helper_after": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mlx-flash-original-20261024\\apple-gdn-scale-preparation\\next-source\\tests\\compute_provider_native\\gdn_output_scale_test.cc",
+      "bytes": 14005,
+      "sha256": "cef1215563960d8926d02b35c5ed0c4c188b96e5811da8032b590f60a62d015d"
+    }
+  },
+  "limits": [
+    "Metal is direct NativeProgram, not default Graph or MLX Context assembly.",
+    "No MTP model/quality, Vulkan execution, throughput or physical memory-peak conclusion.",
+    "CPU provider18 and baseline CpuProgram ABI3 are exercised; direct Metal does not instantiate or qualify the default ProviderVTable assembly."
+  ],
+  "archive": {
+    "path": "docs/evidence/correctness/mtp-gdn-output-scale-apple-2026-10-24.zip",
+    "bytes": 958004,
+    "sha256": "a32626d898df1d2debb3717b667a184d5530b874367ba99423506684fa381dc9"
+  },
+  "archive_files": 420,
+  "previous_windows_evidence_unchanged": [
+    {
+      "path": "docs/evidence/correctness/mtp-gdn-output-scale-2026-10-24.json",
+      "bytes": 3773,
+      "sha256": "fe4ca9d1d3e15dcf2bde69dbcffdf1d32cab5405f86150db9482aa985d071de5"
+    },
+    {
+      "path": "docs/evidence/correctness/mtp-gdn-output-scale-2026-10-24.zip",
+      "bytes": 2839961,
+      "sha256": "317bf1180c1a6af34eae481a74ac4b94b601bb5466e3670a67a0310bcb249bcb"
+    }
+  ]
+}

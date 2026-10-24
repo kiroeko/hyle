@@ -140,7 +140,7 @@
         ],
         "global_scratch_align": 1,
         "global_scratch_size": 0,
-        "hash": "becc47efb4eedc99dc7b0a3c10aaea20d1ce7453f66c6bdffde6737a9e14e123",
+        "hash": "0e1b401b00114458da92fa50f79c824b106ea8d8bc81d9a57c53d4d4bbf04bee",
         "instrumentation_mode": "",
         "ir_override": null,
         "launch_cooperative_grid": false,
@@ -156,7 +156,7 @@
         "ptx_options": null,
         "ptx_version": null,
         "sanitize_overflow": true,
-        "shared": 24576,
+        "shared": 16384,
         "supported_fp8_dtypes": [
           "fp8e4b15",
           "fp8e4nv",
@@ -172,7 +172,15 @@
         "triton_version": "3.8.0",
         "warp_size": 32
       },
-      "seconds": 1.749136923
+      "cubin_sha256": "85551feee11cfbf0a8c6ab5f5ea5aafdf7d849a937e86571221ecd07d76e86a7"
     }
-  ]
+  ],
+  "matmul_adaptation": {
+    "function": "_w8a8_block_fp8_matmul",
+    "purpose": "Use exact finite E4M3FN-to-BF16 register tiles for the SM89 dot so its F32 accumulation satisfies the declared precision. This changes native dot arithmetic, not packed storage, quantization policy, block scales or output dtype.",
+    "before": "tl.dot(a, b)",
+    "after": "tl.dot(a.to(tl.bfloat16), b.to(tl.bfloat16))",
+    "occurrences": 1,
+    "adapted_module_sha256": "d13e43b7ef3511e6a0843375e8facf22a17823d7c5dfe85015f12e376bfe628c"
+  }
 }

@@ -38,9 +38,6 @@ spec = importlib.util.spec_from_file_location('deepseek_original_quant', module_
 module = importlib.util.module_from_spec(spec)
 sys.modules[spec.name] = module
 spec.loader.exec_module(module)
-adapter_spec = importlib.util.spec_from_file_location('deepseek_indexed_entry', root/'indexed_entry.py')
-adapter = importlib.util.module_from_spec(adapter_spec)
-adapter_spec.loader.exec_module(adapter)
 identity_spec = importlib.util.spec_from_file_location('deepseek_rebuild_identity', root/'rebuild_identity.py')
 identity = importlib.util.module_from_spec(identity_spec)
 identity_spec.loader.exec_module(identity)
@@ -51,21 +48,19 @@ receipt = []
 for job in provenance['programs']:
     name = job['kernel']
     artifact = job.get('artifact', name)
-    if 'group' in job:
-        kwargs = {'block_size': job['group'], 'scale_dtype': 'float32', 'inplace': job.get('inplace', True)}
-        if name == 'act_quant_kernel':
-            kwargs['round_scale'] = True
-        prim = getattr(module, name).get_tir(job['group'], **kwargs)
-    else:
-        prim = module.fp4_gemm_kernel.get_tir(job['n'], job['k'], scale_dtype='float32')
+    # Only the four original quantizers are product AOT artifacts. The HYLE
+    # FP4/F32 GEMM is an ordinary CUDA TU in compute_provider_cuda.
+    assert 'group' in job and name in ('act_quant_kernel', 'fp4_quant_kernel')
+    kwargs = {'block_size': job['group'], 'scale_dtype': 'float32', 'inplace': job.get('inplace', True)}
+    if name == 'act_quant_kernel':
+        kwargs['round_scale'] = True
+    prim = getattr(module, name).get_tir(job['group'], **kwargs)
     target = tilelang.tvm.target.Target({'kind': 'cuda', 'arch': 'sm_89'})
     with target, tilelang.tvm.transform.PassContext(config=module.pass_configs):
         result = tilelang.lower(prim, target=target, enable_host_codegen=False, enable_device_compile=False)
     generated = result.kernel_source
     if 'original_cuda_sha256' in job:
         assert hashlib.sha256(generated.encode()).hexdigest() == job['original_cuda_sha256']
-    if job.get('indexed'):
-        generated = adapter.adapt(generated, job['n'], job['k'])
     cu = args.output/(artifact+'.cu')
     cu.write_text(generated, encoding='utf-8', newline='\n')
     blob_path = args.output/(artifact+'.cubin')

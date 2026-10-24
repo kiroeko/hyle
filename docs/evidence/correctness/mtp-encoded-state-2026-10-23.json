@@ -1,0 +1,1255 @@
+{
+  "date": "2026-10-23",
+  "stage": "BF",
+  "status": "bounded implementation and correctness progress; broad goal incomplete",
+  "final_tests": 26,
+  "final_failures": 0,
+  "final_skips": 0,
+  "model_graph_submissions": 380,
+  "quant_graph_successes": 12,
+  "quant_expected_NaN_completion_failures": 4,
+  "graph_submission_attempts": 396,
+  "graph_count_scope": "Sum actual_submissions model properties plus successful_submissions/failed_submissions quant properties; Direct Cast invocations are not Graph submissions.",
+  "system": "Windows local CPU and RTX4070 CUDA, cached toolchain/native workers; no Linux/macOS or Vulkan model suite this round",
+  "runs": [
+    {
+      "process": {
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\glm-encoded-state-20261023\\tests-link4\\encoded-state-checks.exe",
+          "--gtest_filter=DSparkOriginalState.*:CudaTensor.Int32ToFloat32RoundsTiesToEvenAndPreservesInputOnReplay:CudaTensor.FloatStorageConversionsMatchIndependentRounding:CudaTensor.BoolConversionsPreserveNonzeroBitsAndNormalizeTruthValues",
+          "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\glm-encoded-state-20261023\\checks5\\results.xml"
+        ],
+        "cwd": "C:\\public\\project-hyle\\hyle",
+        "started": 1792690943.0550249,
+        "timeout_seconds": 600,
+        "throughput_evidence": false,
+        "memory_evidence": false,
+        "trace": false,
+        "profiler": false,
+        "pid": 11332,
+        "exit": 0,
+        "timed_out": false,
+        "finished": 1792691005.9851105,
+        "process_wall_seconds": 62.92992299999969
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-encoded-state-20261023\\tests-link4\\encoded-state-checks.exe",
+        "bytes": 141969920,
+        "sha256": "a274d81528f8920d1ea1de2896d8973cb39c1411aa707bbdb65f24bd385fb493"
+      },
+      "throughput_evidence": false,
+      "physical_memory_evidence": false,
+      "whole_original_model": false,
+      "tests": 5,
+      "failures": 0,
+      "errors": 0,
+      "disabled": 0,
+      "skips": 0,
+      "cases": [
+        {
+          "attributes": {
+            "name": "CpuEncodedMainHistoryFeedsFullDraftAndAtomicAcceptedState",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_original_state_consumer_test.cc",
+            "line": "518",
+            "status": "run",
+            "result": "completed",
+            "time": "56.518",
+            "timestamp": "2026-10-23T01:42:24.125",
+            "classname": "DSparkOriginalState"
+          },
+          "properties": {
+            "actual_submissions": "25",
+            "original_role_count": "11",
+            "original_role_bytes": "192576000",
+            "encoded_draft_inputs": "6",
+            "semantic_draft_outputs": "7",
+            "test_boundary_outputs": "18",
+            "proposal_numerics": "all3 original M5 wkv/norm independent Q8 decode + compensated F64 dot/norm gate on actual activation; actual postnorm BF16 then independent RoPE gate; exact actual-F32->BF16 bits; exact actual-BF16->584B codes/scales; independent actual committed/proposal carrier reader equals prepared attention F32 keys byte-for-byte",
+            "scope": "full three-stage draft HC/attention/MoE plus natural original Markov/confidence; original fc/norm and three original wkv/norm share readonly roles with accepted encoded history; prefix0/1/2, wrap, rejection, own-head continuation and retained results. Generated shared LM/embedding/other stage parameters and generated target-capture/verifier boundary, not trained target/full model or measured natural acceptance."
+          }
+        },
+        {
+          "attributes": {
+            "name": "CudaEncodedMainHistoryFeedsFullDraftAndAtomicAcceptedState",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_original_state_consumer_test.cc",
+            "line": "524",
+            "status": "run",
+            "result": "completed",
+            "time": "5.056",
+            "timestamp": "2026-10-23T01:43:20.644",
+            "classname": "DSparkOriginalState"
+          },
+          "properties": {
+            "actual_submissions": "25",
+            "original_role_count": "11",
+            "original_role_bytes": "192576000",
+            "encoded_draft_inputs": "6",
+            "semantic_draft_outputs": "7",
+            "test_boundary_outputs": "18",
+            "proposal_numerics": "all3 original M5 wkv/norm independent Q8 decode + compensated F64 dot/norm gate on actual activation; actual postnorm BF16 then independent RoPE gate; exact actual-F32->BF16 bits; exact actual-BF16->584B codes/scales; independent actual committed/proposal carrier reader equals prepared attention F32 keys byte-for-byte",
+            "scope": "full three-stage draft HC/attention/MoE plus natural original Markov/confidence; original fc/norm and three original wkv/norm share readonly roles with accepted encoded history; prefix0/1/2, wrap, rejection, own-head continuation and retained results. Generated shared LM/embedding/other stage parameters and generated target-capture/verifier boundary, not trained target/full model or measured natural acceptance."
+          }
+        },
+        {
+          "attributes": {
+            "name": "FloatStorageConversionsMatchIndependentRounding",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_cuda\\tensor_test.cc",
+            "line": "303",
+            "status": "run",
+            "result": "completed",
+            "time": "0.005",
+            "timestamp": "2026-10-23T01:43:25.705",
+            "classname": "CudaTensor"
+          },
+          "properties": {}
+        },
+        {
+          "attributes": {
+            "name": "Int32ToFloat32RoundsTiesToEvenAndPreservesInputOnReplay",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_cuda\\tensor_test.cc",
+            "line": "318",
+            "status": "run",
+            "result": "completed",
+            "time": "0.002",
+            "timestamp": "2026-10-23T01:43:25.710",
+            "classname": "CudaTensor"
+          },
+          "properties": {}
+        },
+        {
+          "attributes": {
+            "name": "BoolConversionsPreserveNonzeroBitsAndNormalizeTruthValues",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_cuda\\tensor_test.cc",
+            "line": "431",
+            "status": "run",
+            "result": "completed",
+            "time": "0.003",
+            "timestamp": "2026-10-23T01:43:25.713",
+            "classname": "CudaTensor"
+          },
+          "properties": {}
+        }
+      ]
+    },
+    {
+      "process": {
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\glm-encoded-state-20261023\\tests-link4\\encoded-state-checks.exe",
+          "--gtest_filter=Float8QuantizeOutput.*:GlmOfficialIndexCache.*:GlmMtpStateConsumer.*:DSparkMainHistory.*:DSparkTargetBinding.*:DSparkOriginalTargetBinding.*",
+          "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\glm-encoded-state-20261023\\checks6\\results.xml"
+        ],
+        "cwd": "C:\\public\\project-hyle\\hyle",
+        "started": 1792691026.7972178,
+        "timeout_seconds": 600,
+        "throughput_evidence": false,
+        "memory_evidence": false,
+        "trace": false,
+        "profiler": false,
+        "pid": 34752,
+        "exit": 0,
+        "timed_out": false,
+        "finished": 1792691139.187987,
+        "process_wall_seconds": 112.39058950000253
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-encoded-state-20261023\\tests-link4\\encoded-state-checks.exe",
+        "bytes": 141969920,
+        "sha256": "a274d81528f8920d1ea1de2896d8973cb39c1411aa707bbdb65f24bd385fb493"
+      },
+      "throughput_evidence": false,
+      "physical_memory_evidence": false,
+      "whole_original_model": false,
+      "tests": 21,
+      "failures": 0,
+      "errors": 0,
+      "disabled": 0,
+      "skips": 0,
+      "cases": [
+        {
+          "attributes": {
+            "name": "CudaTarget43MlaFlowsThroughTarget44AndNextN",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_mtp_state_consumer_test.cc",
+            "line": "1765",
+            "status": "run",
+            "result": "completed",
+            "time": "16.931",
+            "timestamp": "2026-10-23T01:43:47.172",
+            "classname": "GlmMtpStateConsumer"
+          },
+          "properties": {
+            "initialization_submissions": "3",
+            "logical_index_state_bytes": "71052",
+            "actual_submissions": "41",
+            "target_submissions": "12",
+            "target43_submissions": "12",
+            "state_budget_bytes": "536870912",
+            "peak_state_backing_bytes": "208205556",
+            "target_output_generations": "10",
+            "backend": "ordinary CUDA Graph",
+            "component_schema": "34 resources plus epoch metadata:17 NextN,13 independent target43 MLA/indexer,4 target44 KDA/conv/tap/cursor; one StateStore/Head/Draft",
+            "journey": "actual target43 UE8M0 MLA/indexer->43 mHC/FFN->actual43mhc lease->44 KDA/conv/mHC/finalnorm->NextN; accept1/2 crosses pool close; NextN accepted journal catches up; epoch8 direct target-tap reseed; independent base replay; rejected/stale/cancel/old leases",
+            "scope": "generated primary GGUF/F32 layer42 four-stream input; actual13-state target43 attention at distinct immutable projection roles,34-resource joint43/44/NextN continuation; BF16 rings and default UE8M0 logical codec; no original checkpoint/full45-layer target,vendorpage ABI,natural acceptance or throughput claim"
+          }
+        },
+        {
+          "attributes": {
+            "name": "CudaWholeNextNPrefixPublishesAndContinuesWithoutRejectedTail",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_mtp_state_consumer_test.cc",
+            "line": "1771",
+            "status": "run",
+            "result": "completed",
+            "time": "3.937",
+            "timestamp": "2026-10-23T01:44:04.103",
+            "classname": "GlmMtpStateConsumer"
+          },
+          "properties": {
+            "initialization_submissions": "1",
+            "logical_index_state_bytes": "71052",
+            "actual_submissions": "8",
+            "backend": "ordinary CUDA Graph",
+            "component_schema": "17 native resources plus explicit iteration policy; BF16 raw key/score rings,E4 pools/F32 scales,complete NextN/indexer state and bounded nx journal/lag count",
+            "scope": "generated primary GGUF/F32 single complete NextN component; fresh K4 closepool->actual I32 sparse MLA/MoE; same-epoch entire-indexer skip; default UE8M0 logical cache/query and BF16 raw rings; no original checkpoint/full target/KDA/mHC/vendorpage ABI/natural acceptance",
+            "prefixes": "0 retained;1 corrected-pending atomic publish and independent base recomputation;2 independent branch; rejected tail/cancel/stale publish/old readonly ownership",
+            "uncovered": "this case is single-epoch; cross-epoch catchup is covered by the separate AcceptedJournal cases; target KDA/conv/mHC,original projection weights,vendorpage ABI and vocabulary/natural acceptance remain separate"
+          }
+        },
+        {
+          "attributes": {
+            "name": "CudaAcceptedJournalCatchesUpAndReseedsNextIteration",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_mtp_state_consumer_test.cc",
+            "line": "1777",
+            "status": "run",
+            "result": "completed",
+            "time": "7.775",
+            "timestamp": "2026-10-23T01:44:08.042",
+            "classname": "GlmMtpStateConsumer"
+          },
+          "properties": {
+            "initialization_submissions": "2",
+            "logical_index_state_bytes": "71052",
+            "actual_submissions": "16",
+            "fresh_submissions": "8",
+            "skip_submissions": "3",
+            "catchup_submissions": "2",
+            "policy_submissions": "1",
+            "backend": "ordinary CUDA Graph",
+            "journal": "actual nx[2,4096] with I32 valid lag count; selected StateVersion determines accepted input; no eager indexer during skip",
+            "journey": "base2054 tail2; accept1 rejects B and fresh2055 closes pool; accept2 catches actual accepted B2055 then fresh2056 appends tail1; independent actual nx direct-input reference",
+            "scope": "generated selected GGUF/F32 NextN cross-epoch accepted-feature catchup and fresh seed; default UE8M0 logical cache/query and BF16 raw rings; no target KDA/conv/mHC,original projection weights,vendorpage ABI or natural acceptance claim"
+          }
+        },
+        {
+          "attributes": {
+            "name": "CudaTargetPrefixAndNextNPublishAndReseedTogether",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_mtp_state_consumer_test.cc",
+            "line": "1783",
+            "status": "run",
+            "result": "completed",
+            "time": "9.36",
+            "timestamp": "2026-10-23T01:44:15.817",
+            "classname": "GlmMtpStateConsumer"
+          },
+          "properties": {
+            "initialization_submissions": "2",
+            "logical_index_state_bytes": "71052",
+            "actual_submissions": "28",
+            "target_submissions": "12",
+            "state_budget_bytes": "536870912",
+            "peak_state_backing_bytes": "127920364",
+            "target_output_generations": "10",
+            "backend": "ordinary CUDA Graph",
+            "component_schema": "17 NextN/indexer resources plus epoch metadata and4 target resources: raw QKV history,KDA matrix,finalnorm tap,I32 cursor; one StateStore/Head/Draft",
+            "journey": "actual target warmup->A/B verify pending->accept1/2->accepted journal catchup->epoch8 real target-tap reseed; independent base recomputation/direct nx catchup; rejected tail,stale CAS,cancellation,old readonly leases",
+            "scope": "generated primary GGUF/F32 layer44 KDA/conv/two mHC branches/sparse FFN/finalnorm target tap composed with complete NextN; upper-layer4H remains generated; default UE8M0 logical cache/query codec; no vendorpage ABI,full45-layer original model,natural acceptance or throughput claim"
+          }
+        },
+        {
+          "attributes": {
+            "name": "CudaDraftExtendLastAcceptedSeedSkipsDecodeStepZero",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_mtp_state_consumer_test.cc",
+            "line": "1789",
+            "status": "run",
+            "result": "completed",
+            "time": "14.874",
+            "timestamp": "2026-10-23T01:44:25.178",
+            "classname": "GlmMtpStateConsumer"
+          },
+          "properties": {
+            "initialization_submissions": "2",
+            "logical_index_state_bytes": "71052",
+            "actual_submissions": "26",
+            "draft_extend_submissions": "11",
+            "skip_submissions": "8",
+            "catchup_submissions": "4",
+            "policy_submissions": "1",
+            "backend": "ordinary CUDA Graph",
+            "journey": "draft-extend A2054/B2055->last accepted row1/2 actual hidden+full2051IDs->step0 immediately skips entire indexer->accepted nx catchup->actual epoch8 extend->step0 skip; independent accepted-only base execution/direct nx reference",
+            "scope": "generated selected Flash primary GGUF/F32 sequential M1 draft-extend seed protocol; generated per-position target-hidden boundary; default UE8M0 logical cache/query and BF16 raw rings; no target43 MLA/indexer composition,batched vendor extend kernel,full target,original weights,vendorpage ABI,natural acceptance or throughput claim"
+          }
+        },
+        {
+          "attributes": {
+            "name": "CpuTarget43MlaFlowsThroughTarget44AndNextN",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_mtp_state_consumer_test.cc",
+            "line": "1798",
+            "status": "run",
+            "result": "completed",
+            "time": "17.649",
+            "timestamp": "2026-10-23T01:44:40.052",
+            "classname": "GlmMtpStateConsumer"
+          },
+          "properties": {
+            "initialization_submissions": "3",
+            "logical_index_state_bytes": "71052",
+            "actual_submissions": "41",
+            "target_submissions": "12",
+            "target43_submissions": "12",
+            "state_budget_bytes": "536870912",
+            "peak_state_backing_bytes": "208205556",
+            "target_output_generations": "10",
+            "backend": "ordinary CPU Graph",
+            "component_schema": "34 resources plus epoch metadata:17 NextN,13 independent target43 MLA/indexer,4 target44 KDA/conv/tap/cursor; one StateStore/Head/Draft",
+            "journey": "actual target43 UE8M0 MLA/indexer->43 mHC/FFN->actual43mhc lease->44 KDA/conv/mHC/finalnorm->NextN; accept1/2 crosses pool close; NextN accepted journal catches up; epoch8 direct target-tap reseed; independent base replay; rejected/stale/cancel/old leases",
+            "scope": "generated primary GGUF/F32 layer42 four-stream input; actual13-state target43 attention at distinct immutable projection roles,34-resource joint43/44/NextN continuation; BF16 rings and default UE8M0 logical codec; no original checkpoint/full45-layer target,vendorpage ABI,natural acceptance or throughput claim"
+          }
+        },
+        {
+          "attributes": {
+            "name": "CpuWholeNextNPrefixPublishesAndContinuesWithoutRejectedTail",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_mtp_state_consumer_test.cc",
+            "line": "1803",
+            "status": "run",
+            "result": "completed",
+            "time": "4.032",
+            "timestamp": "2026-10-23T01:44:57.702",
+            "classname": "GlmMtpStateConsumer"
+          },
+          "properties": {
+            "initialization_submissions": "1",
+            "logical_index_state_bytes": "71052",
+            "actual_submissions": "8",
+            "backend": "ordinary CPU Graph",
+            "component_schema": "17 native resources plus explicit iteration policy; BF16 raw key/score rings,E4 pools/F32 scales,complete NextN/indexer state and bounded nx journal/lag count",
+            "scope": "generated primary GGUF/F32 single complete NextN component; fresh K4 closepool->actual I32 sparse MLA/MoE; same-epoch entire-indexer skip; default UE8M0 logical cache/query and BF16 raw rings; no original checkpoint/full target/KDA/mHC/vendorpage ABI/natural acceptance",
+            "prefixes": "0 retained;1 corrected-pending atomic publish and independent base recomputation;2 independent branch; rejected tail/cancel/stale publish/old readonly ownership",
+            "uncovered": "this case is single-epoch; cross-epoch catchup is covered by the separate AcceptedJournal cases; target KDA/conv/mHC,original projection weights,vendorpage ABI and vocabulary/natural acceptance remain separate"
+          }
+        },
+        {
+          "attributes": {
+            "name": "CpuAcceptedJournalCatchesUpAndReseedsNextIteration",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_mtp_state_consumer_test.cc",
+            "line": "1808",
+            "status": "run",
+            "result": "completed",
+            "time": "8.026",
+            "timestamp": "2026-10-23T01:45:01.734",
+            "classname": "GlmMtpStateConsumer"
+          },
+          "properties": {
+            "initialization_submissions": "2",
+            "logical_index_state_bytes": "71052",
+            "actual_submissions": "16",
+            "fresh_submissions": "8",
+            "skip_submissions": "3",
+            "catchup_submissions": "2",
+            "policy_submissions": "1",
+            "backend": "ordinary CPU Graph",
+            "journal": "actual nx[2,4096] with I32 valid lag count; selected StateVersion determines accepted input; no eager indexer during skip",
+            "journey": "base2054 tail2; accept1 rejects B and fresh2055 closes pool; accept2 catches actual accepted B2055 then fresh2056 appends tail1; independent actual nx direct-input reference",
+            "scope": "generated selected GGUF/F32 NextN cross-epoch accepted-feature catchup and fresh seed; default UE8M0 logical cache/query and BF16 raw rings; no target KDA/conv/mHC,original projection weights,vendorpage ABI or natural acceptance claim"
+          }
+        },
+        {
+          "attributes": {
+            "name": "CpuTargetPrefixAndNextNPublishAndReseedTogether",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_mtp_state_consumer_test.cc",
+            "line": "1813",
+            "status": "run",
+            "result": "completed",
+            "time": "9.836",
+            "timestamp": "2026-10-23T01:45:09.761",
+            "classname": "GlmMtpStateConsumer"
+          },
+          "properties": {
+            "initialization_submissions": "2",
+            "logical_index_state_bytes": "71052",
+            "actual_submissions": "28",
+            "target_submissions": "12",
+            "state_budget_bytes": "536870912",
+            "peak_state_backing_bytes": "127920364",
+            "target_output_generations": "10",
+            "backend": "ordinary CPU Graph",
+            "component_schema": "17 NextN/indexer resources plus epoch metadata and4 target resources: raw QKV history,KDA matrix,finalnorm tap,I32 cursor; one StateStore/Head/Draft",
+            "journey": "actual target warmup->A/B verify pending->accept1/2->accepted journal catchup->epoch8 real target-tap reseed; independent base recomputation/direct nx catchup; rejected tail,stale CAS,cancellation,old readonly leases",
+            "scope": "generated primary GGUF/F32 layer44 KDA/conv/two mHC branches/sparse FFN/finalnorm target tap composed with complete NextN; upper-layer4H remains generated; default UE8M0 logical cache/query codec; no vendorpage ABI,full45-layer original model,natural acceptance or throughput claim"
+          }
+        },
+        {
+          "attributes": {
+            "name": "CpuDraftExtendLastAcceptedSeedSkipsDecodeStepZero",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_mtp_state_consumer_test.cc",
+            "line": "1818",
+            "status": "run",
+            "result": "completed",
+            "time": "15.182",
+            "timestamp": "2026-10-23T01:45:19.597",
+            "classname": "GlmMtpStateConsumer"
+          },
+          "properties": {
+            "initialization_submissions": "2",
+            "logical_index_state_bytes": "71052",
+            "actual_submissions": "26",
+            "draft_extend_submissions": "11",
+            "skip_submissions": "8",
+            "catchup_submissions": "4",
+            "policy_submissions": "1",
+            "backend": "ordinary CPU Graph",
+            "journey": "draft-extend A2054/B2055->last accepted row1/2 actual hidden+full2051IDs->step0 immediately skips entire indexer->accepted nx catchup->actual epoch8 extend->step0 skip; independent accepted-only base execution/direct nx reference",
+            "scope": "generated selected Flash primary GGUF/F32 sequential M1 draft-extend seed protocol; generated per-position target-hidden boundary; default UE8M0 logical cache/query and BF16 raw rings; no target43 MLA/indexer composition,batched vendor extend kernel,full target,original weights,vendorpage ABI,natural acceptance or throughput claim"
+          }
+        },
+        {
+          "attributes": {
+            "name": "CudaEncodedLeaseSelectsAndPublishesMlaPrefix",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_official_index_cache_test.cc",
+            "line": "343",
+            "status": "run",
+            "result": "completed",
+            "time": "1.019",
+            "timestamp": "2026-10-23T01:45:34.779",
+            "classname": "GlmOfficialIndexCache"
+          },
+          "properties": {
+            "actual_submissions": "12",
+            "persistent_index_bytes": "67848",
+            "f32_index_comparison_bytes": "263168",
+            "peak_state_backing_bytes": "2721536",
+            "reader": "fixed SGLang06992 default ue8m0; K4 pooledF32->BF16->normalizedHadamard128->BF16; explicit Float8BlockQuantize PowerOfTwo/floor1e-4; F32 reciprocal448 raw-scale then ceil-power-of-two, divide normalization; real E4 RNE codes plus F32 scales; matching rounded query and TileLang scorer logical math",
+            "journey": "actual encoded lease->scorer->TopK512 I32->2048-token MLA; one StateHead code/scale/cursor/IDs/MLA; acceptA,rejectB,continueC,independent base recomputation,stale CAS,cancel,old readonly versions",
+            "scope": "generated raw K4/query/headweights/latent boundary; complete closed-pool chunks; logical E4+F32scale storage,not vendor pagefooter ABI; partial raw tails covered separately; no original/full model,natural token acceptance,or throughput claim"
+          }
+        },
+        {
+          "attributes": {
+            "name": "CpuEncodedLeaseSelectsAndPublishesMlaPrefix",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_official_index_cache_test.cc",
+            "line": "352",
+            "status": "run",
+            "result": "completed",
+            "time": "1.154",
+            "timestamp": "2026-10-23T01:45:35.799",
+            "classname": "GlmOfficialIndexCache"
+          },
+          "properties": {
+            "actual_submissions": "12",
+            "persistent_index_bytes": "67848",
+            "f32_index_comparison_bytes": "263168",
+            "peak_state_backing_bytes": "2721536",
+            "reader": "fixed SGLang06992 default ue8m0; K4 pooledF32->BF16->normalizedHadamard128->BF16; explicit Float8BlockQuantize PowerOfTwo/floor1e-4; F32 reciprocal448 raw-scale then ceil-power-of-two, divide normalization; real E4 RNE codes plus F32 scales; matching rounded query and TileLang scorer logical math",
+            "journey": "actual encoded lease->scorer->TopK512 I32->2048-token MLA; one StateHead code/scale/cursor/IDs/MLA; acceptA,rejectB,continueC,independent base recomputation,stale CAS,cancel,old readonly versions",
+            "scope": "generated raw K4/query/headweights/latent boundary; complete closed-pool chunks; logical E4+F32scale storage,not vendor pagefooter ABI; partial raw tails covered separately; no original/full model,natural token acceptance,or throughput claim"
+          }
+        },
+        {
+          "attributes": {
+            "name": "CpuThreeOriginalStagesPublishPhysicalAcceptedHistoryAndContinue",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_main_history_test.cc",
+            "line": "522",
+            "status": "run",
+            "result": "completed",
+            "time": "0.173",
+            "timestamp": "2026-10-23T01:45:37.179",
+            "classname": "DSparkMainHistory"
+          },
+          "properties": {
+            "actual_submissions": "16",
+            "original_role_count": "8",
+            "original_role_bytes": "60184576",
+            "physical_ring_row_bytes": "584",
+            "numerical_checks": "original decoded Q8/F32 independent dot/norm with established profile gate; actual postnorm -> BF16/last64 RoPE F32 gate; actual joined F32 -> exact BF16 bits; actual BF16 entry -> exact584B row and selected ring; exact old-ring preservation; actual carrier -> independent attention oracle",
+            "scope": "original Flash0731 Q8 fc/norm + three distinct stage wkv/norm; generated HC -> original main projection lease -> F32 norm -> BF16 -> last64 RoPE -> BF16 -> group64 QDQ physical128x584 three-rings -> actual gather-decode/attention; artificial prefix0/1/2 and fresh own-head/old-branch continuation; not original target, full official BF16 arithmetic or full DSpark MTP"
+          }
+        },
+        {
+          "attributes": {
+            "name": "CudaThreeOriginalStagesPublishPhysicalAcceptedHistoryAndContinue",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_main_history_test.cc",
+            "line": "528",
+            "status": "run",
+            "result": "completed",
+            "time": "0.171",
+            "timestamp": "2026-10-23T01:45:37.353",
+            "classname": "DSparkMainHistory"
+          },
+          "properties": {
+            "actual_submissions": "16",
+            "original_role_count": "8",
+            "original_role_bytes": "60184576",
+            "physical_ring_row_bytes": "584",
+            "numerical_checks": "original decoded Q8/F32 independent dot/norm with established profile gate; actual postnorm -> BF16/last64 RoPE F32 gate; actual joined F32 -> exact BF16 bits; actual BF16 entry -> exact584B row and selected ring; exact old-ring preservation; actual carrier -> independent attention oracle",
+            "scope": "original Flash0731 Q8 fc/norm + three distinct stage wkv/norm; generated HC -> original main projection lease -> F32 norm -> BF16 -> last64 RoPE -> BF16 -> group64 QDQ physical128x584 three-rings -> actual gather-decode/attention; artificial prefix0/1/2 and fresh own-head/old-branch continuation; not original target, full official BF16 arithmetic or full DSpark MTP"
+          }
+        },
+        {
+          "attributes": {
+            "name": "CpuActualCaptureLeasesReachSameStageMainKv",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_target_binding_test.cc",
+            "line": "352",
+            "status": "run",
+            "result": "completed",
+            "time": "0.262",
+            "timestamp": "2026-10-23T01:45:37.526",
+            "classname": "DSparkTargetBinding"
+          },
+          "properties": {
+            "actual_submissions": "9",
+            "scope": "formal Flash0731 selected Q8 role types, generated parameters; actual raw HC producer leases -> mean/concat/main projection/norm -> same stage0 wkv/norm 512-wide pre-RoPE; no trained payload/physical ring/full-model claim",
+            "backend": "ordinary CPU Graph"
+          }
+        },
+        {
+          "attributes": {
+            "name": "CudaActualCaptureLeasesReachSameStageMainKv",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_target_binding_test.cc",
+            "line": "364",
+            "status": "run",
+            "result": "completed",
+            "time": "0.263",
+            "timestamp": "2026-10-23T01:45:37.788",
+            "classname": "DSparkTargetBinding"
+          },
+          "properties": {
+            "actual_submissions": "9",
+            "scope": "formal Flash0731 selected Q8 role types, generated parameters; actual raw HC producer leases -> mean/concat/main projection/norm -> same stage0 wkv/norm 512-wide pre-RoPE; no trained payload/physical ring/full-model claim",
+            "backend": "ordinary CUDA Graph"
+          }
+        },
+        {
+          "attributes": {
+            "name": "CpuOriginalCaptureProjectionFeedsSameStageMainKv",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_target_binding_test.cc",
+            "line": "357",
+            "status": "run",
+            "result": "completed",
+            "time": "0.316",
+            "timestamp": "2026-10-23T01:45:38.259",
+            "classname": "DSparkOriginalTargetBinding"
+          },
+          "properties": {
+            "actual_submissions": "9",
+            "scope": "formal Flash0731 four original Q8/F32 roles; generated raw HC producer leases -> original main projection/norm -> original stage0 wkv/norm 512-wide pre-RoPE; no original target captures/physical ring/full-model claim",
+            "original_role_count": "4",
+            "original_role_bytes": "55724032",
+            "fc_sha256": "4516df35cd05ecd36b93e73ac2ae74c524ec6edda13b634a7895b7eabe0c8c04",
+            "main_norm_sha256": "0f99d64b4fa46264c9bd2efdffcb66d3ec0cdd0ca61109f929ed958bcb843f0b",
+            "wkv_sha256": "a52e49dc69f4eff1c8287b3887123dd7a583bdaee7d42efe55310f035bafd35f",
+            "kv_norm_sha256": "edbbd17729cfb3c0852c8b6cdb8c1044eb9f501d8864c7ef4444c568e56fc966",
+            "backend": "ordinary CPU Graph"
+          }
+        },
+        {
+          "attributes": {
+            "name": "CudaOriginalCaptureProjectionFeedsSameStageMainKv",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_target_binding_test.cc",
+            "line": "370",
+            "status": "run",
+            "result": "completed",
+            "time": "0.321",
+            "timestamp": "2026-10-23T01:45:38.575",
+            "classname": "DSparkOriginalTargetBinding"
+          },
+          "properties": {
+            "actual_submissions": "9",
+            "scope": "formal Flash0731 four original Q8/F32 roles; generated raw HC producer leases -> original main projection/norm -> original stage0 wkv/norm 512-wide pre-RoPE; no original target captures/physical ring/full-model claim",
+            "original_role_count": "4",
+            "original_role_bytes": "55724032",
+            "fc_sha256": "4516df35cd05ecd36b93e73ac2ae74c524ec6edda13b634a7895b7eabe0c8c04",
+            "main_norm_sha256": "0f99d64b4fa46264c9bd2efdffcb66d3ec0cdd0ca61109f929ed958bcb843f0b",
+            "wkv_sha256": "a52e49dc69f4eff1c8287b3887123dd7a583bdaee7d42efe55310f035bafd35f",
+            "kv_norm_sha256": "edbbd17729cfb3c0852c8b6cdb8c1044eb9f501d8864c7ef4444c568e56fc966",
+            "backend": "ordinary CUDA Graph"
+          }
+        },
+        {
+          "attributes": {
+            "name": "ContractRejectsInvalidDescriptionsAndParameters",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\float8_quantize_output_test.cc",
+            "line": "322",
+            "status": "run",
+            "result": "completed",
+            "time": "0.",
+            "timestamp": "2026-10-23T01:45:38.899",
+            "classname": "Float8QuantizeOutput"
+          },
+          "properties": {}
+        },
+        {
+          "attributes": {
+            "name": "CpuCodesScalesAndLifetimes",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\float8_quantize_output_test.cc",
+            "line": "345",
+            "status": "run",
+            "result": "completed",
+            "time": "0.007",
+            "timestamp": "2026-10-23T01:45:38.899",
+            "classname": "Float8QuantizeOutput"
+          },
+          "properties": {
+            "successful_submissions": "6",
+            "failed_submissions": "2",
+            "scope": "two dense M2/K256 Graphs:F32/BF16;four policies,eight real outputs;two generations,NaN Completion,fresh recovery,retained readonly results;not throughput/fullmodel"
+          }
+        },
+        {
+          "attributes": {
+            "name": "CudaCodesScalesAndLifetimes",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\float8_quantize_output_test.cc",
+            "line": "358",
+            "status": "run",
+            "result": "completed",
+            "time": "0.011",
+            "timestamp": "2026-10-23T01:45:38.906",
+            "classname": "Float8QuantizeOutput"
+          },
+          "properties": {
+            "successful_submissions": "6",
+            "failed_submissions": "2",
+            "scope": "two dense M2/K256 Graphs:F32/BF16;four policies,eight real outputs;two generations,NaN Completion,fresh recovery,retained readonly results;not throughput/fullmodel"
+          }
+        }
+      ]
+    }
+  ],
+  "earlier_runs": [
+    {
+      "process": {
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\glm-encoded-state-20261023\\tests-link1\\encoded-state-checks.exe",
+          "--gtest_filter=GlmMtpStateConsumer.*:GlmOfficialIndexCache.*",
+          "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\glm-encoded-state-20261023\\checks1\\results.xml"
+        ],
+        "cwd": "C:\\public\\project-hyle\\hyle",
+        "started": 1792688936.6208456,
+        "timeout_seconds": 600,
+        "throughput_evidence": false,
+        "memory_evidence": false,
+        "trace": false,
+        "profiler": false,
+        "pid": 37552,
+        "exit": 0,
+        "timed_out": false,
+        "finished": 1792689013.8305976,
+        "process_wall_seconds": 77.2097589999994
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-encoded-state-20261023\\tests-link1\\encoded-state-checks.exe",
+        "bytes": 141179904,
+        "sha256": "04ec99594e0dcae5a8d82fa690e55d92137068dacb5b6acfa98ea0ac9e04d28d"
+      },
+      "throughput_evidence": false,
+      "physical_memory_evidence": false,
+      "whole_original_model": false,
+      "tests": 10,
+      "failures": 0,
+      "errors": 0,
+      "disabled": 0,
+      "skips": 0,
+      "cases": [
+        {
+          "attributes": {
+            "name": "CudaWholeNextNPrefixPublishesAndContinuesWithoutRejectedTail",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_mtp_state_consumer_test.cc",
+            "line": "1397",
+            "status": "run",
+            "result": "completed",
+            "time": "4.15",
+            "timestamp": "2026-10-23T01:08:56.921",
+            "classname": "GlmMtpStateConsumer"
+          },
+          "properties": {
+            "initialization_submissions": "1",
+            "logical_index_state_bytes": "71052",
+            "actual_submissions": "8",
+            "backend": "ordinary CUDA Graph",
+            "component_schema": "17 native resources plus explicit iteration policy; BF16 raw key/score rings,E4 pools/F32 scales,complete NextN/indexer state and bounded nx journal/lag count",
+            "scope": "generated primary GGUF/F32 single complete NextN component; fresh K4 closepool->actual I32 sparse MLA/MoE; same-epoch entire-indexer skip; default UE8M0 logical cache/query and BF16 raw rings; no original checkpoint/full target/KDA/mHC/vendorpage ABI/natural acceptance",
+            "prefixes": "0 retained;1 corrected-pending atomic publish and independent base recomputation;2 independent branch; rejected tail/cancel/stale publish/old readonly ownership",
+            "uncovered": "this case is single-epoch; cross-epoch catchup is covered by the separate AcceptedJournal cases; target KDA/conv/mHC,original projection weights,vendorpage ABI and vocabulary/natural acceptance remain separate"
+          }
+        },
+        {
+          "attributes": {
+            "name": "CudaAcceptedJournalCatchesUpAndReseedsNextIteration",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_mtp_state_consumer_test.cc",
+            "line": "1403",
+            "status": "run",
+            "result": "completed",
+            "time": "7.943",
+            "timestamp": "2026-10-23T01:09:01.072",
+            "classname": "GlmMtpStateConsumer"
+          },
+          "properties": {
+            "initialization_submissions": "2",
+            "logical_index_state_bytes": "71052",
+            "actual_submissions": "16",
+            "fresh_submissions": "8",
+            "skip_submissions": "3",
+            "catchup_submissions": "2",
+            "policy_submissions": "1",
+            "backend": "ordinary CUDA Graph",
+            "journal": "actual nx[2,4096] with I32 valid lag count; selected StateVersion determines accepted input; no eager indexer during skip",
+            "journey": "base2054 tail2; accept1 rejects B and fresh2055 closes pool; accept2 catches actual accepted B2055 then fresh2056 appends tail1; independent actual nx direct-input reference",
+            "scope": "generated selected GGUF/F32 NextN cross-epoch accepted-feature catchup and fresh seed; default UE8M0 logical cache/query and BF16 raw rings; no target KDA/conv/mHC,original projection weights,vendorpage ABI or natural acceptance claim"
+          }
+        },
+        {
+          "attributes": {
+            "name": "CudaTargetPrefixAndNextNPublishAndReseedTogether",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_mtp_state_consumer_test.cc",
+            "line": "1409",
+            "status": "run",
+            "result": "completed",
+            "time": "9.544",
+            "timestamp": "2026-10-23T01:09:09.016",
+            "classname": "GlmMtpStateConsumer"
+          },
+          "properties": {
+            "initialization_submissions": "2",
+            "logical_index_state_bytes": "71052",
+            "actual_submissions": "28",
+            "target_submissions": "12",
+            "state_budget_bytes": "536870912",
+            "peak_state_backing_bytes": "127920364",
+            "target_output_generations": "10",
+            "backend": "ordinary CUDA Graph",
+            "component_schema": "17 NextN/indexer resources plus epoch metadata and4 target resources: raw QKV history,KDA matrix,finalnorm tap,I32 cursor; one StateStore/Head/Draft",
+            "journey": "actual target warmup->A/B verify pending->accept1/2->accepted journal catchup->epoch8 real target-tap reseed; independent base recomputation/direct nx catchup; rejected tail,stale CAS,cancellation,old readonly leases",
+            "scope": "generated primary GGUF/F32 layer44 KDA/conv/two mHC branches/sparse FFN/finalnorm target tap composed with complete NextN; upper-layer4H remains generated; default UE8M0 logical cache/query codec; no vendorpage ABI,full45-layer original model,natural acceptance or throughput claim"
+          }
+        },
+        {
+          "attributes": {
+            "name": "CudaDraftExtendLastAcceptedSeedSkipsDecodeStepZero",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_mtp_state_consumer_test.cc",
+            "line": "1415",
+            "status": "run",
+            "result": "completed",
+            "time": "15.064",
+            "timestamp": "2026-10-23T01:09:18.561",
+            "classname": "GlmMtpStateConsumer"
+          },
+          "properties": {
+            "initialization_submissions": "2",
+            "logical_index_state_bytes": "71052",
+            "actual_submissions": "26",
+            "draft_extend_submissions": "11",
+            "skip_submissions": "8",
+            "catchup_submissions": "4",
+            "policy_submissions": "1",
+            "backend": "ordinary CUDA Graph",
+            "journey": "draft-extend A2054/B2055->last accepted row1/2 actual hidden+full2051IDs->step0 immediately skips entire indexer->accepted nx catchup->actual epoch8 extend->step0 skip; independent accepted-only base execution/direct nx reference",
+            "scope": "generated selected Flash primary GGUF/F32 sequential M1 draft-extend seed protocol; generated per-position target-hidden boundary; default UE8M0 logical cache/query and BF16 raw rings; no target43 MLA/indexer composition,batched vendor extend kernel,full target,original weights,vendorpage ABI,natural acceptance or throughput claim"
+          }
+        },
+        {
+          "attributes": {
+            "name": "CpuWholeNextNPrefixPublishesAndContinuesWithoutRejectedTail",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_mtp_state_consumer_test.cc",
+            "line": "1424",
+            "status": "run",
+            "result": "completed",
+            "time": "4.133",
+            "timestamp": "2026-10-23T01:09:33.626",
+            "classname": "GlmMtpStateConsumer"
+          },
+          "properties": {
+            "initialization_submissions": "1",
+            "logical_index_state_bytes": "71052",
+            "actual_submissions": "8",
+            "backend": "ordinary CPU Graph",
+            "component_schema": "17 native resources plus explicit iteration policy; BF16 raw key/score rings,E4 pools/F32 scales,complete NextN/indexer state and bounded nx journal/lag count",
+            "scope": "generated primary GGUF/F32 single complete NextN component; fresh K4 closepool->actual I32 sparse MLA/MoE; same-epoch entire-indexer skip; default UE8M0 logical cache/query and BF16 raw rings; no original checkpoint/full target/KDA/mHC/vendorpage ABI/natural acceptance",
+            "prefixes": "0 retained;1 corrected-pending atomic publish and independent base recomputation;2 independent branch; rejected tail/cancel/stale publish/old readonly ownership",
+            "uncovered": "this case is single-epoch; cross-epoch catchup is covered by the separate AcceptedJournal cases; target KDA/conv/mHC,original projection weights,vendorpage ABI and vocabulary/natural acceptance remain separate"
+          }
+        },
+        {
+          "attributes": {
+            "name": "CpuAcceptedJournalCatchesUpAndReseedsNextIteration",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_mtp_state_consumer_test.cc",
+            "line": "1429",
+            "status": "run",
+            "result": "completed",
+            "time": "8.105",
+            "timestamp": "2026-10-23T01:09:37.760",
+            "classname": "GlmMtpStateConsumer"
+          },
+          "properties": {
+            "initialization_submissions": "2",
+            "logical_index_state_bytes": "71052",
+            "actual_submissions": "16",
+            "fresh_submissions": "8",
+            "skip_submissions": "3",
+            "catchup_submissions": "2",
+            "policy_submissions": "1",
+            "backend": "ordinary CPU Graph",
+            "journal": "actual nx[2,4096] with I32 valid lag count; selected StateVersion determines accepted input; no eager indexer during skip",
+            "journey": "base2054 tail2; accept1 rejects B and fresh2055 closes pool; accept2 catches actual accepted B2055 then fresh2056 appends tail1; independent actual nx direct-input reference",
+            "scope": "generated selected GGUF/F32 NextN cross-epoch accepted-feature catchup and fresh seed; default UE8M0 logical cache/query and BF16 raw rings; no target KDA/conv/mHC,original projection weights,vendorpage ABI or natural acceptance claim"
+          }
+        },
+        {
+          "attributes": {
+            "name": "CpuTargetPrefixAndNextNPublishAndReseedTogether",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_mtp_state_consumer_test.cc",
+            "line": "1434",
+            "status": "run",
+            "result": "completed",
+            "time": "9.839",
+            "timestamp": "2026-10-23T01:09:45.865",
+            "classname": "GlmMtpStateConsumer"
+          },
+          "properties": {
+            "initialization_submissions": "2",
+            "logical_index_state_bytes": "71052",
+            "actual_submissions": "28",
+            "target_submissions": "12",
+            "state_budget_bytes": "536870912",
+            "peak_state_backing_bytes": "127920364",
+            "target_output_generations": "10",
+            "backend": "ordinary CPU Graph",
+            "component_schema": "17 NextN/indexer resources plus epoch metadata and4 target resources: raw QKV history,KDA matrix,finalnorm tap,I32 cursor; one StateStore/Head/Draft",
+            "journey": "actual target warmup->A/B verify pending->accept1/2->accepted journal catchup->epoch8 real target-tap reseed; independent base recomputation/direct nx catchup; rejected tail,stale CAS,cancellation,old readonly leases",
+            "scope": "generated primary GGUF/F32 layer44 KDA/conv/two mHC branches/sparse FFN/finalnorm target tap composed with complete NextN; upper-layer4H remains generated; default UE8M0 logical cache/query codec; no vendorpage ABI,full45-layer original model,natural acceptance or throughput claim"
+          }
+        },
+        {
+          "attributes": {
+            "name": "CpuDraftExtendLastAcceptedSeedSkipsDecodeStepZero",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_mtp_state_consumer_test.cc",
+            "line": "1439",
+            "status": "run",
+            "result": "completed",
+            "time": "15.678",
+            "timestamp": "2026-10-23T01:09:55.705",
+            "classname": "GlmMtpStateConsumer"
+          },
+          "properties": {
+            "initialization_submissions": "2",
+            "logical_index_state_bytes": "71052",
+            "actual_submissions": "26",
+            "draft_extend_submissions": "11",
+            "skip_submissions": "8",
+            "catchup_submissions": "4",
+            "policy_submissions": "1",
+            "backend": "ordinary CPU Graph",
+            "journey": "draft-extend A2054/B2055->last accepted row1/2 actual hidden+full2051IDs->step0 immediately skips entire indexer->accepted nx catchup->actual epoch8 extend->step0 skip; independent accepted-only base execution/direct nx reference",
+            "scope": "generated selected Flash primary GGUF/F32 sequential M1 draft-extend seed protocol; generated per-position target-hidden boundary; default UE8M0 logical cache/query and BF16 raw rings; no target43 MLA/indexer composition,batched vendor extend kernel,full target,original weights,vendorpage ABI,natural acceptance or throughput claim"
+          }
+        },
+        {
+          "attributes": {
+            "name": "CudaEncodedLeaseSelectsAndPublishesMlaPrefix",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_official_index_cache_test.cc",
+            "line": "343",
+            "status": "run",
+            "result": "completed",
+            "time": "1.048",
+            "timestamp": "2026-10-23T01:10:11.384",
+            "classname": "GlmOfficialIndexCache"
+          },
+          "properties": {
+            "actual_submissions": "12",
+            "persistent_index_bytes": "67848",
+            "f32_index_comparison_bytes": "263168",
+            "peak_state_backing_bytes": "2721536",
+            "reader": "fixed SGLang06992 default ue8m0; K4 pooledF32->BF16->normalizedHadamard128->BF16; explicit Float8BlockQuantize PowerOfTwo/floor1e-4; F32 reciprocal448 raw-scale then ceil-power-of-two, divide normalization; real E4 RNE codes plus F32 scales; matching rounded query and TileLang scorer logical math",
+            "journey": "actual encoded lease->scorer->TopK512 I32->2048-token MLA; one StateHead code/scale/cursor/IDs/MLA; acceptA,rejectB,continueC,independent base recomputation,stale CAS,cancel,old readonly versions",
+            "scope": "generated raw K4/query/headweights/latent boundary; complete closed-pool chunks; logical E4+F32scale storage,not vendor pagefooter ABI; partial raw tails covered separately; no original/full model,natural token acceptance,or throughput claim"
+          }
+        },
+        {
+          "attributes": {
+            "name": "CpuEncodedLeaseSelectsAndPublishesMlaPrefix",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_official_index_cache_test.cc",
+            "line": "352",
+            "status": "run",
+            "result": "completed",
+            "time": "1.072",
+            "timestamp": "2026-10-23T01:10:12.432",
+            "classname": "GlmOfficialIndexCache"
+          },
+          "properties": {
+            "actual_submissions": "12",
+            "persistent_index_bytes": "67848",
+            "f32_index_comparison_bytes": "263168",
+            "peak_state_backing_bytes": "2721536",
+            "reader": "fixed SGLang06992 default ue8m0; K4 pooledF32->BF16->normalizedHadamard128->BF16; explicit Float8BlockQuantize PowerOfTwo/floor1e-4; F32 reciprocal448 raw-scale then ceil-power-of-two, divide normalization; real E4 RNE codes plus F32 scales; matching rounded query and TileLang scorer logical math",
+            "journey": "actual encoded lease->scorer->TopK512 I32->2048-token MLA; one StateHead code/scale/cursor/IDs/MLA; acceptA,rejectB,continueC,independent base recomputation,stale CAS,cancel,old readonly versions",
+            "scope": "generated raw K4/query/headweights/latent boundary; complete closed-pool chunks; logical E4+F32scale storage,not vendor pagefooter ABI; partial raw tails covered separately; no original/full model,natural token acceptance,or throughput claim"
+          }
+        }
+      ]
+    },
+    {
+      "process": {
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\glm-encoded-state-20261023\\tests-link2\\encoded-state-checks.exe",
+          "--gtest_filter=*Target43MlaFlowsThroughTarget44AndNextN",
+          "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\glm-encoded-state-20261023\\checks2\\results.xml"
+        ],
+        "cwd": "C:\\public\\project-hyle\\hyle",
+        "started": 1792689922.111458,
+        "timeout_seconds": 600,
+        "throughput_evidence": false,
+        "memory_evidence": false,
+        "trace": false,
+        "profiler": false,
+        "pid": 42664,
+        "exit": 0,
+        "timed_out": false,
+        "finished": 1792689957.9148633,
+        "process_wall_seconds": 35.803210899997794
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-encoded-state-20261023\\tests-link2\\encoded-state-checks.exe",
+        "bytes": 141274112,
+        "sha256": "12a3d8a849223e3d5d3d50289fefd68eb745b43d7b698a0c1cdc76912668966d"
+      },
+      "throughput_evidence": false,
+      "physical_memory_evidence": false,
+      "whole_original_model": false,
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "disabled": 0,
+      "skips": 0,
+      "cases": [
+        {
+          "attributes": {
+            "name": "CudaTarget43MlaFlowsThroughTarget44AndNextN",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_mtp_state_consumer_test.cc",
+            "line": "1765",
+            "status": "run",
+            "result": "completed",
+            "time": "17.042",
+            "timestamp": "2026-10-23T01:25:22.482",
+            "classname": "GlmMtpStateConsumer"
+          },
+          "properties": {
+            "initialization_submissions": "3",
+            "logical_index_state_bytes": "71052",
+            "actual_submissions": "41",
+            "target_submissions": "12",
+            "target43_submissions": "12",
+            "state_budget_bytes": "536870912",
+            "peak_state_backing_bytes": "208205556",
+            "target_output_generations": "10",
+            "backend": "ordinary CUDA Graph",
+            "component_schema": "34 resources plus epoch metadata:17 NextN,13 independent target43 MLA/indexer,4 target44 KDA/conv/tap/cursor; one StateStore/Head/Draft",
+            "journey": "actual target43 UE8M0 MLA/indexer->43 mHC/FFN->actual43mhc lease->44 KDA/conv/mHC/finalnorm->NextN; accept1/2 crosses pool close; NextN accepted journal catches up; epoch8 direct target-tap reseed; independent base replay; rejected/stale/cancel/old leases",
+            "scope": "generated primary GGUF/F32 layer42 four-stream input; actual13-state target43 attention at distinct immutable projection roles,34-resource joint43/44/NextN continuation; BF16 rings and default UE8M0 logical codec; no original checkpoint/full45-layer target,vendorpage ABI,natural acceptance or throughput claim"
+          }
+        },
+        {
+          "attributes": {
+            "name": "CpuTarget43MlaFlowsThroughTarget44AndNextN",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_mtp_state_consumer_test.cc",
+            "line": "1798",
+            "status": "run",
+            "result": "completed",
+            "time": "18.066",
+            "timestamp": "2026-10-23T01:25:39.524",
+            "classname": "GlmMtpStateConsumer"
+          },
+          "properties": {
+            "initialization_submissions": "3",
+            "logical_index_state_bytes": "71052",
+            "actual_submissions": "41",
+            "target_submissions": "12",
+            "target43_submissions": "12",
+            "state_budget_bytes": "536870912",
+            "peak_state_backing_bytes": "208205556",
+            "target_output_generations": "10",
+            "backend": "ordinary CPU Graph",
+            "component_schema": "34 resources plus epoch metadata:17 NextN,13 independent target43 MLA/indexer,4 target44 KDA/conv/tap/cursor; one StateStore/Head/Draft",
+            "journey": "actual target43 UE8M0 MLA/indexer->43 mHC/FFN->actual43mhc lease->44 KDA/conv/mHC/finalnorm->NextN; accept1/2 crosses pool close; NextN accepted journal catches up; epoch8 direct target-tap reseed; independent base replay; rejected/stale/cancel/old leases",
+            "scope": "generated primary GGUF/F32 layer42 four-stream input; actual13-state target43 attention at distinct immutable projection roles,34-resource joint43/44/NextN continuation; BF16 rings and default UE8M0 logical codec; no original checkpoint/full45-layer target,vendorpage ABI,natural acceptance or throughput claim"
+          }
+        }
+      ]
+    },
+    {
+      "process": {
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\glm-encoded-state-20261023\\tests-link3\\encoded-state-checks.exe",
+          "--gtest_filter=DSparkOriginalStateConsumer.*",
+          "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\glm-encoded-state-20261023\\checks3\\results.xml"
+        ],
+        "cwd": "C:\\public\\project-hyle\\hyle",
+        "started": 1792690182.6790957,
+        "timeout_seconds": 600,
+        "throughput_evidence": false,
+        "memory_evidence": false,
+        "trace": false,
+        "profiler": false,
+        "pid": 13724,
+        "exit": 0,
+        "timed_out": false,
+        "finished": 1792690183.0965407,
+        "process_wall_seconds": 0.41765070000110427
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-encoded-state-20261023\\tests-link3\\encoded-state-checks.exe",
+        "bytes": 141523456,
+        "sha256": "64b24e4f4639838908f6f9fd410457f14dbbcf04b04073abbdc877283feeeb2c"
+      },
+      "throughput_evidence": false,
+      "physical_memory_evidence": false,
+      "whole_original_model": false,
+      "tests": 0,
+      "failures": 0,
+      "errors": 0,
+      "disabled": 0,
+      "skips": 0,
+      "cases": []
+    },
+    {
+      "process": {
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\glm-encoded-state-20261023\\tests-link3\\encoded-state-checks.exe",
+          "--gtest_filter=DSparkOriginalState.*",
+          "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\glm-encoded-state-20261023\\checks4\\results.xml"
+        ],
+        "cwd": "C:\\public\\project-hyle\\hyle",
+        "started": 1792690203.386493,
+        "timeout_seconds": 600,
+        "throughput_evidence": false,
+        "memory_evidence": false,
+        "trace": false,
+        "profiler": false,
+        "pid": 36832,
+        "exit": 1,
+        "timed_out": false,
+        "finished": 1792690217.2922018,
+        "process_wall_seconds": 13.904936599999928
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-encoded-state-20261023\\tests-link3\\encoded-state-checks.exe",
+        "bytes": 141523456,
+        "sha256": "64b24e4f4639838908f6f9fd410457f14dbbcf04b04073abbdc877283feeeb2c"
+      },
+      "throughput_evidence": false,
+      "physical_memory_evidence": false,
+      "whole_original_model": false,
+      "tests": 2,
+      "failures": 2,
+      "errors": 0,
+      "disabled": 0,
+      "skips": 0,
+      "cases": [
+        {
+          "attributes": {
+            "name": "CpuEncodedMainHistoryFeedsFullDraftAndAtomicAcceptedState",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_original_state_consumer_test.cc",
+            "line": "510",
+            "status": "run",
+            "result": "completed",
+            "time": "5.624",
+            "timestamp": "2026-10-23T01:30:08.391",
+            "classname": "DSparkOriginalState"
+          },
+          "properties": {}
+        },
+        {
+          "attributes": {
+            "name": "CudaEncodedMainHistoryFeedsFullDraftAndAtomicAcceptedState",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_original_state_consumer_test.cc",
+            "line": "516",
+            "status": "run",
+            "result": "completed",
+            "time": "3.019",
+            "timestamp": "2026-10-23T01:30:14.015",
+            "classname": "DSparkOriginalState"
+          },
+          "properties": {}
+        }
+      ]
+    }
+  ],
+  "implementation": {
+    "glm": "Default UE8M0 logical E4+F32 scale pool now in complete NextN state; BF16 raw key and compression-score rings; no F32 pool shadow. Shared real attention builder drives separate target43 MLA/index history, actual43 four-stream output lease feeds44, accepted44 tap feeds NextN. 34 resources plus epoch under one existing StateHead.",
+    "dspark": "Three-stage full draft uses actual encoded128-row main history and real per-stage Q8 wkv/norm; five temporary proposal rows encoded584B then decoded through original reader for attention. Actual original Markov/confidence,11 trained roles192576000B. Prefix0/1/2, reject,wrap,branches,CAS,cancel,collect/old leases checked. Shared cold prepare extracted; caller-owned views explicitly Copy.",
+    "cuda": "Public existing Cast I32 to F32 now supported through native provider, explicit __int2float_rn; old storage operations/enum values/Program layout and floating/Bool conversions preserved; no new buffer. Existing fixture checks13 exact IEEE boundaries, odd strides,replay,input unchanged."
+  },
+  "independent_math": "Layered GLM BF16/Hadamard/codec and separate state reference. DSpark all3 actual M5 projections use independent Q8 decode and compensated FP64 dot/norm gates; BF16/RoPE/codec boundaries and actual decoded committed/proposal keys checked independently; no assertion of cross-backend bitwise full-network equivalence.",
+  "repaired_failures": [
+    "DSpark test ConstantBinding/auto/vexing-parse compile errors",
+    "Caller output write lease erroneously bound to view result; explicit Copy and ownership gate",
+    "CUDA public I32 to F32 Cast absent, exposed by actual target-capture boundary",
+    "/WX C4456 shadowed cold local; names only changed"
+  ],
+  "remaining": [
+    "GLM original roles/shared LM and applicable Pro geometry/confirmed quant supply",
+    "DSpark trained target captures/shared LM/remaining original stage suppliers and Pro applicability",
+    "Q27/Q24 complete state/original role and confirmed quant combinations",
+    "Necessary final ordinary/MTP complete performance comparison before image path"
+  ],
+  "limitations": [
+    "GLM target/NextN component weights remain selected generated math, not original complete45-layer model",
+    "DSpark shared LM/embedding/other stage weights and target/verifier boundary remain generated; not trained target/natural acceptance",
+    "Logical codec storage checks do not certify vendor page ABI or peak GPU memory",
+    "No new throughput,load,physical CPU/GPU peak measurements; retain AV latest complete table",
+    "CMake source wiring reviewed but no fresh full configure/build; focused cached TU/link closure used"
+  ],
+  "final_image": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-encoded-state-20261023\\tests-link4\\encoded-state-checks.exe",
+    "bytes": 141969920,
+    "sha256": "a274d81528f8920d1ea1de2896d8973cb39c1411aa707bbdb65f24bd385fb493"
+  },
+  "source_identities": [
+    {
+      "path": "src\\compute_provider_cuda\\tensor_provider.cc",
+      "bytes": 15051,
+      "sha256": "3d9ca2e84d60050639309db8eb0656a7ad1c96948f9c8dfab2bf72af8d012820"
+    },
+    {
+      "path": "src\\compute_provider_cuda\\tensor_kernel.h",
+      "bytes": 1570,
+      "sha256": "41a277646217525811d695815e4fa435533864138455ac9d2330a3ac5af48d3e"
+    },
+    {
+      "path": "src\\compute_provider_cuda\\tensor_kernel.cu",
+      "bytes": 16609,
+      "sha256": "aa9af0acbbb0f01bd804fa32500d47bd9fd454cdd4241f6eb226884bce1ffd21"
+    },
+    {
+      "path": "tests\\compute_provider_cuda\\tensor_test.cc",
+      "bytes": 60538,
+      "sha256": "df38d165cd94c3df3a0d01b29f462fa88d66832d88fe337afe25e0a6b73c3106"
+    },
+    {
+      "path": "tests\\compute_models\\glm_mtp_state_consumer_test.cc",
+      "bytes": 127139,
+      "sha256": "d83cff790685001fd5858736bc5c7dee278b422c7fa0bc301dd8d39246b71688"
+    },
+    {
+      "path": "tests\\compute_models\\glm_official_index_cache.h",
+      "bytes": 17011,
+      "sha256": "a454c67796fc456cea071439589826c3d6afc7298209219c7ab8b66ee4111bd3"
+    },
+    {
+      "path": "tests\\compute_models\\cpu_c4_model_branches.h",
+      "bytes": 33898,
+      "sha256": "39f8015dc3ce369edbeea9322a1da9bed820d47810f361b344fa4c3ac760f71d"
+    },
+    {
+      "path": "tests\\compute_models\\dspark_complete_graph_fixture.h",
+      "bytes": 10078,
+      "sha256": "059841a47bc05b056e6698a98d4491f0a241e3f148275915b4d699f57ec5fcdf"
+    },
+    {
+      "path": "tests\\compute_models\\dspark_prepare_constants.h",
+      "bytes": 5202,
+      "sha256": "5341915058f68dbc3fa76f6e0742168ad65e3271569e67e7408661c2731166b4"
+    },
+    {
+      "path": "tests\\compute_models\\dspark_original_state_consumer.h",
+      "bytes": 8602,
+      "sha256": "500df2878daeeb3565249163442eba7c945ea992cd9f82051fa7d3f08e2bf803"
+    },
+    {
+      "path": "tests\\compute_models\\dspark_original_state_consumer_test.cc",
+      "bytes": 35765,
+      "sha256": "229b731aa630c8246cd4a7003f4267fe3ace608313f6c374d0eadbc046c0fd83"
+    },
+    {
+      "path": "tests\\graph_route_cuda\\dspark_cuda_consumer_fixture.h",
+      "bytes": 7759,
+      "sha256": "8120b7d4db2a008a9054b2512b94f48142fd9bb971a887f1e72b37ea0dbf1f84"
+    },
+    {
+      "path": "tests\\graph_route_cpu\\CMakeLists.txt",
+      "bytes": 10771,
+      "sha256": "1e0e1c804d724138e6bdfb4d4349ba4d43805c7284785610853356273db5214f"
+    },
+    {
+      "path": "tests\\graph_route_cuda\\CMakeLists.txt",
+      "bytes": 12104,
+      "sha256": "70e85919aa94c8b888dc11b89e32af7047731d061e2e48e048c762306db783fd"
+    }
+  ],
+  "archive": {
+    "path": "docs\\evidence\\correctness\\mtp-encoded-state-2026-10-23.zip",
+    "bytes": 1264779,
+    "sha256": "260b64e3de2b86fa723051594831c722c37d7d427669a3dcd66b8c95c3bb93ba"
+  },
+  "archive_items": 288,
+  "no_SDK_or_third_party_rebuild": true,
+  "final_source_reviews": [
+    {
+      "path": ".scratch\\glm-encoded-state-20261023\\review\\dspark-revision4-state-review.json",
+      "bytes": 8158,
+      "sha256": "8342d42cb7c31d53bab8c4f73ff7ed9b5fb3d0dc364b1d013af3f1f41fd0944d"
+    },
+    {
+      "path": ".scratch\\glm-encoded-state-20261023\\review\\integer-cast-independent.json",
+      "bytes": 8698,
+      "sha256": "7aee64d6e12d407af060d05c008fa5a240984d8b2f71dd9d847db4eac4fa0520"
+    },
+    {
+      "path": ".scratch\\glm-encoded-state-20261023\\review\\integer_cast_independent_review.py",
+      "bytes": 7039,
+      "sha256": "bcdcc4c2c66acfb9ffd0203395e868f8c69ec0e0ade423a01f2caf8e20e8a3d5"
+    }
+  ],
+  "cleanup": {
+    "Removed": [
+      {
+        "Relative": ".scratch/glm-encoded-state-20261023/tests-link1/encoded-state-checks.exe",
+        "Bytes": 141179904
+      },
+      {
+        "Relative": ".scratch/glm-encoded-state-20261023/tests-link1/encoded-state-checks.map",
+        "Bytes": 59995499
+      },
+      {
+        "Relative": ".scratch/glm-encoded-state-20261023/tests-link2/encoded-state-checks.exe",
+        "Bytes": 141274112
+      },
+      {
+        "Relative": ".scratch/glm-encoded-state-20261023/tests-link2/encoded-state-checks.map",
+        "Bytes": 60230132
+      },
+      {
+        "Relative": ".scratch/glm-encoded-state-20261023/tests-link3/encoded-state-checks.exe",
+        "Bytes": 141523456
+      },
+      {
+        "Relative": ".scratch/glm-encoded-state-20261023/tests-link3/encoded-state-checks.map",
+        "Bytes": 60845641
+      },
+      {
+        "Relative": ".scratch/fp8-quant-output-20261023/tests-link1/fp8-quant-output-checks.exe",
+        "Bytes": 141158400
+      },
+      {
+        "Relative": ".scratch/fp8-quant-output-20261023/tests-link1/fp8-quant-output-checks.map",
+        "Bytes": 59958104
+      }
+    ],
+    "RemovedPathBytes": 806165248.0,
+    "ProtectedImagesRetained": [
+      true,
+      true,
+      true
+    ],
+    "Retained": "All objects, source, commands, data and runtime DLLs; current BF CPU/CUDA, previous Vulkan and AV performance images"
+  },
+  "current_work": {
+    "path": "docs\\developer\\current-work.md",
+    "bytes": 23028,
+    "sha256": "00429001f88efc115a81307d593664e6fcf983bc396104de078fb68a8791c7f5"
+  }
+}

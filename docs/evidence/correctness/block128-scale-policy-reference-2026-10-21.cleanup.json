@@ -1,0 +1,196 @@
+{
+  "completed": true,
+  "windows_removed": 10,
+  "windows_bytes": 547240958.0,
+  "windows_kept_objects": 14,
+  "mac": {
+    "removed": 2,
+    "bytes": 19982963,
+    "kept_objects": 3
+  },
+  "evidence_sha256": "87b2c68a021f2d1164bc48a87a2875e1027ca89a9e1e0a7fad8fae083d6aa5d5",
+  "archive_sha256": "e22783ffd4b2ea44b43faeaf7b70508fd423f9cc3c7b55218b7be51d0738ec11",
+  "exact_plan": {
+    "allowed_windows": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\quark-block128-scale-2026-10-21",
+    "remove_windows": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\quark-block128-scale-2026-10-21\\cpu\\checks\\link1\\cpu.exe",
+        "bytes": 21476352,
+        "sha256": "7f24fd474e67a941dc6c3b50b78df15b78208b2f9eea8261682fe50116a517a6"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\quark-block128-scale-2026-10-21\\cpu\\checks\\link1\\cpu.map",
+        "bytes": 27365413,
+        "sha256": "bd9efc31342ad4a3df997409302342d260804be148f96ebb92c0130d5203322e"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\quark-block128-scale-2026-10-21\\cuda\\checks\\link1\\cuda.exe",
+        "bytes": 139265024,
+        "sha256": "a2491d764c20ea5b0cee62c401be5d2111834392534789f10b576d31097225e5"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\quark-block128-scale-2026-10-21\\cuda\\checks\\link1\\cuda.map",
+        "bytes": 58808746,
+        "sha256": "ff8d85f140aad5692483c5b0560ff653307012c4ef07baa042cd46abef25571e"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\quark-block128-scale-2026-10-21\\cuda\\checks\\link1\\hyle_ggml_cpu_avx2_ffa4e8b8_e74fc9bb8964d04f.dll",
+        "bytes": 1358336,
+        "sha256": "09828878dd44d62eb6ae844827e20382ee2b457d0dbd76594b6577bea3ad5434"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\quark-block128-scale-2026-10-21\\cuda-pair\\checks\\link1\\cuda-pair.exe",
+        "bytes": 139277824,
+        "sha256": "b870af1c5e9de40d5c62c46fbda1ce03b265ecbe7fbd69e8a7ab8000d4719871"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\quark-block128-scale-2026-10-21\\cuda-pair\\checks\\link1\\cuda-pair.map",
+        "bytes": 57774530,
+        "sha256": "8e8f21da008b6ab5c627aa439164ee9ac37c09de6344d6d6d932b090f9888b61"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\quark-block128-scale-2026-10-21\\cuda-pair\\checks\\link1\\hyle_ggml_cpu_avx2_ffa4e8b8_e74fc9bb8964d04f.dll",
+        "bytes": 1358336,
+        "sha256": "09828878dd44d62eb6ae844827e20382ee2b457d0dbd76594b6577bea3ad5434"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\quark-block128-scale-2026-10-21\\vulkan\\checks\\link1\\vulkan.exe",
+        "bytes": 68124160,
+        "sha256": "7c94ae27567f3ebb21cecce21eaf438dc13d35734be3b3fa8a8984ecf45993cb"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\quark-block128-scale-2026-10-21\\vulkan\\checks\\link1\\vulkan.map",
+        "bytes": 32432237,
+        "sha256": "73bfb599a4255b4a3046ea30e40a5c2e097b4b2a92fed6f5720555b156bef516"
+      }
+    ],
+    "keep_windows": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\quark-block128-scale-2026-10-21\\cuda\\windows\\checks\\attempt1\\cuda-provider\\cuda-provider.obj",
+        "bytes": 705503,
+        "sha256": "c77ffd5b0e4b1ea6fa802d68dcdb12d2cc2040cf2c9a3cf5fc087d96e53092e6"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\quark-block128-scale-2026-10-21\\cuda\\windows\\checks\\attempt1\\fp8-provider\\fp8-provider.obj",
+        "bytes": 1387920,
+        "sha256": "5d74367b85e386884f9d2c49f55be7af2dec4423702734243dd9ff417ffcc0d1"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\quark-block128-scale-2026-10-21\\cuda\\windows\\checks\\attempt1\\fp8-shared-prologue-region\\fp8-shared-prologue-region.obj",
+        "bytes": 989063,
+        "sha256": "849203110dddee103c06abc62875bacb483f6c4c0a2a4621ecd8ddd8d50752cf"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\quark-block128-scale-2026-10-21\\cuda\\windows\\checks\\attempt1\\grouped-fp8-provider\\grouped-fp8-provider.obj",
+        "bytes": 1384012,
+        "sha256": "e8d1ccf37c8d9bc49839435903dab7a7b95058cfb3f1ce3ee058a9cc2e673c57"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\quark-block128-scale-2026-10-21\\vulkan\\windows\\checks\\attempt1\\embedded\\embedded.obj",
+        "bytes": 842010,
+        "sha256": "9c3d9fa005b510d740ddeac5d0ad5d48d407ee20b3e1ae57e44829f27543e60a"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\quark-block128-scale-2026-10-21\\vulkan\\windows\\checks\\attempt1\\iree\\iree.obj",
+        "bytes": 1004732,
+        "sha256": "8cf4123371bbd891f0f53aa10fa881e53c6953520666774f3da392970e7fb2c5"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\quark-block128-scale-2026-10-21\\vulkan\\windows\\checks\\attempt1\\native-program\\native-program.obj",
+        "bytes": 408862,
+        "sha256": "2aa8ded6c0f8f0ed08a0d38d097ed5c34ad455e0e71197e5ecfafe82b35612c6"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\quark-block128-scale-2026-10-21\\vulkan\\windows\\checks\\attempt1\\official\\official.obj",
+        "bytes": 248591,
+        "sha256": "9a0b692072f4e1f3c454f3e13d8ce2b18333872cdf3575bce93bb2e27f505a19"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\quark-block128-scale-2026-10-21\\vulkan\\windows\\checks\\attempt1\\program\\program.obj",
+        "bytes": 2456147,
+        "sha256": "b002c39c102536c8161fb1a7f499f1c6200c23269cc036a28e19592334f83e12"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\quark-block128-scale-2026-10-21\\windows\\checks\\attempt1\\cpu-scale-policy-test\\cpu-scale-policy-test.obj",
+        "bytes": 3141650,
+        "sha256": "5be754e12daf2e71d75fa428d7dd9af5cf550e669d1e5f861581f8c3990efc31"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\quark-block128-scale-2026-10-21\\windows\\checks\\attempt1\\cuda-scale-policy-test\\cuda-scale-policy-test.obj",
+        "bytes": 3367175,
+        "sha256": "aa911efc65c6c1a3ff208827f1dcffb4970b310c196aca0abf7b07dd5e81bcdb"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\quark-block128-scale-2026-10-21\\windows\\checks\\attempt1\\torch-cpu\\torch-cpu.obj",
+        "bytes": 1891140,
+        "sha256": "aca4599addc4dbfcbf777d492fdb401994387083d77e29a3f02617fa515abc1c"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\quark-block128-scale-2026-10-21\\windows\\checks\\attempt3\\vulkan-scale-policy-test\\vulkan-scale-policy-test.obj",
+        "bytes": 3309324,
+        "sha256": "212d890f37465684ad32eec3ece62a6577ddb2635af0eedb0f1a42b9e706434f"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\quark-block128-scale-2026-10-21\\windows\\checks\\pair1\\cuda-shared-prologue-test\\cuda-shared-prologue-test.obj",
+        "bytes": 2521184,
+        "sha256": "652784bdf6d639c4d842f0f0d9ce00c76aae3fa4011251ab3f80fc5490022dd7"
+      }
+    ],
+    "keep_runtime_cache": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_ggml_cpu_avx2_ffa4e8b8_e74fc9bb8964d04f.dll",
+        "bytes": 1358336,
+        "sha256": "09828878dd44d62eb6ae844827e20382ee2b457d0dbd76594b6577bea3ad5434"
+      }
+    ],
+    "evidence": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\block128-scale-policy-reference-2026-10-21.json",
+      "bytes": 31180,
+      "sha256": "87b2c68a021f2d1164bc48a87a2875e1027ca89a9e1e0a7fad8fae083d6aa5d5"
+    },
+    "archive": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\block128-scale-policy-reference-2026-10-21.zip",
+      "bytes": 4951296,
+      "sha256": "e22783ffd4b2ea44b43faeaf7b70508fd423f9cc3c7b55218b7be51d0738ec11"
+    },
+    "mac": {
+      "allowed_mac": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/quark-block128-scale-2026-10-21/apple",
+      "remove_mac": [
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/quark-block128-scale-2026-10-21/apple/fp8-scale-policy",
+          "bytes": 15455600,
+          "sha256": "d521740bbdc5095db0d07355276c1b4e68028d9e7e5852b5c95beeb92da5995a",
+          "symlink": false
+        },
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/quark-block128-scale-2026-10-21/apple/fp8-scale-policy.map",
+          "bytes": 4527363,
+          "sha256": "e34b0312a6882873f4f5e7eab5f71b8b99ff2c02953879da6fdffe8ae0d44430",
+          "symlink": false
+        }
+      ],
+      "keep_mac": [
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/quark-block128-scale-2026-10-21/apple/objects/src--compute_provider_native--torch_cpu_program.cc.o",
+          "bytes": 265176,
+          "sha256": "ec4906d93ba80e7fab232eded79098513382f567d1bebf0db8931fe0f2279d5a",
+          "symlink": false
+        },
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/quark-block128-scale-2026-10-21/apple/objects/src--compute_route_apple--apple_mature_float.cc.o",
+          "bytes": 153112,
+          "sha256": "2a015326feef2a9ce2d6e4616162861167ba27b532c88216e16107f9d8238046",
+          "symlink": false
+        },
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/quark-block128-scale-2026-10-21/apple/objects/tests--graph_route_apple--fp8_scale_policy_test.cc.o",
+          "bytes": 289128,
+          "sha256": "da8cf1e8b6e81eae85902e8feb17ac7ae3cc3549fbeb73a01c15a017e1212cdf",
+          "symlink": false
+        }
+      ]
+    },
+    "note": "Exact regular test images/maps/staged private-module hardlinks only. Bytes are logical sizes, not physical storage savings."
+  },
+  "source_script": "# Exact FP8 block128 scale-policy test-artifact cleanup. No recursive directory removal.\n$ErrorActionPreference = 'Stop'\n$plan = Get-Content -LiteralPath 'C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\quark-block128-scale-2026-10-21\\root\\cleanup-plan.json' -Raw | ConvertFrom-Json\n$separator = [IO.Path]::DirectorySeparatorChar\n$allowed = [IO.Path]::GetFullPath($plan.allowed_windows).TrimEnd($separator) + $separator\nfunction Assert-Identity($row) {\n  $file = Get-Item -LiteralPath $row.path -ErrorAction Stop\n  if ($file.PSIsContainer -or ($file.Attributes -band [IO.FileAttributes]::ReparsePoint)) { throw \"Not a regular file: $($row.path)\" }\n  if ($file.Length -ne $row.bytes -or (Get-FileHash -LiteralPath $row.path -Algorithm SHA256).Hash.ToLowerInvariant() -ne $row.sha256) { throw \"Identity changed: $($row.path)\" }\n}\nAssert-Identity $plan.evidence\nAssert-Identity $plan.archive\nforeach ($row in $plan.remove_windows) {\n  $full = [IO.Path]::GetFullPath($row.path)\n  if (-not $full.StartsWith($allowed, [StringComparison]::OrdinalIgnoreCase) -or [IO.Path]::GetExtension($full) -notin '.exe','.map','.dll') { throw \"Outside exact artifact scope: $full\" }\n  Assert-Identity $row\n}\nforeach ($row in $plan.keep_windows) { Assert-Identity $row }\nforeach ($row in $plan.keep_runtime_cache) { Assert-Identity $row }\n$active = @(Get-CimInstance Win32_Process | Where-Object { $_.ExecutablePath -and $_.ExecutablePath.StartsWith($allowed, [StringComparison]::OrdinalIgnoreCase) })\nif ($active.Count) { throw 'A test executable in this exact workspace is still running' }\nforeach ($row in $plan.remove_windows) { Remove-Item -LiteralPath $row.path -Force }\nforeach ($row in $plan.keep_windows) { Assert-Identity $row }\nforeach ($row in $plan.keep_runtime_cache) { Assert-Identity $row }\n$macProgram = @'\nimport pathlib,hashlib,json,subprocess\nplan=json.loads('{\"allowed_mac\": \"/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/quark-block128-scale-2026-10-21/apple\", \"remove_mac\": [{\"path\": \"/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/quark-block128-scale-2026-10-21/apple/fp8-scale-policy\", \"bytes\": 15455600, \"sha256\": \"d521740bbdc5095db0d07355276c1b4e68028d9e7e5852b5c95beeb92da5995a\", \"symlink\": false}, {\"path\": \"/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/quark-block128-scale-2026-10-21/apple/fp8-scale-policy.map\", \"bytes\": 4527363, \"sha256\": \"e34b0312a6882873f4f5e7eab5f71b8b99ff2c02953879da6fdffe8ae0d44430\", \"symlink\": false}], \"keep_mac\": [{\"path\": \"/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/quark-block128-scale-2026-10-21/apple/objects/src--compute_provider_native--torch_cpu_program.cc.o\", \"bytes\": 265176, \"sha256\": \"ec4906d93ba80e7fab232eded79098513382f567d1bebf0db8931fe0f2279d5a\", \"symlink\": false}, {\"path\": \"/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/quark-block128-scale-2026-10-21/apple/objects/src--compute_route_apple--apple_mature_float.cc.o\", \"bytes\": 153112, \"sha256\": \"2a015326feef2a9ce2d6e4616162861167ba27b532c88216e16107f9d8238046\", \"symlink\": false}, {\"path\": \"/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/quark-block128-scale-2026-10-21/apple/objects/tests--graph_route_apple--fp8_scale_policy_test.cc.o\", \"bytes\": 289128, \"sha256\": \"da8cf1e8b6e81eae85902e8feb17ac7ae3cc3549fbeb73a01c15a017e1212cdf\", \"symlink\": false}]}')\nbase=pathlib.Path(plan['allowed_mac']); assert base.is_dir() and not base.is_symlink()\ndef verify(row):\n p=pathlib.Path(row['path']); assert p.is_absolute() and not p.is_symlink() and p.resolve().is_relative_to(base.resolve())\n assert p.is_file() and p.stat().st_size==row['bytes'] and hashlib.sha256(p.read_bytes()).hexdigest()==row['sha256'],str(p)\n return p\npaths=[verify(x) for x in plan['remove_mac']]\nfor row in plan['keep_mac']:verify(row)\nactive=subprocess.check_output(['ps','-axo','command='],text=True)\nassert not any(str(p) in command for p in paths for command in active.splitlines() if not command.startswith('python3 -')), 'test executable is running'\nfor p in paths:p.unlink()\nfor row in plan['keep_mac']:verify(row)\nprint(json.dumps(dict(removed=len(paths),bytes=sum(x['bytes'] for x in plan['remove_mac']),kept_objects=len(plan['keep_mac']))))\n'@\n$macResult = $macProgram | & ssh kiro@172.22.10.198 python3 -\nif ($LASTEXITCODE -ne 0) { throw 'Mac exact-file cleanup failed; do not report both platforms completed' }\n$result = [ordered]@{\n  completed = $true\n  windows_removed = @($plan.remove_windows).Count\n  windows_bytes = ($plan.remove_windows | Measure-Object -Property bytes -Sum).Sum\n  windows_kept_objects = @($plan.keep_windows).Count\n  mac = ($macResult | ConvertFrom-Json)\n  evidence_sha256 = $plan.evidence.sha256\n  archive_sha256 = $plan.archive.sha256\n  exact_plan = $plan\n  source_script = [IO.File]::ReadAllText($PSCommandPath)\n}\n$result | ConvertTo-Json -Depth 18 | Set-Content -LiteralPath 'C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\block128-scale-policy-reference-2026-10-21.cleanup.json' -Encoding utf8\n[pscustomobject]$result | Select-Object completed,windows_removed,windows_bytes,windows_kept_objects,mac | ConvertTo-Json -Depth 5\n"
+}

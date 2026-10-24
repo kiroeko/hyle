@@ -335,7 +335,7 @@ Status execute(PrimitivePlan &plan, PrimitiveInvocation &invocation,
   return status;
 }
 
-detail::EnqueueResult submit(void *plan, void *invocation, Queue &,
+detail::EnqueueResult submit(void *plan, void *invocation, detail::QueueSequence &,
                              std::span<const ConstTensorView> inputs,
                              std::span<const TensorView> outputs) noexcept {
   return detail::EnqueueResult::accepted_command(execute(
@@ -515,7 +515,7 @@ prepare_normalization(const NormRequest &request, ParallelExecutorRef executor,
   void *storage =
       allocator.allocate(sizeof(PrimitivePlan), alignof(PrimitivePlan));
   if (storage == nullptr)
-    return ProviderPrepareOutcome::resource_declined(
+    return ProviderPrepareOutcome::error(
         Status::ResourceExhausted("oneDNN primitive plan allocation failed"));
   auto *plan = ::new (storage) PrimitivePlan{.executor = executor};
   status = vendor_call([&] {
@@ -677,7 +677,7 @@ prepare_tensor(const TensorRequest &request, ParallelExecutorRef executor,
   void *storage =
       allocator.allocate(sizeof(PrimitivePlan), alignof(PrimitivePlan));
   if (storage == nullptr)
-    return ProviderPrepareOutcome::resource_declined(
+    return ProviderPrepareOutcome::error(
         Status::ResourceExhausted("oneDNN tensor plan allocation failed"));
   auto *plan = ::new (storage) PrimitivePlan{.executor = executor};
   status = vendor_call([&] {

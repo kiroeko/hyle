@@ -1,0 +1,65 @@
+{
+  "status": "vulkan-ready-row-region-projection-and-cold-metadata-wiring-implemented",
+  "tests": {
+    "passed": 6,
+    "total": 6,
+    "new_vulkan": 3,
+    "existing_vulkan": 1,
+    "existing_cpu_ready_pending": 2
+  },
+  "original_control": {
+    "total": 4,
+    "failed": 2,
+    "reason": "old core requires ordinary singleton at first typed preparation",
+    "original_expert_control_passed": true
+  },
+  "source_files": 24,
+  "fresh_cpp_translation_units": 15,
+  "native_sdk_shader_rebuild": false,
+  "selected_owners": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\row-cache-region-projection\\selected-map-owners.json",
+    "bytes": 15901,
+    "sha256": "e8d0074695f43728d0ecf30169e299f42ec74049b20a9a3be5a0ba908957610a"
+  },
+  "changes": [
+    "One selected-node access/configuration path for ordinary prepared operations and native regions; old configure_operation name removed.",
+    "Private v3 native capability preserves physical-port inspection and adds exact logical-node inspection/configuration; pending is a separate opt-in, default false.",
+    "Actual Vulkan lowerer/final dispatches prove checked indexed bank reads; sparse cold facts map original node to Graph boundary port, including constant-filter remapping.",
+    "Original slot copies only cold layout booleans; empty permission requires actual configured padded checked computation.",
+    "Owned row metadata uses original lane Source cold transfer, charged scratch, and publish only after successful retirement; unchanged prepared version skips upload."
+  ],
+  "verified_scope": [
+    "FP8 depth512 padded Map -> Decode -> existing F32 Sink, real Vulkan kDevice bank and metadata, original shader and numeric budget.",
+    "Actual fused/split artifacts, permuted pages, two slots, changed query grouping/page order in same slot, retained GraphOutput and exported lease.",
+    "Unused page writer during nonempty read; all page writers during true-empty history; exact decoded BF16/mask and original FP64 Sink oracle.",
+    "Extra bank Copy reader and private physical IDs publication rejected; no failed result publication.",
+    "CPU existing FP8/FP4 ready and actual pending-copy typed consumers remain correct."
+  ],
+  "limits": [
+    "No new whole-model, Apple/Linux runtime, throughput or total device-memory measurement.",
+    "Vulkan projected row pending remains unimplemented; ready capability cannot grant pending permissions.",
+    "Apple projected row Graph and Apple/Vulkan five-port paged scorer remain unfinished.",
+    "Native cold metadata transfer has staging/control allocation and a wait per changed layout; no allocation-free or zero-copy claim.",
+    "Original pending fixture needed its omitted explicit warm prepare_replay, and split fixture needed a distinct configured Source on the same actual Runtime. Product behavior was not relaxed."
+  ],
+  "goal": "active; full model accuracy/performance and inherited eight-model/22-profile review remain",
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\inference-foundation-review-2026-10-18\\row-cache-region-projection.zip",
+    "bytes": 397368,
+    "sha256": "2a666b2d435514c851e44484fd4b393b9e88c09dd7eb802b4d31e80ac6f3d4b0"
+  },
+  "cleanup": {
+    "archive_verified": true,
+    "files": 8,
+    "bytes": 197353563.0,
+    "retained_objects": 15,
+    "retained_native": 2,
+    "other_cache_retained": true,
+    "executed_script": {
+      "path": "test.ps1",
+      "bytes": 2437,
+      "sha256": "4244c050dd328f2597088f7ddfde17f49c014a55d5dc0a15a4dbd9bd1a923a8a",
+      "argument": "-ReclaimRowCacheRegionProjection"
+    }
+  }
+}

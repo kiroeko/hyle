@@ -137,7 +137,7 @@ Status valid_binding(CopyInvocationState *state, CopyResourceId id) noexcept {
   return Status::Ok();
 }
 Result<PhysicalCopyResource> bind_physical(CopyInvocationState &state, mem::ConstBufferView view,
-                                          bool writable, mem::HostMapping &mapping) noexcept {
+                                          bool, mem::HostMapping &mapping) noexcept {
   if (state.program->table) {
     struct Call { mem::ConstBufferView view; PhysicalCopyResource result; } call{view, {}};
     const auto status = BackendExtensionAccess::call(state.program->extension,
@@ -149,10 +149,10 @@ Result<PhysicalCopyResource> bind_physical(CopyInvocationState &state, mem::Cons
     if (!status.ok()) return std::unexpected(status);
     return call.result;
   }
-  // CPU writable storage needs a proven persistent address. Arbitrary opaque
-  // writable resource carriers are rejected, not identified by wrapper pointer.
-  if (writable && view.resource() != mem::system_resource())
-    return std::unexpected(Status::Unimplemented("CPU copy mutable carrier has no proven physical identity"));
+  // Read and write carriers both need canonical stable CPU coordinates. An
+  // arbitrary mapping may use a temporary shadow and cannot prove aliasing.
+  if (!view.resource().properties().has(mem::MemoryProperty::kHostAddressIdentity))
+    return std::unexpected(Status::Unimplemented("CPU copy carrier has no canonical host address identity"));
   HYLE_ASSIGN_OR_RETURN(mapping, view.map_host());
   const auto address = reinterpret_cast<std::uintptr_t>(mapping.bytes().data());
   if (view.size() > SIZE_MAX - address)
@@ -203,6 +203,12 @@ CopyBatchProgram::~CopyBatchProgram() { reset(); }
 void CopyBatchProgram::reset() noexcept { if (auto *state = std::exchange(state_, nullptr)) state->decref(); }
 
 Result<CopyBatchProgram> CopyBatchProgram::prepare(const Context &context,
+    std::span<const CopyResourceSpec> resources, CopyBatchOptions options) noexcept {
+  HYLE_ASSIGN_OR_RETURN(auto retained, detail::ContextRef::acquire(context));
+  return detail::CopyStreamAccess::prepare(retained, resources, std::move(options));
+}
+
+Result<CopyBatchProgram> detail::CopyStreamAccess::prepare(const ContextRef &context,
     std::span<const CopyResourceSpec> resources, CopyBatchOptions options) noexcept {
   auto *owner = detail::ContextAccess::state(context);
   if (!owner || !context.is_open()) return std::unexpected(Status::FailedPrecondition("copy context is closed or empty"));
@@ -328,6 +334,23 @@ Result<WriteLease> detail::CopyStreamAccess::take_mutable(
   auto &binding = state->bindings[id.value];
   if (!binding.write.valid())
     return std::unexpected(Status::FailedPrecondition("copy binding has no mutable lease"));
+  // A device wait orders the copy without settling the producer's host-side
+  // retention. Before submission, a bound producer must also retire before its
+  // writer can be withdrawn. After submission, observe only producers used by
+  // the accepted prefix. Neither path waits or consumes a pending binding.
+  if (binding.producer.valid()) {
+    bool observe_producer = state->submitted == 0;
+    if (state->submitted) {
+      const auto &last = *state->phases[state->submitted - 1];
+      const auto end = state->producer_order.begin() + last.producer_first + last.producer_count;
+      observe_producer = std::find(state->producer_order.begin(), end, id.value) != end;
+    }
+    if (observe_producer) {
+      HYLE_ASSIGN_OR_RETURN(auto observed, binding.producer.poll());
+      if (observed == CompletionPoll::kPending)
+        return std::unexpected(Status::Unavailable("copy source producer retirement is pending"));
+    }
+  }
   HYLE_ASSIGN_OR_RETURN(auto unique, binding.write.view());
   (void)unique;
   auto writer = std::move(binding.write);

@@ -8,6 +8,8 @@
 #include <hyle/compute/paged_arena.h>
 #if defined(HYLE_PENDING_GRAPH_RECEIVER)
 #include <hyle/graph/batch.h>
+#include <hyle/graph/cuda.h>
+#include <hyle/graph/cpu.h>
 #if !defined(HYLE_PENDING_GRAPH_CUDA)
 #include <hyle/compute/providers/ggml_cpu.h>
 #endif
@@ -55,12 +57,12 @@ Status exercise([[maybe_unused]] c::Context&context,[[maybe_unused]] c::Queue&qu
       .host_workspace=hyle::mem::system_resource(),
       .max_float_workspace_bytes=8u<<20,.max_int_workspace_bytes=64u<<10,.max_invocations=2,.scale=1.F/16.F,.causal=true};
 #if defined(HYLE_PENDING_GRAPH_CUDA)
-  HYLE_ASSIGN_OR_RETURN(auto wrapped,gb::provider(c::flashinfer::provider(),schema,options));
+  const auto native_provider = c::flashinfer::provider();
   HYLE_ASSIGN_OR_RETURN(auto gpu,c::cuda::device(0));
-  HYLE_ASSIGN_OR_RETURN(auto graph_context,c::Context::create(gpu,wrapped));
+  HYLE_ASSIGN_OR_RETURN(auto graph_context,c::Context::create(gpu,native_provider));
 #else
-  HYLE_ASSIGN_OR_RETURN(auto wrapped,gb::provider(c::ggml_cpu::provider({.native_threads=2}),schema,options));
-  HYLE_ASSIGN_OR_RETURN(auto graph_context,c::Context::create(c::cpu::device(),wrapped));
+  const auto native_provider = c::ggml_cpu::provider({.native_threads=2});
+  HYLE_ASSIGN_OR_RETURN(auto graph_context,c::Context::create(c::cpu::device(),native_provider));
 #endif
   HYLE_ASSIGN_OR_RETURN(auto graph_queue,graph_context.create_queue());
 #if defined(HYLE_PENDING_GRAPH_CUDA)
@@ -169,12 +171,28 @@ Status exercise([[maybe_unused]] c::Context&context,[[maybe_unused]] c::Queue&qu
   const auto output_resource=hyle::mem::system_resource();
 #else
   const std::array storage{g::StorageDomain{resource}};
-  const std::array targets{g::ExecutionTarget{&graph_context,g::StorageDomainId{0}}};
-  HYLE_ASSIGN_OR_RETURN(auto compiled,g::compile(graph,{.storage_domains=storage,.targets=targets},
+  HYLE_ASSIGN_OR_RETURN(auto target_source_0, hyle::graph::ExecutionSource::acquire(graph_context));
+  const std::array targets{g::ExecutionTarget{target_source_0,g::StorageDomainId{0}}};
+#if defined(HYLE_PENDING_GRAPH_CUDA)
+  HYLE_ASSIGN_OR_RETURN(auto compiled,g::cuda::compile(graph,{.storage_domains=storage,.targets=targets},
       {.operation_fallback=g::OperationFallbackPolicy::kReject}));
+#else
+  HYLE_ASSIGN_OR_RETURN(auto compiled,g::cpu::compile(graph,{.storage_domains=storage,.targets=targets},
+      {.operation_fallback=g::OperationFallbackPolicy::kReject}));
+#endif
   const auto output_resource=resource;
 #endif
-  std::array<gb::PendingInvocation,2> slots;
+  std::array<g::Invocation,2> slots;
+#if defined(HYLE_PENDING_GRAPH_CPU_CUDA)
+    const std::array lanes{g::QueueBinding{g::ExecutionLaneId{0}, &graph_queue},
+        g::QueueBinding{g::ExecutionLaneId{1}, &cpu_queue}};
+#else
+    const std::array lanes{g::QueueBinding{g::ExecutionLaneId{0}, &graph_queue}};
+#endif
+  const gb::PrepareOptions preparation{.host_workspace=host_resource,
+      .max_float_workspace_bytes=options.max_float_workspace_bytes,
+      .max_int_workspace_bytes=options.max_int_workspace_bytes,.max_source_completions=2};
+
   HYLE_ASSIGN_OR_RETURN(auto output_pool,c::LeasePool::create(output_resource,2*output_bytes+512,{.max_blocks=2}));
   std::array<c::WriteLease,2> output_writers;std::array<c::ReadLease,2> output_reads;
   for(auto&writer:output_writers){HYLE_ASSIGN_OR_RETURN(writer,output_pool.allocate(output_bytes,64));}
@@ -184,14 +202,7 @@ Status exercise([[maybe_unused]] c::Context&context,[[maybe_unused]] c::Queue&qu
   for(unsigned i=0;i<2;++i){
     HYLE_ASSIGN_OR_RETURN(copy_slots[i],n::CopyBatchInvocation::create(update_program,execution_queue));
 #if defined(HYLE_PENDING_GRAPH_RECEIVER)
-#if defined(HYLE_PENDING_GRAPH_CPU_CUDA)
-    const std::array lanes{gb::LaneBinding{g::ExecutionLaneId{0},&graph_context,&graph_queue,host_resource},
-        gb::LaneBinding{g::ExecutionLaneId{1},&cpu_context,&cpu_queue,hyle::mem::system_resource()}};
-#else
-    const std::array lanes{gb::LaneBinding{g::ExecutionLaneId{0},&graph_context,&graph_queue,host_resource}};
-#endif
-    HYLE_ASSIGN_OR_RETURN(auto native,gb::Invocation::create(compiled.executable,lanes));
-    HYLE_ASSIGN_OR_RETURN(slots[i],gb::PendingInvocation::create(std::move(native),2));
+    HYLE_ASSIGN_OR_RETURN(slots[i],compiled.executable.create_invocation({.resources=g::ResourceOptions{}}));
 #else
     HYLE_ASSIGN_OR_RETURN(auto program,c::BatchProgram::prepare(context,schema,
         {.resource=resource,.max_float_workspace_bytes=8u<<20,.max_int_workspace_bytes=4096,
@@ -221,7 +232,7 @@ Status exercise([[maybe_unused]] c::Context&context,[[maybe_unused]] c::Queue&qu
 #if defined(HYLE_PENDING_GRAPH_RECEIVER)
     const std::array node_layouts{gb::NodeLayout{node,layout}};
     for(unsigned i=0;i<slots.size();++i){
-      HYLE_RETURN_IF_ERROR(slots[i].prepare_batch(node_layouts));
+      HYLE_RETURN_IF_ERROR(gb::prepare(slots[i],lanes,node_layouts,preparation));
       if(output_reads[i].valid()){HYLE_ASSIGN_OR_RETURN(output_writers[i],output_reads[i].try_write());}
     }
 #else
@@ -269,28 +280,32 @@ Status exercise([[maybe_unused]] c::Context&context,[[maybe_unused]] c::Queue&qu
     HYLE_ASSIGN_OR_RETURN(auto vframe,values.pending_read(layout,value_reads,value_updates));
 #if defined(HYLE_PENDING_GRAPH_RECEIVER)
     HYLE_RETURN_IF_ERROR(slot.bind(inputs[0],query_input_desc,query));
-    HYLE_RETURN_IF_ERROR(slot.bind(inputs[1],kframe));HYLE_RETURN_IF_ERROR(slot.bind(inputs[2],vframe));
+    HYLE_RETURN_IF_ERROR(gb::bind(slot,inputs[1],kframe));HYLE_RETURN_IF_ERROR(gb::bind(slot,inputs[2],vframe));
     HYLE_RETURN_IF_ERROR(slot.bind(output_id,output_desc,std::move(output_writers[step%2])));
-    HYLE_ASSIGN_OR_RETURN(auto submitted,slot.submit(std::move(owner)));
+    HYLE_RETURN_IF_ERROR(slot.prepare_replay(lanes));HYLE_ASSIGN_OR_RETURN(auto submitted,gb::submit(slot,lanes,std::move(owner)));
 #else
     HYLE_ASSIGN_OR_RETURN(auto submitted,slot.submit(query,kframe,vframe,std::move(owner)));
 #endif
-    HYLE_RETURN_IF_ERROR(require(!owner.valid() && !slot.take_update(),"pending source was not retained by original suffix"));
 #if defined(HYLE_PENDING_GRAPH_RECEIVER)
-    HYLE_RETURN_IF_ERROR(require(!slot.prepare_batch(node_layouts).ok(),"retained aggregate allowed Graph prepare"));
+    HYLE_RETURN_IF_ERROR(require(!owner.valid() && !gb::take_update(slot),"pending source was not retained by original suffix"));
+#else
+    HYLE_RETURN_IF_ERROR(require(!owner.valid() && !slot.take_update(),"pending source was not retained by original suffix"));
+#endif
+#if defined(HYLE_PENDING_GRAPH_RECEIVER)
+    HYLE_RETURN_IF_ERROR(require(!gb::prepare(slot,lanes,node_layouts,preparation).ok(),"retained aggregate allowed Graph prepare"));
 #else
     HYLE_RETURN_IF_ERROR(require(!slot.prepare_batch(layout).ok(),"retained aggregate allowed receiver prepare"));
 #endif
     {HYLE_ASSIGN_OR_RETURN(auto free,keys.acquire(kr[9]));HYLE_ASSIGN_OR_RETURN(kr[9],free.publish(0));}
 #if defined(HYLE_PENDING_GRAPH_RECEIVER)
-    HYLE_RETURN_IF_ERROR(require(!slot.output(output_id),"unobserved Graph aggregate published output"));
+    HYLE_RETURN_IF_ERROR(require(!slot.result(output_id),"unobserved Graph aggregate published output"));
 #else
     HYLE_RETURN_IF_ERROR(require(!slot.output(),"unobserved common aggregate published output"));
 #endif
     HYLE_RETURN_IF_ERROR(submitted.wait());
     {
 #if defined(HYLE_PENDING_GRAPH_RECEIVER)
-      HYLE_ASSIGN_OR_RETURN(auto graph_output,slot.output(output_id));
+      HYLE_ASSIGN_OR_RETURN(auto graph_output,slot.result(output_id));
       HYLE_ASSIGN_OR_RETURN(auto output,graph_output.storage_lease());output_reads[step%2]=output;
 #else
       HYLE_ASSIGN_OR_RETURN(auto output,slot.output());
@@ -329,7 +344,7 @@ Status exercise([[maybe_unused]] c::Context&context,[[maybe_unused]] c::Queue&qu
         }
       }
 #if defined(HYLE_PENDING_GRAPH_RECEIVER)
-      HYLE_RETURN_IF_ERROR(require(!slot.prepare_batch(node_layouts).ok() && !slot.take_update(),"retained Graph result permitted prepare/control recovery"));
+      HYLE_RETURN_IF_ERROR(require(!gb::prepare(slot,lanes,node_layouts,preparation).ok() && !gb::take_update(slot),"retained Graph result permitted prepare/control recovery"));
 #else
       HYLE_RETURN_IF_ERROR(require(!slot.prepare_batch(layout).ok(),"retained native result permitted prepare/update"));
 #endif
@@ -338,7 +353,11 @@ Status exercise([[maybe_unused]] c::Context&context,[[maybe_unused]] c::Queue&qu
     // be separately waited. Recovery uses the two original update controls.
     HYLE_RETURN_IF_ERROR(submitted.wait());
     submitted={};
+#if defined(HYLE_PENDING_GRAPH_RECEIVER)
+    HYLE_ASSIGN_OR_RETURN(owner,gb::take_update(slot));
+#else
     HYLE_ASSIGN_OR_RETURN(owner,slot.take_update());
+#endif
     HYLE_RETURN_IF_ERROR(require(owner.report().logical_bytes==2*updates*row_bytes,"pending update copied history"));
     dirty_total+=owner.report().logical_bytes;
     for(unsigned request=0;request<updates;++request){

@@ -1,0 +1,1052 @@
+{
+  "date": "2026-10-24",
+  "status": "closed_without_product_change",
+  "decision": "Keep current independent first/next snapshot copies; reject removal by sharing one2MiB backing under the unchanged cache plan.",
+  "existing_trace_evidence": {
+    "path": "docs/evidence/performance/qwen-mtp-current-cuda-structure-2026-10-24.json",
+    "bytes": 959525,
+    "sha256": "b47c931d62535ac2c87efd59e21b013949f84e35304163879983c7f424353de2"
+  },
+  "trace": {
+    "path": ".scratch/qwen-mtp-final-window-20261024/current-structure1/hyle_mtp/trace.sqlite",
+    "bytes": 11591680,
+    "sha256": "66bb83d5ac09a3aa46152f228a9c580c00df067e213be37edbd11e9e6fbdee0e"
+  },
+  "query_mode": "SQLite read-only; existing captured process only; no new native/performance execution.",
+  "sql": {
+    "target_captures": "SELECT k.correlationId,COUNT(*) FROM CUPTI_ACTIVITY_KIND_KERNEL k JOIN CUPTI_ACTIVITY_KIND_RUNTIME r ON r.correlationId=k.correlationId JOIN StringIds s ON s.id=r.nameId WHERE s.value LIKE 'cudaGraphLaunch%' GROUP BY k.correlationId HAVING COUNT(*)=738",
+    "all_d2d": "SELECT start,end,graphNodeId,bytes FROM CUPTI_ACTIVITY_KIND_MEMCPY WHERE copyKind=8 AND correlationId=? ORDER BY start",
+    "kernels": "SELECT k.start,k.end,k.graphNodeId,s.value FROM CUPTI_ACTIVITY_KIND_KERNEL k JOIN StringIds s ON s.id=k.demangledName WHERE k.correlationId=? ORDER BY k.end"
+  },
+  "classification": {
+    "rule": "For each of66 target graph launches(738kernels), identify1MiB D2D copies whose most recently completed captured kernel is k_get_rows_float_vec<float>. All66 have18 such reorder kernels followed by2 such copies each.",
+    "source_correlation": "The18 recurrent layers each explicitly Copy both chronological GDN snapshots to independent1MiB state outputs. This source/shape/order correspondence identifies the origin; the trace has no copy source/destination addresses or host call stacks.",
+    "copy_kind": 8,
+    "state_snapshot_copies_per_capture": 36,
+    "state_snapshot_bytes_per_capture": 37748736,
+    "state_snapshot_activity_ns": {
+      "median": 60751.5,
+      "minimum": 59935,
+      "maximum": 257982
+    },
+    "all_d2d_copies_per_capture": 135,
+    "all_d2d_bytes": {
+      "median": 39731200.0,
+      "minimum": 39702528,
+      "maximum": 42856448
+    },
+    "all_d2d_activity_ns": {
+      "median": 136880.0,
+      "minimum": 135775,
+      "maximum": 334205
+    },
+    "extra_1MiB_copies_outside_the36": [
+      {
+        "correlation_id": 165435,
+        "copy_node": 21474837324,
+        "bytes": 1048576,
+        "activity_ns": 736,
+        "preceding_kernel": "void cpy_scalar<&cpy_1_scalar<__nv_bfloat16, __nv_bfloat16>>(const char *, char *, long long, long long, long long, long long, long long, long long, long long, long long, long long, long long, long long, long long, long long, long long, long long)"
+      },
+      {
+        "correlation_id": 165435,
+        "copy_node": 21474837347,
+        "bytes": 1048576,
+        "activity_ns": 768,
+        "preceding_kernel": "void rms_norm_f32<(int)1024, (bool)1, (bool)0, __nv_bfloat16, __nv_bfloat16>(const T4 *, T5 *, int, long long, long long, long long, float, const float *, long long, long long, long long, uint3, uint3, uint3, uint3, const float *, long long, long long, long long, uint3, uint3, uint3, uint3)"
+      },
+      {
+        "correlation_id": 165435,
+        "copy_node": 21474837348,
+        "bytes": 1048576,
+        "activity_ns": 736,
+        "preceding_kernel": "void rms_norm_f32<(int)1024, (bool)1, (bool)0, __nv_bfloat16, __nv_bfloat16>(const T4 *, T5 *, int, long long, long long, long long, float, const float *, long long, long long, long long, uint3, uint3, uint3, uint3, const float *, long long, long long, long long, uint3, uint3, uint3, uint3)"
+      }
+    ]
+  },
+  "example": {
+    "correlation_id": 130889,
+    "timeline": [
+      {
+        "start": 2483517743,
+        "end": 2483518543,
+        "node": 21474836500,
+        "kind": "D2D",
+        "bytes": 8192
+      },
+      {
+        "start": 2483518735,
+        "end": 2483520271,
+        "node": 21474836501,
+        "kind": "kernel",
+        "name": "void hyle_bf16_l2_core<float, (bool)1>(const __nv_bfloat16 *, const __nv_bfloat16 *, const float *, T1 *, int)"
+      },
+      {
+        "start": 2483520303,
+        "end": 2483525295,
+        "node": 21474836502,
+        "kind": "kernel",
+        "name": "void gated_delta_net_cuda<(int)128, (bool)0, (bool)1, __nv_bfloat16, __nv_bfloat16>(const float *, const float *, const T4 *, const float *, const T5 *, const float *, float *, float *, long long, long long, long long, long long, long long, long long, long long, long long, long long, long long, long long, long long, long long, long long, long long, uint3, uint3, float, long long, int)"
+      },
+      {
+        "start": 2483525327,
+        "end": 2483526063,
+        "node": 21474836503,
+        "kind": "D2D",
+        "bytes": 16384
+      },
+      {
+        "start": 2483526287,
+        "end": 2483529583,
+        "node": 21474836504,
+        "kind": "kernel",
+        "name": "void k_get_rows_float_vec<float>(const T1 *, const int *, T1 *, long long, long long, uint3, unsigned long long, unsigned long long, unsigned long long, unsigned long long, unsigned long long, unsigned long long, unsigned long long, unsigned long long, unsigned long long)"
+      },
+      {
+        "start": 2483529615,
+        "end": 2483531823,
+        "node": 21474836505,
+        "kind": "D2D",
+        "bytes": 1048576
+      },
+      {
+        "start": 2483532047,
+        "end": 2483533743,
+        "node": 21474836506,
+        "kind": "D2D",
+        "bytes": 1048576
+      },
+      {
+        "start": 2483534095,
+        "end": 2483534895,
+        "node": 21474836507,
+        "kind": "kernel",
+        "name": "void cpy_scalar_contiguous<float, __nv_bfloat16>(const char *, char *, long long)"
+      },
+      {
+        "start": 2483534927,
+        "end": 2483535951,
+        "node": 21474836508,
+        "kind": "kernel",
+        "name": "void rms_norm_f32<(int)256, (bool)0, (bool)0, __nv_bfloat16, __nv_bfloat16>(const T4 *, T5 *, int, long long, long long, long long, float, const float *, long long, long long, long long, uint3, uint3, uint3, uint3, const float *, long long, long long, long long, uint3, uint3, uint3, uint3)"
+      }
+    ]
+  },
+  "capture_results": [
+    {
+      "correlation_id": 130889,
+      "kernels": 738,
+      "state_snapshot_copies": 36,
+      "state_snapshot_bytes": 37748736,
+      "state_snapshot_copy_activity_ns": 61024,
+      "all_d2d_copies": 135,
+      "all_d2d_bytes": 39731200,
+      "all_d2d_activity_ns": 136896
+    },
+    {
+      "correlation_id": 139758,
+      "kernels": 738,
+      "state_snapshot_copies": 36,
+      "state_snapshot_bytes": 37748736,
+      "state_snapshot_copy_activity_ns": 61886,
+      "all_d2d_copies": 135,
+      "all_d2d_bytes": 39731200,
+      "all_d2d_activity_ns": 137854
+    },
+    {
+      "correlation_id": 147475,
+      "kernels": 738,
+      "state_snapshot_copies": 36,
+      "state_snapshot_bytes": 37748736,
+      "state_snapshot_copy_activity_ns": 61632,
+      "all_d2d_copies": 135,
+      "all_d2d_bytes": 39731200,
+      "all_d2d_activity_ns": 137536
+    },
+    {
+      "correlation_id": 148092,
+      "kernels": 738,
+      "state_snapshot_copies": 36,
+      "state_snapshot_bytes": 37748736,
+      "state_snapshot_copy_activity_ns": 60384,
+      "all_d2d_copies": 135,
+      "all_d2d_bytes": 39731200,
+      "all_d2d_activity_ns": 136288
+    },
+    {
+      "correlation_id": 148341,
+      "kernels": 738,
+      "state_snapshot_copies": 36,
+      "state_snapshot_bytes": 37748736,
+      "state_snapshot_copy_activity_ns": 60640,
+      "all_d2d_copies": 135,
+      "all_d2d_bytes": 39731200,
+      "all_d2d_activity_ns": 136607
+    },
+    {
+      "correlation_id": 148590,
+      "kernels": 738,
+      "state_snapshot_copies": 36,
+      "state_snapshot_bytes": 37748736,
+      "state_snapshot_copy_activity_ns": 60832,
+      "all_d2d_copies": 135,
+      "all_d2d_bytes": 39731200,
+      "all_d2d_activity_ns": 136799
+    },
+    {
+      "correlation_id": 155931,
+      "kernels": 738,
+      "state_snapshot_copies": 36,
+      "state_snapshot_bytes": 37748736,
+      "state_snapshot_copy_activity_ns": 59935,
+      "all_d2d_copies": 135,
+      "all_d2d_bytes": 39731200,
+      "all_d2d_activity_ns": 135807
+    },
+    {
+      "correlation_id": 156400,
+      "kernels": 738,
+      "state_snapshot_copies": 36,
+      "state_snapshot_bytes": 37748736,
+      "state_snapshot_copy_activity_ns": 60447,
+      "all_d2d_copies": 135,
+      "all_d2d_bytes": 39731200,
+      "all_d2d_activity_ns": 140254
+    },
+    {
+      "correlation_id": 157017,
+      "kernels": 738,
+      "state_snapshot_copies": 36,
+      "state_snapshot_bytes": 37748736,
+      "state_snapshot_copy_activity_ns": 60095,
+      "all_d2d_copies": 135,
+      "all_d2d_bytes": 39702528,
+      "all_d2d_activity_ns": 135775
+    },
+    {
+      "correlation_id": 157634,
+      "kernels": 738,
+      "state_snapshot_copies": 36,
+      "state_snapshot_bytes": 37748736,
+      "state_snapshot_copy_activity_ns": 60704,
+      "all_d2d_copies": 135,
+      "all_d2d_bytes": 39731200,
+      "all_d2d_activity_ns": 136864
+    },
+    {
+      "correlation_id": 157729,
+      "kernels": 738,
+      "state_snapshot_copies": 36,
+      "state_snapshot_bytes": 37748736,
+      "state_snapshot_copy_activity_ns": 60287,
+      "all_d2d_copies": 135,
+      "all_d2d_bytes": 39731200,
+      "all_d2d_activity_ns": 135965
+    },
+    {
+      "correlation_id": 165435,
+      "kernels": 738,
+      "state_snapshot_copies": 36,
+      "state_snapshot_bytes": 37748736,
+      "state_snapshot_copy_activity_ns": 61024,
+      "all_d2d_copies": 135,
+      "all_d2d_bytes": 42856448,
+      "all_d2d_activity_ns": 136831
+    },
+    {
+      "correlation_id": 173143,
+      "kernels": 738,
+      "state_snapshot_copies": 36,
+      "state_snapshot_bytes": 37748736,
+      "state_snapshot_copy_activity_ns": 60287,
+      "all_d2d_copies": 135,
+      "all_d2d_bytes": 39731200,
+      "all_d2d_activity_ns": 135999
+    },
+    {
+      "correlation_id": 180718,
+      "kernels": 738,
+      "state_snapshot_copies": 36,
+      "state_snapshot_bytes": 37748736,
+      "state_snapshot_copy_activity_ns": 60416,
+      "all_d2d_copies": 135,
+      "all_d2d_bytes": 39702528,
+      "all_d2d_activity_ns": 136415
+    },
+    {
+      "correlation_id": 188439,
+      "kernels": 738,
+      "state_snapshot_copies": 36,
+      "state_snapshot_bytes": 37748736,
+      "state_snapshot_copy_activity_ns": 60992,
+      "all_d2d_copies": 135,
+      "all_d2d_bytes": 39731200,
+      "all_d2d_activity_ns": 136991
+    },
+    {
+      "correlation_id": 188688,
+      "kernels": 738,
+      "state_snapshot_copies": 36,
+      "state_snapshot_bytes": 37748736,
+      "state_snapshot_copy_activity_ns": 60448,
+      "all_d2d_copies": 135,
+      "all_d2d_bytes": 39702528,
+      "all_d2d_activity_ns": 136512
+    },
+    {
+      "correlation_id": 188937,
+      "kernels": 738,
+      "state_snapshot_copies": 36,
+      "state_snapshot_bytes": 37748736,
+      "state_snapshot_copy_activity_ns": 60607,
+      "all_d2d_copies": 135,
+      "all_d2d_bytes": 39731200,
+      "all_d2d_activity_ns": 136477
+    },
+    {
+      "correlation_id": 189186,
+      "kernels": 738,
+      "state_snapshot_copies": 36,
+      "state_snapshot_bytes": 37748736,
+      "state_snapshot_copy_activity_ns": 60480,
+      "all_d2d_copies": 135,
+      "all_d2d_bytes": 39702528,
+      "all_d2d_activity_ns": 136352
+    },
+    {
+      "correlation_id": 189435,
+      "kernels": 738,
+      "state_snapshot_copies": 36,
+      "state_snapshot_bytes": 37748736,
+      "state_snapshot_copy_activity_ns": 61183,
+      "all_d2d_copies": 135,
+      "all_d2d_bytes": 39731200,
+      "all_d2d_activity_ns": 137215
+    },
+    {
+      "correlation_id": 189684,
+      "kernels": 738,
+      "state_snapshot_copies": 36,
+      "state_snapshot_bytes": 37748736,
+      "state_snapshot_copy_activity_ns": 60127,
+      "all_d2d_copies": 135,
+      "all_d2d_bytes": 39702528,
+      "all_d2d_activity_ns": 136252
+    },
+    {
+      "correlation_id": 189933,
+      "kernels": 738,
+      "state_snapshot_copies": 36,
+      "state_snapshot_bytes": 37748736,
+      "state_snapshot_copy_activity_ns": 60704,
+      "all_d2d_copies": 135,
+      "all_d2d_bytes": 39731200,
+      "all_d2d_activity_ns": 136512
+    },
+    {
+      "correlation_id": 190182,
+      "kernels": 738,
+      "state_snapshot_copies": 36,
+      "state_snapshot_bytes": 37748736,
+      "state_snapshot_copy_activity_ns": 60704,
+      "all_d2d_copies": 135,
+      "all_d2d_bytes": 39702528,
+      "all_d2d_activity_ns": 141664
+    },
+    {
+      "correlation_id": 190431,
+      "kernels": 738,
+      "state_snapshot_copies": 36,
+      "state_snapshot_bytes": 37748736,
+      "state_snapshot_copy_activity_ns": 60960,
+      "all_d2d_copies": 135,
+      "all_d2d_bytes": 39731200,
+      "all_d2d_activity_ns": 137184
+    },
+    {
+      "correlation_id": 190680,
+      "kernels": 738,
+      "state_snapshot_copies": 36,
+      "state_snapshot_bytes": 37748736,
+      "state_snapshot_copy_activity_ns": 61055,
+      "all_d2d_copies": 135,
+      "all_d2d_bytes": 39702528,
+      "all_d2d_activity_ns": 136862
+    },
+    {
+      "correlation_id": 190929,
+      "kernels": 738,
+      "state_snapshot_copies": 36,
+      "state_snapshot_bytes": 37748736,
+      "state_snapshot_copy_activity_ns": 60255,
+      "all_d2d_copies": 135,
+      "all_d2d_bytes": 39731200,
+      "all_d2d_activity_ns": 136286
+    },
+    {
+      "correlation_id": 191178,
+      "kernels": 738,
+      "state_snapshot_copies": 36,
+      "state_snapshot_bytes": 37748736,
+      "state_snapshot_copy_activity_ns": 60128,
+      "all_d2d_copies": 135,
+      "all_d2d_bytes": 39702528,
+      "all_d2d_activity_ns": 138654
+    },
+    {
+      "correlation_id": 191273,
+      "kernels": 738,
+      "state_snapshot_copies": 36,
+      "state_snapshot_bytes": 37748736,
+      "state_snapshot_copy_activity_ns": 60223,
+      "all_d2d_copies": 135,
+      "all_d2d_bytes": 39731200,
+      "all_d2d_activity_ns": 135966
+    },
+    {
+      "correlation_id": 191372,
+      "kernels": 738,
+      "state_snapshot_copies": 36,
+      "state_snapshot_bytes": 37748736,
+      "state_snapshot_copy_activity_ns": 60927,
+      "all_d2d_copies": 135,
+      "all_d2d_bytes": 39702528,
+      "all_d2d_activity_ns": 136959
+    },
+    {
+      "correlation_id": 191621,
+      "kernels": 738,
+      "state_snapshot_copies": 36,
+      "state_snapshot_bytes": 37748736,
+      "state_snapshot_copy_activity_ns": 60608,
+      "all_d2d_copies": 135,
+      "all_d2d_bytes": 39731200,
+      "all_d2d_activity_ns": 136864
+    },
+    {
+      "correlation_id": 191870,
+      "kernels": 738,
+      "state_snapshot_copies": 36,
+      "state_snapshot_bytes": 37748736,
+      "state_snapshot_copy_activity_ns": 61536,
+      "all_d2d_copies": 135,
+      "all_d2d_bytes": 39702528,
+      "all_d2d_activity_ns": 137727
+    },
+    {
+      "correlation_id": 192119,
+      "kernels": 738,
+      "state_snapshot_copies": 36,
+      "state_snapshot_bytes": 37748736,
+      "state_snapshot_copy_activity_ns": 60928,
+      "all_d2d_copies": 135,
+      "all_d2d_bytes": 39731200,
+      "all_d2d_activity_ns": 136960
+    },
+    {
+      "correlation_id": 192368,
+      "kernels": 738,
+      "state_snapshot_copies": 36,
+      "state_snapshot_bytes": 37748736,
+      "state_snapshot_copy_activity_ns": 61056,
+      "all_d2d_copies": 135,
+      "all_d2d_bytes": 39702528,
+      "all_d2d_activity_ns": 137054
+    },
+    {
+      "correlation_id": 192617,
+      "kernels": 738,
+      "state_snapshot_copies": 36,
+      "state_snapshot_bytes": 37748736,
+      "state_snapshot_copy_activity_ns": 60896,
+      "all_d2d_copies": 135,
+      "all_d2d_bytes": 39731200,
+      "all_d2d_activity_ns": 136832
+    },
+    {
+      "correlation_id": 192866,
+      "kernels": 738,
+      "state_snapshot_copies": 36,
+      "state_snapshot_bytes": 37748736,
+      "state_snapshot_copy_activity_ns": 61056,
+      "all_d2d_copies": 135,
+      "all_d2d_bytes": 39702528,
+      "all_d2d_activity_ns": 137151
+    },
+    {
+      "correlation_id": 210875,
+      "kernels": 738,
+      "state_snapshot_copies": 36,
+      "state_snapshot_bytes": 37748736,
+      "state_snapshot_copy_activity_ns": 61215,
+      "all_d2d_copies": 135,
+      "all_d2d_bytes": 39731200,
+      "all_d2d_activity_ns": 137371
+    },
+    {
+      "correlation_id": 218861,
+      "kernels": 738,
+      "state_snapshot_copies": 36,
+      "state_snapshot_bytes": 37748736,
+      "state_snapshot_copy_activity_ns": 60798,
+      "all_d2d_copies": 135,
+      "all_d2d_bytes": 39731200,
+      "all_d2d_activity_ns": 137052
+    },
+    {
+      "correlation_id": 226274,
+      "kernels": 738,
+      "state_snapshot_copies": 36,
+      "state_snapshot_bytes": 37748736,
+      "state_snapshot_copy_activity_ns": 60512,
+      "all_d2d_copies": 135,
+      "all_d2d_bytes": 39731200,
+      "all_d2d_activity_ns": 137407
+    },
+    {
+      "correlation_id": 233619,
+      "kernels": 738,
+      "state_snapshot_copies": 36,
+      "state_snapshot_bytes": 37748736,
+      "state_snapshot_copy_activity_ns": 61375,
+      "all_d2d_copies": 135,
+      "all_d2d_bytes": 39731200,
+      "all_d2d_activity_ns": 137853
+    },
+    {
+      "correlation_id": 241338,
+      "kernels": 738,
+      "state_snapshot_copies": 36,
+      "state_snapshot_bytes": 37748736,
+      "state_snapshot_copy_activity_ns": 60832,
+      "all_d2d_copies": 135,
+      "all_d2d_bytes": 39731200,
+      "all_d2d_activity_ns": 136831
+    },
+    {
+      "correlation_id": 241955,
+      "kernels": 738,
+      "state_snapshot_copies": 36,
+      "state_snapshot_bytes": 37748736,
+      "state_snapshot_copy_activity_ns": 60511,
+      "all_d2d_copies": 135,
+      "all_d2d_bytes": 39731200,
+      "all_d2d_activity_ns": 141118
+    },
+    {
+      "correlation_id": 249534,
+      "kernels": 738,
+      "state_snapshot_copies": 36,
+      "state_snapshot_bytes": 37748736,
+      "state_snapshot_copy_activity_ns": 257982,
+      "all_d2d_copies": 135,
+      "all_d2d_bytes": 39731200,
+      "all_d2d_activity_ns": 334205
+    },
+    {
+      "correlation_id": 257294,
+      "kernels": 738,
+      "state_snapshot_copies": 36,
+      "state_snapshot_bytes": 37748736,
+      "state_snapshot_copy_activity_ns": 60319,
+      "all_d2d_copies": 135,
+      "all_d2d_bytes": 39731200,
+      "all_d2d_activity_ns": 136539
+    },
+    {
+      "correlation_id": 257909,
+      "kernels": 738,
+      "state_snapshot_copies": 36,
+      "state_snapshot_bytes": 37748736,
+      "state_snapshot_copy_activity_ns": 62048,
+      "all_d2d_copies": 135,
+      "all_d2d_bytes": 39731200,
+      "all_d2d_activity_ns": 138429
+    },
+    {
+      "correlation_id": 258158,
+      "kernels": 738,
+      "state_snapshot_copies": 36,
+      "state_snapshot_bytes": 37748736,
+      "state_snapshot_copy_activity_ns": 60608,
+      "all_d2d_copies": 135,
+      "all_d2d_bytes": 39731200,
+      "all_d2d_activity_ns": 136576
+    },
+    {
+      "correlation_id": 258407,
+      "kernels": 738,
+      "state_snapshot_copies": 36,
+      "state_snapshot_bytes": 37748736,
+      "state_snapshot_copy_activity_ns": 60798,
+      "all_d2d_copies": 135,
+      "all_d2d_bytes": 39731200,
+      "all_d2d_activity_ns": 136989
+    },
+    {
+      "correlation_id": 258656,
+      "kernels": 738,
+      "state_snapshot_copies": 36,
+      "state_snapshot_bytes": 37748736,
+      "state_snapshot_copy_activity_ns": 60479,
+      "all_d2d_copies": 135,
+      "all_d2d_bytes": 39731200,
+      "all_d2d_activity_ns": 136445
+    },
+    {
+      "correlation_id": 258905,
+      "kernels": 738,
+      "state_snapshot_copies": 36,
+      "state_snapshot_bytes": 37748736,
+      "state_snapshot_copy_activity_ns": 60672,
+      "all_d2d_copies": 135,
+      "all_d2d_bytes": 39731200,
+      "all_d2d_activity_ns": 136864
+    },
+    {
+      "correlation_id": 259154,
+      "kernels": 738,
+      "state_snapshot_copies": 36,
+      "state_snapshot_bytes": 37748736,
+      "state_snapshot_copy_activity_ns": 60575,
+      "all_d2d_copies": 135,
+      "all_d2d_bytes": 39731200,
+      "all_d2d_activity_ns": 136732
+    },
+    {
+      "correlation_id": 259403,
+      "kernels": 738,
+      "state_snapshot_copies": 36,
+      "state_snapshot_bytes": 37748736,
+      "state_snapshot_copy_activity_ns": 60799,
+      "all_d2d_copies": 135,
+      "all_d2d_bytes": 39731200,
+      "all_d2d_activity_ns": 137023
+    },
+    {
+      "correlation_id": 259652,
+      "kernels": 738,
+      "state_snapshot_copies": 36,
+      "state_snapshot_bytes": 37748736,
+      "state_snapshot_copy_activity_ns": 60607,
+      "all_d2d_copies": 135,
+      "all_d2d_bytes": 39731200,
+      "all_d2d_activity_ns": 136574
+    },
+    {
+      "correlation_id": 259901,
+      "kernels": 738,
+      "state_snapshot_copies": 36,
+      "state_snapshot_bytes": 37748736,
+      "state_snapshot_copy_activity_ns": 61119,
+      "all_d2d_copies": 135,
+      "all_d2d_bytes": 39731200,
+      "all_d2d_activity_ns": 137181
+    },
+    {
+      "correlation_id": 260150,
+      "kernels": 738,
+      "state_snapshot_copies": 36,
+      "state_snapshot_bytes": 37748736,
+      "state_snapshot_copy_activity_ns": 61343,
+      "all_d2d_copies": 135,
+      "all_d2d_bytes": 39731200,
+      "all_d2d_activity_ns": 137342
+    },
+    {
+      "correlation_id": 260399,
+      "kernels": 738,
+      "state_snapshot_copies": 36,
+      "state_snapshot_bytes": 37748736,
+      "state_snapshot_copy_activity_ns": 60800,
+      "all_d2d_copies": 135,
+      "all_d2d_bytes": 39731200,
+      "all_d2d_activity_ns": 136959
+    },
+    {
+      "correlation_id": 260648,
+      "kernels": 738,
+      "state_snapshot_copies": 36,
+      "state_snapshot_bytes": 37748736,
+      "state_snapshot_copy_activity_ns": 60832,
+      "all_d2d_copies": 135,
+      "all_d2d_bytes": 39731200,
+      "all_d2d_activity_ns": 136767
+    },
+    {
+      "correlation_id": 260897,
+      "kernels": 738,
+      "state_snapshot_copies": 36,
+      "state_snapshot_bytes": 37748736,
+      "state_snapshot_copy_activity_ns": 61152,
+      "all_d2d_copies": 135,
+      "all_d2d_bytes": 39731200,
+      "all_d2d_activity_ns": 137407
+    },
+    {
+      "correlation_id": 261146,
+      "kernels": 738,
+      "state_snapshot_copies": 36,
+      "state_snapshot_bytes": 37748736,
+      "state_snapshot_copy_activity_ns": 60608,
+      "all_d2d_copies": 135,
+      "all_d2d_bytes": 39731200,
+      "all_d2d_activity_ns": 136958
+    },
+    {
+      "correlation_id": 261395,
+      "kernels": 738,
+      "state_snapshot_copies": 36,
+      "state_snapshot_bytes": 37748736,
+      "state_snapshot_copy_activity_ns": 60608,
+      "all_d2d_copies": 135,
+      "all_d2d_bytes": 39731200,
+      "all_d2d_activity_ns": 136734
+    },
+    {
+      "correlation_id": 261644,
+      "kernels": 738,
+      "state_snapshot_copies": 36,
+      "state_snapshot_bytes": 37748736,
+      "state_snapshot_copy_activity_ns": 60864,
+      "all_d2d_copies": 135,
+      "all_d2d_bytes": 39731200,
+      "all_d2d_activity_ns": 136896
+    },
+    {
+      "correlation_id": 261893,
+      "kernels": 738,
+      "state_snapshot_copies": 36,
+      "state_snapshot_bytes": 37748736,
+      "state_snapshot_copy_activity_ns": 60767,
+      "all_d2d_copies": 135,
+      "all_d2d_bytes": 39731200,
+      "all_d2d_activity_ns": 136830
+    },
+    {
+      "correlation_id": 262142,
+      "kernels": 738,
+      "state_snapshot_copies": 36,
+      "state_snapshot_bytes": 37748736,
+      "state_snapshot_copy_activity_ns": 60351,
+      "all_d2d_copies": 135,
+      "all_d2d_bytes": 39731200,
+      "all_d2d_activity_ns": 136639
+    },
+    {
+      "correlation_id": 262391,
+      "kernels": 738,
+      "state_snapshot_copies": 36,
+      "state_snapshot_bytes": 37748736,
+      "state_snapshot_copy_activity_ns": 60736,
+      "all_d2d_copies": 135,
+      "all_d2d_bytes": 39731200,
+      "all_d2d_activity_ns": 137023
+    },
+    {
+      "correlation_id": 262640,
+      "kernels": 738,
+      "state_snapshot_copies": 36,
+      "state_snapshot_bytes": 37748736,
+      "state_snapshot_copy_activity_ns": 60672,
+      "all_d2d_copies": 135,
+      "all_d2d_bytes": 39731200,
+      "all_d2d_activity_ns": 136800
+    },
+    {
+      "correlation_id": 262889,
+      "kernels": 738,
+      "state_snapshot_copies": 36,
+      "state_snapshot_bytes": 37748736,
+      "state_snapshot_copy_activity_ns": 60896,
+      "all_d2d_copies": 135,
+      "all_d2d_bytes": 39731200,
+      "all_d2d_activity_ns": 136959
+    },
+    {
+      "correlation_id": 263138,
+      "kernels": 738,
+      "state_snapshot_copies": 36,
+      "state_snapshot_bytes": 37748736,
+      "state_snapshot_copy_activity_ns": 60671,
+      "all_d2d_copies": 135,
+      "all_d2d_bytes": 39731200,
+      "all_d2d_activity_ns": 136574
+    },
+    {
+      "correlation_id": 263387,
+      "kernels": 738,
+      "state_snapshot_copies": 36,
+      "state_snapshot_bytes": 37748736,
+      "state_snapshot_copy_activity_ns": 60896,
+      "all_d2d_copies": 135,
+      "all_d2d_bytes": 39731200,
+      "all_d2d_activity_ns": 137279
+    },
+    {
+      "correlation_id": 263636,
+      "kernels": 738,
+      "state_snapshot_copies": 36,
+      "state_snapshot_bytes": 37748736,
+      "state_snapshot_copy_activity_ns": 60991,
+      "all_d2d_copies": 135,
+      "all_d2d_bytes": 39731200,
+      "all_d2d_activity_ns": 137023
+    }
+  ],
+  "sources": [
+    {
+      "file": {
+        "path": "tools/qwen35_text/main.cc",
+        "bytes": 288566,
+        "sha256": "f6a688610e1156e26e5300e2477a5f4f939210983fdbded3ed6fe697071dee9f"
+      },
+      "lines": [
+        187,
+        212
+      ],
+      "role": "18 recurrent layer state geometry; each F32 [1,16,128,128] is1MiB"
+    },
+    {
+      "file": {
+        "path": "tools/qwen35_text/main.cc",
+        "bytes": 288566,
+        "sha256": "f6a688610e1156e26e5300e2477a5f4f939210983fdbded3ed6fe697071dee9f"
+      },
+      "lines": [
+        1093,
+        1114
+      ],
+      "role": "Explicit caller state LeasePool sizing/ResourceBudget"
+    },
+    {
+      "file": {
+        "path": "tools/qwen35_text/main.cc",
+        "bytes": 288566,
+        "sha256": "f6a688610e1156e26e5300e2477a5f4f939210983fdbded3ed6fe697071dee9f"
+      },
+      "lines": [
+        1305,
+        1320
+      ],
+      "role": "K2 GDN contract and first/next r.copy(snapshot view) origins"
+    },
+    {
+      "file": {
+        "path": "tools/qwen35_text/main.cc",
+        "bytes": 288566,
+        "sha256": "f6a688610e1156e26e5300e2477a5f4f939210983fdbded3ed6fe697071dee9f"
+      },
+      "lines": [
+        2013,
+        2027
+      ],
+      "role": "Each first/next caller output independently allocated from state pool"
+    },
+    {
+      "file": {
+        "path": "tools/qwen35_text/main.cc",
+        "bytes": 288566,
+        "sha256": "f6a688610e1156e26e5300e2477a5f4f939210983fdbded3ed6fe697071dee9f"
+      },
+      "lines": [
+        2181,
+        2190
+      ],
+      "role": "Select accepted prefix output and export its readonly state lease; no GPU copy"
+    },
+    {
+      "file": {
+        "path": "tools/qwen35_text/main.cc",
+        "bytes": 288566,
+        "sha256": "f6a688610e1156e26e5300e2477a5f4f939210983fdbded3ed6fe697071dee9f"
+      },
+      "lines": [
+        1053,
+        1060
+      ],
+      "role": "GraphOutput storage_lease(cache_budget), not a second state materialization"
+    },
+    {
+      "file": {
+        "path": "tools/qwen35_text/session_state.h",
+        "bytes": 10809,
+        "sha256": "9cd094e7778ff48567b87c2983e138597940b9683e63023409562d0e562c35cd"
+      },
+      "lines": [
+        50,
+        61
+      ],
+      "role": "state_slots=N+candidate_boundaries*R"
+    },
+    {
+      "file": {
+        "path": "tools/qwen35_text/session_state.h",
+        "bytes": 10809,
+        "sha256": "9cd094e7778ff48567b87c2983e138597940b9683e63023409562d0e562c35cd"
+      },
+      "lines": [
+        208,
+        224
+      ],
+      "role": "Immutable Snapshot holds original ReadLease state owners"
+    },
+    {
+      "file": {
+        "path": "src/compute_provider_ggml_cuda/tensor_program.cc",
+        "bytes": 62112,
+        "sha256": "7d9d9b3e5af1843118e65e69f8f43bb9fa3d2d331c3073122175de6d6d0d2e76"
+      },
+      "lines": [
+        831,
+        834
+      ],
+      "role": "Copy lowering is ggml_dup"
+    },
+    {
+      "file": {
+        "path": "src/compute_provider_ggml_cuda/tensor_program.cc",
+        "bytes": 62112,
+        "sha256": "7d9d9b3e5af1843118e65e69f8f43bb9fa3d2d331c3073122175de6d6d0d2e76"
+      },
+      "lines": [
+        1239,
+        1289
+      ],
+      "role": "Native packed GDN states, GET_ROWS chronological reorder, output metadata"
+    },
+    {
+      "file": {
+        "path": "src/compute_provider_ggml_cuda/ggml_cuda_provider.cc",
+        "bytes": 82474,
+        "sha256": "ff8a364ba191350d57be3224792bada1501b6665427aaf6a9e159896e084febc"
+      },
+      "lines": [
+        1660,
+        1670
+      ],
+      "role": "Snapshot order reverses native newest-first into public chronological order"
+    },
+    {
+      "file": {
+        "path": "src/compute_provider_ggml_cuda/ggml_cuda_provider.cc",
+        "bytes": 82474,
+        "sha256": "ff8a364ba191350d57be3224792bada1501b6665427aaf6a9e159896e084febc"
+      },
+      "lines": [
+        760,
+        790
+      ],
+      "role": "Published storage roots are externally bound"
+    },
+    {
+      "file": {
+        "path": "src/compute_provider_ggml_cuda/ggml_cuda_provider.cc",
+        "bytes": 82474,
+        "sha256": "ff8a364ba191350d57be3224792bada1501b6665427aaf6a9e159896e084febc"
+      },
+      "lines": [
+        1108,
+        1142
+      ],
+      "role": "Validated caller output pointers bind original tensor roots"
+    },
+    {
+      "file": {
+        "path": "src/compute/resource_leases.cc",
+        "bytes": 41288,
+        "sha256": "2b1917cecb17180ceef70ae3ad73707064783227d4aa7bb908826125e3d950d9"
+      },
+      "lines": [
+        118,
+        160
+      ],
+      "role": "Retained backing admission uses original backing extent"
+    },
+    {
+      "file": {
+        "path": "src/compute/resource_leases.cc",
+        "bytes": 41288,
+        "sha256": "2b1917cecb17180ceef70ae3ad73707064783227d4aa7bb908826125e3d950d9"
+      },
+      "lines": [
+        708,
+        714
+      ],
+      "role": "Subview retains the same original block; no independent half reclamation"
+    },
+    {
+      "file": {
+        "path": ".scratch/glm-mlx-flash-original-20261024/gdn-output-scale-proposal/native-after/src/ggml-cuda/gated_delta_net.cu",
+        "bytes": 19092,
+        "sha256": "309c8cf3d384bc2a13a1dd479274b119f355bd5636307b0f911fa1dfc57c1d21"
+      },
+      "lines": [
+        206,
+        216
+      ],
+      "role": "Native snapshot slot0 is newest; K2 needs public chronological reorder"
+    },
+    {
+      "file": {
+        "path": ".scratch/glm-mlx-flash-original-20261024/gdn-output-scale-proposal/native-after/src/ggml-cuda/gated_delta_net.cu",
+        "bytes": 19092,
+        "sha256": "309c8cf3d384bc2a13a1dd479274b119f355bd5636307b0f911fa1dfc57c1d21"
+      },
+      "lines": [
+        355,
+        363
+      ],
+      "role": "One state destination pointer plus slot stride, not two independent lease blocks"
+    },
+    {
+      "file": {
+        "path": ".scratch/architecture-refactor-2026-10-18/gdn-direct-state-output/native-source/src/ggml-cuda/ggml-cuda.cu",
+        "bytes": 324367,
+        "sha256": "e4b2cd325b2390c8aaed56c50fd2037a13a537210c01fc7adda7e1f5580f9dc8"
+      },
+      "lines": [
+        3484,
+        3500
+      ],
+      "role": "Existing direct state-output qualification explicitly requires K=1; not applicable to this K2 candidate"
+    }
+  ],
+  "pool_budget": {
+    "geometry": [
+      1,
+      16,
+      128,
+      128
+    ],
+    "dtype": "F32",
+    "bytes_per_snapshot_per_layer": 1048576,
+    "recurrent_layers": 18,
+    "current_formula": "state_slots=N+2R; recurrent pool=(N+2R)*1MiB+1B per layer",
+    "N1_R1": {
+      "current_pool_bytes_per_layer": 3145729,
+      "current_layout": "old committed1MiB + first candidate1MiB + next candidate1MiB; unselected candidate is independently reclaimable",
+      "shared_parent_first_round": "old initial1MiB + new2MiB fits",
+      "shared_parent_next_round": "retained selected subview pins old2MiB block; new2MiB needs4MiB before release",
+      "required_shared_pool_bytes_per_layer": 4194305,
+      "additional_backing_bytes_all18_layers": 18874368
+    },
+    "general_shared_parent_formula": "2*(N+R)*1MiB+1B per layer; increases backing by N MiB per layer(18N MiB total) at the same resident/active capacities",
+    "owner_contract": "A readonly subview preserves old-reader and separate Invocation safety by retaining its whole original block. It cannot reclaim an unselected sibling half. The selected state remains a1MiB logical input, but its physical block is2MiB."
+  },
+  "reasoning": [
+    "The36 copies are explicit consumer Copy→GGML DUP materializations immediately after native state reorder, not copies performed by StateHead publication or an accidental extra Graph crossing.",
+    "Dropping Copy and borrowing an Invocation temporary would lose stable independently retained storage when that Invocation/workspace is reused.",
+    "Publishing an owned2MiB parent plus readonly1MiB subview could be semantically correct, but requires changing caller output ports/bindings/pool sizing and declared cache budget. It is not a cost-free dedup within the present contract.",
+    "The present copies deliberately preserve independently reclaimable candidate allocations and old readers. Keep the default for this bounded source review; do not extend K1 fusion or add a new split-lease abstraction for this candidate."
+  ],
+  "limits": [
+    "The36-copy GPU activity median/range is separate from the135-copy total. One capture has3 additional1MiB copies outside this classification; they are listed and not charged to GDN state.",
+    "GPU activity sums are not end-to-end wall time or a proven removable speedup. No new TPS,15% gain, or explanation of the complete decode gap is claimed.",
+    "The pool arithmetic excludes unchanged conv-history/KV/hidden/workspace allocations and does not predict allocator peak changes. It proves the existing recurrent pool cannot sustain retained2MiB parents at unchanged capacity."
+  ],
+  "product_changes": 0,
+  "new_compiles": 0,
+  "new_native_runs": 0,
+  "HTTP": 0
+}

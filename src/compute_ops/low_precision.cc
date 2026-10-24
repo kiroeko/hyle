@@ -59,6 +59,8 @@ std::optional<GgufBlock> gguf_block(GgufQuantizedType type) noexcept {
     return GgufBlock{kGgufIq1Xxs, 256, 42};
   case GgufQuantizedType::kIq1Xs:
     return GgufBlock{kGgufIq1Xs, 256, 46};
+  case GgufQuantizedType::kNvfp4:
+    return GgufBlock{kGgufNvfp4, 64, 36};
   }
   return std::nullopt;
 }
@@ -121,6 +123,14 @@ Result<CacheStorage> CacheStorage::float8(float scale) noexcept {
   const CacheStorage storage{DataType::kFloat8E4M3FN, scale};
   HYLE_RETURN_IF_ERROR(validate_cache_storage(storage));
   return storage;
+}
+
+Result<TensorDesc> row_cache_carrier_description(const RowCacheEncoding &encoding,
+                                                std::int64_t rows) noexcept {
+  if (encoding.depth() == 0 || encoding.row_bytes() == 0 || rows < 0)
+    return std::unexpected(Status::InvalidArgument("row cache requires a known encoding and nonnegative row count"));
+  return TensorDesc::dense(DataType::kUInt8,
+      std::array{rows, std::int64_t{encoding.row_bytes()}});
 }
 
 Status validate_cache_storage(const CacheStorage &storage) noexcept {
@@ -237,7 +247,7 @@ gguf_quantized_type(StorageFormatId id) noexcept {
       GgufQuantizedType::kIq2Xs, GgufQuantizedType::kIq2S,
       GgufQuantizedType::kIq1S, GgufQuantizedType::kIq1M,
       GgufQuantizedType::kIq1Xxxs, GgufQuantizedType::kIq1Xxs,
-      GgufQuantizedType::kIq1Xs};
+      GgufQuantizedType::kIq1Xs, GgufQuantizedType::kNvfp4};
   for (const auto type : types)
     if (gguf_block(type)->id == id)
       return type;

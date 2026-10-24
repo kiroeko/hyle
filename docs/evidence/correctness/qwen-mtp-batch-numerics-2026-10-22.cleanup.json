@@ -1,0 +1,2848 @@
+{
+  "status": "completed; do not rerun",
+  "recursive": false,
+  "script": {
+    "path": "C:\\public\\project-hyle\\hyle\\test.ps1",
+    "bytes": 3192,
+    "sha256": "8999bdccecf1290c6022f75a19174637d3dea3986a242bdc81fd77eefdd85fef"
+  },
+  "script_copy": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\cleanup_script.ps1",
+    "bytes": 3192,
+    "sha256": "8999bdccecf1290c6022f75a19174637d3dea3986a242bdc81fd77eefdd85fef"
+  },
+  "script_text": "# Exact verified leaves only. No recursion. Do not rerun after completion.\r\n$ErrorActionPreference = 'Stop'\r\n$taskRoot = 'C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022'\r\n$planFile = Join-Path $taskRoot 'cleanup-plan.json'\r\n$resultFile = Join-Path $taskRoot 'cleanup-result.json'\r\nif (Test-Path -LiteralPath $resultFile) { throw 'Completed cleanup; do not rerun test.ps1.' }\r\n$plan = Get-Content -LiteralPath $planFile -Raw | ConvertFrom-Json\r\n$scope = [IO.Path]::GetFullPath($plan.scope).TrimEnd('\\') + '\\'\r\n$batch = [IO.Path]::GetFullPath($plan.batch_scope).TrimEnd('\\') + '\\'\r\nif ($scope -cne 'C:\\public\\project-hyle\\hyle\\.scratch\\' -or $batch -cne ($taskRoot + '\\')) { throw 'Unexpected cleanup scope' }\r\nfunction Confirm-Identity($record) {\r\n $item = Get-Item -LiteralPath $record.path -Force -ErrorAction Stop\r\n if ($item.PSIsContainer -or $item.Length -ne $record.bytes) { throw ('File identity differs: ' + $record.path) }\r\n if ((Get-FileHash -LiteralPath $record.path -Algorithm SHA256).Hash.ToLowerInvariant() -cne $record.sha256) { throw ('File hash differs: ' + $record.path) }\r\n}\r\nConfirm-Identity $plan.script\r\nConfirm-Identity $plan.script_copy\r\nConfirm-Identity $plan.published.manifest\r\nforeach ($archive in $plan.published.archives) { Confirm-Identity $archive }\r\n$protected = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)\r\nforeach ($record in $plan.keep_images) { Confirm-Identity $record; [void]$protected.Add([IO.Path]::GetFullPath($record.path)) }\r\n$allowOld = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)\r\nforeach ($path in $plan.historical_image_allowlist) { [void]$allowOld.Add([IO.Path]::GetFullPath($path)) }\r\n$seen = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)\r\nforeach ($target in $plan.targets) {\r\n $absolute = [IO.Path]::GetFullPath($target.path)\r\n if (-not $absolute.StartsWith($scope,[StringComparison]::OrdinalIgnoreCase) -or\r\n     (-not $absolute.StartsWith($batch,[StringComparison]::OrdinalIgnoreCase) -and -not $allowOld.Contains($absolute)) -or\r\n     $protected.Contains($absolute) -or -not $seen.Add($absolute)) { throw ('Unsafe cleanup target: ' + $absolute) }\r\n Confirm-Identity $target\r\n}\r\n$scriptText = Get-Content -LiteralPath $plan.script_copy.path -Raw\r\n$removed = [Collections.Generic.List[object]]::new()\r\nforeach ($target in $plan.targets) { Remove-Item -LiteralPath $target.path -Force -ErrorAction Stop; $removed.Add($target) }\r\n$result = [ordered]@{status='completed; do not rerun';recursive=$false;script=$plan.script;script_copy=$plan.script_copy;script_text=$scriptText;removed_files=$removed.Count;removed_logical_bytes=$plan.logical_bytes;kept_images=$plan.keep_images;verified_archives=$plan.published.archives;removed=$removed}\r\n$result | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath $resultFile -Encoding utf8\r\nCopy-Item -LiteralPath $resultFile -Destination 'C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\qwen-mtp-batch-numerics-2026-10-22.cleanup.json'\r\nWrite-Output ('Removed ' + $removed.Count + ' exact leaves / ' + $plan.logical_bytes + ' logical bytes. Completed; do not rerun.')\r\n",
+  "removed_files": 402,
+  "removed_logical_bytes": 352057453,
+  "kept_images": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-20261022\\qwen-link1\\qwen.exe",
+      "bytes": 140352512,
+      "sha256": "563c3735a3243e3956bba4034128d1e3135b996b9af81e02e75da38014a5af88"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-window-20261022\\peer\\checks\\attempt1\\peer.exe",
+      "bytes": 35795456,
+      "sha256": "f353371459d63d168ee88e4e57115ba9af4258b871f5adf02dd289e34cd2b421"
+    }
+  ],
+  "verified_archives": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\qwen-mtp-batch-numerics-2026-10-22.data.zip",
+      "bytes": 133865982,
+      "sha256": "6f50220c41b1b2342dd2b0172b4585b081d23c475c2ebb663bf66bbf030f67bd"
+    }
+  ],
+  "removed": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\mtp_session-link1\\mtp_session.exe",
+      "bytes": 140342272,
+      "sha256": "6a72fe5a2cfe8aba3227babb148b92b332b87a87cdb904040b317cfd763d1e7f",
+      "kind": "rebuildable probe/link output"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\mtp_session-link1\\mtp_session.exp",
+      "bytes": 25001,
+      "sha256": "132470e787173f7fdcbeb60bd097cb64a09b205ea9881565a7d41aeaf058e39b",
+      "kind": "rebuildable probe/link output"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\mtp_session-link1\\mtp_session.lib",
+      "bytes": 42002,
+      "sha256": "e55af9c7c3c485fe80085d6b18835d7a0c3e0043964843c4a93ecbacac644c99",
+      "kind": "rebuildable probe/link output"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\mtp_session-link1\\mtp_session.map",
+      "bytes": 58793650,
+      "sha256": "17d48caf6eed94dd37b73536587c41aa34397c21f095602dd610c1c626a956f4",
+      "kind": "rebuildable probe/link output"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source0_R1\\carry.bf16",
+      "bytes": 4096,
+      "sha256": "553a9efd8ea854401d9c67daa3e46d9d6561396aa9c8662772ab589d4cbb0443",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source0_R1/carry.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source0_R1\\draft.key.bf16",
+      "bytes": 19456,
+      "sha256": "f6a6253204496c89b878acf21b4a6c6785e6b881674685ce4a4d481bf7e13d49",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source0_R1/draft.key.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source0_R1\\draft.value.bf16",
+      "bytes": 19456,
+      "sha256": "8313e72c3363555ffba8b1a28e7edc3a2c718f46ff37f3f1dfad13d3dd8decf1",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source0_R1/draft.value.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source0_R1\\layer0.conv.bf16",
+      "bytes": 36864,
+      "sha256": "f40ad31c9aa181654cf64ac6fceedf911b49c630d94d8476098123dc2ba109bd",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source0_R1/layer0.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source0_R1\\layer0.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "6a5c41cca1783cadc5aba8ab26210e8243df3566e0f277b13888c271c7637296",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source0_R1/layer0.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source0_R1\\layer1.conv.bf16",
+      "bytes": 36864,
+      "sha256": "af9bd78eeae0d1a713c0d20ef5780d97eb2c203b029c00226ce252d7718a4aa2",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source0_R1/layer1.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source0_R1\\layer1.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "05ff834b15baa2e5982a3f5142e7c2bf6019618b93375e17fdd5aaca3e083dd6",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source0_R1/layer1.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source0_R1\\layer10.conv.bf16",
+      "bytes": 36864,
+      "sha256": "db4d9317c780d05f81382821d6676a0839546d268eda640b0bd932a57e6fcbd8",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source0_R1/layer10.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source0_R1\\layer10.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "b12b9862dd380b47ba77091b2f7693079664cf3b26939d8195aa04f00b1ac464",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source0_R1/layer10.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source0_R1\\layer12.conv.bf16",
+      "bytes": 36864,
+      "sha256": "735ec20a01a87065e450fb20cb6e4e8fc4664c23a26097e305641ed7b286b733",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source0_R1/layer12.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source0_R1\\layer12.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "ad1af455584bf9a2e40c6c75f0cdf7336d7c446a2d7078ac1a8e801b18788cbc",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source0_R1/layer12.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source0_R1\\layer13.conv.bf16",
+      "bytes": 36864,
+      "sha256": "9820f7294144cb76524e004844602e9607371154a4eb0838260ba2185a28d78d",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source0_R1/layer13.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source0_R1\\layer13.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "265e0f527187143fb09c07447fd41edd927e5b30265d70a8f5eee70706482998",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source0_R1/layer13.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source0_R1\\layer14.conv.bf16",
+      "bytes": 36864,
+      "sha256": "08f3d9ea7590977eb8d5b6e5f328cd3673abe81c01ecb6ce7dfd628195c15ffd",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source0_R1/layer14.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source0_R1\\layer14.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "560bd3cf14172614f0ff8533a5acbcb58c687e4ba394f01518089ed013e10189",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source0_R1/layer14.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source0_R1\\layer16.conv.bf16",
+      "bytes": 36864,
+      "sha256": "b49deca36de3b22092d26b2b82b17c728c0079165b9a9bf3b0f29f4a5be57b5f",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source0_R1/layer16.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source0_R1\\layer16.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "debe159c1fda7d44f46c35454958a983b95d1112ce4f7570f8fca1c38fd5bcc6",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source0_R1/layer16.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source0_R1\\layer17.conv.bf16",
+      "bytes": 36864,
+      "sha256": "f6490d7c9d4e0a24a329eacacdace23cf0760b310e76886197dced257d1bf304",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source0_R1/layer17.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source0_R1\\layer17.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "ebbdb710b1ef0ccb1fd18b5b3438caa70fdf7f8bca6361f0675f6847dcd78335",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source0_R1/layer17.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source0_R1\\layer18.conv.bf16",
+      "bytes": 36864,
+      "sha256": "3cdb019ea6ba3999b86d103d8845ad49d8e1831b3dc8ba284da6379e8db43225",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source0_R1/layer18.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source0_R1\\layer18.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "bc9c9cc6cab9613ae5f3b8c434848646108ff8984602ee17db4da533027d3dc7",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source0_R1/layer18.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source0_R1\\layer2.conv.bf16",
+      "bytes": 36864,
+      "sha256": "866200ab2b07ca1591f534a10a416092eabec620a5d307928d7388818818ef00",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source0_R1/layer2.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source0_R1\\layer2.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "0b3ca689f066994dd10cd2fc0d7eadbcc81fae44768c1c2dc261062e50ceca77",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source0_R1/layer2.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source0_R1\\layer20.conv.bf16",
+      "bytes": 36864,
+      "sha256": "752bd848e034b39c1f960719627335c135ce89354fdeb9c7022f9acb23020112",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source0_R1/layer20.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source0_R1\\layer20.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "d1833bcdf8b5f0672ffd363ef76d928e1c47dde069f7c35e70b6b2de4949209e",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source0_R1/layer20.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source0_R1\\layer21.conv.bf16",
+      "bytes": 36864,
+      "sha256": "7459a04ef51e2e3d1859119c23290a8373937bfef94079811d94d01a672abcbd",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source0_R1/layer21.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source0_R1\\layer21.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "c25793e5f1250a0a3762ee6c5c1b7249266fa7e0c3dfedcae41bfb782d0a0569",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source0_R1/layer21.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source0_R1\\layer22.conv.bf16",
+      "bytes": 36864,
+      "sha256": "a918ba3c3f7dd2a2daa85e0ed5a1e41add4a84557546f2efd37fff8baf398f2e",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source0_R1/layer22.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source0_R1\\layer22.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "b8e2df08c5d3e7273ac9464d8156a47e3529a2addca3fa3d44e65b022ed200f3",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source0_R1/layer22.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source0_R1\\layer4.conv.bf16",
+      "bytes": 36864,
+      "sha256": "8bf967c820d25dfde6d5fc3a66a21178161d10fcb9889c814f58733bf99988c8",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source0_R1/layer4.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source0_R1\\layer4.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "fb4417e74191ea9ac5a59e5d5d700e3fba4d7c3ba02881f00790d0fd111c5290",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source0_R1/layer4.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source0_R1\\layer5.conv.bf16",
+      "bytes": 36864,
+      "sha256": "025a70defb07a177252f3e4bb0ac1631ea25cf0dc378b9cf0c7cfd4366fc0d96",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source0_R1/layer5.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source0_R1\\layer5.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "f10c7428ef25b2ea778b4e06da75a8b4eb2544063124a61d109f2d30c1d914fd",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source0_R1/layer5.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source0_R1\\layer6.conv.bf16",
+      "bytes": 36864,
+      "sha256": "736cf0de8caee4bfcc8772892c4133c365de1f48e8f9bceb5ab37dd226d075bd",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source0_R1/layer6.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source0_R1\\layer6.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "1b720ff0e748c8be9b1d738dc4e0d952c97f2e40a38b20106970eaacbdfb0c98",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source0_R1/layer6.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source0_R1\\layer8.conv.bf16",
+      "bytes": 36864,
+      "sha256": "23aacbeb204b005fd5eebaf205a4d32c63bc89ddf3478a5d8fe75b4485c7d28a",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source0_R1/layer8.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source0_R1\\layer8.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "5129276f03b0f9523dd6d4e7016e61936632eb7dde79dd0c6d6387d7b24659d9",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source0_R1/layer8.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source0_R1\\layer9.conv.bf16",
+      "bytes": 36864,
+      "sha256": "912bdd5d57d3f5e5f498f786cd5b2f2a105092bc980ced40f46665cfad173cfe",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source0_R1/layer9.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source0_R1\\layer9.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "9d0f134653651cb61952fc2aece1dd25ce22a4f77a8a42972465d3113d836096",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source0_R1/layer9.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source0_R1\\output.hidden.bf16",
+      "bytes": 8192,
+      "sha256": "751bc1e1134a6d3e52faafe4c43155af82854ab4557ae90a5d8ceb4224335f89",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source0_R1/output.hidden.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source0_R1\\output.logits.f32",
+      "bytes": 1986560,
+      "sha256": "806b32d0741d69fc44b7433934183afa8cde7041d6dd4ecab007803978ea57c3",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source0_R1/output.logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source0_R1\\prior.bf16",
+      "bytes": 4096,
+      "sha256": "e20654ecd269682e7befc72586f089ed3565b46493833f2eaad794046d4db3fe",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source0_R1/prior.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source0_R1\\target0.key.bf16",
+      "bytes": 20480,
+      "sha256": "43b29e307746bc3f8463342507a572fd2247da11d9ac189ffcd4e713b03a6f72",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source0_R1/target0.key.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source0_R1\\target0.value.bf16",
+      "bytes": 20480,
+      "sha256": "129a5c167c167a87a3b5ac0a5ea3948aa3c796ba30b0344b8535dacb1f3c2a44",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source0_R1/target0.value.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source0_R1\\target1.key.bf16",
+      "bytes": 20480,
+      "sha256": "00c25a70e0fd737e3132d5272b0cfeedeb42224c007b8dbdeaf49208db623557",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source0_R1/target1.key.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source0_R1\\target1.value.bf16",
+      "bytes": 20480,
+      "sha256": "d5db4b78c25fe01b0284e86d09417acbeabd582e48b88692fb4c698abed9bc84",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source0_R1/target1.value.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source0_R1\\target2.key.bf16",
+      "bytes": 20480,
+      "sha256": "5c9710b3ae173fa7ef0ac77bd8131c236fff484df4188d1585d06c84f3438c78",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source0_R1/target2.key.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source0_R1\\target2.value.bf16",
+      "bytes": 20480,
+      "sha256": "661ed93a894d48358dde60b235fd5fe45b8883d4184fed8a37638c04dba00be8",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source0_R1/target2.value.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source0_R1\\target3.key.bf16",
+      "bytes": 20480,
+      "sha256": "d3f99ead1509217510ae7a408da374586de4a92efd5a41456161810aae519937",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source0_R1/target3.key.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source0_R1\\target3.value.bf16",
+      "bytes": 20480,
+      "sha256": "598d05cc477ea0780eb5a287a28be0ae1c50545fc41acea101ed248bb1204f58",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source0_R1/target3.value.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source0_R1\\target4.key.bf16",
+      "bytes": 20480,
+      "sha256": "7eb206f09d9d563c82b1a786563233ebb921cba559b6ea37b12a2d560aa8d8c1",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source0_R1/target4.key.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source0_R1\\target4.value.bf16",
+      "bytes": 20480,
+      "sha256": "91f9e3997c4955b0e4611d1ba0c94ce2a3b730de4247d5b344464f9139631fc4",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source0_R1/target4.value.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source0_R1\\target5.key.bf16",
+      "bytes": 20480,
+      "sha256": "fab9552c02fe5beb05515b3da747e3502a9b80eb371b88b2ff90482b8d31df53",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source0_R1/target5.key.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source0_R1\\target5.value.bf16",
+      "bytes": 20480,
+      "sha256": "af109b4c3ec4161f1aa6d359bc1ff5dbb35b64ba1076433c94d9fd9329248001",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source0_R1/target5.value.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source0_R2_member0\\draft.key.bf16",
+      "bytes": 19456,
+      "sha256": "a36b13b682d4924190989c021839471a7e8504f3ea2a8be733170361d9cc809d",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source0_R2_member0/draft.key.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source0_R2_member0\\draft.value.bf16",
+      "bytes": 19456,
+      "sha256": "d4dfc089ee33df3906c2b59fbcd734f40265e085c959002eb671811921f9271e",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source0_R2_member0/draft.value.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source1_R1\\carry.bf16",
+      "bytes": 4096,
+      "sha256": "557439375a1d9a7323269b024061f5e6cd57a013c8d1891e7a55446c2cf1026e",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source1_R1/carry.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source1_R1\\draft.key.bf16",
+      "bytes": 19456,
+      "sha256": "c9a6340487a09fec028e31f7538e65fbc0a4e0f349e852abeb06504452ee4ca7",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source1_R1/draft.key.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source1_R1\\draft.value.bf16",
+      "bytes": 19456,
+      "sha256": "83418fb3525befe4a9e8c8b4dab2860f6967bd406d7a79a9e8780499a07f447f",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source1_R1/draft.value.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source1_R1\\layer0.conv.bf16",
+      "bytes": 36864,
+      "sha256": "f40ad31c9aa181654cf64ac6fceedf911b49c630d94d8476098123dc2ba109bd",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source0_R1/layer0.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source1_R1\\layer0.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "6a5c41cca1783cadc5aba8ab26210e8243df3566e0f277b13888c271c7637296",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source0_R1/layer0.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source1_R1\\layer1.conv.bf16",
+      "bytes": 36864,
+      "sha256": "af9bd78eeae0d1a713c0d20ef5780d97eb2c203b029c00226ce252d7718a4aa2",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source0_R1/layer1.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source1_R1\\layer1.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "05ff834b15baa2e5982a3f5142e7c2bf6019618b93375e17fdd5aaca3e083dd6",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source0_R1/layer1.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source1_R1\\layer10.conv.bf16",
+      "bytes": 36864,
+      "sha256": "ed91b9a13df0339d70de0e523390f463c9bd15d0efcb138ac5f03317c2984328",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source1_R1/layer10.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source1_R1\\layer10.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "ff6a3f81c1fec0d2f9d4f27ef4be09c969ba299212a7a52c713d5ec50dce40c8",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source1_R1/layer10.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source1_R1\\layer12.conv.bf16",
+      "bytes": 36864,
+      "sha256": "f059dc031629ca69fb6208915adc9121df078ea507af334a741633b1e1ab22c9",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source1_R1/layer12.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source1_R1\\layer12.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "bf84f7364433824c96bb3ad8df20191b8f0f3eb62e7a0c790336046b4a54b47b",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source1_R1/layer12.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source1_R1\\layer13.conv.bf16",
+      "bytes": 36864,
+      "sha256": "2f601f70b946dad2ffdf1b418a685688af9ef08a7fbb832fd094e331596533be",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source1_R1/layer13.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source1_R1\\layer13.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "ea5c4ac18e05a427e530ed21a458af32b4ff0fdef56736b82bac6b8b42139c80",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source1_R1/layer13.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source1_R1\\layer14.conv.bf16",
+      "bytes": 36864,
+      "sha256": "a9de460ef2f9d09a6fdc71b879817a77bfbf7dbb6dc39d3a2cbd552b4e0718bb",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source1_R1/layer14.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source1_R1\\layer14.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "5c21b448e9b8676251fe4fdf2c7310fbb7c5f8d7249f6e4a07ed9a5cb83964f9",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source1_R1/layer14.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source1_R1\\layer16.conv.bf16",
+      "bytes": 36864,
+      "sha256": "e4f037486e218b26ab6a35b78d3bb5764d66eb95b44d0ebc06d64f8c35a8b2f0",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source1_R1/layer16.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source1_R1\\layer16.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "1cf3d47b782161613333f23ec9adb2298f8b37ebe429f28c30eed6fa11c01ab9",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source1_R1/layer16.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source1_R1\\layer17.conv.bf16",
+      "bytes": 36864,
+      "sha256": "b4fdcff6e022c0035f8dd82e531b5555e3a653ebb97ccb2fb2f781f042f35a49",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source1_R1/layer17.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source1_R1\\layer17.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "7ed97301bb11f1124589cf2ddcfb40703bd9731d08951ef15c45314e90a10814",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source1_R1/layer17.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source1_R1\\layer18.conv.bf16",
+      "bytes": 36864,
+      "sha256": "fc78b1191ee38393efb21def611016086beb6a6454bc3d091241c08cfdbd0a0c",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source1_R1/layer18.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source1_R1\\layer18.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "418a5d69088500a562c8bc6f1c09a69abd9ae063f3c7c97e1ff65b0fe917fc23",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source1_R1/layer18.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source1_R1\\layer2.conv.bf16",
+      "bytes": 36864,
+      "sha256": "866200ab2b07ca1591f534a10a416092eabec620a5d307928d7388818818ef00",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source0_R1/layer2.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source1_R1\\layer2.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "0b3ca689f066994dd10cd2fc0d7eadbcc81fae44768c1c2dc261062e50ceca77",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source0_R1/layer2.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source1_R1\\layer20.conv.bf16",
+      "bytes": 36864,
+      "sha256": "ddc637ea6aeba37405a474b96f6146eee785323fe85d6dee692cd5592ee0a937",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source1_R1/layer20.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source1_R1\\layer20.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "77f070f2016a376018855fabdb70fabf10a2f906f42c21c9b9a4daafb837c283",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source1_R1/layer20.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source1_R1\\layer21.conv.bf16",
+      "bytes": 36864,
+      "sha256": "015ffa084eafd16241989bffff8766bf6c0677f22fd296f154b3e1660ad9eea3",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source1_R1/layer21.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source1_R1\\layer21.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "1adbdd507a9912bfa53a3ed1b8472c9e97bdbb1f626c98c4650772af238ed87d",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source1_R1/layer21.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source1_R1\\layer22.conv.bf16",
+      "bytes": 36864,
+      "sha256": "4205c565eaedab4ec2cd7d081c90432c5275a2cb0ebc99aa0425485b895249b2",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source1_R1/layer22.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source1_R1\\layer22.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "42b1f9bb5f5f6cb3b2f21520893f08899b1009f9ab0ab67e992bf8fddc30f220",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source1_R1/layer22.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source1_R1\\layer4.conv.bf16",
+      "bytes": 36864,
+      "sha256": "c5a8c3294b92419ffff5be1ce7b49f1490a8c203a10002d9da361f31ae100b4b",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source1_R1/layer4.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source1_R1\\layer4.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "57fd389a6b2149f23599c2ff62583270d9140368425d15692983151f8da2e975",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source1_R1/layer4.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source1_R1\\layer5.conv.bf16",
+      "bytes": 36864,
+      "sha256": "adc62c3e5f78ccf93bbaad677a0ae47ff3bdcbaa094c85cc2de366ffac4ff649",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source1_R1/layer5.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source1_R1\\layer5.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "af27b82f1d7930500c4956dc6fb7e49e6e0d5dfbd0c5fc521a6c5c09cc792272",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source1_R1/layer5.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source1_R1\\layer6.conv.bf16",
+      "bytes": 36864,
+      "sha256": "7bfc19fa560e57a79b27ad3b2019c0df14c842246d82615e30d567e1ecd96a78",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source1_R1/layer6.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source1_R1\\layer6.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "9b2903aaab5b73bd828258930516472dedacebb84a584a45c931e7c5d81b92a9",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source1_R1/layer6.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source1_R1\\layer8.conv.bf16",
+      "bytes": 36864,
+      "sha256": "72f0d84bfa95d15187831c2e85d4e3c8deac1443970def974d2dcfe411cb7f77",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source1_R1/layer8.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source1_R1\\layer8.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "3a1a6ce273cd26aebdad3e159fb008af5e2a3d2e0d018236e35083cf0cda7a5e",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source1_R1/layer8.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source1_R1\\layer9.conv.bf16",
+      "bytes": 36864,
+      "sha256": "60d18cfd24ceea2f1212b945f9d819735e55ac4d0ed20c4faa6541eb807ea6f9",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source1_R1/layer9.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source1_R1\\layer9.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "6350bcfc24c0cdc0120b2e4babcebef53025bc091f41a5b45647ad4bbe6c1632",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source1_R1/layer9.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source1_R1\\output.hidden.bf16",
+      "bytes": 8192,
+      "sha256": "999f205a7168dd54dfc83b7b2a1bf90f9035a35fd31884031f536d386c5a46e3",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source1_R1/output.hidden.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source1_R1\\output.logits.f32",
+      "bytes": 1986560,
+      "sha256": "41313c75c59f7f7e4319d9b07467240f8597dc4bee0e082f9d0cf9beee6a3bb2",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source1_R1/output.logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source1_R1\\prior.bf16",
+      "bytes": 4096,
+      "sha256": "a541704a42003be07dbe241922b39faff2ab77b2344b6231c06adb48e4c293d5",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source1_R1/prior.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source1_R1\\target0.key.bf16",
+      "bytes": 20480,
+      "sha256": "99f305ed450a9d843572595b805cd5a85e72686fb8db5086993a4b5733a78f14",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source1_R1/target0.key.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source1_R1\\target0.value.bf16",
+      "bytes": 20480,
+      "sha256": "7f411852731c8e91f9422895f2c0734dcd6b80729057431464377a17227f93cc",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source1_R1/target0.value.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source1_R1\\target1.key.bf16",
+      "bytes": 20480,
+      "sha256": "661abcb9325f0e4f3531cbb620269356df465d5f43cbc19e8f41937ac6dce642",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source1_R1/target1.key.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source1_R1\\target1.value.bf16",
+      "bytes": 20480,
+      "sha256": "a485741af7bed763b73c4fd222ef414674db739b3abc637259da34ef01f50b44",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source1_R1/target1.value.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source1_R1\\target2.key.bf16",
+      "bytes": 20480,
+      "sha256": "9d2681845d5748da84686cade2a4cf98e27c894b20fab83b4b98fdbe35444f32",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source1_R1/target2.key.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source1_R1\\target2.value.bf16",
+      "bytes": 20480,
+      "sha256": "bc8e338a82ba4fb9b174854b789c653c4b8ba5fd10140fa1a5ddd6e167d804ee",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source1_R1/target2.value.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source1_R1\\target3.key.bf16",
+      "bytes": 20480,
+      "sha256": "d4a9fa5bbe1cf8fdeb14ae80177df79aa14720bfb001eb6e8c71db0c591195a9",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source1_R1/target3.key.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source1_R1\\target3.value.bf16",
+      "bytes": 20480,
+      "sha256": "9854c6a41edafdb04fb99877bcfbffaaeb7f35f8d869c764ba6a2d19cc87a92e",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source1_R1/target3.value.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source1_R1\\target4.key.bf16",
+      "bytes": 20480,
+      "sha256": "e450c96f75fc54bbfec3c1c727997253305013d731e9b14d7d20f103a006e3cf",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source1_R1/target4.key.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source1_R1\\target4.value.bf16",
+      "bytes": 20480,
+      "sha256": "83a4e5140f8d658cf7974ddd69ac2fcde74068fcc4ddd172d6841fde795f3e67",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source1_R1/target4.value.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source1_R1\\target5.key.bf16",
+      "bytes": 20480,
+      "sha256": "09dce1972942234df4f3e3b31991a13f83f1ed1b12b15560f344b914f8e31f3c",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source1_R1/target5.key.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source1_R1\\target5.value.bf16",
+      "bytes": 20480,
+      "sha256": "6e4a4eac780f1fa2623171750df226e1ff3c24fa7e57cda4d4dc0a7f3a70d8ca",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source1_R1/target5.value.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source1_R2_member0\\draft.key.bf16",
+      "bytes": 19456,
+      "sha256": "f781b759504d4336c84cb8ce6ce7c6f40075e1ec5234fad4567bd3ff82e2bd70",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source1_R2_member0/draft.key.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\control_source1_R2_member0\\draft.value.bf16",
+      "bytes": 19456,
+      "sha256": "72abe9b9c27f982ad45a4db5e331929a526db15088304b09ad0f9046e3f2c33c",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/control_source1_R2_member0/draft.value.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\seed_R1\\carry.bf16",
+      "bytes": 4096,
+      "sha256": "707731a2d8666c5f942515db83fa25074f0ffbabd6acb6528721aaebad039b9d",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/seed_R1/carry.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\seed_R1\\draft.key.bf16",
+      "bytes": 15360,
+      "sha256": "ca94e2e256032ea65a84a3d946f5dc7eda87c3f8a2a7e3f49629a3733e3e8af1",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/seed_R1/draft.key.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\seed_R1\\draft.value.bf16",
+      "bytes": 15360,
+      "sha256": "4ed9569ed43eb84e42e945261e24675adfd8e57a31076ce3c40eeb6f9306493c",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/seed_R1/draft.value.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\seed_R1\\layer0.conv.bf16",
+      "bytes": 36864,
+      "sha256": "ab1a8ea6601b33a10368e1c3071e3579baa8ca1980b5c6f597ef2628a84d57be",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/seed_R1/layer0.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\seed_R1\\layer0.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "033a42e06d4317c4dc07cc0dbabc9cc95b983b0a404c2b8971f1f3474b1936aa",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/seed_R1/layer0.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\seed_R1\\layer1.conv.bf16",
+      "bytes": 36864,
+      "sha256": "daccb199c796d27d9d778d08fdb510fff5c66ea295464d268943df92159120ec",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/seed_R1/layer1.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\seed_R1\\layer1.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "fd485a2b239c25e612474869222c2d0ae6fdebc91737247d8d8e710f4d66ef19",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/seed_R1/layer1.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\seed_R1\\layer10.conv.bf16",
+      "bytes": 36864,
+      "sha256": "c1e50a81939355f39d9f28d6bf80746d2382e2b07c0717dc7cfb1e9bbe3e2a4a",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/seed_R1/layer10.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\seed_R1\\layer10.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "f97d1521111453f26a98a7f7d83bfe206de7210f28fa64f337bda67e3bca357c",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/seed_R1/layer10.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\seed_R1\\layer12.conv.bf16",
+      "bytes": 36864,
+      "sha256": "c111f1b78c647ee375a4168b2908bbd3ed2396d4518491b60b8e4a03d673c2c7",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/seed_R1/layer12.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\seed_R1\\layer12.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "5aeea62a012f5454c86e8bed419f08d0c069e8850b228fe576f1915867ecf905",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/seed_R1/layer12.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\seed_R1\\layer13.conv.bf16",
+      "bytes": 36864,
+      "sha256": "99832597b95bdd825d6c3e1a93bdabdb7fcd77a87d915b7bda18381f5af89c68",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/seed_R1/layer13.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\seed_R1\\layer13.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "494fabefda77e15b46f47ab017196f77ac2977bc709930ad3a0354106fc6ecea",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/seed_R1/layer13.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\seed_R1\\layer14.conv.bf16",
+      "bytes": 36864,
+      "sha256": "e30a81eff4aff9b60421bb83f2870977fadcfcf235d5f150b7c6ecf4f22cccf4",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/seed_R1/layer14.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\seed_R1\\layer14.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "828aa144beb21b47006be4c789cf067766bde468e674b41776a1d5067f0542d0",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/seed_R1/layer14.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\seed_R1\\layer16.conv.bf16",
+      "bytes": 36864,
+      "sha256": "00864c333cd4e8ea7a9122fb4e8d008c53fc13e2672b593fc23d80bd10be647e",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/seed_R1/layer16.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\seed_R1\\layer16.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "ce221658167dcb4d3c2e814a453cae7cfedcf8aed70f804f1d0f5406e702441e",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/seed_R1/layer16.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\seed_R1\\layer17.conv.bf16",
+      "bytes": 36864,
+      "sha256": "a97ce3938549efba2ce0ba19393a1cc27adac354f06f773ba8cf857bfb2172bd",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/seed_R1/layer17.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\seed_R1\\layer17.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "cb5e506a6e802b6a5414ae520b115a47dc5ec0ff708ec717c2b674f1898d4e60",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/seed_R1/layer17.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\seed_R1\\layer18.conv.bf16",
+      "bytes": 36864,
+      "sha256": "ac8553b46f4db8794bf216a3ad8af255b01a7b12a1b8d760a8698e8ac13ea1e9",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/seed_R1/layer18.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\seed_R1\\layer18.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "b1e5d0a57290708acab8bf8f1097b5f36d9910313a231c7e9fa351e446b27d57",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/seed_R1/layer18.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\seed_R1\\layer2.conv.bf16",
+      "bytes": 36864,
+      "sha256": "8b95886fc99624355ae16b4be3f8c36799884e2c62681fcadc504a3326c152c4",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/seed_R1/layer2.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\seed_R1\\layer2.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "a91ffde8da46c21d681d1176283f44d8f37c98d05aab60f038dd77c180195045",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/seed_R1/layer2.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\seed_R1\\layer20.conv.bf16",
+      "bytes": 36864,
+      "sha256": "de22f715831426eec573cbd105e6b18f5edffb099945a3461c2e9b7b09be9225",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/seed_R1/layer20.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\seed_R1\\layer20.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "2de3657efa6bfdb38f6619740ce285aa26b18e53082a97962cefe5d9d818d794",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/seed_R1/layer20.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\seed_R1\\layer21.conv.bf16",
+      "bytes": 36864,
+      "sha256": "d2e908fe6016f135bee3667a35b9f03906c8365e295c879584f9a7705dec4912",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/seed_R1/layer21.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\seed_R1\\layer21.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "525c4cd6c0b1398f602e02cc3b0b154f1392aab64778a2dcdffb8ac53c681d7a",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/seed_R1/layer21.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\seed_R1\\layer22.conv.bf16",
+      "bytes": 36864,
+      "sha256": "1de6071de5f5ad82b0b60b69de89f69deadc04e56f671bf91e2ce49e4883f4ca",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/seed_R1/layer22.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\seed_R1\\layer22.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "1f09b95fd461b6dbe95edad974308e22f7acac1846acb07685bc043947536114",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/seed_R1/layer22.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\seed_R1\\layer4.conv.bf16",
+      "bytes": 36864,
+      "sha256": "71c7d44d87744692284737f67a95fc9e0c06679c6a98c7714e3dded6381eb725",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/seed_R1/layer4.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\seed_R1\\layer4.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "f1b46d4d98c625b839883d5dc3b764eb5c8af2805fe9ee34699cfbdc1c8ccc69",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/seed_R1/layer4.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\seed_R1\\layer5.conv.bf16",
+      "bytes": 36864,
+      "sha256": "32aff3d8d415167fc5c978402d124ae0c6ecd6edc8f05a04be57a300095a82b3",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/seed_R1/layer5.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\seed_R1\\layer5.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "bfc1d6fb91b8a6b669123c751c301410ca1ca0fa078dc7364148fa2f9a6ddf4a",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/seed_R1/layer5.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\seed_R1\\layer6.conv.bf16",
+      "bytes": 36864,
+      "sha256": "dd9c46f09e6d21c483b6e285c6a3174e7d159f0c2f38db63be452dcd21624206",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/seed_R1/layer6.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\seed_R1\\layer6.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "ba5a04975919a1acafa5da3afb38b1d38745f5a1b1e6cea23fb8a68278e660f1",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/seed_R1/layer6.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\seed_R1\\layer8.conv.bf16",
+      "bytes": 36864,
+      "sha256": "352f74ad01586d04195e18e4869a75999217b0ca4d295ace2d757d8fb34e7b69",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/seed_R1/layer8.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\seed_R1\\layer8.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "c0dae9e9471357c466a561746bf1dec1a84b5c904d829077c5bd41761f213c80",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/seed_R1/layer8.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\seed_R1\\layer9.conv.bf16",
+      "bytes": 36864,
+      "sha256": "368bb085ab92035b8febebf6b1140e4d2c98873f54ba1e1549cb7f2aabe6cab5",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/seed_R1/layer9.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\seed_R1\\layer9.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "4ff15dce6563913c31e1fe46ad9bc5ee8f041992026d6800e81900adc4bce73b",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/seed_R1/layer9.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\seed_R1\\output.hidden.bf16",
+      "bytes": 4096,
+      "sha256": "707731a2d8666c5f942515db83fa25074f0ffbabd6acb6528721aaebad039b9d",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/seed_R1/carry.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\seed_R1\\output.logits.f32",
+      "bytes": 993280,
+      "sha256": "f6947e46facdabeb58caeb32abc93d3d260c934031102a2a0693ad510cafdd42",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/seed_R1/output.logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\seed_R1\\prior.bf16",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/compile1/mtp_session/compile.stderr.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\seed_R1\\target0.key.bf16",
+      "bytes": 15360,
+      "sha256": "830d9271a2bf4f76c63aaaeef064d7b05239c245e8888db6863b1b499ebb07fa",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/seed_R1/target0.key.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\seed_R1\\target0.value.bf16",
+      "bytes": 15360,
+      "sha256": "10609f515b942c0613fba9e073246e4769aa7c6da1e87e7cb87b468bc957262c",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/seed_R1/target0.value.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\seed_R1\\target1.key.bf16",
+      "bytes": 15360,
+      "sha256": "abd3f0fa67ece8a7a2f5fd689bc9dacd67ad3567b8acf5565e3dda338f1154a2",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/seed_R1/target1.key.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\seed_R1\\target1.value.bf16",
+      "bytes": 15360,
+      "sha256": "eeceda195349e123aa69f9b1bb9a7ed54b74dadbb8176d0bdf0dbbcdd0de0eab",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/seed_R1/target1.value.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\seed_R1\\target2.key.bf16",
+      "bytes": 15360,
+      "sha256": "1152285f95a959db9858a24b2dc7c42aa2ff2f923ef917b569472b73a8852f80",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/seed_R1/target2.key.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\seed_R1\\target2.value.bf16",
+      "bytes": 15360,
+      "sha256": "dc0fc5b7f41679a082929346637d576725c826510df468f0e8aabe97e70b3dcb",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/seed_R1/target2.value.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\seed_R1\\target3.key.bf16",
+      "bytes": 15360,
+      "sha256": "9d4e76f76268476cdff0265b16a3a0add29a17c8c1c10facc8d55d5d5f00d992",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/seed_R1/target3.key.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\seed_R1\\target3.value.bf16",
+      "bytes": 15360,
+      "sha256": "77d139861f60bf7188d9237ca30be1820d3aa2f291bfe7c5d0a4a2c12dbcf8c4",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/seed_R1/target3.value.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\seed_R1\\target4.key.bf16",
+      "bytes": 15360,
+      "sha256": "bad7a1955b24e26a6967dd1b49e93d02e05d8f68c7d88879922c1c33c5a217e9",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/seed_R1/target4.key.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\seed_R1\\target4.value.bf16",
+      "bytes": 15360,
+      "sha256": "92e1457d703f22fa80a156287356002185a984887064968864e61063a3b797bf",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/seed_R1/target4.value.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\seed_R1\\target5.key.bf16",
+      "bytes": 15360,
+      "sha256": "9b33741c1f94db73c2b2db1eb08e8552b23207e444885725feed767ed868b817",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/seed_R1/target5.key.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\seed_R1\\target5.value.bf16",
+      "bytes": 15360,
+      "sha256": "c0727068a61e7a51da568dfd5d493a008d9a5ad6ee1d1c2c38c639f006c2b67d",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/seed_R1/target5.value.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\seed_R2_0\\carry.bf16",
+      "bytes": 4096,
+      "sha256": "375cdfceacc5163b1222a87999faa50811577f013dc39955e703e8532582a1d3",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/seed_R2_0/carry.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\seed_R2_0\\draft.key.bf16",
+      "bytes": 15360,
+      "sha256": "0d478ad5cd9fdc405412dd1446720083e014cba4c1cb0f23c1be98088dc4d7e4",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/seed_R2_0/draft.key.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\seed_R2_0\\draft.value.bf16",
+      "bytes": 15360,
+      "sha256": "59658b896e2f317abdb95e1bf81d2e1a399b80c349d239a411d2f890892c0a88",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/seed_R2_0/draft.value.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\seed_R2_0\\layer10.conv.bf16",
+      "bytes": 36864,
+      "sha256": "c246e12a23ebc36d9396bda72412de708b588460515d5aeafd704bb8063d1d02",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/seed_R2_0/layer10.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\seed_R2_0\\layer10.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "56a8a7328e5c06f32faee8f6ccd21981d23b829bbc70974e2a78ef761114996e",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/seed_R2_0/layer10.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\seed_R2_0\\layer12.conv.bf16",
+      "bytes": 36864,
+      "sha256": "bd9088903a03b318838c6290de7835400b9e37b2afa8ecbbb2eedaaf53b76f5d",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/seed_R2_0/layer12.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\seed_R2_0\\layer12.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "7de6ed1101a19d20d25ccc224fed72d0ad2bc5e2a9662edcb89b1da08ca748b0",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/seed_R2_0/layer12.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\seed_R2_0\\layer13.conv.bf16",
+      "bytes": 36864,
+      "sha256": "b8e609eb128e7ebc78502a96588090ca328516b0a3d51dbca27b4a6864f4edcd",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/seed_R2_0/layer13.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\seed_R2_0\\layer13.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "2d324a1cac67dfd27371587cc61af9b855f28f6c8cf9cfaaa04981b3e2374de0",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/seed_R2_0/layer13.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\seed_R2_0\\layer14.conv.bf16",
+      "bytes": 36864,
+      "sha256": "cc7c3847c866d27b1f97b4f809f9ace09dfd94432d1db16f189d2059a75aa453",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/seed_R2_0/layer14.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\seed_R2_0\\layer14.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "e8c8f579cd92cc0abc815103eaca56176a0ec121dbf07c7b2786283263705d19",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/seed_R2_0/layer14.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\seed_R2_0\\layer16.conv.bf16",
+      "bytes": 36864,
+      "sha256": "897655cf17d571299c784ed0952066245f30f20f11a97df6f906d71eee1cf19c",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/seed_R2_0/layer16.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\seed_R2_0\\layer16.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "abbaa85282687344eefd38de2fdcf55c61addac07f54eed93ce41f3a4b305e06",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/seed_R2_0/layer16.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\seed_R2_0\\layer17.conv.bf16",
+      "bytes": 36864,
+      "sha256": "9cf55cc462edaa2a46676a6bd5f60519456b653773d283c77a7f8ba903576134",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/seed_R2_0/layer17.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\seed_R2_0\\layer17.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "40fb629844cc7f53f0e8719d754b244b6988166a06eff3e2af9e51017eb2ecbb",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/seed_R2_0/layer17.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\seed_R2_0\\layer18.conv.bf16",
+      "bytes": 36864,
+      "sha256": "1cd05a85481ab2662c35501a5281b803fbbb753b7ebe351e93b75ba7ddb90bc3",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/seed_R2_0/layer18.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\seed_R2_0\\layer18.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "7ff873be1e22ef7273baea080339cc5fd45d743adc321925c75dd44cfd3e2736",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/seed_R2_0/layer18.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\seed_R2_0\\layer20.conv.bf16",
+      "bytes": 36864,
+      "sha256": "588a03efb4a55b7459adaa754450c27d2f79fc895b9138c309813717e51715e3",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/seed_R2_0/layer20.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\seed_R2_0\\layer20.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "e7d57d7795c969aa5fa4d1fc92d34d279aae264201dd41efc50615850b765bfd",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/seed_R2_0/layer20.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\seed_R2_0\\layer21.conv.bf16",
+      "bytes": 36864,
+      "sha256": "59e6d9f1ee2a386bf8ebf34c3dfab28ed7de1d8bd00ef479e94f0b34dbf51f51",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/seed_R2_0/layer21.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\seed_R2_0\\layer21.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "6563c1a3efe7f256fba2f285ee155c016d32808cc72edc80e09d00920a127d1b",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/seed_R2_0/layer21.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\seed_R2_0\\layer22.conv.bf16",
+      "bytes": 36864,
+      "sha256": "9fb9f1717637bf5cc41278a7c8171ff0bcac0ca406d16a96285ba401478fbc20",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/seed_R2_0/layer22.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\seed_R2_0\\layer22.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "0ab9a17555a6c2d95350e7c14c85c4d9f2efc3dd90b7575727a3788b5e76cdb6",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/seed_R2_0/layer22.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\seed_R2_0\\layer8.conv.bf16",
+      "bytes": 36864,
+      "sha256": "d69ae88c51e17a9b5fc5ff40507830cda2a68d6fd8030f02ffa5c9ea58166873",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/seed_R2_0/layer8.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\seed_R2_0\\layer8.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "d729043f43131cb690b7cb64b9f03b7ae00b4d2225f7578782ed1e783c05deb1",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/seed_R2_0/layer8.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\seed_R2_0\\layer9.conv.bf16",
+      "bytes": 36864,
+      "sha256": "e6a22c0a650b6d8da2442386f9995c2b9b1bdb8ad92a1ac71638ef1aabb8f756",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/seed_R2_0/layer9.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\seed_R2_0\\layer9.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "5086bc263ecc273a473c4ab263cd1be21c8e1d8627c37f9f5c8e796acc398587",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/seed_R2_0/layer9.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\seed_R2_0\\output.hidden.bf16",
+      "bytes": 4096,
+      "sha256": "375cdfceacc5163b1222a87999faa50811577f013dc39955e703e8532582a1d3",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/seed_R2_0/carry.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\seed_R2_0\\output.logits.f32",
+      "bytes": 993280,
+      "sha256": "5edcf908f2a3cd5f1be8682cdca20e904ba08e0bd27a4f5dd4f88be250703dfa",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/seed_R2_0/output.logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\seed_R2_0\\target0.key.bf16",
+      "bytes": 15360,
+      "sha256": "30b4bc2a8c0bd2bb3d4b1cc4dbc3485bb8044e6787bf0ff55bdc5da1121abfe2",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/seed_R2_0/target0.key.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\seed_R2_0\\target0.value.bf16",
+      "bytes": 15360,
+      "sha256": "d0f6b94ec01aa5e7af95140dda381d6c3fcba79dbba272bdae615fc1caf605dd",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/seed_R2_0/target0.value.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\seed_R2_0\\target1.key.bf16",
+      "bytes": 15360,
+      "sha256": "ab354201d1a89ecc7aba77a646c58ab876b6efa7920d67bc3c48182fdb670d0c",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/seed_R2_0/target1.key.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\seed_R2_0\\target1.value.bf16",
+      "bytes": 15360,
+      "sha256": "b2575ce2b21434a8709c9f1f8cddc094c16628462a19813e150ad86cca0af0cb",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/seed_R2_0/target1.value.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\seed_R2_0\\target2.key.bf16",
+      "bytes": 15360,
+      "sha256": "a1b44bd09e686bbac06d9e3ea2f8d152291cd40674970d24ffaa6c8276b1578a",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/seed_R2_0/target2.key.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\seed_R2_0\\target2.value.bf16",
+      "bytes": 15360,
+      "sha256": "1883dae22e89b5439ae2adc0ece6bca11f8e8e57a9d8795432beb1b2a7732644",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/seed_R2_0/target2.value.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\seed_R2_0\\target3.key.bf16",
+      "bytes": 15360,
+      "sha256": "0d3298920e5ddbf8d9d7eeb5d75ea27634d89ee294ac80fa3afb89cd00aa766b",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/seed_R2_0/target3.key.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\seed_R2_0\\target3.value.bf16",
+      "bytes": 15360,
+      "sha256": "9e6a9ce488d9a05c8dc47215726999d952dfd552b3b80df95244b88a208357fa",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/seed_R2_0/target3.value.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\seed_R2_0\\target4.key.bf16",
+      "bytes": 15360,
+      "sha256": "290faae341f4b5b3e6569bd8551a31c90ba4d6f8e393282558ec8e315d891e3e",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/seed_R2_0/target4.key.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\seed_R2_0\\target4.value.bf16",
+      "bytes": 15360,
+      "sha256": "ed038872eb5404908b16ee05199c24a6d682deaff5b0ee34f44f7aeb88a3fc2f",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/seed_R2_0/target4.value.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\seed_R2_0\\target5.key.bf16",
+      "bytes": 15360,
+      "sha256": "16091151fee2a534edcfbcc26901ebbf97baf519d357830daadcb9fe56068e7f",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/seed_R2_0/target5.key.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\seed_R2_0\\target5.value.bf16",
+      "bytes": 15360,
+      "sha256": "a0a290fa63752a2d4143bc1c3ac6e59b23b9af672537d9ae340e0aeb01c0a6f8",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/seed_R2_0/target5.value.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step0\\carry.bf16",
+      "bytes": 4096,
+      "sha256": "da6e0474d94bbd45fe8211f5e96b0b76ea0ab3eefc657fac4ad25bd16211e398",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step0/carry.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step0\\draft.key.bf16",
+      "bytes": 16384,
+      "sha256": "f753fdca37d2fff7bc8a3fa622c95a70caf545ecc4ec51f153436a972d141773",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step0/draft.key.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step0\\draft.value.bf16",
+      "bytes": 16384,
+      "sha256": "9a9fdbfa26c60871e5377002c2352bbf6b6ec4cc24da82ce09fb887ab130c8b1",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step0/draft.value.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step0\\layer0.conv.bf16",
+      "bytes": 36864,
+      "sha256": "8c77c06c1971f16ed1ea33a048f916f9183a0b3fa6d89057f802ed4721de8278",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step0/layer0.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step0\\layer0.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "6f68bbb46f69d028cef4e02c9cb3ffe3a277d835cbd38e7429cf0fd46b8cca56",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step0/layer0.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step0\\layer1.conv.bf16",
+      "bytes": 36864,
+      "sha256": "4f1b29ae3b066b5569d13d91bde211eecdaa54894d0f72843566c55fee7d385c",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step0/layer1.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step0\\layer1.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "b8e948ca4ecc5170bad9d18b36494d3c73c6da855582d1afbd1035526e6e518e",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step0/layer1.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step0\\layer10.conv.bf16",
+      "bytes": 36864,
+      "sha256": "be5aaff508fd1c2f3e8db77a5837b06fee98ab8151810c3a50cde145e75a7474",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step0/layer10.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step0\\layer10.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "d37ef0a351ad55406cc239d2069577d88e6c67788ef12a404766d0716a7c5aea",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step0/layer10.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step0\\layer12.conv.bf16",
+      "bytes": 36864,
+      "sha256": "db8e381e7be2640b234f6b32a90e7b7e8a6c60e3d81636b1809b6ed441fde59e",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step0/layer12.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step0\\layer12.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "7dad66caa48479c424738aad2ff5cd234bb87f2a2248cddf92c0511bad84e026",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step0/layer12.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step0\\layer13.conv.bf16",
+      "bytes": 36864,
+      "sha256": "08a2e864ce9616a5b94885302f54e34ee2a53eda0a5a105f4ef00a17bef99c50",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step0/layer13.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step0\\layer13.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "366ba558c992e8852ceb2c8d4d58654f8992c644ee7f48e947d2af0084b9bd1e",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step0/layer13.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step0\\layer14.conv.bf16",
+      "bytes": 36864,
+      "sha256": "bbd015dbf985e4acc761612a6978ceccb5456ddbddea1cd905edd388127a94a2",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step0/layer14.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step0\\layer14.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "73756642e52767f9ad7bc10ec00e68455bbc833e9b6d66913eda59cafb914145",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step0/layer14.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step0\\layer16.conv.bf16",
+      "bytes": 36864,
+      "sha256": "d3a3330d6110c5c451813074825a597689cfd3273054a61570e86686999b59dd",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step0/layer16.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step0\\layer16.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "f314d348d010bc91855ba3b2f27138893b67b89422bdd2c488cff63823fd6a63",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step0/layer16.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step0\\layer17.conv.bf16",
+      "bytes": 36864,
+      "sha256": "ad18fb5d6e8ddd917bc2839b6c89524d59133c5d99cacd1f813a76948d3a04cb",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step0/layer17.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step0\\layer17.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "62bb9f6be860861211cf7b0ca50518a7c0ccbb6f2414f3a89e38fb2ed15cb85e",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step0/layer17.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step0\\layer18.conv.bf16",
+      "bytes": 36864,
+      "sha256": "075d424523c8f980c67d6c68ef53e20307644e3afbe86c0a864d1677b4e7cd13",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step0/layer18.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step0\\layer18.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "7faa657675d7c5b5482580688e87c34a720ff0a1f71d7717b926742a68f14ea8",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step0/layer18.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step0\\layer2.conv.bf16",
+      "bytes": 36864,
+      "sha256": "8979211d95085a8adc9522aa89fb5facf5d78d3647884e561e19a31b6df3017f",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step0/layer2.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step0\\layer2.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "37fd80a302f553774626ff264bde92ca10eae9f8b03b589b4f4ecd41d9204b76",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step0/layer2.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step0\\layer20.conv.bf16",
+      "bytes": 36864,
+      "sha256": "2c454c1df28494a137ac28fae99b1568425cc472e05c08f5fb0395f07b087865",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step0/layer20.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step0\\layer20.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "119d516bdd8e8fbdfe0ab8854005ea310ef2c036cdc5da484ed09b422f347124",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step0/layer20.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step0\\layer21.conv.bf16",
+      "bytes": 36864,
+      "sha256": "d5335f16417d7c0ad497451128b27c3e5ddb479753fff4c8cd272b51493efdf2",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step0/layer21.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step0\\layer21.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "fbbdec3f33841ccc119b35f1a090c2a88e3ea27b0b1d9ac6a028f2e376610555",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step0/layer21.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step0\\layer22.conv.bf16",
+      "bytes": 36864,
+      "sha256": "67d6a7eeb3684bc569078cf3a5fefa2532333541759c6d8e733617c90a898365",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step0/layer22.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step0\\layer22.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "b8224f6176b73e93ce97b9e456a787d4873b010312be3ab7e7b7c177dca9918a",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step0/layer22.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step0\\layer4.conv.bf16",
+      "bytes": 36864,
+      "sha256": "9a8e3ca9a8215462096389d7978c15f5594fc4fa7e853e28f1a46507972bed9f",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step0/layer4.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step0\\layer4.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "8bb732e6d8003585b8d736b34b54132be09c09c84234fd36d952b4f73a2c5d38",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step0/layer4.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step0\\layer5.conv.bf16",
+      "bytes": 36864,
+      "sha256": "c7fd483796bcfdb8ae2210d2729eb6504d22c4ead1e8df87bae09cfa385cd064",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step0/layer5.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step0\\layer5.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "6d1d744a8417b5deb2f091464540dc8bdd3870b4c8e4b97fe2d4f044f1b0b2a2",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step0/layer5.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step0\\layer6.conv.bf16",
+      "bytes": 36864,
+      "sha256": "19f6b11a9749c8eeb218bc7c6a1df2a4e3ee8c896c604e3d3afcd9603b5bdf93",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step0/layer6.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step0\\layer6.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "610f8ae3cacef5debd3262c032de70edc95a5767c9d4ab8b14a62d267a59450c",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step0/layer6.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step0\\layer8.conv.bf16",
+      "bytes": 36864,
+      "sha256": "b8cbe92558778665755ec8e5ca559403ab3a867ebb7a54c49c7a82a0ac26c102",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step0/layer8.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step0\\layer8.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "a2d7d7abc9b9e8487d5f97c8f1732d4b22e285d6285dfa2a3f126d1c8e57c23c",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step0/layer8.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step0\\layer9.conv.bf16",
+      "bytes": 36864,
+      "sha256": "8a275db0a56700548e485bb6da12042798cab712b4b55bb83f6b7f787ca6c52c",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step0/layer9.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step0\\layer9.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "77b5558a364f567e8c30f90610a984dad21effc7282f03bf53333b8af1b71f20",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step0/layer9.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step0\\output.hidden.bf16",
+      "bytes": 8192,
+      "sha256": "9834dda78a03552c7c848f9f3069fba410b212e156666d2743eee07a1df45ca9",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step0/output.hidden.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step0\\output.logits.f32",
+      "bytes": 1986560,
+      "sha256": "c96228b0acc7ca2d12804bf3c934d6397824ac7898f76519ba14ee027159e79d",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step0/output.logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step0\\prior.bf16",
+      "bytes": 4096,
+      "sha256": "7afe3f0d4c1afb0f253ef9da0c186a11237a413e7bb2cb3be6f768ac4602b2da",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step0/prior.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step0\\target0.key.bf16",
+      "bytes": 17408,
+      "sha256": "2d2389aa0687c98f5109c94cda39fa3f0b2137c09426d479fee66c9f382ac4a9",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step0/target0.key.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step0\\target0.value.bf16",
+      "bytes": 17408,
+      "sha256": "6134236c08ccfd2f7029510729e15e03b12c7ce545e070dbc64da887b63534c3",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step0/target0.value.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step0\\target1.key.bf16",
+      "bytes": 17408,
+      "sha256": "94501d075eb31e0c7a8eebc4ff285df62e872256c11afd669af6f516a12293c5",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step0/target1.key.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step0\\target1.value.bf16",
+      "bytes": 17408,
+      "sha256": "66c935507f83e54991cd19cb707eda8014b95eb9b27f064dcef841c3975347f7",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step0/target1.value.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step0\\target2.key.bf16",
+      "bytes": 17408,
+      "sha256": "e03171fac6ae21b5e47af231b9e85e095462bfdf81a6cef4309d022a250f567f",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step0/target2.key.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step0\\target2.value.bf16",
+      "bytes": 17408,
+      "sha256": "7efe03028d22289542a82b2243ae6fbba790f8a39921edc582e3f9204eec30d5",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step0/target2.value.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step0\\target3.key.bf16",
+      "bytes": 17408,
+      "sha256": "560c24885cb5407a9d631442a7738d4c304bff870d6f41bc68d2aaa528ed0a08",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step0/target3.key.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step0\\target3.value.bf16",
+      "bytes": 17408,
+      "sha256": "3066ea08a092855c963f51a2c9e82cac2021b72ff77c18649cb79e3ac486e7d4",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step0/target3.value.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step0\\target4.key.bf16",
+      "bytes": 17408,
+      "sha256": "77b69389f930610205d547f1a4cc4e39c9e14da05d419ed16ed776e973d7770d",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step0/target4.key.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step0\\target4.value.bf16",
+      "bytes": 17408,
+      "sha256": "273bad69dbf6870b1601c270fe54b5bb1c6030da3bafe1b5496216f2a920ba62",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step0/target4.value.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step0\\target5.key.bf16",
+      "bytes": 17408,
+      "sha256": "e21f0b2ed1766170b4b5627d784f7ca0c7949ee4c1635d87b1cd5a7c873c1d5b",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step0/target5.key.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step0\\target5.value.bf16",
+      "bytes": 17408,
+      "sha256": "1140a9707447d1cb37024734b4f6d696d1f7240dfebb1d21921551bee3f26e78",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step0/target5.value.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step1\\carry.bf16",
+      "bytes": 4096,
+      "sha256": "a0dbd2278db2ca93ace525e2cc52fdc90439478903826122966e3bc5b413af3a",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step1/carry.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step1\\draft.key.bf16",
+      "bytes": 18432,
+      "sha256": "2d56e9818a3ca2601e76df81089f960b3bbf625cc68df14eb1afb8138880bf2d",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step1/draft.key.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step1\\draft.value.bf16",
+      "bytes": 18432,
+      "sha256": "7d39cb497f546880b665c9f200efabe7413ebdbaa12d333cd444d2e7ae572501",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step1/draft.value.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step1\\layer0.conv.bf16",
+      "bytes": 36864,
+      "sha256": "edca1eed45b06be32730046547d5be2052b2964b840dc9928d2fd3a0e707bb5b",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step1/layer0.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step1\\layer0.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "00e1537c16dbd9236adff77ee24c33b771aaae30411dd51fbcc3530514d4da52",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step1/layer0.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step1\\layer1.conv.bf16",
+      "bytes": 36864,
+      "sha256": "d9e4741aee0e2d30e72f172814e5faf8241654dfd840dec05ede480110cf4105",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step1/layer1.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step1\\layer1.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "a32d20e7f1baebfcc02fbb8e63b27a80feac19d239b2ab30a6a9deaeb2ba5b78",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step1/layer1.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step1\\layer10.conv.bf16",
+      "bytes": 36864,
+      "sha256": "63c1739129ebbf83cbbaa16fad1928269fa8a1b7f2bfefdf7a16c567c553bddd",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step1/layer10.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step1\\layer10.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "9041004248cfcb1077edfe3c69986ecf58d3297cf838dc33aee86bf8bad33969",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step1/layer10.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step1\\layer12.conv.bf16",
+      "bytes": 36864,
+      "sha256": "430b84daf2ab5c75747119d797fd9deca69516d4b37f6d5daffbf5f775957939",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step1/layer12.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step1\\layer12.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "a0d2d058353070b80114d8abcf0f0ac871e5424c508c522f5e27e807d20d34d6",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step1/layer12.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step1\\layer13.conv.bf16",
+      "bytes": 36864,
+      "sha256": "3cdd1ed2559657f5492dbd15bce621ef193c2a77f52cd76089948aff94e6cd56",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step1/layer13.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step1\\layer13.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "9c5c85288226e9e93f34b370a5042db8a736ea6a6085bc3ac07ae6ccce9ad7c5",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step1/layer13.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step1\\layer14.conv.bf16",
+      "bytes": 36864,
+      "sha256": "f3a0c0b44d6c4da3808c5d7ac4a6005f8d09b12b92066ec48f152e07e111087c",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step1/layer14.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step1\\layer14.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "47e42292cfec13a4ea2ed2cd46acb7faa381cb97295e6f0ffdc63fd13a3f3ca8",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step1/layer14.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step1\\layer16.conv.bf16",
+      "bytes": 36864,
+      "sha256": "0aba4b7a699593fa0bb47d3ff407e38a659b533f0cb24a51cb905ce8aeb1243b",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step1/layer16.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step1\\layer16.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "100371eabcf5ac2dc782ec347d9cbf7a64a848a0d2afa94912f4cdc0193323e5",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step1/layer16.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step1\\layer17.conv.bf16",
+      "bytes": 36864,
+      "sha256": "c2d76e41b69c16dcf9c482f107a26c11225730d0b9c85d8b91e2068c95999966",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step1/layer17.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step1\\layer17.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "ec186678be5cb6ae5aa3096c8596efc61b9ec9ab7a24b20779534356c48db41e",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step1/layer17.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step1\\layer18.conv.bf16",
+      "bytes": 36864,
+      "sha256": "dd8a94e4e19d0cd7e015ccd0dcc61aedaf9aba28dc7e354a25240363cd0cbd64",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step1/layer18.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step1\\layer18.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "0b28119650c6500f49d347979a31c6a624fc1ad1639b53d294031cc7158beae7",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step1/layer18.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step1\\layer2.conv.bf16",
+      "bytes": 36864,
+      "sha256": "f89043b0aee8843c12f900637c943aa6f0b9c8366067124896e920ddbc2808b2",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step1/layer2.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step1\\layer2.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "3e646502c4347204839c08d09d6abaed57a69016fbb497434cec29415604ff04",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step1/layer2.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step1\\layer20.conv.bf16",
+      "bytes": 36864,
+      "sha256": "04223b961e2d9cebd705816b37293da58f2d6ce5dec5ec490c47ae2dcb4ba90c",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step1/layer20.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step1\\layer20.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "11e143cb71d63d17e679a9cbb93b2f877c1d92b0b3182a03b968d0be1c6cdffc",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step1/layer20.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step1\\layer21.conv.bf16",
+      "bytes": 36864,
+      "sha256": "ffd43ac1eee66dd2026e40ead9d06e2718124a5225c4119d6acbfbbf23b8d0f7",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step1/layer21.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step1\\layer21.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "f00eff28eebceb9a14a5f2c01c1d37414fbf4fbabad55e421357ebe919e4596d",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step1/layer21.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step1\\layer22.conv.bf16",
+      "bytes": 36864,
+      "sha256": "e330ebbe220c82f22f985b88add7aa8e8eecac4f6348c591aaef2d92ce90ade7",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step1/layer22.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step1\\layer22.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "5ec1dde57a4a7ec730ce54775a7b8cac969ba93ac69eeb5ec727965495b27e6a",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step1/layer22.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step1\\layer4.conv.bf16",
+      "bytes": 36864,
+      "sha256": "332c46b984afdcb940197f42be1312ddc4ba0456e67cfcb846bebbdcb6f2f487",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step1/layer4.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step1\\layer4.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "9906f583550236e5ad8330aa297fb8805afe9ed51208f49bdcb5d212186cc2fe",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step1/layer4.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step1\\layer5.conv.bf16",
+      "bytes": 36864,
+      "sha256": "8f70b6ac6e7dfeec96441dc623d128959d04f24261795bd37f92ed09c9499b5c",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step1/layer5.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step1\\layer5.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "499b9a380a3568d124366f261d1bb32e450445236c32313824a57f57cdbad470",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step1/layer5.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step1\\layer6.conv.bf16",
+      "bytes": 36864,
+      "sha256": "34f560f1d897df74e89d125518f3a763a8974e2e0c1ac04170252fe79ab7e2ef",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step1/layer6.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step1\\layer6.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "b106de686c3efbd38b010c60d8fa1c5f8c4a84d61a556b0832ed7b23f9c577dc",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step1/layer6.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step1\\layer8.conv.bf16",
+      "bytes": 36864,
+      "sha256": "8f51f325d48dd5e4c62958366aca32eac123fc4f347520abba9a4b12159f3876",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step1/layer8.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step1\\layer8.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "927d8c9619b0aef52a7a39e00f2136482553e086eb978e0e696f15fdcc9d3f69",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step1/layer8.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step1\\layer9.conv.bf16",
+      "bytes": 36864,
+      "sha256": "79fbed2ef771025ba6f94a85006434878b1221b1d2fbe21ec4cb4bcac32259f3",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step1/layer9.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step1\\layer9.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "86e24bf8a79dd818401ca186fefbc8f6d31a49e0089013bc511d8f3ac029d19d",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step1/layer9.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step1\\output.hidden.bf16",
+      "bytes": 8192,
+      "sha256": "5be16f6d039229fbeccec513debda1ecc2e5ee328e49d404016d7f8c061f1bed",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step1/output.hidden.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step1\\output.logits.f32",
+      "bytes": 1986560,
+      "sha256": "3c60de054bf940b67c7a0e696d88fb2c2991d8142324f57a552b04d02921dfd0",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step1/output.logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step1\\prior.bf16",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/compile1/mtp_session/compile.stderr.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step1\\target0.key.bf16",
+      "bytes": 18432,
+      "sha256": "186f9a30da0a862f6113eecb96e5ce241357466aa54384cfc90ce0846701dd7d",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step1/target0.key.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step1\\target0.value.bf16",
+      "bytes": 18432,
+      "sha256": "8763622e16b79022a9e9c3a55d714687d309731cfd965335ab5d93c7e0a444e9",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step1/target0.value.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step1\\target1.key.bf16",
+      "bytes": 18432,
+      "sha256": "de3255c29ba0d2921c97ee2503d12e2c7a9c90f4c3809484ac4de7c88172bfd2",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step1/target1.key.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step1\\target1.value.bf16",
+      "bytes": 18432,
+      "sha256": "db4195ce17704e03f8a5d00c5ebe0abcecdae89867371efd6531c73bb53cf654",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step1/target1.value.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step1\\target2.key.bf16",
+      "bytes": 18432,
+      "sha256": "ebacbdba89c630290705a32ea6cec078bfbeac6cc3a85e9b3647592dd5cc2de3",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step1/target2.key.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step1\\target2.value.bf16",
+      "bytes": 18432,
+      "sha256": "ebc1468fa17190132db8434081f8602eb76b6952d91a7f5b124edeb7656287f6",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step1/target2.value.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step1\\target3.key.bf16",
+      "bytes": 18432,
+      "sha256": "83694cd021f14f4bd025867cd54498252dde9db48fc48b25fad59b3b6d778b3f",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step1/target3.key.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step1\\target3.value.bf16",
+      "bytes": 18432,
+      "sha256": "4ef81070f4fc18ad012912d08be1808a5acd145cd272148f5c3277b3b40477c5",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step1/target3.value.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step1\\target4.key.bf16",
+      "bytes": 18432,
+      "sha256": "da0b5496fde04fe53f1a69897e391507ac112af0a2d354228657bb0b95209342",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step1/target4.key.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step1\\target4.value.bf16",
+      "bytes": 18432,
+      "sha256": "17a9df6dbdb8d4c72e74d27c36b3b556a5c144b6f07d4f87b836c16f4234e2e0",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step1/target4.value.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step1\\target5.key.bf16",
+      "bytes": 18432,
+      "sha256": "17abced09e8cd05455001e9e5a9ff6972079b63e1b1bf722566eff4f86186a89",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step1/target5.key.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source0_R1_step1\\target5.value.bf16",
+      "bytes": 18432,
+      "sha256": "e8ce9980c573fed300971e0e6085a4a1ef0a6dd8d88c81dfa3aa096d71991c96",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source0_R1_step1/target5.value.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source1_R1_step0\\carry.bf16",
+      "bytes": 4096,
+      "sha256": "15b050c70e8a11044dd9f327f134ff02ea675db72ba1f26bedd448cae94a08ee",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source1_R1_step0/carry.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source1_R1_step0\\draft.key.bf16",
+      "bytes": 16384,
+      "sha256": "a04464904f32f0c44109605617c497e861f23fbdc7e24da14a3bf8b1cf3a7814",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source1_R1_step0/draft.key.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source1_R1_step0\\draft.value.bf16",
+      "bytes": 16384,
+      "sha256": "890dadc7369e0e756aefafc5c4f16c59573b7aba72f5c1e2e728f0196e902972",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source1_R1_step0/draft.value.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source1_R1_step0\\layer10.conv.bf16",
+      "bytes": 36864,
+      "sha256": "836cea3a6af377c0bf05ebd3f8fadfefd35473bec9265931af984cd498c3add3",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source1_R1_step0/layer10.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source1_R1_step0\\layer10.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "63467d3b466a2354c035d76504065be91170491eb83d0bd08faeb59146249a48",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source1_R1_step0/layer10.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source1_R1_step0\\layer12.conv.bf16",
+      "bytes": 36864,
+      "sha256": "98da476b613ab07a4739d54a4a851850136122841cdc7f5672a238d50cc1af57",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source1_R1_step0/layer12.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source1_R1_step0\\layer12.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "0986ba317e9d2645023b8fc2c2f6f9043efd6171fc44421a3be3a2d6b0916002",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source1_R1_step0/layer12.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source1_R1_step0\\layer13.conv.bf16",
+      "bytes": 36864,
+      "sha256": "6a96428c4e2c2fa219fef0b851e94b3439b9187a54b0ca2ed0b77a5ff059d1b1",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source1_R1_step0/layer13.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source1_R1_step0\\layer13.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "7ad73ca9be30aa41edc73a1e2622531f44d675020cd48034b688f8ab302a96d2",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source1_R1_step0/layer13.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source1_R1_step0\\layer14.conv.bf16",
+      "bytes": 36864,
+      "sha256": "ae1dcbe3b2d58d6cc09303896403c1d6779c83bdfc4106b6204aae1553b91d7e",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source1_R1_step0/layer14.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source1_R1_step0\\layer14.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "a9587d43b5b16703108696b4454fc9a3acd790848fd02ae60d8b00f704316ca5",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source1_R1_step0/layer14.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source1_R1_step0\\layer16.conv.bf16",
+      "bytes": 36864,
+      "sha256": "0aa64e177678b5e5ef96c79c28d83a573a5bc30c9ec0c03b85c88be43c4a526e",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source1_R1_step0/layer16.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source1_R1_step0\\layer16.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "f4b78cd5489b1bda9969d992f6475a7d3e630f4b0ba35f7f1601e5d65ae52a6a",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source1_R1_step0/layer16.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source1_R1_step0\\layer17.conv.bf16",
+      "bytes": 36864,
+      "sha256": "5a10be6a7793a7c62efc84448989d8f8c70c09e3c884eb6468e72f44d261982f",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source1_R1_step0/layer17.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source1_R1_step0\\layer17.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "faa8f6f7ef8b35247259c4f4480ba1b4140d1f30110f961b2812bb2e798d194b",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source1_R1_step0/layer17.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source1_R1_step0\\layer18.conv.bf16",
+      "bytes": 36864,
+      "sha256": "2a7b0de809f845975c1ecb866b546abeabaebf70c8b1e864dcc146a0b9d558d3",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source1_R1_step0/layer18.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source1_R1_step0\\layer18.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "fe8c0a5ccaff8f598f3d7d07894003a433b18626260250549df0f981504c1b05",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source1_R1_step0/layer18.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source1_R1_step0\\layer20.conv.bf16",
+      "bytes": 36864,
+      "sha256": "4947fb18ffa38c9dab82bd47719b9ddce9945f8626990a1d297071dbbfda0847",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source1_R1_step0/layer20.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source1_R1_step0\\layer20.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "a1a9ab583114b02acc6dee6d8a43df6154ef5097cc42b550ac99ed73e2162eec",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source1_R1_step0/layer20.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source1_R1_step0\\layer21.conv.bf16",
+      "bytes": 36864,
+      "sha256": "cadef36125ac3ccb350d6f288330108612d48e0b0a141a62e4bfee126c0a2667",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source1_R1_step0/layer21.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source1_R1_step0\\layer21.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "561c370a50c57bea4213a6cdfc49175e86dc1f812bfa73c294aca99afa4e318d",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source1_R1_step0/layer21.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source1_R1_step0\\layer22.conv.bf16",
+      "bytes": 36864,
+      "sha256": "0c62cee33926db695dcf05931a4f41307f7bcbc71b119f77608bcbb97a76d6d9",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source1_R1_step0/layer22.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source1_R1_step0\\layer22.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "3d2936a425e9b51b1e9df2b7d99376c3a7a8b6f046e82a39a9723fb56e74bab0",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source1_R1_step0/layer22.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source1_R1_step0\\layer8.conv.bf16",
+      "bytes": 36864,
+      "sha256": "d9987136caa91f4b8d6ebfe6fea53fe0a6c6ce9beacb31313d53b9337cc4b2b6",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source1_R1_step0/layer8.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source1_R1_step0\\layer8.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "0479f73b20e3d9161dea212cb81b955d1c16f21782239687843c3b9dab2e9742",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source1_R1_step0/layer8.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source1_R1_step0\\layer9.conv.bf16",
+      "bytes": 36864,
+      "sha256": "13e8752f2cd04eddc7a7b7a5a01406bea8d4263e0a1284dcd6a48bdf1459f530",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source1_R1_step0/layer9.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source1_R1_step0\\layer9.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "82ddb5bd095e3ad0e0a38b3e7810c6cde181cfed96a3938eae19897650fe74b5",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source1_R1_step0/layer9.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source1_R1_step0\\output.hidden.bf16",
+      "bytes": 8192,
+      "sha256": "f2ca246c734afa38968abdd344d8496ea4ec9f0d230bbd0c9449561497582c15",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source1_R1_step0/output.hidden.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source1_R1_step0\\output.logits.f32",
+      "bytes": 1986560,
+      "sha256": "f0c4b63eaef115352ccd932e39695586ffda5c75c099cc93a098977e9b57c842",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source1_R1_step0/output.logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source1_R1_step0\\prior.bf16",
+      "bytes": 4096,
+      "sha256": "14a18b008e61a84d1cbeeb0047d433daa9fc7e7463ce155a4b09102815f4f090",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source1_R1_step0/prior.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source1_R1_step0\\target0.key.bf16",
+      "bytes": 17408,
+      "sha256": "73f0ad01e0fd7d021153633ae27be3806aa5626f65f60896321d2ee7f82fe2b8",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source1_R1_step0/target0.key.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source1_R1_step0\\target0.value.bf16",
+      "bytes": 17408,
+      "sha256": "a015dfd370f242d5ce3bd168bcad9b101ab1cea812d41767bd2b84fd9be1132f",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source1_R1_step0/target0.value.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source1_R1_step0\\target1.key.bf16",
+      "bytes": 17408,
+      "sha256": "b1984ce241b8a60b4b66598ce0a8ce5461f990dd3f41e52b3483e6bcad0a09dd",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source1_R1_step0/target1.key.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source1_R1_step0\\target1.value.bf16",
+      "bytes": 17408,
+      "sha256": "a2ab7f8ede3c94766adcf3bb818f8231f0d5a6c08867ea2fdcf7897cd7359d66",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source1_R1_step0/target1.value.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source1_R1_step0\\target2.key.bf16",
+      "bytes": 17408,
+      "sha256": "1285d937db44da5a26f746fbf68f87f172047493a8706df360a586214762b44f",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source1_R1_step0/target2.key.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source1_R1_step0\\target2.value.bf16",
+      "bytes": 17408,
+      "sha256": "26248adb2bad377f2e54651a4f4c18da0b02da4e9eb8a715a97aa61772acbacc",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source1_R1_step0/target2.value.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source1_R1_step0\\target3.key.bf16",
+      "bytes": 17408,
+      "sha256": "c35384d954c59b3451baaada79dd4bbe96dadf9682a43a86e31d8805048b3ebe",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source1_R1_step0/target3.key.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source1_R1_step0\\target3.value.bf16",
+      "bytes": 17408,
+      "sha256": "a3b71e40ddc6ecca0f90a8a0783df7bc4e2021794afa9825e4bfad669eb41c81",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source1_R1_step0/target3.value.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source1_R1_step0\\target4.key.bf16",
+      "bytes": 17408,
+      "sha256": "91f659e3fd069ab73279b2711f04a9e2d3020efc9f940308e1a7409dd975e754",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source1_R1_step0/target4.key.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source1_R1_step0\\target4.value.bf16",
+      "bytes": 17408,
+      "sha256": "00200a46948c66ac3dadf62864a5fb62390f008888be687a1168dcee44b16ec3",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source1_R1_step0/target4.value.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source1_R1_step0\\target5.key.bf16",
+      "bytes": 17408,
+      "sha256": "26d15847cf01d4d1f39b20832569f358925668a4092ca234deaf85f26bcfa889",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source1_R1_step0/target5.key.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source1_R1_step0\\target5.value.bf16",
+      "bytes": 17408,
+      "sha256": "8e7b8c89e641a3f7ae4a4bc929ad2e896970d09a583f613d3d517f700da73ef9",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source1_R1_step0/target5.value.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source1_R1_step1\\carry.bf16",
+      "bytes": 4096,
+      "sha256": "7356b22c59024fdccb1320cca1c6aa88966a3c05dadb8d3c2ef57188a9d55ccb",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source1_R1_step1/carry.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source1_R1_step1\\draft.key.bf16",
+      "bytes": 18432,
+      "sha256": "b8f5cc6c070f363ed094c3fcf396bcf85a93420a9fbc1a67dedacb1560bd2beb",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source1_R1_step1/draft.key.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source1_R1_step1\\draft.value.bf16",
+      "bytes": 18432,
+      "sha256": "e7003c623f7a2b30aa0519825750d285a3a4dbe1f743c6eac784196da334b87c",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source1_R1_step1/draft.value.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source1_R1_step1\\layer10.conv.bf16",
+      "bytes": 36864,
+      "sha256": "17e76a8ddb62c882130445270cae287acd6fb197043a3a8068faafb1525971e7",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source1_R1_step1/layer10.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source1_R1_step1\\layer10.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "cddefe229c1c939c1836073287f2f8edc126684859fb05494c0768c1c3e6d0bd",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source1_R1_step1/layer10.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source1_R1_step1\\layer12.conv.bf16",
+      "bytes": 36864,
+      "sha256": "4cf64dd4ef303d9d9c5c5d922517b58facd752b00d2fbbc828039cd5ce55422f",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source1_R1_step1/layer12.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source1_R1_step1\\layer12.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "f69532b123d2a463c6809ac02afbbe997623633d6684db495899bdc86249eb57",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source1_R1_step1/layer12.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source1_R1_step1\\layer13.conv.bf16",
+      "bytes": 36864,
+      "sha256": "5cbe0d0bcab7c2a5d3bb3f587df7d9ef385c1ca256bceea62b6d18cdc16e5523",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source1_R1_step1/layer13.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source1_R1_step1\\layer13.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "e0b80b8a939b842f4c0a2d273bdd170950f9c06848dc12d792c11457aefa193f",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source1_R1_step1/layer13.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source1_R1_step1\\layer14.conv.bf16",
+      "bytes": 36864,
+      "sha256": "df714d6235dab459cca38652ffbc2e7b27bc5721fedca64a261855e5f1426302",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source1_R1_step1/layer14.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source1_R1_step1\\layer14.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "a5ab92badc744712e096d7b9739f4061b0469c3b09742f3b17a17f2b34826841",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source1_R1_step1/layer14.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source1_R1_step1\\layer16.conv.bf16",
+      "bytes": 36864,
+      "sha256": "913b0b770c6eddbde4dc43be3837d1811e433a35e5d4de494fb5e482cfb71354",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source1_R1_step1/layer16.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source1_R1_step1\\layer16.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "c29b39725cbcb50cc625cb30bb3183d2ca64583cc1c31379d974b0da1322abac",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source1_R1_step1/layer16.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source1_R1_step1\\layer17.conv.bf16",
+      "bytes": 36864,
+      "sha256": "feda5025d93f88234a8dbed370719121c72b1d856373cebede95d8d5f6637e6e",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source1_R1_step1/layer17.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source1_R1_step1\\layer17.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "0a9cf8f1f95b5031590c9f34929791c7b105ba2c18254701938f35c2318f1a72",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source1_R1_step1/layer17.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source1_R1_step1\\layer18.conv.bf16",
+      "bytes": 36864,
+      "sha256": "d57222f3cbfa6ad2ca89b078c9bf98aa4549872508c218112f3ea941159148df",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source1_R1_step1/layer18.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source1_R1_step1\\layer18.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "5be997e6dc411e868b3c1311512a20004ca581fc161f505f6caab3dc8f01013f",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source1_R1_step1/layer18.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source1_R1_step1\\layer20.conv.bf16",
+      "bytes": 36864,
+      "sha256": "f04a2eb51bcaf8abc5d61fb27f9958019b58755aceceaacd1385a1a183bcacc2",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source1_R1_step1/layer20.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source1_R1_step1\\layer20.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "12c97375aee573a33c909ad6ce880808a44db5f4ea515376c3c161b3ccf42e37",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source1_R1_step1/layer20.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source1_R1_step1\\layer21.conv.bf16",
+      "bytes": 36864,
+      "sha256": "e802b135298e301a7c1b4163ea5201a856e3372cf1e0aa0f1265076b77b75e57",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source1_R1_step1/layer21.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source1_R1_step1\\layer21.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "783edbd5f9de7ab83fbe249a3250615c433ae65b058cdf2e2cd041bdc3cab4e3",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source1_R1_step1/layer21.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source1_R1_step1\\layer22.conv.bf16",
+      "bytes": 36864,
+      "sha256": "2b335d7ec9f75f4d124490a7b7784697c54c3e07548fb534a376c55cd9ceffdc",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source1_R1_step1/layer22.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source1_R1_step1\\layer22.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "c64cce702ec19a6d485f3597a7dd0c17e112ee60f36b74e4b8d9287f177fbf24",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source1_R1_step1/layer22.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source1_R1_step1\\layer8.conv.bf16",
+      "bytes": 36864,
+      "sha256": "45fe6f066a43cb182b616c5861ba8dc6b80034c948a4bc6f7f34f394857c38eb",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source1_R1_step1/layer8.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source1_R1_step1\\layer8.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "e3404ffc7fd16e061ebe195f4b779777e9e81634f0653357b0c8eb372abdc284",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source1_R1_step1/layer8.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source1_R1_step1\\layer9.conv.bf16",
+      "bytes": 36864,
+      "sha256": "d20c3141c32ee676b3d39f96eb0fce1539b15cc07799e69e3db13851310650a5",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source1_R1_step1/layer9.conv.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source1_R1_step1\\layer9.gdn.f32",
+      "bytes": 1048576,
+      "sha256": "9dcbb57ed073d48d1cc5669b5d0c1847df249fcfec175618628598ab0aebd6c2",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source1_R1_step1/layer9.gdn.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source1_R1_step1\\output.hidden.bf16",
+      "bytes": 8192,
+      "sha256": "ee3e26ae38d4b9fd801010a82b80900b797689c65cbc89fa4692f1d9f2bae6b6",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source1_R1_step1/output.hidden.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source1_R1_step1\\output.logits.f32",
+      "bytes": 1986560,
+      "sha256": "73727e39fb0df4e43d1e8afebf21f59bf5387e2040586f0fd09e58d22c315426",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source1_R1_step1/output.logits.f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source1_R1_step1\\target0.key.bf16",
+      "bytes": 18432,
+      "sha256": "da190a23b1253bcaa112b6bf86cbe6b77783fa6a1e58d6b3faeaebc4cf2fb088",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source1_R1_step1/target0.key.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source1_R1_step1\\target0.value.bf16",
+      "bytes": 18432,
+      "sha256": "7bb250de978f8a5c987443f8791e5952a71a50f0058f05b355703fc26697616a",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source1_R1_step1/target0.value.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source1_R1_step1\\target1.key.bf16",
+      "bytes": 18432,
+      "sha256": "6bf19a5d1b422c267044744351f067243601dd44fad9b4f880a96614a1f2afc0",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source1_R1_step1/target1.key.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source1_R1_step1\\target1.value.bf16",
+      "bytes": 18432,
+      "sha256": "c4684ed087fbce57393d5ed3503fac4303bdfe7877fdb7de5f2b22b0f84d13fe",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source1_R1_step1/target1.value.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source1_R1_step1\\target2.key.bf16",
+      "bytes": 18432,
+      "sha256": "423ec882c19ca402dca984586165980227f7d10c74e0b0505b6a240eb60f3871",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source1_R1_step1/target2.key.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source1_R1_step1\\target2.value.bf16",
+      "bytes": 18432,
+      "sha256": "dd3bdecddd44435ddef445e874e1c05b07620d9e43a068acd597ced6cf2823fe",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source1_R1_step1/target2.value.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source1_R1_step1\\target3.key.bf16",
+      "bytes": 18432,
+      "sha256": "3aed9e0f49175c1847c183a3291515d4db81cacc7beef6ecc929bcdd7f861fac",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source1_R1_step1/target3.key.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source1_R1_step1\\target3.value.bf16",
+      "bytes": 18432,
+      "sha256": "9f2a56cb8ee4da10e40d5c13c9dfdc98d04e42ef824e572f62b996c4bd89f12c",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source1_R1_step1/target3.value.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source1_R1_step1\\target4.key.bf16",
+      "bytes": 18432,
+      "sha256": "7f115afb5f4d9156ff556c342ba5614ab354ca74cb32eff7b8f3a0c53232b3ce",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source1_R1_step1/target4.key.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source1_R1_step1\\target4.value.bf16",
+      "bytes": 18432,
+      "sha256": "a960536295f718c07407209fbe110f29eb2ae9bcb7e749318e59eebf1c78e803",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source1_R1_step1/target4.value.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source1_R1_step1\\target5.key.bf16",
+      "bytes": 18432,
+      "sha256": "a08ee112185ec5476d6ec9eea10a3079a595696c346f112717f36fc598be64d5",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source1_R1_step1/target5.key.bf16"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-numerics-20261022\\probe-run1\\vectors\\source1_R1_step1\\target5.value.bf16",
+      "bytes": 18432,
+      "sha256": "d4eecb047b634622c6bc2fb650230c2e49f8ea32d937bdbc7dc003980444c39c",
+      "kind": "verified archived raw diagnostic payload",
+      "archive_entry": ".scratch/qwen-mtp-batch-numerics-20261022/probe-run1/vectors/source1_R1_step1/target5.value.bf16"
+    }
+  ]
+}

@@ -1,0 +1,2835 @@
+{
+  "status": "completed",
+  "deleted_leaf_count": 562,
+  "deleted_bytes": 945442355,
+  "deleted": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-tests-link1\\prefix-tests.exe",
+      "bytes": 138569216,
+      "sha256": "85222e8c765f42fd019a8656fad22a74b1a9f5bc6d44016c50041a0ed18bae9c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-tests-link1\\prefix-tests.exp",
+      "bytes": 24996,
+      "sha256": "56235576047697e5ec6b2e5d91fb1d9a3dcfa7abe09ad839ad43fec837758a5b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-tests-link1\\prefix-tests.lib",
+      "bytes": 42166,
+      "sha256": "d57f5d644c20ec56e02e06432f803b8b154d41b3259d803a9d3a486e1181a764"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-tests-link1\\prefix-tests.map",
+      "bytes": 56633899,
+      "sha256": "698af612d49e7f0adc1ff8a7f4125ebbaf7f4aae9b85bc22c3b82e0c5ae83ca0"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\qwen-link1\\qwen.exe",
+      "bytes": 139849216,
+      "sha256": "ba41c28e97bb1a488fcd9b1b7679119ab1f07d2d19e9dbf21051237bc7d962ea"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\qwen-link1\\qwen.exp",
+      "bytes": 24972,
+      "sha256": "380794d09b2b545a5dd9f79f71ae084ebe022301ff6be14b0fe05aabde716f41"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\qwen-link1\\qwen.lib",
+      "bytes": 41384,
+      "sha256": "339d3ce297534ebac8825c27a011f2f4f9dfe366c657ebfc45dbbfdc8412a2cb"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\qwen-link1\\qwen.map",
+      "bytes": 58485309,
+      "sha256": "6094908dabae4d9da7e4b22e7274f16cbe4e7e276ca2524a55810db0eccab96a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\qwen-link2\\qwen.exe",
+      "bytes": 139852800,
+      "sha256": "388e67844b27cdc97101d6c53dced317cc4c086b1b96e4673c6a33fe5da5f547"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\qwen-link2\\qwen.exp",
+      "bytes": 24972,
+      "sha256": "a282233a4449442db983066046ba2306b00a73aef0093214ccefab14451f7b1a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\qwen-link2\\qwen.lib",
+      "bytes": 41384,
+      "sha256": "339d3ce297534ebac8825c27a011f2f4f9dfe366c657ebfc45dbbfdc8412a2cb"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\qwen-link2\\qwen.map",
+      "bytes": 58492055,
+      "sha256": "45d380b7fde41d4cd9a5e3ad5cdfd2b7ae30530f2634fc1e3fde7d54cdaf3196"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\qwen-link3\\qwen.exp",
+      "bytes": 24972,
+      "sha256": "0663ca71f4661eeddbce8961867ae59bbd3a8f391ab92dda023b34b1baf76d00"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\qwen-link3\\qwen.lib",
+      "bytes": 41384,
+      "sha256": "339d3ce297534ebac8825c27a011f2f4f9dfe366c657ebfc45dbbfdc8412a2cb"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\qwen-link3\\qwen.map",
+      "bytes": 58492578,
+      "sha256": "89032f821bf43001a34c289be498417dc19f65d3e1ec9602d6ccd7e0e2e8246f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run1\\trace\\session0_alice\\round1_decode1\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "2da66274c62e00fc8bf9d9250c3d86ec4a3ab4f7aa7b7f45143771777caeba10"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run1\\trace\\session0_alice\\round1_decode1\\logits.f32",
+      "bytes": 993280,
+      "sha256": "abfd568a4e7a9ac63924d3101bcd872129bcc12eeacbbcef194ddd8755143d6c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run1\\trace\\session0_alice\\round1_decode2\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "63473b6371aa5bab48cd0693e767ce31fb786de1bd6fab89498bee58d2c26dfc"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run1\\trace\\session0_alice\\round1_decode2\\logits.f32",
+      "bytes": 993280,
+      "sha256": "dc73c1b31ddee65ed3c3ef5671ef2b851f5de1b70cf0460211d1d43c5aac1073"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run1\\trace\\session0_alice\\round1_decode3\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "f50d257156fd33e746cc10e4033c6c287a5a6d1e2b1c21397d03de9a3826685e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run1\\trace\\session0_alice\\round1_decode3\\logits.f32",
+      "bytes": 993280,
+      "sha256": "3d44c79716f84088bec6141e2be47eec061e06a7471a2a4695ea93740eb4a61a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run1\\trace\\session0_alice\\round1_decode4\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "6458bd79e33333c62d404be9ce5613cb90b459699cf9d8859f752607fa7e5a0d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run1\\trace\\session0_alice\\round1_decode4\\logits.f32",
+      "bytes": 993280,
+      "sha256": "f1a62f8d3fa46eda620c6c5ab5f3cae8e30d120ee0fe76ee280622657d0c7ad8"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run1\\trace\\session0_alice\\round1_prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "441f8e0eea6b8deea8b640bb76efc9dcc1267f3ee4de9e936bcc9fa9110a8ee1"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run1\\trace\\session0_alice\\round1_prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "3f9f6f36cbefdeae7dc1e5e89b8af0729c2d9d6f59dab28e040a4771d9609b43"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run1\\trace\\session0_alice\\round2_decode1\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "5276330584226e4852bda60150ee26ce481d283110214004aae0596315c4c467"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run1\\trace\\session0_alice\\round2_decode1\\logits.f32",
+      "bytes": 993280,
+      "sha256": "258a64e46f8416dabf402a9228f70cd0cc0977d3becf539d88ad43a3447327fa"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run1\\trace\\session0_alice\\round2_decode2\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "3b75c1eb2197cfa462a93b1a2ab011a86afb6ef18064e3d69d8bd99d09cefbf2"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run1\\trace\\session0_alice\\round2_decode2\\logits.f32",
+      "bytes": 993280,
+      "sha256": "0613e4b44294e6962a7dac2d9aa2523dd0c8b88e2a44903a8f8929278b6529cd"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run1\\trace\\session0_alice\\round2_decode3\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "db3e06fa27f0905d971ae1a51119684dce0308ca235d1b30ae7f925297d3c792"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run1\\trace\\session0_alice\\round2_decode3\\logits.f32",
+      "bytes": 993280,
+      "sha256": "a6285f9567555630264f37c0bfafd5a590d5551429d5e0f66e57e33079b7f802"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run1\\trace\\session0_alice\\round2_prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "f2752b1f3743ed291af7854fda48301f286aa652d9ae53d0ca2635f7eaef487c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run1\\trace\\session0_alice\\round2_prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "ec519ced96625ee206a0d0467e4881364acd816b51699d34041f68c5c41a40cd"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run1\\trace\\session1_bob\\round1_decode1\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "d188f46248ecc38eb41348ea19e4dd1b6c9b381af2daddc8e78f4acbf095475f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run1\\trace\\session1_bob\\round1_decode1\\logits.f32",
+      "bytes": 993280,
+      "sha256": "a9dfddef6c3de35dde34b4a4d83862793f40256b0094528601593f17deca8277"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run1\\trace\\session1_bob\\round1_decode2\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "efc393ee97ce0080103af63d70b18474e8f30935088aa3209cf454c925c077b3"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run1\\trace\\session1_bob\\round1_decode2\\logits.f32",
+      "bytes": 993280,
+      "sha256": "2b0dab944c3876bcc0315f56a7d274e4eed5f1cef32bc2f90c5157b4d01d91d9"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run1\\trace\\session1_bob\\round1_decode3\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "8c19533ed140d711e26fdf951576ab52253f5b757556f292091be788a59e9984"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run1\\trace\\session1_bob\\round1_decode3\\logits.f32",
+      "bytes": 993280,
+      "sha256": "01e2353a39586a2c54e1ca40512b5fae3aa130be20f6a5c4f88f5a2bf1816bcf"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run1\\trace\\session1_bob\\round1_prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "d1625d53fbb1c918aa90b829c69ff5ae4f44683eb0352a7745e54d4879b82c11"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run1\\trace\\session1_bob\\round1_prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "c217c3a1db43fb0dea77b1860c2833b4454202c70b511575dafd466af20e54c5"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run1\\trace\\session1_bob\\round2_decode1\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "38b2e55b463c15d186ab529deb88bca491da3a269dd7ae036f1ec94d34f07cd9"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run1\\trace\\session1_bob\\round2_decode1\\logits.f32",
+      "bytes": 993280,
+      "sha256": "ae1a3291f08e869c805e90c2a9fc272fc22a9bdb18e8e0c3c8bb43ff844b7294"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run1\\trace\\session1_bob\\round2_decode2\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "7999f3cc3b025085962120fef2ec042a306e340f1c1325677b91d4d5c9e80e0f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run1\\trace\\session1_bob\\round2_decode2\\logits.f32",
+      "bytes": 993280,
+      "sha256": "b40e2014cc03803811a843b20c2c1e1333565f01db127e059d4c4953027ee369"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run1\\trace\\session1_bob\\round2_decode3\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "f5b80761cf96f38e13567cff881288939b50bf4f32de4160d2686f0904cc3d8e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run1\\trace\\session1_bob\\round2_decode3\\logits.f32",
+      "bytes": 993280,
+      "sha256": "7655f6c186bdce4f3efb0f3025a6c2aa82c286735ef8fe747e9e89f2d5466652"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run1\\trace\\session1_bob\\round2_decode4\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "7c6224729bea9c031f829a161bebc1f88ca04977bbe4b08c8a91fb3ede6b16a0"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run1\\trace\\session1_bob\\round2_decode4\\logits.f32",
+      "bytes": 993280,
+      "sha256": "909e4be4750f482d6c861964bd82d36830383dbd20fb0e683d36254dced394f8"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run1\\trace\\session1_bob\\round2_prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "11a35896e67b255f5d93b70a42dac03f9a9688105d8787562937011b7f9ea600"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run1\\trace\\session1_bob\\round2_prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "0bad5f5c42294ae4b7e9eb80120112aeb6151351bbc02c57de229b9a231a24f5"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run1\\trace\\session2_carol\\round1_decode1\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "10d189d8e0442fa02ba201c8bbffc7a4c330a298099048106d33a44b38297b7c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run1\\trace\\session2_carol\\round1_decode1\\logits.f32",
+      "bytes": 993280,
+      "sha256": "524fd2094046f6557392919205df2c42ceeffe47e3653914187fd8e28044647e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run1\\trace\\session2_carol\\round1_decode2\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "b7ec1928eecfa46b1c16c962a08753412d6190cc5d6a84f96e0e64bf1d482325"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run1\\trace\\session2_carol\\round1_decode2\\logits.f32",
+      "bytes": 993280,
+      "sha256": "d9aaff259c11bd53c556079054bb519ca887444dab35c666f4c6e4d26fc97213"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run1\\trace\\session2_carol\\round1_prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "f8ba4c2fb63b09d799ec0f9c94c65768c0499458ad67034855e299c5a3edaf3a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run1\\trace\\session2_carol\\round1_prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "1506e6681e8695e9554545d87c10b95bb9a00902831d1b0320406373a37959a0"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run1\\trace\\session2_carol\\round2_decode1\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "9f0dbf23886d7f6e1dcf0edd9bdf0514e2c821ae78cdef52c65b3e405096547e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run1\\trace\\session2_carol\\round2_decode1\\logits.f32",
+      "bytes": 993280,
+      "sha256": "56ea271b1e1aa03ccd7af7859013dd55780945dc686d4d097ed11da00a637fdb"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run1\\trace\\session2_carol\\round2_decode2\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "c6671e8dddc31f69b56901489f42369897e0d6b166cffefbf4a6c19636745cf9"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run1\\trace\\session2_carol\\round2_decode2\\logits.f32",
+      "bytes": 993280,
+      "sha256": "6493fda917dc6338b321c6e7b86db14687defe6956a4dbca33f343fc66e18bd0"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run1\\trace\\session2_carol\\round2_decode3\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "5bbd9fc24c1bb4fc7fb585a4fb5562e7b47b4ea5186e62967c6d41cdbf59a6cc"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run1\\trace\\session2_carol\\round2_decode3\\logits.f32",
+      "bytes": 993280,
+      "sha256": "e6347e38573a4878e71bc7be4c552dbc710202e029db6a1a127780e04d6395a1"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run1\\trace\\session2_carol\\round2_decode4\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "8bf410741244fdc5f13ebc24671fd004cafbcdc97d7884c938fb90680ce9804a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run1\\trace\\session2_carol\\round2_decode4\\logits.f32",
+      "bytes": 993280,
+      "sha256": "aa1698e520ca5135d3217967afe93f6881f5f78fc7004765d3fee1700f277a0a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run1\\trace\\session2_carol\\round2_decode5\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "8eb20e4f50ebb5d16181b4cd01fdee671fb5b3295698b1b6f8078cf4d34b4033"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run1\\trace\\session2_carol\\round2_decode5\\logits.f32",
+      "bytes": 993280,
+      "sha256": "19b61572692e6fcfa410ed0c83ac9809acbe213468a7cd81f578a376512ae06e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run1\\trace\\session2_carol\\round2_prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "d77b37d104220a0a15c9258f92cedea0b8c5160fadbf2018d85340b93050af4f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run1\\trace\\session2_carol\\round2_prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "619890aa536e979e3a1232b6d12322988f0296a76cb91c9436741b6000507767"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run1\\trace\\session3_dave\\round1_decode1\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "a0492edc94c6890d7815a6c3c7e2db7cb56f368d882f5cc169d86974fb2480ce"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run1\\trace\\session3_dave\\round1_decode1\\logits.f32",
+      "bytes": 993280,
+      "sha256": "389394483a3b00b22ec3baa90f4271a5aff7a66d155a697f5d22f2c8157333aa"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run1\\trace\\session3_dave\\round1_decode2\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "7107c146f06591c00f4ffb7472287662268cac1e056115e6d24706d7d25d8057"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run1\\trace\\session3_dave\\round1_decode2\\logits.f32",
+      "bytes": 993280,
+      "sha256": "ec44a2714e0ab27fe8d49e5fdd782dd7b0619259f56bb8586d69f8c26d45fa2e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run1\\trace\\session3_dave\\round1_decode3\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "e029d86fb854d61b9c029c54798babfcec96814d8efeff9e9c6fe21d331bebe4"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run1\\trace\\session3_dave\\round1_decode3\\logits.f32",
+      "bytes": 993280,
+      "sha256": "d9e875c5ad0cce3f0036451da4ed3b044d5980223d16568c7986d59835177f61"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run1\\trace\\session3_dave\\round1_decode4\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "39451cc509c92e948c4661c13d02c3d538f754ea044a47cfd3e5d19775922cbd"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run1\\trace\\session3_dave\\round1_decode4\\logits.f32",
+      "bytes": 993280,
+      "sha256": "95da5ef94acce88141272ab647517225c05dd181363d6173799709c5f02f7d5a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run1\\trace\\session3_dave\\round1_decode5\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "cfbc33ebac45d2869b1d9bfecefb4c4512750c52b40909a4fecb7ea2c337b96b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run1\\trace\\session3_dave\\round1_decode5\\logits.f32",
+      "bytes": 993280,
+      "sha256": "d1ba2c6e071db84e0c289436de02a1672d9424f486597ae1435158f091261baf"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run1\\trace\\session3_dave\\round1_prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "0172b7b395f4575cea0c2605abe541c7c02a2ea5a726c866e91856838fb60339"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run1\\trace\\session3_dave\\round1_prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "48320738232fab2e8af380cd27bea31c373fb1343269c44c7ea0380bb0816adc"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run1\\trace\\session3_dave\\round2_decode1\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "e6a8e9e17c3b34f54320c5615220b616c955b8d31229540372e954f7124da9d9"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run1\\trace\\session3_dave\\round2_decode1\\logits.f32",
+      "bytes": 993280,
+      "sha256": "c95fa68c6ca9633a8cdb47aced4ee781268e25c73240851bd2f642ed53e79a2f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run1\\trace\\session3_dave\\round2_decode2\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "a7551088511fac54bca96447c4b9b1a37002c6464264264e0fbf40273775379b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run1\\trace\\session3_dave\\round2_decode2\\logits.f32",
+      "bytes": 993280,
+      "sha256": "9f3727939a9aa57370bc67d0b94a3a284ee4ba476d5ff59d6407f5c65c530600"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run1\\trace\\session3_dave\\round2_prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "d59d5ab37af38ce8d0f8da70a6545922e1ab82e1b6a3f7118f8cabb20ed8eb54"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run1\\trace\\session3_dave\\round2_prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "1e120e6f41f6ca7233739400b27c77ece57611faa6d0d02834a18cc12baa3f4f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run2\\trace\\session0_alice\\round1_decode1\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "2da66274c62e00fc8bf9d9250c3d86ec4a3ab4f7aa7b7f45143771777caeba10"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run2\\trace\\session0_alice\\round1_decode1\\logits.f32",
+      "bytes": 993280,
+      "sha256": "abfd568a4e7a9ac63924d3101bcd872129bcc12eeacbbcef194ddd8755143d6c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run2\\trace\\session0_alice\\round1_decode2\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "63473b6371aa5bab48cd0693e767ce31fb786de1bd6fab89498bee58d2c26dfc"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run2\\trace\\session0_alice\\round1_decode2\\logits.f32",
+      "bytes": 993280,
+      "sha256": "dc73c1b31ddee65ed3c3ef5671ef2b851f5de1b70cf0460211d1d43c5aac1073"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run2\\trace\\session0_alice\\round1_decode3\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "f50d257156fd33e746cc10e4033c6c287a5a6d1e2b1c21397d03de9a3826685e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run2\\trace\\session0_alice\\round1_decode3\\logits.f32",
+      "bytes": 993280,
+      "sha256": "3d44c79716f84088bec6141e2be47eec061e06a7471a2a4695ea93740eb4a61a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run2\\trace\\session0_alice\\round1_decode4\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "6458bd79e33333c62d404be9ce5613cb90b459699cf9d8859f752607fa7e5a0d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run2\\trace\\session0_alice\\round1_decode4\\logits.f32",
+      "bytes": 993280,
+      "sha256": "f1a62f8d3fa46eda620c6c5ab5f3cae8e30d120ee0fe76ee280622657d0c7ad8"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run2\\trace\\session0_alice\\round1_prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "441f8e0eea6b8deea8b640bb76efc9dcc1267f3ee4de9e936bcc9fa9110a8ee1"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run2\\trace\\session0_alice\\round1_prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "3f9f6f36cbefdeae7dc1e5e89b8af0729c2d9d6f59dab28e040a4771d9609b43"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run2\\trace\\session0_alice\\round2_decode1\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "5276330584226e4852bda60150ee26ce481d283110214004aae0596315c4c467"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run2\\trace\\session0_alice\\round2_decode1\\logits.f32",
+      "bytes": 993280,
+      "sha256": "258a64e46f8416dabf402a9228f70cd0cc0977d3becf539d88ad43a3447327fa"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run2\\trace\\session0_alice\\round2_decode2\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "3b75c1eb2197cfa462a93b1a2ab011a86afb6ef18064e3d69d8bd99d09cefbf2"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run2\\trace\\session0_alice\\round2_decode2\\logits.f32",
+      "bytes": 993280,
+      "sha256": "0613e4b44294e6962a7dac2d9aa2523dd0c8b88e2a44903a8f8929278b6529cd"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run2\\trace\\session0_alice\\round2_decode3\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "db3e06fa27f0905d971ae1a51119684dce0308ca235d1b30ae7f925297d3c792"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run2\\trace\\session0_alice\\round2_decode3\\logits.f32",
+      "bytes": 993280,
+      "sha256": "a6285f9567555630264f37c0bfafd5a590d5551429d5e0f66e57e33079b7f802"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run2\\trace\\session0_alice\\round2_prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "f2752b1f3743ed291af7854fda48301f286aa652d9ae53d0ca2635f7eaef487c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run2\\trace\\session0_alice\\round2_prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "ec519ced96625ee206a0d0467e4881364acd816b51699d34041f68c5c41a40cd"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run2\\trace\\session1_bob\\round1_decode1\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "d188f46248ecc38eb41348ea19e4dd1b6c9b381af2daddc8e78f4acbf095475f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run2\\trace\\session1_bob\\round1_decode1\\logits.f32",
+      "bytes": 993280,
+      "sha256": "a9dfddef6c3de35dde34b4a4d83862793f40256b0094528601593f17deca8277"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run2\\trace\\session1_bob\\round1_decode2\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "efc393ee97ce0080103af63d70b18474e8f30935088aa3209cf454c925c077b3"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run2\\trace\\session1_bob\\round1_decode2\\logits.f32",
+      "bytes": 993280,
+      "sha256": "2b0dab944c3876bcc0315f56a7d274e4eed5f1cef32bc2f90c5157b4d01d91d9"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run2\\trace\\session1_bob\\round1_decode3\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "8c19533ed140d711e26fdf951576ab52253f5b757556f292091be788a59e9984"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run2\\trace\\session1_bob\\round1_decode3\\logits.f32",
+      "bytes": 993280,
+      "sha256": "01e2353a39586a2c54e1ca40512b5fae3aa130be20f6a5c4f88f5a2bf1816bcf"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run2\\trace\\session1_bob\\round1_prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "d1625d53fbb1c918aa90b829c69ff5ae4f44683eb0352a7745e54d4879b82c11"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run2\\trace\\session1_bob\\round1_prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "c217c3a1db43fb0dea77b1860c2833b4454202c70b511575dafd466af20e54c5"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run2\\trace\\session1_bob\\round2_decode1\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "38b2e55b463c15d186ab529deb88bca491da3a269dd7ae036f1ec94d34f07cd9"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run2\\trace\\session1_bob\\round2_decode1\\logits.f32",
+      "bytes": 993280,
+      "sha256": "ae1a3291f08e869c805e90c2a9fc272fc22a9bdb18e8e0c3c8bb43ff844b7294"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run2\\trace\\session1_bob\\round2_decode2\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "7999f3cc3b025085962120fef2ec042a306e340f1c1325677b91d4d5c9e80e0f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run2\\trace\\session1_bob\\round2_decode2\\logits.f32",
+      "bytes": 993280,
+      "sha256": "b40e2014cc03803811a843b20c2c1e1333565f01db127e059d4c4953027ee369"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run2\\trace\\session1_bob\\round2_decode3\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "f5b80761cf96f38e13567cff881288939b50bf4f32de4160d2686f0904cc3d8e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run2\\trace\\session1_bob\\round2_decode3\\logits.f32",
+      "bytes": 993280,
+      "sha256": "7655f6c186bdce4f3efb0f3025a6c2aa82c286735ef8fe747e9e89f2d5466652"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run2\\trace\\session1_bob\\round2_decode4\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "7c6224729bea9c031f829a161bebc1f88ca04977bbe4b08c8a91fb3ede6b16a0"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run2\\trace\\session1_bob\\round2_decode4\\logits.f32",
+      "bytes": 993280,
+      "sha256": "909e4be4750f482d6c861964bd82d36830383dbd20fb0e683d36254dced394f8"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run2\\trace\\session1_bob\\round2_prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "11a35896e67b255f5d93b70a42dac03f9a9688105d8787562937011b7f9ea600"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run2\\trace\\session1_bob\\round2_prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "0bad5f5c42294ae4b7e9eb80120112aeb6151351bbc02c57de229b9a231a24f5"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run2\\trace\\session2_carol\\round1_decode1\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "10d189d8e0442fa02ba201c8bbffc7a4c330a298099048106d33a44b38297b7c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run2\\trace\\session2_carol\\round1_decode1\\logits.f32",
+      "bytes": 993280,
+      "sha256": "524fd2094046f6557392919205df2c42ceeffe47e3653914187fd8e28044647e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run2\\trace\\session2_carol\\round1_decode2\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "b7ec1928eecfa46b1c16c962a08753412d6190cc5d6a84f96e0e64bf1d482325"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run2\\trace\\session2_carol\\round1_decode2\\logits.f32",
+      "bytes": 993280,
+      "sha256": "d9aaff259c11bd53c556079054bb519ca887444dab35c666f4c6e4d26fc97213"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run2\\trace\\session2_carol\\round1_prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "f8ba4c2fb63b09d799ec0f9c94c65768c0499458ad67034855e299c5a3edaf3a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run2\\trace\\session2_carol\\round1_prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "1506e6681e8695e9554545d87c10b95bb9a00902831d1b0320406373a37959a0"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run2\\trace\\session2_carol\\round2_decode1\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "9f0dbf23886d7f6e1dcf0edd9bdf0514e2c821ae78cdef52c65b3e405096547e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run2\\trace\\session2_carol\\round2_decode1\\logits.f32",
+      "bytes": 993280,
+      "sha256": "56ea271b1e1aa03ccd7af7859013dd55780945dc686d4d097ed11da00a637fdb"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run2\\trace\\session2_carol\\round2_decode2\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "c6671e8dddc31f69b56901489f42369897e0d6b166cffefbf4a6c19636745cf9"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run2\\trace\\session2_carol\\round2_decode2\\logits.f32",
+      "bytes": 993280,
+      "sha256": "6493fda917dc6338b321c6e7b86db14687defe6956a4dbca33f343fc66e18bd0"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run2\\trace\\session2_carol\\round2_decode3\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "5bbd9fc24c1bb4fc7fb585a4fb5562e7b47b4ea5186e62967c6d41cdbf59a6cc"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run2\\trace\\session2_carol\\round2_decode3\\logits.f32",
+      "bytes": 993280,
+      "sha256": "e6347e38573a4878e71bc7be4c552dbc710202e029db6a1a127780e04d6395a1"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run2\\trace\\session2_carol\\round2_decode4\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "8bf410741244fdc5f13ebc24671fd004cafbcdc97d7884c938fb90680ce9804a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run2\\trace\\session2_carol\\round2_decode4\\logits.f32",
+      "bytes": 993280,
+      "sha256": "aa1698e520ca5135d3217967afe93f6881f5f78fc7004765d3fee1700f277a0a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run2\\trace\\session2_carol\\round2_decode5\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "8eb20e4f50ebb5d16181b4cd01fdee671fb5b3295698b1b6f8078cf4d34b4033"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run2\\trace\\session2_carol\\round2_decode5\\logits.f32",
+      "bytes": 993280,
+      "sha256": "19b61572692e6fcfa410ed0c83ac9809acbe213468a7cd81f578a376512ae06e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run2\\trace\\session2_carol\\round2_prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "d77b37d104220a0a15c9258f92cedea0b8c5160fadbf2018d85340b93050af4f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run2\\trace\\session2_carol\\round2_prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "619890aa536e979e3a1232b6d12322988f0296a76cb91c9436741b6000507767"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run2\\trace\\session3_dave\\round1_decode1\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "a0492edc94c6890d7815a6c3c7e2db7cb56f368d882f5cc169d86974fb2480ce"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run2\\trace\\session3_dave\\round1_decode1\\logits.f32",
+      "bytes": 993280,
+      "sha256": "389394483a3b00b22ec3baa90f4271a5aff7a66d155a697f5d22f2c8157333aa"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run2\\trace\\session3_dave\\round1_decode2\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "7107c146f06591c00f4ffb7472287662268cac1e056115e6d24706d7d25d8057"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run2\\trace\\session3_dave\\round1_decode2\\logits.f32",
+      "bytes": 993280,
+      "sha256": "ec44a2714e0ab27fe8d49e5fdd782dd7b0619259f56bb8586d69f8c26d45fa2e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run2\\trace\\session3_dave\\round1_decode3\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "e029d86fb854d61b9c029c54798babfcec96814d8efeff9e9c6fe21d331bebe4"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run2\\trace\\session3_dave\\round1_decode3\\logits.f32",
+      "bytes": 993280,
+      "sha256": "d9e875c5ad0cce3f0036451da4ed3b044d5980223d16568c7986d59835177f61"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run2\\trace\\session3_dave\\round1_decode4\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "39451cc509c92e948c4661c13d02c3d538f754ea044a47cfd3e5d19775922cbd"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run2\\trace\\session3_dave\\round1_decode4\\logits.f32",
+      "bytes": 993280,
+      "sha256": "95da5ef94acce88141272ab647517225c05dd181363d6173799709c5f02f7d5a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run2\\trace\\session3_dave\\round1_decode5\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "cfbc33ebac45d2869b1d9bfecefb4c4512750c52b40909a4fecb7ea2c337b96b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run2\\trace\\session3_dave\\round1_decode5\\logits.f32",
+      "bytes": 993280,
+      "sha256": "d1ba2c6e071db84e0c289436de02a1672d9424f486597ae1435158f091261baf"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run2\\trace\\session3_dave\\round1_prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "0172b7b395f4575cea0c2605abe541c7c02a2ea5a726c866e91856838fb60339"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run2\\trace\\session3_dave\\round1_prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "48320738232fab2e8af380cd27bea31c373fb1343269c44c7ea0380bb0816adc"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run2\\trace\\session3_dave\\round2_decode1\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "e6a8e9e17c3b34f54320c5615220b616c955b8d31229540372e954f7124da9d9"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run2\\trace\\session3_dave\\round2_decode1\\logits.f32",
+      "bytes": 993280,
+      "sha256": "c95fa68c6ca9633a8cdb47aced4ee781268e25c73240851bd2f642ed53e79a2f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run2\\trace\\session3_dave\\round2_decode2\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "a7551088511fac54bca96447c4b9b1a37002c6464264264e0fbf40273775379b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run2\\trace\\session3_dave\\round2_decode2\\logits.f32",
+      "bytes": 993280,
+      "sha256": "9f3727939a9aa57370bc67d0b94a3a284ee4ba476d5ff59d6407f5c65c530600"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run2\\trace\\session3_dave\\round2_prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "d59d5ab37af38ce8d0f8da70a6545922e1ab82e1b6a3f7118f8cabb20ed8eb54"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\batch-run2\\trace\\session3_dave\\round2_prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "1e120e6f41f6ca7233739400b27c77ece57611faa6d0d02834a18cc12baa3f4f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session0_alice\\round1_decode1\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "2da66274c62e00fc8bf9d9250c3d86ec4a3ab4f7aa7b7f45143771777caeba10"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session0_alice\\round1_decode1\\logits.f32",
+      "bytes": 993280,
+      "sha256": "abfd568a4e7a9ac63924d3101bcd872129bcc12eeacbbcef194ddd8755143d6c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session0_alice\\round1_decode2\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "63473b6371aa5bab48cd0693e767ce31fb786de1bd6fab89498bee58d2c26dfc"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session0_alice\\round1_decode2\\logits.f32",
+      "bytes": 993280,
+      "sha256": "dc73c1b31ddee65ed3c3ef5671ef2b851f5de1b70cf0460211d1d43c5aac1073"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session0_alice\\round1_decode3\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "f50d257156fd33e746cc10e4033c6c287a5a6d1e2b1c21397d03de9a3826685e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session0_alice\\round1_decode3\\logits.f32",
+      "bytes": 993280,
+      "sha256": "3d44c79716f84088bec6141e2be47eec061e06a7471a2a4695ea93740eb4a61a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session0_alice\\round1_decode4\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "6458bd79e33333c62d404be9ce5613cb90b459699cf9d8859f752607fa7e5a0d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session0_alice\\round1_decode4\\logits.f32",
+      "bytes": 993280,
+      "sha256": "f1a62f8d3fa46eda620c6c5ab5f3cae8e30d120ee0fe76ee280622657d0c7ad8"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session0_alice\\round1_prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "441f8e0eea6b8deea8b640bb76efc9dcc1267f3ee4de9e936bcc9fa9110a8ee1"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session0_alice\\round1_prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "3f9f6f36cbefdeae7dc1e5e89b8af0729c2d9d6f59dab28e040a4771d9609b43"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session0_alice\\round2_decode1\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "b5a7cfeb4fb5b7fd24943859ad39077378ec9fe5b02f4f8adddf64e3a13a018e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session0_alice\\round2_decode1\\logits.f32",
+      "bytes": 993280,
+      "sha256": "4a0ab5ba8df9d3f6b3d4a256c4e1c4c6f1bf05771067aa5b5da05226b654607a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session0_alice\\round2_decode2\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "71c9fa3e94410be0b02ae1b13f1a990ac958c380e958430921f469d7ba5bca78"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session0_alice\\round2_decode2\\logits.f32",
+      "bytes": 993280,
+      "sha256": "87f4b2aa83e68999032191c1fb1947b2e5719faae6afca1dab8fac3b7e76e6bc"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session0_alice\\round2_decode3\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "fdadf1a4b37fa24ecd55f6d1ee7eb20cfdc55f5a3844f4fedd9a75af1682af4b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session0_alice\\round2_decode3\\logits.f32",
+      "bytes": 993280,
+      "sha256": "7b0428828e316e67984b61839b473b8986cc116238c57df4449e0325cb9ef6fc"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session0_alice\\round2_prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "841bac7fa804558dac57deec0721853bcb308007d82c1a422fc600db04dc25c6"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session0_alice\\round2_prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "958bfc71c22a9517e6039108481211b8b4e5b11b0db2d1650c469ccf7824db3d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session0_alice\\restores\\restore2_call0\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "441f8e0eea6b8deea8b640bb76efc9dcc1267f3ee4de9e936bcc9fa9110a8ee1"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session0_alice\\restores\\restore2_call0\\logits.f32",
+      "bytes": 993280,
+      "sha256": "3f9f6f36cbefdeae7dc1e5e89b8af0729c2d9d6f59dab28e040a4771d9609b43"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session0_alice\\restores\\restore2_call1\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "e40060187d8c6376d00e58794643dd3f444dceefe29eb675c6ee2b0899131210"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session0_alice\\restores\\restore2_call1\\logits.f32",
+      "bytes": 993280,
+      "sha256": "54999d39e6a46f665fe6f7fc5d22b5136eb5e9b73ae179e5b908b33d7009f326"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session0_alice\\restores\\restore2_call2\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "f6d075ad86e2e0550617e6dfd6201ae335228ee6808ab8ae8bb3681159663424"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session0_alice\\restores\\restore2_call2\\logits.f32",
+      "bytes": 993280,
+      "sha256": "772199ca4b0550c00635c25bd8036a9b5334cb0c22bb79ce86f6fbd81520df67"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session0_alice\\restores\\restore2_call3\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "227c7e6548e2159393ddf350d7dfbd1dda87040994ade315075c005ce7798889"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session0_alice\\restores\\restore2_call3\\logits.f32",
+      "bytes": 993280,
+      "sha256": "aff61c4c7ec366a0b25cf583427df267859aca70ab3c9e264268a30f2d45f3d4"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session0_alice\\restores\\restore2_call4\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "f7d8474a362ca19268b3481791345307fee1026f0a4c871e1227ce3315e7021e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session0_alice\\restores\\restore2_call4\\logits.f32",
+      "bytes": 993280,
+      "sha256": "0ab4e55caa9276fd56d4353c36121014f07342989b570eb9c3f7dfddc21a2bba"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session1_bob\\round1_decode1\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "d188f46248ecc38eb41348ea19e4dd1b6c9b381af2daddc8e78f4acbf095475f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session1_bob\\round1_decode1\\logits.f32",
+      "bytes": 993280,
+      "sha256": "a9dfddef6c3de35dde34b4a4d83862793f40256b0094528601593f17deca8277"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session1_bob\\round1_decode2\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "efc393ee97ce0080103af63d70b18474e8f30935088aa3209cf454c925c077b3"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session1_bob\\round1_decode2\\logits.f32",
+      "bytes": 993280,
+      "sha256": "2b0dab944c3876bcc0315f56a7d274e4eed5f1cef32bc2f90c5157b4d01d91d9"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session1_bob\\round1_decode3\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "8c19533ed140d711e26fdf951576ab52253f5b757556f292091be788a59e9984"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session1_bob\\round1_decode3\\logits.f32",
+      "bytes": 993280,
+      "sha256": "01e2353a39586a2c54e1ca40512b5fae3aa130be20f6a5c4f88f5a2bf1816bcf"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session1_bob\\round1_prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "d1625d53fbb1c918aa90b829c69ff5ae4f44683eb0352a7745e54d4879b82c11"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session1_bob\\round1_prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "c217c3a1db43fb0dea77b1860c2833b4454202c70b511575dafd466af20e54c5"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session1_bob\\round2_decode1\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "b217044871011e5ba28018c6852d533bb354792527e3527a533114c382e88648"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session1_bob\\round2_decode1\\logits.f32",
+      "bytes": 993280,
+      "sha256": "b0744f4a876b5ef898a9b4cd55d78406007032eb9af73a41fc6a26a1c01d398a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session1_bob\\round2_decode2\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "590325f5dd6aa49abf67372493c80ed8a73b8d16e0eae46c2a48cf9c93a91c7a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session1_bob\\round2_decode2\\logits.f32",
+      "bytes": 993280,
+      "sha256": "61cf449f3b874b95535aecb64c10c35e6e56965ebb3bd4e0fd5138e60afacd53"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session1_bob\\round2_decode3\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "b52dab402558fa72bae74e4e77c3b235a08ad362322f8b1806d90b2e86f1154c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session1_bob\\round2_decode3\\logits.f32",
+      "bytes": 993280,
+      "sha256": "a746d50b1e5db4aad9644bcf1c12a565acb7bf5d3bdfbb80788f89ec873f8147"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session1_bob\\round2_decode4\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "db8dfa211c636e71cb367e7a5cff708eef9889e498701b3b892c927b3cceaf51"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session1_bob\\round2_decode4\\logits.f32",
+      "bytes": 993280,
+      "sha256": "5532864ac0348b4119724997aff8f857bbc808cbe0ceebeeaa371e7b834126cb"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session1_bob\\round2_prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "c782df548da6e2e97dcf41ab2236f9b49e8d9819c92e56aa04e27fc69d7912f3"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session1_bob\\round2_prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "6e5de8e07c6d0edcec55ced0d3f45662486ed6f5113565505df83da21fd2793f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session1_bob\\restores\\restore2_call0\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "d1625d53fbb1c918aa90b829c69ff5ae4f44683eb0352a7745e54d4879b82c11"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session1_bob\\restores\\restore2_call0\\logits.f32",
+      "bytes": 993280,
+      "sha256": "c217c3a1db43fb0dea77b1860c2833b4454202c70b511575dafd466af20e54c5"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session1_bob\\restores\\restore2_call1\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "c1fb63adae3b189e294daea3046c23c794372922e632a7c05b302a73c5d50d07"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session1_bob\\restores\\restore2_call1\\logits.f32",
+      "bytes": 993280,
+      "sha256": "1ef495bbd5091ffb4ae49c78b81e3ff2e74c0d20b22ab17b2da795548b3c2268"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session1_bob\\restores\\restore2_call2\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "2c7718cf2ad792e7ec9fee314ffe87cd1ebed2873e24526e531d17225885f5cf"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session1_bob\\restores\\restore2_call2\\logits.f32",
+      "bytes": 993280,
+      "sha256": "a05a567732f027fb6285122d2838afcf6cf4a65e1633808731be2016ae424f8e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session1_bob\\restores\\restore2_call3\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "c3de9823666def2d7d6b26d5dbc05ddc80f3cc91b134d21f12e8b12cb3f9ad55"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session1_bob\\restores\\restore2_call3\\logits.f32",
+      "bytes": 993280,
+      "sha256": "14140b027af3cb85c24a3e22cad01338f34d6320b50a23c98739f12c9b536d46"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session2_carol\\round1_decode1\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "10d189d8e0442fa02ba201c8bbffc7a4c330a298099048106d33a44b38297b7c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session2_carol\\round1_decode1\\logits.f32",
+      "bytes": 993280,
+      "sha256": "524fd2094046f6557392919205df2c42ceeffe47e3653914187fd8e28044647e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session2_carol\\round1_decode2\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "b7ec1928eecfa46b1c16c962a08753412d6190cc5d6a84f96e0e64bf1d482325"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session2_carol\\round1_decode2\\logits.f32",
+      "bytes": 993280,
+      "sha256": "d9aaff259c11bd53c556079054bb519ca887444dab35c666f4c6e4d26fc97213"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session2_carol\\round1_prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "f8ba4c2fb63b09d799ec0f9c94c65768c0499458ad67034855e299c5a3edaf3a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session2_carol\\round1_prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "1506e6681e8695e9554545d87c10b95bb9a00902831d1b0320406373a37959a0"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session2_carol\\round2_decode1\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "c4703242dc8d337426b24bd4b6d8f59e65b73a7734509ec8e5a9e83d553a1946"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session2_carol\\round2_decode1\\logits.f32",
+      "bytes": 993280,
+      "sha256": "e51dd156eb9c1240ee2e8bb1a6c8e39ff1cade50a2fa6ea107280984406e0de7"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session2_carol\\round2_decode2\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "a09f30462be304587e08236f6d8005c3b28730071d6dc64a4168771c730d8010"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session2_carol\\round2_decode2\\logits.f32",
+      "bytes": 993280,
+      "sha256": "95f11442ef03c78b6c54a0c9504320ed8c3fe1a993caee081d7a3b47868049b1"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session2_carol\\round2_decode3\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "9739e46a34a1d3c5b610156cbaab18d7c4337e02561806f8f3a03368aa717728"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session2_carol\\round2_decode3\\logits.f32",
+      "bytes": 993280,
+      "sha256": "0b9053cafd9b0bf13512e02a4c374fced4d8a94e0fdc1b556518495c0fd4eb97"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session2_carol\\round2_decode4\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "23016443138f8abc32323015c62db5c89a691e5635cf1b3e730315a8f71a1229"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session2_carol\\round2_decode4\\logits.f32",
+      "bytes": 993280,
+      "sha256": "db94c57d0ac91419dd987fbcb95a252aa6ddcdf339ac15916d1ed474bb7041e4"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session2_carol\\round2_decode5\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "c7cb04d9893c91c07908168f729c20e4c650336b49ebafb7f321f38925b41b08"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session2_carol\\round2_decode5\\logits.f32",
+      "bytes": 993280,
+      "sha256": "6bc72ab235ab135c5fcd5a15a34971a56f25c78175967dd5d4d9b6d5029688f9"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session2_carol\\round2_prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "f2a7173d3c99ac9d343924e782a171b2c8f1e0b0ba81940942ac3c605b674268"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session2_carol\\round2_prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "5f62a2ad05d4b5aa2f07a1f4cd222d5649e180d26b1eb3d367cd8961599ae7e2"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session2_carol\\restores\\restore2_call0\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "f8ba4c2fb63b09d799ec0f9c94c65768c0499458ad67034855e299c5a3edaf3a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session2_carol\\restores\\restore2_call0\\logits.f32",
+      "bytes": 993280,
+      "sha256": "1506e6681e8695e9554545d87c10b95bb9a00902831d1b0320406373a37959a0"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session2_carol\\restores\\restore2_call1\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "5172a304d03fa040565d6bdce2e30b4ac94336abcab89a43639523759a4a6e0b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session2_carol\\restores\\restore2_call1\\logits.f32",
+      "bytes": 993280,
+      "sha256": "a72482129fd89df992e29705c55820a83e3bd1676e4cce67d1b3679feeef87ce"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session2_carol\\restores\\restore2_call2\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "2c5cf20082dc8e607448b10e493377cf5a40b7921e87eaec80b6d77858159e0c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session2_carol\\restores\\restore2_call2\\logits.f32",
+      "bytes": 993280,
+      "sha256": "23842835b454bd81872a46e167ee177acb9e873e80f13d8513dbcf696f2613e7"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session3_dave\\round1_decode1\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "a0492edc94c6890d7815a6c3c7e2db7cb56f368d882f5cc169d86974fb2480ce"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session3_dave\\round1_decode1\\logits.f32",
+      "bytes": 993280,
+      "sha256": "389394483a3b00b22ec3baa90f4271a5aff7a66d155a697f5d22f2c8157333aa"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session3_dave\\round1_decode2\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "7107c146f06591c00f4ffb7472287662268cac1e056115e6d24706d7d25d8057"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session3_dave\\round1_decode2\\logits.f32",
+      "bytes": 993280,
+      "sha256": "ec44a2714e0ab27fe8d49e5fdd782dd7b0619259f56bb8586d69f8c26d45fa2e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session3_dave\\round1_decode3\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "e029d86fb854d61b9c029c54798babfcec96814d8efeff9e9c6fe21d331bebe4"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session3_dave\\round1_decode3\\logits.f32",
+      "bytes": 993280,
+      "sha256": "d9e875c5ad0cce3f0036451da4ed3b044d5980223d16568c7986d59835177f61"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session3_dave\\round1_decode4\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "39451cc509c92e948c4661c13d02c3d538f754ea044a47cfd3e5d19775922cbd"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session3_dave\\round1_decode4\\logits.f32",
+      "bytes": 993280,
+      "sha256": "95da5ef94acce88141272ab647517225c05dd181363d6173799709c5f02f7d5a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session3_dave\\round1_decode5\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "cfbc33ebac45d2869b1d9bfecefb4c4512750c52b40909a4fecb7ea2c337b96b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session3_dave\\round1_decode5\\logits.f32",
+      "bytes": 993280,
+      "sha256": "d1ba2c6e071db84e0c289436de02a1672d9424f486597ae1435158f091261baf"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session3_dave\\round1_prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "0172b7b395f4575cea0c2605abe541c7c02a2ea5a726c866e91856838fb60339"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session3_dave\\round1_prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "48320738232fab2e8af380cd27bea31c373fb1343269c44c7ea0380bb0816adc"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session3_dave\\round2_decode1\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "3a43ee1d7efbbce148f83c22406f85a6098e25bec59937411bb8965c8adbca1a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session3_dave\\round2_decode1\\logits.f32",
+      "bytes": 993280,
+      "sha256": "494efd84b905b74029ae492bec4da3ee8b925617763bffa6bb7a0e42e7ec1767"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session3_dave\\round2_decode2\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "d358733e351421cce9c402eedccd3a5f93168f09b50e66b9b4fd2ae967c15abc"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session3_dave\\round2_decode2\\logits.f32",
+      "bytes": 993280,
+      "sha256": "6b2676842cbfc540718c86ecda6ea0d95d0bcb331939e0a442bd2898ae1022a2"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session3_dave\\round2_prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "4ca82b2f951b2f57b7fd6bb86d6b80c9b89e44ef1af28ec4c92a18d3dc9e3507"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session3_dave\\round2_prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "de031ae06577e766eadeac3dbd75978c1a42da8876b283d251bc4ae0895ad89a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session3_dave\\restores\\restore2_call0\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "0172b7b395f4575cea0c2605abe541c7c02a2ea5a726c866e91856838fb60339"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session3_dave\\restores\\restore2_call0\\logits.f32",
+      "bytes": 993280,
+      "sha256": "48320738232fab2e8af380cd27bea31c373fb1343269c44c7ea0380bb0816adc"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session3_dave\\restores\\restore2_call1\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "c371698e4a23b7029c909a95345f5b1db631c0e00f2de8160cbd6b9dc5295b41"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session3_dave\\restores\\restore2_call1\\logits.f32",
+      "bytes": 993280,
+      "sha256": "a2060c5e6c7c97c20e82ae21ea6b476e3253b7104c46f6fb634b5d244640898d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session3_dave\\restores\\restore2_call2\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "d79da8ee7b70578888362faeceb8ac94a60ae077451f1ba4fbc03a717cb53bef"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session3_dave\\restores\\restore2_call2\\logits.f32",
+      "bytes": 993280,
+      "sha256": "f41462cb67bcbf7ec1b9a69eb80b402ea228c3a3b4228f835d7a1dd23c0af6b0"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session3_dave\\restores\\restore2_call3\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "96b2fc84a155b5e87d1bb5f9f4b71e57d966ca3a5b40796b0ec65fee68d7a349"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session3_dave\\restores\\restore2_call3\\logits.f32",
+      "bytes": 993280,
+      "sha256": "566475fbfdcb8ba29aa55edad74a497cd393567d4844772be4642f9629bbd300"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session3_dave\\restores\\restore2_call4\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "675ce5d3c828126d33fd9eb8c7bec0e121ec2f5d06320651452c1a7f21377e42"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session3_dave\\restores\\restore2_call4\\logits.f32",
+      "bytes": 993280,
+      "sha256": "e05936fefaa30771f1ae3259da500e87ef67979ca61077f7e367ce8cde399288"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session3_dave\\restores\\restore2_call5\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "09d6258e5b5d9c2dca4706133182b5a6eaaf879b38741ed66865717fa7813bb3"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\budget-pressure-run1\\trace\\session3_dave\\restores\\restore2_call5\\logits.f32",
+      "bytes": 993280,
+      "sha256": "ac112b588c60bd99d6893751cc111ca95c971358c8f85eac4154f5bcaa546643"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\peer\\checks\\attempt1\\peer.map",
+      "bytes": 22517404,
+      "sha256": "657ed8584261a469be5781ad5add31d9e0a6caf52d17c462f826902b01e266f2"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-pressure-run1\\trace\\session0_seed\\round1_decode1\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "e40060187d8c6376d00e58794643dd3f444dceefe29eb675c6ee2b0899131210"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-pressure-run1\\trace\\session0_seed\\round1_decode1\\logits.f32",
+      "bytes": 993280,
+      "sha256": "54999d39e6a46f665fe6f7fc5d22b5136eb5e9b73ae179e5b908b33d7009f326"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-pressure-run1\\trace\\session0_seed\\round1_prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "441f8e0eea6b8deea8b640bb76efc9dcc1267f3ee4de9e936bcc9fa9110a8ee1"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-pressure-run1\\trace\\session0_seed\\round1_prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "3f9f6f36cbefdeae7dc1e5e89b8af0729c2d9d6f59dab28e040a4771d9609b43"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-pressure-run1\\trace\\session0_seed\\round2_decode1\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "c9546e8c6bfaa1451377f82fb53a3c290013111832744e96253d690cafeb6deb"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-pressure-run1\\trace\\session0_seed\\round2_decode1\\logits.f32",
+      "bytes": 993280,
+      "sha256": "51c85698d5886eadd59dddb8d9bd8b4efcc924b28cddb914cf68d96dad59a73e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-pressure-run1\\trace\\session0_seed\\round2_decode2\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "59f76e55e07a4ea0fbbbe95795c8db68a6d405fd79caee3b0571d018d3eadd27"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-pressure-run1\\trace\\session0_seed\\round2_decode2\\logits.f32",
+      "bytes": 993280,
+      "sha256": "4cf83284367074267e6f4f0d38cf6df8eb275c71b15118cc69237d629a277c77"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-pressure-run1\\trace\\session0_seed\\round2_prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "da92d11d370f9fc85f593cf212ae4121b3af3dd2221384a16e670a9e921b0b4c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-pressure-run1\\trace\\session0_seed\\round2_prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "c52043bcade883c1f11708c6e7727901e6b9dd89b0652929fea4ca254078dbc4"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-pressure-run1\\trace\\session1_branch_a\\round1_decode1\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "b201b697286da5cfe51fe54b40a35173fd840aaa5e3e7f45d2dff05931046918"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-pressure-run1\\trace\\session1_branch_a\\round1_decode1\\logits.f32",
+      "bytes": 993280,
+      "sha256": "74694634e12ca11db5f70c99a477623b6e73da9292968e257422394fc96b08c1"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-pressure-run1\\trace\\session1_branch_a\\round1_decode2\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "a620ef7e154bf9b6fb92563781010b23d82ed6fc75d63ee91b00a70cfafa9e04"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-pressure-run1\\trace\\session1_branch_a\\round1_decode2\\logits.f32",
+      "bytes": 993280,
+      "sha256": "7c6dc085297182c7246039c003c9196df41209679d3d3245da2cf259bc0eeb35"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-pressure-run1\\trace\\session1_branch_a\\round1_prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "8d8aa1a5058fbfd5346350e5d92e2a2ffd754f5e9ee963dc1cc0869d68b8bf7c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-pressure-run1\\trace\\session1_branch_a\\round1_prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "4e34af9ced099c79406b6f116fffe13353c9c2332ea3202d5a6b6754a35b02b7"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-pressure-run1\\trace\\session1_branch_a\\round2_decode1\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "42737939a31d069e16ba127cf8dd4a15ab16abcc5bdb6c268cc58353c8374bc7"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-pressure-run1\\trace\\session1_branch_a\\round2_decode1\\logits.f32",
+      "bytes": 993280,
+      "sha256": "bb957c0453a02dcf024672458bfe1964c12f5e56a1bc4f93da2bd27ee8bce632"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-pressure-run1\\trace\\session1_branch_a\\round2_prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "8771db15619c775b672753a2db40710855ba71ed0e1cd936bfe71f39c4aab571"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-pressure-run1\\trace\\session1_branch_a\\round2_prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "b37988646956016643edf4b255c90e2a2e3662feafae48b3bc8e9350de526b0c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-pressure-run1\\trace\\session1_branch_a\\restores\\restore2_chunk0\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "441f8e0eea6b8deea8b640bb76efc9dcc1267f3ee4de9e936bcc9fa9110a8ee1"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-pressure-run1\\trace\\session1_branch_a\\restores\\restore2_chunk0\\logits.f32",
+      "bytes": 993280,
+      "sha256": "3f9f6f36cbefdeae7dc1e5e89b8af0729c2d9d6f59dab28e040a4771d9609b43"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-pressure-run1\\trace\\session1_branch_a\\restores\\restore2_chunk1\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "e40060187d8c6376d00e58794643dd3f444dceefe29eb675c6ee2b0899131210"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-pressure-run1\\trace\\session1_branch_a\\restores\\restore2_chunk1\\logits.f32",
+      "bytes": 993280,
+      "sha256": "54999d39e6a46f665fe6f7fc5d22b5136eb5e9b73ae179e5b908b33d7009f326"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-pressure-run1\\trace\\session1_branch_a\\restores\\restore2_chunk2\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "8d8aa1a5058fbfd5346350e5d92e2a2ffd754f5e9ee963dc1cc0869d68b8bf7c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-pressure-run1\\trace\\session1_branch_a\\restores\\restore2_chunk2\\logits.f32",
+      "bytes": 993280,
+      "sha256": "4e34af9ced099c79406b6f116fffe13353c9c2332ea3202d5a6b6754a35b02b7"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-pressure-run1\\trace\\session1_branch_a\\restores\\restore2_chunk3\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "b201b697286da5cfe51fe54b40a35173fd840aaa5e3e7f45d2dff05931046918"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-pressure-run1\\trace\\session1_branch_a\\restores\\restore2_chunk3\\logits.f32",
+      "bytes": 993280,
+      "sha256": "74694634e12ca11db5f70c99a477623b6e73da9292968e257422394fc96b08c1"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-pressure-run1\\trace\\session1_branch_a\\restores\\restore2_chunk4\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "a620ef7e154bf9b6fb92563781010b23d82ed6fc75d63ee91b00a70cfafa9e04"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-pressure-run1\\trace\\session1_branch_a\\restores\\restore2_chunk4\\logits.f32",
+      "bytes": 993280,
+      "sha256": "7c6dc085297182c7246039c003c9196df41209679d3d3245da2cf259bc0eeb35"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-pressure-run1\\trace\\session2_branch_b\\round1_decode1\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "b102a3f5ec69ad04596e72d38c40be2a8deb5bcd8c5f1d07838fefc0ac3a5fc6"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-pressure-run1\\trace\\session2_branch_b\\round1_decode1\\logits.f32",
+      "bytes": 993280,
+      "sha256": "5e6a06138118a52b26e392313b5840eb4686579e5438b8dc5439f7de3899a671"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-pressure-run1\\trace\\session2_branch_b\\round1_decode2\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "356eea0ae6de7e19503115197804a52168f396f82179a08638c74a72dc190b0f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-pressure-run1\\trace\\session2_branch_b\\round1_decode2\\logits.f32",
+      "bytes": 993280,
+      "sha256": "53d3fc80b0ac98db2f314aa1996b5da9e9777575b301ca8db7024f6b27061186"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-pressure-run1\\trace\\session2_branch_b\\round1_prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "818c0b48009c335685c5f82097f8629e369e083cf9a3a3e49d1732b32c647f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-pressure-run1\\trace\\session2_branch_b\\round1_prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "4a53b35a2590598d338ed98f1f15581a96c8350fbfcad7ec82aa51ab53333456"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-pressure-run1\\trace\\session3_full_hit\\round1_prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "5143f1a066c545460ebc33d72b46533a47a0093e807f1e57653bde5ae47e5111"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-pressure-run1\\trace\\session3_full_hit\\round1_prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "e281613cc93ca91a2abe930a931a7c7411fe056dba73c5213bba4d30be1cdee5"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-pressure-run1\\trace\\session4_changed\\round1_prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "c54e2a3c4a4f46af578735dd1fa804d34f11c7b46238a19282f45690b097dbcb"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-pressure-run1\\trace\\session4_changed\\round1_prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "f759e8dfafa5bc2b9625c3d7cbf39e02f1a0759b299586003b4d35d74e0fe78f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-run1\\trace\\session0_seed\\round1_decode1\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "e40060187d8c6376d00e58794643dd3f444dceefe29eb675c6ee2b0899131210"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-run1\\trace\\session0_seed\\round1_decode1\\logits.f32",
+      "bytes": 993280,
+      "sha256": "54999d39e6a46f665fe6f7fc5d22b5136eb5e9b73ae179e5b908b33d7009f326"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-run1\\trace\\session0_seed\\round1_prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "441f8e0eea6b8deea8b640bb76efc9dcc1267f3ee4de9e936bcc9fa9110a8ee1"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-run1\\trace\\session0_seed\\round1_prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "3f9f6f36cbefdeae7dc1e5e89b8af0729c2d9d6f59dab28e040a4771d9609b43"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-run1\\trace\\session0_seed\\round2_decode1\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "cf4aa420dcab098effc3352a8444cad88f8a44ba4e3add693fac5b76fcb1c169"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-run1\\trace\\session0_seed\\round2_decode1\\logits.f32",
+      "bytes": 993280,
+      "sha256": "b6b54649953db2e946f05c270d51434ae2c2925ab4137eae0784bc7a2db2300c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-run1\\trace\\session0_seed\\round2_decode2\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "02482e5a8a6fa102fa373e55ff04af9f7b21657491dff36bf8d9b7deb0c4bf11"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-run1\\trace\\session0_seed\\round2_decode2\\logits.f32",
+      "bytes": 993280,
+      "sha256": "f252fea79b7d02b28cc26986403762c309f7f07b8690863e09cc448ff466811b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-run1\\trace\\session0_seed\\round2_prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "dd72a3f20adab822fccbf819e728810f2ec2c5fae7c7737dd768c24cf54b5a10"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-run1\\trace\\session0_seed\\round2_prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "b6831289fbc1efc4d43ec7b2ca2a877ef9803c1ccdc35d8e27828412dfcd41a0"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-run1\\trace\\session1_changed\\round1_prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "c54e2a3c4a4f46af578735dd1fa804d34f11c7b46238a19282f45690b097dbcb"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-run1\\trace\\session1_changed\\round1_prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "f759e8dfafa5bc2b9625c3d7cbf39e02f1a0759b299586003b4d35d74e0fe78f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-run1\\trace\\session2_A\\round1_decode1\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "9c25d044aa33817ea1b7eaea5acf653d054295a837b853dc1b699548946b270e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-run1\\trace\\session2_A\\round1_decode1\\logits.f32",
+      "bytes": 993280,
+      "sha256": "00c60f15888fa9296d68deacf8ff47960533c9b0d494a0b8a6afe4f97742469b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-run1\\trace\\session2_A\\round1_decode2\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "c7cff82a587ef80bfe98a3cc0f47f861dbc2d3aefea0c71a880e8b379f65dafc"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-run1\\trace\\session2_A\\round1_decode2\\logits.f32",
+      "bytes": 993280,
+      "sha256": "c9cc13a43cc03dd820065c3bdce06b13f14483af0041d831f26e02170194132f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-run1\\trace\\session2_A\\round1_prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "8d8aa1a5058fbfd5346350e5d92e2a2ffd754f5e9ee963dc1cc0869d68b8bf7c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-run1\\trace\\session2_A\\round1_prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "4e34af9ced099c79406b6f116fffe13353c9c2332ea3202d5a6b6754a35b02b7"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-run1\\trace\\session3_B\\round1_decode1\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "79a011e4bd6227cc59a6eb6afa958630dc1fc7ba9cab744315170481531f96b7"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-run1\\trace\\session3_B\\round1_decode1\\logits.f32",
+      "bytes": 993280,
+      "sha256": "4d1793b206b754af8a4019b0185bfc37a9f4c587aa3944e0756d4b6509faa5fd"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-run1\\trace\\session3_B\\round1_decode2\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "16c8492a03efdad9b6f188df02141bc1aa0e66e7d31c75a334683f6b68548996"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-run1\\trace\\session3_B\\round1_decode2\\logits.f32",
+      "bytes": 993280,
+      "sha256": "3e84a0008c1a382115821b67a10a9bef134fdc05adc9d288c9d4cc1ec9679ff7"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-run1\\trace\\session3_B\\round1_prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "569252b65feade617ff413cd9e9982a121c4997b207810c9327a23e73393debc"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-run1\\trace\\session3_B\\round1_prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "75d7a0f6c9d73cf4c8b3cbb38d2bb88bb60b1ed832236a7babb2a44dec46072f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-run1\\trace\\session4_full\\round1_prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "5143f1a066c545460ebc33d72b46533a47a0093e807f1e57653bde5ae47e5111"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-run1\\trace\\session4_full\\round1_prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "e281613cc93ca91a2abe930a931a7c7411fe056dba73c5213bba4d30be1cdee5"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-run2\\trace\\session0_seed\\round1_decode1\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "e40060187d8c6376d00e58794643dd3f444dceefe29eb675c6ee2b0899131210"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-run2\\trace\\session0_seed\\round1_decode1\\logits.f32",
+      "bytes": 993280,
+      "sha256": "54999d39e6a46f665fe6f7fc5d22b5136eb5e9b73ae179e5b908b33d7009f326"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-run2\\trace\\session0_seed\\round1_prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "441f8e0eea6b8deea8b640bb76efc9dcc1267f3ee4de9e936bcc9fa9110a8ee1"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-run2\\trace\\session0_seed\\round1_prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "3f9f6f36cbefdeae7dc1e5e89b8af0729c2d9d6f59dab28e040a4771d9609b43"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-run2\\trace\\session0_seed\\round2_decode1\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "cf4aa420dcab098effc3352a8444cad88f8a44ba4e3add693fac5b76fcb1c169"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-run2\\trace\\session0_seed\\round2_decode1\\logits.f32",
+      "bytes": 993280,
+      "sha256": "b6b54649953db2e946f05c270d51434ae2c2925ab4137eae0784bc7a2db2300c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-run2\\trace\\session0_seed\\round2_decode2\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "02482e5a8a6fa102fa373e55ff04af9f7b21657491dff36bf8d9b7deb0c4bf11"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-run2\\trace\\session0_seed\\round2_decode2\\logits.f32",
+      "bytes": 993280,
+      "sha256": "f252fea79b7d02b28cc26986403762c309f7f07b8690863e09cc448ff466811b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-run2\\trace\\session0_seed\\round2_prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "dd72a3f20adab822fccbf819e728810f2ec2c5fae7c7737dd768c24cf54b5a10"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-run2\\trace\\session0_seed\\round2_prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "b6831289fbc1efc4d43ec7b2ca2a877ef9803c1ccdc35d8e27828412dfcd41a0"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-run2\\trace\\session1_changed\\round1_prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "c54e2a3c4a4f46af578735dd1fa804d34f11c7b46238a19282f45690b097dbcb"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-run2\\trace\\session1_changed\\round1_prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "f759e8dfafa5bc2b9625c3d7cbf39e02f1a0759b299586003b4d35d74e0fe78f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-run2\\trace\\session2_A\\round1_decode1\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "9c25d044aa33817ea1b7eaea5acf653d054295a837b853dc1b699548946b270e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-run2\\trace\\session2_A\\round1_decode1\\logits.f32",
+      "bytes": 993280,
+      "sha256": "00c60f15888fa9296d68deacf8ff47960533c9b0d494a0b8a6afe4f97742469b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-run2\\trace\\session2_A\\round1_decode2\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "c7cff82a587ef80bfe98a3cc0f47f861dbc2d3aefea0c71a880e8b379f65dafc"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-run2\\trace\\session2_A\\round1_decode2\\logits.f32",
+      "bytes": 993280,
+      "sha256": "c9cc13a43cc03dd820065c3bdce06b13f14483af0041d831f26e02170194132f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-run2\\trace\\session2_A\\round1_prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "8d8aa1a5058fbfd5346350e5d92e2a2ffd754f5e9ee963dc1cc0869d68b8bf7c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-run2\\trace\\session2_A\\round1_prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "4e34af9ced099c79406b6f116fffe13353c9c2332ea3202d5a6b6754a35b02b7"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-run2\\trace\\session3_B\\round1_decode1\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "79a011e4bd6227cc59a6eb6afa958630dc1fc7ba9cab744315170481531f96b7"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-run2\\trace\\session3_B\\round1_decode1\\logits.f32",
+      "bytes": 993280,
+      "sha256": "4d1793b206b754af8a4019b0185bfc37a9f4c587aa3944e0756d4b6509faa5fd"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-run2\\trace\\session3_B\\round1_decode2\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "16c8492a03efdad9b6f188df02141bc1aa0e66e7d31c75a334683f6b68548996"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-run2\\trace\\session3_B\\round1_decode2\\logits.f32",
+      "bytes": 993280,
+      "sha256": "3e84a0008c1a382115821b67a10a9bef134fdc05adc9d288c9d4cc1ec9679ff7"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-run2\\trace\\session3_B\\round1_prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "569252b65feade617ff413cd9e9982a121c4997b207810c9327a23e73393debc"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-run2\\trace\\session3_B\\round1_prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "75d7a0f6c9d73cf4c8b3cbb38d2bb88bb60b1ed832236a7babb2a44dec46072f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-run3\\trace\\session0_seed\\round1_decode1\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "e40060187d8c6376d00e58794643dd3f444dceefe29eb675c6ee2b0899131210"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-run3\\trace\\session0_seed\\round1_decode1\\logits.f32",
+      "bytes": 993280,
+      "sha256": "54999d39e6a46f665fe6f7fc5d22b5136eb5e9b73ae179e5b908b33d7009f326"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-run3\\trace\\session0_seed\\round1_prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "441f8e0eea6b8deea8b640bb76efc9dcc1267f3ee4de9e936bcc9fa9110a8ee1"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-run3\\trace\\session0_seed\\round1_prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "3f9f6f36cbefdeae7dc1e5e89b8af0729c2d9d6f59dab28e040a4771d9609b43"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-run3\\trace\\session0_seed\\round2_decode1\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "cf4aa420dcab098effc3352a8444cad88f8a44ba4e3add693fac5b76fcb1c169"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-run3\\trace\\session0_seed\\round2_decode1\\logits.f32",
+      "bytes": 993280,
+      "sha256": "b6b54649953db2e946f05c270d51434ae2c2925ab4137eae0784bc7a2db2300c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-run3\\trace\\session0_seed\\round2_decode2\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "02482e5a8a6fa102fa373e55ff04af9f7b21657491dff36bf8d9b7deb0c4bf11"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-run3\\trace\\session0_seed\\round2_decode2\\logits.f32",
+      "bytes": 993280,
+      "sha256": "f252fea79b7d02b28cc26986403762c309f7f07b8690863e09cc448ff466811b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-run3\\trace\\session0_seed\\round2_prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "dd72a3f20adab822fccbf819e728810f2ec2c5fae7c7737dd768c24cf54b5a10"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-run3\\trace\\session0_seed\\round2_prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "b6831289fbc1efc4d43ec7b2ca2a877ef9803c1ccdc35d8e27828412dfcd41a0"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-run3\\trace\\session1_changed\\round1_prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "c54e2a3c4a4f46af578735dd1fa804d34f11c7b46238a19282f45690b097dbcb"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-run3\\trace\\session1_changed\\round1_prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "f759e8dfafa5bc2b9625c3d7cbf39e02f1a0759b299586003b4d35d74e0fe78f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-run3\\trace\\session2_A\\round1_decode1\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "9c25d044aa33817ea1b7eaea5acf653d054295a837b853dc1b699548946b270e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-run3\\trace\\session2_A\\round1_decode1\\logits.f32",
+      "bytes": 993280,
+      "sha256": "00c60f15888fa9296d68deacf8ff47960533c9b0d494a0b8a6afe4f97742469b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-run3\\trace\\session2_A\\round1_decode2\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "c7cff82a587ef80bfe98a3cc0f47f861dbc2d3aefea0c71a880e8b379f65dafc"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-run3\\trace\\session2_A\\round1_decode2\\logits.f32",
+      "bytes": 993280,
+      "sha256": "c9cc13a43cc03dd820065c3bdce06b13f14483af0041d831f26e02170194132f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-run3\\trace\\session2_A\\round1_prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "8d8aa1a5058fbfd5346350e5d92e2a2ffd754f5e9ee963dc1cc0869d68b8bf7c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-run3\\trace\\session2_A\\round1_prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "4e34af9ced099c79406b6f116fffe13353c9c2332ea3202d5a6b6754a35b02b7"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-run3\\trace\\session3_B\\round1_decode1\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "79a011e4bd6227cc59a6eb6afa958630dc1fc7ba9cab744315170481531f96b7"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-run3\\trace\\session3_B\\round1_decode1\\logits.f32",
+      "bytes": 993280,
+      "sha256": "4d1793b206b754af8a4019b0185bfc37a9f4c587aa3944e0756d4b6509faa5fd"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-run3\\trace\\session3_B\\round1_decode2\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "16c8492a03efdad9b6f188df02141bc1aa0e66e7d31c75a334683f6b68548996"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-run3\\trace\\session3_B\\round1_decode2\\logits.f32",
+      "bytes": 993280,
+      "sha256": "3e84a0008c1a382115821b67a10a9bef134fdc05adc9d288c9d4cc1ec9679ff7"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-run3\\trace\\session3_B\\round1_prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "569252b65feade617ff413cd9e9982a121c4997b207810c9327a23e73393debc"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\prefix-run3\\trace\\session3_B\\round1_prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "75d7a0f6c9d73cf4c8b3cbb38d2bb88bb60b1ed832236a7babb2a44dec46072f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run1\\trace\\session0_alice\\round1_decode1\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "2da66274c62e00fc8bf9d9250c3d86ec4a3ab4f7aa7b7f45143771777caeba10"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run1\\trace\\session0_alice\\round1_decode1\\logits.f32",
+      "bytes": 993280,
+      "sha256": "abfd568a4e7a9ac63924d3101bcd872129bcc12eeacbbcef194ddd8755143d6c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run1\\trace\\session0_alice\\round1_decode2\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "63473b6371aa5bab48cd0693e767ce31fb786de1bd6fab89498bee58d2c26dfc"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run1\\trace\\session0_alice\\round1_decode2\\logits.f32",
+      "bytes": 993280,
+      "sha256": "dc73c1b31ddee65ed3c3ef5671ef2b851f5de1b70cf0460211d1d43c5aac1073"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run1\\trace\\session0_alice\\round1_decode3\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "f50d257156fd33e746cc10e4033c6c287a5a6d1e2b1c21397d03de9a3826685e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run1\\trace\\session0_alice\\round1_decode3\\logits.f32",
+      "bytes": 993280,
+      "sha256": "3d44c79716f84088bec6141e2be47eec061e06a7471a2a4695ea93740eb4a61a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run1\\trace\\session0_alice\\round1_decode4\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "6458bd79e33333c62d404be9ce5613cb90b459699cf9d8859f752607fa7e5a0d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run1\\trace\\session0_alice\\round1_decode4\\logits.f32",
+      "bytes": 993280,
+      "sha256": "f1a62f8d3fa46eda620c6c5ab5f3cae8e30d120ee0fe76ee280622657d0c7ad8"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run1\\trace\\session0_alice\\round1_prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "441f8e0eea6b8deea8b640bb76efc9dcc1267f3ee4de9e936bcc9fa9110a8ee1"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run1\\trace\\session0_alice\\round1_prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "3f9f6f36cbefdeae7dc1e5e89b8af0729c2d9d6f59dab28e040a4771d9609b43"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run1\\trace\\session0_alice\\round2_decode1\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "b5a7cfeb4fb5b7fd24943859ad39077378ec9fe5b02f4f8adddf64e3a13a018e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run1\\trace\\session0_alice\\round2_decode1\\logits.f32",
+      "bytes": 993280,
+      "sha256": "4a0ab5ba8df9d3f6b3d4a256c4e1c4c6f1bf05771067aa5b5da05226b654607a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run1\\trace\\session0_alice\\round2_decode2\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "71c9fa3e94410be0b02ae1b13f1a990ac958c380e958430921f469d7ba5bca78"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run1\\trace\\session0_alice\\round2_decode2\\logits.f32",
+      "bytes": 993280,
+      "sha256": "87f4b2aa83e68999032191c1fb1947b2e5719faae6afca1dab8fac3b7e76e6bc"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run1\\trace\\session0_alice\\round2_decode3\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "fdadf1a4b37fa24ecd55f6d1ee7eb20cfdc55f5a3844f4fedd9a75af1682af4b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run1\\trace\\session0_alice\\round2_decode3\\logits.f32",
+      "bytes": 993280,
+      "sha256": "7b0428828e316e67984b61839b473b8986cc116238c57df4449e0325cb9ef6fc"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run1\\trace\\session0_alice\\round2_prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "841bac7fa804558dac57deec0721853bcb308007d82c1a422fc600db04dc25c6"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run1\\trace\\session0_alice\\round2_prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "958bfc71c22a9517e6039108481211b8b4e5b11b0db2d1650c469ccf7824db3d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run1\\trace\\session1_bob\\round1_decode1\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "d188f46248ecc38eb41348ea19e4dd1b6c9b381af2daddc8e78f4acbf095475f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run1\\trace\\session1_bob\\round1_decode1\\logits.f32",
+      "bytes": 993280,
+      "sha256": "a9dfddef6c3de35dde34b4a4d83862793f40256b0094528601593f17deca8277"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run1\\trace\\session1_bob\\round1_decode2\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "efc393ee97ce0080103af63d70b18474e8f30935088aa3209cf454c925c077b3"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run1\\trace\\session1_bob\\round1_decode2\\logits.f32",
+      "bytes": 993280,
+      "sha256": "2b0dab944c3876bcc0315f56a7d274e4eed5f1cef32bc2f90c5157b4d01d91d9"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run1\\trace\\session1_bob\\round1_decode3\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "8c19533ed140d711e26fdf951576ab52253f5b757556f292091be788a59e9984"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run1\\trace\\session1_bob\\round1_decode3\\logits.f32",
+      "bytes": 993280,
+      "sha256": "01e2353a39586a2c54e1ca40512b5fae3aa130be20f6a5c4f88f5a2bf1816bcf"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run1\\trace\\session1_bob\\round1_prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "d1625d53fbb1c918aa90b829c69ff5ae4f44683eb0352a7745e54d4879b82c11"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run1\\trace\\session1_bob\\round1_prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "c217c3a1db43fb0dea77b1860c2833b4454202c70b511575dafd466af20e54c5"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run1\\trace\\session1_bob\\round2_decode1\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "b217044871011e5ba28018c6852d533bb354792527e3527a533114c382e88648"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run1\\trace\\session1_bob\\round2_decode1\\logits.f32",
+      "bytes": 993280,
+      "sha256": "b0744f4a876b5ef898a9b4cd55d78406007032eb9af73a41fc6a26a1c01d398a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run1\\trace\\session1_bob\\round2_decode2\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "590325f5dd6aa49abf67372493c80ed8a73b8d16e0eae46c2a48cf9c93a91c7a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run1\\trace\\session1_bob\\round2_decode2\\logits.f32",
+      "bytes": 993280,
+      "sha256": "61cf449f3b874b95535aecb64c10c35e6e56965ebb3bd4e0fd5138e60afacd53"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run1\\trace\\session1_bob\\round2_decode3\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "b52dab402558fa72bae74e4e77c3b235a08ad362322f8b1806d90b2e86f1154c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run1\\trace\\session1_bob\\round2_decode3\\logits.f32",
+      "bytes": 993280,
+      "sha256": "a746d50b1e5db4aad9644bcf1c12a565acb7bf5d3bdfbb80788f89ec873f8147"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run1\\trace\\session1_bob\\round2_decode4\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "db8dfa211c636e71cb367e7a5cff708eef9889e498701b3b892c927b3cceaf51"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run1\\trace\\session1_bob\\round2_decode4\\logits.f32",
+      "bytes": 993280,
+      "sha256": "5532864ac0348b4119724997aff8f857bbc808cbe0ceebeeaa371e7b834126cb"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run1\\trace\\session1_bob\\round2_prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "c782df548da6e2e97dcf41ab2236f9b49e8d9819c92e56aa04e27fc69d7912f3"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run1\\trace\\session1_bob\\round2_prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "6e5de8e07c6d0edcec55ced0d3f45662486ed6f5113565505df83da21fd2793f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run1\\trace\\session2_carol\\round1_decode1\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "10d189d8e0442fa02ba201c8bbffc7a4c330a298099048106d33a44b38297b7c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run1\\trace\\session2_carol\\round1_decode1\\logits.f32",
+      "bytes": 993280,
+      "sha256": "524fd2094046f6557392919205df2c42ceeffe47e3653914187fd8e28044647e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run1\\trace\\session2_carol\\round1_decode2\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "b7ec1928eecfa46b1c16c962a08753412d6190cc5d6a84f96e0e64bf1d482325"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run1\\trace\\session2_carol\\round1_decode2\\logits.f32",
+      "bytes": 993280,
+      "sha256": "d9aaff259c11bd53c556079054bb519ca887444dab35c666f4c6e4d26fc97213"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run1\\trace\\session2_carol\\round1_prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "f8ba4c2fb63b09d799ec0f9c94c65768c0499458ad67034855e299c5a3edaf3a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run1\\trace\\session2_carol\\round1_prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "1506e6681e8695e9554545d87c10b95bb9a00902831d1b0320406373a37959a0"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run1\\trace\\session3_dave\\round1_decode1\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "a0492edc94c6890d7815a6c3c7e2db7cb56f368d882f5cc169d86974fb2480ce"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run1\\trace\\session3_dave\\round1_decode1\\logits.f32",
+      "bytes": 993280,
+      "sha256": "389394483a3b00b22ec3baa90f4271a5aff7a66d155a697f5d22f2c8157333aa"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run1\\trace\\session3_dave\\round1_decode2\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "7107c146f06591c00f4ffb7472287662268cac1e056115e6d24706d7d25d8057"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run1\\trace\\session3_dave\\round1_decode2\\logits.f32",
+      "bytes": 993280,
+      "sha256": "ec44a2714e0ab27fe8d49e5fdd782dd7b0619259f56bb8586d69f8c26d45fa2e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run1\\trace\\session3_dave\\round1_decode3\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "e029d86fb854d61b9c029c54798babfcec96814d8efeff9e9c6fe21d331bebe4"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run1\\trace\\session3_dave\\round1_decode3\\logits.f32",
+      "bytes": 993280,
+      "sha256": "d9e875c5ad0cce3f0036451da4ed3b044d5980223d16568c7986d59835177f61"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run1\\trace\\session3_dave\\round1_decode4\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "39451cc509c92e948c4661c13d02c3d538f754ea044a47cfd3e5d19775922cbd"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run1\\trace\\session3_dave\\round1_decode4\\logits.f32",
+      "bytes": 993280,
+      "sha256": "95da5ef94acce88141272ab647517225c05dd181363d6173799709c5f02f7d5a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run1\\trace\\session3_dave\\round1_decode5\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "cfbc33ebac45d2869b1d9bfecefb4c4512750c52b40909a4fecb7ea2c337b96b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run1\\trace\\session3_dave\\round1_decode5\\logits.f32",
+      "bytes": 993280,
+      "sha256": "d1ba2c6e071db84e0c289436de02a1672d9424f486597ae1435158f091261baf"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run1\\trace\\session3_dave\\round1_prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "0172b7b395f4575cea0c2605abe541c7c02a2ea5a726c866e91856838fb60339"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run1\\trace\\session3_dave\\round1_prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "48320738232fab2e8af380cd27bea31c373fb1343269c44c7ea0380bb0816adc"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session0_alice\\round1_decode1\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "2da66274c62e00fc8bf9d9250c3d86ec4a3ab4f7aa7b7f45143771777caeba10"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session0_alice\\round1_decode1\\logits.f32",
+      "bytes": 993280,
+      "sha256": "abfd568a4e7a9ac63924d3101bcd872129bcc12eeacbbcef194ddd8755143d6c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session0_alice\\round1_decode2\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "63473b6371aa5bab48cd0693e767ce31fb786de1bd6fab89498bee58d2c26dfc"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session0_alice\\round1_decode2\\logits.f32",
+      "bytes": 993280,
+      "sha256": "dc73c1b31ddee65ed3c3ef5671ef2b851f5de1b70cf0460211d1d43c5aac1073"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session0_alice\\round1_decode3\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "f50d257156fd33e746cc10e4033c6c287a5a6d1e2b1c21397d03de9a3826685e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session0_alice\\round1_decode3\\logits.f32",
+      "bytes": 993280,
+      "sha256": "3d44c79716f84088bec6141e2be47eec061e06a7471a2a4695ea93740eb4a61a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session0_alice\\round1_decode4\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "6458bd79e33333c62d404be9ce5613cb90b459699cf9d8859f752607fa7e5a0d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session0_alice\\round1_decode4\\logits.f32",
+      "bytes": 993280,
+      "sha256": "f1a62f8d3fa46eda620c6c5ab5f3cae8e30d120ee0fe76ee280622657d0c7ad8"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session0_alice\\round1_prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "441f8e0eea6b8deea8b640bb76efc9dcc1267f3ee4de9e936bcc9fa9110a8ee1"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session0_alice\\round1_prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "3f9f6f36cbefdeae7dc1e5e89b8af0729c2d9d6f59dab28e040a4771d9609b43"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session0_alice\\round2_decode1\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "b5a7cfeb4fb5b7fd24943859ad39077378ec9fe5b02f4f8adddf64e3a13a018e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session0_alice\\round2_decode1\\logits.f32",
+      "bytes": 993280,
+      "sha256": "4a0ab5ba8df9d3f6b3d4a256c4e1c4c6f1bf05771067aa5b5da05226b654607a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session0_alice\\round2_decode2\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "71c9fa3e94410be0b02ae1b13f1a990ac958c380e958430921f469d7ba5bca78"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session0_alice\\round2_decode2\\logits.f32",
+      "bytes": 993280,
+      "sha256": "87f4b2aa83e68999032191c1fb1947b2e5719faae6afca1dab8fac3b7e76e6bc"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session0_alice\\round2_decode3\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "fdadf1a4b37fa24ecd55f6d1ee7eb20cfdc55f5a3844f4fedd9a75af1682af4b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session0_alice\\round2_decode3\\logits.f32",
+      "bytes": 993280,
+      "sha256": "7b0428828e316e67984b61839b473b8986cc116238c57df4449e0325cb9ef6fc"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session0_alice\\round2_prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "841bac7fa804558dac57deec0721853bcb308007d82c1a422fc600db04dc25c6"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session0_alice\\round2_prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "958bfc71c22a9517e6039108481211b8b4e5b11b0db2d1650c469ccf7824db3d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session0_alice\\restores\\restore2_call0\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "441f8e0eea6b8deea8b640bb76efc9dcc1267f3ee4de9e936bcc9fa9110a8ee1"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session0_alice\\restores\\restore2_call0\\logits.f32",
+      "bytes": 993280,
+      "sha256": "3f9f6f36cbefdeae7dc1e5e89b8af0729c2d9d6f59dab28e040a4771d9609b43"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session0_alice\\restores\\restore2_call1\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "e40060187d8c6376d00e58794643dd3f444dceefe29eb675c6ee2b0899131210"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session0_alice\\restores\\restore2_call1\\logits.f32",
+      "bytes": 993280,
+      "sha256": "54999d39e6a46f665fe6f7fc5d22b5136eb5e9b73ae179e5b908b33d7009f326"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session0_alice\\restores\\restore2_call2\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "f6d075ad86e2e0550617e6dfd6201ae335228ee6808ab8ae8bb3681159663424"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session0_alice\\restores\\restore2_call2\\logits.f32",
+      "bytes": 993280,
+      "sha256": "772199ca4b0550c00635c25bd8036a9b5334cb0c22bb79ce86f6fbd81520df67"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session0_alice\\restores\\restore2_call3\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "227c7e6548e2159393ddf350d7dfbd1dda87040994ade315075c005ce7798889"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session0_alice\\restores\\restore2_call3\\logits.f32",
+      "bytes": 993280,
+      "sha256": "aff61c4c7ec366a0b25cf583427df267859aca70ab3c9e264268a30f2d45f3d4"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session0_alice\\restores\\restore2_call4\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "f7d8474a362ca19268b3481791345307fee1026f0a4c871e1227ce3315e7021e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session0_alice\\restores\\restore2_call4\\logits.f32",
+      "bytes": 993280,
+      "sha256": "0ab4e55caa9276fd56d4353c36121014f07342989b570eb9c3f7dfddc21a2bba"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session1_bob\\round1_decode1\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "d188f46248ecc38eb41348ea19e4dd1b6c9b381af2daddc8e78f4acbf095475f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session1_bob\\round1_decode1\\logits.f32",
+      "bytes": 993280,
+      "sha256": "a9dfddef6c3de35dde34b4a4d83862793f40256b0094528601593f17deca8277"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session1_bob\\round1_decode2\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "efc393ee97ce0080103af63d70b18474e8f30935088aa3209cf454c925c077b3"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session1_bob\\round1_decode2\\logits.f32",
+      "bytes": 993280,
+      "sha256": "2b0dab944c3876bcc0315f56a7d274e4eed5f1cef32bc2f90c5157b4d01d91d9"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session1_bob\\round1_decode3\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "8c19533ed140d711e26fdf951576ab52253f5b757556f292091be788a59e9984"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session1_bob\\round1_decode3\\logits.f32",
+      "bytes": 993280,
+      "sha256": "01e2353a39586a2c54e1ca40512b5fae3aa130be20f6a5c4f88f5a2bf1816bcf"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session1_bob\\round1_prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "d1625d53fbb1c918aa90b829c69ff5ae4f44683eb0352a7745e54d4879b82c11"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session1_bob\\round1_prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "c217c3a1db43fb0dea77b1860c2833b4454202c70b511575dafd466af20e54c5"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session1_bob\\round2_decode1\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "b217044871011e5ba28018c6852d533bb354792527e3527a533114c382e88648"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session1_bob\\round2_decode1\\logits.f32",
+      "bytes": 993280,
+      "sha256": "b0744f4a876b5ef898a9b4cd55d78406007032eb9af73a41fc6a26a1c01d398a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session1_bob\\round2_decode2\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "590325f5dd6aa49abf67372493c80ed8a73b8d16e0eae46c2a48cf9c93a91c7a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session1_bob\\round2_decode2\\logits.f32",
+      "bytes": 993280,
+      "sha256": "61cf449f3b874b95535aecb64c10c35e6e56965ebb3bd4e0fd5138e60afacd53"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session1_bob\\round2_decode3\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "b52dab402558fa72bae74e4e77c3b235a08ad362322f8b1806d90b2e86f1154c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session1_bob\\round2_decode3\\logits.f32",
+      "bytes": 993280,
+      "sha256": "a746d50b1e5db4aad9644bcf1c12a565acb7bf5d3bdfbb80788f89ec873f8147"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session1_bob\\round2_decode4\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "db8dfa211c636e71cb367e7a5cff708eef9889e498701b3b892c927b3cceaf51"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session1_bob\\round2_decode4\\logits.f32",
+      "bytes": 993280,
+      "sha256": "5532864ac0348b4119724997aff8f857bbc808cbe0ceebeeaa371e7b834126cb"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session1_bob\\round2_prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "c782df548da6e2e97dcf41ab2236f9b49e8d9819c92e56aa04e27fc69d7912f3"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session1_bob\\round2_prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "6e5de8e07c6d0edcec55ced0d3f45662486ed6f5113565505df83da21fd2793f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session1_bob\\restores\\restore2_call0\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "d1625d53fbb1c918aa90b829c69ff5ae4f44683eb0352a7745e54d4879b82c11"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session1_bob\\restores\\restore2_call0\\logits.f32",
+      "bytes": 993280,
+      "sha256": "c217c3a1db43fb0dea77b1860c2833b4454202c70b511575dafd466af20e54c5"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session1_bob\\restores\\restore2_call1\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "c1fb63adae3b189e294daea3046c23c794372922e632a7c05b302a73c5d50d07"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session1_bob\\restores\\restore2_call1\\logits.f32",
+      "bytes": 993280,
+      "sha256": "1ef495bbd5091ffb4ae49c78b81e3ff2e74c0d20b22ab17b2da795548b3c2268"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session1_bob\\restores\\restore2_call2\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "2c7718cf2ad792e7ec9fee314ffe87cd1ebed2873e24526e531d17225885f5cf"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session1_bob\\restores\\restore2_call2\\logits.f32",
+      "bytes": 993280,
+      "sha256": "a05a567732f027fb6285122d2838afcf6cf4a65e1633808731be2016ae424f8e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session1_bob\\restores\\restore2_call3\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "c3de9823666def2d7d6b26d5dbc05ddc80f3cc91b134d21f12e8b12cb3f9ad55"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session1_bob\\restores\\restore2_call3\\logits.f32",
+      "bytes": 993280,
+      "sha256": "14140b027af3cb85c24a3e22cad01338f34d6320b50a23c98739f12c9b536d46"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session2_carol\\round1_decode1\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "10d189d8e0442fa02ba201c8bbffc7a4c330a298099048106d33a44b38297b7c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session2_carol\\round1_decode1\\logits.f32",
+      "bytes": 993280,
+      "sha256": "524fd2094046f6557392919205df2c42ceeffe47e3653914187fd8e28044647e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session2_carol\\round1_decode2\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "b7ec1928eecfa46b1c16c962a08753412d6190cc5d6a84f96e0e64bf1d482325"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session2_carol\\round1_decode2\\logits.f32",
+      "bytes": 993280,
+      "sha256": "d9aaff259c11bd53c556079054bb519ca887444dab35c666f4c6e4d26fc97213"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session2_carol\\round1_prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "f8ba4c2fb63b09d799ec0f9c94c65768c0499458ad67034855e299c5a3edaf3a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session2_carol\\round1_prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "1506e6681e8695e9554545d87c10b95bb9a00902831d1b0320406373a37959a0"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session2_carol\\round2_decode1\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "c4703242dc8d337426b24bd4b6d8f59e65b73a7734509ec8e5a9e83d553a1946"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session2_carol\\round2_decode1\\logits.f32",
+      "bytes": 993280,
+      "sha256": "e51dd156eb9c1240ee2e8bb1a6c8e39ff1cade50a2fa6ea107280984406e0de7"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session2_carol\\round2_decode2\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "a09f30462be304587e08236f6d8005c3b28730071d6dc64a4168771c730d8010"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session2_carol\\round2_decode2\\logits.f32",
+      "bytes": 993280,
+      "sha256": "95f11442ef03c78b6c54a0c9504320ed8c3fe1a993caee081d7a3b47868049b1"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session2_carol\\round2_decode3\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "9739e46a34a1d3c5b610156cbaab18d7c4337e02561806f8f3a03368aa717728"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session2_carol\\round2_decode3\\logits.f32",
+      "bytes": 993280,
+      "sha256": "0b9053cafd9b0bf13512e02a4c374fced4d8a94e0fdc1b556518495c0fd4eb97"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session2_carol\\round2_decode4\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "23016443138f8abc32323015c62db5c89a691e5635cf1b3e730315a8f71a1229"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session2_carol\\round2_decode4\\logits.f32",
+      "bytes": 993280,
+      "sha256": "db94c57d0ac91419dd987fbcb95a252aa6ddcdf339ac15916d1ed474bb7041e4"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session2_carol\\round2_decode5\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "c7cb04d9893c91c07908168f729c20e4c650336b49ebafb7f321f38925b41b08"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session2_carol\\round2_decode5\\logits.f32",
+      "bytes": 993280,
+      "sha256": "6bc72ab235ab135c5fcd5a15a34971a56f25c78175967dd5d4d9b6d5029688f9"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session2_carol\\round2_prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "f2a7173d3c99ac9d343924e782a171b2c8f1e0b0ba81940942ac3c605b674268"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session2_carol\\round2_prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "5f62a2ad05d4b5aa2f07a1f4cd222d5649e180d26b1eb3d367cd8961599ae7e2"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session2_carol\\restores\\restore2_call0\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "f8ba4c2fb63b09d799ec0f9c94c65768c0499458ad67034855e299c5a3edaf3a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session2_carol\\restores\\restore2_call0\\logits.f32",
+      "bytes": 993280,
+      "sha256": "1506e6681e8695e9554545d87c10b95bb9a00902831d1b0320406373a37959a0"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session2_carol\\restores\\restore2_call1\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "5172a304d03fa040565d6bdce2e30b4ac94336abcab89a43639523759a4a6e0b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session2_carol\\restores\\restore2_call1\\logits.f32",
+      "bytes": 993280,
+      "sha256": "a72482129fd89df992e29705c55820a83e3bd1676e4cce67d1b3679feeef87ce"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session2_carol\\restores\\restore2_call2\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "2c5cf20082dc8e607448b10e493377cf5a40b7921e87eaec80b6d77858159e0c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session2_carol\\restores\\restore2_call2\\logits.f32",
+      "bytes": 993280,
+      "sha256": "23842835b454bd81872a46e167ee177acb9e873e80f13d8513dbcf696f2613e7"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session3_dave\\round1_decode1\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "a0492edc94c6890d7815a6c3c7e2db7cb56f368d882f5cc169d86974fb2480ce"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session3_dave\\round1_decode1\\logits.f32",
+      "bytes": 993280,
+      "sha256": "389394483a3b00b22ec3baa90f4271a5aff7a66d155a697f5d22f2c8157333aa"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session3_dave\\round1_decode2\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "7107c146f06591c00f4ffb7472287662268cac1e056115e6d24706d7d25d8057"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session3_dave\\round1_decode2\\logits.f32",
+      "bytes": 993280,
+      "sha256": "ec44a2714e0ab27fe8d49e5fdd782dd7b0619259f56bb8586d69f8c26d45fa2e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session3_dave\\round1_decode3\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "e029d86fb854d61b9c029c54798babfcec96814d8efeff9e9c6fe21d331bebe4"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session3_dave\\round1_decode3\\logits.f32",
+      "bytes": 993280,
+      "sha256": "d9e875c5ad0cce3f0036451da4ed3b044d5980223d16568c7986d59835177f61"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session3_dave\\round1_decode4\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "39451cc509c92e948c4661c13d02c3d538f754ea044a47cfd3e5d19775922cbd"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session3_dave\\round1_decode4\\logits.f32",
+      "bytes": 993280,
+      "sha256": "95da5ef94acce88141272ab647517225c05dd181363d6173799709c5f02f7d5a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session3_dave\\round1_decode5\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "cfbc33ebac45d2869b1d9bfecefb4c4512750c52b40909a4fecb7ea2c337b96b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session3_dave\\round1_decode5\\logits.f32",
+      "bytes": 993280,
+      "sha256": "d1ba2c6e071db84e0c289436de02a1672d9424f486597ae1435158f091261baf"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session3_dave\\round1_prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "0172b7b395f4575cea0c2605abe541c7c02a2ea5a726c866e91856838fb60339"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session3_dave\\round1_prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "48320738232fab2e8af380cd27bea31c373fb1343269c44c7ea0380bb0816adc"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session3_dave\\round2_decode1\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "3a43ee1d7efbbce148f83c22406f85a6098e25bec59937411bb8965c8adbca1a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session3_dave\\round2_decode1\\logits.f32",
+      "bytes": 993280,
+      "sha256": "494efd84b905b74029ae492bec4da3ee8b925617763bffa6bb7a0e42e7ec1767"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session3_dave\\round2_decode2\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "d358733e351421cce9c402eedccd3a5f93168f09b50e66b9b4fd2ae967c15abc"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session3_dave\\round2_decode2\\logits.f32",
+      "bytes": 993280,
+      "sha256": "6b2676842cbfc540718c86ecda6ea0d95d0bcb331939e0a442bd2898ae1022a2"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session3_dave\\round2_prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "4ca82b2f951b2f57b7fd6bb86d6b80c9b89e44ef1af28ec4c92a18d3dc9e3507"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session3_dave\\round2_prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "de031ae06577e766eadeac3dbd75978c1a42da8876b283d251bc4ae0895ad89a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session3_dave\\restores\\restore2_call0\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "0172b7b395f4575cea0c2605abe541c7c02a2ea5a726c866e91856838fb60339"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session3_dave\\restores\\restore2_call0\\logits.f32",
+      "bytes": 993280,
+      "sha256": "48320738232fab2e8af380cd27bea31c373fb1343269c44c7ea0380bb0816adc"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session3_dave\\restores\\restore2_call1\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "c371698e4a23b7029c909a95345f5b1db631c0e00f2de8160cbd6b9dc5295b41"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session3_dave\\restores\\restore2_call1\\logits.f32",
+      "bytes": 993280,
+      "sha256": "a2060c5e6c7c97c20e82ae21ea6b476e3253b7104c46f6fb634b5d244640898d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session3_dave\\restores\\restore2_call2\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "d79da8ee7b70578888362faeceb8ac94a60ae077451f1ba4fbc03a717cb53bef"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session3_dave\\restores\\restore2_call2\\logits.f32",
+      "bytes": 993280,
+      "sha256": "f41462cb67bcbf7ec1b9a69eb80b402ea228c3a3b4228f835d7a1dd23c0af6b0"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session3_dave\\restores\\restore2_call3\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "96b2fc84a155b5e87d1bb5f9f4b71e57d966ca3a5b40796b0ec65fee68d7a349"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session3_dave\\restores\\restore2_call3\\logits.f32",
+      "bytes": 993280,
+      "sha256": "566475fbfdcb8ba29aa55edad74a497cd393567d4844772be4642f9629bbd300"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session3_dave\\restores\\restore2_call4\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "675ce5d3c828126d33fd9eb8c7bec0e121ec2f5d06320651452c1a7f21377e42"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session3_dave\\restores\\restore2_call4\\logits.f32",
+      "bytes": 993280,
+      "sha256": "e05936fefaa30771f1ae3259da500e87ef67979ca61077f7e367ce8cde399288"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session3_dave\\restores\\restore2_call5\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "09d6258e5b5d9c2dca4706133182b5a6eaaf879b38741ed66865717fa7813bb3"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\pressure-run2\\trace\\session3_dave\\restores\\restore2_call5\\logits.f32",
+      "bytes": 993280,
+      "sha256": "ac112b588c60bd99d6893751cc111ca95c971358c8f85eac4154f5bcaa546643"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\r1-run1\\trace\\round1_decode1\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "e40060187d8c6376d00e58794643dd3f444dceefe29eb675c6ee2b0899131210"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\r1-run1\\trace\\round1_decode1\\logits.f32",
+      "bytes": 993280,
+      "sha256": "54999d39e6a46f665fe6f7fc5d22b5136eb5e9b73ae179e5b908b33d7009f326"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\r1-run1\\trace\\round1_decode2\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "f6d075ad86e2e0550617e6dfd6201ae335228ee6808ab8ae8bb3681159663424"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\r1-run1\\trace\\round1_decode2\\logits.f32",
+      "bytes": 993280,
+      "sha256": "772199ca4b0550c00635c25bd8036a9b5334cb0c22bb79ce86f6fbd81520df67"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\r1-run1\\trace\\round1_decode3\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "227c7e6548e2159393ddf350d7dfbd1dda87040994ade315075c005ce7798889"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\r1-run1\\trace\\round1_decode3\\logits.f32",
+      "bytes": 993280,
+      "sha256": "aff61c4c7ec366a0b25cf583427df267859aca70ab3c9e264268a30f2d45f3d4"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\r1-run1\\trace\\round1_decode4\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "f7d8474a362ca19268b3481791345307fee1026f0a4c871e1227ce3315e7021e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\r1-run1\\trace\\round1_decode4\\logits.f32",
+      "bytes": 993280,
+      "sha256": "0ab4e55caa9276fd56d4353c36121014f07342989b570eb9c3f7dfddc21a2bba"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\r1-run1\\trace\\round1_prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "441f8e0eea6b8deea8b640bb76efc9dcc1267f3ee4de9e936bcc9fa9110a8ee1"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\r1-run1\\trace\\round1_prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "3f9f6f36cbefdeae7dc1e5e89b8af0729c2d9d6f59dab28e040a4771d9609b43"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\r1-run1\\trace\\round2_decode1\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "8871fcd2d7757fe35a648f1c251c469af39bbabf6aedaa1140ca265fc83c6f89"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\r1-run1\\trace\\round2_decode1\\logits.f32",
+      "bytes": 993280,
+      "sha256": "66db711343338eeeb14cdb3fc6218ea0fc4f81945071835096814859681fcabe"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\r1-run1\\trace\\round2_decode2\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "4b61582cd57ec864b3d377722a2d60668b4fcb554c2ae2becf72113b3bd1ba14"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\r1-run1\\trace\\round2_decode2\\logits.f32",
+      "bytes": 993280,
+      "sha256": "29cf46dc8de81a798853d10cec118bc91770b7fae999036123e7c9398b6a1d6b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\r1-run1\\trace\\round2_decode3\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "ef73bdc8381e86f039d3cd2b3b041e783e31b8c99933b27f7a90527045d0382c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\r1-run1\\trace\\round2_decode3\\logits.f32",
+      "bytes": 993280,
+      "sha256": "fb86e1771034cbdb301309d9f8115d0df3b480bd58bcff8613c48fe0f109eca3"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\r1-run1\\trace\\round2_prefill\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "841bac7fa804558dac57deec0721853bcb308007d82c1a422fc600db04dc25c6"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\r1-run1\\trace\\round2_prefill\\logits.f32",
+      "bytes": 993280,
+      "sha256": "958bfc71c22a9517e6039108481211b8b4e5b11b0db2d1650c469ccf7824db3d"
+    }
+  ],
+  "kept_images": [
+    "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\peer\\checks\\attempt1\\peer.exe",
+    "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\qwen-link3\\qwen.exe"
+  ],
+  "archives": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\qwen-cli-batch-2026-10-22.data.part01.zip",
+      "bytes": 90517873,
+      "sha256": "83f98859e0b0f929baa067942ba8bf3f3dc87284f72cf1512a8998385106fc4f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\qwen-cli-batch-2026-10-22.data.part02.zip",
+      "bytes": 38026133,
+      "sha256": "1c57ffa551358562235022b40796c0c8d532a27d1a72b4cbf9adf3520eb60344"
+    }
+  ],
+  "recursive_deletes": 0,
+  "note": "Delete only these verified stage-local leaves. Raw tensors are fully hashed/ZIP-entry verified in published ordinary archives. Keep all source, logs, recipes, objects, runtime DLL hardlinks, final Hyle and peer images. No recursive directory operation."
+}

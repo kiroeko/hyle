@@ -1,0 +1,498 @@
+{
+  "status": "executed",
+  "local_files": 36,
+  "local_bytes": 969556575.0,
+  "remote_files": 2,
+  "remote_bytes": 30987000,
+  "protected_images_checked": 8,
+  "rule": "Only superseded/diagnostic images and linker sidecars, no recursive deletion; all product objects, SDKs, source, commands, unique observations and latest/direct-before/peer images retained.",
+  "plan": {
+    "local": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-current-rebenchmark\\build\\qwen.exp",
+        "bytes": 25003,
+        "sha256": "5f7cdf35a390e8df5a3247fbecbdbab327099e20080f06e62dbeb067d336fda8"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-current-rebenchmark\\build\\qwen.lib",
+        "bytes": 41384,
+        "sha256": "339d3ce297534ebac8825c27a011f2f4f9dfe366c657ebfc45dbbfdc8412a2cb"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-current-rebenchmark\\build\\qwen.map",
+        "bytes": 34782838,
+        "sha256": "31f369d964a8183b3be5bab7ab46183801be59c0bbd422b478a88860d9e6d249"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-retirement-query-reuse\\checks\\refreshed-retirement\\retirement-tests.exe",
+        "bytes": 120946688,
+        "sha256": "b758faddde5b86190d91e722df0cfa8231d3c7e87ca62987e5dba471dffb0dec"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-retirement-query-reuse\\checks\\refreshed-retirement\\retirement-tests.exp",
+        "bytes": 25052,
+        "sha256": "cc2012174f7280048c418d0210b236aa0d03c8ab442802d1db050892123e75df"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-retirement-query-reuse\\checks\\refreshed-retirement\\retirement-tests.lib",
+        "bytes": 42522,
+        "sha256": "5f9fe6bff4e35b0ba139d765e6309f99fdf181ed49219b0d8b4270355e01fc05"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-retirement-query-reuse\\checks\\refreshed-retirement\\retirement-tests.map",
+        "bytes": 41111655,
+        "sha256": "e4039e044a600ce1f963e42f33d749c0a3262cd26b11efcf76e854b61972dd19"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-retirement-query-reuse\\checks\\retirement-tests.exp",
+        "bytes": 25031,
+        "sha256": "1c4722ab26618dc91b07cc853b697f80d933d49ff12e7e8f7141751c2377f576"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-retirement-query-reuse\\checks\\retirement-tests.lib",
+        "bytes": 42522,
+        "sha256": "5f9fe6bff4e35b0ba139d765e6309f99fdf181ed49219b0d8b4270355e01fc05"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-retirement-query-reuse\\checks\\retirement-tests.map",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-retirement-query-reuse\\diagnostic-build\\before\\qwen-retirement.exe",
+        "bytes": 117831168,
+        "sha256": "5ac07becac713242135b6324401bef8dc92f7964b4927303e50156b8e6cb8c22"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-retirement-query-reuse\\diagnostic-build\\before\\qwen-retirement.exp",
+        "bytes": 25045,
+        "sha256": "db84a5eaba8586f96fe9a0e4fd20f93df31a632b7d0cb0862e456725d1cd0a81"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-retirement-query-reuse\\diagnostic-build\\before\\qwen-retirement.lib",
+        "bytes": 42434,
+        "sha256": "0f65e727a133b1328c87971c4d76004b456c40086f67c0d2fe6856fa4ba0d189"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-retirement-query-reuse\\diagnostic-build\\before\\qwen-retirement.map",
+        "bytes": 34784907,
+        "sha256": "5a12f173a699197a98c0e80f6efafcc9fcacc13e2dfc211c604348a6fbc10f5b"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-retirement-query-reuse\\diagnostic-build\\current\\qwen-retirement.exe",
+        "bytes": 117831168,
+        "sha256": "27bc88b3a40c76c9f0514a6457deb4e68a1ae4f8d512152e8d7c297a81d1a0eb"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-retirement-query-reuse\\diagnostic-build\\current\\qwen-retirement.exp",
+        "bytes": 25046,
+        "sha256": "96e0d254356da4a0fb7cba69c7a18674f3d97b6caf2794a71997e1cfde1176db"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-retirement-query-reuse\\diagnostic-build\\current\\qwen-retirement.lib",
+        "bytes": 42434,
+        "sha256": "0f65e727a133b1328c87971c4d76004b456c40086f67c0d2fe6856fa4ba0d189"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-retirement-query-reuse\\diagnostic-build\\current\\qwen-retirement.map",
+        "bytes": 34784907,
+        "sha256": "c961d1ba7e97e2589295b178b96163c401eb4b881ed4810cdd6fb614facedf23"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-retirement-query-reuse\\diagnostic-build\\tests\\retirement-tests.exe",
+        "bytes": 120950272,
+        "sha256": "091f94af56db7a7e023eca9c973ed8edab7d49a858f31a06cead264965d440d0"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-retirement-query-reuse\\diagnostic-build\\tests\\retirement-tests.exp",
+        "bytes": 25047,
+        "sha256": "2ec6fc4528861cb88abd78d9c97dbeb93b0329df228e64221047d5711b18cc25"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-retirement-query-reuse\\diagnostic-build\\tests\\retirement-tests.lib",
+        "bytes": 42522,
+        "sha256": "5f9fe6bff4e35b0ba139d765e6309f99fdf181ed49219b0d8b4270355e01fc05"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-retirement-query-reuse\\diagnostic-build\\tests\\retirement-tests.map",
+        "bytes": 41121359,
+        "sha256": "8e123c6d80e2e237db68392f736b4de49dee81ba0a5b6cbb693aec87331d2123"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-retirement-query-reuse\\final-test-build\\retirement-tests.exp",
+        "bytes": 25041,
+        "sha256": "20ada504ffe532dcf36ef751a15ef36b46efe2e516cfe4848d0bd0cf084a370d"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-retirement-query-reuse\\final-test-build\\retirement-tests.lib",
+        "bytes": 42522,
+        "sha256": "5f9fe6bff4e35b0ba139d765e6309f99fdf181ed49219b0d8b4270355e01fc05"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-retirement-query-reuse\\final-test-build\\retirement-tests.map",
+        "bytes": 41121157,
+        "sha256": "05635a2a11bbf2beff5d64801e43c0165fc3e4e9d17bd70064924d1431dbb4ed"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-cross-backend-reference\\cpu\\cpu.exp",
+        "bytes": 25001,
+        "sha256": "54804f3f4bfe468d1ee553e17c9cef609f30799b0b09e472fa6b08344c6e2b36"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-cross-backend-reference\\cpu\\cpu.lib",
+        "bytes": 41298,
+        "sha256": "1a72c22d3a6dec39cca5118fd99aa738ff5f4202c029fc8a48afb6c3d20e909d"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-cross-backend-reference\\cpu\\cpu.map",
+        "bytes": 39201106,
+        "sha256": "e7559e1e06483633fc7da5bd08bf44eaa637441bfec3c7f3591eec3fc8fdafe1"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-cross-backend-reference\\cuda\\cuda.exp",
+        "bytes": 25005,
+        "sha256": "cf351c913160d90b9083ea320799e7839743ca55804f33fb2ec9b4fd7ff4350e"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-cross-backend-reference\\cuda\\cuda.lib",
+        "bytes": 41384,
+        "sha256": "097299e17e955c077a99f65f363d3484d564c016359baeb643f4e47c6b737d59"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-cross-backend-reference\\cuda\\cuda.map",
+        "bytes": 41628501,
+        "sha256": "a5e48d62f84ddc703b98216cf00f4e18904dfd5774bad4df57665198149477ed"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-reference-linear\\cpu-final\\cpu.exe",
+        "bytes": 26924032,
+        "sha256": "4ee89745df150d11394b7d08c338b1ce0b1d951e74c6b9c244978467f0a64361"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-reference-linear\\cuda-final\\cuda.exe",
+        "bytes": 121006080,
+        "sha256": "c4ecfc4a286987c52832a687f1ec4e41d92a8ffea9eb7a2a2be06258a5ca5477"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-vulkan-reference\\checks\\vulkan.exp",
+        "bytes": 25004,
+        "sha256": "200744cd8abf95021cdb494654f480bfbc13f8dde0c2e3ea76ada26cbf136d28"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-vulkan-reference\\checks\\vulkan.lib",
+        "bytes": 41560,
+        "sha256": "fed51f80d367206935c20d5a34eb77b477832f71dd84a1440dfdc0c7d9c6ce7d"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-vulkan-reference\\checks\\vulkan.map",
+        "bytes": 34859880,
+        "sha256": "513c72c5a8f01b17815be6912080fe45cee27b78ad2e7b11400e0ab1540abe3f"
+      }
+    ],
+    "protected": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-explicit-rope\\performance-prepared\\peer.exe",
+        "bytes": 35814400,
+        "sha256": "fb169f0282f2a834a61b3e887edaba92d8699814558b0c5f1a13aaf07e0de969"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-current-rebenchmark\\build\\qwen.exe",
+        "bytes": 117831168,
+        "sha256": "a9b7a934060a846d0c9b15227acd894f2ddf53c68a066449d152a3c76a415722"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-retirement-query-reuse\\final-test-build\\retirement-tests.exe",
+        "bytes": 120950272,
+        "sha256": "0fa8d33ce2a4343296d8136a42d787bca27807dcaef2ef15fc7576762dcb56fa"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-stable-bind\\ab\\before\\qwen.exe",
+        "bytes": 117827584,
+        "sha256": "84d6ec6b0ed171244d4067657d4ec533ac7f2bfab2bb45da44310da5594461d2"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-stable-bind\\ab\\current\\qwen.exe",
+        "bytes": 117830656,
+        "sha256": "f798042c7a2550d5edca4144a97ef7a8c13045bcb352db46b35717ebc627e3bb"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-cross-backend-reference\\cpu\\cpu.exe",
+        "bytes": 26924544,
+        "sha256": "8ed4cf06ed9af03a5018dba9b8a988108e35a4975094c5a6016f747a8bb80c89"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-cross-backend-reference\\cuda\\cuda.exe",
+        "bytes": 121007104,
+        "sha256": "94179bfaffa8813223d304581708104dafcb83b5f6dcd42e1416ff0cbf298e11"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-vulkan-reference\\checks\\vulkan.exe",
+        "bytes": 68569600,
+        "sha256": "e1774d6c9556f0e67db711fa371e17d5c859a08bdbdd2405600d1ea305827505"
+      }
+    ],
+    "remote": [
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/nvfp4-reference-linear/apple/v1/nvfp4-before",
+        "bytes": 15484912,
+        "sha256": "59a29eb5d65457bf459be02702dcc3b297fabf4a807d525e9e100137bfb6b1f5"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/nvfp4-reference-linear/apple/v1/nvfp4-after",
+        "bytes": 15502088,
+        "sha256": "35d6c8e1506e7604c97cff6d52d7b3c29c1bb7723c210bf167f5a69436d0c622"
+      }
+    ],
+    "proofs": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\nvfp4-cross-backend-reference-2026-10-20.json",
+        "bytes": 44576,
+        "sha256": "c2e16fb73eb0808a308dc84b6fa89d079ca4f5e60f9783afa6f5f9c4e9b0bd85"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\nvfp4-cross-backend-reference-2026-10-20.zip",
+        "bytes": 2112756,
+        "sha256": "bf86f37da14d5328edbd60470cdf052cb644b1bf3232a38670ec3cdf89d12290"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\qwen-retirement-query-reuse-2026-10-20.json",
+        "bytes": 12583,
+        "sha256": "c1c08e054b79d6c260c6be9514e36db8869e37cea18dc10178122a9919b73cf8"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\qwen-retirement-query-reuse-2026-10-20.zip",
+        "bytes": 463448,
+        "sha256": "6fd1eb0377b7047a4e9e7ce2f83a6ad127e13d0bd6937c09b32879fa647c18a7"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\qwen-decode-rebenchmark-2026-10-20.json",
+        "bytes": 55265,
+        "sha256": "01bfb64ecab4c0538e63daa0c272c98bfdac7ed396800ff549e85bde0ab8b8c3"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\qwen-decode-rebenchmark-2026-10-20.zip",
+        "bytes": 186536,
+        "sha256": "c96bd7e31caa159a0c0363ce59e000433ac26aaf36873e879fe7b3d01c88d70b"
+      }
+    ],
+    "rule": "Only superseded/diagnostic images and linker sidecars, no recursive deletion; all product objects, SDKs, source, commands, unique observations and latest/direct-before/peer images retained."
+  },
+  "execution": {
+    "local": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-current-rebenchmark\\build\\qwen.exp",
+        "bytes": 25003,
+        "sha256": "5f7cdf35a390e8df5a3247fbecbdbab327099e20080f06e62dbeb067d336fda8"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-current-rebenchmark\\build\\qwen.lib",
+        "bytes": 41384,
+        "sha256": "339d3ce297534ebac8825c27a011f2f4f9dfe366c657ebfc45dbbfdc8412a2cb"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-current-rebenchmark\\build\\qwen.map",
+        "bytes": 34782838,
+        "sha256": "31f369d964a8183b3be5bab7ab46183801be59c0bbd422b478a88860d9e6d249"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-retirement-query-reuse\\checks\\refreshed-retirement\\retirement-tests.exe",
+        "bytes": 120946688,
+        "sha256": "b758faddde5b86190d91e722df0cfa8231d3c7e87ca62987e5dba471dffb0dec"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-retirement-query-reuse\\checks\\refreshed-retirement\\retirement-tests.exp",
+        "bytes": 25052,
+        "sha256": "cc2012174f7280048c418d0210b236aa0d03c8ab442802d1db050892123e75df"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-retirement-query-reuse\\checks\\refreshed-retirement\\retirement-tests.lib",
+        "bytes": 42522,
+        "sha256": "5f9fe6bff4e35b0ba139d765e6309f99fdf181ed49219b0d8b4270355e01fc05"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-retirement-query-reuse\\checks\\refreshed-retirement\\retirement-tests.map",
+        "bytes": 41111655,
+        "sha256": "e4039e044a600ce1f963e42f33d749c0a3262cd26b11efcf76e854b61972dd19"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-retirement-query-reuse\\checks\\retirement-tests.exp",
+        "bytes": 25031,
+        "sha256": "1c4722ab26618dc91b07cc853b697f80d933d49ff12e7e8f7141751c2377f576"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-retirement-query-reuse\\checks\\retirement-tests.lib",
+        "bytes": 42522,
+        "sha256": "5f9fe6bff4e35b0ba139d765e6309f99fdf181ed49219b0d8b4270355e01fc05"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-retirement-query-reuse\\checks\\retirement-tests.map",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-retirement-query-reuse\\diagnostic-build\\before\\qwen-retirement.exe",
+        "bytes": 117831168,
+        "sha256": "5ac07becac713242135b6324401bef8dc92f7964b4927303e50156b8e6cb8c22"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-retirement-query-reuse\\diagnostic-build\\before\\qwen-retirement.exp",
+        "bytes": 25045,
+        "sha256": "db84a5eaba8586f96fe9a0e4fd20f93df31a632b7d0cb0862e456725d1cd0a81"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-retirement-query-reuse\\diagnostic-build\\before\\qwen-retirement.lib",
+        "bytes": 42434,
+        "sha256": "0f65e727a133b1328c87971c4d76004b456c40086f67c0d2fe6856fa4ba0d189"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-retirement-query-reuse\\diagnostic-build\\before\\qwen-retirement.map",
+        "bytes": 34784907,
+        "sha256": "5a12f173a699197a98c0e80f6efafcc9fcacc13e2dfc211c604348a6fbc10f5b"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-retirement-query-reuse\\diagnostic-build\\current\\qwen-retirement.exe",
+        "bytes": 117831168,
+        "sha256": "27bc88b3a40c76c9f0514a6457deb4e68a1ae4f8d512152e8d7c297a81d1a0eb"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-retirement-query-reuse\\diagnostic-build\\current\\qwen-retirement.exp",
+        "bytes": 25046,
+        "sha256": "96e0d254356da4a0fb7cba69c7a18674f3d97b6caf2794a71997e1cfde1176db"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-retirement-query-reuse\\diagnostic-build\\current\\qwen-retirement.lib",
+        "bytes": 42434,
+        "sha256": "0f65e727a133b1328c87971c4d76004b456c40086f67c0d2fe6856fa4ba0d189"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-retirement-query-reuse\\diagnostic-build\\current\\qwen-retirement.map",
+        "bytes": 34784907,
+        "sha256": "c961d1ba7e97e2589295b178b96163c401eb4b881ed4810cdd6fb614facedf23"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-retirement-query-reuse\\diagnostic-build\\tests\\retirement-tests.exe",
+        "bytes": 120950272,
+        "sha256": "091f94af56db7a7e023eca9c973ed8edab7d49a858f31a06cead264965d440d0"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-retirement-query-reuse\\diagnostic-build\\tests\\retirement-tests.exp",
+        "bytes": 25047,
+        "sha256": "2ec6fc4528861cb88abd78d9c97dbeb93b0329df228e64221047d5711b18cc25"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-retirement-query-reuse\\diagnostic-build\\tests\\retirement-tests.lib",
+        "bytes": 42522,
+        "sha256": "5f9fe6bff4e35b0ba139d765e6309f99fdf181ed49219b0d8b4270355e01fc05"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-retirement-query-reuse\\diagnostic-build\\tests\\retirement-tests.map",
+        "bytes": 41121359,
+        "sha256": "8e123c6d80e2e237db68392f736b4de49dee81ba0a5b6cbb693aec87331d2123"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-retirement-query-reuse\\final-test-build\\retirement-tests.exp",
+        "bytes": 25041,
+        "sha256": "20ada504ffe532dcf36ef751a15ef36b46efe2e516cfe4848d0bd0cf084a370d"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-retirement-query-reuse\\final-test-build\\retirement-tests.lib",
+        "bytes": 42522,
+        "sha256": "5f9fe6bff4e35b0ba139d765e6309f99fdf181ed49219b0d8b4270355e01fc05"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-retirement-query-reuse\\final-test-build\\retirement-tests.map",
+        "bytes": 41121157,
+        "sha256": "05635a2a11bbf2beff5d64801e43c0165fc3e4e9d17bd70064924d1431dbb4ed"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-cross-backend-reference\\cpu\\cpu.exp",
+        "bytes": 25001,
+        "sha256": "54804f3f4bfe468d1ee553e17c9cef609f30799b0b09e472fa6b08344c6e2b36"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-cross-backend-reference\\cpu\\cpu.lib",
+        "bytes": 41298,
+        "sha256": "1a72c22d3a6dec39cca5118fd99aa738ff5f4202c029fc8a48afb6c3d20e909d"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-cross-backend-reference\\cpu\\cpu.map",
+        "bytes": 39201106,
+        "sha256": "e7559e1e06483633fc7da5bd08bf44eaa637441bfec3c7f3591eec3fc8fdafe1"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-cross-backend-reference\\cuda\\cuda.exp",
+        "bytes": 25005,
+        "sha256": "cf351c913160d90b9083ea320799e7839743ca55804f33fb2ec9b4fd7ff4350e"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-cross-backend-reference\\cuda\\cuda.lib",
+        "bytes": 41384,
+        "sha256": "097299e17e955c077a99f65f363d3484d564c016359baeb643f4e47c6b737d59"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-cross-backend-reference\\cuda\\cuda.map",
+        "bytes": 41628501,
+        "sha256": "a5e48d62f84ddc703b98216cf00f4e18904dfd5774bad4df57665198149477ed"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-reference-linear\\cpu-final\\cpu.exe",
+        "bytes": 26924032,
+        "sha256": "4ee89745df150d11394b7d08c338b1ce0b1d951e74c6b9c244978467f0a64361"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-reference-linear\\cuda-final\\cuda.exe",
+        "bytes": 121006080,
+        "sha256": "c4ecfc4a286987c52832a687f1ec4e41d92a8ffea9eb7a2a2be06258a5ca5477"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-vulkan-reference\\checks\\vulkan.exp",
+        "bytes": 25004,
+        "sha256": "200744cd8abf95021cdb494654f480bfbc13f8dde0c2e3ea76ada26cbf136d28"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-vulkan-reference\\checks\\vulkan.lib",
+        "bytes": 41560,
+        "sha256": "fed51f80d367206935c20d5a34eb77b477832f71dd84a1440dfdc0c7d9c6ce7d"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-vulkan-reference\\checks\\vulkan.map",
+        "bytes": 34859880,
+        "sha256": "513c72c5a8f01b17815be6912080fe45cee27b78ad2e7b11400e0ab1540abe3f"
+      }
+    ],
+    "local_bytes": 969556575.0,
+    "remote": {
+      "deleted": [
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/nvfp4-reference-linear/apple/v1/nvfp4-before",
+          "bytes": 15484912,
+          "sha256": "59a29eb5d65457bf459be02702dcc3b297fabf4a807d525e9e100137bfb6b1f5"
+        },
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/nvfp4-reference-linear/apple/v1/nvfp4-after",
+          "bytes": 15502088,
+          "sha256": "35d6c8e1506e7604c97cff6d52d7b3c29c1bb7723c210bf167f5a69436d0c622"
+        }
+      ],
+      "bytes": 30987000
+    },
+    "protected_verified": 8
+  },
+  "script": {
+    "path": "C:\\public\\project-hyle\\hyle\\test.ps1",
+    "bytes": 2841,
+    "sha256": "65195cded2a311c5fc366d6eace7316471ee33eb084338ebe231324bb6b8291d"
+  },
+  "plan_receipt": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-cross-backend-reference\\cleanup\\plan.json",
+    "bytes": 14275,
+    "sha256": "7e937dcec6b56b5890e7f819a5083f82fbc18a5946d729080c6e7fb3f3857764"
+  },
+  "execution_receipt": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-cross-backend-reference\\cleanup\\executed.json",
+    "bytes": 10822,
+    "sha256": "6c4a87d51bc049afbc94078722b0921dcc2f30cb07d28e0862370a71599bf359"
+  },
+  "evidence_archives_verified_before_deletion": true,
+  "console_note": "Final Select-Object display projected an ordered dictionary as null; the persisted executed.json contains the checked non-null counts above. Deletion actions were not repeated."
+}

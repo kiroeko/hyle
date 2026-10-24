@@ -1,0 +1,2305 @@
+{
+  "date": "2026-10-20",
+  "status": "implemented_focused_Apple_M4_passed_default_original_after_measured_regression",
+  "scope": "Native MLX/Metal bounded packed CT symmetric/asymmetric INT4 Decode[/Cast]/Transpose/MatMul contraction, positive rank2 plain A, all positive M capability. Actual strides are used; no dense W array, second executor or hot hostwait was added.",
+  "contract": "Original low-first codes along K and asymmetric zeros along N; source-scale product RNE, decode RNE, operand RNE, F32 dot and declared output RNE. Normal finite BF16 scale times integer[-15,15] uses Safe native F32 multiply with <=12 significant bits then the same three RNE boundaries. Other scales retain shared uint math. FTZ-sensitive/nonfinite native dot SIMDgroups are recomputed with the same reduction tree through shared uint IEEE helpers.",
+  "selection": {
+    "default_CT_preference": 201,
+    "original_preference": 200,
+    "ordinary_default": "original route1 retained",
+    "bounded_capability": "kept as a separate cold route4 candidate; directed tests select it through the actual source capability adapter",
+    "not_promised": "RequirePrepared cannot distinguish these two Managed native routes; opaque private bounds/OOM do not guarantee automatic reselection."
+  },
+  "validation": {
+    "device": "MacBook Air Mac16,12 / Apple M4; actual hardware/toolchain identity in validation/results/hardware.json",
+    "tests": 4,
+    "failures": 0,
+    "skipped": 0,
+    "actual_submissions": 21,
+    "names": [
+      "AppleCtPackedLinear.PublicChainsKeepSourceRoundsAndTypedCastWitnesses",
+      "AppleCtPackedLinear.DynamicInputsRebindAcrossOwnedSlotsAndRetainResults",
+      "AppleCtPackedLinear.PublishedViewAndControlEscapesExecuteOriginalDecomposition",
+      "AppleCtPackedLinear.OriginalPackedConstantsKeepTheirExplicitCallerLifetime"
+    ],
+    "source_round_profiles": "same6profiles each forced CT and forced original route1, with exact one-hot independent scalar witnesses; one additional F32 NaN/Inf case for CT",
+    "lifetimes": "two invocation slots and two actual updates, old GraphOutput blocking/reset and retained results after invocation teardown",
+    "escapes": "published decoded value, extra data reader and control dependency use the original decomposition",
+    "constants": "raw borrowed original packed banks and explicit caller-owned ready leases/resource retained for complete compiled-program lifetime; no fabricated generic Compute owner",
+    "final_summary": "validation/after-artifact-closure/source-round-comparison/bf16-pointwise/plain-activation/results/validation.json",
+    "final_link": "validation/after-artifact-closure/source-round-comparison/bf16-pointwise/plain-activation/results/link.json"
+  },
+  "performance": {
+    "geometry": "N512,K1024,g32,asymmetric BF16 A/scales/decode/operand; M1 andM128; same original packed constants and same public graph publishing onlyY",
+    "timing": "2warmups per arm then4AB/BApairs; warm submit through original Completion.wait; prepare/bind/reset/oracle outside timer; independent oracle checks both arms",
+    "initial_window": [
+      {
+        "M": 1,
+        "N": 512,
+        "K": 1024,
+        "packed_regions": 1,
+        "original_packed_regions": 0,
+        "cold_packed_us": 142109,
+        "cold_original_us": 950682,
+        "packed_median_us": 1037.04,
+        "original_median_us": 599.5,
+        "packed_samples_us": [
+          1045.29,
+          1028.79,
+          986.667,
+          1062.75
+        ],
+        "original_samples_us": [
+          595,
+          604,
+          570.125,
+          614.416
+        ],
+        "packed_workspace_known_bytes": 0,
+        "original_workspace_known_bytes": 0,
+        "packed_total_storage_known": false,
+        "original_total_storage_known": false
+      },
+      {
+        "M": 128,
+        "N": 512,
+        "K": 1024,
+        "packed_regions": 1,
+        "original_packed_regions": 0,
+        "cold_packed_us": 82657.6,
+        "cold_original_us": 99679.8,
+        "packed_median_us": 19119,
+        "original_median_us": 435.355,
+        "packed_samples_us": [
+          34255.7,
+          18894.2,
+          19343.8,
+          18858.5
+        ],
+        "original_samples_us": [
+          441.583,
+          429.834,
+          440.875,
+          422.416
+        ],
+        "packed_workspace_known_bytes": 0,
+        "original_workspace_known_bytes": 0,
+        "packed_total_storage_known": false,
+        "original_total_storage_known": false
+      }
+    ],
+    "final_optimized_window": [
+      {
+        "M": 1,
+        "N": 512,
+        "K": 1024,
+        "packed_regions": 1,
+        "original_packed_regions": 0,
+        "cold_packed_us": 144754,
+        "cold_original_us": 959703,
+        "packed_median_us": 899.833,
+        "original_median_us": 586.958,
+        "packed_samples_us": [
+          918.25,
+          881.417,
+          772.042,
+          938.875
+        ],
+        "original_samples_us": [
+          584.708,
+          607.875,
+          565.25,
+          589.209
+        ],
+        "packed_workspace_known_bytes": 0,
+        "original_workspace_known_bytes": 0,
+        "packed_total_storage_known": false,
+        "original_total_storage_known": false
+      },
+      {
+        "M": 128,
+        "N": 512,
+        "K": 1024,
+        "packed_regions": 1,
+        "original_packed_regions": 0,
+        "cold_packed_us": 87314.4,
+        "cold_original_us": 85892.2,
+        "packed_median_us": 14888.9,
+        "original_median_us": 728.958,
+        "packed_samples_us": [
+          20963,
+          14904.7,
+          14868.8,
+          14873
+        ],
+        "original_samples_us": [
+          971.625,
+          929.875,
+          434.25,
+          528.041
+        ],
+        "packed_workspace_known_bytes": 0,
+        "original_workspace_known_bytes": 0,
+        "packed_total_storage_known": false,
+        "original_total_storage_known": false
+      }
+    ],
+    "pooled": false,
+    "conclusion": "Both observed packed medians remain materially slower than original route1. The ordinary default therefore preserves original. The windows are independent and not pooled; no universal crossover or throughput claim.",
+    "summaries": [
+      "validation/after-artifact-closure/source-round-comparison/performance/results/summary.json",
+      "validation/after-artifact-closure/source-round-comparison/bf16-pointwise/performance/results/summary.json"
+    ]
+  },
+  "failures_and_corrections": [
+    {
+      "path": "validation/results/validation.json",
+      "reason": "verification directory missing original mlx.metallib sidecar; Context construction failed before any submit"
+    },
+    {
+      "path": "validation/run-ready/validation.json",
+      "reason": "2passed; old SDK ArtifactDecode asym shape and test constant owner/lease contract misuse"
+    },
+    {
+      "path": "validation/after-artifact-closure/results/validation.json",
+      "reason": "same missing sidecar in new verification subdir; Context failed before submit"
+    },
+    {
+      "path": "validation/after-artifact-closure/source-round-comparison/results/first-foreign-source-audit-failure.json",
+      "reason": "compiler0 but strict include location audit saw2cached current byte-identical headers; metadata-only correction,0extraCXX"
+    }
+  ],
+  "counts": {
+    "successful_CXX": 14,
+    "product_CXX": 8,
+    "correctness_test_CXX": 4,
+    "benchmark_CXX": 2,
+    "compiler_failures": 0,
+    "successful_links": 7,
+    "total_test_processes": 9,
+    "context_setup_failure_processes": 2,
+    "SDK_compilations": 0,
+    "MetalSDK_compilations": 0,
+    "downloads": 0
+  },
+  "shared_numerical_host": {
+    "comparisons": 1505524,
+    "mismatches": 0,
+    "source": "shared-numeric-host/check.cc",
+    "result": "shared-numeric-host/run.stdout.log",
+    "boundary": "Independent host strict arithmetic check only; not Metal execution or proof of the BF16 fast branch."
+  },
+  "limits": [
+    "No model payload, full artifact, quality or whole-model run.",
+    "Native MLX private/persistent/workspace allocation totals remain unknown. Known Graph workspace0 does not imply0 GPU memory.",
+    "Special GPU payload coverage is the fixed fixture, signed-zero scale payloads and F32 NaN/Inf, not an exhaustive subnormal/overflow corpus.",
+    "No other backend or all-model acceptance is inferred from this Apple evidence."
+  ],
+  "evidence": {
+    "archive": "ct-packed-apple-2026-10-20.zip",
+    "bytes": 2564359,
+    "sha256": "889c4c71678771c8888d1fb919e0e471b1a38345ae472b2ac36f256e6e6f1161",
+    "payload_files": 419,
+    "archive_members": 420,
+    "CRC_verified": true,
+    "all_payload_SHA256_verified": true,
+    "manifest": "manifest.json",
+    "files": [
+      {
+        "path": "before/src/compute_route_apple/CMakeLists.txt",
+        "bytes": 5961,
+        "sha256": "53738677460f21dbe7824a6e9725fe79bbd7a6672d7d400827771c76ff94a38a"
+      },
+      {
+        "path": "before/src/compute_route_apple/apple_mature_float.cc",
+        "bytes": 34030,
+        "sha256": "b6e68881eb70bd12fc8240f57ce26a27408207c30efbf1680b69eb5ae41111e5"
+      },
+      {
+        "path": "before/tests/compute_models/ct_packed_graph_fixture.h",
+        "bytes": 24460,
+        "sha256": "fb02137f14083cf786c0b353d6cd5b8a0fb3c0b34d290cd02fe10915c04c817c"
+      },
+      {
+        "path": "before/tests/graph_route_apple/CMakeLists.txt",
+        "bytes": 6084,
+        "sha256": "9c9540139ecafc26bf8ec807287499bf63bba4ac246cb2d552e12fc88df2377f"
+      },
+      {
+        "path": "records/before.json",
+        "bytes": 694,
+        "sha256": "ab40a0a244729d41d6519286897f1cd92dce574ad082a4d18cbb3c58f52ae632"
+      },
+      {
+        "path": "records/final-source-freeze.json",
+        "bytes": 44470,
+        "sha256": "0943c55b8d75a97bffca8aee406a69a30edc9ba47d0e323abf7e7255740e3cc6"
+      },
+      {
+        "path": "records/final-validation.json",
+        "bytes": 26027,
+        "sha256": "4dc2af83aab21fafab6c7f791b3124f8e48fa292abff122278f037143be6109b"
+      },
+      {
+        "path": "records/implementation.diff",
+        "bytes": 30625,
+        "sha256": "13ec7699893cc4ab36c7d8cf02ec7b1c80f6bded0359f238f4cc8723cfd935c9"
+      },
+      {
+        "path": "revisions/before-bf16-pointwise/src/compute_route_apple/apple_ct_packed.cc",
+        "bytes": 8197,
+        "sha256": "49d9b8c0389112e3c9ada5824b02ebbc69bd1c93037b665390d75a34510bb561"
+      },
+      {
+        "path": "revisions/before-bf16-pointwise/tests/graph_route_apple/ct_packed_linear_test.cc",
+        "bytes": 11132,
+        "sha256": "7b067ef9330e9e1dd80fb1afe22734ac0656067014ea024435c5c7df8c5e855f"
+      },
+      {
+        "path": "revisions/before-plain-guard/src/compute_route_apple/apple_ct_packed.cc",
+        "bytes": 9052,
+        "sha256": "ccd8f4a5431fc7ad3b05f2e071d66c27ae497ccb5017cb712c96318721c7b144"
+      },
+      {
+        "path": "revisions/constant-borrow-fix/tests/graph_route_apple/ct_packed_linear_test.cc",
+        "bytes": 8231,
+        "sha256": "4db2e3dc955bcc92ef8aab49e3580628636e12d31243baac64f4326fc2075bb8"
+      },
+      {
+        "path": "revisions/initial/src/compute_route_apple/apple_ct_packed.cc",
+        "bytes": 8197,
+        "sha256": "49d9b8c0389112e3c9ada5824b02ebbc69bd1c93037b665390d75a34510bb561"
+      },
+      {
+        "path": "revisions/initial/src/compute_route_apple/apple_ct_packed.h",
+        "bytes": 390,
+        "sha256": "7dfca17a36582c0e4b6ddd1ff9ec1b064637d812bbfb3f2ff301a57113c6e49f"
+      },
+      {
+        "path": "revisions/initial/src/graph_route_apple/apple_lowering.cc",
+        "bytes": 33878,
+        "sha256": "55e61e6a21f4a2f17e495bf3df19749cec7d6158dc61f24c6749d800aa668358"
+      },
+      {
+        "path": "revisions/initial/src/graph_route_apple/native_region.cc",
+        "bytes": 46312,
+        "sha256": "528e3a12580aca5b65045369a585041dcb312ec18bcea8c2988bb88a5da46a05"
+      },
+      {
+        "path": "revisions/initial/src/graph_route_apple/native_region.h",
+        "bytes": 1143,
+        "sha256": "c38cd785e65ecebe7678a1e36db1592b578c8ecb7852fb89784c05f1b50dbee8"
+      },
+      {
+        "path": "revisions/initial/tests/graph_route_apple/ct_packed_linear_test.cc",
+        "bytes": 7913,
+        "sha256": "1f1e1ad6ad69eda0acf52cb37c9529cbbc6d22ec5c7df7bb214f430a809c2b71"
+      },
+      {
+        "path": "scripts/benchmark_remote.py",
+        "bytes": 2859,
+        "sha256": "0ada3e5d9e78a56dc571536648bb835a4050ca341553674f888090207087e8d8"
+      },
+      {
+        "path": "scripts/build_remote.py",
+        "bytes": 4989,
+        "sha256": "ee1483fd4f7efdd61d6f0d879743ee77bffe13f7372c7349a3e77853afd069fd"
+      },
+      {
+        "path": "scripts/collect_remote.py",
+        "bytes": 877,
+        "sha256": "9faba5f621dbc208957d9c4f847fb47ceda2bcd4dbbdb389c1fa95530d32448a"
+      },
+      {
+        "path": "scripts/prepare_increment.py",
+        "bytes": 3725,
+        "sha256": "af8b7318557ef394f21575204640b9e1711d4faad08ca0f14ac9ef665a31d039"
+      },
+      {
+        "path": "scripts/publish.py",
+        "bytes": 8252,
+        "sha256": "352fc1c6964963059f8d8b4cc6bddbe86569df32fb024ac9c38a622825bb4edf"
+      },
+      {
+        "path": "scripts/reconcile_source_audit.py",
+        "bytes": 1479,
+        "sha256": "f3c45079bc85444ad0ce1012ca5e42dc61776b6b9cf1a72e4458423a9a6b1f13"
+      },
+      {
+        "path": "scripts/run_ready.py",
+        "bytes": 1462,
+        "sha256": "374960e3fa0cb1fabea9a2f2e9257bcf0a202ef336e77f36b94b2ce25a3f6a56"
+      },
+      {
+        "path": "shared-numeric-host/check.cc",
+        "bytes": 9954,
+        "sha256": "c362173872470f1a95cc390bf99f8b4b9ffdcba62af7b2678d6e8ab6b0abaf19"
+      },
+      {
+        "path": "shared-numeric-host/check.py",
+        "bytes": 5096,
+        "sha256": "c430058c346b64ade68121d5199029eb75fa4eababb415ec16c819fac0219d29"
+      },
+      {
+        "path": "shared-numeric-host/compile.command.json",
+        "bytes": 629,
+        "sha256": "86057c00e71b6a388ea945b14a1c2f44e87192495db70e135b32b9236050bf3b"
+      },
+      {
+        "path": "shared-numeric-host/compile.result.json",
+        "bytes": 699,
+        "sha256": "0798ec2b884226ba88fda3492c43fd9838b0e2fc237841847d6e2d2bad669796"
+      },
+      {
+        "path": "shared-numeric-host/compile.stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "shared-numeric-host/compile.stdout.log",
+        "bytes": 10,
+        "sha256": "feefadcc028a2002223a7e50e25a038569cffc4c16f708b6922e5098fad9ad00"
+      },
+      {
+        "path": "shared-numeric-host/identity.json",
+        "bytes": 1192,
+        "sha256": "5194faae6a5043d2a875f7d07ef94f2391ef1484ebe1f2f27ff573ee88e40927"
+      },
+      {
+        "path": "shared-numeric-host/link.command.json",
+        "bytes": 517,
+        "sha256": "75aa41b28cd6a68be4bbb0190aa5af911cb5dd0b1f84f45fd1283ede67bdd525"
+      },
+      {
+        "path": "shared-numeric-host/link.result.json",
+        "bytes": 588,
+        "sha256": "3587007883d1a267ddc9faa6d501c5d122e1b6b3e7b61b70956adc92f2e14574"
+      },
+      {
+        "path": "shared-numeric-host/link.stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "shared-numeric-host/link.stdout.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "shared-numeric-host/live.json",
+        "bytes": 326,
+        "sha256": "232a2e7647cd33f72c66ee8c7993de959440c1bad7c9c05d67669d7aa8f3170d"
+      },
+      {
+        "path": "shared-numeric-host/run.command.json",
+        "bytes": 255,
+        "sha256": "8bcfa83e723ab23bb5bbcdfbc5dff8757cf172b66c324784c7822e0df8daa329"
+      },
+      {
+        "path": "shared-numeric-host/run.result.json",
+        "bytes": 326,
+        "sha256": "232a2e7647cd33f72c66ee8c7993de959440c1bad7c9c05d67669d7aa8f3170d"
+      },
+      {
+        "path": "shared-numeric-host/run.stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "shared-numeric-host/run.stdout.log",
+        "bytes": 40,
+        "sha256": "a284bdf186695abf654bea5871ad46532fa86e0026fbe0dc1da9a5eb979f52e2"
+      },
+      {
+        "path": "source/include/hyle/compute/apple.h",
+        "bytes": 11664,
+        "sha256": "5baedfd8caa3dd7bd54d9c4619f3c7e7c7e853189a6d8d7c20ab1ebeb2b7dbd5"
+      },
+      {
+        "path": "source/include/hyle/compute/apple_batch.h",
+        "bytes": 8214,
+        "sha256": "c22b73da2caa1031a99fe5cbcbd81e6c255eec7429cbf542c06b35cd82ad8e98"
+      },
+      {
+        "path": "source/include/hyle/compute/apple_memory.h",
+        "bytes": 11885,
+        "sha256": "4795aa787801c4a300658bb87d81d3249880822fd49ba91381ad254d3c4ff150"
+      },
+      {
+        "path": "source/include/hyle/compute/apple_weights.h",
+        "bytes": 3966,
+        "sha256": "d3fc24ad2fd96b7c32574c6360e6fffd07f2aebc45169c44e0c66be2747b8a69"
+      },
+      {
+        "path": "source/include/hyle/compute/backends/cpu.h",
+        "bytes": 1814,
+        "sha256": "a0b99762a3620c1b44b6856263c172d12fa6e482282fe9c2fcc06aa7d82a1d4d"
+      },
+      {
+        "path": "source/include/hyle/compute/batch_execution.h",
+        "bytes": 10247,
+        "sha256": "4efe41eead34949a75dbb6fbae4ea7c3013b33e413b540d9d5e3b0d5396542c8"
+      },
+      {
+        "path": "source/include/hyle/compute/batch_layout.h",
+        "bytes": 10277,
+        "sha256": "8712c3fc736fb48ee1b02d4d52dbbd8afa4828a0542525bdb97be0b40326cd0e"
+      },
+      {
+        "path": "source/include/hyle/compute/batch_materialize.h",
+        "bytes": 7245,
+        "sha256": "9f57cfe9748faf89faae485b604a4b14d6f222bc3ce475bc40a1a265b405b50b"
+      },
+      {
+        "path": "source/include/hyle/compute/batch_ops.h",
+        "bytes": 6114,
+        "sha256": "92a052affd8a4159d3f053f879050630297c33e343e96e84a147966ef491a85d"
+      },
+      {
+        "path": "source/include/hyle/compute/batch_paged_native.h",
+        "bytes": 4723,
+        "sha256": "b42b17bd38435422f06cd830f0b35f6c7deca256916d9d99bff52b9ec0d9f1ce"
+      },
+      {
+        "path": "source/include/hyle/compute/batch_transfer.h",
+        "bytes": 11416,
+        "sha256": "7bec296577c0439b0e0b48639ccff6b3bd95d137dba085c608f650dbb69fcd1b"
+      },
+      {
+        "path": "source/include/hyle/compute/completion.h",
+        "bytes": 1959,
+        "sha256": "98b34b9ee4665e9aedac719504c029a509f304b0a4f566bf6b7f76d88dc2ef34"
+      },
+      {
+        "path": "source/include/hyle/compute/cpu.h",
+        "bytes": 3070,
+        "sha256": "5573eb9618c4ef2a0db299dfb3bc3f2bf93f0e7005ec31aa7ccd95e25efac21f"
+      },
+      {
+        "path": "source/include/hyle/compute/detail/apple_batch_access.h",
+        "bytes": 4635,
+        "sha256": "0897bec26d927ba9defa95a1cda1fd9ff377b7d47fe47f06f609823fe1b43387"
+      },
+      {
+        "path": "source/include/hyle/compute/detail/apple_plan.h",
+        "bytes": 4485,
+        "sha256": "ff08cb8aac33a2026a93b2100814d1daab2d75177341461f9248ea462106fba4"
+      },
+      {
+        "path": "source/include/hyle/compute/detail/builtin_provider_ids.h",
+        "bytes": 483,
+        "sha256": "34dbb8802a4269bc1251e3b2ae511209e4efbd23b88a5c733e85e0759e7ba07a"
+      },
+      {
+        "path": "source/include/hyle/compute/detail/completion_access.h",
+        "bytes": 4164,
+        "sha256": "8699638e39a1a7d5708cbb6a5e41f191228b3ac571b16b026eadcc1aa6765e34"
+      },
+      {
+        "path": "source/include/hyle/compute/detail/context_ref.h",
+        "bytes": 2563,
+        "sha256": "b1295a6d21d452b2730e3907891ca49993e512a741f8f3a9689976e56f5af3f1"
+      },
+      {
+        "path": "source/include/hyle/compute/detail/copy_backend.h",
+        "bytes": 1968,
+        "sha256": "6a6b2a44a81292297e5f5eb44eefe4e360a6003995a516676932de5e1b55b324"
+      },
+      {
+        "path": "source/include/hyle/compute/detail/copy_outcome_source.h",
+        "bytes": 6694,
+        "sha256": "b6a6d6648e6fa3a351cedace1a7f598fc086e1671414061bf1a2ab4e99dcdbfa"
+      },
+      {
+        "path": "source/include/hyle/compute/detail/copy_ranges.h",
+        "bytes": 1796,
+        "sha256": "86b711e8dd26d63bba37e0ebbd47956f28bfd58b28934ac8073f28df81c543e7"
+      },
+      {
+        "path": "source/include/hyle/compute/detail/copy_stream_access.h",
+        "bytes": 3611,
+        "sha256": "edc3c69aa398ee0f0ca1bbf47463925b0895b117edc8bed0a218b773cf52b681"
+      },
+      {
+        "path": "source/include/hyle/compute/detail/dependent_completion.h",
+        "bytes": 2699,
+        "sha256": "25aecc0c64d1edfad3d71523b04dc222f523ac7cd71f99e63193495a8431cc9b"
+      },
+      {
+        "path": "source/include/hyle/compute/detail/generated_result.h",
+        "bytes": 8681,
+        "sha256": "5099bec5a08e515145d43630050e9a1595d12f9f7a5f4eaa216ec40c10b946de"
+      },
+      {
+        "path": "source/include/hyle/compute/detail/lease_access.h",
+        "bytes": 3996,
+        "sha256": "3df3c018e207f135ab6a5e21336360c68977416f2762dfb8688b6cce0abbb39f"
+      },
+      {
+        "path": "source/include/hyle/compute/detail/operation_access.h",
+        "bytes": 992,
+        "sha256": "4bdd60939dea229e91907768308155716b7cd8b78d92150391edc771f2089f34"
+      },
+      {
+        "path": "source/include/hyle/compute/detail/paged_arena_access.h",
+        "bytes": 4693,
+        "sha256": "15f3221da8e4c2ab7d8117c4587e201403b93aa770c288bf3950e5d0f5172879"
+      },
+      {
+        "path": "source/include/hyle/compute/detail/prepared_callbacks.h",
+        "bytes": 3012,
+        "sha256": "a721592ad0985c92ec0a427973dd63ca20cf3d870cb8c1162b57f86afde514ae"
+      },
+      {
+        "path": "source/include/hyle/compute/detail/provider_extension.h",
+        "bytes": 4033,
+        "sha256": "1508099710fe63576cd04faeb6837288cad911a8952214fd070369c6c21c5e58"
+      },
+      {
+        "path": "source/include/hyle/compute/detail/queue_ref.h",
+        "bytes": 1551,
+        "sha256": "a50579827a0b1554ffa4595c3b2fff68cfcbcc9b75caba25c60f78028d49961b"
+      },
+      {
+        "path": "source/include/hyle/compute/detail/queue_sequence.h",
+        "bytes": 9214,
+        "sha256": "d8cc25b000e655468f3de3b1da3f5b17c388329f21d3f9d6f1d06d9e54de8a26"
+      },
+      {
+        "path": "source/include/hyle/compute/detail/resource_binding.h",
+        "bytes": 333,
+        "sha256": "5728b7fc8d0b9e6faf413dd5f8e5ba13e7ddf4d86354a722770f554c1591c6e5"
+      },
+      {
+        "path": "source/include/hyle/compute/detail/resource_budget_access.h",
+        "bytes": 527,
+        "sha256": "17f1adbcf9a15c6eadc20e4346bcbefb6b704e344d0e21f8cd44328c53b55004"
+      },
+      {
+        "path": "source/include/hyle/compute/detail/retained_completion.h",
+        "bytes": 4972,
+        "sha256": "3199644bf8ae58b283fdbea2f9a4fe43331a2b0297380bd948e1fb3780d34d29"
+      },
+      {
+        "path": "source/include/hyle/compute/device.h",
+        "bytes": 7702,
+        "sha256": "f966803f2293e03db1cde9b1327f847a92162f21adb53f69ef37f0c19b16a84a"
+      },
+      {
+        "path": "source/include/hyle/compute/low_precision.h",
+        "bytes": 10406,
+        "sha256": "0920a5a2faecb2991da60ecede680c496bab73411a305e559461ea41cea309cb"
+      },
+      {
+        "path": "source/include/hyle/compute/model_ops.h",
+        "bytes": 60890,
+        "sha256": "60e694b3d25ff7e894d4d3c6e0885900081066b50ad54e0f5fb8cf3a89cdbb8c"
+      },
+      {
+        "path": "source/include/hyle/compute/operation.h",
+        "bytes": 28108,
+        "sha256": "35b7c862143839e4b8ce0c9a49753b7add2f325ec424bf5f91a1afeec0101506"
+      },
+      {
+        "path": "source/include/hyle/compute/ops_visibility.h",
+        "bytes": 43,
+        "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+      },
+      {
+        "path": "source/include/hyle/compute/paged_arena.h",
+        "bytes": 10342,
+        "sha256": "004230261c2bcd629ac581ea2c6ce3fe7da928adc1b7827b8955e6e69f471fa0"
+      },
+      {
+        "path": "source/include/hyle/compute/prepared_operation.h",
+        "bytes": 20281,
+        "sha256": "03895c56e8665daf2482f66fecf205fd8aacf92046e13c169d9d8ff86fff52d7"
+      },
+      {
+        "path": "source/include/hyle/compute/provider.h",
+        "bytes": 10281,
+        "sha256": "a9737ca3cf64eec23ce768e20b1112407fc7816a32f8031f0b668b16c49f816a"
+      },
+      {
+        "path": "source/include/hyle/compute/providers/ggml_cpu.h",
+        "bytes": 1054,
+        "sha256": "9a4255d47bb85235d9f1fa66228367017cd6ae2e61c0edebcc63f65ade0e1e58"
+      },
+      {
+        "path": "source/include/hyle/compute/providers/native.h",
+        "bytes": 993,
+        "sha256": "786ec09a4db6be4a7020b2f235db40cdb4f9c67fedd46b4f6d39952374646f8b"
+      },
+      {
+        "path": "source/include/hyle/compute/providers/onednn.h",
+        "bytes": 726,
+        "sha256": "3e9fbdfa34e309f2695600a043adf15828643feb6aa8d37c23f1358826bc681b"
+      },
+      {
+        "path": "source/include/hyle/compute/resource_budget.h",
+        "bytes": 4622,
+        "sha256": "578d440b6fc3f5b58809837506165de27ac0866ae39b2d132763f5dd1786b1ce"
+      },
+      {
+        "path": "source/include/hyle/compute/resource_leases.h",
+        "bytes": 8660,
+        "sha256": "4e5681ebfa7c2f2ad51e5788c8316f4b993883f595c04b33fe594d7294dab85b"
+      },
+      {
+        "path": "source/include/hyle/compute/resource_requirement.h",
+        "bytes": 749,
+        "sha256": "0a1260090ba84ed86cf26b27ec5d187c8ed5d39b1acda641b632a3b84d3acf76"
+      },
+      {
+        "path": "source/include/hyle/compute/result.h",
+        "bytes": 4704,
+        "sha256": "07a584147b7de3b3f3c1a238207df4ec548130308295b583fc8c93a4d36a4164"
+      },
+      {
+        "path": "source/include/hyle/compute/sampling_ops.h",
+        "bytes": 3673,
+        "sha256": "887faba6ebe6249a0e2f766e2ea4b6bd83900bcf1e85165ad55e3e9be18528da"
+      },
+      {
+        "path": "source/include/hyle/compute/storage_owner.h",
+        "bytes": 8058,
+        "sha256": "549d881d8d4f96eedbb03c8ef9bd6892ede776e5da90a39025538bc50a0530d9"
+      },
+      {
+        "path": "source/include/hyle/compute/tensor.h",
+        "bytes": 1980,
+        "sha256": "ac00f221a66d0f9044a2b49a1123a6b99a6c425568790898129c31d81519c538"
+      },
+      {
+        "path": "source/include/hyle/compute/tensor_desc.h",
+        "bytes": 8700,
+        "sha256": "e5496e00c643bcce2efbb42666773f4172243d10458b756d6f9881b0e677eb9a"
+      },
+      {
+        "path": "source/include/hyle/compute/visibility.h",
+        "bytes": 43,
+        "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+      },
+      {
+        "path": "source/include/hyle/compute/workload.h",
+        "bytes": 5017,
+        "sha256": "2e7509d99d986e71b06788e4dd1dcb9595799e2ad972df48449ff0b58f0815ad"
+      },
+      {
+        "path": "source/include/hyle/container/small_vector.h",
+        "bytes": 30022,
+        "sha256": "cd04f94cac8c7be603600dfeb2a343a88a576bb5230c914d6d38ae5676b99cee"
+      },
+      {
+        "path": "source/include/hyle/core/assert.h",
+        "bytes": 16114,
+        "sha256": "5596728bc220ea27696be4f25e2f9eb9cf2705930f8eb0461747c4a862615790"
+      },
+      {
+        "path": "source/include/hyle/core/compiler.h",
+        "bytes": 4287,
+        "sha256": "e31151f0ed73c532e464c6568483acecd80a2da9c1ee7afc7e081db87d6fb687"
+      },
+      {
+        "path": "source/include/hyle/core/detail/compiler_attributes.h",
+        "bytes": 1913,
+        "sha256": "263c7691f9984073e198b69328092330bf572195113d3994d1ab54fe4564d88a"
+      },
+      {
+        "path": "source/include/hyle/core/detail/preprocessor.h",
+        "bytes": 409,
+        "sha256": "1d9872ef98db007dcbed7e0128771244640e1de4092830d52a7a83537f98eb84"
+      },
+      {
+        "path": "source/include/hyle/core/environment.h",
+        "bytes": 6712,
+        "sha256": "3d289765b1b677499a444b38d1dbe366bb5e99f89fcb7670af2d08106fd958fa"
+      },
+      {
+        "path": "source/include/hyle/error/result.h",
+        "bytes": 30856,
+        "sha256": "7718409ab2854eb76959215b356bf8077007134d87db1a24f9384a9b5deff2b5"
+      },
+      {
+        "path": "source/include/hyle/error/status.h",
+        "bytes": 18122,
+        "sha256": "4d6b4b0bfa5628947aad5449320513d4b071e0c84debfac47f7a7d264cecb7f4"
+      },
+      {
+        "path": "source/include/hyle/graph/apple.h",
+        "bytes": 5669,
+        "sha256": "774d322adcd2fbdb18fa466087ceef4010cfc127d9f9daf87f050e62058fdb11"
+      },
+      {
+        "path": "source/include/hyle/graph/batch.h",
+        "bytes": 12881,
+        "sha256": "8ff99a3c07bf3fb9c963e78e96d14f86ca05222540fd14d9d3dfda1a68a26877"
+      },
+      {
+        "path": "source/include/hyle/graph/compile_report.h",
+        "bytes": 577,
+        "sha256": "c42c30527d581975c49ddfebb182b0ae7928d799eed91172cb631779a2ad5b4f"
+      },
+      {
+        "path": "source/include/hyle/graph/cpu.h",
+        "bytes": 919,
+        "sha256": "01165b3d6fe8276d4275495d8cb52186d9a81b11749db49a2684856bfbe088e8"
+      },
+      {
+        "path": "source/include/hyle/graph/detail/execution_source.h",
+        "bytes": 1782,
+        "sha256": "f4c451def6a23d4dcbe2d0cc5fa0c3bdf86d8ed508d786212c4473c0ebb435ad"
+      },
+      {
+        "path": "source/include/hyle/graph/detail/region_access.h",
+        "bytes": 12293,
+        "sha256": "8c9c74a86cf1e0257f76d1e2a72de10987dc9698748e0d82d5a18e6822d6044f"
+      },
+      {
+        "path": "source/include/hyle/graph/detail/region_adapter.h",
+        "bytes": 1703,
+        "sha256": "cbc1a56573a6eca49081b65d6f90e5485dc23042ed8faf9049f60addf64621fa"
+      },
+      {
+        "path": "source/include/hyle/graph/executable.h",
+        "bytes": 49762,
+        "sha256": "6305dd557606b26119fc60de9dbb68c979a1f8fe54755a191378c49742ef4714"
+      },
+      {
+        "path": "source/include/hyle/graph/execution_source.h",
+        "bytes": 1859,
+        "sha256": "b89de5c6fe8b84192c9618a6a4e4dcee8ac45393e04a9e335f17b5a2d3ecac3f"
+      },
+      {
+        "path": "source/include/hyle/graph/graph.h",
+        "bytes": 19988,
+        "sha256": "c7a93ccf9fd1c86fb9dec286e7d3345aabcb1810c2fb6793a66093480a5a2136"
+      },
+      {
+        "path": "source/include/hyle/graph/providers/onednn.h",
+        "bytes": 875,
+        "sha256": "4e96b4e13f2e6868d91a74f685b30e80d5e60af52835e83468483533e0660439"
+      },
+      {
+        "path": "source/include/hyle/graph/region_provider.h",
+        "bytes": 24812,
+        "sha256": "16558cc236133bd76a2306dc7144b9edd08c81e19600d1d1dc6f7c8bc5127949"
+      },
+      {
+        "path": "source/include/hyle/graph/resources.h",
+        "bytes": 430,
+        "sha256": "c9d3075babb4d863f3543c76576d093fe59f9868df67d50fc492db0aebe7015d"
+      },
+      {
+        "path": "source/include/hyle/graph/result.h",
+        "bytes": 1646,
+        "sha256": "90861eafec4f3a0aa73014416bd2817dfe3892ac001ea206bebf907e1d3cf182"
+      },
+      {
+        "path": "source/include/hyle/graph/visibility.h",
+        "bytes": 43,
+        "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+      },
+      {
+        "path": "source/include/hyle/math/scalar.h",
+        "bytes": 17828,
+        "sha256": "10ca4013013fafc5383310bb0128ce6f11f389e77c815648b8c48bb06a00210a"
+      },
+      {
+        "path": "source/include/hyle/mem/alignment.h",
+        "bytes": 3645,
+        "sha256": "3ae961e6556cf2a3e5e56f5de9c80db224c7a50a591ce998d81b347a8c4be9ae"
+      },
+      {
+        "path": "source/include/hyle/mem/allocator.h",
+        "bytes": 11717,
+        "sha256": "8beaac413632fdc4409c2384f1cda7d6d5e75b72aafad73d188e13dbfa50781a"
+      },
+      {
+        "path": "source/include/hyle/mem/buffer.h",
+        "bytes": 19273,
+        "sha256": "346a4f810babb8c5dacba49faaf57903d998a3cbb49af12b8c62acc85f7be72c"
+      },
+      {
+        "path": "source/include/hyle/mem/quota_allocator.h",
+        "bytes": 7124,
+        "sha256": "a88fe230dc5358ddde6209de96cc61a59e3f6e60d30b9e7534e986fab10224c9"
+      },
+      {
+        "path": "source/include/hyle/mem/resource.h",
+        "bytes": 7717,
+        "sha256": "84b0366e658ec63f999b4c9719cf8584ad758f4ff5340baf37f1c3ebd17145cd"
+      },
+      {
+        "path": "source/include/hyle/mem/std_allocator.h",
+        "bytes": 5150,
+        "sha256": "adee9ae71753fa27e001b7b71b1d57b61e14f7ebcfdea57bb3993d2a3e9550e4"
+      },
+      {
+        "path": "source/include/hyle/mem/system_inline.h",
+        "bytes": 8762,
+        "sha256": "d890fe66b1a83a5f1a8f2b22c368276e7b3fadcfd0946df5279692ce055164f1"
+      },
+      {
+        "path": "source/include/hyle/mem/visibility.h",
+        "bytes": 43,
+        "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+      },
+      {
+        "path": "source/include/hyle/obs/trace.h",
+        "bytes": 8554,
+        "sha256": "be0df49a044a0888d46c6c2411a292fdd04908b7bdc393557b87d68a70cf1f6f"
+      },
+      {
+        "path": "source/include/hyle/platform/thread.h",
+        "bytes": 8423,
+        "sha256": "fe5d5dd5ff4a7190f9f9d98e5cbbf924a6d44ce62c30d257556b96ff6f711d1d"
+      },
+      {
+        "path": "source/include/hyle/platform/thread_visibility.h",
+        "bytes": 43,
+        "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+      },
+      {
+        "path": "source/include/hyle/platform/wait.h",
+        "bytes": 4708,
+        "sha256": "460fa7b1cab2f50b65b37a3f738cf0065bb607cde34cabf975cecc6e88f8d61f"
+      },
+      {
+        "path": "source/include/hyle/simd/dtype.h",
+        "bytes": 12213,
+        "sha256": "ef351c21ddf58309cd1bca6c7558862eb10fd53934194065e3a9d7d62f590ae8"
+      },
+      {
+        "path": "source/include/hyle/simd/dtype_ops.h",
+        "bytes": 2711,
+        "sha256": "67f53a3095f2a27fda8445c378d3154385fba06a70b28408cb082be333d8a822"
+      },
+      {
+        "path": "source/include/hyle/simd/math.h",
+        "bytes": 24767,
+        "sha256": "fbc4f22a4bd329c37fdb7cf08b6be2f56ba24cb1fbe2781bd1babf11c5c50dd6"
+      },
+      {
+        "path": "source/include/hyle/simd/ops.h",
+        "bytes": 5114,
+        "sha256": "7ca600d232b2dfcf0b0b3143678818a250d8aba2216febaee0438e1b94c1fd45"
+      },
+      {
+        "path": "source/include/hyle/simd/types.h",
+        "bytes": 1658,
+        "sha256": "e79863029c8036f918f36f93dd0267b8d42857516e0d74678584d75f8926abbd"
+      },
+      {
+        "path": "source/include/hyle/simd/visibility.h",
+        "bytes": 43,
+        "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+      },
+      {
+        "path": "source/include/hyle/time/clock.h",
+        "bytes": 30661,
+        "sha256": "42db74ed8cd6d03fb896e54318a2a2fd9bc32e92be5aa0e32d55fc4ff06dd075"
+      },
+      {
+        "path": "source/include/hyle/time/unix_timestamp.h",
+        "bytes": 11791,
+        "sha256": "bcd6bdc860d6ee1e73004ebd15e3b2b2a60ca3dff7a0818deecf9420f95b4496"
+      },
+      {
+        "path": "source/include/hyle/util/ref_counted.h",
+        "bytes": 15931,
+        "sha256": "47cc650a3bb704ace90bd718fc3e8f0b9d10485a32009551e3e7f456d9f5b5d6"
+      },
+      {
+        "path": "source/include/hyle/visibility.h",
+        "bytes": 11701,
+        "sha256": "893fa73589b6e46f00474c2258af74c28d662b52176b57012290c820812ed486"
+      },
+      {
+        "path": "source/src/compute/native_route.h",
+        "bytes": 317,
+        "sha256": "fe7f47f962414b1ffc77284ca91e641d8df58c16018c80ca9f21cb4c04940ae3"
+      },
+      {
+        "path": "source/src/compute/operation_cold.h",
+        "bytes": 702,
+        "sha256": "0bb54f81060d671a17e8d998c4a4a2c679c7eb5d9d6906367cd50c55bb57be4e"
+      },
+      {
+        "path": "source/src/compute/provider_internal.h",
+        "bytes": 11448,
+        "sha256": "d5fe8397f2f7e7818f48aa1547e549fbfe9c49446275d2a224f92c28d1cab3fb"
+      },
+      {
+        "path": "source/src/compute/shape_domain.h",
+        "bytes": 4715,
+        "sha256": "2c50da6b169b550e737a4dd95d5be66ab5803ac1843ba628ebc5cc37f2507846"
+      },
+      {
+        "path": "source/src/compute/shape_program.h",
+        "bytes": 3883,
+        "sha256": "1d58ee387d7c7bb21e14c7f9e6330ffa544aaf5eca91d3182b2c08f2927169f1"
+      },
+      {
+        "path": "source/src/compute_batch/row_cache_map.h",
+        "bytes": 5708,
+        "sha256": "3d8f7cb59a99031a70971f120980814c7b41fa2c111734125db16fde4a17865b"
+      },
+      {
+        "path": "source/src/compute_batch/row_cache_planning.h",
+        "bytes": 545,
+        "sha256": "8866aea3dc5319df3f9472e6b1749e9c8380855a2b0920d4567465a02faee5a8"
+      },
+      {
+        "path": "source/src/compute_packed_shared/ct_packed_linear.h",
+        "bytes": 2459,
+        "sha256": "8c18cb714ffa23e629f16b163b7dafabc3ece8947a740b6e98154cac9056cdfe"
+      },
+      {
+        "path": "source/src/compute_provider_native/ct_packed.cc",
+        "bytes": 8700,
+        "sha256": "79d85696fafec5d7b0f25fe795bfcf4ff9ee0b32334cadd151656ef660c3f906"
+      },
+      {
+        "path": "source/src/compute_provider_native/default_rules.h",
+        "bytes": 1119,
+        "sha256": "f03a0048eacd1cabee3a45667041405bf474e47a88b276eef1a54b4a4c4b7839"
+      },
+      {
+        "path": "source/src/compute_provider_native/native_plan.h",
+        "bytes": 10404,
+        "sha256": "cdf8e70bbb880b084f92222062aaea82eed74d19ac3e27328fecccca4903f01c"
+      },
+      {
+        "path": "source/src/compute_provider_native/native_provider.cc",
+        "bytes": 38683,
+        "sha256": "1f8c4f0c1e87ced606ae8e1e73d28bd174f06042162d1ab400048506eb8f559a"
+      },
+      {
+        "path": "source/src/compute_provider_native/numeric.h",
+        "bytes": 2229,
+        "sha256": "7d66593e3131a2f99ebaa1a25d8b689b3b4087b96760586bcbc439a062e349fb"
+      },
+      {
+        "path": "source/src/compute_provider_native/nvfp4.cc",
+        "bytes": 10456,
+        "sha256": "da4b8a1906ac1cee6a3ad6db1159dc224286ae2aa213ee246d36e3ac37bc609c"
+      },
+      {
+        "path": "source/src/compute_provider_native/torch_cpu_program.h",
+        "bytes": 1893,
+        "sha256": "5c6b58c639c875f08d45c833206c14ce484c6c3d54c4f0e47d2fabe54be4de2e"
+      },
+      {
+        "path": "source/src/compute_route_apple/CMakeLists.txt",
+        "bytes": 5980,
+        "sha256": "ab379d8ecf883af4b8a41f841165a2c79a47ceffafb6bd0881ff592ba3d22686"
+      },
+      {
+        "path": "source/src/compute_route_apple/apple_carrier.h",
+        "bytes": 3792,
+        "sha256": "ff1cede731db50e0277754bdd058fc54a31bb67d40ce38c1450f0fc03b4b0d1f"
+      },
+      {
+        "path": "source/src/compute_route_apple/apple_checks.h",
+        "bytes": 655,
+        "sha256": "ad551180e3211086858440f36dd2e1b0f624436973a40bd2c8875e45a4496543"
+      },
+      {
+        "path": "source/src/compute_route_apple/apple_copy_internal.h",
+        "bytes": 5686,
+        "sha256": "1d8cdfc696bcf68571dc9b25ffb5d901a2303705b698ba44ae2dc7abb6bc7084"
+      },
+      {
+        "path": "source/src/compute_route_apple/apple_ct_packed.cc",
+        "bytes": 9095,
+        "sha256": "1b269b18746a6f7bb58ab6b9f1e5ca74383b5fa4c4ed96a59915015f5cfb30df"
+      },
+      {
+        "path": "source/src/compute_route_apple/apple_ct_packed.h",
+        "bytes": 390,
+        "sha256": "7dfca17a36582c0e4b6ddd1ff9ec1b064637d812bbfb3f2ff301a57113c6e49f"
+      },
+      {
+        "path": "source/src/compute_route_apple/apple_file_stream_access.h",
+        "bytes": 2512,
+        "sha256": "2e2f2191666aac05da14d023459dfe6efe002b27520b4eaacdcf08c7bceb13d8"
+      },
+      {
+        "path": "source/src/compute_route_apple/apple_internal.h",
+        "bytes": 242,
+        "sha256": "ee14ab5edf41c20aa9fd83767a6a8481fec83c8fd4510a6cd7c253caef633e1c"
+      },
+      {
+        "path": "source/src/compute_route_apple/apple_mature_artifact.cc",
+        "bytes": 2190,
+        "sha256": "e139bf68b4df52ebb301afa8a03e8d98690230d30e7988d742a256dcbb5d1be0"
+      },
+      {
+        "path": "source/src/compute_route_apple/apple_mature_artifact.h",
+        "bytes": 374,
+        "sha256": "13eea79e2cceef1c734cf11c89e2a4352d6e73f61f730b21f6cac25fe8f54e86"
+      },
+      {
+        "path": "source/src/compute_route_apple/apple_mature_float.cc",
+        "bytes": 34323,
+        "sha256": "1010006eb8321d3db14f5c2d8abf48ab33c0ffd77eb2274fb345f5325edc6cb1"
+      },
+      {
+        "path": "source/src/compute_route_apple/apple_nvfp4.h",
+        "bytes": 302,
+        "sha256": "dfb3c0c148bc3b7653c89e02e7a75f4715c8b0627170329d94f9cd4f399b2c87"
+      },
+      {
+        "path": "source/src/compute_route_apple/apple_row_cache.h",
+        "bytes": 1101,
+        "sha256": "46c4e5a74871c0490809e283ebeae5d0728993dcad0500509e131bd315a7a50c"
+      },
+      {
+        "path": "source/src/compute_route_apple/apple_row_cache_indexer.h",
+        "bytes": 429,
+        "sha256": "70bc8e1f144d00a5d029b7194f8d4912a0dd765a88b3d2595b7e963e072d2977"
+      },
+      {
+        "path": "source/src/compute_route_apple/apple_runtime_internal.h",
+        "bytes": 1188,
+        "sha256": "d081f2b519f87e6420345c94e92475aaf93b1c9cade591fd46bbe8a01f4a398a"
+      },
+      {
+        "path": "source/src/compute_route_cpu/cpu_context.cc",
+        "bytes": 3909,
+        "sha256": "cff2d22dca2bad3581d1456b284430101aabdbc4899cb606159554dabb67ab4c"
+      },
+      {
+        "path": "source/src/compute_route_cpu/default_policy.h",
+        "bytes": 993,
+        "sha256": "e8621cda012975ac44d81fd9b97ce10bedd7c8468a8e95719e5925e0987d050e"
+      },
+      {
+        "path": "source/src/compute_shader_shared/ct_packed.h",
+        "bytes": 2374,
+        "sha256": "33a6001ae830c9649e5ab15ee2b6335456438b41486cf7965ce3e9bcc55d5459"
+      },
+      {
+        "path": "source/src/compute_shader_shared/nvfp4_f32.h",
+        "bytes": 4845,
+        "sha256": "bcb1534ec5072993166944e8a6085a10078a61ec85fe2d88fc1e7dd659822c43"
+      },
+      {
+        "path": "source/src/graph/ct_packed_region.h",
+        "bytes": 17504,
+        "sha256": "566764816fe921c1fc129ec71ea202eadbf76fbc4874bd11e462e86364186120"
+      },
+      {
+        "path": "source/src/graph/execution_source_internal.h",
+        "bytes": 6898,
+        "sha256": "63030a3f57bafa1bcdb49c572c034aeaad3c4b2f39d5cc99228d6cb9d54abc11"
+      },
+      {
+        "path": "source/src/graph/mapped_native_region.h",
+        "bytes": 7908,
+        "sha256": "b881145fa09ce17f0d68779ee674dac393b05bf6cab4a6a83363072a48d46e6e"
+      },
+      {
+        "path": "source/src/graph/native_analysis.h",
+        "bytes": 10708,
+        "sha256": "ff3aee42d1c6c21c9d0766ea5d1bfb03df0bdb8c9ac656a2119fce5be665c3d7"
+      },
+      {
+        "path": "source/src/graph/region_discovery.h",
+        "bytes": 4544,
+        "sha256": "87305150cbdc893ccf8e394f93c4a10b89def5ce4b4dff213afc94671641ff43"
+      },
+      {
+        "path": "source/src/graph_batch/native_pending_regions.h",
+        "bytes": 5214,
+        "sha256": "8e3481fdd0b69d152ac6e06ef2be6498727a83f096a3e4fe75ec4737f8edd15c"
+      },
+      {
+        "path": "source/src/graph_route_apple/apple_lowering.cc",
+        "bytes": 33878,
+        "sha256": "55e61e6a21f4a2f17e495bf3df19749cec7d6158dc61f24c6749d800aa668358"
+      },
+      {
+        "path": "source/src/graph_route_apple/apple_lowering_internal.h",
+        "bytes": 972,
+        "sha256": "2d9f57d600079bbbfdbf18186297a88258d9f837f57fe5db0705a36e87ed7b91"
+      },
+      {
+        "path": "source/src/graph_route_apple/native_output.h",
+        "bytes": 1414,
+        "sha256": "e2fa8256fe053d87a9d15136a81b05201503626a44d6afa3e281be032b36bf09"
+      },
+      {
+        "path": "source/src/graph_route_apple/native_paged_pending.h",
+        "bytes": 1341,
+        "sha256": "3deb7fe2d41ceb4040a2be9a9962da8d79265bbb3d8287c29a7d6d1323c17c4e"
+      },
+      {
+        "path": "source/src/graph_route_apple/native_paged_region.h",
+        "bytes": 741,
+        "sha256": "660a7dfa83fe9c6d43a87dd4dcf00d6a2c33fbc0041e383396cd8a92cc3506a1"
+      },
+      {
+        "path": "source/src/graph_route_apple/native_ragged_region.h",
+        "bytes": 739,
+        "sha256": "9aa77760ff9c848cfd7e4189ecc0027eb78d26509bb7c267a5fe02b78d41743c"
+      },
+      {
+        "path": "source/src/graph_route_apple/native_region.cc",
+        "bytes": 46312,
+        "sha256": "0be0c43821d547463ee9bb9eb75ff548838a935bfa99a7f510cd50062f6ad365"
+      },
+      {
+        "path": "source/src/graph_route_apple/native_region.h",
+        "bytes": 1143,
+        "sha256": "c38cd785e65ecebe7678a1e36db1592b578c8ecb7852fb89784c05f1b50dbee8"
+      },
+      {
+        "path": "source/src/graph_route_cpu/cpu_context.cc",
+        "bytes": 1204,
+        "sha256": "0474886077f21efd345dadd2e78676180d836b9f20f323ff9dad7053190a88b2"
+      },
+      {
+        "path": "source/src/graph_route_cpu/ct_packed_linear_region.cc",
+        "bytes": 518,
+        "sha256": "7140afb0e6a5186dae3763aaaaaa5e47de59dbef239772e46c452378e3dc3c3c"
+      },
+      {
+        "path": "source/src/graph_route_cpu/ct_packed_linear_region.h",
+        "bytes": 196,
+        "sha256": "c2d5822c5d1868bb09ec4bac6c8e1e20ece1241b35c4fd5349946b292cd43206"
+      },
+      {
+        "path": "source/src/graph_route_cpu/ggml_region.h",
+        "bytes": 212,
+        "sha256": "7e48271ff689b9e6287f49632da42a1ab9f0b932c01474fa2f762714507d667f"
+      },
+      {
+        "path": "source/tests/compute/native_context_fixture.h",
+        "bytes": 832,
+        "sha256": "9be255942e4d788e3c6de674c22691a90bf7a92578b43dc86e7403877ddf7222"
+      },
+      {
+        "path": "source/tests/compute_models/ct_packed_graph_fixture.h",
+        "bytes": 25617,
+        "sha256": "3e5750bdaad93e36792f2ee9428af0ca9672a8fafa24800cd064790432c3ba32"
+      },
+      {
+        "path": "source/tests/compute_models/ct_packed_linear_fixture.h",
+        "bytes": 4140,
+        "sha256": "523cbb539ce7b1d2be6de9646535594b191d556d9645f727406c5b52ea5cd396"
+      },
+      {
+        "path": "source/tests/compute_provider_native/ct_packed_test.cc",
+        "bytes": 10863,
+        "sha256": "fe120b513d987a185469a49d4240cf8ce19ab9220445fa81d90b3c69a4d865e9"
+      },
+      {
+        "path": "source/tests/compute_provider_native/half_test_support.h",
+        "bytes": 4399,
+        "sha256": "5f6d8f7b70d07e44600bb6d6d592f66af5dac9970a730695956a1afcfc3cd0b8"
+      },
+      {
+        "path": "source/tests/graph_route_apple/CMakeLists.txt",
+        "bytes": 6109,
+        "sha256": "abf22e1d27b3676ad7125a70bdbc447c041528ac7d78e4112cd0599a5c8bf618"
+      },
+      {
+        "path": "source/tests/graph_route_apple/ct_packed_linear_test.cc",
+        "bytes": 11732,
+        "sha256": "15de2e0b1d39dc9490f895360cece9ca854a5ae446ab375b80db641072fb83a4"
+      },
+      {
+        "path": "source/tests/graph_route_cpu/ct_packed_linear_test.cc",
+        "bytes": 3903,
+        "sha256": "71584d8928c390f696819130592816acee8a006269ee950c6e7474e65928935d"
+      },
+      {
+        "path": "source/third_party/awq_apple/awq_apple.h",
+        "bytes": 1321,
+        "sha256": "c2c05ab932e730c9e7db6f4bbb051f0a9685a60b416c4b247d34ebbb947c293a"
+      },
+      {
+        "path": "source/third_party/bitsandbytes_apple/bitsandbytes_apple.h",
+        "bytes": 1666,
+        "sha256": "6d4a2fcc2714efcd6e56dd73771c8ef6b1d81b309e7388bb80d5df114e6cb613"
+      },
+      {
+        "path": "source/third_party/compressed_tensors_apple/compressed_tensors_apple.h",
+        "bytes": 2972,
+        "sha256": "9be1f1e003745759000acb9abbef0099a78773352ef6e0d0dd276ffe079de03e"
+      },
+      {
+        "path": "validation/after-artifact-closure/build_remote.py",
+        "bytes": 4989,
+        "sha256": "ee1483fd4f7efdd61d6f0d879743ee77bffe13f7372c7349a3e77853afd069fd"
+      },
+      {
+        "path": "validation/after-artifact-closure/objects/src--compute_route_apple--apple_mature_artifact.cc.o.d",
+        "bytes": 101902,
+        "sha256": "d9826e03f6996f2d5a7ef3aaff81901557bee277aee22fdb9df74d980a5e69cf"
+      },
+      {
+        "path": "validation/after-artifact-closure/objects/tests--graph_route_apple--ct_packed_linear_test.cc.o.d",
+        "bytes": 115772,
+        "sha256": "6c2226716d0cc349739df42301690534a6e709512502fee088e527ba692392fc"
+      },
+      {
+        "path": "validation/after-artifact-closure/plan.json",
+        "bytes": 49964,
+        "sha256": "2be94dd96e3b96d3cbde3e2df1bf17d9b0cc89921f2823af96c4eadc1a743ada"
+      },
+      {
+        "path": "validation/after-artifact-closure/results/baseline-input-identities.json",
+        "bytes": 3,
+        "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+      },
+      {
+        "path": "validation/after-artifact-closure/results/compile-summary.json",
+        "bytes": 570319,
+        "sha256": "58fee66f3bcdba8ab058800b473a88fea37f0a0664ebbe655bba8ea8c375bd08"
+      },
+      {
+        "path": "validation/after-artifact-closure/results/hardware.json",
+        "bytes": 478,
+        "sha256": "fd1e9b5e2ff57a943c230fadda052a9dcb1e84da89b48530487ca45059e3674e"
+      },
+      {
+        "path": "validation/after-artifact-closure/results/link-inputs.json",
+        "bytes": 46401,
+        "sha256": "c00c0676469d7da1e7db6bfc03a0c76ac304ceef8e1e4b9fc631f96137d730b8"
+      },
+      {
+        "path": "validation/after-artifact-closure/results/link.command.json",
+        "bytes": 27282,
+        "sha256": "647d19e9148db2c4cbaf026986cf8eb6ebbc7bdcb9fe6573bed0e55f7d2cb038"
+      },
+      {
+        "path": "validation/after-artifact-closure/results/link.json",
+        "bytes": 27329,
+        "sha256": "4752db2a42212c7258ecc710a9f27e5d1bf1f62e3d92780121f2e26e3d1b51a7"
+      },
+      {
+        "path": "validation/after-artifact-closure/results/link.result.json",
+        "bytes": 27329,
+        "sha256": "4752db2a42212c7258ecc710a9f27e5d1bf1f62e3d92780121f2e26e3d1b51a7"
+      },
+      {
+        "path": "validation/after-artifact-closure/results/link.stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "validation/after-artifact-closure/results/link.stdout.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "validation/after-artifact-closure/results/run.command.json",
+        "bytes": 442,
+        "sha256": "d156c308b21b09b0e27ff84c10d410133a2861d123b30e09af64a9d7c6f2b452"
+      },
+      {
+        "path": "validation/after-artifact-closure/results/run.result.json",
+        "bytes": 488,
+        "sha256": "e46e0f88bcee5d4b1c96201c23fab4e6f0afea81d3a6433fc0297007dc901bd3"
+      },
+      {
+        "path": "validation/after-artifact-closure/results/run.stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "validation/after-artifact-closure/results/run.stdout.log",
+        "bytes": 2468,
+        "sha256": "bf7d977ba66d5e7c2f9256c78fa4599138aaaae1259ddadde67982a9f3e7d774"
+      },
+      {
+        "path": "validation/after-artifact-closure/results/src--compute_route_apple--apple_mature_artifact.cc-compile.command.json",
+        "bytes": 6370,
+        "sha256": "d01894799d8c5c35dbf721492d068f7af0e8eb4d9478a57e1a6f83156104134b"
+      },
+      {
+        "path": "validation/after-artifact-closure/results/src--compute_route_apple--apple_mature_artifact.cc-compile.result.json",
+        "bytes": 6416,
+        "sha256": "7c9ba540831d3e22d1979ebb3667db44cfb50b4ee43d4d67fff7aeaa1ee64639"
+      },
+      {
+        "path": "validation/after-artifact-closure/results/src--compute_route_apple--apple_mature_artifact.cc-compile.stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "validation/after-artifact-closure/results/src--compute_route_apple--apple_mature_artifact.cc-compile.stdout.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "validation/after-artifact-closure/results/src--compute_route_apple--apple_mature_artifact.cc-identity.json",
+        "bytes": 240862,
+        "sha256": "30129ff82c5abe86ca8d5a5445680cd54105a5aad4eb8bed515a23c5bbcc7b83"
+      },
+      {
+        "path": "validation/after-artifact-closure/results/tests--graph_route_apple--ct_packed_linear_test.cc-compile.command.json",
+        "bytes": 21503,
+        "sha256": "5ce9f7d8fac484d89fddf7e5f7daf3adb089ca87c441fe88717af5cce2d22ace"
+      },
+      {
+        "path": "validation/after-artifact-closure/results/tests--graph_route_apple--ct_packed_linear_test.cc-compile.result.json",
+        "bytes": 21549,
+        "sha256": "d1358f9fb0bf1f855242ca1cc3bb6fd05b01d5e0bb1db4262db343bdb0ab7947"
+      },
+      {
+        "path": "validation/after-artifact-closure/results/tests--graph_route_apple--ct_packed_linear_test.cc-compile.stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "validation/after-artifact-closure/results/tests--graph_route_apple--ct_packed_linear_test.cc-compile.stdout.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "validation/after-artifact-closure/results/tests--graph_route_apple--ct_packed_linear_test.cc-identity.json",
+        "bytes": 285244,
+        "sha256": "a1ce2927283650ef6303b3660e869ecb46143a5ad9d8c9ea9fb98f55777fb367"
+      },
+      {
+        "path": "validation/after-artifact-closure/results/tests.xml",
+        "bytes": 3863,
+        "sha256": "eb185ffaabe7675b479142d4e00f271f3a14a36237e72785c6763b4de023c8a0"
+      },
+      {
+        "path": "validation/after-artifact-closure/results/validation.json",
+        "bytes": 2911,
+        "sha256": "8a72427325cff7b97a5fe80006a487ec22fd01cdc916b7f050681c6a1fd0ca5f"
+      },
+      {
+        "path": "validation/after-artifact-closure/run-ready/metallib.json",
+        "bytes": 603,
+        "sha256": "3b8d50714f455f3717303dd1cd9ba53320732761a9b6117828753261b7fc3e28"
+      },
+      {
+        "path": "validation/after-artifact-closure/run-ready/run.json",
+        "bytes": 492,
+        "sha256": "2ec22420162570aa434e918fb69e0ab1aaa76fd0d4fc9fcd05d8615f46b5efff"
+      },
+      {
+        "path": "validation/after-artifact-closure/run-ready/run.stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "validation/after-artifact-closure/run-ready/run.stdout.log",
+        "bytes": 1254,
+        "sha256": "9c819be5df63f59cc06c291af19ca448ecbc2fc2a7dbb3e08b0604b925b8c6bf"
+      },
+      {
+        "path": "validation/after-artifact-closure/run-ready/tests.xml",
+        "bytes": 2481,
+        "sha256": "3a07916524a654b43bfaf143c698c5e466989c39c33486ee3cf4dfba7f45f536"
+      },
+      {
+        "path": "validation/after-artifact-closure/run-ready/validation.json",
+        "bytes": 696,
+        "sha256": "8fab5d943682bf82cb394d3d7af3504de7feddcf4deb8c3e37bba9e78fca1455"
+      },
+      {
+        "path": "validation/after-artifact-closure/run_ready.py",
+        "bytes": 1462,
+        "sha256": "374960e3fa0cb1fabea9a2f2e9257bcf0a202ef336e77f36b94b2ce25a3f6a56"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-manifest.json",
+        "bytes": 26733,
+        "sha256": "d0372283707477a191ea0b53e5df84fb67529ce9deeed0233cb9e197c3ea2f6e"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/bf16-pointwise/build_remote.py",
+        "bytes": 4989,
+        "sha256": "ee1483fd4f7efdd61d6f0d879743ee77bffe13f7372c7349a3e77853afd069fd"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/bf16-pointwise/objects/src--compute_route_apple--apple_ct_packed.cc.o.d",
+        "bytes": 102873,
+        "sha256": "d7c335089340f6deee2a56bfc4c0872c00d8090bd4134fe80d8cb41e2400a672"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/bf16-pointwise/objects/src--graph_route_apple--native_region.cc.o.d",
+        "bytes": 124248,
+        "sha256": "52e983718568861e7ca52fe4fc8d751376418707a4247fdb64ac9dec0205eb0d"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/bf16-pointwise/objects/tests--graph_route_apple--ct_packed_linear_test.cc.o.d",
+        "bytes": 120760,
+        "sha256": "8e906e9418e103404eadaad54e251211306708893b2e35d32f853ab2a075cc5f"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/bf16-pointwise/performance/benchmark.d",
+        "bytes": 123524,
+        "sha256": "d33b133add519a55e06844b986d692521a254c556afaa5b9881d5e3d1bdf1c63"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/bf16-pointwise/performance/benchmark_remote.py",
+        "bytes": 2859,
+        "sha256": "0ada3e5d9e78a56dc571536648bb835a4050ca341553674f888090207087e8d8"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/bf16-pointwise/performance/results/compile-identity.json",
+        "bytes": 276151,
+        "sha256": "c183a779360f117b451ca771717bc6152a062c760e973eadf5f8ce8fca9b1edf"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/bf16-pointwise/performance/results/compile.command.json",
+        "bytes": 22260,
+        "sha256": "20577162aa45b9d3196f39591173467c465da1f972eeff398b8b02c8c2d2fa1e"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/bf16-pointwise/performance/results/compile.result.json",
+        "bytes": 22305,
+        "sha256": "07dfb688f2703d27d5d361ede151afc6e9324a07496cb8413dde49afac696f7b"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/bf16-pointwise/performance/results/compile.stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/bf16-pointwise/performance/results/compile.stdout.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/bf16-pointwise/performance/results/link-inputs.json",
+        "bytes": 46527,
+        "sha256": "815a1ff2397b440b8d30359e37905fbe1d5305cf762964773099ac495f0ec262"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/bf16-pointwise/performance/results/link.command.json",
+        "bytes": 27505,
+        "sha256": "4dbbd3f2b5021e8e5a946e8d0ad6e3f80954021b424263f46c197a24b5691d02"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/bf16-pointwise/performance/results/link.result.json",
+        "bytes": 27552,
+        "sha256": "9030be7cda49867b7d20e4ba594c711cd226e1ddd747df79bc80bc72011ab609"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/bf16-pointwise/performance/results/link.stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/bf16-pointwise/performance/results/link.stdout.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/bf16-pointwise/performance/results/run.command.json",
+        "bytes": 546,
+        "sha256": "3f0621fcfebbed8d36b34e2200e93e27bf7bda2d24b0289d50031af5ba5bff1d"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/bf16-pointwise/performance/results/run.result.json",
+        "bytes": 592,
+        "sha256": "72d2b655747a2034047b983b8077b232d245245d03bd66e4ed2eba5d76003efc"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/bf16-pointwise/performance/results/run.stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/bf16-pointwise/performance/results/run.stdout.log",
+        "bytes": 1577,
+        "sha256": "1dda9f78a45d31b7f84b8869c6fc4527c39995805ed748960a249ac71cd3cd1c"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/bf16-pointwise/performance/results/summary.json",
+        "bytes": 1986,
+        "sha256": "5102e9c7d14f25576b7a7a1eb6ff87e8c292c1057dc06cc12e9b767c2a8f5986"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/bf16-pointwise/performance/results/tests.xml",
+        "bytes": 860,
+        "sha256": "a84dc87b564c9a6fe1dd791df3af77764205ad94e95d07bae09fa46f3cd5f753"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/bf16-pointwise/plain-activation/build_remote.py",
+        "bytes": 4989,
+        "sha256": "ee1483fd4f7efdd61d6f0d879743ee77bffe13f7372c7349a3e77853afd069fd"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/bf16-pointwise/plain-activation/objects/src--compute_route_apple--apple_ct_packed.cc.o.d",
+        "bytes": 103417,
+        "sha256": "288fcf07d42c328c934cd2ddfc766064c9456744e043e74c1d508ea60f305876"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/bf16-pointwise/plain-activation/plan.json",
+        "bytes": 41855,
+        "sha256": "932201817daf62487b3df58be8a7836a576a01c73bd43125680e05fc2c7796e1"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/bf16-pointwise/plain-activation/results/baseline-input-identities.json",
+        "bytes": 3,
+        "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/bf16-pointwise/plain-activation/results/compile-summary.json",
+        "bytes": 274837,
+        "sha256": "a5ea0000acb2e5dd278b0a97314bcf3984a817f3f957e1bd6d384e39cafe0532"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/bf16-pointwise/plain-activation/results/hardware.json",
+        "bytes": 478,
+        "sha256": "fd1e9b5e2ff57a943c230fadda052a9dcb1e84da89b48530487ca45059e3674e"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/bf16-pointwise/plain-activation/results/link-inputs.json",
+        "bytes": 46581,
+        "sha256": "6ea8e729d5306a2c7b9f65ac1cb448fb21fbeb79ecc38ff9c2aa806377e27713"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/bf16-pointwise/plain-activation/results/link.command.json",
+        "bytes": 27574,
+        "sha256": "050f273d0ca9b721689f7ac7f2c7eab1d836b873b8fbdc79f535ddf031b55bcb"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/bf16-pointwise/plain-activation/results/link.json",
+        "bytes": 27620,
+        "sha256": "dc28a2b683ae0dbad9f2fc7cef571bb5374c3304e0ab3d88176f9f2273b8cd93"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/bf16-pointwise/plain-activation/results/link.result.json",
+        "bytes": 27620,
+        "sha256": "dc28a2b683ae0dbad9f2fc7cef571bb5374c3304e0ab3d88176f9f2273b8cd93"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/bf16-pointwise/plain-activation/results/link.stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/bf16-pointwise/plain-activation/results/link.stdout.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/bf16-pointwise/plain-activation/results/run.command.json",
+        "bytes": 555,
+        "sha256": "72a1ee918356fd4fb9d2367182e3f7ce757f92d16be0e06876b49bc07d739512"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/bf16-pointwise/plain-activation/results/run.result.json",
+        "bytes": 601,
+        "sha256": "6dd9be47a78ce19ab3b3c8278a70fa587ca22179b35a9ab31bcaf1870475babc"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/bf16-pointwise/plain-activation/results/run.stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/bf16-pointwise/plain-activation/results/run.stdout.log",
+        "bytes": 1253,
+        "sha256": "eb10237f3b4b08ef6e7e9556330b0e0e2c2763e93cd382efbc53e045d7e6c2ee"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/bf16-pointwise/plain-activation/results/src--compute_route_apple--apple_ct_packed.cc-compile.command.json",
+        "bytes": 17078,
+        "sha256": "c27086ce0fbec241ea82f80c1e9ad208e127b7c0ef8a99a4f0892bab5439aa5b"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/bf16-pointwise/plain-activation/results/src--compute_route_apple--apple_ct_packed.cc-compile.result.json",
+        "bytes": 17124,
+        "sha256": "e45753f0c42b513c47cbbe0f71309eec98ccbb5e8bf54d6a4933f0d62d5b85ce"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/bf16-pointwise/plain-activation/results/src--compute_route_apple--apple_ct_packed.cc-compile.stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/bf16-pointwise/plain-activation/results/src--compute_route_apple--apple_ct_packed.cc-compile.stdout.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/bf16-pointwise/plain-activation/results/src--compute_route_apple--apple_ct_packed.cc-identity.json",
+        "bytes": 253749,
+        "sha256": "c4df3544467a574aead963ae3cc545adf21f1acb6713ca28d29cbe4a15bb4d32"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/bf16-pointwise/plain-activation/results/tests.xml",
+        "bytes": 2641,
+        "sha256": "2ec3198ad89968bb5ffcec84223638d37d918dd86c667e449fe8cb3b9e6c94f5"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/bf16-pointwise/plain-activation/results/validation.json",
+        "bytes": 1132,
+        "sha256": "76e8815587edeaf747bf77d6b4ebde67bc00c5088378d42608ef7e68c10a9c12"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/bf16-pointwise/plain-activation/source-manifest.json",
+        "bytes": 27409,
+        "sha256": "f2c97ab61f2465d918c14ad32b30060edac13da812d7e15420480889d26ffabe"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/bf16-pointwise/plan.json",
+        "bytes": 74015,
+        "sha256": "30fe99f71eac24807f51dad533160729303cd8a3384039cffd4fa486106f812e"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/bf16-pointwise/results/baseline-input-identities.json",
+        "bytes": 3,
+        "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/bf16-pointwise/results/compile-summary.json",
+        "bytes": 903523,
+        "sha256": "8bb9b25c97b1b9f0c76abee28a00a6651bfeec02398fcb32f355c1a1bc1d77fc"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/bf16-pointwise/results/hardware.json",
+        "bytes": 478,
+        "sha256": "fd1e9b5e2ff57a943c230fadda052a9dcb1e84da89b48530487ca45059e3674e"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/bf16-pointwise/results/link-inputs.json",
+        "bytes": 46564,
+        "sha256": "4be993aae004fe2ea70d92d1e9799d94ca74e1c22d8a1b7d8dd31e1f35fdd822"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/bf16-pointwise/results/link.command.json",
+        "bytes": 27524,
+        "sha256": "f1322d44cbc8282938ec5f57087b19776d747afd74e478093c7b00bd54862466"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/bf16-pointwise/results/link.json",
+        "bytes": 27571,
+        "sha256": "5c121146a93ec1eda32a01a81bd7703d92bbae8fad4d0e0cc1902a73b3e1db23"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/bf16-pointwise/results/link.result.json",
+        "bytes": 27571,
+        "sha256": "5c121146a93ec1eda32a01a81bd7703d92bbae8fad4d0e0cc1902a73b3e1db23"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/bf16-pointwise/results/link.stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/bf16-pointwise/results/link.stdout.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/bf16-pointwise/results/run.command.json",
+        "bytes": 521,
+        "sha256": "70d8fc566ed1b8ecb8e62f24bf3caa0baed7941e88d0fb5ae0623727bdb1f6b8"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/bf16-pointwise/results/run.result.json",
+        "bytes": 565,
+        "sha256": "7f73cbd5598232f537d580545852bbc063b0cd6ca43acd7f1e8d2c4235847a6c"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/bf16-pointwise/results/run.stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/bf16-pointwise/results/run.stdout.log",
+        "bytes": 1253,
+        "sha256": "97460947c45a0ad670381277ba925c57bc48f67989f6bfc99542af00cebf17fe"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/bf16-pointwise/results/src--compute_route_apple--apple_ct_packed.cc-compile.command.json",
+        "bytes": 12707,
+        "sha256": "6a05461ecf4c74b687c10c381a4f08a55e3b2ff9c1d068d7e2eabc13ba34b23c"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/bf16-pointwise/results/src--compute_route_apple--apple_ct_packed.cc-compile.result.json",
+        "bytes": 12752,
+        "sha256": "d63236fd49345fd661fa486889794195fb73a34d52e9f5d37c5e36cd887c5e62"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/bf16-pointwise/results/src--compute_route_apple--apple_ct_packed.cc-compile.stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/bf16-pointwise/results/src--compute_route_apple--apple_ct_packed.cc-compile.stdout.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/bf16-pointwise/results/src--compute_route_apple--apple_ct_packed.cc-identity.json",
+        "bytes": 248701,
+        "sha256": "82fc50c37b6e5a71f984ef2488c83f37b5a3b396ca55f620864cee39f95b8022"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/bf16-pointwise/results/src--graph_route_apple--native_region.cc-compile.command.json",
+        "bytes": 20019,
+        "sha256": "486a9ff7c4c31d8a40e400db9a4102b9fe336cf37da192a5e065f77dca3cb6cc"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/bf16-pointwise/results/src--graph_route_apple--native_region.cc-compile.result.json",
+        "bytes": 20065,
+        "sha256": "925b9e8087052e581972da410089f58bffc2e370cb03207c3a9963f549368302"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/bf16-pointwise/results/src--graph_route_apple--native_region.cc-compile.stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/bf16-pointwise/results/src--graph_route_apple--native_region.cc-compile.stdout.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/bf16-pointwise/results/src--graph_route_apple--native_region.cc-identity.json",
+        "bytes": 293397,
+        "sha256": "33352d254794702ea662137b4aed19a83179daf2d0d546b766e5a49a3e77ab65"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/bf16-pointwise/results/tests--graph_route_apple--ct_packed_linear_test.cc-compile.command.json",
+        "bytes": 22360,
+        "sha256": "5093b1ce726e6a7b4aa15f11348f5174f885eb64f3e129e4a7c1d595962589c4"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/bf16-pointwise/results/tests--graph_route_apple--ct_packed_linear_test.cc-compile.result.json",
+        "bytes": 22406,
+        "sha256": "2474c6b94ada76c98b1d69b9c4fa1a68d31044ac5ab12871f29a2dd5c79527fe"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/bf16-pointwise/results/tests--graph_route_apple--ct_packed_linear_test.cc-compile.stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/bf16-pointwise/results/tests--graph_route_apple--ct_packed_linear_test.cc-compile.stdout.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/bf16-pointwise/results/tests--graph_route_apple--ct_packed_linear_test.cc-identity.json",
+        "bytes": 292991,
+        "sha256": "4d60b74cf2a05f5f4e9acad616f6c7b582bb53d994f6c244ac83fc9bfe01e8e9"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/bf16-pointwise/results/tests.xml",
+        "bytes": 2640,
+        "sha256": "d4103df2833819477a088e90a1ee39a11596cba6307ef4bf5438574b34dd703a"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/bf16-pointwise/results/validation.json",
+        "bytes": 1098,
+        "sha256": "050cfa6020def3119c5d46a42eedfc155461daa675f278fffeea678ec8048106"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/bf16-pointwise/source-manifest.json",
+        "bytes": 27409,
+        "sha256": "392c0175aede5d4fbee40a094fd9bb3da4486b8173d828d15feabd6579dcab5d"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/build_remote.py",
+        "bytes": 4989,
+        "sha256": "ee1483fd4f7efdd61d6f0d879743ee77bffe13f7372c7349a3e77853afd069fd"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/objects/tests--graph_route_apple--ct_packed_linear_test.cc.o.d",
+        "bytes": 119639,
+        "sha256": "c337fe85139df66ceb1d160bef3abd7c38d7d344a937121258d798793de9605e"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/performance/benchmark.d",
+        "bytes": 122474,
+        "sha256": "b2049e7921c4571ea896e67d7971377ee57b96e7b32f2052eb91ae2b0012a8ab"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/performance/benchmark_remote.py",
+        "bytes": 2859,
+        "sha256": "0ada3e5d9e78a56dc571536648bb835a4050ca341553674f888090207087e8d8"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/performance/results/compile-identity.json",
+        "bytes": 275086,
+        "sha256": "b4ee11ad2cc8c66b29a081697e63ed7cfd2ae5d91cf0352aee9ae9d470425710"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/performance/results/compile.command.json",
+        "bytes": 21931,
+        "sha256": "982f9fda42a22c8388f4168412345db5ba565838ddf5ef4777a55de9898eadb9"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/performance/results/compile.result.json",
+        "bytes": 21977,
+        "sha256": "7ea2c11584243f91c6d12b5136f396e0f3a792cddc4dd0597280313cd16dae4c"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/performance/results/compile.stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/performance/results/compile.stdout.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/performance/results/link-inputs.json",
+        "bytes": 46388,
+        "sha256": "06a76b555339f9c3d613aa3a68c9b81f66a3090fc5c56a4c308885c539f7a37f"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/performance/results/link.command.json",
+        "bytes": 27335,
+        "sha256": "af8cdb38fcbbe4cf991cea706461813cf519561fc5392962da54210ae535d3e6"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/performance/results/link.result.json",
+        "bytes": 27382,
+        "sha256": "c29499473e973e24558e06c4e240ecf5270c39633fc2f44634e3f964a74aaff0"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/performance/results/link.stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/performance/results/link.stdout.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/performance/results/run.command.json",
+        "bytes": 516,
+        "sha256": "22ff4fe5e57c0aceaee7041d35f87aec6ea9c15d711d7c7160af008dd0a7ad1e"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/performance/results/run.result.json",
+        "bytes": 561,
+        "sha256": "134ea5283c315201b6c59ae0396a20dcb3df652b59f58dbd7cf239aba527fb2f"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/performance/results/run.stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/performance/results/run.stdout.log",
+        "bytes": 1572,
+        "sha256": "7523c03606d2b460ca83fd57c80d793e9524fdc9164139a5b66ff7a340cd555f"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/performance/results/summary.json",
+        "bytes": 1966,
+        "sha256": "da555616f02fd9a1f9bac91a60ce344b9a84bd5a80af0557fc982a52bab299f9"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/performance/results/tests.xml",
+        "bytes": 845,
+        "sha256": "06db785c44844d91e658db0d1c9f1efab43b53d9c1c74fd1e90315cd444f7121"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/plan.json",
+        "bytes": 46875,
+        "sha256": "0f5eee3c5d8e344a05b01522aae2af3f2af8079429577b56cf569e26a3b1a3e3"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/reconcile_source_audit.py",
+        "bytes": 1479,
+        "sha256": "f3c45079bc85444ad0ce1012ca5e42dc61776b6b9cf1a72e4458423a9a6b1f13"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/results/baseline-input-identities.json",
+        "bytes": 3,
+        "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/results/compile-summary.json",
+        "bytes": 318234,
+        "sha256": "81a347cef9e12c10739328b240d4060f518353cd5401af7d17d3cc48e0a09d6d"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/results/first-foreign-source-audit-failure.json",
+        "bytes": 305443,
+        "sha256": "cc63f90f36711ae116c44150e639ff6e64a84900e555e5010bc9ffd345efb896"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/results/hardware.json",
+        "bytes": 478,
+        "sha256": "fd1e9b5e2ff57a943c230fadda052a9dcb1e84da89b48530487ca45059e3674e"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/results/link-inputs.json",
+        "bytes": 46425,
+        "sha256": "ebe0cbb3bf3c6d243b261deb403b89cf6b8abc3a09e10095a314083f610c74e9"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/results/link.command.json",
+        "bytes": 27355,
+        "sha256": "3af39d125d07d81e2b2ac8f94d6d79ee7c3d247c999cb8383c9c3b6cc66e9d95"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/results/link.json",
+        "bytes": 27399,
+        "sha256": "3631a0c049e846f61bb3d6f58f2f6ea51dde5a9c3bfd8e07b3a7ade3a1137a2d"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/results/link.result.json",
+        "bytes": 27399,
+        "sha256": "3631a0c049e846f61bb3d6f58f2f6ea51dde5a9c3bfd8e07b3a7ade3a1137a2d"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/results/link.stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/results/link.stdout.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/results/run.command.json",
+        "bytes": 491,
+        "sha256": "0d895c9053d2354db1d87cd847ae3f352945e4039769ee68dd309f2abd3b18d0"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/results/run.result.json",
+        "bytes": 535,
+        "sha256": "f373aad0e8b4dd09476d9f9c9b5bd47e38ee8c4a87c9c896b1c2abdf7a9e2e69"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/results/run.stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/results/run.stdout.log",
+        "bytes": 1253,
+        "sha256": "1f671ebee8c004734e2c8672c365ba5bed4b7fafdbac2c497138c39cce444fba"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/results/tests--graph_route_apple--ct_packed_linear_test.cc-compile.command.json",
+        "bytes": 22030,
+        "sha256": "cfe66b03b5c451eeac1988bc37c34f06ee7b36af488a512c51b9cd7dfcada442"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/results/tests--graph_route_apple--ct_packed_linear_test.cc-compile.result.json",
+        "bytes": 22076,
+        "sha256": "a81f63b1c044f31cf8851a6f18510a013ff7314cc128c6333ce423aca10c9233"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/results/tests--graph_route_apple--ct_packed_linear_test.cc-compile.stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/results/tests--graph_route_apple--ct_packed_linear_test.cc-compile.stdout.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/results/tests--graph_route_apple--ct_packed_linear_test.cc-identity.json",
+        "bytes": 291865,
+        "sha256": "47e9547db8b3052fe6aea578fcc68e85487fb081b81890a5fd8ed56f493a735c"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/results/tests.xml",
+        "bytes": 2579,
+        "sha256": "55694a0f02908aab9ec8ff4a30a8e02215142500b8eee0c758e9f1915a1498cc"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/results/validation.json",
+        "bytes": 1068,
+        "sha256": "91aae2b5b8091f3cc19c3122d6b5a24fa1191f22bfd58c09e49a2db48fa152a4"
+      },
+      {
+        "path": "validation/after-artifact-closure/source-round-comparison/source-manifest.json",
+        "bytes": 27073,
+        "sha256": "5e1d452eb38b0dbe1aeb56226639f228d56cc71148906208b0b6ada755faeb43"
+      },
+      {
+        "path": "validation/build_remote.py",
+        "bytes": 4989,
+        "sha256": "ee1483fd4f7efdd61d6f0d879743ee77bffe13f7372c7349a3e77853afd069fd"
+      },
+      {
+        "path": "validation/objects/src--compute_route_apple--apple_ct_packed.cc.o.d",
+        "bytes": 100889,
+        "sha256": "b75c1b4be1eef3826b958c2290a09621af7f3318999a51b0aac409d4a82dfa0e"
+      },
+      {
+        "path": "validation/objects/src--compute_route_apple--apple_mature_float.cc.o.d",
+        "bytes": 101696,
+        "sha256": "c625ac7dba68e7d0a554cf7803a7a3dff402a8865c4f66920f5d623318aeb65e"
+      },
+      {
+        "path": "validation/objects/src--graph_route_apple--apple_lowering.cc.o.d",
+        "bytes": 114615,
+        "sha256": "d15df1669767613c0a278c62f05f4132f95b81a4d73e025386d9a31f5e75f3d9"
+      },
+      {
+        "path": "validation/objects/src--graph_route_apple--native_region.cc.o.d",
+        "bytes": 117800,
+        "sha256": "91c89969293376e726ebdb35706a433f113ad996629db4568dc126b714149b9a"
+      },
+      {
+        "path": "validation/objects/tests--graph_route_apple--ct_packed_linear_test.cc.o.d",
+        "bytes": 114461,
+        "sha256": "599bddc3e82312f729ef750889332f8ba1180ab1108635e695c29947f3ebe34a"
+      },
+      {
+        "path": "validation/plan.json",
+        "bytes": 142300,
+        "sha256": "2b10ad27ea96b315422d81cee00f4ab6fd18c4414265ca4b253e397996a2e7da"
+      },
+      {
+        "path": "validation/results/baseline-input-identities.json",
+        "bytes": 45454,
+        "sha256": "be599c5ee3e39e83ea91203f1a1ec5f2a4d599e4fad0727ed6b82dc32b5fe980"
+      },
+      {
+        "path": "validation/results/compile-summary.json",
+        "bytes": 1445555,
+        "sha256": "169568f966afe154e8366fbe62745e43eb3918d5907172da3fed3711cccbbf6c"
+      },
+      {
+        "path": "validation/results/hardware.json",
+        "bytes": 478,
+        "sha256": "fd1e9b5e2ff57a943c230fadda052a9dcb1e84da89b48530487ca45059e3674e"
+      },
+      {
+        "path": "validation/results/link-inputs.json",
+        "bytes": 46050,
+        "sha256": "78e5c03843710644704693c02d7713d5a042f6e1610b1a60529bb7d97f26de13"
+      },
+      {
+        "path": "validation/results/link.command.json",
+        "bytes": 27003,
+        "sha256": "49dff34df6df8b5219d58f58714063f2edcf32a1fe1faca06f55d395c4a1ce9b"
+      },
+      {
+        "path": "validation/results/link.json",
+        "bytes": 27050,
+        "sha256": "8c4832c5b58be393c5156512bf6ced738986f506649e471805ce7e3cd05f9cbd"
+      },
+      {
+        "path": "validation/results/link.result.json",
+        "bytes": 27050,
+        "sha256": "8c4832c5b58be393c5156512bf6ced738986f506649e471805ce7e3cd05f9cbd"
+      },
+      {
+        "path": "validation/results/link.stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "validation/results/link.stdout.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "validation/results/run.command.json",
+        "bytes": 397,
+        "sha256": "daff13e89c9d49c05e79e7a04726bcd91a93013f09eeb911a09a54ed3b1f1da9"
+      },
+      {
+        "path": "validation/results/run.result.json",
+        "bytes": 443,
+        "sha256": "316605dc6bfb21d0554501305a11bc889193278c25ffad668846c0403a72ef00"
+      },
+      {
+        "path": "validation/results/run.stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "validation/results/run.stdout.log",
+        "bytes": 2450,
+        "sha256": "ad715342257aff05846a26742f6872f2ce470ada8dd485b42cb3a3a50666c220"
+      },
+      {
+        "path": "validation/results/src--compute_route_apple--apple_ct_packed.cc-compile.command.json",
+        "bytes": 10870,
+        "sha256": "61523cb09102c1cabc62078fbfa97bd83461f9c7f39271cb70baa8e8549b2cf2"
+      },
+      {
+        "path": "validation/results/src--compute_route_apple--apple_ct_packed.cc-compile.result.json",
+        "bytes": 10916,
+        "sha256": "eac216a5aee23d7a9ab09d4f86355427c2a603f5d851e97142cefdca2ac774b7"
+      },
+      {
+        "path": "validation/results/src--compute_route_apple--apple_ct_packed.cc-compile.stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "validation/results/src--compute_route_apple--apple_ct_packed.cc-compile.stdout.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "validation/results/src--compute_route_apple--apple_ct_packed.cc-identity.json",
+        "bytes": 244524,
+        "sha256": "886a0cf404d86895f1c98a8889dacf90b02b9a76f8663d60d25ce1e92cc97016"
+      },
+      {
+        "path": "validation/results/src--compute_route_apple--apple_mature_float.cc-compile.command.json",
+        "bytes": 9805,
+        "sha256": "9821306f135d5e9e88e46490d92213c851b7496ab773bb32f4d4881a803fa8e4"
+      },
+      {
+        "path": "validation/results/src--compute_route_apple--apple_mature_float.cc-compile.result.json",
+        "bytes": 9851,
+        "sha256": "ab59fef2b7bd5a63df548afd3fc0a81edeb3123279e95b45f43f0f289e097cd0"
+      },
+      {
+        "path": "validation/results/src--compute_route_apple--apple_mature_float.cc-compile.stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "validation/results/src--compute_route_apple--apple_mature_float.cc-compile.stdout.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "validation/results/src--compute_route_apple--apple_mature_float.cc-identity.json",
+        "bytes": 245116,
+        "sha256": "7de190dc3a8909720cb7cbbab07fa77389951e6e06ccbe6283a364e9b9e724ab"
+      },
+      {
+        "path": "validation/results/src--graph_route_apple--apple_lowering.cc-compile.command.json",
+        "bytes": 14286,
+        "sha256": "a6c7c28b0cb08ec0f47606c55a84a873c0b44dcbd2504b0275a05bd7e945c2da"
+      },
+      {
+        "path": "validation/results/src--graph_route_apple--apple_lowering.cc-compile.result.json",
+        "bytes": 14332,
+        "sha256": "8ff8aad8fdfa66054a00e90011a7d223e81c745624182ca06a475cd06901cc0f"
+      },
+      {
+        "path": "validation/results/src--graph_route_apple--apple_lowering.cc-compile.stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "validation/results/src--graph_route_apple--apple_lowering.cc-compile.stdout.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "validation/results/src--graph_route_apple--apple_lowering.cc-identity.json",
+        "bytes": 275770,
+        "sha256": "c3de81e1a936fdd8315ef15d86b8bd7cc145b63f9e003f6eb3253c83afb8b081"
+      },
+      {
+        "path": "validation/results/src--graph_route_apple--native_region.cc-compile.command.json",
+        "bytes": 18181,
+        "sha256": "98ec378597624e5691191a2ab57ba873b1732fd496ac8484160cc9a3fdb2c969"
+      },
+      {
+        "path": "validation/results/src--graph_route_apple--native_region.cc-compile.result.json",
+        "bytes": 18227,
+        "sha256": "cd4071d6a9af643473814f7b76f9446f89af099f0f8d130f242306678c5da5fe"
+      },
+      {
+        "path": "validation/results/src--graph_route_apple--native_region.cc-compile.stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "validation/results/src--graph_route_apple--native_region.cc-compile.stdout.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "validation/results/src--graph_route_apple--native_region.cc-identity.json",
+        "bytes": 284926,
+        "sha256": "f26383baa12823b8aab218704096892230d7b7ea5e8306d198635e3fd2ee5006"
+      },
+      {
+        "path": "validation/results/tests--graph_route_apple--ct_packed_linear_test.cc-compile.command.json",
+        "bytes": 20522,
+        "sha256": "78db9d339c80998272396fb91526b7104ea5b297ec99d2a4b63ca1e4a04e0122"
+      },
+      {
+        "path": "validation/results/tests--graph_route_apple--ct_packed_linear_test.cc-compile.result.json",
+        "bytes": 20568,
+        "sha256": "c7401020309ce7eeca12bc93ae6307dbda76f8d56e22f01a4f756cc6dc1e1865"
+      },
+      {
+        "path": "validation/results/tests--graph_route_apple--ct_packed_linear_test.cc-compile.stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "validation/results/tests--graph_route_apple--ct_packed_linear_test.cc-compile.stdout.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "validation/results/tests--graph_route_apple--ct_packed_linear_test.cc-identity.json",
+        "bytes": 282883,
+        "sha256": "2228bbbf2323d912b33abc6ca3a790cc19ea0d09d655517ee65cc1f97f376c3f"
+      },
+      {
+        "path": "validation/results/tests.xml",
+        "bytes": 3766,
+        "sha256": "95498369c4f0095ee50921718ae55c3d0ba336c02040ae7c3e65b64c9d846d7d"
+      },
+      {
+        "path": "validation/results/validation.json",
+        "bytes": 2763,
+        "sha256": "c3c5c61b188dced25f89de295d76fd74519137ed33dd5a807fba1f99b373e420"
+      },
+      {
+        "path": "validation/run-ready/metallib.json",
+        "bytes": 580,
+        "sha256": "214bfbb24e48f113ae3813ac2daebfbd7379f237530d82c249ef09b4655a2a9b"
+      },
+      {
+        "path": "validation/run-ready/run.json",
+        "bytes": 445,
+        "sha256": "527d82a3c11dcc60600e577cb170ad9286d0c503406d821451a3a91e8c3ad0ba"
+      },
+      {
+        "path": "validation/run-ready/run.stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "validation/run-ready/run.stdout.log",
+        "bytes": 1806,
+        "sha256": "1889d055d74799e3b50da33b50feb8552a0f4d02102e6a594e3a71841abe2612"
+      },
+      {
+        "path": "validation/run-ready/tests.xml",
+        "bytes": 3109,
+        "sha256": "994b1ecd9e2f77544e80ceda722090e9632dbd798bd8c664edb220f53e13bcf1"
+      },
+      {
+        "path": "validation/run-ready/validation.json",
+        "bytes": 1575,
+        "sha256": "1671f972939565cc8e13ef921d1375ab2a6db567df97abaedc7d621b3f10e09e"
+      },
+      {
+        "path": "validation/run_ready.py",
+        "bytes": 1462,
+        "sha256": "374960e3fa0cb1fabea9a2f2e9257bcf0a202ef336e77f36b94b2ce25a3f6a56"
+      },
+      {
+        "path": "validation/source-manifest.json",
+        "bytes": 25842,
+        "sha256": "0e0f44c4bea42dc94c17a5281351bbc0488681b9358d2e78629a534a1b5519aa"
+      }
+    ]
+  }
+}

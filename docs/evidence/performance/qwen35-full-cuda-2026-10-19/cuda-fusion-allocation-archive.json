@@ -1,0 +1,18 @@
+{
+  "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\qwen35-full-cuda-2026-10-19\\cuda-fusion-allocation.zip",
+  "sha256": "10bfa5c2f1328e93b73fd9ac442c3f5eebef8e98b5bd08871b56c5d83fa88950",
+  "bytes": 16692219,
+  "payloads": 415,
+  "entries_including_manifest": 416,
+  "uncompressed_payload_bytes": 42029597,
+  "CRC_and_every_payload_SHA_verified": true,
+  "source_id": "52e46f2bb4908ab3",
+  "coherent_header_count": 89,
+  "failed_compiler_records_preserved": 2,
+  "source_correction_and_normalized_proof_limit_documented": true,
+  "tests": 10,
+  "model_equal_vectors": 64,
+  "physical_full_GLU_candidates": 6,
+  "SDK_models_objects_executables_maps_tmp_excluded": true,
+  "other_unapplied_agent_drafts_excluded": true
+}

@@ -4,6 +4,7 @@
 #include <hyle/compute/state_versions.h>
 #include <hyle/compute/detail/lease_access.h>
 #include <hyle/mem/quota_allocator.h>
+#include "allocation_fault_fixture.h"
 #include <gtest/gtest.h>
 #include <array>
 
@@ -59,6 +60,53 @@ TEST(PagedArena, ForeignSchemaPageRangeAndIncompleteOrExcessiveSetsReject){
 }
 TEST(PagedArena, RepeatedPhysicalReferencesKeepOneActualGuard){
   auto schema=c::BatchSchema::create(capacity()).value();auto arena=c::PagedArena::create(schema,c::BatchCacheRole::kKey,m::system_resource(),{.max_backing_bytes=4096}).value();auto zero=fill(arena,0,std::byte{7});auto frame=arena.read(layout(schema,std::array<std::int32_t,2>{0,0}),std::array{zero,zero}).value();EXPECT_EQ(frame.page_count(),1u);EXPECT_EQ(c::detail::PagedArenaAccess::pages(frame).size(),1u);
+}
+TEST(PagedArena, TrueEmptyAttentionFrameRetainsCapacityWithoutPagePermissions){
+  auto schema=c::BatchSchema::create(capacity()).value();
+  auto arena=c::PagedArena::create(schema,c::BatchCacheRole::kKey,m::system_resource(),
+      {.max_backing_bytes=4096}).value();
+  const std::array<std::int32_t,2> zero{0,0};
+  const std::array<std::int32_t,1> tail{0};
+  auto empty=schema.version({zero,zero,{},tail}).value();
+  auto frame=arena.read(empty,{});ASSERT_TRUE(frame)<<frame.error().message();
+  EXPECT_TRUE(frame->valid());EXPECT_EQ(frame->page_count(),0U);
+  EXPECT_TRUE(c::detail::PagedArenaAccess::pages(*frame).empty());
+  auto physical=c::detail::PagedArenaAccess::tensor(*frame);ASSERT_TRUE(physical);
+  EXPECT_EQ(physical->description(),c::batch_cache_description(capacity(),c::BatchCacheRole::kKey).value());
+  EXPECT_EQ(physical->storage().size(),arena.page_bytes()*capacity().max_pages);
+  // Holding an address-only empty frame must not pin any page writer.
+  for(unsigned page=0;page<capacity().max_pages;++page)EXPECT_TRUE(arena.acquire(page));
+  EXPECT_FALSE(arena.read(layout(schema,std::array<std::int32_t,1>{0}),{}));
+  auto other=c::BatchSchema::create(capacity()).value();
+  EXPECT_FALSE(arena.read(other.version({zero,zero,{},tail}).value(),{}));
+}
+TEST(PagedArena, SharedLayoutFootprintDoesNotCacheOrRetainPagePermissions){
+  hyle_f5_fault_fixture::Allocator layout_metadata,arena_metadata;
+  auto schema=c::BatchSchema::create(capacity(),{.allocator=layout_metadata.ref()}).value();
+  auto keys=c::PagedArena::create(schema,c::BatchCacheRole::kKey,m::system_resource(),{.max_backing_bytes=4096,.allocator=arena_metadata.ref()}).value();
+  auto values=c::PagedArena::create(schema,c::BatchCacheRole::kValue,m::system_resource(),{.max_backing_bytes=4096,.allocator=arena_metadata.ref()}).value();
+  std::array k{fill(keys,0,std::byte{7}),fill(keys,1,std::byte{11})};
+  std::array v{fill(values,0,std::byte{13}),fill(values,1,std::byte{17})};
+  auto old=layout(schema,std::array<std::int32_t,3>{1,0,1});
+  const auto layout_before=layout_metadata.attempts,arena_before=arena_metadata.attempts;
+  {auto kr=keys.read(old,k).value();auto vr=values.read(old,v).value();
+    EXPECT_EQ(layout_metadata.attempts-layout_before,1u);EXPECT_EQ(arena_metadata.attempts-arena_before,4u);
+    EXPECT_EQ(kr.page_count(),2u);EXPECT_EQ(vr.page_count(),2u);EXPECT_FALSE(keys.acquire(k[0]));
+    for(unsigned repeat=0;repeat<8;++repeat){auto another=keys.read(old,k).value();EXPECT_EQ(another.page_count(),2u);}
+    EXPECT_EQ(layout_metadata.attempts-layout_before,1u);
+    // A different immutable version builds its own exact set; the old one and
+    // every already-admitted page permission keep their original identity.
+    auto next=layout(schema,std::array<std::int32_t,1>{0});
+    const auto next_before=layout_metadata.attempts;
+    EXPECT_FALSE(keys.read(next,std::array{k[1]}));
+    EXPECT_EQ(layout_metadata.attempts-next_before,1u);
+    EXPECT_TRUE(keys.read(next,std::array{k[0]}));
+    EXPECT_EQ(layout_metadata.attempts-next_before,1u);
+    EXPECT_EQ(kr.layout(),old);EXPECT_EQ(first(k[0]),std::byte{7});}
+  // Only the caller's ready leases remain; retaining the version/footprint
+  // must not obstruct the original permission's ordinary writer transfer.
+  auto writer=keys.acquire(k[0]);ASSERT_TRUE(writer);k[0]=writer->publish(2).value();
+  EXPECT_TRUE(keys.read(old,k));
 }
 TEST(PagedArena, F4LedgerAndArenaDoNotPinEachOtherAfterLastReaderRetires){
   auto schema=c::BatchSchema::create(capacity()).value();auto arena=c::PagedArena::create(schema,c::BatchCacheRole::kKey,m::system_resource(),{.max_backing_bytes=4096}).value();auto page=fill(arena,0,std::byte{7});auto description=c::TensorDesc::dense(c::DataType::kFloat16,std::array<std::int64_t,3>{2,2,64}).value();auto state_schema=c::StateSchema::create(std::array{c::StateEntrySpec{.description=description}}).value();auto id=state_schema.entry(0).value();auto store=c::StateStore::create(state_schema).value();auto version=store.import(std::array{c::StateMember{id,page}}).value();auto uses=c::LeaseUsePool::create().value();auto use=uses.begin().value();ASSERT_TRUE(use.read(page).ok());page.reset();version={};store.collect().IgnoreError();EXPECT_FALSE(arena.acquire(0));use={};ASSERT_TRUE(store.collect().ok());EXPECT_TRUE(arena.acquire(0));
@@ -259,6 +307,150 @@ TEST(PagedArena, CompleteRejectsInvalidPrefixWithoutConsumingReservation){
   auto foreign=fill(arena,1,std::byte{59});EXPECT_TRUE(writer.complete(foreign,1).IsInvalidArgument());EXPECT_TRUE(writer.valid());
   ASSERT_TRUE(writer.complete(raw,1).ok());EXPECT_EQ(first(raw),std::byte{53});
   EXPECT_TRUE(arena.read(layout(schema,std::array<std::int32_t,1>{0},1),std::array{raw}));EXPECT_FALSE(arena.read(layout(schema,std::array<std::int32_t,1>{0},2),std::array{raw}));
+}
+TEST(PagedArena, ReframeComposesHistoriesAndRetainsOnlyItsExactPagePermissions){
+  auto cap=capacity();cap.max_requests=cap.max_query_rows=2;
+  auto schema=c::BatchSchema::create(cap).value();
+  auto arena=c::PagedArena::create(schema,c::BatchCacheRole::kKey,m::system_resource(),{.max_backing_bytes=4096}).value();
+  auto zero=fill(arena,0,std::byte{7}),one=fill(arena,1,std::byte{11});
+  auto two=fill(arena,2,std::byte{17}),three=fill(arena,3,std::byte{23});
+  const auto a_layout=layout(schema,std::array<std::int32_t,3>{3,0,1});
+  const auto b_layout=layout(schema,std::array<std::int32_t,2>{0,2});
+  auto a=arena.read(a_layout,std::array{three,zero,one}).value();
+  auto b=arena.read(b_layout,std::array{two,zero}).value();
+  std::array sources{a,b,a}; // Repeated frames and the shared page grant one permission.
+  const std::array<std::int32_t,3> q{0,1,2},kv{0,2,4};
+  const std::array<std::int32_t,4> pages{0,1,0,2};
+  const std::array<std::int32_t,2> tails{2,1};
+  const auto target=schema.version({q,kv,pages,tails}).value();
+  auto result=arena.reframe(target,sources);ASSERT_TRUE(result)<<result.error().message();
+  auto combined=std::move(*result);
+  EXPECT_EQ(combined.layout(),target);EXPECT_EQ(combined.page_count(),3u);
+  EXPECT_EQ(c::detail::PagedArenaAccess::pages(combined).size(),3u);
+  EXPECT_EQ(sources[0].layout(),a_layout);EXPECT_EQ(sources[1].layout(),b_layout);
+  EXPECT_EQ(sources[2].layout(),a_layout);EXPECT_EQ(sources[0].page_count(),3u);
+  EXPECT_EQ(first(zero),std::byte{7});EXPECT_EQ(first(one),std::byte{11});
+  EXPECT_EQ(first(two),std::byte{17});EXPECT_EQ(first(three),std::byte{23});
+  a={};b={};sources={};zero.reset();one.reset();two.reset();three.reset();
+  // The result owns selected original leases, not the input frames: their
+  // unrelated page becomes writable while every selected page remains pinned.
+  EXPECT_TRUE(arena.acquire(3));
+  for(unsigned page=0;page<3;++page)EXPECT_TRUE(arena.acquire(page).error().IsUnavailable());
+  auto uses=c::LeaseUsePool::create({.max_batches=1,.max_resources_per_batch=3}).value();
+  auto reading=uses.begin().value();
+  for(const auto&guard:c::detail::PagedArenaAccess::pages(combined))ASSERT_TRUE(reading.read(guard).ok());
+  combined={};
+  // Dropping the result is not actual retirement of an already admitted use.
+  for(unsigned page=0;page<3;++page)EXPECT_FALSE(arena.acquire(page));
+  reading={};
+  for(unsigned page=0;page<4;++page)EXPECT_TRUE(arena.acquire(page));
+}
+TEST(PagedArena, ReframeCannotExpandASourcesLogicalPrefixThroughItsWholePageGuard){
+  auto schema=c::BatchSchema::create(capacity()).value();
+  auto arena=c::PagedArena::create(schema,c::BatchCacheRole::kKey,m::system_resource(),{.max_backing_bytes=4096}).value();
+  auto page=fill(arena,0,std::byte{29});
+  const auto one=layout(schema,std::array<std::int32_t,1>{0},1);
+  const auto two=layout(schema,std::array<std::int32_t,1>{0},2);
+  auto old=arena.read(one,std::array{page}).value();
+  ASSERT_EQ(c::detail::PagedArenaAccess::pages(old)[0].size(),arena.page_bytes());
+  auto expanded=arena.reframe(two,std::array{old});
+  ASSERT_FALSE(expanded);EXPECT_TRUE(expanded.error().IsFailedPrecondition());
+  EXPECT_EQ(old.layout(),one);EXPECT_EQ(first(page),std::byte{29});
+  EXPECT_TRUE(arena.reframe(one,std::array{old}));
+  // A second frame explicitly grants the longer evaluated prefix. Merging
+  // the same page chooses this authority, not the order of source handles.
+  auto longer=arena.read(two,std::array{page}).value();
+  auto merged=arena.reframe(two,std::array{old,longer,old});ASSERT_TRUE(merged);
+  EXPECT_EQ(merged->page_count(),1u);EXPECT_EQ(old.layout(),one);
+  EXPECT_EQ(longer.layout(),two);EXPECT_EQ(first(page),std::byte{29});
+}
+TEST(PagedArena, ReframeKeepsOldAppendablePrefixBoundedAfterTheFrontierAdvances){
+  auto schema=c::BatchSchema::create(capacity()).value();
+  auto arena=c::PagedArena::create(schema,c::BatchCacheRole::kKey,m::system_resource(),{.max_backing_bytes=4096}).value();
+  auto writer=arena.acquire(0).value();const auto generation=writer.lease().generation();
+  const auto row_bytes=arena.page_bytes()/capacity().page_size;
+  ASSERT_TRUE(writer.lease().view()->subview(0,row_bytes)->fill(std::byte{31}).ok());
+  auto published=writer.publish_appendable(1).value();
+  const auto one=layout(schema,std::array<std::int32_t,1>{0},1);
+  const auto two=layout(schema,std::array<std::int32_t,1>{0},2);
+  auto old=arena.read(one,std::array{published.prefix}).value();
+  ASSERT_TRUE(published.appender.reserve_rows(1).ok());
+  ASSERT_TRUE(published.appender.view()->fill(std::byte{47}).ok());
+  auto current=published.appender.publish().value();
+  EXPECT_FALSE(published.appender.valid());EXPECT_EQ(current.generation(),generation);
+  EXPECT_EQ(published.prefix.size(),row_bytes);EXPECT_EQ(current.size(),2*row_bytes);
+  auto expanded=arena.reframe(two,std::array{old});
+  ASSERT_FALSE(expanded);EXPECT_TRUE(expanded.error().IsFailedPrecondition());
+  EXPECT_EQ(old.layout(),one);EXPECT_EQ(c::detail::PagedArenaAccess::pages(old)[0].size(),row_bytes);
+  EXPECT_EQ(first(published.prefix),std::byte{31});
+  EXPECT_TRUE(arena.reframe(one,std::array{old}));
+  auto longer=arena.read(two,std::array{current}).value();
+  auto combined=arena.reframe(two,std::array{longer,old});ASSERT_TRUE(combined);
+  EXPECT_EQ(combined->page_count(),1u);EXPECT_EQ(first(current),std::byte{31});
+  std::array<std::byte,1> appended{};
+  ASSERT_TRUE(current.view()->subview(row_bytes,1)->read(appended).ok());
+  EXPECT_EQ(appended[0],std::byte{47});
+}
+TEST(PagedArena, ReframeRejectsInvalidForeignAndMissingSourcesWithoutChangingSnapshots){
+  auto schema=c::BatchSchema::create(capacity()).value();
+  auto arena=c::PagedArena::create(schema,c::BatchCacheRole::kKey,m::system_resource(),{.max_backing_bytes=4096}).value();
+  auto page=fill(arena,0,std::byte{53});const auto target=layout(schema,std::array<std::int32_t,1>{0});
+  auto source=arena.read(target,std::array{page}).value();
+  auto same_schema_arena=c::PagedArena::create(schema,c::BatchCacheRole::kKey,m::system_resource(),{.max_backing_bytes=4096}).value();
+  auto foreign_page=fill(same_schema_arena,0,std::byte{59});
+  auto foreign=same_schema_arena.read(target,std::array{foreign_page}).value();
+  auto other_schema=c::BatchSchema::create(capacity()).value();
+  const auto foreign_target=layout(other_schema,std::array<std::int32_t,1>{0});
+  const auto invalid=[](const auto&result){EXPECT_FALSE(result);if(!result)EXPECT_TRUE(result.error().IsInvalidArgument());};
+  invalid(arena.reframe(c::BatchLayoutVersion{},std::array{source}));
+  invalid(arena.reframe(foreign_target,std::array{source}));
+  invalid(arena.reframe(target,std::array{c::PagedArenaRead{}}));
+  invalid(arena.reframe(target,std::array{source,foreign}));
+  auto missing=arena.reframe(layout(schema,std::array<std::int32_t,1>{1}),std::array{source});
+  ASSERT_FALSE(missing);EXPECT_TRUE(missing.error().IsFailedPrecondition());
+  auto absent=arena.reframe(target,{});ASSERT_FALSE(absent);EXPECT_TRUE(absent.error().IsFailedPrecondition());
+  EXPECT_EQ(source.layout(),target);EXPECT_EQ(source.page_count(),1u);EXPECT_EQ(first(page),std::byte{53});
+  EXPECT_EQ(foreign.layout(),target);EXPECT_EQ(first(foreign_page),std::byte{59});
+  EXPECT_TRUE(arena.reframe(target,std::array{source}));
+  c::PagedArena empty_arena;auto empty_result=empty_arena.reframe(target,std::array{source});
+  ASSERT_FALSE(empty_result);EXPECT_TRUE(empty_result.error().IsFailedPrecondition());
+  ASSERT_TRUE(arena.close().ok());
+  auto closed=arena.reframe(target,std::array{source});ASSERT_FALSE(closed);EXPECT_TRUE(closed.error().IsFailedPrecondition());
+  // Closing allocation/admission does not invalidate an immutable observation.
+  EXPECT_EQ(source.layout(),target);EXPECT_EQ(first(page),std::byte{53});
+}
+TEST(PagedArena, ReframeEmptyTargetPinsNoPageAndStillValidatesEverySuppliedSource){
+  auto schema=c::BatchSchema::create(capacity()).value();
+  auto arena=c::PagedArena::create(schema,c::BatchCacheRole::kKey,m::system_resource(),{.max_backing_bytes=4096}).value();
+  auto page=fill(arena,0,std::byte{61});
+  auto source=arena.read(layout(schema,std::array<std::int32_t,1>{0}),std::array{page}).value();
+  const std::array<std::int32_t,2> zero{0,0};const std::array<std::int32_t,1> tail{0};
+  const auto empty=schema.version({zero,zero,{},tail}).value();
+  auto from_nothing=arena.reframe(empty,{});ASSERT_TRUE(from_nothing);
+  auto from_source=arena.reframe(empty,std::array{source});ASSERT_TRUE(from_source);
+  EXPECT_EQ(from_source->layout(),empty);EXPECT_EQ(from_source->page_count(),0u);
+  EXPECT_TRUE(c::detail::PagedArenaAccess::pages(*from_source).empty());
+  EXPECT_EQ(c::detail::PagedArenaAccess::tensor(*from_source)->storage().size(),arena.page_bytes()*capacity().max_pages);
+  auto invalid=arena.reframe(empty,std::array{source,c::PagedArenaRead{}});
+  ASSERT_FALSE(invalid);EXPECT_TRUE(invalid.error().IsInvalidArgument());
+  auto foreign_arena=c::PagedArena::create(schema,c::BatchCacheRole::kKey,m::system_resource(),{.max_backing_bytes=4096}).value();
+  auto foreign=foreign_arena.reframe(empty,{}).value();
+  auto rejected=arena.reframe(empty,std::array{foreign});ASSERT_FALSE(rejected);EXPECT_TRUE(rejected.error().IsInvalidArgument());
+  source={};page.reset();
+  for(unsigned id=0;id<capacity().max_pages;++id)EXPECT_TRUE(arena.acquire(id));
+}
+TEST(PagedArena, ReframeMetadataFailureLeavesSourcesReadyForRetry){
+  auto schema=c::BatchSchema::create(capacity()).value();m::QuotaAllocator quota(m::system_allocator());
+  auto arena=c::PagedArena::create(schema,c::BatchCacheRole::kKey,m::system_resource(),
+      {.max_backing_bytes=4096,.allocator=quota.get()}).value();
+  auto page=fill(arena,0,std::byte{67});const auto target=layout(schema,std::array<std::int32_t,1>{0});
+  auto source=arena.read(target,std::array{page}).value();
+  {auto reserved=quota.try_reserve_bytes(quota.remaining()).value();
+    auto failed=arena.reframe(target,std::array{source});
+    ASSERT_FALSE(failed);EXPECT_TRUE(failed.error().IsResourceExhausted());
+    EXPECT_EQ(source.layout(),target);EXPECT_EQ(first(page),std::byte{67});}
+  auto retried=arena.reframe(target,std::array{source});ASSERT_TRUE(retried);
+  EXPECT_EQ(retried->page_count(),1u);EXPECT_EQ(source.layout(),target);EXPECT_EQ(first(page),std::byte{67});
 }
 } // namespace
 TEST(PagedAdmission, ExactBlocksDeduplicateSubviewsWithoutCollapsingSharedBacking){

@@ -1,0 +1,30 @@
+{
+  "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\qwen35-full-cuda-2026-10-19\\cast-stable-silu.zip",
+  "bytes": 6222798,
+  "sha256": "c46e90c38d23230544e80125016b254f8c9d1ba7ba14c035c19c95f44ee3b16c",
+  "entries": 547,
+  "payloads": 545,
+  "crc_verified": true,
+  "payload_sha256_verified": true,
+  "verification_passes": 1,
+  "build_plan": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cast-stable-silu\\checks\\20261019T180346-fixture-correction\\plan.json",
+    "bytes": 212685,
+    "sha256": "d2e197fcbaf0602e7981dcc8208fc06cebcfaab5975f29377e6fe072f78bbbe1"
+  },
+  "production_plan": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cast-stable-silu\\checks\\20261019T180121\\plan.json",
+    "bytes": 209600,
+    "sha256": "c3a3c9c8bc1667d1f7285274d63d67faaa0209aefe8f23cf14eb799a92a14751"
+  },
+  "source_id": "e2d446afee1c93d5",
+  "initial_host_TUs": 3,
+  "native_TUs": 2,
+  "fixture_host_TUs": 1,
+  "tests": 5,
+  "equal_vectors": 64,
+  "unprofiled_processes": 9,
+  "physical_expectations_met": true,
+  "duplicate_raw_vectors_omitted": true,
+  "cleanup_executed": false
+}

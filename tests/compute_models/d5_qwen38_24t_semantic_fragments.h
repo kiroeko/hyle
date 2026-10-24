@@ -12,6 +12,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <span>
+#include <stdexcept>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -188,32 +189,45 @@ struct GraphCase final {
   std::vector<g::ValueId> inputs, constants, outputs;
 };
 inline GraphCase make_graph(const Fragment &fragment) {
-  auto builder = g::GraphBuilder::create().value();
+  const auto checked = []<class T>(hyle::Result<T> value, std::string where) -> T {
+    if (!value)
+      throw std::runtime_error("semantic graph " + where + ": " +
+                               std::string(value.error().message()));
+    return std::move(*value);
+  };
+  auto builder = checked(g::GraphBuilder::create(), "create");
   std::vector<g::ValueId> values(fragment.descriptions.size());
   GraphCase result;
   for (auto id : fragment.inputs) {
-    values[id.ordinal()] = builder.input(fragment.description(id)).value();
+    values[id.ordinal()] = checked(builder.input(fragment.description(id)),
+                                  "input " + std::to_string(id.ordinal()));
     result.inputs.push_back(values[id.ordinal()]);
   }
   for (auto id : fragment.constants) {
-    values[id.ordinal()] = builder.constant(fragment.description(id)).value();
+    values[id.ordinal()] = checked(builder.constant(fragment.description(id)),
+                                  "constant " + std::to_string(id.ordinal()));
     result.constants.push_back(values[id.ordinal()]);
   }
+  std::size_t ordinal = 0;
   for (const auto &step : fragment.nodes) {
     std::vector<g::ValueId> inputs;
     for (auto id : step.inputs)
       inputs.push_back(values[id.ordinal()]);
-    auto node = builder.add_node(step.operation, inputs).value();
+    const auto label = "node " + std::to_string(ordinal++);
+    auto node = checked(builder.add_node(step.operation, inputs), label);
     for (std::size_t i = 0; i < step.outputs.size(); ++i)
-      values[step.outputs[i].ordinal()] = builder.result(node, i).value();
+      values[step.outputs[i].ordinal()] = checked(builder.result(node, i),
+                                                label + " result " + std::to_string(i));
   }
   for (auto id : fragment.outputs) {
     auto output = values[id.ordinal()];
-    if (!builder.publish(output).ok())
-      throw std::runtime_error("semantic fragment publication failed");
+    const auto status = builder.publish(output);
+    if (!status.ok())
+      throw std::runtime_error("semantic graph publish " + std::to_string(id.ordinal()) +
+                               ": " + std::string(status.message()));
     result.outputs.push_back(output);
   }
-  result.graph = std::move(builder).finish().value();
+  result.graph = checked(std::move(builder).finish(), "finish");
   return result;
 }
 

@@ -1,0 +1,109 @@
+{
+  "status": "source-only design; no product/API edit, build, GPU run or support claim",
+  "decision": "Keep the public semantic graph. Put its composite implementation in the existing native CUDA Provider, exposed to Graph through its existing region-extension protocol. Do not implement this inside the ggml executor or extend LightningIndexer.",
+  "basis": {
+    "review": "review.json",
+    "review_sha256": "80ebe7b60e5c627295ed8a1b269c0648db740a43dc14f021247a6b10533bd28f",
+    "official_source": "docs/evidence/research/deepseek-v4-ga-2026-10-19.zip",
+    "official_model_entries": [
+      "flash-0731/inference-model.py:386-439",
+      "pro-0813/current/inference/model.py:386-439"
+    ],
+    "scope": "Selected GA dense BF16 index scores. Projection, RoPE/Hadamard/FP4-QAT, persistent cache writes, all-reduce, TopK, invalid-ID replacement and offset remain caller graphs/state operations. Hyle's 68-byte row-cache bank is not the official BF16 cache format."
+  },
+  "public_graph": {
+    "inputs": {
+      "Q": "BF16 [B,T,H,D]",
+      "K": "BF16 [B,L,D]; dense D and key rows, with truthful optional batch pitch larger than L*D*2",
+      "W": "BF16 [B,T,H], already prescaled",
+      "mask": "Optional F16 [MB,T,L], MB=1 or B; use the graph's actual Cast(BF16) before Add, never infer mask values"
+    },
+    "sequence": [
+      "View reshape K -> [B,1,L,D], then permute -> [B,1,D,L]",
+      "MatMul(Q,Kt, accumulation_type=F32) -> BF16 [B,T,H,L]",
+      "Unary Relu -> BF16 [B,T,H,L], preserving NaN",
+      "View reshape W -> [B,T,H,1]; Binary Multiply -> BF16 [B,T,H,L]",
+      "Reduce Sum(axis=2, keep_dimensions=false, accumulation_type=F32) -> BF16 [B,T,L]",
+      "Optional mask Cast(BF16) then Binary Add -> BF16 [B,T,L]",
+      "Optional final Cast(F32) is an exact widen of the already-rounded BF16 score"
+    ],
+    "boundaries": "Dot, weighted product, head sum, mask Cast and final Add each retain their own BF16 RNE. The composite may change private physical scratch order, not these visible arithmetic boundaries. MatMul/Reduce require F32 accumulation, not a particular vendor reduction tree.",
+    "shape_rules": "H,D positive; B,T,L may be zero. Batch-specific K must not be flattened into one shared key matrix. A prefix cache keeps its original batch stride. No fixed profile TopK, model ID, H64 or D128 belongs in common infer.",
+    "infer_evidence": [
+      "src/compute_ops/operation.cc:250-278 broadcast_shape handles 0 and 1 correctly",
+      "src/compute_ops/operation.cc:292-364 infer_reshape preserves contiguous chunks and singleton axes across a batch gap",
+      "src/compute_ops/operation.cc:580-617 infer_matmul accepts the same-dtype batched BF16 expression without a dense-layout or nonempty restriction",
+      "src/compute_ops/operation.cc:1276-1306 Cast, Unary and Binary retain their declared type boundaries",
+      "src/compute_ops/operation.cc:1345-1397 Reduce supports the required axis, BF16 output and F32 accumulation"
+    ],
+    "public_change_required": "None established for this expression. No new public/model_ops descriptor, schema exception or common Graph matcher is needed."
+  },
+  "actual_leaf_gaps": [
+    {
+      "source": "src/compute_provider_ggml_cuda/tensor_program.cc:135-156,570-584,614-629,715-751",
+      "fact": "The current CUDA ggml MatMul RHS gate accepts dense or matrix-transposed-dense layouts, not a prefix batch gap; representability rejects empty tensors. Ordinary Relu is not admitted/lowered there. Native ggml fmaxf Relu would suppress NaN, so opening that case without preserving its contract is insufficient.",
+      "consequence": "A new region must qualify the complete typed pattern independently of ggml supported_node/eligible flags. Unsupported ordinary fallback for a padded/empty leaf is a backend gap, not missing public mathematics."
+    },
+    {
+      "source": "src/compute_provider_cuda/tensor_kernel.cu:20-25,65-66,129-136; src/compute_provider_cuda/reduction_kernel.cu:91-114",
+      "fact": "Existing native CUDA tensor and reduction programs already provide BF16 store RNE, NaN-preserving Relu, BF16 weighted product and F32 head sum followed by BF16 RNE.",
+      "consequence": "Reuse these kernels and the existing Lt BF16-output tile plan; do not route GA through the old all-F32 LightningIndexer."
+    }
+  ],
+  "placement": {
+    "existing_seams": [
+      "include/hyle/graph/region_provider.h:153-194,274-306,474-494: bounded cold proposal, exact resources and compile callbacks; Graph validates candidate contraction and original effects",
+      "src/graph/executable.cc:5531-5532,5591-5751: discovery queries each retained Provider instance's Region extension; no separate registry is needed",
+      "src/compute/provider_internal.h:116-151,216-226: same-build ProviderVTable and ProviderAccess::with_vtable preserve the configured provider payload and lifetime hooks",
+      "include/hyle/compute/detail/provider_extension.h:12-24,64-95: original Context retention/admission and exact Queue ownership are already supplied by the extension bridge",
+      "src/compute_provider_cuda/cuda_provider.cc:39-53,423-449: native context is the original CUcontext, and query_extension currently serves RowCacheColdPlanning only",
+      "src/compute_route_cuda/cuda_context.cc:21-54 and default_context.h:10: existing private default-roster assembly constructs the native Provider; Graph currently injects only its ggml Provider",
+      "src/graph_route_cuda/cuda_context.cc:13-16: natural Graph facade attachment point"
+    ],
+    "small_adapter": "Add one private region adapter TU/header to graph_route_cuda. Its Provider decoration copies the original native vtable and overrides only query_extension: return the static region table for kRegionProviderExtensionId, otherwise delegate to the original callback. Keep create_context/propose/prepare/drain and configuration retain/release unchanged. Do not wrap the raw native CUcontext in an incompatible state object. Retain the exact original Provider identity/inline configuration and its owning configuration hooks; the configured vtable and both extension tables have static lifetime. This is a capability decoration of the same Provider, not a replacement identity. Delegate every unhandled extension ID to the original query callback, including RowCacheColdPlanning.",
+    "assembly": "Allow the existing private compute::cuda::internal::create_context assembly to receive a native Provider override (alongside the current ggml argument). Direct keeps cuda_native::provider(); Graph supplies the decorated native instance. Preserve provider ordering/default-policy decoration and the RowCacheColdPlanning extension. Add the real graph_route_cuda -> compute_provider_cuda private module edge; do not add a new module or public factory.",
+    "private_operation": "A small same-build DenseBfloatScores descriptor in compute_provider_cuda describes this composite's actual output type/mask form and validates its real TensorDesc ports. It is not public model_ops, has no model fields, and is prepared by the existing native CUDA Provider's propose/prepare dispatch. Shape facts come from ports, not duplicated B/T/H/D constants.",
+    "prepared_artifact": "Region compile converts exact original ports/resources into this private operation and delegates to the original native Provider proposal/prepare. The region wrapper retains the returned ProviderPrepared and its original ProviderPreparedVTable. create_invocation/destroy/shared_submit forward to that table and the original QueueSequence. No nested public Context, extra Queue, Completion polling loop or alternate executor.",
+    "meaning_of_fusion": "One composite prepared region need not be one physical kernel: the initial implementation may use Lt + typed tensor/reduction + final publish per key tile. Report actual dispatches/workspace; candidate selection is not proof of physical fusion."
+  },
+  "implementation_checklist": [
+    {
+      "files": "src/compute_provider_cuda/row_cache_indexer_provider.cc and its private header",
+      "functions": "Factor the existing Part/Cold tile-plan configuration and typed post-dot stages into a small private helper; parameterize H/D from actual shapes. Keep packed/paged mapping, decode, checked ranges, 68-byte format and their Completion errors in their current wrappers. Add dense typed-score select/propose/prepare/create_invocation/shared_submit in the same provider family.",
+      "rules": "Dense K is read directly with its actual batch pitch; no full-history decode/copy. Tile workspace is bounded by the existing 256-key policy and checked dimensions. LT algorithms must support BF16 operands and BF16 D with F32 accumulation. Actual algorithm/stride/alignment limits may decline a shape; do not replace those limits with a model whitelist. A short B loop or checked strided batch may reuse scratch. General H/D are inferred, while existing packed schema continues its fixed H64/D128 contract."
+    },
+    {
+      "files": "src/compute_provider_cuda/row_cache_indexer_kernel.h/.cu",
+      "functions": "Add only a dense score-publish variant: read BF16 head-sum, optionally cast F16 mask to BF16 and widen that rounded value, add in F32 then BF16-RNE, and optionally exact-widen the rounded result to F32. Keep old interval/paged publish untouched.",
+      "rules": "Use actual [B,T,L] output and MB mask broadcast. No inferred 0/-Inf optimization, implicit scaling, interval conversion, TopK or finite guard. Numeric NaN/Inf remains successful numeric output; bounds failures remain explicit Completion errors."
+    },
+    {
+      "files": "src/compute_provider_cuda/private typed-score header and cuda_provider.cc",
+      "functions": "Own the private descriptor/infer and route ID, and dispatch its propose/prepare through the current native Provider. Preserve every existing public operation route and projected RowCache access table.",
+      "rules": "Every byte count, B*L*D and tile product, stride, native int field, offset and launch grid must be overflow checked. Return a genuine zero-work prepared artifact before payload pointer/Lt allocation for an empty result. Do not require nonempty Q/K/W payload for B/T/L=0."
+    },
+    {
+      "files": "src/graph_route_cuda/private typed-score region adapter; src/graph_route_cuda/{cuda_context.cc,CMakeLists.txt}; src/compute_route_cuda/{default_context.h,cuda_context.cc}; cmake/HyleComponents.cmake",
+      "functions": "Implement whole-pattern match/propose_resources/compile plus the thin Provider extension decoration and native Provider injection at existing context assembly.",
+      "rules": "Follow actual ValueIds, legal View descriptors and accumulation settings. Require allowed_nodes and exact closed single-result intermediate use/output/alias/control contracts. Optional mask/add/final-widen suffixes may be absorbed only when private; otherwise keep their real graph boundary. Never require unsupported leaves to be pre-admitted by ggml. No CONT stripping, same-address value substitution or model/workload lookup. Use bounded allocator-backed cold indices and truthful compilation/persistent/invocation workspace counts."
+    }
+  ],
+  "lifetime_and_layout": [
+    "Use original Graph resources/ReadLease/StorageOwner admission. Cache no ready permission or caller TensorView address beyond the ordinary binding contract; Queue replacement and Context close retain their current checks.",
+    "All mutable Lt handles/scratch belong to the existing invocation. Shared immutable descriptions/plans may be prepared state. Partial vendor acceptance returns accepted-prefix semantics through QueueSequence; a numeric nonfinite result is not a provider failure.",
+    "Start with dense Q/W, actual K row-dense plus batch pitch, and exact supported mask layouts. General strided operands are not claimed. Restrict output/input overlap unless explicitly implemented; retain original allocation and published-alias protection.",
+    "Capture compatibility is a separately qualified property of the dense prepared path. Do not inherit the paged path's noncapture status or claim capture from a selected route. Workspace is caller-owned, and hot submit must not plan/allocate or create another execution sequence."
+  ],
+  "small_regression_plan": [
+    "One arithmetic fixture embeds the independent dyadic dot-RNE, product-RNE and head-sum-RNE witnesses in a nonzero small H/D problem; use the previous review's exact expected values. Add the F16 mask-Cast witness score=-1, mask=1+2^-10: CastBF16 then Add must yield 0, not 2^-10. NaN classification is checked independently of Completion success.",
+    "One Graph fixture uses two invocations/slots, two rounds with fresh addresses and retained old outputs; B=2 K has a larger physical batch pitch and distinct batches. Include optional mask and final F32 widen, ordinary dense B=1 published-reader/control escape rejection, and B/T/L=0 no-read behavior in the same small table. Use a native+ordinary-default provider context for fallback tests, since ggml alone does not currently provide NaN-correct Relu.",
+    "Compare against the explicitly staged public BF16 operators and the independent dyadic oracle. Do not demand arbitrary Lt-vs-Torch reduction bit identity. Retain original packed RowCache empty/checked-range tests to prove factoring did not change that contract.",
+    "Only after implementation: actual source-owner incremental host/native compile, directed CUDA cases and physical dispatch/capture evidence. This design does not assert all four backends, complete GA model execution, quality or speed."
+  ],
+  "unresolved_and_not_claimed": [
+    "The exact first dense implementation's LT H/D/stride/alignment admissible domain requires real proposal/compile qualification; broad public infer does not assert every backend accepts it.",
+    "CPU/Apple/Vulkan could recognize the same public expression later; current view/cast/empty eligibility differs. This CUDA plan does not mark those custom integrations implemented.",
+    "GA all-reduce and cache-state ownership remain outside this local scorer. Selected official sources prescribe visible dtype stages but not one universal physical F32 dot/head-reduction tree.",
+    "No descriptor extension to the existing F32 LightningIndexer and no reinterpretation of the packed RowCache bank is proposed."
+  ]
+}

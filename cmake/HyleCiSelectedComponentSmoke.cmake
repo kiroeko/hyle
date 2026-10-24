@@ -97,7 +97,7 @@ elseif(HYLE_SMOKE_COMPONENT STREQUAL "core")
     "endif()\n")
   string(APPEND _source_extra_tests
     "add_test(NAME hyle_selected_core_no_exceptions COMMAND hyle_selected_core_no_exceptions)\n")
-elseif(HYLE_SMOKE_COMPONENT MATCHES "^(compute|graph)$")
+elseif(HYLE_SMOKE_COMPONENT MATCHES "^(compute|graph|compute_stream)$")
   # Drive the same complete product route set through all three deliveries.
   foreach(_legacy IN ITEMS CPU CUDA ONEDNN)
     if(DEFINED HYLE_SMOKE_COMPUTE_${_legacy})
@@ -115,7 +115,7 @@ elseif(HYLE_SMOKE_COMPONENT MATCHES "^(compute|graph)$")
       set(_compute_${_route}_selected TRUE)
     endif()
   endforeach()
-  if(_compute_cpu_selected)
+  if(_compute_cpu_selected AND NOT HYLE_SMOKE_COMPONENT STREQUAL "compute_stream")
     cmake_host_system_information(
       RESULT _hyle_smoke_host_processor QUERY OS_PLATFORM)
     string(TOLOWER "${_hyle_smoke_host_processor}"
@@ -189,7 +189,7 @@ foreach(_linkage IN ITEMS shared static)
     -DHYLE_INSTALL=ON
     -DHYLE_STATIC=${_static}
     ${_selected_feature_args})
-  if(HYLE_SMOKE_COMPONENT MATCHES "^(compute|graph)$")
+  if(HYLE_SMOKE_COMPONENT MATCHES "^(compute|graph|compute_stream)$")
     file(READ "${_sdk_build}/HyleConfig.cmake" _configured_hyle_config)
     _hyle_selected_require_compute_routes(
       "${_configured_hyle_config}" "${_smoke_routes}")
@@ -227,7 +227,7 @@ foreach(_linkage IN ITEMS shared static)
           "installed ${_linkage} SIMD SDK lacks expert asset ${_expert_asset}")
       endif()
     endforeach()
-  elseif(HYLE_SMOKE_COMPONENT MATCHES "^(compute|graph)$")
+  elseif(HYLE_SMOKE_COMPONENT MATCHES "^(compute|graph|compute_stream)$")
     file(READ "${_staging}/lib/cmake/Hyle/HyleConfig.cmake"
       _installed_hyle_config)
     file(READ "${_staging}/lib/cmake/Hyle/HylePackageIndex.cmake"
@@ -257,11 +257,28 @@ foreach(_linkage IN ITEMS shared static)
         message(FATAL_ERROR "SDK leaked unselected compute_${_feature} feature")
       endif()
     endforeach()
-    foreach(_entry IN ITEMS
+    set(_expert_entries
         "cpu|compute_backend_cpu|hyle/compute/backends/cpu.h"
+        "cuda|compute_backend_cuda|hyle/compute/backends/cuda.h")
+    if(NOT HYLE_SMOKE_COMPONENT STREQUAL "compute_stream")
+      list(APPEND _expert_entries
         "cpu|compute_provider_native|hyle/compute/providers/native.h"
-        "cuda|compute_backend_cuda|hyle/compute/backends/cuda.h"
         "onednn|compute_provider_onednn|hyle/compute/providers/onednn.h")
+    else()
+      foreach(_route IN ITEMS cpu cuda apple vulkan)
+        set(_factory_header "${_staging}/include/hyle/compute/${_route}_file_stream.h")
+        if((_compute_${_route}_selected AND NOT EXISTS "${_factory_header}") OR
+           (NOT _compute_${_route}_selected AND EXISTS "${_factory_header}"))
+          message(FATAL_ERROR "stream service factory header differs from selected ${_route} route")
+        endif()
+      endforeach()
+      foreach(_math_header IN ITEMS cpu.h cuda.h providers/native.h providers/onednn.h)
+        if(EXISTS "${_staging}/include/hyle/compute/${_math_header}")
+          message(FATAL_ERROR "file service leaked default math header ${_math_header}")
+        endif()
+      endforeach()
+    endif()
+    foreach(_entry IN LISTS _expert_entries)
       string(REPLACE "|" ";" _fields "${_entry}")
       list(GET _fields 0 _feature)
       list(GET _fields 1 _factor)

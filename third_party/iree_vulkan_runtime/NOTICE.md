@@ -46,9 +46,15 @@ to that operation; it is not a hidden persistent F32 model weight bank.
   `awq/utils/packing_utils.py` unpack/reverse order and dequantize;
   Copyright (c) 2023 MIT HAN Lab, MIT. See `programs/licenses/awq.txt`.
 - compressed-tensors `ac8e2ba82f4e0d5eaa40069f8fc642738f124cd4`,
-  original `unpack_from_int32` and symmetric grouped dequantization;
+  original `unpack_from_int32` and symmetric/asymmetric grouped dequantization;
   Copyright contributors to the vLLM project, Apache-2.0.
   See `programs/licenses/compressed-tensors.txt`.
+
+The asymmetric sequence unpacks weights along K and zero points along the
+padded output-row axis, then trims zero-point padding. Both signed nibble
+values use the original offset of eight. Subtraction and multiplication round
+in the scale dtype before the requested final output conversion. Only natural
+column groups are accepted; an activation-order `g_idx` is not inferred.
 
 Original source identities and parent tensor borrows are registered in
 `third_party/{bitsandbytes,awq,compressed_tensors}_cpu/SOURCE.json` and their
@@ -56,6 +62,12 @@ notices. The new recipe/bytecode/exports are recorded in programs/manifest.json;
 offline compilation is recorded separately from runtime qualification.
 
 ## Original MLX packed tensor programs
+
+The existing affine linear/grouped/embedding exports carry integer bits as
+one runtime scalar for4/5/6/8bit continuous low-first U32 packing. Cross-word
+extraction is bounds-safe and uses unsigned shifts; no per-width program
+family, runtime compiler or full decoded bank is added. The original F32
+decode/dot and typed embedding barriers remain. MX4/8 exports are unchanged.
 
 `programs/mlx.mlir` expresses the original MLX group sequences in standard
 tensor/arith/linalg/scf operations. Origin: ml-explore/mlx
@@ -94,6 +106,19 @@ algorithm, HYLE kernel or compiler pass is introduced. Dynamic finite control
 returns a native scalar flag; failed output remains private. Original dot then
 activation scale, weight scale and ordered F32 accumulation are retained.
 
+Dense official FP8 linear and encoded MatMul share one decoded [N,128]
+weight block across token rows. The generated ordinary MatMul preserves the
+original K-block order and scale sequence. Grouped programs gather and decode
+each selected packed word inside the native F32 reduction, avoiding a
+materialized [token-slot,output-row,K-group] float weight tensor. This does
+not share decoded experts between tokens. Activation blocks, dot outputs,
+ordered scale/accumulation, native resource pools and output storage remain.
+No full decoded weight bank is retained.
+Grouped FP8/FP4 input codes use the same packed bytes through an I32 word
+view. Unsigned shifts select the original byte or low/high nibble, avoiding
+signed byte-address products for large encoded expert banks. Scales and
+selected-block F32 accumulation retain their original order and meaning.
+
 ## Original Unsloth IQ1 GPU programs
 
 `programs/iq1.mlir` expresses the three registered original GPU grids and
@@ -104,3 +129,18 @@ activation scale, weight scale and ordered F32 accumulation are retained.
 strided contribution sequence and final reduction are retained. IREE owns
 standard tensor/arith/scf/linalg compilation and execution. There is no new
 HYLE quantizer, shader or whole-bank float expansion. See `programs/licenses/iq1.txt`.
+
+MLX affine AsStored programs retain original U32 [N,K] rows and scale/bias
+[N,K/group]. They evaluate the same F32 pointwise affine equation while reducing
+N into output K. Only a selected physical K output group and at most64 source N
+rows are decoded at once; N may have a partial tile. Source floating types,
+final promotion/rounding and checked IDs retain the existing typed interface.
+The original transpose programs and MX group-scale equations are unchanged.
+
+The block128 MultiplyReciprocal policy adds separate dense/grouped official
+entries. Group scales are F32 amax times F32(1/448); a U32 significand
+division computes an exact normal reciprocal once per scale group before
+activation multiplication. A raw-subnormal activation boost avoids input
+FTZ at this normalization boundary. Existing Divide/PowerOfTwo SPIR-V
+dispatches are retained byte-for-byte. The same VMFB/Program/Invocation
+path retains original code-dot, scaling and checked ID semantics.

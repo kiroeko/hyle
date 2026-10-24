@@ -1,11 +1,11 @@
 #pragma once
 
 #include "hyle/compute/provider.h"
+#include "hyle/compute/detail/builtin_provider_ids.h"
 
 namespace hyle::compute::native {
 
-inline constexpr ProviderId kProviderId{0x48594c4500000001ULL,
-                                        0x4e41544956450001ULL};
+inline constexpr ProviderId kProviderId = ::hyle::compute::detail::kNativeProviderId;
 
 struct Options final {
   ParallelExecutorRef executor{};

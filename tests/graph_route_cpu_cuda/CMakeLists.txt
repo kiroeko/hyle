@@ -10,12 +10,17 @@ if(_HYLE_COMPUTE_HAVE_CUDA AND _HYLE_COMPUTE_REQUEST_CPU)
     SOURCES ../graph/cpu_cuda_contracts.cc DEPS hyle_graph_route_cpu hyle_graph_route_cuda)
   hyle_add_test(graph_route_cpu_cuda NAME public_consumer
     SOURCES ../../samples/package/graph/cpu_cuda/main.cc DEPS hyle_graph_route_cpu hyle_graph_route_cuda)
+  hyle_add_test(graph_route_cpu_cuda NAME finite
+    SOURCES ../graph/route_symmetry_cuda.cc
+    DEPS hyle_graph_route_cpu hyle_graph_route_cuda hyle_graph_progress)
   hyle_stage_runtime(hyle_graph_route_cpu_cuda_contracts_test)
   hyle_stage_runtime(hyle_graph_route_cpu_cuda_public_consumer_test)
+  hyle_stage_runtime(hyle_graph_route_cpu_cuda_finite_test)
 endif()
 
 if(_HYLE_COMPUTE_HAVE_CUDA AND _HYLE_COMPUTE_REQUEST_CPU)
   hyle_add_test(graph_route_cpu_cuda NAME sampling_consumer
-    SOURCES sampling_consumer.cc DEPS hyle_graph_route_cpu hyle_graph_route_cuda)
+    SOURCES sampling_consumer.cc
+    DEPS hyle_graph_route_cpu hyle_graph_route_cuda hyle_graph_progress)
   hyle_stage_runtime(hyle_graph_route_cpu_cuda_sampling_consumer_test)
 endif()

@@ -1,0 +1,2013 @@
+{
+  "observed_on": "2026-10-21",
+  "status": "raw_F32_scale_import_four_backend_consumer_and_Apple_generic_MoE_passed",
+  "implementation": "Original import_float8_block128_weight accepts raw2D F32 scales in addition to unsigned E8M0 U8. Original E4 codes and F32 scale bits are copied unchanged with uint32 memcpy, not requantized or rounded to BF16. Same existing canonical F32block128 carrier, original host geometry/alias/map/flush/unmap contract. No new descriptor, executor, model policy or decoded NK bank.",
+  "regression": {
+    "total": 14,
+    "new": 6,
+    "neighbors": 8,
+    "failed": 0,
+    "skipped": 0,
+    "windows": [
+      {
+        "backend": "cpu",
+        "receipt": {
+          "path": ".scratch/architecture-refactor-2026-10-18/precise-role-consumers-2026-10-21/cpu/validation/final1/receipt.json",
+          "bytes": 3059,
+          "sha256": "eabc125c6a415f84b9b854fd72e9b9370eb07beac4c76a0d516a37eff6944822"
+        }
+      },
+      {
+        "backend": "cuda",
+        "receipt": {
+          "path": ".scratch/architecture-refactor-2026-10-18/precise-role-consumers-2026-10-21/cuda/validation/final1/receipt.json",
+          "bytes": 2020,
+          "sha256": "05e81012b43cfa65bfa82645011e999f0b3e407034395039b8029b8a73085444"
+        }
+      },
+      {
+        "backend": "vulkan",
+        "receipt": {
+          "path": ".scratch/architecture-refactor-2026-10-18/precise-role-consumers-2026-10-21/vulkan/validation/final1/receipt.json",
+          "bytes": 2233,
+          "sha256": "7f03885d47cd67b61120501c6787ef9b8510fd54e475e48fb7cdb5c17da26943"
+        }
+      }
+    ],
+    "apple": {
+      "path": ".scratch/architecture-refactor-2026-10-18/precise-role-consumers-2026-10-21/apple/final-validation.json",
+      "bytes": 7548,
+      "sha256": "98083780af80291b5abd5ba49b203d1437a6e3b5314a8f7823fc95511f6aa11e"
+    },
+    "cases": [
+      {
+        "backend": "cpu",
+        "name": "CpuE8M0WeightImport.ColdCanonicalBankUsesOriginalLinearAndResultLifetime",
+        "new": false,
+        "properties": {
+          "cold_weight_imports": "1",
+          "scale_source": "E8M0_U8",
+          "successful_submissions": "4"
+        }
+      },
+      {
+        "backend": "cpu",
+        "name": "CpuE8M0WeightImport.StoredFloat32ScalesKeepDynamicActivationQuantization",
+        "new": true,
+        "properties": {
+          "cold_weight_imports": "1",
+          "scale_source": "stored_F32",
+          "successful_submissions": "4"
+        }
+      },
+      {
+        "backend": "cpu",
+        "name": "Float8WeightImport.AllExponentBytesPreserveOriginalWeightAndRawNaN",
+        "new": false,
+        "properties": {}
+      },
+      {
+        "backend": "cpu",
+        "name": "Float8WeightImport.PartialNAndSourceStridesKeepPaddingAndAxisOrder",
+        "new": false,
+        "properties": {}
+      },
+      {
+        "backend": "cpu",
+        "name": "Float8WeightImport.StoredFloat32ScalesPreserveRawBitsAndExplicitSingletonView",
+        "new": true,
+        "properties": {}
+      },
+      {
+        "backend": "cpu",
+        "name": "Float8WeightImport.InvalidGeometryAndAliasesRejectBeforeWriting",
+        "new": false,
+        "properties": {}
+      },
+      {
+        "backend": "cpu",
+        "name": "Float8WeightImport.CanonicalAddressProofAndMappingFailuresRemainObservable",
+        "new": false,
+        "properties": {}
+      },
+      {
+        "backend": "cuda",
+        "name": "CudaE8M0WeightImport.ColdCanonicalBankUsesOriginalLinearAndResultLifetime",
+        "new": false,
+        "properties": {
+          "cold_weight_imports": "1",
+          "scale_source": "E8M0_U8",
+          "successful_submissions": "4"
+        }
+      },
+      {
+        "backend": "cuda",
+        "name": "CudaE8M0WeightImport.StoredFloat32ScalesKeepDynamicActivationQuantization",
+        "new": true,
+        "properties": {
+          "cold_weight_imports": "1",
+          "scale_source": "stored_F32",
+          "successful_submissions": "4"
+        }
+      },
+      {
+        "backend": "vulkan",
+        "name": "VulkanE8M0WeightImport.ColdCanonicalBankUsesOriginalLinearAndResultLifetime",
+        "new": false,
+        "properties": {
+          "device": "NVIDIA GeForce RTX 4070",
+          "cold_weight_imports": "1",
+          "scale_source": "E8M0_U8",
+          "successful_submissions": "4"
+        }
+      },
+      {
+        "backend": "vulkan",
+        "name": "VulkanE8M0WeightImport.StoredFloat32ScalesKeepDynamicActivationQuantization",
+        "new": true,
+        "properties": {
+          "device": "NVIDIA GeForce RTX 4070",
+          "cold_weight_imports": "1",
+          "scale_source": "stored_F32",
+          "successful_submissions": "4"
+        }
+      },
+      {
+        "backend": "apple",
+        "name": "AppleMlxMoeGraph.MixedBitMoeKeepsTypedMetadataAndIndependentSlots",
+        "new": true,
+        "properties": {
+          "device": "Apple M4",
+          "moe_output_ownership_E3": "2",
+          "moe_output_ownership_E17": "2"
+        }
+      },
+      {
+        "backend": "apple",
+        "name": "AppleE8M0WeightImport.ColdCanonicalBankUsesOriginalLinearAndResultLifetime",
+        "new": false,
+        "properties": {
+          "device": "Apple M4",
+          "cold_weight_imports": "1",
+          "scale_source": "E8M0_U8",
+          "successful_submissions": "4"
+        }
+      },
+      {
+        "backend": "apple",
+        "name": "AppleE8M0WeightImport.StoredFloat32ScalesKeepDynamicActivationQuantization",
+        "new": true,
+        "properties": {
+          "device": "Apple M4",
+          "cold_weight_imports": "1",
+          "scale_source": "stored_F32",
+          "successful_submissions": "4"
+        }
+      }
+    ],
+    "new_Graph_successful_submissions": 24,
+    "neighbor_Graph_successful_submissions": 16,
+    "count": "1 new host import test,4 new original dynamic-FP8 Graph consumers,1 new Apple generic MoE;4 old U8 importer Graph neighbors plus4 old host import neighbors.",
+    "import_host": "N129/K384 partial N macroblock, noncontiguous F32 scale source with canaries, raw non-BF16 scale/signedzero/tiny/sNaN/negative/Inf bits. Four singleton axes rejected without mutation; explicit metadata-only flatten succeeds. Existing U8 all256scale codes, aliases, mapping/flush/close failures remain passing.",
+    "import_graph": "N129/K256 source E4 bytes plus raw F32 grid{1.0039,.7,.3333,1.997}, import once. BF16 A has non-E4 values and group maximum448*2^q. Original Float8BlockLinear kNone dynamic128 quantization, F32 coded dot then A-scale/W-scale order and BF16 output. Independent exhaustive E4 RNE oracle; no-AQDQ counterfactual differs. Existing E8 mode stays power2 with original data/math.",
+    "lifetime": "Each four-backend new import case runs2 slots and2 content generations, retains old outputs across opposite slot updates and invocation/compiled release. CUDA both old and new cases require/assert actual capture.",
+    "Apple_MoE": "Original generic TopK/softmax/gate5/up6/SiLU/multiply/down4/route-sum graph, BF16 metadata/F32 activations, E3 andE17,2slots*2updates each=8successful submits. Existing scalar oracle/tolerances retained. No exact GLM routing/shared/mHC or native low-dtype bit equality claimed."
+  },
+  "source_contracts": {
+    "PB_WO": {
+      "path": ".scratch/architecture-refactor-2026-10-18/precise-role-consumers-2026-10-21/pbwo/design-review.json",
+      "bytes": 26440,
+      "sha256": "b055fd76b5f3700d59c23e69af5e8405cac4f310706543bfdc5458d058b69eff"
+    },
+    "MLX_loader": {
+      "path": ".scratch/architecture-refactor-2026-10-18/precise-role-consumers-2026-10-21/apple/producer-contract-review.json",
+      "bytes": 9129,
+      "sha256": "df33b0feff7cb040abfb88350076c56ed9f6c0f8954e2160d725d0ebb088c237"
+    },
+    "MLX_head": {
+      "path": ".scratch/architecture-refactor-2026-10-18/precise-role-consumers-2026-10-21/mlx-head-review.json",
+      "bytes": 15256,
+      "sha256": "e97247fff0b131d796ab215a77efe98fc3af718dcdeba66d8c60b632f322334f"
+    },
+    "findings": [
+      "Fixed ModelOpt0.45 FP8QTensor.dequantize(dtype=BF16) rounds scale to BF16 before multiply. Existing Float8WeightDecode uses F32(code*originalSF) then output cast. Independent code0x3c/SF0x3f809249 witness yields3fc2 vs3fc1; neither contract is silently changed.",
+      "Fixed vLLM7b569 resolves FP8_PB_WO as static128 weight plus dynamic128 activation (W8A8), default output dtype from BF16 config. Missing input_activations metadata/name WO does not prove A16. This batch validates Hyle stored-F32/dynamic128 software reference, not all native vLLM kernel arithmetic or original fake-QDQ equivalence.",
+      "GLM32 actual fixed MLX-VLM default loader preserves original F16 SF/bias. MLX promotion of BF16 A plus F16 SF is F32, consistent with Hyle that mixed affine domain. Explicit dtype conversion and native same-low-dtype kernels are separate.",
+      "GLM31 fixed mlx-lm glm_moe_dsa -> deepseek_v32 -> mla uses156 head banks, not routed experts. L1 transposed projection can use existing grouped operation and head IDs plus explicit small activation Copy. L>1 needs non-transposed packed multiplication: a real missing orientation in current API."
+    ]
+  },
+  "remaining_required": "Next implement affine packed A*W orientation in original MlxQuantized across backends, preserving physical K packing/grouping and compressed residency; test both head decode/prefill. Do not swap N/K or fake completion with full floating expansion. Capability package8 and all3delivery packages stay open.",
+  "source_review": {
+    "path": ".scratch/architecture-refactor-2026-10-18/precise-role-consumers-2026-10-21/apple/importer-source-review.json",
+    "bytes": 7434,
+    "sha256": "ac1c45c27088be10b8e6e66d683f2c2faf10ff479389b1cd0313089115e24560"
+  },
+  "windows_targeted_objects": [
+    {
+      "identity": {
+        "path": ".scratch/architecture-refactor-2026-10-18/precise-role-consumers-2026-10-21/common/checks/import1/compute--weight_import-28eb7b/identity.json",
+        "bytes": 35568,
+        "sha256": "5be6de27d50f6d576222a82d1062533ab0e0c130db4d6c1309d482a65e9c4369"
+      },
+      "source": {
+        "path": "C:\\public\\project-hyle\\hyle\\src\\compute\\weight_import.cc",
+        "bytes": 18148,
+        "sha256": "caa7caabbe464198883d9af074be269330cf4273144f8746dcf3457083c0fc6f"
+      },
+      "object": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\precise-role-consumers-2026-10-21\\common\\checks\\import1\\compute--weight_import-28eb7b\\compute--weight_import-28eb7b.obj",
+        "bytes": 142881,
+        "sha256": "b215931c41435dd8d36a1f3ec1d87b97dddb3d5c9237e102803c398f11e4af74"
+      }
+    },
+    {
+      "identity": {
+        "path": ".scratch/architecture-refactor-2026-10-18/precise-role-consumers-2026-10-21/common/checks/import1/compute--weight_import_test-1c834d/identity.json",
+        "bytes": 57553,
+        "sha256": "3387a1510b59c2e3d9de8da6566188e479a46e167f17dbbc2b2d6f02d43d76b3"
+      },
+      "source": {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\compute\\weight_import_test.cc",
+        "bytes": 28173,
+        "sha256": "f4780fab6fe1761503ae43cffdddb6ba587170e1e7a930b25a850f5ab57d7e5b"
+      },
+      "object": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\precise-role-consumers-2026-10-21\\common\\checks\\import1\\compute--weight_import_test-1c834d\\compute--weight_import_test-1c834d.obj",
+        "bytes": 1298147,
+        "sha256": "21e9adb88dd5bbcf03b26566ee9d40d3c2d4d2e3daae64ce03091cb7156b544b"
+      }
+    },
+    {
+      "identity": {
+        "path": ".scratch/architecture-refactor-2026-10-18/precise-role-consumers-2026-10-21/common/checks/wrappers2/graph_route_cpu--e8m0_weight_import_test-2e8480/identity.json",
+        "bytes": 63775,
+        "sha256": "b695db73d99c1400e011657221c4b99133b04fe1a99d77efb2ef7f4f24703ca1"
+      },
+      "source": {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_cpu\\e8m0_weight_import_test.cc",
+        "bytes": 1772,
+        "sha256": "3430961fc27937b640d2218984c8e47cf41ee0d876fea5667f992a21690e0b34"
+      },
+      "object": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\precise-role-consumers-2026-10-21\\common\\checks\\wrappers2\\graph_route_cpu--e8m0_weight_import_test-2e8480\\graph_route_cpu--e8m0_weight_import_test-2e8480.obj",
+        "bytes": 1708003,
+        "sha256": "63128833c86c5c71ad48f8492685a015aa76cf6c6b086e96abf53e8ed21dde39"
+      }
+    },
+    {
+      "identity": {
+        "path": ".scratch/architecture-refactor-2026-10-18/precise-role-consumers-2026-10-21/common/checks/wrappers2/graph_route_cuda--e8m0_weight_import_test-4baf3d/identity.json",
+        "bytes": 68249,
+        "sha256": "c16f7183f6ae021f71965090cde6547f5106729e700c25a9ba7f6219780842d2"
+      },
+      "source": {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_cuda\\e8m0_weight_import_test.cc",
+        "bytes": 2175,
+        "sha256": "367b3bd14e27674f9e5c165931c7cdcae926316aa4ac6ce0414178b86a25f579"
+      },
+      "object": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\precise-role-consumers-2026-10-21\\common\\checks\\wrappers2\\graph_route_cuda--e8m0_weight_import_test-4baf3d\\graph_route_cuda--e8m0_weight_import_test-4baf3d.obj",
+        "bytes": 2073217,
+        "sha256": "8cd76a35ab420abec68875ebca1a27f2b3a90bccda7e228a6b473db395d009d9"
+      }
+    },
+    {
+      "identity": {
+        "path": ".scratch/architecture-refactor-2026-10-18/precise-role-consumers-2026-10-21/common/checks/wrappers2/graph_route_vulkan--e8m0_weight_import_test-10c483/identity.json",
+        "bytes": 75287,
+        "sha256": "e49470b8cd2db7f77d66396ba2c033f37e59beed6cbf59dfac2f8a3f4d005cdb"
+      },
+      "source": {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_vulkan\\e8m0_weight_import_test.cc",
+        "bytes": 3631,
+        "sha256": "a50aa09efc1fc6f154d0b8a82e86ea4d1aac696a53788a75884879e6a5577571"
+      },
+      "object": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\precise-role-consumers-2026-10-21\\common\\checks\\wrappers2\\graph_route_vulkan--e8m0_weight_import_test-10c483\\graph_route_vulkan--e8m0_weight_import_test-10c483.obj",
+        "bytes": 2016665,
+        "sha256": "c457073580576553fab8e2cb413540073e0a7c7fc8db2e669bf538cebbb982a1"
+      }
+    }
+  ],
+  "build": "Windows5 final fresh CXX owners:common import/test plus3 existing wrappers.3 first wrapper attempts failed only W4/WX lambda shadow warning; renamed local lambda and3 retries passed. Apple3new CXX inclMoE wrapper/import/old+new importer wrapper. Original CUDA AOT/SPIRV/Metal programs, SDKs and all unrelated objects reused, no NVCC/shader/full build.",
+  "limitations": [
+    "Finite generated scale/role/software-math/resource witnesses. No publisher payload or all-shard binding, whole-model, Linux, quality or throughput acceptance.",
+    "Ordinary BF16 pre-SF graph is a source-derived design here, not a newly executed reference or replacement for the dynamic deployment path. Original F32 decode contract retained.",
+    "Apple generic MoE pass is not a GLM whole layer or every MLX low-dtype native kernel. Head non-transposed packed prefill remains to implement. All33catalog artifact_execution_verified flags stayfalse."
+  ],
+  "current_sources": [
+    {
+      "path": "docs/developer/current-work.md",
+      "bytes": 32215,
+      "sha256": "9825738c5c38d923d959e6f3812436a0d7f1ec525ad6f46ec70910070c26d482"
+    },
+    {
+      "path": "docs/implementation/model-operators.md",
+      "bytes": 76212,
+      "sha256": "4f690fb56dc7ab7beabc66d4f1bbcb5764ca62b9b9e963d3c1b1b3a899847ad5"
+    },
+    {
+      "path": "docs/implementation/model-quantizations.json",
+      "bytes": 542575,
+      "sha256": "a40ee99d296abdf7832553044dc6ac13b4e35a9be0b81f5d4511fa868dc96102"
+    },
+    {
+      "path": "docs/user/compute.md",
+      "bytes": 117075,
+      "sha256": "dde53f13d5ef26e002619a100bd261b50a84c524f00b49c37ab4ed6dc3087697"
+    },
+    {
+      "path": "include/hyle/compute/model_ops.h",
+      "bytes": 74365,
+      "sha256": "86fcfb2ea003cc3d172a1babb18372861cf02668d0614c45591750fce5932573"
+    },
+    {
+      "path": "include/hyle/compute/weight_import.h",
+      "bytes": 3487,
+      "sha256": "19479024d3e80a6c7357dd55cc79e59347c20b22b621ce6f2779082afaaab6cb"
+    },
+    {
+      "path": "src/compute/weight_import.cc",
+      "bytes": 18148,
+      "sha256": "caa7caabbe464198883d9af074be269330cf4273144f8746dcf3457083c0fc6f"
+    },
+    {
+      "path": "src/compute_ops/weight_decode.cc",
+      "bytes": 17322,
+      "sha256": "8ddf5de604e0fe55525f2b78b44f6b6cb82eca4d7b483e0cd4d62ebc7afdc964"
+    },
+    {
+      "path": "src/compute_route_apple/apple_mature_float.cc",
+      "bytes": 36640,
+      "sha256": "151d714068c8249f519bf514a8c1b69580d7e51f0399b75f135f74f54198e04e"
+    },
+    {
+      "path": "src/compute_route_apple/apple_tensor.cc",
+      "bytes": 39266,
+      "sha256": "837ab889add8a3f694d3dfffe958c7ba7cb2933eb7b1a2d64f4c278102e32f77"
+    },
+    {
+      "path": "tests/compute/weight_import_test.cc",
+      "bytes": 28173,
+      "sha256": "f4780fab6fe1761503ae43cffdddb6ba587170e1e7a930b25a850f5ab57d7e5b"
+    },
+    {
+      "path": "tests/compute_models/e8m0_weight_import_fixture.h",
+      "bytes": 9022,
+      "sha256": "a4af823849b52de950c8640f392f6299373c9f847518136caab5af06ad0e6aa9"
+    },
+    {
+      "path": "tests/compute_models/mlx_affine_bitstream.h",
+      "bytes": 1098,
+      "sha256": "5317fec77bcb553c4f9b5f8073e38083070fdbb7733249fa0b1c7ad848f35cf8"
+    },
+    {
+      "path": "tests/compute_models/mlx_moe_fixture.h",
+      "bytes": 15814,
+      "sha256": "4f67dc45745c337c9f42dd67a5b095dc52c56c04e6d8fc1493d1e2bb4685d8bb"
+    },
+    {
+      "path": "tests/compute_models/nvfp4_reference_fixture.h",
+      "bytes": 22482,
+      "sha256": "cc94ec1f443511722ff4fc227b065af27b82573443735250951cdce934faa4d3"
+    },
+    {
+      "path": "tests/graph_route_apple/CMakeLists.txt",
+      "bytes": 6440,
+      "sha256": "eef30961caed6a6d356db75c12bc6be8f6a1dfb493b209dec554b117dc613728"
+    },
+    {
+      "path": "tests/graph_route_apple/e8m0_weight_import_test.cc",
+      "bytes": 1922,
+      "sha256": "335e8dee836a5051f07e3f7fa26527ad76064ff14aa0dfbc5e441d87a3b04cbc"
+    },
+    {
+      "path": "tests/graph_route_apple/mlx_moe_test.cc",
+      "bytes": 1055,
+      "sha256": "5df29f0d2635b718915f5a312b4c30316665d1321a1340a07e3b468771fa8c78"
+    },
+    {
+      "path": "tests/graph_route_cpu/e8m0_weight_import_test.cc",
+      "bytes": 1772,
+      "sha256": "3430961fc27937b640d2218984c8e47cf41ee0d876fea5667f992a21690e0b34"
+    },
+    {
+      "path": "tests/graph_route_cuda/e8m0_weight_import_test.cc",
+      "bytes": 2175,
+      "sha256": "367b3bd14e27674f9e5c165931c7cdcae926316aa4ac6ce0414178b86a25f579"
+    },
+    {
+      "path": "tests/graph_route_vulkan/e8m0_weight_import_test.cc",
+      "bytes": 3631,
+      "sha256": "a50aa09efc1fc6f154d0b8a82e86ea4d1aac696a53788a75884879e6a5577571"
+    }
+  ],
+  "archive": {
+    "path": "docs/evidence/correctness/precise-role-consumers-reference-2026-10-21.zip",
+    "bytes": 2187175,
+    "sha256": "b52ddffe66f044651b2c0fa7543af362912463ae268dc154ff27adb2b4cd9d6d",
+    "members": 320
+  },
+  "archive_entries": [
+    {
+      "entry": "records/apple/before/CMakeLists.txt",
+      "bytes": 6424,
+      "sha256": "b4836ed12423c3e54a5fdb60b19f137243bfa4345bcad6cab40e39e4352680ca"
+    },
+    {
+      "entry": "records/apple/build_mac.py",
+      "bytes": 6131,
+      "sha256": "f082265e75786971a38ba34a320a2ebe59c003078d0f28eaa04e2b7498b57129"
+    },
+    {
+      "entry": "records/apple/cleanup-readonly-inventory.json",
+      "bytes": 3626,
+      "sha256": "f4121c4a6cb11779a6e3e5155a1fd7f2288e74f14a94b2395da8b0ff12745ce8"
+    },
+    {
+      "entry": "records/apple/collect_mac.py",
+      "bytes": 1034,
+      "sha256": "0a2cb97d29d42f07f849baba25d75492d115f616b72c101fb17a65cb94032e94"
+    },
+    {
+      "entry": "records/apple/final-validation.json",
+      "bytes": 7548,
+      "sha256": "98083780af80291b5abd5ba49b203d1437a6e3b5314a8f7823fc95511f6aa11e"
+    },
+    {
+      "entry": "records/apple/finalize_combined.py",
+      "bytes": 6816,
+      "sha256": "7ee6bc88ecbcb8966fd4ac9bab02c089217e2b3be93b9a52acec03c721a7c703"
+    },
+    {
+      "entry": "records/apple/finalize_moe.py",
+      "bytes": 8740,
+      "sha256": "e0413ea98a1559916593632bbba6cba30ff6934f6c25f51ddcd56885bc3b2ab0"
+    },
+    {
+      "entry": "records/apple/importer-source-review.json",
+      "bytes": 7434,
+      "sha256": "ac1c45c27088be10b8e6e66d683f2c2faf10ff479389b1cd0313089115e24560"
+    },
+    {
+      "entry": "records/apple/mac/first-import-pass/hardware.json",
+      "bytes": 516,
+      "sha256": "36c7374b7c2561a82c4d0cc4f4b0c3cc69721dca80908bf61073cd56d5a9309a"
+    },
+    {
+      "entry": "records/apple/mac/first-import-pass/include/hyle/compute/weight_import.h",
+      "bytes": 3487,
+      "sha256": "19479024d3e80a6c7357dd55cc79e59347c20b22b621ce6f2779082afaaab6cb"
+    },
+    {
+      "entry": "records/apple/mac/first-import-pass/plan.json",
+      "bytes": 279918,
+      "sha256": "ad5208c51052c385febf1ed28848a42df7163c82ee262353079025b01ececb67"
+    },
+    {
+      "entry": "records/apple/mac/first-import-pass/results/compile-summary.json",
+      "bytes": 1040935,
+      "sha256": "e3f91b91421f0977c75b0760856a0df9f069d4f6932e4f185a9b10f86b39511e"
+    },
+    {
+      "entry": "records/apple/mac/first-import-pass/results/link-inputs.json",
+      "bytes": 50647,
+      "sha256": "741b8653eecc3fbf4eab8579ce7bef39e50fc54e8920c553d594a017607a0f45"
+    },
+    {
+      "entry": "records/apple/mac/first-import-pass/results/link.command.json",
+      "bytes": 29990,
+      "sha256": "17134d2a80ac6eb68f7a24cf425a7393843f1af6bbca99e7f76adf21f0d49318"
+    },
+    {
+      "entry": "records/apple/mac/first-import-pass/results/link.result.json",
+      "bytes": 30037,
+      "sha256": "82089739381fb46ecaf0035f5f002553fb79efd4170864d5e3ce482fe53d9483"
+    },
+    {
+      "entry": "records/apple/mac/first-import-pass/results/link.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/mac/first-import-pass/results/link.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/mac/first-import-pass/results/run.command.json",
+      "bytes": 458,
+      "sha256": "1bfee2d199b336bcdd56fa21d96b3a7215c34cda85354c97eb9886085c15b633"
+    },
+    {
+      "entry": "records/apple/mac/first-import-pass/results/run.result.json",
+      "bytes": 503,
+      "sha256": "915ec4f87c1caab2ea74b8566b7bea09182a4f285c328c9565466a00a273cda3"
+    },
+    {
+      "entry": "records/apple/mac/first-import-pass/results/run.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/mac/first-import-pass/results/run.stdout.log",
+      "bytes": 1182,
+      "sha256": "be94ee4305ede05fd4fc40275a115b6cf2d1556782942304c9d3048917a56064"
+    },
+    {
+      "entry": "records/apple/mac/first-import-pass/results/src--compute--weight_import.cc-compile.command.json",
+      "bytes": 69268,
+      "sha256": "020d5cce84cef8d00afbb8ceec58a57e830aa83c3130d42f087fc9b93694d73d"
+    },
+    {
+      "entry": "records/apple/mac/first-import-pass/results/src--compute--weight_import.cc-compile.result.json",
+      "bytes": 69314,
+      "sha256": "1d3aa80324870f0cb9074ae2a1abc98509dc84b3302e7c3d30fec07f6818e6e6"
+    },
+    {
+      "entry": "records/apple/mac/first-import-pass/results/src--compute--weight_import.cc-compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/mac/first-import-pass/results/src--compute--weight_import.cc-compile.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/mac/first-import-pass/results/src--compute--weight_import.cc-identity.json",
+      "bytes": 266168,
+      "sha256": "028ad61497d45c9b861fe935208375b558f26e507cab69b5727c2bcc50e3705d"
+    },
+    {
+      "entry": "records/apple/mac/first-import-pass/results/tests--graph_route_apple--e8m0_weight_import_test.cc-compile.command.json",
+      "bytes": 97912,
+      "sha256": "459fcda4a921aad17e0440453d7fcf260ab30611c3141bef07db5b9e1d9ea80a"
+    },
+    {
+      "entry": "records/apple/mac/first-import-pass/results/tests--graph_route_apple--e8m0_weight_import_test.cc-compile.result.json",
+      "bytes": 97958,
+      "sha256": "4dd969e267cd864bbf802d04d66ece2f093911be58409dcd6e787c8af04d0536"
+    },
+    {
+      "entry": "records/apple/mac/first-import-pass/results/tests--graph_route_apple--e8m0_weight_import_test.cc-compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/mac/first-import-pass/results/tests--graph_route_apple--e8m0_weight_import_test.cc-compile.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/mac/first-import-pass/results/tests--graph_route_apple--e8m0_weight_import_test.cc-identity.json",
+      "bytes": 361225,
+      "sha256": "03661b232b91d4199e6d75a25a9deadd8aa582127929ef21d33e5e58da3d90f3"
+    },
+    {
+      "entry": "records/apple/mac/first-import-pass/results/tests--graph_route_apple--mlx_moe_test.cc-compile.command.json",
+      "bytes": 76610,
+      "sha256": "e851d842094f8ac2bf3819149e5f53fd1bf315259003c8a2cce91fa2de29e530"
+    },
+    {
+      "entry": "records/apple/mac/first-import-pass/results/tests--graph_route_apple--mlx_moe_test.cc-compile.result.json",
+      "bytes": 76655,
+      "sha256": "7ba1e4d790f7ec17915bf2988efb1125a5738840ba9b2e90b564b5d9c9d3d2dc"
+    },
+    {
+      "entry": "records/apple/mac/first-import-pass/results/tests--graph_route_apple--mlx_moe_test.cc-compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/mac/first-import-pass/results/tests--graph_route_apple--mlx_moe_test.cc-compile.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/mac/first-import-pass/results/tests--graph_route_apple--mlx_moe_test.cc-identity.json",
+      "bytes": 343621,
+      "sha256": "b1296073a42a1e10825d4935f60e759ac1699e3eef7919bd03ad5b3b1fa50f05"
+    },
+    {
+      "entry": "records/apple/mac/first-import-pass/results/tests.xml",
+      "bytes": 2450,
+      "sha256": "21dcc5495ce998ed234253cdcfb748325e475aede3055e6fd391eb9ae0687826"
+    },
+    {
+      "entry": "records/apple/mac/first-import-pass/results/validation.json",
+      "bytes": 910,
+      "sha256": "dca4b72d6bb4dce2cc463d610bfe3118c557ad120078a826529b0a36e688d1c7"
+    },
+    {
+      "entry": "records/apple/mac/first-import-pass/source-manifest.json",
+      "bytes": 10497,
+      "sha256": "e8b61250df5768db5c2a18554abca992d6f072383d977372d4b1d5b03403a014"
+    },
+    {
+      "entry": "records/apple/mac/first-import-pass/src/compute/weight_import.cc",
+      "bytes": 18148,
+      "sha256": "caa7caabbe464198883d9af074be269330cf4273144f8746dcf3457083c0fc6f"
+    },
+    {
+      "entry": "records/apple/mac/first-import-pass/tests/compute_models/e8m0_weight_import_fixture.h",
+      "bytes": 9022,
+      "sha256": "a4af823849b52de950c8640f392f6299373c9f847518136caab5af06ad0e6aa9"
+    },
+    {
+      "entry": "records/apple/mac/first-import-pass/tests/graph_route_apple/e8m0_weight_import_test.cc",
+      "bytes": 1922,
+      "sha256": "335e8dee836a5051f07e3f7fa26527ad76064ff14aa0dfbc5e441d87a3b04cbc"
+    },
+    {
+      "entry": "records/apple/mac/moe-first-pass/hardware.json",
+      "bytes": 516,
+      "sha256": "36c7374b7c2561a82c4d0cc4f4b0c3cc69721dca80908bf61073cd56d5a9309a"
+    },
+    {
+      "entry": "records/apple/mac/moe-first-pass/plan.json",
+      "bytes": 146486,
+      "sha256": "74e178ba81e0f3e0f1affd1ca4a83ee48fb121e0275b1e566a4af5fb6a3855a0"
+    },
+    {
+      "entry": "records/apple/mac/moe-first-pass/results/compile-summary.json",
+      "bytes": 368956,
+      "sha256": "ef5ad1ac3dadb8345063e4947796fd57eff2059b0967bd3627c710b81ca7aa68"
+    },
+    {
+      "entry": "records/apple/mac/moe-first-pass/results/link-inputs.json",
+      "bytes": 50640,
+      "sha256": "c35f3db7384f7bc241fbcdae551bf6e89944b52a719f84b914ea63317b3d4185"
+    },
+    {
+      "entry": "records/apple/mac/moe-first-pass/results/link.command.json",
+      "bytes": 29971,
+      "sha256": "3e9173d04c919f4506c1ca9cb09b6118e7c7a497d34cdece67bf1d63d9783a17"
+    },
+    {
+      "entry": "records/apple/mac/moe-first-pass/results/link.result.json",
+      "bytes": 30018,
+      "sha256": "20b45a40617510992999d0af35cf7dd7c78d0cb181ea7cdec58071150b0e7595"
+    },
+    {
+      "entry": "records/apple/mac/moe-first-pass/results/link.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/mac/moe-first-pass/results/link.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/mac/moe-first-pass/results/run.command.json",
+      "bytes": 429,
+      "sha256": "fee4f44d5bc2d1574ea0771a264d358d56c1b3a3bfdbe53ecfaee03bf9102b4e"
+    },
+    {
+      "entry": "records/apple/mac/moe-first-pass/results/run.result.json",
+      "bytes": 474,
+      "sha256": "11909aa9f0da32922882bc89420a3718e297f20de470c3a345f827bd3a0fe81c"
+    },
+    {
+      "entry": "records/apple/mac/moe-first-pass/results/run.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/mac/moe-first-pass/results/run.stdout.log",
+      "bytes": 676,
+      "sha256": "678d9f2befd4c5d9b7922af2d63d4426dd6030881af217031e7f633b772825af"
+    },
+    {
+      "entry": "records/apple/mac/moe-first-pass/results/tests--graph_route_apple--mlx_moe_test.cc-compile.command.json",
+      "bytes": 76610,
+      "sha256": "e851d842094f8ac2bf3819149e5f53fd1bf315259003c8a2cce91fa2de29e530"
+    },
+    {
+      "entry": "records/apple/mac/moe-first-pass/results/tests--graph_route_apple--mlx_moe_test.cc-compile.result.json",
+      "bytes": 76655,
+      "sha256": "7ba1e4d790f7ec17915bf2988efb1125a5738840ba9b2e90b564b5d9c9d3d2dc"
+    },
+    {
+      "entry": "records/apple/mac/moe-first-pass/results/tests--graph_route_apple--mlx_moe_test.cc-compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/mac/moe-first-pass/results/tests--graph_route_apple--mlx_moe_test.cc-compile.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/mac/moe-first-pass/results/tests--graph_route_apple--mlx_moe_test.cc-identity.json",
+      "bytes": 343621,
+      "sha256": "b1296073a42a1e10825d4935f60e759ac1699e3eef7919bd03ad5b3b1fa50f05"
+    },
+    {
+      "entry": "records/apple/mac/moe-first-pass/results/tests.xml",
+      "bytes": 939,
+      "sha256": "9ea9048bd44ce320b765c56d40320b0068c035917c8aaad534560ed2e09b41f7"
+    },
+    {
+      "entry": "records/apple/mac/moe-first-pass/results/validation.json",
+      "bytes": 739,
+      "sha256": "aa734e9274322b1576d5db9eeaa10632078a2dadb96e598ce5b1a3da05912a05"
+    },
+    {
+      "entry": "records/apple/mac/moe-first-pass/source-manifest.json",
+      "bytes": 9039,
+      "sha256": "a0893d59b9f1083ca21adfc5c49d53954ab4e9eafb2e00835083aa3e5830c910"
+    },
+    {
+      "entry": "records/apple/mac/plan.json",
+      "bytes": 282592,
+      "sha256": "8178c5f5a051e3468cd2fb1de6ef0f641c79c20699b4d1a3c14acec020c83f2d"
+    },
+    {
+      "entry": "records/apple/mac/remote/hardware.json",
+      "bytes": 516,
+      "sha256": "072aadfd3b969664f72b96548ec50ef7d28164bbfd8521e4bf937daa2b8d7c97"
+    },
+    {
+      "entry": "records/apple/mac/remote/include/hyle/compute/weight_import.h",
+      "bytes": 3487,
+      "sha256": "19479024d3e80a6c7357dd55cc79e59347c20b22b621ce6f2779082afaaab6cb"
+    },
+    {
+      "entry": "records/apple/mac/remote/plan.json",
+      "bytes": 279918,
+      "sha256": "ad5208c51052c385febf1ed28848a42df7163c82ee262353079025b01ececb67"
+    },
+    {
+      "entry": "records/apple/mac/remote/results/compile-summary.json",
+      "bytes": 1040935,
+      "sha256": "e3f91b91421f0977c75b0760856a0df9f069d4f6932e4f185a9b10f86b39511e"
+    },
+    {
+      "entry": "records/apple/mac/remote/results/link-inputs.json",
+      "bytes": 50647,
+      "sha256": "741b8653eecc3fbf4eab8579ce7bef39e50fc54e8920c553d594a017607a0f45"
+    },
+    {
+      "entry": "records/apple/mac/remote/results/link.command.json",
+      "bytes": 29990,
+      "sha256": "17134d2a80ac6eb68f7a24cf425a7393843f1af6bbca99e7f76adf21f0d49318"
+    },
+    {
+      "entry": "records/apple/mac/remote/results/link.result.json",
+      "bytes": 30037,
+      "sha256": "82089739381fb46ecaf0035f5f002553fb79efd4170864d5e3ce482fe53d9483"
+    },
+    {
+      "entry": "records/apple/mac/remote/results/link.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/mac/remote/results/link.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/mac/remote/results/run.command.json",
+      "bytes": 458,
+      "sha256": "1bfee2d199b336bcdd56fa21d96b3a7215c34cda85354c97eb9886085c15b633"
+    },
+    {
+      "entry": "records/apple/mac/remote/results/run.result.json",
+      "bytes": 503,
+      "sha256": "915ec4f87c1caab2ea74b8566b7bea09182a4f285c328c9565466a00a273cda3"
+    },
+    {
+      "entry": "records/apple/mac/remote/results/run.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/mac/remote/results/run.stdout.log",
+      "bytes": 1182,
+      "sha256": "be94ee4305ede05fd4fc40275a115b6cf2d1556782942304c9d3048917a56064"
+    },
+    {
+      "entry": "records/apple/mac/remote/results/src--compute--weight_import.cc-compile.command.json",
+      "bytes": 69268,
+      "sha256": "020d5cce84cef8d00afbb8ceec58a57e830aa83c3130d42f087fc9b93694d73d"
+    },
+    {
+      "entry": "records/apple/mac/remote/results/src--compute--weight_import.cc-compile.result.json",
+      "bytes": 69314,
+      "sha256": "1d3aa80324870f0cb9074ae2a1abc98509dc84b3302e7c3d30fec07f6818e6e6"
+    },
+    {
+      "entry": "records/apple/mac/remote/results/src--compute--weight_import.cc-compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/mac/remote/results/src--compute--weight_import.cc-compile.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/mac/remote/results/src--compute--weight_import.cc-identity.json",
+      "bytes": 266168,
+      "sha256": "028ad61497d45c9b861fe935208375b558f26e507cab69b5727c2bcc50e3705d"
+    },
+    {
+      "entry": "records/apple/mac/remote/results/tests--graph_route_apple--e8m0_weight_import_test.cc-compile.command.json",
+      "bytes": 97912,
+      "sha256": "459fcda4a921aad17e0440453d7fcf260ab30611c3141bef07db5b9e1d9ea80a"
+    },
+    {
+      "entry": "records/apple/mac/remote/results/tests--graph_route_apple--e8m0_weight_import_test.cc-compile.result.json",
+      "bytes": 97958,
+      "sha256": "4dd969e267cd864bbf802d04d66ece2f093911be58409dcd6e787c8af04d0536"
+    },
+    {
+      "entry": "records/apple/mac/remote/results/tests--graph_route_apple--e8m0_weight_import_test.cc-compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/mac/remote/results/tests--graph_route_apple--e8m0_weight_import_test.cc-compile.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/mac/remote/results/tests--graph_route_apple--e8m0_weight_import_test.cc-identity.json",
+      "bytes": 361225,
+      "sha256": "03661b232b91d4199e6d75a25a9deadd8aa582127929ef21d33e5e58da3d90f3"
+    },
+    {
+      "entry": "records/apple/mac/remote/results/tests--graph_route_apple--mlx_moe_test.cc-compile.command.json",
+      "bytes": 76610,
+      "sha256": "e851d842094f8ac2bf3819149e5f53fd1bf315259003c8a2cce91fa2de29e530"
+    },
+    {
+      "entry": "records/apple/mac/remote/results/tests--graph_route_apple--mlx_moe_test.cc-compile.result.json",
+      "bytes": 76655,
+      "sha256": "7ba1e4d790f7ec17915bf2988efb1125a5738840ba9b2e90b564b5d9c9d3d2dc"
+    },
+    {
+      "entry": "records/apple/mac/remote/results/tests--graph_route_apple--mlx_moe_test.cc-compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/mac/remote/results/tests--graph_route_apple--mlx_moe_test.cc-compile.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/mac/remote/results/tests--graph_route_apple--mlx_moe_test.cc-identity.json",
+      "bytes": 343621,
+      "sha256": "b1296073a42a1e10825d4935f60e759ac1699e3eef7919bd03ad5b3b1fa50f05"
+    },
+    {
+      "entry": "records/apple/mac/remote/results/tests.xml",
+      "bytes": 2450,
+      "sha256": "21dcc5495ce998ed234253cdcfb748325e475aede3055e6fd391eb9ae0687826"
+    },
+    {
+      "entry": "records/apple/mac/remote/results/validation.json",
+      "bytes": 910,
+      "sha256": "dca4b72d6bb4dce2cc463d610bfe3118c557ad120078a826529b0a36e688d1c7"
+    },
+    {
+      "entry": "records/apple/mac/remote/source-manifest.json",
+      "bytes": 10497,
+      "sha256": "e8b61250df5768db5c2a18554abca992d6f072383d977372d4b1d5b03403a014"
+    },
+    {
+      "entry": "records/apple/mac/remote/src/compute/weight_import.cc",
+      "bytes": 18148,
+      "sha256": "caa7caabbe464198883d9af074be269330cf4273144f8746dcf3457083c0fc6f"
+    },
+    {
+      "entry": "records/apple/mac/remote/tests/compute_models/e8m0_weight_import_fixture.h",
+      "bytes": 9022,
+      "sha256": "a4af823849b52de950c8640f392f6299373c9f847518136caab5af06ad0e6aa9"
+    },
+    {
+      "entry": "records/apple/mac/remote/tests/graph_route_apple/e8m0_weight_import_test.cc",
+      "bytes": 1922,
+      "sha256": "335e8dee836a5051f07e3f7fa26527ad76064ff14aa0dfbc5e441d87a3b04cbc"
+    },
+    {
+      "entry": "records/apple/mac/source-manifest.json",
+      "bytes": 10829,
+      "sha256": "235c092f608d81017df536254f3e5989eb4af061dcee73e09da0c2d48dc281e0"
+    },
+    {
+      "entry": "records/apple/mac/sync.result.json",
+      "bytes": 768,
+      "sha256": "d37148f1be2229602a8935de0fa15a1511f1f4e12b767d6199b36cad5493fcc3"
+    },
+    {
+      "entry": "records/apple/prepare_mac.py",
+      "bytes": 4566,
+      "sha256": "7a529670eda36e7b03148dfbd54911a99b7bb661a46d12784272a8cef307180a"
+    },
+    {
+      "entry": "records/apple/producer-contract-review.json",
+      "bytes": 9129,
+      "sha256": "df33b0feff7cb040abfb88350076c56ed9f6c0f8954e2160d725d0ebb088c237"
+    },
+    {
+      "entry": "records/apple/producer/lm-commit.json",
+      "bytes": 9454,
+      "sha256": "8fcc0ed83f151a477cf8d6a2e8c275b3b0d3a5aeb3280d4a3ec03f5b138c197a"
+    },
+    {
+      "entry": "records/apple/producer/lm-glm-moe-dsa.py",
+      "bytes": 1365,
+      "sha256": "ed99c179942f30a1eacb5ca9b14fd8eecd473dedec499aaf220d048488fc15d1"
+    },
+    {
+      "entry": "records/apple/producer/lm-utils.py",
+      "bytes": 42836,
+      "sha256": "2803ff8d2298b0854797d78b16387c394801d16c57bfb30cf42ac4efbdee2873"
+    },
+    {
+      "entry": "records/apple/producer/mlx-directory.json",
+      "bytes": 52618,
+      "sha256": "067ae3fcd5572281fb82f66a29b7c7164288c7f4b1109fc4cfcf3235e02ba14c"
+    },
+    {
+      "entry": "records/apple/producer/mlx-dtype.cpp",
+      "bytes": 7464,
+      "sha256": "f60852034e52b82df17fad13f3cb63225b421f26357dd89cff83a2e41db8672d"
+    },
+    {
+      "entry": "records/apple/producer/mlx-dtype.h",
+      "bytes": 3133,
+      "sha256": "a9b6c8719deae53015cfcf0452b570b2620c8c24b409b93e80ffd8ecb4537748"
+    },
+    {
+      "entry": "records/apple/producer/mlx-module-base.py",
+      "bytes": 26169,
+      "sha256": "ec749e1d50fd1a5e57e0aedc8e6eb13fc697e630f59333a0e24aee62a8dc7f0f"
+    },
+    {
+      "entry": "records/apple/producer/mlx-ops.cpp",
+      "bytes": 203048,
+      "sha256": "6eae219354d0f9be37a064cb327c863fc3a12dba6668fd61d428e8d09d6baaf2"
+    },
+    {
+      "entry": "records/apple/producer/mlx-quantized.py",
+      "bytes": 14991,
+      "sha256": "1797a3571484ad3134224354b7f130c0931f495691aa8e54eb55329d674bb00b"
+    },
+    {
+      "entry": "records/apple/producer/requests.json",
+      "bytes": 4999,
+      "sha256": "8221aa96199fd08524a02960753199e4d33f24ccb2898b7dd89a30391b2ddacc"
+    },
+    {
+      "entry": "records/apple/producer/revisions.json",
+      "bytes": 238,
+      "sha256": "b9fcf7ee0febf65994e30a7804c3d3294fe49e4b0d0d973e83ec0d48d427d483"
+    },
+    {
+      "entry": "records/apple/producer/vlm-commit.json",
+      "bytes": 182445,
+      "sha256": "ca8bab711f38b8d22959a5613d1f42c86083484c105ef88a02a716a7b371255f"
+    },
+    {
+      "entry": "records/apple/producer/vlm-convert.py",
+      "bytes": 18544,
+      "sha256": "7fbb3c45a8c767a3a09d9f0da8bf46ff61041f457223302ee047bc4d2915a0ed"
+    },
+    {
+      "entry": "records/apple/producer/vlm-glm5-next-directory.json",
+      "bytes": 7394,
+      "sha256": "b612538e07845a0ddd69396ed01e231ede326ffbf8fa29a980602b9dc67b3619"
+    },
+    {
+      "entry": "records/apple/producer/vlm-glm5-next-language.py",
+      "bytes": 43767,
+      "sha256": "478b285c862e09a6c2c9289af702e5644f50445a2aea3a1c5de086455f1c0d9c"
+    },
+    {
+      "entry": "records/apple/producer/vlm-glm5-next-model.py",
+      "bytes": 5600,
+      "sha256": "ba1cc4f82d5146eaa8b033fd33dbdec8f7e3a785ca91e286ebb8173dc3c5fcca"
+    },
+    {
+      "entry": "records/apple/producer/vlm-mla.py",
+      "bytes": 3510,
+      "sha256": "da01333e57a5ba76b778a779e8e98724f48de1fffd24f6353d58bc846ba19bbf"
+    },
+    {
+      "entry": "records/apple/producer/vlm-switch-layers.py",
+      "bytes": 17215,
+      "sha256": "f1903e6e9f8f1871ac0f773c317450297bcfe0ebf5469b907b401dfd91d8dcd8"
+    },
+    {
+      "entry": "records/apple/producer/vlm-utils.py",
+      "bytes": 83433,
+      "sha256": "ed95bcfd1c4e8cb522c3c7f34d4aaa10f5e53bc69a45622606f80edfa2fd7cc7"
+    },
+    {
+      "entry": "records/apple/review_importer.py",
+      "bytes": 6621,
+      "sha256": "f586c7b63ae983e424172efb98e26c800e4edb1cd14abddce1fc1ebe40bb01b3"
+    },
+    {
+      "entry": "records/apple/revisions/moe-first-pass/final-validation.json",
+      "bytes": 4154,
+      "sha256": "aa098f9f141815ad0f1c68dc9cae6f1075745fb561fb47c1d4e92da33c3d30f1"
+    },
+    {
+      "entry": "records/apple/revisions/moe-first-pass/source-freeze.json",
+      "bytes": 1834,
+      "sha256": "20e448f20bfc18cbbaa5e135bdd7237c41aae9ddb6ebc7b324bb19e5a2328550"
+    },
+    {
+      "entry": "records/apple/source-freeze.json",
+      "bytes": 3606,
+      "sha256": "9ef7fede2dabc2cfa03a538c45efc21beed610ca4f57231da89a5879deabed5c"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/weight_import.h",
+      "bytes": 3487,
+      "sha256": "19479024d3e80a6c7357dd55cc79e59347c20b22b621ce6f2779082afaaab6cb"
+    },
+    {
+      "entry": "records/apple/source/src/compute/weight_import.cc",
+      "bytes": 18148,
+      "sha256": "caa7caabbe464198883d9af074be269330cf4273144f8746dcf3457083c0fc6f"
+    },
+    {
+      "entry": "records/apple/source/src/compute_ops/weight_decode.cc",
+      "bytes": 17322,
+      "sha256": "8ddf5de604e0fe55525f2b78b44f6b6cb82eca4d7b483e0cd4d62ebc7afdc964"
+    },
+    {
+      "entry": "records/apple/source/src/compute_route_apple/apple_tensor.cc",
+      "bytes": 39266,
+      "sha256": "837ab889add8a3f694d3dfffe958c7ba7cb2933eb7b1a2d64f4c278102e32f77"
+    },
+    {
+      "entry": "records/apple/source/tests/compute_models/e8m0_weight_import_fixture.h",
+      "bytes": 9022,
+      "sha256": "a4af823849b52de950c8640f392f6299373c9f847518136caab5af06ad0e6aa9"
+    },
+    {
+      "entry": "records/apple/source/tests/compute_models/mlx_moe_fixture.h",
+      "bytes": 15814,
+      "sha256": "4f67dc45745c337c9f42dd67a5b095dc52c56c04e6d8fc1493d1e2bb4685d8bb"
+    },
+    {
+      "entry": "records/apple/source/tests/graph_route_apple/CMakeLists.txt",
+      "bytes": 6440,
+      "sha256": "eef30961caed6a6d356db75c12bc6be8f6a1dfb493b209dec554b117dc613728"
+    },
+    {
+      "entry": "records/apple/source/tests/graph_route_apple/e8m0_weight_import_test.cc",
+      "bytes": 1922,
+      "sha256": "335e8dee836a5051f07e3f7fa26527ad76064ff14aa0dfbc5e441d87a3b04cbc"
+    },
+    {
+      "entry": "records/apple/source/tests/graph_route_apple/mlx_moe_test.cc",
+      "bytes": 1055,
+      "sha256": "5df29f0d2635b718915f5a312b4c30316665d1321a1340a07e3b468771fa8c78"
+    },
+    {
+      "entry": "records/catalog-update/after/docs/implementation/model-operators.md",
+      "bytes": 76212,
+      "sha256": "4f690fb56dc7ab7beabc66d4f1bbcb5764ca62b9b9e963d3c1b1b3a899847ad5"
+    },
+    {
+      "entry": "records/catalog-update/after/docs/implementation/model-quantizations.json",
+      "bytes": 542575,
+      "sha256": "a40ee99d296abdf7832553044dc6ac13b4e35a9be0b81f5d4511fa868dc96102"
+    },
+    {
+      "entry": "records/catalog-update/before.json",
+      "bytes": 350,
+      "sha256": "c97d41a3a524d735f35bb8c1f78232e3148104dce00adbf924e9c411750da69c"
+    },
+    {
+      "entry": "records/catalog-update/before/docs/implementation/model-operators.md",
+      "bytes": 74942,
+      "sha256": "083c22ea8afcd31452ed62e1ad245288ff7d6487374d8b10853d0d397f64766c"
+    },
+    {
+      "entry": "records/catalog-update/before/docs/implementation/model-quantizations.json",
+      "bytes": 533099,
+      "sha256": "2aa00c0e9b415fe8ccdeaa623af46de1fb2fb62d745cf143686ef682b76daae1"
+    },
+    {
+      "entry": "records/catalog-update/implementation.diff",
+      "bytes": 43787,
+      "sha256": "cb7411a932b3964cfca1d0cf92751f377413e5e800e8dbbe6bd5ea9f9c90d9a3"
+    },
+    {
+      "entry": "records/catalog-update/source-freeze.json",
+      "bytes": 350,
+      "sha256": "7489e57d6c702323d657ddb13e4ba59cd87d22fda6fc95fe7ebf971a208baabb"
+    },
+    {
+      "entry": "records/catalog-update/update_docs.py",
+      "bytes": 17059,
+      "sha256": "3a68bed52ccc5c9fab4d8e437b70b1d9a2b1fad53ae2d161027a6d18f75bb842"
+    },
+    {
+      "entry": "records/catalog-update/validation.json",
+      "bytes": 1004,
+      "sha256": "9b2f0388c4171fbca7f2ea488fba9efa51831cfaa678a112b06744d5277123ef"
+    },
+    {
+      "entry": "records/common/checks/import1/compute--weight_import-28eb7b/compile-plan.json",
+      "bytes": 1866,
+      "sha256": "bf9e27e3525a7045b405bec53053942240062d5bcf60a940de4ab8c9d7196e99"
+    },
+    {
+      "entry": "records/common/checks/import1/compute--weight_import-28eb7b/compile.command.json",
+      "bytes": 1461,
+      "sha256": "b113f4d8aeebfcd518924eab5172c7495a4a3ee6c23b3ad6758505c63af6273a"
+    },
+    {
+      "entry": "records/common/checks/import1/compute--weight_import-28eb7b/compile.result.json",
+      "bytes": 1531,
+      "sha256": "02f7a0bb09a988784b3615e45f415f865cb54989457c6d5a62adba6a9a0bdfad"
+    },
+    {
+      "entry": "records/common/checks/import1/compute--weight_import-28eb7b/compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/common/checks/import1/compute--weight_import-28eb7b/compile.stdout.log",
+      "bytes": 18,
+      "sha256": "90cc7d30c7deb774df986076cb0e24d2bcc86cb46b0a1104d29ff509497abace"
+    },
+    {
+      "entry": "records/common/checks/import1/compute--weight_import-28eb7b/compute--weight_import-28eb7b-deps.json",
+      "bytes": 16152,
+      "sha256": "65c433087008d0967bb0f62a7836cb44e11c35f684ab35770b11b3a54344c2a1"
+    },
+    {
+      "entry": "records/common/checks/import1/compute--weight_import-28eb7b/identity.json",
+      "bytes": 35568,
+      "sha256": "5be6de27d50f6d576222a82d1062533ab0e0c130db4d6c1309d482a65e9c4369"
+    },
+    {
+      "entry": "records/common/checks/import1/compute--weight_import-28eb7b/live.json",
+      "bytes": 1531,
+      "sha256": "02f7a0bb09a988784b3615e45f415f865cb54989457c6d5a62adba6a9a0bdfad"
+    },
+    {
+      "entry": "records/common/checks/import1/compute--weight_import_test-1c834d/compile-plan.json",
+      "bytes": 2788,
+      "sha256": "a8ad34117090dda783ae0ed954028f796ff7a8cfe3036a5e72ba993de31050d1"
+    },
+    {
+      "entry": "records/common/checks/import1/compute--weight_import_test-1c834d/compile.command.json",
+      "bytes": 2373,
+      "sha256": "5e75975996f15be988ebfd23cf117522447e2da69693e9f5c96b0ded2312f5b4"
+    },
+    {
+      "entry": "records/common/checks/import1/compute--weight_import_test-1c834d/compile.result.json",
+      "bytes": 2443,
+      "sha256": "00396ad803cbc476defc8889e1908f53dac602670cbf5c01b5b23fd48df26323"
+    },
+    {
+      "entry": "records/common/checks/import1/compute--weight_import_test-1c834d/compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/common/checks/import1/compute--weight_import_test-1c834d/compile.stdout.log",
+      "bytes": 23,
+      "sha256": "c849537c9661b7e4d20f37da058ba7aa2747c92e313be8c9b19f7c3320cb22ec"
+    },
+    {
+      "entry": "records/common/checks/import1/compute--weight_import_test-1c834d/compute--weight_import_test-1c834d-deps.json",
+      "bytes": 27312,
+      "sha256": "243f39442b8e533159b2a3b64e509a270fee8f879babb25b6594dfcc4ae72e93"
+    },
+    {
+      "entry": "records/common/checks/import1/compute--weight_import_test-1c834d/identity.json",
+      "bytes": 57553,
+      "sha256": "3387a1510b59c2e3d9de8da6566188e479a46e167f17dbbc2b2d6f02d43d76b3"
+    },
+    {
+      "entry": "records/common/checks/import1/compute--weight_import_test-1c834d/live.json",
+      "bytes": 2443,
+      "sha256": "00396ad803cbc476defc8889e1908f53dac602670cbf5c01b5b23fd48df26323"
+    },
+    {
+      "entry": "records/common/checks/import1/summary.json",
+      "bytes": 738,
+      "sha256": "15305cda49d5d2179f54a5565760b80d7f9b0b14f060d30fbaf519ff4230359b"
+    },
+    {
+      "entry": "records/common/checks/wrappers1/graph_route_cpu--e8m0_weight_import_test-2e8480/compile-plan.json",
+      "bytes": 2867,
+      "sha256": "30aa4711eca227fa1f362c1f8321ea9aefa8b9072966bb091aa58cb37ce9a868"
+    },
+    {
+      "entry": "records/common/checks/wrappers1/graph_route_cpu--e8m0_weight_import_test-2e8480/compile.command.json",
+      "bytes": 2471,
+      "sha256": "0992224a624924845c4b9a09fad2e43cd5a1fb500806f90e48502efdf7f818df"
+    },
+    {
+      "entry": "records/common/checks/wrappers1/graph_route_cpu--e8m0_weight_import_test-2e8480/compile.result.json",
+      "bytes": 2542,
+      "sha256": "d961ec33ce7c895efa77af3c488edd75ba88c962c346c1c2178c2c9184a1d053"
+    },
+    {
+      "entry": "records/common/checks/wrappers1/graph_route_cpu--e8m0_weight_import_test-2e8480/compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/common/checks/wrappers1/graph_route_cpu--e8m0_weight_import_test-2e8480/compile.stdout.log",
+      "bytes": 526,
+      "sha256": "da8a3ca0b1d0c4445ccc9b8c1a0a05838eeb036206433f0cd5201b38c89bf132"
+    },
+    {
+      "entry": "records/common/checks/wrappers1/graph_route_cpu--e8m0_weight_import_test-2e8480/graph_route_cpu--e8m0_weight_import_test-2e8480-deps.json",
+      "bytes": 29884,
+      "sha256": "78277632ee3e677150929f3047bfe56d40c0fe30853d8e71476cd91898d11075"
+    },
+    {
+      "entry": "records/common/checks/wrappers1/graph_route_cpu--e8m0_weight_import_test-2e8480/live.json",
+      "bytes": 2542,
+      "sha256": "d961ec33ce7c895efa77af3c488edd75ba88c962c346c1c2178c2c9184a1d053"
+    },
+    {
+      "entry": "records/common/checks/wrappers1/graph_route_cuda--e8m0_weight_import_test-4baf3d/compile-plan.json",
+      "bytes": 4867,
+      "sha256": "ef88bdd4acc716b2f86b49f87fdcf386a02cd4272f2542c9f195b103d20f52ca"
+    },
+    {
+      "entry": "records/common/checks/wrappers1/graph_route_cuda--e8m0_weight_import_test-4baf3d/compile.command.json",
+      "bytes": 4469,
+      "sha256": "7207fb7b1854727b324ca3c35bf326fdc2ed8a9de20b0d0ee56587cdc7f41b66"
+    },
+    {
+      "entry": "records/common/checks/wrappers1/graph_route_cuda--e8m0_weight_import_test-4baf3d/compile.result.json",
+      "bytes": 4540,
+      "sha256": "196e88d78f1a21f31564f7a2c24aa044bea725e7d669695c2e08c46fc8c614c3"
+    },
+    {
+      "entry": "records/common/checks/wrappers1/graph_route_cuda--e8m0_weight_import_test-4baf3d/compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/common/checks/wrappers1/graph_route_cuda--e8m0_weight_import_test-4baf3d/compile.stdout.log",
+      "bytes": 529,
+      "sha256": "9de9a395df490c2b95a9ba2b7999dc20063e02f1a9651be83f5275babb28d588"
+    },
+    {
+      "entry": "records/common/checks/wrappers1/graph_route_cuda--e8m0_weight_import_test-4baf3d/graph_route_cuda--e8m0_weight_import_test-4baf3d-deps.json",
+      "bytes": 31619,
+      "sha256": "e6e06b51674cb40a89ca83dd8859c6972823315d3d36838412e559799697d8bd"
+    },
+    {
+      "entry": "records/common/checks/wrappers1/graph_route_cuda--e8m0_weight_import_test-4baf3d/live.json",
+      "bytes": 4540,
+      "sha256": "196e88d78f1a21f31564f7a2c24aa044bea725e7d669695c2e08c46fc8c614c3"
+    },
+    {
+      "entry": "records/common/checks/wrappers1/graph_route_vulkan--e8m0_weight_import_test-10c483/compile-plan.json",
+      "bytes": 5300,
+      "sha256": "be90b07c3d81e74402ba3cd1960a48f2a2ab88e6d00df51fa43ebea6353b36eb"
+    },
+    {
+      "entry": "records/common/checks/wrappers1/graph_route_vulkan--e8m0_weight_import_test-10c483/compile.command.json",
+      "bytes": 4898,
+      "sha256": "22930e16263f23312f779442101338996824db299cba6c4c3442904a6797442c"
+    },
+    {
+      "entry": "records/common/checks/wrappers1/graph_route_vulkan--e8m0_weight_import_test-10c483/compile.result.json",
+      "bytes": 4968,
+      "sha256": "fb019a104e64cc4395f85a20ed7bf6f5751ae9604e65e52a4433afbdd8127f25"
+    },
+    {
+      "entry": "records/common/checks/wrappers1/graph_route_vulkan--e8m0_weight_import_test-10c483/compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/common/checks/wrappers1/graph_route_vulkan--e8m0_weight_import_test-10c483/compile.stdout.log",
+      "bytes": 535,
+      "sha256": "af2b02db422997c5a9d76c7a9c6954d30f90842bf036ae33bd65c7331e853b2c"
+    },
+    {
+      "entry": "records/common/checks/wrappers1/graph_route_vulkan--e8m0_weight_import_test-10c483/graph_route_vulkan--e8m0_weight_import_test-10c483-deps.json",
+      "bytes": 34267,
+      "sha256": "1b776f4af0e4bd6e6d10336b7e3d3365e892d5bba2f30ec98ce1bf212a992887"
+    },
+    {
+      "entry": "records/common/checks/wrappers1/graph_route_vulkan--e8m0_weight_import_test-10c483/live.json",
+      "bytes": 4968,
+      "sha256": "fb019a104e64cc4395f85a20ed7bf6f5751ae9604e65e52a4433afbdd8127f25"
+    },
+    {
+      "entry": "records/common/checks/wrappers2/graph_route_cpu--e8m0_weight_import_test-2e8480/compile-plan.json",
+      "bytes": 2867,
+      "sha256": "6b838a29f0aeb02b87b60daa64b5efe18f6da3fcd8bb754570901f57d392036a"
+    },
+    {
+      "entry": "records/common/checks/wrappers2/graph_route_cpu--e8m0_weight_import_test-2e8480/compile.command.json",
+      "bytes": 2471,
+      "sha256": "2ffe056eec3bcbcec6e9eaf56baec856407f617e9dc3f3c1383dc80c47a98e03"
+    },
+    {
+      "entry": "records/common/checks/wrappers2/graph_route_cpu--e8m0_weight_import_test-2e8480/compile.result.json",
+      "bytes": 2541,
+      "sha256": "e9ab072d2d19aa45babc6bc618f0706d1bc00e5693b621dbd29d1ac021530746"
+    },
+    {
+      "entry": "records/common/checks/wrappers2/graph_route_cpu--e8m0_weight_import_test-2e8480/compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/common/checks/wrappers2/graph_route_cpu--e8m0_weight_import_test-2e8480/compile.stdout.log",
+      "bytes": 28,
+      "sha256": "29478caa8f7c870f3098e2b33d5ce6bf0031b59f84d0f400b272fc4768a49350"
+    },
+    {
+      "entry": "records/common/checks/wrappers2/graph_route_cpu--e8m0_weight_import_test-2e8480/graph_route_cpu--e8m0_weight_import_test-2e8480-deps.json",
+      "bytes": 29884,
+      "sha256": "78277632ee3e677150929f3047bfe56d40c0fe30853d8e71476cd91898d11075"
+    },
+    {
+      "entry": "records/common/checks/wrappers2/graph_route_cpu--e8m0_weight_import_test-2e8480/identity.json",
+      "bytes": 63775,
+      "sha256": "b695db73d99c1400e011657221c4b99133b04fe1a99d77efb2ef7f4f24703ca1"
+    },
+    {
+      "entry": "records/common/checks/wrappers2/graph_route_cpu--e8m0_weight_import_test-2e8480/live.json",
+      "bytes": 2541,
+      "sha256": "e9ab072d2d19aa45babc6bc618f0706d1bc00e5693b621dbd29d1ac021530746"
+    },
+    {
+      "entry": "records/common/checks/wrappers2/graph_route_cuda--e8m0_weight_import_test-4baf3d/compile-plan.json",
+      "bytes": 4867,
+      "sha256": "1031bc5941b73837b318af045ce555bf6b0f319d5bf093b15aef9f9bc943ebe6"
+    },
+    {
+      "entry": "records/common/checks/wrappers2/graph_route_cuda--e8m0_weight_import_test-4baf3d/compile.command.json",
+      "bytes": 4468,
+      "sha256": "fa542a548dcd7ea9ef8cb07c663622e09a8fc73a3ddfe90a4f65533d0eea4249"
+    },
+    {
+      "entry": "records/common/checks/wrappers2/graph_route_cuda--e8m0_weight_import_test-4baf3d/compile.result.json",
+      "bytes": 4539,
+      "sha256": "9ab6e2366778b89bfe647973082ac87979d45bd451712628f867bc9590a0134f"
+    },
+    {
+      "entry": "records/common/checks/wrappers2/graph_route_cuda--e8m0_weight_import_test-4baf3d/compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/common/checks/wrappers2/graph_route_cuda--e8m0_weight_import_test-4baf3d/compile.stdout.log",
+      "bytes": 28,
+      "sha256": "29478caa8f7c870f3098e2b33d5ce6bf0031b59f84d0f400b272fc4768a49350"
+    },
+    {
+      "entry": "records/common/checks/wrappers2/graph_route_cuda--e8m0_weight_import_test-4baf3d/graph_route_cuda--e8m0_weight_import_test-4baf3d-deps.json",
+      "bytes": 31619,
+      "sha256": "e6e06b51674cb40a89ca83dd8859c6972823315d3d36838412e559799697d8bd"
+    },
+    {
+      "entry": "records/common/checks/wrappers2/graph_route_cuda--e8m0_weight_import_test-4baf3d/identity.json",
+      "bytes": 68249,
+      "sha256": "c16f7183f6ae021f71965090cde6547f5106729e700c25a9ba7f6219780842d2"
+    },
+    {
+      "entry": "records/common/checks/wrappers2/graph_route_cuda--e8m0_weight_import_test-4baf3d/live.json",
+      "bytes": 4539,
+      "sha256": "9ab6e2366778b89bfe647973082ac87979d45bd451712628f867bc9590a0134f"
+    },
+    {
+      "entry": "records/common/checks/wrappers2/graph_route_vulkan--e8m0_weight_import_test-10c483/compile-plan.json",
+      "bytes": 5300,
+      "sha256": "28f59cb96aeb7e6ebf15f8248ea01b5b858450634a202f75d59d9362a8306c78"
+    },
+    {
+      "entry": "records/common/checks/wrappers2/graph_route_vulkan--e8m0_weight_import_test-10c483/compile.command.json",
+      "bytes": 4898,
+      "sha256": "ab1ee59e0ccac7eefbca2ac3c1bd03124cc35133740f3e672c5c5cca824c5fcc"
+    },
+    {
+      "entry": "records/common/checks/wrappers2/graph_route_vulkan--e8m0_weight_import_test-10c483/compile.result.json",
+      "bytes": 4968,
+      "sha256": "a99ad75e1f4313e309bac8415fea1deeef0257482e822ea127702653e04b4a3f"
+    },
+    {
+      "entry": "records/common/checks/wrappers2/graph_route_vulkan--e8m0_weight_import_test-10c483/compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/common/checks/wrappers2/graph_route_vulkan--e8m0_weight_import_test-10c483/compile.stdout.log",
+      "bytes": 28,
+      "sha256": "29478caa8f7c870f3098e2b33d5ce6bf0031b59f84d0f400b272fc4768a49350"
+    },
+    {
+      "entry": "records/common/checks/wrappers2/graph_route_vulkan--e8m0_weight_import_test-10c483/graph_route_vulkan--e8m0_weight_import_test-10c483-deps.json",
+      "bytes": 34267,
+      "sha256": "1b776f4af0e4bd6e6d10336b7e3d3365e892d5bba2f30ec98ce1bf212a992887"
+    },
+    {
+      "entry": "records/common/checks/wrappers2/graph_route_vulkan--e8m0_weight_import_test-10c483/identity.json",
+      "bytes": 75287,
+      "sha256": "e49470b8cd2db7f77d66396ba2c033f37e59beed6cbf59dfac2f8a3f4d005cdb"
+    },
+    {
+      "entry": "records/common/checks/wrappers2/graph_route_vulkan--e8m0_weight_import_test-10c483/live.json",
+      "bytes": 4968,
+      "sha256": "a99ad75e1f4313e309bac8415fea1deeef0257482e822ea127702653e04b4a3f"
+    },
+    {
+      "entry": "records/common/checks/wrappers2/summary.json",
+      "bytes": 1118,
+      "sha256": "56bcca88d3a48600a80d0cf266a6e9e2ae4568acfd8c5f3df7c86cc1aaccffea"
+    },
+    {
+      "entry": "records/cpu/checks/link1/image.json",
+      "bytes": 261,
+      "sha256": "c1f3eaf28d270e897fa1743c1bd05b026a541a89a402394c15100cc6bb7a30e6"
+    },
+    {
+      "entry": "records/cpu/checks/link1/link-plan.json",
+      "bytes": 68533,
+      "sha256": "d701936d3e3f22f4be2edd9fcabd85b176f06a0df065ec074fc995464775da5e"
+    },
+    {
+      "entry": "records/cpu/checks/link1/link.command.json",
+      "bytes": 24320,
+      "sha256": "0c8f2701109f71fcf24edaa1a1d44745a533234919a4a421e1907a760935eb15"
+    },
+    {
+      "entry": "records/cpu/checks/link1/link.result.json",
+      "bytes": 24390,
+      "sha256": "f651ba1de864872b3aca3ad666792354d71a4c00778a91a1915a755160ef64c4"
+    },
+    {
+      "entry": "records/cpu/checks/link1/link.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/cpu/checks/link1/link.stdout.log",
+      "bytes": 290,
+      "sha256": "ec02fbb6ff96cd812c8e00b908cd039f97e802f02258f4ca94fc2f13eac46a99"
+    },
+    {
+      "entry": "records/cpu/checks/link1/live.json",
+      "bytes": 24390,
+      "sha256": "f651ba1de864872b3aca3ad666792354d71a4c00778a91a1915a755160ef64c4"
+    },
+    {
+      "entry": "records/cpu/checks/link1/runtime-environment.json",
+      "bytes": 8168,
+      "sha256": "0d6c2a4b1a37637f38e620d06cdf1c16aa9e603fea74bbb2c4ef57aa8c532b17"
+    },
+    {
+      "entry": "records/cpu/validation/final1/image-before.json",
+      "bytes": 261,
+      "sha256": "c1f3eaf28d270e897fa1743c1bd05b026a541a89a402394c15100cc6bb7a30e6"
+    },
+    {
+      "entry": "records/cpu/validation/final1/live.json",
+      "bytes": 594,
+      "sha256": "22ad37d32c0394f73e22cc7e9324b0f42a9da99a4c359944331b0076bbe1f33e"
+    },
+    {
+      "entry": "records/cpu/validation/final1/receipt.json",
+      "bytes": 3059,
+      "sha256": "eabc125c6a415f84b9b854fd72e9b9370eb07beac4c76a0d516a37eff6944822"
+    },
+    {
+      "entry": "records/cpu/validation/final1/runtime-environment.json",
+      "bytes": 8168,
+      "sha256": "0d6c2a4b1a37637f38e620d06cdf1c16aa9e603fea74bbb2c4ef57aa8c532b17"
+    },
+    {
+      "entry": "records/cpu/validation/final1/tests.command.json",
+      "bytes": 524,
+      "sha256": "6a27f5afea7274f10d9e90d3de3a1b9da71e6b807beb810e3c4f48cc5bd869a6"
+    },
+    {
+      "entry": "records/cpu/validation/final1/tests.result.json",
+      "bytes": 594,
+      "sha256": "22ad37d32c0394f73e22cc7e9324b0f42a9da99a4c359944331b0076bbe1f33e"
+    },
+    {
+      "entry": "records/cpu/validation/final1/tests.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/cpu/validation/final1/tests.stdout.log",
+      "bytes": 1899,
+      "sha256": "fc599d360a0ec17f00c3789c062121bba0d994fa9e395b0559f23ba75ef0205d"
+    },
+    {
+      "entry": "records/cpu/validation/final1/tests.xml",
+      "bytes": 2879,
+      "sha256": "a06b915f79912cff7545f55750a4a8eeb08795cb91b749b770fdabca95f10bcb"
+    },
+    {
+      "entry": "records/cuda/checks/link1/image.json",
+      "bytes": 264,
+      "sha256": "35596c052e5e8ebd72eb11770d74cdc2b5015b1896c775917a37f8d225bc2b75"
+    },
+    {
+      "entry": "records/cuda/checks/link1/link-plan.json",
+      "bytes": 82328,
+      "sha256": "e53de6acb3c6709e682568603ca4aeef971010de46f0cbbc2ede9d11272c5333"
+    },
+    {
+      "entry": "records/cuda/checks/link1/link.command.json",
+      "bytes": 29133,
+      "sha256": "373c05c14ae8a776b9f04d12098e26e9d429aa0baad79a2dba74295b9a46271c"
+    },
+    {
+      "entry": "records/cuda/checks/link1/link.result.json",
+      "bytes": 29203,
+      "sha256": "6352558c7ac87c8fa73ccf3f576d851a868cb15a10452394f40abd434acc022d"
+    },
+    {
+      "entry": "records/cuda/checks/link1/link.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/cuda/checks/link1/link.stdout.log",
+      "bytes": 294,
+      "sha256": "5cb79115cd29debabc09c97d8e9db825e10509ddd984673cf8448769ddd59596"
+    },
+    {
+      "entry": "records/cuda/checks/link1/live.json",
+      "bytes": 29203,
+      "sha256": "6352558c7ac87c8fa73ccf3f576d851a868cb15a10452394f40abd434acc022d"
+    },
+    {
+      "entry": "records/cuda/checks/link1/runtime-environment.json",
+      "bytes": 6546,
+      "sha256": "03641062d6490cedf2c812c5d526dbe08275e31bab4769f50853930ee4cf5ed5"
+    },
+    {
+      "entry": "records/cuda/validation/final1/image-before.json",
+      "bytes": 264,
+      "sha256": "35596c052e5e8ebd72eb11770d74cdc2b5015b1896c775917a37f8d225bc2b75"
+    },
+    {
+      "entry": "records/cuda/validation/final1/live.json",
+      "bytes": 579,
+      "sha256": "5f37ac634389aca3edcbadc862cde7f79b38a1bec5825f7083f045c20a3d1eab"
+    },
+    {
+      "entry": "records/cuda/validation/final1/receipt.json",
+      "bytes": 2020,
+      "sha256": "05e81012b43cfa65bfa82645011e999f0b3e407034395039b8029b8a73085444"
+    },
+    {
+      "entry": "records/cuda/validation/final1/runtime-environment.json",
+      "bytes": 6546,
+      "sha256": "03641062d6490cedf2c812c5d526dbe08275e31bab4769f50853930ee4cf5ed5"
+    },
+    {
+      "entry": "records/cuda/validation/final1/tests.command.json",
+      "bytes": 509,
+      "sha256": "1b576a678a4a87d28ffabfc7a640c75403d6e7b06e2b5cfb5c1cbe3b9b90f15d"
+    },
+    {
+      "entry": "records/cuda/validation/final1/tests.result.json",
+      "bytes": 579,
+      "sha256": "5f37ac634389aca3edcbadc862cde7f79b38a1bec5825f7083f045c20a3d1eab"
+    },
+    {
+      "entry": "records/cuda/validation/final1/tests.stderr.log",
+      "bytes": 151,
+      "sha256": "88dd5e35d67fb5c0c371390a98a66a5e061e4c0bef2d890a7b74781363216092"
+    },
+    {
+      "entry": "records/cuda/validation/final1/tests.stdout.log",
+      "bytes": 901,
+      "sha256": "ca7f4f24d08296a89ab08403b3323d961f7a8048ff4d2de22edc9ea1faa1b2b0"
+    },
+    {
+      "entry": "records/cuda/validation/final1/tests.xml",
+      "bytes": 1389,
+      "sha256": "327ad05d7a7dda69fc744a0e5aa609a825c870d4efefd823291efa8cf3b0902f"
+    },
+    {
+      "entry": "records/mlx-head-review.json",
+      "bytes": 15256,
+      "sha256": "e97247fff0b131d796ab215a77efe98fc3af718dcdeba66d8c60b632f322334f"
+    },
+    {
+      "entry": "records/mlx-head-source/deepseek_v3.py",
+      "bytes": 20267,
+      "sha256": "a6124188b530db449b55fd42d62b366fe4e67905b78108a9a9c8a72520965d04"
+    },
+    {
+      "entry": "records/mlx-head-source/deepseek_v32.py",
+      "bytes": 23620,
+      "sha256": "c2140067fb3e35d5f195b051b2189d1170ba11d144a73aac810cc859f5d2fe4d"
+    },
+    {
+      "entry": "records/mlx-head-source/mla.py",
+      "bytes": 2207,
+      "sha256": "22877b336255e58d949d982b6ac4730bd0ca1a1a6f40479f736570b3c9f35057"
+    },
+    {
+      "entry": "records/mlx-head-source/requests.json",
+      "bytes": 810,
+      "sha256": "1b7f0ac14e2aa341a9d9ebbc9075b11a682cd03c434be4a5d04a232d7f010ae2"
+    },
+    {
+      "entry": "records/mlx-orientation-actual-owners.json",
+      "bytes": 42293,
+      "sha256": "295563e1d40424bf09f1758fc99f1fdc7d486f09d40c98429d946e95b3918041"
+    },
+    {
+      "entry": "records/mlx-orientation-design.json",
+      "bytes": 19916,
+      "sha256": "975a23df3e92a9ac525ac5c37a746d5ed7b42ee56056daa2f42b4a91fbb03184"
+    },
+    {
+      "entry": "records/pbwo/design-review.json",
+      "bytes": 26440,
+      "sha256": "b055fd76b5f3700d59c23e69af5e8405cac4f310706543bfdc5458d058b69eff"
+    },
+    {
+      "entry": "records/pbwo/fetch_fixed_sources.py",
+      "bytes": 1969,
+      "sha256": "62f07efd3f83c325ea4bb3963c09e0e937d4fe4ddfaf0e5d8a4d10e9bdd1759e"
+    },
+    {
+      "entry": "records/pbwo/fetch_reader.py",
+      "bytes": 1605,
+      "sha256": "ac54023838f49f8fe88d56e4f645bd179d5d13d07239e7d37679cda567afb623"
+    },
+    {
+      "entry": "records/pbwo/primary-source-identities.json",
+      "bytes": 9832,
+      "sha256": "e85a48f6b7def6f7b0dc80588e19c6aa03ed7432fa312d0d47ded7fcbd2c5bec"
+    },
+    {
+      "entry": "records/pbwo/primary/ec87a82927d003986d44fb7f4fa8b3d10c31b095/modelopt/torch/export/quant_utils.py",
+      "bytes": 62594,
+      "sha256": "e42e1143a78b37fbb16b2103ed85cb60426b5fb36949268f07c986d91975548a"
+    },
+    {
+      "entry": "records/pbwo/primary/ec87a82927d003986d44fb7f4fa8b3d10c31b095/modelopt/torch/export/quant_utils.py.http.json",
+      "bytes": 1740,
+      "sha256": "78f20502bcd43561976893be82d113ddad326076d09d874f24d7b9a228359e5b"
+    },
+    {
+      "entry": "records/pbwo/primary/ec87a82927d003986d44fb7f4fa8b3d10c31b095/modelopt/torch/quantization/config.py",
+      "bytes": 59551,
+      "sha256": "9413558436ec3d363d44a4fe3eb360125e204d5cb5ca87f7c54547c3924baf04"
+    },
+    {
+      "entry": "records/pbwo/primary/ec87a82927d003986d44fb7f4fa8b3d10c31b095/modelopt/torch/quantization/config.py.http.json",
+      "bytes": 1741,
+      "sha256": "e1ddbf73d0fb5251cf750a9db76adedc7294a98440f2583a5399d8ec003b234c"
+    },
+    {
+      "entry": "records/pbwo/primary/ec87a82927d003986d44fb7f4fa8b3d10c31b095/modelopt/torch/quantization/nn/modules/quant_linear.py",
+      "bytes": 13776,
+      "sha256": "2d34d815b7e7b485ff47352847fb17749107f96693334cebe61e4ca61612d1ae"
+    },
+    {
+      "entry": "records/pbwo/primary/ec87a82927d003986d44fb7f4fa8b3d10c31b095/modelopt/torch/quantization/nn/modules/quant_linear.py.http.json",
+      "bytes": 1777,
+      "sha256": "28c6074ffc8b0bcdf7ac4ed427d7e289eef8bcbd8c184e82da3f925c270e1a94"
+    },
+    {
+      "entry": "records/pbwo/primary/ec87a82927d003986d44fb7f4fa8b3d10c31b095/modelopt/torch/quantization/nn/modules/tensor_quantizer.py",
+      "bytes": 60481,
+      "sha256": "2a217b0c1cc971cf5b046a046cdbd215bf9f84ac81bde5b4d69baadd1c08ac30"
+    },
+    {
+      "entry": "records/pbwo/primary/ec87a82927d003986d44fb7f4fa8b3d10c31b095/modelopt/torch/quantization/nn/modules/tensor_quantizer.py.http.json",
+      "bytes": 1786,
+      "sha256": "2d84079437f7546af389ada67269b11d4ebdf38692a427dbbe56174f3d2c49a4"
+    },
+    {
+      "entry": "records/pbwo/primary/ec87a82927d003986d44fb7f4fa8b3d10c31b095/modelopt/torch/quantization/qtensor/fp8_tensor.py",
+      "bytes": 6277,
+      "sha256": "ec9caf56fc140720a55732f827dbdd41b9fdf8fcb961a1e37028d4d4b69b7fae"
+    },
+    {
+      "entry": "records/pbwo/primary/ec87a82927d003986d44fb7f4fa8b3d10c31b095/modelopt/torch/quantization/qtensor/fp8_tensor.py.http.json",
+      "bytes": 1764,
+      "sha256": "ebc48570e6fc7d861ea2163d4b7ae093f54f2cce4c5b1d16415617fd57472759"
+    },
+    {
+      "entry": "records/pbwo/primary/fp8_2d_blockwise_weight_only.yaml.http.json",
+      "bytes": 466,
+      "sha256": "db72849d4a877a8b22c07706c0c85ebd6578ff4c45bde582adeaa6d10fea51b2"
+    },
+    {
+      "entry": "records/pbwo/reader-source-identities.json",
+      "bytes": 2200,
+      "sha256": "8650b0ee8ca0ed460b7cac54efada0a243c818ce79133330ff6fb3cecfd0ea39"
+    },
+    {
+      "entry": "records/pbwo/runtime/vllm-modelopt.py",
+      "bytes": 106968,
+      "sha256": "a2b87ae1d271fcdf7ce5fb017f225af744743353be16b4a2d5e7e24cce8a33f6"
+    },
+    {
+      "entry": "records/pbwo/runtime/vllm-modelopt.py.http.json",
+      "bytes": 1639,
+      "sha256": "881b2363c567b040f27e721e1a90625ff5351cf54b809f3adb17b6cfb232cd93"
+    },
+    {
+      "entry": "records/pbwo/scalar-witness.json",
+      "bytes": 1325,
+      "sha256": "1dbb846440c6c62070f8933a7361d516c424dbce5f0b3b33dd2d1576211826b6"
+    },
+    {
+      "entry": "records/pbwo/scalar_witness.py",
+      "bytes": 1954,
+      "sha256": "65df6332d8593466f97ce6d6754b2c83093a9d62f5116c800db1d97065bbddc5"
+    },
+    {
+      "entry": "records/pbwo/source-inventory.json",
+      "bytes": 1674,
+      "sha256": "af52791d5917e0619aaf9c6b60347c783b74995aeead16bea4302d0e3c21767b"
+    },
+    {
+      "entry": "records/pbwo/write_review.py",
+      "bytes": 13390,
+      "sha256": "b3c2e6bda13f337babf41b4eed9f6d91a8e7cec6943b78513cdf496a84fdb200"
+    },
+    {
+      "entry": "records/root/add_wrappers.py",
+      "bytes": 951,
+      "sha256": "8c4065c7a9a1e838c689e9eeac7858778cfcdc99c11a13ee7e5c831f3a384d11"
+    },
+    {
+      "entry": "records/root/before/include--hyle--compute--weight_import.h",
+      "bytes": 3192,
+      "sha256": "30dcee5c343604be21f659200983b0411e390c772795a50c4c853e5bb8cb4116"
+    },
+    {
+      "entry": "records/root/before/src--compute--weight_import.cc",
+      "bytes": 17643,
+      "sha256": "8e858b40acbe68e208de7fa022bffa54cdf9ac20917580ba2d27928ebc5fd5d0"
+    },
+    {
+      "entry": "records/root/before/tests--compute--weight_import_test.cc",
+      "bytes": 25147,
+      "sha256": "20621f776a45f83c27ebb79b4d7a15f2b93300e2273187d54689c1e8e3b89c08"
+    },
+    {
+      "entry": "records/root/build_common.py",
+      "bytes": 1796,
+      "sha256": "70c1918d0c718cbb63eec9f11533a2755a5c67db4a2494818c7f49ec05787ff4"
+    },
+    {
+      "entry": "records/root/build_wrapper.py",
+      "bytes": 1630,
+      "sha256": "de0da4993cb8e0ac2f4a9e345a4f33ba92f5e1a98fb4b4c8228fd211073d7ddb"
+    },
+    {
+      "entry": "records/root/common-plan.json",
+      "bytes": 20952,
+      "sha256": "4c3d345cdd912ec8434e777aee17ad2097a8cbdf981d07983e32b0e2e8bc4a8e"
+    },
+    {
+      "entry": "records/root/link_windows.py",
+      "bytes": 1936,
+      "sha256": "90f9028a5d2a5c358e5eb7b8490b55ae3b44df7337775ba3d1cb1cf9bbd54694"
+    },
+    {
+      "entry": "records/root/package.py",
+      "bytes": 9681,
+      "sha256": "bb8324078bc84cd08af1d19d43027e8da3c7c86278f48822c0868dbc126f42d3"
+    },
+    {
+      "entry": "records/root/prepare_cleanup.py",
+      "bytes": 5457,
+      "sha256": "729059531c94c6413a9c91a0fcafc184ca8bbadbb5334543be491729e38bed92"
+    },
+    {
+      "entry": "records/root/run_windows.py",
+      "bytes": 2083,
+      "sha256": "68be9431d3ed278b919e9916bdad0bb81a0563645a2f05b4b0b00bc463896316"
+    },
+    {
+      "entry": "records/root/setup.py",
+      "bytes": 1370,
+      "sha256": "e9d220b46647d6acf00fa76708160e7d91df6f78532da116fb8edc091235e310"
+    },
+    {
+      "entry": "records/root/setup_cleanup.py",
+      "bytes": 855,
+      "sha256": "b0dd345d72fa05c156cc6f33f9bbfe80f00049346ea0b41d24641d8510c14b2b"
+    },
+    {
+      "entry": "records/root/source-before.json",
+      "bytes": 496,
+      "sha256": "3279f84e2f7938ed3b65173d63b32e22cfdd3dc6e78d8d16f03b4915b030a0e6"
+    },
+    {
+      "entry": "records/vulkan/checks/link1/image.json",
+      "bytes": 267,
+      "sha256": "1b563b34064700199db83b22095255abbc2e792122c9b64f5b85a035da3c6a27"
+    },
+    {
+      "entry": "records/vulkan/checks/link1/link-plan.json",
+      "bytes": 83776,
+      "sha256": "56bf0acc1ebd2045669890981f0feaa5c3af927e50cac06c5b5019c5fc72e5ba"
+    },
+    {
+      "entry": "records/vulkan/checks/link1/link.command.json",
+      "bytes": 29821,
+      "sha256": "cc502eb8cb7fb5d98dde74711d95727dc7192cbc08e709c3bacf8b22a40276fc"
+    },
+    {
+      "entry": "records/vulkan/checks/link1/link.result.json",
+      "bytes": 29890,
+      "sha256": "3215740eb21d434d83528f8c1520d787aab6353202c233af931dc11c9c4ae934"
+    },
+    {
+      "entry": "records/vulkan/checks/link1/link.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/vulkan/checks/link1/link.stdout.log",
+      "bytes": 302,
+      "sha256": "39500b667745139268d89cfb9bf5709265f1d4f8fde41ea0838df4593d8d1c18"
+    },
+    {
+      "entry": "records/vulkan/checks/link1/live.json",
+      "bytes": 29890,
+      "sha256": "3215740eb21d434d83528f8c1520d787aab6353202c233af931dc11c9c4ae934"
+    },
+    {
+      "entry": "records/vulkan/checks/link1/runtime-environment.json",
+      "bytes": 8168,
+      "sha256": "1aa2abd4e47acb9619357b1f5ae4706989f3fd36515133996fb310250fb6abf3"
+    },
+    {
+      "entry": "records/vulkan/validation/final1/image-before.json",
+      "bytes": 267,
+      "sha256": "1b563b34064700199db83b22095255abbc2e792122c9b64f5b85a035da3c6a27"
+    },
+    {
+      "entry": "records/vulkan/validation/final1/live.json",
+      "bytes": 587,
+      "sha256": "d15884006eff9dfa46a28421d5f4055f39d19444dbfe3c3dc38caaab332baf35"
+    },
+    {
+      "entry": "records/vulkan/validation/final1/receipt.json",
+      "bytes": 2233,
+      "sha256": "7f03885d47cd67b61120501c6787ef9b8510fd54e475e48fb7cdb5c17da26943"
+    },
+    {
+      "entry": "records/vulkan/validation/final1/runtime-environment.json",
+      "bytes": 8168,
+      "sha256": "1aa2abd4e47acb9619357b1f5ae4706989f3fd36515133996fb310250fb6abf3"
+    },
+    {
+      "entry": "records/vulkan/validation/final1/tests.command.json",
+      "bytes": 517,
+      "sha256": "d2376137d5d8faa298da13ac36ddcc7ab6819d47b01a22bc3a0894e5c323fa13"
+    },
+    {
+      "entry": "records/vulkan/validation/final1/tests.result.json",
+      "bytes": 587,
+      "sha256": "d15884006eff9dfa46a28421d5f4055f39d19444dbfe3c3dc38caaab332baf35"
+    },
+    {
+      "entry": "records/vulkan/validation/final1/tests.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/vulkan/validation/final1/tests.stdout.log",
+      "bytes": 918,
+      "sha256": "b5c8f1dfd3123d9ce06c2bf5e76b1d69d3275e4dc426f77539dfd723bb3126ea"
+    },
+    {
+      "entry": "records/vulkan/validation/final1/tests.xml",
+      "bytes": 1533,
+      "sha256": "b9a1dfaa14c03672543d60679c8bef64b46d0209721fa7b1344890114b6d63e5"
+    },
+    {
+      "entry": "source/docs/developer/current-work.md",
+      "bytes": 32215,
+      "sha256": "9825738c5c38d923d959e6f3812436a0d7f1ec525ad6f46ec70910070c26d482"
+    },
+    {
+      "entry": "source/docs/implementation/model-operators.md",
+      "bytes": 76212,
+      "sha256": "4f690fb56dc7ab7beabc66d4f1bbcb5764ca62b9b9e963d3c1b1b3a899847ad5"
+    },
+    {
+      "entry": "source/docs/implementation/model-quantizations.json",
+      "bytes": 542575,
+      "sha256": "a40ee99d296abdf7832553044dc6ac13b4e35a9be0b81f5d4511fa868dc96102"
+    },
+    {
+      "entry": "source/docs/user/compute.md",
+      "bytes": 117075,
+      "sha256": "dde53f13d5ef26e002619a100bd261b50a84c524f00b49c37ab4ed6dc3087697"
+    },
+    {
+      "entry": "source/include/hyle/compute/model_ops.h",
+      "bytes": 74365,
+      "sha256": "86fcfb2ea003cc3d172a1babb18372861cf02668d0614c45591750fce5932573"
+    },
+    {
+      "entry": "source/include/hyle/compute/weight_import.h",
+      "bytes": 3487,
+      "sha256": "19479024d3e80a6c7357dd55cc79e59347c20b22b621ce6f2779082afaaab6cb"
+    },
+    {
+      "entry": "source/src/compute/weight_import.cc",
+      "bytes": 18148,
+      "sha256": "caa7caabbe464198883d9af074be269330cf4273144f8746dcf3457083c0fc6f"
+    },
+    {
+      "entry": "source/src/compute_ops/weight_decode.cc",
+      "bytes": 17322,
+      "sha256": "8ddf5de604e0fe55525f2b78b44f6b6cb82eca4d7b483e0cd4d62ebc7afdc964"
+    },
+    {
+      "entry": "source/src/compute_route_apple/apple_mature_float.cc",
+      "bytes": 36640,
+      "sha256": "151d714068c8249f519bf514a8c1b69580d7e51f0399b75f135f74f54198e04e"
+    },
+    {
+      "entry": "source/src/compute_route_apple/apple_tensor.cc",
+      "bytes": 39266,
+      "sha256": "837ab889add8a3f694d3dfffe958c7ba7cb2933eb7b1a2d64f4c278102e32f77"
+    },
+    {
+      "entry": "source/tests/compute/weight_import_test.cc",
+      "bytes": 28173,
+      "sha256": "f4780fab6fe1761503ae43cffdddb6ba587170e1e7a930b25a850f5ab57d7e5b"
+    },
+    {
+      "entry": "source/tests/compute_models/e8m0_weight_import_fixture.h",
+      "bytes": 9022,
+      "sha256": "a4af823849b52de950c8640f392f6299373c9f847518136caab5af06ad0e6aa9"
+    },
+    {
+      "entry": "source/tests/compute_models/mlx_affine_bitstream.h",
+      "bytes": 1098,
+      "sha256": "5317fec77bcb553c4f9b5f8073e38083070fdbb7733249fa0b1c7ad848f35cf8"
+    },
+    {
+      "entry": "source/tests/compute_models/mlx_moe_fixture.h",
+      "bytes": 15814,
+      "sha256": "4f67dc45745c337c9f42dd67a5b095dc52c56c04e6d8fc1493d1e2bb4685d8bb"
+    },
+    {
+      "entry": "source/tests/compute_models/nvfp4_reference_fixture.h",
+      "bytes": 22482,
+      "sha256": "cc94ec1f443511722ff4fc227b065af27b82573443735250951cdce934faa4d3"
+    },
+    {
+      "entry": "source/tests/graph_route_apple/CMakeLists.txt",
+      "bytes": 6440,
+      "sha256": "eef30961caed6a6d356db75c12bc6be8f6a1dfb493b209dec554b117dc613728"
+    },
+    {
+      "entry": "source/tests/graph_route_apple/e8m0_weight_import_test.cc",
+      "bytes": 1922,
+      "sha256": "335e8dee836a5051f07e3f7fa26527ad76064ff14aa0dfbc5e441d87a3b04cbc"
+    },
+    {
+      "entry": "source/tests/graph_route_apple/mlx_moe_test.cc",
+      "bytes": 1055,
+      "sha256": "5df29f0d2635b718915f5a312b4c30316665d1321a1340a07e3b468771fa8c78"
+    },
+    {
+      "entry": "source/tests/graph_route_cpu/e8m0_weight_import_test.cc",
+      "bytes": 1772,
+      "sha256": "3430961fc27937b640d2218984c8e47cf41ee0d876fea5667f992a21690e0b34"
+    },
+    {
+      "entry": "source/tests/graph_route_cuda/e8m0_weight_import_test.cc",
+      "bytes": 2175,
+      "sha256": "367b3bd14e27674f9e5c165931c7cdcae926316aa4ac6ce0414178b86a25f579"
+    },
+    {
+      "entry": "source/tests/graph_route_vulkan/e8m0_weight_import_test.cc",
+      "bytes": 3631,
+      "sha256": "a50aa09efc1fc6f154d0b8a82e86ea4d1aac696a53788a75884879e6a5577571"
+    }
+  ]
+}

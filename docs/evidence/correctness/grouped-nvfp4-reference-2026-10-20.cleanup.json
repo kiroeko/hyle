@@ -1,0 +1,218 @@
+{
+  "status": "completed",
+  "local": {
+    "files": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-nvfp4\\common-cpu\\checks\\cpu.exe",
+        "bytes": 27289088,
+        "sha256": "3a9fa733e95843c591268cfb8fd8a4215230237c57d32dbead433e39dba1653d"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-nvfp4\\common-cpu\\checks\\cpu.exp",
+        "bytes": 24999,
+        "sha256": "b019dfd98aeb5766638d65022b7446ad3823a531de0179b2c4777a9dc6210f47"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-nvfp4\\common-cpu\\checks\\cpu.lib",
+        "bytes": 41298,
+        "sha256": "1a72c22d3a6dec39cca5118fd99aa738ff5f4202c029fc8a48afb6c3d20e909d"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-nvfp4\\common-cpu\\checks\\cpu.map",
+        "bytes": 40199355,
+        "sha256": "e0dfd1b6fa9e201715cede40892de222464f3efcc9763bd0071c72d207bdeaa0"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-nvfp4\\cuda\\tests\\cuda.exe",
+        "bytes": 121129472,
+        "sha256": "f7c9df3b6195c6841de06237eee9d0bbde56702f76e2c333cb215cea74da5c53"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-nvfp4\\cuda\\tests\\cuda.exp",
+        "bytes": 24995,
+        "sha256": "f827420d4285a9759ee278f7f2f1dfdb1ea9656f8b0a410c43900dce369634ae"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-nvfp4\\cuda\\tests\\cuda.lib",
+        "bytes": 41384,
+        "sha256": "097299e17e955c077a99f65f363d3484d564c016359baeb643f4e47c6b737d59"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-nvfp4\\cuda\\tests\\cuda.map",
+        "bytes": 42189796,
+        "sha256": "c8207275c58539fb03ee69e42459621eef7949ac5ca0793e76e1a29b627b02af"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-nvfp4-vulkan\\checks\\grouped-nvfp4-test.exe",
+        "bytes": 68818944,
+        "sha256": "96d2f953c521de62fcbd3e962383b0d54ce7c9680946da5462d2d25d455cfc4d"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-nvfp4-vulkan\\checks\\grouped-nvfp4-test.exp",
+        "bytes": 25026,
+        "sha256": "4bbddc452ece1ab63477421d469e1dd25c714a208aa01e67c04c453f311a7e57"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-nvfp4-vulkan\\checks\\grouped-nvfp4-test.lib",
+        "bytes": 42700,
+        "sha256": "88b92d3515654b523a97314291271e6dcd11f03de6b83e295212b4f72321e8af"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-nvfp4-vulkan\\checks\\grouped-nvfp4-test.map",
+        "bytes": 35608110,
+        "sha256": "2d34da77bd15d973602bc35da5a9bba293e6e24421625c30a1c7ee345d884d68"
+      }
+    ],
+    "bytes": 335435167.0
+  },
+  "remote": {
+    "status": "completed",
+    "files": [
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/grouped-nvfp4/apple/grouped-nvfp4-retry1",
+        "bytes": 15606200,
+        "sha256": "16e16212911092769e77cf42b5542262a65a0b2ef3a6bbd2ecc03ec61edcd3cb"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/grouped-nvfp4/apple/grouped-nvfp4-retry1.map",
+        "bytes": 4588006,
+        "sha256": "58ad153f25b9f456f14ae073cdcf35e8d5f1852197730ef2ee37b4af6d2d6f0c"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/grouped-nvfp4/apple/status-carrier-v2/grouped-nvfp4",
+        "bytes": 15606192,
+        "sha256": "8b6ccb8acbf697169a4c34b0b0266c0bacd622964f43930ce0dac08751018309"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/grouped-nvfp4/apple/status-carrier-v2/grouped-nvfp4.map",
+        "bytes": 4588009,
+        "sha256": "421234cb85047db4467ba838647576aac9445b874aa7fdf190a89b9c656f7375"
+      }
+    ],
+    "bytes": 40388407
+  },
+  "proofs": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\grouped-nvfp4-reference-2026-10-20.json",
+      "bytes": 15788,
+      "sha256": "0ce23e01e8bf2d5accd5c805ac5689b37a08cae59dcf0158c83b95d4befe1df5"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\grouped-nvfp4-reference-2026-10-20.zip",
+      "bytes": 481364,
+      "sha256": "6cf84d04906f40ddfaac2e5b0c048922c45e4d63bf74dae5e5b58526db4ac50f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-nvfp4\\common-cpu\\source-freeze.json",
+      "bytes": 2806,
+      "sha256": "08e9c2ab9a6b3e44e260253abb6b8b69c9feeaa8265c39fbcdb7b32a5e1d7f10"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-nvfp4\\common-cpu\\checks\\summary.json",
+      "bytes": 3494,
+      "sha256": "b818059bf8f7d03d2090ba0974979db8b716df22abd730c7f64f2214713fa34d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-nvfp4\\cuda\\final-source-freeze.json",
+      "bytes": 3391,
+      "sha256": "b9c1ae1c18cd1448a2692ffc15010526d0fdd630ed5b0128dca2363d4721acb9"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-nvfp4\\cuda\\validation\\result.json",
+      "bytes": 2976,
+      "sha256": "732348a260a9189dcd01bee962a6a2b221ab554ca4094a0d0bd835c2e43d9f14"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-nvfp4\\vulkan\\validation\\result.json",
+      "bytes": 3049,
+      "sha256": "4c3e45a6c5d549ee307206ef0419cba3e2de25791178812d81b65618ae7a49d1"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-nvfp4\\apple\\source-freeze.json",
+      "bytes": 2339,
+      "sha256": "26b29b8b6d0a827c28cb7d9a7afe70e6ddf39d507b88c1af543f1fdaaa2557fa"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-nvfp4\\apple\\final-validation.json",
+      "bytes": 14462,
+      "sha256": "3729affa65617ceaab9c65a152ad07abb7052385b6f49511f42734d9df7d1f78"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-nvfp4-vulkan\\source-freeze.json",
+      "bytes": 4565,
+      "sha256": "3569ee04f04e5fcbfbb004e6f7225f67aef5861ecd97f22adaf6b7681b89ae4e"
+    }
+  ],
+  "protected": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-nvfp4\\common-cpu\\checks\\direct-test.obj",
+      "bytes": 971358,
+      "sha256": "488e5cfc2e22db33a5546d7bd1b2b0a844953ee9f784e0edf43e46c96c551a0a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-nvfp4\\common-cpu\\checks\\graph-test.obj",
+      "bytes": 2528337,
+      "sha256": "f9560782979a044a66b7503d59f6952220cbf1de5aa65b0c92bb5d7dd821d1db"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-nvfp4\\common-cpu\\checks\\native-nvfp4.obj",
+      "bytes": 227998,
+      "sha256": "5741a6e974972f0e2ff8d16ee474b9a8980553bd7d5ddcdefef99f0e855f9f49"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-nvfp4\\common-cpu\\checks\\native-provider.obj",
+      "bytes": 724401,
+      "sha256": "a1dac2e7389f6c8b14fcf54a530105797e39e9cbe93c8a2f7bee73b087cc3faf"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-nvfp4\\common-cpu\\checks\\weight-decode.obj",
+      "bytes": 100100,
+      "sha256": "650fa3b9ce679ca766d483cdfc246af745f3ca0e0b9828f728c862f48ceb4e94"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-nvfp4\\cuda\\checks\\cuda-provider.obj",
+      "bytes": 686217,
+      "sha256": "f91d119bc133319d0f0e4a5120d270c0e134c171f680abcd81975bc27c07a70b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-nvfp4\\cuda\\checks\\nvfp4-provider.obj",
+      "bytes": 113233,
+      "sha256": "9acff21374bb934ef137fe0dbffce8abf0633280e3434647e78de75e7f55ac5b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-nvfp4\\cuda\\tests\\test.obj",
+      "bytes": 2659424,
+      "sha256": "d71595977e622eca7a3d721a57ae3c16c599ed298cf02c7b8b5772f6bba9a2f3"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-nvfp4\\cuda\\checks\\native-retry1\\nvfp4-kernel.obj",
+      "bytes": 170300,
+      "sha256": "629d409a1378c3d9dd8c2582d8452539797edb6063555e8212834e4b5a253bfd"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-nvfp4-vulkan\\checks\\grouped-nvfp4-test.obj",
+      "bytes": 2609364,
+      "sha256": "e5d85ab13707f61df1a77f7e007192250d137a15be62519e30f95f57322f4831"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-nvfp4-vulkan\\checks\\vulkan_nvfp4.obj",
+      "bytes": 252938,
+      "sha256": "8f1780b3e199e00b3ac464acd95b1a0960184f33fc4cfa080c0fb2e82387793c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-nvfp4-vulkan\\checks\\vulkan_operations.obj",
+      "bytes": 247223,
+      "sha256": "27739da631dbd3fb863e44475db9aaca50a1dee3920281ce80871e337975e845"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-nvfp4-vulkan\\checks\\vulkan_program.obj",
+      "bytes": 2444593,
+      "sha256": "6c8e65e05a9f4075cbd4d246b3ac6065a792a40f54e44e13031d57142d8e1770"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-nvfp4-vulkan\\checks\\vulkan_shaders.obj",
+      "bytes": 408234,
+      "sha256": "1f8353971ba4fda0fcc81555e188215eb5e9302b90db98334f6fd48513aebcca"
+    }
+  ]
+}

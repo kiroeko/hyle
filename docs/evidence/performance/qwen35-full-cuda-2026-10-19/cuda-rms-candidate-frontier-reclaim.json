@@ -1,0 +1,104 @@
+{
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\qwen35-full-cuda-2026-10-19\\cuda-rms-candidate-frontier.zip",
+    "bytes": 18180217,
+    "sha256": "3a98a354eef0697b1a27dca63bd921337152ae98feeda3b85465155500426be2",
+    "entries": 334,
+    "CRC_and_payload_SHA_verified": true,
+    "reclaim_manifest": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-rms-candidate-frontier\\reclaim-targets.json",
+      "bytes": 4615,
+      "sha256": "53f5957a20e25c8b7184cd8482063dbf5b6e8f50a0801e7f737488ca7b85d3de"
+    }
+  },
+  "targets": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-rms-candidate-frontier\\comparison\\baseline.exe",
+      "bytes": 116230144,
+      "sha256": "73c76dca2d8932e16a05f14332c9a7e67ac8102fb8bda2cd7fe81f3b5c0a882c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-rms-candidate-frontier\\comparison\\baseline.exp",
+      "bytes": 25017,
+      "sha256": "df81876c9142f748078dde8f06dc8118dbccef85a26581f4b211ae2b7850432f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-rms-candidate-frontier\\comparison\\baseline.lib",
+      "bytes": 41736,
+      "sha256": "716c7bf4e9533f251a02b7669470b23b4e893859b4ada256dc3b7d54f4554a1f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-rms-candidate-frontier\\comparison\\baseline.map",
+      "bytes": 33700947,
+      "sha256": "61dd747504646f2b8d26dc08577ad34392cc396101d5f05eaa42b36b07a09ae8"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-rms-candidate-frontier\\comparison\\peer.exe",
+      "bytes": 35814400,
+      "sha256": "82c45d4c31a4e45cdfa1f337eeb54b1829b2a320cab7c00c3403938179d67281"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-rms-candidate-frontier\\comparison\\peer.map",
+      "bytes": 22806334,
+      "sha256": "656b43d29cc69c3ad32634f7429eb4b42883380651e9a0a45cc189a70c7465cc"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-rms-candidate-frontier\\checks\\20261019T080921\\cuda.exe",
+      "bytes": 117928448,
+      "sha256": "e8aa86d975e554098685d970d8bd7b52010a2365af7e9d4cb1692cb9529c1caf"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-rms-candidate-frontier\\checks\\20261019T080921\\cuda.exp",
+      "bytes": 25021,
+      "sha256": "b4f801bf5d52975d3a08ece37d5f53c1c60962994a109b677c827c5af5e89ced"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-rms-candidate-frontier\\checks\\20261019T080921\\cuda.lib",
+      "bytes": 41384,
+      "sha256": "097299e17e955c077a99f65f363d3484d564c016359baeb643f4e47c6b737d59"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-rms-candidate-frontier\\checks\\20261019T080921\\cuda.map",
+      "bytes": 36994307,
+      "sha256": "e90c5b760cd81cd3d95836149aa110bc7d626d9f4c8cdcd8a70f0f672df7792d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-rms-candidate-frontier\\checks\\20261019T080921\\qwen.exp",
+      "bytes": 25021,
+      "sha256": "68763654762ba673ecae882484285d38c82e40de617e203d7aa896238079244f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-rms-candidate-frontier\\checks\\20261019T080921\\qwen.lib",
+      "bytes": 41384,
+      "sha256": "339d3ce297534ebac8825c27a011f2f4f9dfe366c657ebfc45dbbfdc8412a2cb"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-rms-candidate-frontier\\checks\\20261019T080921\\qwen.map",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-rms-candidate-frontier\\checks\\platform-fs-relink-20261019T081124\\qwen.exe",
+      "bytes": 116242944,
+      "sha256": "6ebf57e026299db17b99ac68b55762f9f00b9fa96e320b51f3806e25c66a2d1a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-rms-candidate-frontier\\checks\\platform-fs-relink-20261019T081124\\qwen.exp",
+      "bytes": 25040,
+      "sha256": "ceda1b2caca298bb07eb5c90d5e8d64b809040d32f39f154b807aa277705f472"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-rms-candidate-frontier\\checks\\platform-fs-relink-20261019T081124\\qwen.lib",
+      "bytes": 41384,
+      "sha256": "339d3ce297534ebac8825c27a011f2f4f9dfe366c657ebfc45dbbfdc8412a2cb"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-rms-candidate-frontier\\checks\\platform-fs-relink-20261019T081124\\qwen.map",
+      "bytes": 33692550,
+      "sha256": "a13d7e31b3b13bd2d7de6bbcefc426522e0f800afaa4f5da95994107a180cb02"
+    }
+  ],
+  "recursive": false,
+  "raw_vectors_retained": true,
+  "objects_retained": true
+}

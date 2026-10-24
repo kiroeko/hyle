@@ -1,0 +1,1119 @@
+{
+  "scope": "Read-only recount of recorded ordinary allCUDA Qwen3.5-2B BF16 finite exact Graph routes, plus current source kind scan. No new build/model/profile/run. Route scopes R1 T1/T15 and MTP roles2/3/4/6 only; not an AV P154 trace.",
+  "public_name_family_count": 17,
+  "public_name_families": [
+    "gather",
+    "cast",
+    "binary",
+    "rms-norm",
+    "view",
+    "matmul",
+    "concat",
+    "copy",
+    "causal-conv1d",
+    "unary",
+    "reduce",
+    "gated-delta-net",
+    "rope",
+    "paged-append",
+    "paged-attention",
+    "bfloat-linear-f32",
+    "top-k"
+  ],
+  "unary_subtypes": [
+    "exp",
+    "neg",
+    "rsqrt",
+    "sigmoid",
+    "silu",
+    "softplus"
+  ],
+  "binary_subtypes": [
+    "add",
+    "multiply"
+  ],
+  "refined_semantic_and_support_type_count": 23,
+  "view_subtypes": [
+    "reshape",
+    "permute",
+    "slice"
+  ],
+  "refined_if_view_subtypes_separated": 25,
+  "MTP_additional_public_types_in_recorded_routes": 0,
+  "named_specialized_ggml_cuda_region_families": [
+    {
+      "id": 3,
+      "name": "SiLU multiply, including cast-typed variant"
+    },
+    {
+      "id": 4,
+      "name": "Two BF16 gate/up projections with SiLU multiply"
+    },
+    {
+      "id": 5,
+      "name": "Cast stable SiLU preserving BF16 boundary"
+    },
+    {
+      "id": 6,
+      "name": "Paired BF16 projections from same input"
+    }
+  ],
+  "generic_region_implementation": {
+    "id": 2,
+    "meaning": "General native graph lowering and constant preparation; one region is not one GPU kernel"
+  },
+  "routes": [
+    {
+      "path": ".scratch\\qwen-cublas-scores-20261022\\cases1\\ordinary-after\\trace\\routes\\default-R1-T1.route.tsv",
+      "sha256": "2a902994dc27e49c81d45dcbffcd18c1d9ae8edfd68148d81f8f4271adbaa2c6",
+      "nodes": 1870,
+      "steps": 1039,
+      "families": 17,
+      "node_histogram": {
+        "gather": 1,
+        "cast": 453,
+        "binary": 319,
+        "rms-norm": 79,
+        "view": 511,
+        "matmul": 186,
+        "concat": 18,
+        "copy": 25,
+        "causal-conv1d": 18,
+        "unary": 174,
+        "reduce": 36,
+        "gated-delta-net": 18,
+        "rope": 12,
+        "paged-append": 12,
+        "paged-attention": 6,
+        "bfloat-linear-f32": 1,
+        "top-k": 1
+      },
+      "multi_node_region_signature_count": 14,
+      "multi_node_region_instances": 254,
+      "native_implementation_keys": 11,
+      "ggml_region_implementation_instances": {
+        "2": 194,
+        "5": 18,
+        "6": 18,
+        "3": 18,
+        "4": 24
+      },
+      "patterns": [
+        {
+          "sequence": [
+            "cast",
+            "binary"
+          ],
+          "instances": 1
+        },
+        {
+          "sequence": [
+            "cast",
+            "rms-norm",
+            "cast"
+          ],
+          "instances": 13
+        },
+        {
+          "sequence": [
+            "cast",
+            "causal-conv1d"
+          ],
+          "instances": 18
+        },
+        {
+          "sequence": [
+            "cast",
+            "unary"
+          ],
+          "instances": 18
+        },
+        {
+          "sequence": [
+            "matmul",
+            "matmul"
+          ],
+          "instances": 18
+        },
+        {
+          "sequence": [
+            "cast",
+            "cast",
+            "unary",
+            "unary"
+          ],
+          "instances": 18
+        },
+        {
+          "sequence": [
+            "binary",
+            "reduce",
+            "binary",
+            "unary",
+            "binary",
+            "cast"
+          ],
+          "instances": 36
+        },
+        {
+          "sequence": [
+            "cast",
+            "cast",
+            "gated-delta-net"
+          ],
+          "instances": 18
+        },
+        {
+          "sequence": [
+            "cast",
+            "cast",
+            "rms-norm",
+            "cast",
+            "cast",
+            "binary"
+          ],
+          "instances": 18
+        },
+        {
+          "sequence": [
+            "cast",
+            "unary",
+            "binary",
+            "cast"
+          ],
+          "instances": 18
+        },
+        {
+          "sequence": [
+            "binary",
+            "cast",
+            "binary",
+            "cast",
+            "rms-norm",
+            "cast"
+          ],
+          "instances": 42
+        },
+        {
+          "sequence": [
+            "matmul",
+            "unary",
+            "matmul",
+            "binary"
+          ],
+          "instances": 24
+        },
+        {
+          "sequence": [
+            "binary",
+            "cast",
+            "binary",
+            "cast",
+            "rms-norm",
+            "cast",
+            "cast",
+            "binary"
+          ],
+          "instances": 6
+        },
+        {
+          "sequence": [
+            "copy",
+            "cast",
+            "binary"
+          ],
+          "instances": 6
+        }
+      ]
+    },
+    {
+      "path": ".scratch\\qwen-cublas-scores-20261022\\cases1\\ordinary-after\\trace\\routes\\default-R1-T15.route.tsv",
+      "sha256": "7e71d2642e522ba819f54fa406363b9d740f02a309d5a0df85e4abba958954ca",
+      "nodes": 1870,
+      "steps": 1105,
+      "families": 17,
+      "node_histogram": {
+        "gather": 1,
+        "cast": 453,
+        "binary": 319,
+        "rms-norm": 79,
+        "view": 511,
+        "matmul": 186,
+        "concat": 18,
+        "copy": 25,
+        "causal-conv1d": 18,
+        "unary": 174,
+        "reduce": 36,
+        "gated-delta-net": 18,
+        "rope": 12,
+        "paged-append": 12,
+        "paged-attention": 6,
+        "bfloat-linear-f32": 1,
+        "top-k": 1
+      },
+      "multi_node_region_signature_count": 13,
+      "multi_node_region_instances": 236,
+      "native_implementation_keys": 9,
+      "ggml_region_implementation_instances": {
+        "2": 194,
+        "5": 18,
+        "3": 42
+      },
+      "patterns": [
+        {
+          "sequence": [
+            "cast",
+            "binary"
+          ],
+          "instances": 1
+        },
+        {
+          "sequence": [
+            "cast",
+            "rms-norm",
+            "cast"
+          ],
+          "instances": 13
+        },
+        {
+          "sequence": [
+            "cast",
+            "causal-conv1d"
+          ],
+          "instances": 18
+        },
+        {
+          "sequence": [
+            "cast",
+            "unary"
+          ],
+          "instances": 18
+        },
+        {
+          "sequence": [
+            "cast",
+            "cast",
+            "unary",
+            "unary"
+          ],
+          "instances": 18
+        },
+        {
+          "sequence": [
+            "binary",
+            "reduce",
+            "binary",
+            "unary",
+            "binary",
+            "cast"
+          ],
+          "instances": 36
+        },
+        {
+          "sequence": [
+            "cast",
+            "cast",
+            "gated-delta-net"
+          ],
+          "instances": 18
+        },
+        {
+          "sequence": [
+            "cast",
+            "cast",
+            "rms-norm",
+            "cast",
+            "cast",
+            "binary"
+          ],
+          "instances": 18
+        },
+        {
+          "sequence": [
+            "cast",
+            "unary",
+            "binary",
+            "cast"
+          ],
+          "instances": 18
+        },
+        {
+          "sequence": [
+            "binary",
+            "cast",
+            "binary",
+            "cast",
+            "rms-norm",
+            "cast"
+          ],
+          "instances": 42
+        },
+        {
+          "sequence": [
+            "unary",
+            "binary"
+          ],
+          "instances": 24
+        },
+        {
+          "sequence": [
+            "binary",
+            "cast",
+            "binary",
+            "cast",
+            "rms-norm",
+            "cast",
+            "cast",
+            "binary"
+          ],
+          "instances": 6
+        },
+        {
+          "sequence": [
+            "copy",
+            "cast",
+            "binary"
+          ],
+          "instances": 6
+        }
+      ]
+    },
+    {
+      "path": ".scratch\\qwen-cublas-scores-20261022\\cases1\\mtp-single\\trace\\routes\\default-role2-R1-T15.route.tsv",
+      "sha256": "39794d0f12e55f0433e801177ac64a14adb8db06e2bf21d8acddc130ed519075",
+      "nodes": 1908,
+      "steps": 1131,
+      "families": 17,
+      "node_histogram": {
+        "gather": 2,
+        "cast": 465,
+        "binary": 323,
+        "rms-norm": 83,
+        "view": 519,
+        "matmul": 189,
+        "concat": 20,
+        "copy": 26,
+        "causal-conv1d": 18,
+        "unary": 174,
+        "reduce": 36,
+        "gated-delta-net": 18,
+        "rope": 13,
+        "paged-append": 14,
+        "paged-attention": 6,
+        "bfloat-linear-f32": 1,
+        "top-k": 1
+      },
+      "multi_node_region_signature_count": 14,
+      "multi_node_region_instances": 242,
+      "native_implementation_keys": 9,
+      "ggml_region_implementation_instances": {
+        "2": 200,
+        "5": 18,
+        "3": 42
+      },
+      "patterns": [
+        {
+          "sequence": [
+            "cast",
+            "binary"
+          ],
+          "instances": 1
+        },
+        {
+          "sequence": [
+            "cast",
+            "rms-norm",
+            "cast"
+          ],
+          "instances": 17
+        },
+        {
+          "sequence": [
+            "cast",
+            "causal-conv1d"
+          ],
+          "instances": 18
+        },
+        {
+          "sequence": [
+            "cast",
+            "unary"
+          ],
+          "instances": 18
+        },
+        {
+          "sequence": [
+            "cast",
+            "cast",
+            "unary",
+            "unary"
+          ],
+          "instances": 18
+        },
+        {
+          "sequence": [
+            "binary",
+            "reduce",
+            "binary",
+            "unary",
+            "binary",
+            "cast"
+          ],
+          "instances": 36
+        },
+        {
+          "sequence": [
+            "cast",
+            "cast",
+            "gated-delta-net"
+          ],
+          "instances": 18
+        },
+        {
+          "sequence": [
+            "cast",
+            "cast",
+            "rms-norm",
+            "cast",
+            "cast",
+            "binary"
+          ],
+          "instances": 18
+        },
+        {
+          "sequence": [
+            "cast",
+            "unary",
+            "binary",
+            "cast"
+          ],
+          "instances": 18
+        },
+        {
+          "sequence": [
+            "binary",
+            "cast",
+            "binary",
+            "cast",
+            "rms-norm",
+            "cast"
+          ],
+          "instances": 42
+        },
+        {
+          "sequence": [
+            "unary",
+            "binary"
+          ],
+          "instances": 24
+        },
+        {
+          "sequence": [
+            "binary",
+            "cast",
+            "binary",
+            "cast",
+            "rms-norm",
+            "cast",
+            "cast",
+            "binary"
+          ],
+          "instances": 6
+        },
+        {
+          "sequence": [
+            "copy",
+            "cast",
+            "binary"
+          ],
+          "instances": 6
+        },
+        {
+          "sequence": [
+            "concat",
+            "cast",
+            "binary"
+          ],
+          "instances": 2
+        }
+      ]
+    },
+    {
+      "path": ".scratch\\qwen-cublas-scores-20261022\\cases1\\mtp-single\\trace\\routes\\default-role3-R1-T2.route.tsv",
+      "sha256": "64192ecf65ab8afcccd04496ddcc49bcfc118e5c3fcc28a6206b7f0394ac692f",
+      "nodes": 2115,
+      "steps": 1326,
+      "families": 17,
+      "node_histogram": {
+        "gather": 2,
+        "cast": 474,
+        "binary": 330,
+        "rms-norm": 86,
+        "concat": 20,
+        "view": 639,
+        "matmul": 194,
+        "rope": 14,
+        "paged-append": 14,
+        "copy": 83,
+        "paged-attention": 7,
+        "unary": 176,
+        "bfloat-linear-f32": 2,
+        "top-k": 2,
+        "causal-conv1d": 18,
+        "reduce": 36,
+        "gated-delta-net": 18
+      },
+      "multi_node_region_signature_count": 16,
+      "multi_node_region_instances": 244,
+      "native_implementation_keys": 10,
+      "ggml_region_implementation_instances": {
+        "2": 201,
+        "4": 1,
+        "5": 18,
+        "3": 42
+      },
+      "patterns": [
+        {
+          "sequence": [
+            "cast",
+            "binary"
+          ],
+          "instances": 1
+        },
+        {
+          "sequence": [
+            "cast",
+            "rms-norm",
+            "cast"
+          ],
+          "instances": 17
+        },
+        {
+          "sequence": [
+            "binary",
+            "cast",
+            "binary",
+            "cast",
+            "rms-norm",
+            "cast"
+          ],
+          "instances": 43
+        },
+        {
+          "sequence": [
+            "matmul",
+            "unary",
+            "matmul",
+            "binary"
+          ],
+          "instances": 1
+        },
+        {
+          "sequence": [
+            "concat",
+            "cast",
+            "binary"
+          ],
+          "instances": 1
+        },
+        {
+          "sequence": [
+            "cast",
+            "causal-conv1d"
+          ],
+          "instances": 18
+        },
+        {
+          "sequence": [
+            "cast",
+            "unary"
+          ],
+          "instances": 18
+        },
+        {
+          "sequence": [
+            "cast",
+            "cast",
+            "unary",
+            "unary"
+          ],
+          "instances": 18
+        },
+        {
+          "sequence": [
+            "binary",
+            "reduce",
+            "binary",
+            "unary",
+            "binary",
+            "cast"
+          ],
+          "instances": 36
+        },
+        {
+          "sequence": [
+            "cast",
+            "cast",
+            "gated-delta-net"
+          ],
+          "instances": 18
+        },
+        {
+          "sequence": [
+            "cast",
+            "cast",
+            "rms-norm",
+            "cast",
+            "cast",
+            "binary"
+          ],
+          "instances": 18
+        },
+        {
+          "sequence": [
+            "cast",
+            "unary",
+            "binary",
+            "cast"
+          ],
+          "instances": 18
+        },
+        {
+          "sequence": [
+            "unary",
+            "binary"
+          ],
+          "instances": 24
+        },
+        {
+          "sequence": [
+            "binary",
+            "cast",
+            "binary",
+            "cast",
+            "rms-norm",
+            "cast",
+            "cast",
+            "binary"
+          ],
+          "instances": 6
+        },
+        {
+          "sequence": [
+            "copy",
+            "cast",
+            "binary"
+          ],
+          "instances": 6
+        },
+        {
+          "sequence": [
+            "binary",
+            "cast",
+            "binary",
+            "cast",
+            "rms-norm",
+            "cast",
+            "copy"
+          ],
+          "instances": 1
+        }
+      ]
+    },
+    {
+      "path": ".scratch\\qwen-cublas-scores-20261022\\cases1\\mtp-single\\trace\\routes\\default-role4-R1-T2.route.tsv",
+      "sha256": "c0674c3ca7d7b0f5b4f5ddfe54c6dfd22d28327dd9e058ff29052a4574633cdd",
+      "nodes": 2117,
+      "steps": 1324,
+      "families": 17,
+      "node_histogram": {
+        "concat": 22,
+        "cast": 474,
+        "binary": 330,
+        "gather": 2,
+        "rms-norm": 86,
+        "view": 639,
+        "matmul": 194,
+        "rope": 14,
+        "paged-append": 14,
+        "copy": 83,
+        "paged-attention": 7,
+        "unary": 176,
+        "bfloat-linear-f32": 2,
+        "top-k": 2,
+        "causal-conv1d": 18,
+        "reduce": 36,
+        "gated-delta-net": 18
+      },
+      "multi_node_region_signature_count": 15,
+      "multi_node_region_instances": 246,
+      "native_implementation_keys": 9,
+      "ggml_region_implementation_instances": {
+        "2": 203,
+        "3": 43,
+        "5": 18
+      },
+      "patterns": [
+        {
+          "sequence": [
+            "concat",
+            "concat",
+            "cast",
+            "binary"
+          ],
+          "instances": 1
+        },
+        {
+          "sequence": [
+            "cast",
+            "rms-norm",
+            "cast"
+          ],
+          "instances": 18
+        },
+        {
+          "sequence": [
+            "concat",
+            "cast",
+            "binary"
+          ],
+          "instances": 2
+        },
+        {
+          "sequence": [
+            "binary",
+            "cast",
+            "binary",
+            "cast",
+            "rms-norm",
+            "cast"
+          ],
+          "instances": 43
+        },
+        {
+          "sequence": [
+            "unary",
+            "binary"
+          ],
+          "instances": 25
+        },
+        {
+          "sequence": [
+            "cast",
+            "causal-conv1d"
+          ],
+          "instances": 18
+        },
+        {
+          "sequence": [
+            "cast",
+            "unary"
+          ],
+          "instances": 18
+        },
+        {
+          "sequence": [
+            "cast",
+            "cast",
+            "unary",
+            "unary"
+          ],
+          "instances": 18
+        },
+        {
+          "sequence": [
+            "binary",
+            "reduce",
+            "binary",
+            "unary",
+            "binary",
+            "cast"
+          ],
+          "instances": 36
+        },
+        {
+          "sequence": [
+            "cast",
+            "cast",
+            "gated-delta-net"
+          ],
+          "instances": 18
+        },
+        {
+          "sequence": [
+            "cast",
+            "cast",
+            "rms-norm",
+            "cast",
+            "cast",
+            "binary"
+          ],
+          "instances": 18
+        },
+        {
+          "sequence": [
+            "cast",
+            "unary",
+            "binary",
+            "cast"
+          ],
+          "instances": 18
+        },
+        {
+          "sequence": [
+            "binary",
+            "cast",
+            "binary",
+            "cast",
+            "rms-norm",
+            "cast",
+            "cast",
+            "binary"
+          ],
+          "instances": 6
+        },
+        {
+          "sequence": [
+            "copy",
+            "cast",
+            "binary"
+          ],
+          "instances": 6
+        },
+        {
+          "sequence": [
+            "binary",
+            "cast",
+            "binary",
+            "cast",
+            "rms-norm",
+            "cast",
+            "copy"
+          ],
+          "instances": 1
+        }
+      ]
+    },
+    {
+      "path": ".scratch\\qwen-cublas-scores-20261022\\cases1\\mtp-single\\trace\\routes\\default-role6-R1-T1.route.tsv",
+      "sha256": "1ce7f8b3e82f93da6acb4c1d4d93548488e31542fce9826c61a41ef9fed13d5a",
+      "nodes": 1908,
+      "steps": 1065,
+      "families": 17,
+      "node_histogram": {
+        "concat": 21,
+        "cast": 465,
+        "binary": 323,
+        "gather": 2,
+        "rms-norm": 83,
+        "view": 518,
+        "matmul": 189,
+        "rope": 13,
+        "paged-append": 14,
+        "copy": 26,
+        "causal-conv1d": 18,
+        "unary": 174,
+        "reduce": 36,
+        "gated-delta-net": 18,
+        "paged-attention": 6,
+        "bfloat-linear-f32": 1,
+        "top-k": 1
+      },
+      "multi_node_region_signature_count": 15,
+      "multi_node_region_instances": 259,
+      "native_implementation_keys": 11,
+      "ggml_region_implementation_instances": {
+        "2": 199,
+        "5": 18,
+        "6": 18,
+        "3": 18,
+        "4": 24
+      },
+      "patterns": [
+        {
+          "sequence": [
+            "concat",
+            "concat",
+            "cast",
+            "binary"
+          ],
+          "instances": 1
+        },
+        {
+          "sequence": [
+            "cast",
+            "rms-norm",
+            "cast"
+          ],
+          "instances": 17
+        },
+        {
+          "sequence": [
+            "concat",
+            "cast",
+            "binary"
+          ],
+          "instances": 1
+        },
+        {
+          "sequence": [
+            "cast",
+            "causal-conv1d"
+          ],
+          "instances": 18
+        },
+        {
+          "sequence": [
+            "cast",
+            "unary"
+          ],
+          "instances": 18
+        },
+        {
+          "sequence": [
+            "matmul",
+            "matmul"
+          ],
+          "instances": 18
+        },
+        {
+          "sequence": [
+            "cast",
+            "cast",
+            "unary",
+            "unary"
+          ],
+          "instances": 18
+        },
+        {
+          "sequence": [
+            "binary",
+            "reduce",
+            "binary",
+            "unary",
+            "binary",
+            "cast"
+          ],
+          "instances": 36
+        },
+        {
+          "sequence": [
+            "cast",
+            "cast",
+            "gated-delta-net"
+          ],
+          "instances": 18
+        },
+        {
+          "sequence": [
+            "cast",
+            "cast",
+            "rms-norm",
+            "cast",
+            "cast",
+            "binary"
+          ],
+          "instances": 18
+        },
+        {
+          "sequence": [
+            "cast",
+            "unary",
+            "binary",
+            "cast"
+          ],
+          "instances": 18
+        },
+        {
+          "sequence": [
+            "binary",
+            "cast",
+            "binary",
+            "cast",
+            "rms-norm",
+            "cast"
+          ],
+          "instances": 42
+        },
+        {
+          "sequence": [
+            "matmul",
+            "unary",
+            "matmul",
+            "binary"
+          ],
+          "instances": 24
+        },
+        {
+          "sequence": [
+            "binary",
+            "cast",
+            "binary",
+            "cast",
+            "rms-norm",
+            "cast",
+            "cast",
+            "binary"
+          ],
+          "instances": 6
+        },
+        {
+          "sequence": [
+            "copy",
+            "cast",
+            "binary"
+          ],
+          "instances": 6
+        }
+      ]
+    }
+  ],
+  "counting_rules": [
+    "Graph nodes are unique node ordinals listed by exact compile report steps; metadata View nodes and cold preparation nodes are included.",
+    "Pattern means coarse sequence of operation_name tokens in a selected multi-node region, not a proven-distinct mathematical pattern or a physical kernel implementation. Unary/Binary subtype is unavailable in TSV.",
+    "Implementation key is provider+implementation ID, never bare integer ID. Blank-provider metadata ID0 is excluded from native implementation key counts.",
+    "Fusion is an optimization: these recorded patterns do not prove a unique exhaustive minimal set of fusions every engine must implement."
+  ],
+  "source_math_crosscheck": {
+    "historical_main_sha256": "f2e1c6002042d8ccf08eaed3d2204fe7c459a2e9a37ae74d13c2ff93e3714131",
+    "current_main_sha256": "b48a51ea9611a46804624252d3b69217db3303aad789bde74a7bcf5a698c8856",
+    "graph_body_identical_after_only_backend_resource_expression_and_comment_substitution": true,
+    "recipe_math_helpers_exactly_equal": true,
+    "current_mtp_graph_sha256": "409ac3116cdcf34dadcf8ebe8a6f638061eb23d5ac79011deb82509b4758b97f",
+    "mtp_graph_unchanged_from_profile_receipt": true
+  },
+  "kernel_activity": {
+    "source": "docs/evidence/performance/qwen-mtp-steady-profile-2026-10-22.json#/profile_findings/steady_per_round_statistics/kernel_count",
+    "scope": "Historical P154/64 MTP profile, steady rounds16..34,19 rounds; not latest AV timing process, not per-output-token count",
+    "median_per_round": 783,
+    "min": 779,
+    "max": 783,
+    "latest_AV_kernel_count": "Not measured in AV timing/memory window; cannot invent or substitute cold step count"
+  },
+  "MTP_remaining_scope": "Q35 official BF16 greedy K1 existing tested consumer does not add a missing operator kind. Wider goal still needs exact original-role/codec and shared-LM/real-target-tap integration for other selected MTP artifacts, actual complete-state continuations, remaining declared system/quantization scope and final ordinary/MTP performance comparison; new DSpark83 batch is separate in-progress native evidence.",
+  "coarse_pattern_unions": {
+    "ordinary_two_recorded_shapes": 15,
+    "MTP_four_recorded_shapes": 18
+  },
+  "source_locations": {
+    "graph_helpers": "tools/qwen35_text/main.cc:215-426",
+    "ordinary_model_graph": "tools/qwen35_text/main.cc:1250-1417",
+    "MTP_graph": "tools/qwen35_text/mtp_graph.h:141-320",
+    "route_writer": "tools/qwen35_text/main.cc:1674-1695",
+    "name_granularity": "src/compute_ops/operation.cc:849-913",
+    "specialized_fusions": "src/graph_provider_ggml_cuda/ggml_cuda_region.cc:550-895",
+    "catalogue": "docs/implementation/model-operators.md:168-176",
+    "original_route_evidence": "docs/evidence/performance/qwen-cublas-scores-2026-10-22.json#/reports/actual-score-analysis.json/actual_routes",
+    "latest_window": "docs/developer/current-work.md:122-156"
+  },
+  "recount_date": "2026-10-23",
+  "new_benchmark_run": false,
+  "evidence_source": "Original recorded CompileReport tables from qwen-cublas-scores20261022; original report docs/evidence/performance/qwen-cublas-scores-2026-10-22.json; all six recounted tables retained in this count archive, including MTP tables not found in the older data archive.",
+  "archive": {
+    "path": "docs/evidence/research/qwen35-operator-counts-2026-10-23.zip",
+    "bytes": 63461,
+    "sha256": "c9f6665f6b255dd962430517c5a54338093d9d6c8451da3c828b90fee45aaa68",
+    "route_tables": 6,
+    "model_weights_archived": false
+  }
+}

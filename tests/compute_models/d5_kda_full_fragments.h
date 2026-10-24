@@ -2,6 +2,8 @@
 
 #include "d5_moe_semantic_fragments.h"
 
+#include <functional>
+
 // Shared test consumer: preserve native projection storage, then compose the
 // pinned Kimi/GLM KDA model program through public Compute operations. The host
 // calculations below are independent test oracles, never a runtime fallback.
@@ -76,7 +78,11 @@ inline Projection projection(Fragment &f, ValueId input, std::int64_t n,
   return {std::move(weight), storage, output};
 }
 
-inline Fragment complete(const c::ModelArtifactProfileDescription *profile) {
+using Reference = std::function<std::vector<std::vector<float>>(
+    std::span<const float>, std::span<const float>, std::span<const float>)>;
+
+inline Fragment complete(const c::ModelArtifactProfileDescription *profile,
+                         Reference *reference = nullptr) {
   const bool kimi = profile->model_name == "Kimi-K3";
   const bool official = profile->format_family == "safetensors";
   const auto storage = (official || profile == core::kKdaProfiles[2])
@@ -175,14 +181,14 @@ inline Fragment complete(const c::ModelArtifactProfileDescription *profile) {
                out.output};
   f.state_ports = {{1, 0}, {2, 2}};
 
-  std::vector<float> state(heads * depth * depth);
-  for (std::size_t i = 0; i < state.size(); ++i)
-    state[i] = float(std::sin(double(i) * 0.013) * 0.0005);
-  auto initial_window = conv.samples(3);
-  std::vector<float> past(initial_window.begin(), initial_window.begin() + 3 * channels);
-  for (int step = 0; step < 8; ++step) {
-    auto x = d5_gguf_test::activation(hidden, 3 + 14 * step);
-    sem::Replay replay{{bytes(x), bytes(past), bytes(state)}, {}};
+  Reference evaluate = [=](std::span<const float> x,
+      std::span<const float> prior_history,
+      std::span<const float> prior_state) -> std::vector<std::vector<float>> {
+    if (x.size() != std::size_t(hidden) || prior_history.size() != std::size_t(3 * channels) ||
+        prior_state.size() != std::size_t(heads * depth * depth))
+      throw std::runtime_error("KDA reference input extent");
+    std::vector<float> state(prior_state.begin(), prior_state.end());
+    std::vector<float> past(prior_history.begin(), prior_history.end());
     auto projected = q.reference(x);
     auto pk = k.reference(x), pv = v.reference(x);
     projected.insert(projected.end(), pk.begin(), pk.end());
@@ -241,8 +247,23 @@ inline Fragment complete(const c::ModelArtifactProfileDescription *profile) {
     for (std::size_t i = 0; i < expected.size(); ++i)
       expected[i] *= float(core::sigmoid(output_gate[i]));
     auto final = out.reference(expected);
-    replay.outputs = {past, std::move(conv_values), state, std::move(output),
-                       std::move(expected), std::move(final)};
+    return {std::move(past), std::move(conv_values), std::move(state),
+            std::move(output), std::move(expected), std::move(final)};
+  };
+  if (reference) {
+    *reference = std::move(evaluate);
+    return f;
+  }
+  std::vector<float> state(heads * depth * depth);
+  for (std::size_t i = 0; i < state.size(); ++i)
+    state[i] = float(std::sin(double(i) * 0.013) * 0.0005);
+  auto initial_window = conv.samples(3);
+  std::vector<float> past(initial_window.begin(), initial_window.begin() + 3 * channels);
+  for (int step = 0; step < 8; ++step) {
+    auto x = d5_gguf_test::activation(hidden, 3 + 14 * step);
+    sem::Replay replay{{bytes(x), bytes(past), bytes(state)}, evaluate(x, past, state)};
+    past = replay.outputs[0];
+    state = replay.outputs[2];
     f.replays.push_back(std::move(replay));
   }
   return f;

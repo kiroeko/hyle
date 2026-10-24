@@ -122,7 +122,7 @@ inline Fragment mlx(const in::Case &item,const c::ModelArtifactProfileDescriptio
                     std::int64_t n,std::int64_t first=0) {
   using Format=c::model_ops::MlxWeightFormat;
   const bool affine=item.format==in::Format::kAffine,mx8=item.format==in::Format::kMx8;
-  const auto format=affine?Format::kAffine4:(mx8?Format::kMxfp8:Format::kMxfp4);
+  const auto format=affine?Format::kAffine:(mx8?Format::kMxfp8:Format::kMxfp4);
   const std::int64_t k=item.k,group=item.group,pack=mx8?4:8;
   const auto block=std::uint32_t(item.group);
   const std::int64_t e=item.grouped?std::min<std::int64_t>(item.e,8):1,slots=item.grouped?3:1;
@@ -147,11 +147,11 @@ inline Fragment mlx(const in::Case &item,const c::ModelArtifactProfileDescriptio
   ValueId ids;if(item.grouped)ids=f.input(dense({1,slots},c::DataType::kInt32));
   auto a=item.embedding?input:f.one(c::Operation(c::Cast{.output_type=type}),{input});
   ValueId y;
-  if(item.embedding)y=f.one(c::model_ops::mlx_quantized_embedding(block),{w,s,z,input});
-  else if(item.grouped)y=affine?f.one(c::model_ops::mlx_grouped_matmul(format,block),{a,w,s,z,ids}):
-      f.one(c::model_ops::mlx_grouped_matmul(format,block),{a,w,s,ids});
-  else y=affine?f.one(c::model_ops::mlx_quantized_matmul(format,block),{a,w,s,z}):
-      f.one(c::model_ops::mlx_quantized_matmul(format,block),{a,w,s});
+  if(item.embedding)y=f.one(c::model_ops::mlx_quantized_embedding(4,block),{w,s,z,input});
+  else if(item.grouped)y=affine?f.one(c::model_ops::mlx_grouped_matmul(format,mx8?8:4,block),{a,w,s,z,ids}):
+      f.one(c::model_ops::mlx_grouped_matmul(format,mx8?8:4,block),{a,w,s,ids});
+  else y=affine?f.one(c::model_ops::mlx_quantized_matmul(format,mx8?8:4,block),{a,w,s,z}):
+      f.one(c::model_ops::mlx_quantized_matmul(format,mx8?8:4,block),{a,w,s});
   f.outputs={f.one(c::Operation(c::Cast{.output_type=c::DataType::kFloat32}),{y})};
   if(item.embedding)f.invalid_index_input=0;else if(item.grouped)f.invalid_index_input=1;
   constexpr std::array<float,8> fp4{0,.5f,1,1.5f,2,3,4,6};

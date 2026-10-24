@@ -1,0 +1,18 @@
+{
+  "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\qwen35-full-cuda-2026-10-19\\first-fi-startup.zip",
+  "bytes": 4071632,
+  "sha256": "aa2517a283fc471840d0aeca8b1c5f4e784ab97ec2399a00d12028a8b31b0123",
+  "payloads": 97,
+  "entries": 98,
+  "CRC_and_every_payload_SHA_verified": true,
+  "crc_verified": true,
+  "payload_sha256_verified": true,
+  "verification_passes": 1,
+  "source_probes": 2,
+  "production_all_api_traces": 1,
+  "performance_claim": false,
+  "internal_module_loading_confirmed": false,
+  "excluded_provisional_correlation_attribution": true,
+  "cleanup_candidates": 6,
+  "cleanup_bytes": 232147607
+}

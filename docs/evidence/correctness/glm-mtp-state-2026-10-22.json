@@ -1,0 +1,3576 @@
+{
+  "date": "2026-10-22",
+  "status": "GLM_SINGLE_NEXTN_STATE_AND_GROUPED_FP8_REPAIR_PASS",
+  "goal_complete": false,
+  "checks": {
+    "process": {
+      "command": [
+        "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mtp-state-20261022\\tests-link2\\glm-state-checks.exe",
+        "--gtest_filter=*",
+        "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\glm-mtp-state-20261022\\checks2\\results.xml"
+      ],
+      "cwd": "C:\\public\\project-hyle\\hyle",
+      "started": 1792679648.2817147,
+      "timeout_seconds": 600,
+      "throughput_evidence": false,
+      "memory_evidence": false,
+      "trace": false,
+      "profiler": false,
+      "pid": 41192,
+      "exit": 0,
+      "timed_out": false,
+      "finished": 1792679658.289822,
+      "process_wall_seconds": 10.00775049999993
+    },
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mtp-state-20261022\\tests-link2\\glm-state-checks.exe",
+      "bytes": 140743680,
+      "sha256": "7307a8756196d97249368d79c1abf9843821939ab4397b1329ef25d7ddb0746e"
+    },
+    "throughput_evidence": false,
+    "memory_evidence": false,
+    "whole_original_model": false,
+    "tests": 10,
+    "failures": 0,
+    "errors": 0,
+    "disabled": 0,
+    "skips": 0,
+    "cases": [
+      {
+        "attributes": {
+          "name": "CudaOriginalInputFeedsFp8QueryAndActualIndexerLease",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_original_mtp_chain_test.cc",
+          "line": "528",
+          "status": "run",
+          "result": "completed",
+          "time": "0.502",
+          "timestamp": "2026-10-22T22:34:08.931",
+          "classname": "GlmOriginalMtpChain"
+        },
+        "properties": {
+          "scope": "original layer45 NextN input->inputnorm->dynamic128 q_a->qnorm; actual qnorm lease->generated BF16 indexer wq_b; actual inputnorm lease->grouped E1/slot1 original q_a; no full-model/indexer/cache/natural-acceptance claim",
+          "backend": "ordinary CUDA Graph",
+          "actual_submissions": "9",
+          "grouped_submissions": "3",
+          "original_role_count": "7",
+          "original_role_bytes": "73429504",
+          "q_a_sha256": "615e317d19a83114b756e4634599ebba333c95241f3e775c77cc1633802d8be6",
+          "q_a_scale_sha256": "c93393c24ed2c12f5458fbf88a257df91e22f586acc58436b861465c56f4d3fb",
+          "input_norm_sha256": "34ebd6b797e89011997e3f8fa674e4d0b9bc322d88bee17a91fe0a5421263e0c",
+          "q_a_norm_sha256": "33fec4645dc799a2a96b870b48012fcd096e66c2003c528881d98cd397afa96a",
+          "producer_output_pool": "two generations;14 blocks;110592 bytes",
+          "successor_output_pool": "two generations;2 blocks;16384 bytes",
+          "grouped_output_pool": "two generations;2 blocks;6144 bytes"
+        }
+      },
+      {
+        "attributes": {
+          "name": "CpuOriginalInputFeedsFp8QueryAndActualIndexerLease",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_original_mtp_chain_test.cc",
+          "line": "537",
+          "status": "run",
+          "result": "completed",
+          "time": "0.376",
+          "timestamp": "2026-10-22T22:34:09.434",
+          "classname": "GlmOriginalMtpChain"
+        },
+        "properties": {
+          "scope": "original layer45 NextN input->inputnorm->dynamic128 q_a->qnorm; actual qnorm lease->generated BF16 indexer wq_b; actual inputnorm lease->grouped E1/slot1 original q_a; no full-model/indexer/cache/natural-acceptance claim",
+          "backend": "ordinary CPU Graph",
+          "actual_submissions": "9",
+          "grouped_submissions": "3",
+          "original_role_count": "7",
+          "original_role_bytes": "73429504",
+          "q_a_sha256": "615e317d19a83114b756e4634599ebba333c95241f3e775c77cc1633802d8be6",
+          "q_a_scale_sha256": "c93393c24ed2c12f5458fbf88a257df91e22f586acc58436b861465c56f4d3fb",
+          "input_norm_sha256": "34ebd6b797e89011997e3f8fa674e4d0b9bc322d88bee17a91fe0a5421263e0c",
+          "q_a_norm_sha256": "33fec4645dc799a2a96b870b48012fcd096e66c2003c528881d98cd397afa96a",
+          "producer_output_pool": "two generations;14 blocks;110592 bytes",
+          "successor_output_pool": "two generations;2 blocks;16384 bytes",
+          "grouped_output_pool": "two generations;2 blocks;6144 bytes"
+        }
+      },
+      {
+        "attributes": {
+          "name": "ThreePoliciesKeepDistinctFiniteQuantizers",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_cuda\\fp8_scale_policy_test.cc",
+          "line": "24",
+          "status": "run",
+          "result": "completed",
+          "time": "0.011",
+          "timestamp": "2026-10-22T22:34:09.813",
+          "classname": "CudaFp8ScalePolicy"
+        },
+        "properties": {
+          "successful_submissions": "12",
+          "policy_witness": "450/tiny: Divide3c01,MultiplyReciprocal3bc1;Wcode1/SF1"
+        }
+      },
+      {
+        "attributes": {
+          "name": "FixedHeaderRoleKeepsOriginalBlockAxes",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_cuda\\fp8_scale_policy_test.cc",
+          "line": "27",
+          "status": "run",
+          "result": "completed",
+          "time": "0.026",
+          "timestamp": "2026-10-22T22:34:09.825",
+          "classname": "CudaFp8ScalePolicy"
+        },
+        "properties": {
+          "successful_submissions": "4",
+          "role_scope": "catalog30 layer45 expert0 gate_proj:BF16A[1,4096],E4W[2048,4096],F32SF[16,32];artificial bytes;no payload/fullmodel/AMDrcpf claim"
+        }
+      },
+      {
+        "attributes": {
+          "name": "GroupedSharedAndPerSlotInputsKeepReciprocalPolicy",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_cuda\\fp8_scale_policy_test.cc",
+          "line": "30",
+          "status": "run",
+          "result": "completed",
+          "time": "0.022",
+          "timestamp": "2026-10-22T22:34:09.851",
+          "classname": "CudaFp8ScalePolicy"
+        },
+        "properties": {
+          "actual_submissions": "8"
+        }
+      },
+      {
+        "attributes": {
+          "name": "InvalidIdsFailAndFreshInvocationRecovers",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_cuda\\fp8_scale_policy_test.cc",
+          "line": "33",
+          "status": "run",
+          "result": "completed",
+          "time": "0.01",
+          "timestamp": "2026-10-22T22:34:09.874",
+          "classname": "CudaFp8ScalePolicy"
+        },
+        "properties": {
+          "successful_submissions": "3",
+          "expected_failed_completions": "2"
+        }
+      },
+      {
+        "attributes": {
+          "name": "OriginalPowerOfTwoNeighbor",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_cuda\\fp8_scale_policy_test.cc",
+          "line": "36",
+          "status": "run",
+          "result": "completed",
+          "time": "0.059",
+          "timestamp": "2026-10-22T22:34:09.884",
+          "classname": "CudaFp8ScalePolicy"
+        },
+        "properties": {
+          "actual_submissions": "8"
+        }
+      },
+      {
+        "attributes": {
+          "name": "OriginalDivideNeighbor",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_cuda\\fp8_scale_policy_test.cc",
+          "line": "39",
+          "status": "run",
+          "result": "completed",
+          "time": "0.017",
+          "timestamp": "2026-10-22T22:34:09.944",
+          "classname": "CudaFp8ScalePolicy"
+        },
+        "properties": {
+          "actual_submissions": "8"
+        }
+      },
+      {
+        "attributes": {
+          "name": "CudaWholeNextNPrefixPublishesAndContinuesWithoutRejectedTail",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_mtp_state_consumer_test.cc",
+          "line": "609",
+          "status": "run",
+          "result": "completed",
+          "time": "3.975",
+          "timestamp": "2026-10-22T22:34:09.961",
+          "classname": "GlmMtpStateConsumer"
+        },
+        "properties": {
+          "actual_submissions": "7",
+          "backend": "ordinary CUDA Graph",
+          "component_schema": "14 native resource entries plus explicit iteration policy; latent/rawK/rawgate/pools/hidden/qresidual/pending/MLAcursor/indexcursor/poolcount/ringoffset/tailvalid/tailstart/selection",
+          "scope": "generated primary GGUF/F32 single complete NextN component; fresh K4 closepool->actual I32 sparse MLA/MoE; same-epoch entire-indexer skip; no original checkpoint/full target/KDA/mHC/official FP8cache/natural acceptance",
+          "prefixes": "0 retained;1 corrected-pending atomic publish and independent base recomputation;2 independent branch; rejected tail/cancel/stale publish/old readonly ownership",
+          "uncovered": "target KDA/conv/mHC composition; new-iteration accepted-skip catchup/reseed; original cache encodings; vocabulary/natural acceptance"
+        }
+      },
+      {
+        "attributes": {
+          "name": "CpuWholeNextNPrefixPublishesAndContinuesWithoutRejectedTail",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_mtp_state_consumer_test.cc",
+          "line": "618",
+          "status": "run",
+          "result": "completed",
+          "time": "4.135",
+          "timestamp": "2026-10-22T22:34:13.937",
+          "classname": "GlmMtpStateConsumer"
+        },
+        "properties": {
+          "actual_submissions": "7",
+          "backend": "ordinary CPU Graph",
+          "component_schema": "14 native resource entries plus explicit iteration policy; latent/rawK/rawgate/pools/hidden/qresidual/pending/MLAcursor/indexcursor/poolcount/ringoffset/tailvalid/tailstart/selection",
+          "scope": "generated primary GGUF/F32 single complete NextN component; fresh K4 closepool->actual I32 sparse MLA/MoE; same-epoch entire-indexer skip; no original checkpoint/full target/KDA/mHC/official FP8cache/natural acceptance",
+          "prefixes": "0 retained;1 corrected-pending atomic publish and independent base recomputation;2 independent branch; rejected tail/cancel/stale publish/old readonly ownership",
+          "uncovered": "target KDA/conv/mHC composition; new-iteration accepted-skip catchup/reseed; original cache encodings; vocabulary/natural acceptance"
+        }
+      }
+    ]
+  },
+  "actual_new_consumer_graph_submissions": 32,
+  "original_role_chain_graph_submissions": 18,
+  "whole_NextN_component_graph_submissions": 14,
+  "existing_CUDA_scale_neighbor_cases": 6,
+  "changes": [
+    {
+      "path": "tests/compute_models/glm_original_mtp_chain_test.cc",
+      "bytes": 31629,
+      "sha256": "24d6e7211be7a18bd6a8af56a88c6e5f0eaa9bcdcccdd1412499e64c77bb352e"
+    },
+    {
+      "path": "tests/compute_models/glm_mtp_state_consumer_test.cc",
+      "bytes": 41175,
+      "sha256": "525c610b88613de25d6ca4d56e02a515836bbcc8f2b0317d14616e59f438c382"
+    },
+    {
+      "path": "tests/graph_route_cpu/CMakeLists.txt",
+      "bytes": 8296,
+      "sha256": "fdb65fe9b3a1ee85732dff1dc78ba2aef24dfb16cdbe1a4909998c5794082ae2"
+    },
+    {
+      "path": "tests/graph_route_cuda/CMakeLists.txt",
+      "bytes": 9584,
+      "sha256": "23db803923a0fae25305d12b807160a71cd8a5115ea1c45fb2b2ee923b942fd2"
+    },
+    {
+      "path": "src/compute_provider_cuda/grouped_fp8_provider.cc",
+      "bytes": 15630,
+      "sha256": "d897e7cc9e3bc5afee5b624b7bb91dd07ae69b6ac2c90bf4213adad715753f0d"
+    },
+    {
+      "path": "third_party/sglang_activation/fp8/grouped/source.json",
+      "bytes": 3758,
+      "sha256": "6912741b2a052d52b68a2bde98444f718e34f5a5f68151ac240abfc3c4b3ea25"
+    },
+    {
+      "path": "third_party/sglang_activation/fp8/grouped/rebuild.py",
+      "bytes": 4910,
+      "sha256": "4b1522c31ec36fd08b976e307344aaf36bf223ad99c4043a5dbd63295bd8d10e"
+    },
+    {
+      "path": "third_party/sglang_activation/fp8/grouped/compilation.json",
+      "bytes": 7489,
+      "sha256": "dafd9cd897d0d4506765f4934c332e5a746c5f2377a4d2f723a791bed8fba26d"
+    },
+    {
+      "path": "third_party/sglang_activation/fp8/grouped/sglang_grouped_fp8_sm89.h",
+      "bytes": 4883249,
+      "sha256": "3b3f5c06b228bc433b3fe03dedc36be253688893308c6d50896b16e1730088eb"
+    },
+    {
+      "path": "docs/developer/current-work.md",
+      "bytes": 21907,
+      "sha256": "8dda1bce5c1f496374275b5444a5a1a3b10a92930c94a7dfd6cc4b0502f517ae"
+    },
+    {
+      "path": "docs/implementation/model-operators.md",
+      "bytes": 92640,
+      "sha256": "9d24984be27737ea77c34228657d2d4d281ae29cf1da61b455cce205e21c3ae3"
+    }
+  ],
+  "original_role_and_single_FP8_predecessor": {
+    "path": "docs/evidence/correctness/glm-mtp-carry-2026-10-22.json",
+    "bytes": 62903,
+    "sha256": "2562d35f040c99d84b1de3c7a3f9c601ee8dc7c3936e095fed77a9f11db4e2c8"
+  },
+  "state_component": {
+    "scope": "Generated selected primary GGUF/F32 single complete NextN component, not the full original target model.",
+    "math": "EH->input norm->q_a/qnorm->absorbed MLA query and current latent->pool4 indexer actual I32 selection->sparse MLA->residual/MoE->normalized next hidden. Ordinary Graph outputs are directly rebound; host oracles are observation only.",
+    "boundary": "14 native resource leases plus24-byte explicit epoch policy: MLA latent;6-slot raw key/gate rings; completed pool bank; hidden/query carry; pending; MLA and indexer separate cursors; pool count; ring offset; tail validity/start; I32 selection.",
+    "fresh": "Actual base position2055/tail3 closes pool513 and exposes514 complete pools, selects512 pools->2048 valid token IDs, pads3 slots with-1. Only valid IDs are fed into checked Gather/attention.",
+    "skip": "Within the same MTP epoch, the entire indexer is absent. Actual old raw key/gate/pool/counter leases are retained while MLA/hidden/pending advance. Producer cursors are not falsely made equal.",
+    "accepted_prefix": "Fresh A->same-epoch skip B; explicit policy chooses prefix1 and corrects pending through an actual Copy Graph; atomic publish and continuation from actual head. Independent old-base recomputation gives byte-identical whole state. Prefix0 old base and prefix2 separate branch retained.",
+    "isolation": "Rejected MLA append absent from prefix1; old byte images unchanged; stale head publish refused; cancelled incomplete/invalid member transaction cannot expose partial state; store/output live allocations retire; parameters unchanged.",
+    "unfinished": [
+      "Target KDA/conv/mHC and target MLA/index history composition with NextN.",
+      "Next-epoch accepted-skip indexer catchup from actual accepted input features, then qualified reseed.",
+      "Other applicable original parameter bindings and official cache codec boundaries.",
+      "All effective_n/pool-tail combinations and full original vocabulary/natural acceptance were not executed; this finite check does not certify them."
+    ]
+  },
+  "grouped_FP8_repair": {
+    "before": {
+      "scope": "One expert/slot raw grouped GEMM diagnostic, original q_a E4 pair; no claim about an original FFN or complete model.",
+      "cubin_sha256": "daa2204310283488d64db7b1ed80183c9f4b784ccdc05d0f0ac47f1e2e18b223",
+      "launch": {
+        "grid": 12,
+        "threads": 128,
+        "shared": 24576,
+        "arguments": 29
+      },
+      "expected_bf16_equal": false,
+      "failed_unchanged_gate": [
+        25
+      ],
+      "max_absolute_error": 0.001953125,
+      "row25": {
+        "actual": -0.0020904541015625,
+        "independent": -0.0022125244140625
+      },
+      "SDK_builds": 0,
+      "native_compilations": 0
+    },
+    "after": {
+      "scope": "One expert/slot raw grouped GEMM diagnostic, original q_a E4 pair; no claim about an original FFN or complete model.",
+      "source": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mtp-state-20261022\\probe_grouped_original.py",
+        "bytes": 4500,
+        "sha256": "1034680a77fbbd989b716ea4f2802cbf36a1504f289cbc632f64f070a280d0b7"
+      },
+      "cubin_sha256": "bc4051266b4a407f6afd50d4971aaf38fbd96e8f2b89522b36104eba74213967",
+      "launch": {
+        "grid": 12,
+        "threads": 128,
+        "shared": 16384,
+        "arguments": 29
+      },
+      "expected_bf16_equal": true,
+      "failed_unchanged_gate": [],
+      "max_absolute_error": 0.0,
+      "row25": {
+        "actual": -0.0022125244140625,
+        "independent": -0.0022125244140625
+      },
+      "SDK_builds": 0,
+      "native_compilations": 0
+    },
+    "witness": "Reused authenticated original q_a E4 codes/scales and actual BF16 input from the previously published original GLM chain. E1/slot1 grouped invocation is a diagnostic of the real grouped primitive, not an original FFN bank.",
+    "repair": "Keep original E4 storage, quantizer/scale bits, sequential activation-scale then weight-scale arithmetic, expert IDs/alignment and output conversions. Exact finite E4->BF16 register-tile casts before F32 dot avoid the observed SM89 loss, following the independently fixed single route.",
+    "graph_regression": "Original actual inputnorm output ReadLease is directly bound into grouped E1/slot1 q_a Graph on CPU/CUDA for three generations each. Existing qa_reference/close_bfloat gates unchanged.",
+    "unchanged": "No resident BF16 shadow bank, new public option, provider/executor split, vendor module edit, quantizer change or tolerance relaxation.",
+    "maintainer_generation": {
+      "generated_payloads_match_installed": true,
+      "align_image_unchanged": true,
+      "images": {
+        "kGroupedF32": {
+          "bytes": 463520,
+          "sha256": "32c3e7bf9a494f95639b98a40f482c824006aa7ad316f500eb8bb1fedcdf5114"
+        },
+        "kGroupedBf16": {
+          "bytes": 464544,
+          "sha256": "bc4051266b4a407f6afd50d4971aaf38fbd96e8f2b89522b36104eba74213967"
+        },
+        "kCheckedAlign": {
+          "bytes": 30368,
+          "sha256": "0a94fd8832b7b6c87e19802f1227744223a8355087647ac4c64e0db07252f3a1"
+        }
+      },
+      "grouped_shared_bytes": {
+        "grouped_fp32": 16384,
+        "grouped_bf16": 16384
+      }
+    },
+    "actual_aot_images_regenerated": 2,
+    "shared_memory_bytes_per_image": 16384,
+    "performance_claim": false
+  },
+  "fixed_source": {
+    "status": "read-only source/design audit; no product edit, build, download or native execution",
+    "scope": "A connected GLM-5.3-Flash NextN MLA/indexer state consumer, not eight complete engines, original whole-model parameters, target KDA/mHC, natural MTP acceptance or a serving cache implementation.",
+    "fixed_source": {
+      "repository": "sgl-project/sglang",
+      "revision": "06992c92ad4494fe9f9636e75be3e35040512447",
+      "acquisition": "Read existing local Git objects from C:/public/project-hyle/sglang; no network.",
+      "manifest": ".scratch/glm-mtp-state-20261022/review/fixed-source/manifest.json",
+      "version_correction": "The older .scratch/inference-single-machine/source-manifest.json identifies7224fce1, not06992. Its index_topk_share.py equals06992 byte-for-byte, but indexer/pool/plan/memory files differ. The anchors below refer to the separately captured06992 blobs, never the older archive's line numbers."
+    },
+    "model_semantics": {
+      "nextn": "One ordinary attention/FFN residual decoder with its own normalized hidden and NoPE MLA latent cache. The Flash target trunk separately has KDA/short-conv/mHC; those are not NextN state entries.",
+      "geometry": {
+        "hidden": 4096,
+        "q_lora_rank": 1536,
+        "mla_latent": 512,
+        "mla_rope": 0,
+        "attention_heads": 64,
+        "index_heads": 32,
+        "index_head_dim": 128,
+        "pool_size": 4,
+        "selected_full_tokens": 2048,
+        "selected_pools": 512,
+        "tail_id_padding": 3
+      },
+      "references": [
+        "tests/compute_models/d5_glm_remaining_facts.json:glm53_flash config and original layer45 tensor roles",
+        "tests/compute_models/d5_glm_remaining_fragments.h:mtp_input,mla,mtp_decoder",
+        "SGLang06992 python/sglang/srt/models/deepseek_nextn.py:DeepseekModelNextN.forward",
+        "SGLang06992 python/sglang/srt/models/deepseek_v2.py:DeepseekV2AttentionMLA.__init__,DeepseekV2DecoderLayer"
+      ]
+    },
+    "pool_rules": {
+      "decode": {
+        "anchor": "fixed-source/kpool_fp8_index.py:1010-1135, _kpool_decode_update_and_maybe_write_cache_kernel",
+        "validity": "A request update is valid only with a valid request index, nonzero cache location and0<=logical_position<seq_len. Sentinel/invalid positions do not modify the ring.",
+        "ring": "Logical position p uses pool slot p%4 but physical raw-key/gate slot p%R, where R=4+num_draft_tokens for the speculative preparation domain. These are distinct moduli.",
+        "close": "Only p%4==3 closes pool floor(p/4). Gather keys and gates for logical[p-3,p], use current input for the final slot, and compute per-channel softmax(gate+APE[slot,channel]) over the four slots, then the weighted key sum.",
+        "tail_write": "Store current raw key and gate in physical ring slot p%R even when the pool closes. A completed pool does not require zeroing old ring bytes; validity and logical length determine which tail rows remain visible.",
+        "official_cache_encoding": "The fixed official FP8 reader stores pooled key after BF16 rounding, Hadamard128, another BF16 rounding, then E4 quantization with positive F32 scale, absmax floor1e-4, optional power-of-two scale depending on chosen reader. Index query undergoes its matching rotate_activation path.",
+        "encoding_scope": "The existing GGUF/F32 mathematical pool fragment does not implement these official FP8 cache byte boundaries. It can be used as an explicit selected GGUF/F32 state consumer; it must not certify official FP8 cache bytes or silently substitute one reader for the other."
+      },
+      "extend_and_verify": {
+        "anchors": [
+          "fixed-source/kpool_plan.py:152-207, _decompose_compress/_append_compress_rows",
+          "fixed-source/kpool_fp8_index.py:309-323, _update_kpool_write_plan_kernel",
+          "fixed-source/kpool_fp8_index.py:1545-1608, _kpool_write_tail_and_maybe_compress_kernel",
+          "fixed-source/dsa_backend_kpool.py:_init_kpool_metadata"
+        ],
+        "chunk_formula": "For logical start s and consumed length n: first_slot=s%4; base_pool=floor(s/4); closed=floor((s+n)/4)-base_pool; consumed_into_pools=max(0,closed*4-first_slot); remaining_tail=n-consumed_into_pools. A first newly closed pool may combine the old partial tail with the new Graph-produced chunk.",
+        "tail_source": "The plan explicitly carries n_from_tail, tail_logical_base and chunk_src. Remaining raw keys/gates write from chunk_src into physical slots(dst_logical_start+i)%R.",
+        "per_query_visibility": "For candidate k, visible seq_len=s+k+1 and visible completed-pool count=floor((s+k+1)/4). A candidate must not attend a completed pool containing its future siblings.",
+        "effective_n": "The verify/v2 ring writer may store its fixed N candidate rows in the extra ring slots, but closure count uses effective_n_per_batch when supplied. Thus logical validity/accepted count remains essential even if rejected bytes are physically present.",
+        "old_fallback_limit": "The non-plan extend fallback rejects nonaligned first_slot!=0; this is not a mathematical requirement to forbid partial-prefix continuation in Hyle. The fixed plan path explicitly combines old tail with a new chunk.",
+        "hyle_publication": "A Hyle implementation can retain immutable whole candidate versions instead of imitating SGLang in-place rollback. Selecting a prefix must select the matching MLA, pool, ring, hidden, IDs and counters together; merely decreasing seq_len on the final full candidate bank is insufficient."
+      },
+      "tail_ids": {
+        "anchors": [
+          "fixed-source/kpool_fp8_index.py:408-540, append_kpool_tail_to_topk/_append_kpool_tail_to_topk_kernel",
+          "fixed-source/dsa_indexer_kpool.py:KPoolIndexer.__init__"
+        ],
+        "rules": "Top512 completed pool IDs expand to their four logical token IDs. Always append seq_len%4 unpooled tail tokens starting at4*pool_len, with at most3 padded slots. Unused slots are-1. Page-table translation or explicit topk offset belongs to the selected cache coordinate system.",
+        "gather_safety": "Strip or qualify the padded-1 tail positions with actual visible length before checked Gather; never map-1 to row0 or select more than the prefix-visible rows."
+      }
+    },
+    "same_epoch_index_reuse": {
+      "anchors": [
+        "fixed-source/index_topk_share.py:IndexTopKShareState.mtp_iteration/update/publish",
+        "SGLang06992 python/sglang/srt/models/deepseek_v2.py:DeepseekV2AttentionMLA.__init__, is_nextn sets skip_topk=True",
+        "SGLang06992 python/sglang/srt/models/deepseek_common/attention_forward_methods/forward_mla.py:should_run_indexer and DSA branch"
+      ],
+      "policy": "Default MTP iteration start clears the carried selection; explicit keep_carry_seed retains a real seed only. Finally clears carry and disables reuse. Historical readonly state need not become unreadable, but cannot nominate a stale epoch/head.",
+      "important_skip_fact": "For NextN with prev_topk_indices present, should_run_indexer is false. The whole indexer is skipped, not merely TopK. MLA and hidden may advance while raw index keys/gates/completed pools retain their old leases.",
+      "cursor_separation": "Track MLA consumed cursor and indexer-produced-through cursor separately, plus seed producer/epoch/selection coordinate extent. Never fabricate indexer writes or advance its cursor merely to keep it equal to MLA length during skip.",
+      "catch_up_requirement": "If every skipped token is accepted and an upcoming fresh indexer requires its key/gate history, catch up from the actual accepted per-token Graph-produced features/hidden inputs, or execute the source draft-extend equivalent before publishing the refreshed indexer state. Do not fill omitted rows with host mathematical oracles or rejected siblings.",
+      "existing_verified_component": "tests/compute_models/glm_mtp_index_carry_test.cc covers actual I32 leases and epoch policy. Its four-member state retains index-key/gate resources but does not advance the complete MLA/pool/tail/hidden boundary."
+    },
+    "complete_local_state_schema": [
+      {
+        "entry": "nextn_hidden",
+        "kind": "resource",
+        "shape": "[1,H4096]",
+        "purpose": "Actual normalized decoder output used by later NextN input, with chosen boundary dtype."
+      },
+      {
+        "entry": "mla_latent_kv",
+        "kind": "resource",
+        "shape": "[capacity,512]",
+        "purpose": "Complete prefix-visible Flash NoPE latent bank; actual Graph updates, not a separate three-row diagnostic cache."
+      },
+      {
+        "entry": "index_tail_raw_key",
+        "kind": "resource",
+        "shape": "[R,128]",
+        "purpose": "Raw normalized index keys at logical modulo-R slots, R=4+prepared draft bound."
+      },
+      {
+        "entry": "index_tail_gate",
+        "kind": "resource",
+        "shape": "[R,128]",
+        "purpose": "Actual corresponding learned gate values; same ring and provenance as the key."
+      },
+      {
+        "entry": "completed_pool_key",
+        "kind": "resource",
+        "shape": "[ceil(capacity/4),128]",
+        "purpose": "Retained completed-pool index keys. Decode/F32 selected reader or original E4 storage must be named explicitly."
+      },
+      {
+        "entry": "completed_pool_scale",
+        "kind": "resource_if_encoded",
+        "shape": "[ceil(capacity/4)] F32",
+        "purpose": "Mandatory original physical scale for an encoded official pooled-key cache; not needed if the declared selected reader stores decoded F32."
+      },
+      {
+        "entry": "carried_ids",
+        "kind": "resource",
+        "shape": "[2051] I32",
+        "purpose": "Actual producer/skip Graph output order and padding, retained with seed validity/producer/epoch."
+      },
+      {
+        "entry": "graph_counters",
+        "kind": "resource",
+        "shape": "bounded I32 scalars/vector",
+        "purpose": "MLA length/absolute position; indexer logical cursor; completed-pool valid count; partial-tail logical start/count; physical ring next-slot. Separately named cursors avoid inventing work during skip."
+      },
+      {
+        "entry": "qualification",
+        "kind": "host_metadata",
+        "shape": "explicit fixed struct",
+        "purpose": "Epoch, producer identity, carry-enabled/seed-valid, accepted inputs, pending token/lag if the chosen consumer uses it, capacity and coordinate domain. Policy may remain host-owned, but it must match the same atomic version."
+      }
+    ],
+    "reusable_hyle_mechanisms": {
+      "new_public_api_needed": false,
+      "basis": [
+        "StateSchema declares resource extents and opaque metadata; StateDraft replaces actual ready ReadLeases and finalizes a complete immutable version; StateHead compare-and-publish selects one whole version.",
+        "Existing Graph Gather/Scatter/Concat/Copy/LayerNorm/Softmax/Reduce/MatMul/SDPA express pool math, bank append and actual ID-to-MLA attention. Finite input/output shapes can be compiled cold.",
+        "Existing I32 Scan supplies checked integer prefix addition. Counter increment can use Concat(old_counter,delta)->Scan->Gather final item. Ring/phase evolution can Gather a fixed cyclic lookup table with the old I32 counter, keeping outputs as actual Graph resources.",
+        "LeasePool bounds live output generations; retained old versions prevent their outputs from being recycled. No shadow cache, model-specific State API, second executor or per-layer host readback is necessary.",
+        "StateCloneRoute/CopyBatchProgram and existing hybrid consumer demonstrate exact selected resource subrange transfer if a CPU/GPU continuation is later chosen. They need not be copied into the first same-device journey."
+      ],
+      "references": [
+        "include/hyle/compute/state_versions.h:StateEntrySpec,StateDraft,StateHead,StateCloneRoute",
+        "include/hyle/compute/operation.h:Scan",
+        "tests/compute_state/kda_prefix_consumer.h:actual snapshot/prefix StateDraft selection and continued Graph execution",
+        "tests/compute_state/mtp_hybrid_consumer.h:actual selected snapshot/history CopyBatch transfer and destination Graph continuation"
+      ]
+    },
+    "fragment_reuse_limits": {
+      "indexer": "d5_glm_remaining_fragments.h:indexer supplies real-shape wq_b/wk/gate, learned pool math, scores and TopK/expansion. It currently recomputes513 pools from a supplied full history and deletes row2 each replay. Reuse its equations/constants, not that fixed rolling-window policy.",
+      "sparse_attention": "The existing fragment connects actual produced I32 IDs to MLA Gather/SDPA without host reconstruction. Its query/current MLA latent are external ports and its fixed row2 deletion is a fixture rule; complete journey must feed real producer outputs and retain explicit logical validity.",
+      "mla": "The existing fragment offers actual absorbed MLA projections and a three-row recurrent bank. Extend the bank boundary to the chosen finite capacity/valid prefix instead of publishing a three-row diagnostic as the full model cache.",
+      "mtp_decoder": "Existing EH->attention->residual->FFN->shared-head norm composition exposes next_hidden and cache; its hidden lease can connect to the next actual step. Generated parameters do not establish original whole-model quality or natural acceptance."
+    },
+    "finite_first_journey": {
+      "proposal_not_runtime_evidence": true,
+      "capacity": "One fixed cap covering base history and a small speculative domain; e.g. capacity2064 with513 complete pools and2 partial-tail tokens initially (logical length2054), draft bound<=4, ring R8.",
+      "nontrivial_selection": "More than512 complete pools avoids a vacuous select-all TopK. Keep full selected2048 token IDs plus at most3 tail IDs.",
+      "source_aligned_minimum": [
+        "Fresh A at logical2054: actual producer updates MLA/raw-key/gate ring and IDs; partial tail2->3. Retain the full version and all original leases.",
+        "Same-epoch skip B at2055: consume actual carried IDs and actual MLA state; advance MLA/hidden while retaining indexer ring/pool resources and its separately recorded cursor.",
+        "Accept only A from the two-step speculative journey using one atomic StateHead publication. The speculative B MLA/hidden is not selected; its bytes cannot become a future tail input.",
+        "End epoch, fresh continuation C at2055 from the accepted A version. Its actual key/gate closes the next pool with exactly the three accepted old-tail rows; compare against an independent sequential A->C execution at the same boundaries.",
+        "Where a full-accept branch is included, explicitly catch up the skipped accepted indexer features before claiming an immediately fresh successor works. Preserve the lag as state until that actual catch-up completes."
+      ],
+      "publication_checks": "Old complete versions and old result leases remain unchanged; failed member extent, cancelled draft and stale identity cannot partially publish another pool/tail/MLA mixture. Check bounded resource retirement after all retained versions/results are released.",
+      "scope_limit": "This proves a connected finite state journey and acceptance rollback. It must not be reported as full original GLM inference, full target verification, every possible prefix/shape or natural acceptance/performance evidence."
+    }
+  },
+  "remaining_review": {
+    "path": ".scratch/glm-mtp-state-20261022/review/remaining.md",
+    "bytes": 12383,
+    "sha256": "10269114519c47d58d58230fcd04ee20da3cca321e87b3feece928890aaf26b2"
+  },
+  "DSpark_exact_binding": {
+    "date": "2026-10-22",
+    "scope": "Read-only next binding plan for formal Flash0731 and Pro0813; no preview, new model, full-engine suite, download, build or model run",
+    "conclusion": {
+      "new_common_loader_executor_or_mtp_api_demonstrated_needed": false,
+      "actual_next_work": "A model-local typed parameter supplier plus existing Graph input leases for real block-output captures, followed by actual per-stage verified-main KV catchup in the existing complete StateHead candidate. Current proposal chaining and accepted-prefix generic mechanisms already exist.",
+      "not_completion_claim": "Source/metadata only; exact original value execution, complete target and all codecs are not proved by this report."
+    },
+    "important_corrections": [
+      "The C1 fixed safetensors-header inventory already includes all 48 formal Flash0731 and 66 formal Pro0813 header files, with 4705 and 7009 mtp.* roles. Prior statements that formal Pro original role metadata was wholly unverified are stale; payload remains unexecuted.",
+      "Flash optional sidecars contain 81 roles but no token embedding or shared LM projection. These must be borrowed from the matching target artifact, with explicit revision/format identity.",
+      "Official config uses zero-based block outputs [40,41,42] (Flash), [58,59,60] (Pro). Flash sidecar dflash.target_layers is [41,42,43]. Current llama conversion explicitly writes layer+1. Treat this as an explicit capture-index convention, not a different model topology or a reason to capture adjacent wrong blocks.",
+      "The natural DSpark consumer already has actual row-to-row greedy TopK->next Markov Gather in one proposal Graph. Do not reopen the old missing-row-dependency task.",
+      "Actual proposal persistent rings include only the caught-up last verified main row; private draft-token KV stays an attention intermediate. Full target/rings/carry/pending prefix publication exists at a projected boundary."
+    ],
+    "metadata_available": {
+      "official": [
+        {
+          "model": "flash0731",
+          "repository": "deepseek-ai/DeepSeek-V4-Flash-0731",
+          "revision": "7872f01b1d1fe23eabc4c98b48bffcef5a386062",
+          "header_files": 48,
+          "mtp_header_role_count": 4705,
+          "hidden": 4096,
+          "markov_rank": 256,
+          "official_zero_based_target_blocks": [
+            40,
+            41,
+            42
+          ],
+          "role_headers": [
+            {
+              "file": "model-00001-of-00048.safetensors",
+              "name": "embed.weight",
+              "dtype": "BF16",
+              "shape": [
+                129280,
+                4096
+              ]
+            },
+            {
+              "file": "model-00045-of-00048.safetensors",
+              "name": "head.weight",
+              "dtype": "BF16",
+              "shape": [
+                129280,
+                4096
+              ]
+            },
+            {
+              "file": "model-00045-of-00048.safetensors",
+              "name": "norm.weight",
+              "dtype": "BF16",
+              "shape": [
+                4096
+              ]
+            },
+            {
+              "file": "model-00046-of-00048.safetensors",
+              "name": "mtp.0.attn.attn_sink",
+              "dtype": "F32",
+              "shape": [
+                64
+              ]
+            },
+            {
+              "file": "model-00046-of-00048.safetensors",
+              "name": "mtp.0.ffn.gate.bias",
+              "dtype": "F32",
+              "shape": [
+                256
+              ]
+            },
+            {
+              "file": "model-00046-of-00048.safetensors",
+              "name": "mtp.0.hc_attn_base",
+              "dtype": "F32",
+              "shape": [
+                24
+              ]
+            },
+            {
+              "file": "model-00046-of-00048.safetensors",
+              "name": "mtp.0.hc_attn_fn",
+              "dtype": "F32",
+              "shape": [
+                24,
+                16384
+              ]
+            },
+            {
+              "file": "model-00046-of-00048.safetensors",
+              "name": "mtp.0.hc_attn_scale",
+              "dtype": "F32",
+              "shape": [
+                3
+              ]
+            },
+            {
+              "file": "model-00046-of-00048.safetensors",
+              "name": "mtp.0.hc_ffn_base",
+              "dtype": "F32",
+              "shape": [
+                24
+              ]
+            },
+            {
+              "file": "model-00046-of-00048.safetensors",
+              "name": "mtp.0.hc_ffn_fn",
+              "dtype": "F32",
+              "shape": [
+                24,
+                16384
+              ]
+            },
+            {
+              "file": "model-00046-of-00048.safetensors",
+              "name": "mtp.0.hc_ffn_scale",
+              "dtype": "F32",
+              "shape": [
+                3
+              ]
+            },
+            {
+              "file": "model-00046-of-00048.safetensors",
+              "name": "mtp.0.attn.kv_norm.weight",
+              "dtype": "BF16",
+              "shape": [
+                512
+              ]
+            },
+            {
+              "file": "model-00046-of-00048.safetensors",
+              "name": "mtp.0.attn.q_norm.weight",
+              "dtype": "BF16",
+              "shape": [
+                1024
+              ]
+            },
+            {
+              "file": "model-00046-of-00048.safetensors",
+              "name": "mtp.0.attn_norm.weight",
+              "dtype": "BF16",
+              "shape": [
+                4096
+              ]
+            },
+            {
+              "file": "model-00046-of-00048.safetensors",
+              "name": "mtp.0.ffn.gate.weight",
+              "dtype": "BF16",
+              "shape": [
+                256,
+                4096
+              ]
+            },
+            {
+              "file": "model-00046-of-00048.safetensors",
+              "name": "mtp.0.ffn_norm.weight",
+              "dtype": "BF16",
+              "shape": [
+                4096
+              ]
+            },
+            {
+              "file": "model-00046-of-00048.safetensors",
+              "name": "mtp.0.main_norm.weight",
+              "dtype": "BF16",
+              "shape": [
+                4096
+              ]
+            },
+            {
+              "file": "model-00046-of-00048.safetensors",
+              "name": "mtp.0.attn.wkv.scale",
+              "dtype": "F8_E8M0",
+              "shape": [
+                4,
+                32
+              ]
+            },
+            {
+              "file": "model-00046-of-00048.safetensors",
+              "name": "mtp.0.attn.wo_a.scale",
+              "dtype": "F8_E8M0",
+              "shape": [
+                64,
+                32
+              ]
+            },
+            {
+              "file": "model-00046-of-00048.safetensors",
+              "name": "mtp.0.attn.wo_b.scale",
+              "dtype": "F8_E8M0",
+              "shape": [
+                32,
+                64
+              ]
+            },
+            {
+              "file": "model-00046-of-00048.safetensors",
+              "name": "mtp.0.attn.wq_a.scale",
+              "dtype": "F8_E8M0",
+              "shape": [
+                8,
+                32
+              ]
+            },
+            {
+              "file": "model-00046-of-00048.safetensors",
+              "name": "mtp.0.attn.wq_b.scale",
+              "dtype": "F8_E8M0",
+              "shape": [
+                256,
+                8
+              ]
+            },
+            {
+              "file": "model-00046-of-00048.safetensors",
+              "name": "mtp.0.ffn.experts.0.w1.scale",
+              "dtype": "F8_E8M0",
+              "shape": [
+                2048,
+                128
+              ]
+            },
+            {
+              "file": "model-00046-of-00048.safetensors",
+              "name": "mtp.0.ffn.experts.0.w2.scale",
+              "dtype": "F8_E8M0",
+              "shape": [
+                4096,
+                64
+              ]
+            },
+            {
+              "file": "model-00046-of-00048.safetensors",
+              "name": "mtp.0.ffn.experts.0.w3.scale",
+              "dtype": "F8_E8M0",
+              "shape": [
+                2048,
+                128
+              ]
+            },
+            {
+              "file": "model-00046-of-00048.safetensors",
+              "name": "mtp.0.ffn.shared_experts.w1.scale",
+              "dtype": "F8_E8M0",
+              "shape": [
+                16,
+                32
+              ]
+            },
+            {
+              "file": "model-00046-of-00048.safetensors",
+              "name": "mtp.0.ffn.shared_experts.w2.scale",
+              "dtype": "F8_E8M0",
+              "shape": [
+                32,
+                16
+              ]
+            },
+            {
+              "file": "model-00046-of-00048.safetensors",
+              "name": "mtp.0.ffn.shared_experts.w3.scale",
+              "dtype": "F8_E8M0",
+              "shape": [
+                16,
+                32
+              ]
+            },
+            {
+              "file": "model-00046-of-00048.safetensors",
+              "name": "mtp.0.main_proj.scale",
+              "dtype": "F8_E8M0",
+              "shape": [
+                32,
+                96
+              ]
+            },
+            {
+              "file": "model-00046-of-00048.safetensors",
+              "name": "mtp.0.attn.wkv.weight",
+              "dtype": "F8_E4M3",
+              "shape": [
+                512,
+                4096
+              ]
+            },
+            {
+              "file": "model-00046-of-00048.safetensors",
+              "name": "mtp.0.attn.wo_a.weight",
+              "dtype": "F8_E4M3",
+              "shape": [
+                8192,
+                4096
+              ]
+            },
+            {
+              "file": "model-00046-of-00048.safetensors",
+              "name": "mtp.0.attn.wo_b.weight",
+              "dtype": "F8_E4M3",
+              "shape": [
+                4096,
+                8192
+              ]
+            },
+            {
+              "file": "model-00046-of-00048.safetensors",
+              "name": "mtp.0.attn.wq_a.weight",
+              "dtype": "F8_E4M3",
+              "shape": [
+                1024,
+                4096
+              ]
+            },
+            {
+              "file": "model-00046-of-00048.safetensors",
+              "name": "mtp.0.attn.wq_b.weight",
+              "dtype": "F8_E4M3",
+              "shape": [
+                32768,
+                1024
+              ]
+            },
+            {
+              "file": "model-00046-of-00048.safetensors",
+              "name": "mtp.0.ffn.shared_experts.w1.weight",
+              "dtype": "F8_E4M3",
+              "shape": [
+                2048,
+                4096
+              ]
+            },
+            {
+              "file": "model-00046-of-00048.safetensors",
+              "name": "mtp.0.ffn.shared_experts.w2.weight",
+              "dtype": "F8_E4M3",
+              "shape": [
+                4096,
+                2048
+              ]
+            },
+            {
+              "file": "model-00046-of-00048.safetensors",
+              "name": "mtp.0.ffn.shared_experts.w3.weight",
+              "dtype": "F8_E4M3",
+              "shape": [
+                2048,
+                4096
+              ]
+            },
+            {
+              "file": "model-00046-of-00048.safetensors",
+              "name": "mtp.0.main_proj.weight",
+              "dtype": "F8_E4M3",
+              "shape": [
+                4096,
+                12288
+              ]
+            },
+            {
+              "file": "model-00046-of-00048.safetensors",
+              "name": "mtp.0.ffn.experts.0.w1.weight",
+              "dtype": "I8",
+              "shape": [
+                2048,
+                2048
+              ]
+            },
+            {
+              "file": "model-00046-of-00048.safetensors",
+              "name": "mtp.0.ffn.experts.0.w2.weight",
+              "dtype": "I8",
+              "shape": [
+                4096,
+                1024
+              ]
+            },
+            {
+              "file": "model-00046-of-00048.safetensors",
+              "name": "mtp.0.ffn.experts.0.w3.weight",
+              "dtype": "I8",
+              "shape": [
+                2048,
+                2048
+              ]
+            },
+            {
+              "file": "model-00048-of-00048.safetensors",
+              "name": "mtp.2.hc_head_base",
+              "dtype": "F32",
+              "shape": [
+                4
+              ]
+            },
+            {
+              "file": "model-00048-of-00048.safetensors",
+              "name": "mtp.2.hc_head_fn",
+              "dtype": "F32",
+              "shape": [
+                4,
+                16384
+              ]
+            },
+            {
+              "file": "model-00048-of-00048.safetensors",
+              "name": "mtp.2.hc_head_scale",
+              "dtype": "F32",
+              "shape": [
+                1
+              ]
+            },
+            {
+              "file": "model-00048-of-00048.safetensors",
+              "name": "mtp.2.confidence_head.proj.weight",
+              "dtype": "BF16",
+              "shape": [
+                1,
+                4352
+              ]
+            },
+            {
+              "file": "model-00048-of-00048.safetensors",
+              "name": "mtp.2.markov_head.markov_w1.weight",
+              "dtype": "BF16",
+              "shape": [
+                129280,
+                256
+              ]
+            },
+            {
+              "file": "model-00048-of-00048.safetensors",
+              "name": "mtp.2.markov_head.markov_w2.weight",
+              "dtype": "BF16",
+              "shape": [
+                129280,
+                256
+              ]
+            },
+            {
+              "file": "model-00048-of-00048.safetensors",
+              "name": "mtp.2.norm.weight",
+              "dtype": "BF16",
+              "shape": [
+                4096
+              ]
+            }
+          ],
+          "payload_execution_claimed": false
+        },
+        {
+          "model": "pro0813",
+          "repository": "deepseek-ai/DeepSeek-V4-Pro-0813",
+          "revision": "72e1d3230f6c080a530b0a1d46f8eb4602340597",
+          "header_files": 66,
+          "mtp_header_role_count": 7009,
+          "hidden": 7168,
+          "markov_rank": 512,
+          "official_zero_based_target_blocks": [
+            58,
+            59,
+            60
+          ],
+          "role_headers": [
+            {
+              "file": "model-00001-of-00066.safetensors",
+              "name": "embed.weight",
+              "dtype": "BF16",
+              "shape": [
+                129280,
+                7168
+              ]
+            },
+            {
+              "file": "model-00063-of-00066.safetensors",
+              "name": "head.weight",
+              "dtype": "BF16",
+              "shape": [
+                129280,
+                7168
+              ]
+            },
+            {
+              "file": "model-00063-of-00066.safetensors",
+              "name": "norm.weight",
+              "dtype": "BF16",
+              "shape": [
+                7168
+              ]
+            },
+            {
+              "file": "model-00064-of-00066.safetensors",
+              "name": "mtp.0.attn.attn_sink",
+              "dtype": "F32",
+              "shape": [
+                128
+              ]
+            },
+            {
+              "file": "model-00064-of-00066.safetensors",
+              "name": "mtp.0.ffn.gate.bias",
+              "dtype": "F32",
+              "shape": [
+                384
+              ]
+            },
+            {
+              "file": "model-00064-of-00066.safetensors",
+              "name": "mtp.0.hc_attn_base",
+              "dtype": "F32",
+              "shape": [
+                24
+              ]
+            },
+            {
+              "file": "model-00064-of-00066.safetensors",
+              "name": "mtp.0.hc_attn_fn",
+              "dtype": "F32",
+              "shape": [
+                24,
+                28672
+              ]
+            },
+            {
+              "file": "model-00064-of-00066.safetensors",
+              "name": "mtp.0.hc_attn_scale",
+              "dtype": "F32",
+              "shape": [
+                3
+              ]
+            },
+            {
+              "file": "model-00064-of-00066.safetensors",
+              "name": "mtp.0.hc_ffn_base",
+              "dtype": "F32",
+              "shape": [
+                24
+              ]
+            },
+            {
+              "file": "model-00064-of-00066.safetensors",
+              "name": "mtp.0.hc_ffn_fn",
+              "dtype": "F32",
+              "shape": [
+                24,
+                28672
+              ]
+            },
+            {
+              "file": "model-00064-of-00066.safetensors",
+              "name": "mtp.0.hc_ffn_scale",
+              "dtype": "F32",
+              "shape": [
+                3
+              ]
+            },
+            {
+              "file": "model-00064-of-00066.safetensors",
+              "name": "mtp.0.attn.kv_norm.weight",
+              "dtype": "BF16",
+              "shape": [
+                512
+              ]
+            },
+            {
+              "file": "model-00064-of-00066.safetensors",
+              "name": "mtp.0.attn.q_norm.weight",
+              "dtype": "BF16",
+              "shape": [
+                1536
+              ]
+            },
+            {
+              "file": "model-00064-of-00066.safetensors",
+              "name": "mtp.0.attn_norm.weight",
+              "dtype": "BF16",
+              "shape": [
+                7168
+              ]
+            },
+            {
+              "file": "model-00064-of-00066.safetensors",
+              "name": "mtp.0.ffn.gate.weight",
+              "dtype": "BF16",
+              "shape": [
+                384,
+                7168
+              ]
+            },
+            {
+              "file": "model-00064-of-00066.safetensors",
+              "name": "mtp.0.ffn_norm.weight",
+              "dtype": "BF16",
+              "shape": [
+                7168
+              ]
+            },
+            {
+              "file": "model-00064-of-00066.safetensors",
+              "name": "mtp.0.main_norm.weight",
+              "dtype": "BF16",
+              "shape": [
+                7168
+              ]
+            },
+            {
+              "file": "model-00064-of-00066.safetensors",
+              "name": "mtp.0.attn.wkv.scale",
+              "dtype": "F8_E8M0",
+              "shape": [
+                4,
+                56
+              ]
+            },
+            {
+              "file": "model-00064-of-00066.safetensors",
+              "name": "mtp.0.attn.wo_a.scale",
+              "dtype": "F8_E8M0",
+              "shape": [
+                128,
+                32
+              ]
+            },
+            {
+              "file": "model-00064-of-00066.safetensors",
+              "name": "mtp.0.attn.wo_b.scale",
+              "dtype": "F8_E8M0",
+              "shape": [
+                56,
+                128
+              ]
+            },
+            {
+              "file": "model-00064-of-00066.safetensors",
+              "name": "mtp.0.attn.wq_a.scale",
+              "dtype": "F8_E8M0",
+              "shape": [
+                12,
+                56
+              ]
+            },
+            {
+              "file": "model-00064-of-00066.safetensors",
+              "name": "mtp.0.attn.wq_b.scale",
+              "dtype": "F8_E8M0",
+              "shape": [
+                512,
+                12
+              ]
+            },
+            {
+              "file": "model-00064-of-00066.safetensors",
+              "name": "mtp.0.ffn.experts.0.w1.scale",
+              "dtype": "F8_E8M0",
+              "shape": [
+                3072,
+                224
+              ]
+            },
+            {
+              "file": "model-00064-of-00066.safetensors",
+              "name": "mtp.0.ffn.experts.0.w2.scale",
+              "dtype": "F8_E8M0",
+              "shape": [
+                7168,
+                96
+              ]
+            },
+            {
+              "file": "model-00064-of-00066.safetensors",
+              "name": "mtp.0.ffn.experts.0.w3.scale",
+              "dtype": "F8_E8M0",
+              "shape": [
+                3072,
+                224
+              ]
+            },
+            {
+              "file": "model-00064-of-00066.safetensors",
+              "name": "mtp.0.ffn.shared_experts.w1.scale",
+              "dtype": "F8_E8M0",
+              "shape": [
+                24,
+                56
+              ]
+            },
+            {
+              "file": "model-00064-of-00066.safetensors",
+              "name": "mtp.0.ffn.shared_experts.w2.scale",
+              "dtype": "F8_E8M0",
+              "shape": [
+                56,
+                24
+              ]
+            },
+            {
+              "file": "model-00064-of-00066.safetensors",
+              "name": "mtp.0.ffn.shared_experts.w3.scale",
+              "dtype": "F8_E8M0",
+              "shape": [
+                24,
+                56
+              ]
+            },
+            {
+              "file": "model-00064-of-00066.safetensors",
+              "name": "mtp.0.main_proj.scale",
+              "dtype": "F8_E8M0",
+              "shape": [
+                56,
+                168
+              ]
+            },
+            {
+              "file": "model-00064-of-00066.safetensors",
+              "name": "mtp.0.attn.wkv.weight",
+              "dtype": "F8_E4M3",
+              "shape": [
+                512,
+                7168
+              ]
+            },
+            {
+              "file": "model-00064-of-00066.safetensors",
+              "name": "mtp.0.attn.wo_a.weight",
+              "dtype": "F8_E4M3",
+              "shape": [
+                16384,
+                4096
+              ]
+            },
+            {
+              "file": "model-00064-of-00066.safetensors",
+              "name": "mtp.0.attn.wo_b.weight",
+              "dtype": "F8_E4M3",
+              "shape": [
+                7168,
+                16384
+              ]
+            },
+            {
+              "file": "model-00064-of-00066.safetensors",
+              "name": "mtp.0.attn.wq_a.weight",
+              "dtype": "F8_E4M3",
+              "shape": [
+                1536,
+                7168
+              ]
+            },
+            {
+              "file": "model-00064-of-00066.safetensors",
+              "name": "mtp.0.attn.wq_b.weight",
+              "dtype": "F8_E4M3",
+              "shape": [
+                65536,
+                1536
+              ]
+            },
+            {
+              "file": "model-00064-of-00066.safetensors",
+              "name": "mtp.0.ffn.shared_experts.w1.weight",
+              "dtype": "F8_E4M3",
+              "shape": [
+                3072,
+                7168
+              ]
+            },
+            {
+              "file": "model-00064-of-00066.safetensors",
+              "name": "mtp.0.ffn.shared_experts.w2.weight",
+              "dtype": "F8_E4M3",
+              "shape": [
+                7168,
+                3072
+              ]
+            },
+            {
+              "file": "model-00064-of-00066.safetensors",
+              "name": "mtp.0.ffn.shared_experts.w3.weight",
+              "dtype": "F8_E4M3",
+              "shape": [
+                3072,
+                7168
+              ]
+            },
+            {
+              "file": "model-00064-of-00066.safetensors",
+              "name": "mtp.0.main_proj.weight",
+              "dtype": "F8_E4M3",
+              "shape": [
+                7168,
+                21504
+              ]
+            },
+            {
+              "file": "model-00064-of-00066.safetensors",
+              "name": "mtp.0.ffn.experts.0.w1.weight",
+              "dtype": "I8",
+              "shape": [
+                3072,
+                3584
+              ]
+            },
+            {
+              "file": "model-00064-of-00066.safetensors",
+              "name": "mtp.0.ffn.experts.0.w2.weight",
+              "dtype": "I8",
+              "shape": [
+                7168,
+                1536
+              ]
+            },
+            {
+              "file": "model-00064-of-00066.safetensors",
+              "name": "mtp.0.ffn.experts.0.w3.weight",
+              "dtype": "I8",
+              "shape": [
+                3072,
+                3584
+              ]
+            },
+            {
+              "file": "model-00066-of-00066.safetensors",
+              "name": "mtp.2.hc_head_base",
+              "dtype": "F32",
+              "shape": [
+                4
+              ]
+            },
+            {
+              "file": "model-00066-of-00066.safetensors",
+              "name": "mtp.2.hc_head_fn",
+              "dtype": "F32",
+              "shape": [
+                4,
+                28672
+              ]
+            },
+            {
+              "file": "model-00066-of-00066.safetensors",
+              "name": "mtp.2.hc_head_scale",
+              "dtype": "F32",
+              "shape": [
+                1
+              ]
+            },
+            {
+              "file": "model-00066-of-00066.safetensors",
+              "name": "mtp.2.confidence_head.proj.weight",
+              "dtype": "BF16",
+              "shape": [
+                1,
+                7680
+              ]
+            },
+            {
+              "file": "model-00066-of-00066.safetensors",
+              "name": "mtp.2.markov_head.markov_w1.weight",
+              "dtype": "BF16",
+              "shape": [
+                129280,
+                512
+              ]
+            },
+            {
+              "file": "model-00066-of-00066.safetensors",
+              "name": "mtp.2.markov_head.markov_w2.weight",
+              "dtype": "BF16",
+              "shape": [
+                129280,
+                512
+              ]
+            },
+            {
+              "file": "model-00066-of-00066.safetensors",
+              "name": "mtp.2.norm.weight",
+              "dtype": "BF16",
+              "shape": [
+                7168
+              ]
+            }
+          ],
+          "payload_execution_claimed": false
+        }
+      ],
+      "flash_sidecars": [
+        {
+          "cache_key": "8efc99f95baea1e5ad523348661d26a21bf71e66248d8bc0e0ab18191830e9ef",
+          "repository": "unsloth/DeepSeek-V4-Flash-0731-GGUF",
+          "revision": "fbbb5b93fb787c21338159b0af3318bb3f4d9768",
+          "file": "dspark-DeepSeek-V4-Flash-0731-Q8_0.gguf",
+          "tensor_count": 81,
+          "tensor_data_offset": "5253152",
+          "tensor_table_sha256": "44f30d92e3be1e3737b92dddcb737e6d85944b60804a7a7a810a2ac60c79de5f",
+          "target_layers_metadata": [
+            41,
+            42,
+            43
+          ],
+          "roles": [
+            {
+              "name": "blk.0.ffn_gate_exps.weight",
+              "shape": [
+                "4096",
+                "2048",
+                "256"
+              ],
+              "dtype": "MXFP4",
+              "dtype_code": 39,
+              "role": "dspark",
+              "offset": "0"
+            },
+            {
+              "name": "blk.0.ffn_down_exps.weight",
+              "shape": [
+                "2048",
+                "4096",
+                "256"
+              ],
+              "dtype": "MXFP4",
+              "dtype_code": 39,
+              "role": "dspark",
+              "offset": "1140850688"
+            },
+            {
+              "name": "blk.0.ffn_up_exps.weight",
+              "shape": [
+                "4096",
+                "2048",
+                "256"
+              ],
+              "dtype": "MXFP4",
+              "dtype_code": 39,
+              "role": "dspark",
+              "offset": "2281701376"
+            },
+            {
+              "name": "blk.1.ffn_gate_exps.weight",
+              "shape": [
+                "4096",
+                "2048",
+                "256"
+              ],
+              "dtype": "MXFP4",
+              "dtype_code": 39,
+              "role": "dspark",
+              "offset": "3422552064"
+            },
+            {
+              "name": "blk.1.ffn_down_exps.weight",
+              "shape": [
+                "2048",
+                "4096",
+                "256"
+              ],
+              "dtype": "MXFP4",
+              "dtype_code": 39,
+              "role": "dspark",
+              "offset": "4563402752"
+            },
+            {
+              "name": "blk.1.ffn_up_exps.weight",
+              "shape": [
+                "4096",
+                "2048",
+                "256"
+              ],
+              "dtype": "MXFP4",
+              "dtype_code": 39,
+              "role": "dspark",
+              "offset": "5704253440"
+            },
+            {
+              "name": "blk.2.ffn_gate_exps.weight",
+              "shape": [
+                "4096",
+                "2048",
+                "256"
+              ],
+              "dtype": "MXFP4",
+              "dtype_code": 39,
+              "role": "dspark",
+              "offset": "6845104128"
+            },
+            {
+              "name": "blk.2.ffn_down_exps.weight",
+              "shape": [
+                "2048",
+                "4096",
+                "256"
+              ],
+              "dtype": "MXFP4",
+              "dtype_code": 39,
+              "role": "dspark",
+              "offset": "7985954816"
+            },
+            {
+              "name": "blk.2.ffn_up_exps.weight",
+              "shape": [
+                "4096",
+                "2048",
+                "256"
+              ],
+              "dtype": "MXFP4",
+              "dtype_code": 39,
+              "role": "dspark",
+              "offset": "9126805504"
+            },
+            {
+              "name": "blk.0.attn_sinks.weight",
+              "shape": [
+                "64"
+              ],
+              "dtype": "F32",
+              "dtype_code": 0,
+              "role": "dspark",
+              "offset": "10267656192"
+            },
+            {
+              "name": "blk.0.attn_kv_a_norm.weight",
+              "shape": [
+                "512"
+              ],
+              "dtype": "F32",
+              "dtype_code": 0,
+              "role": "dspark",
+              "offset": "10267656448"
+            },
+            {
+              "name": "blk.0.attn_q_a_norm.weight",
+              "shape": [
+                "1024"
+              ],
+              "dtype": "F32",
+              "dtype_code": 0,
+              "role": "dspark",
+              "offset": "10267658496"
+            },
+            {
+              "name": "blk.0.attn_kv.weight",
+              "shape": [
+                "4096",
+                "512"
+              ],
+              "dtype": "Q8_0",
+              "dtype_code": 8,
+              "role": "dspark",
+              "offset": "10267662592"
+            },
+            {
+              "name": "blk.0.attn_output_a.weight",
+              "shape": [
+                "4096",
+                "8192"
+              ],
+              "dtype": "Q8_0",
+              "dtype_code": 8,
+              "role": "dspark",
+              "offset": "10269890816"
+            },
+            {
+              "name": "blk.0.attn_output_b.weight",
+              "shape": [
+                "8192",
+                "4096"
+              ],
+              "dtype": "Q8_0",
+              "dtype_code": 8,
+              "role": "dspark",
+              "offset": "10305542400"
+            },
+            {
+              "name": "blk.0.attn_q_a.weight",
+              "shape": [
+                "4096",
+                "1024"
+              ],
+              "dtype": "Q8_0",
+              "dtype_code": 8,
+              "role": "dspark",
+              "offset": "10341193984"
+            },
+            {
+              "name": "blk.0.attn_q_b.weight",
+              "shape": [
+                "1024",
+                "32768"
+              ],
+              "dtype": "Q8_0",
+              "dtype_code": 8,
+              "role": "dspark",
+              "offset": "10345650432"
+            },
+            {
+              "name": "blk.0.attn_norm.weight",
+              "shape": [
+                "4096"
+              ],
+              "dtype": "F32",
+              "dtype_code": 0,
+              "role": "dspark",
+              "offset": "10381302016"
+            },
+            {
+              "name": "blk.0.exp_probs_b.bias",
+              "shape": [
+                "256"
+              ],
+              "dtype": "F32",
+              "dtype_code": 0,
+              "role": "dspark",
+              "offset": "10381318400"
+            },
+            {
+              "name": "blk.0.ffn_gate_inp.weight",
+              "shape": [
+                "4096",
+                "256"
+              ],
+              "dtype": "BF16",
+              "dtype_code": 30,
+              "role": "dspark",
+              "offset": "10381319424"
+            },
+            {
+              "name": "blk.0.ffn_gate_shexp.weight",
+              "shape": [
+                "4096",
+                "2048"
+              ],
+              "dtype": "Q8_0",
+              "dtype_code": 8,
+              "role": "dspark",
+              "offset": "10383416576"
+            },
+            {
+              "name": "blk.0.ffn_down_shexp.weight",
+              "shape": [
+                "2048",
+                "4096"
+              ],
+              "dtype": "Q8_0",
+              "dtype_code": 8,
+              "role": "dspark",
+              "offset": "10392329472"
+            },
+            {
+              "name": "blk.0.ffn_up_shexp.weight",
+              "shape": [
+                "4096",
+                "2048"
+              ],
+              "dtype": "Q8_0",
+              "dtype_code": 8,
+              "role": "dspark",
+              "offset": "10401242368"
+            },
+            {
+              "name": "blk.0.ffn_norm.weight",
+              "shape": [
+                "4096"
+              ],
+              "dtype": "F32",
+              "dtype_code": 0,
+              "role": "dspark",
+              "offset": "10410155264"
+            },
+            {
+              "name": "blk.0.hc_attn_base.weight",
+              "shape": [
+                "24"
+              ],
+              "dtype": "F32",
+              "dtype_code": 0,
+              "role": "dspark",
+              "offset": "10410171648"
+            },
+            {
+              "name": "blk.0.hc_attn_fn.weight",
+              "shape": [
+                "16384",
+                "24"
+              ],
+              "dtype": "F32",
+              "dtype_code": 0,
+              "role": "dspark",
+              "offset": "10410171744"
+            },
+            {
+              "name": "blk.0.hc_attn_scale.weight",
+              "shape": [
+                "3"
+              ],
+              "dtype": "F32",
+              "dtype_code": 0,
+              "role": "dspark",
+              "offset": "10411744608"
+            },
+            {
+              "name": "blk.0.hc_ffn_base.weight",
+              "shape": [
+                "24"
+              ],
+              "dtype": "F32",
+              "dtype_code": 0,
+              "role": "dspark",
+              "offset": "10411744640"
+            },
+            {
+              "name": "blk.0.hc_ffn_fn.weight",
+              "shape": [
+                "16384",
+                "24"
+              ],
+              "dtype": "F32",
+              "dtype_code": 0,
+              "role": "dspark",
+              "offset": "10411744736"
+            },
+            {
+              "name": "blk.0.hc_ffn_scale.weight",
+              "shape": [
+                "3"
+              ],
+              "dtype": "F32",
+              "dtype_code": 0,
+              "role": "dspark",
+              "offset": "10413317600"
+            },
+            {
+              "name": "enc.output_norm.weight",
+              "shape": [
+                "4096"
+              ],
+              "dtype": "F32",
+              "dtype_code": 0,
+              "role": "dspark",
+              "offset": "10413317632"
+            },
+            {
+              "name": "fc.weight",
+              "shape": [
+                "12288",
+                "4096"
+              ],
+              "dtype": "Q8_0",
+              "dtype_code": 8,
+              "role": "dspark",
+              "offset": "10413334016"
+            },
+            {
+              "name": "blk.1.attn_sinks.weight",
+              "shape": [
+                "64"
+              ],
+              "dtype": "F32",
+              "dtype_code": 0,
+              "role": "dspark",
+              "offset": "10466811392"
+            },
+            {
+              "name": "blk.1.attn_kv_a_norm.weight",
+              "shape": [
+                "512"
+              ],
+              "dtype": "F32",
+              "dtype_code": 0,
+              "role": "dspark",
+              "offset": "10466811648"
+            },
+            {
+              "name": "blk.1.attn_q_a_norm.weight",
+              "shape": [
+                "1024"
+              ],
+              "dtype": "F32",
+              "dtype_code": 0,
+              "role": "dspark",
+              "offset": "10466813696"
+            },
+            {
+              "name": "blk.1.attn_kv.weight",
+              "shape": [
+                "4096",
+                "512"
+              ],
+              "dtype": "Q8_0",
+              "dtype_code": 8,
+              "role": "dspark",
+              "offset": "10466817792"
+            },
+            {
+              "name": "blk.1.attn_output_a.weight",
+              "shape": [
+                "4096",
+                "8192"
+              ],
+              "dtype": "Q8_0",
+              "dtype_code": 8,
+              "role": "dspark",
+              "offset": "10469046016"
+            },
+            {
+              "name": "blk.1.attn_output_b.weight",
+              "shape": [
+                "8192",
+                "4096"
+              ],
+              "dtype": "Q8_0",
+              "dtype_code": 8,
+              "role": "dspark",
+              "offset": "10504697600"
+            },
+            {
+              "name": "blk.1.attn_q_a.weight",
+              "shape": [
+                "4096",
+                "1024"
+              ],
+              "dtype": "Q8_0",
+              "dtype_code": 8,
+              "role": "dspark",
+              "offset": "10540349184"
+            },
+            {
+              "name": "blk.1.attn_q_b.weight",
+              "shape": [
+                "1024",
+                "32768"
+              ],
+              "dtype": "Q8_0",
+              "dtype_code": 8,
+              "role": "dspark",
+              "offset": "10544805632"
+            },
+            {
+              "name": "blk.1.attn_norm.weight",
+              "shape": [
+                "4096"
+              ],
+              "dtype": "F32",
+              "dtype_code": 0,
+              "role": "dspark",
+              "offset": "10580457216"
+            },
+            {
+              "name": "blk.1.exp_probs_b.bias",
+              "shape": [
+                "256"
+              ],
+              "dtype": "F32",
+              "dtype_code": 0,
+              "role": "dspark",
+              "offset": "10580473600"
+            },
+            {
+              "name": "blk.1.ffn_gate_inp.weight",
+              "shape": [
+                "4096",
+                "256"
+              ],
+              "dtype": "BF16",
+              "dtype_code": 30,
+              "role": "dspark",
+              "offset": "10580474624"
+            },
+            {
+              "name": "blk.1.ffn_gate_shexp.weight",
+              "shape": [
+                "4096",
+                "2048"
+              ],
+              "dtype": "Q8_0",
+              "dtype_code": 8,
+              "role": "dspark",
+              "offset": "10582571776"
+            },
+            {
+              "name": "blk.1.ffn_down_shexp.weight",
+              "shape": [
+                "2048",
+                "4096"
+              ],
+              "dtype": "Q8_0",
+              "dtype_code": 8,
+              "role": "dspark",
+              "offset": "10591484672"
+            },
+            {
+              "name": "blk.1.ffn_up_shexp.weight",
+              "shape": [
+                "4096",
+                "2048"
+              ],
+              "dtype": "Q8_0",
+              "dtype_code": 8,
+              "role": "dspark",
+              "offset": "10600397568"
+            },
+            {
+              "name": "blk.1.ffn_norm.weight",
+              "shape": [
+                "4096"
+              ],
+              "dtype": "F32",
+              "dtype_code": 0,
+              "role": "dspark",
+              "offset": "10609310464"
+            },
+            {
+              "name": "blk.1.hc_attn_base.weight",
+              "shape": [
+                "24"
+              ],
+              "dtype": "F32",
+              "dtype_code": 0,
+              "role": "dspark",
+              "offset": "10609326848"
+            },
+            {
+              "name": "blk.1.hc_attn_fn.weight",
+              "shape": [
+                "16384",
+                "24"
+              ],
+              "dtype": "F32",
+              "dtype_code": 0,
+              "role": "dspark",
+              "offset": "10609326944"
+            },
+            {
+              "name": "blk.1.hc_attn_scale.weight",
+              "shape": [
+                "3"
+              ],
+              "dtype": "F32",
+              "dtype_code": 0,
+              "role": "dspark",
+              "offset": "10610899808"
+            },
+            {
+              "name": "blk.1.hc_ffn_base.weight",
+              "shape": [
+                "24"
+              ],
+              "dtype": "F32",
+              "dtype_code": 0,
+              "role": "dspark",
+              "offset": "10610899840"
+            },
+            {
+              "name": "blk.1.hc_ffn_fn.weight",
+              "shape": [
+                "16384",
+                "24"
+              ],
+              "dtype": "F32",
+              "dtype_code": 0,
+              "role": "dspark",
+              "offset": "10610899936"
+            },
+            {
+              "name": "blk.1.hc_ffn_scale.weight",
+              "shape": [
+                "3"
+              ],
+              "dtype": "F32",
+              "dtype_code": 0,
+              "role": "dspark",
+              "offset": "10612472800"
+            },
+            {
+              "name": "blk.2.attn_sinks.weight",
+              "shape": [
+                "64"
+              ],
+              "dtype": "F32",
+              "dtype_code": 0,
+              "role": "dspark",
+              "offset": "10612472832"
+            },
+            {
+              "name": "blk.2.attn_kv_a_norm.weight",
+              "shape": [
+                "512"
+              ],
+              "dtype": "F32",
+              "dtype_code": 0,
+              "role": "dspark",
+              "offset": "10612473088"
+            },
+            {
+              "name": "blk.2.attn_q_a_norm.weight",
+              "shape": [
+                "1024"
+              ],
+              "dtype": "F32",
+              "dtype_code": 0,
+              "role": "dspark",
+              "offset": "10612475136"
+            },
+            {
+              "name": "blk.2.attn_kv.weight",
+              "shape": [
+                "4096",
+                "512"
+              ],
+              "dtype": "Q8_0",
+              "dtype_code": 8,
+              "role": "dspark",
+              "offset": "10612479232"
+            },
+            {
+              "name": "blk.2.attn_output_a.weight",
+              "shape": [
+                "4096",
+                "8192"
+              ],
+              "dtype": "Q8_0",
+              "dtype_code": 8,
+              "role": "dspark",
+              "offset": "10614707456"
+            },
+            {
+              "name": "blk.2.attn_output_b.weight",
+              "shape": [
+                "8192",
+                "4096"
+              ],
+              "dtype": "Q8_0",
+              "dtype_code": 8,
+              "role": "dspark",
+              "offset": "10650359040"
+            },
+            {
+              "name": "blk.2.attn_q_a.weight",
+              "shape": [
+                "4096",
+                "1024"
+              ],
+              "dtype": "Q8_0",
+              "dtype_code": 8,
+              "role": "dspark",
+              "offset": "10686010624"
+            },
+            {
+              "name": "blk.2.attn_q_b.weight",
+              "shape": [
+                "1024",
+                "32768"
+              ],
+              "dtype": "Q8_0",
+              "dtype_code": 8,
+              "role": "dspark",
+              "offset": "10690467072"
+            },
+            {
+              "name": "blk.2.attn_norm.weight",
+              "shape": [
+                "4096"
+              ],
+              "dtype": "F32",
+              "dtype_code": 0,
+              "role": "dspark",
+              "offset": "10726118656"
+            },
+            {
+              "name": "conf_proj.weight",
+              "shape": [
+                "4352",
+                "1"
+              ],
+              "dtype": "BF16",
+              "dtype_code": 30,
+              "role": "dspark",
+              "offset": "10726135040"
+            },
+            {
+              "name": "blk.2.exp_probs_b.bias",
+              "shape": [
+                "256"
+              ],
+              "dtype": "F32",
+              "dtype_code": 0,
+              "role": "dspark",
+              "offset": "10726143744"
+            },
+            {
+              "name": "blk.2.ffn_gate_inp.weight",
+              "shape": [
+                "4096",
+                "256"
+              ],
+              "dtype": "BF16",
+              "dtype_code": 30,
+              "role": "dspark",
+              "offset": "10726144768"
+            },
+            {
+              "name": "blk.2.ffn_gate_shexp.weight",
+              "shape": [
+                "4096",
+                "2048"
+              ],
+              "dtype": "Q8_0",
+              "dtype_code": 8,
+              "role": "dspark",
+              "offset": "10728241920"
+            },
+            {
+              "name": "blk.2.ffn_down_shexp.weight",
+              "shape": [
+                "2048",
+                "4096"
+              ],
+              "dtype": "Q8_0",
+              "dtype_code": 8,
+              "role": "dspark",
+              "offset": "10737154816"
+            },
+            {
+              "name": "blk.2.ffn_up_shexp.weight",
+              "shape": [
+                "4096",
+                "2048"
+              ],
+              "dtype": "Q8_0",
+              "dtype_code": 8,
+              "role": "dspark",
+              "offset": "10746067712"
+            },
+            {
+              "name": "blk.2.ffn_norm.weight",
+              "shape": [
+                "4096"
+              ],
+              "dtype": "F32",
+              "dtype_code": 0,
+              "role": "dspark",
+              "offset": "10754980608"
+            },
+            {
+              "name": "blk.2.hc_attn_base.weight",
+              "shape": [
+                "24"
+              ],
+              "dtype": "F32",
+              "dtype_code": 0,
+              "role": "dspark",
+              "offset": "10754996992"
+            },
+            {
+              "name": "blk.2.hc_attn_fn.weight",
+              "shape": [
+                "16384",
+                "24"
+              ],
+              "dtype": "F32",
+              "dtype_code": 0,
+              "role": "dspark",
+              "offset": "10754997088"
+            },
+            {
+              "name": "blk.2.hc_attn_scale.weight",
+              "shape": [
+                "3"
+              ],
+              "dtype": "F32",
+              "dtype_code": 0,
+              "role": "dspark",
+              "offset": "10756569952"
+            },
+            {
+              "name": "blk.2.hc_ffn_base.weight",
+              "shape": [
+                "24"
+              ],
+              "dtype": "F32",
+              "dtype_code": 0,
+              "role": "dspark",
+              "offset": "10756569984"
+            },
+            {
+              "name": "blk.2.hc_ffn_fn.weight",
+              "shape": [
+                "16384",
+                "24"
+              ],
+              "dtype": "F32",
+              "dtype_code": 0,
+              "role": "dspark",
+              "offset": "10756570080"
+            },
+            {
+              "name": "blk.2.hc_ffn_scale.weight",
+              "shape": [
+                "3"
+              ],
+              "dtype": "F32",
+              "dtype_code": 0,
+              "role": "dspark",
+              "offset": "10758142944"
+            },
+            {
+              "name": "output_hc_base.weight",
+              "shape": [
+                "4"
+              ],
+              "dtype": "F32",
+              "dtype_code": 0,
+              "role": "dspark",
+              "offset": "10758142976"
+            },
+            {
+              "name": "output_hc_fn.weight",
+              "shape": [
+                "16384",
+                "4"
+              ],
+              "dtype": "F32",
+              "dtype_code": 0,
+              "role": "dspark",
+              "offset": "10758143008"
+            },
+            {
+              "name": "output_hc_scale.weight",
+              "shape": [
+                "1"
+              ],
+              "dtype": "F32",
+              "dtype_code": 0,
+              "role": "dspark",
+              "offset": "10758405152"
+            },
+            {
+              "name": "markov_w1.weight",
+              "shape": [
+                "256",
+                "129280"
+              ],
+              "dtype": "BF16",
+              "dtype_code": 30,
+              "role": "dspark",
+              "offset": "10758405184"
+            },
+            {
+              "name": "markov_w2.weight",
+              "shape": [
+                "256",
+                "129280"
+              ],
+              "dtype": "BF16",
+              "dtype_code": 30,
+              "role": "dspark",
+              "offset": "10824596544"
+            },
+            {
+              "name": "output_norm.weight",
+              "shape": [
+                "4096"
+              ],
+              "dtype": "F32",
+              "dtype_code": 0,
+              "role": "dspark",
+              "offset": "10890787904"
+            }
+          ],
+          "no_shared_embedding_or_lm_tensor": true,
+          "payload_execution_claimed_for_all_roles": false
+        },
+        {
+          "cache_key": "37db6ffce0c993c18defc9a62810e4b50c8524bb752b2b27a7e40abb134e88dd",
+          "repository": "unsloth/DeepSeek-V4-Flash-0731-GGUF",
+          "revision": "fbbb5b93fb787c21338159b0af3318bb3f4d9768",
+          "file": "dspark/dspark-DeepSeek-V4-Flash-0731-BF16.gguf",
+          "tensor_count": 81,
+          "tensor_data_offset": "5253152",
+          "tensor_table_sha256": "c93fa628f656654ba421e1d7d161c3edb754646e9da634b3f0cad592bb0d91ed",
+          "target_layers_metadata": [
+            41,
+            42,
+            43
+          ],
+          "roles": [
+            {
+              "name": "blk.0.ffn_gate_exps.weight",
+              "shape": [
+                "4096",
+                "2048",
+                "256"
+              ],
+              "dtype": "MXFP4",
+              "dtype_code": 39,
+              "role": "dspark",
+              "offset": "0"
+            },
+            {
+              "name": "blk.0.ffn_down_exps.weight",
+              "shape": [
+                "2048",
+                "4096",
+                "256"
+              ],
+              "dtype": "MXFP4",
+              "dtype_code": 39,
+              "role": "dspark",
+              "offset": "1140850688"
+            },
+            {
+              "name": "blk.0.ffn_up_exps.weight",
+              "shape": [
+                "4096",
+                "2048",
+                "256"
+              ],
+              "dtype": "MXFP4",
+              "dtype_code": 39,
+              "role": "dspark",
+              "offset": "2281701376"
+            },
+            {
+              "name": "blk.1.ffn_gate_exps.weight",
+              "shape": [
+                "4096",
+                "2048",
+                "256"
+              ],
+              "dtype": "MXFP4",
+              "dtype_code": 39,
+              "role": "dspark",
+              "offset": "3422552064"
+            },
+            {
+              "name": "blk.1.ffn_down_exps.weight",
+              "shape": [
+                "2048",
+                "4096",
+                "256"
+              ],
+              "dtype": "MXFP4",
+              "dtype_code": 39,
+              "role": "dspark",
+              "offset": "4563402752"
+            },
+            {
+              "name": "blk.1.ffn_up_exps.weight",
+              "shape": [
+                "4096",
+                "2048",
+                "256"
+              ],
+              "dtype": "MXFP4",
+              "dtype_code": 39,
+              "role": "dspark",
+              "offset": "5704253440"
+            },
+            {
+              "name": "blk.2.ffn_gate_exps.weight",
+              "shape": [
+                "4096",
+                "2048",
+                "256"
+              ],
+              "dtype": "MXFP4",
+              "dtype_code": 39,
+              "role": "dspark",
+              "offset": "6845104128"
+            },
+            {
+              "name": "blk.2.ffn_down_exps.weight",
+              "shape": [
+                "2048",
+                "4096",
+                "256"
+              ],
+              "dtype": "MXFP4",
+              "dtype_code": 39,
+              "role": "dspark",
+              "offset": "7985954816"
+            },
+            {
+              "name": "blk.2.ffn_up_exps.weight",
+              "shape": [
+                "4096",
+                "2048",
+                "256"
+              ],
+              "dtype": "MXFP4",
+              "dtype_code": 39,
+              "role": "dspark",
+              "offset": "9126805504"
+            },
+            {
+              "name": "blk.0.attn_sinks.weight",
+              "shape": [
+                "64"
+              ],
+              "dtype": "F32",
+              "dtype_code": 0,
+              "role": "dspark",
+              "offset": "10267656192"
+            },
+            {
+              "name": "blk.0.attn_kv_a_norm.weight",
+              "shape": [
+                "512"
+              ],
+              "dtype": "F32",
+              "dtype_code": 0,
+              "role": "dspark",
+              "offset": "10267656448"
+            },
+            {
+              "name": "blk.0.attn_q_a_norm.weight",
+              "shape": [
+                "1024"
+              ],
+              "dtype": "F32",
+              "dtype_code": 0,
+              "role": "dspark",
+              "offset": "10267658496"
+            },
+            {
+              "name": "blk.0.attn_kv.weight",
+              "shape": [
+                "4096",
+                "512"
+              ],
+              "dtype": "BF16",
+              "dtype_code": 30,
+              "role": "dspark",
+              "offset": "10267662592"
+            },
+            {
+              "name": "blk.0.attn_output_a.weight",
+              "shape": [
+                "4096",
+                "8192"
+              ],
+              "dtype": "BF16",
+              "dtype_code": 30,
+              "role": "dspark",
+              "offset": "10271856896"
+            },
+            {
+              "name": "blk.0.attn_output_b.weight",
+              "shape": [
+                "8192",
+                "4096"
+              ],
+              "dtype": "BF16",
+              "dtype_code": 30,
+              "role": "dspark",
+              "offset": "10338965760"
+            },
+            {
+              "name": "blk.0.attn_q_a.weight",
+              "shape": [
+                "4096",
+                "1024"
+              ],
+              "dtype": "BF16",
+              "dtype_code": 30,
+              "role": "dspark",
+              "offset": "10406074624"
+            },
+            {
+              "name": "blk.0.attn_q_b.weight",
+              "shape": [
+                "1024",
+                "32768"
+              ],
+              "dtype": "BF16",
+              "dtype_code": 30,
+              "role": "dspark",
+              "offset": "10414463232"
+            },
+            {
+              "name": "blk.0.attn_norm.weight",
+              "shape": [
+                "4096"
+              ],
+              "dtype": "F32",
+              "dtype_code": 0,
+              "role": "dspark",
+              "offset": "10481572096"
+            },
+            {
+              "name": "blk.0.exp_probs_b.bias",
+              "shape": [
+                "256"
+              ],
+              "dtype": "F32",
+              "dtype_code": 0,
+              "role": "dspark",
+              "offset": "10481588480"
+            },
+            {
+              "name": "blk.0.ffn_gate_inp.weight",
+              "shape": [
+                "4096",
+                "256"
+              ],
+              "dtype": "BF16",
+              "dtype_code": 30,
+              "role": "dspark",
+              "offset": "10481589504"
+            },
+            {
+              "name": "blk.0.ffn_gate_shexp.weight",
+              "shape": [
+                "4096",
+                "2048"
+              ],
+              "dtype": "BF16",
+              "dtype_code": 30,
+              "role": "dspark",
+              "offset": "10483686656"
+            },
+            {
+              "name": "blk.0.ffn_down_shexp.weight",
+              "shape": [
+                "2048",
+                "4096"
+              ],
+              "dtype": "BF16",
+              "dtype_code": 30,
+              "role": "dspark",
+              "offset": "10500463872"
+            },
+            {
+              "name": "blk.0.ffn_up_shexp.weight",
+              "shape": [
+                "4096",
+                "2048"
+              ],
+              "dtype": "BF16",
+              "dtype_code": 30,
+              "role": "dspark",
+              "offset": "10517241088"
+            },
+            {
+              "name": "blk.0.ffn_norm.weight",
+              "shape": [
+                "4096"
+              ],
+              "dtype": "F32",
+              "dtype_code": 0,
+              "role": "dspark",
+              "offset": "10534018304"
+            },
+            {
+              "name": "blk.0.hc_attn_base.weight",
+              "shape": [
+                "24"
+              ],
+              "dtype": "F32",
+              "dtype_code": 0,
+              "role": "dspark",
+              "offset": "10534034688"
+            },
+            {
+              "name": "blk.0.hc_attn_fn.weight",
+              "shape": [
+                "16384",
+                "24"
+              ],
+              "dtype": "F32",
+              "dtype_code": 0,
+              "role": "dspark",
+              "offset": "10534034784"
+            },
+            {
+              "name": "blk.0.hc_attn_scale.weight",
+              "shape": [
+                "3"
+              ],
+              "dtype": "F32",
+              "dtype_code": 0,
+              "role": "dspark",
+              "offset": "10535607648"
+            },
+            {
+              "name": "blk.0.hc_ffn_base.weight",
+              "shape": [
+                "24"
+              ],
+              "dtype": "F32",
+              "dtype_code": 0,
+              "role": "dspark",
+              "offset": "10535607680"
+            },
+            {
+              "name": "blk.0.hc_ffn_fn.weight",
+              "shape": [
+                "16384",
+                "24"
+              ],
+              "dtype": "F32",
+              "dtype_code": 0,
+              "role": "dspark",
+              "offset": "10535607776"
+            },
+            {
+              "name": "blk.0.hc_ffn_scale.weight",
+              "shape": [
+                "3"
+              ],
+              "dtype": "F32",
+              "dtype_code": 0,
+              "role": "dspark",
+              "offset": "10537180640"
+            },
+            {
+              "name": "enc.output_norm.weight",
+              "shape": [
+                "4096"
+              ],
+              "dtype": "F32",
+              "dtype_code": 0,
+              "role": "dspark",
+              "offset": "10537180672"
+            },
+            {
+              "name": "fc.weight",
+              "shape": [
+                "12288",
+                "4096"
+              ],
+              "dtype": "BF16",
+              "dtype_code": 30,
+              "role": "dspark",
+              "offset": "10537197056"
+            },
+            {
+              "name": "blk.1.attn_sinks.weight",
+              "shape": [
+                "64"
+              ],
+              "dtype": "F32",
+              "dtype_code": 0,
+              "role": "dspark",
+              "offset": "10637860352"
+            },
+            {
+              "name": "blk.1.attn_kv_a_norm.weight",
+              "shape": [
+                "512"
+              ],
+              "dtype": "F32",
+              "dtype_code": 0,
+              "role": "dspark",
+              "offset": "10637860608"
+            },
+            {
+              "name": "blk.1.attn_q_a_norm.weight",
+              "shape": [
+                "1024"
+              ],
+              "dtype": "F32",
+              "dtype_code": 0,
+              "role": "dspark",
+              "offset": "10637862656"
+            },
+            {
+              "name": "blk.1.attn_kv.weight",
+              "shape": [
+                "4096",
+                "512"
+              ],
+              "dtype": "BF16",
+              "dtype_code": 30,
+              "role": "dspark",
+              "offset": "10637866752"
+            },
+            {
+              "name": "blk.1.attn_output_a.weight",
+              "shape": [
+                "4096",
+                "8192"
+              ],
+              "dtype": "BF16",
+              "dtype_code": 30,
+              "role": "dspark",
+              "offset": "10642061056"
+            },
+            {
+              "name": "blk.1.attn_output_b.weight",
+              "shape": [
+                "8192",
+                "4096"
+              ],
+              "dtype": "BF16",
+              "dtype_code": 30,
+              "role": "dspark",
+              "offset": "10709169920"
+            },
+            {
+              "name": "blk.1.attn_q_a.weight",
+              "shape": [
+                "4096",
+                "1024"
+              ],
+              "dtype": "BF16",
+              "dtype_code": 30,
+              "role": "dspark",
+              "offset": "10776278784"
+            },
+            {
+              "name": "blk.1.attn_q_b.weight",
+              "shape": [
+                "1024",
+                "32768"
+              ],
+              "dtype": "BF16",
+              "dtype_code": 30,
+              "role": "dspark",
+              "offset": "10784667392"
+            },
+            {
+              "name": "blk.1.attn_norm.weight",
+              "shape": [
+                "4096"
+              ],
+              "dtype": "F32",
+              "dtype_code": 0,
+              "role": "dspark",
+              "offset": "10851776256"
+            },
+            {
+              "name": "blk.1.exp_probs_b.bias",
+              "shape": [
+                "256"
+              ],
+              "dtype": "F32",
+              "dtype_code": 0,
+              "role": "dspark",
+              "offset": "10851792640"
+            },
+            {
+              "name": "blk.1.ffn_gate_inp.weight",
+              "shape": [
+                "4096",
+                "256"
+              ],
+              "dtype": "BF16",
+              "dtype_code": 30,
+              "role": "dspark",
+              "offset": "10851793664"
+            },
+            {
+              "name": "blk.1.ffn_gate_shexp.weight",
+              "shape": [
+                "4096",
+                "2048"
+              ],
+              "dtype": "BF16",
+              "dtype_code": 30,
+              "role": "dspark",
+              "offset": "10853890816"
+            },
+            {
+              "name": "blk.1.ffn_down_shexp.weight",
+              "shape": [
+                "2048",
+                "4096"
+              ],
+              "dtype": "BF16",
+              "dtype_code": 30,
+              "role": "dspark",
+              "offset": "10870668032"
+            },
+            {
+              "name": "blk.1.ffn_up_shexp.weight",
+              "shape": [
+                "4096",
+                "2048"
+              ],
+              "dtype": "BF16",
+              "dtype_code": 30,
+              "role": "dspark",
+              "offset": "10887445248"
+            },
+            {
+              "name": "blk.1.ffn_norm.weight",
+              "shape": [
+                "4096"
+              ],
+              "dtype": "F32",
+              "dtype_code": 0,
+              "role": "dspark",
+              "offset": "10904222464"
+            },
+            {
+              "name": "blk.1.hc_attn_base.weight",
+              "shape": [
+                "24"
+              ],
+              "dtype": "F32",
+              "dtype_code": 0,
+              "role": "dspark",
+              "offset": "10904238848"
+            },
+            {
+              "name": "blk.1.hc_attn_fn.weight",
+              "shape": [
+                "16384",
+                "24"
+              ],
+              "dtype": "F32",
+              "dtype_code": 0,
+              "role": "dspark",
+              "offset": "10904238944"
+            },
+            {
+              "name": "blk.1.hc_attn_scale.weight",
+              "shape": [
+                "3"
+              ],
+              "dtype": "F32",
+              "dtype_code": 0,
+              "role": "dspark",
+              "offset": "10905811808"
+            },
+            {
+              "name": "blk.1.hc_ffn_base.weight",
+              "shape": [
+                "24"
+              ],
+              "dtype": "F32",
+              "dtype_code": 0,
+              "role": "dspark",
+              "offset": "10905811840"
+            },
+            {
+              "name": "blk.1.hc_ffn_fn.weight",
+              "shape": [
+                "16384",
+                "24"
+              ],
+              "dtype": "F32",
+              "dtype_code": 0,
+              "role": "dspark",
+              "offset": "10905811936"
+            },
+            {
+              "name": "blk.1.hc_ffn_scale.weight",
+              "shape": [
+                "3"
+              ],
+              "dtype": "F32",
+              "dtype_code": 0,
+              "role": "dspark",
+              "offset": "10907384800"
+            },
+            {
+              "name": "blk.2.attn_sinks.weight",
+              "shape": [
+                "64"
+              ],
+              "dtype": "F32",
+              "dtype_code": 0,
+              "role": "dspark",
+              "offset": "10907384832"
+            },
+            {
+              "name": "blk.2.attn_kv_a_norm.weight",
+              "shape": [
+                "512"
+              ],
+              "dtype": "F32",
+              "dtype_code": 0,
+              "role": "dspark",
+              "offset": "10907385088"
+            },
+            {
+              "name": "blk.2.attn_q_a_norm.weight",
+              "shape": [
+                "1024"
+              ],
+              "dtype": "F32",
+              "dtype_code": 0,
+              "role": "dspark",
+              "offset": "10907387136"
+            },
+            {
+              "name": "blk.2.attn_kv.weight",
+              "shape": [
+                "4096",
+                "512"
+              ],
+              "dtype": "BF16",
+              "dtype_code": 30,
+              "role": "dspark",
+              "offset": "10907391232"
+            },
+            {
+              "name": "blk.2.attn_output_a.weight",
+              "shape": [
+                "4096",
+                "8192"
+              ],
+              "dtype": "BF16",
+              "dtype_code": 30,
+              "role": "dspark",
+              "offset": "10911585536"
+            },
+            {
+              "name": "blk.2.attn_output_b.weight",
+              "shape": [
+                "8192",
+                "4096"
+              ],
+              "dtype": "BF16",
+              "dtype_code": 30,
+              "role": "dspark",
+              "offset": "10978694400"
+            },
+            {
+              "name": "blk.2.attn_q_a.weight",
+              "shape": [
+                "4096",
+                "1024"
+              ],
+              "dtype": "BF16",
+              "dtype_code": 30,
+              "role": "dspark",
+              "offset": "11045803264"
+            },
+            {
+              "name": "blk.2.attn_q_b.weight",
+              "shape": [
+                "1024",
+                "32768"
+              ],
+              "dtype": "BF16",
+              "dtype_code": 30,
+              "role": "dspark",
+              "offset": "11054191872"
+            },
+            {
+              "name": "blk.2.attn_norm.weight",
+              "shape": [
+                "4096"
+              ],
+              "dtype": "F32",
+              "dtype_code": 0,
+              "role": "dspark",
+              "offset": "11121300736"
+            },
+            {
+              "name": "conf_proj.weight",
+              "shape": [
+                "4352",
+                "1"
+              ],
+              "dtype": "BF16",
+              "dtype_code": 30,
+              "role": "dspark",
+              "offset": "11121317120"
+            },
+            {
+              "name": "blk.2.exp_probs_b.bias",
+              "shape": [
+                "256"
+              ],
+              "dtype": "F32",
+              "dtype_code": 0,
+              "role": "dspark",
+              "offset": "11121325824"
+            },
+            {
+              "name": "blk.2.ffn_gate_inp.weight",
+              "shape": [
+                "4096",
+                "256"
+              ],
+              "dtype": "BF16",
+              "dtype_code": 30,
+              "role": "dspark",
+              "offset": "11121326848"
+            },
+            {
+              "name": "blk.2.ffn_gate_shexp.weight",
+              "shape": [
+                "4096",
+                "2048"
+              ],
+              "dtype": "BF16",
+              "dtype_code": 30,
+              "role": "dspark",
+              "offset": "11123424000"
+            },
+            {
+              "name": "blk.2.ffn_down_shexp.weight",
+              "shape": [
+                "2048",
+                "4096"
+              ],
+              "dtype": "BF16",
+              "dtype_code": 30,
+              "role": "dspark",
+              "offset": "11140201216"
+            },
+            {
+              "name": "blk.2.ffn_up_shexp.weight",
+              "shape": [
+                "4096",
+                "2048"
+              ],
+              "dtype": "BF16",
+              "dtype_code": 30,
+              "role": "dspark",
+              "offset": "11156978432"
+            },
+            {
+              "name": "blk.2.ffn_norm.weight",
+              "shape": [
+                "4096"
+              ],
+              "dtype": "F32",
+              "dtype_code": 0,
+              "role": "dspark",
+              "offset": "11173755648"
+            },
+            {
+              "name": "blk.2.hc_attn_base.weight",
+              "shape": [
+                "24"
+              ],
+              "dtype": "F32",
+              "dtype_code": 0,
+              "role": "dspark",
+              "offset": "11173772032"
+            },
+            {
+              "name": "blk.2.hc_attn_fn.weight",
+              "shape": [
+                "16384",
+                "24"
+              ],
+              "dtype": "F32",
+              "dtype_code": 0,
+              "role": "dspark",
+              "offset": "11173772128"
+            },
+            {
+              "name": "blk.2.hc_attn_scale.weight",
+              "shape": [
+                "3"
+              ],
+              "dtype": "F32",
+              "dtype_code": 0,
+              "role": "dspark",
+              "offset": "11175344992"
+            },
+            {
+              "name": "blk.2.hc_ffn_base.weight",
+              "shape": [
+                "24"
+              ],
+              "dtype": "F32",
+              "dtype_code": 0,
+              "role": "dspark",
+              "offset": "11175345024"
+            },
+            {
+              "name": "blk.2.hc_ffn_fn.weight",
+              "shape": [
+                "16384",
+                "24"
+              ],
+              "dtype": "F32",
+              "dtype_code": 0,
+              "role": "dspark",
+              "offset": "11175345120"
+            },
+            {
+              "name": "blk.2.hc_ffn_scale.weight",
+              "shape": [
+                "3"
+              ],
+              "dtype": "F32",
+              "dtype_code": 0,
+              "role": "dspark",
+              "offset": "11176917984"
+            },
+            {
+              "name": "output_hc_base.weight",
+              "shape": [
+                "4"
+              ],
+              "dtype": "F32",
+              "dtype_code": 0,
+              "role": "dspark",
+              "offset": "11176918016"
+            },
+            {
+              "name": "output_hc_fn.weight",
+              "shape": [
+                "16384",
+                "4"
+              ],
+              "dtype": "F32",
+              "dtype_code": 0,
+              "role": "dspark",
+              "offset": "11176918048"
+            },
+            {
+              "name": "output_hc_scale.weight",
+              "shape": [
+                "1"
+              ],
+              "dtype": "F32",
+              "dtype_code": 0,
+              "role": "dspark",
+              "offset": "11177180192"
+            },
+            {
+              "name": "markov_w1.weight",
+              "shape": [
+                "256",
+                "129280"
+              ],
+              "dtype": "BF16",
+              "dtype_code": 30,
+              "role": "dspark",
+              "offset": "11177180224"
+            },
+            {
+              "name": "markov_w2.weight",
+              "shape": [
+                "256",
+                "129280"
+              ],
+              "dtype": "BF16",
+              "dtype_code": 30,
+              "role": "dspark",
+              "offset": "11243371584"
+            },
+            {
+              "name": "output_norm.weight",
+              "shape": [
+                "4096"
+              ],
+              "dtype": "F32",
+              "dtype_code": 0,
+              "role": "dspark",
+              "offset": "11309562944"
+            }
+          ],
+          "no_shared_embedding_or_lm_tensor": true,
+          "payload_execution_claimed_for_all_roles": false
+        }
+      ],
+      "rules": [
+        "Official main_proj, wq_a/wq_b/wkv/wo_a/wo_b and shared FFN headers are E4 weight plus E8M0 macroblock128 grids. Use import_float8_block128_weight for the existing canonical carrier; do not invert scale by a field name.",
+        "Official routed experts are packed I8 E2M1 bytes with per-row E8M0 group32 grids, not dense integer MatMul or Q8. Preserve existing GroupedFloat4Linear / selected explicit conversion contract.",
+        "Official norms are BF16 checkpoint values but the source RMSNorm parameter is F32; HC/sink/bias are F32; routers and shared embed/head are BF16. Source dtype and runtime parameter dtype are distinct.",
+        "Official wo_a is stored E4/E8 in headers but reference inference constructs BF16 wo_a. Existing prepare_output_weight cold Float8WeightDecode->BF16/grouped reshape is relevant; do not replace it with an extra activation-quantized operator merely because storage is FP8.",
+        "Sidecar Q8 and lossless BF16 are separate execution contracts. Their 25 converted FP8 projections become Q8_0 or BF16 respectively, including fc/main_proj and attention/shared-FFN roles; norms/HC/sinks are F32, router/Markov/confidence BF16, experts MXFP4. Do not send sidecar Q8 through official power2 activation quantization.",
+        "No complete current formal main GGUF DSpark inclusion is inferred from these optional sidecar headers. Do not use old Flash e3aa preview header offsets."
+      ]
+    },
+    "minimal_helper_changes": [
+      {
+        "path": "tests/compute_models/cpu_c4_model_branches.h",
+        "helpers": [
+          "target_hidden",
+          "draft_attention",
+          "cache_prefill",
+          "complete_draft"
+        ],
+        "change": "Pass an explicit model-local typed role supplier and stage ordinal. target_hidden already has three [T,4,H] HC inputs with mean->concat; generalize the finite row count and use supplied main_proj/main_norm. draft_attention/cache_prefill must use the same supplied stage wkv/norm/RoPE/cache contract; stage ordinal prevents all stages silently using one generated seed. complete_draft supplies embedding, per-stage HC/norm/attention/FFN, final HC/norm from the provided bank. Keep generated fixtures explicit, fail missing original roles instead of silently generating them.",
+        "public_api_changes": false
+      },
+      {
+        "path": "tests/compute_models/dspark_complete_graph_fixture.h",
+        "helpers": [
+          "HeadParameters",
+          "build_flash",
+          "parameter_bytes",
+          "cold_f32"
+        ],
+        "change": "Broaden the test-local supplied parameters beyond three head tensors to stage and shared embedding/LM references; pass through complete_draft. Replace the empty LM source and generated embedding by the matching immutable target banks. Preserve actual per-row greedy feedback and raw confidence hidden. Keep original typed constants/banks and source-required cold conversions; do not mandate a duplicate 2GiB F32 LM copy where the existing typed MatMul can consume the required original contract. Full-vocabulary greedy still requires all head candidates, not a favorable sampled vocabulary.",
+        "new_loader_framework": false
+      },
+      {
+        "path": "tests/compute_models/d5_deepseek_official_attention.h",
+        "helpers": [
+          "prepare_output_weight",
+          "hyper_pre",
+          "norm",
+          "official::moe_chain"
+        ],
+        "change": "Reuse the arithmetic builders while taking exact supplied weight/scale/HC/norm/router sources instead of seed-only generation. For official E4/E8 output-a retain one cold BF16 decode and group layout; for sidecar typed Q8/BF16 do not reinterpret the bytes as E4. Only local adapters for the selected role shapes are needed.",
+        "new_product_math": false
+      },
+      {
+        "path": "tests/compute_models/cpu_c4_flash_sidecars.h",
+        "helpers": [
+          "linear",
+          "grouped_weight",
+          "attention",
+          "expert",
+          "complete"
+        ],
+        "change": "This existing selected-codec path is the narrowest sidecar binding location: replace generated storage by descriptor-checked role bytes or immutable bank references, with stage names. Keep its F32 graph-state/GGUF math separate from official BF16 and dynamic FP8 semantics. Reuse it rather than teaching the ordinary consumer middleware about providers.",
+        "reason": "Actual 81-role header map is already available; codec work is model parameter wiring, not new descriptors."
+      },
+      {
+        "path": "tests/graph_route_cuda/dspark_cuda_consumer_fixture.h",
+        "helpers": [
+          "prepare_constants",
+          "Draft::create"
+        ],
+        "change": "Accept the model-local parameter set/declared program instead of always constructing one generated Flash program. Resolve shared native WeightBatch banks and their retained owner once, using existing WeightBinding/native bind when needed; retain upload owner across all Graphs/Invocations. Keep cold-only preparation and bounded output generations. No global bank cache or second executor.",
+        "note": "Current sem::Fragment constants route is also usable for a bounded reference; choosing WeightBatch must not cause per-submit uploads."
+      },
+      {
+        "path": "tests/compute_models/dspark_original_roles.h",
+        "helpers": [
+          "Roles",
+          "load"
+        ],
+        "change": "Keep this a value reader/manifest identity check. Add exact role descriptors or reuse original_role_input reads only for explicitly selected inputs; Graph construction and policy remain outside it. Do not add an eight-model loader API to Compute.",
+        "already_loaded": "Flash BF16 W1/W2/confidence actual values only; remaining header presence is not value execution."
+      },
+      {
+        "path": "tests/graph_route_cuda/dspark_journey_consumer_test.cc",
+        "helpers": [
+          "run_mode",
+          "serial_reference"
+        ],
+        "change": "Replace the repeated projected main_bridge with external actual block-output leases and the ordinary target_hidden projection result. Bind actual main_x lease to proposal kMain and to accepted catchup; do not rebuild it from host observations. Preserve the current natural acceptance host policy and one complete StateHead publication.",
+        "scope": "A caller may own the complete target; this consumer need not implement another full inference engine."
+      },
+      {
+        "path": "tests/compute_state/dspark_accepted_prefix_fixture.h",
+        "helpers": [
+          "main_catchup",
+          "CompleteState::advance"
+        ],
+        "change": "main_catchup currently projects one synthetic seed443 to kDepth128 and writes all rings identically. Actual DSpark uses per-stage original wkv and 512-wide ring with the declared cache codec, so parameterize its role/geometry or share the same main-KV Graph builder as draft_attention/cache_prefill. Keep advance generic resource replacement and frontier/pending accounting; adapt finite geometry rather than silently signing 128-wide projected history as original 512-wide history.",
+        "do_not_duplicate": "Target complete resources + three rings + carry + metadata already use one StateSchema/StateHead."
+      }
+    ],
+    "target_taps_lease_contract": {
+      "capture_point": "Official Transformer.forward: after layer(i) returns its HC state, append h.mean(dim=2), then concatenate the selected layers in configured order. This is not final HC-head output and not a proposal-token hidden.",
+      "inputs": "Either three actual [B,T,4,H] block-output ReadLeases followed by the existing Graph HC mean, or three already-collapsed BF16 [B,T,H] leases declared as such. Avoid averaging twice.",
+      "provenance": [
+        "Exact target model/artifact revision and adapter identity",
+        "Which block-index convention is used and exact ordered taps",
+        "Actual input row/token positions, batch/session/branch and accepted frontier",
+        "BF16 rounding point and producer Completion readiness",
+        "Independent retained ReadLease owner through the projection/proposal/catchup work"
+      ],
+      "graph_path": "actual captures -> mean where required -> Concat last axis -> supplied main_proj -> supplied main_norm -> actual main_x ReadLease -> proposal / per-stage main-KV catchup",
+      "no_full_engine_requirement": "The target may provide these public outputs as an external boundary. Generated taps still prove only that declared boundary; they must never be described as real original target captures."
+    },
+    "verified_main_rings": [
+      "Use each stage own wkv and kv_norm, shared by its main and proposal computations. Apply original RoPE and only the non-RoPE 448/512 component FP8 group64 cache roundtrip for the official path; preserve distinct sidecar semantics.",
+      "Bootstrap/prefill may fill the ring from verified target main rows only. At position T, proposal sees the caught-up main carry at T-1, with correct own stage rings; its five draft KV rows are private temporary inputs after the persistent ring.",
+      "After target verify, select actual verified main rows 0..accepted_inputs-1 and update every stage ring with those rows at the same position frontier. Never publish kv produced from the guessed draft x merely because its token was proposed.",
+      "Publish target prefix state, all three main rings, carry at the last consumed main row, new pending and frontier together through existing CompleteState::advance/StateHead. Fresh pending is not yet consumed; rejected suffix cannot advance the ring.",
+      "Retain actual old leases and keep budget/retirement intact. Cancellation or failed member staging must leave head unchanged, as the existing projected-boundary tests already exercise."
+    ],
+    "smallest_meaningful_next_code_batch": [
+      "Make target_hidden parameter-aware and accept actual capture leases, with explicit official/sidecar indexing convention. Bind supplied main_proj/main_norm and pass real main_x output lease into the existing proposal boundary.",
+      "Use supplied per-stage original wkv/norm for both proposal main refresh and accepted verified-main catchup, retaining 512-wide actual ring geometry. Keep generated remainder clearly labeled until stage roles are supplied.",
+      "Expand the existing typed parameter supplier for the remaining stage HC/FFN/head and matching shared target embedding/LM. Reuse fixed metadata to bind formats; original value execution coverage remains explicitly finite."
+    ],
+    "coverage_limits_not_new_engine_tasks": [
+      "No original complete target-model execution, throughput, acceptance-rate or quality claim is established by this source review.",
+      "Not downloading all same-contract weights is a value-execution limit; an absent parameter hook, wrong codec/scale/layout or false capture provenance is real code work.",
+      "Flash optional sidecar weights do not certify formal Pro roles or separate official FP8 execution. Pro main-GGUF DSpark inclusion remains independent metadata scope.",
+      "No new platform/codec cross-product or eight full target/draft runtimes is required by this report."
+    ],
+    "read_source_identities": [
+      {
+        "path": "tests/compute_models/dspark_complete_graph_fixture.h",
+        "bytes": 9175,
+        "sha256": "aec542759cb2bc26a2a0f2764d47bc7cae655ee48e50f8f22ec93373d1e37698"
+      },
+      {
+        "path": "tests/compute_models/cpu_c4_model_branches.h",
+        "bytes": 32076,
+        "sha256": "a1a8b06eefd7687208cf563714b020fa629c77f0a7cf437872901fdcdbe2c9f1"
+      },
+      {
+        "path": "tests/compute_models/cpu_c4_flash_sidecars.h",
+        "bytes": 28042,
+        "sha256": "2e9012a9a9f3fe2960743298a29d45a8b489fe03c3bbccf3e40bbc5205fc3168"
+      },
+      {
+        "path": "tests/compute_models/dspark_original_roles.h",
+        "bytes": 6416,
+        "sha256": "60999491c87a0ede761de205250a7a85c47089c35db0ebc52aa8364efc3a6cd2"
+      },
+      {
+        "path": "tests/compute_models/d5_deepseek_official_attention.h",
+        "bytes": 45111,
+        "sha256": "16d1ad125464ac02b805a53f5e7bcc2c316879046414834a377b421db181dfbb"
+      },
+      {
+        "path": "tests/compute_models/d5_dynamic_fp8_fragments.h",
+        "bytes": 16239,
+        "sha256": "6e6d323a06331a70666a6ce2a8e26984932d7fbf5732f71ced728a3bc0b68040"
+      },
+      {
+        "path": "tests/graph_route_cuda/dspark_cuda_consumer_fixture.h",
+        "bytes": 11556,
+        "sha256": "d10297ec4919ee2d320a6077c84a64fd2ef70c1ecbc51b5a6b893d336e2d82a0"
+      },
+      {
+        "path": "tests/graph_route_cuda/dspark_journey_consumer_test.cc",
+        "bytes": 19518,
+        "sha256": "817f1ffd94547357e2f0a37628ce83002bf2c38a75622dc1727910bfeedd279d"
+      },
+      {
+        "path": "tests/compute_state/dspark_accepted_prefix_fixture.h",
+        "bytes": 11309,
+        "sha256": "b6d60ef3bca725db50e8f3ee5e238fd2e30052cc941d19ffad2625b7900585de"
+      },
+      {
+        "path": ".scratch/model-scope-2026-10-19/flash-0731/inference-model.py",
+        "bytes": 45118,
+        "sha256": "c0c19e6c9fa439bac7fbb1c5bc1868232dfd5aa2f439a548d0e33dcc2a9edd3f"
+      },
+      {
+        "path": ".scratch/model-scope-2026-10-19/flash-0731/inference-config.json",
+        "bytes": 1162,
+        "sha256": "c90861f3d10a9e4ef5954f8f1a34c529d480da1c5799f84660028f4e38e14e71"
+      },
+      {
+        "path": ".scratch/model-scope-2026-10-19/pro-0813/current/inference/model.py",
+        "bytes": 45118,
+        "sha256": "c0c19e6c9fa439bac7fbb1c5bc1868232dfd5aa2f439a548d0e33dcc2a9edd3f"
+      },
+      {
+        "path": ".scratch/validation/cpu-quant-mtp-c1/headers.json",
+        "bytes": 26636221,
+        "sha256": "bded8af0909a524f3516e3a53ba77996ba664793fe815c58c16e4fbbe18460d0"
+      },
+      {
+        "path": ".scratch/validation/cpu-quant-mtp-c1/safetensors-headers.json",
+        "bytes": 33807055,
+        "sha256": "c866df769511d449c116eb84cbb63c6f7dfc9f7c222baaef6cb8d6532e3b5062"
+      }
+    ],
+    "operations": {
+      "product_or_docs_edits": false,
+      "compiled": false,
+      "executed": false,
+      "downloaded": false,
+      "wrote_only": ".scratch/glm-mtp-state-20261022/review/dspark-next-binding.json"
+    },
+    "implementation_route_choice": {
+      "rule": "Choose one exact artifact path for the next finite binding; the helper list includes alternatives, not a requirement to change all official and sidecar builders at once.",
+      "official_path": "Parameter-aware cpu_c4_model_branches target_hidden/draft_attention/complete_draft plus dspark_complete_graph head/shared-bank supply, then actual per-stage main_catchup.",
+      "sidecar_alternative": "Use the already selected Q8_0/BF16 cpu_c4_flash_sidecars linear/grouped/attention/expert path with typed role supply instead. Do not mix its F32/GGUF math into the official FP8 route.",
+      "highest_priority": "Actual captures -> supplied main projection/norm -> main_x lease -> per-stage verified-main KV; metadata already resolves these exact roles."
+    }
+  },
+  "validation": {
+    "platform": "Windows CPU/CUDA on existing matched native closure; CUDA SM89 RTX4070.",
+    "SDK_builds": 0,
+    "NVCC_builds": 0,
+    "shader_builds": 0,
+    "method": "Four related host TUs incrementally compiled; existing libs/objects/DLLs reused. Cached Triton regenerates only2 grouped GEMM AOT images. No SDK/full-tree rebuild or new platform matrix.",
+    "throughput_evidence": false,
+    "physical_memory_evidence": false,
+    "performance_section_unchanged": {
+      "performance_section_unchanged": true,
+      "performance_utf8_sha256": "80b8672315911a74039a14cd137659bc67289273dc9c3707cd267b2d06de2551"
+    }
+  },
+  "cleanup": {
+    "Removed": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mtp-carry-20261022\\chain-link4\\glm-original-chain-checks.exe",
+        "bytes": 140168704,
+        "sha256": "30bc9f3e15e480dfac81c97d432df23f0e3d2e145e301384aad609e7b01abb49"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mtp-carry-20261022\\chain-link4\\glm-original-chain-checks.map",
+        "bytes": 58321659,
+        "sha256": "215ea3bbf5d7f99bf11bea526a0d781b2d2c4a637fa7f6a5561416f9cc0cf9f7"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mtp-state-20261022\\tests-link1\\glm-state-checks.exe",
+        "bytes": 140451840,
+        "sha256": "cf500e7064e34571a3b07c2302e8cb763a84c1b41d174ea7189fed9db6602e9e"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mtp-state-20261022\\tests-link1\\glm-state-checks.map",
+        "bytes": 59362871,
+        "sha256": "32ad25f7d016cc6ecb798cd4142f993b4f9baa128ae704ed79cd09968660236a"
+      }
+    ],
+    "Bytes": 398305074,
+    "CurrentImageRetained": true,
+    "CurrentMapRetained": true,
+    "PriorReproductionInputsRetained": "Final BB10-case native image/map; all old source/objects/link inputs/plans/DLLs/original payloads; actual AV Qwen benchmark image/map."
+  },
+  "remaining": [
+    "Finish GLM next-epoch indexer catchup/reseed and target-state composition; connect remaining applicable original parameters/codecs.",
+    "DSpark formal Flash/Pro original stage/shared-head suppliers and real qualified target capture leases; existing128-wide synthetic rings do not certify original512-wide per-stage histories.",
+    "Q27/Q24 remaining applicable original role/codec and complete target/draft/pending/frontier composition, and confirmed-MTP selected derivative formats.",
+    "Necessary focused regressions and final ordinary/MTP prefill/decode/combined/physical-memory comparison; then image encoder/projector."
+  ],
+  "limits": [
+    "No full original GLM/DeepSeek/Q27/Q24 target execution in this batch; do not count undispatched whole-model payloads as new API work.",
+    "No new Apple/Linux/Vulkan native validation or broad codec matrix.",
+    "No new TPS, acceptance-rate or physical memory measurements; AV remains the latest full four-arm performance comparison."
+  ],
+  "sources_commands_and_results": {
+    "path": "docs/evidence/correctness/glm-mtp-state-2026-10-22.logs.zip",
+    "bytes": 1484741,
+    "sha256": "f89bd8de9f2e662339099a9dd6c5957959006a280db72617a9de8f26464b7f3a"
+  },
+  "large_original_payloads_archived": false,
+  "GLM_next_implementation_design": {
+    "status": "read-only follow-up design; no code change, compilation, download or native run",
+    "current_evidence": {
+      "summary": ".scratch/glm-mtp-state-20261022/checks2/summary.json",
+      "observed": "Final process exited0;10 tests,0 failures/errors/disabled/skips; two GlmMtpStateConsumer cases each report7 actual Graph submissions. This is correctness evidence, not throughput or memory evidence.",
+      "source": "tests/compute_models/glm_mtp_state_consumer_test.cc",
+      "source_sha256": "525c610b88613de25d6ca4d56e02a515836bbcc8f2b0317d14616e59f438c382",
+      "proved_boundary": "Generated selected primary-GGUF/F32 single NextN component: 14 resources+24B epoch policy; fresh pool4 closure, actual I32 selection->MLA/MoE; same-epoch entire-indexer skip; complete prefix1 publication/corrected policy token and independent base recomputation; prefix2 old branch, cancellation, stale CAS, old readonly lifetime.",
+      "not_proved": "Target trunk KDA/conv/mHC composition; target-hidden tap->NextN seed; fresh indexer after accepted skip rows; full original target/vocabulary or natural acceptance; official BF16/Hadamard/FP8 pooled-cache byte format."
+    },
+    "source_authority": {
+      "revision": "SGLang06992c92ad4494fe9f9636e75be3e35040512447",
+      "captured_pool_sources": ".scratch/glm-mtp-state-20261022/review/fixed-source/manifest.json",
+      "pool_audit": ".scratch/glm-mtp-state-20261022/review/source-state.json",
+      "additional_local_git_reads": [
+        "python/sglang/srt/models/glm5_next.py",
+        "python/sglang/srt/models/deepseek_nextn.py",
+        "python/sglang/kernels/ops/layernorm/mhc.py"
+      ],
+      "important_facts": [
+        "With an actual previous top-k seed, NextN skips the entire indexer, not only TopK. Its MLA cursor may advance while indexer cursor/raw ring/pool bank remain unchanged.",
+        "IndexTopKShareState.mtp_iteration clears carry by default, preserves only an explicit real keep_carry_seed, and clears/disables in finally.",
+        "Draft-extend-v2 pool planning uses num_accept_tokens as effective_n_per_batch; skipped/rejected physical siblings must not become valid history merely by advancing seq_len.",
+        "mHC streams are per-token residual data flowing across target layers, not an additional temporal recurrent cache. A next target token starts from its actual new-token layer input, not the previous token's final mHC streams.",
+        "hc_contract is the mean over the hc_mult dimension. Its exact placement and normalization depend on the target output/tap boundary; do not substitute a convenient arbitrary norm for the NextN seed."
+      ]
+    },
+    "next_steps_in_order": [
+      {
+        "id": "GLM-C1",
+        "deliverable": "Close the next-epoch accepted-skip catchup/reseed gap in the existing generated NextN consumer before adding a target block.",
+        "smallest_implementation": [
+          "Retain actual per-token pre-indexer nx output leases from the ordinary NextN Graph for the bounded skipped suffix. nx is already published at Recipe.nx, but currently released after observation. Put a bounded nx journal plus logical range/valid count inside the declared component schema/version; capacity derives from the prepared draft bound. No eager wk/wg computation during skip and no host numeric reconstruction.",
+          "When accepting a prefix, select its journal range together with latent cache, hidden, q-residual, pending token, raw ring/pools and split cursors in one StateDraft/StateHead publication. Rejected candidate features never enter the accepted journal.",
+          "At iteration end disable old reuse. A small ordinary catchup Graph consumes only accepted journal ReadLeases and the old raw-ring/pool state. Reuse the existing wk projection, LayerNorm, wg projection and softmax(gate+APE) pool equations; Scatter paired raw key/gate at logical_position modulo(4+draft_bound), close only complete valid groups, and publish actual counter outputs through existing I32 Scan/Gather.",
+          "Catchup advances indexer-produced-through to the accepted frontier without rewriting/replaying the already accepted MLA bank or hidden. If no rows lag, retain those actual resources directly. It does not manufacture a new seed by copying stale IDs.",
+          "Then a fresh ordinary indexer uses the actual new query/current-token feature and caught-up history to create the next epoch's I32 seed. Publish refreshed index state, new IDs and explicit epoch provenance together. An explicit keep_carry_seed may use this real seed; a retained prior-epoch version remains readable but is refused before prepare."
+        ],
+        "finite_scenario": "Use one two-candidate case around base_position2054 (old tail2): fresh A writes2054, skip B consumes2055. Accept1: new fresh token2055 closes the pool using only old tail+A+new token, never rejected B. Accept2: catch up actual accepted B at2055, close that same pool, then fresh token2056 creates the next epoch seed with one valid unpooled tail ID. These two branches cover the necessary partial/all-accept distinction, not an all-shape matrix. The already-passed base2055 closure need not be repeatedly rerun as a new benchmark.",
+        "minimal_checks": [
+          "Compare actual accepted state+new-epoch continuation with an independent normal indexer path that processed exactly the accepted tokens. Compare raw K/gate, pooled bank, split cursors, tail validity/start, ring offset, refreshed IDs, MLA/hidden/pending and epoch.",
+          "Retain the rejected branch and previous epoch as readonly snapshots; assert catchup/reseed never changes them. Preserve actual I32 and nx storage identity across Graph binding; do not observe and re-upload results.",
+          "Retain existing numerical gates. Validate pool mathematics from actual predecessor key/gate bytes and per-prefix valid extent. No speculative future pool may be visible to an earlier query."
+        ],
+        "reuse": [
+          "glm_mtp_state_consumer_test.cc: Recipe.nx, State.stage, split cursors, actual-leased execute, ring/closepool equations and atomic head checks",
+          "glm_mtp_index_carry_test.cc: real seed/default-clear/finally-clear/old-epoch refusal policy",
+          "fixed-source/kpool_plan.py: partial-tail plus chunk decomposition",
+          "fixed-source/kpool_fp8_index.py: logical modulo-R raw writer and effective_n closure",
+          "fixed-source/dsa_backend_kpool.py: draft-extend-v2 accepted-length planning"
+        ],
+        "gap_classification": "Missing GLM consumer state/provenance composition and catchup recipe. Existing Graph, Scatter/Gather/Scan, lease/state APIs already express it; no demonstrated new public operator/executor/transaction API is needed."
+      },
+      {
+        "id": "GLM-C2",
+        "deliverable": "Connect one representative real-compute target Flash KDA/short-conv/mHC block to the NextN component and select target+draft state together.",
+        "smallest_implementation": [
+          "Keep the selected primary-GGUF/F32 generated-parameter scope. Build one target linear-attention block, not all43 target layers or eight engines. Ordinary mHC pre must actually produce the collapsed branch input consumed by KDA; the actual KDA branch output then enters mHC post. If including the target FFN, wire a second mHC pre->existing GLM MoE->post sequence rather than feeding an externally generated branch to an otherwise isolated mHC fixture.",
+          "Reuse d5_kda_full_fragments::complete(profile) for full generated projections, causal_conv1d, SiLU, q/k normalization, KDA recurrence and output projection. It already uses Flash heads64,depth128,hidden4096 and channels24576. Reuse kda_prefix_consumer's exact recurrent/history snapshot selection and sequential comparison; do not copy its per-operation adapter into a production executor.",
+          "Use existing hyper_connection_combine/pre/post ordinary operations with the established20-step Sinkhorn and affine gates. The existing glm::hyper_connection wrapper accepts an independent branch and publishes collapsed as a diagnostic; wire the branch into its actual collapsed input, rather than counting the existing detached wrapper alone as the new integration.",
+          "The target temporal state adds KDA matrix[1,64,128,128] and conv history[3,24576]. mHC per-token streams[1,4,4096] and the chosen collapsed target hidden are retained prefix results/taps, not feedback state for the next token's mHC input. Token input comes from its actual embedding/preceding target layer Graph input.",
+          "Expose the correctly selected target hidden tap as an actual ReadLease with prefix position/dtype provenance. Bind it to the NextN seed hidden input for a new iteration; later draft steps may use the appropriate actual draft hidden as specified by the chosen NextN algorithm. No host calculation of the target hidden and no inference that shape[1,4096] alone proves the correct producer.",
+          "Use one combined StateSchema and one StateHead for target KDA/history/cursor/tap plus complete NextN/catchup/indexer state and policy pending token. One StateDraft selects the same accepted prefix across all members. Do not publish target and draft through two sequential heads and call that atomic.",
+          "First run the same two-candidate prefix scenario through actual target and draft Graphs, accept partial and all on separate retained branches, then continue from the published versions and independently recomputed accepted sequence. Keep policy acceptance/token choice explicit; natural acceptance and original full-model quality are separate later work."
+        ],
+        "reuse": [
+          "tests/compute_models/d5_kda_full_fragments.h: complete(profile), projection/storage and independent reference equations",
+          "tests/compute_state/kda_prefix_consumer.h: projected GLM Flash KDA/conv geometry, snapshot_count and exact history subrange for accepted prefix",
+          "tests/compute_models/d5_moe_semantic_fragments.h: hyper_connection, hyper_reference and model_ops combine/pre/post contracts",
+          "tests/compute_models/d5_glm_remaining_fragments.h: mhc_projection, hyper_connection, mtp_input, NextN MLA and GLM MoE recipes",
+          "tests/compute_state/mtp_hybrid_consumer.h: actual accepted recurrence/history ownership and CopyBatch transfer when mixed placement is later needed"
+        ],
+        "gap_classification": "The kernels and generic state/lease mechanisms exist and have separate consumers. The missing delivery is their semantically correct target->hidden tap->NextN composition and all-member accepted-prefix publication. A concrete source/API failure during implementation would justify a focused library fix; there is currently no evidence for a new common architecture/API."
+      }
+    ],
+    "mechanisms_already_available": [
+      "Immutable Graph/Executable, independent Invocation, prepare_replay, strict submit/Completion, caller LeasePool outputs and retained ReadLease results.",
+      "StateSchema, StateDraft.replace/finalize/cancel, StateHead compare-and-publish, StateVersion old-branch ownership and bounded StateStore accounting.",
+      "GatedDeltaNet.snapshot_count, causal_conv1d, ordinary Gather/Scatter/Concat/View/Copy, integer Scan and Gather transition tables.",
+      "hyper_connection_combine/pre/post plus established independent numerical oracles.",
+      "CopyBatch and StateCloneRoute already express actual CPU/GPU transfer/copy-on-write. A mixed-device matrix is unnecessary for the first connected CPU/CUDA consumer pair."
+    ],
+    "avoid": [
+      "Do not relabel indexer cursor as MLA length during reuse or count an old I32 seed as a newly generated next-epoch seed.",
+      "Do not run wk/wg/pooling during the same-epoch skip merely to hide the lag; keep bounded real accepted features or run an explicit source-equivalent catchup/reseed phase.",
+      "Do not add KDA/conv/mHC to the NextN decoder. They belong to the target trunk and its selected prefix state.",
+      "Do not feed previous-token mHC streams back as next-token temporal recurrence.",
+      "Do not zero tail storage or decrease final seq_len as a substitute for restoring/selecting the correct complete prefix snapshot.",
+      "Do not claim the F32 reader proves official BF16/Hadamard/FP8 cache bytes or original full-model generation quality.",
+      "No new global implicit cache, generic parameter framework, second executor, provider-name branch or cross-head transaction scheme is warranted."
+    ],
+    "verification_scope": "One CPU and one CUDA case for the connected consumer, with partial/all accepted branches and their necessary mathematical/state comparisons. Reuse existing build/native closure and constants; no new SDK/NVCC/shader builds, repeated throughput runs, whole-model downloads or platform/shape Cartesian product."
+  }
+}

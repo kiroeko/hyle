@@ -16,6 +16,7 @@
 #include <vector>
 
 #include "cpu_context_fixture.h"
+#include "hyle/compute/prepared_operation.h"
 #include "hyle/compute/providers/native.h"
 #include "hyle/graph/executable.h"
 #include "hyle/mem/buffer.h"
@@ -419,7 +420,7 @@ TEST(GraphVariants, FiniteTableSelectsExactOrGeneralWithoutWarmCompilation) {
     EXPECT_LE(child.workspace_bytes(), compiled->executable.workspace_bytes());
     EXPECT_EQ(child.exact_variant_count(), 0U);
     EXPECT_EQ(child.create_invocation()->exact_variant_index(), i);
-    EXPECT_FALSE(child.create_invocation(shapes[i]));
+    EXPECT_FALSE(child.create_invocation({.shape = shapes[i]}));
   }
   // Neither the finite table nor the source Graph is borrowed after compile.
   for (auto &shape : shapes)
@@ -430,7 +431,7 @@ TEST(GraphVariants, FiniteTableSelectsExactOrGeneralWithoutWarmCompilation) {
     for (std::int64_t tokens = batch; tokens <= 3; ++tokens) {
       const std::array shape{ShapeBinding{logical.batch, batch},
                              ShapeBinding{logical.tokens, tokens}};
-      auto created = compiled->executable.create_invocation(shape);
+      auto created = compiled->executable.create_invocation({.shape = shape});
       ASSERT_TRUE(created) << created.error().message();
       std::optional<std::size_t> expected_index;
       if (batch == 2 && tokens == 3)
@@ -533,6 +534,217 @@ TEST(GraphVariants,
   EXPECT_TRUE(hyle::graph::compile(graph, context, {.shape = point}));
 }
 
+TEST(GraphVariants, FiniteExactFamilyRunsOnlyItsPreparedPoints) {
+  auto context = hyle::compute::test::native_context().value();
+  auto queue = context.create_queue().value();
+  auto builder = GraphBuilder::create().value();
+  const auto rows = builder.dimension({1, 4, 1}).value();
+  const auto spec = TensorSpec::dense(
+      DataType::kFloat32, std::array{Dimension(rows), Dimension::fixed(4)}).value();
+  const auto input_id = builder.input(spec).value();
+  const auto output_id = builder.add(Unary{UnaryKind::kExp}, spec, input_id).value();
+  ASSERT_TRUE(builder.publish(output_id).ok());
+  auto graph = std::move(builder).finish().value();
+  std::array large{ShapeBinding{rows, 4}}, small{ShapeBinding{rows, 1}};
+  const std::array variants{ExactShapeVariant{large}, ExactShapeVariant{small}};
+  // Native Exp has exact implementations but does not prove a general domain.
+  auto general = hyle::graph::compile(
+      graph, context, {.shape_policy = CompileShapePolicy::kDeclaredDomain});
+  ASSERT_FALSE(general);
+  EXPECT_TRUE(general.error().IsUnimplemented());
+  auto compiled = hyle::graph::compile(
+      graph, context, {.shape_policy = CompileShapePolicy::kFiniteExact,
+                       .exact_variants = variants});
+  ASSERT_TRUE(compiled) << compiled.error().message();
+  EXPECT_TRUE(compiled->executable.is_shape_domain());
+  EXPECT_TRUE(compiled->report.is_shape_domain());
+  EXPECT_FALSE(compiled->executable.has_execution_route());
+  EXPECT_FALSE(compiled->report.has_execution_route());
+  EXPECT_FALSE(compiled->executable.specialization().valid());
+  EXPECT_EQ(compiled->executable.input_id().value(), input_id);
+  EXPECT_EQ(compiled->executable.output_id().value(), output_id);
+  EXPECT_EQ(compiled->executable.workspace_bytes(), 0U);
+  EXPECT_EQ(compiled->executable.step_count(), 0U);
+  EXPECT_EQ(compiled->executable.required_queue_count(), 0U);
+  EXPECT_EQ(compiled->report.workspace_bytes(), 0U);
+  EXPECT_EQ(compiled->report.physical_value_count(), 0U);
+  EXPECT_EQ(compiled->report.search().placement_attempts, 0U);
+  EXPECT_EQ(compiled->report.compiled_storage().known_bytes(), 0U);
+  const auto ownership = compiled->executable.output_ownership();
+  ASSERT_FALSE(ownership);
+  EXPECT_TRUE(ownership.error().IsFailedPrecondition());
+  const auto child = compiled->executable.exact_variant(0).value();
+  EXPECT_TRUE(child.has_execution_route());
+  EXPECT_TRUE(compiled->report.exact_variant(0)->has_execution_route());
+  EXPECT_EQ(child.specialization().binding(0)->value, 4);
+  const std::array absent{ShapeBinding{rows, 2}};
+  auto missing = compiled->executable.create_invocation({.shape = absent});
+  ASSERT_FALSE(missing);
+  EXPECT_TRUE(missing.error().IsUnimplemented());
+  EXPECT_FALSE(compiled->executable.create_invocation());
+  auto first = compiled->executable.create_invocation({.shape = large}).value();
+  auto second = compiled->executable.create_invocation({.shape = small}).value();
+  EXPECT_EQ(first.exact_variant_index(), 0U);
+  EXPECT_EQ(second.exact_variant_index(), 1U);
+  // Neither caller shape storage nor the logical Graph is consulted by replay.
+  large[0].value = -99;
+  small[0].value = -99;
+  graph = {};
+  *compiled = {};
+  auto input = make_tensor(matrix(4, 4)), output = make_tensor(matrix(4, 4));
+  auto other_input = make_tensor(matrix(1, 4)), other_output = make_tensor(matrix(1, 4));
+  write(input, std::vector<float>(16, 1.0F));
+  write(other_input, std::vector<float>(4, 2.0F));
+  ASSERT_TRUE(first.bind(input_id, input.view).ok());
+  ASSERT_TRUE(first.bind(output_id, output.view).ok());
+  ASSERT_TRUE(first.submit(queue)->wait().ok());
+  auto old = first.result(output_id).value();
+  EXPECT_FALSE(first.bind(input_id, input.view).ok());
+  ASSERT_TRUE(second.bind(input_id, other_input.view).ok());
+  ASSERT_TRUE(second.bind(output_id, other_output.view).ok());
+  ASSERT_TRUE(second.submit(queue)->wait().ok());
+  expect_near(read(output, 16), std::vector<float>(16, std::exp(1.0F)));
+  expect_near(read(other_output, 4), std::vector<float>(4, std::exp(2.0F)));
+  old.reset();
+  ASSERT_TRUE(first.bind(input_id, input.view).ok());
+  ASSERT_TRUE(first.submit(queue)->wait().ok());
+}
+
+TEST(GraphVariants, FiniteExactConstantsAndBudgetsBelongToActualChildren) {
+  HostResource resource;
+  const auto memory = hyle::mem::MemoryResourceRef(resource);
+  auto context = hyle::compute::test::native_context().value();
+  auto queue = context.create_queue().value();
+  auto builder = GraphBuilder::create().value();
+  const auto rows = builder.dimension({1, 4, 1}).value();
+  const auto spec = TensorSpec::dense(
+      DataType::kFloat32, std::array{Dimension(rows), Dimension::fixed(4)}).value();
+  const auto input_id = builder.input(spec).value();
+  const auto weight_id = builder.constant(row(4)).value();
+  const auto output_id = builder.add(RmsNorm{}, spec, input_id, weight_id).value();
+  ASSERT_TRUE(builder.publish(output_id).ok());
+  ASSERT_TRUE(builder.publish(weight_id).ok());
+  auto graph = std::move(builder).finish().value();
+  auto weight = make_tensor(row(4));
+  write(weight, std::array{1.0F, 2.0F, 3.0F, 4.0F});
+  const std::array constants{ConstantBinding{
+      weight_id, weight.view.as_const(), hyle::graph::ConstantPolicy::kMaterialize}};
+  const std::array small{ShapeBinding{rows, 1}};
+  std::array large{ShapeBinding{rows, 5}};
+  const std::array variants{ExactShapeVariant{small}, ExactShapeVariant{large}};
+  const Environment environment{{&context, memory}};
+  CompileOptions options{
+      .shape_policy = CompileShapePolicy::kFiniteExact,
+      .exact_variants = variants,
+      .constants = constants,
+      .compilation_storage = hyle::graph::CompilationStorageLimits{},
+      .invocation_storage = hyle::graph::InvocationStorageLimits{1U << 20}};
+  // A valid first point cannot materialize weights before a later bad point
+  // or duplicate is found. The parent itself never uploads a constant.
+  EXPECT_FALSE(hyle::graph::compile(graph, environment.environment(), options));
+  EXPECT_EQ(resource.allocation_count, 0U);
+  large[0].value = 1;
+  auto duplicate = hyle::graph::compile(graph, environment.environment(), options);
+  ASSERT_FALSE(duplicate);
+  EXPECT_TRUE(duplicate.error().IsInvalidArgument());
+  EXPECT_EQ(resource.allocation_count, 0U);
+  large[0].value = 4;
+  auto compiled = hyle::graph::compile(graph, environment.environment(), options);
+  ASSERT_TRUE(compiled) << compiled.error().message();
+  EXPECT_EQ(resource.allocation_count, 1U);
+  EXPECT_EQ(compiled->report.materialized_constant_bytes(), 0U);
+  EXPECT_EQ(compiled->report.total_compiled_storage().materialized_constant_bytes, 16U);
+  const auto total = compiled->report.total_search();
+  auto placements = std::size_t{0}, states = std::size_t{0};
+  for (std::size_t index = 0; index < variants.size(); ++index) {
+    const auto report = compiled->report.exact_variant(index).value();
+    EXPECT_EQ(report.materialized_constant_bytes(), 16U);
+    EXPECT_EQ(report.compilation_storage()->resident_bytes,
+              compiled->report.compilation_storage()->resident_bytes);
+    placements += report.search().placement_attempts;
+    states += report.search().route_search_states;
+  }
+  EXPECT_EQ(total.placement_attempts, placements);
+  EXPECT_EQ(total.route_search_states, states);
+  ASSERT_GT(placements, 1U);
+  ASSERT_GT(states, 1U);
+  const auto bytes = compiled->report.total_compiled_storage().known_bytes();
+  for (int kind = 0; kind != 3; ++kind) {
+    auto restricted = options;
+    if (kind == 0) restricted.max_placement_attempts = placements - 1;
+    if (kind == 1) restricted.max_route_search_states = states - 1;
+    if (kind == 2) restricted.compiled_storage.max_bytes = bytes - 1;
+    auto rejected = hyle::graph::compile(graph, environment.environment(), restricted);
+    ASSERT_FALSE(rejected) << "budget kind " << kind;
+    EXPECT_TRUE(rejected.error().IsResourceExhausted()) << rejected.error().message();
+    EXPECT_EQ(resource.live_allocations, 1U);
+  }
+  auto bounded = options;
+  bounded.max_placement_attempts = placements;
+  bounded.max_route_search_states = states;
+  bounded.compiled_storage.max_bytes = bytes;
+  EXPECT_TRUE(hyle::graph::compile(graph, environment.environment(), bounded));
+  EXPECT_EQ(resource.live_allocations, 1U);
+  auto first = compiled->executable.create_invocation({.shape = small}).value();
+  auto child = compiled->executable.exact_variant(1).value();
+  const auto first_bytes = child.invocation_storage_usage()->live_bytes;
+  {
+    auto second = child.create_invocation().value();
+    EXPECT_GT(child.invocation_storage_usage()->live_bytes, first_bytes);
+    EXPECT_EQ(child.invocation_storage_usage()->live_bytes,
+              compiled->executable.invocation_storage_usage()->live_bytes);
+  }
+  EXPECT_EQ(child.invocation_storage_usage()->live_bytes, first_bytes);
+  auto report = compiled->report;
+  *compiled = {};
+  graph = {};
+  weight = {};
+  {
+    auto input = make_tensor(matrix(1, 4), memory);
+    auto output = make_tensor(matrix(1, 4), memory);
+    write(input, std::array{1.0F, 1.0F, 1.0F, 1.0F});
+    ASSERT_TRUE(first.bind(input_id, input.view).ok());
+    ASSERT_TRUE(first.bind(output_id, output.view).ok());
+    ASSERT_TRUE(first.submit(queue)->wait().ok());
+    expect_near(read(output, 4), std::array{1.0F, 2.0F, 3.0F, 4.0F});
+    EXPECT_EQ(first.output(weight_id)->storage().size(), 16U);
+  }
+  first = {};
+  EXPECT_EQ(resource.live_allocations, 1U);
+  child = {};
+  EXPECT_EQ(resource.live_allocations, 0U);
+  EXPECT_EQ(report.total_compiled_storage().materialized_constant_bytes, 16U);
+  EXPECT_TRUE(report.exact_variant(0)->node(0));
+}
+
+TEST(GraphVariants, FiniteExactPartialMetadataAllocationFailureReclaimsFamily) {
+  AllocatorProbe probe;
+  auto context = hyle::compute::test::native_context(
+      {.metadata_allocator = probe_allocator(probe)}).value();
+  const auto logical = make_bounded_rms_graph();
+  const std::array first{ShapeBinding{logical.batch, 1},
+                         ShapeBinding{logical.tokens, 1}};
+  const std::array second{ShapeBinding{logical.batch, 2},
+                          ShapeBinding{logical.tokens, 3}};
+  const std::array variants{ExactShapeVariant{first}, ExactShapeVariant{second}};
+  const CompileOptions options{.shape_policy = CompileShapePolicy::kFiniteExact,
+                               .exact_variants = variants};
+  const auto start = probe.attempts.load();
+  EXPECT_TRUE(hyle::graph::compile(logical.graph, context, options));
+  const auto attempts = probe.attempts.load() - start;
+  ASSERT_GT(attempts, 0U);
+  const auto live = probe.allocations.load() - probe.deallocations.load();
+  for (const auto failure : std::array<std::size_t, 3>{0, attempts / 2, attempts - 1}) {
+    probe.fail_on_attempt = probe.attempts.load() + failure;
+    auto rejected = hyle::graph::compile(logical.graph, context, options);
+    ASSERT_FALSE(rejected) << "allocation " << failure;
+    EXPECT_TRUE(rejected.error().IsResourceExhausted()) << rejected.error().message();
+    probe.fail_on_attempt = SIZE_MAX;
+    EXPECT_EQ(probe.allocations.load() - probe.deallocations.load(), live);
+  }
+  EXPECT_TRUE(hyle::graph::compile(logical.graph, context, options));
+}
+
 TEST(GraphVariants, ConstantCopyIsSharedAndReportsDoNotRetainPayload) {
   HostResource resource;
   const auto memory = hyle::mem::MemoryResourceRef(resource);
@@ -611,10 +823,10 @@ TEST(GraphVariants, ConstantCopyIsSharedAndReportsDoNotRetainPayload) {
   auto child_report = report.exact_variant(1).value();
   auto child = compiled->executable.exact_variant(1).value();
   EXPECT_EQ(child.output_ownership(1).value(), OutputOwnership::kExecutable);
-  auto hit = compiled->executable.create_invocation(small).value();
+  auto hit = compiled->executable.create_invocation({.shape = small}).value();
   const std::array fallback_shape{ShapeBinding{rows, 2}};
   auto fallback =
-      compiled->executable.create_invocation(fallback_shape).value();
+      compiled->executable.create_invocation({.shape = fallback_shape}).value();
   graph = {};
   *compiled = {};
   {
@@ -751,6 +963,8 @@ TEST(GraphVariants, EmptyAndZeroDimensionalHandlesHaveDefinedBehavior) {
   EXPECT_EQ(empty_report.exact_variant_count(), 0U);
   EXPECT_FALSE(empty.exact_variant(0));
   EXPECT_FALSE(empty_report.exact_variant(0));
+  EXPECT_FALSE(empty.has_execution_route());
+  EXPECT_FALSE(empty_report.has_execution_route());
   EXPECT_FALSE(empty_run.executable());
   EXPECT_FALSE(empty_run.exact_variant_index());
   auto graph = make_rms_graph(row(4));
@@ -770,6 +984,21 @@ TEST(GraphVariants, EmptyAndZeroDimensionalHandlesHaveDefinedBehavior) {
   auto exact = hyle::graph::compile(graph.graph, context).value();
   EXPECT_EQ(exact.executable.exact_variant_count(), 0U);
   EXPECT_FALSE(exact.executable.create_invocation()->exact_variant_index());
+  EXPECT_TRUE(exact.executable.has_execution_route());
+  auto finite = hyle::graph::compile(
+      graph.graph, context,
+      {.shape_policy = CompileShapePolicy::kFiniteExact,
+       .exact_variants = std::span(variants).first(1)});
+  ASSERT_TRUE(finite) << finite.error().message();
+  EXPECT_FALSE(finite->executable.has_execution_route());
+  EXPECT_EQ(finite->executable.create_invocation()->exact_variant_index(), 0U);
+  auto missing_table = hyle::graph::compile(
+      graph.graph, context, {.shape_policy = CompileShapePolicy::kFiniteExact});
+  ASSERT_FALSE(missing_table);
+  EXPECT_TRUE(missing_table.error().IsInvalidArgument());
+  EXPECT_FALSE(hyle::graph::compile(
+      graph.graph, context, {.shape_policy = CompileShapePolicy::kFiniteExact,
+                            .exact_variants = variants}));
 }
 
 TEST(GraphVariants, PartialFamilyAllocationFailureRollsBackAndRecovers) {
@@ -824,19 +1053,19 @@ TEST(GraphVariants, PartialFamilyAllocationFailureRollsBackAndRecovers) {
     for (const auto shape : {std::span<const ShapeBinding>(first),
                              std::span<const ShapeBinding>(fallback)}) {
       const auto start = probe.attempts.load();
-      EXPECT_TRUE(compiled.executable.create_invocation(shape));
+      EXPECT_TRUE(compiled.executable.create_invocation({.shape = shape}));
       const auto count = probe.attempts.load() - start;
       const auto live = probe.allocations.load() - probe.deallocations.load();
       for (std::size_t failure = 0; failure < count; ++failure) {
         probe.fail_on_attempt = probe.attempts.load() + failure;
         {
-          auto failed = compiled.executable.create_invocation(shape);
+          auto failed = compiled.executable.create_invocation({.shape = shape});
           ASSERT_FALSE(failed) << "instance allocation " << failure;
           EXPECT_TRUE(failed.error().IsResourceExhausted());
         }
         probe.fail_on_attempt = (std::numeric_limits<std::size_t>::max)();
         EXPECT_EQ(probe.allocations.load() - probe.deallocations.load(), live);
-        EXPECT_TRUE(compiled.executable.create_invocation(shape));
+        EXPECT_TRUE(compiled.executable.create_invocation({.shape = shape}));
       }
     }
   }
@@ -862,7 +1091,7 @@ TEST(GraphVariants, ExactAndGeneralInvocationsCanRunConcurrently) {
       const std::int64_t rows = i % 2 == 0 ? 1 : 2;
       const std::array shape{ShapeBinding{logical.batch, 1},
                              ShapeBinding{logical.tokens, rows}};
-      auto run = compiled.executable.create_invocation(shape).value();
+      auto run = compiled.executable.create_invocation({.shape = shape}).value();
       auto queue = context.create_queue().value();
       auto input = make_tensor(matrix(rows, 4));
       auto output = make_tensor(matrix(rows, 4));
@@ -912,7 +1141,7 @@ TEST(GraphDomain,
       SCOPED_TRACE((std::to_string(b) + "," + std::to_string(t)));
       const std::array shape{ShapeBinding{logical.tokens, t},
                              ShapeBinding{logical.batch, b}};
-      auto created = compiled->executable.create_invocation(shape);
+      auto created = compiled->executable.create_invocation({.shape = shape});
       if (b > t) {
         ASSERT_FALSE(created.has_value());
         EXPECT_TRUE(created.error().IsInvalidArgument());
@@ -988,13 +1217,13 @@ TEST(GraphDomain, RejectsMissingForeignDerivedDuplicateAndOutOfRangeBindings) {
       std::array{ShapeBinding{logical.batch, 1},
                  ShapeBinding{foreign.tokens, 1}}};
   for (const auto &shape : invalid_shapes)
-    EXPECT_TRUE(compiled.executable.create_invocation(shape)
+    EXPECT_TRUE(compiled.executable.create_invocation({.shape = shape})
                     .error()
                     .IsInvalidArgument());
   const std::array outside{ShapeBinding{logical.batch, 1},
                            ShapeBinding{logical.tokens, 4}};
   EXPECT_TRUE(
-      compiled.executable.create_invocation(outside).error().IsOutOfRange());
+      compiled.executable.create_invocation({.shape = outside}).error().IsOutOfRange());
   const std::array valid{ShapeBinding{logical.batch, 1},
                          ShapeBinding{logical.tokens, 1}};
   EXPECT_TRUE(
@@ -1013,10 +1242,10 @@ TEST(GraphDomain, RejectsMissingForeignDerivedDuplicateAndOutOfRangeBindings) {
   EXPECT_FALSE(exact.executable.is_shape_domain());
   EXPECT_FALSE(exact.report.is_shape_domain());
   EXPECT_TRUE(
-      exact.executable.create_invocation(valid).error().IsInvalidArgument());
+      exact.executable.create_invocation({.shape = valid}).error().IsInvalidArgument());
   auto exact_run = exact.executable.create_invocation().value();
   EXPECT_EQ(exact_run.specialization(), exact.executable.specialization());
-  auto run = compiled.executable.create_invocation(valid).value();
+  auto run = compiled.executable.create_invocation({.shape = valid}).value();
   auto wrong = make_tensor(matrix(2, 4));
   EXPECT_TRUE(run.bind(logical.input, wrong.view).IsInvalidArgument());
   EXPECT_TRUE(run.bind(logical.output, wrong.view).IsInvalidArgument());
@@ -1069,7 +1298,7 @@ TEST(GraphDomain, MaterializedConstantsOutliveSourceAndPublicPlanHandles) {
   EXPECT_EQ(resource.live_allocations, 0U);
   const std::array shape{ShapeBinding{logical.batch, 1},
                          ShapeBinding{logical.tokens, 2}};
-  auto run = compiled->executable.create_invocation(shape).value();
+  auto run = compiled->executable.create_invocation({.shape = shape}).value();
   logical.graph = {};
   *compiled = {};
   auto input = make_tensor(matrix(2, 4));
@@ -1123,14 +1352,14 @@ TEST(GraphDomain, CompileAndInstantiationAllocationFailuresRollBackAndRecover) {
     const std::array shape{ShapeBinding{logical.batch, 2},
                            ShapeBinding{logical.tokens, 3}};
     const auto before_create = probe.attempts.load();
-    EXPECT_TRUE(compiled.executable.create_invocation(shape).has_value());
+    EXPECT_TRUE(compiled.executable.create_invocation({.shape = shape}).has_value());
     const auto create_attempts = probe.attempts.load() - before_create;
     const auto prepared_live =
         probe.allocations.load() - probe.deallocations.load();
     for (std::size_t failure = 0; failure < create_attempts; ++failure) {
       probe.fail_on_attempt = probe.attempts.load() + failure;
       {
-        auto result = compiled.executable.create_invocation(shape);
+        auto result = compiled.executable.create_invocation({.shape = shape});
         EXPECT_FALSE(result.has_value()) << "instance allocation " << failure;
         if (!result) {
           EXPECT_TRUE(result.error().IsResourceExhausted());
@@ -1139,7 +1368,7 @@ TEST(GraphDomain, CompileAndInstantiationAllocationFailuresRollBackAndRecover) {
       probe.fail_on_attempt = (std::numeric_limits<std::size_t>::max)();
       EXPECT_EQ(probe.allocations.load() - probe.deallocations.load(),
                 prepared_live);
-      EXPECT_TRUE(compiled.executable.create_invocation(shape).has_value());
+      EXPECT_TRUE(compiled.executable.create_invocation({.shape = shape}).has_value());
     }
   }
   EXPECT_EQ(probe.allocations.load(), probe.deallocations.load());
@@ -1165,7 +1394,7 @@ TEST(GraphDomain, FixedOperationsUseExactProvidersBesideDynamicNodes) {
       graph, context, {.shape_policy = CompileShapePolicy::kDeclaredDomain});
   ASSERT_TRUE(compiled.has_value()) << compiled.error().message();
   const std::array shape{ShapeBinding{rows, 2}};
-  auto run = compiled->executable.create_invocation(shape).value();
+  auto run = compiled->executable.create_invocation({.shape = shape}).value();
   auto in = make_tensor(matrix(2, 4)), out = make_tensor(matrix(2, 4));
   auto fixed_in = make_tensor(row(4)), fixed_out = make_tensor(row(4));
   write(in, std::vector<float>(8, 1.0F));
@@ -1225,7 +1454,7 @@ TEST(GraphDomain, CrossStorageCopyUsesConcreteByteCountNotEnvelope) {
   for (std::int64_t t : {0, 1, 3}) {
     const std::array shape{ShapeBinding{logical.batch, t == 0 ? 0 : 1},
                            ShapeBinding{logical.tokens, t}};
-    auto run = compiled->executable.create_invocation(shape).value();
+    auto run = compiled->executable.create_invocation({.shape = shape}).value();
     auto input = make_tensor(matrix(t, 4), first);
     auto output = make_tensor(row(t * 4 + 4), second);
     write(input, std::vector<float>(static_cast<std::size_t>(t * 4), 1.0F));
@@ -1260,7 +1489,7 @@ TEST(GraphDomain, DistinctShapesSharePlanButNotMutableRunState) {
       const auto rows = static_cast<std::int64_t>(index);
       const std::array shape{ShapeBinding{logical.batch, rows == 0 ? 0 : 1},
                              ShapeBinding{logical.tokens, rows}};
-      auto created = compiled.executable.create_invocation(shape);
+      auto created = compiled.executable.create_invocation({.shape = shape});
       if (!created)
         return;
       auto queue = context.create_queue().value();
@@ -1759,11 +1988,11 @@ TEST(GraphInvocationStorage,
                hyle::graph::InvocationStorageLimits{.max_bytes = 1U << 20}})
           .value();
   auto child = compiled.executable.exact_variant(0).value();
-  auto first = compiled.executable.create_invocation(general).value();
+  auto first = compiled.executable.create_invocation({.shape = general}).value();
   auto signature = first.specialization();
   const auto one = child.invocation_storage_usage()->live_bytes;
   {
-    auto second = compiled.executable.create_invocation(exact).value();
+    auto second = compiled.executable.create_invocation({.shape = exact}).value();
     EXPECT_GT(child.invocation_storage_usage()->live_bytes, one);
     EXPECT_EQ(child.invocation_storage_usage()->live_bytes,
               compiled.executable.invocation_storage_usage()->live_bytes);
@@ -1822,7 +2051,7 @@ TEST(GraphCompile, RemoteTargetMetadataUsesTheGraphOwnerForAllVariants) {
     for (const auto shape : {std::span<const ShapeBinding>(exact),
                              std::span<const ShapeBinding>(general)}) {
       const auto target_allocations = target_owner.allocations.load();
-      auto created = compiled->executable.create_invocation(shape);
+      auto created = compiled->executable.create_invocation({.shape = shape});
       ASSERT_TRUE(created) << created.error().message();
       EXPECT_EQ(target_owner.allocations.load(), target_allocations);
       auto input = make_tensor(matrix(shape[1].value, 4));
@@ -1865,7 +2094,7 @@ TEST(GraphCompile, LargeTargetSetKeepsDeterministicPreferredOrdinal) {
                           {.metadata_allocator = probe_allocator(probe)})
                           .value();
     targets[index] = hyle::graph::ExecutionTarget{
-        .context = &contexts[index],
+        .source = hyle::graph::ExecutionSource::acquire(contexts[index]).value(),
         .default_storage = hyle::graph::StorageDomainId{0},
     };
   }
@@ -2312,10 +2541,10 @@ TEST(GraphCompile, MakesWorkspaceSerializationAnExplicitBudgetTradeoff) {
   Context second = hyle::graph::test::cpu_context().value();
   const auto host = hyle::mem::system_resource();
   const std::array targets{
-      hyle::graph::ExecutionTarget{.context = &first,
+      hyle::graph::ExecutionTarget{.source = hyle::graph::ExecutionSource::acquire(first).value(),
                                    .default_storage =
                                        hyle::graph::StorageDomainId{0}},
-      hyle::graph::ExecutionTarget{.context = &second,
+      hyle::graph::ExecutionTarget{.source = hyle::graph::ExecutionSource::acquire(second).value(),
                                    .default_storage =
                                        hyle::graph::StorageDomainId{0}},
   };
@@ -2725,6 +2954,42 @@ TEST(GraphCompile, RejectsMissingForeignAndMismatchedConstantBindings) {
             .error()
             .IsInvalidArgument());
   }
+}
+
+TEST(GraphCompile, ReadonlyResourceFamilyRequiresActualSourceAuthority) {
+  auto context = hyle::compute::test::native_context().value();
+  HostResource imported_resource;
+  auto imported = make_tensor(row(4), hyle::mem::MemoryResourceRef(imported_resource));
+  write(imported, std::array{1.0F, 2.0F, 3.0F, 4.0F});
+  // Host accessibility is not a readonly-family capability. Ordinary leaf
+  // inputs and caller outputs continue to require their nominated resource.
+  const auto logical = make_rms_graph(row(4));
+  auto compiled = hyle::graph::compile(logical.graph, context).value();
+  auto run = compiled.executable.create_invocation().value();
+  EXPECT_TRUE(run.bind(logical.inputs[0], imported.view.as_const()).IsInvalidArgument());
+  EXPECT_TRUE(run.bind(logical.outputs[0], imported.view).IsInvalidArgument());
+  auto ordinary = make_tensor(row(4));
+  EXPECT_TRUE(run.bind(logical.inputs[0], ordinary.view.as_const()).ok());
+
+  auto source_builder = GraphBuilder::create().value();
+  const auto source = source_builder.input(row(4)).value();
+  ASSERT_TRUE(source_builder.publish(source).ok());
+  auto source_graph = std::move(source_builder).finish().value();
+  auto source_plan = hyle::graph::compile(source_graph, context).value();
+  auto source_run = source_plan.executable.create_invocation().value();
+  EXPECT_TRUE(source_run.bind(source, imported.view.as_const()).IsInvalidArgument());
+
+  auto constant_builder = GraphBuilder::create().value();
+  const auto constant = constant_builder.constant(row(4)).value();
+  ASSERT_TRUE(constant_builder.publish(constant).ok());
+  auto constant_graph = std::move(constant_builder).finish().value();
+  const std::array borrowed{ConstantBinding{constant, imported.view.as_const()}};
+  auto refused = hyle::graph::compile(constant_graph, context, {.constants = borrowed});
+  ASSERT_FALSE(refused);
+  EXPECT_TRUE(refused.error().IsInvalidArgument());
+  const std::array copied{ConstantBinding{constant, imported.view.as_const(),
+                                        hyle::graph::ConstantPolicy::kMaterialize}};
+  EXPECT_TRUE(hyle::graph::compile(constant_graph, context, {.constants = copied}));
 }
 
 TEST(GraphCompile, ExecutesPublishedConstantWithoutRuntimeRebinding) {
@@ -3256,6 +3521,179 @@ TEST(Invocation, AllowsOnlyLifetimeSafeExactExternalInPlaceAlias) {
       invocation.bind(safe.outputs[0], partial_output).IsInvalidArgument());
 }
 
+TEST(Invocation, ImmutableConstantsAndTheirViewsNeverUseDestructiveAliases) {
+  auto provider = hyle::compute::aten_cpu::provider();
+  ASSERT_TRUE(provider.valid());
+  const std::array providers{hyle::compute::ProviderBinding{provider, 100}};
+  auto context = Context::create(hyle::compute::cpu::device(),
+                                  {.providers = providers}).value();
+  auto queue = context.create_queue().value();
+  const std::array queues{
+      QueueBinding{.lane = hyle::graph::ExecutionLaneId{0}, .queue = &queue}};
+  // ATen's basic unary route admits edge layouts, including dense rank > 4.
+  // Keep the same four scalar payload values while using that actual domain.
+  const auto constant_description = TensorDesc::dense(DataType::kFloat32,
+      std::array<std::int64_t, 5>{1, 1, 1, 1, 4}).value();
+  const auto view_description = TensorDesc::dense(DataType::kFloat32,
+      std::array<std::int64_t, 5>{1, 1, 1, 1, 2}).value();
+  for (auto policy : {hyle::graph::ConstantPolicy::kBorrow,
+                      hyle::graph::ConstantPolicy::kMaterialize}) {
+    for (bool through_view : {false, true}) {
+      SCOPED_TRACE(static_cast<int>(policy));
+      SCOPED_TRACE(through_view);
+      auto builder = GraphBuilder::create().value();
+      const auto constant = builder.constant(constant_description).value();
+      const auto readonly = through_view
+          ? builder.add(View::slice(4, 1, 2).value(), constant).value()
+          : constant;
+      const auto output = builder.add(Unary{UnaryKind::kNeg}, readonly).value();
+      ASSERT_TRUE(builder.publish(output).ok());
+      ASSERT_TRUE(builder.publish(readonly).ok());
+      if (through_view)
+        ASSERT_TRUE(builder.publish(constant).ok());
+      const auto graph = std::move(builder).finish().value();
+      const auto description = through_view ? view_description
+                                            : constant_description;
+      // Use a real provider that actually permits destructive input0 aliasing.
+      // A provider returning no optional aliases would not exercise this gate.
+      auto prepared = hyle::compute::prepare(
+          context, Unary{UnaryKind::kNeg}, description);
+      ASSERT_TRUE(prepared) << prepared.error().message();
+      auto alias = prepared->alias_support(0, 0);
+      ASSERT_TRUE(alias);
+      ASSERT_TRUE(alias->supported);
+      auto source = make_tensor(constant_description);
+      const std::array values{1.F, -2.F, 3.F, -4.F};
+      write(source, values);
+      const std::array constants{
+          ConstantBinding{constant, source.view.as_const(), policy}};
+      auto compiled = hyle::graph::compile(graph, context,
+                                           {.constants = constants});
+      ASSERT_TRUE(compiled) << compiled.error().message();
+      EXPECT_EQ(compiled->executable.output_ownership(0).value(),
+                OutputOwnership::kCaller);
+      EXPECT_EQ(compiled->executable.output_ownership(1).value(),
+                policy == hyle::graph::ConstantPolicy::kMaterialize
+                    ? OutputOwnership::kExecutable
+                    : OutputOwnership::kSourceAlias);
+      if (policy == hyle::graph::ConstantPolicy::kMaterialize)
+        ASSERT_TRUE(source.buffer.reset().ok());
+      auto destination = make_tensor(description);
+      auto run = compiled->executable.create_invocation().value();
+      if (policy == hyle::graph::ConstantPolicy::kBorrow) {
+        const auto overlapping_storage = through_view
+            ? source.buffer.view().subview(sizeof(float),
+                                           2 * sizeof(float)).value()
+            : source.buffer.view();
+        const auto overlapping = TensorView::create(
+            description, overlapping_storage).value();
+        EXPECT_TRUE(run.bind(output, overlapping).IsInvalidArgument());
+      }
+      ASSERT_TRUE(run.bind(output, destination.view).ok());
+      ASSERT_TRUE(run.prepare_replay(queues).ok());
+      for (int repeat = 0; repeat < 2; ++repeat) {
+        const std::array sentinel{-99.F, -99.F, -99.F, -99.F};
+        write(destination, std::span(sentinel).first(
+            description.element_count().value()));
+        auto completion = run.submit(queues);
+        ASSERT_TRUE(completion) << completion.error().message();
+        ASSERT_TRUE(completion->wait().ok());
+        if (through_view) {
+          expect_near(read(destination, 2), std::array{2.F, -3.F});
+          expect_near(read(run.output(readonly).value(), 2),
+                      std::array{-2.F, 3.F});
+        } else {
+          expect_near(read(destination, 4), std::array{-1.F, 2.F, -3.F, 4.F});
+        }
+        expect_near(read(run.output(constant).value(), 4), values);
+        if (policy == hyle::graph::ConstantPolicy::kBorrow)
+          expect_near(read(source, 4), values);
+      }
+    }
+  }
+}
+
+
+TEST(Invocation, ImmutableAllocationGroupsKeepViewOffsetsAcrossReset) {
+  auto provider = hyle::compute::aten_cpu::provider();
+  ASSERT_TRUE(provider.valid());
+  const std::array providers{hyle::compute::ProviderBinding{provider, 100}};
+  auto context = Context::create(hyle::compute::cpu::device(),
+                                  {.providers = providers}).value();
+  auto queue = context.create_queue().value();
+  const auto root_description = TensorDesc::dense(DataType::kFloat32,
+      std::array<std::int64_t, 5>{1, 1, 1, 1, 4}).value();
+  const auto description = TensorDesc::dense(DataType::kFloat32,
+      std::array<std::int64_t, 5>{1, 1, 1, 1, 2}).value();
+  auto builder = GraphBuilder::create().value();
+  const auto first = builder.constant(root_description).value();
+  const auto second = builder.constant(root_description).value();
+  const auto third = builder.constant(root_description).value();
+  const auto selected = builder.add(View::slice(4, 1, 2).value(), first).value();
+  const auto output = builder.add(Unary{UnaryKind::kNeg}, selected).value();
+  for (const auto value : {first, second, third, selected, output})
+    ASSERT_TRUE(builder.publish(value).ok());
+  const auto graph = std::move(builder).finish().value();
+  auto bank = make_tensor(row(12));
+  auto separate = make_tensor(root_description);
+  const std::array bank_values{1.F, -2.F, 3.F, -4.F,
+      5.F, -6.F, 7.F, -8.F, 91.F, 92.F, 93.F, 94.F};
+  const std::array separate_values{9.F, -10.F, 11.F, -12.F};
+  write(bank, bank_values);
+  write(separate, separate_values);
+  const auto first_source = TensorView::create(root_description,
+      bank.buffer.view().subview(0, 4 * sizeof(float)).value()).value();
+  const auto second_source = TensorView::create(root_description,
+      bank.buffer.view().subview(4 * sizeof(float), 4 * sizeof(float)).value()).value();
+  // Input binding order differs from graph order; both bank ranges share the
+  // actual allocation token while the third root has a different allocation.
+  const std::array constants{
+      ConstantBinding{third, separate.view.as_const()},
+      ConstantBinding{second, second_source.as_const()},
+      ConstantBinding{first, first_source.as_const()}};
+  auto compiled = hyle::graph::compile(graph, context, {.constants = constants});
+  ASSERT_TRUE(compiled) << compiled.error().message();
+  auto run = compiled->executable.create_invocation().value();
+  auto old_destination = make_tensor(description);
+  auto new_destination = make_tensor(description);
+  const auto unused_bank_range = TensorView::create(description,
+      bank.buffer.view().subview(8 * sizeof(float), 2 * sizeof(float)).value()).value();
+  for (int round = 0; round < 3; ++round) {
+    if (round != 0) ASSERT_TRUE(run.reset().ok());
+    // Check every same-token range, including one that overlaps only the
+    // second constant and another that straddles the two root boundaries.
+    for (const auto offset : {sizeof(float), 3 * sizeof(float), 5 * sizeof(float)}) {
+      const auto overlapping = TensorView::create(description,
+          bank.buffer.view().subview(offset, 2 * sizeof(float)).value()).value();
+      EXPECT_TRUE(run.bind(output, overlapping).IsInvalidArgument());
+    }
+    const auto other_overlap = TensorView::create(description,
+        separate.buffer.view().subview(sizeof(float), 2 * sizeof(float)).value()).value();
+    EXPECT_TRUE(run.bind(output, other_overlap).IsInvalidArgument());
+    const auto destination = round == 0 ? old_destination.view
+        : round == 1 ? unused_bank_range : new_destination.view;
+    ASSERT_TRUE(run.bind(output, destination).ok());
+    // Repeated binding keeps normal invalidation and all dynamic gates.
+    ASSERT_TRUE(run.bind(output, destination).ok());
+    ASSERT_TRUE(run.submit(queue)->wait().ok());
+    expect_near(read(destination.as_const(), 2), std::array{2.F, -3.F});
+    expect_near(read(run.output(first).value(), 4),
+                std::span(bank_values).first(4));
+    expect_near(read(run.output(second).value(), 4),
+                std::span(bank_values).subspan(4, 4));
+    expect_near(read(run.output(third).value(), 4), separate_values);
+    expect_near(read(run.output(selected).value(), 2), std::array{-2.F, 3.F});
+    expect_near(read(old_destination, 2), std::array{2.F, -3.F});
+    if (round == 0) expect_near(read(bank, 12), bank_values);
+    else {
+      auto expected = bank_values;
+      expected[8] = 2.F; expected[9] = -3.F;
+      expect_near(read(bank, 12), expected);
+    }
+    expect_near(read(separate, 4), separate_values);
+  }
+}
+
 TEST(GraphCompile, ReusesInternalStorageForLifetimeSafeInPlaceOperations) {
   GraphBuilder builder = GraphBuilder::create().value();
   const TensorDesc description = row(4);
@@ -3772,6 +4210,107 @@ TEST(Invocation, RejectsExternalAliasWhileTheInputRemainsLive) {
   EXPECT_TRUE(invocation.bind(early, shared.view).IsInvalidArgument());
 }
 
+TEST(Invocation, RepeatedOutputBindingKeepsAliasChecksForChangedInputsAndRanges) {
+  GraphBuilder builder = GraphBuilder::create().value();
+  const TensorDesc description = row(4);
+  const ValueId input = builder.input(description).value();
+  const ValueId early = builder.add(RmsNorm{}, input).value();
+  const ValueId late = builder.add(RmsNorm{}, input).value();
+  ASSERT_TRUE(builder.publish(early).ok());
+  ASSERT_TRUE(builder.publish(late).ok());
+  const Graph graph = std::move(builder).finish().value();
+  Context context = hyle::compute::test::native_context().value();
+  Queue queue = context.create_queue().value();
+  Invocation invocation = hyle::graph::compile(graph, context)
+                              ->executable.create_invocation().value();
+  OwnedTensor first = make_tensor(description);
+  OwnedTensor second = make_tensor(description);
+  OwnedTensor output = make_tensor(description);
+  OwnedTensor final = make_tensor(description);
+  write(first, std::array<float, 4>{1, 2, 3, 4});
+  write(second, std::array<float, 4>{4, 3, 2, 1});
+  ASSERT_TRUE(invocation.bind(input, first.view).ok());
+  ASSERT_TRUE(invocation.bind(early, output.view).ok());
+  ASSERT_TRUE(invocation.bind(late, final.view).ok());
+  ASSERT_TRUE(invocation.submit(queue)->wait().ok());
+  ASSERT_TRUE(invocation.output(early));
+  EXPECT_TRUE(invocation.bind(input, output.view).IsInvalidArgument());
+  ASSERT_TRUE(invocation.bind(input, second.view).ok());
+  ASSERT_TRUE(invocation.bind(early, output.view).ok());
+  EXPECT_FALSE(invocation.output(early)); // Rebind still invalidates publication.
+  EXPECT_TRUE(invocation.bind(early, second.view).IsInvalidArgument());
+  EXPECT_TRUE(invocation.bind(early, final.view).IsInvalidArgument());
+  ASSERT_TRUE(invocation.submit(queue)->wait().ok());
+  const auto a = read(output, 4), b = read(final, 4);
+  expect_near(a, b);
+  EXPECT_GT(a[0], a[3]);
+  ASSERT_TRUE(invocation.reset().ok());
+  ASSERT_TRUE(invocation.bind(input, output.view).ok());
+  EXPECT_TRUE(invocation.bind(early, output.view).IsInvalidArgument());
+}
+
+TEST(Invocation, DynamicAliasGroupsTrackRangeChangesFailedBindsAndReset) {
+  AllocatorProbe probe;
+  auto context = hyle::compute::test::native_context(
+      {.metadata_allocator = probe_allocator(probe)}).value();
+  const auto description = row(4);
+  auto builder = GraphBuilder::create().value();
+  std::array<ValueId, 3> inputs;
+  std::array<ValueId, 6> outputs;
+  for (std::size_t index = 0; index < inputs.size(); ++index) {
+    inputs[index] = builder.input(description).value();
+    // The first output cannot destructively reuse its still-live input.
+    outputs[2 * index] = builder.add(RmsNorm{}, inputs[index]).value();
+    outputs[2 * index + 1] = builder.add(RmsNorm{}, inputs[index]).value();
+    ASSERT_TRUE(builder.publish(outputs[2 * index]).ok());
+    ASSERT_TRUE(builder.publish(outputs[2 * index + 1]).ok());
+  }
+  const auto graph = std::move(builder).finish().value();
+  auto compiled = hyle::graph::compile(graph, context).value();
+  auto invocation = compiled.executable.create_invocation().value();
+  auto bank = make_tensor(row(36));
+  auto separate = make_tensor(description);
+  std::array<TensorView, 9> ranges;
+  for (std::size_t index = 0; index < ranges.size(); ++index)
+    ranges[index] = TensorView::create(description,
+        bank.buffer.view().subview(index * 4 * sizeof(float),
+                                   4 * sizeof(float)).value()).value();
+
+  const auto attempts = probe.attempts.load();
+  probe.fail_on_attempt = attempts; // No bind/reset may request new metadata.
+  for (int round = 0; round < 3; ++round) {
+    SCOPED_TRACE(round);
+    if (round != 0) ASSERT_TRUE(invocation.reset().ok());
+    if (round == 1) // The reverse admission order must reject the same aliases.
+      for (std::size_t index = 0; index < outputs.size(); ++index)
+        ASSERT_TRUE(invocation.bind(outputs[index], ranges[index + 2]).ok());
+    ASSERT_TRUE(invocation.bind(inputs[0], ranges[0]).ok());
+    ASSERT_TRUE(invocation.bind(inputs[1], ranges[1]).ok());
+    ASSERT_TRUE(invocation.bind(inputs[2], separate.view).ok());
+    if (round != 1)
+      for (std::size_t index = 0; index < outputs.size(); ++index)
+        ASSERT_TRUE(invocation.bind(outputs[index], ranges[index + 2]).ok());
+
+    ASSERT_TRUE(invocation.bind(inputs[0], ranges[8]).ok());
+    EXPECT_TRUE(invocation.bind(inputs[1], ranges[2]).IsInvalidArgument());
+    EXPECT_TRUE(invocation.bind(outputs[0], ranges[1]).IsInvalidArgument());
+    EXPECT_TRUE(invocation.bind(outputs[1], ranges[2]).IsInvalidArgument());
+    EXPECT_TRUE(invocation.bind(outputs[0], ranges[8]).IsInvalidArgument());
+    // Failed replacements retained the original input/output ranges. A
+    // successful move releases exactly the old membership in this allocation.
+    ASSERT_TRUE(invocation.bind(outputs[0], ranges[0]).ok());
+    EXPECT_TRUE(invocation.bind(outputs[1], ranges[0]).IsInvalidArgument());
+    ASSERT_TRUE(invocation.bind(inputs[0], ranges[2]).ok());
+    EXPECT_TRUE(invocation.bind(inputs[1], ranges[0]).IsInvalidArgument());
+    // Read/read aliases are legal, but the third graph input remains live at
+    // its early output even after another input joins its physical allocation.
+    ASSERT_TRUE(invocation.bind(inputs[0], separate.view).ok());
+    EXPECT_TRUE(invocation.bind(outputs[4], separate.view).IsInvalidArgument());
+  }
+  EXPECT_EQ(probe.attempts.load(), attempts);
+  probe.fail_on_attempt = SIZE_MAX;
+}
+
 TEST(Invocation, RejectsAQueueFromAnotherContext) {
   const LogicalGraph logical = make_rms_graph(row(4));
   Context first = hyle::compute::test::native_context().value();
@@ -3785,6 +4324,54 @@ TEST(Invocation, RejectsAQueueFromAnotherContext) {
   ASSERT_TRUE(invocation.bind(logical.inputs[0], input.view).ok());
   ASSERT_TRUE(invocation.bind(logical.outputs[0], output.view).ok());
   EXPECT_TRUE(invocation.submit(wrong_queue).error().IsInvalidArgument());
+}
+
+TEST(Invocation, PreparedReplayFollowsQueueIdentityAcrossPublicHandleMoves) {
+  const auto logical = make_rms_graph(row(4));
+  auto context = hyle::compute::test::native_context().value();
+  auto compiled = hyle::graph::compile(logical.graph, context);
+  ASSERT_TRUE(compiled) << compiled.error().message();
+  ASSERT_EQ(compiled->executable.required_queue_count(), 1u);
+  auto invocation = compiled->executable.create_invocation().value();
+  auto input = make_tensor(row(4)), output = make_tensor(row(4));
+  const std::array<float, 4> values{1, -2, 3, -4};
+  write(input, values);
+  ASSERT_TRUE(invocation.bind(logical.inputs[0], input.view).ok());
+  ASSERT_TRUE(invocation.bind(logical.outputs[0], output.view).ok());
+  auto queue = context.create_queue().value();
+  const std::array original_bindings{QueueBinding{
+      .lane = hyle::graph::ExecutionLaneId{0}, .queue = &queue}};
+  ASSERT_TRUE(invocation.prepare_replay(original_bindings).ok());
+
+  auto moved = std::move(queue);
+  EXPECT_FALSE(queue.valid()); // NOLINT(bugprone-use-after-move)
+  const std::array moved_bindings{QueueBinding{
+      .lane = hyle::graph::ExecutionLaneId{0}, .queue = &moved}};
+  // Use strict prepared submit: the single-Queue convenience overload could
+  // otherwise hide an object-address mismatch by preparing replay again.
+  auto completion = invocation.submit(moved_bindings);
+  ASSERT_TRUE(completion) << completion.error().message();
+  ASSERT_TRUE(completion->wait().ok());
+  auto published = invocation.result(logical.outputs[0]);
+  ASSERT_TRUE(published) << published.error().message();
+  auto tensor = published->tensor();
+  ASSERT_TRUE(tensor) << tensor.error().message();
+  const auto actual = read(*tensor, values.size());
+  const float denominator = std::sqrt(7.5F + RmsNorm{}.epsilon);
+  for (std::size_t index = 0; index < values.size(); ++index)
+    EXPECT_NEAR(actual[index], values[index] / denominator, 1.0e-6F);
+  published->reset(); // Test Queue admission, not the old result's reuse gate.
+
+  const std::array<float, 4> sentinel{77, 77, 77, 77};
+  write(output, sentinel);
+  ASSERT_TRUE(moved.close().ok());
+  auto rejected = invocation.submit(moved_bindings);
+  ASSERT_FALSE(rejected);
+  EXPECT_TRUE(rejected.error().IsFailedPrecondition());
+  EXPECT_FALSE(invocation.output(logical.outputs[0]));
+  EXPECT_FALSE(invocation.result(logical.outputs[0]));
+  EXPECT_EQ(read(output, sentinel.size()),
+            std::vector<float>(sentinel.begin(), sentinel.end()));
 }
 
 TEST(GraphCompile, ExecutesMatureAttentionWithHonestPrivateStorage) {
@@ -3890,7 +4477,7 @@ TEST(GraphViews, DerivedFlattenNormAndRestoreUseRealLayoutsIncludingEmpty) {
           expected[r * 4 + h] = values[r * 4 + h] * scale;
       }
       for (bool domain : {false, true}) {
-        auto created = domain ? general->executable.create_invocation(bindings)
+        auto created = domain ? general->executable.create_invocation({.shape = bindings})
                               : compiled->executable.create_invocation();
         ASSERT_TRUE(created) << created.error().message();
         auto run = std::move(*created);
@@ -3996,7 +4583,7 @@ TEST(GraphViews, BroadcastUsesZeroStridesAndAnExplicitCopyMaterializes) {
     const std::array bindings{ShapeBinding{rows, n}};
     auto compiled = hyle::graph::compile(graph, context, {.shape = bindings});
     ASSERT_TRUE(compiled) << compiled.error().message();
-    auto created = general->executable.create_invocation(bindings);
+    auto created = general->executable.create_invocation({.shape = bindings});
     ASSERT_TRUE(created) << created.error().message();
     auto run = std::move(*created);
     auto source = make_tensor(matrix(1, 3));
@@ -4189,6 +4776,61 @@ TEST(GraphViews, ExactSliceOutlivesGraphAndWarmBindingDoesNotAllocate) {
   probe.fail = false;
 }
 
+TEST(GraphViews, NestedProjectionsReuseCanonicalSpansAcrossResetAndRejectedBind) {
+  auto builder = GraphBuilder::create().value();
+  const auto input = builder.input(row(8)).value();
+  const auto outer = builder.add(View::slice(0, 1, 6).value(), input).value();
+  const auto inner = builder.add(View::slice(0, 2, 3).value(), outer).value();
+  const auto output = builder.add(
+      View::reshape(hyle::compute::TensorShape::create(
+          std::array<std::int64_t, 2>{1, 3}).value()).value(), inner).value();
+  ASSERT_TRUE(builder.publish(output).ok());
+  auto graph = std::move(builder).finish().value();
+  auto context = hyle::compute::test::native_context().value();
+  auto compiled = hyle::graph::compile(graph, context);
+  ASSERT_TRUE(compiled) << compiled.error().message();
+  EXPECT_EQ(compiled->executable.required_queue_count(), 0u);
+  auto run = compiled->executable.create_invocation().value();
+  auto backing = make_tensor(row(12));
+  const std::array<std::size_t, 3> starts{0, 2, 2};
+  constexpr std::span<const QueueBinding> no_queues{};
+  for (std::size_t round_index = 0; round_index < starts.size(); ++round_index) {
+    SCOPED_TRACE(round_index);
+    if (round_index != 0) ASSERT_TRUE(run.reset().ok());
+    if (round_index == 1) {
+      auto wrong = ConstTensorView::create(row(7), backing.buffer.view()).value();
+      EXPECT_TRUE(run.bind(input, wrong).IsInvalidArgument());
+      EXPECT_TRUE(run.prepare_replay(no_queues).IsFailedPrecondition());
+    }
+    std::array<float, 12> data{};
+    for (std::size_t i = 0; i < data.size(); ++i)
+      data[i] = static_cast<float>(round_index * 100 + i);
+    write(backing, data);
+    const auto base = starts[round_index];
+    // The caller passes a larger backing. The factory must retain only the
+    // exact descriptor span, including after the base offset changes.
+    auto source = ConstTensorView::create(
+        row(8), backing.buffer.view().subview(base * sizeof(float)).value());
+    ASSERT_TRUE(source) << source.error().message();
+    EXPECT_EQ(source->storage().size(), 8 * sizeof(float));
+    ASSERT_TRUE(run.bind(input, *source).ok());
+    ASSERT_TRUE(run.prepare_replay(no_queues).ok());
+    auto done = run.submit();
+    ASSERT_TRUE(done) << done.error().message();
+    ASSERT_TRUE(done->wait().ok());
+    const auto projected = run.output(output);
+    ASSERT_TRUE(projected) << projected.error().message();
+    EXPECT_EQ(projected->description(), matrix(1, 3));
+    EXPECT_EQ(projected->storage().resource(), source->storage().resource());
+    EXPECT_EQ(projected->storage().native_handle(), source->storage().native_handle());
+    EXPECT_EQ(projected->storage().offset(), (base + 3) * sizeof(float));
+    EXPECT_EQ(projected->storage().size(), 3 * sizeof(float));
+    EXPECT_EQ(read(*projected, 3),
+              (std::vector<float>{data[base + 3], data[base + 4], data[base + 5]}));
+    EXPECT_EQ(read(backing, data.size()), std::vector<float>(data.begin(), data.end()));
+  }
+}
+
 TEST(GraphViews, EveryExactCompileAllocationFailureCleansUpAndRetries) {
   AllocatorProbe probe;
   auto context = hyle::compute::test::native_context(
@@ -4338,7 +4980,7 @@ TEST(GraphViewDomain, GuardedNestedSlicesUseOnePlanAndActualWorkspaceOffsets) {
         const std::array bindings{ShapeBinding{rows, n},
                                   ShapeBinding{start, first},
                                   ShapeBinding{count, length}};
-        auto created = compiled->executable.create_invocation(bindings);
+        auto created = compiled->executable.create_invocation({.shape = bindings});
         ASSERT_TRUE(created) << created.error().message();
         auto run = std::move(*created);
         auto source = make_tensor(matrix(n, 5));
@@ -4371,7 +5013,7 @@ TEST(GraphViewDomain, GuardedNestedSlicesUseOnePlanAndActualWorkspaceOffsets) {
   }
   const std::array invalid{ShapeBinding{rows, 2}, ShapeBinding{start, 2},
                            ShapeBinding{count, 1}};
-  EXPECT_FALSE(compiled->executable.create_invocation(invalid));
+  EXPECT_FALSE(compiled->executable.create_invocation({.shape = invalid}));
 }
 
 TEST(GraphViewDomain,
@@ -4402,7 +5044,7 @@ TEST(GraphViewDomain,
   ASSERT_TRUE(compiled) << compiled.error().message();
   for (std::int64_t n = 0; n <= 12; ++n) {
     const std::array bindings{ShapeBinding{elements, n}};
-    auto run = compiled->executable.create_invocation(bindings);
+    auto run = compiled->executable.create_invocation({.shape = bindings});
     if (n % 3 != 0) {
       EXPECT_FALSE(run);
       continue;
@@ -4484,7 +5126,7 @@ TEST(GraphViewDomain, ColdAllocationFailuresReleaseSharedPlanAndCanRetry) {
   const std::array bindings{ShapeBinding{rows, 3}};
   probe.attempts = 0;
   {
-    auto run = compiled.executable.create_invocation(bindings);
+    auto run = compiled.executable.create_invocation({.shape = bindings});
     ASSERT_TRUE(run) << run.error().message();
   }
   const auto instance_attempts = probe.attempts.load();
@@ -4492,14 +5134,14 @@ TEST(GraphViewDomain, ColdAllocationFailuresReleaseSharedPlanAndCanRetry) {
     probe.attempts = 0;
     probe.fail_on_attempt = fail;
     {
-      auto run = compiled.executable.create_invocation(bindings);
+      auto run = compiled.executable.create_invocation({.shape = bindings});
       EXPECT_FALSE(run);
     }
     EXPECT_EQ(probe.allocations.load() - probe.deallocations.load(),
               plan_retained);
     probe.fail_on_attempt = SIZE_MAX;
   }
-  auto run = compiled.executable.create_invocation(bindings);
+  auto run = compiled.executable.create_invocation({.shape = bindings});
   ASSERT_TRUE(run) << run.error().message();
   auto source = make_tensor(matrix(3, 4));
   const std::array<float, 12> values{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};

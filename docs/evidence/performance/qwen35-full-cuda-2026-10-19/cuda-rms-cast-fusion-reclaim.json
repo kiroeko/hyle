@@ -1,0 +1,99 @@
+{
+  "raw_vectors_retained": true,
+  "targets": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-rms-cast-fusion\\performance\\baseline.exe",
+      "bytes": 116208128,
+      "sha256": "21cbc16f74080ae7c6cdc781e39ca2a6694c6a95bec5c763d73141a3ed19d465"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-rms-cast-fusion\\performance\\baseline.exp",
+      "bytes": 25011,
+      "sha256": "f4a1baab5624c0cd578ee0321a4b42d1c4fbefa7ee98107e9a7634b39eb43666"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-rms-cast-fusion\\performance\\baseline.lib",
+      "bytes": 41736,
+      "sha256": "716c7bf4e9533f251a02b7669470b23b4e893859b4ada256dc3b7d54f4554a1f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-rms-cast-fusion\\performance\\baseline.map",
+      "bytes": 33712884,
+      "sha256": "aef627c9c7c32eef7fb2d43248839d086ff97dc0abb4cb0e449e450162dc3c07"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-rms-cast-fusion\\checks\\20261019T065214-eb0b4c02\\cuda.exe",
+      "bytes": 117219840,
+      "sha256": "3eb8d80766f7dfbb722d9c4bb2437f60ca46033d34ff3f83e9bf558166d9f41b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-rms-cast-fusion\\checks\\20261019T065214-eb0b4c02\\cuda.exp",
+      "bytes": 25023,
+      "sha256": "1412aa85c1cb68dd466c70c072fbfb1b533f830d814bda6f522cc274c1121355"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-rms-cast-fusion\\checks\\20261019T065214-eb0b4c02\\cuda.lib",
+      "bytes": 41384,
+      "sha256": "097299e17e955c077a99f65f363d3484d564c016359baeb643f4e47c6b737d59"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-rms-cast-fusion\\checks\\20261019T065214-eb0b4c02\\cuda.map",
+      "bytes": 35958965,
+      "sha256": "0e85e722c242babf8ec8a9bef5da1b80693cb2a128c4e5bb39b6b6890cb0c063"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-rms-cast-fusion\\checks\\20261019T065214-eb0b4c02\\qwen.exe",
+      "bytes": 116221440,
+      "sha256": "c24624cbd511878f3bdd59158ca60b961c5c233020fe4ca8243ad9359e0c707e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-rms-cast-fusion\\checks\\20261019T065214-eb0b4c02\\qwen.exp",
+      "bytes": 25023,
+      "sha256": "a6ece460df9fd62176eb3b960145a11964ef193dd1cad52ca6955b7704d1efc4"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-rms-cast-fusion\\checks\\20261019T065214-eb0b4c02\\qwen.lib",
+      "bytes": 41384,
+      "sha256": "339d3ce297534ebac8825c27a011f2f4f9dfe366c657ebfc45dbbfdc8412a2cb"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-rms-cast-fusion\\checks\\20261019T065214-eb0b4c02\\qwen.map",
+      "bytes": 33695980,
+      "sha256": "19d6f10649e9e358eafe13a3db6a88e95802fc891643855cfc2bf401ae2f49f9"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-rms-cast-fusion\\checks\\20261019T065521-144b94d3\\cuda.exe",
+      "bytes": 117810688,
+      "sha256": "96ed89ee08b33e48d44995135f5e7139e1889f5d5f73b537024df0baea44667e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-rms-cast-fusion\\checks\\20261019T065521-144b94d3\\cuda.exp",
+      "bytes": 25023,
+      "sha256": "6ba937fdc9be46719ca2afb17ff3f2ea19281d4864c7fb61f41eb28eb29ab2b7"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-rms-cast-fusion\\checks\\20261019T065521-144b94d3\\cuda.lib",
+      "bytes": 41384,
+      "sha256": "097299e17e955c077a99f65f363d3484d564c016359baeb643f4e47c6b737d59"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-rms-cast-fusion\\checks\\20261019T065521-144b94d3\\cuda.map",
+      "bytes": 36822725,
+      "sha256": "290a8668ed42f55d0762bfc64c001125e689c7f2be0d227a9dbdd5d203a776a1"
+    }
+  ],
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\qwen35-full-cuda-2026-10-19\\cuda-rms-cast-fusion.zip",
+    "bytes": 18713667,
+    "sha256": "1406ad467a8c79ae2dd826f9be2bf06c4628d4321f7ff95aab2853e7b34c8893",
+    "entries": 315,
+    "CRC_and_payload_SHA_verified": true,
+    "reclaim_manifest": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-rms-cast-fusion\\reclaim-targets.json",
+      "bytes": 4301,
+      "sha256": "513939f656a7ef7be4a177f54a7158c584750f38d2500817a1ee54ae329fe230"
+    }
+  },
+  "recursive": false,
+  "objects_retained": true
+}

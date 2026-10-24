@@ -90,7 +90,7 @@ void address_axis(inout uint remaining, inout uvec3 offsets, uint dimension, uve
     remaining /= dimension;
 }
 
-uint width(uint type) { return type == 4 ? 8 : (type == 5 || type == 6) ? 1 : (type == 1 || type == 2) ? 2 : 4; }
+uint width(uint type) { return type == 4 ? 8 : (type == 5 || type == 6 || type == 8) ? 1 : (type == 1 || type == 2) ? 2 : 4; }
 uint word(uint port, uint index) { return port == 0 ? a[index] : port == 1 ? b[index] : c[index]; }
 uint load_bytes(uint port, uint offset, uint size) {
     uint shift = (offset & 3u) * 8u;
@@ -99,10 +99,21 @@ uint load_bytes(uint port, uint offset, uint size) {
         value |= word(port, offset / 4u + 1u) << (32u - shift);
     return size == 4 ? value : value & ((1u << (size * 8u)) - 1u);
 }
+#include "fp8_storage.glsl"
+uint float_storage_bits(uint value, uint type) {
+    if (type == 2) return value << 16u;
+    if (type != 1) return value;
+    uint sign_bit = (value & 0x8000u) << 16u;
+    uint exponent = (value >> 10u) & 31u, fraction = value & 0x3ffu;
+    if (exponent == 31u) return sign_bit | 0x7f800000u | (fraction << 13u);
+    if (exponent != 0u) return sign_bit | ((exponent + 112u) << 23u) | (fraction << 13u);
+    if (fraction == 0u) return sign_bit;
+    uint leading = uint(findMSB(fraction));
+    return sign_bit | ((leading + 103u) << 23u) |
+           ((fraction << (23u - leading)) & 0x7fffffu);
+}
 float decode(uint value, uint type) {
-    if (type == 1) return unpackHalf2x16(value).x;
-    if (type == 2) return uintBitsToFloat(value << 16u);
-    return uintBitsToFloat(value);
+    return uintBitsToFloat(float_storage_bits(value, type));
 }
 uint half_rne(float value) {
     uint bits = floatBitsToUint(value), sign_bit = (bits >> 16u) & 0x8000u;
@@ -221,6 +232,19 @@ uint evaluate(uint index, uint half_word) {
     }
     uint bits = load_bytes(0, offsets.x + half_word * 4u, min(width(type_a), 4u));
     if (operation == 0) return bits;
+    if (operation == 2) {
+        // Bool is stored as one byte. Compare source magnitude bits so even
+        // subnormals and NaNs are nonzero independently of device float FTZ.
+        if (type_d == 5) {
+            if (type_a == 5) return uint(bits != 0u);
+            return uint((bits & (type_a == 0 ? 0x7fffffffu : 0x7fffu)) != 0u);
+        }
+        if (type_a == 5) return encode(bits != 0u ? 1.0 : 0.0, type_d);
+        if (type_a == 8)
+            return type_d == 8 ? bits : encode(uintBitsToFloat(fp8_e4m3_to_f32_bits(bits)), type_d);
+        if (type_d == 8)
+            return f32_to_fp8_e4m3_bits(float_storage_bits(bits, type_a));
+    }
     float value = decode(bits, type_a);
     if (operation == 3) value = unary(value);
     if (operation == 4) value = binary(value, decode(load_bytes(1, offsets.y, width(type_b)), type_b));

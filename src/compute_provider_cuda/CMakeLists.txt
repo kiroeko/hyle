@@ -1,5 +1,5 @@
 if(_HYLE_COMPUTE_HAVE_CUDA)
-  hyle_audit_in_tree_dependencies(sglang_activation deepseek_fp8 deepseek_quantization)
+  hyle_audit_in_tree_dependencies(sglang_activation deepseek_fp8 deepseek_quantization mlx_cuda_quant)
   if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES AND "$ENV{CUDAARCHS}" STREQUAL "")
     set(CMAKE_CUDA_ARCHITECTURES 80 89-real)
   endif()
@@ -8,11 +8,16 @@ if(_HYLE_COMPUTE_HAVE_CUDA)
     collectives_provider.cc collectives.cu sampling_provider.cc sampling_kernel.cu
     cuda_provider.cc native_kernel.cu sglang_kernel.cu sglang_norm_kernel.cu
     router_provider.cc sglang_router_kernel.cu fp8_provider.cc grouped_fp8_provider.cc
-    deepseek_fp8_provider.cc deepseek_grouped_fp4_provider.cc
+    deepseek_fp8_provider.cc deepseek_grouped_fp4_provider.cc grouped_fp4_f32_kernel.cu
     tensor_provider.cc tensor_kernel.cu norm_provider.cc norm_kernel.cu
+    nvfp4_provider.cc nvfp4_kernel.cu
+    blockwise_w4a8_provider.cc blockwise_w4a8_kernel.cu
     reduction_provider.cc reduction_kernel.cu
     concat_provider.cc concat_kernel.cu
-    scatter_provider.cc scatter_kernel.cu)
+    scatter_provider.cc scatter_kernel.cu
+    row_cache_provider.cc row_cache_kernel.cu
+    float8_quantize_provider.cc float8_quantize_kernel.cu
+    row_cache_indexer_provider.cc row_cache_indexer_kernel.cu)
   set_target_properties(hyle_compute_provider_cuda PROPERTIES
     CUDA_STANDARD 20 CUDA_STANDARD_REQUIRED ON CUDA_RUNTIME_LIBRARY Shared)
   # CUDA language variables belong to this enabled-language directory, not
@@ -25,8 +30,12 @@ if(_HYLE_COMPUTE_HAVE_CUDA)
     "${CMAKE_CURRENT_SOURCE_DIR}/../compute_backend_cuda"
     "${PROJECT_SOURCE_DIR}/third_party/sglang_activation"
     "${PROJECT_SOURCE_DIR}/third_party/deepseek_fp8"
-    "${PROJECT_SOURCE_DIR}/third_party/deepseek_quantization")
-  target_link_libraries(hyle_compute_provider_cuda PRIVATE CUDA::cudart CUDA::cuda_driver)
+    "${PROJECT_SOURCE_DIR}/third_party/deepseek_quantization"
+    "${PROJECT_SOURCE_DIR}/third_party/mlx_cuda_quant")
+  target_link_libraries(hyle_compute_provider_cuda PRIVATE CUDA::cudart CUDA::cuda_driver CUDA::cublasLt)
+  if(TARGET HyleCudaSdk::cublasLt_runtime)
+    target_link_libraries(hyle_compute_provider_cuda PRIVATE HyleCudaSdk::cublasLt_runtime)
+  endif()
   if(WIN32 AND (MSVC OR CMAKE_CXX_SIMULATE_ID STREQUAL "MSVC"))
     # Same CUDA 13.3 driver-loader CRT directive as compute_backend_cuda.
     target_link_options(hyle_compute_provider_cuda PRIVATE /NODEFAULTLIB:LIBCMT)
@@ -46,9 +55,9 @@ if(_HYLE_COMPUTE_HAVE_CUDA)
   endif()
   hyle_target_compute_capability(hyle_compute_provider_cuda cuda)
   if(MSVC)
-    # SDK collectives include CCCL headers, which require the conforming
+    # SDK collectives and CUDA atomics include CCCL headers, which require the conforming
     # preprocessor in nvcc's MSVC host preprocessing phase.
-    set_property(SOURCE collectives.cu sampling_kernel.cu norm_kernel.cu reduction_kernel.cu scatter_kernel.cu APPEND PROPERTY
+    set_property(SOURCE collectives.cu sampling_kernel.cu norm_kernel.cu reduction_kernel.cu scatter_kernel.cu nvfp4_kernel.cu blockwise_w4a8_kernel.cu APPEND PROPERTY
       COMPILE_OPTIONS -Xcompiler=/Zc:preprocessor)
     target_compile_options(hyle_compute_provider_cuda PRIVATE
       "$<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=/utf-8,/wd4211>")

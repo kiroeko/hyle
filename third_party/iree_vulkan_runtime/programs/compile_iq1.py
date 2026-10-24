@@ -7,7 +7,9 @@ import os
 from pathlib import Path
 import re
 import subprocess
+import sys
 
+sys.dont_write_bytecode = True
 from generate_iq1 import generate
 
 

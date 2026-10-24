@@ -1,0 +1,98 @@
+{
+  "schema": 1,
+  "date": "2026-10-20",
+  "topic": "MLX packed grouped shared activations",
+  "result": "Implemented and directed tested on CPU, CUDA, Apple and Vulkan; no full-artifact/model or performance acceptance.",
+  "contract": {
+    "inputs": "A[T,A,K], A=1 or S; IDs dense I32[T,S], output[T,S,N]. Existing dtype/codec/group and mixed-affine promotion remain.",
+    "views": "Actual zero-slot-stride view with contiguous K and element-aligned nonoverlapping token rows; test token pitch80 for K64.",
+    "math": "Original codec, scale/bias dtype, F32 affine product/add and dot/group accumulation, MX scale cast, final output boundaries unchanged. No implicit precision change.",
+    "storage": "No full T*S*K activation expansion required. CPU collapses before casts and uses selected per-slot group dots; CUDA addresses original A; Apple uses native indexed broadcast; Vulkan stages physical A span and retains per-group workspaces.",
+    "architecture": "Existing schema/carriers/Queue/Invocation; no model whitelist, executor, hidden ID readback or public descriptor ABI field. Private CUDA host/native geometry updated together; private Vulkan ProgramSpecV3 prevents silent old by-value callers."
+  },
+  "evidence": {
+    "old_admission": {
+      "tests": 3,
+      "failed": 2,
+      "control_passed": 1,
+      "source": "stage/reproduction/summary.json",
+      "frozen_before_compiled": true
+    },
+    "CPU": {
+      "gtests": 19,
+      "common_inference_probes": 3,
+      "provider_Direct_Graph_tests": 16,
+      "new_shared_tests": 2,
+      "failures": 0,
+      "skipped": 0,
+      "result": "stage/checks/tests/summary.json"
+    },
+    "CUDA": {
+      "gtests": 31,
+      "common_inference_probes": 3,
+      "device_provider_tests": 28,
+      "new_shared_tests": 1,
+      "neighbors": "18 precision,5 original packed,4 CT Graph; common probes are not GPU tests",
+      "failures": 0,
+      "skipped": 0,
+      "result": "stage/checks/tests/summary.json",
+      "hardware_observation": "stage/checks/tests/hardware-query.stdout.log"
+    },
+    "Apple": {
+      "gtests": 9,
+      "new_shared_tests": 2,
+      "neighbor_tests": 7,
+      "internal_domains_per_new_test": 4,
+      "failures": 0,
+      "skipped": 0,
+      "host": "Mac16,12 Apple M4 16GiB; macOS27.0.1 clang21",
+      "CXX": 6,
+      "SDK_or_Metal_rebuild": false,
+      "result": "stage/apple-verification/final-validation.json",
+      "frozen_common_before_next_batch": "stage/apple-verification/retained-common/freeze.json"
+    },
+    "Vulkan": {
+      "gtests": 9,
+      "new_shared_tests": 2,
+      "neighbor_tests": 7,
+      "failures": 0,
+      "skipped": 0,
+      "fresh_product_CXX": 26,
+      "reused_current_common_owners": 2,
+      "fresh_test_CXX": 2,
+      "SDK_rebuild": false,
+      "result": "stage/apple-vulkan/final-validation.json"
+    },
+    "local_lock": {
+      "canonical_verify_exit": 0,
+      "upstream_revision_change": false,
+      "source": "stage/lock/summary.json"
+    }
+  },
+  "retained_failures": [
+    "Original frozen inference source rejects dense A1 and true shared View; both controls and exact same probe object retained.",
+    "Initial 3 test compiles fail because two SCOPED_TRACE macros shared one source line; root split lines,3 test owners rebuilt and passed.",
+    "Initial in-tree lock update used expanded raw tree hashes; canonical CMake audit rejected the category. Correct normalized vendored hash and NOTICE identities then verified.",
+    "Offline IREE compiler schedule-count32 assertion was brittle after grouped ABI change; export set/signatures remain21 and actual generated count recorded.",
+    "MSVC C4838 in private IREE physical extent list fixed with existing bounded iree_hal_dim_t conversion; failed source,command and log retained."
+  ],
+  "limits": [
+    "New shared execution witnesses cover F32/BF16 affine5, denseA1 and real zero-slot/token-gap80, duplicate IDs, two value updates and checked invalid IDs. Other shared format/precision domains are not exhaustively runtime tested.",
+    "Apple arbitrary nested lazy Views, general decode/QMV contraction and typed embedding two-RNE equivalence are not established by this batch.",
+    "Vulkan retains per-K-group activation/weight workspaces and native staging; no zero-allocation,zero-copy or peak-memory claim.",
+    "Windows hardware was separately queried as RTX4070 SM8.9 driver617.14; fixtures use default contexts and do not emit selected physical-device UUID. The Vulkan default-context run does not independently pin a device identity.",
+    "No full selected artifact payload/model, quality, throughput, peak-memory or Linux acceptance.",
+    "Later common binding/layout architecture edits are a separate batch; this package preserves the actual earlier common snapshot and does not rebuild against later source."
+  ],
+  "reproduction": "Current canonical checkout plus recorded toolchains/caches and source snapshots. Exact commands/dependencies/logs are retained; SDK binaries, executables,objects,maps and caches are intentionally excluded. Final MLX encoded module and canonical regeneration scripts are included.",
+  "archive": {
+    "path": "mlx-grouped-shared-activation-2026-10-20.zip",
+    "bytes": 4057412,
+    "sha256": "bf995c72b7bc1a5a22c30e8ec581bdfa497715867e227f7255678b3e7847ccd4",
+    "members": 664,
+    "CRC_verified": true,
+    "all_payload_SHA256_verified": true,
+    "manifest_sha256": "da888947fa161a3f06549d22c85f86fdbbd6bfbf027bca5c84dabb019b0b3c26",
+    "uncompressed_payload_bytes": 23532595
+  }
+}

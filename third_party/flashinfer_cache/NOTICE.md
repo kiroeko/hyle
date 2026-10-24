@@ -97,3 +97,68 @@ unchanged paired raw K prefetch after the QK call and before logits transform
 and masking, ahead of online softmax. The compiler can schedule these raw
 loads across the QK tail. Decoder/publication timing, shared K/V page indexing,
 row guards, arithmetic, barriers and all other routes remain.
+
+Windows CUDA uses the same attention and cache kernels. The verified header
+set additionally selects CUDA forceinline for MSVC, spells two 16-bit
+temporaries as unsigned short, and makes seven scheduler/decode max expressions
+independent of LP64 versus LLP64 integer aliases. Two restrict annotations
+are removed from an unused host-only rotary launch wrapper because nvcc
+emits them as unsupported C99 restrict in MSVC C++. Device kernels,
+thread/block dispatch, storage layouts and numerical contracts are unchanged.
+The decode header also uses CUDA __shared__ instead of a GNU shared
+attribute for the same dynamic shared-memory declaration.
+
+The compact MLA adapter retains the upstream CKV512/KPE64 kernel and scheduler.
+The scheduler can count its original workspace layout without writing or
+uploading it, and checks its fixed work-array and integer chunk capacities
+before materialization. Three dependent template calls use explicit empty
+argument lists for MSVC. Its causal kernel uses a ceiling query-row bound,
+matching the scheduler when a packed cluster crosses a partial query head
+group (including 96 heads); the original elementwise causal mask remains.
+The typed MLA adapter stores normalized split outputs directly from the F32
+accumulators into F32 partial storage, and the original merge reads those F32
+values. Final output conversion and the original probability tile are retained;
+the scheduler accounts for four-byte partial elements. No larger shared tile is
+introduced.
+The zero-KPE specialization reserves one unused query-storage column instead
+of declaring a zero-length array; its compile-time KPE load/compute loops stay empty.
+
+MLA workspace allocation follows the scheduler's active work and split rows.
+Each per-work integer array uses total_num_works entries, and work_indptr uses
+num_clusters + 1; the original 16384-work admission bound is unchanged. All
+five merge arrays retain num_sm entries, including blocks without merge work.
+Partial outputs use partial_o_nnz * head_dim_o * the selected partial width,
+and partial LSE uses partial_o_nnz float entries. A no-split schedule therefore
+needs no partial storage. Query and materialization use these same counts;
+kernel indexing, split/merge metadata and arithmetic are unchanged.
+These are required workspace sizes. The public batch adapter allocates the
+queried layout requirement within its explicit positive workspace cap. For
+no-split schedules, the scheduler skips both partial allocations, records zero
+offsets and reports zero float bytes; the private native wrapper supplies null
+partial pointers without arithmetic on an absent buffer. Split schedules keep
+the original aligned allocations, F32 partials and merge. The common allocator
+and attention arithmetic are unchanged.
+
+Typed ragged MLA reuses the same CKV512/KPE64 scheduler, tiles, F32 split
+partials and merge. Its private linear-row mode reads the original packed
+cache at the request's global KV indptr plus local row, with the physical
+512/576-element stride and the CKV prefix shared by V. No page table or
+expanded K/V payload is created. A null page table remains invalid unless
+the adapter explicitly selects plain 16-bit or BF16-query scalar E4 unit-row
+storage; paged lookup and the original scheduler remain unchanged.
+
+Uniform E4 compact MLA admits BF16 query/output and one immutable F32 cache
+scale for the original CKV512 and optional KPE64 row. CKV is also V; it is not
+an independently scaled value allocation. Paged and explicit unit-row ragged
+adapters use element pitches of the truthful E4 row. Each E4 code is multiplied
+by its original F32 scale with F32 round-to-nearest and then rounded once to
+BF16 in the existing bounded shared tile. The scale is not first rounded to
+BF16. The scalar repack uses no-FTZ PTX multiplication; plain F16/BF16 arithmetic
+is unchanged. The group-scale array remains a distinct native path.
+
+On the one-stage SM89 tier only E4 uses KV16 with the original Q64/256-thread
+geometry. Its nonsharded shared-storage specialization omits the unused 512-byte
+cross-warpgroup m/d state: CKV512+KPE64 needs 101376 bytes and CKV512 needs
+91296 bytes. Plain storage, the MLA scheduler, F32 split partial/merge, existing
+synchronization and output ownership remain unchanged. This is not the separate
+scaled DSA format with inline per-group scales or a BF16 positional tail.

@@ -1,6 +1,9 @@
 #include <hyle/graph/cpu.h>
 #include <hyle/graph/cuda.h>
-#include <hyle/graph/cpu_cuda.h>
+#include <hyle/compute/cuda_weights.h>
+#include <hyle/graph/progress.h>
+#include <hyle/graph/result.h>
+#include <hyle/sched/blocking.h>
 #include <cuda_fp16.h>
 #include "../../compute/cpp/workload.h"
 
@@ -13,10 +16,42 @@
 namespace {
 namespace compute = hyle::compute;
 namespace graph = hyle::graph;
-namespace bridge = hyle::graph::cpu_cuda;
 namespace mem = hyle::mem;
 using hyle::Status;
 template <class T> using Result = hyle::Result<T>;
+
+constexpr graph::ExecutionTargetId kCudaTarget{0}, kCpuTarget{1};
+constexpr graph::StorageDomainId kDeviceStorage{0}, kHostStorage{1}, kStagingStorage{2};
+
+Result<graph::CompiledGraph> compile_mixed(
+    const graph::Graph &logical, const compute::Context &cpu,
+    const compute::Context &cuda, const compute::cuda::MemoryResource &staging,
+    const compute::cuda::MemoryResource &device, graph::CompileOptions options = {},
+    std::array<std::size_t, 3> workspace = {SIZE_MAX, SIZE_MAX, SIZE_MAX}) noexcept {
+  HYLE_ASSIGN_OR_RETURN(auto gpu_source, graph::ExecutionSource::acquire(cuda));
+  HYLE_ASSIGN_OR_RETURN(auto cpu_source, graph::ExecutionSource::acquire(cpu));
+  const std::array domains{
+      graph::StorageDomain{device.ref(), workspace[0]},
+      graph::StorageDomain{mem::system_resource(), workspace[1]},
+      graph::StorageDomain{staging.ref(), workspace[2]}};
+  const std::array targets{
+      graph::ExecutionTarget{gpu_source, kDeviceStorage},
+      graph::ExecutionTarget{cpu_source, kHostStorage}};
+  const std::array lanes{graph::ExecutionLane{kCudaTarget}, graph::ExecutionLane{kCpuTarget}};
+  return graph::compile(logical,
+      {.storage_domains = domains, .targets = targets, .lanes = lanes}, options);
+}
+
+Result<std::size_t> staging_copies(const graph::CompileReport &report) noexcept {
+  std::size_t count = 0;
+  for (std::size_t i = 0; i < report.step_count(); ++i) {
+    HYLE_ASSIGN_OR_RETURN(auto step, report.step(i));
+    if (step.kind == graph::CompileStepKind::kCopy &&
+        (step.source_storage == kStagingStorage || step.destination_storage == kStagingStorage))
+      ++count;
+  }
+  return count;
+}
 
 struct Tensor final {
   mem::Buffer buffer;
@@ -52,6 +87,7 @@ Status run() noexcept {
                                         cuda, compute::cuda::MemoryKind::kDevice));
   std::fprintf(stderr, "H1: contexts/resources ready\n");
   hyle::sched::Scheduler scheduler(2, mem::system_allocator(), 64);
+  hyle::sched::BlockingPool workers(mem::system_allocator(), 2);
   const std::array limits{
       compute::ResourceBudgetLimit{mem::system_resource(), 64 * 1024 * 1024},
       compute::ResourceBudgetLimit{device.ref(), 64 * 1024 * 1024},
@@ -126,52 +162,50 @@ Status run() noexcept {
   HYLE_ASSIGN_OR_RETURN(auto n2, logical.node_id(2));
   HYLE_ASSIGN_OR_RETURN(auto n3, logical.node_id(3));
   const std::array placement{
-      graph::NodePlacement{n0, bridge::kCpuTarget, graph::PlacementStrength::kRequired},
-      graph::NodePlacement{n1, bridge::kCpuTarget, graph::PlacementStrength::kRequired},
-      graph::NodePlacement{n2, bridge::kCudaTarget, graph::PlacementStrength::kRequired},
-      graph::NodePlacement{n3, bridge::kCpuTarget, graph::PlacementStrength::kRequired}};
+      graph::NodePlacement{n0, kCpuTarget, graph::PlacementStrength::kRequired},
+      graph::NodePlacement{n1, kCpuTarget, graph::PlacementStrength::kRequired},
+      graph::NodePlacement{n2, kCudaTarget, graph::PlacementStrength::kRequired},
+      graph::NodePlacement{n3, kCpuTarget, graph::PlacementStrength::kRequired}};
   const std::array external{
-      graph::ExternalResourceContract{x, bridge::kHostStorage},
-      graph::ExternalResourceContract{s, bridge::kHostStorage},
-      graph::ExternalResourceContract{w, bridge::kDeviceStorage},
-      graph::ExternalResourceContract{cw, bridge::kHostStorage},
-      graph::ExternalResourceContract{y, bridge::kHostStorage}};
+      graph::ExternalResourceContract{x, kHostStorage},
+      graph::ExternalResourceContract{s, kHostStorage},
+      graph::ExternalResourceContract{w, kDeviceStorage},
+      graph::ExternalResourceContract{cw, kHostStorage},
+      graph::ExternalResourceContract{y, kHostStorage}};
   HYLE_ASSIGN_OR_RETURN(auto compiled,
-      bridge::compile(logical,
-          {.cpu = &cpu, .cuda = &cuda, .staging = &host, .device = &device,
-           .staging_workspace_budget_bytes = 512},
+      compile_mixed(logical, cpu, cuda, host, device,
           {.resource_budget = resource_budget, .node_placements = placement,
-           .external_resources = external}));
+           .external_resources = external}, {SIZE_MAX, SIZE_MAX, 512}));
   std::fprintf(stderr, "H1: mixed graph compiled\n");
   HYLE_ASSIGN_OR_RETURN(auto staging_report,
-      compiled.report.storage_domain(bridge::kStagingStorage.ordinal()));
-  std::array<bridge::Invocation, 2> runs;
+      compiled.report.storage_domain(kStagingStorage.ordinal()));
+  std::array<graph::Invocation, 2> runs;
   std::array<Tensor, 2> outputs;
   std::array<compute::Queue, 2> gpu_queues, cpu_queues;
-  std::array<compute::OwnedResult<bridge::Results>, 2> results;
+  std::array<compute::Completion, 2> results;
+  std::array<std::array<graph::QueueBinding, 2>, 2> queues;
+  HYLE_ASSIGN_OR_RETURN(auto copy_count, staging_copies(compiled.report));
   for (std::size_t i = 0; i < 2; ++i) {
     HYLE_ASSIGN_OR_RETURN(gpu_queues[i], cuda.create_queue());
     HYLE_ASSIGN_OR_RETURN(cpu_queues[i], cpu.create_queue());
     HYLE_ASSIGN_OR_RETURN(outputs[i], tensor(mem::system_resource(), row));
-    HYLE_ASSIGN_OR_RETURN(auto native, compiled.executable.create_invocation());
-    const std::array queues{
+    HYLE_ASSIGN_OR_RETURN(runs[i], compiled.executable.create_invocation());
+    queues[i] = {
         graph::QueueBinding{graph::ExecutionLaneId{0}, &gpu_queues[i]},
         graph::QueueBinding{graph::ExecutionLaneId{1}, &cpu_queues[i]}};
-    HYLE_ASSIGN_OR_RETURN(runs[i], bridge::Invocation::create(
-                                      std::move(native), scheduler, queues));
+    HYLE_RETURN_IF_ERROR(graph::prepare_progress(runs[i], scheduler, workers));
     HYLE_RETURN_IF_ERROR(runs[i].bind(x, input.view.as_const()));
     HYLE_RETURN_IF_ERROR(runs[i].bind(s, scale.view.as_const()));
-    HYLE_RETURN_IF_ERROR(runs[i].bind(w, i == 0 ? batch0 : batch1, 7));
+    HYLE_RETURN_IF_ERROR(graph::cuda::bind(runs[i], w, i == 0 ? batch0 : batch1, 7));
     HYLE_RETURN_IF_ERROR(runs[i].bind(cw, cpu_weight.view.as_const()));
     HYLE_RETURN_IF_ERROR(runs[i].bind(y, outputs[i].view));
-    HYLE_RETURN_IF_ERROR(runs[i].prepare_replay());
-    HYLE_ASSIGN_OR_RETURN(auto replay, runs[i].replay_report());
-    HYLE_RETURN_IF_ERROR(require(replay.staging_copy_count == 4 &&
-                                 replay.weight_device_wait_count == 1,
+    HYLE_RETURN_IF_ERROR(runs[i].prepare_replay(queues[i]));
+    HYLE_ASSIGN_OR_RETURN(auto sources, runs[i].input_source_report());
+    HYLE_RETURN_IF_ERROR(require(copy_count == 4 && sources.device_wait_count == 1,
                                  "ordinary host boundary did not use prepared staging"));
     HYLE_ASSIGN_OR_RETURN(auto resources, runs[i].resource_report());
     HYLE_RETURN_IF_ERROR(require(
-        resources.storage[bridge::kStagingStorage.ordinal()].live_bytes <
+        resources.storage[kStagingStorage.ordinal()].usage.live_bytes <
             limits[2].max_bytes &&
         staging_report.workspace_bytes <= 512,
         "staging exceeded its declared capacity"));
@@ -188,12 +222,13 @@ Status run() noexcept {
   HYLE_RETURN_IF_ERROR(scale.buffer.view().write(std::as_bytes(std::span(scales))));
   Drain drain{scheduler};
   for (std::size_t i = 0; i < 2; ++i) {
-    HYLE_ASSIGN_OR_RETURN(results[i], runs[i].submit());
+    HYLE_ASSIGN_OR_RETURN(results[i], runs[i].submit(queues[i]));
   }
   std::fprintf(stderr, "H1: both slots submitted\n");
   for (std::size_t i = 0; i < 2; ++i) {
-    HYLE_ASSIGN_OR_RETURN(auto lease, results[i].wait());
-    HYLE_ASSIGN_OR_RETURN(auto view, lease->output(y));
+    HYLE_RETURN_IF_ERROR(results[i].wait());
+    HYLE_ASSIGN_OR_RETURN(auto lease, runs[i].result(y));
+    HYLE_ASSIGN_OR_RETURN(auto view, lease.tensor());
     std::array<float, 64> actual;
     HYLE_RETURN_IF_ERROR(view.storage().read(std::as_writable_bytes(std::span(actual))));
     const float inverse = 1.0f / std::sqrt(squares / 64 + compute::RmsNorm{}.epsilon);
@@ -204,8 +239,8 @@ Status run() noexcept {
     HYLE_RETURN_IF_ERROR(require(!runs[i].reset().ok(), "old result lease allowed reset"));
     lease = {};
     // Stable payload/addresses can repeat without selecting Providers again.
-    HYLE_ASSIGN_OR_RETURN(auto repeated, runs[i].run());
-    repeated = {};
+    HYLE_ASSIGN_OR_RETURN(auto repeated, runs[i].submit(queues[i]));
+    HYLE_RETURN_IF_ERROR(repeated.wait());
   }
   batch0 = {};
   batch1 = {};
@@ -217,40 +252,41 @@ Status run() noexcept {
   }
   HYLE_ASSIGN_OR_RETURN(auto reused, weights.upload(1, selected, transfer));
   HYLE_RETURN_IF_ERROR(reused.wait());
-  const std::array queues{
+  const std::array replay_queues{
       graph::QueueBinding{graph::ExecutionLaneId{0}, &gpu_queues[0]},
       graph::QueueBinding{graph::ExecutionLaneId{1}, &cpu_queues[0]}};
-  auto prepare = [&](hyle::sched::Scheduler &executor) noexcept -> Result<bridge::Invocation> {
-    HYLE_ASSIGN_OR_RETURN(auto native, compiled.executable.create_invocation());
-    HYLE_ASSIGN_OR_RETURN(auto invocation,
-        bridge::Invocation::create(std::move(native), executor, queues));
+  auto prepare = [&](hyle::sched::Scheduler &executor,
+                     hyle::sched::BlockingPool &pool) noexcept -> Result<graph::Invocation> {
+    HYLE_ASSIGN_OR_RETURN(auto invocation, compiled.executable.create_invocation());
+    HYLE_RETURN_IF_ERROR(graph::prepare_progress(invocation, executor, pool));
     HYLE_RETURN_IF_ERROR(invocation.bind(x, input.view.as_const()));
     HYLE_RETURN_IF_ERROR(invocation.bind(s, scale.view.as_const()));
-    HYLE_RETURN_IF_ERROR(invocation.bind(w, reused, 7));
+    HYLE_RETURN_IF_ERROR(graph::cuda::bind(invocation, w, reused, 7));
     HYLE_RETURN_IF_ERROR(invocation.bind(cw, cpu_weight.view.as_const()));
     HYLE_RETURN_IF_ERROR(invocation.bind(y, outputs[0].view));
-    HYLE_RETURN_IF_ERROR(invocation.prepare_replay());
+    HYLE_RETURN_IF_ERROR(invocation.prepare_replay(replay_queues));
     return invocation;
   };
   {
-    HYLE_ASSIGN_OR_RETURN(auto cancelled, prepare(scheduler));
-    HYLE_ASSIGN_OR_RETURN(auto pending, cancelled.submit());
+    HYLE_ASSIGN_OR_RETURN(auto cancelled, prepare(scheduler, workers));
+    HYLE_ASSIGN_OR_RETURN(auto pending, cancelled.submit(replay_queues));
     HYLE_RETURN_IF_ERROR(pending.request_cancel());
-    auto settled = pending.wait();
-    if (!settled && !settled.error().IsCancelled())
-      return settled.error();
-    const auto drained = cancelled.close();
+    const auto settled = pending.wait();
+    if (!settled.ok() && !settled.IsCancelled()) return settled;
+    const auto drained = cancelled.drain();
     if (!drained.ok() && !drained.IsCancelled())
       return drained;
-    HYLE_RETURN_IF_ERROR(require(!cancelled.submit(), "closed slot accepted work"));
+    HYLE_RETURN_IF_ERROR(require(!cancelled.submit(replay_queues), "closed slot accepted work"));
   }
   HYLE_RETURN_IF_ERROR(outputs[0].buffer.view().fill(std::byte{}));
   {
     // Scheduler drain is explicit and occurs while every borrowed native owner
     // and external buffer remains alive. Public handle destruction adds no wait.
     hyle::sched::Scheduler temporary(1, mem::system_allocator(), 16);
-    HYLE_ASSIGN_OR_RETURN(auto abandoned, prepare(temporary));
-    HYLE_ASSIGN_OR_RETURN(auto pending, abandoned.submit());
+    hyle::sched::BlockingPool temporary_workers(mem::system_allocator(), 1);
+    Drain temporary_drain{temporary};
+    HYLE_ASSIGN_OR_RETURN(auto abandoned, prepare(temporary, temporary_workers));
+    HYLE_ASSIGN_OR_RETURN(auto pending, abandoned.submit(replay_queues));
     pending = {};
     abandoned = {};
   }
@@ -261,7 +297,7 @@ Status run() noexcept {
                                "abandoned work lost its execution owner"));
   HYLE_ASSIGN_OR_RETURN(auto independent, cuda.create_queue());
   HYLE_RETURN_IF_ERROR(weights.close());
-  HYLE_RETURN_IF_ERROR(inference_case(cpu, cuda, host, device, scheduler));
+  HYLE_RETURN_IF_ERROR(inference_case(cpu, cuda, host, device, scheduler, workers));
   std::printf("CPU+CUDA: two real math slots, fixed weight IDs, native DMA dependencies, leases and replay passed\n");
   return Status::Ok();
 }

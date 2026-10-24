@@ -40,8 +40,9 @@ struct NativePagedBatchVersionData;
 }
 class NativePagedBatchVersion;
 // Cold schema/attention recipe and compact page metadata, not native math
-// qualification. Ports are packed Q, true physical K/V capacity, and I32 page
-// IDs. No query/head expansion, mask, or KV payload materialization is stored.
+// qualification. Ports are active packed Q, true physical K/V capacity, and
+// I32 page IDs. Q descriptions require the owned active layout; maximum query
+// rows remain a schema limit. No mask or KV payload materialization is stored.
 // Injected allocator/budget outlive programs, versions and exported leases.
 class NativePagedBatchProgram final {
 public:
@@ -58,7 +59,11 @@ public:
   HYLE_COMPUTE_BATCH_API float scale() const noexcept;
   HYLE_COMPUTE_BATCH_API bool causal() const noexcept;
   HYLE_COMPUTE_BATCH_API std::int32_t window_left() const noexcept;
-  HYLE_COMPUTE_BATCH_API std::span<const TensorDesc> descriptions() const noexcept;
+  HYLE_COMPUTE_BATCH_API std::size_t input_count() const noexcept;
+  // Pure descriptor query: Q uses layout.query_rows; KV and page IDs retain
+  // schema capacity. The layout must belong to this recipe's schema.
+  HYLE_COMPUTE_BATCH_API Result<TensorDesc> input_description(
+      const BatchLayoutVersion &layout, std::size_t port) const noexcept;
   HYLE_COMPUTE_BATCH_API NativePagedBatchCosts costs() const noexcept;
   // Exact owned layout identity/generation; caller spans are never retained.
   HYLE_COMPUTE_BATCH_API Result<NativePagedBatchVersion> version(BatchLayoutVersion) const noexcept;

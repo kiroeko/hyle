@@ -23,7 +23,8 @@ struct Fixture final {
 
   explicit Fixture(int seed = 0, std::int64_t batches = 2,
                    std::int64_t tokens = 5, std::int64_t key_heads = 2,
-                   std::int64_t value_heads = 6, std::int64_t depth = 32)
+                   std::int64_t value_heads = 6, std::int64_t depth = 32,
+                   bool per_channel_decay = false)
       : batches(batches), tokens(tokens), key_heads(key_heads),
         value_heads(value_heads), depth(depth) {
     const auto dense = [](std::initializer_list<std::int64_t> shape) {
@@ -33,7 +34,8 @@ struct Fixture final {
     inputs = {dense({batches, tokens, key_heads, depth}),
               dense({batches, tokens, key_heads, depth}),
               dense({batches, tokens, value_heads, depth}),
-              dense({batches, tokens, value_heads, 1}),
+              dense({batches, tokens, value_heads,
+                     per_channel_decay ? depth : 1}),
               dense({batches, tokens, value_heads, 1}),
               dense({batches, value_heads, depth, depth})};
     for (std::size_t port = 0; port < data.size(); ++port) {
@@ -70,11 +72,13 @@ struct Fixture final {
           const auto value = ((batch * tokens + token) * value_heads + head) * depth;
           const auto gate = (batch * tokens + token) * value_heads + head;
           const auto matrix = (batch * value_heads + head) * depth * depth;
-          const auto decay = std::exp(double(data[3][gate]));
+          const auto gate_width = inputs[3].dimensions().back();
           for (std::int64_t row = 0; row < depth; ++row) {
             const auto offset = matrix + row * depth;
             double projected = 0;
             for (std::int64_t key = 0; key < depth; ++key) {
+              const auto decay = std::exp(double(data[3][gate * gate_width +
+                  (gate_width == 1 ? 0 : key)]));
               state[offset + key] *= decay;
               projected += state[offset + key] * data[1][qk + key];
             }

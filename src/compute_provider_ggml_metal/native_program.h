@@ -16,6 +16,8 @@
 #define HYLE_GGML_METAL_INTERNAL_API HYLE_IMPORT
 #endif
 
+namespace hyle::compute::apple::detail { struct Recurrent; }
+
 namespace hyle::compute::ggml_metal {
 
 // Private Apple-native boundary. metal_buffer is an id<MTLBuffer>, with its
@@ -63,6 +65,14 @@ public:
   HYLE_GGML_METAL_INTERNAL_API std::size_t output_bytes() const noexcept;
 
 private:
+  friend struct apple::detail::Recurrent;
+  HYLE_GGML_METAL_INTERNAL_API Status
+  run_with_proven_indices(std::span<const BufferView> ports,
+                          std::size_t port, std::int64_t extent) noexcept;
+  // Caller has proved the original synchronous run retired. Keep graph,
+  // backend and workspace; the next run imports all external ports afresh.
+  HYLE_GGML_METAL_INTERNAL_API void detach_bindings() noexcept;
+  Status run_impl(std::span<const BufferView> ports, bool proven_indices) noexcept;
   struct State;
   explicit NativeProgram(std::unique_ptr<State> state) noexcept;
   std::unique_ptr<State> state_;

@@ -1,0 +1,179 @@
+{
+  "date": "2026-10-20",
+  "status": "Linux_CPU_nine_case_regression_executed",
+  "problem": "The current layout-reset fix had actual Windows/Mac coverage but had not run against the older retained Linux host closure.",
+  "behavior": "Actual CPU graph journeys retain ordinary caller bindings and source/lease owners across layout configuration changes, revoke metadata/preparation on failures, gate mutation on retained results, and preserve full Invocation::reset clearing semantics.",
+  "actual": {
+    "platform": {
+      "distro": "Ubuntu-24.04 / Ubuntu 24.04.4 LTS, WSL2",
+      "compiler": "g++-14 (Ubuntu 14.2.0-4ubuntu2~24.04.1) 14.2.0",
+      "kernel": "Linux kiro-workstation 6.18.54.1-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Tue Oct  6 19:13:07 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux",
+      "cpu": "Intel Core i9-13900K,32 logical CPUs",
+      "gtest": "Existing GNU14 cached GTest static archives; source/hash/compiler records in ../gtest-recipe-inventory.json"
+    },
+    "cases": 9,
+    "failures": 0,
+    "skipped": 0,
+    "exit_code": 0,
+    "names": [
+      "TypedCapabilityGraph.SharedMetadataAcrossHostResourcesSurvivesLayoutUpdates",
+      "ConfigurationInput.OrdinaryBindingsCannotReplacePreparedMetadata",
+      "ConfigurationInput.FailedColdReplacementPreservesReplayAndResetUnlocksInput",
+      "ConfigurationInput.CarrierQueryUsesOnlyThisPlansPrivateInput",
+      "ConfigurationInput.LayoutResetPreservesCallerLeasesAndSourceButExpiresMetadata",
+      "InputSourceFrontier.OrdinarySubmitSettlesBothSourcesAfterIndependentReadyWork",
+      "InputSourceFrontier.NonblockingPendingObservationDoesNotPoisonTheOriginalCursor",
+      "InputSourceFrontier.ProducerWaitFailurePreservesAcceptedIndependentWorkAndItsStatus",
+      "InputSourceFrontier.StableSourcesReuseScratchAcrossOrdinaryBindingChanges"
+    ],
+    "counts": {
+      "product_cxx_success": 38,
+      "test_cxx_success": 3,
+      "cxx_attempts": 42,
+      "cxx_failures": 1,
+      "links": 1,
+      "link_failures": 0,
+      "test_processes": 1,
+      "gtest": {
+        "tests": 9,
+        "failures": 0,
+        "disabled": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "max_host_compile_parallelism": 2,
+      "nvcc": 0,
+      "sdk_builds": 0,
+      "downloads": 0,
+      "gpu_compute_processes": 0,
+      "retained_self_host_objects": 44,
+      "retained_native_objects": 2,
+      "cached_libraries": 8,
+      "all_actual_link_inputs": 95
+    },
+    "closure": {
+      "current_source_files": 276,
+      "actual_compiler_project_dependency_files": 180,
+      "stale_old_overlay_headers": 0,
+      "canonical_source_drift": 0,
+      "actual_link_inputs_rechecked": 95
+    }
+  },
+  "build_diagnostic": {
+    "failed_attempts": 1,
+    "file": "src/graph/constant_artifact.cc",
+    "diagnostic": "GNU14 -Wextra -Werror missing-field-initializers for PreparationQueue::queue.",
+    "fix": "Explicit .queue = {} at the existing aggregate initialization. Same empty Queue default construction, no layout/ABI change and no warning suppression.",
+    "failure_source_and_log_preserved": true
+  },
+  "reuse": "38 product CXX plus three existing test owners were rebuilt; 44 compatible host objects, two native objects and eight cached libraries were SHA verified. No SDK/NVCC/download/whole-suite or GPU execution was performed.",
+  "scope_limits": [
+    "Only the one named TypedCapabilityGraph bind-once journey ran; the other typed shape/tail matrix cases were intentionally not rerun.",
+    "No Linux CUDA capture, Vulkan, model, throughput or quality acceptance.",
+    "The cached native CPU kernel/AVX2 libraries and selected native objects were reused, with exact actual identities retained; this does not claim the latest complete SDK/patch closure has been rebuilt or accepted.",
+    "No cleanup performed; product source was not copied back from WSL."
+  ],
+  "evidence": [
+    {
+      "member": "validation/final-validation.json",
+      "bytes": 21420,
+      "sha256": "ef6a0fdccb842b7bc391ec25f8d4dceb87ad420cc8fb032e530b47459606086b"
+    },
+    {
+      "member": "validation/compile-plan.json",
+      "bytes": 704004,
+      "sha256": "af202dd3c7154e33911fd82b5b9ad4cb250c713f8e46bf5ec3c3d95252a9c6c6"
+    },
+    {
+      "member": "validation/compile-results.json",
+      "bytes": 900169,
+      "sha256": "e0808f32cf01ba1749131e01d2274dcca88881d294c9a49e9bd3335d3596bb2f"
+    },
+    {
+      "member": "validation/link-plan.json",
+      "bytes": 32527,
+      "sha256": "69c194fad92c828e3899599978f6929f32ece888f59c46411be30cd030c01cbe"
+    },
+    {
+      "member": "validation/link-result.json",
+      "bytes": 10834,
+      "sha256": "d0452cea206a9ec748a0d23594e149eb1371ff7c6b381e4abf9fdc9b5eeba9d8"
+    },
+    {
+      "member": "validation/run-result.json",
+      "bytes": 845,
+      "sha256": "d5babe84e3c91004a00b9d9129d7bbb5d491092c33b4513dcdd13ec9a5aab176"
+    },
+    {
+      "member": "validation/tests.xml",
+      "bytes": 3470,
+      "sha256": "abc2981c6e194fb4cbfdc6ab4bceb9a68522652c4da7a56a2885192bb31ce563"
+    },
+    {
+      "member": "validation/source-manifest.json",
+      "bytes": 158277,
+      "sha256": "883b511748d2bf4371bf6eb90057e803001e627b881f0a9fa6583cafa4c647a8"
+    },
+    {
+      "member": "validation/actual-project-dependency-closure.json",
+      "bytes": 50108,
+      "sha256": "23982b45c33d965a036a37348be6a3d940154605d83472b5bd7c64e1fa676775"
+    },
+    {
+      "member": "validation/retained-abi-proof.json",
+      "bytes": 21871,
+      "sha256": "d4e3140d8932515524d55247e8a922f6210445538a286e8a0816ededf4ff2511"
+    },
+    {
+      "member": "validation/final-input-identities.json",
+      "bytes": 1329,
+      "sha256": "5a7d29574579b3d2c149dd6776e52bc83cae0c881199a8db962edb2258563166"
+    },
+    {
+      "member": "validation/map-excerpt.json",
+      "bytes": 3869,
+      "sha256": "a41c73c834b964c4eef0994f5d57b0bb71ffab0a98d71ab722bf4b543f574647"
+    },
+    {
+      "member": "validation/map-excerpt.txt",
+      "bytes": 17807,
+      "sha256": "5b7e5977017a17ebbc918b45791a2963e38f37d22ff5eec6d1d483ad6a466760"
+    },
+    {
+      "member": "validation/gnu-queue-init.json",
+      "bytes": 651,
+      "sha256": "398e73701c805d83a17b94e52fba0bcf4f2b400b8c5cb7ddfe58851c1a333f18"
+    },
+    {
+      "member": "validation/gnu-queue-init.diff",
+      "bytes": 621,
+      "sha256": "98f7903b518e0af23932608d1c88ab8eedff30f9afafb0ad055799394de55394"
+    },
+    {
+      "member": "validation/revisions/pre-gnu-queue-init/constant_artifact.cc",
+      "bytes": 29679,
+      "sha256": "b50d46af957c5cca6e60feb211a28535ba2afe02f4a6f7359d8bd1743f104670"
+    },
+    {
+      "member": "validation/source/src/graph/constant_artifact.cc",
+      "bytes": 29692,
+      "sha256": "314d8cb679a21202e18707705314af52036b49f96ceb0e6d77e6790599be4361"
+    }
+  ],
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\linux-layout-current-2026-10-20.zip",
+    "bytes": 1345570,
+    "sha256": "6f0f6fbaceb29b976d401b2f2b667b5e5da99471fb2ab7a00f4462c7471de834",
+    "payloads": 446,
+    "uncompressed_bytes": 9725509,
+    "CRC_checked": true,
+    "all_payload_SHA256_checked": true,
+    "safe_paths_and_unique_names_checked": true,
+    "payload_manifest": {
+      "member": "payload-manifest.json",
+      "bytes": 84932,
+      "sha256": "2f5d47002e7631ab46ebb85d1929f49d8f3e1a234810267561fc08a99f081f55"
+    },
+    "excluded": "No object/executable/archive/shared-library/SDK/cache payloads; full per-symbol map body and unneeded historical baseline .cc snapshots omitted."
+  }
+}

@@ -1,4 +1,5 @@
 #include "program.h"
+#include "gated_delta_scale.h"
 #include "hyle/core/environment.h"
 #include "hyle/core/assert.h"
 #include "standard_index.h"
@@ -11,6 +12,7 @@
 #include <climits>
 #include <cmath>
 #include <cstdint>
+#include <cstdio>
 #include <cstring>
 #include <exception>
 #include <limits>
@@ -23,11 +25,14 @@
 #include "cpu_execution.h"
 #include "cpu_program.h"
 #include "explicit_rope.h"
+#include "sink_mask.h"
 #include "hyle/compute/backends/cpu.h"
 #include "hyle/compute/low_precision.h"
 #include "hyle/compute/model_ops.h"
 #include "hyle/mem/std_allocator.h"
 #include "hyle/simd/dtype.h"
+#include "hyle/simd/ops.h"
+#include "../compute/operation_cold.h"
 
 namespace hyle::compute::ggml_cpu {
 namespace {
@@ -125,6 +130,8 @@ ggml_type native_quantized_type(const TensorDesc &description) noexcept {
     return GGML_TYPE_IQ4_XS;
   case GgufQuantizedType::kMxfp4:
     return GGML_TYPE_MXFP4;
+  case GgufQuantizedType::kNvfp4:
+    return GGML_TYPE_NVFP4;
 #if defined(HYLE_GGML_CPU_IQ1_EXTENSIONS)
   case GgufQuantizedType::kQ4_0:
     return GGML_TYPE_Q4_0;
@@ -255,13 +262,13 @@ std::int64_t rows(const TensorDesc &description) noexcept {
                     : static_cast<std::int64_t>(elements(description)) / width;
 }
 bool representable(const TensorDesc &description,
-                   bool large_encoded_gather = false) noexcept {
+                   bool large_encoded_input = false) noexcept {
   const auto count = description.element_count();
   if (!description.valid() || !count || *count > INT32_MAX)
     return false;
   if (native_quantized(description)) {
     const auto bytes = description.required_bytes();
-    return bytes && (*bytes <= INT32_MAX || large_encoded_gather) &&
+    return bytes && (*bytes <= INT32_MAX || large_encoded_input) &&
            description.rank() > 0 &&
            description.rank() <= GGML_MAX_DIMS &&
            description.storage_format().kind() == StorageFormatKind::kBlocked &&
@@ -278,6 +285,63 @@ bool representable(const TensorDesc &description,
            return stride % static_cast<std::int64_t>(
                                data_type_size(description.data_type())) ==
                   0;
+         });
+}
+bool grouped_activation(const TensorDesc &description) noexcept {
+  if (!description.is_plain() || description.rank() != 3 ||
+      description.data_type() != DataType::kFloat32)
+    return false;
+  if (description.is_dense())
+    return true;
+  const auto shape = description.dimensions();
+  const auto stride = description.byte_strides();
+  return stride[2] == sizeof(float) && stride[1] == 0 &&
+         (shape[0] == 1 || stride[0] >= shape[2] * std::int64_t{sizeof(float)});
+}
+// A broadcast slot is metadata, not S physical activation rows. This narrow
+// port qualification keeps the original native bounds on its folded [K,1,T]
+// carrier and exact backing; ordinary per-slot tensors retain the generic gate.
+bool shared_grouped_activation(const TensorDesc &description) noexcept {
+  const auto bytes = description.required_bytes();
+  if (!description.valid() || !grouped_activation(description) || !bytes ||
+      description.byte_strides()[1] != 0)
+    return false;
+  const auto shape = description.dimensions();
+  constexpr auto limit = std::size_t{INT32_MAX};
+  return shape[0] > 0 && shape[2] > 0 &&
+         static_cast<std::size_t>(shape[2]) <= limit &&
+         static_cast<std::size_t>(shape[0]) <= limit / shape[2] &&
+         std::ranges::all_of(description.byte_strides(), [](auto stride) {
+           return stride <= INT32_MAX && stride % sizeof(float) == 0;
+         });
+}
+
+ggml_tensor *grouped_activation(ggml_context *context, ggml_tensor *source) {
+  if (source->nb[1] != 0)
+    return source;
+  // A read-only broadcast slot is one physical row per token. Keep its root
+  // and token pitch, with a positive inactive slot pitch for native indexing.
+  return ggml_view_3d(context, source, source->ne[0], 1, source->ne[2],
+      std::size_t(source->ne[0]) * sizeof(float),
+      source->ne[2] == 1 ? std::size_t(source->ne[0]) * sizeof(float) : source->nb[2], 0);
+}
+bool native_grouped_bank(const TensorDesc &description) noexcept {
+  const auto type = gguf_quantized_type(description.storage_format());
+  if (!type || !native_quantized(description) || description.rank() != 3 ||
+      description.data_type() != DataType::kFloat32)
+    return false;
+  const auto shape = description.dimensions();
+  const auto canonical = gguf_grouped_weight_description(
+      *type, description.data_type(), shape[0], shape[1], shape[2]);
+  // MUL_MAT_ID selects a matrix with size_t byte strides; no full-bank F32
+  // conversion is performed. Keep native int dimensions and per-expert bounds.
+  return canonical && *canonical == description && shape[0] <= INT32_MAX &&
+         shape[1] > 0 && shape[2] > 0 &&
+         shape[1] <= INT32_MAX / shape[2] &&
+         *description.element_count() /
+                 ggml_blck_size(native_quantized_type(description)) <= INT32_MAX &&
+         std::ranges::all_of(description.byte_strides(), [](auto stride) {
+           return stride > 0 && stride <= INT32_MAX;
          });
 }
 bool matrix_operand(const TensorDesc &input,
@@ -458,6 +522,7 @@ struct Invocation final {
   std::vector<ggml_tensor *> views;
   std::vector<mem::HostMapping> input_maps;
   std::vector<mem::HostMapping> output_maps;
+  std::vector<mem::HostMapping> constant_maps;
   void *storage = nullptr;
   std::size_t storage_bytes = 0;
   GraphStorage *graph_storage = nullptr;
@@ -689,6 +754,30 @@ bool valid_softmax_row(const float *values, std::int64_t width) noexcept {
   return finite;
 }
 
+// Preserve the public mixed source precision. Native ggml's BF16 vec_dot
+// converts a F32 activation row to BF16; SIMD already provides the required
+// direct mixed dot, with register-only widening of original BF16 weights.
+void f32_bfloat_linear(ggml_tensor *output, int ith, int nth, void *) noexcept {
+  const auto &activation = *output->src[0];
+  const auto &weights = *output->src[1];
+  const auto width = static_cast<std::size_t>(activation.ne[0]);
+  const auto output_width = output->ne[0];
+  const auto count = ggml_nelements(output);
+  auto *target = static_cast<float *>(output->data);
+  for (auto index = std::int64_t{ith}; index < count; index += nth) {
+    const auto row = index / output_width, column = index % output_width;
+    const auto *a = reinterpret_cast<const float *>(
+        static_cast<const std::byte *>(activation.data) + std::size_t(row) * activation.nb[1]);
+    // Public dense [B,M,K]/[B,N,K] retain their actual native batch pitch.
+    // A rank2 source has one batch; no repeated W or expanded F32 bank.
+    const auto batch = row / activation.ne[1];
+    const auto *w = reinterpret_cast<const simd::bfloat16_t *>(
+        static_cast<const std::byte *>(weights.data) + std::size_t(batch) * weights.nb[2] +
+        std::size_t(column) * weights.nb[1]);
+    target[index] = simd::dot(a, w, width);
+  }
+}
+
 // Upstream debug Softmax asserts on undefined rows. Replace those rows
 // before its kernel, then restore the public NaN result before consumers.
 // Neither boundary computes exp, a sum or normalization.
@@ -749,9 +838,7 @@ ggml_tensor *tiled_math_attention(ggml_context *context, ggml_tensor *query,
       return nullptr;
     ggml_tensor *probabilities;
     if (mask) {
-      auto *rows_mask =
-          ggml_view_2d(context, mask, mask->ne[0], rows, mask->nb[1],
-                       std::size_t(begin) * mask->nb[1]);
+      auto *rows_mask = ggml_runtime::sink_mask_rows(context, mask, begin, rows);
       probabilities = ggml_soft_max_ext(context, scores, rows_mask, scale, 0.F);
       ggml_soft_max_add_sinks(probabilities, sinks);
     } else {
@@ -1047,8 +1134,14 @@ std::vector<ggml_tensor *> lower(Program &program, Invocation &invocation,
         ggml_permute(context, invocation.values[node.inputs[0]], 1, 0, 2, 3));
     result = ggml_ssm_conv(context, samples, invocation.values[node.inputs[1]]);
   } else if (node.operation.custom_as<model_ops::GroupedMatMul>()) {
-    result = ggml_mul_mat_id(context, invocation.values[node.inputs[0]],
-                             invocation.values[node.inputs[1]],
+    auto *weights = invocation.values[node.inputs[0]];
+    // The original BF16 CPU dot converts its F32 operand to BF16. Preserve
+    // this operation's F32 activation contract instead. Immutable Graph banks
+    // can enter through the existing cold F32 packing cache.
+    if (weights->type == GGML_TYPE_BF16)
+      weights = ggml_cast(context, weights, GGML_TYPE_F32);
+    result = ggml_mul_mat_id(context, weights,
+                             grouped_activation(context, invocation.values[node.inputs[1]]),
                              invocation.values[node.inputs[2]]);
   } else if (const auto descriptor =
                  node.operation
@@ -1084,6 +1177,12 @@ std::vector<ggml_tensor *> lower(Program &program, Invocation &invocation,
       identity->data = &program.zero;
       result = ggml_repeat_4d(context, identity, columns(output), rows(output),
                               1, 1);
+      return {as_output(context, result, output)};
+    }
+    if (!matmul && recipe.values[node.inputs[0]].data_type() == DataType::kFloat32) {
+      std::array operands{invocation.values[node.inputs[0]], invocation.values[node.inputs[1]]};
+      result = ggml_custom_4d(context, GGML_TYPE_F32, columns(output), rows(output), 1, 1,
+          operands.data(), int(operands.size()), &f32_bfloat_linear, GGML_N_TASKS_MAX, nullptr);
       return {as_output(context, result, output)};
     }
     // Public RHS is [...,K,N]; ggml mul_mat consumes [K,N] as ne0=K,
@@ -1123,16 +1222,17 @@ std::vector<ggml_tensor *> lower(Program &program, Invocation &invocation,
     auto *query = ggml_permute(context, invocation.values[node.inputs[0]], 0, 2, 1, 3);
     auto *key = ggml_permute(context, invocation.values[node.inputs[1]], 0, 2, 1, 3);
     auto *value = ggml_permute(context, invocation.values[node.inputs[2]], 0, 2, 1, 3);
+    auto *mask = ggml_runtime::sink_mask(context, invocation.values[node.inputs[3]]);
     if (const auto rows = attention_query_block(recipe, node)) {
       result = tiled_math_attention(context, query, key, value,
-                                    invocation.values[node.inputs[3]],
+                                    mask,
                                     invocation.values[node.inputs[4]],
                                     sink->scale, false, rows);
     } else {
       auto *scores = ggml_mul_mat(context, key, query);
       if (!ggml_prec_set_acc(scores, GGML_PREC_F32)) return {};
       auto *probabilities = ggml_soft_max_ext(context, scores,
-          invocation.values[node.inputs[3]], sink->scale, 0.0F);
+          mask, sink->scale, 0.0F);
       ggml_soft_max_add_sinks(probabilities, invocation.values[node.inputs[4]]);
       value = ggml_cont(context, ggml_transpose(context, value));
       result = ggml_mul_mat(context, value, probabilities);
@@ -1146,7 +1246,8 @@ std::vector<ggml_tensor *> lower(Program &program, Invocation &invocation,
         .layout=AttentionLayout::kBatchSequenceHeadDepth,
         .scale=paged?paged->scale:1.F,.causal=paged?paged->causal:false};
     const auto *attention=ordinary?ordinary:&paged_attention;
-    const bool boxed=paged && (paged->window_left>=0 ||
+    const bool e4=paged && recipe.values[node.inputs[1]].data_type()==DataType::kFloat8E4M3FN;
+    const bool boxed=paged && (e4 || paged->window_left>=0 ||
         native_quantized(recipe.values[node.inputs[1]]) ||
         recipe.values[node.inputs[0]].dimensions().back()!=recipe.values[node.inputs[2]].dimensions().back());
     auto *query = invocation.values[node.inputs[0]];
@@ -1179,6 +1280,11 @@ std::vector<ggml_tensor *> lower(Program &program, Invocation &invocation,
         result->op_params[7]=0x48594258;
         result->op_params[8]=paged->window_left;
         result->op_params[9]=paged->causal?1:0;
+        if(e4){
+          result->op_params[10]=0x48594534;
+          result->op_params[11]=std::bit_cast<std::int32_t>(paged->key_scale);
+          result->op_params[12]=std::bit_cast<std::int32_t>(paged->value_scale);
+        }
       } else if (attention->causal && query->ne[1] > 1) {
         // Implicit bottom-right mask in the original native vector/tiled paths.
         // Unlike the boxed tag, this preserves prefill and split-KV selection.
@@ -1238,6 +1344,9 @@ std::vector<ggml_tensor *> lower(Program &program, Invocation &invocation,
     auto *packed = ggml_gated_delta_net(
         context, recurrent_input(0), recurrent_input(1), recurrent_input(2),
         decay, beta, initial, snapshots);
+    ggml_runtime::set_gdn_output_scale(
+        packed, gdn ? gdn->output_scale
+                    : node.operation.custom_as<model_ops::RecurrentGatedDeltaNet>()->output_scale);
     const auto score_count =
         static_cast<std::int64_t>(elements(recipe.values[node.outputs[0]]));
     const auto state_count =
@@ -1351,13 +1460,31 @@ Status create_invocation(void *value, mem::AllocatorRef allocator,
         ggml_set_input(tensor);
       invocation->input_roots.push_back(tensor);
     }
+    invocation->constant_maps.reserve(recipe.constants.size());
+    for (const auto &constant : recipe.constants) {
+      const auto backing = constant.binding.storage();
+      if (!backing.resource().properties().has(mem::MemoryProperty::kHostDeviceCoherent))
+        HYLE_RETURN_IF_ERROR(backing.invalidate());
+      HYLE_ASSIGN_OR_RETURN(auto mapping, backing.map_host());
+      invocation->constant_maps.push_back(std::move(mapping));
+      auto *tensor = create_tensor_input(context, recipe.values[constant.value]);
+      tensor->data = const_cast<std::byte *>(
+          invocation->constant_maps.back().bytes().data());
+      invocation->values[constant.value] = tensor;
+    }
     for (std::size_t node_index = 0; node_index < recipe.nodes.size();
          ++node_index) {
       const auto &node = recipe.nodes[node_index];
       auto results = lower(program, *invocation, node, node_index);
-      if (results.size() != node.outputs.size())
-        return Status::Internal(
-            "ggml CPU lowering differs from its admitted schema");
+      if (results.size() != node.outputs.size()) {
+        const auto name = operation_name(node.operation);
+        char message[192]{};
+        std::snprintf(message, sizeof(message),
+            "ggml CPU %.*s lowering returned %zu outputs; expected %zu at recipe node %zu",
+            int(std::min<std::size_t>(name.size(), 80)), name.data(),
+            results.size(), node.outputs.size(), node_index);
+        return Status::Internal(message);
+      }
       for (std::size_t i = 0; i < results.size(); ++i) {
         invocation->values[node.outputs[i]] = results[i];
         ggml_build_forward_expand(invocation->graph, results[i]);
@@ -1545,7 +1672,7 @@ Status run(Program &program, Invocation &invocation,
     call.terminal=Status::InvalidArgument("cache encoder requires finite inputs and representable Q8_0 scales");
   return finish(std::move(call.terminal));
 }
-detail::EnqueueResult submit(void *value, void *slot, Queue &,
+detail::EnqueueResult submit(void *value, void *slot, detail::QueueSequence &,
                              std::span<const ConstTensorView> inputs,
                              std::span<const TensorView> outputs) noexcept {
   auto &program = *static_cast<Program *>(value);
@@ -1604,8 +1731,7 @@ Status propose(void *context, const detail::ProviderOperationRequest &request,
   *output = {};
   const bool standard = standard_index::supports(
       request.operation, request.inputs, request.outputs);
-  if (static_cast<Configuration *>(context)->extension ||
-      !request.shape.exact() ||
+  if (!request.shape.exact() ||
       (!standard && !internal::supports(context, request.operation,
                                         request.inputs, request.outputs)))
     return Status::Unimplemented("ggml CPU operation domain is not admitted");
@@ -1687,8 +1813,20 @@ Status drain(void *) noexcept { return Status::Ok(); }
 const void *extension(void *value, ProviderExtensionId id) noexcept {
   if (id == detail::kBatchPlanningExtensionId)
     return internal::native_batch_table();
-  const auto *extension = static_cast<Configuration *>(value)->extension;
-  return extension && extension->id == id ? extension->table : nullptr;
+  if (id == detail::kMlaBatchPlanningExtensionId)
+    return internal::native_mla_batch_table();
+  if (id == detail::kProjectedInputReadExtensionId) {
+    static constexpr detail::OperationAccessVTable access{
+        .inspect = [](const detail::ProviderPrepared &prepared,
+                      detail::OperationPreparedAccess *result) noexcept {
+          return internal::inspect_projected_read(prepared, 0, result);
+        }};
+    return &access;
+  }
+  for (auto *extension = static_cast<Configuration *>(value)->extension;
+       extension; extension = extension->next)
+    if (extension->id == id) return extension->table;
+  return nullptr;
 }
 const detail::ProviderVTable kProvider{
     .identity = {.id = kProviderId,
@@ -1703,6 +1841,47 @@ const detail::ProviderVTable kProvider{
 } // namespace
 
 namespace internal {
+Status inspect_projected_read(const detail::ProviderPrepared &prepared,
+    std::uint32_t input_port, detail::OperationPreparedAccess *access) noexcept {
+  if (!access || prepared.vtable != &kPrepared || !prepared.state)
+    return Status::Unimplemented("selected ggml CPU artifact has no projected read");
+  const auto &program = *static_cast<const Program *>(prepared.state);
+  const auto &recipe = program.recipe;
+  if (input_port >= recipe.inputs.size())
+    return Status::InvalidArgument("ggml CPU projected input port is outside its artifact");
+  const auto input = recipe.inputs[input_port];
+  const auto &description = recipe.values[input];
+  if (!description.is_dense() || !description.is_plain())
+    return Status::Unimplemented("ggml CPU projected input needs its direct dense plain root");
+  if (std::ranges::find(recipe.outputs, input) != recipe.outputs.end())
+    return Status::Unimplemented("ggml CPU projected input is published");
+  bool consumed = false;
+  for (const auto &node : recipe.nodes) {
+    for (std::size_t port = 0; port < node.inputs.size(); ++port) {
+      if (node.inputs[port] != input) continue;
+      const auto *gather = node.operation.get_if<Gather>();
+      // This exact lowerer passes matrix(input) straight to GET_ROWS. A dense
+      // input has no CONT, cast or full-bank copy; only selected output rows
+      // are materialized. Other uses/imports must establish their own proof.
+      if (!gather || port != 0 || axis(gather->axis, description.rank()) != 0 ||
+          gather->bounds != IndexBoundsPolicy::kChecked || node.inputs.size() != 2)
+        return Status::Unimplemented("ggml CPU projected input has an unbounded reader");
+      const auto indices = std::ranges::find(recipe.inputs, node.inputs[1]);
+      if (indices == recipe.inputs.end())
+        return Status::Unimplemented("ggml CPU projected indices are not a checked boundary");
+      const auto index_port = std::uint32_t(indices - recipe.inputs.begin());
+      if (std::ranges::none_of(program.index_checks, [&](const auto &check) {
+            return check.input == index_port && check.limit == description.dimensions()[0];
+          }))
+        return Status::Unimplemented("ggml CPU selected artifact has no exact bounds check");
+      consumed = true;
+    }
+  }
+  if (!consumed) return Status::Unimplemented("ggml CPU projected input has no checked reader");
+  *access = {.projected_input = input_port};
+  return Status::Ok();
+}
+
 bool native_invocation_reads_kv(void *slot) noexcept {
   const auto &invocation = *static_cast<Invocation *>(slot);
   if (invocation.input_roots.size() != 3)
@@ -1804,6 +1983,68 @@ void native_invocation_update_q1_ragged(void* slot,std::uint32_t rows) noexcept 
   }
   ggml_flash_attn_ext_set_n_kv_max(node,static_cast<std::int32_t>(rows));
 }
+static Status pack_constant(void *value, ConstTensorView source,
+                            TensorView destination,
+                            mem::AllocatorRef allocator, bool widen) noexcept {
+  const auto &from = source.description();
+  const auto &to = destination.description();
+  if (!value || !from.is_plain() || !from.is_dense() || from.rank() < 2 ||
+      from.rank() > 4 || !to.is_plain() ||
+      (widen ? (from.data_type() != DataType::kBFloat16 ||
+                to.data_type() != DataType::kFloat32 || !to.is_dense())
+             : (from.data_type() != to.data_type() ||
+                !to.transposed() || !to.transposed()->is_dense())) ||
+      !std::ranges::equal(from.dimensions(), to.dimensions()) ||
+      to.rank() != from.rank())
+    return Status::InvalidArgument("ggml CPU constant packing schema differs");
+  try {
+    if (!source.storage().resource().properties().has(mem::MemoryProperty::kHostDeviceCoherent))
+      HYLE_RETURN_IF_ERROR(source.storage().invalidate());
+    HYLE_ASSIGN_OR_RETURN(auto input, source.storage().map_host());
+    HYLE_ASSIGN_OR_RETURN(auto output, destination.storage().map_host(mem::HostAccess::kWrite));
+    HYLE_ASSIGN_OR_RETURN(auto bytes, output.writable_bytes());
+    HYLE_ASSIGN_OR_RETURN(auto arena, ggml_runtime::MetadataArena::for_graph(8, 8, allocator));
+    auto *context = arena.get();
+    auto *tensor = create_tensor_input(context, from);
+    tensor->data = const_cast<std::byte *>(input.bytes().data());
+    auto *packed = widen ? ggml_cast(context, tensor, GGML_TYPE_F32)
+                        : ggml_cont(context, ggml_transpose(context, tensor));
+    packed->data = bytes.data();
+    if (widen)
+      packed = ggml_map_custom2_inplace(context, packed, tensor,
+          &cast_nan_storage, GGML_N_TASKS_MAX, nullptr);
+    auto *graph = ggml_new_graph_custom(context, 8, false);
+    ggml_build_forward_expand(graph, packed);
+    const auto &options = static_cast<Configuration *>(value)->options;
+    HYLE_ASSIGN_OR_RETURN(auto execution, ggml_runtime::CpuExecution::prepare(
+        graph, static_cast<int>(options.native_threads), allocator));
+    struct Call { ggml_runtime::CpuExecution *execution; Status status; } call{&execution, Status::Ok()};
+    options.executor.parallel_for(1, [](void *opaque, std::size_t, std::size_t) noexcept {
+      auto &work = *static_cast<Call *>(opaque);
+      work.status = work.execution->run();
+    }, &call);
+    auto status = std::move(call.status);
+    if (status.ok() && !destination.storage().resource().properties().has(mem::MemoryProperty::kHostDeviceCoherent))
+      preserve(status, output.flush());
+    preserve(status, output.close());
+    preserve(status, input.close());
+    return status;
+  } catch (...) {
+    return exception_status();
+  }
+}
+
+Status pack_matrix_constant(void *value, ConstTensorView source,
+                            TensorView destination,
+                            mem::AllocatorRef allocator) noexcept {
+  return pack_constant(value, source, destination, allocator, false);
+}
+Status widen_bfloat_constant(void *value, ConstTensorView source,
+                             TensorView destination,
+                             mem::AllocatorRef allocator) noexcept {
+  return pack_constant(value, source, destination, allocator, true);
+}
+
 ProviderRuntimeProperties runtime(void *value) noexcept {
   return {.mode = ProviderRuntimeMode::kSharedQueue,
           .workspace_owner = ProviderWorkspaceOwner::kProvider,
@@ -1825,9 +2066,13 @@ bool supports(void *context, Operation operation,
   if(const auto paged=operation.custom_as<PagedRead>()){
     if(inputs.size()!=3 || outputs.size()!=1 || !paged->page_size ||
        !paged->logical_rows || inputs[0].rank()!=4 ||
-       (inputs[0].data_type()!=DataType::kFloat16 && inputs[0].data_type()!=DataType::kBFloat16) ||
-       (inputs[0].dimensions().back()!=64 && inputs[0].dimensions().back()!=128 && inputs[0].dimensions().back()!=256))
+       (inputs[0].data_type()!=DataType::kFloat16 && inputs[0].data_type()!=DataType::kBFloat16))
       return false;
+    const auto depth=inputs[0].dimensions().back();
+    const bool highdim_plain=(depth==512 || depth==576) &&
+        inputs[1].is_plain() && inputs[2].is_plain() && inputs[2].rank()==4 &&
+        inputs[2].dimensions().back()==512;
+    if(depth!=64 && depth!=128 && depth!=256 && !highdim_plain)return false;
     const auto &k=inputs[1];
     if(k.rank()!=4 || (!paged->pages.empty() && k.dimensions()[1]%paged->page_size) ||
        inputs[0].dimensions()[0]!=1 || paged->logical_rows>INT32_MAX)
@@ -1843,23 +2088,49 @@ bool supports(void *context, Operation operation,
     if(!representable(inputs[0]) || !resident_attention_view(inputs[0]))return false;
     for(std::size_t i=1;i<3;++i){
       const auto &input=inputs[i];
-      if(!representable(input) || !input.is_dense())return false;
+      if(!representable(input) ||
+          (!input.is_dense() && !(i == 2 && highdim_plain && resident_attention_view(input))))return false;
       if(input.is_plain()){
-        if(input.data_type()!=inputs[0].data_type())return false;
+        if(input.data_type()!=inputs[0].data_type() && input.data_type()!=DataType::kFloat8E4M3FN)return false;
       }else if(input.data_type()!=DataType::kFloat32 || input.block_axis()!=3 ||
                native_quantized_type(input)!=GGML_TYPE_Q8_0)return false;
     }
-    return inputs[1].is_plain()==inputs[2].is_plain();
+    return inputs[1].is_plain()==inputs[2].is_plain() &&
+        ((inputs[1].data_type()==DataType::kFloat8E4M3FN)==
+         (inputs[2].data_type()==DataType::kFloat8E4M3FN));
   }
   bool large_encoded_gather = false;
+  bool large_encoded_matmul_rhs = false;
 #if defined(HYLE_GGML_CPU_IQ1_EXTENSIONS)
   // The fixed CPU-only core addresses GET_ROWS source bytes with int64 row
   // indices and size_t strides. Keep all existing element/stride/output bounds;
   // only the first encoded table may span more than INT32_MAX bytes.
   large_encoded_gather = operation.get_if<Gather>() != nullptr;
+  // MUL_MAT also advances original encoded rows with int64 row indices and
+  // size_t byte strides. Its workspace converts only A, never the W bank.
+  // Keep logical element, per-axis stride, A and output bounds unchanged.
+  if (operation.get_if<MatMul>() && inputs.size() == 2 && outputs.size() == 1 &&
+      inputs[0].is_plain() && inputs[0].is_dense() && inputs[0].rank() == 2 &&
+      inputs[0].data_type() == DataType::kFloat32 &&
+      outputs[0].rank() == 2 && outputs[0].data_type() == DataType::kFloat32 &&
+      inputs[1].rank() == 2 && native_quantized(inputs[1]) &&
+      inputs[1].data_type() == DataType::kFloat32) {
+    const auto codec = gguf_quantized_type(inputs[1].storage_format());
+    if (codec) {
+      const auto shape = inputs[1].dimensions();
+      const auto canonical = gguf_weight_description(
+          *codec, DataType::kFloat32, shape[0], shape[1]);
+      large_encoded_matmul_rhs = canonical && *canonical == inputs[1];
+    }
+  }
 #endif
   for (std::size_t i = 0; i < inputs.size(); ++i)
-    if (!representable(inputs[i], large_encoded_gather && i == 0))
+    if (!representable(inputs[i], (large_encoded_gather && i == 0) ||
+                                   (large_encoded_matmul_rhs && i == 1)) &&
+        !(i == 0 && operation.custom_as<model_ops::GroupedMatMul>() &&
+          native_grouped_bank(inputs[i])) &&
+        !(i == 1 && operation.custom_as<model_ops::GroupedMatMul>() &&
+          shared_grouped_activation(inputs[i])))
       return false;
   const bool has_quantized = std::ranges::any_of(inputs, native_quantized);
   if (has_quantized && !operation.get_if<MatMul>() &&
@@ -1874,8 +2145,8 @@ bool supports(void *context, Operation operation,
   if(operation.custom_as<model_ops::CacheEncode>())
     return inputs.size()==1 && outputs.size()==1 && inputs[0].is_dense();
   if (operation.custom_as<model_ops::SinkAttention>())
-    return *inputs[3].element_count() <=
-           std::size_t{INT32_MAX} / sizeof(float) / inputs[0].dimensions()[2];
+    return ggml_runtime::sink_score_elements(inputs[0].dimensions(), inputs[1].dimensions()) <=
+           std::size_t{INT32_MAX} / sizeof(float);
   if (operation.custom_as<model_ops::Clamp>())
     return true; // Public inference has already validated the entire domain.
   if (operation.custom_as<model_ops::CausalConv1d>())
@@ -1886,7 +2157,7 @@ bool supports(void *context, Operation operation,
     return outputs.size() == 1 && inputs.size() == 3 &&
            (!native_quantized(inputs[0]) ||
             (inputs[0].rank() == 3 && inputs[0].block_axis() == 2)) &&
-           inputs[0].is_dense() && inputs[1].is_dense() &&
+           inputs[0].is_dense() && grouped_activation(inputs[1]) &&
            inputs[2].is_dense() &&
            (inputs[0].data_type() == DataType::kFloat32 ||
             (inputs[0].is_plain() &&
@@ -1922,6 +2193,12 @@ bool supports(void *context, Operation operation,
   const bool recurrent =
       operation.custom_as<model_ops::RecurrentGatedDeltaNet>().has_value();
   if (operation.get_if<GatedDeltaNet>() || recurrent) {
+    const auto *gdn = operation.get_if<GatedDeltaNet>();
+    const auto scale = gdn ? gdn->output_scale
+        : operation.custom_as<model_ops::RecurrentGatedDeltaNet>()->output_scale;
+    if (!ggml_runtime::valid_gdn_output_scale(scale)) return false;
+    if (ggml_hyle_cpu_gdn_output_scale_contract() !=
+        ggml_runtime::kGdnOutputScaleContract) return false;
     if (outputs.size() != 2 || inputs.size() != (recurrent ? 8U : 6U) ||
         !std::ranges::all_of(inputs, [](const auto &description) {
           return description.is_dense() &&
@@ -2051,12 +2328,13 @@ bool supports(void *context, Operation operation,
   }
   if (const auto *rope = operation.get_if<RoPE>())
     return inputs.size() == 3 && inputs[0].rank() == 4 &&
-           rope->sequence_axis == 1 && inputs[0].is_dense() &&
+           (rope->sequence_axis == 1 || rope->sequence_axis == -3) && inputs[0].is_dense() &&
            (inputs[0].data_type() == DataType::kFloat16 ||
             inputs[0].data_type() == DataType::kBFloat16 ||
             inputs[0].data_type() == DataType::kFloat32) &&
-           inputs[1].rank() == 1 && inputs[1].is_dense() &&
-           inputs[1].data_type() == DataType::kInt32 && inputs[2].rank() == 1 &&
+           (inputs[1].rank() == 1 || inputs[1].rank() == 2) && inputs[1].is_dense() &&
+           inputs[1].data_type() == DataType::kInt32 &&
+           (inputs[2].rank() == 1 || inputs[2].rank() == 2) &&
            inputs[2].is_dense() && inputs[2].data_type() == DataType::kFloat32;
   if (const auto *hadamard = operation.get_if<Hadamard>())
     return inputs.size() == 1 && inputs[0].is_dense() &&
@@ -2125,6 +2403,13 @@ ProviderPrepareOutcome compile(void *context, Recipe recipe,
         return ProviderPrepareOutcome::error(
             Status::InvalidArgument("ggml CPU input identity is invalid"));
       available[id] = true;
+    }
+    for (const auto &constant : recipe.constants) {
+      if (constant.value >= available.size() || available[constant.value] ||
+          constant.binding.description() != recipe.values[constant.value])
+        return ProviderPrepareOutcome::error(
+            Status::InvalidArgument("ggml CPU packed constant identity differs"));
+      available[constant.value] = true;
     }
     for (const auto &node : recipe.nodes) {
       std::vector<TensorDesc> inputs;
@@ -2230,7 +2515,7 @@ ProviderPrepareOutcome compile(void *context, Recipe recipe,
     }
     void *storage = allocator.allocate(sizeof(Program), alignof(Program));
     if (!storage)
-      return ProviderPrepareOutcome::resource_declined(allocation_failure());
+      return ProviderPrepareOutcome::error(allocation_failure());
     auto *program = ::new (storage)
         Program{static_cast<Configuration *>(context)->options,
                 std::move(recipe), hadamard, std::move(index_checks),

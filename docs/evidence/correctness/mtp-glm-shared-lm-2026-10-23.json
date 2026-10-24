@@ -1,0 +1,975 @@
+{
+  "date": "2026-10-23",
+  "stage": "BN",
+  "goal_complete": false,
+  "conclusion": "Original GLM-5.3-Flash embedding, independent LM head and NextN shared-head norm feed the existing original14-role NextN/state consumer; actual full-vocabulary predictions feed subsequent draft embeddings.",
+  "artifact": {
+    "repository": "zai-org/GLM-5.3-Flash",
+    "revision": "eb9eb208eb0d988989d07a6a12d0fdeb5f52574a",
+    "original_roles": 17,
+    "additional_original_roles": 3,
+    "additional_original_payload_bytes": 2537562112,
+    "acquisition": {
+      "repository": "zai-org/GLM-5.3-Flash",
+      "revision": "eb9eb208eb0d988989d07a6a12d0fdeb5f52574a",
+      "source_plan": ".scratch/dspark-original-experts-20261023/review/glm-shared-lm-next.json",
+      "expected_role_payload_bytes": 2537562112,
+      "complete": true,
+      "original_roles": 3,
+      "whole_shard_downloaded": false,
+      "chunk_bytes": 134217728,
+      "stream_buffer_bytes": 1048576,
+      "requests": [
+        {
+          "role": "lm_head.weight",
+          "first": 767312,
+          "last": 134985039,
+          "requested_bytes": 134217728,
+          "complete": true,
+          "started_utc": "2026-10-22T21:32:28.905202+00:00",
+          "http_status": 206,
+          "bytes": 134217728,
+          "content_range": "bytes 767312-134985039/5365306704",
+          "etag": "\"8d515c191fd1c42528efb3f407033580a62ba6430ae55e9c7c9c9cec41a4755e\"",
+          "sha256": "c03747e3d2d3ee0b3a559d73cd34002614f46a27f345791d14b832e8132bc64a",
+          "finished_utc": "2026-10-22T21:32:43.272760+00:00"
+        },
+        {
+          "role": "lm_head.weight",
+          "first": 134985040,
+          "last": 269202767,
+          "requested_bytes": 134217728,
+          "complete": true,
+          "started_utc": "2026-10-22T21:32:43.274942+00:00",
+          "http_status": 206,
+          "bytes": 134217728,
+          "content_range": "bytes 134985040-269202767/5365306704",
+          "etag": "\"8d515c191fd1c42528efb3f407033580a62ba6430ae55e9c7c9c9cec41a4755e\"",
+          "sha256": "44ee59f71da253be79806e6dacc8d3f0fe94416566ffe8a97ab4e7d371e4ca9a",
+          "finished_utc": "2026-10-22T21:32:57.622287+00:00"
+        },
+        {
+          "role": "lm_head.weight",
+          "first": 269202768,
+          "last": 403420495,
+          "requested_bytes": 134217728,
+          "complete": true,
+          "started_utc": "2026-10-22T21:32:57.623794+00:00",
+          "http_status": 206,
+          "bytes": 134217728,
+          "content_range": "bytes 269202768-403420495/5365306704",
+          "etag": "\"8d515c191fd1c42528efb3f407033580a62ba6430ae55e9c7c9c9cec41a4755e\"",
+          "sha256": "3f4b2e2ba7fe380ff1fd83d64c9e5f6a12106812de0b0811b5af283100259e72",
+          "finished_utc": "2026-10-22T21:33:11.822701+00:00"
+        },
+        {
+          "role": "lm_head.weight",
+          "first": 403420496,
+          "last": 537638223,
+          "requested_bytes": 134217728,
+          "complete": true,
+          "started_utc": "2026-10-22T21:33:11.824310+00:00",
+          "http_status": 206,
+          "bytes": 134217728,
+          "content_range": "bytes 403420496-537638223/5365306704",
+          "etag": "\"8d515c191fd1c42528efb3f407033580a62ba6430ae55e9c7c9c9cec41a4755e\"",
+          "sha256": "5ffd70b09aa85a9e606a4388e5c49c80a8f9bb997bf4c1e9abcca2220bb79f1d",
+          "finished_utc": "2026-10-22T21:33:25.865382+00:00"
+        },
+        {
+          "role": "lm_head.weight",
+          "first": 537638224,
+          "last": 671855951,
+          "requested_bytes": 134217728,
+          "complete": true,
+          "started_utc": "2026-10-22T21:33:25.867946+00:00",
+          "http_status": 206,
+          "bytes": 134217728,
+          "content_range": "bytes 537638224-671855951/5365306704",
+          "etag": "\"8d515c191fd1c42528efb3f407033580a62ba6430ae55e9c7c9c9cec41a4755e\"",
+          "sha256": "7ca7552f31a21cb89cd014e5c936f89377491f592ae17e9668afc5fba8ff3907",
+          "finished_utc": "2026-10-22T21:33:39.733821+00:00"
+        },
+        {
+          "role": "lm_head.weight",
+          "first": 671855952,
+          "last": 806073679,
+          "requested_bytes": 134217728,
+          "complete": true,
+          "started_utc": "2026-10-22T21:33:39.735850+00:00",
+          "http_status": 206,
+          "bytes": 134217728,
+          "content_range": "bytes 671855952-806073679/5365306704",
+          "etag": "\"8d515c191fd1c42528efb3f407033580a62ba6430ae55e9c7c9c9cec41a4755e\"",
+          "sha256": "e3f5326bb05e14bb346a7bd66024d11c502e2efefadeb95a88323d9181e184e5",
+          "finished_utc": "2026-10-22T21:33:54.285851+00:00"
+        },
+        {
+          "role": "lm_head.weight",
+          "first": 806073680,
+          "last": 940291407,
+          "requested_bytes": 134217728,
+          "complete": true,
+          "started_utc": "2026-10-22T21:33:54.287924+00:00",
+          "http_status": 206,
+          "bytes": 134217728,
+          "content_range": "bytes 806073680-940291407/5365306704",
+          "etag": "\"8d515c191fd1c42528efb3f407033580a62ba6430ae55e9c7c9c9cec41a4755e\"",
+          "sha256": "3f1ab78baaf83d2e5b88cab42b24bedaf463a5fb173467d1b5f1ad6f4453fafa",
+          "finished_utc": "2026-10-22T21:34:08.363105+00:00"
+        },
+        {
+          "role": "lm_head.weight",
+          "first": 940291408,
+          "last": 1074509135,
+          "requested_bytes": 134217728,
+          "complete": true,
+          "started_utc": "2026-10-22T21:34:08.365718+00:00",
+          "http_status": 206,
+          "bytes": 134217728,
+          "content_range": "bytes 940291408-1074509135/5365306704",
+          "etag": "\"8d515c191fd1c42528efb3f407033580a62ba6430ae55e9c7c9c9cec41a4755e\"",
+          "sha256": "269777528d77029fc4c845bfe58413702fdd8d5d88c6597f42277a25064d5b77",
+          "finished_utc": "2026-10-22T21:34:22.579780+00:00"
+        },
+        {
+          "role": "lm_head.weight",
+          "first": 1074509136,
+          "last": 1208726863,
+          "requested_bytes": 134217728,
+          "complete": true,
+          "started_utc": "2026-10-22T21:34:22.582772+00:00",
+          "http_status": 206,
+          "bytes": 134217728,
+          "content_range": "bytes 1074509136-1208726863/5365306704",
+          "etag": "\"8d515c191fd1c42528efb3f407033580a62ba6430ae55e9c7c9c9cec41a4755e\"",
+          "sha256": "2ba9a048e150ec8d19e1b70931274b13b2d7e8ad50dcb325e77153cf1db754c6",
+          "finished_utc": "2026-10-22T21:34:36.893780+00:00"
+        },
+        {
+          "role": "lm_head.weight",
+          "first": 1208726864,
+          "last": 1269544271,
+          "requested_bytes": 60817408,
+          "complete": true,
+          "started_utc": "2026-10-22T21:34:36.896168+00:00",
+          "http_status": 206,
+          "bytes": 60817408,
+          "content_range": "bytes 1208726864-1269544271/5365306704",
+          "etag": "\"8d515c191fd1c42528efb3f407033580a62ba6430ae55e9c7c9c9cec41a4755e\"",
+          "sha256": "6c9d90ca3a68e93b3fd93479533ea91ace4577399209fb7b90fbbfef469e1094",
+          "finished_utc": "2026-10-22T21:34:44.565007+00:00"
+        },
+        {
+          "role": "model.language_model.embed_tokens.weight",
+          "first": 1269544272,
+          "last": 1403761999,
+          "requested_bytes": 134217728,
+          "complete": true,
+          "started_utc": "2026-10-22T21:34:45.243123+00:00",
+          "http_status": 206,
+          "bytes": 134217728,
+          "content_range": "bytes 1269544272-1403761999/5365306704",
+          "etag": "\"8d515c191fd1c42528efb3f407033580a62ba6430ae55e9c7c9c9cec41a4755e\"",
+          "sha256": "f9d27d3f207a4475cf16ee2b7f5ace5ecc8ef9895d36d6ffb258806c7c059890",
+          "finished_utc": "2026-10-22T21:34:59.641176+00:00"
+        },
+        {
+          "role": "model.language_model.embed_tokens.weight",
+          "first": 1403762000,
+          "last": 1537979727,
+          "requested_bytes": 134217728,
+          "complete": true,
+          "started_utc": "2026-10-22T21:34:59.643219+00:00",
+          "http_status": 206,
+          "bytes": 134217728,
+          "content_range": "bytes 1403762000-1537979727/5365306704",
+          "etag": "\"8d515c191fd1c42528efb3f407033580a62ba6430ae55e9c7c9c9cec41a4755e\"",
+          "sha256": "e517e6e0c24d20655513f397f5093d7810cbecdf5cf125b714cd49b8d5725269",
+          "finished_utc": "2026-10-22T21:35:13.871892+00:00"
+        },
+        {
+          "role": "model.language_model.embed_tokens.weight",
+          "first": 1537979728,
+          "last": 1672197455,
+          "requested_bytes": 134217728,
+          "complete": true,
+          "started_utc": "2026-10-22T21:35:13.875448+00:00",
+          "http_status": 206,
+          "bytes": 134217728,
+          "content_range": "bytes 1537979728-1672197455/5365306704",
+          "etag": "\"8d515c191fd1c42528efb3f407033580a62ba6430ae55e9c7c9c9cec41a4755e\"",
+          "sha256": "0386b7adb1c9bd76c68ffb63fdabe26ae7473a8286c403ac6fa528a7df75c58b",
+          "finished_utc": "2026-10-22T21:35:28.366523+00:00"
+        },
+        {
+          "role": "model.language_model.embed_tokens.weight",
+          "first": 1672197456,
+          "last": 1806415183,
+          "requested_bytes": 134217728,
+          "complete": true,
+          "started_utc": "2026-10-22T21:35:28.368554+00:00",
+          "http_status": 206,
+          "bytes": 134217728,
+          "content_range": "bytes 1672197456-1806415183/5365306704",
+          "etag": "\"8d515c191fd1c42528efb3f407033580a62ba6430ae55e9c7c9c9cec41a4755e\"",
+          "sha256": "f78c7e66e3278163ea263f717b008e9a4463dbe04a3e1ce3a25cb61827b7a61a",
+          "finished_utc": "2026-10-22T21:35:42.588535+00:00"
+        },
+        {
+          "role": "model.language_model.embed_tokens.weight",
+          "first": 1806415184,
+          "last": 1940632911,
+          "requested_bytes": 134217728,
+          "complete": true,
+          "started_utc": "2026-10-22T21:35:42.590766+00:00",
+          "http_status": 206,
+          "bytes": 134217728,
+          "content_range": "bytes 1806415184-1940632911/5365306704",
+          "etag": "\"8d515c191fd1c42528efb3f407033580a62ba6430ae55e9c7c9c9cec41a4755e\"",
+          "sha256": "2dd1394d1da118160285c1e6baaa46954d6c8f11ff1be5d4e530637486eee4b8",
+          "finished_utc": "2026-10-22T21:35:56.596585+00:00"
+        },
+        {
+          "role": "model.language_model.embed_tokens.weight",
+          "first": 1940632912,
+          "last": 2074850639,
+          "requested_bytes": 134217728,
+          "complete": true,
+          "started_utc": "2026-10-22T21:35:56.598128+00:00",
+          "http_status": 206,
+          "bytes": 134217728,
+          "content_range": "bytes 1940632912-2074850639/5365306704",
+          "etag": "\"8d515c191fd1c42528efb3f407033580a62ba6430ae55e9c7c9c9cec41a4755e\"",
+          "sha256": "dbca269dc94f7ba712288528c795438323a5b62fc4a0cb8a0e29646bf042f241",
+          "finished_utc": "2026-10-22T21:36:11.180670+00:00"
+        },
+        {
+          "role": "model.language_model.embed_tokens.weight",
+          "first": 2074850640,
+          "last": 2209068367,
+          "requested_bytes": 134217728,
+          "complete": true,
+          "started_utc": "2026-10-22T21:36:11.182676+00:00",
+          "transport_errors": [
+            {
+              "error_type": "URLError",
+              "error": "<urlopen error [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1010)>",
+              "utc": "2026-10-22T21:36:11.767398+00:00"
+            }
+          ],
+          "http_status": 206,
+          "bytes": 134217728,
+          "content_range": "bytes 2074850640-2209068367/5365306704",
+          "etag": "\"8d515c191fd1c42528efb3f407033580a62ba6430ae55e9c7c9c9cec41a4755e\"",
+          "sha256": "bfe0da4f394db41614f1b959d3fa46a9aefcfd6a5eeb23ed369c6cc568559fbf",
+          "finished_utc": "2026-10-22T21:36:27.851395+00:00"
+        },
+        {
+          "role": "model.language_model.embed_tokens.weight",
+          "first": 2209068368,
+          "last": 2343286095,
+          "requested_bytes": 134217728,
+          "complete": true,
+          "started_utc": "2026-10-22T21:36:27.854487+00:00",
+          "http_status": 206,
+          "bytes": 134217728,
+          "content_range": "bytes 2209068368-2343286095/5365306704",
+          "etag": "\"8d515c191fd1c42528efb3f407033580a62ba6430ae55e9c7c9c9cec41a4755e\"",
+          "sha256": "37e892ac831a07de363fc0629e20672260792d9bd3438d6feccc373ecbb4f831",
+          "finished_utc": "2026-10-22T21:36:42.006177+00:00"
+        },
+        {
+          "role": "model.language_model.embed_tokens.weight",
+          "first": 2343286096,
+          "last": 2477503823,
+          "requested_bytes": 134217728,
+          "complete": true,
+          "started_utc": "2026-10-22T21:36:42.009048+00:00",
+          "http_status": 206,
+          "bytes": 134217728,
+          "content_range": "bytes 2343286096-2477503823/5365306704",
+          "etag": "\"8d515c191fd1c42528efb3f407033580a62ba6430ae55e9c7c9c9cec41a4755e\"",
+          "sha256": "24fcd5238a2dc8fd4b5c22776690644e00515702849699dbe3124b62a152025e",
+          "finished_utc": "2026-10-22T21:36:56.610651+00:00"
+        },
+        {
+          "role": "model.language_model.embed_tokens.weight",
+          "first": 2477503824,
+          "last": 2538321231,
+          "requested_bytes": 60817408,
+          "complete": true,
+          "started_utc": "2026-10-22T21:36:56.612691+00:00",
+          "http_status": 206,
+          "bytes": 60817408,
+          "content_range": "bytes 2477503824-2538321231/5365306704",
+          "etag": "\"8d515c191fd1c42528efb3f407033580a62ba6430ae55e9c7c9c9cec41a4755e\"",
+          "sha256": "796578c50474acefa8b6e0615c1e2517e1f65d2adfc2b49b96256f6e538892d1",
+          "finished_utc": "2026-10-22T21:37:04.158173+00:00"
+        },
+        {
+          "role": "model.language_model.layers.45.shared_head.norm.weight",
+          "first": 52298384,
+          "last": 52306575,
+          "requested_bytes": 8192,
+          "complete": true,
+          "started_utc": "2026-10-22T21:37:04.824855+00:00",
+          "http_status": 206,
+          "bytes": 8192,
+          "content_range": "bytes 52298384-52306575/5320647824",
+          "etag": "\"3b634445603c457deae3497697213cdf620af6560dd1c33d64048ba4d710340d\"",
+          "sha256": "200c13367cfe6166220338e4c1ccd5d4e8bb414b251cb3c5b73a4bd49bb37188",
+          "finished_utc": "2026-10-22T21:37:06.380747+00:00"
+        }
+      ],
+      "roles": [
+        {
+          "name": "lm_head.weight",
+          "dtype": "BF16",
+          "shape": [
+            154880,
+            4096
+          ],
+          "bytes": 1268776960,
+          "shard": "model-00001-of-00062.safetensors",
+          "data_relative_half_open": [
+            673792,
+            1269450752
+          ],
+          "absolute_inclusive": [
+            767312,
+            1269544271
+          ],
+          "url": "https://huggingface.co/zai-org/GLM-5.3-Flash/resolve/eb9eb208eb0d988989d07a6a12d0fdeb5f52574a/model-00001-of-00062.safetensors",
+          "etag": "\"8d515c191fd1c42528efb3f407033580a62ba6430ae55e9c7c9c9cec41a4755e\"",
+          "whole_file_bytes": 5365306704,
+          "complete": true,
+          "chunks": [
+            {
+              "offset": 0,
+              "bytes": 134217728,
+              "sha256": "c03747e3d2d3ee0b3a559d73cd34002614f46a27f345791d14b832e8132bc64a",
+              "absolute_range_inclusive": [
+                767312,
+                134985039
+              ]
+            },
+            {
+              "offset": 134217728,
+              "bytes": 134217728,
+              "sha256": "44ee59f71da253be79806e6dacc8d3f0fe94416566ffe8a97ab4e7d371e4ca9a",
+              "absolute_range_inclusive": [
+                134985040,
+                269202767
+              ]
+            },
+            {
+              "offset": 268435456,
+              "bytes": 134217728,
+              "sha256": "3f4b2e2ba7fe380ff1fd83d64c9e5f6a12106812de0b0811b5af283100259e72",
+              "absolute_range_inclusive": [
+                269202768,
+                403420495
+              ]
+            },
+            {
+              "offset": 402653184,
+              "bytes": 134217728,
+              "sha256": "5ffd70b09aa85a9e606a4388e5c49c80a8f9bb997bf4c1e9abcca2220bb79f1d",
+              "absolute_range_inclusive": [
+                403420496,
+                537638223
+              ]
+            },
+            {
+              "offset": 536870912,
+              "bytes": 134217728,
+              "sha256": "7ca7552f31a21cb89cd014e5c936f89377491f592ae17e9668afc5fba8ff3907",
+              "absolute_range_inclusive": [
+                537638224,
+                671855951
+              ]
+            },
+            {
+              "offset": 671088640,
+              "bytes": 134217728,
+              "sha256": "e3f5326bb05e14bb346a7bd66024d11c502e2efefadeb95a88323d9181e184e5",
+              "absolute_range_inclusive": [
+                671855952,
+                806073679
+              ]
+            },
+            {
+              "offset": 805306368,
+              "bytes": 134217728,
+              "sha256": "3f1ab78baaf83d2e5b88cab42b24bedaf463a5fb173467d1b5f1ad6f4453fafa",
+              "absolute_range_inclusive": [
+                806073680,
+                940291407
+              ]
+            },
+            {
+              "offset": 939524096,
+              "bytes": 134217728,
+              "sha256": "269777528d77029fc4c845bfe58413702fdd8d5d88c6597f42277a25064d5b77",
+              "absolute_range_inclusive": [
+                940291408,
+                1074509135
+              ]
+            },
+            {
+              "offset": 1073741824,
+              "bytes": 134217728,
+              "sha256": "2ba9a048e150ec8d19e1b70931274b13b2d7e8ad50dcb325e77153cf1db754c6",
+              "absolute_range_inclusive": [
+                1074509136,
+                1208726863
+              ]
+            },
+            {
+              "offset": 1207959552,
+              "bytes": 60817408,
+              "sha256": "6c9d90ca3a68e93b3fd93479533ea91ace4577399209fb7b90fbbfef469e1094",
+              "absolute_range_inclusive": [
+                1208726864,
+                1269544271
+              ]
+            }
+          ],
+          "payload": {
+            "path": ".scratch/glm-shared-lm-20261023/original-lm/head.bf16",
+            "bytes": 1268776960,
+            "sha256": "aa21c427970f64edd82669db3a8fb46613084e8bc271a3728784a52eb3f25ab4"
+          }
+        },
+        {
+          "name": "model.language_model.embed_tokens.weight",
+          "dtype": "BF16",
+          "shape": [
+            154880,
+            4096
+          ],
+          "bytes": 1268776960,
+          "shard": "model-00001-of-00062.safetensors",
+          "data_relative_half_open": [
+            1269450752,
+            2538227712
+          ],
+          "absolute_inclusive": [
+            1269544272,
+            2538321231
+          ],
+          "url": "https://huggingface.co/zai-org/GLM-5.3-Flash/resolve/eb9eb208eb0d988989d07a6a12d0fdeb5f52574a/model-00001-of-00062.safetensors",
+          "etag": "\"8d515c191fd1c42528efb3f407033580a62ba6430ae55e9c7c9c9cec41a4755e\"",
+          "whole_file_bytes": 5365306704,
+          "complete": true,
+          "chunks": [
+            {
+              "offset": 0,
+              "bytes": 134217728,
+              "sha256": "f9d27d3f207a4475cf16ee2b7f5ace5ecc8ef9895d36d6ffb258806c7c059890",
+              "absolute_range_inclusive": [
+                1269544272,
+                1403761999
+              ]
+            },
+            {
+              "offset": 134217728,
+              "bytes": 134217728,
+              "sha256": "e517e6e0c24d20655513f397f5093d7810cbecdf5cf125b714cd49b8d5725269",
+              "absolute_range_inclusive": [
+                1403762000,
+                1537979727
+              ]
+            },
+            {
+              "offset": 268435456,
+              "bytes": 134217728,
+              "sha256": "0386b7adb1c9bd76c68ffb63fdabe26ae7473a8286c403ac6fa528a7df75c58b",
+              "absolute_range_inclusive": [
+                1537979728,
+                1672197455
+              ]
+            },
+            {
+              "offset": 402653184,
+              "bytes": 134217728,
+              "sha256": "f78c7e66e3278163ea263f717b008e9a4463dbe04a3e1ce3a25cb61827b7a61a",
+              "absolute_range_inclusive": [
+                1672197456,
+                1806415183
+              ]
+            },
+            {
+              "offset": 536870912,
+              "bytes": 134217728,
+              "sha256": "2dd1394d1da118160285c1e6baaa46954d6c8f11ff1be5d4e530637486eee4b8",
+              "absolute_range_inclusive": [
+                1806415184,
+                1940632911
+              ]
+            },
+            {
+              "offset": 671088640,
+              "bytes": 134217728,
+              "sha256": "dbca269dc94f7ba712288528c795438323a5b62fc4a0cb8a0e29646bf042f241",
+              "absolute_range_inclusive": [
+                1940632912,
+                2074850639
+              ]
+            },
+            {
+              "offset": 805306368,
+              "bytes": 134217728,
+              "sha256": "bfe0da4f394db41614f1b959d3fa46a9aefcfd6a5eeb23ed369c6cc568559fbf",
+              "absolute_range_inclusive": [
+                2074850640,
+                2209068367
+              ]
+            },
+            {
+              "offset": 939524096,
+              "bytes": 134217728,
+              "sha256": "37e892ac831a07de363fc0629e20672260792d9bd3438d6feccc373ecbb4f831",
+              "absolute_range_inclusive": [
+                2209068368,
+                2343286095
+              ]
+            },
+            {
+              "offset": 1073741824,
+              "bytes": 134217728,
+              "sha256": "24fcd5238a2dc8fd4b5c22776690644e00515702849699dbe3124b62a152025e",
+              "absolute_range_inclusive": [
+                2343286096,
+                2477503823
+              ]
+            },
+            {
+              "offset": 1207959552,
+              "bytes": 60817408,
+              "sha256": "796578c50474acefa8b6e0615c1e2517e1f65d2adfc2b49b96256f6e538892d1",
+              "absolute_range_inclusive": [
+                2477503824,
+                2538321231
+              ]
+            }
+          ],
+          "payload": {
+            "path": ".scratch/glm-shared-lm-20261023/original-lm/embedding.bf16",
+            "bytes": 1268776960,
+            "sha256": "4f7aecd51589ce7879d0ae48a5a1ed25750e4e94d2abe2d14c9526e5ce5641d6"
+          }
+        },
+        {
+          "name": "model.language_model.layers.45.shared_head.norm.weight",
+          "dtype": "BF16",
+          "shape": [
+            4096
+          ],
+          "bytes": 8192,
+          "shard": "model-00002-of-00062.safetensors",
+          "data_relative_half_open": [
+            52137520,
+            52145712
+          ],
+          "absolute_inclusive": [
+            52298384,
+            52306575
+          ],
+          "url": "https://huggingface.co/zai-org/GLM-5.3-Flash/resolve/eb9eb208eb0d988989d07a6a12d0fdeb5f52574a/model-00002-of-00062.safetensors",
+          "etag": "\"3b634445603c457deae3497697213cdf620af6560dd1c33d64048ba4d710340d\"",
+          "whole_file_bytes": 5320647824,
+          "complete": true,
+          "chunks": [
+            {
+              "offset": 0,
+              "bytes": 8192,
+              "sha256": "200c13367cfe6166220338e4c1ccd5d4e8bb414b251cb3c5b73a4bd49bb37188",
+              "absolute_range_inclusive": [
+                52298384,
+                52306575
+              ]
+            }
+          ],
+          "payload": {
+            "path": ".scratch/glm-shared-lm-20261023/original-lm/norm.bf16",
+            "bytes": 8192,
+            "sha256": "200c13367cfe6166220338e4c1ccd5d4e8bb414b251cb3c5b73a4bd49bb37188"
+          }
+        }
+      ],
+      "role_payload_bytes": 2537562112,
+      "successful_request_body_bytes": 2537562112,
+      "finished_utc": "2026-10-22T21:37:06.388655+00:00"
+    },
+    "original_weight_bodies_archived": false
+  },
+  "implementation": {
+    "shared_storage": "Three readonly original BF16 ready banks are bound once to the same nominated StorageOwner. Recipes retain shared owners/leases; no per-Recipe bank replication and no complete F32 vocabulary copy.",
+    "math": "Original BF16 embedding Gather enters the original NextN prefix. The actual generated F32 decoder residual+FFN boundary feeds original norm gamma/eps1e-5, explicit BF16 norm output store, fullV BF16 LM projection/F32 scores and stable TopK1.",
+    "state": "Actual greedy IDs publish as pending and enter following embedding Gather. Explicit target bonus/correction remains consumer policy. Existing full state, accepted prefixes, seed provenance, journal/direct catchup and immutable old results stay shared.",
+    "scope": "Original shared roles are checked at the declared F32 generated-decoder boundary; this does not certify the remaining original BF16/FP8 decoder, target/verifier or natural acceptance."
+  },
+  "validation": {
+    "tests": 6,
+    "failures": 0,
+    "errors": 0,
+    "skips": 0,
+    "model_graph_submissions": 160,
+    "new_model_graph_submissions": 56,
+    "full_f64_head_scores_checked": 309760,
+    "actual_prediction_to_pending_checks": 40,
+    "new_cases": [
+      {
+        "attributes": {
+          "name": "CudaOriginalSharedLmPredictsAndFeedsBackAcrossSeedAndCatchup",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_mtp_state_consumer_test.cc",
+          "line": "2209",
+          "status": "run",
+          "result": "completed",
+          "time": "25.04",
+          "timestamp": "2026-10-23T05:47:44.744",
+          "classname": "GlmMtpStateConsumer"
+        },
+        "properties": {
+          "shared_lm_head_provider": "cublasLt",
+          "initialization_submissions": "2",
+          "logical_index_state_bytes": "71052",
+          "actual_submissions": "28",
+          "draft_extend_submissions": "12",
+          "skip_submissions": "8",
+          "catchup_submissions": "4",
+          "policy_submissions": "2",
+          "backend": "ordinary CUDA Graph",
+          "journey": "draft-extend A2054/B2055->last accepted row1/2 actual hidden+full2051IDs->step0 immediately skips entire indexer->accepted nx catchup->actual epoch8 extend->step0 skip; independent accepted-only base execution/direct nx reference",
+          "original_roles": "17",
+          "original_role_bytes": "2625935360",
+          "original_runtime_bank_bytes": "2626199040",
+          "shared_lm_bank_capacity_bytes": "2537562112",
+          "state_output_pool_backing_bound": "220598272",
+          "state_initial_independent_backing_bound": "4287744",
+          "state_metadata_backing_bound": "16384",
+          "state_budget_bytes": "224902400",
+          "peak_state_backing_bytes": "143373644",
+          "state_max_versions": "16",
+          "shared_lm_full_f64_scores_checked": "154880",
+          "shared_lm_greedy_scores_observed": "3097600",
+          "shared_lm_prediction_to_pending_checks": "20",
+          "shared_lm_pending_embedding_checks": "20",
+          "scope": "official GLM-5.3-Flash eb9eb208 original14 prefix/indexer plus untied fullV154880 BF16 embedding/head and original BF16 sharednorm; actual generated residualF32+FFN_F32 add -> originalgamma exactwiden RMS eps1e-5 -> BF16store -> fullV BFloatLinearF32 -> stableTop1 actualI32pending -> next fullV embedding Gather. Shared three banks uploaded once per Context/owner, capacity not measured peak. Firsthead independent fullV F64 bound, subsequent actualTop4/selectedrow dots and allV strictgreedy everyhead, exact BF16stores/embedding/feedback. Acceptance0/1/2, explicit targetbonus, originalseed/skip/journal/directcatchup/epoch8 and atomicStateHead/oldleases remain. Targethidden,remaining MLA/MoE stay generated F32 boundaries; not original BF16 decoder/fullmodel,quality,naturalacceptance or throughput."
+        }
+      },
+      {
+        "attributes": {
+          "name": "CpuOriginalSharedLmPredictsAndFeedsBackAcrossSeedAndCatchup",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_mtp_state_consumer_test.cc",
+          "line": "2254",
+          "status": "run",
+          "result": "completed",
+          "time": "27.452",
+          "timestamp": "2026-10-23T05:48:13.535",
+          "classname": "GlmMtpStateConsumer"
+        },
+        "properties": {
+          "shared_lm_head_provider": "ggml-cpu",
+          "initialization_submissions": "2",
+          "logical_index_state_bytes": "71052",
+          "actual_submissions": "28",
+          "draft_extend_submissions": "12",
+          "skip_submissions": "8",
+          "catchup_submissions": "4",
+          "policy_submissions": "2",
+          "backend": "ordinary CPU Graph",
+          "journey": "draft-extend A2054/B2055->last accepted row1/2 actual hidden+full2051IDs->step0 immediately skips entire indexer->accepted nx catchup->actual epoch8 extend->step0 skip; independent accepted-only base execution/direct nx reference",
+          "original_roles": "17",
+          "original_role_bytes": "2625935360",
+          "original_runtime_bank_bytes": "2626199040",
+          "shared_lm_bank_capacity_bytes": "2537562112",
+          "state_output_pool_backing_bound": "220598272",
+          "state_initial_independent_backing_bound": "4287744",
+          "state_metadata_backing_bound": "16384",
+          "state_budget_bytes": "224902400",
+          "peak_state_backing_bytes": "143373644",
+          "state_max_versions": "16",
+          "shared_lm_full_f64_scores_checked": "154880",
+          "shared_lm_greedy_scores_observed": "3097600",
+          "shared_lm_prediction_to_pending_checks": "20",
+          "shared_lm_pending_embedding_checks": "20",
+          "scope": "official GLM-5.3-Flash eb9eb208 original14 prefix/indexer plus untied fullV154880 BF16 embedding/head and original BF16 sharednorm; actual generated residualF32+FFN_F32 add -> originalgamma exactwiden RMS eps1e-5 -> BF16store -> fullV BFloatLinearF32 -> stableTop1 actualI32pending -> next fullV embedding Gather. Shared three banks uploaded once per Context/owner, capacity not measured peak. Firsthead independent fullV F64 bound, subsequent actualTop4/selectedrow dots and allV strictgreedy everyhead, exact BF16stores/embedding/feedback. Acceptance0/1/2, explicit targetbonus, originalseed/skip/journal/directcatchup/epoch8 and atomicStateHead/oldleases remain. Targethidden,remaining MLA/MoE stay generated F32 boundaries; not original BF16 decoder/fullmodel,quality,naturalacceptance or throughput."
+        }
+      }
+    ],
+    "related_cases": [
+      {
+        "attributes": {
+          "name": "CudaOriginalIndexerPublishesCatchesUpAndReseeds",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_mtp_state_consumer_test.cc",
+          "line": "2215",
+          "status": "run",
+          "result": "completed",
+          "time": "15.766",
+          "timestamp": "2026-10-23T05:49:09.140",
+          "classname": "GlmMtpStateConsumer"
+        },
+        "properties": {
+          "initialization_submissions": "2",
+          "logical_index_state_bytes": "71052",
+          "actual_submissions": "26",
+          "draft_extend_submissions": "11",
+          "skip_submissions": "8",
+          "catchup_submissions": "4",
+          "policy_submissions": "1",
+          "backend": "ordinary CUDA Graph",
+          "journey": "draft-extend A2054/B2055->last accepted row1/2 actual hidden+full2051IDs->step0 immediately skips entire indexer->accepted nx catchup->actual epoch8 extend->step0 skip; independent accepted-only base execution/direct nx reference",
+          "original_roles": "14",
+          "original_role_bytes": "88373248",
+          "original_runtime_bank_bytes": "88636928",
+          "scope": "official HF GLM-5.3-Flash eb9eb208 layer45 original7 input/query+original7 indexer in the existing complete sequential M1 NextN seed/catchup journey; explicit generated target-hidden/embedding and MLA/MoE/head remainder; no primaryGGUF tensor equality,full target,original shared LM,natural acceptance,vendorpage ABI or throughput claim"
+        }
+      },
+      {
+        "attributes": {
+          "name": "CudaDraftExtendLastAcceptedSeedSkipsDecodeStepZero",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_mtp_state_consumer_test.cc",
+          "line": "2245",
+          "status": "run",
+          "result": "completed",
+          "time": "14.789",
+          "timestamp": "2026-10-23T05:49:24.906",
+          "classname": "GlmMtpStateConsumer"
+        },
+        "properties": {
+          "initialization_submissions": "2",
+          "logical_index_state_bytes": "71052",
+          "actual_submissions": "26",
+          "draft_extend_submissions": "11",
+          "skip_submissions": "8",
+          "catchup_submissions": "4",
+          "policy_submissions": "1",
+          "backend": "ordinary CUDA Graph",
+          "journey": "draft-extend A2054/B2055->last accepted row1/2 actual hidden+full2051IDs->step0 immediately skips entire indexer->accepted nx catchup->actual epoch8 extend->step0 skip; independent accepted-only base execution/direct nx reference",
+          "scope": "generated selected Flash primary GGUF/F32 sequential M1 draft-extend seed protocol; generated per-position target-hidden boundary; default UE8M0 logical cache/query and BF16 raw rings; no target43 MLA/indexer composition,batched vendor extend kernel,full target,original weights,vendorpage ABI,natural acceptance or throughput claim"
+        }
+      },
+      {
+        "attributes": {
+          "name": "CpuOriginalIndexerPublishesCatchesUpAndReseeds",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_mtp_state_consumer_test.cc",
+          "line": "2259",
+          "status": "run",
+          "result": "completed",
+          "time": "16.207",
+          "timestamp": "2026-10-23T05:49:39.695",
+          "classname": "GlmMtpStateConsumer"
+        },
+        "properties": {
+          "initialization_submissions": "2",
+          "logical_index_state_bytes": "71052",
+          "actual_submissions": "26",
+          "draft_extend_submissions": "11",
+          "skip_submissions": "8",
+          "catchup_submissions": "4",
+          "policy_submissions": "1",
+          "backend": "ordinary CPU Graph",
+          "journey": "draft-extend A2054/B2055->last accepted row1/2 actual hidden+full2051IDs->step0 immediately skips entire indexer->accepted nx catchup->actual epoch8 extend->step0 skip; independent accepted-only base execution/direct nx reference",
+          "original_roles": "14",
+          "original_role_bytes": "88373248",
+          "original_runtime_bank_bytes": "88636928",
+          "scope": "official HF GLM-5.3-Flash eb9eb208 layer45 original7 input/query+original7 indexer in the existing complete sequential M1 NextN seed/catchup journey; explicit generated target-hidden/embedding and MLA/MoE/head remainder; no primaryGGUF tensor equality,full target,original shared LM,natural acceptance,vendorpage ABI or throughput claim"
+        }
+      },
+      {
+        "attributes": {
+          "name": "CpuDraftExtendLastAcceptedSeedSkipsDecodeStepZero",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_mtp_state_consumer_test.cc",
+          "line": "2284",
+          "status": "run",
+          "result": "completed",
+          "time": "14.962",
+          "timestamp": "2026-10-23T05:49:55.903",
+          "classname": "GlmMtpStateConsumer"
+        },
+        "properties": {
+          "initialization_submissions": "2",
+          "logical_index_state_bytes": "71052",
+          "actual_submissions": "26",
+          "draft_extend_submissions": "11",
+          "skip_submissions": "8",
+          "catchup_submissions": "4",
+          "policy_submissions": "1",
+          "backend": "ordinary CPU Graph",
+          "journey": "draft-extend A2054/B2055->last accepted row1/2 actual hidden+full2051IDs->step0 immediately skips entire indexer->accepted nx catchup->actual epoch8 extend->step0 skip; independent accepted-only base execution/direct nx reference",
+          "scope": "generated selected Flash primary GGUF/F32 sequential M1 draft-extend seed protocol; generated per-position target-hidden boundary; default UE8M0 logical cache/query and BF16 raw rings; no target43 MLA/indexer composition,batched vendor extend kernel,full target,original weights,vendorpage ABI,natural acceptance or throughput claim"
+        }
+      }
+    ],
+    "results": [
+      {
+        "path": ".scratch/glm-shared-lm-20261023/checks2/summary.json",
+        "bytes": 3833,
+        "sha256": "57eb410503c9fe1245cd257148c18c002845cb2ceb5e46e70517d93848e9911b"
+      },
+      {
+        "path": ".scratch/glm-shared-lm-20261023/checks3/summary.json",
+        "bytes": 3833,
+        "sha256": "3d37ae151b25517e99c7c1d5baf215969b956c89f8c328fae6eae95abe131240"
+      },
+      {
+        "path": ".scratch/glm-shared-lm-20261023/checks4/summary.json",
+        "bytes": 7063,
+        "sha256": "c3cd91c4f741888ef49917b1f69ef48f9fda360ade1bff4678bc9d23ce203496"
+      }
+    ],
+    "source_freeze": {
+      "path": ".scratch/glm-shared-lm-20261023/source2/freeze.json",
+      "bytes": 3392,
+      "sha256": "68cdbd36bc2fa5e3eeec089f81bb6220db111de0e57d5f1444f631068ed7f55d"
+    },
+    "linked_inputs": {
+      "path": ".scratch/glm-shared-lm-20261023/tests-link2/link-plan.json",
+      "bytes": 88188,
+      "sha256": "8a571d576a78656f46aa330d99c9a79fe40a731e8c118e01f2eaaf759841798e"
+    },
+    "compiled_host_translation_units": 1,
+    "host_compile_attempts": 2,
+    "prior_attempts": [
+      {
+        "process": {
+          "command": [
+            "C:\\public\\project-hyle\\hyle\\.scratch\\glm-shared-lm-20261023\\tests-link1\\glm-shared-lm-checks.exe",
+            "--gtest_filter=GlmMtpStateConsumer.CudaOriginalSharedLmPredictsAndFeedsBackAcrossSeedAndCatchup",
+            "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\glm-shared-lm-20261023\\checks1\\results.xml"
+          ],
+          "cwd": "C:\\public\\project-hyle\\hyle",
+          "started": 1792705352.6458623,
+          "timeout_seconds": 900,
+          "throughput_evidence": false,
+          "memory_evidence": false,
+          "trace": false,
+          "profiler": false,
+          "pid": 40624,
+          "exit": 1,
+          "timed_out": false,
+          "finished": 1792705374.0773115,
+          "process_wall_seconds": 21.430976700001338
+        },
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-shared-lm-20261023\\tests-link1\\glm-shared-lm-checks.exe",
+          "bytes": 141058560,
+          "sha256": "df328e836eca077fe8e20f3cd3da4923e741ec3734f6b6575c240cf0254d1e60"
+        },
+        "throughput_evidence": false,
+        "physical_memory_evidence": false,
+        "whole_original_model": false,
+        "tests": 1,
+        "failures": 1,
+        "errors": 0,
+        "disabled": 0,
+        "skips": 0,
+        "cases": [
+          {
+            "attributes": {
+              "name": "CudaOriginalSharedLmPredictsAndFeedsBackAcrossSeedAndCatchup",
+              "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_mtp_state_consumer_test.cc",
+              "line": "2164",
+              "status": "run",
+              "result": "completed",
+              "time": "20.328",
+              "timestamp": "2026-10-23T05:42:33.567",
+              "classname": "GlmMtpStateConsumer"
+            },
+            "properties": {
+              "shared_lm_head_provider": "cublasLt"
+            }
+          }
+        ]
+      }
+    ],
+    "prior_attempt_scope": "The first CUDA image passed original prefix/indexer, full vocabulary scores and actual ID feedback, then hit the test fixture default128MiB StateStore backing budget. The final fixture derives its own budget from real retained output-pool backing; product admission/accounting and numerical gates remain unchanged.",
+    "SDK_builds": 0,
+    "native_CPU_builds": 0,
+    "NVCC_builds": 0,
+    "shaders": 0
+  },
+  "limitations": [
+    "Finite Windows CPU/CUDA model journey, not all systems/shapes/codecs.",
+    "Target hidden/taps/verifier and remaining MLA/MoE are still explicit generated boundaries.",
+    "No original full45-layer target, Pro6144 geometry, full quantization coverage, natural acceptance or complete quality claim.",
+    "Declared shared-bank capacities are not measured physical CPU/GPU peak memory.",
+    "No new throughput/loading/memory benchmark; latest AV comparison remains unchanged.",
+    "MTP and the broader goal remain incomplete."
+  ],
+  "remaining": "Remaining original roles, real target taps, actual Pro geometry and confirmed applicable quantization combinations; final related regressions and complete ordinary/MTP performance comparison before images.",
+  "final_image": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-shared-lm-20261023\\tests-link2\\glm-shared-lm-checks.exe",
+    "bytes": 141061120,
+    "sha256": "e588de0518c3f598396710161195d0b867884bac58297aa7b7151d5d1c6b4c90"
+  },
+  "sources": [
+    {
+      "path": "tests/compute_models/glm_shared_vocabulary.h",
+      "bytes": 13861,
+      "sha256": "930b11d95b8826c6a65d18dac34746d67238d0f4ab67a3909a024c182555c525"
+    },
+    {
+      "path": "tests/compute_models/glm_shared_vocabulary_reference.h",
+      "bytes": 14905,
+      "sha256": "f091ff25783e12b28ac6e233fa2aca7c84702b8feefc5a6afaebf9f4ca75e446"
+    },
+    {
+      "path": "tests/compute_models/glm_mtp_state_consumer_test.cc",
+      "bytes": 161855,
+      "sha256": "21bac767e00f5a910cd1c4e390709659688f25465ba76045b7592fb4c9a5f861"
+    },
+    {
+      "path": "docs/developer/current-work.md",
+      "bytes": 24577,
+      "sha256": "8bc0b46a159b3dc3e484c5180464a58b8c63291110080c20222579f131c97f72"
+    },
+    {
+      "path": "docs/implementation/model-operators.md",
+      "bytes": 96537,
+      "sha256": "e15fcb1bfe544f7fd402f713efbb6128550dcc60141440c65c791f877a397322"
+    }
+  ],
+  "source_metadata": [
+    {
+      "path": ".scratch/dspark-original-experts-20261023/review/glm-shared-lm-next.json",
+      "bytes": 10044,
+      "sha256": "7ceb580b3ed92a8ac8b8c8e6e489c7b1306a8e8d4f9fe53ebfb1f4917562b124"
+    },
+    {
+      "path": ".scratch/dspark-natural-journey-20261022/original-glm-input/header.json",
+      "bytes": 93512,
+      "sha256": "e18e7ff23ee5bfbd2cf7bf9c931ad99972b50e7c9184babdff42db46ccaf8ab2"
+    },
+    {
+      "path": ".scratch/dspark-natural-journey-20261022/original-glm-input/acquisition.json",
+      "bytes": 4445,
+      "sha256": "91854aa05031d305f9ecc4152cf2b86c44bb2df5fc5a418ef390aba08acebb8c"
+    },
+    {
+      "path": ".scratch/glm-mtp-carry-20261022/original-glm-q-a/header.json",
+      "bytes": 160856,
+      "sha256": "4727368ca83ad19ddfea0bfcb0fbf4427087b5b0bf648968b863962454e85c15"
+    },
+    {
+      "path": ".scratch/glm-mtp-carry-20261022/original-glm-q-a/acquisition.json",
+      "bytes": 3722,
+      "sha256": "aff6fefe6c5064e3eb3903bc0a90bca073b6fd048293cc48b231e299c171bb76"
+    },
+    {
+      "path": ".scratch/glm-encoded-state-20261023/review/fixed-source/models/deepseek_nextn.py",
+      "bytes": 12508,
+      "sha256": "56cf0d2267400050765fe6c870a2b89068bc7e032a24fd493d31da7ffc52d84f"
+    }
+  ],
+  "performance_tail_sha256": "80b8672315911a74039a14cd137659bc67289273dc9c3707cd267b2d06de2551",
+  "archive": {
+    "path": "docs/evidence/correctness/mtp-glm-shared-lm-2026-10-23.zip",
+    "bytes": 483367,
+    "sha256": "a4e976c9ae26892194c3586503eb02d2a413a3bdfbbe36a0c1787503d33099f6"
+  },
+  "archive_items": 100
+}

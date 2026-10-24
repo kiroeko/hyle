@@ -1,0 +1,172 @@
+{
+  "date": "2026-10-21",
+  "created_utc": "2026-10-21T11:49:59.516875+00:00",
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\qwen-native-retirement-2026-10-21.zip",
+    "bytes": 1384210,
+    "sha256": "b02501c2d5ab4e380bb7fc245d3e63d93294b403feecfaa3c6474447ed150337"
+  },
+  "archive_file_count": 327,
+  "source_identities": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tools\\qwen35_text\\main.cc",
+      "bytes": 127938,
+      "sha256": "440220ee2b4c38575765d3617127f275ca932e2a8e25d37d7e5baf4e463bbdd9"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tools\\qwen35_text\\session_cache.h",
+      "bytes": 8963,
+      "sha256": "b7385d37ac5461d947ff02b5be6de47f608abd0cea319b8e015ec5201923f8d7"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tools\\qwen35_text\\prefix_cache.h",
+      "bytes": 8965,
+      "sha256": "f9f8738135192bb735c3580c78db9caab970f51ad480e0ed788eb33a1659fbc2"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tools\\qwen35_text\\session_state.h",
+      "bytes": 7504,
+      "sha256": "12bec40ae0b60f4402b3243904245d26d096310a507dfd680b077c2d5ffbe8e5"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tools\\qwen35_text\\schedule.h",
+      "bytes": 3917,
+      "sha256": "4fff152976d9c7ae80be67b0ee03f2a08ff99dc6ca9ef7c89baa8130931c2db3"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tools\\qwen35_text\\session_schedule.h",
+      "bytes": 3469,
+      "sha256": "ebe364a2113c3a8cf69b78afdd8aea2b530dd6288a6856d9f37347553cdaacc8"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tools\\qwen35_text\\retirement_probe.cc",
+      "bytes": 11135,
+      "sha256": "2e47688e59c52909b2d7ac4786ef1797baf9f48a5908bb3c441c99458ecdcee0"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tools\\qwen35_text\\CMakeLists.txt",
+      "bytes": 1238,
+      "sha256": "8ca6a45b11d9872d4569990af9353377c169d967cf8d71232225fe1d429a37bc"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\resources.cc",
+      "bytes": 86050,
+      "sha256": "f3149a78b8ea0dfa2372a0be67587026dbd98f2d19763485d05932374e965b5a"
+    }
+  ],
+  "build": {
+    "CXX_compiles": 4,
+    "links": 5,
+    "NVCC_compiles": 0,
+    "SDK_builds": 0,
+    "current_model": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-retirement-20261021\\qwen-link1\\qwen.exe",
+      "bytes": 139700224,
+      "sha256": "2941d9df0192ce2422b1d7b668f029800ce5b59134d11bcebaf3403f2f8f26e0"
+    },
+    "current_ready": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-retirement-20261021\\qwen-ready-attempt1.json",
+      "bytes": 2915,
+      "sha256": "10cba53de122d5fa430c2ed01dd1e6790a8fd3acac7e728a1df7fb6d3f91f8bc"
+    },
+    "method": "Changed host owners only; reused the prior192-input native closure, installed compiler/SDK and hardlinked one existing CPU selector DLL. Probe has a distinct EXCLUDE_FROM_ALL target and is absent from the timed model link."
+  },
+  "prior_evidence": [
+    "docs/evidence/correctness/qwen-prefix-reuse-2026-10-21.json",
+    "docs/evidence/performance/qwen-indexed-preparation-2026-10-21.json"
+  ],
+  "scope": "Actual Windows RTX4070 Qwen text consumer and original CPU/CUDA page append fixtures; not universal serving or other-backend acceptance.",
+  "implementation": [
+    "Original evaluate is prepare -> submit -> finish; one original StepState retains Completion/IO/base/candidate until actual commit or abort. No duplicate math executor.",
+    "Session stop withdraws admission/publication; try_retire polls nonblockingly and retains original typed append/outcome gates. Dropping public Completion or unsupported cancellation does not prove retirement.",
+    "Original SessionCache entry becomes invisible/retiring but remains counted/charged; pin release does not restore visibility. Same or replacement ID cannot use its slot until actual owner collection.",
+    "Serial model candidate admission preserves N committed +1 candidate; physical shared pool stays reserved/charged after directory eviction.",
+    "Invocation result publishes all owned WriteLease records from the fixed caller prefix; appended anonymous records hold reads/writer pointers and need not be rescanned for every output."
+  ],
+  "actual_native_probe": {
+    "final_attempt": 2,
+    "result": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-retirement-20261021\\probe-run2\\result.json",
+      "bytes": 1055,
+      "sha256": "78ae18abd9eb4561579223be3d0d74ec6838030b7a49cd058f1c0c280c062bf7"
+    },
+    "observation": {
+      "status": "PASS",
+      "capacity": 256,
+      "resident_limit": 1,
+      "old_prefix_tokens": 129,
+      "cancelled_candidate_tokens": 130,
+      "directory_reported_bytes": 0,
+      "old_prefix_logical_lease_bytes": 21307392,
+      "managed_bytes_while_native_pending": 42418224,
+      "managed_backing_bytes": 42418224,
+      "collector_calls": 133987,
+      "dropped_live_public_completion": true,
+      "cancel_means_native_preemption": false,
+      "timing_comparison": false
+    },
+    "review": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-retirement-20261021\\async-review\\probe-review.json",
+      "bytes": 7375,
+      "sha256": "516e3966f2ebbc5774eabd4e3304e7f91e1ced2f257699cffe6f54dca02af201"
+    },
+    "assertions": "P128+D1=129 partial tail; actual host callback blocks original CUDA Queue after preparation; submit actual Model Graph; withdraw directory/stop/drop live public Completion; two pending collections retain same candidate, old head, N+1 version count, serial admission and42,418,224 managed bytes. Same/replacement IDs and original dirty page reacquisition reject. Release gate; original typed retirement permits collection; all12 bank pages reacquire uninitialized, candidate expires. Old prefix resumes after releasing external alias; successful commit has exactly one completed version.",
+    "final_route": "Commands, not a captured Graph cancellation experiment. Captured ordinary path has separate normal numerical regression.",
+    "collector_calls_are_diagnostic_poll_count_not_latency": true
+  },
+  "numerical_regression": {
+    "total_actual_decision_vectors": 142,
+    "canonical_single": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-retirement-20261021\\single-run1\\summary.json",
+      "bytes": 11862,
+      "sha256": "e7bbf49c87c0a00567a6fcccefdf63ddad512318d3e82a83ae9588f45db0d29b"
+    },
+    "canonical_multi": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-retirement-20261021\\multi-run1\\summary.json",
+      "bytes": 50231,
+      "sha256": "f9b950182678bce6ed48c12c175388fa5ddfaf8285dcb99f71527a22385f1037"
+    },
+    "prefix": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-retirement-20261021\\async-review\\runtime-comparison.json",
+      "bytes": 60245,
+      "sha256": "f650d1176c30abe40e8b757666c933707688b0e9de2d96007bad66568ea2970d"
+    },
+    "scope": "18single +72four-session eviction/rebuild +52prefix/branch/full-hit/pressure vectors, all byte equal to existing matching-partition baselines. These are hidden/logits, not a full dump of12KV and36state pools or independent model quality acceptance."
+  },
+  "source_review": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-retirement-20261021\\async-review\\source-review.json",
+    "bytes": 5627,
+    "sha256": "bafec66577695f8d3add235c4020730601e9253bfdefbc047e42d440773a1319"
+  },
+  "original_append_fixtures": {
+    "cpu": {
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-retirement-20261021\\cpu-run1\\result.json",
+        "bytes": 1062,
+        "sha256": "ab70c43716e162682b55b03784170e7ad25034e6cda8d609808dc0d120dafe6a"
+      },
+      "stdout": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-retirement-20261021\\cpu-run1\\stdout.log",
+        "bytes": 852,
+        "sha256": "b607cef31b4e5ce4ec8474ffdcc551816fc0b8e51a8ac4f11c1eba23eb08873b"
+      }
+    },
+    "cuda": {
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-retirement-20261021\\cuda-run1\\result.json",
+        "bytes": 1070,
+        "sha256": "50eaf31b369e76d6be248e2e36508704bff66b28b48da1396ab3a5e9d409221d"
+      },
+      "stdout": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-retirement-20261021\\cuda-run1\\stdout.log",
+        "bytes": 165,
+        "sha256": "ab7c128f7cde578599bd0b3923e94e19cd6f939f67de0f3c2019ff57ddf05d81"
+      }
+    }
+  },
+  "remaining": [
+    "Exclusive suffix append needs real committed-prefix/read and uncommitted-suffix/write authority; current whole-page lease contract does not permit a use_count shortcut.",
+    "Full consumers on Linux/macOS/native Apple/Vulkan; native concurrent-throughput scheduling.",
+    "Actual MTP, image encoder/mmproj and remaining selected-model/quantization/architecture work."
+  ]
+}

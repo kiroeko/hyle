@@ -1,0 +1,3581 @@
+{
+  "date": "2026-10-23",
+  "stage": "BM",
+  "goal_complete": false,
+  "conclusion": "All81 pinned DSpark sidecar original roles, plus2 formalBF16 vocabulary roles, now feed the complete three-stage draft/accepted-state journey on CPU and CUDA. Actual256-domain routing consumes original selected MXFP4 experts with finite explicit residency.",
+  "artifact": {
+    "original_roles": 83,
+    "sidecar_original_roles": 81,
+    "sidecar_total_roles": 81,
+    "additional_formal_BF16_vocabulary_roles": 2,
+    "original_payload_bytes": 13008927644,
+    "acquisition": {
+      "repository": "unsloth/DeepSeek-V4-Flash-0731-GGUF",
+      "revision": "fbbb5b93fb787c21338159b0af3318bb3f4d9768",
+      "file": "dspark-DeepSeek-V4-Flash-0731-Q8_0.gguf",
+      "url": "https://huggingface.co/unsloth/DeepSeek-V4-Flash-0731-GGUF/resolve/fbbb5b93fb787c21338159b0af3318bb3f4d9768/dspark-DeepSeek-V4-Flash-0731-Q8_0.gguf",
+      "whole_file_bytes": 10896057440,
+      "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+      "tensor_table_sha256": "44f30d92e3be1e3737b92dddcb737e6d85944b60804a7a7a810a2ac60c79de5f",
+      "tensor_data_offset": 5253152,
+      "source_plan": ".scratch/dspark-original-hc-20261023/review/remaining-original-roles.json",
+      "complete": true,
+      "original_roles": 15,
+      "expected_role_payload_bytes": 10273950720,
+      "whole_file_downloaded": false,
+      "chunk_bytes": 134217728,
+      "stream_buffer_bytes": 1048576,
+      "requests": [
+        {
+          "role": "blk.0.exp_probs_b.bias",
+          "first": 10386571552,
+          "last": 10386572575,
+          "requested_bytes": 1024,
+          "complete": true,
+          "started_utc": "2026-10-22T20:35:12.214819+00:00",
+          "http_status": 206,
+          "bytes": 1024,
+          "content_range": "bytes 10386571552-10386572575/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "sha256": "b52ff88dd23e93db08dbf26ae20c8e3c2bffedf2de87771960a611f5b6c36b43",
+          "finished_utc": "2026-10-22T20:35:13.672923+00:00"
+        },
+        {
+          "role": "blk.1.exp_probs_b.bias",
+          "first": 10585726752,
+          "last": 10585727775,
+          "requested_bytes": 1024,
+          "complete": true,
+          "started_utc": "2026-10-22T20:35:13.682089+00:00",
+          "http_status": 206,
+          "bytes": 1024,
+          "content_range": "bytes 10585726752-10585727775/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "sha256": "a42f1ce50da2d684e8b55ef78e7231311c549cbbdf9326c8b76fabc3eccefe68",
+          "finished_utc": "2026-10-22T20:35:14.937114+00:00"
+        },
+        {
+          "role": "blk.2.exp_probs_b.bias",
+          "first": 10731396896,
+          "last": 10731397919,
+          "requested_bytes": 1024,
+          "complete": true,
+          "started_utc": "2026-10-22T20:35:14.944621+00:00",
+          "http_status": 206,
+          "bytes": 1024,
+          "content_range": "bytes 10731396896-10731397919/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "sha256": "6502c5c0fa2869a8b60d4a8c992b2b2891c01f725c150b054a709c64118f87a3",
+          "finished_utc": "2026-10-22T20:35:16.126779+00:00"
+        },
+        {
+          "role": "blk.0.ffn_gate_inp.weight",
+          "first": 10386572576,
+          "last": 10388669727,
+          "requested_bytes": 2097152,
+          "complete": true,
+          "started_utc": "2026-10-22T20:35:16.135537+00:00",
+          "http_status": 206,
+          "bytes": 2097152,
+          "content_range": "bytes 10386572576-10388669727/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "sha256": "fa79c6106bc42c7823026123b42ddfefc67078e44345fc91a518e84c404fe7c2",
+          "finished_utc": "2026-10-22T20:35:18.572885+00:00"
+        },
+        {
+          "role": "blk.1.ffn_gate_inp.weight",
+          "first": 10585727776,
+          "last": 10587824927,
+          "requested_bytes": 2097152,
+          "complete": true,
+          "started_utc": "2026-10-22T20:35:18.581863+00:00",
+          "http_status": 206,
+          "bytes": 2097152,
+          "content_range": "bytes 10585727776-10587824927/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "sha256": "003af3e6a99adc828e75cb355b520641f7a51cedf412a85ddb404abba3dbc18f",
+          "finished_utc": "2026-10-22T20:35:20.693678+00:00"
+        },
+        {
+          "role": "blk.2.ffn_gate_inp.weight",
+          "first": 10731397920,
+          "last": 10733495071,
+          "requested_bytes": 2097152,
+          "complete": true,
+          "started_utc": "2026-10-22T20:35:20.703036+00:00",
+          "http_status": 206,
+          "bytes": 2097152,
+          "content_range": "bytes 10731397920-10733495071/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "sha256": "3deb9ee8676445f9c61c22fe9cc6a308dd9e8d77e031d0023f7779f62f0094e5",
+          "finished_utc": "2026-10-22T20:35:22.898432+00:00"
+        },
+        {
+          "role": "blk.0.ffn_gate_exps.weight",
+          "first": 5253152,
+          "last": 139470879,
+          "requested_bytes": 134217728,
+          "complete": true,
+          "started_utc": "2026-10-22T20:35:22.907956+00:00",
+          "http_status": 206,
+          "bytes": 134217728,
+          "content_range": "bytes 5253152-139470879/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "sha256": "94aa3cf057cda8f92d75034b8eb5090bbe76aff413e9164a2b1d4541149483a4",
+          "finished_utc": "2026-10-22T20:35:37.400950+00:00"
+        },
+        {
+          "role": "blk.0.ffn_gate_exps.weight",
+          "first": 139470880,
+          "last": 273688607,
+          "requested_bytes": 134217728,
+          "complete": true,
+          "started_utc": "2026-10-22T20:35:37.403171+00:00",
+          "http_status": 206,
+          "bytes": 134217728,
+          "content_range": "bytes 139470880-273688607/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "sha256": "789e5645fe104774a1c093df2fba15276439bea3dcab07e563bcb503cf691185",
+          "finished_utc": "2026-10-22T20:35:51.991844+00:00"
+        },
+        {
+          "role": "blk.0.ffn_gate_exps.weight",
+          "first": 273688608,
+          "last": 407906335,
+          "requested_bytes": 134217728,
+          "complete": true,
+          "started_utc": "2026-10-22T20:35:51.994010+00:00",
+          "http_status": 206,
+          "bytes": 134217728,
+          "content_range": "bytes 273688608-407906335/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "sha256": "1fbedc64473e76344ac619019660386c77a7f41c5ed045b4314ac114a1f29f46",
+          "finished_utc": "2026-10-22T20:36:06.560295+00:00"
+        },
+        {
+          "role": "blk.0.ffn_gate_exps.weight",
+          "first": 407906336,
+          "last": 542124063,
+          "requested_bytes": 134217728,
+          "complete": true,
+          "started_utc": "2026-10-22T20:36:06.562849+00:00",
+          "http_status": 206,
+          "bytes": 134217728,
+          "content_range": "bytes 407906336-542124063/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "sha256": "50f10dac0ed4262b5a55cfbe45c93e239f30d242976d47b01808d78ce861ea2c",
+          "finished_utc": "2026-10-22T20:36:20.819190+00:00"
+        },
+        {
+          "role": "blk.0.ffn_gate_exps.weight",
+          "first": 542124064,
+          "last": 676341791,
+          "requested_bytes": 134217728,
+          "complete": true,
+          "started_utc": "2026-10-22T20:36:20.821285+00:00",
+          "http_status": 206,
+          "bytes": 134217728,
+          "content_range": "bytes 542124064-676341791/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "sha256": "41fcc491ba9c125dd167b6ece0ef0829162fce822ff6ef814a7f434fbbdea878",
+          "finished_utc": "2026-10-22T20:36:35.278848+00:00"
+        },
+        {
+          "role": "blk.0.ffn_gate_exps.weight",
+          "first": 676341792,
+          "last": 810559519,
+          "requested_bytes": 134217728,
+          "complete": false,
+          "started_utc": "2026-10-22T20:36:35.280887+00:00",
+          "error_type": "URLError",
+          "error": "<urlopen error [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1010)>",
+          "finished_utc": "2026-10-22T20:36:35.610745+00:00"
+        },
+        {
+          "role": "blk.0.ffn_gate_exps.weight",
+          "first": 676341792,
+          "last": 810559519,
+          "requested_bytes": 134217728,
+          "complete": true,
+          "started_utc": "2026-10-22T20:36:46.315789+00:00",
+          "http_status": 206,
+          "bytes": 134217728,
+          "content_range": "bytes 676341792-810559519/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "sha256": "ee310e2534e97c8215a7feae8448d0de1de1e5487b191ddff32e91d9e566b200",
+          "finished_utc": "2026-10-22T20:37:00.864297+00:00"
+        },
+        {
+          "role": "blk.0.ffn_gate_exps.weight",
+          "first": 810559520,
+          "last": 944777247,
+          "requested_bytes": 134217728,
+          "complete": true,
+          "started_utc": "2026-10-22T20:37:00.866346+00:00",
+          "http_status": 206,
+          "bytes": 134217728,
+          "content_range": "bytes 810559520-944777247/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "sha256": "80157bae120def08040b6b475649f3859660aedd08fb8feb8f59dc579901ad62",
+          "finished_utc": "2026-10-22T20:37:15.226482+00:00"
+        },
+        {
+          "role": "blk.0.ffn_gate_exps.weight",
+          "first": 944777248,
+          "last": 1078994975,
+          "requested_bytes": 134217728,
+          "complete": true,
+          "started_utc": "2026-10-22T20:37:15.228508+00:00",
+          "http_status": 206,
+          "bytes": 134217728,
+          "content_range": "bytes 944777248-1078994975/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "sha256": "c8242a77e8aeabf49cf35da8d52c73b779ed973db15215cd6247126a446a1041",
+          "finished_utc": "2026-10-22T20:37:29.671253+00:00"
+        },
+        {
+          "role": "blk.0.ffn_gate_exps.weight",
+          "first": 1078994976,
+          "last": 1146103839,
+          "requested_bytes": 67108864,
+          "complete": true,
+          "started_utc": "2026-10-22T20:37:29.674254+00:00",
+          "http_status": 206,
+          "bytes": 67108864,
+          "content_range": "bytes 1078994976-1146103839/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "sha256": "7395cb28834f04532808167793dda7ad4f701588a439ae5ba467925d28207ad1",
+          "finished_utc": "2026-10-22T20:37:37.913599+00:00"
+        },
+        {
+          "role": "blk.0.ffn_down_exps.weight",
+          "first": 1146103840,
+          "last": 1280321567,
+          "requested_bytes": 134217728,
+          "complete": true,
+          "started_utc": "2026-10-22T20:37:38.525020+00:00",
+          "http_status": 206,
+          "bytes": 134217728,
+          "content_range": "bytes 1146103840-1280321567/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "sha256": "bf96a13c4b54fdd327301aa91c06da68a723df793c85e6bd04a80356fc139bac",
+          "finished_utc": "2026-10-22T20:37:53.405732+00:00"
+        },
+        {
+          "role": "blk.0.ffn_down_exps.weight",
+          "first": 1280321568,
+          "last": 1414539295,
+          "requested_bytes": 134217728,
+          "complete": false,
+          "started_utc": "2026-10-22T20:37:53.407841+00:00",
+          "error_type": "URLError",
+          "error": "<urlopen error [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1010)>",
+          "finished_utc": "2026-10-22T20:37:58.972841+00:00"
+        },
+        {
+          "role": "blk.0.ffn_down_exps.weight",
+          "first": 1280321568,
+          "last": 1414539295,
+          "requested_bytes": 134217728,
+          "complete": true,
+          "started_utc": "2026-10-22T20:39:23.273156+00:00",
+          "http_status": 206,
+          "bytes": 134217728,
+          "content_range": "bytes 1280321568-1414539295/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "sha256": "965c7992fd22d98670ca201fc20f621c2d7876ffda04c3c51e5f5b0e118693dd",
+          "finished_utc": "2026-10-22T20:39:37.797350+00:00"
+        },
+        {
+          "role": "blk.0.ffn_down_exps.weight",
+          "first": 1414539296,
+          "last": 1548757023,
+          "requested_bytes": 134217728,
+          "complete": true,
+          "started_utc": "2026-10-22T20:39:37.800405+00:00",
+          "http_status": 206,
+          "bytes": 134217728,
+          "content_range": "bytes 1414539296-1548757023/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "sha256": "1abdf463b405c44e057904976880e5540067270b0970ed1a61595486a30f4de6",
+          "finished_utc": "2026-10-22T20:39:52.157251+00:00"
+        },
+        {
+          "role": "blk.0.ffn_down_exps.weight",
+          "first": 1548757024,
+          "last": 1682974751,
+          "requested_bytes": 134217728,
+          "complete": true,
+          "started_utc": "2026-10-22T20:39:52.159258+00:00",
+          "http_status": 206,
+          "bytes": 134217728,
+          "content_range": "bytes 1548757024-1682974751/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "sha256": "ce9c8cbff6bfb47e736289a35404880a288e4364f10d1052b911f028d1db1f38",
+          "finished_utc": "2026-10-22T20:40:06.728655+00:00"
+        },
+        {
+          "role": "blk.0.ffn_down_exps.weight",
+          "first": 1682974752,
+          "last": 1817192479,
+          "requested_bytes": 134217728,
+          "complete": true,
+          "started_utc": "2026-10-22T20:40:06.731178+00:00",
+          "http_status": 206,
+          "bytes": 134217728,
+          "content_range": "bytes 1682974752-1817192479/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "sha256": "898abbd08fda473fb0b0096bb0f014a409e39aa22db1fe784f9247adb1e34826",
+          "finished_utc": "2026-10-22T20:40:21.199866+00:00"
+        },
+        {
+          "role": "blk.0.ffn_down_exps.weight",
+          "first": 1817192480,
+          "last": 1951410207,
+          "requested_bytes": 134217728,
+          "complete": true,
+          "started_utc": "2026-10-22T20:40:21.202623+00:00",
+          "http_status": 206,
+          "bytes": 134217728,
+          "content_range": "bytes 1817192480-1951410207/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "sha256": "9356c5af8f95642626cedcccd97996b1c41fb05edd6fff0c95e0b0d3f11a5d72",
+          "finished_utc": "2026-10-22T20:40:35.533889+00:00"
+        },
+        {
+          "role": "blk.0.ffn_down_exps.weight",
+          "first": 1951410208,
+          "last": 2085627935,
+          "requested_bytes": 134217728,
+          "complete": true,
+          "started_utc": "2026-10-22T20:40:35.535991+00:00",
+          "http_status": 206,
+          "bytes": 134217728,
+          "content_range": "bytes 1951410208-2085627935/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "sha256": "f8c93ea0e748cf5e9a0823a5c9f37eadf4c7969e728ed46edc8ee20fbf274b97",
+          "finished_utc": "2026-10-22T20:40:49.949520+00:00"
+        },
+        {
+          "role": "blk.0.ffn_down_exps.weight",
+          "first": 2085627936,
+          "last": 2219845663,
+          "requested_bytes": 134217728,
+          "complete": true,
+          "started_utc": "2026-10-22T20:40:49.951520+00:00",
+          "http_status": 206,
+          "bytes": 134217728,
+          "content_range": "bytes 2085627936-2219845663/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "sha256": "b773a30e5fb366c53ab42eff377dd10a8457cd616bdb9f060afb38c65fcae752",
+          "finished_utc": "2026-10-22T20:41:04.264439+00:00"
+        },
+        {
+          "role": "blk.0.ffn_down_exps.weight",
+          "first": 2219845664,
+          "last": 2286954527,
+          "requested_bytes": 67108864,
+          "complete": true,
+          "started_utc": "2026-10-22T20:41:04.267037+00:00",
+          "http_status": 206,
+          "bytes": 67108864,
+          "content_range": "bytes 2219845664-2286954527/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "sha256": "f85658234400871ebb163840b71050c40972cb430795e2621586e62f6da9a740",
+          "finished_utc": "2026-10-22T20:41:12.475132+00:00"
+        },
+        {
+          "role": "blk.0.ffn_up_exps.weight",
+          "first": 2286954528,
+          "last": 2421172255,
+          "requested_bytes": 134217728,
+          "complete": true,
+          "started_utc": "2026-10-22T20:41:13.086276+00:00",
+          "http_status": 206,
+          "bytes": 134217728,
+          "content_range": "bytes 2286954528-2421172255/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "sha256": "b69f9b96daee5adb689b640c6a520d98148e1d10efd9917d5287500e1606f226",
+          "finished_utc": "2026-10-22T20:41:27.503482+00:00"
+        },
+        {
+          "role": "blk.0.ffn_up_exps.weight",
+          "first": 2421172256,
+          "last": 2555389983,
+          "requested_bytes": 134217728,
+          "complete": true,
+          "started_utc": "2026-10-22T20:41:27.505483+00:00",
+          "http_status": 206,
+          "bytes": 134217728,
+          "content_range": "bytes 2421172256-2555389983/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "sha256": "c74f411ba6f1e5e0de14e4a8409d9521c74d97d04d4a05aa0946b437b6dfb87f",
+          "finished_utc": "2026-10-22T20:41:42.011816+00:00"
+        },
+        {
+          "role": "blk.0.ffn_up_exps.weight",
+          "first": 2555389984,
+          "last": 2689607711,
+          "requested_bytes": 134217728,
+          "complete": true,
+          "started_utc": "2026-10-22T20:41:42.014465+00:00",
+          "http_status": 206,
+          "bytes": 134217728,
+          "content_range": "bytes 2555389984-2689607711/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "sha256": "7fffe606d6749d0d410c534c64fa68a442d115c131aac881a15dd4c46a463050",
+          "finished_utc": "2026-10-22T20:41:56.410503+00:00"
+        },
+        {
+          "role": "blk.0.ffn_up_exps.weight",
+          "first": 2689607712,
+          "last": 2823825439,
+          "requested_bytes": 134217728,
+          "complete": true,
+          "started_utc": "2026-10-22T20:41:56.412702+00:00",
+          "http_status": 206,
+          "bytes": 134217728,
+          "content_range": "bytes 2689607712-2823825439/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "sha256": "125b5d192ef08fa89f291f702ebb899f88fa7b86b521356c333853754e21f927",
+          "finished_utc": "2026-10-22T20:42:10.930352+00:00"
+        },
+        {
+          "role": "blk.0.ffn_up_exps.weight",
+          "first": 2823825440,
+          "last": 2958043167,
+          "requested_bytes": 134217728,
+          "complete": true,
+          "started_utc": "2026-10-22T20:42:10.932399+00:00",
+          "http_status": 206,
+          "bytes": 134217728,
+          "content_range": "bytes 2823825440-2958043167/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "sha256": "d2c1fd49c1faa6d6b3e3f900a89667e3ae918514fb9e1204966a35f22fa1ba6d",
+          "finished_utc": "2026-10-22T20:42:24.930983+00:00"
+        },
+        {
+          "role": "blk.0.ffn_up_exps.weight",
+          "first": 2958043168,
+          "last": 3092260895,
+          "requested_bytes": 134217728,
+          "complete": true,
+          "started_utc": "2026-10-22T20:42:24.933038+00:00",
+          "http_status": 206,
+          "bytes": 134217728,
+          "content_range": "bytes 2958043168-3092260895/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "sha256": "2034722639496a37990b2dc93d368ec06f314a6bcb22f43acef21382c4e9a21e",
+          "finished_utc": "2026-10-22T20:42:39.328303+00:00"
+        },
+        {
+          "role": "blk.0.ffn_up_exps.weight",
+          "first": 3092260896,
+          "last": 3226478623,
+          "requested_bytes": 134217728,
+          "complete": true,
+          "started_utc": "2026-10-22T20:42:39.330852+00:00",
+          "http_status": 206,
+          "bytes": 134217728,
+          "content_range": "bytes 3092260896-3226478623/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "sha256": "a52f96eee9b7dd06d8885c8afe64470309d6f2daa25aacac4079f47f1d3b1035",
+          "finished_utc": "2026-10-22T20:42:54.640703+00:00"
+        },
+        {
+          "role": "blk.0.ffn_up_exps.weight",
+          "first": 3226478624,
+          "last": 3360696351,
+          "requested_bytes": 134217728,
+          "complete": true,
+          "started_utc": "2026-10-22T20:42:54.642703+00:00",
+          "http_status": 206,
+          "bytes": 134217728,
+          "content_range": "bytes 3226478624-3360696351/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "sha256": "d843162186b9c0ea7585d7a9458caee974d191654b1ff19f0bd46c348c3dc529",
+          "finished_utc": "2026-10-22T20:43:09.275397+00:00"
+        },
+        {
+          "role": "blk.0.ffn_up_exps.weight",
+          "first": 3360696352,
+          "last": 3427805215,
+          "requested_bytes": 67108864,
+          "complete": true,
+          "started_utc": "2026-10-22T20:43:09.277941+00:00",
+          "http_status": 206,
+          "bytes": 67108864,
+          "content_range": "bytes 3360696352-3427805215/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "sha256": "2d25b2bb74d873f9943c70d1d439508770eef6d39a43da54c44493986c66fb73",
+          "finished_utc": "2026-10-22T20:43:17.550274+00:00"
+        },
+        {
+          "role": "blk.1.ffn_gate_exps.weight",
+          "first": 3427805216,
+          "last": 3562022943,
+          "requested_bytes": 134217728,
+          "complete": true,
+          "started_utc": "2026-10-22T20:43:18.159975+00:00",
+          "http_status": 206,
+          "bytes": 134217728,
+          "content_range": "bytes 3427805216-3562022943/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "sha256": "6cf646ef030c0b96b4770db8250c9f61fdf96a4cf008efafdfb26551ea81ce9b",
+          "finished_utc": "2026-10-22T20:43:32.646287+00:00"
+        },
+        {
+          "role": "blk.1.ffn_gate_exps.weight",
+          "first": 3562022944,
+          "last": 3696240671,
+          "requested_bytes": 134217728,
+          "complete": true,
+          "started_utc": "2026-10-22T20:43:32.648863+00:00",
+          "http_status": 206,
+          "bytes": 134217728,
+          "content_range": "bytes 3562022944-3696240671/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "sha256": "54224b55df917e49fe5f80122d811cdf5eef9a631f3571399323877d834161f0",
+          "finished_utc": "2026-10-22T20:43:47.045064+00:00"
+        },
+        {
+          "role": "blk.1.ffn_gate_exps.weight",
+          "first": 3696240672,
+          "last": 3830458399,
+          "requested_bytes": 134217728,
+          "complete": true,
+          "started_utc": "2026-10-22T20:43:47.047715+00:00",
+          "http_status": 206,
+          "bytes": 134217728,
+          "content_range": "bytes 3696240672-3830458399/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "sha256": "ec7bfa2cda252251904b107b1b212b9ef6961e7251ccd43ed8fa82095b5aa2c6",
+          "finished_utc": "2026-10-22T20:44:01.793511+00:00"
+        },
+        {
+          "role": "blk.1.ffn_gate_exps.weight",
+          "first": 3830458400,
+          "last": 3964676127,
+          "requested_bytes": 134217728,
+          "complete": true,
+          "started_utc": "2026-10-22T20:44:01.795983+00:00",
+          "http_status": 206,
+          "bytes": 134217728,
+          "content_range": "bytes 3830458400-3964676127/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "sha256": "f26ce26dd29e6b9cd59d79e508ed202f13873f3b9c8ab90bc8c184b1ca9d5d4f",
+          "finished_utc": "2026-10-22T20:44:15.983896+00:00"
+        },
+        {
+          "role": "blk.1.ffn_gate_exps.weight",
+          "first": 3964676128,
+          "last": 4098893855,
+          "requested_bytes": 134217728,
+          "complete": true,
+          "started_utc": "2026-10-22T20:44:15.986446+00:00",
+          "http_status": 206,
+          "bytes": 134217728,
+          "content_range": "bytes 3964676128-4098893855/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "sha256": "005f68e8c3425590ef4e8e84401310f0514e01d8385988f4c3b6650946c3fd8c",
+          "finished_utc": "2026-10-22T20:44:30.381877+00:00"
+        },
+        {
+          "role": "blk.1.ffn_gate_exps.weight",
+          "first": 4098893856,
+          "last": 4233111583,
+          "requested_bytes": 134217728,
+          "complete": true,
+          "started_utc": "2026-10-22T20:44:30.384601+00:00",
+          "http_status": 206,
+          "bytes": 134217728,
+          "content_range": "bytes 4098893856-4233111583/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "sha256": "cab2cdc62c719e6fdce379345b435f3ac0b11b69e3b89b8db08a3823f208a980",
+          "finished_utc": "2026-10-22T20:44:44.812317+00:00"
+        },
+        {
+          "role": "blk.1.ffn_gate_exps.weight",
+          "first": 4233111584,
+          "last": 4367329311,
+          "requested_bytes": 134217728,
+          "complete": true,
+          "started_utc": "2026-10-22T20:44:44.814902+00:00",
+          "http_status": 206,
+          "bytes": 134217728,
+          "content_range": "bytes 4233111584-4367329311/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "sha256": "021796200c71b47a1e9924ecd225acdfeddc80eac33479835b7c30e53a18647f",
+          "finished_utc": "2026-10-22T20:44:59.383940+00:00"
+        },
+        {
+          "role": "blk.1.ffn_gate_exps.weight",
+          "first": 4367329312,
+          "last": 4501547039,
+          "requested_bytes": 134217728,
+          "complete": true,
+          "started_utc": "2026-10-22T20:44:59.387533+00:00",
+          "http_status": 206,
+          "bytes": 134217728,
+          "content_range": "bytes 4367329312-4501547039/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "sha256": "809a0a8e6d19a951e697e9e0ead3e23993b43c0bb28c8762422c37d3bb12a24d",
+          "finished_utc": "2026-10-22T20:45:14.199380+00:00"
+        },
+        {
+          "role": "blk.1.ffn_gate_exps.weight",
+          "first": 4501547040,
+          "last": 4568655903,
+          "requested_bytes": 67108864,
+          "complete": true,
+          "started_utc": "2026-10-22T20:45:14.202015+00:00",
+          "http_status": 206,
+          "bytes": 67108864,
+          "content_range": "bytes 4501547040-4568655903/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "sha256": "b5c0466f48c7ef3be94a3031e6049996b718e529c657bb849eb0e0e5ff656190",
+          "finished_utc": "2026-10-22T20:45:22.507830+00:00"
+        },
+        {
+          "role": "blk.1.ffn_down_exps.weight",
+          "first": 4568655904,
+          "last": 4702873631,
+          "requested_bytes": 134217728,
+          "complete": true,
+          "started_utc": "2026-10-22T20:45:23.111239+00:00",
+          "http_status": 206,
+          "bytes": 134217728,
+          "content_range": "bytes 4568655904-4702873631/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "sha256": "c46e5818930deb9929a308438d0302eed5d45107e09aa41fe53df12e67d978a4",
+          "finished_utc": "2026-10-22T20:45:37.847037+00:00"
+        },
+        {
+          "role": "blk.1.ffn_down_exps.weight",
+          "first": 4702873632,
+          "last": 4837091359,
+          "requested_bytes": 134217728,
+          "complete": true,
+          "started_utc": "2026-10-22T20:45:37.850073+00:00",
+          "http_status": 206,
+          "bytes": 134217728,
+          "content_range": "bytes 4702873632-4837091359/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "sha256": "59f7fa3190df70438c44db7d07aeec40eba9ea01461385c6492a5c62a80bc6c4",
+          "finished_utc": "2026-10-22T20:45:52.398761+00:00"
+        },
+        {
+          "role": "blk.1.ffn_down_exps.weight",
+          "first": 4837091360,
+          "last": 4971309087,
+          "requested_bytes": 134217728,
+          "complete": true,
+          "started_utc": "2026-10-22T20:45:52.401366+00:00",
+          "http_status": 206,
+          "bytes": 134217728,
+          "content_range": "bytes 4837091360-4971309087/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "sha256": "66c383a452d2d79635d52c9c924cf58d87caef8242da924c31c2b0b6fe030dd8",
+          "finished_utc": "2026-10-22T20:46:06.927075+00:00"
+        },
+        {
+          "role": "blk.1.ffn_down_exps.weight",
+          "first": 4971309088,
+          "last": 5105526815,
+          "requested_bytes": 134217728,
+          "complete": true,
+          "started_utc": "2026-10-22T20:46:06.930136+00:00",
+          "http_status": 206,
+          "bytes": 134217728,
+          "content_range": "bytes 4971309088-5105526815/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "sha256": "0a8abccbcd1c57058b48711ea054f6224e774d9fa0e292a4e0ee02077d19ef82",
+          "finished_utc": "2026-10-22T20:46:21.403946+00:00"
+        },
+        {
+          "role": "blk.1.ffn_down_exps.weight",
+          "first": 5105526816,
+          "last": 5239744543,
+          "requested_bytes": 134217728,
+          "complete": true,
+          "started_utc": "2026-10-22T20:46:21.405879+00:00",
+          "http_status": 206,
+          "bytes": 134217728,
+          "content_range": "bytes 5105526816-5239744543/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "sha256": "da3edad5fd21ed5443194be2d0f129164d6cc64617033cc39c28845be95df03c",
+          "finished_utc": "2026-10-22T20:46:35.882179+00:00"
+        },
+        {
+          "role": "blk.1.ffn_down_exps.weight",
+          "first": 5239744544,
+          "last": 5373962271,
+          "requested_bytes": 134217728,
+          "complete": true,
+          "started_utc": "2026-10-22T20:46:35.884745+00:00",
+          "http_status": 206,
+          "bytes": 134217728,
+          "content_range": "bytes 5239744544-5373962271/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "sha256": "4497d0f8c26be2354fea451301b20c429a7028bbac2d829575730c4778fc1f1f",
+          "finished_utc": "2026-10-22T20:46:50.421716+00:00"
+        },
+        {
+          "role": "blk.1.ffn_down_exps.weight",
+          "first": 5373962272,
+          "last": 5508179999,
+          "requested_bytes": 134217728,
+          "complete": true,
+          "started_utc": "2026-10-22T20:46:50.424801+00:00",
+          "http_status": 206,
+          "bytes": 134217728,
+          "content_range": "bytes 5373962272-5508179999/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "sha256": "18a94c7f14366e1d1f6d7f59e1821d044e904c9592434f22cb0320f33d6a3d72",
+          "finished_utc": "2026-10-22T20:47:05.195767+00:00"
+        },
+        {
+          "role": "blk.1.ffn_down_exps.weight",
+          "first": 5508180000,
+          "last": 5642397727,
+          "requested_bytes": 134217728,
+          "complete": true,
+          "started_utc": "2026-10-22T20:47:05.198191+00:00",
+          "http_status": 206,
+          "bytes": 134217728,
+          "content_range": "bytes 5508180000-5642397727/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "sha256": "adf093fa7f57795d3f3925cdd5f68e17176155cfff27b46db4096c013e71d814",
+          "finished_utc": "2026-10-22T20:47:19.451534+00:00"
+        },
+        {
+          "role": "blk.1.ffn_down_exps.weight",
+          "first": 5642397728,
+          "last": 5709506591,
+          "requested_bytes": 67108864,
+          "complete": true,
+          "started_utc": "2026-10-22T20:47:19.453888+00:00",
+          "http_status": 206,
+          "bytes": 67108864,
+          "content_range": "bytes 5642397728-5709506591/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "sha256": "559ce2309a9a498023e645b6186db2c1a39ff53a1555d7ec7714b6495acc034f",
+          "finished_utc": "2026-10-22T20:47:27.804300+00:00"
+        },
+        {
+          "role": "blk.1.ffn_up_exps.weight",
+          "first": 5709506592,
+          "last": 5843724319,
+          "requested_bytes": 134217728,
+          "complete": true,
+          "started_utc": "2026-10-22T20:47:28.388789+00:00",
+          "http_status": 206,
+          "bytes": 134217728,
+          "content_range": "bytes 5709506592-5843724319/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "sha256": "8bca1f6d9008632a6c83401461ecb5625126f08884c713decf3edd1049eb67b4",
+          "finished_utc": "2026-10-22T20:47:42.786413+00:00"
+        },
+        {
+          "role": "blk.1.ffn_up_exps.weight",
+          "first": 5843724320,
+          "last": 5977942047,
+          "requested_bytes": 134217728,
+          "complete": true,
+          "started_utc": "2026-10-22T20:47:42.788966+00:00",
+          "http_status": 206,
+          "bytes": 134217728,
+          "content_range": "bytes 5843724320-5977942047/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "sha256": "cf04cf9cad6427a7f9d3cc5b8bcbc30ac9eb29a7ee7304f7b06bcc672d7755f0",
+          "finished_utc": "2026-10-22T20:47:57.290052+00:00"
+        },
+        {
+          "role": "blk.1.ffn_up_exps.weight",
+          "first": 5977942048,
+          "last": 6112159775,
+          "requested_bytes": 134217728,
+          "complete": true,
+          "started_utc": "2026-10-22T20:47:57.293055+00:00",
+          "http_status": 206,
+          "bytes": 134217728,
+          "content_range": "bytes 5977942048-6112159775/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "sha256": "daa8f7cb647e0c8a29e95b3dc60879e48a5e9d9b4999cd445010d1b5b12f5ef1",
+          "finished_utc": "2026-10-22T20:48:11.813637+00:00"
+        },
+        {
+          "role": "blk.1.ffn_up_exps.weight",
+          "first": 6112159776,
+          "last": 6246377503,
+          "requested_bytes": 134217728,
+          "complete": true,
+          "started_utc": "2026-10-22T20:48:11.817146+00:00",
+          "http_status": 206,
+          "bytes": 134217728,
+          "content_range": "bytes 6112159776-6246377503/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "sha256": "8825f84f552cfc9dc1af49e7c5f47944ddb2fe1abf4e57f8e0e2ee20959d5628",
+          "finished_utc": "2026-10-22T20:48:26.237606+00:00"
+        },
+        {
+          "role": "blk.1.ffn_up_exps.weight",
+          "first": 6246377504,
+          "last": 6380595231,
+          "requested_bytes": 134217728,
+          "complete": true,
+          "started_utc": "2026-10-22T20:48:26.239606+00:00",
+          "http_status": 206,
+          "bytes": 134217728,
+          "content_range": "bytes 6246377504-6380595231/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "sha256": "af656fe4b7a3c41479cd59bb261a67e29a99570cc042b14f3655cb969e01c7c3",
+          "finished_utc": "2026-10-22T20:48:40.821447+00:00"
+        },
+        {
+          "role": "blk.1.ffn_up_exps.weight",
+          "first": 6380595232,
+          "last": 6514812959,
+          "requested_bytes": 134217728,
+          "complete": true,
+          "started_utc": "2026-10-22T20:48:40.824006+00:00",
+          "http_status": 206,
+          "bytes": 134217728,
+          "content_range": "bytes 6380595232-6514812959/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "sha256": "4696d94f229f71847eef42648de039ce87b8e4c5d485a168d2469a8bfaa896d6",
+          "finished_utc": "2026-10-22T20:48:55.900208+00:00"
+        },
+        {
+          "role": "blk.1.ffn_up_exps.weight",
+          "first": 6514812960,
+          "last": 6649030687,
+          "requested_bytes": 134217728,
+          "complete": true,
+          "started_utc": "2026-10-22T20:48:55.902208+00:00",
+          "http_status": 206,
+          "bytes": 134217728,
+          "content_range": "bytes 6514812960-6649030687/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "sha256": "e44e2072098edcb4aebc7238960e1d8142990881a3b00b54820c2236e80ca0c2",
+          "finished_utc": "2026-10-22T20:49:10.268211+00:00"
+        },
+        {
+          "role": "blk.1.ffn_up_exps.weight",
+          "first": 6649030688,
+          "last": 6783248415,
+          "requested_bytes": 134217728,
+          "complete": true,
+          "started_utc": "2026-10-22T20:49:10.270651+00:00",
+          "http_status": 206,
+          "bytes": 134217728,
+          "content_range": "bytes 6649030688-6783248415/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "sha256": "3832b670025ef30e7d7fc24ad0bb96b778006ce9fa1d00aee58e54e2428a6bbf",
+          "finished_utc": "2026-10-22T20:49:24.852302+00:00"
+        },
+        {
+          "role": "blk.1.ffn_up_exps.weight",
+          "first": 6783248416,
+          "last": 6850357279,
+          "requested_bytes": 67108864,
+          "complete": true,
+          "started_utc": "2026-10-22T20:49:24.854482+00:00",
+          "http_status": 206,
+          "bytes": 67108864,
+          "content_range": "bytes 6783248416-6850357279/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "sha256": "ce05ea57fd9f31191e274ed01ec05040629442aee50c642821dc599dc4e551cf",
+          "finished_utc": "2026-10-22T20:49:32.924552+00:00"
+        },
+        {
+          "role": "blk.2.ffn_gate_exps.weight",
+          "first": 6850357280,
+          "last": 6984575007,
+          "requested_bytes": 134217728,
+          "complete": true,
+          "started_utc": "2026-10-22T20:49:33.522514+00:00",
+          "http_status": 206,
+          "bytes": 134217728,
+          "content_range": "bytes 6850357280-6984575007/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "sha256": "1715d06d75befb619c88bbdac5b3a8d4c0f8e5b75ce0195953aabc578db5dc2c",
+          "finished_utc": "2026-10-22T20:49:47.856108+00:00"
+        },
+        {
+          "role": "blk.2.ffn_gate_exps.weight",
+          "first": 6984575008,
+          "last": 7118792735,
+          "requested_bytes": 134217728,
+          "complete": true,
+          "started_utc": "2026-10-22T20:49:47.858755+00:00",
+          "http_status": 206,
+          "bytes": 134217728,
+          "content_range": "bytes 6984575008-7118792735/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "sha256": "a221127750c2f22e9764109beb0fd8f0a6cbb8944724d77a40e49eb915c707eb",
+          "finished_utc": "2026-10-22T20:50:01.951531+00:00"
+        },
+        {
+          "role": "blk.2.ffn_gate_exps.weight",
+          "first": 7118792736,
+          "last": 7253010463,
+          "requested_bytes": 134217728,
+          "complete": true,
+          "started_utc": "2026-10-22T20:50:01.954098+00:00",
+          "http_status": 206,
+          "bytes": 134217728,
+          "content_range": "bytes 7118792736-7253010463/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "sha256": "5f32613da13f6df4c5ad3517cd19f50cfaedb0846a5b83df9ae92ad994b5ec63",
+          "finished_utc": "2026-10-22T20:50:18.048763+00:00"
+        },
+        {
+          "role": "blk.2.ffn_gate_exps.weight",
+          "first": 7253010464,
+          "last": 7387228191,
+          "requested_bytes": 134217728,
+          "complete": true,
+          "started_utc": "2026-10-22T20:50:18.051427+00:00",
+          "transport_errors": [
+            {
+              "error_type": "URLError",
+              "error": "<urlopen error [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1010)>",
+              "utc": "2026-10-22T20:50:19.003819+00:00"
+            }
+          ],
+          "http_status": 206,
+          "bytes": 134217728,
+          "content_range": "bytes 7253010464-7387228191/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "sha256": "4c8b18d0ebbf5174a21ebfec927bd1b25c339e5b368076786d91c8b3d82fcf14",
+          "finished_utc": "2026-10-22T20:50:35.252788+00:00"
+        },
+        {
+          "role": "blk.2.ffn_gate_exps.weight",
+          "first": 7387228192,
+          "last": 7521445919,
+          "requested_bytes": 134217728,
+          "complete": true,
+          "started_utc": "2026-10-22T20:50:35.255788+00:00",
+          "http_status": 206,
+          "bytes": 134217728,
+          "content_range": "bytes 7387228192-7521445919/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "sha256": "131f890a27146d8cab32407a5a5ea43930e66e77e9d51d0f09b38477b7c2cb56",
+          "finished_utc": "2026-10-22T20:50:49.627550+00:00"
+        },
+        {
+          "role": "blk.2.ffn_gate_exps.weight",
+          "first": 7521445920,
+          "last": 7655663647,
+          "requested_bytes": 134217728,
+          "complete": true,
+          "started_utc": "2026-10-22T20:50:49.630549+00:00",
+          "http_status": 206,
+          "bytes": 134217728,
+          "content_range": "bytes 7521445920-7655663647/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "sha256": "6c54d856b3f750dad8bf7387986252ad047b9fdb810c17372fff03bca661efe1",
+          "finished_utc": "2026-10-22T20:51:04.130123+00:00"
+        },
+        {
+          "role": "blk.2.ffn_gate_exps.weight",
+          "first": 7655663648,
+          "last": 7789881375,
+          "requested_bytes": 134217728,
+          "complete": true,
+          "started_utc": "2026-10-22T20:51:04.133124+00:00",
+          "http_status": 206,
+          "bytes": 134217728,
+          "content_range": "bytes 7655663648-7789881375/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "sha256": "0d8defc209d05161b2ef2412d416ed2dfb648f126f24900c467d6a716cd11b88",
+          "finished_utc": "2026-10-22T20:51:18.575874+00:00"
+        },
+        {
+          "role": "blk.2.ffn_gate_exps.weight",
+          "first": 7789881376,
+          "last": 7924099103,
+          "requested_bytes": 134217728,
+          "complete": true,
+          "started_utc": "2026-10-22T20:51:18.578810+00:00",
+          "http_status": 206,
+          "bytes": 134217728,
+          "content_range": "bytes 7789881376-7924099103/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "sha256": "d255f67c581737de6a839862b792e48bd0bf5cf74ecd66ecb6ad4461cc7c2bc7",
+          "finished_utc": "2026-10-22T20:51:32.812627+00:00"
+        },
+        {
+          "role": "blk.2.ffn_gate_exps.weight",
+          "first": 7924099104,
+          "last": 7991207967,
+          "requested_bytes": 67108864,
+          "complete": true,
+          "started_utc": "2026-10-22T20:51:32.815636+00:00",
+          "http_status": 206,
+          "bytes": 67108864,
+          "content_range": "bytes 7924099104-7991207967/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "sha256": "011e7c7d8ee13fdd65a3653acdcab130ad80d49a404fbd702471a087c6135ec8",
+          "finished_utc": "2026-10-22T20:51:41.120106+00:00"
+        },
+        {
+          "role": "blk.2.ffn_down_exps.weight",
+          "first": 7991207968,
+          "last": 8125425695,
+          "requested_bytes": 134217728,
+          "complete": true,
+          "started_utc": "2026-10-22T20:51:41.708381+00:00",
+          "http_status": 206,
+          "bytes": 134217728,
+          "content_range": "bytes 7991207968-8125425695/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "sha256": "320f24f73c37b20539641e968cc7a20425ddaf9c1f4d0034cfe0104e72895aa6",
+          "finished_utc": "2026-10-22T20:51:56.285230+00:00"
+        },
+        {
+          "role": "blk.2.ffn_down_exps.weight",
+          "first": 8125425696,
+          "last": 8259643423,
+          "requested_bytes": 134217728,
+          "complete": true,
+          "started_utc": "2026-10-22T20:51:56.287790+00:00",
+          "http_status": 206,
+          "bytes": 134217728,
+          "content_range": "bytes 8125425696-8259643423/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "sha256": "3adbe8cf59faf623f50fb37308c1c135736b81559799dd0923827b962e3e8e0d",
+          "finished_utc": "2026-10-22T20:52:11.198213+00:00"
+        },
+        {
+          "role": "blk.2.ffn_down_exps.weight",
+          "first": 8259643424,
+          "last": 8393861151,
+          "requested_bytes": 134217728,
+          "complete": true,
+          "started_utc": "2026-10-22T20:52:11.201263+00:00",
+          "http_status": 206,
+          "bytes": 134217728,
+          "content_range": "bytes 8259643424-8393861151/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "sha256": "b18020c2e1d926d27127a6775c90bb135c1c36c464648d4f01531e95a68c8f53",
+          "finished_utc": "2026-10-22T20:52:25.568362+00:00"
+        },
+        {
+          "role": "blk.2.ffn_down_exps.weight",
+          "first": 8393861152,
+          "last": 8528078879,
+          "requested_bytes": 134217728,
+          "complete": true,
+          "started_utc": "2026-10-22T20:52:25.571582+00:00",
+          "http_status": 206,
+          "bytes": 134217728,
+          "content_range": "bytes 8393861152-8528078879/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "sha256": "aeef64984faddef8fca7f63a0653b6d18b55351ba0a4101d34a335208b3375cd",
+          "finished_utc": "2026-10-22T20:52:40.426519+00:00"
+        },
+        {
+          "role": "blk.2.ffn_down_exps.weight",
+          "first": 8528078880,
+          "last": 8662296607,
+          "requested_bytes": 134217728,
+          "complete": true,
+          "started_utc": "2026-10-22T20:52:40.429587+00:00",
+          "http_status": 206,
+          "bytes": 134217728,
+          "content_range": "bytes 8528078880-8662296607/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "sha256": "79c947127c5ecb1d0fefa43c554afe1b75daf51e2c4c3aaeb0e1453fea3a50c8",
+          "finished_utc": "2026-10-22T20:52:55.190871+00:00"
+        },
+        {
+          "role": "blk.2.ffn_down_exps.weight",
+          "first": 8662296608,
+          "last": 8796514335,
+          "requested_bytes": 134217728,
+          "complete": true,
+          "started_utc": "2026-10-22T20:52:55.193987+00:00",
+          "http_status": 206,
+          "bytes": 134217728,
+          "content_range": "bytes 8662296608-8796514335/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "sha256": "bd498626821c4e9eb9779f6f729a4797c50c061f7a5cc736bbf38e75f38105e3",
+          "finished_utc": "2026-10-22T20:53:09.809047+00:00"
+        },
+        {
+          "role": "blk.2.ffn_down_exps.weight",
+          "first": 8796514336,
+          "last": 8930732063,
+          "requested_bytes": 134217728,
+          "complete": true,
+          "started_utc": "2026-10-22T20:53:09.812296+00:00",
+          "http_status": 206,
+          "bytes": 134217728,
+          "content_range": "bytes 8796514336-8930732063/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "sha256": "8b8b66917bf4ab5767f78d81743496a172c0019eefbc08138129e13bdec9fb46",
+          "finished_utc": "2026-10-22T20:53:24.906557+00:00"
+        },
+        {
+          "role": "blk.2.ffn_down_exps.weight",
+          "first": 8930732064,
+          "last": 9064949791,
+          "requested_bytes": 134217728,
+          "complete": true,
+          "started_utc": "2026-10-22T20:53:24.909638+00:00",
+          "http_status": 206,
+          "bytes": 134217728,
+          "content_range": "bytes 8930732064-9064949791/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "sha256": "47d98b9f4b9dc53cb2f10455f83b0bf2364b2b16d3c600c8fccf5949f68ba385",
+          "finished_utc": "2026-10-22T20:53:39.236702+00:00"
+        },
+        {
+          "role": "blk.2.ffn_down_exps.weight",
+          "first": 9064949792,
+          "last": 9132058655,
+          "requested_bytes": 67108864,
+          "complete": true,
+          "started_utc": "2026-10-22T20:53:39.240288+00:00",
+          "http_status": 206,
+          "bytes": 67108864,
+          "content_range": "bytes 9064949792-9132058655/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "sha256": "3a76d458cdd6ebc99a85b10cdc594c441e8d946a5cb13f8f315637fdbef7d42f",
+          "finished_utc": "2026-10-22T20:53:47.134427+00:00"
+        },
+        {
+          "role": "blk.2.ffn_up_exps.weight",
+          "first": 9132058656,
+          "last": 9266276383,
+          "requested_bytes": 134217728,
+          "complete": true,
+          "started_utc": "2026-10-22T20:53:47.718305+00:00",
+          "http_status": 206,
+          "bytes": 134217728,
+          "content_range": "bytes 9132058656-9266276383/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "sha256": "a1d0217a775fdd1462cab72dcda52247da314c27dd0876fd3e0463889777c160",
+          "finished_utc": "2026-10-22T20:54:02.016829+00:00"
+        },
+        {
+          "role": "blk.2.ffn_up_exps.weight",
+          "first": 9266276384,
+          "last": 9400494111,
+          "requested_bytes": 134217728,
+          "complete": true,
+          "started_utc": "2026-10-22T20:54:02.020003+00:00",
+          "http_status": 206,
+          "bytes": 134217728,
+          "content_range": "bytes 9266276384-9400494111/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "sha256": "9ecd0a3675c933201a3b7e25f69490a70931d16cb726a42ff5fbd04ee15db854",
+          "finished_utc": "2026-10-22T20:54:16.493368+00:00"
+        },
+        {
+          "role": "blk.2.ffn_up_exps.weight",
+          "first": 9400494112,
+          "last": 9534711839,
+          "requested_bytes": 134217728,
+          "complete": true,
+          "started_utc": "2026-10-22T20:54:16.496670+00:00",
+          "http_status": 206,
+          "bytes": 134217728,
+          "content_range": "bytes 9400494112-9534711839/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "sha256": "04550f562d8574393fdb94b51088221295dbd7dc5d349b35d87c91685fa1dcca",
+          "finished_utc": "2026-10-22T20:54:31.445110+00:00"
+        },
+        {
+          "role": "blk.2.ffn_up_exps.weight",
+          "first": 9534711840,
+          "last": 9668929567,
+          "requested_bytes": 134217728,
+          "complete": true,
+          "started_utc": "2026-10-22T20:54:31.448316+00:00",
+          "http_status": 206,
+          "bytes": 134217728,
+          "content_range": "bytes 9534711840-9668929567/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "sha256": "570b68bddd6d839164eb2535df7d5197425b4614ff2966780856831c64781a00",
+          "finished_utc": "2026-10-22T20:54:46.307351+00:00"
+        },
+        {
+          "role": "blk.2.ffn_up_exps.weight",
+          "first": 9668929568,
+          "last": 9803147295,
+          "requested_bytes": 134217728,
+          "complete": true,
+          "started_utc": "2026-10-22T20:54:46.310354+00:00",
+          "http_status": 206,
+          "bytes": 134217728,
+          "content_range": "bytes 9668929568-9803147295/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "sha256": "286fdfb245d5f019cda7fb531b880c5e5bf36090d919f24635a7d547480fa9da",
+          "finished_utc": "2026-10-22T20:55:01.043736+00:00"
+        },
+        {
+          "role": "blk.2.ffn_up_exps.weight",
+          "first": 9803147296,
+          "last": 9937365023,
+          "requested_bytes": 134217728,
+          "complete": true,
+          "started_utc": "2026-10-22T20:55:01.047418+00:00",
+          "http_status": 206,
+          "bytes": 134217728,
+          "content_range": "bytes 9803147296-9937365023/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "sha256": "4ca50967e0ca2e6ff8b43a4b873a14c138161af14ab93c73d588349b352fdddc",
+          "finished_utc": "2026-10-22T20:55:15.922150+00:00"
+        },
+        {
+          "role": "blk.2.ffn_up_exps.weight",
+          "first": 9937365024,
+          "last": 10071582751,
+          "requested_bytes": 134217728,
+          "complete": true,
+          "started_utc": "2026-10-22T20:55:15.926151+00:00",
+          "http_status": 206,
+          "bytes": 134217728,
+          "content_range": "bytes 9937365024-10071582751/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "sha256": "e3f206aa89825b723e01e4faeb62574a10541774024a58a59286a5eb97b22a2c",
+          "finished_utc": "2026-10-22T20:55:30.426212+00:00"
+        },
+        {
+          "role": "blk.2.ffn_up_exps.weight",
+          "first": 10071582752,
+          "last": 10205800479,
+          "requested_bytes": 134217728,
+          "complete": true,
+          "started_utc": "2026-10-22T20:55:30.428799+00:00",
+          "http_status": 206,
+          "bytes": 134217728,
+          "content_range": "bytes 10071582752-10205800479/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "sha256": "71b38530154b624ac371584dd00ceac04edab16e1f10bb856a4a103892deb888",
+          "finished_utc": "2026-10-22T20:55:44.829351+00:00"
+        },
+        {
+          "role": "blk.2.ffn_up_exps.weight",
+          "first": 10205800480,
+          "last": 10272909343,
+          "requested_bytes": 67108864,
+          "complete": true,
+          "started_utc": "2026-10-22T20:55:44.832356+00:00",
+          "http_status": 206,
+          "bytes": 67108864,
+          "content_range": "bytes 10205800480-10272909343/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "sha256": "919fc1eef38eb4a16423452e7ce16303bdec08f46057e87b5dadf2c5067afdbe",
+          "finished_utc": "2026-10-22T20:55:52.890716+00:00"
+        }
+      ],
+      "roles": [
+        {
+          "name": "blk.0.exp_probs_b.bias",
+          "codec": "F32",
+          "gguf_dimensions": [
+            256
+          ],
+          "payload_bytes": 1024,
+          "absolute_range_inclusive": [
+            10386571552,
+            10386572575
+          ],
+          "complete": true,
+          "chunks": [
+            {
+              "offset": 0,
+              "bytes": 1024,
+              "sha256": "b52ff88dd23e93db08dbf26ae20c8e3c2bffedf2de87771960a611f5b6c36b43",
+              "absolute_range_inclusive": [
+                10386571552,
+                10386572575
+              ]
+            }
+          ],
+          "payload": {
+            "path": ".scratch/dspark-original-experts-20261023/original-experts/blk.0.exp_probs_b.bias.f32",
+            "bytes": 1024,
+            "sha256": "b52ff88dd23e93db08dbf26ae20c8e3c2bffedf2de87771960a611f5b6c36b43"
+          }
+        },
+        {
+          "name": "blk.1.exp_probs_b.bias",
+          "codec": "F32",
+          "gguf_dimensions": [
+            256
+          ],
+          "payload_bytes": 1024,
+          "absolute_range_inclusive": [
+            10585726752,
+            10585727775
+          ],
+          "complete": true,
+          "chunks": [
+            {
+              "offset": 0,
+              "bytes": 1024,
+              "sha256": "a42f1ce50da2d684e8b55ef78e7231311c549cbbdf9326c8b76fabc3eccefe68",
+              "absolute_range_inclusive": [
+                10585726752,
+                10585727775
+              ]
+            }
+          ],
+          "payload": {
+            "path": ".scratch/dspark-original-experts-20261023/original-experts/blk.1.exp_probs_b.bias.f32",
+            "bytes": 1024,
+            "sha256": "a42f1ce50da2d684e8b55ef78e7231311c549cbbdf9326c8b76fabc3eccefe68"
+          }
+        },
+        {
+          "name": "blk.2.exp_probs_b.bias",
+          "codec": "F32",
+          "gguf_dimensions": [
+            256
+          ],
+          "payload_bytes": 1024,
+          "absolute_range_inclusive": [
+            10731396896,
+            10731397919
+          ],
+          "complete": true,
+          "chunks": [
+            {
+              "offset": 0,
+              "bytes": 1024,
+              "sha256": "6502c5c0fa2869a8b60d4a8c992b2b2891c01f725c150b054a709c64118f87a3",
+              "absolute_range_inclusive": [
+                10731396896,
+                10731397919
+              ]
+            }
+          ],
+          "payload": {
+            "path": ".scratch/dspark-original-experts-20261023/original-experts/blk.2.exp_probs_b.bias.f32",
+            "bytes": 1024,
+            "sha256": "6502c5c0fa2869a8b60d4a8c992b2b2891c01f725c150b054a709c64118f87a3"
+          }
+        },
+        {
+          "name": "blk.0.ffn_gate_inp.weight",
+          "codec": "BF16",
+          "gguf_dimensions": [
+            4096,
+            256
+          ],
+          "payload_bytes": 2097152,
+          "absolute_range_inclusive": [
+            10386572576,
+            10388669727
+          ],
+          "complete": true,
+          "chunks": [
+            {
+              "offset": 0,
+              "bytes": 2097152,
+              "sha256": "fa79c6106bc42c7823026123b42ddfefc67078e44345fc91a518e84c404fe7c2",
+              "absolute_range_inclusive": [
+                10386572576,
+                10388669727
+              ]
+            }
+          ],
+          "payload": {
+            "path": ".scratch/dspark-original-experts-20261023/original-experts/blk.0.ffn_gate_inp.weight.bf16",
+            "bytes": 2097152,
+            "sha256": "fa79c6106bc42c7823026123b42ddfefc67078e44345fc91a518e84c404fe7c2"
+          }
+        },
+        {
+          "name": "blk.1.ffn_gate_inp.weight",
+          "codec": "BF16",
+          "gguf_dimensions": [
+            4096,
+            256
+          ],
+          "payload_bytes": 2097152,
+          "absolute_range_inclusive": [
+            10585727776,
+            10587824927
+          ],
+          "complete": true,
+          "chunks": [
+            {
+              "offset": 0,
+              "bytes": 2097152,
+              "sha256": "003af3e6a99adc828e75cb355b520641f7a51cedf412a85ddb404abba3dbc18f",
+              "absolute_range_inclusive": [
+                10585727776,
+                10587824927
+              ]
+            }
+          ],
+          "payload": {
+            "path": ".scratch/dspark-original-experts-20261023/original-experts/blk.1.ffn_gate_inp.weight.bf16",
+            "bytes": 2097152,
+            "sha256": "003af3e6a99adc828e75cb355b520641f7a51cedf412a85ddb404abba3dbc18f"
+          }
+        },
+        {
+          "name": "blk.2.ffn_gate_inp.weight",
+          "codec": "BF16",
+          "gguf_dimensions": [
+            4096,
+            256
+          ],
+          "payload_bytes": 2097152,
+          "absolute_range_inclusive": [
+            10731397920,
+            10733495071
+          ],
+          "complete": true,
+          "chunks": [
+            {
+              "offset": 0,
+              "bytes": 2097152,
+              "sha256": "3deb9ee8676445f9c61c22fe9cc6a308dd9e8d77e031d0023f7779f62f0094e5",
+              "absolute_range_inclusive": [
+                10731397920,
+                10733495071
+              ]
+            }
+          ],
+          "payload": {
+            "path": ".scratch/dspark-original-experts-20261023/original-experts/blk.2.ffn_gate_inp.weight.bf16",
+            "bytes": 2097152,
+            "sha256": "3deb9ee8676445f9c61c22fe9cc6a308dd9e8d77e031d0023f7779f62f0094e5"
+          }
+        },
+        {
+          "name": "blk.0.ffn_gate_exps.weight",
+          "codec": "MXFP4",
+          "gguf_dimensions": [
+            4096,
+            2048,
+            256
+          ],
+          "payload_bytes": 1140850688,
+          "absolute_range_inclusive": [
+            5253152,
+            1146103839
+          ],
+          "complete": true,
+          "chunks": [
+            {
+              "offset": 0,
+              "bytes": 134217728,
+              "sha256": "94aa3cf057cda8f92d75034b8eb5090bbe76aff413e9164a2b1d4541149483a4",
+              "absolute_range_inclusive": [
+                5253152,
+                139470879
+              ]
+            },
+            {
+              "offset": 134217728,
+              "bytes": 134217728,
+              "sha256": "789e5645fe104774a1c093df2fba15276439bea3dcab07e563bcb503cf691185",
+              "absolute_range_inclusive": [
+                139470880,
+                273688607
+              ]
+            },
+            {
+              "offset": 268435456,
+              "bytes": 134217728,
+              "sha256": "1fbedc64473e76344ac619019660386c77a7f41c5ed045b4314ac114a1f29f46",
+              "absolute_range_inclusive": [
+                273688608,
+                407906335
+              ]
+            },
+            {
+              "offset": 402653184,
+              "bytes": 134217728,
+              "sha256": "50f10dac0ed4262b5a55cfbe45c93e239f30d242976d47b01808d78ce861ea2c",
+              "absolute_range_inclusive": [
+                407906336,
+                542124063
+              ]
+            },
+            {
+              "offset": 536870912,
+              "bytes": 134217728,
+              "sha256": "41fcc491ba9c125dd167b6ece0ef0829162fce822ff6ef814a7f434fbbdea878",
+              "absolute_range_inclusive": [
+                542124064,
+                676341791
+              ]
+            },
+            {
+              "offset": 671088640,
+              "bytes": 134217728,
+              "sha256": "ee310e2534e97c8215a7feae8448d0de1de1e5487b191ddff32e91d9e566b200",
+              "absolute_range_inclusive": [
+                676341792,
+                810559519
+              ]
+            },
+            {
+              "offset": 805306368,
+              "bytes": 134217728,
+              "sha256": "80157bae120def08040b6b475649f3859660aedd08fb8feb8f59dc579901ad62",
+              "absolute_range_inclusive": [
+                810559520,
+                944777247
+              ]
+            },
+            {
+              "offset": 939524096,
+              "bytes": 134217728,
+              "sha256": "c8242a77e8aeabf49cf35da8d52c73b779ed973db15215cd6247126a446a1041",
+              "absolute_range_inclusive": [
+                944777248,
+                1078994975
+              ]
+            },
+            {
+              "offset": 1073741824,
+              "bytes": 67108864,
+              "sha256": "7395cb28834f04532808167793dda7ad4f701588a439ae5ba467925d28207ad1",
+              "absolute_range_inclusive": [
+                1078994976,
+                1146103839
+              ]
+            }
+          ],
+          "payload": {
+            "path": ".scratch/dspark-original-experts-20261023/original-experts/blk.0.ffn_gate_exps.weight.mxfp4",
+            "bytes": 1140850688,
+            "sha256": "8c57af9c12a282c8855c59c8f0a577193845250c9594740c7b07b1ea9d43e261"
+          }
+        },
+        {
+          "name": "blk.0.ffn_down_exps.weight",
+          "codec": "MXFP4",
+          "gguf_dimensions": [
+            2048,
+            4096,
+            256
+          ],
+          "payload_bytes": 1140850688,
+          "absolute_range_inclusive": [
+            1146103840,
+            2286954527
+          ],
+          "complete": true,
+          "chunks": [
+            {
+              "offset": 0,
+              "bytes": 134217728,
+              "sha256": "bf96a13c4b54fdd327301aa91c06da68a723df793c85e6bd04a80356fc139bac",
+              "absolute_range_inclusive": [
+                1146103840,
+                1280321567
+              ]
+            },
+            {
+              "offset": 134217728,
+              "bytes": 134217728,
+              "sha256": "965c7992fd22d98670ca201fc20f621c2d7876ffda04c3c51e5f5b0e118693dd",
+              "absolute_range_inclusive": [
+                1280321568,
+                1414539295
+              ]
+            },
+            {
+              "offset": 268435456,
+              "bytes": 134217728,
+              "sha256": "1abdf463b405c44e057904976880e5540067270b0970ed1a61595486a30f4de6",
+              "absolute_range_inclusive": [
+                1414539296,
+                1548757023
+              ]
+            },
+            {
+              "offset": 402653184,
+              "bytes": 134217728,
+              "sha256": "ce9c8cbff6bfb47e736289a35404880a288e4364f10d1052b911f028d1db1f38",
+              "absolute_range_inclusive": [
+                1548757024,
+                1682974751
+              ]
+            },
+            {
+              "offset": 536870912,
+              "bytes": 134217728,
+              "sha256": "898abbd08fda473fb0b0096bb0f014a409e39aa22db1fe784f9247adb1e34826",
+              "absolute_range_inclusive": [
+                1682974752,
+                1817192479
+              ]
+            },
+            {
+              "offset": 671088640,
+              "bytes": 134217728,
+              "sha256": "9356c5af8f95642626cedcccd97996b1c41fb05edd6fff0c95e0b0d3f11a5d72",
+              "absolute_range_inclusive": [
+                1817192480,
+                1951410207
+              ]
+            },
+            {
+              "offset": 805306368,
+              "bytes": 134217728,
+              "sha256": "f8c93ea0e748cf5e9a0823a5c9f37eadf4c7969e728ed46edc8ee20fbf274b97",
+              "absolute_range_inclusive": [
+                1951410208,
+                2085627935
+              ]
+            },
+            {
+              "offset": 939524096,
+              "bytes": 134217728,
+              "sha256": "b773a30e5fb366c53ab42eff377dd10a8457cd616bdb9f060afb38c65fcae752",
+              "absolute_range_inclusive": [
+                2085627936,
+                2219845663
+              ]
+            },
+            {
+              "offset": 1073741824,
+              "bytes": 67108864,
+              "sha256": "f85658234400871ebb163840b71050c40972cb430795e2621586e62f6da9a740",
+              "absolute_range_inclusive": [
+                2219845664,
+                2286954527
+              ]
+            }
+          ],
+          "payload": {
+            "path": ".scratch/dspark-original-experts-20261023/original-experts/blk.0.ffn_down_exps.weight.mxfp4",
+            "bytes": 1140850688,
+            "sha256": "8f2523b3f2dfd99954227a372d7efaf4f3f632a3e6e4f8bf108dea794d85ca42"
+          }
+        },
+        {
+          "name": "blk.0.ffn_up_exps.weight",
+          "codec": "MXFP4",
+          "gguf_dimensions": [
+            4096,
+            2048,
+            256
+          ],
+          "payload_bytes": 1140850688,
+          "absolute_range_inclusive": [
+            2286954528,
+            3427805215
+          ],
+          "complete": true,
+          "chunks": [
+            {
+              "offset": 0,
+              "bytes": 134217728,
+              "sha256": "b69f9b96daee5adb689b640c6a520d98148e1d10efd9917d5287500e1606f226",
+              "absolute_range_inclusive": [
+                2286954528,
+                2421172255
+              ]
+            },
+            {
+              "offset": 134217728,
+              "bytes": 134217728,
+              "sha256": "c74f411ba6f1e5e0de14e4a8409d9521c74d97d04d4a05aa0946b437b6dfb87f",
+              "absolute_range_inclusive": [
+                2421172256,
+                2555389983
+              ]
+            },
+            {
+              "offset": 268435456,
+              "bytes": 134217728,
+              "sha256": "7fffe606d6749d0d410c534c64fa68a442d115c131aac881a15dd4c46a463050",
+              "absolute_range_inclusive": [
+                2555389984,
+                2689607711
+              ]
+            },
+            {
+              "offset": 402653184,
+              "bytes": 134217728,
+              "sha256": "125b5d192ef08fa89f291f702ebb899f88fa7b86b521356c333853754e21f927",
+              "absolute_range_inclusive": [
+                2689607712,
+                2823825439
+              ]
+            },
+            {
+              "offset": 536870912,
+              "bytes": 134217728,
+              "sha256": "d2c1fd49c1faa6d6b3e3f900a89667e3ae918514fb9e1204966a35f22fa1ba6d",
+              "absolute_range_inclusive": [
+                2823825440,
+                2958043167
+              ]
+            },
+            {
+              "offset": 671088640,
+              "bytes": 134217728,
+              "sha256": "2034722639496a37990b2dc93d368ec06f314a6bcb22f43acef21382c4e9a21e",
+              "absolute_range_inclusive": [
+                2958043168,
+                3092260895
+              ]
+            },
+            {
+              "offset": 805306368,
+              "bytes": 134217728,
+              "sha256": "a52f96eee9b7dd06d8885c8afe64470309d6f2daa25aacac4079f47f1d3b1035",
+              "absolute_range_inclusive": [
+                3092260896,
+                3226478623
+              ]
+            },
+            {
+              "offset": 939524096,
+              "bytes": 134217728,
+              "sha256": "d843162186b9c0ea7585d7a9458caee974d191654b1ff19f0bd46c348c3dc529",
+              "absolute_range_inclusive": [
+                3226478624,
+                3360696351
+              ]
+            },
+            {
+              "offset": 1073741824,
+              "bytes": 67108864,
+              "sha256": "2d25b2bb74d873f9943c70d1d439508770eef6d39a43da54c44493986c66fb73",
+              "absolute_range_inclusive": [
+                3360696352,
+                3427805215
+              ]
+            }
+          ],
+          "payload": {
+            "path": ".scratch/dspark-original-experts-20261023/original-experts/blk.0.ffn_up_exps.weight.mxfp4",
+            "bytes": 1140850688,
+            "sha256": "bba10f84d21bd52350fd209f13122ff1ae1f570a6e64991541fd7d95b4062083"
+          }
+        },
+        {
+          "name": "blk.1.ffn_gate_exps.weight",
+          "codec": "MXFP4",
+          "gguf_dimensions": [
+            4096,
+            2048,
+            256
+          ],
+          "payload_bytes": 1140850688,
+          "absolute_range_inclusive": [
+            3427805216,
+            4568655903
+          ],
+          "complete": true,
+          "chunks": [
+            {
+              "offset": 0,
+              "bytes": 134217728,
+              "sha256": "6cf646ef030c0b96b4770db8250c9f61fdf96a4cf008efafdfb26551ea81ce9b",
+              "absolute_range_inclusive": [
+                3427805216,
+                3562022943
+              ]
+            },
+            {
+              "offset": 134217728,
+              "bytes": 134217728,
+              "sha256": "54224b55df917e49fe5f80122d811cdf5eef9a631f3571399323877d834161f0",
+              "absolute_range_inclusive": [
+                3562022944,
+                3696240671
+              ]
+            },
+            {
+              "offset": 268435456,
+              "bytes": 134217728,
+              "sha256": "ec7bfa2cda252251904b107b1b212b9ef6961e7251ccd43ed8fa82095b5aa2c6",
+              "absolute_range_inclusive": [
+                3696240672,
+                3830458399
+              ]
+            },
+            {
+              "offset": 402653184,
+              "bytes": 134217728,
+              "sha256": "f26ce26dd29e6b9cd59d79e508ed202f13873f3b9c8ab90bc8c184b1ca9d5d4f",
+              "absolute_range_inclusive": [
+                3830458400,
+                3964676127
+              ]
+            },
+            {
+              "offset": 536870912,
+              "bytes": 134217728,
+              "sha256": "005f68e8c3425590ef4e8e84401310f0514e01d8385988f4c3b6650946c3fd8c",
+              "absolute_range_inclusive": [
+                3964676128,
+                4098893855
+              ]
+            },
+            {
+              "offset": 671088640,
+              "bytes": 134217728,
+              "sha256": "cab2cdc62c719e6fdce379345b435f3ac0b11b69e3b89b8db08a3823f208a980",
+              "absolute_range_inclusive": [
+                4098893856,
+                4233111583
+              ]
+            },
+            {
+              "offset": 805306368,
+              "bytes": 134217728,
+              "sha256": "021796200c71b47a1e9924ecd225acdfeddc80eac33479835b7c30e53a18647f",
+              "absolute_range_inclusive": [
+                4233111584,
+                4367329311
+              ]
+            },
+            {
+              "offset": 939524096,
+              "bytes": 134217728,
+              "sha256": "809a0a8e6d19a951e697e9e0ead3e23993b43c0bb28c8762422c37d3bb12a24d",
+              "absolute_range_inclusive": [
+                4367329312,
+                4501547039
+              ]
+            },
+            {
+              "offset": 1073741824,
+              "bytes": 67108864,
+              "sha256": "b5c0466f48c7ef3be94a3031e6049996b718e529c657bb849eb0e0e5ff656190",
+              "absolute_range_inclusive": [
+                4501547040,
+                4568655903
+              ]
+            }
+          ],
+          "payload": {
+            "path": ".scratch/dspark-original-experts-20261023/original-experts/blk.1.ffn_gate_exps.weight.mxfp4",
+            "bytes": 1140850688,
+            "sha256": "943f93278e9fb2138e5619f3420e65963bed61f58b90a89f8ee17f701dc4476c"
+          }
+        },
+        {
+          "name": "blk.1.ffn_down_exps.weight",
+          "codec": "MXFP4",
+          "gguf_dimensions": [
+            2048,
+            4096,
+            256
+          ],
+          "payload_bytes": 1140850688,
+          "absolute_range_inclusive": [
+            4568655904,
+            5709506591
+          ],
+          "complete": true,
+          "chunks": [
+            {
+              "offset": 0,
+              "bytes": 134217728,
+              "sha256": "c46e5818930deb9929a308438d0302eed5d45107e09aa41fe53df12e67d978a4",
+              "absolute_range_inclusive": [
+                4568655904,
+                4702873631
+              ]
+            },
+            {
+              "offset": 134217728,
+              "bytes": 134217728,
+              "sha256": "59f7fa3190df70438c44db7d07aeec40eba9ea01461385c6492a5c62a80bc6c4",
+              "absolute_range_inclusive": [
+                4702873632,
+                4837091359
+              ]
+            },
+            {
+              "offset": 268435456,
+              "bytes": 134217728,
+              "sha256": "66c383a452d2d79635d52c9c924cf58d87caef8242da924c31c2b0b6fe030dd8",
+              "absolute_range_inclusive": [
+                4837091360,
+                4971309087
+              ]
+            },
+            {
+              "offset": 402653184,
+              "bytes": 134217728,
+              "sha256": "0a8abccbcd1c57058b48711ea054f6224e774d9fa0e292a4e0ee02077d19ef82",
+              "absolute_range_inclusive": [
+                4971309088,
+                5105526815
+              ]
+            },
+            {
+              "offset": 536870912,
+              "bytes": 134217728,
+              "sha256": "da3edad5fd21ed5443194be2d0f129164d6cc64617033cc39c28845be95df03c",
+              "absolute_range_inclusive": [
+                5105526816,
+                5239744543
+              ]
+            },
+            {
+              "offset": 671088640,
+              "bytes": 134217728,
+              "sha256": "4497d0f8c26be2354fea451301b20c429a7028bbac2d829575730c4778fc1f1f",
+              "absolute_range_inclusive": [
+                5239744544,
+                5373962271
+              ]
+            },
+            {
+              "offset": 805306368,
+              "bytes": 134217728,
+              "sha256": "18a94c7f14366e1d1f6d7f59e1821d044e904c9592434f22cb0320f33d6a3d72",
+              "absolute_range_inclusive": [
+                5373962272,
+                5508179999
+              ]
+            },
+            {
+              "offset": 939524096,
+              "bytes": 134217728,
+              "sha256": "adf093fa7f57795d3f3925cdd5f68e17176155cfff27b46db4096c013e71d814",
+              "absolute_range_inclusive": [
+                5508180000,
+                5642397727
+              ]
+            },
+            {
+              "offset": 1073741824,
+              "bytes": 67108864,
+              "sha256": "559ce2309a9a498023e645b6186db2c1a39ff53a1555d7ec7714b6495acc034f",
+              "absolute_range_inclusive": [
+                5642397728,
+                5709506591
+              ]
+            }
+          ],
+          "payload": {
+            "path": ".scratch/dspark-original-experts-20261023/original-experts/blk.1.ffn_down_exps.weight.mxfp4",
+            "bytes": 1140850688,
+            "sha256": "dfa7c0e2799d21434477963ba1a6671a66c8bb2bc2975fc1f12fde98e97f8a88"
+          }
+        },
+        {
+          "name": "blk.1.ffn_up_exps.weight",
+          "codec": "MXFP4",
+          "gguf_dimensions": [
+            4096,
+            2048,
+            256
+          ],
+          "payload_bytes": 1140850688,
+          "absolute_range_inclusive": [
+            5709506592,
+            6850357279
+          ],
+          "complete": true,
+          "chunks": [
+            {
+              "offset": 0,
+              "bytes": 134217728,
+              "sha256": "8bca1f6d9008632a6c83401461ecb5625126f08884c713decf3edd1049eb67b4",
+              "absolute_range_inclusive": [
+                5709506592,
+                5843724319
+              ]
+            },
+            {
+              "offset": 134217728,
+              "bytes": 134217728,
+              "sha256": "cf04cf9cad6427a7f9d3cc5b8bcbc30ac9eb29a7ee7304f7b06bcc672d7755f0",
+              "absolute_range_inclusive": [
+                5843724320,
+                5977942047
+              ]
+            },
+            {
+              "offset": 268435456,
+              "bytes": 134217728,
+              "sha256": "daa8f7cb647e0c8a29e95b3dc60879e48a5e9d9b4999cd445010d1b5b12f5ef1",
+              "absolute_range_inclusive": [
+                5977942048,
+                6112159775
+              ]
+            },
+            {
+              "offset": 402653184,
+              "bytes": 134217728,
+              "sha256": "8825f84f552cfc9dc1af49e7c5f47944ddb2fe1abf4e57f8e0e2ee20959d5628",
+              "absolute_range_inclusive": [
+                6112159776,
+                6246377503
+              ]
+            },
+            {
+              "offset": 536870912,
+              "bytes": 134217728,
+              "sha256": "af656fe4b7a3c41479cd59bb261a67e29a99570cc042b14f3655cb969e01c7c3",
+              "absolute_range_inclusive": [
+                6246377504,
+                6380595231
+              ]
+            },
+            {
+              "offset": 671088640,
+              "bytes": 134217728,
+              "sha256": "4696d94f229f71847eef42648de039ce87b8e4c5d485a168d2469a8bfaa896d6",
+              "absolute_range_inclusive": [
+                6380595232,
+                6514812959
+              ]
+            },
+            {
+              "offset": 805306368,
+              "bytes": 134217728,
+              "sha256": "e44e2072098edcb4aebc7238960e1d8142990881a3b00b54820c2236e80ca0c2",
+              "absolute_range_inclusive": [
+                6514812960,
+                6649030687
+              ]
+            },
+            {
+              "offset": 939524096,
+              "bytes": 134217728,
+              "sha256": "3832b670025ef30e7d7fc24ad0bb96b778006ce9fa1d00aee58e54e2428a6bbf",
+              "absolute_range_inclusive": [
+                6649030688,
+                6783248415
+              ]
+            },
+            {
+              "offset": 1073741824,
+              "bytes": 67108864,
+              "sha256": "ce05ea57fd9f31191e274ed01ec05040629442aee50c642821dc599dc4e551cf",
+              "absolute_range_inclusive": [
+                6783248416,
+                6850357279
+              ]
+            }
+          ],
+          "payload": {
+            "path": ".scratch/dspark-original-experts-20261023/original-experts/blk.1.ffn_up_exps.weight.mxfp4",
+            "bytes": 1140850688,
+            "sha256": "e573b2eb880fd6e4b9564dc07fe9ff58152db19ac2d4d1d2c0e591066920407b"
+          }
+        },
+        {
+          "name": "blk.2.ffn_gate_exps.weight",
+          "codec": "MXFP4",
+          "gguf_dimensions": [
+            4096,
+            2048,
+            256
+          ],
+          "payload_bytes": 1140850688,
+          "absolute_range_inclusive": [
+            6850357280,
+            7991207967
+          ],
+          "complete": true,
+          "chunks": [
+            {
+              "offset": 0,
+              "bytes": 134217728,
+              "sha256": "1715d06d75befb619c88bbdac5b3a8d4c0f8e5b75ce0195953aabc578db5dc2c",
+              "absolute_range_inclusive": [
+                6850357280,
+                6984575007
+              ]
+            },
+            {
+              "offset": 134217728,
+              "bytes": 134217728,
+              "sha256": "a221127750c2f22e9764109beb0fd8f0a6cbb8944724d77a40e49eb915c707eb",
+              "absolute_range_inclusive": [
+                6984575008,
+                7118792735
+              ]
+            },
+            {
+              "offset": 268435456,
+              "bytes": 134217728,
+              "sha256": "5f32613da13f6df4c5ad3517cd19f50cfaedb0846a5b83df9ae92ad994b5ec63",
+              "absolute_range_inclusive": [
+                7118792736,
+                7253010463
+              ]
+            },
+            {
+              "offset": 402653184,
+              "bytes": 134217728,
+              "sha256": "4c8b18d0ebbf5174a21ebfec927bd1b25c339e5b368076786d91c8b3d82fcf14",
+              "absolute_range_inclusive": [
+                7253010464,
+                7387228191
+              ]
+            },
+            {
+              "offset": 536870912,
+              "bytes": 134217728,
+              "sha256": "131f890a27146d8cab32407a5a5ea43930e66e77e9d51d0f09b38477b7c2cb56",
+              "absolute_range_inclusive": [
+                7387228192,
+                7521445919
+              ]
+            },
+            {
+              "offset": 671088640,
+              "bytes": 134217728,
+              "sha256": "6c54d856b3f750dad8bf7387986252ad047b9fdb810c17372fff03bca661efe1",
+              "absolute_range_inclusive": [
+                7521445920,
+                7655663647
+              ]
+            },
+            {
+              "offset": 805306368,
+              "bytes": 134217728,
+              "sha256": "0d8defc209d05161b2ef2412d416ed2dfb648f126f24900c467d6a716cd11b88",
+              "absolute_range_inclusive": [
+                7655663648,
+                7789881375
+              ]
+            },
+            {
+              "offset": 939524096,
+              "bytes": 134217728,
+              "sha256": "d255f67c581737de6a839862b792e48bd0bf5cf74ecd66ecb6ad4461cc7c2bc7",
+              "absolute_range_inclusive": [
+                7789881376,
+                7924099103
+              ]
+            },
+            {
+              "offset": 1073741824,
+              "bytes": 67108864,
+              "sha256": "011e7c7d8ee13fdd65a3653acdcab130ad80d49a404fbd702471a087c6135ec8",
+              "absolute_range_inclusive": [
+                7924099104,
+                7991207967
+              ]
+            }
+          ],
+          "payload": {
+            "path": ".scratch/dspark-original-experts-20261023/original-experts/blk.2.ffn_gate_exps.weight.mxfp4",
+            "bytes": 1140850688,
+            "sha256": "01c2adc2b2c0163ef085645ec5d2a86cc7559a26c26192eb550567607584d7f0"
+          }
+        },
+        {
+          "name": "blk.2.ffn_down_exps.weight",
+          "codec": "MXFP4",
+          "gguf_dimensions": [
+            2048,
+            4096,
+            256
+          ],
+          "payload_bytes": 1140850688,
+          "absolute_range_inclusive": [
+            7991207968,
+            9132058655
+          ],
+          "complete": true,
+          "chunks": [
+            {
+              "offset": 0,
+              "bytes": 134217728,
+              "sha256": "320f24f73c37b20539641e968cc7a20425ddaf9c1f4d0034cfe0104e72895aa6",
+              "absolute_range_inclusive": [
+                7991207968,
+                8125425695
+              ]
+            },
+            {
+              "offset": 134217728,
+              "bytes": 134217728,
+              "sha256": "3adbe8cf59faf623f50fb37308c1c135736b81559799dd0923827b962e3e8e0d",
+              "absolute_range_inclusive": [
+                8125425696,
+                8259643423
+              ]
+            },
+            {
+              "offset": 268435456,
+              "bytes": 134217728,
+              "sha256": "b18020c2e1d926d27127a6775c90bb135c1c36c464648d4f01531e95a68c8f53",
+              "absolute_range_inclusive": [
+                8259643424,
+                8393861151
+              ]
+            },
+            {
+              "offset": 402653184,
+              "bytes": 134217728,
+              "sha256": "aeef64984faddef8fca7f63a0653b6d18b55351ba0a4101d34a335208b3375cd",
+              "absolute_range_inclusive": [
+                8393861152,
+                8528078879
+              ]
+            },
+            {
+              "offset": 536870912,
+              "bytes": 134217728,
+              "sha256": "79c947127c5ecb1d0fefa43c554afe1b75daf51e2c4c3aaeb0e1453fea3a50c8",
+              "absolute_range_inclusive": [
+                8528078880,
+                8662296607
+              ]
+            },
+            {
+              "offset": 671088640,
+              "bytes": 134217728,
+              "sha256": "bd498626821c4e9eb9779f6f729a4797c50c061f7a5cc736bbf38e75f38105e3",
+              "absolute_range_inclusive": [
+                8662296608,
+                8796514335
+              ]
+            },
+            {
+              "offset": 805306368,
+              "bytes": 134217728,
+              "sha256": "8b8b66917bf4ab5767f78d81743496a172c0019eefbc08138129e13bdec9fb46",
+              "absolute_range_inclusive": [
+                8796514336,
+                8930732063
+              ]
+            },
+            {
+              "offset": 939524096,
+              "bytes": 134217728,
+              "sha256": "47d98b9f4b9dc53cb2f10455f83b0bf2364b2b16d3c600c8fccf5949f68ba385",
+              "absolute_range_inclusive": [
+                8930732064,
+                9064949791
+              ]
+            },
+            {
+              "offset": 1073741824,
+              "bytes": 67108864,
+              "sha256": "3a76d458cdd6ebc99a85b10cdc594c441e8d946a5cb13f8f315637fdbef7d42f",
+              "absolute_range_inclusive": [
+                9064949792,
+                9132058655
+              ]
+            }
+          ],
+          "payload": {
+            "path": ".scratch/dspark-original-experts-20261023/original-experts/blk.2.ffn_down_exps.weight.mxfp4",
+            "bytes": 1140850688,
+            "sha256": "9ead6ce6f4f4bd305b34e376a84458246319a99008b28eb2dc4ee317225a6abd"
+          }
+        },
+        {
+          "name": "blk.2.ffn_up_exps.weight",
+          "codec": "MXFP4",
+          "gguf_dimensions": [
+            4096,
+            2048,
+            256
+          ],
+          "payload_bytes": 1140850688,
+          "absolute_range_inclusive": [
+            9132058656,
+            10272909343
+          ],
+          "complete": true,
+          "chunks": [
+            {
+              "offset": 0,
+              "bytes": 134217728,
+              "sha256": "a1d0217a775fdd1462cab72dcda52247da314c27dd0876fd3e0463889777c160",
+              "absolute_range_inclusive": [
+                9132058656,
+                9266276383
+              ]
+            },
+            {
+              "offset": 134217728,
+              "bytes": 134217728,
+              "sha256": "9ecd0a3675c933201a3b7e25f69490a70931d16cb726a42ff5fbd04ee15db854",
+              "absolute_range_inclusive": [
+                9266276384,
+                9400494111
+              ]
+            },
+            {
+              "offset": 268435456,
+              "bytes": 134217728,
+              "sha256": "04550f562d8574393fdb94b51088221295dbd7dc5d349b35d87c91685fa1dcca",
+              "absolute_range_inclusive": [
+                9400494112,
+                9534711839
+              ]
+            },
+            {
+              "offset": 402653184,
+              "bytes": 134217728,
+              "sha256": "570b68bddd6d839164eb2535df7d5197425b4614ff2966780856831c64781a00",
+              "absolute_range_inclusive": [
+                9534711840,
+                9668929567
+              ]
+            },
+            {
+              "offset": 536870912,
+              "bytes": 134217728,
+              "sha256": "286fdfb245d5f019cda7fb531b880c5e5bf36090d919f24635a7d547480fa9da",
+              "absolute_range_inclusive": [
+                9668929568,
+                9803147295
+              ]
+            },
+            {
+              "offset": 671088640,
+              "bytes": 134217728,
+              "sha256": "4ca50967e0ca2e6ff8b43a4b873a14c138161af14ab93c73d588349b352fdddc",
+              "absolute_range_inclusive": [
+                9803147296,
+                9937365023
+              ]
+            },
+            {
+              "offset": 805306368,
+              "bytes": 134217728,
+              "sha256": "e3f206aa89825b723e01e4faeb62574a10541774024a58a59286a5eb97b22a2c",
+              "absolute_range_inclusive": [
+                9937365024,
+                10071582751
+              ]
+            },
+            {
+              "offset": 939524096,
+              "bytes": 134217728,
+              "sha256": "71b38530154b624ac371584dd00ceac04edab16e1f10bb856a4a103892deb888",
+              "absolute_range_inclusive": [
+                10071582752,
+                10205800479
+              ]
+            },
+            {
+              "offset": 1073741824,
+              "bytes": 67108864,
+              "sha256": "919fc1eef38eb4a16423452e7ce16303bdec08f46057e87b5dadf2c5067afdbe",
+              "absolute_range_inclusive": [
+                10205800480,
+                10272909343
+              ]
+            }
+          ],
+          "payload": {
+            "path": ".scratch/dspark-original-experts-20261023/original-experts/blk.2.ffn_up_exps.weight.mxfp4",
+            "bytes": 1140850688,
+            "sha256": "95e7b5c6095094f5452c0dbad465b06df79491d0c851e32ec0329bb5f1bb109e"
+          }
+        }
+      ],
+      "role_payload_bytes": 10273950720,
+      "successful_request_body_bytes": 10273950720,
+      "finished_utc": "2026-10-22T20:55:53.498162+00:00"
+    },
+    "original_payloads_archived": false,
+    "scope": "Source-role extents, not all expert IDs exercised, a whole trained target run or measured physical memory."
+  },
+  "implementation": {
+    "routing": "OriginalBF16[256,4096] router with actualBF16 input/F32 accumulation; originalF32 bias affects selection only. Top6 weights use unbiased sqrtsoftplus scores/divide sum/scale. Real global IDs are never filtered/clamped/modulo-remapped to generated experts.",
+    "arithmetic": "Nine native GroupedMatMul consume original17B/32MXFP4 selected ranges. Gate/up/down stores, clip/SwiGLU and route weighting before down activation quantization remain. CPU Q8_0/CUDA Q8_1 activation math is distinct from official E4-A128/FP4.",
+    "phases": "One complete model Fragment cold-cuts at three actual router frontiers into four ordinary Graphs on the existing Context/queue. Original semantic/diagnostic outputs map by phase/port. Only30I32 router IDs are scheduling readback; activation/weights/state pass by direct leases.",
+    "supply": "E30 gate/up/down and I32map share each immutable generation.91 exact-coverage slices include valid duplicated unaddressed tail experts. CPU uses fixed two-generation ready lease pool; CUDA atomic span WeightBinding from one WeightBatch. Original nine banks stay mapped, no full F32 expert shadow.",
+    "foundation_fix": "Borrowed FileMapping/SharedMapping views now truthfully advertise existing stable canonical CPU addresses. The mapping/access/lifetime implementation and weight-slice overlap validator remain unchanged; original mapped compressed ranges can directly feed sliced uploads without an extra resident host copy.",
+    "lifetime": "Native resource addresses stay stable across Supply moves. Phase Invocations retire/reset before generation release, and their destruction precedes Supply. Explicit close reports upload retirement; exception teardown drains uploads before native resources. Complete accepted state publishes only after full proposal/verification.",
+    "state": "Same encoded three-main-ring/carry/captures/protocol tuple; prefix0/1/2, wrap, Head continuation, cancellation/stale publication, retained results and collection."
+  },
+  "allocation_scope": {
+    "resident_capacity": 30,
+    "expert_bytes_per_leg": 4456448,
+    "per_slot_payload_bytes": 401081344,
+    "CUDA_two_device_slots_bytes": 802162688,
+    "CUDA_two_pinned_slots_bytes": 802162688,
+    "CPU_two_generation_pool_bytes": 802162688,
+    "scope": "Declared native pool/backing capacities and upload reports; no physical peak, private workspace or bus-traffic measurement."
+  },
+  "validation": {
+    "unique_tests": 7,
+    "model_consumer_tests": 4,
+    "mapping_tests": 3,
+    "failures": 0,
+    "errors": 0,
+    "skips": 0,
+    "model_graph_submissions": 124,
+    "new_original_model_graph_submissions": 74,
+    "related_regression_graph_submissions": 50,
+    "cases": [
+      {
+        "attributes": {
+          "name": "CudaOriginalExpertsFeedFullDraftAndAtomicAcceptedState",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_original_state_consumer_test.cc",
+          "line": "1518",
+          "status": "run",
+          "result": "completed",
+          "time": "69.892",
+          "timestamp": "2026-10-23T05:16:15.880",
+          "classname": "DSparkOriginalState"
+        },
+        "properties": {
+          "shared_projection0_provider": "ggml-cuda",
+          "shared_projection1_provider": "ggml-cuda",
+          "shared_projection2_provider": "ggml-cuda",
+          "shared_projection3_provider": "ggml-cuda",
+          "shared_projection4_provider": "ggml-cuda",
+          "shared_projection5_provider": "ggml-cuda",
+          "shared_projection6_provider": "ggml-cuda",
+          "shared_projection7_provider": "ggml-cuda",
+          "shared_projection8_provider": "ggml-cuda",
+          "shared_q8_activation_codec": "fixed M5 native CUDA MMVQ Q8_1 strict/fast division envelope: source-derived code/halfscale intervals under NVIDIA documented approximate intrinsic accuracy, conditional rather than formal guarantee",
+          "attention_projection0_provider": "ggml-cuda",
+          "attention_projection1_provider": "ggml-cuda",
+          "attention_projection2_provider": "ggml-cuda",
+          "attention_projection3_provider": "ggml-cuda",
+          "attention_projection4_provider": "ggml-cuda",
+          "attention_projection5_provider": "ggml-cuda",
+          "attention_projection6_provider": "ggml-cuda",
+          "attention_projection7_provider": "ggml-cuda",
+          "attention_projection8_provider": "ggml-cuda",
+          "attention_projection9_provider": "ggml-cuda",
+          "attention_projection10_provider": "ggml-cuda",
+          "attention_projection11_provider": "ggml-cuda",
+          "attention_output_a_layout": "original single Q8_0 role canonical[8,1024,4096],actualF32[5,8,4096],I32ids[5,8]0..7,GroupedMatMul->F32[5,8,1024]; native CUDA tokenbatch5 uses sameMMVQ codec, not40-row dense/MMQ math",
+          "stage0_attention_fn_provider": "cublasLt",
+          "stage0_ffn_fn_provider": "cublasLt",
+          "stage1_attention_fn_provider": "cublasLt",
+          "stage1_ffn_fn_provider": "cublasLt",
+          "stage2_attention_fn_provider": "cublasLt",
+          "stage2_ffn_fn_provider": "cublasLt",
+          "output_hc_fn_provider": "cublasLt",
+          "expert_stage0_leg0_provider": "ggml-cuda",
+          "expert_stage0_leg1_provider": "ggml-cuda",
+          "expert_stage0_leg2_provider": "ggml-cuda",
+          "expert_stage1_leg0_provider": "ggml-cuda",
+          "expert_stage1_leg1_provider": "ggml-cuda",
+          "expert_stage1_leg2_provider": "ggml-cuda",
+          "expert_stage2_leg0_provider": "ggml-cuda",
+          "expert_stage2_leg1_provider": "ggml-cuda",
+          "expert_stage2_leg2_provider": "ggml-cuda",
+          "resident_draft_phases": "4",
+          "actual_draft_phase_submissions": "16",
+          "actual_draft_episodes": "4",
+          "actual_expert_unions_stage0": "17,17,16,15",
+          "actual_expert_unions_stage1": "17,17,17,19",
+          "actual_expert_unions_stage2": "8,8,11,9",
+          "expert_upload_accounting_scope": "per-phase retired WeightBatch report in stdout; logical/staged=401081344,completed=submitted,unknown=false; API accounting,not measured VRAM or physicalbus traffic",
+          "resident_expert_slot_bytes": "401081344",
+          "expert_projection_reference_episodes": "1",
+          "expert_projection_matrices": "9",
+          "original_expert_numerics": "firstepisode nine actual selected MXFP4 projections against original global-ID mmap byte ranges/native AQ bound; everyepisode actual BF16 router F64 dot,original F32 bias,actual256-domain routing/TopK,exactglobal/localmap,clip/SwiGLU/routeweight-before-down and local BF16 stores/six-slot reduction. FourordinaryGraph phases; onlyactual30I32IDs readback,activation/weights/state directleases,compressed3bank+map samegeneration. Whole State tuple published onlyafter completeproposal+verification.",
+          "actual_submissions": "37",
+          "original_role_count": "83",
+          "original_role_bytes": "13008927644",
+          "encoded_draft_inputs": "18",
+          "semantic_draft_outputs": "7",
+          "test_boundary_outputs": "304",
+          "proposal_numerics": "all3 original M5 wkv/norm independent Q8 decode + compensated F64 dot/norm gate on actual activation; actual postnorm BF16 then independent RoPE gate; exact actual-F32->BF16 bits; exact actual-BF16->584B codes/scales; independent actual committed/proposal carrier reader equals prepared attention F32 keys byte-for-byte",
+          "full_vocabulary_lm_values_checked": "646400",
+          "lm_reference_episodes": "1",
+          "confidence_numerics": "every-episode independent original BF16 coefficients and actual widened-BF16 rawhidden/actualBF16 Markov dot; exact-F32-product/nonFTZ/overflow preconditions; analytic gamma4352(F32)+F64 absolute-product bound; old relative-gate exceedances/error/sumabs/maxratio in stdout, generated gate unchanged",
+          "shared_vocabulary": "formal Flash0731 BF16 full embedding/head, target-owned immutable banks; no dense F32 LM weight shadow",
+          "original_hc_numerics": "every-episode seven actual widened-BF16 x original-F32 dense HC projections with independent F64/product+accum bound; actual inverse RMS, original scale/base Sinkhorn20 and head gates, actual 4-stream collapse/expansion; actual learned RMS/sink inputs and exact local BF16 stores. Seven fn providers recorded from actual CompileReport.",
+          "shared_projection_reference_episodes": "1",
+          "shared_projection_matrices": "9",
+          "original_shared_numerics": "first-episode all9 original Q8_0 projections over actual5row BF16 predecessors with independent packed-byte decoding/native activation codec arithmetic and derived F32 error bounds; all episodes exact actual bounded operands/BF16 stores, existing local SwiGLU gate, derived F32 six-routed-slot reduction and routed+shared addition bounds. Actual Q8 MatMul providers and canonical packed RHS recorded; no dense F32 weight shadow or official FP8 equivalence.",
+          "attention_projection_reference_episodes": "1",
+          "attention_projection_matrices": "12",
+          "attention_projection_values_checked": "691200",
+          "original_attention_numerics": "first-episode12 originalQ8_0 projections on actual5row BF16 operands,including3natural8group output-A projections with actualI32 IDs; derived nativeAQ/F32 bounds. Everyepisode exact QA/QB/OA/OB stores,actual learnedqnorm input,11-step query512norm boundaries with gamma512 mean/localrsqrt and exact BF16 stores,actual forward/inverse last64RoPE raw gates and exact stores,group/input topology and unchanged learned-sink/HC/FFN/LM/Markov/confidence/state checks.",
+          "scope": "83 original roles: all81 fixed Q8_0 sidecar DSpark roles including original BF16router/F32bias and9MXFP4experts,plusformalBF16 fullVembedding/head. Complete3stage draft/encodedstate,accept0/1/2/wrap/continuation/retainedresults. CompactE30 bank residency preserves all256globalIDs,actualrouter outcomes and original17B/32codec. Generated trained-target captures/verifier remain explicit; no official FP8/FP4 arithmetic equivalence,trainedtarget quality,naturalacceptance or throughput claim."
+        }
+      },
+      {
+        "attributes": {
+          "name": "CpuOriginalExpertsFeedFullDraftAndAtomicAcceptedState",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_original_state_consumer_test.cc",
+          "line": "1471",
+          "status": "run",
+          "result": "completed",
+          "time": "74.627",
+          "timestamp": "2026-10-23T05:18:31.670",
+          "classname": "DSparkOriginalState"
+        },
+        "properties": {
+          "shared_projection0_provider": "ggml-cpu",
+          "shared_projection1_provider": "ggml-cpu",
+          "shared_projection2_provider": "ggml-cpu",
+          "shared_projection3_provider": "ggml-cpu",
+          "shared_projection4_provider": "ggml-cpu",
+          "shared_projection5_provider": "ggml-cpu",
+          "shared_projection6_provider": "ggml-cpu",
+          "shared_projection7_provider": "ggml-cpu",
+          "shared_projection8_provider": "ggml-cpu",
+          "shared_q8_activation_codec": "actual fixed ggml CPU worker AVX Q8_0 nearest-even: exact arch/x86/quants.c.obj disassembly in BK/review/cpu-q8-quantizer.json; no main-executable capability inference",
+          "attention_projection0_provider": "ggml-cpu",
+          "attention_projection1_provider": "ggml-cpu",
+          "attention_projection2_provider": "ggml-cpu",
+          "attention_projection3_provider": "ggml-cpu",
+          "attention_projection4_provider": "ggml-cpu",
+          "attention_projection5_provider": "ggml-cpu",
+          "attention_projection6_provider": "ggml-cpu",
+          "attention_projection7_provider": "ggml-cpu",
+          "attention_projection8_provider": "ggml-cpu",
+          "attention_projection9_provider": "ggml-cpu",
+          "attention_projection10_provider": "ggml-cpu",
+          "attention_projection11_provider": "ggml-cpu",
+          "attention_output_a_layout": "original single Q8_0 role canonical[8,1024,4096],actualF32[5,8,4096],I32ids[5,8]0..7,GroupedMatMul->F32[5,8,1024]; native CUDA tokenbatch5 uses sameMMVQ codec, not40-row dense/MMQ math",
+          "stage0_attention_fn_provider": "ggml-cpu",
+          "stage0_ffn_fn_provider": "ggml-cpu",
+          "stage1_attention_fn_provider": "ggml-cpu",
+          "stage1_ffn_fn_provider": "ggml-cpu",
+          "stage2_attention_fn_provider": "ggml-cpu",
+          "stage2_ffn_fn_provider": "ggml-cpu",
+          "output_hc_fn_provider": "ggml-cpu",
+          "expert_stage0_leg0_provider": "ggml-cpu",
+          "expert_stage0_leg1_provider": "ggml-cpu",
+          "expert_stage0_leg2_provider": "ggml-cpu",
+          "expert_stage1_leg0_provider": "ggml-cpu",
+          "expert_stage1_leg1_provider": "ggml-cpu",
+          "expert_stage1_leg2_provider": "ggml-cpu",
+          "expert_stage2_leg0_provider": "ggml-cpu",
+          "expert_stage2_leg1_provider": "ggml-cpu",
+          "expert_stage2_leg2_provider": "ggml-cpu",
+          "resident_draft_phases": "4",
+          "actual_draft_phase_submissions": "16",
+          "actual_draft_episodes": "4",
+          "actual_expert_unions_stage0": "17,17,16,15",
+          "actual_expert_unions_stage1": "18,18,17,19",
+          "actual_expert_unions_stage2": "7,7,11,9",
+          "expert_upload_accounting_scope": "ordinary ready StorageOwner CPU compressed operands from one bounded two-generation LeasePool; not CUDA WeightSlots",
+          "cpu_expert_pool_capacity": "802162688",
+          "cpu_expert_pool_peak": "401081344",
+          "resident_expert_slot_bytes": "401081344",
+          "expert_projection_reference_episodes": "1",
+          "expert_projection_matrices": "9",
+          "original_expert_numerics": "firstepisode nine actual selected MXFP4 projections against original global-ID mmap byte ranges/native AQ bound; everyepisode actual BF16 router F64 dot,original F32 bias,actual256-domain routing/TopK,exactglobal/localmap,clip/SwiGLU/routeweight-before-down and local BF16 stores/six-slot reduction. FourordinaryGraph phases; onlyactual30I32IDs readback,activation/weights/state directleases,compressed3bank+map samegeneration. Whole State tuple published onlyafter completeproposal+verification.",
+          "actual_submissions": "37",
+          "original_role_count": "83",
+          "original_role_bytes": "13008927644",
+          "encoded_draft_inputs": "18",
+          "semantic_draft_outputs": "7",
+          "test_boundary_outputs": "304",
+          "proposal_numerics": "all3 original M5 wkv/norm independent Q8 decode + compensated F64 dot/norm gate on actual activation; actual postnorm BF16 then independent RoPE gate; exact actual-F32->BF16 bits; exact actual-BF16->584B codes/scales; independent actual committed/proposal carrier reader equals prepared attention F32 keys byte-for-byte",
+          "full_vocabulary_lm_values_checked": "646400",
+          "lm_reference_episodes": "1",
+          "confidence_numerics": "every-episode independent original BF16 coefficients and actual widened-BF16 rawhidden/actualBF16 Markov dot; exact-F32-product/nonFTZ/overflow preconditions; analytic gamma4352(F32)+F64 absolute-product bound; old relative-gate exceedances/error/sumabs/maxratio in stdout, generated gate unchanged",
+          "shared_vocabulary": "formal Flash0731 BF16 full embedding/head, target-owned immutable banks; no dense F32 LM weight shadow",
+          "original_hc_numerics": "every-episode seven actual widened-BF16 x original-F32 dense HC projections with independent F64/product+accum bound; actual inverse RMS, original scale/base Sinkhorn20 and head gates, actual 4-stream collapse/expansion; actual learned RMS/sink inputs and exact local BF16 stores. Seven fn providers recorded from actual CompileReport.",
+          "shared_projection_reference_episodes": "1",
+          "shared_projection_matrices": "9",
+          "original_shared_numerics": "first-episode all9 original Q8_0 projections over actual5row BF16 predecessors with independent packed-byte decoding/native activation codec arithmetic and derived F32 error bounds; all episodes exact actual bounded operands/BF16 stores, existing local SwiGLU gate, derived F32 six-routed-slot reduction and routed+shared addition bounds. Actual Q8 MatMul providers and canonical packed RHS recorded; no dense F32 weight shadow or official FP8 equivalence.",
+          "attention_projection_reference_episodes": "1",
+          "attention_projection_matrices": "12",
+          "attention_projection_values_checked": "691200",
+          "original_attention_numerics": "first-episode12 originalQ8_0 projections on actual5row BF16 operands,including3natural8group output-A projections with actualI32 IDs; derived nativeAQ/F32 bounds. Everyepisode exact QA/QB/OA/OB stores,actual learnedqnorm input,11-step query512norm boundaries with gamma512 mean/localrsqrt and exact BF16 stores,actual forward/inverse last64RoPE raw gates and exact stores,group/input topology and unchanged learned-sink/HC/FFN/LM/Markov/confidence/state checks.",
+          "scope": "83 original roles: all81 fixed Q8_0 sidecar DSpark roles including original BF16router/F32bias and9MXFP4experts,plusformalBF16 fullVembedding/head. Complete3stage draft/encodedstate,accept0/1/2/wrap/continuation/retainedresults. CompactE30 bank residency preserves all256globalIDs,actualrouter outcomes and original17B/32codec. Generated trained-target captures/verifier remain explicit; no official FP8/FP4 arithmetic equivalence,trainedtarget quality,naturalacceptance or throughput claim."
+        }
+      },
+      {
+        "attributes": {
+          "name": "CpuOriginalAttentionFeedsFullDraftAndAtomicAcceptedState",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_original_state_consumer_test.cc",
+          "line": "1461",
+          "status": "run",
+          "result": "completed",
+          "time": "42.465",
+          "timestamp": "2026-10-23T05:20:07.838",
+          "classname": "DSparkOriginalState"
+        },
+        "properties": {
+          "shared_projection0_provider": "ggml-cpu",
+          "shared_projection1_provider": "ggml-cpu",
+          "shared_projection2_provider": "ggml-cpu",
+          "shared_projection3_provider": "ggml-cpu",
+          "shared_projection4_provider": "ggml-cpu",
+          "shared_projection5_provider": "ggml-cpu",
+          "shared_projection6_provider": "ggml-cpu",
+          "shared_projection7_provider": "ggml-cpu",
+          "shared_projection8_provider": "ggml-cpu",
+          "shared_q8_activation_codec": "actual fixed ggml CPU worker AVX Q8_0 nearest-even: exact arch/x86/quants.c.obj disassembly in BK/review/cpu-q8-quantizer.json; no main-executable capability inference",
+          "attention_projection0_provider": "ggml-cpu",
+          "attention_projection1_provider": "ggml-cpu",
+          "attention_projection2_provider": "ggml-cpu",
+          "attention_projection3_provider": "ggml-cpu",
+          "attention_projection4_provider": "ggml-cpu",
+          "attention_projection5_provider": "ggml-cpu",
+          "attention_projection6_provider": "ggml-cpu",
+          "attention_projection7_provider": "ggml-cpu",
+          "attention_projection8_provider": "ggml-cpu",
+          "attention_projection9_provider": "ggml-cpu",
+          "attention_projection10_provider": "ggml-cpu",
+          "attention_projection11_provider": "ggml-cpu",
+          "attention_output_a_layout": "original single Q8_0 role canonical[8,1024,4096],actualF32[5,8,4096],I32ids[5,8]0..7,GroupedMatMul->F32[5,8,1024]; native CUDA tokenbatch5 uses sameMMVQ codec, not40-row dense/MMQ math",
+          "stage0_attention_fn_provider": "ggml-cpu",
+          "stage0_ffn_fn_provider": "ggml-cpu",
+          "stage1_attention_fn_provider": "ggml-cpu",
+          "stage1_ffn_fn_provider": "ggml-cpu",
+          "stage2_attention_fn_provider": "ggml-cpu",
+          "stage2_ffn_fn_provider": "ggml-cpu",
+          "output_hc_fn_provider": "ggml-cpu",
+          "actual_submissions": "25",
+          "original_role_count": "68",
+          "original_role_bytes": "2734976924",
+          "encoded_draft_inputs": "6",
+          "semantic_draft_outputs": "7",
+          "test_boundary_outputs": "241",
+          "proposal_numerics": "all3 original M5 wkv/norm independent Q8 decode + compensated F64 dot/norm gate on actual activation; actual postnorm BF16 then independent RoPE gate; exact actual-F32->BF16 bits; exact actual-BF16->584B codes/scales; independent actual committed/proposal carrier reader equals prepared attention F32 keys byte-for-byte",
+          "full_vocabulary_lm_values_checked": "646400",
+          "lm_reference_episodes": "1",
+          "confidence_numerics": "every-episode independent original BF16 coefficients and actual widened-BF16 rawhidden/actualBF16 Markov dot; exact-F32-product/nonFTZ/overflow preconditions; analytic gamma4352(F32)+F64 absolute-product bound; old relative-gate exceedances/error/sumabs/maxratio in stdout, generated gate unchanged",
+          "shared_vocabulary": "formal Flash0731 BF16 full embedding/head, target-owned immutable banks; no dense F32 LM weight shadow",
+          "original_hc_numerics": "every-episode seven actual widened-BF16 x original-F32 dense HC projections with independent F64/product+accum bound; actual inverse RMS, original scale/base Sinkhorn20 and head gates, actual 4-stream collapse/expansion; actual learned RMS/sink inputs and exact local BF16 stores. Seven fn providers recorded from actual CompileReport.",
+          "shared_projection_reference_episodes": "1",
+          "shared_projection_matrices": "9",
+          "original_shared_numerics": "first-episode all9 original Q8_0 projections over actual5row BF16 predecessors with independent packed-byte decoding/native activation codec arithmetic and derived F32 error bounds; all episodes exact actual bounded operands/BF16 stores, existing local SwiGLU gate, derived F32 six-routed-slot reduction and routed+shared addition bounds. Actual Q8 MatMul providers and canonical packed RHS recorded; no dense F32 weight shadow or official FP8 equivalence.",
+          "attention_projection_reference_episodes": "1",
+          "attention_projection_matrices": "12",
+          "attention_projection_values_checked": "691200",
+          "original_attention_numerics": "first-episode12 originalQ8_0 projections on actual5row BF16 operands,including3natural8group output-A projections with actualI32 IDs; derived nativeAQ/F32 bounds. Everyepisode exact QA/QB/OA/OB stores,actual learnedqnorm input,11-step query512norm boundaries with gamma512 mean/localrsqrt and exact BF16 stores,actual forward/inverse last64RoPE raw gates and exact stores,group/input topology and unchanged learned-sink/HC/FFN/LM/Markov/confidence/state checks.",
+          "scope": "68 original roles: previous56 formalBF16 fullVvocabulary plus originalQ8DSpark roles,now12 originalQ8 attention projections including natural8group output-A. Same complete3stage encodedstate/allVhead journey. Remaining15 sidecarroles(router3,bias3,MXFP4experts9) and actualtrainedtargetcapture/verifier unsupplied/generated. CPUAQ reference fixedactualAVXworker,CUDA MMVQ strict/fastdivisioninterval conditional; no officialFP8 arithmetic equivalence,fulltrainedtarget,naturalacceptance or throughput claim."
+        }
+      },
+      {
+        "attributes": {
+          "name": "CudaOriginalAttentionFeedsFullDraftAndAtomicAcceptedState",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_original_state_consumer_test.cc",
+          "line": "1511",
+          "status": "run",
+          "result": "completed",
+          "time": "18.218",
+          "timestamp": "2026-10-23T05:20:50.303",
+          "classname": "DSparkOriginalState"
+        },
+        "properties": {
+          "shared_projection0_provider": "ggml-cuda",
+          "shared_projection1_provider": "ggml-cuda",
+          "shared_projection2_provider": "ggml-cuda",
+          "shared_projection3_provider": "ggml-cuda",
+          "shared_projection4_provider": "ggml-cuda",
+          "shared_projection5_provider": "ggml-cuda",
+          "shared_projection6_provider": "ggml-cuda",
+          "shared_projection7_provider": "ggml-cuda",
+          "shared_projection8_provider": "ggml-cuda",
+          "shared_q8_activation_codec": "fixed M5 native CUDA MMVQ Q8_1 strict/fast division envelope: source-derived code/halfscale intervals under NVIDIA documented approximate intrinsic accuracy, conditional rather than formal guarantee",
+          "attention_projection0_provider": "ggml-cuda",
+          "attention_projection1_provider": "ggml-cuda",
+          "attention_projection2_provider": "ggml-cuda",
+          "attention_projection3_provider": "ggml-cuda",
+          "attention_projection4_provider": "ggml-cuda",
+          "attention_projection5_provider": "ggml-cuda",
+          "attention_projection6_provider": "ggml-cuda",
+          "attention_projection7_provider": "ggml-cuda",
+          "attention_projection8_provider": "ggml-cuda",
+          "attention_projection9_provider": "ggml-cuda",
+          "attention_projection10_provider": "ggml-cuda",
+          "attention_projection11_provider": "ggml-cuda",
+          "attention_output_a_layout": "original single Q8_0 role canonical[8,1024,4096],actualF32[5,8,4096],I32ids[5,8]0..7,GroupedMatMul->F32[5,8,1024]; native CUDA tokenbatch5 uses sameMMVQ codec, not40-row dense/MMQ math",
+          "stage0_attention_fn_provider": "cublasLt",
+          "stage0_ffn_fn_provider": "cublasLt",
+          "stage1_attention_fn_provider": "cublasLt",
+          "stage1_ffn_fn_provider": "cublasLt",
+          "stage2_attention_fn_provider": "cublasLt",
+          "stage2_ffn_fn_provider": "cublasLt",
+          "output_hc_fn_provider": "cublasLt",
+          "actual_submissions": "25",
+          "original_role_count": "68",
+          "original_role_bytes": "2734976924",
+          "encoded_draft_inputs": "6",
+          "semantic_draft_outputs": "7",
+          "test_boundary_outputs": "241",
+          "proposal_numerics": "all3 original M5 wkv/norm independent Q8 decode + compensated F64 dot/norm gate on actual activation; actual postnorm BF16 then independent RoPE gate; exact actual-F32->BF16 bits; exact actual-BF16->584B codes/scales; independent actual committed/proposal carrier reader equals prepared attention F32 keys byte-for-byte",
+          "full_vocabulary_lm_values_checked": "646400",
+          "lm_reference_episodes": "1",
+          "confidence_numerics": "every-episode independent original BF16 coefficients and actual widened-BF16 rawhidden/actualBF16 Markov dot; exact-F32-product/nonFTZ/overflow preconditions; analytic gamma4352(F32)+F64 absolute-product bound; old relative-gate exceedances/error/sumabs/maxratio in stdout, generated gate unchanged",
+          "shared_vocabulary": "formal Flash0731 BF16 full embedding/head, target-owned immutable banks; no dense F32 LM weight shadow",
+          "original_hc_numerics": "every-episode seven actual widened-BF16 x original-F32 dense HC projections with independent F64/product+accum bound; actual inverse RMS, original scale/base Sinkhorn20 and head gates, actual 4-stream collapse/expansion; actual learned RMS/sink inputs and exact local BF16 stores. Seven fn providers recorded from actual CompileReport.",
+          "shared_projection_reference_episodes": "1",
+          "shared_projection_matrices": "9",
+          "original_shared_numerics": "first-episode all9 original Q8_0 projections over actual5row BF16 predecessors with independent packed-byte decoding/native activation codec arithmetic and derived F32 error bounds; all episodes exact actual bounded operands/BF16 stores, existing local SwiGLU gate, derived F32 six-routed-slot reduction and routed+shared addition bounds. Actual Q8 MatMul providers and canonical packed RHS recorded; no dense F32 weight shadow or official FP8 equivalence.",
+          "attention_projection_reference_episodes": "1",
+          "attention_projection_matrices": "12",
+          "attention_projection_values_checked": "691200",
+          "original_attention_numerics": "first-episode12 originalQ8_0 projections on actual5row BF16 operands,including3natural8group output-A projections with actualI32 IDs; derived nativeAQ/F32 bounds. Everyepisode exact QA/QB/OA/OB stores,actual learnedqnorm input,11-step query512norm boundaries with gamma512 mean/localrsqrt and exact BF16 stores,actual forward/inverse last64RoPE raw gates and exact stores,group/input topology and unchanged learned-sink/HC/FFN/LM/Markov/confidence/state checks.",
+          "scope": "68 original roles: previous56 formalBF16 fullVvocabulary plus originalQ8DSpark roles,now12 originalQ8 attention projections including natural8group output-A. Same complete3stage encodedstate/allVhead journey. Remaining15 sidecarroles(router3,bias3,MXFP4experts9) and actualtrainedtargetcapture/verifier unsupplied/generated. CPUAQ reference fixedactualAVXworker,CUDA MMVQ strict/fastdivisioninterval conditional; no officialFP8 arithmetic equivalence,fulltrainedtarget,naturalacceptance or throughput claim."
+        }
+      },
+      {
+        "attributes": {
+          "name": "ReadOnlyMapsContent",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\mem_vm\\file_mapping_test.cc",
+          "line": "88",
+          "status": "run",
+          "result": "completed",
+          "time": "0.005",
+          "timestamp": "2026-10-23T05:21:29.623",
+          "classname": "MapTest"
+        },
+        "properties": {}
+      },
+      {
+        "attributes": {
+          "name": "ReadWriteFlushPersists",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\mem_vm\\file_mapping_test.cc",
+          "line": "358",
+          "status": "run",
+          "result": "completed",
+          "time": "0.005",
+          "timestamp": "2026-10-23T05:21:29.629",
+          "classname": "MapTest"
+        },
+        "properties": {}
+      },
+      {
+        "attributes": {
+          "name": "CopyOnWriteDoesNotTouchFile",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\mem_vm\\file_mapping_test.cc",
+          "line": "383",
+          "status": "run",
+          "result": "completed",
+          "time": "0.",
+          "timestamp": "2026-10-23T05:21:29.634",
+          "classname": "MapTest"
+        },
+        "properties": {}
+      }
+    ],
+    "expert_projection_values_checked": 1474560,
+    "numerical_observations": [
+      {
+        "role": "original selected MXFP4 stage0 leg0",
+        "values": 61440,
+        "maximum_absolute_error": 0.0014479160308837893,
+        "maximum_bound_ratio": 0.3301450295297009,
+        "maximum_quantization_ambiguity": 0.005093365907669105,
+        "ambiguous_activation_codes": 70,
+        "ambiguous_activation_scales": 0
+      },
+      {
+        "role": "original selected MXFP4 stage0 leg1",
+        "values": 61440,
+        "maximum_absolute_error": 0.0014478862285614016,
+        "maximum_bound_ratio": 0.2979836478507295,
+        "maximum_quantization_ambiguity": 0.004752978682518048,
+        "ambiguous_activation_codes": 70,
+        "ambiguous_activation_scales": 0
+      },
+      {
+        "role": "original selected MXFP4 stage0 leg2",
+        "values": 122880,
+        "maximum_absolute_error": 0.0011196359992027285,
+        "maximum_bound_ratio": 0.8747264640313266,
+        "maximum_quantization_ambiguity": 0.002136707305908209,
+        "ambiguous_activation_codes": 82,
+        "ambiguous_activation_scales": 0
+      },
+      {
+        "role": "original selected MXFP4 stage1 leg0",
+        "values": 61440,
+        "maximum_absolute_error": 0.00206136703491211,
+        "maximum_bound_ratio": 0.3928162535115136,
+        "maximum_quantization_ambiguity": 0.007994472980499339,
+        "ambiguous_activation_codes": 67,
+        "ambiguous_activation_scales": 0
+      },
+      {
+        "role": "original selected MXFP4 stage1 leg1",
+        "values": 61440,
+        "maximum_absolute_error": 0.0019863843917846684,
+        "maximum_bound_ratio": 0.3895565057227744,
+        "maximum_quantization_ambiguity": 0.008266955614090044,
+        "ambiguous_activation_codes": 67,
+        "ambiguous_activation_scales": 0
+      },
+      {
+        "role": "original selected MXFP4 stage1 leg2",
+        "values": 122880,
+        "maximum_absolute_error": 0.0016722679138183596,
+        "maximum_bound_ratio": 0.9058471229762949,
+        "maximum_quantization_ambiguity": 0.005622625350952166,
+        "ambiguous_activation_codes": 101,
+        "ambiguous_activation_scales": 0
+      },
+      {
+        "role": "original selected MXFP4 stage2 leg0",
+        "values": 61440,
+        "maximum_absolute_error": 0.001251339912414551,
+        "maximum_bound_ratio": 0.2715744770838307,
+        "maximum_quantization_ambiguity": 0.006367206573486401,
+        "ambiguous_activation_codes": 65,
+        "ambiguous_activation_scales": 0
+      },
+      {
+        "role": "original selected MXFP4 stage2 leg1",
+        "values": 61440,
+        "maximum_absolute_error": 0.001470625400543213,
+        "maximum_bound_ratio": 0.3358843012669719,
+        "maximum_quantization_ambiguity": 0.006509006023407059,
+        "ambiguous_activation_codes": 65,
+        "ambiguous_activation_scales": 0
+      },
+      {
+        "role": "original selected MXFP4 stage2 leg2",
+        "values": 122880,
+        "maximum_absolute_error": 0.0010321289300918581,
+        "maximum_bound_ratio": 0.7791167536754257,
+        "maximum_quantization_ambiguity": 0.0033963918685913134,
+        "ambiguous_activation_codes": 62,
+        "ambiguous_activation_scales": 0
+      },
+      {
+        "role": "original selected MXFP4 stage0 leg0",
+        "values": 61440,
+        "maximum_absolute_error": 3.278255462646485e-07,
+        "maximum_bound_ratio": 0.00016102181378791077,
+        "maximum_quantization_ambiguity": 1.265e-321,
+        "ambiguous_activation_codes": 0,
+        "ambiguous_activation_scales": 0
+      },
+      {
+        "role": "original selected MXFP4 stage0 leg1",
+        "values": 61440,
+        "maximum_absolute_error": 3.278255462646485e-07,
+        "maximum_bound_ratio": 0.00018677102871355114,
+        "maximum_quantization_ambiguity": 1.265e-321,
+        "ambiguous_activation_codes": 0,
+        "ambiguous_activation_scales": 0
+      },
+      {
+        "role": "original selected MXFP4 stage0 leg2",
+        "values": 122880,
+        "maximum_absolute_error": 1.266598701477051e-07,
+        "maximum_bound_ratio": 0.0007472711176218302,
+        "maximum_quantization_ambiguity": 6.3e-322,
+        "ambiguous_activation_codes": 0,
+        "ambiguous_activation_scales": 0
+      },
+      {
+        "role": "original selected MXFP4 stage1 leg0",
+        "values": 61440,
+        "maximum_absolute_error": 5.066394805908204e-07,
+        "maximum_bound_ratio": 0.00021921568937726928,
+        "maximum_quantization_ambiguity": 1.265e-321,
+        "ambiguous_activation_codes": 0,
+        "ambiguous_activation_scales": 0
+      },
+      {
+        "role": "original selected MXFP4 stage1 leg1",
+        "values": 61440,
+        "maximum_absolute_error": 4.1723251342773443e-07,
+        "maximum_bound_ratio": 0.00017290169492852642,
+        "maximum_quantization_ambiguity": 1.265e-321,
+        "ambiguous_activation_codes": 0,
+        "ambiguous_activation_scales": 0
+      },
+      {
+        "role": "original selected MXFP4 stage1 leg2",
+        "values": 122880,
+        "maximum_absolute_error": 3.874301910400391e-07,
+        "maximum_bound_ratio": 0.0009105260422134498,
+        "maximum_quantization_ambiguity": 6.3e-322,
+        "ambiguous_activation_codes": 0,
+        "ambiguous_activation_scales": 0
+      },
+      {
+        "role": "original selected MXFP4 stage2 leg0",
+        "values": 61440,
+        "maximum_absolute_error": 4.0233135223388677e-07,
+        "maximum_bound_ratio": 0.00021798547060596297,
+        "maximum_quantization_ambiguity": 1.265e-321,
+        "ambiguous_activation_codes": 0,
+        "ambiguous_activation_scales": 0
+      },
+      {
+        "role": "original selected MXFP4 stage2 leg1",
+        "values": 61440,
+        "maximum_absolute_error": 3.874301910400391e-07,
+        "maximum_bound_ratio": 0.0002022904198345267,
+        "maximum_quantization_ambiguity": 1.265e-321,
+        "ambiguous_activation_codes": 0,
+        "ambiguous_activation_scales": 0
+      },
+      {
+        "role": "original selected MXFP4 stage2 leg2",
+        "values": 122880,
+        "maximum_absolute_error": 1.9371509552001956e-07,
+        "maximum_bound_ratio": 0.0007422164355847764,
+        "maximum_quantization_ambiguity": 6.37e-322,
+        "ambiguous_activation_codes": 0,
+        "ambiguous_activation_scales": 0
+      }
+    ],
+    "numerical": "Firstepisode independent original-selected-byte F64/native-AQ projection bounds; everyepisode actualrouter dot/selection/unbiasedweights/map/clip/gate/weighteddown/BF16 and prior attention/shared/HC/LM/confidence/state gates. No tolerance widening or ideal-predecessor propagation through rounding.",
+    "precision_scope": "CPU fixed actualAVX Q8_0 quantizer. CUDA SM89 M5 MMVQ Q8_1 interval remains conditional under existing division/FTZ/range assumptions. Does not assert all-input vendor accuracy.",
+    "commands_and_results": [
+      {
+        "path": ".scratch/dspark-original-experts-20261023/checks5/summary.json",
+        "bytes": 8655,
+        "sha256": "442fa7c74425a15ab207ebe9a4be85a2e12296911059e5becb37cf2759a0f43d"
+      },
+      {
+        "path": ".scratch/dspark-original-experts-20261023/checks6/summary.json",
+        "bytes": 8640,
+        "sha256": "12f1721606f193c28c0db243f1ff12e5d76d2065ad31e14c22d2b76b584fee35"
+      },
+      {
+        "path": ".scratch/dspark-original-experts-20261023/checks7/summary.json",
+        "bytes": 12716,
+        "sha256": "2c6104a218d671d19ee5b5997a7bbe41a4bfe34d625fc3300a41194b6e539727"
+      },
+      {
+        "path": ".scratch/dspark-original-experts-20261023/checks8/summary.json",
+        "bytes": 2444,
+        "sha256": "28babc88ea251d48b6491e5d4c1bbcb9ececc9699e3dbb30b3451eace982f4a0"
+      }
+    ],
+    "compiled_host_translation_units": 3,
+    "host_compile_attempts": 5,
+    "prior_attempts": [
+      {
+        "process": {
+          "command": [
+            "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-original-experts-20261023\\tests-link1\\dspark-original-expert-checks.exe",
+            "--gtest_filter=DSparkOriginalState.*OriginalExpertsFeedFullDraftAndAtomicAcceptedState",
+            "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\dspark-original-experts-20261023\\checks1\\results.xml"
+          ],
+          "cwd": "C:\\public\\project-hyle\\hyle",
+          "started": 1792702643.4281275,
+          "timeout_seconds": 900,
+          "throughput_evidence": false,
+          "memory_evidence": false,
+          "trace": false,
+          "profiler": false,
+          "pid": 8740,
+          "exit": 1,
+          "timed_out": false,
+          "finished": 1792702688.0250823,
+          "process_wall_seconds": 44.59597980000035
+        },
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-original-experts-20261023\\tests-link1\\dspark-original-expert-checks.exe",
+          "bytes": 141210112,
+          "sha256": "04eab23f5bfaacd95d40ed2d4ba1e36493ce9fb11ddd68f4cec96c0996ea407e"
+        },
+        "throughput_evidence": false,
+        "physical_memory_evidence": false,
+        "whole_original_model": false,
+        "tests": 2,
+        "failures": 2,
+        "errors": 0,
+        "disabled": 0,
+        "skips": 0,
+        "cases": [
+          {
+            "attributes": {
+              "name": "CpuOriginalExpertsFeedFullDraftAndAtomicAcceptedState",
+              "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_original_state_consumer_test.cc",
+              "line": "1427",
+              "status": "run",
+              "result": "completed",
+              "time": "41.486",
+              "timestamp": "2026-10-23T04:57:24.534",
+              "classname": "DSparkOriginalState"
+            },
+            "properties": {
+              "shared_projection0_provider": "ggml-cpu",
+              "shared_projection1_provider": "ggml-cpu",
+              "shared_projection2_provider": "ggml-cpu",
+              "shared_projection3_provider": "ggml-cpu",
+              "shared_projection4_provider": "ggml-cpu",
+              "shared_projection5_provider": "ggml-cpu",
+              "shared_projection6_provider": "ggml-cpu",
+              "shared_projection7_provider": "ggml-cpu",
+              "shared_projection8_provider": "ggml-cpu",
+              "shared_q8_activation_codec": "actual fixed ggml CPU worker AVX Q8_0 nearest-even: exact arch/x86/quants.c.obj disassembly in BK/review/cpu-q8-quantizer.json; no main-executable capability inference",
+              "attention_projection0_provider": "ggml-cpu",
+              "attention_projection1_provider": "ggml-cpu",
+              "attention_projection2_provider": "ggml-cpu",
+              "attention_projection3_provider": "ggml-cpu",
+              "attention_projection4_provider": "ggml-cpu",
+              "attention_projection5_provider": "ggml-cpu"
+            }
+          },
+          {
+            "attributes": {
+              "name": "CudaOriginalExpertsFeedFullDraftAndAtomicAcceptedState",
+              "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_original_state_consumer_test.cc",
+              "line": "1468",
+              "status": "run",
+              "result": "completed",
+              "time": "0.824",
+              "timestamp": "2026-10-23T04:58:06.020",
+              "classname": "DSparkOriginalState"
+            },
+            "properties": {
+              "shared_projection0_provider": "ggml-cuda",
+              "shared_projection1_provider": "ggml-cuda",
+              "shared_projection2_provider": "ggml-cuda",
+              "shared_projection3_provider": "ggml-cuda",
+              "shared_projection4_provider": "ggml-cuda",
+              "shared_projection5_provider": "ggml-cuda",
+              "shared_projection6_provider": "ggml-cuda",
+              "shared_projection7_provider": "ggml-cuda",
+              "shared_projection8_provider": "ggml-cuda",
+              "shared_q8_activation_codec": "fixed M5 native CUDA MMVQ Q8_1 strict/fast division envelope: source-derived code/halfscale intervals under NVIDIA documented approximate intrinsic accuracy, conditional rather than formal guarantee",
+              "attention_projection0_provider": "ggml-cuda",
+              "attention_projection1_provider": "ggml-cuda",
+              "attention_projection2_provider": "ggml-cuda",
+              "attention_projection3_provider": "ggml-cuda",
+              "attention_projection4_provider": "ggml-cuda",
+              "attention_projection5_provider": "ggml-cuda"
+            }
+          }
+        ]
+      },
+      {
+        "process": {
+          "command": [
+            "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-original-experts-20261023\\tests-link2\\dspark-original-expert-checks.exe",
+            "--gtest_filter=DSparkOriginalState.*OriginalExpertsFeedFullDraftAndAtomicAcceptedState",
+            "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\dspark-original-experts-20261023\\checks2\\results.xml"
+          ],
+          "cwd": "C:\\public\\project-hyle\\hyle",
+          "started": 1792702875.9431634,
+          "timeout_seconds": 900,
+          "throughput_evidence": false,
+          "memory_evidence": false,
+          "trace": false,
+          "profiler": false,
+          "pid": 33928,
+          "exit": 1,
+          "timed_out": false,
+          "finished": 1792702953.4257782,
+          "process_wall_seconds": 77.48131309999735
+        },
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-original-experts-20261023\\tests-link2\\dspark-original-expert-checks.exe",
+          "bytes": 141212672,
+          "sha256": "4b19870af13b4f6fac43aa81ca6144539a6b8d7116d4ca518fa266164ab403d6"
+        },
+        "throughput_evidence": false,
+        "physical_memory_evidence": false,
+        "whole_original_model": false,
+        "tests": 2,
+        "failures": 1,
+        "errors": 0,
+        "disabled": 0,
+        "skips": 0,
+        "cases": [
+          {
+            "attributes": {
+              "name": "CpuOriginalExpertsFeedFullDraftAndAtomicAcceptedState",
+              "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_original_state_consumer_test.cc",
+              "line": "1458",
+              "status": "run",
+              "result": "completed",
+              "time": "74.266",
+              "timestamp": "2026-10-23T05:01:17.058",
+              "classname": "DSparkOriginalState"
+            },
+            "properties": {
+              "shared_projection0_provider": "ggml-cpu",
+              "shared_projection1_provider": "ggml-cpu",
+              "shared_projection2_provider": "ggml-cpu",
+              "shared_projection3_provider": "ggml-cpu",
+              "shared_projection4_provider": "ggml-cpu",
+              "shared_projection5_provider": "ggml-cpu",
+              "shared_projection6_provider": "ggml-cpu",
+              "shared_projection7_provider": "ggml-cpu",
+              "shared_projection8_provider": "ggml-cpu",
+              "shared_q8_activation_codec": "actual fixed ggml CPU worker AVX Q8_0 nearest-even: exact arch/x86/quants.c.obj disassembly in BK/review/cpu-q8-quantizer.json; no main-executable capability inference",
+              "attention_projection0_provider": "ggml-cpu",
+              "attention_projection1_provider": "ggml-cpu",
+              "attention_projection2_provider": "ggml-cpu",
+              "attention_projection3_provider": "ggml-cpu",
+              "attention_projection4_provider": "ggml-cpu",
+              "attention_projection5_provider": "ggml-cpu",
+              "attention_projection6_provider": "ggml-cpu",
+              "attention_projection7_provider": "ggml-cpu",
+              "attention_projection8_provider": "ggml-cpu",
+              "attention_projection9_provider": "ggml-cpu",
+              "attention_projection10_provider": "ggml-cpu",
+              "attention_projection11_provider": "ggml-cpu",
+              "attention_output_a_layout": "original single Q8_0 role canonical[8,1024,4096],actualF32[5,8,4096],I32ids[5,8]0..7,GroupedMatMul->F32[5,8,1024]; native CUDA tokenbatch5 uses sameMMVQ codec, not40-row dense/MMQ math",
+              "stage0_attention_fn_provider": "ggml-cpu",
+              "stage0_ffn_fn_provider": "ggml-cpu",
+              "stage1_attention_fn_provider": "ggml-cpu",
+              "stage1_ffn_fn_provider": "ggml-cpu",
+              "stage2_attention_fn_provider": "ggml-cpu",
+              "stage2_ffn_fn_provider": "ggml-cpu",
+              "output_hc_fn_provider": "ggml-cpu",
+              "expert_stage0_leg0_provider": "ggml-cpu",
+              "expert_stage0_leg1_provider": "ggml-cpu",
+              "expert_stage0_leg2_provider": "ggml-cpu",
+              "expert_stage1_leg0_provider": "ggml-cpu",
+              "expert_stage1_leg1_provider": "ggml-cpu",
+              "expert_stage1_leg2_provider": "ggml-cpu",
+              "expert_stage2_leg0_provider": "ggml-cpu",
+              "expert_stage2_leg1_provider": "ggml-cpu",
+              "expert_stage2_leg2_provider": "ggml-cpu",
+              "resident_draft_phases": "4",
+              "actual_draft_phase_submissions": "16",
+              "actual_draft_episodes": "4",
+              "actual_expert_unions_stage0": "17,17,16,15",
+              "actual_expert_unions_stage1": "18,18,17,19",
+              "actual_expert_unions_stage2": "7,7,11,9",
+              "expert_upload_accounting_scope": "ordinary ready StorageOwner CPU compressed operands from one bounded two-generation LeasePool; not CUDA WeightSlots",
+              "cpu_expert_pool_capacity": "802162688",
+              "cpu_expert_pool_peak": "401081344",
+              "resident_expert_slot_bytes": "401081344",
+              "expert_projection_reference_episodes": "1",
+              "expert_projection_matrices": "9",
+              "original_expert_numerics": "firstepisode nine actual selected MXFP4 projections against original global-ID mmap byte ranges/native AQ bound; everyepisode actual BF16 router F64 dot,original F32 bias,actual256-domain routing/TopK,exactglobal/localmap,clip/SwiGLU/routeweight-before-down and local BF16 stores/six-slot reduction. FourordinaryGraph phases; onlyactual30I32IDs readback,activation/weights/state directleases,compressed3bank+map samegeneration. Whole State tuple published onlyafter completeproposal+verification.",
+              "actual_submissions": "37",
+              "original_role_count": "83",
+              "original_role_bytes": "13008927644",
+              "encoded_draft_inputs": "18",
+              "semantic_draft_outputs": "7",
+              "test_boundary_outputs": "304",
+              "proposal_numerics": "all3 original M5 wkv/norm independent Q8 decode + compensated F64 dot/norm gate on actual activation; actual postnorm BF16 then independent RoPE gate; exact actual-F32->BF16 bits; exact actual-BF16->584B codes/scales; independent actual committed/proposal carrier reader equals prepared attention F32 keys byte-for-byte",
+              "full_vocabulary_lm_values_checked": "646400",
+              "lm_reference_episodes": "1",
+              "confidence_numerics": "every-episode independent original BF16 coefficients and actual widened-BF16 rawhidden/actualBF16 Markov dot; exact-F32-product/nonFTZ/overflow preconditions; analytic gamma4352(F32)+F64 absolute-product bound; old relative-gate exceedances/error/sumabs/maxratio in stdout, generated gate unchanged",
+              "shared_vocabulary": "formal Flash0731 BF16 full embedding/head, target-owned immutable banks; no dense F32 LM weight shadow",
+              "original_hc_numerics": "every-episode seven actual widened-BF16 x original-F32 dense HC projections with independent F64/product+accum bound; actual inverse RMS, original scale/base Sinkhorn20 and head gates, actual 4-stream collapse/expansion; actual learned RMS/sink inputs and exact local BF16 stores. Seven fn providers recorded from actual CompileReport.",
+              "shared_projection_reference_episodes": "1",
+              "shared_projection_matrices": "9",
+              "original_shared_numerics": "first-episode all9 original Q8_0 projections over actual5row BF16 predecessors with independent packed-byte decoding/native activation codec arithmetic and derived F32 error bounds; all episodes exact actual bounded operands/BF16 stores, existing local SwiGLU gate, derived F32 six-routed-slot reduction and routed+shared addition bounds. Actual Q8 MatMul providers and canonical packed RHS recorded; no dense F32 weight shadow or official FP8 equivalence.",
+              "attention_projection_reference_episodes": "1",
+              "attention_projection_matrices": "12",
+              "attention_projection_values_checked": "691200",
+              "original_attention_numerics": "first-episode12 originalQ8_0 projections on actual5row BF16 operands,including3natural8group output-A projections with actualI32 IDs; derived nativeAQ/F32 bounds. Everyepisode exact QA/QB/OA/OB stores,actual learnedqnorm input,11-step query512norm boundaries with gamma512 mean/localrsqrt and exact BF16 stores,actual forward/inverse last64RoPE raw gates and exact stores,group/input topology and unchanged learned-sink/HC/FFN/LM/Markov/confidence/state checks.",
+              "scope": "83 original roles: all81 fixed Q8_0 sidecar DSpark roles including original BF16router/F32bias and9MXFP4experts,plusformalBF16 fullVembedding/head. Complete3stage draft/encodedstate,accept0/1/2/wrap/continuation/retainedresults. CompactE30 bank residency preserves all256globalIDs,actualrouter outcomes and original17B/32codec. Generated trained-target captures/verifier remain explicit; no official FP8/FP4 arithmetic equivalence,trainedtarget quality,naturalacceptance or throughput claim."
+            }
+          },
+          {
+            "attributes": {
+              "name": "CudaOriginalExpertsFeedFullDraftAndAtomicAcceptedState",
+              "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_original_state_consumer_test.cc",
+              "line": "1499",
+              "status": "run",
+              "result": "completed",
+              "time": "0.944",
+              "timestamp": "2026-10-23T05:02:31.324",
+              "classname": "DSparkOriginalState"
+            },
+            "properties": {
+              "shared_projection0_provider": "ggml-cuda",
+              "shared_projection1_provider": "ggml-cuda",
+              "shared_projection2_provider": "ggml-cuda",
+              "shared_projection3_provider": "ggml-cuda",
+              "shared_projection4_provider": "ggml-cuda",
+              "shared_projection5_provider": "ggml-cuda",
+              "shared_projection6_provider": "ggml-cuda",
+              "shared_projection7_provider": "ggml-cuda",
+              "shared_projection8_provider": "ggml-cuda",
+              "shared_q8_activation_codec": "fixed M5 native CUDA MMVQ Q8_1 strict/fast division envelope: source-derived code/halfscale intervals under NVIDIA documented approximate intrinsic accuracy, conditional rather than formal guarantee",
+              "attention_projection0_provider": "ggml-cuda",
+              "attention_projection1_provider": "ggml-cuda",
+              "attention_projection2_provider": "ggml-cuda",
+              "attention_projection3_provider": "ggml-cuda",
+              "attention_projection4_provider": "ggml-cuda",
+              "attention_projection5_provider": "ggml-cuda",
+              "attention_projection6_provider": "ggml-cuda",
+              "attention_projection7_provider": "ggml-cuda",
+              "attention_projection8_provider": "ggml-cuda",
+              "attention_projection9_provider": "ggml-cuda",
+              "attention_projection10_provider": "ggml-cuda",
+              "attention_projection11_provider": "ggml-cuda",
+              "attention_output_a_layout": "original single Q8_0 role canonical[8,1024,4096],actualF32[5,8,4096],I32ids[5,8]0..7,GroupedMatMul->F32[5,8,1024]; native CUDA tokenbatch5 uses sameMMVQ codec, not40-row dense/MMQ math",
+              "stage0_attention_fn_provider": "cublasLt",
+              "stage0_ffn_fn_provider": "cublasLt",
+              "stage1_attention_fn_provider": "cublasLt",
+              "stage1_ffn_fn_provider": "cublasLt",
+              "stage2_attention_fn_provider": "cublasLt",
+              "stage2_ffn_fn_provider": "cublasLt",
+              "output_hc_fn_provider": "cublasLt",
+              "expert_stage0_leg0_provider": "ggml-cuda",
+              "expert_stage0_leg1_provider": "ggml-cuda",
+              "expert_stage0_leg2_provider": "ggml-cuda",
+              "expert_stage1_leg0_provider": "ggml-cuda",
+              "expert_stage1_leg1_provider": "ggml-cuda",
+              "expert_stage1_leg2_provider": "ggml-cuda",
+              "expert_stage2_leg0_provider": "ggml-cuda",
+              "expert_stage2_leg1_provider": "ggml-cuda",
+              "expert_stage2_leg2_provider": "ggml-cuda"
+            }
+          }
+        ]
+      },
+      {
+        "process": {
+          "command": [
+            "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-original-experts-20261023\\tests-link3\\dspark-original-expert-checks.exe",
+            "--gtest_filter=DSparkOriginalState.*OriginalExpertsFeedFullDraftAndAtomicAcceptedState",
+            "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\dspark-original-experts-20261023\\checks4\\results.xml"
+          ],
+          "cwd": "C:\\public\\project-hyle\\hyle",
+          "started": 1792703327.7389796,
+          "timeout_seconds": 900,
+          "throughput_evidence": false,
+          "memory_evidence": false,
+          "trace": false,
+          "profiler": false,
+          "pid": 42288,
+          "exit": 1,
+          "timed_out": false,
+          "finished": 1792703405.4570293,
+          "process_wall_seconds": 77.71777970000039
+        },
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-original-experts-20261023\\tests-link3\\dspark-original-expert-checks.exe",
+          "bytes": 141390336,
+          "sha256": "2380772135182d0bbb6dae0347a63ca0ccad759abda0cc3390f0c72d73812b30"
+        },
+        "throughput_evidence": false,
+        "physical_memory_evidence": false,
+        "whole_original_model": false,
+        "tests": 2,
+        "failures": 1,
+        "errors": 0,
+        "disabled": 0,
+        "skips": 0,
+        "cases": [
+          {
+            "attributes": {
+              "name": "CpuOriginalExpertsFeedFullDraftAndAtomicAcceptedState",
+              "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_original_state_consumer_test.cc",
+              "line": "1458",
+              "status": "run",
+              "result": "completed",
+              "time": "74.521",
+              "timestamp": "2026-10-23T05:08:48.804",
+              "classname": "DSparkOriginalState"
+            },
+            "properties": {
+              "shared_projection0_provider": "ggml-cpu",
+              "shared_projection1_provider": "ggml-cpu",
+              "shared_projection2_provider": "ggml-cpu",
+              "shared_projection3_provider": "ggml-cpu",
+              "shared_projection4_provider": "ggml-cpu",
+              "shared_projection5_provider": "ggml-cpu",
+              "shared_projection6_provider": "ggml-cpu",
+              "shared_projection7_provider": "ggml-cpu",
+              "shared_projection8_provider": "ggml-cpu",
+              "shared_q8_activation_codec": "actual fixed ggml CPU worker AVX Q8_0 nearest-even: exact arch/x86/quants.c.obj disassembly in BK/review/cpu-q8-quantizer.json; no main-executable capability inference",
+              "attention_projection0_provider": "ggml-cpu",
+              "attention_projection1_provider": "ggml-cpu",
+              "attention_projection2_provider": "ggml-cpu",
+              "attention_projection3_provider": "ggml-cpu",
+              "attention_projection4_provider": "ggml-cpu",
+              "attention_projection5_provider": "ggml-cpu",
+              "attention_projection6_provider": "ggml-cpu",
+              "attention_projection7_provider": "ggml-cpu",
+              "attention_projection8_provider": "ggml-cpu",
+              "attention_projection9_provider": "ggml-cpu",
+              "attention_projection10_provider": "ggml-cpu",
+              "attention_projection11_provider": "ggml-cpu",
+              "attention_output_a_layout": "original single Q8_0 role canonical[8,1024,4096],actualF32[5,8,4096],I32ids[5,8]0..7,GroupedMatMul->F32[5,8,1024]; native CUDA tokenbatch5 uses sameMMVQ codec, not40-row dense/MMQ math",
+              "stage0_attention_fn_provider": "ggml-cpu",
+              "stage0_ffn_fn_provider": "ggml-cpu",
+              "stage1_attention_fn_provider": "ggml-cpu",
+              "stage1_ffn_fn_provider": "ggml-cpu",
+              "stage2_attention_fn_provider": "ggml-cpu",
+              "stage2_ffn_fn_provider": "ggml-cpu",
+              "output_hc_fn_provider": "ggml-cpu",
+              "expert_stage0_leg0_provider": "ggml-cpu",
+              "expert_stage0_leg1_provider": "ggml-cpu",
+              "expert_stage0_leg2_provider": "ggml-cpu",
+              "expert_stage1_leg0_provider": "ggml-cpu",
+              "expert_stage1_leg1_provider": "ggml-cpu",
+              "expert_stage1_leg2_provider": "ggml-cpu",
+              "expert_stage2_leg0_provider": "ggml-cpu",
+              "expert_stage2_leg1_provider": "ggml-cpu",
+              "expert_stage2_leg2_provider": "ggml-cpu",
+              "resident_draft_phases": "4",
+              "actual_draft_phase_submissions": "16",
+              "actual_draft_episodes": "4",
+              "actual_expert_unions_stage0": "17,17,16,15",
+              "actual_expert_unions_stage1": "18,18,17,19",
+              "actual_expert_unions_stage2": "7,7,11,9",
+              "expert_upload_accounting_scope": "ordinary ready StorageOwner CPU compressed operands from one bounded two-generation LeasePool; not CUDA WeightSlots",
+              "cpu_expert_pool_capacity": "802162688",
+              "cpu_expert_pool_peak": "401081344",
+              "resident_expert_slot_bytes": "401081344",
+              "expert_projection_reference_episodes": "1",
+              "expert_projection_matrices": "9",
+              "original_expert_numerics": "firstepisode nine actual selected MXFP4 projections against original global-ID mmap byte ranges/native AQ bound; everyepisode actual BF16 router F64 dot,original F32 bias,actual256-domain routing/TopK,exactglobal/localmap,clip/SwiGLU/routeweight-before-down and local BF16 stores/six-slot reduction. FourordinaryGraph phases; onlyactual30I32IDs readback,activation/weights/state directleases,compressed3bank+map samegeneration. Whole State tuple published onlyafter completeproposal+verification.",
+              "actual_submissions": "37",
+              "original_role_count": "83",
+              "original_role_bytes": "13008927644",
+              "encoded_draft_inputs": "18",
+              "semantic_draft_outputs": "7",
+              "test_boundary_outputs": "304",
+              "proposal_numerics": "all3 original M5 wkv/norm independent Q8 decode + compensated F64 dot/norm gate on actual activation; actual postnorm BF16 then independent RoPE gate; exact actual-F32->BF16 bits; exact actual-BF16->584B codes/scales; independent actual committed/proposal carrier reader equals prepared attention F32 keys byte-for-byte",
+              "full_vocabulary_lm_values_checked": "646400",
+              "lm_reference_episodes": "1",
+              "confidence_numerics": "every-episode independent original BF16 coefficients and actual widened-BF16 rawhidden/actualBF16 Markov dot; exact-F32-product/nonFTZ/overflow preconditions; analytic gamma4352(F32)+F64 absolute-product bound; old relative-gate exceedances/error/sumabs/maxratio in stdout, generated gate unchanged",
+              "shared_vocabulary": "formal Flash0731 BF16 full embedding/head, target-owned immutable banks; no dense F32 LM weight shadow",
+              "original_hc_numerics": "every-episode seven actual widened-BF16 x original-F32 dense HC projections with independent F64/product+accum bound; actual inverse RMS, original scale/base Sinkhorn20 and head gates, actual 4-stream collapse/expansion; actual learned RMS/sink inputs and exact local BF16 stores. Seven fn providers recorded from actual CompileReport.",
+              "shared_projection_reference_episodes": "1",
+              "shared_projection_matrices": "9",
+              "original_shared_numerics": "first-episode all9 original Q8_0 projections over actual5row BF16 predecessors with independent packed-byte decoding/native activation codec arithmetic and derived F32 error bounds; all episodes exact actual bounded operands/BF16 stores, existing local SwiGLU gate, derived F32 six-routed-slot reduction and routed+shared addition bounds. Actual Q8 MatMul providers and canonical packed RHS recorded; no dense F32 weight shadow or official FP8 equivalence.",
+              "attention_projection_reference_episodes": "1",
+              "attention_projection_matrices": "12",
+              "attention_projection_values_checked": "691200",
+              "original_attention_numerics": "first-episode12 originalQ8_0 projections on actual5row BF16 operands,including3natural8group output-A projections with actualI32 IDs; derived nativeAQ/F32 bounds. Everyepisode exact QA/QB/OA/OB stores,actual learnedqnorm input,11-step query512norm boundaries with gamma512 mean/localrsqrt and exact BF16 stores,actual forward/inverse last64RoPE raw gates and exact stores,group/input topology and unchanged learned-sink/HC/FFN/LM/Markov/confidence/state checks.",
+              "scope": "83 original roles: all81 fixed Q8_0 sidecar DSpark roles including original BF16router/F32bias and9MXFP4experts,plusformalBF16 fullVembedding/head. Complete3stage draft/encodedstate,accept0/1/2/wrap/continuation/retainedresults. CompactE30 bank residency preserves all256globalIDs,actualrouter outcomes and original17B/32codec. Generated trained-target captures/verifier remain explicit; no official FP8/FP4 arithmetic equivalence,trainedtarget quality,naturalacceptance or throughput claim."
+            }
+          },
+          {
+            "attributes": {
+              "name": "CudaOriginalExpertsFeedFullDraftAndAtomicAcceptedState",
+              "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_original_state_consumer_test.cc",
+              "line": "1499",
+              "status": "run",
+              "result": "completed",
+              "time": "0.994",
+              "timestamp": "2026-10-23T05:10:03.325",
+              "classname": "DSparkOriginalState"
+            },
+            "properties": {
+              "shared_projection0_provider": "ggml-cuda",
+              "shared_projection1_provider": "ggml-cuda",
+              "shared_projection2_provider": "ggml-cuda",
+              "shared_projection3_provider": "ggml-cuda",
+              "shared_projection4_provider": "ggml-cuda",
+              "shared_projection5_provider": "ggml-cuda",
+              "shared_projection6_provider": "ggml-cuda",
+              "shared_projection7_provider": "ggml-cuda",
+              "shared_projection8_provider": "ggml-cuda",
+              "shared_q8_activation_codec": "fixed M5 native CUDA MMVQ Q8_1 strict/fast division envelope: source-derived code/halfscale intervals under NVIDIA documented approximate intrinsic accuracy, conditional rather than formal guarantee",
+              "attention_projection0_provider": "ggml-cuda",
+              "attention_projection1_provider": "ggml-cuda",
+              "attention_projection2_provider": "ggml-cuda",
+              "attention_projection3_provider": "ggml-cuda",
+              "attention_projection4_provider": "ggml-cuda",
+              "attention_projection5_provider": "ggml-cuda",
+              "attention_projection6_provider": "ggml-cuda",
+              "attention_projection7_provider": "ggml-cuda",
+              "attention_projection8_provider": "ggml-cuda",
+              "attention_projection9_provider": "ggml-cuda",
+              "attention_projection10_provider": "ggml-cuda",
+              "attention_projection11_provider": "ggml-cuda",
+              "attention_output_a_layout": "original single Q8_0 role canonical[8,1024,4096],actualF32[5,8,4096],I32ids[5,8]0..7,GroupedMatMul->F32[5,8,1024]; native CUDA tokenbatch5 uses sameMMVQ codec, not40-row dense/MMQ math",
+              "stage0_attention_fn_provider": "cublasLt",
+              "stage0_ffn_fn_provider": "cublasLt",
+              "stage1_attention_fn_provider": "cublasLt",
+              "stage1_ffn_fn_provider": "cublasLt",
+              "stage2_attention_fn_provider": "cublasLt",
+              "stage2_ffn_fn_provider": "cublasLt",
+              "output_hc_fn_provider": "cublasLt",
+              "expert_stage0_leg0_provider": "ggml-cuda",
+              "expert_stage0_leg1_provider": "ggml-cuda",
+              "expert_stage0_leg2_provider": "ggml-cuda",
+              "expert_stage1_leg0_provider": "ggml-cuda",
+              "expert_stage1_leg1_provider": "ggml-cuda",
+              "expert_stage1_leg2_provider": "ggml-cuda",
+              "expert_stage2_leg0_provider": "ggml-cuda",
+              "expert_stage2_leg1_provider": "ggml-cuda",
+              "expert_stage2_leg2_provider": "ggml-cuda"
+            }
+          }
+        ]
+      }
+    ],
+    "prior_attempt_scope": "Preserved separately: checks1 failed2 provenance reports before expert arithmetic. checks2 CPU complete83 passed; CUDA upload exposed the missing mapped-host-address capability. checks4 CPU passed and CUDA then exposed the separate device resource rejected by fallback Gather. Final7 passing cases above use the repaired frozen executable.",
+    "SDK_builds": 0,
+    "native_CPU_builds": 0,
+    "NVCC_builds": 0,
+    "shaders": 0
+  },
+  "source_reviews": [
+    {
+      "path": ".scratch/dspark-original-experts-20261023/source3/freeze.json",
+      "bytes": 3842,
+      "sha256": "955c6d4490d5aa5481523e17cad12792164777e94e4952e92566d5c45f4ee1b1"
+    },
+    {
+      "path": ".scratch/dspark-original-experts-20261023/hooks-source/freeze.json",
+      "bytes": 6475,
+      "sha256": "c46dc7cc0f50c4d953bd90bcafea70c4b3897e49b8c9ad7ac2359d6538a946a6"
+    },
+    {
+      "path": ".scratch/dspark-original-experts-20261023/reference-source/freeze.json",
+      "bytes": 1050,
+      "sha256": "0df0e225c2724e0f647817abc0ae864ec1799c7cbc9ff1ff43b8ef08d5c131e7"
+    },
+    {
+      "path": ".scratch/dspark-original-experts-20261023/supply-source2/freeze.json",
+      "bytes": 655,
+      "sha256": "43683de0083dccefd60f8f1348353f398a717fe9f366415a358caf12f298351d"
+    },
+    {
+      "path": ".scratch/dspark-original-experts-20261023/mapping-source/freeze.json",
+      "bytes": 849,
+      "sha256": "aec7850c9706fb51a6f8e1a7d33b1e0d6fe0b8e6f8ac4dd7089d50c9f3bf9e4a"
+    }
+  ],
+  "source_metadata": [
+    {
+      "path": ".scratch/dspark-original-attention-20261023/review/expert-residency-next.json",
+      "bytes": 14542,
+      "sha256": "2e93db81816f35339bfd143977fa1e4ee0ea8362e5293ac28a6d747bc8fc84d7"
+    },
+    {
+      "path": ".scratch/dspark-original-hc-20261023/review/remaining-original-roles.json",
+      "bytes": 24651,
+      "sha256": "675f5142736a33cf4bc3b475498fecfbdea4127f59244df32c560214bc2ed49c"
+    },
+    {
+      "path": ".scratch/dspark-original-shared-20261023/review/cpu-q8-quantizer.json",
+      "bytes": 2106,
+      "sha256": "117fe27bc1e9a2e180eac670ccba1b3c33c996540daaf9b3060d98ee5a20daf0"
+    },
+    {
+      "path": ".scratch/dspark-original-shared-20261023/reference-source/source-notes.json",
+      "bytes": 6423,
+      "sha256": "8860417c85bf5114e9eaf38ad2304db14f9e70b38601b3475b19a9cdc4989395"
+    }
+  ],
+  "limitations": [
+    "WindowsCPU/CUDA finite journey only; no new Linux/Apple/Vulkan model execution.",
+    "Target captures/verifier remain generated. No full trainedtarget, Pro geometry, primaryUD-Q4 vocabulary, natural acceptance or generation-quality claim.",
+    "Exact original selected codec/activation math does not certify official FP8/FP4 or all other quantization artifacts.",
+    "No new TPS/loading/physical-memory peak measurement; latestAV comparison remains unchanged.",
+    "Full MTP, images and broader architecture/performance goal remain incomplete."
+  ],
+  "remaining": "Other original roles/sharedLM/real targettaps/Pro geometry and confirmed applicable quantization supply; necessary final ordinary/MTP complete performance comparison before images.",
+  "final_image": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-original-experts-20261023\\tests-link4\\dspark-original-expert-checks.exe",
+    "bytes": 141394432,
+    "sha256": "986fd7099e3be8c928bd004f724991b3de67d4e1a5696901ed392d509b4de52c"
+  },
+  "sources": [
+    {
+      "path": "tests/compute_models/cpu_c4_model_branches.h",
+      "bytes": 53008,
+      "sha256": "8af3aeea3be2a5763e3f8344475ba135bc151fded90eb4f363736bc9c72a0960"
+    },
+    {
+      "path": "tests/compute_models/d5_deepseek_official_fragments.h",
+      "bytes": 21297,
+      "sha256": "5807c46057cb63bfb7691c82dba92c0a63a467e1ab90a7e9486183c1c17c2c30"
+    },
+    {
+      "path": "tests/compute_models/dspark_complete_graph_fixture.h",
+      "bytes": 11211,
+      "sha256": "282c3eb713b2ba15ade30a05a17f0c59d1a161c219d3b9598b40d2cb624e7303"
+    },
+    {
+      "path": "tests/compute_models/dspark_resident_draft.h",
+      "bytes": 8126,
+      "sha256": "f8ccad3ac94085f7414385d268cde6fef104486f93699862dc18aff7a7e5a692"
+    },
+    {
+      "path": "tests/compute_models/dspark_original_expert_roles.h",
+      "bytes": 12155,
+      "sha256": "69277e38034a0d7954cbe2989ae278aa1d2f232a2b97707e7e73699b55a487a2"
+    },
+    {
+      "path": "tests/compute_models/dspark_original_expert_reference.h",
+      "bytes": 17226,
+      "sha256": "87648bf4db7f2f1d045be5ef9764f80afb2a971bcbe283d1c50ab20ec02ed57e"
+    },
+    {
+      "path": "tests/compute_models/dspark_original_resident_weights.h",
+      "bytes": 7691,
+      "sha256": "766865bbe49ede284ac8704ff6772ee9c569c398ddc58be674da1dfa1ae1593b"
+    },
+    {
+      "path": "tests/compute_models/dspark_original_state_consumer.h",
+      "bytes": 18367,
+      "sha256": "459f21b57d9fe6f1029445ee7f7d1345275705c9c75c786fc5e0fd7f87c38d84"
+    },
+    {
+      "path": "tests/compute_models/dspark_original_state_consumer_test.cc",
+      "bytes": 111614,
+      "sha256": "38a4855343ffad207cacbb7c24c0be5065bebf54bb60710af8df621cb18340e6"
+    },
+    {
+      "path": "src/mem_vm/mapping.cc",
+      "bytes": 3395,
+      "sha256": "725496e5d62a7798d93c2616c674e6f46181b26a1c44bfda1c4f9a56f606197c"
+    },
+    {
+      "path": "tests/mem_vm/file_mapping_test.cc",
+      "bytes": 27728,
+      "sha256": "79f7d9578ad7e5fb47e5a3e41143adfad425d8d2327703d5adaf5f5baf4ce58b"
+    },
+    {
+      "path": "docs/developer/current-work.md",
+      "bytes": 24448,
+      "sha256": "c5eede54269f038265901778094a1500b9d621c5e3cf2276572326ab69cbb0f8"
+    },
+    {
+      "path": "docs/implementation/model-operators.md",
+      "bytes": 96011,
+      "sha256": "bdc7fda967316f1d342676eef931d91f7648a4a8ff88fa12d486fef68ea8bfa0"
+    }
+  ],
+  "performance_tail_sha256": "80b8672315911a74039a14cd137659bc67289273dc9c3707cd267b2d06de2551",
+  "archive": {
+    "path": "docs/evidence/correctness/mtp-dspark-original-experts-2026-10-23.zip",
+    "bytes": 919259,
+    "sha256": "ff8145a4f9cf5c737cc9b4ac95424c69d7906d2775d60574e550eb1ea908aefd"
+  },
+  "archive_items": 218,
+  "cleanup": {
+    "result": {
+      "complete": true,
+      "removed_files": 7,
+      "logical_removed_bytes": 605937522.0,
+      "targets": [
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-original-experts-20261023\\tests-link1\\dspark-original-expert-checks.exe",
+          "bytes": 141210112
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-original-experts-20261023\\tests-link1\\dspark-original-expert-checks.map",
+          "bytes": 60539716
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-original-experts-20261023\\tests-link2\\dspark-original-expert-checks.exe",
+          "bytes": 141212672
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-original-experts-20261023\\tests-link2\\dspark-original-expert-checks.map",
+          "bytes": 60543378
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-original-experts-20261023\\tests-link3\\dspark-original-expert-checks.exe",
+          "bytes": 141390336
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-original-experts-20261023\\tests-link3\\dspark-original-expert-checks.map",
+          "bytes": 60955730
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-original-experts-20261023\\mapping-tests-recipe.json",
+          "bytes": 85578
+        }
+      ],
+      "retained": "Current link4 executable/map, all objects/runtime/SDK/source/data and all failure/command/result records"
+    },
+    "script": {
+      "path": ".scratch/dspark-original-experts-20261023/cleanup/test.ps1",
+      "bytes": 1931,
+      "sha256": "8b47a65eb556bebe5c26e38f1bddaaed5df2db61afcf8d2a07f2a35d56491757"
+    }
+  }
+}

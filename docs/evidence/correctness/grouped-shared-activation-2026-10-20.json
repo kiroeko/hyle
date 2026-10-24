@@ -1,0 +1,239 @@
+{
+  "passed": true,
+  "scope": "GroupedMatMul shared activations, repeated expert IDs and native layout/allocation seams",
+  "public_contract": "W[E,N,K], F32 A[T,A,K], I32 IDs[T,S] -> F32 Y[T,S,N]; A=1 or S; real zero-slot View admitted by provider layout facts",
+  "public_OpID_unchanged": true,
+  "shared_graph_executor_or_public_owner_added": false,
+  "original_valid_AS_inputs_preserved": true,
+  "tests": {
+    "cpu-direct": {
+      "passed": true,
+      "cases": 7,
+      "expected_count": 7,
+      "names": [
+        "CpuGroupedSharedDirect.DenseSharedAndPerSlotInputsPreserveEveryId",
+        "CpuGroupedSharedDirect.BroadcastViewKeepsCompactBackingAndCheckedRecovery",
+        "CpuGroupedSharedDirect.BfloatWeightsRetainNonBfloatActivationAndColdConstants",
+        "OperationModelOps.GroupedExpertAndHyperConnectionKeepModelLayouts",
+        "OperationModelOps.GroupedExpertSharesActivationWithoutExpandingStorage",
+        "OperationModelOps.GroupedSharedShapeFailuresKeepOutputUnpublished",
+        "OperationModelOps.GroupedExpertAcceptsNativeGgufWeights"
+      ],
+      "skipped": 0,
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-shared-activation\\windows-host\\checks\\current\\cpu-direct.exe",
+        "bytes": 25455104,
+        "sha256": "4224b26439a84cac013c2b53ff143595746aa75a303146291feaa8fe48d79642"
+      },
+      "link_plan": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-shared-activation\\windows-host\\checks\\current\\cpu-direct-link-plan.json",
+        "bytes": 51688,
+        "sha256": "9a005f5b09d2b9dbbde1e1adabceda782c62b31774f608fa5767e28b6935a2e0"
+      },
+      "filter": "CpuGroupedSharedDirect.*:OperationModelOps.GroupedExpertAndHyperConnectionKeepModelLayouts:OperationModelOps.GroupedExpertSharesActivationWithoutExpandingStorage:OperationModelOps.GroupedSharedShapeFailuresKeepOutputUnpublished:OperationModelOps.GroupedExpertAcceptsNativeGgufWeights"
+    },
+    "cpu-graph-fixed": {
+      "passed": true,
+      "cases": 3,
+      "expected_count": 3,
+      "names": [
+        "CpuGroupedSharedGraph.DenseSharedAndPerSlotInputsPreserveEveryId",
+        "CpuGroupedSharedGraph.BroadcastViewKeepsCompactBackingAndCheckedRecovery",
+        "CpuGroupedSharedGraph.BfloatWeightsRetainNonBfloatActivationAndColdConstants"
+      ],
+      "skipped": 0,
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-shared-activation\\corrections\\20261019T205952\\cpu-graph.exe",
+        "bytes": 25467904,
+        "sha256": "d42fb4687bcfd21edd3630a23c3ce6aa4b3b80adc6414dfcf1162024501d517d"
+      },
+      "link_plan": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-shared-activation\\corrections\\20261019T205952\\cpu-graph-link-plan.json",
+        "bytes": 51016,
+        "sha256": "1ae8a985b835ce0848177edcd48230fe8ff004a20fa365da46b191cc90c40c4e"
+      },
+      "filter": "CpuGroupedSharedGraph.*"
+    },
+    "cuda-final": {
+      "passed": true,
+      "cases": 5,
+      "expected_count": 5,
+      "names": [
+        "CudaGroupedShared.DenseAndBroadcastInputsPreserveEveryPlainSlot",
+        "CudaGroupedShared.BfloatBanksPreserveOriginalFloatActivationAndColdWidening",
+        "CudaGroupedShared.PackedSharedInputsRetainOriginalQuantizationAndCapture",
+        "CudaGroupedShared.SharedCapacityUsesPhysicalRowsRatherThanBroadcastElements",
+        "CudaGroupedShared.PrivateGateUpGluRetainsSharedAndPerSlotTopology"
+      ],
+      "skipped": 0,
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-shared-activation\\corrections\\20261019T210159\\grouped.exe",
+        "bytes": 116946432,
+        "sha256": "cfe34342237ecc4465d3b018745a1306d1f3f2090fc284238def62cc4e4c002c"
+      },
+      "link_plan": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-shared-activation\\corrections\\20261019T210159\\grouped-link-plan.json",
+        "bytes": 58743,
+        "sha256": "84e6ebc9a72bf68a3abd985cea00c94dd46ca01300cab205d6eeae8b5c2197e9"
+      },
+      "filter": "CudaGroupedShared.*"
+    },
+    "vulkan-final-layout": {
+      "passed": true,
+      "cases": 3,
+      "expected_count": 3,
+      "names": [
+        "VulkanGroupedShared.DenseAndBroadcastViewsKeepSlotsAndFreshBindings",
+        "VulkanGroupedShared.PackedWeightsKeepRepeatedIdsForSharedActivation",
+        "VulkanGroupedShared.CheckedIdsFailAtCompletionAndOtherStridesDecline"
+      ],
+      "skipped": 0,
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-shared-activation\\vulkan\\native-driver\\checks\\20261019T212029-layout\\vulkan.exe",
+        "bytes": 66333184,
+        "sha256": "5ded573c89931ecedbb66e54c31cb61ab4ea51f9f193f8068664c2d7615cf60d"
+      },
+      "link_plan": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-shared-activation\\vulkan\\native-driver\\checks\\20261019T212029-layout\\vulkan-link-plan.json",
+        "bytes": 71145,
+        "sha256": "4d32a6ffcbc6ea842ec2ffbd35fef1a74ca31ff66035ee4f4c1b03948a953fe5"
+      },
+      "filter": "VulkanGroupedShared.*"
+    }
+  },
+  "windows_distinct_cases": 18,
+  "apple": {
+    "summary": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-shared-activation\\apple\\summary.json",
+      "bytes": 4729,
+      "sha256": "00463a8890e62dd48ccd8c95ebc311bb4556c0fed92b758efdd542dcb1b549b1"
+    },
+    "public_domains": 16,
+    "native_domains": 8,
+    "domain_counts_are_not_gtest_counts": true
+  },
+  "model": {
+    "summary": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-shared-activation\\correctness\\summary.json",
+      "bytes": 112765,
+      "sha256": "50c84d388eda1fcbddbe02c0eb54ccced4f3494290341aa95b9d4ddd4e8322ce"
+    },
+    "equal_finite_vectors": 64,
+    "same_predictions_and_fixed_decode_inputs": true,
+    "single_hybrid_range_in_all_32_phases": true
+  },
+  "fixes": [
+    "Public and backend A1/zero-slot admission preserve physical span and real row pitch; no S-fold caller copy.",
+    "CPU plain BF16 W widens W to F32 rather than pre-narrowing original F32 A; immutable singleton Graph constants use existing cold artifact preparation.",
+    "CUDA original plain sorted fallback preserves every repeated slot; previously it stopped at the first matching expert occurrence.",
+    "Metal original map kernel emits every repeated slot with O(T*S+E) metadata; shared array carrier retains actual strides and original owner.",
+    "Metal result allocation reserves actual backend span, including MMID private metadata after the logical result.",
+    "Vulkan qualified non-dense Grouped input boundary retains original read-only layout/backing. Existing dense input alignment adapters remain, including valid 4-byte-offset bindings.",
+    "Vulkan native direct-Y MMID/MVID preserve actual span and pitch; non-vector-aligned rows use the existing unaligned variant. Matrix dispatch covers every repeated ID occurrence. No CONT/Repeat or shader ABI addition."
+  ],
+  "failures_retained": [
+    "Apple original T32 repeated-ID native errors; carrier CONT mismatch and insufficient physical result allocation.",
+    "CPU Graph immutable singleton missed cold constant preparation.",
+    "CUDA fixture lacked ready owned source/destination permission for queued constant preparation; fixture now uses existing ownership APIs.",
+    "CUDA nonlinear fused GLU versus standalone exact equality was an invalid oracle; final independent FP64 check retains existing bounded nonlinear error, exact dot/BF16/ID checks unchanged.",
+    "Vulkan checked helper dispatch count assumption, padded-input native pitch/span bug and insufficient matrix dispatch rows for duplicate IDs."
+  ],
+  "costs_and_limits": [
+    "Shared A1 descriptor has T*K physical rows, but CUDA original plain sorted fallback still uses T*S*K scratch and host ID readback/synchronization. No universal O(T*K) workspace claim.",
+    "CPU dynamic plain BF16 banks still widen when executed; only qualified immutable Graph constants are cold-prepared once.",
+    "CUDA multi-token padded row pitch must be a whole K-row multiple. General arbitrary strides remain unsupported.",
+    "Vulkan non-dense shared inputs require native storage-buffer origin alignment at each bind; original dense inputs retain their alignment adapter. Native matrix occurrence dispatch is cold-bounded by actual initialized pipeline tiles and real device grid limits.",
+    "Explicit singleton zero strides were executed on CPU Direct; CUDA executes multi-slot zero-stride View, while its same-shape singleton Graph View retains public original stride semantics.",
+    "Apple NVFP4 kernel remains absent. Covered F32/Q8 domains do not establish every Metal codec or complete model artifact execution.",
+    "Historic CPU reference helper corrections were source-reviewed; their large historical consumer suites were not run this batch.",
+    "No new Linux execution, full model quality evaluation, throughput measurement or aggregate memory-peak acceptance.",
+    "The current broad architecture goal remains active; this bounded batch does not complete model/quantization/fusion/platform coverage."
+  ],
+  "evidence": {
+    "root_source_freeze": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-shared-activation\\root-source-freeze.json",
+      "bytes": 7721,
+      "sha256": "96a93245c07c84a8f5dc65a975315a5182f59cc2f3675bcb5775c28aba9539d0"
+    },
+    "cpu_cuda_source_freeze": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-shared-activation\\final-owned-source-freeze.json",
+      "bytes": 12660,
+      "sha256": "8c2ecd80944ce17466c58cbf1b75e4da83976837bc0c61309ba2d2b94ac60565"
+    },
+    "cpu_cuda_build": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-shared-activation\\cpu-cuda-build-delivery.json",
+      "bytes": 6673,
+      "sha256": "f5c28223b3f5b4587c15a0bb9a8dcef9a8d1ee0fe05a89b51e56230a37345e24"
+    },
+    "cpu_cuda_review": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-shared-activation\\cpu-cuda-implementation-review.json",
+      "bytes": 3291,
+      "sha256": "6943fc193391763e875566a990e333e082ea34a1ab7c6993d029b483ed79cae7"
+    },
+    "vulkan_independent_review": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-shared-activation\\vulkan\\padded-independent-review.json",
+      "bytes": 10044,
+      "sha256": "690fdcbba62228ddc54eacddfbe8173262686e67667e3ceb8b89784dd489323e"
+    },
+    "vulkan_final_driver_review": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-shared-activation\\vulkan\\native-driver\\independent-review.json",
+      "bytes": 4329,
+      "sha256": "f2b0458ef4fc6ecaea94a50282cd7eadefefe7c5c23e0b594023ca6e3d92a786"
+    },
+    "vulkan_driver_source": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-shared-activation\\vulkan\\native-driver\\source-freeze.json",
+      "bytes": 2231,
+      "sha256": "7f5d8ea9818599a11410d10962cef8c33bb296b056e45aec56fdd67b5031344b"
+    },
+    "vulkan_occurrence_review": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-shared-activation\\vulkan\\mmid-occurrence-independent-review.json",
+      "bytes": 10557,
+      "sha256": "6ae0f289d897ad524fd0276845582ab38afddd0214b21891c39d738ae839f395"
+    },
+    "vulkan_final_validation": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-shared-activation\\vulkan\\final-validation.json",
+      "bytes": 16168,
+      "sha256": "56c82bfa028eb7bcb7403dc18df5eb98fd15ff8fd24e5da35a837dbbaafc6fb7"
+    },
+    "final_dependency_audit": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-shared-activation\\dependency-audit-dispatch.result.json",
+      "bytes": 152,
+      "sha256": "96568c734da9c1cfed89eab3783352da3310f3f891d8388516324fc82d17a59e"
+    }
+  },
+  "goal_status": "active",
+  "goal_turn": "progress",
+  "throughput_claim": false,
+  "last_accepted_throughput_unchanged": {
+    "hyle_warm_tokens_s": 103.1,
+    "peer_warm_tokens_s": 105.68,
+    "gap_percent": 2.43,
+    "sample_overlap": true
+  },
+  "archive": {
+    "archive": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\grouped-shared-activation-2026-10-20.zip",
+      "bytes": 35822360,
+      "sha256": "817ee61aa64eec6b1c4cb9dfca4377b20a93c3cbc0a0e025402ed999c5a0bba3"
+    },
+    "payload_entries": 1519,
+    "manifest_entries": 1,
+    "CRC_and_payload_SHA_verified_once": true,
+    "binaries_objects_SDKs_and_duplicate_vectors_archived": false,
+    "complete_actual_header_and_failed_runs_retained": true,
+    "maps_compressed": true
+  },
+  "cleanup": {
+    "report": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\grouped-shared-activation-2026-10-20-reclaim.json",
+      "bytes": 109321,
+      "sha256": "52e9984d78ab8f29a2a7b0eb7038325d7bb9e2ba6adc94f1dbed0bf5c6a0a5ea"
+    },
+    "deleted_files": 113,
+    "deleted_bytes": 1193422403.0,
+    "MiB": 1138.1362943649292,
+    "all_actual_objects_SDKs_and_original_vectors_retained": true,
+    "current_CPU_Graph_Qwen_Vulkan_images_retained": true,
+    "older_measured_images_outside_this_stage_untouched": true
+  }
+}

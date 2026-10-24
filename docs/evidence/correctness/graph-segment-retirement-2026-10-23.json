@@ -1,0 +1,2457 @@
+{
+  "schema_version": 1,
+  "id": "graph-segment-retirement-2026-10-23",
+  "date": "2026-10-23",
+  "conclusion": "The same final regression reproduces the old Graph retirement bug and passes with the two-source public Graph fix; all four available GraphNativeRetirement cases pass.",
+  "scope": "Public ordinary Graph segment completion/leased-result retirement. No model payload, full-model, quality, throughput, peak-memory or cross-backend claim.",
+  "root_cause": "Each accepted segment held its own submission guard, while final completion selected only the latest Queue prefixes. Earlier native Completion guards could remain after wait, preventing result publication.",
+  "change": "Collect every valid accepted segment from the current episode for success and synchronous tail rejection; size cold aggregate cells by actual segment count. Preserve zero-native rejection and original native retirement/error/output gates.",
+  "fixture": "One CUDA Context, two compute/transfer Queues: direct device MatMul, actual pinned-input H2D, second MatMul. The early compute Completion remains asynchronous and is omitted from the old per-lane completion set. Both replays check successful wait, both actual results and zero device/host lease uses. Only the test settles leftover old guards after recording failure.",
+  "sources": [
+    {
+      "product": "src/graph/submission.cc",
+      "before": {
+        "path": ".scratch/qwen-bfloat-selected-20261023/B05/graph-retirement-source/before/src/graph/submission.cc",
+        "bytes": 52555,
+        "sha256": "bcea096540781de5396351d834915abc4323cd1066dc4877a5a9c07e9159eaab"
+      },
+      "after": {
+        "path": ".scratch/qwen-bfloat-selected-20261023/B05/graph-retirement-source/final/src/graph/submission.cc",
+        "bytes": 50109,
+        "sha256": "6a4d92d0b2fac1776d71d2f4242ecca361916988dc8c13c070c13999caf20dc4"
+      }
+    },
+    {
+      "product": "src/graph/executable.cc",
+      "before": {
+        "path": ".scratch/qwen-bfloat-selected-20261023/B05/graph-retirement-source/before/src/graph/executable.cc",
+        "bytes": 477960,
+        "sha256": "3439cde8a75e6bf2c1ed4397a7756cb9b2e6765305af7b2882b76c3945dab06d"
+      },
+      "after": {
+        "path": ".scratch/qwen-bfloat-selected-20261023/B05/graph-retirement-source/final/src/graph/executable.cc",
+        "bytes": 477966,
+        "sha256": "eaebb7945041c37c8cac252289e3bb1c181c5560cd8729d1ec97dc1dcbbd95ad"
+      }
+    }
+  ],
+  "shared_final_test_source": {
+    "path": ".scratch/qwen-bfloat-selected-20261023/B05/graph-retirement-source/source2/aggregate_native_retirement_test.cc",
+    "bytes": 27999,
+    "sha256": "fd3621fd8bef6181feffd19f782499c0d4d09315b4401b48551f6c1d310485c5"
+  },
+  "source_freeze": {
+    "path": ".scratch/qwen-bfloat-selected-20261023/B05/graph-retirement-source/source2/freeze.json",
+    "bytes": 2062,
+    "sha256": "1e87e551b4980a8f7cb2eea16b1876ab06dc576674f7226773395a60d64eadc2"
+  },
+  "compilation": [
+    {
+      "role": "old_product",
+      "identity": {
+        "path": ".scratch/qwen-capture-variants-20261022/compile3/submission/identity.json",
+        "bytes": 52811,
+        "sha256": "c50b6e2c9f79222723f334b64cfd837b7d20bffe88fab21192cf90fe50df4a86"
+      },
+      "source": {
+        "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\submission.cc",
+        "bytes": 52555,
+        "sha256": "bcea096540781de5396351d834915abc4323cd1066dc4877a5a9c07e9159eaab"
+      },
+      "object": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-variants-20261022\\compile3\\submission\\submission.obj",
+        "bytes": 632354,
+        "sha256": "a8e8701bdd146014074cefacf7da38f3d94c623e52587cd9d9438901d40870b2"
+      },
+      "recipe": {
+        "path": ".scratch/qwen-capture-variants-20261022/recipes/submission.json",
+        "bytes": 71775,
+        "sha256": "0c043d11afe5aaf2e908a121c83b9a553c63a57ebae39caf88fa220f74786020"
+      }
+    },
+    {
+      "role": "old_product",
+      "identity": {
+        "path": ".scratch/qwen-mtp-next-20261022/compile4/executable/identity.json",
+        "bytes": 54211,
+        "sha256": "101b42098639629a82a96f88013cb28123ceb3c95a93dc30696b0e84a512e2e1"
+      },
+      "source": {
+        "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\executable.cc",
+        "bytes": 477960,
+        "sha256": "3439cde8a75e6bf2c1ed4397a7756cb9b2e6765305af7b2882b76c3945dab06d"
+      },
+      "object": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-next-20261022\\compile4\\executable\\executable.obj",
+        "bytes": 5130343,
+        "sha256": "7d07eaec3814d2e450f416b787681ed50a84fc8cc77fc6762ca8a5df8bc622f8"
+      },
+      "recipe": {
+        "path": ".scratch/qwen-capture-variants-20261022/recipes/executable.json",
+        "bytes": 71775,
+        "sha256": "0c043d11afe5aaf2e908a121c83b9a553c63a57ebae39caf88fa220f74786020"
+      }
+    },
+    {
+      "role": "new_product",
+      "identity": {
+        "path": ".scratch/qwen-bfloat-selected-20261023/B05/mixed/compile1/graph-submission/identity.json",
+        "bytes": 52914,
+        "sha256": "a7d29afbeb032d6b66218beb919fffb6348b46e2c46a220314a2980070ad221f"
+      },
+      "source": {
+        "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\submission.cc",
+        "bytes": 50109,
+        "sha256": "6a4d92d0b2fac1776d71d2f4242ecca361916988dc8c13c070c13999caf20dc4"
+      },
+      "object": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-bfloat-selected-20261023\\B05\\mixed\\compile1\\graph-submission\\graph-submission.obj",
+        "bytes": 628082,
+        "sha256": "a4a52628c5497af9bb83caab2c3e9419e83de649af2ad35c7b58044973221934"
+      },
+      "recipe": {
+        "path": ".scratch/qwen-capture-variants-20261022/compile3/submission/identity.json",
+        "bytes": 52811,
+        "sha256": "c50b6e2c9f79222723f334b64cfd837b7d20bffe88fab21192cf90fe50df4a86"
+      }
+    },
+    {
+      "role": "new_product",
+      "identity": {
+        "path": ".scratch/qwen-bfloat-selected-20261023/B05/mixed/compile1/graph-executable/identity.json",
+        "bytes": 54338,
+        "sha256": "eadcf4dee594c4a041f396da9ca2e9c09c6367e7901f4dc0d090d99f71c4ecd8"
+      },
+      "source": {
+        "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\executable.cc",
+        "bytes": 477966,
+        "sha256": "eaebb7945041c37c8cac252289e3bb1c181c5560cd8729d1ec97dc1dcbbd95ad"
+      },
+      "object": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-bfloat-selected-20261023\\B05\\mixed\\compile1\\graph-executable\\graph-executable.obj",
+        "bytes": 5130371,
+        "sha256": "f73f7d5b3016cd6602bf4be83a5e8b485373ba414cb4499538af8f7fdf7fc719"
+      },
+      "recipe": {
+        "path": ".scratch/qwen-mtp-next-20261022/compile4/executable/identity.json",
+        "bytes": 54211,
+        "sha256": "101b42098639629a82a96f88013cb28123ceb3c95a93dc30696b0e84a512e2e1"
+      }
+    },
+    {
+      "role": "shared_final_test",
+      "identity": {
+        "path": ".scratch/qwen-bfloat-selected-20261023/B05/mixed/compile2/retirement-test/identity.json",
+        "bytes": 72403,
+        "sha256": "ca3ef8bfb220c7696caad6f1bd4f669a1edf2c4772fcfc1f8d9edc2af778a296"
+      },
+      "source": {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\graph\\aggregate_native_retirement_test.cc",
+        "bytes": 27999,
+        "sha256": "fd3621fd8bef6181feffd19f782499c0d4d09315b4401b48551f6c1d310485c5"
+      },
+      "object": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-bfloat-selected-20261023\\B05\\mixed\\compile2\\retirement-test\\retirement-test.obj",
+        "bytes": 1453713,
+        "sha256": "42d67b0d88710131023b97dc9ed0c6458c498dd33caffe6832344a7dadaae98a"
+      },
+      "recipe": {
+        "path": ".scratch/qwen-bfloat-selected-20261023/B05/mixed/recipes/retirement-test-from-qwen10-attempt2.json",
+        "bytes": 108546,
+        "sha256": "56c7fde8a5ddbd535e7655e3e571c88ff1894a31a604e3ccca0d37ec4f00b248"
+      }
+    }
+  ],
+  "link_difference": "The test object and all other link inputs are identical; only the two Graph product objects differ.",
+  "links": [
+    {
+      "old_graph": true,
+      "plan": {
+        "path": ".scratch/qwen-bfloat-selected-20261023/B05/mixed/tests-link3/link-plan.json",
+        "bytes": 89806,
+        "sha256": "26cb46dff59eade843706db9c2921761f1027bf708cc7ad071bb60dce527191a"
+      },
+      "inputs": [
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-bfloat-selected-20261023\\B05\\mixed\\compile2\\retirement-test\\retirement-test.obj",
+          "bytes": 1453713,
+          "sha256": "42d67b0d88710131023b97dc9ed0c6458c498dd33caffe6832344a7dadaae98a"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-original-target-tail-20261023\\compile4\\fp4-provider\\fp4-provider.obj",
+          "bytes": 624157,
+          "sha256": "8f39d69c97a0d52b8ec673c93db610a30d2896a263e7ac506ee33bc1222a87e9"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-original-target-tail-20261023\\compile4\\fp4-kernel\\fp4-kernel.obj",
+          "bytes": 38657,
+          "sha256": "9b5e08c9f593c0fbd36d8febbd7ff501508e3f3a52a34871ad036d5b0935b3fb"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-original-experts-20261023\\compile3\\mapping-view\\mapping-view.obj",
+          "bytes": 74881,
+          "sha256": "d358aa12e1d24c3270360ba30051295d1782c2265bb773e55c65a906078d44e5"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-encoded-state-20261023\\compile4\\tensor-provider\\tensor-provider.obj",
+          "bytes": 605881,
+          "sha256": "c2a89aa7541826c695e33888ee03456e69b9f48225ff42d4be0ac29fe5537f7e"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-encoded-state-20261023\\compile4\\tensor-kernel\\tensor-kernel.obj",
+          "bytes": 2489677,
+          "sha256": "773bce8801df7bdc41cbd7bf3c1745139e874060e3a18ac920cd309c9f1688eb"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\fp8-quant-output-20261023\\compile1\\torch-cpu\\torch-cpu.obj",
+          "bytes": 1931998,
+          "sha256": "f8862b4c27f3d42cf7f2fd599a33db1db53dfd8613b43576ca9290c6ea3c18b3"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\fp8-quant-output-20261023\\compile1\\cuda-provider\\cuda-provider.obj",
+          "bytes": 708856,
+          "sha256": "6444eda87e167a531fb261e5cb31018deffd3af370dff06ef5e3829e1fcd8e09"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\fp8-quant-output-20261023\\compile1\\quant-provider\\quant-provider.obj",
+          "bytes": 613197,
+          "sha256": "5d2c6fd97d37bc02fd9c6def0778fba16f4d3ee88e4abfb84c55e95bc4c265a5"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\fp8-quant-output-20261023\\compile1\\quant-kernel\\quant-kernel.obj",
+          "bytes": 64928,
+          "sha256": "fd7cfd34c9bdb47106a4b9f82bcf59ee911668182ca634f12a2c4fba5175f137"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-m2-20261023\\compile1\\tensor-program\\tensor-program.obj",
+          "bytes": 808291,
+          "sha256": "f6e35da6f2e01889f9525eb6b15f6f48e01162ccb86c147514d4e151657862e9"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-m2-20261023\\compile1\\ggml-provider\\ggml-provider.obj",
+          "bytes": 2267227,
+          "sha256": "e510a4875f52969558dcbc788608cceeb3aed92ae01c2c8862a84f3c94392311"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mtp-state-20261022\\compile1\\grouped-provider\\grouped-provider.obj",
+          "bytes": 1661956,
+          "sha256": "20074d87edfd06728f4b72f9b9c5eab172ac4a3e7be01c21078b29f9569bae2d"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mtp-carry-20261022\\compile3\\fp8-provider\\fp8-provider.obj",
+          "bytes": 1553744,
+          "sha256": "6a080ca7190b3370867e724ed39be65a9417705b14fdccdbc775374a3ff9355b"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-original-mtp-20261022\\compile2\\cpu-compile\\cpu-compile.obj",
+          "bytes": 59668,
+          "sha256": "efd1d3136a8fe2cb116318ddef7acfe6c91e82b8aae123e1df5e64c0f58ceef9"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-original-mtp-20261022\\compile2\\cpu-provider\\cpu-provider.obj",
+          "bytes": 1968227,
+          "sha256": "392de51e6cd19d078708cdfce3de7823d361de641dcb8fb34fe23960cb8a78e4"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-natural-journey-20261022\\compile4\\cast\\cast.obj",
+          "bytes": 227687,
+          "sha256": "f3fb0e4474e612c86a9b1a0d6b8ce59246da338913dbb5b2d3a028076c807db2"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\lib\\gtest_main.lib",
+          "bytes": 9922,
+          "sha256": "2ba99648f575cc131bedbd24137f02e050e3abe211d97ea0a7d87858e8342394"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\lib\\gtest.lib",
+          "bytes": 5884522,
+          "sha256": "3bfd89195042039c256ca3b5df467813da5efa8d5a99caae3ae72891c9d17296"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-mtp-integration-20261022\\compile1\\cpu-context\\cpu-context.obj",
+          "bytes": 11979,
+          "sha256": "04ab2ccf23cdba299f0b52ad679bf0d2958100e9517d70efd30aa24c70c7fbcb"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-mtp-integration-20261022\\compile1\\cpu-packed\\cpu-packed.obj",
+          "bytes": 1135640,
+          "sha256": "858426731da3410bb20540ef2f63d52f7d8cc4aea8a1e35b8b959b134700655b"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-mtp-integration-20261022\\compile1\\cpu-ggml\\cpu-ggml.obj",
+          "bytes": 1495449,
+          "sha256": "7e718b7adac9e8564ffce6e610a9b63fc9ee6b7afade428fe2cf39753a119701"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-mtp-integration-20261022\\compile1\\cpu-onednn\\cpu-onednn.obj",
+          "bytes": 1224100,
+          "sha256": "8a6eecad52a7e4f05e444da14f14c26731a7b9011d3826ea89bac9a57ffc6612"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\checks\\attempt7\\compute_ggml_runtime--cpu_program\\compute_ggml_runtime--cpu_program.obj",
+          "bytes": 40186,
+          "sha256": "b0d246e75a205bc8fc1f46661d77f439e60f6c19a0a97f0ddc163452c4adbb90"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\cpu-native-causal\\ffa4\\native-baseline.obj",
+          "bytes": 900499,
+          "sha256": "60da9386fa119238c62f6d74f307b69d0bc79965ba12513a69344448e7a56f6b"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-pinned-weight-load\\checks\\cuda-stream.obj",
+          "bytes": 355983,
+          "sha256": "785d5a3ac9a048f3cc97ceec5ceee9267ebae3b613c32f5e68f9e1781ae5ba2e"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-pinned-weight-load\\checks\\io-dns.obj",
+          "bytes": 117652,
+          "sha256": "459892346ff336ffd8a45e928bbd007cc7a1fc359a64771c43baeed0a57b4813"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-pinned-weight-load\\checks\\io-endpoint.obj",
+          "bytes": 59523,
+          "sha256": "3b379f6907a8aab89ef6e12b50838f8376b5e0b0d4fd749de43d434937d8fd70"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-pinned-weight-load\\checks\\io-file.obj",
+          "bytes": 516361,
+          "sha256": "5ff1cb0e86138482b8d9740fef6482142995ab5e8a1f44dc69b4e4acde3e91b8"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-pinned-weight-load\\checks\\io-file_region.obj",
+          "bytes": 129159,
+          "sha256": "67da027aeb760dfef396866a4d180a65257e36c40ea010f788a41d331e8bde3f"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-pinned-weight-load\\checks\\io-io_context.obj",
+          "bytes": 57331,
+          "sha256": "da75ce761dd08410895dadf9381e9821a4473676b1e14c8a5dc5e24d1c4e60b5"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-pinned-weight-load\\checks\\io-io_uring.obj",
+          "bytes": 1021,
+          "sha256": "6a13a95478c312308da094ab109eafaebbcee2650a2edd701884b07520346de2"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-pinned-weight-load\\checks\\io-local.obj",
+          "bytes": 351375,
+          "sha256": "b4d890a6dc093d4d97570549a6924207057cbbe25539a4c4be605e78847dedee"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-pinned-weight-load\\checks\\io-operation.obj",
+          "bytes": 17687,
+          "sha256": "0f0940419da2d1d4dee843f3ff5196273178523d743aa4f71a586d9b0ba6f615"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-pinned-weight-load\\checks\\io-proactor.obj",
+          "bytes": 52580,
+          "sha256": "67a43ca1c1ea9f9562c17a27cb28514bbb8fde0702646702e16fa1c20228f4f0"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-pinned-weight-load\\checks\\io-signal.obj",
+          "bytes": 75736,
+          "sha256": "62dcae7a9a416574de8c2497617e0350448bf7996c9b268accb4253bee66cf22"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-pinned-weight-load\\checks\\io-tcp.obj",
+          "bytes": 547538,
+          "sha256": "2b090386b46f942ad368ed41008ffbc4d9a0321e7e22a3466d698df5b634bae5"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-pinned-weight-load\\checks\\io-udp.obj",
+          "bytes": 102611,
+          "sha256": "324501014122d657494bc050e4f1a69b49700adbd75b8e98abe1a70ab232ac10"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-pinned-weight-load\\checks\\stream-file_stream.obj",
+          "bytes": 818017,
+          "sha256": "13b3a03376508384040fb2c5aa54edad95f5203e723f0b55fdb650100be8e6dd"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-pinned-weight-load\\checks\\stream-stream_sources.obj",
+          "bytes": 86310,
+          "sha256": "f4ff9accde2e274b77a75e2a9bbe80b05ce987e1303461c794c2793fd91b334e"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\e4-paired-pending-2026-10-21\\cuda\\checks\\mixed-helper\\cpu-cuda-compile.obj",
+          "bytes": 65763,
+          "sha256": "6b8ec0c14981b779202957fe633fa5b8139c3132e2915ab9c7b353df51b1d412"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fixed-role-binding-2026-10-21\\blockwise-w4a8\\cpu\\attempt1\\kernel\\kernel.obj",
+          "bytes": 216498,
+          "sha256": "358ee29b795f5e2ba3235a7668b4f83c9d8838f819847ab2c0b713fa7edabd53"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cross-platform\\checks\\src--compute_route_cpu--cpu_context.obj",
+          "bytes": 29400,
+          "sha256": "a9c3599289061c5e6f4fae80d56bb32c304453dd52c8bce1ebb0ced00679fe04"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-next-cold\\checks\\20261019T155819\\04-compute_provider_native-row_cache.obj",
+          "bytes": 314651,
+          "sha256": "95e896e1680ad93d6d67a7cab2c0cc6983c7a49c66b66fd230cc46e1a9bc23f2"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\quark-fp8-side-2026-10-21\\windows\\checks\\attempt1\\native-provider\\native-provider.obj",
+          "bytes": 746506,
+          "sha256": "627e95623382ffe07cf7547db6e3972db6fb3d1e8ea11ab8264b39aac146efcf"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\compact-mla-e4-reference\\common\\checks\\attempt1\\compute_provider_ggml--native_batch-6700b7\\compute_provider_ggml--native_batch-6700b7.obj",
+          "bytes": 1237519,
+          "sha256": "e8b13215b9af6da9ac26526a72ea044221d6a2285677f4bd867eb090761147e9"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\native-ready-pages\\windows\\compute_provider_native--indexing.obj",
+          "bytes": 211504,
+          "sha256": "fb219db3165775c920abb8d7467cd6f8e5d15e7738ff221d44b770fe43a892e1"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\bf16-nan-cast-contract\\green\\aten-cpu.obj",
+          "bytes": 1974726,
+          "sha256": "afdf59979a6e1073cc128978e61e6c215d6eb868adae0120d4992706d01cd987"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\native-ready-pages\\windows\\compute_route_cpu--default_policy.obj",
+          "bytes": 609950,
+          "sha256": "04e396ab151dab8a348daeac4203a88906c0e8ce730ec90a3e13d49a4b875ec2"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-coarse-capture-tests\\compute_provider_onednn--onednn_provider.obj",
+          "bytes": 633238,
+          "sha256": "ce20f9b61c1c3583628cc7b619988234555d348921bd27211f916879892b3816"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-coarse-capture-tests\\compute_provider_onednn--normalization_internal.obj",
+          "bytes": 261023,
+          "sha256": "1dc6aba71b05504da3ea3a1f8249c2a8737f230d3e7dfbda85efdc14301892a6"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ga-bf16-indexer-state-2026-10-21\\common\\checks\\attempt1\\standard-index\\standard-index.obj",
+          "bytes": 682605,
+          "sha256": "d8fa06f7240d3fc7cd13bb6efe4c5e9e1d00e4d0f76b06e84e8c23dad8b10abd"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\native-ready-pages\\windows\\compute_provider_native--elementwise.obj",
+          "bytes": 292435,
+          "sha256": "f542f2e51bc60c365b2fb3939f6fc94b958033361b310b3370bb80d08b1bec91"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-next-cold\\checks\\20261019T155819\\12-compute_provider_native-ds4_quantization.obj",
+          "bytes": 214936,
+          "sha256": "65d1e8228f4051629491744a1cef1e771c07debc6404dd0fe942dbf5d0ee5a72"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\native-ready-pages\\windows\\compute_provider_native--normalization.obj",
+          "bytes": 214538,
+          "sha256": "f112e34da5ad3671214249f7e1c7091912bddc298747e2684862e044ba1970b2"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\native-ready-pages\\windows\\compute_provider_native--reduction.obj",
+          "bytes": 212189,
+          "sha256": "3b74d78e3da48446b6cb9b6db9763286dc6db93e47c8307a3dc5ce5e6d6fd028"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\native-ready-pages\\windows\\compute_provider_native--sampling.obj",
+          "bytes": 267942,
+          "sha256": "e66b05ec19870a099f6d0529c93d34ce398428e740029a1656d382fddb9d8dd6"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\native-ready-pages\\windows\\compute_provider_native--transform.obj",
+          "bytes": 200565,
+          "sha256": "f994f1305b6a4771dcc6a2d48193acd2550087a0a503a57bbba6ebe1284b5cfd"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\native-ready-pages\\windows\\compute_provider_native--transformer.obj",
+          "bytes": 208433,
+          "sha256": "ef430be3ec1f3d7bfea416af12697309510dff47740f028957191dc10c259f7c"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\native-ready-pages\\windows\\compute_provider_native--default_rules.obj",
+          "bytes": 555570,
+          "sha256": "d501bd5cf4a48e59f972a0a321ec5af96ce39c8df1fc4699cb584b4156b67ada"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\quark-fp8-side-2026-10-21\\windows\\checks\\attempt1\\native-static-fp8\\native-static-fp8.obj",
+          "bytes": 421769,
+          "sha256": "52459bf01a63f8331859dc058d90b87073c96b1f77681bf03929e0d263f10afb"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_compute_route_cpu.lib",
+          "bytes": 661224,
+          "sha256": "3518d9b8deca2a2f60641b6a90c040bee6727777c5daa8043ef2c54046f1a1eb"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_compute_provider_native.lib",
+          "bytes": 5064106,
+          "sha256": "d566c7667362620bbbb8734b3ea1649c6d22aa3d9c4914da867daca2cb496232"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_compute_backend_cpu.lib",
+          "bytes": 82916,
+          "sha256": "43f48241092ab0a5528c6a6fb54366671041d85451849350def72b10259f54f3"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_compute_provider_ggml.lib",
+          "bytes": 2030784,
+          "sha256": "fbbf2b45fb97c9bf19e5e306d01969c265e31115288e2078c90527e593fa873e"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-cpu-final-mixed-probe\\ggml\\src\\ggml-cpu.lib",
+          "bytes": 3036828,
+          "sha256": "dd20dd3c7604e5c4dad8758ae5e659d64944491ae7dae03e43286dbbcb7fed12"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_compute_provider_onednn.lib",
+          "bytes": 548220,
+          "sha256": "482943fe21db6e81592bbd90ec562add6f72ff748252345f5f907615d521ea0d"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\dnnl.lib",
+          "bytes": 835138242,
+          "sha256": "450497125afdf2112508569950e2d506ef465b31a0e214adead83f749869bd11"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\expert-working-set-2026-10-21\\graph-adapters\\checks\\attempt1\\cuda-weight-binding.obj",
+          "bytes": 95406,
+          "sha256": "c0210f667a4f7c68d246554b0b38771fd8b3f06d5e9db1ea39211bbcb78a752b"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\precise-role-consumers-2026-10-21\\common\\checks\\import1\\compute--weight_import-28eb7b\\compute--weight_import-28eb7b.obj",
+          "bytes": 142881,
+          "sha256": "b215931c41435dd8d36a1f3ec1d87b97dddb3d5c9237e102803c398f11e4af74"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fixed-role-binding-2026-10-21\\blockwise-w4a8\\cuda\\checks\\attempt1\\blockwise-provider\\blockwise-provider.obj",
+          "bytes": 114910,
+          "sha256": "9ccf4f450fb802f3138464b639732e6cdbef3848618cda32a7b7f1a30c929dd3"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fixed-role-binding-2026-10-21\\blockwise-w4a8\\cuda\\checks\\attempt3\\blockwise-kernel\\blockwise-kernel.obj",
+          "bytes": 122758,
+          "sha256": "943fa546b6c8f31ae8e445cd42869d4cb4b1a6ca121386c907b9cef2d4c511f2"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fixed-role-binding-2026-10-21\\blockwise-w4a8\\cpu\\attempt1\\schema\\schema.obj",
+          "bytes": 47017,
+          "sha256": "bb0e45a88f2defa0558dbedcb76f8171e6d1f70782b7460fa42ec8da5a989882"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-grouped-space\\cpu-cuda\\checks\\products-cpu\\attempt1\\ct-packed\\ct-packed.obj",
+          "bytes": 853778,
+          "sha256": "18373d1d0d896a4f53989f6c045568eeb3077c3b612705f118fbfaad2de4b1d5"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mxfp4-weight-only-reference\\common\\checks\\attempt1\\compute_provider_native--nvfp4-9c3005\\compute_provider_native--nvfp4-9c3005.obj",
+          "bytes": 310654,
+          "sha256": "c43a666c56bcd07b5d61bc5399f567cb446458ebe7b7a2884622c51781f2d2b5"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\quark-block128-scale-2026-10-21\\cuda\\windows\\checks\\attempt1\\fp8-shared-prologue-region\\fp8-shared-prologue-region.obj",
+          "bytes": 989063,
+          "sha256": "849203110dddee103c06abc62875bacb483f6c4c0a2a4621ecd8ddd8d50752cf"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\glm-flash-mixed-mlx-2026-10-21\\cuda\\checks\\bank-alignment-product1\\cuda-weights.obj",
+          "bytes": 348153,
+          "sha256": "106790e875e6fa9da75377851493de0f1805439c507d4f38fca23120860d9bbb"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\quark-fp8-side-2026-10-21\\windows\\checks\\attempt1\\cuda-packed-region\\cuda-packed-region.obj",
+          "bytes": 1136146,
+          "sha256": "0629023aa6684ebfd487424e74c0200b6dab7937b994620ed7195762a7e98c8b"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\bf16-grouped-bank\\checks\\native1\\native--mmid.obj",
+          "bytes": 140348,
+          "sha256": "436759039764b12c715854a70d7cc673f4479070602c82ff4cf0aea15f26d5f9"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gguf-nvfp4\\cpu-cuda\\checks\\20261019T201144\\native-getrows.obj",
+          "bytes": 1586734,
+          "sha256": "de5e854072b8a1dbd373fdde60b96803b778095bbad77af10f89910d04d6a315"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gguf-nvfp4\\cpu-cuda\\checks\\20261019T201144\\native-convert.obj",
+          "bytes": 670522,
+          "sha256": "e10107249fde94d4bd40d751e6117513b0a87486fbfa4f6024992617af340b20"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gptq-reference\\cuda\\checks\\mapped-refresh\\dense-bfloat-scores-region.obj",
+          "bytes": 953331,
+          "sha256": "7f8755ef266bf6363ec77b48ab83ce5fa85043b342b180d178ac56384bc4a5da"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\bf16-grouped-bank\\checks\\native1\\native--ssm-conv.obj",
+          "bytes": 624091,
+          "sha256": "3bb5fdd4e25ecc7318f703d79a80006349b8d4cb4e548273afc0a91d695f22d1"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\bf16-grouped-bank\\checks\\native1\\native--gated_delta_net.obj",
+          "bytes": 841753,
+          "sha256": "de9c20d97bb97d48c2b52a3010077224cf58d36ff4560915df80b1f77c4fb542"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\quark-fp8-side-2026-10-21\\windows\\checks\\attempt1\\cuda-mlx-packed-kernel\\cuda-mlx-packed-kernel.obj",
+          "bytes": 852947,
+          "sha256": "cd66fc4b0a0b0808d74b36a529ddbb56fe22ef00e62e62bed0c0568b8594b590"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-weight-orientation-2026-10-21\\common\\checks\\schema1\\compute_ops--weight_decode-25df34\\compute_ops--weight_decode-25df34.obj",
+          "bytes": 107391,
+          "sha256": "659472d29aa03318a4e6bf1cd5654ac7f1b3dddd95906188a0b9602436922c70"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-fusion-precision\\checks\\20261019T111328\\mmvq.obj",
+          "bytes": 4470159,
+          "sha256": "0acbbf5934963ec9db3980fea6afaf4b0c4e84dd71d9e02197445b4132025a8e"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-hot-prepare-selection\\checks\\cpu-identity-20261019T082918\\mem-resource.obj",
+          "bytes": 68886,
+          "sha256": "74c964bedf19aaef623759b24aedc7f0ebdeb92319c165e9a4ea6e0d460e5a0d"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-gdn-l2-epilogue\\checks\\20261019T102437\\norm.obj",
+          "bytes": 477496,
+          "sha256": "f285764a7350059eee68ceab6b0861d9a10f540f36483f69bd02a1cf1f19e7aa"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-bf16-block128-reference\\cuda-bfloat-binary\\checks\\attempt1\\binbcast.obj",
+          "bytes": 3446016,
+          "sha256": "0a9fb71f7e62efde9d15e491370098cb54e3c79d9ad02cf8e297e22b1cb0c931"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\paired-projection-route\\checks\\native1\\unary.obj",
+          "bytes": 1271842,
+          "sha256": "85d63ab61523489461c5aaa09df2efedab906ab77e0a9ec40f88af08f6d235e6"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-reuse-20261022\\compile1\\memory\\memory.obj",
+          "bytes": 182541,
+          "sha256": "c735471f2b9eb0253e66e43b8bd6db1a860d6fbf58351e0ec7396fb9a156743b"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-reuse-20261022\\compile1\\batch_transfer\\batch_transfer.obj",
+          "bytes": 147426,
+          "sha256": "6af47a3cdea2789201fcbccd532ef303447c78e14ec5611060bee0b7e029df51"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-variants-20261022\\compile3\\input_sources\\input_sources.obj",
+          "bytes": 771741,
+          "sha256": "77ae28452d1f1796a4cae0e4e2bdf608b7992eecc9105fbf0a995c1741a3b41d"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-variants-20261022\\compile3\\resource_report\\resource_report.obj",
+          "bytes": 174115,
+          "sha256": "20e790e5699f82c24c10cf7ec968d5ea4d2585225e25925d9ef6ab35d19fb10c"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-variants-20261022\\compile3\\progress\\progress.obj",
+          "bytes": 546739,
+          "sha256": "a2540ebf6bb99691241006731b41b93488ae8cb16626b172521df3dc72a55d91"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\native-ready-pages\\windows\\compute--retained_completion.obj",
+          "bytes": 247500,
+          "sha256": "a190789896debdf2b779cd80b525cbde6eee8d50e48ab73ff36e806f46943cae"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-variants-20261022\\compile3\\resources\\resources.obj",
+          "bytes": 1581359,
+          "sha256": "6b8cf2ff73a5747025a7538c20ca74ee53806d2e42d5e432d42aacbee6b87ca6"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-variants-20261022\\compile3\\graph-batch\\graph-batch.obj",
+          "bytes": 2231873,
+          "sha256": "e36f43941bdeec22009f065d8c19bc665674699c2a3953fadb098aad4fed07c2"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-shared-activation\\windows-host\\checks\\current\\oaca62ba1--graph_batch--row_cache_node.obj",
+          "bytes": 782884,
+          "sha256": "f74f2ca28a5a8f283255a1aad52f499e7828e756e648622da27b86e666b968cc"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-variants-20261022\\compile3\\operation\\operation.obj",
+          "bytes": 1350600,
+          "sha256": "5e37c2f0f0b16a0b695f690877d0142d0371f0780f5f226659550dc4662ab0b7"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-next-20261022\\compile4\\executable\\executable.obj",
+          "bytes": 5130343,
+          "sha256": "7d07eaec3814d2e450f416b787681ed50a84fc8cc77fc6762ca8a5df8bc622f8"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-variants-20261022\\compile3\\constant_artifact\\constant_artifact.obj",
+          "bytes": 775628,
+          "sha256": "218d2a9bf12a825c3dc21430ca93ac76b0dfdb819a9fb5f8b6f7db72874477a0"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-variants-20261022\\compile3\\submission\\submission.obj",
+          "bytes": 632354,
+          "sha256": "a8e8701bdd146014074cefacf7da38f3d94c623e52587cd9d9438901d40870b2"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-variants-20261022\\compile3\\region_access\\region_access.obj",
+          "bytes": 101656,
+          "sha256": "683f86248700aed0040ee88f377cc8427cde194554bb7a837db5b94a60e9053b"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\compact-mla-e4-reference\\common\\checks\\attempt1\\compute_batch--batch_layout-a6d556\\compute_batch--batch_layout-a6d556.obj",
+          "bytes": 327819,
+          "sha256": "7efb1c4e78cb0a2e7057ae4a0e48c68142bed6916ac5b866aae77b7634a1cac2"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multisequence-batch-20261021\\compile2\\arena\\arena.obj",
+          "bytes": 1136945,
+          "sha256": "ae01e1c43df951108034b88ce72bc26f97786612d84450c1388ab373ec9385c5"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-reuse-20261022\\compile1\\batch-execution\\batch-execution.obj",
+          "bytes": 645532,
+          "sha256": "92c8c90e2b25ae929cd8d2e66e48a9e978ba17bd2e990aec3a8188a6de0cc2bb"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gguf-nvfp4\\windows-host\\checks\\20261019T201048\\oe6d1eed0--compute_ops--low_precision.obj",
+          "bytes": 94406,
+          "sha256": "22c67856aecca208186eb08a1bd6965b845b713d2379e5ee6354cc3d923aa8f8"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\compact-mla-e4-reference\\common\\checks\\attempt1\\graph_batch--native_paged_node-ee24b2\\graph_batch--native_paged_node-ee24b2.obj",
+          "bytes": 74790,
+          "sha256": "949381ff9ce2e3077f497fc966fda2cc62b54d329029f7724230f0f77de1dc3a"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gguf-nvfp4\\windows-host\\checks\\20261019T201048\\ob04410ba--compute_batch--batch_paged_native.obj",
+          "bytes": 172435,
+          "sha256": "21f0194d9a914c210981a40dcb866c0318854a36b590bae50fb274b46673fbdc"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-reuse-20261022\\compile1\\device\\device.obj",
+          "bytes": 303963,
+          "sha256": "5afe3409cbd7eedd59302d99977b8550d60672289d9cfb28757ef9b20e643235"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\e4-paired-pending-2026-10-21\\common\\checks\\final-common\\batch-transfer.obj",
+          "bytes": 787327,
+          "sha256": "f5aae0e18e9d6c2495de5557ca0d562d29ebc56f2fb5718892fc7e0799a676ef"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gguf-nvfp4\\windows-host\\checks\\20261019T201048\\of951adc3--graph_batch--materialized_invocation.obj",
+          "bytes": 713762,
+          "sha256": "dcac9eeeab455ddfe2784a662278e5de2dff98d5b932644e40d80918b6d5a38e"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\checks\\attempt2\\graph--execution_source\\graph--execution_source.obj",
+          "bytes": 175972,
+          "sha256": "5f1cd685b09cc3e915f10adc87b6fb4e6c758bba883f55535c3482baa561469c"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-variants-20261022\\compile3\\lease_submission\\lease_submission.obj",
+          "bytes": 315090,
+          "sha256": "ec05522402d430a8967cc97b130ba66c0c614d3610e38c619e0487b95a7199f7"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\layout-binding-lifetime\\checks\\compute-custom_kernel.obj",
+          "bytes": 581815,
+          "sha256": "ced3100ddc82c48037df110aae5dbef692721810764a33a4c9d42b6cbdff9508"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\native-ready-pages\\windows\\compute--transfer.obj",
+          "bytes": 51817,
+          "sha256": "297ca4d97087771dd48977303856f199c42d17082f08534d763865097396e270"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-reuse-20261022\\compile1\\capture\\capture.obj",
+          "bytes": 68677,
+          "sha256": "7e3b2e3fb3c39e1fd1817006970e65854d7b9d351079d4e8219814c407af658d"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\native-ready-pages\\schema\\graph.obj",
+          "bytes": 1517564,
+          "sha256": "3608845c1d4b9e17593ce5cabb3c5631b21bd7c033643b6f591d6970fdc6d96d"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\native-ready-pages\\windows\\graph--effect_order.obj",
+          "bytes": 218922,
+          "sha256": "04269128d9da617ea42b47fe4685f7606499048adb20f308caeeb2d0d56a4010"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\native-ready-pages\\windows\\graph--view_domain.obj",
+          "bytes": 689416,
+          "sha256": "fdbf48793781886f0d30fc7b05a478b9ad019d2a924839fdc4c71b8711ae08d2"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ga-bf16-indexer-state-2026-10-21\\common\\checks\\attempt1\\operation\\operation.obj",
+          "bytes": 318898,
+          "sha256": "8c212ee307833121a8889f18a24ee5e98558df4b2ac1229fc16031d093e54821"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\native-ready-pages\\schema\\sampling.obj",
+          "bytes": 55060,
+          "sha256": "cbc14f8503db1a294352b2fffd14de57826ce5b582fa73cbcfddda46596c8fec"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\native-paged-capacity-20261022\\compile1\\native-batch\\native-batch.obj",
+          "bytes": 239901,
+          "sha256": "258046e6c45d6955a2f173565861fa3cb96a004ace4f4f62441c9304b997028e"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-feature-completion-2026-10-18\\windows-batch\\native-batch-portable-llp64-posenc.obj",
+          "bytes": 9300682,
+          "sha256": "476be33d56818ea80e206cc9b8258fc8ecf17cb04b10e149a9d2a8e71d81ffe9"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-feature-completion-2026-10-18\\windows-batch\\native-cache-portable-llp64-posenc.obj",
+          "bytes": 59742161,
+          "sha256": "1b31146f19285b62a7be78d3b4261edd833bb3e859a132764ef465382176ff3f"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-feature-completion-2026-10-18\\windows-batch\\native-attention-portable-llp64-posenc-decode.obj",
+          "bytes": 2757335,
+          "sha256": "ac1a037a48887ad30400c9a14204d5379b26b3b94a01bf4ff3aa834c29201af3"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-feature-completion-2026-10-18\\windows-batch\\native_cache_encoder.current.obj",
+          "bytes": 78620,
+          "sha256": "2a3a5b496bd3f36f0ad2d37f4d385303fd97ef95a19f129803ddff8afe6c8a26"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-batch-profile-20261022\\compile3\\native\\native.obj",
+          "bytes": 15369390,
+          "sha256": "371158ae0f7883b845fc1693def534044d0252940bfece35c8ebebd67b514653"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\b-cuda-d5\\src\\compute_provider_cuda\\CMakeFiles\\hyle_compute_provider_cuda.dir\\native_kernel.cu.obj",
+          "bytes": 220888,
+          "sha256": "f734878f57f743de611ed7da7727eee3cef66744ebfe3851f27d96f5962f0982"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\b-cuda-d5\\src\\compute_provider_cuda\\CMakeFiles\\hyle_compute_provider_cuda.dir\\norm_kernel.cu.obj",
+          "bytes": 400955,
+          "sha256": "dacfc8ca88ffdb1c6a7fed714f232941d916d0f98ebdc00fe89f42e42ef830ba"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\b-cuda-d5\\src\\compute_provider_cuda\\CMakeFiles\\hyle_compute_provider_cuda.dir\\reduction_kernel.cu.obj",
+          "bytes": 2955351,
+          "sha256": "9e39e30048645d08891f442ec5fc728bcd151879f4a4bb24586a1880b997d5fc"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\b-cuda-d5\\src\\compute_provider_cuda\\CMakeFiles\\hyle_compute_provider_cuda.dir\\scatter_kernel.cu.obj",
+          "bytes": 3076754,
+          "sha256": "30f6473b35650c3d3412d06302e89f6ccf328c39e194682f9c7db401e17781f2"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\b-cuda-d5\\src\\compute_provider_cuda\\CMakeFiles\\hyle_compute_provider_cuda.dir\\sglang_kernel.cu.obj",
+          "bytes": 278533,
+          "sha256": "7f76ce81f4efda1637886156e30cb4b3e26e62133975f9ce6be1ce7a6d00ec85"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\b-cuda-d5\\src\\compute_provider_cuda\\CMakeFiles\\hyle_compute_provider_cuda.dir\\sglang_norm_kernel.cu.obj",
+          "bytes": 1426280,
+          "sha256": "e421fbde6e05157f99f75852f3338029651aba3030422316afc5b2cf4d1b14b9"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-next-cold\\checks\\20261019T155819\\native-router.obj",
+          "bytes": 97706,
+          "sha256": "2d18543aed0bdf07b37b589dba24edbf659731261956f8f46ca85b7417fc29c3"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-feature-completion-2026-10-18\\windows-batch\\concat_kernel.current.obj",
+          "bytes": 287427,
+          "sha256": "0a735b1551fb38c481b3be00434604f8147efc5ffd03ae9ea3464705871ff850"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-feature-completion-2026-10-18\\windows-batch\\sampling_kernel.current.obj",
+          "bytes": 390228,
+          "sha256": "ac39262d1fa186b763807c41918fabad5db2a12d310303f1664e20955eb069c3"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-fusion-quantization-2026-10-18\\cuda-device-indices\\guard.obj",
+          "bytes": 38014,
+          "sha256": "11fad538d7496ffded4968db31d2b8bb4ec3554119e75499f67ed80edbcd9da9"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\compact-mla-e4-reference\\cuda\\checks\\attempt1\\native-mla\\native-mla.obj",
+          "bytes": 5666602,
+          "sha256": "727cb1ae92d82efd05fd16ac1a9be48c5250cddb5788f9ad6ceb4abb704304f9"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-feature-completion-2026-10-18\\windows-batch\\highdim-review\\native_highdim.obj",
+          "bytes": 7361496,
+          "sha256": "d68eb7e4bfd374b173fcc22f8376cd9c078e1a0688bf6661629e5ae7f5f9c24c"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-foundation-review-2026-10-18\\cuda-paged-indexer\\row-codec.obj",
+          "bytes": 250371,
+          "sha256": "7aff63eca9b623399245100c2a79f6a2c146359baecad777cb515dc9649724b8"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ga-dense-indexer\\checks\\20261019T182917\\indexer-kernel.obj",
+          "bytes": 124356,
+          "sha256": "ad0fb70425dda47e0f6caa1a60bb9935a5cbf4c2309adeb33e9bd003905474f4"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gdn-direct-state-output\\checks\\native1\\native-main.obj",
+          "bytes": 1646064,
+          "sha256": "827e2876cc20224c0fa6a5dc1fc6340d1a4ff5541173dd22b6b8cd7d0e98758b"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\generic-progress\\ggml-cache\\ggml-alloc.obj",
+          "bytes": 54588,
+          "sha256": "c05efaa641a646d50e902da6e45e3a1297b74ffed49a364097359a081206b615"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-variants-20261022\\compile3\\cublas\\cublas.obj",
+          "bytes": 707821,
+          "sha256": "f06bd71ff38bbdb464cee64780fb52bb95634c9de2483c0040746820e318731f"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-variants-20261022\\compile3\\cccl\\cccl.obj",
+          "bytes": 622850,
+          "sha256": "281b75d516fd505a23498269073faa0b685afa246ce16a2d6d9670493d520a03"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-coarse-capture-tests\\compute_provider_cuda--concat_provider.obj",
+          "bytes": 594138,
+          "sha256": "941659ea63df06a635953510f9b817d08774e766975699cd86310d2b2d93bb1f"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fp8-shared-prologue\\checks\\host1\\compute_provider_cuda--deepseek_fp8_provider.obj",
+          "bytes": 918587,
+          "sha256": "d788a4748ecb789c6647047b1b1651e71b086189cf47ac9bf2bbf5959fea5678"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fp8-shared-prologue\\checks\\host1\\compute_provider_cuda--norm_provider.obj",
+          "bytes": 611435,
+          "sha256": "4cb12275906e4de5a5bb7fd6c6319d237c612481e6b1d670e6021ac5b54762f8"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-coarse-capture-tests\\compute_provider_cuda--reduction_provider.obj",
+          "bytes": 592628,
+          "sha256": "f16000309d185627e379dcd08c66d18a904a9fb3562195b2255a5c59458dc7a1"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-shared-activation\\windows-host\\checks\\current\\o409973f2--compute_provider_cuda--router_provider.obj",
+          "bytes": 622291,
+          "sha256": "117aebc9c1b73802d750ea88733539bfc2d2825cf76e208c28d9f8e1d2c96e9c"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-native-storage-cast\\green\\row-cache.obj",
+          "bytes": 758499,
+          "sha256": "7fe2b073aa4485dd1595e24555067b0692c82adc2bd7d174a8b0f976c0f4871b"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-shared-activation\\windows-host\\checks\\current\\oe24ab717--compute_provider_cuda--row_cache_provider.obj",
+          "bytes": 649945,
+          "sha256": "8e13a9753d4a09386dd782c38744f9f265fe9a09943a9640e06a14caa55fc8c7"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-coarse-capture-tests\\compute_provider_cuda--sampling_provider.obj",
+          "bytes": 119967,
+          "sha256": "c895358525d221def0701f1154bebf8e00db7f3856dcbf4d740c0519e3695afa"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-coarse-capture-tests\\compute_provider_cuda--scatter_provider.obj",
+          "bytes": 597214,
+          "sha256": "f1a07de695cb68cf70883971e4c0cfeea76da1791873f24335fa8bd267caf4dc"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\checks\\provider\\provider.obj",
+          "bytes": 817892,
+          "sha256": "206596695f0e84a111e212f7e62c35f86878cba01643e03098b175bfe40c8a1a"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-variants-20261022\\compile3\\artifact\\artifact.obj",
+          "bytes": 1381427,
+          "sha256": "78375ab48e4e572769d63731908a8f3261412b4ae168cdba6f99f6da0a4b2344"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-next-20261022\\compile3\\ggml-region\\ggml-region.obj",
+          "bytes": 2394680,
+          "sha256": "1c033b3713ffc46c413389e65e62e11e8fcbc9b912b593fc10dd70635dcabff8"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cublas-scores-20261022\\compile1\\policy\\policy.obj",
+          "bytes": 644458,
+          "sha256": "7fbf548d0adf6e8bc545a7694ed744751d56bfa63aed1bcfec3b7dd62f1e4e62"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fp8-shared-prologue\\checks\\host1\\compute_route_cuda--cuda_context.obj",
+          "bytes": 15822,
+          "sha256": "60afb808fc475b484c8ed2f20bbd6cc7de8e2295ff08c48ca0fbacad6ed897ec"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-reuse-20261022\\compile1\\backend\\backend.obj",
+          "bytes": 323539,
+          "sha256": "c67fbe588c06b3d607387fae67e98a3589f4d8545f92794697432927f14d0219"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-reuse-20261022\\compile1\\device_status\\device_status.obj",
+          "bytes": 64978,
+          "sha256": "6d833c721b896e3e6e07d35a1b03eeb5df9ebce9059942dc23fcbc15f370acb2"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fp8-shared-prologue\\checks\\host1\\graph_route_cuda--cuda_context.obj",
+          "bytes": 73898,
+          "sha256": "67dcb883b97304c33cc4de0d3772f7c9e5301d616e8bf1d3e72b96a13cb08b1e"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\blocking-pool\\candidate.obj",
+          "bytes": 192862,
+          "sha256": "3d5b384c983847a3ccceee4b31a3280d1dafe9bdd8f6aff8b212d4d2e98737ce"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_compute_backend_cuda.lib",
+          "bytes": 931092,
+          "sha256": "5a34352607dab2b4b73546bce7ec0e4a8443770d9c90e65f5162a20372889e4e"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-slot-ownership\\checks\\after-state_versions.obj",
+          "bytes": 711862,
+          "sha256": "c1139ced882083f359aaa31fe1e3600a97f162c066e6e670f2464271b1a6e2e4"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_compute_batch.lib",
+          "bytes": 2710566,
+          "sha256": "9d91868ae29fcecf09b0af914d0352c31b11d93baeb5637407b299e7d41493c7"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_compute_ggml_runtime.lib",
+          "bytes": 158570,
+          "sha256": "b395b176471d277a9b938fba73cd899547be5a20ce3f5eebe4c2c41443e66054"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_compute_provider_torch_cuda.lib",
+          "bytes": 1975796,
+          "sha256": "a24af7b9f03e942ca09705811e54c7de03dea348c3db6e7994b2cb0c951c64bb"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_compute.lib",
+          "bytes": 4633248,
+          "sha256": "470e3e6e8cf8349c238f4633d5b0565563699671b2c6200c85a854e1624e3a46"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_compute_ops.lib",
+          "bytes": 858826,
+          "sha256": "0602ddf0946f48522932a1b7ee6f490694375cf2a6025993698404ef5938f584"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_container.lib",
+          "bytes": 300918,
+          "sha256": "5f014b65f203f823e02c91c4b368b31bb4e8cadb25110771d5e6c6415bcb4d6b"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_mem.lib",
+          "bytes": 1280686,
+          "sha256": "10fe859d66dcd68d391c65d1a933e1a4de902d8bb49003f8dca768d65b19dbe4"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\mimalloc_static.lib",
+          "bytes": 989658,
+          "sha256": "6e92620e93dddd66497fb57f6bb43ad36b525e050812c4f1df7e04b66c439858"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_platform.lib",
+          "bytes": 764086,
+          "sha256": "4b88eede9ed8ef3813059bc6db5c87baefbae7266a4a7304ec24ede1904f1b6f"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_error.lib",
+          "bytes": 136936,
+          "sha256": "1da55ee1495b45e4b32f14cdf6b374487e538f01899e0902446742ef24c25326"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_platform_thread.lib",
+          "bytes": 119700,
+          "sha256": "2d0008331fc5cad2cc2e310788a4e9dba2c911ecf334498ac8b3af7861d736f7"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_time.lib",
+          "bytes": 113586,
+          "sha256": "275bc429d61d97153acf50f126151f73581a1a4823a5faf2b01536bf7e52535d"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_simd.lib",
+          "bytes": 27179832,
+          "sha256": "7ef184c55086e5bf3fffa1df8730ab33df4b7e54e2f9366d7e9f29460d5b1645"
+        },
+        {
+          "path": "C:\\Users\\kiro\\AppData\\Local\\hyle\\dependencies\\v1\\sdks\\torch-cpu\\Windows-bf0079104e068dcbd60b2f8de589dc725282cbe865a85016cc5b8aa46cab519d\\libtorch\\lib\\torch.lib",
+          "bytes": 1832,
+          "sha256": "a31e4708d2727f3fd81be6957fe8fa6158719d3a03a22cb38c9fa1ad68766daa"
+        },
+        {
+          "path": "C:\\public\\tools\\hyle-dependencies\\v1\\sdks\\torch-cuda-leaf\\Windows-2bc729898e422b9f3da54349eed98f2f0b5dd415434508ee2ab2a13fb021815d\\torch\\lib\\c10_cuda.lib",
+          "bytes": 65860,
+          "sha256": "deece15705cbade7f41d14736283de25150ea20cbb398c726a959ee00aa609e1"
+        },
+        {
+          "path": "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\lib\\x64\\cudart.lib",
+          "bytes": 2080530,
+          "sha256": "36a9ddcb459d2a79555282da3bb19e9720b7eb6dc78d3d0694c701b5b73807cb"
+        },
+        {
+          "path": "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\lib\\x64\\cuda.lib",
+          "bytes": 843708,
+          "sha256": "feb684bc4d9460c0777c5eb1e7d3a04332c426f1703a2fbfdc771dea5ad81146"
+        },
+        {
+          "path": "C:\\Users\\kiro\\AppData\\Local\\hyle\\dependencies\\v1\\sdks\\torch-cpu\\Windows-bf0079104e068dcbd60b2f8de589dc725282cbe865a85016cc5b8aa46cab519d\\libtorch\\lib\\torch_cpu.lib",
+          "bytes": 29046564,
+          "sha256": "5c2c703cf2f71e0124228a19cedc7a1a334dd1260b6494d01bbbb5a58b33b3a1"
+        },
+        {
+          "path": "C:\\Users\\kiro\\AppData\\Local\\hyle\\dependencies\\v1\\sdks\\torch-cpu\\Windows-bf0079104e068dcbd60b2f8de589dc725282cbe865a85016cc5b8aa46cab519d\\libtorch\\lib\\c10.lib",
+          "bytes": 778152,
+          "sha256": "3b9653f65f59c09915aa425fb1ebc9abbf5f1f524b94e98e607c2301183724ba"
+        },
+        {
+          "path": "C:\\public\\tools\\hyle-dependencies\\v1\\sdks\\torch-cuda-leaf\\Windows-2bc729898e422b9f3da54349eed98f2f0b5dd415434508ee2ab2a13fb021815d\\torch\\lib\\torch_cuda.lib",
+          "bytes": 1774574,
+          "sha256": "bf0759f648f84b2ffd1ca75842249b0d8b1dea469bc92167434c5e1af9fea3f4"
+        },
+        {
+          "path": "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\lib\\x64\\cublas.lib",
+          "bytes": 159250,
+          "sha256": "e6a7e1cb87932e28bc000c0d364b354759c6c29c92b6db38140cca816f5acbff"
+        },
+        {
+          "path": "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\lib\\x64\\cublasLt.lib",
+          "bytes": 877282,
+          "sha256": "992ef03e8204464231c5292ed046e21d1f67a178b24ae1d1fdb248a4e4393171"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cuda-final-u3-delivery\\reference-windows\\lib\\ggml.lib",
+          "bytes": 650112,
+          "sha256": "9a8af56da187a861642b9cf78f53bdf597721ab04521216f38e2662b4a9bc685"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-sdpa-mask\\diagmask-current.obj",
+          "bytes": 77406,
+          "sha256": "5468161c6b9fea7ab595096f68c7d736fb236aa7613268e2d05db5eab63fc071"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cuda-final-u3-delivery\\reference-windows\\lib\\ggml-cuda.lib",
+          "bytes": 108378918,
+          "sha256": "ebc36f3034c307facbbbb2b7e75643551bb6324f23cceceae08901999c88aa11"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cuda-final-u3-delivery\\reference-windows\\lib\\ggml-base.lib",
+          "bytes": 5591196,
+          "sha256": "c17aa8b55587caf8ad1aa07dc8c11dcad703a5e4335fc2471bef3c7615e7f20f"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_sched.lib",
+          "bytes": 1643842,
+          "sha256": "d1987955f9b36b60d2bdd1bcea7b821b4fe880f409cafd1823dfe16b8972ac65"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_mem_vm.lib",
+          "bytes": 332730,
+          "sha256": "7b67c790b1ba298f6e76c0d59df03fdfbf0ec521bcc82f8973239699b8090d90"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\checks\\attempt1\\graph_batch--native_pending_regions\\graph_batch--native_pending_regions.obj",
+          "bytes": 176569,
+          "sha256": "51c50fce9d404d9ab1858908cfa5228f3d347f1fd404cd318f2ac2184a26df73"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\native-state-ownership-20261022\\compile1\\budget\\budget.obj",
+          "bytes": 217936,
+          "sha256": "3244abecef0674378ce78c40e11f09addb0210000e6e8947a360b0e5bcda4e47"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\native-state-ownership-20261022\\compile2\\leases\\leases.obj",
+          "bytes": 367130,
+          "sha256": "0d4c9e6c718d1fc759b35e5c8c0f8b2ccbc6de143195659f5bad41cef69d93aa"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\paired-projection-route\\checks\\native1\\mmvf.obj",
+          "bytes": 4351175,
+          "sha256": "94055189123ab8a87ccafbe31fa55d677a4d3ca2fdcb35653dfc06e82d2db40d"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_platform_fs.lib",
+          "bytes": 286796,
+          "sha256": "3c750d5908efe3fc60570ed87ea469c6e907d236dd72a42f14fbd25c6ea0eafb"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mxfp4-weight-only-reference\\cuda\\checks\\attempt1\\nvfp4-provider.obj",
+          "bytes": 127792,
+          "sha256": "9beff1d9acdc5988bc4c74880b16e4de3a93eda7ffb6835cdc49852e0e4fe132"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mxfp4-weight-only-reference\\cuda\\checks\\attempt1\\nvfp4-kernel.obj",
+          "bytes": 609683,
+          "sha256": "821764810fc3bd9b5e13d8bdd5466d54d3bd4b27db9bb9ddefbfe6d329c43448"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-variants-20261022\\compile3\\append\\append.obj",
+          "bytes": 1716174,
+          "sha256": "8096165a879cd955e432a9b24df70eec3310578cf2ddb5ee3d72bd0128e9e1f3"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\result-detach\\checks\\attempt1\\result.obj",
+          "bytes": 68583,
+          "sha256": "78875c06025c31e120ef10f35a4c3da355754bfad561aa43a797bbddf997fa7c"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-capture-20261021\\host\\checks2\\helper\\helper.obj",
+          "bytes": 124873,
+          "sha256": "2dca8e057212d669c13c27d820f3fa83729719aef4497229df5adf41e96e4d58"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-reuse-20261022\\compile1\\paged_append\\paged_append.obj",
+          "bytes": 58639,
+          "sha256": "872966c363f5d0ea8d0401d63869c530c54013118ecdd0ff7c4d821df1db10b2"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-capture-20261021\\cuda\\checks1\\kernel\\kernel.obj",
+          "bytes": 31784,
+          "sha256": "fd1a941b77b16b4ad1dab117b12c049d2cc0f2e762e81a8161cbd200b10e607c"
+        }
+      ],
+      "result": {
+        "path": ".scratch/qwen-bfloat-selected-20261023/B05/mixed/tests-link3/link.result.json",
+        "bytes": 29691,
+        "sha256": "2e24347741fce7575986382f5daea2906125e1ebaf54d2b57e5db6a6f597e3c4"
+      }
+    },
+    {
+      "old_graph": false,
+      "plan": {
+        "path": ".scratch/qwen-bfloat-selected-20261023/B05/mixed/tests-link4/link-plan.json",
+        "bytes": 90445,
+        "sha256": "c024b7bba5aba308d93dae5f5a18148ab2b5c91c3d9ff85cf9c6f665f8be8efe"
+      },
+      "inputs": [
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-bfloat-selected-20261023\\B05\\mixed\\compile2\\retirement-test\\retirement-test.obj",
+          "bytes": 1453713,
+          "sha256": "42d67b0d88710131023b97dc9ed0c6458c498dd33caffe6832344a7dadaae98a"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-original-target-tail-20261023\\compile4\\fp4-provider\\fp4-provider.obj",
+          "bytes": 624157,
+          "sha256": "8f39d69c97a0d52b8ec673c93db610a30d2896a263e7ac506ee33bc1222a87e9"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-original-target-tail-20261023\\compile4\\fp4-kernel\\fp4-kernel.obj",
+          "bytes": 38657,
+          "sha256": "9b5e08c9f593c0fbd36d8febbd7ff501508e3f3a52a34871ad036d5b0935b3fb"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-original-experts-20261023\\compile3\\mapping-view\\mapping-view.obj",
+          "bytes": 74881,
+          "sha256": "d358aa12e1d24c3270360ba30051295d1782c2265bb773e55c65a906078d44e5"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-encoded-state-20261023\\compile4\\tensor-provider\\tensor-provider.obj",
+          "bytes": 605881,
+          "sha256": "c2a89aa7541826c695e33888ee03456e69b9f48225ff42d4be0ac29fe5537f7e"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-encoded-state-20261023\\compile4\\tensor-kernel\\tensor-kernel.obj",
+          "bytes": 2489677,
+          "sha256": "773bce8801df7bdc41cbd7bf3c1745139e874060e3a18ac920cd309c9f1688eb"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\fp8-quant-output-20261023\\compile1\\torch-cpu\\torch-cpu.obj",
+          "bytes": 1931998,
+          "sha256": "f8862b4c27f3d42cf7f2fd599a33db1db53dfd8613b43576ca9290c6ea3c18b3"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\fp8-quant-output-20261023\\compile1\\cuda-provider\\cuda-provider.obj",
+          "bytes": 708856,
+          "sha256": "6444eda87e167a531fb261e5cb31018deffd3af370dff06ef5e3829e1fcd8e09"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\fp8-quant-output-20261023\\compile1\\quant-provider\\quant-provider.obj",
+          "bytes": 613197,
+          "sha256": "5d2c6fd97d37bc02fd9c6def0778fba16f4d3ee88e4abfb84c55e95bc4c265a5"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\fp8-quant-output-20261023\\compile1\\quant-kernel\\quant-kernel.obj",
+          "bytes": 64928,
+          "sha256": "fd7cfd34c9bdb47106a4b9f82bcf59ee911668182ca634f12a2c4fba5175f137"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-m2-20261023\\compile1\\tensor-program\\tensor-program.obj",
+          "bytes": 808291,
+          "sha256": "f6e35da6f2e01889f9525eb6b15f6f48e01162ccb86c147514d4e151657862e9"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-m2-20261023\\compile1\\ggml-provider\\ggml-provider.obj",
+          "bytes": 2267227,
+          "sha256": "e510a4875f52969558dcbc788608cceeb3aed92ae01c2c8862a84f3c94392311"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mtp-state-20261022\\compile1\\grouped-provider\\grouped-provider.obj",
+          "bytes": 1661956,
+          "sha256": "20074d87edfd06728f4b72f9b9c5eab172ac4a3e7be01c21078b29f9569bae2d"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mtp-carry-20261022\\compile3\\fp8-provider\\fp8-provider.obj",
+          "bytes": 1553744,
+          "sha256": "6a080ca7190b3370867e724ed39be65a9417705b14fdccdbc775374a3ff9355b"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-original-mtp-20261022\\compile2\\cpu-compile\\cpu-compile.obj",
+          "bytes": 59668,
+          "sha256": "efd1d3136a8fe2cb116318ddef7acfe6c91e82b8aae123e1df5e64c0f58ceef9"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-original-mtp-20261022\\compile2\\cpu-provider\\cpu-provider.obj",
+          "bytes": 1968227,
+          "sha256": "392de51e6cd19d078708cdfce3de7823d361de641dcb8fb34fe23960cb8a78e4"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-natural-journey-20261022\\compile4\\cast\\cast.obj",
+          "bytes": 227687,
+          "sha256": "f3fb0e4474e612c86a9b1a0d6b8ce59246da338913dbb5b2d3a028076c807db2"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\lib\\gtest_main.lib",
+          "bytes": 9922,
+          "sha256": "2ba99648f575cc131bedbd24137f02e050e3abe211d97ea0a7d87858e8342394"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\lib\\gtest.lib",
+          "bytes": 5884522,
+          "sha256": "3bfd89195042039c256ca3b5df467813da5efa8d5a99caae3ae72891c9d17296"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-mtp-integration-20261022\\compile1\\cpu-context\\cpu-context.obj",
+          "bytes": 11979,
+          "sha256": "04ab2ccf23cdba299f0b52ad679bf0d2958100e9517d70efd30aa24c70c7fbcb"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-mtp-integration-20261022\\compile1\\cpu-packed\\cpu-packed.obj",
+          "bytes": 1135640,
+          "sha256": "858426731da3410bb20540ef2f63d52f7d8cc4aea8a1e35b8b959b134700655b"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-mtp-integration-20261022\\compile1\\cpu-ggml\\cpu-ggml.obj",
+          "bytes": 1495449,
+          "sha256": "7e718b7adac9e8564ffce6e610a9b63fc9ee6b7afade428fe2cf39753a119701"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-mtp-integration-20261022\\compile1\\cpu-onednn\\cpu-onednn.obj",
+          "bytes": 1224100,
+          "sha256": "8a6eecad52a7e4f05e444da14f14c26731a7b9011d3826ea89bac9a57ffc6612"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\checks\\attempt7\\compute_ggml_runtime--cpu_program\\compute_ggml_runtime--cpu_program.obj",
+          "bytes": 40186,
+          "sha256": "b0d246e75a205bc8fc1f46661d77f439e60f6c19a0a97f0ddc163452c4adbb90"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\cpu-native-causal\\ffa4\\native-baseline.obj",
+          "bytes": 900499,
+          "sha256": "60da9386fa119238c62f6d74f307b69d0bc79965ba12513a69344448e7a56f6b"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-pinned-weight-load\\checks\\cuda-stream.obj",
+          "bytes": 355983,
+          "sha256": "785d5a3ac9a048f3cc97ceec5ceee9267ebae3b613c32f5e68f9e1781ae5ba2e"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-pinned-weight-load\\checks\\io-dns.obj",
+          "bytes": 117652,
+          "sha256": "459892346ff336ffd8a45e928bbd007cc7a1fc359a64771c43baeed0a57b4813"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-pinned-weight-load\\checks\\io-endpoint.obj",
+          "bytes": 59523,
+          "sha256": "3b379f6907a8aab89ef6e12b50838f8376b5e0b0d4fd749de43d434937d8fd70"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-pinned-weight-load\\checks\\io-file.obj",
+          "bytes": 516361,
+          "sha256": "5ff1cb0e86138482b8d9740fef6482142995ab5e8a1f44dc69b4e4acde3e91b8"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-pinned-weight-load\\checks\\io-file_region.obj",
+          "bytes": 129159,
+          "sha256": "67da027aeb760dfef396866a4d180a65257e36c40ea010f788a41d331e8bde3f"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-pinned-weight-load\\checks\\io-io_context.obj",
+          "bytes": 57331,
+          "sha256": "da75ce761dd08410895dadf9381e9821a4473676b1e14c8a5dc5e24d1c4e60b5"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-pinned-weight-load\\checks\\io-io_uring.obj",
+          "bytes": 1021,
+          "sha256": "6a13a95478c312308da094ab109eafaebbcee2650a2edd701884b07520346de2"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-pinned-weight-load\\checks\\io-local.obj",
+          "bytes": 351375,
+          "sha256": "b4d890a6dc093d4d97570549a6924207057cbbe25539a4c4be605e78847dedee"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-pinned-weight-load\\checks\\io-operation.obj",
+          "bytes": 17687,
+          "sha256": "0f0940419da2d1d4dee843f3ff5196273178523d743aa4f71a586d9b0ba6f615"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-pinned-weight-load\\checks\\io-proactor.obj",
+          "bytes": 52580,
+          "sha256": "67a43ca1c1ea9f9562c17a27cb28514bbb8fde0702646702e16fa1c20228f4f0"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-pinned-weight-load\\checks\\io-signal.obj",
+          "bytes": 75736,
+          "sha256": "62dcae7a9a416574de8c2497617e0350448bf7996c9b268accb4253bee66cf22"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-pinned-weight-load\\checks\\io-tcp.obj",
+          "bytes": 547538,
+          "sha256": "2b090386b46f942ad368ed41008ffbc4d9a0321e7e22a3466d698df5b634bae5"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-pinned-weight-load\\checks\\io-udp.obj",
+          "bytes": 102611,
+          "sha256": "324501014122d657494bc050e4f1a69b49700adbd75b8e98abe1a70ab232ac10"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-pinned-weight-load\\checks\\stream-file_stream.obj",
+          "bytes": 818017,
+          "sha256": "13b3a03376508384040fb2c5aa54edad95f5203e723f0b55fdb650100be8e6dd"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-pinned-weight-load\\checks\\stream-stream_sources.obj",
+          "bytes": 86310,
+          "sha256": "f4ff9accde2e274b77a75e2a9bbe80b05ce987e1303461c794c2793fd91b334e"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\e4-paired-pending-2026-10-21\\cuda\\checks\\mixed-helper\\cpu-cuda-compile.obj",
+          "bytes": 65763,
+          "sha256": "6b8ec0c14981b779202957fe633fa5b8139c3132e2915ab9c7b353df51b1d412"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fixed-role-binding-2026-10-21\\blockwise-w4a8\\cpu\\attempt1\\kernel\\kernel.obj",
+          "bytes": 216498,
+          "sha256": "358ee29b795f5e2ba3235a7668b4f83c9d8838f819847ab2c0b713fa7edabd53"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cross-platform\\checks\\src--compute_route_cpu--cpu_context.obj",
+          "bytes": 29400,
+          "sha256": "a9c3599289061c5e6f4fae80d56bb32c304453dd52c8bce1ebb0ced00679fe04"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-next-cold\\checks\\20261019T155819\\04-compute_provider_native-row_cache.obj",
+          "bytes": 314651,
+          "sha256": "95e896e1680ad93d6d67a7cab2c0cc6983c7a49c66b66fd230cc46e1a9bc23f2"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\quark-fp8-side-2026-10-21\\windows\\checks\\attempt1\\native-provider\\native-provider.obj",
+          "bytes": 746506,
+          "sha256": "627e95623382ffe07cf7547db6e3972db6fb3d1e8ea11ab8264b39aac146efcf"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\compact-mla-e4-reference\\common\\checks\\attempt1\\compute_provider_ggml--native_batch-6700b7\\compute_provider_ggml--native_batch-6700b7.obj",
+          "bytes": 1237519,
+          "sha256": "e8b13215b9af6da9ac26526a72ea044221d6a2285677f4bd867eb090761147e9"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\native-ready-pages\\windows\\compute_provider_native--indexing.obj",
+          "bytes": 211504,
+          "sha256": "fb219db3165775c920abb8d7467cd6f8e5d15e7738ff221d44b770fe43a892e1"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\bf16-nan-cast-contract\\green\\aten-cpu.obj",
+          "bytes": 1974726,
+          "sha256": "afdf59979a6e1073cc128978e61e6c215d6eb868adae0120d4992706d01cd987"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\native-ready-pages\\windows\\compute_route_cpu--default_policy.obj",
+          "bytes": 609950,
+          "sha256": "04e396ab151dab8a348daeac4203a88906c0e8ce730ec90a3e13d49a4b875ec2"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-coarse-capture-tests\\compute_provider_onednn--onednn_provider.obj",
+          "bytes": 633238,
+          "sha256": "ce20f9b61c1c3583628cc7b619988234555d348921bd27211f916879892b3816"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-coarse-capture-tests\\compute_provider_onednn--normalization_internal.obj",
+          "bytes": 261023,
+          "sha256": "1dc6aba71b05504da3ea3a1f8249c2a8737f230d3e7dfbda85efdc14301892a6"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ga-bf16-indexer-state-2026-10-21\\common\\checks\\attempt1\\standard-index\\standard-index.obj",
+          "bytes": 682605,
+          "sha256": "d8fa06f7240d3fc7cd13bb6efe4c5e9e1d00e4d0f76b06e84e8c23dad8b10abd"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\native-ready-pages\\windows\\compute_provider_native--elementwise.obj",
+          "bytes": 292435,
+          "sha256": "f542f2e51bc60c365b2fb3939f6fc94b958033361b310b3370bb80d08b1bec91"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-next-cold\\checks\\20261019T155819\\12-compute_provider_native-ds4_quantization.obj",
+          "bytes": 214936,
+          "sha256": "65d1e8228f4051629491744a1cef1e771c07debc6404dd0fe942dbf5d0ee5a72"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\native-ready-pages\\windows\\compute_provider_native--normalization.obj",
+          "bytes": 214538,
+          "sha256": "f112e34da5ad3671214249f7e1c7091912bddc298747e2684862e044ba1970b2"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\native-ready-pages\\windows\\compute_provider_native--reduction.obj",
+          "bytes": 212189,
+          "sha256": "3b74d78e3da48446b6cb9b6db9763286dc6db93e47c8307a3dc5ce5e6d6fd028"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\native-ready-pages\\windows\\compute_provider_native--sampling.obj",
+          "bytes": 267942,
+          "sha256": "e66b05ec19870a099f6d0529c93d34ce398428e740029a1656d382fddb9d8dd6"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\native-ready-pages\\windows\\compute_provider_native--transform.obj",
+          "bytes": 200565,
+          "sha256": "f994f1305b6a4771dcc6a2d48193acd2550087a0a503a57bbba6ebe1284b5cfd"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\native-ready-pages\\windows\\compute_provider_native--transformer.obj",
+          "bytes": 208433,
+          "sha256": "ef430be3ec1f3d7bfea416af12697309510dff47740f028957191dc10c259f7c"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\native-ready-pages\\windows\\compute_provider_native--default_rules.obj",
+          "bytes": 555570,
+          "sha256": "d501bd5cf4a48e59f972a0a321ec5af96ce39c8df1fc4699cb584b4156b67ada"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\quark-fp8-side-2026-10-21\\windows\\checks\\attempt1\\native-static-fp8\\native-static-fp8.obj",
+          "bytes": 421769,
+          "sha256": "52459bf01a63f8331859dc058d90b87073c96b1f77681bf03929e0d263f10afb"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_compute_route_cpu.lib",
+          "bytes": 661224,
+          "sha256": "3518d9b8deca2a2f60641b6a90c040bee6727777c5daa8043ef2c54046f1a1eb"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_compute_provider_native.lib",
+          "bytes": 5064106,
+          "sha256": "d566c7667362620bbbb8734b3ea1649c6d22aa3d9c4914da867daca2cb496232"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_compute_backend_cpu.lib",
+          "bytes": 82916,
+          "sha256": "43f48241092ab0a5528c6a6fb54366671041d85451849350def72b10259f54f3"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_compute_provider_ggml.lib",
+          "bytes": 2030784,
+          "sha256": "fbbf2b45fb97c9bf19e5e306d01969c265e31115288e2078c90527e593fa873e"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-cpu-final-mixed-probe\\ggml\\src\\ggml-cpu.lib",
+          "bytes": 3036828,
+          "sha256": "dd20dd3c7604e5c4dad8758ae5e659d64944491ae7dae03e43286dbbcb7fed12"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_compute_provider_onednn.lib",
+          "bytes": 548220,
+          "sha256": "482943fe21db6e81592bbd90ec562add6f72ff748252345f5f907615d521ea0d"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\dnnl.lib",
+          "bytes": 835138242,
+          "sha256": "450497125afdf2112508569950e2d506ef465b31a0e214adead83f749869bd11"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\expert-working-set-2026-10-21\\graph-adapters\\checks\\attempt1\\cuda-weight-binding.obj",
+          "bytes": 95406,
+          "sha256": "c0210f667a4f7c68d246554b0b38771fd8b3f06d5e9db1ea39211bbcb78a752b"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\precise-role-consumers-2026-10-21\\common\\checks\\import1\\compute--weight_import-28eb7b\\compute--weight_import-28eb7b.obj",
+          "bytes": 142881,
+          "sha256": "b215931c41435dd8d36a1f3ec1d87b97dddb3d5c9237e102803c398f11e4af74"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fixed-role-binding-2026-10-21\\blockwise-w4a8\\cuda\\checks\\attempt1\\blockwise-provider\\blockwise-provider.obj",
+          "bytes": 114910,
+          "sha256": "9ccf4f450fb802f3138464b639732e6cdbef3848618cda32a7b7f1a30c929dd3"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fixed-role-binding-2026-10-21\\blockwise-w4a8\\cuda\\checks\\attempt3\\blockwise-kernel\\blockwise-kernel.obj",
+          "bytes": 122758,
+          "sha256": "943fa546b6c8f31ae8e445cd42869d4cb4b1a6ca121386c907b9cef2d4c511f2"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fixed-role-binding-2026-10-21\\blockwise-w4a8\\cpu\\attempt1\\schema\\schema.obj",
+          "bytes": 47017,
+          "sha256": "bb0e45a88f2defa0558dbedcb76f8171e6d1f70782b7460fa42ec8da5a989882"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-grouped-space\\cpu-cuda\\checks\\products-cpu\\attempt1\\ct-packed\\ct-packed.obj",
+          "bytes": 853778,
+          "sha256": "18373d1d0d896a4f53989f6c045568eeb3077c3b612705f118fbfaad2de4b1d5"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mxfp4-weight-only-reference\\common\\checks\\attempt1\\compute_provider_native--nvfp4-9c3005\\compute_provider_native--nvfp4-9c3005.obj",
+          "bytes": 310654,
+          "sha256": "c43a666c56bcd07b5d61bc5399f567cb446458ebe7b7a2884622c51781f2d2b5"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\quark-block128-scale-2026-10-21\\cuda\\windows\\checks\\attempt1\\fp8-shared-prologue-region\\fp8-shared-prologue-region.obj",
+          "bytes": 989063,
+          "sha256": "849203110dddee103c06abc62875bacb483f6c4c0a2a4621ecd8ddd8d50752cf"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\glm-flash-mixed-mlx-2026-10-21\\cuda\\checks\\bank-alignment-product1\\cuda-weights.obj",
+          "bytes": 348153,
+          "sha256": "106790e875e6fa9da75377851493de0f1805439c507d4f38fca23120860d9bbb"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\quark-fp8-side-2026-10-21\\windows\\checks\\attempt1\\cuda-packed-region\\cuda-packed-region.obj",
+          "bytes": 1136146,
+          "sha256": "0629023aa6684ebfd487424e74c0200b6dab7937b994620ed7195762a7e98c8b"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\bf16-grouped-bank\\checks\\native1\\native--mmid.obj",
+          "bytes": 140348,
+          "sha256": "436759039764b12c715854a70d7cc673f4479070602c82ff4cf0aea15f26d5f9"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gguf-nvfp4\\cpu-cuda\\checks\\20261019T201144\\native-getrows.obj",
+          "bytes": 1586734,
+          "sha256": "de5e854072b8a1dbd373fdde60b96803b778095bbad77af10f89910d04d6a315"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gguf-nvfp4\\cpu-cuda\\checks\\20261019T201144\\native-convert.obj",
+          "bytes": 670522,
+          "sha256": "e10107249fde94d4bd40d751e6117513b0a87486fbfa4f6024992617af340b20"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gptq-reference\\cuda\\checks\\mapped-refresh\\dense-bfloat-scores-region.obj",
+          "bytes": 953331,
+          "sha256": "7f8755ef266bf6363ec77b48ab83ce5fa85043b342b180d178ac56384bc4a5da"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\bf16-grouped-bank\\checks\\native1\\native--ssm-conv.obj",
+          "bytes": 624091,
+          "sha256": "3bb5fdd4e25ecc7318f703d79a80006349b8d4cb4e548273afc0a91d695f22d1"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\bf16-grouped-bank\\checks\\native1\\native--gated_delta_net.obj",
+          "bytes": 841753,
+          "sha256": "de9c20d97bb97d48c2b52a3010077224cf58d36ff4560915df80b1f77c4fb542"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\quark-fp8-side-2026-10-21\\windows\\checks\\attempt1\\cuda-mlx-packed-kernel\\cuda-mlx-packed-kernel.obj",
+          "bytes": 852947,
+          "sha256": "cd66fc4b0a0b0808d74b36a529ddbb56fe22ef00e62e62bed0c0568b8594b590"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mlx-weight-orientation-2026-10-21\\common\\checks\\schema1\\compute_ops--weight_decode-25df34\\compute_ops--weight_decode-25df34.obj",
+          "bytes": 107391,
+          "sha256": "659472d29aa03318a4e6bf1cd5654ac7f1b3dddd95906188a0b9602436922c70"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-fusion-precision\\checks\\20261019T111328\\mmvq.obj",
+          "bytes": 4470159,
+          "sha256": "0acbbf5934963ec9db3980fea6afaf4b0c4e84dd71d9e02197445b4132025a8e"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-hot-prepare-selection\\checks\\cpu-identity-20261019T082918\\mem-resource.obj",
+          "bytes": 68886,
+          "sha256": "74c964bedf19aaef623759b24aedc7f0ebdeb92319c165e9a4ea6e0d460e5a0d"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-gdn-l2-epilogue\\checks\\20261019T102437\\norm.obj",
+          "bytes": 477496,
+          "sha256": "f285764a7350059eee68ceab6b0861d9a10f540f36483f69bd02a1cf1f19e7aa"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-bf16-block128-reference\\cuda-bfloat-binary\\checks\\attempt1\\binbcast.obj",
+          "bytes": 3446016,
+          "sha256": "0a9fb71f7e62efde9d15e491370098cb54e3c79d9ad02cf8e297e22b1cb0c931"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\paired-projection-route\\checks\\native1\\unary.obj",
+          "bytes": 1271842,
+          "sha256": "85d63ab61523489461c5aaa09df2efedab906ab77e0a9ec40f88af08f6d235e6"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-reuse-20261022\\compile1\\memory\\memory.obj",
+          "bytes": 182541,
+          "sha256": "c735471f2b9eb0253e66e43b8bd6db1a860d6fbf58351e0ec7396fb9a156743b"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-reuse-20261022\\compile1\\batch_transfer\\batch_transfer.obj",
+          "bytes": 147426,
+          "sha256": "6af47a3cdea2789201fcbccd532ef303447c78e14ec5611060bee0b7e029df51"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-variants-20261022\\compile3\\input_sources\\input_sources.obj",
+          "bytes": 771741,
+          "sha256": "77ae28452d1f1796a4cae0e4e2bdf608b7992eecc9105fbf0a995c1741a3b41d"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-variants-20261022\\compile3\\resource_report\\resource_report.obj",
+          "bytes": 174115,
+          "sha256": "20e790e5699f82c24c10cf7ec968d5ea4d2585225e25925d9ef6ab35d19fb10c"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-variants-20261022\\compile3\\progress\\progress.obj",
+          "bytes": 546739,
+          "sha256": "a2540ebf6bb99691241006731b41b93488ae8cb16626b172521df3dc72a55d91"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\native-ready-pages\\windows\\compute--retained_completion.obj",
+          "bytes": 247500,
+          "sha256": "a190789896debdf2b779cd80b525cbde6eee8d50e48ab73ff36e806f46943cae"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-variants-20261022\\compile3\\resources\\resources.obj",
+          "bytes": 1581359,
+          "sha256": "6b8cf2ff73a5747025a7538c20ca74ee53806d2e42d5e432d42aacbee6b87ca6"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-variants-20261022\\compile3\\graph-batch\\graph-batch.obj",
+          "bytes": 2231873,
+          "sha256": "e36f43941bdeec22009f065d8c19bc665674699c2a3953fadb098aad4fed07c2"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-shared-activation\\windows-host\\checks\\current\\oaca62ba1--graph_batch--row_cache_node.obj",
+          "bytes": 782884,
+          "sha256": "f74f2ca28a5a8f283255a1aad52f499e7828e756e648622da27b86e666b968cc"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-variants-20261022\\compile3\\operation\\operation.obj",
+          "bytes": 1350600,
+          "sha256": "5e37c2f0f0b16a0b695f690877d0142d0371f0780f5f226659550dc4662ab0b7"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-bfloat-selected-20261023\\B05\\mixed\\compile1\\graph-executable\\graph-executable.obj",
+          "bytes": 5130371,
+          "sha256": "f73f7d5b3016cd6602bf4be83a5e8b485373ba414cb4499538af8f7fdf7fc719"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-variants-20261022\\compile3\\constant_artifact\\constant_artifact.obj",
+          "bytes": 775628,
+          "sha256": "218d2a9bf12a825c3dc21430ca93ac76b0dfdb819a9fb5f8b6f7db72874477a0"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-bfloat-selected-20261023\\B05\\mixed\\compile1\\graph-submission\\graph-submission.obj",
+          "bytes": 628082,
+          "sha256": "a4a52628c5497af9bb83caab2c3e9419e83de649af2ad35c7b58044973221934"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-variants-20261022\\compile3\\region_access\\region_access.obj",
+          "bytes": 101656,
+          "sha256": "683f86248700aed0040ee88f377cc8427cde194554bb7a837db5b94a60e9053b"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\compact-mla-e4-reference\\common\\checks\\attempt1\\compute_batch--batch_layout-a6d556\\compute_batch--batch_layout-a6d556.obj",
+          "bytes": 327819,
+          "sha256": "7efb1c4e78cb0a2e7057ae4a0e48c68142bed6916ac5b866aae77b7634a1cac2"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\multisequence-batch-20261021\\compile2\\arena\\arena.obj",
+          "bytes": 1136945,
+          "sha256": "ae01e1c43df951108034b88ce72bc26f97786612d84450c1388ab373ec9385c5"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-reuse-20261022\\compile1\\batch-execution\\batch-execution.obj",
+          "bytes": 645532,
+          "sha256": "92c8c90e2b25ae929cd8d2e66e48a9e978ba17bd2e990aec3a8188a6de0cc2bb"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gguf-nvfp4\\windows-host\\checks\\20261019T201048\\oe6d1eed0--compute_ops--low_precision.obj",
+          "bytes": 94406,
+          "sha256": "22c67856aecca208186eb08a1bd6965b845b713d2379e5ee6354cc3d923aa8f8"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\compact-mla-e4-reference\\common\\checks\\attempt1\\graph_batch--native_paged_node-ee24b2\\graph_batch--native_paged_node-ee24b2.obj",
+          "bytes": 74790,
+          "sha256": "949381ff9ce2e3077f497fc966fda2cc62b54d329029f7724230f0f77de1dc3a"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gguf-nvfp4\\windows-host\\checks\\20261019T201048\\ob04410ba--compute_batch--batch_paged_native.obj",
+          "bytes": 172435,
+          "sha256": "21f0194d9a914c210981a40dcb866c0318854a36b590bae50fb274b46673fbdc"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-reuse-20261022\\compile1\\device\\device.obj",
+          "bytes": 303963,
+          "sha256": "5afe3409cbd7eedd59302d99977b8550d60672289d9cfb28757ef9b20e643235"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\e4-paired-pending-2026-10-21\\common\\checks\\final-common\\batch-transfer.obj",
+          "bytes": 787327,
+          "sha256": "f5aae0e18e9d6c2495de5557ca0d562d29ebc56f2fb5718892fc7e0799a676ef"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gguf-nvfp4\\windows-host\\checks\\20261019T201048\\of951adc3--graph_batch--materialized_invocation.obj",
+          "bytes": 713762,
+          "sha256": "dcac9eeeab455ddfe2784a662278e5de2dff98d5b932644e40d80918b6d5a38e"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\checks\\attempt2\\graph--execution_source\\graph--execution_source.obj",
+          "bytes": 175972,
+          "sha256": "5f1cd685b09cc3e915f10adc87b6fb4e6c758bba883f55535c3482baa561469c"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-variants-20261022\\compile3\\lease_submission\\lease_submission.obj",
+          "bytes": 315090,
+          "sha256": "ec05522402d430a8967cc97b130ba66c0c614d3610e38c619e0487b95a7199f7"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\layout-binding-lifetime\\checks\\compute-custom_kernel.obj",
+          "bytes": 581815,
+          "sha256": "ced3100ddc82c48037df110aae5dbef692721810764a33a4c9d42b6cbdff9508"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\native-ready-pages\\windows\\compute--transfer.obj",
+          "bytes": 51817,
+          "sha256": "297ca4d97087771dd48977303856f199c42d17082f08534d763865097396e270"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-reuse-20261022\\compile1\\capture\\capture.obj",
+          "bytes": 68677,
+          "sha256": "7e3b2e3fb3c39e1fd1817006970e65854d7b9d351079d4e8219814c407af658d"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\native-ready-pages\\schema\\graph.obj",
+          "bytes": 1517564,
+          "sha256": "3608845c1d4b9e17593ce5cabb3c5631b21bd7c033643b6f591d6970fdc6d96d"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\native-ready-pages\\windows\\graph--effect_order.obj",
+          "bytes": 218922,
+          "sha256": "04269128d9da617ea42b47fe4685f7606499048adb20f308caeeb2d0d56a4010"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\native-ready-pages\\windows\\graph--view_domain.obj",
+          "bytes": 689416,
+          "sha256": "fdbf48793781886f0d30fc7b05a478b9ad019d2a924839fdc4c71b8711ae08d2"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ga-bf16-indexer-state-2026-10-21\\common\\checks\\attempt1\\operation\\operation.obj",
+          "bytes": 318898,
+          "sha256": "8c212ee307833121a8889f18a24ee5e98558df4b2ac1229fc16031d093e54821"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\native-ready-pages\\schema\\sampling.obj",
+          "bytes": 55060,
+          "sha256": "cbc14f8503db1a294352b2fffd14de57826ce5b582fa73cbcfddda46596c8fec"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\native-paged-capacity-20261022\\compile1\\native-batch\\native-batch.obj",
+          "bytes": 239901,
+          "sha256": "258046e6c45d6955a2f173565861fa3cb96a004ace4f4f62441c9304b997028e"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-feature-completion-2026-10-18\\windows-batch\\native-batch-portable-llp64-posenc.obj",
+          "bytes": 9300682,
+          "sha256": "476be33d56818ea80e206cc9b8258fc8ecf17cb04b10e149a9d2a8e71d81ffe9"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-feature-completion-2026-10-18\\windows-batch\\native-cache-portable-llp64-posenc.obj",
+          "bytes": 59742161,
+          "sha256": "1b31146f19285b62a7be78d3b4261edd833bb3e859a132764ef465382176ff3f"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-feature-completion-2026-10-18\\windows-batch\\native-attention-portable-llp64-posenc-decode.obj",
+          "bytes": 2757335,
+          "sha256": "ac1a037a48887ad30400c9a14204d5379b26b3b94a01bf4ff3aa834c29201af3"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-feature-completion-2026-10-18\\windows-batch\\native_cache_encoder.current.obj",
+          "bytes": 78620,
+          "sha256": "2a3a5b496bd3f36f0ad2d37f4d385303fd97ef95a19f129803ddff8afe6c8a26"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-batch-profile-20261022\\compile3\\native\\native.obj",
+          "bytes": 15369390,
+          "sha256": "371158ae0f7883b845fc1693def534044d0252940bfece35c8ebebd67b514653"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\b-cuda-d5\\src\\compute_provider_cuda\\CMakeFiles\\hyle_compute_provider_cuda.dir\\native_kernel.cu.obj",
+          "bytes": 220888,
+          "sha256": "f734878f57f743de611ed7da7727eee3cef66744ebfe3851f27d96f5962f0982"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\b-cuda-d5\\src\\compute_provider_cuda\\CMakeFiles\\hyle_compute_provider_cuda.dir\\norm_kernel.cu.obj",
+          "bytes": 400955,
+          "sha256": "dacfc8ca88ffdb1c6a7fed714f232941d916d0f98ebdc00fe89f42e42ef830ba"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\b-cuda-d5\\src\\compute_provider_cuda\\CMakeFiles\\hyle_compute_provider_cuda.dir\\reduction_kernel.cu.obj",
+          "bytes": 2955351,
+          "sha256": "9e39e30048645d08891f442ec5fc728bcd151879f4a4bb24586a1880b997d5fc"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\b-cuda-d5\\src\\compute_provider_cuda\\CMakeFiles\\hyle_compute_provider_cuda.dir\\scatter_kernel.cu.obj",
+          "bytes": 3076754,
+          "sha256": "30f6473b35650c3d3412d06302e89f6ccf328c39e194682f9c7db401e17781f2"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\b-cuda-d5\\src\\compute_provider_cuda\\CMakeFiles\\hyle_compute_provider_cuda.dir\\sglang_kernel.cu.obj",
+          "bytes": 278533,
+          "sha256": "7f76ce81f4efda1637886156e30cb4b3e26e62133975f9ce6be1ce7a6d00ec85"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\b-cuda-d5\\src\\compute_provider_cuda\\CMakeFiles\\hyle_compute_provider_cuda.dir\\sglang_norm_kernel.cu.obj",
+          "bytes": 1426280,
+          "sha256": "e421fbde6e05157f99f75852f3338029651aba3030422316afc5b2cf4d1b14b9"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-next-cold\\checks\\20261019T155819\\native-router.obj",
+          "bytes": 97706,
+          "sha256": "2d18543aed0bdf07b37b589dba24edbf659731261956f8f46ca85b7417fc29c3"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-feature-completion-2026-10-18\\windows-batch\\concat_kernel.current.obj",
+          "bytes": 287427,
+          "sha256": "0a735b1551fb38c481b3be00434604f8147efc5ffd03ae9ea3464705871ff850"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-feature-completion-2026-10-18\\windows-batch\\sampling_kernel.current.obj",
+          "bytes": 390228,
+          "sha256": "ac39262d1fa186b763807c41918fabad5db2a12d310303f1664e20955eb069c3"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-fusion-quantization-2026-10-18\\cuda-device-indices\\guard.obj",
+          "bytes": 38014,
+          "sha256": "11fad538d7496ffded4968db31d2b8bb4ec3554119e75499f67ed80edbcd9da9"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\compact-mla-e4-reference\\cuda\\checks\\attempt1\\native-mla\\native-mla.obj",
+          "bytes": 5666602,
+          "sha256": "727cb1ae92d82efd05fd16ac1a9be48c5250cddb5788f9ad6ceb4abb704304f9"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-feature-completion-2026-10-18\\windows-batch\\highdim-review\\native_highdim.obj",
+          "bytes": 7361496,
+          "sha256": "d68eb7e4bfd374b173fcc22f8376cd9c078e1a0688bf6661629e5ae7f5f9c24c"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-foundation-review-2026-10-18\\cuda-paged-indexer\\row-codec.obj",
+          "bytes": 250371,
+          "sha256": "7aff63eca9b623399245100c2a79f6a2c146359baecad777cb515dc9649724b8"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ga-dense-indexer\\checks\\20261019T182917\\indexer-kernel.obj",
+          "bytes": 124356,
+          "sha256": "ad0fb70425dda47e0f6caa1a60bb9935a5cbf4c2309adeb33e9bd003905474f4"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gdn-direct-state-output\\checks\\native1\\native-main.obj",
+          "bytes": 1646064,
+          "sha256": "827e2876cc20224c0fa6a5dc1fc6340d1a4ff5541173dd22b6b8cd7d0e98758b"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\generic-progress\\ggml-cache\\ggml-alloc.obj",
+          "bytes": 54588,
+          "sha256": "c05efaa641a646d50e902da6e45e3a1297b74ffed49a364097359a081206b615"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-variants-20261022\\compile3\\cublas\\cublas.obj",
+          "bytes": 707821,
+          "sha256": "f06bd71ff38bbdb464cee64780fb52bb95634c9de2483c0040746820e318731f"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-variants-20261022\\compile3\\cccl\\cccl.obj",
+          "bytes": 622850,
+          "sha256": "281b75d516fd505a23498269073faa0b685afa246ce16a2d6d9670493d520a03"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-coarse-capture-tests\\compute_provider_cuda--concat_provider.obj",
+          "bytes": 594138,
+          "sha256": "941659ea63df06a635953510f9b817d08774e766975699cd86310d2b2d93bb1f"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fp8-shared-prologue\\checks\\host1\\compute_provider_cuda--deepseek_fp8_provider.obj",
+          "bytes": 918587,
+          "sha256": "d788a4748ecb789c6647047b1b1651e71b086189cf47ac9bf2bbf5959fea5678"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fp8-shared-prologue\\checks\\host1\\compute_provider_cuda--norm_provider.obj",
+          "bytes": 611435,
+          "sha256": "4cb12275906e4de5a5bb7fd6c6319d237c612481e6b1d670e6021ac5b54762f8"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-coarse-capture-tests\\compute_provider_cuda--reduction_provider.obj",
+          "bytes": 592628,
+          "sha256": "f16000309d185627e379dcd08c66d18a904a9fb3562195b2255a5c59458dc7a1"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-shared-activation\\windows-host\\checks\\current\\o409973f2--compute_provider_cuda--router_provider.obj",
+          "bytes": 622291,
+          "sha256": "117aebc9c1b73802d750ea88733539bfc2d2825cf76e208c28d9f8e1d2c96e9c"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-native-storage-cast\\green\\row-cache.obj",
+          "bytes": 758499,
+          "sha256": "7fe2b073aa4485dd1595e24555067b0692c82adc2bd7d174a8b0f976c0f4871b"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\grouped-shared-activation\\windows-host\\checks\\current\\oe24ab717--compute_provider_cuda--row_cache_provider.obj",
+          "bytes": 649945,
+          "sha256": "8e13a9753d4a09386dd782c38744f9f265fe9a09943a9640e06a14caa55fc8c7"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-coarse-capture-tests\\compute_provider_cuda--sampling_provider.obj",
+          "bytes": 119967,
+          "sha256": "c895358525d221def0701f1154bebf8e00db7f3856dcbf4d740c0519e3695afa"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-coarse-capture-tests\\compute_provider_cuda--scatter_provider.obj",
+          "bytes": 597214,
+          "sha256": "f1a07de695cb68cf70883971e4c0cfeea76da1791873f24335fa8bd267caf4dc"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\checks\\provider\\provider.obj",
+          "bytes": 817892,
+          "sha256": "206596695f0e84a111e212f7e62c35f86878cba01643e03098b175bfe40c8a1a"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-variants-20261022\\compile3\\artifact\\artifact.obj",
+          "bytes": 1381427,
+          "sha256": "78375ab48e4e572769d63731908a8f3261412b4ae168cdba6f99f6da0a4b2344"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-next-20261022\\compile3\\ggml-region\\ggml-region.obj",
+          "bytes": 2394680,
+          "sha256": "1c033b3713ffc46c413389e65e62e11e8fcbc9b912b593fc10dd70635dcabff8"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cublas-scores-20261022\\compile1\\policy\\policy.obj",
+          "bytes": 644458,
+          "sha256": "7fbf548d0adf6e8bc545a7694ed744751d56bfa63aed1bcfec3b7dd62f1e4e62"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fp8-shared-prologue\\checks\\host1\\compute_route_cuda--cuda_context.obj",
+          "bytes": 15822,
+          "sha256": "60afb808fc475b484c8ed2f20bbd6cc7de8e2295ff08c48ca0fbacad6ed897ec"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-reuse-20261022\\compile1\\backend\\backend.obj",
+          "bytes": 323539,
+          "sha256": "c67fbe588c06b3d607387fae67e98a3589f4d8545f92794697432927f14d0219"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-reuse-20261022\\compile1\\device_status\\device_status.obj",
+          "bytes": 64978,
+          "sha256": "6d833c721b896e3e6e07d35a1b03eeb5df9ebce9059942dc23fcbc15f370acb2"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fp8-shared-prologue\\checks\\host1\\graph_route_cuda--cuda_context.obj",
+          "bytes": 73898,
+          "sha256": "67dcb883b97304c33cc4de0d3772f7c9e5301d616e8bf1d3e72b96a13cb08b1e"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\perf-review-2026-10-18\\blocking-pool\\candidate.obj",
+          "bytes": 192862,
+          "sha256": "3d5b384c983847a3ccceee4b31a3280d1dafe9bdd8f6aff8b212d4d2e98737ce"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_compute_backend_cuda.lib",
+          "bytes": 931092,
+          "sha256": "5a34352607dab2b4b73546bce7ec0e4a8443770d9c90e65f5162a20372889e4e"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\state-clone-slot-ownership\\checks\\after-state_versions.obj",
+          "bytes": 711862,
+          "sha256": "c1139ced882083f359aaa31fe1e3600a97f162c066e6e670f2464271b1a6e2e4"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_compute_batch.lib",
+          "bytes": 2710566,
+          "sha256": "9d91868ae29fcecf09b0af914d0352c31b11d93baeb5637407b299e7d41493c7"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_compute_ggml_runtime.lib",
+          "bytes": 158570,
+          "sha256": "b395b176471d277a9b938fba73cd899547be5a20ce3f5eebe4c2c41443e66054"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_compute_provider_torch_cuda.lib",
+          "bytes": 1975796,
+          "sha256": "a24af7b9f03e942ca09705811e54c7de03dea348c3db6e7994b2cb0c951c64bb"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_compute.lib",
+          "bytes": 4633248,
+          "sha256": "470e3e6e8cf8349c238f4633d5b0565563699671b2c6200c85a854e1624e3a46"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_compute_ops.lib",
+          "bytes": 858826,
+          "sha256": "0602ddf0946f48522932a1b7ee6f490694375cf2a6025993698404ef5938f584"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_container.lib",
+          "bytes": 300918,
+          "sha256": "5f014b65f203f823e02c91c4b368b31bb4e8cadb25110771d5e6c6415bcb4d6b"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_mem.lib",
+          "bytes": 1280686,
+          "sha256": "10fe859d66dcd68d391c65d1a933e1a4de902d8bb49003f8dca768d65b19dbe4"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\mimalloc_static.lib",
+          "bytes": 989658,
+          "sha256": "6e92620e93dddd66497fb57f6bb43ad36b525e050812c4f1df7e04b66c439858"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_platform.lib",
+          "bytes": 764086,
+          "sha256": "4b88eede9ed8ef3813059bc6db5c87baefbae7266a4a7304ec24ede1904f1b6f"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_error.lib",
+          "bytes": 136936,
+          "sha256": "1da55ee1495b45e4b32f14cdf6b374487e538f01899e0902446742ef24c25326"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_platform_thread.lib",
+          "bytes": 119700,
+          "sha256": "2d0008331fc5cad2cc2e310788a4e9dba2c911ecf334498ac8b3af7861d736f7"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_time.lib",
+          "bytes": 113586,
+          "sha256": "275bc429d61d97153acf50f126151f73581a1a4823a5faf2b01536bf7e52535d"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_simd.lib",
+          "bytes": 27179832,
+          "sha256": "7ef184c55086e5bf3fffa1df8730ab33df4b7e54e2f9366d7e9f29460d5b1645"
+        },
+        {
+          "path": "C:\\Users\\kiro\\AppData\\Local\\hyle\\dependencies\\v1\\sdks\\torch-cpu\\Windows-bf0079104e068dcbd60b2f8de589dc725282cbe865a85016cc5b8aa46cab519d\\libtorch\\lib\\torch.lib",
+          "bytes": 1832,
+          "sha256": "a31e4708d2727f3fd81be6957fe8fa6158719d3a03a22cb38c9fa1ad68766daa"
+        },
+        {
+          "path": "C:\\public\\tools\\hyle-dependencies\\v1\\sdks\\torch-cuda-leaf\\Windows-2bc729898e422b9f3da54349eed98f2f0b5dd415434508ee2ab2a13fb021815d\\torch\\lib\\c10_cuda.lib",
+          "bytes": 65860,
+          "sha256": "deece15705cbade7f41d14736283de25150ea20cbb398c726a959ee00aa609e1"
+        },
+        {
+          "path": "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\lib\\x64\\cudart.lib",
+          "bytes": 2080530,
+          "sha256": "36a9ddcb459d2a79555282da3bb19e9720b7eb6dc78d3d0694c701b5b73807cb"
+        },
+        {
+          "path": "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\lib\\x64\\cuda.lib",
+          "bytes": 843708,
+          "sha256": "feb684bc4d9460c0777c5eb1e7d3a04332c426f1703a2fbfdc771dea5ad81146"
+        },
+        {
+          "path": "C:\\Users\\kiro\\AppData\\Local\\hyle\\dependencies\\v1\\sdks\\torch-cpu\\Windows-bf0079104e068dcbd60b2f8de589dc725282cbe865a85016cc5b8aa46cab519d\\libtorch\\lib\\torch_cpu.lib",
+          "bytes": 29046564,
+          "sha256": "5c2c703cf2f71e0124228a19cedc7a1a334dd1260b6494d01bbbb5a58b33b3a1"
+        },
+        {
+          "path": "C:\\Users\\kiro\\AppData\\Local\\hyle\\dependencies\\v1\\sdks\\torch-cpu\\Windows-bf0079104e068dcbd60b2f8de589dc725282cbe865a85016cc5b8aa46cab519d\\libtorch\\lib\\c10.lib",
+          "bytes": 778152,
+          "sha256": "3b9653f65f59c09915aa425fb1ebc9abbf5f1f524b94e98e607c2301183724ba"
+        },
+        {
+          "path": "C:\\public\\tools\\hyle-dependencies\\v1\\sdks\\torch-cuda-leaf\\Windows-2bc729898e422b9f3da54349eed98f2f0b5dd415434508ee2ab2a13fb021815d\\torch\\lib\\torch_cuda.lib",
+          "bytes": 1774574,
+          "sha256": "bf0759f648f84b2ffd1ca75842249b0d8b1dea469bc92167434c5e1af9fea3f4"
+        },
+        {
+          "path": "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\lib\\x64\\cublas.lib",
+          "bytes": 159250,
+          "sha256": "e6a7e1cb87932e28bc000c0d364b354759c6c29c92b6db38140cca816f5acbff"
+        },
+        {
+          "path": "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\lib\\x64\\cublasLt.lib",
+          "bytes": 877282,
+          "sha256": "992ef03e8204464231c5292ed046e21d1f67a178b24ae1d1fdb248a4e4393171"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cuda-final-u3-delivery\\reference-windows\\lib\\ggml.lib",
+          "bytes": 650112,
+          "sha256": "9a8af56da187a861642b9cf78f53bdf597721ab04521216f38e2662b4a9bc685"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-sdpa-mask\\diagmask-current.obj",
+          "bytes": 77406,
+          "sha256": "5468161c6b9fea7ab595096f68c7d736fb236aa7613268e2d05db5eab63fc071"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cuda-final-u3-delivery\\reference-windows\\lib\\ggml-cuda.lib",
+          "bytes": 108378918,
+          "sha256": "ebc36f3034c307facbbbb2b7e75643551bb6324f23cceceae08901999c88aa11"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cuda-final-u3-delivery\\reference-windows\\lib\\ggml-base.lib",
+          "bytes": 5591196,
+          "sha256": "c17aa8b55587caf8ad1aa07dc8c11dcad703a5e4335fc2471bef3c7615e7f20f"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_sched.lib",
+          "bytes": 1643842,
+          "sha256": "d1987955f9b36b60d2bdd1bcea7b821b4fe880f409cafd1823dfe16b8972ac65"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_mem_vm.lib",
+          "bytes": 332730,
+          "sha256": "7b67c790b1ba298f6e76c0d59df03fdfbf0ec521bcc82f8973239699b8090d90"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-recording-20261021\\checks\\attempt1\\graph_batch--native_pending_regions\\graph_batch--native_pending_regions.obj",
+          "bytes": 176569,
+          "sha256": "51c50fce9d404d9ab1858908cfa5228f3d347f1fd404cd318f2ac2184a26df73"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\native-state-ownership-20261022\\compile1\\budget\\budget.obj",
+          "bytes": 217936,
+          "sha256": "3244abecef0674378ce78c40e11f09addb0210000e6e8947a360b0e5bcda4e47"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\native-state-ownership-20261022\\compile2\\leases\\leases.obj",
+          "bytes": 367130,
+          "sha256": "0d4c9e6c718d1fc759b35e5c8c0f8b2ccbc6de143195659f5bad41cef69d93aa"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\paired-projection-route\\checks\\native1\\mmvf.obj",
+          "bytes": 4351175,
+          "sha256": "94055189123ab8a87ccafbe31fa55d677a4d3ca2fdcb35653dfc06e82d2db40d"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_platform_fs.lib",
+          "bytes": 286796,
+          "sha256": "3c750d5908efe3fc60570ed87ea469c6e907d236dd72a42f14fbd25c6ea0eafb"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mxfp4-weight-only-reference\\cuda\\checks\\attempt1\\nvfp4-provider.obj",
+          "bytes": 127792,
+          "sha256": "9beff1d9acdc5988bc4c74880b16e4de3a93eda7ffb6835cdc49852e0e4fe132"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\mxfp4-weight-only-reference\\cuda\\checks\\attempt1\\nvfp4-kernel.obj",
+          "bytes": 609683,
+          "sha256": "821764810fc3bd9b5e13d8bdd5466d54d3bd4b27db9bb9ddefbfe6d329c43448"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-variants-20261022\\compile3\\append\\append.obj",
+          "bytes": 1716174,
+          "sha256": "8096165a879cd955e432a9b24df70eec3310578cf2ddb5ee3d72bd0128e9e1f3"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\result-detach\\checks\\attempt1\\result.obj",
+          "bytes": 68583,
+          "sha256": "78875c06025c31e120ef10f35a4c3da355754bfad561aa43a797bbddf997fa7c"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-capture-20261021\\host\\checks2\\helper\\helper.obj",
+          "bytes": 124873,
+          "sha256": "2dca8e057212d669c13c27d820f3fa83729719aef4497229df5adf41e96e4d58"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-reuse-20261022\\compile1\\paged_append\\paged_append.obj",
+          "bytes": 58639,
+          "sha256": "872966c363f5d0ea8d0401d63869c530c54013118ecdd0ff7c4d821df1db10b2"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-capture-20261021\\cuda\\checks1\\kernel\\kernel.obj",
+          "bytes": 31784,
+          "sha256": "fd1a941b77b16b4ad1dab117b12c049d2cc0f2e762e81a8161cbd200b10e607c"
+        }
+      ],
+      "result": {
+        "path": ".scratch/qwen-bfloat-selected-20261023/B05/mixed/tests-link4/link.result.json",
+        "bytes": 29744,
+        "sha256": "cdf2bec7663210a94305000f7fec7bd6cdd7ba62cd6025c896fb39584242c684"
+      }
+    }
+  ],
+  "runs": [
+    {
+      "classification": "expected_old_bug",
+      "summary": {
+        "process": {
+          "command": [
+            "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-bfloat-selected-20261023\\B05\\mixed\\tests-link3\\graph-retirement-checks.exe",
+            "--gtest_filter=GraphNativeRetirement.LeasedWaitRetiresEarlierQueuePrefixesBeforePublishingResults",
+            "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\qwen-bfloat-selected-20261023\\B05\\mixed\\checks3\\results.xml"
+          ],
+          "cwd": "C:\\public\\project-hyle\\hyle",
+          "started": 1792754684.916306,
+          "timeout_seconds": 120,
+          "throughput_evidence": false,
+          "memory_evidence": false,
+          "trace": false,
+          "profiler": false,
+          "pid": 49620,
+          "exit": 1,
+          "timed_out": false,
+          "finished": 1792754685.4577878,
+          "process_wall_seconds": 0.5412737000006018
+        },
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-bfloat-selected-20261023\\B05\\mixed\\tests-link3\\graph-retirement-checks.exe",
+          "bytes": 139964928,
+          "sha256": "acfac81c9a6c8090d7b0d64628996a16428dc2c65a7571b4c6204b448e6b4522"
+        },
+        "old_graph": true,
+        "expected_failure": true,
+        "concurrent_model_state": "B05 checks9 waiting on authenticated expert network frontier; correctness only",
+        "tests": 1,
+        "failures": 1,
+        "errors": 0,
+        "disabled": 0,
+        "skips": 0
+      },
+      "summary_record": {
+        "path": ".scratch/qwen-bfloat-selected-20261023/B05/mixed/checks3/summary.json",
+        "bytes": 1310,
+        "sha256": "a6c7971a4a6fb29c80b1b0382464ca5725b6595acdfd0aef5e1b1c300933a4b8"
+      },
+      "xml": {
+        "path": ".scratch/qwen-bfloat-selected-20261023/B05/mixed/checks3/results.xml",
+        "bytes": 5665,
+        "sha256": "a1f1d96c3cfb8276825740d210bab763d29b0349158f24201d07075eeb1b0f42"
+      }
+    },
+    {
+      "classification": "new_graph_regression_pass",
+      "summary": {
+        "process": {
+          "command": [
+            "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-bfloat-selected-20261023\\B05\\mixed\\tests-link4\\graph-retirement-checks.exe",
+            "--gtest_filter=GraphNativeRetirement.*",
+            "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\qwen-bfloat-selected-20261023\\B05\\mixed\\checks4\\results.xml"
+          ],
+          "cwd": "C:\\public\\project-hyle\\hyle",
+          "started": 1792754696.8884223,
+          "timeout_seconds": 120,
+          "throughput_evidence": false,
+          "memory_evidence": false,
+          "trace": false,
+          "profiler": false,
+          "pid": 15376,
+          "exit": 0,
+          "timed_out": false,
+          "finished": 1792754697.4358778,
+          "process_wall_seconds": 0.5466768000042066
+        },
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-bfloat-selected-20261023\\B05\\mixed\\tests-link4\\graph-retirement-checks.exe",
+          "bytes": 139963904,
+          "sha256": "d4f3eee7f633f32c3d3fc22b71084f952f65095909da8e3761b58f36a248b894"
+        },
+        "old_graph": false,
+        "expected_failure": false,
+        "concurrent_model_state": "B05 checks9 waiting on authenticated expert network frontier; correctness only",
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "disabled": 0,
+        "skips": 0,
+        "cases": [
+          {
+            "name": "ObservationErrorKeepsAllAcceptedCublasBranchesAlive",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\aggregate_native_retirement_test.cc",
+            "line": "94",
+            "status": "run",
+            "result": "completed",
+            "time": "0.122",
+            "timestamp": "2026-10-23T19:24:57.166",
+            "classname": "GraphNativeRetirement"
+          },
+          {
+            "name": "LeasedGraphOwnsBindingsAndOldResultsPreventReplay",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\aggregate_native_retirement_test.cc",
+            "line": "197",
+            "status": "run",
+            "result": "completed",
+            "time": "0.004",
+            "timestamp": "2026-10-23T19:24:57.288",
+            "classname": "GraphNativeRetirement"
+          },
+          {
+            "name": "LeasedPrivateOutputRetainsOriginalWorkspaceAfterAdapterDestruction",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\aggregate_native_retirement_test.cc",
+            "line": "279",
+            "status": "run",
+            "result": "completed",
+            "time": "0.003",
+            "timestamp": "2026-10-23T19:24:57.293",
+            "classname": "GraphNativeRetirement"
+          },
+          {
+            "name": "LeasedWaitRetiresEarlierQueuePrefixesBeforePublishingResults",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\aggregate_native_retirement_test.cc",
+            "line": "317",
+            "status": "run",
+            "result": "completed",
+            "time": "0.002",
+            "timestamp": "2026-10-23T19:24:57.296",
+            "classname": "GraphNativeRetirement"
+          }
+        ]
+      },
+      "summary_record": {
+        "path": ".scratch/qwen-bfloat-selected-20261023/B05/mixed/checks4/summary.json",
+        "bytes": 2798,
+        "sha256": "1aecdfacdd69de32d00fde8a0de5705b00973e050b189a85f84ad78333af7e72"
+      },
+      "xml": {
+        "path": ".scratch/qwen-bfloat-selected-20261023/B05/mixed/checks4/results.xml",
+        "bytes": 1514,
+        "sha256": "113bf41d14c70170e8ee17bf3c275e193f065ebcc2f55478078465fda51c73c3"
+      }
+    }
+  ],
+  "fixture_history": [
+    {
+      "classification": "fixture_failure_not_old_bug_proof",
+      "summary": {
+        "path": ".scratch/qwen-bfloat-selected-20261023/B05/mixed/checks1/summary.json",
+        "bytes": 1197,
+        "sha256": "0ce6d4ad5288c77d4c8af61bf04f9526003dedd5cbe01353df7d5d3e188bb7a1"
+      },
+      "xml": {
+        "path": ".scratch/qwen-bfloat-selected-20261023/B05/mixed/checks1/results.xml",
+        "bytes": 1079,
+        "sha256": "1016d6faa11c5215b529c9dc37ca03bce68f93dcc8bcfd72d65c21373c7f5907"
+      }
+    },
+    {
+      "classification": "fixture_failure_not_old_bug_proof",
+      "summary": {
+        "path": ".scratch/qwen-bfloat-selected-20261023/B05/mixed/checks2/summary.json",
+        "bytes": 2686,
+        "sha256": "96fc79beab6867ebeab05510a826f3b00350940001e15949d7d7d7a005cf176a"
+      },
+      "xml": {
+        "path": ".scratch/qwen-bfloat-selected-20261023/B05/mixed/checks2/results.xml",
+        "bytes": 1949,
+        "sha256": "f80efd510c8184bab027a20c318b8949b99d205083534a16a455f5b03496ada6"
+      }
+    }
+  ],
+  "counts": {
+    "expected_old_failure_cases": 1,
+    "new_passed_cases": 4,
+    "new_failed_cases": 0,
+    "new_skipped_cases": 0
+  },
+  "timing_scope": "Recorded subsecond runs were correctness checks while B05 was waiting at an authenticated expert acquisition frontier. Times are not TPS/performance evidence; B05 success is not required or claimed.",
+  "archive_policy": "Only listed source snapshots, recipes, identity records, commands, logs and XML. Link input objects/images are identified but not copied; no weight body or SDK tree.",
+  "archive": {
+    "path": "docs/evidence/correctness/graph-segment-retirement-2026-10-23.zip",
+    "bytes": 562980,
+    "sha256": "d3f5bcc78be885894230dd5dccf2938522df077277617285be2e1cbd3edae8ef"
+  }
+}

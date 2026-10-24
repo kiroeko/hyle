@@ -1,0 +1,27 @@
+{
+  "archive": {
+    "path": "docs/evidence/correctness/inference-foundation-review-2026-10-18/masked-attention-progress.zip",
+    "bytes": 2460655,
+    "sha256": "b196b873baebfabe25c2c8f9943c43bc09d95dcfc1742223469ad314fe9a29fd"
+  },
+  "checks": {
+    "cuda_default_direct_graph": "5/5 PASS; original cached CUDA CU causal +Inf case fails, one-CU correction passes",
+    "optional_progress_metadata": "15 route tests,16 static/shared package fixtures, component selection configure PASS",
+    "optional_progress_delivery": "Actual shared/offline install+public consumer PASS;73 compile commands reused,13 Graph/service TUs and2DLLs added; full mathematical SDK not rebuilt",
+    "dependency_identity": "Selected CUDA patch tree/license CMake audit PASS",
+    "whitespace": "Relevant git diff --check PASS"
+  },
+  "cleanup": {
+    "other_cache_retained": true,
+    "files": 44,
+    "retained_files": 112,
+    "archive_verified": true,
+    "bytes": 154510671.0
+  },
+  "limits": [
+    "Apple plain two-pass F32 partials only analyzed; native precision gate retained",
+    "No new full model numerical acceptance or fair throughput comparison",
+    "No other OS/device or arbitrary caller-stride/non-F32 mask claim"
+  ],
+  "goal": "active; broad architecture/model coverage remains"
+}

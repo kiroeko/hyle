@@ -1,0 +1,53 @@
+{
+  "archive": {
+    "path": "docs/evidence/correctness/inference-foundation-review-2026-10-18/apple-two-pass-partials.zip",
+    "bytes": 1071949,
+    "sha256": "4650a19fedb54551d5c5431bee832273f835cd560e71b2e3251c15e409fa7d2c",
+    "source_entries": 280
+  },
+  "changes": [
+    "Shared Apple ordinary, ragged and paged two-pass attention uses F32 partial output storage and reduction input; Q/K/V and final output retain their original dtype.",
+    "Optimized grouped two-pass decode indexes K and V with both batch and KV head.",
+    "Direct and Graph use the same native paged input validator; obsolete low-precision partial and architecture prediction gates were removed.",
+    "Paged Graph seal releases its completed internal result owner before the existing native reuse check; external GraphOutput, source-reader and native uniqueness protection remains."
+  ],
+  "checks": {
+    "device": "MacBook Air Mac16,12, 16 GiB, macOS 27.0.1",
+    "runtime": "4/4 PASS, 0.528s; Direct paged, default Graph two slots and held output, ordinary/ragged and adjacent branches, B2 grouped decode with independent FP64 softmax oracle",
+    "negative_control": "Original cached host and original matching metallib fail both numerical control tests; failure logs retained.",
+    "lifetime_regression": "Before the paged seal fix, the final four tests had one real replay failure; after only that product fix all four passed.",
+    "dependency_replay": "Exact 20-file patch replay and selected MLX dependency tree/license CMake audit PASS; 18 derived files unchanged.",
+    "incremental_build": "One MLX host TU and one attention AIR compiled; seven original AIR reused. Two Hyle owner TUs and the test compiled; only the paged owner recompiled after its replay fix. Original SDK unchanged.",
+    "whitespace": "Relevant git diff --check PASS"
+  },
+  "validation_identity": {
+    "summary_sha256": "330b11387ba94e53a8c0c16481dbe9ed4186f1b9d93b6d0a508c33480b512df0",
+    "commands_sha256": "0fa988777fdfce9c21fdd313195c60e059494e57cf911c349a7d7a04635ea775",
+    "final_results_sha256": "1b8babc3fdacf655ec8c4fad541bddee6a5aa09898ccaaf2f19d5a8215c228c0",
+    "host_source_sha256": "a3293daa0566c89b473ab1261021d84f2fc98c318afd9dc5c8526cd01c30fa12",
+    "partial_header_sha256": "7c0672ca90ae3ef2d65e3ab058b8b8ba1df97af37b05880255032a667f7aa6b5",
+    "matching_metallib_sha256": "cabb611108c741e6132c3b518d832dc0b8c730868415d3c44789526823095636"
+  },
+  "resource_cost": {
+    "additional_logical_partial_bytes_for_f16_bf16": "2 * B * Hq * Q * blocks * Dv",
+    "whole_kv_widening": false,
+    "native_allocation_count_and_lifetime": "unchanged",
+    "peak_memory_or_throughput_measurement": false
+  },
+  "cleanup": {
+    "script": "test.ps1 -ReclaimAppleTwoPassPartials",
+    "archive_verified": true,
+    "files": 6,
+    "bytes": 55492700,
+    "retained_objects": 6,
+    "retained_matching_shader_bundle": 2,
+    "other_cache_retained": true
+  },
+  "limits": [
+    "Four focused tests on this Apple device; no new full-model numerical acceptance or fair tokens/s comparison.",
+    "New live attention cases use D64; other dimensions and devices were not newly runtime-validated.",
+    "No tolerance relaxation, zero-warm-allocation claim, measured peak-memory claim or whole-SDK rebuild.",
+    "The retained new host must be used with its matching new metallib."
+  ],
+  "goal": "active; broader architecture, model coverage and performance work remains"
+}

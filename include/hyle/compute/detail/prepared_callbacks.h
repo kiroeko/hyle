@@ -23,10 +23,10 @@ struct ProviderPreparedVTable final {
                               void **invocation) noexcept = nullptr;
   void (*destroy_invocation)(void *invocation,
                              mem::AllocatorRef allocator) noexcept = nullptr;
-  // Shared callbacks record inside an admitted Queue, never create another
+  // Shared callbacks record inside the original admitted sequence, never create another
   // Completion. Delegated callbacks instead consume dependencies and return
   // the independent runtime's one real Completion. Exactly one is present.
-  EnqueueResult (*shared_submit)(void *prepared, void *invocation, Queue &queue,
+  EnqueueResult (*shared_submit)(void *prepared, void *invocation, QueueSequence &sequence,
                                  std::span<const ConstTensorView> inputs,
                                  std::span<const TensorView> outputs) noexcept =
       nullptr;
@@ -41,6 +41,14 @@ struct ProviderPreparedVTable final {
                                  void *invocation) noexcept = nullptr;
   bool (*can_import_endpoint)(void *prepared, void *invocation,
                               CompletionEndpoint source) noexcept = nullptr;
+  // Optional cold binding/resource preparation for the original invocation.
+  // It may allocate owned resources, but never reads/writes tensor payloads,
+  // accepts device work, or creates a Completion. Spans are borrowed only for
+  // this call. Failure leaves the slot retryable; repeated calls for the same
+  // bindings must not duplicate retained owners or invalidate a prior success.
+  Status (*prepare_bindings)(void *prepared, void *invocation,
+                             std::span<const ConstTensorView> inputs,
+                             std::span<const TensorView> outputs) noexcept = nullptr;
 };
 
 } // namespace hyle::compute::detail

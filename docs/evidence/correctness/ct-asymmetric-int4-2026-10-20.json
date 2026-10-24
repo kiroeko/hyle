@@ -1,0 +1,320 @@
+{
+  "passed": true,
+  "recorded_utc": "2026-10-19T19:52:40.437513+00:00",
+  "change": "CT asymmetric INT4 on the existing explicit cold ArtifactWeightDecode operation",
+  "contract": {
+    "codes": "I32[N,K/8]",
+    "zero_points": "I32[ceil(N/8),K/group]",
+    "scales": "F16/BF16/F32[N,K/group]",
+    "packing": "W along K, Z along N, low-first signed nibble-8",
+    "math": "Scale-typed subtraction then multiplication, each rounded before final output cast",
+    "default_output": "scale dtype",
+    "g_idx": false,
+    "capacity": "CPU checks each expanded I64 codes/padded-zero native allocation before any payload allocation"
+  },
+  "architecture": {
+    "new_operation": false,
+    "appended_format": true,
+    "Graph_executor_changes": false,
+    "new_shared_runtime_or_owner": false,
+    "implicit_hot_decode": false,
+    "SDK_rebuild": false
+  },
+  "source_freeze": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\source-freeze.json",
+    "bytes": 23822,
+    "sha256": "fbe60f367a115d8cd91d07ffbc5b6a9d1892af648e3697fdc6dc7741dd6379e2"
+  },
+  "product_files": 27,
+  "docs_update": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\docs-update.json",
+    "bytes": 4191,
+    "sha256": "c4b3b841e130f6e2bc29070b0a5a22d5049341838c3bf84e0369ee65e46ad270"
+  },
+  "checks": [
+    {
+      "command": [
+        "cmake",
+        "-P",
+        "cmake/HyleDependencyVersions.cmake"
+      ],
+      "cwd": "C:\\public\\project-hyle\\hyle",
+      "exit": 0,
+      "stdout": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\dependency-lock.stdout.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stderr": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\dependency-lock.stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "command": [
+        "git",
+        "diff",
+        "--check",
+        "--",
+        "include\\hyle\\compute\\model_ops.h",
+        "src\\compute_ops\\weight_decode.cc",
+        "src\\compute_provider_native\\torch_cpu_program.cc",
+        "third_party\\compressed_tensors_cpu\\compressed_tensors_cpu.h",
+        "third_party\\compressed_tensors_cpu\\NOTICE.md",
+        "tests\\compute_ops\\operation_test.cc",
+        "tests\\compute_route_cpu\\cpu_artifact_decode_test.cc",
+        "tests\\compute_models\\ct_asymmetric_int4_fixture.h",
+        "src\\compute_provider_torch_cuda\\artifact_provider.cc",
+        "third_party\\compressed_tensors_cuda\\compressed_tensors_cuda.h",
+        "third_party\\compressed_tensors_cuda\\NOTICE.md",
+        "tests\\graph_route_cuda\\artifact_test.cc",
+        "src\\compute_route_vulkan\\vulkan_iree.cc",
+        "src\\compute_provider_iree_vulkan\\native_program.h",
+        "src\\compute_provider_iree_vulkan\\native_program.cc",
+        "third_party\\iree_vulkan_runtime\\programs\\generate_artifacts.py",
+        "third_party\\iree_vulkan_runtime\\programs\\compile_artifacts.py",
+        "third_party\\iree_vulkan_runtime\\programs\\artifacts.mlir",
+        "third_party\\iree_vulkan_runtime\\programs\\artifacts.vmfb.b64",
+        "tests\\compute_route_vulkan\\iree_test.cc",
+        "cmake\\HyleDependencyLock.json",
+        "third_party\\iree_vulkan_runtime\\programs\\manifest.json",
+        "third_party\\iree_vulkan_runtime\\NOTICE.md",
+        "src\\compute_route_apple\\apple_mature_artifact.cc",
+        "third_party\\compressed_tensors_apple\\compressed_tensors_apple.h",
+        "third_party\\compressed_tensors_apple\\NOTICE.md",
+        "tests\\compute_route_apple\\parity_delivery\\main.cc",
+        "docs\\user\\compute.md",
+        "docs\\user\\apple-compute.md",
+        "docs\\implementation\\model-operators.md",
+        "docs\\implementation\\model-quantizations.json",
+        "docs\\developer\\current-work.md"
+      ],
+      "cwd": "C:\\public\\project-hyle\\hyle",
+      "exit": 0,
+      "stdout": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\diff.stdout.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stderr": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\diff.stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    }
+  ],
+  "windows_tests": {
+    "windows-cpu-direct": {
+      "summary": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\tests\\windows-cpu-direct\\summary.json",
+        "bytes": 1423,
+        "sha256": "6a8b3079fc084b6b70e96a2a59029fb15f80f43c267ddfb57d44abdaf415c34e"
+      },
+      "cases": 7,
+      "skipped": 0,
+      "names": [
+        "CpuArtifactDecode.Nf4AndNestedScalesPreserveOriginalHighFirstOrder",
+        "CpuArtifactDecode.AwqAndCompressedTensorsUseDifferentOriginalWordLayouts",
+        "CpuArtifactDecode.OriginalScaleDtypeRoundsBeforeExplicitFloat32Output",
+        "CpuArtifactDecode.CtAsymmetricPackedOutputAxisPreservesSourceRounding",
+        "CpuArtifactDecode.NativeExpandedCapacityIsCheckedWithoutPayloadAllocation",
+        "OperationModelOps.ArtifactDecodeRejectsWrongPackingAndPrecisionPorts",
+        "OperationModelOps.CtAsymmetricDecodeKeepsPackedZeroAxisAndNaturalGroups"
+      ],
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\windows-host\\checks\\20261019T194607\\cpu-direct.exe",
+        "bytes": 25311744,
+        "sha256": "01ac7d37190c0de1b4e95fa95d8e8275b9bc2a079f19dcd3200ee46932a77a5a"
+      }
+    },
+    "windows-cpu-graph": {
+      "summary": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\tests\\windows-cpu-graph\\summary.json",
+        "bytes": 1421,
+        "sha256": "22153995d3744dd3722ff34f562cca62435dedacf8063e6417533a0450b79ad8"
+      },
+      "cases": 7,
+      "skipped": 0,
+      "names": [
+        "CpuArtifactDecode.Nf4AndNestedScalesPreserveOriginalHighFirstOrder",
+        "CpuArtifactDecode.AwqAndCompressedTensorsUseDifferentOriginalWordLayouts",
+        "CpuArtifactDecode.OriginalScaleDtypeRoundsBeforeExplicitFloat32Output",
+        "CpuArtifactDecode.CtAsymmetricPackedOutputAxisPreservesSourceRounding",
+        "CpuArtifactDecode.NativeExpandedCapacityIsCheckedWithoutPayloadAllocation",
+        "OperationModelOps.ArtifactDecodeRejectsWrongPackingAndPrecisionPorts",
+        "OperationModelOps.CtAsymmetricDecodeKeepsPackedZeroAxisAndNaturalGroups"
+      ],
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\windows-host\\checks\\20261019T194607\\cpu-graph.exe",
+        "bytes": 25325056,
+        "sha256": "0a52619d27dbe3f2a96af12c4356b916164ec545dfba7bd9484acc78a1464d1d"
+      }
+    },
+    "cuda": {
+      "summary": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\tests\\cuda\\summary.json",
+        "bytes": 2543,
+        "sha256": "28d8303286ae05e231b8be410988cfea1ded29894cfc741d1d39120172b83f4f"
+      },
+      "cases": 17,
+      "skipped": 0,
+      "names": [
+        "CudaArtifactDecode.CtAsymmetricAxesPaddingAndSourceRoundingSurviveRebinding",
+        "CudaArtifactAdmission.MetadataExhaustionReturnsErrorWithoutLeaking",
+        "OriginalPrecision/CudaArtifactLifecycle.ChangedPayloadTwoSlotsAndAcceptedWorkSurvivesOwnerClose/0",
+        "OriginalPrecision/CudaArtifactLifecycle.ChangedPayloadTwoSlotsAndAcceptedWorkSurvivesOwnerClose/1",
+        "OriginalPrecision/CudaArtifactLifecycle.ChangedPayloadTwoSlotsAndAcceptedWorkSurvivesOwnerClose/2",
+        "OriginalPrecision/CudaArtifactLifecycle.ChangedPayloadTwoSlotsAndAcceptedWorkSurvivesOwnerClose/3",
+        "OriginalPrecision/CudaArtifactLifecycle.ChangedPayloadTwoSlotsAndAcceptedWorkSurvivesOwnerClose/4",
+        "OriginalPrecision/CudaArtifactLifecycle.ChangedPayloadTwoSlotsAndAcceptedWorkSurvivesOwnerClose/5",
+        "OriginalPrecision/CudaArtifactLifecycle.ChangedPayloadTwoSlotsAndAcceptedWorkSurvivesOwnerClose/6",
+        "OriginalPrecision/CudaArtifactLifecycle.ChangedPayloadTwoSlotsAndAcceptedWorkSurvivesOwnerClose/7",
+        "OriginalPrecision/CudaArtifactLifecycle.ChangedPayloadTwoSlotsAndAcceptedWorkSurvivesOwnerClose/8",
+        "OriginalPrecision/CudaArtifactLifecycle.ChangedPayloadTwoSlotsAndAcceptedWorkSurvivesOwnerClose/9",
+        "OriginalPrecision/CudaArtifactLifecycle.ChangedPayloadTwoSlotsAndAcceptedWorkSurvivesOwnerClose/10",
+        "OriginalPrecision/CudaArtifactLifecycle.ChangedPayloadTwoSlotsAndAcceptedWorkSurvivesOwnerClose/11",
+        "OriginalPrecision/CudaArtifactLifecycle.ChangedPayloadTwoSlotsAndAcceptedWorkSurvivesOwnerClose/12",
+        "OriginalPrecision/CudaArtifactLifecycle.ChangedPayloadTwoSlotsAndAcceptedWorkSurvivesOwnerClose/13",
+        "OriginalPrecision/CudaArtifactLifecycle.ChangedPayloadTwoSlotsAndAcceptedWorkSurvivesOwnerClose/14"
+      ],
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\windows-host\\checks\\20261019T194607\\cuda.exe",
+        "bytes": 116932096,
+        "sha256": "70c80720145429adb93700a502c5b7c93f5a8bc5f01137d0153585dca75d0c16"
+      }
+    },
+    "vulkan": {
+      "summary": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\tests\\vulkan\\summary.json",
+        "bytes": 1333,
+        "sha256": "94192b38afadc0df47e5d5d30d8e7c1af8b008ac49a5ec877859a3c8dc09fffa"
+      },
+      "cases": 4,
+      "skipped": 0,
+      "names": [
+        "VulkanIree.OriginalArtifactBatchPreservesSourceRoundingAndSixPorts",
+        "VulkanIree.OriginalAsymmetricArtifactKeepsPaddedZerosAndSourceRoundsAcrossSlots",
+        "VulkanIree.OriginalArtifactColdResultBindsMatureConstantProjection",
+        "VulkanIree.OriginalArtifactChecksFeaturesDomainFailureAndCancellation"
+      ],
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\vulkan\\windows-host\\checks\\20261019T194520\\ct-asymmetric-vulkan.exe",
+        "bytes": 66193920,
+        "sha256": "4875e2369f82626b62ff124b4f3c832828393b7d5448b246076ab1610d6ab5ae"
+      }
+    }
+  },
+  "apple": {
+    "summary": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\apple\\summary.json",
+      "bytes": 1881,
+      "sha256": "bd0d190535390440eb647661196f02ab713f0a16d4bf5928d243c7a086a43852"
+    },
+    "model": "Mac16,12",
+    "numeric_domains": 24,
+    "scope": "24 CT Direct/Graph numeric domains plus existing Q4_K/NF4/FP4 neighbours; single consumer process exit0, not gtest testcase count",
+    "image": {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/ct-asymmetric-int4-20261020/apple/checks-retry1/ct-asymmetric-apple-tests",
+      "bytes": 11194824,
+      "sha256": "7f659ea0619e398dad9ec784aef6a1bd01c2678f3293e4e2471ba32aef3122a5"
+    },
+    "actual_compile": {
+      "total_host_owners": 30,
+      "initial_succeeded": 20,
+      "initial_failed": 10,
+      "retry_compiled": 10,
+      "reused_original_owners": 117,
+      "new_main_test_TU": 1,
+      "SDK_recompiled": false
+    }
+  },
+  "build": {
+    "windows_cpu_cuda": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\windows-host\\checks\\20261019T194607\\build-proof.json",
+      "bytes": 17052,
+      "sha256": "c398d1ae5f4cd67ca42de7b57194040e66a25821e6756ddb336a1fbb4df31773"
+    },
+    "vulkan": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\vulkan\\windows-host\\checks\\20261019T194520\\summary.json",
+      "bytes": 761,
+      "sha256": "95d238b2b462cba4598d055158085041dc0e742335488c3b5bc96112e91eb12d"
+    },
+    "windows_distinct_host_TUs": 69,
+    "windows_actual_cl_processes": 72,
+    "windows_native_CUDA_TUs": 0,
+    "SDK_rebuilt": false,
+    "cpu_vulkan_archive_extraction": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\windows-host\\checks\\20261019T194607\\vulkan-archive-extraction.json",
+      "bytes": 293,
+      "sha256": "57deb7b27436ade3dccc94e6818b1d8d1347b1614c5e3f3c1e46b2d0695900b0"
+    }
+  },
+  "model": {
+    "summary": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\correctness\\summary.json",
+      "bytes": 112290,
+      "sha256": "8c9807e48d8c70dfa1329f15c783c135002c90ca9faa3d944c6723959b19edd2"
+    },
+    "process_count": 1,
+    "equal_finite_vectors": 64,
+    "same_predictions_and_fixed_inputs": true,
+    "one_outer_hybrid_range_per_phase": true,
+    "quality_acceptance": false,
+    "throughput_claim": false
+  },
+  "header_evidence": {
+    "archive": "docs/evidence/correctness/ct-asymmetric-int4-header-2026-10-20.zip",
+    "publisher": "cyankiwi/Qwen3.8-27B-AWQ-INT4",
+    "revision": "6e134bae811fb5adac50ee042ae5f029ac6779aa",
+    "tensors": 2396,
+    "language_quantized_roles": 399,
+    "tensor_payload_bytes_read": 0
+  },
+  "retained_failures": [
+    "Windows three artifact test TUs failed C4244/WX implicit double-to-float vector conversion; corrected explicit casts only, reused all30 successful owners.",
+    "Mac initial minimal source package missed six recursive private headers:20 owners succeeded,10 failed; retried those10 only.",
+    "Offline generator import left one pyc in the vendor tree and exposed lock hashing mismatch; exact generated file was removed using root test.ps1, final original CMake audit passes.",
+    "Cleanup first attempt removed the pyc then failed Split-Path parameter selection; retained exact script, corrected directory API and completed empty-directory cleanup."
+  ],
+  "limitations": [
+    "Cold dense decode only; packed W4A16 MatMul/grouped/FFN remains absent.",
+    "No actual publisher tensor payload was read or executed; no importer or whole quantized model quality, memory or performance claim.",
+    "Linux was not rebuilt or run in this batch.",
+    "Vulkan new regression uses the public Direct batch route; no new Vulkan Graph journey was run.",
+    "Apple24 counts typed Direct/Graph numeric domains, not24 gtest cases.",
+    "Full BF16 Qwen regression is unrelated to execution of the selected27B quantized artifact.",
+    "No new throughput rotation or physical kernel trace; previous valid performance numbers remain the latest."
+  ],
+  "next_review": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-asymmetric-int4\\next-nvfp4-review.json",
+    "bytes": 15058,
+    "sha256": "242f1c6550f5582f69137eaf2954c239032407c3e7f7e50c40865cf616b06e25"
+  },
+  "archive": {
+    "archive": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\ct-asymmetric-int4-2026-10-20.zip",
+      "bytes": 15143713,
+      "sha256": "ebcbd74183c2f67e83fdeb835b6f686020a8f9daa6ca51fb2ea48fae07940cc9"
+    },
+    "payload_entries": 1375,
+    "manifest_entries": 1,
+    "CRC_and_each_payload_SHA_verified_once": true,
+    "retained_maps": true,
+    "binaries_and_duplicate_vectors_archived": false
+  },
+  "cleanup": {
+    "report": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\ct-asymmetric-int4-2026-10-20-reclaim.json",
+      "bytes": 59236,
+      "sha256": "2ecf57f2d5d8709ac34fd968fa819012c35c02cddac5dcb0ad5acf234eda85bf"
+    },
+    "deleted_files": 81,
+    "deleted_bytes": 343587957,
+    "MiB": 327.671010017395,
+    "all_actual_objects_SDKs_and_original_vectors_retained": true,
+    "current_CPU_Graph_Qwen_Vulkan_images_retained": true,
+    "older_measured_images_outside_current_stage_untouched": true
+  },
+  "followup_support_tool_issue": "Resolved in docs/evidence/correctness/gguf-nvfp4-2026-10-20.json: the four offline compiler entry scripts now disable bytecode before local generator imports; all four actual --help commands pass without -B or inherited suppression, with unchanged vendored file inventory."
+}

@@ -10,26 +10,15 @@
 #include "hyle/core/compiler.h"
 #include "hyle/mem/allocator.h"
 
-// Path string manipulation (clay sys/path.h `path_api_t` -- the pure-string half:
-// no syscalls, deterministic on every platform, so it lives in `container` next
-// to StringView rather than in `platform`. The fs/env/os_info half of clay's
-// path/os stays in platform-03.). Read-only operations return borrowed
-// StringView values. Producing operations write into caller-owned spans; no path
-// function hides an allocation inside a non-owning view.
+// Pure string path manipulation: no syscalls, deterministic on every platform.
+// Read-only operations return borrowed StringView values. Producing operations
+// write into caller-owned spans; no path function hides an allocation in a view.
 //
-// THREE deliberate upgrades over clay's vtable (each registered in the coverage
-// map), because clay shipped inconsistent or domain-specific behavior:
-//   1. extension()/strip_extension() use Python os.path.splitext semantics (a
-//      leading-dot name like ".bashrc" has NO extension) -- clay's vtable entry
-//      used a naive reverse-scan that disagreed with its OWN path_extension_or_end
-//      (which is splitext). splitext is the robust one: strip never empties a name.
-//   2. is_absolute() is a TRUE absolute-path test (POSIX root / Win drive / UNC).
-//      clay's `is_relative` actually tested the Blender "//" blend-relative prefix
-//      -- a domain convention, useless for general infra, not absorbed.
-//   3. normalize_path() collapses on '/' as THE separator (identical on all
-//      platforms, so it is unit-testable double-platform). clay used the native
-//      separator and folded in Windows drive/UNC casing -- that part is coupled to
-//      the fs layer and is registered for platform-03, not done here.
+//  - extension()/strip_extension() follow splitext semantics: a leading-dot name
+//    such as ".bashrc" has no extension, and stripping never empties its name.
+//  - is_absolute() recognizes POSIX roots, Windows drives and UNC paths.
+//  - normalize_path() uses '/' on all platforms; filesystem-specific casing and
+//    native path access belong to the platform layer.
 
 namespace hyle::container {
 
@@ -45,8 +34,7 @@ inline constexpr char kPathSepNative = '\\';
 inline constexpr char kPathSepNative = '/';
 #endif
 
-// True for either separator (clay slash_is_native_compat, minus the WIN32 gate:
-// HYLE treats '\\' as a separator on all platforms for parsing robustness).
+// Treats either '/' or '\\' as a separator on all platforms.
 HYLE_FORCE_INLINE constexpr bool is_separator(char c) noexcept {
   return c == '/' || c == '\\';
 }
@@ -89,7 +77,7 @@ HYLE_FORCE_INLINE constexpr StringView strip_extension(
 
 // ---- base / directory (basename / dirname) ----------------------------------
 // Last element of `path`. Trailing separators are stripped first. "" -> ".",
-// a path of only separators -> "/". (clay base)
+// a path of only separators -> "/".
 HYLE_FORCE_INLINE constexpr StringView base(StringView path) noexcept {
   if (path.size() == 0) return StringView{".", 1, true};
   bool found = false;
@@ -111,7 +99,7 @@ HYLE_FORCE_INLINE constexpr StringView base(StringView path) noexcept {
 }
 
 // "Directory" of `path`: everything before base(). Trailing separators removed
-// unless it is the root. No directory / empty path -> ".". (clay directory)
+// unless it is the root. No directory / empty path -> ".".
 HYLE_FORCE_INLINE constexpr StringView directory(StringView path) noexcept {
   if (path.size() == 0) return StringView{".", 1, true};
   bool found = false;
@@ -120,8 +108,7 @@ HYLE_FORCE_INLINE constexpr StringView directory(StringView path) noexcept {
       if (found) {
         if (i == 0) return StringView{"/", 1, true};
         // Skip a run of separators back to the parent's last char. Bounds check
-        // FIRST so the underflowed index never dereferences (clay read OOB here
-        // on an all-separator prefix like "//x").
+        // first so an all-separator prefix never dereferences an underflowed index.
         std::uint32_t j = i;
         while (j < path.size() && is_separator(path.data()[j])) --j;
         if (j < path.size())
@@ -150,7 +137,7 @@ constexpr bool is_absolute(StringView path) noexcept {
          is_separator(path.data()[2]);
 }
 
-// True for a UNC path: starts with two backslashes (clay path_is_unc).
+// True for a UNC path: starts with two backslashes.
 constexpr bool is_unc(StringView path) noexcept {
   return path.size() >= 2 && path.data()[0] == '\\' && path.data()[1] == '\\';
 }
@@ -158,7 +145,7 @@ constexpr bool is_unc(StringView path) noexcept {
 // ---- iteration (pop a leading / trailing element) ----------------------------
 // Pops the FIRST element off *path and returns it; *path advances past it and any
 // following separators. Empty *path -> ".". A leading separator pops as itself
-// ("/foo" -> "/", then "foo"). (clay pop_first)
+// ("/foo" -> "/", then "foo").
 inline StringView pop_first(StringView* path) noexcept {
   if (path->empty()) return StringView{".", 1, true};
   bool found = false;
@@ -180,8 +167,7 @@ inline StringView pop_first(StringView* path) noexcept {
   return first;
 }
 
-// Pops the LAST element: returns base(*path) and sets *path to directory(*path)
-// (clay pop_last).
+// Pops the last element: returns base(*path) and sets *path to directory(*path).
 inline StringView pop_last(StringView* path) noexcept {
   StringView b = base(*path);
   *path = directory(*path);
@@ -203,14 +189,13 @@ inline std::size_t join_path(StringView a, StringView b,
   return join_path(std::span<const StringView>{parts}, output);
 }
 
-// Splits `path` into its elements (clay split_all). Allocates the array via
+// Splits `path` into its elements. Allocates the array via
 // `alloc`; each element is a view INTO `path` (no string copies).
 HYLE_CONTAINER_TEXT_API PodVector<StringView> split_all(StringView path,
                                                    mem::AllocatorRef alloc);
 
 // Replaces the extension: "test.jpg" + ".png" -> "test.png". If `path` has no
-// extension, `ext` is appended ("test" + ".png" -> "test.png" -- clay returned
-// null here; HYLE appends, which is the useful behavior). Uses the same
+// extension, `ext` is appended ("test" + ".png" -> "test.png"). Uses the same
 // snprintf-style return contract as join_path; output must not overlap inputs.
 HYLE_CONTAINER_TEXT_API std::size_t replace_extension(
     StringView path, StringView ext, std::span<char> output) noexcept;
@@ -220,8 +205,7 @@ HYLE_CONTAINER_TEXT_API std::size_t replace_extension(
 // Lexical only (does not touch the filesystem). Treats
 // '/' as the separator and emits '/'. A relative path that collapses to nothing
 // becomes ".". Leading ".." in a relative path is kept (cannot go above cwd);
-// ".." at an absolute root is dropped. (clay path_normalize_native, rewritten as
-// a component walk -- clearer than clay's in-place memmove batching, same result.)
+// ".." at an absolute root is dropped. Normalization walks path components.
 // The result borrows `output`; nullopt means output is smaller than
 // max(path.size(), 1)+1. Exact overlap between input and output is supported.
 HYLE_CONTAINER_TEXT_API std::optional<StringView> normalize_path(

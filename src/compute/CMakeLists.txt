@@ -20,4 +20,5 @@ hyle_add_module(compute TRACE SOURCES
   shape_program.cc
   tensor_view.cc
   transfer.cc
+  weight_import.cc
   workload.cc)

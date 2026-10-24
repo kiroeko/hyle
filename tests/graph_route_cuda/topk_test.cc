@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <cstddef>
 #include <numeric>
 #include <span>
 #include <vector>
@@ -251,5 +252,164 @@ TEST(CudaDefaultGraph, SoftmaxTopKAndRenormalizationCaptureBothOutputs) {
     ASSERT_TRUE(owner.close().ok());
   }
   EXPECT_TRUE(stats.balanced());
+}
+TEST(CudaDefaultGraph, WideTopOnePreparedCaptureKeepsInvocationWorkspaceIsolated) {
+  auto owner = graph::cuda::create_context().value();
+  auto resource =
+      cuda::MemoryResource::create(owner, cuda::MemoryKind::kDevice).value();
+  constexpr std::size_t rows = 3, width = 8193;
+  const auto desc = compute::TensorDesc::dense(
+                        compute::DataType::kFloat32,
+                        std::array<std::int64_t, 2>{rows, width})
+                        .value();
+  const compute::TopK operation{.count = 1};
+  auto direct = compute::prepare(owner, operation, desc, resource.ref());
+  ASSERT_TRUE(direct) << direct.error().message();
+  EXPECT_EQ(direct->provider().id, compute::cuda_native::kCcclProviderId);
+  EXPECT_EQ(direct->runtime_properties().replay_class,
+            compute::ProviderReplayClass::kPrepared);
+  EXPECT_TRUE(direct->capture_compatible());
+  EXPECT_FALSE(direct->runtime_properties().blocks_host);
+  EXPECT_TRUE(direct->runtime_properties().supports_concurrent_invocations);
+
+  auto builder = graph::GraphBuilder::create().value();
+  const auto input_id = builder.input(desc).value();
+  const auto top = builder.add_node(compute::Operation(operation),
+                                    std::array{input_id}).value();
+  const auto values_id = builder.result(top, 0).value();
+  const auto indices_id = builder.result(top, 1).value();
+  ASSERT_TRUE(builder.publish(values_id).ok());
+  ASSERT_TRUE(builder.publish(indices_id).ok());
+  auto logical = std::move(builder).finish().value();
+  auto compiled = graph::cuda::compile(
+      logical, owner, resource.ref(),
+      {.provider_replay = graph::ProviderReplayPolicy::kRequirePrepared});
+  ASSERT_TRUE(compiled) << compiled.error().message();
+  ASSERT_EQ(compiled->report.step_count(), 1U);
+  EXPECT_EQ(compiled->report.step(0)->provider.id,
+            compute::cuda_native::kCcclProviderId);
+  EXPECT_EQ(compiled->report.step(0)->runtime.replay_class,
+            compute::ProviderReplayClass::kPrepared);
+  std::array inputs{Tensor(desc, resource.ref()), Tensor(desc, resource.ref())};
+  std::array values{Tensor(direct->output_description(0).value(), resource.ref()),
+                    Tensor(direct->output_description(0).value(), resource.ref())};
+  std::array indices{
+      Tensor(direct->output_description(1).value(), resource.ref()),
+      Tensor(direct->output_description(1).value(), resource.ref())};
+  std::array queues{owner.create_queue().value(), owner.create_queue().value()};
+  std::array slots{compiled->executable.create_invocation().value(),
+                  compiled->executable.create_invocation().value()};
+  for (std::size_t lane = 0; lane < slots.size(); ++lane) {
+    ASSERT_TRUE(slots[lane].bind(input_id, inputs[lane].view.as_const()).ok());
+    ASSERT_TRUE(slots[lane].bind(values_id, values[lane].view).ok());
+    ASSERT_TRUE(slots[lane].bind(indices_id, indices[lane].view).ok());
+    const auto status = graph::cuda::prepare_replay(
+        slots[lane], queues[lane],
+        {.mode = graph::ReplayMode::kRequireCapture,
+         .host_wait = graph::HostWaitPolicy::kReject});
+    ASSERT_TRUE(status.ok()) << status.message();
+    EXPECT_EQ(slots[lane].replay_route(), graph::ReplayRoute::kCaptured);
+    EXPECT_EQ(slots[lane].replay_report()->host_wait_dependency_count, 0U);
+    EXPECT_GT(slots[lane].replay_report()->recorded_capture_range_count, 0U);
+  }
+
+  std::vector<float> retained_values;
+  std::vector<std::int32_t> retained_indices;
+  for (std::size_t repeat = 0; repeat < 3; ++repeat) {
+    std::array<std::vector<float>, 2> data;
+    std::array<compute::Completion, 2> done;
+    for (std::size_t lane = 0; lane < slots.size(); ++lane) {
+      if (repeat == 2 && lane == 0)
+        continue;
+      data[lane].resize(rows * width);
+      for (std::size_t i = 0; i < data[lane].size(); ++i)
+        data[lane][i] = static_cast<float>(
+            static_cast<int>((i + lane * 11 + repeat * 17) % 53) - 26);
+      for (std::size_t row = 0; row < rows; ++row) {
+        const auto first = (row * 271 + lane * 397 + repeat * 617) % 4096;
+        const auto maximum = static_cast<float>(1000 + row + 10 * lane + repeat);
+        data[lane][row * width + first] = maximum;
+        data[lane][row * width + width - 1] = maximum;
+      }
+      ASSERT_TRUE(inputs[lane].write<float>(data[lane]).ok());
+      if (repeat != 0) {
+        const auto status = graph::cuda::prepare_replay(
+            slots[lane], queues[lane],
+            {.mode = graph::ReplayMode::kRequireCapture,
+             .host_wait = graph::HostWaitPolicy::kReject});
+        ASSERT_TRUE(status.ok()) << status.message();
+        EXPECT_EQ(slots[lane].replay_report()->recorded_capture_range_count, 0U);
+        EXPECT_GT(slots[lane].replay_report()->reused_capture_range_count, 0U);
+      }
+    }
+    for (std::size_t lane = 0; lane < slots.size(); ++lane) {
+      if (repeat == 2 && lane == 0)
+        continue;
+      auto submitted = slots[lane].submit(queues[lane]);
+      ASSERT_TRUE(submitted) << submitted.error().message();
+      done[lane] = std::move(*submitted);
+    }
+    for (std::size_t lane = 0; lane < slots.size(); ++lane) {
+      if (repeat == 2 && lane == 0) {
+        EXPECT_EQ(values[lane].read<float>(), retained_values);
+        EXPECT_EQ(indices[lane].read<std::int32_t>(), retained_indices);
+        continue;
+      }
+      ASSERT_TRUE(done[lane].wait().ok());
+      const auto actual_values = values[lane].read<float>();
+      const auto actual_indices = indices[lane].read<std::int32_t>();
+      ASSERT_EQ(actual_values.size(), rows);
+      ASSERT_EQ(actual_indices.size(), rows);
+      for (std::size_t row = 0; row < rows; ++row) {
+        const auto begin = data[lane].begin() +
+                           static_cast<std::ptrdiff_t>(row * width);
+        const auto best = std::max_element(
+            begin, begin + static_cast<std::ptrdiff_t>(width));
+        EXPECT_EQ(actual_values[row], *best);
+        EXPECT_EQ(actual_indices[row], static_cast<std::int32_t>(best - begin));
+      }
+      if (lane == 0) {
+        retained_values = actual_values;
+        retained_indices = actual_indices;
+      }
+    }
+  }
+}
+
+TEST(CudaDefaultGraph, OtherTopKProgramsKeepManagedReplayContract) {
+  auto owner = graph::cuda::create_context().value();
+  auto resource =
+      cuda::MemoryResource::create(owner, cuda::MemoryKind::kDevice).value();
+  struct Case final {
+    std::int64_t rows, width;
+    std::size_t count;
+  };
+  for (const auto item :
+       {Case{1, 8193, 1}, Case{3, 17, 1}, Case{3, 8193, 2}}) {
+    SCOPED_TRACE(::testing::Message()
+                 << item.rows << '/' << item.width << '/' << item.count);
+    const auto desc = compute::TensorDesc::dense(
+                          compute::DataType::kFloat32,
+                          std::array{item.rows, item.width}).value();
+    const compute::TopK operation{.count = item.count};
+    auto direct = compute::prepare(owner, operation, desc, resource.ref());
+    ASSERT_TRUE(direct) << direct.error().message();
+    EXPECT_EQ(direct->provider().id, compute::cuda_native::kCcclProviderId);
+    EXPECT_EQ(direct->runtime_properties().replay_class,
+              compute::ProviderReplayClass::kManaged);
+    EXPECT_FALSE(direct->capture_compatible());
+
+    auto builder = graph::GraphBuilder::create().value();
+    const auto input = builder.input(desc).value();
+    const auto top = builder.add_node(compute::Operation(operation),
+                                     std::array{input}).value();
+    ASSERT_TRUE(builder.publish(builder.result(top, 0).value()).ok());
+    ASSERT_TRUE(builder.publish(builder.result(top, 1).value()).ok());
+    auto logical = std::move(builder).finish().value();
+    auto compiled = graph::cuda::compile(
+        logical, owner, resource.ref(),
+        {.provider_replay = graph::ProviderReplayPolicy::kRequirePrepared});
+    EXPECT_FALSE(compiled);
+  }
 }
 } // namespace

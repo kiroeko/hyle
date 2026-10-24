@@ -31,7 +31,7 @@ inline Status episode(bool graph,bool producer){
     HYLE_ASSIGN_OR_RETURN(auto recipe,c::MaterializedBatchProgram::prepare(schema,{.max_kv_per_request=4,.max_host_metadata_bytes=1u<<20,.max_logical_intermediate_bytes=1u<<20,.scale=.125f}));
     HYLE_ASSIGN_OR_RETURN(auto pool,c::LeasePool::create(hyle::mem::system_resource(),8192));HYLE_ASSIGN_OR_RETURN(auto q,zero(pool,1024));HYLE_ASSIGN_OR_RETURN(auto k,zero(pool,1024));HYLE_ASSIGN_OR_RETURN(auto v,zero(pool,1024));
     c::MaterializedBatchInvocation direct;g::batch::MaterializedInvocation coordinator;
-    if(graph){HYLE_ASSIGN_OR_RETURN(coordinator,g::batch::MaterializedInvocation::create(context,recipe,queue,{.max_output_bytes=4096,.leases={.allocator=metadata.get()}}));HYLE_RETURN_IF_ERROR(coordinator.prepare_batch(layout));}
+    if(graph){HYLE_ASSIGN_OR_RETURN(coordinator,g::batch::MaterializedInvocation::create(context,recipe,queue,{.max_output_bytes=4096,.resources={.allocator=metadata.get()}}));HYLE_RETURN_IF_ERROR(coordinator.prepare_batch(layout));}
     else{HYLE_ASSIGN_OR_RETURN(direct,c::MaterializedBatchInvocation::create(context,recipe,queue,{.max_payload_bytes=1u<<20,.max_workspace_bytes=1u<<20,.allocator=metadata.get()}));HYLE_RETURN_IF_ERROR(direct.prepare_batch(layout));}
     if(producer){
       const auto kd=recipe.descriptions()[1];HYLE_ASSIGN_OR_RETURN(auto state_schema,c::StateSchema::create(std::array{c::StateEntrySpec{.description=kd},c::StateEntrySpec{.description=kd},c::StateEntrySpec{.description=schema.metadata_description().value()}}));

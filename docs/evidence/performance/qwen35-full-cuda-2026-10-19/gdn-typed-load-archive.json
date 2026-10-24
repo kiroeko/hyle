@@ -1,0 +1,24 @@
+{
+  "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\qwen35-full-cuda-2026-10-19\\gdn-typed-load.zip",
+  "bytes": 6311638,
+  "sha256": "3b2b790ffd1cebdc4b16fadaea1501789706fda1bfbec1dea39cee9451ad71c2",
+  "entries": 671,
+  "payloads": 669,
+  "crc_verified": true,
+  "payload_sha256_verified": true,
+  "verification_passes": 1,
+  "build_plan": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gdn-typed-load\\checks\\20261019T163125\\plan.json",
+    "bytes": 207511,
+    "sha256": "30adc97d93764a2dd552a3ffd4ff1de8c38649640f6d1b6ea17c28f3a0d4143d"
+  },
+  "source_id": "e4c59fb549eb055d",
+  "host_TUs": 3,
+  "native_TUs": 2,
+  "tests": 3,
+  "equal_vectors": 64,
+  "unprofiled_processes": 9,
+  "profile_ready": true,
+  "duplicate_raw_vectors_omitted": true,
+  "cleanup_executed": false
+}

@@ -85,7 +85,7 @@ hyle::Status bounded_normalization() {
   for (std::int64_t count : {0, 1, 4}) {
     const std::array shape{ShapeBinding{rows, count}};
     HYLE_ASSIGN_OR_RETURN(auto run,
-                          compiled.executable.create_invocation(shape));
+                          compiled.executable.create_invocation({.shape = shape}));
     const auto run_storage = compiled.executable.invocation_storage_usage();
     const auto shared_storage = exact_route.invocation_storage_usage();
     if (!run_storage || !shared_storage || run_storage->live_bytes == 0 ||
@@ -177,8 +177,8 @@ hyle::Status symbolic_views(hyle::graph::CompileShapePolicy policy) {
   graph = {};
   HYLE_ASSIGN_OR_RETURN(auto run,
                         compiled.executable.create_invocation(
-                            domain ? std::span<const ShapeBinding>(bindings)
-                                   : std::span<const ShapeBinding>{}));
+                            {.shape = domain ? std::span<const ShapeBinding>(bindings)
+                                             : std::span<const ShapeBinding>{}}));
   HYLE_ASSIGN_OR_RETURN(auto source, hyle::mem::Buffer::create(
                                          hyle::mem::system_resource(), 48, 64));
   const std::array values{0.F, 1.F, 2.F, 3.F, 4.F,  5.F,

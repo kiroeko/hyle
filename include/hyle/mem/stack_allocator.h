@@ -14,11 +14,8 @@ namespace hyle::mem {
 // pointer; release is bulk via reset() (whole slab) or rewind(mark) (back to a
 // saved point). Ideal for frame/temporary lifetimes (e.g. one taskgraph pass).
 //
-// Fixes clay bug #4 (stack_allocator.h:28,30,108): clay's copy ctor left
-// allocator_ uninitialized -> a copied StackArena dereferenced a wild
-// pointer on the heap-fallback path. Root-cause fix: this type OWNS a slab and
-// is non-copyable/non-movable (an allocator holding a resource should never be
-// value-copied). And there is NO heap-fallback path -- full returns nullptr.
+// This type owns its slab and is non-copyable/non-movable, so slab and allocator
+// ownership cannot diverge. There is no heap-fallback path: full returns nullptr.
 //
 // Single-threaded by design (stack/scratch lifetime is thread-local).
 class StackArena {

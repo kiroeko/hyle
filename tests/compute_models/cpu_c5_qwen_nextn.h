@@ -1,6 +1,8 @@
 #pragma once
 #if defined(HYLE_GGML_CPU_IQ1_EXTENSIONS) || defined(HYLE_GGML_CUDA_IQ1_EXTENSIONS) || defined(HYLE_TEST_VULKAN_CATALOGUE)
 #include "cpu_c5_qwen_attention.h"
+#include "qwen_nextn_input_fragment.h"
+#include <optional>
 
 namespace cpu_c5_qwen_nextn {
 namespace c = hyle::compute;
@@ -14,6 +16,28 @@ using sem::dense;
 using sem::bytes;
 inline constexpr std::int64_t hidden = 8192, heads = 64, kv_heads = 4, depth = 256,
                               intermediate = 2048, experts = 512, selected = 10, resident = 8, vocabulary = 248320;
+// Current selected main-GGUF profiles. These are generated payload consumers;
+// exact source codec binding does not claim original model payload execution.
+struct Codec {
+  c::GgufQuantizedType quant;
+  ggml_type native;
+};
+struct ProfileParameters {
+  unsigned profile;
+  std::string_view variant;
+  Codec vocabulary, attention, routed_experts, shared_down;
+};
+inline constexpr std::array profiles{
+    ProfileParameters{54u, "UD-IQ4_XS",
+        {c::GgufQuantizedType::kQ4K, GGML_TYPE_Q4_K},
+        {c::GgufQuantizedType::kQ5K, GGML_TYPE_Q5_K},
+        {c::GgufQuantizedType::kQ4K, GGML_TYPE_Q4_K},
+        {c::GgufQuantizedType::kQ6K, GGML_TYPE_Q6_K}},
+    ProfileParameters{48u, "Q8_0",
+        {c::GgufQuantizedType::kQ8_0, GGML_TYPE_Q8_0},
+        {c::GgufQuantizedType::kQ8_0, GGML_TYPE_Q8_0},
+        {c::GgufQuantizedType::kQ8_0, GGML_TYPE_Q8_0},
+        {c::GgufQuantizedType::kQ8_0, GGML_TYPE_Q8_0}}};
 struct Linear {
   in::Case spec;
   cpu_c5_gguf_fixture::Bank bank;
@@ -64,14 +88,47 @@ inline std::vector<float> gated(std::span<const float> gate, std::span<const flo
   return result;
 }
 
-inline Fragment decoder(const c::ModelArtifactProfileDescription *identity,
+// Same F32 equations for these converted fixtures; original BF16 consumers
+// call the shared constructor with explicit storage/gamma boundaries.
+using qwen_nextn_input_fragment::InputBoundary;
+using qwen_nextn_input_fragment::append_input;
+struct ProjectedAttention final { ValueId query, gate, key, value; };
+inline ProjectedAttention append_qkv(Fragment &f, ValueId qg, ValueId key,
+    ValueId value, ValueId query_scale, ValueId key_scale, ValueId position,
+    ValueId frequency, std::int64_t query_heads, std::int64_t key_heads) {
+  const auto qg_heads = core::reshape(f, qg, {1, 1, query_heads, 2 * depth});
+  const auto query = f.one(c::Operation(c::RmsNorm{.epsilon = 1e-6F}),
+      {ds::slice(f, qg_heads, 3, 0, depth), query_scale});
+  const auto current_key = f.one(c::Operation(c::RmsNorm{.epsilon = 1e-6F}),
+      {core::reshape(f, key, {1, 1, key_heads, depth}), key_scale});
+  const c::Operation rope(c::RoPE{.rotary_dimensions = 64, .sequence_axis = 1,
+                                 .layout = c::RopeLayout::kHalfSplit});
+  return {f.one(rope, {query, position, frequency}),
+      ds::slice(f, qg_heads, 3, depth, depth),
+      f.one(rope, {current_key, position, frequency}),
+      core::reshape(f, value, {1, 1, key_heads, depth})};
+}
+inline ValueId append_attention(Fragment &f, const ProjectedAttention &projected,
+                                ValueId keys, ValueId values,
+                                std::optional<ValueId> additive_mask = {}) {
+  const c::Operation attention(c::ScaledDotProductAttention{
+      .layout = c::AttentionLayout::kBatchSequenceHeadDepth,
+      .mask = additive_mask ? c::MaskKind::kAdditive : c::MaskKind::kNone,
+      .scale = 0.0625F, .causal = !additive_mask,
+      .accumulation_type = c::DataType::kFloat32});
+  const auto context = additive_mask
+      ? f.one(attention, {projected.query, keys, values, *additive_mask})
+      : f.one(attention, {projected.query, keys, values});
+  return core::binary(f, c::BinaryKind::kMultiply, context,
+      core::unary(f, c::UnaryKind::kSigmoid, projected.gate));
+}
+
+inline Fragment decoder(const ProfileParameters &parameters,
+                        const c::ModelArtifactProfileDescription *identity,
                         std::span<const std::vector<float>> actual_embedding,
                         std::span<const std::vector<float>> expected_embedding) {
-  const bool mixed = identity->variant == "UD-IQ1_M";
-  const auto attention_quant = mixed ? c::GgufQuantizedType::kQ5K : c::GgufQuantizedType::kQ8_0;
-  const auto attention_native = mixed ? GGML_TYPE_Q5_K : GGML_TYPE_Q8_0;
-  const auto expert_quant = mixed ? c::GgufQuantizedType::kQ2K : c::GgufQuantizedType::kQ8_0;
-  const auto expert_native = mixed ? GGML_TYPE_Q2_K : GGML_TYPE_Q8_0;
+  const auto [attention_quant, attention_native] = parameters.attention;
+  const auto [expert_quant, expert_native] = parameters.routed_experts;
   Fragment f{.profile = identity, .region = 0x0d0c0510, .quantized = true};
   auto h = f.input(dense({1, hidden})), embedding = f.input(dense({1, hidden}));
   auto past_k = f.input(dense({1, 2, kv_heads, depth})), past_v = f.input(dense({1, 2, kv_heads, depth}));
@@ -84,27 +141,23 @@ inline Fragment decoder(const c::ModelArtifactProfileDescription *identity,
     auto w = f.constant(dense({std::int64_t(scales.size())}), bytes(scales));
     return f.one(c::Operation(c::RmsNorm{.epsilon = 1.0e-6F}), {x, w});
   };
-  auto joined = ds::concat(f, norm(embedding, es), norm(h, hs), 1);
+  const auto input_boundary = append_input(f, h, embedding,
+      f.constant(dense({hidden}), bytes(hs)), f.constant(dense({hidden}), bytes(es)));
+  auto joined = input_boundary.joined;
   Linear eh(f, joined, hidden, 2 * hidden, c::GgufQuantizedType::kQ8_0, GGML_TYPE_Q8_0);
   auto normalized = norm(eh.output, as);
   Linear qg(f, normalized, 2 * heads * depth, hidden, attention_quant, attention_native);
   Linear key(f, normalized, kv_heads * depth, hidden, attention_quant, attention_native);
   Linear value(f, normalized, kv_heads * depth, hidden, attention_quant, attention_native);
-  auto qg_heads = core::reshape(f, qg.output, {1, 1, heads, 2 * depth});
-  auto query = norm(ds::slice(f, qg_heads, 3, 0, depth), qs);
-  auto gate = ds::slice(f, qg_heads, 3, depth, depth);
-  auto current_k = norm(core::reshape(f, key.output, {1, 1, kv_heads, depth}), ks);
   std::vector<float> frequencies(32);
   for (std::size_t pair = 0; pair < frequencies.size(); ++pair) frequencies[pair] = 1.0F / std::pow(10000000.0F, float(pair) / 32);
   auto freq = f.constant(dense({32}), bytes(frequencies));
-  const c::Operation rope(c::RoPE{.rotary_dimensions = 64, .sequence_axis = 1, .layout = c::RopeLayout::kHalfSplit});
-  query = f.one(rope, {query, position, freq}); current_k = f.one(rope, {current_k, position, freq});
-  auto keys = ds::concat(f, past_k, current_k, 1);
-  auto values = ds::concat(f, past_v, core::reshape(f, value.output, {1, 1, kv_heads, depth}), 1);
-  auto attention = f.one(c::Operation(c::ScaledDotProductAttention{
-      .layout = c::AttentionLayout::kBatchSequenceHeadDepth, .scale = 0.0625F,
-      .causal = true, .accumulation_type = c::DataType::kFloat32}), {query, keys, values});
-  auto attended = core::binary(f, c::BinaryKind::kMultiply, attention, core::unary(f, c::UnaryKind::kSigmoid, gate));
+  const auto projected_attention = append_qkv(f, qg.output, key.output, value.output,
+      f.constant(dense({depth}), bytes(qs)), f.constant(dense({depth}), bytes(ks)),
+      position, freq, heads, kv_heads);
+  auto keys = ds::concat(f, past_k, projected_attention.key, 1);
+  auto values = ds::concat(f, past_v, projected_attention.value, 1);
+  auto attended = append_attention(f, projected_attention, keys, values);
   Linear out(f, core::reshape(f, attended, {1, heads * depth}), hidden, heads * depth, attention_quant, attention_native);
   auto residual = core::binary(f, c::BinaryKind::kAdd, eh.output, out.output);
   auto ffn_input = norm(residual, fs);
@@ -128,8 +181,8 @@ inline Fragment decoder(const c::ModelArtifactProfileDescription *identity,
   Linear sg(f, ffn_input, intermediate, hidden, attention_quant, attention_native);
   Linear su(f, ffn_input, intermediate, hidden, attention_quant, attention_native);
   auto shared_activation = f.one(c::Operation(c::GatedActivation{.inputs = c::GatedInputKind::kSeparate}), {sg.output, su.output});
-  Linear sd(f, shared_activation, hidden, intermediate, mixed ? c::GgufQuantizedType::kQ6K : attention_quant,
-            mixed ? GGML_TYPE_Q6_K : attention_native);
+  Linear sd(f, shared_activation, hidden, intermediate,
+            parameters.shared_down.quant, parameters.shared_down.native);
   Linear shared_gate(f, ffn_input, 1, hidden, c::GgufQuantizedType::kQ8_0, GGML_TYPE_F32, false);
   auto shared = core::binary(f, c::BinaryKind::kMultiply, sd.output, core::unary(f, c::UnaryKind::kSigmoid, shared_gate.output));
   auto final = norm(core::binary(f, c::BinaryKind::kAdd, residual,
@@ -179,11 +232,12 @@ inline Fragment decoder(const c::ModelArtifactProfileDescription *identity,
   return f;
 }
 
-template <class Run> void check(unsigned profile, Run run) {
-  const auto identity = cpu_c5_gguf_fixture::profile(profile);
-  const bool mixed = identity.variant == "UD-IQ1_M";
-  const auto quant = mixed ? c::GgufQuantizedType::kQ4K : c::GgufQuantizedType::kQ8_0;
-  const auto native = mixed ? GGML_TYPE_Q4_K : GGML_TYPE_Q8_0;
+template <class Run> void check(const ProfileParameters &parameters, Run run) {
+  const auto identity = cpu_c5_gguf_fixture::profile(parameters.profile);
+  ASSERT_EQ(identity.artifact_repository, "unsloth/Qwen3.8-2.4T-A95B-GGUF");
+  ASSERT_EQ(identity.artifact_revision, "567d3e6ac26c5474b18311e619c04350fb9a5556");
+  ASSERT_EQ(identity.variant, parameters.variant);
+  const auto [quant, native] = parameters.vocabulary;
   const in::Case embedding_spec{"NextNEmbedding", in::Kind::kEmbedding, native, quant, true, hidden, vocabulary, 1, 0, 0};
   const cpu_c5_gguf_fixture::Bank bank(embedding_spec);
   auto lookup = cpu_c5_gguf_fixture::lookup(embedding_spec, bank, &identity);
@@ -198,7 +252,7 @@ template <class Run> void check(unsigned profile, Run run) {
   }
   lookup.observe = [&](std::size_t, std::span<const float> values) { observed_embedding.emplace_back(values.begin(), values.begin() + hidden); };
   run(std::move(lookup)); ASSERT_FALSE(::testing::Test::HasFatalFailure()); ASSERT_EQ(observed_embedding.size(), 4u);
-  auto fragment = decoder(&identity, observed_embedding, expected_embedding);
+  auto fragment = decoder(parameters, &identity, observed_embedding, expected_embedding);
   std::vector<std::vector<float>> observed_hidden, expected_hidden;
   for (const auto &replay : fragment.replays) expected_hidden.push_back(replay.outputs[0]);
   fragment.observe = [&](std::size_t port, std::span<const float> values) { if (port == 0) observed_hidden.emplace_back(values.begin(), values.end()); };

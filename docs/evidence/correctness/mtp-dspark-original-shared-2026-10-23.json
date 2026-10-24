@@ -1,0 +1,742 @@
+{
+  "date": "2026-10-23",
+  "stage": "BK",
+  "goal_complete": false,
+  "conclusion": "All nine original shared FFN Q8_0 gate/up/down banks now run in the existing complete three-stage DSpark accepted-state journey on CPU and CUDA, together with the previous47 original roles.",
+  "artifact": {
+    "original_roles": 56,
+    "original_payload_bytes": 2400743324,
+    "sidecar_original_roles": 54,
+    "sidecar_total_roles": 81,
+    "additional_formal_BF16_vocabulary_roles": 2,
+    "acquisition": {
+      "repository": "unsloth/DeepSeek-V4-Flash-0731-GGUF",
+      "revision": "fbbb5b93fb787c21338159b0af3318bb3f4d9768",
+      "file": "dspark-DeepSeek-V4-Flash-0731-Q8_0.gguf",
+      "url": "https://huggingface.co/unsloth/DeepSeek-V4-Flash-0731-GGUF/resolve/fbbb5b93fb787c21338159b0af3318bb3f4d9768/dspark-DeepSeek-V4-Flash-0731-Q8_0.gguf",
+      "whole_file_bytes": 10896057440,
+      "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+      "tensor_table_sha256": "44f30d92e3be1e3737b92dddcb737e6d85944b60804a7a7a810a2ac60c79de5f",
+      "tensor_data_offset": 5253152,
+      "source_plan": ".scratch\\dspark-original-hc-20261023\\review\\remaining-original-roles.json",
+      "complete": true,
+      "requests": [
+        {
+          "first": 10388669728,
+          "last": 10415408415,
+          "requested_bytes": 26738688,
+          "complete": true,
+          "started_utc": "2026-10-22T19:46:50.552983+00:00",
+          "http_status": 206,
+          "content_range": "bytes 10388669728-10415408415/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "bytes": 26738688,
+          "sha256": "f6ad6c00c1598af957170e690c14bbb22ac776c25072b71b510dc8548e5a727d",
+          "finished_utc": "2026-10-22T19:46:55.673742+00:00"
+        },
+        {
+          "first": 10587824928,
+          "last": 10614563615,
+          "requested_bytes": 26738688,
+          "complete": true,
+          "started_utc": "2026-10-22T19:46:55.674742+00:00",
+          "http_status": 206,
+          "content_range": "bytes 10587824928-10614563615/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "bytes": 26738688,
+          "sha256": "d99dec7b9d1a5251c13549d6173467cd0c0ffa3c3e9cc2552d666690f31f5425",
+          "finished_utc": "2026-10-22T19:47:00.642580+00:00"
+        },
+        {
+          "first": 10733495072,
+          "last": 10760233759,
+          "requested_bytes": 26738688,
+          "complete": true,
+          "started_utc": "2026-10-22T19:47:00.642580+00:00",
+          "http_status": 206,
+          "content_range": "bytes 10733495072-10760233759/10896057440",
+          "etag": "\"eb936ecf3e6c1de4ef038aa4c147955ddaa81eb06a02378090e4227faf7978fa\"",
+          "bytes": 26738688,
+          "sha256": "e256be0d513a4fee719a9c0daa19b1ee0af0bb315e754632d7ba6c6df0f77be3",
+          "finished_utc": "2026-10-22T19:47:05.327984+00:00"
+        }
+      ],
+      "roles": [
+        {
+          "name": "blk.0.ffn_gate_shexp.weight",
+          "codec": "Q8_0",
+          "gguf_dimensions": [
+            4096,
+            2048
+          ],
+          "payload_bytes": 8912896,
+          "absolute_range_inclusive": [
+            10388669728,
+            10397582623
+          ],
+          "payload": {
+            "path": ".scratch\\dspark-original-shared-20261023\\original-shared\\blk.0.ffn_gate_shexp.weight.q8_0",
+            "bytes": 8912896,
+            "sha256": "4dea85a5c73f1f3d8556436306b386e6db1656cf41482143f027b632f5a864ad"
+          }
+        },
+        {
+          "name": "blk.0.ffn_down_shexp.weight",
+          "codec": "Q8_0",
+          "gguf_dimensions": [
+            2048,
+            4096
+          ],
+          "payload_bytes": 8912896,
+          "absolute_range_inclusive": [
+            10397582624,
+            10406495519
+          ],
+          "payload": {
+            "path": ".scratch\\dspark-original-shared-20261023\\original-shared\\blk.0.ffn_down_shexp.weight.q8_0",
+            "bytes": 8912896,
+            "sha256": "a2fedccd9c8c75d4b953cb3af6368a52683372293fbf23909bb451aecaed4939"
+          }
+        },
+        {
+          "name": "blk.0.ffn_up_shexp.weight",
+          "codec": "Q8_0",
+          "gguf_dimensions": [
+            4096,
+            2048
+          ],
+          "payload_bytes": 8912896,
+          "absolute_range_inclusive": [
+            10406495520,
+            10415408415
+          ],
+          "payload": {
+            "path": ".scratch\\dspark-original-shared-20261023\\original-shared\\blk.0.ffn_up_shexp.weight.q8_0",
+            "bytes": 8912896,
+            "sha256": "dde85012f13ca2c96d7e877c1c6d141db0b2d2cf91ba087a45458cc1a4dec6b8"
+          }
+        },
+        {
+          "name": "blk.1.ffn_gate_shexp.weight",
+          "codec": "Q8_0",
+          "gguf_dimensions": [
+            4096,
+            2048
+          ],
+          "payload_bytes": 8912896,
+          "absolute_range_inclusive": [
+            10587824928,
+            10596737823
+          ],
+          "payload": {
+            "path": ".scratch\\dspark-original-shared-20261023\\original-shared\\blk.1.ffn_gate_shexp.weight.q8_0",
+            "bytes": 8912896,
+            "sha256": "bd674477c52462120a2092e0cadbdc3470f358221b76ee90f874dafcca1b9309"
+          }
+        },
+        {
+          "name": "blk.1.ffn_down_shexp.weight",
+          "codec": "Q8_0",
+          "gguf_dimensions": [
+            2048,
+            4096
+          ],
+          "payload_bytes": 8912896,
+          "absolute_range_inclusive": [
+            10596737824,
+            10605650719
+          ],
+          "payload": {
+            "path": ".scratch\\dspark-original-shared-20261023\\original-shared\\blk.1.ffn_down_shexp.weight.q8_0",
+            "bytes": 8912896,
+            "sha256": "68d3bb6b03fad6d0cff461031334365e1fd6476764f495eda20b74eccd9777a0"
+          }
+        },
+        {
+          "name": "blk.1.ffn_up_shexp.weight",
+          "codec": "Q8_0",
+          "gguf_dimensions": [
+            4096,
+            2048
+          ],
+          "payload_bytes": 8912896,
+          "absolute_range_inclusive": [
+            10605650720,
+            10614563615
+          ],
+          "payload": {
+            "path": ".scratch\\dspark-original-shared-20261023\\original-shared\\blk.1.ffn_up_shexp.weight.q8_0",
+            "bytes": 8912896,
+            "sha256": "26a1a4e1040d82892b0abdb9cac2e80bfb2a476b3717dbd8765c0b589472675e"
+          }
+        },
+        {
+          "name": "blk.2.ffn_gate_shexp.weight",
+          "codec": "Q8_0",
+          "gguf_dimensions": [
+            4096,
+            2048
+          ],
+          "payload_bytes": 8912896,
+          "absolute_range_inclusive": [
+            10733495072,
+            10742407967
+          ],
+          "payload": {
+            "path": ".scratch\\dspark-original-shared-20261023\\original-shared\\blk.2.ffn_gate_shexp.weight.q8_0",
+            "bytes": 8912896,
+            "sha256": "26d4547520661f6e16c13dd5f166ee493ce6a92d4417d6bbade73a94298a2b22"
+          }
+        },
+        {
+          "name": "blk.2.ffn_down_shexp.weight",
+          "codec": "Q8_0",
+          "gguf_dimensions": [
+            2048,
+            4096
+          ],
+          "payload_bytes": 8912896,
+          "absolute_range_inclusive": [
+            10742407968,
+            10751320863
+          ],
+          "payload": {
+            "path": ".scratch\\dspark-original-shared-20261023\\original-shared\\blk.2.ffn_down_shexp.weight.q8_0",
+            "bytes": 8912896,
+            "sha256": "cdd77201bdb49a8eb559cd3fc4c032a835d4de1e7b7f7682fa44b9830607de37"
+          }
+        },
+        {
+          "name": "blk.2.ffn_up_shexp.weight",
+          "codec": "Q8_0",
+          "gguf_dimensions": [
+            4096,
+            2048
+          ],
+          "payload_bytes": 8912896,
+          "absolute_range_inclusive": [
+            10751320864,
+            10760233759
+          ],
+          "payload": {
+            "path": ".scratch\\dspark-original-shared-20261023\\original-shared\\blk.2.ffn_up_shexp.weight.q8_0",
+            "bytes": 8912896,
+            "sha256": "cae64bbaf6a701f3b1c49582527710a018e44513a907ec762f033e88fdb2f82a"
+          }
+        }
+      ],
+      "whole_file_downloaded": false,
+      "original_roles": 9,
+      "expected_role_payload_bytes": 80216064,
+      "role_payload_bytes": 80216064,
+      "successful_request_body_bytes": 80216064
+    },
+    "original_payloads_archived": false,
+    "byte_scope": "Original checkpoint payload extents only, not physical memory or VRAM peaks."
+  },
+  "implementation": {
+    "assembly": "Typed optional cold shared-FFN supplier binds three parent-owned canonical Q8_0 operands to each child through ordinary inputs. Same-Fragment descriptors are checked. Existing generated/default path and its12 semantic MoE outputs retained.",
+    "lifetime": "Nine encoded banks uploaded once per backend under readonly owner/lease. Every episode reuses them; host immutable source is retained. No full F32 decoded weight shadow and no additional executor/provider/dispatcher.",
+    "mathematics": "Original gate/up projections, existing clipping and gated activation, BF16 stores, down projection and routed-plus-shared accumulation feed the existing HC residual path. Q8_0 storage and its native activation quantizer remain distinct from official FP8/E4-A128 math.",
+    "state": "Same25-Graph journey per case: encoded main-ring bootstrap, complete three-stage draft, accepted prefixes0/1/2, wrap, independent nominated-Head continuation, rejection/cancellation/stale publication, retained results and collection. Proposal KV remains temporary."
+  },
+  "validation": {
+    "unique_tests": 4,
+    "failures": 0,
+    "errors": 0,
+    "skips": 0,
+    "model_graph_submissions": 100,
+    "new_original_model_graph_submissions": 50,
+    "related_regression_graph_submissions": 50,
+    "cases": [
+      {
+        "attributes": {
+          "name": "CpuOriginalSharedFfnFeedsFullDraftAndAtomicAcceptedState",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_original_state_consumer_test.cc",
+          "line": "918",
+          "status": "run",
+          "result": "completed",
+          "time": "41.02",
+          "timestamp": "2026-10-23T04:03:08.195",
+          "classname": "DSparkOriginalState"
+        },
+        "properties": {
+          "shared_projection0_provider": "ggml-cpu",
+          "shared_projection1_provider": "ggml-cpu",
+          "shared_projection2_provider": "ggml-cpu",
+          "shared_projection3_provider": "ggml-cpu",
+          "shared_projection4_provider": "ggml-cpu",
+          "shared_projection5_provider": "ggml-cpu",
+          "shared_projection6_provider": "ggml-cpu",
+          "shared_projection7_provider": "ggml-cpu",
+          "shared_projection8_provider": "ggml-cpu",
+          "shared_q8_activation_codec": "actual fixed ggml CPU worker AVX Q8_0 nearest-even: exact arch/x86/quants.c.obj disassembly in BK/review/cpu-q8-quantizer.json; no main-executable capability inference",
+          "stage0_attention_fn_provider": "ggml-cpu",
+          "stage0_ffn_fn_provider": "ggml-cpu",
+          "stage1_attention_fn_provider": "ggml-cpu",
+          "stage1_ffn_fn_provider": "ggml-cpu",
+          "stage2_attention_fn_provider": "ggml-cpu",
+          "stage2_ffn_fn_provider": "ggml-cpu",
+          "output_hc_fn_provider": "ggml-cpu",
+          "actual_submissions": "25",
+          "original_role_count": "56",
+          "original_role_bytes": "2400743324",
+          "encoded_draft_inputs": "6",
+          "semantic_draft_outputs": "7",
+          "test_boundary_outputs": "175",
+          "proposal_numerics": "all3 original M5 wkv/norm independent Q8 decode + compensated F64 dot/norm gate on actual activation; actual postnorm BF16 then independent RoPE gate; exact actual-F32->BF16 bits; exact actual-BF16->584B codes/scales; independent actual committed/proposal carrier reader equals prepared attention F32 keys byte-for-byte",
+          "full_vocabulary_lm_values_checked": "646400",
+          "lm_reference_episodes": "1",
+          "confidence_numerics": "every-episode independent original BF16 coefficients and actual widened-BF16 rawhidden/actualBF16 Markov dot; exact-F32-product/nonFTZ/overflow preconditions; analytic gamma4352(F32)+F64 absolute-product bound; old relative-gate exceedances/error/sumabs/maxratio in stdout, generated gate unchanged",
+          "shared_vocabulary": "formal Flash0731 BF16 full embedding/head, target-owned immutable banks; no dense F32 LM weight shadow",
+          "original_hc_numerics": "every-episode seven actual widened-BF16 x original-F32 dense HC projections with independent F64/product+accum bound; actual inverse RMS, original scale/base Sinkhorn20 and head gates, actual 4-stream collapse/expansion; actual learned RMS/sink inputs and exact local BF16 stores. Seven fn providers recorded from actual CompileReport.",
+          "shared_projection_reference_episodes": "1",
+          "shared_projection_matrices": "9",
+          "original_shared_numerics": "first-episode all9 original Q8_0 projections over actual5row BF16 predecessors with independent packed-byte decoding/native activation codec arithmetic and derived F32 error bounds; all episodes exact actual bounded operands/BF16 stores, existing local SwiGLU gate, derived F32 six-routed-slot reduction and routed+shared addition bounds. Actual Q8 MatMul providers and canonical packed RHS recorded; no dense F32 weight shadow or official FP8 equivalence.",
+          "scope": "56 original roles: previous47 formal BF16 full-V vocabulary plus original Q8 DSpark fc/mainnorm,3wkv/kvnorm,Markov/confidence,13norm/sink,21HC,now9original shared-FFN Q8_0 banks. Complete three-stage encoded state and all-V head; remaining attention projections,routed experts/router and target-capture/verifier boundary generated. Selected Q8 arithmetic differs from official FP8; CPU reference tied to actual fixed AVX worker, CUDA MMVQ strict/fast division interval accuracy conditional. Same strict all-V greedy/embedding/Markov/LM/confidence and prefix0/1/2/wrap/continuation/lifetime/collection gates. Not full trained target/stages,natural acceptance or throughput."
+        }
+      },
+      {
+        "attributes": {
+          "name": "CudaOriginalSharedFfnFeedsFullDraftAndAtomicAcceptedState",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_original_state_consumer_test.cc",
+          "line": "945",
+          "status": "run",
+          "result": "completed",
+          "time": "11.346",
+          "timestamp": "2026-10-23T04:03:49.216",
+          "classname": "DSparkOriginalState"
+        },
+        "properties": {
+          "shared_projection0_provider": "ggml-cuda",
+          "shared_projection1_provider": "ggml-cuda",
+          "shared_projection2_provider": "ggml-cuda",
+          "shared_projection3_provider": "ggml-cuda",
+          "shared_projection4_provider": "ggml-cuda",
+          "shared_projection5_provider": "ggml-cuda",
+          "shared_projection6_provider": "ggml-cuda",
+          "shared_projection7_provider": "ggml-cuda",
+          "shared_projection8_provider": "ggml-cuda",
+          "shared_q8_activation_codec": "fixed M5 native CUDA MMVQ Q8_1 strict/fast division envelope: source-derived code/halfscale intervals under NVIDIA documented approximate intrinsic accuracy, conditional rather than formal guarantee",
+          "stage0_attention_fn_provider": "cublasLt",
+          "stage0_ffn_fn_provider": "cublasLt",
+          "stage1_attention_fn_provider": "cublasLt",
+          "stage1_ffn_fn_provider": "cublasLt",
+          "stage2_attention_fn_provider": "cublasLt",
+          "stage2_ffn_fn_provider": "cublasLt",
+          "output_hc_fn_provider": "cublasLt",
+          "actual_submissions": "25",
+          "original_role_count": "56",
+          "original_role_bytes": "2400743324",
+          "encoded_draft_inputs": "6",
+          "semantic_draft_outputs": "7",
+          "test_boundary_outputs": "175",
+          "proposal_numerics": "all3 original M5 wkv/norm independent Q8 decode + compensated F64 dot/norm gate on actual activation; actual postnorm BF16 then independent RoPE gate; exact actual-F32->BF16 bits; exact actual-BF16->584B codes/scales; independent actual committed/proposal carrier reader equals prepared attention F32 keys byte-for-byte",
+          "full_vocabulary_lm_values_checked": "646400",
+          "lm_reference_episodes": "1",
+          "confidence_numerics": "every-episode independent original BF16 coefficients and actual widened-BF16 rawhidden/actualBF16 Markov dot; exact-F32-product/nonFTZ/overflow preconditions; analytic gamma4352(F32)+F64 absolute-product bound; old relative-gate exceedances/error/sumabs/maxratio in stdout, generated gate unchanged",
+          "shared_vocabulary": "formal Flash0731 BF16 full embedding/head, target-owned immutable banks; no dense F32 LM weight shadow",
+          "original_hc_numerics": "every-episode seven actual widened-BF16 x original-F32 dense HC projections with independent F64/product+accum bound; actual inverse RMS, original scale/base Sinkhorn20 and head gates, actual 4-stream collapse/expansion; actual learned RMS/sink inputs and exact local BF16 stores. Seven fn providers recorded from actual CompileReport.",
+          "shared_projection_reference_episodes": "1",
+          "shared_projection_matrices": "9",
+          "original_shared_numerics": "first-episode all9 original Q8_0 projections over actual5row BF16 predecessors with independent packed-byte decoding/native activation codec arithmetic and derived F32 error bounds; all episodes exact actual bounded operands/BF16 stores, existing local SwiGLU gate, derived F32 six-routed-slot reduction and routed+shared addition bounds. Actual Q8 MatMul providers and canonical packed RHS recorded; no dense F32 weight shadow or official FP8 equivalence.",
+          "scope": "56 original roles: previous47 formal BF16 full-V vocabulary plus original Q8 DSpark fc/mainnorm,3wkv/kvnorm,Markov/confidence,13norm/sink,21HC,now9original shared-FFN Q8_0 banks. Complete three-stage encoded state and all-V head; remaining attention projections,routed experts/router and target-capture/verifier boundary generated. Selected Q8 arithmetic differs from official FP8; CPU reference tied to actual fixed AVX worker, CUDA MMVQ strict/fast division interval accuracy conditional. Same strict all-V greedy/embedding/Markov/LM/confidence and prefix0/1/2/wrap/continuation/lifetime/collection gates. Not full trained target/stages,natural acceptance or throughput."
+        }
+      },
+      {
+        "attributes": {
+          "name": "CpuOriginalHyperConnectionsFeedFullDraftAndAtomicAcceptedState",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_original_state_consumer_test.cc",
+          "line": "912",
+          "status": "run",
+          "result": "completed",
+          "time": "38.977",
+          "timestamp": "2026-10-23T04:04:14.756",
+          "classname": "DSparkOriginalState"
+        },
+        "properties": {
+          "stage0_attention_fn_provider": "ggml-cpu",
+          "stage0_ffn_fn_provider": "ggml-cpu",
+          "stage1_attention_fn_provider": "ggml-cpu",
+          "stage1_ffn_fn_provider": "ggml-cpu",
+          "stage2_attention_fn_provider": "ggml-cpu",
+          "stage2_ffn_fn_provider": "ggml-cpu",
+          "output_hc_fn_provider": "ggml-cpu",
+          "actual_submissions": "25",
+          "original_role_count": "47",
+          "original_role_bytes": "2320527260",
+          "encoded_draft_inputs": "6",
+          "semantic_draft_outputs": "7",
+          "test_boundary_outputs": "133",
+          "proposal_numerics": "all3 original M5 wkv/norm independent Q8 decode + compensated F64 dot/norm gate on actual activation; actual postnorm BF16 then independent RoPE gate; exact actual-F32->BF16 bits; exact actual-BF16->584B codes/scales; independent actual committed/proposal carrier reader equals prepared attention F32 keys byte-for-byte",
+          "full_vocabulary_lm_values_checked": "646400",
+          "lm_reference_episodes": "1",
+          "confidence_numerics": "every-episode independent original BF16 coefficients and actual widened-BF16 rawhidden/actualBF16 Markov dot; exact-F32-product/nonFTZ/overflow preconditions; analytic gamma4352(F32)+F64 absolute-product bound; old relative-gate exceedances/error/sumabs/maxratio in stdout, generated gate unchanged",
+          "shared_vocabulary": "formal Flash0731 BF16 full embedding/head, target-owned immutable banks; no dense F32 LM weight shadow",
+          "original_hc_numerics": "every-episode seven actual widened-BF16 x original-F32 dense HC projections with independent F64/product+accum bound; actual inverse RMS, original scale/base Sinkhorn20 and head gates, actual 4-stream collapse/expansion; actual learned RMS/sink inputs and exact local BF16 stores. Seven fn providers recorded from actual CompileReport.",
+          "scope": "47 original roles: formal Flash0731 BF16 full-V shared embedding/head plus Q8 DSpark original fc/mainnorm, 3 wkv/kvnorm, Markov/confidence, 13 norm/sink and21 HC parameters. Same complete three-stage encoded state and all-V head journey; remaining attention/MoE coefficients and target-capture/verifier boundary generated. All-V greedy, exact embedding, independent full-V LM and actual4352-term confidence bounds, old Markov cancellation/IDs gates; prefix0/1/2, wrap, continuation, retained results and collection. Not main UD-Q4 vocabulary, full original target/stages, natural acceptance or throughput."
+        }
+      },
+      {
+        "attributes": {
+          "name": "CudaOriginalHyperConnectionsFeedFullDraftAndAtomicAcceptedState",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_original_state_consumer_test.cc",
+          "line": "939",
+          "status": "run",
+          "result": "completed",
+          "time": "9.613",
+          "timestamp": "2026-10-23T04:04:53.733",
+          "classname": "DSparkOriginalState"
+        },
+        "properties": {
+          "stage0_attention_fn_provider": "cublasLt",
+          "stage0_ffn_fn_provider": "cublasLt",
+          "stage1_attention_fn_provider": "cublasLt",
+          "stage1_ffn_fn_provider": "cublasLt",
+          "stage2_attention_fn_provider": "cublasLt",
+          "stage2_ffn_fn_provider": "cublasLt",
+          "output_hc_fn_provider": "cublasLt",
+          "actual_submissions": "25",
+          "original_role_count": "47",
+          "original_role_bytes": "2320527260",
+          "encoded_draft_inputs": "6",
+          "semantic_draft_outputs": "7",
+          "test_boundary_outputs": "133",
+          "proposal_numerics": "all3 original M5 wkv/norm independent Q8 decode + compensated F64 dot/norm gate on actual activation; actual postnorm BF16 then independent RoPE gate; exact actual-F32->BF16 bits; exact actual-BF16->584B codes/scales; independent actual committed/proposal carrier reader equals prepared attention F32 keys byte-for-byte",
+          "full_vocabulary_lm_values_checked": "646400",
+          "lm_reference_episodes": "1",
+          "confidence_numerics": "every-episode independent original BF16 coefficients and actual widened-BF16 rawhidden/actualBF16 Markov dot; exact-F32-product/nonFTZ/overflow preconditions; analytic gamma4352(F32)+F64 absolute-product bound; old relative-gate exceedances/error/sumabs/maxratio in stdout, generated gate unchanged",
+          "shared_vocabulary": "formal Flash0731 BF16 full embedding/head, target-owned immutable banks; no dense F32 LM weight shadow",
+          "original_hc_numerics": "every-episode seven actual widened-BF16 x original-F32 dense HC projections with independent F64/product+accum bound; actual inverse RMS, original scale/base Sinkhorn20 and head gates, actual 4-stream collapse/expansion; actual learned RMS/sink inputs and exact local BF16 stores. Seven fn providers recorded from actual CompileReport.",
+          "scope": "47 original roles: formal Flash0731 BF16 full-V shared embedding/head plus Q8 DSpark original fc/mainnorm, 3 wkv/kvnorm, Markov/confidence, 13 norm/sink and21 HC parameters. Same complete three-stage encoded state and all-V head journey; remaining attention/MoE coefficients and target-capture/verifier boundary generated. All-V greedy, exact embedding, independent full-V LM and actual4352-term confidence bounds, old Markov cancellation/IDs gates; prefix0/1/2, wrap, continuation, retained results and collection. Not main UD-Q4 vocabulary, full original target/stages, natural acceptance or throughput."
+        }
+      }
+    ],
+    "numerical": "First episode checks all nine dense projections from actual predecessors and original Q8_0 bytes against independent integer-block/F64 arithmetic with the actual activation-quantizer rules and explicit quantization/accumulation bounds. Every episode retains local BF16 stores, clipping/gating, residual merge, originalHC/sink/norm, embedding/greedy/Markov/confidence and complete-state checks. The earlier full-V LM oracle remains first-episode only.",
+    "precision_scope": "CPU actual archived AVX quantizer object inspected directly; VROUNDPS immediate0 confirms nearest-even. CUDA MMVQ Q8_1 activation interval uses NVIDIA published2-ULP division envelope with explicit finite/normal-domain checks. NVIDIA describes these intrinsic errors as non-exhaustive observations; this conditional scope is not a formal all-input proof. Actual MatMul providers and canonical encoded operands are checked through the public graph/report.",
+    "original_Q8_projection_values_checked": 245760,
+    "numerical_observations": [
+      {
+        "role": "blk.0.ffn_gate_shexp.weight",
+        "codec": 0,
+        "values": 10240,
+        "maximum_absolute_error": 1.192900526802987e-06,
+        "maximum_bound_ratio": 0.0008633867910055225,
+        "maximum_quantization_ambiguity": 1.265e-321,
+        "ambiguous_activation_codes": 0,
+        "ambiguous_activation_scales": 0
+      },
+      {
+        "role": "blk.0.ffn_up_shexp.weight",
+        "codec": 0,
+        "values": 10240,
+        "maximum_absolute_error": 7.161306712077932e-07,
+        "maximum_bound_ratio": 0.0006088852465839728,
+        "maximum_quantization_ambiguity": 1.265e-321,
+        "ambiguous_activation_codes": 0,
+        "ambiguous_activation_scales": 0
+      },
+      {
+        "role": "blk.0.ffn_down_shexp.weight",
+        "codec": 0,
+        "values": 20480,
+        "maximum_absolute_error": 5.225547283771449e-07,
+        "maximum_bound_ratio": 0.00110098631559147,
+        "maximum_quantization_ambiguity": 6.3e-322,
+        "ambiguous_activation_codes": 0,
+        "ambiguous_activation_scales": 0
+      },
+      {
+        "role": "blk.1.ffn_gate_shexp.weight",
+        "codec": 0,
+        "values": 10240,
+        "maximum_absolute_error": 9.703780960990118e-07,
+        "maximum_bound_ratio": 0.0005022740951079682,
+        "maximum_quantization_ambiguity": 1.265e-321,
+        "ambiguous_activation_codes": 0,
+        "ambiguous_activation_scales": 0
+      },
+      {
+        "role": "blk.1.ffn_up_shexp.weight",
+        "codec": 0,
+        "values": 10240,
+        "maximum_absolute_error": 9.584546205587687e-07,
+        "maximum_bound_ratio": 0.0005255599085136738,
+        "maximum_quantization_ambiguity": 1.265e-321,
+        "ambiguous_activation_codes": 0,
+        "ambiguous_activation_scales": 0
+      },
+      {
+        "role": "blk.1.ffn_down_shexp.weight",
+        "codec": 0,
+        "values": 20480,
+        "maximum_absolute_error": 6.067375579732471e-07,
+        "maximum_bound_ratio": 0.001484654744044109,
+        "maximum_quantization_ambiguity": 6.3e-322,
+        "ambiguous_activation_codes": 0,
+        "ambiguous_activation_scales": 0
+      },
+      {
+        "role": "blk.2.ffn_gate_shexp.weight",
+        "codec": 0,
+        "values": 10240,
+        "maximum_absolute_error": 8.605074981460349e-07,
+        "maximum_bound_ratio": 0.0006396181693635967,
+        "maximum_quantization_ambiguity": 1.265e-321,
+        "ambiguous_activation_codes": 0,
+        "ambiguous_activation_scales": 0
+      },
+      {
+        "role": "blk.2.ffn_up_shexp.weight",
+        "codec": 0,
+        "values": 10240,
+        "maximum_absolute_error": 8.607694326201455e-07,
+        "maximum_bound_ratio": 0.0005175953537415188,
+        "maximum_quantization_ambiguity": 1.265e-321,
+        "ambiguous_activation_codes": 0,
+        "ambiguous_activation_scales": 0
+      },
+      {
+        "role": "blk.2.ffn_down_shexp.weight",
+        "codec": 0,
+        "values": 20480,
+        "maximum_absolute_error": 4.290297511033715e-06,
+        "maximum_bound_ratio": 0.002175563026385962,
+        "maximum_quantization_ambiguity": 6.3e-322,
+        "ambiguous_activation_codes": 0,
+        "ambiguous_activation_scales": 0
+      },
+      {
+        "role": "blk.0.ffn_gate_shexp.weight",
+        "codec": 2,
+        "values": 10240,
+        "maximum_absolute_error": 0.0015458884690815469,
+        "maximum_bound_ratio": 0.3671888791723559,
+        "maximum_quantization_ambiguity": 0.00558087848003202,
+        "ambiguous_activation_codes": 69,
+        "ambiguous_activation_scales": 0
+      },
+      {
+        "role": "blk.0.ffn_up_shexp.weight",
+        "codec": 2,
+        "values": 10240,
+        "maximum_absolute_error": 0.0017346721278954649,
+        "maximum_bound_ratio": 0.41247283873736207,
+        "maximum_quantization_ambiguity": 0.0054324968459696305,
+        "ambiguous_activation_codes": 69,
+        "ambiguous_activation_scales": 0
+      },
+      {
+        "role": "blk.0.ffn_down_shexp.weight",
+        "codec": 2,
+        "values": 20480,
+        "maximum_absolute_error": 0.001522414285773266,
+        "maximum_bound_ratio": 0.7546180277518136,
+        "maximum_quantization_ambiguity": 0.003917974019714203,
+        "ambiguous_activation_codes": 28,
+        "ambiguous_activation_scales": 0
+      },
+      {
+        "role": "blk.1.ffn_gate_shexp.weight",
+        "codec": 2,
+        "values": 10240,
+        "maximum_absolute_error": 0.0017088021168092384,
+        "maximum_bound_ratio": 0.33729360187447444,
+        "maximum_quantization_ambiguity": 0.008651659385577791,
+        "ambiguous_activation_codes": 83,
+        "ambiguous_activation_scales": 0
+      },
+      {
+        "role": "blk.1.ffn_up_shexp.weight",
+        "codec": 2,
+        "values": 10240,
+        "maximum_absolute_error": 0.0020667779826908377,
+        "maximum_bound_ratio": 0.3005963607656842,
+        "maximum_quantization_ambiguity": 0.00849363482484492,
+        "ambiguous_activation_codes": 83,
+        "ambiguous_activation_scales": 0
+      },
+      {
+        "role": "blk.1.ffn_down_shexp.weight",
+        "codec": 2,
+        "values": 20480,
+        "maximum_absolute_error": 0.0012900546844321072,
+        "maximum_bound_ratio": 0.6071950881070903,
+        "maximum_quantization_ambiguity": 0.0046719840102014245,
+        "ambiguous_activation_codes": 9,
+        "ambiguous_activation_scales": 0
+      },
+      {
+        "role": "blk.2.ffn_gate_shexp.weight",
+        "codec": 2,
+        "values": 10240,
+        "maximum_absolute_error": 0.0009349522824777524,
+        "maximum_bound_ratio": 0.20857555609038975,
+        "maximum_quantization_ambiguity": 0.013059999750112286,
+        "ambiguous_activation_codes": 67,
+        "ambiguous_activation_scales": 0
+      },
+      {
+        "role": "blk.2.ffn_up_shexp.weight",
+        "codec": 2,
+        "values": 10240,
+        "maximum_absolute_error": 0.001111716994273593,
+        "maximum_bound_ratio": 0.17721368961543726,
+        "maximum_quantization_ambiguity": 0.009450375997403272,
+        "ambiguous_activation_codes": 67,
+        "ambiguous_activation_scales": 0
+      },
+      {
+        "role": "blk.2.ffn_down_shexp.weight",
+        "codec": 2,
+        "values": 20480,
+        "maximum_absolute_error": 0.0005671088165399852,
+        "maximum_bound_ratio": 0.6030133980903343,
+        "maximum_quantization_ambiguity": 0.00806364078016495,
+        "ambiguous_activation_codes": 15,
+        "ambiguous_activation_scales": 0
+      }
+    ],
+    "commands_and_results": [
+      {
+        "path": ".scratch\\dspark-original-shared-20261023\\checks1\\summary.json",
+        "bytes": 9916,
+        "sha256": "549a65273c9cb10bbc861bd438237ec785d1eda813cbc26aa758d5ec23060566"
+      },
+      {
+        "path": ".scratch\\dspark-original-shared-20261023\\checks2\\summary.json",
+        "bytes": 7214,
+        "sha256": "ac696db124b51311179427a59172d565dd43d22cbc3b2a4e4d19098824d1ad2b"
+      }
+    ],
+    "compiled_host_translation_units": 1,
+    "SDK_builds": 0,
+    "native_CPU_builds": 0,
+    "NVCC_builds": 0,
+    "shaders": 0,
+    "first_native_run_failures": 0
+  },
+  "source_reviews": [
+    {
+      "path": ".scratch\\dspark-original-shared-20261023\\source\\freeze.json",
+      "bytes": 5451,
+      "sha256": "8961c77e8b314ce6ba11a80ed2185cfdb1a072f96411f772dcb0fc47d7c2ac73"
+    },
+    {
+      "path": ".scratch\\dspark-original-shared-20261023\\hooks-source\\freeze.json",
+      "bytes": 4680,
+      "sha256": "fefa1ae59a57b59c0661772a2a47f2fd61b23099ad1b1e63642b18552220f850"
+    },
+    {
+      "path": ".scratch\\dspark-original-shared-20261023\\reference-source\\freeze.json",
+      "bytes": 1000,
+      "sha256": "cbc42d5f74d0eed1f744838f41c2834ba9fa415d8e5212c98b00a2a058c8774a"
+    }
+  ],
+  "source_metadata": [
+    {
+      "path": ".scratch\\dspark-original-hc-20261023\\review\\remaining-original-roles.json",
+      "bytes": 24651,
+      "sha256": "675f5142736a33cf4bc3b475498fecfbdea4127f59244df32c560214bc2ed49c"
+    },
+    {
+      "path": ".scratch\\dspark-original-hc-20261023\\original-parameters\\acquisition.json",
+      "bytes": 24432,
+      "sha256": "19a3922c0f6ee7344424094983107fe81403cfe7217c6e3c2573347ca0250156"
+    },
+    {
+      "path": ".scratch\\glm-mtp-catchup-20261022\\native-cpu-hc\\link-plan.json",
+      "bytes": 9800,
+      "sha256": "b40caacf98ee971a64531d18b5477bed66066d3543f59256a1cff9b434d2797f"
+    },
+    {
+      "path": ".scratch\\glm-mtp-catchup-20261022\\native-cpu-hc\\ready.json",
+      "bytes": 831,
+      "sha256": "6c3771003a7d8323f687d664b248d1f5bf6797eacc0277e4adcfdb0890e671ec"
+    },
+    {
+      "path": ".scratch\\model-scope-2026-10-19\\flash-0731\\inference-model.py",
+      "bytes": 45118,
+      "sha256": "c0c19e6c9fa439bac7fbb1c5bc1868232dfd5aa2f439a548d0e33dcc2a9edd3f"
+    }
+  ],
+  "remaining": {
+    "sidecar_roles": 27,
+    "groups": {
+      "attention_projection": 12,
+      "router": 3,
+      "router_bias": 3,
+      "expert_MXFP4": 9
+    },
+    "sidecar_payload_bytes": 10608184320,
+    "constraints": "Original router/bias requires actual selected experts resident with explicit original-ID mapping; never filter IDs to fit generated smallbanks. Whole original expert banks are not required to reside on a12GB GPU. WeightSlots carries selected immutable banks and retirement; it does not silently map global expert IDs."
+  },
+  "limitations": [
+    "WindowsCPU/CUDA only; no new Linux/Apple/Vulkan model run.",
+    "Other attention/router/expert coefficients and target-capture/verifier boundary remain generated. No full original trained target/stages, Pro geometry, primaryUD-Q4 vocabulary, natural acceptance or generation-quality claim.",
+    "GGUF Q8_0 shared weights with native activation quantization do not establish equality to officialFP8/E4-A128 or other codecs.",
+    "No new TPS, loading or physical memory/VRAM peak measurement; latestAV performance table retained.",
+    "Full MTP and broader architecture/performance/image goal remain incomplete."
+  ],
+  "next": "Remaining attention projections, actual expert residency and router coupling, other actual-role/sharedLM/targettap/Pro/confirmedquant work, then necessary final ordinary/MTP performance comparison before images.",
+  "final_image": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-original-shared-20261023\\tests-link1\\dspark-original-shared-checks.exe",
+    "bytes": 140957696,
+    "sha256": "4a5ba0fc0b6f7780eccad6df21739aad0ce14a530e294614967718dd87b6f8d9"
+  },
+  "sources": [
+    {
+      "path": "tests\\compute_models\\d5_deepseek_official_fragments.h",
+      "bytes": 15326,
+      "sha256": "99ffc91030d8e350ae02c4c9cc5c26172dedcf13e0421bf58d952109fbd0e420"
+    },
+    {
+      "path": "tests\\compute_models\\cpu_c4_model_branches.h",
+      "bytes": 44317,
+      "sha256": "6ded895fbd2ca2d011139ea2aa920e97059c60c295f9d573f28b25f23384db36"
+    },
+    {
+      "path": "tests\\compute_models\\dspark_complete_graph_fixture.h",
+      "bytes": 11104,
+      "sha256": "6d0f84255127375f089e343815b6ad321b36a08bd37a2096ee6fd1b1200617f6"
+    },
+    {
+      "path": "tests\\compute_models\\dspark_original_shared_roles.h",
+      "bytes": 6368,
+      "sha256": "606357cfe16acd1490a6200e3f8cd95839015111726b5b5ac5cd0848d673e629"
+    },
+    {
+      "path": "tests\\compute_models\\dspark_original_shared_reference.h",
+      "bytes": 15936,
+      "sha256": "dc316cb0d0a9c7ba8123c9ac6ee47beb7d30c0871e499f5a586d14af9bba70b0"
+    },
+    {
+      "path": "tests\\compute_models\\dspark_original_state_consumer.h",
+      "bytes": 13752,
+      "sha256": "af3fe7e6e489c52f4210a9982ff359aa0276f56e9eb279c0d2bdc5cadb7acbf5"
+    },
+    {
+      "path": "tests\\compute_models\\dspark_original_state_consumer_test.cc",
+      "bytes": 66737,
+      "sha256": "7401decadc786d99d777a61574b4e7b3f66d8bfd27a61c8a52cf8d4e46f776a6"
+    },
+    {
+      "path": "docs\\developer\\current-work.md",
+      "bytes": 24740,
+      "sha256": "3d2cb2fa9fc09027c121fd3549b8d0093c234b869969444445d5b22b46a383c5"
+    },
+    {
+      "path": "docs\\implementation\\model-operators.md",
+      "bytes": 93856,
+      "sha256": "e0043bac1fd8b021b8787c38caf162a9270ea3f1b35f6b7cd09fa5a4fdc2eff6"
+    }
+  ],
+  "performance_tail_sha256": "80b8672315911a74039a14cd137659bc67289273dc9c3707cd267b2d06de2551",
+  "cleanup": "One executable/map and one host object retained for replay and subsequent incremental linking; no superseded BK image, whole shard or SDK copy was produced. No deletion required.",
+  "archive": {
+    "path": "docs\\evidence\\correctness\\mtp-dspark-original-shared-2026-10-23.zip",
+    "bytes": 356917,
+    "sha256": "34fc31682c0ae8bb4669b89a9602bbd502aa9d4762409fbae66132bc4be348c3"
+  },
+  "archive_items": 79
+}

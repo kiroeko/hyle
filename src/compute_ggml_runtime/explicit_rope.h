@@ -22,9 +22,16 @@ inline ggml_tensor *explicit_rope(ggml_context *context, ggml_tensor *data,
   const auto heads = data->ne[1];
   const auto sequence = data->ne[2];
   const auto batch = data->ne[3];
+  // Positions are [S] or [B,S]; frequencies are [pairs] or [S,pairs].
+  // Shared positions need no phase expansion across B.
+  const auto position_batches = positions->ne[1];
   auto *position = ggml_reshape_4d(
-      context, ggml_cast(context, positions, GGML_TYPE_F32), 1, 1, sequence, 1);
-  auto *frequency = ggml_repeat_4d(context, frequencies, pairs, 1, sequence, 1);
+      context, ggml_cast(context, positions, GGML_TYPE_F32),
+      1, 1, sequence, position_batches);
+  auto *frequency = ggml_reshape_4d(context, frequencies,
+                                      pairs, 1, frequencies->ne[1], 1);
+  frequency = ggml_repeat_4d(context, frequency,
+                              pairs, 1, sequence, position_batches);
   auto *phase = ggml_mul(context, frequency, position);
   auto *cosine = ggml_cos(context, phase);
   auto *sine = ggml_sin(context, phase);

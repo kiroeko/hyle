@@ -1,0 +1,44 @@
+{
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\cuda-grouped-fp8-slots-2026-10-19.zip",
+    "bytes": 1279160,
+    "sha256": "c24f7905411ad1a6997672b338826ca2ac512b36f3ea25c83ba117a289e67ef0"
+  },
+  "entries": 144,
+  "uncompressed_bytes": 15233345,
+  "manifest": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-grouped-fp8-slots\\validation\\archive-manifest.json",
+    "bytes": 32803,
+    "sha256": "bb7a62e74138616de3ac2d0dd816ebed982513e3407fba8d338ac597321c7801"
+  },
+  "summary": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-grouped-fp8-slots\\validation\\summary.json",
+    "bytes": 4440,
+    "sha256": "0d646397eea55ac35af588be7dcb3e86de200d3054d15f2764c5b10e4de1db1e"
+  },
+  "product_source_freeze": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-grouped-fp8-slots\\validation\\product-source-freeze.json",
+    "bytes": 5432,
+    "sha256": "d129fe0962ea84c74df8c7d7dae822d679b73160842299d137681f7506f68ce0"
+  },
+  "test_source_freeze": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-grouped-fp8-slots\\validation\\tests-source-freeze.json",
+    "bytes": 1112,
+    "sha256": "36dac58e904d2bfb1396fba8273b8a6d8469ae06353bfb0165d8d559631509cd"
+  },
+  "independent_review": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-grouped-fp8-slots\\review.json",
+    "bytes": 2819,
+    "sha256": "f4f05d7501d28a79b554f82aca7015ace68ce99b891c21fe26a5a8747edd6776"
+  },
+  "table_after": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-grouped-fp8-slots\\validation\\table-after\\docs\\implementation\\model-quantizations.json",
+    "bytes": 291766,
+    "sha256": "4ca38ff813e4ae634f79317ebd95e01f28f8abe97ff854f328ff9274a5fa6882"
+  },
+  "zip_verified": true,
+  "objects_images_maps_libs_exp_cubins_excluded": true,
+  "cache_SDK_not_copied": true,
+  "deletion_executed": false,
+  "test_ps1_changed": false
+}

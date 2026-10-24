@@ -23,11 +23,12 @@ HYLE（HYbrid LEvels）是面向本地 AI 推理、异构计算、资源流送�
 |---|---|
 | 使用 HYLE，包括首次构建与 C++ 接入 | [用户手册](docs/user/README.md) |
 | 修改、构建、测试与排障 | [开发与维护](docs/developer/README.md) |
+| 查询已验证模型、算子与边界 | [模型与算子覆盖](docs/implementation/model-operators.md) |
 | 理解产品边界与设计取舍 | [架构](docs/architecture/README.md) |
 | 查询实施材料与历史依据 | [实施材料](docs/implementation/README.md) |
 
 [文档索引](docs/README.md)说明文档分工；[样例](samples/README.md)提供独立 C++ 消费者工程。
-工作区约定见 [AGENTS.md](AGENTS.md)，当前任务见[工作主线](docs/developer/current-work.md)。
+工作区约定见 [AGENTS.md](AGENTS.md)。
 
 ## 仓库结构
 

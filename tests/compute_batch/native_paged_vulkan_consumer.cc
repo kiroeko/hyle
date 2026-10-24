@@ -50,7 +50,7 @@ Status exercise(n::Context& context, n::MemoryResource& device,
       {.max_backing_bytes=1<<20}));
   HYLE_ASSIGN_OR_RETURN(auto values,c::PagedArena::create(schema,c::BatchCacheRole::kValue,device.ref(),
       {.max_backing_bytes=1<<20}));
-  std::vector<Half> q(24*8*depth), k(64*2*depth), v(k.size());
+  std::vector<Half> q(std::size_t(layout.facts().query_rows)*8*depth), k(64*2*depth), v(k.size());
   for(std::size_t i=0;i<q.size();++i)q[i]=encode(float(int(i%13)-6)*.03125F);
   for(std::size_t i=0;i<k.size();++i){
     k[i]=encode(float(int(i%17)-8)*.015625F);
@@ -59,8 +59,8 @@ Status exercise(n::Context& context, n::MemoryResource& device,
   for(unsigned row=32;row<48;++row)for(unsigned z=0;z<2*depth;++z){
     k[row*2*depth+z]=encode(64.0F);v[row*2*depth+z]=encode(128.0F);
   }
-  const auto descriptions=recipe.descriptions();
-  HYLE_ASSIGN_OR_RETURN(auto qt,context.upload(descriptions[0],std::as_bytes(std::span(q))));
+  HYLE_ASSIGN_OR_RETURN(auto query_description,recipe.input_description(layout,0));
+  HYLE_ASSIGN_OR_RETURN(auto qt,context.upload(query_description,std::as_bytes(std::span(q))));
   HYLE_ASSIGN_OR_RETURN(auto query,device.import_readonly(qt));
   const auto page_bytes=keys.page_bytes();
   HYLE_ASSIGN_OR_RETURN(auto host_pool,c::LeasePool::create(staging.ref(),

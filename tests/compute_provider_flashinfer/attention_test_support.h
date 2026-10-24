@@ -1,8 +1,6 @@
 #pragma once
 
-#if defined(__linux__)
 #include "hyle/compute/providers/flashinfer.h"
-#endif
 
 #include <algorithm>
 #include <array>

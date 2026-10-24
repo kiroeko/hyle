@@ -1,0 +1,288 @@
+{
+  "schema": "hyle.performance.finite-leaf-screen.v1",
+  "date": "2026-10-24",
+  "status": "closed_no_product_change",
+  "conclusion": {
+    "decision": "Retain the production request1 default. Close this bounded three-configuration M2 FFN-down screen; no further candidate search in this task.",
+    "reason": "All three timing ranges overlap. The stage19 median is about 1.18% lower; this finite screen provides no clear adoptable gain. SplitK16 is slightly slower and is not byte equivalent.",
+    "product_source_changes": 0,
+    "full_model_performance_claim": false
+  },
+  "scope": {
+    "device": "NVIDIA GeForce RTX 4070",
+    "operation": "Actual original BF16 layer0 FFN down weight with two retained real prefill activation rows",
+    "activation_limit": "First2 rows of a retained real layer0 T23 prefill down-input trace. It is not a freshly captured MTP activation.",
+    "layout": {
+      "A": [
+        2,
+        6144
+      ],
+      "A_order": "row",
+      "lda": 6144,
+      "B": [
+        6144,
+        2048
+      ],
+      "B_order": "column",
+      "ldb": 6144,
+      "original_W": [
+        2048,
+        6144
+      ],
+      "C_D": [
+        2,
+        2048
+      ],
+      "C_D_order": "row",
+      "ldc": 2048,
+      "ldd": 2048,
+      "transpose": [
+        "N",
+        "N"
+      ],
+      "batch_count": 1,
+      "data_type": "BF16",
+      "compute": "CUBLAS_COMPUTE_32F",
+      "scale": "CUDA_R_32F",
+      "alpha": 1,
+      "beta": 0,
+      "alignment_bytes": 16,
+      "workspace_cap_bytes": 33554432,
+      "reduction": "CUBLASLT_REDUCTION_SCHEME_COMPUTE_TYPE"
+    },
+    "choices_limit": 3,
+    "query_contract": "Separate production request1 baseline; bounded request3; at most3 total distinct complete configurations, same original M2 descriptors.",
+    "configuration_fields": [
+      "ID",
+      "tile",
+      "splitK",
+      "reduction",
+      "swizzle",
+      "custom",
+      "stages",
+      "inner_shape",
+      "cluster_shape"
+    ]
+  },
+  "measurement": {
+    "weight_bank_count": 4,
+    "weight_working_set_bytes": 100663296,
+    "actual_L2_bytes": 37748736,
+    "graph_leaves": 64,
+    "host_graph_launches_per_trial": 1,
+    "trials": 5,
+    "order": "Interleaved choices; one serial 64-leaf graph per choice, leaf j uses bank j%4; events divided by64.",
+    "limit": "Bounded rotation working-set approximation only. No PMU cache-miss observation, absolute cold-bandwidth, full decode, model quality or TPS claim."
+  },
+  "numerical_contract": {
+    "gate": "independent F64 dot + fixed gamma(2K+4) F32/FTZ bound + outward BF16 RNE endpoints",
+    "outputs_per_choice": 4096,
+    "all_choices_passed": true,
+    "baseline_is_not_oracle": true,
+    "domain": "Actual finite normal/zero BF16 inputs; finite BF16 interval endpoints and no BF16-subnormal result-domain claim.",
+    "splitK16": {
+      "bf16_differences": 20,
+      "byte_equivalent": false,
+      "independent_interval_passed": true
+    },
+    "tolerance_changed_from_observed_error": false
+  },
+  "choices": [
+    {
+      "configuration": [
+        21,
+        5,
+        1,
+        0,
+        0,
+        0,
+        20,
+        0,
+        0
+      ],
+      "baseline_request1": true,
+      "workspace_bytes": 0,
+      "device_us_per_leaf": [
+        67.56649911403656,
+        63.791997730731964,
+        59.856001287698746,
+        71.19999825954437,
+        63.919998705387115
+      ],
+      "median_us": 63.919998705387115,
+      "range_us": [
+        59.856001287698746,
+        71.19999825954437
+      ],
+      "bf16_values_different_from_baseline": 0,
+      "independent_interval_passed": true
+    },
+    {
+      "configuration": [
+        21,
+        5,
+        1,
+        0,
+        0,
+        0,
+        19,
+        0,
+        0
+      ],
+      "baseline_request1": false,
+      "workspace_bytes": 0,
+      "device_us_per_leaf": [
+        60.47999858856201,
+        63.1679967045784,
+        63.680000603199005,
+        59.96549874544144,
+        66.62099808454514
+      ],
+      "median_us": 63.1679967045784,
+      "range_us": [
+        59.96549874544144,
+        66.62099808454514
+      ],
+      "bf16_values_different_from_baseline": 0,
+      "independent_interval_passed": true
+    },
+    {
+      "configuration": [
+        21,
+        5,
+        16,
+        2,
+        0,
+        0,
+        20,
+        0,
+        0
+      ],
+      "baseline_request1": false,
+      "workspace_bytes": 262144,
+      "device_us_per_leaf": [
+        64.70400094985962,
+        60.127999633550644,
+        67.9360032081604,
+        68.52799654006958,
+        60.095999389886856
+      ],
+      "median_us": 64.70400094985962,
+      "range_us": [
+        60.095999389886856,
+        68.52799654006958
+      ],
+      "bf16_values_different_from_baseline": 20,
+      "independent_interval_passed": true
+    }
+  ],
+  "cublasLt_observation": {
+    "api_version": 130600,
+    "api_version_is_actual": true,
+    "raw_field": "loaded_cublasLt",
+    "raw_path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-final-window-20261024\\m2-down-leaf-proposal\\link2\\m2-down-leaf.exe",
+    "path_interpretation": "GetModuleHandleEx from the imported function address resolves the executable import-address module here, not the cuBLASLt DLL.",
+    "actual_dll_full_path": null,
+    "actual_dll_identity": null,
+    "comparison_validity": "All choices ran in the same native process using the same loaded vendor API. No rerun or rewriting of the raw mislabelled observation."
+  },
+  "inputs": {
+    "original_weight_range": {
+      "path": "C:\\Users\\kiro\\Downloads\\Qwen3.5-2B\\model.safetensors-00001-of-00001.safetensors",
+      "whole_file_bytes": 4548221488,
+      "role": "model.language_model.layers.0.mlp.down_proj.weight",
+      "dtype": "BF16",
+      "shape": [
+        2048,
+        6144
+      ],
+      "offset": 1059333136,
+      "bytes": 25165824,
+      "original_range_sha256": "computed from this range only immediately before an authorized run; no full-model hash/copy",
+      "actual_sha256": "fbafb4be6b6a3e93fb969b1679f7430a824cd912db98a83a7c4b9658e511d766"
+    },
+    "activation": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-execution-refactor-2026-10-18\\qwen35-layer0-probe\\candidate\\prefill\\04-down-proj-input.bf16",
+      "bytes": 282624,
+      "sha256": "69e7f737101e7fc14fb703bec46dd37b741bfb6355a808c2f838d90f9df4ce28"
+    },
+    "activation_selected_range": [
+      0,
+      24575
+    ],
+    "weight_or_activation_bodies_archived": false,
+    "full_weight_file_hashed": false
+  },
+  "execution": {
+    "compile2": {
+      "record": {
+        "path": ".scratch/qwen-mtp-final-window-20261024/m2-down-leaf-proposal/compile2/identity.json",
+        "bytes": 63927,
+        "sha256": "dda07010dfe626b6e9e46ec5e35bbf49796f0d350407c1c610e5cd54959c6f33"
+      },
+      "exit": 0,
+      "object": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-final-window-20261024\\m2-down-leaf-proposal\\compile2\\probe.obj",
+        "bytes": 429208,
+        "sha256": "be4dbc4424a6e16fdab06f9e70eb1129731bbe814184edee615551646b8313f6"
+      }
+    },
+    "link2": {
+      "record": {
+        "path": ".scratch/qwen-mtp-final-window-20261024/m2-down-leaf-proposal/link2/ready.json",
+        "bytes": 1928,
+        "sha256": "46fbdd9410dfda82ff9df3da4738e85b802fc7f3b122e5a28c4bd170559f0918"
+      },
+      "exit": 0,
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-final-window-20261024\\m2-down-leaf-proposal\\link2\\m2-down-leaf.exe",
+        "bytes": 123904,
+        "sha256": "c4ecb476629964653ca27cf4271d451c96f25a4097e9424d33d589c9fc8f07bd"
+      }
+    },
+    "run2": {
+      "status": "environment_setup_failure_before_native_launch",
+      "native_started": false,
+      "process_exit": null,
+      "retained_record": {
+        "path": ".scratch/qwen-mtp-final-window-20261024/m2-down-leaf-proposal/run2/inputs.json",
+        "bytes": 1092,
+        "sha256": "efc39e039c021f96a376b545d17228062738a6b5b2a633e32b0a8f2858f64b5c"
+      },
+      "cause": "The old build.py run helper treated the image as a compiler during environment setup.",
+      "evidence": "Parent execution report and preserved run3/inputs.json preceding_setup_failure; no native run2 process record exists."
+    },
+    "run3": {
+      "summary": {
+        "path": ".scratch/qwen-mtp-final-window-20261024/m2-down-leaf-proposal/run3/summary.json",
+        "bytes": 4205,
+        "sha256": "0ec3888a9715006741cbb390f6993cf570e3ae281aa106d73e4df1e6aa93e372"
+      },
+      "stdout": {
+        "path": ".scratch/qwen-mtp-final-window-20261024/m2-down-leaf-proposal/run3/run/stdout.log",
+        "bytes": 1851,
+        "sha256": "c08376c7807dd0412fd7885e011c4e69b0c307070f0d4f0f2143c143aac00cb1"
+      },
+      "runner": {
+        "path": ".scratch/qwen-mtp-final-window-20261024/m2-down-leaf-proposal/run_compiled.py",
+        "bytes": 1981,
+        "sha256": "8a7fe6a5e5a23b6a724e452d35e24ce3c86edb200844f84237ccbc29e5608c17"
+      },
+      "exit": 0,
+      "pid": 47560,
+      "passed": true
+    },
+    "prepared_plan_counts_are_not_execution_results": true,
+    "SDK_builds": 0,
+    "NVCC_builds": 0,
+    "HTTP_requests": 0
+  },
+  "unchanged_full_window": "docs/evidence/performance/qwen-mtp-single-and-multiturn-2026-10-24.json",
+  "archive": {
+    "path": "docs/evidence/performance/qwen-m2-down-lt-screen-2026-10-24.zip",
+    "bytes": 53734,
+    "sha256": "08d4a8510e9a3a4325b8756eec235936d34488260fd8dcb08607d1cff8cda5f2",
+    "entry_count": 26,
+    "contents": "Probe source, small build/run records and logs, unmodified provider context and corrected result interpretation. No model payload, activation payload, SDK, executable or object."
+  }
+}

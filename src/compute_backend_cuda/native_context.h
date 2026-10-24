@@ -68,7 +68,27 @@ inline RouteFacts route_facts(const Environment &environment) noexcept {
 // Kernels atomically retain the first nonzero DeviceStatusCode and must not
 // access invalid payload. Compute/Graph's real Completion reports the code.
 HYLE_COMPUTE_BACKEND_CUDA_API compute::detail::EnqueueResult
-acquire_device_status(Queue &queue, unsigned **device_word) noexcept;
+acquire_device_status(compute::detail::QueueSequence &sequence, unsigned **device_word) noexcept;
+
+// Exceptional native work not yet joined to the admitted Queue's root stream.
+// Its callback reports actual retirement separately from observation errors;
+// false `wait` must remain nonblocking. State is borrowed from the provider
+// invocation retained by this sequence's original Completion, including after
+// both public owners are abandoned. No callback may submit further work.
+struct NativeRetirement final {
+  void *state = nullptr;
+  Status (*observe)(void *state, bool wait, bool *retired) noexcept = nullptr;
+};
+
+// Same-build original-Completion seam for an admitted CUDA sequence.
+// Ordinary failure attaches only one probe and then stops. Cold
+// recording may compose probes by saving the returned previous probe in the
+// same retained invocation; it must not register that invocation twice. Its
+// observer first proves outer capture ended/aborted before native cleanup.
+// The original Completion retains every execution/resource owner until both
+// its root fence and the complete native prefix actually retire.
+HYLE_COMPUTE_BACKEND_CUDA_API NativeRetirement defer_native_retirement(
+    compute::detail::QueueSequence &sequence, NativeRetirement native) noexcept;
 
 // Preserve the caller's current driver context across native SDK work. This
 // is the backend's existing scope, shared by native providers without giving

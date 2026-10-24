@@ -1,0 +1,188 @@
+{
+  "status": "completed; do not rerun",
+  "recursive": false,
+  "failure": null,
+  "removed_files": 10,
+  "removed_logical_bytes": 413591305,
+  "absent_not_deleted": 0,
+  "planned_files": 10,
+  "script": {
+    "path": "C:\\public\\project-hyle\\hyle\\test.ps1",
+    "bytes": 5063,
+    "sha256": "732d9a583276bd5e32d6531b9c243e5212185f32fdd172e757415a3da18f3266"
+  },
+  "script_copy": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-steady-profile-20261022\\cleanup-script.ps1",
+    "bytes": 5063,
+    "sha256": "732d9a583276bd5e32d6531b9c243e5212185f32fdd172e757415a3da18f3266"
+  },
+  "verified_manifest": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\qwen-mtp-steady-profile-2026-10-22.json",
+    "bytes": 111870,
+    "sha256": "e6e4f1095764a6407a1d5b30e45306c4850d3ce039d04030d5b2ba3ee6ac6adb"
+  },
+  "verified_archives": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\qwen-mtp-steady-profile-2026-10-22.data.zip",
+      "bytes": 5177733,
+      "sha256": "2ca42a426b88613b2cf11bfca81e10cefa2c5293fd5f013d883883cfa3c7215b"
+    }
+  ],
+  "archive_verification": {
+    "CRC": true,
+    "all_unique_entry_SHA256": true,
+    "unique_entries": 216
+  },
+  "kept_images": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cublas-scores-20261022\\qwen-link1\\qwen.exe",
+      "bytes": 140355072,
+      "sha256": "18932968a05db1f13fbf6c1579d1783eac60b1426ef6ca28d4018a09128fff15"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-window-20261022\\peer\\checks\\attempt1\\peer.exe",
+      "bytes": 35795456,
+      "sha256": "f353371459d63d168ee88e4e57115ba9af4258b871f5adf02dd289e34cd2b421"
+    }
+  ],
+  "canonical_sqlite": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-steady-profile-20261022\\execution\\attempt1\\capture.sqlite",
+    "bytes": 12472320,
+    "sha256": "1902b43763406334cd99ddd657685b9d1bff51de449023e61cf5b9615f38f90d",
+    "archive_entry": ".scratch/qwen-mtp-steady-profile-20261022/execution/attempt1/capture.sqlite"
+  },
+  "transformed_report_limitation": "The original .nsys-rep bytes are not archived and cannot be claimed byte-exactly reconstructible from SQLite.",
+  "results": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-steady-profile-20261022\\candidate\\qwen-link1\\qwen.exe",
+      "kind": "rebuildable-candidate-output",
+      "status": "removed",
+      "bytes": 140355584,
+      "sha256": "981b70e565c83edb8b181f4c4baacb43e54f0b9c095dc2819a448fc943172f62",
+      "preservation": null
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-steady-profile-20261022\\candidate\\qwen-link1\\qwen.map",
+      "kind": "rebuildable-candidate-output",
+      "status": "removed",
+      "bytes": 58965882,
+      "sha256": "7e7dd0b4dbe934a42f7faa86a68179e6732339974f8b762c961cd1b625df9309",
+      "preservation": null
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-steady-profile-20261022\\candidate\\qwen-link1\\qwen.lib",
+      "kind": "rebuildable-candidate-output",
+      "status": "removed",
+      "bytes": 41384,
+      "sha256": "339d3ce297534ebac8825c27a011f2f4f9dfe366c657ebfc45dbbfdc8412a2cb",
+      "preservation": null
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-steady-profile-20261022\\candidate\\qwen-link1\\qwen.exp",
+      "kind": "rebuildable-candidate-output",
+      "status": "removed",
+      "bytes": 24991,
+      "sha256": "147583d9c3ebd0c38cf5de3eabbc2a0fc84102215d2e2522aeab1ea3465a28c9",
+      "preservation": null
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-steady-profile-20261022\\candidate\\tests-link1\\tests.exe",
+      "kind": "rebuildable-candidate-output",
+      "status": "removed",
+      "bytes": 139122688,
+      "sha256": "f8578b6d9349ed5c3c12d12624ab195e79d6c4379c60f4307ef5ff42961df021",
+      "preservation": null
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-steady-profile-20261022\\candidate\\tests-link1\\tests.map",
+      "kind": "rebuildable-candidate-output",
+      "status": "removed",
+      "bytes": 57089947,
+      "sha256": "7029be7701ab5d56ae58414ad8f0794ca8cecf1501fcde322fdaccc0b9783b9f",
+      "preservation": null
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-steady-profile-20261022\\candidate\\tests-link1\\tests.lib",
+      "kind": "rebuildable-candidate-output",
+      "status": "removed",
+      "bytes": 41474,
+      "sha256": "eb94a4b61486dd914abc7fea7de972f2f36d30506b483ec4765f2d276d689b15",
+      "preservation": null
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-steady-profile-20261022\\candidate\\tests-link1\\tests.exp",
+      "kind": "rebuildable-candidate-output",
+      "status": "removed",
+      "bytes": 24993,
+      "sha256": "bfff1b791e67ba6c65293080fc9f95d04d285caa35aeeb297edfacae96c7b797",
+      "preservation": null
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-steady-profile-20261022\\execution\\attempt1\\capture.sqlite",
+      "kind": "exact-archived-raw",
+      "status": "removed",
+      "bytes": 12472320,
+      "sha256": "1902b43763406334cd99ddd657685b9d1bff51de449023e61cf5b9615f38f90d",
+      "preservation": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-steady-profile-20261022\\execution\\attempt1\\capture.sqlite",
+        "bytes": 12472320,
+        "sha256": "1902b43763406334cd99ddd657685b9d1bff51de449023e61cf5b9615f38f90d",
+        "archive_entry": ".scratch/qwen-mtp-steady-profile-20261022/execution/attempt1/capture.sqlite"
+      }
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-steady-profile-20261022\\execution\\attempt1\\capture.nsys-rep",
+      "kind": "transformed-report",
+      "status": "removed",
+      "bytes": 5452042,
+      "sha256": "4b60df87bba5d62797beef5f98498032c00d1e2d62a8a976364a52f7256636f6",
+      "preservation": {
+        "original_identity": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-steady-profile-20261022\\execution\\attempt1\\capture.nsys-rep",
+          "bytes": 5452042,
+          "sha256": "4b60df87bba5d62797beef5f98498032c00d1e2d62a8a976364a52f7256636f6"
+        },
+        "mode": "transformed report; original bytes not archived",
+        "canonical_sqlite": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-steady-profile-20261022\\execution\\attempt1\\capture.sqlite",
+          "bytes": 12472320,
+          "sha256": "1902b43763406334cd99ddd657685b9d1bff51de449023e61cf5b9615f38f90d",
+          "archive_entry": ".scratch/qwen-mtp-steady-profile-20261022/execution/attempt1/capture.sqlite"
+        },
+        "export_evidence": {
+          "profile_command": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-steady-profile-20261022\\execution\\attempt1\\profile.command.json",
+            "bytes": 1075,
+            "sha256": "67af2215ed97bdfab782630d5f614a065cbf27b4a259c2d41c060ea72c990392",
+            "archive_entry": ".scratch/qwen-mtp-steady-profile-20261022/execution/attempt1/profile.command.json"
+          },
+          "export_command": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-steady-profile-20261022\\execution\\attempt1\\export.command.json",
+            "bytes": 588,
+            "sha256": "60936426ec759d54a8aebfd600e5cc184d7de79afd24fdd77509335d2536f972",
+            "archive_entry": ".scratch/qwen-mtp-steady-profile-20261022/execution/attempt1/export.command.json"
+          },
+          "profile_receipt": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-steady-profile-20261022\\execution\\attempt1\\profile.result.json",
+            "bytes": 1190,
+            "sha256": "6fe16cbb7d8f49798e0b2d794259b6f4ee31f0813e189b59f8f127ef422a6442",
+            "archive_entry": ".scratch/qwen-mtp-steady-profile-20261022/execution/attempt1/profile.result.json"
+          },
+          "export_receipt": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-steady-profile-20261022\\execution\\attempt1\\export.result.json",
+            "bytes": 704,
+            "sha256": "5eb4acea8589936cf66a0cd963f0ac9e500de8e1c3b670fbcfd1a07278d112c9",
+            "archive_entry": ".scratch/qwen-mtp-steady-profile-20261022/execution/attempt1/export.result.json"
+          },
+          "native_receipt": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-steady-profile-20261022\\execution\\attempt1\\receipt.json",
+            "bytes": 1103,
+            "sha256": "aa2585c1f1810ed6828ad9760a89b7730c0f478563533e131f0f204ab412f20e",
+            "archive_entry": ".scratch/qwen-mtp-steady-profile-20261022/execution/attempt1/receipt.json"
+          }
+        },
+        "limitation": "SQLite is exact archived raw. It does not permit byte-exact reconstruction of the original .nsys-rep."
+      }
+    }
+  ]
+}

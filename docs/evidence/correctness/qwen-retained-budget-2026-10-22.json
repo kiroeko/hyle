@@ -1,0 +1,5136 @@
+{
+  "schema": "hyle.qwen-retained-budget.v1",
+  "date": "2026-10-22",
+  "status": "PASS_LIMITED_CONSUMER_RETENTION",
+  "scope": [
+    "Actual Qwen plain and greedy K1; 335 original MTP/target weights, original math and Graph retirement",
+    "Selected 36 conv/GDN, carry/prior retained storage admitted before every take_append and head/ledger publication",
+    "Shared backing admission reuses prior library mechanism; no payload copy, second executor or Provider vtable change"
+  ],
+  "changes": [
+    "CUDA keeps exact shared pool plan and same-scope idempotent charges",
+    "Native auto has no byte limit; finite explicit cap uses actual pool and completed output admission, not CUDA capacity formula",
+    "Unified Model-global cache report for single/scheduled plain and MTP; per-session copies of these figures must not be summed",
+    "Only admitted retained output backings plus shared pools counted; weights, execution/private intermediate/driver peak remain outside"
+  ],
+  "sources": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tools\\qwen35_text\\main.cc",
+      "bytes": 279429,
+      "sha256": "29a388d5c85ecca65a22288b1b5d89fa22f471d1c61a5cee18009fba688ddda1"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tools\\qwen35_text\\retained_budget_probe.cc",
+      "bytes": 19620,
+      "sha256": "8a8f87f390787a586c946608c33a9ba16bed4df679cce6fa0209831dea238f03"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tools\\qwen35_text\\CMakeLists.txt",
+      "bytes": 2396,
+      "sha256": "b95ead856e01c55a843869512180bdd69e6630c9c4fd1debff87478e016c5720"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tools\\qwen35_text\\README.md",
+      "bytes": 35533,
+      "sha256": "3470981cda336dadb0333042540f22b0b2a325b15245e117adba2d6b1a52a22e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\developer\\current-work.md",
+      "bytes": 41728,
+      "sha256": "9f079818e21846c2e64d31b5890344d24649c10ad680e5f9d8e3eb1201781c3c"
+    }
+  ],
+  "build": {
+    "CUDA_CXX": 1,
+    "Apple_CXX": 2,
+    "SDK_builds": 0,
+    "NVCC": 0,
+    "CMake_configure_run": false,
+    "CUDA": {
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-retained-budget-20261022\\cuda-link1\\qwen.exe",
+        "bytes": 140397568,
+        "sha256": "5789d59b9e6239aeaf4265682f12f2a10360ddfa32b3e44f11986c65a80b6c9f"
+      },
+      "consumer": {
+        "path": "C:\\public\\project-hyle\\hyle\\tools\\qwen35_text\\main.cc",
+        "bytes": 279429,
+        "sha256": "29a388d5c85ecca65a22288b1b5d89fa22f471d1c61a5cee18009fba688ddda1"
+      }
+    },
+    "Apple_consumer": {
+      "records": [
+        {
+          "command": [
+            "/usr/bin/c++",
+            "-I/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/qwen-retained-budget-20261022/consumer1/source/include",
+            "-I/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/qwen-retained-budget-20261022/consumer1/source",
+            "-DHYLE_COMPUTE_APPLE=1",
+            "-DHYLE_GRAPH_ROUTE_APPLE_BUILD",
+            "-DHYLE_STATIC",
+            "-DMLX_STATIC",
+            "-I/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/qwen-retained-budget-20261022/consumer1/source/include",
+            "-I/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/qwen-retained-budget-20261022/consumer1/source/src/graph_route_apple",
+            "-isystem",
+            "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/build/_deps/metal-cpp-91aee008db1a5528/source",
+            "-isystem",
+            "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/build/_deps/mlx-91aee008db1a5528/source",
+            "-O3",
+            "-DNDEBUG",
+            "-std=c++23",
+            "-arch",
+            "arm64",
+            "-isysroot",
+            "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+            "-mmacosx-version-min=14.4",
+            "-Wall",
+            "-Wextra",
+            "-Wpedantic",
+            "-c",
+            "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/qwen-retained-budget-20261022/consumer1/source/tools/qwen35_text/main.cc",
+            "-o",
+            "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/qwen-retained-budget-20261022/consumer1/consumer.o",
+            "-MMD",
+            "-MF",
+            "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/qwen-retained-budget-20261022/consumer1/consumer.o.d"
+          ],
+          "cwd": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/build",
+          "started": 1792638345.13561,
+          "pid": 2622,
+          "state": "terminal",
+          "exit": 0,
+          "seconds": 5.642830848693848
+        },
+        {
+          "command": [
+            "/usr/bin/c++",
+            "-O3",
+            "-DNDEBUG",
+            "-arch",
+            "arm64",
+            "-isysroot",
+            "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+            "-mmacosx-version-min=14.4",
+            "-Wl,-search_paths_first",
+            "-Wl,-headerpad_max_install_names",
+            "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/qwen-retained-budget-20261022/consumer1/consumer.o",
+            "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/src--compute_stream_apple--file_stream.o",
+            "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/src--compute_stream--stream_sources.o",
+            "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/src--compute_stream--file_stream.o",
+            "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_io_core.a",
+            "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/native-paged-effects-20261022/lib/libhyle_graph_progress.a",
+            "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk/lib/libhyle_sched.a",
+            "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk/lib/libhyle_mem_vm.a",
+            "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk/lib/libhyle_platform_fs.a",
+            "-o",
+            "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/qwen-retained-budget-20261022/consumer1/qwen",
+            "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/qwen-native-assembly-20261022/revision3/libhyle_graph_route_apple.a",
+            "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/native-paged-capacity-20261022/lib/libhyle_graph_batch.a",
+            "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/native-state-ownership-20261022/core1/libhyle_graph.a",
+            "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/native-paged-capacity-20261022/lib/libhyle_compute_route_apple.a",
+            "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/native-paged-effects-20261022/lib/libhyle_compute_batch.a",
+            "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/native-state-ownership-20261022/core2/libhyle_compute.a",
+            "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk/lib/libhyle_container.a",
+            "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk/lib/libhyle_platform_thread.a",
+            "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk/lib/libhyle_time.a",
+            "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/native-paged-effects-20261022/lib/libhyle_compute_provider_ggml_metal.a",
+            "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk/lib/libhyle_compute_ops.a",
+            "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk/lib/libhyle_compute_ggml_runtime.a",
+            "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk/lib/libhyle_mem.a",
+            "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk/lib/libmimalloc_static.a",
+            "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk/lib/libhyle_platform.a",
+            "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk/lib/libhyle_error.a",
+            "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk/lib/libggml.a",
+            "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk/lib/libggml-metal.a",
+            "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk/lib/libggml-base.a",
+            "-lm",
+            "-framework",
+            "Foundation",
+            "-framework",
+            "Metal",
+            "-framework",
+            "MetalKit",
+            "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk/lib/libmlx.a",
+            "-framework",
+            "QuartzCore",
+            "-framework",
+            "Foundation",
+            "-framework",
+            "Metal"
+          ],
+          "cwd": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/build",
+          "started": 1792638350.778691,
+          "pid": 2631,
+          "state": "terminal",
+          "exit": 0,
+          "seconds": 0.07488203048706055
+        }
+      ],
+      "hardware": {
+        "hw.model": "Mac16,12",
+        "hw.memsize": "17179869184"
+      },
+      "all_exit_zero": true,
+      "image": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/qwen-retained-budget-20261022/consumer1/qwen",
+        "bytes": 12727512,
+        "sha256": "ec70057a94b0a6ceade170d1c1ae8f7da3d06d3258721a3c20c5d329a6fb14a0"
+      }
+    },
+    "Apple_probe": {
+      "records": [
+        {
+          "command": [
+            "/usr/bin/c++",
+            "-I/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/qwen-retained-budget-20261022/probe1/source/include",
+            "-I/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/qwen-retained-budget-20261022/probe1/source",
+            "-DHYLE_COMPUTE_APPLE=1",
+            "-DHYLE_GRAPH_ROUTE_APPLE_BUILD",
+            "-DHYLE_STATIC",
+            "-DMLX_STATIC",
+            "-I/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/qwen-retained-budget-20261022/probe1/source/include",
+            "-I/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/qwen-retained-budget-20261022/probe1/source/src/graph_route_apple",
+            "-isystem",
+            "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/build/_deps/metal-cpp-91aee008db1a5528/source",
+            "-isystem",
+            "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/build/_deps/mlx-91aee008db1a5528/source",
+            "-O3",
+            "-DNDEBUG",
+            "-std=c++23",
+            "-arch",
+            "arm64",
+            "-isysroot",
+            "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+            "-mmacosx-version-min=14.4",
+            "-Wall",
+            "-Wextra",
+            "-Wpedantic",
+            "-c",
+            "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/qwen-retained-budget-20261022/probe1/source/tools/qwen35_text/retained_budget_probe.cc",
+            "-o",
+            "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/qwen-retained-budget-20261022/probe1/consumer.o",
+            "-MMD",
+            "-MF",
+            "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/qwen-retained-budget-20261022/probe1/consumer.o.d"
+          ],
+          "cwd": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/build",
+          "started": 1792638635.024163,
+          "pid": 2686,
+          "state": "terminal",
+          "exit": 0,
+          "seconds": 5.964120864868164
+        },
+        {
+          "command": [
+            "/usr/bin/c++",
+            "-O3",
+            "-DNDEBUG",
+            "-arch",
+            "arm64",
+            "-isysroot",
+            "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+            "-mmacosx-version-min=14.4",
+            "-Wl,-search_paths_first",
+            "-Wl,-headerpad_max_install_names",
+            "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/qwen-retained-budget-20261022/probe1/consumer.o",
+            "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/src--compute_stream_apple--file_stream.o",
+            "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/src--compute_stream--stream_sources.o",
+            "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/src--compute_stream--file_stream.o",
+            "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/lib/libhyle_io_core.a",
+            "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/native-paged-effects-20261022/lib/libhyle_graph_progress.a",
+            "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk/lib/libhyle_sched.a",
+            "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk/lib/libhyle_mem_vm.a",
+            "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk/lib/libhyle_platform_fs.a",
+            "-o",
+            "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/qwen-retained-budget-20261022/probe1/qwen",
+            "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/qwen-native-assembly-20261022/revision3/libhyle_graph_route_apple.a",
+            "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/native-paged-capacity-20261022/lib/libhyle_graph_batch.a",
+            "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/native-state-ownership-20261022/core1/libhyle_graph.a",
+            "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/native-paged-capacity-20261022/lib/libhyle_compute_route_apple.a",
+            "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/native-paged-effects-20261022/lib/libhyle_compute_batch.a",
+            "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/native-state-ownership-20261022/core2/libhyle_compute.a",
+            "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk/lib/libhyle_container.a",
+            "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk/lib/libhyle_platform_thread.a",
+            "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk/lib/libhyle_time.a",
+            "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/native-paged-effects-20261022/lib/libhyle_compute_provider_ggml_metal.a",
+            "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk/lib/libhyle_compute_ops.a",
+            "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk/lib/libhyle_compute_ggml_runtime.a",
+            "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk/lib/libhyle_mem.a",
+            "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk/lib/libmimalloc_static.a",
+            "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk/lib/libhyle_platform.a",
+            "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk/lib/libhyle_error.a",
+            "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk/lib/libggml.a",
+            "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk/lib/libggml-metal.a",
+            "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk/lib/libggml-base.a",
+            "-lm",
+            "-framework",
+            "Foundation",
+            "-framework",
+            "Metal",
+            "-framework",
+            "MetalKit",
+            "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/relocated/sdk/lib/libmlx.a",
+            "-framework",
+            "QuartzCore",
+            "-framework",
+            "Foundation",
+            "-framework",
+            "Metal"
+          ],
+          "cwd": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/build",
+          "started": 1792638640.988568,
+          "pid": 2695,
+          "state": "terminal",
+          "exit": 0,
+          "seconds": 0.0938408374786377
+        }
+      ],
+      "hardware": {
+        "hw.model": "Mac16,12",
+        "hw.memsize": "17179869184"
+      },
+      "all_exit_zero": true,
+      "image": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/qwen-retained-budget-20261022/probe1/qwen",
+        "bytes": 12747064,
+        "sha256": "ab5e147679e5fd3c3b84522859949a4ee91602a14ed358ab336c3b2fe8a80066"
+      }
+    },
+    "shared_common_libraries": "docs/evidence/correctness/native-state-ownership-2026-10-22.json"
+  },
+  "CUDA": [
+    {
+      "mode": "plain",
+      "process": {
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-retained-budget-20261022\\cuda-link1\\qwen.exe",
+          "--inputs",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-native-assembly-20261022\\inputs\\text",
+          "--steps",
+          "4",
+          "--capacity",
+          "64",
+          "--max-sessions",
+          "1",
+          "--active-sequences",
+          "1",
+          "--prefix-cache",
+          "off",
+          "--progress",
+          "direct",
+          "--replay",
+          "commands",
+          "--mtp",
+          "off"
+        ],
+        "cwd": "C:\\public\\project-hyle\\hyle",
+        "started": 1792638427.0746317,
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-retained-budget-20261022\\cuda-link1\\qwen.exe",
+          "bytes": 140397568,
+          "sha256": "5789d59b9e6239aeaf4265682f12f2a10360ddfa32b3e44f11986c65a80b6c9f"
+        },
+        "performance_comparison": false,
+        "pid": 84748,
+        "state": "terminal",
+        "exit": 0,
+        "seconds": 2.328117609024048
+      },
+      "output": {
+        "source_id": "4068044d8571635d8a86f1e96a43dad104efc7089169065f735601e350008155",
+        "score_dtype": "F32",
+        "score_policy": "bf16_inputs_f32_output",
+        "mtp": false,
+        "text_tensors": 320,
+        "backend": "cuda",
+        "cache_budget_scope": "shared_pools_and_retained_output_backing",
+        "cache_shared_backing_bytes": 40058928,
+        "cache_retained_output_backing_bytes": 0,
+        "cache_live_requested_bytes": 40058928,
+        "cache_peak_requested_bytes": 40058928,
+        "cache_requested_byte_limit": 40058928,
+        "native_execution_private_bytes_unknown": false,
+        "physical_vram_limit_known": false,
+        "visible_tokens": 18,
+        "generated_ids": [
+          1328,
+          5675,
+          11,
+          9637
+        ],
+        "fixed_decode": false,
+        "decode_input_ids": [
+          1328,
+          5675,
+          11
+        ],
+        "prefill_seconds": 0.0547823,
+        "decode_seconds": 0.0462826,
+        "session_seconds": 0.1010649,
+        "startup_total_seconds": 1.3339543,
+        "startup_to_endpoint_seconds": 1.3339543,
+        "startup_to_ready_seconds": 1.2327393,
+        "first_token_elapsed_seconds": 1.2876717,
+        "prefill_step_seconds": 0.0547793,
+        "continuation_seconds": 0,
+        "continuation_step_seconds": 0,
+        "decode_step_sum_seconds": 0.045849100000000004,
+        "step_sum_seconds": 0.1006284,
+        "prefill_tokens_per_second": 273.8110667131537,
+        "decode_output_tokens_per_second": 64.81917610505892,
+        "output_tokens_per_second": 39.57852825263766,
+        "requested_steps": 4,
+        "generated_tokens": 4,
+        "generated_decode_tokens": 3,
+        "actual_graph_calls": 4,
+        "prefill_graph_calls": 1,
+        "decode_graph_calls": 3,
+        "continuation_graph_calls": 0,
+        "prefill_target_rows": 15,
+        "prefill_draft_rows": 0,
+        "continuation_target_rows": 0,
+        "verified_target_rows": 3,
+        "actual_target_rows": 18,
+        "actual_draft_rows": 0,
+        "committed_target_rows": 18,
+        "committed_target_decode_rows": 3,
+        "draft_rows": 0,
+        "draft_rounds": 0,
+        "agreements": 0,
+        "accepted_drafts": 0,
+        "decode_seconds_includes_continuation": false,
+        "diagnostic": false
+      },
+      "comparison": {
+        "fields": {
+          "generated_ids": true,
+          "actual_graph_calls": true,
+          "actual_target_rows": true,
+          "actual_draft_rows": true,
+          "committed_target_rows": true
+        },
+        "cache": {
+          "cache_budget_scope": "shared_pools_and_retained_output_backing",
+          "cache_shared_backing_bytes": 40058928,
+          "cache_retained_output_backing_bytes": 0,
+          "cache_live_requested_bytes": 40058928,
+          "cache_peak_requested_bytes": 40058928,
+          "cache_requested_byte_limit": 40058928
+        },
+        "before": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-native-assembly-20261022\\cuda-plain-current3\\stdout.log",
+          "bytes": 1405,
+          "sha256": "caa5f24f7b834abd124fdfb9805725c7ce007ca41451a36b3884a0494a7a9f63"
+        }
+      }
+    },
+    {
+      "mode": "mtp",
+      "process": {
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-retained-budget-20261022\\cuda-link1\\qwen.exe",
+          "--inputs",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-native-assembly-20261022\\inputs\\mtp",
+          "--steps",
+          "4",
+          "--capacity",
+          "64",
+          "--max-sessions",
+          "1",
+          "--active-sequences",
+          "1",
+          "--prefix-cache",
+          "off",
+          "--progress",
+          "direct",
+          "--replay",
+          "commands",
+          "--mtp",
+          "on"
+        ],
+        "cwd": "C:\\public\\project-hyle\\hyle",
+        "started": 1792638429.411503,
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-retained-budget-20261022\\cuda-link1\\qwen.exe",
+          "bytes": 140397568,
+          "sha256": "5789d59b9e6239aeaf4265682f12f2a10360ddfa32b3e44f11986c65a80b6c9f"
+        },
+        "performance_comparison": false,
+        "pid": 6716,
+        "state": "terminal",
+        "exit": 0,
+        "seconds": 2.3686013221740723
+      },
+      "output": {
+        "source_id": "4068044d8571635d8a86f1e96a43dad104efc7089169065f735601e350008155",
+        "score_dtype": "F32",
+        "score_policy": "bf16_inputs_f32_output",
+        "mtp": true,
+        "text_tensors": 320,
+        "mtp_tensors": 15,
+        "backend": "cuda",
+        "cache_budget_scope": "shared_pools_and_retained_output_backing",
+        "cache_shared_backing_bytes": 59777075,
+        "cache_retained_output_backing_bytes": 0,
+        "cache_live_requested_bytes": 59777075,
+        "cache_peak_requested_bytes": 59777075,
+        "cache_requested_byte_limit": 59777075,
+        "native_execution_private_bytes_unknown": false,
+        "physical_vram_limit_known": false,
+        "visible_tokens": 18,
+        "draft_frontier": 17,
+        "draft_lag": 1,
+        "generated_ids": [
+          1328,
+          5675,
+          11,
+          9637
+        ],
+        "prefill_seconds": 0.0511815,
+        "decode_seconds": 0.0392654,
+        "session_seconds": 0.0904469,
+        "startup_total_seconds": 1.7699942,
+        "startup_to_endpoint_seconds": 1.7699942,
+        "startup_to_ready_seconds": 1.6794721,
+        "first_token_elapsed_seconds": 1.7307288,
+        "prefill_step_seconds": 0.0511765,
+        "decode_step_sum_seconds": 0.0389725,
+        "step_sum_seconds": 0.090149,
+        "prefill_tokens_per_second": 293.07464611236486,
+        "decode_output_tokens_per_second": 76.40314373468753,
+        "output_tokens_per_second": 44.2248435269755,
+        "requested_steps": 4,
+        "generated_tokens": 4,
+        "generated_decode_tokens": 3,
+        "verified_target_rows": 4,
+        "actual_graph_calls": 3,
+        "prefill_graph_calls": 1,
+        "decode_graph_calls": 2,
+        "prefill_target_rows": 15,
+        "prefill_draft_rows": 15,
+        "actual_target_rows": 19,
+        "actual_draft_rows": 17,
+        "committed_target_rows": 18,
+        "committed_target_decode_rows": 3,
+        "draft_rows": 2,
+        "draft_rounds": 2,
+        "agreements": 1,
+        "accepted_drafts": 1,
+        "diagnostic": false,
+        "rounds": [
+          {
+            "pending": 1328,
+            "draft": 8,
+            "target_first": 5675,
+            "target_second": 248046,
+            "accepted_draft": false,
+            "committed_target_rows": 1,
+            "draft_rows": 1
+          },
+          {
+            "pending": 5675,
+            "draft": 11,
+            "target_first": 11,
+            "target_second": 9637,
+            "accepted_draft": true,
+            "committed_target_rows": 2,
+            "draft_rows": 1
+          }
+        ]
+      },
+      "comparison": {
+        "fields": {
+          "generated_ids": true,
+          "actual_graph_calls": true,
+          "actual_target_rows": true,
+          "actual_draft_rows": true,
+          "committed_target_rows": true,
+          "draft_frontier": true,
+          "draft_lag": true,
+          "rounds": true
+        },
+        "cache": {
+          "cache_budget_scope": "shared_pools_and_retained_output_backing",
+          "cache_shared_backing_bytes": 59777075,
+          "cache_retained_output_backing_bytes": 0,
+          "cache_live_requested_bytes": 59777075,
+          "cache_peak_requested_bytes": 59777075,
+          "cache_requested_byte_limit": 59777075
+        },
+        "before": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-native-assembly-20261022\\cuda-mtp-current3\\stdout.log",
+          "bytes": 1489,
+          "sha256": "4d57dc47dd11f42a159382e05fa492baaaee0bda5941a4e710c3cf8ed3c437ba"
+        }
+      }
+    }
+  ],
+  "Apple": [
+    {
+      "case": "plain",
+      "process": {
+        "command": [
+          "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/qwen-retained-budget-20261022/consumer1/qwen",
+          "--inputs",
+          "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/qwen-native-assembly-20261022/inputs/text",
+          "--mtp",
+          "off",
+          "--capacity",
+          "64",
+          "--prefix-cache",
+          "off",
+          "--progress",
+          "direct",
+          "--replay",
+          "commands",
+          "--steps",
+          "4",
+          "--max-sessions",
+          "1",
+          "--active-sequences",
+          "1",
+          "--cache-bytes",
+          "268435456"
+        ],
+        "cwd": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/qwen-retained-budget-20261022/consumer1",
+        "image": {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/qwen-retained-budget-20261022/consumer1/qwen",
+          "bytes": 12727512,
+          "sha256": "ec70057a94b0a6ceade170d1c1ae8f7da3d06d3258721a3c20c5d329a6fb14a0"
+        },
+        "started": 1792638438.000863,
+        "performance_comparison": false,
+        "pid": 2645,
+        "state": "terminal",
+        "exit": 0,
+        "seconds": 2.1463499069213867
+      },
+      "output": {
+        "source_id": "4068044d8571635d8a86f1e96a43dad104efc7089169065f735601e350008155",
+        "score_dtype": "F32",
+        "score_policy": "bf16_inputs_f32_output",
+        "mtp": false,
+        "text_tensors": 320,
+        "backend": "apple",
+        "cache_budget_scope": "shared_pools_and_retained_output_backing",
+        "cache_shared_backing_bytes": 20521008,
+        "cache_retained_output_backing_bytes": 20348928,
+        "cache_live_requested_bytes": 40869936,
+        "cache_peak_requested_bytes": 63070256,
+        "cache_requested_byte_limit": 268435456,
+        "native_execution_private_bytes_unknown": true,
+        "physical_vram_limit_known": false,
+        "visible_tokens": 18,
+        "generated_ids": [
+          1328,
+          5675,
+          11,
+          9637
+        ],
+        "fixed_decode": false,
+        "decode_input_ids": [
+          1328,
+          5675,
+          11
+        ],
+        "prefill_seconds": 0.111472584,
+        "decode_seconds": 0.225153708,
+        "session_seconds": 0.336626292,
+        "startup_total_seconds": 1.66453975,
+        "startup_to_endpoint_seconds": 1.66453975,
+        "startup_to_ready_seconds": 1.327797333,
+        "first_token_elapsed_seconds": 1.439386042,
+        "prefill_step_seconds": 0.111471542,
+        "continuation_seconds": 0,
+        "continuation_step_seconds": 0,
+        "decode_step_sum_seconds": 0.2249315,
+        "step_sum_seconds": 0.33640304200000004,
+        "prefill_tokens_per_second": 134.56223460290468,
+        "decode_output_tokens_per_second": 13.324230929388024,
+        "output_tokens_per_second": 11.882613138251246,
+        "requested_steps": 4,
+        "generated_tokens": 4,
+        "generated_decode_tokens": 3,
+        "actual_graph_calls": 4,
+        "prefill_graph_calls": 1,
+        "decode_graph_calls": 3,
+        "continuation_graph_calls": 0,
+        "prefill_target_rows": 15,
+        "prefill_draft_rows": 0,
+        "continuation_target_rows": 0,
+        "verified_target_rows": 3,
+        "actual_target_rows": 18,
+        "actual_draft_rows": 0,
+        "committed_target_rows": 18,
+        "committed_target_decode_rows": 3,
+        "draft_rows": 0,
+        "draft_rounds": 0,
+        "agreements": 0,
+        "accepted_drafts": 0,
+        "decode_seconds_includes_continuation": false,
+        "diagnostic": false
+      },
+      "report": null,
+      "comparison": {
+        "fields": {
+          "generated_ids": true,
+          "actual_graph_calls": true,
+          "actual_target_rows": true,
+          "actual_draft_rows": true,
+          "committed_target_rows": true
+        },
+        "cache": {
+          "cache_budget_scope": "shared_pools_and_retained_output_backing",
+          "cache_shared_backing_bytes": 20521008,
+          "cache_retained_output_backing_bytes": 20348928,
+          "cache_live_requested_bytes": 40869936,
+          "cache_peak_requested_bytes": 63070256,
+          "cache_requested_byte_limit": 268435456
+        },
+        "performance_comparison": false,
+        "comparison_before": ".scratch/qwen-native-assembly-20261022/apple/plain-run5.json"
+      }
+    },
+    {
+      "case": "mtp",
+      "process": {
+        "command": [
+          "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/qwen-retained-budget-20261022/consumer1/qwen",
+          "--inputs",
+          "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/qwen-native-assembly-20261022/inputs/mtp",
+          "--mtp",
+          "on",
+          "--capacity",
+          "64",
+          "--prefix-cache",
+          "off",
+          "--progress",
+          "direct",
+          "--replay",
+          "commands",
+          "--steps",
+          "4",
+          "--max-sessions",
+          "1",
+          "--active-sequences",
+          "1",
+          "--cache-bytes",
+          "268435456"
+        ],
+        "cwd": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/qwen-retained-budget-20261022/consumer1",
+        "image": {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/qwen-retained-budget-20261022/consumer1/qwen",
+          "bytes": 12727512,
+          "sha256": "ec70057a94b0a6ceade170d1c1ae8f7da3d06d3258721a3c20c5d329a6fb14a0"
+        },
+        "started": 1792638451.405737,
+        "performance_comparison": false,
+        "pid": 2656,
+        "state": "terminal",
+        "exit": 0,
+        "seconds": 1.679826021194458
+      },
+      "output": {
+        "source_id": "4068044d8571635d8a86f1e96a43dad104efc7089169065f735601e350008155",
+        "score_dtype": "F32",
+        "score_policy": "bf16_inputs_f32_output",
+        "mtp": true,
+        "text_tensors": 320,
+        "mtp_tensors": 15,
+        "backend": "apple",
+        "cache_budget_scope": "shared_pools_and_retained_output_backing",
+        "cache_shared_backing_bytes": 20688947,
+        "cache_retained_output_backing_bytes": 19980288,
+        "cache_live_requested_bytes": 40669235,
+        "cache_peak_requested_bytes": 62951475,
+        "cache_requested_byte_limit": 268435456,
+        "native_execution_private_bytes_unknown": true,
+        "physical_vram_limit_known": false,
+        "visible_tokens": 18,
+        "draft_frontier": 17,
+        "draft_lag": 1,
+        "generated_ids": [
+          1328,
+          5675,
+          11,
+          9637
+        ],
+        "prefill_seconds": 0.086725292,
+        "decode_seconds": 0.179915917,
+        "session_seconds": 0.266641209,
+        "startup_total_seconds": 1.647912709,
+        "startup_to_endpoint_seconds": 1.647912709,
+        "startup_to_ready_seconds": 1.381256167,
+        "first_token_elapsed_seconds": 1.467996792,
+        "prefill_step_seconds": 0.086723542,
+        "decode_step_sum_seconds": 0.179802167,
+        "step_sum_seconds": 0.266525709,
+        "prefill_tokens_per_second": 172.95992500088673,
+        "decode_output_tokens_per_second": 16.67445576813529,
+        "output_tokens_per_second": 15.001432130470127,
+        "requested_steps": 4,
+        "generated_tokens": 4,
+        "generated_decode_tokens": 3,
+        "verified_target_rows": 4,
+        "actual_graph_calls": 3,
+        "prefill_graph_calls": 1,
+        "decode_graph_calls": 2,
+        "prefill_target_rows": 15,
+        "prefill_draft_rows": 15,
+        "actual_target_rows": 19,
+        "actual_draft_rows": 17,
+        "committed_target_rows": 18,
+        "committed_target_decode_rows": 3,
+        "draft_rows": 2,
+        "draft_rounds": 2,
+        "agreements": 1,
+        "accepted_drafts": 1,
+        "diagnostic": false,
+        "rounds": [
+          {
+            "pending": 1328,
+            "draft": 8,
+            "target_first": 5675,
+            "target_second": 248046,
+            "accepted_draft": false,
+            "committed_target_rows": 1,
+            "draft_rows": 1
+          },
+          {
+            "pending": 5675,
+            "draft": 11,
+            "target_first": 11,
+            "target_second": 9637,
+            "accepted_draft": true,
+            "committed_target_rows": 2,
+            "draft_rows": 1
+          }
+        ]
+      },
+      "report": null,
+      "comparison": {
+        "fields": {
+          "generated_ids": true,
+          "actual_graph_calls": true,
+          "actual_target_rows": true,
+          "actual_draft_rows": true,
+          "committed_target_rows": true,
+          "draft_frontier": true,
+          "draft_lag": true,
+          "rounds": true
+        },
+        "cache": {
+          "cache_budget_scope": "shared_pools_and_retained_output_backing",
+          "cache_shared_backing_bytes": 20688947,
+          "cache_retained_output_backing_bytes": 19980288,
+          "cache_live_requested_bytes": 40669235,
+          "cache_peak_requested_bytes": 62951475,
+          "cache_requested_byte_limit": 268435456
+        },
+        "performance_comparison": false
+      }
+    },
+    {
+      "case": "N1R1",
+      "process": {
+        "command": [
+          "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/qwen-retained-budget-20261022/consumer1/qwen",
+          "--inputs",
+          "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/qwen-native-assembly-20261022/inputs/mtp",
+          "--mtp",
+          "on",
+          "--capacity",
+          "64",
+          "--prefix-cache",
+          "off",
+          "--progress",
+          "direct",
+          "--replay",
+          "commands",
+          "--session-schedules",
+          "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/native-state-ownership-20261022/fixtures/sessions.txt",
+          "--max-sessions",
+          "1",
+          "--active-sequences",
+          "1",
+          "--cache-bytes",
+          "268435456"
+        ],
+        "cwd": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/qwen-retained-budget-20261022/consumer1",
+        "image": {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/qwen-retained-budget-20261022/consumer1/qwen",
+          "bytes": 12727512,
+          "sha256": "ec70057a94b0a6ceade170d1c1ae8f7da3d06d3258721a3c20c5d329a6fb14a0"
+        },
+        "started": 1792638460.529535,
+        "performance_comparison": false,
+        "pid": 2662,
+        "state": "terminal",
+        "exit": 0,
+        "seconds": 4.347453832626343
+      },
+      "output": {
+        "source_id": "4068044d8571635d8a86f1e96a43dad104efc7089169065f735601e350008155",
+        "score_dtype": "F32",
+        "score_policy": "bf16_inputs_f32_output",
+        "mtp": true,
+        "text_tensors": 320,
+        "mtp_tensors": 15,
+        "session_count": 3,
+        "turn_count": 6,
+        "active_sequences": 1,
+        "max_sessions": 1,
+        "backend": "apple",
+        "cache_budget_scope": "shared_pools_and_retained_output_backing",
+        "cache_shared_backing_bytes": 20688947,
+        "cache_retained_output_backing_bytes": 0,
+        "cache_live_requested_bytes": 20688947,
+        "cache_peak_requested_bytes": 64491571,
+        "cache_requested_byte_limit": 268435456,
+        "native_execution_private_bytes_unknown": true,
+        "physical_vram_limit_known": false,
+        "prefix_cache": false,
+        "admitted_requests": 3,
+        "admitted_turns": 6,
+        "retired_requests": 3,
+        "peak_resident_requests": 1,
+        "peak_committed_versions": 1,
+        "live_committed_versions": 0,
+        "idle_evictions": 3,
+        "prefix_hits": 0,
+        "prefix_misses": 0,
+        "prefix_full_hits": 0,
+        "reused_tokens": 0,
+        "prefix_entries": 0,
+        "prefix_evictions": 0,
+        "requested_output_tokens": 40,
+        "generated_tokens": 26,
+        "generated_decode_tokens": 20,
+        "actual_graph_calls": 29,
+        "prefill_graph_calls": 6,
+        "decode_graph_calls": 13,
+        "graph_participations": 19,
+        "logical_dispatches": 19,
+        "logical_prompt_tokens": 89,
+        "logical_user_prompt_tokens": 86,
+        "pending_flushed_tokens": 3,
+        "prefill_target_rows": 89,
+        "prefill_draft_rows": 89,
+        "verified_target_rows": 23,
+        "draft_rows": 18,
+        "actual_target_rows": 176,
+        "actual_draft_rows": 171,
+        "committed_target_rows": 109,
+        "committed_target_decode_rows": 20,
+        "draft_rounds": 10,
+        "agreements": 8,
+        "accepted_drafts": 7,
+        "restore_count": 3,
+        "restored_graph_calls": 10,
+        "restored_target_rows": 64,
+        "restored_draft_rows": 64,
+        "restore_step_seconds": 0.801614874,
+        "restore_seconds": 0.805246333,
+        "restore_contract": "recompute_committed_inputs",
+        "normalized_lag_rows": 1,
+        "recomputed_decision_changes": 0,
+        "prefill_seconds": 1.357026959,
+        "decode_seconds": 1.117426,
+        "session_seconds": 2.474452959,
+        "step_sum_seconds": 2.465338083,
+        "participation_step_sum_seconds": 1.663723209,
+        "post_endpoint_seconds": 9.7041e-05,
+        "phase_timing": "disjoint_continuous_episode_intervals",
+        "startup_total_seconds": 4.304751875,
+        "startup_to_endpoint_seconds": 4.304751875,
+        "startup_to_ready_seconds": 1.830261875,
+        "first_token_elapsed_seconds": 1.912936666,
+        "prefill_tokens_per_second": 65.58454819908998,
+        "decode_output_tokens_per_second": 17.89827693287967,
+        "output_tokens_per_second": 10.507372914661255,
+        "diagnostic": false,
+        "dispatch": [
+          {
+            "session_id": "A",
+            "turn": 1
+          },
+          {
+            "session_id": "A",
+            "turn": 1
+          },
+          {
+            "session_id": "A",
+            "turn": 1
+          },
+          {
+            "session_id": "A",
+            "turn": 1
+          },
+          {
+            "session_id": "A",
+            "turn": 1
+          },
+          {
+            "session_id": "B",
+            "turn": 1
+          },
+          {
+            "session_id": "B",
+            "turn": 1
+          },
+          {
+            "session_id": "B",
+            "turn": 1
+          },
+          {
+            "session_id": "C",
+            "turn": 1
+          },
+          {
+            "session_id": "C",
+            "turn": 1
+          },
+          {
+            "session_id": "A",
+            "turn": 2
+          },
+          {
+            "session_id": "A",
+            "turn": 2
+          },
+          {
+            "session_id": "A",
+            "turn": 2
+          },
+          {
+            "session_id": "B",
+            "turn": 2
+          },
+          {
+            "session_id": "B",
+            "turn": 2
+          },
+          {
+            "session_id": "B",
+            "turn": 2
+          },
+          {
+            "session_id": "C",
+            "turn": 2
+          },
+          {
+            "session_id": "C",
+            "turn": 2
+          },
+          {
+            "session_id": "C",
+            "turn": 2
+          }
+        ],
+        "batches": [
+          {
+            "index": 0,
+            "requests": 1,
+            "tokens": 15,
+            "role": 2,
+            "generation": false,
+            "session_ids": [
+              "A"
+            ]
+          },
+          {
+            "index": 1,
+            "requests": 1,
+            "tokens": 2,
+            "role": 3,
+            "generation": true,
+            "session_ids": [
+              "A"
+            ]
+          },
+          {
+            "index": 2,
+            "requests": 1,
+            "tokens": 2,
+            "role": 4,
+            "generation": true,
+            "session_ids": [
+              "A"
+            ]
+          },
+          {
+            "index": 3,
+            "requests": 1,
+            "tokens": 2,
+            "role": 3,
+            "generation": true,
+            "session_ids": [
+              "A"
+            ]
+          },
+          {
+            "index": 4,
+            "requests": 1,
+            "tokens": 2,
+            "role": 4,
+            "generation": true,
+            "session_ids": [
+              "A"
+            ]
+          },
+          {
+            "index": 5,
+            "requests": 1,
+            "tokens": 15,
+            "role": 2,
+            "generation": false,
+            "session_ids": [
+              "B"
+            ]
+          },
+          {
+            "index": 6,
+            "requests": 1,
+            "tokens": 2,
+            "role": 3,
+            "generation": true,
+            "session_ids": [
+              "B"
+            ]
+          },
+          {
+            "index": 7,
+            "requests": 1,
+            "tokens": 1,
+            "role": 6,
+            "generation": true,
+            "session_ids": [
+              "B"
+            ]
+          },
+          {
+            "index": 8,
+            "requests": 1,
+            "tokens": 23,
+            "role": 2,
+            "generation": false,
+            "session_ids": [
+              "C"
+            ]
+          },
+          {
+            "index": 9,
+            "requests": 1,
+            "tokens": 2,
+            "role": 3,
+            "generation": true,
+            "session_ids": [
+              "C"
+            ]
+          },
+          {
+            "index": 10,
+            "requests": 1,
+            "tokens": 25,
+            "role": 2,
+            "generation": false,
+            "session_ids": [
+              "A"
+            ]
+          },
+          {
+            "index": 11,
+            "requests": 1,
+            "tokens": 2,
+            "role": 3,
+            "generation": true,
+            "session_ids": [
+              "A"
+            ]
+          },
+          {
+            "index": 12,
+            "requests": 1,
+            "tokens": 1,
+            "role": 6,
+            "generation": true,
+            "session_ids": [
+              "A"
+            ]
+          },
+          {
+            "index": 13,
+            "requests": 1,
+            "tokens": 2,
+            "role": 2,
+            "generation": false,
+            "session_ids": [
+              "B"
+            ]
+          },
+          {
+            "index": 14,
+            "requests": 1,
+            "tokens": 2,
+            "role": 3,
+            "generation": true,
+            "session_ids": [
+              "B"
+            ]
+          },
+          {
+            "index": 15,
+            "requests": 1,
+            "tokens": 2,
+            "role": 3,
+            "generation": true,
+            "session_ids": [
+              "B"
+            ]
+          },
+          {
+            "index": 16,
+            "requests": 1,
+            "tokens": 9,
+            "role": 2,
+            "generation": false,
+            "session_ids": [
+              "C"
+            ]
+          },
+          {
+            "index": 17,
+            "requests": 1,
+            "tokens": 2,
+            "role": 3,
+            "generation": true,
+            "session_ids": [
+              "C"
+            ]
+          },
+          {
+            "index": 18,
+            "requests": 1,
+            "tokens": 1,
+            "role": 6,
+            "generation": true,
+            "session_ids": [
+              "C"
+            ]
+          }
+        ],
+        "sessions": [
+          {
+            "session_id": "A",
+            "result": {
+              "source_id": "4068044d8571635d8a86f1e96a43dad104efc7089169065f735601e350008155",
+              "score_dtype": "F32",
+              "score_policy": "bf16_inputs_f32_output",
+              "mtp": true,
+              "text_tensors": 320,
+              "mtp_tensors": 15,
+              "backend": "apple",
+              "cache_budget_scope": "shared_pools_and_retained_output_backing",
+              "cache_shared_backing_bytes": 20688947,
+              "cache_retained_output_backing_bytes": 0,
+              "cache_live_requested_bytes": 20688947,
+              "cache_peak_requested_bytes": 64491571,
+              "cache_requested_byte_limit": 268435456,
+              "native_execution_private_bytes_unknown": true,
+              "physical_vram_limit_known": false,
+              "visible_tokens": 50,
+              "draft_frontier": 50,
+              "draft_lag": 0,
+              "generated_ids": [
+                198,
+                248045,
+                74455,
+                271,
+                248068,
+                271,
+                248069,
+                271,
+                846,
+                198,
+                5328,
+                10724
+              ],
+              "prefill_seconds": 0.579454833,
+              "decode_seconds": 0.522299709,
+              "session_seconds": 1.558173417,
+              "startup_total_seconds": 3.388472333,
+              "startup_to_endpoint_seconds": 3.388472333,
+              "startup_to_ready_seconds": 1.830261875,
+              "first_token_elapsed_seconds": 1.912936666,
+              "prefill_step_seconds": 0.194399166,
+              "decode_step_sum_seconds": 0.5217557500000001,
+              "step_sum_seconds": 1.098046123,
+              "prefill_tokens_per_second": 69.03040189156555,
+              "decode_output_tokens_per_second": 19.146095292961384,
+              "output_tokens_per_second": 7.70132507016066,
+              "requested_steps": 12,
+              "generated_tokens": 12,
+              "generated_decode_tokens": 10,
+              "verified_target_rows": 11,
+              "graph_participations": 13,
+              "prefill_graph_calls": 2,
+              "decode_graph_calls": 6,
+              "prefill_target_rows": 40,
+              "prefill_draft_rows": 40,
+              "actual_target_rows": 73,
+              "actual_draft_rows": 71,
+              "committed_target_rows": 50,
+              "committed_target_decode_rows": 10,
+              "draft_rows": 9,
+              "draft_rounds": 5,
+              "agreements": 4,
+              "accepted_drafts": 4,
+              "diagnostic": false,
+              "emitted_pending": 10724,
+              "fresh_next_id": 10724,
+              "restore_contract": "recompute_committed_inputs",
+              "restored_graph_calls": 5,
+              "restored_target_rows": 22,
+              "restored_draft_rows": 22,
+              "normalized_lag_rows": 1,
+              "decision_changes": [],
+              "logical_prompt_tokens": 40,
+              "reused_tokens": 0,
+              "prefix_hits": 0,
+              "prefix_misses": 0,
+              "prefix_full_hits": 0,
+              "between_turn_seconds": 0.4564188749999999,
+              "phase_timing": "sum_per_turn_latency_including_interleaving",
+              "turns": [
+                {
+                  "turn": 1,
+                  "requested_steps": 8,
+                  "new_user_tokens": 15,
+                  "pending_flushed": 0,
+                  "output_begin": 0,
+                  "output_end": 8,
+                  "prefill_seconds": 0.08263775,
+                  "decode_seconds": 0.358996542
+                },
+                {
+                  "turn": 2,
+                  "requested_steps": 4,
+                  "new_user_tokens": 24,
+                  "pending_flushed": 1,
+                  "output_begin": 8,
+                  "output_end": 12,
+                  "prefill_seconds": 0.496817083,
+                  "decode_seconds": 0.163303167
+                }
+              ],
+              "rounds": [
+                {
+                  "pending": 198,
+                  "draft": 248045,
+                  "target_first": 248045,
+                  "target_second": 74455,
+                  "accepted_draft": true,
+                  "committed_target_rows": 2,
+                  "draft_rows": 1
+                },
+                {
+                  "pending": 74455,
+                  "draft": 198,
+                  "target_first": 271,
+                  "target_second": 248068,
+                  "accepted_draft": false,
+                  "committed_target_rows": 1,
+                  "draft_rows": 2
+                },
+                {
+                  "pending": 271,
+                  "draft": 248068,
+                  "target_first": 248068,
+                  "target_second": 271,
+                  "accepted_draft": true,
+                  "committed_target_rows": 2,
+                  "draft_rows": 1
+                },
+                {
+                  "pending": 271,
+                  "draft": 248069,
+                  "target_first": 248069,
+                  "target_second": 271,
+                  "accepted_draft": true,
+                  "committed_target_rows": 2,
+                  "draft_rows": 2
+                },
+                {
+                  "pending": 846,
+                  "draft": 198,
+                  "target_first": 198,
+                  "target_second": 5328,
+                  "accepted_draft": true,
+                  "committed_target_rows": 2,
+                  "draft_rows": 1
+                },
+                {
+                  "pending": 5328,
+                  "draft": -1,
+                  "target_first": 10724,
+                  "target_second": -1,
+                  "accepted_draft": false,
+                  "committed_target_rows": 1,
+                  "draft_rows": 2
+                }
+              ]
+            },
+            "restore_count": 1,
+            "idle_evictions": 1,
+            "ledger": [
+              {
+                "index": 0,
+                "turn": 1,
+                "role": 2,
+                "requests": 1,
+                "member_index": 0,
+                "generation": false,
+                "input_rows": 15,
+                "input_hash": 193236489044397402,
+                "first_input": 248045,
+                "quota": 0,
+                "before_length": 0,
+                "before_frontier": 0,
+                "before_lag": 0,
+                "before_next_id": -1,
+                "draft": -1,
+                "target_first": 198,
+                "target_second": -1,
+                "accepted": 15,
+                "draft_rows": 15,
+                "after_length": 15,
+                "after_frontier": 15,
+                "after_lag": 0,
+                "next_id": 198,
+                "committed_input_ids": [],
+                "imported": false,
+                "source_geometry": "recorded",
+                "trace_name": "prefill"
+              },
+              {
+                "index": 1,
+                "turn": 1,
+                "role": 3,
+                "requests": 1,
+                "member_index": 0,
+                "generation": true,
+                "input_rows": 1,
+                "input_hash": 4953095186932338239,
+                "first_input": 198,
+                "quota": 7,
+                "before_length": 15,
+                "before_frontier": 15,
+                "before_lag": 0,
+                "before_next_id": 198,
+                "draft": 248045,
+                "target_first": 248045,
+                "target_second": 74455,
+                "accepted": 2,
+                "draft_rows": 1,
+                "after_length": 17,
+                "after_frontier": 16,
+                "after_lag": 1,
+                "next_id": 74455,
+                "committed_input_ids": [
+                  198,
+                  248045
+                ],
+                "imported": false,
+                "source_geometry": "recorded",
+                "trace_name": "mtp1"
+              },
+              {
+                "index": 2,
+                "turn": 1,
+                "role": 4,
+                "requests": 1,
+                "member_index": 0,
+                "generation": true,
+                "input_rows": 1,
+                "input_hash": 4889498334844985788,
+                "first_input": 74455,
+                "quota": 5,
+                "before_length": 17,
+                "before_frontier": 16,
+                "before_lag": 1,
+                "before_next_id": 74455,
+                "draft": 198,
+                "target_first": 271,
+                "target_second": 248068,
+                "accepted": 1,
+                "draft_rows": 2,
+                "after_length": 18,
+                "after_frontier": 18,
+                "after_lag": 0,
+                "next_id": 271,
+                "committed_input_ids": [
+                  74455
+                ],
+                "imported": false,
+                "source_geometry": "recorded",
+                "trace_name": "mtp2"
+              },
+              {
+                "index": 3,
+                "turn": 1,
+                "role": 3,
+                "requests": 1,
+                "member_index": 0,
+                "generation": true,
+                "input_rows": 1,
+                "input_hash": 4952891777281119204,
+                "first_input": 271,
+                "quota": 4,
+                "before_length": 18,
+                "before_frontier": 18,
+                "before_lag": 0,
+                "before_next_id": 271,
+                "draft": 248068,
+                "target_first": 248068,
+                "target_second": 271,
+                "accepted": 2,
+                "draft_rows": 1,
+                "after_length": 20,
+                "after_frontier": 19,
+                "after_lag": 1,
+                "next_id": 271,
+                "committed_input_ids": [
+                  271,
+                  248068
+                ],
+                "imported": false,
+                "source_geometry": "recorded",
+                "trace_name": "mtp3"
+              },
+              {
+                "index": 4,
+                "turn": 1,
+                "role": 4,
+                "requests": 1,
+                "member_index": 0,
+                "generation": true,
+                "input_rows": 1,
+                "input_hash": 4952891777281119204,
+                "first_input": 271,
+                "quota": 2,
+                "before_length": 20,
+                "before_frontier": 19,
+                "before_lag": 1,
+                "before_next_id": 271,
+                "draft": 248069,
+                "target_first": 248069,
+                "target_second": 271,
+                "accepted": 2,
+                "draft_rows": 2,
+                "after_length": 22,
+                "after_frontier": 21,
+                "after_lag": 1,
+                "next_id": 271,
+                "committed_input_ids": [
+                  271,
+                  248069
+                ],
+                "imported": false,
+                "source_geometry": "recorded",
+                "trace_name": "mtp4"
+              },
+              {
+                "index": 5,
+                "turn": 2,
+                "role": 2,
+                "requests": 1,
+                "member_index": 0,
+                "generation": false,
+                "input_rows": 25,
+                "input_hash": 11093330054213518513,
+                "first_input": 271,
+                "quota": 0,
+                "before_length": 22,
+                "before_frontier": 22,
+                "before_lag": 0,
+                "before_next_id": 271,
+                "draft": -1,
+                "target_first": 846,
+                "target_second": -1,
+                "accepted": 25,
+                "draft_rows": 25,
+                "after_length": 47,
+                "after_frontier": 47,
+                "after_lag": 0,
+                "next_id": 846,
+                "committed_input_ids": [],
+                "imported": false,
+                "source_geometry": "recorded",
+                "trace_name": "round2_prefill"
+              },
+              {
+                "index": 6,
+                "turn": 2,
+                "role": 3,
+                "requests": 1,
+                "member_index": 0,
+                "generation": true,
+                "input_rows": 1,
+                "input_hash": 4952400295583308887,
+                "first_input": 846,
+                "quota": 3,
+                "before_length": 47,
+                "before_frontier": 47,
+                "before_lag": 0,
+                "before_next_id": 846,
+                "draft": 198,
+                "target_first": 198,
+                "target_second": 5328,
+                "accepted": 2,
+                "draft_rows": 1,
+                "after_length": 49,
+                "after_frontier": 48,
+                "after_lag": 1,
+                "next_id": 5328,
+                "committed_input_ids": [
+                  846,
+                  198
+                ],
+                "imported": false,
+                "source_geometry": "recorded",
+                "trace_name": "round2_mtp5"
+              },
+              {
+                "index": 7,
+                "turn": 2,
+                "role": 6,
+                "requests": 1,
+                "member_index": 0,
+                "generation": true,
+                "input_rows": 1,
+                "input_hash": 4958740079631573513,
+                "first_input": 5328,
+                "quota": 1,
+                "before_length": 49,
+                "before_frontier": 48,
+                "before_lag": 1,
+                "before_next_id": 5328,
+                "draft": -1,
+                "target_first": 10724,
+                "target_second": -1,
+                "accepted": 1,
+                "draft_rows": 2,
+                "after_length": 50,
+                "after_frontier": 50,
+                "after_lag": 0,
+                "next_id": 10724,
+                "committed_input_ids": [
+                  5328
+                ],
+                "imported": false,
+                "source_geometry": "recorded",
+                "trace_name": "round2_mtp6"
+              }
+            ]
+          },
+          {
+            "session_id": "B",
+            "result": {
+              "source_id": "4068044d8571635d8a86f1e96a43dad104efc7089169065f735601e350008155",
+              "score_dtype": "F32",
+              "score_policy": "bf16_inputs_f32_output",
+              "mtp": true,
+              "text_tensors": 320,
+              "mtp_tensors": 15,
+              "backend": "apple",
+              "cache_budget_scope": "shared_pools_and_retained_output_backing",
+              "cache_shared_backing_bytes": 20688947,
+              "cache_retained_output_backing_bytes": 0,
+              "cache_live_requested_bytes": 20688947,
+              "cache_peak_requested_bytes": 64491571,
+              "cache_requested_byte_limit": 268435456,
+              "native_execution_private_bytes_unknown": true,
+              "physical_vram_limit_known": false,
+              "visible_tokens": 23,
+              "draft_frontier": 22,
+              "draft_lag": 1,
+              "generated_ids": [
+                198,
+                248045,
+                74455,
+                271,
+                74455,
+                271,
+                248068,
+                271
+              ],
+              "prefill_seconds": 0.396824292,
+              "decode_seconds": 0.341201666,
+              "session_seconds": 1.602728,
+              "startup_total_seconds": 3.874727666,
+              "startup_to_endpoint_seconds": 3.874727666,
+              "startup_to_ready_seconds": 1.830261875,
+              "first_token_elapsed_seconds": 2.360727708,
+              "prefill_step_seconds": 0.161518417,
+              "decode_step_sum_seconds": 0.34084208299999996,
+              "step_sum_seconds": 0.735445,
+              "prefill_tokens_per_second": 42.840119273746474,
+              "decode_output_tokens_per_second": 17.584908275330637,
+              "output_tokens_per_second": 4.9914895103847945,
+              "requested_steps": 8,
+              "generated_tokens": 8,
+              "generated_decode_tokens": 6,
+              "verified_target_rows": 7,
+              "graph_participations": 9,
+              "prefill_graph_calls": 2,
+              "decode_graph_calls": 4,
+              "prefill_target_rows": 17,
+              "prefill_draft_rows": 17,
+              "actual_target_rows": 42,
+              "actual_draft_rows": 40,
+              "committed_target_rows": 23,
+              "committed_target_decode_rows": 6,
+              "draft_rows": 5,
+              "draft_rounds": 3,
+              "agreements": 2,
+              "accepted_drafts": 2,
+              "diagnostic": false,
+              "emitted_pending": 271,
+              "fresh_next_id": 271,
+              "restore_contract": "recompute_committed_inputs",
+              "restored_graph_calls": 3,
+              "restored_target_rows": 18,
+              "restored_draft_rows": 18,
+              "normalized_lag_rows": 0,
+              "decision_changes": [],
+              "logical_prompt_tokens": 17,
+              "reused_tokens": 0,
+              "prefix_hits": 0,
+              "prefix_misses": 0,
+              "prefix_full_hits": 0,
+              "between_turn_seconds": 0.8647020419999999,
+              "phase_timing": "sum_per_turn_latency_including_interleaving",
+              "turns": [
+                {
+                  "turn": 1,
+                  "requested_steps": 4,
+                  "new_user_tokens": 15,
+                  "pending_flushed": 0,
+                  "output_begin": 0,
+                  "output_end": 4,
+                  "prefill_seconds": 0.088728042,
+                  "decode_seconds": 0.163147708
+                },
+                {
+                  "turn": 2,
+                  "requested_steps": 4,
+                  "new_user_tokens": 1,
+                  "pending_flushed": 1,
+                  "output_begin": 4,
+                  "output_end": 8,
+                  "prefill_seconds": 0.30809625,
+                  "decode_seconds": 0.178053958
+                }
+              ],
+              "rounds": [
+                {
+                  "pending": 198,
+                  "draft": 248045,
+                  "target_first": 248045,
+                  "target_second": 74455,
+                  "accepted_draft": true,
+                  "committed_target_rows": 2,
+                  "draft_rows": 1
+                },
+                {
+                  "pending": 74455,
+                  "draft": -1,
+                  "target_first": 271,
+                  "target_second": -1,
+                  "accepted_draft": false,
+                  "committed_target_rows": 1,
+                  "draft_rows": 2
+                },
+                {
+                  "pending": 74455,
+                  "draft": 198,
+                  "target_first": 271,
+                  "target_second": 248068,
+                  "accepted_draft": false,
+                  "committed_target_rows": 1,
+                  "draft_rows": 1
+                },
+                {
+                  "pending": 271,
+                  "draft": 248068,
+                  "target_first": 248068,
+                  "target_second": 271,
+                  "accepted_draft": true,
+                  "committed_target_rows": 2,
+                  "draft_rows": 1
+                }
+              ]
+            },
+            "restore_count": 1,
+            "idle_evictions": 1,
+            "ledger": [
+              {
+                "index": 0,
+                "turn": 1,
+                "role": 2,
+                "requests": 1,
+                "member_index": 0,
+                "generation": false,
+                "input_rows": 15,
+                "input_hash": 193236489044397402,
+                "first_input": 248045,
+                "quota": 0,
+                "before_length": 0,
+                "before_frontier": 0,
+                "before_lag": 0,
+                "before_next_id": -1,
+                "draft": -1,
+                "target_first": 198,
+                "target_second": -1,
+                "accepted": 15,
+                "draft_rows": 15,
+                "after_length": 15,
+                "after_frontier": 15,
+                "after_lag": 0,
+                "next_id": 198,
+                "committed_input_ids": [],
+                "imported": false,
+                "source_geometry": "recorded",
+                "trace_name": "prefill"
+              },
+              {
+                "index": 1,
+                "turn": 1,
+                "role": 3,
+                "requests": 1,
+                "member_index": 0,
+                "generation": true,
+                "input_rows": 1,
+                "input_hash": 4953095186932338239,
+                "first_input": 198,
+                "quota": 3,
+                "before_length": 15,
+                "before_frontier": 15,
+                "before_lag": 0,
+                "before_next_id": 198,
+                "draft": 248045,
+                "target_first": 248045,
+                "target_second": 74455,
+                "accepted": 2,
+                "draft_rows": 1,
+                "after_length": 17,
+                "after_frontier": 16,
+                "after_lag": 1,
+                "next_id": 74455,
+                "committed_input_ids": [
+                  198,
+                  248045
+                ],
+                "imported": false,
+                "source_geometry": "recorded",
+                "trace_name": "mtp1"
+              },
+              {
+                "index": 2,
+                "turn": 1,
+                "role": 6,
+                "requests": 1,
+                "member_index": 0,
+                "generation": true,
+                "input_rows": 1,
+                "input_hash": 4889498334844985788,
+                "first_input": 74455,
+                "quota": 1,
+                "before_length": 17,
+                "before_frontier": 16,
+                "before_lag": 1,
+                "before_next_id": 74455,
+                "draft": -1,
+                "target_first": 271,
+                "target_second": -1,
+                "accepted": 1,
+                "draft_rows": 2,
+                "after_length": 18,
+                "after_frontier": 18,
+                "after_lag": 0,
+                "next_id": 271,
+                "committed_input_ids": [
+                  74455
+                ],
+                "imported": false,
+                "source_geometry": "recorded",
+                "trace_name": "mtp2"
+              },
+              {
+                "index": 3,
+                "turn": 2,
+                "role": 2,
+                "requests": 1,
+                "member_index": 0,
+                "generation": false,
+                "input_rows": 2,
+                "input_hash": 10694023817772101707,
+                "first_input": 271,
+                "quota": 0,
+                "before_length": 18,
+                "before_frontier": 18,
+                "before_lag": 0,
+                "before_next_id": 271,
+                "draft": -1,
+                "target_first": 74455,
+                "target_second": -1,
+                "accepted": 2,
+                "draft_rows": 2,
+                "after_length": 20,
+                "after_frontier": 20,
+                "after_lag": 0,
+                "next_id": 74455,
+                "committed_input_ids": [],
+                "imported": false,
+                "source_geometry": "recorded",
+                "trace_name": "round2_prefill"
+              },
+              {
+                "index": 4,
+                "turn": 2,
+                "role": 3,
+                "requests": 1,
+                "member_index": 0,
+                "generation": true,
+                "input_rows": 1,
+                "input_hash": 4889498334844985788,
+                "first_input": 74455,
+                "quota": 3,
+                "before_length": 20,
+                "before_frontier": 20,
+                "before_lag": 0,
+                "before_next_id": 74455,
+                "draft": 198,
+                "target_first": 271,
+                "target_second": 248068,
+                "accepted": 1,
+                "draft_rows": 1,
+                "after_length": 21,
+                "after_frontier": 21,
+                "after_lag": 0,
+                "next_id": 271,
+                "committed_input_ids": [
+                  74455
+                ],
+                "imported": false,
+                "source_geometry": "recorded",
+                "trace_name": "round2_mtp3"
+              },
+              {
+                "index": 5,
+                "turn": 2,
+                "role": 3,
+                "requests": 1,
+                "member_index": 0,
+                "generation": true,
+                "input_rows": 1,
+                "input_hash": 4952891777281119204,
+                "first_input": 271,
+                "quota": 2,
+                "before_length": 21,
+                "before_frontier": 21,
+                "before_lag": 0,
+                "before_next_id": 271,
+                "draft": 248068,
+                "target_first": 248068,
+                "target_second": 271,
+                "accepted": 2,
+                "draft_rows": 1,
+                "after_length": 23,
+                "after_frontier": 22,
+                "after_lag": 1,
+                "next_id": 271,
+                "committed_input_ids": [
+                  271,
+                  248068
+                ],
+                "imported": false,
+                "source_geometry": "recorded",
+                "trace_name": "round2_mtp4"
+              }
+            ]
+          },
+          {
+            "session_id": "C",
+            "result": {
+              "source_id": "4068044d8571635d8a86f1e96a43dad104efc7089169065f735601e350008155",
+              "score_dtype": "F32",
+              "score_policy": "bf16_inputs_f32_output",
+              "mtp": true,
+              "text_tensors": 320,
+              "mtp_tensors": 15,
+              "backend": "apple",
+              "cache_budget_scope": "shared_pools_and_retained_output_backing",
+              "cache_shared_backing_bytes": 20688947,
+              "cache_retained_output_backing_bytes": 0,
+              "cache_live_requested_bytes": 20688947,
+              "cache_peak_requested_bytes": 64491571,
+              "cache_requested_byte_limit": 268435456,
+              "native_execution_private_bytes_unknown": true,
+              "physical_vram_limit_known": false,
+              "visible_tokens": 36,
+              "draft_frontier": 36,
+              "draft_lag": 0,
+              "generated_ids": [
+                20,
+                248046,
+                220,
+                18,
+                13,
+                21134
+              ],
+              "prefill_seconds": 0.38033079200000003,
+              "decode_seconds": 0.253924625,
+              "session_seconds": 1.780798709,
+              "startup_total_seconds": 4.304751875,
+              "startup_to_endpoint_seconds": 4.304751875,
+              "startup_to_ready_seconds": 1.830261875,
+              "first_token_elapsed_seconds": 2.638772833,
+              "prefill_step_seconds": 0.191573501,
+              "decode_step_sum_seconds": 0.253634292,
+              "step_sum_seconds": 0.6318469600000001,
+              "prefill_tokens_per_second": 84.13728436692026,
+              "decode_output_tokens_per_second": 15.752706142620077,
+              "output_tokens_per_second": 3.3692746797695485,
+              "requested_steps": 20,
+              "generated_tokens": 6,
+              "generated_decode_tokens": 4,
+              "verified_target_rows": 5,
+              "graph_participations": 7,
+              "prefill_graph_calls": 2,
+              "decode_graph_calls": 3,
+              "prefill_target_rows": 32,
+              "prefill_draft_rows": 32,
+              "actual_target_rows": 61,
+              "actual_draft_rows": 60,
+              "committed_target_rows": 36,
+              "committed_target_decode_rows": 4,
+              "draft_rows": 4,
+              "draft_rounds": 2,
+              "agreements": 2,
+              "accepted_drafts": 1,
+              "diagnostic": false,
+              "emitted_pending": 21134,
+              "fresh_next_id": 21134,
+              "restore_contract": "recompute_committed_inputs",
+              "restored_graph_calls": 2,
+              "restored_target_rows": 24,
+              "restored_draft_rows": 24,
+              "normalized_lag_rows": 0,
+              "decision_changes": [],
+              "logical_prompt_tokens": 32,
+              "reused_tokens": 0,
+              "prefix_hits": 0,
+              "prefix_misses": 0,
+              "prefix_full_hits": 0,
+              "between_turn_seconds": 1.1465432919999998,
+              "phase_timing": "sum_per_turn_latency_including_interleaving",
+              "turns": [
+                {
+                  "turn": 1,
+                  "requested_steps": 16,
+                  "new_user_tokens": 23,
+                  "pending_flushed": 0,
+                  "output_begin": 0,
+                  "output_end": 2,
+                  "prefill_seconds": 0.114819667,
+                  "decode_seconds": 0.089503875
+                },
+                {
+                  "turn": 2,
+                  "requested_steps": 4,
+                  "new_user_tokens": 8,
+                  "pending_flushed": 1,
+                  "output_begin": 2,
+                  "output_end": 6,
+                  "prefill_seconds": 0.265511125,
+                  "decode_seconds": 0.16442075
+                }
+              ],
+              "rounds": [
+                {
+                  "pending": 20,
+                  "draft": 248046,
+                  "target_first": 248046,
+                  "target_second": 198,
+                  "accepted_draft": false,
+                  "committed_target_rows": 1,
+                  "draft_rows": 1
+                },
+                {
+                  "pending": 220,
+                  "draft": 18,
+                  "target_first": 18,
+                  "target_second": 13,
+                  "accepted_draft": true,
+                  "committed_target_rows": 2,
+                  "draft_rows": 1
+                },
+                {
+                  "pending": 13,
+                  "draft": -1,
+                  "target_first": 21134,
+                  "target_second": -1,
+                  "accepted_draft": false,
+                  "committed_target_rows": 1,
+                  "draft_rows": 2
+                }
+              ]
+            },
+            "restore_count": 1,
+            "idle_evictions": 1,
+            "ledger": [
+              {
+                "index": 0,
+                "turn": 1,
+                "role": 2,
+                "requests": 1,
+                "member_index": 0,
+                "generation": false,
+                "input_rows": 23,
+                "input_hash": 17949801909349996447,
+                "first_input": 248045,
+                "quota": 0,
+                "before_length": 0,
+                "before_frontier": 0,
+                "before_lag": 0,
+                "before_next_id": -1,
+                "draft": -1,
+                "target_first": 20,
+                "target_second": -1,
+                "accepted": 23,
+                "draft_rows": 23,
+                "after_length": 23,
+                "after_frontier": 23,
+                "after_lag": 0,
+                "next_id": 20,
+                "committed_input_ids": [],
+                "imported": false,
+                "source_geometry": "recorded",
+                "trace_name": "prefill"
+              },
+              {
+                "index": 1,
+                "turn": 1,
+                "role": 3,
+                "requests": 1,
+                "member_index": 0,
+                "generation": true,
+                "input_rows": 1,
+                "input_hash": 4953185346885851541,
+                "first_input": 20,
+                "quota": 15,
+                "before_length": 23,
+                "before_frontier": 23,
+                "before_lag": 0,
+                "before_next_id": 20,
+                "draft": 248046,
+                "target_first": 248046,
+                "target_second": 198,
+                "accepted": 1,
+                "draft_rows": 1,
+                "after_length": 24,
+                "after_frontier": 24,
+                "after_lag": 0,
+                "next_id": 248046,
+                "committed_input_ids": [
+                  20
+                ],
+                "imported": false,
+                "source_geometry": "recorded",
+                "trace_name": "mtp1"
+              },
+              {
+                "index": 2,
+                "turn": 2,
+                "role": 2,
+                "requests": 1,
+                "member_index": 0,
+                "generation": false,
+                "input_rows": 9,
+                "input_hash": 1101471241151929513,
+                "first_input": 248046,
+                "quota": 0,
+                "before_length": 24,
+                "before_frontier": 24,
+                "before_lag": 0,
+                "before_next_id": 248046,
+                "draft": -1,
+                "target_first": 220,
+                "target_second": -1,
+                "accepted": 9,
+                "draft_rows": 9,
+                "after_length": 33,
+                "after_frontier": 33,
+                "after_lag": 0,
+                "next_id": 220,
+                "committed_input_ids": [],
+                "imported": false,
+                "source_geometry": "recorded",
+                "trace_name": "round2_prefill"
+              },
+              {
+                "index": 3,
+                "turn": 2,
+                "role": 3,
+                "requests": 1,
+                "member_index": 0,
+                "generation": true,
+                "input_rows": 1,
+                "input_hash": 4953123774234671725,
+                "first_input": 220,
+                "quota": 3,
+                "before_length": 33,
+                "before_frontier": 33,
+                "before_lag": 0,
+                "before_next_id": 220,
+                "draft": 18,
+                "target_first": 18,
+                "target_second": 13,
+                "accepted": 2,
+                "draft_rows": 1,
+                "after_length": 35,
+                "after_frontier": 34,
+                "after_lag": 1,
+                "next_id": 13,
+                "committed_input_ids": [
+                  220,
+                  18
+                ],
+                "imported": false,
+                "source_geometry": "recorded",
+                "trace_name": "round2_mtp2"
+              },
+              {
+                "index": 4,
+                "turn": 2,
+                "role": 6,
+                "requests": 1,
+                "member_index": 0,
+                "generation": true,
+                "input_rows": 1,
+                "input_hash": 4953175451281197642,
+                "first_input": 13,
+                "quota": 1,
+                "before_length": 35,
+                "before_frontier": 34,
+                "before_lag": 1,
+                "before_next_id": 13,
+                "draft": -1,
+                "target_first": 21134,
+                "target_second": -1,
+                "accepted": 1,
+                "draft_rows": 2,
+                "after_length": 36,
+                "after_frontier": 36,
+                "after_lag": 0,
+                "next_id": 21134,
+                "committed_input_ids": [
+                  13
+                ],
+                "imported": false,
+                "source_geometry": "recorded",
+                "trace_name": "round2_mtp3"
+              }
+            ]
+          }
+        ]
+      },
+      "report": null,
+      "comparison": {
+        "fields": {
+          "actual_graph_calls": true,
+          "generated_tokens": true,
+          "restore_count": true,
+          "restored_graph_calls": true,
+          "restored_target_rows": true,
+          "restored_draft_rows": true,
+          "normalized_lag_rows": true,
+          "recomputed_decision_changes": true,
+          "idle_evictions": true,
+          "session_ids": true
+        },
+        "cache": {
+          "cache_budget_scope": "shared_pools_and_retained_output_backing",
+          "cache_shared_backing_bytes": 20688947,
+          "cache_retained_output_backing_bytes": 0,
+          "cache_live_requested_bytes": 20688947,
+          "cache_peak_requested_bytes": 64491571,
+          "cache_requested_byte_limit": 268435456
+        },
+        "performance_comparison": false
+      }
+    },
+    {
+      "case": "N2R2",
+      "process": {
+        "command": [
+          "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/qwen-retained-budget-20261022/consumer1/qwen",
+          "--inputs",
+          "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/qwen-native-assembly-20261022/inputs/mtp",
+          "--mtp",
+          "on",
+          "--capacity",
+          "64",
+          "--prefix-cache",
+          "off",
+          "--progress",
+          "direct",
+          "--replay",
+          "commands",
+          "--session-schedules",
+          "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/native-state-ownership-20261022/fixtures/sessions.txt",
+          "--max-sessions",
+          "2",
+          "--active-sequences",
+          "2",
+          "--cache-bytes",
+          "auto"
+        ],
+        "cwd": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/qwen-retained-budget-20261022/consumer1",
+        "image": {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/qwen-retained-budget-20261022/consumer1/qwen",
+          "bytes": 12727512,
+          "sha256": "ec70057a94b0a6ceade170d1c1ae8f7da3d06d3258721a3c20c5d329a6fb14a0"
+        },
+        "started": 1792638468.825572,
+        "performance_comparison": false,
+        "pid": 2668,
+        "state": "terminal",
+        "exit": 0,
+        "seconds": 4.825814962387085
+      },
+      "output": {
+        "source_id": "4068044d8571635d8a86f1e96a43dad104efc7089169065f735601e350008155",
+        "score_dtype": "F32",
+        "score_policy": "bf16_inputs_f32_output",
+        "mtp": true,
+        "text_tensors": 320,
+        "mtp_tensors": 15,
+        "session_count": 3,
+        "turn_count": 6,
+        "active_sequences": 2,
+        "max_sessions": 2,
+        "backend": "apple",
+        "cache_budget_scope": "shared_pools_and_retained_output_backing",
+        "cache_shared_backing_bytes": 41377843,
+        "cache_retained_output_backing_bytes": 0,
+        "cache_live_requested_bytes": 41377843,
+        "cache_peak_requested_bytes": 124579891,
+        "cache_requested_byte_limit": null,
+        "native_execution_private_bytes_unknown": true,
+        "physical_vram_limit_known": false,
+        "prefix_cache": false,
+        "admitted_requests": 3,
+        "admitted_turns": 6,
+        "retired_requests": 3,
+        "peak_resident_requests": 2,
+        "peak_committed_versions": 2,
+        "live_committed_versions": 0,
+        "idle_evictions": 3,
+        "prefix_hits": 0,
+        "prefix_misses": 0,
+        "prefix_full_hits": 0,
+        "reused_tokens": 0,
+        "prefix_entries": 0,
+        "prefix_evictions": 0,
+        "requested_output_tokens": 40,
+        "generated_tokens": 26,
+        "generated_decode_tokens": 20,
+        "actual_graph_calls": 26,
+        "prefill_graph_calls": 5,
+        "decode_graph_calls": 11,
+        "graph_participations": 19,
+        "logical_dispatches": 19,
+        "logical_prompt_tokens": 89,
+        "logical_user_prompt_tokens": 86,
+        "pending_flushed_tokens": 3,
+        "prefill_target_rows": 89,
+        "prefill_draft_rows": 89,
+        "verified_target_rows": 23,
+        "draft_rows": 18,
+        "actual_target_rows": 176,
+        "actual_draft_rows": 171,
+        "committed_target_rows": 109,
+        "committed_target_decode_rows": 20,
+        "draft_rounds": 10,
+        "agreements": 8,
+        "accepted_drafts": 7,
+        "restore_count": 3,
+        "restored_graph_calls": 10,
+        "restored_target_rows": 64,
+        "restored_draft_rows": 64,
+        "restore_step_seconds": 0.808873457,
+        "restore_seconds": 0.812135833,
+        "restore_contract": "recompute_committed_inputs",
+        "normalized_lag_rows": 1,
+        "recomputed_decision_changes": 0,
+        "prefill_seconds": 1.307156376,
+        "decode_seconds": 0.9659205830000002,
+        "session_seconds": 2.273076959,
+        "step_sum_seconds": 2.263017747,
+        "participation_step_sum_seconds": 1.7748112059999999,
+        "post_endpoint_seconds": 0.000100333,
+        "phase_timing": "disjoint_continuous_episode_intervals",
+        "startup_total_seconds": 4.770049917,
+        "startup_to_endpoint_seconds": 4.770049917,
+        "startup_to_ready_seconds": 2.49692,
+        "first_token_elapsed_seconds": 2.610880583,
+        "prefill_tokens_per_second": 68.08672752096189,
+        "decode_output_tokens_per_second": 20.705636003617492,
+        "output_tokens_per_second": 11.438240089960809,
+        "diagnostic": false,
+        "dispatch": [
+          {
+            "session_id": "A",
+            "turn": 1
+          },
+          {
+            "session_id": "B",
+            "turn": 1
+          },
+          {
+            "session_id": "A",
+            "turn": 1
+          },
+          {
+            "session_id": "B",
+            "turn": 1
+          },
+          {
+            "session_id": "A",
+            "turn": 1
+          },
+          {
+            "session_id": "B",
+            "turn": 1
+          },
+          {
+            "session_id": "A",
+            "turn": 1
+          },
+          {
+            "session_id": "C",
+            "turn": 1
+          },
+          {
+            "session_id": "A",
+            "turn": 1
+          },
+          {
+            "session_id": "C",
+            "turn": 1
+          },
+          {
+            "session_id": "B",
+            "turn": 2
+          },
+          {
+            "session_id": "A",
+            "turn": 2
+          },
+          {
+            "session_id": "B",
+            "turn": 2
+          },
+          {
+            "session_id": "A",
+            "turn": 2
+          },
+          {
+            "session_id": "B",
+            "turn": 2
+          },
+          {
+            "session_id": "A",
+            "turn": 2
+          },
+          {
+            "session_id": "C",
+            "turn": 2
+          },
+          {
+            "session_id": "C",
+            "turn": 2
+          },
+          {
+            "session_id": "C",
+            "turn": 2
+          }
+        ],
+        "batches": [
+          {
+            "index": 0,
+            "requests": 2,
+            "tokens": 15,
+            "role": 2,
+            "generation": false,
+            "session_ids": [
+              "A",
+              "B"
+            ]
+          },
+          {
+            "index": 1,
+            "requests": 2,
+            "tokens": 2,
+            "role": 3,
+            "generation": true,
+            "session_ids": [
+              "A",
+              "B"
+            ]
+          },
+          {
+            "index": 2,
+            "requests": 1,
+            "tokens": 2,
+            "role": 4,
+            "generation": true,
+            "session_ids": [
+              "A"
+            ]
+          },
+          {
+            "index": 3,
+            "requests": 1,
+            "tokens": 1,
+            "role": 6,
+            "generation": true,
+            "session_ids": [
+              "B"
+            ]
+          },
+          {
+            "index": 4,
+            "requests": 1,
+            "tokens": 2,
+            "role": 3,
+            "generation": true,
+            "session_ids": [
+              "A"
+            ]
+          },
+          {
+            "index": 5,
+            "requests": 1,
+            "tokens": 23,
+            "role": 2,
+            "generation": false,
+            "session_ids": [
+              "C"
+            ]
+          },
+          {
+            "index": 6,
+            "requests": 1,
+            "tokens": 2,
+            "role": 4,
+            "generation": true,
+            "session_ids": [
+              "A"
+            ]
+          },
+          {
+            "index": 7,
+            "requests": 1,
+            "tokens": 2,
+            "role": 3,
+            "generation": true,
+            "session_ids": [
+              "C"
+            ]
+          },
+          {
+            "index": 8,
+            "requests": 1,
+            "tokens": 2,
+            "role": 2,
+            "generation": false,
+            "session_ids": [
+              "B"
+            ]
+          },
+          {
+            "index": 9,
+            "requests": 1,
+            "tokens": 25,
+            "role": 2,
+            "generation": false,
+            "session_ids": [
+              "A"
+            ]
+          },
+          {
+            "index": 10,
+            "requests": 2,
+            "tokens": 2,
+            "role": 3,
+            "generation": true,
+            "session_ids": [
+              "B",
+              "A"
+            ]
+          },
+          {
+            "index": 11,
+            "requests": 1,
+            "tokens": 2,
+            "role": 3,
+            "generation": true,
+            "session_ids": [
+              "B"
+            ]
+          },
+          {
+            "index": 12,
+            "requests": 1,
+            "tokens": 1,
+            "role": 6,
+            "generation": true,
+            "session_ids": [
+              "A"
+            ]
+          },
+          {
+            "index": 13,
+            "requests": 1,
+            "tokens": 9,
+            "role": 2,
+            "generation": false,
+            "session_ids": [
+              "C"
+            ]
+          },
+          {
+            "index": 14,
+            "requests": 1,
+            "tokens": 2,
+            "role": 3,
+            "generation": true,
+            "session_ids": [
+              "C"
+            ]
+          },
+          {
+            "index": 15,
+            "requests": 1,
+            "tokens": 1,
+            "role": 6,
+            "generation": true,
+            "session_ids": [
+              "C"
+            ]
+          }
+        ],
+        "sessions": [
+          {
+            "session_id": "A",
+            "result": {
+              "source_id": "4068044d8571635d8a86f1e96a43dad104efc7089169065f735601e350008155",
+              "score_dtype": "F32",
+              "score_policy": "bf16_inputs_f32_output",
+              "mtp": true,
+              "text_tensors": 320,
+              "mtp_tensors": 15,
+              "backend": "apple",
+              "cache_budget_scope": "shared_pools_and_retained_output_backing",
+              "cache_shared_backing_bytes": 41377843,
+              "cache_retained_output_backing_bytes": 0,
+              "cache_live_requested_bytes": 41377843,
+              "cache_peak_requested_bytes": 124579891,
+              "cache_requested_byte_limit": null,
+              "native_execution_private_bytes_unknown": true,
+              "physical_vram_limit_known": false,
+              "visible_tokens": 50,
+              "draft_frontier": 50,
+              "draft_lag": 0,
+              "generated_ids": [
+                198,
+                248045,
+                74455,
+                271,
+                248068,
+                271,
+                248069,
+                271,
+                846,
+                198,
+                5328,
+                10724
+              ],
+              "prefill_seconds": 0.6847585420000001,
+              "decode_seconds": 0.8348359999999999,
+              "session_seconds": 1.849237542,
+              "startup_total_seconds": 4.346210542,
+              "startup_to_endpoint_seconds": 4.346210542,
+              "startup_to_ready_seconds": 2.49692,
+              "first_token_elapsed_seconds": 2.610880583,
+              "prefill_step_seconds": 0.223627666,
+              "decode_step_sum_seconds": 0.552420207,
+              "step_sum_seconds": 1.1584359979999999,
+              "prefill_tokens_per_second": 58.41475140006358,
+              "decode_output_tokens_per_second": 11.97840054813161,
+              "output_tokens_per_second": 6.489160925762776,
+              "requested_steps": 12,
+              "generated_tokens": 12,
+              "generated_decode_tokens": 10,
+              "verified_target_rows": 11,
+              "graph_participations": 13,
+              "prefill_graph_calls": 2,
+              "decode_graph_calls": 6,
+              "prefill_target_rows": 40,
+              "prefill_draft_rows": 40,
+              "actual_target_rows": 73,
+              "actual_draft_rows": 71,
+              "committed_target_rows": 50,
+              "committed_target_decode_rows": 10,
+              "draft_rows": 9,
+              "draft_rounds": 5,
+              "agreements": 4,
+              "accepted_drafts": 4,
+              "diagnostic": false,
+              "emitted_pending": 10724,
+              "fresh_next_id": 10724,
+              "restore_contract": "recompute_committed_inputs",
+              "restored_graph_calls": 5,
+              "restored_target_rows": 22,
+              "restored_draft_rows": 22,
+              "normalized_lag_rows": 1,
+              "decision_changes": [],
+              "logical_prompt_tokens": 40,
+              "reused_tokens": 0,
+              "prefix_hits": 0,
+              "prefix_misses": 0,
+              "prefix_full_hits": 0,
+              "between_turn_seconds": 0.32964300000000013,
+              "phase_timing": "sum_per_turn_latency_including_interleaving",
+              "turns": [
+                {
+                  "turn": 1,
+                  "requested_steps": 8,
+                  "new_user_tokens": 15,
+                  "pending_flushed": 0,
+                  "output_begin": 0,
+                  "output_end": 8,
+                  "prefill_seconds": 0.113907583,
+                  "decode_seconds": 0.563843
+                },
+                {
+                  "turn": 2,
+                  "requested_steps": 4,
+                  "new_user_tokens": 24,
+                  "pending_flushed": 1,
+                  "output_begin": 8,
+                  "output_end": 12,
+                  "prefill_seconds": 0.570850959,
+                  "decode_seconds": 0.270993
+                }
+              ],
+              "rounds": [
+                {
+                  "pending": 198,
+                  "draft": 248045,
+                  "target_first": 248045,
+                  "target_second": 74455,
+                  "accepted_draft": true,
+                  "committed_target_rows": 2,
+                  "draft_rows": 1
+                },
+                {
+                  "pending": 74455,
+                  "draft": 198,
+                  "target_first": 271,
+                  "target_second": 248068,
+                  "accepted_draft": false,
+                  "committed_target_rows": 1,
+                  "draft_rows": 2
+                },
+                {
+                  "pending": 271,
+                  "draft": 248068,
+                  "target_first": 248068,
+                  "target_second": 271,
+                  "accepted_draft": true,
+                  "committed_target_rows": 2,
+                  "draft_rows": 1
+                },
+                {
+                  "pending": 271,
+                  "draft": 248069,
+                  "target_first": 248069,
+                  "target_second": 271,
+                  "accepted_draft": true,
+                  "committed_target_rows": 2,
+                  "draft_rows": 2
+                },
+                {
+                  "pending": 846,
+                  "draft": 198,
+                  "target_first": 198,
+                  "target_second": 5328,
+                  "accepted_draft": true,
+                  "committed_target_rows": 2,
+                  "draft_rows": 1
+                },
+                {
+                  "pending": 5328,
+                  "draft": -1,
+                  "target_first": 10724,
+                  "target_second": -1,
+                  "accepted_draft": false,
+                  "committed_target_rows": 1,
+                  "draft_rows": 2
+                }
+              ]
+            },
+            "restore_count": 1,
+            "idle_evictions": 1,
+            "ledger": [
+              {
+                "index": 0,
+                "turn": 1,
+                "role": 2,
+                "requests": 2,
+                "member_index": 0,
+                "generation": false,
+                "input_rows": 15,
+                "input_hash": 193236489044397402,
+                "first_input": 248045,
+                "quota": 0,
+                "before_length": 0,
+                "before_frontier": 0,
+                "before_lag": 0,
+                "before_next_id": -1,
+                "draft": -1,
+                "target_first": 198,
+                "target_second": -1,
+                "accepted": 15,
+                "draft_rows": 15,
+                "after_length": 15,
+                "after_frontier": 15,
+                "after_lag": 0,
+                "next_id": 198,
+                "committed_input_ids": [],
+                "imported": false,
+                "source_geometry": "recorded",
+                "trace_name": "prefill"
+              },
+              {
+                "index": 1,
+                "turn": 1,
+                "role": 3,
+                "requests": 2,
+                "member_index": 0,
+                "generation": true,
+                "input_rows": 1,
+                "input_hash": 4953095186932338239,
+                "first_input": 198,
+                "quota": 7,
+                "before_length": 15,
+                "before_frontier": 15,
+                "before_lag": 0,
+                "before_next_id": 198,
+                "draft": 248045,
+                "target_first": 248045,
+                "target_second": 74455,
+                "accepted": 2,
+                "draft_rows": 1,
+                "after_length": 17,
+                "after_frontier": 16,
+                "after_lag": 1,
+                "next_id": 74455,
+                "committed_input_ids": [
+                  198,
+                  248045
+                ],
+                "imported": false,
+                "source_geometry": "recorded",
+                "trace_name": "mtp1"
+              },
+              {
+                "index": 2,
+                "turn": 1,
+                "role": 4,
+                "requests": 1,
+                "member_index": 0,
+                "generation": true,
+                "input_rows": 1,
+                "input_hash": 4889498334844985788,
+                "first_input": 74455,
+                "quota": 5,
+                "before_length": 17,
+                "before_frontier": 16,
+                "before_lag": 1,
+                "before_next_id": 74455,
+                "draft": 198,
+                "target_first": 271,
+                "target_second": 248068,
+                "accepted": 1,
+                "draft_rows": 2,
+                "after_length": 18,
+                "after_frontier": 18,
+                "after_lag": 0,
+                "next_id": 271,
+                "committed_input_ids": [
+                  74455
+                ],
+                "imported": false,
+                "source_geometry": "recorded",
+                "trace_name": "mtp2"
+              },
+              {
+                "index": 3,
+                "turn": 1,
+                "role": 3,
+                "requests": 1,
+                "member_index": 0,
+                "generation": true,
+                "input_rows": 1,
+                "input_hash": 4952891777281119204,
+                "first_input": 271,
+                "quota": 4,
+                "before_length": 18,
+                "before_frontier": 18,
+                "before_lag": 0,
+                "before_next_id": 271,
+                "draft": 248068,
+                "target_first": 248068,
+                "target_second": 271,
+                "accepted": 2,
+                "draft_rows": 1,
+                "after_length": 20,
+                "after_frontier": 19,
+                "after_lag": 1,
+                "next_id": 271,
+                "committed_input_ids": [
+                  271,
+                  248068
+                ],
+                "imported": false,
+                "source_geometry": "recorded",
+                "trace_name": "mtp3"
+              },
+              {
+                "index": 4,
+                "turn": 1,
+                "role": 4,
+                "requests": 1,
+                "member_index": 0,
+                "generation": true,
+                "input_rows": 1,
+                "input_hash": 4952891777281119204,
+                "first_input": 271,
+                "quota": 2,
+                "before_length": 20,
+                "before_frontier": 19,
+                "before_lag": 1,
+                "before_next_id": 271,
+                "draft": 248069,
+                "target_first": 248069,
+                "target_second": 271,
+                "accepted": 2,
+                "draft_rows": 2,
+                "after_length": 22,
+                "after_frontier": 21,
+                "after_lag": 1,
+                "next_id": 271,
+                "committed_input_ids": [
+                  271,
+                  248069
+                ],
+                "imported": false,
+                "source_geometry": "recorded",
+                "trace_name": "mtp4"
+              },
+              {
+                "index": 5,
+                "turn": 2,
+                "role": 2,
+                "requests": 1,
+                "member_index": 0,
+                "generation": false,
+                "input_rows": 25,
+                "input_hash": 11093330054213518513,
+                "first_input": 271,
+                "quota": 0,
+                "before_length": 22,
+                "before_frontier": 22,
+                "before_lag": 0,
+                "before_next_id": 271,
+                "draft": -1,
+                "target_first": 846,
+                "target_second": -1,
+                "accepted": 25,
+                "draft_rows": 25,
+                "after_length": 47,
+                "after_frontier": 47,
+                "after_lag": 0,
+                "next_id": 846,
+                "committed_input_ids": [],
+                "imported": false,
+                "source_geometry": "recorded",
+                "trace_name": "round2_prefill"
+              },
+              {
+                "index": 6,
+                "turn": 2,
+                "role": 3,
+                "requests": 2,
+                "member_index": 1,
+                "generation": true,
+                "input_rows": 1,
+                "input_hash": 4952400295583308887,
+                "first_input": 846,
+                "quota": 3,
+                "before_length": 47,
+                "before_frontier": 47,
+                "before_lag": 0,
+                "before_next_id": 846,
+                "draft": 198,
+                "target_first": 198,
+                "target_second": 5328,
+                "accepted": 2,
+                "draft_rows": 1,
+                "after_length": 49,
+                "after_frontier": 48,
+                "after_lag": 1,
+                "next_id": 5328,
+                "committed_input_ids": [
+                  846,
+                  198
+                ],
+                "imported": false,
+                "source_geometry": "recorded",
+                "trace_name": "round2_mtp5"
+              },
+              {
+                "index": 7,
+                "turn": 2,
+                "role": 6,
+                "requests": 1,
+                "member_index": 0,
+                "generation": true,
+                "input_rows": 1,
+                "input_hash": 4958740079631573513,
+                "first_input": 5328,
+                "quota": 1,
+                "before_length": 49,
+                "before_frontier": 48,
+                "before_lag": 1,
+                "before_next_id": 5328,
+                "draft": -1,
+                "target_first": 10724,
+                "target_second": -1,
+                "accepted": 1,
+                "draft_rows": 2,
+                "after_length": 50,
+                "after_frontier": 50,
+                "after_lag": 0,
+                "next_id": 10724,
+                "committed_input_ids": [
+                  5328
+                ],
+                "imported": false,
+                "source_geometry": "recorded",
+                "trace_name": "round2_mtp6"
+              }
+            ]
+          },
+          {
+            "session_id": "B",
+            "result": {
+              "source_id": "4068044d8571635d8a86f1e96a43dad104efc7089169065f735601e350008155",
+              "score_dtype": "F32",
+              "score_policy": "bf16_inputs_f32_output",
+              "mtp": true,
+              "text_tensors": 320,
+              "mtp_tensors": 15,
+              "backend": "apple",
+              "cache_budget_scope": "shared_pools_and_retained_output_backing",
+              "cache_shared_backing_bytes": 41377843,
+              "cache_retained_output_backing_bytes": 0,
+              "cache_live_requested_bytes": 41377843,
+              "cache_peak_requested_bytes": 124579891,
+              "cache_requested_byte_limit": null,
+              "native_execution_private_bytes_unknown": true,
+              "physical_vram_limit_known": false,
+              "visible_tokens": 23,
+              "draft_frontier": 22,
+              "draft_lag": 1,
+              "generated_ids": [
+                198,
+                248045,
+                74455,
+                271,
+                74455,
+                271,
+                248068,
+                271
+              ],
+              "prefill_seconds": 0.811413999,
+              "decode_seconds": 0.5797300009999999,
+              "session_seconds": 1.772406625,
+              "startup_total_seconds": 4.269380042,
+              "startup_to_endpoint_seconds": 4.269380042,
+              "startup_to_ready_seconds": 2.49692,
+              "first_token_elapsed_seconds": 2.610880583,
+              "prefill_step_seconds": 0.18339845700000001,
+              "decode_step_sum_seconds": 0.375468167,
+              "step_sum_seconds": 0.798241706,
+              "prefill_tokens_per_second": 20.95108048536392,
+              "decode_output_tokens_per_second": 10.349645506788255,
+              "output_tokens_per_second": 4.513636931367259,
+              "requested_steps": 8,
+              "generated_tokens": 8,
+              "generated_decode_tokens": 6,
+              "verified_target_rows": 7,
+              "graph_participations": 9,
+              "prefill_graph_calls": 2,
+              "decode_graph_calls": 4,
+              "prefill_target_rows": 17,
+              "prefill_draft_rows": 17,
+              "actual_target_rows": 42,
+              "actual_draft_rows": 40,
+              "committed_target_rows": 23,
+              "committed_target_decode_rows": 6,
+              "draft_rows": 5,
+              "draft_rounds": 3,
+              "agreements": 2,
+              "accepted_drafts": 2,
+              "diagnostic": false,
+              "emitted_pending": 271,
+              "fresh_next_id": 271,
+              "restore_contract": "recompute_committed_inputs",
+              "restored_graph_calls": 3,
+              "restored_target_rows": 18,
+              "restored_draft_rows": 18,
+              "normalized_lag_rows": 0,
+              "decision_changes": [],
+              "logical_prompt_tokens": 17,
+              "reused_tokens": 0,
+              "prefix_hits": 0,
+              "prefix_misses": 0,
+              "prefix_full_hits": 0,
+              "between_turn_seconds": 0.38126262499999997,
+              "phase_timing": "sum_per_turn_latency_including_interleaving",
+              "turns": [
+                {
+                  "turn": 1,
+                  "requested_steps": 4,
+                  "new_user_tokens": 15,
+                  "pending_flushed": 0,
+                  "output_begin": 0,
+                  "output_end": 4,
+                  "prefill_seconds": 0.113907166,
+                  "decode_seconds": 0.271802917
+                },
+                {
+                  "turn": 2,
+                  "requested_steps": 4,
+                  "new_user_tokens": 1,
+                  "pending_flushed": 1,
+                  "output_begin": 4,
+                  "output_end": 8,
+                  "prefill_seconds": 0.697506833,
+                  "decode_seconds": 0.307927084
+                }
+              ],
+              "rounds": [
+                {
+                  "pending": 198,
+                  "draft": 248045,
+                  "target_first": 248045,
+                  "target_second": 74455,
+                  "accepted_draft": true,
+                  "committed_target_rows": 2,
+                  "draft_rows": 1
+                },
+                {
+                  "pending": 74455,
+                  "draft": -1,
+                  "target_first": 271,
+                  "target_second": -1,
+                  "accepted_draft": false,
+                  "committed_target_rows": 1,
+                  "draft_rows": 2
+                },
+                {
+                  "pending": 74455,
+                  "draft": 198,
+                  "target_first": 271,
+                  "target_second": 248068,
+                  "accepted_draft": false,
+                  "committed_target_rows": 1,
+                  "draft_rows": 1
+                },
+                {
+                  "pending": 271,
+                  "draft": 248068,
+                  "target_first": 248068,
+                  "target_second": 271,
+                  "accepted_draft": true,
+                  "committed_target_rows": 2,
+                  "draft_rows": 1
+                }
+              ]
+            },
+            "restore_count": 1,
+            "idle_evictions": 1,
+            "ledger": [
+              {
+                "index": 0,
+                "turn": 1,
+                "role": 2,
+                "requests": 2,
+                "member_index": 1,
+                "generation": false,
+                "input_rows": 15,
+                "input_hash": 193236489044397402,
+                "first_input": 248045,
+                "quota": 0,
+                "before_length": 0,
+                "before_frontier": 0,
+                "before_lag": 0,
+                "before_next_id": -1,
+                "draft": -1,
+                "target_first": 198,
+                "target_second": -1,
+                "accepted": 15,
+                "draft_rows": 15,
+                "after_length": 15,
+                "after_frontier": 15,
+                "after_lag": 0,
+                "next_id": 198,
+                "committed_input_ids": [],
+                "imported": false,
+                "source_geometry": "recorded",
+                "trace_name": "prefill"
+              },
+              {
+                "index": 1,
+                "turn": 1,
+                "role": 3,
+                "requests": 2,
+                "member_index": 1,
+                "generation": true,
+                "input_rows": 1,
+                "input_hash": 4953095186932338239,
+                "first_input": 198,
+                "quota": 3,
+                "before_length": 15,
+                "before_frontier": 15,
+                "before_lag": 0,
+                "before_next_id": 198,
+                "draft": 248045,
+                "target_first": 248045,
+                "target_second": 74455,
+                "accepted": 2,
+                "draft_rows": 1,
+                "after_length": 17,
+                "after_frontier": 16,
+                "after_lag": 1,
+                "next_id": 74455,
+                "committed_input_ids": [
+                  198,
+                  248045
+                ],
+                "imported": false,
+                "source_geometry": "recorded",
+                "trace_name": "mtp1"
+              },
+              {
+                "index": 2,
+                "turn": 1,
+                "role": 6,
+                "requests": 1,
+                "member_index": 0,
+                "generation": true,
+                "input_rows": 1,
+                "input_hash": 4889498334844985788,
+                "first_input": 74455,
+                "quota": 1,
+                "before_length": 17,
+                "before_frontier": 16,
+                "before_lag": 1,
+                "before_next_id": 74455,
+                "draft": -1,
+                "target_first": 271,
+                "target_second": -1,
+                "accepted": 1,
+                "draft_rows": 2,
+                "after_length": 18,
+                "after_frontier": 18,
+                "after_lag": 0,
+                "next_id": 271,
+                "committed_input_ids": [
+                  74455
+                ],
+                "imported": false,
+                "source_geometry": "recorded",
+                "trace_name": "mtp2"
+              },
+              {
+                "index": 3,
+                "turn": 2,
+                "role": 2,
+                "requests": 1,
+                "member_index": 0,
+                "generation": false,
+                "input_rows": 2,
+                "input_hash": 10694023817772101707,
+                "first_input": 271,
+                "quota": 0,
+                "before_length": 18,
+                "before_frontier": 18,
+                "before_lag": 0,
+                "before_next_id": 271,
+                "draft": -1,
+                "target_first": 74455,
+                "target_second": -1,
+                "accepted": 2,
+                "draft_rows": 2,
+                "after_length": 20,
+                "after_frontier": 20,
+                "after_lag": 0,
+                "next_id": 74455,
+                "committed_input_ids": [],
+                "imported": false,
+                "source_geometry": "recorded",
+                "trace_name": "round2_prefill"
+              },
+              {
+                "index": 4,
+                "turn": 2,
+                "role": 3,
+                "requests": 2,
+                "member_index": 0,
+                "generation": true,
+                "input_rows": 1,
+                "input_hash": 4889498334844985788,
+                "first_input": 74455,
+                "quota": 3,
+                "before_length": 20,
+                "before_frontier": 20,
+                "before_lag": 0,
+                "before_next_id": 74455,
+                "draft": 198,
+                "target_first": 271,
+                "target_second": 248068,
+                "accepted": 1,
+                "draft_rows": 1,
+                "after_length": 21,
+                "after_frontier": 21,
+                "after_lag": 0,
+                "next_id": 271,
+                "committed_input_ids": [
+                  74455
+                ],
+                "imported": false,
+                "source_geometry": "recorded",
+                "trace_name": "round2_mtp3"
+              },
+              {
+                "index": 5,
+                "turn": 2,
+                "role": 3,
+                "requests": 1,
+                "member_index": 0,
+                "generation": true,
+                "input_rows": 1,
+                "input_hash": 4952891777281119204,
+                "first_input": 271,
+                "quota": 2,
+                "before_length": 21,
+                "before_frontier": 21,
+                "before_lag": 0,
+                "before_next_id": 271,
+                "draft": 248068,
+                "target_first": 248068,
+                "target_second": 271,
+                "accepted": 2,
+                "draft_rows": 1,
+                "after_length": 23,
+                "after_frontier": 22,
+                "after_lag": 1,
+                "next_id": 271,
+                "committed_input_ids": [
+                  271,
+                  248068
+                ],
+                "imported": false,
+                "source_geometry": "recorded",
+                "trace_name": "round2_mtp4"
+              }
+            ]
+          },
+          {
+            "session_id": "C",
+            "result": {
+              "source_id": "4068044d8571635d8a86f1e96a43dad104efc7089169065f735601e350008155",
+              "score_dtype": "F32",
+              "score_policy": "bf16_inputs_f32_output",
+              "mtp": true,
+              "text_tensors": 320,
+              "mtp_tensors": 15,
+              "backend": "apple",
+              "cache_budget_scope": "shared_pools_and_retained_output_backing",
+              "cache_shared_backing_bytes": 41377843,
+              "cache_retained_output_backing_bytes": 0,
+              "cache_live_requested_bytes": 41377843,
+              "cache_peak_requested_bytes": 124579891,
+              "cache_requested_byte_limit": null,
+              "native_execution_private_bytes_unknown": true,
+              "physical_vram_limit_known": false,
+              "visible_tokens": 36,
+              "draft_frontier": 36,
+              "draft_lag": 0,
+              "generated_ids": [
+                20,
+                248046,
+                220,
+                18,
+                13,
+                21134
+              ],
+              "prefill_seconds": 0.469174501,
+              "decode_seconds": 0.335663166,
+              "session_seconds": 1.887293792,
+              "startup_total_seconds": 4.770049917,
+              "startup_to_endpoint_seconds": 4.770049917,
+              "startup_to_ready_seconds": 2.49692,
+              "first_token_elapsed_seconds": 3.085730917,
+              "prefill_step_seconds": 0.19349904299999998,
+              "decode_step_sum_seconds": 0.246397666,
+              "step_sum_seconds": 0.627006959,
+              "prefill_tokens_per_second": 68.20490016357475,
+              "decode_output_tokens_per_second": 11.916708191925949,
+              "output_tokens_per_second": 3.179155267416892,
+              "requested_steps": 20,
+              "generated_tokens": 6,
+              "generated_decode_tokens": 4,
+              "verified_target_rows": 5,
+              "graph_participations": 7,
+              "prefill_graph_calls": 2,
+              "decode_graph_calls": 3,
+              "prefill_target_rows": 32,
+              "prefill_draft_rows": 32,
+              "actual_target_rows": 61,
+              "actual_draft_rows": 60,
+              "committed_target_rows": 36,
+              "committed_target_decode_rows": 4,
+              "draft_rows": 4,
+              "draft_rounds": 2,
+              "agreements": 2,
+              "accepted_drafts": 1,
+              "diagnostic": false,
+              "emitted_pending": 21134,
+              "fresh_next_id": 21134,
+              "restore_contract": "recompute_committed_inputs",
+              "restored_graph_calls": 2,
+              "restored_target_rows": 24,
+              "restored_draft_rows": 24,
+              "normalized_lag_rows": 0,
+              "decision_changes": [],
+              "logical_prompt_tokens": 32,
+              "reused_tokens": 0,
+              "prefix_hits": 0,
+              "prefix_misses": 0,
+              "prefix_full_hits": 0,
+              "between_turn_seconds": 1.082456125,
+              "phase_timing": "sum_per_turn_latency_including_interleaving",
+              "turns": [
+                {
+                  "turn": 1,
+                  "requested_steps": 16,
+                  "new_user_tokens": 23,
+                  "pending_flushed": 0,
+                  "output_begin": 0,
+                  "output_end": 2,
+                  "prefill_seconds": 0.202974792,
+                  "decode_seconds": 0.178138416
+                },
+                {
+                  "turn": 2,
+                  "requested_steps": 4,
+                  "new_user_tokens": 8,
+                  "pending_flushed": 1,
+                  "output_begin": 2,
+                  "output_end": 6,
+                  "prefill_seconds": 0.266199709,
+                  "decode_seconds": 0.15752475
+                }
+              ],
+              "rounds": [
+                {
+                  "pending": 20,
+                  "draft": 248046,
+                  "target_first": 248046,
+                  "target_second": 198,
+                  "accepted_draft": false,
+                  "committed_target_rows": 1,
+                  "draft_rows": 1
+                },
+                {
+                  "pending": 220,
+                  "draft": 18,
+                  "target_first": 18,
+                  "target_second": 13,
+                  "accepted_draft": true,
+                  "committed_target_rows": 2,
+                  "draft_rows": 1
+                },
+                {
+                  "pending": 13,
+                  "draft": -1,
+                  "target_first": 21134,
+                  "target_second": -1,
+                  "accepted_draft": false,
+                  "committed_target_rows": 1,
+                  "draft_rows": 2
+                }
+              ]
+            },
+            "restore_count": 1,
+            "idle_evictions": 1,
+            "ledger": [
+              {
+                "index": 0,
+                "turn": 1,
+                "role": 2,
+                "requests": 1,
+                "member_index": 0,
+                "generation": false,
+                "input_rows": 23,
+                "input_hash": 17949801909349996447,
+                "first_input": 248045,
+                "quota": 0,
+                "before_length": 0,
+                "before_frontier": 0,
+                "before_lag": 0,
+                "before_next_id": -1,
+                "draft": -1,
+                "target_first": 20,
+                "target_second": -1,
+                "accepted": 23,
+                "draft_rows": 23,
+                "after_length": 23,
+                "after_frontier": 23,
+                "after_lag": 0,
+                "next_id": 20,
+                "committed_input_ids": [],
+                "imported": false,
+                "source_geometry": "recorded",
+                "trace_name": "prefill"
+              },
+              {
+                "index": 1,
+                "turn": 1,
+                "role": 3,
+                "requests": 1,
+                "member_index": 0,
+                "generation": true,
+                "input_rows": 1,
+                "input_hash": 4953185346885851541,
+                "first_input": 20,
+                "quota": 15,
+                "before_length": 23,
+                "before_frontier": 23,
+                "before_lag": 0,
+                "before_next_id": 20,
+                "draft": 248046,
+                "target_first": 248046,
+                "target_second": 198,
+                "accepted": 1,
+                "draft_rows": 1,
+                "after_length": 24,
+                "after_frontier": 24,
+                "after_lag": 0,
+                "next_id": 248046,
+                "committed_input_ids": [
+                  20
+                ],
+                "imported": false,
+                "source_geometry": "recorded",
+                "trace_name": "mtp1"
+              },
+              {
+                "index": 2,
+                "turn": 2,
+                "role": 2,
+                "requests": 1,
+                "member_index": 0,
+                "generation": false,
+                "input_rows": 9,
+                "input_hash": 1101471241151929513,
+                "first_input": 248046,
+                "quota": 0,
+                "before_length": 24,
+                "before_frontier": 24,
+                "before_lag": 0,
+                "before_next_id": 248046,
+                "draft": -1,
+                "target_first": 220,
+                "target_second": -1,
+                "accepted": 9,
+                "draft_rows": 9,
+                "after_length": 33,
+                "after_frontier": 33,
+                "after_lag": 0,
+                "next_id": 220,
+                "committed_input_ids": [],
+                "imported": false,
+                "source_geometry": "recorded",
+                "trace_name": "round2_prefill"
+              },
+              {
+                "index": 3,
+                "turn": 2,
+                "role": 3,
+                "requests": 1,
+                "member_index": 0,
+                "generation": true,
+                "input_rows": 1,
+                "input_hash": 4953123774234671725,
+                "first_input": 220,
+                "quota": 3,
+                "before_length": 33,
+                "before_frontier": 33,
+                "before_lag": 0,
+                "before_next_id": 220,
+                "draft": 18,
+                "target_first": 18,
+                "target_second": 13,
+                "accepted": 2,
+                "draft_rows": 1,
+                "after_length": 35,
+                "after_frontier": 34,
+                "after_lag": 1,
+                "next_id": 13,
+                "committed_input_ids": [
+                  220,
+                  18
+                ],
+                "imported": false,
+                "source_geometry": "recorded",
+                "trace_name": "round2_mtp2"
+              },
+              {
+                "index": 4,
+                "turn": 2,
+                "role": 6,
+                "requests": 1,
+                "member_index": 0,
+                "generation": true,
+                "input_rows": 1,
+                "input_hash": 4953175451281197642,
+                "first_input": 13,
+                "quota": 1,
+                "before_length": 35,
+                "before_frontier": 34,
+                "before_lag": 1,
+                "before_next_id": 13,
+                "draft": -1,
+                "target_first": 21134,
+                "target_second": -1,
+                "accepted": 1,
+                "draft_rows": 2,
+                "after_length": 36,
+                "after_frontier": 36,
+                "after_lag": 0,
+                "next_id": 21134,
+                "committed_input_ids": [
+                  13
+                ],
+                "imported": false,
+                "source_geometry": "recorded",
+                "trace_name": "round2_mtp3"
+              }
+            ]
+          }
+        ]
+      },
+      "report": null,
+      "comparison": {
+        "fields": {
+          "actual_graph_calls": true,
+          "generated_tokens": true,
+          "restore_count": true,
+          "restored_graph_calls": true,
+          "restored_target_rows": true,
+          "restored_draft_rows": true,
+          "normalized_lag_rows": true,
+          "recomputed_decision_changes": true,
+          "idle_evictions": true,
+          "session_ids": true
+        },
+        "cache": {
+          "cache_budget_scope": "shared_pools_and_retained_output_backing",
+          "cache_shared_backing_bytes": 41377843,
+          "cache_retained_output_backing_bytes": 0,
+          "cache_live_requested_bytes": 41377843,
+          "cache_peak_requested_bytes": 124579891,
+          "cache_requested_byte_limit": null
+        },
+        "performance_comparison": false
+      }
+    },
+    {
+      "case": "probe",
+      "process": {
+        "command": [
+          "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/qwen-retained-budget-20261022/probe1/qwen",
+          "--inputs",
+          "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/qwen-native-assembly-20261022/inputs/mtp",
+          "--out",
+          "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/qwen-retained-budget-20261022/probe-run1/observations"
+        ],
+        "cwd": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/qwen-retained-budget-20261022/probe1",
+        "image": {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/qwen-retained-budget-20261022/probe1/qwen",
+          "bytes": 12747064,
+          "sha256": "ab5e147679e5fd3c3b84522859949a4ee91602a14ed358ab336c3b2fe8a80066"
+        },
+        "started": 1792638667.4711192,
+        "performance_comparison": false,
+        "pid": 2709,
+        "state": "terminal",
+        "exit": 0,
+        "seconds": 19.551321744918823
+      },
+      "output": {
+        "status": "PASS_LIMITED_NATIVE_RETENTION_REJECTION_RETRY",
+        "old_components": 52,
+        "actual_retained_output_backing_bytes": 39989248,
+        "timing_comparison": false
+      },
+      "report": {
+        "status": "PASS_LIMITED_NATIVE_RETENTION_REJECTION_RETRY",
+        "backend": "apple",
+        "capacity": 64,
+        "resident_limit": 1,
+        "active_sequences": 1,
+        "cache_limit_bytes": 268435456,
+        "seed_rounds": 2,
+        "old_target_rows": 18,
+        "old_draft_rows": 17,
+        "old_lag": 1,
+        "complete_old_components": 52,
+        "old_whole_snapshot_unchanged_checks": 3,
+        "native_completed_before_quota_pressure": true,
+        "pressure_allocates_device_memory": false,
+        "quota_pressure_bytes": 227766221,
+        "bytes_before_pressure": 40669235,
+        "bytes_after_rejection_with_pressure": 268435456,
+        "bytes_after_pressure_release": 40669235,
+        "rejection": "cache retained-state admission failed before snapshot publication: shared resource budget is exhausted; live=268435456, limit=268435456; increase --cache-bytes or reduce retained sessions/context; old snapshots remain valid",
+        "rejected_head_and_ledger_unpublished": true,
+        "rejected_candidate_and_slot_retired": true,
+        "retry_same_model_phase_slot_base": true,
+        "retry_matches_reference_whole_payload": true,
+        "cache_shared_backing_bytes": 20688947,
+        "actual_retained_output_backing_bytes": 39989248,
+        "cache_live_requested_bytes": 60678195,
+        "cache_peak_requested_bytes": 268435456,
+        "native_private_bytes_unknown": true,
+        "physical_memory_cap_known": false,
+        "timing_comparison": false,
+        "fingerprint": "FNV1a64 diagnostic; equality compares full byte arrays",
+        "old_components": [
+          {
+            "name": "layer0.conv.bf16",
+            "bytes": 36864,
+            "fnv1a64": "6cb9f3c959f67f4d"
+          },
+          {
+            "name": "layer0.gdn.f32",
+            "bytes": 1048576,
+            "fnv1a64": "6d95546e95747e56"
+          },
+          {
+            "name": "layer1.conv.bf16",
+            "bytes": 36864,
+            "fnv1a64": "4466128f9c9e5bb5"
+          },
+          {
+            "name": "layer1.gdn.f32",
+            "bytes": 1048576,
+            "fnv1a64": "ccfbd50dd22d68bb"
+          },
+          {
+            "name": "layer2.conv.bf16",
+            "bytes": 36864,
+            "fnv1a64": "f0d4cc2ad15d2d76"
+          },
+          {
+            "name": "layer2.gdn.f32",
+            "bytes": 1048576,
+            "fnv1a64": "6e9471abfbf26f49"
+          },
+          {
+            "name": "layer4.conv.bf16",
+            "bytes": 36864,
+            "fnv1a64": "b7f6e77f95748bca"
+          },
+          {
+            "name": "layer4.gdn.f32",
+            "bytes": 1048576,
+            "fnv1a64": "29ce7256269863df"
+          },
+          {
+            "name": "layer5.conv.bf16",
+            "bytes": 36864,
+            "fnv1a64": "7a6f6b355d90219b"
+          },
+          {
+            "name": "layer5.gdn.f32",
+            "bytes": 1048576,
+            "fnv1a64": "4b231ca344b5eeda"
+          },
+          {
+            "name": "layer6.conv.bf16",
+            "bytes": 36864,
+            "fnv1a64": "006e1e79daac08d7"
+          },
+          {
+            "name": "layer6.gdn.f32",
+            "bytes": 1048576,
+            "fnv1a64": "cd27136976c3bb87"
+          },
+          {
+            "name": "layer8.conv.bf16",
+            "bytes": 36864,
+            "fnv1a64": "2c11a8a8e2c59a33"
+          },
+          {
+            "name": "layer8.gdn.f32",
+            "bytes": 1048576,
+            "fnv1a64": "82cbf5017a68e57d"
+          },
+          {
+            "name": "layer9.conv.bf16",
+            "bytes": 36864,
+            "fnv1a64": "9e1a6307b69d959d"
+          },
+          {
+            "name": "layer9.gdn.f32",
+            "bytes": 1048576,
+            "fnv1a64": "f5af80f004cbb0c3"
+          },
+          {
+            "name": "layer10.conv.bf16",
+            "bytes": 36864,
+            "fnv1a64": "8329454d4dc26713"
+          },
+          {
+            "name": "layer10.gdn.f32",
+            "bytes": 1048576,
+            "fnv1a64": "f99cf24e1365742c"
+          },
+          {
+            "name": "layer12.conv.bf16",
+            "bytes": 36864,
+            "fnv1a64": "fd1d40b6d6b4b4d9"
+          },
+          {
+            "name": "layer12.gdn.f32",
+            "bytes": 1048576,
+            "fnv1a64": "a544965ace7ba1d2"
+          },
+          {
+            "name": "layer13.conv.bf16",
+            "bytes": 36864,
+            "fnv1a64": "7cd7392e8309fffb"
+          },
+          {
+            "name": "layer13.gdn.f32",
+            "bytes": 1048576,
+            "fnv1a64": "394c55a5d4197e7b"
+          },
+          {
+            "name": "layer14.conv.bf16",
+            "bytes": 36864,
+            "fnv1a64": "1f976e0dea183eef"
+          },
+          {
+            "name": "layer14.gdn.f32",
+            "bytes": 1048576,
+            "fnv1a64": "1f24fd62ae01950e"
+          },
+          {
+            "name": "layer16.conv.bf16",
+            "bytes": 36864,
+            "fnv1a64": "8938fc9b9d419d41"
+          },
+          {
+            "name": "layer16.gdn.f32",
+            "bytes": 1048576,
+            "fnv1a64": "dcf5da887eab53ce"
+          },
+          {
+            "name": "layer17.conv.bf16",
+            "bytes": 36864,
+            "fnv1a64": "fed72f519625262a"
+          },
+          {
+            "name": "layer17.gdn.f32",
+            "bytes": 1048576,
+            "fnv1a64": "caf8dd49a64a71db"
+          },
+          {
+            "name": "layer18.conv.bf16",
+            "bytes": 36864,
+            "fnv1a64": "cc2abd4ee52139d2"
+          },
+          {
+            "name": "layer18.gdn.f32",
+            "bytes": 1048576,
+            "fnv1a64": "d66c36530497924c"
+          },
+          {
+            "name": "layer20.conv.bf16",
+            "bytes": 36864,
+            "fnv1a64": "da739b26a3b04efd"
+          },
+          {
+            "name": "layer20.gdn.f32",
+            "bytes": 1048576,
+            "fnv1a64": "7a3d1125523593ff"
+          },
+          {
+            "name": "layer21.conv.bf16",
+            "bytes": 36864,
+            "fnv1a64": "08997bbf3eaa6ba4"
+          },
+          {
+            "name": "layer21.gdn.f32",
+            "bytes": 1048576,
+            "fnv1a64": "ca1ca468a7fa5508"
+          },
+          {
+            "name": "layer22.conv.bf16",
+            "bytes": 36864,
+            "fnv1a64": "0db2ccb70ba6d93b"
+          },
+          {
+            "name": "layer22.gdn.f32",
+            "bytes": 1048576,
+            "fnv1a64": "3d204f11b67b6ce2"
+          },
+          {
+            "name": "target0.key.bf16",
+            "bytes": 18432,
+            "fnv1a64": "330c1abf49711427"
+          },
+          {
+            "name": "target0.value.bf16",
+            "bytes": 18432,
+            "fnv1a64": "323107130b6c97a8"
+          },
+          {
+            "name": "target1.key.bf16",
+            "bytes": 18432,
+            "fnv1a64": "658a82c4fb014d0a"
+          },
+          {
+            "name": "target1.value.bf16",
+            "bytes": 18432,
+            "fnv1a64": "7f128493d53fedd7"
+          },
+          {
+            "name": "target2.key.bf16",
+            "bytes": 18432,
+            "fnv1a64": "5de02de7c206d4e4"
+          },
+          {
+            "name": "target2.value.bf16",
+            "bytes": 18432,
+            "fnv1a64": "6ffedf798788cbed"
+          },
+          {
+            "name": "target3.key.bf16",
+            "bytes": 18432,
+            "fnv1a64": "37f253f6b83cb43d"
+          },
+          {
+            "name": "target3.value.bf16",
+            "bytes": 18432,
+            "fnv1a64": "43e829f5a43fdd18"
+          },
+          {
+            "name": "target4.key.bf16",
+            "bytes": 18432,
+            "fnv1a64": "e35140defac4cd2d"
+          },
+          {
+            "name": "target4.value.bf16",
+            "bytes": 18432,
+            "fnv1a64": "ed3c43eb9d4a0a91"
+          },
+          {
+            "name": "target5.key.bf16",
+            "bytes": 18432,
+            "fnv1a64": "f823d96fd8ff3ff4"
+          },
+          {
+            "name": "target5.value.bf16",
+            "bytes": 18432,
+            "fnv1a64": "6025d3b6c5b0d557"
+          },
+          {
+            "name": "draft.key.bf16",
+            "bytes": 17408,
+            "fnv1a64": "0b4fb2a4270763a5"
+          },
+          {
+            "name": "draft.value.bf16",
+            "bytes": 17408,
+            "fnv1a64": "18e616613729dc91"
+          },
+          {
+            "name": "carry.bf16",
+            "bytes": 4096,
+            "fnv1a64": "63000c123e03888a"
+          },
+          {
+            "name": "prior.bf16",
+            "bytes": 4096,
+            "fnv1a64": "665ec0d7685da653"
+          }
+        ],
+        "reference_and_retry_emitted": [
+          5433
+        ]
+      }
+    }
+  ],
+  "limitations": [
+    "Finite C64/P15 or three-session/two-turn fixtures, not full numerical/model-quality validation",
+    "Quota pressure is a real budget Reservation after actual native completion; it does not allocate device bytes or simulate a device failure",
+    "52-component comparisons cover all committed logical KV ranges, states and hidden rows; unused physical KV tails are not read",
+    "No physical/driver/MLX execution peak cap; no new full TPS or GPU-memory side sampling",
+    "Apple prefix/native cancellation combinations and other selected MTP model/quantization profiles remain",
+    "Vulkan rotation/rebinding is separate implementation in progress, not covered by these passing native results"
+  ],
+  "read_only_reviews": [
+    {
+      "scope": "Read-only minimal Qwen retained-budget integration review; no product edit/build/model/native/GPU run",
+      "status": "frozen recommendation for root implementation; no runtime acceptance claim",
+      "necessary_changes": [
+        {
+          "at": "tools/qwen35_text/main.cc:2138-2158",
+          "change": "Use storage_lease(cache_budget) for each accepted history/recurrent output (36 per member) and selected carry_hidden; accepted-two also budget prior_hidden. Apply this uniformly to caller and generated outputs: same-scope original pool admission is idempotent. Keep ID/logits/trace/probe temporary result exports unbudgeted by cache_budget."
+        },
+        {
+          "at": "tools/qwen35_text/main.cc:2188-2258",
+          "change": "Finish all retained-output budget admission for ALL members before the first take_append. Keep original export -> all 12 target + 2 draft takes -> ready/reframe -> unbind -> nonthrowing complete-head swap. Native quota failure must never first publish a subset of heads or consume some bank publications before the budget check."
+        },
+        {
+          "at": "tools/qwen35_text/main.cc:3556-3577",
+          "change": "Keep cache::plan geometry/N/R/physical inventory, but do not use its CUDA caller-output backing_bytes as native auto byte limit or as a native N-fitting estimator. For native auto retain an explicit auto/unbounded admission mode; for native explicit finite cache bytes keep requested N/R and enforce actual known pool + real output-retention reservations. If a cold known pool or completed-result admission does not fit, fail honestly through the existing transaction. CUDA preallocated-pool binary selection can stay in its existing actual caller-pool path."
+        },
+        {
+          "at": "tools/qwen35_text/main.cc:1082-1086,3845-3846",
+          "change": "known_cache_backing_bytes remains fixed actual arena/initial-state/actual caller-output pool backing, not a snapshot of dynamic usage. prepare_state_storage cold equality can remain valid before any result exists. The restore/adoption-time usage == known check must allow dynamic retained-output charges (at least usage >= fixed known base); do not mutate the known base to make equality appear true."
+        },
+        {
+          "at": "tools/qwen35_text/main.cc:2977+,3324-3325,3880-3883,4182-4185,4224-4247",
+          "change": "Report budget mode/explicit limit, fixed known base, actual cache budget live/peak requested bytes, and unknown native execution-private backing separately at all CLI output surfaces, including single-MTP print_mtp_request (currently receives no Model). Neither live nor peak retention accounting is a measured Metal/process peak. Do not keep describing all generated retained backing as unknown after successfully accounting it, or change the unknown-private execution fact to false."
+        }
+      ],
+      "existing_failure_path": {
+        "at": "tools/qwen35_text/main.cc:614-680,2272;1711-1731",
+        "fact": "After original actual retirement, try_abort recovers every bound append, destroys the failed original Invocation, rolls back pending append reservations/discards failed writers, drops all next/base episode pins, and releases admission. finish catch invokes the same abort. Budget export failure before first take therefore fits this path without a second executor or extra recovery protocol.",
+        "constraint": "Old heads stay installed until all fallible work is complete. Admission must include overlap of old live heads and new candidates; do not credit a future old-head release early. A finite quota may reject a transaction whose eventual final footprint would fit, because atomic publication requires both versions temporarily."
+      },
+      "paths_easy_to_miss": [
+        {
+          "path": "MTP carry/prior",
+          "at": "main.cc:2149-2164",
+          "fact": "carry is required for all MTP roles, including teacher-forced single/prefill/catchup; prior is newly exported when verify accepts two. Both need retention admission before any take. Draft key/value are already the independently charged 2 arena backings, not another generated state pool."
+        },
+        {
+          "path": "initial and caller-owned states",
+          "at": "main.cc:1037-1086,1512-1531",
+          "fact": "Twelve/fourteen shared arenas and actual state/hidden initial/caller pools are already globally charged. Initial zero carry/state and output aliases of these pools must preserve same-scope charge, not be added as per-head logical bytes."
+        },
+        {
+          "path": "prefix whole hit and fork",
+          "at": "prefix_cache.h:228-255,283-310;main.cc:1484-1507",
+          "fact": "Directory/Hit/Session hold the same complete SnapshotRef. Exported leases already carry the scope; lookup/adopt/fullhit0Graph need no new native allocation or logical-size charge. A prefix checkpoint can retain an old backing after its source advances, so directory eviction is not proof bytes are gone when another Session/slot/native use still owns it."
+        },
+        {
+          "path": "strict restore and normal committed-token rebuild",
+          "at": "main.cc:2635-2689,2695-2758",
+          "fact": "Both rebuild through normal prepare/submit/finish; central finish retention covers new states/carry. Quota failure keeps temporary session cleanup and caller ledger facts; do not inject old GPU state or suppress admission to make restore fit. Every intermediate replay boundary can remain charged if an original slot/input/export retains it."
+        },
+        {
+          "path": "temporary trace/ID/logits/probe",
+          "at": "main.cc:2090-2100,2181-2185",
+          "fact": "These exports exist to read actual completed output and diagnostics. They should not turn every native output into cache retention. If such an alias shares an already-budgeted domain it can conservatively extend that domain charge, which is expected, not a second logical payload charge."
+        },
+        {
+          "path": "retained original native slot outputs",
+          "at": "src/graph_route_apple/native_region.cc:246-248,403-422,450-454,695-708",
+          "fact": "export_port caches the original ReadLease by port. bind/submit and the existing qualified binding-release path clear projections, but not every idle Phase/slot is necessarily immediately reused/destroyed. A charge attached to that same domain may outlive the last Snapshot; usage must remain authoritative and no fixed-base equality may claim that it was released."
+        }
+      ],
+      "report_semantics": {
+        "known_cache_backing_bytes": "Actual one-time arena/initial/caller-pool backing reserved by this Model. It is a base, not all retained state after native execution.",
+        "cache_live_requested_bytes": "Current actual ResourceBudget usage for the nominated device, including fixed base plus deduplicated retained generated backings. It includes legitimate lingering domain/slot/real-use owners.",
+        "cache_peak_requested_bytes": "Peak of that managed retention admission scope. Not native physical allocator peak, RSS, total unified memory, or transient execution allocation.",
+        "auto": "No numeric native closed-form backing estimate is substituted for the requested auto policy. Explicit flag/null limit can accompany actual ResourceBudget SIZE_MAX internal limit.",
+        "finite_limit": "Completed-result retention and known-pool quota. Native operations can have allocated opaque/transient backing before retention admission, so this is not a before-allocation device-memory safety cap.",
+        "unknown": "execution_budget.unattributed_usage/selected native private storage remains an explicitly separate unknown bound. The new cache accounting does not cover native intermediates, compiled artifacts, allocator cache, drivers, or weights."
+      },
+      "verification_suggestions_not_run": [
+        "Finite cap just below one required new backing: failure occurs at storage_lease before first take; all 14 transactions abort and old head/state/pending facts remain authoritative.",
+        "Same prefix head adopted twice has one shared native backing charge; original slot or real native use may delay its eventual release.",
+        "Single-MTP, multi-MTP and ordinary scheduled/restore reports distinguish actual dynamic live/peak retention from the fixed shared inventory and auto/explicit mode."
+      ],
+      "source_identities": {
+        "tools/qwen35_text/main.cc": {
+          "bytes": 279429,
+          "sha256": "29a388d5c85ecca65a22288b1b5d89fa22f471d1c61a5cee18009fba688ddda1"
+        },
+        "tools/qwen35_text/session_state.h": {
+          "bytes": 10809,
+          "sha256": "9cd094e7778ff48567b87c2983e138597940b9683e63023409562d0e562c35cd"
+        },
+        "tools/qwen35_text/prefix_cache.h": {
+          "bytes": 18627,
+          "sha256": "ed1bd7f444fbc54a0182717785b967a35a8d40fc555bf434b5ce86d71a337baa"
+        },
+        "src/graph_route_apple/native_region.cc": {
+          "bytes": 49275,
+          "sha256": "5091353367cdebbbd8f20c7bf719b104d6b1d283dec7cb019f181b76364ecf4f"
+        },
+        "src/compute/resource_leases.cc": {
+          "bytes": 39295,
+          "sha256": "fe2af6ebebca7e5b2e5b004fe1977703b77076d234716f639153a5425ae59b7a"
+        },
+        "include/hyle/graph/result.h": {
+          "bytes": 2146,
+          "sha256": "dc576aa9e523321df6d69ced5717cd9a8e92a9261245a42a431ecc8039a3dd46"
+        }
+      }
+    },
+    {
+      "status": "final narrow source review; no blocking finding; no new compile/native/GPU execution",
+      "source": {
+        "path": "tools/qwen35_text/main.cc",
+        "bytes": 279429,
+        "sha256": "29a388d5c85ecca65a22288b1b5d89fa22f471d1c61a5cee18009fba688ddda1"
+      },
+      "before": ".scratch/qwen-retained-budget-20261022/before/tools/qwen35_text/main.cc",
+      "confirmed": [
+        {
+          "at": "main.cc:1022-1059",
+          "fact": "cache_usage distinguishes fixed known pool inventory from native dynamic retained outputs; cache_report labels managed retention scope/live/peak and unknown native execution-private storage, emits null for SIZE_MAX limit, and denies a physical VRAM cap. retain_state_storage preserves original failure propagation."
+        },
+        {
+          "at": "main.cc:2176-2196;2226+;2290+",
+          "fact": "All participants history/recurrent and selected carry/prior use the retained cache budget before the first target/draft take. Original failure catch/abort and nonthrowing complete-head publication ordering remain intact."
+        },
+        {
+          "at": "main.cc:3601-3623",
+          "fact": "Native auto uses an unbounded retained-admission scope rather than the CUDA caller-output formula. Explicit native bytes do not derive a smaller N using that formula. CUDA exact preallocated-pool selection remains unchanged."
+        },
+        {
+          "at": "main.cc:3886",
+          "fact": "Ordinary restore/adoption now calls the compatible cache_usage check rather than requiring native dynamic usage equal the fixed shared inventory."
+        },
+        {
+          "at": "main.cc:3015-3048,3131,3359+,3410,4220+,4260+,4332+",
+          "fact": "Single MTP, multi-MTP aggregate and subresults, ordinary scheduled aggregate/subresults and ordinary legacy output all include the same Model cache_report. No unbudgeted persistent state/carry export remains in the reviewed finish diff."
+        }
+      ],
+      "important_boundaries": [
+        "Every cache_report describes one whole Model budget snapshot. Multi-session subresults repeat this global scope; their live/peak values must not be added as if per-session allocations.",
+        "Native original slot.exported/projected arrays, trace aliases, existing input bindings and actual native uses can legitimately retain a budgeted LeaseDomain after its Snapshot is evicted. The new fields reflect that lifetime, not directory size.",
+        "A finite limit bounds known pools and completed-result retention. The operation may have already allocated native transient output/intermediate storage; this is not a pre-allocation Metal/process peak cap.",
+        "Explicit quota failure is an honest transaction failure after original abort. This implementation intentionally does not add an LRU retry or early-release old heads inside finish.",
+        "The review binds the current source/diff only. Root-provided CUDA/Apple finite runs are not independently rerun or extended here."
+      ],
+      "product_edits_by_reviewer": false
+    }
+  ],
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\qwen-retained-budget-2026-10-22-logs.zip",
+    "bytes": 755782,
+    "sha256": "4b780cbb0dc88a90d37c3dffae4a0e6e8041d1781acecd71651e705fcb98bf27"
+  },
+  "archive_entries": [
+    {
+      "path": "source/docs/developer/current-work.md",
+      "bytes": 41728,
+      "sha256": "9f079818e21846c2e64d31b5890344d24649c10ad680e5f9d8e3eb1201781c3c"
+    },
+    {
+      "path": "source/include/hyle/compute/apple.h",
+      "bytes": 11664,
+      "sha256": "5baedfd8caa3dd7bd54d9c4619f3c7e7c7e853189a6d8d7c20ab1ebeb2b7dbd5"
+    },
+    {
+      "path": "source/include/hyle/compute/apple_batch.h",
+      "bytes": 8214,
+      "sha256": "c22b73da2caa1031a99fe5cbcbd81e6c255eec7429cbf542c06b35cd82ad8e98"
+    },
+    {
+      "path": "source/include/hyle/compute/apple_file_stream.h",
+      "bytes": 539,
+      "sha256": "1fc2c6854a03f30a3e1280e549b3abc0a40929e28c0548e502e527b3c1b8db1f"
+    },
+    {
+      "path": "source/include/hyle/compute/apple_memory.h",
+      "bytes": 11994,
+      "sha256": "b7a3f9714752cabab1ce2e9eb2a1c3d8473ac0d906498f22189ffa99e91ff0e4"
+    },
+    {
+      "path": "source/include/hyle/compute/apple_weights.h",
+      "bytes": 4606,
+      "sha256": "0f74446c0496272df3b902a52e0ec3f0897e6131ddc2f0bc1cdd95e81f228d4f"
+    },
+    {
+      "path": "source/include/hyle/compute/backends/cuda.h",
+      "bytes": 9030,
+      "sha256": "8b1eeec880b852f5d35a98464c55a20abb8de0b1db447421dff4b90ba4a13748"
+    },
+    {
+      "path": "source/include/hyle/compute/batch_execution.h",
+      "bytes": 10247,
+      "sha256": "4efe41eead34949a75dbb6fbae4ea7c3013b33e413b540d9d5e3b0d5396542c8"
+    },
+    {
+      "path": "source/include/hyle/compute/batch_layout.h",
+      "bytes": 10506,
+      "sha256": "db6c552379051f9b8132fc8dce775dd0826c9a8d1d0d7fd10eecd1f10b159921"
+    },
+    {
+      "path": "source/include/hyle/compute/batch_materialize.h",
+      "bytes": 7245,
+      "sha256": "9f57cfe9748faf89faae485b604a4b14d6f222bc3ce475bc40a1a265b405b50b"
+    },
+    {
+      "path": "source/include/hyle/compute/batch_ops.h",
+      "bytes": 6114,
+      "sha256": "d6dcf9e7c8559280a762d191bc41c4f7b56b0097844d0b31091b4fda361ea077"
+    },
+    {
+      "path": "source/include/hyle/compute/batch_paged_native.h",
+      "bytes": 4723,
+      "sha256": "b42b17bd38435422f06cd830f0b35f6c7deca256916d9d99bff52b9ec0d9f1ce"
+    },
+    {
+      "path": "source/include/hyle/compute/batch_transfer.h",
+      "bytes": 11416,
+      "sha256": "7bec296577c0439b0e0b48639ccff6b3bd95d137dba085c608f650dbb69fcd1b"
+    },
+    {
+      "path": "source/include/hyle/compute/completion.h",
+      "bytes": 1959,
+      "sha256": "98b34b9ee4665e9aedac719504c029a509f304b0a4f566bf6b7f76d88dc2ef34"
+    },
+    {
+      "path": "source/include/hyle/compute/cuda.h",
+      "bytes": 1457,
+      "sha256": "308beb0703f01239c106d23792f8ef68a57880630b209d1e772a6cd9958918e7"
+    },
+    {
+      "path": "source/include/hyle/compute/cuda_file_stream.h",
+      "bytes": 635,
+      "sha256": "7c89df9fedf1da81fbf6191b47d3557b2b4de115729b91805864e9f04c7208b9"
+    },
+    {
+      "path": "source/include/hyle/compute/cuda_weights.h",
+      "bytes": 5065,
+      "sha256": "1e3ca02148c67fc2d6d6744beb5a03ee93dcb7f7a61ffed16aa5b5e49d5a8079"
+    },
+    {
+      "path": "source/include/hyle/compute/detail/append_lease.h",
+      "bytes": 1944,
+      "sha256": "67b6e87fb0bfbc179d781174c2dc414f1e7487445925cb4c2a4faea579cb7ec5"
+    },
+    {
+      "path": "source/include/hyle/compute/detail/completion_access.h",
+      "bytes": 4164,
+      "sha256": "8699638e39a1a7d5708cbb6a5e41f191228b3ac571b16b026eadcc1aa6765e34"
+    },
+    {
+      "path": "source/include/hyle/compute/detail/context_ref.h",
+      "bytes": 2563,
+      "sha256": "b1295a6d21d452b2730e3907891ca49993e512a741f8f3a9689976e56f5af3f1"
+    },
+    {
+      "path": "source/include/hyle/compute/detail/copy_ranges.h",
+      "bytes": 1796,
+      "sha256": "86b711e8dd26d63bba37e0ebbd47956f28bfd58b28934ac8073f28df81c543e7"
+    },
+    {
+      "path": "source/include/hyle/compute/detail/copy_stream_access.h",
+      "bytes": 3611,
+      "sha256": "edc3c69aa398ee0f0ca1bbf47463925b0895b117edc8bed0a218b773cf52b681"
+    },
+    {
+      "path": "source/include/hyle/compute/detail/lease_access.h",
+      "bytes": 5891,
+      "sha256": "f5e6837eb1cd939d7cdce4051e2abac62c7ecfb372cebdc5ca22ea0bf2190418"
+    },
+    {
+      "path": "source/include/hyle/compute/detail/paged_arena_access.h",
+      "bytes": 6415,
+      "sha256": "ffba6a67c84d912e5a95e287ff27579e300c2e46479f8532d58bf54ba531e2e7"
+    },
+    {
+      "path": "source/include/hyle/compute/detail/resource_budget_access.h",
+      "bytes": 2741,
+      "sha256": "f5cfd7955fed71cf08b9a08e0ddacf70191495a61883dac4224e02ef3cba4871"
+    },
+    {
+      "path": "source/include/hyle/compute/device.h",
+      "bytes": 7702,
+      "sha256": "f966803f2293e03db1cde9b1327f847a92162f21adb53f69ef37f0c19b16a84a"
+    },
+    {
+      "path": "source/include/hyle/compute/file_stream.h",
+      "bytes": 9950,
+      "sha256": "a550dbddbd586998656d99372969c06f084967f183519bf846df88221bf2a414"
+    },
+    {
+      "path": "source/include/hyle/compute/low_precision.h",
+      "bytes": 10406,
+      "sha256": "0920a5a2faecb2991da60ecede680c496bab73411a305e559461ea41cea309cb"
+    },
+    {
+      "path": "source/include/hyle/compute/model_ops.h",
+      "bytes": 75815,
+      "sha256": "91ef5991618307e1be23c4d36f8b07aca09d9ff41473098b3d50ada4feb6b5cb"
+    },
+    {
+      "path": "source/include/hyle/compute/operation.h",
+      "bytes": 28108,
+      "sha256": "35b7c862143839e4b8ce0c9a49753b7add2f325ec424bf5f91a1afeec0101506"
+    },
+    {
+      "path": "source/include/hyle/compute/ops_visibility.h",
+      "bytes": 43,
+      "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+    },
+    {
+      "path": "source/include/hyle/compute/paged_arena.h",
+      "bytes": 14088,
+      "sha256": "24d54cdae3a2c46f28126fffbfce06fc28ee6acb44c677324ce4f8fbaf67d458"
+    },
+    {
+      "path": "source/include/hyle/compute/prepared_operation.h",
+      "bytes": 20281,
+      "sha256": "03895c56e8665daf2482f66fecf205fd8aacf92046e13c169d9d8ff86fff52d7"
+    },
+    {
+      "path": "source/include/hyle/compute/provider.h",
+      "bytes": 10281,
+      "sha256": "a9737ca3cf64eec23ce768e20b1112407fc7816a32f8031f0b668b16c49f816a"
+    },
+    {
+      "path": "source/include/hyle/compute/providers/flashinfer.h",
+      "bytes": 941,
+      "sha256": "5a8911aa510156602c76be9695ca6e8505ef4a71f1251e0e62cc60ca503f09a4"
+    },
+    {
+      "path": "source/include/hyle/compute/resource_budget.h",
+      "bytes": 4622,
+      "sha256": "578d440b6fc3f5b58809837506165de27ac0866ae39b2d132763f5dd1786b1ce"
+    },
+    {
+      "path": "source/include/hyle/compute/resource_leases.h",
+      "bytes": 8660,
+      "sha256": "4e5681ebfa7c2f2ad51e5788c8316f4b993883f595c04b33fe594d7294dab85b"
+    },
+    {
+      "path": "source/include/hyle/compute/result.h",
+      "bytes": 4704,
+      "sha256": "07a584147b7de3b3f3c1a238207df4ec548130308295b583fc8c93a4d36a4164"
+    },
+    {
+      "path": "source/include/hyle/compute/storage_owner.h",
+      "bytes": 8058,
+      "sha256": "549d881d8d4f96eedbb03c8ef9bd6892ede776e5da90a39025538bc50a0530d9"
+    },
+    {
+      "path": "source/include/hyle/compute/tensor.h",
+      "bytes": 1980,
+      "sha256": "ac00f221a66d0f9044a2b49a1123a6b99a6c425568790898129c31d81519c538"
+    },
+    {
+      "path": "source/include/hyle/compute/tensor_desc.h",
+      "bytes": 8700,
+      "sha256": "e5496e00c643bcce2efbb42666773f4172243d10458b756d6f9881b0e677eb9a"
+    },
+    {
+      "path": "source/include/hyle/compute/visibility.h",
+      "bytes": 43,
+      "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+    },
+    {
+      "path": "source/include/hyle/compute/weight_assembly.h",
+      "bytes": 2095,
+      "sha256": "c085186c2751371d8e642f29d1b338e53962236e50c9935ea1858a4b188ca3ac"
+    },
+    {
+      "path": "source/include/hyle/compute/workload.h",
+      "bytes": 5017,
+      "sha256": "2e7509d99d986e71b06788e4dd1dcb9595799e2ad972df48449ff0b58f0815ad"
+    },
+    {
+      "path": "source/include/hyle/container/detail/intrusive_member.h",
+      "bytes": 1822,
+      "sha256": "e3ea047e3ed723ab47061422c72ca83526ad107b983d3b6072d47fca91082f80"
+    },
+    {
+      "path": "source/include/hyle/container/intrusive_hlist.h",
+      "bytes": 15077,
+      "sha256": "ec18650198cd65bed765a6ebb83396cfc4b3bb9fff9704a6206bbc6378e4e680"
+    },
+    {
+      "path": "source/include/hyle/container/intrusive_list.h",
+      "bytes": 33222,
+      "sha256": "ad4739927482839590c349e5a6eeb9808f724406b0a27d9c5f46892148b7e688"
+    },
+    {
+      "path": "source/include/hyle/container/small_vector.h",
+      "bytes": 30022,
+      "sha256": "cd04f94cac8c7be603600dfeb2a343a88a576bb5230c914d6d38ae5676b99cee"
+    },
+    {
+      "path": "source/include/hyle/core/assert.h",
+      "bytes": 16114,
+      "sha256": "5596728bc220ea27696be4f25e2f9eb9cf2705930f8eb0461747c4a862615790"
+    },
+    {
+      "path": "source/include/hyle/core/compiler.h",
+      "bytes": 4287,
+      "sha256": "e31151f0ed73c532e464c6568483acecd80a2da9c1ee7afc7e081db87d6fb687"
+    },
+    {
+      "path": "source/include/hyle/core/detail/compiler_attributes.h",
+      "bytes": 1913,
+      "sha256": "263c7691f9984073e198b69328092330bf572195113d3994d1ab54fe4564d88a"
+    },
+    {
+      "path": "source/include/hyle/core/detail/preprocessor.h",
+      "bytes": 409,
+      "sha256": "1d9872ef98db007dcbed7e0128771244640e1de4092830d52a7a83537f98eb84"
+    },
+    {
+      "path": "source/include/hyle/core/environment.h",
+      "bytes": 6712,
+      "sha256": "3d289765b1b677499a444b38d1dbe366bb5e99f89fcb7670af2d08106fd958fa"
+    },
+    {
+      "path": "source/include/hyle/error/result.h",
+      "bytes": 30856,
+      "sha256": "7718409ab2854eb76959215b356bf8077007134d87db1a24f9384a9b5deff2b5"
+    },
+    {
+      "path": "source/include/hyle/error/status.h",
+      "bytes": 18122,
+      "sha256": "4d6b4b0bfa5628947aad5449320513d4b071e0c84debfac47f7a7d264cecb7f4"
+    },
+    {
+      "path": "source/include/hyle/graph/apple.h",
+      "bytes": 6233,
+      "sha256": "f61ad9e69cb85f731112b2a1ca0ec9b0a1158714e02b911bfc3924fbb0ba03d0"
+    },
+    {
+      "path": "source/include/hyle/graph/batch.h",
+      "bytes": 18453,
+      "sha256": "1cf89548b6544889419045c54d859153d5fdb21e49cdac8357e0f653dbdf04a0"
+    },
+    {
+      "path": "source/include/hyle/graph/compile_report.h",
+      "bytes": 577,
+      "sha256": "c42c30527d581975c49ddfebb182b0ae7928d799eed91172cb631779a2ad5b4f"
+    },
+    {
+      "path": "source/include/hyle/graph/cuda.h",
+      "bytes": 2663,
+      "sha256": "658f3dab4eb1a0a90f2dc472652e0c0fa5e694373544abc21331f116adee1373"
+    },
+    {
+      "path": "source/include/hyle/graph/executable.h",
+      "bytes": 50386,
+      "sha256": "aa3a55ed1869f84149ad0a6a558d6541880d71ba0bf4c6789480724564cdc0b0"
+    },
+    {
+      "path": "source/include/hyle/graph/execution_source.h",
+      "bytes": 1859,
+      "sha256": "b89de5c6fe8b84192c9618a6a4e4dcee8ac45393e04a9e335f17b5a2d3ecac3f"
+    },
+    {
+      "path": "source/include/hyle/graph/graph.h",
+      "bytes": 19988,
+      "sha256": "c7a93ccf9fd1c86fb9dec286e7d3345aabcb1810c2fb6793a66093480a5a2136"
+    },
+    {
+      "path": "source/include/hyle/graph/progress.h",
+      "bytes": 901,
+      "sha256": "0d39fc0706f5bfb3706f49e3d6f08d4471c9724cdb9aef13605a392e9f04f6d9"
+    },
+    {
+      "path": "source/include/hyle/graph/resources.h",
+      "bytes": 430,
+      "sha256": "c9d3075babb4d863f3543c76576d093fe59f9868df67d50fc492db0aebe7015d"
+    },
+    {
+      "path": "source/include/hyle/graph/result.h",
+      "bytes": 2146,
+      "sha256": "dc576aa9e523321df6d69ced5717cd9a8e92a9261245a42a431ecc8039a3dd46"
+    },
+    {
+      "path": "source/include/hyle/graph/visibility.h",
+      "bytes": 43,
+      "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+    },
+    {
+      "path": "source/include/hyle/graph/weight_binding.h",
+      "bytes": 422,
+      "sha256": "ebcc3eea951953966a3b10b2951872e74d04921af6f0cc8de45ab52ab1ba32bd"
+    },
+    {
+      "path": "source/include/hyle/io/buffer.h",
+      "bytes": 10908,
+      "sha256": "a8f184f572e7d7336bbeddbd6fdf0361173f8e0dd5e96e0ab4b028c9c64982cf"
+    },
+    {
+      "path": "source/include/hyle/io/capabilities.h",
+      "bytes": 5227,
+      "sha256": "b0fb030836a297dd16728b6c250c7e44510ef0b7e3e5d7a6f334d2462c6971f9"
+    },
+    {
+      "path": "source/include/hyle/io/detail/net.h",
+      "bytes": 12231,
+      "sha256": "3b246fdb7db67b571ca2debc85e0f2a15d764dea0937f080f84c71e1c1125956"
+    },
+    {
+      "path": "source/include/hyle/io/detail/net_budget.h",
+      "bytes": 9883,
+      "sha256": "558f0ac110e788bcf845ef9491fe5b0687ecd942913e03a1d68727c9721cb44d"
+    },
+    {
+      "path": "source/include/hyle/io/detail/net_timeout.h",
+      "bytes": 19015,
+      "sha256": "be0801ea66173063ec0bf9e7f7e9a24c9d05141284344e3ee6acfd13c34c24e9"
+    },
+    {
+      "path": "source/include/hyle/io/detail/proactor.h",
+      "bytes": 27949,
+      "sha256": "02aa67a112c705effeb1b39b1e35c0336b8a57792b5de82f7aa3b801eb68f133"
+    },
+    {
+      "path": "source/include/hyle/io/endpoint.h",
+      "bytes": 2885,
+      "sha256": "3396d90bfe96c7a9509faafb6596842f3108bc4333590146a39b603e6e1f79c8"
+    },
+    {
+      "path": "source/include/hyle/io/file.h",
+      "bytes": 12585,
+      "sha256": "d70b57f52cb4cd9da312c4ac116e69680f9bfcd1a8afe7331144e6744b9d8905"
+    },
+    {
+      "path": "source/include/hyle/io/io_context.h",
+      "bytes": 4309,
+      "sha256": "f82cd55aaa3a47536a41026bfc8f8f185eaf9af0a7359c0f00b6053576ad2409"
+    },
+    {
+      "path": "source/include/hyle/io/operation.h",
+      "bytes": 3463,
+      "sha256": "2441917bd0469c74a65a3f5f22e92e0d42926473398c1a420f86882c9c75669e"
+    },
+    {
+      "path": "source/include/hyle/mem/alignment.h",
+      "bytes": 3499,
+      "sha256": "75388cd67ecb0f6d9bd48a85ea9994e97d8e1db6658a57a3aa24fc89690c76a8"
+    },
+    {
+      "path": "source/include/hyle/mem/allocator.h",
+      "bytes": 11090,
+      "sha256": "0369680d4769a0187bfb77ee8b565b5e8fb53a03909fabf233458d9c1cbcd011"
+    },
+    {
+      "path": "source/include/hyle/mem/buffer.h",
+      "bytes": 19273,
+      "sha256": "346a4f810babb8c5dacba49faaf57903d998a3cbb49af12b8c62acc85f7be72c"
+    },
+    {
+      "path": "source/include/hyle/mem/fiber_stack.h",
+      "bytes": 5697,
+      "sha256": "d53e766fdac6fe9ee6fa3d0ba6b730f4fe9aa7d28c43a6d0cd60a0c5131bad30"
+    },
+    {
+      "path": "source/include/hyle/mem/mapping.h",
+      "bytes": 7139,
+      "sha256": "98b1a1ea8c4d85eff4fb8ddeb0fd7a425e7619128c468ae29e11c5e3fbfd05c3"
+    },
+    {
+      "path": "source/include/hyle/mem/quota_allocator.h",
+      "bytes": 7124,
+      "sha256": "a88fe230dc5358ddde6209de96cc61a59e3f6e60d30b9e7534e986fab10224c9"
+    },
+    {
+      "path": "source/include/hyle/mem/resource.h",
+      "bytes": 7717,
+      "sha256": "84b0366e658ec63f999b4c9719cf8584ad758f4ff5340baf37f1c3ebd17145cd"
+    },
+    {
+      "path": "source/include/hyle/mem/std_allocator.h",
+      "bytes": 5150,
+      "sha256": "adee9ae71753fa27e001b7b71b1d57b61e14f7ebcfdea57bb3993d2a3e9550e4"
+    },
+    {
+      "path": "source/include/hyle/mem/system_inline.h",
+      "bytes": 8762,
+      "sha256": "d890fe66b1a83a5f1a8f2b22c368276e7b3fadcfd0946df5279692ce055164f1"
+    },
+    {
+      "path": "source/include/hyle/mem/visibility.h",
+      "bytes": 43,
+      "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+    },
+    {
+      "path": "source/include/hyle/obs/trace.h",
+      "bytes": 8554,
+      "sha256": "be0df49a044a0888d46c6c2411a292fdd04908b7bdc393557b87d68a70cf1f6f"
+    },
+    {
+      "path": "source/include/hyle/platform/cpu.h",
+      "bytes": 14870,
+      "sha256": "033953ef33ba5fd57c98af540818bb7c82b8189a4ca1e2502e3297dddde48342"
+    },
+    {
+      "path": "source/include/hyle/platform/fs.h",
+      "bytes": 24891,
+      "sha256": "2af351149fc82762267b89303439ef71626a2eb541d1922ff6f66014136a9ffa"
+    },
+    {
+      "path": "source/include/hyle/platform/fs_visibility.h",
+      "bytes": 43,
+      "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+    },
+    {
+      "path": "source/include/hyle/platform/numa.h",
+      "bytes": 8400,
+      "sha256": "e154f229dc7f6f5ceb1c44f20f769204b48bd422e57c5fed1e53c490607b8fde"
+    },
+    {
+      "path": "source/include/hyle/platform/thread.h",
+      "bytes": 8423,
+      "sha256": "fe5d5dd5ff4a7190f9f9d98e5cbbf924a6d44ce62c30d257556b96ff6f711d1d"
+    },
+    {
+      "path": "source/include/hyle/platform/thread_visibility.h",
+      "bytes": 43,
+      "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+    },
+    {
+      "path": "source/include/hyle/platform/virtual_memory.h",
+      "bytes": 10485,
+      "sha256": "1b01086d44f330a592a5d3b4946fb213e485095dce904db99bb71103e2a578b8"
+    },
+    {
+      "path": "source/include/hyle/platform/visibility.h",
+      "bytes": 43,
+      "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+    },
+    {
+      "path": "source/include/hyle/platform/wait.h",
+      "bytes": 4708,
+      "sha256": "460fa7b1cab2f50b65b37a3f738cf0065bb607cde34cabf975cecc6e88f8d61f"
+    },
+    {
+      "path": "source/include/hyle/sched/blocking.h",
+      "bytes": 11177,
+      "sha256": "6ac68f05f6f1dce2ada469956d823bc52827e11aea781a74cc896877f145db41"
+    },
+    {
+      "path": "source/include/hyle/sched/cancel.h",
+      "bytes": 4793,
+      "sha256": "93a50fd56e083cc62938dc9115924f8a1da979ec879b2a8c1ea10e03b43adb43"
+    },
+    {
+      "path": "source/include/hyle/sched/coro.h",
+      "bytes": 11737,
+      "sha256": "8694732bb1a069fde73f0359399b13f893d41c6981800f05cd824b293d93df54"
+    },
+    {
+      "path": "source/include/hyle/sched/fiber.h",
+      "bytes": 12046,
+      "sha256": "64f4dc01aedc6b5a3ae7a481dc8ac70d44dd2f032cf8a8c7dc479245d1eb2a79"
+    },
+    {
+      "path": "source/include/hyle/sched/join.h",
+      "bytes": 33859,
+      "sha256": "ddff411dbf716c7fa1566ef115e8ddbe8ab010f8db701d82c6ccfee4077f8df4"
+    },
+    {
+      "path": "source/include/hyle/sched/priority.h",
+      "bytes": 1391,
+      "sha256": "2e86acbc6a9f8b7d80a9692682be4eca2340f132aacec76b3456a90f2d9aee1e"
+    },
+    {
+      "path": "source/include/hyle/sched/scheduler.h",
+      "bytes": 20496,
+      "sha256": "8ab542f46ed961d13f497004579eba81ce6ad62acdb79a26486a8b55b2741829"
+    },
+    {
+      "path": "source/include/hyle/sched/sync.h",
+      "bytes": 78133,
+      "sha256": "dea8c4ba498d97223a8039718449e4bcf4a6ec9ee3dd5c26779725e49f73d1dc"
+    },
+    {
+      "path": "source/include/hyle/sched/timer.h",
+      "bytes": 3646,
+      "sha256": "2339fc15eae1fcd3401a53bb83d59ffad26fdc4d58e544941aa54906bb7ec2c5"
+    },
+    {
+      "path": "source/include/hyle/sched/waker.h",
+      "bytes": 3374,
+      "sha256": "85c40b6f63b1db04ceffc99681d590a59160ddd15cc1988a6161ad73396e61ed"
+    },
+    {
+      "path": "source/include/hyle/time/clock.h",
+      "bytes": 30458,
+      "sha256": "383955c82cb45d63addc85ec307fff4f0f5bfd6f44089a489b0ecc1529b4c689"
+    },
+    {
+      "path": "source/include/hyle/time/timer_entry.h",
+      "bytes": 3392,
+      "sha256": "7c4e58dc71513648edeeaf2e3eda9d1b2126356054332ac911c6b2a9743bfa83"
+    },
+    {
+      "path": "source/include/hyle/time/unix_timestamp.h",
+      "bytes": 11791,
+      "sha256": "bcd6bdc860d6ee1e73004ebd15e3b2b2a60ca3dff7a0818deecf9420f95b4496"
+    },
+    {
+      "path": "source/include/hyle/util/spin_lock.h",
+      "bytes": 4270,
+      "sha256": "3c0326e4fb09ec6a43b56eccea267b4b45886262094010bcd3dbac759696ea1b"
+    },
+    {
+      "path": "source/include/hyle/visibility.h",
+      "bytes": 11701,
+      "sha256": "893fa73589b6e46f00474c2258af74c28d662b52176b57012290c820812ed486"
+    },
+    {
+      "path": "source/tools/qwen35_text/CMakeLists.txt",
+      "bytes": 2396,
+      "sha256": "b95ead856e01c55a843869512180bdd69e6630c9c4fd1debff87478e016c5720"
+    },
+    {
+      "path": "source/tools/qwen35_text/README.md",
+      "bytes": 35533,
+      "sha256": "3470981cda336dadb0333042540f22b0b2a325b15245e117adba2d6b1a52a22e"
+    },
+    {
+      "path": "source/tools/qwen35_text/backend.h",
+      "bytes": 7224,
+      "sha256": "7822808811e82164415945816e475592adf2826b986bb3a1ebd33a61c4e77a27"
+    },
+    {
+      "path": "source/tools/qwen35_text/batch_schedule.h",
+      "bytes": 7902,
+      "sha256": "61f7aebc8d923057769495d108d8c5555c6232bdcaef05e07eead620a1bc8ea4"
+    },
+    {
+      "path": "source/tools/qwen35_text/main.cc",
+      "bytes": 279429,
+      "sha256": "29a388d5c85ecca65a22288b1b5d89fa22f471d1c61a5cee18009fba688ddda1"
+    },
+    {
+      "path": "source/tools/qwen35_text/mtp_graph.h",
+      "bytes": 18155,
+      "sha256": "409ac3116cdcf34dadcf8ebe8a6f638061eb23d5ac79011deb82509b4758b97f"
+    },
+    {
+      "path": "source/tools/qwen35_text/mtp_schedule.h",
+      "bytes": 4698,
+      "sha256": "091a7d5c7b61bf72c842ddbb540f428ae29d362fc0a2a7892d2f2cd1dd7349ff"
+    },
+    {
+      "path": "source/tools/qwen35_text/prefix_cache.h",
+      "bytes": 18627,
+      "sha256": "ed1bd7f444fbc54a0182717785b967a35a8d40fc555bf434b5ce86d71a337baa"
+    },
+    {
+      "path": "source/tools/qwen35_text/retained_budget_probe.cc",
+      "bytes": 19620,
+      "sha256": "8a8f87f390787a586c946608c33a9ba16bed4df679cce6fa0209831dea238f03"
+    },
+    {
+      "path": "source/tools/qwen35_text/schedule.h",
+      "bytes": 4762,
+      "sha256": "093583e30cdce2e55d4a40b3f384715a25928a3583b8171057c0719218145fbe"
+    },
+    {
+      "path": "source/tools/qwen35_text/session_cache.h",
+      "bytes": 8963,
+      "sha256": "b7385d37ac5461d947ff02b5be6de47f608abd0cea319b8e015ec5201923f8d7"
+    },
+    {
+      "path": "source/tools/qwen35_text/session_schedule.h",
+      "bytes": 4134,
+      "sha256": "7ce20af02378a4904cda4d522a01ffeb7b047febaaed5b41d1b82c7ab18c31ac"
+    },
+    {
+      "path": "source/tools/qwen35_text/session_state.h",
+      "bytes": 10809,
+      "sha256": "9cd094e7778ff48567b87c2983e138597940b9683e63023409562d0e562c35cd"
+    },
+    {
+      "path": "stage/apple-N1R1-comparison.json",
+      "bytes": 706,
+      "sha256": "dca4b9dda6d25bfc19a36f4d6d54491ebedc030754f758e366d0cfa80d8c55db"
+    },
+    {
+      "path": "stage/apple-N1R1-run1.json",
+      "bytes": 192175,
+      "sha256": "4f1f5a69763658c7bfd6bccbb20ddb3b41799b915e7c75cc0d5c3731dc0848fe"
+    },
+    {
+      "path": "stage/apple-N2R2-comparison.json",
+      "bytes": 702,
+      "sha256": "350e2aff704eb6a77ee2aa975d023818989d8da269c8aa80c3db0f4c55c11508"
+    },
+    {
+      "path": "stage/apple-N2R2-run1.json",
+      "bytes": 238658,
+      "sha256": "6d8ac0ff38938a9f8c7480341bdee107be1dcc602b21e2f348b59471a566f9cc"
+    },
+    {
+      "path": "stage/apple-consumer1-plan.json",
+      "bytes": 28295,
+      "sha256": "75ae74c9f0fdadc3f0b5c6d34e610efb8dc0b669115d88df6ed6342761a6f373"
+    },
+    {
+      "path": "stage/apple-consumer1.json",
+      "bytes": 8647,
+      "sha256": "a1006a4566b512fb39d3602e861c9c7f8e4d73374ed233fd288da34b6892441b"
+    },
+    {
+      "path": "stage/apple-mtp-comparison.json",
+      "bytes": 622,
+      "sha256": "fd97b88e1b72b5cf4e12f14134df0a47a2b9b2b3b9bca350451b303117d39ea7"
+    },
+    {
+      "path": "stage/apple-mtp-run1.json",
+      "bytes": 67139,
+      "sha256": "692517904d855465d93fd094b128f6da9c2ac43b907299dc4f15e4c69810bdbe"
+    },
+    {
+      "path": "stage/apple-plain-comparison.json",
+      "bytes": 636,
+      "sha256": "601b5467865020a48679be2e4b8e72357dce1c8b179b95f177b8b5b55808d11d"
+    },
+    {
+      "path": "stage/apple-plain-run1.json",
+      "bytes": 36173,
+      "sha256": "20f53d5ffdffe78686d417ce36534a2e8453c59aba8a8353d127b366dce006da"
+    },
+    {
+      "path": "stage/apple-probe-run1.json",
+      "bytes": 78948,
+      "sha256": "6c43c5e28d1ec9206639e56614d6f68c5213d25ffc229fa63860fca25ebf5c24"
+    },
+    {
+      "path": "stage/apple-probe1-plan.json",
+      "bytes": 29378,
+      "sha256": "a74d73e945971fc9a00b5c81679bca2988107878837078f0a53391ba141d083a"
+    },
+    {
+      "path": "stage/apple-probe1.json",
+      "bytes": 8634,
+      "sha256": "5c88aa5501012e5490fc587f2ee0fa4e93950db689dcd9a203ec4bd2284739d7"
+    },
+    {
+      "path": "stage/apple.py",
+      "bytes": 4325,
+      "sha256": "f259ff2703451be0a7543da5a0ab19989d0adda7e369199b133460426cbddbb7"
+    },
+    {
+      "path": "stage/before.json",
+      "bytes": 619,
+      "sha256": "6ad92aba53ddc9ef5ce522f496895c11e5e5462664ed3f058e5aeb035cff967e"
+    },
+    {
+      "path": "stage/before/docs/developer/current-work.md",
+      "bytes": 40603,
+      "sha256": "6643115b438e6a6288a28efc2753aed52b9bb9a40d407a01209a3e2c4e81c2e9"
+    },
+    {
+      "path": "stage/before/test.ps1",
+      "bytes": 1609,
+      "sha256": "0d403b93ba824a53efed3ec334765370a665de029cb7db4b24a72dba4d999252"
+    },
+    {
+      "path": "stage/before/tools/qwen35_text/CMakeLists.txt",
+      "bytes": 1791,
+      "sha256": "2bd5a35f8cf32d563532b2f01724d7f54d49e7926aadb13e2a01febf72ef0a03"
+    },
+    {
+      "path": "stage/before/tools/qwen35_text/README.md",
+      "bytes": 34203,
+      "sha256": "01c990084eb4fdbdbe263822e2175c906a8b9ed9da5440514b1efc10bde53a79"
+    },
+    {
+      "path": "stage/before/tools/qwen35_text/main.cc",
+      "bytes": 278021,
+      "sha256": "e13b60ac2a41706145ada1936e89496ecf6da4bd635665f029c42e47d09aaca1"
+    },
+    {
+      "path": "stage/build_windows.py",
+      "bytes": 3041,
+      "sha256": "bdfee147a682783841d48a4050388bdc37226c7b420f0d6a4b6638a99e22f65c"
+    },
+    {
+      "path": "stage/cleanup-plan.json",
+      "bytes": 680,
+      "sha256": "2eec79bb9ab4835788f795febd05d0f26929faa2c82136f3982907299c803312"
+    },
+    {
+      "path": "stage/cleanup-receipt.json",
+      "bytes": 810,
+      "sha256": "4d78623d2db1b8f068dc37bf25baef5091c9eac87478f7c2cb322406bd3c603d"
+    },
+    {
+      "path": "stage/cleanup-test.ps1",
+      "bytes": 1537,
+      "sha256": "a8fc53a90b8910e37f86f831e176c98b6efd686fde392231580ba65e48231b56"
+    },
+    {
+      "path": "stage/compile1/main/compile.command.json",
+      "bytes": 2136,
+      "sha256": "d989412abb1ffa30a2052db687351001126dcbdb20b04ac21175822c1c2e7a90"
+    },
+    {
+      "path": "stage/compile1/main/compile.result.json",
+      "bytes": 2207,
+      "sha256": "172ad390d19aeb79bf60dacf9f58b731c36dc5f17f6b819afba46b5a718d0a3b"
+    },
+    {
+      "path": "stage/compile1/main/compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "stage/compile1/main/compile.stdout.log",
+      "bytes": 9,
+      "sha256": "f197b2519eedf02e571357ddc67cf5ca097ec055c64ddd28a980d92394b07b5d"
+    },
+    {
+      "path": "stage/compile1/main/identity.json",
+      "bytes": 71489,
+      "sha256": "b9db73612285392dc60f79a0d27f52349c297381daf2855ef52b6e155d0630d3"
+    },
+    {
+      "path": "stage/compile1/main/live.json",
+      "bytes": 2207,
+      "sha256": "172ad390d19aeb79bf60dacf9f58b731c36dc5f17f6b819afba46b5a718d0a3b"
+    },
+    {
+      "path": "stage/compile1/main/main-deps.json",
+      "bytes": 32874,
+      "sha256": "8f242be600b3416cc007caaabc0e819a10eabed8871343cd13081d6cc821f3cb"
+    },
+    {
+      "path": "stage/compile1/main/plan.json",
+      "bytes": 2515,
+      "sha256": "2d35bd5b7a6d3d548dce10e121143b08c49e61f6bb0533e28650ba95bbb06fbe"
+    },
+    {
+      "path": "stage/compile1/main/source/tools/qwen35_text/main.cc",
+      "bytes": 279429,
+      "sha256": "29a388d5c85ecca65a22288b1b5d89fa22f471d1c61a5cee18009fba688ddda1"
+    },
+    {
+      "path": "stage/cuda-link1/link-plan.json",
+      "bytes": 83548,
+      "sha256": "9885d539696243b139946288b5f59655f53ec57f44099906f5f5f51b44e93582"
+    },
+    {
+      "path": "stage/cuda-link1/link.command.json",
+      "bytes": 29065,
+      "sha256": "fca3f1837159b8a41dd471c76bb471576ab3a6730e6306872dcc353e3a93c95e"
+    },
+    {
+      "path": "stage/cuda-link1/link.result.json",
+      "bytes": 29136,
+      "sha256": "18c669953a27a295c8ecb3df29aa1aab2eece4886074884bb3c0c85a97e2a4da"
+    },
+    {
+      "path": "stage/cuda-link1/link.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "stage/cuda-link1/link.stdout.log",
+      "bytes": 206,
+      "sha256": "dc942d3651f3a91a59db640f6b80f044466ca96ff217d8f247ffdd1bdd071623"
+    },
+    {
+      "path": "stage/cuda-link1/live.json",
+      "bytes": 29136,
+      "sha256": "18c669953a27a295c8ecb3df29aa1aab2eece4886074884bb3c0c85a97e2a4da"
+    },
+    {
+      "path": "stage/cuda-link1/ready.json",
+      "bytes": 445,
+      "sha256": "e738ae278fa5bb7cad8366939c78362b4bd27e7f5173211450704f9a61091509"
+    },
+    {
+      "path": "stage/cuda-link1/runtime-environment.json",
+      "bytes": 8848,
+      "sha256": "9b8792339651220a9fbf129bdf6b7e0d7fe8ca0a777fcf87b578e069f67ecf25"
+    },
+    {
+      "path": "stage/cuda-mtp/command.json",
+      "bytes": 881,
+      "sha256": "dbed6f228bd75eb18d2719e2d2716ba383b00bd82559cc27a95910b56810a740"
+    },
+    {
+      "path": "stage/cuda-mtp/comparison.json",
+      "bytes": 820,
+      "sha256": "26763f474f82ecd3e95a3fc86fa3d0b8d59b8965e20c6bd489fe86aefb0b7b92"
+    },
+    {
+      "path": "stage/cuda-mtp/result.json",
+      "bytes": 930,
+      "sha256": "ac056e16fee70318eb8a377ff9a4300523419f2259622f1f8a02795cb3d0c79b"
+    },
+    {
+      "path": "stage/cuda-mtp/stderr.log",
+      "bytes": 3860,
+      "sha256": "ffcb81e6e3751d8fcddb26e56509480df791714ae46d5936d909ea70483b3cda"
+    },
+    {
+      "path": "stage/cuda-mtp/stdout.log",
+      "bytes": 1854,
+      "sha256": "06820348fa4f354fc5ad7eef4ec908463a8a61a7d05b365eec3c547396c76f99"
+    },
+    {
+      "path": "stage/cuda-plain/command.json",
+      "bytes": 885,
+      "sha256": "1aea0b53d2221d51374b7f9d64451f551e09ae2f6ff77ed7bc35830c03ac647b"
+    },
+    {
+      "path": "stage/cuda-plain/comparison.json",
+      "bytes": 748,
+      "sha256": "d56f022579fe3690ae257e46f95385e50fd2a257654c88ed39b08a0225bb7ceb"
+    },
+    {
+      "path": "stage/cuda-plain/result.json",
+      "bytes": 933,
+      "sha256": "dcc63c5dcc772ed5d8ec97fca6dea4a17a2089c005852321357b0f0ad0e5c04d"
+    },
+    {
+      "path": "stage/cuda-plain/stderr.log",
+      "bytes": 25267,
+      "sha256": "5fcc61d8997547d3a086ec8b19e96df842f78632f78efc2a91301eac35393677"
+    },
+    {
+      "path": "stage/cuda-plain/stdout.log",
+      "bytes": 1721,
+      "sha256": "ebc628ed01a0797bb8d83c3a6ef9e9d57d190cb1523834ac1c866d5a7bac1e75"
+    },
+    {
+      "path": "stage/diff/docs/developer/current-work.md.diff",
+      "bytes": 12236,
+      "sha256": "73235b78581ce4dc9e81ebc9ef164fe7a6cbb570e2eeb5829de9940248499122"
+    },
+    {
+      "path": "stage/diff/tools/qwen35_text/CMakeLists.txt.diff",
+      "bytes": 1008,
+      "sha256": "d278a69629bf6ed28cd3ec6122801e52f21824ec1279ec3994d99a36853bc10f"
+    },
+    {
+      "path": "stage/diff/tools/qwen35_text/README.md.diff",
+      "bytes": 7063,
+      "sha256": "7a2c2005c8e2242759e624b1ec55fa57c07b1045d6f662044c9c4f32c1306ec5"
+    },
+    {
+      "path": "stage/diff/tools/qwen35_text/main.cc.diff",
+      "bytes": 14408,
+      "sha256": "6a1b5febe79a5a14da73e4a47d01787b5c4ca0814da7458ca968c8bc7b39fde9"
+    },
+    {
+      "path": "stage/live.json",
+      "bytes": 930,
+      "sha256": "ac056e16fee70318eb8a377ff9a4300523419f2259622f1f8a02795cb3d0c79b"
+    },
+    {
+      "path": "stage/publish.py",
+      "bytes": 6385,
+      "sha256": "734313fa6865f72aa8d8b5ad13ac81537f232ce58888b9db7fe8d967f740a245"
+    },
+    {
+      "path": "stage/review/final-main-review.json",
+      "bytes": 2959,
+      "sha256": "242c972bf263e4047acb906d6ee15d63f7588981a3540133ee5c1bf1d0e9cf5b"
+    },
+    {
+      "path": "stage/review/integration-review.json",
+      "bytes": 9213,
+      "sha256": "4b8728a4d8b58bcfe37767cdbe5be48d78bbe7218ef7024df0d7a8881d92c48e"
+    },
+    {
+      "path": "stage/run.py",
+      "bytes": 7137,
+      "sha256": "b21034714eff53b89f3dd84a258da105c3241c01131420d75c8a1d72b18019d7"
+    },
+    {
+      "path": "stage/vulkan_build.py",
+      "bytes": 4277,
+      "sha256": "c1a155c9228a0eae6c145487aed86ae256f7bad982ee16fa276fe10b7576af91"
+    }
+  ],
+  "cleanup": {
+    "receipt": {
+      "removed": [
+        {
+          "Bytes": 59031932,
+          "Path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-retained-budget-20261022\\cuda-link1\\qwen.map",
+          "SHA256": "4cdf6d3f41b97c1935dcf8d597cf38c183170a13c26474db19668f9931c7dcb2"
+        },
+        {
+          "Bytes": 41384,
+          "Path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-retained-budget-20261022\\cuda-link1\\qwen.lib",
+          "SHA256": "339d3ce297534ebac8825c27a011f2f4f9dfe366c657ebfc45dbbfdc8412a2cb"
+        },
+        {
+          "Bytes": 24978,
+          "Path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-retained-budget-20261022\\cuda-link1\\qwen.exp",
+          "SHA256": "5b2455f96f33a79da3f4b4a34914b8ce0a80402988a320839db1955c21941335"
+        }
+      ],
+      "logical_file_bytes": 59098294.0,
+      "physical_free_space_measured": false
+    },
+    "script": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-retained-budget-20261022\\cleanup-test.ps1",
+      "bytes": 1537,
+      "sha256": "a8fc53a90b8910e37f86f831e176c98b6efd686fde392231580ba65e48231b56"
+    },
+    "executed": true,
+    "do_not_rerun": true,
+    "execution_original_path": "C:\\public\\project-hyle\\hyle\\test.ps1"
+  }
+}

@@ -1,0 +1,418 @@
+{
+  "date": "2026-10-20",
+  "status": "first_preparation_cost_localized_scratch_only",
+  "purpose": "Locate the9.5–13.8ms first2parity coldpreparation from prior peerwindow; do not move preparation outside a timer or claim speedup.",
+  "prior_window": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\qwen-stable-bind-2026-10-20.json",
+    "bytes": 37523,
+    "sha256": "3a1c6099a707a140ff2e93026b0a367f8cc4430d308fc1126027c272ae287391"
+  },
+  "source": {
+    "product_unchanged": {
+      "path": "C:\\public\\project-hyle\\hyle\\tools\\qwen35_text\\main.cc",
+      "bytes": 57917,
+      "sha256": "33a3e3de91050ad752935b81d1b5bb82fa9e09a8868ca04b0a028dd832b66a6c"
+    },
+    "scratch_instrumented": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-first-prepare\\candidate\\main.cc",
+      "bytes": 58786,
+      "sha256": "bc8b0ec8bd807b8e336d57e7977476533b3a9c41ebfbaad7fa721869743ad343"
+    },
+    "before": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-first-prepare\\before\\main.cc",
+      "bytes": 57917,
+      "sha256": "33a3e3de91050ad752935b81d1b5bb82fa9e09a8868ca04b0a028dd832b66a6c"
+    },
+    "diff": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-first-prepare\\main.diff",
+      "bytes": 2727,
+      "sha256": "c317c7420509ccbe8d58804a79cb764b543f78205f3bbd33827fa1c396745422"
+    },
+    "freeze": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-first-prepare\\source-freeze.json",
+      "bytes": 2607,
+      "sha256": "0b93c739c5a15802c6fb9f1c519e80dd742fa6b79cae1b8f9e208ebd99912581"
+    },
+    "common_link_plan": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-first-prepare\\checks\\link-plan.json",
+      "bytes": 63895,
+      "sha256": "0e1ee5769f3eebcdfe2b0f497a0afc6ef31201d4b00c2e016ea9510f34a833a7"
+    },
+    "common_inputs": 149
+  },
+  "instrumentation": {
+    "original_total_cold_boundary_retained": true,
+    "interior_clock_points_added": 3,
+    "stages": [
+      "layoutversion/arrays",
+      "batch::prepare",
+      "Invocation::prepare_replay",
+      "replay report"
+    ],
+    "private_or_core_hooks": false,
+    "profiler": false
+  },
+  "observations": {
+    "first2_totals": {
+      "prefer-capture": {
+        "cold_total_seconds": 0.0095303,
+        "layout_seconds": 3.56e-05,
+        "batch_seconds": 0.0015584000000000001,
+        "replay_seconds": 0.0079353,
+        "report_seconds": 1e-06
+      },
+      "commands": {
+        "cold_total_seconds": 0.0027002,
+        "layout_seconds": 2.9400000000000003e-05,
+        "batch_seconds": 0.001591,
+        "replay_seconds": 0.0010792,
+        "report_seconds": 6e-07
+      }
+    },
+    "first2_replay_delta_seconds": 0.0068560999999999995,
+    "all3phases": {
+      "prefer-capture": [
+        {
+          "tokens": 128,
+          "visible": 128,
+          "route": "hybrid",
+          "cold_total_seconds": 0.0452822,
+          "layout_seconds": 2.97e-05,
+          "batch_seconds": 0.0008284,
+          "replay_seconds": 0.0444235,
+          "report_seconds": 6e-07,
+          "recorded": 1,
+          "reused": 0,
+          "printed_stage_sum_error_seconds": 6.938893903907228e-18
+        },
+        {
+          "tokens": 1,
+          "visible": 129,
+          "route": "hybrid",
+          "cold_total_seconds": 0.0048966,
+          "layout_seconds": 1.88e-05,
+          "batch_seconds": 0.000616,
+          "replay_seconds": 0.0042612,
+          "report_seconds": 6e-07,
+          "recorded": 1,
+          "reused": 0,
+          "printed_stage_sum_error_seconds": 0.0
+        },
+        {
+          "tokens": 1,
+          "visible": 130,
+          "route": "hybrid",
+          "cold_total_seconds": 0.0046337,
+          "layout_seconds": 1.68e-05,
+          "batch_seconds": 0.0009424,
+          "replay_seconds": 0.0036741,
+          "report_seconds": 4e-07,
+          "recorded": 1,
+          "reused": 0,
+          "printed_stage_sum_error_seconds": 0.0
+        }
+      ],
+      "commands": [
+        {
+          "tokens": 128,
+          "visible": 128,
+          "route": "commands",
+          "cold_total_seconds": 0.0011447,
+          "layout_seconds": 1.78e-05,
+          "batch_seconds": 0.0005736,
+          "replay_seconds": 0.0005528,
+          "report_seconds": 5e-07,
+          "recorded": 0,
+          "reused": 0,
+          "printed_stage_sum_error_seconds": 0.0
+        },
+        {
+          "tokens": 1,
+          "visible": 129,
+          "route": "commands",
+          "cold_total_seconds": 0.0011781,
+          "layout_seconds": 1.65e-05,
+          "batch_seconds": 0.0006276,
+          "replay_seconds": 0.0005337,
+          "report_seconds": 3e-07,
+          "recorded": 0,
+          "reused": 0,
+          "printed_stage_sum_error_seconds": 0.0
+        },
+        {
+          "tokens": 1,
+          "visible": 130,
+          "route": "commands",
+          "cold_total_seconds": 0.0015221,
+          "layout_seconds": 1.29e-05,
+          "batch_seconds": 0.0009634,
+          "replay_seconds": 0.0005455,
+          "report_seconds": 3e-07,
+          "recorded": 0,
+          "reused": 0,
+          "printed_stage_sum_error_seconds": 0.0
+        }
+      ]
+    },
+    "full_step_control": [
+      {
+        "mode": "prefer-capture",
+        "first2": {
+          "post_prepare_seconds": 0.0193305,
+          "submit_seconds": 0.00036990000000000005,
+          "step_seconds": 0.0289378
+        },
+        "phases": [
+          {
+            "phase": 1,
+            "post_prepare_seconds": 0.0094024,
+            "submit_seconds": 0.0001854,
+            "step_seconds": 0.0143376
+          },
+          {
+            "phase": 2,
+            "post_prepare_seconds": 0.0099281,
+            "submit_seconds": 0.0001845,
+            "step_seconds": 0.0146002
+          }
+        ],
+        "limit": "Commands encodes atsubmit, captured mode encodes duringcoldprepare. Timer relocation and pipelineoverlap mean capture-preparation delta isnot saved inference latency."
+      },
+      {
+        "mode": "commands",
+        "first2": {
+          "post_prepare_seconds": 0.0224537,
+          "submit_seconds": 0.010098900000000001,
+          "step_seconds": 0.0252236
+        },
+        "phases": [
+          {
+            "phase": 1,
+            "post_prepare_seconds": 0.0118582,
+            "submit_seconds": 0.0051811,
+            "step_seconds": 0.0130719
+          },
+          {
+            "phase": 2,
+            "post_prepare_seconds": 0.0105955,
+            "submit_seconds": 0.0049178,
+            "step_seconds": 0.0121517
+          }
+        ],
+        "limit": "Commands encodes atsubmit, captured mode encodes duringcoldprepare. Timer relocation and pipelineoverlap mean capture-preparation delta isnot saved inference latency."
+      }
+    ],
+    "conclusions": [
+      "Recorded first2cold total9.5303ms decomposes tolayout0.0356ms/batch1.5584ms/replay7.9353ms/report0.0010ms. Commands control layout0.0294/batch1.5910/replay1.0792/report0.0006ms.",
+      "batch::prepare time is essentially similar in these2observations. Extra6.8561ms in replay identifies the first-capture lifecycle (encoding+instantiate+retirement) as the main location relative to this command-preparation control, not model input/layout construction.",
+      "Prefill replay44.4235ms versus commands0.5528ms is also in that branch. First module/kernel initialization and actual command encoding may move between coldprepare and submit depending on mode. Do not interpret preparation-only differences as saved total inference time.",
+      "Same6prefix vectors per mode exactly match retained canonical hidden/logits; no numerical path or clock boundary was changed. Two modes deliberately have different command recording/submission behavior; one sample each does not establish a speed ratio."
+    ]
+  },
+  "root_cause_scope": "Most extra firstcoldtime versus command-preparation control sits in the firstcapture lifecycle. This aggregate includes actualcommand encoding,CUDAgraphinstantiate andretirement; APIselftimes/callbackcounts are unmeasured. No particular allocator/query proven dominant.",
+  "source_findings": [
+    {
+      "source": "src/graph_batch/batch.cc:869",
+      "fact": "First layout episode discovers/registers batch readers and creates original per-nodeBatchProgram/native/workspace; selected later episodes reuse the cached reader set, still prepare currentmetadata."
+    },
+    {
+      "source": "src/graph/executable.cc:9241,9357-9464",
+      "fact": "First replay prepares bindings/dependencies then begins an original capture sequence, enqueues every command in immutable compatible range, ends/instantiates, retires actual sequence. Retained range shortcut skips recording later."
+    },
+    {
+      "source": "src/compute_backend_cuda/cuda_backend.cc:1244-1323",
+      "fact": "Begin alwayscudaMalloc4Bstatus beforeStreamBeginCapture; endStreamEndCapture→GraphInstantiateWithFlags→GraphDestroy. Unused status iscudaFree atscopeexit. Allocation exists but timing contribution/status-used for this exact captured range is not observed."
+    },
+    {
+      "source": "src/compute_provider_ggml_cuda/ggml_cuda_provider.cc:893-929,1010-1065",
+      "fact": "Every actual recorded nativeggml slot retains one retirement node; iterative retirement loops over nodes and queriescudaStreamIsCapturing for its recorded stream afterScopedPrimaryContext. Many nodes in one outerrange share the same stream. The388reportedT1steps bound opportunities; exact actual callback count not instrumented."
+    },
+    {
+      "source": "src/compute_provider_cublas/cublas_provider.cc:submit",
+      "fact": "Recording still calls originalLtMatmul toencode each selected projection once; warmouterGraphLaunch doesnot repeat thoseCPUcalls. This mandatory firstencoding cost mustnot be classified as unnecessary duplicate computation."
+    }
+  ],
+  "next_candidates": [
+    {
+      "candidate": "Repeated same-stream capture-state queries in native retirementchain",
+      "confirmed_source_redundancy": "Per-node stream queries despite a single original outercapture; exactcovered native count and APIselftime unknown.",
+      "possible_minimal_followup": "If root prioritizes, bound native source-only timing of encode/end/retire before any productchange. A local retirement-loop memo keyed actualstream+context could avoid repeated queries withoutnewAPI/state, but requires success/failure/partial-retirement safety review and measured relevance.",
+      "implemented": false
+    },
+    {
+      "candidate": "Unconditional4B capturestatusallocation/free",
+      "confirmed_source_redundancy": "Storage allocatedeven if no statuskerneluses it; currentrange actual status-use not proved.",
+      "limits": "Do not allocate lazily insidecapture illegally, reuse an EventSlot word whose lifetime is shorter than capturedartifact, or remove asyncerrorchecking. No allocation change withoutnative ownership proof/timing relevance.",
+      "implemented": false
+    }
+  ],
+  "source_excerpts": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-first-prepare\\source-excerpts\\index.json",
+    "bytes": 2099,
+    "sha256": "0d6b86a94292c957db0f40f5e57e425b6318f5ad263487886506e3225e722be9"
+  },
+  "route_inventory": {
+    "128": {
+      "identity": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-first-prepare\\diagnostic\\prefer-capture-fixed-prefix\\trace\\routes\\default-T128.route.tsv",
+        "bytes": 36783,
+        "sha256": "bd9ac4ef0dd17a8326e370d0adf57436e10b4158831bc1c7af92cbf14d7823f5"
+      },
+      "steps": 1113,
+      "counts": [
+        {
+          "kind": "0",
+          "provider": "cccl-cuda",
+          "count": 2
+        },
+        {
+          "kind": "1",
+          "provider": "ggml-cuda",
+          "count": 254
+        },
+        {
+          "kind": "3",
+          "provider": "",
+          "count": 518
+        },
+        {
+          "kind": "0",
+          "provider": "cublasLt",
+          "count": 187
+        },
+        {
+          "kind": "0",
+          "provider": "ggml-cuda",
+          "count": 116
+        },
+        {
+          "kind": "0",
+          "provider": "original-artifacts-cuda",
+          "count": 18
+        },
+        {
+          "kind": "0",
+          "provider": "hyle-cuda",
+          "count": 12
+        },
+        {
+          "kind": "1",
+          "provider": "flashinfer",
+          "count": 6
+        }
+      ],
+      "ggml_reported_steps": 370
+    },
+    "1": {
+      "identity": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-first-prepare\\diagnostic\\prefer-capture-fixed-prefix\\trace\\routes\\default-T1.route.tsv",
+        "bytes": 35547,
+        "sha256": "86c3799a908d2c78b22af70efed2c2fc18d45cceb8fd9bb1f7c5a5edb22d8c70"
+      },
+      "steps": 1047,
+      "counts": [
+        {
+          "kind": "0",
+          "provider": "cccl-cuda",
+          "count": 2
+        },
+        {
+          "kind": "1",
+          "provider": "ggml-cuda",
+          "count": 272
+        },
+        {
+          "kind": "3",
+          "provider": "",
+          "count": 518
+        },
+        {
+          "kind": "0",
+          "provider": "cublasLt",
+          "count": 103
+        },
+        {
+          "kind": "0",
+          "provider": "ggml-cuda",
+          "count": 116
+        },
+        {
+          "kind": "0",
+          "provider": "original-artifacts-cuda",
+          "count": 18
+        },
+        {
+          "kind": "0",
+          "provider": "hyle-cuda",
+          "count": 12
+        },
+        {
+          "kind": "1",
+          "provider": "flashinfer",
+          "count": 6
+        }
+      ],
+      "ggml_reported_steps": 388
+    }
+  },
+  "correctness": {
+    "both_modes_exit0": true,
+    "exact6prefix_each": true,
+    "all_finite": true,
+    "hash_proof": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-first-prepare\\diagnostic\\vector-hash-proof.json",
+      "bytes": 9428,
+      "sha256": "26e89861214382bcd870dbe1d22e263bb9caaa552d3c49acc6ea3010c150443f"
+    },
+    "summary": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-first-prepare\\diagnostic\\summary.json",
+      "bytes": 25394,
+      "sha256": "8afeb4edbd5e17e3d2105f5de8a6940f7dc3d9088ce852cc9936ea19b1a784b8"
+    },
+    "independent_quality_acceptance": false
+  },
+  "actual_process_counts": {
+    "CXX": 1,
+    "link": 1,
+    "NVCC": 0,
+    "consumer_attempts": 3,
+    "CLI_argument_rejection_before_CUDA": 1,
+    "model_processes": 2,
+    "model_exit0": 2,
+    "SDK": 0,
+    "profiler": 0,
+    "throughput_windows": 0
+  },
+  "first_CLI_rejection": {
+    "stderr": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-first-prepare\\diagnostic\\prefer-capture\\qwen.stderr.log",
+      "bytes": 71,
+      "sha256": "a8e1bd6a206b4c53b602fc39ae269772aba259f3df008c6798503c7397bc1f6a"
+    },
+    "result": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-first-prepare\\diagnostic\\prefer-capture\\qwen.result.json",
+      "bytes": 965,
+      "sha256": "d769273bba641047bc3d83303c84bf5fa7d6b6105bb0ef44a6b0a2a167572677"
+    },
+    "reason": "--steps3with31-IDtape rejected beforeModel/CUDA setup; fixed by using originalfirst2IDs withsameCLI/mathcontract."
+  },
+  "limits": [
+    "CurrentT1route contains388GGMLreportedsteps, not proof every step is in capturedrange or every callbackran388times.",
+    "The commands control still must encode physicalcommands atsubmit; its reducedcoldtimer is not an inference speedup.",
+    "The fourstagesretain originalcoldstart/end and add3interiorclockpoints; smallinstrumentationperturbationexists.",
+    "NoCupti/Nsight/nativeAPIcounter trace, no perAPI cost attributed, no extraGPUwindow.",
+    "Root owns possible subsequent native/core changes; none made here.",
+    "Commands mode encodes during actualsubmit, not duringprepare: first2submit10.0989ms versus captured0.3699ms. The6.8561ms prepare delta is not saved inference time; fullstep sums are28.9378/25.2236ms in these single diagnostic processes.",
+    "No throughput window, furtherGPUexperiment,publiccorechange,precisionchange or optimization adopted in this diagnostic batch.",
+    "Parent may review same-Completion repeatednative query proof separately; no implementation or measured benefit signed here."
+  ],
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\qwen-first-prepare-2026-10-20.zip",
+    "bytes": 167178,
+    "sha256": "8b3048a940510f9d610c90fb2cd54d3eb4e5d9d42067ebd5f7172d7cd989a401",
+    "payloads": 62,
+    "CRC_checked": true,
+    "all_payload_SHA256_checked": true,
+    "excluded": "Executables/objects/libs/SDK/fullmaps/duplicate raw prefixvectors."
+  }
+}

@@ -1,0 +1,155 @@
+{
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\qwen35-full-cuda-2026-10-19\\cuda-bf16-dual-projection.zip",
+    "bytes": 96454642,
+    "sha256": "7430dc89515d87e3b8cb27870c0a2bf9ea956b5de235602521274c03dd86011c",
+    "entries": 967,
+    "CRC_and_payload_SHA_verified": true,
+    "reclaim_manifest": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-bf16-dual-projection\\reclaim-targets.json",
+      "bytes": 7513,
+      "sha256": "83c238384c668ab710e965cca3f396aeae339ad33a307dcd99043e7435dcbd52"
+    },
+    "files_deleted": 0
+  },
+  "objects_retained": true,
+  "targets": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-bf16-dual-projection\\checks\\20261019T084721\\baseline.exp",
+      "bytes": 25027,
+      "sha256": "a39201545b6f5302e5db4fb9e95ae4eec0bab8e577fe91bf596dfd516547f8eb"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-bf16-dual-projection\\checks\\20261019T084721\\baseline.lib",
+      "bytes": 41736,
+      "sha256": "716c7bf4e9533f251a02b7669470b23b4e893859b4ada256dc3b7d54f4554a1f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-bf16-dual-projection\\checks\\20261019T084721\\baseline.map",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-bf16-dual-projection\\checks\\relink-20261019T084930\\baseline.exe",
+      "bytes": 116244992,
+      "sha256": "84c2dadd5683c16d600961753a27b2e7b2f3cd77c58d3fb643ae231f2600339b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-bf16-dual-projection\\checks\\relink-20261019T084930\\baseline.exp",
+      "bytes": 25034,
+      "sha256": "c5b27f5ebaf3da4e414ea88010b32d9a428a7c709b4a9ae596cdac5a59dc3e94"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-bf16-dual-projection\\checks\\relink-20261019T084930\\baseline.lib",
+      "bytes": 41736,
+      "sha256": "716c7bf4e9533f251a02b7669470b23b4e893859b4ada256dc3b7d54f4554a1f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-bf16-dual-projection\\checks\\relink-20261019T084930\\baseline.map",
+      "bytes": 33703139,
+      "sha256": "1c00fcefa51e3152c073d082e49fc2ad82341ac4a86e5dae4d6d2f56301385e5"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-bf16-dual-projection\\checks\\relink-20261019T084930\\qwen.exe",
+      "bytes": 116292096,
+      "sha256": "2b652f5deb5a85d914952740b237280f99cce467d6d1f5a9b911d9d3154ba2d0"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-bf16-dual-projection\\checks\\relink-20261019T084930\\qwen.exp",
+      "bytes": 25026,
+      "sha256": "136d17d8097f5e3e5fa8f19300bddb48f33b69b02d77a9e0ebe5b911c622306d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-bf16-dual-projection\\checks\\relink-20261019T084930\\qwen.lib",
+      "bytes": 41384,
+      "sha256": "339d3ce297534ebac8825c27a011f2f4f9dfe366c657ebfc45dbbfdc8412a2cb"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-bf16-dual-projection\\checks\\relink-20261019T084930\\qwen.map",
+      "bytes": 33731314,
+      "sha256": "74362da939cb6abb2af1ebb136a20fae9ef9c50ba998c73685b7762a28d256b3"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-bf16-dual-projection\\metadata-fix\\checks\\20261019T091159\\cuda.exe",
+      "bytes": 118224384,
+      "sha256": "af6ad54d50fea1546ed73869cecf3deca27fedd3d1b19b8ff0923d9b67bf2663"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-bf16-dual-projection\\metadata-fix\\checks\\20261019T091159\\cuda.exp",
+      "bytes": 25032,
+      "sha256": "5534c8c1f915886ee629992c3f885742329cec8afe48c16ec59783941ee629dc"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-bf16-dual-projection\\metadata-fix\\checks\\20261019T091159\\cuda.lib",
+      "bytes": 41384,
+      "sha256": "097299e17e955c077a99f65f363d3484d564c016359baeb643f4e47c6b737d59"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-bf16-dual-projection\\metadata-fix\\checks\\20261019T091159\\cuda.map",
+      "bytes": 37445617,
+      "sha256": "37f3f48caf71a393782e73e0a1b814200e869b11efd2e8ac145f595323f76cc6"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-bf16-dual-projection\\metadata-fix\\checks\\20261019T091159\\qwen.exe",
+      "bytes": 116293632,
+      "sha256": "f1300408225479e73870a0b43cc655f43389c3499ee889ca74a57b439e068fef"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-bf16-dual-projection\\metadata-fix\\checks\\20261019T091159\\qwen.exp",
+      "bytes": 25032,
+      "sha256": "e4c320777a115efd1cddd6422c22e95e40c18f8b43e77f5ca16e4141af819d21"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-bf16-dual-projection\\metadata-fix\\checks\\20261019T091159\\qwen.lib",
+      "bytes": 41384,
+      "sha256": "339d3ce297534ebac8825c27a011f2f4f9dfe366c657ebfc45dbbfdc8412a2cb"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-bf16-dual-projection\\metadata-fix\\checks\\20261019T091159\\qwen.map",
+      "bytes": 33731602,
+      "sha256": "d87c68c54eba96f95e01578bec8e46eb3dba7f25f0a0b5ac92fbbfeead9b9476"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-bf16-dual-projection\\metadata-fix\\performance-prepared\\peer.exe",
+      "bytes": 35814400,
+      "sha256": "d19f2d9ea5fbc77a3b67c440d2160c49e33762c8bcbcd00aaa51834d3838db29"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-bf16-dual-projection\\metadata-fix\\performance-prepared\\peer.map",
+      "bytes": 22806334,
+      "sha256": "38b109dbf97c1d2d886299945480f38821c9a849dfa2a455ed6d38d78a12ffd0"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-bf16-dual-projection\\performance-prepared\\peer.exe",
+      "bytes": 35814400,
+      "sha256": "5006fbc7e4ffdfef1c629edf2fdadefa38e81c226c3b723fd0c78c99f08c2381"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-bf16-dual-projection\\performance-prepared\\peer.map",
+      "bytes": 22806334,
+      "sha256": "66f2a35a28e5bf983fe7053bd3b9f82e8dcec8cc85699bfaca92bbc1be1f6d01"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-bf16-dual-projection\\tests-build\\20261019T085621\\cuda-tests.exe",
+      "bytes": 118223360,
+      "sha256": "d5c111aaa863823df5475b204b443f9e9700bc64945892a320af6ebad5ef847b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-bf16-dual-projection\\tests-build\\20261019T085621\\cuda-tests.exp",
+      "bytes": 25036,
+      "sha256": "bafdf08c5fe5a41242e6aa93d4f379729a66af4f60472c734c7909c51777c198"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-bf16-dual-projection\\tests-build\\20261019T085621\\cuda-tests.lib",
+      "bytes": 41912,
+      "sha256": "0e7db8c36cf2f28f9f9d8cacc9eef0c27ac43ca835729c6bf69bb5abce18a383"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-bf16-dual-projection\\tests-build\\20261019T085621\\cuda-tests.map",
+      "bytes": 37445827,
+      "sha256": "261804f2b862b161931e859e0ef784bfe3096d60a0ba8f1430dab9f58042cab2"
+    }
+  ],
+  "raw_vectors_retained": true,
+  "recursive": false
+}

@@ -12,6 +12,7 @@
 #include "backend_internal.h"
 #include "completion_internal.h"
 #include "hyle/compute/backends/cpu.h"
+#include "hyle/compute/detail/context_ref.h"
 #include "hyle/compute/delegated_operation.h"
 #include "hyle/compute/detail/backend_extension.h"
 #include "hyle/compute/detail/completion_access.h"
@@ -269,7 +270,7 @@ const hyle::compute::detail::CompletionVTable kAsyncOperationCompletionVTable{
 };
 
 hyle::compute::detail::EnqueueResult
-submit_async_operation(void *, void *invocation, hyle::compute::Queue &,
+submit_async_operation(void *, void *invocation, hyle::compute::detail::QueueSequence &,
                        std::span<const hyle::compute::ConstTensorView>,
                        std::span<const hyle::compute::TensorView>) noexcept {
   auto &probe = *static_cast<AsyncOperationProbe *>(invocation);
@@ -869,7 +870,7 @@ const hyle::compute::detail::ProviderPreparedVTable kDelegatedPreparedVTable{
 };
 
 hyle::compute::detail::EnqueueResult
-invalid_shared_submit(void *, void *, hyle::compute::Queue &,
+invalid_shared_submit(void *, void *, hyle::compute::detail::QueueSequence &,
                       std::span<const hyle::compute::ConstTensorView>,
                       std::span<const hyle::compute::TensorView>) noexcept {
   return hyle::compute::detail::EnqueueResult::rejected(
@@ -1010,7 +1011,7 @@ hyle::Status observe_probe_extension(void *, const void *interface_value,
 
 hyle::compute::detail::EnqueueResult
 submit_probe_extension(void *, const void *interface_value, void *call_context,
-                       hyle::compute::Queue &) noexcept {
+                       hyle::compute::detail::QueueSequence &) noexcept {
   const auto &interface =
       *static_cast<const ProbeExtensionInterface *>(interface_value);
   *static_cast<std::uint32_t *>(call_context) = interface.marker;
@@ -1258,6 +1259,8 @@ TEST(RuntimeProviders, ProposalCannotBeSplicedIntoAnotherSameFamilySlot) {
   auto context = hyle::compute::Context::create(hyle::compute::cpu::device(),
                                                 {.providers = providers})
                      .value();
+  const auto context_ref =
+      hyle::compute::detail::ContextRef::acquire(context).value();
   const auto description =
       hyle::compute::TensorDesc::dense(hyle::compute::DataType::kFloat32,
                                        std::array<std::int64_t, 1>{8})
@@ -1268,7 +1271,7 @@ TEST(RuntimeProviders, ProposalCannotBeSplicedIntoAnotherSameFamilySlot) {
   std::array<hyle::compute::detail::ResourceBindingRequirement, 1> inputs;
   std::array<hyle::compute::detail::ResourceBindingRequirement, 1> outputs;
   const auto proposal =
-      OperationPreparationAccess::propose(context, 0, operation, descriptions,
+      OperationPreparationAccess::propose(context_ref, 0, operation, descriptions,
                                           descriptions, inputs, outputs)
           .value();
   const auto expected = context.provider_instance_id(0).value();
@@ -1282,14 +1285,14 @@ TEST(RuntimeProviders, ProposalCannotBeSplicedIntoAnotherSameFamilySlot) {
       .outputs = resources,
       .workspace_resource = hyle::mem::system_resource()};
   auto rejected = OperationPreparationAccess::prepare_candidate(
-      context, spliced, operation, descriptions, descriptions, inputs, outputs,
+      context_ref, spliced, operation, descriptions, descriptions, inputs, outputs,
       bindings);
   ASSERT_FALSE(rejected.has_value());
   EXPECT_TRUE(rejected.error().IsInvalidArgument());
   EXPECT_EQ(first.prepare_count, 0u);
   EXPECT_EQ(second.prepare_count, 0u);
   auto original = OperationPreparationAccess::prepare_candidate(
-                      context, proposal, operation, descriptions, descriptions,
+                      context_ref, proposal, operation, descriptions, descriptions,
                       inputs, outputs, bindings)
                       .value();
   ASSERT_TRUE(original.succeeded());
@@ -1340,6 +1343,8 @@ TEST(RuntimeProviders,
   auto context = hyle::compute::Context::create(hyle::compute::cpu::device(),
                                                 make_async_provider(probe))
                      .value();
+  const auto context_ref =
+      hyle::compute::detail::ContextRef::acquire(context).value();
   const std::array<std::int64_t, 1> shape{8};
   const auto description =
       hyle::compute::TensorDesc::dense(hyle::compute::DataType::kFloat32, shape)
@@ -1354,7 +1359,7 @@ TEST(RuntimeProviders,
       output_requirements{};
   const auto proposal =
       hyle::compute::detail::OperationPreparationAccess::propose(
-          context, 0, operation, inputs, outputs, input_requirements,
+          context_ref, 0, operation, inputs, outputs, input_requirements,
           output_requirements)
           .value();
   const std::array input_resources{hyle::mem::system_resource()};
@@ -1366,7 +1371,7 @@ TEST(RuntimeProviders,
   };
   const auto attempt = [&]() {
     return hyle::compute::detail::OperationPreparationAccess::prepare_candidate(
-        context, proposal, operation, inputs, outputs, input_requirements,
+        context_ref, proposal, operation, inputs, outputs, input_requirements,
         output_requirements, resources);
   };
 
@@ -1649,6 +1654,8 @@ TEST(RuntimeProviders, ShapeRequestsNeedExplicitWholeDomainCoverage) {
   AsyncOperationProbe probe;
   auto context =
       Context::create(cpu::device(), make_async_provider(probe)).value();
+  const auto context_ref =
+      hyle::compute::detail::ContextRef::acquire(context).value();
   const std::array<std::int64_t, 1> upper_shape{8};
   const std::array descriptions{
       TensorDesc::dense(DataType::kFloat32, upper_shape).value()};
@@ -1659,7 +1666,7 @@ TEST(RuntimeProviders, ShapeRequestsNeedExplicitWholeDomainCoverage) {
   std::array<ResourceBindingRequirement, 1> inputs{}, outputs{};
   const auto propose = [&]() {
     return OperationPreparationAccess::propose(
-        context, 0, Operation(Unary{UnaryKind::kNeg}), descriptions,
+        context_ref, 0, Operation(Unary{UnaryKind::kNeg}), descriptions,
         descriptions, inputs, outputs, domain);
   };
   auto exact_only = propose();
@@ -1720,6 +1727,8 @@ TEST(RuntimeProviders, RejectsMalformedEffectsBeforeExactOrBoundedProposal) {
   probe.shape_coverage = ProviderShapeCoverage::kEntireDomain;
   auto context =
       Context::create(cpu::device(), make_async_provider(probe)).value();
+  const auto context_ref =
+      hyle::compute::detail::ContextRef::acquire(context).value();
   const std::array descriptions{
       TensorDesc::dense(DataType::kFloat32, std::array<std::int64_t, 1>{8})
           .value()};
@@ -1731,7 +1740,7 @@ TEST(RuntimeProviders, RejectsMalformedEffectsBeforeExactOrBoundedProposal) {
   for (const ProviderShapeDomain domain :
        {ProviderShapeDomain{}, ProviderShapeDomain{dimensions, axes, axes}}) {
     auto result = OperationPreparationAccess::propose(
-        context, 0, operation, descriptions, descriptions, inputs, outputs,
+        context_ref, 0, operation, descriptions, descriptions, inputs, outputs,
         domain);
     ASSERT_FALSE(result.has_value());
     EXPECT_TRUE(result.error().IsInvalidArgument());
@@ -1748,6 +1757,8 @@ TEST(RuntimeProviders, GuardedEnvelopeIsNotUsedForConcreteSchemaInference) {
   probe.shape_coverage = ProviderShapeCoverage::kEntireDomain;
   auto context =
       Context::create(cpu::device(), make_async_provider(probe)).value();
+  const auto context_ref =
+      hyle::compute::detail::ContextRef::acquire(context).value();
   const std::array dimensions{ShapeDimension{.bounds = {1, 8, 1}},
                               ShapeDimension{.bounds = {1, 6, 1}}};
   const std::array guards{ShapeGuard{
@@ -1766,12 +1777,12 @@ TEST(RuntimeProviders, GuardedEnvelopeIsNotUsedForConcreteSchemaInference) {
   // The equality guard admits (1,1)..(6,6), never the envelope tuple (8,6).
   // This is still only an SPI probe; no real bounded artifact is claimed.
   auto proposed = OperationPreparationAccess::propose(
-      context, 0, Operation(Unary{UnaryKind::kNeg}), input_desc, output_desc,
+      context_ref, 0, Operation(Unary{UnaryKind::kNeg}), input_desc, output_desc,
       inputs, outputs, domain);
   ASSERT_TRUE(proposed.has_value()) << proposed.error().message();
   EXPECT_EQ(probe.proposal_count, 1u);
   auto exact = OperationPreparationAccess::propose(
-      context, 0, Operation(Unary{UnaryKind::kNeg}), input_desc, output_desc,
+      context_ref, 0, Operation(Unary{UnaryKind::kNeg}), input_desc, output_desc,
       inputs, outputs);
   EXPECT_TRUE(exact.error().IsInvalidArgument());
   EXPECT_EQ(probe.proposal_count, 1u);
@@ -1931,6 +1942,8 @@ TEST(RuntimeProviders, InferenceScratchDoesNotBypassTheSelectedAllocator) {
   AsyncOperationProbe probe;
   auto context =
       Context::create(cpu::device(), make_async_provider(probe)).value();
+  const auto context_ref =
+      hyle::compute::detail::ContextRef::acquire(context).value();
   const Operation operation = Operation::custom(WideMetadataSchema{});
   const auto description =
       TensorDesc::dense(DataType::kFloat32, std::array<std::int64_t, 1>{4})
@@ -1940,19 +1953,19 @@ TEST(RuntimeProviders, InferenceScratchDoesNotBypassTheSelectedAllocator) {
   std::array<detail::ResourceBindingRequirement, 9> inputs{}, outputs{};
   hyle::mem::QuotaAllocator denied(hyle::mem::system_allocator(), 0);
   auto rejected = detail::OperationPreparationAccess::propose(
-      context, 0, operation, descriptions, descriptions, inputs, outputs, {},
+      context_ref, 0, operation, descriptions, descriptions, inputs, outputs, {},
       denied.get());
   ASSERT_FALSE(rejected);
   EXPECT_TRUE(rejected.error().IsResourceExhausted());
   EXPECT_EQ(probe.proposal_count, 0u);
   auto proposal =
       detail::OperationPreparationAccess::propose(
-          context, 0, operation, descriptions, descriptions, inputs, outputs)
+          context_ref, 0, operation, descriptions, descriptions, inputs, outputs)
           .value();
   std::array<hyle::mem::MemoryResourceRef, 9> resources;
   resources.fill(hyle::mem::system_resource());
   auto failed = detail::OperationPreparationAccess::prepare_candidate(
-      context, proposal, operation, descriptions, descriptions, inputs, outputs,
+      context_ref, proposal, operation, descriptions, descriptions, inputs, outputs,
       {resources, resources}, {}, denied.get());
   ASSERT_FALSE(failed);
   EXPECT_TRUE(failed.error().IsResourceExhausted());
@@ -1960,7 +1973,7 @@ TEST(RuntimeProviders, InferenceScratchDoesNotBypassTheSelectedAllocator) {
   hyle::mem::QuotaAllocator allowed(hyle::mem::system_allocator(), 65536);
   {
     auto prepared = detail::OperationPreparationAccess::prepare_candidate(
-        context, proposal, operation, descriptions, descriptions, inputs,
+        context_ref, proposal, operation, descriptions, descriptions, inputs,
         outputs, {resources, resources}, {}, allowed.get());
     ASSERT_TRUE(prepared) << prepared.error().message();
     ASSERT_TRUE(prepared->succeeded());
@@ -2241,6 +2254,8 @@ TEST(RuntimeProviders,
   auto context = hyle::compute::Context::create(hyle::compute::cpu::device(),
                                                 make_delegated_provider(probe))
                      .value();
+  const auto context_ref =
+      hyle::compute::detail::ContextRef::acquire(context).value();
   const std::array<std::int64_t, 1> shape{4};
   const auto description =
       hyle::compute::TensorDesc::dense(hyle::compute::DataType::kFloat32, shape)
@@ -2260,7 +2275,7 @@ TEST(RuntimeProviders,
   const std::array input_descriptions{description};
   const std::array output_descriptions{description};
   auto proposal = hyle::compute::detail::OperationPreparationAccess::propose(
-      context, 0, operation, input_descriptions, output_descriptions,
+      context_ref, 0, operation, input_descriptions, output_descriptions,
       input_requirements, output_requirements);
   ASSERT_TRUE(proposal.has_value()) << proposal.error().message();
   const std::array input_resources{hyle::mem::system_resource()};
@@ -2273,7 +2288,7 @@ TEST(RuntimeProviders,
   probe.return_invalid_artifact = true;
   auto invalid_artifact =
       hyle::compute::detail::OperationPreparationAccess::prepare_candidate(
-          context, *proposal, operation, input_descriptions,
+          context_ref, *proposal, operation, input_descriptions,
           output_descriptions, input_requirements, output_requirements,
           resource_bindings);
   ASSERT_FALSE(invalid_artifact.has_value());
@@ -2281,7 +2296,7 @@ TEST(RuntimeProviders,
   probe.return_invalid_artifact = false;
   auto attempt =
       hyle::compute::detail::OperationPreparationAccess::prepare_candidate(
-          context, *proposal, operation, input_descriptions,
+          context_ref, *proposal, operation, input_descriptions,
           output_descriptions, input_requirements, output_requirements,
           resource_bindings)
           .value();

@@ -27,7 +27,7 @@
 #endif
 #if defined(HYLE_TEST_GRAPH_ROUTE_CPU)
 #include "hyle/graph/cpu.h"
-#include "hyle/graph/leased_invocation.h"
+#include "hyle/graph/executable.h"
 #endif
 #include "hyle/mem/quota_allocator.h"
 #include "hyle/mem/stats.h"
@@ -166,6 +166,77 @@ TEST(CpuDefaultContext, LeasedMatMulKeepsPermissionsAndHasNoHotLeaseAllocation) 
 }
 
 #if defined(HYLE_TEST_GRAPH_ROUTE_CPU)
+TEST(CpuDefaultContext, OneGgmlInstanceServesOrdinaryAndFusedGraphRoutes) {
+  namespace graph = hyle::graph;
+  auto context = create_context().value();
+  ProviderInstanceId instance;
+  std::size_t ggml_count = 0;
+  for (std::size_t index = 0; index < context.provider_count(); ++index) {
+    if (context.provider_identity(index)->id != ggml_cpu::kProviderId)
+      continue;
+    ++ggml_count;
+    instance = context.provider_instance_id(index).value();
+  }
+  ASSERT_EQ(ggml_count, 1u);
+  ASSERT_TRUE(instance.valid());
+
+  const auto description = matrix(2, 64);
+  std::array<float, 128> values{};
+  for (std::size_t index = 0; index < values.size(); ++index)
+    values[index] = float(index % 7) * 0.5F - 2.0F;
+  auto input = half_test::buffer<float>(values);
+  auto output = half_test::buffer<float>(std::array<float, 128>{});
+  const auto source = ConstTensorView::create(description, input.view()).value();
+  const auto destination = TensorView::create(description, output.view()).value();
+  auto queue = context.create_queue().value();
+  auto ordinary = prepare(context, Unary{UnaryKind::kExp}, description);
+  ASSERT_TRUE(ordinary) << ordinary.error().message();
+  EXPECT_EQ(ordinary->provider_instance_id(), instance);
+  EXPECT_EQ(ordinary->route_preference(), 300u); // Original Graph leaf scope.
+  auto direct = ordinary->create_invocation().value();
+  auto done = direct.submit(queue, source, destination);
+  ASSERT_TRUE(done) << done.error().message();
+  ASSERT_TRUE(done->wait().ok());
+  auto actual = half_test::read<float>(output);
+  for (std::size_t index = 0; index < values.size(); ++index)
+    EXPECT_NEAR(actual[index], std::exp(values[index]), 2.e-6F);
+
+  auto builder = graph::GraphBuilder::create().value();
+  const auto x = builder.input(description).value();
+  const auto exp = builder.add(Unary{UnaryKind::kExp}, x).value();
+  const auto neg = builder.add(Unary{UnaryKind::kNeg}, exp).value();
+  ASSERT_TRUE(builder.publish(neg).ok());
+  auto definition = std::move(builder).finish().value();
+  for (const bool fused : {true, false}) {
+    graph::CompileOptions options;
+    if (!fused)
+      options.region_selection = graph::RegionSelectionPolicy::kDisabled;
+    auto compiled = graph::compile(definition, context, options);
+    ASSERT_TRUE(compiled) << compiled.error().message();
+    ASSERT_EQ(compiled->report.step_count(), fused ? 1u : 2u);
+    for (std::size_t step = 0; step < compiled->report.step_count(); ++step) {
+      const auto selected = compiled->report.step(step).value();
+      EXPECT_EQ(selected.provider.id, ggml_cpu::kProviderId);
+      EXPECT_EQ(selected.provider_instance, instance);
+      EXPECT_EQ(selected.kind, fused ? graph::CompileStepKind::kProviderRegion
+                                     : graph::CompileStepKind::kOperationFallback);
+      EXPECT_EQ(selected.preference, fused ? 100u : 300u);
+    }
+    auto invocation = compiled->executable.create_invocation().value();
+    ASSERT_TRUE(invocation.bind(x, source).ok());
+    ASSERT_TRUE(invocation.bind(neg, destination).ok());
+    const std::array queues{graph::QueueBinding{.lane = graph::ExecutionLaneId{0},
+                                              .queue = &queue}};
+    ASSERT_TRUE(invocation.prepare_replay(queues).ok());
+    auto completion = invocation.submit(queue);
+    ASSERT_TRUE(completion) << completion.error().message();
+    ASSERT_TRUE(completion->wait().ok());
+    actual = half_test::read<float>(output);
+    for (std::size_t index = 0; index < values.size(); ++index)
+      EXPECT_NEAR(actual[index], -std::exp(values[index]), 2.e-6F);
+  }
+}
+
 TEST(CpuDefaultContext, LeasedGraphRetainsCallerOutputAndSourceAliasThroughDrain) {
   namespace graph = hyle::graph;
   auto context = create_context().value();
@@ -187,8 +258,7 @@ TEST(CpuDefaultContext, LeasedGraphRetainsCallerOutputAndSourceAliasThroughDrain
   ASSERT_TRUE(builder.publish(a_id).ok());
   auto definition = std::move(builder).finish().value();
   auto compiled = graph::compile(definition, context).value();
-  auto invocation = graph::LeasedInvocation::create(compiled.executable,
-      {.allocator = stats.get()}).value();
+  auto invocation = compiled.executable.create_invocation({.resources = graph::ResourceOptions{.allocator = stats.get()}}).value();
   ASSERT_TRUE(invocation.bind(a_id, desc, left).ok());
   ASSERT_TRUE(invocation.bind(b_id, desc, right).ok());
   ASSERT_TRUE(invocation.bind(product, desc, std::move(destination)).ok());
@@ -197,7 +267,7 @@ TEST(CpuDefaultContext, LeasedGraphRetainsCallerOutputAndSourceAliasThroughDrain
   for (int iteration = 0; iteration < 8; ++iteration) {
     auto completion = invocation.submit(queue).value();
     ASSERT_TRUE(completion.wait().ok());
-    auto result = invocation.output(product).value();
+    auto result = invocation.result(product).value();
     auto reader = result;
     EXPECT_FALSE(invocation.reset().ok());
     EXPECT_FALSE(invocation.submit(queue).has_value());
@@ -210,7 +280,7 @@ TEST(CpuDefaultContext, LeasedGraphRetainsCallerOutputAndSourceAliasThroughDrain
   ASSERT_TRUE(invocation.drain().ok());
   EXPECT_EQ(pool.stats().active_uses, 0u);
   ASSERT_TRUE(held.wait().ok());
-  auto result = invocation.output(a_id).value();
+  auto result = invocation.result(a_id).value();
   auto exported = result.storage_lease().value();
   result.reset(); invocation = {};
   EXPECT_EQ(pool.stats().live_blocks, 1u);

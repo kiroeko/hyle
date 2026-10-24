@@ -1,6 +1,6 @@
 {
   "upstream_revision": "69ff11fc4954396d98326656dc85debd2223f637",
-  "scope": "One provider-private verified header set: finite mixed FP8 QK64/VO128 physical K tile; original F32 partial/merge with optional final scale; shared-storage handoff and warp output synchronization; original cooperative prefill tile repack with matching storage/traits/dispatcher budgets; FP8 exact128B/64B producer row divisibility and original native16-bit per-warp work footprint bound; scaled F32 merge uses one final output group while retaining original local reductions and synchronization; producer-owned full-row FP8 conversion uses the existing post-conversion publication barriers; F32 split batch decodes packed global vectors directly into bounded native16 K/V shared tiles; explicit private D256 CTA64 BF16 partial marker and shared query/materialize workspace width selection, default FP32 retained; SM89-only private BF16 marker D256 CTA64 paged causal main-loop shared guarded K/V page-index load and paired K prefetch before softmax, with independent K/V strides and existing decoder/publication retained; same SM89 private BF16 scope moves the unchanged paired raw K prefetch immediately after compute_qk and before logits transform/mask, retaining shared page indexing and original publication",
+  "scope": "One provider-private verified header set: finite mixed FP8 QK64/VO128 physical K tile; original F32 partial/merge with optional final scale; shared-storage handoff and warp output synchronization; original cooperative prefill tile repack with matching storage/traits/dispatcher budgets; FP8 exact128B/64B producer row divisibility and original native16-bit per-warp work footprint bound; scaled F32 merge uses one final output group while retaining original local reductions and synchronization; producer-owned full-row FP8 conversion uses the existing post-conversion publication barriers; F32 split batch decodes packed global vectors directly into bounded native16 K/V shared tiles; explicit private D256 CTA64 BF16 partial marker and shared query/materialize workspace width selection, default FP32 retained; SM89-only private BF16 marker D256 CTA64 paged causal main-loop shared guarded K/V page-index load and paired K prefetch before softmax, with independent K/V strides and existing decoder/publication retained; same SM89 private BF16 scope moves the unchanged paired raw K prefetch immediately after compute_qk and before logits transform/mask, retaining shared page indexing and original publication; MSVC CUDA portability uses native forceinline, explicit 16-bit and LP64/LLP64-neutral max types, and removes two unsupported restrict annotations from an unused host-only rotary launch wrapper; attention device kernels and numerical paths are unchanged; decode host launch templates use the same LLP64-neutral max types and CUDA shared spelling; MLA uses the original scheduler in count-only workspace queries and bounds its fixed work arrays before upload; dependent template calls use portable explicit empty argument lists; MLA causal cluster upper bounds use the same ceil query-row bound as its original scheduler, preserving per-element masks for non-divisor head counts; typed MLA keeps normalized split partial outputs in F32 and merges them with the original F32 state reducer; final caller dtype and probability tile stay unchanged; MLA workspace storage follows active scheduled work and exact split partial rows, with full num_sm merge arrays and the original 16384 work admission bound retained; MLA no-split materialization skips absent partial allocations and accepts exact zero-byte float workspace without null pointer arithmetic; uniform E4 compact MLA keeps the original Q64 scheduler and F32 partial merge, selects one-stage KV16 on the SM89 tier, omits unused E4 nonsharded cross-warpgroup state, and repacks original F32 scalar scales to BF16 once after F32 RNE multiplication; paged and explicit unit-row ragged modes share the CKV prefix as V",
   "files": [
     {
       "path": "include/flashinfer/attention/prefill.cuh",
@@ -235,7 +235,7 @@
     {
       "path": "include/flashinfer/attention/scheduler.cuh",
       "before_sha256": "a11a39aea393cdb380ad9439aac9170cd96849d7426ebbb920c5c8cdadfcc575",
-      "after_sha256": "d57a9e018dfa1e430f41b3d8da4891299c23ffbced1b1e75e235c011f56d2883",
+      "after_sha256": "e6d8286c3cefd4ac0a68f364b7fdccc3b91bdce7f7846a896d69d2f45af54407",
       "edits": [
         {
           "before": "    int64_t uniform_q_len, cudaStream_t stream, uint32_t kv_dtype_bytes = 2) {",
@@ -260,8 +260,298 @@
         {
           "before": "                                num_colocated_ctas, uniform_q_len, stream, kv_dtype_bytes);",
           "after": "                                num_colocated_ctas, uniform_q_len, stream, kv_dtype_bytes,\n                                hyle_bf16_partials);"
+        },
+        {
+          "before": "std::max(16UL / sizeof(DTypeKV), HEAD_DIM / 32UL)",
+          "after": "std::max<size_t>(16 / sizeof(DTypeKV), HEAD_DIM / 32)"
+        },
+        {
+          "before": "std::max(16UL / sizeof(DTypeKV), HEAD_DIM_CKV / 32UL)",
+          "after": "std::max<size_t>(16 / sizeof(DTypeKV), HEAD_DIM_CKV / 32)"
+        },
+        {
+          "before": "std::max(ceil_div(total_kv_lens * num_kv_heads, num_clusters), 1L)",
+          "after": "std::max<int64_t>(ceil_div(total_kv_lens * num_kv_heads, num_clusters), 1)"
+        },
+        {
+          "before": "std::max(ceil_div(total_kv_lens, num_clusters), 1L)",
+          "after": "std::max<int64_t>(ceil_div(total_kv_lens, num_clusters), 1)"
+        },
+        {
+          "before": "bool causal, cudaStream_t stream) {\n  int num_sm = 0;",
+          "after": "bool causal, cudaStream_t stream, bool hyle_query = false,\n                           size_t* hyle_float_bytes = nullptr, size_t* hyle_int_bytes = nullptr) {\n  int num_sm = 0;"
+        },
+        {
+          "before": "  int total_num_works = work_indptr_vec.back();\n  auto q_indptr_vec",
+          "after": "  int total_num_works = work_indptr_vec.back();\n  FLASHINFER_CHECK(total_num_works <= max_total_num_works && num_clusters + 1 <= uint32_t(max_total_num_works),\n                   \"MLA plan exceeds its original fixed work capacity\");\n  auto q_indptr_vec"
+        },
+        {
+          "before": "  AlignedAllocator int_allocator(int_buffer, int_workspace_size_in_bytes);\n  plan_info.q_indptr_offset",
+          "after": "  AlignedAllocator int_allocator = hyle_query ? AlignedAllocator() :\n      AlignedAllocator(int_buffer, int_workspace_size_in_bytes);\n  plan_info.q_indptr_offset"
+        },
+        {
+          "before": "  constexpr size_t sizeof_dtype_o = 2;\n  AlignedAllocator float_allocator(float_buffer, float_workspace_size_in_bytes);\n  plan_info.partial_o_offset = float_allocator.aligned_alloc_offset(\n      2 * num_clusters * cluster_tile_q * sizeof_dtype_o * head_dim_o, 16, \"mla_partial_o\");\n  plan_info.partial_lse_offset = float_allocator.aligned_alloc_offset(\n      2 * num_clusters * cluster_tile_q * sizeof(float), 16, \"mla_partial_lse\");\n",
+          "after": ""
+        },
+        {
+          "before": "  IdType* cluster_q_indptr_h =\n",
+          "after": "  constexpr size_t sizeof_dtype_o = 2;\n  AlignedAllocator float_allocator = hyle_query ? AlignedAllocator() :\n      AlignedAllocator(float_buffer, float_workspace_size_in_bytes);\n  plan_info.partial_o_offset = float_allocator.aligned_alloc_offset(\n      2 * num_clusters * cluster_tile_q * sizeof_dtype_o * head_dim_o, 16, \"mla_partial_o\");\n  plan_info.partial_lse_offset = float_allocator.aligned_alloc_offset(\n      2 * num_clusters * cluster_tile_q * sizeof(float), 16, \"mla_partial_lse\");\n\n  if (hyle_float_bytes) *hyle_float_bytes = float_allocator.num_allocated_bytes();\n  if (hyle_int_bytes) *hyle_int_bytes = int_allocator.num_allocated_bytes();\n  if (hyle_query) return cudaSuccess;\n\n  IdType* cluster_q_indptr_h =\n"
+        },
+        {
+          "before": "  int kv_len_limit = f(std::max<int64_t>(ceil_div(total_kv_lens, num_clusters), 1));",
+          "after": "  const auto hyle_average_kv = std::max<int64_t>(ceil_div(total_kv_lens, num_clusters), 1);\n  FLASHINFER_CHECK(hyle_average_kv <= std::numeric_limits<int>::max() - 255,\n                   \"MLA scheduler KV chunk rounding exceeds its native int field\");\n  int kv_len_limit = f(static_cast<int>(hyle_average_kv));"
+        },
+        {
+          "before": "size_t* hyle_float_bytes = nullptr, size_t* hyle_int_bytes = nullptr) {",
+          "after": "size_t* hyle_float_bytes = nullptr, size_t* hyle_int_bytes = nullptr,\n                           uint32_t hyle_partial_bytes = 2) {"
+        },
+        {
+          "before": "  constexpr size_t sizeof_dtype_o = 2;\n  AlignedAllocator float_allocator = hyle_query",
+          "after": "  const size_t sizeof_dtype_o = hyle_partial_bytes;\n  AlignedAllocator float_allocator = hyle_query"
+        },
+        {
+          "before": "sizeof(IdType) * max_total_num_works, 16, \"mla_q_indptr\"",
+          "after": "sizeof(IdType) * size_t(total_num_works), 16, \"mla_q_indptr\""
+        },
+        {
+          "before": "sizeof(IdType) * max_total_num_works, 16, \"mla_kv_indptr\"",
+          "after": "sizeof(IdType) * size_t(total_num_works), 16, \"mla_kv_indptr\""
+        },
+        {
+          "before": "sizeof(IdType) * max_total_num_works, 16, \"mla_partial_indptr\"",
+          "after": "sizeof(IdType) * size_t(total_num_works), 16, \"mla_partial_indptr\""
+        },
+        {
+          "before": "sizeof(IdType) * max_total_num_works, 16, \"mla_q_len\"",
+          "after": "sizeof(IdType) * size_t(total_num_works), 16, \"mla_q_len\""
+        },
+        {
+          "before": "sizeof(IdType) * max_total_num_works, 16, \"mla_kv_len\"",
+          "after": "sizeof(IdType) * size_t(total_num_works), 16, \"mla_kv_len\""
+        },
+        {
+          "before": "sizeof(IdType) * max_total_num_works, 16, \"mla_q_start\"",
+          "after": "sizeof(IdType) * size_t(total_num_works), 16, \"mla_q_start\""
+        },
+        {
+          "before": "sizeof(IdType) * max_total_num_works, 16, \"mla_kv_start\"",
+          "after": "sizeof(IdType) * size_t(total_num_works), 16, \"mla_kv_start\""
+        },
+        {
+          "before": "sizeof(IdType) * max_total_num_works, 16, \"mla_kv_end\"",
+          "after": "sizeof(IdType) * size_t(total_num_works), 16, \"mla_kv_end\""
+        },
+        {
+          "before": "sizeof(IdType) * max_total_num_works, 16, \"mla_work_indptr\"",
+          "after": "sizeof(IdType) * size_t(num_clusters + 1), 16, \"mla_work_indptr\""
+        },
+        {
+          "before": "2 * num_clusters * cluster_tile_q * sizeof_dtype_o * head_dim_o, 16, \"mla_partial_o\"",
+          "after": "size_t(partial_o_nnz) * head_dim_o * sizeof_dtype_o, 16, \"mla_partial_o\""
+        },
+        {
+          "before": "2 * num_clusters * cluster_tile_q * sizeof(float), 16, \"mla_partial_lse\"",
+          "after": "size_t(partial_o_nnz) * sizeof(float), 16, \"mla_partial_lse\""
+        },
+        {
+          "before": "  AlignedAllocator float_allocator = hyle_query ? AlignedAllocator() :\n      AlignedAllocator(float_buffer, float_workspace_size_in_bytes);\n  plan_info.partial_o_offset = float_allocator.aligned_alloc_offset(\n      size_t(partial_o_nnz) * head_dim_o * sizeof_dtype_o, 16, \"mla_partial_o\");\n  plan_info.partial_lse_offset = float_allocator.aligned_alloc_offset(\n      size_t(partial_o_nnz) * sizeof(float), 16, \"mla_partial_lse\");\n\n  if (hyle_float_bytes) *hyle_float_bytes = float_allocator.num_allocated_bytes();\n",
+          "after": "  size_t hyle_partial_workspace_bytes = 0;\n  plan_info.partial_o_offset = 0;\n  plan_info.partial_lse_offset = 0;\n  if (partial_o_nnz != 0) {\n    AlignedAllocator float_allocator = hyle_query ? AlignedAllocator() :\n        AlignedAllocator(float_buffer, float_workspace_size_in_bytes);\n    plan_info.partial_o_offset = float_allocator.aligned_alloc_offset(\n        size_t(partial_o_nnz) * head_dim_o * sizeof_dtype_o, 16, \"mla_partial_o\");\n    plan_info.partial_lse_offset = float_allocator.aligned_alloc_offset(\n        size_t(partial_o_nnz) * sizeof(float), 16, \"mla_partial_lse\");\n    hyle_partial_workspace_bytes = float_allocator.num_allocated_bytes();\n  }\n\n  if (hyle_float_bytes) *hyle_float_bytes = hyle_partial_workspace_bytes;\n"
         }
       ]
+    },
+    {
+      "path": "include/flashinfer/vec_dtypes.cuh",
+      "before_sha256": "3e292b05f261f29287cb18871fe62f6a9a59cf1f47e885bee45524776a984f2c",
+      "after_sha256": "e115e83cb1453686e02ceff4af710db0c7264a3d67eb2711713e88df4ab3236f",
+      "edits": [
+        {
+          "before": "#define FLASHINFER_INLINE inline __attribute__((always_inline)) __device__",
+          "after": "#if defined(_MSC_VER)\n#define FLASHINFER_INLINE __forceinline__ __device__\n#else\n#define FLASHINFER_INLINE inline __attribute__((always_inline)) __device__\n#endif"
+        }
+      ]
+    },
+    {
+      "path": "include/flashinfer/math.cuh",
+      "before_sha256": "ad9461ba66273bf7e227af1e285a136b4e53f899fa60b3a41f08627ad738f2ed",
+      "after_sha256": "d327574c6385694fc12095e6dead9e23a8359159134d30b35d57c28f127feb3b",
+      "edits": [
+        {
+          "before": "  ushort y_u16;\n  asm volatile(\"ex2.approx.f16",
+          "after": "  unsigned short y_u16;\n  asm volatile(\"ex2.approx.f16"
+        },
+        {
+          "before": "  ushort y_u16;\n  asm volatile(\"tanh.approx.f16",
+          "after": "  unsigned short y_u16;\n  asm volatile(\"tanh.approx.f16"
+        }
+      ]
+    },
+    {
+      "path": "include/flashinfer/pos_enc.cuh",
+      "before_sha256": "6a94df7647512f9474198ee99a04bf84b7dad9c65be1d10d8d20c9c9f9cf2abf",
+      "after_sha256": "5a4bfada569de437fada0cc3e6ccd0029936107c99b3a4c7d4714f033c660d56",
+      "edits": [
+        {
+          "before": "cudaError_t BatchQKApplyLlama31Rotary(\n    DType* q, DType* k, DType* q_rope, DType* k_rope, IdType* __restrict__ indptr,\n    IdType* __restrict__ offsets, uint32_t batch_size",
+          "after": "cudaError_t BatchQKApplyLlama31Rotary(\n    DType* q, DType* k, DType* q_rope, DType* k_rope, IdType* indptr,\n    IdType* offsets, uint32_t batch_size"
+        }
+      ]
+    },
+    {
+      "path": "include/flashinfer/attention/decode.cuh",
+      "before_sha256": "bd699c64cff0af922305e532de587ff4db8bc377c198bd653db1d48aa74c2942",
+      "after_sha256": "f9ccd05af60dfe078e19919a5e4bee480f6ccabdfe29ee66a9fd3242e8c37be3",
+      "edits": [
+        {
+          "before": "const uint32_t seq_len = params.kv_len;\n\n  constexpr uint32_t vec_size = std::max(16UL / sizeof(DTypeKV), HEAD_DIM / 32UL);",
+          "after": "const uint32_t seq_len = params.kv_len;\n\n  constexpr uint32_t vec_size = std::max<size_t>(16 / sizeof(DTypeKV), HEAD_DIM / 32);"
+        },
+        {
+          "before": "const uint32_t padded_batch_size = params.padded_batch_size;\n\n  constexpr uint32_t vec_size = std::max(16UL / sizeof(DTypeKV), HEAD_DIM / 32UL);",
+          "after": "const uint32_t padded_batch_size = params.padded_batch_size;\n\n  constexpr uint32_t vec_size = std::max<size_t>(16 / sizeof(DTypeKV), HEAD_DIM / 32);"
+        },
+        {
+          "before": "std::max(16UL / sizeof(DTypeKV), HEAD_DIM_CKV / 32UL)",
+          "after": "std::max<size_t>(16 / sizeof(DTypeKV), HEAD_DIM_CKV / 32)"
+        },
+        {
+          "before": "extern __attribute__((shared)) uint8_t smem[];",
+          "after": "extern __shared__ uint8_t smem[];"
+        }
+      ]
+    },
+    {
+      "path": "include/flashinfer/attention/mla.cuh",
+      "before_sha256": "3084a832425fa3872ce00b4b3ec52a32f9f319eb8c0403bc991e91c6d443d132",
+      "edits": [
+        {
+          "before": "    o_smem.template stmatrix_m8n8x4(o_smem_offset_w, o_frag_f16);",
+          "after": "    o_smem.template stmatrix_m8n8x4<>(o_smem_offset_w, o_frag_f16);"
+        },
+        {
+          "before": "          o_smem.template store_128b(o_smem_offset_w, o_partial_ptr);",
+          "after": "          o_smem.template store_128b<>(o_smem_offset_w, o_partial_ptr);"
+        },
+        {
+          "before": "          o_smem.template store_128b(o_smem_offset_w, o_final_ptr);",
+          "after": "          o_smem.template store_128b<>(o_smem_offset_w, o_final_ptr);"
+        },
+        {
+          "before": "kv_len - q_len + (packed_qo_start + cluster_tile_q) / num_heads",
+          "after": "kv_len - q_len + ceil_div(packed_qo_start + cluster_tile_q, num_heads)"
+        },
+        {
+          "before": "typename DTypeKV_, typename DTypeO_, typename IdType_>\nstruct KernelTraits",
+          "after": "typename DTypeKV_, typename DTypeO_, typename IdType_, typename DTypePartial_ = DTypeO_>\nstruct KernelTraits"
+        },
+        {
+          "before": "  using DTypeO = DTypeO_;",
+          "after": "  using DTypeO = DTypeO_;\n  using DTypePartial = DTypePartial_;"
+        },
+        {
+          "before": "typename KTraits::DTypeO* partial_o,\n    float* partial_lse,",
+          "after": "typename KTraits::DTypePartial* partial_o,\n    float* partial_lse,"
+        },
+        {
+          "before": "                                              typename KTraits::DTypeO* partial_o,",
+          "after": "                                              typename KTraits::DTypePartial* partial_o,"
+        },
+        {
+          "before": "                                        typename KTraits::DTypeO* partial_o, float* partial_lse,",
+          "after": "                                        typename KTraits::DTypePartial* partial_o, float* partial_lse,"
+        },
+        {
+          "before": "      DTypeO* o_partial_ptr =",
+          "after": "      typename KTraits::DTypePartial* o_partial_ptr ="
+        },
+        {
+          "before": "  DTypeO* partial_o = params.partial_o;",
+          "after": "  typename Params::DTypePartial* partial_o = params.partial_o;"
+        },
+        {
+          "before": "/*CTA_TILE_Q_=*/64, EFF_CTA_TILE_KV, DTypeQ, DTypeKV, DTypeO, IdType>;",
+          "after": "/*CTA_TILE_Q_=*/64, EFF_CTA_TILE_KV, DTypeQ, DTypeKV, DTypeO, IdType, typename Params::DTypePartial>;"
+        },
+        {
+          "before": "  smem_t<KTraits::SWIZZLE_MODE_O> o_smem(smem_storage->o_smem);\n#pragma unroll\n  for (uint32_t mma_d",
+          "after": "  // A private F32-partial consumer stores the normalized accumulator before\n  // final-output conversion. Keep the original 16-bit shared tile and final\n  // writeback; a separate F32 shared tile would exceed SM89 block capacity.\n  if constexpr (std::is_same_v<typename KTraits::DTypePartial, float>) {\n    if (partial_o != nullptr) {\n#pragma unroll\n      for (uint32_t mma_d = 0; mma_d < NUM_MMA_D_CKV / 2; ++mma_d) {\n#pragma unroll\n        for (uint32_t reg = 0; reg < 8; ++reg) {\n          const uint32_t row = warp_idx_in_wg * 16 + lane_idx / 4 + ((reg % 4) / 2) * 8;\n          const uint32_t col = warpgroup_idx * (HEAD_DIM_CKV / 2) + mma_d * 16 +\n                               (reg / 4) * 8 + (lane_idx % 4) * 2 + reg % 2;\n          if ((packed_offset + row) / num_heads < q_len)\n            partial_o[(blockIdx.x * KTraits::CTA_TILE_Q + row) * HEAD_DIM_CKV + col] = o_frag[mma_d][reg];\n        }\n      }\n#pragma unroll\n      for (uint32_t j = 0; j < 2; ++j) {\n        const uint32_t row = warp_idx_in_wg * 16 + lane_idx / 4 + 8 * j;\n        if (lane_idx % 4 == 0 && (packed_offset + row) / num_heads < q_len)\n          partial_lse[blockIdx.x * KTraits::CTA_TILE_Q + row] =\n              m[j] == typename KTraits::DTypeQKAccum(-math::inf) ?\n                  -cuda::std::numeric_limits<float>::infinity() : math::ptx_log2(d[j]) + float(m[j]);\n      }\n      return;\n    }\n  }\n  smem_t<KTraits::SWIZZLE_MODE_O> o_smem(smem_storage->o_smem);\n#pragma unroll\n  for (uint32_t mma_d"
+        },
+        {
+          "before": "      alignas(16) DTypeQ q_smem_pe[CTA_TILE_Q * HEAD_DIM_KPE];",
+          "after": "      // A zero-width KPE specialization performs no KPE loads. Keep its unused storage legal.\n      alignas(16) DTypeQ q_smem_pe[CTA_TILE_Q * (HEAD_DIM_KPE > 0 ? HEAD_DIM_KPE : 1)];"
+        },
+        {
+          "before": "      // Cast page index to int64_t before multiplying to avoid overflow.\n      DTypeKV* ckv_ptr =\n          ckv +\n          static_cast<int64_t>(packed_block_iter < packed_kv_bound ? indices[q] : 0) *\n              ckv_stride_page +\n          r * ckv_stride_n + (lane_idx % 8) * upcast_size<DTypeKV>();\n      DTypeKV* kpe_ptr =\n          kpe +\n          static_cast<int64_t>(packed_block_iter < packed_kv_bound ? indices[q] : 0) *\n              kpe_stride_page +\n          r * kpe_stride_n + (lane_idx % 8) * upcast_size<DTypeKV>();\n",
+          "after": "      // Cast page index to int64_t before multiplying to avoid overflow.\n      DTypeKV* ckv_ptr =\n          ckv +\n          static_cast<int64_t>(packed_block_iter < packed_kv_bound\n                  ? (indices ? indices[q] : static_cast<typename KTraits::IdType>(q)) : 0) *\n              ckv_stride_page +\n          r * ckv_stride_n + (lane_idx % 8) * upcast_size<DTypeKV>();\n      DTypeKV* kpe_ptr =\n          kpe +\n          static_cast<int64_t>(packed_block_iter < packed_kv_bound\n                  ? (indices ? indices[q] : static_cast<typename KTraits::IdType>(q)) : 0) *\n              kpe_stride_page +\n          r * kpe_stride_n + (lane_idx % 8) * upcast_size<DTypeKV>();\n"
+        },
+        {
+          "before": "      // See comment above: widen to int64_t to avoid 32-bit overflow when indices[q] is large.\n      DTypeKV* ckv_ptr =\n          ckv +\n          static_cast<int64_t>(packed_block_iter < packed_kv_bound ? indices[q] : 0) *\n              ckv_stride_page +\n          r * ckv_stride_n + (lane_idx % 8) * upcast_size<DTypeKV>();\n      DTypeKV* kpe_ptr =\n          kpe +\n          static_cast<int64_t>(packed_block_iter < packed_kv_bound ? indices[q] : 0) *\n              kpe_stride_page +\n          r * kpe_stride_n + (lane_idx % 8) * upcast_size<DTypeKV>();\n",
+          "after": "      // See comment above: widen to int64_t to avoid 32-bit overflow when indices[q] is large.\n      DTypeKV* ckv_ptr =\n          ckv +\n          static_cast<int64_t>(packed_block_iter < packed_kv_bound\n                  ? (indices ? indices[q] : static_cast<typename KTraits::IdType>(q)) : 0) *\n              ckv_stride_page +\n          r * ckv_stride_n + (lane_idx % 8) * upcast_size<DTypeKV>();\n      DTypeKV* kpe_ptr =\n          kpe +\n          static_cast<int64_t>(packed_block_iter < packed_kv_bound\n                  ? (indices ? indices[q] : static_cast<typename KTraits::IdType>(q)) : 0) *\n              kpe_stride_page +\n          r * kpe_stride_n + (lane_idx % 8) * upcast_size<DTypeKV>();\n"
+        },
+        {
+          "before": "  constexpr bool CAUSAL = MASK_MODE == MaskMode::kCausal;\n\n  dim3 nblks(num_blks_x, num_blks_y);",
+          "after": "  constexpr bool CAUSAL = MASK_MODE == MaskMode::kCausal;\n\n  // A missing page table is legal only for explicit 16-bit linear rows.\n  // Keep accidental null tables invalid for every original paged caller.\n  if (params.linear_kv) {\n    if (params.kv_indices || unsigned(params.block_size) != 1 || sizeof(DTypeKV) != 2)\n      return cudaErrorInvalidValue;\n  } else if (!params.kv_indices) {\n    return cudaErrorInvalidValue;\n  }\n\n  dim3 nblks(num_blks_x, num_blks_y);"
+        },
+        {
+          "before": "    alignas(16) DTypeO o_smem[CTA_TILE_Q * HEAD_DIM_CKV];\n  };\n};\n\ntemplate <bool CAUSAL_, uint32_t NUM_STAGES_, bool QK_SHARD_, uint32_t HEAD_DIM_CKV_,\n          uint32_t HEAD_DIM_KPE_, uint32_t CTA_TILE_Q_, uint32_t CTA_TILE_KV_, typename DTypeQ_,\n          typename DTypeKV_, typename DTypeO_, typename IdType_, typename DTypePartial_ = DTypeO_>\nstruct KernelTraits {\n",
+          "after": "    alignas(16) DTypeO o_smem[CTA_TILE_Q * HEAD_DIM_CKV];\n  };\n};\n\n// Isolated Hyle candidate: E4 repack always uses the nonsharded QK path.\n// Keep original non-E4 storage above byte-for-byte; no dead cross-WG m/d state.\ntemplate <uint32_t NUM_STAGES, uint32_t CTA_TILE_Q, uint32_t CTA_TILE_KV,\n          uint32_t HEAD_DIM_CKV, uint32_t HEAD_DIM_KPE, typename DTypeQ, typename DTypeO>\nstruct SharedStorageQKVO<NUM_STAGES, CTA_TILE_Q, CTA_TILE_KV, HEAD_DIM_CKV,\n                         HEAD_DIM_KPE, DTypeQ, __nv_fp8_e4m3, DTypeO> {\n  static_assert(std::is_same_v<DTypeQ, __nv_bfloat16> &&\n                std::is_same_v<DTypeO, __nv_bfloat16>,\n                \"E4 MLA candidate requires BF16 query and output\");\n  static constexpr bool USE_KV_REPACK = true;\n  union {\n    struct {\n      alignas(16) DTypeQ q_smem_nope[CTA_TILE_Q * HEAD_DIM_CKV];\n      alignas(16) DTypeQ q_smem_pe[CTA_TILE_Q * (HEAD_DIM_KPE > 0 ? HEAD_DIM_KPE : 1)];\n      alignas(16) __nv_fp8_e4m3 ckv_smem[NUM_STAGES][CTA_TILE_KV * HEAD_DIM_CKV];\n      alignas(16) __nv_fp8_e4m3\n          kpe_p_smem[NUM_STAGES]\n                    [CTA_TILE_KV * (HEAD_DIM_KPE > CTA_TILE_Q ? HEAD_DIM_KPE : CTA_TILE_Q)];\n      alignas(16) DTypeQ ckv_bf16[NUM_STAGES * CTA_TILE_KV * HEAD_DIM_CKV];\n      alignas(16) DTypeQ kpe_bf16[NUM_STAGES * CTA_TILE_KV * (HEAD_DIM_KPE > 0 ? HEAD_DIM_KPE : 1)];\n    };\n    alignas(16) DTypeO o_smem[CTA_TILE_Q * HEAD_DIM_CKV];\n  };\n};\n\ntemplate <bool CAUSAL_, uint32_t NUM_STAGES_, bool QK_SHARD_, uint32_t HEAD_DIM_CKV_,\n          uint32_t HEAD_DIM_KPE_, uint32_t CTA_TILE_Q_, uint32_t CTA_TILE_KV_, typename DTypeQ_,\n          typename DTypeKV_, typename DTypeO_, typename IdType_, typename DTypePartial_ = DTypeO_>\nstruct KernelTraits {\n"
+        },
+        {
+          "before": "  static constexpr uint32_t UPCAST_STRIDE_FINAL_O = HEAD_DIM_CKV / upcast_size<DTypeO_>();\n  static constexpr uint32_t UPCAST_STRIDE_P = CTA_TILE_KV / upcast_size<DTypeKV_>();\n\n  static constexpr bool USE_KV_REPACK = std::is_same_v<DTypeKV_, __nv_fp8_e4m3>;\n  static constexpr uint32_t UPCAST_STRIDE_CKV_BF16 = HEAD_DIM_CKV / upcast_size<DTypeQ_>();\n  static constexpr uint32_t UPCAST_STRIDE_KPE_BF16 =\n      (HEAD_DIM_KPE > 0 ? HEAD_DIM_KPE : 16) / upcast_size<DTypeQ_>();\n  static constexpr uint32_t UPCAST_STRIDE_P_BF16 = CTA_TILE_KV / upcast_size<DTypeQ_>();\n",
+          "after": "  static constexpr uint32_t UPCAST_STRIDE_FINAL_O = HEAD_DIM_CKV / upcast_size<DTypeO_>();\n  static constexpr uint32_t UPCAST_STRIDE_P = CTA_TILE_KV / upcast_size<DTypeKV_>();\n\n  static constexpr bool USE_KV_REPACK = std::is_same_v<DTypeKV_, __nv_fp8_e4m3>;\n  static_assert(!USE_KV_REPACK || !QK_SHARD, \"E4 storage has no cross-warpgroup state\");\n  static constexpr uint32_t UPCAST_STRIDE_CKV_BF16 = HEAD_DIM_CKV / upcast_size<DTypeQ_>();\n  static constexpr uint32_t UPCAST_STRIDE_KPE_BF16 =\n      (HEAD_DIM_KPE > 0 ? HEAD_DIM_KPE : 16) / upcast_size<DTypeQ_>();\n  static constexpr uint32_t UPCAST_STRIDE_P_BF16 = CTA_TILE_KV / upcast_size<DTypeQ_>();\n"
+        },
+        {
+          "before": "    }\n  }\n}\n\ntemplate <typename KTraits>\n__device__ __forceinline__ void repack_fp8_kv_to_bf16(\n    typename KTraits::SharedStorage* smem_storage, const uint32_t stage_idx, float ckv_scale,\n    float kpe_scale, const float* ckv_scale_arr, uint32_t row_base,\n",
+          "after": "    }\n  }\n}\n\n// Preserve F32 scale before the declared final BF16 storage boundary.\n// Explicit no-.ftz PTX is independent of future translation-unit fastmath flags.\n__device__ __forceinline__ __nv_bfloat16 hyle_mla_e4_scale_rn(__nv_bfloat16 code, float scale) {\n  float product;\n  const float decoded = __bfloat162float(code); // Every E4 value is exactly BF16.\n  asm(\"mul.rn.f32 %0, %1, %2;\" : \"=f\"(product) : \"f\"(decoded), \"f\"(scale));\n  return __float2bfloat16_rn(product);\n}\n\ntemplate <typename KTraits>\n__device__ __forceinline__ void repack_fp8_kv_to_bf16(\n    typename KTraits::SharedStorage* smem_storage, const uint32_t stage_idx, float ckv_scale,\n    float kpe_scale, const float* ckv_scale_arr, uint32_t row_base,\n"
+        },
+        {
+          "before": "  constexpr uint32_t NUM_B128_CKV = CTA_TILE_KV * FP8_COLS_CKV;\n  const uint32_t tid = threadIdx.x + threadIdx.y * 32 + threadIdx.z * 128;\n  constexpr uint32_t num_threads = KTraits::NUM_THREADS;\n\n  using packed2_t = nv_bfloat162;\n  smem_t<KTraits::SWIZZLE_MODE_CKV> ckv_src(smem_storage->ckv_smem[stage_idx]);\n  smem_t<KTraits::SWIZZLE_MODE_CKV> ckv_dst(smem_storage->ckv_bf16 +\n                                            stage_idx * CTA_TILE_KV * HEAD_DIM_CKV);\n#pragma unroll\n",
+          "after": "  constexpr uint32_t NUM_B128_CKV = CTA_TILE_KV * FP8_COLS_CKV;\n  const uint32_t tid = threadIdx.x + threadIdx.y * 32 + threadIdx.z * 128;\n  constexpr uint32_t num_threads = KTraits::NUM_THREADS;\n\n  static_assert(std::is_same_v<DTypeQ, __nv_bfloat16>, \"E4 repack requires BF16 query\");\n  smem_t<KTraits::SWIZZLE_MODE_CKV> ckv_src(smem_storage->ckv_smem[stage_idx]);\n  smem_t<KTraits::SWIZZLE_MODE_CKV> ckv_dst(smem_storage->ckv_bf16 +\n                                            stage_idx * CTA_TILE_KV * HEAD_DIM_CKV);\n#pragma unroll\n"
+        },
+        {
+          "before": "      for (uint32_t k = 0; k < 16; ++k) {\n        conv[k] = static_cast<DTypeQ>(static_cast<float>(conv[k]) * scale);\n      }\n    } else {\n      packed2_t scale_packed{static_cast<DTypeQ>(ckv_scale), static_cast<DTypeQ>(ckv_scale)};\n#pragma unroll\n      for (uint32_t k = 0; k < 8; ++k) {\n        ((packed2_t*)&conv[0])[k] = __hmul2(((packed2_t*)&conv[0])[k], scale_packed);\n      }\n    }\n    ckv_dst\n        .base[ckv_dst.template get_permuted_offset<KTraits::UPCAST_STRIDE_CKV_BF16>(row, 2 * col)] =\n",
+          "after": "      for (uint32_t k = 0; k < 16; ++k) {\n        conv[k] = static_cast<DTypeQ>(static_cast<float>(conv[k]) * scale);\n      }\n    } else {\n#pragma unroll\n      for (uint32_t k = 0; k < 16; ++k) {\n        conv[k] = hyle_mla_e4_scale_rn(conv[k], ckv_scale);\n      }\n    }\n    ckv_dst\n        .base[ckv_dst.template get_permuted_offset<KTraits::UPCAST_STRIDE_CKV_BF16>(row, 2 * col)] =\n"
+        },
+        {
+          "before": "\n  if constexpr (HEAD_DIM_KPE > 0) {\n    constexpr uint32_t FP8_COLS_KPE = HEAD_DIM_KPE / upcast_size<DTypeKV>();\n    constexpr uint32_t NUM_B128_KPE = CTA_TILE_KV * FP8_COLS_KPE;\n    packed2_t kpe_scale_packed{static_cast<DTypeQ>(kpe_scale), static_cast<DTypeQ>(kpe_scale)};\n    smem_t<KTraits::SWIZZLE_MODE_KPE_RAW> kpe_src(smem_storage->kpe_p_smem[stage_idx]);\n    smem_t<KTraits::SWIZZLE_MODE_KPE> kpe_dst(smem_storage->kpe_bf16 +\n                                              stage_idx * CTA_TILE_KV * HEAD_DIM_KPE);\n#pragma unroll\n",
+          "after": "\n  if constexpr (HEAD_DIM_KPE > 0) {\n    constexpr uint32_t FP8_COLS_KPE = HEAD_DIM_KPE / upcast_size<DTypeKV>();\n    constexpr uint32_t NUM_B128_KPE = CTA_TILE_KV * FP8_COLS_KPE;\n\n    smem_t<KTraits::SWIZZLE_MODE_KPE_RAW> kpe_src(smem_storage->kpe_p_smem[stage_idx]);\n    smem_t<KTraits::SWIZZLE_MODE_KPE> kpe_dst(smem_storage->kpe_bf16 +\n                                              stage_idx * CTA_TILE_KV * HEAD_DIM_KPE);\n#pragma unroll\n"
+        },
+        {
+          "before": "          kpe_src.base[kpe_src.template get_permuted_offset<KTraits::UPCAST_STRIDE_KPE>(row, col)];\n      alignas(16) DTypeQ conv[16];\n      vec_cast<DTypeQ, DTypeKV>::template cast<16>(conv, (DTypeKV*)&packed);\n#pragma unroll\n      for (uint32_t k = 0; k < 8; ++k) {\n        ((packed2_t*)&conv[0])[k] = __hmul2(((packed2_t*)&conv[0])[k], kpe_scale_packed);\n      }\n      kpe_dst.base[kpe_dst.template get_permuted_offset<KTraits::UPCAST_STRIDE_KPE_BF16>(\n          row, 2 * col)] = *(b128_t*)&conv[0];\n      kpe_dst.base[kpe_dst.template get_permuted_offset<KTraits::UPCAST_STRIDE_KPE_BF16>(\n",
+          "after": "          kpe_src.base[kpe_src.template get_permuted_offset<KTraits::UPCAST_STRIDE_KPE>(row, col)];\n      alignas(16) DTypeQ conv[16];\n      vec_cast<DTypeQ, DTypeKV>::template cast<16>(conv, (DTypeKV*)&packed);\n#pragma unroll\n      for (uint32_t k = 0; k < 16; ++k) {\n        conv[k] = hyle_mla_e4_scale_rn(conv[k], kpe_scale);\n      }\n      kpe_dst.base[kpe_dst.template get_permuted_offset<KTraits::UPCAST_STRIDE_KPE_BF16>(\n          row, 2 * col)] = *(b128_t*)&conv[0];\n      kpe_dst.base[kpe_dst.template get_permuted_offset<KTraits::UPCAST_STRIDE_KPE_BF16>(\n"
+        },
+        {
+          "before": "    return cudaErrorNotSupported;\n  }\n  constexpr bool CAUSAL = MASK_MODE == MaskMode::kCausal;\n\n  // A missing page table is legal only for explicit 16-bit linear rows.\n  // Keep accidental null tables invalid for every original paged caller.\n  if (params.linear_kv) {\n    if (params.kv_indices || unsigned(params.block_size) != 1 || sizeof(DTypeKV) != 2)\n      return cudaErrorInvalidValue;\n  } else if (!params.kv_indices) {\n    return cudaErrorInvalidValue;\n  }\n",
+          "after": "    return cudaErrorNotSupported;\n  }\n  constexpr bool CAUSAL = MASK_MODE == MaskMode::kCausal;\n\n  // A missing page table is legal only for explicit unit-row storage.\n  // E4 linear rows use this BF16-query scalar-scale adapter, never a group-scale page table.\n  // Keep accidental null tables invalid for every original paged caller.\n  if (params.linear_kv) {\n    const bool e4_linear = std::is_same_v<DTypeKV, __nv_fp8_e4m3> &&\n                          std::is_same_v<DTypeQ, __nv_bfloat16> && params.ckv_scale_arr == nullptr;\n    if (params.kv_indices || unsigned(params.block_size) != 1 ||\n        (sizeof(DTypeKV) != 2 && !e4_linear))\n      return cudaErrorInvalidValue;\n  } else if (!params.kv_indices) {\n    return cudaErrorInvalidValue;\n  }\n"
+        },
+        {
+          "before": "  cudaDeviceGetAttribute(&smem_limit_per_sm, cudaDevAttrMaxSharedMemoryPerMultiprocessor, device);\n\n  DISPATCH_SMEM_CONFIG(smem_limit_per_sm, NUM_STAGES, CTA_TILE_KV, QK_SHARD, {\n    constexpr uint32_t EFF_NUM_STAGES = NUM_STAGES;\n    constexpr uint32_t EFF_CTA_TILE_KV = std::is_same_v<DTypeKV, __nv_fp8_e4m3> ? 32 : CTA_TILE_KV;\n    constexpr bool EFF_QK_SHARD = std::is_same_v<DTypeKV, __nv_fp8_e4m3> ? false : QK_SHARD;\n    using KTraits =\n        KernelTraits<CAUSAL, EFF_NUM_STAGES, EFF_QK_SHARD, HEAD_DIM_CKV, HEAD_DIM_KPE,\n                     /*CTA_TILE_Q_=*/64, EFF_CTA_TILE_KV, DTypeQ, DTypeKV, DTypeO, IdType, typename Params::DTypePartial>;\n",
+          "after": "  cudaDeviceGetAttribute(&smem_limit_per_sm, cudaDevAttrMaxSharedMemoryPerMultiprocessor, device);\n\n  DISPATCH_SMEM_CONFIG(smem_limit_per_sm, NUM_STAGES, CTA_TILE_KV, QK_SHARD, {\n    constexpr uint32_t EFF_NUM_STAGES = NUM_STAGES;\n    constexpr uint32_t EFF_CTA_TILE_KV = std::is_same_v<DTypeKV, __nv_fp8_e4m3> ? (NUM_STAGES == 1 ? 16 : 32) : CTA_TILE_KV;\n    constexpr bool EFF_QK_SHARD = std::is_same_v<DTypeKV, __nv_fp8_e4m3> ? false : QK_SHARD;\n    using KTraits =\n        KernelTraits<CAUSAL, EFF_NUM_STAGES, EFF_QK_SHARD, HEAD_DIM_CKV, HEAD_DIM_KPE,\n                     /*CTA_TILE_Q_=*/64, EFF_CTA_TILE_KV, DTypeQ, DTypeKV, DTypeO, IdType, typename Params::DTypePartial>;\n"
+        }
+      ],
+      "after_sha256": "9ac05f420b294e2cf03b848702ff2566bcd29ce09052127e312cfdb0558dc248"
+    },
+    {
+      "path": "include/flashinfer/attention/mla_params.cuh",
+      "before_sha256": "57be4a5ea15a670305fc45dc7d03b5f3b4f041321e6db05efed01096391946bf",
+      "edits": [
+        {
+          "before": "typename DTypeO_, typename IdType_>",
+          "after": "typename DTypeO_, typename IdType_, typename DTypePartial_ = DTypeO_>"
+        },
+        {
+          "before": "  using IdType = IdType_;",
+          "after": "  using IdType = IdType_;\n  using DTypePartial = DTypePartial_;"
+        },
+        {
+          "before": "  DTypeO* partial_o;",
+          "after": "  DTypePartial* partial_o;"
+        },
+        {
+          "before": "  IdType* kv_indices;",
+          "after": "  IdType* kv_indices;\n  // Private linear CKV rows; only the qualified ragged adapter sets this.\n  bool linear_kv = false;"
+        }
+      ],
+      "after_sha256": "e0fd16a476bf5d786d5b5bc8abd1910ff47e5fcbb32cbfc540c90dd68320d585"
     }
   ]
 }

@@ -52,7 +52,8 @@ clone只复制该完整byte-addressable成员，保留原编码；不对opaque�
 borrowed Queue与allocator活到全部版本、writer和实际native use退休。
 
 ticket内部遵循批量搬运 output→drop submission→reset→ReadLease::try_write的独占规则。Writer
-不能发布被换成其他block的mutable handle。如果原typed native操作消费了WriteLease，
+不能发布被换成其他block或缩成子范围的mutable handle；往返`lease()`也必须保留schema成员的完整范围。
+范围不符时`publish()`拒绝且不消费writer，不会把不完整成员发布为版本。如果原typed native操作消费了WriteLease，
 用complete(ready)接回同一block/generation的成功readonly结果；不同root或不完整extent
 拒绝。Native异步writes必须资源租约跟踪，publish未ready返回Unavailable，已接受失败保留原错。
 
@@ -65,8 +66,13 @@ readonly replace/分享；应用维护的conv/KV dirty域可以放在资源租�
 
 取消停止candidate发布，不保证GPU抢占已经接受的复制；native request_cancel可以明确返回
 Unimplemented，此时仍等真实退休。批量搬运取消会关闭该invocation，确认退休后显式冷rearm才
-重新创建原copy slot；unknown不能rearm。close不关闭caller Context，旧readonly版本仍可
-消费；collect非阻塞处理已放弃copy与retained backing，drain仅显式等待本store的copy工作。
+重新创建原copy slot；unknown不能rearm。另一个线程正在ticket.wait时，取消／close只记录逻辑
+取消并关闭后续准入，不并行操作它正在观察的原生句柄，也不等待该host observer；待其退出后
+collect才能清理该slot。close不关闭caller Context，旧readonly版本仍可消费；collect非阻塞
+处理已放弃copy与retained backing，drain仅显式等待本store的copy工作。
+取消或致命失败先解除candidate对该copy的控制；保留旧ticket／draft、查询原错或析构，均不影响
+随后复用slot的新copy。Unavailable保留同一copy供重试，rearm不会替换它。失败ticket返回原错，
+不能据此推断native已经退休；需要等待本store已接受的工作时使用drain。
 最后状态版本 owner析构不隐藏host等待，资源租约与批量搬运继续保活已经接受的native工作，borrow寿命仍由caller满足。
 
 容量包括版本/draft/clone slots、所有仍导出的资源租约 block、完整backing根及host snapshots。
@@ -81,14 +87,15 @@ metadata复制、host等待和opaque native私有bytes分别计费，不拿这�
 
 ## MTP 接受前缀并继续计算
 
-一次验证 T 个候选 token 后，接受长度、采样/RNG、修正 token 和 main/draft 模型策略由引擎决定。
+一次批量验证产生 T 行状态后，按实际要提交的输入前缀行数 p 选择状态。
+草稿接受长度、采样/RNG、修正 token 和 main/draft 模型策略由引擎决定。
 HYLE 提供计算和状态集合，不需要专用 MTP 事务：
 
 1. 保留验证前的版本。GDN 使用 `GatedDeltaNet{.snapshot_count=T}`（T=1 保持原四维输出），
    或 `model_ops::recurrent_gated_delta_net(T)`，得到逐 token 状态；第二输出按时间正序，
-   第 `p-1` 项是接受 p 个 token 后的状态。接受零个时继续使用旧版本。
-2. 卷积的输入为旧 history 与候选卷积输入拼成的 `[B,T+K-1,C]`。接受 p 个后，
-   下一步 history 是该输入的 `[:,p:p+K-1,:]`，而非最后 K−1 个候选。保留原始卷积输入；
+   第 `p-1` 项是消费前 p 行输入后的状态。p=0 时继续使用旧版本。
+2. 卷积的输入为旧 history 与本次卷积输入拼成的 `[B,T+K-1,C]`。保留 p 行输入后，
+   下一步 history 是该输入的 `[:,p:p+K-1,:]`，而非最后 K−1 行。保留原始卷积输入；
    无需逐 token 重跑卷积或从卷积输出反推 history。
 3. 将选出的 recurrent state、conv history、main/draft KV 的有效长度与布局以及必要的引擎元数据
    放进同一 draft，再 finalize/publish。只读 KV 里可保留被拒绝后缀的字节，计算只能引用接受前缀。
@@ -97,6 +104,11 @@ HYLE 提供计算和状态集合，不需要专用 MTP 事务：
 4. 下一 token 使用已发布版本的真实输出继续计算。失败或拒绝的分支不发布；取消后仍须等原生使用退休。
    若页写入失败且原 writer reservation 仍在，可按[页恢复说明](batch-attention.md)
    重试，不能把失败字节当作成功前缀。
+
+提交的输入行数与接受的草稿数不同。例如验证 `[pending,draft]` 时，接受0个草稿也要保留
+消费pending之后的状态，接受1个草稿则保留消费两行后的状态；纠正／bonus token仍是待消费输出。
+依赖真实target hidden的草稿缓存还须先修复，或显式保留lag、hidden和pending以便下一轮补算，
+不能把推测hidden产生的缓存与已确认target状态一起当作完整续算状态发布。
 
 B=1 的状态和 history 前缀通常是连续 byte subview，可直接用 `ReadLease::subview`，保留原资源寿命。
 B>1 在 `[B,T,...]` 中选择相同时间索引一般不是连续范围，需要 View/Gather 和必要的物化；
@@ -107,11 +119,13 @@ CUDA 侧需要同一 Context 的 device/pinned/managed 资源；普通 CPU syste
 多 token cached 验证的 Q 长度为 T、KV 长度为 L+T，已有右对齐 causal 保留前 L 个旧 token
 及当前 token 之前的候选。额外可见性约束可合并成完整显式 mask 并关闭 causal，由具体后端检查支持域。
 
-快照输出空间为 `K*B*Hv*Dv*Dk*sizeof(float)`，正序整理在执行设备完成，不读回全部状态，
-也不逐 token 重算。只要最终状态时保持默认 K=1；需要减少快照显存可缩短验证块或分块验证，
+快照状态载荷为 `snapshot_count*B*Hv*Dv*Dk*sizeof(float)`，正序整理在执行设备完成，不读回全部状态，
+也不逐 token 重算。只要最终状态时保持默认 `snapshot_count=1`；需要减少快照显存可缩短验证块或分块验证，
 不能只保留最终状态却宣称可以恢复任意中间前缀。Readonly subview 会保留整个快照 backing，
 需释放大块时可显式复制选中的状态，再释放原输出。
 
 [公共消费者](../../tests/compute_state/public_state_consumer.cc)覆盖接受 0..4 个 token 后的
 GDN、conv、KV/attention 与 Direct/Graph 接续；CPU＋CUDA 路径还复制真实快照子范围后在另一侧接续。
 它使用结构化输入和独立数值参考，不是完整 Qwen/DeepSeek MTP 引擎，也不衡量生成 tokens/s。
+模型接入的实际数学与原制品边界见[模型与算子表](../implementation/model-operators.md#续算状态与多会话接入)；
+Qwen3.5-2B测试消费者已另做[真实两轮pending续算](../evidence/correctness/mtp-qwen-natural-multiturn-2026-10-24.json)。

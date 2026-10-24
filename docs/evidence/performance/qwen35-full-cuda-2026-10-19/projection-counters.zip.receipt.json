@@ -1,0 +1,17 @@
+{
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\qwen35-full-cuda-2026-10-19\\projection-counters.zip",
+    "bytes": 583264,
+    "sha256": "c9afcb1635b407aef2497c4927312993a4901e6c62e75bd7bf17a61a320048c7"
+  },
+  "entries": 59,
+  "CRC_verified": true,
+  "payload_SHA256_verified": 58,
+  "joined": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cold-capture-topology\\ncu-preparation\\projection-counters-joined.json",
+    "bytes": 9494,
+    "sha256": "77c5f92082c838a353f2cb89fc8ac7f0561436c4d944ac848b0189ca50442dc9"
+  },
+  "new_GPU_runs": 0,
+  "new_counter_queries": 0
+}

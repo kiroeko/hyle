@@ -1,5 +1,6 @@
 #include "native_batch.h"
 #include "program.h"
+#include "hyle/compute/detail/batch_output_extent.h"
 #include "hyle/mem/std_allocator.h"
 
 #include <algorithm>
@@ -41,6 +42,7 @@ struct Slot final {
   std::vector<Request *, mem::StdAllocator<Request *>> requests;
   BatchLayoutVersion layout;
   std::size_t known_bytes = 0;
+  bool mla = false;
   ~Slot() { clear(); }
   void clear() noexcept {
     for (auto *request : requests)
@@ -56,18 +58,22 @@ Status qualify(void *, BatchCapacity capacity,
   HYLE_RETURN_IF_ERROR(validate_batch_attention_options(options.causal,options.window_left));
   const auto q8=CacheStorage::q8_0().value();
   const auto plain=CacheStorage::plain(capacity.query_type).value();
+  const bool e4=capacity.key_storage.data_type()==DataType::kFloat8E4M3FN &&
+      capacity.value_storage.data_type()==DataType::kFloat8E4M3FN;
   if(capacity.output_type!=capacity.query_type ||
       !((capacity.key_storage==plain && capacity.value_storage==plain) ||
-        (capacity.key_storage==q8 && capacity.value_storage==q8)))
-    return Status::Unimplemented("ggml CPU batch requires same-type plain or Q8_0 K/V and query/output dtype");
+        (capacity.key_storage==q8 && capacity.value_storage==q8) || e4))
+    return Status::Unimplemented("ggml CPU batch requires same-type plain, Q8_0 or E4 K/V and matching query/output dtype");
+  const bool highdim_scalar=((capacity.key_storage==plain && capacity.value_storage==plain) || e4) &&
+      (capacity.qk_head_dim==512 || capacity.qk_head_dim==576) && capacity.value_head_dim==512;
   if(!((capacity.qk_head_dim==capacity.value_head_dim) ||
-       (capacity.qk_head_dim==64 && capacity.value_head_dim==128)))
+       (capacity.qk_head_dim==64 && capacity.value_head_dim==128) || highdim_scalar))
     return Status::Unimplemented("ggml CPU batch value depth is outside its finite domain");
   if ((capacity.storage != BatchStorage::kRagged && capacity.storage != BatchStorage::kPaged) ||
       (capacity.query_type != DataType::kFloat16 &&
        capacity.query_type != DataType::kBFloat16) ||
       (capacity.qk_head_dim != 64 && capacity.qk_head_dim != 128 &&
-       capacity.qk_head_dim != 256) || !std::isfinite(options.scale))
+       capacity.qk_head_dim != 256 && !highdim_scalar) || !std::isfinite(options.scale))
     return Status::Unimplemented("ggml CPU native batch requires qualified resident flash");
   const auto properties = options.resource.properties();
   if (!properties.has(mem::MemoryProperty::kHostAccessible) ||
@@ -89,6 +95,38 @@ Status create(void *context, BatchCapacity capacity,
   slot->allocator = allocator;
   *output = slot;
   return Status::Ok();
+}
+Status qualify_mla(void *context, BatchCapacity capacity,
+                   const BatchProgramOptions &options) noexcept {
+  HYLE_RETURN_IF_ERROR(qualify(context, capacity, options));
+  const auto plain = CacheStorage::plain(capacity.query_type).value();
+  if (capacity.kv_heads != 1 || capacity.value_head_dim != 512 ||
+      (capacity.qk_head_dim != 512 && capacity.qk_head_dim != 576) ||
+      capacity.key_storage != capacity.value_storage ||
+      (capacity.key_storage != plain &&
+       capacity.key_storage.data_type()!=DataType::kFloat8E4M3FN))
+    return Status::Unimplemented("ggml CPU MLA requires uniform plain or E4 CKV512 with optional KPE64");
+  return Status::Ok();
+}
+Status create_mla(void *context, BatchCapacity capacity,
+                 const BatchProgramOptions &options, mem::AllocatorRef allocator,
+                 void **output) noexcept {
+  *output = nullptr;
+  HYLE_RETURN_IF_ERROR(qualify_mla(context, capacity, options));
+  HYLE_RETURN_IF_ERROR(create(context, capacity, options, allocator, output));
+  static_cast<Slot *>(*output)->mla = true;
+  return Status::Ok();
+}
+Result<TensorDesc> value_description(const Slot &slot, std::int64_t rows) noexcept {
+  if (!slot.mla)
+    return cache_tensor_description(slot.capacity.value_storage,
+        std::array<std::int64_t,4>{1,rows,slot.capacity.kv_heads,slot.capacity.value_head_dim});
+  HYLE_ASSIGN_OR_RETURN(auto key, cache_tensor_description(slot.capacity.key_storage,
+      std::array<std::int64_t,4>{1,rows,1,slot.capacity.qk_head_dim}));
+  // V borrows only the CKV prefix. Its row stride still skips the KPE tail;
+  // no independent V payload, copy or full-cache expansion is allocated.
+  return TensorDesc::strided_bytes(key.data_type(),
+      std::array<std::int64_t,4>{1,rows,1,512}, key.byte_strides());
 }
 void destroy(void *value, mem::AllocatorRef allocator) noexcept {
   allocator.destroy(static_cast<Slot *>(value));
@@ -125,8 +163,9 @@ Result<bool> update(void *value, const BatchLayoutVersion &layout,
       for(unsigned port=1;port<3;++port){
         const auto storage=port==1?slot.capacity.key_storage:slot.capacity.value_storage;
         const auto depth=port==1?slot.capacity.qk_head_dim:slot.capacity.value_head_dim;
-        HYLE_ASSIGN_OR_RETURN(auto desc,cache_tensor_description(storage,
-            std::array<std::int64_t,4>{1,rows,slot.capacity.kv_heads,depth}));
+        HYLE_ASSIGN_OR_RETURN(auto desc, port == 2 ? value_description(slot, rows) :
+            cache_tensor_description(storage,
+                std::array<std::int64_t,4>{1,rows,slot.capacity.kv_heads,depth}));
         if(auto bytes=desc.required_bytes();!bytes)return std::unexpected(bytes.error());
       }
     }
@@ -145,8 +184,9 @@ Result<bool> update(void *value, const BatchLayoutVersion &layout,
         for(unsigned port=1;port<3;++port){
           const auto storage=port==1?slot.capacity.key_storage:slot.capacity.value_storage;
           const auto depth=port==1?slot.capacity.qk_head_dim:slot.capacity.value_head_dim;
-          auto desc=cache_tensor_description(storage,
-              std::array<std::int64_t,4>{1,std::int64_t(refs),slot.capacity.kv_heads,depth}).value();
+          auto desc=(port == 2 ? value_description(slot, std::int64_t(refs)) :
+              cache_tensor_description(storage,
+                  std::array<std::int64_t,4>{1,std::int64_t(refs),slot.capacity.kv_heads,depth})).value();
           const auto offset=first*std::size_t(desc.byte_strides()[1]);
           (port==1?request->key_offset:request->value_offset)=offset;
           request->input_bytes[port]=desc.required_bytes().value();request->inputs[port]=std::move(desc);
@@ -164,12 +204,13 @@ Result<bool> update(void *value, const BatchLayoutVersion &layout,
   output->layout_generation=layout.generation();
   return true;
 }
-detail::EnqueueResult plan(void *value, Queue &, const BatchLayoutVersion &layout,
+detail::EnqueueResult plan(void *value, detail::QueueSequence &, const BatchLayoutVersion &layout,
                           detail::BatchWorkspaceViews,
                           BatchPlanReport *output) noexcept {
   auto &slot = *static_cast<Slot *>(value);
   slot.clear();
-  if (!layout.valid() || layout.schema().capacity() != slot.capacity)
+  if (!layout.valid() || layout.schema().capacity() != slot.capacity ||
+      (layout.schema().mla_layout() != MlaCacheLayout::kNone) != slot.mla)
     return detail::EnqueueResult::rejected(Status::InvalidArgument("ggml CPU ragged layout capacity"));
   try {
     slot.layout=layout;
@@ -218,9 +259,8 @@ detail::EnqueueResult plan(void *value, Queue &, const BatchLayoutVersion &layou
       auto k = cache_tensor_description(slot.capacity.key_storage,
           std::array<std::int64_t, 4>{1, paged?std::int64_t(slot.capacity.max_pages)*slot.capacity.page_size:
               static_cast<std::int64_t>(keys), slot.capacity.kv_heads, slot.capacity.qk_head_dim});
-      auto v = cache_tensor_description(slot.capacity.value_storage,
-          std::array<std::int64_t, 4>{1, paged?std::int64_t(slot.capacity.max_pages)*slot.capacity.page_size:
-              static_cast<std::int64_t>(keys), slot.capacity.kv_heads, slot.capacity.value_head_dim});
+      auto v = value_description(slot, paged ? std::int64_t(slot.capacity.max_pages)*slot.capacity.page_size :
+          static_cast<std::int64_t>(keys));
       auto out = TensorDesc::dense(slot.capacity.output_type,
           std::array<std::int64_t,4>{1,queries,slot.capacity.query_heads,slot.capacity.value_head_dim});
       if (!q || !k || !v || !out) {
@@ -242,7 +282,8 @@ detail::EnqueueResult plan(void *value, Queue &, const BatchLayoutVersion &layou
       const auto value_row=cache_tensor_description(slot.capacity.value_storage,
           std::array<std::int64_t,2>{slot.capacity.kv_heads,slot.capacity.value_head_dim}).value();
       request->key_offset=paged?0:static_cast<std::size_t>(host.kv_indptr[index])*key_row.required_bytes().value();
-      request->value_offset=paged?0:static_cast<std::size_t>(host.kv_indptr[index])*value_row.required_bytes().value();
+      request->value_offset=paged?0:static_cast<std::size_t>(host.kv_indptr[index])*
+          (slot.mla ? key_row.required_bytes().value() : value_row.required_bytes().value());
       request->output_offset=static_cast<std::size_t>(host.query_indptr[index])*
           slot.capacity.query_heads*slot.capacity.value_head_dim*data_type_size(slot.capacity.output_type);
       Recipe recipe;
@@ -252,7 +293,8 @@ detail::EnqueueResult plan(void *value, Queue &, const BatchLayoutVersion &layou
       const auto operation=Operation::custom(PagedRead{
           .pages=paged?host.page_indices.subspan(static_cast<std::size_t>(host.kv_indptr[index]),static_cast<std::size_t>(refs)):std::span<const std::int32_t>{},
           .logical_rows=static_cast<std::uint32_t>(keys),.page_size=slot.capacity.page_size,
-          .scale=slot.options.scale,.causal=slot.options.causal,.window_left=slot.options.window_left});
+          .scale=slot.options.scale,.causal=slot.options.causal,.window_left=slot.options.window_left,
+          .key_scale=slot.capacity.key_storage.scale(),.value_scale=slot.capacity.value_storage.scale()});
       recipe.nodes.push_back({operation, {0, 1, 2}, {3}});
       const auto compiled = compile(slot.context, std::move(recipe), slot.allocator, &request->prepared);
       if (compiled.kind != ProviderPrepareOutcomeKind::kPrepared) {
@@ -290,17 +332,20 @@ detail::EnqueueResult plan(void *value, Queue &, const BatchLayoutVersion &layou
     return detail::EnqueueResult::rejected(Status::ResourceExhausted("ggml CPU ragged plan allocation"));
   }
 }
-detail::EnqueueResult run(void *value, Queue &queue,
+detail::EnqueueResult run(void *value, detail::QueueSequence &sequence,
                          std::span<const ConstTensorView> inputs,
                          detail::BatchWorkspaceViews workspace) noexcept {
   auto &slot = *static_cast<Slot *>(value);
-  if (!slot.layout.valid() || inputs.size() != 3)
+  if (!slot.layout.valid() || inputs.size() != (slot.mla ? 2u : 3u))
     return detail::EnqueueResult::rejected(Status::FailedPrecondition("ggml CPU ragged slot is not planned"));
+  auto tail = detail::batch_output_tail(slot.capacity, slot.layout.facts().query_rows, workspace.output);
+  if (!tail)
+    return detail::EnqueueResult::rejected(tail.error());
   bool accepted = false;
   for (auto *request : slot.requests) {
     std::array<ConstTensorView, 3> views;
     for (std::size_t port = 0; port < 3; ++port) {
-      auto buffer = inputs[port].storage().subview(port == 0 ? request->query_offset : port==1?request->key_offset:request->value_offset,
+      auto buffer = inputs[slot.mla && port == 2 ? 1 : port].storage().subview(port == 0 ? request->query_offset : port==1?request->key_offset:request->value_offset,
                                                  request->input_bytes[port]);
       if (!buffer)
         return {accepted, buffer.error()};
@@ -316,16 +361,50 @@ detail::EnqueueResult run(void *value, Queue &queue,
     if (!output)
       return {accepted, output.error()};
     const auto result = request->prepared.vtable->shared_submit(
-        request->prepared.state, request->invocation, queue, views, std::span(&*output, 1));
+        request->prepared.state, request->invocation, sequence, views, std::span(&*output, 1));
     accepted |= result.accepted;
     if (!result.status.ok())
       return {accepted, result.status};
   }
-  return detail::EnqueueResult::accepted_command();
+  if (!tail->empty()) {
+    // The original synchronous CPU sequence already owns this coherent
+    // output. Map only its authorized inactive suffix, never backing slack.
+    auto mapping = tail->map_host(mem::HostAccess::kWrite);
+    if (!mapping)
+      return {accepted, mapping.error()};
+    auto bytes = mapping->writable_bytes();
+    if (!bytes)
+      return {accepted, bytes.error()};
+    std::fill(bytes->begin(), bytes->end(), std::byte{0});
+    accepted = true;
+    const auto flushed = tail->resource().properties().has(mem::MemoryProperty::kHostDeviceCoherent)
+        ? Status::Ok() : mapping->flush();
+    const auto closed = mapping->close();
+    if (!flushed.ok())
+      return {accepted, flushed};
+    if (!closed.ok())
+      return {accepted, closed};
+  }
+  return {accepted, Status::Ok()};
+}
+bool empty_cache_reads(void *value) noexcept {
+  const auto &slot = *static_cast<const Slot *>(value);
+  // plan() creates no Request for a zero-query batch; run() then has no
+  // native input views or cache dereferences to submit.
+  return slot.layout.valid() && !slot.layout.facts().query_rows && slot.requests.empty();
+}
+ProviderRuntimeProperties batch_runtime(void *context) noexcept {
+  auto properties=runtime(context);
+  properties.replay_class=ProviderReplayClass::kManaged;
+  return properties;
 }
 const detail::BatchProviderVTable table{
     .qualify=&qualify,.create=&create,.destroy=&destroy,.update=&update,
-    .plan=&plan,.run=&run,.uses_caller_workspace=false};
+    .plan=&plan,.run=&run,.uses_caller_workspace=false,.empty_cache_reads=&empty_cache_reads,.runtime=&batch_runtime};
+const detail::BatchProviderVTable mla_table{
+    .qualify=&qualify_mla,.create=&create_mla,.destroy=&destroy,.update=&update,
+    .plan=&plan,.run=&run,.uses_caller_workspace=false,.empty_cache_reads=&empty_cache_reads,.runtime=&batch_runtime};
 } // namespace
 const detail::BatchProviderVTable *native_batch_table() noexcept { return &table; }
+const detail::BatchProviderVTable *native_mla_batch_table() noexcept { return &mla_table; }
 } // namespace hyle::compute::ggml_cpu::internal

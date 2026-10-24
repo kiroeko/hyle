@@ -7,7 +7,10 @@
 #include <vector>
 
 #include "hyle/graph/region_provider.h"
+#include "hyle/graph/detail/region_access.h"
 #include "program.h"
+#include "../graph_ggml_shared/constant_packing.h"
+#include "../graph/region_discovery.h"
 
 namespace hyle::graph::cpu::internal {
 namespace native = compute::ggml_cpu::internal;
@@ -19,7 +22,8 @@ inline constexpr std::uint32_t kGgmlCpuRegionPreference = 100;
 
 Result<std::size_t>
 matmul_repack_bytes(const Graph &graph,
-                    std::span<const NodeId> nodes) noexcept {
+                    std::span<const NodeId> nodes,
+                    std::span<const ValueId> packed_constants = {}) noexcept {
   std::size_t total = 0;
   for (const auto node : nodes) {
     auto operation = graph.operation(node);
@@ -42,7 +46,8 @@ matmul_repack_bytes(const Graph &graph,
     if (!description)
       return std::unexpected(std::move(description).error());
     auto physical = description->transposed();
-    if (!physical || !physical->is_dense()) {
+    if ((!physical || !physical->is_dense()) &&
+        std::ranges::find(packed_constants, *input) == packed_constants.end()) {
       auto bytes = description->required_bytes();
       if (!bytes)
         return std::unexpected(std::move(bytes).error());
@@ -82,7 +87,7 @@ Result<bool> supported_node(void *context, const Graph &graph,
   if (!input_count || !output_count || !effects)
     return std::unexpected(
         Status::InvalidArgument("ggml CPU region node is invalid"));
-  if (*output_count != 1 || *effects != 0)
+  if (*output_count == 0 || *effects != 0)
     return false;
   try {
     std::vector<compute::TensorDesc> inputs;
@@ -95,45 +100,64 @@ Result<bool> supported_node(void *context, const Graph &graph,
         return std::unexpected(std::move(description).error());
       inputs.push_back(*description);
     }
-    auto id = graph.result(node);
-    if (!id)
-      return std::unexpected(std::move(id).error());
-    auto output = graph.value_description(*id);
-    if (!output)
-      return std::unexpected(std::move(output).error());
-    if (output->element_count().value() == 0)
-      return false; // Empty outputs do not bind a nonempty native backing.
-    return native::supports(context, *operation, inputs,
-                            std::span(&*output, 1));
+    std::vector<compute::TensorDesc> outputs;
+    for (std::size_t i = 0; i < *output_count; ++i) {
+      auto id = graph.result(node, i);
+      if (!id)
+        return std::unexpected(std::move(id).error());
+      auto description = graph.value_description(*id);
+      if (!description)
+        return std::unexpected(std::move(description).error());
+      if (description->element_count().value() == 0)
+        return false; // Empty outputs do not bind a nonempty native backing.
+      outputs.push_back(*description);
+    }
+    return native::supports(context, *operation, inputs, outputs);
   } catch (const std::bad_alloc &) {
     return std::unexpected(
         Status::ResourceExhausted("ggml CPU region schema allocation failed"));
   }
 }
 
-Status propose(void *context, const Graph &graph, mem::AllocatorRef allocator,
+// A singleton is useful when this adapter can prepare an immutable expert
+// bank once. Ordinary dynamic operations keep their existing Direct route.
+bool single_constant_expert(const Graph &graph, NodeId node) noexcept {
+  const auto operation = graph.operation(node);
+  if (!operation || !operation->custom_as<compute::model_ops::GroupedMatMul>())
+    return false;
+  const auto weight = graph.node_input(node, 0);
+  if (!weight) return false;
+  const auto description = graph.value_description(*weight);
+  if (!description || !description->is_plain() || !description->is_dense() ||
+      description->rank() != 3 ||
+      description->data_type() != compute::DataType::kBFloat16)
+    return false;
+  auto value = *weight;
+  for (std::size_t depth = 0; depth <= graph.node_count(); ++depth) {
+    if (value.kind() == ValueKind::kConstant) return true;
+    if (value.kind() != ValueKind::kNodeOutput) return false;
+    const auto producer = graph.producer(value);
+    if (!producer) return false;
+    const auto kind = graph.operation_kind(*producer);
+    const auto inputs = graph.node_input_count(*producer);
+    if (!kind || *kind != compute::OperationKind::kView || !inputs || *inputs != 1)
+      return false;
+    const auto input = graph.node_input(*producer, 0);
+    if (!input) return false;
+    value = *input;
+  }
+  return false;
+}
+
+Status propose(void *context, const RegionDiscoveryRequest &request, mem::AllocatorRef allocator,
                RegionProposalWriter &writer) noexcept {
-  struct Scratch final {
-    mem::AllocatorRef allocator;
-    NodeId *data;
-    std::size_t capacity;
-    ~Scratch() { allocator.deallocate_n(data, capacity); }
-  } scratch{allocator, nullptr, graph.node_count()};
-  if (scratch.capacity < 2)
+  const auto &graph = request.graph;
+  if (!request.allowed_nodes.empty() && request.allowed_nodes.size() != graph.node_count())
+    return Status::InvalidArgument("ggml CPU discovery mask size differs");
+  if (graph.node_count() == 0)
     return Status::Ok();
-  scratch.data = allocator.allocate_n<NodeId>(scratch.capacity);
-  if (!scratch.data)
-    return Status::ResourceExhausted(
-        "ggml CPU region discovery allocation failed");
-  std::size_t size = 0;
-  const auto emit = [&]() -> Result<bool> {
-    if (size < 2)
-      return true;
-    const auto nodes = std::span(scratch.data, size);
-    auto contractible = is_region_contractible(graph, nodes, allocator);
-    if (!contractible)
-      return std::unexpected(std::move(contractible).error());
-    if (!*contractible)
+  const auto emit = [&](std::span<const NodeId> nodes) -> Result<bool> {
+    if (nodes.empty() || (nodes.size() == 1 && !single_constant_expert(graph, nodes[0])))
       return true;
     auto repack = matmul_repack_bytes(graph, nodes);
     if (!repack)
@@ -152,31 +176,22 @@ Status propose(void *context, const Graph &graph, mem::AllocatorRef allocator,
          .policy = kGgmlCpuRegionPolicy,
          .preference = kGgmlCpuRegionPreference});
   };
-  // An independent node between two related ggml nodes does not
-  // break their region. The DAG contraction check, not insertion adjacency,
-  // decides whether the eligible set has a legal native boundary. A set that
-  // leaves and re-enters retains the existing single-operation routes.
-  for (std::size_t i = 0; i < graph.node_count(); ++i) {
-    auto node = graph.node_id(i);
-    if (!node)
-      return std::move(node).error();
-    auto supported = supported_node(context, graph, *node);
-    if (!supported)
-      return std::move(supported).error();
-    if (*supported)
-      scratch.data[size++] = *node;
-  }
-  auto accepted = emit();
-  if (!accepted)
-    return std::move(accepted).error();
-  return Status::Ok();
+  return detail::discover_regions(graph, allocator,
+      [&](NodeId node) -> Result<bool> {
+        if (!request.allowed_nodes.empty() && !request.allowed_nodes[node.ordinal()])
+          return false;
+        return supported_node(context, graph, node);
+      }, emit);
 }
 
 Status qualify(void *context, const RegionCompileRequest &request) noexcept {
-  if (!request.graph || request.route != 1 || request.nodes.size() < 2 ||
+  if (!request.graph || request.route != 1 || request.nodes.empty() ||
       request.outputs.empty() || request.has_unknown_effects ||
       !request.effect_accesses.empty())
     return Status::Unimplemented("ggml CPU region boundary is not admitted");
+  if (request.nodes.size() == 1 &&
+      !single_constant_expert(*request.graph, request.nodes.front()))
+    return Status::Unimplemented("ggml CPU singleton has no immutable preparation");
   for (const auto node : request.nodes) {
     auto supported = supported_node(context, *request.graph, node);
     if (!supported)
@@ -189,23 +204,25 @@ Status qualify(void *context, const RegionCompileRequest &request) noexcept {
 }
 Status resources(void *context, const RegionCompileRequest &request,
                  mem::AllocatorRef,
-                 std::span<compute::detail::ResourceBindingRequirement> inputs,
-                 std::span<compute::detail::ResourceBindingRequirement> outputs,
+                 std::span<RegionInputRequirement> inputs,
+                 std::span<RegionOutputRequirement> outputs,
                  RegionResourceProposal *proposal) noexcept {
   *proposal = {};
   HYLE_RETURN_IF_ERROR(qualify(context, request));
   for (std::size_t i = 0; i < inputs.size(); ++i)
-    inputs[i] = {.required_properties = mem::MemoryProperty::kHostAccessible,
-                 .minimum_alignment =
-                     request.graph->value_description(request.inputs[i])
-                         .value()
-                         .required_alignment()};
+    inputs[i] = {.resource = {
+                     .required_properties = mem::MemoryProperty::kHostAccessible,
+                     .minimum_alignment =
+                         request.graph->value_description(request.inputs[i])
+                             .value()
+                             .required_alignment()}};
   for (std::size_t i = 0; i < outputs.size(); ++i)
-    outputs[i] = {.required_properties = mem::MemoryProperty::kHostAccessible,
-                  .minimum_alignment =
-                      request.graph->value_description(request.outputs[i])
-                          .value()
-                          .required_alignment()};
+    outputs[i] = {.resource = {
+                      .required_properties = mem::MemoryProperty::kHostAccessible,
+                      .minimum_alignment =
+                          request.graph->value_description(request.outputs[i])
+                              .value()
+                              .required_alignment()}};
   *proposal = {
       .runtime = native::runtime(context),
       .workspace_resource = {.required_properties =
@@ -262,20 +279,22 @@ void destroy_region_invocation(void *value,
   allocator.deallocate(invocation, sizeof(Invocation), alignof(Invocation));
 }
 compute::detail::EnqueueResult
-submit(void *value, void *lane, compute::Queue &queue,
+submit(void *value, void *lane, compute::detail::QueueSequence &sequence,
        std::span<const compute::ConstTensorView> inputs,
        std::span<const compute::TensorView> outputs) noexcept {
   const auto &artifact = static_cast<Artifact *>(value)->native;
   return artifact.vtable->shared_submit(artifact.state,
                                         static_cast<Invocation *>(lane)->state,
-                                        queue, inputs, outputs);
+                                        sequence, inputs, outputs);
 }
+const void *query_extension(void *, compute::ProviderExtensionId) noexcept;
 const ProviderRegionPreparedVTable kPrepared{
     .destroy_prepared = &destroy,
     .alias_support = &alias,
     .create_invocation = &create_region_invocation,
     .destroy_invocation = &destroy_region_invocation,
-    .shared_submit = &submit};
+    .shared_submit = &submit,
+    .query_extension = &query_extension};
 
 compute::ProviderPrepareOutcome
 compile(void *context, const RegionCompileRequest &request,
@@ -293,7 +312,9 @@ compile(void *context, const RegionCompileRequest &request,
     for (std::uint32_t i = 0; i < values.size(); ++i)
       recipe.inputs.push_back(i);
     for (const auto node : request.nodes)
-      values.push_back(request.graph->result(node).value());
+      for (std::size_t port = 0;
+           port < request.graph->node_output_count(node).value(); ++port)
+        values.push_back(request.graph->result(node, port).value());
     const auto local = [&](ValueId value) -> std::uint32_t {
       return static_cast<std::uint32_t>(std::ranges::find(values, value) -
                                         values.begin());
@@ -301,9 +322,11 @@ compile(void *context, const RegionCompileRequest &request,
     for (const auto id : values)
       recipe.values.push_back(request.graph->value_description(id).value());
     for (const auto node : request.nodes) {
-      native::Node lowered{request.graph->operation(node).value(),
-                           {},
-                           {local(request.graph->result(node).value())}};
+      native::Node lowered{request.graph->operation(node).value(), {}, {}};
+      for (std::size_t port = 0;
+           port < request.graph->node_output_count(node).value(); ++port)
+        lowered.outputs.push_back(
+            local(request.graph->result(node, port).value()));
       for (std::size_t i = 0; i < request.graph->node_input_count(node).value();
            ++i) {
         const auto id = local(request.graph->node_input(node, i).value());
@@ -316,9 +339,21 @@ compile(void *context, const RegionCompileRequest &request,
     }
     for (const auto id : request.outputs)
       recipe.outputs.push_back(local(id));
+    std::vector<ValueId> packed_constants;
+    const auto casts = ggml_shared::prepare_constant_casts(context, request, values, recipe,
+        &native::widen_bfloat_constant);
+    if (casts.kind != compute::ProviderPrepareOutcomeKind::kPrepared)
+      return casts;
+    const auto packing = ggml_shared::pack_constants(context, request, values, recipe,
+        &native::widen_bfloat_constant, &native::pack_matrix_constant, &packed_constants);
+    if (packing.kind != compute::ProviderPrepareOutcomeKind::kPrepared)
+      return packing;
+    repack = matmul_repack_bytes(*request.graph, request.nodes, packed_constants);
+    if (!repack)
+      return compute::ProviderPrepareOutcome::error(std::move(repack).error());
     void *storage = allocator.allocate(sizeof(Artifact), alignof(Artifact));
     if (!storage)
-      return compute::ProviderPrepareOutcome::resource_declined(
+      return compute::ProviderPrepareOutcome::error(
           Status::ResourceExhausted(
               "ggml CPU region artifact allocation failed"));
     auto *artifact = ::new (storage) Artifact;
@@ -349,6 +384,17 @@ compile(void *context, const RegionCompileRequest &request,
 }
 const RegionProviderVTable kRegion{
     .propose = &propose, .propose_resources = &resources, .compile = &compile};
+Status inspect_projected_read(const ProviderRegionPrepared &prepared, void *,
+    std::uint32_t input_port, compute::detail::OperationPreparedAccess *access) noexcept {
+  if (prepared.vtable != &kPrepared || !prepared.state)
+    return Status::Unimplemented("selected CPU region is not this compiled carrier");
+  return native::inspect_projected_read(
+      static_cast<const Artifact *>(prepared.state)->native, input_port, access);
+}
+const void *query_extension(void *, compute::ProviderExtensionId id) noexcept {
+  static constexpr detail::RegionProjectedReadVTable projected{&inspect_projected_read};
+  return id == detail::kRegionProjectedReadExtensionId ? &projected : nullptr;
+}
 } // namespace
 
 compute::Provider ggml_regions(compute::ggml_cpu::Options options) noexcept {

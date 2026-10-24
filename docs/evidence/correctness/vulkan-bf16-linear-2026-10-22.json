@@ -1,0 +1,333 @@
+{
+  "date": "2026-10-22",
+  "status": "bf16_matrix_fix_passed_full_qwen_reuse_incomplete",
+  "implementation": [
+    "Prefer the existing qualified BF16 native MatMul instead of the full-F32 wrapper",
+    "Preserve BF16 immutable dense RHS during necessary cold transpose packing",
+    "Separate native and promoted pack replacements for the same source"
+  ],
+  "contracts": {
+    "native_provider_changed": false,
+    "consumer_mathematics_changed": false,
+    "public_API_changed": false,
+    "other_BF16_operation_fallback_changed": false,
+    "weight_dtype": "BF16",
+    "accumulation": "F32",
+    "ordinary_output": "BF16",
+    "scores": "F32"
+  },
+  "changed_files": [
+    {
+      "before": {
+        "path": ".scratch/vulkan-bf16-linear-20261022/before/docs/developer/current-work.md",
+        "bytes": 43855,
+        "sha256": "c318aa13c12df22b24abddc47e494a93070ab7c784d6aaed60e34aa56a125127"
+      },
+      "current": {
+        "path": "docs/developer/current-work.md",
+        "bytes": 45339,
+        "sha256": "e90f061813cd7bce84e7ff6fc1774b0834599a10bb25ab57ca2aa3253add82a8"
+      }
+    },
+    {
+      "before": {
+        "path": ".scratch/vulkan-bf16-linear-20261022/before/src/compute_route_vulkan/vulkan_program.cc",
+        "bytes": 68146,
+        "sha256": "6329401189ffb8aa4359e4222178f067fd5447abf34033b3a48106ee96ae9c44"
+      },
+      "current": {
+        "path": "src/compute_route_vulkan/vulkan_program.cc",
+        "bytes": 68413,
+        "sha256": "d6e68d2e74e13a1127d829ec36d79c0d7b23ece10f0a61723db8bb0140a47b25"
+      }
+    },
+    {
+      "before": {
+        "path": ".scratch/vulkan-bf16-linear-20261022/before/src/compute_route_vulkan/vulkan_region.cc",
+        "bytes": 73084,
+        "sha256": "9901a277d2399209a39251af2c40f0450b8175eea11c639fa2a4195f7c90f3e2"
+      },
+      "current": {
+        "path": "src/compute_route_vulkan/vulkan_region.cc",
+        "bytes": 73400,
+        "sha256": "f8f3916ba403cc2f6ee176529a9e00269833856b38b2f027765e8679c3c736da"
+      }
+    },
+    {
+      "before": {
+        "path": ".scratch/vulkan-bf16-linear-20261022/before/tests/graph_route_vulkan/CMakeLists.txt",
+        "bytes": 7988,
+        "sha256": "d85843836ce563c3fb00e6c868abdbed7418366aa006d5b9ed660cddbed7053f"
+      },
+      "current": {
+        "path": "tests/graph_route_vulkan/CMakeLists.txt",
+        "bytes": 8203,
+        "sha256": "a1e855cd2e98ad1015f6f37fcd5b81c209157e824b5280ae1daba4d8b27819a4"
+      }
+    },
+    {
+      "before": null,
+      "current": {
+        "path": "tests/graph_route_vulkan/bfloat_linear_consumer.cc",
+        "bytes": 15930,
+        "sha256": "632e0bd99fd025ece34b43cefdf2790c8cf3468af11ed54e5ce1d4a4fc590362"
+      }
+    },
+    {
+      "before": {
+        "path": ".scratch/vulkan-bf16-linear-20261022/before/tools/qwen35_text/README.md",
+        "bytes": 36137,
+        "sha256": "98a96d8ebd4ad1a6cf726fdc9a971b4139aa67ccb50df85adb26cb6ea42df1af"
+      },
+      "current": {
+        "path": "tools/qwen35_text/README.md",
+        "bytes": 36266,
+        "sha256": "8caae02c7766c7b36a1177847866e0a12ff0d1a9f28ab4c55861c50053f7712c"
+      }
+    }
+  ],
+  "regression": {
+    "result": {
+      "path": ".scratch/vulkan-bf16-linear-20261022/test-run2/run.result.json",
+      "bytes": 308,
+      "sha256": "26cfc7904c4cb0de1b20ffa17a56a90bb6a6022ac1136f97e319f5b783efefc5"
+    },
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\vulkan-bf16-linear-20261022\\test-link2\\test.exe",
+      "bytes": 67931136,
+      "sha256": "22a2d167fcdd33ba0d33edb7e1395b1c72b112751f077700ebfc19abed91e5e2"
+    },
+    "log": {
+      "path": ".scratch/vulkan-bf16-linear-20261022/test-run2/run.stdout.log",
+      "bytes": 241,
+      "sha256": "8f26b15242e54db45a12a4c4448ddd5c74aaa79574ce6c9a47057b3523896c6d"
+    },
+    "checked_output_elements": 12288,
+    "rows": [
+      1,
+      15
+    ],
+    "different_inputs_per_shape": 2,
+    "independent_reference": "FP64 dots of decoded original BF16; nearest/even BF16 output oracle",
+    "checks": [
+      "stored[N,K] permute and same-dtype dense[K,N] cold packing",
+      "ordinary BF16 outputs and native F32 near-tie scores",
+      "BF16 exponent range: exact 2^30 * 2^-30 = 1; no silent F16 narrowing",
+      "original activation and both constant payloads byte-identical; readonly permissions and exact output resources"
+    ]
+  },
+  "failed_fixture": {
+    "result": {
+      "path": ".scratch/vulkan-bf16-linear-20261022/test-run1/run.result.json",
+      "bytes": 309,
+      "sha256": "e951b574e6a5d9b09fca16b9bed71861b7781f2a3633ce42c991cafcb8858e0d"
+    },
+    "failure": "symbolic operation requires explicit output tensor specs",
+    "fix": "Three symbolic operations now provide explicit BF16/F32 TensorSpecs; mathematical fixture and tolerances unchanged"
+  },
+  "qwen_runs": [
+    {
+      "command": [
+        "C:\\public\\project-hyle\\hyle\\.scratch\\vulkan-bf16-linear-20261022\\qwen-link1\\qwen.exe",
+        "--inputs",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-native-assembly-20261022\\inputs\\text",
+        "--steps",
+        "4",
+        "--capacity",
+        "64",
+        "--max-sessions",
+        "1",
+        "--active-sequences",
+        "1",
+        "--cache-bytes",
+        "268435456",
+        "--prefix-cache",
+        "off",
+        "--progress",
+        "direct",
+        "--replay",
+        "commands",
+        "--mtp",
+        "off"
+      ],
+      "cwd": "C:\\public\\project-hyle\\hyle",
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\vulkan-bf16-linear-20261022\\qwen-link1\\qwen.exe",
+        "bytes": 68980224,
+        "sha256": "e9b4f32661c8d0efc81f0be9bda1012bcae426e343531db917a032be30ec87e5"
+      },
+      "started": 1792642078.9984522,
+      "performance_comparison": false,
+      "pid": 101436,
+      "state": "terminal",
+      "exit": 1,
+      "seconds": 6.561665773391724
+    },
+    {
+      "command": [
+        "C:\\public\\project-hyle\\hyle\\.scratch\\vulkan-bf16-linear-20261022\\diagnostic-link1\\qwen.exe",
+        "--inputs",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-native-assembly-20261022\\inputs\\text",
+        "--steps",
+        "4",
+        "--capacity",
+        "64",
+        "--max-sessions",
+        "1",
+        "--active-sequences",
+        "1",
+        "--cache-bytes",
+        "268435456",
+        "--prefix-cache",
+        "off",
+        "--progress",
+        "direct",
+        "--replay",
+        "commands",
+        "--mtp",
+        "off"
+      ],
+      "cwd": "C:\\public\\project-hyle\\hyle",
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\vulkan-bf16-linear-20261022\\diagnostic-link1\\qwen.exe",
+        "bytes": 68980736,
+        "sha256": "d9e79e4845a16e04a00ebccefde6b8c2745d1e2e8c75dc25a048465bd1f4245b"
+      },
+      "started": 1792642274.9718394,
+      "performance_comparison": false,
+      "pid": 98512,
+      "state": "terminal",
+      "exit": 1,
+      "seconds": 4.432417869567871
+    }
+  ],
+  "qwen_actual": {
+    "loaded_text_tensors": 320,
+    "loaded_requested_bytes": 3763655360,
+    "parameters": "Original AM P15/natural4, C64, N1/R1, cache256MiB, prefix off, commands",
+    "completed_ids": [
+      1328,
+      5675,
+      11
+    ],
+    "failure": "Vulkan batch native output retained before third decode preparation",
+    "complete_plain_pass": false,
+    "mtp_run": false
+  },
+  "storage_diagnostic": {
+    "original_AM_diagnostic_object_reused": true,
+    "product_logging_changed": false,
+    "report": {
+      "path": ".scratch/vulkan-bf16-linear-20261022/review/storage-after.json",
+      "bytes": 7312,
+      "sha256": "26eb7556e30ddd75b5ddab2752217397484497f1620286091080f56bdfcbba80"
+    },
+    "successful_regions": 2349,
+    "cumulative_private_allocation_bytes": 198830080,
+    "large_weight_CPY_CONT_threshold_bytes": 16777216,
+    "large_weight_CPY_CONT_nodes": 0,
+    "old_partial_successful_regions": 573,
+    "old_partial_private_bytes": 7760350944,
+    "old_next_region_failed": true,
+    "coverage_differs": true,
+    "physical_vram_peak_measured": false
+  },
+  "next_action": "Connect existing whole-block retained-output epochs to paged/ragged readers; preserve pure native retirement, one pending cold epoch through failed export/retry, full binding and final seal before strict submit. Do not update owner baselines to absorb readers.",
+  "limitations": [
+    "Only the listed finite regression and partial actual full-model flow; no complete quality claim",
+    "No new complete performance/memory comparison; current-work final table unchanged",
+    "No CMake configure or SDK/shader/NVCC rebuild; exact cached closure with two incremental product TUs",
+    "No new CPU/Apple native run because their implementation was not changed"
+  ],
+  "cleanup": {
+    "executed_from": {
+      "path": "test.ps1",
+      "bytes": 3753,
+      "sha256": "8c940133e6ad2f41fce5491e9a5e15224233408116365c74fe33cbb513431c1e"
+    },
+    "frozen_script": {
+      "path": ".scratch/vulkan-bf16-linear-20261022/cleanup-test.ps1",
+      "bytes": 3753,
+      "sha256": "8c940133e6ad2f41fce5491e9a5e15224233408116365c74fe33cbb513431c1e"
+    },
+    "targets": [
+      {
+        "path": ".scratch/vulkan-bf16-linear-20261022/diagnostic-link1/qwen.exe",
+        "bytes": 68980736,
+        "sha256": "d9e79e4845a16e04a00ebccefde6b8c2745d1e2e8c75dc25a048465bd1f4245b"
+      },
+      {
+        "path": ".scratch/vulkan-bf16-linear-20261022/diagnostic-link1/qwen.exp",
+        "bytes": 24982,
+        "sha256": "22009680a8100986dc81512bcb7e55de013196852f6186db9b817c5192f9f181"
+      },
+      {
+        "path": ".scratch/vulkan-bf16-linear-20261022/diagnostic-link1/qwen.lib",
+        "bytes": 41384,
+        "sha256": "339d3ce297534ebac8825c27a011f2f4f9dfe366c657ebfc45dbbfdc8412a2cb"
+      },
+      {
+        "path": ".scratch/vulkan-bf16-linear-20261022/diagnostic-link1/qwen.map",
+        "bytes": 32551065,
+        "sha256": "df9c930dc67933f3b30c9e362f3b650aeeabc46c21463c46779795dacd6e3365"
+      },
+      {
+        "path": ".scratch/vulkan-bf16-linear-20261022/qwen-link1/qwen.exp",
+        "bytes": 24976,
+        "sha256": "22e67cf5af4aa42af22d49cb9f7b01a73fdefe2b8087dfb078939a8c7400d425"
+      },
+      {
+        "path": ".scratch/vulkan-bf16-linear-20261022/qwen-link1/qwen.lib",
+        "bytes": 41384,
+        "sha256": "339d3ce297534ebac8825c27a011f2f4f9dfe366c657ebfc45dbbfdc8412a2cb"
+      },
+      {
+        "path": ".scratch/vulkan-bf16-linear-20261022/qwen-link1/qwen.map",
+        "bytes": 32551930,
+        "sha256": "8b78e22ba5031fd1c7fd582506a9f226587032c965665011e0fc640aef2d5ca3"
+      },
+      {
+        "path": ".scratch/vulkan-bf16-linear-20261022/test-link1/test.exe",
+        "bytes": 67933696,
+        "sha256": "9ca3838c908169ad24e2959d2be27e9b230c7131f567462fc8e7aa1b6aa2fed6"
+      },
+      {
+        "path": ".scratch/vulkan-bf16-linear-20261022/test-link1/test.exp",
+        "bytes": 24976,
+        "sha256": "5bea5cbb89d9e758bbb3c7ee1b248d8aab0e2d5a7ba292c1a96860e9d938a7ac"
+      },
+      {
+        "path": ".scratch/vulkan-bf16-linear-20261022/test-link1/test.lib",
+        "bytes": 41384,
+        "sha256": "e8b2f56b280c09b2f7a259f184ba9923439c597a6227843d256c824b87a691fa"
+      },
+      {
+        "path": ".scratch/vulkan-bf16-linear-20261022/test-link1/test.map",
+        "bytes": 30477202,
+        "sha256": "d0e2efb920991d59ff4d66880c84f5685430e1de2758d14f3928dd7ec3b02dc9"
+      },
+      {
+        "path": ".scratch/vulkan-bf16-linear-20261022/test-link2/test.exp",
+        "bytes": 24976,
+        "sha256": "235ad70fde682906280f5b95f60e069c3ff16dd0c918c0f31aabe834a639dd2c"
+      },
+      {
+        "path": ".scratch/vulkan-bf16-linear-20261022/test-link2/test.lib",
+        "bytes": 41384,
+        "sha256": "e8b2f56b280c09b2f7a259f184ba9923439c597a6227843d256c824b87a691fa"
+      },
+      {
+        "path": ".scratch/vulkan-bf16-linear-20261022/test-link2/test.map",
+        "bytes": 30476714,
+        "sha256": "c1f16c8541ed0d329467446a08dfa4a977768a61b8fe80d8848acc36d8566fe4"
+      }
+    ],
+    "logical_file_bytes": 263236789
+  },
+  "evidence_zip": {
+    "path": "docs/evidence/correctness/vulkan-bf16-linear-2026-10-22-logs.zip",
+    "bytes": 492191,
+    "sha256": "16f42c3b59786149526286f7744bc83b7ee90699dd16ec5b3972c9d30ef5fb33"
+  },
+  "archive_files": 122
+}

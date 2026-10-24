@@ -1,12 +1,12 @@
 #pragma once
 
 #include "hyle/compute/provider.h"
+#include "hyle/compute/detail/builtin_provider_ids.h"
 #include "hyle/visibility.h"
 
 namespace hyle::compute::cuda_native {
 
-inline constexpr ProviderId kProviderId{0x48594c4500000001ULL,
-                                        0x435544414b455201ULL};
+inline constexpr ProviderId kProviderId = ::hyle::compute::detail::kCudaNativeProviderId;
 inline constexpr ProviderId kSglangProviderId{0x48594c4500000001ULL,
                                               0x53474c4143540001ULL};
 inline constexpr ProviderId kCcclProviderId{0x48594c4500000001ULL,
@@ -70,10 +70,10 @@ HYLE_COMPUTE_PROVIDER_CUDA_API Provider provider() noexcept;
 // vectors and exact input0 aliases, with stable tails and -Inf -> +0.
 // These added domains require 16-byte bindings, count <= INT32_MAX, no caller
 // workspace or slot state. Other norms/layouts remain separate candidates.
-// Complete model_ops::SqrtSoftplusRouting uses the pinned original MoE gate
+// Complete model_ops::SqrtSoftplusRouting adapts the pinned MoE gate
 // program: F32 [T,256/384] logits and [E] bias, top6 F32 weights/I32 IDs.
-// It preserves unbiased positive-sum normalization and output scaling, with
-// native tie selection rather than generic stable TopK. No workspace/aliases;
+// Unbiased scores divide by their sum without a zero fallback, then scale;
+// native tie selection differs from generic stable TopK. No workspace/aliases;
 // four-byte bindings, count <= INT32_MAX, cold launch binding and capture.
 HYLE_COMPUTE_PROVIDER_CUDA_API Provider sglang_provider() noexcept;
 
@@ -87,9 +87,12 @@ HYLE_COMPUTE_PROVIDER_CUDA_API Provider sglang_provider() noexcept;
 // require distinct 16-byte-aligned input/output and caller workspace of four
 // bytes per group (4-byte aligned), kept alive until Completion. One launch;
 // no private invocation allocation or Python/TileLang runtime dependency.
-// GroupedFloat4Linear retains the original E4M3 activation and FP4 GEMM,
-// with device-side checked expert addressing. Two launches, caller-owned
-// FP8 codes/F32 scales workspace, no host ID transfer or weight expansion.
+// GroupedFloat4Linear preserves the original E4M3 activation quantization and
+// packed FP4 encoding, with device-side checked expert addressing. Its dot
+// widens the codes losslessly in bounded tiles for F32 MMA accumulation,
+// retaining the operation's group32 scale order and final BF16 store.
+// Two launches, caller-owned FP8 codes/F32 scales workspace, no host ID
+// transfer or whole-weight expansion.
 // Four DeepSeek N/K pairs only, BF16 activations/output aligned16, I32 IDs
 // aligned4; invalid IDs fail Completion. Workspace lasts until completion.
 HYLE_COMPUTE_PROVIDER_CUDA_API Provider deepseek_provider() noexcept;

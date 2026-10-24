@@ -12,13 +12,18 @@ struct IreeStage final {
     VkDeviceSize offset = 0;
     iree_vulkan::BufferSpan destination;
     bool constant = false;
+    bool borrowed = false;
   };
   Run *parent = nullptr;
   std::unique_ptr<iree_vulkan::NativeProgram> program;
   std::array<Input, 6> inputs;
   std::size_t input_count = 0;
-  std::uint32_t output = 0;
-  std::size_t output_bytes = 0;
+  struct Output final {
+    std::uint32_t value = 0;
+    std::size_t bytes = 0;
+  };
+  std::array<Output, 2> outputs;
+  std::size_t output_count = 1;
   std::shared_ptr<Run> input_copy, constant_copy, output_copy, flag_copy;
   bool constants_submitted = false;
   std::shared_ptr<Buffer> flag;

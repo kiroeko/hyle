@@ -37,7 +37,12 @@ inline constexpr std::array kEmbeddingTypes{
     c::GgufQuantizedType::kQ2K, c::GgufQuantizedType::kQ3K,
     c::GgufQuantizedType::kQ4_0, c::GgufQuantizedType::kQ4_1,
     c::GgufQuantizedType::kQ4K, c::GgufQuantizedType::kQ5K,
-    c::GgufQuantizedType::kQ6K, c::GgufQuantizedType::kQ8_0};
+    c::GgufQuantizedType::kQ6K, c::GgufQuantizedType::kQ8_0,
+    c::GgufQuantizedType::kIq3Xxs, c::GgufQuantizedType::kIq3S,
+    c::GgufQuantizedType::kIq4Nl, c::GgufQuantizedType::kIq4Xs,
+    c::GgufQuantizedType::kMxfp4, c::GgufQuantizedType::kIq2Xxs,
+    c::GgufQuantizedType::kIq2Xs, c::GgufQuantizedType::kIq2S,
+    c::GgufQuantizedType::kIq1S, c::GgufQuantizedType::kIq1M};
 
 inline constexpr std::array kGroupedTypes{
     c::GgufQuantizedType::kIq4Xs, c::GgufQuantizedType::kQ4_0,

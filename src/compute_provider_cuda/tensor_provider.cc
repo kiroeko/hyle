@@ -44,10 +44,19 @@ bool numeric(DataType type) noexcept {
   return type == DataType::kFloat32 || type == DataType::kFloat16 ||
          type == DataType::kBFloat16;
 }
-native::ElementType element_type(DataType type) noexcept {
-  return type == DataType::kFloat16    ? native::ElementType::kFloat16
-         : type == DataType::kBFloat16 ? native::ElementType::kBFloat16
-                                       : native::ElementType::kFloat32;
+bool floating(DataType type) noexcept {
+  return numeric(type) || type == DataType::kFloat8E4M3FN ||
+         type == DataType::kFloat8E5M2;
+}
+native::TensorElementType element_type(DataType type) noexcept {
+  switch (type) {
+  case DataType::kFloat16: return native::TensorElementType::kFloat16;
+  case DataType::kBFloat16: return native::TensorElementType::kBFloat16;
+  case DataType::kFloat8E4M3FN: return native::TensorElementType::kFloat8E4M3FN;
+  case DataType::kFloat8E5M2: return native::TensorElementType::kFloat8E5M2;
+  case DataType::kBool: return native::TensorElementType::kBool;
+  default: return native::TensorElementType::kFloat32; // Storage-only operations ignore it.
+  }
 }
 
 Result<Selection> select(Operation operation,
@@ -74,10 +83,10 @@ Result<Selection> select(Operation operation,
     return std::unexpected(
         Status::Unimplemented("CUDA tensor primitives require a dense output"));
   HYLE_ASSIGN_OR_RETURN(const auto count, outputs[0].element_count());
-  if (count > INT32_MAX)
+  if (count > INT32_MAX && operation.kind() != OperationKind::kCast)
     return std::unexpected(Status::Unimplemented(
         "CUDA tensor primitives require at most INT32_MAX output elements"));
-  selected.layout.elements = static_cast<unsigned>(count);
+  selected.layout.elements = count;
   selected.layout.rank = static_cast<unsigned>(outputs[0].rank());
   bool arithmetic = false;
   switch (operation.kind()) {
@@ -88,12 +97,25 @@ Result<Selection> select(Operation operation,
     selected.kind = native::TensorKind::kFill;
     selected.layout.scalar_bits = operation.get_if<Fill>()->value.bits();
     break;
-  case OperationKind::kCast:
-    arithmetic = true;
-    selected.kind = inputs[0].data_type() == outputs[0].data_type()
-                        ? native::TensorKind::kCopy
-                        : native::TensorKind::kCast;
+  case OperationKind::kCast: {
+    const auto input_type = inputs[0].data_type();
+    const auto output_type = outputs[0].data_type();
+    const bool int32_to_float32 = input_type == DataType::kInt32 &&
+                                  output_type == DataType::kFloat32;
+    const bool has_bool = input_type == DataType::kBool || output_type == DataType::kBool;
+    if (!int32_to_float32 &&
+        ((!floating(input_type) && input_type != DataType::kBool) ||
+         (!floating(output_type) && output_type != DataType::kBool) ||
+         (has_bool && ((floating(input_type) && !numeric(input_type)) ||
+                       (floating(output_type) && !numeric(output_type))))))
+      return std::unexpected(Status::Unimplemented(
+          "CUDA Cast supports floating storage, FP32/FP16/BF16 with Bool, or I32 to F32"));
+    if (input_type == output_type)
+      selected.kind = native::TensorKind::kCopy;
+    else
+      selected.kind = native::TensorKind::kCast;
     break;
+  }
   case OperationKind::kSelect:
     selected.kind = native::TensorKind::kSelect;
     break;
@@ -146,14 +168,14 @@ Result<Selection> select(Operation operation,
          return !numeric(input.data_type());
        })))
     return std::unexpected(Status::Unimplemented(
-        "CUDA tensor arithmetic and Cast require FP32/FP16/BF16"));
+        "CUDA tensor arithmetic requires FP32/FP16/BF16"));
   const auto width = data_type_size(outputs[0].data_type());
   if (width != 1 && width != 2 && width != 4 && width != 8)
     return std::unexpected(Status::Unimplemented(
         "CUDA tensor storage requires a 1/2/4/8-byte scalar"));
   for (std::size_t axis = 0; axis < outputs[0].rank(); ++axis)
     selected.layout.dimensions[axis] =
-        static_cast<unsigned>(outputs[0].dimensions()[axis]);
+        static_cast<std::uint64_t>(outputs[0].dimensions()[axis]);
   for (std::size_t input = 0; input < inputs.size(); ++input) {
     const auto &desc = inputs[input];
     const bool same_shape =
@@ -197,13 +219,13 @@ Status create_invocation(void *, mem::AllocatorRef, mem::BufferView,
 }
 void destroy_invocation(void *, mem::AllocatorRef) noexcept {}
 
-detail::EnqueueResult submit(void *state, void *, Queue &queue,
+detail::EnqueueResult submit(void *state, void *, detail::QueueSequence &sequence,
                              std::span<const ConstTensorView> inputs,
                              std::span<const TensorView> outputs) noexcept {
   const auto &prepared = *static_cast<const Prepared *>(state);
   if (prepared.program.layout.elements == 0)
     return detail::EnqueueResult::no_op();
-  auto stream = cuda::stream(queue);
+  auto stream = cuda::stream(sequence);
   if (!stream)
     return detail::EnqueueResult::rejected(std::move(stream).error());
   std::array<const void *, 3> pointers{};
@@ -287,9 +309,14 @@ ProviderPrepareOutcome prepare(void *state,
   native::TensorProgram program;
   if (!selection->view) {
     const auto type = element_type(request.outputs[0].data_type());
-    const auto input_type = request.inputs.empty()
-                                ? type
-                                : element_type(request.inputs[0].data_type());
+    auto input_type = request.inputs.empty()
+                          ? type
+                          : element_type(request.inputs[0].data_type());
+    // Storage-only Copy/Fill/View keep their existing byte dispatch. The new
+    // integer type is a numerical input only for the qualified I32 -> F32 Cast.
+    if (selection->kind == native::TensorKind::kCast &&
+        request.inputs[0].data_type() == DataType::kInt32)
+      input_type = native::TensorElementType::kInt32;
     const auto configured = native::tensor_prepare(
         selection->kind, type, input_type,
         static_cast<unsigned>(data_type_size(request.outputs[0].data_type())),
@@ -299,7 +326,7 @@ ProviderPrepareOutcome prepare(void *state,
   }
   void *storage = allocator.allocate(sizeof(Prepared), alignof(Prepared));
   if (storage == nullptr)
-    return ProviderPrepareOutcome::resource_declined(
+    return ProviderPrepareOutcome::error(
         Status::ResourceExhausted("CUDA tensor program allocation failed"));
   auto *prepared = ::new (storage) Prepared{
       .primary = primary,
@@ -319,11 +346,5 @@ ProviderPrepareOutcome prepare(void *state,
              .persistent_bytes = sizeof(Prepared),
              .invocation_private_bytes = 0};
   return ProviderPrepareOutcome::prepared();
-}
-void require_alignment(detail::ProviderPrepared &artifact, std::size_t alignment) noexcept {
-  auto &prepared = *static_cast<Prepared *>(artifact.state);
-  for (auto &value : prepared.input_alignment)
-    value = (std::max)(value, alignment);
-  prepared.output_alignment = (std::max)(prepared.output_alignment, alignment);
 }
 } // namespace hyle::compute::cuda_native::tensor

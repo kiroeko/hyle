@@ -1,0 +1,507 @@
+{
+  "passed": true,
+  "recorded_utc": "2026-10-19T20:28:43.344762+00:00",
+  "scope": "This batch only: GGUF NVFP4 descriptors/native operators and MMQ repeated-slot repair. Not completion of the broad architecture goal.",
+  "changes": [
+    "Distinct GGUF NVFP4 identity: appended ordinal21,64 logical values/36bytes with four inline UE4M3 subgroup scales; existing identities unchanged.",
+    "CPU/CUDA/Vulkan retain original packed weights for MatMul/GroupedMatMul; Gather decodes only selected rows.",
+    "CUDA original NVFP4 conversion math shared with64-block GetRows; old256-block paths unchanged.",
+    "MMQ metadata now preserves every token-slot occurrence, including repeated expert IDs; forward/inverse maps retain token-major slot-major order.",
+    "Removed obsolete per-token shared store and its22/10-bit packing restrictions; actual flattened I32 bound and public capacity/stride checks remain.",
+    "Four offline IREE compiler entry scripts disable bytecode before local imports, preventing untracked vendor cache pollution."
+  ],
+  "architecture": {
+    "new_public_operation": false,
+    "public_struct_layout_changed": false,
+    "new_graph_executor": false,
+    "new_shared_runtime_or_owner": false,
+    "hidden_full_bank_floating_decode": false,
+    "hot_provider_search_added": false,
+    "SDK_or_metallib_rebuild": false
+  },
+  "sources": {
+    "product_files": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\low_precision.h",
+        "bytes": 10406,
+        "sha256": "0920a5a2faecb2991da60ecede680c496bab73411a305e559461ea41cea309cb"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\src\\compute_ops\\low_precision.cc",
+        "bytes": 15337,
+        "sha256": "2d1754ef9a2f91b6987bc9abc31b1063427741aac89767b48e7f51fcb7b02bce"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_ops\\low_precision_test.cc",
+        "bytes": 20033,
+        "sha256": "2d9c8c39344b3cd16774c66bb0b563979ff0a1dfed0f0bd4d07132ae6ed12799"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\gguf_nvfp4_fixture.h",
+        "bytes": 3365,
+        "sha256": "b75573cffa3906c26623252c9d9cf8c5cf4791485addd2e0c9f09fac513fcb26"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_ggml\\ggml_cpu_provider.cc",
+        "bytes": 111331,
+        "sha256": "ec9aa6de32de0958bf0a73f6fe74f2e6cae15034aea234aeb34d69524b6c0540"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_ggml_cuda\\tensor_program.cc",
+        "bytes": 53910,
+        "sha256": "7b92318e8728d5132a716bbfc23d5a2d3e89f3564f827c7458cfd51ed46f9113"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_ggml_vulkan\\region.cc",
+        "bytes": 93590,
+        "sha256": "31ebc5295521cfbe7af1e128df096b03787113365db66dd29a672e5a3987bf57"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_ggml_metal\\native_program.cc",
+        "bytes": 26072,
+        "sha256": "3d90ab027a93ef182f8eee87ced5ab23b84c109fb61baa76b4c1f240dfad72cb"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_cpu\\gguf_nvfp4_test.cc",
+        "bytes": 9461,
+        "sha256": "9591b31cb6eab2388943a4afcb3496241a42c9f4cb9e39cbdeb6b3ff9536cb16"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_cpu\\CMakeLists.txt",
+        "bytes": 3522,
+        "sha256": "fcb55e58b4e520d181e4941ffccf00364a4459d18c6aeeed4e06f204b73ab798"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_cpu\\CMakeLists.txt",
+        "bytes": 2609,
+        "sha256": "cd55d577a7a766947414cac5c10c61b0f2a7a30b4e296c818b043ec5c31f0af7"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_cuda\\gguf_nvfp4_test.cc",
+        "bytes": 12970,
+        "sha256": "e1d45392a5f091116f7d469316bb60a79284ee7b7b5d5463066e8e0c4e30d0bc"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_cuda\\CMakeLists.txt",
+        "bytes": 1592,
+        "sha256": "fee9e55fb7ef591b366eb4f9d0c92497cd8400e0ac84ac623664899b1ef599f3"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\gguf_nvfp4_test.cc",
+        "bytes": 11120,
+        "sha256": "4ffbbaa5d23545ae93109ca1069681e243e22777875b88fc64cf86ffd7d4047e"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\CMakeLists.txt",
+        "bytes": 4056,
+        "sha256": "96b658c9b23d8cbde3e89459e4901ae79ed5c4d81abdffbab292c9b89ac1e0ff"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_apple\\CMakeLists.txt",
+        "bytes": 3016,
+        "sha256": "de569458c960914b0c765d7581f6163876e7823f8423475d2ad4c79030687699"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_apple\\nvfp4_admission\\main.cc",
+        "bytes": 3364,
+        "sha256": "85451035c3e37e824d6fbdcc28fd3fe53337fdd7d38c637ea0cfc88c013cc43c"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\third_party\\ggml_cuda_runtime\\patches.json",
+        "bytes": 482343,
+        "sha256": "2f3a2ab665fee1a4e728717bca2da319df83fd83a539f4e7d5c7dbbb0c22ab1e"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\third_party\\ggml_cuda_runtime\\NOTICE.md",
+        "bytes": 17685,
+        "sha256": "9bc34c0979f7e9cff3307f799bf1eee3ccfaae4d9966faf14ba1fcc40232f05a"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\cmake\\HyleDependencyLock.json",
+        "bytes": 77554,
+        "sha256": "2fd5a46416e9e088ad8d602adf350c5c81f2cf98a4586f8ceabe5bcaf2cb486d"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\third_party\\iree_vulkan_runtime\\programs\\compile_artifacts.py",
+        "bytes": 4098,
+        "sha256": "e6baa5b92693edbe20e1b519187a01a0c532570880ff67808e3f406d85656ca7"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\third_party\\iree_vulkan_runtime\\programs\\compile_mlx.py",
+        "bytes": 4095,
+        "sha256": "f65c89d84d737969995789ac51c3aa65446f3baa1b751a0e7a8e870456c1a04c"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\third_party\\iree_vulkan_runtime\\programs\\compile_official.py",
+        "bytes": 4172,
+        "sha256": "e45d983051740902950b3299c5dbe9042bd01e57ab7f1d283b6d49dba2a3c569"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\third_party\\iree_vulkan_runtime\\programs\\compile_iq1.py",
+        "bytes": 3751,
+        "sha256": "dd202f225a936d29fb6102b0a89e798fa9266c20a705503186469e30ebe86bb7"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\docs\\user\\compute.md",
+        "bytes": 96183,
+        "sha256": "56e30069aa4b4a9e9b96e91d0a56018cba785422f4c88c0a15a3ffc0f7cd509e"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\docs\\user\\apple-compute.md",
+        "bytes": 28261,
+        "sha256": "36e8570c23fcd17a0caaf5aad864e3c24d9d7ce8eb0ff89dadb24bcbf1cffc7c"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\docs\\implementation\\model-operators.md",
+        "bytes": 54373,
+        "sha256": "44ec4959c57afe5db789cfc1a11d8ae4e75c312126f32de7d95d724a0aa63d47"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\docs\\implementation\\model-quantizations.json",
+        "bytes": 333016,
+        "sha256": "321476fc63a2bc618fb1d940198f08e7fdc9120f0aa393daf7a18164821407f8"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\docs\\developer\\current-work.md",
+        "bytes": 47504,
+        "sha256": "7ea81d81f1b734c727e1f873cb8586c7829d25a699e7987a46ab23d6e7bc6258"
+      }
+    ],
+    "freezes": {
+      "root-source-freeze.json": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gguf-nvfp4\\root-source-freeze.json",
+        "bytes": 7790,
+        "sha256": "f3c060da4e347f8d6c2f5253925bcbfba806bbb34c26711f640c0131d21ef45f"
+      },
+      "cpu-cuda/cpu-source-freeze.json": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gguf-nvfp4\\cpu-cuda\\cpu-source-freeze.json",
+        "bytes": 4375,
+        "sha256": "66b0a0e232c9b9f130a9c3805a506fd89804a196a45c30fc9dbcc0d0b8dd6d9a"
+      },
+      "cpu-cuda/cuda-host-source-freeze.json": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gguf-nvfp4\\cpu-cuda\\cuda-host-source-freeze.json",
+        "bytes": 3417,
+        "sha256": "857ea2459e095c7dda6232770752031434f7963197e2b50442b4682a829513c8"
+      },
+      "cpu-cuda/native-source-freeze.json": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gguf-nvfp4\\cpu-cuda\\native-source-freeze.json",
+        "bytes": 6129,
+        "sha256": "211d4f9daab46d85f4969e0a303fc165ecb0d7a5da2e8193596b6527edc14e87"
+      },
+      "vulkan/source-freeze.json": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gguf-nvfp4\\vulkan\\source-freeze.json",
+        "bytes": 1923,
+        "sha256": "5b16d5035d0e58e6bea9d2f79c8758d4416703cd8067b32a633b6541bbdf694c"
+      },
+      "apple/source-freeze.json": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gguf-nvfp4\\apple\\source-freeze.json",
+        "bytes": 1581,
+        "sha256": "9b8277700a9f5014bdc504e9e3018ee489c1a7b06b9b477c775238e5aaf49155"
+      },
+      "docs-update.json": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gguf-nvfp4\\docs-update.json",
+        "bytes": 5249,
+        "sha256": "34ceb8f214048c97a4f1e1e49df62498bc32c3c15f328f86613b749a0902194d"
+      }
+    },
+    "getrows_independent_review": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gguf-nvfp4\\native-independent-review.json",
+      "bytes": 11023,
+      "sha256": "7add943d56571a87fe602ba1ee3d19f978a702159644687af1636039ba262173"
+    },
+    "mmid_independent_review": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gguf-nvfp4\\mmid-independent-review.json",
+      "bytes": 7940,
+      "sha256": "f20b820a6943d93b4e9463fffcb2ac2903b1bfc9a327c58fcc57acc48b8a17a2"
+    }
+  },
+  "checks": {
+    "cpu-direct": {
+      "passed": true,
+      "cases": 7,
+      "expected_count": 7,
+      "names": [
+        "ComputeOpsLowPrecision.GgufCatalogPreservesExactNativeBlocks",
+        "ComputeOpsLowPrecision.GgufGroupedWeightsKeepExpertRowAndKOrder",
+        "ComputeOpsLowPrecision.Nvfp4UsesItsOwnBlocksAndPreservesLogicalViews",
+        "ComputeOpsLowPrecision.RejectsIncompleteBlocksAndOverflow",
+        "CpuNvfp4Direct.MatMulKeeps64BlockSubgroupsAndOriginalDot",
+        "CpuNvfp4Direct.GroupedExpertsKeepRepeatedIdsAndCheckedFailure",
+        "CpuNvfp4Direct.GetRowsKeeps64BlockTailAndSelectedDecode"
+      ],
+      "skipped": 0,
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gguf-nvfp4\\windows-host\\checks\\20261019T201048\\cpu-direct.exe",
+        "bytes": 25411072,
+        "sha256": "e8eb367dd500da25fe644a6e4435d6522e33dc8b5452b76a7033c943d365242f"
+      },
+      "link_plan": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gguf-nvfp4\\windows-host\\checks\\20261019T201048\\cpu-direct-link-plan.json",
+        "bytes": 50809,
+        "sha256": "d0e6daee7e754f3b607f2bf8c56a79939adf4b20ebcc17de80b9c4d804876640"
+      },
+      "filter": "CpuNvfp4Direct.*:ComputeOpsLowPrecision.GgufCatalogPreservesExactNativeBlocks:ComputeOpsLowPrecision.GgufGroupedWeightsKeepExpertRowAndKOrder:ComputeOpsLowPrecision.Nvfp4UsesItsOwnBlocksAndPreservesLogicalViews:ComputeOpsLowPrecision.RejectsIncompleteBlocksAndOverflow"
+    },
+    "cpu-graph": {
+      "passed": true,
+      "cases": 3,
+      "expected_count": 3,
+      "names": [
+        "CpuNvfp4Graph.MatMulKeeps64BlockSubgroupsAndOriginalDot",
+        "CpuNvfp4Graph.GroupedExpertsKeepRepeatedIdsAndCheckedFailure",
+        "CpuNvfp4Graph.GetRowsKeeps64BlockTailAndSelectedDecode"
+      ],
+      "skipped": 0,
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gguf-nvfp4\\windows-host\\checks\\20261019T201048\\cpu-graph.exe",
+        "bytes": 25416704,
+        "sha256": "067701ab086841b06ab60dab960504f8964865a4eeb2c62f6ae28ef3fe84cb7a"
+      },
+      "link_plan": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gguf-nvfp4\\windows-host\\checks\\20261019T201048\\cpu-graph-link-plan.json",
+        "bytes": 50804,
+        "sha256": "b19fabd1bdc2d30fdf77d889c55da7d7d60a829db7ebcc19740f2f777cf94ab7"
+      },
+      "filter": "CpuNvfp4Graph.*"
+    },
+    "vulkan": {
+      "passed": true,
+      "cases": 3,
+      "expected_count": 3,
+      "names": [
+        "VulkanNvfp4.DirectAndGraphMatMulKeepPackedSubgroupsAndIndependentSlots",
+        "VulkanNvfp4.DirectAndGraphGroupedExpertsKeepRepeatedAndReboundIds",
+        "VulkanNvfp4.DirectAndGraphGetRowsCheckPublicationAndRecoverAfterInvalidIds"
+      ],
+      "skipped": 0,
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gguf-nvfp4\\windows-host\\checks\\20261019T201048\\vulkan.exe",
+        "bytes": 66264064,
+        "sha256": "507abf86448b89584c4b76d8621a8d417af0486330c878bc417d4935fe96c7b4"
+      },
+      "link_plan": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gguf-nvfp4\\windows-host\\checks\\20261019T201048\\vulkan-link-plan.json",
+        "bytes": 70284,
+        "sha256": "4e4a8fc9d2c659791241b7d70815ed14306006c0839e7f77ed3e83b5936e88e2"
+      },
+      "filter": "VulkanNvfp4.*"
+    },
+    "cuda-fixed": {
+      "passed": true,
+      "cases": 3,
+      "expected_count": 3,
+      "names": [
+        "CudaNvfp4Graph.MatMulKeeps64BlockSubgroupsWithoutDenseWeightBank",
+        "CudaNvfp4Graph.GroupedExpertsKeepRepeatedReboundAndCheckedIds",
+        "CudaNvfp4Graph.SelectedRowsDecode64BlockWidthsAndRejectInvalidPublication"
+      ],
+      "skipped": 0,
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gguf-nvfp4\\cpu-cuda\\checks\\20261019T202628-grouped-fix\\nvfp4.exe",
+        "bytes": 116872192,
+        "sha256": "232f976b9368c222ce7db939d05f6b4bef0f2effe89e5102fadeeb7adaf5b6da"
+      },
+      "link_plan": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gguf-nvfp4\\cpu-cuda\\checks\\20261019T202628-grouped-fix\\nvfp4-link-plan.json",
+        "bytes": 58393,
+        "sha256": "b3be02a77015a24432cd69ebe5857ea8d72ff0c41deef0964ad484cc7b340da4"
+      },
+      "filter": "CudaNvfp4Graph.*"
+    }
+  },
+  "apple": {
+    "support_added": false,
+    "actual_descriptor_declines": 4,
+    "summary": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gguf-nvfp4\\apple\\summary.json",
+      "bytes": 3084,
+      "sha256": "0c34b54753708e70f3ab4a2d026aeef50f285cf6b201b9d4658e604a6c3dd723"
+    },
+    "result": {
+      "public_infer_succeeded": true,
+      "expected_status": "Unimplemented",
+      "expected_native_message": "ggml Metal model capability unavailable",
+      "payload_arrays_constructed": false,
+      "inputs_bound": false,
+      "invocations_created": false,
+      "commands_submitted": false,
+      "hot_full_bank_decode": false
+    }
+  },
+  "model": {
+    "summary": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gguf-nvfp4\\correctness\\summary.json",
+      "bytes": 111754,
+      "sha256": "0b6fa95591fb642141315d417ce4f1f45faa48db27df3297774b302ea2f16c94"
+    },
+    "equal_vectors": 64,
+    "all_outputs_finite": true,
+    "single_outer_range_32_phases": true,
+    "quality_acceptance": false,
+    "throughput_claim": false,
+    "selected_publisher_quantized_artifact": false
+  },
+  "offline_compiler_cache": {
+    "summary": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gguf-nvfp4\\offline-cache\\summary.json",
+      "bytes": 1516,
+      "sha256": "7df0eef9e76bd13c7e83bd0020a5dfa12847d1b71115664ffbf4edd03813867c"
+    },
+    "four_real_commands_without_B_or_inherited_suppression": true
+  },
+  "header": {
+    "facts": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gguf-nvfp4\\header\\facts.json",
+      "bytes": 12508,
+      "sha256": "a86d0c6fabed542ce763b27d5b913299f5779fcb7073c826d28f0c5ddf263004"
+    },
+    "inventory": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gguf-nvfp4\\header\\header-inventory.json",
+      "bytes": 404219,
+      "sha256": "a917ce8175bae0a2dbe42c53a4f080c15ac4a0b51a84d21d4b6f253266949f34"
+    },
+    "repository": "cdiamond/Qwen3.8-27B-iMatrix-NVFP4-MTP-GGUF",
+    "revision": "ac343e8f44caef0896f79d372ecc07ef7ab34ec8",
+    "tensors": 866,
+    "codec_counts": {
+      "Q8_0": 1,
+      "F32": 360,
+      "Q6_K": 9,
+      "Q5_K": 122,
+      "NVFP4": 374
+    },
+    "header": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gguf-nvfp4\\header\\model.header.bin",
+      "bytes": 10996832,
+      "sha256": "d6b286fea2fceacbbaf9e40428ad40afd973506925de4ae3093476d9b02229cf"
+    },
+    "tensor_payload_bytes_read": 0,
+    "protected_role_matches": 130,
+    "whole_file_hash_verified": false,
+    "artifact_execution_verified": false
+  },
+  "formatting_check": {
+    "command": [
+      "git",
+      "diff",
+      "--check",
+      "--",
+      "include/hyle/compute/low_precision.h",
+      "src/compute_ops/low_precision.cc",
+      "tests/compute_ops/low_precision_test.cc",
+      "tests/compute_models/gguf_nvfp4_fixture.h",
+      "src/compute_provider_ggml/ggml_cpu_provider.cc",
+      "src/compute_provider_ggml_cuda/tensor_program.cc",
+      "src/compute_provider_ggml_vulkan/region.cc",
+      "src/compute_provider_ggml_metal/native_program.cc",
+      "tests/compute_route_cpu/gguf_nvfp4_test.cc",
+      "tests/compute_route_cpu/CMakeLists.txt",
+      "tests/graph_route_cpu/CMakeLists.txt",
+      "tests/graph_route_cuda/gguf_nvfp4_test.cc",
+      "tests/graph_route_cuda/CMakeLists.txt",
+      "tests/compute_route_vulkan/gguf_nvfp4_test.cc",
+      "tests/compute_route_vulkan/CMakeLists.txt",
+      "tests/compute_route_apple/CMakeLists.txt",
+      "tests/compute_route_apple/nvfp4_admission/main.cc",
+      "third_party/ggml_cuda_runtime/patches.json",
+      "third_party/ggml_cuda_runtime/NOTICE.md",
+      "cmake/HyleDependencyLock.json",
+      "third_party/iree_vulkan_runtime/programs/compile_artifacts.py",
+      "third_party/iree_vulkan_runtime/programs/compile_mlx.py",
+      "third_party/iree_vulkan_runtime/programs/compile_official.py",
+      "third_party/iree_vulkan_runtime/programs/compile_iq1.py",
+      "docs/user/compute.md",
+      "docs/user/apple-compute.md",
+      "docs/implementation/model-operators.md",
+      "docs/implementation/model-quantizations.json",
+      "docs/developer/current-work.md"
+    ],
+    "cwd": "C:\\public\\project-hyle\\hyle",
+    "exit": 0,
+    "stdout": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gguf-nvfp4\\diff.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "stderr": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gguf-nvfp4\\diff.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "dependency_audit": {
+    "command": [
+      "cmake",
+      "-P",
+      "cmake/HyleDependencyVersions.cmake"
+    ],
+    "cwd": "C:\\public\\project-hyle\\hyle",
+    "exit": 0,
+    "source_lock": {
+      "path": "C:\\public\\project-hyle\\hyle\\cmake\\HyleDependencyLock.json",
+      "bytes": 77554,
+      "sha256": "2fd5a46416e9e088ad8d602adf350c5c81f2cf98a4586f8ceabe5bcaf2cb486d"
+    }
+  },
+  "retained_failures": [
+    "Initial Windows CPU/CUDA/Vulkan fixture API ambiguities were corrected at existing call sites; successful unrelated objects were reused.",
+    "Initial CUDA grouped NVFP4 T9/S2 returned missing slots: actual MMQ mmid compaction assumed unique expert per token. Initial tests/cuda XML/logs/image/link identities retained.",
+    "First incremental mmid compile lacked its existing240-byte mmid.cuh in the retained minimal source closure; the original header was added to the closure and only the affected TU retried.",
+    "Apple first compile had an incorrect duplicated include path;18 failed owners retried,7 successful and122 cached owners reused.",
+    "Header parser attempts with missing type40 and truncated physical extent retained; final mature original parser reparses the complete real header."
+  ],
+  "limitations": [
+    "Apple NVFP4 kernel is still missing; four prepare declines are not numerical support.",
+    "The27B GGUF artifact has only been inspected through its complete header, not payload binding, inference, MTP, quality, throughput or memory use.",
+    "GGUF NVFP4 is not the HF ModelOpt/Quark/compressed-tensors W4A4 format or activation contract.",
+    "Linux was not newly built or run; no new cross-platform whole-model or mixed CPU/GPU journey was executed in this batch.",
+    "A=1 MMQ inverse-map coverage uses raw native calls inside the existing test TU. Public GroupedMatMul still rejects slot-broadcast Views; that separately identified wiring gap is not fixed here.",
+    "No throughput rotation or new physical trace; fewer shared allocations or corrected mappings do not establish speedup.",
+    "The BF16 Qwen64-vector regression verifies the existing unrelated full-model consumer only."
+  ],
+  "next_review": [
+    {
+      "source": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gguf-nvfp4\\next-grouped-shared-activation-review.json",
+        "bytes": 11168,
+        "sha256": "593be24919dd7b919899816f5da9db690d1f2890ca1602038c6ca1850c1267de"
+      },
+      "scope": "Read-only source finding; not implemented or runtime-verified by this batch"
+    },
+    {
+      "source": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gguf-nvfp4\\next-apple-nvfp4-review.json",
+        "bytes": 12751,
+        "sha256": "2e370c8cf9b6b2133eb8fe74daafa008574ab483dd6214630266dad182c4ddb1"
+      },
+      "scope": "Read-only source finding; not implemented or runtime-verified by this batch"
+    }
+  ],
+  "next_action": "Admit existing slot-broadcast Views through public GroupedMatMul with truthful native A1 lowering, while preserving repeated IDs; separately reproduce/correct the Apple MMID source finding. Metal NVFP4 kernels still need implementation.",
+  "archive": {
+    "archive": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\gguf-nvfp4-2026-10-20.zip",
+      "bytes": 22957143,
+      "sha256": "3666e736a90b3113d1660a7441478c9a563cc6ae37a78d6babcade61094becb8"
+    },
+    "payload_entries": 1667,
+    "manifest_entries": 1,
+    "CRC_and_payload_SHA_verified_once": true,
+    "binaries_objects_SDKs_and_duplicate_vectors_archived": false,
+    "complete_actual_header_and_failed_runs_retained": true,
+    "maps_compressed": true
+  },
+  "cleanup": {
+    "report": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\gguf-nvfp4-2026-10-20-reclaim.json",
+      "bytes": 85955,
+      "sha256": "6e0e604695c51ee4f68c255f57ea71217570baaaa9ee9b51a5c056eaf4ccc665"
+    },
+    "deleted_files": 89,
+    "deleted_bytes": 646877922.0,
+    "MiB": 616.9108600616455,
+    "all_actual_objects_SDKs_and_original_vectors_retained": true,
+    "current_CPU_Graph_Qwen_Vulkan_images_retained": true,
+    "older_measured_images_outside_this_stage_untouched": true
+  }
+}

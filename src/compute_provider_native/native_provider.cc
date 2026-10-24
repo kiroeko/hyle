@@ -11,9 +11,15 @@
 
 #include "../compute/native_route.h"
 #include "../compute/provider_internal.h"
+#include "../compute/operation_cold.h"
+#include "../compute_packed_shared/artifact_packed_linear.h"
+#include "../compute_packed_shared/static_fp8_linear.h"
 #include "default_rules.h"
 #include "torch_cpu_program.h"
 #include "hyle/compute/prepared_operation.h"
+#include "hyle/compute/model_ops.h"
+#include "../compute_batch/row_cache_map.h"
+#include "../compute_batch/row_cache_planning.h"
 #include "hyle/compute/sampling_ops.h"
 #include "hyle/math/scalar.h"
 #include "hyle/mem/resource.h"
@@ -371,7 +377,7 @@ submit_float(const NativePlan &plan, std::span<const ConstTensorView> inputs,
 }
 
 detail::EnqueueResult submit(void *prepared_value, void *invocation_value,
-                             Queue &, std::span<const ConstTensorView> inputs,
+                             detail::QueueSequence &, std::span<const ConstTensorView> inputs,
                              std::span<const TensorView> outputs) noexcept {
   auto *plan = static_cast<NativePlan *>(prepared_value);
   if (plan == nullptr || (plan->submit_route == nullptr &&
@@ -449,8 +455,33 @@ Status build_plan(Operation operation, std::span<const TensorDesc> inputs,
   case OperationKind::kCustom: {
     const bool sampling = operation.custom_as<sampling_ops::RandomBits>() ||
                           operation.custom_as<sampling_ops::Categorical>();
+    const bool row_cache = operation.custom_as<model_ops::RowCacheEncode>() ||
+                          operation.custom_as<model_ops::RowCacheGatherDecode>() ||
+                          operation.custom_as<model_ops::RowCacheGatherDecodePadded>() ||
+                          operation.custom_as<detail::RowCachePaddedMap>() ||
+                          operation.custom_as<detail::RowCacheMap>();
+    const bool nvfp4 = operation.custom_as<model_ops::Nvfp4Linear>() ||
+                       operation.custom_as<model_ops::GroupedNvfp4Linear>() ||
+                       operation.custom_as<model_ops::LocalNvfp4Linear>() ||
+                       operation.custom_as<model_ops::GroupedLocalNvfp4Linear>() ||
+                       operation.custom_as<model_ops::Mxfp4Linear>() ||
+                       operation.custom_as<model_ops::GroupedMxfp4Linear>();
+    const bool static_fp8 = operation.custom_as<packed::internal::StaticFloat8Linear>().has_value();
+    const bool blockwise_w4a8 = operation.custom_as<model_ops::BlockwiseW4A8Linear>() ||
+        operation.custom_as<model_ops::GroupedBlockwiseW4A8Linear>();
+    const bool ct_packed = operation.custom_as<packed::internal::ArtifactPackedLinear>().has_value();
     Status status = sampling
         ? internal::prepare_sampling(operation, inputs, outputs, plan)
+        : row_cache
+        ? internal::prepare_row_cache(operation, inputs, outputs, plan)
+        : nvfp4
+        ? internal::prepare_nvfp4(operation, inputs, outputs, plan)
+        : blockwise_w4a8
+        ? internal::prepare_blockwise_w4a8(operation, inputs, outputs, plan)
+        : static_fp8
+        ? internal::prepare_static_fp8(operation, inputs, outputs, plan)
+        : ct_packed
+        ? internal::prepare_ct_packed(operation, inputs, outputs, plan)
         : internal::prepare_ds4_quantization(operation, inputs, outputs, plan);
     if (!status.ok())
       return status;
@@ -551,6 +582,15 @@ Status build_plan(Operation operation, std::span<const TensorDesc> inputs,
     if (operation.custom_as<sampling_ops::RandomBits>() ||
         operation.custom_as<sampling_ops::Categorical>())
       work_per_unit = plan.parameters[1];
+    else if (operation.custom_as<model_ops::Nvfp4Linear>() ||
+             operation.custom_as<model_ops::GroupedNvfp4Linear>() ||
+             operation.custom_as<model_ops::LocalNvfp4Linear>() ||
+             operation.custom_as<model_ops::GroupedLocalNvfp4Linear>() ||
+             operation.custom_as<packed::internal::ArtifactPackedLinear>() ||
+             operation.custom_as<packed::internal::StaticFloat8Linear>()) {
+      parallel_units = *outputs[0].element_count();
+      work_per_unit = plan.parameters[2];
+    }
     break;
   default:
     break;
@@ -797,6 +837,12 @@ propose(void *context_value, const detail::ProviderOperationRequest &request,
           context->scope == internal::DefaultRuleScope::kDirect ? 50 : 175;
     }
   }
+  // This packed matvec route decodes W for each activation row. A matrix
+  // workload has no cross-row weight reuse here, so let the ordinary dense
+  // leaf compete first; keep the capability and its storage facts available.
+  if (const auto packed = operation.custom_as<packed::internal::ArtifactPackedLinear>();
+      packed && packed->expert_count == 0 && inputs[0].dimensions()[0] > 1)
+    proposal->preference = 1001;
   return Status::Ok();
 }
 
@@ -841,7 +887,7 @@ prepare(void *context_value, const detail::ProviderPrepareRequest &request,
 
   void *storage = allocator.allocate(sizeof(NativePlan), alignof(NativePlan));
   if (storage == nullptr) {
-    return ProviderPrepareOutcome::resource_declined(
+    return ProviderPrepareOutcome::error(
         Status::ResourceExhausted("native plan allocation failed"));
   }
   auto *prepared = ::new (storage) NativePlan(plan);
@@ -860,6 +906,39 @@ prepare(void *context_value, const detail::ProviderPrepareRequest &request,
 
 Status drain_context(void *) noexcept { return Status::Ok(); }
 
+Status inspect_access(const detail::ProviderPrepared &prepared,
+                      detail::OperationPreparedAccess *access) noexcept {
+  if (!access || !prepared.state)
+    return Status::InvalidArgument("native prepared access output is null");
+#if defined(HYLE_COMPUTE_TORCH_CPU)
+  if (internal::inspect_torch_cpu_access(prepared, *access)) return Status::Ok();
+#endif
+  if (prepared.vtable == &kPreparedVTable &&
+      internal::inspect_row_cache_access(*static_cast<const NativePlan *>(prepared.state), *access))
+    return Status::Ok();
+  return Status::Unimplemented("selected native implementation has no projected access");
+}
+Status inspect_projected_input_access(
+    const detail::ProviderPrepared &prepared,
+    detail::OperationPreparedAccess *access) noexcept {
+  if (!access || !prepared.state)
+    return Status::InvalidArgument("native prepared access output is null");
+  if (prepared.vtable == &kPreparedVTable &&
+      internal::inspect_indexing_access(
+          *static_cast<const NativePlan *>(prepared.state), *access))
+    return Status::Ok();
+  return Status::Unimplemented(
+      "selected native implementation has no projected input read");
+}
+const void *query_extension(void *, ProviderExtensionId id) noexcept {
+  static constexpr detail::OperationAccessVTable access{.inspect = &inspect_access};
+  static constexpr detail::OperationAccessVTable projected{
+      .inspect = &inspect_projected_input_access};
+  if (id == detail::kRowCacheColdPlanningId)
+    return &access;
+  return id == detail::kProjectedInputReadExtensionId ? &projected : nullptr;
+}
+
 const detail::ProviderVTable kProviderVTable{
     .identity =
         ProviderIdentity{.id = kProviderId,
@@ -875,6 +954,7 @@ const detail::ProviderVTable kProviderVTable{
     .propose = &propose,
     .prepare = &prepare,
     .drain_context = &drain_context,
+    .query_extension = &query_extension,
 };
 
 } // namespace

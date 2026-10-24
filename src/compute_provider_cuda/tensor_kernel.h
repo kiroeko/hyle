@@ -3,7 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 
-#include "native_kernel.h"
+#include <cuda_runtime_api.h>
 
 namespace hyle::compute::cuda_native::native {
 
@@ -33,13 +33,18 @@ enum class TensorKind {
   kMaximum,
 };
 
+enum class TensorElementType {
+  kFloat32, kFloat16, kBFloat16, kFloat8E4M3FN, kFloat8E5M2, kBool,
+  kInt32,
+};
+
 // CUDA-only launch metadata. Strides are bytes, including zero broadcasts;
 // generic kernels load bytes safely even for odd strides. Dense instances
 // compile away coordinate mapping. No public descriptor crosses this seam.
 struct TensorLayout final {
-  unsigned elements = 0;
+  std::uint64_t elements = 0;
   unsigned rank = 0;
-  unsigned dimensions[8]{};
+  std::uint64_t dimensions[8]{};
   std::size_t strides[3][8]{};
   std::uint64_t scalar_bits = 0;
 };
@@ -50,8 +55,8 @@ struct TensorProgram final {
   TensorLayout layout{};
 };
 
-cudaError_t tensor_prepare(TensorKind kind, ElementType output_type,
-                           ElementType input_type, unsigned storage_width,
+cudaError_t tensor_prepare(TensorKind kind, TensorElementType output_type,
+                           TensorElementType input_type, unsigned storage_width,
                            bool dense, const TensorLayout &layout,
                            TensorProgram *output) noexcept;
 cudaError_t tensor_launch(const TensorProgram &program, const void *first,

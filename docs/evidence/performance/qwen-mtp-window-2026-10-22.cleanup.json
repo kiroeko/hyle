@@ -1,0 +1,102 @@
+{
+  "status": "completed; do not rerun",
+  "recursive": false,
+  "removed_files": 10,
+  "removed_logical_bytes": 456146529,
+  "kept_images": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-window-20261022\\qwen-link1\\qwen.exe",
+      "bytes": 140240384,
+      "sha256": "b09548496e1541674ba8a739c63f6be2cc9f94a970ede684f7e081fdd2f6dd10"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-window-20261022\\peer\\checks\\attempt1\\peer.exe",
+      "bytes": 35795456,
+      "sha256": "f353371459d63d168ee88e4e57115ba9af4258b871f5adf02dd289e34cd2b421"
+    }
+  ],
+  "model_cache_untouched": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\llama-matched-consumer\\Qwen3.5-2B-text-MTP-BF16.gguf",
+    "bytes": 3897387936,
+    "sha256": "8c744017e119657f75d2d154350104ce5291500b0f9f0a115374d5bfe482642d"
+  },
+  "verified_archives": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\qwen-mtp-window-2026-10-22.data.zip",
+      "bytes": 1083982,
+      "sha256": "99dbf175d53c1439f644fecb1e984bc0afceb01e96f675c03d82c73fe6150636"
+    }
+  ],
+  "removed": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-window-20261022\\peer\\checks\\attempt1\\peer.map",
+      "bytes": 22611939,
+      "sha256": "b4da64b70d02be7bfb4fac230eef97802e0aa4bf16b40eb7cf63dac1555667a5",
+      "kind": "rebuildable obsolete image/link output"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-window-20261022\\qwen-link1\\qwen.exp",
+      "bytes": 24973,
+      "sha256": "f220d320b667af7291fa0266b113613f88a34700d228f24ec3c4db8b28ab043b",
+      "kind": "rebuildable obsolete image/link output"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-window-20261022\\qwen-link1\\qwen.lib",
+      "bytes": 41384,
+      "sha256": "339d3ce297534ebac8825c27a011f2f4f9dfe366c657ebfc45dbbfdc8412a2cb",
+      "kind": "rebuildable obsolete image/link output"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-window-20261022\\qwen-link1\\qwen.map",
+      "bytes": 58681783,
+      "sha256": "d61c065f11e4c54789d4d1458e291a35590652ab7913058af865e8be5c01caed",
+      "kind": "rebuildable obsolete image/link output"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-window-20261022\\retirement-link1\\retirement.exe",
+      "bytes": 140159488,
+      "sha256": "c51f29fcb49cabebb141993c3de9d1126733e570114ed26c748d457f52552666",
+      "kind": "rebuildable obsolete image/link output"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-window-20261022\\retirement-link1\\retirement.exp",
+      "bytes": 24991,
+      "sha256": "adcbd8c9c607bb9c419952fd4e9daa71450bc154a185214d1f7326fca947b79e",
+      "kind": "rebuildable obsolete image/link output"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-window-20261022\\retirement-link1\\retirement.lib",
+      "bytes": 41912,
+      "sha256": "4bdce5b3aff8b1d2ea67ae4ae90de5589678b48d6088fd5fc658fea029732525",
+      "kind": "rebuildable obsolete image/link output"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-window-20261022\\retirement-link1\\retirement.map",
+      "bytes": 58539067,
+      "sha256": "0275957c2adf3594a2ad75c12426f194d44dedc219abd4d3383ace261ca8c166",
+      "kind": "rebuildable obsolete image/link output"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\qwen-link1\\qwen.exe",
+      "bytes": 140236800,
+      "sha256": "7272f512ae273ba3bec73e28c549571b10f1f6b08bab8a4e9d7ec683015d2109",
+      "kind": "superseded previous-batch image; object closure retained",
+      "ready_record": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\qwen-ready-attempt1.json",
+        "bytes": 1189,
+        "sha256": "356a036ae03b61a27b7d5c584d62395697940ff803688ecb3687f5f627ac4b47"
+      }
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\peer\\checks\\attempt2\\peer.exe",
+      "bytes": 35784192,
+      "sha256": "cea15cde6a80793aae9ba9ab9b33bbbb8a157652a80e639a6ba26e62dba33005",
+      "kind": "superseded previous-batch image; object closure retained",
+      "ready_record": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\peer-ready-attempt2.json",
+        "bytes": 1314,
+        "sha256": "efcce069cf80ad0e62196bf247ca67b992930f31e19b533e872abe584d92a1da"
+      }
+    }
+  ]
+}

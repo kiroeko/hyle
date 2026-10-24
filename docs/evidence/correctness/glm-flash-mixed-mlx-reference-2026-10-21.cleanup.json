@@ -1,0 +1,136 @@
+{
+  "completed": true,
+  "windows_removed": 10,
+  "windows_bytes": 544824914.0,
+  "windows_kept_objects": 5,
+  "mac": {
+    "removed": 2,
+    "bytes": 19894530,
+    "kept_objects": 1
+  },
+  "evidence_sha256": "740051aad229fcce496fa11d99aec8e4373e00d84616a4437fa1fdc8e9d6c979",
+  "archive_sha256": "aa9543e0cb791f4ce28ca1fcfd71ea95318bd33639fb1d3b3be43af1cf97ca63",
+  "exact_plan": {
+    "allowed_windows": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\glm-flash-mixed-mlx-2026-10-21",
+    "allowed_mac": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/glm-flash-mixed-mlx-2026-10-21/apple",
+    "remove_windows": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\glm-flash-mixed-mlx-2026-10-21\\cpu\\checks\\link1\\cpu.exe",
+        "bytes": 21449216,
+        "sha256": "e3a8d334400df340c1faae8fb7b2cffcf17edb26e36cae68fe18258fa1a49f38"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\glm-flash-mixed-mlx-2026-10-21\\cpu\\checks\\link1\\cpu.map",
+        "bytes": 26385184,
+        "sha256": "6aedeedfba4bfdee05343cb0cfd0d374cd7b9924f519cf4e27f302632c5551eb"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\glm-flash-mixed-mlx-2026-10-21\\cuda\\checks\\link1\\cuda.exe",
+        "bytes": 139243520,
+        "sha256": "d4bc7e0a51c4d1bbc2011c062f7559e9a54ad9aad3e08586e57f23e4801fc927"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\glm-flash-mixed-mlx-2026-10-21\\cuda\\checks\\link1\\cuda.map",
+        "bytes": 57968754,
+        "sha256": "e50daa0dd9f84cefad7a0b253825a5fa34a1aa2c736c136da1bb41e71b2f6e55"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\glm-flash-mixed-mlx-2026-10-21\\cuda\\checks\\link2\\cuda.exe",
+        "bytes": 139267584,
+        "sha256": "04da083371f00fe82a588ac504059466e5c247403bb9f4613db390c04efad797"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\glm-flash-mixed-mlx-2026-10-21\\cuda\\checks\\link2\\cuda.map",
+        "bytes": 58035150,
+        "sha256": "a5e7c84966e7a6ebe77d37b23d6affd7c81a536cfe62169f500d532c290cd501"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\glm-flash-mixed-mlx-2026-10-21\\vulkan\\checks\\link1\\vulkan.exe",
+        "bytes": 68136960,
+        "sha256": "da8968f8d0f70ebb7c3ad916041c51c56ee4741b7b551579829d5c4a9ff74433"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\glm-flash-mixed-mlx-2026-10-21\\vulkan\\checks\\link1\\vulkan.map",
+        "bytes": 31621874,
+        "sha256": "c0bfd5907252a8681b70bf164539d8c7424c40921e4c5947f529bbc549a5b592"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\glm-flash-mixed-mlx-2026-10-21\\cuda\\checks\\link2\\hyle_ggml_cpu_avx2_ffa4e8b8_e74fc9bb8964d04f.dll",
+        "bytes": 1358336,
+        "sha256": "09828878dd44d62eb6ae844827e20382ee2b457d0dbd76594b6577bea3ad5434"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\glm-flash-mixed-mlx-2026-10-21\\cuda\\checks\\link1\\hyle_ggml_cpu_avx2_ffa4e8b8_e74fc9bb8964d04f.dll",
+        "bytes": 1358336,
+        "sha256": "09828878dd44d62eb6ae844827e20382ee2b457d0dbd76594b6577bea3ad5434"
+      }
+    ],
+    "keep_windows": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\glm-flash-mixed-mlx-2026-10-21\\cpu\\checks\\attempt2\\glm-flash-mixed-mlx-test.obj",
+        "bytes": 2409897,
+        "sha256": "a00b8257918551fad78637610c0dc99b67454cd474cb186d53c30d87e515d6a3"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\glm-flash-mixed-mlx-2026-10-21\\cuda\\checks\\attempt2\\glm-flash-mixed-mlx-test.obj",
+        "bytes": 2732698,
+        "sha256": "494e5e10acc995f9c041b89677d054df3a7c324153386d80d5f9f326c554fde1"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\glm-flash-mixed-mlx-2026-10-21\\cuda\\checks\\attempt3\\glm-flash-mixed-mlx-test.obj",
+        "bytes": 2888781,
+        "sha256": "04840a0c8f79786b869226a53b4f4e5570d28bc1da615081541887dfa70aae45"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\glm-flash-mixed-mlx-2026-10-21\\cuda\\checks\\bank-alignment-product1\\cuda-weights.obj",
+        "bytes": 348153,
+        "sha256": "106790e875e6fa9da75377851493de0f1805439c507d4f38fca23120860d9bbb"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\glm-flash-mixed-mlx-2026-10-21\\vulkan\\checks\\attempt2\\glm-flash-mixed-mlx-test.obj",
+        "bytes": 2791959,
+        "sha256": "42a662892a00a9eeb7f08b972cfde5b78ba05425f5b383751ed46f21d67a7a5f"
+      }
+    ],
+    "keep_runtime_cache": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_ggml_cpu_avx2_ffa4e8b8_e74fc9bb8964d04f.dll",
+        "bytes": 1358336,
+        "sha256": "09828878dd44d62eb6ae844827e20382ee2b457d0dbd76594b6577bea3ad5434"
+      }
+    ],
+    "remove_mac": [
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/glm-flash-mixed-mlx-2026-10-21/apple/glm-flash-mixed-mlx",
+        "bytes": 15385984,
+        "sha256": "a92b96745b1112287fd4096fe3da2e00e118e16bb6280428e4310108b3461b62",
+        "symlink": false
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/glm-flash-mixed-mlx-2026-10-21/apple/glm-flash-mixed-mlx.map",
+        "bytes": 4508546,
+        "sha256": "9a8677267dda55d45b7e4c78350e235106297eae090596c51303027095a5191f",
+        "symlink": false
+      }
+    ],
+    "keep_mac": [
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/glm-flash-mixed-mlx-2026-10-21/apple/objects/tests--graph_route_apple--glm_flash_mixed_mlx_test.cc.o",
+        "bytes": 284840,
+        "sha256": "e73910cb92f1686b672429ee0175694a8830198e0a3f65c94b774185b946fd13",
+        "symlink": false
+      }
+    ],
+    "evidence": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\glm-flash-mixed-mlx-reference-2026-10-21.json",
+      "bytes": 101005,
+      "sha256": "740051aad229fcce496fa11d99aec8e4373e00d84616a4437fa1fdc8e9d6c979"
+    },
+    "archive": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\glm-flash-mixed-mlx-reference-2026-10-21.zip",
+      "bytes": 4528053,
+      "sha256": "aa9543e0cb791f4ce28ca1fcfd71ea95318bd33639fb1d3b3be43af1cf97ca63"
+    }
+  },
+  "source_script": "# Exact GLM mixed-MLX test-artifact cleanup. No recursive directory removal.\r\n$ErrorActionPreference = 'Stop'\r\n$plan = Get-Content -LiteralPath 'C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\glm-flash-mixed-mlx-2026-10-21\\root\\cleanup-plan.json' -Raw | ConvertFrom-Json\r\n$separator = [IO.Path]::DirectorySeparatorChar\r\n$allowed = [IO.Path]::GetFullPath($plan.allowed_windows).TrimEnd($separator) + $separator\r\nfunction Assert-Identity($row) {\r\n  $file = Get-Item -LiteralPath $row.path -ErrorAction Stop\r\n  if ($file.PSIsContainer -or ($file.Attributes -band [IO.FileAttributes]::ReparsePoint)) { throw \"Not a regular file: $($row.path)\" }\r\n  if ($file.Length -ne $row.bytes -or (Get-FileHash -LiteralPath $row.path -Algorithm SHA256).Hash.ToLowerInvariant() -ne $row.sha256) { throw \"Identity changed: $($row.path)\" }\r\n}\r\nAssert-Identity $plan.evidence\r\nAssert-Identity $plan.archive\r\nforeach ($row in $plan.remove_windows) {\r\n  $full = [IO.Path]::GetFullPath($row.path)\r\n  if (-not $full.StartsWith($allowed, [StringComparison]::OrdinalIgnoreCase) -or [IO.Path]::GetExtension($full) -notin '.exe','.map','.dll') { throw \"Outside exact artifact scope: $full\" }\r\n  Assert-Identity $row\r\n}\r\nforeach ($row in $plan.keep_windows) { Assert-Identity $row }\r\nforeach ($row in $plan.keep_runtime_cache) { Assert-Identity $row }\r\n$active = @(Get-CimInstance Win32_Process | Where-Object { $_.ExecutablePath -and $_.ExecutablePath.StartsWith($allowed, [StringComparison]::OrdinalIgnoreCase) })\r\nif ($active.Count) { throw 'A test executable in this exact workspace is still running' }\r\nforeach ($row in $plan.remove_windows) { Remove-Item -LiteralPath $row.path -Force }\r\nforeach ($row in $plan.keep_windows) { Assert-Identity $row }\r\nforeach ($row in $plan.keep_runtime_cache) { Assert-Identity $row }\r\n$macProgram = @'\r\nimport pathlib,hashlib,json,subprocess\r\nplan=json.loads('{\"allowed_mac\": \"/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/glm-flash-mixed-mlx-2026-10-21/apple\", \"remove_mac\": [{\"path\": \"/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/glm-flash-mixed-mlx-2026-10-21/apple/glm-flash-mixed-mlx\", \"bytes\": 15385984, \"sha256\": \"a92b96745b1112287fd4096fe3da2e00e118e16bb6280428e4310108b3461b62\", \"symlink\": false}, {\"path\": \"/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/glm-flash-mixed-mlx-2026-10-21/apple/glm-flash-mixed-mlx.map\", \"bytes\": 4508546, \"sha256\": \"9a8677267dda55d45b7e4c78350e235106297eae090596c51303027095a5191f\", \"symlink\": false}], \"keep_mac\": [{\"path\": \"/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/glm-flash-mixed-mlx-2026-10-21/apple/objects/tests--graph_route_apple--glm_flash_mixed_mlx_test.cc.o\", \"bytes\": 284840, \"sha256\": \"e73910cb92f1686b672429ee0175694a8830198e0a3f65c94b774185b946fd13\", \"symlink\": false}]}')\r\nbase=pathlib.Path(plan['allowed_mac']); assert base.is_dir() and not base.is_symlink()\r\ndef verify(row):\r\n p=pathlib.Path(row['path']); assert p.is_absolute() and not p.is_symlink() and p.resolve().is_relative_to(base.resolve())\r\n assert p.is_file() and p.stat().st_size==row['bytes'] and hashlib.sha256(p.read_bytes()).hexdigest()==row['sha256'],str(p)\r\n return p\r\npaths=[verify(x) for x in plan['remove_mac']]\r\nfor row in plan['keep_mac']:verify(row)\r\nactive=subprocess.check_output(['ps','-axo','command='],text=True)\r\nassert not any(str(p) in command for p in paths for command in active.splitlines() if not command.startswith('python3 -')), 'test executable is running'\r\nfor p in paths:p.unlink()\r\nfor row in plan['keep_mac']:verify(row)\r\nprint(json.dumps(dict(removed=len(paths),bytes=sum(x['bytes'] for x in plan['remove_mac']),kept_objects=len(plan['keep_mac']))))\r\n'@\r\n$macResult = $macProgram | & ssh kiro@172.22.10.198 python3 -\r\nif ($LASTEXITCODE -ne 0) { throw 'Mac exact-file cleanup failed; do not report both platforms completed' }\r\n$result = [ordered]@{\r\n  completed = $true\r\n  windows_removed = @($plan.remove_windows).Count\r\n  windows_bytes = ($plan.remove_windows | Measure-Object -Property bytes -Sum).Sum\r\n  windows_kept_objects = @($plan.keep_windows).Count\r\n  mac = ($macResult | ConvertFrom-Json)\r\n  evidence_sha256 = $plan.evidence.sha256\r\n  archive_sha256 = $plan.archive.sha256\r\n  exact_plan = $plan\r\n  source_script = [IO.File]::ReadAllText($PSCommandPath)\r\n}\r\n$result | ConvertTo-Json -Depth 18 | Set-Content -LiteralPath 'C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\glm-flash-mixed-mlx-reference-2026-10-21.cleanup.json' -Encoding utf8\r\n[pscustomobject]$result | Select-Object completed,windows_removed,windows_bytes,windows_kept_objects,mac | ConvertTo-Json -Depth 5\r\n"
+}

@@ -1,0 +1,3630 @@
+{
+  "date": "2026-10-20",
+  "scope": "One fresh unprofiled Windows CUDA Qwen3.5-2B BF16 text comparison after GDN direct state output and StateWriter extent fix; immediate preceding Hyle image and retained llama.cpp consumer.",
+  "actual_window": {
+    "started_epoch": 1792463767.3930614,
+    "finished_epoch": 1792463795.3772373,
+    "started_Beijing": "2026-10-20T10:36:07.393061+08:00",
+    "finished_Beijing": "2026-10-20T10:36:35.377237+08:00",
+    "source": "Actual nine process result metadata; Asia/Shanghai UTC+08:00."
+  },
+  "actual_processes": 9,
+  "processes_per_arm": 3,
+  "actual_summary": {
+    "status": "nine_fresh_unprofiled_processes_terminal_zero",
+    "terminal_zero": 9,
+    "order": [
+      "baseline",
+      "current",
+      "llama",
+      "llama",
+      "baseline",
+      "current",
+      "current",
+      "llama",
+      "baseline"
+    ],
+    "groups": {
+      "baseline": {
+        "load_seconds": {
+          "samples": [
+            1.21862,
+            1.24082,
+            1.2244
+          ],
+          "median": 1.2244,
+          "min": 1.21862,
+          "max": 1.24082
+        },
+        "prepare_seconds": {
+          "samples": [
+            0.328878,
+            0.337129,
+            0.335859
+          ],
+          "median": 0.335859,
+          "min": 0.328878,
+          "max": 0.337129
+        },
+        "startup_to_ready_seconds": {
+          "samples": [
+            1.99854,
+            2.05015,
+            2.01488
+          ],
+          "median": 2.01488,
+          "min": 1.99854,
+          "max": 2.05015
+        },
+        "ttft_seconds": {
+          "samples": [
+            2.06304,
+            2.11623,
+            2.08602
+          ],
+          "median": 2.08602,
+          "min": 2.06304,
+          "max": 2.11623
+        },
+        "prefill_seconds": {
+          "samples": [
+            0.0640893,
+            0.0654917,
+            0.0705457
+          ],
+          "median": 0.0654917,
+          "min": 0.0640893,
+          "max": 0.0705457
+        },
+        "prefill_tokens_per_second": {
+          "samples": [
+            1997.2132633684562,
+            1954.4461359225672,
+            1814.4266766082128
+          ],
+          "median": 1954.4461359225672,
+          "min": 1814.4266766082128,
+          "max": 1997.2132633684562
+        },
+        "full31_seconds": {
+          "samples": [
+            0.3446034,
+            0.3479002,
+            0.3430764
+          ],
+          "median": 0.3446034,
+          "min": 0.3430764,
+          "max": 0.3479002
+        },
+        "full31_tokens_per_second": {
+          "samples": [
+            89.95848560983438,
+            89.10601373612317,
+            90.35888216152438
+          ],
+          "median": 89.95848560983438,
+          "min": 89.10601373612317,
+          "max": 90.35888216152438
+        },
+        "warm7_31_seconds": {
+          "samples": [
+            0.2692711,
+            0.274833,
+            0.2694402
+          ],
+          "median": 0.2694402,
+          "min": 0.2692711,
+          "max": 0.274833
+        },
+        "warm7_31_tokens_per_second": {
+          "samples": [
+            92.84323494054877,
+            90.96433106650221,
+            92.78496675700211
+          ],
+          "median": 92.78496675700211,
+          "min": 90.96433106650221,
+          "max": 92.84323494054877
+        }
+      },
+      "current": {
+        "load_seconds": {
+          "samples": [
+            1.20227,
+            1.25394,
+            1.21784
+          ],
+          "median": 1.21784,
+          "min": 1.20227,
+          "max": 1.25394
+        },
+        "prepare_seconds": {
+          "samples": [
+            0.331755,
+            0.340689,
+            0.341439
+          ],
+          "median": 0.340689,
+          "min": 0.331755,
+          "max": 0.341439
+        },
+        "startup_to_ready_seconds": {
+          "samples": [
+            1.9921,
+            2.05806,
+            2.02858
+          ],
+          "median": 2.02858,
+          "min": 1.9921,
+          "max": 2.05806
+        },
+        "ttft_seconds": {
+          "samples": [
+            2.0614,
+            2.12747,
+            2.09286
+          ],
+          "median": 2.09286,
+          "min": 2.0614,
+          "max": 2.12747
+        },
+        "prefill_seconds": {
+          "samples": [
+            0.068719,
+            0.0688421,
+            0.0636264
+          ],
+          "median": 0.068719,
+          "min": 0.0636264,
+          "max": 0.0688421
+        },
+        "prefill_tokens_per_second": {
+          "samples": [
+            1862.6580712757752,
+            1859.3273592757919,
+            2011.7435529905824
+          ],
+          "median": 1862.6580712757752,
+          "min": 1859.3273592757919,
+          "max": 2011.7435529905824
+        },
+        "full31_seconds": {
+          "samples": [
+            0.3398158,
+            0.3376859,
+            0.3417792
+          ],
+          "median": 0.3398158,
+          "min": 0.3376859,
+          "max": 0.3417792
+        },
+        "full31_tokens_per_second": {
+          "samples": [
+            91.2258935576274,
+            91.8012863433149,
+            90.70183323034286
+          ],
+          "median": 91.2258935576274,
+          "min": 90.70183323034286,
+          "max": 91.8012863433149
+        },
+        "warm7_31_seconds": {
+          "samples": [
+            0.26202179999999997,
+            0.2652563,
+            0.2663468
+          ],
+          "median": 0.2652563,
+          "min": 0.26202179999999997,
+          "max": 0.2663468
+        },
+        "warm7_31_tokens_per_second": {
+          "samples": [
+            95.41190847479103,
+            94.24846836814055,
+            93.86258817451534
+          ],
+          "median": 94.24846836814055,
+          "min": 93.86258817451534,
+          "max": 95.41190847479103
+        }
+      },
+      "llama": {
+        "load_seconds": {
+          "samples": [
+            1.7744228,
+            1.8004808,
+            1.7673211
+          ],
+          "median": 1.7744228,
+          "min": 1.7673211,
+          "max": 1.8004808
+        },
+        "prepare_seconds": {
+          "samples": [
+            0.0077506,
+            0.0070736,
+            0.0074083
+          ],
+          "median": 0.0074083,
+          "min": 0.0070736,
+          "max": 0.0077506
+        },
+        "startup_to_ready_seconds": {
+          "samples": [
+            1.8577744,
+            1.8799684,
+            1.8532091
+          ],
+          "median": 1.8577744,
+          "min": 1.8532091,
+          "max": 1.8799684
+        },
+        "ttft_seconds": {
+          "samples": [
+            1.9539955,
+            1.973068,
+            1.9504288
+          ],
+          "median": 1.9539955,
+          "min": 1.9504288,
+          "max": 1.973068
+        },
+        "prefill_seconds": {
+          "samples": [
+            0.0961641,
+            0.0930382,
+            0.0971579
+          ],
+          "median": 0.0961641,
+          "min": 0.0930382,
+          "max": 0.0971579
+        },
+        "prefill_tokens_per_second": {
+          "samples": [
+            1331.0580559689115,
+            1375.7789811066853,
+            1317.443048892576
+          ],
+          "median": 1331.0580559689115,
+          "min": 1317.443048892576,
+          "max": 1375.7789811066853
+        },
+        "full31_seconds": {
+          "samples": [
+            0.3403932,
+            0.3356614,
+            0.3378259
+          ],
+          "median": 0.3378259,
+          "min": 0.3356614,
+          "max": 0.3403932
+        },
+        "full31_tokens_per_second": {
+          "samples": [
+            91.07114948242209,
+            92.35497438788016,
+            91.7632425459386
+          ],
+          "median": 91.7632425459386,
+          "min": 91.07114948242209,
+          "max": 92.35497438788016
+        },
+        "warm7_31_seconds": {
+          "samples": [
+            0.2667689,
+            0.264576,
+            0.2721858
+          ],
+          "median": 0.2667689,
+          "min": 0.264576,
+          "max": 0.2721858
+        },
+        "warm7_31_tokens_per_second": {
+          "samples": [
+            93.71407236750612,
+            94.49080793420417,
+            91.8490237183571
+          ],
+          "median": 93.71407236750612,
+          "min": 91.8490237183571,
+          "max": 94.49080793420417
+        }
+      }
+    },
+    "images": {
+      "baseline": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\checks\\host1\\qwen.exe",
+        "bytes": 117290496,
+        "sha256": "b3d26fda0ae4eb65c3769e431de4c428b603c46f50cf57fd8d085a43c0063049"
+      },
+      "current": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gdn-direct-state-output\\checks\\native1\\qwen.exe",
+        "bytes": 117294080,
+        "sha256": "7d998d81dde99286bdf7fa411ef9a6bb3fad0b6660cab3262de8841001fdc14d"
+      },
+      "llama": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-explicit-rope\\performance-prepared\\peer.exe",
+        "bytes": 35814400,
+        "sha256": "fb169f0282f2a834a61b3e887edaba92d8699814558b0c5f1a13aaf07e0de969"
+      }
+    },
+    "current_over_baseline": {
+      "load_seconds": 0.994642273766743,
+      "prepare_seconds": 1.0143810348985736,
+      "startup_to_ready_seconds": 1.0067994123719526,
+      "ttft_seconds": 1.003278971438433,
+      "prefill_seconds": 1.0492780001129915,
+      "prefill_tokens_per_second": 0.9530362781763413,
+      "full31_seconds": 0.9861069275578824,
+      "full31_tokens_per_second": 1.0140888092902096,
+      "warm7_31_seconds": 0.984471879103415,
+      "warm7_31_tokens_per_second": 1.0157730466722186
+    },
+    "current_over_llama": {
+      "load_seconds": 0.6863302252428226,
+      "prepare_seconds": 45.98747350944212,
+      "startup_to_ready_seconds": 1.0919409805625482,
+      "ttft_seconds": 1.0710669497447665,
+      "prefill_seconds": 0.7146013949072471,
+      "prefill_tokens_per_second": 1.3993815393122717,
+      "full31_seconds": 1.0058903121400697,
+      "full31_tokens_per_second": 0.9941441804648284,
+      "warm7_31_seconds": 0.9943299237654765,
+      "warm7_31_tokens_per_second": 1.0057024093301459
+    },
+    "same_baseline_predictions_all9": true,
+    "predictions_deterministic_within_each_arm": true,
+    "capture_results": {
+      "baseline": [
+        [
+          [
+            1,
+            0
+          ],
+          [
+            1,
+            0
+          ],
+          [
+            1,
+            0
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ]
+        ],
+        [
+          [
+            1,
+            0
+          ],
+          [
+            1,
+            0
+          ],
+          [
+            1,
+            0
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ]
+        ],
+        [
+          [
+            1,
+            0
+          ],
+          [
+            1,
+            0
+          ],
+          [
+            1,
+            0
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ]
+        ]
+      ],
+      "current": [
+        [
+          [
+            1,
+            0
+          ],
+          [
+            1,
+            0
+          ],
+          [
+            1,
+            0
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ]
+        ],
+        [
+          [
+            1,
+            0
+          ],
+          [
+            1,
+            0
+          ],
+          [
+            1,
+            0
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ]
+        ],
+        [
+          [
+            1,
+            0
+          ],
+          [
+            1,
+            0
+          ],
+          [
+            1,
+            0
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ]
+        ]
+      ],
+      "llama": [
+        null,
+        null,
+        null
+      ]
+    },
+    "metric_contract": {
+      "warm7_31": "decode7 through decode31 inclusive, exactly25steps",
+      "step": "Consumer input preparation through host token completion; includes upload/layout/bind/capture/submit/wait.",
+      "load": "Hyle weights_load_seconds versus peer model_load_seconds: different documented sub-boundaries.",
+      "prepare": "Hyle shape_prepare_seconds versus peer context_prepare_seconds: different work.",
+      "ttft": "Reported process-entry-to-first-host-token; includes startup and first-step work."
+    },
+    "profiler": false,
+    "external_memory_monitor": false,
+    "statistical_significance": false,
+    "independent_quality_acceptance": false,
+    "limits": [
+      "Three fresh processes per image in one rotated window; drift remains possible.",
+      "No historical timing samples or profiler durations enter these medians.",
+      "Hyle prepares both shapes before prefill; peer graph maintenance remains in step.",
+      "Weight loading and context preparation have different engine sub-boundaries.",
+      "Same fixed128+31 inputs; current predictions are reported, not used as an approval gate.",
+      "Matching predictions are not independent language-model quality acceptance."
+    ]
+  },
+  "runs": [
+    {
+      "arm": "baseline",
+      "tag": "01-baseline",
+      "pid": 52604,
+      "exit": 0,
+      "command": [
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\checks\\host1\\qwen.exe",
+        "--inputs",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-gpu-comparison\\128-prefill\\inputs",
+        "--decode-ids",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-gpu-comparison\\128-prefill\\decode.ids",
+        "--steps",
+        "32",
+        "--capacity",
+        "256",
+        "--progress",
+        "direct",
+        "--replay",
+        "prefer-capture"
+      ],
+      "process_wall_seconds": 2.945132255554199,
+      "metrics": {
+        "load_seconds": 1.21862,
+        "prepare_seconds": 0.328878,
+        "startup_to_ready_seconds": 1.99854,
+        "ttft_seconds": 2.06304,
+        "prefill_seconds": 0.0640893,
+        "prefill_tokens_per_second": 1997.2132633684562,
+        "full31_seconds": 0.3446034,
+        "full31_tokens_per_second": 89.95848560983438,
+        "warm7_31_seconds": 0.2692711,
+        "warm7_31_tokens_per_second": 92.84323494054877
+      },
+      "phase_step_seconds": [
+        0.0640893,
+        0.0143778,
+        0.0169989,
+        0.0116372,
+        0.0092892,
+        0.0092229,
+        0.0138063,
+        0.0134592,
+        0.0094375,
+        0.0091871,
+        0.0098788,
+        0.0128318,
+        0.0122697,
+        0.0092981,
+        0.0091855,
+        0.0135359,
+        0.0126188,
+        0.0097112,
+        0.0117274,
+        0.0142461,
+        0.0101486,
+        0.0091365,
+        0.0091016,
+        0.0116965,
+        0.0099233,
+        0.0117145,
+        0.0093777,
+        0.0090903,
+        0.0140608,
+        0.0092587,
+        0.0092593,
+        0.0091162
+      ],
+      "capture_counts": [
+        [
+          1,
+          0
+        ],
+        [
+          1,
+          0
+        ],
+        [
+          1,
+          0
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ]
+      ],
+      "capture_recorded_total": 3,
+      "capture_reused_total": 29,
+      "matches_retained_capture_journey": false,
+      "generated_ids": [
+        958,
+        71163,
+        369,
+        279,
+        1817,
+        539,
+        864,
+        10462,
+        11,
+        65562,
+        11,
+        321,
+        1010,
+        22434,
+        5335,
+        3000,
+        4649,
+        1083,
+        279,
+        6797,
+        1083,
+        11153,
+        4649,
+        9476,
+        1061,
+        7022,
+        1817,
+        11,
+        10462,
+        958,
+        303,
+        12141
+      ],
+      "decode_input_ids": [
+        30729,
+        71163,
+        369,
+        279,
+        1817,
+        539,
+        864,
+        10462,
+        11,
+        65562,
+        11,
+        321,
+        1010,
+        22434,
+        5335,
+        3000,
+        4649,
+        494,
+        279,
+        6797,
+        1083,
+        11153,
+        4649,
+        13,
+        11615,
+        411,
+        12355,
+        11,
+        781,
+        1831,
+        303
+      ],
+      "same_baseline_predictions": true,
+      "prediction_differences_from_baseline": []
+    },
+    {
+      "arm": "current",
+      "tag": "02-current",
+      "pid": 98592,
+      "exit": 0,
+      "command": [
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gdn-direct-state-output\\checks\\native1\\qwen.exe",
+        "--inputs",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-gpu-comparison\\128-prefill\\inputs",
+        "--decode-ids",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-gpu-comparison\\128-prefill\\decode.ids",
+        "--steps",
+        "32",
+        "--capacity",
+        "256",
+        "--progress",
+        "direct",
+        "--replay",
+        "prefer-capture"
+      ],
+      "process_wall_seconds": 2.9366512298583984,
+      "metrics": {
+        "load_seconds": 1.20227,
+        "prepare_seconds": 0.331755,
+        "startup_to_ready_seconds": 1.9921,
+        "ttft_seconds": 2.0614,
+        "prefill_seconds": 0.068719,
+        "prefill_tokens_per_second": 1862.6580712757752,
+        "full31_seconds": 0.3398158,
+        "full31_tokens_per_second": 91.2258935576274,
+        "warm7_31_seconds": 0.26202179999999997,
+        "warm7_31_tokens_per_second": 95.41190847479103
+      },
+      "phase_step_seconds": [
+        0.068719,
+        0.0152241,
+        0.0141801,
+        0.0137602,
+        0.0128059,
+        0.0097557,
+        0.012068,
+        0.0117103,
+        0.0092594,
+        0.0090975,
+        0.0093265,
+        0.0138,
+        0.0099712,
+        0.0091167,
+        0.0093247,
+        0.0125666,
+        0.0094574,
+        0.0090971,
+        0.0090711,
+        0.0100931,
+        0.0111903,
+        0.0093476,
+        0.0121314,
+        0.0092155,
+        0.0097046,
+        0.0134306,
+        0.0092006,
+        0.0090706,
+        0.012814,
+        0.01471,
+        0.0098482,
+        0.0094668
+      ],
+      "capture_counts": [
+        [
+          1,
+          0
+        ],
+        [
+          1,
+          0
+        ],
+        [
+          1,
+          0
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ]
+      ],
+      "capture_recorded_total": 3,
+      "capture_reused_total": 29,
+      "matches_retained_capture_journey": false,
+      "generated_ids": [
+        958,
+        71163,
+        369,
+        279,
+        1817,
+        539,
+        864,
+        10462,
+        11,
+        65562,
+        11,
+        321,
+        1010,
+        22434,
+        5335,
+        3000,
+        4649,
+        1083,
+        279,
+        6797,
+        1083,
+        11153,
+        4649,
+        9476,
+        1061,
+        7022,
+        1817,
+        11,
+        10462,
+        958,
+        303,
+        12141
+      ],
+      "decode_input_ids": [
+        30729,
+        71163,
+        369,
+        279,
+        1817,
+        539,
+        864,
+        10462,
+        11,
+        65562,
+        11,
+        321,
+        1010,
+        22434,
+        5335,
+        3000,
+        4649,
+        494,
+        279,
+        6797,
+        1083,
+        11153,
+        4649,
+        13,
+        11615,
+        411,
+        12355,
+        11,
+        781,
+        1831,
+        303
+      ],
+      "same_baseline_predictions": true,
+      "prediction_differences_from_baseline": []
+    },
+    {
+      "arm": "llama",
+      "tag": "03-llama",
+      "pid": 15752,
+      "exit": 0,
+      "command": [
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-explicit-rope\\performance-prepared\\peer.exe",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\llama-matched-consumer\\Qwen3.5-2B-text-BF16.gguf",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-gpu-comparison\\128-prefill\\fixed-inputs.json",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gdn-direct-state-output\\performance-rotation/03-llama-peer-result.json"
+      ],
+      "process_wall_seconds": 2.8692445755004883,
+      "metrics": {
+        "load_seconds": 1.7744228,
+        "prepare_seconds": 0.0077506,
+        "startup_to_ready_seconds": 1.8577744,
+        "ttft_seconds": 1.9539955,
+        "prefill_seconds": 0.0961641,
+        "prefill_tokens_per_second": 1331.0580559689115,
+        "full31_seconds": 0.3403932,
+        "full31_tokens_per_second": 91.07114948242209,
+        "warm7_31_seconds": 0.2667689,
+        "warm7_31_tokens_per_second": 93.71407236750612
+      },
+      "loading": {
+        "backend_setup_seconds": 0.0226555,
+        "model_load_seconds": 1.7744228,
+        "context_prepare_seconds": 0.0077506,
+        "startup_to_ready_seconds": 1.8577744,
+        "first_token_elapsed_seconds": 1.9539955,
+        "model_load_boundary": "llama_model_load_from_file call; original loader synchronizes async uploads before return, mmap/lazy defaults preserved",
+        "ready_boundary": "run entry before JSON read -> original model/context/sampler/batch ready, excluding following ready snapshot"
+      },
+      "phase_step_seconds": [
+        0.0961641,
+        0.0157513,
+        0.0125746,
+        0.0095573,
+        0.0120024,
+        0.0143575,
+        0.0093812,
+        0.0089769,
+        0.0089432,
+        0.0121238,
+        0.0118303,
+        0.0095212,
+        0.0090081,
+        0.0089849,
+        0.015173,
+        0.0094796,
+        0.0090698,
+        0.0089501,
+        0.011775,
+        0.0137208,
+        0.01142,
+        0.0091645,
+        0.0119058,
+        0.0117197,
+        0.0090914,
+        0.0092419,
+        0.0090673,
+        0.0122094,
+        0.011346,
+        0.0093239,
+        0.0124029,
+        0.0123194
+      ],
+      "capture_counts": null,
+      "capture_scope": "Peer graphs enabled; no per-phase capture counter is exposed by this unchanged consumer.",
+      "generated_ids": [
+        958,
+        71163,
+        369,
+        279,
+        1817,
+        539,
+        864,
+        10462,
+        11,
+        65562,
+        11,
+        321,
+        1010,
+        22434,
+        5335,
+        3000,
+        4649,
+        1083,
+        279,
+        6797,
+        1083,
+        11153,
+        4649,
+        9476,
+        1061,
+        7022,
+        1817,
+        11,
+        10462,
+        958,
+        303,
+        12141
+      ],
+      "decode_input_ids": [
+        30729,
+        71163,
+        369,
+        279,
+        1817,
+        539,
+        864,
+        10462,
+        11,
+        65562,
+        11,
+        321,
+        1010,
+        22434,
+        5335,
+        3000,
+        4649,
+        494,
+        279,
+        6797,
+        1083,
+        11153,
+        4649,
+        13,
+        11615,
+        411,
+        12355,
+        11,
+        781,
+        1831,
+        303
+      ],
+      "same_baseline_predictions": true,
+      "prediction_differences_from_baseline": [],
+      "sampling_D2H_per_phase": {
+        "token_bytes": 4,
+        "sampled_logits_bytes": 993280
+      }
+    },
+    {
+      "arm": "llama",
+      "tag": "04-llama",
+      "pid": 81076,
+      "exit": 0,
+      "command": [
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-explicit-rope\\performance-prepared\\peer.exe",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\llama-matched-consumer\\Qwen3.5-2B-text-BF16.gguf",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-gpu-comparison\\128-prefill\\fixed-inputs.json",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gdn-direct-state-output\\performance-rotation/04-llama-peer-result.json"
+      ],
+      "process_wall_seconds": 2.8601481914520264,
+      "metrics": {
+        "load_seconds": 1.8004808,
+        "prepare_seconds": 0.0070736,
+        "startup_to_ready_seconds": 1.8799684,
+        "ttft_seconds": 1.973068,
+        "prefill_seconds": 0.0930382,
+        "prefill_tokens_per_second": 1375.7789811066853,
+        "full31_seconds": 0.3356614,
+        "full31_tokens_per_second": 92.35497438788016,
+        "warm7_31_seconds": 0.264576,
+        "warm7_31_tokens_per_second": 94.49080793420417
+      },
+      "loading": {
+        "backend_setup_seconds": 0.0213326,
+        "model_load_seconds": 1.8004808,
+        "context_prepare_seconds": 0.0070736,
+        "startup_to_ready_seconds": 1.8799684,
+        "first_token_elapsed_seconds": 1.973068,
+        "model_load_boundary": "llama_model_load_from_file call; original loader synchronizes async uploads before return, mmap/lazy defaults preserved",
+        "ready_boundary": "run entry before JSON read -> original model/context/sampler/batch ready, excluding following ready snapshot"
+      },
+      "phase_step_seconds": [
+        0.0930382,
+        0.0146921,
+        0.0125712,
+        0.0090183,
+        0.0090047,
+        0.0158924,
+        0.0099067,
+        0.0120205,
+        0.009239,
+        0.011977,
+        0.0113695,
+        0.0091135,
+        0.0089608,
+        0.0091137,
+        0.0118031,
+        0.0135516,
+        0.0101236,
+        0.0089417,
+        0.0119058,
+        0.0112605,
+        0.0090481,
+        0.0095557,
+        0.0100797,
+        0.0127173,
+        0.0097204,
+        0.0092535,
+        0.0118995,
+        0.0119888,
+        0.0113721,
+        0.0090103,
+        0.0089672,
+        0.0115831
+      ],
+      "capture_counts": null,
+      "capture_scope": "Peer graphs enabled; no per-phase capture counter is exposed by this unchanged consumer.",
+      "generated_ids": [
+        958,
+        71163,
+        369,
+        279,
+        1817,
+        539,
+        864,
+        10462,
+        11,
+        65562,
+        11,
+        321,
+        1010,
+        22434,
+        5335,
+        3000,
+        4649,
+        1083,
+        279,
+        6797,
+        1083,
+        11153,
+        4649,
+        9476,
+        1061,
+        7022,
+        1817,
+        11,
+        10462,
+        958,
+        303,
+        12141
+      ],
+      "decode_input_ids": [
+        30729,
+        71163,
+        369,
+        279,
+        1817,
+        539,
+        864,
+        10462,
+        11,
+        65562,
+        11,
+        321,
+        1010,
+        22434,
+        5335,
+        3000,
+        4649,
+        494,
+        279,
+        6797,
+        1083,
+        11153,
+        4649,
+        13,
+        11615,
+        411,
+        12355,
+        11,
+        781,
+        1831,
+        303
+      ],
+      "same_baseline_predictions": true,
+      "prediction_differences_from_baseline": [],
+      "sampling_D2H_per_phase": {
+        "token_bytes": 4,
+        "sampled_logits_bytes": 993280
+      }
+    },
+    {
+      "arm": "baseline",
+      "tag": "05-baseline",
+      "pid": 100884,
+      "exit": 0,
+      "command": [
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\checks\\host1\\qwen.exe",
+        "--inputs",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-gpu-comparison\\128-prefill\\inputs",
+        "--decode-ids",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-gpu-comparison\\128-prefill\\decode.ids",
+        "--steps",
+        "32",
+        "--capacity",
+        "256",
+        "--progress",
+        "direct",
+        "--replay",
+        "prefer-capture"
+      ],
+      "process_wall_seconds": 2.9896187782287598,
+      "metrics": {
+        "load_seconds": 1.24082,
+        "prepare_seconds": 0.337129,
+        "startup_to_ready_seconds": 2.05015,
+        "ttft_seconds": 2.11623,
+        "prefill_seconds": 0.0654917,
+        "prefill_tokens_per_second": 1954.4461359225672,
+        "full31_seconds": 0.3479002,
+        "full31_tokens_per_second": 89.10601373612317,
+        "warm7_31_seconds": 0.274833,
+        "warm7_31_tokens_per_second": 90.96433106650221
+      },
+      "phase_step_seconds": [
+        0.0654917,
+        0.0168449,
+        0.0138348,
+        0.0091968,
+        0.0103636,
+        0.0134937,
+        0.0093334,
+        0.0091033,
+        0.0095052,
+        0.0135242,
+        0.0103582,
+        0.0091475,
+        0.0092127,
+        0.0124983,
+        0.0136947,
+        0.0099933,
+        0.009384,
+        0.0118101,
+        0.0133421,
+        0.0101322,
+        0.0093314,
+        0.0117094,
+        0.0133996,
+        0.0092227,
+        0.0097392,
+        0.0153402,
+        0.0114523,
+        0.0096121,
+        0.0092411,
+        0.0094705,
+        0.0146476,
+        0.0099611
+      ],
+      "capture_counts": [
+        [
+          1,
+          0
+        ],
+        [
+          1,
+          0
+        ],
+        [
+          1,
+          0
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ]
+      ],
+      "capture_recorded_total": 3,
+      "capture_reused_total": 29,
+      "matches_retained_capture_journey": false,
+      "generated_ids": [
+        958,
+        71163,
+        369,
+        279,
+        1817,
+        539,
+        864,
+        10462,
+        11,
+        65562,
+        11,
+        321,
+        1010,
+        22434,
+        5335,
+        3000,
+        4649,
+        1083,
+        279,
+        6797,
+        1083,
+        11153,
+        4649,
+        9476,
+        1061,
+        7022,
+        1817,
+        11,
+        10462,
+        958,
+        303,
+        12141
+      ],
+      "decode_input_ids": [
+        30729,
+        71163,
+        369,
+        279,
+        1817,
+        539,
+        864,
+        10462,
+        11,
+        65562,
+        11,
+        321,
+        1010,
+        22434,
+        5335,
+        3000,
+        4649,
+        494,
+        279,
+        6797,
+        1083,
+        11153,
+        4649,
+        13,
+        11615,
+        411,
+        12355,
+        11,
+        781,
+        1831,
+        303
+      ],
+      "same_baseline_predictions": true,
+      "prediction_differences_from_baseline": []
+    },
+    {
+      "arm": "current",
+      "tag": "06-current",
+      "pid": 95688,
+      "exit": 0,
+      "command": [
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gdn-direct-state-output\\checks\\native1\\qwen.exe",
+        "--inputs",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-gpu-comparison\\128-prefill\\inputs",
+        "--decode-ids",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-gpu-comparison\\128-prefill\\decode.ids",
+        "--steps",
+        "32",
+        "--capacity",
+        "256",
+        "--progress",
+        "direct",
+        "--replay",
+        "prefer-capture"
+      ],
+      "process_wall_seconds": 3.0034122467041016,
+      "metrics": {
+        "load_seconds": 1.25394,
+        "prepare_seconds": 0.340689,
+        "startup_to_ready_seconds": 2.05806,
+        "ttft_seconds": 2.12747,
+        "prefill_seconds": 0.0688421,
+        "prefill_tokens_per_second": 1859.3273592757919,
+        "full31_seconds": 0.3376859,
+        "full31_tokens_per_second": 91.8012863433149,
+        "warm7_31_seconds": 0.2652563,
+        "warm7_31_tokens_per_second": 94.24846836814055
+      },
+      "phase_step_seconds": [
+        0.0688421,
+        0.014446,
+        0.0176078,
+        0.0093413,
+        0.0092354,
+        0.0091277,
+        0.0126714,
+        0.0121882,
+        0.0092689,
+        0.0092155,
+        0.011793,
+        0.012258,
+        0.0121034,
+        0.0091977,
+        0.012104,
+        0.0116085,
+        0.0092253,
+        0.0091162,
+        0.0095979,
+        0.0097964,
+        0.0090899,
+        0.0089986,
+        0.0126981,
+        0.013279,
+        0.0098488,
+        0.0093905,
+        0.0120357,
+        0.0112768,
+        0.0092593,
+        0.0092484,
+        0.0090899,
+        0.0135683
+      ],
+      "capture_counts": [
+        [
+          1,
+          0
+        ],
+        [
+          1,
+          0
+        ],
+        [
+          1,
+          0
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ]
+      ],
+      "capture_recorded_total": 3,
+      "capture_reused_total": 29,
+      "matches_retained_capture_journey": false,
+      "generated_ids": [
+        958,
+        71163,
+        369,
+        279,
+        1817,
+        539,
+        864,
+        10462,
+        11,
+        65562,
+        11,
+        321,
+        1010,
+        22434,
+        5335,
+        3000,
+        4649,
+        1083,
+        279,
+        6797,
+        1083,
+        11153,
+        4649,
+        9476,
+        1061,
+        7022,
+        1817,
+        11,
+        10462,
+        958,
+        303,
+        12141
+      ],
+      "decode_input_ids": [
+        30729,
+        71163,
+        369,
+        279,
+        1817,
+        539,
+        864,
+        10462,
+        11,
+        65562,
+        11,
+        321,
+        1010,
+        22434,
+        5335,
+        3000,
+        4649,
+        494,
+        279,
+        6797,
+        1083,
+        11153,
+        4649,
+        13,
+        11615,
+        411,
+        12355,
+        11,
+        781,
+        1831,
+        303
+      ],
+      "same_baseline_predictions": true,
+      "prediction_differences_from_baseline": []
+    },
+    {
+      "arm": "current",
+      "tag": "07-current",
+      "pid": 77228,
+      "exit": 0,
+      "command": [
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gdn-direct-state-output\\checks\\native1\\qwen.exe",
+        "--inputs",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-gpu-comparison\\128-prefill\\inputs",
+        "--decode-ids",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-gpu-comparison\\128-prefill\\decode.ids",
+        "--steps",
+        "32",
+        "--capacity",
+        "256",
+        "--progress",
+        "direct",
+        "--replay",
+        "prefer-capture"
+      ],
+      "process_wall_seconds": 2.958076000213623,
+      "metrics": {
+        "load_seconds": 1.21784,
+        "prepare_seconds": 0.341439,
+        "startup_to_ready_seconds": 2.02858,
+        "ttft_seconds": 2.09286,
+        "prefill_seconds": 0.0636264,
+        "prefill_tokens_per_second": 2011.7435529905824,
+        "full31_seconds": 0.3417792,
+        "full31_tokens_per_second": 90.70183323034286,
+        "warm7_31_seconds": 0.2663468,
+        "warm7_31_tokens_per_second": 93.86258817451534
+      },
+      "phase_step_seconds": [
+        0.0636264,
+        0.0171886,
+        0.0143832,
+        0.0092161,
+        0.0126284,
+        0.0094182,
+        0.0125979,
+        0.0092924,
+        0.0098292,
+        0.012907,
+        0.0099441,
+        0.0096872,
+        0.0094323,
+        0.0125864,
+        0.0116486,
+        0.0092046,
+        0.0125578,
+        0.0119754,
+        0.0115676,
+        0.0090785,
+        0.009034,
+        0.0125755,
+        0.0114392,
+        0.0090857,
+        0.0090267,
+        0.0094911,
+        0.009369,
+        0.0096482,
+        0.0112446,
+        0.0121605,
+        0.0139456,
+        0.0096156
+      ],
+      "capture_counts": [
+        [
+          1,
+          0
+        ],
+        [
+          1,
+          0
+        ],
+        [
+          1,
+          0
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ]
+      ],
+      "capture_recorded_total": 3,
+      "capture_reused_total": 29,
+      "matches_retained_capture_journey": false,
+      "generated_ids": [
+        958,
+        71163,
+        369,
+        279,
+        1817,
+        539,
+        864,
+        10462,
+        11,
+        65562,
+        11,
+        321,
+        1010,
+        22434,
+        5335,
+        3000,
+        4649,
+        1083,
+        279,
+        6797,
+        1083,
+        11153,
+        4649,
+        9476,
+        1061,
+        7022,
+        1817,
+        11,
+        10462,
+        958,
+        303,
+        12141
+      ],
+      "decode_input_ids": [
+        30729,
+        71163,
+        369,
+        279,
+        1817,
+        539,
+        864,
+        10462,
+        11,
+        65562,
+        11,
+        321,
+        1010,
+        22434,
+        5335,
+        3000,
+        4649,
+        494,
+        279,
+        6797,
+        1083,
+        11153,
+        4649,
+        13,
+        11615,
+        411,
+        12355,
+        11,
+        781,
+        1831,
+        303
+      ],
+      "same_baseline_predictions": true,
+      "prediction_differences_from_baseline": []
+    },
+    {
+      "arm": "llama",
+      "tag": "08-llama",
+      "pid": 27752,
+      "exit": 0,
+      "command": [
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-explicit-rope\\performance-prepared\\peer.exe",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\llama-matched-consumer\\Qwen3.5-2B-text-BF16.gguf",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-gpu-comparison\\128-prefill\\fixed-inputs.json",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gdn-direct-state-output\\performance-rotation/08-llama-peer-result.json"
+      ],
+      "process_wall_seconds": 2.8895931243896484,
+      "metrics": {
+        "load_seconds": 1.7673211,
+        "prepare_seconds": 0.0074083,
+        "startup_to_ready_seconds": 1.8532091,
+        "ttft_seconds": 1.9504288,
+        "prefill_seconds": 0.0971579,
+        "prefill_tokens_per_second": 1317.443048892576,
+        "full31_seconds": 0.3378259,
+        "full31_tokens_per_second": 91.7632425459386,
+        "warm7_31_seconds": 0.2721858,
+        "warm7_31_tokens_per_second": 91.8490237183571
+      },
+      "loading": {
+        "backend_setup_seconds": 0.0234715,
+        "model_load_seconds": 1.7673211,
+        "context_prepare_seconds": 0.0074083,
+        "startup_to_ready_seconds": 1.8532091,
+        "first_token_elapsed_seconds": 1.9504288,
+        "model_load_boundary": "llama_model_load_from_file call; original loader synchronizes async uploads before return, mmap/lazy defaults preserved",
+        "ready_boundary": "run entry before JSON read -> original model/context/sampler/batch ready, excluding following ready snapshot"
+      },
+      "phase_step_seconds": [
+        0.0971579,
+        0.0117672,
+        0.0118948,
+        0.0096922,
+        0.0119481,
+        0.0111957,
+        0.0091421,
+        0.0096045,
+        0.0134699,
+        0.0099513,
+        0.009007,
+        0.0124279,
+        0.0118022,
+        0.0097241,
+        0.0091163,
+        0.0153652,
+        0.0152323,
+        0.0099134,
+        0.0089531,
+        0.0100504,
+        0.0110929,
+        0.011314,
+        0.0093658,
+        0.0112154,
+        0.0114953,
+        0.0119829,
+        0.0093508,
+        0.0090278,
+        0.0120625,
+        0.0121917,
+        0.009461,
+        0.0090081
+      ],
+      "capture_counts": null,
+      "capture_scope": "Peer graphs enabled; no per-phase capture counter is exposed by this unchanged consumer.",
+      "generated_ids": [
+        958,
+        71163,
+        369,
+        279,
+        1817,
+        539,
+        864,
+        10462,
+        11,
+        65562,
+        11,
+        321,
+        1010,
+        22434,
+        5335,
+        3000,
+        4649,
+        1083,
+        279,
+        6797,
+        1083,
+        11153,
+        4649,
+        9476,
+        1061,
+        7022,
+        1817,
+        11,
+        10462,
+        958,
+        303,
+        12141
+      ],
+      "decode_input_ids": [
+        30729,
+        71163,
+        369,
+        279,
+        1817,
+        539,
+        864,
+        10462,
+        11,
+        65562,
+        11,
+        321,
+        1010,
+        22434,
+        5335,
+        3000,
+        4649,
+        494,
+        279,
+        6797,
+        1083,
+        11153,
+        4649,
+        13,
+        11615,
+        411,
+        12355,
+        11,
+        781,
+        1831,
+        303
+      ],
+      "same_baseline_predictions": true,
+      "prediction_differences_from_baseline": [],
+      "sampling_D2H_per_phase": {
+        "token_bytes": 4,
+        "sampled_logits_bytes": 993280
+      }
+    },
+    {
+      "arm": "baseline",
+      "tag": "09-baseline",
+      "pid": 24580,
+      "exit": 0,
+      "command": [
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\checks\\host1\\qwen.exe",
+        "--inputs",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-gpu-comparison\\128-prefill\\inputs",
+        "--decode-ids",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-gpu-comparison\\128-prefill\\decode.ids",
+        "--steps",
+        "32",
+        "--capacity",
+        "256",
+        "--progress",
+        "direct",
+        "--replay",
+        "prefer-capture"
+      ],
+      "process_wall_seconds": 2.9513468742370605,
+      "metrics": {
+        "load_seconds": 1.2244,
+        "prepare_seconds": 0.335859,
+        "startup_to_ready_seconds": 2.01488,
+        "ttft_seconds": 2.08602,
+        "prefill_seconds": 0.0705457,
+        "prefill_tokens_per_second": 1814.4266766082128,
+        "full31_seconds": 0.3430764,
+        "full31_tokens_per_second": 90.35888216152438,
+        "warm7_31_seconds": 0.2694402,
+        "warm7_31_tokens_per_second": 92.78496675700211
+      },
+      "phase_step_seconds": [
+        0.0705457,
+        0.0142143,
+        0.0137171,
+        0.0128974,
+        0.0136619,
+        0.0099097,
+        0.0092358,
+        0.0153434,
+        0.0102463,
+        0.0093156,
+        0.0092178,
+        0.0127154,
+        0.0119832,
+        0.0130305,
+        0.0091174,
+        0.0118815,
+        0.0116435,
+        0.0091901,
+        0.0093978,
+        0.0095875,
+        0.0092209,
+        0.0091676,
+        0.0091744,
+        0.0137242,
+        0.012803,
+        0.0117786,
+        0.0092707,
+        0.0091779,
+        0.010194,
+        0.0131489,
+        0.0099248,
+        0.0091852
+      ],
+      "capture_counts": [
+        [
+          1,
+          0
+        ],
+        [
+          1,
+          0
+        ],
+        [
+          1,
+          0
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ]
+      ],
+      "capture_recorded_total": 3,
+      "capture_reused_total": 29,
+      "matches_retained_capture_journey": false,
+      "generated_ids": [
+        958,
+        71163,
+        369,
+        279,
+        1817,
+        539,
+        864,
+        10462,
+        11,
+        65562,
+        11,
+        321,
+        1010,
+        22434,
+        5335,
+        3000,
+        4649,
+        1083,
+        279,
+        6797,
+        1083,
+        11153,
+        4649,
+        9476,
+        1061,
+        7022,
+        1817,
+        11,
+        10462,
+        958,
+        303,
+        12141
+      ],
+      "decode_input_ids": [
+        30729,
+        71163,
+        369,
+        279,
+        1817,
+        539,
+        864,
+        10462,
+        11,
+        65562,
+        11,
+        321,
+        1010,
+        22434,
+        5335,
+        3000,
+        4649,
+        494,
+        279,
+        6797,
+        1083,
+        11153,
+        4649,
+        13,
+        11615,
+        411,
+        12355,
+        11,
+        781,
+        1831,
+        303
+      ],
+      "same_baseline_predictions": true,
+      "prediction_differences_from_baseline": []
+    }
+  ],
+  "source_and_structural_evidence": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\gdn-direct-state-output-2026-10-20.zip",
+    "bytes": 3242553,
+    "sha256": "1c6340962958c9711118b7cc372275ecf42d54f62e78063b7a4b17238b795e09"
+  },
+  "comparison_script": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gdn-direct-state-output\\compare.py",
+    "bytes": 2021,
+    "sha256": "b46d162d58461dada132c86c49e466862fb55253f6e462e61aba026d4415f4a8"
+  },
+  "metric_contract": {
+    "warm7_31": "decode7 through decode31 inclusive, exactly25steps",
+    "step": "Consumer input preparation through host token completion; includes upload/layout/bind/capture/submit/wait.",
+    "load": "Hyle weights_load_seconds versus peer model_load_seconds: different documented sub-boundaries.",
+    "prepare": "Hyle shape_prepare_seconds versus peer context_prepare_seconds: different work.",
+    "ttft": "Reported process-entry-to-first-host-token; includes startup and first-step work."
+  },
+  "compilations_during_rotation": 0,
+  "links_during_rotation": 0,
+  "profiler": false,
+  "external_memory_monitor": false,
+  "current_over_peer_median_percent": {
+    "load_seconds": -31.36697747571774,
+    "prepare_seconds": 4498.747350944212,
+    "startup_to_ready_seconds": 9.194098056254818,
+    "ttft_seconds": 7.106694974476646,
+    "prefill_seconds": -28.539860509275293,
+    "prefill_tokens_per_second": 39.93815393122717,
+    "full31_seconds": 0.5890312140069742,
+    "full31_tokens_per_second": -0.5855819535171558,
+    "warm7_31_seconds": -0.5670076234523536,
+    "warm7_31_tokens_per_second": 0.5702409330145874
+  },
+  "current_over_immediate_before_median_percent": {
+    "load_seconds": -0.5357726233257032,
+    "prepare_seconds": 1.4381034898573564,
+    "startup_to_ready_seconds": 0.6799412371952585,
+    "ttft_seconds": 0.32789714384329205,
+    "prefill_seconds": 4.927800011299155,
+    "prefill_tokens_per_second": -4.696372182365871,
+    "full31_seconds": -1.389307244211757,
+    "full31_tokens_per_second": 1.4088809290209614,
+    "warm7_31_seconds": -1.5528120896584952,
+    "warm7_31_tokens_per_second": 1.5773046672218571
+  },
+  "interpretation": "This window places warm decode median0.570% above the peer and complete31-step median0.586% below it. Current versus immediate preceding Hyle is+1.577% warm and+1.409% complete. Three samples per arm do not establish stable speedup, stable overtake or causal attribution.",
+  "limits": [
+    "All9 processes ended successfully and predictions agree on the same fixed128-token prompt plus31 supplied decode inputs. This is not independent model quality acceptance.",
+    "No historical samples or software-profiler durations enter these medians. Earlier windows remain separate.",
+    "Both Hyle versions use the same BF16 consumer contract. The peer intermediate arithmetic differs; matrix precision, load and preparation sub-boundaries remain explicitly documented rather than assumed identical.",
+    "Hyle prepares both shapes before prefill; the peer retains graph maintenance inside step. Startup-to-first-token is needed alongside individual load/prepare numbers.",
+    "Current and preceding Hyle prefill sample ranges overlap; a difference between their three-sample medians does not establish a prefill regression.",
+    "No model memory-peak measurement, OS cache eviction or independent statistical-significance result was added in this rotation.",
+    "Source/math/lifetime regressions and structural copy removal remain in the separately sealed source archive. This archive holds the actual9 timing samples, raw logs, metric parser source, fixed input metadata and exact image identities; executable/model/SDK payloads are excluded."
+  ],
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\gdn-direct-state-comparison-2026-10-20.zip",
+    "bytes": 92432,
+    "sha256": "cefbb352e0b270e6bd6d6ad9cbb66e00cc0593a9aace16f6e29f863242c8aabd"
+  },
+  "payloads": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gdn-direct-state-output\\compare.py",
+      "bytes": 2021,
+      "sha256": "b46d162d58461dada132c86c49e466862fb55253f6e462e61aba026d4415f4a8",
+      "member": "compare.py"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-gpu-comparison\\128-prefill\\decode.ids",
+      "bytes": 145,
+      "sha256": "a54763b6a222361929113352d795b6079bb1695352cf6eb956648d3e2d592d60",
+      "member": "fixed-inputs/decode.ids"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-gpu-comparison\\128-prefill\\fixed-inputs.json",
+      "bytes": 2850,
+      "sha256": "3d6cb3967fbf403b5baf824928d7c24e5a96a273b12ffd890a780693e496a40b",
+      "member": "fixed-inputs/fixed-inputs.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-gpu-comparison\\128-prefill\\inputs\\prompt.ids",
+      "bytes": 631,
+      "sha256": "5e56597bffba5cab7e6b229a15c128998b7093f6cb621f217c46dd95dbacdb8d",
+      "member": "fixed-inputs/prompt.ids"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-gpu-comparison\\128-prefill\\inputs\\weights.tsv",
+      "bytes": 27889,
+      "sha256": "bb8900a6ebe1572f97f02121c83e807ea9ba140d18fe6ee15f20815aa4a73890",
+      "member": "fixed-inputs/weights.tsv"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gdn-direct-state-output\\performance-prepared\\plan.json",
+      "bytes": 18545,
+      "sha256": "ba88b04eee43cd23295560f87bfc0251f68b0c4c19995c83c456c42680d0e737",
+      "member": "performance-prepared/plan.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gdn-direct-state-output\\performance-rotation\\01-baseline.command.json",
+      "bytes": 705,
+      "sha256": "5c55dd9a18adfc30cba755fb8785d33dca227c162b65ffd31eb2388a65486013",
+      "member": "performance-rotation/01-baseline.command.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gdn-direct-state-output\\performance-rotation\\01-baseline.result.json",
+      "bytes": 775,
+      "sha256": "60907e37239584c8a38a5eb94b62375c15d2f476f06743a3f4de746b0e184093",
+      "member": "performance-rotation/01-baseline.result.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gdn-direct-state-output\\performance-rotation\\01-baseline.stderr.log",
+      "bytes": 7836,
+      "sha256": "f1a63bcad45ce4223b2cfffd411c8209a3e060bb60c84e16cf13e31f386a6be8",
+      "member": "performance-rotation/01-baseline.stderr.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gdn-direct-state-output\\performance-rotation\\01-baseline.stdout.log",
+      "bytes": 478,
+      "sha256": "58dd34b7b6029330f4447507901336eb770484a64b7fba87ad9f40be531d8f6c",
+      "member": "performance-rotation/01-baseline.stdout.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gdn-direct-state-output\\performance-rotation\\02-current.command.json",
+      "bytes": 704,
+      "sha256": "edabfc82a5160604fd8d6e7eb9243980700593cb73cf6ca551ebd991be94d29d",
+      "member": "performance-rotation/02-current.command.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gdn-direct-state-output\\performance-rotation\\02-current.result.json",
+      "bytes": 774,
+      "sha256": "4f621bdce3494869ef3c6f26670a8811d931db01792a0d37567ae28085afcf45",
+      "member": "performance-rotation/02-current.result.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gdn-direct-state-output\\performance-rotation\\02-current.stderr.log",
+      "bytes": 7827,
+      "sha256": "fc04d5b2b2b49b7d53b4476abd222230e80cd46582ead9bbb1b9977f262b1727",
+      "member": "performance-rotation/02-current.stderr.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gdn-direct-state-output\\performance-rotation\\02-current.stdout.log",
+      "bytes": 478,
+      "sha256": "58dd34b7b6029330f4447507901336eb770484a64b7fba87ad9f40be531d8f6c",
+      "member": "performance-rotation/02-current.stdout.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gdn-direct-state-output\\performance-rotation\\03-llama-peer-result.json",
+      "bytes": 21657,
+      "sha256": "3985896e66e96efee203788b917701b07429fd8aef86e1fb94d99e116d2cf2c8",
+      "member": "performance-rotation/03-llama-peer-result.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gdn-direct-state-output\\performance-rotation\\03-llama.command.json",
+      "bytes": 704,
+      "sha256": "8c8f14b4f76e6ba3f6b15ac858fde955f7c8a6eb28ef32f6f4af3a9ac9743bf5",
+      "member": "performance-rotation/03-llama.command.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gdn-direct-state-output\\performance-rotation\\03-llama.result.json",
+      "bytes": 773,
+      "sha256": "c52e6c480804808f90acec5665e6fe6003103c4d8e39713135d040f8bc64b6b6",
+      "member": "performance-rotation/03-llama.result.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gdn-direct-state-output\\performance-rotation\\03-llama.stderr.log",
+      "bytes": 60796,
+      "sha256": "d2888c58c38d89a0cf4d1bc46f978d3982b21ea7a2f5dd687a163b924a969f5d",
+      "member": "performance-rotation/03-llama.stderr.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gdn-direct-state-output\\performance-rotation\\03-llama.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "member": "performance-rotation/03-llama.stdout.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gdn-direct-state-output\\performance-rotation\\04-llama-peer-result.json",
+      "bytes": 21679,
+      "sha256": "85bc20a5e0bd844c19c9d9c829647032c94de2be452fe5e0e3044e069374c033",
+      "member": "performance-rotation/04-llama-peer-result.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gdn-direct-state-output\\performance-rotation\\04-llama.command.json",
+      "bytes": 704,
+      "sha256": "484c2375f264b612364db9e5e440f190cdc636ffa503d559f01426f3f8924c11",
+      "member": "performance-rotation/04-llama.command.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gdn-direct-state-output\\performance-rotation\\04-llama.result.json",
+      "bytes": 774,
+      "sha256": "dc841ef55b4b53527e09a10398c8b66392d85d1cb95cb613a09990b8d23e5c75",
+      "member": "performance-rotation/04-llama.result.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gdn-direct-state-output\\performance-rotation\\04-llama.stderr.log",
+      "bytes": 60799,
+      "sha256": "f25ff035dc2bf3847ac01f6a116ddf860bf0d561aebb73fb838598c87419dabc",
+      "member": "performance-rotation/04-llama.stderr.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gdn-direct-state-output\\performance-rotation\\04-llama.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "member": "performance-rotation/04-llama.stdout.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gdn-direct-state-output\\performance-rotation\\05-baseline.command.json",
+      "bytes": 705,
+      "sha256": "b07664747f233f9762fa6e216407dfa03423d1e6446d58704a14915b3df13442",
+      "member": "performance-rotation/05-baseline.command.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gdn-direct-state-output\\performance-rotation\\05-baseline.result.json",
+      "bytes": 776,
+      "sha256": "e68a7e2f81b25b3648b864b5899c01bfdf824d34d03fe914606524fd2c8c8436",
+      "member": "performance-rotation/05-baseline.result.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gdn-direct-state-output\\performance-rotation\\05-baseline.stderr.log",
+      "bytes": 7833,
+      "sha256": "75d4f6b56c40617da39dcbb7c93b74912890413142b68d272c76693c7bfaa134",
+      "member": "performance-rotation/05-baseline.stderr.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gdn-direct-state-output\\performance-rotation\\05-baseline.stdout.log",
+      "bytes": 478,
+      "sha256": "58dd34b7b6029330f4447507901336eb770484a64b7fba87ad9f40be531d8f6c",
+      "member": "performance-rotation/05-baseline.stdout.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gdn-direct-state-output\\performance-rotation\\06-current.command.json",
+      "bytes": 704,
+      "sha256": "9c91330d3f16edfd4bf01935b82f3f2dacb4165bc4e7abb6bc062aa628a4bbed",
+      "member": "performance-rotation/06-current.command.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gdn-direct-state-output\\performance-rotation\\06-current.result.json",
+      "bytes": 774,
+      "sha256": "64b262f5b58150cac5bb9477748292d72a0b269122cc6027012d36773ec4e5f6",
+      "member": "performance-rotation/06-current.result.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gdn-direct-state-output\\performance-rotation\\06-current.stderr.log",
+      "bytes": 7836,
+      "sha256": "aa71a454037336a0b5e57f263659a6b5839021e188cf635bc4d44a1d4b82407e",
+      "member": "performance-rotation/06-current.stderr.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gdn-direct-state-output\\performance-rotation\\06-current.stdout.log",
+      "bytes": 478,
+      "sha256": "58dd34b7b6029330f4447507901336eb770484a64b7fba87ad9f40be531d8f6c",
+      "member": "performance-rotation/06-current.stdout.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gdn-direct-state-output\\performance-rotation\\07-current.command.json",
+      "bytes": 704,
+      "sha256": "068a1c8f1258a76a5a01e08c1dbb4b26946f51fc1cd1074446de3d5fd4872890",
+      "member": "performance-rotation/07-current.command.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gdn-direct-state-output\\performance-rotation\\07-current.result.json",
+      "bytes": 774,
+      "sha256": "713d757b577bba005ed9e623bd58d14c1e3319821add7783563c0e9f025a414c",
+      "member": "performance-rotation/07-current.result.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gdn-direct-state-output\\performance-rotation\\07-current.stderr.log",
+      "bytes": 7833,
+      "sha256": "fc627df10cdf4403d66428af86a01d7872ea274e23af35f87b9d94c9646a031f",
+      "member": "performance-rotation/07-current.stderr.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gdn-direct-state-output\\performance-rotation\\07-current.stdout.log",
+      "bytes": 478,
+      "sha256": "58dd34b7b6029330f4447507901336eb770484a64b7fba87ad9f40be531d8f6c",
+      "member": "performance-rotation/07-current.stdout.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gdn-direct-state-output\\performance-rotation\\08-llama-peer-result.json",
+      "bytes": 21655,
+      "sha256": "b3975bfee195eedc1e4cb1aa9bcd31392ad987ad2f32c3543c4b547ac8bbafcf",
+      "member": "performance-rotation/08-llama-peer-result.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gdn-direct-state-output\\performance-rotation\\08-llama.command.json",
+      "bytes": 704,
+      "sha256": "55d1f41195c0ef6a0f0418463be1362462f1a763f65bd2f6420a0adc49277886",
+      "member": "performance-rotation/08-llama.command.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gdn-direct-state-output\\performance-rotation\\08-llama.result.json",
+      "bytes": 773,
+      "sha256": "66b73771ac284d445aef15622a80c503c6b19fac9ee4bfc9043d112ee43bc4a0",
+      "member": "performance-rotation/08-llama.result.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gdn-direct-state-output\\performance-rotation\\08-llama.stderr.log",
+      "bytes": 60799,
+      "sha256": "f3b80dcd862226724987bee9391dd311bf423063c815ed35ed591f5329f81702",
+      "member": "performance-rotation/08-llama.stderr.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gdn-direct-state-output\\performance-rotation\\08-llama.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "member": "performance-rotation/08-llama.stdout.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gdn-direct-state-output\\performance-rotation\\09-baseline.command.json",
+      "bytes": 705,
+      "sha256": "2917ab68ca276d264cfb9b34e5ad889984ca16067a162bd0fc0cf03279f84dbc",
+      "member": "performance-rotation/09-baseline.command.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gdn-direct-state-output\\performance-rotation\\09-baseline.result.json",
+      "bytes": 775,
+      "sha256": "7055cfd862334f9498ceaa54dd1a1b07a3c834974a7b7f7eb941b69030073683",
+      "member": "performance-rotation/09-baseline.result.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gdn-direct-state-output\\performance-rotation\\09-baseline.stderr.log",
+      "bytes": 7831,
+      "sha256": "985091e8a4e0927793c6ef9ab979feb05a70e9b4cacfe41768dab65962b33d55",
+      "member": "performance-rotation/09-baseline.stderr.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gdn-direct-state-output\\performance-rotation\\09-baseline.stdout.log",
+      "bytes": 478,
+      "sha256": "58dd34b7b6029330f4447507901336eb770484a64b7fba87ad9f40be531d8f6c",
+      "member": "performance-rotation/09-baseline.stdout.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gdn-direct-state-output\\performance-rotation\\inputs.json",
+      "bytes": 5605,
+      "sha256": "5771f2c02e4d84dd48ed138ebbfd4c224f7ee801883b9ea542fd5c36b4683708",
+      "member": "performance-rotation/inputs.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gdn-direct-state-output\\performance-rotation\\live.json",
+      "bytes": 775,
+      "sha256": "7055cfd862334f9498ceaa54dd1a1b07a3c834974a7b7f7eb941b69030073683",
+      "member": "performance-rotation/live.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gdn-direct-state-output\\performance-rotation\\runs.json",
+      "bytes": 36134,
+      "sha256": "95016ca98e71c7613e7ee894f77524f48a6429e3d2fecf56068da232210266f8",
+      "member": "performance-rotation/runs.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gdn-direct-state-output\\performance-rotation\\summary.json",
+      "bytes": 20440,
+      "sha256": "b445299b49c206391f734010b2fcd1fadcc7cc50200d96c87fa253f187c21e53",
+      "member": "performance-rotation/summary.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gdn-direct-state-output\\publish_comparison.py",
+      "bytes": 7213,
+      "sha256": "eff0fe53c96cf60a029014d2134c7ff520b6fecad3f7dc04511e6166e74bbe9d",
+      "member": "publish_comparison.py"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gdn-direct-state-output\\retest-plan.json",
+      "bytes": 572,
+      "sha256": "2c78be30b0f7dd631a110e6d152e973b19e88c6140b7403dfac4d29d3b305ff0",
+      "member": "retest-plan.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-layout-query-reuse\\compare_three.py",
+      "bytes": 8834,
+      "sha256": "250c3dd72b55623566b8644fdb628ccdfa34afd3ad918e8da90932851b1fc4b6",
+      "member": "supporting-source/batch-layout-query-reuse/compare_three.py"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-bf16-dual-projection\\compare_three_dual.py",
+      "bytes": 21486,
+      "sha256": "1f081040901320a12ffded0fb623b8810bcd65e69c0b0ccce6a13aa6bd49a0fa",
+      "member": "supporting-source/cuda-bf16-dual-projection/compare_three_dual.py"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-current-retest\\compare.py",
+      "bytes": 4220,
+      "sha256": "93a994114c06b0d556b7623933c83f99893db52325e3f75d1eaa71edab17adea",
+      "member": "supporting-source/qwen-current-retest/compare.py"
+    }
+  ],
+  "archive_verified": {
+    "CRC": true,
+    "all_payload_SHA256": true
+  }
+}

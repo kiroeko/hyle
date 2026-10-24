@@ -1,0 +1,453 @@
+{
+  "date": "2026-10-22",
+  "status": "mechanisms_passed_full_vulkan_qwen_blocked",
+  "summary": "Vulkan canonical retained backing budget and bounded native Buffer IO passed; same Qwen consumer loads all text weights and compiles finite graph, but first execution preparation exhausts native private memory through full-weight F32 CPY/CONT.",
+  "changes": [
+    {
+      "before": {
+        "path": ".scratch/vulkan-qwen-assembly-20261022/before/docs/developer/current-work.md",
+        "bytes": 43171,
+        "sha256": "8bcea651123ba4d7b17245b6ad1f7e5556c44a75d014a5e58832525c74c924ab"
+      },
+      "current": {
+        "path": "docs/developer/current-work.md",
+        "bytes": 43855,
+        "sha256": "c318aa13c12df22b24abddc47e494a93070ab7c784d6aaed60e34aa56a125127"
+      }
+    },
+    {
+      "before": {
+        "path": ".scratch/vulkan-qwen-assembly-20261022/before/include/hyle/compute/detail/lease_access.h",
+        "bytes": 5891,
+        "sha256": "f5e6837eb1cd939d7cdce4051e2abac62c7ecfb372cebdc5ca22ea0bf2190418"
+      },
+      "current": {
+        "path": "include/hyle/compute/detail/lease_access.h",
+        "bytes": 6794,
+        "sha256": "1b0ab7b4b05faf25d5e6a87e4638504b47f38a54fcbce5ffeb7e50ff2148c8bc"
+      }
+    },
+    {
+      "before": {
+        "path": ".scratch/vulkan-qwen-assembly-20261022/before/src/compute/resource_leases.cc",
+        "bytes": 39295,
+        "sha256": "fe2af6ebebca7e5b2e5b004fe1977703b77076d234716f639153a5425ae59b7a"
+      },
+      "current": {
+        "path": "src/compute/resource_leases.cc",
+        "bytes": 41288,
+        "sha256": "2b1917cecb17180ceef70ae3ad73707064783227d4aa7bb908826125e3d950d9"
+      }
+    },
+    {
+      "before": {
+        "path": ".scratch/vulkan-qwen-assembly-20261022/vulkan/before/src/compute_route_vulkan/vulkan_memory.cc",
+        "bytes": 36956,
+        "sha256": "9a808d8dde9779dc423ddb3e858a92a74a3bbbfc28b4b7bcb610701b9ffd326f"
+      },
+      "current": {
+        "path": "src/compute_route_vulkan/vulkan_memory.cc",
+        "bytes": 48291,
+        "sha256": "9b39651897fdaf8211a390506589de00eb2c3edabf7cb77abc6f912b8a296d84"
+      }
+    },
+    {
+      "before": {
+        "path": ".scratch/vulkan-qwen-assembly-20261022/vulkan/before/src/compute_route_vulkan/vulkan_memory_internal.h",
+        "bytes": 3330,
+        "sha256": "a3f080a783b17a70f4832dfd4462d661f370c551bbe25451324765ca2b035fc0"
+      },
+      "current": {
+        "path": "src/compute_route_vulkan/vulkan_memory_internal.h",
+        "bytes": 4146,
+        "sha256": "8d3615de1ed38f96bbdb1a78c41b963a7c805fbdb6308c0ef8a6ba2210fb1a81"
+      }
+    },
+    {
+      "before": {
+        "path": ".scratch/vulkan-qwen-assembly-20261022/vulkan/before/src/graph_route_vulkan/native_region.cc",
+        "bytes": 52292,
+        "sha256": "3d7135f8a4d9f631a6348562615c0b3aada8f1d188c08443eeda7166c02f5401"
+      },
+      "current": {
+        "path": "src/graph_route_vulkan/native_region.cc",
+        "bytes": 53593,
+        "sha256": "e53b2187f0031b3bc67c5cee2d6a50ab40416894939ee21aa57675684b0887d0"
+      }
+    },
+    {
+      "before": {
+        "path": ".scratch/vulkan-qwen-assembly-20261022/before/tests/compute/retained_lease_budget_test.cc",
+        "bytes": 6413,
+        "sha256": "867314d26cfd7d1141085cf63381e9172a24803a9e6bfbd8ad7fc27231e07abc"
+      },
+      "current": {
+        "path": "tests/compute/retained_lease_budget_test.cc",
+        "bytes": 13935,
+        "sha256": "3d828c876b8de1723e6a8a0fe82f79b170407922788fe4441f9a83bb0f182d2c"
+      }
+    },
+    {
+      "before": {
+        "path": ".scratch/vulkan-qwen-assembly-20261022/before/tests/graph_route_vulkan/retained_output_reuse_consumer.cc",
+        "bytes": 14356,
+        "sha256": "491532e820677331e60dc5a190fdb6289a0dd8d2afc24c831aea9efc5372a2d9"
+      },
+      "current": {
+        "path": "tests/graph_route_vulkan/retained_output_reuse_consumer.cc",
+        "bytes": 30321,
+        "sha256": "e7c1ea9af9f28ffb88ed5244fa5b89ba93accefffd98be95d0434f0b03098ca6"
+      }
+    },
+    {
+      "before": {
+        "path": ".scratch/vulkan-qwen-assembly-20261022/before/tools/qwen35_text/CMakeLists.txt",
+        "bytes": 2396,
+        "sha256": "b95ead856e01c55a843869512180bdd69e6630c9c4fd1debff87478e016c5720"
+      },
+      "current": {
+        "path": "tools/qwen35_text/CMakeLists.txt",
+        "bytes": 2516,
+        "sha256": "376c4589da26c3973c139390065a37baca9ed642ee7d4f93c7b82181f440b6c0"
+      }
+    },
+    {
+      "before": {
+        "path": ".scratch/vulkan-qwen-assembly-20261022/before/tools/qwen35_text/README.md",
+        "bytes": 35533,
+        "sha256": "3470981cda336dadb0333042540f22b0b2a325b15245e117adba2d6b1a52a22e"
+      },
+      "current": {
+        "path": "tools/qwen35_text/README.md",
+        "bytes": 36137,
+        "sha256": "98a96d8ebd4ad1a6cf726fdc9a971b4139aa67ccb50df85adb26cb6ea42df1af"
+      }
+    },
+    {
+      "before": {
+        "path": ".scratch/vulkan-qwen-assembly-20261022/before/tools/qwen35_text/backend.h",
+        "bytes": 7224,
+        "sha256": "7822808811e82164415945816e475592adf2826b986bb3a1ebd33a61c4e77a27"
+      },
+      "current": {
+        "path": "tools/qwen35_text/backend.h",
+        "bytes": 8850,
+        "sha256": "d60fad35497121df81f3f58ddc9f956279476a202cc33e875c6ca96c7b60d828"
+      }
+    }
+  ],
+  "checks": {
+    "common_tests": 8,
+    "vulkan_native_cases": 3,
+    "device": "NVIDIA GeForce RTX 4070",
+    "driver": "617.14",
+    "cpu_log": {
+      "path": ".scratch/vulkan-qwen-assembly-20261022/cpu-run1/run.stdout.log",
+      "bytes": 2080,
+      "sha256": "156a50c00c6119458100150b47f1d4216a2375afb6500b2d0a92f3d34a09567f"
+    },
+    "vulkan_log": {
+      "path": ".scratch/vulkan-qwen-assembly-20261022/test-run3/run.stdout.log",
+      "bytes": 299,
+      "sha256": "43529e2b2d625ce170f015f9de99e83194d21752c8cde41678684998b689aeb6"
+    }
+  },
+  "native_io": {
+    "staging_bytes": 1048576,
+    "cached_original_copy_recording": true,
+    "whole_owning_private_padding": true,
+    "arbitrary_unaligned_partial_ranges": "Unimplemented; destination unchanged in actual regression",
+    "retirement_failure": "sticky local failure; original Runtime new admission disabled if clear cannot prove retirement; original pending drain retained"
+  },
+  "qwen_runs": [
+    {
+      "command": [
+        "C:\\public\\project-hyle\\hyle\\.scratch\\vulkan-qwen-assembly-20261022\\qwen-link2\\qwen.exe",
+        "--inputs",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-native-assembly-20261022\\inputs\\text",
+        "--steps",
+        "4",
+        "--capacity",
+        "64",
+        "--max-sessions",
+        "1",
+        "--active-sequences",
+        "1",
+        "--cache-bytes",
+        "268435456",
+        "--prefix-cache",
+        "off",
+        "--progress",
+        "direct",
+        "--replay",
+        "commands",
+        "--mtp",
+        "off"
+      ],
+      "cwd": "C:\\public\\project-hyle\\hyle",
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\vulkan-qwen-assembly-20261022\\qwen-link2\\qwen.exe",
+        "bytes": 68976640,
+        "sha256": "17648c9ad2d96f0cbead38a1adaf4749bb7f85f8c2ce53ad8c2de9bf264dc828"
+      },
+      "started": 1792640593.1249082,
+      "performance_comparison": false,
+      "pid": 98036,
+      "state": "terminal",
+      "exit": 1,
+      "seconds": 1.473294734954834
+    },
+    {
+      "command": [
+        "C:\\public\\project-hyle\\hyle\\.scratch\\vulkan-qwen-assembly-20261022\\qwen-link3\\qwen.exe",
+        "--inputs",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-native-assembly-20261022\\inputs\\text",
+        "--steps",
+        "4",
+        "--capacity",
+        "64",
+        "--max-sessions",
+        "1",
+        "--active-sequences",
+        "1",
+        "--cache-bytes",
+        "268435456",
+        "--prefix-cache",
+        "off",
+        "--progress",
+        "direct",
+        "--replay",
+        "commands",
+        "--mtp",
+        "off"
+      ],
+      "cwd": "C:\\public\\project-hyle\\hyle",
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\vulkan-qwen-assembly-20261022\\qwen-link3\\qwen.exe",
+        "bytes": 68978176,
+        "sha256": "8a7043b6c9a4611c81d4ce09b81515467309d45316b7498ecc7ea172368b4585"
+      },
+      "started": 1792640944.1105285,
+      "performance_comparison": false,
+      "pid": 86324,
+      "state": "terminal",
+      "exit": 1,
+      "seconds": 5.096943140029907
+    },
+    {
+      "command": [
+        "C:\\public\\project-hyle\\hyle\\.scratch\\vulkan-qwen-assembly-20261022\\diagnostic-link1\\qwen.exe",
+        "--inputs",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-native-assembly-20261022\\inputs\\text",
+        "--steps",
+        "4",
+        "--capacity",
+        "64",
+        "--max-sessions",
+        "1",
+        "--active-sequences",
+        "1",
+        "--cache-bytes",
+        "268435456",
+        "--prefix-cache",
+        "off",
+        "--progress",
+        "direct",
+        "--replay",
+        "commands",
+        "--mtp",
+        "off"
+      ],
+      "cwd": "C:\\public\\project-hyle\\hyle",
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\vulkan-qwen-assembly-20261022\\diagnostic-link1\\qwen.exe",
+        "bytes": 68979712,
+        "sha256": "3c252dde84f026d489c0dd7594a19b8caa7d026c8ecb2257431218f437bfc802"
+      },
+      "started": 1792641502.2922468,
+      "performance_comparison": false,
+      "pid": 27052,
+      "state": "terminal",
+      "exit": 1,
+      "seconds": 3.748668909072876
+    }
+  ],
+  "diagnostic": {
+    "product_logging_changed": false,
+    "successful_regions": 573,
+    "successful_private_storage_bytes": 7760350944,
+    "large_weight_cast_cont_regions": 97,
+    "large_weight_cast_cont_private_bytes": 7616856064,
+    "failed_region": 574,
+    "failed_private_request_bytes": 100663296,
+    "failed_large_nodes": [
+      {
+        "op": "CPY",
+        "type": "F32",
+        "bytes": 50331648
+      },
+      {
+        "op": "CONT",
+        "type": "F32",
+        "bytes": 50331648
+      }
+    ],
+    "loaded_text_tensors": 320,
+    "loaded_requested_bytes": 3763655360,
+    "physical_vram_peak_measured": false
+  },
+  "mtp_remaining": {
+    "qwen_greedy_k1_algorithm": "implemented in existing listed CUDA/Apple cases",
+    "required_closure": [
+      "Vulkan full plain and K1 execution; fix native memory expansion first",
+      "Apple prefix/native cancellation combinations",
+      "cross-shape/batch numeric differences and full task quality"
+    ],
+    "separate_work": [
+      "other selected applicable MTP model/quantization profiles",
+      "performance optimization and complete four-arm comparison"
+    ]
+  },
+  "scope": {
+    "full_qwen_vulkan_pass": false,
+    "vulkan_mtp_run": false,
+    "new_performance_comparison": false,
+    "cmake_configure_run": false,
+    "SDK_rebuilds": 0,
+    "shader_rebuilds": 0,
+    "NVCC": 0,
+    "apple_current_common_change_run": false
+  },
+  "next_action": "Remove unnecessary whole-weight widening/materialization in the original Vulkan cold lowering under the existing precision/ownership contract; no smaller model or relaxed budget/permission substitute.",
+  "cleanup": {
+    "script": {
+      "path": "test.ps1",
+      "bytes": 5360,
+      "sha256": "f8c0f9e522c2b4b65c305e5701fa66562c014f1b2e30a0294aaf6cc0c20ad98b"
+    },
+    "immutable_script": {
+      "path": ".scratch/vulkan-qwen-assembly-20261022/cleanup-test.ps1",
+      "bytes": 5360,
+      "sha256": "f8c0f9e522c2b4b65c305e5701fa66562c014f1b2e30a0294aaf6cc0c20ad98b"
+    },
+    "targets": [
+      {
+        "path": ".scratch/vulkan-qwen-assembly-20261022/cpu-link1/cpu.exe",
+        "bytes": 138909696,
+        "sha256": "5b0243bda4647a1882570d927d2c2fb386dcd2e95d4f791cecd5db27e8fef867"
+      },
+      {
+        "path": ".scratch/vulkan-qwen-assembly-20261022/cpu-link1/cpu.exp",
+        "bytes": 24974,
+        "sha256": "57c84758dafabd7a51767b7df66ce5204691bea1a99f03a3e70188b97761516d"
+      },
+      {
+        "path": ".scratch/vulkan-qwen-assembly-20261022/cpu-link1/cpu.lib",
+        "bytes": 41298,
+        "sha256": "1a72c22d3a6dec39cca5118fd99aa738ff5f4202c029fc8a48afb6c3d20e909d"
+      },
+      {
+        "path": ".scratch/vulkan-qwen-assembly-20261022/cpu-link1/cpu.map",
+        "bytes": 56776430,
+        "sha256": "d3b1be3e7d41bf2b9d6d7ffe3152d19e3f2a72abe81979518db3e7e2b6711874"
+      },
+      {
+        "path": ".scratch/vulkan-qwen-assembly-20261022/test-link2/test.exe",
+        "bytes": 67943936,
+        "sha256": "ed935e1beec22f98aae271f1d6ea5dd629f8d281031a62d7b4dd66f7533ec56e"
+      },
+      {
+        "path": ".scratch/vulkan-qwen-assembly-20261022/test-link2/test.exp",
+        "bytes": 24978,
+        "sha256": "dd8822ec0570f58527b669141a25cdf0d725a5b63f3ce3aaf2917bc6bd7d472f"
+      },
+      {
+        "path": ".scratch/vulkan-qwen-assembly-20261022/test-link2/test.lib",
+        "bytes": 41384,
+        "sha256": "e8b2f56b280c09b2f7a259f184ba9923439c597a6227843d256c824b87a691fa"
+      },
+      {
+        "path": ".scratch/vulkan-qwen-assembly-20261022/test-link2/test.map",
+        "bytes": 30505298,
+        "sha256": "ad8f7423da7e93bc5ec97732ec72d7937b8c77e77cfc763da5388e6148ad8704"
+      },
+      {
+        "path": ".scratch/vulkan-qwen-assembly-20261022/test-link3/test.exp",
+        "bytes": 24978,
+        "sha256": "42f0dc08e8cc8383602394d49f9d79bdbd85f6c7c6557604c3f706295795399e"
+      },
+      {
+        "path": ".scratch/vulkan-qwen-assembly-20261022/test-link3/test.lib",
+        "bytes": 41384,
+        "sha256": "e8b2f56b280c09b2f7a259f184ba9923439c597a6227843d256c824b87a691fa"
+      },
+      {
+        "path": ".scratch/vulkan-qwen-assembly-20261022/test-link3/test.map",
+        "bytes": 30511900,
+        "sha256": "20f21fba10f20fce24b643d01cf759f9e8e08f40f496b581bc0623e703a51c58"
+      },
+      {
+        "path": ".scratch/vulkan-qwen-assembly-20261022/qwen-link2/qwen.exe",
+        "bytes": 68976640,
+        "sha256": "17648c9ad2d96f0cbead38a1adaf4749bb7f85f8c2ce53ad8c2de9bf264dc828"
+      },
+      {
+        "path": ".scratch/vulkan-qwen-assembly-20261022/qwen-link2/qwen.exp",
+        "bytes": 24978,
+        "sha256": "d675764a588801cbda3b10121073b5f5e20b9f6701823983aef8fea41a6e122e"
+      },
+      {
+        "path": ".scratch/vulkan-qwen-assembly-20261022/qwen-link2/qwen.lib",
+        "bytes": 41384,
+        "sha256": "339d3ce297534ebac8825c27a011f2f4f9dfe366c657ebfc45dbbfdc8412a2cb"
+      },
+      {
+        "path": ".scratch/vulkan-qwen-assembly-20261022/qwen-link2/qwen.map",
+        "bytes": 32542520,
+        "sha256": "528cfd038c48a49ef45b4beeef9ce9760a3e280d96b8c4a9c184fe84acb1970b"
+      },
+      {
+        "path": ".scratch/vulkan-qwen-assembly-20261022/qwen-link3/qwen.exp",
+        "bytes": 24978,
+        "sha256": "e3c3e757efed6fb7d1b3d18bd670674ba5d4dc684cb53d8caaec1e6856802685"
+      },
+      {
+        "path": ".scratch/vulkan-qwen-assembly-20261022/qwen-link3/qwen.lib",
+        "bytes": 41384,
+        "sha256": "339d3ce297534ebac8825c27a011f2f4f9dfe366c657ebfc45dbbfdc8412a2cb"
+      },
+      {
+        "path": ".scratch/vulkan-qwen-assembly-20261022/qwen-link3/qwen.map",
+        "bytes": 32544300,
+        "sha256": "f6320eb871952857e17f53e8ea248290a65884ec3763b933f6d7f80408c4852c"
+      },
+      {
+        "path": ".scratch/vulkan-qwen-assembly-20261022/diagnostic-link1/qwen.exe",
+        "bytes": 68979712,
+        "sha256": "3c252dde84f026d489c0dd7594a19b8caa7d026c8ecb2257431218f437bfc802"
+      },
+      {
+        "path": ".scratch/vulkan-qwen-assembly-20261022/diagnostic-link1/qwen.exp",
+        "bytes": 24984,
+        "sha256": "cffba8f3ae14ad20f3d494fd9edfbdd14f45f6ee7377bceb05f2749df2865dff"
+      },
+      {
+        "path": ".scratch/vulkan-qwen-assembly-20261022/diagnostic-link1/qwen.lib",
+        "bytes": 41384,
+        "sha256": "339d3ce297534ebac8825c27a011f2f4f9dfe366c657ebfc45dbbfdc8412a2cb"
+      },
+      {
+        "path": ".scratch/vulkan-qwen-assembly-20261022/diagnostic-link1/qwen.map",
+        "bytes": 32543435,
+        "sha256": "c80f08406e4d3e45c51890f41ce598f6aa2ce387825f893a3034dbac552f7710"
+      }
+    ],
+    "logical_file_bytes": 560631955
+  },
+  "evidence_zip": {
+    "path": "docs/evidence/correctness/qwen-vulkan-assembly-2026-10-22-logs.zip",
+    "bytes": 794972,
+    "sha256": "6ec7a7e352b7ee97a016e13035269b8c4c783d3cc1a329c6da5f96e5128e935c"
+  },
+  "archive_files": 225
+}

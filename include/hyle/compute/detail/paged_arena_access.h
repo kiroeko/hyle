@@ -30,10 +30,47 @@ struct PendingArenaPage final {
   std::uint64_t generation=0;
   std::size_t new_offset=0,new_bytes=0;
 };
+// Original exclusive page, inspected only while its owning reservation is
+// idle. The capacity view below is never mutable; a writer receives only this
+// independently leased page range. No readiness or source ordering is implied.
+struct ArenaPageWrite final {
+  std::uint32_t page=0, initialized_rows=0;
+  const void *root=nullptr;
+  std::uint64_t generation=0;
+  mem::BufferView storage;
+};
+// Exact opt-in suffix authority. Its old prefix remains readonly at the same
+// original allocation generation; the append epoch is independently retired.
+struct ArenaPageAppend final {
+  std::uint32_t page=0,initialized_rows=0,reserved_rows=0;
+  const void*root=nullptr;
+  std::uint64_t generation=0,epoch=0;
+  mem::BufferView storage;
+  const AppendLease*permission=nullptr;
+};
 // Trusted batch adapters only. Full span is an addressable capacity, not read
 // permission for unused pages. Retain/admit every returned page guard, and only
 // run a qualified operation whose actual reads follow this immutable layout.
 struct PagedArenaAccess final {
+  HYLE_COMPUTE_BATCH_API static Result<ConstTensorView> tensor(const PagedArena&) noexcept;
+  HYLE_COMPUTE_BATCH_API static Result<ArenaPageWrite> writer(
+      const PagedArena&,const PagedPageWriter&) noexcept;
+  HYLE_COMPUTE_BATCH_API static Result<ArenaPageAppend> appender(
+      const PagedArena&,const PagedPageAppender&) noexcept;
+  // After exact cold validation and move into the transaction's stable owner.
+  // Never retain the pointer from a pre-move facts record.
+  static const AppendLease&permission(const PagedPageAppender&p)noexcept{return p.appender_;}
+  HYLE_COMPUTE_BATCH_API static Result<std::uint32_t> page(
+      const PagedArena&,const ReadLease&) noexcept;
+  HYLE_COMPUTE_BATCH_API static bool owns(const PagedArena&,
+      const PagedArenaRead&) noexcept;
+  HYLE_COMPUTE_BATCH_API static BatchSchema schema(const PagedArena&) noexcept;
+  HYLE_COMPUTE_BATCH_API static BatchCacheRole role(const PagedArena&) noexcept;
+  HYLE_COMPUTE_BATCH_API static Status validate_storage(const PagedRowCachePendingRead&,RowCacheEncoding) noexcept;
+  static const PagedArenaPendingRead& owner(const PagedRowCachePendingRead&r)noexcept{return r.owner_;}
+  HYLE_COMPUTE_BATCH_API static Result<ConstTensorView> tensor(const PagedRowCacheRead&) noexcept;
+  HYLE_COMPUTE_BATCH_API static Status validate_storage(const PagedRowCacheRead&,RowCacheEncoding) noexcept;
+  static std::span<const ReadLease> pages(const PagedRowCacheRead&r) noexcept{return pages(r.owner_);}
   HYLE_COMPUTE_BATCH_API static Result<ConstTensorView> tensor(const PagedArenaRead&) noexcept;
   HYLE_COMPUTE_BATCH_API static Status validate_storage(const PagedArenaRead&,const CacheStorage&) noexcept;
   HYLE_COMPUTE_BATCH_API static std::span<const ReadLease> pages(const PagedArenaRead&) noexcept;

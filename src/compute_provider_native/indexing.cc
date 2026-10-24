@@ -271,6 +271,17 @@ submit_gather(const NativePlan &plan,
 
 } // namespace
 
+bool inspect_indexing_access(const NativePlan &plan,
+                             detail::OperationPreparedAccess &access) noexcept {
+  access = {};
+  if (plan.submit_route != &submit_gather || plan.axis != 0 ||
+      plan.index_bounds != IndexBoundsPolicy::kChecked)
+    return false;
+  // The selected route validates indices, then copies only the selected rows.
+  access.projected_input = 0;
+  return true;
+}
+
 Status prepare_indexing(Operation operation,
                         std::span<const TensorDesc> inputs,
                         std::span<const TensorDesc> outputs,

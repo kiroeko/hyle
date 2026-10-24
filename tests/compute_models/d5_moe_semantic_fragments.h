@@ -316,12 +316,14 @@ inline std::vector<std::vector<float>> hyper_reference(
           std::move(expanded_values)};
 }
 
-inline Fragment hyper_connection(const HyperProfile &profile) {
-  Fragment f{.profile = profile.profile, .region = 0x0c0601};
-  const auto hidden = profile.hidden;
-  auto mixes = f.input(dense({1, 24}));
-  auto residual = f.input(dense({1, 4, hidden}));
-  auto branch = f.input(dense({1, hidden}));
+struct HyperConnectionBoundary final {
+  ValueId combine, collapsed, post;
+};
+
+// Prepare the real branch input before composing attention/FFN. A supplied
+// independent branch remains useful for the isolated primitive consumer below.
+inline HyperConnectionBoundary hyper_connection_prepare(
+    Fragment &f, ValueId mixes, ValueId residual) {
   const std::vector<float> scales{0.125F, 0.25F, 0.5F};
   std::vector<float> bases(24);
   for (int i = 0; i < 24; ++i)
@@ -350,9 +352,23 @@ inline Fragment hyper_connection(const HyperProfile &profile) {
   auto pre = gate(0, 1.0F, 1.0e-6F);
   auto post = gate(4, 2.0F, 0.0F);
   auto collapsed = f.one(c::model_ops::hyper_connection_pre(), {residual, pre});
+  return {comb, collapsed, post};
+}
+
+inline Fragment hyper_connection(const HyperProfile &profile) {
+  Fragment f{.profile = profile.profile, .region = 0x0c0601};
+  const auto hidden = profile.hidden;
+  auto mixes = f.input(dense({1, 24}));
+  auto residual = f.input(dense({1, 4, hidden}));
+  auto branch = f.input(dense({1, hidden}));
+  const auto prepared = hyper_connection_prepare(f, mixes, residual);
   auto expanded = f.one(c::model_ops::hyper_connection_post(),
-                        {branch, residual, post, comb});
-  f.outputs = {comb, collapsed, expanded};
+                        {branch, residual, prepared.post, prepared.combine});
+  f.outputs = {prepared.combine, prepared.collapsed, expanded};
+  const std::vector<float> scales{0.125F, 0.25F, 0.5F};
+  std::vector<float> bases(24);
+  for (int i = 0; i < 24; ++i)
+    bases[i] = float(i % 7 - 3) / 8.0F;
   for (int seed : {3, 19}) {
     auto x = d5_gguf_test::values(4, hidden, seed);
     auto branch_values = d5_gguf_test::activation(hidden, seed + 5);

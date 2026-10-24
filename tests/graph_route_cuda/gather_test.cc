@@ -122,8 +122,20 @@ TEST(CudaDefaultGraph,
                 .value();
         auto direct_gather_slot =
             gather_program.create_invocation(gather_workspace.view()).value();
-        auto direct_norm_slot = norm_program.create_invocation().value();
-        auto direct_add_slot = add_program.create_invocation().value();
+        const auto norm_need = norm_program.workspace_requirement();
+        auto norm_workspace = norm_need.size == 0
+            ? mem::Buffer{}
+            : mem::Buffer::create(resource.ref(), norm_need.size,
+                                  norm_need.alignment).value();
+        auto direct_norm_slot =
+            norm_program.create_invocation(norm_workspace.view()).value();
+        const auto add_need = add_program.workspace_requirement();
+        auto add_workspace = add_need.size == 0
+            ? mem::Buffer{}
+            : mem::Buffer::create(resource.ref(), add_need.size,
+                                  add_need.alignment).value();
+        auto direct_add_slot =
+            add_program.create_invocation(add_workspace.view()).value();
         Tensor direct_gather(output_desc, resource.ref()),
             direct_norm(output_desc, resource.ref()),
             direct_output(output_desc, resource.ref());

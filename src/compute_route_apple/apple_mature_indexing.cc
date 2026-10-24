@@ -9,6 +9,7 @@
 #include <mlx/ops.h>
 
 #include "apple_checks.h"
+#include "hyle/compute/model_ops.h"
 
 namespace hyle::compute::apple::detail {
 namespace mx = mlx::core;
@@ -19,14 +20,16 @@ int native_axis(std::int32_t axis, const mx::array &input) {
 
 Result<std::vector<mx::array>> gather(const Gather &operation,
                                     std::span<const mx::array> inputs,
-                                    mx::Stream stream) {
+                                    mx::Stream stream, bool elements = false) {
   const auto axis = native_axis(operation.axis, inputs[0]);
   const auto extent = inputs[0].shape(axis);
   if (extent == 0)
     return std::unexpected(
         Status::OutOfRange("Apple Gather cannot index an empty source axis"));
   if (operation.bounds == IndexBoundsPolicy::kUnchecked)
-    return std::vector{mx::take(inputs[0], inputs[1], axis, stream)};
+    return std::vector{elements
+        ? mx::take_along_axis(inputs[0], inputs[1], axis, stream)
+        : mx::take(inputs[0], inputs[1], axis, stream)};
 
   const auto index_type = inputs[1].dtype();
   auto invalid = mx::logical_or(
@@ -36,7 +39,8 @@ Result<std::vector<mx::array>> gather(const Gather &operation,
   // Native take must never see an invalid index, even though the checked
   // invocation will fail. Only its status scalar reaches the host.
   auto safe = mx::where(invalid, mx::array(0, index_type), inputs[1], stream);
-  auto output = mx::take(inputs[0], safe, axis, stream);
+  auto output = elements ? mx::take_along_axis(inputs[0], safe, axis, stream)
+                         : mx::take(inputs[0], safe, axis, stream);
   auto status = mx::where(mx::any(invalid, stream), mx::array(kIndexOutOfRange),
                           mx::array(0), stream);
   HYLE_ASSIGN_OR_RETURN(
@@ -264,6 +268,7 @@ Result<std::vector<mx::array>> lower_mature_indexing(
     return outputs;
   }
   if (operation.kind() == OperationKind::kGather ||
+      operation.custom_as<model_ops::GatherElements>() ||
       operation.kind() == OperationKind::kScatter ||
       operation.kind() == OperationKind::kScan) {
     constexpr auto limit =
@@ -276,6 +281,7 @@ Result<std::vector<mx::array>> lower_mature_indexing(
       count *= static_cast<std::size_t>(dimension);
     }
     if ((operation.kind() == OperationKind::kGather ||
+         operation.custom_as<model_ops::GatherElements>() ||
          operation.kind() == OperationKind::kScatter) && inputs[1].size() > limit)
       return std::unexpected(Status::OutOfRange(
           "Apple indices exceed the admitted I32 element range"));
@@ -285,6 +291,13 @@ Result<std::vector<mx::array>> lower_mature_indexing(
   }
   if (const auto *value = operation.get_if<Gather>())
     return gather(*value, inputs, stream);
+  if (const auto value = operation.custom_as<model_ops::GatherElements>()) {
+    const auto axis = native_axis(value->axis, inputs[0]);
+    if (inputs[0].ndim() != 2 || axis != 1)
+      return std::unexpected(Status::Unimplemented(
+          "Apple GatherElements requires rank-two last-axis data"));
+    return gather(Gather{value->axis, value->bounds}, inputs, stream, true);
+  }
   if (const auto *value = operation.get_if<Scan>())
     return scan(*value, inputs[0], stream);
   if (const auto *value = operation.get_if<Scatter>())

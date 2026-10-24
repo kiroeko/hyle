@@ -1,4 +1,5 @@
 #include "hyle/graph/vulkan.h"
+#include "vulkan_source.h"
 #include "../graph/native_analysis.h"
 
 #include "hyle/obs/trace.h"
@@ -10,11 +11,36 @@
 #include <utility>
 
 #include "hyle/compute/detail/vulkan_plan.h"
-#include "hyle/compute/model_ops.h"
-#include "hyle/compute/sampling_ops.h"
+#include "../compute_route_vulkan/vulkan_carrier.h"
 
 namespace hyle::graph::vulkan {
 namespace cv = compute::vulkan;
+
+cv::detail::ColdCustomResolver detail::custom_resolver(const CustomLowering &lower) noexcept {
+  if (!lower) return {};
+  return {const_cast<CustomLowering *>(&lower),
+      [](void *opaque, const compute::Operation &operation,
+         std::span<const compute::TensorDesc> inputs,
+         std::span<const compute::TensorDesc> outputs) noexcept
+          -> Result<cv::detail::ColdCustomDispatch> {
+        if (outputs.size() != 1)
+          return std::unexpected(Status::Unimplemented(
+              "Vulkan public custom lowering requires one output"));
+        const auto &callback = *static_cast<const CustomLowering *>(opaque);
+        try {
+          HYLE_ASSIGN_OR_RETURN(auto lowered, callback(operation, inputs, outputs[0]));
+          return cv::detail::ColdCustomDispatch{
+              std::move(lowered.kernel), lowered.groups, std::move(lowered.push_constants)};
+        } catch (const std::bad_alloc &) {
+          return std::unexpected(Status::ResourceExhausted(
+              "Vulkan custom preparation allocation failed"));
+        } catch (const std::exception &error) {
+          return std::unexpected(Status::Internal(error.what()));
+        } catch (...) {
+          return std::unexpected(Status::Internal("Vulkan custom preparation failed"));
+        }
+      }};
+}
 
 static Result<cv::Program> compile_impl(const cv::Context &context,
                                         const Graph &graph,
@@ -111,16 +137,10 @@ static Result<cv::Program> compile_impl(const cv::Context &context,
       }
       if (!needed)
         continue;
-      if ((operation.kind() == compute::OperationKind::kCustom &&
-           output_count != 1 &&
-           !(output_count == 2 &&
-             (operation.custom_as<compute::model_ops::RecurrentGatedDeltaNet>() ||
-              operation.custom_as<compute::sampling_ops::Categorical>()))) ||
-          (traits.alias == compute::AliasPolicy::kMustAliasInput0 &&
-           operation.kind() != compute::OperationKind::kView))
+      if (traits.alias == compute::AliasPolicy::kMustAliasInput0 &&
+          operation.kind() != compute::OperationKind::kView)
         return std::unexpected(
-            Status::Unimplemented("Vulkan Graph requires supported alias "
-                                  "semantics and qualified custom outputs"));
+            Status::Unimplemented("Vulkan Graph requires supported alias semantics"));
       cv::detail::PlanStep step;
       step.operation = operation;
       step.control_boundary = analysis.boundary[index - 1] != 0;
@@ -141,46 +161,6 @@ static Result<cv::Program> compile_impl(const cv::Context &context,
       auto &node = nodes[index];
       if (!node)
         continue;
-      const bool mature_custom =
-          node->operation.custom_as<compute::sampling_ops::RandomBits>() ||
-          node->operation.custom_as<compute::sampling_ops::Categorical>() ||
-          node->operation.custom_as<compute::model_ops::CacheEncode>() ||
-          node->operation.custom_as<compute::model_ops::Float8WeightDecode>() ||
-          node->operation.custom_as<compute::model_ops::Float8BlockLinear>() ||
-          node->operation.custom_as<compute::model_ops::GroupedFloat8Linear>() ||
-          node->operation.custom_as<compute::model_ops::GroupedFloat4Linear>() ||
-          node->operation.custom_as<compute::model_ops::BlockQuantizationRoundtrip>() ||
-          node->operation.custom_as<compute::model_ops::MlxQuantized>() ||
-          node->operation.custom_as<compute::model_ops::ArtifactWeightDecode>() ||
-          node->operation.custom_as<compute::model_ops::CausalConv1d>() ||
-          node->operation.custom_as<compute::model_ops::RecurrentGatedDeltaNet>() ||
-          node->operation.custom_as<compute::model_ops::Clamp>() ||
-          node->operation.custom_as<compute::model_ops::SinkAttention>() ||
-          node->operation.custom_as<compute::model_ops::GroupedMatMul>() ||
-          node->operation.custom_as<compute::model_ops::BFloatLinearF32>() ||
-          node->operation
-              .custom_as<compute::model_ops::HyperConnectionCombine>() ||
-          node->operation.custom_as<compute::model_ops::HyperConnectionPre>() ||
-          node->operation
-              .custom_as<compute::model_ops::HyperConnectionPost>() ||
-          node->operation.custom_as<compute::model_ops::LightningIndexer>();
-      if (node->operation.kind() == compute::OperationKind::kCustom &&
-          !mature_custom) {
-        if (!options.custom)
-          return std::unexpected(Status::Unimplemented(
-              "Vulkan custom schema needs a cold native lowering"));
-        std::vector<compute::TensorDesc> descriptions;
-        descriptions.reserve(node->inputs.size());
-        for (const auto input : node->inputs)
-          descriptions.push_back(plan.values[input].description);
-        HYLE_ASSIGN_OR_RETURN(
-            auto native,
-            options.custom(context, node->operation, descriptions,
-                           plan.values[node->outputs[0]].description));
-        node->custom = std::move(native.kernel);
-        node->groups = native.groups;
-        node->push_constants = std::move(native.push_constants);
-      }
       if (report != nullptr)
         report->nodes.push_back(CompileNodeReport{
             .ordinal = static_cast<std::uint32_t>(index),
@@ -191,7 +171,7 @@ static Result<cv::Program> compile_impl(const cv::Context &context,
     }
     cv::detail::PlanFacts facts;
     auto program = cv::detail::prepare_plan(
-        context, plan, report != nullptr ? &facts : nullptr);
+        context, plan, report != nullptr ? &facts : nullptr, detail::custom_resolver(options.custom));
     if (!program)
       return program;
     if (report != nullptr) {

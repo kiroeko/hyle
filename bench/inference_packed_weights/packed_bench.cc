@@ -77,7 +77,7 @@ struct Harness {
       take(c::TensorDesc::dense(c::DataType::kFloat32,std::array<std::int64_t,2>{n,k/group}))};
     const std::array bytes{std::as_bytes(std::span(d.x)),std::as_bytes(std::span(d.words)),std::as_bytes(std::span(d.scales)),std::as_bytes(std::span(d.bias))};
     for(unsigned i=0;i<4;++i){buffers[i]=take(hyle::mem::Buffer::create(memory.ref(),take(descriptions[i].required_bytes()),256));check(buffers[i].view().write(bytes[i]));views[i]=take(c::ConstTensorView::create(descriptions[i],buffers[i].view()));}
-    const auto op=c::model_ops::mlx_quantized_matmul(c::model_ops::MlxWeightFormat::kAffine4,group);
+    const auto op=c::model_ops::mlx_quantized_matmul(c::model_ops::MlxWeightFormat::kAffine,4,group);
     std::array<c::TensorDesc,1> desc;check(c::infer_output_descriptions(op,descriptions,desc));
     program=take(c::prepare(context,op,descriptions,desc,memory.ref()));invocation=take(program.create_invocation());
     output=take(hyle::mem::Buffer::create(memory.ref(),take(desc[0].required_bytes()),256));outputs[0]=take(c::TensorView::create(desc[0],output.view()));

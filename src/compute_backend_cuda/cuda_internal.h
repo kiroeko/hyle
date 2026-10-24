@@ -17,6 +17,10 @@
 #include "hyle/util/spin_lock.h"
 #include "native_context.h"
 
+namespace hyle::compute::detail {
+struct PagedAppendBackendVTable;
+}
+
 namespace hyle::compute::cuda::detail {
 
 inline constexpr std::size_t kCudaAllocationAlignment = 256;
@@ -29,6 +33,7 @@ struct QueueState;
 struct EventSlot;
 struct CapturedCommandsState;
 const compute::detail::CopyBackendVTable *copy_batch_interface() noexcept;
+const compute::detail::PagedAppendBackendVTable *paged_append_interface() noexcept;
 
 struct StatusReference final {
   StatusReference *next = nullptr;
@@ -46,6 +51,7 @@ enum class FenceKind : unsigned char {
   kReserved = 0,
   kEvent,
   kStreamFallback,
+  kNativeRetirementPending,
   kRetired,
 };
 
@@ -74,6 +80,7 @@ struct EventSlot final {
   EventSlot *next = nullptr;
   FenceKind fence = FenceKind::kReserved;
   compute::detail::CompletionLifetime lifetime{};
+  NativeRetirement native_retirement{};
   Status terminal_hint{};
   std::atomic<std::size_t> references{0};
   unsigned *device_status = nullptr;
@@ -123,6 +130,8 @@ struct CapturedCommandsState final : util::RefCounted<CapturedCommandsState> {
   mem::AllocatorRef allocator{};
   unsigned *device_status = nullptr;
   std::atomic<bool> status_busy{false};
+  // A retired executable kept only as update storage can never launch again.
+  bool rebuild_only = false;
 };
 
 struct QueueState final : util::RefCounted<QueueState> {

@@ -1,0 +1,361 @@
+{
+  "date": "2026-10-20",
+  "status": "implemented_and_focused_correctness_passed_performance_unverified",
+  "scope": "CPU ordinary same-Graph compressed-tensors symmetric/asymmetric INT4 Decode[/Cast]/exact transpose/MatMul packed contraction plus shared CUDA/CPU cold discovery. No selected artifact payload, full model, throughput or whole-platform acceptance.",
+  "contract": "Original low-first I32 codes along K, asymmetric I32 zeros packed along N, complete natural groups and F16/BF16/F32 scales. Keep scale-dtype subtraction/product, decode RNE, operand RNE, F32 accumulation and declared output RNE. One optional weight Cast before or after exact transpose. Closed intermediate data/control proof unchanged.",
+  "architecture": {
+    "common": "One private format/rounding descriptor, one existing reader/control discovery and original prepared port adapter. CPU and CUDA bind their actual provider vtable; CPU preserves Graph default scope/executor/thread options and original Context. No executor/core/NativePlan layout or public API fields changed.",
+    "removed": [
+      "Old CUDA-only ct_packed_linear.h owner",
+      "Old CUDA-only mapped_native_region.h owner"
+    ],
+    "cpu": "27 cold type route combinations;64-element A/W stack tiles, original ParallelExecutor and host mapping/Completion lifecycle. No workspace, dense W bank or hot provider heap allocation.",
+    "precision": "F32 source product materialized before dot to prevent accidental multiply-add contraction across the public boundary. Backend dot reduction may differ; exact one-hot witnesses isolate operand rounding.",
+    "facade": "Private CPU assembly accepts the decorated original native provider only for Graph. Ordinary Direct facade and existing oneDNN/ggml/ATen/native order and preferences remain unchanged. Both affected private-function symbol owners were recompiled."
+  },
+  "validation": {
+    "cpu": {
+      "tests": 9,
+      "failures": 0,
+      "skip": 0,
+      "xml": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cross-platform\\cpu-green\\tests.xml",
+        "bytes": 3807,
+        "sha256": "8ba32364d5d5f5f91207a633049f9d46be7b247e98436cc02bb345c9a4e8c68a"
+      },
+      "cases": [
+        [
+          "CpuNvfp4ReferenceGraph",
+          "OriginalPackedBanksAndBfloatBoundariesSurviveSlotsAndUpdates"
+        ],
+        [
+          "CpuNvfp4ReferenceGraph",
+          "RuntimeDomainFailuresRecoverWithoutChangingTheReferenceTree"
+        ],
+        [
+          "CpuCtPackedLinear",
+          "PublicChainsKeepSourceRoundsAndTypedCastWitnesses"
+        ],
+        [
+          "CpuCtPackedLinear",
+          "CapturedDynamicInputsRebindAcrossOwnedSlotsAndRetainResults"
+        ],
+        [
+          "CpuCtPackedLinear",
+          "PublishedViewAndControlEscapesExecuteTheOriginalDecomposition"
+        ],
+        [
+          "CpuCtPackedLinear",
+          "OriginalPackedConstantsDoNotRetainOrWorkspaceADenseWeightBank"
+        ],
+        [
+          "NativeCtPackedLinear",
+          "SourceDecodeAndOperandRoundsWithPackedOutputAxisZeroTail"
+        ],
+        [
+          "NativeCtPackedLinear",
+          "DynamicInputsUseIndependentSlotsAndRejectReadWriteAlias"
+        ],
+        [
+          "NativeCtPackedLinear",
+          "RealQ27GeometryPreparesWithoutADenseWeightWorkspace"
+        ]
+      ],
+      "properties": [
+        {
+          "case": "OriginalPackedBanksAndBfloatBoundariesSurviveSlotsAndUpdates",
+          "values": {
+            "actual_submissions": "8"
+          }
+        },
+        {
+          "case": "RuntimeDomainFailuresRecoverWithoutChangingTheReferenceTree",
+          "values": {
+            "successful_submissions": "25",
+            "failed_completions": "18"
+          }
+        },
+        {
+          "case": "OriginalPackedConstantsDoNotRetainOrWorkspaceADenseWeightBank",
+          "values": {
+            "compiled_known_bytes": "376",
+            "workspace_bytes": "0",
+            "excluded_dense_f32_bank_bytes": "1052672"
+          }
+        }
+      ]
+    },
+    "cuda": {
+      "tests": 8,
+      "failures": 0,
+      "skip": 0,
+      "xml": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cross-platform\\cuda-final\\tests.xml",
+        "bytes": 3882,
+        "sha256": "1ece9775f4818fa7fd65e730df9c036594fe87eea17ff399f0dbd7cdc3202e81"
+      },
+      "cases": [
+        [
+          "CudaCtPackedLinear",
+          "PublicChainsKeepSourceRoundsAndTypedCastWitnesses"
+        ],
+        [
+          "CudaCtPackedLinear",
+          "CapturedDynamicInputsRebindAcrossOwnedSlotsAndRetainResults"
+        ],
+        [
+          "CudaCtPackedLinear",
+          "PublishedViewAndControlEscapesExecuteTheOriginalDecomposition"
+        ],
+        [
+          "CudaCtPackedLinear",
+          "OriginalPackedConstantsDoNotRetainOrWorkspaceADenseWeightBank"
+        ],
+        [
+          "CudaMlxMoeGraph",
+          "MixedBitMoeKeepsTypedMetadataAndIndependentSlots"
+        ],
+        [
+          "CudaMlxSharedActivation",
+          "OriginalPayloadStridesAndCheckedIdsSurviveReuse"
+        ],
+        [
+          "CudaNvfp4ReferenceGraph",
+          "OriginalPackedBanksAndBfloatBoundariesSurviveSlotsAndUpdates"
+        ],
+        [
+          "CudaNvfp4ReferenceGraph",
+          "RuntimeDomainFailuresRecoverWithoutChangingTheReferenceTree"
+        ]
+      ],
+      "properties": [
+        {
+          "case": "OriginalPackedConstantsDoNotRetainOrWorkspaceADenseWeightBank",
+          "values": {
+            "compiled_known_bytes": "1560",
+            "workspace_bytes": "0",
+            "excluded_dense_f32_bank_bytes": "1052672"
+          }
+        },
+        {
+          "case": "MixedBitMoeKeepsTypedMetadataAndIndependentSlots",
+          "values": {
+            "moe_output_ownership_E3": "0",
+            "moe_output_ownership_E17": "0"
+          }
+        },
+        {
+          "case": "OriginalPackedBanksAndBfloatBoundariesSurviveSlotsAndUpdates",
+          "values": {
+            "actual_submissions": "8"
+          }
+        },
+        {
+          "case": "RuntimeDomainFailuresRecoverWithoutChangingTheReferenceTree",
+          "values": {
+            "successful_submissions": "25",
+            "failed_completions": "18"
+          }
+        }
+      ]
+    }
+  },
+  "memory": {
+    "synthetic": "N257/K1024 borrowed original packed constants: CPU report known compiled owned bytes376 and caller workspace0, versus a hypothetical decoded F32 bank1052672B (BF16526336B). Borrowed original bank/backing, Graph metadata, outputs and system/opaque allocations are separate. This is not measured whole-process/whole-model peak memory.",
+    "true_geometry": "Direct cold preparation of real Q27 gate N17408/K5120 passed with0workspace; no large payload was allocated or executed.",
+    "artifact_research": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cross-platform\\research.json",
+      "bytes": 15943,
+      "sha256": "cce9e10b8ded1810ce6637c209fc707542d062747ce4e80f048a749cdb8f519d"
+    },
+    "capacity_scope": "Header-derived399-role dense BF16 sum45.254GiB vs original CT carriers13.081GiB is a hypothetical full-bank capacity comparison, not observed resident memory or total inference requirement."
+  },
+  "failures": {
+    "cpu_red": "Same final Graph test object with new facade/shared discovery but old CPU native implementation: no packed region selected; old opaque-storage report remained unknown. Not a measured old dense-memory byte count.",
+    "source_review": "Initial extraction retained a duplicated CUDA original() function; independently detected and removed before the7 product compiles. No compile failure hidden.",
+    "native_test": "First strict Direct test CXX rejected implicit double-to-float narrowing. Test-only explicit cast corrected, later dynamic A witness changed to actual varying data; both earlier observations retained.",
+    "duplicate_test_closure": "Initial CUDA integration appended the new shared test owner while retaining the old owner, producing12 registered tests with duplicate CT names. Replaced the exact old test owner, relinked and ran final8 unique tests; initial run is retained and is not final coverage."
+  },
+  "build": {
+    "CXX_attempts": 14,
+    "CXX_successful": 13,
+    "CXX_failed": 1,
+    "product_CXX_successful": 9,
+    "test_CXX_successful": 4,
+    "NVCC": 0,
+    "SDK": 0,
+    "links": 6,
+    "model_runs": 0,
+    "profiler_runs": 0,
+    "notes": "Root7 product CXX + native2 product/3 test attempts + shared2 test CXX. All six actual links succeeded; final acceptance is CPU9/CUDA8 only, not cumulative repeated case counts."
+  },
+  "independent_reviews": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-cross-platform\\shared-review.json",
+      "bytes": 4834,
+      "sha256": "ab4cb07b034ba1d6f0870dc710917ff5c5add27f8bfb2a3fbbbc37fc00346aa4"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-linear-cpu\\tests\\final-source-freeze.json",
+      "bytes": 7262,
+      "sha256": "67fadb2c93b4f9f91cb9d06e31d62a2344a1c70d93682e1f8aea92264e8678d6"
+    }
+  ],
+  "source_freeze": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_packed_shared\\ct_packed_linear.h",
+      "bytes": 2459,
+      "sha256": "8c18cb714ffa23e629f16b163b7dafabc3ece8947a740b6e98154cac9056cdfe"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\ct_packed_region.h",
+      "bytes": 17224,
+      "sha256": "ba26dfebf33c9c84bef6136e89423fcbf32fab5f566492895d8dc1b2b778bf36"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\mapped_native_region.h",
+      "bytes": 7908,
+      "sha256": "b881145fa09ce17f0d68779ee674dac393b05bf6cab4a6a83363072a48d46e6e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_native\\ct_packed.cc",
+      "bytes": 8700,
+      "sha256": "79d85696fafec5d7b0f25fe795bfcf4ff9ee0b32334cadd151656ef660c3f906"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_native\\native_provider.cc",
+      "bytes": 38320,
+      "sha256": "86974a9feba6ccdf7b3684c25cbb357d1e48a95e7173a0c4d843879266365422"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_native\\native_plan.h",
+      "bytes": 10404,
+      "sha256": "cdf8e70bbb880b084f92222062aaea82eed74d19ac3e27328fecccca4903f01c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_native\\CMakeLists.txt",
+      "bytes": 4730,
+      "sha256": "5a6596a7a73201021e0cde486f3718b06e22481a76cc852461af7f24df5f4404"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_torch_cuda\\artifact_provider.cc",
+      "bytes": 29406,
+      "sha256": "215dadc8074b4d7434e3ba27d27ac1dc13c8576d9e6997e5b51c76aa55ce10ac"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_route_cpu\\cpu_context.cc",
+      "bytes": 3909,
+      "sha256": "cff2d22dca2bad3581d1456b284430101aabdbc4899cb606159554dabb67ab4c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_route_cpu\\default_policy.h",
+      "bytes": 993,
+      "sha256": "e8621cda012975ac44d81fd9b97ce10bedd7c8468a8e95719e5925e0987d050e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph_route_cpu\\cpu_context.cc",
+      "bytes": 1204,
+      "sha256": "0474886077f21efd345dadd2e78676180d836b9f20f323ff9dad7053190a88b2"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph_route_cpu\\ct_packed_linear_region.h",
+      "bytes": 196,
+      "sha256": "c2d5822c5d1868bb09ec4bac6c8e1e20ece1241b35c4fd5349946b292cd43206"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph_route_cpu\\ct_packed_linear_region.cc",
+      "bytes": 518,
+      "sha256": "7140afb0e6a5186dae3763aaaaaa5e47de59dbef239772e46c452378e3dc3c3c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph_route_cpu\\CMakeLists.txt",
+      "bytes": 855,
+      "sha256": "4444efbc3f05b1e5964ef0501f8b70b7b87c61233f0c6604c1fdaf88111b42c8"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph_route_cuda\\ct_packed_linear_region.cc",
+      "bytes": 725,
+      "sha256": "8e0803ff50b2087bfdd53e2891126111aa2edf5021508c686e83a2bfe8ee2880"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph_route_cuda\\dense_bfloat_scores_region.cc",
+      "bytes": 20143,
+      "sha256": "2637b7cc24a377bacf58dce868bc0eed4a308d100d2e3cdbca9f5641aba3a8d0"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph_route_cuda\\fp8_shared_prologue_region.cc",
+      "bytes": 11822,
+      "sha256": "9759ee05668ee66a8104eec4db9a817fe36a01716c89ee01e46066108f2ca497"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_native\\ct_packed_test.cc",
+      "bytes": 10863,
+      "sha256": "fe120b513d987a185469a49d4240cf8ce19ab9220445fa81d90b3c69a4d865e9"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_native\\CMakeLists.txt",
+      "bytes": 1434,
+      "sha256": "7f3f9ed512b4950e0ef37eaf7315209dda0e02bbc6d4c30ccf387dcbc192e9e9"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\ct_packed_graph_fixture.h",
+      "bytes": 24403,
+      "sha256": "fca698a1221a314d0e77b264969ecb69a1de92066109e3b15108c533aadac7b2"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\ct_packed_linear_fixture.h",
+      "bytes": 4140,
+      "sha256": "523cbb539ce7b1d2be6de9646535594b191d556d9645f727406c5b52ea5cd396"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_cpu\\ct_packed_linear_test.cc",
+      "bytes": 2205,
+      "sha256": "3fbbdf49fd0b7c5c3f52e36eff8e1245b9cc62eab0c79fac1d1fd66da2ce4ffa"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_cpu\\CMakeLists.txt",
+      "bytes": 3126,
+      "sha256": "088424038754cc04b7a120d01a7c4acc7786280b1c311d12238c430ad1deb60f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_cuda\\ct_packed_linear_test.cc",
+      "bytes": 2001,
+      "sha256": "b48af9d6fbc517aec28b174af242628a2ba8000741352b368b64888ae9d13be3"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\user\\compute.md",
+      "bytes": 101028,
+      "sha256": "873f54d62db8d3bb2598ace5589abfbb86034f0c86e8af785468a72dad7d388f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\implementation\\model-operators.md",
+      "bytes": 59404,
+      "sha256": "dd643142b2aeab1cb1aeadedb4fb5024c2189bcccb9d5872c545450d8dcef2fe"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\implementation\\model-quantizations.json",
+      "bytes": 342001,
+      "sha256": "83c4d923b132cc9fb1dc02d928e598de6ac3d3c59593ce97b317f4bf4779350a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\developer\\current-work.md",
+      "bytes": 41785,
+      "sha256": "890ba3251fc39d9e0a1a3a3cf0bea163fed206cf38858309be4aea061cd11fc0"
+    }
+  ],
+  "execution_limits": [
+    "Windows CPU/CUDA SM89 only; no Linux/macOS execution, new CMake configure/install or shared-library acceptance.",
+    "Apple/Vulkan packed CT paths remain absent; original cold dense decode remains available.",
+    "No throughput benchmark. Large-M prefill may prefer a mature dense GEMM; packed-vs-dense default planning and performance tradeoff require follow-up rather than assuming memory savings imply faster execution.",
+    "No GPTQ/permutation/expert/FFN/W4A4 extension; group128/512 numerical execution and selected publisher payloads remain unverified.",
+    "No new Qwen BF16 speed claim or independent model quality acceptance."
+  ],
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\ct-packed-cpu-2026-10-20.zip",
+    "bytes": 1255930,
+    "sha256": "dfbb48c7e076cb80047c9f47c1c4ea4b93ca74d92aa4fbc611a92d17e6200f93",
+    "payloads": 234,
+    "CRC_checked": true,
+    "all_payload_SHA256_checked": true
+  }
+}

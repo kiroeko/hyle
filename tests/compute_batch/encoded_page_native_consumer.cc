@@ -2,19 +2,19 @@
 #include <hyle/compute/apple_batch.h>
 #include <hyle/compute/apple_memory.h>
 #include <hyle/graph/apple.h>
-#include <hyle/graph/cpu_apple.h>
 #else
 #include <hyle/compute/vulkan_batch.h>
 #include <hyle/compute/vulkan_memory.h>
 #include <hyle/graph/vulkan.h>
-#include <hyle/graph/cpu_vulkan.h>
-#include <hyle/sched/blocking.h>
 #endif
 #include <hyle/compute/model_ops.h>
 #include <hyle/graph/cpu.h>
 #include <hyle/graph/batch.h>
+#include <hyle/graph/progress.h>
+#include <hyle/graph/result.h>
+#include <hyle/sched/blocking.h>
 #include <hyle/sched/scheduler.h>
-#include "../compute_provider_native/half_test_support.h"
+#include "encoded_page_codec_oracle.h"
 
 #include <algorithm>
 #include <array>
@@ -30,19 +30,19 @@ namespace g = hyle::graph;
 #if defined(HYLE_ENCODED_APPLE)
 namespace n = c::apple;
 namespace ng = g::apple;
-namespace joint = g::cpu_apple;
 using NativeTensor = mlx::core::array;
 constexpr auto route = "Apple";
 #else
 namespace n = c::vulkan;
 namespace ng = g::vulkan;
-namespace joint = g::cpu_vulkan;
 using NativeTensor = n::Tensor;
 constexpr auto route = "Vulkan";
 #endif
 using hyle::Status;
 using hyle::Result;
 using F16 = hyle::simd::float16_t;
+constexpr g::ExecutionTargetId native_target{0},cpu_target{1};
+constexpr g::StorageDomainId host_storage{0},native_storage{1};
 
 Status require(bool condition, const char *message) {
   return condition ? Status::Ok() : Status::Internal(message);
@@ -52,24 +52,8 @@ struct Drain final {
   ~Drain() { scheduler.drain(); }
 };
 
-// A separate byte oracle, independent of the device encoder and its results.
-std::vector<std::uint8_t> constant_q8(float value, std::size_t elements) {
-  const float scale = std::abs(value) / 127.F;
-  const auto bits = half_test::encode<F16>(scale).bits;
-  const auto code = std::uint8_t(int(std::round(value * (scale ? 1.F / scale : 0.F))));
-  std::vector<std::uint8_t> bytes(elements / 32 * 34);
-  for (std::size_t block = 0; block < elements / 32; ++block) {
-    bytes[block * 34] = std::uint8_t(bits);
-    bytes[block * 34 + 1] = std::uint8_t(bits >> 8);
-    std::fill_n(bytes.begin() + block * 34 + 2, 32, code);
-  }
-  return bytes;
-}
-double decoded_constant(float value) {
-  const float scale = std::abs(value) / 127.F;
-  const auto code = std::round(value * (scale ? 1.F / scale : 0.F));
-  return half_test::decode(half_test::encode<F16>(scale)) * code;
-}
+using encoded_page_test::Codec;
+using encoded_page_test::CodecOracle;
 
 Result<NativeTensor> upload(n::Context &context, n::MemoryResource &device,
                             c::TensorDesc description, std::span<const std::byte> bytes) {
@@ -101,18 +85,20 @@ Status read_bytes(n::Context &context, n::MemoryResource &device,
 #endif
 }
 
-Result<g::Graph> encoder(std::span<const c::TensorDesc> inputs) {
+Result<g::Graph> encoder(std::span<const c::TensorDesc> inputs,
+                         std::span<const c::CacheStorage> storage) {
   HYLE_ASSIGN_OR_RETURN(auto builder, g::GraphBuilder::create());
-  for (const auto &description : inputs) {
-    HYLE_ASSIGN_OR_RETURN(auto input, builder.input(description));
+  for (std::size_t i=0;i<inputs.size();++i) {
+    HYLE_ASSIGN_OR_RETURN(auto input, builder.input(inputs[i]));
     HYLE_ASSIGN_OR_RETURN(auto output, builder.add(c::Operation::custom(
-        c::model_ops::CacheEncode{c::CacheStorage::q8_0().value()}), input));
+        c::model_ops::CacheEncode{storage[i]}), input));
     HYLE_RETURN_IF_ERROR(builder.publish(output));
   }
   return std::move(builder).finish();
 }
 
-Status episode(unsigned dk, unsigned dv, bool combined, bool invalid=false, bool paired_failure=false, bool single=false, bool bf16=false) {
+Status episode(unsigned dk, unsigned dv, bool combined, bool invalid=false, bool paired_failure=false, bool single=false, bool bf16=false, Codec codec=Codec::kQ8) {
+  const CodecOracle oracle{codec};
   HYLE_ASSIGN_OR_RETURN(auto context, n::Context::create());
 #if defined(HYLE_ENCODED_APPLE)
   HYLE_ASSIGN_OR_RETURN(auto device, n::MemoryResource::create(context));
@@ -129,9 +115,10 @@ Status episode(unsigned dk, unsigned dv, bool combined, bool invalid=false, bool
                 half_test::decode(F16::from_bits(word));
   };
   const double tolerance=bf16?.008:.002;
-  const auto q8 = c::CacheStorage::q8_0().value();
+  const auto key_storage=codec==Codec::kE4M3?c::CacheStorage::float8(.5F).value():c::CacheStorage::q8_0().value();
+  const auto value_storage=codec==Codec::kE4M3?c::CacheStorage::float8(2.F).value():key_storage;
   const c::BatchCapacity capacity{.query_type=qtype, .output_type=qtype,
-      .key_storage=q8, .value_storage=q8, .max_requests=requests, .max_query_rows=query_rows, .max_kv_rows=36,
+      .key_storage=key_storage, .value_storage=value_storage, .max_requests=requests, .max_query_rows=query_rows, .max_kv_rows=36,
       .max_pages=5, .max_page_refs=4, .query_heads=8, .kv_heads=2, .qk_head_dim=dk, .value_head_dim=dv};
   HYLE_ASSIGN_OR_RETURN(auto schema, c::BatchSchema::create(capacity));
   HYLE_ASSIGN_OR_RETURN(auto recipe, c::NativePagedBatchProgram::prepare(schema,
@@ -144,7 +131,9 @@ Status episode(unsigned dk, unsigned dv, bool combined, bool invalid=false, bool
   HYLE_ASSIGN_OR_RETURN(auto keys, c::PagedArena::create(schema,c::BatchCacheRole::kKey,device.ref(),{.max_backing_bytes=1<<20}));
   HYLE_ASSIGN_OR_RETURN(auto values, c::PagedArena::create(schema,c::BatchCacheRole::kValue,device.ref(),{.max_backing_bytes=1<<20}));
   const auto kb=keys.page_bytes(), vb=values.page_bytes(), krb=kb/16, vrb=vb/16;
-  HYLE_RETURN_IF_ERROR(require(krb==2*dk/32*34 && vrb==2*dv/32*34,"encoded K/V byte geometry differs"));
+  HYLE_RETURN_IF_ERROR(require(codec==Codec::kE4M3?
+      (krb==2*dk && vrb==2*dv):(krb==2*dk/32*34 && vrb==2*dv/32*34),
+      "encoded K/V byte geometry differs"));
   const auto maximum=std::max(kb,vb);
   HYLE_ASSIGN_OR_RETURN(auto pool,c::LeasePool::create(staging.ref(),maximum+64));
   const std::array init_specs{c::CopyResourceSpec{staging.ref(),maximum},c::CopyResourceSpec{device.ref(),maximum}};
@@ -152,7 +141,7 @@ Status episode(unsigned dk, unsigned dv, bool combined, bool invalid=false, bool
   HYLE_ASSIGN_OR_RETURN(auto init,n::CopyBatchInvocation::create(init_program));
   const auto fill=[&](c::PagedArena &arena,unsigned page,float value,unsigned depth)->Result<c::ReadLease>{
     HYLE_ASSIGN_OR_RETURN(auto writer,arena.acquire(page));
-    auto bytes=constant_q8(value,16*2*depth);
+    auto bytes=oracle.bytes(value,16*2*depth,&arena==&values);
     HYLE_RETURN_IF_ERROR(init.reset());
     HYLE_ASSIGN_OR_RETURN(auto host_writer,pool.allocate(bytes.size(),64));
     HYLE_RETURN_IF_ERROR(host_writer.view()->write(std::as_bytes(std::span(bytes))));
@@ -175,7 +164,7 @@ Status episode(unsigned dk, unsigned dv, bool combined, bool invalid=false, bool
   HYLE_ASSIGN_OR_RETURN(auto old_key,keys.read(old_layout,std::span(old_kr).first(1+requests)));
   HYLE_ASSIGN_OR_RETURN(auto old_value,values.read(old_layout,std::span(old_vr).first(1+requests)));
   HYLE_RETURN_IF_ERROR(require(!keys.acquire(kr[1]) && kr[1].valid(),"old reader allowed mutable acquisition"));
-  HYLE_ASSIGN_OR_RETURN(auto query_desc,c::batch_query_description(capacity));
+  HYLE_ASSIGN_OR_RETURN(auto query_desc,recipe.input_description(layout,0));
   std::vector<std::uint16_t> query_words(*query_desc.element_count(),bf16?0x3e00:0x3000);
 #if defined(HYLE_ENCODED_APPLE)
   HYLE_ASSIGN_OR_RETURN(auto query_pool,c::LeasePool::create(device.ref(),query_words.size()*2+64));
@@ -192,12 +181,11 @@ Status episode(unsigned dk, unsigned dv, bool combined, bool invalid=false, bool
 
   HYLE_ASSIGN_OR_RETURN(auto kd,c::TensorDesc::dense(c::DataType::kFloat32,std::array<std::int64_t,2>{2*requests,dk}));
   HYLE_ASSIGN_OR_RETURN(auto vd,c::TensorDesc::dense(c::DataType::kFloat32,std::array<std::int64_t,2>{2*requests,dv}));
-  const auto op=c::Operation::custom(c::model_ops::CacheEncode{q8});
-  HYLE_ASSIGN_OR_RETURN(auto kc,c::infer_single_output(op,std::array{kd}));
-  HYLE_ASSIGN_OR_RETURN(auto vc,c::infer_single_output(op,std::array{vd}));
-  HYLE_ASSIGN_OR_RETURN(auto kg,encoder(std::array{kd}));
-  HYLE_ASSIGN_OR_RETURN(auto vg,encoder(std::array{vd}));
-  HYLE_ASSIGN_OR_RETURN(auto pg,encoder(std::array{kd,vd}));
+  HYLE_ASSIGN_OR_RETURN(auto kc,c::infer_single_output(c::Operation::custom(c::model_ops::CacheEncode{key_storage}),std::array{kd}));
+  HYLE_ASSIGN_OR_RETURN(auto vc,c::infer_single_output(c::Operation::custom(c::model_ops::CacheEncode{value_storage}),std::array{vd}));
+  HYLE_ASSIGN_OR_RETURN(auto kg,encoder(std::array{kd},std::array{key_storage}));
+  HYLE_ASSIGN_OR_RETURN(auto vg,encoder(std::array{vd},std::array{value_storage}));
+  HYLE_ASSIGN_OR_RETURN(auto pg,encoder(std::array{kd,vd},std::array{key_storage,value_storage}));
   HYLE_ASSIGN_OR_RETURN(auto kprogram,ng::compile(context,kg));
   HYLE_ASSIGN_OR_RETURN(auto vprogram,ng::compile(context,vg));
   HYLE_ASSIGN_OR_RETURN(auto pprogram,ng::compile(context,pg));
@@ -218,9 +206,7 @@ Status episode(unsigned dk, unsigned dv, bool combined, bool invalid=false, bool
   HYLE_ASSIGN_OR_RETURN(auto cpu,g::cpu::create_context());
   HYLE_ASSIGN_OR_RETURN(auto cpu_queue,cpu.create_queue());
   hyle::sched::Scheduler scheduler(1,hyle::mem::system_allocator(),32);
-#if !defined(HYLE_ENCODED_APPLE)
   hyle::sched::BlockingPool completion_waiters(hyle::mem::system_allocator(),1);
-#endif
   Drain drain{scheduler};
   HYLE_ASSIGN_OR_RETURN(auto host_desc,c::TensorDesc::dense(c::DataType::kFloat32,query_desc.dimensions()));
   HYLE_ASSIGN_OR_RETURN(auto host_pool,c::LeasePool::create(hyle::mem::system_resource(),query_words.size()*4+64));
@@ -230,35 +216,60 @@ Status episode(unsigned dk, unsigned dv, bool combined, bool invalid=false, bool
   HYLE_ASSIGN_OR_RETURN(auto host_read,host_writer.publish());
   HYLE_ASSIGN_OR_RETURN(auto builder,g::GraphBuilder::create());
   HYLE_ASSIGN_OR_RETURN(auto qi,builder.input(host_desc));
-  HYLE_ASSIGN_OR_RETURN(auto ki,builder.input(recipe.descriptions()[1]));
-  HYLE_ASSIGN_OR_RETURN(auto vi,builder.input(recipe.descriptions()[2]));
+  HYLE_ASSIGN_OR_RETURN(auto key_description,recipe.input_description(layout,1));
+  HYLE_ASSIGN_OR_RETURN(auto value_description,recipe.input_description(layout,2));
+  HYLE_ASSIGN_OR_RETURN(auto ki,builder.input(key_description));
+  HYLE_ASSIGN_OR_RETURN(auto vi,builder.input(value_description));
   std::vector<g::NodePlacement> placements;
   const auto cpu_node=[&](c::Operation operation,g::ValueId input)->Result<g::ValueId>{
     HYLE_ASSIGN_OR_RETURN(auto node,builder.add_node(operation,std::array{input}));
-    placements.push_back({node,joint::kCpuTarget,g::PlacementStrength::kRequired});return builder.result(node);
+    placements.push_back({node,cpu_target,g::PlacementStrength::kRequired});return builder.result(node);
   };
   HYLE_ASSIGN_OR_RETURN(auto qabs,cpu_node(c::Operation(c::Unary{c::UnaryKind::kAbs}),qi));
   HYLE_ASSIGN_OR_RETURN(auto qhalf,cpu_node(c::Operation(c::Cast{qtype}),qabs));
-  HYLE_ASSIGN_OR_RETURN(auto descriptor,g::batch::native_paged_attention(recipe,layout));
+  HYLE_ASSIGN_OR_RETURN(auto descriptor,g::batch::paged_attention(layout,
+      {.scale=recipe.scale(),.causal=recipe.causal(),.window_left=recipe.window_left()}));
   HYLE_ASSIGN_OR_RETURN(auto node,builder.add_node(c::Operation::custom(descriptor),std::array{qhalf,ki,vi}));
   HYLE_ASSIGN_OR_RETURN(auto attention,builder.result(node));
   HYLE_ASSIGN_OR_RETURN(auto wide,cpu_node(c::Operation(c::Cast{c::DataType::kFloat32}),attention));
   HYLE_ASSIGN_OR_RETURN(auto output,cpu_node(c::Operation(c::Unary{c::UnaryKind::kNeg}),wide));
   HYLE_RETURN_IF_ERROR(builder.publish(output));HYLE_ASSIGN_OR_RETURN(auto graph,std::move(builder).finish());
-  const std::array bindings{g::batch::NativePagedNodeBinding{node,recipe,layout,{.max_metadata_backing_bytes=4096}}};
-  joint::Environment env{.cpu=&cpu};
-#if defined(HYLE_ENCODED_APPLE)
-  env.apple=&context;env.native=&device;
-#else
-  env.vulkan=&context;env.device=&device;env.staging=&staging;
-#endif
-  HYLE_ASSIGN_OR_RETURN(auto joint_program,joint::compile(graph,env,{.node_placements=placements,.paged_nodes=bindings}));
-#if defined(HYLE_ENCODED_APPLE)
-  HYLE_ASSIGN_OR_RETURN(auto joint_slot,joint_program.create_invocation(scheduler,cpu_queue));
-#else
-  HYLE_ASSIGN_OR_RETURN(auto joint_slot,joint_program.create_invocation(scheduler,cpu_queue,completion_waiters));
-#endif
-  HYLE_RETURN_IF_ERROR(joint_slot.reserve_pending_sources(4));
+  placements.push_back({node,native_target,g::PlacementStrength::kRequired});
+  HYLE_ASSIGN_OR_RETURN(auto native_source,ng::execution_source(context));
+  HYLE_ASSIGN_OR_RETURN(auto cpu_source,g::ExecutionSource::acquire(cpu));
+  const std::array domains{g::StorageDomain{hyle::mem::system_resource()},
+      g::StorageDomain{device.ref()},g::StorageDomain{staging.ref()}};
+  const std::array targets{g::ExecutionTarget{native_source,native_storage},g::ExecutionTarget{cpu_source,host_storage}};
+  const std::array external{g::ExternalResourceContract{qi,host_storage},g::ExternalResourceContract{ki,native_storage},
+      g::ExternalResourceContract{vi,native_storage},g::ExternalResourceContract{output,host_storage}};
+  HYLE_ASSIGN_OR_RETURN(auto graph_program,g::batch::compile(graph,{.storage_domains=domains,.targets=targets},
+      {.node_placements=placements,.external_resources=external}));
+  std::vector<g::QueueBinding> queues;
+  for(std::size_t i=0;i<graph_program.report.lane_count();++i){
+    HYLE_ASSIGN_OR_RETURN(auto lane,graph_program.report.lane(i));
+    if(lane.queue_required){
+      HYLE_RETURN_IF_ERROR(require(lane.target==cpu_target && lane.runtime_mode==c::ProviderRuntimeMode::kSharedQueue,
+          "encoded native page requested a public Compute Queue"));queues.push_back({lane.lane,&cpu_queue});
+    }
+  }
+  std::size_t cpu_steps=0,page_steps=0;
+  for(std::size_t i=0;i<graph_program.report.step_count();++i){
+    HYLE_ASSIGN_OR_RETURN(auto step,graph_program.report.step(i));
+    if(step.node_count && step.runtime.mode==c::ProviderRuntimeMode::kSharedQueue)++cpu_steps;
+    for(std::size_t index=0;index<step.node_count;++index){
+      HYLE_ASSIGN_OR_RETURN(auto selected,graph_program.report.step_node(i,index));
+      if(selected==node){++page_steps;HYLE_RETURN_IF_ERROR(require(step.kind==g::CompileStepKind::kProviderRegion &&
+          step.runtime.mode==c::ProviderRuntimeMode::kDelegated,"encoded page did not select its real native implementation"));}
+    }
+  }
+  HYLE_RETURN_IF_ERROR(require(cpu_steps>=2 && page_steps==1,"encoded Graph missed real CPU/native math"));
+  HYLE_ASSIGN_OR_RETURN(auto graph_slot,graph_program.executable.create_invocation({.resources=g::ResourceOptions{}}));
+  HYLE_RETURN_IF_ERROR(g::prepare_progress(graph_slot,scheduler,completion_waiters));
+  HYLE_ASSIGN_OR_RETURN(auto output_description,graph.value_description(output));
+  HYLE_ASSIGN_OR_RETURN(auto output_bytes,output_description.required_bytes());
+  // Binding the next caller-owned output happens after its allocation. The
+  // invocation still owns the preceding buffer until that successful bind.
+  HYLE_ASSIGN_OR_RETURN(auto output_pool,c::LeasePool::create(hyle::mem::system_resource(),2*output_bytes+128,{.max_blocks=2}));
   const std::array versions{g::batch::NodeLayout{node,layout}};
 
   const auto numeric_failure=[](const Status&status){
@@ -269,19 +280,27 @@ Status episode(unsigned dk, unsigned dv, bool combined, bool invalid=false, bool
 #endif
     return status.IsInvalidArgument() && status.message()==message;
   };
-  const auto failed_result=[&](auto &done,auto &slot,n::CopyBatchUpdate &update)->Status{
-    const auto result=done.wait();
-    HYLE_RETURN_IF_ERROR(require(!result && numeric_failure(result.error()),"encoded producer failure published a result or lost numeric error"));
-    HYLE_RETURN_IF_ERROR(require(numeric_failure(done.completion().wait()),"encoded source completion lost numeric error"));
-    done={};HYLE_ASSIGN_OR_RETURN(update,slot.take_update());
+  const auto failed_update=[&](n::CopyBatchUpdate &update)->Status{
     for(unsigned port=2;port<2+2*requests;++port)
       HYLE_RETURN_IF_ERROR(require(!update.take_mutable({port}),"failed encoder source published page writers"));
     std::vector<std::uint8_t> bytes(vb);
     HYLE_RETURN_IF_ERROR(read_bytes(context,device,vr[1],bytes));
-    return require(bytes==constant_q8(.125F,16*2*dv),"failed new-page update changed old reader bytes");
+    return require(bytes==oracle.bytes(.125F,16*2*dv,true),"failed new-page update changed old reader bytes");
+  };
+  const auto failed_result=[&](auto &done,auto &slot,n::CopyBatchUpdate &update)->Status{
+    const auto result=done.wait();
+    HYLE_RETURN_IF_ERROR(require(!result && numeric_failure(result.error()),"encoded producer failure published a result or lost numeric error"));
+    HYLE_RETURN_IF_ERROR(require(numeric_failure(done.completion().wait()),"encoded source completion lost numeric error"));
+    done={};HYLE_ASSIGN_OR_RETURN(update,slot.take_update());return failed_update(update);
+  };
+  const auto failed_graph_result=[&](c::Completion &done,n::CopyBatchUpdate &update)->Status{
+    HYLE_RETURN_IF_ERROR(require(numeric_failure(done.wait()) && !graph_slot.result(output),
+        "encoded Graph producer failure published a result or lost numeric error"));
+    HYLE_RETURN_IF_ERROR(require(numeric_failure(done.wait()),"encoded Graph source completion lost numeric error"));
+    done={};HYLE_ASSIGN_OR_RETURN(update,ng::take_update(graph_slot));return failed_update(update);
   };
   for(unsigned step=0;step<(invalid?1u:6u);++step){
-    if(combined)HYLE_RETURN_IF_ERROR(joint_slot.prepare_batch(versions));
+    if(combined)HYLE_RETURN_IF_ERROR(g::batch::prepare(graph_slot,queues,versions,{.max_source_completions=4}));
     else HYLE_RETURN_IF_ERROR(receiver.prepare_batch(layout));
     HYLE_RETURN_IF_ERROR(copy.reset());
     std::array<c::PagedPageWriter,2> kw,vw;
@@ -353,10 +372,10 @@ Status episode(unsigned dk, unsigned dv, bool combined, bool invalid=false, bool
           HYLE_RETURN_IF_ERROR(require(kw[request].lease().valid() && vw[request].lease().valid(),"unsubmitted page writer was not preserved"));
         }
       }else HYLE_RETURN_IF_ERROR(require(report.phase_completions!=0,"accepted update has no actual native phase"));
-      HYLE_RETURN_IF_ERROR(require(!receiver.take_update() && !joint_slot.take_update(),"rejected suffix retained or published a pending update"));
+      HYLE_RETURN_IF_ERROR(require(!receiver.take_update() && !ng::take_update(graph_slot),"rejected suffix retained or published a pending update"));
       std::vector<std::uint8_t> bytes(vb);
       HYLE_RETURN_IF_ERROR(read_bytes(context,device,vr[1],bytes));
-      HYLE_RETURN_IF_ERROR(require(bytes==constant_q8(.125F,16*2*dv),"rejected encoder source changed old reader bytes"));
+      HYLE_RETURN_IF_ERROR(require(bytes==oracle.bytes(.125F,16*2*dv,true),"rejected encoder source changed old reader bytes"));
       std::fprintf(stderr,"%s failed encoder rejected at %s: original numeric error, actual drain, accepted_phases=%llu native_calls=%llu, no suffix/page publication, old bytes PASS\n",
           route,stage,static_cast<unsigned long long>(report.phase_completions),static_cast<unsigned long long>(report.native_calls));
       return Status::Ok();
@@ -401,8 +420,8 @@ Status episode(unsigned dk, unsigned dv, bool combined, bool invalid=false, bool
         for(unsigned row=0;row<nq;++row){
           const unsigned position=18-nq+row,first=position>16?position-16:0;
           double sum=0,denominator=0;for(unsigned j=first;j<=position;++j){
-            const double weight=std::exp(.125*dk*.125*(j==17?decoded_constant(key_incoming[request]):0));
-            sum+=weight*decoded_constant(j<16?.0625F:j==16?(request?.25F:.125F):incoming[request]);denominator+=weight;
+            const double weight=std::exp(.125*dk*.125*(j==17?oracle.decoded(key_incoming[request]):0));
+            sum+=weight*oracle.decoded(j<16?.0625F:j==16?(request?.25F:.125F):incoming[request],true);denominator+=weight;
           }
           const double expected=(combined?-1:1)*sum/denominator;
           for(unsigned i=0;i<8*dv;++i){const auto x=actual[(qp[request]+row)*8*dv+i];
@@ -412,18 +431,21 @@ Status episode(unsigned dk, unsigned dv, bool combined, bool invalid=false, bool
     };
     std::vector<float> actual(query_rows*8*dv);
     if(combined){
-      HYLE_RETURN_IF_ERROR(joint_slot.bind(qi,host_desc,host_read));HYLE_RETURN_IF_ERROR(joint_slot.bind(ki,kframe));HYLE_RETURN_IF_ERROR(joint_slot.bind(vi,vframe));
-      HYLE_RETURN_IF_ERROR(joint_slot.prepare_replay());HYLE_ASSIGN_OR_RETURN(auto report,joint_slot.replay_report());
-      HYLE_RETURN_IF_ERROR(require(report.cpu_fragments>=2 && report.paged_fragments==1,"encoded joint graph missed real CPU/native fragments"));
-      auto submitted=joint_slot.submit(std::move(update));
+      HYLE_RETURN_IF_ERROR(graph_slot.bind(qi,host_desc,host_read));
+      HYLE_RETURN_IF_ERROR(g::batch::bind(graph_slot,ki,kframe));HYLE_RETURN_IF_ERROR(g::batch::bind(graph_slot,vi,vframe));
+      HYLE_ASSIGN_OR_RETURN(auto destination,output_pool.allocate(output_bytes,64));
+      HYLE_RETURN_IF_ERROR(graph_slot.bind(output,output_description,std::move(destination)));
+      HYLE_RETURN_IF_ERROR(graph_slot.prepare_replay(queues));
+      auto submitted=ng::submit(graph_slot,queues,std::move(update));
       if(!submitted)return rejected_source(submitted.error(),"joint.submit",&update);
       auto done=std::move(*submitted);
-      if(invalid){HYLE_RETURN_IF_ERROR(failed_result(done,joint_slot,update));
+      if(invalid){HYLE_RETURN_IF_ERROR(failed_graph_result(done,update));
         std::fprintf(stderr,"%s CPU+GPU failed %s encoder source retains InvalidArgument/no result/no page publication PASS\n",route,paired_failure?"paired":"independent second");return Status::Ok();}
-      {HYLE_ASSIGN_OR_RETURN(auto result,done.wait());HYLE_ASSIGN_OR_RETURN(auto tensor,result->output(output));
+      HYLE_RETURN_IF_ERROR(done.wait());
+      {HYLE_ASSIGN_OR_RETURN(auto result,graph_slot.result(output));HYLE_ASSIGN_OR_RETURN(auto tensor,result.tensor());
         HYLE_RETURN_IF_ERROR(tensor.storage().read(std::as_writable_bytes(std::span(actual))));HYLE_RETURN_IF_ERROR(check(actual));
-        HYLE_RETURN_IF_ERROR(require(!joint_slot.take_update(),"retained joint result released original update"));}
-      HYLE_RETURN_IF_ERROR(done.completion().wait());done={};HYLE_ASSIGN_OR_RETURN(update,joint_slot.take_update());
+        HYLE_RETURN_IF_ERROR(require(!ng::take_update(graph_slot),"retained Graph result released original update"));}
+      HYLE_RETURN_IF_ERROR(done.wait());done={};HYLE_ASSIGN_OR_RETURN(update,ng::take_update(graph_slot));
     }else{
       auto submitted=receiver.submit(query,kframe,vframe,std::move(update));
       if(!submitted)return rejected_source(submitted.error(),"receiver.submit",&update);
@@ -446,11 +468,11 @@ Status episode(unsigned dk, unsigned dv, bool combined, bool invalid=false, bool
     for(unsigned request=0;request<requests;++request){
       HYLE_ASSIGN_OR_RETURN(kw[request].lease(),update.take_mutable({2+2*request}));HYLE_ASSIGN_OR_RETURN(vw[request].lease(),update.take_mutable({3+2*request}));
       HYLE_ASSIGN_OR_RETURN(kr[3+request],kw[request].publish(2));HYLE_ASSIGN_OR_RETURN(vr[3+request],vw[request].publish(2));
-      auto expected=constant_q8(request?.25F:.125F,16*2*dv),dirty=constant_q8(incoming[request],2*dv);
+      auto expected=oracle.bytes(request?.25F:.125F,16*2*dv,true),dirty=oracle.bytes(incoming[request],2*dv,true);
       std::copy(dirty.begin(),dirty.end(),expected.begin()+vrb);std::vector<std::uint8_t> bytes(vb);
       HYLE_RETURN_IF_ERROR(read_bytes(context,device,vr[3+request],bytes));
       HYLE_RETURN_IF_ERROR(require(bytes==expected,"dirty encoded append changed untouched tail bytes"));
-      expected=constant_q8(0.F,16*2*dk);dirty=constant_q8(key_incoming[request],2*dk);
+      expected=oracle.bytes(0.F,16*2*dk);dirty=oracle.bytes(key_incoming[request],2*dk);
       std::copy(dirty.begin(),dirty.end(),expected.begin()+krb);bytes.resize(kb);
       HYLE_RETURN_IF_ERROR(read_bytes(context,device,kr[3+request],bytes));
       HYLE_RETURN_IF_ERROR(require(bytes==expected,"dirty encoded key append changed codes or untouched bytes"));
@@ -468,8 +490,8 @@ Status episode(unsigned dk, unsigned dv, bool combined, bool invalid=false, bool
 #endif
     for(unsigned request=0;request<requests;++request){const unsigned nq=unsigned(qp[request+1]-qp[request]);
       for(unsigned row=0;row<nq;++row){const unsigned position=17-nq+row;
-        const double expected=(position*decoded_constant(.0625F)+decoded_constant(request?.25F:.125F))/(position+1);
-        const double visible=position==16?expected:decoded_constant(.0625F);
+        const double expected=(position*oracle.decoded(.0625F,true)+oracle.decoded(request?.25F:.125F,true))/(position+1);
+        const double visible=position==16?expected:oracle.decoded(.0625F,true);
         for(unsigned i=0;i<8*dv;++i)HYLE_RETURN_IF_ERROR(require(std::abs(decode_word(words[(qp[request]+row)*8*dv+i])-visible)<tolerance,"old reader math changed across new version"));
       }
     }
@@ -477,12 +499,12 @@ Status episode(unsigned dk, unsigned dv, bool combined, bool invalid=false, bool
   HYLE_RETURN_IF_ERROR(old_done.completion().wait());old_done={};
   HYLE_RETURN_IF_ERROR(require(!keys.acquire(kr[1]) && kr[1].valid(),"old reader became writable after new updates"));
   std::vector<std::uint8_t> bytes(vb);HYLE_RETURN_IF_ERROR(read_bytes(context,device,vr[0],bytes));
-  HYLE_RETURN_IF_ERROR(require(bytes==constant_q8(.0625F,16*2*dv),"shared clean page changed"));
+  HYLE_RETURN_IF_ERROR(require(bytes==oracle.bytes(.0625F,16*2*dv,true),"shared clean page changed"));
   HYLE_RETURN_IF_ERROR(read_bytes(context,device,vr[1],bytes));
-  HYLE_RETURN_IF_ERROR(require(bytes==constant_q8(.125F,16*2*dv),"old page changed across clone/update"));
+  HYLE_RETURN_IF_ERROR(require(bytes==oracle.bytes(.125F,16*2*dv,true),"old page changed across clone/update"));
   HYLE_RETURN_IF_ERROR(copy.close());HYLE_RETURN_IF_ERROR(init.close());
-  HYLE_RETURN_IF_ERROR(receiver.close());HYLE_RETURN_IF_ERROR(joint_slot.close());HYLE_RETURN_IF_ERROR(old_slot.close());
-  std::fprintf(stderr,"%s %s Q8 delta D%u/%u PASS: %u requests, six updates, paired/separate Graph encoders, final-only pending consumption, exact dirty bytes, old reader and shared/history bytes\n",route,combined?"CPU+GPU":"native",dk,dv,requests);
+  HYLE_RETURN_IF_ERROR(receiver.close());HYLE_RETURN_IF_ERROR(graph_slot.close());HYLE_RETURN_IF_ERROR(old_slot.close());
+  std::fprintf(stderr,"%s %s %s delta D%u/%u PASS: %u requests, six updates, paired/separate Graph encoders, final-only pending consumption, exact dirty bytes, old reader and shared/history bytes\n",route,combined?"CPU+GPU":"native",oracle.name(),dk,dv,requests);
   return Status::Ok();
 }
 } // namespace
@@ -523,3 +545,27 @@ TEST(EncodedNativePages, BFloat16IncrementalAndFailureConsumers) {
   }
 }
 #endif
+
+TEST(EncodedNativePages, Float8PairedPendingConsumers) {
+  // The native and CPU+GPU consumers see the same pending E4 pages. Preserve
+  // original paired and independent producer failures instead of host waiting
+  // or substituting a successfully encoded source.
+  for(bool combined:{false,true}){
+    SCOPED_TRACE(::testing::Message()<<"E4 BF16 combined="<<combined);
+    auto status=episode(64,128,combined,false,false,false,true,Codec::kE4M3);
+    ASSERT_TRUE(status.ok())<<status.message();
+    for(bool paired:{false,true}){
+      SCOPED_TRACE(::testing::Message()<<"invalid V paired="<<paired);
+      status=episode(64,128,combined,true,paired,false,true,Codec::kE4M3);
+      ASSERT_TRUE(status.ok())<<status.message();
+    }
+  }
+  RecordProperty("codec","E4M3FN");
+  RecordProperty("key_scale","0.5");
+  RecordProperty("value_scale","2");
+  RecordProperty("modes",2);
+  RecordProperty("success_episodes",2);
+  RecordProperty("expected_failure_episodes",2*2);
+  RecordProperty("update_rounds",6*2);
+  RecordProperty("update_rounds_per_episode",6);
+}

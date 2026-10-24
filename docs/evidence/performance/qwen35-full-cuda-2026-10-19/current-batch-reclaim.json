@@ -1,0 +1,433 @@
+{
+  "completed": true,
+  "utc": "2026-10-19T13:43:50.9660917Z",
+  "script": "test.ps1",
+  "plan": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\current-batch-reclaim\\plan.json",
+  "windows_files": 64,
+  "windows_bytes": 2094515455,
+  "windows_removed": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-grouped-fp8-slots\\validation\\checks\\20261019T132520\\cuda.exe",
+      "bytes": 118330368,
+      "sha256": "d34ea633503f2e3e7a76534a975db59dc8f7c64405b7b609cd5f43688739da34"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-grouped-fp8-slots\\validation\\checks\\20261019T132520\\cuda.map",
+      "bytes": 38587961,
+      "sha256": "a77021058139d0194def844ec9ca2d9e9cfd9cff1080314e461f812c5cfea16d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-grouped-fp8-slots\\validation\\checks\\20261019T132520\\cuda.lib",
+      "bytes": 41384,
+      "sha256": "097299e17e955c077a99f65f363d3484d564c016359baeb643f4e47c6b737d59"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-grouped-fp8-slots\\validation\\checks\\20261019T132520\\cuda.exp",
+      "bytes": 25027,
+      "sha256": "ca32a0b79eb9727b52c524dba08e913ec80602ab07cd8df69181c939d90ba251"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-grouped-fp8-slots\\validation\\checks\\20261019T132520\\control.exe",
+      "bytes": 118699520,
+      "sha256": "206f2c3c70fa1bab1c04195ac22456c935ac936d9dd92cfbee995aacda564a9b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-grouped-fp8-slots\\validation\\checks\\20261019T132520\\control.map",
+      "bytes": 38590152,
+      "sha256": "479b7ead5b306f685e949f012f0a8ea402da76afad5aab56a0d51e0f152e2295"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-grouped-fp8-slots\\validation\\checks\\20261019T132520\\control.lib",
+      "bytes": 41650,
+      "sha256": "6e6021240d599850ba1dccf0341a4d8a81278adfcfef859a93c118a266481a09"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-grouped-fp8-slots\\validation\\checks\\20261019T132520\\control.exp",
+      "bytes": 25032,
+      "sha256": "a534de36c562b1cff10c151d2e4455d5a5c197038f900f70c7cf2269b549c44b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-grouped-fp8-slots\\validation\\checks\\20261019T132520\\neighbor.exe",
+      "bytes": 118687232,
+      "sha256": "08325439eb0b41bf17daf073de8e764fdb23208c3fb1c6b5eb6564f329b85705"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-grouped-fp8-slots\\validation\\checks\\20261019T132520\\neighbor.map",
+      "bytes": 39205373,
+      "sha256": "930c18714faa3c9b8428e3ed9731529a0fca416e6f399827699c1805df358ac5"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-grouped-fp8-slots\\validation\\checks\\20261019T132520\\neighbor.lib",
+      "bytes": 41736,
+      "sha256": "b714c80dd5e0203c6df9ce4fad4f99e9224d9fad8c0b604dd89be1d97392fdf0"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-grouped-fp8-slots\\validation\\checks\\20261019T132520\\neighbor.exp",
+      "bytes": 25035,
+      "sha256": "4c3c4f820c9c4dd883d9dcab5d731f6cf7a68284444f7fa483dee124f3bcc36a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-grouped-fp8-slots\\validation\\checks\\20261019T132520\\qwen.exe",
+      "bytes": 116002816,
+      "sha256": "43ce8944993ae126b7f754f246a25deb46dd1eece3736616989d23af0834d604"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-grouped-fp8-slots\\validation\\checks\\20261019T132520\\qwen.map",
+      "bytes": 33877348,
+      "sha256": "ecc1485fbd3d7be9bd8148e4ee67bbbe8ae285dc713e8600efd833c25abac9c5"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-grouped-fp8-slots\\validation\\checks\\20261019T132520\\qwen.lib",
+      "bytes": 41384,
+      "sha256": "339d3ce297534ebac8825c27a011f2f4f9dfe366c657ebfc45dbbfdc8412a2cb"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-grouped-fp8-slots\\validation\\checks\\20261019T132520\\qwen.exp",
+      "bytes": 25027,
+      "sha256": "e29689fc2a2988f221748a721a1919d929f1ddfac15bcdc0663f9c146c019729"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-grouped-fusion\\checks\\20261019T123025\\cuda.exe",
+      "bytes": 118649344,
+      "sha256": "d238f48d3542595a4733cfe5bfe3ab07f7356859385cbfdc8ab9f72617e2040d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-grouped-fusion\\checks\\20261019T123025\\qwen.exe",
+      "bytes": 116371968,
+      "sha256": "47084f66cfc6086e7ac17e51d392ae0202a1275013fe1d68d5ed408606203078"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-host-path-review\\checks\\20261019T133438-fixture\\cpu.exe",
+      "bytes": 25778688,
+      "sha256": "f1f46e487d60a2a19166eb64f5d77dfb4ab59fa973adcfb40fe741d8e4657ca7",
+      "reason": "Superseded or CPU-only test image; raw observations retained, latest CUDA/Qwen remain"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-host-path-review\\checks\\20261019T133438-fixture\\cpu.exp",
+      "bytes": 25022,
+      "sha256": "64255db81b8625c2602d12b5249553e34af8fc47cd0eda72d8b356d463c11923",
+      "reason": "Rebuildable link byproduct; exact commands/owner identities retained"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-host-path-review\\checks\\20261019T133438-fixture\\cpu.lib",
+      "bytes": 41298,
+      "sha256": "1a72c22d3a6dec39cca5118fd99aa738ff5f4202c029fc8a48afb6c3d20e909d",
+      "reason": "Rebuildable link byproduct; exact commands/owner identities retained"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-host-path-review\\checks\\20261019T133438-fixture\\cpu.map",
+      "bytes": 35111851,
+      "sha256": "23483e5fc816b1deadc42459e21f8ea33e4406adb3db468f91d07f5b322bb298",
+      "reason": "Rebuildable link byproduct; exact commands/owner identities retained"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-host-path-review\\checks\\20261019T133438-fixture\\cuda.exe",
+      "bytes": 118330368,
+      "sha256": "4c9d9f7f32539547450bd3fe1513567bd1dd12b5b89d28e4a539dc41d6ca5e4d",
+      "reason": "Superseded or CPU-only test image; raw observations retained, latest CUDA/Qwen remain"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-host-path-review\\checks\\20261019T133438-fixture\\cuda.exp",
+      "bytes": 25025,
+      "sha256": "34e98129871041ea56a42b50d294dd715a73b6c81fa3553b4742aea7d946d8e7",
+      "reason": "Rebuildable link byproduct; exact commands/owner identities retained"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-host-path-review\\checks\\20261019T133438-fixture\\cuda.lib",
+      "bytes": 41384,
+      "sha256": "097299e17e955c077a99f65f363d3484d564c016359baeb643f4e47c6b737d59",
+      "reason": "Rebuildable link byproduct; exact commands/owner identities retained"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-host-path-review\\checks\\20261019T133438-fixture\\cuda.map",
+      "bytes": 38586394,
+      "sha256": "58e2cab694f77c1a08753a6879dcb7644546adee057f204322e4426c7f9c53eb",
+      "reason": "Rebuildable link byproduct; exact commands/owner identities retained"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-host-path-review\\checks\\20261019T133438-fixture\\qwen.exe",
+      "bytes": 116003328,
+      "sha256": "9b351746ea4d13944d1e1d4b15af94574cd68bedd15fdf36838cda260de9f47a",
+      "reason": "Superseded or CPU-only test image; raw observations retained, latest CUDA/Qwen remain"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-host-path-review\\checks\\20261019T133438-fixture\\qwen.exp",
+      "bytes": 25025,
+      "sha256": "8f4eeb8462d019f83df0d59adb64045b69e280cf45b2f130d4ad6307f5e05bec",
+      "reason": "Rebuildable link byproduct; exact commands/owner identities retained"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-host-path-review\\checks\\20261019T133438-fixture\\qwen.lib",
+      "bytes": 41384,
+      "sha256": "339d3ce297534ebac8825c27a011f2f4f9dfe366c657ebfc45dbbfdc8412a2cb",
+      "reason": "Rebuildable link byproduct; exact commands/owner identities retained"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-host-path-review\\checks\\20261019T133438-fixture\\qwen.map",
+      "bytes": 33875407,
+      "sha256": "75f4d779f6da3add6b0eaeb25ea7d5c935315bac852b51f6205e7013d75690ba",
+      "reason": "Rebuildable link byproduct; exact commands/owner identities retained"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-host-path-review\\checks\\20261019T133607-fixture\\cpu.exe",
+      "bytes": 25784320,
+      "sha256": "ca064fe2c1792944d6c14974309c7db62bcb67d276b0211ff5115de37a9eb378",
+      "reason": "Superseded or CPU-only test image; raw observations retained, latest CUDA/Qwen remain"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-host-path-review\\checks\\20261019T133607-fixture\\cpu.exp",
+      "bytes": 25022,
+      "sha256": "66cd81c8c4f32851ab1425195fb0d452b7d72b14beaacae27ab587acb829672f",
+      "reason": "Rebuildable link byproduct; exact commands/owner identities retained"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-host-path-review\\checks\\20261019T133607-fixture\\cpu.lib",
+      "bytes": 41298,
+      "sha256": "1a72c22d3a6dec39cca5118fd99aa738ff5f4202c029fc8a48afb6c3d20e909d",
+      "reason": "Rebuildable link byproduct; exact commands/owner identities retained"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-host-path-review\\checks\\20261019T133607-fixture\\cpu.map",
+      "bytes": 35118299,
+      "sha256": "b2fb0407222fed7ca29796b8d9a0f0058e18b86eddac651a7fed08e93c59ddab",
+      "reason": "Rebuildable link byproduct; exact commands/owner identities retained"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-host-path-review\\checks\\20261019T133607-fixture\\cuda.exe",
+      "bytes": 118330368,
+      "sha256": "96abdf136b879a59a074559f3cdf61c18a757062b5b943bc76b28cfc3c57c59e",
+      "reason": "Superseded or CPU-only test image; raw observations retained, latest CUDA/Qwen remain"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-host-path-review\\checks\\20261019T133607-fixture\\cuda.exp",
+      "bytes": 25025,
+      "sha256": "d5e8b7e681632bd80bc7108342172943c3a4e941840ad2f06562e2b0860635f8",
+      "reason": "Rebuildable link byproduct; exact commands/owner identities retained"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-host-path-review\\checks\\20261019T133607-fixture\\cuda.lib",
+      "bytes": 41384,
+      "sha256": "097299e17e955c077a99f65f363d3484d564c016359baeb643f4e47c6b737d59",
+      "reason": "Rebuildable link byproduct; exact commands/owner identities retained"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-host-path-review\\checks\\20261019T133607-fixture\\cuda.map",
+      "bytes": 38586394,
+      "sha256": "6f2c9c7f87494bb6ff19742ce88611171e5e4214f0cb76e4c6e2c7718d263445",
+      "reason": "Rebuildable link byproduct; exact commands/owner identities retained"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-host-path-review\\checks\\20261019T133607-fixture\\qwen.exe",
+      "bytes": 116003328,
+      "sha256": "d44c5f638fc571f0ed70f6c05e45dce901cf84eee0f71b187fee283cf8e2ced7",
+      "reason": "Superseded or CPU-only test image; raw observations retained, latest CUDA/Qwen remain"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-host-path-review\\checks\\20261019T133607-fixture\\qwen.exp",
+      "bytes": 25025,
+      "sha256": "140ce155dae01d041d6c70c7baf5b2d2b7c540ae0953e01f3b6a1c4acb5d9d23",
+      "reason": "Rebuildable link byproduct; exact commands/owner identities retained"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-host-path-review\\checks\\20261019T133607-fixture\\qwen.lib",
+      "bytes": 41384,
+      "sha256": "339d3ce297534ebac8825c27a011f2f4f9dfe366c657ebfc45dbbfdc8412a2cb",
+      "reason": "Rebuildable link byproduct; exact commands/owner identities retained"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-host-path-review\\checks\\20261019T133607-fixture\\qwen.map",
+      "bytes": 33875407,
+      "sha256": "a7f6d3129bbdfbc3f9721c34f4d1a89dfb6e49742d1d22b222a0dd6bdb28baf2",
+      "reason": "Rebuildable link byproduct; exact commands/owner identities retained"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-host-path-review\\checks\\20261019T133655-fixture\\cpu.exe",
+      "bytes": 25784320,
+      "sha256": "a543dc5b1927cf4a4db9fe1266be04d4f3d075b10130e8b80a6e064f50ba76f6",
+      "reason": "Superseded or CPU-only test image; raw observations retained, latest CUDA/Qwen remain"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-host-path-review\\checks\\20261019T133655-fixture\\cpu.exp",
+      "bytes": 25022,
+      "sha256": "c7e821e34985ca534b37d1e9ee4698a7c045bff3ebccc8770159e5c2331d7205",
+      "reason": "Rebuildable link byproduct; exact commands/owner identities retained"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-host-path-review\\checks\\20261019T133655-fixture\\cpu.lib",
+      "bytes": 41298,
+      "sha256": "1a72c22d3a6dec39cca5118fd99aa738ff5f4202c029fc8a48afb6c3d20e909d",
+      "reason": "Rebuildable link byproduct; exact commands/owner identities retained"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-host-path-review\\checks\\20261019T133655-fixture\\cpu.map",
+      "bytes": 35118299,
+      "sha256": "82e12e25c310ec9a99ee4a54eb758c0c236c659b406b82df603f9dc10b4b20da",
+      "reason": "Rebuildable link byproduct; exact commands/owner identities retained"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-host-path-review\\checks\\20261019T133655-fixture\\cuda.exe",
+      "bytes": 118330368,
+      "sha256": "369a3e0213ad58405393c94397986513f3501d8cd36a1d85f40e3ed3871f5fc8",
+      "reason": "Superseded or CPU-only test image; raw observations retained, latest CUDA/Qwen remain"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-host-path-review\\checks\\20261019T133655-fixture\\cuda.exp",
+      "bytes": 25025,
+      "sha256": "06910ebb6a4b9c5a7f2ca9dcd6f6e9ca624071f37c249fcf272191fe704dc621",
+      "reason": "Rebuildable link byproduct; exact commands/owner identities retained"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-host-path-review\\checks\\20261019T133655-fixture\\cuda.lib",
+      "bytes": 41384,
+      "sha256": "097299e17e955c077a99f65f363d3484d564c016359baeb643f4e47c6b737d59",
+      "reason": "Rebuildable link byproduct; exact commands/owner identities retained"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-host-path-review\\checks\\20261019T133655-fixture\\cuda.map",
+      "bytes": 38586394,
+      "sha256": "41270f4a8ea2082a7f79e6a22b7e730496feead6845cdb73c014dd9399332ce6",
+      "reason": "Rebuildable link byproduct; exact commands/owner identities retained"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-host-path-review\\checks\\20261019T133655-fixture\\qwen.exe",
+      "bytes": 116003328,
+      "sha256": "13e32d502f0024757bf49cc0ab9dcf90de25cb6bae5924a620c3f452c1b2cb04",
+      "reason": "Superseded or CPU-only test image; raw observations retained, latest CUDA/Qwen remain"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-host-path-review\\checks\\20261019T133655-fixture\\qwen.exp",
+      "bytes": 25025,
+      "sha256": "17ee567c41ce95f2dcc08fc03aabe862e3e00c19856f619d2b8514b32ebf8d1e",
+      "reason": "Rebuildable link byproduct; exact commands/owner identities retained"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-host-path-review\\checks\\20261019T133655-fixture\\qwen.lib",
+      "bytes": 41384,
+      "sha256": "339d3ce297534ebac8825c27a011f2f4f9dfe366c657ebfc45dbbfdc8412a2cb",
+      "reason": "Rebuildable link byproduct; exact commands/owner identities retained"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-host-path-review\\checks\\20261019T133655-fixture\\qwen.map",
+      "bytes": 33875407,
+      "sha256": "11b39878e74e9869d50745e287584649539ed81b6df7233ef2ea1046686447af",
+      "reason": "Rebuildable link byproduct; exact commands/owner identities retained"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-host-path-review\\checks\\20261019T133822-fixture\\cpu.exe",
+      "bytes": 25786368,
+      "sha256": "bad0236359c6da6b511d36a0e7216f4b304a21065434e7601e0facb208162f5e",
+      "reason": "Superseded or CPU-only test image; raw observations retained, latest CUDA/Qwen remain"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-host-path-review\\checks\\20261019T133822-fixture\\cpu.exp",
+      "bytes": 25022,
+      "sha256": "6bb73259934161cc62a8cdf4fe950d0f2eaf60a1476151db23233daa95515d11",
+      "reason": "Rebuildable link byproduct; exact commands/owner identities retained"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-host-path-review\\checks\\20261019T133822-fixture\\cpu.lib",
+      "bytes": 41298,
+      "sha256": "1a72c22d3a6dec39cca5118fd99aa738ff5f4202c029fc8a48afb6c3d20e909d",
+      "reason": "Rebuildable link byproduct; exact commands/owner identities retained"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-host-path-review\\checks\\20261019T133822-fixture\\cpu.map",
+      "bytes": 35120109,
+      "sha256": "7971e949759a0dc59578315da4bfb0f00330d1598e8c26b1f07e12bb883d2b6b",
+      "reason": "Rebuildable link byproduct; exact commands/owner identities retained"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-host-path-review\\checks\\20261019T133822-fixture\\cuda.exp",
+      "bytes": 25025,
+      "sha256": "c9a1096077a7f62a0f615de1650a76362d1290160899debf58a5d18fb2deb709",
+      "reason": "Rebuildable link byproduct; exact commands/owner identities retained"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-host-path-review\\checks\\20261019T133822-fixture\\cuda.lib",
+      "bytes": 41384,
+      "sha256": "097299e17e955c077a99f65f363d3484d564c016359baeb643f4e47c6b737d59",
+      "reason": "Rebuildable link byproduct; exact commands/owner identities retained"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-host-path-review\\checks\\20261019T133822-fixture\\cuda.map",
+      "bytes": 38586394,
+      "sha256": "13e35dc5164a94c601fce394950b433e7d1033be139236146a07f8e2f4036e90",
+      "reason": "Rebuildable link byproduct; exact commands/owner identities retained"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-host-path-review\\checks\\20261019T133822-fixture\\qwen.exp",
+      "bytes": 25025,
+      "sha256": "6ce55563e4f737795240b623629ea47cc7f7832e27e9b463a2dbbe80d4b478bf",
+      "reason": "Rebuildable link byproduct; exact commands/owner identities retained"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-host-path-review\\checks\\20261019T133822-fixture\\qwen.lib",
+      "bytes": 41384,
+      "sha256": "339d3ce297534ebac8825c27a011f2f4f9dfe366c657ebfc45dbbfdc8412a2cb",
+      "reason": "Rebuildable link byproduct; exact commands/owner identities retained"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-host-path-review\\checks\\20261019T133822-fixture\\qwen.map",
+      "bytes": 33875407,
+      "sha256": "5911236b61c9efc5e171c52b20d4f8b0a5f9dad9aca5e58f58a42b6e332a0305",
+      "reason": "Rebuildable link byproduct; exact commands/owner identities retained"
+    }
+  ],
+  "apple": {
+    "remote": "kiro@172.22.10.198",
+    "removed": [
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/mlx-affine-contract-20261019/control-retry1/mlx.metallib",
+        "bytes": 1666552,
+        "sha256": "cabb611108c741e6132c3b518d832dc0b8c730868415d3c44789526823095636"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/mlx-affine-contract-20261019/control-retry1/mlx-quantized-tests",
+        "bytes": 10490992,
+        "sha256": "a8d160f8efdfb0fd8e82deda73f67ef65770404b6395c5ffc425add27f727f9f"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/mlx-affine-contract-20261019/control-retry1/mlx-quantized-tests.map",
+        "bytes": 2832341,
+        "sha256": "47782ed85b2751ecc0b0d43bfa3fceb1b7f490e518646f8cb998fb8925ba9154"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/mlx-affine-contract-20261019/fixed/mlx.metallib",
+        "bytes": 1666552,
+        "sha256": "cabb611108c741e6132c3b518d832dc0b8c730868415d3c44789526823095636"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/mlx-affine-contract-20261019/fixed/mlx-quantized-tests",
+        "bytes": 10490992,
+        "sha256": "0c614f7c78757afcf182c67926e917aaaebd709c5e092b4b2a97246ea02a8f62"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/mlx-affine-contract-20261019/fixed/mlx-quantized-tests.map",
+        "bytes": 2831972,
+        "sha256": "8964f852d8b72c6150f36f5c9732e27afa6dd875238f74af7a2208289b1ed780"
+      }
+    ],
+    "files": 6,
+    "bytes": 29979401,
+    "retained_cache_files": 139,
+    "cache_hashes_preserved": true
+  },
+  "retained": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-host-path-review\\checks\\20261019T133822-fixture\\cuda.exe",
+      "bytes": 118330368,
+      "sha256": "a3b9b140eb6de15a816b7ad9d078528ebbe9423f2357b1f2e34e627845a3e731"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-host-path-review\\checks\\20261019T133822-fixture\\qwen.exe",
+      "bytes": 116003328,
+      "sha256": "429c5400e9fb9a50ad3efcbc30581117fc583c1e791baa6c5e1bbeecd8f97d0e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-explicit-rope\\performance-prepared\\peer.exe",
+      "bytes": 35814400,
+      "sha256": "fb169f0282f2a834a61b3e887edaba92d8699814558b0c5f1a13aaf07e0de969"
+    }
+  ],
+  "objects_sources_recipes_and_shared_SDKs_preserved": true
+}

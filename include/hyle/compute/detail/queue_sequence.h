@@ -6,12 +6,15 @@
 
 #include "hyle/compute/completion.h"
 #include "hyle/compute/detail/completion_access.h"
+#include "hyle/compute/detail/operation_access.h"
+#include "hyle/compute/detail/queue_ref.h"
 #include "hyle/compute/device.h"
 #include "hyle/compute/tensor.h"
 
 namespace hyle::compute {
 
 class OperationInvocation;
+struct OperationId;
 
 namespace detail {
 
@@ -47,8 +50,8 @@ struct EnqueueResult final {
 // Internal factor bridge for one uninterrupted ordered-Queue submission
 // sequence.  It holds Context/Queue admission and excludes a second producer
 // only while commands are being submitted; asynchronous execution continues
-// after this guard is destroyed.  Graph uses one guard for its whole plan so a
-// close or another producer cannot split/interleave the sequence.
+// after this guard is destroyed. Each shared Graph segment uses one guard so
+// a close or another producer cannot split/interleave that admitted sequence.
 class QueueSequence final {
 public:
   QueueSequence() noexcept = default;
@@ -59,18 +62,26 @@ public:
   HYLE_COMPUTE_API ~QueueSequence();
 
   HYLE_COMPUTE_API static Result<QueueSequence> begin(Queue &queue) noexcept;
+  HYLE_COMPUTE_API static Result<QueueSequence> begin(const QueueRef &queue) noexcept;
   // Cold route query for the prefix Completion produced by source. It does
   // not begin a sequence or create an event and is stable for these Queue
   // objects. Same-Queue ordering is normally handled by Graph before calling.
   HYLE_COMPUTE_API static Result<QueueDependencyRoute>
   dependency_route(const Queue &destination, const Queue &source) noexcept;
+  HYLE_COMPUTE_API static Result<QueueDependencyRoute>
+  dependency_route(const QueueRef &destination, const QueueRef &source) noexcept;
   // Cold endpoint bridge shared by Queue and delegated-provider islands.
   // An invalid endpoint is valid only for a synchronous Queue whose prefix is
   // complete before finish_sequence() returns.
   HYLE_COMPUTE_API static Result<CompletionEndpoint>
   completion_endpoint(const Queue &queue) noexcept;
+  HYLE_COMPUTE_API static Result<CompletionEndpoint>
+  completion_endpoint(const QueueRef &queue) noexcept;
   HYLE_COMPUTE_API static Result<bool>
   can_import_endpoint(const Queue &destination,
+                      CompletionEndpoint source) noexcept;
+  HYLE_COMPUTE_API static Result<bool>
+  can_import_endpoint(const QueueRef &destination,
                       CompletionEndpoint source) noexcept;
 
   // Accumulate one provider/backend enqueue result. Once an error is recorded,
@@ -90,21 +101,31 @@ public:
   // prefix is represented by a valid Completion carrying the first tail error.
   HYLE_COMPUTE_API Result<Completion> finish() noexcept;
 
-  bool valid() const noexcept { return queue_ != nullptr; }
+  bool valid() const noexcept { return state_ != nullptr; }
   explicit operator bool() const noexcept { return valid(); }
-  Queue &queue() const noexcept { return *queue_; }
   bool accepted() const noexcept { return accepted_; }
+  // Actual recording state of this admitted sequence, never inferred from a
+  // selected provider. CommandCaptureAccess owns its begin/end/abort changes.
+  bool recording() const noexcept { return recording_; }
   const Status &terminal() const noexcept { return terminal_; }
 
 private:
-  QueueSequence(Queue *queue, void *backend_sequence) noexcept
-      : queue_(queue), backend_sequence_(backend_sequence) {}
+  friend struct ContextAccess;
+  friend struct CommandCaptureAccess;
+  QueueSequence(QueueState *state, void *backend_sequence) noexcept
+      : state_(state), backend_sequence_(backend_sequence) {}
+  static Result<QueueSequence> begin(QueueState *) noexcept;
+  static Result<QueueDependencyRoute>
+  dependency_route(QueueState *destination, QueueState *source) noexcept;
+  static Result<CompletionEndpoint> completion_endpoint(QueueState *) noexcept;
+  static Result<bool> can_import_endpoint(QueueState *, CompletionEndpoint) noexcept;
   void reset() noexcept;
 
-  Queue *queue_ = nullptr;
+  QueueState *state_ = nullptr;
   void *backend_sequence_ = nullptr;
   Status terminal_{};
   bool accepted_ = false;
+  bool recording_ = false;
 };
 
 // Validation and provider dispatch for a command inside an already-admitted
@@ -113,6 +134,17 @@ private:
 // prefix rule lets Graph discard intermediate handles without losing earlier
 // terminal errors or inserting host waits.
 struct OperationInvocationAccess final {
+  // Cold only, while the original slot is idle and unretained. Revalidates
+  // descriptions/resources/aliases before its optional preparation callback.
+  // No Queue admission, payload execution, or implicit submit is performed.
+  HYLE_COMPUTE_API static Status prepare_bindings(
+      OperationInvocation &, std::span<const ConstTensorView> inputs,
+      std::span<const TensorView> outputs) noexcept;
+  // Same-build typed adapter only. False means this selected implementation
+  // needs no layout update. Native state never leaves object-local dispatch.
+  HYLE_COMPUTE_API static Result<bool> configure_cold(
+      OperationInvocation &, ProviderExtensionId,
+      const void *configuration) noexcept;
   HYLE_COMPUTE_API static EnqueueResult
   enqueue(OperationInvocation &invocation, QueueSequence &sequence,
           std::span<const ConstTensorView> inputs,

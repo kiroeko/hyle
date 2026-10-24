@@ -1,0 +1,21 @@
+{
+  "status": "PASS",
+  "product_main_provider_policy_and_kept_images_unchanged": true,
+  "final_doc_hashes_match_published_snapshots": true,
+  "local_doc_links_resolve": true,
+  "archive_hashes_unchanged": true,
+  "retained_link_inputs": 195,
+  "reused_product_inputs": 194,
+  "all_input_paths_and_sizes_retained": true,
+  "cleanup": {
+    "files": 412,
+    "logical_bytes": 401368456,
+    "all_exact_targets_absent": true,
+    "root_script_matches_executed_copy": true
+  },
+  "actual_model_processes": 4,
+  "host_CXX_processes": 1,
+  "link_processes": 1,
+  "no_additional_native_work_in_postconditions": true,
+  "goal_complete": false
+}

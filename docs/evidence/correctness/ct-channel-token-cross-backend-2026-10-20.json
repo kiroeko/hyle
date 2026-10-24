@@ -1,0 +1,219 @@
+{
+  "status": "PASS: CT BF16 channel/token QDQ ordinary Graph on four backends",
+  "source_definition": "docs/evidence/research/fp8-channel-token-contract-2026-10-20.json",
+  "implementation_scope": {
+    "Apple": "Ordinary F32/F16/BF16-to-Bool Cast uses IEEE magnitude bits; reverse Bool Cast and Select normalize any nonzero raw byte. Floating Select retains its original integer-bit payload path.",
+    "Vulkan": "Ordinary F32/F16/BF16-to/from-Bool Cast and F16/BF16-to/from-E4M3FN storage bridges. Existing byte-copy Select, BF16 arithmetic and ordinary MatMul retained.",
+    "unchanged": "CPU/CUDA already implement the required leaves; current shared tests were refreshed against retained current product objects.",
+    "excluded": "No FP8-to/from-Bool or integer-to/from-Bool expansion, no new public operator, backend switch, executor or model whitelist."
+  },
+  "numerical_contract": {
+    "graph": "Original rank3 BF16 A[B,T,K], BF16 last-axis absmax/448; replace exactly zero scale by epsilon1/128, not an epsilon floor. BF16 divide/clamp -> saturated nearest-even E4 -> BF16 reconstruction.",
+    "weight": "Original E4 W[N,K] -> BF16 -> multiply BF16 channel scale[N,1] with BF16 rounding; transpose and ordinary F32-accumulating MatMul -> BF16 output.",
+    "non_equivalence": "No replacement by a raw FP8 code-dot with scales outside the sum; original intermediate BF16 rounding remains observable.",
+    "primitive_edges": "Three floating storage types: +/-zero false; minimum +/-subnormal, +/-Inf and NaN true; arbitrary nonzero Bool bytes restore floating0/1. Broadcast [7,1] mask with [1,3]/[7,1] branches preserves exact selected signedzero/subnormal/NaN payload bits."
+  },
+  "architecture": "Existing GraphBuilder, cold backend lowering, Program/Invocation, prepare/capture, Completion and output leases. No change to shared scheduling, allocation policy or resource-retirement core.",
+  "resources": "Original two QDQ Invocation slots with stable input updates; materialized constant owners/executable dropped; retained output blocks replay, and output survives Invocation destruction. The primitive guard repeats updates and ownership checks for three dtypes. No peak-memory measurement.",
+  "catalog_scope": {
+    "indices": [
+      2,
+      8
+    ],
+    "artifact2": "Freesolo-Co Qwen3.5-2B inspected186 language-role weights with BF16[N,1] scales; no vision-role inference.",
+    "artifact8": "Unsloth Qwen3.8-27B NVFP4 artifact FP8 attention/head and last8-layer MLP overrides only; layers0..55 local NVFP4 is a separate completed contract.",
+    "excluded": "Quark per-channel axis/F32 scales, official block128/group128 and static ModelOpt FP8 are not borrowed.",
+    "evidence_scope": "Synthetic original-format numerical and lifetime reference; role headers/source establish applicability, not selected publisher numeric payload or complete importer/model execution.",
+    "artifact_execution_verified_false_count": 33,
+    "update": {
+      "status": "Only artifacts2/8 provider coverage updated; historical/local-NVFP4 facts retained",
+      "changed_zero_based_rows": [
+        2,
+        8
+      ],
+      "only_provider_coverage_changed": true,
+      "all_other31_artifacts_and_root_fields_unchanged": true,
+      "existing_entry_points_kept_as_exact_prefix": true,
+      "historical_evidence_references_and_local_nvfp4_contract_unchanged": true,
+      "artifact_execution_verified_false_count": 33,
+      "reported_regressions": {
+        "WindowsCPU": 5,
+        "WindowsCUDA": 5,
+        "WindowsVulkan": 7,
+        "macOSAppleM4": 3,
+        "total": 20,
+        "skipped": 0
+      },
+      "reported_submissions_per_backend": {
+        "CT_QDQ": 4,
+        "three_dtype_Bool_Select": 6
+      },
+      "builds_tests_or_GPU_runs_by_this_catalog_task": 0,
+      "new_correctness_evidence": "docs/evidence/correctness/ct-channel-token-cross-backend-2026-10-20.json",
+      "correctness_file_present_at_catalog_edit": false,
+      "correctness_publisher": "root; fixed path per task",
+      "preserved_historical_file_identities": [
+        {
+          "path": "docs/evidence/research/fp8-channel-token-contract-2026-10-20.json",
+          "bytes": 5558,
+          "sha256": "c17cbca2bfae80daf7d8d5580c1618cc5a55900ba3fa98759d58800599b67cda"
+        },
+        {
+          "path": "docs/evidence/correctness/fp8-channel-token-qdq-2026-10-20.json",
+          "bytes": 9706,
+          "sha256": "228361a92d029f953141589004681322a0e26e35c8eb3642e8692599ef1f2ce2"
+        },
+        {
+          "path": "docs/evidence/correctness/cuda-native-storage-cast-2026-10-20.json",
+          "bytes": 14099,
+          "sha256": "c0641cd1d222a7839c4e3f443ebfc675797d479148e78eb627ff59d2ef9a61af"
+        },
+        {
+          "path": "docs/evidence/correctness/ct-local-nvfp4-reference-2026-10-20.json",
+          "bytes": 14982,
+          "sha256": "78a394b6901d8bfd19e97c33b9f2768c73f9181ab3da3ff8b7761b524d33e366"
+        }
+      ],
+      "before": {
+        "bytes": 435834,
+        "sha256": "847f67902e9c1aa630492139e8948dad6530bc80493cc6a14b75fc0c2b754b83"
+      },
+      "after": {
+        "bytes": 443057,
+        "sha256": "8fd5b89f8774d60951a43a1a02c583f47657609b6f8fcd9d3462140e96a13ace"
+      },
+      "diff": {
+        "bytes": 14202,
+        "sha256": "1e20e8f2918ecbe8cc1f9f1822b10d1ee34af4ba06abe847714e68f743a9d943"
+      }
+    }
+  },
+  "results": [
+    {
+      "backend": "Windows CPU",
+      "passed": 5,
+      "failed": 0,
+      "skipped": 0,
+      "xml": "cpu/checks/attempt2/tests.xml",
+      "identity": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-channel-token-cross-backend\\cpu\\checks\\attempt2\\tests.xml",
+        "bytes": 2113,
+        "sha256": "b8c79334f1be5c08996573975d5505f61c14707c935e026bdcf6df21bddfa16d"
+      },
+      "new_CT_and_boolean_storage_cases": 2,
+      "new_CT_and_boolean_actual_submissions": 10,
+      "names": [
+        "NativeCast.BfloatNanPayloadPreservesE5m2UpperPayloadAndQuietBit",
+        "NativeCast.ReplaysAllFourQualifiedStoragePairs",
+        "NativeCast.BooleanConversionsKeepSignedZerosTinyValuesAndByteStrides",
+        "CpuFp8ChannelTokenQdqGraph.RankThreeBfloatReferenceKeepsTypedRoundingAndLifetimes",
+        "CpuFp8ChannelTokenQdqGraph.BooleanStorageAndBroadcastSelectPreserveIeeeBits"
+      ]
+    },
+    {
+      "backend": "Windows CUDA RTX4070",
+      "passed": 5,
+      "failed": 0,
+      "skipped": 0,
+      "xml": "cuda/checks/attempt1/tests.xml",
+      "identity": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-channel-token-cross-backend\\cuda\\checks\\attempt1\\tests.xml",
+        "bytes": 2636,
+        "sha256": "fb67808301cda01a5bd707908c6ad503524f32ecbe139ccd243a8e711df12cda"
+      },
+      "new_CT_and_boolean_storage_cases": 2,
+      "new_CT_and_boolean_actual_submissions": 10,
+      "names": [
+        "CudaStaticFp8ReferenceGraph.StoredCodesScalesAndCodeDotSurviveSlotsAndUpdates",
+        "CudaStaticFp8ReferenceGraph.IeeeScalarUpdatesKeepReciprocalAndSeparateScaleRounds",
+        "CudaStaticFp8ReferenceGraph.PublishedCodeValuesKeepTheOriginalCapturedDecomposition",
+        "CudaFp8ChannelTokenQdqGraph.RankThreeBfloatReferenceKeepsTypedRoundingAndLifetimes",
+        "CudaFp8ChannelTokenQdqGraph.BooleanStorageAndBroadcastSelectPreserveIeeeBits"
+      ]
+    },
+    {
+      "backend": "Windows Vulkan RTX4070",
+      "passed": 7,
+      "failed": 0,
+      "skipped": 0,
+      "xml": "vulkan/validation/final1/tests.xml",
+      "identity": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-channel-token-cross-backend\\vulkan\\validation\\final1\\tests.xml",
+        "bytes": 3757,
+        "sha256": "382ccf3c58b85fae37917ca8af2e4877677dfc29a9e6c5340315262271f2fb4c"
+      },
+      "new_CT_and_boolean_storage_cases": 2,
+      "new_CT_and_boolean_actual_submissions": 10,
+      "names": [
+        "VulkanFp8ChannelTokenQdqGraph.RankThreeBfloatReferenceKeepsTypedRoundingAndLifetimes",
+        "VulkanFp8ChannelTokenQdqGraph.OrdinaryBoolCastAndBroadcastSelectKeepRawStorage",
+        "VulkanFp8ChannelTokenStorage.BfloatFp8BridgeKeepsRneAndRejectsFp8Arithmetic",
+        "VulkanStaticFp8ReferenceGraph.StoredScalesAndTypedOutputsSurviveSlotsAndUpdates",
+        "VulkanStaticFp8ReferenceGraph.IeeeScaleAndCodeBoundariesRetainTheDeclaredTree",
+        "VulkanStaticFp8ReferenceGraph.PublishedCodesAndControlEscapesUseTheOriginalGraph",
+        "VulkanStaticFp8ReferenceGraph.OddStorageCastWordsRespectExplicitPaddingOwnership"
+      ]
+    },
+    {
+      "backend": "macOS Apple M4",
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "xml": "apple/mac/remote/results/tests.xml",
+      "identity": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-channel-token-cross-backend\\apple\\mac\\remote\\results\\tests.xml",
+        "bytes": 2040,
+        "sha256": "8ca9151ffcee1acb11e764c10f3c70649c0a06d136b60e54c8a920da1607b127"
+      },
+      "new_CT_and_boolean_storage_cases": 2,
+      "new_CT_and_boolean_actual_submissions": 10,
+      "names": [
+        "AppleFp8ChannelTokenQdqGraph.RankThreeBfloatReferenceKeepsTypedRoundingAndLifetimes",
+        "AppleFp8ChannelTokenQdqGraph.FloatingBooleanRoundtripAndBroadcastSelectionPreserveOriginalBits",
+        "AppleNvfp4ReferenceGraph.ByteCarrierDoesNotTurnLogicalFp8IntoIntegerArithmetic"
+      ]
+    }
+  ],
+  "total_final_passed": 20,
+  "final_failed": 0,
+  "final_skipped": 0,
+  "actual_primary_submissions": 40,
+  "build_scope": "Windows: CPU/CUDA one test TU each, Vulkan two product CXX plus one test CXX and six affected GLSL variants;15 unaffected SPV reused. Apple one product CXX plus wrapper, then wrapper-only mechanical header refresh. No SDK rebuilt or unrelated full build.",
+  "baseline": {
+    "Apple": "Original graph actually failed compile at the floating-only Bool Cast guard; baseline/results/tests.xml and command logs retained.",
+    "Vulkan": "Missing typed Bool/FP8 bridges established by source inspection; old shader baseline was not executed. Final graph and neighbors were executed on RTX4070."
+  },
+  "retained_build_failures": [
+    "Shared test max_blocks initialized from size_t triggered MSVC C4267 under /WX. Fixed to the known bound4, no numerical change; first failed receipts and Apple first complete pass retained.",
+    "Vulkan wrapper initially omitted explicit Operation construction in two helper calls; corrected test setup only.",
+    "Vulkan first link attempted the test object after failed compilation and hit LNK1181; final current linked image and inputs are identified separately."
+  ],
+  "review_members": [
+    "review/scope.json",
+    "review/source-review.json",
+    "vulkan/compiled-identities.json",
+    "apple/final-validation.json"
+  ],
+  "limits": [
+    "No publisher numeric weight payload, complete artifact/model, quality or deployment-native FP8-dot equivalence claim.",
+    "No Linux execution or installed-consumer qualification by this package.",
+    "No throughput, peak-memory or energy result; current BF16 Qwen consumer uses a different path.",
+    "No all-code-space qualification of the F16/E4 bridge or arbitrary quantizer/axis/scale combinations."
+  ],
+  "progress": {
+    "capability_packages_complete": 6,
+    "capability_packages_total": 8,
+    "delivery_packages_complete": 0,
+    "delivery_packages_total": 3,
+    "next": "CT packed grouped/expert space: bounded packed consumption instead of a full decoded expert bank"
+  },
+  "archive": {
+    "identity": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\ct-channel-token-cross-backend-2026-10-20.zip",
+      "bytes": 1845861,
+      "sha256": "1847350c0d87362d51a7f5c48ab62ef834cacdcb04ed1c2560bc16b5eb1d5e60"
+    },
+    "members": 282,
+    "current_sources": 22
+  }
+}

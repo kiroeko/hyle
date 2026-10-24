@@ -32,5 +32,25 @@
       "body_sha256": "3d1b06219a79c51fdfa8474a52bfe80e4015f8683a62475ff96744230ff40c17"
     }
   ],
-  "module_sha256": "8c1ab58b5362d0d419f6127418771c54bac313013c940633eae2a04653d2833d"
+  "module_sha256": "8c1ab58b5362d0d419f6127418771c54bac313013c940633eae2a04653d2833d",
+  "runtime_top_k": {
+    "description": "Only top_k loses constexpr annotation. The actual shared-activation divisor is supplied per prepared shape; independent-slot activations pass 1. Dot, quantization, scales, stores, tiles and expert sorting are unchanged.",
+    "before": "    top_k: tl.constexpr,",
+    "after": "    top_k,",
+    "module_sha256": "f095301b2c70b12d1040eabe62845030833cab9ac07b546fb1c45b274946dd02"
+  },
+  "scale_order": {
+    "description": "For the qualified block128 jobs, scale the F32 code dot by the activation scale, then by the weight scale, with two explicit F32 RNE multiplies before the original F32 accumulation. Do not form As*Bs first: finite scales can overflow even for zero weights. The pinned upstream body, quantizer, dot, output conversion, sorting, tiles and launch ABI remain unchanged.",
+    "input_module_sha256": "f095301b2c70b12d1040eabe62845030833cab9ac07b546fb1c45b274946dd02",
+    "before": "                    accumulator += tl.dot(a, b) * (a_scale[:, None] * b_scale)",
+    "after": "                    # HYLE: preserve dot -> activation scale -> weight scale.\n                    # Explicit F32 RNE prevents reassociation/FFMA from creating\n                    # an overflowing As*Bs for otherwise finite zero weights.\n                    block_dot = tl.dot(a, b)\n                    scaled_dot = tl.inline_asm_elementwise(\n                        \"mul.rn.f32 $0, $1, $2;\", \"=f,f,f\",\n                        [block_dot, a_scale[:, None]], dtype=tl.float32,\n                        is_pure=True, pack=1,\n                    )\n                    scaled_dot = tl.inline_asm_elementwise(\n                        \"mul.rn.f32 $0, $1, $2;\", \"=f,f,f\",\n                        [scaled_dot, b_scale], dtype=tl.float32,\n                        is_pure=True, pack=1,\n                    )\n                    accumulator += scaled_dot",
+    "module_sha256": "16d9d20c557868941bec8494873484be0f2958537a9cd5c4a1eee29b7e97cc44"
+  },
+  "dot_precision": {
+    "description": "For the qualified block128 FP8 jobs, exactly widen finite E4M3FN register tiles to BF16 before the F32 dot. Keep original packed storage, quantizer, scale order, expert sorting and output conversions.",
+    "input_module_sha256": "16d9d20c557868941bec8494873484be0f2958537a9cd5c4a1eee29b7e97cc44",
+    "before": "block_dot = tl.dot(a, b)",
+    "after": "block_dot = tl.dot(a.to(tl.bfloat16), b.to(tl.bfloat16))",
+    "module_sha256": "fc07e0718a4b2f96ac76ed86916fe03bba9915bbbd6ff9b23e61ad0fc78b58db"
+  }
 }

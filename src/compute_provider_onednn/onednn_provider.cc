@@ -170,7 +170,7 @@ detail::EnqueueResult accepted(Status terminal) noexcept {
 }
 
 detail::EnqueueResult submit(void *prepared_value, void *invocation_value,
-                             Queue &, std::span<const ConstTensorView> inputs,
+                             detail::QueueSequence &, std::span<const ConstTensorView> inputs,
                              std::span<const TensorView> outputs) noexcept {
   if (inputs.size() != 2 || outputs.size() != 1) {
     return accepted(Status::Internal("oneDNN binding count is invalid"));
@@ -439,16 +439,14 @@ prepare(void *context_value, const detail::ProviderPrepareRequest &request,
   status = internal::create_brgemm_plan(route.shape, route.task_count,
                                         allocator, &brgemm);
   if (!status.ok()) {
-    return status.IsResourceExhausted()
-               ? ProviderPrepareOutcome::resource_declined(std::move(status))
-               : ProviderPrepareOutcome::error(std::move(status));
+    return ProviderPrepareOutcome::error(std::move(status));
   }
 
   void *storage =
       allocator.allocate(sizeof(OneDnnPrepared), alignof(OneDnnPrepared));
   if (storage == nullptr) {
     internal::destroy_brgemm_plan(brgemm, allocator);
-    return ProviderPrepareOutcome::resource_declined(
+    return ProviderPrepareOutcome::error(
         Status::ResourceExhausted("oneDNN prepared wrapper allocation failed"));
   }
   auto *prepared = ::new (storage) OneDnnPrepared{

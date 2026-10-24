@@ -1,0 +1,138 @@
+{
+  "review": "read_only_projection_typed_epilogue_feasibility",
+  "decision": "No remaining applicable projection-output F32-store plus BF16-cast target is demonstrated in the current retained Qwen trace. Do not reopen the rejected default cuBLAS-to-MMVF route change under a typed-epilogue label.",
+  "trace_evidence": {
+    "source": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-critical-path\\hyle\\decode.sqlite",
+    "existing_analysis": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-critical-path\\hyle\\analysis.json",
+    "phase": "decode7",
+    "kernel_count": 740,
+    "conversion_counts": {
+      "void cpy_scalar_contiguous<__nv_bfloat16, float>(const char *, char *, long long)": 109,
+      "void cpy_scalar_contiguous<float, __nv_bfloat16>(const char *, char *, long long)": 54
+    },
+    "projection_mapping_count": 163,
+    "mapping_ordinals_are_zero_based": true,
+    "every_projection_symbol_matched_sqlite": true,
+    "projection_family_counts": {
+      "cuBLAS_BF16_GEMV": 139,
+      "GGML_MMVF_dual": 24
+    },
+    "immediately_following_kernels": [
+      {
+        "family": "cuBLAS_BF16_GEMV",
+        "kind": "other",
+        "count": 102
+      },
+      {
+        "family": "cuBLAS_BF16_GEMV",
+        "kind": "widen_BF16_to_F32",
+        "count": 37
+      },
+      {
+        "family": "GGML_MMVF_dual",
+        "kind": "other",
+        "count": 24
+      }
+    ],
+    "examples": [
+      {
+        "role": "GDN_qkv_projection",
+        "layer": 0,
+        "kernel_ordinal_zero_based": 2,
+        "family": "cuBLAS_BF16_GEMV",
+        "next_kernel": "void concat_cont<unsigned short, (int)1>(const T1 *, const T1 *, T1 *, long long, long long, long long, long long, long long, long long)"
+      },
+      {
+        "role": "GDN_a_or_b_projection",
+        "layer": 0,
+        "kernel_ordinal_zero_based": 9,
+        "family": "cuBLAS_BF16_GEMV",
+        "next_kernel": "void cpy_scalar_contiguous<__nv_bfloat16, float>(const char *, char *, long long)"
+      },
+      {
+        "role": "GDN_a_or_b_projection",
+        "layer": 0,
+        "kernel_ordinal_zero_based": 11,
+        "family": "cuBLAS_BF16_GEMV",
+        "next_kernel": "void k_bin_bcast<&op_add, float, float, float, const float *>(const T2 *, const T3 *, T4 *, unsigned int, unsigned int, unsigned int, uint3, uint3, uint3, uint3, uint3, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, T5...)"
+      },
+      {
+        "role": "GDN_z_projection",
+        "layer": 0,
+        "kernel_ordinal_zero_based": 25,
+        "family": "cuBLAS_BF16_GEMV",
+        "next_kernel": "void cpy_scalar_contiguous<__nv_bfloat16, float>(const char *, char *, long long)"
+      },
+      {
+        "role": "GDN_output_projection",
+        "layer": 0,
+        "kernel_ordinal_zero_based": 29,
+        "family": "cuBLAS_BF16_GEMV",
+        "next_kernel": "void k_bin_bcast<&op_add, __nv_bfloat16, __nv_bfloat16, __nv_bfloat16, const __nv_bfloat16 *>(const T2 *, const T3 *, T4 *, unsigned int, unsigned int, unsigned int, uint3, uint3, uint3, uint3, uint3, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, T5...)"
+      },
+      {
+        "role": "FFN_gate_up_dual_projection",
+        "layer": 0,
+        "kernel_ordinal_zero_based": 32,
+        "family": "GGML_MMVF_dual",
+        "next_kernel": "std::enable_if<!T7, void>::type internal::gemvx::kernel<int, int, __nv_bfloat16, __nv_bfloat16, __nv_bfloat16, float, (bool)0, (bool)1, (bool)1, (bool)0, (int)7, (bool)0, cublasGemvParamsEx<int, cublasGemvTensorStridedBatched<const __nv_bfloat16>, cublasGemvTensorStridedBatched<const __nv_bfloat16>, cublasGemvTensorStridedBatched<__nv_bfloat16>, float>>(T13)"
+      },
+      {
+        "role": "FFN_down_projection",
+        "layer": 0,
+        "kernel_ordinal_zero_based": 33,
+        "family": "cuBLAS_BF16_GEMV",
+        "next_kernel": "void k_bin_bcast<&op_add, __nv_bfloat16, __nv_bfloat16, __nv_bfloat16, const __nv_bfloat16 *>(const T2 *, const T3 *, T4 *, unsigned int, unsigned int, unsigned int, uint3, uint3, uint3, uint3, uint3, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, T5...)"
+      }
+    ],
+    "limits": "Adjacency alone is not a dataflow proof for all conversions. The projection symbols declare BF16 output storage; not one mapped projection is immediately followed by F32-to-BF16 cpy. Follow-on BF16-to-F32 consumption is a separate optimization question."
+  },
+  "current_source": [
+    {
+      "source": "src/compute_provider_ggml_cuda/tensor_program.cc:946",
+      "fact": "The selected rank-2/even-K/contiguous/single-vector ordinary BF16 MatMul already constructs a BF16 GGML MUL_MAT output. It retains the F32-result path for other domains; this does not change provider policy."
+    },
+    {
+      "source": ".scratch/architecture-refactor-2026-10-18/cuda-fusion-precision/native-source/src/ggml-cuda/mmvf.cuh:35",
+      "fact": "Actual retained MMVF carrier is already templated on input Y and output Dst. F32 MAC and warp/block reduction precede the final store; lines424-427 select __float2bfloat16_rn only at the BF16 final store."
+    },
+    {
+      "source": ".scratch/architecture-refactor-2026-10-18/cuda-fusion-precision/native-source/src/ggml-cuda/mmvf.cu:166",
+      "fact": "A concrete BF16-input/BF16-output ordinary MMVF branch is already instantiated. Existing F32-input/F32-output behavior remains separate at lines183-185."
+    },
+    {
+      "source": ".scratch/architecture-refactor-2026-10-18/cuda-grouped-fusion/native-source/src/ggml-cuda/ggml-cuda.cu:2133",
+      "fact": "Native BF16 destination predicate restricts exact ordinary MatMul with F32 accumulation, even K, singleton vector/batches, contiguous Q/W/output and original should_use_mmvf device qualification; lines2148-2151 directly dispatch it."
+    },
+    {
+      "source": "src/compute_route_cuda/default_policy.cc:17",
+      "fact": "Ordinary plain rank-2 MatMul still defaults to the cuBLAS family. The retained trace has139 cuBLAS BF16 GEMV carriers and24 BF16 dual MMVF carriers, rather than163 unfused F32 MMVF outputs."
+    }
+  ],
+  "native_provenance": {
+    "ggml_pin": "456172ec733a135778adcd32d00e576a58232e45",
+    "lock": "cmake/HyleDependencyLock.json",
+    "cuda_patch_version": "hyle-ggml-cuda-resource-iq1-inference-v22",
+    "actual_mmvf_object_identity": ".scratch/architecture-refactor-2026-10-18/cuda-fusion-precision/checks/20261019T111328/mmvf-identity.json",
+    "actual_main_object_identity": ".scratch/architecture-refactor-2026-10-18/cuda-grouped-fusion/checks/20261019T123025/ggml-cuda-identity.json",
+    "note": "The unpatched cache source has only F32 MMVF output. This review uses the actual linked patched sources, not that upstream-only header as the final carrier."
+  },
+  "previous_rejected_experiment": {
+    "summary": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-native-matvec\\summary.json",
+    "restoration": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-native-matvec\\product-restoration.json",
+    "actual_changes": "Admitted additional rank-2 native vectors, inserted exact widening of their low-type activations to F32, and changed the default single-token rank-2 route from cuBLAS to GGML MMVF. It did not isolate a final-store-type change.",
+    "observed_byte_identical_vectors": 2,
+    "observed_total_vectors": 128,
+    "prediction_ids_equal": true,
+    "decision": "Rejected as default optimization; product and two test TUs restored to exact pre-experiment sources. Candidate source, numeric checks and all failed/successful build attempts retained.",
+    "numerical_interpretation": "The two carriers use different reduction/accumulation structures. An exact BF16-to-F32 input widening is not itself a rounding loss. Retained evidence proves output drift and regression for the compound route change, not that replacing F32 store+RNE copy with a single final BF16 RNE is numerically invalid."
+  },
+  "generic_cold_recipe_if_a_real_target_exists_later": {
+    "shape": "An already selected GGML_OP_MUL_MAT producing F32, followed by its unique same-layout GGML_OP_CPY cast to BF16. Keep the exact existing MMVF eligibility, source tensor types/strides, precision and launch/reduction template choices.",
+    "output_only_change": "For an original F32 RHS MMVF, instantiate Y=float and Dst=nv_bfloat16; do not switch it to the existing Y=BF16/Dst=BF16 route as a hidden arithmetic/routing change. The current template supplies the final-store seam, but the current host entry only accepts F32/F32 or BF16/BF16 pairs.",
+    "closure": "Require no published/flagged F32 intermediate, no additional direct or View/control readers, exact output mapping, and original bound-address/alignment/RESTRICT overlap proof. Preserve unsupported domains and allocator read dependencies; allocation lifetime extension alone cannot remove a publicly visible F32 intermediate.",
+    "numerical_guard": "Use the same MAC sequence, accumulation type, warp/block reduction and compiler precision flags; only the final FP32-to-BF16 RNE store differs. Verify NaN/Inf/subnormal/RNE ties against the original cast implementation before making any bitwise claim.",
+    "not_a_current_optimization": "No such remaining projection target is demonstrated in this retained workload, and no provider/default/native kernel change is proposed or implemented."
+  },
+  "execution": "Only current local sources, existing identity/JSON/CSV and read-only SQLite were read. No build, SDK preparation/download, GPU execution, profiler invocation or product modification."
+}

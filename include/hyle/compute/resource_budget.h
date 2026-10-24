@@ -11,7 +11,7 @@
 #include "hyle/mem/resource.h"
 
 namespace hyle::compute {
-namespace detail { struct ResourceBudgetState; }
+namespace detail { struct ResourceBudgetState; struct ResourceBudgetAccess; }
 
 struct ResourceBudgetLimit final {
   mem::MemoryResourceRef resource{};
@@ -63,6 +63,7 @@ public:
     HYLE_COMPUTE_API void reset() noexcept;
   private:
     friend class ResourceBudget;
+    friend struct detail::ResourceBudgetAccess;
     Reservation(detail::ResourceBudgetState *state,
                 mem::QuotaAllocator::Reservation charge, bool unknown,
                 std::size_t row, ResourceBudgetCategory category) noexcept;
@@ -98,6 +99,7 @@ public:
   // the scope; the returned ref itself is borrowed, like every AllocatorRef.
   HYLE_COMPUTE_API Result<mem::AllocatorRef> metadata_allocator() const noexcept;
 private:
+  friend struct detail::ResourceBudgetAccess;
   explicit ResourceBudget(detail::ResourceBudgetState *state) noexcept : state_(state) {}
   detail::ResourceBudgetState *state_ = nullptr;
 };

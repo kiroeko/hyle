@@ -11,17 +11,15 @@ runtime. Source, static and shared C++ all include the same artifacts/licenses.
 
 Offline rebuild: install TileLang0.1.14 and apache-tvm-ffi0.1.12, then from a
 CUDA13.3/MSVC developer environment run `python rebuild.py --output <scratch>`.
-The script records raw hashes and compares the entire cubin against its pinned
-embedded image. NVCC's eight-digit internal symbol hashes can vary with the source
-path: only those eleven fields inside the indexed GEMM ELF string table are
-ignored. Instructions, constants, relocations and every other byte must match.
-Raw hash mismatches remain visible in the receipt. Python bytecode and generated
+The script records raw hashes and compares each quantizer cubin against its
+pinned embedded image. Python bytecode and generated
 files stay outside this source directory. Compiler/CUTLASS runtime template
 notices are preserved beside the official MIT license.
 
-Indexed FP4 expert programs preserve the original `fp4_gemm_kernel` math.
-`indexed_entry.py` changes only the generated entry qualifier and adds checked
-expert/token pointer selection before calling that body with M=1. No FP4
-arithmetic is added by HYLE. Four actual DeepSeek N/K pairs are instantiated;
-the encoded group128 activation program supplies original E4M3 codes/scales.
-The per-slot M32 tile utilization is part of this implementation's cost.
+The encoded group128 activation program supplies original E4M3 codes/scales
+for `GroupedFloat4Linear`. Its GEMM is the HYLE-owned ordinary CUDA source
+`src/compute_provider_cuda/grouped_fp4_f32_kernel.cu`. It widens each small
+E4/E2M1 code tile exactly to BF16 and uses F32 MMA, scaling and accumulation;
+packed weights remain compressed. The previous four FP8-MMA expert GEMM
+images and their indexed adapter are no longer embedded or rebuilt. The
+official upstream Python source remains unchanged for source attribution.

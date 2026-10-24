@@ -1,0 +1,4543 @@
+{
+  "date": "2026-10-20",
+  "status": "finite_family_consumer_adopted_and_executed",
+  "architecture": "One model semantic Graph/schema, cold finite-exact family, actual immutable child/report, two original Invocation slots per child. L is bound; T=L+1 and convolution sample rows=T+3 derive in the shape program. No hot graph construction/padding/JIT/new executor/global cache.",
+  "adopted": {
+    "before": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\before\\main.cc",
+      "bytes": 45586,
+      "sha256": "e32219fc1b92c213f8c10cdf526826c65b4eb9fa85fe8ab865a92c975d504646"
+    },
+    "candidate": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\candidate\\main.cc",
+      "bytes": 57719,
+      "sha256": "883dcaecb78294b14bb0502c8488c59efcb6d8661aabb9c6820e4c6c736c1579"
+    },
+    "product": {
+      "path": "C:\\public\\project-hyle\\hyle\\tools\\qwen35_text\\main.cc",
+      "bytes": 57719,
+      "sha256": "883dcaecb78294b14bb0502c8488c59efcb6d8661aabb9c6820e4c6c736c1579"
+    },
+    "source_byte_identical_to_measured_candidate": true,
+    "compiled_product": true,
+    "full64": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\correctness\\summary.json",
+      "bytes": 112110,
+      "sha256": "38c8a5876c6def0fbf8db09733abbbed1becafafd547bc55374f3973cfe7cc12"
+    },
+    "continuation6": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\continuation-fixed\\summary.json",
+      "bytes": 10166,
+      "sha256": "a81a2baa54062bb7b01d89fbd411dd6ac587c93c62b18633cb6dca74313ba906"
+    },
+    "original_rotation": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\performance-rotation\\summary.json",
+      "bytes": 20439,
+      "sha256": "5e69f2c31a4e3f2ccd21424a1e782b652ce652aefe76ae7beb5d8e8be41cee38"
+    },
+    "separate_followup": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\decode-followup\\summary.json",
+      "bytes": 3886,
+      "sha256": "fdb8291b8036720d98a5b06dea87c296e72fb86c4bb9aee4d5a75c395d31cc29"
+    },
+    "product_check": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\product-checks\\summary.json",
+      "bytes": 910,
+      "sha256": "1133bf9468579db8b82c695ba20bcd96236222a6a455cecf1a19f1bab1407948"
+    },
+    "product_image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\product-checks\\qwen.exe",
+      "bytes": 117475840,
+      "sha256": "b7081baab2d24d37f512c7fff6fae09501b5b35a413b239a5058e018f4f31e43"
+    }
+  },
+  "exact_checks": {
+    "original_fixed128_plus31": {
+      "passed": true,
+      "observation": {
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\checks\\qwen-finite-family.exe",
+          "bytes": 117475840,
+          "sha256": "fb3de75c13133e2d16521bfe2e4c95987e875dbe7e613da1ad3fb2dc8e6779ae"
+        },
+        "process": {
+          "tag": "qwen",
+          "command": [
+            "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\checks\\qwen-finite-family.exe",
+            "--inputs",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-gpu-comparison\\128-prefill\\inputs",
+            "--decode-ids",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-gpu-comparison\\128-prefill\\decode.ids",
+            "--steps",
+            "32",
+            "--capacity",
+            "256",
+            "--progress",
+            "direct",
+            "--replay",
+            "prefer-capture",
+            "--trace",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\correctness\\trace",
+            "--trace-level",
+            "decisions"
+          ],
+          "cwd": "C:\\public\\project-hyle\\hyle",
+          "started": 1792469668.5908384,
+          "exit": 0,
+          "pid": 81340,
+          "finished": 1792469671.3374624,
+          "terminal": true
+        },
+        "generated_ids": [
+          958,
+          71163,
+          369,
+          279,
+          1817,
+          539,
+          864,
+          10462,
+          11,
+          65562,
+          11,
+          321,
+          1010,
+          22434,
+          5335,
+          3000,
+          4649,
+          1083,
+          279,
+          6797,
+          1083,
+          11153,
+          4649,
+          9476,
+          1061,
+          7022,
+          1817,
+          11,
+          10462,
+          958,
+          303,
+          12141
+        ],
+        "decode_input_ids": [
+          30729,
+          71163,
+          369,
+          279,
+          1817,
+          539,
+          864,
+          10462,
+          11,
+          65562,
+          11,
+          321,
+          1010,
+          22434,
+          5335,
+          3000,
+          4649,
+          494,
+          279,
+          6797,
+          1083,
+          11153,
+          4649,
+          13,
+          11615,
+          411,
+          12355,
+          11,
+          781,
+          1831,
+          303
+        ],
+        "source_id": "4068044d8571635d8a86f1e96a43dad104efc7089169065f735601e350008155",
+        "text_tensors": 320,
+        "visible_tokens": 159,
+        "fixed_decode": true,
+        "same_greedy_ids_as_reference": true,
+        "same_fixed_decode_inputs": true,
+        "equal_vectors": 64,
+        "vectors": [
+          {
+            "path": "decode1/hidden.bf16",
+            "actual": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\correctness\\trace\\decode1\\hidden.bf16",
+              "bytes": 4096,
+              "sha256": "e40060187d8c6376d00e58794643dd3f444dceefe29eb675c6ee2b0899131210"
+            },
+            "reference": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode1\\hidden.bf16",
+              "bytes": 4096,
+              "sha256": "e40060187d8c6376d00e58794643dd3f444dceefe29eb675c6ee2b0899131210"
+            },
+            "byte_equal": true,
+            "metrics": {
+              "elements": 2048,
+              "bit_equal_elements": 2048,
+              "first_bit_mismatch": null,
+              "finite_pairs": 2048,
+              "candidate_nan": 0,
+              "reference_nan": 0,
+              "candidate_posinf": 0,
+              "candidate_neginf": 0,
+              "reference_posinf": 0,
+              "reference_neginf": 0,
+              "max_abs": 0.0,
+              "rms": 0.0,
+              "relative_l2": 0.0,
+              "max_relative_nonzero_reference": 0.0,
+              "zero_reference_nonzero_candidate": 0,
+              "max_ulp": 0,
+              "ulp_dtype": "BF16",
+              "ulp_signed_zero": "positive/negative zero have distance0; raw bit equality still distinguishes them",
+              "metric_domain": "finite pairs only; nonfinite counts separately reported"
+            }
+          },
+          {
+            "path": "decode1/logits.f32",
+            "actual": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\correctness\\trace\\decode1\\logits.f32",
+              "bytes": 993280,
+              "sha256": "54999d39e6a46f665fe6f7fc5d22b5136eb5e9b73ae179e5b908b33d7009f326"
+            },
+            "reference": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode1\\logits.f32",
+              "bytes": 993280,
+              "sha256": "54999d39e6a46f665fe6f7fc5d22b5136eb5e9b73ae179e5b908b33d7009f326"
+            },
+            "byte_equal": true,
+            "metrics": {
+              "elements": 248320,
+              "bit_equal_elements": 248320,
+              "first_bit_mismatch": null,
+              "finite_pairs": 248320,
+              "candidate_nan": 0,
+              "reference_nan": 0,
+              "candidate_posinf": 0,
+              "candidate_neginf": 0,
+              "reference_posinf": 0,
+              "reference_neginf": 0,
+              "max_abs": 0.0,
+              "rms": 0.0,
+              "relative_l2": 0.0,
+              "max_relative_nonzero_reference": 0.0,
+              "zero_reference_nonzero_candidate": 0,
+              "max_ulp": 0,
+              "ulp_dtype": "F32",
+              "ulp_signed_zero": "positive/negative zero have distance0; raw bit equality still distinguishes them",
+              "metric_domain": "finite pairs only; nonfinite counts separately reported"
+            }
+          },
+          {
+            "path": "decode10/hidden.bf16",
+            "actual": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\correctness\\trace\\decode10\\hidden.bf16",
+              "bytes": 4096,
+              "sha256": "14f67a52e0c149e904e363021efe444ddabc3de5c45c16e9fb3f4a4c533f8ba9"
+            },
+            "reference": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode10\\hidden.bf16",
+              "bytes": 4096,
+              "sha256": "14f67a52e0c149e904e363021efe444ddabc3de5c45c16e9fb3f4a4c533f8ba9"
+            },
+            "byte_equal": true,
+            "metrics": {
+              "elements": 2048,
+              "bit_equal_elements": 2048,
+              "first_bit_mismatch": null,
+              "finite_pairs": 2048,
+              "candidate_nan": 0,
+              "reference_nan": 0,
+              "candidate_posinf": 0,
+              "candidate_neginf": 0,
+              "reference_posinf": 0,
+              "reference_neginf": 0,
+              "max_abs": 0.0,
+              "rms": 0.0,
+              "relative_l2": 0.0,
+              "max_relative_nonzero_reference": 0.0,
+              "zero_reference_nonzero_candidate": 0,
+              "max_ulp": 0,
+              "ulp_dtype": "BF16",
+              "ulp_signed_zero": "positive/negative zero have distance0; raw bit equality still distinguishes them",
+              "metric_domain": "finite pairs only; nonfinite counts separately reported"
+            }
+          },
+          {
+            "path": "decode10/logits.f32",
+            "actual": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\correctness\\trace\\decode10\\logits.f32",
+              "bytes": 993280,
+              "sha256": "bcc503ff8585699e10eda6c4eb899a900aca16db9f348e3ca1ecba3899e0f4dc"
+            },
+            "reference": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode10\\logits.f32",
+              "bytes": 993280,
+              "sha256": "bcc503ff8585699e10eda6c4eb899a900aca16db9f348e3ca1ecba3899e0f4dc"
+            },
+            "byte_equal": true,
+            "metrics": {
+              "elements": 248320,
+              "bit_equal_elements": 248320,
+              "first_bit_mismatch": null,
+              "finite_pairs": 248320,
+              "candidate_nan": 0,
+              "reference_nan": 0,
+              "candidate_posinf": 0,
+              "candidate_neginf": 0,
+              "reference_posinf": 0,
+              "reference_neginf": 0,
+              "max_abs": 0.0,
+              "rms": 0.0,
+              "relative_l2": 0.0,
+              "max_relative_nonzero_reference": 0.0,
+              "zero_reference_nonzero_candidate": 0,
+              "max_ulp": 0,
+              "ulp_dtype": "F32",
+              "ulp_signed_zero": "positive/negative zero have distance0; raw bit equality still distinguishes them",
+              "metric_domain": "finite pairs only; nonfinite counts separately reported"
+            }
+          },
+          {
+            "path": "decode11/hidden.bf16",
+            "actual": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\correctness\\trace\\decode11\\hidden.bf16",
+              "bytes": 4096,
+              "sha256": "025d250c3511f106ae4dc6f11d659262e917fd545c94c8e18da3253437af50d9"
+            },
+            "reference": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode11\\hidden.bf16",
+              "bytes": 4096,
+              "sha256": "025d250c3511f106ae4dc6f11d659262e917fd545c94c8e18da3253437af50d9"
+            },
+            "byte_equal": true,
+            "metrics": {
+              "elements": 2048,
+              "bit_equal_elements": 2048,
+              "first_bit_mismatch": null,
+              "finite_pairs": 2048,
+              "candidate_nan": 0,
+              "reference_nan": 0,
+              "candidate_posinf": 0,
+              "candidate_neginf": 0,
+              "reference_posinf": 0,
+              "reference_neginf": 0,
+              "max_abs": 0.0,
+              "rms": 0.0,
+              "relative_l2": 0.0,
+              "max_relative_nonzero_reference": 0.0,
+              "zero_reference_nonzero_candidate": 0,
+              "max_ulp": 0,
+              "ulp_dtype": "BF16",
+              "ulp_signed_zero": "positive/negative zero have distance0; raw bit equality still distinguishes them",
+              "metric_domain": "finite pairs only; nonfinite counts separately reported"
+            }
+          },
+          {
+            "path": "decode11/logits.f32",
+            "actual": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\correctness\\trace\\decode11\\logits.f32",
+              "bytes": 993280,
+              "sha256": "a695e7dd458fc3eb5d5e4301d1ca4548bd5d9c38bfe3fed8e05203e2b7f7d43a"
+            },
+            "reference": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode11\\logits.f32",
+              "bytes": 993280,
+              "sha256": "a695e7dd458fc3eb5d5e4301d1ca4548bd5d9c38bfe3fed8e05203e2b7f7d43a"
+            },
+            "byte_equal": true,
+            "metrics": {
+              "elements": 248320,
+              "bit_equal_elements": 248320,
+              "first_bit_mismatch": null,
+              "finite_pairs": 248320,
+              "candidate_nan": 0,
+              "reference_nan": 0,
+              "candidate_posinf": 0,
+              "candidate_neginf": 0,
+              "reference_posinf": 0,
+              "reference_neginf": 0,
+              "max_abs": 0.0,
+              "rms": 0.0,
+              "relative_l2": 0.0,
+              "max_relative_nonzero_reference": 0.0,
+              "zero_reference_nonzero_candidate": 0,
+              "max_ulp": 0,
+              "ulp_dtype": "F32",
+              "ulp_signed_zero": "positive/negative zero have distance0; raw bit equality still distinguishes them",
+              "metric_domain": "finite pairs only; nonfinite counts separately reported"
+            }
+          },
+          {
+            "path": "decode12/hidden.bf16",
+            "actual": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\correctness\\trace\\decode12\\hidden.bf16",
+              "bytes": 4096,
+              "sha256": "f7b6685cf738390474f1fa85320df313e39eb469bf0af22dea10c3c016edc06c"
+            },
+            "reference": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode12\\hidden.bf16",
+              "bytes": 4096,
+              "sha256": "f7b6685cf738390474f1fa85320df313e39eb469bf0af22dea10c3c016edc06c"
+            },
+            "byte_equal": true,
+            "metrics": {
+              "elements": 2048,
+              "bit_equal_elements": 2048,
+              "first_bit_mismatch": null,
+              "finite_pairs": 2048,
+              "candidate_nan": 0,
+              "reference_nan": 0,
+              "candidate_posinf": 0,
+              "candidate_neginf": 0,
+              "reference_posinf": 0,
+              "reference_neginf": 0,
+              "max_abs": 0.0,
+              "rms": 0.0,
+              "relative_l2": 0.0,
+              "max_relative_nonzero_reference": 0.0,
+              "zero_reference_nonzero_candidate": 0,
+              "max_ulp": 0,
+              "ulp_dtype": "BF16",
+              "ulp_signed_zero": "positive/negative zero have distance0; raw bit equality still distinguishes them",
+              "metric_domain": "finite pairs only; nonfinite counts separately reported"
+            }
+          },
+          {
+            "path": "decode12/logits.f32",
+            "actual": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\correctness\\trace\\decode12\\logits.f32",
+              "bytes": 993280,
+              "sha256": "372a79e6f28a730945c45b223bb2a7958ea0d1967e57b8586ff08b4804d54eed"
+            },
+            "reference": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode12\\logits.f32",
+              "bytes": 993280,
+              "sha256": "372a79e6f28a730945c45b223bb2a7958ea0d1967e57b8586ff08b4804d54eed"
+            },
+            "byte_equal": true,
+            "metrics": {
+              "elements": 248320,
+              "bit_equal_elements": 248320,
+              "first_bit_mismatch": null,
+              "finite_pairs": 248320,
+              "candidate_nan": 0,
+              "reference_nan": 0,
+              "candidate_posinf": 0,
+              "candidate_neginf": 0,
+              "reference_posinf": 0,
+              "reference_neginf": 0,
+              "max_abs": 0.0,
+              "rms": 0.0,
+              "relative_l2": 0.0,
+              "max_relative_nonzero_reference": 0.0,
+              "zero_reference_nonzero_candidate": 0,
+              "max_ulp": 0,
+              "ulp_dtype": "F32",
+              "ulp_signed_zero": "positive/negative zero have distance0; raw bit equality still distinguishes them",
+              "metric_domain": "finite pairs only; nonfinite counts separately reported"
+            }
+          },
+          {
+            "path": "decode13/hidden.bf16",
+            "actual": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\correctness\\trace\\decode13\\hidden.bf16",
+              "bytes": 4096,
+              "sha256": "a9d03c31ab0682e9cb017af1eba6e9872778715bea080c5bad77122e4b50a2d6"
+            },
+            "reference": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode13\\hidden.bf16",
+              "bytes": 4096,
+              "sha256": "a9d03c31ab0682e9cb017af1eba6e9872778715bea080c5bad77122e4b50a2d6"
+            },
+            "byte_equal": true,
+            "metrics": {
+              "elements": 2048,
+              "bit_equal_elements": 2048,
+              "first_bit_mismatch": null,
+              "finite_pairs": 2048,
+              "candidate_nan": 0,
+              "reference_nan": 0,
+              "candidate_posinf": 0,
+              "candidate_neginf": 0,
+              "reference_posinf": 0,
+              "reference_neginf": 0,
+              "max_abs": 0.0,
+              "rms": 0.0,
+              "relative_l2": 0.0,
+              "max_relative_nonzero_reference": 0.0,
+              "zero_reference_nonzero_candidate": 0,
+              "max_ulp": 0,
+              "ulp_dtype": "BF16",
+              "ulp_signed_zero": "positive/negative zero have distance0; raw bit equality still distinguishes them",
+              "metric_domain": "finite pairs only; nonfinite counts separately reported"
+            }
+          },
+          {
+            "path": "decode13/logits.f32",
+            "actual": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\correctness\\trace\\decode13\\logits.f32",
+              "bytes": 993280,
+              "sha256": "534e20e20dfc7419d234026daa156c0ea2a8cd7d0b81d7394562679b931932b4"
+            },
+            "reference": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode13\\logits.f32",
+              "bytes": 993280,
+              "sha256": "534e20e20dfc7419d234026daa156c0ea2a8cd7d0b81d7394562679b931932b4"
+            },
+            "byte_equal": true,
+            "metrics": {
+              "elements": 248320,
+              "bit_equal_elements": 248320,
+              "first_bit_mismatch": null,
+              "finite_pairs": 248320,
+              "candidate_nan": 0,
+              "reference_nan": 0,
+              "candidate_posinf": 0,
+              "candidate_neginf": 0,
+              "reference_posinf": 0,
+              "reference_neginf": 0,
+              "max_abs": 0.0,
+              "rms": 0.0,
+              "relative_l2": 0.0,
+              "max_relative_nonzero_reference": 0.0,
+              "zero_reference_nonzero_candidate": 0,
+              "max_ulp": 0,
+              "ulp_dtype": "F32",
+              "ulp_signed_zero": "positive/negative zero have distance0; raw bit equality still distinguishes them",
+              "metric_domain": "finite pairs only; nonfinite counts separately reported"
+            }
+          },
+          {
+            "path": "decode14/hidden.bf16",
+            "actual": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\correctness\\trace\\decode14\\hidden.bf16",
+              "bytes": 4096,
+              "sha256": "25d9877095a26bb7e6c6c2419cb0e182a01b6cd9e40f0bb769c42fcb34fc2dfb"
+            },
+            "reference": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode14\\hidden.bf16",
+              "bytes": 4096,
+              "sha256": "25d9877095a26bb7e6c6c2419cb0e182a01b6cd9e40f0bb769c42fcb34fc2dfb"
+            },
+            "byte_equal": true,
+            "metrics": {
+              "elements": 2048,
+              "bit_equal_elements": 2048,
+              "first_bit_mismatch": null,
+              "finite_pairs": 2048,
+              "candidate_nan": 0,
+              "reference_nan": 0,
+              "candidate_posinf": 0,
+              "candidate_neginf": 0,
+              "reference_posinf": 0,
+              "reference_neginf": 0,
+              "max_abs": 0.0,
+              "rms": 0.0,
+              "relative_l2": 0.0,
+              "max_relative_nonzero_reference": 0.0,
+              "zero_reference_nonzero_candidate": 0,
+              "max_ulp": 0,
+              "ulp_dtype": "BF16",
+              "ulp_signed_zero": "positive/negative zero have distance0; raw bit equality still distinguishes them",
+              "metric_domain": "finite pairs only; nonfinite counts separately reported"
+            }
+          },
+          {
+            "path": "decode14/logits.f32",
+            "actual": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\correctness\\trace\\decode14\\logits.f32",
+              "bytes": 993280,
+              "sha256": "52722aedd166038381d5c6732855b3c73804e7f32db14403edaa1fe619ab8e71"
+            },
+            "reference": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode14\\logits.f32",
+              "bytes": 993280,
+              "sha256": "52722aedd166038381d5c6732855b3c73804e7f32db14403edaa1fe619ab8e71"
+            },
+            "byte_equal": true,
+            "metrics": {
+              "elements": 248320,
+              "bit_equal_elements": 248320,
+              "first_bit_mismatch": null,
+              "finite_pairs": 248320,
+              "candidate_nan": 0,
+              "reference_nan": 0,
+              "candidate_posinf": 0,
+              "candidate_neginf": 0,
+              "reference_posinf": 0,
+              "reference_neginf": 0,
+              "max_abs": 0.0,
+              "rms": 0.0,
+              "relative_l2": 0.0,
+              "max_relative_nonzero_reference": 0.0,
+              "zero_reference_nonzero_candidate": 0,
+              "max_ulp": 0,
+              "ulp_dtype": "F32",
+              "ulp_signed_zero": "positive/negative zero have distance0; raw bit equality still distinguishes them",
+              "metric_domain": "finite pairs only; nonfinite counts separately reported"
+            }
+          },
+          {
+            "path": "decode15/hidden.bf16",
+            "actual": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\correctness\\trace\\decode15\\hidden.bf16",
+              "bytes": 4096,
+              "sha256": "be0704805ca7c78aa081b4ac85dd9a017010c913b9260fb1d2f591f0994370e7"
+            },
+            "reference": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode15\\hidden.bf16",
+              "bytes": 4096,
+              "sha256": "be0704805ca7c78aa081b4ac85dd9a017010c913b9260fb1d2f591f0994370e7"
+            },
+            "byte_equal": true,
+            "metrics": {
+              "elements": 2048,
+              "bit_equal_elements": 2048,
+              "first_bit_mismatch": null,
+              "finite_pairs": 2048,
+              "candidate_nan": 0,
+              "reference_nan": 0,
+              "candidate_posinf": 0,
+              "candidate_neginf": 0,
+              "reference_posinf": 0,
+              "reference_neginf": 0,
+              "max_abs": 0.0,
+              "rms": 0.0,
+              "relative_l2": 0.0,
+              "max_relative_nonzero_reference": 0.0,
+              "zero_reference_nonzero_candidate": 0,
+              "max_ulp": 0,
+              "ulp_dtype": "BF16",
+              "ulp_signed_zero": "positive/negative zero have distance0; raw bit equality still distinguishes them",
+              "metric_domain": "finite pairs only; nonfinite counts separately reported"
+            }
+          },
+          {
+            "path": "decode15/logits.f32",
+            "actual": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\correctness\\trace\\decode15\\logits.f32",
+              "bytes": 993280,
+              "sha256": "6c804d67822906c715a8238c52507f61ffa0c62057eb7bac124253ab56b57f84"
+            },
+            "reference": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode15\\logits.f32",
+              "bytes": 993280,
+              "sha256": "6c804d67822906c715a8238c52507f61ffa0c62057eb7bac124253ab56b57f84"
+            },
+            "byte_equal": true,
+            "metrics": {
+              "elements": 248320,
+              "bit_equal_elements": 248320,
+              "first_bit_mismatch": null,
+              "finite_pairs": 248320,
+              "candidate_nan": 0,
+              "reference_nan": 0,
+              "candidate_posinf": 0,
+              "candidate_neginf": 0,
+              "reference_posinf": 0,
+              "reference_neginf": 0,
+              "max_abs": 0.0,
+              "rms": 0.0,
+              "relative_l2": 0.0,
+              "max_relative_nonzero_reference": 0.0,
+              "zero_reference_nonzero_candidate": 0,
+              "max_ulp": 0,
+              "ulp_dtype": "F32",
+              "ulp_signed_zero": "positive/negative zero have distance0; raw bit equality still distinguishes them",
+              "metric_domain": "finite pairs only; nonfinite counts separately reported"
+            }
+          },
+          {
+            "path": "decode16/hidden.bf16",
+            "actual": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\correctness\\trace\\decode16\\hidden.bf16",
+              "bytes": 4096,
+              "sha256": "db38845e211bf589a3a41f9beee7610a37538b9d015df79d7a86744a245b5d09"
+            },
+            "reference": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode16\\hidden.bf16",
+              "bytes": 4096,
+              "sha256": "db38845e211bf589a3a41f9beee7610a37538b9d015df79d7a86744a245b5d09"
+            },
+            "byte_equal": true,
+            "metrics": {
+              "elements": 2048,
+              "bit_equal_elements": 2048,
+              "first_bit_mismatch": null,
+              "finite_pairs": 2048,
+              "candidate_nan": 0,
+              "reference_nan": 0,
+              "candidate_posinf": 0,
+              "candidate_neginf": 0,
+              "reference_posinf": 0,
+              "reference_neginf": 0,
+              "max_abs": 0.0,
+              "rms": 0.0,
+              "relative_l2": 0.0,
+              "max_relative_nonzero_reference": 0.0,
+              "zero_reference_nonzero_candidate": 0,
+              "max_ulp": 0,
+              "ulp_dtype": "BF16",
+              "ulp_signed_zero": "positive/negative zero have distance0; raw bit equality still distinguishes them",
+              "metric_domain": "finite pairs only; nonfinite counts separately reported"
+            }
+          },
+          {
+            "path": "decode16/logits.f32",
+            "actual": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\correctness\\trace\\decode16\\logits.f32",
+              "bytes": 993280,
+              "sha256": "65abecf3cc29af92f817b3cd91cbccd155362a92e779be9c81e77341d9709ea0"
+            },
+            "reference": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode16\\logits.f32",
+              "bytes": 993280,
+              "sha256": "65abecf3cc29af92f817b3cd91cbccd155362a92e779be9c81e77341d9709ea0"
+            },
+            "byte_equal": true,
+            "metrics": {
+              "elements": 248320,
+              "bit_equal_elements": 248320,
+              "first_bit_mismatch": null,
+              "finite_pairs": 248320,
+              "candidate_nan": 0,
+              "reference_nan": 0,
+              "candidate_posinf": 0,
+              "candidate_neginf": 0,
+              "reference_posinf": 0,
+              "reference_neginf": 0,
+              "max_abs": 0.0,
+              "rms": 0.0,
+              "relative_l2": 0.0,
+              "max_relative_nonzero_reference": 0.0,
+              "zero_reference_nonzero_candidate": 0,
+              "max_ulp": 0,
+              "ulp_dtype": "F32",
+              "ulp_signed_zero": "positive/negative zero have distance0; raw bit equality still distinguishes them",
+              "metric_domain": "finite pairs only; nonfinite counts separately reported"
+            }
+          },
+          {
+            "path": "decode17/hidden.bf16",
+            "actual": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\correctness\\trace\\decode17\\hidden.bf16",
+              "bytes": 4096,
+              "sha256": "ee49ec44b74f98a437c9df25aa3add98bc3247475b2605f16efa8b964c5451f6"
+            },
+            "reference": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode17\\hidden.bf16",
+              "bytes": 4096,
+              "sha256": "ee49ec44b74f98a437c9df25aa3add98bc3247475b2605f16efa8b964c5451f6"
+            },
+            "byte_equal": true,
+            "metrics": {
+              "elements": 2048,
+              "bit_equal_elements": 2048,
+              "first_bit_mismatch": null,
+              "finite_pairs": 2048,
+              "candidate_nan": 0,
+              "reference_nan": 0,
+              "candidate_posinf": 0,
+              "candidate_neginf": 0,
+              "reference_posinf": 0,
+              "reference_neginf": 0,
+              "max_abs": 0.0,
+              "rms": 0.0,
+              "relative_l2": 0.0,
+              "max_relative_nonzero_reference": 0.0,
+              "zero_reference_nonzero_candidate": 0,
+              "max_ulp": 0,
+              "ulp_dtype": "BF16",
+              "ulp_signed_zero": "positive/negative zero have distance0; raw bit equality still distinguishes them",
+              "metric_domain": "finite pairs only; nonfinite counts separately reported"
+            }
+          },
+          {
+            "path": "decode17/logits.f32",
+            "actual": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\correctness\\trace\\decode17\\logits.f32",
+              "bytes": 993280,
+              "sha256": "ad8067b76a35214374e5e585c9671654c547c9a4f4e79bb6b4b589bdfa83b845"
+            },
+            "reference": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode17\\logits.f32",
+              "bytes": 993280,
+              "sha256": "ad8067b76a35214374e5e585c9671654c547c9a4f4e79bb6b4b589bdfa83b845"
+            },
+            "byte_equal": true,
+            "metrics": {
+              "elements": 248320,
+              "bit_equal_elements": 248320,
+              "first_bit_mismatch": null,
+              "finite_pairs": 248320,
+              "candidate_nan": 0,
+              "reference_nan": 0,
+              "candidate_posinf": 0,
+              "candidate_neginf": 0,
+              "reference_posinf": 0,
+              "reference_neginf": 0,
+              "max_abs": 0.0,
+              "rms": 0.0,
+              "relative_l2": 0.0,
+              "max_relative_nonzero_reference": 0.0,
+              "zero_reference_nonzero_candidate": 0,
+              "max_ulp": 0,
+              "ulp_dtype": "F32",
+              "ulp_signed_zero": "positive/negative zero have distance0; raw bit equality still distinguishes them",
+              "metric_domain": "finite pairs only; nonfinite counts separately reported"
+            }
+          },
+          {
+            "path": "decode18/hidden.bf16",
+            "actual": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\correctness\\trace\\decode18\\hidden.bf16",
+              "bytes": 4096,
+              "sha256": "d1336e9f037dea6d1a28d519b2300686825b1666ccad9972d9667b91769a97f5"
+            },
+            "reference": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode18\\hidden.bf16",
+              "bytes": 4096,
+              "sha256": "d1336e9f037dea6d1a28d519b2300686825b1666ccad9972d9667b91769a97f5"
+            },
+            "byte_equal": true,
+            "metrics": {
+              "elements": 2048,
+              "bit_equal_elements": 2048,
+              "first_bit_mismatch": null,
+              "finite_pairs": 2048,
+              "candidate_nan": 0,
+              "reference_nan": 0,
+              "candidate_posinf": 0,
+              "candidate_neginf": 0,
+              "reference_posinf": 0,
+              "reference_neginf": 0,
+              "max_abs": 0.0,
+              "rms": 0.0,
+              "relative_l2": 0.0,
+              "max_relative_nonzero_reference": 0.0,
+              "zero_reference_nonzero_candidate": 0,
+              "max_ulp": 0,
+              "ulp_dtype": "BF16",
+              "ulp_signed_zero": "positive/negative zero have distance0; raw bit equality still distinguishes them",
+              "metric_domain": "finite pairs only; nonfinite counts separately reported"
+            }
+          },
+          {
+            "path": "decode18/logits.f32",
+            "actual": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\correctness\\trace\\decode18\\logits.f32",
+              "bytes": 993280,
+              "sha256": "500ce9be766ecde9d75c2ed2f7ac0f9b6401806288bd9e545f4227e27c9795a2"
+            },
+            "reference": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode18\\logits.f32",
+              "bytes": 993280,
+              "sha256": "500ce9be766ecde9d75c2ed2f7ac0f9b6401806288bd9e545f4227e27c9795a2"
+            },
+            "byte_equal": true,
+            "metrics": {
+              "elements": 248320,
+              "bit_equal_elements": 248320,
+              "first_bit_mismatch": null,
+              "finite_pairs": 248320,
+              "candidate_nan": 0,
+              "reference_nan": 0,
+              "candidate_posinf": 0,
+              "candidate_neginf": 0,
+              "reference_posinf": 0,
+              "reference_neginf": 0,
+              "max_abs": 0.0,
+              "rms": 0.0,
+              "relative_l2": 0.0,
+              "max_relative_nonzero_reference": 0.0,
+              "zero_reference_nonzero_candidate": 0,
+              "max_ulp": 0,
+              "ulp_dtype": "F32",
+              "ulp_signed_zero": "positive/negative zero have distance0; raw bit equality still distinguishes them",
+              "metric_domain": "finite pairs only; nonfinite counts separately reported"
+            }
+          },
+          {
+            "path": "decode19/hidden.bf16",
+            "actual": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\correctness\\trace\\decode19\\hidden.bf16",
+              "bytes": 4096,
+              "sha256": "72de0d12d75275391252ae195d2b2b19f4d3a234095e2e988ba12455fbe3cf7c"
+            },
+            "reference": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode19\\hidden.bf16",
+              "bytes": 4096,
+              "sha256": "72de0d12d75275391252ae195d2b2b19f4d3a234095e2e988ba12455fbe3cf7c"
+            },
+            "byte_equal": true,
+            "metrics": {
+              "elements": 2048,
+              "bit_equal_elements": 2048,
+              "first_bit_mismatch": null,
+              "finite_pairs": 2048,
+              "candidate_nan": 0,
+              "reference_nan": 0,
+              "candidate_posinf": 0,
+              "candidate_neginf": 0,
+              "reference_posinf": 0,
+              "reference_neginf": 0,
+              "max_abs": 0.0,
+              "rms": 0.0,
+              "relative_l2": 0.0,
+              "max_relative_nonzero_reference": 0.0,
+              "zero_reference_nonzero_candidate": 0,
+              "max_ulp": 0,
+              "ulp_dtype": "BF16",
+              "ulp_signed_zero": "positive/negative zero have distance0; raw bit equality still distinguishes them",
+              "metric_domain": "finite pairs only; nonfinite counts separately reported"
+            }
+          },
+          {
+            "path": "decode19/logits.f32",
+            "actual": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\correctness\\trace\\decode19\\logits.f32",
+              "bytes": 993280,
+              "sha256": "35be9bd7e307d44e2929605be12977d985b8818af81fcdd59259163b7a748002"
+            },
+            "reference": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode19\\logits.f32",
+              "bytes": 993280,
+              "sha256": "35be9bd7e307d44e2929605be12977d985b8818af81fcdd59259163b7a748002"
+            },
+            "byte_equal": true,
+            "metrics": {
+              "elements": 248320,
+              "bit_equal_elements": 248320,
+              "first_bit_mismatch": null,
+              "finite_pairs": 248320,
+              "candidate_nan": 0,
+              "reference_nan": 0,
+              "candidate_posinf": 0,
+              "candidate_neginf": 0,
+              "reference_posinf": 0,
+              "reference_neginf": 0,
+              "max_abs": 0.0,
+              "rms": 0.0,
+              "relative_l2": 0.0,
+              "max_relative_nonzero_reference": 0.0,
+              "zero_reference_nonzero_candidate": 0,
+              "max_ulp": 0,
+              "ulp_dtype": "F32",
+              "ulp_signed_zero": "positive/negative zero have distance0; raw bit equality still distinguishes them",
+              "metric_domain": "finite pairs only; nonfinite counts separately reported"
+            }
+          },
+          {
+            "path": "decode2/hidden.bf16",
+            "actual": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\correctness\\trace\\decode2\\hidden.bf16",
+              "bytes": 4096,
+              "sha256": "f6d075ad86e2e0550617e6dfd6201ae335228ee6808ab8ae8bb3681159663424"
+            },
+            "reference": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode2\\hidden.bf16",
+              "bytes": 4096,
+              "sha256": "f6d075ad86e2e0550617e6dfd6201ae335228ee6808ab8ae8bb3681159663424"
+            },
+            "byte_equal": true,
+            "metrics": {
+              "elements": 2048,
+              "bit_equal_elements": 2048,
+              "first_bit_mismatch": null,
+              "finite_pairs": 2048,
+              "candidate_nan": 0,
+              "reference_nan": 0,
+              "candidate_posinf": 0,
+              "candidate_neginf": 0,
+              "reference_posinf": 0,
+              "reference_neginf": 0,
+              "max_abs": 0.0,
+              "rms": 0.0,
+              "relative_l2": 0.0,
+              "max_relative_nonzero_reference": 0.0,
+              "zero_reference_nonzero_candidate": 0,
+              "max_ulp": 0,
+              "ulp_dtype": "BF16",
+              "ulp_signed_zero": "positive/negative zero have distance0; raw bit equality still distinguishes them",
+              "metric_domain": "finite pairs only; nonfinite counts separately reported"
+            }
+          },
+          {
+            "path": "decode2/logits.f32",
+            "actual": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\correctness\\trace\\decode2\\logits.f32",
+              "bytes": 993280,
+              "sha256": "772199ca4b0550c00635c25bd8036a9b5334cb0c22bb79ce86f6fbd81520df67"
+            },
+            "reference": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode2\\logits.f32",
+              "bytes": 993280,
+              "sha256": "772199ca4b0550c00635c25bd8036a9b5334cb0c22bb79ce86f6fbd81520df67"
+            },
+            "byte_equal": true,
+            "metrics": {
+              "elements": 248320,
+              "bit_equal_elements": 248320,
+              "first_bit_mismatch": null,
+              "finite_pairs": 248320,
+              "candidate_nan": 0,
+              "reference_nan": 0,
+              "candidate_posinf": 0,
+              "candidate_neginf": 0,
+              "reference_posinf": 0,
+              "reference_neginf": 0,
+              "max_abs": 0.0,
+              "rms": 0.0,
+              "relative_l2": 0.0,
+              "max_relative_nonzero_reference": 0.0,
+              "zero_reference_nonzero_candidate": 0,
+              "max_ulp": 0,
+              "ulp_dtype": "F32",
+              "ulp_signed_zero": "positive/negative zero have distance0; raw bit equality still distinguishes them",
+              "metric_domain": "finite pairs only; nonfinite counts separately reported"
+            }
+          },
+          {
+            "path": "decode20/hidden.bf16",
+            "actual": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\correctness\\trace\\decode20\\hidden.bf16",
+              "bytes": 4096,
+              "sha256": "43c03820fa5f5b838cd5992205b52f44f12fd82c5585698eb08197f48713cb6f"
+            },
+            "reference": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode20\\hidden.bf16",
+              "bytes": 4096,
+              "sha256": "43c03820fa5f5b838cd5992205b52f44f12fd82c5585698eb08197f48713cb6f"
+            },
+            "byte_equal": true,
+            "metrics": {
+              "elements": 2048,
+              "bit_equal_elements": 2048,
+              "first_bit_mismatch": null,
+              "finite_pairs": 2048,
+              "candidate_nan": 0,
+              "reference_nan": 0,
+              "candidate_posinf": 0,
+              "candidate_neginf": 0,
+              "reference_posinf": 0,
+              "reference_neginf": 0,
+              "max_abs": 0.0,
+              "rms": 0.0,
+              "relative_l2": 0.0,
+              "max_relative_nonzero_reference": 0.0,
+              "zero_reference_nonzero_candidate": 0,
+              "max_ulp": 0,
+              "ulp_dtype": "BF16",
+              "ulp_signed_zero": "positive/negative zero have distance0; raw bit equality still distinguishes them",
+              "metric_domain": "finite pairs only; nonfinite counts separately reported"
+            }
+          },
+          {
+            "path": "decode20/logits.f32",
+            "actual": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\correctness\\trace\\decode20\\logits.f32",
+              "bytes": 993280,
+              "sha256": "aa2082864e5999cce1e72d98d71f1a34f0b59bfbf9a728aba621cce2e25b644f"
+            },
+            "reference": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode20\\logits.f32",
+              "bytes": 993280,
+              "sha256": "aa2082864e5999cce1e72d98d71f1a34f0b59bfbf9a728aba621cce2e25b644f"
+            },
+            "byte_equal": true,
+            "metrics": {
+              "elements": 248320,
+              "bit_equal_elements": 248320,
+              "first_bit_mismatch": null,
+              "finite_pairs": 248320,
+              "candidate_nan": 0,
+              "reference_nan": 0,
+              "candidate_posinf": 0,
+              "candidate_neginf": 0,
+              "reference_posinf": 0,
+              "reference_neginf": 0,
+              "max_abs": 0.0,
+              "rms": 0.0,
+              "relative_l2": 0.0,
+              "max_relative_nonzero_reference": 0.0,
+              "zero_reference_nonzero_candidate": 0,
+              "max_ulp": 0,
+              "ulp_dtype": "F32",
+              "ulp_signed_zero": "positive/negative zero have distance0; raw bit equality still distinguishes them",
+              "metric_domain": "finite pairs only; nonfinite counts separately reported"
+            }
+          },
+          {
+            "path": "decode21/hidden.bf16",
+            "actual": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\correctness\\trace\\decode21\\hidden.bf16",
+              "bytes": 4096,
+              "sha256": "f8188e3da86374d7e412e99e95ebbeb5b542392318adad6c4fe4be6849dbb026"
+            },
+            "reference": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode21\\hidden.bf16",
+              "bytes": 4096,
+              "sha256": "f8188e3da86374d7e412e99e95ebbeb5b542392318adad6c4fe4be6849dbb026"
+            },
+            "byte_equal": true,
+            "metrics": {
+              "elements": 2048,
+              "bit_equal_elements": 2048,
+              "first_bit_mismatch": null,
+              "finite_pairs": 2048,
+              "candidate_nan": 0,
+              "reference_nan": 0,
+              "candidate_posinf": 0,
+              "candidate_neginf": 0,
+              "reference_posinf": 0,
+              "reference_neginf": 0,
+              "max_abs": 0.0,
+              "rms": 0.0,
+              "relative_l2": 0.0,
+              "max_relative_nonzero_reference": 0.0,
+              "zero_reference_nonzero_candidate": 0,
+              "max_ulp": 0,
+              "ulp_dtype": "BF16",
+              "ulp_signed_zero": "positive/negative zero have distance0; raw bit equality still distinguishes them",
+              "metric_domain": "finite pairs only; nonfinite counts separately reported"
+            }
+          },
+          {
+            "path": "decode21/logits.f32",
+            "actual": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\correctness\\trace\\decode21\\logits.f32",
+              "bytes": 993280,
+              "sha256": "d10c058ee22da65190fb9d9c04997754b8484607f6202283f3b89416be4d2580"
+            },
+            "reference": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode21\\logits.f32",
+              "bytes": 993280,
+              "sha256": "d10c058ee22da65190fb9d9c04997754b8484607f6202283f3b89416be4d2580"
+            },
+            "byte_equal": true,
+            "metrics": {
+              "elements": 248320,
+              "bit_equal_elements": 248320,
+              "first_bit_mismatch": null,
+              "finite_pairs": 248320,
+              "candidate_nan": 0,
+              "reference_nan": 0,
+              "candidate_posinf": 0,
+              "candidate_neginf": 0,
+              "reference_posinf": 0,
+              "reference_neginf": 0,
+              "max_abs": 0.0,
+              "rms": 0.0,
+              "relative_l2": 0.0,
+              "max_relative_nonzero_reference": 0.0,
+              "zero_reference_nonzero_candidate": 0,
+              "max_ulp": 0,
+              "ulp_dtype": "F32",
+              "ulp_signed_zero": "positive/negative zero have distance0; raw bit equality still distinguishes them",
+              "metric_domain": "finite pairs only; nonfinite counts separately reported"
+            }
+          },
+          {
+            "path": "decode22/hidden.bf16",
+            "actual": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\correctness\\trace\\decode22\\hidden.bf16",
+              "bytes": 4096,
+              "sha256": "d6ae658866d9358580e704e5374fec7acf9f66eddb5895a4d09917a7f7f20022"
+            },
+            "reference": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode22\\hidden.bf16",
+              "bytes": 4096,
+              "sha256": "d6ae658866d9358580e704e5374fec7acf9f66eddb5895a4d09917a7f7f20022"
+            },
+            "byte_equal": true,
+            "metrics": {
+              "elements": 2048,
+              "bit_equal_elements": 2048,
+              "first_bit_mismatch": null,
+              "finite_pairs": 2048,
+              "candidate_nan": 0,
+              "reference_nan": 0,
+              "candidate_posinf": 0,
+              "candidate_neginf": 0,
+              "reference_posinf": 0,
+              "reference_neginf": 0,
+              "max_abs": 0.0,
+              "rms": 0.0,
+              "relative_l2": 0.0,
+              "max_relative_nonzero_reference": 0.0,
+              "zero_reference_nonzero_candidate": 0,
+              "max_ulp": 0,
+              "ulp_dtype": "BF16",
+              "ulp_signed_zero": "positive/negative zero have distance0; raw bit equality still distinguishes them",
+              "metric_domain": "finite pairs only; nonfinite counts separately reported"
+            }
+          },
+          {
+            "path": "decode22/logits.f32",
+            "actual": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\correctness\\trace\\decode22\\logits.f32",
+              "bytes": 993280,
+              "sha256": "96a33dcc9a7b11ab9fa4720a945007c5dac2c4f660cfb04cbcaa77d9fcaf0e9f"
+            },
+            "reference": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode22\\logits.f32",
+              "bytes": 993280,
+              "sha256": "96a33dcc9a7b11ab9fa4720a945007c5dac2c4f660cfb04cbcaa77d9fcaf0e9f"
+            },
+            "byte_equal": true,
+            "metrics": {
+              "elements": 248320,
+              "bit_equal_elements": 248320,
+              "first_bit_mismatch": null,
+              "finite_pairs": 248320,
+              "candidate_nan": 0,
+              "reference_nan": 0,
+              "candidate_posinf": 0,
+              "candidate_neginf": 0,
+              "reference_posinf": 0,
+              "reference_neginf": 0,
+              "max_abs": 0.0,
+              "rms": 0.0,
+              "relative_l2": 0.0,
+              "max_relative_nonzero_reference": 0.0,
+              "zero_reference_nonzero_candidate": 0,
+              "max_ulp": 0,
+              "ulp_dtype": "F32",
+              "ulp_signed_zero": "positive/negative zero have distance0; raw bit equality still distinguishes them",
+              "metric_domain": "finite pairs only; nonfinite counts separately reported"
+            }
+          },
+          {
+            "path": "decode23/hidden.bf16",
+            "actual": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\correctness\\trace\\decode23\\hidden.bf16",
+              "bytes": 4096,
+              "sha256": "eb27d0449a834afd98899067feb7ceb33f37f1819e21ff63ac668654c90a8d5a"
+            },
+            "reference": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode23\\hidden.bf16",
+              "bytes": 4096,
+              "sha256": "eb27d0449a834afd98899067feb7ceb33f37f1819e21ff63ac668654c90a8d5a"
+            },
+            "byte_equal": true,
+            "metrics": {
+              "elements": 2048,
+              "bit_equal_elements": 2048,
+              "first_bit_mismatch": null,
+              "finite_pairs": 2048,
+              "candidate_nan": 0,
+              "reference_nan": 0,
+              "candidate_posinf": 0,
+              "candidate_neginf": 0,
+              "reference_posinf": 0,
+              "reference_neginf": 0,
+              "max_abs": 0.0,
+              "rms": 0.0,
+              "relative_l2": 0.0,
+              "max_relative_nonzero_reference": 0.0,
+              "zero_reference_nonzero_candidate": 0,
+              "max_ulp": 0,
+              "ulp_dtype": "BF16",
+              "ulp_signed_zero": "positive/negative zero have distance0; raw bit equality still distinguishes them",
+              "metric_domain": "finite pairs only; nonfinite counts separately reported"
+            }
+          },
+          {
+            "path": "decode23/logits.f32",
+            "actual": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\correctness\\trace\\decode23\\logits.f32",
+              "bytes": 993280,
+              "sha256": "dc53f76f793be5e01854f437be46a71985a53861042b08220a8b1e49528b21a0"
+            },
+            "reference": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode23\\logits.f32",
+              "bytes": 993280,
+              "sha256": "dc53f76f793be5e01854f437be46a71985a53861042b08220a8b1e49528b21a0"
+            },
+            "byte_equal": true,
+            "metrics": {
+              "elements": 248320,
+              "bit_equal_elements": 248320,
+              "first_bit_mismatch": null,
+              "finite_pairs": 248320,
+              "candidate_nan": 0,
+              "reference_nan": 0,
+              "candidate_posinf": 0,
+              "candidate_neginf": 0,
+              "reference_posinf": 0,
+              "reference_neginf": 0,
+              "max_abs": 0.0,
+              "rms": 0.0,
+              "relative_l2": 0.0,
+              "max_relative_nonzero_reference": 0.0,
+              "zero_reference_nonzero_candidate": 0,
+              "max_ulp": 0,
+              "ulp_dtype": "F32",
+              "ulp_signed_zero": "positive/negative zero have distance0; raw bit equality still distinguishes them",
+              "metric_domain": "finite pairs only; nonfinite counts separately reported"
+            }
+          },
+          {
+            "path": "decode24/hidden.bf16",
+            "actual": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\correctness\\trace\\decode24\\hidden.bf16",
+              "bytes": 4096,
+              "sha256": "1b55a229ef3ada9232b7f590977fce3c3b2b7ee56932ceadd8c16f05201a35a1"
+            },
+            "reference": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode24\\hidden.bf16",
+              "bytes": 4096,
+              "sha256": "1b55a229ef3ada9232b7f590977fce3c3b2b7ee56932ceadd8c16f05201a35a1"
+            },
+            "byte_equal": true,
+            "metrics": {
+              "elements": 2048,
+              "bit_equal_elements": 2048,
+              "first_bit_mismatch": null,
+              "finite_pairs": 2048,
+              "candidate_nan": 0,
+              "reference_nan": 0,
+              "candidate_posinf": 0,
+              "candidate_neginf": 0,
+              "reference_posinf": 0,
+              "reference_neginf": 0,
+              "max_abs": 0.0,
+              "rms": 0.0,
+              "relative_l2": 0.0,
+              "max_relative_nonzero_reference": 0.0,
+              "zero_reference_nonzero_candidate": 0,
+              "max_ulp": 0,
+              "ulp_dtype": "BF16",
+              "ulp_signed_zero": "positive/negative zero have distance0; raw bit equality still distinguishes them",
+              "metric_domain": "finite pairs only; nonfinite counts separately reported"
+            }
+          },
+          {
+            "path": "decode24/logits.f32",
+            "actual": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\correctness\\trace\\decode24\\logits.f32",
+              "bytes": 993280,
+              "sha256": "04903c42456b5d223ce673d73794e0aa88a5da810bd58f054cdff7db57bc354c"
+            },
+            "reference": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode24\\logits.f32",
+              "bytes": 993280,
+              "sha256": "04903c42456b5d223ce673d73794e0aa88a5da810bd58f054cdff7db57bc354c"
+            },
+            "byte_equal": true,
+            "metrics": {
+              "elements": 248320,
+              "bit_equal_elements": 248320,
+              "first_bit_mismatch": null,
+              "finite_pairs": 248320,
+              "candidate_nan": 0,
+              "reference_nan": 0,
+              "candidate_posinf": 0,
+              "candidate_neginf": 0,
+              "reference_posinf": 0,
+              "reference_neginf": 0,
+              "max_abs": 0.0,
+              "rms": 0.0,
+              "relative_l2": 0.0,
+              "max_relative_nonzero_reference": 0.0,
+              "zero_reference_nonzero_candidate": 0,
+              "max_ulp": 0,
+              "ulp_dtype": "F32",
+              "ulp_signed_zero": "positive/negative zero have distance0; raw bit equality still distinguishes them",
+              "metric_domain": "finite pairs only; nonfinite counts separately reported"
+            }
+          },
+          {
+            "path": "decode25/hidden.bf16",
+            "actual": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\correctness\\trace\\decode25\\hidden.bf16",
+              "bytes": 4096,
+              "sha256": "386adc36e11cae2a75fbb2e3fe8b66dfe37d9a6b4d5fd5e73c67f287625b34bd"
+            },
+            "reference": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode25\\hidden.bf16",
+              "bytes": 4096,
+              "sha256": "386adc36e11cae2a75fbb2e3fe8b66dfe37d9a6b4d5fd5e73c67f287625b34bd"
+            },
+            "byte_equal": true,
+            "metrics": {
+              "elements": 2048,
+              "bit_equal_elements": 2048,
+              "first_bit_mismatch": null,
+              "finite_pairs": 2048,
+              "candidate_nan": 0,
+              "reference_nan": 0,
+              "candidate_posinf": 0,
+              "candidate_neginf": 0,
+              "reference_posinf": 0,
+              "reference_neginf": 0,
+              "max_abs": 0.0,
+              "rms": 0.0,
+              "relative_l2": 0.0,
+              "max_relative_nonzero_reference": 0.0,
+              "zero_reference_nonzero_candidate": 0,
+              "max_ulp": 0,
+              "ulp_dtype": "BF16",
+              "ulp_signed_zero": "positive/negative zero have distance0; raw bit equality still distinguishes them",
+              "metric_domain": "finite pairs only; nonfinite counts separately reported"
+            }
+          },
+          {
+            "path": "decode25/logits.f32",
+            "actual": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\correctness\\trace\\decode25\\logits.f32",
+              "bytes": 993280,
+              "sha256": "079091277422cd9c20aee9d03a3672ac7223d48ffb8f9fb0869b5434740f244b"
+            },
+            "reference": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode25\\logits.f32",
+              "bytes": 993280,
+              "sha256": "079091277422cd9c20aee9d03a3672ac7223d48ffb8f9fb0869b5434740f244b"
+            },
+            "byte_equal": true,
+            "metrics": {
+              "elements": 248320,
+              "bit_equal_elements": 248320,
+              "first_bit_mismatch": null,
+              "finite_pairs": 248320,
+              "candidate_nan": 0,
+              "reference_nan": 0,
+              "candidate_posinf": 0,
+              "candidate_neginf": 0,
+              "reference_posinf": 0,
+              "reference_neginf": 0,
+              "max_abs": 0.0,
+              "rms": 0.0,
+              "relative_l2": 0.0,
+              "max_relative_nonzero_reference": 0.0,
+              "zero_reference_nonzero_candidate": 0,
+              "max_ulp": 0,
+              "ulp_dtype": "F32",
+              "ulp_signed_zero": "positive/negative zero have distance0; raw bit equality still distinguishes them",
+              "metric_domain": "finite pairs only; nonfinite counts separately reported"
+            }
+          },
+          {
+            "path": "decode26/hidden.bf16",
+            "actual": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\correctness\\trace\\decode26\\hidden.bf16",
+              "bytes": 4096,
+              "sha256": "9ad10d1bc33b02b2ee0bf1df056087f84eb510871bfe4af278e895b3eede0419"
+            },
+            "reference": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode26\\hidden.bf16",
+              "bytes": 4096,
+              "sha256": "9ad10d1bc33b02b2ee0bf1df056087f84eb510871bfe4af278e895b3eede0419"
+            },
+            "byte_equal": true,
+            "metrics": {
+              "elements": 2048,
+              "bit_equal_elements": 2048,
+              "first_bit_mismatch": null,
+              "finite_pairs": 2048,
+              "candidate_nan": 0,
+              "reference_nan": 0,
+              "candidate_posinf": 0,
+              "candidate_neginf": 0,
+              "reference_posinf": 0,
+              "reference_neginf": 0,
+              "max_abs": 0.0,
+              "rms": 0.0,
+              "relative_l2": 0.0,
+              "max_relative_nonzero_reference": 0.0,
+              "zero_reference_nonzero_candidate": 0,
+              "max_ulp": 0,
+              "ulp_dtype": "BF16",
+              "ulp_signed_zero": "positive/negative zero have distance0; raw bit equality still distinguishes them",
+              "metric_domain": "finite pairs only; nonfinite counts separately reported"
+            }
+          },
+          {
+            "path": "decode26/logits.f32",
+            "actual": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\correctness\\trace\\decode26\\logits.f32",
+              "bytes": 993280,
+              "sha256": "0ddbec9ca8cb287be9d9dd415e4d7baf53175d100d309a4d3014eb690430270e"
+            },
+            "reference": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode26\\logits.f32",
+              "bytes": 993280,
+              "sha256": "0ddbec9ca8cb287be9d9dd415e4d7baf53175d100d309a4d3014eb690430270e"
+            },
+            "byte_equal": true,
+            "metrics": {
+              "elements": 248320,
+              "bit_equal_elements": 248320,
+              "first_bit_mismatch": null,
+              "finite_pairs": 248320,
+              "candidate_nan": 0,
+              "reference_nan": 0,
+              "candidate_posinf": 0,
+              "candidate_neginf": 0,
+              "reference_posinf": 0,
+              "reference_neginf": 0,
+              "max_abs": 0.0,
+              "rms": 0.0,
+              "relative_l2": 0.0,
+              "max_relative_nonzero_reference": 0.0,
+              "zero_reference_nonzero_candidate": 0,
+              "max_ulp": 0,
+              "ulp_dtype": "F32",
+              "ulp_signed_zero": "positive/negative zero have distance0; raw bit equality still distinguishes them",
+              "metric_domain": "finite pairs only; nonfinite counts separately reported"
+            }
+          },
+          {
+            "path": "decode27/hidden.bf16",
+            "actual": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\correctness\\trace\\decode27\\hidden.bf16",
+              "bytes": 4096,
+              "sha256": "11126f85e99889de5700986061d56f2759ff5b0eea94bb2636a36707ae2df606"
+            },
+            "reference": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode27\\hidden.bf16",
+              "bytes": 4096,
+              "sha256": "11126f85e99889de5700986061d56f2759ff5b0eea94bb2636a36707ae2df606"
+            },
+            "byte_equal": true,
+            "metrics": {
+              "elements": 2048,
+              "bit_equal_elements": 2048,
+              "first_bit_mismatch": null,
+              "finite_pairs": 2048,
+              "candidate_nan": 0,
+              "reference_nan": 0,
+              "candidate_posinf": 0,
+              "candidate_neginf": 0,
+              "reference_posinf": 0,
+              "reference_neginf": 0,
+              "max_abs": 0.0,
+              "rms": 0.0,
+              "relative_l2": 0.0,
+              "max_relative_nonzero_reference": 0.0,
+              "zero_reference_nonzero_candidate": 0,
+              "max_ulp": 0,
+              "ulp_dtype": "BF16",
+              "ulp_signed_zero": "positive/negative zero have distance0; raw bit equality still distinguishes them",
+              "metric_domain": "finite pairs only; nonfinite counts separately reported"
+            }
+          },
+          {
+            "path": "decode27/logits.f32",
+            "actual": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\correctness\\trace\\decode27\\logits.f32",
+              "bytes": 993280,
+              "sha256": "ea0c1a5585e84ee37096cf8fb2c531784c352bf43e270bf80bd954bd60e459ef"
+            },
+            "reference": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode27\\logits.f32",
+              "bytes": 993280,
+              "sha256": "ea0c1a5585e84ee37096cf8fb2c531784c352bf43e270bf80bd954bd60e459ef"
+            },
+            "byte_equal": true,
+            "metrics": {
+              "elements": 248320,
+              "bit_equal_elements": 248320,
+              "first_bit_mismatch": null,
+              "finite_pairs": 248320,
+              "candidate_nan": 0,
+              "reference_nan": 0,
+              "candidate_posinf": 0,
+              "candidate_neginf": 0,
+              "reference_posinf": 0,
+              "reference_neginf": 0,
+              "max_abs": 0.0,
+              "rms": 0.0,
+              "relative_l2": 0.0,
+              "max_relative_nonzero_reference": 0.0,
+              "zero_reference_nonzero_candidate": 0,
+              "max_ulp": 0,
+              "ulp_dtype": "F32",
+              "ulp_signed_zero": "positive/negative zero have distance0; raw bit equality still distinguishes them",
+              "metric_domain": "finite pairs only; nonfinite counts separately reported"
+            }
+          },
+          {
+            "path": "decode28/hidden.bf16",
+            "actual": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\correctness\\trace\\decode28\\hidden.bf16",
+              "bytes": 4096,
+              "sha256": "5b81866d1c8c9d4e282e45025e1b4d4010878e4f367b14ef2d6a08fc27c85c6e"
+            },
+            "reference": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode28\\hidden.bf16",
+              "bytes": 4096,
+              "sha256": "5b81866d1c8c9d4e282e45025e1b4d4010878e4f367b14ef2d6a08fc27c85c6e"
+            },
+            "byte_equal": true,
+            "metrics": {
+              "elements": 2048,
+              "bit_equal_elements": 2048,
+              "first_bit_mismatch": null,
+              "finite_pairs": 2048,
+              "candidate_nan": 0,
+              "reference_nan": 0,
+              "candidate_posinf": 0,
+              "candidate_neginf": 0,
+              "reference_posinf": 0,
+              "reference_neginf": 0,
+              "max_abs": 0.0,
+              "rms": 0.0,
+              "relative_l2": 0.0,
+              "max_relative_nonzero_reference": 0.0,
+              "zero_reference_nonzero_candidate": 0,
+              "max_ulp": 0,
+              "ulp_dtype": "BF16",
+              "ulp_signed_zero": "positive/negative zero have distance0; raw bit equality still distinguishes them",
+              "metric_domain": "finite pairs only; nonfinite counts separately reported"
+            }
+          },
+          {
+            "path": "decode28/logits.f32",
+            "actual": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\correctness\\trace\\decode28\\logits.f32",
+              "bytes": 993280,
+              "sha256": "75083b3b88af9047012de440d3e42c05eb1baa96763f888eddd134da287b8538"
+            },
+            "reference": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode28\\logits.f32",
+              "bytes": 993280,
+              "sha256": "75083b3b88af9047012de440d3e42c05eb1baa96763f888eddd134da287b8538"
+            },
+            "byte_equal": true,
+            "metrics": {
+              "elements": 248320,
+              "bit_equal_elements": 248320,
+              "first_bit_mismatch": null,
+              "finite_pairs": 248320,
+              "candidate_nan": 0,
+              "reference_nan": 0,
+              "candidate_posinf": 0,
+              "candidate_neginf": 0,
+              "reference_posinf": 0,
+              "reference_neginf": 0,
+              "max_abs": 0.0,
+              "rms": 0.0,
+              "relative_l2": 0.0,
+              "max_relative_nonzero_reference": 0.0,
+              "zero_reference_nonzero_candidate": 0,
+              "max_ulp": 0,
+              "ulp_dtype": "F32",
+              "ulp_signed_zero": "positive/negative zero have distance0; raw bit equality still distinguishes them",
+              "metric_domain": "finite pairs only; nonfinite counts separately reported"
+            }
+          },
+          {
+            "path": "decode29/hidden.bf16",
+            "actual": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\correctness\\trace\\decode29\\hidden.bf16",
+              "bytes": 4096,
+              "sha256": "b92b40b4fd571a637b2ef95b1634470d63d1ea628f45ce0a117c7a32afe76eb8"
+            },
+            "reference": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode29\\hidden.bf16",
+              "bytes": 4096,
+              "sha256": "b92b40b4fd571a637b2ef95b1634470d63d1ea628f45ce0a117c7a32afe76eb8"
+            },
+            "byte_equal": true,
+            "metrics": {
+              "elements": 2048,
+              "bit_equal_elements": 2048,
+              "first_bit_mismatch": null,
+              "finite_pairs": 2048,
+              "candidate_nan": 0,
+              "reference_nan": 0,
+              "candidate_posinf": 0,
+              "candidate_neginf": 0,
+              "reference_posinf": 0,
+              "reference_neginf": 0,
+              "max_abs": 0.0,
+              "rms": 0.0,
+              "relative_l2": 0.0,
+              "max_relative_nonzero_reference": 0.0,
+              "zero_reference_nonzero_candidate": 0,
+              "max_ulp": 0,
+              "ulp_dtype": "BF16",
+              "ulp_signed_zero": "positive/negative zero have distance0; raw bit equality still distinguishes them",
+              "metric_domain": "finite pairs only; nonfinite counts separately reported"
+            }
+          },
+          {
+            "path": "decode29/logits.f32",
+            "actual": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\correctness\\trace\\decode29\\logits.f32",
+              "bytes": 993280,
+              "sha256": "10e0712c92ed33298e2dd4a5919bd714cef9bb74cb53b19780dbfd2856c791e0"
+            },
+            "reference": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode29\\logits.f32",
+              "bytes": 993280,
+              "sha256": "10e0712c92ed33298e2dd4a5919bd714cef9bb74cb53b19780dbfd2856c791e0"
+            },
+            "byte_equal": true,
+            "metrics": {
+              "elements": 248320,
+              "bit_equal_elements": 248320,
+              "first_bit_mismatch": null,
+              "finite_pairs": 248320,
+              "candidate_nan": 0,
+              "reference_nan": 0,
+              "candidate_posinf": 0,
+              "candidate_neginf": 0,
+              "reference_posinf": 0,
+              "reference_neginf": 0,
+              "max_abs": 0.0,
+              "rms": 0.0,
+              "relative_l2": 0.0,
+              "max_relative_nonzero_reference": 0.0,
+              "zero_reference_nonzero_candidate": 0,
+              "max_ulp": 0,
+              "ulp_dtype": "F32",
+              "ulp_signed_zero": "positive/negative zero have distance0; raw bit equality still distinguishes them",
+              "metric_domain": "finite pairs only; nonfinite counts separately reported"
+            }
+          },
+          {
+            "path": "decode3/hidden.bf16",
+            "actual": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\correctness\\trace\\decode3\\hidden.bf16",
+              "bytes": 4096,
+              "sha256": "227c7e6548e2159393ddf350d7dfbd1dda87040994ade315075c005ce7798889"
+            },
+            "reference": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode3\\hidden.bf16",
+              "bytes": 4096,
+              "sha256": "227c7e6548e2159393ddf350d7dfbd1dda87040994ade315075c005ce7798889"
+            },
+            "byte_equal": true,
+            "metrics": {
+              "elements": 2048,
+              "bit_equal_elements": 2048,
+              "first_bit_mismatch": null,
+              "finite_pairs": 2048,
+              "candidate_nan": 0,
+              "reference_nan": 0,
+              "candidate_posinf": 0,
+              "candidate_neginf": 0,
+              "reference_posinf": 0,
+              "reference_neginf": 0,
+              "max_abs": 0.0,
+              "rms": 0.0,
+              "relative_l2": 0.0,
+              "max_relative_nonzero_reference": 0.0,
+              "zero_reference_nonzero_candidate": 0,
+              "max_ulp": 0,
+              "ulp_dtype": "BF16",
+              "ulp_signed_zero": "positive/negative zero have distance0; raw bit equality still distinguishes them",
+              "metric_domain": "finite pairs only; nonfinite counts separately reported"
+            }
+          },
+          {
+            "path": "decode3/logits.f32",
+            "actual": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\correctness\\trace\\decode3\\logits.f32",
+              "bytes": 993280,
+              "sha256": "aff61c4c7ec366a0b25cf583427df267859aca70ab3c9e264268a30f2d45f3d4"
+            },
+            "reference": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode3\\logits.f32",
+              "bytes": 993280,
+              "sha256": "aff61c4c7ec366a0b25cf583427df267859aca70ab3c9e264268a30f2d45f3d4"
+            },
+            "byte_equal": true,
+            "metrics": {
+              "elements": 248320,
+              "bit_equal_elements": 248320,
+              "first_bit_mismatch": null,
+              "finite_pairs": 248320,
+              "candidate_nan": 0,
+              "reference_nan": 0,
+              "candidate_posinf": 0,
+              "candidate_neginf": 0,
+              "reference_posinf": 0,
+              "reference_neginf": 0,
+              "max_abs": 0.0,
+              "rms": 0.0,
+              "relative_l2": 0.0,
+              "max_relative_nonzero_reference": 0.0,
+              "zero_reference_nonzero_candidate": 0,
+              "max_ulp": 0,
+              "ulp_dtype": "F32",
+              "ulp_signed_zero": "positive/negative zero have distance0; raw bit equality still distinguishes them",
+              "metric_domain": "finite pairs only; nonfinite counts separately reported"
+            }
+          },
+          {
+            "path": "decode30/hidden.bf16",
+            "actual": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\correctness\\trace\\decode30\\hidden.bf16",
+              "bytes": 4096,
+              "sha256": "ca725572fbf8c186b9bc0c5662173d8ad7dae136b179587657ea87029eb1349f"
+            },
+            "reference": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode30\\hidden.bf16",
+              "bytes": 4096,
+              "sha256": "ca725572fbf8c186b9bc0c5662173d8ad7dae136b179587657ea87029eb1349f"
+            },
+            "byte_equal": true,
+            "metrics": {
+              "elements": 2048,
+              "bit_equal_elements": 2048,
+              "first_bit_mismatch": null,
+              "finite_pairs": 2048,
+              "candidate_nan": 0,
+              "reference_nan": 0,
+              "candidate_posinf": 0,
+              "candidate_neginf": 0,
+              "reference_posinf": 0,
+              "reference_neginf": 0,
+              "max_abs": 0.0,
+              "rms": 0.0,
+              "relative_l2": 0.0,
+              "max_relative_nonzero_reference": 0.0,
+              "zero_reference_nonzero_candidate": 0,
+              "max_ulp": 0,
+              "ulp_dtype": "BF16",
+              "ulp_signed_zero": "positive/negative zero have distance0; raw bit equality still distinguishes them",
+              "metric_domain": "finite pairs only; nonfinite counts separately reported"
+            }
+          },
+          {
+            "path": "decode30/logits.f32",
+            "actual": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\correctness\\trace\\decode30\\logits.f32",
+              "bytes": 993280,
+              "sha256": "42d688f93ec3ae1e4c920fa3a22b1169f1050d0eec291e5b69aa51b54b24e11d"
+            },
+            "reference": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode30\\logits.f32",
+              "bytes": 993280,
+              "sha256": "42d688f93ec3ae1e4c920fa3a22b1169f1050d0eec291e5b69aa51b54b24e11d"
+            },
+            "byte_equal": true,
+            "metrics": {
+              "elements": 248320,
+              "bit_equal_elements": 248320,
+              "first_bit_mismatch": null,
+              "finite_pairs": 248320,
+              "candidate_nan": 0,
+              "reference_nan": 0,
+              "candidate_posinf": 0,
+              "candidate_neginf": 0,
+              "reference_posinf": 0,
+              "reference_neginf": 0,
+              "max_abs": 0.0,
+              "rms": 0.0,
+              "relative_l2": 0.0,
+              "max_relative_nonzero_reference": 0.0,
+              "zero_reference_nonzero_candidate": 0,
+              "max_ulp": 0,
+              "ulp_dtype": "F32",
+              "ulp_signed_zero": "positive/negative zero have distance0; raw bit equality still distinguishes them",
+              "metric_domain": "finite pairs only; nonfinite counts separately reported"
+            }
+          },
+          {
+            "path": "decode31/hidden.bf16",
+            "actual": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\correctness\\trace\\decode31\\hidden.bf16",
+              "bytes": 4096,
+              "sha256": "886b6f71fcbbcf3f95dc61f7873e43f245f40a4d967d0c2401205fbba52bd95e"
+            },
+            "reference": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode31\\hidden.bf16",
+              "bytes": 4096,
+              "sha256": "886b6f71fcbbcf3f95dc61f7873e43f245f40a4d967d0c2401205fbba52bd95e"
+            },
+            "byte_equal": true,
+            "metrics": {
+              "elements": 2048,
+              "bit_equal_elements": 2048,
+              "first_bit_mismatch": null,
+              "finite_pairs": 2048,
+              "candidate_nan": 0,
+              "reference_nan": 0,
+              "candidate_posinf": 0,
+              "candidate_neginf": 0,
+              "reference_posinf": 0,
+              "reference_neginf": 0,
+              "max_abs": 0.0,
+              "rms": 0.0,
+              "relative_l2": 0.0,
+              "max_relative_nonzero_reference": 0.0,
+              "zero_reference_nonzero_candidate": 0,
+              "max_ulp": 0,
+              "ulp_dtype": "BF16",
+              "ulp_signed_zero": "positive/negative zero have distance0; raw bit equality still distinguishes them",
+              "metric_domain": "finite pairs only; nonfinite counts separately reported"
+            }
+          },
+          {
+            "path": "decode31/logits.f32",
+            "actual": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\correctness\\trace\\decode31\\logits.f32",
+              "bytes": 993280,
+              "sha256": "6619c64b58de04545169513c926b852f92822fb64ae0b22fc7efbd9cf8842887"
+            },
+            "reference": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode31\\logits.f32",
+              "bytes": 993280,
+              "sha256": "6619c64b58de04545169513c926b852f92822fb64ae0b22fc7efbd9cf8842887"
+            },
+            "byte_equal": true,
+            "metrics": {
+              "elements": 248320,
+              "bit_equal_elements": 248320,
+              "first_bit_mismatch": null,
+              "finite_pairs": 248320,
+              "candidate_nan": 0,
+              "reference_nan": 0,
+              "candidate_posinf": 0,
+              "candidate_neginf": 0,
+              "reference_posinf": 0,
+              "reference_neginf": 0,
+              "max_abs": 0.0,
+              "rms": 0.0,
+              "relative_l2": 0.0,
+              "max_relative_nonzero_reference": 0.0,
+              "zero_reference_nonzero_candidate": 0,
+              "max_ulp": 0,
+              "ulp_dtype": "F32",
+              "ulp_signed_zero": "positive/negative zero have distance0; raw bit equality still distinguishes them",
+              "metric_domain": "finite pairs only; nonfinite counts separately reported"
+            }
+          },
+          {
+            "path": "decode4/hidden.bf16",
+            "actual": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\correctness\\trace\\decode4\\hidden.bf16",
+              "bytes": 4096,
+              "sha256": "f7d8474a362ca19268b3481791345307fee1026f0a4c871e1227ce3315e7021e"
+            },
+            "reference": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode4\\hidden.bf16",
+              "bytes": 4096,
+              "sha256": "f7d8474a362ca19268b3481791345307fee1026f0a4c871e1227ce3315e7021e"
+            },
+            "byte_equal": true,
+            "metrics": {
+              "elements": 2048,
+              "bit_equal_elements": 2048,
+              "first_bit_mismatch": null,
+              "finite_pairs": 2048,
+              "candidate_nan": 0,
+              "reference_nan": 0,
+              "candidate_posinf": 0,
+              "candidate_neginf": 0,
+              "reference_posinf": 0,
+              "reference_neginf": 0,
+              "max_abs": 0.0,
+              "rms": 0.0,
+              "relative_l2": 0.0,
+              "max_relative_nonzero_reference": 0.0,
+              "zero_reference_nonzero_candidate": 0,
+              "max_ulp": 0,
+              "ulp_dtype": "BF16",
+              "ulp_signed_zero": "positive/negative zero have distance0; raw bit equality still distinguishes them",
+              "metric_domain": "finite pairs only; nonfinite counts separately reported"
+            }
+          },
+          {
+            "path": "decode4/logits.f32",
+            "actual": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\correctness\\trace\\decode4\\logits.f32",
+              "bytes": 993280,
+              "sha256": "0ab4e55caa9276fd56d4353c36121014f07342989b570eb9c3f7dfddc21a2bba"
+            },
+            "reference": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode4\\logits.f32",
+              "bytes": 993280,
+              "sha256": "0ab4e55caa9276fd56d4353c36121014f07342989b570eb9c3f7dfddc21a2bba"
+            },
+            "byte_equal": true,
+            "metrics": {
+              "elements": 248320,
+              "bit_equal_elements": 248320,
+              "first_bit_mismatch": null,
+              "finite_pairs": 248320,
+              "candidate_nan": 0,
+              "reference_nan": 0,
+              "candidate_posinf": 0,
+              "candidate_neginf": 0,
+              "reference_posinf": 0,
+              "reference_neginf": 0,
+              "max_abs": 0.0,
+              "rms": 0.0,
+              "relative_l2": 0.0,
+              "max_relative_nonzero_reference": 0.0,
+              "zero_reference_nonzero_candidate": 0,
+              "max_ulp": 0,
+              "ulp_dtype": "F32",
+              "ulp_signed_zero": "positive/negative zero have distance0; raw bit equality still distinguishes them",
+              "metric_domain": "finite pairs only; nonfinite counts separately reported"
+            }
+          },
+          {
+            "path": "decode5/hidden.bf16",
+            "actual": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\correctness\\trace\\decode5\\hidden.bf16",
+              "bytes": 4096,
+              "sha256": "850b8196a3ee12fb1ef0f4f71a37155b3b4b394053b616603d33457b3d0c8a19"
+            },
+            "reference": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode5\\hidden.bf16",
+              "bytes": 4096,
+              "sha256": "850b8196a3ee12fb1ef0f4f71a37155b3b4b394053b616603d33457b3d0c8a19"
+            },
+            "byte_equal": true,
+            "metrics": {
+              "elements": 2048,
+              "bit_equal_elements": 2048,
+              "first_bit_mismatch": null,
+              "finite_pairs": 2048,
+              "candidate_nan": 0,
+              "reference_nan": 0,
+              "candidate_posinf": 0,
+              "candidate_neginf": 0,
+              "reference_posinf": 0,
+              "reference_neginf": 0,
+              "max_abs": 0.0,
+              "rms": 0.0,
+              "relative_l2": 0.0,
+              "max_relative_nonzero_reference": 0.0,
+              "zero_reference_nonzero_candidate": 0,
+              "max_ulp": 0,
+              "ulp_dtype": "BF16",
+              "ulp_signed_zero": "positive/negative zero have distance0; raw bit equality still distinguishes them",
+              "metric_domain": "finite pairs only; nonfinite counts separately reported"
+            }
+          },
+          {
+            "path": "decode5/logits.f32",
+            "actual": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\correctness\\trace\\decode5\\logits.f32",
+              "bytes": 993280,
+              "sha256": "ebb26764856c828fae8d95a751837b1af2fc6101e9207cfa3bdaa0fdea3c7a1e"
+            },
+            "reference": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode5\\logits.f32",
+              "bytes": 993280,
+              "sha256": "ebb26764856c828fae8d95a751837b1af2fc6101e9207cfa3bdaa0fdea3c7a1e"
+            },
+            "byte_equal": true,
+            "metrics": {
+              "elements": 248320,
+              "bit_equal_elements": 248320,
+              "first_bit_mismatch": null,
+              "finite_pairs": 248320,
+              "candidate_nan": 0,
+              "reference_nan": 0,
+              "candidate_posinf": 0,
+              "candidate_neginf": 0,
+              "reference_posinf": 0,
+              "reference_neginf": 0,
+              "max_abs": 0.0,
+              "rms": 0.0,
+              "relative_l2": 0.0,
+              "max_relative_nonzero_reference": 0.0,
+              "zero_reference_nonzero_candidate": 0,
+              "max_ulp": 0,
+              "ulp_dtype": "F32",
+              "ulp_signed_zero": "positive/negative zero have distance0; raw bit equality still distinguishes them",
+              "metric_domain": "finite pairs only; nonfinite counts separately reported"
+            }
+          },
+          {
+            "path": "decode6/hidden.bf16",
+            "actual": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\correctness\\trace\\decode6\\hidden.bf16",
+              "bytes": 4096,
+              "sha256": "1f04b58f50a488b9599eabf6b360ede1b3e3205fe9f1fd44b2d86dd25adf4484"
+            },
+            "reference": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode6\\hidden.bf16",
+              "bytes": 4096,
+              "sha256": "1f04b58f50a488b9599eabf6b360ede1b3e3205fe9f1fd44b2d86dd25adf4484"
+            },
+            "byte_equal": true,
+            "metrics": {
+              "elements": 2048,
+              "bit_equal_elements": 2048,
+              "first_bit_mismatch": null,
+              "finite_pairs": 2048,
+              "candidate_nan": 0,
+              "reference_nan": 0,
+              "candidate_posinf": 0,
+              "candidate_neginf": 0,
+              "reference_posinf": 0,
+              "reference_neginf": 0,
+              "max_abs": 0.0,
+              "rms": 0.0,
+              "relative_l2": 0.0,
+              "max_relative_nonzero_reference": 0.0,
+              "zero_reference_nonzero_candidate": 0,
+              "max_ulp": 0,
+              "ulp_dtype": "BF16",
+              "ulp_signed_zero": "positive/negative zero have distance0; raw bit equality still distinguishes them",
+              "metric_domain": "finite pairs only; nonfinite counts separately reported"
+            }
+          },
+          {
+            "path": "decode6/logits.f32",
+            "actual": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\correctness\\trace\\decode6\\logits.f32",
+              "bytes": 993280,
+              "sha256": "cbda8781111c0ca4ad618ae56c2d840974152770d2d5474c43498bd0e81e2a84"
+            },
+            "reference": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode6\\logits.f32",
+              "bytes": 993280,
+              "sha256": "cbda8781111c0ca4ad618ae56c2d840974152770d2d5474c43498bd0e81e2a84"
+            },
+            "byte_equal": true,
+            "metrics": {
+              "elements": 248320,
+              "bit_equal_elements": 248320,
+              "first_bit_mismatch": null,
+              "finite_pairs": 248320,
+              "candidate_nan": 0,
+              "reference_nan": 0,
+              "candidate_posinf": 0,
+              "candidate_neginf": 0,
+              "reference_posinf": 0,
+              "reference_neginf": 0,
+              "max_abs": 0.0,
+              "rms": 0.0,
+              "relative_l2": 0.0,
+              "max_relative_nonzero_reference": 0.0,
+              "zero_reference_nonzero_candidate": 0,
+              "max_ulp": 0,
+              "ulp_dtype": "F32",
+              "ulp_signed_zero": "positive/negative zero have distance0; raw bit equality still distinguishes them",
+              "metric_domain": "finite pairs only; nonfinite counts separately reported"
+            }
+          },
+          {
+            "path": "decode7/hidden.bf16",
+            "actual": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\correctness\\trace\\decode7\\hidden.bf16",
+              "bytes": 4096,
+              "sha256": "db84650d85f3c3fea8e4c3d4bf891b1fc01a65aad3f7807e8eef53315f7723f2"
+            },
+            "reference": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode7\\hidden.bf16",
+              "bytes": 4096,
+              "sha256": "db84650d85f3c3fea8e4c3d4bf891b1fc01a65aad3f7807e8eef53315f7723f2"
+            },
+            "byte_equal": true,
+            "metrics": {
+              "elements": 2048,
+              "bit_equal_elements": 2048,
+              "first_bit_mismatch": null,
+              "finite_pairs": 2048,
+              "candidate_nan": 0,
+              "reference_nan": 0,
+              "candidate_posinf": 0,
+              "candidate_neginf": 0,
+              "reference_posinf": 0,
+              "reference_neginf": 0,
+              "max_abs": 0.0,
+              "rms": 0.0,
+              "relative_l2": 0.0,
+              "max_relative_nonzero_reference": 0.0,
+              "zero_reference_nonzero_candidate": 0,
+              "max_ulp": 0,
+              "ulp_dtype": "BF16",
+              "ulp_signed_zero": "positive/negative zero have distance0; raw bit equality still distinguishes them",
+              "metric_domain": "finite pairs only; nonfinite counts separately reported"
+            }
+          },
+          {
+            "path": "decode7/logits.f32",
+            "actual": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\correctness\\trace\\decode7\\logits.f32",
+              "bytes": 993280,
+              "sha256": "8c90db2481c2110453c52633a8b3153fe37391085de09fb4e5a0943adfe396c1"
+            },
+            "reference": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode7\\logits.f32",
+              "bytes": 993280,
+              "sha256": "8c90db2481c2110453c52633a8b3153fe37391085de09fb4e5a0943adfe396c1"
+            },
+            "byte_equal": true,
+            "metrics": {
+              "elements": 248320,
+              "bit_equal_elements": 248320,
+              "first_bit_mismatch": null,
+              "finite_pairs": 248320,
+              "candidate_nan": 0,
+              "reference_nan": 0,
+              "candidate_posinf": 0,
+              "candidate_neginf": 0,
+              "reference_posinf": 0,
+              "reference_neginf": 0,
+              "max_abs": 0.0,
+              "rms": 0.0,
+              "relative_l2": 0.0,
+              "max_relative_nonzero_reference": 0.0,
+              "zero_reference_nonzero_candidate": 0,
+              "max_ulp": 0,
+              "ulp_dtype": "F32",
+              "ulp_signed_zero": "positive/negative zero have distance0; raw bit equality still distinguishes them",
+              "metric_domain": "finite pairs only; nonfinite counts separately reported"
+            }
+          },
+          {
+            "path": "decode8/hidden.bf16",
+            "actual": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\correctness\\trace\\decode8\\hidden.bf16",
+              "bytes": 4096,
+              "sha256": "4ba5e0f90d2c22025d9136092d03307914b18795082217cd34d4aec5c85dfdd6"
+            },
+            "reference": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode8\\hidden.bf16",
+              "bytes": 4096,
+              "sha256": "4ba5e0f90d2c22025d9136092d03307914b18795082217cd34d4aec5c85dfdd6"
+            },
+            "byte_equal": true,
+            "metrics": {
+              "elements": 2048,
+              "bit_equal_elements": 2048,
+              "first_bit_mismatch": null,
+              "finite_pairs": 2048,
+              "candidate_nan": 0,
+              "reference_nan": 0,
+              "candidate_posinf": 0,
+              "candidate_neginf": 0,
+              "reference_posinf": 0,
+              "reference_neginf": 0,
+              "max_abs": 0.0,
+              "rms": 0.0,
+              "relative_l2": 0.0,
+              "max_relative_nonzero_reference": 0.0,
+              "zero_reference_nonzero_candidate": 0,
+              "max_ulp": 0,
+              "ulp_dtype": "BF16",
+              "ulp_signed_zero": "positive/negative zero have distance0; raw bit equality still distinguishes them",
+              "metric_domain": "finite pairs only; nonfinite counts separately reported"
+            }
+          },
+          {
+            "path": "decode8/logits.f32",
+            "actual": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\correctness\\trace\\decode8\\logits.f32",
+              "bytes": 993280,
+              "sha256": "db08f2c1bdd302459dd6151dea7de3d6f37b431d7dfaf3cf191b9ada82858745"
+            },
+            "reference": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode8\\logits.f32",
+              "bytes": 993280,
+              "sha256": "db08f2c1bdd302459dd6151dea7de3d6f37b431d7dfaf3cf191b9ada82858745"
+            },
+            "byte_equal": true,
+            "metrics": {
+              "elements": 248320,
+              "bit_equal_elements": 248320,
+              "first_bit_mismatch": null,
+              "finite_pairs": 248320,
+              "candidate_nan": 0,
+              "reference_nan": 0,
+              "candidate_posinf": 0,
+              "candidate_neginf": 0,
+              "reference_posinf": 0,
+              "reference_neginf": 0,
+              "max_abs": 0.0,
+              "rms": 0.0,
+              "relative_l2": 0.0,
+              "max_relative_nonzero_reference": 0.0,
+              "zero_reference_nonzero_candidate": 0,
+              "max_ulp": 0,
+              "ulp_dtype": "F32",
+              "ulp_signed_zero": "positive/negative zero have distance0; raw bit equality still distinguishes them",
+              "metric_domain": "finite pairs only; nonfinite counts separately reported"
+            }
+          },
+          {
+            "path": "decode9/hidden.bf16",
+            "actual": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\correctness\\trace\\decode9\\hidden.bf16",
+              "bytes": 4096,
+              "sha256": "e9852a023ec1982b1258a0042712d1abd868575fc9f968798be75da2cd9fdc5a"
+            },
+            "reference": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode9\\hidden.bf16",
+              "bytes": 4096,
+              "sha256": "e9852a023ec1982b1258a0042712d1abd868575fc9f968798be75da2cd9fdc5a"
+            },
+            "byte_equal": true,
+            "metrics": {
+              "elements": 2048,
+              "bit_equal_elements": 2048,
+              "first_bit_mismatch": null,
+              "finite_pairs": 2048,
+              "candidate_nan": 0,
+              "reference_nan": 0,
+              "candidate_posinf": 0,
+              "candidate_neginf": 0,
+              "reference_posinf": 0,
+              "reference_neginf": 0,
+              "max_abs": 0.0,
+              "rms": 0.0,
+              "relative_l2": 0.0,
+              "max_relative_nonzero_reference": 0.0,
+              "zero_reference_nonzero_candidate": 0,
+              "max_ulp": 0,
+              "ulp_dtype": "BF16",
+              "ulp_signed_zero": "positive/negative zero have distance0; raw bit equality still distinguishes them",
+              "metric_domain": "finite pairs only; nonfinite counts separately reported"
+            }
+          },
+          {
+            "path": "decode9/logits.f32",
+            "actual": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\correctness\\trace\\decode9\\logits.f32",
+              "bytes": 993280,
+              "sha256": "e19784e9cb938d33e1a6508bacca54fb44b8807c41f091cdf8b401c161da6cb9"
+            },
+            "reference": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode9\\logits.f32",
+              "bytes": 993280,
+              "sha256": "e19784e9cb938d33e1a6508bacca54fb44b8807c41f091cdf8b401c161da6cb9"
+            },
+            "byte_equal": true,
+            "metrics": {
+              "elements": 248320,
+              "bit_equal_elements": 248320,
+              "first_bit_mismatch": null,
+              "finite_pairs": 248320,
+              "candidate_nan": 0,
+              "reference_nan": 0,
+              "candidate_posinf": 0,
+              "candidate_neginf": 0,
+              "reference_posinf": 0,
+              "reference_neginf": 0,
+              "max_abs": 0.0,
+              "rms": 0.0,
+              "relative_l2": 0.0,
+              "max_relative_nonzero_reference": 0.0,
+              "zero_reference_nonzero_candidate": 0,
+              "max_ulp": 0,
+              "ulp_dtype": "F32",
+              "ulp_signed_zero": "positive/negative zero have distance0; raw bit equality still distinguishes them",
+              "metric_domain": "finite pairs only; nonfinite counts separately reported"
+            }
+          },
+          {
+            "path": "prefill/hidden.bf16",
+            "actual": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\correctness\\trace\\prefill\\hidden.bf16",
+              "bytes": 4096,
+              "sha256": "441f8e0eea6b8deea8b640bb76efc9dcc1267f3ee4de9e936bcc9fa9110a8ee1"
+            },
+            "reference": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\prefill\\hidden.bf16",
+              "bytes": 4096,
+              "sha256": "441f8e0eea6b8deea8b640bb76efc9dcc1267f3ee4de9e936bcc9fa9110a8ee1"
+            },
+            "byte_equal": true,
+            "metrics": {
+              "elements": 2048,
+              "bit_equal_elements": 2048,
+              "first_bit_mismatch": null,
+              "finite_pairs": 2048,
+              "candidate_nan": 0,
+              "reference_nan": 0,
+              "candidate_posinf": 0,
+              "candidate_neginf": 0,
+              "reference_posinf": 0,
+              "reference_neginf": 0,
+              "max_abs": 0.0,
+              "rms": 0.0,
+              "relative_l2": 0.0,
+              "max_relative_nonzero_reference": 0.0,
+              "zero_reference_nonzero_candidate": 0,
+              "max_ulp": 0,
+              "ulp_dtype": "BF16",
+              "ulp_signed_zero": "positive/negative zero have distance0; raw bit equality still distinguishes them",
+              "metric_domain": "finite pairs only; nonfinite counts separately reported"
+            }
+          },
+          {
+            "path": "prefill/logits.f32",
+            "actual": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\correctness\\trace\\prefill\\logits.f32",
+              "bytes": 993280,
+              "sha256": "3f9f6f36cbefdeae7dc1e5e89b8af0729c2d9d6f59dab28e040a4771d9609b43"
+            },
+            "reference": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\prefill\\logits.f32",
+              "bytes": 993280,
+              "sha256": "3f9f6f36cbefdeae7dc1e5e89b8af0729c2d9d6f59dab28e040a4771d9609b43"
+            },
+            "byte_equal": true,
+            "metrics": {
+              "elements": 248320,
+              "bit_equal_elements": 248320,
+              "first_bit_mismatch": null,
+              "finite_pairs": 248320,
+              "candidate_nan": 0,
+              "reference_nan": 0,
+              "candidate_posinf": 0,
+              "candidate_neginf": 0,
+              "reference_posinf": 0,
+              "reference_neginf": 0,
+              "max_abs": 0.0,
+              "rms": 0.0,
+              "relative_l2": 0.0,
+              "max_relative_nonzero_reference": 0.0,
+              "zero_reference_nonzero_candidate": 0,
+              "max_ulp": 0,
+              "ulp_dtype": "F32",
+              "ulp_signed_zero": "positive/negative zero have distance0; raw bit equality still distinguishes them",
+              "metric_domain": "finite pairs only; nonfinite counts separately reported"
+            }
+          }
+        ],
+        "routes": {
+          "128": {
+            "file": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\correctness\\trace\\routes\\default-T128.route.tsv",
+              "bytes": 36783,
+              "sha256": "bd9ac4ef0dd17a8326e370d0adf57436e10b4158831bc1c7af92cbf14d7823f5"
+            },
+            "steps": 1113,
+            "impl4_count": 0,
+            "impl4_steps": [],
+            "explicit_copy_steps": 0,
+            "copy_bytes": null,
+            "copy_bytes_status": "Consumer TSV does not emit CompileReport copy_bytes; zero proposal cost or zero explicit Copy steps does not measure internal/native copies."
+          },
+          "1": {
+            "file": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\correctness\\trace\\routes\\default-T1.route.tsv",
+              "bytes": 35547,
+              "sha256": "86c3799a908d2c78b22af70efed2c2fc18d45cceb8fd9bb1f7c5a5edb22d8c70"
+            },
+            "steps": 1047,
+            "impl4_count": 24,
+            "impl4_steps": [
+              {
+                "step": "45",
+                "kind": "1",
+                "provider": "ggml-cuda",
+                "implementation": "4",
+                "nodes": "78:matmul,79:unary,81:matmul,82:binary"
+              },
+              {
+                "step": "91",
+                "kind": "1",
+                "provider": "ggml-cuda",
+                "implementation": "4",
+                "nodes": "163:matmul,164:unary,166:matmul,167:binary"
+              },
+              {
+                "step": "137",
+                "kind": "1",
+                "provider": "ggml-cuda",
+                "implementation": "4",
+                "nodes": "248:matmul,249:unary,251:matmul,252:binary"
+              },
+              {
+                "step": "172",
+                "kind": "1",
+                "provider": "ggml-cuda",
+                "implementation": "4",
+                "nodes": "304:matmul,305:unary,307:matmul,308:binary"
+              },
+              {
+                "step": "218",
+                "kind": "1",
+                "provider": "ggml-cuda",
+                "implementation": "4",
+                "nodes": "389:matmul,390:unary,392:matmul,393:binary"
+              },
+              {
+                "step": "264",
+                "kind": "1",
+                "provider": "ggml-cuda",
+                "implementation": "4",
+                "nodes": "474:matmul,475:unary,477:matmul,478:binary"
+              },
+              {
+                "step": "310",
+                "kind": "1",
+                "provider": "ggml-cuda",
+                "implementation": "4",
+                "nodes": "559:matmul,560:unary,562:matmul,563:binary"
+              },
+              {
+                "step": "345",
+                "kind": "1",
+                "provider": "ggml-cuda",
+                "implementation": "4",
+                "nodes": "615:matmul,616:unary,618:matmul,619:binary"
+              },
+              {
+                "step": "391",
+                "kind": "1",
+                "provider": "ggml-cuda",
+                "implementation": "4",
+                "nodes": "700:matmul,701:unary,703:matmul,704:binary"
+              },
+              {
+                "step": "437",
+                "kind": "1",
+                "provider": "ggml-cuda",
+                "implementation": "4",
+                "nodes": "785:matmul,786:unary,788:matmul,789:binary"
+              },
+              {
+                "step": "483",
+                "kind": "1",
+                "provider": "ggml-cuda",
+                "implementation": "4",
+                "nodes": "870:matmul,871:unary,873:matmul,874:binary"
+              },
+              {
+                "step": "518",
+                "kind": "1",
+                "provider": "ggml-cuda",
+                "implementation": "4",
+                "nodes": "926:matmul,927:unary,929:matmul,930:binary"
+              },
+              {
+                "step": "564",
+                "kind": "1",
+                "provider": "ggml-cuda",
+                "implementation": "4",
+                "nodes": "1011:matmul,1012:unary,1014:matmul,1015:binary"
+              },
+              {
+                "step": "610",
+                "kind": "1",
+                "provider": "ggml-cuda",
+                "implementation": "4",
+                "nodes": "1096:matmul,1097:unary,1099:matmul,1100:binary"
+              },
+              {
+                "step": "656",
+                "kind": "1",
+                "provider": "ggml-cuda",
+                "implementation": "4",
+                "nodes": "1181:matmul,1182:unary,1184:matmul,1185:binary"
+              },
+              {
+                "step": "691",
+                "kind": "1",
+                "provider": "ggml-cuda",
+                "implementation": "4",
+                "nodes": "1237:matmul,1238:unary,1240:matmul,1241:binary"
+              },
+              {
+                "step": "737",
+                "kind": "1",
+                "provider": "ggml-cuda",
+                "implementation": "4",
+                "nodes": "1322:matmul,1323:unary,1325:matmul,1326:binary"
+              },
+              {
+                "step": "783",
+                "kind": "1",
+                "provider": "ggml-cuda",
+                "implementation": "4",
+                "nodes": "1407:matmul,1408:unary,1410:matmul,1411:binary"
+              },
+              {
+                "step": "829",
+                "kind": "1",
+                "provider": "ggml-cuda",
+                "implementation": "4",
+                "nodes": "1492:matmul,1493:unary,1495:matmul,1496:binary"
+              },
+              {
+                "step": "864",
+                "kind": "1",
+                "provider": "ggml-cuda",
+                "implementation": "4",
+                "nodes": "1548:matmul,1549:unary,1551:matmul,1552:binary"
+              },
+              {
+                "step": "910",
+                "kind": "1",
+                "provider": "ggml-cuda",
+                "implementation": "4",
+                "nodes": "1633:matmul,1634:unary,1636:matmul,1637:binary"
+              },
+              {
+                "step": "956",
+                "kind": "1",
+                "provider": "ggml-cuda",
+                "implementation": "4",
+                "nodes": "1718:matmul,1719:unary,1721:matmul,1722:binary"
+              },
+              {
+                "step": "1002",
+                "kind": "1",
+                "provider": "ggml-cuda",
+                "implementation": "4",
+                "nodes": "1803:matmul,1804:unary,1806:matmul,1807:binary"
+              },
+              {
+                "step": "1037",
+                "kind": "1",
+                "provider": "ggml-cuda",
+                "implementation": "4",
+                "nodes": "1859:matmul,1860:unary,1862:matmul,1863:binary"
+              }
+            ],
+            "explicit_copy_steps": 0,
+            "copy_bytes": null,
+            "copy_bytes_status": "Consumer TSV does not emit CompileReport copy_bytes; zero proposal cost or zero explicit Copy steps does not measure internal/native copies."
+          }
+        },
+        "workspace": [
+          {
+            "tokens": 128,
+            "steps": 1113,
+            "workspace_bytes_per_slot": 26910720
+          },
+          {
+            "tokens": 1,
+            "steps": 1047,
+            "workspace_bytes_per_slot": 1807616
+          }
+        ],
+        "capture_counts": [
+          {
+            "tokens": 128,
+            "visible": 128,
+            "replay": "hybrid",
+            "recorded": 1,
+            "reused": 0
+          },
+          {
+            "tokens": 1,
+            "visible": 129,
+            "replay": "hybrid",
+            "recorded": 1,
+            "reused": 0
+          },
+          {
+            "tokens": 1,
+            "visible": 130,
+            "replay": "hybrid",
+            "recorded": 1,
+            "reused": 0
+          },
+          {
+            "tokens": 1,
+            "visible": 131,
+            "replay": "hybrid",
+            "recorded": 0,
+            "reused": 1
+          },
+          {
+            "tokens": 1,
+            "visible": 132,
+            "replay": "hybrid",
+            "recorded": 0,
+            "reused": 1
+          },
+          {
+            "tokens": 1,
+            "visible": 133,
+            "replay": "hybrid",
+            "recorded": 0,
+            "reused": 1
+          },
+          {
+            "tokens": 1,
+            "visible": 134,
+            "replay": "hybrid",
+            "recorded": 0,
+            "reused": 1
+          },
+          {
+            "tokens": 1,
+            "visible": 135,
+            "replay": "hybrid",
+            "recorded": 0,
+            "reused": 1
+          },
+          {
+            "tokens": 1,
+            "visible": 136,
+            "replay": "hybrid",
+            "recorded": 0,
+            "reused": 1
+          },
+          {
+            "tokens": 1,
+            "visible": 137,
+            "replay": "hybrid",
+            "recorded": 0,
+            "reused": 1
+          },
+          {
+            "tokens": 1,
+            "visible": 138,
+            "replay": "hybrid",
+            "recorded": 0,
+            "reused": 1
+          },
+          {
+            "tokens": 1,
+            "visible": 139,
+            "replay": "hybrid",
+            "recorded": 0,
+            "reused": 1
+          },
+          {
+            "tokens": 1,
+            "visible": 140,
+            "replay": "hybrid",
+            "recorded": 0,
+            "reused": 1
+          },
+          {
+            "tokens": 1,
+            "visible": 141,
+            "replay": "hybrid",
+            "recorded": 0,
+            "reused": 1
+          },
+          {
+            "tokens": 1,
+            "visible": 142,
+            "replay": "hybrid",
+            "recorded": 0,
+            "reused": 1
+          },
+          {
+            "tokens": 1,
+            "visible": 143,
+            "replay": "hybrid",
+            "recorded": 0,
+            "reused": 1
+          },
+          {
+            "tokens": 1,
+            "visible": 144,
+            "replay": "hybrid",
+            "recorded": 0,
+            "reused": 1
+          },
+          {
+            "tokens": 1,
+            "visible": 145,
+            "replay": "hybrid",
+            "recorded": 0,
+            "reused": 1
+          },
+          {
+            "tokens": 1,
+            "visible": 146,
+            "replay": "hybrid",
+            "recorded": 0,
+            "reused": 1
+          },
+          {
+            "tokens": 1,
+            "visible": 147,
+            "replay": "hybrid",
+            "recorded": 0,
+            "reused": 1
+          },
+          {
+            "tokens": 1,
+            "visible": 148,
+            "replay": "hybrid",
+            "recorded": 0,
+            "reused": 1
+          },
+          {
+            "tokens": 1,
+            "visible": 149,
+            "replay": "hybrid",
+            "recorded": 0,
+            "reused": 1
+          },
+          {
+            "tokens": 1,
+            "visible": 150,
+            "replay": "hybrid",
+            "recorded": 0,
+            "reused": 1
+          },
+          {
+            "tokens": 1,
+            "visible": 151,
+            "replay": "hybrid",
+            "recorded": 0,
+            "reused": 1
+          },
+          {
+            "tokens": 1,
+            "visible": 152,
+            "replay": "hybrid",
+            "recorded": 0,
+            "reused": 1
+          },
+          {
+            "tokens": 1,
+            "visible": 153,
+            "replay": "hybrid",
+            "recorded": 0,
+            "reused": 1
+          },
+          {
+            "tokens": 1,
+            "visible": 154,
+            "replay": "hybrid",
+            "recorded": 0,
+            "reused": 1
+          },
+          {
+            "tokens": 1,
+            "visible": 155,
+            "replay": "hybrid",
+            "recorded": 0,
+            "reused": 1
+          },
+          {
+            "tokens": 1,
+            "visible": 156,
+            "replay": "hybrid",
+            "recorded": 0,
+            "reused": 1
+          },
+          {
+            "tokens": 1,
+            "visible": 157,
+            "replay": "hybrid",
+            "recorded": 0,
+            "reused": 1
+          },
+          {
+            "tokens": 1,
+            "visible": 158,
+            "replay": "hybrid",
+            "recorded": 0,
+            "reused": 1
+          },
+          {
+            "tokens": 1,
+            "visible": 159,
+            "replay": "hybrid",
+            "recorded": 0,
+            "reused": 1
+          }
+        ],
+        "capture_32_phases_with_7_ranges": false,
+        "all_outputs_finite": true,
+        "physical_fusion_verified": false,
+        "physical_fusion_note": "Cold impl4 membership is selection evidence; a physical kernel trace is still required."
+      },
+      "single_outer_range_32_phases": true,
+      "fresh_model_processes": 1,
+      "throughput_claim": false,
+      "quality_acceptance": false,
+      "limits": "Original fixed128+31 CUDA journey. Exact hidden/logits equality is a regression comparison, not independent model-quality acceptance."
+    },
+    "continuation_scheduler23_4_1": {
+      "passed": true,
+      "actual_arms": {
+        "baseline": {
+          "result": {
+            "source_id": "4068044d8571635d8a86f1e96a43dad104efc7089169065f735601e350008155",
+            "text_tensors": 320,
+            "visible_tokens": 28,
+            "generated_ids": [
+              248046,
+              198
+            ],
+            "fixed_decode": true,
+            "decode_input_ids": [
+              248046
+            ]
+          },
+          "prepared": [
+            [
+              "23",
+              "23",
+              "hybrid",
+              "1",
+              "0"
+            ],
+            [
+              "4",
+              "27",
+              "hybrid",
+              "1",
+              "0"
+            ],
+            [
+              "1",
+              "28",
+              "hybrid",
+              "1",
+              "0"
+            ]
+          ],
+          "vectors": {
+            "continuation/hidden.bf16": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\continuation-fixed\\baseline\\trace\\continuation\\hidden.bf16",
+              "bytes": 4096,
+              "sha256": "8d2e0289f75ef8841dfaeb923ad3b82c34ff966fc09eb8411be40e68c6464b7f"
+            },
+            "continuation/logits.f32": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\continuation-fixed\\baseline\\trace\\continuation\\logits.f32",
+              "bytes": 993280,
+              "sha256": "3f251710c6471add1f356678ecace9e5a614c34eb7022a0ef2086a05d8c44732"
+            },
+            "decode1/hidden.bf16": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\continuation-fixed\\baseline\\trace\\decode1\\hidden.bf16",
+              "bytes": 4096,
+              "sha256": "f8c82c9236f7f960547c6baa7ab545a6437fc02b7a08cccfba0fa18128fb938e"
+            },
+            "decode1/logits.f32": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\continuation-fixed\\baseline\\trace\\decode1\\logits.f32",
+              "bytes": 993280,
+              "sha256": "e5b4e1958b06aad7cc61c6eb9955d9814e525343609b1cf874e27fe9a192aab7"
+            },
+            "prefill/hidden.bf16": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\continuation-fixed\\baseline\\trace\\prefill\\hidden.bf16",
+              "bytes": 4096,
+              "sha256": "bffc65306a5860672aa995d82eb382177b2f4ed66aa1cf966a64c44202f93f20"
+            },
+            "prefill/logits.f32": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\continuation-fixed\\baseline\\trace\\prefill\\logits.f32",
+              "bytes": 993280,
+              "sha256": "19dffc6bd131e0d1bd1dd70dfb8b62c3edc80d79014ec823c253c6e28a422e82"
+            }
+          }
+        },
+        "current": {
+          "result": {
+            "source_id": "4068044d8571635d8a86f1e96a43dad104efc7089169065f735601e350008155",
+            "text_tensors": 320,
+            "visible_tokens": 28,
+            "generated_ids": [
+              248046,
+              198
+            ],
+            "fixed_decode": true,
+            "decode_input_ids": [
+              248046
+            ]
+          },
+          "prepared": [
+            [
+              "23",
+              "23",
+              "hybrid",
+              "1",
+              "0"
+            ],
+            [
+              "4",
+              "27",
+              "hybrid",
+              "1",
+              "0"
+            ],
+            [
+              "1",
+              "28",
+              "hybrid",
+              "1",
+              "0"
+            ]
+          ],
+          "vectors": {
+            "continuation/hidden.bf16": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\continuation-fixed\\current\\trace\\continuation\\hidden.bf16",
+              "bytes": 4096,
+              "sha256": "8d2e0289f75ef8841dfaeb923ad3b82c34ff966fc09eb8411be40e68c6464b7f"
+            },
+            "continuation/logits.f32": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\continuation-fixed\\current\\trace\\continuation\\logits.f32",
+              "bytes": 993280,
+              "sha256": "3f251710c6471add1f356678ecace9e5a614c34eb7022a0ef2086a05d8c44732"
+            },
+            "decode1/hidden.bf16": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\continuation-fixed\\current\\trace\\decode1\\hidden.bf16",
+              "bytes": 4096,
+              "sha256": "f8c82c9236f7f960547c6baa7ab545a6437fc02b7a08cccfba0fa18128fb938e"
+            },
+            "decode1/logits.f32": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\continuation-fixed\\current\\trace\\decode1\\logits.f32",
+              "bytes": 993280,
+              "sha256": "e5b4e1958b06aad7cc61c6eb9955d9814e525343609b1cf874e27fe9a192aab7"
+            },
+            "prefill/hidden.bf16": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\continuation-fixed\\current\\trace\\prefill\\hidden.bf16",
+              "bytes": 4096,
+              "sha256": "bffc65306a5860672aa995d82eb382177b2f4ed66aa1cf966a64c44202f93f20"
+            },
+            "prefill/logits.f32": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\continuation-fixed\\current\\trace\\prefill\\logits.f32",
+              "bytes": 993280,
+              "sha256": "19dffc6bd131e0d1bd1dd70dfb8b62c3edc80d79014ec823c253c6e28a422e82"
+            }
+          }
+        }
+      },
+      "comparisons": [
+        {
+          "path": "continuation/hidden.bf16",
+          "baseline": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\continuation-fixed\\baseline\\trace\\continuation\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "8d2e0289f75ef8841dfaeb923ad3b82c34ff966fc09eb8411be40e68c6464b7f"
+          },
+          "current": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\continuation-fixed\\current\\trace\\continuation\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "8d2e0289f75ef8841dfaeb923ad3b82c34ff966fc09eb8411be40e68c6464b7f"
+          },
+          "equal": true
+        },
+        {
+          "path": "continuation/logits.f32",
+          "baseline": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\continuation-fixed\\baseline\\trace\\continuation\\logits.f32",
+            "bytes": 993280,
+            "sha256": "3f251710c6471add1f356678ecace9e5a614c34eb7022a0ef2086a05d8c44732"
+          },
+          "current": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\continuation-fixed\\current\\trace\\continuation\\logits.f32",
+            "bytes": 993280,
+            "sha256": "3f251710c6471add1f356678ecace9e5a614c34eb7022a0ef2086a05d8c44732"
+          },
+          "equal": true
+        },
+        {
+          "path": "decode1/hidden.bf16",
+          "baseline": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\continuation-fixed\\baseline\\trace\\decode1\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "f8c82c9236f7f960547c6baa7ab545a6437fc02b7a08cccfba0fa18128fb938e"
+          },
+          "current": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\continuation-fixed\\current\\trace\\decode1\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "f8c82c9236f7f960547c6baa7ab545a6437fc02b7a08cccfba0fa18128fb938e"
+          },
+          "equal": true
+        },
+        {
+          "path": "decode1/logits.f32",
+          "baseline": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\continuation-fixed\\baseline\\trace\\decode1\\logits.f32",
+            "bytes": 993280,
+            "sha256": "e5b4e1958b06aad7cc61c6eb9955d9814e525343609b1cf874e27fe9a192aab7"
+          },
+          "current": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\continuation-fixed\\current\\trace\\decode1\\logits.f32",
+            "bytes": 993280,
+            "sha256": "e5b4e1958b06aad7cc61c6eb9955d9814e525343609b1cf874e27fe9a192aab7"
+          },
+          "equal": true
+        },
+        {
+          "path": "prefill/hidden.bf16",
+          "baseline": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\continuation-fixed\\baseline\\trace\\prefill\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "bffc65306a5860672aa995d82eb382177b2f4ed66aa1cf966a64c44202f93f20"
+          },
+          "current": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\continuation-fixed\\current\\trace\\prefill\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "bffc65306a5860672aa995d82eb382177b2f4ed66aa1cf966a64c44202f93f20"
+          },
+          "equal": true
+        },
+        {
+          "path": "prefill/logits.f32",
+          "baseline": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\continuation-fixed\\baseline\\trace\\prefill\\logits.f32",
+            "bytes": 993280,
+            "sha256": "19dffc6bd131e0d1bd1dd70dfb8b62c3edc80d79014ec823c253c6e28a422e82"
+          },
+          "current": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\continuation-fixed\\current\\trace\\prefill\\logits.f32",
+            "bytes": 993280,
+            "sha256": "19dffc6bd131e0d1bd1dd70dfb8b62c3edc80d79014ec823c253c6e28a422e82"
+          },
+          "equal": true
+        }
+      ],
+      "exact_vectors": 6,
+      "original_chunks": [
+        23,
+        4,
+        1
+      ],
+      "progress": "scheduler",
+      "replay": "hybrid",
+      "no_hot_compile": true,
+      "candidate_one_finite_family_three_variants": true,
+      "throughput_claim": false,
+      "quality_acceptance": false
+    },
+    "original_unforced_EOS": {
+      "process_exit": 0,
+      "checker_passed": false,
+      "reason": "The existing consumer correctly stopped at EOS after continuation; the checker expected a decode step. Subsequent fixed-token test explicitly consumes the same EOS ID to exercise T1.",
+      "result": {
+        "source_id": "4068044d8571635d8a86f1e96a43dad104efc7089169065f735601e350008155",
+        "text_tensors": 320,
+        "visible_tokens": 27,
+        "generated_ids": [
+          248046
+        ],
+        "fixed_decode": false,
+        "decode_input_ids": []
+      },
+      "product_changed": false
+    }
+  },
+  "rotation_window": {
+    "start": "2026-10-20T12:16:58.903935+08:00",
+    "finish": "2026-10-20T12:17:22.629448+08:00",
+    "timezone": "Asia/Shanghai"
+  },
+  "original_nine_process_window": {
+    "status": "nine_fresh_unprofiled_processes_terminal_zero",
+    "terminal_zero": 9,
+    "order": [
+      "baseline",
+      "current",
+      "llama",
+      "llama",
+      "baseline",
+      "current",
+      "current",
+      "llama",
+      "baseline"
+    ],
+    "groups": {
+      "baseline": {
+        "load_seconds": {
+          "samples": [
+            0.943983,
+            0.922771,
+            0.9181
+          ],
+          "median": 0.922771,
+          "min": 0.9181,
+          "max": 0.943983
+        },
+        "prepare_seconds": {
+          "samples": [
+            0.332426,
+            0.34226,
+            0.335098
+          ],
+          "median": 0.335098,
+          "min": 0.332426,
+          "max": 0.34226
+        },
+        "startup_to_ready_seconds": {
+          "samples": [
+            1.36718,
+            1.35088,
+            1.33823
+          ],
+          "median": 1.35088,
+          "min": 1.33823,
+          "max": 1.36718
+        },
+        "ttft_seconds": {
+          "samples": [
+            1.43522,
+            1.41675,
+            1.40325
+          ],
+          "median": 1.41675,
+          "min": 1.40325,
+          "max": 1.43522
+        },
+        "prefill_seconds": {
+          "samples": [
+            0.0678524,
+            0.0656673,
+            0.0648271
+          ],
+          "median": 0.0656673,
+          "min": 0.0648271,
+          "max": 0.0678524
+        },
+        "prefill_tokens_per_second": {
+          "samples": [
+            1886.4476422352047,
+            1949.2197790985772,
+            1974.482893728086
+          ],
+          "median": 1949.2197790985772,
+          "min": 1886.4476422352047,
+          "max": 1974.482893728086
+        },
+        "full31_seconds": {
+          "samples": [
+            0.3410327,
+            0.3328952,
+            0.3442195
+          ],
+          "median": 0.3410327,
+          "min": 0.3328952,
+          "max": 0.3442195
+        },
+        "full31_tokens_per_second": {
+          "samples": [
+            90.90037406970065,
+            93.12240008266866,
+            90.05881421592908
+          ],
+          "median": 90.90037406970065,
+          "min": 90.05881421592908,
+          "max": 93.12240008266866
+        },
+        "warm7_31_seconds": {
+          "samples": [
+            0.2616075,
+            0.2574224,
+            0.2726839
+          ],
+          "median": 0.2616075,
+          "min": 0.2574224,
+          "max": 0.2726839
+        },
+        "warm7_31_tokens_per_second": {
+          "samples": [
+            95.56300947029425,
+            97.11664563767566,
+            91.68124704098776
+          ],
+          "median": 95.56300947029425,
+          "min": 91.68124704098776,
+          "max": 97.11664563767566
+        }
+      },
+      "current": {
+        "load_seconds": {
+          "samples": [
+            0.937277,
+            0.931836,
+            0.933042
+          ],
+          "median": 0.933042,
+          "min": 0.931836,
+          "max": 0.937277
+        },
+        "prepare_seconds": {
+          "samples": [
+            0.283324,
+            0.269408,
+            0.265297
+          ],
+          "median": 0.269408,
+          "min": 0.265297,
+          "max": 0.283324
+        },
+        "startup_to_ready_seconds": {
+          "samples": [
+            1.31373,
+            1.29165,
+            1.28833
+          ],
+          "median": 1.29165,
+          "min": 1.28833,
+          "max": 1.31373
+        },
+        "ttft_seconds": {
+          "samples": [
+            1.38217,
+            1.35481,
+            1.35202
+          ],
+          "median": 1.35481,
+          "min": 1.35202,
+          "max": 1.38217
+        },
+        "prefill_seconds": {
+          "samples": [
+            0.0682383,
+            0.0629487,
+            0.0634877
+          ],
+          "median": 0.0634877,
+          "min": 0.0629487,
+          "max": 0.0682383
+        },
+        "prefill_tokens_per_second": {
+          "samples": [
+            1875.7794376471863,
+            2033.4018017846279,
+            2016.138559122476
+          ],
+          "median": 2016.138559122476,
+          "min": 1875.7794376471863,
+          "max": 2033.4018017846279
+        },
+        "full31_seconds": {
+          "samples": [
+            0.3396023,
+            0.3402567,
+            0.3435625
+          ],
+          "median": 0.3402567,
+          "min": 0.3396023,
+          "max": 0.3435625
+        },
+        "full31_tokens_per_second": {
+          "samples": [
+            91.28324513703234,
+            91.10768428659891,
+            90.23103511006003
+          ],
+          "median": 91.10768428659891,
+          "min": 90.23103511006003,
+          "max": 91.28324513703234
+        },
+        "warm7_31_seconds": {
+          "samples": [
+            0.2645929,
+            0.2661896,
+            0.2677923
+          ],
+          "median": 0.2661896,
+          "min": 0.2645929,
+          "max": 0.2677923
+        },
+        "warm7_31_tokens_per_second": {
+          "samples": [
+            94.48477264507096,
+            93.91801933659316,
+            93.35593293757887
+          ],
+          "median": 93.91801933659316,
+          "min": 93.35593293757887,
+          "max": 94.48477264507096
+        }
+      },
+      "llama": {
+        "load_seconds": {
+          "samples": [
+            1.7898215,
+            1.8437393,
+            1.7906416
+          ],
+          "median": 1.7906416,
+          "min": 1.7898215,
+          "max": 1.8437393
+        },
+        "prepare_seconds": {
+          "samples": [
+            0.0076614,
+            0.0080218,
+            0.0068319
+          ],
+          "median": 0.0076614,
+          "min": 0.0068319,
+          "max": 0.0080218
+        },
+        "startup_to_ready_seconds": {
+          "samples": [
+            1.8784901,
+            1.92945,
+            1.8740506
+          ],
+          "median": 1.8784901,
+          "min": 1.8740506,
+          "max": 1.92945
+        },
+        "ttft_seconds": {
+          "samples": [
+            1.9829865,
+            2.0319175,
+            1.968275
+          ],
+          "median": 1.9829865,
+          "min": 1.968275,
+          "max": 2.0319175
+        },
+        "prefill_seconds": {
+          "samples": [
+            0.1044317,
+            0.1024085,
+            0.0941713
+          ],
+          "median": 0.1024085,
+          "min": 0.0941713,
+          "max": 0.1044317
+        },
+        "prefill_tokens_per_second": {
+          "samples": [
+            1225.6814741117878,
+            1249.8962488465313,
+            1359.2251567091034
+          ],
+          "median": 1249.8962488465313,
+          "min": 1225.6814741117878,
+          "max": 1359.2251567091034
+        },
+        "full31_seconds": {
+          "samples": [
+            0.3251317,
+            0.3231586,
+            0.3296243
+          ],
+          "median": 0.3251317,
+          "min": 0.3231586,
+          "max": 0.3296243
+        },
+        "full31_tokens_per_second": {
+          "samples": [
+            95.34597826050181,
+            95.92812940766545,
+            94.04646441418306
+          ],
+          "median": 95.34597826050181,
+          "min": 94.04646441418306,
+          "max": 95.92812940766545
+        },
+        "warm7_31_seconds": {
+          "samples": [
+            0.2577399,
+            0.2524003,
+            0.2578986
+          ],
+          "median": 0.2577399,
+          "min": 0.2524003,
+          "max": 0.2578986
+        },
+        "warm7_31_tokens_per_second": {
+          "samples": [
+            96.99701132808696,
+            99.04901063905233,
+            96.93732342866538
+          ],
+          "median": 96.99701132808696,
+          "min": 96.93732342866538,
+          "max": 99.04901063905233
+        }
+      }
+    },
+    "images": {
+      "baseline": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-pinned-weight-load\\product-checks\\qwen.exe",
+        "bytes": 117435904,
+        "sha256": "a487d7e22a55b1461a0ed8a704a9e0fb97f656c503b58d59a662cd3d345458b6"
+      },
+      "current": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\checks\\qwen-finite-family.exe",
+        "bytes": 117475840,
+        "sha256": "fb3de75c13133e2d16521bfe2e4c95987e875dbe7e613da1ad3fb2dc8e6779ae"
+      },
+      "llama": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-explicit-rope\\performance-prepared\\peer.exe",
+        "bytes": 35814400,
+        "sha256": "fb169f0282f2a834a61b3e887edaba92d8699814558b0c5f1a13aaf07e0de969"
+      }
+    },
+    "current_over_baseline": {
+      "load_seconds": 1.011130605534851,
+      "prepare_seconds": 0.8039677944959385,
+      "startup_to_ready_seconds": 0.956154506691934,
+      "ttft_seconds": 0.9562802188106583,
+      "prefill_seconds": 0.966808441949037,
+      "prefill_tokens_per_second": 1.0343310594020576,
+      "full31_seconds": 0.9977245583781262,
+      "full31_tokens_per_second": 1.0022806310647225,
+      "warm7_31_seconds": 1.0175151706277534,
+      "warm7_31_tokens_per_second": 0.9827863297439118
+    },
+    "current_over_llama": {
+      "load_seconds": 0.5210657453730552,
+      "prepare_seconds": 35.16433027906127,
+      "startup_to_ready_seconds": 0.6876001103226469,
+      "ttft_seconds": 0.6832169558390842,
+      "prefill_seconds": 0.6199456099835462,
+      "prefill_tokens_per_second": 1.6130447314991725,
+      "full31_seconds": 1.0465196103609706,
+      "full31_tokens_per_second": 0.9555482669408127,
+      "warm7_31_seconds": 1.0327838258647575,
+      "warm7_31_tokens_per_second": 0.9682568364804636
+    },
+    "same_baseline_predictions_all9": true,
+    "predictions_deterministic_within_each_arm": true,
+    "capture_results": {
+      "baseline": [
+        [
+          [
+            1,
+            0
+          ],
+          [
+            1,
+            0
+          ],
+          [
+            1,
+            0
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ]
+        ],
+        [
+          [
+            1,
+            0
+          ],
+          [
+            1,
+            0
+          ],
+          [
+            1,
+            0
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ]
+        ],
+        [
+          [
+            1,
+            0
+          ],
+          [
+            1,
+            0
+          ],
+          [
+            1,
+            0
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ]
+        ]
+      ],
+      "current": [
+        [
+          [
+            1,
+            0
+          ],
+          [
+            1,
+            0
+          ],
+          [
+            1,
+            0
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ]
+        ],
+        [
+          [
+            1,
+            0
+          ],
+          [
+            1,
+            0
+          ],
+          [
+            1,
+            0
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ]
+        ],
+        [
+          [
+            1,
+            0
+          ],
+          [
+            1,
+            0
+          ],
+          [
+            1,
+            0
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            1
+          ]
+        ]
+      ],
+      "llama": [
+        null,
+        null,
+        null
+      ]
+    },
+    "metric_contract": {
+      "warm7_31": "decode7 through decode31 inclusive, exactly25steps",
+      "step": "Consumer input preparation through host token completion; includes upload/layout/bind/capture/submit/wait.",
+      "load": "Hyle weights_load_seconds versus peer model_load_seconds: different documented sub-boundaries.",
+      "prepare": "Hyle shape_prepare_seconds versus peer context_prepare_seconds: different work.",
+      "ttft": "Reported process-entry-to-first-host-token; includes startup and first-step work."
+    },
+    "profiler": false,
+    "external_memory_monitor": false,
+    "statistical_significance": false,
+    "independent_quality_acceptance": false,
+    "limits": [
+      "Three fresh processes per image in one rotated window; drift remains possible.",
+      "No historical timing samples or profiler durations enter these medians.",
+      "Hyle prepares both shapes before prefill; peer graph maintenance remains in step.",
+      "Weight loading and context preparation have different engine sub-boundaries.",
+      "Same fixed128+31 inputs; current predictions are reported, not used as an approval gate.",
+      "Matching predictions are not independent language-model quality acceptance."
+    ]
+  },
+  "followup_window": {
+    "start": "2026-10-20T12:18:27.353944+08:00",
+    "finish": "2026-10-20T12:18:37.069639+08:00",
+    "timezone": "Asia/Shanghai"
+  },
+  "separate_four_process_followup": {
+    "executed": true,
+    "terminal_zero": 4,
+    "groups": {
+      "baseline": {
+        "load_seconds": {
+          "samples": [
+            0.932527,
+            0.943327
+          ],
+          "median": 0.937927
+        },
+        "prepare_seconds": {
+          "samples": [
+            0.339709,
+            0.355749
+          ],
+          "median": 0.34772899999999995
+        },
+        "startup_to_ready_seconds": {
+          "samples": [
+            1.36242,
+            1.38854
+          ],
+          "median": 1.37548
+        },
+        "ttft_seconds": {
+          "samples": [
+            1.43403,
+            1.46234
+          ],
+          "median": 1.448185
+        },
+        "prefill_seconds": {
+          "samples": [
+            0.0714197,
+            0.073607
+          ],
+          "median": 0.07251335
+        },
+        "prefill_tokens_per_second": {
+          "samples": [
+            1792.2225940461806,
+            1738.965044085481
+          ],
+          "median": 1765.5938190658308
+        },
+        "full31_seconds": {
+          "samples": [
+            0.3430902,
+            0.3396034
+          ],
+          "median": 0.3413468
+        },
+        "full31_tokens_per_second": {
+          "samples": [
+            90.35524768705139,
+            91.28294946399241
+          ],
+          "median": 90.8190985755219
+        },
+        "warm7_31_seconds": {
+          "samples": [
+            0.2702221,
+            0.2678545
+          ],
+          "median": 0.2690383
+        },
+        "warm7_31_tokens_per_second": {
+          "samples": [
+            92.51648921387257,
+            93.33425423130842
+          ],
+          "median": 92.9253717225905
+        }
+      },
+      "current": {
+        "load_seconds": {
+          "samples": [
+            0.944,
+            0.93503
+          ],
+          "median": 0.939515
+        },
+        "prepare_seconds": {
+          "samples": [
+            0.26112,
+            0.26374
+          ],
+          "median": 0.26243
+        },
+        "startup_to_ready_seconds": {
+          "samples": [
+            1.30311,
+            1.28768
+          ],
+          "median": 1.295395
+        },
+        "ttft_seconds": {
+          "samples": [
+            1.36773,
+            1.35124
+          ],
+          "median": 1.3594849999999998
+        },
+        "prefill_seconds": {
+          "samples": [
+            0.0644216,
+            0.0633811
+          ],
+          "median": 0.06390135
+        },
+        "prefill_tokens_per_second": {
+          "samples": [
+            1986.9112223229477,
+            2019.529481186032
+          ],
+          "median": 2003.22035175449
+        },
+        "full31_seconds": {
+          "samples": [
+            0.3436071,
+            0.3332906
+          ],
+          "median": 0.33844885
+        },
+        "full31_tokens_per_second": {
+          "samples": [
+            90.21932317463754,
+            93.0119241286733
+          ],
+          "median": 91.61562365165543
+        },
+        "warm7_31_seconds": {
+          "samples": [
+            0.2675849,
+            0.2575825
+          ],
+          "median": 0.2625837
+        },
+        "warm7_31_tokens_per_second": {
+          "samples": [
+            93.42829135724773,
+            97.05628293847603
+          ],
+          "median": 95.24228714786187
+        }
+      }
+    },
+    "current_over_baseline": {
+      "load_seconds": 1.0016930955180947,
+      "prepare_seconds": 0.754696904773545,
+      "startup_to_ready_seconds": 0.9417766888649781,
+      "ttft_seconds": 0.9387509192541007,
+      "prefill_seconds": 0.8812356621229055,
+      "prefill_tokens_per_second": 1.1345873156796542,
+      "full31_seconds": 0.9915102470566591,
+      "full31_tokens_per_second": 1.008770457851122,
+      "warm7_31_seconds": 0.9760086203339821,
+      "warm7_31_tokens_per_second": 1.024933076750966
+    },
+    "same_predictions": true,
+    "statistical_significance": false,
+    "scope": "Separate four-process follow-up; retain the nine-process window unchanged, do not pool or replace samples."
+  },
+  "conclusion": {
+    "shape_prepare": "Median0.335098→0.269408s (-19.60%); separate reversed-order0.347729→0.262430s (-24.53%).",
+    "TTFT": "Median1.41675→1.35481s (-4.37%); separate1.448185→1.359485s (-6.12%).",
+    "decode": "Full31 +0.23% / warm -1.72% in first window; reversed-order +0.88% / +2.49%. Small warm difference reverses; no stable decode gain or significance claimed.",
+    "peer": "First-window finite Hyle/llama full31 91.11/95.35; warm93.92/97.00; prefill2016.14/1249.90 tokens/s. Do not pool with earlier windows."
+  },
+  "limits": [
+    "Windows RTX4070 only; no new Linux/macOS full-model run.",
+    "No profiler or memory side sampling in timing windows; no new physical kernel count or full-model memory peak.",
+    "Matching fixed tokens/hidden/logits are regression evidence, not independent model-quality acceptance.",
+    "Hyle BF16/peer F32 intermediates and engine load/prepare sub-boundaries still differ. Full startup/TTFT is reported; OS file cache was not cleared.",
+    "Finite-family compiled known storage retains unknown-provider counts; it is not total VRAM or evidence every native cold artifact was shared.",
+    "No claim that one consumer completes eight-model/quant/provider coverage or the overall refactor."
+  ],
+  "product_check": {
+    "passed": true,
+    "host_TUs": 1,
+    "native_TUs": 0,
+    "SDK_rebuild": false,
+    "executed_product_source": {
+      "path": "C:\\public\\project-hyle\\hyle\\tools\\qwen35_text\\main.cc",
+      "bytes": 57719,
+      "sha256": "883dcaecb78294b14bb0502c8488c59efcb6d8661aabb9c6820e4c6c736c1579"
+    },
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\product-checks\\qwen.exe",
+      "bytes": 117475840,
+      "sha256": "b7081baab2d24d37f512c7fff6fae09501b5b35a413b239a5058e018f4f31e43"
+    },
+    "fixed128_plus31": true,
+    "unchanged_predictions": true,
+    "source_byte_identical_to_measured_candidate": true,
+    "limits": "Actual adopted-source build and one fixed128+31 smoke. Exact64/scheduler continuation and separate timing windows belong to the byte-identical scratch candidate; this smoke is not pooled into timing medians."
+  },
+  "documentation": [
+    {
+      "relative": "tools/qwen35_text/README.md",
+      "current": {
+        "path": "C:\\public\\project-hyle\\hyle\\tools\\qwen35_text\\README.md",
+        "bytes": 4080,
+        "sha256": "4045b3cb70ae9e5bb5034a1bf68c34c3f01217bb958c51f377d6fbb4a4cfd48a"
+      },
+      "snapshot": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\documentation\\tools\\qwen35_text\\README.md",
+        "bytes": 4080,
+        "sha256": "4045b3cb70ae9e5bb5034a1bf68c34c3f01217bb958c51f377d6fbb4a4cfd48a"
+      }
+    },
+    {
+      "relative": "docs/developer/current-work.md",
+      "current": {
+        "path": "C:\\public\\project-hyle\\hyle\\docs\\developer\\current-work.md",
+        "bytes": 30122,
+        "sha256": "ac875c615d909592596f15b8a05603f0ccf367f0f604c1f6c2a821611f120ff5"
+      },
+      "snapshot": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-finite-family\\documentation\\docs\\developer\\current-work.md",
+        "bytes": 30122,
+        "sha256": "ac875c615d909592596f15b8a05603f0ccf367f0f604c1f6c2a821611f120ff5"
+      }
+    }
+  ],
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\qwen-finite-family-2026-10-20.zip",
+    "bytes": 676467,
+    "sha256": "4bebda47017bd35f7dc750eae2c9e606027a2a60736b7de71d4acfe020116cd3",
+    "payloads": 199,
+    "CRC_checked": true,
+    "all_payload_SHA256_checked": true,
+    "vectors": "Exact identity/metric records retained; duplicate raw vectors intentionally excluded. Canonical original64 and unique short baseline6 remain in the workspace."
+  },
+  "executed_cleanup": {
+    "relative": "docs/evidence/performance/qwen-finite-family-2026-10-20.cleanup.json",
+    "identity": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\qwen-finite-family-2026-10-20.cleanup.json",
+      "bytes": 124635,
+      "sha256": "90aa4d8d044223a46820aaddca144d5413a491f835f4e173d3fc3292283dc9e0"
+    }
+  }
+}

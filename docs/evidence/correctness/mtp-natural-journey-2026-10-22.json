@@ -1,0 +1,560 @@
+{
+  "date": "2026-10-22",
+  "status": "FINITE_ORIGINAL_INPUT_AND_NATURAL_PROJECTED_JOURNEY_PASS",
+  "goal_complete": false,
+  "changes": [
+    {
+      "path": "src\\compute_provider_native\\cast.cc",
+      "bytes": 11863,
+      "sha256": "cde33ecb15aaccb6860db9f930463ce7ce44c0c4475e0b14e1a88d6c03dc74f8"
+    },
+    {
+      "path": "include\\hyle\\compute\\operation.h",
+      "bytes": 28394,
+      "sha256": "01730da295dde06e2982685b98176c2bdfcebbb0963515b8fbce6e63ad4fe025"
+    },
+    {
+      "path": "tests\\compute_provider_native\\cast_test.cc",
+      "bytes": 18990,
+      "sha256": "e1ad19deb4bd07bd54fc64f6c35471661103303ce7df3df5d471c53fe2080891"
+    },
+    {
+      "path": "tests\\graph_route_cuda\\glm_original_mtp_input_test.cc",
+      "bytes": 12907,
+      "sha256": "6a60e194b54f646769f5706c7df1d48411e25437fd30c7bdb903ff79ffc1e5f9"
+    },
+    {
+      "path": "tests\\graph_route_cuda\\dspark_journey_consumer_test.cc",
+      "bytes": 19518,
+      "sha256": "817f1ffd94547357e2f0a37628ce83002bf2c38a75622dc1727910bfeedd279d"
+    },
+    {
+      "path": "tests\\graph_route_cuda\\dspark_complete_consumer_test.cc",
+      "bytes": 8981,
+      "sha256": "0d27a89bc59ffef7bcb6d164af6818bf2a6f0393738b42eef9e74521836a2713"
+    },
+    {
+      "path": "tests\\graph_route_cuda\\dspark_cuda_consumer_fixture.h",
+      "bytes": 11556,
+      "sha256": "d10297ec4919ee2d320a6077c84a64fd2ef70c1ecbc51b5a6b893d336e2d82a0"
+    },
+    {
+      "path": "tests\\graph_route_cuda\\dspark_head_checks.h",
+      "bytes": 3521,
+      "sha256": "6da020699e900345bf7be9c117833096ce657e1d030034376934bfc4e36da495"
+    },
+    {
+      "path": "tests\\graph_route_cuda\\CMakeLists.txt",
+      "bytes": 6588,
+      "sha256": "8a91b34876d99655a92597aececefc1893dd24f45c2157e9af22869b386f0477"
+    },
+    {
+      "path": "tests\\compute_models\\original_role_input.h",
+      "bytes": 5143,
+      "sha256": "e93d2f62457ed0d4acd6a4c23bc1373374bb7eb81cab1031a039582e698e59f5"
+    },
+    {
+      "path": "tests\\compute_models\\dspark_original_roles.h",
+      "bytes": 6416,
+      "sha256": "60999491c87a0ede761de205250a7a85c47089c35db0ebc52aa8364efc3a6cd2"
+    },
+    {
+      "path": "tests\\compute_models\\dspark_complete_graph_fixture.h",
+      "bytes": 9175,
+      "sha256": "aec542759cb2bc26a2a0f2764d47bc7cae655ee48e50f8f22ec93373d1e37698"
+    },
+    {
+      "path": "tests\\compute_state\\deepseek_sparse_prefix_fixture.h",
+      "bytes": 37418,
+      "sha256": "f3a19a598eb31ec7fdceea76032d5bc3b8209d0b7304d6634cfb4019e8c11990"
+    },
+    {
+      "path": "tests\\compute_state\\dspark_accepted_prefix_fixture.h",
+      "bytes": 11309,
+      "sha256": "b6d60ef3bca725db50e8f3ee5e238fd2e30052cc941d19ffad2625b7900585de"
+    },
+    {
+      "path": "tests\\compute_state\\dspark_prefix_consumer_test.cc",
+      "bytes": 13492,
+      "sha256": "2f2b21aab8116214c7c36681b41f76d741e25df9eb4142a29e798a69500b8625"
+    },
+    {
+      "path": "docs\\user\\compute.md",
+      "bytes": 121933,
+      "sha256": "f470cdfccf27da646fe44a14ac64d481e59354e33f20b74a26a34ec8d0233842"
+    },
+    {
+      "path": "docs\\developer\\current-work.md",
+      "bytes": 55924,
+      "sha256": "e60c9cf018aeb37cb88861c50ddf6e3c496de1cac93655c1f35c0a80bd4ec8f4"
+    },
+    {
+      "path": "docs\\implementation\\model-operators.md",
+      "bytes": 90873,
+      "sha256": "c738eb7a72f67bf73db1144dd87b641720b8b70f0f6c218d51f224bc30ce80cd"
+    }
+  ],
+  "final_checks": {
+    "process": {
+      "command": [
+        "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-natural-journey-20261022\\tests-link4\\mtp-checks.exe",
+        "--gtest_filter=*",
+        "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\dspark-natural-journey-20261022\\checks4\\results.xml"
+      ],
+      "cwd": "C:\\public\\project-hyle\\hyle",
+      "started": 1792668767.763909,
+      "timeout_seconds": 1200,
+      "throughput_evidence": false,
+      "memory_evidence": false,
+      "trace": false,
+      "profiler": false,
+      "pid": 48412,
+      "exit": 0,
+      "timed_out": false,
+      "finished": 1792668783.9211853,
+      "process_wall_seconds": 16.157268300070427
+    },
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-natural-journey-20261022\\tests-link4\\mtp-checks.exe",
+      "bytes": 140635136,
+      "sha256": "6a582bd4a58104c581d8370627b55dd80fbdd689ac3d60015b87c07a299db277"
+    },
+    "throughput_evidence": false,
+    "whole_original_model": false,
+    "tests": 13,
+    "failures": 0,
+    "errors": 0,
+    "disabled": 0,
+    "skips": 0,
+    "cases": [
+      {
+        "attributes": {
+          "name": "Layer45OriginalNormAndProjectionPreserveOrderAndOldResults",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_cuda\\glm_original_mtp_input_test.cc",
+          "line": "128",
+          "status": "run",
+          "result": "completed",
+          "time": "0.677",
+          "timestamp": "2026-10-22T19:32:48.074",
+          "classname": "CudaGlmOriginalMtpInput"
+        },
+        "properties": {
+          "scope": "original GLM-5.3-Flash layer45 BF16 norm/EH input component only; no attention/MoE/state/head/full-model claim",
+          "actual_submissions": "3",
+          "original_role_bytes": "67125248",
+          "eh_proj_sha256": "17af8402a6b674a462f2847612b2477e76c0de7dfc5ff9fba50ead1e5c88d649",
+          "enorm_sha256": "187f2b4efe991b8c69a1a0365ded195b7fd463d50a7facd0d7196402a66dcc54",
+          "hnorm_sha256": "3fbc01762fea938ae24e94ece075b03dd5cb44cbe218884712b35d865b820501"
+        }
+      },
+      {
+        "attributes": {
+          "name": "ActualProposalVerifyCatchupPublishesAndContinuesTwice",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_cuda\\dspark_journey_consumer_test.cc",
+          "line": "267",
+          "status": "run",
+          "result": "completed",
+          "time": "7.719",
+          "timestamp": "2026-10-22T19:32:48.752",
+          "classname": "CudaDSparkJourney"
+        },
+        "properties": {
+          "scope": "actual full Flash DSpark3stage/original W1-W2-confidence; finite untrained projected target and generated stage/LM weights; not complete original43layer model",
+          "actual_proposal_submissions": "4",
+          "proposal_parameter_cold_graphs": "1",
+          "acceptance": "natural greedy comparison only; accepted_inputs=matched+1 includes pending, all5 means6 including fresh bonus"
+        }
+      },
+      {
+        "attributes": {
+          "name": "Ratio4TargetIndexAndThreeMainRingsPublishAtomically",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_state\\dspark_prefix_consumer_test.cc",
+          "line": "208",
+          "status": "run",
+          "result": "completed",
+          "time": "0.244",
+          "timestamp": "2026-10-22T19:32:56.471",
+          "classname": "DSparkAcceptedPrefix"
+        },
+        "properties": {}
+      },
+      {
+        "attributes": {
+          "name": "Ratio128HalfWindowsAndThreeMainRingsPublishAtomically",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_state\\dspark_prefix_consumer_test.cc",
+          "line": "214",
+          "status": "run",
+          "result": "completed",
+          "time": "0.16",
+          "timestamp": "2026-10-22T19:32:56.715",
+          "classname": "DSparkAcceptedPrefix"
+        },
+        "properties": {}
+      },
+      {
+        "attributes": {
+          "name": "FullFlashStagesFeedOriginalMarkovGreedyRowsAndRetainPriorState",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_cuda\\dspark_complete_consumer_test.cc",
+          "line": "46",
+          "status": "run",
+          "result": "completed",
+          "time": "6.831",
+          "timestamp": "2026-10-22T19:32:56.876",
+          "classname": "CudaDSparkComplete"
+        },
+        "properties": {
+          "scope": "Flash H4096/heads64/D512/three stages/five greedy rows/full V129280; generated stage+LM weights, original W1/W2/confidence only",
+          "actual_hot_submissions": "3",
+          "adjusted_logit_check": "exact BF16 products; gamma256 F32 reduction plus FP64 oracle bound; normal-quantum/finite range checked; necessary numerical compatibility, not vendor-internal proof",
+          "markov_w1_sha256": "966bd0507046347754d0f4bf3addd6df6c179ff16243d63998258b3987e4b2f5",
+          "markov_w2_sha256": "40ac7e99651c5c6aab8d2555ff65d247931f318414cf94baedc6da2d3bf7c175",
+          "confidence_sha256": "15c5d09c7842d0f947ce0afdc154691ead377e6263af71bd2f7cb34bd592f30f"
+        }
+      },
+      {
+        "attributes": {
+          "name": "ReplaysAllFourQualifiedStoragePairs",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_native\\cast_test.cc",
+          "line": "125",
+          "status": "run",
+          "result": "completed",
+          "time": "0.",
+          "timestamp": "2026-10-22T19:33:03.707",
+          "classname": "NativeCast"
+        },
+        "properties": {}
+      },
+      {
+        "attributes": {
+          "name": "Int32ToFloat32RoundsEvenAcrossDenseAndOddByteStrides",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_native\\cast_test.cc",
+          "line": "233",
+          "status": "run",
+          "result": "completed",
+          "time": "0.",
+          "timestamp": "2026-10-22T19:33:03.707",
+          "classname": "NativeCast"
+        },
+        "properties": {}
+      },
+      {
+        "attributes": {
+          "name": "BooleanConversionsKeepSignedZerosTinyValuesAndByteStrides",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_native\\cast_test.cc",
+          "line": "388",
+          "status": "run",
+          "result": "completed",
+          "time": "0.",
+          "timestamp": "2026-10-22T19:33:03.707",
+          "classname": "NativeCast"
+        },
+        "properties": {}
+      },
+      {
+        "attributes": {
+          "name": "CoversCompleteInferenceStorageConversionGraph",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_native\\cast_test.cc",
+          "line": "132",
+          "status": "run",
+          "result": "completed",
+          "time": "0.",
+          "timestamp": "2026-10-22T19:33:03.707",
+          "classname": "MatureCast"
+        },
+        "properties": {}
+      },
+      {
+        "attributes": {
+          "name": "ConvertsDenseFloat32ToFloat16Bits",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_native\\cast_test.cc",
+          "line": "140",
+          "status": "run",
+          "result": "completed",
+          "time": "0.",
+          "timestamp": "2026-10-22T19:33:03.708",
+          "classname": "MatureCast"
+        },
+        "properties": {}
+      },
+      {
+        "attributes": {
+          "name": "MaterializesStridedFloat16ToFloat32",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_native\\cast_test.cc",
+          "line": "179",
+          "status": "run",
+          "result": "completed",
+          "time": "0.",
+          "timestamp": "2026-10-22T19:33:03.708",
+          "classname": "MatureCast"
+        },
+        "properties": {}
+      },
+      {
+        "attributes": {
+          "name": "RejectsOverlappingInputAndOutputStorage",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_native\\cast_test.cc",
+          "line": "306",
+          "status": "run",
+          "result": "completed",
+          "time": "0.",
+          "timestamp": "2026-10-22T19:33:03.708",
+          "classname": "MatureCast"
+        },
+        "properties": {}
+      },
+      {
+        "attributes": {
+          "name": "RejectsUnsupportedIntegerConversionCarrier",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_native\\cast_test.cc",
+          "line": "222",
+          "status": "run",
+          "result": "completed",
+          "time": "0.",
+          "timestamp": "2026-10-22T19:33:03.708",
+          "classname": "AtenCpuCast"
+        },
+        "properties": {}
+      }
+    ]
+  },
+  "original_glm_input": {
+    "repository": "zai-org/GLM-5.3-Flash",
+    "revision": "eb9eb208eb0d988989d07a6a12d0fdeb5f52574a",
+    "shard": "model-00001-of-00062.safetensors",
+    "url": "https://huggingface.co/zai-org/GLM-5.3-Flash/resolve/eb9eb208eb0d988989d07a6a12d0fdeb5f52574a/model-00001-of-00062.safetensors",
+    "requests": [
+      {
+        "first": 0,
+        "last": 7,
+        "bytes": 8,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 0-7/5365306704",
+        "etag": "\"8d515c191fd1c42528efb3f407033580a62ba6430ae55e9c7c9c9cec41a4755e\"",
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-natural-journey-20261022\\original-glm-input\\header-length.bin",
+        "sha256": "7171ffc351896bf67e7591b13f7d26bbd80424c8ebf1780bc6a36b089b015562"
+      },
+      {
+        "first": 8,
+        "last": 93519,
+        "bytes": 93512,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 8-93519/5365306704",
+        "etag": "\"8d515c191fd1c42528efb3f407033580a62ba6430ae55e9c7c9c9cec41a4755e\"",
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-natural-journey-20261022\\original-glm-input\\header.json",
+        "sha256": "e18e7ff23ee5bfbd2cf7bf9c931ad99972b50e7c9184babdff42db46ccaf8ab2"
+      },
+      {
+        "first": 2538321232,
+        "last": 2605430095,
+        "bytes": 67108864,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 2538321232-2605430095/5365306704",
+        "etag": "\"8d515c191fd1c42528efb3f407033580a62ba6430ae55e9c7c9c9cec41a4755e\"",
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-natural-journey-20261022\\original-glm-input\\eh_proj.weight.bf16",
+        "sha256": "17af8402a6b674a462f2847612b2477e76c0de7dfc5ff9fba50ead1e5c88d649"
+      },
+      {
+        "first": 2605430096,
+        "last": 2605438287,
+        "bytes": 8192,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 2605430096-2605438287/5365306704",
+        "etag": "\"8d515c191fd1c42528efb3f407033580a62ba6430ae55e9c7c9c9cec41a4755e\"",
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-natural-journey-20261022\\original-glm-input\\enorm.weight.bf16",
+        "sha256": "187f2b4efe991b8c69a1a0365ded195b7fd463d50a7facd0d7196402a66dcc54"
+      },
+      {
+        "first": 2605438288,
+        "last": 2605446479,
+        "bytes": 8192,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 2605438288-2605446479/5365306704",
+        "etag": "\"8d515c191fd1c42528efb3f407033580a62ba6430ae55e9c7c9c9cec41a4755e\"",
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-natural-journey-20261022\\original-glm-input\\hnorm.weight.bf16",
+        "sha256": "3fbc01762fea938ae24e94ece075b03dd5cb44cbe218884712b35d865b820501"
+      }
+    ],
+    "roles": [
+      {
+        "name": "model.language_model.layers.45.eh_proj.weight",
+        "dtype": "BF16",
+        "shape": [
+          4096,
+          8192
+        ],
+        "relative_offsets": [
+          2538227712,
+          2605336576
+        ],
+        "payload": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-natural-journey-20261022\\original-glm-input\\eh_proj.weight.bf16",
+          "bytes": 67108864,
+          "sha256": "17af8402a6b674a462f2847612b2477e76c0de7dfc5ff9fba50ead1e5c88d649"
+        }
+      },
+      {
+        "name": "model.language_model.layers.45.enorm.weight",
+        "dtype": "BF16",
+        "shape": [
+          4096
+        ],
+        "relative_offsets": [
+          2605336576,
+          2605344768
+        ],
+        "payload": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-natural-journey-20261022\\original-glm-input\\enorm.weight.bf16",
+          "bytes": 8192,
+          "sha256": "187f2b4efe991b8c69a1a0365ded195b7fd463d50a7facd0d7196402a66dcc54"
+        }
+      },
+      {
+        "name": "model.language_model.layers.45.hnorm.weight",
+        "dtype": "BF16",
+        "shape": [
+          4096
+        ],
+        "relative_offsets": [
+          2605344768,
+          2605352960
+        ],
+        "payload": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-natural-journey-20261022\\original-glm-input\\hnorm.weight.bf16",
+          "bytes": 8192,
+          "sha256": "3fbc01762fea938ae24e94ece075b03dd5cb44cbe218884712b35d865b820501"
+        }
+      }
+    ],
+    "complete": true,
+    "whole_shard_allowed": false,
+    "shard_bytes": 5365306704,
+    "data_start": 93520
+  },
+  "prior_original_dspark_roles": "docs/evidence/correctness/dspark-mtp-composition-2026-10-22.json",
+  "glm_scope": "Three original layer45 BF16 roles: RMSNorm E/H, embedding-first concat and EH projection. One compiled CUDA graph, three submissions, independent local numerical oracles and old result leases. No original attention/MoE/head/full-model claim.",
+  "natural_journey": {
+    "rounds": [
+      {
+        "ratio": 4,
+        "round": 0,
+        "matched_proposals": 0,
+        "accepted_inputs": 1,
+        "next_frontier": 2048,
+        "pending": 15
+      },
+      {
+        "ratio": 4,
+        "round": 1,
+        "matched_proposals": 0,
+        "accepted_inputs": 1,
+        "next_frontier": 2049,
+        "pending": 15
+      },
+      {
+        "ratio": 128,
+        "round": 0,
+        "matched_proposals": 0,
+        "accepted_inputs": 1,
+        "next_frontier": 2303,
+        "pending": 15
+      },
+      {
+        "ratio": 128,
+        "round": 1,
+        "matched_proposals": 0,
+        "accepted_inputs": 1,
+        "next_frontier": 2304,
+        "pending": 15
+      }
+    ],
+    "proposal_cold_parameter_graphs": 1,
+    "actual_full_shape_proposal_submissions": 4,
+    "proposal": "Flash H4096/heads64/D512, three stages, five proposals and full V129280; generated stage/LM/embedding bank, original W1/W2/confidence from previous fixed AW acquisition.",
+    "transfer": "Original CopyBatchProgram/Invocation: CUDA to pinned then System for the CPU target, and reverse for published carry and main rings; real Completion and bounded pools.",
+    "target": "Actual proposal I32 IDs feed ordinary token-feature Graph, then existing full compression/index/raw target component. Projected ports and finite untrained target/head/bridge; not original43layer target.",
+    "state": "Natural greedy comparison consumes pending plus matching proposals. Relative advance starts committed metadata; proposal carry is T-1 and drafts begin at T. Complete target resources, three persistent main rings, carry and 28B metadata publish atomically. Second round reads actual StateHead. Independent single-row continuation and old full snapshots checked.",
+    "acceptance_limit": "Measured natural outcomes apply to this untrained finite fixture only. Separate retained prefix cases cover accepted input counts0..6; no model acceptance-rate claim."
+  },
+  "native_cast": {
+    "direction": "CPU Native I32 to F32 only, round-to-nearest ties-to-even, independent of ambient rounding mode",
+    "reason": "The ordinary Graph exposed a real missing carrier: schema admitted this plain Cast, but all CPU candidates rejected it. Freeze only this safe direction and reuse original linear/scalar executor; other integer directions remain unsupported.",
+    "checks": "Actual dense and odd byte strides, token IDs, positive/negative midpoint and int32 endpoints, repeated Invocation, alias rejection and unsupported reverse direction. Existing cast cases retained."
+  },
+  "artifact_binding_review": {
+    "path": ".scratch\\dspark-natural-journey-20261022\\review\\remaining-artifact-bindings.json",
+    "bytes": 84195,
+    "sha256": "afd925977139ad05929cacce6f553823ccbc19f74d2ad169cdb2878494e1ee2a"
+  },
+  "failures": [
+    {
+      "folder": "checks1",
+      "outcome": "GLM test setup omitted owned ResourceOptions, fixed in the consumer only."
+    },
+    {
+      "folder": "checks3",
+      "outcome": "Four pass; natural journey rejected at ordinary CPU I32 to F32 Cast. Product carrier and limited numerical contract fixed before final run."
+    }
+  ],
+  "cleanup": {
+    "Removed": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-natural-journey-20261022\\tests-link1\\mtp-checks.exe",
+        "bytes": 139700224,
+        "sha256": "abee7890f7e28e0f56613dab7250ea22cf015b873f151b97c59fdc467efde158"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-natural-journey-20261022\\tests-link1\\mtp-checks.map",
+        "bytes": 57800979,
+        "sha256": "be02585344d5eb8f4d799b5a63a1bf670d6f9b43c88db74c77c2137b413ec39f"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-natural-journey-20261022\\tests-link2\\mtp-checks.exe",
+        "bytes": 139700736,
+        "sha256": "b666bd8f727d3ef36bde48b70ea069f0efa6b131bfee2595c018c96dd9eccb85"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-natural-journey-20261022\\tests-link2\\mtp-checks.map",
+        "bytes": 57799556,
+        "sha256": "fa239b471f17cb2535a6f50f438a75781a48ecff13df005da41d6a595e780017"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-natural-journey-20261022\\tests-link3\\mtp-checks.exe",
+        "bytes": 140397568,
+        "sha256": "cc0efa2e6e799e82d71848639628f65e9f0924d9199ac3e9f564987ce4e85fac"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-natural-journey-20261022\\tests-link3\\mtp-checks.map",
+        "bytes": 59031655,
+        "sha256": "e1186f73a4d5789c585a1ffb77fa846f703382d7e4da38e1eeee0db2837c0f42"
+      }
+    ],
+    "Bytes": 594430718,
+    "CurrentImageRetained": true,
+    "CurrentMapRetained": true
+  },
+  "performance": "No new TPS or memory window. AV remains the current four-arm performance comparison.",
+  "remaining": [
+    "Selected original DSpark stage/LM role bindings and applicable complete-state compositions; the unexecuted full43layer target is a coverage limit, not an automatic requirement to build another production engine.",
+    "Current Q27 embedded MTP, Q24 primary codec and GLM original FP8/quantized-role bindings; old sidecar or alternate codec consumers do not sign these.",
+    "Other applicable actual artifact/state combinations and relevant platform checks. No new public executor, MTP loader or per-model production engine is implied."
+  ],
+  "limitations": [
+    "Windows CPU/CUDA only for these new components; prior Qwen cross-platform evidence retains its own scope.",
+    "No whole-original-model or task-quality claim from finite generated stage/target parameters.",
+    "Numerical oracle gates unchanged; no forced provider route or host teacher token substitution."
+  ],
+  "SDK_builds": 0,
+  "NVCC_builds": 0,
+  "shader_builds": 0,
+  "sources_commands_results_and_cleanup": {
+    "path": "docs\\evidence\\correctness\\mtp-natural-journey-2026-10-22.logs.zip",
+    "bytes": 805831,
+    "sha256": "9536cf965abe1d7156d9e6c9aa8f153f72eb54178fa2ebb04459719bebffefdb"
+  },
+  "large_original_payloads_in_archive": false
+}

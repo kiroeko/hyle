@@ -1,4 +1,5 @@
 #include <hyle/graph/batch.h>
+#include <hyle/graph/cpu.h>
 #include <hyle/compute/cpu.h>
 #include <hyle/compute/providers/ggml_cpu.h>
 #include "../compute_batch/allocation_fault_fixture.h"
@@ -23,10 +24,7 @@ Status episode(Mode mode){
   const std::array<std::int32_t,2> ptr{0,1};const std::array<std::int32_t,1> pages{1},tail{2},other_tail{1};
   HYLE_ASSIGN_OR_RETURN(auto layout,schema.version({ptr,ptr,pages,tail}));
   HYLE_ASSIGN_OR_RETURN(auto other,schema.version({ptr,ptr,pages,other_tail}));
-  HYLE_ASSIGN_OR_RETURN(auto wrapped,b::provider(c::ggml_cpu::provider({.native_threads=2}),schema,
-      {.resource=resource,.host_workspace=resource,.max_float_workspace_bytes=8u<<20,
-       .max_int_workspace_bytes=4096,.max_invocations=1,.scale=.125F,.allocator=fault.ref(),.resource_budget=budget}));
-  HYLE_ASSIGN_OR_RETURN(auto context,c::Context::create(c::cpu::device(),wrapped));
+  HYLE_ASSIGN_OR_RETURN(auto context,c::Context::create(c::cpu::device(),c::ggml_cpu::provider({.native_threads=2})));
   HYLE_ASSIGN_OR_RETURN(auto queue,context.create_queue());
   struct Drain{c::Context&context;~Drain(){context.drain().IgnoreError();}}drain{context};
   HYLE_ASSIGN_OR_RETURN(auto qdesc,c::TensorDesc::dense(cap.query_type,std::array<std::int64_t,3>{1,2,64}));
@@ -38,36 +36,46 @@ Status episode(Mode mode){
   HYLE_ASSIGN_OR_RETURN(auto node,builder.add_node(c::Operation::custom(c::PagedAttention{cap,.125F}),inputs));
   HYLE_ASSIGN_OR_RETURN(auto output_id,builder.result(node));HYLE_RETURN_IF_ERROR(builder.publish(output_id));
   HYLE_ASSIGN_OR_RETURN(auto graph,std::move(builder).finish());
-  HYLE_ASSIGN_OR_RETURN(auto compiled,g::compile(graph,context,{.resource_budget=budget,.operation_fallback=g::OperationFallbackPolicy::kReject}));
-  const std::array lanes{b::LaneBinding{g::ExecutionLaneId{0},&context,&queue,resource}};
-  const g::LeasedInvocationOptions options{.allocator=fault.ref(),.resource_budget=budget};
-  HYLE_ASSIGN_OR_RETURN(auto original,b::Invocation::create(compiled.executable,lanes,options));
+  HYLE_ASSIGN_OR_RETURN(auto compiled,g::cpu::compile(graph,context,{.resource_budget=budget,.operation_fallback=g::OperationFallbackPolicy::kReject}));
+  const std::array lanes{g::QueueBinding{g::ExecutionLaneId{0},&queue}};
+  const g::ResourceOptions options{.allocator=fault.ref(),.resource_budget=budget};
+  const std::array versions{b::NodeLayout{node,layout}};
+  const b::PrepareOptions prepare_options{.host_workspace=resource,.max_float_workspace_bytes=8u<<20,
+      .max_int_workspace_bytes=4096,.allocator=fault.ref(),.resource_budget=budget,
+      .max_source_completions=mode==Mode::capacity?1u:2u};
+  const auto make_slot=[&](){return compiled.executable.create_invocation({.resources=options});};
+  HYLE_ASSIGN_OR_RETURN(auto pending,make_slot());
   const auto baseline=fault.live;
   if(mode==Mode::budget){
     HYLE_ASSIGN_OR_RETURN(auto before,budget.usage(resource));
     HYLE_ASSIGN_OR_RETURN(auto full,budget.reserve(resource,before.limit_bytes-before.live_bytes));
-    auto refused=b::PendingInvocation::create(std::move(original),2,options);
-    HYLE_RETURN_IF_ERROR(require(!refused && refused.error().IsResourceExhausted() && original.valid() && fault.live==baseline,
+    const auto refused=b::prepare(pending,lanes,versions,prepare_options);
+    HYLE_RETURN_IF_ERROR(require(refused.IsResourceExhausted() && pending.valid() && fault.live==baseline,
         "pending Graph cold source bypassed shared metadata budget"));
     full.reset();HYLE_ASSIGN_OR_RETURN(auto after,budget.usage(resource));
     HYLE_RETURN_IF_ERROR(require(after.live_bytes==before.live_bytes,"pending Graph budget rejection leaked charges"));
   }
   if(mode==Mode::allocation){
-    bool complete=false;std::size_t count=0;
+    pending={};const auto before=fault.live;bool complete=false;std::size_t count=0;
+    auto ready_options=prepare_options;ready_options.max_source_completions=0;
     for(std::size_t nth=0;nth<32;++nth){
-      fault.fail=fault.attempts+nth;
-      {auto candidate=b::PendingInvocation::create(std::move(original),2,options);fault.fail=SIZE_MAX;
-        if(candidate){complete=true;count=nth;}
-        else HYLE_RETURN_IF_ERROR(require(candidate.error().IsResourceExhausted() && original.valid() && fault.live==baseline,
-            "pending Graph cold source OOM consumed original or leaked metadata"));}
+      {
+        HYLE_ASSIGN_OR_RETURN(auto candidate,make_slot());
+        HYLE_RETURN_IF_ERROR(b::prepare(candidate,lanes,versions,ready_options));
+        fault.fail=fault.attempts+nth;
+        const auto status=b::prepare(candidate,lanes,versions,prepare_options);fault.fail=SIZE_MAX;
+        if(status.ok()){complete=true;count=nth;}
+        else HYLE_RETURN_IF_ERROR(require(status.IsResourceExhausted() && candidate.valid(),
+            "pending Graph cold source OOM destroyed its original Invocation"));
+      }
+      HYLE_RETURN_IF_ERROR(require(fault.live==before,"pending Graph cold preparation OOM leaked metadata"));
       if(complete)break;
     }
     HYLE_RETURN_IF_ERROR(require(complete,"pending Graph cold source OOM has no finite success boundary"));
-    std::fprintf(stderr,"pending Graph all %zu cold source allocation refusals preserve owner PASS\n",count);
-    HYLE_ASSIGN_OR_RETURN(original,b::Invocation::create(compiled.executable,lanes,options));
+    std::fprintf(stderr,"pending Graph all %zu cold source allocation refusals preserve owner and release metadata PASS\n",count);
+    HYLE_ASSIGN_OR_RETURN(pending,make_slot());
   }
-  HYLE_ASSIGN_OR_RETURN(auto pending,b::PendingInvocation::create(std::move(original),mode==Mode::capacity?1:2,options));
-  const std::array versions{b::NodeLayout{node,layout}};HYLE_RETURN_IF_ERROR(pending.prepare_batch(versions));
+  HYLE_RETURN_IF_ERROR(b::prepare(pending,lanes,versions,prepare_options));
   HYLE_ASSIGN_OR_RETURN(auto keys,c::PagedArena::create(schema,c::BatchCacheRole::kKey,resource,{.max_backing_bytes=8192}));
   HYLE_ASSIGN_OR_RETURN(auto values,c::PagedArena::create(schema,c::BatchCacheRole::kValue,resource,{.max_backing_bytes=8192}));
   HYLE_ASSIGN_OR_RETURN(auto kw,keys.acquire(1));HYLE_ASSIGN_OR_RETURN(auto vw,values.acquire(1));
@@ -90,58 +98,60 @@ Status episode(Mode mode){
   const std::array<c::PagedPageUpdate,1> ku{{{&kw,{1}}}},vu{{{&vw,{2}}}};
   HYLE_ASSIGN_OR_RETURN(auto k,keys.pending_read(mode==Mode::foreign?other:layout,{},ku));
   HYLE_ASSIGN_OR_RETURN(auto v,values.pending_read(layout,{},vu));
-  HYLE_RETURN_IF_ERROR(require(!pending.bind(inputs[0],k).ok() && !pending.bind(output_id,k).ok(),
+  HYLE_RETURN_IF_ERROR(require(!b::bind(pending,inputs[0],k).ok() && !b::bind(pending,output_id,k).ok(),
       "pending Graph accepted a capacity as query/output permission"));
   HYLE_RETURN_IF_ERROR(pending.bind(inputs[0],qdesc,query));
   if(mode==Mode::foreign){
-    HYLE_RETURN_IF_ERROR(require(pending.bind(inputs[1],k).IsInvalidArgument() && update.valid(),
+    HYLE_RETURN_IF_ERROR(require(b::bind(pending,inputs[1],k).IsInvalidArgument() && update.valid(),
         "pending Graph foreign layout consumed source or installed capacity"));
     std::fprintf(stderr,"pending Graph foreign layout and invalid pending ports preserved source PASS\n");return Status::Ok();
   }
   if(mode==Mode::binding_oom){
     const auto before=fault.live;bool complete=false;std::size_t count=0;
     for(std::size_t nth=0;nth<16;++nth){fault.fail=fault.attempts+nth;
-      auto status=pending.bind(inputs[1],k);fault.fail=SIZE_MAX;
+      auto status=b::bind(pending,inputs[1],k);fault.fail=SIZE_MAX;
       if(status.ok()){complete=true;count=nth;break;}
       HYLE_RETURN_IF_ERROR(require(status.IsResourceExhausted() && fault.live==before && update.valid() && k.valid(),
           "pending Graph exact-reader binding OOM consumed permission/source or leaked metadata"));}
     HYLE_RETURN_IF_ERROR(require(complete,"pending Graph reader allocation has no finite success boundary"));
     std::fprintf(stderr,"pending Graph all %zu exact-reader binding allocation refusals roll back PASS\n",count);
-  }else HYLE_RETURN_IF_ERROR(pending.bind(inputs[1],k));
-  HYLE_RETURN_IF_ERROR(pending.bind(inputs[2],v));
+  }else HYLE_RETURN_IF_ERROR(b::bind(pending,inputs[1],k));
+  HYLE_RETURN_IF_ERROR(b::bind(pending,inputs[2],v));
   HYLE_ASSIGN_OR_RETURN(auto output_write,pool.allocate(256,64));
   HYLE_RETURN_IF_ERROR(pending.bind(output_id,qdesc,std::move(output_write)));
+  HYLE_RETURN_IF_ERROR(pending.prepare_replay(lanes));
   if(mode==Mode::closed)HYLE_RETURN_IF_ERROR(context.close());
-  auto submitted=pending.submit(std::move(update));
+  auto submitted=b::submit(pending,lanes,std::move(update));
   if(mode==Mode::closed && !submitted)std::fprintf(stderr,"closed Graph status=%.*s original_update=%d\n",
       int(submitted.error().message().size()),submitted.error().message().data(),update.valid());
   if(mode==Mode::hole || mode==Mode::capacity || mode==Mode::closed){
     HYLE_RETURN_IF_ERROR(require(!submitted && update.valid() &&
-        (mode==Mode::hole?submitted.error().IsOutOfRange():mode==Mode::capacity?submitted.error().IsResourceExhausted():submitted.error().IsInvalidArgument()),
+        (mode==Mode::hole?submitted.error().IsOutOfRange():mode==Mode::capacity?submitted.error().IsResourceExhausted():submitted.error().IsFailedPrecondition()),
         "pending Graph rejected admission lost original source or error"));
     std::fprintf(stderr,"pending Graph refusal mode=%u original source preserved PASS\n",unsigned(mode));return Status::Ok();
   }
-  HYLE_RETURN_IF_ERROR(require(submitted.has_value() && !update.valid() && !pending.take_update(),
+  HYLE_RETURN_IF_ERROR(require(submitted.has_value() && !update.valid() && !b::take_update(pending),
       "pending Graph accepted source could be recovered with a live aggregate"));
   if(mode==Mode::abandon){
     *submitted={};pending={};HYLE_RETURN_IF_ERROR(context.drain());
     HYLE_RETURN_IF_ERROR(require(pool.stats().active_uses==0,"pending Graph abandoned original guards not retired"));
-    HYLE_ASSIGN_OR_RETURN(auto reused,b::Invocation::create(compiled.executable,lanes,options));
+    HYLE_ASSIGN_OR_RETURN(auto reused,make_slot());
+    HYLE_RETURN_IF_ERROR(b::prepare(reused,lanes,versions,prepare_options));
     HYLE_RETURN_IF_ERROR(reused.close());std::fprintf(stderr,"pending Graph owner/aggregate abandonment and original slot recovery PASS\n");
     return Status::Ok();
   }
   HYLE_RETURN_IF_ERROR(submitted->wait());
-  {HYLE_ASSIGN_OR_RETURN(auto output,pending.output(output_id));HYLE_ASSIGN_OR_RETURN(auto lease,output.storage_lease());
+  {HYLE_ASSIGN_OR_RETURN(auto output,pending.result(output_id));HYLE_ASSIGN_OR_RETURN(auto lease,output.storage_lease());
     std::array<std::uint16_t,128> actual{};HYLE_RETURN_IF_ERROR(lease.view()->read(std::as_writable_bytes(std::span(actual))));
     for(auto word:actual)HYLE_RETURN_IF_ERROR(require(word==0x3400,"pending Graph exact native mean differs"));
-    HYLE_RETURN_IF_ERROR(require(!pending.take_update() && !pending.prepare_batch(versions).ok(),
+    HYLE_RETURN_IF_ERROR(require(!b::take_update(pending) && !b::prepare(pending,lanes,versions,prepare_options).ok(),
         "pending Graph retained result permitted source/slot reuse"));}
-  *submitted={};HYLE_ASSIGN_OR_RETURN(update,pending.take_update());
+  *submitted={};HYLE_ASSIGN_OR_RETURN(update,b::take_update(pending));
   HYLE_ASSIGN_OR_RETURN(kw.lease(),update.take_mutable({1}));HYLE_ASSIGN_OR_RETURN(vw.lease(),update.take_mutable({2}));
   HYLE_ASSIGN_OR_RETURN(auto key,kw.publish(2));HYLE_ASSIGN_OR_RETURN(auto value,vw.publish(2));
   HYLE_RETURN_IF_ERROR(require(keys.read(layout,std::span(&key,1)).has_value() && values.read(layout,std::span(&value,1)).has_value(),
       "pending Graph original writers did not recover exact ready frames"));
-  HYLE_RETURN_IF_ERROR(pending.prepare_batch(versions));HYLE_RETURN_IF_ERROR(pending.drain());
+  HYLE_RETURN_IF_ERROR(b::prepare(pending,lanes,versions,prepare_options));HYLE_RETURN_IF_ERROR(pending.drain());
   std::fprintf(stderr,"pending Graph mode=%u actual math/old result/source/writer recovery PASS\n",unsigned(mode));return Status::Ok();
 }
 }

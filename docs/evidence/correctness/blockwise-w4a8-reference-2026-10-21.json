@@ -1,0 +1,3084 @@
+{
+  "observed_on": "2026-10-21",
+  "status": "bounded_software_reference_10_new_and14_neighbor_cases_passed_no_skip",
+  "source_contract": "../research/fixed-role-binding-2026-10-21.json",
+  "publisher_contract_entry": "kimi/24/quantization/contract_ops.py",
+  "publisher_contract_sha256": "b5551ca0fbeac2f16983ad2d2aace521e6cb804ce0be2b8a8ec92b5a2cca2b3d",
+  "public_operations": [
+    "BlockwiseW4A8Linear",
+    "GroupedBlockwiseW4A8Linear"
+  ],
+  "geometry": "Dense BF16 A[M,K],I32 W[N,K/8],F32 SF[N,K/512] ->BF16[M,N]. Grouped BF16 A[T,1|S,K],I32 W[E,N,K/8],F32SF[E,N,K/512],I32IDs[T,S] ->BF16[T,S,N]. Positive dimensions, K multiple512; real zero-slot activation views allowed.",
+  "math": "s=BF16(absmax(A)*BF16(1/127)); inv=s==0?0:BF16(1/s); q=I8_trunc(BF16(A*inv)). Per increasing512group: d=BF16(I32_dot(q,nibble-8)); p=BF16(d*s); v=BF16(p*BF16(SF)); y=BF16(y+v) from+0. All BF16 rounds RNE. No dequantized whole floating W bank.",
+  "defined_domain": "A finite, original selected SF finite positive, derived q finite and truncated result in[-128,127]. Source undefined casts fail Completion rather than clamp/wrap. Zero-scale inv is0. Finite SF conversion may become BF16 zero/Inf and subsequent IEEE output is legal.",
+  "architecture": "Existing NativePlan/PreparedOperation/QueueSequence or original Apple/Vulkan Program/Invocation. Shared A quantizesT rows, independent slotsTS, before checked selected dot. All IDs validated before expert addressing. No new Graph executor/lease/model whitelist.",
+  "storage": "CPU/CUDA Q+SA body is R*(K+2*K/512)bytes, R=M or T or T*S. Vulkan stores Q I8 plus BF16-rounded SA widened F32; Apple adds existing checks/status arrays. Runtime ownership/state costs are separate. No hardware integer GEMM or throughput claim.",
+  "tests": {
+    "distinct_total": 24,
+    "new_operator_cases": 10,
+    "neighbors": 14,
+    "new_names": [
+      "AppleBlockwiseW4A8ReferenceGraph.DenseGroupedGroup512RoundingRetainsSlotsAndResults",
+      "AppleBlockwiseW4A8ReferenceGraph.RuntimeQuantizationIndexFailuresAndIeeeReconstruction",
+      "CpuBlockwiseW4A8Direct.SharedQuantizationHasBoundedWorkspaceAndRejectsAliasing",
+      "CpuBlockwiseW4A8Graph.OriginalPackedBanksSurviveSharedAndIndependentSlots",
+      "CpuBlockwiseW4A8Graph.TinyOperandsRuntimeFailuresAndIeeeRecovery",
+      "CpuBlockwiseW4A8Schema.RejectsWrongPackingScaleAndIncompleteBlocks",
+      "CudaBlockwiseW4A8Graph.DenseGroupedGroup512RoundingRetainsSlotsAndResults",
+      "CudaBlockwiseW4A8Graph.RuntimeScaleIndexFailuresAndIeeeReconstruction",
+      "VulkanBlockwiseW4A8Graph.DenseAndSelectedExpertsShareOriginalActivationSafely",
+      "VulkanBlockwiseW4A8Graph.Int8TruncationAndGroupBf16RuntimeDomains"
+    ],
+    "neighbor_names": [
+      "CpuCtPackedGrouped.CompleteIdsValidateBeforeSelectedBankAccess",
+      "CpuCtPackedGrouped.OriginalBanksKeepRoundingStridesSlotsAndResults",
+      "CpuCtPackedGrouped.PublishedDecodeRetainsTheOriginalGraph",
+      "CpuMxfp4ReferenceGraph.OriginalPackedBanksSurviveSharedAndIndependentSlots",
+      "CpuMxfp4ReferenceGraph.TinyOperandsRuntimeFailuresAndIeeeRecovery",
+      "CudaCtPackedGrouped.CompleteIdsValidateBeforeSelectedBankAccess",
+      "CudaCtPackedGrouped.OriginalBanksKeepRoundingStridesSlotsAndResults",
+      "CudaCtPackedGrouped.PublishedDecodeRetainsTheOriginalGraph",
+      "CudaMxfp4ReferenceGraph.DenseGroupedGroup32RoundingRetainsSlotsAndResults",
+      "CudaMxfp4ReferenceGraph.RuntimeScaleIndexFailuresAndIeeeReconstruction",
+      "VulkanLocalNvfp4ReferenceGraph.DenseAndSelectedExpertRoundingModesSurviveLifetimes",
+      "VulkanLocalNvfp4ReferenceGraph.PointwiseBoundariesAndRuntimeDomainsRetainLocalMath",
+      "VulkanMxfp4ReferenceGraph.DenseAndSelectedExpertsShareOriginalActivationSafely",
+      "VulkanMxfp4ReferenceGraph.PortableRoundingAndRuntimeDomainsRetainBf16Math"
+    ],
+    "windows": [
+      {
+        "label": "CPU neighbors",
+        "receipt": {
+          "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/validation/attempt1/receipt.json",
+          "bytes": 3637,
+          "sha256": "e1a669bd1a069e704d5d815d2e554fd907a491a03a7f98ec92a432de9919e005"
+        },
+        "green_case_names": [
+          "CpuCtPackedGrouped.OriginalBanksKeepRoundingStridesSlotsAndResults",
+          "CpuCtPackedGrouped.CompleteIdsValidateBeforeSelectedBankAccess",
+          "CpuCtPackedGrouped.PublishedDecodeRetainsTheOriginalGraph",
+          "CpuMxfp4ReferenceGraph.OriginalPackedBanksSurviveSharedAndIndependentSlots",
+          "CpuMxfp4ReferenceGraph.TinyOperandsRuntimeFailuresAndIeeeRecovery"
+        ],
+        "partial_window": true,
+        "original_failures_retained": [
+          {
+            "name": "TinyOperandsRuntimeFailuresAndIeeeRecovery",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_cpu\\blockwise_w4a8_test.cc",
+            "line": "24",
+            "status": "run",
+            "result": "completed",
+            "time": "0.001",
+            "timestamp": "2026-10-21T00:53:38.634",
+            "classname": "CpuBlockwiseW4A8Graph"
+          }
+        ]
+      },
+      {
+        "label": "CPU new graph",
+        "receipt": {
+          "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/validation/attempt2/receipt.json",
+          "bytes": 1758,
+          "sha256": "e4c52b397fdee6c7f6f7a74a6b221ef7ef3c0c767a6ca382ddac79e5eb49ac1d"
+        },
+        "green_case_names": [
+          "CpuBlockwiseW4A8Graph.OriginalPackedBanksSurviveSharedAndIndependentSlots",
+          "CpuBlockwiseW4A8Graph.TinyOperandsRuntimeFailuresAndIeeeRecovery"
+        ],
+        "partial_window": false,
+        "original_failures_retained": []
+      },
+      {
+        "label": "CPU direct/schema",
+        "receipt": {
+          "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/validation/attempt3/receipt.json",
+          "bytes": 1513,
+          "sha256": "7b79c1c912938dde6262073448eb009e0cc7a6a2fba423a48bbff84254de71cb"
+        },
+        "green_case_names": [
+          "CpuBlockwiseW4A8Direct.SharedQuantizationHasBoundedWorkspaceAndRejectsAliasing",
+          "CpuBlockwiseW4A8Schema.RejectsWrongPackingScaleAndIncompleteBlocks"
+        ],
+        "partial_window": false,
+        "original_failures_retained": []
+      },
+      {
+        "label": "CUDA new+neighbors",
+        "receipt": {
+          "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cuda/validation/attempt1/receipt.json",
+          "bytes": 3515,
+          "sha256": "a869c3630cd1301f947b29f56a209d42ec36b864a292241642d1cd5706a6270d"
+        },
+        "green_case_names": [
+          "CudaBlockwiseW4A8Graph.DenseGroupedGroup512RoundingRetainsSlotsAndResults",
+          "CudaBlockwiseW4A8Graph.RuntimeScaleIndexFailuresAndIeeeReconstruction",
+          "CudaCtPackedGrouped.OriginalBanksKeepRoundingStridesSlotsAndResults",
+          "CudaCtPackedGrouped.CompleteIdsValidateBeforeSelectedBankAccess",
+          "CudaCtPackedGrouped.PublishedDecodeRetainsTheOriginalGraph",
+          "CudaMxfp4ReferenceGraph.DenseGroupedGroup32RoundingRetainsSlotsAndResults",
+          "CudaMxfp4ReferenceGraph.RuntimeScaleIndexFailuresAndIeeeReconstruction"
+        ],
+        "partial_window": false,
+        "original_failures_retained": []
+      },
+      {
+        "label": "Vulkan neighbors",
+        "receipt": {
+          "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/validation/attempt1/receipt.json",
+          "bytes": 4386,
+          "sha256": "f5680ec241b707630118bca552d3f9bcb7a1933b03d3d1ebb3a74682dd6f1d74"
+        },
+        "green_case_names": [
+          "VulkanMxfp4ReferenceGraph.DenseAndSelectedExpertsShareOriginalActivationSafely",
+          "VulkanMxfp4ReferenceGraph.PortableRoundingAndRuntimeDomainsRetainBf16Math",
+          "VulkanLocalNvfp4ReferenceGraph.DenseAndSelectedExpertRoundingModesSurviveLifetimes",
+          "VulkanLocalNvfp4ReferenceGraph.PointwiseBoundariesAndRuntimeDomainsRetainLocalMath"
+        ],
+        "partial_window": true,
+        "original_failures_retained": [
+          {
+            "name": "DenseAndSelectedExpertsShareOriginalActivationSafely",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_vulkan\\blockwise_w4a8_test.cc",
+            "line": "59",
+            "status": "run",
+            "result": "completed",
+            "time": "0.298",
+            "timestamp": "2026-10-21T00:56:13.809",
+            "classname": "VulkanBlockwiseW4A8Graph"
+          },
+          {
+            "name": "Int8TruncationAndGroupBf16RuntimeDomains",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_vulkan\\blockwise_w4a8_test.cc",
+            "line": "64",
+            "status": "run",
+            "result": "completed",
+            "time": "0.059",
+            "timestamp": "2026-10-21T00:56:14.107",
+            "classname": "VulkanBlockwiseW4A8Graph"
+          }
+        ]
+      },
+      {
+        "label": "Vulkan new",
+        "receipt": {
+          "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/validation/attempt2/receipt.json",
+          "bytes": 2006,
+          "sha256": "b0fcb13e3a95d08654b66cfde0aebead3001d9c105d422121bbf85a2ebba709f"
+        },
+        "green_case_names": [
+          "VulkanBlockwiseW4A8Graph.DenseAndSelectedExpertsShareOriginalActivationSafely",
+          "VulkanBlockwiseW4A8Graph.Int8TruncationAndGroupBf16RuntimeDomains"
+        ],
+        "partial_window": false,
+        "original_failures_retained": []
+      }
+    ],
+    "apple": {
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/final-validation.json",
+      "bytes": 2366,
+      "sha256": "15369c9cbe35bee7b13d1b4f6c9c3069769e85bb9035e7b03b3d43f1629cecc8"
+    },
+    "new_graph_successful_submissions": 248,
+    "new_graph_expected_failed_completions": 80,
+    "counting": "Each backend new2Graph tests gives16lifetime+46runtime success,20expectedFailedCompletions. CPU has2additional Direct/schema tests. Neighbors14 counted once across their actual windows; CPU/Vulkan earlier red windows retain only unaffected green neighbors, not a fabricated all-green final-image rerun.",
+    "CUDA_capture": "Actual RequireCapture and kCaptured assertions passed in both new CUDA tests.",
+    "failures_retained": [
+      "First fixture compile had a mixed-auto declarator type error, corrected before numerical execution.",
+      "Initial CPU/Apple domain classification treated negative128 as invalid and positive128 as valid; scalar source oracle corrected the fixture without changing product math/tolerances.",
+      "Vulkan first new leaf placed status at binding3 rather than original checked protocol binding2; create_invocation failed before math. Only new lower/generated shader objects changed; original175inputs including same testobj retained. New2thenpassed.",
+      "CUDA2helperplanning errors occurred before nvcc; receipts retained."
+    ]
+  },
+  "validation_limits": [
+    "No numeric publisher tensor payload or full artifact/model execution.",
+    "No Linux execution of this new operation yet; retained for delivery1.",
+    "No upstream CUDA/TPU nonportable-I8-cast behavior claim outside the stated defined domain.",
+    "No hardware INT8 GEMM, completeFFN, quantized quality or performance acceptance.",
+    "Independent expert source spans/working sets remain delivery3; bounded E17 tests do not accept arbitrarily large banks."
+  ],
+  "current_sources": [
+    {
+      "path": "include/hyle/compute/model_ops.h",
+      "bytes": 73352,
+      "sha256": "de8070c76e074b1c37d022f59ed98b2afef1c10dbced6c24d3c0aa696eafd6e6"
+    },
+    {
+      "path": "src/compute_ops/blockwise_w4a8.cc",
+      "bytes": 2999,
+      "sha256": "3003b41ed9fb46901235f6c4ce5eab681df6d0326895ca98b408a7fb6d6c4c91"
+    },
+    {
+      "path": "src/compute_ops/CMakeLists.txt",
+      "bytes": 705,
+      "sha256": "541e663702d14ee649b61741ad00adb4e015bf6b786500cd7815161ef64d8252"
+    },
+    {
+      "path": "src/compute_provider_native/blockwise_w4a8.cc",
+      "bytes": 11188,
+      "sha256": "d0393cd14a6a470feabf0bd9326dfb3221d10f3ad15c248e0432b24b56e2b30d"
+    },
+    {
+      "path": "src/compute_provider_native/native_plan.h",
+      "bytes": 10966,
+      "sha256": "dd9b7d8254cac0d9357bb29f0164803c330c8f8b5c87be0718415ee9066486ef"
+    },
+    {
+      "path": "src/compute_provider_native/native_provider.cc",
+      "bytes": 40915,
+      "sha256": "5e52894af3a1e1325a4b4a84b9ef44b89a89c327912b76b2d764f605b71d233d"
+    },
+    {
+      "path": "src/compute_provider_native/CMakeLists.txt",
+      "bytes": 4861,
+      "sha256": "ebddd061fc975feb8411ec6f9238042e87108db9916103dad79cab4c686da64e"
+    },
+    {
+      "path": "src/compute_provider_cuda/blockwise_w4a8_kernel.h",
+      "bytes": 669,
+      "sha256": "28af571fac71af60de2f19860af189ee54536aea0dd93b7de513e54f1f238282"
+    },
+    {
+      "path": "src/compute_provider_cuda/blockwise_w4a8_kernel.cu",
+      "bytes": 7689,
+      "sha256": "93abdca3cee06612294fbaa59118aa00bcaccada3c5e7961eebea710411e0515"
+    },
+    {
+      "path": "src/compute_provider_cuda/blockwise_w4a8_provider.h",
+      "bytes": 624,
+      "sha256": "2b1e40ccbfb473033917480d9d5636a3edc6f9faea0cd07a2cab0ba96310d75e"
+    },
+    {
+      "path": "src/compute_provider_cuda/blockwise_w4a8_provider.cc",
+      "bytes": 9381,
+      "sha256": "b0dfb7762949aebcbd7135c6c533212724dda3d23103e05657fe2e08ab5542a5"
+    },
+    {
+      "path": "src/compute_provider_cuda/cuda_provider.cc",
+      "bytes": 21752,
+      "sha256": "9f333dacfe1d57d6df5ccd380df10133985878b3c882453b99a6f683ce5a7845"
+    },
+    {
+      "path": "src/compute_provider_cuda/CMakeLists.txt",
+      "bytes": 6628,
+      "sha256": "2a5890fc9de9874640cb1370f3f8fc7d1a3bfa5411c45c9392919ab31de6337a"
+    },
+    {
+      "path": "src/compute_route_apple/apple_blockwise_w4a8.h",
+      "bytes": 329,
+      "sha256": "c8bc5fdfbc414e5327039243bd0a02a3136dd84620ed837e7e983a15f2b70a4f"
+    },
+    {
+      "path": "src/compute_route_apple/apple_blockwise_w4a8.cc",
+      "bytes": 11061,
+      "sha256": "0bbd73e2714cdca3d5a8c07726677eae344a0e265d3b755845c183ac8b13a65a"
+    },
+    {
+      "path": "src/compute_route_apple/apple_mature_float.cc",
+      "bytes": 36362,
+      "sha256": "2abf83d7c7476a9ff1f1ff0f9f47a0eb48e7d978aef457729751f382b7b6cf9a"
+    },
+    {
+      "path": "src/compute_route_apple/CMakeLists.txt",
+      "bytes": 6024,
+      "sha256": "e132a88f2312a0863fda459824c13f12dba8a68fdc7816ec5769a48dd24cb101"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_blockwise_w4a8.cc",
+      "bytes": 6193,
+      "sha256": "74e4a41eb0accad71f73b9bc9c089c31edfb376a3a526a4e1371f4e184f0a2a0"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_operations.cc",
+      "bytes": 5903,
+      "sha256": "da273c09f75778929f68970a5c3e41723f3092d63b301fa093e986cbefeb738b"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_tensor.h",
+      "bytes": 1838,
+      "sha256": "061204ab279632cc577c44bebb794090d847948fb772a2e71d5f11bd71d2a8cd"
+    },
+    {
+      "path": "src/compute_route_vulkan/build_shaders.py",
+      "bytes": 7843,
+      "sha256": "3b58a38a42705201f3460c58817e7934b0db81304b32c1448bbc5b75364154e3"
+    },
+    {
+      "path": "src/compute_route_vulkan/shaders/blockwise_w4a8.comp",
+      "bytes": 5994,
+      "sha256": "100bd33f5a3c8b6db14b4c9b6302a75f2d552f9be4aff2f4ee7036da0855fe95"
+    },
+    {
+      "path": "src/compute_route_vulkan/CMakeLists.txt",
+      "bytes": 3250,
+      "sha256": "4210fd65dc1d3410057a0e56246e3dab8e5faaeda0b39f466fc0f678f79d7c3a"
+    },
+    {
+      "path": "src/compute_shader_shared/nvfp4_f32.h",
+      "bytes": 4845,
+      "sha256": "bcb1534ec5072993166944e8a6085a10078a61ec85fe2d88fc1e7dd659822c43"
+    },
+    {
+      "path": "src/compute_shader_shared/ct_packed.h",
+      "bytes": 2374,
+      "sha256": "33a6001ae830c9649e5ab15ee2b6335456438b41486cf7965ce3e9bcc55d5459"
+    },
+    {
+      "path": "tests/compute_models/nvfp4_reference_fixture.h",
+      "bytes": 22482,
+      "sha256": "cc94ec1f443511722ff4fc227b065af27b82573443735250951cdce934faa4d3"
+    },
+    {
+      "path": "tests/compute_models/blockwise_w4a8_fixture.h",
+      "bytes": 17350,
+      "sha256": "bb0e5d6a6c2581e19bf81a55b895ba0d7ed611b3f90281243095e6620c4427ac"
+    },
+    {
+      "path": "tests/graph_route_cpu/blockwise_w4a8_test.cc",
+      "bytes": 6150,
+      "sha256": "e80d9d116bf3cae4c1540b2a9b5e38bfd08f8754964f4cb3a083ddd31681cb1d"
+    },
+    {
+      "path": "tests/graph_route_cpu/CMakeLists.txt",
+      "bytes": 3371,
+      "sha256": "94515958c7b60af404efbca57e5dd141546b14cdc4bf75afcb124dfc2e792242"
+    },
+    {
+      "path": "tests/graph_route_cuda/blockwise_w4a8_test.cc",
+      "bytes": 2047,
+      "sha256": "be8e9134e95f74bb3a2c55f17fbc2670facb487abefa20ee1043fdf164065c67"
+    },
+    {
+      "path": "tests/graph_route_cuda/CMakeLists.txt",
+      "bytes": 2490,
+      "sha256": "d4368a6caf8e3a266fbe17791f21a2af1a671d3ed6c4a65e130c60733020c21a"
+    },
+    {
+      "path": "tests/graph_route_vulkan/blockwise_w4a8_test.cc",
+      "bytes": 3962,
+      "sha256": "a7f641ced5f485eef7fb31c5ec0719c9b1b6bfbaac55478f77d319d66d06cb75"
+    },
+    {
+      "path": "tests/graph_route_vulkan/CMakeLists.txt",
+      "bytes": 5672,
+      "sha256": "241d57382ebb77024fe432ab31c270c36ad0c2f1b05abd7790c7813eebd2181f"
+    },
+    {
+      "path": "tests/graph_route_apple/blockwise_w4a8_test.cc",
+      "bytes": 1925,
+      "sha256": "56ec97c18b9d02fd240aaf81782b13bbea696381a9e66dcd406256e53084fa28"
+    },
+    {
+      "path": "tests/graph_route_apple/CMakeLists.txt",
+      "bytes": 6222,
+      "sha256": "bce04c30740096061112da7e59379150c132b23eb7869a322875cf3f9854dd1f"
+    }
+  ],
+  "archive": {
+    "path": "docs/evidence/correctness/blockwise-w4a8-reference-2026-10-21.zip",
+    "bytes": 2580605,
+    "sha256": "d3428d29038f18c554356bc1a8f524b834f086f2ebf71d32a6e9cd175626db75",
+    "members": 450
+  },
+  "entry_identities": [
+    {
+      "entry": "apple/after/src/compute_route_apple/CMakeLists.txt",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/after/src/compute_route_apple/CMakeLists.txt",
+      "bytes": 6024,
+      "sha256": "e132a88f2312a0863fda459824c13f12dba8a68fdc7816ec5769a48dd24cb101"
+    },
+    {
+      "entry": "apple/after/src/compute_route_apple/apple_blockwise_w4a8.cc",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/after/src/compute_route_apple/apple_blockwise_w4a8.cc",
+      "bytes": 11061,
+      "sha256": "0bbd73e2714cdca3d5a8c07726677eae344a0e265d3b755845c183ac8b13a65a"
+    },
+    {
+      "entry": "apple/after/src/compute_route_apple/apple_blockwise_w4a8.h",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/after/src/compute_route_apple/apple_blockwise_w4a8.h",
+      "bytes": 329,
+      "sha256": "c8bc5fdfbc414e5327039243bd0a02a3136dd84620ed837e7e983a15f2b70a4f"
+    },
+    {
+      "entry": "apple/after/src/compute_route_apple/apple_mature_float.cc",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/after/src/compute_route_apple/apple_mature_float.cc",
+      "bytes": 36362,
+      "sha256": "2abf83d7c7476a9ff1f1ff0f9f47a0eb48e7d978aef457729751f382b7b6cf9a"
+    },
+    {
+      "entry": "apple/after/tests/graph_route_apple/CMakeLists.txt",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/after/tests/graph_route_apple/CMakeLists.txt",
+      "bytes": 6222,
+      "sha256": "bce04c30740096061112da7e59379150c132b23eb7869a322875cf3f9854dd1f"
+    },
+    {
+      "entry": "apple/after/tests/graph_route_apple/blockwise_w4a8_test.cc",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/after/tests/graph_route_apple/blockwise_w4a8_test.cc",
+      "bytes": 1925,
+      "sha256": "56ec97c18b9d02fd240aaf81782b13bbea696381a9e66dcd406256e53084fa28"
+    },
+    {
+      "entry": "apple/attempt1-fixture-classification/hardware.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/attempt1-fixture-classification/hardware.json",
+      "bytes": 516,
+      "sha256": "137744c87ad0d26cf40a9dd2943a659663608cd6bc9fb0af412c031ff8902f62"
+    },
+    {
+      "entry": "apple/attempt1-fixture-classification/plan.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/attempt1-fixture-classification/plan.json",
+      "bytes": 141992,
+      "sha256": "05a6f8a32520c06181086ade229e58caad5114708006693d7477d571c5b0b867"
+    },
+    {
+      "entry": "apple/attempt1-fixture-classification/results/compile-summary.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/attempt1-fixture-classification/results/compile-summary.json",
+      "bytes": 1079379,
+      "sha256": "a7204c18d3ad7e26132d7150c264db47d2149ed05dedfa1c00d238bfcafb21e6"
+    },
+    {
+      "entry": "apple/attempt1-fixture-classification/results/link-inputs.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/attempt1-fixture-classification/results/link-inputs.json",
+      "bytes": 45073,
+      "sha256": "ec3e5486e7453744b9fcb7dd73dec17aa781356b081ccf8c0d3ad96f68ac40b4"
+    },
+    {
+      "entry": "apple/attempt1-fixture-classification/results/link.command.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/attempt1-fixture-classification/results/link.command.json",
+      "bytes": 26381,
+      "sha256": "517f8697b644960e1283f32ca461d22c6d3d0afdd3a01b4267b861aa578740df"
+    },
+    {
+      "entry": "apple/attempt1-fixture-classification/results/link.result.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/attempt1-fixture-classification/results/link.result.json",
+      "bytes": 26427,
+      "sha256": "c9b9bd5a611ea48e800e6b40d251cfc00cde060ecb032274615e8366e7667043"
+    },
+    {
+      "entry": "apple/attempt1-fixture-classification/results/link.stderr.log",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/attempt1-fixture-classification/results/link.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "apple/attempt1-fixture-classification/results/link.stdout.log",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/attempt1-fixture-classification/results/link.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "apple/attempt1-fixture-classification/results/run.command.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/attempt1-fixture-classification/results/run.command.json",
+      "bytes": 404,
+      "sha256": "e21fb29cab0b4bfd22a4235c756bc25312d3595b7c325a38c533b9b18afe3764"
+    },
+    {
+      "entry": "apple/attempt1-fixture-classification/results/run.result.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/attempt1-fixture-classification/results/run.result.json",
+      "bytes": 450,
+      "sha256": "9eb8c9fcd5e157aecbb304d18680c781a4bf90cf81798e2bccc241f66881baa2"
+    },
+    {
+      "entry": "apple/attempt1-fixture-classification/results/run.stderr.log",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/attempt1-fixture-classification/results/run.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "apple/attempt1-fixture-classification/results/run.stdout.log",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/attempt1-fixture-classification/results/run.stdout.log",
+      "bytes": 3368,
+      "sha256": "8bd96bafbc74484344bdbfbb961406bd2276fb6ea7ee2555bd2febd0989360c5"
+    },
+    {
+      "entry": "apple/attempt1-fixture-classification/results/src--compute_ops--blockwise_w4a8.cc-compile.command.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/attempt1-fixture-classification/results/src--compute_ops--blockwise_w4a8.cc-compile.command.json",
+      "bytes": 10274,
+      "sha256": "31ea9fcceb635c2935e15434a1f21de577d7023315e5d603c0cb88200402b7c1"
+    },
+    {
+      "entry": "apple/attempt1-fixture-classification/results/src--compute_ops--blockwise_w4a8.cc-compile.result.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/attempt1-fixture-classification/results/src--compute_ops--blockwise_w4a8.cc-compile.result.json",
+      "bytes": 10321,
+      "sha256": "ab65d34f3c64bc1d5df2d2bb243c0ff9a37094af087b5c4b5a895976d6abe2a1"
+    },
+    {
+      "entry": "apple/attempt1-fixture-classification/results/src--compute_ops--blockwise_w4a8.cc-compile.stderr.log",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/attempt1-fixture-classification/results/src--compute_ops--blockwise_w4a8.cc-compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "apple/attempt1-fixture-classification/results/src--compute_ops--blockwise_w4a8.cc-compile.stdout.log",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/attempt1-fixture-classification/results/src--compute_ops--blockwise_w4a8.cc-compile.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "apple/attempt1-fixture-classification/results/src--compute_ops--blockwise_w4a8.cc-identity.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/attempt1-fixture-classification/results/src--compute_ops--blockwise_w4a8.cc-identity.json",
+      "bytes": 206316,
+      "sha256": "21665cf83cbf18d4cdaa43c920574229ce597677c9ebdb5affc39f76d0bc0f54"
+    },
+    {
+      "entry": "apple/attempt1-fixture-classification/results/src--compute_route_apple--apple_blockwise_w4a8.cc-compile.command.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/attempt1-fixture-classification/results/src--compute_route_apple--apple_blockwise_w4a8.cc-compile.command.json",
+      "bytes": 18488,
+      "sha256": "e7e221d03c117ac9d1cc4bdf6299daf6b28baa2645c6abf5f114b980a5ae9ffe"
+    },
+    {
+      "entry": "apple/attempt1-fixture-classification/results/src--compute_route_apple--apple_blockwise_w4a8.cc-compile.result.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/attempt1-fixture-classification/results/src--compute_route_apple--apple_blockwise_w4a8.cc-compile.result.json",
+      "bytes": 18534,
+      "sha256": "a161bc4a8e9a777a65839c10f392cd4f70b357a87c768bb1dfd96f36ae49f736"
+    },
+    {
+      "entry": "apple/attempt1-fixture-classification/results/src--compute_route_apple--apple_blockwise_w4a8.cc-compile.stderr.log",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/attempt1-fixture-classification/results/src--compute_route_apple--apple_blockwise_w4a8.cc-compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "apple/attempt1-fixture-classification/results/src--compute_route_apple--apple_blockwise_w4a8.cc-compile.stdout.log",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/attempt1-fixture-classification/results/src--compute_route_apple--apple_blockwise_w4a8.cc-compile.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "apple/attempt1-fixture-classification/results/src--compute_route_apple--apple_blockwise_w4a8.cc-identity.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/attempt1-fixture-classification/results/src--compute_route_apple--apple_blockwise_w4a8.cc-identity.json",
+      "bytes": 251571,
+      "sha256": "4302da6941f9e6bbacecd9040fc92a6432afadc7b2694128c14cafb22a956845"
+    },
+    {
+      "entry": "apple/attempt1-fixture-classification/results/src--compute_route_apple--apple_mature_float.cc-compile.command.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/attempt1-fixture-classification/results/src--compute_route_apple--apple_mature_float.cc-compile.command.json",
+      "bytes": 18482,
+      "sha256": "d901ee7e4a249d7a3721f7b82c0c9a9132136b315ed75dfe02b726cc2452558a"
+    },
+    {
+      "entry": "apple/attempt1-fixture-classification/results/src--compute_route_apple--apple_mature_float.cc-compile.result.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/attempt1-fixture-classification/results/src--compute_route_apple--apple_mature_float.cc-compile.result.json",
+      "bytes": 18528,
+      "sha256": "a7bda975c694d7993e744890d5ed5ea4340d0438ae174d363393e938965ccbfe"
+    },
+    {
+      "entry": "apple/attempt1-fixture-classification/results/src--compute_route_apple--apple_mature_float.cc-compile.stderr.log",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/attempt1-fixture-classification/results/src--compute_route_apple--apple_mature_float.cc-compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "apple/attempt1-fixture-classification/results/src--compute_route_apple--apple_mature_float.cc-compile.stdout.log",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/attempt1-fixture-classification/results/src--compute_route_apple--apple_mature_float.cc-compile.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "apple/attempt1-fixture-classification/results/src--compute_route_apple--apple_mature_float.cc-identity.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/attempt1-fixture-classification/results/src--compute_route_apple--apple_mature_float.cc-identity.json",
+      "bytes": 254410,
+      "sha256": "6a55e9bfadbd7942da92fc3bdad16a0b9e5a264522d430a0b8bdf52ab5f5447b"
+    },
+    {
+      "entry": "apple/attempt1-fixture-classification/results/tests--graph_route_apple--blockwise_w4a8_test.cc-compile.command.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/attempt1-fixture-classification/results/tests--graph_route_apple--blockwise_w4a8_test.cc-compile.command.json",
+      "bytes": 22506,
+      "sha256": "b284ef69364858c9616bbf579ae35e2d905115f5dc07502242fbdd99d1b6140a"
+    },
+    {
+      "entry": "apple/attempt1-fixture-classification/results/tests--graph_route_apple--blockwise_w4a8_test.cc-compile.result.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/attempt1-fixture-classification/results/tests--graph_route_apple--blockwise_w4a8_test.cc-compile.result.json",
+      "bytes": 22551,
+      "sha256": "57dd26a83544cac5b61374c0c59fc8bddcf0613c3b19e31bc0b5a104bd1f175f"
+    },
+    {
+      "entry": "apple/attempt1-fixture-classification/results/tests--graph_route_apple--blockwise_w4a8_test.cc-compile.stderr.log",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/attempt1-fixture-classification/results/tests--graph_route_apple--blockwise_w4a8_test.cc-compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "apple/attempt1-fixture-classification/results/tests--graph_route_apple--blockwise_w4a8_test.cc-compile.stdout.log",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/attempt1-fixture-classification/results/tests--graph_route_apple--blockwise_w4a8_test.cc-compile.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "apple/attempt1-fixture-classification/results/tests--graph_route_apple--blockwise_w4a8_test.cc-identity.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/attempt1-fixture-classification/results/tests--graph_route_apple--blockwise_w4a8_test.cc-identity.json",
+      "bytes": 283604,
+      "sha256": "d83ea605ae0137a45dd1d276291a6c1268d6fee5c307d94d8093c65b92d8c1e6"
+    },
+    {
+      "entry": "apple/attempt1-fixture-classification/results/tests.xml",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/attempt1-fixture-classification/results/tests.xml",
+      "bytes": 6153,
+      "sha256": "ed16f1c2cbc0ac34f6b364c925963b7c3e303df1be84672b31abe1efb29a5642"
+    },
+    {
+      "entry": "apple/attempt1-fixture-classification/results/validation.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/attempt1-fixture-classification/results/validation.json",
+      "bytes": 1272,
+      "sha256": "f8e53f3d21e08386e2972d977a83e478cf0b0f04d3b606ee5416e77af0e7a758"
+    },
+    {
+      "entry": "apple/attempt1-fixture-classification/source-manifest.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/attempt1-fixture-classification/source-manifest.json",
+      "bytes": 11094,
+      "sha256": "5b5ad1895f33194ae0b05d2b1f6706d49f39d0275228f1492ac3b8bc7aac88a2"
+    },
+    {
+      "entry": "apple/before.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/before.json",
+      "bytes": 556,
+      "sha256": "d3b68607f747d2fcb6b69874e8f95242117fe535d1b767c5febada0178e944cb"
+    },
+    {
+      "entry": "apple/before/CMakeLists.txt",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/before/CMakeLists.txt",
+      "bytes": 6000,
+      "sha256": "61dbeef5bc449d2449de82b43153246117ff58a8e308e7ec79418519f8501529"
+    },
+    {
+      "entry": "apple/before/apple_mature_float.cc",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/before/apple_mature_float.cc",
+      "bytes": 35923,
+      "sha256": "21ac480bbe5e835b88e26bf9ba600970f0e9b7865e7ba1d4508d6e9e5b107217"
+    },
+    {
+      "entry": "apple/before/apple_operations.cc",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/before/apple_operations.cc",
+      "bytes": 22120,
+      "sha256": "f0b9546dd6400fd9c6a88e87420900265552c83e6553c97058277c3b9620034a"
+    },
+    {
+      "entry": "apple/before/tests-CMakeLists.txt",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/before/tests-CMakeLists.txt",
+      "bytes": 6199,
+      "sha256": "60ca657d45f440b0edd4552e4b89ef095a4188f02b117df22720fcd5b33e51d4"
+    },
+    {
+      "entry": "apple/build_mac.py",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/build_mac.py",
+      "bytes": 5609,
+      "sha256": "5d122f826758759b3c31a9d1efae2c269dadc67d8339f67f5a68cbd0d41d9274"
+    },
+    {
+      "entry": "apple/cleanup-readonly-inventory.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/cleanup-readonly-inventory.json",
+      "bytes": 2634,
+      "sha256": "59de78a235f3380fb7d672ac4723538eaba769bcd97a7b95820f4b7062f8d7d8"
+    },
+    {
+      "entry": "apple/collect_mac.py",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/collect_mac.py",
+      "bytes": 1984,
+      "sha256": "0dde17c0e0cbe4a96071b8e7ce60ec2febc527adede00bb557458e218c38ca4d"
+    },
+    {
+      "entry": "apple/compile-final.log",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/compile-final.log",
+      "bytes": 363,
+      "sha256": "4397ebe724e5538cd5cd297a06b42dd7358650d92b9e4fe3eca376afc1e4bc00"
+    },
+    {
+      "entry": "apple/compile.log",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/compile.log",
+      "bytes": 247,
+      "sha256": "734fbe385569756edc47af8e63d8009d85288d226039d1d811b18560a50b2195"
+    },
+    {
+      "entry": "apple/final-validation.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/final-validation.json",
+      "bytes": 2366,
+      "sha256": "15369c9cbe35bee7b13d1b4f6c9c3069769e85bb9035e7b03b3d43f1629cecc8"
+    },
+    {
+      "entry": "apple/mac/collected.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/mac/collected.json",
+      "bytes": 6439,
+      "sha256": "c43f523644c46eb67a08618853b94310759e382c48a9509203efccee9b546fe2"
+    },
+    {
+      "entry": "apple/mac/plan.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/mac/plan.json",
+      "bytes": 143703,
+      "sha256": "3f1c64635601d1aa38714f3f02e5a6e6efe95881dddf060ca19e725b2ec0dcd2"
+    },
+    {
+      "entry": "apple/mac/remote/hardware.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/mac/remote/hardware.json",
+      "bytes": 516,
+      "sha256": "137744c87ad0d26cf40a9dd2943a659663608cd6bc9fb0af412c031ff8902f62"
+    },
+    {
+      "entry": "apple/mac/remote/plan.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/mac/remote/plan.json",
+      "bytes": 141992,
+      "sha256": "c2c54814ca28b3383b2a80784efa110d12aa177aa3163645b79aeae29e629919"
+    },
+    {
+      "entry": "apple/mac/remote/results/compile-summary.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/mac/remote/results/compile-summary.json",
+      "bytes": 1079379,
+      "sha256": "0eedfcc34cc7415f58e71f9ddb5858a8791cf868d9ddcb1c504e21c432218aca"
+    },
+    {
+      "entry": "apple/mac/remote/results/link-inputs.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/mac/remote/results/link-inputs.json",
+      "bytes": 45073,
+      "sha256": "5c8a58da79061ac83f9c3fb84f6f4409a38b3243df74973594fae8f2c3508300"
+    },
+    {
+      "entry": "apple/mac/remote/results/link.command.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/mac/remote/results/link.command.json",
+      "bytes": 26381,
+      "sha256": "efc3b01636d59a3dbf07458c877fa2d1b8ae3ec805116ab591720b11abc01c50"
+    },
+    {
+      "entry": "apple/mac/remote/results/link.result.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/mac/remote/results/link.result.json",
+      "bytes": 26428,
+      "sha256": "8df416568fdb36abc7c5da5a9d199522e7ca08f991de576e6bc02cb09e58053d"
+    },
+    {
+      "entry": "apple/mac/remote/results/link.stderr.log",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/mac/remote/results/link.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "apple/mac/remote/results/link.stdout.log",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/mac/remote/results/link.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "apple/mac/remote/results/run.command.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/mac/remote/results/run.command.json",
+      "bytes": 404,
+      "sha256": "65cc580dc787f665844a17e8c00d6a002405165bd86e6dad9b3cf447fb51f1b9"
+    },
+    {
+      "entry": "apple/mac/remote/results/run.result.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/mac/remote/results/run.result.json",
+      "bytes": 450,
+      "sha256": "b0d80ed7f9f643975aeaa38697ae8d16fa413368f6e49bf0fc7b4525cc9e32e6"
+    },
+    {
+      "entry": "apple/mac/remote/results/run.stderr.log",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/mac/remote/results/run.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "apple/mac/remote/results/run.stdout.log",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/mac/remote/results/run.stdout.log",
+      "bytes": 969,
+      "sha256": "cea313704ac3abe874ecc54b445ab99703832d23c7e7268e2e0348edbd6807cc"
+    },
+    {
+      "entry": "apple/mac/remote/results/src--compute_ops--blockwise_w4a8.cc-compile.command.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/mac/remote/results/src--compute_ops--blockwise_w4a8.cc-compile.command.json",
+      "bytes": 10274,
+      "sha256": "31ea9fcceb635c2935e15434a1f21de577d7023315e5d603c0cb88200402b7c1"
+    },
+    {
+      "entry": "apple/mac/remote/results/src--compute_ops--blockwise_w4a8.cc-compile.result.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/mac/remote/results/src--compute_ops--blockwise_w4a8.cc-compile.result.json",
+      "bytes": 10321,
+      "sha256": "ab65d34f3c64bc1d5df2d2bb243c0ff9a37094af087b5c4b5a895976d6abe2a1"
+    },
+    {
+      "entry": "apple/mac/remote/results/src--compute_ops--blockwise_w4a8.cc-compile.stderr.log",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/mac/remote/results/src--compute_ops--blockwise_w4a8.cc-compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "apple/mac/remote/results/src--compute_ops--blockwise_w4a8.cc-compile.stdout.log",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/mac/remote/results/src--compute_ops--blockwise_w4a8.cc-compile.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "apple/mac/remote/results/src--compute_ops--blockwise_w4a8.cc-identity.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/mac/remote/results/src--compute_ops--blockwise_w4a8.cc-identity.json",
+      "bytes": 206316,
+      "sha256": "21665cf83cbf18d4cdaa43c920574229ce597677c9ebdb5affc39f76d0bc0f54"
+    },
+    {
+      "entry": "apple/mac/remote/results/src--compute_route_apple--apple_blockwise_w4a8.cc-compile.command.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/mac/remote/results/src--compute_route_apple--apple_blockwise_w4a8.cc-compile.command.json",
+      "bytes": 18488,
+      "sha256": "e7e221d03c117ac9d1cc4bdf6299daf6b28baa2645c6abf5f114b980a5ae9ffe"
+    },
+    {
+      "entry": "apple/mac/remote/results/src--compute_route_apple--apple_blockwise_w4a8.cc-compile.result.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/mac/remote/results/src--compute_route_apple--apple_blockwise_w4a8.cc-compile.result.json",
+      "bytes": 18534,
+      "sha256": "a161bc4a8e9a777a65839c10f392cd4f70b357a87c768bb1dfd96f36ae49f736"
+    },
+    {
+      "entry": "apple/mac/remote/results/src--compute_route_apple--apple_blockwise_w4a8.cc-compile.stderr.log",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/mac/remote/results/src--compute_route_apple--apple_blockwise_w4a8.cc-compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "apple/mac/remote/results/src--compute_route_apple--apple_blockwise_w4a8.cc-compile.stdout.log",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/mac/remote/results/src--compute_route_apple--apple_blockwise_w4a8.cc-compile.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "apple/mac/remote/results/src--compute_route_apple--apple_blockwise_w4a8.cc-identity.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/mac/remote/results/src--compute_route_apple--apple_blockwise_w4a8.cc-identity.json",
+      "bytes": 251571,
+      "sha256": "4302da6941f9e6bbacecd9040fc92a6432afadc7b2694128c14cafb22a956845"
+    },
+    {
+      "entry": "apple/mac/remote/results/src--compute_route_apple--apple_mature_float.cc-compile.command.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/mac/remote/results/src--compute_route_apple--apple_mature_float.cc-compile.command.json",
+      "bytes": 18482,
+      "sha256": "d901ee7e4a249d7a3721f7b82c0c9a9132136b315ed75dfe02b726cc2452558a"
+    },
+    {
+      "entry": "apple/mac/remote/results/src--compute_route_apple--apple_mature_float.cc-compile.result.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/mac/remote/results/src--compute_route_apple--apple_mature_float.cc-compile.result.json",
+      "bytes": 18528,
+      "sha256": "a7bda975c694d7993e744890d5ed5ea4340d0438ae174d363393e938965ccbfe"
+    },
+    {
+      "entry": "apple/mac/remote/results/src--compute_route_apple--apple_mature_float.cc-compile.stderr.log",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/mac/remote/results/src--compute_route_apple--apple_mature_float.cc-compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "apple/mac/remote/results/src--compute_route_apple--apple_mature_float.cc-compile.stdout.log",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/mac/remote/results/src--compute_route_apple--apple_mature_float.cc-compile.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "apple/mac/remote/results/src--compute_route_apple--apple_mature_float.cc-identity.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/mac/remote/results/src--compute_route_apple--apple_mature_float.cc-identity.json",
+      "bytes": 254410,
+      "sha256": "6a55e9bfadbd7942da92fc3bdad16a0b9e5a264522d430a0b8bdf52ab5f5447b"
+    },
+    {
+      "entry": "apple/mac/remote/results/tests--graph_route_apple--blockwise_w4a8_test.cc-compile.command.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/mac/remote/results/tests--graph_route_apple--blockwise_w4a8_test.cc-compile.command.json",
+      "bytes": 22505,
+      "sha256": "184a38013c6f27f0ab664143398daa8d6a2303fcbc785ca4d91a6704025af8ab"
+    },
+    {
+      "entry": "apple/mac/remote/results/tests--graph_route_apple--blockwise_w4a8_test.cc-compile.result.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/mac/remote/results/tests--graph_route_apple--blockwise_w4a8_test.cc-compile.result.json",
+      "bytes": 22551,
+      "sha256": "6502bbe2c6a3e91a08c71c7cce9e5241f4b57c301200a9f84357aca9a3247b2e"
+    },
+    {
+      "entry": "apple/mac/remote/results/tests--graph_route_apple--blockwise_w4a8_test.cc-compile.stderr.log",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/mac/remote/results/tests--graph_route_apple--blockwise_w4a8_test.cc-compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "apple/mac/remote/results/tests--graph_route_apple--blockwise_w4a8_test.cc-compile.stdout.log",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/mac/remote/results/tests--graph_route_apple--blockwise_w4a8_test.cc-compile.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "apple/mac/remote/results/tests--graph_route_apple--blockwise_w4a8_test.cc-identity.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/mac/remote/results/tests--graph_route_apple--blockwise_w4a8_test.cc-identity.json",
+      "bytes": 283604,
+      "sha256": "4899e12ee69cc519d2ade1a231713cd12cd735d43575e72f80bfee33fd4c7326"
+    },
+    {
+      "entry": "apple/mac/remote/results/tests.xml",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/mac/remote/results/tests.xml",
+      "bytes": 1500,
+      "sha256": "24a6a1e88a671c5aa3169e990fae3393deff0425b13c78bd88b14b2faf12e6be"
+    },
+    {
+      "entry": "apple/mac/remote/results/validation.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/mac/remote/results/validation.json",
+      "bytes": 812,
+      "sha256": "2b05ef7b150f386b63fc8bb212dd7278ec4bc2abd8723eeb3de168c2f91f89b9"
+    },
+    {
+      "entry": "apple/mac/remote/runtime-identity.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/mac/remote/runtime-identity.json",
+      "bytes": 262,
+      "sha256": "5f3bc7bf88a958af3a82f4410c63a8d3fc54a4205273f06dcb6af4babdd4e3e5"
+    },
+    {
+      "entry": "apple/mac/remote/source-manifest.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/mac/remote/source-manifest.json",
+      "bytes": 11094,
+      "sha256": "4dad43963e4d34ba0e980a7e6a82bf566a3dea480fba77c7d6990a5f16973f74"
+    },
+    {
+      "entry": "apple/mac/source-manifest.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/mac/source-manifest.json",
+      "bytes": 11441,
+      "sha256": "d9de6d1bdeacab6bf6b2a90be147d4ee29369330a4e9f6eda704503ed418048a"
+    },
+    {
+      "entry": "apple/mac/sync.command.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/mac/sync.command.json",
+      "bytes": 1955,
+      "sha256": "af28f20fccc2588fa3b2685f72369e2b0fa491de29198b954396422c401edf40"
+    },
+    {
+      "entry": "apple/mac/sync.result.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/mac/sync.result.json",
+      "bytes": 19,
+      "sha256": "3bed2591497b89b762fbdeca5fc4da005cc8cb3bdede1fcb6de0d5e2c45f98d3"
+    },
+    {
+      "entry": "apple/mac/sync.stderr.log",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/mac/sync.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "apple/mac/sync.stdout.log",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/mac/sync.stdout.log",
+      "bytes": 719,
+      "sha256": "ee33431e82a9bae7c4912f06b1583726617a5d2973b20f01a78cc8f91c741279"
+    },
+    {
+      "entry": "apple/prepare_mac.py",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/prepare_mac.py",
+      "bytes": 5841,
+      "sha256": "dca89055a59b8474750a1f4d015aa278120dfa8ea6478e4461e9084623a0c2f3"
+    },
+    {
+      "entry": "apple/remote-final-audit.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/remote-final-audit.json",
+      "bytes": 421,
+      "sha256": "c68d19d1fd4e40e442b2d35412d1ea8eaef758a219e9319b2a1975a15cf802d9"
+    },
+    {
+      "entry": "apple/review-common.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/review-common.json",
+      "bytes": 3510,
+      "sha256": "f73051c2a916e8b090eb9964337723b7974fb58989668f1127f92908687038cc"
+    },
+    {
+      "entry": "apple/run-final.log",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/run-final.log",
+      "bytes": 57,
+      "sha256": "3337f9b7fa244282ff6854c18a0dc9c8ec43bd5a229ac71e474cde0711f1d84e"
+    },
+    {
+      "entry": "apple/run-first.log",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/run-first.log",
+      "bytes": 57,
+      "sha256": "eb0fd8a5c47a91ffe301dca377ab53331f94de19083c3a662f505283b6f8c913"
+    },
+    {
+      "entry": "apple/source-freeze.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/source-freeze.json",
+      "bytes": 2242,
+      "sha256": "1b6575bde0331c8295cdd121b4f8b4c04ecadd2b13ff86bed600062d3bf68d14"
+    },
+    {
+      "entry": "apple/source.diff",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/source.diff",
+      "bytes": 18220,
+      "sha256": "0866f45d6c591996d7ecf1be831696dbe156391452ee1c7c4d56378a2ac8f440"
+    },
+    {
+      "entry": "apple/sync-final.log",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/sync-final.log",
+      "bytes": 723,
+      "sha256": "cab0fd0f4068b8a2d68bae8e2133193e24ad337a837684827c20bdb6e6cc72e2"
+    },
+    {
+      "entry": "apple/sync.log",
+      "path": ".scratch/architecture-refactor-2026-10-18/blockwise-w4a8/apple/sync.log",
+      "bytes": 723,
+      "sha256": "67f34e18b00ee16d80bcde90a1547c5110b8c46fb0aedcfbd3cce6e8d09f6901"
+    },
+    {
+      "entry": "root/build_cpu.py",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/root/build_cpu.py",
+      "bytes": 3745,
+      "sha256": "9517997d9c89895080234e96acd6ac1524ff32537992d0f505856add0ea41927"
+    },
+    {
+      "entry": "root/package.py",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/root/package.py",
+      "bytes": 11447,
+      "sha256": "37f51ec4c7a8f970b61fbd6aeb6e2266f6940d8cafc998ad9c62e45b76d930c0"
+    },
+    {
+      "entry": "root/prepare_tests.py",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/root/prepare_tests.py",
+      "bytes": 6820,
+      "sha256": "f04d041125c9d8beefc383e59d6b0e0d75cbf35cba72ab3100600112751e9003"
+    },
+    {
+      "entry": "root/run_windows.py",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/root/run_windows.py",
+      "bytes": 2015,
+      "sha256": "f53ce0f4fcb120dcddf8064c71afd9a86730c22550d34d3649699d249d647ee1"
+    },
+    {
+      "entry": "source/include/hyle/compute/model_ops.h",
+      "path": "include/hyle/compute/model_ops.h",
+      "bytes": 73352,
+      "sha256": "de8070c76e074b1c37d022f59ed98b2afef1c10dbced6c24d3c0aa696eafd6e6"
+    },
+    {
+      "entry": "source/src/compute_ops/CMakeLists.txt",
+      "path": "src/compute_ops/CMakeLists.txt",
+      "bytes": 705,
+      "sha256": "541e663702d14ee649b61741ad00adb4e015bf6b786500cd7815161ef64d8252"
+    },
+    {
+      "entry": "source/src/compute_ops/blockwise_w4a8.cc",
+      "path": "src/compute_ops/blockwise_w4a8.cc",
+      "bytes": 2999,
+      "sha256": "3003b41ed9fb46901235f6c4ce5eab681df6d0326895ca98b408a7fb6d6c4c91"
+    },
+    {
+      "entry": "source/src/compute_provider_cuda/CMakeLists.txt",
+      "path": "src/compute_provider_cuda/CMakeLists.txt",
+      "bytes": 6628,
+      "sha256": "2a5890fc9de9874640cb1370f3f8fc7d1a3bfa5411c45c9392919ab31de6337a"
+    },
+    {
+      "entry": "source/src/compute_provider_cuda/blockwise_w4a8_kernel.cu",
+      "path": "src/compute_provider_cuda/blockwise_w4a8_kernel.cu",
+      "bytes": 7689,
+      "sha256": "93abdca3cee06612294fbaa59118aa00bcaccada3c5e7961eebea710411e0515"
+    },
+    {
+      "entry": "source/src/compute_provider_cuda/blockwise_w4a8_kernel.h",
+      "path": "src/compute_provider_cuda/blockwise_w4a8_kernel.h",
+      "bytes": 669,
+      "sha256": "28af571fac71af60de2f19860af189ee54536aea0dd93b7de513e54f1f238282"
+    },
+    {
+      "entry": "source/src/compute_provider_cuda/blockwise_w4a8_provider.cc",
+      "path": "src/compute_provider_cuda/blockwise_w4a8_provider.cc",
+      "bytes": 9381,
+      "sha256": "b0dfb7762949aebcbd7135c6c533212724dda3d23103e05657fe2e08ab5542a5"
+    },
+    {
+      "entry": "source/src/compute_provider_cuda/blockwise_w4a8_provider.h",
+      "path": "src/compute_provider_cuda/blockwise_w4a8_provider.h",
+      "bytes": 624,
+      "sha256": "2b1e40ccbfb473033917480d9d5636a3edc6f9faea0cd07a2cab0ba96310d75e"
+    },
+    {
+      "entry": "source/src/compute_provider_cuda/cuda_provider.cc",
+      "path": "src/compute_provider_cuda/cuda_provider.cc",
+      "bytes": 21752,
+      "sha256": "9f333dacfe1d57d6df5ccd380df10133985878b3c882453b99a6f683ce5a7845"
+    },
+    {
+      "entry": "source/src/compute_provider_native/CMakeLists.txt",
+      "path": "src/compute_provider_native/CMakeLists.txt",
+      "bytes": 4861,
+      "sha256": "ebddd061fc975feb8411ec6f9238042e87108db9916103dad79cab4c686da64e"
+    },
+    {
+      "entry": "source/src/compute_provider_native/blockwise_w4a8.cc",
+      "path": "src/compute_provider_native/blockwise_w4a8.cc",
+      "bytes": 11188,
+      "sha256": "d0393cd14a6a470feabf0bd9326dfb3221d10f3ad15c248e0432b24b56e2b30d"
+    },
+    {
+      "entry": "source/src/compute_provider_native/native_plan.h",
+      "path": "src/compute_provider_native/native_plan.h",
+      "bytes": 10966,
+      "sha256": "dd9b7d8254cac0d9357bb29f0164803c330c8f8b5c87be0718415ee9066486ef"
+    },
+    {
+      "entry": "source/src/compute_provider_native/native_provider.cc",
+      "path": "src/compute_provider_native/native_provider.cc",
+      "bytes": 40915,
+      "sha256": "5e52894af3a1e1325a4b4a84b9ef44b89a89c327912b76b2d764f605b71d233d"
+    },
+    {
+      "entry": "source/src/compute_route_apple/CMakeLists.txt",
+      "path": "src/compute_route_apple/CMakeLists.txt",
+      "bytes": 6024,
+      "sha256": "e132a88f2312a0863fda459824c13f12dba8a68fdc7816ec5769a48dd24cb101"
+    },
+    {
+      "entry": "source/src/compute_route_apple/apple_blockwise_w4a8.cc",
+      "path": "src/compute_route_apple/apple_blockwise_w4a8.cc",
+      "bytes": 11061,
+      "sha256": "0bbd73e2714cdca3d5a8c07726677eae344a0e265d3b755845c183ac8b13a65a"
+    },
+    {
+      "entry": "source/src/compute_route_apple/apple_blockwise_w4a8.h",
+      "path": "src/compute_route_apple/apple_blockwise_w4a8.h",
+      "bytes": 329,
+      "sha256": "c8bc5fdfbc414e5327039243bd0a02a3136dd84620ed837e7e983a15f2b70a4f"
+    },
+    {
+      "entry": "source/src/compute_route_apple/apple_mature_float.cc",
+      "path": "src/compute_route_apple/apple_mature_float.cc",
+      "bytes": 36362,
+      "sha256": "2abf83d7c7476a9ff1f1ff0f9f47a0eb48e7d978aef457729751f382b7b6cf9a"
+    },
+    {
+      "entry": "source/src/compute_route_vulkan/CMakeLists.txt",
+      "path": "src/compute_route_vulkan/CMakeLists.txt",
+      "bytes": 3250,
+      "sha256": "4210fd65dc1d3410057a0e56246e3dab8e5faaeda0b39f466fc0f678f79d7c3a"
+    },
+    {
+      "entry": "source/src/compute_route_vulkan/build_shaders.py",
+      "path": "src/compute_route_vulkan/build_shaders.py",
+      "bytes": 7843,
+      "sha256": "3b58a38a42705201f3460c58817e7934b0db81304b32c1448bbc5b75364154e3"
+    },
+    {
+      "entry": "source/src/compute_route_vulkan/shaders/blockwise_w4a8.comp",
+      "path": "src/compute_route_vulkan/shaders/blockwise_w4a8.comp",
+      "bytes": 5994,
+      "sha256": "100bd33f5a3c8b6db14b4c9b6302a75f2d552f9be4aff2f4ee7036da0855fe95"
+    },
+    {
+      "entry": "source/src/compute_route_vulkan/vulkan_blockwise_w4a8.cc",
+      "path": "src/compute_route_vulkan/vulkan_blockwise_w4a8.cc",
+      "bytes": 6193,
+      "sha256": "74e4a41eb0accad71f73b9bc9c089c31edfb376a3a526a4e1371f4e184f0a2a0"
+    },
+    {
+      "entry": "source/src/compute_route_vulkan/vulkan_operations.cc",
+      "path": "src/compute_route_vulkan/vulkan_operations.cc",
+      "bytes": 5903,
+      "sha256": "da273c09f75778929f68970a5c3e41723f3092d63b301fa093e986cbefeb738b"
+    },
+    {
+      "entry": "source/src/compute_route_vulkan/vulkan_tensor.h",
+      "path": "src/compute_route_vulkan/vulkan_tensor.h",
+      "bytes": 1838,
+      "sha256": "061204ab279632cc577c44bebb794090d847948fb772a2e71d5f11bd71d2a8cd"
+    },
+    {
+      "entry": "source/src/compute_shader_shared/ct_packed.h",
+      "path": "src/compute_shader_shared/ct_packed.h",
+      "bytes": 2374,
+      "sha256": "33a6001ae830c9649e5ab15ee2b6335456438b41486cf7965ce3e9bcc55d5459"
+    },
+    {
+      "entry": "source/src/compute_shader_shared/nvfp4_f32.h",
+      "path": "src/compute_shader_shared/nvfp4_f32.h",
+      "bytes": 4845,
+      "sha256": "bcb1534ec5072993166944e8a6085a10078a61ec85fe2d88fc1e7dd659822c43"
+    },
+    {
+      "entry": "source/tests/compute_models/blockwise_w4a8_fixture.h",
+      "path": "tests/compute_models/blockwise_w4a8_fixture.h",
+      "bytes": 17350,
+      "sha256": "bb0e5d6a6c2581e19bf81a55b895ba0d7ed611b3f90281243095e6620c4427ac"
+    },
+    {
+      "entry": "source/tests/compute_models/nvfp4_reference_fixture.h",
+      "path": "tests/compute_models/nvfp4_reference_fixture.h",
+      "bytes": 22482,
+      "sha256": "cc94ec1f443511722ff4fc227b065af27b82573443735250951cdce934faa4d3"
+    },
+    {
+      "entry": "source/tests/graph_route_apple/CMakeLists.txt",
+      "path": "tests/graph_route_apple/CMakeLists.txt",
+      "bytes": 6222,
+      "sha256": "bce04c30740096061112da7e59379150c132b23eb7869a322875cf3f9854dd1f"
+    },
+    {
+      "entry": "source/tests/graph_route_apple/blockwise_w4a8_test.cc",
+      "path": "tests/graph_route_apple/blockwise_w4a8_test.cc",
+      "bytes": 1925,
+      "sha256": "56ec97c18b9d02fd240aaf81782b13bbea696381a9e66dcd406256e53084fa28"
+    },
+    {
+      "entry": "source/tests/graph_route_cpu/CMakeLists.txt",
+      "path": "tests/graph_route_cpu/CMakeLists.txt",
+      "bytes": 3371,
+      "sha256": "94515958c7b60af404efbca57e5dd141546b14cdc4bf75afcb124dfc2e792242"
+    },
+    {
+      "entry": "source/tests/graph_route_cpu/blockwise_w4a8_test.cc",
+      "path": "tests/graph_route_cpu/blockwise_w4a8_test.cc",
+      "bytes": 6150,
+      "sha256": "e80d9d116bf3cae4c1540b2a9b5e38bfd08f8754964f4cb3a083ddd31681cb1d"
+    },
+    {
+      "entry": "source/tests/graph_route_cuda/CMakeLists.txt",
+      "path": "tests/graph_route_cuda/CMakeLists.txt",
+      "bytes": 2490,
+      "sha256": "d4368a6caf8e3a266fbe17791f21a2af1a671d3ed6c4a65e130c60733020c21a"
+    },
+    {
+      "entry": "source/tests/graph_route_cuda/blockwise_w4a8_test.cc",
+      "path": "tests/graph_route_cuda/blockwise_w4a8_test.cc",
+      "bytes": 2047,
+      "sha256": "be8e9134e95f74bb3a2c55f17fbc2670facb487abefa20ee1043fdf164065c67"
+    },
+    {
+      "entry": "source/tests/graph_route_vulkan/CMakeLists.txt",
+      "path": "tests/graph_route_vulkan/CMakeLists.txt",
+      "bytes": 5672,
+      "sha256": "241d57382ebb77024fe432ab31c270c36ad0c2f1b05abd7790c7813eebd2181f"
+    },
+    {
+      "entry": "source/tests/graph_route_vulkan/blockwise_w4a8_test.cc",
+      "path": "tests/graph_route_vulkan/blockwise_w4a8_test.cc",
+      "bytes": 3962,
+      "sha256": "a7f641ced5f485eef7fb31c5ec0719c9b1b6bfbaac55478f77d319d66d06cb75"
+    },
+    {
+      "entry": "windows/cpu/attempt1/kernel/compile.command.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/attempt1/kernel/compile.command.json",
+      "bytes": 2959,
+      "sha256": "7d032601deda7c052da6e7719e5172508aa92a48efc152a6f53a224568da0e0b"
+    },
+    {
+      "entry": "windows/cpu/attempt1/kernel/compile.result.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/attempt1/kernel/compile.result.json",
+      "bytes": 3026,
+      "sha256": "3eca6d8ed8d048a1b398d4878324a76a200b09e263b9fb8e4a981da3d3ceb36b"
+    },
+    {
+      "entry": "windows/cpu/attempt1/kernel/compile.stderr.log",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/attempt1/kernel/compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "windows/cpu/attempt1/kernel/compile.stdout.log",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/attempt1/kernel/compile.stdout.log",
+      "bytes": 19,
+      "sha256": "4669d71b51ec6a36e8829b96b95268e851bab774c937fcdc49f4683aaa220515"
+    },
+    {
+      "entry": "windows/cpu/attempt1/kernel/identity.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/attempt1/kernel/identity.json",
+      "bytes": 40744,
+      "sha256": "03afb72d6dbc0203386df98aaf585b628d5eb109f8fdca8c1f6f6a941b51d8db"
+    },
+    {
+      "entry": "windows/cpu/attempt1/kernel/kernel-deps.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/attempt1/kernel/kernel-deps.json",
+      "bytes": 17500,
+      "sha256": "be5a2b6426cede667014d343a42e13433acea801e19abb18d3422eef9303be93"
+    },
+    {
+      "entry": "windows/cpu/attempt1/kernel/live.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/attempt1/kernel/live.json",
+      "bytes": 3026,
+      "sha256": "3eca6d8ed8d048a1b398d4878324a76a200b09e263b9fb8e4a981da3d3ceb36b"
+    },
+    {
+      "entry": "windows/cpu/attempt1/kernel/plan.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/attempt1/kernel/plan.json",
+      "bytes": 3657,
+      "sha256": "db4e2bac7205f7b54e5a1868ec4fbee57de2b57960b9f3a4e5232eeaf8a881ac"
+    },
+    {
+      "entry": "windows/cpu/attempt1/native-provider/compile.command.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/attempt1/native-provider/compile.command.json",
+      "bytes": 3014,
+      "sha256": "3fb4f29bd24181191858c9e5ade20acda6ceb0b6648b95e27cc63880ed324366"
+    },
+    {
+      "entry": "windows/cpu/attempt1/native-provider/compile.result.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/attempt1/native-provider/compile.result.json",
+      "bytes": 3083,
+      "sha256": "91f5e4a30107a6ca4570ab98e2b4785c13b4f3b06e473e6d99ecb0bf14e5e2c1"
+    },
+    {
+      "entry": "windows/cpu/attempt1/native-provider/compile.stderr.log",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/attempt1/native-provider/compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "windows/cpu/attempt1/native-provider/compile.stdout.log",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/attempt1/native-provider/compile.stdout.log",
+      "bytes": 20,
+      "sha256": "7b6d1674bdf9f120075bc110f707c21e4ef5a8954718aa6a8d393b3ada2be4f6"
+    },
+    {
+      "entry": "windows/cpu/attempt1/native-provider/identity.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/attempt1/native-provider/identity.json",
+      "bytes": 44570,
+      "sha256": "12ebe95621d3d62f0290f14869701834595345a309c8bc10f7468a5a7183a8af"
+    },
+    {
+      "entry": "windows/cpu/attempt1/native-provider/live.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/attempt1/native-provider/live.json",
+      "bytes": 3083,
+      "sha256": "91f5e4a30107a6ca4570ab98e2b4785c13b4f3b06e473e6d99ecb0bf14e5e2c1"
+    },
+    {
+      "entry": "windows/cpu/attempt1/native-provider/native-provider-deps.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/attempt1/native-provider/native-provider-deps.json",
+      "bytes": 19064,
+      "sha256": "6dfb2bfcfd7699ed5e7d1646005f5faf852f1a52b8882f5ea357ec209f2aa41d"
+    },
+    {
+      "entry": "windows/cpu/attempt1/native-provider/plan.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/attempt1/native-provider/plan.json",
+      "bytes": 3794,
+      "sha256": "847160ddc00aec5ea36c929d3d8e709d8c850ce50e044ebfd3080ad8b8092c79"
+    },
+    {
+      "entry": "windows/cpu/attempt1/schema/compile.command.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/attempt1/schema/compile.command.json",
+      "bytes": 2172,
+      "sha256": "d8411db0f89255f04b857d4005a285a6ccb642084a32a6c6a4464ba5b75a4fac"
+    },
+    {
+      "entry": "windows/cpu/attempt1/schema/compile.result.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/attempt1/schema/compile.result.json",
+      "bytes": 2241,
+      "sha256": "7d5426eea14dc5e7e2dfd754f06b33a8177f968f0920020e508d17d15822ad78"
+    },
+    {
+      "entry": "windows/cpu/attempt1/schema/compile.stderr.log",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/attempt1/schema/compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "windows/cpu/attempt1/schema/compile.stdout.log",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/attempt1/schema/compile.stdout.log",
+      "bytes": 19,
+      "sha256": "4669d71b51ec6a36e8829b96b95268e851bab774c937fcdc49f4683aaa220515"
+    },
+    {
+      "entry": "windows/cpu/attempt1/schema/identity.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/attempt1/schema/identity.json",
+      "bytes": 35174,
+      "sha256": "0b0feae9c410cd655390eea621c5eca91f80e617119bcae6fbcd752c7e103796"
+    },
+    {
+      "entry": "windows/cpu/attempt1/schema/live.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/attempt1/schema/live.json",
+      "bytes": 2241,
+      "sha256": "7d5426eea14dc5e7e2dfd754f06b33a8177f968f0920020e508d17d15822ad78"
+    },
+    {
+      "entry": "windows/cpu/attempt1/schema/plan.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/attempt1/schema/plan.json",
+      "bytes": 2873,
+      "sha256": "6da9922c5a2948064081f94a82eea16eefd4cff826317efd42e8f22513e6753c"
+    },
+    {
+      "entry": "windows/cpu/attempt1/schema/schema-deps.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/attempt1/schema/schema-deps.json",
+      "bytes": 15543,
+      "sha256": "2e6ccbd2e678b6bd6874266dabac981e7538aaab74d6cec3acac4c1ccd3e54bb"
+    },
+    {
+      "entry": "windows/cpu/attempt1/test/compile.command.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/attempt1/test/compile.command.json",
+      "bytes": 2241,
+      "sha256": "a3abff5227649864fcfe033ff20382596490c6028fd533d5876d9c90cbe01dda"
+    },
+    {
+      "entry": "windows/cpu/attempt1/test/compile.result.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/attempt1/test/compile.result.json",
+      "bytes": 2310,
+      "sha256": "d51631592e417e5ab9787a0e12ebeae53e78bf1b60fae03b1b4c35d80e9924a7"
+    },
+    {
+      "entry": "windows/cpu/attempt1/test/compile.stderr.log",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/attempt1/test/compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "windows/cpu/attempt1/test/compile.stdout.log",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/attempt1/test/compile.stdout.log",
+      "bytes": 452,
+      "sha256": "00b4adcc1efb94fa3cab7b8026862588b8b9a6d3e2ab4ae2931879178a6d0470"
+    },
+    {
+      "entry": "windows/cpu/attempt1/test/live.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/attempt1/test/live.json",
+      "bytes": 2310,
+      "sha256": "d51631592e417e5ab9787a0e12ebeae53e78bf1b60fae03b1b4c35d80e9924a7"
+    },
+    {
+      "entry": "windows/cpu/attempt1/test/plan.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/attempt1/test/plan.json",
+      "bytes": 2936,
+      "sha256": "4a46a03fa73b197a1b7cb7f6d13f6fa787a334fe24c0958b3ff176a3a2109e2a"
+    },
+    {
+      "entry": "windows/cpu/attempt1/test/test-deps.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/attempt1/test/test-deps.json",
+      "bytes": 29983,
+      "sha256": "cfcda9dd3f653aae7fecf1fd2457dbfd7557f9ec215ede1c83b4e6a51376298d"
+    },
+    {
+      "entry": "windows/cpu/attempt2/image.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/attempt2/image.json",
+      "bytes": 268,
+      "sha256": "6c8ccd854b7dc6f02e7109efef649718573a0148ba0c59528c467172ad2ba8da"
+    },
+    {
+      "entry": "windows/cpu/attempt2/link-plan.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/attempt2/link-plan.json",
+      "bytes": 263099,
+      "sha256": "3b77ab99a4c0bbff31b8f70ae18da89c75848aabe6f7c87e91143179fdfaccb7"
+    },
+    {
+      "entry": "windows/cpu/attempt2/link.command.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/attempt2/link.command.json",
+      "bytes": 22044,
+      "sha256": "e0a08f66970a69f0d5935dbf624d6b0340b4252c9be4fa03f449577cb426cb13"
+    },
+    {
+      "entry": "windows/cpu/attempt2/link.result.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/attempt2/link.result.json",
+      "bytes": 22115,
+      "sha256": "700d8e093d5971b2f72297e0b50b88b4299d87e3b5cfaf44419984ac64a43085"
+    },
+    {
+      "entry": "windows/cpu/attempt2/link.stderr.log",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/attempt2/link.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "windows/cpu/attempt2/link.stdout.log",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/attempt2/link.stdout.log",
+      "bytes": 304,
+      "sha256": "b35d2572b5730ed88972da4c834a9815a87b0547e1bee4d880d31964f0cf2510"
+    },
+    {
+      "entry": "windows/cpu/attempt2/live.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/attempt2/live.json",
+      "bytes": 22115,
+      "sha256": "700d8e093d5971b2f72297e0b50b88b4299d87e3b5cfaf44419984ac64a43085"
+    },
+    {
+      "entry": "windows/cpu/attempt2/runtime-environment.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/attempt2/runtime-environment.json",
+      "bytes": 8168,
+      "sha256": "0d6c2a4b1a37637f38e620d06cdf1c16aa9e603fea74bbb2c4ef57aa8c532b17"
+    },
+    {
+      "entry": "windows/cpu/attempt2/test/compile.command.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/attempt2/test/compile.command.json",
+      "bytes": 2240,
+      "sha256": "8724a16d9597675725fcc559cabe677637a95f9ee3d684a5af784203996e4e04"
+    },
+    {
+      "entry": "windows/cpu/attempt2/test/compile.result.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/attempt2/test/compile.result.json",
+      "bytes": 2310,
+      "sha256": "afef393fccdf4ccee1673e78e13804cd14ccc665e3f36b6ba7af33bcff22336b"
+    },
+    {
+      "entry": "windows/cpu/attempt2/test/compile.stderr.log",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/attempt2/test/compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "windows/cpu/attempt2/test/compile.stdout.log",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/attempt2/test/compile.stdout.log",
+      "bytes": 24,
+      "sha256": "60cf5acb9df698821842769200fe9c273bf98c46c6fc4fe23cac1f933ca83893"
+    },
+    {
+      "entry": "windows/cpu/attempt2/test/identity.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/attempt2/test/identity.json",
+      "bytes": 64256,
+      "sha256": "6b350d3858e86e2557264dc500d556ae9056d5577ca84a5a1b49b0cadb761dad"
+    },
+    {
+      "entry": "windows/cpu/attempt2/test/live.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/attempt2/test/live.json",
+      "bytes": 2310,
+      "sha256": "afef393fccdf4ccee1673e78e13804cd14ccc665e3f36b6ba7af33bcff22336b"
+    },
+    {
+      "entry": "windows/cpu/attempt2/test/plan.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/attempt2/test/plan.json",
+      "bytes": 2936,
+      "sha256": "dfa367680357451e1c96b28a0ca617ceb064137c632d994d1ae670fb3bc09f25"
+    },
+    {
+      "entry": "windows/cpu/attempt2/test/test-deps.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/attempt2/test/test-deps.json",
+      "bytes": 29983,
+      "sha256": "cfcda9dd3f653aae7fecf1fd2457dbfd7557f9ec215ede1c83b4e6a51376298d"
+    },
+    {
+      "entry": "windows/cpu/attempt3/image.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/attempt3/image.json",
+      "bytes": 268,
+      "sha256": "5d63a7b3e758fe7c66acf2fd781adc1e72663dde1f22f54ade50b7869173f411"
+    },
+    {
+      "entry": "windows/cpu/attempt3/link-plan.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/attempt3/link-plan.json",
+      "bytes": 263099,
+      "sha256": "04b9a20f72293cd8fbee6c0c8f1c2bd1530f5dd7335e791880d0cf74270e040d"
+    },
+    {
+      "entry": "windows/cpu/attempt3/link.command.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/attempt3/link.command.json",
+      "bytes": 22044,
+      "sha256": "a4b23b5ed3721b21d672ca5ebc2c05e918849f47d3300090aebfd7013a5c3522"
+    },
+    {
+      "entry": "windows/cpu/attempt3/link.result.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/attempt3/link.result.json",
+      "bytes": 22114,
+      "sha256": "836a3466db011c08ecf4fbd0c44d625b2632c050fe7a711d8c648c4105050441"
+    },
+    {
+      "entry": "windows/cpu/attempt3/link.stderr.log",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/attempt3/link.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "windows/cpu/attempt3/link.stdout.log",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/attempt3/link.stdout.log",
+      "bytes": 304,
+      "sha256": "5397932674fa9d19d3499f26621c203ed7a82b576ac7e30aba1a635c81002e03"
+    },
+    {
+      "entry": "windows/cpu/attempt3/live.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/attempt3/live.json",
+      "bytes": 22114,
+      "sha256": "836a3466db011c08ecf4fbd0c44d625b2632c050fe7a711d8c648c4105050441"
+    },
+    {
+      "entry": "windows/cpu/attempt3/runtime-environment.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/attempt3/runtime-environment.json",
+      "bytes": 8168,
+      "sha256": "0d6c2a4b1a37637f38e620d06cdf1c16aa9e603fea74bbb2c4ef57aa8c532b17"
+    },
+    {
+      "entry": "windows/cpu/attempt3/test/compile.command.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/attempt3/test/compile.command.json",
+      "bytes": 2241,
+      "sha256": "d2942d115f1213e52a124a5740ceeb704d760d90578a75bb76866baa6b4188d9"
+    },
+    {
+      "entry": "windows/cpu/attempt3/test/compile.result.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/attempt3/test/compile.result.json",
+      "bytes": 2311,
+      "sha256": "0446013eb88fd7b6f0727eaece227518d370c26de1b04131fab8ff0604e65527"
+    },
+    {
+      "entry": "windows/cpu/attempt3/test/compile.stderr.log",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/attempt3/test/compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "windows/cpu/attempt3/test/compile.stdout.log",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/attempt3/test/compile.stdout.log",
+      "bytes": 24,
+      "sha256": "60cf5acb9df698821842769200fe9c273bf98c46c6fc4fe23cac1f933ca83893"
+    },
+    {
+      "entry": "windows/cpu/attempt3/test/identity.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/attempt3/test/identity.json",
+      "bytes": 64256,
+      "sha256": "12e43a10971ba095735c122a9b1098b9e7a05e35bc3efa93d4875db5c038c74a"
+    },
+    {
+      "entry": "windows/cpu/attempt3/test/live.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/attempt3/test/live.json",
+      "bytes": 2311,
+      "sha256": "0446013eb88fd7b6f0727eaece227518d370c26de1b04131fab8ff0604e65527"
+    },
+    {
+      "entry": "windows/cpu/attempt3/test/plan.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/attempt3/test/plan.json",
+      "bytes": 2936,
+      "sha256": "c48eb0f13ea2eb509aff0b6bfcb17b02183e56038bc09709003b017bfe1c51f1"
+    },
+    {
+      "entry": "windows/cpu/attempt3/test/test-deps.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/attempt3/test/test-deps.json",
+      "bytes": 29983,
+      "sha256": "cfcda9dd3f653aae7fecf1fd2457dbfd7557f9ec215ede1c83b4e6a51376298d"
+    },
+    {
+      "entry": "windows/cpu/attempt4/image.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/attempt4/image.json",
+      "bytes": 268,
+      "sha256": "bc4bd06be25c237100a7afab4e2d2d8a1245938db14a624a9e03d50ea27b827b"
+    },
+    {
+      "entry": "windows/cpu/attempt4/link-plan.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/attempt4/link-plan.json",
+      "bytes": 263099,
+      "sha256": "348ae978d9c199851f9a7e015836c1cc9873d534b6bc977790cc8488fbc09128"
+    },
+    {
+      "entry": "windows/cpu/attempt4/link.command.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/attempt4/link.command.json",
+      "bytes": 22044,
+      "sha256": "b15ace220bb5054839c3bd002c155e2aaf4ad5bc3668628fa274214bc73850f4"
+    },
+    {
+      "entry": "windows/cpu/attempt4/link.result.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/attempt4/link.result.json",
+      "bytes": 22114,
+      "sha256": "8ff9c5207815e146c78c3c6a6b4a4f2ed9c1d16529e64eb7988bd36854a99427"
+    },
+    {
+      "entry": "windows/cpu/attempt4/link.stderr.log",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/attempt4/link.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "windows/cpu/attempt4/link.stdout.log",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/attempt4/link.stdout.log",
+      "bytes": 304,
+      "sha256": "283afd6941377b0fa5aaaca64a345238910729a21e8d5189ee0fbfb39522c552"
+    },
+    {
+      "entry": "windows/cpu/attempt4/live.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/attempt4/live.json",
+      "bytes": 22114,
+      "sha256": "8ff9c5207815e146c78c3c6a6b4a4f2ed9c1d16529e64eb7988bd36854a99427"
+    },
+    {
+      "entry": "windows/cpu/attempt4/runtime-environment.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/attempt4/runtime-environment.json",
+      "bytes": 8168,
+      "sha256": "0d6c2a4b1a37637f38e620d06cdf1c16aa9e603fea74bbb2c4ef57aa8c532b17"
+    },
+    {
+      "entry": "windows/cpu/attempt4/test/compile.command.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/attempt4/test/compile.command.json",
+      "bytes": 2241,
+      "sha256": "a1e26899ecd6c268e181d9f53693cb71dfc4f361a7e9b95a98bbf0fb92288ed9"
+    },
+    {
+      "entry": "windows/cpu/attempt4/test/compile.result.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/attempt4/test/compile.result.json",
+      "bytes": 2311,
+      "sha256": "29444f2ae913f017421b99f572439e80467c46a32043dcf5604ff371b7c41d66"
+    },
+    {
+      "entry": "windows/cpu/attempt4/test/compile.stderr.log",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/attempt4/test/compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "windows/cpu/attempt4/test/compile.stdout.log",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/attempt4/test/compile.stdout.log",
+      "bytes": 24,
+      "sha256": "60cf5acb9df698821842769200fe9c273bf98c46c6fc4fe23cac1f933ca83893"
+    },
+    {
+      "entry": "windows/cpu/attempt4/test/identity.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/attempt4/test/identity.json",
+      "bytes": 64256,
+      "sha256": "ba4f0403e45af1d855d60d42d163fba554a8801d8ec0853c8f83643768413dcb"
+    },
+    {
+      "entry": "windows/cpu/attempt4/test/live.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/attempt4/test/live.json",
+      "bytes": 2311,
+      "sha256": "29444f2ae913f017421b99f572439e80467c46a32043dcf5604ff371b7c41d66"
+    },
+    {
+      "entry": "windows/cpu/attempt4/test/plan.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/attempt4/test/plan.json",
+      "bytes": 2936,
+      "sha256": "40c6d4386de36b724bd47867c8ec9a1995953f9af6518a4bcbefb1a6621794ce"
+    },
+    {
+      "entry": "windows/cpu/attempt4/test/test-deps.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/attempt4/test/test-deps.json",
+      "bytes": 29983,
+      "sha256": "cfcda9dd3f653aae7fecf1fd2457dbfd7557f9ec215ede1c83b4e6a51376298d"
+    },
+    {
+      "entry": "windows/cpu/validation/attempt1/image-before.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/validation/attempt1/image-before.json",
+      "bytes": 268,
+      "sha256": "6c8ccd854b7dc6f02e7109efef649718573a0148ba0c59528c467172ad2ba8da"
+    },
+    {
+      "entry": "windows/cpu/validation/attempt1/live.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/validation/attempt1/live.json",
+      "bytes": 643,
+      "sha256": "017891834ab564358b21c762ba57f615feaf64c02203f5631f4ab51cab40c43e"
+    },
+    {
+      "entry": "windows/cpu/validation/attempt1/receipt.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/validation/attempt1/receipt.json",
+      "bytes": 3637,
+      "sha256": "e1a669bd1a069e704d5d815d2e554fd907a491a03a7f98ec92a432de9919e005"
+    },
+    {
+      "entry": "windows/cpu/validation/attempt1/runtime-environment.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/validation/attempt1/runtime-environment.json",
+      "bytes": 8168,
+      "sha256": "0d6c2a4b1a37637f38e620d06cdf1c16aa9e603fea74bbb2c4ef57aa8c532b17"
+    },
+    {
+      "entry": "windows/cpu/validation/attempt1/tests.command.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/validation/attempt1/tests.command.json",
+      "bytes": 573,
+      "sha256": "221382220e5346ce2c0b9e05a90e60f77fad21c8b42494c7ee582e0890ae0a24"
+    },
+    {
+      "entry": "windows/cpu/validation/attempt1/tests.result.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/validation/attempt1/tests.result.json",
+      "bytes": 643,
+      "sha256": "017891834ab564358b21c762ba57f615feaf64c02203f5631f4ab51cab40c43e"
+    },
+    {
+      "entry": "windows/cpu/validation/attempt1/tests.stderr.log",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/validation/attempt1/tests.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "windows/cpu/validation/attempt1/tests.stdout.log",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/validation/attempt1/tests.stdout.log",
+      "bytes": 3617,
+      "sha256": "ab15a9bb05f645cd900d8481e6245b4babdf8a548f824d282779cb2ad117f13c"
+    },
+    {
+      "entry": "windows/cpu/validation/attempt1/tests.xml",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/validation/attempt1/tests.xml",
+      "bytes": 6699,
+      "sha256": "02a6bb245347c6bb8bd27e7bc3874ac1bac4607b1c44c3698e0e26ef9fb2432c"
+    },
+    {
+      "entry": "windows/cpu/validation/attempt2/image-before.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/validation/attempt2/image-before.json",
+      "bytes": 268,
+      "sha256": "5d63a7b3e758fe7c66acf2fd781adc1e72663dde1f22f54ade50b7869173f411"
+    },
+    {
+      "entry": "windows/cpu/validation/attempt2/live.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/validation/attempt2/live.json",
+      "bytes": 599,
+      "sha256": "2e0ce0b1eb21b6fdbaa2667c2844db79f9fe088d964137594acc09b2f4ffd889"
+    },
+    {
+      "entry": "windows/cpu/validation/attempt2/receipt.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/validation/attempt2/receipt.json",
+      "bytes": 1758,
+      "sha256": "e4c52b397fdee6c7f6f7a74a6b221ef7ef3c0c767a6ca382ddac79e5eb49ac1d"
+    },
+    {
+      "entry": "windows/cpu/validation/attempt2/runtime-environment.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/validation/attempt2/runtime-environment.json",
+      "bytes": 8168,
+      "sha256": "0d6c2a4b1a37637f38e620d06cdf1c16aa9e603fea74bbb2c4ef57aa8c532b17"
+    },
+    {
+      "entry": "windows/cpu/validation/attempt2/tests.command.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/validation/attempt2/tests.command.json",
+      "bytes": 528,
+      "sha256": "1022a4fee2b897dd15296814ecde452d5a146f2c7c9e95d24e4808a40f7f4d84"
+    },
+    {
+      "entry": "windows/cpu/validation/attempt2/tests.result.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/validation/attempt2/tests.result.json",
+      "bytes": 599,
+      "sha256": "2e0ce0b1eb21b6fdbaa2667c2844db79f9fe088d964137594acc09b2f4ffd889"
+    },
+    {
+      "entry": "windows/cpu/validation/attempt2/tests.stderr.log",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/validation/attempt2/tests.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "windows/cpu/validation/attempt2/tests.stdout.log",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/validation/attempt2/tests.stdout.log",
+      "bytes": 883,
+      "sha256": "4329ef66bd33b75df53b5bf4914cdc7ccc24e1fdebae74ec4df15aad6a0c0773"
+    },
+    {
+      "entry": "windows/cpu/validation/attempt2/tests.xml",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/validation/attempt2/tests.xml",
+      "bytes": 1194,
+      "sha256": "2ac66d11747aad481b747d8c30b29f7589a801bfa7a0c64a5c1a390beb0f7b1d"
+    },
+    {
+      "entry": "windows/cpu/validation/attempt3/image-before.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/validation/attempt3/image-before.json",
+      "bytes": 268,
+      "sha256": "bc4bd06be25c237100a7afab4e2d2d8a1245938db14a624a9e03d50ea27b827b"
+    },
+    {
+      "entry": "windows/cpu/validation/attempt3/live.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/validation/attempt3/live.json",
+      "bytes": 624,
+      "sha256": "51a502f44e07a43a4a724df7c17a59e70e47e087e64a816506030810aaa4c6fd"
+    },
+    {
+      "entry": "windows/cpu/validation/attempt3/receipt.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/validation/attempt3/receipt.json",
+      "bytes": 1513,
+      "sha256": "7b79c1c912938dde6262073448eb009e0cc7a6a2fba423a48bbff84254de71cb"
+    },
+    {
+      "entry": "windows/cpu/validation/attempt3/runtime-environment.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/validation/attempt3/runtime-environment.json",
+      "bytes": 8168,
+      "sha256": "0d6c2a4b1a37637f38e620d06cdf1c16aa9e603fea74bbb2c4ef57aa8c532b17"
+    },
+    {
+      "entry": "windows/cpu/validation/attempt3/tests.command.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/validation/attempt3/tests.command.json",
+      "bytes": 554,
+      "sha256": "bcaa12480e1ec3db9ceee49e90cb72ade4655081bbaa579aeebb5cf46da8d94a"
+    },
+    {
+      "entry": "windows/cpu/validation/attempt3/tests.result.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/validation/attempt3/tests.result.json",
+      "bytes": 624,
+      "sha256": "51a502f44e07a43a4a724df7c17a59e70e47e087e64a816506030810aaa4c6fd"
+    },
+    {
+      "entry": "windows/cpu/validation/attempt3/tests.stderr.log",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/validation/attempt3/tests.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "windows/cpu/validation/attempt3/tests.stdout.log",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/validation/attempt3/tests.stdout.log",
+      "bytes": 1036,
+      "sha256": "5ad9724e519d62cde90f9c1809e572f97237783dd6b51f1c699c18dd37c1b3ec"
+    },
+    {
+      "entry": "windows/cpu/validation/attempt3/tests.xml",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cpu/validation/attempt3/tests.xml",
+      "bytes": 1075,
+      "sha256": "a50ca7770c658cc9d17d72610a12caaf8b815bd3d769f4b8a81344ec07b81777"
+    },
+    {
+      "entry": "windows/cuda/after/src/compute_provider_cuda/CMakeLists.txt",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cuda/after/src/compute_provider_cuda/CMakeLists.txt",
+      "bytes": 6628,
+      "sha256": "2a5890fc9de9874640cb1370f3f8fc7d1a3bfa5411c45c9392919ab31de6337a"
+    },
+    {
+      "entry": "windows/cuda/after/src/compute_provider_cuda/blockwise_w4a8_kernel.cu",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cuda/after/src/compute_provider_cuda/blockwise_w4a8_kernel.cu",
+      "bytes": 7689,
+      "sha256": "93abdca3cee06612294fbaa59118aa00bcaccada3c5e7961eebea710411e0515"
+    },
+    {
+      "entry": "windows/cuda/after/src/compute_provider_cuda/blockwise_w4a8_kernel.h",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cuda/after/src/compute_provider_cuda/blockwise_w4a8_kernel.h",
+      "bytes": 669,
+      "sha256": "28af571fac71af60de2f19860af189ee54536aea0dd93b7de513e54f1f238282"
+    },
+    {
+      "entry": "windows/cuda/after/src/compute_provider_cuda/blockwise_w4a8_provider.cc",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cuda/after/src/compute_provider_cuda/blockwise_w4a8_provider.cc",
+      "bytes": 9381,
+      "sha256": "b0dfb7762949aebcbd7135c6c533212724dda3d23103e05657fe2e08ab5542a5"
+    },
+    {
+      "entry": "windows/cuda/after/src/compute_provider_cuda/blockwise_w4a8_provider.h",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cuda/after/src/compute_provider_cuda/blockwise_w4a8_provider.h",
+      "bytes": 624,
+      "sha256": "2b1e40ccbfb473033917480d9d5636a3edc6f9faea0cd07a2cab0ba96310d75e"
+    },
+    {
+      "entry": "windows/cuda/after/src/compute_provider_cuda/cuda_provider.cc",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cuda/after/src/compute_provider_cuda/cuda_provider.cc",
+      "bytes": 21752,
+      "sha256": "9f333dacfe1d57d6df5ccd380df10133985878b3c882453b99a6f683ce5a7845"
+    },
+    {
+      "entry": "windows/cuda/before.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cuda/before.json",
+      "bytes": 541,
+      "sha256": "fe83546e10faa8b91f7f70b600c94b8e08252d9e40e78381dc5aca3151378d47"
+    },
+    {
+      "entry": "windows/cuda/before/src/compute_provider_cuda/CMakeLists.txt",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cuda/before/src/compute_provider_cuda/CMakeLists.txt",
+      "bytes": 6547,
+      "sha256": "01190782e61bfb209cef7d1ec1478b0e4dc2003d47ffa4f4c84d6a144307e78d"
+    },
+    {
+      "entry": "windows/cuda/before/src/compute_provider_cuda/cuda_provider.cc",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cuda/before/src/compute_provider_cuda/cuda_provider.cc",
+      "bytes": 21368,
+      "sha256": "7fc20012225004eb28277616879256498ac78e175988a14c27b64e21192f717c"
+    },
+    {
+      "entry": "windows/cuda/build.py",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cuda/build.py",
+      "bytes": 4341,
+      "sha256": "5015565ce0d69f41a0d358eb508f0d649f393e9110d89126d01c4349a327ec08"
+    },
+    {
+      "entry": "windows/cuda/checks/attempt1/blockwise-provider/blockwise-provider-deps.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cuda/checks/attempt1/blockwise-provider/blockwise-provider-deps.json",
+      "bytes": 20098,
+      "sha256": "5cf372ef23033333204eb774df888fb9b687cfc263b3ce23656a7675a7bf771b"
+    },
+    {
+      "entry": "windows/cuda/checks/attempt1/blockwise-provider/blockwise-provider-identity.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cuda/checks/attempt1/blockwise-provider/blockwise-provider-identity.json",
+      "bytes": 43829,
+      "sha256": "60984296a0c203eb12a367eb3fac36c4d2b6dddf29c40005b3c2878c4c9387b9"
+    },
+    {
+      "entry": "windows/cuda/checks/attempt1/blockwise-provider/compile.command.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cuda/checks/attempt1/blockwise-provider/compile.command.json",
+      "bytes": 2108,
+      "sha256": "8cbf832a4a29d9752279c81c7df61508b96264da7deb7a87f843a8de44d902e7"
+    },
+    {
+      "entry": "windows/cuda/checks/attempt1/blockwise-provider/compile.result.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cuda/checks/attempt1/blockwise-provider/compile.result.json",
+      "bytes": 2177,
+      "sha256": "afb92b7a22943139054fd740c9241f7a2bf7c19490c09c1b89d0ce83a932ed79"
+    },
+    {
+      "entry": "windows/cuda/checks/attempt1/blockwise-provider/compile.stderr.log",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cuda/checks/attempt1/blockwise-provider/compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "windows/cuda/checks/attempt1/blockwise-provider/compile.stdout.log",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cuda/checks/attempt1/blockwise-provider/compile.stdout.log",
+      "bytes": 28,
+      "sha256": "6f6586040bf1bbd47fe74f2609cbd685a0878981223883db3346c1694dada299"
+    },
+    {
+      "entry": "windows/cuda/checks/attempt1/blockwise-provider/live.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cuda/checks/attempt1/blockwise-provider/live.json",
+      "bytes": 2177,
+      "sha256": "afb92b7a22943139054fd740c9241f7a2bf7c19490c09c1b89d0ce83a932ed79"
+    },
+    {
+      "entry": "windows/cuda/checks/attempt1/blockwise-provider/plan.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cuda/checks/attempt1/blockwise-provider/plan.json",
+      "bytes": 3112,
+      "sha256": "8357cf013fd77c92ebcfe03083cd95bf5098fc8d32ae4384f1dab7d3cee17d0f"
+    },
+    {
+      "entry": "windows/cuda/checks/attempt1/blockwise-test/blockwise-test-deps.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cuda/checks/attempt1/blockwise-test/blockwise-test-deps.json",
+      "bytes": 31153,
+      "sha256": "7cadb265e54f3046e9e67336c79325471d2b779869ab0faac59a41ac22cb0f27"
+    },
+    {
+      "entry": "windows/cuda/checks/attempt1/blockwise-test/blockwise-test-identity.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cuda/checks/attempt1/blockwise-test/blockwise-test-identity.json",
+      "bytes": 67485,
+      "sha256": "76ce30c06713d2218d71056998aacc3ebeda85b17eb9260aeaa82dfe2ee59c5d"
+    },
+    {
+      "entry": "windows/cuda/checks/attempt1/blockwise-test/compile.command.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cuda/checks/attempt1/blockwise-test/compile.command.json",
+      "bytes": 4287,
+      "sha256": "767aad51f7f44e62520d446734afd72479c69560ce615da022ebe295f2f89ccd"
+    },
+    {
+      "entry": "windows/cuda/checks/attempt1/blockwise-test/compile.result.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cuda/checks/attempt1/blockwise-test/compile.result.json",
+      "bytes": 4357,
+      "sha256": "398b18346516ab84214a4df091145776b45088f01b3017df625af649d07bd6a0"
+    },
+    {
+      "entry": "windows/cuda/checks/attempt1/blockwise-test/compile.stderr.log",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cuda/checks/attempt1/blockwise-test/compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "windows/cuda/checks/attempt1/blockwise-test/compile.stdout.log",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cuda/checks/attempt1/blockwise-test/compile.stdout.log",
+      "bytes": 24,
+      "sha256": "60cf5acb9df698821842769200fe9c273bf98c46c6fc4fe23cac1f933ca83893"
+    },
+    {
+      "entry": "windows/cuda/checks/attempt1/blockwise-test/live.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cuda/checks/attempt1/blockwise-test/live.json",
+      "bytes": 4357,
+      "sha256": "398b18346516ab84214a4df091145776b45088f01b3017df625af649d07bd6a0"
+    },
+    {
+      "entry": "windows/cuda/checks/attempt1/blockwise-test/plan.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cuda/checks/attempt1/blockwise-test/plan.json",
+      "bytes": 5228,
+      "sha256": "1aebdf15446b8c439a40803231ebb76a05cc02d05df004d5a431cf45d3b6d175"
+    },
+    {
+      "entry": "windows/cuda/checks/attempt1/cuda-provider/compile.command.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cuda/checks/attempt1/cuda-provider/compile.command.json",
+      "bytes": 2203,
+      "sha256": "43be257f5fdb1cc096f0ebcaaba3438c7e4ef32a0a5a256e8928799bacb97e27"
+    },
+    {
+      "entry": "windows/cuda/checks/attempt1/cuda-provider/compile.result.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cuda/checks/attempt1/cuda-provider/compile.result.json",
+      "bytes": 2274,
+      "sha256": "71cb47c1e94892c6e84ba7c4bcefe74dd91c3882a2eaaf4eb860897eb07f1d6e"
+    },
+    {
+      "entry": "windows/cuda/checks/attempt1/cuda-provider/compile.stderr.log",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cuda/checks/attempt1/cuda-provider/compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "windows/cuda/checks/attempt1/cuda-provider/compile.stdout.log",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cuda/checks/attempt1/cuda-provider/compile.stdout.log",
+      "bytes": 18,
+      "sha256": "f6fdd3811bcd90b4b12e0d5c425476b4ba8907e2020b5cc8841c61b349e67ec2"
+    },
+    {
+      "entry": "windows/cuda/checks/attempt1/cuda-provider/cuda-provider-deps.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cuda/checks/attempt1/cuda-provider/cuda-provider-deps.json",
+      "bytes": 21953,
+      "sha256": "6dfa16724522e8094d82837db3e13a90592c0efc5008d55c23951d1960bd8822"
+    },
+    {
+      "entry": "windows/cuda/checks/attempt1/cuda-provider/cuda-provider-identity.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cuda/checks/attempt1/cuda-provider/cuda-provider-identity.json",
+      "bytes": 48197,
+      "sha256": "483557be9f0b3bd5a374943cbc2cef41bd5657cb0c2f336f21a49b1004d88430"
+    },
+    {
+      "entry": "windows/cuda/checks/attempt1/cuda-provider/live.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cuda/checks/attempt1/cuda-provider/live.json",
+      "bytes": 2274,
+      "sha256": "71cb47c1e94892c6e84ba7c4bcefe74dd91c3882a2eaaf4eb860897eb07f1d6e"
+    },
+    {
+      "entry": "windows/cuda/checks/attempt1/cuda-provider/plan.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cuda/checks/attempt1/cuda-provider/plan.json",
+      "bytes": 3197,
+      "sha256": "4a83d5a805efbf0217f7faf20513fd6f1307ff26179af4efb0f922d0116a52f8"
+    },
+    {
+      "entry": "windows/cuda/checks/attempt1/test-summary.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cuda/checks/attempt1/test-summary.json",
+      "bytes": 1319,
+      "sha256": "7c6ad58439f859bcae894a8bd10aa7199367d3e5ef376ecbd3409b05b5ea6215"
+    },
+    {
+      "entry": "windows/cuda/checks/attempt2/blockwise-kernel/plan.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cuda/checks/attempt2/blockwise-kernel/plan.json",
+      "bytes": 3418,
+      "sha256": "b9835ebb3e192f60b374d79dc6768c5b3145b3daae84e09f70b87e87d41f8867"
+    },
+    {
+      "entry": "windows/cuda/checks/attempt2/blockwise-test/blockwise-test-deps.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cuda/checks/attempt2/blockwise-test/blockwise-test-deps.json",
+      "bytes": 31153,
+      "sha256": "7cadb265e54f3046e9e67336c79325471d2b779869ab0faac59a41ac22cb0f27"
+    },
+    {
+      "entry": "windows/cuda/checks/attempt2/blockwise-test/blockwise-test-identity.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cuda/checks/attempt2/blockwise-test/blockwise-test-identity.json",
+      "bytes": 67485,
+      "sha256": "3cae252b780c836d26335db05ee0e99c411b94f57e72170440200bbfaba82e82"
+    },
+    {
+      "entry": "windows/cuda/checks/attempt2/blockwise-test/compile.command.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cuda/checks/attempt2/blockwise-test/compile.command.json",
+      "bytes": 4288,
+      "sha256": "ffabb9ef1df7820815f2b20abfc671de46f794b77b64762fb525a33319ec125d"
+    },
+    {
+      "entry": "windows/cuda/checks/attempt2/blockwise-test/compile.result.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cuda/checks/attempt2/blockwise-test/compile.result.json",
+      "bytes": 4359,
+      "sha256": "ea2b7133dcf9cdc4442c12281bfcdd4e796670e6bbfe917f0f535da1b74e31e1"
+    },
+    {
+      "entry": "windows/cuda/checks/attempt2/blockwise-test/compile.stderr.log",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cuda/checks/attempt2/blockwise-test/compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "windows/cuda/checks/attempt2/blockwise-test/compile.stdout.log",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cuda/checks/attempt2/blockwise-test/compile.stdout.log",
+      "bytes": 24,
+      "sha256": "60cf5acb9df698821842769200fe9c273bf98c46c6fc4fe23cac1f933ca83893"
+    },
+    {
+      "entry": "windows/cuda/checks/attempt2/blockwise-test/live.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cuda/checks/attempt2/blockwise-test/live.json",
+      "bytes": 4359,
+      "sha256": "ea2b7133dcf9cdc4442c12281bfcdd4e796670e6bbfe917f0f535da1b74e31e1"
+    },
+    {
+      "entry": "windows/cuda/checks/attempt2/blockwise-test/plan.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cuda/checks/attempt2/blockwise-test/plan.json",
+      "bytes": 5228,
+      "sha256": "ab40dcd3b631837c46164205e4482da28b2511faafb19f13e9d9fd6624e68139"
+    },
+    {
+      "entry": "windows/cuda/checks/attempt2/test-summary.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cuda/checks/attempt2/test-summary.json",
+      "bytes": 1319,
+      "sha256": "a4e5b3a872ee4b8ec16461bb52d38318e7f246dab2863b6d0ad587f7ca2d5705"
+    },
+    {
+      "entry": "windows/cuda/checks/attempt3/blockwise-kernel/blockwise-kernel-identity.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cuda/checks/attempt3/blockwise-kernel/blockwise-kernel-identity.json",
+      "bytes": 129902,
+      "sha256": "8426a1a104d29edeb6c8e90c959758686d1db3c7cd295eb526fa9d46e2e81a37"
+    },
+    {
+      "entry": "windows/cuda/checks/attempt3/blockwise-kernel/blockwise-kernel.d",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cuda/checks/attempt3/blockwise-kernel/blockwise-kernel.d",
+      "bytes": 55253,
+      "sha256": "caf3913c000c7cd096d58e80cd232c823850fef343f965093bd4d4fb5f8ecf16"
+    },
+    {
+      "entry": "windows/cuda/checks/attempt3/blockwise-kernel/compile.command.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cuda/checks/attempt3/blockwise-kernel/compile.command.json",
+      "bytes": 2419,
+      "sha256": "30d0ae30442e8fa4af8785bb8eda0b14a09e2ec17197c2e9f090451f5cf859c2"
+    },
+    {
+      "entry": "windows/cuda/checks/attempt3/blockwise-kernel/compile.result.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cuda/checks/attempt3/blockwise-kernel/compile.result.json",
+      "bytes": 2490,
+      "sha256": "5de1a0ff4f516ff847a1ad2f7a9fb2f9b1447e135f9de55fb64cd1b40ffd40e5"
+    },
+    {
+      "entry": "windows/cuda/checks/attempt3/blockwise-kernel/compile.stderr.log",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cuda/checks/attempt3/blockwise-kernel/compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "windows/cuda/checks/attempt3/blockwise-kernel/compile.stdout.log",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cuda/checks/attempt3/blockwise-kernel/compile.stdout.log",
+      "bytes": 88,
+      "sha256": "153bc218f989a5502951a9d0ab2fc22103592a6209224d05a7a4bef30f8b7aeb"
+    },
+    {
+      "entry": "windows/cuda/checks/attempt3/blockwise-kernel/live.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cuda/checks/attempt3/blockwise-kernel/live.json",
+      "bytes": 2490,
+      "sha256": "5de1a0ff4f516ff847a1ad2f7a9fb2f9b1447e135f9de55fb64cd1b40ffd40e5"
+    },
+    {
+      "entry": "windows/cuda/checks/attempt3/blockwise-kernel/plan.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cuda/checks/attempt3/blockwise-kernel/plan.json",
+      "bytes": 3418,
+      "sha256": "89c8ca5bbc27c40ea20e7cfee45ce8fc9b3f2b7a12587a5f814267b1c1c11e36"
+    },
+    {
+      "entry": "windows/cuda/checks/attempt3/native-summary.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cuda/checks/attempt3/native-summary.json",
+      "bytes": 1358,
+      "sha256": "b9d61c24847f8f33067d98b079b4df9c1c11fdd0ee872f3cfd1585413640f5ef"
+    },
+    {
+      "entry": "windows/cuda/checks/link-attempt1/image.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cuda/checks/link-attempt1/image.json",
+      "bytes": 284,
+      "sha256": "c68582e970a2184a2b80826dc06fa2ba2334fd17f24e1addb99b48d1de059423"
+    },
+    {
+      "entry": "windows/cuda/checks/link-attempt1/link-plan.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cuda/checks/link-attempt1/link-plan.json",
+      "bytes": 78819,
+      "sha256": "df485c87680cb059dfd91d5767b97a26d87eacefd16f45a4ec52f800e33ce342"
+    },
+    {
+      "entry": "windows/cuda/checks/link-attempt1/link.command.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cuda/checks/link-attempt1/link.command.json",
+      "bytes": 26336,
+      "sha256": "29e255ba7b20d7fef1b42edbb8a98498c8dec4263ad5c98bc10924a11b03dbb0"
+    },
+    {
+      "entry": "windows/cuda/checks/link-attempt1/link.result.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cuda/checks/link-attempt1/link.result.json",
+      "bytes": 26407,
+      "sha256": "0bb8394f5cd0bc7dcf1832d54928aec6b8116a0dc658f788ff60932a52affc70"
+    },
+    {
+      "entry": "windows/cuda/checks/link-attempt1/link.stderr.log",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cuda/checks/link-attempt1/link.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "windows/cuda/checks/link-attempt1/link.stdout.log",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cuda/checks/link-attempt1/link.stdout.log",
+      "bytes": 332,
+      "sha256": "541be9a9b4685c96131e16872e12b7e241e3f97fcff9f1c8afc9021683b63c0d"
+    },
+    {
+      "entry": "windows/cuda/checks/link-attempt1/live.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cuda/checks/link-attempt1/live.json",
+      "bytes": 26407,
+      "sha256": "0bb8394f5cd0bc7dcf1832d54928aec6b8116a0dc658f788ff60932a52affc70"
+    },
+    {
+      "entry": "windows/cuda/checks/link-attempt1/runtime-environment.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cuda/checks/link-attempt1/runtime-environment.json",
+      "bytes": 6546,
+      "sha256": "03641062d6490cedf2c812c5d526dbe08275e31bab4769f50853930ee4cf5ed5"
+    },
+    {
+      "entry": "windows/cuda/checks/link-attempt2/image.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cuda/checks/link-attempt2/image.json",
+      "bytes": 284,
+      "sha256": "e7609c258d113e21c204e7ca289a6067d291b4e8195cd2bdd736de61ffd17ee3"
+    },
+    {
+      "entry": "windows/cuda/checks/link-attempt2/link-plan.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cuda/checks/link-attempt2/link-plan.json",
+      "bytes": 78819,
+      "sha256": "e73843cc0e1e1b166ac60d22760848d5fe9d52c979586da352ab1fcd1f1685b6"
+    },
+    {
+      "entry": "windows/cuda/checks/link-attempt2/link.command.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cuda/checks/link-attempt2/link.command.json",
+      "bytes": 26336,
+      "sha256": "3fee7dcbdfa326331d440702020bf814c7c264908537257d0aeb6a9a4c323941"
+    },
+    {
+      "entry": "windows/cuda/checks/link-attempt2/link.result.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cuda/checks/link-attempt2/link.result.json",
+      "bytes": 26406,
+      "sha256": "6911e86814272f365dc1dadd1738a5ee31ddfdfb8241fd7bef3af0ae5505e83f"
+    },
+    {
+      "entry": "windows/cuda/checks/link-attempt2/link.stderr.log",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cuda/checks/link-attempt2/link.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "windows/cuda/checks/link-attempt2/link.stdout.log",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cuda/checks/link-attempt2/link.stdout.log",
+      "bytes": 332,
+      "sha256": "474b379332fbfe3d9e2a71b0ad54be60f283dd2024a6b1662c6dd1cfd2cc173c"
+    },
+    {
+      "entry": "windows/cuda/checks/link-attempt2/live.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cuda/checks/link-attempt2/live.json",
+      "bytes": 26406,
+      "sha256": "6911e86814272f365dc1dadd1738a5ee31ddfdfb8241fd7bef3af0ae5505e83f"
+    },
+    {
+      "entry": "windows/cuda/checks/link-attempt2/runtime-environment.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cuda/checks/link-attempt2/runtime-environment.json",
+      "bytes": 6546,
+      "sha256": "03641062d6490cedf2c812c5d526dbe08275e31bab4769f50853930ee4cf5ed5"
+    },
+    {
+      "entry": "windows/cuda/final-build-receipt.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cuda/final-build-receipt.json",
+      "bytes": 10115,
+      "sha256": "e05b651e5fde132ad1875531956e9c654b16442e6d2da09ddd54e3f0b31f7dde"
+    },
+    {
+      "entry": "windows/cuda/final-validation.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cuda/final-validation.json",
+      "bytes": 3057,
+      "sha256": "9c2c368f09b3a74b70baefba7fbe6c146891e317bbb5788d625d7b7b129c4a4c"
+    },
+    {
+      "entry": "windows/cuda/finalize.py",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cuda/finalize.py",
+      "bytes": 3276,
+      "sha256": "ea5cc485beee0041fb11cd37f355c7662815d4856fd5f3bc6a4e2dda868d9d21"
+    },
+    {
+      "entry": "windows/cuda/implementation.diff",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cuda/implementation.diff",
+      "bytes": 22174,
+      "sha256": "0520d0b3f48a4b31f61e93d5b6df4aed1cec42296769875635c43dba78be84ab"
+    },
+    {
+      "entry": "windows/cuda/link.py",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cuda/link.py",
+      "bytes": 2593,
+      "sha256": "ef90339cf7e00d665c13b60e3a103f64035d96b3a4e347b1712dc83d0dea6bbb"
+    },
+    {
+      "entry": "windows/cuda/observe.py",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cuda/observe.py",
+      "bytes": 2206,
+      "sha256": "87d2890ffbe0b9b6f375804f8a57ae038f26b281ea5dd4054e023e428fe580be"
+    },
+    {
+      "entry": "windows/cuda/revisions/native-arch-planner/build.before.py",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cuda/revisions/native-arch-planner/build.before.py",
+      "bytes": 3398,
+      "sha256": "2038d70d606d1ba26709bf8a82822e624b42a0ab81d7b813bfebe7c75737915f"
+    },
+    {
+      "entry": "windows/cuda/revisions/native-arch-planner/failure.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cuda/revisions/native-arch-planner/failure.json",
+      "bytes": 209,
+      "sha256": "64e06b2460bce1d7894a32dcdfc9f44e2c449565704b918ee1bac8c78b14461d"
+    },
+    {
+      "entry": "windows/cuda/revisions/native-env-planner/build.before.py",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cuda/revisions/native-env-planner/build.before.py",
+      "bytes": 4066,
+      "sha256": "a96dc8cd12d28c422c92a7e85e97b02e7ce608cfd4e252b918a6e6fa3bed9f42"
+    },
+    {
+      "entry": "windows/cuda/revisions/native-env-planner/failure.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cuda/revisions/native-env-planner/failure.json",
+      "bytes": 202,
+      "sha256": "d3835d58eeca60036522fa394c301265872c542235ee32623c20b250a93eed0a"
+    },
+    {
+      "entry": "windows/cuda/shared-tested-source/tests/compute_models/blockwise_w4a8_fixture.h",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cuda/shared-tested-source/tests/compute_models/blockwise_w4a8_fixture.h",
+      "bytes": 17350,
+      "sha256": "bb0e5d6a6c2581e19bf81a55b895ba0d7ed611b3f90281243095e6620c4427ac"
+    },
+    {
+      "entry": "windows/cuda/shared-tested-source/tests/graph_route_cuda/blockwise_w4a8_test.cc",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cuda/shared-tested-source/tests/graph_route_cuda/blockwise_w4a8_test.cc",
+      "bytes": 2047,
+      "sha256": "be8e9134e95f74bb3a2c55f17fbc2670facb487abefa20ee1043fdf164065c67"
+    },
+    {
+      "entry": "windows/cuda/source-freeze.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cuda/source-freeze.json",
+      "bytes": 2798,
+      "sha256": "ba2e42ae5e48092566277c4bfaa5a1b3e4ad6396a617de0bcf4c19cbd8675a86"
+    },
+    {
+      "entry": "windows/cuda/validation/attempt1/image-before.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cuda/validation/attempt1/image-before.json",
+      "bytes": 284,
+      "sha256": "e7609c258d113e21c204e7ca289a6067d291b4e8195cd2bdd736de61ffd17ee3"
+    },
+    {
+      "entry": "windows/cuda/validation/attempt1/live.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cuda/validation/attempt1/live.json",
+      "bytes": 662,
+      "sha256": "82f2bb17cdc3d3814015a5069fdd8e8bec6b94b4a258571d27a9988c79024fdb"
+    },
+    {
+      "entry": "windows/cuda/validation/attempt1/receipt.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cuda/validation/attempt1/receipt.json",
+      "bytes": 3515,
+      "sha256": "a869c3630cd1301f947b29f56a209d42ec36b864a292241642d1cd5706a6270d"
+    },
+    {
+      "entry": "windows/cuda/validation/attempt1/runtime-environment.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cuda/validation/attempt1/runtime-environment.json",
+      "bytes": 6546,
+      "sha256": "03641062d6490cedf2c812c5d526dbe08275e31bab4769f50853930ee4cf5ed5"
+    },
+    {
+      "entry": "windows/cuda/validation/attempt1/tests.command.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cuda/validation/attempt1/tests.command.json",
+      "bytes": 591,
+      "sha256": "c2293767494109d9c8d213d5a113884d5f7525e7c513a124d52fd22af0ef219f"
+    },
+    {
+      "entry": "windows/cuda/validation/attempt1/tests.result.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cuda/validation/attempt1/tests.result.json",
+      "bytes": 662,
+      "sha256": "82f2bb17cdc3d3814015a5069fdd8e8bec6b94b4a258571d27a9988c79024fdb"
+    },
+    {
+      "entry": "windows/cuda/validation/attempt1/tests.stderr.log",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cuda/validation/attempt1/tests.stderr.log",
+      "bytes": 151,
+      "sha256": "88dd5e35d67fb5c0c371390a98a66a5e061e4c0bef2d890a7b74781363216092"
+    },
+    {
+      "entry": "windows/cuda/validation/attempt1/tests.stdout.log",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cuda/validation/attempt1/tests.stdout.log",
+      "bytes": 2028,
+      "sha256": "b60bc44c4a1e09a0aaf6c211745c91bb93c511eaeb5d6fd9402d13c294b68d7e"
+    },
+    {
+      "entry": "windows/cuda/validation/attempt1/tests.xml",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cuda/validation/attempt1/tests.xml",
+      "bytes": 3629,
+      "sha256": "2b9586ec67cf07f6a043c6e289079396330e2ae6bcc9f4493b779dd17863aa03"
+    },
+    {
+      "entry": "windows/cuda/write_source_review.py",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/cuda/write_source_review.py",
+      "bytes": 5657,
+      "sha256": "c087eed93e5c4db6e9d03fc525c59a04c6ceb01ce7440fe1272d7207c400a5eb"
+    },
+    {
+      "entry": "windows/review/apple-vulkan-source-review.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/review/apple-vulkan-source-review.json",
+      "bytes": 7755,
+      "sha256": "02c8d3ed3103f52f7b40c6b15cf164dbeda1f636e5995779dd639e2e8dd65dd2"
+    },
+    {
+      "entry": "windows/vulkan/after/src/compute_route_vulkan/CMakeLists.txt",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/after/src/compute_route_vulkan/CMakeLists.txt",
+      "bytes": 3250,
+      "sha256": "4210fd65dc1d3410057a0e56246e3dab8e5faaeda0b39f466fc0f678f79d7c3a"
+    },
+    {
+      "entry": "windows/vulkan/after/src/compute_route_vulkan/build_shaders.py",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/after/src/compute_route_vulkan/build_shaders.py",
+      "bytes": 7843,
+      "sha256": "3b58a38a42705201f3460c58817e7934b0db81304b32c1448bbc5b75364154e3"
+    },
+    {
+      "entry": "windows/vulkan/after/src/compute_route_vulkan/shaders/blockwise_w4a8.comp",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/after/src/compute_route_vulkan/shaders/blockwise_w4a8.comp",
+      "bytes": 5994,
+      "sha256": "100bd33f5a3c8b6db14b4c9b6302a75f2d552f9be4aff2f4ee7036da0855fe95"
+    },
+    {
+      "entry": "windows/vulkan/after/src/compute_route_vulkan/vulkan_blockwise_w4a8.cc",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/after/src/compute_route_vulkan/vulkan_blockwise_w4a8.cc",
+      "bytes": 6193,
+      "sha256": "74e4a41eb0accad71f73b9bc9c089c31edfb376a3a526a4e1371f4e184f0a2a0"
+    },
+    {
+      "entry": "windows/vulkan/after/src/compute_route_vulkan/vulkan_operations.cc",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/after/src/compute_route_vulkan/vulkan_operations.cc",
+      "bytes": 5903,
+      "sha256": "da273c09f75778929f68970a5c3e41723f3092d63b301fa093e986cbefeb738b"
+    },
+    {
+      "entry": "windows/vulkan/after/src/compute_route_vulkan/vulkan_tensor.h",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/after/src/compute_route_vulkan/vulkan_tensor.h",
+      "bytes": 1838,
+      "sha256": "061204ab279632cc577c44bebb794090d847948fb772a2e71d5f11bd71d2a8cd"
+    },
+    {
+      "entry": "windows/vulkan/after/tests/graph_route_vulkan/CMakeLists.txt",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/after/tests/graph_route_vulkan/CMakeLists.txt",
+      "bytes": 5672,
+      "sha256": "241d57382ebb77024fe432ab31c270c36ad0c2f1b05abd7790c7813eebd2181f"
+    },
+    {
+      "entry": "windows/vulkan/after/tests/graph_route_vulkan/blockwise_w4a8_test.cc",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/after/tests/graph_route_vulkan/blockwise_w4a8_test.cc",
+      "bytes": 3962,
+      "sha256": "a7f641ced5f485eef7fb31c5ec0719c9b1b6bfbaac55478f77d319d66d06cb75"
+    },
+    {
+      "entry": "windows/vulkan/before/source-identities.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/before/source-identities.json",
+      "bytes": 859,
+      "sha256": "8e94fa84ecea48561fd4880c32b991afb33d347bda1e6b4fda7c69bf5d2ccc28"
+    },
+    {
+      "entry": "windows/vulkan/before/src/compute_route_vulkan/CMakeLists.txt",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/before/src/compute_route_vulkan/CMakeLists.txt",
+      "bytes": 3225,
+      "sha256": "e8b3040ac6fa805a7fc463280610a03fb3c5ee352dfeb90863f9772b3c039a8b"
+    },
+    {
+      "entry": "windows/vulkan/before/src/compute_route_vulkan/build_shaders.py",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/before/src/compute_route_vulkan/build_shaders.py",
+      "bytes": 7368,
+      "sha256": "7709c5baff7e00df9a261186fb433ca0bfc76d40a613b730cb4ca1b598e50b91"
+    },
+    {
+      "entry": "windows/vulkan/before/src/compute_route_vulkan/vulkan_operations.cc",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/before/src/compute_route_vulkan/vulkan_operations.cc",
+      "bytes": 5708,
+      "sha256": "8a775dad0b18e8333fb84f5102b40bfe0948cb7f5ba4f89e3a8413ae94e4b702"
+    },
+    {
+      "entry": "windows/vulkan/before/src/compute_route_vulkan/vulkan_tensor.h",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/before/src/compute_route_vulkan/vulkan_tensor.h",
+      "bytes": 1755,
+      "sha256": "8e94102f6ec5457fc197f3276f711a83056d13fe2a392f148afb669b9d50726c"
+    },
+    {
+      "entry": "windows/vulkan/before/tests/graph_route_vulkan/CMakeLists.txt",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/before/tests/graph_route_vulkan/CMakeLists.txt",
+      "bytes": 5649,
+      "sha256": "e89f2fb0d1d483138253a1224713f5407454a7862c02d6a9f751f7ca99d18a19"
+    },
+    {
+      "entry": "windows/vulkan/build.py",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/build.py",
+      "bytes": 9770,
+      "sha256": "9ebd982e3ad6097c693209977d2b8c5b84b20eb5e8025253667997756a210f72"
+    },
+    {
+      "entry": "windows/vulkan/checks/attempt2/blockwise_w4a8-shader.stderr.txt",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/checks/attempt2/blockwise_w4a8-shader.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "windows/vulkan/checks/attempt2/blockwise_w4a8-shader.stdout.txt",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/checks/attempt2/blockwise_w4a8-shader.stdout.txt",
+      "bytes": 170,
+      "sha256": "43e45f89028589bcf410e351288214a396d3154219c01d1666f5f2a01080e653"
+    },
+    {
+      "entry": "windows/vulkan/checks/attempt2/blockwise_w4a8_grouped-shader.stderr.txt",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/checks/attempt2/blockwise_w4a8_grouped-shader.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "windows/vulkan/checks/attempt2/blockwise_w4a8_grouped-shader.stdout.txt",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/checks/attempt2/blockwise_w4a8_grouped-shader.stdout.txt",
+      "bytes": 170,
+      "sha256": "43e45f89028589bcf410e351288214a396d3154219c01d1666f5f2a01080e653"
+    },
+    {
+      "entry": "windows/vulkan/checks/attempt2/commands-link.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/checks/attempt2/commands-link.json",
+      "bytes": 27662,
+      "sha256": "a7ee1f18cad50e61cba5dcb7b4cad6eb5f72a71c18c2b4fe66751a6dcf886c8e"
+    },
+    {
+      "entry": "windows/vulkan/checks/attempt2/commands-repair.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/checks/attempt2/commands-repair.json",
+      "bytes": 8943,
+      "sha256": "b0064f55da7d258d9cbcff0e3e12d4f9bff77553453030f9644bdb0369694299"
+    },
+    {
+      "entry": "windows/vulkan/checks/attempt2/commands-shaders.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/checks/attempt2/commands-shaders.json",
+      "bytes": 1456,
+      "sha256": "c2d4c2c96dc331132685726b4ba275355959f8b4382f4039a9af0c4f194197e1"
+    },
+    {
+      "entry": "windows/vulkan/checks/attempt2/link-plan.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/checks/attempt2/link-plan.json",
+      "bytes": 81877,
+      "sha256": "3770fef0c6a91823c951f5541ebc07cdd32b9457527dabe723488314b8cdceaf"
+    },
+    {
+      "entry": "windows/vulkan/checks/attempt2/link.stderr.txt",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/checks/attempt2/link.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "windows/vulkan/checks/attempt2/link.stdout.txt",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/checks/attempt2/link.stdout.txt",
+      "bytes": 356,
+      "sha256": "074cb143a5b93b59398d65501003c84431d26c89839385a93fd63343a6279a6c"
+    },
+    {
+      "entry": "windows/vulkan/checks/attempt2/proposed-link-plan.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/checks/attempt2/proposed-link-plan.json",
+      "bytes": 81557,
+      "sha256": "ee9989d3c70dd7ec659b84df40455155917362d9008ab7ea8b043c23e7e11f77"
+    },
+    {
+      "entry": "windows/vulkan/checks/attempt2/receipts-repair.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/checks/attempt2/receipts-repair.json",
+      "bytes": 757,
+      "sha256": "ef7f3c0196757b9ee0de90d662ed39f9ec0044fc971dc9a54e193e7ff2277eb7"
+    },
+    {
+      "entry": "windows/vulkan/checks/attempt2/shader-artifacts.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/checks/attempt2/shader-artifacts.json",
+      "bytes": 11059,
+      "sha256": "c6a0c619f8b56311963c334bcbacaf4b1dd7afd16697c4a887c50fe426000f27"
+    },
+    {
+      "entry": "windows/vulkan/checks/attempt2/vulkan_blockwise_w4a8-compile.stderr.txt",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/checks/attempt2/vulkan_blockwise_w4a8-compile.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "windows/vulkan/checks/attempt2/vulkan_blockwise_w4a8-compile.stdout.txt",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/checks/attempt2/vulkan_blockwise_w4a8-compile.stdout.txt",
+      "bytes": 26,
+      "sha256": "d5baa32d8f5c2b1028e57fd24d488b21671a70e8ab7744a857fe21ed90c24104"
+    },
+    {
+      "entry": "windows/vulkan/checks/attempt2/vulkan_blockwise_w4a8-deps.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/checks/attempt2/vulkan_blockwise_w4a8-deps.json",
+      "bytes": 23292,
+      "sha256": "983c803e8b9ca9d3ba5851c16501cc51cf4fa60bee852f79576a78221b1ceec3"
+    },
+    {
+      "entry": "windows/vulkan/checks/attempt2/vulkan_blockwise_w4a8-identity.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/checks/attempt2/vulkan_blockwise_w4a8-identity.json",
+      "bytes": 52494,
+      "sha256": "1b34090ab7a0fbd5b71ec72e7074df538667db69d241ec62ef7dce3cd6f63446"
+    },
+    {
+      "entry": "windows/vulkan/checks/attempt2/vulkan_shaders-compile.stderr.txt",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/checks/attempt2/vulkan_shaders-compile.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "windows/vulkan/checks/attempt2/vulkan_shaders-compile.stdout.txt",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/checks/attempt2/vulkan_shaders-compile.stdout.txt",
+      "bytes": 19,
+      "sha256": "dee8c0d35a51af60db9cf6e80f299954eedc55ef4c2a5b7583c597591a1fb1d2"
+    },
+    {
+      "entry": "windows/vulkan/checks/attempt2/vulkan_shaders-deps.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/checks/attempt2/vulkan_shaders-deps.json",
+      "bytes": 8957,
+      "sha256": "196ed291eb2803a387360028d4e1ad8c1bd2fe4f221fd8b0544d97276706947c"
+    },
+    {
+      "entry": "windows/vulkan/checks/attempt2/vulkan_shaders-identity.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/checks/attempt2/vulkan_shaders-identity.json",
+      "bytes": 23132,
+      "sha256": "8c293f3f4546e49b43ef65480aeaf20b64c009efc887771e9c9a6b1699f191fb"
+    },
+    {
+      "entry": "windows/vulkan/checks/blockwise-test-compile.stderr.txt",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/checks/blockwise-test-compile.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "windows/vulkan/checks/blockwise-test-compile.stdout.txt",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/checks/blockwise-test-compile.stdout.txt",
+      "bytes": 24,
+      "sha256": "60cf5acb9df698821842769200fe9c273bf98c46c6fc4fe23cac1f933ca83893"
+    },
+    {
+      "entry": "windows/vulkan/checks/blockwise-test-deps.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/checks/blockwise-test-deps.json",
+      "bytes": 33994,
+      "sha256": "bbe68c08233de34450dfd739fc973169781a87d0f7d0202cc65ced724c511740"
+    },
+    {
+      "entry": "windows/vulkan/checks/blockwise-test-identity.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/checks/blockwise-test-identity.json",
+      "bytes": 74231,
+      "sha256": "d29ff80906ab9a3d31d61d58c12960f08a5c8b523cf40943f27c229673f64ce5"
+    },
+    {
+      "entry": "windows/vulkan/checks/blockwise_w4a8-shader.stderr.txt",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/checks/blockwise_w4a8-shader.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "windows/vulkan/checks/blockwise_w4a8-shader.stdout.txt",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/checks/blockwise_w4a8-shader.stdout.txt",
+      "bytes": 161,
+      "sha256": "b1b1e2b47c442ac23da2b973e626052d6a324833ef4b35ea1c14dcc705c4e536"
+    },
+    {
+      "entry": "windows/vulkan/checks/blockwise_w4a8_grouped-shader.stderr.txt",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/checks/blockwise_w4a8_grouped-shader.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "windows/vulkan/checks/blockwise_w4a8_grouped-shader.stdout.txt",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/checks/blockwise_w4a8_grouped-shader.stdout.txt",
+      "bytes": 161,
+      "sha256": "b1b1e2b47c442ac23da2b973e626052d6a324833ef4b35ea1c14dcc705c4e536"
+    },
+    {
+      "entry": "windows/vulkan/checks/commands-compile.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/checks/commands-compile.json",
+      "bytes": 13153,
+      "sha256": "20bb1793c26931ed2f30976731f83a0d09a49a85d6511960edf231f6daaa83a8"
+    },
+    {
+      "entry": "windows/vulkan/checks/commands-link.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/checks/commands-link.json",
+      "bytes": 27611,
+      "sha256": "9041d1d09a3a0d30881e90860f58e34edcc99b735e4df0fa71c2b8a9d5fd8f44"
+    },
+    {
+      "entry": "windows/vulkan/checks/commands-shaders.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/checks/commands-shaders.json",
+      "bytes": 1416,
+      "sha256": "2d8bd5278e985f33b89472bfbf33f79504924179bd5f457c43cd82d06c39e564"
+    },
+    {
+      "entry": "windows/vulkan/checks/commands-tests.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/checks/commands-tests.json",
+      "bytes": 4802,
+      "sha256": "2190c54461b1494e3012f24dd4e992a29d7ab039cd1ba67dd92f633676f4a26d"
+    },
+    {
+      "entry": "windows/vulkan/checks/link-plan.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/checks/link-plan.json",
+      "bytes": 81777,
+      "sha256": "bea66599fa3f2c8db080da514d90dd594c8b79e3faaaafad03fea0bd8ae35ce1"
+    },
+    {
+      "entry": "windows/vulkan/checks/link.stderr.txt",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/checks/link.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "windows/vulkan/checks/link.stdout.txt",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/checks/link.stdout.txt",
+      "bytes": 338,
+      "sha256": "547f561e3944881258f6d32a4f8119ba61e298d5b2fc4fe128d4b0d64aaae869"
+    },
+    {
+      "entry": "windows/vulkan/checks/proposed-link-plan.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/checks/proposed-link-plan.json",
+      "bytes": 81467,
+      "sha256": "f82d330bd5dbe96ea632ad7d5fe1391a1b32b0591e02e548f089b60fd12bace2"
+    },
+    {
+      "entry": "windows/vulkan/checks/receipts-compile.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/checks/receipts-compile.json",
+      "bytes": 1102,
+      "sha256": "bd57a07ba841ad0ef962fe09ad1237a99b482950bfb20d1819f8bbe9ba6e4b1e"
+    },
+    {
+      "entry": "windows/vulkan/checks/receipts-tests.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/checks/receipts-tests.json",
+      "bytes": 364,
+      "sha256": "8316192d4f34da5c733d59fd19717f5fb7bc68947f17c8cfc2c31c81ec4105a8"
+    },
+    {
+      "entry": "windows/vulkan/checks/shader-artifacts.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/checks/shader-artifacts.json",
+      "bytes": 11029,
+      "sha256": "002960436f4148c312f09b69df785971ed8572e122299027e406078c4c9014e9"
+    },
+    {
+      "entry": "windows/vulkan/checks/vulkan_blockwise_w4a8-compile.stderr.txt",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/checks/vulkan_blockwise_w4a8-compile.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "windows/vulkan/checks/vulkan_blockwise_w4a8-compile.stdout.txt",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/checks/vulkan_blockwise_w4a8-compile.stdout.txt",
+      "bytes": 26,
+      "sha256": "d5baa32d8f5c2b1028e57fd24d488b21671a70e8ab7744a857fe21ed90c24104"
+    },
+    {
+      "entry": "windows/vulkan/checks/vulkan_blockwise_w4a8-deps.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/checks/vulkan_blockwise_w4a8-deps.json",
+      "bytes": 23282,
+      "sha256": "f4928b239dfae3bceba958e93b5ad7bf587ea77f3c843f18feb2e7d01b022c92"
+    },
+    {
+      "entry": "windows/vulkan/checks/vulkan_blockwise_w4a8-identity.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/checks/vulkan_blockwise_w4a8-identity.json",
+      "bytes": 52434,
+      "sha256": "6143c9e0866fd822d90de9247a9e2071715d01d8bd378ea5de868fe8624ffb46"
+    },
+    {
+      "entry": "windows/vulkan/checks/vulkan_operations-compile.stderr.txt",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/checks/vulkan_operations-compile.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "windows/vulkan/checks/vulkan_operations-compile.stdout.txt",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/checks/vulkan_operations-compile.stdout.txt",
+      "bytes": 22,
+      "sha256": "491e3c9260a8ab918c06a46d80e21d3bb812af731914132fbed981508b8dec31"
+    },
+    {
+      "entry": "windows/vulkan/checks/vulkan_operations-deps.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/checks/vulkan_operations-deps.json",
+      "bytes": 23565,
+      "sha256": "ca35093dca188612ab809f803ab8669cdb0da9e058862c3b2b4143ec1e45a272"
+    },
+    {
+      "entry": "windows/vulkan/checks/vulkan_operations-identity.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/checks/vulkan_operations-identity.json",
+      "bytes": 53185,
+      "sha256": "00af09e7adb9571162c7cb536cc1bcc76e2efaf6b52e3ec07658485733c1741c"
+    },
+    {
+      "entry": "windows/vulkan/checks/vulkan_shaders-compile.stderr.txt",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/checks/vulkan_shaders-compile.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "windows/vulkan/checks/vulkan_shaders-compile.stdout.txt",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/checks/vulkan_shaders-compile.stdout.txt",
+      "bytes": 19,
+      "sha256": "dee8c0d35a51af60db9cf6e80f299954eedc55ef4c2a5b7583c597591a1fb1d2"
+    },
+    {
+      "entry": "windows/vulkan/checks/vulkan_shaders-deps.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/checks/vulkan_shaders-deps.json",
+      "bytes": 8937,
+      "sha256": "3fa6a7db4233e99b77459df7ddf536a23dd4eba8409555fb69a5b0364d28498e"
+    },
+    {
+      "entry": "windows/vulkan/checks/vulkan_shaders-identity.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/checks/vulkan_shaders-identity.json",
+      "bytes": 23042,
+      "sha256": "45383df8c6502fb362846e6a136e48de6a9113f3456bdfc79095559da889de88"
+    },
+    {
+      "entry": "windows/vulkan/implementation.diff",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/implementation.diff",
+      "bytes": 24245,
+      "sha256": "54d95698223310a14f12cf4752cb6e5ca0f92ecfac143597183e09f5c098ec92"
+    },
+    {
+      "entry": "windows/vulkan/ready-to-run.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/ready-to-run.json",
+      "bytes": 5629,
+      "sha256": "4e91d562f1cf1931d5b30f96fc88fa7f7a3e52adff27c8a54174186ac120d498"
+    },
+    {
+      "entry": "windows/vulkan/revisions/first-attempt/after/src/compute_route_vulkan/CMakeLists.txt",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/revisions/first-attempt/after/src/compute_route_vulkan/CMakeLists.txt",
+      "bytes": 3250,
+      "sha256": "4210fd65dc1d3410057a0e56246e3dab8e5faaeda0b39f466fc0f678f79d7c3a"
+    },
+    {
+      "entry": "windows/vulkan/revisions/first-attempt/after/src/compute_route_vulkan/build_shaders.py",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/revisions/first-attempt/after/src/compute_route_vulkan/build_shaders.py",
+      "bytes": 7843,
+      "sha256": "3b58a38a42705201f3460c58817e7934b0db81304b32c1448bbc5b75364154e3"
+    },
+    {
+      "entry": "windows/vulkan/revisions/first-attempt/after/src/compute_route_vulkan/shaders/blockwise_w4a8.comp",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/revisions/first-attempt/after/src/compute_route_vulkan/shaders/blockwise_w4a8.comp",
+      "bytes": 5994,
+      "sha256": "b5a14bf24bb3ef78dcfe3d189f601f42650873ace2e0e6087606ec75c861385a"
+    },
+    {
+      "entry": "windows/vulkan/revisions/first-attempt/after/src/compute_route_vulkan/vulkan_blockwise_w4a8.cc",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/revisions/first-attempt/after/src/compute_route_vulkan/vulkan_blockwise_w4a8.cc",
+      "bytes": 6122,
+      "sha256": "276280d7209a4318ef7694d1dc10a497454a1c46883abb1a1102b3b3c5ac52af"
+    },
+    {
+      "entry": "windows/vulkan/revisions/first-attempt/after/src/compute_route_vulkan/vulkan_operations.cc",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/revisions/first-attempt/after/src/compute_route_vulkan/vulkan_operations.cc",
+      "bytes": 5903,
+      "sha256": "da273c09f75778929f68970a5c3e41723f3092d63b301fa093e986cbefeb738b"
+    },
+    {
+      "entry": "windows/vulkan/revisions/first-attempt/after/src/compute_route_vulkan/vulkan_tensor.h",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/revisions/first-attempt/after/src/compute_route_vulkan/vulkan_tensor.h",
+      "bytes": 1838,
+      "sha256": "061204ab279632cc577c44bebb794090d847948fb772a2e71d5f11bd71d2a8cd"
+    },
+    {
+      "entry": "windows/vulkan/revisions/first-attempt/after/tests/graph_route_vulkan/CMakeLists.txt",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/revisions/first-attempt/after/tests/graph_route_vulkan/CMakeLists.txt",
+      "bytes": 5672,
+      "sha256": "241d57382ebb77024fe432ab31c270c36ad0c2f1b05abd7790c7813eebd2181f"
+    },
+    {
+      "entry": "windows/vulkan/revisions/first-attempt/after/tests/graph_route_vulkan/blockwise_w4a8_test.cc",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/revisions/first-attempt/after/tests/graph_route_vulkan/blockwise_w4a8_test.cc",
+      "bytes": 3962,
+      "sha256": "a7f641ced5f485eef7fb31c5ec0719c9b1b6bfbaac55478f77d319d66d06cb75"
+    },
+    {
+      "entry": "windows/vulkan/revisions/first-attempt/implementation.diff",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/revisions/first-attempt/implementation.diff",
+      "bytes": 24172,
+      "sha256": "b50e06e1b2e8d06a585985a947f6d3b9cebdd6339ed33543b88a0660de87fb87"
+    },
+    {
+      "entry": "windows/vulkan/revisions/first-attempt/ready-to-run.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/revisions/first-attempt/ready-to-run.json",
+      "bytes": 5250,
+      "sha256": "cd0d718d299214b1d587357699b61aee38301269726b4673f12f797e449571e5"
+    },
+    {
+      "entry": "windows/vulkan/revisions/first-attempt/source-freeze.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/revisions/first-attempt/source-freeze.json",
+      "bytes": 5737,
+      "sha256": "65ad48e8a8f5ff983903c7cf0179863085a9f519db44847d1a08b58619be1879"
+    },
+    {
+      "entry": "windows/vulkan/shaders/attempt2/blockwise_w4a8.generated.comp",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/shaders/attempt2/blockwise_w4a8.generated.comp",
+      "bytes": 12345,
+      "sha256": "558c96d630c27cb3354eb42ea8c7c02747c2e66be10172a66b006eb384ef3f43"
+    },
+    {
+      "entry": "windows/vulkan/shaders/attempt2/vulkan_shaders.cc",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/shaders/attempt2/vulkan_shaders.cc",
+      "bytes": 2415786,
+      "sha256": "a7d16bddf37870a36399f0b9614bd7e9373242257aa8821cb761037a70dfda21"
+    },
+    {
+      "entry": "windows/vulkan/shaders/attempt2/vulkan_shaders.h",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/shaders/attempt2/vulkan_shaders.h",
+      "bytes": 1498,
+      "sha256": "52f159b375e7b6a1a360cadf4dfc3eb779a25af3ab1067367ec435b1539793de"
+    },
+    {
+      "entry": "windows/vulkan/shaders/blockwise_w4a8.generated.comp",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/shaders/blockwise_w4a8.generated.comp",
+      "bytes": 12345,
+      "sha256": "b628902e8d8cb5aca8fd4827c6430e6ae61c680395e79bbfe0b69f2fa09f3f9f"
+    },
+    {
+      "entry": "windows/vulkan/shaders/vulkan_shaders.cc",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/shaders/vulkan_shaders.cc",
+      "bytes": 2415786,
+      "sha256": "92eef1e6a8cf14f2fe7441dc1313976003f14d2a564b94b56008ed61acf908d1"
+    },
+    {
+      "entry": "windows/vulkan/shaders/vulkan_shaders.h",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/shaders/vulkan_shaders.h",
+      "bytes": 1498,
+      "sha256": "52f159b375e7b6a1a360cadf4dfc3eb779a25af3ab1067367ec435b1539793de"
+    },
+    {
+      "entry": "windows/vulkan/source-freeze.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/source-freeze.json",
+      "bytes": 5737,
+      "sha256": "92a1500e79f9c499a274913e68c718d7325bcf98f84809e3127042441d4d683f"
+    },
+    {
+      "entry": "windows/vulkan/status-slot-fix.diff",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/status-slot-fix.diff",
+      "bytes": 2123,
+      "sha256": "4da34ae30210a5d9d7412a8eb97a2873bf330492174e5ee483d21a4556843cf4"
+    },
+    {
+      "entry": "windows/vulkan/status-slot-fix.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/status-slot-fix.json",
+      "bytes": 3023,
+      "sha256": "3842fdcc5a46dad60f67633d9bff406e7df87c838f339df5dcf0cd2cf2bdba36"
+    },
+    {
+      "entry": "windows/vulkan/validation/attempt1/image-before.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/validation/attempt1/image-before.json",
+      "bytes": 285,
+      "sha256": "4a917f080a54d6004bf99910041489e350bb5908ef0e856622b8b58a25a491db"
+    },
+    {
+      "entry": "windows/vulkan/validation/attempt1/live.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/validation/attempt1/live.json",
+      "bytes": 682,
+      "sha256": "dfca8c475d64ce8d35d3e74af5504755554eee1aa5743aa39f71d0b2430960a5"
+    },
+    {
+      "entry": "windows/vulkan/validation/attempt1/receipt.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/validation/attempt1/receipt.json",
+      "bytes": 4386,
+      "sha256": "f5680ec241b707630118bca552d3f9bcb7a1933b03d3d1ebb3a74682dd6f1d74"
+    },
+    {
+      "entry": "windows/vulkan/validation/attempt1/runtime-environment.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/validation/attempt1/runtime-environment.json",
+      "bytes": 8168,
+      "sha256": "1aa2abd4e47acb9619357b1f5ae4706989f3fd36515133996fb310250fb6abf3"
+    },
+    {
+      "entry": "windows/vulkan/validation/attempt1/tests.command.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/validation/attempt1/tests.command.json",
+      "bytes": 612,
+      "sha256": "72f1dec112700a575914c2b29223b72c4d1f3d7e29e0315695685d0d4f06a7cd"
+    },
+    {
+      "entry": "windows/vulkan/validation/attempt1/tests.result.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/validation/attempt1/tests.result.json",
+      "bytes": 682,
+      "sha256": "dfca8c475d64ce8d35d3e74af5504755554eee1aa5743aa39f71d0b2430960a5"
+    },
+    {
+      "entry": "windows/vulkan/validation/attempt1/tests.stderr.log",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/validation/attempt1/tests.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "windows/vulkan/validation/attempt1/tests.stdout.log",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/validation/attempt1/tests.stdout.log",
+      "bytes": 2498,
+      "sha256": "77db5640b3fde053dad8b1102551a81fa852c7e804d7bab8e63bdfe431132674"
+    },
+    {
+      "entry": "windows/vulkan/validation/attempt1/tests.xml",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/validation/attempt1/tests.xml",
+      "bytes": 4165,
+      "sha256": "6f9ee279c911616dac7379f1c074667f54b830e6459570f1f191063b7232ccf8"
+    },
+    {
+      "entry": "windows/vulkan/validation/attempt2/image-before.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/validation/attempt2/image-before.json",
+      "bytes": 295,
+      "sha256": "0ad0c6e030870d655e39a909d83868f880d30b830bfc0c4d28d468bd8158c124"
+    },
+    {
+      "entry": "windows/vulkan/validation/attempt2/live.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/validation/attempt2/live.json",
+      "bytes": 631,
+      "sha256": "00b86441ea1d968b4448ea2cb8f0de511dffa14b16a30f01f618fba40b7373ce"
+    },
+    {
+      "entry": "windows/vulkan/validation/attempt2/receipt.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/validation/attempt2/receipt.json",
+      "bytes": 2006,
+      "sha256": "b0fcb13e3a95d08654b66cfde0aebead3001d9c105d422121bbf85a2ebba709f"
+    },
+    {
+      "entry": "windows/vulkan/validation/attempt2/runtime-environment.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/validation/attempt2/runtime-environment.json",
+      "bytes": 8168,
+      "sha256": "1aa2abd4e47acb9619357b1f5ae4706989f3fd36515133996fb310250fb6abf3"
+    },
+    {
+      "entry": "windows/vulkan/validation/attempt2/tests.command.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/validation/attempt2/tests.command.json",
+      "bytes": 561,
+      "sha256": "86873ef7c2bc42155adfc2de9145ca7336cc22e0ecc9a72346e5cc947014a2e3"
+    },
+    {
+      "entry": "windows/vulkan/validation/attempt2/tests.result.json",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/validation/attempt2/tests.result.json",
+      "bytes": 631,
+      "sha256": "00b86441ea1d968b4448ea2cb8f0de511dffa14b16a30f01f618fba40b7373ce"
+    },
+    {
+      "entry": "windows/vulkan/validation/attempt2/tests.stderr.log",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/validation/attempt2/tests.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "windows/vulkan/validation/attempt2/tests.stdout.log",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/validation/attempt2/tests.stdout.log",
+      "bytes": 910,
+      "sha256": "d8d45cf1e5697bad1e4642c49073a46eafcbc011cc4d8a9eb74a6d0e749364db"
+    },
+    {
+      "entry": "windows/vulkan/validation/attempt2/tests.xml",
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/blockwise-w4a8/vulkan/validation/attempt2/tests.xml",
+      "bytes": 1342,
+      "sha256": "2c757b099cfad3fc99efff7b0a0632e37740510bcdfe64b378ed58e9e4db7e54"
+    }
+  ]
+}

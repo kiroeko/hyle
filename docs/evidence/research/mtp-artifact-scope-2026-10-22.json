@@ -1,0 +1,1014 @@
+{
+  "date": "2026-10-22",
+  "status": "SOURCE_ONLY_ARTIFACT_AND_ADAPTER_REVIEW",
+  "scope": {
+    "models": [
+      "qwen35_2b",
+      "qwen38_27b",
+      "qwen38_24t",
+      "kimi_k3",
+      "glm53",
+      "glm53_flash",
+      "deepseek_v4_pro_0813",
+      "deepseek_v4_flash_0731"
+    ],
+    "excluded": [
+      "deepseek_v4_pro",
+      "deepseek_v4_flash"
+    ],
+    "baseline_profiles": 24,
+    "discovered_derivative_rows": 33,
+    "limitation": "33 discovery rows are not33mandatory MTP adapters. A library provides math/layout/state/resource primitives; engine scheduling, complete checkpoint loaders and sampling policy remain consumers. No deeper Qwen draft/non-greedy/multimodal scope added."
+  },
+  "conclusion": "Q35 official BF16 K1 is the real original-payload running consumer. Other confirmed MTP artifacts have substantial finite math consumers already. No new public MTP math/state API is currently justified; the smallest meaningful remaining consumer is actual sampled token to next-row Markov/confidence in DSpark, followed by exact chosen payload binding and complete accepted-state publication. Do not turn unreviewed artifacts into missing implementation claims.",
+  "models": [
+    {
+      "model": "qwen35_2b",
+      "official": "PRESENT_HEADER_AND_ACTUAL_PAYLOAD_CONSUMER:15BF16 mtp.*;320target+15mtp originals",
+      "primary_gguf": "EXPLICIT_R13_EXCLUSION:UD-Q4_K_XL",
+      "fidelity_gguf": "EXPLICIT_R13_EXCLUSION:UD-Q8_K_XL",
+      "current": "Official BF16 greedy K1 complete target/draft snapshots, shared embedding/head, accepted-prefix/catch-up, prefix reuse, bounded restoration, budget and actual retirement exist on current consumer. This does not certify other codecs.",
+      "remaining": "Actual current performance gap; separately selected concrete derivative payload/adapter if required. No MTP implementation task for these two excluded baseline GGUF profiles."
+    },
+    {
+      "model": "qwen38_27b",
+      "official": "PRESENT_FIXED_HEADER:15BF16 mtp.* at exact official revision;D5120/FF17408/Q24/KV4/D256",
+      "primary_gguf": "Main embedded MTP inclusion unverified here; fixed separate18-tensor MTP/mtp-Qwen3.8-27B-Q4_0.gguf exists at same repository revision.",
+      "fidelity_gguf": "Same separate sidecar is an explicit additional selection, not implicit main-GGUF inclusion.",
+      "current": "cpu_c4_qwen_mtp.h has full-width mixed Q3_K/Q4_K/Q6_K/F32 sidecar math and actual generated test output feedback/full shared head. Weights are deterministic format-valid test bytes.",
+      "remaining": "Exact original payload/role importer and geometry/state adapter; Q35 fixed15tensor schema cannot be reused unchanged. No proven missing new MTP math API."
+    },
+    {
+      "model": "qwen38_24t",
+      "official": "PRESENT_FIXED_HEADER:19BF16 mtp.* including fused512expert gate_up/down banks and shared/router roles;D8192",
+      "primary_gguf": "PRESENT_ROLE_HEADER:currentUD-IQ4_XS blk.92.nextn.eh_proj.weight is Q8_0; per-role codecs remain separate.",
+      "fidelity_gguf": "PRESENT_ROLE_HEADER:Q8_0 blk.92.nextn.eh_proj.weight.",
+      "current": "d5_qwen38_24t_semantic_fragments.h:355 covers current two baseline input projection roles. cpu_c5_qwen_nextn.h has larger full synthetic NextN but its Q8_0/UD-IQ1_M program must not certify current UD-IQ4_XS payload.",
+      "remaining": "Bind exact chosen original BF16 or encoded MTP banks and shared weights; parameterized target/recurrent/draft complete state and accepted-prefix consumer. Do not copy 2.4T model into test infrastructure."
+    },
+    {
+      "model": "kimi_k3",
+      "official": "NO_TRAINED_MTP_HEAD_IN_FIXED_ARTIFACT:nextn0;all497220 named tensor headers contain0mtp.*",
+      "primary_gguf": "No MTP requirement established for inherited model family.",
+      "fidelity_gguf": "No MTP requirement established for inherited model family.",
+      "current": "KDA/MLA/conv complete state work is model integration, not missing MTP.",
+      "remaining": "None for MTP absent concrete new artifact head evidence. Derivative quantization labels alone do not add an MTP obligation."
+    },
+    {
+      "model": "glm53",
+      "official": "PRESENT_FIXED_NEXTN_HEADER:layer78,1569tensors BF16/F8_E4M3/F32",
+      "primary_gguf": "PRESENT_FIXED_HEADER:blk.78.nextn.eh_proj Q8_0 and F32 enorm/hnorm/shared_head_norm in pinned UD-Q4_K_XL",
+      "fidelity_gguf": "PRESENT_FIXED_HEADER:same NextN roles in pinned Q8_0",
+      "current": "d5_glm_remaining_fragments.h:750 mtp_decoder,925 check_mtp_head,945 check_index_carry provide finite decoder/head/index carry math and feedback. They are synthetic-role consumers.",
+      "remaining": "Original payload role binding and one complete model-specific MLA/DSA/index carry snapshot/proposal/verify/accepted-prefix consumer; no need to invent dedicated MTP/index-carry core API without a concrete failure."
+    },
+    {
+      "model": "glm53_flash",
+      "official": "PRESENT_FIXED_NEXTN_HEADER:layer45,1760tensors BF16/F8_E4M3/F32",
+      "primary_gguf": "PRESENT_FIXED_HEADER:blk.45.nextn roles in pinned UD-Q4_K_XL",
+      "fidelity_gguf": "PRESENT_FIXED_HEADER:same NextN roles in pinned Q8_0",
+      "current": "Same finite NextN/carry sources; Flash trunk KDA/pool/tail and its ordinary NextN decoder are distinct. Quark derivative MTP uses explicit FP8 MultiplyReciprocal overrides, not blanket MXFP4.",
+      "remaining": "Bind selected payload and preserve KDA/conv/pool+unpooled tail/NoPE MLA/index state with positions and accepted boundary as one complete snapshot. Shared generic state/Graph mechanisms remain applicable."
+    },
+    {
+      "model": "deepseek_v4_pro_0813",
+      "official": "DECLARED_FIXED_GA_SOURCE_DSPARK:3stages/block5,target58/59/60,Markov512;not old nextn1 topology. GA raw role header/payload not newly audited here.",
+      "primary_gguf": "UNVERIFIED_MAIN_DSPARK_INCLUSION_AND_ROLE_CODECS:20shards at fixed GA revision;do not use old preview result.",
+      "fidelity_gguf": "UNVERIFIED_MAIN_DSPARK_INCLUSION_AND_ROLE_CODECS:same fixed GA repository.",
+      "current": "cpu_c4_model_branches.h:373–533 expresses three full stages, independent cache feedback, HC/head, Markov/confidence and full vocabulary through resident head shards, with artificial weights. Markov IDs are external inputs.",
+      "remaining": "Finite actual sampled-ID→next-rowMarkov/confidence chain, then exact original GA role importer/target hidden extraction and complete target/draft accepted state. No evidence for missing three-stage math primitive."
+    },
+    {
+      "model": "deepseek_v4_flash_0731",
+      "official": "DECLARED_FIXED_GA_SOURCE_DSPARK:3stages/block5,target40/41/42,Markov256. Fixed official source is distinct from old Flash preview.",
+      "primary_gguf": "Main UD-Q4_K_XL DSpark inclusion unverified; explicit optional Q8_0/BF16 dflash sidecars each have81 fixed header roles.",
+      "fidelity_gguf": "Main UD-Q8_K_XL likewise; optional sidecar is separate, not automatic completion.",
+      "current": "cpu_c4_flash_sidecars.h supports same three-stage finite ordinary Graph with actual codec roles and state feedback; independently sharded full shared head. Header manifest81each does not imply payload execution.",
+      "remaining": "Current complete() still takes external token[t] for Markov, not previous sampled row. Close that finite public Graph chain first, then selected original sidecar/shared payload and acceptance state. No DSpark-specific public API justified."
+    }
+  ],
+  "official_header_extract": [
+    {
+      "model_id": "qwen35_2b",
+      "repository": "Qwen/Qwen3.5-2B",
+      "revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+      "all_parsed_header_tensors": 632,
+      "weight_map_count": 632,
+      "mtp_tensor_count": 15,
+      "mtp_dtypes": {
+        "BF16": 15
+      },
+      "mtp_roles": [
+        {
+          "name": "mtp.fc.weight",
+          "dtype": "BF16",
+          "shape": [
+            2048,
+            4096
+          ]
+        },
+        {
+          "name": "mtp.layers.0.input_layernorm.weight",
+          "dtype": "BF16",
+          "shape": [
+            2048
+          ]
+        },
+        {
+          "name": "mtp.layers.0.mlp.down_proj.weight",
+          "dtype": "BF16",
+          "shape": [
+            2048,
+            6144
+          ]
+        },
+        {
+          "name": "mtp.layers.0.mlp.gate_proj.weight",
+          "dtype": "BF16",
+          "shape": [
+            6144,
+            2048
+          ]
+        },
+        {
+          "name": "mtp.layers.0.mlp.up_proj.weight",
+          "dtype": "BF16",
+          "shape": [
+            6144,
+            2048
+          ]
+        },
+        {
+          "name": "mtp.layers.0.post_attention_layernorm.weight",
+          "dtype": "BF16",
+          "shape": [
+            2048
+          ]
+        },
+        {
+          "name": "mtp.layers.0.self_attn.k_norm.weight",
+          "dtype": "BF16",
+          "shape": [
+            256
+          ]
+        },
+        {
+          "name": "mtp.layers.0.self_attn.k_proj.weight",
+          "dtype": "BF16",
+          "shape": [
+            512,
+            2048
+          ]
+        },
+        {
+          "name": "mtp.layers.0.self_attn.o_proj.weight",
+          "dtype": "BF16",
+          "shape": [
+            2048,
+            2048
+          ]
+        },
+        {
+          "name": "mtp.layers.0.self_attn.q_norm.weight",
+          "dtype": "BF16",
+          "shape": [
+            256
+          ]
+        },
+        {
+          "name": "mtp.layers.0.self_attn.q_proj.weight",
+          "dtype": "BF16",
+          "shape": [
+            4096,
+            2048
+          ]
+        },
+        {
+          "name": "mtp.layers.0.self_attn.v_proj.weight",
+          "dtype": "BF16",
+          "shape": [
+            512,
+            2048
+          ]
+        },
+        {
+          "name": "mtp.norm.weight",
+          "dtype": "BF16",
+          "shape": [
+            2048
+          ]
+        },
+        {
+          "name": "mtp.pre_fc_norm_embedding.weight",
+          "dtype": "BF16",
+          "shape": [
+            2048
+          ]
+        },
+        {
+          "name": "mtp.pre_fc_norm_hidden.weight",
+          "dtype": "BF16",
+          "shape": [
+            2048
+          ]
+        }
+      ]
+    },
+    {
+      "model_id": "qwen38_27b",
+      "repository": "Qwen/Qwen3.8-27B",
+      "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+      "all_parsed_header_tensors": 1199,
+      "weight_map_count": 1199,
+      "mtp_tensor_count": 15,
+      "mtp_dtypes": {
+        "BF16": 15
+      },
+      "mtp_roles": [
+        {
+          "name": "mtp.fc.weight",
+          "dtype": "BF16",
+          "shape": [
+            5120,
+            10240
+          ]
+        },
+        {
+          "name": "mtp.layers.0.input_layernorm.weight",
+          "dtype": "BF16",
+          "shape": [
+            5120
+          ]
+        },
+        {
+          "name": "mtp.layers.0.mlp.down_proj.weight",
+          "dtype": "BF16",
+          "shape": [
+            5120,
+            17408
+          ]
+        },
+        {
+          "name": "mtp.layers.0.mlp.gate_proj.weight",
+          "dtype": "BF16",
+          "shape": [
+            17408,
+            5120
+          ]
+        },
+        {
+          "name": "mtp.layers.0.mlp.up_proj.weight",
+          "dtype": "BF16",
+          "shape": [
+            17408,
+            5120
+          ]
+        },
+        {
+          "name": "mtp.layers.0.post_attention_layernorm.weight",
+          "dtype": "BF16",
+          "shape": [
+            5120
+          ]
+        },
+        {
+          "name": "mtp.layers.0.self_attn.k_norm.weight",
+          "dtype": "BF16",
+          "shape": [
+            256
+          ]
+        },
+        {
+          "name": "mtp.layers.0.self_attn.k_proj.weight",
+          "dtype": "BF16",
+          "shape": [
+            1024,
+            5120
+          ]
+        },
+        {
+          "name": "mtp.layers.0.self_attn.o_proj.weight",
+          "dtype": "BF16",
+          "shape": [
+            5120,
+            6144
+          ]
+        },
+        {
+          "name": "mtp.layers.0.self_attn.q_norm.weight",
+          "dtype": "BF16",
+          "shape": [
+            256
+          ]
+        },
+        {
+          "name": "mtp.layers.0.self_attn.q_proj.weight",
+          "dtype": "BF16",
+          "shape": [
+            12288,
+            5120
+          ]
+        },
+        {
+          "name": "mtp.layers.0.self_attn.v_proj.weight",
+          "dtype": "BF16",
+          "shape": [
+            1024,
+            5120
+          ]
+        },
+        {
+          "name": "mtp.norm.weight",
+          "dtype": "BF16",
+          "shape": [
+            5120
+          ]
+        },
+        {
+          "name": "mtp.pre_fc_norm_embedding.weight",
+          "dtype": "BF16",
+          "shape": [
+            5120
+          ]
+        },
+        {
+          "name": "mtp.pre_fc_norm_hidden.weight",
+          "dtype": "BF16",
+          "shape": [
+            5120
+          ]
+        }
+      ]
+    },
+    {
+      "model_id": "qwen38_24t",
+      "repository": "Qwen/Qwen3.8-2.4T-A95B",
+      "revision": "207bd685a7e3696cfaff12ded7c6a7ea0f88c996",
+      "all_parsed_header_tensors": 1609,
+      "weight_map_count": 1609,
+      "mtp_tensor_count": 19,
+      "mtp_dtypes": {
+        "BF16": 19
+      },
+      "mtp_roles": [
+        {
+          "name": "mtp.fc.weight",
+          "dtype": "BF16",
+          "shape": [
+            8192,
+            16384
+          ]
+        },
+        {
+          "name": "mtp.layers.0.input_layernorm.weight",
+          "dtype": "BF16",
+          "shape": [
+            8192
+          ]
+        },
+        {
+          "name": "mtp.layers.0.mlp.experts.down_proj",
+          "dtype": "BF16",
+          "shape": [
+            512,
+            8192,
+            2048
+          ]
+        },
+        {
+          "name": "mtp.layers.0.mlp.experts.gate_up_proj",
+          "dtype": "BF16",
+          "shape": [
+            512,
+            4096,
+            8192
+          ]
+        },
+        {
+          "name": "mtp.layers.0.mlp.gate.weight",
+          "dtype": "BF16",
+          "shape": [
+            512,
+            8192
+          ]
+        },
+        {
+          "name": "mtp.layers.0.mlp.shared_expert_gate.weight",
+          "dtype": "BF16",
+          "shape": [
+            1,
+            8192
+          ]
+        },
+        {
+          "name": "mtp.layers.0.mlp.shared_expert.down_proj.weight",
+          "dtype": "BF16",
+          "shape": [
+            8192,
+            2048
+          ]
+        },
+        {
+          "name": "mtp.layers.0.mlp.shared_expert.gate_proj.weight",
+          "dtype": "BF16",
+          "shape": [
+            2048,
+            8192
+          ]
+        },
+        {
+          "name": "mtp.layers.0.mlp.shared_expert.up_proj.weight",
+          "dtype": "BF16",
+          "shape": [
+            2048,
+            8192
+          ]
+        },
+        {
+          "name": "mtp.layers.0.post_attention_layernorm.weight",
+          "dtype": "BF16",
+          "shape": [
+            8192
+          ]
+        },
+        {
+          "name": "mtp.layers.0.self_attn.k_norm.weight",
+          "dtype": "BF16",
+          "shape": [
+            256
+          ]
+        },
+        {
+          "name": "mtp.layers.0.self_attn.k_proj.weight",
+          "dtype": "BF16",
+          "shape": [
+            1024,
+            8192
+          ]
+        },
+        {
+          "name": "mtp.layers.0.self_attn.o_proj.weight",
+          "dtype": "BF16",
+          "shape": [
+            8192,
+            16384
+          ]
+        },
+        {
+          "name": "mtp.layers.0.self_attn.q_norm.weight",
+          "dtype": "BF16",
+          "shape": [
+            256
+          ]
+        },
+        {
+          "name": "mtp.layers.0.self_attn.q_proj.weight",
+          "dtype": "BF16",
+          "shape": [
+            32768,
+            8192
+          ]
+        },
+        {
+          "name": "mtp.layers.0.self_attn.v_proj.weight",
+          "dtype": "BF16",
+          "shape": [
+            1024,
+            8192
+          ]
+        },
+        {
+          "name": "mtp.norm.weight",
+          "dtype": "BF16",
+          "shape": [
+            8192
+          ]
+        },
+        {
+          "name": "mtp.pre_fc_norm_embedding.weight",
+          "dtype": "BF16",
+          "shape": [
+            8192
+          ]
+        },
+        {
+          "name": "mtp.pre_fc_norm_hidden.weight",
+          "dtype": "BF16",
+          "shape": [
+            8192
+          ]
+        }
+      ]
+    },
+    {
+      "model_id": "kimi_k3",
+      "repository": "moonshotai/Kimi-K3",
+      "revision": "f831ab66814297da540d832a5235f8e904f29d06",
+      "all_parsed_header_tensors": 497220,
+      "weight_map_count": 497220,
+      "mtp_tensor_count": 0,
+      "mtp_dtypes": {},
+      "mtp_roles": []
+    }
+  ],
+  "selected_additional_quantizations": [
+    {
+      "catalog_pointer": "docs/implementation/model-quantizations.json#/artifacts/0",
+      "model_id": "qwen35_2b",
+      "repository": "cyankiwi/Qwen3.5-2B-AWQ-4bit",
+      "revision": "718fd9b52c5ca16f1f856f6c4e4209129802a6a2",
+      "codec_domain": "AWQ/CT-INT4-g32-sym",
+      "mtp_presence": "UNVERIFIED_MTP_PAYLOAD_PRESENCE_IN_REVIEWED_CATALOG",
+      "fact": "Quantization/operator inventory is not an original MTP payload-role execution. mtp ignore/exclude/modules_to_not_convert is a quantization exclusion; it does not prove tensor absence."
+    },
+    {
+      "catalog_pointer": "docs/implementation/model-quantizations.json#/artifacts/1",
+      "model_id": "qwen35_2b",
+      "repository": "Vishva007/Qwen3.5-2B-W4A16-AutoRound-GPTQ",
+      "revision": "8ec79a3b08636bc68fd40d69df80e97ff1263995",
+      "codec_domain": "GPTQ-INT4-g32-sym",
+      "mtp_presence": "UNVERIFIED_MTP_PAYLOAD_PRESENCE_IN_REVIEWED_CATALOG",
+      "fact": "Quantization/operator inventory is not an original MTP payload-role execution. mtp ignore/exclude/modules_to_not_convert is a quantization exclusion; it does not prove tensor absence."
+    },
+    {
+      "catalog_pointer": "docs/implementation/model-quantizations.json#/artifacts/2",
+      "model_id": "qwen35_2b",
+      "repository": "Freesolo-Co/Qwen3.5-2B-FP8",
+      "revision": "e200465690a076860468c19bec107ac54a257953",
+      "codec_domain": "CT-FP8-channel-token",
+      "mtp_presence": "UNVERIFIED_MTP_PAYLOAD_PRESENCE_IN_REVIEWED_CATALOG",
+      "fact": "Quantization/operator inventory is not an original MTP payload-role execution."
+    },
+    {
+      "catalog_pointer": "docs/implementation/model-quantizations.json#/artifacts/3",
+      "model_id": "qwen35_2b",
+      "repository": "AxionML/Qwen3.5-2B-NVFP4",
+      "revision": "6f2ad4febe92be529de499b08f0020f5ff06bf25",
+      "codec_domain": "ModelOpt-NVFP4-g16",
+      "mtp_presence": "UNVERIFIED_MTP_PAYLOAD_PRESENCE_IN_REVIEWED_CATALOG",
+      "fact": "Quantization/operator inventory is not an original MTP payload-role execution."
+    },
+    {
+      "catalog_pointer": "docs/implementation/model-quantizations.json#/artifacts/4",
+      "model_id": "qwen35_2b",
+      "repository": "mlx-community/Qwen3.5-2B-MLX-4bit",
+      "revision": "93760be4f1f69842a46bc13dbdc0f19e291392a3",
+      "codec_domain": "MLX-affine4-g64",
+      "mtp_presence": "UNVERIFIED_MTP_PAYLOAD_PRESENCE_IN_REVIEWED_CATALOG",
+      "fact": "Quantization/operator inventory is not an original MTP payload-role execution."
+    },
+    {
+      "catalog_pointer": "docs/implementation/model-quantizations.json#/artifacts/5",
+      "model_id": "qwen35_2b",
+      "repository": "mlx-community/Qwen3.5-2B-MLX-8bit",
+      "revision": "e6ffd0033d03c9efa880984e611028e0da63905f",
+      "codec_domain": "MLX-affine8-g64",
+      "mtp_presence": "UNVERIFIED_MTP_PAYLOAD_PRESENCE_IN_REVIEWED_CATALOG",
+      "fact": "Quantization/operator inventory is not an original MTP payload-role execution."
+    },
+    {
+      "catalog_pointer": "docs/implementation/model-quantizations.json#/artifacts/6",
+      "model_id": "qwen38_27b",
+      "repository": "Qwen/Qwen3.8-27B-FP8",
+      "revision": "017b9c7af6b5689d5dd426a76e0bc077eb5ca20a",
+      "codec_domain": "HF-FP8-block128",
+      "mtp_presence": "UNVERIFIED_MTP_PAYLOAD_PRESENCE_IN_REVIEWED_CATALOG",
+      "fact": "Quantization/operator inventory is not an original MTP payload-role execution."
+    },
+    {
+      "catalog_pointer": "docs/implementation/model-quantizations.json#/artifacts/7",
+      "model_id": "qwen38_27b",
+      "repository": "nvidia/Qwen3.8-27B-NVFP4",
+      "revision": "482ca0f3832238542f8f5295dde86b5f22711d80",
+      "codec_domain": "ModelOpt-mixed-FP8-NVFP4",
+      "mtp_presence": "UNVERIFIED_MTP_PAYLOAD_PRESENCE_IN_REVIEWED_CATALOG",
+      "fact": "Quantization/operator inventory is not an original MTP payload-role execution. mtp ignore/exclude/modules_to_not_convert is a quantization exclusion; it does not prove tensor absence."
+    },
+    {
+      "catalog_pointer": "docs/implementation/model-quantizations.json#/artifacts/8",
+      "model_id": "qwen38_27b",
+      "repository": "unsloth/Qwen3.8-27B-NVFP4",
+      "revision": "f0b7c9e722f5565102fff8481c99e4d86ae099c7",
+      "codec_domain": "CT-mixed-FP8token-NVFP4",
+      "mtp_presence": "UNVERIFIED_MTP_PAYLOAD_PRESENCE_IN_REVIEWED_CATALOG",
+      "fact": "Quantization/operator inventory is not an original MTP payload-role execution."
+    },
+    {
+      "catalog_pointer": "docs/implementation/model-quantizations.json#/artifacts/9",
+      "model_id": "qwen38_27b",
+      "repository": "cyankiwi/Qwen3.8-27B-AWQ-INT4",
+      "revision": "6e134bae811fb5adac50ee042ae5f029ac6779aa",
+      "codec_domain": "AWQ/CT-INT4-g32-asym",
+      "mtp_presence": "UNVERIFIED_MTP_PAYLOAD_PRESENCE_IN_REVIEWED_CATALOG",
+      "fact": "Quantization/operator inventory is not an original MTP payload-role execution."
+    },
+    {
+      "catalog_pointer": "docs/implementation/model-quantizations.json#/artifacts/10",
+      "model_id": "qwen38_27b",
+      "repository": "Vishva007/Qwen3.8-27B-W4A16-AutoRound-GPTQ",
+      "revision": "1b9d56b428e9f841d7ad566f87660b5f47553c97",
+      "codec_domain": "GPTQ-INT4-g64-sym",
+      "mtp_presence": "UNVERIFIED_MTP_PAYLOAD_PRESENCE_IN_REVIEWED_CATALOG",
+      "fact": "Quantization/operator inventory is not an original MTP payload-role execution. mtp ignore/exclude/modules_to_not_convert is a quantization exclusion; it does not prove tensor absence."
+    },
+    {
+      "catalog_pointer": "docs/implementation/model-quantizations.json#/artifacts/11",
+      "model_id": "qwen38_27b",
+      "repository": "mlx-community/Qwen3.8-27B-4bit",
+      "revision": "10c35caafbb80f7dc6a7a432cdd11af10a6d4818",
+      "codec_domain": "MLX-affine4-g64",
+      "mtp_presence": "UNVERIFIED_MTP_PAYLOAD_PRESENCE_IN_REVIEWED_CATALOG",
+      "fact": "Quantization/operator inventory is not an original MTP payload-role execution."
+    },
+    {
+      "catalog_pointer": "docs/implementation/model-quantizations.json#/artifacts/12",
+      "model_id": "qwen38_27b",
+      "repository": "mlx-community/Qwen3.8-27B-8bit",
+      "revision": "815b83c0df8ffd1d1b5244cf75fd6ef14fca9ef9",
+      "codec_domain": "MLX-affine8-g64",
+      "mtp_presence": "UNVERIFIED_MTP_PAYLOAD_PRESENCE_IN_REVIEWED_CATALOG",
+      "fact": "Quantization/operator inventory is not an original MTP payload-role execution."
+    },
+    {
+      "catalog_pointer": "docs/implementation/model-quantizations.json#/artifacts/13",
+      "model_id": "qwen38_27b",
+      "repository": "unsloth/Qwen3.8-27B-unsloth-bnb-4bit",
+      "revision": "8aa5f05d26b7205477066e1449e0af13f762a299",
+      "codec_domain": "BNB-NF4-doublequant",
+      "mtp_presence": "UNVERIFIED_MTP_PAYLOAD_PRESENCE_IN_REVIEWED_CATALOG",
+      "fact": "Quantization/operator inventory is not an original MTP payload-role execution."
+    },
+    {
+      "catalog_pointer": "docs/implementation/model-quantizations.json#/artifacts/14",
+      "model_id": "qwen38_27b",
+      "repository": "cdiamond/Qwen3.8-27B-iMatrix-NVFP4-MTP-GGUF",
+      "revision": "ac343e8f44caef0896f79d372ecc07ef7ab34ec8",
+      "codec_domain": "GGUF-hybrid-NVFP4-Kquants",
+      "mtp_presence": "PRESENT_FIXED_FULL_GGUF_HEADER",
+      "fact": "866 tensors mapped; one embedded MTP layer, eight NVFP4 and seven F32 MTP tensors. Original payload importer/full model/MTP unrun."
+    },
+    {
+      "catalog_pointer": "docs/implementation/model-quantizations.json#/artifacts/15",
+      "model_id": "qwen38_24t",
+      "repository": "Qwen/Qwen3.8-2.4T-A95B-FP8",
+      "revision": "d2dc35658bcf77e66643428cb52e774cc3b5bd29",
+      "codec_domain": "HF-FP8-block128",
+      "mtp_presence": "UNVERIFIED_MTP_PAYLOAD_PRESENCE_IN_REVIEWED_CATALOG",
+      "fact": "Quantization/operator inventory is not an original MTP payload-role execution."
+    },
+    {
+      "catalog_pointer": "docs/implementation/model-quantizations.json#/artifacts/16",
+      "model_id": "qwen38_24t",
+      "repository": "amd/Qwen3.8-2.4T-A95B-Quark-MXFP4",
+      "revision": "13dc9676cdd9e2374c3efb50389d3392b975acae",
+      "codec_domain": "Quark-MXFP4-W4A4-g32",
+      "mtp_presence": "UNVERIFIED_MTP_PAYLOAD_PRESENCE_IN_REVIEWED_CATALOG",
+      "fact": "Quantization/operator inventory is not an original MTP payload-role execution."
+    },
+    {
+      "catalog_pointer": "docs/implementation/model-quantizations.json#/artifacts/17",
+      "model_id": "qwen38_24t",
+      "repository": "nvidia/Qwen3.8-2.4T-A95B-NVFP4",
+      "revision": "74eb734297318ecf7c48016a4ac8ce1b47cc74a9",
+      "codec_domain": "ModelOpt-mixed-FP8-NVFP4",
+      "mtp_presence": "UNVERIFIED_MTP_PAYLOAD_PRESENCE_IN_REVIEWED_CATALOG",
+      "fact": "Quantization/operator inventory is not an original MTP payload-role execution. mtp ignore/exclude/modules_to_not_convert is a quantization exclusion; it does not prove tensor absence."
+    },
+    {
+      "catalog_pointer": "docs/implementation/model-quantizations.json#/artifacts/18",
+      "model_id": "qwen38_24t",
+      "repository": "RedHatAI/Qwen3.8-2.4T-A95B-NVFP4-FP8",
+      "revision": "b94577f02dd4bcb722aad2c60f8117032411dfb5",
+      "codec_domain": "CT-mixed-FP8block-NVFP4",
+      "mtp_presence": "UNVERIFIED_MTP_PAYLOAD_PRESENCE_IN_REVIEWED_CATALOG",
+      "fact": "Quantization/operator inventory is not an original MTP payload-role execution."
+    },
+    {
+      "catalog_pointer": "docs/implementation/model-quantizations.json#/artifacts/19",
+      "model_id": "qwen38_24t",
+      "repository": "Inferact/Qwen3.8-2.4T-A95B-MXFP4",
+      "revision": "98b8fd6c5dec37c28ff28e7a0f577677ccbdc49f",
+      "codec_domain": "HF-mxfp4-micro32-macro128",
+      "mtp_presence": "PUBLISHED_INDEX_MTP_SHARDS_PARTIAL",
+      "fact": "Pinned API lists two MTP expert shards among 7 preserved/92 main expert shards; only two unrelated headers sampled, no complete MTP role census/payload execution."
+    },
+    {
+      "catalog_pointer": "docs/implementation/model-quantizations.json#/artifacts/20",
+      "model_id": "kimi_k3",
+      "repository": "nvidia/Kimi-K3-NVFP4",
+      "revision": "b2428a0b83a8b712ff2e1a8448a103d4175341f1",
+      "codec_domain": "ModelOpt-NVFP4-FP8-PB-WO",
+      "mtp_presence": "NO_MTP_REQUIREMENT_ESTABLISHED_FOR_THIS_BASE",
+      "fact": "Fixed original model has nextn0 and full official header has no mtp.*; no reviewed derivative evidence adds a trained head. This is not a fresh full-header absence proof for each derivative."
+    },
+    {
+      "catalog_pointer": "docs/implementation/model-quantizations.json#/artifacts/21",
+      "model_id": "kimi_k3",
+      "repository": "RedHatAI/Kimi-K3-FP8-BLOCK",
+      "revision": "6409c37cf440abeb76f0b44ab4fb7db8c8bccb4b",
+      "codec_domain": "CT-FP8-block128",
+      "mtp_presence": "NO_MTP_REQUIREMENT_ESTABLISHED_FOR_THIS_BASE",
+      "fact": "Fixed original model has nextn0 and full official header has no mtp.*; no reviewed derivative evidence adds a trained head. This is not a fresh full-header absence proof for each derivative."
+    },
+    {
+      "catalog_pointer": "docs/implementation/model-quantizations.json#/artifacts/22",
+      "model_id": "kimi_k3",
+      "repository": "RedHatAI/Kimi-K3-INT4",
+      "revision": "d5048a3ba6d23dd68749ea4b84abcb66d59a07e3",
+      "codec_domain": "CT-INT4-g128-W4A16",
+      "mtp_presence": "NO_MTP_REQUIREMENT_ESTABLISHED_FOR_THIS_BASE",
+      "fact": "Fixed original model has nextn0 and full official header has no mtp.*; no reviewed derivative evidence adds a trained head. This is not a fresh full-header absence proof for each derivative."
+    },
+    {
+      "catalog_pointer": "docs/implementation/model-quantizations.json#/artifacts/23",
+      "model_id": "kimi_k3",
+      "repository": "amd/Kimi-K3-Quark-MXFP4-AttnFP8",
+      "revision": "398ecc22db3722ed6e416d22f8ddb491da32d566",
+      "codec_domain": "Quark-MXFP4-W4A4-FP8",
+      "mtp_presence": "NO_MTP_REQUIREMENT_ESTABLISHED_FOR_THIS_BASE",
+      "fact": "Fixed original model has nextn0 and full official header has no mtp.*; no reviewed derivative evidence adds a trained head. This is not a fresh full-header absence proof for each derivative."
+    },
+    {
+      "catalog_pointer": "docs/implementation/model-quantizations.json#/artifacts/24",
+      "model_id": "kimi_k3",
+      "repository": "open-inference/Kimi-K3-W4A8-K512-GPTQ-Mixed-Cal72-Seq1024",
+      "revision": "dabd12ab69bf9c71fd219bae4c49a34f00249bd2",
+      "codec_domain": "CT-INT4-K512-custom-W4A8",
+      "mtp_presence": "NO_MTP_REQUIREMENT_ESTABLISHED_FOR_THIS_BASE",
+      "fact": "Fixed original model has nextn0 and full official header has no mtp.*; no reviewed derivative evidence adds a trained head. This is not a fresh full-header absence proof for each derivative."
+    },
+    {
+      "catalog_pointer": "docs/implementation/model-quantizations.json#/artifacts/25",
+      "model_id": "deepseek_v4_pro_0813",
+      "repository": "nvidia/DeepSeek-V4-Pro-0813-NVFP4",
+      "revision": "949138637e8e8fe190335be2396af62187dc8a83",
+      "codec_domain": "NVFP4/mixed-FP8",
+      "mtp_presence": "UNVERIFIED_MTP_PAYLOAD_PRESENCE_IN_REVIEWED_CATALOG",
+      "fact": "Quantization/operator inventory is not an original MTP payload-role execution. mtp ignore/exclude/modules_to_not_convert is a quantization exclusion; it does not prove tensor absence."
+    },
+    {
+      "catalog_pointer": "docs/implementation/model-quantizations.json#/artifacts/26",
+      "model_id": "deepseek_v4_flash_0731",
+      "repository": "nvidia/DeepSeek-V4-Flash-0731-NVFP4",
+      "revision": "f1caa71142bd0be02f728c79f75042ac1e461579",
+      "codec_domain": "NVFP4/mixed-FP8",
+      "mtp_presence": "UNVERIFIED_MTP_PAYLOAD_PRESENCE_IN_REVIEWED_CATALOG",
+      "fact": "Quantization/operator inventory is not an original MTP payload-role execution. mtp ignore/exclude/modules_to_not_convert is a quantization exclusion; it does not prove tensor absence."
+    },
+    {
+      "catalog_pointer": "docs/implementation/model-quantizations.json#/artifacts/27",
+      "model_id": "deepseek_v4_flash_0731",
+      "repository": "AtlasCloud/DeepSeek-V4-Flash-0731-FP8-DSpark",
+      "revision": "7eb21d27aee405755da5251f4458e9fff87c047b",
+      "codec_domain": "FP8-DSpark",
+      "mtp_presence": "DECLARED_DSPARK_WITH_PARTIAL_WEIGHT_HEADERS",
+      "fact": "Fixed derivative and source declare DSpark; sampled E4/F32 block128 roles are not all DSpark role headers or original MTP execution. Existing CUDA grouped BF16 PowerOfTwo primitive and cold block128 import must not be relisted as missing."
+    },
+    {
+      "catalog_pointer": "docs/implementation/model-quantizations.json#/artifacts/28",
+      "model_id": "glm53",
+      "repository": "nvidia/GLM-5.3-NVFP4",
+      "revision": "e3b8f9f2fad29727dfa95e766c5cac18ea1414bf",
+      "codec_domain": "NVFP4/mixed-FP8",
+      "mtp_presence": "UNVERIFIED_MTP_PAYLOAD_PRESENCE_IN_REVIEWED_CATALOG",
+      "fact": "Quantization/operator inventory is not an original MTP payload-role execution."
+    },
+    {
+      "catalog_pointer": "docs/implementation/model-quantizations.json#/artifacts/29",
+      "model_id": "glm53_flash",
+      "repository": "nvidia/GLM-5.3-Flash-NVFP4",
+      "revision": "da920bb0b9f4a06727223a349e55468e38352348",
+      "codec_domain": "NVFP4/mixed-FP8",
+      "mtp_presence": "UNVERIFIED_MTP_PAYLOAD_PRESENCE_IN_REVIEWED_CATALOG",
+      "fact": "Quantization/operator inventory is not an original MTP payload-role execution."
+    },
+    {
+      "catalog_pointer": "docs/implementation/model-quantizations.json#/artifacts/30",
+      "model_id": "glm53_flash",
+      "repository": "amd/GLM-5.3-Flash-Quark-MXFP4",
+      "revision": "b5688f25491202978c19c4d036eef579f61bbe07",
+      "codec_domain": "Quark-MXFP4-W4A4-FP8-block128",
+      "mtp_presence": "PRESENT_FIXED_MTP_ROLE_HEADERS",
+      "fact": "871 layer45 FP8 overrides; first shard directly records329 original W/F32-block-scale pairs. MultiplyReciprocal finite primitive exists; full selected payload/model/acceptance unrun."
+    },
+    {
+      "catalog_pointer": "docs/implementation/model-quantizations.json#/artifacts/31",
+      "model_id": "glm53",
+      "repository": "mlx-community/GLM-5.3-4bit",
+      "revision": "81ad9b73c6188f808737dbb52458f082d249dcbe",
+      "codec_domain": "MLX-affine/mixed-per-layer",
+      "mtp_presence": "UNVERIFIED_MTP_PAYLOAD_PRESENCE_IN_REVIEWED_CATALOG",
+      "fact": "Quantization/operator inventory is not an original MTP payload-role execution."
+    },
+    {
+      "catalog_pointer": "docs/implementation/model-quantizations.json#/artifacts/32",
+      "model_id": "glm53_flash",
+      "repository": "mlx-community/GLM-5.3-Flash-4bit",
+      "revision": "fa04cbc3622b16aa7475404060b05e506d81bd4e",
+      "codec_domain": "MLX-affine/mixed-per-layer",
+      "mtp_presence": "UNVERIFIED_MTP_PAYLOAD_PRESENCE_IN_REVIEWED_CATALOG",
+      "fact": "Quantization/operator inventory is not an original MTP payload-role execution."
+    }
+  ],
+  "presence_rules": [
+    "An actual named tensor header establishes presence and codec/shape, not local full payload availability or model execution.",
+    "ignore/exclude/modules_to_not_convert for mtp excludes quantization and alone proves neither tensor absence nor encoded MTP.",
+    "Kimi nextn0/full official absence and Q35 baseline R13 exclusions are explicit finite exclusions; current GA DeepSeek is never inferred from preview headers.",
+    "The two optional Flash sidecar headers have81roles each and mixed MXFP4/BF16/Q8_0; file names do not define every role dtype."
+  ],
+  "dspark_sequential_dependency": {
+    "fixed_source": "flash-0731/inference-model.py:866–873 output_ids[:,i]→markov bias→sample(logits[:,i])→output_ids[:,i+1], then confidence with the actual Markov embeddings. Temperature0 path uses argmax at939–943.",
+    "official_like_fragment": "cpu_c4_model_branches.h:378 markov_ids[5] external;426 feeds Markov Gather;503–533 separately run resident vocabulary head shards. No row-to-row sample dependency.",
+    "sidecar_fragment": "cpu_c4_flash_sidecars.h:267 token[5] external;294 Markov embedding;330 fixed host token list;413–434 separately run head shards. No TopK/argmax/sample exists anywhere in this file.",
+    "conclusion": "Both contain substantial original-topology mathematical fragments; neither presently proves sample-row0→Markov-row1 inside the same Graph or complete draft/verify acceptance."
+  },
+  "smallest_implementable_next": {
+    "kind": "finite_public_Graph_consumer_wiring_not_new_model_API",
+    "starting_sources": [
+      "tests/compute_models/cpu_c4_model_branches.h:373–533",
+      "tests/compute_models/cpu_c4_flash_sidecars.h:267–298,413–434",
+      ".scratch/model-scope-2026-10-19/flash-0731/inference-model.py:860–873"
+    ],
+    "change": "Keep one declared model/codec and full vocabulary mathematical domain. Wire initial real token→Markov Gather→head+bias→actual TopK1 sampledID→next row Markov Gather, preserve confidence input and original selected head. Use actual product outputs for downstream dataflow, independent reference for the same arithmetic, no host substitution or model-specific kernel. A finite greedy source-control is sufficient; do not expand sampling scope.",
+    "boundary": "Synthetic role bytes can establish this missing dependency/Graph expressibility. They still do not establish original payload inference, acceptance throughput or full model execution. Full chosen payload importer and whole accepted snapshot are separate concrete consumer work.",
+    "library_gap": "None confirmed for these existing mathematical branches. Generic StateVersion/Head, pages/leases/budgets and full Graph/Completion commit can carry accurate adapters; add a primitive only if an actual required mathematical/storage domain is rejected."
+  },
+  "raw_payload_loader_status": {
+    "existing": "tools/qwen35_text/prepare.py:17–62 and main.cc:707–792 enforce exact15BF16roles +320target and fixed HYLE_QWEN35_TEXT_MTP_V1/source_id. Async StreamFile ranges→LeasePool and real original bytes are reusable loader mechanisms, but schema and Graph geometry are model-specific.",
+    "other_models": "Existing role/head/sidecar fixtures generate deterministic weight bytes. Header/index/sidecar metadata cannot be called a general original-payload loader. Do not force a full-engine all-model loader into Compute ABI.",
+    "reusable_import": "weight_import.h/import_float8_block128_weight preserves original E4 row bytes with F32 or UE8M0 block128 scales, without dense W expansion. GGUF encoded MatMul/Gather paths and public Graph operators exist; selected exact publisher roles must bind their own descriptors/scale policy.",
+    "current_stale_inventory_sentence": "model-quantizations.json artifacts/27 notes says grouped path still needs power2. Current GroupedFloat8Linear enum/infer and CUDA grouped_fp8_provider.cc:75–80 already accept BF16 PowerOfTwo; cold import also exists. This is not a new missing math task; original derivative payload/role/MTP journey stays unverified."
+  },
+  "source_state_review": {
+    "path": ".scratch/qwen-mtp-next-20261022/review/mtp-state-gap.json",
+    "bytes": 13282,
+    "sha256": "7d3ce7303c5db11f7f29997cb610099a494e81708d1b69772bd6575f065b6872"
+  },
+  "sources_before_doc_refresh": [
+    {
+      "path": "docs/implementation/model-operators.md",
+      "bytes": 87994,
+      "sha256": "fdd201d9045848bde56dda8d211444262e3d69da9d59cfb1def17c0dba46a9a0"
+    },
+    {
+      "path": "docs/implementation/model-quantizations.json",
+      "bytes": 570171,
+      "sha256": "80424c64a0bbabbc7be2b2e1cc638768b6de971d769020cead471baae7e24563"
+    },
+    {
+      "path": "docs/implementation/tasks/compute/llm-moe-provider-demand-matrix.json",
+      "bytes": 25575,
+      "sha256": "3a803704977def58bba3202652f27380e0a72197752ff3989eab42b2d68a1fd3"
+    },
+    {
+      "path": "docs/implementation/tasks/compute/llm-moe-model-sources.json",
+      "bytes": 24817,
+      "sha256": "4bec1832d8d786ff6beb7fcc93d69f2dedf051211c1cc4eab6808e179b6650f3"
+    },
+    {
+      "path": ".scratch/official-weight-audit.json",
+      "bytes": 310200781,
+      "sha256": "b2733128b42afd8e24722c20514bc3ff1a3fa33f8bfbe6da5e7a6c866663d7ff"
+    },
+    {
+      "path": "tests/compute_models/d5_glm_mtp_facts.json",
+      "bytes": 55770,
+      "sha256": "4eacb8a153e9c44b519cd80ae6501a531c17699ddf1be6436248cf7e726d3891"
+    },
+    {
+      "path": "docs/evidence/correctness/cpu-quant-mtp-c4-three-stage/sidecar-roles.json",
+      "bytes": 49966,
+      "sha256": "abb6810eb41c763d49fc36f0c462324cabf31a0dca0921e711238263b55d4ad7"
+    },
+    {
+      "path": "tools/qwen35_text/prepare.py",
+      "bytes": 7446,
+      "sha256": "8582fdc96cfe1a50a45ac0386637a16484ca39890e437ae35bc1b01251d2ad4d"
+    },
+    {
+      "path": "tools/qwen35_text/main.cc",
+      "bytes": 279550,
+      "sha256": "b48a51ea9611a46804624252d3b69217db3303aad789bde74a7bcf5a698c8856"
+    },
+    {
+      "path": "tools/qwen35_text/mtp_graph.h",
+      "bytes": 18155,
+      "sha256": "409ac3116cdcf34dadcf8ebe8a6f638061eb23d5ac79011deb82509b4758b97f"
+    },
+    {
+      "path": "tools/qwen35_text/session_state.h",
+      "bytes": 10809,
+      "sha256": "9cd094e7778ff48567b87c2983e138597940b9683e63023409562d0e562c35cd"
+    },
+    {
+      "path": "tests/compute_models/cpu_c4_model_branches.h",
+      "bytes": 32076,
+      "sha256": "a1a8b06eefd7687208cf563714b020fa629c77f0a7cf437872901fdcdbe2c9f1"
+    },
+    {
+      "path": "tests/compute_models/cpu_c4_flash_sidecars.h",
+      "bytes": 28042,
+      "sha256": "2e9012a9a9f3fe2960743298a29d45a8b489fe03c3bbccf3e40bbc5205fc3168"
+    },
+    {
+      "path": "tests/compute_models/cpu_c4_qwen_mtp.h",
+      "bytes": 11324,
+      "sha256": "bd3d62d9bac7b4e1c39ee8960ead54436769560652463e09ad91625b4026cd07"
+    },
+    {
+      "path": "tests/compute_models/cpu_c5_qwen_nextn.h",
+      "bytes": 15428,
+      "sha256": "79c3cd12cf83ce597d5a8604bd3682eef8c89ce37d8d0ab2629186738f5ff185"
+    },
+    {
+      "path": "tests/compute_models/d5_qwen38_24t_semantic_fragments.h",
+      "bytes": 34939,
+      "sha256": "b419ccdab0d23da5ff1db51d6e2c9c504bcae02f83666885cb5bb457b62d2736"
+    },
+    {
+      "path": "tests/compute_models/d5_glm_remaining_fragments.h",
+      "bytes": 54263,
+      "sha256": "12dbf546cb1050470dd6db65fe4d1f0a70364781a22d9df466699e7b10cde742"
+    },
+    {
+      "path": "include/hyle/compute/model_ops.h",
+      "bytes": 75815,
+      "sha256": "91ef5991618307e1be23c4d36f8b07aca09d9ff41473098b3d50ada4feb6b5cb"
+    },
+    {
+      "path": "include/hyle/compute/weight_import.h",
+      "bytes": 3487,
+      "sha256": "19479024d3e80a6c7357dd55cc79e59347c20b22b621ce6f2779082afaaab6cb"
+    },
+    {
+      "path": "src/compute_provider_cuda/grouped_fp8_provider.cc",
+      "bytes": 15565,
+      "sha256": "3549049beeb03ec707f6826c58e68424f7aa3797a92560e6c386cfc3be45bfd4"
+    },
+    {
+      "path": "tests/compute_models/e8m0_weight_import_fixture.h",
+      "bytes": 9020,
+      "sha256": "c6ca40dfa23d1fcff9a5db9965e9071bf4570b62eea54d8f7649f620dc894550"
+    },
+    {
+      "path": ".scratch/model-scope-2026-10-19/flash-0731/inference-model.py",
+      "bytes": 45118,
+      "sha256": "c0c19e6c9fa439bac7fbb1c5bc1868232dfd5aa2f439a548d0e33dcc2a9edd3f"
+    },
+    {
+      "path": "docs/evidence/research/deepseek-v4-ga-2026-10-19.zip",
+      "bytes": 131088,
+      "sha256": "e7388fd80750107cd0702d413aceaa8d07e644265d275eaee864ee62293f51b0"
+    }
+  ],
+  "operations": {
+    "product_edits": 0,
+    "builds": 0,
+    "links": 0,
+    "model_runs": 0,
+    "GPU_queries": 0,
+    "downloads": 0,
+    "model_payload_reads": 0,
+    "current_fact_map_doc_edits": 2
+  },
+  "documentation_refresh": {
+    "authorization": "Root follow-up authorized two current fact-map edits after the report. No provider support/pass state changed.",
+    "files": [
+      {
+        "path": "docs/implementation/model-operators.md",
+        "bytes": 89342,
+        "sha256": "dd8eb53869409c5ea1a6dbf64e370f336948f2551668d5856410909cd984cdea"
+      },
+      {
+        "path": "docs/implementation/model-quantizations.json",
+        "bytes": 570374,
+        "sha256": "474e247296fbfb449f82f66bc79b1f64df2ff620770efcada7c64aa511381150"
+      }
+    ],
+    "before": [
+      {
+        "path": ".scratch/qwen-mtp-next-20261022/before/docs/implementation/model-operators.md",
+        "bytes": 87994,
+        "sha256": "fdd201d9045848bde56dda8d211444262e3d69da9d59cfb1def17c0dba46a9a0"
+      },
+      {
+        "path": ".scratch/qwen-mtp-next-20261022/before/docs/implementation/model-quantizations.json",
+        "bytes": 570171,
+        "sha256": "80424c64a0bbabbc7be2b2e1cc638768b6de971d769020cead471baae7e24563"
+      }
+    ],
+    "diff": {
+      "path": ".scratch/qwen-mtp-next-20261022/doc-refresh.diff",
+      "bytes": 4653,
+      "sha256": "2adb5fd449c210c8bc9ecbbf05017819cd55aaffd023772f7852d115f8401538"
+    },
+    "catalog_change": "Only artifacts/27/notes. No change to provider coverage/status, codec or execution verdict.",
+    "published_evidence_link": "docs/evidence/research/mtp-artifact-scope-2026-10-22.json (root publishes)",
+    "checks": [
+      "Catalog parsed and deep equality checked after replacing only the one notes string.",
+      "Document edits limited to exact official header MTP facts and finite DSpark/index-carry wiring boundary.",
+      "No product/test/build/model/GPU/download operation."
+    ]
+  },
+  "publication_note": "This is the finite source/header review. Subsequent implementation/runtime results are recorded separately; this report does not certify original payload execution."
+}

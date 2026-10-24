@@ -1,0 +1,2 @@
+hyle_add_header_self_contained_test(compute_stream_cpu
+  HEADER_DIR compute HEADERS cpu_file_stream.h)

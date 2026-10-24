@@ -11,6 +11,7 @@
 #include "hyle/compute/low_precision.h"
 #include "hyle/compute/model_ops.h"
 #include "native_context.h"
+#include "fp8_shared_linear.h"
 #include "fp8/sglang_fp8_sm89.h"
 #include "fp8/sglang_fp8_dynamic_sm89.h"
 #include "fp8/sglang_fp8_quantize_cuda_sm89.h"
@@ -26,10 +27,11 @@ constexpr ProviderRuntimeProperties kRuntime{
 
 struct Shape final {
   int m, n, k;
-  bool dynamic = false, bfloat = false, power2 = false;
+  bool dynamic = false, bfloat = false, power2 = false, multiply_reciprocal = false;
   float floor = 1.0e-10F;
   std::size_t workspace_bytes = 0;
   int quant_groups = 1;
+  int second_n = 0;
 };
 struct Prepared final {
   CUcontext primary = nullptr;
@@ -41,8 +43,8 @@ struct Prepared final {
 };
 struct Invocation final { void *workspace; };
 
-Result<Shape> select(Operation operation, std::span<const TensorDesc> inputs,
-                     std::span<const TensorDesc> outputs) noexcept {
+Result<Shape> select_one(Operation operation, std::span<const TensorDesc> inputs,
+                         std::span<const TensorDesc> outputs) noexcept {
   const auto *matmul = operation.get_if<MatMul>();
   const auto linear = operation.custom_as<model_ops::Float8BlockLinear>();
   if ((!matmul && !linear) ||
@@ -74,7 +76,8 @@ Result<Shape> select(Operation operation, std::span<const TensorDesc> inputs,
     HYLE_RETURN_IF_ERROR(linear->infer_output_descriptions(inputs, inferred));
     shape.dynamic = true;
     shape.bfloat = inputs[0].data_type() == DataType::kBFloat16;
-    shape.power2 = linear->scale_rounding == model_ops::Float8ScaleRounding::kPowerOfTwo;
+    shape.power2 = linear->scale_policy == model_ops::Float8ScalePolicy::kPowerOfTwo;
+    shape.multiply_reciprocal = linear->scale_policy == model_ops::Float8ScalePolicy::kMultiplyReciprocal;
     shape.floor = linear->absmax_floor;
     shape.workspace_bytes = *encoded->required_bytes();
     // Original CUDA wrapper chooses the largest whole number of groups from
@@ -91,22 +94,40 @@ Result<Shape> select(Operation operation, std::span<const TensorDesc> inputs,
   return shape;
 }
 
+Result<Shape> select(Operation operation, std::span<const TensorDesc> inputs,
+                     std::span<const TensorDesc> outputs) noexcept {
+  const auto pair = operation.custom_as<internal::Float8BlockLinearPair>();
+  if (!pair) return select_one(operation, inputs, outputs);
+  if (inputs.size() != 3 || outputs.size() != 2)
+    return std::unexpected(Status::InvalidArgument("SGLang FP8 pair port counts differ"));
+  const auto linear = Operation::custom(model_ops::Float8BlockLinear{
+      pair->scale_policy, pair->absmax_floor});
+  const std::array first_inputs{inputs[0], inputs[1]};
+  const std::array second_inputs{inputs[0], inputs[2]};
+  HYLE_ASSIGN_OR_RETURN(auto shape, select_one(linear, first_inputs, outputs.first(1)));
+  HYLE_ASSIGN_OR_RETURN(const auto second,
+                       select_one(linear, second_inputs, outputs.subspan(1, 1)));
+  // Both selections consume the same A and quantization descriptor. N is the
+  // only independent GEMM dimension; the original quantizer never uses it.
+  shape.second_n = second.n;
+  return shape;
+}
+
 Status qualify_device(CUcontext primary) noexcept {
   cuda::detail::ScopedPrimaryContext scope(primary);
   if (!scope) return scope.status();
   CUdevice device;
-  int major = 0, minor = 0, driver = 0;
+  int major = 0, minor = 0;
   HYLE_RETURN_IF_ERROR(cuda::status(cuCtxGetDevice(&device)));
   HYLE_RETURN_IF_ERROR(cuda::status(cuDeviceGetAttribute(
       &major, CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MAJOR, device)));
   HYLE_RETURN_IF_ERROR(cuda::status(cuDeviceGetAttribute(
       &minor, CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MINOR, device)));
-  HYLE_RETURN_IF_ERROR(cuda::status(cuDriverGetVersion(&driver)));
-  // This is a fixed native artifact qualification domain, checked only cold.
-  // A new architecture/driver domain needs evidence before extending it.
-  if (major != 8 || minor != 9 || driver != 13040)
+  // These embedded cubins target SM89. The native module/function loader
+  // checks driver compatibility; a newer compatible driver is not a decline.
+  if (major != 8 || minor != 9)
     return Status::Unimplemented(
-        "CUDA block128 AOT is qualified for SM89 / CUDA Driver 13040");
+        "CUDA block128 AOT requires SM89");
   return Status::Ok();
 }
 
@@ -144,28 +165,15 @@ void destroy_invocation(void *state, mem::AllocatorRef allocator) noexcept {
   allocator.deallocate(invocation, sizeof(Invocation), alignof(Invocation));
 }
 
-detail::EnqueueResult submit(void *state, void *lane, Queue &queue,
-                             std::span<const ConstTensorView> inputs,
-                             std::span<const TensorView> outputs) noexcept {
-  const auto &prepared = *static_cast<const Prepared *>(state);
-  auto stream = cuda::stream(queue);
-  if (!stream) return detail::EnqueueResult::rejected(std::move(stream).error());
-  const auto alignment = prepared.shape.bfloat ? 2u : 4u;
-  const auto input_alignment = prepared.shape.dynamic && !prepared.shape.power2 ? 16u : alignment;
-  auto a = cuda::detail::const_pointer(inputs[0].storage(), input_alignment, 1);
-  if (!a) return detail::EnqueueResult::rejected(std::move(a).error());
-  auto b = cuda::detail::const_pointer(inputs[1].storage(), 4, 1);
-  if (!b) return detail::EnqueueResult::rejected(std::move(b).error());
-  auto c = cuda::detail::mutable_pointer(outputs[0].storage(), alignment, 1);
-  if (!c) return detail::EnqueueResult::rejected(std::move(c).error());
-  const auto m = prepared.shape.m, n = prepared.shape.n, k = prepared.shape.k;
-  const auto activation = prepared.shape.dynamic
-      ? static_cast<Invocation *>(lane)->workspace : *a;
+CUresult launch_matmul(const Prepared &prepared, const void *activation,
+                       const void *weight, void *output, int n,
+                       CUstream stream) noexcept {
+  const auto m = prepared.shape.m, k = prepared.shape.k;
   std::array<CUdeviceptr, 7> pointers{
-      reinterpret_cast<CUdeviceptr>(activation), reinterpret_cast<CUdeviceptr>(*b),
-      reinterpret_cast<CUdeviceptr>(*c),
+      reinterpret_cast<CUdeviceptr>(activation), reinterpret_cast<CUdeviceptr>(weight),
+      reinterpret_cast<CUdeviceptr>(output),
       reinterpret_cast<CUdeviceptr>(activation) + std::size_t(m) * k,
-      reinterpret_cast<CUdeviceptr>(*b) + std::size_t(n) * k, 0, 0};
+      reinterpret_cast<CUdeviceptr>(weight) + std::size_t(n) * k, 0, 0};
   // Exact original Triton 3.8 ABI, including its two zero-sized scratch slots.
   std::array integers{m, n, k, k, 1, 1, k, n, 1,
                      prepared.shape.power2 ? 1 : k / 128,
@@ -177,33 +185,78 @@ detail::EnqueueResult submit(void *state, void *lane, Queue &queue,
   arguments[19] = &pointers[6];
   const auto grid = unsigned((m / 64 + (m % 64 != 0)) *
                              (n / 128 + (n % 128 != 0)));
+  const auto shared_bytes = prepared.shape.bfloat
+      ? kSglangFp8MatmulBf16SharedBytes : kSglangFp8Sm89SharedBytes;
+  return cuLaunchKernel(prepared.function, grid, 1, 1, 128, 1, 1, shared_bytes,
+                        stream, arguments.data(), nullptr);
+}
+
+CUresult launch_quantizer(const Prepared &prepared, const void *source,
+                          const void *activation, CUstream stream) noexcept {
+  const auto m = prepared.shape.m, k = prepared.shape.k;
+  auto input = reinterpret_cast<CUdeviceptr>(source);
+  auto encoded = reinterpret_cast<CUdeviceptr>(activation);
+  auto scales = encoded + std::size_t(m) * k;
+  std::array<CUdeviceptr, 2> scratch{};
+  int group = 128, columns = k, scale_stride = m;
+  int num_groups = m * (k / 128), groups_per_block = prepared.shape.quant_groups;
+  int unused = 0;
+  float floor = prepared.shape.floor, minimum = -448, maximum = 448;
+  std::array<void *, 11> quant_args{&input, &encoded, &scales, &group,
+      &num_groups, &groups_per_block, &floor, &minimum, &maximum, &unused, &unused};
+  if (prepared.shape.power2) {
+    // The unchanged Triton pow2 ABI ends with two null scratch pointers.
+    quant_args[4] = &columns;
+    quant_args[5] = &scale_stride;
+    quant_args[9] = &scratch[0];
+    quant_args[10] = &scratch[1];
+  }
+  return cuLaunchKernel(prepared.quant_function,
+      unsigned(num_groups / groups_per_block), 1, 1,
+      prepared.shape.power2 ? 32U : unsigned(groups_per_block * 16), 1, 1,
+      0, stream, quant_args.data(), nullptr);
+}
+
+detail::EnqueueResult submit(void *state, void *lane, detail::QueueSequence &sequence,
+                             std::span<const ConstTensorView> inputs,
+                             std::span<const TensorView> outputs) noexcept {
+  const auto &prepared = *static_cast<const Prepared *>(state);
+  auto stream = cuda::stream(sequence);
+  if (!stream) return detail::EnqueueResult::rejected(std::move(stream).error());
+  const auto alignment = prepared.shape.bfloat ? 2u : 4u;
+  const auto input_alignment = prepared.shape.dynamic && !prepared.shape.power2 ? 16u : alignment;
+  auto a = cuda::detail::const_pointer(inputs[0].storage(), input_alignment, 1);
+  if (!a) return detail::EnqueueResult::rejected(std::move(a).error());
+  const std::size_t branches = prepared.shape.second_n ? 2 : 1;
+  std::array<const void *, 2> weights{};
+  std::array<void *, 2> destinations{};
+  // Validate every real port before the first launch. A failed second port
+  // must not turn already accepted quantization/GEMM work into a rejection.
+  for (std::size_t branch = 0; branch < branches; ++branch) {
+    auto weight = cuda::detail::const_pointer(inputs[branch + 1].storage(), 4, 1);
+    if (!weight) return detail::EnqueueResult::rejected(std::move(weight).error());
+    auto output = cuda::detail::mutable_pointer(outputs[branch].storage(), alignment, 1);
+    if (!output) return detail::EnqueueResult::rejected(std::move(output).error());
+    weights[branch] = *weight;
+    destinations[branch] = *output;
+  }
+  const auto activation = prepared.shape.dynamic
+      ? static_cast<Invocation *>(lane)->workspace : *a;
   cuda::detail::ScopedPrimaryContext scope(prepared.primary);
   if (!scope) return detail::EnqueueResult::rejected(scope.status());
   if (prepared.shape.dynamic) {
-    auto input = reinterpret_cast<CUdeviceptr>(*a);
-    int group = 128, columns = k, scale_stride = m;
-    int num_groups = m * (k / 128), groups_per_block = prepared.shape.quant_groups;
-    int unused = 0;
-    float floor = prepared.shape.floor, minimum = -448, maximum = 448;
-    std::array<void *, 11> quant_args{&input, &pointers[0], &pointers[3], &group,
-        &num_groups, &groups_per_block, &floor, &minimum, &maximum, &unused, &unused};
-    if (prepared.shape.power2) {
-      // The unchanged Triton pow2 ABI ends with two null scratch pointers.
-      quant_args[4] = &columns;
-      quant_args[5] = &scale_stride;
-      quant_args[9] = &pointers[5];
-      quant_args[10] = &pointers[6];
-    }
-    const auto result = cuLaunchKernel(prepared.quant_function,
-        unsigned(num_groups / groups_per_block), 1, 1,
-        prepared.shape.power2 ? 32U : unsigned(groups_per_block * 16), 1, 1,
-        0, *stream, quant_args.data(), nullptr);
+    const auto result = launch_quantizer(prepared, *a, activation, *stream);
     if (result != CUDA_SUCCESS)
       return detail::EnqueueResult::accepted_command(cuda::status(result));
   }
-  return detail::EnqueueResult::accepted_command(cuda::status(cuLaunchKernel(
-      prepared.function, grid, 1, 1, 128, 1, 1, 24576, *stream,
-      arguments.data(), nullptr)));
+  for (std::size_t branch = 0; branch < branches; ++branch) {
+    const int n = branch == 0 ? prepared.shape.n : prepared.shape.second_n;
+    const auto result = launch_matmul(prepared, activation, weights[branch],
+                                      destinations[branch], n, *stream);
+    if (result != CUDA_SUCCESS)
+      return detail::EnqueueResult::accepted_command(cuda::status(result));
+  }
+  return detail::EnqueueResult::accepted_command();
 }
 const detail::ProviderPreparedVTable kVTable{
     .destroy_prepared = &destroy, .alias_support = &alias,
@@ -219,7 +272,8 @@ Status propose(void *state, const detail::ProviderOperationRequest &request,
                std::span<detail::ResourceBindingRequirement> inputs,
                std::span<detail::ResourceBindingRequirement> outputs,
                detail::ProviderOperationProposal *proposal) noexcept {
-  if (!proposal || inputs.size() != 2 || outputs.size() != 1)
+  const bool pair = request.operation.custom_as<internal::Float8BlockLinearPair>().has_value();
+  if (!proposal || inputs.size() != (pair ? 3u : 2u) || outputs.size() != (pair ? 2u : 1u))
     return Status::InvalidArgument("SGLang FP8 binding counts differ");
   *proposal = {};
   if (!request.shape.exact())
@@ -232,16 +286,19 @@ Status propose(void *state, const detail::ProviderOperationRequest &request,
       .minimum_alignment = 4};
   std::ranges::fill(inputs, binding);
   std::ranges::fill(outputs, binding);
-  if (shape.bfloat) inputs[0].minimum_alignment = outputs[0].minimum_alignment = 2;
+  if (shape.bfloat) {
+    inputs[0].minimum_alignment = 2;
+    for (auto &output : outputs) output.minimum_alignment = 2;
+  }
   if (shape.dynamic && !shape.power2) inputs[0].minimum_alignment = 16;
-  const auto route = shape.dynamic ? kLinearRoute : kRoute;
+  const auto route = pair ? kPairRoute : shape.dynamic ? kLinearRoute : kRoute;
   *proposal = {.route = route, .runtime = kRuntime,
                .workspace_resource = binding,
                .cost = {.workspace = WorkspaceRequirement{shape.workspace_bytes,
                                                           shape.dynamic ? 4u : 1u},
                         .persistent_bytes = std::nullopt, .copy_bytes = 0,
                         .repack_bytes = 0, .synchronization_count = 0,
-                        .dispatch_count = shape.dynamic ? 2u : 1u},
+                        .dispatch_count = pair ? 3u : shape.dynamic ? 2u : 1u},
                .implementation = ProviderImplementationId{route}};
   return Status::Ok();
 }
@@ -251,12 +308,13 @@ ProviderPrepareOutcome prepare(void *state,
                                mem::AllocatorRef allocator,
                                detail::ProviderPrepared *output) noexcept {
   *output = {};
-  if ((request.route != kRoute && request.route != kLinearRoute) || !request.shape.exact())
+  if ((request.route != kRoute && request.route != kLinearRoute && request.route != kPairRoute) ||
+      !request.shape.exact())
     return ProviderPrepareOutcome::unsupported(Status::Unimplemented(
         "SGLang FP8 exact route mismatch"));
   auto shape = select(request.operation, request.inputs, request.outputs);
   if (!shape) return ProviderPrepareOutcome::unsupported(std::move(shape).error());
-  if (request.route != (shape->dynamic ? kLinearRoute : kRoute))
+  if (request.route != (shape->second_n ? kPairRoute : shape->dynamic ? kLinearRoute : kRoute))
     return ProviderPrepareOutcome::error(Status::InvalidArgument("SGLang FP8 route/operation mismatch"));
   const auto primary = static_cast<CUcontext>(state);
   auto status = qualify(primary);
@@ -267,7 +325,7 @@ ProviderPrepareOutcome prepare(void *state,
   if (!scope) return ProviderPrepareOutcome::error(scope.status());
   auto *memory = allocator.allocate(sizeof(Prepared), alignof(Prepared));
   if (!memory)
-    return ProviderPrepareOutcome::resource_declined(
+    return ProviderPrepareOutcome::error(
         Status::ResourceExhausted("SGLang FP8 program allocation failed"));
   auto *prepared = ::new (memory) Prepared{primary, nullptr, nullptr, *shape};
   auto result = cuModuleLoadData(&prepared->module,
@@ -283,7 +341,10 @@ ProviderPrepareOutcome prepare(void *state,
     if (result == CUDA_SUCCESS)
       result = cuModuleGetFunction(&prepared->quant_function, prepared->quant_module,
           shape->power2 ? "_per_token_group_quant_8bit_colmajor"
-          : shape->bfloat ? kSglangFp8QuantizeBf16Name : kSglangFp8QuantizeF32Name);
+          : shape->multiply_reciprocal
+              ? (shape->bfloat ? kSglangFp8QuantizeMultiplyReciprocalBf16Name
+                               : kSglangFp8QuantizeMultiplyReciprocalF32Name)
+              : (shape->bfloat ? kSglangFp8QuantizeBf16Name : kSglangFp8QuantizeF32Name));
     if (result == CUDA_SUCCESS) result = cuFuncLoad(prepared->quant_function);
   }
   if (result != CUDA_SUCCESS) {
@@ -296,7 +357,9 @@ ProviderPrepareOutcome prepare(void *state,
   *output = {.vtable = &kVTable, .state = prepared,
              .workspace = {shape->workspace_bytes, shape->dynamic ? 4u : 1u},
              .runtime = kRuntime, .persistent_bytes = std::nullopt,
-             .invocation_private_bytes = shape->dynamic ? sizeof(Invocation) : 0u};
+             // Pair state uses only the supplied metadata allocator and caller
+             // workspace; no additional untracked per-invocation storage.
+             .invocation_private_bytes = shape->second_n ? 0u : shape->dynamic ? sizeof(Invocation) : 0u};
   return ProviderPrepareOutcome::prepared();
 }
 } // namespace hyle::compute::cuda_native::fp8

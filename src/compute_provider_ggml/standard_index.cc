@@ -283,7 +283,7 @@ void destroy_program(void *value, mem::AllocatorRef allocator) noexcept {
   }
 }
 AliasSupport alias(void *, std::size_t, std::size_t) noexcept { return {}; }
-detail::EnqueueResult submit(void *value, void *slot, Queue &,
+detail::EnqueueResult submit(void *value, void *slot, detail::QueueSequence &,
                              std::span<const ConstTensorView> inputs,
                              std::span<const TensorView> outputs) noexcept {
   const auto &program = *static_cast<const Program *>(value);
@@ -291,6 +291,9 @@ detail::EnqueueResult submit(void *value, void *slot, Queue &,
       outputs.size() != (program.operation.get_if<Scan>() ? 1U : 2U))
     return detail::EnqueueResult::rejected(
         Status::InvalidArgument("CPU standard-index bindings differ"));
+  if (const auto *selection = program.operation.get_if<TopK>();
+      selection && selection->count == 0)
+    return detail::EnqueueResult::no_op();
   struct Call final {
     const Program &program;
     Invocation &invocation;
@@ -377,7 +380,7 @@ ProviderPrepareOutcome prepare(Options options,
   for (std::size_t i = program.axis + 1; i < program.input.rank(); ++i)
     program.inner *= static_cast<std::size_t>(program.input.dimensions()[i]);
   const auto units = scan ? count
-                     : count == 0 || request.operation.get_if<TopK>()->count == 1
+                     : count == 0 || request.operation.get_if<TopK>()->count <= 1
                          ? 0 : program.width;
   const auto unit_bytes = scan ? (program.input.data_type() == DataType::kInt32
                                       ? sizeof(std::int64_t)
@@ -388,7 +391,7 @@ ProviderPrepareOutcome prepare(Options options,
   program.scratch_bytes = units * unit_bytes;
   void *storage = allocator.allocate(sizeof(Program), alignof(Program));
   if (!storage)
-    return ProviderPrepareOutcome::resource_declined(allocation_failure());
+    return ProviderPrepareOutcome::error(allocation_failure());
   auto *prepared = ::new (storage) Program(program);
   *output = {.vtable = &kPrepared,
              .state = prepared,

@@ -6,6 +6,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include <thread>
 #include <utility>
 
@@ -719,6 +720,302 @@ TEST(Completion, RetainedCompoundObserverDoesNotTreatCachedRootErrorAsRetirement
   EXPECT_TRUE(owner.available());
 }
 
+struct PendingControlProbe final {
+  std::atomic<unsigned> cancels{0}, waits{0}, notifications{0}, releases{0};
+  std::atomic<std::uint64_t> event{0};
+  std::atomic<bool> entered{false}, leave_wait{true};
+
+  hyle::compute::detail::RetainedCompletionControl control() noexcept {
+    return {
+        this,
+        [](void *opaque) noexcept {
+          static_cast<PendingControlProbe *>(opaque)->cancels.fetch_add(1);
+        },
+        [](void *opaque, const std::atomic<std::uint64_t> &revision,
+           std::uint64_t observed) noexcept {
+          auto &probe = *static_cast<PendingControlProbe *>(opaque);
+          probe.waits.fetch_add(1);
+          probe.entered.store(true, std::memory_order_release);
+          probe.entered.notify_all();
+          while (revision.load(std::memory_order_acquire) == observed) {
+            const auto event = probe.event.load(std::memory_order_acquire);
+            if (revision.load(std::memory_order_acquire) != observed) break;
+            probe.event.wait(event, std::memory_order_acquire);
+          }
+          probe.leave_wait.wait(false, std::memory_order_acquire);
+        },
+        [](void *opaque) noexcept {
+          auto &probe = *static_cast<PendingControlProbe *>(opaque);
+          probe.notifications.fetch_add(1);
+          probe.event.fetch_add(1, std::memory_order_release);
+          probe.event.notify_all();
+        },
+        [](void *opaque) noexcept {
+          static_cast<PendingControlProbe *>(opaque)->releases.fetch_add(1);
+        }};
+  }
+};
+
+struct HandoffCancelProbe final {
+  AsyncProbe native;
+  std::atomic<bool> entered{false}, resume{false};
+};
+const hyle::compute::detail::CompletionVTable kHandoffCancelVTable{
+    [](void *opaque, hyle::compute::detail::CompletionLifetime lifetime,
+       hyle::Status hint) noexcept {
+      destroy_async(&static_cast<HandoffCancelProbe *>(opaque)->native,
+                    lifetime, std::move(hint));
+    },
+    [](void *opaque) noexcept {
+      return poll_async(&static_cast<HandoffCancelProbe *>(opaque)->native);
+    },
+    [](void *opaque) noexcept {
+      return wait_async(&static_cast<HandoffCancelProbe *>(opaque)->native);
+    },
+    [](void *opaque) noexcept {
+      auto &probe = *static_cast<HandoffCancelProbe *>(opaque);
+      probe.entered.store(true, std::memory_order_release);
+      probe.entered.notify_all();
+      probe.resume.wait(false, std::memory_order_acquire);
+      return cancel_async(&probe.native);
+    }};
+TEST(Completion, RetainedPendingWaitPinsControlUntilConcurrentHandoffIsObserved) {
+  using namespace hyle::compute;
+  auto owner = detail::RetainedCompletion::create(hyle::mem::system_allocator()).value();
+  PendingControlProbe control;
+  control.leave_wait = false;
+  auto pending = owner.publish_pending(control.control());
+  auto &completion = pending.completion;
+  EXPECT_EQ(completion.poll().value(), CompletionPoll::kPending);
+  auto dependency = detail::RetainedCompletion::native_dependency(completion);
+  EXPECT_FALSE(dependency);
+  if (!dependency) EXPECT_TRUE(dependency.error().IsUnavailable());
+  hyle::Status waited;
+  std::thread waiter([&] { waited = completion.wait(); });
+  control.entered.wait(false, std::memory_order_acquire);
+  auto actual = Completion::completed();
+  EXPECT_TRUE(pending.ticket.handoff(std::move(actual)).ok());
+  EXPECT_FALSE(actual.valid());
+  EXPECT_EQ(control.releases.load(), 0u); // the wait callback is still using it
+  EXPECT_FALSE(owner.available());
+  control.leave_wait.store(true, std::memory_order_release);
+  control.leave_wait.notify_all();
+  waiter.join();
+  EXPECT_TRUE(waited.ok());
+  EXPECT_EQ(control.waits.load(), 1u);
+  EXPECT_EQ(control.releases.load(), 1u);
+  EXPECT_TRUE(owner.available());
+  auto extra = Completion::completed();
+  EXPECT_TRUE(pending.ticket.handoff(std::move(extra)).IsFailedPrecondition());
+  EXPECT_TRUE(extra.valid());
+}
+
+TEST(Completion, RetainedPendingCancelAndAbandonRaceActualInstallationSafely) {
+  using namespace hyle::compute;
+  auto owner = detail::RetainedCompletion::create(hyle::mem::system_allocator()).value();
+  PendingControlProbe control;
+  auto pending = owner.publish_pending(control.control());
+  auto &completion = pending.completion;
+  LifetimeProbe lifetime_probe;
+  detail::CompletionLifetime lifetime{&lifetime_probe, &observe_terminal, &release_lifetime};
+  ASSERT_TRUE(detail::CompletionAccess::attach_lifetime(completion, lifetime).ok());
+  EXPECT_TRUE(completion.request_cancel().ok());
+  EXPECT_TRUE(completion.request_cancel().ok());
+  EXPECT_EQ(control.cancels.load(), 1u);
+  HandoffCancelProbe actual;
+  hyle::Status handed;
+  std::thread driver([&] {
+    auto native = detail::CompletionAccess::make(&kHandoffCancelVTable, &actual);
+    handed = pending.ticket.handoff(std::move(native));
+  });
+  actual.entered.wait(false, std::memory_order_acquire);
+  // Actual native cancellation is running, so installation is not observable.
+  EXPECT_EQ(completion.poll().value(), CompletionPoll::kPending);
+  const auto unavailable = detail::RetainedCompletion::native_dependency(completion);
+  EXPECT_FALSE(unavailable);
+  if (!unavailable) EXPECT_TRUE(unavailable.error().IsUnavailable());
+  completion = {};
+  EXPECT_EQ(lifetime_probe.release_count, 0u);
+  EXPECT_FALSE(owner.available());
+  actual.resume.store(true, std::memory_order_release);
+  actual.resume.notify_all();
+  driver.join();
+  EXPECT_TRUE(handed.ok());
+  EXPECT_EQ(actual.native.cancels, 1u);
+  EXPECT_TRUE(actual.native.destroyed);
+  EXPECT_EQ(lifetime_probe.terminal_count, 1u);
+  EXPECT_EQ(lifetime_probe.release_count, 1u);
+  EXPECT_EQ(lifetime_probe.terminal_code, hyle::StatusCode::Cancelled);
+  EXPECT_EQ(control.releases.load(), 1u);
+  EXPECT_TRUE(owner.available());
+}
+
+TEST(Completion, RetainedPendingEarlyAbandonStillTransfersActualNativeRetirement) {
+  using namespace hyle::compute;
+  auto owner = detail::RetainedCompletion::create(hyle::mem::system_allocator()).value();
+  auto pending = owner.publish_pending();
+  auto &completion = pending.completion;
+  LifetimeProbe probe;
+  detail::CompletionLifetime lifetime{&probe, &observe_terminal, &release_lifetime};
+  ASSERT_TRUE(detail::CompletionAccess::attach_lifetime(completion, lifetime).ok());
+  completion = {};
+  EXPECT_FALSE(owner.available());
+  EXPECT_EQ(probe.release_count, 0u);
+  AsyncProbe actual;
+  auto native = detail::CompletionAccess::make(&kAsyncVTable, &actual);
+  ASSERT_TRUE(pending.ticket.handoff(std::move(native)).ok());
+  EXPECT_TRUE(actual.destroyed);
+  EXPECT_FALSE(actual.complete);
+  EXPECT_EQ(probe.release_count, 0u);
+  EXPECT_FALSE(owner.available());
+  retire_abandoned(actual);
+  EXPECT_EQ(probe.terminal_count, 1u);
+  EXPECT_EQ(probe.release_count, 1u);
+  EXPECT_TRUE(owner.available());
+}
+
+TEST(Completion, RetainedPendingInlineHandoffAllowsSynchronousRetirementCallbacks) {
+  using namespace hyle::compute;
+  auto owner = detail::RetainedCompletion::create(hyle::mem::system_allocator()).value();
+  std::optional<detail::RetainedCompletionPending> pending(owner.publish_pending());
+  auto completion = std::move(pending->completion);
+  struct ReentrantProbe final {
+    std::optional<detail::RetainedCompletionPending> *pending;
+    LifetimeProbe lifetime;
+    bool rejected = false, preserved = false;
+  } probe{&pending};
+  detail::CompletionLifetime lifetime{
+      &probe,
+      [](void *opaque, const hyle::Status &terminal) noexcept {
+        auto &probe = *static_cast<ReentrantProbe *>(opaque);
+        auto duplicate = Completion::completed();
+        probe.rejected = (*probe.pending)->ticket.handoff(std::move(duplicate)).IsFailedPrecondition();
+        probe.preserved = duplicate.valid();
+        probe.pending->reset(); // may destroy the handoff ticket inline
+        observe_terminal(&probe.lifetime, terminal);
+      },
+      [](void *opaque) noexcept {
+        release_lifetime(&static_cast<ReentrantProbe *>(opaque)->lifetime);
+      }};
+  ASSERT_TRUE(detail::CompletionAccess::attach_lifetime(completion, lifetime).ok());
+  completion = {};
+  auto actual = Completion::completed(hyle::Status::Unavailable("actual accepted prefix failed"));
+  ASSERT_TRUE(pending->ticket.handoff(std::move(actual)).ok());
+  EXPECT_EQ(probe.lifetime.terminal_count, 1u);
+  EXPECT_EQ(probe.lifetime.release_count, 1u);
+  EXPECT_EQ(probe.lifetime.terminal_code, hyle::StatusCode::Unavailable);
+  EXPECT_TRUE(probe.rejected);
+  EXPECT_TRUE(probe.preserved);
+  EXPECT_FALSE(pending.has_value());
+  EXPECT_TRUE(owner.available());
+}
+
+TEST(Completion, RetainedPendingTicketSurvivesObservationRootResetAndDestruction) {
+  using namespace hyle::compute;
+  for (const bool explicit_reset : {false, true}) {
+    SourceAllocations allocations;
+    detail::RetainedCompletionPending pending;
+    {
+      auto owner = detail::RetainedCompletion::create(allocations.ref()).value();
+      pending = owner.publish_pending();
+      if (explicit_reset) owner.reset();
+    }
+    EXPECT_EQ(allocations.frees, 0u);
+    LifetimeProbe probe;
+    detail::CompletionLifetime lifetime{&probe, &observe_terminal, &release_lifetime};
+    ASSERT_TRUE(detail::CompletionAccess::attach_lifetime(pending.completion, lifetime).ok());
+    auto ticket = std::move(pending.ticket);
+    if (explicit_reset) pending.completion = {}; // abandon before actual handoff
+    AsyncProbe actual;
+    actual.observation_failed = !explicit_reset;
+    auto native = detail::CompletionAccess::make(&kAsyncVTable, &actual);
+    ASSERT_TRUE(ticket.handoff(std::move(native)).ok());
+    if (!explicit_reset) EXPECT_FALSE(pending.completion.poll());
+    EXPECT_TRUE(actual.destroyed);
+    EXPECT_FALSE(actual.complete);
+    EXPECT_EQ(probe.release_count, 0u);
+    EXPECT_EQ(allocations.frees, 0u);
+    retire_abandoned(actual);
+    EXPECT_EQ(probe.terminal_count, 1u);
+    EXPECT_EQ(probe.release_count, 1u);
+    EXPECT_EQ(allocations.frees, 1u);
+  }
+}
+
+TEST(Completion, RetainedPendingDeferredLatchAndColdSlotReuseKeepOriginalContracts) {
+  using namespace hyle::compute;
+  SourceAllocations allocations;
+  auto owner = detail::RetainedCompletion::create(allocations.ref()).value();
+  for (unsigned episode = 0; episode < 32; ++episode) {
+    const auto retirement = owner.reserve_retirement();
+    auto pending = owner.publish_pending({}, true);
+    auto actual = Completion::completed(hyle::Status::Unavailable("prefix observation failed"));
+    ASSERT_TRUE(pending.ticket.handoff(std::move(actual)).ok());
+    EXPECT_TRUE(pending.completion.wait().IsUnavailable());
+    EXPECT_FALSE(owner.available());
+    retirement.terminal(retirement.state, hyle::Status::Unavailable("native prefix retired"));
+    retirement.release(retirement.state);
+    EXPECT_TRUE(owner.available());
+    EXPECT_EQ(allocations.attempts, 1u);
+    EXPECT_EQ(allocations.frees, 0u);
+  }
+  owner.reset();
+  EXPECT_EQ(allocations.allocations, 1u);
+  EXPECT_EQ(allocations.frees, 1u);
+}
+
+TEST(Completion, RetainedControlPollKeepsPublicAndUnknownNativeRetirementGates) {
+  using namespace hyle::compute;
+  detail::RetainedCompletion empty;
+  EXPECT_EQ(empty.poll().value(), CompletionPoll::kComplete);
+  auto owner = detail::RetainedCompletion::create(hyle::mem::system_allocator()).value();
+  EXPECT_EQ(owner.poll().value(), CompletionPoll::kComplete);
+  {
+    auto pending = owner.publish_pending();
+    EXPECT_EQ(owner.poll().value(), CompletionPoll::kPending);
+    AsyncProbe actual;
+    auto native = detail::CompletionAccess::make(&kAsyncVTable, &actual);
+    ASSERT_TRUE(pending.ticket.handoff(std::move(native)).ok());
+    EXPECT_EQ(owner.poll().value(), CompletionPoll::kPending);
+    actual.complete = true;
+    EXPECT_EQ(owner.poll().value(), CompletionPoll::kComplete);
+    EXPECT_FALSE(owner.available()); // successful root observation keeps old proxy
+    ASSERT_TRUE(pending.completion.wait().ok());
+    EXPECT_TRUE(owner.available());
+    EXPECT_EQ(actual.waits, 0u); // the original native poll already settled it
+  }
+  {
+    auto pending = owner.publish_pending();
+    LifetimeProbe probe;
+    detail::CompletionLifetime lifetime{&probe, &observe_terminal, &release_lifetime};
+    ASSERT_TRUE(detail::CompletionAccess::attach_lifetime(pending.completion, lifetime).ok());
+    AsyncProbe actual;
+    actual.observation_failed = true;
+    auto native = detail::CompletionAccess::make(&kAsyncVTable, &actual);
+    ASSERT_TRUE(pending.ticket.handoff(std::move(native)).ok());
+    const auto failed = owner.poll();
+    EXPECT_FALSE(failed);
+    if (!failed) EXPECT_TRUE(failed.error().IsUnavailable());
+    EXPECT_FALSE(owner.available());
+    EXPECT_FALSE(pending.completion.poll());
+    const auto cached = owner.poll();
+    EXPECT_FALSE(cached);
+    if (!cached) EXPECT_TRUE(cached.error().IsUnavailable());
+    EXPECT_EQ(actual.polls, 1u);
+    EXPECT_EQ(probe.release_count, 0u);
+    EXPECT_FALSE(owner.available()); // cached error/public settle is not retirement
+    retire_abandoned(actual);
+    EXPECT_EQ(probe.terminal_count, 1u);
+    EXPECT_EQ(probe.release_count, 1u);
+    EXPECT_TRUE(owner.available());
+    const auto retired = owner.poll();
+    EXPECT_FALSE(retired);
+    if (!retired) EXPECT_TRUE(retired.error().IsUnavailable());
+  }
+  owner.reset();
+  EXPECT_EQ(owner.poll().value(), CompletionPoll::kComplete);
+}
+
 TEST(Completion, ImmediateSuccessAndFailureRemainInline) {
   auto success = hyle::compute::Completion::completed();
   auto ready = success.poll();
@@ -733,6 +1030,29 @@ TEST(Completion, ImmediateSuccessAndFailureRemainInline) {
   ASSERT_FALSE(failed_poll.has_value());
   EXPECT_TRUE(failed_poll.error().IsUnavailable());
   EXPECT_TRUE(failure.wait().IsUnavailable());
+}
+
+TEST(Completion, DeferredTerminalDiagnosticReachesPublicPollAndWait) {
+  using namespace hyle::compute;
+  for (const bool use_poll : {false, true}) {
+    auto made = detail::RetainedCompletion::create(hyle::mem::system_allocator());
+    ASSERT_TRUE(made);
+    auto observer = std::move(*made);
+    auto retirement = observer.reserve_retirement();
+    auto done = observer.publish(Completion::completed(), true);
+    // A successfully retired native suffix may still expose a producer's
+    // cached diagnostic through the common owner's final publication.
+    retirement.terminal(retirement.state, hyle::Status::Unavailable("producer observation failed"));
+    retirement.release(retirement.state);
+    if (use_poll) {
+      auto ready = done.poll();
+      ASSERT_FALSE(ready);
+      EXPECT_TRUE(ready.error().IsUnavailable());
+    } else {
+      EXPECT_TRUE(done.wait().IsUnavailable());
+    }
+    EXPECT_TRUE(observer.available());
+  }
 }
 
 TEST(Completion, CompositeRetentionPreservesBothOwnersAndRejectsReuse) {

@@ -9,7 +9,7 @@ namespace d5_dynamic_fp8_fragments {
 namespace fp8 = d5_official_fp8_fragments;
 namespace c = fp8::c;
 namespace sem = fp8::sem;
-using Rounding = c::model_ops::Float8ScaleRounding;
+using Rounding = c::model_ops::Float8ScalePolicy;
 
 inline float bfloat(float x) { return float(sem::q::decode(sem::q::encode(x))); }
 inline float fp8_round(float x) {
@@ -93,7 +93,7 @@ inline sem::ValueId weight(sem::Fragment &fragment, const fp8::Case &shape) {
                             std::move(fixture.constant_bytes[0]));
 }
 inline c::Operation operation(bool power2) {
-  return c::model_ops::float8_block_linear(power2 ? Rounding::kPowerOfTwo : Rounding::kNone,
+  return c::model_ops::float8_block_linear(power2 ? Rounding::kPowerOfTwo : Rounding::kDivide,
                                           power2 ? 1.0e-4F : 1.0e-10F);
 }
 inline sem::ValueId visible(sem::Fragment &f, sem::ValueId value, bool bf16) {

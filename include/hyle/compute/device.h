@@ -208,9 +208,6 @@ public:
 private:
   explicit Queue(detail::QueueState *state) noexcept : state_(state) {}
 
-  Status begin_submission() noexcept;
-  void end_submission() noexcept;
-
   friend class Context;
   friend class OperationInvocation;
   friend struct detail::ContextAccess;

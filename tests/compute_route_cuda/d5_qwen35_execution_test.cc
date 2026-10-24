@@ -157,7 +157,12 @@ void run_quantized_embedding(
       c::TensorView::create(output_desc, result_buffer.view()).value();
   const std::array inputs{table, ids};
   const std::array outputs{result};
-  auto invocation = prepared->create_invocation().value();
+  const auto requirement = prepared->workspace_requirement();
+  auto workspace = requirement.size == 0
+      ? mem::Buffer{}
+      : mem::Buffer::create(resource, requirement.size, requirement.alignment)
+            .value();
+  auto invocation = prepared->create_invocation(workspace.view()).value();
   auto queue = context.create_queue().value();
   constexpr std::array<std::array<std::int32_t, tokens>, 2> selections{
       {{{0, 5}}, {{6, 2}}}};

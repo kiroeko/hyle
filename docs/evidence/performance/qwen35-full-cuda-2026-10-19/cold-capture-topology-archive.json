@@ -1,0 +1,13 @@
+{
+  "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\qwen35-full-cuda-2026-10-19\\cold-capture-topology.zip",
+  "bytes": 3022418,
+  "sha256": "7ea12aa0abe5c0a1978b83896bb878410504cab3008121d226810ebc15946c6b",
+  "payloads": 322,
+  "crc_verified": true,
+  "payload_sha256_verified": true,
+  "CPU_tests": 12,
+  "equal_vectors": 64,
+  "equal_greedy_ids": 32,
+  "unprofiled_processes": 9,
+  "raw_duplicate_vectors_omitted": true
+}

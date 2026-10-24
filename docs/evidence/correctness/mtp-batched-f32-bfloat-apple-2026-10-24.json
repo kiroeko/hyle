@@ -1,0 +1,107 @@
+{
+  "created_at": "2026-10-23T18:20:22.631269+00:00",
+  "scope": "Representative Apple CPU/Metal checks for the shared batched F32 activation x original BF16 weight projection",
+  "hardware": [
+    {
+      "command": [
+        "uname",
+        "-m"
+      ],
+      "exit": 0,
+      "output": "arm64\n"
+    },
+    {
+      "command": [
+        "sw_vers"
+      ],
+      "exit": 0,
+      "output": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434\n"
+    },
+    {
+      "command": [
+        "sysctl",
+        "-n",
+        "hw.model"
+      ],
+      "exit": 0,
+      "output": "Mac16,12\n"
+    },
+    {
+      "command": [
+        "sysctl",
+        "-n",
+        "hw.memsize"
+      ],
+      "exit": 0,
+      "output": "17179869184\n"
+    },
+    {
+      "command": [
+        "/usr/bin/clang++",
+        "--version"
+      ],
+      "exit": 0,
+      "output": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin\n"
+    }
+  ],
+  "executions": [
+    {
+      "backend": "cpu",
+      "tests": 4,
+      "failures": 0,
+      "skips": 0,
+      "cases": [
+        "OriginalFloat32ActivationsAndDifferentBatchWeights",
+        "Rank2Float32Regression",
+        "Actual64HeadKeyAndValueColdPreparation",
+        "ExactBatchIdentityRequired"
+      ],
+      "image": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/batched-bfloat-linear-20261024/attempt1/cpu-bfloat-checks",
+        "bytes": 3710368,
+        "sha256": "46ed20cff2da93aa43f2e33ddb4c04dd4367427551ebd5b9c924b0def14dc908"
+      },
+      "xml": "cpu-tests.xml",
+      "scope": "CPU Context prepare/submit"
+    },
+    {
+      "backend": "metal",
+      "tests": 5,
+      "failures": 0,
+      "skips": 0,
+      "cases": [
+        "MetalRejectsOddNForPairedRowKernel",
+        "OriginalFloat32ActivationsAndDifferentBatchWeights",
+        "Rank2Float32Regression",
+        "Actual64HeadKeyAndValueColdPreparation",
+        "ExactBatchIdentityRequired"
+      ],
+      "image": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/batched-bfloat-linear-20261024/attempt1/metal-bfloat-checks",
+        "bytes": 3913840,
+        "sha256": "53d64a9b6ed78380e1082fd83fb9292ad1252b9307784f256e89a52db738a411"
+      },
+      "xml": "metal-tests.xml",
+      "scope": "Metal NativeProgram lowering and actual shared MTLBuffers; not the full Graph/provider assembly"
+    }
+  ],
+  "inputs": "Different original test BF16 W for each B=3, F32 cancellation rows, M1/M2/M17; rank2 regression.",
+  "cold_only": "Actual Q32 key/value-sized B64 descriptors are preparation checks only, not actual Q32 weights or whole-model execution.",
+  "cpu_runtime": "Current ABI2 cpu_program/cpu_execution/metadata_arena host sources plus actual standard_index/native_batch/batch_layout helpers; old ABI1 runtime is not linked. Cached native CPU library reused, missing FWHT symbol supplied by mechanically extracted current small source.",
+  "cpu_host_translation_units": 9,
+  "metal_host_translation_units": 2,
+  "SDK_builds": 0,
+  "native_GGML_library_builds": 0,
+  "limits": [
+    "No complete Q32 model, MTP state journey, task quality, throughput or physical-memory peak claim.",
+    "Metal checks current native lowering directly; full Graph assembly and Vulkan remain outside this batch."
+  ],
+  "archive": {
+    "path": "docs/evidence/correctness/mtp-batched-f32-bfloat-apple-2026-10-24.zip",
+    "bytes": 270535,
+    "sha256": "a8921432b2f39655aa6037663034cb786eab72309f922d0602f630c8227b974d"
+  },
+  "archived_files": 129,
+  "throughput_evidence": false,
+  "memory_evidence": false
+}

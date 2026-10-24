@@ -6,6 +6,8 @@
 
 #include "backend_internal.h"
 #include "hyle/compute/device.h"
+#include "hyle/compute/detail/context_ref.h"
+#include "hyle/compute/detail/queue_ref.h"
 #include "hyle/util/ref_counted.h"
 
 namespace hyle::compute::detail {
@@ -105,6 +107,9 @@ struct QueueState final : util::RefCounted<QueueState> {
   }
 
   void destroy() noexcept;
+  Status begin_submission() noexcept;
+  void end_submission() noexcept;
+  Status reserve_completions(std::size_t minimum) noexcept;
 
   ContextState *context = nullptr;
   void *backend_state = nullptr;
@@ -124,12 +129,23 @@ struct ContextAccess final {
   static ContextState *state(const Context &context) noexcept {
     return context.state_;
   }
+  static ContextState *state(const ContextRef &context) noexcept {
+    return context.state_;
+  }
   static QueueState *state(const Queue &queue) noexcept { return queue.state_; }
+  static QueueState *state(const QueueRef &queue) noexcept { return queue.state_; }
+  static QueueState *state(const QueueSequence &sequence) noexcept { return sequence.state_; }
   static void *backend_context(const Context &context) noexcept {
     return context.state_ != nullptr ? context.state_->backend_state : nullptr;
   }
   static void *backend_queue(const Queue &queue) noexcept {
     return queue.state_ != nullptr ? queue.state_->backend_state : nullptr;
+  }
+  static void *backend_queue(const QueueRef &queue) noexcept {
+    return queue.state_ != nullptr ? queue.state_->backend_state : nullptr;
+  }
+  static void *backend_queue(const QueueSequence &sequence) noexcept {
+    return sequence.state_ != nullptr ? sequence.state_->backend_state : nullptr;
   }
 
   // Internal typed-backend seam for an imported/adopted queue whose creation
@@ -137,6 +153,8 @@ struct ContextAccess final {
   // It preserves the exact allocation, admission and lifetime path used by
   // Context::create_queue; the callback must not publish its backend object on
   // failure.
+  HYLE_COMPUTE_API static Result<Queue>
+  create_queue(const ContextRef &, QueueOptions) noexcept;
   HYLE_COMPUTE_API static Result<Queue>
   create_queue(const Context &context, BackendQueueCreateFn create,
                void *call_context) noexcept;

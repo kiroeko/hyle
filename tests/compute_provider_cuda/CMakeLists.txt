@@ -1,8 +1,10 @@
 hyle_add_header_self_contained_test(compute_provider_cuda
   HEADER_DIR compute/providers HEADERS cuda.h)
 if(_HYLE_COMPUTE_HAVE_CUDA)
-  hyle_add_test(compute_provider_cuda SOURCES cuda_provider_test.cc tensor_test.cc scatter_test.cc sglang_primitives_test.cc collectives_test.cc gather_collectives_test.cc
-    DEPS hyle_compute_backend_cuda)
+  hyle_add_test(compute_provider_cuda NAME row_cache SOURCES row_cache_test.cc row_cache_paged_test.cc row_cache_indexer_test.cc row_cache_padded_test.cc
+    DEPS hyle_compute_backend_cuda hyle_compute_batch hyle_compute_route_cuda hyle_graph)
+  hyle_add_test(compute_provider_cuda SOURCES cuda_provider_test.cc grouped_fp8_test.cc tensor_test.cc scatter_test.cc sglang_primitives_test.cc collectives_test.cc gather_collectives_test.cc
+    DEPS hyle_compute_backend_cuda hyle_graph)
 endif()
 
 if(_HYLE_COMPUTE_HAVE_CUDA)

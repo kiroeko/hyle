@@ -27,6 +27,8 @@ std::optional<std::uint32_t> tensor_storage_type(DataType type) noexcept {
     return 6;
   case DataType::kUInt32:
     return 7;
+  case DataType::kFloat8E4M3FN:
+    return 8;
   default:
     return std::nullopt;
   }
@@ -278,17 +280,34 @@ Status lower_concat(ProgramState &program, const PlanStep &step) {
 Status lower_cache_encoder(ProgramState &program, const PlanStep &step,
                            std::span<const std::size_t> last_uses) {
   const auto encode=step.operation.custom_as<model_ops::CacheEncode>();
-  if(!encode || encode->storage!=CacheStorage::q8_0().value())
-    return Status::Unimplemented("Vulkan cache encoder admits Q8_0 storage");
+  if(!encode)return Status::InvalidArgument("Vulkan cache encoder operation");
+  const bool e4=encode->storage.data_type()==DataType::kFloat8E4M3FN;
+  if(!e4 && encode->storage!=CacheStorage::q8_0().value())
+    return Status::Unimplemented("Vulkan cache encoder admits Q8_0 or scalar E4 storage");
   const auto input=program.values[step.inputs[0]].description;
   const auto count=*input.element_count();
   if(!count)return Status::Ok();
-  if(count>INT32_MAX || count>program.runtime->device->properties.limits.maxStorageBufferRange/4)
+  const auto maximum=program.runtime->device->properties.limits.maxStorageBufferRange;
+  if(count>INT32_MAX || (!e4 && count>maximum/4) ||
+      (e4 && (*input.required_bytes()>maximum ||
+               *program.values[step.outputs[0]].description.required_bytes()>maximum)))
     return Status::OutOfRange("Vulkan cache encoder dirty extent exceeds native limits");
   const auto append=[&](TensorDesc description){
     const auto id=static_cast<std::uint32_t>(program.values.size());
     program.values.push_back({description,{}});program.aliases.push_back({id,0});return id;
   };
+  if(e4){
+    if(!input.is_dense() || !tensor_storage_type(input.data_type()) ||
+       *tensor_storage_type(input.data_type())>2)
+      return Status::Unimplemented("Vulkan E4 cache encoder needs dense F32/F16/BF16");
+    if(!program.status_value){HYLE_ASSIGN_OR_RETURN(auto status,TensorDesc::dense(DataType::kInt32,{}));program.status_value=append(status);}
+    std::array<SpecializationConstant,42> specialization{};Dispatch dispatch;
+    HYLE_RETURN_IF_ERROR(tensor_layout(program,step.inputs,step.outputs[0],specialization,dispatch));
+    specialization[7].value=std::bit_cast<std::uint32_t>(encode->storage.scale());
+    dispatch.values[2]=*program.status_value;dispatch.checked_status=true;
+    return append_tensor_dispatch(program,std::move(dispatch),shaders::cache_encode_e4(),specialization,
+        static_cast<std::uint32_t>(((count+3)/4+127)/128));
+  }
   HYLE_ASSIGN_OR_RETURN(auto safe_desc,TensorDesc::dense(DataType::kFloat32,input.dimensions()));
   const auto safe=append(safe_desc);
   if(!program.status_value){HYLE_ASSIGN_OR_RETURN(auto status,TensorDesc::dense(DataType::kInt32,{}));program.status_value=append(status);}
@@ -503,7 +522,19 @@ Status lower_tensor(ProgramState &program, const PlanStep &step) {
   if (!output_type || !output.is_dense())
     return Status::Unimplemented(
         "Vulkan tensor output requires admitted dense storage");
-  if ((operation >= 2 && operation <= 4) || operation >= 6) {
+  if (operation == 2) {
+    const auto input_type = tensor_storage_type(
+        program.values[step.inputs[0]].description.data_type());
+    const auto ordinary = [](std::uint32_t type) { return type <= 2 || type == 5; };
+    const bool numeric = input_type && ordinary(*input_type) && ordinary(*output_type);
+    const bool fp8 = input_type &&
+        ((*input_type == 8 && (*output_type <= 2 || *output_type == 8)) ||
+         (*output_type == 8 && *input_type <= 2));
+    if (!numeric && !fp8)
+      return Status::Unimplemented(
+          "Vulkan Cast requires F32/F16/BF16/Bool or a floating E4M3 bridge");
+  }
+  if ((operation >= 3 && operation <= 4) || operation >= 6) {
     if (*output_type > 2)
       return Status::Unimplemented(
           "Vulkan tensor arithmetic requires F32/F16/BF16");

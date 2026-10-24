@@ -121,11 +121,11 @@ Status create_invocation(void *state, mem::AllocatorRef, mem::BufferView workspa
   return Status::Ok();
 }
 void destroy_invocation(void *, mem::AllocatorRef) noexcept {}
-detail::EnqueueResult submit(void *state, void *workspace, Queue &queue,
+detail::EnqueueResult submit(void *state, void *workspace, detail::QueueSequence &sequence,
                              std::span<const ConstTensorView> inputs,
                              std::span<const TensorView> outputs) noexcept {
   const auto &prepared = *static_cast<const Prepared *>(state);
-  auto stream = cuda::stream(queue);
+  auto stream = cuda::stream(sequence);
   if (!stream) return detail::EnqueueResult::rejected(std::move(stream).error());
   auto source = cuda::detail::const_pointer(inputs[0].storage(), prepared.shape.roundtrip ? 16u : 4u, 1);
   if (!source) return detail::EnqueueResult::rejected(std::move(source).error());
@@ -172,7 +172,7 @@ ProviderPrepareOutcome prepare(void *state, const detail::ProviderPrepareRequest
   cuda::detail::ScopedPrimaryContext scope(primary);
   if (!scope) return ProviderPrepareOutcome::error(scope.status());
   auto *memory = allocator.allocate(sizeof(Prepared), alignof(Prepared));
-  if (!memory) return ProviderPrepareOutcome::resource_declined(Status::ResourceExhausted("DeepSeek program allocation failed"));
+  if (!memory) return ProviderPrepareOutcome::error(Status::ResourceExhausted("DeepSeek program allocation failed"));
   auto *prepared = ::new (memory) Prepared{primary, nullptr, nullptr, *shape};
   const auto *image = shape->roundtrip ? (shape->k == 64 ? kDeepSeekQuantization8
         : (shape->k == 128 ? kDeepSeekQuantization8Block128 : kDeepSeekQuantization4))

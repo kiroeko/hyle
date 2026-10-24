@@ -87,8 +87,7 @@ TEST(PmrResource, ZeroByteRequestUsesARealBalancedBackingBlock) {
   EXPECT_TRUE(stats.balanced());
 }
 
-// One resource serves containers of different element types (pmr type-erases T,
-// unlike clay's per-type stl_allocator<T>).
+// One type-erased memory resource serves containers of different element types.
 TEST(PmrResource, OneResourceManyTypes) {
   PmrResource res(system_allocator());
   std::pmr::vector<std::uint8_t> bytes(&res);

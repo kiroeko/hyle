@@ -22,9 +22,9 @@ Status hybrid_paged(bool bf16) {
       .resource={},
       .max_float_workspace_bytes=8u<<20,.max_int_workspace_bytes=64u<<10,
       .max_invocations=2,.scale=1.f/std::sqrt(float(depth))};
-  HYLE_ASSIGN_OR_RETURN(auto wrapped,gb::provider(c::flashinfer::provider(),schema,options));
+  const auto native_provider = c::flashinfer::provider();
   HYLE_ASSIGN_OR_RETURN(auto device_id,c::cuda::device(0));
-  HYLE_ASSIGN_OR_RETURN(auto gpu,c::Context::create(device_id,wrapped));
+  HYLE_ASSIGN_OR_RETURN(auto gpu,c::Context::create(device_id,native_provider));
   HYLE_ASSIGN_OR_RETURN(auto gpu_queue,gpu.create_queue());
   HYLE_ASSIGN_OR_RETURN(auto cpu_queue,cpu.create_queue());
   HYLE_ASSIGN_OR_RETURN(auto device,c::cuda::MemoryResource::create(gpu,c::cuda::MemoryKind::kDevice));
@@ -71,9 +71,10 @@ Status hybrid_paged(bool bf16) {
       {.node_placements=placements,.external_resources=external}));
   HYLE_RETURN_IF_ERROR(check(compiled.executable.required_queue_count()==2,"hybrid batch lost CPU/GPU Queues"));
   const std::array lanes{
-      gb::LaneBinding{g::ExecutionLaneId{1},&cpu,&cpu_queue},
-      gb::LaneBinding{g::ExecutionLaneId{0},&gpu,&gpu_queue,staging.ref()}};
-  HYLE_ASSIGN_OR_RETURN(auto invocation,gb::Invocation::create(compiled.executable,lanes));
+      g::QueueBinding{g::ExecutionLaneId{1}, &cpu_queue},
+      g::QueueBinding{g::ExecutionLaneId{0}, &gpu_queue}};
+  const gb::PrepareOptions preparation{.host_workspace = staging.ref(), .max_float_workspace_bytes = options.max_float_workspace_bytes, .max_int_workspace_bytes = options.max_int_workspace_bytes};
+HYLE_ASSIGN_OR_RETURN(auto invocation,compiled.executable.create_invocation({.resources = g::ResourceOptions{}}));
   HYLE_ASSIGN_OR_RETURN(auto keys,c::PagedArena::create(schema,c::BatchCacheRole::kKey,device.ref(),{.max_backing_bytes=1u<<20}));
   HYLE_ASSIGN_OR_RETURN(auto values,c::PagedArena::create(schema,c::BatchCacheRole::kValue,device.ref(),{.max_backing_bytes=1u<<20}));
   std::vector<std::uint16_t> k(4*page*kv_heads*depth),v(k.size());
@@ -109,18 +110,18 @@ Status hybrid_paged(bool bf16) {
     const auto layout=episode?next:initial;
     HYLE_ASSIGN_OR_RETURN(auto read_k,keys.read(layout,ready_k));
     HYLE_ASSIGN_OR_RETURN(auto read_v,values.read(layout,ready_v));
-    HYLE_RETURN_IF_ERROR(invocation.prepare_batch(std::array{gb::NodeLayout{attention,layout}}));
-    if(episode)HYLE_RETURN_IF_ERROR(check(!invocation.bind(key,old_keys).ok(),"hybrid mixed page/layout versions"));
-    HYLE_RETURN_IF_ERROR(invocation.bind(x,xdesc,rx));HYLE_RETURN_IF_ERROR(invocation.bind(scale,scale_desc,rs));
-    HYLE_RETURN_IF_ERROR(invocation.bind(key,read_k));HYLE_RETURN_IF_ERROR(invocation.bind(value,read_v));
+    HYLE_RETURN_IF_ERROR(gb::prepare(invocation, lanes, std::array{gb::NodeLayout{attention,layout}}, preparation));
+    if(episode)HYLE_RETURN_IF_ERROR(check(!gb::bind(invocation, key, old_keys).ok(),"hybrid mixed page/layout versions"));
+    HYLE_RETURN_IF_ERROR(invocation.bind(x, xdesc, rx));HYLE_RETURN_IF_ERROR(invocation.bind(scale, scale_desc, rs));
+    HYLE_RETURN_IF_ERROR(gb::bind(invocation, key, read_k));HYLE_RETURN_IF_ERROR(gb::bind(invocation, value, read_v));
     HYLE_ASSIGN_OR_RETURN(auto writer,host_pool.allocate(xs.size()*sizeof(float)));
-    HYLE_RETURN_IF_ERROR(invocation.bind(output,xdesc,std::move(writer)));
+    HYLE_RETURN_IF_ERROR(invocation.bind(output, xdesc, std::move(writer)));
     {HYLE_ASSIGN_OR_RETURN(auto unused,keys.acquire(3));HYLE_RETURN_IF_ERROR(check(unused.valid(),"hybrid page frame retained unreferenced capacity"));}
 #if defined(HYLE_G06_CAPTURE_REPLAY)
-    HYLE_RETURN_IF_ERROR(invocation.prepare_replay());
+    HYLE_RETURN_IF_ERROR(gb::prepare_replay(invocation, lanes));
 #endif
-    HYLE_ASSIGN_OR_RETURN(auto done,invocation.submit());HYLE_RETURN_IF_ERROR(done.wait());
-    HYLE_ASSIGN_OR_RETURN(auto result,invocation.output(output));
+    HYLE_RETURN_IF_ERROR(invocation.prepare_replay(lanes));HYLE_ASSIGN_OR_RETURN(auto done,invocation.submit(lanes));HYLE_RETURN_IF_ERROR(done.wait());
+    HYLE_ASSIGN_OR_RETURN(auto result,invocation.result(output));
     HYLE_ASSIGN_OR_RETURN(auto lease,result.storage_lease());
     std::vector<float> actual(xs.size());HYLE_ASSIGN_OR_RETURN(auto bytes,lease.view());
     HYLE_RETURN_IF_ERROR(bytes.read(std::as_writable_bytes(std::span(actual))));
@@ -128,13 +129,13 @@ Status hybrid_paged(bool bf16) {
     for(std::size_t i=0;i<actual.size();++i){HYLE_RETURN_IF_ERROR(check(std::isfinite(actual[i]) && actual[i]<0.f,"CPU post-math did not negate native attention"));attended_values[i]=encode(-actual[i],bf16);}
     HYLE_ASSIGN_OR_RETURN(auto converted,load(host_pool,attended_values));
     HYLE_RETURN_IF_ERROR(oracle(cap,layout,expected_q,k,v,converted,bf16));
-    HYLE_RETURN_IF_ERROR(check(!invocation.prepare_batch(std::array{gb::NodeLayout{attention,layout}}).ok(),"hybrid overwritten retained old output"));
-    HYLE_ASSIGN_OR_RETURN(auto report,invocation.report(attention));
+    HYLE_RETURN_IF_ERROR(check(!gb::prepare(invocation, lanes, std::array{gb::NodeLayout{attention,layout}}, preparation).ok(),"hybrid overwritten retained old output"));
+    HYLE_ASSIGN_OR_RETURN(auto report,gb::report(invocation, attention));
     HYLE_RETURN_IF_ERROR(check(report.layout_generation==layout.generation() && (!episode || report.reused_native_plan),"hybrid metadata generation/topology differs"));
 #if defined(HYLE_G06_CAPTURE_REPLAY)
     HYLE_RETURN_IF_ERROR(check(report.capture_compatible,"hybrid native batch capture not prepared"));
     if(episode)HYLE_RETURN_IF_ERROR(check(report.host_waits==(report.metadata_upload.physical_bytes?1u:0u),"hybrid recreated capture at unchanged native storage"));
-    HYLE_RETURN_IF_ERROR(check(!invocation.prepare_replay().ok(),"hybrid captured replay ignored old output"));
+    HYLE_RETURN_IF_ERROR(check(!gb::prepare_replay(invocation, lanes).ok(),"hybrid captured replay ignored old output"));
 #endif
     std::printf("G02 CPU RMS/Cast -> CUDA paged GQA8/2 D256 -> CPU Cast/Neg, %s episode=%u precise-pages/old-output/oracle PASS\n",bf16?"BF16":"F16",episode);
   }

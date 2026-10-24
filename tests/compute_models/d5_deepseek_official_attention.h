@@ -33,6 +33,44 @@ using old::join_compressor;
 using old::CompressorOptions;
 using official::bfloat_boundary;
 
+// A cold, model-local immutable bank and its independently retained source
+// coefficients. The caller keeps those coefficients alive while references
+// are used; only the ValueId participates in the actual computation.
+struct ImmutableF32Parameter final { ValueId value; std::span<const float> coefficients; };
+inline void require_parameter(const Fragment &f, const ImmutableF32Parameter &parameter,
+                              const c::TensorDesc &description) {
+  if (parameter.value.ordinal() >= f.descriptions.size() ||
+      f.description(parameter.value) != description ||
+      parameter.coefficients.size() != description.element_count().value() ||
+      std::ranges::none_of(f.constants, [&](ValueId value) { return value.ordinal() == parameter.value.ordinal(); }) ||
+      !std::ranges::all_of(parameter.coefficients, [](float value) { return std::isfinite(value); }))
+    throw std::runtime_error("immutable model parameter must be a matching same-Fragment F32 constant");
+}
+struct NormPorts final { ValueId input, raw, stored; };
+inline NormPorts norm(Fragment &f, ValueId input, const ImmutableF32Parameter &parameter) {
+  require_parameter(f, parameter, dense({f.description(input).dimensions().back()}));
+  const auto raw = f.one(c::Operation(c::RmsNorm{.epsilon = 1.0e-6F}), {input, parameter.value});
+  return {input, raw, bfloat_boundary(f, raw)};
+}
+inline std::vector<float> dense_projection_reference(std::span<const float> input,
+    std::span<const float> coefficients, std::size_t columns, std::size_t reduction) {
+  if (!columns || !reduction || coefficients.size() != columns * reduction || input.size() % reduction)
+    throw std::runtime_error("dense original model projection reference extent");
+  std::vector<float> result(input.size() / reduction * columns);
+  for (std::size_t row = 0; row < input.size() / reduction; ++row)
+    for (std::size_t output = 0; output < columns; ++output) {
+      double sum = 0, correction = 0;
+      for (std::size_t k = 0; k < reduction; ++k) {
+        const double term = double(input[row * reduction + k]) * coefficients[output * reduction + k];
+        const double next = sum + term;
+        correction += std::abs(sum) >= std::abs(term) ? (sum - next) + term : (term - next) + sum;
+        sum = next;
+      }
+      result[row * columns + output] = float(sum + correction);
+    }
+  return result;
+}
+
 inline ValueId norm(Fragment &f, ValueId input, std::vector<float> &scales) {
   auto weight = linear::parameter(f, dense({std::int64_t(scales.size())}), scales, true);
   return bfloat_boundary(f, f.one(c::Operation(c::RmsNorm{.epsilon = 1.0e-6F}),
@@ -48,13 +86,26 @@ inline ValueId mean(Fragment &f, ValueId x) {
       .axes = c::Axes::from(std::span(&axis, 1)).value(), .keep_dimensions = true,
       .accumulation_type = c::DataType::kFloat32}), {x});
 }
-inline ValueId query_norm(Fragment &f, ValueId x) {
-  auto square = bfloat_boundary(f, binary(f, c::BinaryKind::kMultiply, x, x));
-  auto variance = bfloat_boundary(f, mean(f, square));
-  variance = bfloat_boundary(f, binary(f, c::BinaryKind::kAdd, variance,
-                                      filled(f, dense({1}), 1.0e-6F)));
-  auto inverse = bfloat_boundary(f, unary(f, c::UnaryKind::kRsqrt, variance));
-  return bfloat_boundary(f, binary(f, c::BinaryKind::kMultiply, x, inverse));
+struct QueryNormPorts final {
+  ValueId input,square_raw,square,mean_raw,mean,variance_raw,variance,inverse_raw,inverse,output_raw,output;
+  template<class Visitor> void visit_values(Visitor &&visitor) {
+    for(auto *value:{&input,&square_raw,&square,&mean_raw,&mean,&variance_raw,&variance,
+        &inverse_raw,&inverse,&output_raw,&output}) visitor(*value);
+  }
+};
+inline ValueId query_norm(Fragment &f, ValueId x, QueryNormPorts *ports=nullptr) {
+  const auto square_raw=binary(f, c::BinaryKind::kMultiply, x, x);
+  auto square = bfloat_boundary(f, square_raw);
+  const auto mean_raw=mean(f,square);
+  const auto average=bfloat_boundary(f,mean_raw);
+  const auto variance_raw=binary(f,c::BinaryKind::kAdd,average,filled(f,dense({1}),1.0e-6F));
+  auto variance = bfloat_boundary(f, variance_raw);
+  const auto inverse_raw=unary(f,c::UnaryKind::kRsqrt,variance);
+  auto inverse = bfloat_boundary(f, inverse_raw);
+  const auto output_raw=binary(f,c::BinaryKind::kMultiply,x,inverse);
+  const auto output=bfloat_boundary(f,output_raw);
+  if(ports)*ports={x,square_raw,square,mean_raw,average,variance_raw,variance,inverse_raw,inverse,output_raw,output};
+  return output;
 }
 inline std::vector<float> query_norm_reference(std::vector<float> x, std::int64_t depth) {
   for (std::size_t row = 0; row < x.size(); row += depth) {
@@ -86,13 +137,23 @@ inline std::vector<float> rope_frequencies(bool compressed, bool inverse) {
   }
   return result;
 }
-inline ValueId rope(Fragment &f, ValueId x, ValueId positions, bool compressed, bool inverse = false) {
+struct RopePorts final {
+  ValueId input,raw,stored;
+  template<class Visitor> void visit_values(Visitor &&visitor) {
+    for(auto *value:{&input,&raw,&stored})visitor(*value);
+  }
+};
+inline ValueId rope(Fragment &f, ValueId x, ValueId positions, bool compressed, bool inverse = false,
+                    RopePorts *ports=nullptr) {
   const auto depth = f.description(x).dimensions().back();
   auto prefix = slice(f, x, 3, 0, depth-64), tail = slice(f, x, 3, depth-64, 64);
   auto frequencies = f.constant(dense({32}), bytes(rope_frequencies(compressed, inverse)));
   auto rotated = f.one(c::Operation(c::RoPE{.rotary_dimensions = 64,
       .sequence_axis = 1, .layout = c::RopeLayout::kInterleaved}), {tail, positions, frequencies});
-  return bfloat_boundary(f, concat(f, prefix, rotated, 3));
+  const auto raw=concat(f,prefix,rotated,3);
+  const auto stored=bfloat_boundary(f,raw);
+  if(ports)*ports={x,raw,stored};
+  return stored;
 }
 inline std::vector<float> rope_reference(std::span<const float> x, std::int64_t depth,
                                          std::int32_t position, bool compressed, bool inverse = false) {
@@ -620,17 +681,28 @@ inline Fragment attention(const moe::Case &model, std::int64_t ratio,
   }
   return f;
 }
+struct HyperPrePorts final {
+  ValueId state, flat, projection, inverse, mixes, pre, post, combination, collapsed_raw, collapsed;
+};
+struct HyperPostPorts final { ValueId branch, residual, expanded, stored; };
+struct HyperValues final { ValueId fn, scale, base; };
+struct HyperParameters final { ImmutableF32Parameter fn, scale, base; };
 struct Hyper final {
   ValueId collapsed, post, combination;
   linear::Projection fn;
   std::int64_t hidden;
   std::vector<float> scales{0.125F, 0.25F, 0.5F}, bases = std::vector<float>(24);
   bool bfloat_outputs=true;
+  std::span<const float> dense_coefficients{};
+  HyperPrePorts ports{};
   moe::ReferenceOutputs reference(std::span<const float> state, std::span<const float> branch) const {
+    if(dense_coefficients.empty()&&fn.weight.decoded.empty())
+      throw std::runtime_error("hyper-connection reference needs its own source coefficients");
     moe::ReferenceOutputs result(3);
     for(std::size_t first=0;first<state.size();first+=4*hidden) {
       const auto local=state.subspan(first,4*hidden);
-      auto mixes = fn.reference(local);
+      auto mixes = dense_coefficients.empty() ? fn.reference(local) :
+          dense_projection_reference(local, dense_coefficients, 24, std::size_t(4 * hidden));
       double square = 0;
       for (auto x : local) square += double(x)*x;
       const float inverse = 1.0F/std::sqrt(float(square/local.size())+1.0e-6F);
@@ -655,7 +727,8 @@ inline Hyper hyper_pre(Fragment &f, ValueId state, std::int64_t hidden, int seed
   const auto tokens=f.description(state).dimensions()[0];
   auto flat = reshape(f, state, {tokens, 4*hidden});
   auto fn = linear::projection(f, flat, 24, 4*hidden, linear::Storage::kF32, seed);
-  auto mixes = binary(f, c::BinaryKind::kMultiply, fn.output, inverse_rms(f, flat));
+  const auto inverse = inverse_rms(f, flat);
+  auto mixes = binary(f, c::BinaryKind::kMultiply, fn.output, inverse);
   Hyper result{{}, {}, {}, std::move(fn), hidden};
   result.bfloat_outputs=bfloat;
   for (int i = 0; i < 24; ++i) result.bases[i] = float(i%7-3)/8.0F;
@@ -673,13 +746,72 @@ inline Hyper hyper_pre(Fragment &f, ValueId state, std::int64_t hidden, int seed
         filled(f, dense({1}), offset));
   };
   result.post = gate(4, 2, 0);
-  result.collapsed = f.one(c::model_ops::hyper_connection_pre(), {state, gate(0, 1, 1.0e-6F)});
+  const auto pre = gate(0, 1, 1.0e-6F);
+  result.collapsed = f.one(c::model_ops::hyper_connection_pre(), {state, pre});
+  const auto collapsed_raw = result.collapsed;
   if(bfloat)result.collapsed=bfloat_boundary(f,result.collapsed);
+  result.ports = {state, flat, result.fn.output, inverse, mixes, pre, result.post,
+      result.combination, collapsed_raw, result.collapsed};
   return result;
 }
-inline ValueId hyper_post(Fragment &f, const Hyper &mix, ValueId state, ValueId branch) {
+inline Hyper hyper_pre(Fragment &f, ValueId state, std::int64_t hidden,
+                       const HyperValues &parameters, bool bfloat = true) {
+  // Graph assembly requires typed operands. Host coefficient spans belong to
+  // the independent reference and are not needed to execute these Values.
+  const auto require_value=[&](ValueId value,const c::TensorDesc &description) {
+    if(value.ordinal()>=f.descriptions.size()||f.description(value)!=description)
+      throw std::runtime_error("hyper-connection parameter has a different typed layout");
+  };
+  require_value(parameters.fn,dense({24,4*hidden}));
+  require_value(parameters.scale,dense({3}));
+  require_value(parameters.base,dense({24}));
+  const auto tokens = f.description(state).dimensions()[0];
+  const auto flat = reshape(f, state, {tokens, 4 * hidden});
+  const auto product = f.one(c::Operation(c::MatMul{}), {flat, permute(f, parameters.fn, {1, 0})});
+  linear::Projection fn{{}, linear::Storage::kF32, product};
+  const auto inverse = inverse_rms(f, flat);
+  const auto mixes = binary(f, c::BinaryKind::kMultiply, product, inverse);
+  Hyper result{{}, {}, {}, std::move(fn), hidden};
+  result.bfloat_outputs = bfloat;
+  result.combination = f.one(c::model_ops::hyper_connection_combine(1.0e-6F, 20),
+      {mixes, parameters.scale, parameters.base});
+  const auto gate = [&](int start, float multiplier, float offset) {
+    const auto part = slice(f, mixes, 1, start, 4);
+    const auto scale = slice(f, parameters.scale, 0, start / 4, 1);
+    const auto base = reshape(f, slice(f, parameters.base, 0, start, 4), {1, 4});
+    const auto affine = binary(f, c::BinaryKind::kAdd,
+        binary(f, c::BinaryKind::kMultiply, part, scale), base);
+    const auto sigmoid = unary(f, c::UnaryKind::kSigmoid, affine);
+    return binary(f, c::BinaryKind::kAdd,
+        binary(f, c::BinaryKind::kMultiply, sigmoid, filled(f, dense({1}), multiplier)),
+        filled(f, dense({1}), offset));
+  };
+  result.post = gate(4, 2, 0);
+  const auto pre = gate(0, 1, 1.0e-6F);
+  const auto collapsed_raw = f.one(c::model_ops::hyper_connection_pre(), {state, pre});
+  result.collapsed = bfloat ? bfloat_boundary(f, collapsed_raw) : collapsed_raw;
+  result.ports = {state, flat, product, inverse, mixes, pre, result.post,
+      result.combination, collapsed_raw, result.collapsed};
+  return result;
+}
+inline Hyper hyper_pre(Fragment &f, ValueId state, std::int64_t hidden,
+                       const HyperParameters &parameters, bool bfloat = true) {
+  require_parameter(f, parameters.fn, dense({24, 4 * hidden}));
+  require_parameter(f, parameters.scale, dense({3}));
+  require_parameter(f, parameters.base, dense({24}));
+  auto result=hyper_pre(f,state,hidden,
+      HyperValues{parameters.fn.value,parameters.scale.value,parameters.base.value},bfloat);
+  result.dense_coefficients=parameters.fn.coefficients;
+  result.scales.assign(parameters.scale.coefficients.begin(),parameters.scale.coefficients.end());
+  result.bases.assign(parameters.base.coefficients.begin(),parameters.base.coefficients.end());
+  return result;
+}
+inline ValueId hyper_post(Fragment &f, const Hyper &mix, ValueId state, ValueId branch,
+                          HyperPostPorts *ports = nullptr) {
   auto result=f.one(c::model_ops::hyper_connection_post(), {branch, state, mix.post, mix.combination});
-  return mix.bfloat_outputs?bfloat_boundary(f,result):result;
+  const auto stored = mix.bfloat_outputs?bfloat_boundary(f,result):result;
+  if (ports) *ports = {branch, state, result, stored};
+  return stored;
 }
 
 // The fixed official config appends ratio0 for mtp.0 on both Pro and Flash.

@@ -14,8 +14,17 @@ namespace provider = ggml_vulkan::detail;
 namespace {
 bool layout_limits(const ProgramState &program, const PlanStep &step) noexcept {
   const auto &limits = program.runtime->device->properties.limits;
+  const auto paged=step.operation.custom_as<provider::PagedAttentionRead>();
   const auto fits = [&](std::uint32_t value) {
-    const auto count = *program.values[value].description.element_count();
+    const auto& description=program.values[value].description;
+    const auto count = *description.element_count();
+    if(paged && (paged->paged || paged->compact_mla) && paged->float8_cache &&
+       (value==step.inputs[1] || (!paged->compact_mla && value==step.inputs[2]))) {
+      // This tagged reader loads original E4 bytes per tile; no F32 bank is
+      // materialized. Q conversion and the F32 result retain the old limits.
+      const auto bytes=description.required_bytes();
+      return bytes && *bytes<=limits.maxStorageBufferRange && count<=INT32_MAX;
+    }
     return count <= limits.maxStorageBufferRange / sizeof(float) &&
            (count + 262143) / 262144 <= limits.maxComputeWorkGroupCount[2];
   };
@@ -87,18 +96,51 @@ bool scan_limits(const ProgramState &program,
           rows <= limits.maxComputeWorkGroupCount[1]);
 }
 bool transposed_dense_matrix(const TensorDesc &description) noexcept {
-  if (!description.is_plain() || description.rank() != 2 ||
+  if (!description.is_plain() || description.rank() < 2 || description.rank() > 4 ||
       description.is_dense())
     return false;
-  const std::array physical_dimensions{description.dimensions()[1],
-                                       description.dimensions()[0]};
-  const auto physical =
-      TensorDesc::dense(description.data_type(), physical_dimensions);
-  if (!physical)
-    return false;
-  const auto transposed = physical->transposed();
-  return transposed && *transposed == description;
+  const auto physical = description.transposed();
+  return physical && physical->is_dense();
 }
+// A transposed matrix may retain padding between physical batches, as a
+// bounded prefix of a row-dense cache does. The existing region adapter copies
+// just this logical RHS before import; it never repeats shared batch axes.
+bool adaptable_matrix_rhs(const TensorDesc &description) noexcept {
+  if (!description.is_plain() || description.rank() < 2 ||
+      description.rank() > 4 ||
+      (description.data_type() != DataType::kFloat32 &&
+       description.data_type() != DataType::kFloat16 &&
+       description.data_type() != DataType::kBFloat16))
+    return false;
+  const auto physical = description.transposed();
+  const auto bytes = description.required_bytes();
+  if (!physical || !bytes || *bytes == 0)
+    return false;
+  const auto shape = physical->dimensions();
+  const auto strides = physical->byte_strides();
+  const auto scalar = data_type_size(description.data_type());
+  if (strides.back() != static_cast<std::int64_t>(scalar) ||
+      (shape[shape.size() - 2] > 1 &&
+       static_cast<std::uint64_t>(strides[strides.size() - 2]) !=
+           static_cast<std::uint64_t>(shape.back()) * scalar))
+    return false;
+  std::uint64_t span = scalar;
+  for (auto axis = shape.size(); axis-- > 0;) {
+    if (shape[axis] <= 0 || strides[axis] < 0 ||
+        static_cast<std::uint64_t>(strides[axis]) % scalar != 0)
+      return false;
+    if (shape[axis] == 1)
+      continue;
+    const auto stride = static_cast<std::uint64_t>(strides[axis]);
+    const auto steps = static_cast<std::uint64_t>(shape[axis] - 1);
+    if (stride < span || span > *bytes ||
+        steps > (*bytes - span) / stride)
+      return false;
+    span += steps * stride;
+  }
+  return span == *bytes;
+}
+
 bool region_operation(const ProgramState &program, const PlanStep &step,
                       bool promote_bfloat) noexcept {
   const auto max_inputs =
@@ -132,12 +174,26 @@ bool region_operation(const ProgramState &program, const PlanStep &step,
                            low_precision)) &&
       (!features.shader_float16 || !features.storage_buffer16))
     return false;
+  const bool adapted_rhs = step.operation.get_if<MatMul>() && input_count == 2 &&
+      adaptable_matrix_rhs(inputs[1]);
+  if (adapted_rhs && *inputs[1].required_bytes() >
+          program.runtime->device->properties.limits.maxStorageBufferRange)
+    return false;
   if (promote_bfloat) {
     for (std::size_t i = 0; i < input_count; ++i) {
       if (step.operation.get_if<RoPE>() && i == 1 &&
           inputs[i].data_type() == DataType::kInt32)
         continue;
-      if (!inputs[i].is_plain() || !inputs[i].is_dense() ||
+      // Only the immutable MatMul RHS can already own a cold F32 pack.
+      // Its native transpose is contiguous; preserve that exact layout.
+      if (i == 1 && step.operation.get_if<MatMul>() &&
+          inputs[i].data_type() == DataType::kFloat32) {
+        const auto transposed = inputs[i].transposed();
+        if (program.values[step.inputs[i]].constant && transposed && transposed->is_dense())
+          continue;
+      }
+      if (!inputs[i].is_plain() ||
+          (!inputs[i].is_dense() && !(i == 1 && adapted_rhs)) ||
           (inputs[i].data_type() != DataType::kFloat32 &&
            !low_precision(inputs[i])))
         return false;
@@ -158,7 +214,16 @@ bool region_operation(const ProgramState &program, const PlanStep &step,
   // against the canonical description that lower_managed_region materializes.
   // This does not introduce another MatMul implementation or a runtime route.
   if (step.operation.get_if<MatMul>() && input_count == 2 &&
-      transposed_dense_matrix(inputs[1])) {
+      transposed_dense_matrix(inputs[0])) {
+    const auto canonical =
+        TensorDesc::dense(inputs[0].data_type(), inputs[0].dimensions());
+    if (!canonical)
+      return false;
+    // Pack only the unique A storage before its native batch broadcast view.
+    inputs[0] = *canonical;
+  }
+  if (step.operation.get_if<MatMul>() && input_count == 2 &&
+      adapted_rhs) {
     const auto canonical =
         TensorDesc::dense(inputs[1].data_type(), inputs[1].dimensions());
     if (!canonical)
@@ -171,15 +236,20 @@ bool region_operation(const ProgramState &program, const PlanStep &step,
     return false;
   if (step.operation.get_if<MatMul>()) {
     const auto &limits = program.runtime->device->properties.limits;
-    const auto rows = static_cast<std::uint64_t>(*inputs[0].element_count() /
-                                                 inputs[0].dimensions().back());
     const auto columns =
         static_cast<std::uint64_t>(inputs[1].dimensions().back());
+    // Output batches can exceed A's physical batches when A is shared.
+    // Bound actual native result/split-K workspace, not A's smaller storage.
+    const auto rows = static_cast<std::uint64_t>(*outputs[0].element_count() / columns);
+    const auto matrix_rows = static_cast<std::uint64_t>(
+        inputs[0].dimensions()[inputs[0].rank() - 2]);
+    const auto batches = rows / matrix_rows;
     // Original matmul may choose up to eight split-K pieces. Bound both its
     // F32 partial workspace and all grids before native graph allocation.
     // The locked MAT pipelines tile at least 32 columns. Split-K multiplies
     // that tile count, not each scalar column; the final reduction tiles 1024.
     if (rows > limits.maxComputeWorkGroupCount[1] ||
+        batches > limits.maxComputeWorkGroupCount[2] ||
         (columns + 31) / 32 > limits.maxComputeWorkGroupCount[0] / 8 ||
         columns > limits.maxComputeWorkGroupCount[0] ||
         rows * columns > limits.maxStorageBufferRange / (8 * sizeof(float)) ||
@@ -291,6 +361,11 @@ bool region_operation(const ProgramState &program, const PlanStep &step,
 
 bool managed_operation(const ProgramState &program,
                        const PlanStep &step) noexcept {
+  // Empty selections retain both published ports without importing payload
+  // or constructing a vendor argsort, including a zero-length input axis.
+  if (const auto *selection = step.operation.get_if<TopK>();
+      selection && selection->count == 0)
+    return false;
   // The row-wise single-selection carrier keeps the original TopK schema,
   // while avoiding this mature region's full argsort and its buffers.
   if (single_topk_operation(program, step)) return false;
@@ -368,6 +443,11 @@ bool quantized_gather_operation(const ProgramState &program,
 bool bfloat_region_operation(const ProgramState &program,
                              const PlanStep &step) noexcept {
   if (step.outputs.size() != 1) return false;
+  // The original matrix carrier already preserves BF16 weights, F32
+  // accumulation and the public output rounding boundary. Prefer that exact
+  // qualified path over widening every operand into per-Invocation storage.
+  if (step.operation.get_if<MatMul>() && managed_operation(program, step))
+    return false;
   const auto type = program.values[step.outputs[0]].description.data_type();
   const bool convolution = step.operation.custom_as<model_ops::CausalConv1d>() &&
       (type == DataType::kFloat16 || type == DataType::kBFloat16);
@@ -632,6 +712,8 @@ Status lower_region(ProgramState &program, const Plan &plan, std::size_t first,
       bool descriptor_aligned = false;
       bool resident_attention = false;
       bool other_reader = false;
+      bool grouped_activation = false;
+      bool other_grouped_reader = false;
     };
     std::vector<ValueUses> uses(ids.size());
     for (auto i = first; i < end; ++i) {
@@ -654,6 +736,14 @@ Status lower_region(ProgramState &program, const Plan &plan, std::size_t first,
       for (const auto input : node.inputs) {
         uses[input].resident_attention |= resident;
         uses[input].other_reader |= !resident;
+      }
+      const bool grouped =
+          step.operation.custom_as<model_ops::GroupedMatMul>().has_value() &&
+          region_operation(program, step, false);
+      for (std::size_t port = 0; port < node.inputs.size(); ++port) {
+        const bool activation = grouped && port == 1;
+        uses[node.inputs[port]].grouped_activation |= activation;
+        uses[node.inputs[port]].other_grouped_reader |= !activation;
       }
       // Argsort, indexed rows, GroupNorm, Softmax and multi-pass Scan need
       // aligned descriptors. Other admitted operations retain their
@@ -707,6 +797,15 @@ Status lower_region(ProgramState &program, const Plan &plan, std::size_t first,
         continue;
       }
       const auto &description = program.values[value].description;
+      if (uses[input].grouped_activation && !uses[input].other_grouped_reader &&
+          !description.is_dense()) {
+        // The qualified Grouped port retains its real token pitch and slot0
+        // layout. The native Provider validates descriptor-origin alignment
+        // on every bind; canonicalizing here would copy S activation rows.
+        // Dense ports keep their existing offset-aware alignment adapter.
+        dispatch.values.push_back(value);
+        continue;
+      }
       bool resident =
           uses[input].resident_attention && !uses[input].other_reader &&
           description.rank() == 4 &&
@@ -732,7 +831,24 @@ Status lower_region(ProgramState &program, const Plan &plan, std::size_t first,
           auto canonical,
           TensorDesc::dense(program.values[value].description.data_type(),
                             program.values[value].description.dimensions()));
-      if (canonical != program.values[value].description) {
+      // A captured RHS or an internally produced, unescaped RHS can already
+      // own the exact transposed matrix/batch payload. Preserve that layout
+      // only when every reader here is MatMul's RHS. External mutable ports
+      // and published views keep the original canonical boundary adapter.
+      bool packed_matrix = program.values[value].constant.valid();
+      if (!packed_matrix &&
+          std::ranges::find(program.inputs, alias.root) == program.inputs.end() &&
+          std::ranges::find(plan.outputs, value) == plan.outputs.end() &&
+          std::ranges::find(plan.outputs, alias.root) == plan.outputs.end())
+        packed_matrix = true;
+      const auto transposed = description.transposed();
+      packed_matrix &= transposed && transposed->is_dense();
+      for (auto i = first; packed_matrix && i < end; ++i)
+        for (std::size_t port = 0; port < plan.steps[i].inputs.size(); ++port)
+          if (plan.steps[i].inputs[port] == value &&
+              (!plan.steps[i].operation.get_if<MatMul>() || port != 1))
+            packed_matrix = false;
+      if (canonical != description && !packed_matrix) {
         const auto adapted =
             static_cast<std::uint32_t>(program.values.size());
         program.values.push_back({canonical, {}});
@@ -779,6 +895,53 @@ Status lower_region(ProgramState &program, const Plan &plan, std::size_t first,
     return Status::Ok();
   } catch (const std::bad_alloc &) {
     return Status::ResourceExhausted("Vulkan region boundary plan");
+  }
+}
+
+Status lower_gather_elements(ProgramState &program, const PlanStep &step) noexcept {
+  try {
+    const auto gather=step.operation.custom_as<model_ops::GatherElements>();
+    if(!gather || step.inputs.size()!=2 || step.outputs.size()!=1)
+      return Status::InvalidArgument("Vulkan GatherElements ports are invalid");
+    const auto input=program.values[step.inputs[0]].description;
+    const auto indices=program.values[step.inputs[1]].description;
+    const auto output=program.values[step.outputs[0]].description;
+    if(input.rank()!=2 || (gather->axis!=-1 && gather->axis!=1))
+      return Status::Unimplemented("Vulkan GatherElements requires rank-two last-axis data");
+    const auto count=*indices.element_count();
+    if(!count)return Status::Ok();
+    const auto& limits=program.runtime->device->properties.limits;
+    // GET_ROWS and a possible narrow-float conversion use four-byte carriers.
+    if(count>INT32_MAX || count>limits.maxStorageBufferRange/4 ||
+       *input.element_count()>limits.maxStorageBufferRange/4 ||
+       limits.maxComputeWorkGroupInvocations<512 || limits.maxComputeWorkGroupSize[0]<512)
+      return Status::Unimplemented("Vulkan GatherElements exceeds native buffer or workgroup limits");
+    while(program.aliases.size()<program.values.size()) {
+      const auto id=static_cast<std::uint32_t>(program.aliases.size());
+      program.aliases.push_back({id,0});
+    }
+    const auto append=[&](TensorDesc description){
+      const auto id=static_cast<std::uint32_t>(program.values.size());
+      program.values.push_back({description,{}});program.aliases.push_back({id,0});return id;
+    };
+    const bool checked=gather->bounds==IndexBoundsPolicy::kChecked;
+    if(checked && !program.status_value){
+      HYLE_ASSIGN_OR_RETURN(auto status,TensorDesc::dense(DataType::kInt32,{}));
+      program.status_value=append(status);
+    }
+    const auto safe=append(indices);
+    HYLE_RETURN_IF_ERROR(lower_index_check(program,step.inputs[1],safe,
+        static_cast<std::uint64_t>(input.dimensions()[1]),checked));
+    const auto selected=append(output);
+    Plan local;local.outputs={selected};
+    local.steps.push_back({model_ops::gather_elements(gather->axis,IndexBoundsPolicy::kUnchecked),
+                          {step.inputs[0],safe},{selected},{},{1,1,1},{}});
+    const std::vector<std::size_t> uses(program.values.size(),0);
+    HYLE_RETURN_IF_ERROR(lower_region(program,local,0,1,uses));
+    return checked ? lower_checked_copy(program,selected,step.outputs[0])
+                   : lower_tensor(program,{Operation(Copy{}),{selected},step.outputs,{},{1,1,1},{}});
+  } catch(const std::bad_alloc&) {
+    return Status::ResourceExhausted("Vulkan GatherElements lowering metadata");
   }
 }
 
@@ -1160,6 +1323,11 @@ Status lower_scan(ProgramState &program, const PlanStep &step) noexcept {
 Status lower_topk(ProgramState &program, const PlanStep &step) noexcept {
   try {
     const auto input = program.values[step.inputs[0]].description;
+    auto selection = *step.operation.get_if<TopK>();
+    // prepare_plan has validated arity, axis and both inferred descriptions.
+    // Empty selection needs no numeric conversion or vendor comparison domain.
+    if (selection.count == 0)
+      return Status::Ok();
     if (input.data_type() != DataType::kFloat32)
       return Status::Unimplemented("Vulkan TopK requires F32 router scores");
     if (*input.element_count() == 0)
@@ -1168,7 +1336,6 @@ Status lower_topk(ProgramState &program, const PlanStep &step) noexcept {
         program.runtime->device->properties.limits.maxStorageBufferRange / 4)
       return Status::Unimplemented(
           "Vulkan TopK dense adapter exceeds device limits");
-    auto selection = *step.operation.get_if<TopK>();
     if (!topk_limits(program, input, selection))
       return Status::Unimplemented(
           "Vulkan TopK padded sort exceeds native limits");
@@ -1291,7 +1458,7 @@ void refresh_region_bindings(Run &run) noexcept {
   }
 }
 
-Status bind_regions(Run &run) noexcept {
+Status bind_regions(Run &run, const ProgramState *rebound_storage) noexcept {
   refresh_region_bindings(run);
   for (auto &stage : run.stages) {
     if (stage.managed) {
@@ -1302,7 +1469,10 @@ Status bind_regions(Run &run) noexcept {
       for (std::size_t i = 0; i < stage.values.size(); ++i)
         stage.native->retained_buffers[i] =
             run.retained_buffers[stage.values[i]];
-      if (origins_changed(*stage.native, stage.encoding->dispatches))
+      if (rebound_storage)
+        HYLE_RETURN_IF_ERROR(rebind_descriptors(*stage.native, rebound_storage->values,
+            stage.encoding->dispatches, stage.values));
+      else if (origins_changed(*stage.native, stage.encoding->dispatches))
         HYLE_RETURN_IF_ERROR(
             encode_commands(*stage.native, stage.encoding->dispatches));
     }

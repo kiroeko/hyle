@@ -1,0 +1,1450 @@
+{
+  "date": "2026-10-23",
+  "stage": "BZ",
+  "goal_complete": false,
+  "conclusion": "Seven listed passing cases combine three retained baseline passes and four corrected-image passes. The original four-case run failed its CUDA target check; that failure and its numerical diagnosis remain preserved. The formal Flash0731 target40->41->42, finalHC/norm and full-vocabulary K5 finite checks now pass on Windows CPU/CUDA.",
+  "artifact": {
+    "repository": "deepseek-ai/DeepSeek-V4-Flash-0731",
+    "revision": "7872f01b1d1fe23eabc4c98b48bffcef5a386062",
+    "original_target_roles": 4725,
+    "original_target_bytes": 10748569116,
+    "typed_catalog": {
+      "path": ".scratch/dspark-original-target-tail-20261023/original-target/catalog.bin",
+      "bytes": 75664,
+      "sha256": "891133bf24c829c51b7c4819df2104e4ce0616c1b5682dbf8025c42fa447aa8a"
+    },
+    "bundle": {
+      "path": ".scratch/dspark-original-target-tail-20261023/original-target/roles.bin",
+      "bytes": 10748569116,
+      "sha256": "05f9bdc3ab78be7040fc484d19ce7b5010c9b3dc037d2715060d3de5606adc52"
+    },
+    "acquisition": {
+      "path": ".scratch/dspark-original-target-tail-20261023/original-target/acquisition.json",
+      "bytes": 73161,
+      "sha256": "58252f55f6dc4ab5356bb9ec6e44fca6c2a7f1ef773fb83fdd4a718f4d8a3641"
+    },
+    "obsolete_adapter_removal": {
+      "path": ".scratch/dspark-original-target-tail-20261023/obsolete-adapter-removal.json",
+      "bytes": 223,
+      "sha256": "0b10253f2f1772d27c335b89724c553d68c02eb56a0da6035742ed973d85cfab"
+    },
+    "reuse": "Existing original83-role Q8/MXFP4 DSpark draft and formal BF16 embedding/head. No duplicate vocabulary or SDK acquisition.",
+    "full_role_bundle_archived": false,
+    "retained_micro_operands_archived": true
+  },
+  "implementation": {
+    "math": "Actual three final target layers retain4/128/4 compression, MLA/sparse indexer/window/cache QAT, original E4/UE8 block128 and FP4 group32, all HC and the independent final head parameters.",
+    "state": "Actual current+five draft IDs drive six target rows. Natural greedy acceptance is separate from controlled0/2/5 StateHead prefix publications. Always consume current; publish all21 target states, real captured main-history/carry, protocol and actual pending lease in one30-member version. Proposal KV remains episode-local.",
+    "architecture": "Typed resident phase execution is shared by target and draft. Assembly supplies the actual artifact and selector. HC graph construction only needs typed Values; independent source coefficients stay with references. Explicit code/scale associations and owned HostMappings remove format/lifetime coupling.",
+    "supply": "E6 packed FP4 codes stay unchanged; only selected UE8 scales widen exactly to F32. All code planes precede scale planes. Two finite94372864-byte slots use37 slices with exact global/local map. Prepared BF16 output-A is shared once, with no full-expert F32 weight shadow.",
+    "fp4_correction": "The exact original A128 quantizer is unchanged. Original FP8 QMMA produced inaccurate inner code-dot partials despite F32 containers. The owned CUDA kernel losslessly widens only tiny E4/E2M1 code tiles to BF16, uses F32 WMMA accumulation perK32, then the original separate F32 scale multiplies/outer accumulation and finalBF16 store. The original numerical certificate is retained."
+  },
+  "validation": {
+    "passing_cases": 7,
+    "combined_runs": 2,
+    "single_run_all_pass": false,
+    "graph_submissions": 248,
+    "graph_submissions_by_case": {
+      "CpuOriginalExpertsFeedFullDraftAndAtomicAcceptedState": 37,
+      "CpuOriginalTargetTailAndFullVocabularyVerifierPublishesBlock5Prefix": 87,
+      "CudaOriginalExpertsFeedFullDraftAndAtomicAcceptedState": 37,
+      "CudaOriginalTargetTailAndFullVocabularyVerifierPublishesBlock5Prefix": 87
+    },
+    "direct_provider_cases": 3,
+    "direct_provider_cases_counted_as_graphs": false,
+    "runs": [
+      {
+        "summary": {
+          "path": ".scratch/dspark-original-target-tail-20261023/checks1/summary.json",
+          "bytes": 28453,
+          "sha256": "021e7b6f5cbb5a16259cddc2c734a6f8d79cbb11d6a5c15e3abf8ac05dd57166"
+        },
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-original-target-tail-20261023\\tests-link1\\dspark-target-verifier-checks.exe",
+          "bytes": 141552640,
+          "sha256": "433cf60cda42f6214bf775d3cec1f3dcb64e1bd8634f75aadaa945eb130c41ed"
+        },
+        "process": {
+          "command": [
+            "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-original-target-tail-20261023\\tests-link1\\dspark-target-verifier-checks.exe",
+            "--gtest_filter=DSparkOriginalState.*OriginalTargetTailAndFullVocabularyVerifierPublishesBlock5Prefix:DSparkOriginalState.*OriginalExpertsFeedFullDraftAndAtomicAcceptedState",
+            "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\dspark-original-target-tail-20261023\\checks1\\results.xml"
+          ],
+          "cwd": "C:\\public\\project-hyle\\hyle",
+          "started": 1792732389.374013,
+          "timeout_seconds": 1800,
+          "throughput_evidence": false,
+          "memory_evidence": false,
+          "trace": false,
+          "profiler": false,
+          "pid": 4916,
+          "exit": 1,
+          "timed_out": false,
+          "finished": 1792732681.476824,
+          "process_wall_seconds": 292.0898118999976
+        },
+        "tests": 4,
+        "failures": 1,
+        "retained_passing_cases": [
+          {
+            "attributes": {
+              "name": "CpuOriginalExpertsFeedFullDraftAndAtomicAcceptedState",
+              "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_original_state_consumer_test.cc",
+              "line": "1921",
+              "status": "run",
+              "result": "completed",
+              "time": "78.224",
+              "timestamp": "2026-10-23T13:13:14.169",
+              "classname": "DSparkOriginalState"
+            },
+            "properties": {
+              "shared_projection0_provider": "ggml-cpu",
+              "shared_projection1_provider": "ggml-cpu",
+              "shared_projection2_provider": "ggml-cpu",
+              "shared_projection3_provider": "ggml-cpu",
+              "shared_projection4_provider": "ggml-cpu",
+              "shared_projection5_provider": "ggml-cpu",
+              "shared_projection6_provider": "ggml-cpu",
+              "shared_projection7_provider": "ggml-cpu",
+              "shared_projection8_provider": "ggml-cpu",
+              "shared_q8_activation_codec": "actual fixed ggml CPU worker AVX Q8_0 nearest-even: exact arch/x86/quants.c.obj disassembly in BK/review/cpu-q8-quantizer.json; no main-executable capability inference",
+              "attention_projection0_provider": "ggml-cpu",
+              "attention_projection1_provider": "ggml-cpu",
+              "attention_projection2_provider": "ggml-cpu",
+              "attention_projection3_provider": "ggml-cpu",
+              "attention_projection4_provider": "ggml-cpu",
+              "attention_projection5_provider": "ggml-cpu",
+              "attention_projection6_provider": "ggml-cpu",
+              "attention_projection7_provider": "ggml-cpu",
+              "attention_projection8_provider": "ggml-cpu",
+              "attention_projection9_provider": "ggml-cpu",
+              "attention_projection10_provider": "ggml-cpu",
+              "attention_projection11_provider": "ggml-cpu",
+              "attention_output_a_layout": "original single Q8_0 role canonical[8,1024,4096],actualF32[5,8,4096],I32ids[5,8]0..7,GroupedMatMul->F32[5,8,1024]; native CUDA tokenbatch5 uses sameMMVQ codec, not40-row dense/MMQ math",
+              "stage0_attention_fn_provider": "ggml-cpu",
+              "stage0_ffn_fn_provider": "ggml-cpu",
+              "stage1_attention_fn_provider": "ggml-cpu",
+              "stage1_ffn_fn_provider": "ggml-cpu",
+              "stage2_attention_fn_provider": "ggml-cpu",
+              "stage2_ffn_fn_provider": "ggml-cpu",
+              "output_hc_fn_provider": "ggml-cpu",
+              "expert_stage0_leg0_provider": "ggml-cpu",
+              "expert_stage0_leg1_provider": "ggml-cpu",
+              "expert_stage0_leg2_provider": "ggml-cpu",
+              "expert_stage1_leg0_provider": "ggml-cpu",
+              "expert_stage1_leg1_provider": "ggml-cpu",
+              "expert_stage1_leg2_provider": "ggml-cpu",
+              "expert_stage2_leg0_provider": "ggml-cpu",
+              "expert_stage2_leg1_provider": "ggml-cpu",
+              "expert_stage2_leg2_provider": "ggml-cpu",
+              "resident_draft_phases": "4",
+              "actual_draft_phase_submissions": "16",
+              "actual_draft_episodes": "4",
+              "actual_expert_unions_stage0": "17,17,16,15",
+              "actual_expert_unions_stage1": "18,18,17,19",
+              "actual_expert_unions_stage2": "7,7,11,9",
+              "expert_upload_accounting_scope": "ordinary ready StorageOwner CPU compressed operands from one bounded two-generation LeasePool; not CUDA WeightSlots",
+              "cpu_expert_pool_capacity": "802162688",
+              "cpu_expert_pool_peak": "401081344",
+              "resident_expert_slot_bytes": "401081344",
+              "expert_projection_reference_episodes": "1",
+              "expert_projection_matrices": "9",
+              "original_expert_numerics": "firstepisode nine actual selected MXFP4 projections against original global-ID mmap byte ranges/native AQ bound; everyepisode actual BF16 router F64 dot,original F32 bias,actual256-domain routing/TopK,exactglobal/localmap,clip/SwiGLU/routeweight-before-down and local BF16 stores/six-slot reduction. FourordinaryGraph phases; onlyactual30I32IDs readback,activation/weights/state directleases,compressed3bank+map samegeneration. Whole State tuple published onlyafter completeproposal+verification.",
+              "actual_submissions": "37",
+              "original_role_count": "83",
+              "original_role_bytes": "13008927644",
+              "encoded_draft_inputs": "18",
+              "semantic_draft_outputs": "7",
+              "test_boundary_outputs": "304",
+              "proposal_numerics": "all3 original M5 wkv/norm independent Q8 decode + compensated F64 dot/norm gate on actual activation; actual postnorm BF16 then independent RoPE gate; exact actual-F32->BF16 bits; exact actual-BF16->584B codes/scales; independent actual committed/proposal carrier reader equals prepared attention F32 keys byte-for-byte",
+              "full_vocabulary_lm_values_checked": "646400",
+              "lm_reference_episodes": "1",
+              "confidence_numerics": "every-episode independent original BF16 coefficients and actual widened-BF16 rawhidden/actualBF16 Markov dot; exact-F32-product/nonFTZ/overflow preconditions; analytic gamma4352(F32)+F64 absolute-product bound; old relative-gate exceedances/error/sumabs/maxratio in stdout, generated gate unchanged",
+              "shared_vocabulary": "formal Flash0731 BF16 full embedding/head, target-owned immutable banks; no dense F32 LM weight shadow",
+              "original_hc_numerics": "every-episode seven actual widened-BF16 x original-F32 dense HC projections with independent F64/product+accum bound; actual inverse RMS, original scale/base Sinkhorn20 and head gates, actual 4-stream collapse/expansion; actual learned RMS/sink inputs and exact local BF16 stores. Seven fn providers recorded from actual CompileReport.",
+              "shared_projection_reference_episodes": "1",
+              "shared_projection_matrices": "9",
+              "original_shared_numerics": "first-episode all9 original Q8_0 projections over actual5row BF16 predecessors with independent packed-byte decoding/native activation codec arithmetic and derived F32 error bounds; all episodes exact actual bounded operands/BF16 stores, existing local SwiGLU gate, derived F32 six-routed-slot reduction and routed+shared addition bounds. Actual Q8 MatMul providers and canonical packed RHS recorded; no dense F32 weight shadow or official FP8 equivalence.",
+              "attention_projection_reference_episodes": "1",
+              "attention_projection_matrices": "12",
+              "attention_projection_values_checked": "691200",
+              "original_attention_numerics": "first-episode12 originalQ8_0 projections on actual5row BF16 operands,including3natural8group output-A projections with actualI32 IDs; derived nativeAQ/F32 bounds. Everyepisode exact QA/QB/OA/OB stores,actual learnedqnorm input,11-step query512norm boundaries with gamma512 mean/localrsqrt and exact BF16 stores,actual forward/inverse last64RoPE raw gates and exact stores,group/input topology and unchanged learned-sink/HC/FFN/LM/Markov/confidence/state checks.",
+              "scope": "83 original roles: all81 fixed Q8_0 sidecar DSpark roles including original BF16router/F32bias and9MXFP4experts,plusformalBF16 fullVembedding/head. Complete3stage draft/encodedstate,accept0/1/2/wrap/continuation/retainedresults. CompactE30 bank residency preserves all256globalIDs,actualrouter outcomes and original17B/32codec. Generated trained-target captures/verifier remain explicit; no official FP8/FP4 arithmetic equivalence,trainedtarget quality,naturalacceptance or throughput claim."
+            }
+          },
+          {
+            "attributes": {
+              "name": "CpuOriginalTargetTailAndFullVocabularyVerifierPublishesBlock5Prefix",
+              "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_original_state_consumer_test.cc",
+              "line": "1931",
+              "status": "run",
+              "result": "completed",
+              "time": "143.49",
+              "timestamp": "2026-10-23T13:14:32.394",
+              "classname": "DSparkOriginalState"
+            },
+            "properties": {
+              "shared_projection0_provider": "ggml-cpu",
+              "shared_projection1_provider": "ggml-cpu",
+              "shared_projection2_provider": "ggml-cpu",
+              "shared_projection3_provider": "ggml-cpu",
+              "shared_projection4_provider": "ggml-cpu",
+              "shared_projection5_provider": "ggml-cpu",
+              "shared_projection6_provider": "ggml-cpu",
+              "shared_projection7_provider": "ggml-cpu",
+              "shared_projection8_provider": "ggml-cpu",
+              "shared_q8_activation_codec": "actual fixed ggml CPU worker AVX Q8_0 nearest-even: exact arch/x86/quants.c.obj disassembly in BK/review/cpu-q8-quantizer.json; no main-executable capability inference",
+              "attention_projection0_provider": "ggml-cpu",
+              "attention_projection1_provider": "ggml-cpu",
+              "attention_projection2_provider": "ggml-cpu",
+              "attention_projection3_provider": "ggml-cpu",
+              "attention_projection4_provider": "ggml-cpu",
+              "attention_projection5_provider": "ggml-cpu",
+              "attention_projection6_provider": "ggml-cpu",
+              "attention_projection7_provider": "ggml-cpu",
+              "attention_projection8_provider": "ggml-cpu",
+              "attention_projection9_provider": "ggml-cpu",
+              "attention_projection10_provider": "ggml-cpu",
+              "attention_projection11_provider": "ggml-cpu",
+              "attention_output_a_layout": "original single Q8_0 role canonical[8,1024,4096],actualF32[5,8,4096],I32ids[5,8]0..7,GroupedMatMul->F32[5,8,1024]; native CUDA tokenbatch5 uses sameMMVQ codec, not40-row dense/MMQ math",
+              "stage0_attention_fn_provider": "ggml-cpu",
+              "stage0_ffn_fn_provider": "ggml-cpu",
+              "stage1_attention_fn_provider": "ggml-cpu",
+              "stage1_ffn_fn_provider": "ggml-cpu",
+              "stage2_attention_fn_provider": "ggml-cpu",
+              "stage2_ffn_fn_provider": "ggml-cpu",
+              "output_hc_fn_provider": "ggml-cpu",
+              "expert_stage0_leg0_provider": "ggml-cpu",
+              "expert_stage0_leg1_provider": "ggml-cpu",
+              "expert_stage0_leg2_provider": "ggml-cpu",
+              "expert_stage1_leg0_provider": "ggml-cpu",
+              "expert_stage1_leg1_provider": "ggml-cpu",
+              "expert_stage1_leg2_provider": "ggml-cpu",
+              "expert_stage2_leg0_provider": "ggml-cpu",
+              "expert_stage2_leg1_provider": "ggml-cpu",
+              "expert_stage2_leg2_provider": "ggml-cpu",
+              "target_verifier6_provider": "ggml-cpu",
+              "target_verifier1_provider": "ggml-cpu",
+              "natural_block5_trials": "1",
+              "natural_accepted_drafts": "0",
+              "controlled_prefix_publications": "0,2,5; explicit StateHead prefix tests, not natural greedy acceptance",
+              "target_cpu_expert_pool_capacity": "188745728",
+              "target_cpu_expert_pool_peak": "94372864",
+              "original_target_roles": "4725",
+              "original_target_source_bytes": "10748569116",
+              "target_state_resources": "21",
+              "complete_state_members": "30",
+              "actual_target_rows": "10",
+              "actual_target_phase_submissions": "40",
+              "actual_target_verifier_submissions": "5",
+              "actual_main_projection_submissions": "10",
+              "actual_main_history_catchup_submissions": "10",
+              "actual_pending_embedding_feedback_checks": "5",
+              "target_full_vocabulary_values_checked": "775680",
+              "target_expert_domain": "256",
+              "target_resident_experts": "6",
+              "target_compression_ratios": "4,128,4",
+              "target_cold_plan_count": "7",
+              "whole_state_publications": "8",
+              "continued_prefix_branches": "4",
+              "cancelled_unpublished_drafts": "4",
+              "rejected_stale_publishes": "4",
+              "state_backing_budget": "347357184",
+              "state_backing_peak": "134734208",
+              "target_scope": "formal Flash0731 original40->41->42, distinct final HC/norm and original fullV target verifier; real block5 draft IDs, actual main-history catchup, all21 target caches plus draft/pending in one Head. Layer39/initial prefix finite fixtures; controlled prefixes separate from natural trial; no full43-layer task quality, acceptance rate or TPS claim.",
+              "resident_draft_phases": "4",
+              "actual_draft_phase_submissions": "20",
+              "actual_draft_episodes": "5",
+              "actual_expert_unions_stage0": "15,20,20,13,16",
+              "actual_expert_unions_stage1": "19,20,20,15,19",
+              "actual_expert_unions_stage2": "18,18,18,16,17",
+              "expert_upload_accounting_scope": "ordinary ready StorageOwner CPU compressed operands from one bounded two-generation LeasePool; not CUDA WeightSlots",
+              "cpu_expert_pool_capacity": "802162688",
+              "cpu_expert_pool_peak": "401081344",
+              "resident_expert_slot_bytes": "401081344",
+              "expert_projection_reference_episodes": "1",
+              "expert_projection_matrices": "9",
+              "original_expert_numerics": "firstepisode nine actual selected MXFP4 projections against original global-ID mmap byte ranges/native AQ bound; everyepisode actual BF16 router F64 dot,original F32 bias,actual256-domain routing/TopK,exactglobal/localmap,clip/SwiGLU/routeweight-before-down and local BF16 stores/six-slot reduction. FourordinaryGraph phases; onlyactual30I32IDs readback,activation/weights/state directleases,compressed3bank+map samegeneration. Whole State tuple published onlyafter completeproposal+verification.",
+              "actual_submissions": "87",
+              "original_role_count": "83",
+              "original_role_bytes": "13008927644",
+              "encoded_draft_inputs": "18",
+              "semantic_draft_outputs": "7",
+              "test_boundary_outputs": "304",
+              "proposal_numerics": "all3 original M5 wkv/norm independent Q8 decode + compensated F64 dot/norm gate on actual activation; actual postnorm BF16 then independent RoPE gate; exact actual-F32->BF16 bits; exact actual-BF16->584B codes/scales; independent actual committed/proposal carrier reader equals prepared attention F32 keys byte-for-byte",
+              "full_vocabulary_lm_values_checked": "646400",
+              "lm_reference_episodes": "1",
+              "confidence_numerics": "every-episode independent original BF16 coefficients and actual widened-BF16 rawhidden/actualBF16 Markov dot; exact-F32-product/nonFTZ/overflow preconditions; analytic gamma4352(F32)+F64 absolute-product bound; old relative-gate exceedances/error/sumabs/maxratio in stdout, generated gate unchanged",
+              "shared_vocabulary": "formal Flash0731 BF16 full embedding/head, target-owned immutable banks; no dense F32 LM weight shadow",
+              "original_hc_numerics": "every-episode seven actual widened-BF16 x original-F32 dense HC projections with independent F64/product+accum bound; actual inverse RMS, original scale/base Sinkhorn20 and head gates, actual 4-stream collapse/expansion; actual learned RMS/sink inputs and exact local BF16 stores. Seven fn providers recorded from actual CompileReport.",
+              "shared_projection_reference_episodes": "1",
+              "shared_projection_matrices": "9",
+              "original_shared_numerics": "first-episode all9 original Q8_0 projections over actual5row BF16 predecessors with independent packed-byte decoding/native activation codec arithmetic and derived F32 error bounds; all episodes exact actual bounded operands/BF16 stores, existing local SwiGLU gate, derived F32 six-routed-slot reduction and routed+shared addition bounds. Actual Q8 MatMul providers and canonical packed RHS recorded; no dense F32 weight shadow or official FP8 equivalence.",
+              "attention_projection_reference_episodes": "1",
+              "attention_projection_matrices": "12",
+              "attention_projection_values_checked": "691200",
+              "original_attention_numerics": "first-episode12 originalQ8_0 projections on actual5row BF16 operands,including3natural8group output-A projections with actualI32 IDs; derived nativeAQ/F32 bounds. Everyepisode exact QA/QB/OA/OB stores,actual learnedqnorm input,11-step query512norm boundaries with gamma512 mean/localrsqrt and exact BF16 stores,actual forward/inverse last64RoPE raw gates and exact stores,group/input topology and unchanged learned-sink/HC/FFN/LM/Markov/confidence/state checks.",
+              "scope": "83 original GGUF Q8/MXFP4 draft roles plus4725 distinct formal Flash0731 target40/41/42/finalHC/norm roles; original shared129280-token BF16 vocabulary, one6row fullV verifier and one30-member StateHead. Actual block5 natural result and separately labelled controlled0/2/5 prefix publications,sourceBF16 capturemean,acceptedmainhistorycatchup,continuation/cancel/stale/oldresults/boundedroots. Layer39 and initial cacheprefix are finite fixtures; not full43-layer inference,task quality,naturalacceptance rate or TPS. Formal target E4/UE8-A128/FP4group32 is distinct from selected GGUF draft math."
+            }
+          },
+          {
+            "attributes": {
+              "name": "CudaOriginalExpertsFeedFullDraftAndAtomicAcceptedState",
+              "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_original_state_consumer_test.cc",
+              "line": "1982",
+              "status": "run",
+              "result": "completed",
+              "time": "30.424",
+              "timestamp": "2026-10-23T13:16:55.884",
+              "classname": "DSparkOriginalState"
+            },
+            "properties": {
+              "shared_projection0_provider": "ggml-cuda",
+              "shared_projection1_provider": "ggml-cuda",
+              "shared_projection2_provider": "ggml-cuda",
+              "shared_projection3_provider": "ggml-cuda",
+              "shared_projection4_provider": "ggml-cuda",
+              "shared_projection5_provider": "ggml-cuda",
+              "shared_projection6_provider": "ggml-cuda",
+              "shared_projection7_provider": "ggml-cuda",
+              "shared_projection8_provider": "ggml-cuda",
+              "shared_q8_activation_codec": "fixed M5 native CUDA MMVQ Q8_1 strict/fast division envelope: source-derived code/halfscale intervals under NVIDIA documented approximate intrinsic accuracy, conditional rather than formal guarantee",
+              "attention_projection0_provider": "ggml-cuda",
+              "attention_projection1_provider": "ggml-cuda",
+              "attention_projection2_provider": "ggml-cuda",
+              "attention_projection3_provider": "ggml-cuda",
+              "attention_projection4_provider": "ggml-cuda",
+              "attention_projection5_provider": "ggml-cuda",
+              "attention_projection6_provider": "ggml-cuda",
+              "attention_projection7_provider": "ggml-cuda",
+              "attention_projection8_provider": "ggml-cuda",
+              "attention_projection9_provider": "ggml-cuda",
+              "attention_projection10_provider": "ggml-cuda",
+              "attention_projection11_provider": "ggml-cuda",
+              "attention_output_a_layout": "original single Q8_0 role canonical[8,1024,4096],actualF32[5,8,4096],I32ids[5,8]0..7,GroupedMatMul->F32[5,8,1024]; native CUDA tokenbatch5 uses sameMMVQ codec, not40-row dense/MMQ math",
+              "stage0_attention_fn_provider": "cublasLt",
+              "stage0_ffn_fn_provider": "cublasLt",
+              "stage1_attention_fn_provider": "cublasLt",
+              "stage1_ffn_fn_provider": "cublasLt",
+              "stage2_attention_fn_provider": "cublasLt",
+              "stage2_ffn_fn_provider": "cublasLt",
+              "output_hc_fn_provider": "cublasLt",
+              "expert_stage0_leg0_provider": "ggml-cuda",
+              "expert_stage0_leg1_provider": "ggml-cuda",
+              "expert_stage0_leg2_provider": "ggml-cuda",
+              "expert_stage1_leg0_provider": "ggml-cuda",
+              "expert_stage1_leg1_provider": "ggml-cuda",
+              "expert_stage1_leg2_provider": "ggml-cuda",
+              "expert_stage2_leg0_provider": "ggml-cuda",
+              "expert_stage2_leg1_provider": "ggml-cuda",
+              "expert_stage2_leg2_provider": "ggml-cuda",
+              "resident_draft_phases": "4",
+              "actual_draft_phase_submissions": "16",
+              "actual_draft_episodes": "4",
+              "actual_expert_unions_stage0": "17,17,16,15",
+              "actual_expert_unions_stage1": "17,17,17,19",
+              "actual_expert_unions_stage2": "8,8,11,9",
+              "expert_upload_accounting_scope": "per-phase retired WeightBatch report in stdout; logical/staged=401081344,completed=submitted,unknown=false; API accounting,not measured VRAM or physicalbus traffic",
+              "resident_expert_slot_bytes": "401081344",
+              "expert_projection_reference_episodes": "1",
+              "expert_projection_matrices": "9",
+              "original_expert_numerics": "firstepisode nine actual selected MXFP4 projections against original global-ID mmap byte ranges/native AQ bound; everyepisode actual BF16 router F64 dot,original F32 bias,actual256-domain routing/TopK,exactglobal/localmap,clip/SwiGLU/routeweight-before-down and local BF16 stores/six-slot reduction. FourordinaryGraph phases; onlyactual30I32IDs readback,activation/weights/state directleases,compressed3bank+map samegeneration. Whole State tuple published onlyafter completeproposal+verification.",
+              "actual_submissions": "37",
+              "original_role_count": "83",
+              "original_role_bytes": "13008927644",
+              "encoded_draft_inputs": "18",
+              "semantic_draft_outputs": "7",
+              "test_boundary_outputs": "304",
+              "proposal_numerics": "all3 original M5 wkv/norm independent Q8 decode + compensated F64 dot/norm gate on actual activation; actual postnorm BF16 then independent RoPE gate; exact actual-F32->BF16 bits; exact actual-BF16->584B codes/scales; independent actual committed/proposal carrier reader equals prepared attention F32 keys byte-for-byte",
+              "full_vocabulary_lm_values_checked": "646400",
+              "lm_reference_episodes": "1",
+              "confidence_numerics": "every-episode independent original BF16 coefficients and actual widened-BF16 rawhidden/actualBF16 Markov dot; exact-F32-product/nonFTZ/overflow preconditions; analytic gamma4352(F32)+F64 absolute-product bound; old relative-gate exceedances/error/sumabs/maxratio in stdout, generated gate unchanged",
+              "shared_vocabulary": "formal Flash0731 BF16 full embedding/head, target-owned immutable banks; no dense F32 LM weight shadow",
+              "original_hc_numerics": "every-episode seven actual widened-BF16 x original-F32 dense HC projections with independent F64/product+accum bound; actual inverse RMS, original scale/base Sinkhorn20 and head gates, actual 4-stream collapse/expansion; actual learned RMS/sink inputs and exact local BF16 stores. Seven fn providers recorded from actual CompileReport.",
+              "shared_projection_reference_episodes": "1",
+              "shared_projection_matrices": "9",
+              "original_shared_numerics": "first-episode all9 original Q8_0 projections over actual5row BF16 predecessors with independent packed-byte decoding/native activation codec arithmetic and derived F32 error bounds; all episodes exact actual bounded operands/BF16 stores, existing local SwiGLU gate, derived F32 six-routed-slot reduction and routed+shared addition bounds. Actual Q8 MatMul providers and canonical packed RHS recorded; no dense F32 weight shadow or official FP8 equivalence.",
+              "attention_projection_reference_episodes": "1",
+              "attention_projection_matrices": "12",
+              "attention_projection_values_checked": "691200",
+              "original_attention_numerics": "first-episode12 originalQ8_0 projections on actual5row BF16 operands,including3natural8group output-A projections with actualI32 IDs; derived nativeAQ/F32 bounds. Everyepisode exact QA/QB/OA/OB stores,actual learnedqnorm input,11-step query512norm boundaries with gamma512 mean/localrsqrt and exact BF16 stores,actual forward/inverse last64RoPE raw gates and exact stores,group/input topology and unchanged learned-sink/HC/FFN/LM/Markov/confidence/state checks.",
+              "scope": "83 original roles: all81 fixed Q8_0 sidecar DSpark roles including original BF16router/F32bias and9MXFP4experts,plusformalBF16 fullVembedding/head. Complete3stage draft/encodedstate,accept0/1/2/wrap/continuation/retainedresults. CompactE30 bank residency preserves all256globalIDs,actualrouter outcomes and original17B/32codec. Generated trained-target captures/verifier remain explicit; no official FP8/FP4 arithmetic equivalence,trainedtarget quality,naturalacceptance or throughput claim."
+            }
+          }
+        ],
+        "failed_case": "CudaOriginalTargetTailAndFullVocabularyVerifierPublishesBlock5Prefix"
+      },
+      {
+        "summary": {
+          "path": ".scratch/dspark-original-target-tail-20261023/checks3/summary.json",
+          "bytes": 12067,
+          "sha256": "9f67cc994eeb88e964e26f0e2fac14859bc24ad568b9b014dc41d6364971ad49"
+        },
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-original-target-tail-20261023\\tests-link4\\dspark-target-verifier-checks.exe",
+          "bytes": 141775360,
+          "sha256": "920c90e8b58830e9b8bafaeb1e0baed21ef2253b06c22a580ba849891a609c32"
+        },
+        "process": {
+          "command": [
+            "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-original-target-tail-20261023\\tests-link4\\dspark-target-verifier-checks.exe",
+            "--gtest_filter=DSparkOriginalState.CudaOriginalTargetTailAndFullVocabularyVerifierPublishesBlock5Prefix:DeepSeekFp4.*",
+            "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\dspark-original-target-tail-20261023\\checks3\\results.xml"
+          ],
+          "cwd": "C:\\public\\project-hyle\\hyle",
+          "started": 1792735028.7270255,
+          "timeout_seconds": 1800,
+          "throughput_evidence": false,
+          "memory_evidence": false,
+          "trace": false,
+          "profiler": false,
+          "pid": 24596,
+          "exit": 0,
+          "timed_out": false,
+          "finished": 1792735149.2163062,
+          "process_wall_seconds": 120.48837349999667
+        },
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skips": 0,
+        "passing_cases": [
+          {
+            "attributes": {
+              "name": "CudaOriginalTargetTailAndFullVocabularyVerifierPublishesBlock5Prefix",
+              "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_original_state_consumer_test.cc",
+              "line": "1991",
+              "status": "run",
+              "result": "completed",
+              "time": "117.053",
+              "timestamp": "2026-10-23T13:57:09.853",
+              "classname": "DSparkOriginalState"
+            },
+            "properties": {
+              "shared_projection0_provider": "ggml-cuda",
+              "shared_projection1_provider": "ggml-cuda",
+              "shared_projection2_provider": "ggml-cuda",
+              "shared_projection3_provider": "ggml-cuda",
+              "shared_projection4_provider": "ggml-cuda",
+              "shared_projection5_provider": "ggml-cuda",
+              "shared_projection6_provider": "ggml-cuda",
+              "shared_projection7_provider": "ggml-cuda",
+              "shared_projection8_provider": "ggml-cuda",
+              "shared_q8_activation_codec": "fixed M5 native CUDA MMVQ Q8_1 strict/fast division envelope: source-derived code/halfscale intervals under NVIDIA documented approximate intrinsic accuracy, conditional rather than formal guarantee",
+              "attention_projection0_provider": "ggml-cuda",
+              "attention_projection1_provider": "ggml-cuda",
+              "attention_projection2_provider": "ggml-cuda",
+              "attention_projection3_provider": "ggml-cuda",
+              "attention_projection4_provider": "ggml-cuda",
+              "attention_projection5_provider": "ggml-cuda",
+              "attention_projection6_provider": "ggml-cuda",
+              "attention_projection7_provider": "ggml-cuda",
+              "attention_projection8_provider": "ggml-cuda",
+              "attention_projection9_provider": "ggml-cuda",
+              "attention_projection10_provider": "ggml-cuda",
+              "attention_projection11_provider": "ggml-cuda",
+              "attention_output_a_layout": "original single Q8_0 role canonical[8,1024,4096],actualF32[5,8,4096],I32ids[5,8]0..7,GroupedMatMul->F32[5,8,1024]; native CUDA tokenbatch5 uses sameMMVQ codec, not40-row dense/MMQ math",
+              "stage0_attention_fn_provider": "cublasLt",
+              "stage0_ffn_fn_provider": "cublasLt",
+              "stage1_attention_fn_provider": "cublasLt",
+              "stage1_ffn_fn_provider": "cublasLt",
+              "stage2_attention_fn_provider": "cublasLt",
+              "stage2_ffn_fn_provider": "cublasLt",
+              "output_hc_fn_provider": "cublasLt",
+              "expert_stage0_leg0_provider": "ggml-cuda",
+              "expert_stage0_leg1_provider": "ggml-cuda",
+              "expert_stage0_leg2_provider": "ggml-cuda",
+              "expert_stage1_leg0_provider": "ggml-cuda",
+              "expert_stage1_leg1_provider": "ggml-cuda",
+              "expert_stage1_leg2_provider": "ggml-cuda",
+              "expert_stage2_leg0_provider": "ggml-cuda",
+              "expert_stage2_leg1_provider": "ggml-cuda",
+              "expert_stage2_leg2_provider": "ggml-cuda",
+              "target_verifier6_provider": "cublasLt",
+              "target_verifier1_provider": "cublasLt",
+              "natural_block5_trials": "1",
+              "natural_accepted_drafts": "0",
+              "controlled_prefix_publications": "0,2,5; explicit StateHead prefix tests, not natural greedy acceptance",
+              "original_target_roles": "4725",
+              "original_target_source_bytes": "10748569116",
+              "target_state_resources": "21",
+              "complete_state_members": "30",
+              "actual_target_rows": "10",
+              "actual_target_phase_submissions": "40",
+              "actual_target_verifier_submissions": "5",
+              "actual_main_projection_submissions": "10",
+              "actual_main_history_catchup_submissions": "10",
+              "actual_pending_embedding_feedback_checks": "5",
+              "target_full_vocabulary_values_checked": "775680",
+              "target_expert_domain": "256",
+              "target_resident_experts": "6",
+              "target_compression_ratios": "4,128,4",
+              "target_cold_plan_count": "7",
+              "whole_state_publications": "8",
+              "continued_prefix_branches": "4",
+              "cancelled_unpublished_drafts": "4",
+              "rejected_stale_publishes": "4",
+              "state_backing_budget": "347357184",
+              "state_backing_peak": "134734208",
+              "target_scope": "formal Flash0731 original40->41->42, distinct final HC/norm and original fullV target verifier; real block5 draft IDs, actual main-history catchup, all21 target caches plus draft/pending in one Head. Layer39/initial prefix finite fixtures; controlled prefixes separate from natural trial; no full43-layer task quality, acceptance rate or TPS claim.",
+              "resident_draft_phases": "4",
+              "actual_draft_phase_submissions": "20",
+              "actual_draft_episodes": "5",
+              "actual_expert_unions_stage0": "15,19,19,13,16",
+              "actual_expert_unions_stage1": "19,20,20,17,18",
+              "actual_expert_unions_stage2": "19,17,17,18,17",
+              "expert_upload_accounting_scope": "per-phase retired WeightBatch report in stdout; logical/staged=401081344,completed=submitted,unknown=false; API accounting,not measured VRAM or physicalbus traffic",
+              "resident_expert_slot_bytes": "401081344",
+              "expert_projection_reference_episodes": "1",
+              "expert_projection_matrices": "9",
+              "original_expert_numerics": "firstepisode nine actual selected MXFP4 projections against original global-ID mmap byte ranges/native AQ bound; everyepisode actual BF16 router F64 dot,original F32 bias,actual256-domain routing/TopK,exactglobal/localmap,clip/SwiGLU/routeweight-before-down and local BF16 stores/six-slot reduction. FourordinaryGraph phases; onlyactual30I32IDs readback,activation/weights/state directleases,compressed3bank+map samegeneration. Whole State tuple published onlyafter completeproposal+verification.",
+              "actual_submissions": "87",
+              "original_role_count": "83",
+              "original_role_bytes": "13008927644",
+              "encoded_draft_inputs": "18",
+              "semantic_draft_outputs": "7",
+              "test_boundary_outputs": "304",
+              "proposal_numerics": "all3 original M5 wkv/norm independent Q8 decode + compensated F64 dot/norm gate on actual activation; actual postnorm BF16 then independent RoPE gate; exact actual-F32->BF16 bits; exact actual-BF16->584B codes/scales; independent actual committed/proposal carrier reader equals prepared attention F32 keys byte-for-byte",
+              "full_vocabulary_lm_values_checked": "646400",
+              "lm_reference_episodes": "1",
+              "confidence_numerics": "every-episode independent original BF16 coefficients and actual widened-BF16 rawhidden/actualBF16 Markov dot; exact-F32-product/nonFTZ/overflow preconditions; analytic gamma4352(F32)+F64 absolute-product bound; old relative-gate exceedances/error/sumabs/maxratio in stdout, generated gate unchanged",
+              "shared_vocabulary": "formal Flash0731 BF16 full embedding/head, target-owned immutable banks; no dense F32 LM weight shadow",
+              "original_hc_numerics": "every-episode seven actual widened-BF16 x original-F32 dense HC projections with independent F64/product+accum bound; actual inverse RMS, original scale/base Sinkhorn20 and head gates, actual 4-stream collapse/expansion; actual learned RMS/sink inputs and exact local BF16 stores. Seven fn providers recorded from actual CompileReport.",
+              "shared_projection_reference_episodes": "1",
+              "shared_projection_matrices": "9",
+              "original_shared_numerics": "first-episode all9 original Q8_0 projections over actual5row BF16 predecessors with independent packed-byte decoding/native activation codec arithmetic and derived F32 error bounds; all episodes exact actual bounded operands/BF16 stores, existing local SwiGLU gate, derived F32 six-routed-slot reduction and routed+shared addition bounds. Actual Q8 MatMul providers and canonical packed RHS recorded; no dense F32 weight shadow or official FP8 equivalence.",
+              "attention_projection_reference_episodes": "1",
+              "attention_projection_matrices": "12",
+              "attention_projection_values_checked": "691200",
+              "original_attention_numerics": "first-episode12 originalQ8_0 projections on actual5row BF16 operands,including3natural8group output-A projections with actualI32 IDs; derived nativeAQ/F32 bounds. Everyepisode exact QA/QB/OA/OB stores,actual learnedqnorm input,11-step query512norm boundaries with gamma512 mean/localrsqrt and exact BF16 stores,actual forward/inverse last64RoPE raw gates and exact stores,group/input topology and unchanged learned-sink/HC/FFN/LM/Markov/confidence/state checks.",
+              "scope": "83 original GGUF Q8/MXFP4 draft roles plus4725 distinct formal Flash0731 target40/41/42/finalHC/norm roles; original shared129280-token BF16 vocabulary, one6row fullV verifier and one30-member StateHead. Actual block5 natural result and separately labelled controlled0/2/5 prefix publications,sourceBF16 capturemean,acceptedmainhistorycatchup,continuation/cancel/stale/oldresults/boundedroots. Layer39 and initial cacheprefix are finite fixtures; not full43-layer inference,task quality,naturalacceptance rate or TPS. Formal target E4/UE8-A128/FP4group32 is distinct from selected GGUF draft math."
+            }
+          },
+          {
+            "attributes": {
+              "name": "WorkspaceOomConcurrencyCompletionAndInvalidIds",
+              "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_cuda\\cuda_provider_test.cc",
+              "line": "792",
+              "status": "run",
+              "result": "completed",
+              "time": "0.011",
+              "timestamp": "2026-10-23T13:59:08.952",
+              "classname": "DeepSeekFp4"
+            },
+            "properties": {}
+          },
+          {
+            "attributes": {
+              "name": "ColdShapeDomainAndHostMemory",
+              "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_cuda\\cuda_provider_test.cc",
+              "line": "896",
+              "status": "run",
+              "result": "completed",
+              "time": "0.002",
+              "timestamp": "2026-10-23T13:59:08.964",
+              "classname": "DeepSeekFp4"
+            },
+            "properties": {}
+          },
+          {
+            "attributes": {
+              "name": "ActualDownProjectionCancellationRetainsF32Precision",
+              "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_cuda\\cuda_provider_test.cc",
+              "line": "918",
+              "status": "run",
+              "result": "completed",
+              "time": "0.004",
+              "timestamp": "2026-10-23T13:59:08.966",
+              "classname": "DeepSeekFp4"
+            },
+            "properties": {
+              "fixture_payload_bytes": "5184",
+              "actual_projection_row": "1008",
+              "scope": "One original BF16/E2M1/UE8 cancellation counterexample; original F32 interval and final BF16 RNE. No large model, runtime fixture file, throughput or universal accuracy claim."
+            }
+          }
+        ]
+      }
+    ],
+    "diagnostics": {
+      "original": {
+        "path": ".scratch/dspark-original-target-tail-20261023/diagnostic-fp4/reproduction/receipt.json",
+        "bytes": 2929,
+        "sha256": "cb63076fff2f37f897ceb2a349e1389aa5f38bd5e4bdff8c3687f2a097aff1a9"
+      },
+      "debug": {
+        "path": ".scratch/dspark-original-target-tail-20261023/diagnostic-fp4/debug-reproduction/receipt.json",
+        "bytes": 4406,
+        "sha256": "0c3e68294cf3b4dbc6940468038643758c522fabbdda31f3392d56aca755d0f5"
+      },
+      "candidate": {
+        "path": ".scratch/dspark-original-target-tail-20261023/diagnostic-fp4/candidate-reproduction/receipt.json",
+        "bytes": 3659,
+        "sha256": "1a5bc3166e60b8c3d9d2fe60e6a649a0f0967f8f06366df99458a925e8b83578"
+      }
+    },
+    "current_translation_units": {
+      "host": 3,
+      "CUDA": 1
+    },
+    "SDK_builds": 0,
+    "NVCC_builds": 3,
+    "NVCC_commands": {
+      "debug_original": {
+        "path": ".scratch/dspark-original-target-tail-20261023/diagnostic-fp4/compile-debug.result.json",
+        "bytes": 974,
+        "sha256": "459765747e60f733f3031e7b8ed4dadecb524941d3fba9a2bd626b212234f8e7"
+      },
+      "candidate_cubin": {
+        "path": ".scratch/dspark-original-target-tail-20261023/diagnostic-fp4/compile-candidate.result.json",
+        "bytes": 965,
+        "sha256": "b73ed0e5cef5ebf475f6b9194fdf763a9cca1a932898190eb9db9e5f11228ea2"
+      },
+      "product_TU": [
+        {
+          "path": ".scratch/dspark-original-target-tail-20261023/compile4/fp4-kernel/identity.json",
+          "bytes": 31187,
+          "sha256": "63d84c2062f516cdaba4da6d8dce7ae88a5f97283465826fd1c91a2df3e22fd8"
+        }
+      ]
+    },
+    "shaders": 0,
+    "compiled_records": [
+      {
+        "path": ".scratch/dspark-original-target-tail-20261023/compile4/dspark-state/identity.json",
+        "bytes": 88588,
+        "sha256": "19587be4039cdc2fc62945cf1e98cc863c78a3884b8b825a1d65be8920fc8df8"
+      },
+      {
+        "path": ".scratch/dspark-original-target-tail-20261023/compile4/fp4-provider/identity.json",
+        "bytes": 43400,
+        "sha256": "7c6ca980df59164e796fabb2c5f897904abd9469ddaa39d5b16243a451c0fb41"
+      },
+      {
+        "path": ".scratch/dspark-original-target-tail-20261023/compile4/fp4-kernel/identity.json",
+        "bytes": 31187,
+        "sha256": "63d84c2062f516cdaba4da6d8dce7ae88a5f97283465826fd1c91a2df3e22fd8"
+      },
+      {
+        "path": ".scratch/dspark-original-target-tail-20261023/compile4/fp4-test/identity.json",
+        "bytes": 65290,
+        "sha256": "e2fcdb7d0f7f4eb88fb0119bcd2d2a819fbcc8e1126c05d34a81b0936546982d"
+      }
+    ],
+    "source_inputs": [
+      {
+        "path": ".scratch/validation/cpu-final-f1/mixed-iq1/source/include/ggml-alloc.h",
+        "bytes": 3753,
+        "sha256": "94e4cd069b9313b2ceb35dacec901981e0bb478d8bb31035b7126be091998c23"
+      },
+      {
+        "path": ".scratch/validation/cpu-final-f1/mixed-iq1/source/include/ggml-backend.h",
+        "bytes": 25374,
+        "sha256": "46d84cb998105f871240864fd0f55446939a2fe86c5c281afa63a010fb1f65a2"
+      },
+      {
+        "path": ".scratch/validation/cpu-final-f1/mixed-iq1/source/include/ggml-cpu.h",
+        "bytes": 7753,
+        "sha256": "316279e004cdeb8e6ef78599acb602bf79a8abdf897fed9fd1914808c1518c6e"
+      },
+      {
+        "path": ".scratch/validation/cpu-final-f1/mixed-iq1/source/include/ggml.h",
+        "bytes": 116114,
+        "sha256": "bc70d20c63d0b155c8895e4933bc0e084970416ccbed6945e47df91084572940"
+      },
+      {
+        "path": "include/hyle/compute/backends/cpu.h",
+        "bytes": 1814,
+        "sha256": "a0b99762a3620c1b44b6856263c172d12fa6e482282fe9c2fcc06aa7d82a1d4d"
+      },
+      {
+        "path": "include/hyle/compute/backends/cuda.h",
+        "bytes": 9030,
+        "sha256": "8b1eeec880b852f5d35a98464c55a20abb8de0b1db447421dff4b90ba4a13748"
+      },
+      {
+        "path": "include/hyle/compute/batch_transfer.h",
+        "bytes": 11416,
+        "sha256": "7bec296577c0439b0e0b48639ccff6b3bd95d137dba085c608f650dbb69fcd1b"
+      },
+      {
+        "path": "include/hyle/compute/completion.h",
+        "bytes": 1959,
+        "sha256": "98b34b9ee4665e9aedac719504c029a509f304b0a4f566bf6b7f76d88dc2ef34"
+      },
+      {
+        "path": "include/hyle/compute/cpu.h",
+        "bytes": 3070,
+        "sha256": "5573eb9618c4ef2a0db299dfb3bc3f2bf93f0e7005ec31aa7ccd95e25efac21f"
+      },
+      {
+        "path": "include/hyle/compute/cuda.h",
+        "bytes": 1457,
+        "sha256": "308beb0703f01239c106d23792f8ef68a57880630b209d1e772a6cd9958918e7"
+      },
+      {
+        "path": "include/hyle/compute/cuda_weights.h",
+        "bytes": 5065,
+        "sha256": "1e3ca02148c67fc2d6d6744beb5a03ee93dcb7f7a61ffed16aa5b5e49d5a8079"
+      },
+      {
+        "path": "include/hyle/compute/detail/append_lease.h",
+        "bytes": 1944,
+        "sha256": "67b6e87fb0bfbc179d781174c2dc414f1e7487445925cb4c2a4faea579cb7ec5"
+      },
+      {
+        "path": "include/hyle/compute/detail/builtin_provider_ids.h",
+        "bytes": 483,
+        "sha256": "34dbb8802a4269bc1251e3b2ae511209e4efbd23b88a5c733e85e0759e7ba07a"
+      },
+      {
+        "path": "include/hyle/compute/detail/completion_access.h",
+        "bytes": 4164,
+        "sha256": "8699638e39a1a7d5708cbb6a5e41f191228b3ac571b16b026eadcc1aa6765e34"
+      },
+      {
+        "path": "include/hyle/compute/detail/context_ref.h",
+        "bytes": 2563,
+        "sha256": "b1295a6d21d452b2730e3907891ca49993e512a741f8f3a9689976e56f5af3f1"
+      },
+      {
+        "path": "include/hyle/compute/detail/lease_access.h",
+        "bytes": 6794,
+        "sha256": "1b0ab7b4b05faf25d5e6a87e4638504b47f38a54fcbce5ffeb7e50ff2148c8bc"
+      },
+      {
+        "path": "include/hyle/compute/detail/operation_access.h",
+        "bytes": 992,
+        "sha256": "4bdd60939dea229e91907768308155716b7cd8b78d92150391edc771f2089f34"
+      },
+      {
+        "path": "include/hyle/compute/detail/prepared_callbacks.h",
+        "bytes": 3012,
+        "sha256": "a721592ad0985c92ec0a427973dd63ca20cf3d870cb8c1162b57f86afde514ae"
+      },
+      {
+        "path": "include/hyle/compute/detail/queue_ref.h",
+        "bytes": 1551,
+        "sha256": "a50579827a0b1554ffa4595c3b2fff68cfcbcc9b75caba25c60f78028d49961b"
+      },
+      {
+        "path": "include/hyle/compute/detail/queue_sequence.h",
+        "bytes": 9214,
+        "sha256": "d8cc25b000e655468f3de3b1da3f5b17c388329f21d3f9d6f1d06d9e54de8a26"
+      },
+      {
+        "path": "include/hyle/compute/detail/resource_binding.h",
+        "bytes": 333,
+        "sha256": "5728b7fc8d0b9e6faf413dd5f8e5ba13e7ddf4d86354a722770f554c1591c6e5"
+      },
+      {
+        "path": "include/hyle/compute/detail/resource_budget_access.h",
+        "bytes": 2741,
+        "sha256": "f5cfd7955fed71cf08b9a08e0ddacf70191495a61883dac4224e02ef3cba4871"
+      },
+      {
+        "path": "include/hyle/compute/device.h",
+        "bytes": 7702,
+        "sha256": "f966803f2293e03db1cde9b1327f847a92162f21adb53f69ef37f0c19b16a84a"
+      },
+      {
+        "path": "include/hyle/compute/low_precision.h",
+        "bytes": 10406,
+        "sha256": "0920a5a2faecb2991da60ecede680c496bab73411a305e559461ea41cea309cb"
+      },
+      {
+        "path": "include/hyle/compute/model_ops.h",
+        "bytes": 79485,
+        "sha256": "351978e0a82a28cf9d4f7fbe9b75bf34bb65e03522de6e4f89a395a1975abbda"
+      },
+      {
+        "path": "include/hyle/compute/operation.h",
+        "bytes": 28394,
+        "sha256": "01730da295dde06e2982685b98176c2bdfcebbb0963515b8fbce6e63ad4fe025"
+      },
+      {
+        "path": "include/hyle/compute/ops_visibility.h",
+        "bytes": 43,
+        "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+      },
+      {
+        "path": "include/hyle/compute/prepared_operation.h",
+        "bytes": 20281,
+        "sha256": "03895c56e8665daf2482f66fecf205fd8aacf92046e13c169d9d8ff86fff52d7"
+      },
+      {
+        "path": "include/hyle/compute/provider.h",
+        "bytes": 10281,
+        "sha256": "a9737ca3cf64eec23ce768e20b1112407fc7816a32f8031f0b668b16c49f816a"
+      },
+      {
+        "path": "include/hyle/compute/providers/cuda.h",
+        "bytes": 7424,
+        "sha256": "fe16eb6930251b2a95261fa89be3baf8f3d546bc06e46f8eb2a672322dfd8997"
+      },
+      {
+        "path": "include/hyle/compute/resource_budget.h",
+        "bytes": 4622,
+        "sha256": "578d440b6fc3f5b58809837506165de27ac0866ae39b2d132763f5dd1786b1ce"
+      },
+      {
+        "path": "include/hyle/compute/resource_leases.h",
+        "bytes": 8660,
+        "sha256": "4e5681ebfa7c2f2ad51e5788c8316f4b993883f595c04b33fe594d7294dab85b"
+      },
+      {
+        "path": "include/hyle/compute/resource_requirement.h",
+        "bytes": 749,
+        "sha256": "0a1260090ba84ed86cf26b27ec5d187c8ed5d39b1acda641b632a3b84d3acf76"
+      },
+      {
+        "path": "include/hyle/compute/route_policy.h",
+        "bytes": 10464,
+        "sha256": "71a4fd38cb6702769cf9879e9c02a631797986f6c1f18417f014b65bb8d70926"
+      },
+      {
+        "path": "include/hyle/compute/state_versions.h",
+        "bytes": 8553,
+        "sha256": "a09cb66a216b56a0651f515f18d8a97772b0e6d281c171a82b8a6630b3e1c7d7"
+      },
+      {
+        "path": "include/hyle/compute/storage_owner.h",
+        "bytes": 8058,
+        "sha256": "549d881d8d4f96eedbb03c8ef9bd6892ede776e5da90a39025538bc50a0530d9"
+      },
+      {
+        "path": "include/hyle/compute/tensor.h",
+        "bytes": 1980,
+        "sha256": "ac00f221a66d0f9044a2b49a1123a6b99a6c425568790898129c31d81519c538"
+      },
+      {
+        "path": "include/hyle/compute/tensor_desc.h",
+        "bytes": 8700,
+        "sha256": "e5496e00c643bcce2efbb42666773f4172243d10458b756d6f9881b0e677eb9a"
+      },
+      {
+        "path": "include/hyle/compute/visibility.h",
+        "bytes": 43,
+        "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+      },
+      {
+        "path": "include/hyle/compute/weight_assembly.h",
+        "bytes": 2095,
+        "sha256": "c085186c2751371d8e642f29d1b338e53962236e50c9935ea1858a4b188ca3ac"
+      },
+      {
+        "path": "include/hyle/compute/weight_import.h",
+        "bytes": 3487,
+        "sha256": "19479024d3e80a6c7357dd55cc79e59347c20b22b621ce6f2779082afaaab6cb"
+      },
+      {
+        "path": "include/hyle/compute/workload.h",
+        "bytes": 5017,
+        "sha256": "2e7509d99d986e71b06788e4dd1dcb9595799e2ad972df48449ff0b58f0815ad"
+      },
+      {
+        "path": "include/hyle/core/assert.h",
+        "bytes": 16114,
+        "sha256": "5596728bc220ea27696be4f25e2f9eb9cf2705930f8eb0461747c4a862615790"
+      },
+      {
+        "path": "include/hyle/core/compiler.h",
+        "bytes": 4287,
+        "sha256": "e31151f0ed73c532e464c6568483acecd80a2da9c1ee7afc7e081db87d6fb687"
+      },
+      {
+        "path": "include/hyle/core/detail/compiler_attributes.h",
+        "bytes": 1913,
+        "sha256": "263c7691f9984073e198b69328092330bf572195113d3994d1ab54fe4564d88a"
+      },
+      {
+        "path": "include/hyle/core/detail/preprocessor.h",
+        "bytes": 409,
+        "sha256": "1d9872ef98db007dcbed7e0128771244640e1de4092830d52a7a83537f98eb84"
+      },
+      {
+        "path": "include/hyle/core/environment.h",
+        "bytes": 6712,
+        "sha256": "3d289765b1b677499a444b38d1dbe366bb5e99f89fcb7670af2d08106fd958fa"
+      },
+      {
+        "path": "include/hyle/error/result.h",
+        "bytes": 30856,
+        "sha256": "7718409ab2854eb76959215b356bf8077007134d87db1a24f9384a9b5deff2b5"
+      },
+      {
+        "path": "include/hyle/error/status.h",
+        "bytes": 18122,
+        "sha256": "4d6b4b0bfa5628947aad5449320513d4b071e0c84debfac47f7a7d264cecb7f4"
+      },
+      {
+        "path": "include/hyle/graph/compile_report.h",
+        "bytes": 577,
+        "sha256": "c42c30527d581975c49ddfebb182b0ae7928d799eed91172cb631779a2ad5b4f"
+      },
+      {
+        "path": "include/hyle/graph/cpu.h",
+        "bytes": 919,
+        "sha256": "01165b3d6fe8276d4275495d8cb52186d9a81b11749db49a2684856bfbe088e8"
+      },
+      {
+        "path": "include/hyle/graph/cuda.h",
+        "bytes": 2663,
+        "sha256": "658f3dab4eb1a0a90f2dc472652e0c0fa5e694373544abc21331f116adee1373"
+      },
+      {
+        "path": "include/hyle/graph/executable.h",
+        "bytes": 50386,
+        "sha256": "aa3a55ed1869f84149ad0a6a558d6541880d71ba0bf4c6789480724564cdc0b0"
+      },
+      {
+        "path": "include/hyle/graph/execution_source.h",
+        "bytes": 1859,
+        "sha256": "b89de5c6fe8b84192c9618a6a4e4dcee8ac45393e04a9e335f17b5a2d3ecac3f"
+      },
+      {
+        "path": "include/hyle/graph/graph.h",
+        "bytes": 19988,
+        "sha256": "c7a93ccf9fd1c86fb9dec286e7d3345aabcb1810c2fb6793a66093480a5a2136"
+      },
+      {
+        "path": "include/hyle/graph/resources.h",
+        "bytes": 430,
+        "sha256": "c9d3075babb4d863f3543c76576d093fe59f9868df67d50fc492db0aebe7015d"
+      },
+      {
+        "path": "include/hyle/graph/result.h",
+        "bytes": 2146,
+        "sha256": "dc576aa9e523321df6d69ced5717cd9a8e92a9261245a42a431ecc8039a3dd46"
+      },
+      {
+        "path": "include/hyle/graph/visibility.h",
+        "bytes": 43,
+        "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+      },
+      {
+        "path": "include/hyle/graph/weight_binding.h",
+        "bytes": 422,
+        "sha256": "ebcc3eea951953966a3b10b2951872e74d04921af6f0cc8de45ab52ab1ba32bd"
+      },
+      {
+        "path": "include/hyle/mem/allocator.h",
+        "bytes": 11090,
+        "sha256": "0369680d4769a0187bfb77ee8b565b5e8fb53a03909fabf233458d9c1cbcd011"
+      },
+      {
+        "path": "include/hyle/mem/buffer.h",
+        "bytes": 19273,
+        "sha256": "346a4f810babb8c5dacba49faaf57903d998a3cbb49af12b8c62acc85f7be72c"
+      },
+      {
+        "path": "include/hyle/mem/mapping.h",
+        "bytes": 7139,
+        "sha256": "98b1a1ea8c4d85eff4fb8ddeb0fd7a425e7619128c468ae29e11c5e3fbfd05c3"
+      },
+      {
+        "path": "include/hyle/mem/quota_allocator.h",
+        "bytes": 7124,
+        "sha256": "a88fe230dc5358ddde6209de96cc61a59e3f6e60d30b9e7534e986fab10224c9"
+      },
+      {
+        "path": "include/hyle/mem/resource.h",
+        "bytes": 7717,
+        "sha256": "84b0366e658ec63f999b4c9719cf8584ad758f4ff5340baf37f1c3ebd17145cd"
+      },
+      {
+        "path": "include/hyle/mem/visibility.h",
+        "bytes": 43,
+        "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+      },
+      {
+        "path": "include/hyle/platform/cpu.h",
+        "bytes": 14870,
+        "sha256": "033953ef33ba5fd57c98af540818bb7c82b8189a4ca1e2502e3297dddde48342"
+      },
+      {
+        "path": "include/hyle/platform/fs.h",
+        "bytes": 24891,
+        "sha256": "2af351149fc82762267b89303439ef71626a2eb541d1922ff6f66014136a9ffa"
+      },
+      {
+        "path": "include/hyle/platform/fs_visibility.h",
+        "bytes": 43,
+        "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+      },
+      {
+        "path": "include/hyle/platform/numa.h",
+        "bytes": 8400,
+        "sha256": "e154f229dc7f6f5ceb1c44f20f769204b48bd422e57c5fed1e53c490607b8fde"
+      },
+      {
+        "path": "include/hyle/platform/virtual_memory.h",
+        "bytes": 10485,
+        "sha256": "1b01086d44f330a592a5d3b4946fb213e485095dce904db99bb71103e2a578b8"
+      },
+      {
+        "path": "include/hyle/platform/visibility.h",
+        "bytes": 43,
+        "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+      },
+      {
+        "path": "include/hyle/simd/dtype.h",
+        "bytes": 12143,
+        "sha256": "04dc8a2e0a654250413a0edc4bdc667f98c8aa40d85da25264b6bb2054dd51e5"
+      },
+      {
+        "path": "include/hyle/simd/types.h",
+        "bytes": 1658,
+        "sha256": "e79863029c8036f918f36f93dd0267b8d42857516e0d74678584d75f8926abbd"
+      },
+      {
+        "path": "include/hyle/time/unix_timestamp.h",
+        "bytes": 11791,
+        "sha256": "bcd6bdc860d6ee1e73004ebd15e3b2b2a60ca3dff7a0818deecf9420f95b4496"
+      },
+      {
+        "path": "include/hyle/visibility.h",
+        "bytes": 11701,
+        "sha256": "893fa73589b6e46f00474c2258af74c28d662b52176b57012290c820812ed486"
+      },
+      {
+        "path": "src/compute/provider_internal.h",
+        "bytes": 11628,
+        "sha256": "e62b1e842d95f3bd4ac720b26e716d0be85ac8e84d3bffce7ce13f8cc910641d"
+      },
+      {
+        "path": "src/compute/shape_domain.h",
+        "bytes": 4715,
+        "sha256": "2c50da6b169b550e737a4dd95d5be66ab5803ac1843ba628ebc5cc37f2507846"
+      },
+      {
+        "path": "src/compute/shape_program.h",
+        "bytes": 3883,
+        "sha256": "1d58ee387d7c7bb21e14c7f9e6330ffa544aaf5eca91d3182b2c08f2927169f1"
+      },
+      {
+        "path": "src/compute_backend_cuda/device_status_kernel.h",
+        "bytes": 582,
+        "sha256": "ef331996915f9881e62d2f4fb2c4a3aa77440463ddd13320a7f34461fee70304"
+      },
+      {
+        "path": "src/compute_backend_cuda/native_context.h",
+        "bytes": 4925,
+        "sha256": "fe5cf9b378abb5cb8feb60533f3eb4ac40115284aacee9e6f431898f301376ec"
+      },
+      {
+        "path": "src/compute_ggml_runtime/cpu_program.h",
+        "bytes": 639,
+        "sha256": "fb05eecb7a65c0c455f6e0785afd4a6f18c06096ba74d502a571c0854f9e56ff"
+      },
+      {
+        "path": "src/compute_ggml_runtime/cpu_program_abi.h",
+        "bytes": 777,
+        "sha256": "9c9953094ea6ef96f7d4c46f562be593ce21579795a174e563b6a5cc7346b35c"
+      },
+      {
+        "path": "src/compute_ggml_runtime/metadata_arena.h",
+        "bytes": 1843,
+        "sha256": "27d9639094db0f0fc72a7dd9c8b767d6e5b63f5bfd4cafe849cf0f97ec719dfb"
+      },
+      {
+        "path": "src/compute_provider_cuda/deepseek_grouped_fp4_provider.cc",
+        "bytes": 10061,
+        "sha256": "4d2fd57433fdce6ff5d7d6285743437593ad04c08f3bc4043febe749ad469dfb"
+      },
+      {
+        "path": "src/compute_provider_cuda/deepseek_grouped_fp4_provider.h",
+        "bytes": 710,
+        "sha256": "14fac9854ae32f6827fefdd19d49efe1c4b91cc8224e3275ae110b0b273414cf"
+      },
+      {
+        "path": "src/compute_provider_cuda/fp8_provider.h",
+        "bytes": 860,
+        "sha256": "ecd866f75a90cd49e9e2a64317606d0a2d9414adc8442159bf6d7965d7cd1e63"
+      },
+      {
+        "path": "src/compute_provider_cuda/grouped_fp4_f32_kernel.cu",
+        "bytes": 7276,
+        "sha256": "fb24190efadefc988f0103397b1765001168d665899852642eccc6cc7dfca57f"
+      },
+      {
+        "path": "src/compute_provider_cuda/grouped_fp4_f32_kernel.h",
+        "bytes": 589,
+        "sha256": "c0ca0f129af4f4ae873e4d1b86e52c8d1387b278cc63646d54fd18c11fb7f020"
+      },
+      {
+        "path": "tests/compute/workload_fixture.h",
+        "bytes": 1211,
+        "sha256": "d451c816f7362313b73758d60fc68c49acbaf0e31735db3039d72e80d39b6a5e"
+      },
+      {
+        "path": "tests/compute_models/cpu_c4_flash_sidecars.h",
+        "bytes": 28042,
+        "sha256": "2e9012a9a9f3fe2960743298a29d45a8b489fe03c3bbccf3e40bbc5205fc3168"
+      },
+      {
+        "path": "tests/compute_models/cpu_c4_model_branches.h",
+        "bytes": 53008,
+        "sha256": "8af3aeea3be2a5763e3f8344475ba135bc151fded90eb4f363736bc9c72a0960"
+      },
+      {
+        "path": "tests/compute_models/cpu_c4_qwen_mtp.h",
+        "bytes": 11324,
+        "sha256": "bd3d62d9bac7b4e1c39ee8960ead54436769560652463e09ad91625b4026cd07"
+      },
+      {
+        "path": "tests/compute_models/d5_deepseek_official_attention.h",
+        "bytes": 52641,
+        "sha256": "28810d78250c6a8d70432467462a1e7c2996231b8c92c9b2c768d5453e398d6a"
+      },
+      {
+        "path": "tests/compute_models/d5_deepseek_official_fragments.h",
+        "bytes": 21297,
+        "sha256": "5807c46057cb63bfb7691c82dba92c0a63a467e1ab90a7e9486183c1c17c2c30"
+      },
+      {
+        "path": "tests/compute_models/d5_deepseek_remaining_fragments.h",
+        "bytes": 39907,
+        "sha256": "5174d4fedabd5b719c7acb91fe2abb523a768c7ec9685878e9b1efaed3241a2b"
+      },
+      {
+        "path": "tests/compute_models/d5_dynamic_fp8_fragments.h",
+        "bytes": 16239,
+        "sha256": "6e6d323a06331a70666a6ce2a8e26984932d7fbf5732f71ced728a3bc0b68040"
+      },
+      {
+        "path": "tests/compute_models/d5_fp8_weight_preparation.h",
+        "bytes": 4214,
+        "sha256": "2e9936b89899495588bd701455ba2a371f1833bb6bdef10b008f043f904200fc"
+      },
+      {
+        "path": "tests/compute_models/d5_gguf_test_support.h",
+        "bytes": 13405,
+        "sha256": "4742b35f873bc892213e8721f44a4bde0cfeea9d30da036c454a4d3042bd7898"
+      },
+      {
+        "path": "tests/compute_models/d5_glm_mtp_head_test.h",
+        "bytes": 475,
+        "sha256": "d8267206827f0399423e5500f45492f70ce51e2bb52bad38bbc1b10b9c33b668"
+      },
+      {
+        "path": "tests/compute_models/d5_glm_remaining_fragments.h",
+        "bytes": 54263,
+        "sha256": "12dbf546cb1050470dd6db65fe4d1f0a70364781a22d9df466699e7b10cde742"
+      },
+      {
+        "path": "tests/compute_models/d5_grouped_fp8_fragments.h",
+        "bytes": 8697,
+        "sha256": "100afd9e17c00798ffa5b6f1cb7201dcea93981937321eac4a5afbaa269f2717"
+      },
+      {
+        "path": "tests/compute_models/d5_kda_full_fragments.h",
+        "bytes": 12967,
+        "sha256": "8af401a0982f99b0283199c53f44ec15f6524a35eb0590b850a3c403f4d7e76e"
+      },
+      {
+        "path": "tests/compute_models/d5_kda_projection_cases.h",
+        "bytes": 5583,
+        "sha256": "489e42c858140847b89f4932a5519572aa132f515d96cb9927392ce0266c0feb"
+      },
+      {
+        "path": "tests/compute_models/d5_kimi_remaining_fragments.h",
+        "bytes": 18043,
+        "sha256": "edc6aaeb8d05c1f848447849b45bf3f908b77a737823ce6dfbf737feedeb2218"
+      },
+      {
+        "path": "tests/compute_models/d5_moe_execution_cases.h",
+        "bytes": 4217,
+        "sha256": "8d3dedc2d98d2ba3cd72c1cec165bc53f6472b274da4215509f623511f4321cf"
+      },
+      {
+        "path": "tests/compute_models/d5_moe_execution_fragments.h",
+        "bytes": 29763,
+        "sha256": "ab7857f47f82b87bf2b39b56d2f637a9d3d3068256abfcbd2a69d94ab1b08f3c"
+      },
+      {
+        "path": "tests/compute_models/d5_moe_profile_cases.h",
+        "bytes": 11520,
+        "sha256": "c21f3e73aba1a7ce161b71c9eec135af9b6352e8aba255c3229c9b82f4d93a6d"
+      },
+      {
+        "path": "tests/compute_models/d5_moe_semantic_fragments.h",
+        "bytes": 17811,
+        "sha256": "75b094320cc81125cfdf7b8ab473be5b51238b66b6403e8f142b14fbe00b5131"
+      },
+      {
+        "path": "tests/compute_models/d5_official_fp4_storage.h",
+        "bytes": 4623,
+        "sha256": "3f9d8a651e2d79dcf5f9ab2ac09cca4439a0d5ef2d4a2ea948c1768966e38846"
+      },
+      {
+        "path": "tests/compute_models/d5_official_fp8_fragments.h",
+        "bytes": 5606,
+        "sha256": "c132fe5588268de6ce57506025f754aeda0c6e7698703db77932711bcfb4dd56"
+      },
+      {
+        "path": "tests/compute_models/d5_quantization_roundtrip.h",
+        "bytes": 3170,
+        "sha256": "64096613c76fb2fb5fa1d2f63bdcd4fd0abf576f7e126decc3ab10ed5dccd3a8"
+      },
+      {
+        "path": "tests/compute_models/d5_qwen35_fixture.h",
+        "bytes": 9558,
+        "sha256": "b80a27f10ce671ab5fa3953a0862dd387fd85bb0aa2cfd31670593303b8ab393"
+      },
+      {
+        "path": "tests/compute_models/d5_qwen35_gguf_fragment_support.h",
+        "bytes": 6939,
+        "sha256": "24d8ae62cbb2ed362c4e949db02fdce18505e03ff06adb23cdcfe8b358b61cb1"
+      },
+      {
+        "path": "tests/compute_models/d5_qwen38_24t_fixture.h",
+        "bytes": 7313,
+        "sha256": "b5b12c7030e2fbf2f14e8b8d0be9569ef47c64a49d58e98bc7b333b4256e050f"
+      },
+      {
+        "path": "tests/compute_models/d5_qwen38_24t_full_router.h",
+        "bytes": 22959,
+        "sha256": "7bff099e41ecee6f6dd4dc85a91db2b13a1737bee46699befe27e4d867b6fd04"
+      },
+      {
+        "path": "tests/compute_models/d5_qwen38_24t_moe_profiles.h",
+        "bytes": 11480,
+        "sha256": "ea93064fca5e64b4db7bfb5ded1062d83baf6ab3794f52f962beee2b0fd8a9ee"
+      },
+      {
+        "path": "tests/compute_models/d5_qwen38_24t_semantic_fragments.h",
+        "bytes": 34939,
+        "sha256": "b419ccdab0d23da5ff1db51d6e2c9c504bcae02f83666885cb5bb457b62d2736"
+      },
+      {
+        "path": "tests/compute_models/d5_qwen38_gdn_fixture.h",
+        "bytes": 8553,
+        "sha256": "9a0fb6af064c85209fa478a7021eb399bf1451fff67d43538a655936343bf2ed"
+      },
+      {
+        "path": "tests/compute_models/d5_qwen38_official_fixture.h",
+        "bytes": 5967,
+        "sha256": "61cacc3d6251c1ef2cfc9a9f724412f9ca4615f4692dcbf777a81e790e7a1ff0"
+      },
+      {
+        "path": "tests/compute_models/d5_qwen_gguf_vocabulary_cases.h",
+        "bytes": 2928,
+        "sha256": "8db378b333614ddc594a3ae9364fcbfdded76a2c1226d5cb19b44b24968af655"
+      },
+      {
+        "path": "tests/compute_models/dspark_complete_graph_fixture.h",
+        "bytes": 11211,
+        "sha256": "282c3eb713b2ba15ade30a05a17f0c59d1a161c219d3b9598b40d2cb624e7303"
+      },
+      {
+        "path": "tests/compute_models/dspark_main_history.h",
+        "bytes": 12463,
+        "sha256": "ccd3c9463de65cbc41c539c166dda48a885dba526240a15de59adcc2850c9f05"
+      },
+      {
+        "path": "tests/compute_models/dspark_original_attention_reference.h",
+        "bytes": 4666,
+        "sha256": "35406aff20b37b22a60380b53f1e09af73331dc8a49a1362be0878a719adfe18"
+      },
+      {
+        "path": "tests/compute_models/dspark_original_attention_roles.h",
+        "bytes": 6713,
+        "sha256": "bdd59f6c5b324214645be543a5ef6f5f21adcfa05cab28d722975f20bd07e598"
+      },
+      {
+        "path": "tests/compute_models/dspark_original_expert_reference.h",
+        "bytes": 17226,
+        "sha256": "87648bf4db7f2f1d045be5ef9764f80afb2a971bcbe283d1c50ab20ec02ed57e"
+      },
+      {
+        "path": "tests/compute_models/dspark_original_expert_roles.h",
+        "bytes": 12155,
+        "sha256": "69277e38034a0d7954cbe2989ae278aa1d2f232a2b97707e7e73699b55a487a2"
+      },
+      {
+        "path": "tests/compute_models/dspark_original_hc_reference.h",
+        "bytes": 16933,
+        "sha256": "1a2977eb36146b5c16fef78fefc75c2b90afa3daa113f85eb8d779cc79a424fe"
+      },
+      {
+        "path": "tests/compute_models/dspark_original_hc_roles.h",
+        "bytes": 9114,
+        "sha256": "a67144154067b6a71f6a3b5c455892396229777a077364730ffa5ea220aa13f0"
+      },
+      {
+        "path": "tests/compute_models/dspark_original_lm_reference.h",
+        "bytes": 8875,
+        "sha256": "1ceb67951e514404e8c5670f54c88d026d1a7be8ed31b285c74077cc6242805c"
+      },
+      {
+        "path": "tests/compute_models/dspark_original_resident_weights.h",
+        "bytes": 7715,
+        "sha256": "bd593df3c247fa4cc99c9449ed4bda9fe8d7cc28e00cd023c71e62bf5d81c003"
+      },
+      {
+        "path": "tests/compute_models/dspark_original_roles.h",
+        "bytes": 6416,
+        "sha256": "60999491c87a0ede761de205250a7a85c47089c35db0ebc52aa8364efc3a6cd2"
+      },
+      {
+        "path": "tests/compute_models/dspark_original_shared_reference.h",
+        "bytes": 16279,
+        "sha256": "f3a68f4bf5758818585c0e6e9e640137f88a751486036a7fd884889994252dff"
+      },
+      {
+        "path": "tests/compute_models/dspark_original_shared_roles.h",
+        "bytes": 6368,
+        "sha256": "606357cfe16acd1490a6200e3f8cd95839015111726b5b5ac5cd0848d673e629"
+      },
+      {
+        "path": "tests/compute_models/dspark_original_state_consumer.h",
+        "bytes": 25458,
+        "sha256": "0d6dc70718e77ead4f48804b494bf6e2f3f93617aaa5c12cdc5048f53f037dcf"
+      },
+      {
+        "path": "tests/compute_models/dspark_original_state_consumer_test.cc",
+        "bytes": 146317,
+        "sha256": "e6fdc6090093345c7db621e086e22de89757572bd4d01f38fd1783f169d4c117"
+      },
+      {
+        "path": "tests/compute_models/dspark_original_target_fragment.h",
+        "bytes": 30967,
+        "sha256": "3780d0abeb6f84f8695943696cd492aad57b0286fe6edabf0d84aef7359418ca"
+      },
+      {
+        "path": "tests/compute_models/dspark_original_target_program.h",
+        "bytes": 8702,
+        "sha256": "f65bfb7761c6a0aceff26f679143b5d80233b73db57dbf907c4d627a29b2ad12"
+      },
+      {
+        "path": "tests/compute_models/dspark_original_target_reference.h",
+        "bytes": 43809,
+        "sha256": "bedad68e8d0e5d3b19f739fbba367b8716bc9c12982f9fdccd6ca5567752fbff"
+      },
+      {
+        "path": "tests/compute_models/dspark_original_target_roles.h",
+        "bytes": 31690,
+        "sha256": "866b1081a48874ad8ef5eac669d76245eb3a0cfed3474a7a7dc57385e354810b"
+      },
+      {
+        "path": "tests/compute_models/dspark_original_target_weights.h",
+        "bytes": 12217,
+        "sha256": "d8096f453c977efc09dad74a05511f48ae340ae4618761c3da4e3659885626db"
+      },
+      {
+        "path": "tests/compute_models/dspark_prepare_constants.h",
+        "bytes": 5202,
+        "sha256": "5341915058f68dbc3fa76f6e0742168ad65e3271569e67e7408661c2731166b4"
+      },
+      {
+        "path": "tests/compute_models/dspark_resident_draft.h",
+        "bytes": 925,
+        "sha256": "0fd2087d93490cdd964117ac2d8c1eff8bbe41e869e83367345c35a9f3e00cac"
+      },
+      {
+        "path": "tests/compute_models/dspark_shared_target_roles.h",
+        "bytes": 3805,
+        "sha256": "3aa38a2ec52606a0b7872987c442c87647da5cb87fd2f2da51bd41135400160a"
+      },
+      {
+        "path": "tests/compute_models/dspark_target_binding.h",
+        "bytes": 13123,
+        "sha256": "34aa71e4b5ba53fe25d9add79b7b5bec21fc6535d1a3443f6a6025dfbd235953"
+      },
+      {
+        "path": "tests/compute_models/dspark_target_tail_checks.h",
+        "bytes": 3985,
+        "sha256": "fb0546997c988ca8eb4d7c8f91903b06b9288d365232b2d9d1779db9dec0c11a"
+      },
+      {
+        "path": "tests/compute_models/glm_original_attention_reference.h",
+        "bytes": 17681,
+        "sha256": "3624cdd2a598cba9a11a28c547213e51f52e6526d976132a3ad16156a1f2f6c9"
+      },
+      {
+        "path": "tests/compute_models/glm_original_attention_roles.h",
+        "bytes": 13614,
+        "sha256": "0423bcc5be425a61e0fe73b7643816a29f6715bee2e4902352d0f95eb32c9ff5"
+      },
+      {
+        "path": "tests/compute_models/glm_original_indexer_reference.h",
+        "bytes": 11617,
+        "sha256": "b6d4ab20192d490f6f6c63c3ce526c8556322a54300c990ea427afd0eb31ec12"
+      },
+      {
+        "path": "tests/compute_models/glm_original_mtp_roles.h",
+        "bytes": 17100,
+        "sha256": "e5ddf53e5dd7b2b88a0a4e8532ed9215164879d1693285d105a069d7864f0938"
+      },
+      {
+        "path": "tests/compute_models/glm_shared_vocabulary.h",
+        "bytes": 13861,
+        "sha256": "930b11d95b8826c6a65d18dac34746d67238d0f4ab67a3909a024c182555c525"
+      },
+      {
+        "path": "tests/compute_models/glm_shared_vocabulary_reference.h",
+        "bytes": 14905,
+        "sha256": "f091ff25783e12b28ac6e233fa2aca7c84702b8feefc5a6afaebf9f4ca75e446"
+      },
+      {
+        "path": "tests/compute_models/model_resident_fragment.h",
+        "bytes": 8672,
+        "sha256": "138deaba975edb57d7c29622fef0df737b22f924db43846d3c5bd6d1001fe0cd"
+      },
+      {
+        "path": "tests/compute_models/original_role_input.h",
+        "bytes": 7051,
+        "sha256": "ef769dc0479128b1ab6d727abe76b47fc96023e80ff6592e7442c40703932617"
+      },
+      {
+        "path": "tests/compute_models/row_cache_fixture.h",
+        "bytes": 6029,
+        "sha256": "4ac7179ed353dcba83aa133de06ab28443ab27db05bb024c5ca4383d1631a67e"
+      },
+      {
+        "path": "tests/compute_provider_cuda/cuda_provider_test.cc",
+        "bytes": 93019,
+        "sha256": "b735e9b15c6a829039c16aae559f5784049995a0a30383b9573efe26743c7698"
+      },
+      {
+        "path": "tests/compute_provider_cuda/fixtures/fp4_f32_cancellation.h",
+        "bytes": 24882,
+        "sha256": "ac597bfb3ec40a77502f5da7f45f6e13a0d090c5870f53c49311d76477affc45"
+      },
+      {
+        "path": "tests/compute_provider_native/half_test_support.h",
+        "bytes": 4399,
+        "sha256": "5f6d8f7b70d07e44600bb6d6d592f66af5dac9970a730695956a1afcfc3cd0b8"
+      },
+      {
+        "path": "tests/graph_route_cuda/dspark_head_checks.h",
+        "bytes": 3521,
+        "sha256": "6da020699e900345bf7be9c117833096ce657e1d030034376934bfc4e36da495"
+      },
+      {
+        "path": "third_party/deepseek_quantization/deepseek_quantization_sm89.h",
+        "bytes": 381519,
+        "sha256": "bd9ddd966d627f0b277afe143ef0764dda3f9ed940855b0dd4ecdfa0f27036d3"
+      }
+    ]
+  },
+  "limitations": [
+    "Layer39 four-stream inputs and finite imported initial histories remain explicit fixtures; these are not full43-layer prompt-to-output execution or task-quality checks.",
+    "One finite natural trial per backend and controlled prefixes do not establish workload acceptance rate. No new TPS, loading-time or physical RAM/VRAM peak is measured.",
+    "Formal target FP8/FP4 and selected GGUF Q8/MXFP4 draft arithmetic remain distinct. Pro, other confirmed quantizations and necessary other-backend checks remain."
+  ],
+  "remaining": "Finish Pro and other confirmed original MTP artifact combinations, then final ordinary/MTP performance comparison; images follow.",
+  "latest_full_performance_unchanged": "80b8672315911a74039a14cd137659bc67289273dc9c3707cd267b2d06de2551",
+  "protected_qwen_image": {
+    "path": ".scratch/qwen-mtp-next-20261022/hyle-link4/qwen.exe",
+    "bytes": 140411392,
+    "sha256": "9dce4f40d2edb8004c0d79c58e20de6ca6cdc5d1477db3773d26b40d7a05d883"
+  },
+  "archive": {
+    "path": "docs/evidence/correctness/mtp-dspark-target-verifier-2026-10-23.zip",
+    "bytes": 2739518,
+    "sha256": "39253d44ed07599f8779bdacfa3f857df8d053bbbccd6beaf9cbf750e202f41c"
+  },
+  "archive_items": 435
+}

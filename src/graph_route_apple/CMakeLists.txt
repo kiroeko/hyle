@@ -1,5 +1,8 @@
 if(_HYLE_COMPUTE_HAVE_APPLE)
-  hyle_add_module(graph_route_apple TRACE SOURCES apple_lowering.cc apple_batch.cc)
+  hyle_add_module(graph_route_apple TRACE SOURCES
+    apple_lowering.cc apple_batch.cc execution_source.cc native_region.cc
+    native_paged_region.cc native_paged_append_region.cc native_ragged_region.cc
+    native_paged_pending.cc weight_binding.cc)
 else()
   hyle_add_module(graph_route_apple OPTIONAL_ABSENT)
   set_property(TARGET hyle_graph_route_apple PROPERTY HYLE_INTERNAL_ONLY_ABSENT TRUE)

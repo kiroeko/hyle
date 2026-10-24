@@ -6,8 +6,8 @@
 #include <limits>
 #include <new>
 
+#include "hyle/compute/detail/capture_bindings.h"
 #include "collectives.h"
-#include "hyle/compute/route_policy.h"
 #include "native_context.h"
 #include "provider_internal.h"
 
@@ -15,7 +15,6 @@ namespace hyle::compute::cuda_native {
 namespace {
 struct Context final {
   CUcontext primary = nullptr;
-  bool qualified = false;
 };
 struct Prepared final {
   CUcontext primary = nullptr;
@@ -26,22 +25,29 @@ struct Invocation final {
   void *workspace = nullptr;
 };
 
-inline constexpr std::array kQualificationPredicates{
-    RouteFactPredicate::range(route_fact::kRuntimeVersion, 13030, 13040),
-    RouteFactPredicate::number(route_fact::kToolkitVersion, 13030)};
-
 ProviderRuntimeProperties
 runtime(const collectives::Program &program) noexcept {
+  if (program.count == 0)
+    return {.mode = ProviderRuntimeMode::kSharedQueue,
+            .workspace_owner = ProviderWorkspaceOwner::kCaller,
+            .replay_class = ProviderReplayClass::kPrepared,
+            .supports_concurrent_invocations = true,
+            .capture_compatible = true};
+  // The tiled TopK1 program is fixed at cold configure time: both kernels
+  // are materialized there and only use this Invocation's caller workspace.
+  // Other TopK programs still enter CUB's managed dispatch at submit time.
+  const bool prepared = program.kind == collectives::Kind::kGather ||
+                        program.arg_tiles != 0;
   return {.mode = ProviderRuntimeMode::kSharedQueue,
           .workspace_owner = ProviderWorkspaceOwner::kCaller,
-          .replay_class = ProviderReplayClass::kManaged,
+          .replay_class = prepared ? ProviderReplayClass::kPrepared
+                                   : ProviderReplayClass::kManaged,
           .blocks_host =
               (program.kind == collectives::Kind::kScan &&
-               program.type == collectives::Type::kInt32) ||
-              (program.kind == collectives::Kind::kGather && program.checked),
+               program.type == collectives::Type::kInt32),
           .uses_private_threads = false,
           .supports_concurrent_invocations = true,
-          .capture_compatible = false};
+          .capture_compatible = prepared};
 }
 
 Status describe(Operation operation, std::span<const TensorDesc> inputs,
@@ -63,6 +69,12 @@ Status describe(Operation operation, std::span<const TensorDesc> inputs,
   if (!std::ranges::equal(outputs, std::span(inferred).first(outputs.size())))
     return Status::InvalidArgument(
         "CCCL output descriptions differ from inference");
+  if (topk && topk->count == 0) {
+    // No values or indices are selected, even for a nonempty source. Reuse
+    // the original zero-work program before type-specific CUB planning.
+    program->kind = collectives::Kind::kTopK;
+    return Status::Ok();
+  }
   if (gather) {
     const auto &indices = inputs[1];
     const auto count = outputs[0].element_count();
@@ -149,7 +161,7 @@ Status describe(Operation operation, std::span<const TensorDesc> inputs,
   return Status::Ok();
 }
 
-Status create_context(const Provider &provider, Device device, void *backend,
+Status create_context(const Provider &, Device device, void *backend,
                       mem::AllocatorRef allocator, void **output) noexcept {
   *output = nullptr;
   if (device.backend_id() != cuda::kBackendId)
@@ -161,17 +173,10 @@ Status create_context(const Provider &provider, Device device, void *backend,
   auto *storage = allocator.allocate(sizeof(Context), alignof(Context));
   if (!storage)
     return Status::ResourceExhausted("CCCL context allocation failed");
-  const auto facts = cuda::detail::route_facts(*environment);
-  const RouteSelector rule{.route = NativeRoute::kCuda,
-                           .provider = kCcclProviderId,
-                           .provider_version = "CCCL-300304",
-                           .environment = kQualificationPredicates};
-  const RouteMatchInput input{.platform = kBuildRoutePlatform,
-                              .route = NativeRoute::kCuda,
-                              .provider = provider.identity(),
-                              .environment = facts.environment()};
-  *output = ::new (storage)
-      Context{primary, match_route_selector(rule, input).matched()};
+  // CCCL is instantiated by this build's CUDA SDK. Native configure/launch
+  // report actual device/runtime incompatibility; an exact SDK or CCCL
+  // version whitelist would disable working kernels after an SDK upgrade.
+  *output = ::new (storage) Context{primary};
   return Status::Ok();
 }
 void destroy_context(void *value, mem::AllocatorRef allocator) noexcept {
@@ -188,9 +193,9 @@ Status propose(void *value, const detail::ProviderOperationRequest &request,
                detail::ProviderOperationProposal *proposal) noexcept {
   *proposal = {};
   const auto &context = *static_cast<Context *>(value);
-  if (!context.qualified || !request.shape.exact())
+  if (!request.shape.exact())
     return Status::Unimplemented(
-        "CCCL requires compatible compiled SDK/runtime and exact shapes");
+        "CCCL requires exact shapes");
   collectives::Program program;
   HYLE_RETURN_IF_ERROR(
       describe(request.operation, request.inputs, request.outputs, &program));
@@ -254,13 +259,13 @@ void destroy_invocation(void *value, mem::AllocatorRef allocator) noexcept {
   slot->~Invocation();
   allocator.deallocate(slot, sizeof(Invocation), alignof(Invocation));
 }
-detail::EnqueueResult submit(void *value, void *slot, Queue &queue,
+detail::EnqueueResult submit(void *value, void *slot, detail::QueueSequence &sequence,
                              std::span<const ConstTensorView> inputs,
                              std::span<const TensorView> outputs) noexcept {
   const auto &prepared = *static_cast<Prepared *>(value);
   if (prepared.program.count == 0)
     return detail::EnqueueResult::no_op();
-  auto stream = cuda::stream(queue);
+  auto stream = cuda::stream(sequence);
   if (!stream)
     return detail::EnqueueResult::rejected(std::move(stream).error());
   auto input = cuda::detail::const_pointer(inputs[0].storage(), 1, 1);
@@ -288,24 +293,36 @@ detail::EnqueueResult submit(void *value, void *slot, Queue &queue,
   cuda::detail::ScopedPrimaryContext scope(prepared.primary);
   if (!scope)
     return detail::EnqueueResult::rejected(scope.status());
-  cudaStreamCaptureStatus capture;
-  auto status = cuda::status(cudaStreamIsCapturing(*stream, &capture));
-  if (!status.ok())
-    return detail::EnqueueResult::rejected(std::move(status));
-  if (capture != cudaStreamCaptureStatusNone)
-    return detail::EnqueueResult::rejected(Status::FailedPrecondition(
-        "CCCL managed execution does not accept external capture"));
+  const bool managed = runtime(prepared.program).replay_class ==
+                       ProviderReplayClass::kManaged;
+  if (managed) {
+    cudaStreamCaptureStatus capture;
+    auto status = cuda::status(cudaStreamIsCapturing(*stream, &capture));
+    if (!status.ok())
+      return detail::EnqueueResult::rejected(std::move(status));
+    if (capture != cudaStreamCaptureStatusNone)
+      return detail::EnqueueResult::rejected(Status::FailedPrecondition(
+          "CCCL managed execution does not accept external capture"));
+  }
+  unsigned *device_status = nullptr;
+  if (prepared.program.kind == collectives::Kind::kGather &&
+      prepared.program.checked) {
+    auto initialized = cuda::detail::acquire_device_status(sequence, &device_status);
+    if (!initialized.status.ok())
+      return initialized;
+  }
   bool overflow = false;
-  status = cuda::status(collectives::submit(
+  auto status = cuda::status(collectives::submit(
       prepared.program, *input, index_input, *values, indices,
-      static_cast<Invocation *>(slot)->workspace, *stream, &overflow));
-  if (!status.ok())
+      static_cast<Invocation *>(slot)->workspace, *stream, &overflow, device_status));
+  // Managed CUB dispatch may have enqueued work before a host-side failure.
+  // Prepared kernels use the Queue's accepted-prefix completion and guards,
+  // including failure after the first tiled TopK1 launch.
+  if (!status.ok() && managed)
     (void)cudaStreamSynchronize(*stream);
   else if (overflow)
     status = Status::OutOfRange(
-        prepared.program.kind == collectives::Kind::kGather
-            ? "CCCL Gather index out of range; output unchanged"
-            : "CCCL integer scan prefix exceeds int32; output unchanged");
+        "CCCL integer scan prefix exceeds int32; output unchanged");
   return detail::EnqueueResult::accepted_command(std::move(status));
 }
 const detail::ProviderPreparedVTable kPrepared{
@@ -321,7 +338,7 @@ ProviderPrepareOutcome prepare(void *value,
                                detail::ProviderPrepared *output) noexcept {
   *output = {};
   const auto &context = *static_cast<Context *>(value);
-  if (!context.qualified || request.route != 1 || !request.shape.exact())
+  if (request.route != 1 || !request.shape.exact())
     return ProviderPrepareOutcome::unsupported(
         Status::Unimplemented("CCCL prepare domain differs"));
   collectives::Program program;
@@ -337,7 +354,7 @@ ProviderPrepareOutcome prepare(void *value,
     return ProviderPrepareOutcome::error(std::move(status));
   auto *storage = allocator.allocate(sizeof(Prepared), alignof(Prepared));
   if (!storage)
-    return ProviderPrepareOutcome::resource_declined(
+    return ProviderPrepareOutcome::error(
         Status::ResourceExhausted("CCCL prepared allocation failed"));
   auto *prepared = ::new (storage) Prepared{
       context.primary, program, data_type_size(request.outputs[0].data_type())};
@@ -350,6 +367,29 @@ ProviderPrepareOutcome prepare(void *value,
   return ProviderPrepareOutcome::prepared();
 }
 Status drain_context(void *) noexcept { return Status::Ok(); }
+Status inspect_capture_bindings(const detail::ProviderPrepared &value,
+                                bool *preserves) noexcept {
+  if (!preserves)
+    return Status::InvalidArgument("CCCL capture bindings output is null");
+  *preserves = false;
+  if (value.vtable != &kPrepared || !value.state)
+    return Status::Unimplemented("foreign CCCL prepared implementation");
+  const auto &prepared = *static_cast<const Prepared *>(value.state);
+  const auto &program = prepared.program;
+  // Only these cold fixed kernels use explicit ports and the original caller
+  // workspace. Scan and other TopK programs enter managed CUB dispatch.
+  *preserves = value.runtime.capture_compatible &&
+      value.runtime.mode == ProviderRuntimeMode::kSharedQueue &&
+      (program.count == 0 || program.kind == collectives::Kind::kGather ||
+       (program.kind == collectives::Kind::kTopK && program.k == 1 &&
+        program.arg_tiles != 0));
+  return Status::Ok();
+}
+const void *query_extension(void *, ProviderExtensionId id) noexcept {
+  static constexpr detail::CaptureBindingsVTable capture{
+      .inspect = &inspect_capture_bindings};
+  return id == detail::kCaptureBindingsExtensionId ? &capture : nullptr;
+}
 const detail::ProviderVTable kProvider{
     .identity = {.id = kCcclProviderId,
                  .name = "cccl-cuda",
@@ -358,7 +398,8 @@ const detail::ProviderVTable kProvider{
     .destroy_context = &destroy_context,
     .propose = &propose,
     .prepare = &prepare,
-    .drain_context = &drain_context};
+    .drain_context = &drain_context,
+    .query_extension = &query_extension};
 } // namespace
 
 Provider cccl_provider() noexcept {

@@ -3,12 +3,29 @@
 #include <cstddef>
 #include <cstdint>
 #include <span>
+#include <utility>
 #include "hyle/compute/low_precision.h"
 #include "hyle/compute/resource_leases.h"
 
 namespace hyle::compute {
 enum class BatchStorage : std::uint8_t { kPaged, kRagged };
-enum class BatchCacheRole : std::uint8_t { kKey, kValue };
+enum class BatchCacheRole : std::uint8_t { kKey, kValue, kMla, kRow };
+enum class MlaCacheLayout : std::uint8_t { kNone, kCkv512, kCkv512Rope64 };
+// One physical row is [CKV512, KPE64] (or CKV512 without RoPE).
+// V is the CKV prefix of that same row, never an independent allocation.
+// One scalar cache interpretation (including its fixed E4 scale) is shared
+// by CKV, optional KPE, and the V prefix. Q/output types are independent.
+struct MlaBatchCapacity final {
+  BatchStorage storage = BatchStorage::kPaged;
+  DataType query_type = DataType::kFloat16;
+  DataType output_type = DataType::kFloat16;
+  CacheStorage cache_storage{};
+  MlaCacheLayout layout = MlaCacheLayout::kCkv512Rope64;
+  std::uint32_t max_requests = 1, max_query_rows = 1, max_kv_rows = 1;
+  std::uint32_t max_pages = 1, max_page_refs = 1;
+  std::uint32_t query_heads = 1, page_size = 16;
+  friend constexpr bool operator==(MlaBatchCapacity, MlaBatchCapacity) noexcept = default;
+};
 struct BatchCapacity final {
   BatchStorage storage = BatchStorage::kPaged;
   DataType query_type = DataType::kFloat16;
@@ -19,6 +36,14 @@ struct BatchCapacity final {
   std::uint32_t query_heads = 1, kv_heads = 1;
   std::uint32_t qk_head_dim = 64, value_head_dim = 64, page_size = 16;
   friend constexpr bool operator==(BatchCapacity, BatchCapacity) noexcept = default;
+};
+// Paged row storage and selection-row/request grouping, independent of
+// attention dtype, heads or Q/K/V geometry. Encoding includes its row depth.
+struct RowCacheBatchCapacity final {
+  RowCacheEncoding encoding{};
+  std::uint32_t max_requests = 1, max_query_rows = 1, max_kv_rows = 1;
+  std::uint32_t max_pages = 1, max_page_refs = 1, page_size = 16;
+  friend constexpr bool operator==(RowCacheBatchCapacity, RowCacheBatchCapacity) noexcept = default;
 };
 struct HostBatchLayout final {
   std::span<const std::int32_t> query_indptr;
@@ -38,6 +63,8 @@ struct BatchSchemaOptions final {
 };
 namespace detail { struct BatchSchemaData; struct BatchLayoutData; struct BatchLayoutAccess; }
 class BatchLayoutVersion;
+class RowCacheBatchSchema;
+class RowCacheLayoutVersion;
 
 // Immutable capacity/identity. Cold version creation is thread-safe when the
 // supplied allocator supports concurrent allocation; handle mutation needs
@@ -53,8 +80,10 @@ public:
   HYLE_COMPUTE_BATCH_API BatchSchema &operator=(BatchSchema &&) noexcept;
   HYLE_COMPUTE_BATCH_API ~BatchSchema();
   HYLE_COMPUTE_BATCH_API static Result<BatchSchema> create(BatchCapacity, BatchSchemaOptions = {}) noexcept;
+  HYLE_COMPUTE_BATCH_API static Result<BatchSchema> create_mla(MlaBatchCapacity, BatchSchemaOptions = {}) noexcept;
   bool valid() const noexcept { return data_ != nullptr; }
   HYLE_COMPUTE_BATCH_API BatchCapacity capacity() const noexcept;
+  HYLE_COMPUTE_BATCH_API MlaCacheLayout mla_layout() const noexcept;
   HYLE_COMPUTE_BATCH_API BatchMetadataOffsets metadata_offsets() const noexcept;
   HYLE_COMPUTE_BATCH_API Result<TensorDesc> metadata_description() const noexcept;
   // Validates all borrowed input before allocation/copy. Stores an immutable
@@ -63,6 +92,8 @@ public:
   HYLE_COMPUTE_BATCH_API bool owns(const BatchLayoutVersion &) const noexcept;
 private:
   friend class BatchLayoutVersion;
+  friend class RowCacheBatchSchema;
+  friend struct detail::BatchLayoutAccess;
   explicit BatchSchema(detail::BatchSchemaData *data) noexcept : data_(data) {}
   detail::BatchSchemaData *data_ = nullptr;
 };
@@ -94,12 +125,58 @@ private:
   explicit BatchLayoutVersion(detail::BatchLayoutData *data) noexcept : data_(data) {}
   detail::BatchLayoutData *data_ = nullptr;
 };
+// Thin typed owners over the same immutable layout storage and F1 metadata
+// export. No conversion to an attention schema/layout is exposed. Allocator
+// and budget retain the original BatchSchema borrow/lifetime contract.
+class RowCacheBatchSchema final {
+public:
+  RowCacheBatchSchema() noexcept = default;
+  HYLE_COMPUTE_BATCH_API static Result<RowCacheBatchSchema> create(
+      RowCacheBatchCapacity, BatchSchemaOptions = {}) noexcept;
+  bool valid() const noexcept { return owner_.valid(); }
+  HYLE_COMPUTE_BATCH_API RowCacheBatchCapacity capacity() const noexcept;
+  BatchMetadataOffsets metadata_offsets() const noexcept { return owner_.metadata_offsets(); }
+  Result<TensorDesc> metadata_description() const noexcept { return owner_.metadata_description(); }
+  HYLE_COMPUTE_BATCH_API Result<RowCacheLayoutVersion> version(HostBatchLayout) const noexcept;
+  HYLE_COMPUTE_BATCH_API bool owns(const RowCacheLayoutVersion &) const noexcept;
+private:
+  friend class RowCacheLayoutVersion;
+  friend struct detail::BatchLayoutAccess;
+  explicit RowCacheBatchSchema(BatchSchema owner) noexcept : owner_(std::move(owner)) {}
+  BatchSchema owner_;
+};
+class RowCacheLayoutVersion final {
+public:
+  RowCacheLayoutVersion() noexcept = default;
+  bool valid() const noexcept { return owner_.valid(); }
+  HYLE_COMPUTE_BATCH_API RowCacheBatchSchema schema() const noexcept;
+  std::uint64_t generation() const noexcept { return owner_.generation(); }
+  BatchLayoutFacts facts() const noexcept { return owner_.facts(); }
+  // query_indptr groups selection rows by request; kv_indptr indexes each
+  // request's page references. This is a visibility/physical-page snapshot,
+  // not validation of future IDs or their per-query causal policy.
+  HostBatchLayout host() const noexcept { return owner_.host(); }
+  Result<ReadLease> metadata() const noexcept { return owner_.metadata(); }
+  bool operator==(const RowCacheLayoutVersion &other) const noexcept { return owner_ == other.owner_; }
+private:
+  friend class RowCacheBatchSchema;
+  friend struct detail::BatchLayoutAccess;
+  explicit RowCacheLayoutVersion(BatchLayoutVersion owner) noexcept : owner_(std::move(owner)) {}
+  BatchLayoutVersion owner_;
+};
+HYLE_COMPUTE_BATCH_API Status validate_row_cache_batch_capacity(RowCacheBatchCapacity) noexcept;
+HYLE_COMPUTE_BATCH_API Result<TensorDesc> row_cache_paged_description(RowCacheBatchCapacity) noexcept;
 // Shared cold validation/schema functions used by typed operations/providers.
 HYLE_COMPUTE_BATCH_API Status validate_batch_capacity(BatchCapacity) noexcept;
 // Description geometry is separate from native math qualification. Cache
 // scales belong to capacity/schema identity, not the encoded TensorDesc bytes.
 HYLE_COMPUTE_BATCH_API Result<TensorDesc> batch_query_description(BatchCapacity) noexcept;
+// An exact packed Q extent within the same schema capacity. The one-argument
+// constructor above continues to describe the full max_query_rows allocation.
+HYLE_COMPUTE_BATCH_API Result<TensorDesc> batch_query_description(BatchCapacity, std::uint32_t query_rows) noexcept;
 HYLE_COMPUTE_BATCH_API Result<TensorDesc> batch_cache_description(BatchCapacity, BatchCacheRole) noexcept;
+HYLE_COMPUTE_BATCH_API Result<BatchCapacity> mla_batch_capacity(MlaBatchCapacity) noexcept;
+HYLE_COMPUTE_BATCH_API Result<TensorDesc> batch_cache_description(const BatchSchema &, BatchCacheRole) noexcept;
 HYLE_COMPUTE_BATCH_API Result<TensorDesc> batch_output_description(BatchCapacity, std::uint32_t query_rows) noexcept;
 HYLE_COMPUTE_BATCH_API Status validate_batch_attention_options(bool causal, std::int32_t window_left) noexcept;
 HYLE_COMPUTE_BATCH_API Status validate_batch_attention_layout(

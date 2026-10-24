@@ -1,4 +1,5 @@
 #include "region.h"
+#include "gated_delta_scale.h"
 #include "native_graph.h"
 
 #include <algorithm>
@@ -11,6 +12,7 @@
 #include "ggml-backend.h"
 #include "ggml.h"
 #include "explicit_rope.h"
+#include "sink_mask.h"
 #include "hyle/compute/low_precision.h"
 #include "hyle/compute/model_ops.h"
 
@@ -53,8 +55,9 @@ std::int64_t attention_query_block(const RegionRecipe &recipe,
           : std::uint64_t(q[2]) * std::uint64_t(q[3]) * sizeof(float);
   auto quantum = alignment / std::gcd(alignment, query_pitch);
   if (sink) {
+    const auto &mask = recipe.values[node.inputs[3]];
     const auto mask_pitch =
-        std::uint64_t(recipe.values[node.inputs[3]].byte_strides()[0]);
+        std::uint64_t(mask.byte_strides()[mask.rank() - 2]);
     quantum = std::lcm(quantum, alignment / std::gcd(alignment, mask_pitch));
   }
   // Native matmul/softmax views require aligned descriptor origins. At least
@@ -97,9 +100,7 @@ tiled_math_attention(ggml_context *context, ggml_tensor *query,
           Status::Unimplemented("ggml Vulkan attention score accumulation"));
     ggml_tensor *probabilities;
     if (mask) {
-      auto *rows_mask =
-          ggml_view_2d(context, mask, mask->ne[0], rows, mask->nb[1],
-                       std::size_t(begin) * mask->nb[1]);
+      auto *rows_mask = ggml_runtime::sink_mask_rows(context, mask, begin, rows);
       probabilities = ggml_soft_max_ext(context, scores, rows_mask, scale, 0.F);
       ggml_soft_max_add_sinks(probabilities, sinks);
     } else {
@@ -164,7 +165,7 @@ bool floating(DataType type) noexcept {
          type == DataType::kBFloat16;
 }
 ggml_type native_type(DataType type) noexcept {
-  if (type == DataType::kUInt8)
+  if (type == DataType::kUInt8 || type == DataType::kFloat8E4M3FN)
     return GGML_TYPE_I8;
   if (type == DataType::kFloat16)
     return GGML_TYPE_F16;
@@ -213,6 +214,8 @@ ggml_type native_quantized_type(const TensorDesc &description) noexcept {
     return GGML_TYPE_IQ4_XS;
   case GgufQuantizedType::kMxfp4:
     return GGML_TYPE_MXFP4;
+  case GgufQuantizedType::kNvfp4:
+    return GGML_TYPE_NVFP4;
   default:
     break; // Extended IQ1 formats still need original Vulkan qualification.
   }
@@ -249,7 +252,14 @@ bool native_embedding_table(const TensorDesc &description) noexcept {
        *type != GgufQuantizedType::kQ4_0 && *type != GgufQuantizedType::kQ4_1 &&
        *type != GgufQuantizedType::kQ5K &&
        *type != GgufQuantizedType::kQ4K && *type != GgufQuantizedType::kQ6K &&
-       *type != GgufQuantizedType::kQ8_0) ||
+       *type != GgufQuantizedType::kQ8_0 &&
+       *type != GgufQuantizedType::kIq2Xxs && *type != GgufQuantizedType::kIq2Xs &&
+       *type != GgufQuantizedType::kIq2S && *type != GgufQuantizedType::kIq1S &&
+       *type != GgufQuantizedType::kIq1M &&
+       *type != GgufQuantizedType::kIq3Xxs && *type != GgufQuantizedType::kIq3S &&
+       *type != GgufQuantizedType::kIq4Nl && *type != GgufQuantizedType::kIq4Xs &&
+       *type != GgufQuantizedType::kMxfp4 &&
+       *type != GgufQuantizedType::kNvfp4) ||
       description.data_type() != DataType::kFloat32 ||
       description.rank() != 2 || description.block_axis() != 1)
     return false;
@@ -280,6 +290,33 @@ bool resident_attention_view(const TensorDesc &description) noexcept {
       return false;
   return true;
 }
+bool packed_matrix_rhs(const TensorDesc &description) noexcept {
+  if (!description.is_plain() || description.rank() < 2 || description.rank() > 4 ||
+      !floating(description.data_type())) return false;
+  const auto transposed = description.transposed();
+  return transposed && transposed->is_dense();
+}
+bool grouped_activation_domain(const TensorDesc &description) noexcept {
+  if (!description.valid() || !description.is_plain() ||
+      description.data_type() != DataType::kFloat32 || description.rank() != 3 ||
+      !description.element_count() || *description.element_count() == 0)
+    return false;
+  constexpr std::int64_t scalar_bytes = sizeof(float);
+  const auto shape = description.dimensions();
+  const auto strides = description.byte_strides();
+  if (shape[1] != 1 && strides[1] != 0)
+    return description.is_dense() && *description.element_count() <= INT32_MAX;
+  // Only a read-only slot broadcast of complete contiguous K rows. Its real
+  // token pitch remains authoritative. The unused T1 pitch is normalized;
+  // native element capacity counts the actual shared rows, not S copies.
+  const auto bytes = description.required_bytes();
+  return shape[1] <= INT32_MAX && shape[2] <= INT32_MAX &&
+         shape[0] <= INT32_MAX / shape[2] && bytes && *bytes <= UINT32_MAX &&
+         strides[2] == scalar_bytes &&
+         (shape[0] == 1 ||
+          (strides[0] > 0 && strides[0] % scalar_bytes == 0 &&
+           strides[0] / scalar_bytes >= shape[2]));
+}
 bool tensor_domain(const TensorDesc &description) noexcept {
   const bool cache = description.rank() >= 3 && description.rank() <= 4 &&
       description.block_axis() == description.rank()-1 &&
@@ -290,11 +327,19 @@ bool tensor_domain(const TensorDesc &description) noexcept {
           quantized_weight_domain(description) ||
           quantized_grouped_weight_domain(description) ||
           (description.is_plain() &&
-           (description.is_dense() || resident_attention_view(description)) &&
+           (description.is_dense() || resident_attention_view(description) ||
+            packed_matrix_rhs(description)) &&
            (floating(description.data_type()) ||
             description.data_type() == DataType::kInt32))) &&
          description.element_count() && *description.element_count() > 0 &&
          *description.element_count() <= INT32_MAX;
+}
+bool e4_cache_domain(const TensorDesc &description, bool compact = false) noexcept {
+  return description.valid() && description.is_plain() && description.is_dense() &&
+      (description.rank()==4 || (compact && description.rank()==3)) &&
+      description.data_type()==DataType::kFloat8E4M3FN &&
+      description.element_count() && *description.element_count()>0 &&
+      *description.element_count()<=INT32_MAX;
 }
 bool same_shape(const TensorDesc &a, const TensorDesc &b) noexcept {
   return a.rank() == b.rank() &&
@@ -496,6 +541,25 @@ struct Imports final {
 Status PagedAttentionRead::infer_output_descriptions(
     std::span<const TensorDesc> inputs,
     std::span<TensorDesc> outputs) const noexcept {
+  std::array<TensorDesc,4> compact_inputs;
+  if(compact_mla){
+    if(inputs.size()!=(paged?3u:2u) || !inputs[1].is_plain() ||
+        inputs[1].rank()!=(paged?4u:3u) || !inputs[1].is_dense() ||
+        inputs[1].dimensions()[inputs[1].rank()-2]!=1 ||
+        (inputs[1].dimensions().back()!=512 && inputs[1].dimensions().back()!=576) ||
+        (float8_cache && key_scale!=value_scale))
+      return Status::InvalidArgument("Vulkan MLA needs its truthful single packed cache and shared scale");
+    const auto k=inputs[1].dimensions();
+    const std::array<std::int64_t,4> shape=paged?
+        std::array<std::int64_t,4>{k[0],k[1],1,512}:
+        std::array<std::int64_t,4>{k[0],1,512,1};
+    HYLE_ASSIGN_OR_RETURN(auto value,TensorDesc::strided_bytes(inputs[1].data_type(),
+        std::span(shape).first(inputs[1].rank()),inputs[1].byte_strides()));
+    // There is no external V port: native construction below makes this
+    // exact prefix of the same K root. Never admit arbitrary padded E4 V.
+    compact_inputs={inputs[0],inputs[1],value,paged?inputs[2]:TensorDesc{}};
+    inputs=std::span(compact_inputs).first(paged?4u:3u);
+  }
   if (inputs.size() != (paged ? 4u : 3u) || outputs.size() != 1 || !logical_rows ||
       logical_rows > INT32_MAX || !std::isfinite(scale) ||
       inputs[0].rank() != 4 || inputs[1].rank() != (paged?4u:3u) ||
@@ -514,17 +578,30 @@ Status PagedAttentionRead::infer_output_descriptions(
       (paged && std::uint64_t(table_offset) + refs >
           std::uint64_t(inputs[3].dimensions()[0])))
     return Status::InvalidArgument("Vulkan paged logical/table bounds");
+  const auto query_type = inputs[0].data_type();
+  const bool bfloat = query_type == DataType::kBFloat16;
   const bool plain = inputs[1].is_plain() && inputs[2].is_plain() &&
-      inputs[1].data_type() == DataType::kFloat16 && inputs[2].data_type() == DataType::kFloat16;
+      (inputs[1].data_type() == DataType::kFloat16 || inputs[1].data_type() == DataType::kBFloat16) &&
+      inputs[2].data_type() == inputs[1].data_type();
   const auto q8 = CacheStorage::q8_0().value();
   const auto key_cache = cache_tensor_description(q8,k), value_cache = cache_tensor_description(q8,v);
   const bool encoded = key_cache && value_cache && inputs[1] == *key_cache && inputs[2] == *value_cache;
-  if (!inputs[0].is_plain() || inputs[0].data_type() != DataType::kFloat16 ||
-      (!plain && !encoded) ||
-      (q[3] != 64 && q[3] != 128 && q[3] != 256) ||
-      (v.back() != q[3] && !(q[3] == 64 && v.back() == 128)))
-    return Status::Unimplemented("Vulkan paged qualified F16 flash depth");
-  HYLE_ASSIGN_OR_RETURN(outputs[0],TensorDesc::dense(DataType::kFloat16,
+  const auto e4_key=CacheStorage::float8(key_scale),e4_value=CacheStorage::float8(value_scale);
+  const bool e4 = (paged || compact_mla) && float8_cache && e4_key && e4_value &&
+      inputs[1].is_plain() && inputs[2].is_plain() &&
+      inputs[1].is_dense() && (inputs[2].is_dense() || compact_mla) &&
+      inputs[1].data_type()==DataType::kFloat8E4M3FN &&
+      inputs[2].data_type()==DataType::kFloat8E4M3FN;
+  if (!inputs[0].is_plain() || (query_type != DataType::kFloat16 && !bfloat) ||
+      (!plain && !encoded && !e4) || (float8_cache && !e4) ||
+      !((q[3] == v.back() && (q[3] == 64 || q[3] == 128 || q[3] == 256)) ||
+        (q[3] == 64 && v.back() == 128) ||
+        ((plain || (e4 && compact_mla)) && v.back() == 512 &&
+         (q[3] == 512 || q[3] == 576))))
+    return Status::Unimplemented("Vulkan paged qualified floating flash depth");
+  // Query/cache storage does not select the public result dtype. Keep flash
+  // and the packed join in F32, then let the route round once at its boundary.
+  HYLE_ASSIGN_OR_RETURN(outputs[0],TensorDesc::dense(DataType::kFloat32,
       std::array<std::int64_t,4>{1,q[1],q[2],v.back()}));
   return Status::Ok();
 }
@@ -539,22 +616,30 @@ bool region_supports(const Operation &operation,
         tensor_domain(inputs[0]) && outputs.size()==1 &&
         infer_output_descriptions(operation,inputs,inferred).ok() && outputs[0]==inferred[0];
   }
+  const bool grouped =
+      operation.custom_as<model_ops::GroupedMatMul>().has_value();
   if (inputs.empty() || outputs.empty() ||
-      !std::ranges::all_of(outputs, tensor_domain) ||
-      !std::ranges::all_of(inputs, tensor_domain))
+      !std::ranges::all_of(outputs, tensor_domain))
     return false;
-  // The padded resident admission belongs only to SDPA. Other operations keep
-  // their original dense/encoded domain, including native weight descriptors.
+  const auto paged_read=operation.custom_as<PagedAttentionRead>();
+  for (std::size_t port = 0; port < inputs.size(); ++port)
+    if (!tensor_domain(inputs[port]) &&
+        !(paged_read && paged_read->float8_cache &&
+          (port==1 || (!paged_read->compact_mla && port==2)) &&
+          e4_cache_domain(inputs[port],paged_read->compact_mla)) &&
+        !(grouped && port == 1 && grouped_activation_domain(inputs[port])))
+      return false;
+  // Padded resident ports belong to SDPA; MatMul separately checks its exact
+  // packed RHS layout. Other operations retain their dense/encoded domain.
   if (!operation.get_if<ScaledDotProductAttention>() &&
-      !operation.custom_as<PagedAttentionRead>() &&
+      !operation.custom_as<PagedAttentionRead>() && !operation.get_if<MatMul>() &&
+      !grouped &&
       (!std::ranges::all_of(inputs, [](const auto &input) {
         return !input.is_plain() || input.is_dense();
       }) || !std::ranges::all_of(outputs, [](const auto &output) {
         return !output.is_plain() || output.is_dense();
       })))
     return false;
-  const bool grouped =
-      operation.custom_as<model_ops::GroupedMatMul>().has_value();
   const bool embedding =
       operation.get_if<Gather>() && native_embedding_table(inputs[0]);
   if (!operation.get_if<MatMul>() && !grouped && !operation.custom_as<PagedAttentionRead>() &&
@@ -602,8 +687,8 @@ bool region_supports(const Operation &operation,
     return outputs.size() == 1 &&
            infer_output_descriptions(operation, inputs, inferred).ok() &&
            inferred[0] == outputs[0] &&
-           *inputs[3].element_count() <=
-               std::size_t{INT32_MAX} / sizeof(float) / inputs[0].dimensions()[2];
+           ggml_runtime::sink_score_elements(inputs[0].dimensions(), inputs[1].dimensions()) <=
+               std::size_t{INT32_MAX} / sizeof(float);
   }
   if (operation.custom_as<model_ops::CausalConv1d>())
     return inputs.size() == 2 && outputs.size() == 1 &&
@@ -614,8 +699,7 @@ bool region_supports(const Operation &operation,
     if (inputs.size() != 3 || outputs.size() != 1)
       return false;
     if (quantized_grouped_weight_domain(inputs[0]))
-      return inputs[1].is_plain() && inputs[1].is_dense() &&
-             inputs[1].data_type() == DataType::kFloat32 &&
+      return grouped_activation_domain(inputs[1]) &&
              inputs[2].is_plain() && inputs[2].is_dense() &&
              inputs[2].data_type() == DataType::kInt32 &&
              outputs[0].is_plain() && outputs[0].is_dense() &&
@@ -623,8 +707,7 @@ bool region_supports(const Operation &operation,
     return inputs[0].is_plain() && inputs[0].is_dense() &&
            (inputs[0].data_type() == DataType::kFloat32 ||
             inputs[0].data_type() == DataType::kBFloat16) &&
-           inputs[1].is_plain() && inputs[1].is_dense() &&
-           inputs[1].data_type() == DataType::kFloat32 &&
+           grouped_activation_domain(inputs[1]) &&
            inputs[2].is_plain() && inputs[2].is_dense() &&
            inputs[2].data_type() == DataType::kInt32 &&
            outputs[0].is_plain() && outputs[0].is_dense() &&
@@ -632,7 +715,8 @@ bool region_supports(const Operation &operation,
   }
   if (operation.custom_as<model_ops::BFloatLinearF32>())
     return inputs.size() == 2 && outputs.size() == 1 &&
-           outputs[0].data_type() == DataType::kFloat32;
+           outputs[0].data_type() == DataType::kFloat32 &&
+           (inputs[0].rank()==2 || inputs[0].data_type()==DataType::kFloat32);
   if (operation.custom_as<model_ops::HyperConnectionCombine>() ||
       operation.custom_as<model_ops::HyperConnectionPre>() ||
       operation.custom_as<model_ops::HyperConnectionPost>())
@@ -669,7 +753,9 @@ bool region_supports(const Operation &operation,
         matmul->accumulation_type != DataType::kFloat32 ||
         inputs[0].rank() < 2 || inputs[0].rank() > GGML_MAX_DIMS ||
         inputs[1].rank() < 2 || inputs[1].rank() > GGML_MAX_DIMS ||
-        !inputs[0].is_dense() || !inputs[1].is_dense() ||
+        !inputs[0].is_dense() ||
+        (!inputs[1].is_dense() && !packed_matrix_rhs(inputs[1])) ||
+        !outputs[0].is_dense() ||
         inputs[0].data_type() != inputs[1].data_type() ||
         outputs[0].data_type() != inputs[0].data_type() ||
         !floating(inputs[0].data_type()))
@@ -683,16 +769,26 @@ bool region_supports(const Operation &operation,
     };
     fill_batch(inputs[0], left_batch);
     fill_batch(inputs[1], right_batch);
-    return left_batch[0] % right_batch[0] == 0 &&
-           left_batch[1] % right_batch[1] == 0;
+    // HYLE follows ordinary per-axis broadcasting in either operand. The
+    // native MatMul below represents a shared activation with a zero-stride
+    // view instead of allocating repeated activation rows.
+    for (std::size_t axis = 0; axis < left_batch.size(); ++axis)
+      if (left_batch[axis] != right_batch[axis] &&
+          left_batch[axis] != 1 && right_batch[axis] != 1)
+        return false;
+    return true;
   }
   if (const auto *rope = operation.get_if<RoPE>())
-    return inputs.size() == 3 && outputs.size() == 1 && inputs[0].rank() == 4 &&
-           rope->sequence_axis == 1 && inputs[0].is_dense() &&
+    return inputs.size() == 3 && outputs.size() == 1 &&
+           ((inputs[0].rank() == 4 &&
+             (rope->sequence_axis == 1 || rope->sequence_axis == -3)) ||
+            (inputs[0].rank() == 3 &&
+             (rope->sequence_axis == 1 || rope->sequence_axis == -2))) &&
+           inputs[0].is_dense() &&
            (inputs[0].data_type() == DataType::kFloat32 ||
             inputs[0].data_type() == DataType::kFloat16) &&
-           inputs[1].rank() == 1 && inputs[1].data_type() == DataType::kInt32 &&
-           inputs[2].rank() == 1 &&
+           inputs[1].rank() <= 2 && inputs[1].data_type() == DataType::kInt32 &&
+           inputs[2].rank() <= 2 &&
            inputs[2].data_type() == DataType::kFloat32 &&
            outputs[0] == inputs[0];
   if (const auto *hadamard = operation.get_if<Hadamard>()) {
@@ -736,6 +832,8 @@ bool region_supports(const Operation &operation,
   const bool recurrent =
       operation.custom_as<model_ops::RecurrentGatedDeltaNet>().has_value();
   if (operation.get_if<GatedDeltaNet>() || recurrent) {
+    if (ggml_hyle_vulkan_gdn_output_scale_contract() !=
+        ggml_runtime::kGdnOutputScaleContract) return false;
     std::array<TensorDesc, 2> inferred;
     if (inputs.size() != (recurrent ? 8U : 6U) || outputs.size() != 2 ||
         !infer_output_descriptions(operation, inputs, inferred).ok() ||
@@ -764,6 +862,13 @@ bool region_supports(const Operation &operation,
            outputs[1].data_type() == DataType::kInt32 &&
            (topk->axis == -1 ||
             topk->axis == static_cast<std::int32_t>(inputs[0].rank()) - 1);
+  if (const auto gather = operation.custom_as<model_ops::GatherElements>()) {
+    std::array<TensorDesc,1> inferred;
+    return inputs.size()==2 && outputs.size()==1 && inputs[0].rank()==2 &&
+           (gather->axis==1 || gather->axis==-1) &&
+           gather->bounds==IndexBoundsPolicy::kUnchecked &&
+           gather->infer_output_descriptions(inputs,inferred).ok() && outputs[0]==inferred[0];
+  }
   if (const auto *gather = operation.get_if<Gather>()) {
     if (native_embedding_table(inputs[0]))
       return inputs.size() == 2 && outputs.size() == 1 &&
@@ -859,10 +964,26 @@ Result<Region> Region::create(NativeDevice device,
     return std::unexpected(
         Status::InvalidArgument("ggml Vulkan region recipe"));
   try {
+    // Raw E4 is admitted only when every consuming port is a typed page read.
+    const auto cache_input=[&](std::uint32_t value){
+      if(recipe.values[value].data_type()!=DataType::kFloat8E4M3FN)
+        return false;
+      bool read=false;
+      for(const auto& node:recipe.nodes)for(std::size_t port=0;port<node.inputs.size();++port)
+        if(node.inputs[port]==value){
+          const auto page=node.operation.custom_as<PagedAttentionRead>();
+          if(!page || (!page->paged && !page->compact_mla) || !page->float8_cache ||
+              (port!=1 && (page->compact_mla || port!=2)) ||
+              !e4_cache_domain(recipe.values[value],page->compact_mla))return false;
+          read=true;
+        }
+      return read;
+    };
     std::vector<bool> available(recipe.values.size(), false);
     for (const auto input : recipe.inputs) {
       if (input >= available.size() || available[input] ||
-          !tensor_domain(recipe.values[input]))
+          (!tensor_domain(recipe.values[input]) &&
+           !grouped_activation_domain(recipe.values[input]) && !cache_input(input)))
         return std::unexpected(
             Status::InvalidArgument("ggml Vulkan region input"));
       available[input] = true;
@@ -915,6 +1036,7 @@ Result<Region> Region::create(NativeDevice device,
                   : node.operation.get_if<Reduce>()        ? 12
                   : node.operation.get_if<Scatter>()       ? 10
                   : node.operation.get_if<TopK>()          ? 10
+                  : node.operation.custom_as<model_ops::GatherElements>() ? 8
                   : node.operation.get_if<LayerNorm>()     ? 5
                   : node.operation.get_if<GatedDeltaNet>() ? 5
                                                            : 3;
@@ -926,6 +1048,33 @@ Result<Region> Region::create(NativeDevice device,
       for (const auto input : node.inputs)
         rank = (std::max)(rank, recipe.values[input].rank());
       capacity += 4 * rank + 2 * node.inputs.size() + 4;
+      if (node.operation.get_if<RoPE>() &&
+          recipe.values[node.inputs[0]].rank() == 3)
+        capacity += 2; // Implicit head and public-rank metadata restores.
+      if (node.operation.get_if<MatMul>()) {
+        const auto &left = recipe.values[node.inputs[0]];
+        const auto &right = recipe.values[node.inputs[1]];
+        const auto batch = [](const TensorDesc &description, std::size_t axis) {
+          return description.rank() > axis
+                     ? std::size_t(description.dimensions()[description.rank() - axis - 1])
+                     : std::size_t{1};
+        };
+        const auto a2 = batch(left, 2), a3 = batch(left, 3);
+        const auto b2 = batch(right, 2), b3 = batch(right, 3);
+        if (b3 < a3 || (left.dimensions()[left.rank() - 2] != 1 &&
+                        (a2 < b2 || a3 < b3))) {
+          // Two views, one native MatMul and at most one balanced Concat
+          // per run, plus one optional unique-A widening. Bound arithmetic
+          // before creating the cold DAG; no expanded A or W allocation.
+          const auto high = (std::max)(a3, b3);
+          const auto low = a2 < b2 ? b2 : 1;
+          constexpr auto maximum = std::size_t{INT32_MAX} / 4;
+          if (capacity > maximum || high > (maximum - capacity) / 5 / low)
+            return std::unexpected(Status::ResourceExhausted(
+                "ggml Vulkan MatMul broadcast run metadata"));
+          capacity += 5 * high * low;
+        }
+      }
       if (const auto rows = attention_query_block(
               recipe, node, device.native().storage_buffer_alignment)) {
         const auto queries = recipe.values[node.inputs[0]].dimensions()[1];
@@ -1054,8 +1203,20 @@ Result<Region> Region::create(NativeDevice device,
             ggml_cont(context, ggml_permute(context, arguments[0], 1, 0, 2, 3));
         output = ggml_ssm_conv(context, samples, arguments[1]);
       } else if (node.operation.custom_as<model_ops::GroupedMatMul>()) {
-        output =
-            ggml_mul_mat_id(context, arguments[0], arguments[1], arguments[2]);
+        auto *activation = arguments[1];
+        if (activation->ne[1] == 1 ||
+            recipe.values[node.inputs[1]].byte_strides()[1] == 0) {
+          // GGML broadcasts ne1==1 across the ID slots. Keep a positive row
+          // pitch, the actual token pitch and the original allocation edge;
+          // no repeated activation payload is materialized.
+          const auto row_pitch = std::size_t(activation->ne[0]) * sizeof(float);
+          const auto token_pitch = activation->ne[2] == 1
+              ? (std::max)(activation->nb[2], row_pitch) : activation->nb[2];
+          activation = ggml_view_3d(
+              context, activation, activation->ne[0], 1, activation->ne[2],
+              row_pitch, token_pitch, 0);
+        }
+        output = ggml_mul_mat_id(context, arguments[0], activation, arguments[2]);
         if (!ggml_prec_set_acc(output, GGML_PREC_F32))
           return std::unexpected(Status::Unimplemented(
               "original ggml grouped F32 accumulation unavailable"));
@@ -1080,6 +1241,13 @@ Result<Region> Region::create(NativeDevice device,
                                         arguments[2], arguments[3]);
       } else if (node.operation.get_if<MatMul>() ||
                  node.operation.custom_as<model_ops::BFloatLinearF32>()) {
+        const bool mixed_bfloat=node.operation.custom_as<model_ops::BFloatLinearF32>() &&
+            recipe.values[node.inputs[0]].data_type()==DataType::kFloat32;
+        const bool aligned_batch=mixed_bfloat && recipe.values[node.inputs[0]].rank()==3;
+        const auto batches=aligned_batch?left->ne[2]:1;
+        if(mixed_bfloat)
+          // One native matvec program: [K,1,M,B] A and [K,N,1,B] W.
+          left=ggml_reshape_4d(context,left,left->ne[0],1,left->ne[1],batches);
         // The fixed upstream Vulkan small-matvec selector admits a BF16
         // activation for up to eight rows (or one native row per batch), but
         // its selected pipeline
@@ -1092,34 +1260,124 @@ Result<Region> Region::create(NativeDevice device,
         if (left->type == GGML_TYPE_BF16 && small_matvec)
           left = ggml_cast(context, left, GGML_TYPE_F32);
         auto *right = arguments[1];
+        if(aligned_batch)right=ggml_reshape_4d(context,right,right->ne[0],right->ne[1],1,batches);
         const bool quantized =
             quantized_weight_domain(recipe.values[node.inputs[1]]);
         if (node.operation.get_if<MatMul>() && !quantized) {
           right = ggml_transpose(context, right);
           if (!ggml_is_contiguous(right))
             right = ggml_cont(context, right);
-          else if (ggml_is_transposed(right))
-            // A unit axis can be contiguous despite its inherited transpose
-            // stride. Rebuild dense unit strides with the original zero-copy
-            // view before ggml_mul_mat checks its stronger input contract.
+          else if (ggml_is_transposed(right) ||
+                   right->nb[1] != right->nb[0] * std::size_t(right->ne[0]) ||
+                   (right->ne[3] != 1 &&
+                    right->nb[3] != right->nb[2] * std::size_t(right->ne[2])))
+            // Contiguity ignores singleton-axis strides, while the native
+            // matrix pipeline also requires canonical row and batch pitches.
+            // Normalize only metadata; retain the original bytes and precision.
             right = ggml_reshape_4d(context, right, right->ne[0], right->ne[1],
                                     right->ne[2], right->ne[3]);
         }
-        auto *product = ggml_mul_mat(context, right, left);
-        if (!ggml_prec_set_acc(product, GGML_PREC_F32))
-          return std::unexpected(
-              Status::Unimplemented("ggml Vulkan MatMul F32 accumulation"));
-        if (right->type == GGML_TYPE_F32 && left->type == GGML_TYPE_F32 &&
-            !ggml_prec_set_src(product, GGML_PREC_F32, 1))
-          return std::unexpected(
-              Status::Unimplemented("ggml Vulkan MatMul F32 operands"));
+        const auto batch2 = (std::max)(left->ne[2], right->ne[2]);
+        const auto batch3 = (std::max)(left->ne[3], right->ne[3]);
+        const auto multiply = [&](ggml_tensor *a, ggml_tensor *b)
+            -> Result<ggml_tensor *> {
+          auto *product = ggml_mul_mat(context, b, a);
+          if (!ggml_prec_set_acc(product, GGML_PREC_F32))
+            return std::unexpected(
+                Status::Unimplemented("ggml Vulkan MatMul F32 accumulation"));
+          if (b->type == GGML_TYPE_F32 && a->type == GGML_TYPE_F32 &&
+              !ggml_prec_set_src(product, GGML_PREC_F32, 1))
+            return std::unexpected(
+                Status::Unimplemented("ggml Vulkan MatMul F32 operands"));
+          return product;
+        };
+        ggml_tensor *product = nullptr;
+        // The original matrix kernel uses affine flat-batch addresses and
+        // requires equal outer batch axes. Its vector kernel understands
+        // actual batch strides, so the common M1 shared-A path stays intact.
+        // Other two-way broadcasts become cold native MatMul runs, reading
+        // the original storage and joining only their result tensors.
+        if (right->ne[3] != batch3 ||
+            (left->ne[1] != 1 &&
+             (left->ne[2] != batch2 || left->ne[3] != batch3))) {
+          if (left->type == GGML_TYPE_BF16 && left->ne[1] <= 8)
+            left = ggml_cast(context, left, GGML_TYPE_F32);
+          const bool split_low = left->ne[2] != batch2;
+          const auto join = [&](std::vector<ggml_tensor *> parts, int axis) {
+            while (parts.size() > 1) {
+              std::size_t next = 0;
+              for (std::size_t i = 0; i < parts.size(); i += 2)
+                parts[next++] = i + 1 < parts.size()
+                                    ? ggml_concat(context, parts[i], parts[i + 1], axis)
+                                    : parts[i];
+              parts.resize(next);
+            }
+            return parts.front();
+          };
+          const auto slice = [&](ggml_tensor *source, std::int64_t high,
+                                 std::int64_t low) {
+            const auto offset =
+                (source->ne[3] == 1 ? 0 : std::size_t(high) * source->nb[3]) +
+                (split_low && source->ne[2] != 1
+                     ? std::size_t(low) * source->nb[2] : 0);
+            return ggml_view_4d(context, source, source->ne[0], source->ne[1],
+                split_low ? 1 : source->ne[2], 1, source->nb[1],
+                source->nb[2], source->nb[3], offset);
+          };
+          std::vector<ggml_tensor *> outer;
+          outer.reserve(std::size_t(batch3));
+          for (std::int64_t high = 0; high < batch3; ++high) {
+            std::vector<ggml_tensor *> inner;
+            const auto runs = split_low ? batch2 : 1;
+            inner.reserve(std::size_t(runs));
+            for (std::int64_t low = 0; low < runs; ++low) {
+              HYLE_ASSIGN_OR_RETURN(auto part,
+                  multiply(slice(left, high, low), slice(right, high, low)));
+              inner.push_back(part);
+            }
+            outer.push_back(join(std::move(inner), 2));
+          }
+          product = join(std::move(outer), 3);
+        } else {
+          // The native vector path reads nb2/nb3, so a broadcast changes
+          // metadata only and retains the original unique-A byte span.
+          if (left->ne[2] != batch2 || left->ne[3] != batch3) {
+            // ggml_view_4d first checks a dense ne product, before applying
+            // strides. Create the original valid view before extending only
+            // singleton batch axes; their zero strides retain the same span.
+            const auto source_bytes = ggml_nbytes(left);
+            auto *broadcast = ggml_view_4d(
+                context, left, left->ne[0], left->ne[1], left->ne[2],
+                left->ne[3], left->nb[1], left->nb[2], left->nb[3], 0);
+            if (left->ne[2] != batch2) {
+              broadcast->ne[2] = batch2;
+              broadcast->nb[2] = 0;
+            }
+            if (left->ne[3] != batch3) {
+              broadcast->ne[3] = batch3;
+              broadcast->nb[3] = 0;
+            }
+            if (ggml_nbytes(broadcast) > source_bytes)
+              return std::unexpected(Status::Internal(
+                  "ggml Vulkan MatMul broadcast exceeds source span"));
+            left = broadcast;
+          }
+          HYLE_ASSIGN_OR_RETURN(product, multiply(left, right));
+        }
         const auto target =
             native_type(recipe.values[node.outputs[0]].data_type());
         output = product->type == target ? product
                                          : ggml_cast(context, product, target);
       } else if (const auto *rope = node.operation.get_if<RoPE>()) {
+        auto *data = left;
+        if (recipe.values[node.inputs[0]].rank() == 3)
+          // BSD is the original single-head case. The common restore_shape
+          // below removes this metadata-only head after explicit-frequency
+          // RoPE; input storage and all arithmetic remain unchanged.
+          data = ggml_reshape_4d(context, data, data->ne[0], 1,
+                                  data->ne[1], data->ne[2]);
         output = ggml_runtime::explicit_rope(
-            context, left, arguments[1], arguments[2], rope->rotary_dimensions,
+            context, data, arguments[1], arguments[2], rope->rotary_dimensions,
             rope->layout == RopeLayout::kInterleaved);
       } else if (node.operation.get_if<Hadamard>()) {
         const auto width = recipe.values[node.inputs[0]].dimensions().back();
@@ -1138,11 +1396,18 @@ Result<Region> Region::create(NativeDevice device,
       } else if (const auto sink = node.operation.custom_as<model_ops::SinkAttention>()) {
         auto *query = ggml_permute(context, arguments[0], 0, 2, 1, 3);
         auto *key = ggml_permute(context, arguments[1], 0, 2, 1, 3);
+        // A singleton KV head can keep its pre-permute nb2 while remaining
+        // contiguous. Canonical strides let Vulkan retain the F32 carrier.
+        if (ggml_is_contiguous(key) && key->ne[3] != 1 &&
+            key->nb[3] != key->nb[2] * std::size_t(key->ne[2]))
+          key = ggml_reshape_4d(context, key, key->ne[0], key->ne[1],
+                                key->ne[2], key->ne[3]);
         auto *value = ggml_permute(context, arguments[2], 0, 2, 1, 3);
+        auto *mask = ggml_runtime::sink_mask(context, arguments[3]);
         if (const auto rows = attention_query_block(
                 recipe, node, state.device.native().storage_buffer_alignment)) {
           HYLE_ASSIGN_OR_RETURN(output,
-              tiled_math_attention(context, query, key, value, arguments[3],
+              tiled_math_attention(context, query, key, value, mask,
                                    arguments[4], sink->scale, false, rows));
         } else {
           query = ggml_cont(context, query);
@@ -1150,7 +1415,7 @@ Result<Region> Region::create(NativeDevice device,
           if (!ggml_prec_set_acc(scores, GGML_PREC_F32) ||
               !ggml_prec_set_src(scores, GGML_PREC_F32, 1))
             return std::unexpected(Status::Unimplemented("ggml Vulkan sink attention score accumulation"));
-          auto *probabilities = ggml_soft_max_ext(context, scores, arguments[3], sink->scale, 0.0F);
+          auto *probabilities = ggml_soft_max_ext(context, scores, mask, sink->scale, 0.0F);
           ggml_soft_max_add_sinks(probabilities, arguments[4]);
           value = ggml_cont(context, ggml_transpose(context, value));
           output = ggml_mul_mat(context, value, probabilities);
@@ -1162,13 +1427,17 @@ Result<Region> Region::create(NativeDevice device,
       } else if (const auto paged = node.operation.custom_as<PagedAttentionRead>()) {
         auto *query = ggml_permute(context,
             ggml_cast(context, arguments[0], GGML_TYPE_F32), 0, 2, 1, 3);
-        const auto root=[&](ggml_tensor* tensor){return ggml_reshape_4d(context,tensor,
-            tensor->ne[0],tensor->ne[1],tensor->ne[2]*tensor->ne[3],1);};
+        const auto root=[&](ggml_tensor* tensor){return ggml_view_4d(context,tensor,
+            tensor->ne[0],tensor->ne[1],tensor->ne[2]*tensor->ne[3],1,
+            tensor->nb[1],tensor->nb[2],tensor->nb[3]*std::size_t(tensor->ne[3]),0);};
         auto *key = ggml_permute(context, root(arguments[1]), 0, 2, 1, 3);
-        auto *value = ggml_permute(context, root(arguments[2]), 0, 2, 1, 3);
+        auto *value_root=paged->compact_mla?ggml_view_4d(context,arguments[1],512,
+            arguments[1]->ne[1],arguments[1]->ne[2],arguments[1]->ne[3],
+            arguments[1]->nb[1],arguments[1]->nb[2],arguments[1]->nb[3],0):arguments[2];
+        auto *value = ggml_permute(context, root(value_root), 0, 2, 1, 3);
         output = ggml_flash_attn_ext(context, query, key, value, nullptr,
                                     paged->scale, 0.0F, 0.0F);
-        if (paged->paged) output->src[5] = arguments[3];
+        if (paged->paged) output->src[5] = arguments[paged->compact_mla?2:3];
         output->op_params[bridge::kFlashAttentionMathSlot] = bridge::kFlashAttentionFullF32;
         output->op_params[bridge::kFlashAttentionPagedSlot] = paged->paged ? bridge::kFlashAttentionPaged : 0;
         output->op_params[bridge::kFlashAttentionLogicalRowsSlot] = static_cast<std::int32_t>(paged->logical_rows);
@@ -1176,11 +1445,13 @@ Result<Region> Region::create(NativeDevice device,
         output->op_params[bridge::kFlashAttentionCausalSlot] = paged->causal;
         output->op_params[bridge::kFlashAttentionWindowSlot] = paged->window_left;
         output->op_params[bridge::kFlashAttentionCacheSlot] = bridge::kFlashAttentionCache;
+        output->op_params[bridge::kFlashAttentionStorageSlot] = paged->float8_cache ? bridge::kFlashAttentionE4M3 : 0;
+        std::memcpy(&output->op_params[bridge::kFlashAttentionKeyScaleSlot], &paged->key_scale, sizeof(float));
+        std::memcpy(&output->op_params[bridge::kFlashAttentionValueScaleSlot], &paged->value_scale, sizeof(float));
         output->op_params[kBatchRuntimeRequestSlot] = paged->runtime_request == UINT32_MAX
             ? -1 : static_cast<std::int32_t>(paged->runtime_request);
         if (!ggml_prec_set_acc(output, GGML_PREC_F32))
           return std::unexpected(Status::Unimplemented("Vulkan paged flash accumulation"));
-        output = ggml_cast(context, output, GGML_TYPE_F16);
       } else if (const auto *attention =
                      node.operation.get_if<ScaledDotProductAttention>()) {
         auto *query = ggml_permute(
@@ -1263,6 +1534,10 @@ Result<Region> Region::create(NativeDevice device,
         auto *fused = ggml_gated_delta_net(
             context, left, arguments[1], value, gate, beta, initial,
             gdn_snapshot_count(node.operation));
+        const auto *gdn = node.operation.get_if<GatedDeltaNet>();
+        ggml_runtime::set_gdn_output_scale(
+            fused, gdn ? gdn->output_scale
+                       : node.operation.custom_as<model_ops::RecurrentGatedDeltaNet>()->output_scale);
         // Upstream owns the fused recurrence and concatenates scores/state.
         // Published ports have independent storage; initial state stays
         // read-only.
@@ -1349,6 +1624,23 @@ Result<Region> Region::create(NativeDevice device,
         output = ggml_cont_4d(context, floats, shape[0], shape[1], shape[2],
                               shape[3]);
         tensors[node.outputs[1]] = indices;
+      } else if (node.operation.custom_as<model_ops::GatherElements>()) {
+        const auto width=left->ne[0],rows=left->ne[1];
+        const auto count=arguments[1]->ne[0];
+        auto* indices=ggml_reshape_2d(context,arguments[1],count,rows);
+        // GET_ROWS(I32) copies uint words into its nominal F32 result.
+        // Restore either word type as metadata, never numerically cast I32
+        // IDs through float. Narrow floating inputs still widen exactly.
+        const bool word = left->type == GGML_TYPE_F32 ||
+                          left->type == GGML_TYPE_I32;
+        auto* raw=ggml_reshape_3d(context,left,1,width,rows);
+        if(word)raw->type=GGML_TYPE_I32;
+        auto* selected=ggml_get_rows(context,raw,indices);
+        auto* values=ggml_reshape_2d(context,selected,count,rows);
+        if(word)values->type=left->type;
+        output=ggml_cont_2d(context,values,count,rows);
+        if(!word)
+          output=ggml_cast(context,output,left->type);
       } else if (node.operation.get_if<Gather>()) {
         output = ggml_get_rows(context, left, arguments[1]);
       } else if (const auto *scatter = node.operation.get_if<Scatter>()) {
@@ -1598,6 +1890,24 @@ Result<Region> Region::create(NativeDevice device,
       auto *node = ggml_graph_node(graph, i);
       if (node->view_src)
         state.views.push_back(node);
+      if (node->op == GGML_OP_MUL_MAT_ID) {
+        auto *tensor = node->src[1];
+        const auto alignment = static_cast<std::size_t>(
+            state.device.native().storage_buffer_alignment);
+        if (tensor->view_offs % alignment != 0)
+          return std::unexpected(Status::Unimplemented(
+              "ggml Vulkan grouped activation origin alignment"));
+        while (tensor->view_src)
+          tensor = tensor->view_src;
+        const auto port = std::ranges::find(state.ports, tensor);
+        if (port != state.ports.end()) {
+          if (state.port_alignments.empty())
+            state.port_alignments.resize(state.ports.size(), sizeof(float));
+          auto &required = state.port_alignments[static_cast<std::size_t>(
+              port - state.ports.begin())];
+          required = (std::max)(required, alignment);
+        }
+      }
       if (node->op != GGML_OP_FLASH_ATTN_EXT ||
           node->op_params[bridge::kFlashAttentionMathSlot] !=
               bridge::kFlashAttentionFullF32)
@@ -1712,7 +2022,7 @@ Region::validate(std::span<const RegionBinding> bindings) const noexcept {
 Status Region::bind(std::span<const RegionBinding> bindings) noexcept {
   HYLE_RETURN_IF_ERROR(validate(bindings));
   auto active = state_->device.activate();
-  bool changed = false;
+  bool changed = !state_->bound;
   for (std::size_t i = 0; i < bindings.size(); ++i) {
     const auto &port = bindings[i];
     auto *buffer = state_->imports->buffers[i];
@@ -1745,6 +2055,22 @@ Status Region::bind(std::span<const RegionBinding> bindings) noexcept {
   state_->bound = std::ranges::all_of(
       bindings, [](const auto &port) { return port.handle != VK_NULL_HANDLE; });
   return Status::Ok();
+}
+Status Region::can_detach_bindings() const noexcept {
+  return !state_ || state_->pending
+      ? Status::Unavailable("ggml Vulkan region is not retired") : Status::Ok();
+}
+void Region::detach_bindings() noexcept {
+  // The original parent cold gate proved retirement before this commit.
+  // Disable submit first; raw cached commands cannot run while unbound, and
+  // the next ordinary bind invalidates them before restoring any port owner.
+  state_->bound = false;
+  for (std::size_t i = 0; i < state_->ports.size(); ++i) {
+    auto *buffer = state_->imports->buffers[i];
+    bridge::bind_buffer(buffer, VK_NULL_HANDLE, ggml_nbytes(state_->ports[i]), {});
+    state_->ports[i]->data = nullptr;
+  }
+  for (auto *view : state_->views) view->data = nullptr;
 }
 WorkState Region::submit() noexcept {
   if (!state_ || !state_->bound)

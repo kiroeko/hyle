@@ -71,7 +71,7 @@ Result<PagedBatchInvocation> PagedBatchInvocation::create(const Context& context
   if(!context.valid() || !recipe.valid() || !workload.valid())
     return std::unexpected(Status::InvalidArgument("Vulkan paged context/recipe/workload invalid"));
   const auto c=recipe.schema().capacity();
-  if(c.query_type!=DataType::kFloat16 || (c.qk_head_dim!=64 && c.qk_head_dim!=128 && c.qk_head_dim!=256))
+  if(!detail::PagedBatchAccess::cache_domain(c))
     return std::unexpected(Status::Unimplemented("Vulkan paged qualified F16 flash depth"));
   auto allocator=options.allocator;
   if(!allocator.valid())return std::unexpected(Status::InvalidArgument("Vulkan paged allocator invalid"));
@@ -84,6 +84,9 @@ Result<PagedBatchInvocation> PagedBatchInvocation::create(const Context& context
 }
 Status PagedBatchInvocation::prepare_batch(BatchLayoutVersion v) noexcept {return data_?data_->prepare(std::move(v)):Status::FailedPrecondition("empty Vulkan paged controller");}
 Status PagedBatchInvocation::bind(ReadLease q,PagedArenaRead k,PagedArenaRead v) noexcept {return data_?data_->bind(std::move(q),std::move(k),std::move(v)):Status::FailedPrecondition("empty Vulkan paged controller");}
+Status PagedBatchInvocation::bind(ReadLease q,PagedArenaRead cache)noexcept{
+  return data_?data_->bind(std::move(q),std::move(cache)):Status::FailedPrecondition("empty vulkan paged MLA controller");
+}
 Result<OwnedResult<Results>> PagedBatchInvocation::submit() noexcept {if(!data_)return std::unexpected(Status::FailedPrecondition("empty Vulkan paged controller"));return data_->submit();}
 NativePagedBatchReport PagedBatchInvocation::report() const noexcept {return data_?data_->report:NativePagedBatchReport{};}
 Status PagedBatchInvocation::close() noexcept {return data_?data_->close():Status::Ok();}

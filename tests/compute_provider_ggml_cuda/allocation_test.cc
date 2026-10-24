@@ -90,7 +90,10 @@ TEST(GgmlCuda, ColdAllocationsRollBackWithoutRetainingNativeResources) {
     };
     check_oom(allocator, prepare);
     auto prepared = prepare().value();
-    check_oom(allocator, [&] { return prepared.create_invocation(); });
+    auto workspace = workspace_buffer(prepared, memory.ref());
+    check_oom(allocator, [&] {
+      return prepared.create_invocation(workspace.view());
+    });
   }
   EXPECT_EQ(allocator.live, 0u);
 }

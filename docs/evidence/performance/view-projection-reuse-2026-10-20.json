@@ -1,0 +1,570 @@
+{
+  "summary": {
+    "passed": true,
+    "build_plan": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\view-projection-reuse\\checks\\20261019T191627\\plan.json",
+      "bytes": 135344,
+      "sha256": "66925a44ba68022688fe4af31a7c4919e44247fe328e0a153b30a8797f8885c7"
+    },
+    "images": {
+      "qwen": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\view-projection-reuse\\checks\\20261019T191627\\qwen.exe",
+        "bytes": 116948992,
+        "sha256": "fc3638f3eec256eb25a5aa4ac3893484b72360655d53f9a5181e787e5a2100b5"
+      },
+      "cpu": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\view-projection-reuse\\checks\\20261019T191627\\cpu.exe",
+        "bytes": 25222656,
+        "sha256": "e3ae816275f4945d5038d1fa6fd484ebf9c0e095f7d251bbfcdcfb1a391dcaba"
+      }
+    },
+    "product_files": [
+      "src/graph/executable.cc",
+      "tests/graph/executable_test.cc"
+    ],
+    "unchanged_private_state": {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\plan_state.h",
+      "bytes": 56713,
+      "sha256": "1f0f3e1e6d5d35320306f262ac8f4267c0bb3d023d71e16e2f08790b584b0697"
+    },
+    "host_TUs": 2,
+    "native_TUs": 0,
+    "SDK_rebuild": false,
+    "Qwen_link_owner_changes": 1,
+    "tests_passed": 14,
+    "tests_skipped": 0,
+    "model_equal_finite_vectors": 64,
+    "stage_diagnostic_processes": 6,
+    "stage_process_medians": {
+      "before": {
+        "layout_us": 8.4,
+        "batch_us": 38.1,
+        "binds_us": 14.9,
+        "replay_us": 134.4,
+        "total_us": 197.2
+      },
+      "after": {
+        "layout_us": 8.6,
+        "batch_us": 40.8,
+        "binds_us": 14.7,
+        "replay_us": 125.1,
+        "total_us": 200.0
+      }
+    },
+    "speed_window_beijing": [
+      "2026-10-20T03:19:06.633986+08:00",
+      "2026-10-20T03:19:32.95573+08:00"
+    ],
+    "rotation_processes": 9,
+    "groups": {
+      "baseline": {
+        "load_seconds": {
+          "samples": [
+            1.0477,
+            1.03304,
+            1.03758
+          ],
+          "median": 1.03758,
+          "min": 1.03304,
+          "max": 1.0477
+        },
+        "prepare_seconds": {
+          "samples": [
+            0.417784,
+            0.431387,
+            0.42978
+          ],
+          "median": 0.42978,
+          "min": 0.417784,
+          "max": 0.431387
+        },
+        "startup_to_ready_seconds": {
+          "samples": [
+            1.91486,
+            1.91987,
+            1.91228
+          ],
+          "median": 1.91486,
+          "min": 1.91228,
+          "max": 1.91987
+        },
+        "ttft_seconds": {
+          "samples": [
+            1.97837,
+            1.98303,
+            1.97538
+          ],
+          "median": 1.97837,
+          "min": 1.97538,
+          "max": 1.98303
+        },
+        "prefill_seconds": {
+          "samples": [
+            0.0629392,
+            0.062754,
+            0.0625372
+          ],
+          "median": 0.062754,
+          "min": 0.0625372,
+          "max": 0.0629392
+        },
+        "prefill_tokens_per_second": {
+          "samples": [
+            2033.7087220682818,
+            2039.710616056347,
+            2046.7817554991268
+          ],
+          "median": 2039.710616056347,
+          "min": 2033.7087220682818,
+          "max": 2046.7817554991268
+        },
+        "full31_seconds": {
+          "samples": [
+            0.3075384,
+            0.3131646,
+            0.3122487
+          ],
+          "median": 0.3122487,
+          "min": 0.3075384,
+          "max": 0.3131646
+        },
+        "full31_tokens_per_second": {
+          "samples": [
+            100.80042037026921,
+            98.98947709926345,
+            99.2798368736203
+          ],
+          "median": 99.2798368736203,
+          "min": 98.98947709926345,
+          "max": 100.80042037026921
+        },
+        "warm7_31_seconds": {
+          "samples": [
+            0.2395123,
+            0.243886,
+            0.2441277
+          ],
+          "median": 0.243886,
+          "min": 0.2395123,
+          "max": 0.2441277
+        },
+        "warm7_31_tokens_per_second": {
+          "samples": [
+            104.37877303169816,
+            102.5069089656643,
+            102.40542142493457
+          ],
+          "median": 102.5069089656643,
+          "min": 102.40542142493457,
+          "max": 104.37877303169816
+        }
+      },
+      "current": {
+        "load_seconds": {
+          "samples": [
+            1.03843,
+            1.03151,
+            1.06723
+          ],
+          "median": 1.03843,
+          "min": 1.03151,
+          "max": 1.06723
+        },
+        "prepare_seconds": {
+          "samples": [
+            0.41258,
+            0.428532,
+            0.425513
+          ],
+          "median": 0.425513,
+          "min": 0.41258,
+          "max": 0.428532
+        },
+        "startup_to_ready_seconds": {
+          "samples": [
+            1.90333,
+            1.91479,
+            1.94612
+          ],
+          "median": 1.91479,
+          "min": 1.90333,
+          "max": 1.94612
+        },
+        "ttft_seconds": {
+          "samples": [
+            1.96651,
+            1.9814,
+            2.01101
+          ],
+          "median": 1.9814,
+          "min": 1.96651,
+          "max": 2.01101
+        },
+        "prefill_seconds": {
+          "samples": [
+            0.0625607,
+            0.0661982,
+            0.0643468
+          ],
+          "median": 0.0643468,
+          "min": 0.0625607,
+          "max": 0.0661982
+        },
+        "prefill_tokens_per_second": {
+          "samples": [
+            2046.0129122596136,
+            1933.5873180841775,
+            1989.220909198282
+          ],
+          "median": 1989.220909198282,
+          "min": 1933.5873180841775,
+          "max": 2046.0129122596136
+        },
+        "full31_seconds": {
+          "samples": [
+            0.3093613,
+            0.3114461,
+            0.3105302
+          ],
+          "median": 0.3105302,
+          "min": 0.3093613,
+          "max": 0.3114461
+        },
+        "full31_tokens_per_second": {
+          "samples": [
+            100.20645762737614,
+            99.53568209715903,
+            99.82925976281857
+          ],
+          "median": 99.82925976281857,
+          "min": 99.53568209715903,
+          "max": 100.20645762737614
+        },
+        "warm7_31_seconds": {
+          "samples": [
+            0.2420485,
+            0.2431565,
+            0.2424753
+          ],
+          "median": 0.2424753,
+          "min": 0.2420485,
+          "max": 0.2431565
+        },
+        "warm7_31_tokens_per_second": {
+          "samples": [
+            103.28508542709416,
+            102.81444255037394,
+            103.10328515935437
+          ],
+          "median": 103.10328515935437,
+          "min": 102.81444255037394,
+          "max": 103.28508542709416
+        }
+      },
+      "llama": {
+        "load_seconds": {
+          "samples": [
+            1.6021355,
+            1.6098786,
+            1.5874756
+          ],
+          "median": 1.6021355,
+          "min": 1.5874756,
+          "max": 1.6098786
+        },
+        "prepare_seconds": {
+          "samples": [
+            0.0074076,
+            0.006739,
+            0.0068522
+          ],
+          "median": 0.0068522,
+          "min": 0.006739,
+          "max": 0.0074076
+        },
+        "startup_to_ready_seconds": {
+          "samples": [
+            1.6802883,
+            1.6891524,
+            1.6649175
+          ],
+          "median": 1.6802883,
+          "min": 1.6649175,
+          "max": 1.6891524
+        },
+        "ttft_seconds": {
+          "samples": [
+            1.7748035,
+            1.78358,
+            1.7586375
+          ],
+          "median": 1.7748035,
+          "min": 1.7586375,
+          "max": 1.78358
+        },
+        "prefill_seconds": {
+          "samples": [
+            0.0944614,
+            0.0943731,
+            0.0936626
+          ],
+          "median": 0.0943731,
+          "min": 0.0936626,
+          "max": 0.0944614
+        },
+        "prefill_tokens_per_second": {
+          "samples": [
+            1355.0508461657355,
+            1356.3186967472723,
+            1366.6073758362463
+          ],
+          "median": 1356.3186967472723,
+          "min": 1355.0508461657355,
+          "max": 1366.6073758362463
+        },
+        "full31_seconds": {
+          "samples": [
+            0.3005577,
+            0.2984967,
+            0.2985397
+          ],
+          "median": 0.2985397,
+          "min": 0.2984967,
+          "max": 0.3005577
+        },
+        "full31_tokens_per_second": {
+          "samples": [
+            103.14159311173862,
+            103.85374444675602,
+            103.83878593031345
+          ],
+          "median": 103.83878593031345,
+          "min": 103.14159311173862,
+          "max": 103.85374444675602
+        },
+        "warm7_31_seconds": {
+          "samples": [
+            0.2371844,
+            0.2365712,
+            0.235403
+          ],
+          "median": 0.2365712,
+          "min": 0.235403,
+          "max": 0.2371844
+        },
+        "warm7_31_tokens_per_second": {
+          "samples": [
+            105.40322213433936,
+            105.67643060524696,
+            106.20085555409234
+          ],
+          "median": 105.67643060524696,
+          "min": 105.40322213433936,
+          "max": 106.20085555409234
+        }
+      }
+    },
+    "current_over_baseline": {
+      "load_seconds": 1.00081921394013,
+      "prepare_seconds": 0.990071664572572,
+      "startup_to_ready_seconds": 0.9999634438026801,
+      "ttft_seconds": 1.0015315638631803,
+      "prefill_seconds": 1.025381648978551,
+      "prefill_tokens_per_second": 0.975246632311164,
+      "full31_seconds": 0.99449637420428,
+      "full31_tokens_per_second": 1.0055340833194324,
+      "warm7_31_seconds": 0.9942157401408855,
+      "warm7_31_tokens_per_second": 1.005817912174972
+    },
+    "current_over_llama": {
+      "load_seconds": 0.6481536674020394,
+      "prepare_seconds": 62.09874200986544,
+      "startup_to_ready_seconds": 1.139560395677337,
+      "ttft_seconds": 1.1164052809226486,
+      "prefill_seconds": 0.6818341243426357,
+      "prefill_tokens_per_second": 1.4666323733270343,
+      "full31_seconds": 1.0401638375063684,
+      "full31_tokens_per_second": 0.9613870084133526,
+      "warm7_31_seconds": 1.0249569685574575,
+      "warm7_31_tokens_per_second": 0.9756507157636262
+    },
+    "contract": "Reuse only exact canonical TensorView extent/projection metadata. Recompute current parent subview/offset/bounds/overflow and retain alignment/alias/published-range/native hooks/seal/lease checks. No PlanState/InvocationState field or public/private ABI addition.",
+    "limits": [
+      "Graph/port traversal remains; descriptor comparison is not claimed O(1).",
+      "Instrumented stage replay median decreased134.4->125.1us, total preparation197.2->200.0us: no total-preparation gain established.",
+      "One rotated throughput window, samples overlap; no stable throughput significance established.",
+      "Prefill median regressed2.475%; sample ranges overlap and cause remains unassigned.",
+      "Same-source weights but Hyle BF16 vs peer F32 intermediates still differ.",
+      "No new native profile, total-memory-peak, cross-platform runtime or independent quality acceptance."
+    ],
+    "goal_complete": false
+  },
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\view-projection-reuse-2026-10-20.zip",
+    "bytes": 1149581,
+    "sha256": "0c976e475c542e168ae2a8be1865d08f33b5c833b992d18e9cf4c90d489063f5",
+    "entries": 273,
+    "payload_bytes": 5841039,
+    "CRC_and_every_payload_SHA_verified": true,
+    "crc_verified": true,
+    "payload_sha256_verified": true,
+    "verification_passes": 1,
+    "build_plan": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\view-projection-reuse\\checks\\20261019T191627\\plan.json",
+      "bytes": 135344,
+      "sha256": "66925a44ba68022688fe4af31a7c4919e44247fe328e0a153b30a8797f8885c7"
+    },
+    "host_TUs": 2,
+    "native_TUs": 0,
+    "CPU_cases": 14,
+    "equal_finite_vectors": 64,
+    "diagnostic_processes": 6,
+    "model_rotation_processes": 9,
+    "native_profile_run": false,
+    "total_prepare_speedup_claim": false,
+    "cleanup_executed": false,
+    "archive_scope": "archive-scope.json",
+    "payload_manifest": "payload-sha256.json"
+  },
+  "cleanup": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\view-projection-reuse-2026-10-20-reclaim.zip",
+    "bytes": 19921,
+    "sha256": "73a77e82d5eeac91f17966b8a78b3c8bbec70184f68c24a1ea0ac7fc294263d3",
+    "entries": 9,
+    "crc_verified": true,
+    "payload_sha256_verified": true,
+    "deleted_files": 94,
+    "deleted_bytes": 911152409,
+    "retained_images": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\view-projection-reuse\\checks\\20261019T191627\\qwen.exe",
+        "bytes": 116948992,
+        "sha256": "fc3638f3eec256eb25a5aa4ac3893484b72360655d53f9a5181e787e5a2100b5"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\view-projection-reuse\\checks\\20261019T191627\\cpu.exe",
+        "bytes": 25222656,
+        "sha256": "e3ae816275f4945d5038d1fa6fd484ebf9c0e095f7d251bbfcdcfb1a391dcaba"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cccl-single-row-topk\\checks\\20261019T185912-host\\qwen.exe",
+        "bytes": 116948480,
+        "sha256": "e71ab8002c5af5e38f053788cd3673e07314c6fd1e88d00799e6ad816254d4d4"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-explicit-rope\\performance-prepared\\peer.exe",
+        "bytes": 35814400,
+        "sha256": "fb169f0282f2a834a61b3e887edaba92d8699814558b0c5f1a13aaf07e0de969"
+      }
+    ],
+    "retained_reference_vectors": 64,
+    "all_link_inputs_retained": true,
+    "recursive": false
+  },
+  "goal_status": "active",
+  "next": "CT natural-group asymmetric INT4 cold decode across the existing mature provider routes; retain scale dtype rounding and packed axis0 zero points.",
+  "prefill_followup": {
+    "rows": [
+      {
+        "arm": "baseline",
+        "tag": "01-baseline",
+        "total_ms": 62.9392,
+        "cold_prepare_ms": 43.7445,
+        "submit_to_token_ms": 19.1647,
+        "submit_call_ms": 0.3837,
+        "residual_upload_and_clock_ms": 0.029999999999997584
+      },
+      {
+        "arm": "current",
+        "tag": "02-current",
+        "total_ms": 62.5607,
+        "cold_prepare_ms": 43.6785,
+        "submit_to_token_ms": 18.8491,
+        "submit_call_ms": 0.5017,
+        "residual_upload_and_clock_ms": 0.033099999999997465
+      },
+      {
+        "arm": "baseline",
+        "tag": "05-baseline",
+        "total_ms": 62.754000000000005,
+        "cold_prepare_ms": 44.559000000000005,
+        "submit_to_token_ms": 18.1584,
+        "submit_call_ms": 0.4437,
+        "residual_upload_and_clock_ms": 0.036599999999999966
+      },
+      {
+        "arm": "current",
+        "tag": "06-current",
+        "total_ms": 66.1982,
+        "cold_prepare_ms": 47.1097,
+        "submit_to_token_ms": 19.0529,
+        "submit_call_ms": 0.433,
+        "residual_upload_and_clock_ms": 0.035600000000002296
+      },
+      {
+        "arm": "current",
+        "tag": "07-current",
+        "total_ms": 64.3468,
+        "cold_prepare_ms": 45.4649,
+        "submit_to_token_ms": 18.8501,
+        "submit_call_ms": 0.4218,
+        "residual_upload_and_clock_ms": 0.031800000000000495
+      },
+      {
+        "arm": "baseline",
+        "tag": "09-baseline",
+        "total_ms": 62.5372,
+        "cold_prepare_ms": 43.6599,
+        "submit_to_token_ms": 18.8456,
+        "submit_call_ms": 0.3852,
+        "residual_upload_and_clock_ms": 0.031699999999997175
+      }
+    ],
+    "medians": {
+      "baseline": {
+        "total_ms": 62.754000000000005,
+        "cold_prepare_ms": 43.7445,
+        "submit_to_token_ms": 18.8456,
+        "submit_call_ms": 0.3852,
+        "residual_upload_and_clock_ms": 0.031699999999997175
+      },
+      "current": {
+        "total_ms": 64.3468,
+        "cold_prepare_ms": 45.4649,
+        "submit_to_token_ms": 18.8501,
+        "submit_call_ms": 0.433,
+        "residual_upload_and_clock_ms": 0.033099999999997465
+      }
+    },
+    "next_measurement": "First prefill submission/native execution portion; no attribution to a core function, driver or GPU kernel from these aggregate logs.",
+    "note": "Already recorded consumer clocks only. Median components do not sum to a median total; submit_call is a subset of submit_to_token. No extra model/profile/build and no causal regression claim.",
+    "source_archive": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\view-projection-reuse-2026-10-20.zip",
+      "bytes": 1149581,
+      "sha256": "0c976e475c542e168ae2a8be1865d08f33b5c833b992d18e9cf4c90d489063f5",
+      "entries": 273,
+      "payload_bytes": 5841039,
+      "CRC_and_every_payload_SHA_verified": true,
+      "crc_verified": true,
+      "payload_sha256_verified": true,
+      "verification_passes": 1,
+      "build_plan": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\view-projection-reuse\\checks\\20261019T191627\\plan.json",
+        "bytes": 135344,
+        "sha256": "66925a44ba68022688fe4af31a7c4919e44247fe328e0a153b30a8797f8885c7"
+      },
+      "host_TUs": 2,
+      "native_TUs": 0,
+      "CPU_cases": 14,
+      "equal_finite_vectors": 64,
+      "diagnostic_processes": 6,
+      "model_rotation_processes": 9,
+      "native_profile_run": false,
+      "total_prepare_speedup_claim": false,
+      "cleanup_executed": false,
+      "archive_scope": "archive-scope.json",
+      "payload_manifest": "payload-sha256.json"
+    },
+    "source_log_contract": "For each run, prepared T=128 cold_batch_seconds is cold preparation; prefill seconds is submit-to-token; step_seconds includes upload+prepare+submit-to-token. Values converted to ms. All6 raw stderr logs are in the source archive."
+  }
+}

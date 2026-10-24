@@ -1,0 +1,952 @@
+{
+  "schema": "hyle.local-evidence-archives.v1",
+  "purpose": "Storage index only. Existing evidence JSON and original archive hashes are unchanged. records archives contain partial source/log material, not raw experimental payloads.",
+  "original_archive_count": 54,
+  "original_bytes": 2889378734,
+  "records_archive_count": 54,
+  "records_bytes": 62720862,
+  "maximum_text_entry_bytes": 4194304,
+  "archives": [
+    {
+      "original_archive": {
+        "path": "docs/evidence/correctness/ct-asymmetric-int4-2026-10-20.zip",
+        "bytes": 15143713,
+        "sha256": "ebcbd74183c2f67e83fdeb835b6f686020a8f9daa6ca51fb2ea48fae07940cc9"
+      },
+      "availability": "original local-only; partial records tracked",
+      "records_archive": {
+        "path": "docs/evidence/correctness/ct-asymmetric-int4-2026-10-20.records.zip",
+        "bytes": 4384496,
+        "sha256": "f631af0a955202ae6078b225c517b8382ae0de1676ded563430fee05069f62c5"
+      },
+      "included_entries": 1315,
+      "included_uncompressed_bytes": 27096726,
+      "omitted_entries": 61,
+      "manifest": "records-manifest.json"
+    },
+    {
+      "original_archive": {
+        "path": "docs/evidence/correctness/gguf-nvfp4-2026-10-20.zip",
+        "bytes": 22957143,
+        "sha256": "3666e736a90b3113d1660a7441478c9a563cc6ae37a78d6babcade61094becb8"
+      },
+      "availability": "original local-only; partial records tracked",
+      "records_archive": {
+        "path": "docs/evidence/correctness/gguf-nvfp4-2026-10-20.records.zip",
+        "bytes": 4987485,
+        "sha256": "3a048e0475272316a7c132fbb3db3fb96dae409fd9ec919e1f531fb57f077384"
+      },
+      "included_entries": 1624,
+      "included_uncompressed_bytes": 30204258,
+      "omitted_entries": 44,
+      "manifest": "records-manifest.json"
+    },
+    {
+      "original_archive": {
+        "path": "docs/evidence/correctness/grouped-shared-activation-2026-10-20.zip",
+        "bytes": 35822360,
+        "sha256": "817ee61aa64eec6b1c4cb9dfca4377b20a93c3cbc0a0e025402ed999c5a0bba3"
+      },
+      "availability": "original local-only; partial records tracked",
+      "records_archive": {
+        "path": "docs/evidence/correctness/grouped-shared-activation-2026-10-20.records.zip",
+        "bytes": 6182167,
+        "sha256": "7f52b650644803e2bd3fc729f8e67ce6afed42b08d4b7828da5631a1fb03ec4f"
+      },
+      "included_entries": 1483,
+      "included_uncompressed_bytes": 37981267,
+      "omitted_entries": 37,
+      "manifest": "records-manifest.json"
+    },
+    {
+      "original_archive": {
+        "path": "docs/evidence/correctness/inference-foundation-review-2026-10-18/cold-constant-retirement.zip",
+        "bytes": 15792181,
+        "sha256": "8c3da3d91bf2d0bb9a3c22c63ba158fb8ec0c7aa5e762f838d9285e3d1e8dfc2"
+      },
+      "availability": "original local-only; partial records tracked",
+      "records_archive": {
+        "path": "docs/evidence/correctness/inference-foundation-review-2026-10-18/cold-constant-retirement.records.zip",
+        "bytes": 975337,
+        "sha256": "5cad7af4dc99918f0bcb346fe7b9c84e0dba29010474e3c38945678bf0235e35"
+      },
+      "included_entries": 368,
+      "included_uncompressed_bytes": 5226836,
+      "omitted_entries": 64,
+      "manifest": "records-manifest.json"
+    },
+    {
+      "original_archive": {
+        "path": "docs/evidence/correctness/inference-foundation-review-2026-10-18/cold-copy-retirement.zip",
+        "bytes": 15431389,
+        "sha256": "74cde937882506b721f0ffba1350fe47bc211381c9abbd24d438ad1cc75651b2"
+      },
+      "availability": "original local-only; partial records tracked",
+      "records_archive": {
+        "path": "docs/evidence/correctness/inference-foundation-review-2026-10-18/cold-copy-retirement.records.zip",
+        "bytes": 583837,
+        "sha256": "85c1a317615884035877f89c72542915d4c5e98178e635ab090ba6f89222f3bd"
+      },
+      "included_entries": 117,
+      "included_uncompressed_bytes": 2907310,
+      "omitted_entries": 64,
+      "manifest": "records-manifest.json"
+    },
+    {
+      "original_archive": {
+        "path": "docs/evidence/correctness/inference-foundation-review-2026-10-18/derived-constant-cast.zip",
+        "bytes": 12266560,
+        "sha256": "8210c8635fbbcfa91627d80e6e884e5a0b33b258345ee549132ba21c0a494036"
+      },
+      "availability": "original local-only; partial records tracked",
+      "records_archive": {
+        "path": "docs/evidence/correctness/inference-foundation-review-2026-10-18/derived-constant-cast.records.zip",
+        "bytes": 599680,
+        "sha256": "0b897fdb07bf712d62e75d1b0e0a6688d9e923130cdc3d7658a430dca8e0b696"
+      },
+      "included_entries": 180,
+      "included_uncompressed_bytes": 2941986,
+      "omitted_entries": 7,
+      "manifest": "records-manifest.json"
+    },
+    {
+      "original_archive": {
+        "path": "docs/evidence/correctness/inference-foundation-review-2026-10-18/qwen-capture-current.zip",
+        "bytes": 15708173,
+        "sha256": "01b71ff8994e7082ef1cd11d7290bf13d40151f05cfdc645d66424168315306e"
+      },
+      "availability": "original local-only; partial records tracked",
+      "records_archive": {
+        "path": "docs/evidence/correctness/inference-foundation-review-2026-10-18/qwen-capture-current.records.zip",
+        "bytes": 132559,
+        "sha256": "edc72a840bb943ff6f7304571fe2270fc3b200a8e49697ca3fd00b516677c6d4"
+      },
+      "included_entries": 50,
+      "included_uncompressed_bytes": 648952,
+      "omitted_entries": 68,
+      "manifest": "records-manifest.json"
+    },
+    {
+      "original_archive": {
+        "path": "docs/evidence/correctness/inference-foundation-review-2026-10-18/qwen-fixed-decode.zip",
+        "bytes": 74858509,
+        "sha256": "95ad49dbf09a4b5e52265731914d9aca0a469a4dc6dfe0de8171fa7a51e0f5ab"
+      },
+      "availability": "original local-only; partial records tracked",
+      "records_archive": {
+        "path": "docs/evidence/correctness/inference-foundation-review-2026-10-18/qwen-fixed-decode.records.zip",
+        "bytes": 264821,
+        "sha256": "5a16ffd958c9f17575b1e4cf3bb99e68b6e024fbf02914d80fffb96272264cca"
+      },
+      "included_entries": 95,
+      "included_uncompressed_bytes": 1280845,
+      "omitted_entries": 326,
+      "manifest": "records-manifest.json"
+    },
+    {
+      "original_archive": {
+        "path": "docs/evidence/correctness/inference-foundation-review-2026-10-18/recurrent-gdn-schema.zip",
+        "bytes": 16653372,
+        "sha256": "806415df007ea4e684be2f7691dbbf5285cea5a7862f9e139b59e1702e70aa4a"
+      },
+      "availability": "original local-only; partial records tracked",
+      "records_archive": {
+        "path": "docs/evidence/correctness/inference-foundation-review-2026-10-18/recurrent-gdn-schema.records.zip",
+        "bytes": 1856708,
+        "sha256": "a1fc3a1431dec4ebfbe23bf8db7b42eabca6b2e05c1b547834075c609a847c73"
+      },
+      "included_entries": 539,
+      "included_uncompressed_bytes": 11063064,
+      "omitted_entries": 64,
+      "manifest": "records-manifest.json"
+    },
+    {
+      "original_archive": {
+        "path": "docs/evidence/correctness/qwen-mtp-batch-2026-10-22.data.zip",
+        "bytes": 113794445,
+        "sha256": "1cfdf53a02adba6760a6892e36d3efd8a3915e1cb80a502b06d03924509c1f51"
+      },
+      "availability": "original local-only; partial records tracked",
+      "records_archive": {
+        "path": "docs/evidence/correctness/qwen-mtp-batch-2026-10-22.records.zip",
+        "bytes": 1062246,
+        "sha256": "1b397f0e618b185567e7f9e8f930607d7edf7f3aafd757c0ddf0539d59ca48ae"
+      },
+      "included_entries": 233,
+      "included_uncompressed_bytes": 5337335,
+      "omitted_entries": 323,
+      "manifest": "records-manifest.json"
+    },
+    {
+      "original_archive": {
+        "path": "docs/evidence/correctness/qwen-mtp-batch-numerics-2026-10-22.data.zip",
+        "bytes": 133865982,
+        "sha256": "6f50220c41b1b2342dd2b0172b4585b081d23c475c2ebb663bf66bbf030f67bd"
+      },
+      "availability": "original local-only; partial records tracked",
+      "records_archive": {
+        "path": "docs/evidence/correctness/qwen-mtp-batch-numerics-2026-10-22.records.zip",
+        "bytes": 523570,
+        "sha256": "830d240490c550e4cf6e7fe00e7c3ee07158ad8453895ad896c316f513a7e422"
+      },
+      "included_entries": 58,
+      "included_uncompressed_bytes": 3121841,
+      "omitted_entries": 388,
+      "manifest": "records-manifest.json"
+    },
+    {
+      "original_archive": {
+        "path": "docs/evidence/correctness/qwen-mtp-current-numerics-2026-10-22.data.zip",
+        "bytes": 161419134,
+        "sha256": "b9004e205f2a9f31342505bfc8dceca056c81bd377ae7460ea1172528fe8e47e"
+      },
+      "availability": "original local-only; partial records tracked",
+      "records_archive": {
+        "path": "docs/evidence/correctness/qwen-mtp-current-numerics-2026-10-22.records.zip",
+        "bytes": 533159,
+        "sha256": "c09611c0c8ee1e3f9ba10fa8890cab7bfc782d3f7689b9907c8bf0e5ac24f7d1"
+      },
+      "included_entries": 86,
+      "included_uncompressed_bytes": 1990685,
+      "omitted_entries": 364,
+      "manifest": "records-manifest.json"
+    },
+    {
+      "original_archive": {
+        "path": "docs/evidence/correctness/qwen-mtp-prefix-2026-10-22.data.zip",
+        "bytes": 177131297,
+        "sha256": "bd0458244e558f3afa7ebb0ad5fedbfdd432595b87fdd48a5e862cfe9d280421"
+      },
+      "availability": "original local-only; partial records tracked",
+      "records_archive": {
+        "path": "docs/evidence/correctness/qwen-mtp-prefix-2026-10-22.records.zip",
+        "bytes": 859451,
+        "sha256": "89a92126dd081d2bf6b14c4bd41a22cdf764de15d4ff8191d33634cf5acece66"
+      },
+      "included_entries": 172,
+      "included_uncompressed_bytes": 5137166,
+      "omitted_entries": 440,
+      "manifest": "records-manifest.json"
+    },
+    {
+      "original_archive": {
+        "path": "docs/evidence/correctness/qwen-mtp-resume-2026-10-22.data.zip",
+        "bytes": 347008402,
+        "sha256": "3cf1b06426f9e0657719fdef184c562494e3858f9ca27368fffcd4fb78997e35"
+      },
+      "availability": "original local-only; partial records tracked",
+      "records_archive": {
+        "path": "docs/evidence/correctness/qwen-mtp-resume-2026-10-22.records.zip",
+        "bytes": 1422185,
+        "sha256": "acc6667a5beefaf375ff911e46222cb24b5dbce6db33ebc38fab0212b8ad68b9"
+      },
+      "included_entries": 281,
+      "included_uncompressed_bytes": 8160839,
+      "omitted_entries": 751,
+      "manifest": "records-manifest.json"
+    },
+    {
+      "original_archive": {
+        "path": "docs/evidence/correctness/qwen-mtp-retirement-2026-10-22.data.zip",
+        "bytes": 42061032,
+        "sha256": "e01c58f92d59344d33b34f876c2886e9e7b2a3ac9aaae2a26ae7eb6cb70c24c0"
+      },
+      "availability": "original local-only; partial records tracked",
+      "records_archive": {
+        "path": "docs/evidence/correctness/qwen-mtp-retirement-2026-10-22.records.zip",
+        "bytes": 747286,
+        "sha256": "4767eae572b6937bf13f26282105cfeda1d65435371dea3023f7f453caf7d336"
+      },
+      "included_entries": 187,
+      "included_uncompressed_bytes": 2899391,
+      "omitted_entries": 95,
+      "manifest": "records-manifest.json"
+    },
+    {
+      "original_archive": {
+        "path": "docs/evidence/correctness/qwen-mtp-round-2026-10-22.data.zip",
+        "bytes": 45289041,
+        "sha256": "925989115ff93ff8bd8ce5618acefa92b2a2b88a7ae527bdb7c580363e9d7965"
+      },
+      "availability": "original local-only; partial records tracked",
+      "records_archive": {
+        "path": "docs/evidence/correctness/qwen-mtp-round-2026-10-22.records.zip",
+        "bytes": 1465021,
+        "sha256": "9c5392ad168d20539a63459da6226198810bb25c27eb7568bd8e3a77c01afdf3"
+      },
+      "included_entries": 341,
+      "included_uncompressed_bytes": 6242941,
+      "omitted_entries": 153,
+      "manifest": "records-manifest.json"
+    },
+    {
+      "original_archive": {
+        "path": "docs/evidence/correctness/qwen-mtp-sessions-2026-10-22.data.zip",
+        "bytes": 137593375,
+        "sha256": "e98dfc3ec62dc4a49e06794f764b24fe92cfaf3ec116cb52e9cffc21c1cc3d0d"
+      },
+      "availability": "original local-only; partial records tracked",
+      "records_archive": {
+        "path": "docs/evidence/correctness/qwen-mtp-sessions-2026-10-22.records.zip",
+        "bytes": 877887,
+        "sha256": "fd665173ec2bd21fa83c854cc29e004c5f0f11766c88913a3f47bbd1396a01e4"
+      },
+      "included_entries": 222,
+      "included_uncompressed_bytes": 4453958,
+      "omitted_entries": 378,
+      "manifest": "records-manifest.json"
+    },
+    {
+      "original_archive": {
+        "path": "docs/evidence/correctness/qwen-mtp-target-2026-10-22.data.part01.zip",
+        "bytes": 80524887,
+        "sha256": "4c65694a1adabef39264aefdeb127b3fe0066e6cde4ca58f45252deb9789f913"
+      },
+      "availability": "original local-only; partial records tracked",
+      "records_archive": {
+        "path": "docs/evidence/correctness/qwen-mtp-target-2026-10-22-part01.records.zip",
+        "bytes": 937068,
+        "sha256": "2159bab15a71ce7bcca6b2a2dca2701c900f4f0f6a8e36840ad81d517acc5532"
+      },
+      "included_entries": 257,
+      "included_uncompressed_bytes": 4152757,
+      "omitted_entries": 260,
+      "manifest": "records-manifest.json"
+    },
+    {
+      "original_archive": {
+        "path": "docs/evidence/correctness/qwen-mtp-target-2026-10-22.data.part02.zip",
+        "bytes": 80451378,
+        "sha256": "69706e6dfbaaf6ce747ec27ab2c8166105c209be886bbde7bd3c74afe2eec4eb"
+      },
+      "availability": "original local-only; partial records tracked",
+      "records_archive": {
+        "path": "docs/evidence/correctness/qwen-mtp-target-2026-10-22-part02.records.zip",
+        "bytes": 3334,
+        "sha256": "a4c77ddb22916110d724d851ff1f5e0a2e6faee82fef9cc20a8d499852e2f9e8"
+      },
+      "included_entries": 0,
+      "included_uncompressed_bytes": 0,
+      "omitted_entries": 169,
+      "manifest": "records-manifest.json"
+    },
+    {
+      "original_archive": {
+        "path": "docs/evidence/correctness/qwen-mtp-target-2026-10-22.data.part03.zip",
+        "bytes": 80029466,
+        "sha256": "3019809a64dfcd6bf71b4a11e1fa255e6009f56d764dcbbe324dbf5a25a20fa5"
+      },
+      "availability": "original local-only; partial records tracked",
+      "records_archive": {
+        "path": "docs/evidence/correctness/qwen-mtp-target-2026-10-22-part03.records.zip",
+        "bytes": 3373,
+        "sha256": "9ff2907206997e2617769fc5224007ee0f44c45f011b90d08aeb5dc5604a224f"
+      },
+      "included_entries": 0,
+      "included_uncompressed_bytes": 0,
+      "omitted_entries": 168,
+      "manifest": "records-manifest.json"
+    },
+    {
+      "original_archive": {
+        "path": "docs/evidence/correctness/qwen-mtp-target-2026-10-22.data.part04.zip",
+        "bytes": 15798088,
+        "sha256": "b3254c27e963d0c3044e7319ffdb34a467bb632eab7a541905e6784d5f129a95"
+      },
+      "availability": "original local-only; partial records tracked",
+      "records_archive": {
+        "path": "docs/evidence/correctness/qwen-mtp-target-2026-10-22-part04.records.zip",
+        "bytes": 109866,
+        "sha256": "cd0d3573c34bcfd756dbb24fa8fc1eacc35b594f7defc28dae55d9059ac373d1"
+      },
+      "included_entries": 23,
+      "included_uncompressed_bytes": 328280,
+      "omitted_entries": 30,
+      "manifest": "records-manifest.json"
+    },
+    {
+      "original_archive": {
+        "path": "docs/evidence/correctness/qwen-mtp-weights-2026-10-22.data.part01.zip",
+        "bytes": 21327879,
+        "sha256": "56b90ac57a1169d4a2b61ab1bb880e74b910cfc1f6aef3f3b756fa22b7fa7ad4"
+      },
+      "availability": "original local-only; partial records tracked",
+      "records_archive": {
+        "path": "docs/evidence/correctness/qwen-mtp-weights-2026-10-22-part01.records.zip",
+        "bytes": 437804,
+        "sha256": "9de500c19fe31034d06701fab1ee5504b581842fb6bf3174840914ba91455b1a"
+      },
+      "included_entries": 104,
+      "included_uncompressed_bytes": 1808967,
+      "omitted_entries": 90,
+      "manifest": "records-manifest.json"
+    },
+    {
+      "original_archive": {
+        "path": "docs/evidence/correctness/qwen-multisequence-2026-10-22.part01.zip",
+        "bytes": 93982882,
+        "sha256": "6c45a153fb2b0f9875a4f3be529df53a59c4b1e78f0a82c8d4a1b4224090dd17"
+      },
+      "availability": "original local-only; partial records tracked",
+      "records_archive": {
+        "path": "docs/evidence/correctness/qwen-multisequence-2026-10-22-part01.records.zip",
+        "bytes": 105271,
+        "sha256": "d768a141bc4895ec22a6bde2a53bedfb808f9e9ab6cc8d005fb9421104d07ea6"
+      },
+      "included_entries": 40,
+      "included_uncompressed_bytes": 603187,
+      "omitted_entries": 192,
+      "manifest": "records-manifest.json"
+    },
+    {
+      "original_archive": {
+        "path": "docs/evidence/correctness/qwen-multisequence-2026-10-22.part02.zip",
+        "bytes": 90593859,
+        "sha256": "15650218e78839df69d5b8de3ff93ff7db5674d12e114a1b7feb5de63975cd83"
+      },
+      "availability": "original local-only; partial records tracked",
+      "records_archive": {
+        "path": "docs/evidence/correctness/qwen-multisequence-2026-10-22-part02.records.zip",
+        "bytes": 1406887,
+        "sha256": "ed7527b5fb4472427171851a70f8364ff8e4fa8037ab0c1c3f507b4eaecde0f3"
+      },
+      "included_entries": 311,
+      "included_uncompressed_bytes": 6516924,
+      "omitted_entries": 254,
+      "manifest": "records-manifest.json"
+    },
+    {
+      "original_archive": {
+        "path": "docs/evidence/performance/qwen-batch-topone-2026-10-22.data.part01.zip",
+        "bytes": 70652557,
+        "sha256": "16d31d6b30b41381e3687d85fab042793c0d29360f2208ca9c615fe5eb9b2e96"
+      },
+      "availability": "original local-only; partial records tracked",
+      "records_archive": {
+        "path": "docs/evidence/performance/qwen-batch-topone-2026-10-22-part01.records.zip",
+        "bytes": 1811054,
+        "sha256": "e60f4cb5be1880e61abfa52a4c0ccf027a09c4838e9731444b5a69786c5832ba"
+      },
+      "included_entries": 459,
+      "included_uncompressed_bytes": 19656605,
+      "omitted_entries": 190,
+      "manifest": "records-manifest.json"
+    },
+    {
+      "original_archive": {
+        "path": "docs/evidence/performance/qwen-capture-cause-2026-10-22.data.zip",
+        "bytes": 601493,
+        "sha256": "04d316e185a56ea71001f4f6432d6aa43b5ce1410c8a42d9f99c27991ac3e846"
+      },
+      "availability": "original local-only; partial records tracked",
+      "records_archive": {
+        "path": "docs/evidence/performance/qwen-capture-cause-2026-10-22.records.zip",
+        "bytes": 610524,
+        "sha256": "32382dd5e42fa0e5ac3cbb1d23ffda3bc6a5ec2d9e5d4a4e5c798d95a0707b9c"
+      },
+      "included_entries": 76,
+      "included_uncompressed_bytes": 2659230,
+      "omitted_entries": 0,
+      "manifest": "records-manifest.json"
+    },
+    {
+      "original_archive": {
+        "path": "docs/evidence/performance/qwen-cli-batch-2026-10-22.data.part01.zip",
+        "bytes": 90517873,
+        "sha256": "83f98859e0b0f929baa067942ba8bf3f3dc87284f72cf1512a8998385106fc4f"
+      },
+      "availability": "original local-only; partial records tracked",
+      "records_archive": {
+        "path": "docs/evidence/performance/qwen-cli-batch-2026-10-22-part01.records.zip",
+        "bytes": 1424371,
+        "sha256": "5e1526908bd327912b903cae32d20085a36a14025af933bc2504df5a019e42c5"
+      },
+      "included_entries": 357,
+      "included_uncompressed_bytes": 11502838,
+      "omitted_entries": 384,
+      "manifest": "records-manifest.json"
+    },
+    {
+      "original_archive": {
+        "path": "docs/evidence/performance/qwen-cli-batch-2026-10-22.data.part02.zip",
+        "bytes": 38026133,
+        "sha256": "1c57ffa551358562235022b40796c0c8d532a27d1a72b4cbf9adf3520eb60344"
+      },
+      "availability": "original local-only; partial records tracked",
+      "records_archive": {
+        "path": "docs/evidence/performance/qwen-cli-batch-2026-10-22-part02.records.zip",
+        "bytes": 413836,
+        "sha256": "3624f355f9858037f1dceccd19a9188bd489565192408f3161880fafe2312294"
+      },
+      "included_entries": 134,
+      "included_uncompressed_bytes": 1669993,
+      "omitted_entries": 162,
+      "manifest": "records-manifest.json"
+    },
+    {
+      "original_archive": {
+        "path": "docs/evidence/performance/qwen-cublas-scores-2026-10-22.data.zip",
+        "bytes": 40354296,
+        "sha256": "be3b00fce161487a6ffdcacf67c9d46e71bb0a519d0acd43d9300a8fd313f1aa"
+      },
+      "availability": "original local-only; partial records tracked",
+      "records_archive": {
+        "path": "docs/evidence/performance/qwen-cublas-scores-2026-10-22.records.zip",
+        "bytes": 1025947,
+        "sha256": "29bc0c0b27bb9bbd501916e95975ad55fc2980ac35fc998bc8778380cb43001c"
+      },
+      "included_entries": 251,
+      "included_uncompressed_bytes": 6259524,
+      "omitted_entries": 62,
+      "manifest": "records-manifest.json"
+    },
+    {
+      "original_archive": {
+        "path": "docs/evidence/performance/qwen-f32-scores-2026-10-22.data.zip",
+        "bytes": 42093863,
+        "sha256": "6d22a4d474b93d5493e158a8349ab5a70ee1f099bc1edb64b92d2a5173d87106"
+      },
+      "availability": "original local-only; partial records tracked",
+      "records_archive": {
+        "path": "docs/evidence/performance/qwen-f32-scores-2026-10-22.records.zip",
+        "bytes": 937333,
+        "sha256": "bea9ca67f288bdda9d36069d8f61ca93b25305dc3ba3fee21b7462558670802b"
+      },
+      "included_entries": 189,
+      "included_uncompressed_bytes": 5828010,
+      "omitted_entries": 66,
+      "manifest": "records-manifest.json"
+    },
+    {
+      "original_archive": {
+        "path": "docs/evidence/performance/qwen-mtp-divergence-2026-10-22.data.zip",
+        "bytes": 170163584,
+        "sha256": "f6f6c28b2acdaa7fa78cf5ec5cd670f24376bde7e24b206370458d37f5a37c5d"
+      },
+      "availability": "original local-only; partial records tracked",
+      "records_archive": {
+        "path": "docs/evidence/performance/qwen-mtp-divergence-2026-10-22.records.zip",
+        "bytes": 1155743,
+        "sha256": "c29c56affd4c05e5e413e19ca20465444f7a39cd38e2c4cebce66dcfbde6a971"
+      },
+      "included_entries": 302,
+      "included_uncompressed_bytes": 6933242,
+      "omitted_entries": 69,
+      "manifest": "records-manifest.json"
+    },
+    {
+      "original_archive": {
+        "path": "docs/evidence/performance/qwen-mtp-steady-profile-2026-10-22.data.zip",
+        "bytes": 5177733,
+        "sha256": "2ca42a426b88613b2cf11bfca81e10cefa2c5293fd5f013d883883cfa3c7215b"
+      },
+      "availability": "original local-only; partial records tracked",
+      "records_archive": {
+        "path": "docs/evidence/performance/qwen-mtp-steady-profile-2026-10-22.records.zip",
+        "bytes": 1186951,
+        "sha256": "cd6c7c5bf20c359f5cc77e88df505f875b7d3700b4f44f191c8fd3fd05083a7b"
+      },
+      "included_entries": 215,
+      "included_uncompressed_bytes": 7461544,
+      "omitted_entries": 1,
+      "manifest": "records-manifest.json"
+    },
+    {
+      "original_archive": {
+        "path": "docs/evidence/performance/qwen-mtp-window-2026-10-22.data.zip",
+        "bytes": 1083982,
+        "sha256": "99dbf175d53c1439f644fecb1e984bc0afceb01e96f675c03d82c73fe6150636"
+      },
+      "availability": "original local-only; partial records tracked",
+      "records_archive": {
+        "path": "docs/evidence/performance/qwen-mtp-window-2026-10-22.records.zip",
+        "bytes": 1108154,
+        "sha256": "4cce9c5bc6b5c774d60539e44324e8075ae67c0eaf0fec5a1f11d627da9e15e5"
+      },
+      "included_entries": 240,
+      "included_uncompressed_bytes": 7040273,
+      "omitted_entries": 0,
+      "manifest": "records-manifest.json"
+    },
+    {
+      "original_archive": {
+        "path": "docs/evidence/performance/qwen-topone-prepared-2026-10-22.data.part01.zip",
+        "bytes": 21727219,
+        "sha256": "613a408f4e505e294c5276da458d3cfaa09f87ba6441267ae33d0fb3685d2170"
+      },
+      "availability": "original local-only; partial records tracked",
+      "records_archive": {
+        "path": "docs/evidence/performance/qwen-topone-prepared-2026-10-22-part01.records.zip",
+        "bytes": 845314,
+        "sha256": "51be9767e7738df7801233620497e01c3e1b87513bad6b45968325b102ecb8fe"
+      },
+      "included_entries": 190,
+      "included_uncompressed_bytes": 8741181,
+      "omitted_entries": 90,
+      "manifest": "records-manifest.json"
+    },
+    {
+      "original_archive": {
+        "path": "docs/evidence/performance/qwen35-full-cuda-2026-10-19/batch-layout-query-reuse.zip",
+        "bytes": 15931982,
+        "sha256": "d40b8fbd6032a6836224e4aec1184124428b8b3a0e9847dd3bc09fedc90068d9"
+      },
+      "availability": "original local-only; partial records tracked",
+      "records_archive": {
+        "path": "docs/evidence/performance/qwen35-full-cuda-2026-10-19/batch-layout-query-reuse.records.zip",
+        "bytes": 1119624,
+        "sha256": "98a5c8992c75b99c4a44b3e6422d7f5422db4e7d2d2d0965b378a4f58df99290"
+      },
+      "included_entries": 395,
+      "included_uncompressed_bytes": 5148279,
+      "omitted_entries": 64,
+      "manifest": "records-manifest.json"
+    },
+    {
+      "original_archive": {
+        "path": "docs/evidence/performance/qwen35-full-cuda-2026-10-19/cuda-bf16-dual-projection.zip",
+        "bytes": 96454642,
+        "sha256": "7430dc89515d87e3b8cb27870c0a2bf9ea956b5de235602521274c03dd86011c"
+      },
+      "availability": "original local-only; partial records tracked",
+      "records_archive": {
+        "path": "docs/evidence/performance/qwen35-full-cuda-2026-10-19/cuda-bf16-dual-projection.records.zip",
+        "bytes": 2383654,
+        "sha256": "ac2bd53d220a59ccd582a243de49fc828ee4702c013f2e67103ebf55397c56de"
+      },
+      "included_entries": 576,
+      "included_uncompressed_bytes": 12596542,
+      "omitted_entries": 392,
+      "manifest": "records-manifest.json"
+    },
+    {
+      "original_archive": {
+        "path": "docs/evidence/performance/qwen35-full-cuda-2026-10-19/cuda-bfloat-matvec.zip",
+        "bytes": 15490900,
+        "sha256": "5bb79e2b6192c9f0d2d13f4e7c2e30c3b48168b1b3eab9a8ddef433013f68388"
+      },
+      "availability": "original local-only; partial records tracked",
+      "records_archive": {
+        "path": "docs/evidence/performance/qwen35-full-cuda-2026-10-19/cuda-bfloat-matvec.records.zip",
+        "bytes": 650320,
+        "sha256": "b09f81f5f7fde06564217f124cc4789a732cf10b8ce824decd52dc3bb3a9edc5"
+      },
+      "included_entries": 252,
+      "included_uncompressed_bytes": 2942371,
+      "omitted_entries": 66,
+      "manifest": "records-manifest.json"
+    },
+    {
+      "original_archive": {
+        "path": "docs/evidence/performance/qwen35-full-cuda-2026-10-19/cuda-constant-expressions.zip",
+        "bytes": 19624311,
+        "sha256": "b0c8a22d636b618cf65553433c801361e72b86bf9978e2e11b2ede8d7eaebca3"
+      },
+      "availability": "original local-only; partial records tracked",
+      "records_archive": {
+        "path": "docs/evidence/performance/qwen35-full-cuda-2026-10-19/cuda-constant-expressions.records.zip",
+        "bytes": 1444562,
+        "sha256": "b5486e773d37771cefcee5da4793fc7431b8ded157598de05bc08d24df43f257"
+      },
+      "included_entries": 556,
+      "included_uncompressed_bytes": 6533343,
+      "omitted_entries": 67,
+      "manifest": "records-manifest.json"
+    },
+    {
+      "original_archive": {
+        "path": "docs/evidence/performance/qwen35-full-cuda-2026-10-19/cuda-constant-view-origins.zip",
+        "bytes": 19335291,
+        "sha256": "15118c9dba4e67466ae96eafe0623f13347b70b176c7dee1c31b709217d8f2c8"
+      },
+      "availability": "original local-only; partial records tracked",
+      "records_archive": {
+        "path": "docs/evidence/performance/qwen35-full-cuda-2026-10-19/cuda-constant-view-origins.records.zip",
+        "bytes": 1165310,
+        "sha256": "7318ab7e10e6f7aa834a60ad319894e12257015e738cd2ac86b74f37bc7f2429"
+      },
+      "included_entries": 400,
+      "included_uncompressed_bytes": 5161055,
+      "omitted_entries": 67,
+      "manifest": "records-manifest.json"
+    },
+    {
+      "original_archive": {
+        "path": "docs/evidence/performance/qwen35-full-cuda-2026-10-19/cuda-explicit-rope.zip",
+        "bytes": 40294823,
+        "sha256": "2eec09d3ba28a9a7aca80ff3cacbd869457335ed5f3e785bb462c2aa7e284785"
+      },
+      "availability": "original local-only; partial records tracked",
+      "records_archive": {
+        "path": "docs/evidence/performance/qwen35-full-cuda-2026-10-19/cuda-explicit-rope.records.zip",
+        "bytes": 1140337,
+        "sha256": "66c0c24739f482114426ba2a0e192aeee861325a4d9e49edfd5e8ff8a3647304"
+      },
+      "included_entries": 227,
+      "included_uncompressed_bytes": 6268548,
+      "omitted_entries": 138,
+      "manifest": "records-manifest.json"
+    },
+    {
+      "original_archive": {
+        "path": "docs/evidence/performance/qwen35-full-cuda-2026-10-19/cuda-fusion-allocation.zip",
+        "bytes": 16692219,
+        "sha256": "10bfa5c2f1328e93b73fd9ac442c3f5eebef8e98b5bd08871b56c5d83fa88950"
+      },
+      "availability": "original local-only; partial records tracked",
+      "records_archive": {
+        "path": "docs/evidence/performance/qwen35-full-cuda-2026-10-19/cuda-fusion-allocation.records.zip",
+        "bytes": 1803171,
+        "sha256": "d6eabba5c8c432ff4d98b9c67fe56349b4672001faa5c4c59e5087cc6c272c28"
+      },
+      "included_entries": 347,
+      "included_uncompressed_bytes": 9784856,
+      "omitted_entries": 69,
+      "manifest": "records-manifest.json"
+    },
+    {
+      "original_archive": {
+        "path": "docs/evidence/performance/qwen35-full-cuda-2026-10-19/cuda-fusion-layout.zip",
+        "bytes": 27630591,
+        "sha256": "7fde43b44bdbfb7549a25510f86722e79a6029411303d4679fbe24632fdad29a"
+      },
+      "availability": "original local-only; partial records tracked",
+      "records_archive": {
+        "path": "docs/evidence/performance/qwen35-full-cuda-2026-10-19/cuda-fusion-layout.records.zip",
+        "bytes": 1225138,
+        "sha256": "b93d7b823f7b115a6d70d59c801221259ccba69819afaaa36ac2117f91c489eb"
+      },
+      "included_entries": 203,
+      "included_uncompressed_bytes": 6972065,
+      "omitted_entries": 74,
+      "manifest": "records-manifest.json"
+    },
+    {
+      "original_archive": {
+        "path": "docs/evidence/performance/qwen35-full-cuda-2026-10-19/cuda-fusion-precision.zip",
+        "bytes": 21880072,
+        "sha256": "53eb34d90e6fbaf7fbc1885b8d36f7a233ea955910da6f5e6f97fc08ad98cb07"
+      },
+      "availability": "original local-only; partial records tracked",
+      "records_archive": {
+        "path": "docs/evidence/performance/qwen35-full-cuda-2026-10-19/cuda-fusion-precision.records.zip",
+        "bytes": 1196058,
+        "sha256": "96c992c47b27a5182d1b23a1cd09e939dbd7012ec2ef68d9fcd6369db9d2fb49"
+      },
+      "included_entries": 268,
+      "included_uncompressed_bytes": 7351229,
+      "omitted_entries": 74,
+      "manifest": "records-manifest.json"
+    },
+    {
+      "original_archive": {
+        "path": "docs/evidence/performance/qwen35-full-cuda-2026-10-19/cuda-gdn-l2-epilogue.zip",
+        "bytes": 36342221,
+        "sha256": "193d8f1f06ad5566694a54aa83acad6e29e152407c703fb0ee29f5c7007716f6"
+      },
+      "availability": "original local-only; partial records tracked",
+      "records_archive": {
+        "path": "docs/evidence/performance/qwen35-full-cuda-2026-10-19/cuda-gdn-l2-epilogue.records.zip",
+        "bytes": 890674,
+        "sha256": "5dc4be4bcea1e4e186b678268f5d5ff0341385a16ac6259404057f9393d1395c"
+      },
+      "included_entries": 197,
+      "included_uncompressed_bytes": 4876377,
+      "omitted_entries": 134,
+      "manifest": "records-manifest.json"
+    },
+    {
+      "original_archive": {
+        "path": "docs/evidence/performance/qwen35-full-cuda-2026-10-19/cuda-gdn-l2-fusion.zip",
+        "bytes": 34380383,
+        "sha256": "62a5854c1a8194219e8a2388be4afec5cbfd84e54a0a68a1a9d21ecaeb8b809c"
+      },
+      "availability": "original local-only; partial records tracked",
+      "records_archive": {
+        "path": "docs/evidence/performance/qwen35-full-cuda-2026-10-19/cuda-gdn-l2-fusion.records.zip",
+        "bytes": 1210626,
+        "sha256": "67e25ef9516668fd79c3f6c19077ef67a1ef7ac4fe3e3553059cde6adc7aa2a9"
+      },
+      "included_entries": 417,
+      "included_uncompressed_bytes": 5773388,
+      "omitted_entries": 132,
+      "manifest": "records-manifest.json"
+    },
+    {
+      "original_archive": {
+        "path": "docs/evidence/performance/qwen35-full-cuda-2026-10-19/cuda-grouped-fusion.zip",
+        "bytes": 16922076,
+        "sha256": "db7d3634c48aadcaac5be6dfe15b61921deca80cf32b61f358a30060fb54b431"
+      },
+      "availability": "original local-only; partial records tracked",
+      "records_archive": {
+        "path": "docs/evidence/performance/qwen35-full-cuda-2026-10-19/cuda-grouped-fusion.records.zip",
+        "bytes": 1926357,
+        "sha256": "3ea8f2f77755606e41eb2b4076c98c3b71b5eaddb173f732d63ebc288ef7bb23"
+      },
+      "included_entries": 445,
+      "included_uncompressed_bytes": 10043536,
+      "omitted_entries": 69,
+      "manifest": "records-manifest.json"
+    },
+    {
+      "original_archive": {
+        "path": "docs/evidence/performance/qwen35-full-cuda-2026-10-19/cuda-hot-prepare-selection.zip",
+        "bytes": 15515617,
+        "sha256": "fb7f506aa3c5f6c7f6deda7ddb96cdf43d3a338fb3874a446596071ccf3d55f5"
+      },
+      "availability": "original local-only; partial records tracked",
+      "records_archive": {
+        "path": "docs/evidence/performance/qwen35-full-cuda-2026-10-19/cuda-hot-prepare-selection.records.zip",
+        "bytes": 686174,
+        "sha256": "8f2202ef6d882f34e64784dc43880b9d85333093c9f2dbb844777cd90571146c"
+      },
+      "included_entries": 258,
+      "included_uncompressed_bytes": 2699377,
+      "omitted_entries": 64,
+      "manifest": "records-manifest.json"
+    },
+    {
+      "original_archive": {
+        "path": "docs/evidence/performance/qwen35-full-cuda-2026-10-19/cuda-native-matvec-rejected.zip",
+        "bytes": 59404863,
+        "sha256": "a76ab4e5f604283cce768b27ab8c1302aadc204c793b6df86184401cce94be4c"
+      },
+      "availability": "original local-only; partial records tracked",
+      "records_archive": {
+        "path": "docs/evidence/performance/qwen35-full-cuda-2026-10-19/cuda-native-matvec-rejected.records.zip",
+        "bytes": 427302,
+        "sha256": "1e2d86d4c63146e6f52c590a1fc57f252750838bd9b4cfb9c76d8758cd491ce1"
+      },
+      "included_entries": 132,
+      "included_uncompressed_bytes": 3191282,
+      "omitted_entries": 254,
+      "manifest": "records-manifest.json"
+    },
+    {
+      "original_archive": {
+        "path": "docs/evidence/performance/qwen35-full-cuda-2026-10-19/cuda-rms-candidate-frontier.zip",
+        "bytes": 18180217,
+        "sha256": "3a98a354eef0697b1a27dca63bd921337152ae98feeda3b85465155500426be2"
+      },
+      "availability": "original local-only; partial records tracked",
+      "records_archive": {
+        "path": "docs/evidence/performance/qwen35-full-cuda-2026-10-19/cuda-rms-candidate-frontier.records.zip",
+        "bytes": 825148,
+        "sha256": "3886c6b0a2468466ddf0b4b1f5610ff4221166125de3f4feb1edb2ddf3696bc8"
+      },
+      "included_entries": 269,
+      "included_uncompressed_bytes": 3264498,
+      "omitted_entries": 66,
+      "manifest": "records-manifest.json"
+    },
+    {
+      "original_archive": {
+        "path": "docs/evidence/performance/qwen35-full-cuda-2026-10-19/cuda-rms-cast-fusion.zip",
+        "bytes": 18713667,
+        "sha256": "1406ad467a8c79ae2dd826f9be2bf06c4628d4321f7ff95aab2853e7b34c8893"
+      },
+      "availability": "original local-only; partial records tracked",
+      "records_archive": {
+        "path": "docs/evidence/performance/qwen35-full-cuda-2026-10-19/cuda-rms-cast-fusion.records.zip",
+        "bytes": 791202,
+        "sha256": "37e7c473ab5ea4447a97573a658ebf0966dc4e35d123f08ceae587c6f3672f5c"
+      },
+      "included_entries": 250,
+      "included_uncompressed_bytes": 3599514,
+      "omitted_entries": 66,
+      "manifest": "records-manifest.json"
+    },
+    {
+      "original_archive": {
+        "path": "docs/evidence/performance/qwen35-full-cuda-2026-10-19/cuda-rms-inplace.zip",
+        "bytes": 18615564,
+        "sha256": "e60aa0746bf5a6afc69efeecf64fdacfcbd9f57202e5ce76c15c8be514b17b39"
+      },
+      "availability": "original local-only; partial records tracked",
+      "records_archive": {
+        "path": "docs/evidence/performance/qwen35-full-cuda-2026-10-19/cuda-rms-inplace.records.zip",
+        "bytes": 768302,
+        "sha256": "bdc9d89c4e2b40cd5f0d3c2c8f165c68a4ee9a73b4a4763d5bdc475f65461256"
+      },
+      "included_entries": 227,
+      "included_uncompressed_bytes": 3490305,
+      "omitted_entries": 66,
+      "manifest": "records-manifest.json"
+    },
+    {
+      "original_archive": {
+        "path": "docs/evidence/performance/qwen35-full-cuda-2026-10-19/ggml-cuda-caller-workspace.zip",
+        "bytes": 28085727,
+        "sha256": "d44a9be92dfc6df6c86e56d4dfe27aa7bd38aa3be9986336fa563d2d639e50dd"
+      },
+      "availability": "original local-only; partial records tracked",
+      "records_archive": {
+        "path": "docs/evidence/performance/qwen35-full-cuda-2026-10-19/ggml-cuda-caller-workspace.records.zip",
+        "bytes": 513610,
+        "sha256": "00b9cb24a34bc73b1a87376b10f62d0cdf638f07ffe4dcb19bfe2a3c2554462e"
+      },
+      "included_entries": 167,
+      "included_uncompressed_bytes": 3537439,
+      "omitted_entries": 128,
+      "manifest": "records-manifest.json"
+    },
+    {
+      "original_archive": {
+        "path": "docs/evidence/performance/qwen35-full-cuda-2026-10-19/ggml-cuda-liveness.zip",
+        "bytes": 27959180,
+        "sha256": "f2e2802e5b9eefb120c7cfd5a6e08362011610636f440cf013a8b07413657db5"
+      },
+      "availability": "original local-only; partial records tracked",
+      "records_archive": {
+        "path": "docs/evidence/performance/qwen35-full-cuda-2026-10-19/ggml-cuda-liveness.records.zip",
+        "bytes": 383062,
+        "sha256": "ec405b956962f1374062a5962cab38ad9a78342c153759732354234000e00c8e"
+      },
+      "included_entries": 132,
+      "included_uncompressed_bytes": 3189010,
+      "omitted_entries": 128,
+      "manifest": "records-manifest.json"
+    },
+    {
+      "original_archive": {
+        "path": "docs/evidence/performance/qwen35-full-cuda-2026-10-19/immutable-alias-index.zip",
+        "bytes": 16021108,
+        "sha256": "feff6e6b20e61b236f77e3532bf2792e507e105c226bbafb1c065740ae294b5a"
+      },
+      "availability": "original local-only; partial records tracked",
+      "records_archive": {
+        "path": "docs/evidence/performance/qwen35-full-cuda-2026-10-19/immutable-alias-index.records.zip",
+        "bytes": 1189506,
+        "sha256": "4c5a6662e68f6b02c74b65919bc0c2598653ca6332939c0deffb38035d4cd19d"
+      },
+      "included_entries": 205,
+      "included_uncompressed_bytes": 6399563,
+      "omitted_entries": 64,
+      "manifest": "records-manifest.json"
+    }
+  ],
+  "omitted_large_text": [
+    {
+      "archive": "docs/evidence/performance/qwen35-full-cuda-2026-10-19/cuda-constant-expressions.zip",
+      "path": "stage/object-inventory.json",
+      "bytes": 4590031,
+      "compressed_bytes": 151377,
+      "crc32": "20705e57"
+    },
+    {
+      "archive": "docs/evidence/performance/qwen35-full-cuda-2026-10-19/cuda-constant-view-origins.zip",
+      "path": "stage/object-inventory.json",
+      "bytes": 4394652,
+      "compressed_bytes": 126039,
+      "crc32": "fb4b20e4"
+    },
+    {
+      "archive": "docs/evidence/performance/qwen35-full-cuda-2026-10-19/cuda-explicit-rope.zip",
+      "path": "stage/checks/20261019T100154/unary.sass.txt",
+      "bytes": 5301504,
+      "compressed_bytes": 410842,
+      "crc32": "083e9aa1"
+    }
+  ]
+}

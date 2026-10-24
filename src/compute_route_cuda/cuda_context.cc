@@ -1,6 +1,5 @@
 #include "default_context.h"
 #include "default_policy.h"
-#include "best_of.h"
 #include "hyle/compute/cuda.h"
 
 #include <array>
@@ -19,7 +18,9 @@ Result<Context> create_context(DefaultContextOptions options) noexcept {
 }
 
 Result<Context> internal::create_context(DefaultContextOptions options,
-                                         Provider ggml, DefaultScope scope) noexcept {
+                                         Provider ggml, DefaultScope scope,
+                                         Provider native, Provider artifacts,
+                                         Provider sglang) noexcept {
   auto selected = device(options.device_ordinal);
   if (!selected)
     return std::unexpected(std::move(selected).error());
@@ -27,27 +28,29 @@ Result<Context> internal::create_context(DefaultContextOptions options,
   const auto configured = [scope](Provider provider, DefaultProvider family) {
     return internal::with_defaults(std::move(provider), family, scope);
   };
-  const auto native = cuda_native::provider();
-  const auto qualified = ggml.identity().version ==
-          "456172ec+iq1-46cbf0e9-resource-f99368c68335266b"
-      ? internal::with_qualified_defaults(native, scope) : Provider{};
+  if (!native.valid()) native = cuda_native::provider();
+  if (!sglang.valid()) sglang = cuda_native::sglang_provider();
+#if defined(HYLE_COMPUTE_TORCH_CUDA)
+  if (!artifacts.valid()) artifacts = torch_cuda::provider();
+#else
+  (void)artifacts;
+#endif
   const std::array providers{
-      ProviderBinding{qualified, 900},
 #if defined(HYLE_COMPUTE_FLASHINFER)
       ProviderBinding{configured(flashinfer::provider(), DefaultProvider::kFlashInfer), 900},
 #endif
       ProviderBinding{configured(ggml, DefaultProvider::kGgml), 900},
 #if defined(HYLE_COMPUTE_TORCH_CUDA)
-      ProviderBinding{configured(torch_cuda::provider(), DefaultProvider::kTorch), 900},
+      ProviderBinding{configured(artifacts, DefaultProvider::kTorch), 900},
 #endif
       ProviderBinding{configured(cublas::provider(), DefaultProvider::kCublas), 900},
-      ProviderBinding{configured(cuda_native::sglang_provider(), DefaultProvider::kSglang), 900},
+      ProviderBinding{configured(sglang, DefaultProvider::kSglang), 900},
       ProviderBinding{configured(cuda_native::deepseek_provider(), DefaultProvider::kDeepSeek), 900},
       ProviderBinding{configured(cuda_native::cccl_provider(), DefaultProvider::kCccl), 900},
       ProviderBinding{configured(native, DefaultProvider::kNative), 1000}};
   return Context::create(*selected,
                          {.metadata_allocator = options.metadata_allocator,
-                          .providers = std::span(providers).subspan(qualified.valid() ? 0 : 1)});
+                          .providers = providers});
 }
 
 } // namespace hyle::compute::cuda

@@ -12,8 +12,11 @@ Result<n::Program> page_reference_program(const n::Context& context,
   if(!recipe.valid() || !recipe.schema().owns(layout))return std::unexpected(Status::InvalidArgument("page peer schema"));
   const auto cap=recipe.schema().capacity();const auto host=layout.host();
   auto state=std::make_shared<d::ProgramState>();state->runtime=d::Access::runtime(context);state->workload=workload;
-  for(const auto& description:recipe.descriptions())state->values.push_back({description,{}});
-  state->inputs={0,1,2,3};state->input_descriptions.assign(recipe.descriptions().begin(),recipe.descriptions().end());
+  for(std::size_t port=0;port<recipe.input_count();++port){
+    HYLE_ASSIGN_OR_RETURN(auto description,recipe.input_description(layout,port));
+    state->values.push_back({description,{}});state->input_descriptions.push_back(description);
+  }
+  state->inputs={0,1,2,3};
   for(unsigned i=0;i<4;++i)state->aliases.push_back({i,0});
   const auto add=[&](const c::TensorDesc& description){const auto id=std::uint32_t(state->values.size());state->values.push_back({description,{}});state->aliases.push_back({id,0});return id;};
   std::vector<std::uint32_t> parts;

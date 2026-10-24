@@ -55,6 +55,7 @@ enum class GgufQuantizedType : std::uint8_t {
   kIq1Xxxs,
   kIq1Xxs,
   kIq1Xs,
+  kNvfp4,
 };
 
 inline constexpr StorageFormatId kGgufQ3K{0x48594c4547475546ULL, 1};
@@ -77,6 +78,9 @@ inline constexpr StorageFormatId kGgufIq1M{0x48594c4547475546ULL, 17};
 inline constexpr StorageFormatId kGgufIq1Xxxs{0x48594c4547475546ULL, 18};
 inline constexpr StorageFormatId kGgufIq1Xxs{0x48594c4547475546ULL, 19};
 inline constexpr StorageFormatId kGgufIq1Xs{0x48594c4547475546ULL, 20};
+// GGUF NVFP4: 64 values in 36 bytes, four inline UE4M3 subgroup scales.
+// This is distinct from MXFP4 and HF NVFP4 activation/scale contracts.
+inline constexpr StorageFormatId kGgufNvfp4{0x48594c4547475546ULL, 21};
 
 // A cold cache interpretation, copied into its schema and encoder recipe.
 // Q8_0 scales are inside each block; FP8 uses one positive finite scale for
@@ -100,6 +104,54 @@ private:
   float scale_ = 1.0F;
 };
 static_assert(sizeof(CacheStorage) == 8);
+
+// HYLE row-inline cache bytes, independent of the executing provider. These
+// are not an official model cache ABI or a native page-footer layout.
+enum class RowCacheFormat : std::uint32_t {
+  kFloat8Block64BFloat16Tail64,
+  kFloat4Block32,
+};
+
+class RowCacheEncoding final {
+public:
+  constexpr RowCacheEncoding() noexcept = default;
+  static constexpr RowCacheEncoding float8_block64_tail64() noexcept {
+    return RowCacheEncoding{RowCacheFormat::kFloat8Block64BFloat16Tail64};
+  }
+  static constexpr RowCacheEncoding float4_block32() noexcept {
+    return RowCacheEncoding{RowCacheFormat::kFloat4Block32};
+  }
+  constexpr RowCacheFormat format() const noexcept { return format_; }
+  constexpr std::uint32_t depth() const noexcept {
+    switch (format_) {
+    case RowCacheFormat::kFloat8Block64BFloat16Tail64: return 512;
+    case RowCacheFormat::kFloat4Block32: return 128;
+    }
+    return 0;
+  }
+  constexpr std::uint32_t row_bytes() const noexcept {
+    switch (format_) {
+    case RowCacheFormat::kFloat8Block64BFloat16Tail64: return 584;
+    case RowCacheFormat::kFloat4Block32: return 68;
+    }
+    return 0;
+  }
+  friend constexpr bool operator==(const RowCacheEncoding &,
+                                   const RowCacheEncoding &) noexcept = default;
+private:
+  constexpr explicit RowCacheEncoding(RowCacheFormat format) noexcept
+      : format_(format) {}
+  RowCacheFormat format_ = RowCacheFormat::kFloat8Block64BFloat16Tail64;
+};
+static_assert(sizeof(RowCacheEncoding) == 4);
+
+// FP8 row: 448 E4M3FN bytes, 64 native BF16 values (128 bytes), seven
+// UE8M0 scale bytes and one zero padding byte. FP4 row: 64 E2M1 bytes
+// (even element in low nibble), followed by four UE8M0 scale bytes.
+// Each row is self-contained; changing another row never changes its scale.
+// Plain U8 carriers use the original StateStore/Copy/page-range ownership.
+HYLE_COMPUTE_OPS_API Result<TensorDesc>
+row_cache_carrier_description(const RowCacheEncoding &, std::int64_t rows) noexcept;
 
 HYLE_COMPUTE_OPS_API Status validate_cache_storage(const CacheStorage &) noexcept;
 // Rows/heads/pages remain outside the final depth axis. Unlike GGUF weight

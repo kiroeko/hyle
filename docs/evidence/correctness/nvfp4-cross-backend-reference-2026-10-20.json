@@ -1,0 +1,849 @@
+{
+  "status": "implemented_and_focused_execution_passed",
+  "date": "2026-10-20",
+  "scope": "Extend the existing ModelOpt group16 BF16 software-reference Nvfp4Linear to Apple/Vulkan; re-execute CPU/CUDA with an additional nonzero subnormal-weight witness. No model artifact, quality or speed acceptance.",
+  "previous_contract": "docs/evidence/correctness/nvfp4-reference-linear-2026-10-20.json",
+  "integration": {
+    "public_operation_unchanged": true,
+    "core_or_executor_added": false,
+    "apple": "Existing typed Apple native lowering and CheckTrace. Logical E4M3 scale uses byte storage only for this operation; ordinary arithmetic cannot reinterpret it as U8.",
+    "vulkan": "Existing Program dispatches, original six bindings/status word. Two phases quantize A once then consume original packed W/scales; no dense W bank.",
+    "math": "One private U32 IEEE F32 add/mul/div source string with small Metal/GLSL dialect wrappers. This preserves legal subnormal globals and BF16 operands without depending on native float division accuracy or F32 denormal preservation.",
+    "workspace": "A QDQ uses2*M*K bytes in each backend. Apple also uses compact per-group/output status arrays and managed CheckTrace; Vulkan uses its existing status word and slot storage. These are not claims that all GPU temporary/opaque allocation equals2*M*K.",
+    "cold_constant_copy": "An actual6-byte E4M3 constant exposed Vulkan non-four-byte D2D rejection. Owned padded carriers now use the existing single TransferSlot allocation for two compute-queue legs, with an intervening completion wait and explicit transfer-write/read visibility. It is cold constant materialization, not warm inference; no host payload copy. Aligned D2D remains direct and clipped spans remain rejected.",
+    "output_origin": "Vulkan binding5 has no byte-origin push field, so descriptor_buffer rejects a nonzero alignment prefix and validates padded capacity. Storage is independently allocated at the same padded capacity; an odd BF16 final word writes authorized padding only."
+  },
+  "validation": {
+    "cpu": {
+      "tests": 3,
+      "failures": 0,
+      "skipped": 0,
+      "xml": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-cross-backend-reference\\cpu\\tests.xml",
+        "bytes": 1650,
+        "sha256": "f46fad559a7d7272337db49b9a863523a37074cbf62490614542b330cb95108c"
+      },
+      "cases": [
+        {
+          "suite": "NativeNvfp4",
+          "name": "RejectsCallerWorkspaceAliasingReadInputsBeforeAnyWrite",
+          "properties": {}
+        },
+        {
+          "suite": "CpuNvfp4ReferenceGraph",
+          "name": "OriginalPackedBanksAndBfloatBoundariesSurviveSlotsAndUpdates",
+          "properties": {
+            "actual_submissions": "8"
+          }
+        },
+        {
+          "suite": "CpuNvfp4ReferenceGraph",
+          "name": "RuntimeDomainFailuresRecoverWithoutChangingTheReferenceTree",
+          "properties": {
+            "successful_submissions": "25",
+            "failed_completions": "18"
+          }
+        }
+      ]
+    },
+    "cuda": {
+      "tests": 2,
+      "failures": 0,
+      "skipped": 0,
+      "xml": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-cross-backend-reference\\cuda\\tests.xml",
+        "bytes": 1229,
+        "sha256": "299d64c10f0571e12e63132b14fcd1d3748624ab5080441026bdd83311f3bb43"
+      },
+      "cases": [
+        {
+          "suite": "CudaNvfp4ReferenceGraph",
+          "name": "OriginalPackedBanksAndBfloatBoundariesSurviveSlotsAndUpdates",
+          "properties": {
+            "actual_submissions": "8"
+          }
+        },
+        {
+          "suite": "CudaNvfp4ReferenceGraph",
+          "name": "RuntimeDomainFailuresRecoverWithoutChangingTheReferenceTree",
+          "properties": {
+            "successful_submissions": "25",
+            "failed_completions": "18"
+          }
+        }
+      ]
+    },
+    "apple": {
+      "scope": "Actual Mac16,12 Apple M4 / macOS27.0.1 / Apple clang21.0.0; software BF16 NVFP4 reference only",
+      "source_freeze": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-reference-linear\\apple\\source-freeze.json",
+        "bytes": 2401,
+        "sha256": "12d684f347755313370442305a688429a2d6c246bbb0727a176a98c847108892"
+      },
+      "versions": {
+        "v1": {
+          "source_manifest": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-reference-linear\\apple\\v1\\source-manifest.json",
+            "bytes": 11238,
+            "sha256": "c839f91b5941b48abb9186afedf696f6c20a038b65369e5c42ddf44edb3faa7b"
+          },
+          "compiles": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-reference-linear\\apple\\v1\\remote\\results\\compile-summary.json",
+            "bytes": 1316368,
+            "sha256": "e3aa1f6b4ed4d7bed109722a97353411f8d48814b6074363996fe4600bf19518"
+          },
+          "host_CXX": 5,
+          "hardware": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-reference-linear\\apple\\v1\\remote\\hardware.json",
+            "bytes": 337,
+            "sha256": "5d29d32be6bc7a3525ef4b6703442b70f42048be97b52856d68703b18666d355"
+          },
+          "after": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-reference-linear\\apple\\v1\\remote\\results\\after-validation.json",
+            "bytes": 2092,
+            "sha256": "399a5b89d3966abfe3e795094ced3849f84b84ff9ec5ae443c1d7926ff2e0ca3"
+          },
+          "before": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-reference-linear\\apple\\v1\\remote\\results\\before-validation.json",
+            "bytes": 2313,
+            "sha256": "dd5b318cb448214f5bb5541501bfc0e2b914e06daffe6ed947c247f6c3b1a7dc"
+          }
+        },
+        "v2": {
+          "source_manifest": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-reference-linear\\apple\\v2\\source-manifest.json",
+            "bytes": 11238,
+            "sha256": "281bacebf36befc50d539ce95b515003be75d9c9e963f61ff466ea6cd5a80865"
+          },
+          "compiles": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-reference-linear\\apple\\v2\\remote\\results\\compile-summary.json",
+            "bytes": 263013,
+            "sha256": "1a3a068b73fca93697adf47773f1deb6e5ffa4e0d042dfce303d82d4acbafdbd"
+          },
+          "host_CXX": 1,
+          "hardware": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-reference-linear\\apple\\v2\\remote\\hardware.json",
+            "bytes": 337,
+            "sha256": "5d29d32be6bc7a3525ef4b6703442b70f42048be97b52856d68703b18666d355"
+          },
+          "after": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-reference-linear\\apple\\v2\\remote\\results\\after-validation.json",
+            "bytes": 1153,
+            "sha256": "527ead88af3c5c321e27cf378957981e79672e3625058d364477e432a48b0701"
+          }
+        }
+      },
+      "counts": {
+        "host_CXX_attempts": 6,
+        "host_CXX_successes": 6,
+        "links": 3,
+        "processes": 3,
+        "SDK_compiles": 0,
+        "NVCC": 0,
+        "whole_suite": false
+      },
+      "old_product": "New test object/current common infer on old Apple owners:3 tests/3fail/0skip (no FP8 byte bridge or typed lowering)",
+      "initial_new_product_failure": "6 tests:2 NVFP4 cold Metal shader compile failures because local variable half used a reserved Metal type name; byte guard and3 MLX neighbors passed. Preserved source/commands/results. Shared numerical core was not the cause.",
+      "final": {
+        "tests": 6,
+        "failures": 0,
+        "skip": 0,
+        "new_tests": 3,
+        "MLX_neighbors": 3,
+        "properties": {
+          "OriginalPackedBanksAndBfloatBoundariesSurviveSlotsAndUpdates": {
+            "device": "Apple M4",
+            "actual_submissions": "8"
+          },
+          "RuntimeDomainFailuresRecoverWithoutChangingTheReferenceTree": {
+            "device": "Apple M4",
+            "successful_submissions": "25",
+            "failed_completions": "18"
+          },
+          "ByteCarrierDoesNotTurnLogicalFp8IntoIntegerArithmetic": {}
+        },
+        "actual_Metal_W_subnormal_witness": "Runtime fixture asserts BF16 0x0284 from weight_global2^-130, BF16 A256 QDQ264; passed on actual GPU",
+        "XML": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-reference-linear\\apple\\v2\\remote\\results\\after-tests.xml",
+          "bytes": 3194,
+          "sha256": "442775b3d2d9170fe00096229a4bd400a768c8d65a66b220c49de651f73daf58"
+        },
+        "link_inputs": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-reference-linear\\apple\\v2\\remote\\results\\after-link-inputs.json",
+          "bytes": 43989,
+          "sha256": "2d33a977cdcc4d43aeb70ce65345e932fac6b07694776c4d30b420a501a6dfa3"
+        }
+      },
+      "ABI_reuse": "New operation descriptor and stateless kernel helper add no existing ABI fields/vtables. Fresh common weight_decode provides new out-of-line infer. Original current layout Graph/core and158-input SDK/Metal cache retained; final link160 actual inputs. v1-to-v2 all source/deps identical except half->halfway in apple_nvfp4.cc, with only that owner refreshed.",
+      "storage": "A QDQ uint16[M,K] =2*M*K bytes once per original execution; W/SF original bytes read per bounded SIMD output tile, no dense N*K W array. Additional compact checked status arrays use existing managed CheckTrace.",
+      "numerics": "Same root-owned integer IEEE F32 math string is compiled by actual Metal with two integer dialect wrappers; BF16 bit rounding, E4M3 RNE, E2M1 ties, nonfast two-scale tree and all public finite/subnormal domains retained. F32 dot tree is backend-specific.",
+      "limits": [
+        "No complete model artifact/payload or quality/throughput acceptance",
+        "No hardware-native FP4 GEMM equivalence",
+        "No cross-platform bitwise-dot equivalence claimed",
+        "Internal zero signs are not all independently observable through final dot outputs"
+      ],
+      "reuse_proof": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-reference-linear\\apple\\v2-reuse-proof.json",
+        "bytes": 596,
+        "sha256": "71e8bcb92dcef3dd367f1e6b2f9c837fb77e4282c1c8e9839cda128fe73964f4"
+      },
+      "no_reverse_sync_or_cleanup": true
+    },
+    "vulkan": {
+      "status": "Implemented and locally verified software reference; not a performance acceptance.",
+      "backend": "Vulkan",
+      "device": {
+        "probe": "Physical properties only; no VkDevice/queue/pipeline/shader execution",
+        "devices": [
+          {
+            "device": "NVIDIA GeForce RTX 4070",
+            "denormBehaviorIndependence": 1,
+            "roundingModeIndependence": 1,
+            "shaderSignedZeroInfNanPreserveFloat16": 1,
+            "shaderSignedZeroInfNanPreserveFloat32": 1,
+            "shaderSignedZeroInfNanPreserveFloat64": 1,
+            "shaderDenormPreserveFloat16": 1,
+            "shaderDenormPreserveFloat32": 0,
+            "shaderDenormPreserveFloat64": 0,
+            "shaderDenormFlushToZeroFloat16": 0,
+            "shaderDenormFlushToZeroFloat32": 0,
+            "shaderDenormFlushToZeroFloat64": 0,
+            "shaderRoundingModeRTEFloat16": 1,
+            "shaderRoundingModeRTEFloat32": 1,
+            "shaderRoundingModeRTEFloat64": 1,
+            "shaderRoundingModeRTZFloat16": 0,
+            "shaderRoundingModeRTZFloat32": 1,
+            "shaderRoundingModeRTZFloat64": 1
+          }
+        ]
+      },
+      "sources": [
+        {
+          "canonical": {
+            "path": "C:\\public\\project-hyle\\hyle\\src\\compute_route_vulkan\\CMakeLists.txt",
+            "bytes": 3111,
+            "sha256": "650e7681144a8d58353644b8fecb774a6310b822431710add4fbbe4108623e6b"
+          },
+          "snapshot": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-vulkan-reference\\source-snapshot\\src\\compute_route_vulkan\\CMakeLists.txt",
+            "bytes": 3111,
+            "sha256": "650e7681144a8d58353644b8fecb774a6310b822431710add4fbbe4108623e6b"
+          }
+        },
+        {
+          "canonical": {
+            "path": "C:\\public\\project-hyle\\hyle\\src\\compute_route_vulkan\\build_shaders.py",
+            "bytes": 5454,
+            "sha256": "bc0ec947f8f1a1f9a6e1bae2e3f0967473439189232f0e8232e8caf5c77e3ab0"
+          },
+          "snapshot": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-vulkan-reference\\source-snapshot\\src\\compute_route_vulkan\\build_shaders.py",
+            "bytes": 5454,
+            "sha256": "bc0ec947f8f1a1f9a6e1bae2e3f0967473439189232f0e8232e8caf5c77e3ab0"
+          }
+        },
+        {
+          "canonical": {
+            "path": "C:\\public\\project-hyle\\hyle\\src\\compute_route_vulkan\\vulkan_tensor.h",
+            "bytes": 1518,
+            "sha256": "34acf53af5a7738c4ae2fab421d8a9253d4ae7066509247c581c4bf366219982"
+          },
+          "snapshot": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-vulkan-reference\\source-snapshot\\src\\compute_route_vulkan\\vulkan_tensor.h",
+            "bytes": 1518,
+            "sha256": "34acf53af5a7738c4ae2fab421d8a9253d4ae7066509247c581c4bf366219982"
+          }
+        },
+        {
+          "canonical": {
+            "path": "C:\\public\\project-hyle\\hyle\\src\\compute_route_vulkan\\vulkan_operations.cc",
+            "bytes": 4785,
+            "sha256": "4bbc2ae1ee9f3b73503a943e2d1de959989fa0a2fbd8b801b02e6bf44a44288b"
+          },
+          "snapshot": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-vulkan-reference\\source-snapshot\\src\\compute_route_vulkan\\vulkan_operations.cc",
+            "bytes": 4785,
+            "sha256": "4bbc2ae1ee9f3b73503a943e2d1de959989fa0a2fbd8b801b02e6bf44a44288b"
+          }
+        },
+        {
+          "canonical": {
+            "path": "C:\\public\\project-hyle\\hyle\\src\\compute_route_vulkan\\vulkan_program.cc",
+            "bytes": 54713,
+            "sha256": "c3c4acb50fcfe5ea1d6fe9e47e923316df02d546c05c9e6a2ddb221d8b6dccc0"
+          },
+          "snapshot": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-vulkan-reference\\source-snapshot\\src\\compute_route_vulkan\\vulkan_program.cc",
+            "bytes": 54713,
+            "sha256": "c3c4acb50fcfe5ea1d6fe9e47e923316df02d546c05c9e6a2ddb221d8b6dccc0"
+          }
+        },
+        {
+          "canonical": {
+            "path": "C:\\public\\project-hyle\\hyle\\src\\compute_route_vulkan\\vulkan_nvfp4.cc",
+            "bytes": 4519,
+            "sha256": "422727e87255110c60ccd6cc36ff3f72bd1192b9291d3c49df40dcd0fef15c29"
+          },
+          "snapshot": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-vulkan-reference\\source-snapshot\\src\\compute_route_vulkan\\vulkan_nvfp4.cc",
+            "bytes": 4519,
+            "sha256": "422727e87255110c60ccd6cc36ff3f72bd1192b9291d3c49df40dcd0fef15c29"
+          }
+        },
+        {
+          "canonical": {
+            "path": "C:\\public\\project-hyle\\hyle\\src\\compute_route_vulkan\\shaders\\nvfp4.comp",
+            "bytes": 6486,
+            "sha256": "c59ffb32719145b3bc1f2790e4e7f6f8bcd9cd64c0282f0c08e7e890c66dfc4d"
+          },
+          "snapshot": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-vulkan-reference\\source-snapshot\\src\\compute_route_vulkan\\shaders\\nvfp4.comp",
+            "bytes": 6486,
+            "sha256": "c59ffb32719145b3bc1f2790e4e7f6f8bcd9cd64c0282f0c08e7e890c66dfc4d"
+          }
+        },
+        {
+          "canonical": {
+            "path": "C:\\public\\project-hyle\\hyle\\src\\compute_route_vulkan\\vulkan_memory.cc",
+            "bytes": 36894,
+            "sha256": "58a56e8c43d7c9974a571b339d25519c0e36a1dc89c27386a690910f9037f133"
+          },
+          "snapshot": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-vulkan-reference\\source-snapshot\\src\\compute_route_vulkan\\vulkan_memory.cc",
+            "bytes": 36894,
+            "sha256": "58a56e8c43d7c9974a571b339d25519c0e36a1dc89c27386a690910f9037f133"
+          }
+        },
+        {
+          "canonical": {
+            "path": "C:\\public\\project-hyle\\hyle\\src\\compute_route_vulkan\\vulkan_memory_internal.h",
+            "bytes": 3330,
+            "sha256": "a3f080a783b17a70f4832dfd4462d661f370c551bbe25451324765ca2b035fc0"
+          },
+          "snapshot": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-vulkan-reference\\source-snapshot\\src\\compute_route_vulkan\\vulkan_memory_internal.h",
+            "bytes": 3330,
+            "sha256": "a3f080a783b17a70f4832dfd4462d661f370c551bbe25451324765ca2b035fc0"
+          }
+        },
+        {
+          "canonical": {
+            "path": "C:\\public\\project-hyle\\hyle\\src\\compute_route_vulkan\\vulkan_transfer_internal.h",
+            "bytes": 1417,
+            "sha256": "ce4e48a15d8b0406a6886672a651f8776a28dd0a19c7d4afa887bb3499f61e83"
+          },
+          "snapshot": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-vulkan-reference\\source-snapshot\\src\\compute_route_vulkan\\vulkan_transfer_internal.h",
+            "bytes": 1417,
+            "sha256": "ce4e48a15d8b0406a6886672a651f8776a28dd0a19c7d4afa887bb3499f61e83"
+          }
+        },
+        {
+          "canonical": {
+            "path": "C:\\public\\project-hyle\\hyle\\src\\compute_route_vulkan\\vulkan_transfer_slot.cc",
+            "bytes": 16132,
+            "sha256": "bb1b208c62ad5134343193e9182d707350af33a967d887b0df4b94f85501ef36"
+          },
+          "snapshot": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-vulkan-reference\\source-snapshot\\src\\compute_route_vulkan\\vulkan_transfer_slot.cc",
+            "bytes": 16132,
+            "sha256": "bb1b208c62ad5134343193e9182d707350af33a967d887b0df4b94f85501ef36"
+          }
+        },
+        {
+          "canonical": {
+            "path": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_vulkan\\CMakeLists.txt",
+            "bytes": 5430,
+            "sha256": "874b211be461942eeba6d08a3d273b3288b41082e37a54215d81061694ea0aa3"
+          },
+          "snapshot": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-vulkan-reference\\source-snapshot\\tests\\graph_route_vulkan\\CMakeLists.txt",
+            "bytes": 5430,
+            "sha256": "874b211be461942eeba6d08a3d273b3288b41082e37a54215d81061694ea0aa3"
+          }
+        },
+        {
+          "canonical": {
+            "path": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_vulkan\\nvfp4_reference_test.cc",
+            "bytes": 3927,
+            "sha256": "be3d70435dbe029c7f9e09e378239d337577c6e5bbdda1aa070e78d406fa880e"
+          },
+          "snapshot": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-vulkan-reference\\source-snapshot\\tests\\graph_route_vulkan\\nvfp4_reference_test.cc",
+            "bytes": 3927,
+            "sha256": "be3d70435dbe029c7f9e09e378239d337577c6e5bbdda1aa070e78d406fa880e"
+          }
+        },
+        {
+          "canonical": {
+            "path": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_vulkan\\native_region_test.cc",
+            "bytes": 56536,
+            "sha256": "e9b55373895453d61d63e102ff0b8bddd9f259fafa881bcf87b531324ce0068f"
+          },
+          "snapshot": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-vulkan-reference\\source-snapshot\\tests\\graph_route_vulkan\\native_region_test.cc",
+            "bytes": 56536,
+            "sha256": "e9b55373895453d61d63e102ff0b8bddd9f259fafa881bcf87b531324ce0068f"
+          }
+        },
+        {
+          "canonical": {
+            "path": "C:\\public\\project-hyle\\hyle\\src\\compute_shader_shared\\nvfp4_f32.h",
+            "bytes": 4845,
+            "sha256": "bcb1534ec5072993166944e8a6085a10078a61ec85fe2d88fc1e7dd659822c43"
+          },
+          "snapshot": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-vulkan-reference\\source-snapshot\\src\\compute_shader_shared\\nvfp4_f32.h",
+            "bytes": 4845,
+            "sha256": "bcb1534ec5072993166944e8a6085a10078a61ec85fe2d88fc1e7dd659822c43"
+          }
+        },
+        {
+          "canonical": {
+            "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\nvfp4_reference_fixture.h",
+            "bytes": 22482,
+            "sha256": "cc94ec1f443511722ff4fc227b065af27b82573443735250951cdce934faa4d3"
+          },
+          "snapshot": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-vulkan-reference\\source-snapshot\\tests\\compute_models\\nvfp4_reference_fixture.h",
+            "bytes": 22482,
+            "sha256": "cc94ec1f443511722ff4fc227b065af27b82573443735250951cdce934faa4d3"
+          }
+        },
+        {
+          "canonical": {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\model_ops.h",
+            "bytes": 60890,
+            "sha256": "60e694b3d25ff7e894d4d3c6e0885900081066b50ad54e0f5fb8cf3a89cdbb8c"
+          },
+          "snapshot": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-vulkan-reference\\source-snapshot\\include\\hyle\\compute\\model_ops.h",
+            "bytes": 60890,
+            "sha256": "60e694b3d25ff7e894d4d3c6e0885900081066b50ad54e0f5fb8cf3a89cdbb8c"
+          }
+        }
+      ],
+      "fixture": {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\nvfp4_reference_fixture.h",
+        "bytes": 22482,
+        "sha256": "cc94ec1f443511722ff4fc227b065af27b82573443735250951cdce934faa4d3"
+      },
+      "prepared_storage": "Original packed W and E4M3 scales are preserved; one BF16 A QDQ buffer of 2*M*K bytes; W decoded only as a sixteen-element register group.",
+      "numerical": "Shared U32 IEEE F32 add/mul/div avoid device FTZ and approximate division, including the nonzero BF16 weight-subnormal witness.",
+      "bounds": "M/N/K U32, actual input/output padded byte ranges within maxStorageBufferRange/U32; general Program actual element_count <= INT32_MAX retained. No hypothetical dense N*K capacity limit.",
+      "constant_copy": "Odd owned original carriers use one cold TransferSlot staging payload, download/wait/upload on the original compute queue, transfer-write/read barrier; aligned device copies keep direct CopyRecording/no staging; clipped unauthorized views stay rejected. No warm inference host wait added.",
+      "output_origin": "binding 5 is outside the five-word byte-origin push range, so descriptor_buffer rejects a nonzero prefix and validates padded capacity. Odd BF16 output last half-word is within owned private padding.",
+      "build": [
+        {
+          "identity": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-vulkan-reference\\checks\\vulkan_operations-identity.json",
+            "bytes": 50398,
+            "sha256": "40dccd9524b35a5abdddbd2940a0e1c5a396d54db93bba7d13bf2d6efb393c38"
+          },
+          "object": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-vulkan-reference\\checks\\vulkan_operations.obj",
+            "bytes": 240750,
+            "sha256": "803a11567fd6c080d5e7422269a01ea234fe5ece33da34dddf28ce95bd4c01c8"
+          }
+        },
+        {
+          "identity": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-vulkan-reference\\checks\\vulkan_program-identity.json",
+            "bytes": 54165,
+            "sha256": "1d888169efab28fa3a5ea855b7d2ccd2f79cd2c0268bce2b2af7eda25be68a33"
+          },
+          "object": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-vulkan-reference\\checks\\vulkan_program.obj",
+            "bytes": 2441385,
+            "sha256": "12b605291561268265f78d43cc8e9de21098516e4ce2f11c05816b1ff6bd3c76"
+          }
+        },
+        {
+          "identity": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-vulkan-reference\\checks\\vulkan_nvfp4-identity.json",
+            "bytes": 50005,
+            "sha256": "b40a0d9ef876e9a095c10e690c8d2f62b7cdc6afe3ca0fc5a4a577e7cf2d35d5"
+          },
+          "object": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-vulkan-reference\\checks\\vulkan_nvfp4.obj",
+            "bytes": 239150,
+            "sha256": "11dc9a1f4de75aacf811465225a25cdb02484fba2cfe7dce2ea82c0c64dd9437"
+          }
+        },
+        {
+          "identity": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-vulkan-reference\\checks\\vulkan_shaders-identity.json",
+            "bytes": 21053,
+            "sha256": "d78d3244def7b0510d5a6f66b9ee2d189ee96e443ec69d56361f1fe6ac42073a"
+          },
+          "object": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-vulkan-reference\\checks\\vulkan_shaders.obj",
+            "bytes": 334606,
+            "sha256": "2209d786712f10fe2c2b214de2a27bc6c78400f8770ed08f42823ca6c2bf8729"
+          }
+        },
+        {
+          "identity": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-vulkan-reference\\checks\\vulkan_memory-identity.json",
+            "bytes": 52895,
+            "sha256": "ba336e7ed70696f17c3ccb109940a53f69626a540f17736ed1ea6f0e2e5d0d6c"
+          },
+          "object": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-vulkan-reference\\checks\\vulkan_memory.obj",
+            "bytes": 805781,
+            "sha256": "53d411c875c16dcb19319d68e88f6b2f462bdbdd071d655ebf7ae9de573b6365"
+          }
+        },
+        {
+          "identity": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-vulkan-reference\\checks\\vulkan_transfer_slot-identity.json",
+            "bytes": 49796,
+            "sha256": "4d6c8874a2cc95b31d212c382aa7b995dff22b12b19c4e36abb2d766b841941d"
+          },
+          "object": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-vulkan-reference\\checks\\vulkan_transfer_slot.obj",
+            "bytes": 280645,
+            "sha256": "0fb5964f23123a9822aff7dae9ffd7baf258f1ee7b4b5b0a421dcaad7d73abc9"
+          }
+        },
+        {
+          "identity": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-vulkan-reference\\checks\\nvfp4-test-current-identity.json",
+            "bytes": 71570,
+            "sha256": "37a3665f8ad7a438a9e7580a76b13551afb60f7025886add2ea4166cf514688c"
+          },
+          "object": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-vulkan-reference\\checks\\nvfp4-test-current.obj",
+            "bytes": 2560096,
+            "sha256": "d08d1d7b3d1db1ac2d153771b6fc9fd8c84917774274e628b7b25d70c89fe745"
+          }
+        },
+        {
+          "identity": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-vulkan-reference\\checks\\native-region-test-identity.json",
+            "bytes": 74857,
+            "sha256": "a8734a8588d965635ed7cf64d900b678bd9c198ed2972f3c4684dac81299d502"
+          },
+          "object": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-vulkan-reference\\checks\\native-region-test.obj",
+            "bytes": 2615978,
+            "sha256": "c33916a08eae6807ea98c8c8a95209d757fdcff87395c059570eb54715e0dbf1"
+          }
+        }
+      ],
+      "link_plan": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-vulkan-reference\\checks\\link-plan.json",
+        "bytes": 69111,
+        "sha256": "7f22d8b803e6473141985a6aba7b7aa113a248b50a93c996431512b6c083944d"
+      },
+      "executable": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-vulkan-reference\\checks\\vulkan.exe",
+        "bytes": 68569600,
+        "sha256": "e1774d6c9556f0e67db711fa371e17d5c859a08bdbdd2405600d1ea305827505"
+      },
+      "shader_comparison": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-vulkan-reference\\checks\\shader-comparison.json",
+        "bytes": 9000,
+        "sha256": "0ee5cc6243eb5fb93a9efc4198b8454123c6b1f1881d396ac343130d9afdf307"
+      },
+      "runs": [
+        {
+          "name": "constants-and-nvfp4",
+          "tests": 8,
+          "failures": 0,
+          "skipped": 0,
+          "receipt": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-vulkan-reference\\checks\\constants-and-nvfp4-run.json",
+            "bytes": 1498,
+            "sha256": "c03e44e22c350e35f69145f2dc78122a7903ece526b40d043472096079ea5611"
+          },
+          "xml": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-vulkan-reference\\checks\\constants-and-nvfp4.xml",
+            "bytes": 3591,
+            "sha256": "b48fe4800e9bc27dc06c83f87b86112626890b52ecc8d07c5b01eb3c2597bdb7"
+          }
+        },
+        {
+          "name": "neighbors",
+          "tests": 9,
+          "failures": 0,
+          "skipped": 0,
+          "receipt": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-vulkan-reference\\checks\\neighbors-run.json",
+            "bytes": 1702,
+            "sha256": "bbc62660d0a2113aa054878e1ddb950d2ad25d01f305d62de9a569b4f3f40ec5"
+          },
+          "xml": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-vulkan-reference\\checks\\neighbors.xml",
+            "bytes": 3289,
+            "sha256": "b2add50e7b4e25ff958a1840dbdc78beadd14326c880d5587bcec0fbc6353bec"
+          }
+        }
+      ],
+      "nvfp4_actual": {
+        "lifetime_submissions": 8,
+        "runtime_successful_submissions": 25,
+        "runtime_failed_completions": 18
+      },
+      "prior_failure": {
+        "receipt": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-vulkan-reference\\checks\\nvfp4-run.json",
+          "bytes": 1393,
+          "sha256": "b0f73549ca5708c82bbbe5c90f2edf79b0ff20589b16000ce6e112097a7c4dc7"
+        },
+        "stdout": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-vulkan-reference\\checks\\nvfp4.stdout.log",
+          "bytes": 1453,
+          "sha256": "4a6f5ebccfe4d7707657f50e5a040df1d8d3cbdb12cb499380b2f9c2f87e344b"
+        },
+        "xml": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-vulkan-reference\\checks\\nvfp4.xml",
+          "bytes": 2092,
+          "sha256": "48fa57312ce3d58531b30d12034bf43717f77bf88a20630826218b1733093671"
+        },
+        "cause": "The first lifetime test failed during materialization of a six-byte E4M3 original scale constant. Runtime-domain test already passed. Fixed with the cold odd-owned device constant transfer path."
+      },
+      "excluded_attempt": {
+        "receipt": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-vulkan-reference\\checks\\constant-copy-run.json",
+          "bytes": 1452,
+          "sha256": "7471164c8883cf844e7aae0ff08f99fd411ee4b3d48b33670e588b9fb9661bc5"
+        },
+        "reason": "First focused constant-copy filter matched zero tests in the inherited executable. It is not counted as validation; the actual owner was then compiled and all six relevant tests ran in the final eight-test process."
+      },
+      "not_run": [
+        "No throughput or native tensor-core FP4 performance claim.",
+        "No validation-layer run for this task.",
+        "CPU/CUDA/Apple results belong to their owners and are not signed here."
+      ],
+      "artifact_size": {
+        "total_bytes_before_freeze": 119467109,
+        "binary_object_map_bytes": 115550733
+      },
+      "cleanup": "No files deleted. Keep all task artifacts until root archive completes, then root test.ps1 can remove regenerable binaries/control outputs. Canonical SDK/build caches were only reused.",
+      "shader_generation": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-vulkan-reference\\checks\\shader-generation-command.json",
+        "bytes": 4770,
+        "sha256": "5a13f0018fdd2f917beb1bd097ea1a19b39f391975c5ee14d7c040f054076a73"
+      },
+      "commands": [
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-vulkan-reference\\checks\\commands-constant-test.json",
+          "bytes": 6616,
+          "sha256": "74a31c338c50e46647db59d608b369bc82b07e32363530665c19878ae00da514"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-vulkan-reference\\checks\\commands-fixture.json",
+          "bytes": 3707,
+          "sha256": "7fbb023002b6ed20810519cb52c92fc40f7de548b968fccaee669d360580d491"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-vulkan-reference\\checks\\commands-host.json",
+          "bytes": 9452,
+          "sha256": "82317c9abbf95f77089dd72a72349f84d9213a30777b7dbbd9d643dccfe8120a"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-vulkan-reference\\checks\\commands-link.json",
+          "bytes": 24880,
+          "sha256": "07d70269009b0e6418246ece897257832fad1b0078e57fb1d31e71d03d4f61f3"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-vulkan-reference\\checks\\commands-shader-host.json",
+          "bytes": 5808,
+          "sha256": "e8efbffa48474ff842d06e5a5852d91448278cfafbb7a57a216a0bdda7bd38ac"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-vulkan-reference\\checks\\commands-transfer-host.json",
+          "bytes": 5792,
+          "sha256": "fd290723f154bc5e8e4b51911564abdddd50ca63bb5af2c05c8b5968af639f8f"
+        }
+      ]
+    },
+    "shared_host_math": {
+      "comparisons": 7212288,
+      "mismatches": 0,
+      "native_FTZ_DAZ": false,
+      "NaN_payload_policy": "class_only",
+      "receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\nvfp4-shader-math\\identity.json",
+        "bytes": 1242,
+        "sha256": "9f8259e0af31081395b0cd025317ec5848c15ae00077204da9390cb9a04021f1"
+      },
+      "scope": "Actual generated integer core vs independent strict native IEEE host arithmetic, RNE with FTZ/DAZ off. Directed edge pairs and random/tiny/cancellation cases; NaN class only. Actual Metal/Vulkan tests separately establish device execution."
+    }
+  },
+  "shared_fixture": {
+    "lifetime_successes": 8,
+    "runtime_successes": 25,
+    "failed_completions": 18,
+    "geometries": [
+      "M2/N3/K32",
+      "M2/N16/K2048"
+    ],
+    "new_witness": "Each row A256 QDQs264; packed code+1, E4M3scale1 and F32 weight_global2^-130 must yield BF16 bits0x0284. Nonzero BF16 subnormal weights must survive multiplication by normal A.",
+    "numerical_scope": "Independent oracle isolates BF16 operand and QDQ boundaries using sparse exact dot witnesses. F32 reduction order is backend-specific; not universal bitwise cross-backend reduction equivalence."
+  },
+  "build_scope": "Reuse existing local/Mac SDKs, native objects and dependency caches; focused product/test host owners, shader generation and relinks only. No SDK/full build, CI, model throughput or new CMake configure/install test.",
+  "failures_retained": [
+    "Old Apple products reject the new entry; initial two Metal shader compiles failed on the reserved identifier half, then only that product owner was corrected.",
+    "Initial Vulkan lifetime graph failed cold materialization of the6-byte scale; runtime-domain test already passed. The cold constant resource seam was fixed without changing the mathematical fixture.",
+    "Host math first link lacked its task-local tmp directory; same compiled object was relinked after creating it."
+  ],
+  "source_freeze": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_shader_shared\\nvfp4_f32.h",
+      "bytes": 4845,
+      "sha256": "bcb1534ec5072993166944e8a6085a10078a61ec85fe2d88fc1e7dd659822c43"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_route_vulkan\\build_shaders.py",
+      "bytes": 5454,
+      "sha256": "bc0ec947f8f1a1f9a6e1bae2e3f0967473439189232f0e8232e8caf5c77e3ab0"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_route_vulkan\\vulkan_nvfp4.cc",
+      "bytes": 4519,
+      "sha256": "422727e87255110c60ccd6cc36ff3f72bd1192b9291d3c49df40dcd0fef15c29"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_route_vulkan\\shaders\\nvfp4.comp",
+      "bytes": 6486,
+      "sha256": "c59ffb32719145b3bc1f2790e4e7f6f8bcd9cd64c0282f0c08e7e890c66dfc4d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_route_vulkan\\vulkan_operations.cc",
+      "bytes": 4785,
+      "sha256": "4bbc2ae1ee9f3b73503a943e2d1de959989fa0a2fbd8b801b02e6bf44a44288b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_route_vulkan\\vulkan_program.cc",
+      "bytes": 54713,
+      "sha256": "c3c4acb50fcfe5ea1d6fe9e47e923316df02d546c05c9e6a2ddb221d8b6dccc0"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_route_vulkan\\vulkan_tensor.h",
+      "bytes": 1518,
+      "sha256": "34acf53af5a7738c4ae2fab421d8a9253d4ae7066509247c581c4bf366219982"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_route_vulkan\\vulkan_memory.cc",
+      "bytes": 36894,
+      "sha256": "58a56e8c43d7c9974a571b339d25519c0e36a1dc89c27386a690910f9037f133"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_route_vulkan\\vulkan_transfer_slot.cc",
+      "bytes": 16132,
+      "sha256": "bb1b208c62ad5134343193e9182d707350af33a967d887b0df4b94f85501ef36"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_route_vulkan\\vulkan_transfer_internal.h",
+      "bytes": 1417,
+      "sha256": "ce4e48a15d8b0406a6886672a651f8776a28dd0a19c7d4afa887bb3499f61e83"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_route_vulkan\\vulkan_memory_internal.h",
+      "bytes": 3330,
+      "sha256": "a3f080a783b17a70f4832dfd4462d661f370c551bbe25451324765ca2b035fc0"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_route_vulkan\\CMakeLists.txt",
+      "bytes": 3111,
+      "sha256": "650e7681144a8d58353644b8fecb774a6310b822431710add4fbbe4108623e6b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_vulkan\\nvfp4_reference_test.cc",
+      "bytes": 3927,
+      "sha256": "be3d70435dbe029c7f9e09e378239d337577c6e5bbdda1aa070e78d406fa880e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_vulkan\\CMakeLists.txt",
+      "bytes": 5430,
+      "sha256": "874b211be461942eeba6d08a3d273b3288b41082e37a54215d81061694ea0aa3"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_vulkan\\native_region_test.cc",
+      "bytes": 56536,
+      "sha256": "e9b55373895453d61d63e102ff0b8bddd9f259fafa881bcf87b531324ce0068f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\nvfp4_reference_fixture.h",
+      "bytes": 22482,
+      "sha256": "cc94ec1f443511722ff4fc227b065af27b82573443735250951cdce934faa4d3"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_route_apple\\apple_nvfp4.h",
+      "bytes": 302,
+      "sha256": "dfb3c0c148bc3b7653c89e02e7a75f4715c8b0627170329d94f9cd4f399b2c87"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_route_apple\\apple_nvfp4.cc",
+      "bytes": 9217,
+      "sha256": "47bdef80513431f59ec4fd3cd335c68f49bc995c46d655ed21945277ecbd6549"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_route_apple\\apple_operations.cc",
+      "bytes": 21452,
+      "sha256": "bdb075054b9fa548a0b3a842d5195c4fb8a6ac8024ad363189a3f684719dcfa2"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_route_apple\\apple_mature_float.cc",
+      "bytes": 34030,
+      "sha256": "b6e68881eb70bd12fc8240f57ce26a27408207c30efbf1680b69eb5ae41111e5"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_route_apple\\CMakeLists.txt",
+      "bytes": 5961,
+      "sha256": "53738677460f21dbe7824a6e9725fe79bbd7a6672d7d400827771c76ff94a38a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_apple\\nvfp4_reference_test.cc",
+      "bytes": 3085,
+      "sha256": "6e1d74694eaa73e5b46a27b4ebd04ce927c37275c276d687ff7ef3350a9df57c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_apple\\CMakeLists.txt",
+      "bytes": 6084,
+      "sha256": "9c9540139ecafc26bf8ec807287499bf63bba4ac246cb2d552e12fc88df2377f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\user\\compute.md",
+      "bytes": 100774,
+      "sha256": "686880f86c5082447cc9f8899989d1fa3042d88366e5663b13487841987fbe31"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\architecture\\compute-design.md",
+      "bytes": 102601,
+      "sha256": "c23bc03c2a1218777d44ecf06b76b427c5a2bb01f0bdee974554cbdd40772a87"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\developer\\current-work.md",
+      "bytes": 39609,
+      "sha256": "1ec1def0dd2cbdb727b126f5f50b7f72401ac68fcc283259dc7bf53adf686bd3"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\implementation\\model-operators.md",
+      "bytes": 59413,
+      "sha256": "cdb5aecf89156ceb31f9375ebf81fcd4f6ddb46ce7a499cb737cec2532a653b2"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\implementation\\model-quantizations.json",
+      "bytes": 337399,
+      "sha256": "2ec00f770b766e0a87050983056a334f3303ade135962cbd5822fe7d53018be0"
+    }
+  ],
+  "execution_limits": [
+    "Windows CPU/CUDA/Vulkan plus MacBook Air M4 only; no new Linux execution.",
+    "No selected artifact weight payload, whole-model import, model quality, throughput or peak-memory verification.",
+    "This strict software reference is not hardware-native FP4 GEMM and does not establish equivalent W4A4 hardware accumulation.",
+    "No Qwen BF16 decode speedup is attributed to these separate reference capability additions."
+  ],
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\nvfp4-cross-backend-reference-2026-10-20.zip",
+    "bytes": 2112756,
+    "sha256": "bf86f37da14d5328edbd60470cdf052cb644b1bf3232a38670ec3cdf89d12290",
+    "payloads": 431,
+    "CRC_checked": true,
+    "all_payload_SHA256_checked": true
+  }
+}

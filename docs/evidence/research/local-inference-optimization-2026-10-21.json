@@ -1,0 +1,160 @@
+{
+  "schema": "hyle.local-inference-optimization.v1",
+  "date": "2026-10-21",
+  "status": "First bounded source review complete; optimization opportunities are not measured wins",
+  "scope": {
+    "repositories": 7,
+    "mechanism_notes": 23,
+    "merged_directions": 5,
+    "priority": "Single-machine inference speed first; GPU memory second",
+    "network": 0,
+    "external_repo_changes": 0,
+    "external_builds": 0,
+    "external_GPU_runs": 0
+  },
+  "repositories": [
+    {
+      "name": "TensorRT-LLM",
+      "commit": "46d9966b54d9d11998b712e732fb20f64d4d35c0"
+    },
+    {
+      "name": "vllm",
+      "commit": "276fbcff2717bd934cfa37c8a2e4c391f3e7237b"
+    },
+    {
+      "name": "llama.cpp",
+      "commit": "23b0202a189c44a54625aadcb37a946dd1d6278d"
+    },
+    {
+      "name": "sglang",
+      "commit": "234ccba7f625e12639e621044496bcc6197c3758"
+    },
+    {
+      "name": "ik_llama.cpp",
+      "commit": "35e72560fac6eb4e0bedc99976d3a12040749230"
+    },
+    {
+      "name": "ds4",
+      "commit": "5379c1c9ac315f1540371b06a3db88491d4059ff"
+    },
+    {
+      "name": "DeepInfer",
+      "commit": "774ce244b87cc0eb8d4b94ab9f5de2ab22049f01"
+    }
+  ],
+  "version_limits": [
+    "Local checkout versions only, not a claim of latest upstream.",
+    "TensorRT-LLM index has staged deletions/untracked source; all cited files were checked against its HEAD with line-ending normalization. Other reviewed repositories were clean.",
+    "Research llama.cpp HEAD is distinct from the retained D4 benchmark peer commit; source research is not a rerun of those engines.",
+    "ds4 is antirez/community, not the official DeepSeek runtime. DeepInfer SM100/Ascend and multi-GPU throughput are not RTX4070 evidence."
+  ],
+  "actions": [
+    {
+      "priority": 1,
+      "work": "Bounded cold tactic comparison for one actual hot BF16 direct-Lt projection",
+      "source": [
+        "TensorRT-LLM autotuner.py:531-553,1321-1500",
+        "Hyle cublas_provider.cc:448-458",
+        "qwen-current-lt-route-confirmation.json"
+      ],
+      "gap": "Current provider asks for one heuristic and retains that algorithm. Actual current Qwen T1 routes103 of187 MatMuls to direct Lt, including down/head; T128 routes187 of187. Counts are not a time share.",
+      "current_BF16_Qwen": true,
+      "next": "Start with one traced head or down geometry and a small number of valid Lt algorithms in the original prepared owner. Preserve source bytes, typed rounding/accumulation and workspace limits. No hot search or general autotuning service.",
+      "closure": "Compare actual projection and complete host-token session. Adopt only with correct outputs and measured benefit; otherwise retain original algorithm and close this finite experiment."
+    },
+    {
+      "priority": 2,
+      "work": "Fuse private normalization or activation into the existing quantization prologue",
+      "source": [
+        "vLLM libtorch_stable/layernorm_quant_kernels.cu:69-78",
+        "SGLang mxfp8_epilogue.py:73-78",
+        "Hyle graph_route_cuda/fp8_shared_prologue_region.cc:86-145"
+      ],
+      "gap": "Hyle already shares quantization across compatible linears; the reviewed matching does not include the preceding norm/activation. Preserve the original BF16/F16 round even when the intermediate stays in registers.",
+      "current_BF16_Qwen": false,
+      "next": "Choose one actually used FP8 role with matching group/scale/order/math and private intermediate; retain ordinary decomposition for escaped outputs. MXFP8/Blackwell and NVFP4 policies are not interchangeable with existing contracts.",
+      "closure": "Reference the unfused rounding/quantization and compare launches, traffic and full role performance. Do not claim current BF16 decode improvement from an unused FP8 path."
+    },
+    {
+      "priority": 3,
+      "work": "Tile and pipeline one contract-compatible packed4bit linear directly into MMA",
+      "source": [
+        "vLLM mixed_precision/marlin.py:74-200",
+        "vLLM marlin_template.h:697-818,1030-1088",
+        "Hyle compute_provider_cuda/packed_rows.cuh:19-61"
+      ],
+      "gap": "Hyle already reads compressed weights without a whole expanded bank. The reviewed packed_rows path uses warp F32 FMA; compatible native tiled MMA is a compute/layout opportunity, not missing format support.",
+      "current_BF16_Qwen": false,
+      "next": "Use a supported4bit source layout/scale/cast contract; cold immutable repack if required, separate tiny-M and prefill schedules. MLX5/6bit, mixed promoted-F32 and quantized activation are separate contracts.",
+      "closure": "Measure a real admitted role and subsequent same-quantization consumer; retain the original math path where incompatible. No whole-bank expansion or silent low-precision reduction."
+    },
+    {
+      "priority": 4,
+      "work": "Finish original-owner cold resources and consider mutually exclusive shape workspace sharing only where legal",
+      "source": [
+        "llama.cpp/ik graph and context pools",
+        "ds4 bounded decode islands",
+        "DeepInfer and vLLM static graph pools"
+      ],
+      "gap": "Finite children, captures, shared FP8 prologue, reserved workspace and leases already exist. Current two native-owner reductions are tested, with no throughput gain established.",
+      "current_BF16_Qwen": true,
+      "next": "Inspect only actual first-use allocations or duplicate mutually exclusive workspace. Keep escaped old outputs, StateVersion and independent parity-slot bindings alive. Shared pointer keys/weak outputs cannot replace those proofs.",
+      "closure": "Report first-call/full-call and sampled memory separately. Do not start a second cache/executor or delay actual first execution outside timing."
+    },
+    {
+      "priority": 5,
+      "work": "Device metadata/CPU bookkeeping overlap and bounded expert residency for a consumer that needs them",
+      "source": [
+        "DeepInfer worker.py:90-189",
+        "ik selected-expert scheduler",
+        "ds4 SSD upload ring"
+      ],
+      "gap": "Hyle already has queues, Completion, file streaming and WeightSlots. Device token dependencies and useful expert residency are consumer policies, not universally missing Graph primitives.",
+      "current_BF16_Qwen": "Conditional; a fully resident small model gains nothing from SSD expert streaming.",
+      "next": "Use the actual MTP/large working-set consumer when reached. Include host-ID readback, waiting, cancellation/drain, cache bytes and token-visible completion. Preserve single-request semantics.",
+      "closure": "No current implementation promise or idle experimental candidate: reconsider only at that concrete consumer; no model support expansion."
+    }
+  ],
+  "already_present": [
+    "Cold compiled finite graph family and explicit replay modes",
+    "Shared compatible FP8 activation quantization",
+    "Packed direct consumers for supported formats",
+    "Invocation workspace, result/state leases and native retirement",
+    "Bounded file pipeline and same-generation WeightSlots"
+  ],
+  "research_records": [
+    {
+      "path": ".scratch/architecture-refactor-2026-10-18/d4-windows-preparation-2026-10-21/first-decode-startup-2026-10-21/tensorrt-vllm-research.json",
+      "bytes": 32498,
+      "sha256": "5523c15c91eb4af72fea0a219d48d5eaaaec32a7e07ff088dcdec9342cce6efe"
+    },
+    {
+      "path": ".scratch/architecture-refactor-2026-10-18/d4-windows-preparation-2026-10-21/first-decode-startup-2026-10-21/llama-sglang-research.json",
+      "bytes": 19796,
+      "sha256": "14c5b8fdfe013daf4695a441e129c379c88aa4d235d34f274138ebf44c865796"
+    },
+    {
+      "path": ".scratch/architecture-refactor-2026-10-18/d4-windows-preparation-2026-10-21/first-decode-startup-2026-10-21/ik-llama-research.json",
+      "bytes": 14929,
+      "sha256": "4aec3c549b9e2448a56b2d2d1f2f13a3556439b22f75229b7b8d2d976ee03385"
+    },
+    {
+      "path": ".scratch/architecture-refactor-2026-10-18/d4-windows-preparation-2026-10-21/first-decode-startup-2026-10-21/ds4-deepinfer-research.json",
+      "bytes": 23828,
+      "sha256": "5a0f2c53c490f42934e2847063252a5ae622708134ec3de5f3799c76a2b7133a"
+    },
+    {
+      "path": ".scratch/architecture-refactor-2026-10-18/d4-windows-preparation-2026-10-21/first-decode-startup-2026-10-21/qwen-current-lt-route-confirmation.json",
+      "bytes": 8759,
+      "sha256": "bc206995b61aadca2602ab36f76b0adc7ae8a5907622891a72204abac6dbabe6"
+    }
+  ],
+  "archive": {
+    "path": "docs/evidence/research/local-inference-optimization-2026-10-21.zip",
+    "bytes": 35253,
+    "sha256": "0107d3d29f7c3b8c7c9148b4a44549aeeb04776ad4e3ccaab52f7f7ffcb2ef7e"
+  },
+  "result_standard": "Every subsequent optimization comparison reports prefill, full decode, per-phase GPU-memory/peak, and a fixed multi-turn session elapsed/output throughput. Missing items stay explicitly unmeasured; no averaging of phase TPS.",
+  "measured_native_work": "../performance/qwen-capture-resource-reuse-2026-10-21.json",
+  "D4_complete": false
+}

@@ -31,19 +31,55 @@ TEST(NativePagedMetadata, FullNoncausalQGreaterThanKvAndIndependentEncodedRoots)
   auto selected=schema->version({q,k,ids,tail});ASSERT_TRUE(selected);
   auto full=c::NativePagedBatchProgram::prepare(*schema,{.max_host_metadata_bytes=4,.causal=false});ASSERT_TRUE(full);
   EXPECT_TRUE(full->version(*selected));
-  EXPECT_NE(full->descriptions()[1],full->descriptions()[2]);
+  EXPECT_NE(full->input_description(*selected,1).value(),full->input_description(*selected,2).value());
   auto causal=c::NativePagedBatchProgram::prepare(*schema,{.max_host_metadata_bytes=4});ASSERT_TRUE(causal);
   EXPECT_TRUE(causal->version(*selected).error().IsInvalidArgument());
   EXPECT_FALSE(c::NativePagedBatchProgram::prepare(*schema,{.max_host_metadata_bytes=4,.causal=false,.window_left=0}));
+}
+TEST(NativePagedMetadata, InputDescriptionsUseActiveQueriesWithoutAllocatingOrShrinkingCache){
+  for(bool mla:{false,true}){
+    auto make_schema=[&]{return mla?c::BatchSchema::create_mla({.max_requests=3,
+        .max_query_rows=8,.max_kv_rows=96,.max_pages=4,.max_page_refs=8,
+        .query_heads=64}).value():schema();};
+    auto selected=make_schema(),foreign=make_schema();auto owned=layout(selected);
+    const std::array<std::int32_t,2> empty_ptr{0,0};
+    const std::array<std::int32_t,1> empty_tail{0};
+    auto empty=selected.version({empty_ptr,empty_ptr,{},empty_tail}).value();
+    auto other=layout(foreign);hyle_f5_fault_fixture::Allocator allocator;
+    {
+      auto recipe=c::NativePagedBatchProgram::prepare(selected,
+          {.max_host_metadata_bytes=32,.allocator=allocator.ref()}).value();
+      const auto attempts=allocator.attempts;allocator.fail=attempts;
+      EXPECT_EQ(recipe.input_count(),mla?3u:4u);
+      auto query=recipe.input_description(owned,0);ASSERT_TRUE(query);
+      EXPECT_EQ(query->dimensions()[0],4);
+      EXPECT_EQ(query->dimensions()[1],selected.capacity().query_heads);
+      EXPECT_EQ(query->dimensions()[2],selected.capacity().qk_head_dim);
+      auto zero=recipe.input_description(empty,0);ASSERT_TRUE(zero);
+      EXPECT_EQ(zero->dimensions()[0],0);EXPECT_EQ(zero->required_bytes().value(),0u);
+      auto cache=recipe.input_description(owned,1);ASSERT_TRUE(cache);
+      EXPECT_EQ(*cache,c::batch_cache_description(selected,
+          mla?c::BatchCacheRole::kMla:c::BatchCacheRole::kKey).value());
+      for(std::size_t port=1;port<recipe.input_count();++port){
+        EXPECT_EQ(recipe.input_description(empty,port).value(),
+                  recipe.input_description(owned,port).value());
+      }
+      EXPECT_TRUE(recipe.input_description(other,0).error().IsInvalidArgument());
+      EXPECT_TRUE(recipe.input_description({},0).error().IsInvalidArgument());
+      EXPECT_TRUE(recipe.input_description(owned,recipe.input_count()).error().IsInvalidArgument());
+      EXPECT_EQ(allocator.attempts,attempts);
+    }
+    EXPECT_EQ(allocator.live,0u);
+    EXPECT_EQ(c::NativePagedBatchProgram{}.input_count(),0u);
+    EXPECT_TRUE(c::NativePagedBatchProgram{}.input_description(owned,0).error().IsFailedPrecondition());
+  }
 }
 TEST(NativePagedMetadata, CompactOwnedPageOrderAndTailGenerationAreIndependentOfQueryHeads) {
   for (auto type : {c::DataType::kFloat16, c::DataType::kBFloat16}) {
     auto selected = schema(type);
     auto recipe = c::NativePagedBatchProgram::prepare(selected,
         {.max_host_metadata_bytes = 32, .scale = .125F, .causal = false}).value();
-    EXPECT_EQ(recipe.descriptions().size(), 4u);
-    EXPECT_EQ(recipe.descriptions()[3].data_type(), c::DataType::kInt32);
-    EXPECT_EQ(recipe.descriptions()[3].required_bytes().value(), 32u);
+    EXPECT_EQ(recipe.input_count(), 4u);
     EXPECT_EQ(recipe.costs().index_bytes, 32u);
     EXPECT_TRUE(recipe.costs().native_private_bytes_unknown);
     EXPECT_EQ(recipe.scale(), .125F); EXPECT_FALSE(recipe.causal());
@@ -51,6 +87,9 @@ TEST(NativePagedMetadata, CompactOwnedPageOrderAndTailGenerationAreIndependentOf
     std::array<std::int32_t, 4> pages{3, 1, 1, 0};
     std::array<std::int32_t, 2> tails{7, 15};
     auto owned = selected.version({q, k, pages, tails}).value();
+    const auto metadata=recipe.input_description(owned,3);ASSERT_TRUE(metadata);
+    EXPECT_EQ(metadata->data_type(), c::DataType::kInt32);
+    EXPECT_EQ(metadata->required_bytes().value(), 32u);
     auto version = recipe.version(owned).value();
     pages.fill(2); tails.fill(16); q[1] = 2;
     EXPECT_EQ(version.layout(), owned);

@@ -10,6 +10,7 @@
 #include <hyle/compute/providers/flashinfer.h>
 #include <hyle/compute/batch_execution.h>
 #include <hyle/graph/batch.h>
+#include <hyle/graph/cuda.h>
 #if defined(HYLE_PENDING_CPU_CUDA_GRAPH_RISKS)
 #include <hyle/graph/cpu_cuda.h>
 #include <hyle/compute/providers/ggml_cpu.h>
@@ -79,10 +80,7 @@ Status run(Mode mode){
   HYLE_ASSIGN_OR_RETURN(auto schema,c::BatchSchema::create(cap));
   const std::array<std::int32_t,2> ptr{0,1};const std::array<std::int32_t,1> pages{1},tail{2};
   HYLE_ASSIGN_OR_RETURN(auto layout,schema.version({ptr,ptr,pages,tail}));
-  HYLE_ASSIGN_OR_RETURN(auto wrapped,b::provider(c::flashinfer::provider(),schema,
-      {.resource={},.host_workspace=hyle::mem::system_resource(),.max_float_workspace_bytes=8u<<20,
-       .max_int_workspace_bytes=64u<<10,.max_invocations=1,.scale=.125F}));
-  HYLE_ASSIGN_OR_RETURN(auto context,c::Context::create(id,wrapped));
+  HYLE_ASSIGN_OR_RETURN(auto context,c::Context::create(id,c::flashinfer::provider()));
   HYLE_ASSIGN_OR_RETURN(auto device,n::MemoryResource::create(context,n::MemoryKind::kDevice));
   HYLE_ASSIGN_OR_RETURN(auto host,n::MemoryResource::create(context,n::MemoryKind::kPinnedHost));
   HYLE_ASSIGN_OR_RETURN(auto queue,context.create_queue());
@@ -152,20 +150,22 @@ Status run(Mode mode){
   const std::array external{g::ExternalResourceContract{inputs[0],bridge::kHostStorage},g::ExternalResourceContract{output_id,bridge::kHostStorage}};
   HYLE_ASSIGN_OR_RETURN(auto compiled,bridge::compile(graph,{&cpu_context,&context,hyle::mem::system_resource(),&host,&device},
       {.node_placements=placements,.external_resources=external}));
-  const std::array lanes{b::LaneBinding{g::ExecutionLaneId{0},&context,&queue,host.ref()},
-      b::LaneBinding{g::ExecutionLaneId{1},&cpu_context,&cpu_queue,hyle::mem::system_resource()}};
+  const std::array lanes{g::QueueBinding{g::ExecutionLaneId{0},&queue},
+      g::QueueBinding{g::ExecutionLaneId{1},&cpu_queue}};
 #else
   const std::array storage{g::StorageDomain{resource}};
-  const std::array targets{g::ExecutionTarget{&context,g::StorageDomainId{0}}};
-  HYLE_ASSIGN_OR_RETURN(auto compiled,g::compile(graph,{.storage_domains=storage,.targets=targets},
+  HYLE_ASSIGN_OR_RETURN(auto target_source_0, hyle::graph::ExecutionSource::acquire(context));
+  const std::array targets{g::ExecutionTarget{target_source_0,g::StorageDomainId{0}}};
+  HYLE_ASSIGN_OR_RETURN(auto compiled,g::cuda::compile(graph,{.storage_domains=storage,.targets=targets},
       {.operation_fallback=g::OperationFallbackPolicy::kReject}));
-  const std::array lanes{b::LaneBinding{g::ExecutionLaneId{0},&context,&queue,host.ref()}};
+  const std::array lanes{g::QueueBinding{g::ExecutionLaneId{0},&queue}};
 #endif
-  const g::LeasedInvocationOptions options{.allocator=metadata.get()};
-  HYLE_ASSIGN_OR_RETURN(auto original,b::Invocation::create(compiled.executable,lanes,options));
-  HYLE_ASSIGN_OR_RETURN(auto receiver,b::PendingInvocation::create(std::move(original),4,options));
+  const g::ResourceOptions options{.allocator=metadata.get()};
+  HYLE_ASSIGN_OR_RETURN(auto receiver,compiled.executable.create_invocation({.resources=options}));
   const std::array versions{b::NodeLayout{node,layout}};
-  HYLE_RETURN_IF_ERROR(receiver.prepare_batch(versions));
+  const b::PrepareOptions prepare_options{.host_workspace=host.ref(),.max_float_workspace_bytes=8u<<20,
+      .max_int_workspace_bytes=64u<<10,.allocator=metadata.get(),.max_source_completions=4};
+  HYLE_RETURN_IF_ERROR(b::prepare(receiver,lanes,versions,prepare_options));
   HYLE_ASSIGN_OR_RETURN(auto keys,c::PagedArena::create(schema,c::BatchCacheRole::kKey,resource,{.max_backing_bytes=8192}));
   HYLE_ASSIGN_OR_RETURN(auto values,c::PagedArena::create(schema,c::BatchCacheRole::kValue,resource,{.max_backing_bytes=8192}));
   HYLE_ASSIGN_OR_RETURN(auto kw,keys.acquire(1));HYLE_ASSIGN_OR_RETURN(auto vw,values.acquire(1));
@@ -219,7 +219,8 @@ Status run(Mode mode){
   std::array<c::Completion*,3> original_sources{};
   HYLE_ASSIGN_OR_RETURN(auto source_count,c::detail::CopyStreamAccess::retirement_sources(update,original_sources));
   HYLE_RETURN_IF_ERROR(require(source_count==3,"pending Graph lost accepted source producer/phase controls"));
-  HYLE_RETURN_IF_ERROR(receiver.bind(inputs[1],k));HYLE_RETURN_IF_ERROR(receiver.bind(inputs[2],v));
+  HYLE_RETURN_IF_ERROR(b::bind(receiver,inputs[1],k));HYLE_RETURN_IF_ERROR(b::bind(receiver,inputs[2],v));
+  HYLE_RETURN_IF_ERROR(receiver.prepare_replay(lanes));
   source_events.clear();recording=true;fail_source=false;
   const auto previous=n::detail::set_completion_observation_hooks({&query_event,&synchronize});
   struct Reset final {n::detail::CompletionObservationHooks previous;~Reset(){
@@ -249,8 +250,8 @@ Status run(Mode mode){
   }
   if(mode==Mode::known_source_error){
     gate.release();HYLE_RETURN_IF_ERROR(require(update.wait().IsResourceExhausted(),"known source lost actual terminal error"));
-    auto rejected=receiver.submit(std::move(update));
-    HYLE_RETURN_IF_ERROR(require(!rejected && update.valid() && !receiver.output(output_id),"CUDA pending Graph accepted known failed source or lost original Update"));
+    auto rejected=b::submit(receiver,lanes,std::move(update));
+    HYLE_RETURN_IF_ERROR(require(!rejected && update.valid() && !receiver.result(output_id),"CUDA pending Graph accepted known failed source or lost original Update"));
     HYLE_RETURN_IF_ERROR(require(!update.take_mutable({1}),"failed source fabricated successful writer"));
     std::fprintf(stderr,"CUDA pending Graph known-source failure preserves controls and actual retirement PASS\n");return Status::Ok();
   }
@@ -263,27 +264,28 @@ Status run(Mode mode){
   JointWaitCheckpoint checkpoint{&gate,&guards,original_sources.back(),mode,false,{}};
   joint_checkpoint=&checkpoint;
 #endif
-  HYLE_ASSIGN_OR_RETURN(auto submitted,receiver.submit(std::move(update)));
+  HYLE_ASSIGN_OR_RETURN(auto submitted,b::submit(receiver,lanes,std::move(update)));
 #if defined(HYLE_PENDING_CPU_CUDA_GRAPH_RISKS)
   joint_checkpoint=nullptr;
   HYLE_RETURN_IF_ERROR(checkpoint.status);
-  HYLE_RETURN_IF_ERROR(require(checkpoint.seen && !update.valid() && !receiver.take_update(),
+  HYLE_RETURN_IF_ERROR(require(checkpoint.seen && !update.valid() && !b::take_update(receiver),
       "joint receiver skipped actual checked boundary or returned retained source controls"));
 #else
-  HYLE_RETURN_IF_ERROR(require(!update.valid() && !receiver.output(output_id) && !receiver.take_update() && guards.active_batches()==1,
+  HYLE_RETURN_IF_ERROR(require(!update.valid() && !receiver.result(output_id) && !b::take_update(receiver) && guards.active_batches()==1,
       "CUDA receiver released pending producer/output/source early"));
 #endif
-  HYLE_RETURN_IF_ERROR(require(receiver.prepare_batch(versions).IsUnavailable(),"CUDA pending native slot reused"));
+  HYLE_RETURN_IF_ERROR(require(b::prepare(receiver,lanes,versions,prepare_options).IsUnavailable(),"CUDA pending native slot reused"));
   if(mode==Mode::abandon){
     submitted={};receiver={};
 #if !defined(HYLE_PENDING_CPU_CUDA_GRAPH_RISKS)
-    HYLE_RETURN_IF_ERROR(require(guards.active_batches()==1 && !b::Invocation::create(compiled.executable,lanes,options),"abandoned common receiver released native work/slot before retirement"));
+    HYLE_RETURN_IF_ERROR(require(guards.active_batches()==1 && metadata.used()>program_metadata,"abandoned original Invocation released native work/metadata before retirement"));
 #endif
     gate.release();HYLE_RETURN_IF_ERROR(context.drain());
     const auto deadline=std::chrono::steady_clock::now()+std::chrono::seconds(5);
     while(metadata.used()!=program_metadata && std::chrono::steady_clock::now()<deadline)std::this_thread::sleep_for(std::chrono::milliseconds(1));
     HYLE_RETURN_IF_ERROR(require(metadata.used()==program_metadata && guards.active_batches()==0,"abandoned common receiver did not retire original owner metadata/guards"));
-    HYLE_ASSIGN_OR_RETURN(auto next,b::Invocation::create(compiled.executable,lanes,options));HYLE_RETURN_IF_ERROR(next.drain());
+    HYLE_ASSIGN_OR_RETURN(auto next,compiled.executable.create_invocation({.resources=options}));
+    HYLE_RETURN_IF_ERROR(b::prepare(next,lanes,versions,prepare_options));HYLE_RETURN_IF_ERROR(next.drain());
 #if defined(HYLE_PENDING_CPU_CUDA_GRAPH_RISKS)
     std::fprintf(stderr,"CPU+CUDA actual checked-boundary result/owner abandon retires original slot/metadata/guards; gated acceptance checkpoint retained source PASS\n");
 #else
@@ -294,7 +296,7 @@ Status run(Mode mode){
   if(mode==Mode::cancel_after){
 #if !defined(HYLE_PENDING_CPU_CUDA_GRAPH_RISKS)
     const auto refused=original_sources.back()->request_cancel();
-    HYLE_RETURN_IF_ERROR(require(refused.IsUnimplemented() && guards.active_batches()==1 && !receiver.output(output_id) && !receiver.take_update(),
+    HYLE_RETURN_IF_ERROR(require(refused.IsUnimplemented() && guards.active_batches()==1 && !receiver.result(output_id) && !b::take_update(receiver),
         "unsupported native cancel fabricated Graph/source retirement or successful output"));
 #endif
   }
@@ -304,7 +306,7 @@ Status run(Mode mode){
   gate.release();const auto terminal=submitted.wait();
   if(mode==Mode::success || mode==Mode::cancel_before || mode==Mode::cancel_after){
     HYLE_RETURN_IF_ERROR(terminal);
-    {HYLE_ASSIGN_OR_RETURN(auto output,receiver.output(output_id));HYLE_ASSIGN_OR_RETURN(auto read,output.storage_lease());
+    {HYLE_ASSIGN_OR_RETURN(auto output,receiver.result(output_id));HYLE_ASSIGN_OR_RETURN(auto read,output.storage_lease());
       HYLE_ASSIGN_OR_RETURN(auto view,read.view());
 #if defined(HYLE_PENDING_CPU_CUDA_GRAPH_RISKS)
       std::array<float,128> actual{};
@@ -319,8 +321,8 @@ Status run(Mode mode){
 #else
       for(auto word:actual)HYLE_RETURN_IF_ERROR(require(word==0x3400,"CUDA pending Graph actual mean differs"));
 #endif
-      HYLE_RETURN_IF_ERROR(require(!receiver.take_update(),"old CUDA Graph output permitted source reuse"));}
-    submitted={};HYLE_ASSIGN_OR_RETURN(update,receiver.take_update());
+      HYLE_RETURN_IF_ERROR(require(!b::take_update(receiver),"old CUDA Graph output permitted source reuse"));}
+    submitted={};HYLE_ASSIGN_OR_RETURN(update,b::take_update(receiver));
     if(mode==Mode::cancel_before){
       HYLE_RETURN_IF_ERROR(require(!update.take_mutable({1}) && guards.active_batches()==0,
           "closed original source escaped its slot or retained native guards after retirement"));
@@ -333,10 +335,10 @@ Status run(Mode mode){
         "CUDA Graph successful original page controls did not recover"));
     std::fprintf(stderr,"CUDA pending Graph actual gated numerical suffix, old output and original page writer recovery; cancel refusal=%d PASS\n",mode==Mode::cancel_after);return Status::Ok();
   }
-  HYLE_RETURN_IF_ERROR(require(!fail_source && terminal.IsResourceExhausted() && !receiver.output(output_id),"source failure was hidden by successful original native suffix"));
+  HYLE_RETURN_IF_ERROR(require(!fail_source && terminal.IsResourceExhausted() && !receiver.result(output_id),"source failure was hidden by successful original native suffix"));
   submitted={};
-  HYLE_ASSIGN_OR_RETURN(update,receiver.take_update());
-  HYLE_RETURN_IF_ERROR(require(!update.take_mutable({1}) && receiver.prepare_batch(versions).IsFailedPrecondition(),"late failed source/epoch fabricated ready output or reuse"));
+  HYLE_ASSIGN_OR_RETURN(update,b::take_update(receiver));
+  HYLE_RETURN_IF_ERROR(require(!update.take_mutable({1}) && b::prepare(receiver,lanes,versions,prepare_options).IsFailedPrecondition(),"late failed source/epoch fabricated ready output or reuse"));
   std::fprintf(stderr,"CUDA pending Graph source risk=%u unknown/late source failure merges original terminal and refuses output/reuse PASS\n",unsigned(mode));return Status::Ok();
 
 

@@ -2,23 +2,27 @@
 
 #include <hyle/compute/file_stream.h>
 #include <hyle/compute/leased_operation.h>
-#include <hyle/graph/leased_invocation.h>
+#include <hyle/graph/executable.h>
 #include <hyle/mem/stats.h>
 #include <hyle/platform/fs.h>
 #include <hyle/sched/join.h>
 #if defined(HYLE_COMPUTE_CPU)
+#include <hyle/compute/cpu_file_stream.h>
 #include <hyle/graph/cpu.h>
 #endif
 #if defined(HYLE_COMPUTE_CUDA)
+#include <hyle/compute/cuda_file_stream.h>
 #include <hyle/compute/backends/cuda.h>
 #include <hyle/graph/cuda.h>
 #endif
 #if defined(HYLE_COMPUTE_APPLE)
+#include <hyle/compute/apple_file_stream.h>
 #include <hyle/compute/apple_memory.h>
 #include <hyle/graph/apple.h>
 #include <mlx/ops.h>
 #endif
 #if defined(HYLE_COMPUTE_VULKAN)
+#include <hyle/compute/vulkan_file_stream.h>
 #include <hyle/compute/vulkan_memory.h>
 #include <hyle/graph/vulkan.h>
 #endif
@@ -112,11 +116,11 @@ Status consume(c::Context &context, c::Queue &queue, m::MemoryResourceRef resour
   HYLE_ASSIGN_OR_RETURN(auto node, builder.add_node(work.operation, std::array{a, b}));
   HYLE_ASSIGN_OR_RETURN(auto y, builder.result(node)); HYLE_RETURN_IF_ERROR(builder.publish(y));
   HYLE_ASSIGN_OR_RETURN(auto graph, std::move(builder).finish()); HYLE_ASSIGN_OR_RETURN(auto compiled, compile(graph));
-  HYLE_ASSIGN_OR_RETURN(auto invocation, g::LeasedInvocation::create(compiled.executable));
+  HYLE_ASSIGN_OR_RETURN(auto invocation, compiled.executable.create_invocation({.resources = g::ResourceOptions{}}));
   HYLE_RETURN_IF_ERROR(invocation.bind(a, work.activation, input)); HYLE_RETURN_IF_ERROR(invocation.bind(b, work.weight, weight));
   HYLE_ASSIGN_OR_RETURN(auto graph_writer, scratch.allocate(bytes)); HYLE_RETURN_IF_ERROR(invocation.bind(y, work.output, std::move(graph_writer)));
   HYLE_ASSIGN_OR_RETURN(auto graph_done, invocation.submit(queue)); HYLE_RETURN_IF_ERROR(graph_done.wait());
-  HYLE_ASSIGN_OR_RETURN(auto result, invocation.output(y)); HYLE_ASSIGN_OR_RETURN(auto lease, result.storage_lease());
+  HYLE_ASSIGN_OR_RETURN(auto result, invocation.result(y)); HYLE_ASSIGN_OR_RETURN(auto lease, result.storage_lease());
   return check(lease, work, range);
 }
 #endif

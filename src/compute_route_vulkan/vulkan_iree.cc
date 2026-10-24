@@ -93,9 +93,12 @@ bool artifact_dispatch_fits(const Device &device, const ProgramState &program,
   const auto operation = step.operation.custom_as<model_ops::ArtifactWeightDecode>();
   if (operation &&
       (operation->format == model_ops::WeightArtifactFormat::kAwqGemm4 ||
-       operation->format == model_ops::WeightArtifactFormat::kCompressedTensorsSymmetric4)) {
+       operation->format == model_ops::WeightArtifactFormat::kCompressedTensorsSymmetric4 ||
+       operation->format == model_ops::WeightArtifactFormat::kCompressedTensorsAsymmetric4)) {
     const auto scale = program.values[step.inputs[
-        operation->format == model_ops::WeightArtifactFormat::kAwqGemm4 ? 2 : 1]]
+        operation->format == model_ops::WeightArtifactFormat::kAwqGemm4 ||
+                operation->format == model_ops::WeightArtifactFormat::kCompressedTensorsAsymmetric4
+            ? 2 : 1]]
                            .description.data_type();
     if (scale != DataType::kFloat32 && scale != output.data_type())
       bytes += (elements * 2 + 63) & ~std::uint64_t{63};
@@ -152,18 +155,27 @@ Status end_copy(Run &run) noexcept {
 }
 
 Status copy_result(IreeStage &stage, bool flag) noexcept {
-  HYLE_ASSIGN_OR_RETURN(auto source, stage.program->output(flag ? 1 : 0));
-  const auto &destination =
-      flag ? stage.flag : stage.parent->retained_buffers[stage.output];
-  const auto bytes = flag ? sizeof(std::uint32_t) : stage.output_bytes;
-  if (source.bytes != bytes || !destination || destination->bytes < bytes)
-    return Status::Internal(
-        "IREE result storage does not match its bound contract");
+  const auto count = flag ? std::size_t{1} : stage.output_count;
+  std::array<iv::BufferSpan, 2> sources;
+  for (std::size_t port = 0; port < count; ++port) {
+    HYLE_ASSIGN_OR_RETURN(sources[port],
+        stage.program->output(flag ? stage.output_count : port));
+    const auto &destination = flag ? stage.flag
+        : stage.parent->retained_buffers[stage.outputs[port].value];
+    const auto bytes = flag ? sizeof(std::uint32_t) : stage.outputs[port].bytes;
+    if (sources[port].bytes != bytes || !destination || destination->bytes < bytes)
+      return Status::Internal("IREE result storage does not match its bound contract");
+  }
   auto &run = *(flag ? stage.flag_copy : stage.output_copy);
   HYLE_RETURN_IF_ERROR(begin_copy(run));
-  const VkBufferCopy copy{source.offset, destination->offset, bytes};
-  run.runtime->device->fn.CmdCopyBuffer(run.command, source.buffer,
-                                        destination->handle, 1, &copy);
+  for (std::size_t port = 0; port < count; ++port) {
+    const auto &destination = flag ? stage.flag
+        : stage.parent->retained_buffers[stage.outputs[port].value];
+    const auto bytes = flag ? sizeof(std::uint32_t) : stage.outputs[port].bytes;
+    const VkBufferCopy copy{sources[port].offset, destination->offset, bytes};
+    run.runtime->device->fn.CmdCopyBuffer(run.command, sources[port].buffer,
+                                          destination->handle, 1, &copy);
+  }
   HYLE_RETURN_IF_ERROR(end_copy(run));
   const bool last =
       stage.parent->async->next_stage + 1 == stage.parent->stages.size();
@@ -183,6 +195,38 @@ void fail_sequence(Run &run, const Status &status) noexcept {
     run.runtime->failure = status;
     run.runtime->device->provider.note_device_lost();
   }
+}
+
+void finish_cancelled_sequence(Run &run) noexcept {
+  auto &device = *run.runtime->device;
+  // Neither clean cancellation boundary has submitted the parent's normal
+  // final fence. Append a real endpoint for the accepted queue prefix so poll
+  // can retire it without a queue-wide blocking drain.
+  auto status = native_status(
+      device.fn.ResetFences(device.native.device, 1, &run.fence),
+      "vkResetFences(cancelled sequence)");
+  if (status.ok()) {
+    VkSubmitInfo info{};
+    info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    struct Submission {
+      PFN_vkQueueSubmit submit;
+      const VkSubmitInfo *info;
+      VkFence fence;
+    } submission{device.fn.QueueSubmit, &info, run.fence};
+    status = device.provider.with_queue(
+        [](void *opaque, VkQueue queue) -> VkResult {
+          const auto &call = *static_cast<const Submission *>(opaque);
+          return call.submit(queue, 1, call.info, call.fence);
+        },
+        &submission);
+  }
+  if (!status.ok()) {
+    fail_sequence(run, status);
+    return;
+  }
+  run.completion_fence = run.fence;
+  run.needs_drain = false;
+  run.async->finished = true;
 }
 
 } // namespace
@@ -220,12 +264,13 @@ bool iree_precision_supported(const Device &device,
 
 bool iree_operation(const ProgramState &program,
                     const PlanStep &step) noexcept {
-  if (step.custom || step.inputs.empty() || step.outputs.size() != 1)
-    return false;
+  if (step.custom || step.inputs.empty()) return false;
   if (official_float_operation(program, step)) return true;
+  if (step.outputs.size() != 1) return false;
   if (iq1_operation(program, step)) return true;
-  if (step.operation.custom_as<model_ops::ArtifactWeightDecode>())
-    return true; // Domain diagnostics belong to cold lowering, never a shader fallback.
+  if (const auto artifact = step.operation.custom_as<model_ops::ArtifactWeightDecode>())
+    // GPTQ needs the native checked g_idx dispatch, never an unchecked module.
+    return artifact->format != model_ops::WeightArtifactFormat::kGptqV1Int4;
   if (step.operation.custom_as<model_ops::MlxQuantized>())
     return true;
   const auto &input = program.values[step.inputs[0]].description;
@@ -257,21 +302,28 @@ Status lower_iree(ProgramState &program, const PlanStep &step) noexcept {
     const auto artifact = step.operation.custom_as<model_ops::ArtifactWeightDecode>();
     if (artifact) {
       using Format = model_ops::WeightArtifactFormat;
-      spec.kind = artifact->format == Format::kNf4 ? iv::ProgramKind::Nf4Decode
-                  : artifact->format == Format::kNf4DoubleQuant
-                      ? iv::ProgramKind::Nf4NestedDecode
-                  : artifact->format == Format::kAwqGemm4
-                      ? iv::ProgramKind::AwqDecode
-                      : iv::ProgramKind::Symmetric4Decode;
+      switch (artifact->format) {
+      case Format::kNf4: spec.kind = iv::ProgramKind::Nf4Decode; break;
+      case Format::kNf4DoubleQuant: spec.kind = iv::ProgramKind::Nf4NestedDecode; break;
+      case Format::kAwqGemm4: spec.kind = iv::ProgramKind::AwqDecode; break;
+      case Format::kCompressedTensorsSymmetric4:
+        spec.kind = iv::ProgramKind::Symmetric4Decode; break;
+      case Format::kCompressedTensorsAsymmetric4:
+        spec.kind = iv::ProgramKind::Asymmetric4Decode; break;
+      default:
+        return Status::Unimplemented("Vulkan IREE artifact format is unknown");
+      }
       const auto &output = program.values[step.outputs[0]].description;
       spec.rows = output.dimensions()[0];
       spec.columns = output.dimensions()[1];
       spec.group_size = artifact->group_size;
       spec.output_type = artifact_scalar(output.data_type());
       if (spec.kind == iv::ProgramKind::AwqDecode ||
-          spec.kind == iv::ProgramKind::Symmetric4Decode)
+          spec.kind == iv::ProgramKind::Symmetric4Decode ||
+          spec.kind == iv::ProgramKind::Asymmetric4Decode)
         spec.scale_type = artifact_scalar(
-            program.values[step.inputs[spec.kind == iv::ProgramKind::AwqDecode ? 2 : 1]]
+            program.values[step.inputs[spec.kind == iv::ProgramKind::AwqDecode ||
+                spec.kind == iv::ProgramKind::Asymmetric4Decode ? 2 : 1]]
                 .description.data_type());
     } else if (precision) {
       if (!iree_operation(program, step))
@@ -341,9 +393,11 @@ Status lower_iree(ProgramState &program, const PlanStep &step) noexcept {
     DataType source_type = DataType::kFloat32;
     if (artifact &&
         (spec.kind == iv::ProgramKind::AwqDecode ||
-         spec.kind == iv::ProgramKind::Symmetric4Decode)) {
+         spec.kind == iv::ProgramKind::Symmetric4Decode ||
+         spec.kind == iv::ProgramKind::Asymmetric4Decode)) {
       source_type = program.values[step.inputs[
-          spec.kind == iv::ProgramKind::AwqDecode ? 2 : 1]].description.data_type();
+          spec.kind == iv::ProgramKind::AwqDecode ||
+          spec.kind == iv::ProgramKind::Asymmetric4Decode ? 2 : 1]].description.data_type();
       source_rounding = source_type != DataType::kFloat32 &&
           source_type != program.values[output].description.data_type();
     }
@@ -407,17 +461,63 @@ create_iree_stage(const std::shared_ptr<Run> &run, const Dispatch &dispatch,
     auto stage = std::make_shared<IreeStage>();
     stage->parent = run.get();
     const auto spec = *dispatch.iree;
+    std::array<iv::BorrowedInput, 3> borrowed;
+    std::size_t borrowed_count = 0;
+    const auto borrow_constant = [&](std::size_t port, std::uint32_t value,
+                                     VkDeviceSize offset) {
+      if (!values[value].constant.valid()) return;
+      const auto &device = *run->runtime->device;
+      const auto &buffer = run->retained_buffers[value];
+      // Unknown imports and lease/weight views retain their copy boundary:
+      // opaque external_owner cannot prove the original storage-buffer root.
+      if (buffer && buffer->device == run->runtime->device &&
+          buffer->memory != VK_NULL_HANDLE && !buffer->external_owner &&
+          !buffer->is_view &&
+          !buffer->mapped && buffer->offset == 0 && buffer->bytes != 0 &&
+          buffer->allocation_bytes >= buffer->bytes &&
+          buffer->bytes <= device.properties.limits.maxStorageBufferRange &&
+          (buffer->memory_flags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)) {
+        const auto alignment = (std::max)(VkDeviceSize{64},
+            device.properties.limits.minStorageBufferOffsetAlignment);
+        if (offset >= buffer->bytes || offset % alignment || offset % 4)
+          return;
+        borrowed[borrowed_count++] = {port, device.native.device,
+            buffer->bytes,
+            {buffer->handle, offset,
+             static_cast<std::size_t>(buffer->bytes - offset)}, buffer};
+      }
+    };
+    if (iv::official_grouped(spec.kind)) {
+      const auto codes = static_cast<VkDeviceSize>(spec.experts) *
+          spec.columns * spec.depth /
+          (spec.kind == iv::ProgramKind::OfficialGrouped4F32 ? 2 : 1);
+      borrow_constant(1, dispatch.values[0], 0);
+      borrow_constant(2, dispatch.values[0], codes);
+    } else if (iv::mlx_program(spec.kind)) {
+      const std::size_t first = spec.kind == iv::ProgramKind::MlxAffineEmbedding ? 0 : 1;
+      const std::size_t end = iv::mlx_affine(spec.kind) && first == 1 ? 4 : 3;
+      for (std::size_t port = first; port < end; ++port)
+        borrow_constant(port, dispatch.values[port], 0);
+    }
     HYLE_ASSIGN_OR_RETURN(
         stage->program,
-        iv::NativeProgram::create(run->runtime->device->iree, spec));
+        iv::NativeProgram::create(run->runtime->device->iree, spec,
+            std::span(borrowed.data(), borrowed_count)));
     stage->input_count = stage->program->input_count();
-    stage->output = dispatch.values.back();
-    stage->output_bytes = *values[stage->output].description.required_bytes();
+    stage->output_count = iv::official_quantize(spec.kind) ? 2 : 1;
+    if (dispatch.values.size() < stage->output_count)
+      return std::unexpected(Status::Internal("IREE prepared output arity"));
+    for (std::size_t port = 0; port < stage->output_count; ++port) {
+      auto &output = stage->outputs[port];
+      output.value = dispatch.values[dispatch.values.size() - stage->output_count + port];
+      output.bytes = *values[output.value].description.required_bytes();
+    }
     for (std::size_t port = 0; port < stage->input_count; ++port) {
       auto &input = stage->inputs[port];
       const bool individual = iv::artifact_program(spec.kind) || iv::mlx_program(spec.kind) || iv::iq1_program(spec.kind);
       if (iv::official_program(spec.kind)) {
-        if (iv::official_roundtrip(spec.kind)) input.value = dispatch.values[0];
+        if (iv::official_roundtrip(spec.kind) || iv::official_quantize(spec.kind))
+          input.value = dispatch.values[0];
         else if (spec.kind == iv::ProgramKind::OfficialWeightDecodeF32 ||
                  spec.kind == iv::ProgramKind::OfficialWeightDecodeBf16) {
           input.value = dispatch.values[0];
@@ -441,21 +541,23 @@ create_iree_stage(const std::shared_ptr<Run> &run, const Dispatch &dispatch,
       HYLE_ASSIGN_OR_RETURN(input.destination, stage->program->input(port));
       input.constant = (iv::mlx_program(spec.kind) || iv::official_program(spec.kind) || iv::iq1_program(spec.kind)) &&
                        values[input.value].constant.valid();
+      input.borrowed = std::ranges::any_of(
+          std::span(borrowed.data(), borrowed_count),
+          [port](const auto &entry) { return entry.index == port; });
     }
     HYLE_ASSIGN_OR_RETURN(stage->input_copy, create_run(run->runtime));
     if (std::ranges::any_of(std::span(stage->inputs.data(), stage->input_count),
-                           [](const auto &input) { return input.constant; })) {
+                           [](const auto &input) { return input.constant && !input.borrowed; })) {
       HYLE_ASSIGN_OR_RETURN(stage->constant_copy, create_run(run->runtime));
     }
     HYLE_ASSIGN_OR_RETURN(stage->output_copy, create_run(run->runtime));
     stage->finite_input_flag = iv::official_checked(spec.kind);
-    if (spec.kind == iv::ProgramKind::ScanInclusive ||
-        spec.kind == iv::ProgramKind::ScanExclusive || stage->finite_input_flag) {
+    if (iree_requires_staging(spec.kind)) {
       HYLE_ASSIGN_OR_RETURN(stage->flag_copy, create_run(run->runtime));
       HYLE_ASSIGN_OR_RETURN(stage->flag,
                             allocate_buffer(run->runtime->device, 4, true, false,
                                 {.budget = run->allocation.resource_budget,
-                                 .resource = run->allocation.staging != nullptr ? run->allocation.staging->ref() : mem::MemoryResourceRef{}}));
+                                 .resource = run->allocation.staging}));
     }
     if (!run->async)
       run->async = std::make_unique<AsyncRun>();
@@ -483,7 +585,7 @@ Status IreeStage::bind() noexcept {
     HYLE_RETURN_IF_ERROR(begin_copy(*constant_copy));
   for (std::size_t port = 0; port < input_count; ++port) {
     const auto &input = inputs[port];
-    if (input.constant && constants_submitted) continue;
+    if (input.borrowed || (input.constant && constants_submitted)) continue;
     const auto &buffer = parent->retained_buffers[input.value];
     const VkBufferCopy copy{buffer->offset + input.offset,
                             input.destination.offset, input.destination.bytes};
@@ -534,8 +636,7 @@ void IreeStage::completed(void *opaque, const Status &completion) noexcept {
   if (status.ok() && run.cancelled) {
     // Cancellation stops publication but does not poison a reusable slot.
     // A completed checked operation still reports its numerical error first.
-    run.needs_drain = true;
-    run.async->finished = true;
+    finish_cancelled_sequence(run);
     return;
   }
   if (status.ok())
@@ -553,8 +654,7 @@ bool advance_async_locked(Run &run) noexcept {
   auto &device = *run.runtime->device;
   while (run.async->next_stage < run.stages.size()) {
     if (run.cancelled) {
-      run.needs_drain = true;
-      run.async->finished = true;
+      finish_cancelled_sequence(run);
       return accepted;
     }
     const auto index = run.async->next_stage;

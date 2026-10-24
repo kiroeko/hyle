@@ -67,12 +67,12 @@ Result<bool> update(void *p,const c::BatchLayoutVersion &layout,c::BatchPlanRepo
   if(!same_layout(s.layout,layout)||!same_layout(s.context.data->layout,layout))return false;
   s.layout=layout;*r=report(s,true);return true;
 }
-d::EnqueueResult plan(void *p,c::Queue &queue,const c::BatchLayoutVersion &layout,
+d::EnqueueResult plan(void *p,d::QueueSequence &sequence,const c::BatchLayoutVersion &layout,
     d::BatchWorkspaceViews views,c::BatchPlanReport *r) noexcept {
   auto &s=*static_cast<Slot *>(p);s.layout={};
   if(!same_layout(s.context.data->layout,layout))
     return d::EnqueueResult::rejected(Status::InvalidArgument("original CUDA snapshot topology changed"));
-  auto stream=c::cuda::stream(queue);if(!stream)return d::EnqueueResult::rejected(stream.error());
+  auto stream=c::cuda::stream(sequence);if(!stream)return d::EnqueueResult::rejected(stream.error());
   auto f=c::cuda::detail::mutable_pointer(views.float_workspace,16,1);
   if(!f)return d::EnqueueResult::rejected(f.error());
   auto i=c::cuda::detail::mutable_pointer(views.int_workspace,16,1);
@@ -97,7 +97,7 @@ d::EnqueueResult plan(void *p,c::Queue &queue,const c::BatchLayoutVersion &layou
   }catch(const std::bad_alloc &){return {accepted,Status::ResourceExhausted("original CUDA planner allocation")};}
    catch(const std::exception &e){return {accepted,Status::Internal(e.what())};}
 }
-d::EnqueueResult run(void *p,c::Queue &queue,std::span<const c::ConstTensorView> inputs,
+d::EnqueueResult run(void *p,d::QueueSequence &sequence,std::span<const c::ConstTensorView> inputs,
     d::BatchWorkspaceViews views) noexcept {
   auto &s=*static_cast<Slot *>(p);
   if(!s.layout.valid()||inputs.size()!=3)return d::EnqueueResult::rejected(Status::FailedPrecondition("original CUDA layout missing"));
@@ -108,7 +108,7 @@ d::EnqueueResult run(void *p,c::Queue &queue,std::span<const c::ConstTensorView>
     if(a.resource()!=b.resource()||a.native_handle()!=b.native_handle()||a.offset()!=b.offset()||a.size()!=b.size())
       return d::EnqueueResult::rejected(Status::InvalidArgument("original CUDA immutable FP8 frame identity changed"));
   }
-  auto stream=c::cuda::stream(queue);if(!stream)return d::EnqueueResult::rejected(stream.error());
+  auto stream=c::cuda::stream(sequence);if(!stream)return d::EnqueueResult::rejected(stream.error());
   auto q=c::cuda::detail::const_pointer(inputs[0].storage(),16,2);if(!q)return d::EnqueueResult::rejected(q.error());
   auto k=c::cuda::detail::const_pointer(s.context.data->expanded[0].view(),16,2);if(!k)return d::EnqueueResult::rejected(k.error());
   auto v=c::cuda::detail::const_pointer(s.context.data->expanded[1].view(),16,2);if(!v)return d::EnqueueResult::rejected(v.error());

@@ -1,0 +1,3770 @@
+{
+  "observed_on": "2026-10-21",
+  "status": "four_backend_formal_GA_typed_HC4_pre_post_head_passed",
+  "scope": "Fixed formal GA mHC typed roles: B2/S3 prefill and B2/S1 decode,HC4,D128,two generations each. Original BF16 residual stream and independent real BF16 branch boundary; synthetic F32 parameters. Not a whole attention/expert/model or checkpoint-payload run.",
+  "mathematics": "Widen BF16 state to F32; compute F32 linear before multiplying rsqrt(mean(square(raw state))+1e-6). Pre=sigmoid(mixes*scale0+base)+eps,post=2*sigmoid(mixes*scale1+base). Comb uses initial row softmax+eps, first column normalization and19 row/column pairs; comb[source,destination]. F32 collapse narrowsBF16; independent BF16 branch and residual expand inF32 thenBF16. hc_head projects/normalizes that BF16 post result, F32 sigmoid+eps collapse thenBF16.",
+  "oracle": "Independent scalar source formula and storage bit-rounding helpers, no product mHC operator. Fixed non-symmetric finite synthetic inputs/parameters and sparse cross-stream projection weights selected before backend runs. F32 abs2e-6+rel2e-6; BF16 at most1ULP. All four final runs reportBF16 ULP0; maximum_f32_error is formatted to six decimals and is not a bitwise-zero claim. Payload counterfactuals distinguish wrong comb direction, premature BF16 Pre and omission of Post BF16 before head.",
+  "journey": "Two geometries,two original generations each: preGraph -> original residual/collapsed/post/comb and host geometry in one StateVersion -> post/headGraph. Next pre binds actual BF16 post GraphOutput.storage_lease without host payload reconstruction. First generation publishes F32 audit boundaries,second keeps intermediates private;8submissions/backend.",
+  "ownership": "Original F32 parameter bytes borrowed with caller lifetime when StorageOwner absent, otherwise original owner+ready lease pair. All parameter ReadLeases retained through derived artifacts/results. Dense metadata reshape precedes final material BF16 Cast, preserving independent output lease export. Four cold original Invocations/geometry protect retained fixed native backing. Old GraphOutputs block reset,retain old bytes after program/state/pool closure,and final independent head ReadLease is read after GraphOutputs reset.",
+  "resources": "Finite caller arena reserves every published output from all four programs at256-byte alignment:41472B forS3 and15360B forS1. StateStore retains its original2MiB limit and charges whole original backing, not just subview bytes. Native private storage remains provider-owned/unknown; no total private-memory or zero-copy claim.",
+  "fixes": {
+    "product_changes": "None. Existing F32 HyperConnectionCombine/Pre/Post and ordinary graph primitives express the fixed formal GA HC4 typed composition. No dtype expansion, custom scheduler or new executor.",
+    "constant_binding_fixture": "Ownerless kBorrow leaves both StorageOwner and attached readiness lease empty; original parameter leases are retained externally through every derived GraphOutput/artifact. Owned CUDA constants retain the original owner/lease pair. No materialization or payload copy.",
+    "material_output_fixture": "Move dense metadata reshape before final BF16 Cast to publish real material outputs, rather than private-workspace final Views whose independent storage lease is deliberately unavailable. Head gains one metadata View; no new Copy or materialized payload buffer. Existing ownership/export contract is preserved.",
+    "arena_capacity_fixture": "StateStore charges the retained whole arena. The original 2MiB arena plus input and metadata exceeded the test's 2MiB state budget. Reserve exactly all published output extents rounded to256 bytes instead; do not enlarge the store limit or change product accounting.",
+    "documentation": "Record material output placement in the existing Graph ownership guide and close only this finite mHC role in the current work plan and model/operator table. Capability7/8 and delivery0/3 remain incomplete."
+  },
+  "build": {
+    "windows_report": ".scratch/architecture-refactor-2026-10-18/ga-mhc-2026-10-21/windows/build-report.json",
+    "windows": "Only focused test wrappers and links. Final per-arm attempt4/link4 retains the prior actual ratio4 current product closure. Three actual CPU fixture failures are preserved: constant attachment, private-view lease export, whole-arena state capacity. CUDA/Vulkan are root-run sequentially only after shared CPU journey passes. No product, SDK, NVCC or shader rebuild.",
+    "apple": "Final image refreshes only the shared-fixture wrapper. Actual1147 dependency references and58 canonical project files match; original product/SDK objects reused. Preserve first ownership-setup failure and intermediate actual green revisions.",
+    "scope": "Four ordinary backend CMake test registrations added. Focused strict compile/link/run only; full canonical reconfigure, installed consumer and Linux closure not run."
+  },
+  "regression": {
+    "total": 4,
+    "new_cases": 4,
+    "neighbors": 0,
+    "failed": 0,
+    "skipped": 0,
+    "successful_Graph_submissions": 32,
+    "windows": [
+      {
+        "backend": "cpu",
+        "receipt": {
+          "path": ".scratch/architecture-refactor-2026-10-18/ga-mhc-2026-10-21/cpu/validation/final3/receipt.json",
+          "bytes": 2508,
+          "sha256": "70e9b0cb6eed14a89b57cb1014e136272a2f2929e863abf274075488a11046f7"
+        }
+      },
+      {
+        "backend": "cuda",
+        "receipt": {
+          "path": ".scratch/architecture-refactor-2026-10-18/ga-mhc-2026-10-21/cuda/validation/final3/receipt.json",
+          "bytes": 2515,
+          "sha256": "f69b70b7e745e0c6bf9972f58b58f75d3ba95cb6d984ecc5b0f22bcbb842437f"
+        }
+      },
+      {
+        "backend": "vulkan",
+        "receipt": {
+          "path": ".scratch/architecture-refactor-2026-10-18/ga-mhc-2026-10-21/vulkan/validation/final3/receipt.json",
+          "bytes": 2626,
+          "sha256": "f2c44fb022a3ac04f143f7e7df1680d5d2b4130153412837847e6ed8f3003e4b"
+        }
+      }
+    ],
+    "apple": {
+      "path": ".scratch/architecture-refactor-2026-10-18/ga-mhc-2026-10-21/apple/final-validation.json",
+      "bytes": 7390,
+      "sha256": "3dcfcdb4e8cd0761a9be7402f8d7360f51d32b20f1d453ce9d42f3bc04303803"
+    },
+    "cases": [
+      {
+        "backend": "cpu",
+        "name": "CpuGaMhc.NativeMhcAndFloatNormFactorKeepTypedResiduals",
+        "neighbor": false,
+        "properties": {
+          "transposed_comb_counterfactual_words": "2143",
+          "early_bf16_pre_counterfactual_words": "591",
+          "omitted_post_bf16_head_counterfactual_words": "251",
+          "successful_submissions": "8",
+          "geometries": "B2/S3 and S1/HC4/D128; two generations each",
+          "maximum_bf16_ulp": "0",
+          "maximum_f32_error": "0.000000",
+          "state_feedback": "actual BF16 post GraphOutput.storage_lease; original residual/post/comb atomically versioned",
+          "private_generations": "2",
+          "independent_head_lease": "read after final GraphOutputs and original public producer handles were destroyed",
+          "scope": "source HC typed composition and original resources; projected BF16 branch boundary, not whole attention/expert/model"
+        }
+      },
+      {
+        "backend": "cuda",
+        "name": "CudaGaMhc.NativeMhcAndFloatNormFactorKeepTypedResiduals",
+        "neighbor": false,
+        "properties": {
+          "transposed_comb_counterfactual_words": "2143",
+          "early_bf16_pre_counterfactual_words": "591",
+          "omitted_post_bf16_head_counterfactual_words": "251",
+          "successful_submissions": "8",
+          "geometries": "B2/S3 and S1/HC4/D128; two generations each",
+          "maximum_bf16_ulp": "0",
+          "maximum_f32_error": "0.000000",
+          "state_feedback": "actual BF16 post GraphOutput.storage_lease; original residual/post/comb atomically versioned",
+          "private_generations": "2",
+          "independent_head_lease": "read after final GraphOutputs and original public producer handles were destroyed",
+          "scope": "source HC typed composition and original resources; projected BF16 branch boundary, not whole attention/expert/model"
+        }
+      },
+      {
+        "backend": "vulkan",
+        "name": "VulkanGaMhc.NativeMhcAndFloatNormFactorKeepTypedResiduals",
+        "neighbor": false,
+        "properties": {
+          "device": "NVIDIA GeForce RTX 4070",
+          "transposed_comb_counterfactual_words": "2143",
+          "early_bf16_pre_counterfactual_words": "591",
+          "omitted_post_bf16_head_counterfactual_words": "251",
+          "successful_submissions": "8",
+          "geometries": "B2/S3 and S1/HC4/D128; two generations each",
+          "maximum_bf16_ulp": "0",
+          "maximum_f32_error": "0.000000",
+          "state_feedback": "actual BF16 post GraphOutput.storage_lease; original residual/post/comb atomically versioned",
+          "private_generations": "2",
+          "independent_head_lease": "read after final GraphOutputs and original public producer handles were destroyed",
+          "scope": "source HC typed composition and original resources; projected BF16 branch boundary, not whole attention/expert/model"
+        }
+      },
+      {
+        "backend": "apple",
+        "name": "AppleGaMhc.NativeMhcAndFloatNormFactorKeepTypedResiduals",
+        "neighbor": false,
+        "properties": {
+          "device": "Apple M4",
+          "transposed_comb_counterfactual_words": "2143",
+          "early_bf16_pre_counterfactual_words": "591",
+          "omitted_post_bf16_head_counterfactual_words": "251",
+          "successful_submissions": "8",
+          "geometries": "B2/S3 and S1/HC4/D128; two generations each",
+          "maximum_bf16_ulp": "0",
+          "maximum_f32_error": "0.000000",
+          "state_feedback": "actual BF16 post GraphOutput.storage_lease; original residual/post/comb atomically versioned",
+          "private_generations": "2",
+          "independent_head_lease": "read after final GraphOutputs and original public producer handles were destroyed",
+          "scope": "source HC typed composition and original resources; projected BF16 branch boundary, not whole attention/expert/model"
+        }
+      }
+    ]
+  },
+  "limitations": [
+    "Finite source-bound HC composition with projected BF16 branch and synthetic F32 parameters; no formal checkpoint tensor payload, complete attention/FFN/expert/model, quality or whole-artifact execution claim.",
+    "No product changes or new operator/executor. Only focused wrapper CXX/link/run; no SDK/NVCC/shader rebuild. Full canonical configure/install and Linux not run.",
+    "No capture, throughput, universal F32 bitwise-equivalence or total backend-private-memory claim.",
+    "Three fixture-contract failures are retained: invalid optional constant ownership pair, private View independent-lease export, and whole-arena StateStore capacity. They are not product numerical failures.",
+    "Capability7/8,delivery0/3 remain incomplete; remaining three finite role actions are in review/remaining-role-actions.json. All33 artifact_execution_verified flags remainfalse."
+  ],
+  "current_sources": [
+    {
+      "path": "docs/developer/current-work.md",
+      "bytes": 36857,
+      "sha256": "475d81737a684cbbb0d66641575f6da7edabac69941aa9b1618fdd4fbf2dfb8a"
+    },
+    {
+      "path": "docs/implementation/model-operators.md",
+      "bytes": 79479,
+      "sha256": "582d6b08c51df4f6b6862700d50f46262150e6ab33499cddc09c88e2c56d4998"
+    },
+    {
+      "path": "docs/implementation/model-quantizations.json",
+      "bytes": 560459,
+      "sha256": "12b2b04e91ca74a79d0661671064aaea4f899cb7e3d496cc7ae62152fbb230d3"
+    },
+    {
+      "path": "docs/user/graph.md",
+      "bytes": 89012,
+      "sha256": "b51d8e16b860e9f014d29afb1c32eef79514f9e886a1dc3be990e46a52d7d692"
+    },
+    {
+      "path": "include/hyle/compute/model_ops.h",
+      "bytes": 75341,
+      "sha256": "d3315100def9904a604dd3a1386000641cb03c2e8d36485ef3e55b98e4dde3e5"
+    },
+    {
+      "path": "include/hyle/compute/operation.h",
+      "bytes": 28108,
+      "sha256": "35b7c862143839e4b8ce0c9a49753b7add2f325ec424bf5f91a1afeec0101506"
+    },
+    {
+      "path": "include/hyle/compute/resource_leases.h",
+      "bytes": 8660,
+      "sha256": "4e5681ebfa7c2f2ad51e5788c8316f4b993883f595c04b33fe594d7294dab85b"
+    },
+    {
+      "path": "include/hyle/compute/state_versions.h",
+      "bytes": 8553,
+      "sha256": "a09cb66a216b56a0651f515f18d8a97772b0e6d281c171a82b8a6630b3e1c7d7"
+    },
+    {
+      "path": "include/hyle/graph/executable.h",
+      "bytes": 49762,
+      "sha256": "6305dd557606b26119fc60de9dbb68c979a1f8fe54755a191378c49742ef4714"
+    },
+    {
+      "path": "include/hyle/graph/result.h",
+      "bytes": 1646,
+      "sha256": "90861eafec4f3a0aa73014416bd2817dfe3892ac001ea206bebf907e1d3cf182"
+    },
+    {
+      "path": "src/compute/resource_leases.cc",
+      "bytes": 27124,
+      "sha256": "6cb990cd573939c9de8a36cdcbac6530ca09dd7081f71c86c593282896d0a281"
+    },
+    {
+      "path": "src/compute_provider_ggml/ggml_cpu_provider.cc",
+      "bytes": 114228,
+      "sha256": "657e91177bd8270082ed9e71b40b0be598fc6776347e426204c1c6d0fc7797fd"
+    },
+    {
+      "path": "src/compute_provider_ggml_cuda/tensor_program.cc",
+      "bytes": 54758,
+      "sha256": "6edcfe378983d4f371cede7a0ec463ae17c2e11f307b81ab8f61a0c0d917a4b2"
+    },
+    {
+      "path": "src/compute_provider_ggml_metal/native_program.cc",
+      "bytes": 28817,
+      "sha256": "29eba24896a30711c4fbc699f157bb9307fecdc64a3a7721b5ddfd171d82bc68"
+    },
+    {
+      "path": "src/compute_provider_ggml_vulkan/region.cc",
+      "bytes": 105872,
+      "sha256": "d76fd202636a65774bb63e8a2a27cbd636c8fa36c070768c09bbefbb9e001bd3"
+    },
+    {
+      "path": "src/compute_state/state_versions.cc",
+      "bytes": 41194,
+      "sha256": "1d344d6c0c37cd1e18b7ee765a56bb58e1ab9aa24095208f453a4c3065b5fe99"
+    },
+    {
+      "path": "src/graph/executable.cc",
+      "bytes": 462934,
+      "sha256": "7817d7e80752912a3daac41cd87511e15a2df3beeb0651c91f1b73d666b2674e"
+    },
+    {
+      "path": "src/graph/resources.cc",
+      "bytes": 70350,
+      "sha256": "40f38a4b5d2d5e316fe9cae57b2360cd1598446a31acee63740ba297990fa57c"
+    },
+    {
+      "path": "tests/compute_models/ga_indexer_state_fixture.h",
+      "bytes": 26486,
+      "sha256": "c2055b3920c8ebc93ed30d2596d4eba049790e148b8dd3d59128e1ffda48ab84"
+    },
+    {
+      "path": "tests/compute_models/ga_mhc_fixture.h",
+      "bytes": 20903,
+      "sha256": "b009de629bbc21a9bbbcba6f24f1f83411012abdb0fcc00e6b525e1562829770"
+    },
+    {
+      "path": "tests/compute_models/ga_mhc_reference_fixture.h",
+      "bytes": 18759,
+      "sha256": "561ba98a37ef5632690802c338046448e4b14548dbd7a68192509656732c9422"
+    },
+    {
+      "path": "tests/compute_models/nvfp4_reference_fixture.h",
+      "bytes": 22482,
+      "sha256": "cc94ec1f443511722ff4fc227b065af27b82573443735250951cdce934faa4d3"
+    },
+    {
+      "path": "tests/graph_route_apple/CMakeLists.txt",
+      "bytes": 7204,
+      "sha256": "8b46bad3af6427c7f02f3b60f6831734bd352fdac2020eb1a71b0a37a3d60d97"
+    },
+    {
+      "path": "tests/graph_route_apple/ga_mhc_test.cc",
+      "bytes": 1450,
+      "sha256": "a806766fe5a3c02b3a1aa1a4055318c0d0985bf2a6865e59cf8d25e170f224c5"
+    },
+    {
+      "path": "tests/graph_route_cpu/CMakeLists.txt",
+      "bytes": 4443,
+      "sha256": "a1c4dadcd491f55e0cb5669ed0e709539cc07ee925f4e3bdca4f718af4d35b5d"
+    },
+    {
+      "path": "tests/graph_route_cpu/ga_mhc_test.cc",
+      "bytes": 1011,
+      "sha256": "6b2b5e43d64da8495de2203790db5fa513802c22a76d961230b26538031d06a3"
+    },
+    {
+      "path": "tests/graph_route_cuda/CMakeLists.txt",
+      "bytes": 3518,
+      "sha256": "40cfed13c328e72aa5edec2e80c7c9277d1ed74142444aa96c51b69fa5ced9cd"
+    },
+    {
+      "path": "tests/graph_route_cuda/ga_mhc_test.cc",
+      "bytes": 1291,
+      "sha256": "77d86ad87083394fefd2f53296c16629db9c73641a7f86bb2555d292e81317ce"
+    },
+    {
+      "path": "tests/graph_route_vulkan/CMakeLists.txt",
+      "bytes": 6691,
+      "sha256": "61eaaf9e208a7ce84d102c93a4ed225ba61dd81cb9c1ae894c312acd6263b0cf"
+    },
+    {
+      "path": "tests/graph_route_vulkan/ga_mhc_test.cc",
+      "bytes": 3205,
+      "sha256": "8dd00c9ec9693a641d24ba3c2015008a61c728443fbbc08a42e40643e8c3b55f"
+    }
+  ],
+  "archive": {
+    "path": "docs/evidence/correctness/ga-mhc-reference-2026-10-21.zip",
+    "bytes": 3473354,
+    "sha256": "b134f5c610fdd5536a555dd9257bdc1546a4e08bee7196804a47115bd5082463",
+    "members": 693
+  },
+  "archive_entries": [
+    {
+      "entry": "provenance/deepseek-v4-ga-2026-10-19.zip",
+      "bytes": 131088,
+      "sha256": "e7388fd80750107cd0702d413aceaa8d07e644265d275eaee864ee62293f51b0"
+    },
+    {
+      "entry": "records/apple/actual-dependencies-canonical-audit.json",
+      "bytes": 312226,
+      "sha256": "b8ef622e6cf9f027f26db7d4c32529a3ec75941d1d378570bb0ff1b28bbdda00"
+    },
+    {
+      "entry": "records/apple/attempt1/source-freeze.json",
+      "bytes": 800,
+      "sha256": "88182165355e19e4f6949d88f1feeb0cfad2e45c9cb4e339e2184f169cd16fab"
+    },
+    {
+      "entry": "records/apple/attempt1/source/tests/compute_models/ga_mhc_fixture.h",
+      "bytes": 19666,
+      "sha256": "192ee08b823e019a39d5f60f32013f14e069925e5080563ef34468fc8a97e42b"
+    },
+    {
+      "entry": "records/apple/attempt1/source/tests/compute_models/ga_mhc_reference_fixture.h",
+      "bytes": 18759,
+      "sha256": "561ba98a37ef5632690802c338046448e4b14548dbd7a68192509656732c9422"
+    },
+    {
+      "entry": "records/apple/attempt1/source/tests/graph_route_apple/CMakeLists.txt",
+      "bytes": 7204,
+      "sha256": "8b46bad3af6427c7f02f3b60f6831734bd352fdac2020eb1a71b0a37a3d60d97"
+    },
+    {
+      "entry": "records/apple/attempt1/source/tests/graph_route_apple/ga_mhc_test.cc",
+      "bytes": 1450,
+      "sha256": "a806766fe5a3c02b3a1aa1a4055318c0d0985bf2a6865e59cf8d25e170f224c5"
+    },
+    {
+      "entry": "records/apple/attempt2/source-freeze.json",
+      "bytes": 653,
+      "sha256": "f2ec88df742c0b66ed3d5eb85e8921f298130c0b3c9ee8b791fe6bb502c961b3"
+    },
+    {
+      "entry": "records/apple/attempt2/source/tests/compute_models/ga_mhc_fixture.h",
+      "bytes": 20304,
+      "sha256": "f013269093cb51d5b10273564dfc5a7db44d4cd14c53252e4421a624adc07c0a"
+    },
+    {
+      "entry": "records/apple/attempt2/source/tests/compute_models/ga_mhc_reference_fixture.h",
+      "bytes": 18759,
+      "sha256": "561ba98a37ef5632690802c338046448e4b14548dbd7a68192509656732c9422"
+    },
+    {
+      "entry": "records/apple/attempt2/source/tests/graph_route_apple/ga_mhc_test.cc",
+      "bytes": 1450,
+      "sha256": "a806766fe5a3c02b3a1aa1a4055318c0d0985bf2a6865e59cf8d25e170f224c5"
+    },
+    {
+      "entry": "records/apple/attempt3/source-freeze.json",
+      "bytes": 643,
+      "sha256": "706b0d842bfec604eb227d145186f8d8831591b1b611fe28a5f93684d4d1c70b"
+    },
+    {
+      "entry": "records/apple/attempt3/source/tests/compute_models/ga_mhc_fixture.h",
+      "bytes": 20436,
+      "sha256": "cd631cf0354daa8abbd4f20d372db9a6ca3345c103b9cc3d4c35fe09d35609f8"
+    },
+    {
+      "entry": "records/apple/attempt3/source/tests/compute_models/ga_mhc_reference_fixture.h",
+      "bytes": 18759,
+      "sha256": "561ba98a37ef5632690802c338046448e4b14548dbd7a68192509656732c9422"
+    },
+    {
+      "entry": "records/apple/attempt3/source/tests/graph_route_apple/ga_mhc_test.cc",
+      "bytes": 1450,
+      "sha256": "a806766fe5a3c02b3a1aa1a4055318c0d0985bf2a6865e59cf8d25e170f224c5"
+    },
+    {
+      "entry": "records/apple/attempt4/source-freeze.json",
+      "bytes": 639,
+      "sha256": "d66f28217d636ab4d9ad89d693ee8bcb82bbaedabe16d36a788564b4c7951fb7"
+    },
+    {
+      "entry": "records/apple/attempt4/source/tests/compute_models/ga_mhc_fixture.h",
+      "bytes": 20903,
+      "sha256": "b009de629bbc21a9bbbcba6f24f1f83411012abdb0fcc00e6b525e1562829770"
+    },
+    {
+      "entry": "records/apple/attempt4/source/tests/compute_models/ga_mhc_reference_fixture.h",
+      "bytes": 18759,
+      "sha256": "561ba98a37ef5632690802c338046448e4b14548dbd7a68192509656732c9422"
+    },
+    {
+      "entry": "records/apple/attempt4/source/tests/graph_route_apple/ga_mhc_test.cc",
+      "bytes": 1450,
+      "sha256": "a806766fe5a3c02b3a1aa1a4055318c0d0985bf2a6865e59cf8d25e170f224c5"
+    },
+    {
+      "entry": "records/apple/audit_dependencies.py",
+      "bytes": 3052,
+      "sha256": "6b69a003461ff1fe80e457e0b423b1773cfe926e1c76569eb689a6e54fe159ff"
+    },
+    {
+      "entry": "records/apple/before/tests/graph_route_apple/CMakeLists.txt",
+      "bytes": 7036,
+      "sha256": "5eedf41e56b8c6867aa21c41269b09a60a62509b2c9549ea152c765d14e71ceb"
+    },
+    {
+      "entry": "records/apple/build_mac.py",
+      "bytes": 8174,
+      "sha256": "6cb73fb66af7d4c929c4c7e731ff81903679e5d32fce9488f82e5081ed5cbf51"
+    },
+    {
+      "entry": "records/apple/cleanup-readonly-inventory.json",
+      "bytes": 1285,
+      "sha256": "85c2c40c69faa571258f97374e448e599a9805bdc57a1457630918c95e29c4e9"
+    },
+    {
+      "entry": "records/apple/collect_mac.py",
+      "bytes": 960,
+      "sha256": "bc2d3a3cf868bff4383f4a3a1b8626d13b896adb99a172e4308e68d2cb62365a"
+    },
+    {
+      "entry": "records/apple/final-validation.json",
+      "bytes": 7390,
+      "sha256": "3dcfcdb4e8cd0761a9be7402f8d7360f51d32b20f1d453ce9d42f3bc04303803"
+    },
+    {
+      "entry": "records/apple/finalize_receipts.py",
+      "bytes": 7651,
+      "sha256": "d867dcc330d62877a2c511dda114747ebc801e83d1f04de0b6ade8727b28563f"
+    },
+    {
+      "entry": "records/apple/leaf-source-review.json",
+      "bytes": 4498,
+      "sha256": "79a8edf884dbfbb00a53879aa4bb857d719f508d60607cb17e65d35d92018fc1"
+    },
+    {
+      "entry": "records/apple/mac/attempt1-compiled/hardware.json",
+      "bytes": 516,
+      "sha256": "072aadfd3b969664f72b96548ec50ef7d28164bbfd8521e4bf937daa2b8d7c97"
+    },
+    {
+      "entry": "records/apple/mac/attempt1-compiled/plan.json",
+      "bytes": 475612,
+      "sha256": "f8cb0bd9093fe6dca278e4a88719787a1ccd7014db82eade9bc0fd7c28b57b6a"
+    },
+    {
+      "entry": "records/apple/mac/attempt1-compiled/results/compile-summary.json",
+      "bytes": 710009,
+      "sha256": "4f131ecd87c9eb310eed38e224dffff1087e78a31b5348466ac9065430b94fe9"
+    },
+    {
+      "entry": "records/apple/mac/attempt1-compiled/results/tests--graph_route_apple--ga_mhc_test.cc-compile.command.json",
+      "bytes": 408899,
+      "sha256": "663350d40c0e42798f7a21f7deec30a105d14c1f620c168d03cfc31493309ae1"
+    },
+    {
+      "entry": "records/apple/mac/attempt1-compiled/results/tests--graph_route_apple--ga_mhc_test.cc-compile.result.json",
+      "bytes": 408945,
+      "sha256": "e92449519586b876e736629439978e2faac13ef409490255803396a583b6a5c2"
+    },
+    {
+      "entry": "records/apple/mac/attempt1-compiled/results/tests--graph_route_apple--ga_mhc_test.cc-compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/mac/attempt1-compiled/results/tests--graph_route_apple--ga_mhc_test.cc-compile.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/mac/attempt1-compiled/results/tests--graph_route_apple--ga_mhc_test.cc-identity.json",
+      "bytes": 676326,
+      "sha256": "a1fa62bb03e65d0bb8cba616323a9b0f9676c926b4f8af1cc7c5b36da116f60b"
+    },
+    {
+      "entry": "records/apple/mac/attempt1-compiled/reused-source-manifest.json",
+      "bytes": 38162,
+      "sha256": "e7fa6ddf821f30b5ed5008b6bd967fe6155897edb14a89a1a878b3224544be65"
+    },
+    {
+      "entry": "records/apple/mac/attempt1-compiled/source-manifest.json",
+      "bytes": 1860,
+      "sha256": "ce4e9d735015448c06d7f67c2c040badee866edc3be7ca798f5e9c10eb53292d"
+    },
+    {
+      "entry": "records/apple/mac/attempt1-compiled/tests/compute_models/ga_mhc_fixture.h",
+      "bytes": 19666,
+      "sha256": "192ee08b823e019a39d5f60f32013f14e069925e5080563ef34468fc8a97e42b"
+    },
+    {
+      "entry": "records/apple/mac/attempt1-compiled/tests/graph_route_apple/ga_mhc_test.cc",
+      "bytes": 1450,
+      "sha256": "a806766fe5a3c02b3a1aa1a4055318c0d0985bf2a6865e59cf8d25e170f224c5"
+    },
+    {
+      "entry": "records/apple/mac/attempt1-runtime-red/hardware.json",
+      "bytes": 516,
+      "sha256": "072aadfd3b969664f72b96548ec50ef7d28164bbfd8521e4bf937daa2b8d7c97"
+    },
+    {
+      "entry": "records/apple/mac/attempt1-runtime-red/plan.json",
+      "bytes": 475612,
+      "sha256": "f8cb0bd9093fe6dca278e4a88719787a1ccd7014db82eade9bc0fd7c28b57b6a"
+    },
+    {
+      "entry": "records/apple/mac/attempt1-runtime-red/results/compile-summary.json",
+      "bytes": 710009,
+      "sha256": "4f131ecd87c9eb310eed38e224dffff1087e78a31b5348466ac9065430b94fe9"
+    },
+    {
+      "entry": "records/apple/mac/attempt1-runtime-red/results/link-inputs.json",
+      "bytes": 44529,
+      "sha256": "c9082b03d627004403e0ebb196d98ebdbc39b26cbf39c553121a1b1e51dd615e"
+    },
+    {
+      "entry": "records/apple/mac/attempt1-runtime-red/results/link.command.json",
+      "bytes": 26187,
+      "sha256": "e6fd221dec8356edff207ffbba6305e78fe1eb3b77997bb3298eba3b0b658204"
+    },
+    {
+      "entry": "records/apple/mac/attempt1-runtime-red/results/link.result.json",
+      "bytes": 26234,
+      "sha256": "d1a6d5fc38e8c727772c5dcd9e4e8f0b0a98bc4571373d1c5ac72f90ba8d18d7"
+    },
+    {
+      "entry": "records/apple/mac/attempt1-runtime-red/results/link.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/mac/attempt1-runtime-red/results/link.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/mac/attempt1-runtime-red/results/run.command.json",
+      "bytes": 401,
+      "sha256": "f9dd953e7c453f11b12b7c79e70063901c821c96a2d8c15ecacab7b719d5b00e"
+    },
+    {
+      "entry": "records/apple/mac/attempt1-runtime-red/results/run.result.json",
+      "bytes": 447,
+      "sha256": "9edb74c91da6a0c20fc444036d2a13966f5d1983ab0474aa971d791cc3af3a3b"
+    },
+    {
+      "entry": "records/apple/mac/attempt1-runtime-red/results/run.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/mac/attempt1-runtime-red/results/run.stdout.log",
+      "bytes": 930,
+      "sha256": "e50af2b5651bd2b1b2c9df1fde8fc8466544761eee59d58b50d8bf8d6bd11037"
+    },
+    {
+      "entry": "records/apple/mac/attempt1-runtime-red/results/tests--graph_route_apple--ga_mhc_test.cc-compile.command.json",
+      "bytes": 408899,
+      "sha256": "663350d40c0e42798f7a21f7deec30a105d14c1f620c168d03cfc31493309ae1"
+    },
+    {
+      "entry": "records/apple/mac/attempt1-runtime-red/results/tests--graph_route_apple--ga_mhc_test.cc-compile.result.json",
+      "bytes": 408945,
+      "sha256": "e92449519586b876e736629439978e2faac13ef409490255803396a583b6a5c2"
+    },
+    {
+      "entry": "records/apple/mac/attempt1-runtime-red/results/tests--graph_route_apple--ga_mhc_test.cc-compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/mac/attempt1-runtime-red/results/tests--graph_route_apple--ga_mhc_test.cc-compile.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/mac/attempt1-runtime-red/results/tests--graph_route_apple--ga_mhc_test.cc-identity.json",
+      "bytes": 676326,
+      "sha256": "a1fa62bb03e65d0bb8cba616323a9b0f9676c926b4f8af1cc7c5b36da116f60b"
+    },
+    {
+      "entry": "records/apple/mac/attempt1-runtime-red/results/tests.xml",
+      "bytes": 1187,
+      "sha256": "769ab5f915cbf5e3c5ac815bc7b1c9a1e8db7dfb83f22ff13110e19b48f4e3a9"
+    },
+    {
+      "entry": "records/apple/mac/attempt1-runtime-red/results/validation.json",
+      "bytes": 1112,
+      "sha256": "eccef4ed67cafc44c3784e83d96e95e3699ed84bbfab9a6c645354097cc357a1"
+    },
+    {
+      "entry": "records/apple/mac/attempt1-runtime-red/reused-source-manifest.json",
+      "bytes": 38162,
+      "sha256": "e7fa6ddf821f30b5ed5008b6bd967fe6155897edb14a89a1a878b3224544be65"
+    },
+    {
+      "entry": "records/apple/mac/attempt1-runtime-red/source-manifest.json",
+      "bytes": 1860,
+      "sha256": "ce4e9d735015448c06d7f67c2c040badee866edc3be7ca798f5e9c10eb53292d"
+    },
+    {
+      "entry": "records/apple/mac/attempt1-runtime-red/tests/compute_models/ga_mhc_fixture.h",
+      "bytes": 19666,
+      "sha256": "192ee08b823e019a39d5f60f32013f14e069925e5080563ef34468fc8a97e42b"
+    },
+    {
+      "entry": "records/apple/mac/attempt1-runtime-red/tests/graph_route_apple/ga_mhc_test.cc",
+      "bytes": 1450,
+      "sha256": "a806766fe5a3c02b3a1aa1a4055318c0d0985bf2a6865e59cf8d25e170f224c5"
+    },
+    {
+      "entry": "records/apple/mac/final/hardware.json",
+      "bytes": 516,
+      "sha256": "e3d3b88dbbb5913e88624a2ef189a6e1418d217e00705e73cdc5f5181427e721"
+    },
+    {
+      "entry": "records/apple/mac/final/plan.json",
+      "bytes": 475612,
+      "sha256": "f8cb0bd9093fe6dca278e4a88719787a1ccd7014db82eade9bc0fd7c28b57b6a"
+    },
+    {
+      "entry": "records/apple/mac/final/results/compile-summary.json",
+      "bytes": 710010,
+      "sha256": "c51b23beab1635f37aa008999d73727f7e6b82b210bc130091b42ad28a02b812"
+    },
+    {
+      "entry": "records/apple/mac/final/results/link-inputs.json",
+      "bytes": 44529,
+      "sha256": "038ed2be8f259e1d250910253c2005c7192460baaefbb70723745f8e2885cfd4"
+    },
+    {
+      "entry": "records/apple/mac/final/results/link.command.json",
+      "bytes": 26186,
+      "sha256": "406430ee65b76c98db48a89c47b833b1aeb0fd551dcf6d66d2b70a0d680f2a60"
+    },
+    {
+      "entry": "records/apple/mac/final/results/link.result.json",
+      "bytes": 26233,
+      "sha256": "10610afce6ea2541c9ea1032f7e7a042d5878edc2cc2bac04ff61018fec08e13"
+    },
+    {
+      "entry": "records/apple/mac/final/results/link.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/mac/final/results/link.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/mac/final/results/run.command.json",
+      "bytes": 401,
+      "sha256": "544067a814c939356fa7db0c9f95b02dd6c459755d0281eeb97d53ba332094d9"
+    },
+    {
+      "entry": "records/apple/mac/final/results/run.result.json",
+      "bytes": 447,
+      "sha256": "259af26e03db872217a58ca6743a4e457a42853370abce836da784dfd410e458"
+    },
+    {
+      "entry": "records/apple/mac/final/results/run.stderr.log",
+      "bytes": 12056,
+      "sha256": "ac9c42baa7b5742e2e1054e6f613933d56c0c114695c91999c417a7d409934d0"
+    },
+    {
+      "entry": "records/apple/mac/final/results/run.stdout.log",
+      "bytes": 634,
+      "sha256": "2da9d9fa3c8854f6d83d4f77ff8b86775427a606999983872e3620a8e6a120b0"
+    },
+    {
+      "entry": "records/apple/mac/final/results/tests--graph_route_apple--ga_mhc_test.cc-compile.command.json",
+      "bytes": 408900,
+      "sha256": "e16c4aac78ddadc4b0fc0ebf943cd4051027eb27bc849594403d0745af78f6e5"
+    },
+    {
+      "entry": "records/apple/mac/final/results/tests--graph_route_apple--ga_mhc_test.cc-compile.result.json",
+      "bytes": 408946,
+      "sha256": "1b20356264816e48cf83742a07973e8fcad5ec29bcc2dcc9bcd65e63de5940c7"
+    },
+    {
+      "entry": "records/apple/mac/final/results/tests--graph_route_apple--ga_mhc_test.cc-compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/mac/final/results/tests--graph_route_apple--ga_mhc_test.cc-compile.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/mac/final/results/tests--graph_route_apple--ga_mhc_test.cc-identity.json",
+      "bytes": 676327,
+      "sha256": "c550879bf999546d8f5d112f37b9f3355047e97477fc7091271e8fc8b7a0e771"
+    },
+    {
+      "entry": "records/apple/mac/final/results/tests.xml",
+      "bytes": 1784,
+      "sha256": "6e60a0dd650f15ef42c900539d3afcd99b9d823c66dce3ec15026ea64a52dd89"
+    },
+    {
+      "entry": "records/apple/mac/final/results/validation.json",
+      "bytes": 688,
+      "sha256": "442ed13ba7cbe881e46426d7e3858ef92e6ea1fa098b54c913dd5018682b872f"
+    },
+    {
+      "entry": "records/apple/mac/final/reused-source-manifest.json",
+      "bytes": 38162,
+      "sha256": "e7fa6ddf821f30b5ed5008b6bd967fe6155897edb14a89a1a878b3224544be65"
+    },
+    {
+      "entry": "records/apple/mac/final/source-manifest.json",
+      "bytes": 1860,
+      "sha256": "11de4181f4dba26a79ef21d94e4227a812e1c5a86cde5c6e1a335543549fc6ea"
+    },
+    {
+      "entry": "records/apple/mac/final/tests/compute_models/ga_mhc_fixture.h",
+      "bytes": 20903,
+      "sha256": "b009de629bbc21a9bbbcba6f24f1f83411012abdb0fcc00e6b525e1562829770"
+    },
+    {
+      "entry": "records/apple/mac/final/tests/graph_route_apple/ga_mhc_test.cc",
+      "bytes": 1450,
+      "sha256": "a806766fe5a3c02b3a1aa1a4055318c0d0985bf2a6865e59cf8d25e170f224c5"
+    },
+    {
+      "entry": "records/apple/mac/plan.json",
+      "bytes": 479263,
+      "sha256": "9531c8192e19168932850c03b6af03b2dd074c157be0d1f6da3eec07faa8e64f"
+    },
+    {
+      "entry": "records/apple/mac/reused-source-manifest.json",
+      "bytes": 38818,
+      "sha256": "f3c5768c9d0402fc198f8e270b9d8fc6e8cad6bef5b8f904a6ae52405a9d1b74"
+    },
+    {
+      "entry": "records/apple/mac/source-manifest.json",
+      "bytes": 1917,
+      "sha256": "da4c0bef6574446a0bbd99790c394091f014739557b0c2158ec92559c0fb87b8"
+    },
+    {
+      "entry": "records/apple/mac/sync.result.json",
+      "bytes": 763,
+      "sha256": "317ddfbab4648b40022224cd5938f1feb76473546a1c6927e6436bfbf8440be8"
+    },
+    {
+      "entry": "records/apple/native-host-cache-identity.json",
+      "bytes": 7238,
+      "sha256": "ce26c1b4dcb194d09355ff068fd104326084128600abd3bdf0f9aef4f423cbc3"
+    },
+    {
+      "entry": "records/apple/native-mhc-kernel-excerpts.json",
+      "bytes": 6843,
+      "sha256": "bf9198b5490217e1799369f32e61ffafc1517e9d929d987bd048039f6977e055"
+    },
+    {
+      "entry": "records/apple/native-mhc-source-excerpts.json",
+      "bytes": 12252,
+      "sha256": "ae984585c05cce136fa3b31aeb81117a59aedc6ed08a496cb478fbbd08bc3124"
+    },
+    {
+      "entry": "records/apple/prepare_mac.py",
+      "bytes": 5083,
+      "sha256": "d34194954ae467b53f3b60e4853f2a711458c8e1aaea55d335cb2853e23c43e6"
+    },
+    {
+      "entry": "records/apple/prior-output-view-fixture/actual-dependencies-canonical-audit.json",
+      "bytes": 312226,
+      "sha256": "2fbea6e761829ebf435ba92fe67b9f1c7a4c389ac40da06b5df4881da63f3fd2"
+    },
+    {
+      "entry": "records/apple/prior-output-view-fixture/cleanup-readonly-inventory.json",
+      "bytes": 1285,
+      "sha256": "2663480a6923e44f6fea1fb2cd29ffd0a19af8794a7865e5cb81a0aecef279d8"
+    },
+    {
+      "entry": "records/apple/prior-output-view-fixture/final-validation.json",
+      "bytes": 6996,
+      "sha256": "a8c80bb682e2d8c510294af25b83eedb4c53c717689bfea0f0e58acbec7f0651"
+    },
+    {
+      "entry": "records/apple/prior-output-view-fixture/mac/final/hardware.json",
+      "bytes": 516,
+      "sha256": "072aadfd3b969664f72b96548ec50ef7d28164bbfd8521e4bf937daa2b8d7c97"
+    },
+    {
+      "entry": "records/apple/prior-output-view-fixture/mac/final/plan.json",
+      "bytes": 475612,
+      "sha256": "f8cb0bd9093fe6dca278e4a88719787a1ccd7014db82eade9bc0fd7c28b57b6a"
+    },
+    {
+      "entry": "records/apple/prior-output-view-fixture/mac/final/results/compile-summary.json",
+      "bytes": 710010,
+      "sha256": "261799896f4f7ae9f0a48ce31fddf71449b0d456bd280ed947615a96d93847e2"
+    },
+    {
+      "entry": "records/apple/prior-output-view-fixture/mac/final/results/link-inputs.json",
+      "bytes": 44529,
+      "sha256": "ffed5625cfa193106384b814c7d4f69f940055bbb4fc0a02375e4e975cbf1197"
+    },
+    {
+      "entry": "records/apple/prior-output-view-fixture/mac/final/results/link.command.json",
+      "bytes": 26186,
+      "sha256": "aa1eedf735ecb950f265a7267c7c3b35096edb59efcf8a36e2b5ce4dcf0e16f8"
+    },
+    {
+      "entry": "records/apple/prior-output-view-fixture/mac/final/results/link.result.json",
+      "bytes": 26233,
+      "sha256": "b6498d8e3dec4530be9f09f927c5ccc75629ac07959541e92860f091ab73c5b5"
+    },
+    {
+      "entry": "records/apple/prior-output-view-fixture/mac/final/results/link.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/prior-output-view-fixture/mac/final/results/link.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/prior-output-view-fixture/mac/final/results/run.command.json",
+      "bytes": 402,
+      "sha256": "e9795530b9751f0490e64b20d8b04cd963654a4a5c051e25d86fa1ed8edcb06a"
+    },
+    {
+      "entry": "records/apple/prior-output-view-fixture/mac/final/results/run.result.json",
+      "bytes": 448,
+      "sha256": "7629ea7bf39c3266e324b4f664aff707a831109c82db1361f3bfb76209e81428"
+    },
+    {
+      "entry": "records/apple/prior-output-view-fixture/mac/final/results/run.stderr.log",
+      "bytes": 12060,
+      "sha256": "b7755c24a22d52df121aeb920cf4ca73d8347e8b6e4046f08f1d71e9ffe3512f"
+    },
+    {
+      "entry": "records/apple/prior-output-view-fixture/mac/final/results/run.stdout.log",
+      "bytes": 643,
+      "sha256": "28c971bac65a38c34ec4413faa75854667ca5b655ce316bfb1cc85ef3258cfc5"
+    },
+    {
+      "entry": "records/apple/prior-output-view-fixture/mac/final/results/tests--graph_route_apple--ga_mhc_test.cc-compile.command.json",
+      "bytes": 408900,
+      "sha256": "f1c21d49cc2e7ceae734a806c746e493a9d7ce6c18d35898dcf5d4c1b29717d5"
+    },
+    {
+      "entry": "records/apple/prior-output-view-fixture/mac/final/results/tests--graph_route_apple--ga_mhc_test.cc-compile.result.json",
+      "bytes": 408946,
+      "sha256": "a214c580bf67dce29ba0913114346219b7c35ee5963daa5657ab9b9c2f4767ba"
+    },
+    {
+      "entry": "records/apple/prior-output-view-fixture/mac/final/results/tests--graph_route_apple--ga_mhc_test.cc-compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/prior-output-view-fixture/mac/final/results/tests--graph_route_apple--ga_mhc_test.cc-compile.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/prior-output-view-fixture/mac/final/results/tests--graph_route_apple--ga_mhc_test.cc-identity.json",
+      "bytes": 676327,
+      "sha256": "a6905b426455809599f72c5dbd1be63c8ff22d89aca175f9090edb9f709dfe61"
+    },
+    {
+      "entry": "records/apple/prior-output-view-fixture/mac/final/results/tests.xml",
+      "bytes": 1787,
+      "sha256": "287b5ea21fe1693970715dc9d98a59c0d2f9c6f85e7a9a79b79e0061b9328b15"
+    },
+    {
+      "entry": "records/apple/prior-output-view-fixture/mac/final/results/validation.json",
+      "bytes": 688,
+      "sha256": "14eedb3cfd6d8e145ac36d95604174996464971176165a4be48379b590a6396b"
+    },
+    {
+      "entry": "records/apple/prior-output-view-fixture/mac/final/reused-source-manifest.json",
+      "bytes": 38162,
+      "sha256": "e7fa6ddf821f30b5ed5008b6bd967fe6155897edb14a89a1a878b3224544be65"
+    },
+    {
+      "entry": "records/apple/prior-output-view-fixture/mac/final/source-manifest.json",
+      "bytes": 1860,
+      "sha256": "215306635ed800edd46df9474828b90de4dc3218a45daac735c73608958c18b1"
+    },
+    {
+      "entry": "records/apple/prior-output-view-fixture/mac/final/tests/compute_models/ga_mhc_fixture.h",
+      "bytes": 20304,
+      "sha256": "f013269093cb51d5b10273564dfc5a7db44d4cd14c53252e4421a624adc07c0a"
+    },
+    {
+      "entry": "records/apple/prior-output-view-fixture/mac/final/tests/graph_route_apple/ga_mhc_test.cc",
+      "bytes": 1450,
+      "sha256": "a806766fe5a3c02b3a1aa1a4055318c0d0985bf2a6865e59cf8d25e170f224c5"
+    },
+    {
+      "entry": "records/apple/prior-output-view-fixture/preservation.json",
+      "bytes": 1424,
+      "sha256": "20d3b7dadc58e57565af93788f180b36d72e958f10409b462082b71fb329e21c"
+    },
+    {
+      "entry": "records/apple/prior-output-view-fixture/source-freeze.json",
+      "bytes": 12339,
+      "sha256": "4448bdb7032c53df1b10f44479ec0a110f47f9f470072bf7d765c9a94c168a54"
+    },
+    {
+      "entry": "records/apple/prior-output-view-fixture/source/include/hyle/compute/apple.h",
+      "bytes": 11664,
+      "sha256": "5baedfd8caa3dd7bd54d9c4619f3c7e7c7e853189a6d8d7c20ab1ebeb2b7dbd5"
+    },
+    {
+      "entry": "records/apple/prior-output-view-fixture/source/include/hyle/compute/apple_batch.h",
+      "bytes": 8214,
+      "sha256": "c22b73da2caa1031a99fe5cbcbd81e6c255eec7429cbf542c06b35cd82ad8e98"
+    },
+    {
+      "entry": "records/apple/prior-output-view-fixture/source/include/hyle/compute/apple_memory.h",
+      "bytes": 11994,
+      "sha256": "b7a3f9714752cabab1ce2e9eb2a1c3d8473ac0d906498f22189ffa99e91ff0e4"
+    },
+    {
+      "entry": "records/apple/prior-output-view-fixture/source/include/hyle/compute/apple_weights.h",
+      "bytes": 4441,
+      "sha256": "44d1783728abc481f0cd699531d4f08a7188faf6f96dec11da70633c7ff3cb4b"
+    },
+    {
+      "entry": "records/apple/prior-output-view-fixture/source/include/hyle/compute/batch_layout.h",
+      "bytes": 10506,
+      "sha256": "db6c552379051f9b8132fc8dce775dd0826c9a8d1d0d7fd10eecd1f10b159921"
+    },
+    {
+      "entry": "records/apple/prior-output-view-fixture/source/include/hyle/compute/batch_materialize.h",
+      "bytes": 7245,
+      "sha256": "9f57cfe9748faf89faae485b604a4b14d6f222bc3ce475bc40a1a265b405b50b"
+    },
+    {
+      "entry": "records/apple/prior-output-view-fixture/source/include/hyle/compute/batch_ops.h",
+      "bytes": 6114,
+      "sha256": "d6dcf9e7c8559280a762d191bc41c4f7b56b0097844d0b31091b4fda361ea077"
+    },
+    {
+      "entry": "records/apple/prior-output-view-fixture/source/include/hyle/compute/batch_paged_native.h",
+      "bytes": 4723,
+      "sha256": "b42b17bd38435422f06cd830f0b35f6c7deca256916d9d99bff52b9ec0d9f1ce"
+    },
+    {
+      "entry": "records/apple/prior-output-view-fixture/source/include/hyle/compute/batch_transfer.h",
+      "bytes": 11416,
+      "sha256": "7bec296577c0439b0e0b48639ccff6b3bd95d137dba085c608f650dbb69fcd1b"
+    },
+    {
+      "entry": "records/apple/prior-output-view-fixture/source/include/hyle/compute/completion.h",
+      "bytes": 1959,
+      "sha256": "98b34b9ee4665e9aedac719504c029a509f304b0a4f566bf6b7f76d88dc2ef34"
+    },
+    {
+      "entry": "records/apple/prior-output-view-fixture/source/include/hyle/compute/detail/context_ref.h",
+      "bytes": 2563,
+      "sha256": "b1295a6d21d452b2730e3907891ca49993e512a741f8f3a9689976e56f5af3f1"
+    },
+    {
+      "entry": "records/apple/prior-output-view-fixture/source/include/hyle/compute/detail/lease_access.h",
+      "bytes": 3996,
+      "sha256": "3df3c018e207f135ab6a5e21336360c68977416f2762dfb8688b6cce0abbb39f"
+    },
+    {
+      "entry": "records/apple/prior-output-view-fixture/source/include/hyle/compute/detail/resource_budget_access.h",
+      "bytes": 527,
+      "sha256": "17f1adbcf9a15c6eadc20e4346bcbefb6b704e344d0e21f8cd44328c53b55004"
+    },
+    {
+      "entry": "records/apple/prior-output-view-fixture/source/include/hyle/compute/device.h",
+      "bytes": 7702,
+      "sha256": "f966803f2293e03db1cde9b1327f847a92162f21adb53f69ef37f0c19b16a84a"
+    },
+    {
+      "entry": "records/apple/prior-output-view-fixture/source/include/hyle/compute/low_precision.h",
+      "bytes": 10406,
+      "sha256": "0920a5a2faecb2991da60ecede680c496bab73411a305e559461ea41cea309cb"
+    },
+    {
+      "entry": "records/apple/prior-output-view-fixture/source/include/hyle/compute/model_ops.h",
+      "bytes": 75341,
+      "sha256": "d3315100def9904a604dd3a1386000641cb03c2e8d36485ef3e55b98e4dde3e5"
+    },
+    {
+      "entry": "records/apple/prior-output-view-fixture/source/include/hyle/compute/operation.h",
+      "bytes": 28108,
+      "sha256": "35b7c862143839e4b8ce0c9a49753b7add2f325ec424bf5f91a1afeec0101506"
+    },
+    {
+      "entry": "records/apple/prior-output-view-fixture/source/include/hyle/compute/ops_visibility.h",
+      "bytes": 43,
+      "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+    },
+    {
+      "entry": "records/apple/prior-output-view-fixture/source/include/hyle/compute/paged_arena.h",
+      "bytes": 10342,
+      "sha256": "004230261c2bcd629ac581ea2c6ce3fe7da928adc1b7827b8955e6e69f471fa0"
+    },
+    {
+      "entry": "records/apple/prior-output-view-fixture/source/include/hyle/compute/prepared_operation.h",
+      "bytes": 20281,
+      "sha256": "03895c56e8665daf2482f66fecf205fd8aacf92046e13c169d9d8ff86fff52d7"
+    },
+    {
+      "entry": "records/apple/prior-output-view-fixture/source/include/hyle/compute/provider.h",
+      "bytes": 10281,
+      "sha256": "a9737ca3cf64eec23ce768e20b1112407fc7816a32f8031f0b668b16c49f816a"
+    },
+    {
+      "entry": "records/apple/prior-output-view-fixture/source/include/hyle/compute/resource_budget.h",
+      "bytes": 4622,
+      "sha256": "578d440b6fc3f5b58809837506165de27ac0866ae39b2d132763f5dd1786b1ce"
+    },
+    {
+      "entry": "records/apple/prior-output-view-fixture/source/include/hyle/compute/resource_leases.h",
+      "bytes": 8660,
+      "sha256": "4e5681ebfa7c2f2ad51e5788c8316f4b993883f595c04b33fe594d7294dab85b"
+    },
+    {
+      "entry": "records/apple/prior-output-view-fixture/source/include/hyle/compute/result.h",
+      "bytes": 4704,
+      "sha256": "07a584147b7de3b3f3c1a238207df4ec548130308295b583fc8c93a4d36a4164"
+    },
+    {
+      "entry": "records/apple/prior-output-view-fixture/source/include/hyle/compute/state_versions.h",
+      "bytes": 8553,
+      "sha256": "a09cb66a216b56a0651f515f18d8a97772b0e6d281c171a82b8a6630b3e1c7d7"
+    },
+    {
+      "entry": "records/apple/prior-output-view-fixture/source/include/hyle/compute/storage_owner.h",
+      "bytes": 8058,
+      "sha256": "549d881d8d4f96eedbb03c8ef9bd6892ede776e5da90a39025538bc50a0530d9"
+    },
+    {
+      "entry": "records/apple/prior-output-view-fixture/source/include/hyle/compute/tensor.h",
+      "bytes": 1980,
+      "sha256": "ac00f221a66d0f9044a2b49a1123a6b99a6c425568790898129c31d81519c538"
+    },
+    {
+      "entry": "records/apple/prior-output-view-fixture/source/include/hyle/compute/tensor_desc.h",
+      "bytes": 8700,
+      "sha256": "e5496e00c643bcce2efbb42666773f4172243d10458b756d6f9881b0e677eb9a"
+    },
+    {
+      "entry": "records/apple/prior-output-view-fixture/source/include/hyle/compute/visibility.h",
+      "bytes": 43,
+      "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+    },
+    {
+      "entry": "records/apple/prior-output-view-fixture/source/include/hyle/compute/weight_assembly.h",
+      "bytes": 1942,
+      "sha256": "f1625d4174c7077c1eee6427e20b80bd17f60c281832133ea028904ff6e77bb0"
+    },
+    {
+      "entry": "records/apple/prior-output-view-fixture/source/include/hyle/compute/workload.h",
+      "bytes": 5017,
+      "sha256": "2e7509d99d986e71b06788e4dd1dcb9595799e2ad972df48449ff0b58f0815ad"
+    },
+    {
+      "entry": "records/apple/prior-output-view-fixture/source/include/hyle/core/assert.h",
+      "bytes": 16114,
+      "sha256": "5596728bc220ea27696be4f25e2f9eb9cf2705930f8eb0461747c4a862615790"
+    },
+    {
+      "entry": "records/apple/prior-output-view-fixture/source/include/hyle/core/compiler.h",
+      "bytes": 4287,
+      "sha256": "e31151f0ed73c532e464c6568483acecd80a2da9c1ee7afc7e081db87d6fb687"
+    },
+    {
+      "entry": "records/apple/prior-output-view-fixture/source/include/hyle/core/detail/compiler_attributes.h",
+      "bytes": 1913,
+      "sha256": "263c7691f9984073e198b69328092330bf572195113d3994d1ab54fe4564d88a"
+    },
+    {
+      "entry": "records/apple/prior-output-view-fixture/source/include/hyle/core/detail/preprocessor.h",
+      "bytes": 409,
+      "sha256": "1d9872ef98db007dcbed7e0128771244640e1de4092830d52a7a83537f98eb84"
+    },
+    {
+      "entry": "records/apple/prior-output-view-fixture/source/include/hyle/core/environment.h",
+      "bytes": 6712,
+      "sha256": "3d289765b1b677499a444b38d1dbe366bb5e99f89fcb7670af2d08106fd958fa"
+    },
+    {
+      "entry": "records/apple/prior-output-view-fixture/source/include/hyle/error/result.h",
+      "bytes": 30856,
+      "sha256": "7718409ab2854eb76959215b356bf8077007134d87db1a24f9384a9b5deff2b5"
+    },
+    {
+      "entry": "records/apple/prior-output-view-fixture/source/include/hyle/error/status.h",
+      "bytes": 18122,
+      "sha256": "4d6b4b0bfa5628947aad5449320513d4b071e0c84debfac47f7a7d264cecb7f4"
+    },
+    {
+      "entry": "records/apple/prior-output-view-fixture/source/include/hyle/graph/apple.h",
+      "bytes": 5922,
+      "sha256": "8f4e5660d322a0450c9df544568f0ef818b7c0ee269a7bdd3c9579cb79e99298"
+    },
+    {
+      "entry": "records/apple/prior-output-view-fixture/source/include/hyle/graph/compile_report.h",
+      "bytes": 577,
+      "sha256": "c42c30527d581975c49ddfebb182b0ae7928d799eed91172cb631779a2ad5b4f"
+    },
+    {
+      "entry": "records/apple/prior-output-view-fixture/source/include/hyle/graph/executable.h",
+      "bytes": 49762,
+      "sha256": "6305dd557606b26119fc60de9dbb68c979a1f8fe54755a191378c49742ef4714"
+    },
+    {
+      "entry": "records/apple/prior-output-view-fixture/source/include/hyle/graph/execution_source.h",
+      "bytes": 1859,
+      "sha256": "b89de5c6fe8b84192c9618a6a4e4dcee8ac45393e04a9e335f17b5a2d3ecac3f"
+    },
+    {
+      "entry": "records/apple/prior-output-view-fixture/source/include/hyle/graph/graph.h",
+      "bytes": 19988,
+      "sha256": "c7a93ccf9fd1c86fb9dec286e7d3345aabcb1810c2fb6793a66093480a5a2136"
+    },
+    {
+      "entry": "records/apple/prior-output-view-fixture/source/include/hyle/graph/resources.h",
+      "bytes": 430,
+      "sha256": "c9d3075babb4d863f3543c76576d093fe59f9868df67d50fc492db0aebe7015d"
+    },
+    {
+      "entry": "records/apple/prior-output-view-fixture/source/include/hyle/graph/result.h",
+      "bytes": 1646,
+      "sha256": "90861eafec4f3a0aa73014416bd2817dfe3892ac001ea206bebf907e1d3cf182"
+    },
+    {
+      "entry": "records/apple/prior-output-view-fixture/source/include/hyle/graph/visibility.h",
+      "bytes": 43,
+      "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+    },
+    {
+      "entry": "records/apple/prior-output-view-fixture/source/include/hyle/graph/weight_binding.h",
+      "bytes": 422,
+      "sha256": "ebcc3eea951953966a3b10b2951872e74d04921af6f0cc8de45ab52ab1ba32bd"
+    },
+    {
+      "entry": "records/apple/prior-output-view-fixture/source/include/hyle/mem/allocator.h",
+      "bytes": 11090,
+      "sha256": "0369680d4769a0187bfb77ee8b565b5e8fb53a03909fabf233458d9c1cbcd011"
+    },
+    {
+      "entry": "records/apple/prior-output-view-fixture/source/include/hyle/mem/buffer.h",
+      "bytes": 19273,
+      "sha256": "346a4f810babb8c5dacba49faaf57903d998a3cbb49af12b8c62acc85f7be72c"
+    },
+    {
+      "entry": "records/apple/prior-output-view-fixture/source/include/hyle/mem/quota_allocator.h",
+      "bytes": 7124,
+      "sha256": "a88fe230dc5358ddde6209de96cc61a59e3f6e60d30b9e7534e986fab10224c9"
+    },
+    {
+      "entry": "records/apple/prior-output-view-fixture/source/include/hyle/mem/resource.h",
+      "bytes": 7717,
+      "sha256": "84b0366e658ec63f999b4c9719cf8584ad758f4ff5340baf37f1c3ebd17145cd"
+    },
+    {
+      "entry": "records/apple/prior-output-view-fixture/source/include/hyle/mem/visibility.h",
+      "bytes": 43,
+      "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+    },
+    {
+      "entry": "records/apple/prior-output-view-fixture/source/include/hyle/visibility.h",
+      "bytes": 11701,
+      "sha256": "893fa73589b6e46f00474c2258af74c28d662b52176b57012290c820812ed486"
+    },
+    {
+      "entry": "records/apple/prior-output-view-fixture/source/tests/compute_models/ga_indexer_state_fixture.h",
+      "bytes": 26486,
+      "sha256": "c2055b3920c8ebc93ed30d2596d4eba049790e148b8dd3d59128e1ffda48ab84"
+    },
+    {
+      "entry": "records/apple/prior-output-view-fixture/source/tests/compute_models/ga_mhc_fixture.h",
+      "bytes": 20304,
+      "sha256": "f013269093cb51d5b10273564dfc5a7db44d4cd14c53252e4421a624adc07c0a"
+    },
+    {
+      "entry": "records/apple/prior-output-view-fixture/source/tests/compute_models/ga_mhc_reference_fixture.h",
+      "bytes": 18759,
+      "sha256": "561ba98a37ef5632690802c338046448e4b14548dbd7a68192509656732c9422"
+    },
+    {
+      "entry": "records/apple/prior-output-view-fixture/source/tests/compute_models/nvfp4_reference_fixture.h",
+      "bytes": 22482,
+      "sha256": "cc94ec1f443511722ff4fc227b065af27b82573443735250951cdce934faa4d3"
+    },
+    {
+      "entry": "records/apple/prior-output-view-fixture/source/tests/graph_route_apple/CMakeLists.txt",
+      "bytes": 7204,
+      "sha256": "8b46bad3af6427c7f02f3b60f6831734bd352fdac2020eb1a71b0a37a3d60d97"
+    },
+    {
+      "entry": "records/apple/prior-output-view-fixture/source/tests/graph_route_apple/ga_mhc_test.cc",
+      "bytes": 1450,
+      "sha256": "a806766fe5a3c02b3a1aa1a4055318c0d0985bf2a6865e59cf8d25e170f224c5"
+    },
+    {
+      "entry": "records/apple/prior-state-arena-fixture/actual-dependencies-canonical-audit.json",
+      "bytes": 312226,
+      "sha256": "79b03763d21ede35dbb1cf63d3cd208368898e8f5f290523580fe8efa4f34707"
+    },
+    {
+      "entry": "records/apple/prior-state-arena-fixture/cleanup-readonly-inventory.json",
+      "bytes": 1285,
+      "sha256": "502d454eaf3ea9290eedb294438181c20ca1998a3a9070b8fb51ed7ecb300bcb"
+    },
+    {
+      "entry": "records/apple/prior-state-arena-fixture/final-validation.json",
+      "bytes": 7240,
+      "sha256": "a6519c4c93140b17814125cb7a52801cf92204dfc560f91847ea5d4402612172"
+    },
+    {
+      "entry": "records/apple/prior-state-arena-fixture/mac/final/hardware.json",
+      "bytes": 516,
+      "sha256": "e3d3b88dbbb5913e88624a2ef189a6e1418d217e00705e73cdc5f5181427e721"
+    },
+    {
+      "entry": "records/apple/prior-state-arena-fixture/mac/final/plan.json",
+      "bytes": 475612,
+      "sha256": "f8cb0bd9093fe6dca278e4a88719787a1ccd7014db82eade9bc0fd7c28b57b6a"
+    },
+    {
+      "entry": "records/apple/prior-state-arena-fixture/mac/final/results/compile-summary.json",
+      "bytes": 710009,
+      "sha256": "ec76403be081a9817750a0f735f835dfc2c6b983e0ce2ffcc30e0f1d2d00e1e9"
+    },
+    {
+      "entry": "records/apple/prior-state-arena-fixture/mac/final/results/link-inputs.json",
+      "bytes": 44529,
+      "sha256": "9b8e37e7e7b338e1e31ad741eeda72d17dc8d3baa5113ff2ffa8125a92f7685f"
+    },
+    {
+      "entry": "records/apple/prior-state-arena-fixture/mac/final/results/link.command.json",
+      "bytes": 26186,
+      "sha256": "cc070b3c5b000656c6d9e6a700347cb92c5a46cec6f41000de4d808acd0a083c"
+    },
+    {
+      "entry": "records/apple/prior-state-arena-fixture/mac/final/results/link.result.json",
+      "bytes": 26233,
+      "sha256": "0a41c4a733dc8a61cb87f2bd517e7e678ae8a3c56d29eaf69de8483aed08d286"
+    },
+    {
+      "entry": "records/apple/prior-state-arena-fixture/mac/final/results/link.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/prior-state-arena-fixture/mac/final/results/link.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/prior-state-arena-fixture/mac/final/results/run.command.json",
+      "bytes": 401,
+      "sha256": "27d9184a61a8059fff34241880d52237719e9396d8a3dad10bc8cbf047e309f4"
+    },
+    {
+      "entry": "records/apple/prior-state-arena-fixture/mac/final/results/run.result.json",
+      "bytes": 447,
+      "sha256": "34396b04ff9e2f0ec3aa35e48669dfc75fed373fa61816ac425062c32aafabe9"
+    },
+    {
+      "entry": "records/apple/prior-state-arena-fixture/mac/final/results/run.stderr.log",
+      "bytes": 12056,
+      "sha256": "20f2df4d97d57c029ede8e44b0be4dcebc470f1bafe79998f75d209d28a6f0d5"
+    },
+    {
+      "entry": "records/apple/prior-state-arena-fixture/mac/final/results/run.stdout.log",
+      "bytes": 634,
+      "sha256": "a0952308b4e7a9d39351d05256bb62af947cd6f2030c4ec9c222ccb77c498e99"
+    },
+    {
+      "entry": "records/apple/prior-state-arena-fixture/mac/final/results/tests--graph_route_apple--ga_mhc_test.cc-compile.command.json",
+      "bytes": 408900,
+      "sha256": "45e677a4155f9b5898b8550fefa61941c57cc26fe59359cafed8e518cfbb5678"
+    },
+    {
+      "entry": "records/apple/prior-state-arena-fixture/mac/final/results/tests--graph_route_apple--ga_mhc_test.cc-compile.result.json",
+      "bytes": 408945,
+      "sha256": "68e0f157c5e4b9acf852002a8d3014cd37c220c3a52dfe89a6e9b05247f8f18e"
+    },
+    {
+      "entry": "records/apple/prior-state-arena-fixture/mac/final/results/tests--graph_route_apple--ga_mhc_test.cc-compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/prior-state-arena-fixture/mac/final/results/tests--graph_route_apple--ga_mhc_test.cc-compile.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/apple/prior-state-arena-fixture/mac/final/results/tests--graph_route_apple--ga_mhc_test.cc-identity.json",
+      "bytes": 676326,
+      "sha256": "3f10bd3f006f2630c1fff8ff3a11de5bacbef60b9991bd3cb1a5f26f2d2aaa12"
+    },
+    {
+      "entry": "records/apple/prior-state-arena-fixture/mac/final/results/tests.xml",
+      "bytes": 1784,
+      "sha256": "aa56500e2f8c1ea4efa8aa610fc40b6aa173c41e4da361537ff38f705b78e369"
+    },
+    {
+      "entry": "records/apple/prior-state-arena-fixture/mac/final/results/validation.json",
+      "bytes": 688,
+      "sha256": "d711b563d8025f28eca4b5b444befac7b7eff8dac21152bb5984505c16dd4dfe"
+    },
+    {
+      "entry": "records/apple/prior-state-arena-fixture/mac/final/reused-source-manifest.json",
+      "bytes": 38162,
+      "sha256": "e7fa6ddf821f30b5ed5008b6bd967fe6155897edb14a89a1a878b3224544be65"
+    },
+    {
+      "entry": "records/apple/prior-state-arena-fixture/mac/final/source-manifest.json",
+      "bytes": 1860,
+      "sha256": "38b4d4489a89bf25b76d78c33bd5b505fd1f3dd21e092712bfd64221b6a8d06d"
+    },
+    {
+      "entry": "records/apple/prior-state-arena-fixture/mac/final/tests/compute_models/ga_mhc_fixture.h",
+      "bytes": 20436,
+      "sha256": "cd631cf0354daa8abbd4f20d372db9a6ca3345c103b9cc3d4c35fe09d35609f8"
+    },
+    {
+      "entry": "records/apple/prior-state-arena-fixture/mac/final/tests/graph_route_apple/ga_mhc_test.cc",
+      "bytes": 1450,
+      "sha256": "a806766fe5a3c02b3a1aa1a4055318c0d0985bf2a6865e59cf8d25e170f224c5"
+    },
+    {
+      "entry": "records/apple/prior-state-arena-fixture/preservation.json",
+      "bytes": 1494,
+      "sha256": "595096175c75ede9226211d7e1a5c9247606ef3a5ab7b8526010185b0210444c"
+    },
+    {
+      "entry": "records/apple/prior-state-arena-fixture/source-freeze.json",
+      "bytes": 12733,
+      "sha256": "066244e92e5d6b62b8a1e9b30b12e8f0734fc7f3055faa87d022fb7131951ff9"
+    },
+    {
+      "entry": "records/apple/prior-state-arena-fixture/source/include/hyle/compute/apple.h",
+      "bytes": 11664,
+      "sha256": "5baedfd8caa3dd7bd54d9c4619f3c7e7c7e853189a6d8d7c20ab1ebeb2b7dbd5"
+    },
+    {
+      "entry": "records/apple/prior-state-arena-fixture/source/include/hyle/compute/apple_batch.h",
+      "bytes": 8214,
+      "sha256": "c22b73da2caa1031a99fe5cbcbd81e6c255eec7429cbf542c06b35cd82ad8e98"
+    },
+    {
+      "entry": "records/apple/prior-state-arena-fixture/source/include/hyle/compute/apple_memory.h",
+      "bytes": 11994,
+      "sha256": "b7a3f9714752cabab1ce2e9eb2a1c3d8473ac0d906498f22189ffa99e91ff0e4"
+    },
+    {
+      "entry": "records/apple/prior-state-arena-fixture/source/include/hyle/compute/apple_weights.h",
+      "bytes": 4441,
+      "sha256": "44d1783728abc481f0cd699531d4f08a7188faf6f96dec11da70633c7ff3cb4b"
+    },
+    {
+      "entry": "records/apple/prior-state-arena-fixture/source/include/hyle/compute/batch_layout.h",
+      "bytes": 10506,
+      "sha256": "db6c552379051f9b8132fc8dce775dd0826c9a8d1d0d7fd10eecd1f10b159921"
+    },
+    {
+      "entry": "records/apple/prior-state-arena-fixture/source/include/hyle/compute/batch_materialize.h",
+      "bytes": 7245,
+      "sha256": "9f57cfe9748faf89faae485b604a4b14d6f222bc3ce475bc40a1a265b405b50b"
+    },
+    {
+      "entry": "records/apple/prior-state-arena-fixture/source/include/hyle/compute/batch_ops.h",
+      "bytes": 6114,
+      "sha256": "d6dcf9e7c8559280a762d191bc41c4f7b56b0097844d0b31091b4fda361ea077"
+    },
+    {
+      "entry": "records/apple/prior-state-arena-fixture/source/include/hyle/compute/batch_paged_native.h",
+      "bytes": 4723,
+      "sha256": "b42b17bd38435422f06cd830f0b35f6c7deca256916d9d99bff52b9ec0d9f1ce"
+    },
+    {
+      "entry": "records/apple/prior-state-arena-fixture/source/include/hyle/compute/batch_transfer.h",
+      "bytes": 11416,
+      "sha256": "7bec296577c0439b0e0b48639ccff6b3bd95d137dba085c608f650dbb69fcd1b"
+    },
+    {
+      "entry": "records/apple/prior-state-arena-fixture/source/include/hyle/compute/completion.h",
+      "bytes": 1959,
+      "sha256": "98b34b9ee4665e9aedac719504c029a509f304b0a4f566bf6b7f76d88dc2ef34"
+    },
+    {
+      "entry": "records/apple/prior-state-arena-fixture/source/include/hyle/compute/detail/context_ref.h",
+      "bytes": 2563,
+      "sha256": "b1295a6d21d452b2730e3907891ca49993e512a741f8f3a9689976e56f5af3f1"
+    },
+    {
+      "entry": "records/apple/prior-state-arena-fixture/source/include/hyle/compute/detail/lease_access.h",
+      "bytes": 3996,
+      "sha256": "3df3c018e207f135ab6a5e21336360c68977416f2762dfb8688b6cce0abbb39f"
+    },
+    {
+      "entry": "records/apple/prior-state-arena-fixture/source/include/hyle/compute/detail/resource_budget_access.h",
+      "bytes": 527,
+      "sha256": "17f1adbcf9a15c6eadc20e4346bcbefb6b704e344d0e21f8cd44328c53b55004"
+    },
+    {
+      "entry": "records/apple/prior-state-arena-fixture/source/include/hyle/compute/device.h",
+      "bytes": 7702,
+      "sha256": "f966803f2293e03db1cde9b1327f847a92162f21adb53f69ef37f0c19b16a84a"
+    },
+    {
+      "entry": "records/apple/prior-state-arena-fixture/source/include/hyle/compute/low_precision.h",
+      "bytes": 10406,
+      "sha256": "0920a5a2faecb2991da60ecede680c496bab73411a305e559461ea41cea309cb"
+    },
+    {
+      "entry": "records/apple/prior-state-arena-fixture/source/include/hyle/compute/model_ops.h",
+      "bytes": 75341,
+      "sha256": "d3315100def9904a604dd3a1386000641cb03c2e8d36485ef3e55b98e4dde3e5"
+    },
+    {
+      "entry": "records/apple/prior-state-arena-fixture/source/include/hyle/compute/operation.h",
+      "bytes": 28108,
+      "sha256": "35b7c862143839e4b8ce0c9a49753b7add2f325ec424bf5f91a1afeec0101506"
+    },
+    {
+      "entry": "records/apple/prior-state-arena-fixture/source/include/hyle/compute/ops_visibility.h",
+      "bytes": 43,
+      "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+    },
+    {
+      "entry": "records/apple/prior-state-arena-fixture/source/include/hyle/compute/paged_arena.h",
+      "bytes": 10342,
+      "sha256": "004230261c2bcd629ac581ea2c6ce3fe7da928adc1b7827b8955e6e69f471fa0"
+    },
+    {
+      "entry": "records/apple/prior-state-arena-fixture/source/include/hyle/compute/prepared_operation.h",
+      "bytes": 20281,
+      "sha256": "03895c56e8665daf2482f66fecf205fd8aacf92046e13c169d9d8ff86fff52d7"
+    },
+    {
+      "entry": "records/apple/prior-state-arena-fixture/source/include/hyle/compute/provider.h",
+      "bytes": 10281,
+      "sha256": "a9737ca3cf64eec23ce768e20b1112407fc7816a32f8031f0b668b16c49f816a"
+    },
+    {
+      "entry": "records/apple/prior-state-arena-fixture/source/include/hyle/compute/resource_budget.h",
+      "bytes": 4622,
+      "sha256": "578d440b6fc3f5b58809837506165de27ac0866ae39b2d132763f5dd1786b1ce"
+    },
+    {
+      "entry": "records/apple/prior-state-arena-fixture/source/include/hyle/compute/resource_leases.h",
+      "bytes": 8660,
+      "sha256": "4e5681ebfa7c2f2ad51e5788c8316f4b993883f595c04b33fe594d7294dab85b"
+    },
+    {
+      "entry": "records/apple/prior-state-arena-fixture/source/include/hyle/compute/result.h",
+      "bytes": 4704,
+      "sha256": "07a584147b7de3b3f3c1a238207df4ec548130308295b583fc8c93a4d36a4164"
+    },
+    {
+      "entry": "records/apple/prior-state-arena-fixture/source/include/hyle/compute/state_versions.h",
+      "bytes": 8553,
+      "sha256": "a09cb66a216b56a0651f515f18d8a97772b0e6d281c171a82b8a6630b3e1c7d7"
+    },
+    {
+      "entry": "records/apple/prior-state-arena-fixture/source/include/hyle/compute/storage_owner.h",
+      "bytes": 8058,
+      "sha256": "549d881d8d4f96eedbb03c8ef9bd6892ede776e5da90a39025538bc50a0530d9"
+    },
+    {
+      "entry": "records/apple/prior-state-arena-fixture/source/include/hyle/compute/tensor.h",
+      "bytes": 1980,
+      "sha256": "ac00f221a66d0f9044a2b49a1123a6b99a6c425568790898129c31d81519c538"
+    },
+    {
+      "entry": "records/apple/prior-state-arena-fixture/source/include/hyle/compute/tensor_desc.h",
+      "bytes": 8700,
+      "sha256": "e5496e00c643bcce2efbb42666773f4172243d10458b756d6f9881b0e677eb9a"
+    },
+    {
+      "entry": "records/apple/prior-state-arena-fixture/source/include/hyle/compute/visibility.h",
+      "bytes": 43,
+      "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+    },
+    {
+      "entry": "records/apple/prior-state-arena-fixture/source/include/hyle/compute/weight_assembly.h",
+      "bytes": 1942,
+      "sha256": "f1625d4174c7077c1eee6427e20b80bd17f60c281832133ea028904ff6e77bb0"
+    },
+    {
+      "entry": "records/apple/prior-state-arena-fixture/source/include/hyle/compute/workload.h",
+      "bytes": 5017,
+      "sha256": "2e7509d99d986e71b06788e4dd1dcb9595799e2ad972df48449ff0b58f0815ad"
+    },
+    {
+      "entry": "records/apple/prior-state-arena-fixture/source/include/hyle/core/assert.h",
+      "bytes": 16114,
+      "sha256": "5596728bc220ea27696be4f25e2f9eb9cf2705930f8eb0461747c4a862615790"
+    },
+    {
+      "entry": "records/apple/prior-state-arena-fixture/source/include/hyle/core/compiler.h",
+      "bytes": 4287,
+      "sha256": "e31151f0ed73c532e464c6568483acecd80a2da9c1ee7afc7e081db87d6fb687"
+    },
+    {
+      "entry": "records/apple/prior-state-arena-fixture/source/include/hyle/core/detail/compiler_attributes.h",
+      "bytes": 1913,
+      "sha256": "263c7691f9984073e198b69328092330bf572195113d3994d1ab54fe4564d88a"
+    },
+    {
+      "entry": "records/apple/prior-state-arena-fixture/source/include/hyle/core/detail/preprocessor.h",
+      "bytes": 409,
+      "sha256": "1d9872ef98db007dcbed7e0128771244640e1de4092830d52a7a83537f98eb84"
+    },
+    {
+      "entry": "records/apple/prior-state-arena-fixture/source/include/hyle/core/environment.h",
+      "bytes": 6712,
+      "sha256": "3d289765b1b677499a444b38d1dbe366bb5e99f89fcb7670af2d08106fd958fa"
+    },
+    {
+      "entry": "records/apple/prior-state-arena-fixture/source/include/hyle/error/result.h",
+      "bytes": 30856,
+      "sha256": "7718409ab2854eb76959215b356bf8077007134d87db1a24f9384a9b5deff2b5"
+    },
+    {
+      "entry": "records/apple/prior-state-arena-fixture/source/include/hyle/error/status.h",
+      "bytes": 18122,
+      "sha256": "4d6b4b0bfa5628947aad5449320513d4b071e0c84debfac47f7a7d264cecb7f4"
+    },
+    {
+      "entry": "records/apple/prior-state-arena-fixture/source/include/hyle/graph/apple.h",
+      "bytes": 5922,
+      "sha256": "8f4e5660d322a0450c9df544568f0ef818b7c0ee269a7bdd3c9579cb79e99298"
+    },
+    {
+      "entry": "records/apple/prior-state-arena-fixture/source/include/hyle/graph/compile_report.h",
+      "bytes": 577,
+      "sha256": "c42c30527d581975c49ddfebb182b0ae7928d799eed91172cb631779a2ad5b4f"
+    },
+    {
+      "entry": "records/apple/prior-state-arena-fixture/source/include/hyle/graph/executable.h",
+      "bytes": 49762,
+      "sha256": "6305dd557606b26119fc60de9dbb68c979a1f8fe54755a191378c49742ef4714"
+    },
+    {
+      "entry": "records/apple/prior-state-arena-fixture/source/include/hyle/graph/execution_source.h",
+      "bytes": 1859,
+      "sha256": "b89de5c6fe8b84192c9618a6a4e4dcee8ac45393e04a9e335f17b5a2d3ecac3f"
+    },
+    {
+      "entry": "records/apple/prior-state-arena-fixture/source/include/hyle/graph/graph.h",
+      "bytes": 19988,
+      "sha256": "c7a93ccf9fd1c86fb9dec286e7d3345aabcb1810c2fb6793a66093480a5a2136"
+    },
+    {
+      "entry": "records/apple/prior-state-arena-fixture/source/include/hyle/graph/resources.h",
+      "bytes": 430,
+      "sha256": "c9d3075babb4d863f3543c76576d093fe59f9868df67d50fc492db0aebe7015d"
+    },
+    {
+      "entry": "records/apple/prior-state-arena-fixture/source/include/hyle/graph/result.h",
+      "bytes": 1646,
+      "sha256": "90861eafec4f3a0aa73014416bd2817dfe3892ac001ea206bebf907e1d3cf182"
+    },
+    {
+      "entry": "records/apple/prior-state-arena-fixture/source/include/hyle/graph/visibility.h",
+      "bytes": 43,
+      "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+    },
+    {
+      "entry": "records/apple/prior-state-arena-fixture/source/include/hyle/graph/weight_binding.h",
+      "bytes": 422,
+      "sha256": "ebcc3eea951953966a3b10b2951872e74d04921af6f0cc8de45ab52ab1ba32bd"
+    },
+    {
+      "entry": "records/apple/prior-state-arena-fixture/source/include/hyle/mem/allocator.h",
+      "bytes": 11090,
+      "sha256": "0369680d4769a0187bfb77ee8b565b5e8fb53a03909fabf233458d9c1cbcd011"
+    },
+    {
+      "entry": "records/apple/prior-state-arena-fixture/source/include/hyle/mem/buffer.h",
+      "bytes": 19273,
+      "sha256": "346a4f810babb8c5dacba49faaf57903d998a3cbb49af12b8c62acc85f7be72c"
+    },
+    {
+      "entry": "records/apple/prior-state-arena-fixture/source/include/hyle/mem/quota_allocator.h",
+      "bytes": 7124,
+      "sha256": "a88fe230dc5358ddde6209de96cc61a59e3f6e60d30b9e7534e986fab10224c9"
+    },
+    {
+      "entry": "records/apple/prior-state-arena-fixture/source/include/hyle/mem/resource.h",
+      "bytes": 7717,
+      "sha256": "84b0366e658ec63f999b4c9719cf8584ad758f4ff5340baf37f1c3ebd17145cd"
+    },
+    {
+      "entry": "records/apple/prior-state-arena-fixture/source/include/hyle/mem/visibility.h",
+      "bytes": 43,
+      "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+    },
+    {
+      "entry": "records/apple/prior-state-arena-fixture/source/include/hyle/visibility.h",
+      "bytes": 11701,
+      "sha256": "893fa73589b6e46f00474c2258af74c28d662b52176b57012290c820812ed486"
+    },
+    {
+      "entry": "records/apple/prior-state-arena-fixture/source/tests/compute_models/ga_indexer_state_fixture.h",
+      "bytes": 26486,
+      "sha256": "c2055b3920c8ebc93ed30d2596d4eba049790e148b8dd3d59128e1ffda48ab84"
+    },
+    {
+      "entry": "records/apple/prior-state-arena-fixture/source/tests/compute_models/ga_mhc_fixture.h",
+      "bytes": 20436,
+      "sha256": "cd631cf0354daa8abbd4f20d372db9a6ca3345c103b9cc3d4c35fe09d35609f8"
+    },
+    {
+      "entry": "records/apple/prior-state-arena-fixture/source/tests/compute_models/ga_mhc_reference_fixture.h",
+      "bytes": 18759,
+      "sha256": "561ba98a37ef5632690802c338046448e4b14548dbd7a68192509656732c9422"
+    },
+    {
+      "entry": "records/apple/prior-state-arena-fixture/source/tests/compute_models/nvfp4_reference_fixture.h",
+      "bytes": 22482,
+      "sha256": "cc94ec1f443511722ff4fc227b065af27b82573443735250951cdce934faa4d3"
+    },
+    {
+      "entry": "records/apple/prior-state-arena-fixture/source/tests/graph_route_apple/CMakeLists.txt",
+      "bytes": 7204,
+      "sha256": "8b46bad3af6427c7f02f3b60f6831734bd352fdac2020eb1a71b0a37a3d60d97"
+    },
+    {
+      "entry": "records/apple/prior-state-arena-fixture/source/tests/graph_route_apple/ga_mhc_test.cc",
+      "bytes": 1450,
+      "sha256": "a806766fe5a3c02b3a1aa1a4055318c0d0985bf2a6865e59cf8d25e170f224c5"
+    },
+    {
+      "entry": "records/apple/revisions/const-binding-pairing-review-before.json",
+      "bytes": 1485,
+      "sha256": "f63bd8d0ffff04e46ef453ed37fb1f506718df15f6a3cc20b2bcaed52bc4c281"
+    },
+    {
+      "entry": "records/apple/shared-candidate-review.json",
+      "bytes": 2073,
+      "sha256": "351a4ae1f3b4985fcebcd395e3f01d0c76895febf80e9cee87fbeb6ab2c8d283"
+    },
+    {
+      "entry": "records/apple/source-freeze.json",
+      "bytes": 13162,
+      "sha256": "32f80d540064f5dab3e84c494c8177c4f6b22d2e9f1c66fce47683271e899d2f"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/apple.h",
+      "bytes": 11664,
+      "sha256": "5baedfd8caa3dd7bd54d9c4619f3c7e7c7e853189a6d8d7c20ab1ebeb2b7dbd5"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/apple_batch.h",
+      "bytes": 8214,
+      "sha256": "c22b73da2caa1031a99fe5cbcbd81e6c255eec7429cbf542c06b35cd82ad8e98"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/apple_memory.h",
+      "bytes": 11994,
+      "sha256": "b7a3f9714752cabab1ce2e9eb2a1c3d8473ac0d906498f22189ffa99e91ff0e4"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/apple_weights.h",
+      "bytes": 4441,
+      "sha256": "44d1783728abc481f0cd699531d4f08a7188faf6f96dec11da70633c7ff3cb4b"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/batch_layout.h",
+      "bytes": 10506,
+      "sha256": "db6c552379051f9b8132fc8dce775dd0826c9a8d1d0d7fd10eecd1f10b159921"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/batch_materialize.h",
+      "bytes": 7245,
+      "sha256": "9f57cfe9748faf89faae485b604a4b14d6f222bc3ce475bc40a1a265b405b50b"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/batch_ops.h",
+      "bytes": 6114,
+      "sha256": "d6dcf9e7c8559280a762d191bc41c4f7b56b0097844d0b31091b4fda361ea077"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/batch_paged_native.h",
+      "bytes": 4723,
+      "sha256": "b42b17bd38435422f06cd830f0b35f6c7deca256916d9d99bff52b9ec0d9f1ce"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/batch_transfer.h",
+      "bytes": 11416,
+      "sha256": "7bec296577c0439b0e0b48639ccff6b3bd95d137dba085c608f650dbb69fcd1b"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/completion.h",
+      "bytes": 1959,
+      "sha256": "98b34b9ee4665e9aedac719504c029a509f304b0a4f566bf6b7f76d88dc2ef34"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/detail/context_ref.h",
+      "bytes": 2563,
+      "sha256": "b1295a6d21d452b2730e3907891ca49993e512a741f8f3a9689976e56f5af3f1"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/detail/lease_access.h",
+      "bytes": 3996,
+      "sha256": "3df3c018e207f135ab6a5e21336360c68977416f2762dfb8688b6cce0abbb39f"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/detail/resource_budget_access.h",
+      "bytes": 527,
+      "sha256": "17f1adbcf9a15c6eadc20e4346bcbefb6b704e344d0e21f8cd44328c53b55004"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/device.h",
+      "bytes": 7702,
+      "sha256": "f966803f2293e03db1cde9b1327f847a92162f21adb53f69ef37f0c19b16a84a"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/low_precision.h",
+      "bytes": 10406,
+      "sha256": "0920a5a2faecb2991da60ecede680c496bab73411a305e559461ea41cea309cb"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/model_ops.h",
+      "bytes": 75341,
+      "sha256": "d3315100def9904a604dd3a1386000641cb03c2e8d36485ef3e55b98e4dde3e5"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/operation.h",
+      "bytes": 28108,
+      "sha256": "35b7c862143839e4b8ce0c9a49753b7add2f325ec424bf5f91a1afeec0101506"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/ops_visibility.h",
+      "bytes": 43,
+      "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/paged_arena.h",
+      "bytes": 10342,
+      "sha256": "004230261c2bcd629ac581ea2c6ce3fe7da928adc1b7827b8955e6e69f471fa0"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/prepared_operation.h",
+      "bytes": 20281,
+      "sha256": "03895c56e8665daf2482f66fecf205fd8aacf92046e13c169d9d8ff86fff52d7"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/provider.h",
+      "bytes": 10281,
+      "sha256": "a9737ca3cf64eec23ce768e20b1112407fc7816a32f8031f0b668b16c49f816a"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/resource_budget.h",
+      "bytes": 4622,
+      "sha256": "578d440b6fc3f5b58809837506165de27ac0866ae39b2d132763f5dd1786b1ce"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/resource_leases.h",
+      "bytes": 8660,
+      "sha256": "4e5681ebfa7c2f2ad51e5788c8316f4b993883f595c04b33fe594d7294dab85b"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/result.h",
+      "bytes": 4704,
+      "sha256": "07a584147b7de3b3f3c1a238207df4ec548130308295b583fc8c93a4d36a4164"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/state_versions.h",
+      "bytes": 8553,
+      "sha256": "a09cb66a216b56a0651f515f18d8a97772b0e6d281c171a82b8a6630b3e1c7d7"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/storage_owner.h",
+      "bytes": 8058,
+      "sha256": "549d881d8d4f96eedbb03c8ef9bd6892ede776e5da90a39025538bc50a0530d9"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/tensor.h",
+      "bytes": 1980,
+      "sha256": "ac00f221a66d0f9044a2b49a1123a6b99a6c425568790898129c31d81519c538"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/tensor_desc.h",
+      "bytes": 8700,
+      "sha256": "e5496e00c643bcce2efbb42666773f4172243d10458b756d6f9881b0e677eb9a"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/visibility.h",
+      "bytes": 43,
+      "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/weight_assembly.h",
+      "bytes": 1942,
+      "sha256": "f1625d4174c7077c1eee6427e20b80bd17f60c281832133ea028904ff6e77bb0"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/compute/workload.h",
+      "bytes": 5017,
+      "sha256": "2e7509d99d986e71b06788e4dd1dcb9595799e2ad972df48449ff0b58f0815ad"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/core/assert.h",
+      "bytes": 16114,
+      "sha256": "5596728bc220ea27696be4f25e2f9eb9cf2705930f8eb0461747c4a862615790"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/core/compiler.h",
+      "bytes": 4287,
+      "sha256": "e31151f0ed73c532e464c6568483acecd80a2da9c1ee7afc7e081db87d6fb687"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/core/detail/compiler_attributes.h",
+      "bytes": 1913,
+      "sha256": "263c7691f9984073e198b69328092330bf572195113d3994d1ab54fe4564d88a"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/core/detail/preprocessor.h",
+      "bytes": 409,
+      "sha256": "1d9872ef98db007dcbed7e0128771244640e1de4092830d52a7a83537f98eb84"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/core/environment.h",
+      "bytes": 6712,
+      "sha256": "3d289765b1b677499a444b38d1dbe366bb5e99f89fcb7670af2d08106fd958fa"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/error/result.h",
+      "bytes": 30856,
+      "sha256": "7718409ab2854eb76959215b356bf8077007134d87db1a24f9384a9b5deff2b5"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/error/status.h",
+      "bytes": 18122,
+      "sha256": "4d6b4b0bfa5628947aad5449320513d4b071e0c84debfac47f7a7d264cecb7f4"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/graph/apple.h",
+      "bytes": 5922,
+      "sha256": "8f4e5660d322a0450c9df544568f0ef818b7c0ee269a7bdd3c9579cb79e99298"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/graph/compile_report.h",
+      "bytes": 577,
+      "sha256": "c42c30527d581975c49ddfebb182b0ae7928d799eed91172cb631779a2ad5b4f"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/graph/executable.h",
+      "bytes": 49762,
+      "sha256": "6305dd557606b26119fc60de9dbb68c979a1f8fe54755a191378c49742ef4714"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/graph/execution_source.h",
+      "bytes": 1859,
+      "sha256": "b89de5c6fe8b84192c9618a6a4e4dcee8ac45393e04a9e335f17b5a2d3ecac3f"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/graph/graph.h",
+      "bytes": 19988,
+      "sha256": "c7a93ccf9fd1c86fb9dec286e7d3345aabcb1810c2fb6793a66093480a5a2136"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/graph/resources.h",
+      "bytes": 430,
+      "sha256": "c9d3075babb4d863f3543c76576d093fe59f9868df67d50fc492db0aebe7015d"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/graph/result.h",
+      "bytes": 1646,
+      "sha256": "90861eafec4f3a0aa73014416bd2817dfe3892ac001ea206bebf907e1d3cf182"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/graph/visibility.h",
+      "bytes": 43,
+      "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/graph/weight_binding.h",
+      "bytes": 422,
+      "sha256": "ebcc3eea951953966a3b10b2951872e74d04921af6f0cc8de45ab52ab1ba32bd"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/mem/allocator.h",
+      "bytes": 11090,
+      "sha256": "0369680d4769a0187bfb77ee8b565b5e8fb53a03909fabf233458d9c1cbcd011"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/mem/buffer.h",
+      "bytes": 19273,
+      "sha256": "346a4f810babb8c5dacba49faaf57903d998a3cbb49af12b8c62acc85f7be72c"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/mem/quota_allocator.h",
+      "bytes": 7124,
+      "sha256": "a88fe230dc5358ddde6209de96cc61a59e3f6e60d30b9e7534e986fab10224c9"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/mem/resource.h",
+      "bytes": 7717,
+      "sha256": "84b0366e658ec63f999b4c9719cf8584ad758f4ff5340baf37f1c3ebd17145cd"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/mem/visibility.h",
+      "bytes": 43,
+      "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+    },
+    {
+      "entry": "records/apple/source/include/hyle/visibility.h",
+      "bytes": 11701,
+      "sha256": "893fa73589b6e46f00474c2258af74c28d662b52176b57012290c820812ed486"
+    },
+    {
+      "entry": "records/apple/source/tests/compute_models/ga_indexer_state_fixture.h",
+      "bytes": 26486,
+      "sha256": "c2055b3920c8ebc93ed30d2596d4eba049790e148b8dd3d59128e1ffda48ab84"
+    },
+    {
+      "entry": "records/apple/source/tests/compute_models/ga_mhc_fixture.h",
+      "bytes": 20903,
+      "sha256": "b009de629bbc21a9bbbcba6f24f1f83411012abdb0fcc00e6b525e1562829770"
+    },
+    {
+      "entry": "records/apple/source/tests/compute_models/ga_mhc_reference_fixture.h",
+      "bytes": 18759,
+      "sha256": "561ba98a37ef5632690802c338046448e4b14548dbd7a68192509656732c9422"
+    },
+    {
+      "entry": "records/apple/source/tests/compute_models/nvfp4_reference_fixture.h",
+      "bytes": 22482,
+      "sha256": "cc94ec1f443511722ff4fc227b065af27b82573443735250951cdce934faa4d3"
+    },
+    {
+      "entry": "records/apple/source/tests/graph_route_apple/CMakeLists.txt",
+      "bytes": 7204,
+      "sha256": "8b46bad3af6427c7f02f3b60f6831734bd352fdac2020eb1a71b0a37a3d60d97"
+    },
+    {
+      "entry": "records/apple/source/tests/graph_route_apple/ga_mhc_test.cc",
+      "bytes": 1450,
+      "sha256": "a806766fe5a3c02b3a1aa1a4055318c0d0985bf2a6865e59cf8d25e170f224c5"
+    },
+    {
+      "entry": "records/apple/wrapper-before.json",
+      "bytes": 211,
+      "sha256": "aa28612aea39e8cccec2b6e6d38c989cdd860db4e822d90467939ac0712ba368"
+    },
+    {
+      "entry": "records/apple/wrapper-registration-change.json",
+      "bytes": 728,
+      "sha256": "bcf8341f2d3d4614813c214fa7689eb9a33fe289b66678dad8f9fb7a782e17d9"
+    },
+    {
+      "entry": "records/cpu/checks/attempt1/compile-plan.json",
+      "bytes": 3374,
+      "sha256": "9eda9f3f13aa7466c61a9a850790cff494f7e9f23be6629c51a35afe73e1902a"
+    },
+    {
+      "entry": "records/cpu/checks/attempt1/compile.command.json",
+      "bytes": 2144,
+      "sha256": "1d89038ac2996d02a819d0794e46c5217a2d36a6965a27ce5bac673d7b9b0d74"
+    },
+    {
+      "entry": "records/cpu/checks/attempt1/compile.result.json",
+      "bytes": 2215,
+      "sha256": "e7cbddcf90c77837cdaaaf7d9377867c4b46ccd057da2cdc6dc4c340f0884901"
+    },
+    {
+      "entry": "records/cpu/checks/attempt1/compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/cpu/checks/attempt1/compile.stdout.log",
+      "bytes": 16,
+      "sha256": "aa8a0f9d01c23efed38c759826af366ec7710a6c764856d666df31546bc52c70"
+    },
+    {
+      "entry": "records/cpu/checks/attempt1/ga-mhc-test-deps.json",
+      "bytes": 30269,
+      "sha256": "17448506ad75c0f47abb5c1404ae17bda4b31c35df64d9f1337299acd171c0d6"
+    },
+    {
+      "entry": "records/cpu/checks/attempt1/identity.json",
+      "bytes": 65224,
+      "sha256": "071a83883507cf73729eb3c39afeac52e64d2bd2579206d4d650de35d5a028f1"
+    },
+    {
+      "entry": "records/cpu/checks/attempt1/live.json",
+      "bytes": 2215,
+      "sha256": "e7cbddcf90c77837cdaaaf7d9377867c4b46ccd057da2cdc6dc4c340f0884901"
+    },
+    {
+      "entry": "records/cpu/checks/attempt2/compile-plan.json",
+      "bytes": 3374,
+      "sha256": "7b8d3c02f45d33f8f2989db12139f3781d5bfa9916bff8652e92e553da147268"
+    },
+    {
+      "entry": "records/cpu/checks/attempt2/compile.command.json",
+      "bytes": 2144,
+      "sha256": "e7f700012b6cdc46e712bfdd540b9192f0ec9e29f3e35c5aa7cf09818553f25a"
+    },
+    {
+      "entry": "records/cpu/checks/attempt2/compile.result.json",
+      "bytes": 2214,
+      "sha256": "afaff42daf9af834b8c150667f9e8363322cf56bf1285c5478310affb5da2283"
+    },
+    {
+      "entry": "records/cpu/checks/attempt2/compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/cpu/checks/attempt2/compile.stdout.log",
+      "bytes": 16,
+      "sha256": "aa8a0f9d01c23efed38c759826af366ec7710a6c764856d666df31546bc52c70"
+    },
+    {
+      "entry": "records/cpu/checks/attempt2/ga-mhc-test-deps.json",
+      "bytes": 30269,
+      "sha256": "17448506ad75c0f47abb5c1404ae17bda4b31c35df64d9f1337299acd171c0d6"
+    },
+    {
+      "entry": "records/cpu/checks/attempt2/identity.json",
+      "bytes": 65224,
+      "sha256": "3048c8a859f8a5d0e57330b9741caa800b0b8315a122a08ea9d68cd51608c72c"
+    },
+    {
+      "entry": "records/cpu/checks/attempt2/live.json",
+      "bytes": 2214,
+      "sha256": "afaff42daf9af834b8c150667f9e8363322cf56bf1285c5478310affb5da2283"
+    },
+    {
+      "entry": "records/cpu/checks/attempt3/compile-plan.json",
+      "bytes": 3374,
+      "sha256": "d882accb6a7955b798664dfe0747e5c43bef0a4d3de4ce9bf09a65fbf874a943"
+    },
+    {
+      "entry": "records/cpu/checks/attempt3/compile.command.json",
+      "bytes": 2144,
+      "sha256": "1fb6843737fea9b279de7d6797d2cfd84867f9768182e42c4f5e9f1aaa6c67e4"
+    },
+    {
+      "entry": "records/cpu/checks/attempt3/compile.result.json",
+      "bytes": 2213,
+      "sha256": "858f74a1b6b80422a8510773f73fe410564eac64615888ee599555848a8b0dc5"
+    },
+    {
+      "entry": "records/cpu/checks/attempt3/compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/cpu/checks/attempt3/compile.stdout.log",
+      "bytes": 16,
+      "sha256": "aa8a0f9d01c23efed38c759826af366ec7710a6c764856d666df31546bc52c70"
+    },
+    {
+      "entry": "records/cpu/checks/attempt3/ga-mhc-test-deps.json",
+      "bytes": 30269,
+      "sha256": "17448506ad75c0f47abb5c1404ae17bda4b31c35df64d9f1337299acd171c0d6"
+    },
+    {
+      "entry": "records/cpu/checks/attempt3/identity.json",
+      "bytes": 65224,
+      "sha256": "f755bd8201a061ae2a2d328a8a83703ad607970c40085a83804ef7b2550e7581"
+    },
+    {
+      "entry": "records/cpu/checks/attempt3/live.json",
+      "bytes": 2213,
+      "sha256": "858f74a1b6b80422a8510773f73fe410564eac64615888ee599555848a8b0dc5"
+    },
+    {
+      "entry": "records/cpu/checks/attempt4/compile-plan.json",
+      "bytes": 3374,
+      "sha256": "aa122c4f38d4bb1784fd445081c143a2ab55b3bc9e105111c8a34792cf05c0c9"
+    },
+    {
+      "entry": "records/cpu/checks/attempt4/compile.command.json",
+      "bytes": 2143,
+      "sha256": "02e907497fef0c2889badaeeabe8d42d5187d06cac2a98cbda29fc32a69a18df"
+    },
+    {
+      "entry": "records/cpu/checks/attempt4/compile.result.json",
+      "bytes": 2212,
+      "sha256": "1e064f2faeb6f2947a2fbd445e49cc3c37ace2a33dd4f339559efccea7364b0f"
+    },
+    {
+      "entry": "records/cpu/checks/attempt4/compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/cpu/checks/attempt4/compile.stdout.log",
+      "bytes": 16,
+      "sha256": "aa8a0f9d01c23efed38c759826af366ec7710a6c764856d666df31546bc52c70"
+    },
+    {
+      "entry": "records/cpu/checks/attempt4/ga-mhc-test-deps.json",
+      "bytes": 30269,
+      "sha256": "17448506ad75c0f47abb5c1404ae17bda4b31c35df64d9f1337299acd171c0d6"
+    },
+    {
+      "entry": "records/cpu/checks/attempt4/identity.json",
+      "bytes": 65224,
+      "sha256": "86d616938b1a96e64d048ce8743bbca1ed5c7ee8add46c54a5a6eb7cdce335bf"
+    },
+    {
+      "entry": "records/cpu/checks/attempt4/live.json",
+      "bytes": 2212,
+      "sha256": "1e064f2faeb6f2947a2fbd445e49cc3c37ace2a33dd4f339559efccea7364b0f"
+    },
+    {
+      "entry": "records/cpu/checks/link1/image.json",
+      "bytes": 245,
+      "sha256": "409cc305d2c54e32c564e733fc3e02860d7b3b4b465c15a959452f8ef02c7cfe"
+    },
+    {
+      "entry": "records/cpu/checks/link1/link-plan.json",
+      "bytes": 52960,
+      "sha256": "edcb27104cd1676eda6d41c3a41c5ba1811039dd3212b54210cf4d6bb3010711"
+    },
+    {
+      "entry": "records/cpu/checks/link1/link.command.json",
+      "bytes": 18344,
+      "sha256": "cd0c13d9be9bc847943490f50d0ea5e60bb22e6a9fdfa09d43171065dc508788"
+    },
+    {
+      "entry": "records/cpu/checks/link1/link.result.json",
+      "bytes": 18412,
+      "sha256": "6f0040cd916d5ca7399aad735dc2eac98b614610af80b0ac045eedde024da78a"
+    },
+    {
+      "entry": "records/cpu/checks/link1/link.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/cpu/checks/link1/link.stdout.log",
+      "bytes": 258,
+      "sha256": "ae6a4c767555dc850052e1006226106e06d283bcbbf2b396d0602666b2c65fbe"
+    },
+    {
+      "entry": "records/cpu/checks/link1/live.json",
+      "bytes": 18412,
+      "sha256": "6f0040cd916d5ca7399aad735dc2eac98b614610af80b0ac045eedde024da78a"
+    },
+    {
+      "entry": "records/cpu/checks/link1/runtime-environment.json",
+      "bytes": 8168,
+      "sha256": "0d6c2a4b1a37637f38e620d06cdf1c16aa9e603fea74bbb2c4ef57aa8c532b17"
+    },
+    {
+      "entry": "records/cpu/checks/link2/image.json",
+      "bytes": 245,
+      "sha256": "e6b5c8c5e40e05184e52581a0d0827cfa1980334846d23427ea5c1ad4779dfec"
+    },
+    {
+      "entry": "records/cpu/checks/link2/link-plan.json",
+      "bytes": 52960,
+      "sha256": "cae792fd1238490851d58ec2fc55a02652d306cca77c0fa39f957008b3e7b46d"
+    },
+    {
+      "entry": "records/cpu/checks/link2/link.command.json",
+      "bytes": 18345,
+      "sha256": "82faaf4b86d6baa120ec3f59f2bc0d65d7b7326d6290285ccff072f016aa7dba"
+    },
+    {
+      "entry": "records/cpu/checks/link2/link.result.json",
+      "bytes": 18414,
+      "sha256": "46be3f19c3e679118bf69c64b86110bf39148c0b57687b14c1fd4f485dbe1514"
+    },
+    {
+      "entry": "records/cpu/checks/link2/link.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/cpu/checks/link2/link.stdout.log",
+      "bytes": 258,
+      "sha256": "dd6c2cc5cf902cb614d283debbfbbe28fa47e40974fcb13240c9c1946f39bdaf"
+    },
+    {
+      "entry": "records/cpu/checks/link2/live.json",
+      "bytes": 18414,
+      "sha256": "46be3f19c3e679118bf69c64b86110bf39148c0b57687b14c1fd4f485dbe1514"
+    },
+    {
+      "entry": "records/cpu/checks/link2/runtime-environment.json",
+      "bytes": 8168,
+      "sha256": "0d6c2a4b1a37637f38e620d06cdf1c16aa9e603fea74bbb2c4ef57aa8c532b17"
+    },
+    {
+      "entry": "records/cpu/checks/link3/image.json",
+      "bytes": 245,
+      "sha256": "07fef33f8c4557581765e56a921d577da986eeeafd27a1adc707319aed6c73b4"
+    },
+    {
+      "entry": "records/cpu/checks/link3/link-plan.json",
+      "bytes": 52960,
+      "sha256": "e39f41f8873ac05044e0245db0c0f324efe8f1f7308e4145b8e3272ac7db13be"
+    },
+    {
+      "entry": "records/cpu/checks/link3/link.command.json",
+      "bytes": 18345,
+      "sha256": "07028e6687192836ed32047344b578bb2ee137bb37a52ef3e0c6b8fed004d67c"
+    },
+    {
+      "entry": "records/cpu/checks/link3/link.result.json",
+      "bytes": 18414,
+      "sha256": "48e88d93a05cafae4c7750b345bcba52e651f455bf908b8ff8fc44086969c1c4"
+    },
+    {
+      "entry": "records/cpu/checks/link3/link.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/cpu/checks/link3/link.stdout.log",
+      "bytes": 258,
+      "sha256": "c3dd10ff70dff60f7d285050ccb5fb0c53447c8b8aa78f01a5330b10c29273e1"
+    },
+    {
+      "entry": "records/cpu/checks/link3/live.json",
+      "bytes": 18414,
+      "sha256": "48e88d93a05cafae4c7750b345bcba52e651f455bf908b8ff8fc44086969c1c4"
+    },
+    {
+      "entry": "records/cpu/checks/link3/runtime-environment.json",
+      "bytes": 8168,
+      "sha256": "0d6c2a4b1a37637f38e620d06cdf1c16aa9e603fea74bbb2c4ef57aa8c532b17"
+    },
+    {
+      "entry": "records/cpu/checks/link4/image.json",
+      "bytes": 245,
+      "sha256": "39e0cf7ad3bf5da49c5e7911eacbc387325f3487954abe8def1e1c92aadcac34"
+    },
+    {
+      "entry": "records/cpu/checks/link4/link-plan.json",
+      "bytes": 52960,
+      "sha256": "c9da1fc3bab0c544d98cbefe374e007e2ca137501e33686adc669406b1827d4f"
+    },
+    {
+      "entry": "records/cpu/checks/link4/link.command.json",
+      "bytes": 18344,
+      "sha256": "80f90a50b74a4c7dec7c99c2373d089f34a572b313297dcfe6ffd285c16a8e24"
+    },
+    {
+      "entry": "records/cpu/checks/link4/link.result.json",
+      "bytes": 18415,
+      "sha256": "8a38e4dc451bfdd7e4988397d1c9aa078a1fac7c719530fdc5089affc35e70a5"
+    },
+    {
+      "entry": "records/cpu/checks/link4/link.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/cpu/checks/link4/link.stdout.log",
+      "bytes": 258,
+      "sha256": "7302ba6e87035ae13a5bf72c56eb8b0f927267a536778b96ed6490b4bb425e13"
+    },
+    {
+      "entry": "records/cpu/checks/link4/live.json",
+      "bytes": 18415,
+      "sha256": "8a38e4dc451bfdd7e4988397d1c9aa078a1fac7c719530fdc5089affc35e70a5"
+    },
+    {
+      "entry": "records/cpu/checks/link4/runtime-environment.json",
+      "bytes": 8168,
+      "sha256": "0d6c2a4b1a37637f38e620d06cdf1c16aa9e603fea74bbb2c4ef57aa8c532b17"
+    },
+    {
+      "entry": "records/cpu/validation/final1/image-before.json",
+      "bytes": 245,
+      "sha256": "e6b5c8c5e40e05184e52581a0d0827cfa1980334846d23427ea5c1ad4779dfec"
+    },
+    {
+      "entry": "records/cpu/validation/final1/live.json",
+      "bytes": 533,
+      "sha256": "8dd22c6e7829695fbab5c0aa4517fa5ed9d458ce794f82ccbcc06f6be924ebc8"
+    },
+    {
+      "entry": "records/cpu/validation/final1/receipt.json",
+      "bytes": 1499,
+      "sha256": "33c6ae862c47a616f3be8e9d565d91474d2eb95670335406c96273291f136974"
+    },
+    {
+      "entry": "records/cpu/validation/final1/runtime-environment.json",
+      "bytes": 8265,
+      "sha256": "31b793f62a5310d02178e16b38342034577bcbd1f136c0ada0ee69968f9979d9"
+    },
+    {
+      "entry": "records/cpu/validation/final1/tests.command.json",
+      "bytes": 462,
+      "sha256": "23d148626e0452201ebb133680ea54702bc2f4c2ea8d72f7c0810f4f0926f668"
+    },
+    {
+      "entry": "records/cpu/validation/final1/tests.result.json",
+      "bytes": 533,
+      "sha256": "8dd22c6e7829695fbab5c0aa4517fa5ed9d458ce794f82ccbcc06f6be924ebc8"
+    },
+    {
+      "entry": "records/cpu/validation/final1/tests.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/cpu/validation/final1/tests.stdout.log",
+      "bytes": 933,
+      "sha256": "795ec32149d3af28183a17802d61cc412b0c48ddbaf6273e177fe1b242e71e49"
+    },
+    {
+      "entry": "records/cpu/validation/final1/tests.xml",
+      "bytes": 1014,
+      "sha256": "187bc5174261b035bc47bb285e3d57e5a1a8ffdb2ac532f4b8d00f7803f2feb2"
+    },
+    {
+      "entry": "records/cpu/validation/final2/image-before.json",
+      "bytes": 245,
+      "sha256": "07fef33f8c4557581765e56a921d577da986eeeafd27a1adc707319aed6c73b4"
+    },
+    {
+      "entry": "records/cpu/validation/final2/live.json",
+      "bytes": 532,
+      "sha256": "6edab61823a557038e960eaecc7c111ac51109aa16ecf8bbb6ce07204143646d"
+    },
+    {
+      "entry": "records/cpu/validation/final2/receipt.json",
+      "bytes": 1498,
+      "sha256": "d2fd4286b6d03fb11800954a49004fa61f415d6f2926fc96b31394ea8c6d914b"
+    },
+    {
+      "entry": "records/cpu/validation/final2/runtime-environment.json",
+      "bytes": 8265,
+      "sha256": "31b793f62a5310d02178e16b38342034577bcbd1f136c0ada0ee69968f9979d9"
+    },
+    {
+      "entry": "records/cpu/validation/final2/tests.command.json",
+      "bytes": 461,
+      "sha256": "d39f50064783fd0557747486accf591523e7551f8719fd2bbad581fa1a302950"
+    },
+    {
+      "entry": "records/cpu/validation/final2/tests.result.json",
+      "bytes": 532,
+      "sha256": "6edab61823a557038e960eaecc7c111ac51109aa16ecf8bbb6ce07204143646d"
+    },
+    {
+      "entry": "records/cpu/validation/final2/tests.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/cpu/validation/final2/tests.stdout.log",
+      "bytes": 914,
+      "sha256": "8d71dad9941c9ee39d9a6d5c48cf24cdeef753cd50ec9ff61ce9490e743a1378"
+    },
+    {
+      "entry": "records/cpu/validation/final2/tests.xml",
+      "bytes": 976,
+      "sha256": "84980424d8cc789ee6b73ab1b874c4cec6631e05a5ef6ae3f6fcda8a4657fc49"
+    },
+    {
+      "entry": "records/cpu/validation/final3/image-before.json",
+      "bytes": 245,
+      "sha256": "39e0cf7ad3bf5da49c5e7911eacbc387325f3487954abe8def1e1c92aadcac34"
+    },
+    {
+      "entry": "records/cpu/validation/final3/live.json",
+      "bytes": 530,
+      "sha256": "cb180a9d554f1bb80331607e09b2b3b45cf876e3ae256240090421f2671e9f9b"
+    },
+    {
+      "entry": "records/cpu/validation/final3/receipt.json",
+      "bytes": 2508,
+      "sha256": "70e9b0cb6eed14a89b57cb1014e136272a2f2929e863abf274075488a11046f7"
+    },
+    {
+      "entry": "records/cpu/validation/final3/runtime-environment.json",
+      "bytes": 8265,
+      "sha256": "31b793f62a5310d02178e16b38342034577bcbd1f136c0ada0ee69968f9979d9"
+    },
+    {
+      "entry": "records/cpu/validation/final3/tests.command.json",
+      "bytes": 460,
+      "sha256": "f50dda4e9855b6306b90d3eed48074c13bc032f23b1ef0c00f330ecc13b14e68"
+    },
+    {
+      "entry": "records/cpu/validation/final3/tests.result.json",
+      "bytes": 530,
+      "sha256": "cb180a9d554f1bb80331607e09b2b3b45cf876e3ae256240090421f2671e9f9b"
+    },
+    {
+      "entry": "records/cpu/validation/final3/tests.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/cpu/validation/final3/tests.stdout.log",
+      "bytes": 634,
+      "sha256": "c2ac22ba253f4b1eafaeb860c0218239ad7ed19a7c0daa12e0f901f229d9a852"
+    },
+    {
+      "entry": "records/cpu/validation/final3/tests.xml",
+      "bytes": 1657,
+      "sha256": "9b337141af39e7f35d8ac4d2ab83f2b9227d3bf1dce4675f8ce8b5cce77f868c"
+    },
+    {
+      "entry": "records/cpu/validation/first1/image-before.json",
+      "bytes": 245,
+      "sha256": "409cc305d2c54e32c564e733fc3e02860d7b3b4b465c15a959452f8ef02c7cfe"
+    },
+    {
+      "entry": "records/cpu/validation/first1/live.json",
+      "bytes": 532,
+      "sha256": "6529a35d940467254b11d43caf2fd8d29c30e66fc7eb85bc85f4dd83bd395e73"
+    },
+    {
+      "entry": "records/cpu/validation/first1/receipt.json",
+      "bytes": 1499,
+      "sha256": "aca6f1f36d9710b8135ab5a6b52576b8c3b559bf1496cc8d7104b28f052d2735"
+    },
+    {
+      "entry": "records/cpu/validation/first1/runtime-environment.json",
+      "bytes": 8265,
+      "sha256": "31b793f62a5310d02178e16b38342034577bcbd1f136c0ada0ee69968f9979d9"
+    },
+    {
+      "entry": "records/cpu/validation/first1/tests.command.json",
+      "bytes": 462,
+      "sha256": "7ef35fe1f9c58f74c4f3640acef0148ca879aa07605482270e20ef6b5a558699"
+    },
+    {
+      "entry": "records/cpu/validation/first1/tests.result.json",
+      "bytes": 532,
+      "sha256": "6529a35d940467254b11d43caf2fd8d29c30e66fc7eb85bc85f4dd83bd395e73"
+    },
+    {
+      "entry": "records/cpu/validation/first1/tests.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/cpu/validation/first1/tests.stdout.log",
+      "bytes": 933,
+      "sha256": "1ce5f5865dcfd282c197673decc10267b5b520f15fc44bbd2f15600b19d64a35"
+    },
+    {
+      "entry": "records/cpu/validation/first1/tests.xml",
+      "bytes": 1014,
+      "sha256": "1851848a561544bb62467fb504b37536e960739ac79a5bda6febd1c7a2bec776"
+    },
+    {
+      "entry": "records/cuda/checks/attempt1/compile-plan.json",
+      "bytes": 5408,
+      "sha256": "0a7d80a331ae9241b86254eb400455ac21038dbbf7dda975cd47b0c8d7959d77"
+    },
+    {
+      "entry": "records/cuda/checks/attempt1/compile.command.json",
+      "bytes": 4175,
+      "sha256": "cfb285f7d6b31e02ae675eb9a4e8cf1c2f1ac090eda4b5ac1a31b0a0f444251f"
+    },
+    {
+      "entry": "records/cuda/checks/attempt1/compile.result.json",
+      "bytes": 4244,
+      "sha256": "898cf73399c71e2bacffe22035635ac45817f39504ccaaa300534fb39d5a489a"
+    },
+    {
+      "entry": "records/cuda/checks/attempt1/compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/cuda/checks/attempt1/compile.stdout.log",
+      "bytes": 16,
+      "sha256": "aa8a0f9d01c23efed38c759826af366ec7710a6c764856d666df31546bc52c70"
+    },
+    {
+      "entry": "records/cuda/checks/attempt1/ga-mhc-test-deps.json",
+      "bytes": 31907,
+      "sha256": "642deab1bd752f0268c847d88b7d4daa2d369448b8cee49ef22c8fe50b1d6174"
+    },
+    {
+      "entry": "records/cuda/checks/attempt1/identity.json",
+      "bytes": 69511,
+      "sha256": "3021c8cb36898b010867a5c9f97c34f5f788c207422e248b4c7578f78cab5140"
+    },
+    {
+      "entry": "records/cuda/checks/attempt1/live.json",
+      "bytes": 4244,
+      "sha256": "898cf73399c71e2bacffe22035635ac45817f39504ccaaa300534fb39d5a489a"
+    },
+    {
+      "entry": "records/cuda/checks/attempt2/compile-plan.json",
+      "bytes": 5408,
+      "sha256": "2c2e00bcc8ac5a70bd4e77b4e66e02d1f6ce6fb17f00bae589ad924bb9d54a3b"
+    },
+    {
+      "entry": "records/cuda/checks/attempt2/compile.command.json",
+      "bytes": 4175,
+      "sha256": "a2cf11bdf21cd79ce3ef3719deef5e4fa45b04c1f029bcffd47f26345846debc"
+    },
+    {
+      "entry": "records/cuda/checks/attempt2/compile.result.json",
+      "bytes": 4245,
+      "sha256": "e8a4bb98f16bd470b5d2201930b9834ca17ad498eb210759cb5079f6937f29a1"
+    },
+    {
+      "entry": "records/cuda/checks/attempt2/compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/cuda/checks/attempt2/compile.stdout.log",
+      "bytes": 16,
+      "sha256": "aa8a0f9d01c23efed38c759826af366ec7710a6c764856d666df31546bc52c70"
+    },
+    {
+      "entry": "records/cuda/checks/attempt2/ga-mhc-test-deps.json",
+      "bytes": 31907,
+      "sha256": "642deab1bd752f0268c847d88b7d4daa2d369448b8cee49ef22c8fe50b1d6174"
+    },
+    {
+      "entry": "records/cuda/checks/attempt2/identity.json",
+      "bytes": 69511,
+      "sha256": "1175e337516dfe533c57ae1fb6b79357ea9949e4d746aa9135f7d8d7a0a6ddae"
+    },
+    {
+      "entry": "records/cuda/checks/attempt2/live.json",
+      "bytes": 4245,
+      "sha256": "e8a4bb98f16bd470b5d2201930b9834ca17ad498eb210759cb5079f6937f29a1"
+    },
+    {
+      "entry": "records/cuda/checks/attempt3/compile-plan.json",
+      "bytes": 5408,
+      "sha256": "2dd55d76eb93b5eb869fc55da6c1b8b2321967ac8f7cf7b444c7078df92a8e1a"
+    },
+    {
+      "entry": "records/cuda/checks/attempt3/compile.command.json",
+      "bytes": 4175,
+      "sha256": "64876ad3d671c3f4d526ca73d5d7fb1a908646573905abc4d3e3931d2cafffb8"
+    },
+    {
+      "entry": "records/cuda/checks/attempt3/compile.result.json",
+      "bytes": 4246,
+      "sha256": "b8d501421064aeac47880b53ea1f3be8ecead83e1763e7303dca943b3b688f73"
+    },
+    {
+      "entry": "records/cuda/checks/attempt3/compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/cuda/checks/attempt3/compile.stdout.log",
+      "bytes": 16,
+      "sha256": "aa8a0f9d01c23efed38c759826af366ec7710a6c764856d666df31546bc52c70"
+    },
+    {
+      "entry": "records/cuda/checks/attempt3/ga-mhc-test-deps.json",
+      "bytes": 31907,
+      "sha256": "642deab1bd752f0268c847d88b7d4daa2d369448b8cee49ef22c8fe50b1d6174"
+    },
+    {
+      "entry": "records/cuda/checks/attempt3/identity.json",
+      "bytes": 69511,
+      "sha256": "5f617ab79a92f5d84aef057eeaf18d8c271f8aa50a064b29f4f59f29cc6306e4"
+    },
+    {
+      "entry": "records/cuda/checks/attempt3/live.json",
+      "bytes": 4246,
+      "sha256": "b8d501421064aeac47880b53ea1f3be8ecead83e1763e7303dca943b3b688f73"
+    },
+    {
+      "entry": "records/cuda/checks/attempt4/compile-plan.json",
+      "bytes": 5408,
+      "sha256": "251d2a78cf4e6e1cc19ced914bfbf776dd110dcbb181889e7aeb8b4a1a335b9f"
+    },
+    {
+      "entry": "records/cuda/checks/attempt4/compile.command.json",
+      "bytes": 4175,
+      "sha256": "bc676e28f7b2567650bd8c720b21f3a754f4324c5b289f10132b51e8f8973876"
+    },
+    {
+      "entry": "records/cuda/checks/attempt4/compile.result.json",
+      "bytes": 4245,
+      "sha256": "884e9a35b980e5d69fcfd495ffa22e96d090e20c6dca23ab48a06bc255635c0c"
+    },
+    {
+      "entry": "records/cuda/checks/attempt4/compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/cuda/checks/attempt4/compile.stdout.log",
+      "bytes": 16,
+      "sha256": "aa8a0f9d01c23efed38c759826af366ec7710a6c764856d666df31546bc52c70"
+    },
+    {
+      "entry": "records/cuda/checks/attempt4/ga-mhc-test-deps.json",
+      "bytes": 31907,
+      "sha256": "642deab1bd752f0268c847d88b7d4daa2d369448b8cee49ef22c8fe50b1d6174"
+    },
+    {
+      "entry": "records/cuda/checks/attempt4/identity.json",
+      "bytes": 69511,
+      "sha256": "ef93d497657ae703a2072c89e8317e93d74bb540fb6cbf4428e3fdaaecb30ee8"
+    },
+    {
+      "entry": "records/cuda/checks/attempt4/live.json",
+      "bytes": 4245,
+      "sha256": "884e9a35b980e5d69fcfd495ffa22e96d090e20c6dca23ab48a06bc255635c0c"
+    },
+    {
+      "entry": "records/cuda/checks/link1/image.json",
+      "bytes": 248,
+      "sha256": "b1f8775c9a022ccc9ecb8445c645d24188ff41ef59eda17eddd480304e558e09"
+    },
+    {
+      "entry": "records/cuda/checks/link1/link-plan.json",
+      "bytes": 79415,
+      "sha256": "ae8fba229a182be63edafe7d4a79aaed253f01416a36ca3f62eb47362bb83ac2"
+    },
+    {
+      "entry": "records/cuda/checks/link1/link.command.json",
+      "bytes": 27473,
+      "sha256": "97533b1d01de33ead89316f40e8cda49d4a561482a868842cb2e4edbad896f55"
+    },
+    {
+      "entry": "records/cuda/checks/link1/link.result.json",
+      "bytes": 27543,
+      "sha256": "5f9c8d12a3d07a5c1db603fead6af217b9ff52b28818fad84f2f1facbfbc067e"
+    },
+    {
+      "entry": "records/cuda/checks/link1/link.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/cuda/checks/link1/link.stdout.log",
+      "bytes": 262,
+      "sha256": "36ab8fbd6e34338dff697efaadd5c70b7f3ff59de77f96f0eac81266eeeaa8ee"
+    },
+    {
+      "entry": "records/cuda/checks/link1/live.json",
+      "bytes": 27543,
+      "sha256": "5f9c8d12a3d07a5c1db603fead6af217b9ff52b28818fad84f2f1facbfbc067e"
+    },
+    {
+      "entry": "records/cuda/checks/link1/runtime-environment.json",
+      "bytes": 6716,
+      "sha256": "dfa7fce4c49931f9f117c1b01f427d788bd6109326c34114b95201794d0e8e7d"
+    },
+    {
+      "entry": "records/cuda/checks/link2/image.json",
+      "bytes": 248,
+      "sha256": "3ad4d5509353523cc1c56e00fbe25a2fc1312b81dc9e06c26ce4c49a8d0669b3"
+    },
+    {
+      "entry": "records/cuda/checks/link2/link-plan.json",
+      "bytes": 79415,
+      "sha256": "9f25ac1ca69dbd2115d8d2be44f859f0ebe08cf3b4b4afdb5f38b56394c1f49c"
+    },
+    {
+      "entry": "records/cuda/checks/link2/link.command.json",
+      "bytes": 27473,
+      "sha256": "06ba79edb96775b028f1cd8f36b5d4dc04cbaae5e0be63abcc99d94265b353b1"
+    },
+    {
+      "entry": "records/cuda/checks/link2/link.result.json",
+      "bytes": 27544,
+      "sha256": "8d3999a47a1dba034c8880c6a911f4e64c98a86724dee65acbbecb8d0a6a7d79"
+    },
+    {
+      "entry": "records/cuda/checks/link2/link.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/cuda/checks/link2/link.stdout.log",
+      "bytes": 262,
+      "sha256": "d039e619144b6fc6c076a7f8d14dc16274f5873090c61beed8781a75604a368b"
+    },
+    {
+      "entry": "records/cuda/checks/link2/live.json",
+      "bytes": 27544,
+      "sha256": "8d3999a47a1dba034c8880c6a911f4e64c98a86724dee65acbbecb8d0a6a7d79"
+    },
+    {
+      "entry": "records/cuda/checks/link2/runtime-environment.json",
+      "bytes": 6716,
+      "sha256": "dfa7fce4c49931f9f117c1b01f427d788bd6109326c34114b95201794d0e8e7d"
+    },
+    {
+      "entry": "records/cuda/checks/link3/image.json",
+      "bytes": 248,
+      "sha256": "4aa8bdbd573304bc698202fca89473a45afcca12e00adf08ac797b8a32012958"
+    },
+    {
+      "entry": "records/cuda/checks/link3/link-plan.json",
+      "bytes": 79415,
+      "sha256": "1fa21e330c018ee3e087b597dd8fc9981fa8f7b633636e645a9e46c5559c6569"
+    },
+    {
+      "entry": "records/cuda/checks/link3/link.command.json",
+      "bytes": 27472,
+      "sha256": "048976e929726714ec2eb5ac0235af9103a2862d5b12ac0d9615997d0d0eda74"
+    },
+    {
+      "entry": "records/cuda/checks/link3/link.result.json",
+      "bytes": 27542,
+      "sha256": "80f2e77f26092d44da8c69e364d391eb38d557e1b06506bc74e3df7481fe0bbe"
+    },
+    {
+      "entry": "records/cuda/checks/link3/link.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/cuda/checks/link3/link.stdout.log",
+      "bytes": 262,
+      "sha256": "697728902b52fcc4875c82a0b0d22df1b206f3e435ad6c0abf8fe42ba719b184"
+    },
+    {
+      "entry": "records/cuda/checks/link3/live.json",
+      "bytes": 27542,
+      "sha256": "80f2e77f26092d44da8c69e364d391eb38d557e1b06506bc74e3df7481fe0bbe"
+    },
+    {
+      "entry": "records/cuda/checks/link3/runtime-environment.json",
+      "bytes": 6716,
+      "sha256": "dfa7fce4c49931f9f117c1b01f427d788bd6109326c34114b95201794d0e8e7d"
+    },
+    {
+      "entry": "records/cuda/checks/link4/image.json",
+      "bytes": 248,
+      "sha256": "c23adfa05fff12be049d7091fbe37e28df9e3663e28fdc433bd62dfb01a5cd7e"
+    },
+    {
+      "entry": "records/cuda/checks/link4/link-plan.json",
+      "bytes": 79415,
+      "sha256": "527df7ebb16b0157e8358b50969b6bfbc680d76f89d71b06be4a5da450b08e10"
+    },
+    {
+      "entry": "records/cuda/checks/link4/link.command.json",
+      "bytes": 27473,
+      "sha256": "be409e56b6ca37740c300925114640327ea26591a5da9a529a055a6ae66019a7"
+    },
+    {
+      "entry": "records/cuda/checks/link4/link.result.json",
+      "bytes": 27542,
+      "sha256": "217b1cd895d05520112b0344871aa6e7525b179141dc63a20a6254637a12bd48"
+    },
+    {
+      "entry": "records/cuda/checks/link4/link.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/cuda/checks/link4/link.stdout.log",
+      "bytes": 262,
+      "sha256": "a05a5bd9e5e7c5446e37ea56a97072462fa94432658ec0eca79f5133fe9ee9dc"
+    },
+    {
+      "entry": "records/cuda/checks/link4/live.json",
+      "bytes": 27542,
+      "sha256": "217b1cd895d05520112b0344871aa6e7525b179141dc63a20a6254637a12bd48"
+    },
+    {
+      "entry": "records/cuda/checks/link4/runtime-environment.json",
+      "bytes": 6716,
+      "sha256": "dfa7fce4c49931f9f117c1b01f427d788bd6109326c34114b95201794d0e8e7d"
+    },
+    {
+      "entry": "records/cuda/validation/final3/image-before.json",
+      "bytes": 248,
+      "sha256": "c23adfa05fff12be049d7091fbe37e28df9e3663e28fdc433bd62dfb01a5cd7e"
+    },
+    {
+      "entry": "records/cuda/validation/final3/live.json",
+      "bytes": 533,
+      "sha256": "406bc0760b788e2a968835ce01a3b7f4c924b3c5a4dba075e69eacd92f6a461c"
+    },
+    {
+      "entry": "records/cuda/validation/final3/receipt.json",
+      "bytes": 2515,
+      "sha256": "f69b70b7e745e0c6bf9972f58b58f75d3ba95cb6d984ecc5b0f22bcbb842437f"
+    },
+    {
+      "entry": "records/cuda/validation/final3/runtime-environment.json",
+      "bytes": 7583,
+      "sha256": "d19bba1d3e0e23d3b205943b79ce8d593793b8cdfc8cd2ed82e16cbe685207e2"
+    },
+    {
+      "entry": "records/cuda/validation/final3/tests.command.json",
+      "bytes": 465,
+      "sha256": "5028aa89fed4eb8e6f8195569b9af1db7bcafafdb8c48b6a2cf7a0c88d619d66"
+    },
+    {
+      "entry": "records/cuda/validation/final3/tests.result.json",
+      "bytes": 533,
+      "sha256": "406bc0760b788e2a968835ce01a3b7f4c924b3c5a4dba075e69eacd92f6a461c"
+    },
+    {
+      "entry": "records/cuda/validation/final3/tests.stderr.log",
+      "bytes": 151,
+      "sha256": "88dd5e35d67fb5c0c371390a98a66a5e061e4c0bef2d890a7b74781363216092"
+    },
+    {
+      "entry": "records/cuda/validation/final3/tests.stdout.log",
+      "bytes": 645,
+      "sha256": "1eb3ccf3638589fc5378a1f6e0159df3b94905e6bf48fdef8009cb069c7f82f4"
+    },
+    {
+      "entry": "records/cuda/validation/final3/tests.xml",
+      "bytes": 1660,
+      "sha256": "eee9972c82ad4c9c3886fb0b497d93550ced3231fba2c034df4c6e630b3e7936"
+    },
+    {
+      "entry": "records/oracle/before.json",
+      "bytes": 174,
+      "sha256": "1f46b5034cb7cbcaef0ab2a672afcb5a701f5c5af087a942e76a44daab60759d"
+    },
+    {
+      "entry": "records/oracle/ga_mhc_reference_fixture.h",
+      "bytes": 18759,
+      "sha256": "561ba98a37ef5632690802c338046448e4b14548dbd7a68192509656732c9422"
+    },
+    {
+      "entry": "records/oracle/kernel.py.excerpt.txt",
+      "bytes": 3389,
+      "sha256": "0222a37913973aba9f8608dd12501fe0dc191e28f64353a0ec3c067fee1a1c07"
+    },
+    {
+      "entry": "records/oracle/model.py.excerpt.txt",
+      "bytes": 3815,
+      "sha256": "fabeecdb520d6747fcf523316c2038a2d37a6d703696521c0695e3b98f22e106"
+    },
+    {
+      "entry": "records/oracle/payload-plan.json",
+      "bytes": 3579,
+      "sha256": "0313baedbc1b6b74597a01d27b43633547753e72dd19181c15954e036f3a0c45"
+    },
+    {
+      "entry": "records/oracle/payload-selection.json",
+      "bytes": 4592,
+      "sha256": "561480405db4d5bf185a62d8994893abada68bfd1a0532c5f03238efdf6be038"
+    },
+    {
+      "entry": "records/oracle/plan_payload.py",
+      "bytes": 5989,
+      "sha256": "ccde6e4acf76240612246919317c42a5c6ce28cdfe58f69343bc1f5d4c03f416"
+    },
+    {
+      "entry": "records/oracle/revisions/initial-payload/ga_mhc_reference_fixture.h",
+      "bytes": 18219,
+      "sha256": "4677b151ae09e9a1c77f81f506d51fa7ff12712f8bacfe79a2bafeec9b75a540"
+    },
+    {
+      "entry": "records/oracle/revisions/initial-payload/payload-plan.json",
+      "bytes": 3527,
+      "sha256": "15dfff4774ba7db321c467ac4c06229ee4ac5bfb116981b958bedb40c5b35726"
+    },
+    {
+      "entry": "records/oracle/revisions/initial-payload/plan_payload.py",
+      "bytes": 5911,
+      "sha256": "7394d85f5d064580a692b65423b07901a0213902b7734d606203362a85d411be"
+    },
+    {
+      "entry": "records/oracle/select_payload.py",
+      "bytes": 1457,
+      "sha256": "fa7190f9879149b309cc306926a185da03670f50d01f8034628ba27a8dfefdf3"
+    },
+    {
+      "entry": "records/oracle/source-freeze.json",
+      "bytes": 2572,
+      "sha256": "9c8319a236425b7f0c1dad1639bd4a9b506c0fc8648a3d864b73d6129a9c228d"
+    },
+    {
+      "entry": "records/oracle/source-review.json",
+      "bytes": 9166,
+      "sha256": "9b6dcb1906c400b521ec2d234503e9afc2f320c039e4c32fccbd0ff6a44d9a69"
+    },
+    {
+      "entry": "records/review/arena-capacity-review.json",
+      "bytes": 5376,
+      "sha256": "97c578e94fb996925f43f0cab78226e38595170540ab796acd1d5f8237e2cef6"
+    },
+    {
+      "entry": "records/review/constant-binding-lifetime-revision.json",
+      "bytes": 3980,
+      "sha256": "9c2ba3e551fdf031d0edede75ac0ae57d67208cdb61c938852aa95a2db7572e8"
+    },
+    {
+      "entry": "records/review/material-output-reviewed.diff",
+      "bytes": 2798,
+      "sha256": "1af3c6f45d5ac8f17217303b5874e6958f16d50e3668ff8b014280e9e687584f"
+    },
+    {
+      "entry": "records/review/private-view-output-boundary.json",
+      "bytes": 6943,
+      "sha256": "894c88d91f39cce928b9aa1b5bdc8d6a473c4de27432cac3aea7ee48619d8096"
+    },
+    {
+      "entry": "records/review/remaining-role-actions.json",
+      "bytes": 5604,
+      "sha256": "37d1cbb81f13201d42aa2e3e421c839b95e929d0c9c5ba15febdf64c2143386b"
+    },
+    {
+      "entry": "records/review/revisions/private-view-output-boundary-24fc49aeb2be.json",
+      "bytes": 4347,
+      "sha256": "24fc49aeb2be9e7107d4c219d68a0c9abfacc5eeca06cb4bff83dec3eddcfe60"
+    },
+    {
+      "entry": "records/review/shared-source-review.json",
+      "bytes": 4414,
+      "sha256": "69ed03ced49e1c33cb0a80bff47f1ef97ae5802893015c89b31aeafc982fee83"
+    },
+    {
+      "entry": "records/root/before-arena-capacity/ga_mhc_fixture.h",
+      "bytes": 20436,
+      "sha256": "cd631cf0354daa8abbd4f20d372db9a6ca3345c103b9cc3d4c35fe09d35609f8"
+    },
+    {
+      "entry": "records/root/before-constant-binding/ga_mhc_fixture.h",
+      "bytes": 19666,
+      "sha256": "192ee08b823e019a39d5f60f32013f14e069925e5080563ef34468fc8a97e42b"
+    },
+    {
+      "entry": "records/root/before-material-output/ga_mhc_fixture.h",
+      "bytes": 20304,
+      "sha256": "f013269093cb51d5b10273564dfc5a7db44d4cd14c53252e4421a624adc07c0a"
+    },
+    {
+      "entry": "records/root/constant-binding-contract.diff",
+      "bytes": 3119,
+      "sha256": "3fe01792d27d1ae9c20cc6a00dbd31713f5a63a0ea26460055e5b277d45fc41a"
+    },
+    {
+      "entry": "records/root/docs-before/current-work.md",
+      "bytes": 36105,
+      "sha256": "e796a4e61b6a841db9fd2baa1fc69c1477a519e7bb8ba91d2c4e95b5265092bc"
+    },
+    {
+      "entry": "records/root/docs-before/graph.md",
+      "bytes": 88767,
+      "sha256": "e0a8f4817a1f3a17bfd7459943845943fa4224b469ed038b6ec36406a5954358"
+    },
+    {
+      "entry": "records/root/docs-before/model-operators.md",
+      "bytes": 78816,
+      "sha256": "80d955c64b531336790e82d8fd525e955848b42a208035a598fcaeb3568d0184"
+    },
+    {
+      "entry": "records/root/final-results.json",
+      "bytes": 2794,
+      "sha256": "06952481cbb275ef9ef305b97e22b8014d7cb8e4c9ab3a352c3a64ae4123c8aa"
+    },
+    {
+      "entry": "records/root/package.py",
+      "bytes": 9051,
+      "sha256": "cbd347d083e847a235058c276382afeae8d4de76a2081f6c942a19454bf77acf"
+    },
+    {
+      "entry": "records/root/prepare_cleanup.py",
+      "bytes": 6334,
+      "sha256": "5e8540e5433a68369518d575f4ff7d87f3819f9b5b88f9108525dae39c97ffd7"
+    },
+    {
+      "entry": "records/root/run_windows.py",
+      "bytes": 3499,
+      "sha256": "e98a8d162cc9c041dd644ea223e5389a0e0d240f3f32319000ec7ad68aeeb4ae"
+    },
+    {
+      "entry": "records/vulkan/checks/attempt1/compile-plan.json",
+      "bytes": 5825,
+      "sha256": "cd47588165ea4c54156f24c2e80911f3a636a419f0f569c38669a1eb3aa64ae0"
+    },
+    {
+      "entry": "records/vulkan/checks/attempt1/compile.command.json",
+      "bytes": 4586,
+      "sha256": "d19e0c4bb0fdeb2e834a119bcb60214b8ceb03899f414fb58eeaf2e1edbf143b"
+    },
+    {
+      "entry": "records/vulkan/checks/attempt1/compile.result.json",
+      "bytes": 4656,
+      "sha256": "417c4cde50e4ee8cbb483b4a3dd3155205f23c07000479a7507169804c1c67aa"
+    },
+    {
+      "entry": "records/vulkan/checks/attempt1/compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/vulkan/checks/attempt1/compile.stdout.log",
+      "bytes": 16,
+      "sha256": "aa8a0f9d01c23efed38c759826af366ec7710a6c764856d666df31546bc52c70"
+    },
+    {
+      "entry": "records/vulkan/checks/attempt1/ga-mhc-test-deps.json",
+      "bytes": 34563,
+      "sha256": "5ac1039d2251e4d19bbab85b3b908f46e90c35f0813d636cc8273b20f6cfe248"
+    },
+    {
+      "entry": "records/vulkan/checks/attempt1/identity.json",
+      "bytes": 76538,
+      "sha256": "3b6d2f45ef48c31790f7c329d117add1be54f53aaa67fe41261c9a0a2ee9eb63"
+    },
+    {
+      "entry": "records/vulkan/checks/attempt1/live.json",
+      "bytes": 4656,
+      "sha256": "417c4cde50e4ee8cbb483b4a3dd3155205f23c07000479a7507169804c1c67aa"
+    },
+    {
+      "entry": "records/vulkan/checks/attempt2/compile-plan.json",
+      "bytes": 5825,
+      "sha256": "669909ccadd97b7b8f867e742cb5bb15f66b72ff82b5cb42fd4f3fc9a76d528d"
+    },
+    {
+      "entry": "records/vulkan/checks/attempt2/compile.command.json",
+      "bytes": 4586,
+      "sha256": "d543918bcd7ab2c30384ac2247b02aca3cb7c4afea0fa38c6e6de3fa7e89f823"
+    },
+    {
+      "entry": "records/vulkan/checks/attempt2/compile.result.json",
+      "bytes": 4656,
+      "sha256": "ee204c5ed81e153786d7eacaf571e64a6023ee82c5b583597893a399a35d0a03"
+    },
+    {
+      "entry": "records/vulkan/checks/attempt2/compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/vulkan/checks/attempt2/compile.stdout.log",
+      "bytes": 16,
+      "sha256": "aa8a0f9d01c23efed38c759826af366ec7710a6c764856d666df31546bc52c70"
+    },
+    {
+      "entry": "records/vulkan/checks/attempt2/ga-mhc-test-deps.json",
+      "bytes": 34563,
+      "sha256": "5ac1039d2251e4d19bbab85b3b908f46e90c35f0813d636cc8273b20f6cfe248"
+    },
+    {
+      "entry": "records/vulkan/checks/attempt2/identity.json",
+      "bytes": 76538,
+      "sha256": "393ad718c7eb3dee30b8bbb86aee622698af77b06ab464ff44ec272f7961ed1a"
+    },
+    {
+      "entry": "records/vulkan/checks/attempt2/live.json",
+      "bytes": 4656,
+      "sha256": "ee204c5ed81e153786d7eacaf571e64a6023ee82c5b583597893a399a35d0a03"
+    },
+    {
+      "entry": "records/vulkan/checks/attempt3/compile-plan.json",
+      "bytes": 5825,
+      "sha256": "72ee6bb550cde74db8c8e2bf8ed47d0148a51c7caf6997edb450fdf5fe33da72"
+    },
+    {
+      "entry": "records/vulkan/checks/attempt3/compile.command.json",
+      "bytes": 4586,
+      "sha256": "d788f480237ae32f3b6e6e30329625168d1f7b312964b26d841af0a90be9a01d"
+    },
+    {
+      "entry": "records/vulkan/checks/attempt3/compile.result.json",
+      "bytes": 4656,
+      "sha256": "f8acc3ea4ab25bfcf2dbb7da2895218f14312300774038989702adf0e653a214"
+    },
+    {
+      "entry": "records/vulkan/checks/attempt3/compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/vulkan/checks/attempt3/compile.stdout.log",
+      "bytes": 16,
+      "sha256": "aa8a0f9d01c23efed38c759826af366ec7710a6c764856d666df31546bc52c70"
+    },
+    {
+      "entry": "records/vulkan/checks/attempt3/ga-mhc-test-deps.json",
+      "bytes": 34563,
+      "sha256": "5ac1039d2251e4d19bbab85b3b908f46e90c35f0813d636cc8273b20f6cfe248"
+    },
+    {
+      "entry": "records/vulkan/checks/attempt3/identity.json",
+      "bytes": 76538,
+      "sha256": "8041ca9448a69bcf02894e1dd1742377f1fbba499e884262097bb84aa944adae"
+    },
+    {
+      "entry": "records/vulkan/checks/attempt3/live.json",
+      "bytes": 4656,
+      "sha256": "f8acc3ea4ab25bfcf2dbb7da2895218f14312300774038989702adf0e653a214"
+    },
+    {
+      "entry": "records/vulkan/checks/attempt4/compile-plan.json",
+      "bytes": 5825,
+      "sha256": "2ba43dab2ec3fede590d47b34ed3af38c770893503d8b8abbb9b219db0219869"
+    },
+    {
+      "entry": "records/vulkan/checks/attempt4/compile.command.json",
+      "bytes": 4586,
+      "sha256": "eb4ccbe975ad6f4b54e2983c50026f50ab3b6e5b217d2d95aaf7064e2f79b4c8"
+    },
+    {
+      "entry": "records/vulkan/checks/attempt4/compile.result.json",
+      "bytes": 4656,
+      "sha256": "1aaf83d4e30e5aaecebd7be85d6b96447185a09c5950f1f7ce0dc7d55ab40f1d"
+    },
+    {
+      "entry": "records/vulkan/checks/attempt4/compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/vulkan/checks/attempt4/compile.stdout.log",
+      "bytes": 16,
+      "sha256": "aa8a0f9d01c23efed38c759826af366ec7710a6c764856d666df31546bc52c70"
+    },
+    {
+      "entry": "records/vulkan/checks/attempt4/ga-mhc-test-deps.json",
+      "bytes": 34563,
+      "sha256": "5ac1039d2251e4d19bbab85b3b908f46e90c35f0813d636cc8273b20f6cfe248"
+    },
+    {
+      "entry": "records/vulkan/checks/attempt4/identity.json",
+      "bytes": 76538,
+      "sha256": "75f814814a2c6381b25ba5dab23c84d1bf4579ee60a1526b265df3530864ee2b"
+    },
+    {
+      "entry": "records/vulkan/checks/attempt4/live.json",
+      "bytes": 4656,
+      "sha256": "1aaf83d4e30e5aaecebd7be85d6b96447185a09c5950f1f7ce0dc7d55ab40f1d"
+    },
+    {
+      "entry": "records/vulkan/checks/link1/image.json",
+      "bytes": 251,
+      "sha256": "ab3ef1cdf25f946f0ee441414515f0cedb93eae8fe1f141a15b0a41eee77722c"
+    },
+    {
+      "entry": "records/vulkan/checks/link1/link-plan.json",
+      "bytes": 76242,
+      "sha256": "8dd004345ae757616ca95f1ef0c93508acff06c684b29b8b9e81de05a2ca388d"
+    },
+    {
+      "entry": "records/vulkan/checks/link1/link.command.json",
+      "bytes": 26573,
+      "sha256": "7b1bffc7d65295293b8cc67657aea4c59b1df8832dd4eaceaaa3cfe0c77171f3"
+    },
+    {
+      "entry": "records/vulkan/checks/link1/link.result.json",
+      "bytes": 26643,
+      "sha256": "85de5c3e539fd44c7bbd2f407400bd358be8a20b99bda3015f7040140882a42f"
+    },
+    {
+      "entry": "records/vulkan/checks/link1/link.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/vulkan/checks/link1/link.stdout.log",
+      "bytes": 270,
+      "sha256": "c126c2e7e39caac20e02d6aa6606a078d6da6835301c87dc99d7794ecfe3ba0d"
+    },
+    {
+      "entry": "records/vulkan/checks/link1/live.json",
+      "bytes": 26643,
+      "sha256": "85de5c3e539fd44c7bbd2f407400bd358be8a20b99bda3015f7040140882a42f"
+    },
+    {
+      "entry": "records/vulkan/checks/link1/runtime-environment.json",
+      "bytes": 8168,
+      "sha256": "0d6c2a4b1a37637f38e620d06cdf1c16aa9e603fea74bbb2c4ef57aa8c532b17"
+    },
+    {
+      "entry": "records/vulkan/checks/link2/image.json",
+      "bytes": 251,
+      "sha256": "5cc9b38364e0812ca49c46c093a942a3d6b6ca5a279552c95cec26db38fc71ab"
+    },
+    {
+      "entry": "records/vulkan/checks/link2/link-plan.json",
+      "bytes": 76242,
+      "sha256": "5d282b04827a032fa6e7d3451b5ae47721d75d1e31865c5d815308e8b84707fa"
+    },
+    {
+      "entry": "records/vulkan/checks/link2/link.command.json",
+      "bytes": 26573,
+      "sha256": "08083a1162f0ffba2588e66f6f1fb827825bac4cef63b1544d3b7a87a7ef0169"
+    },
+    {
+      "entry": "records/vulkan/checks/link2/link.result.json",
+      "bytes": 26643,
+      "sha256": "b98f3ddbbee354e6d8c327d8084c9bca5dd5056f4d296b6df9d73549cc0707cd"
+    },
+    {
+      "entry": "records/vulkan/checks/link2/link.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/vulkan/checks/link2/link.stdout.log",
+      "bytes": 270,
+      "sha256": "5387fb73f0244ef499df6d2e178e8b1dd6e328b36b8ab3578abc88be56f7e2ac"
+    },
+    {
+      "entry": "records/vulkan/checks/link2/live.json",
+      "bytes": 26643,
+      "sha256": "b98f3ddbbee354e6d8c327d8084c9bca5dd5056f4d296b6df9d73549cc0707cd"
+    },
+    {
+      "entry": "records/vulkan/checks/link2/runtime-environment.json",
+      "bytes": 8168,
+      "sha256": "0d6c2a4b1a37637f38e620d06cdf1c16aa9e603fea74bbb2c4ef57aa8c532b17"
+    },
+    {
+      "entry": "records/vulkan/checks/link3/image.json",
+      "bytes": 251,
+      "sha256": "31c67bfec7298a0631ed9daee6c3539c2c833ab4783ead996f58c0a832133d13"
+    },
+    {
+      "entry": "records/vulkan/checks/link3/link-plan.json",
+      "bytes": 76242,
+      "sha256": "840336afc7395bb83d9136cda18a0c73e537e030937899e46e5534265bbc09b2"
+    },
+    {
+      "entry": "records/vulkan/checks/link3/link.command.json",
+      "bytes": 26573,
+      "sha256": "b9919eba9832410eda4f887ab86937aafd209e7edbcb3c32efc3498f1668d12c"
+    },
+    {
+      "entry": "records/vulkan/checks/link3/link.result.json",
+      "bytes": 26643,
+      "sha256": "910220f8db4ef9e0fb6107ed552f7e52f792c06fb7864cdbe3929e8aa8066ac0"
+    },
+    {
+      "entry": "records/vulkan/checks/link3/link.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/vulkan/checks/link3/link.stdout.log",
+      "bytes": 270,
+      "sha256": "47fcca2b4b589923c9766b6d9702711a754baa116cc53c4da0df94d1a5c09801"
+    },
+    {
+      "entry": "records/vulkan/checks/link3/live.json",
+      "bytes": 26643,
+      "sha256": "910220f8db4ef9e0fb6107ed552f7e52f792c06fb7864cdbe3929e8aa8066ac0"
+    },
+    {
+      "entry": "records/vulkan/checks/link3/runtime-environment.json",
+      "bytes": 8168,
+      "sha256": "0d6c2a4b1a37637f38e620d06cdf1c16aa9e603fea74bbb2c4ef57aa8c532b17"
+    },
+    {
+      "entry": "records/vulkan/checks/link4/image.json",
+      "bytes": 251,
+      "sha256": "740a76ed0879e7b2dd0450431465ffc5c740ab8f8b43d4bd749435c2b56a52ba"
+    },
+    {
+      "entry": "records/vulkan/checks/link4/link-plan.json",
+      "bytes": 76242,
+      "sha256": "6da260e14cc6713e5fbe59c86b046c5222efaf03dff7fa14e65d28a334dba15b"
+    },
+    {
+      "entry": "records/vulkan/checks/link4/link.command.json",
+      "bytes": 26573,
+      "sha256": "4bf0476150bfe5ee596f5955ca75993149f9a68879ce1a61107a7b6b23b01af3"
+    },
+    {
+      "entry": "records/vulkan/checks/link4/link.result.json",
+      "bytes": 26644,
+      "sha256": "0b4c54bbc6229d6e07f006f21c66400b0ff7e8a6e32fe7c2df9111e13d1dcaad"
+    },
+    {
+      "entry": "records/vulkan/checks/link4/link.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/vulkan/checks/link4/link.stdout.log",
+      "bytes": 270,
+      "sha256": "b19fb095b7588842179297e0a5f6bc19bb5d1bd34b42acd16b5527367a958915"
+    },
+    {
+      "entry": "records/vulkan/checks/link4/live.json",
+      "bytes": 26644,
+      "sha256": "0b4c54bbc6229d6e07f006f21c66400b0ff7e8a6e32fe7c2df9111e13d1dcaad"
+    },
+    {
+      "entry": "records/vulkan/checks/link4/runtime-environment.json",
+      "bytes": 8168,
+      "sha256": "0d6c2a4b1a37637f38e620d06cdf1c16aa9e603fea74bbb2c4ef57aa8c532b17"
+    },
+    {
+      "entry": "records/vulkan/validation/final3/image-before.json",
+      "bytes": 251,
+      "sha256": "740a76ed0879e7b2dd0450431465ffc5c740ab8f8b43d4bd749435c2b56a52ba"
+    },
+    {
+      "entry": "records/vulkan/validation/final3/live.json",
+      "bytes": 544,
+      "sha256": "ea391ae562290c9961af11c671ddc95b21f89380e509af9ba9f687aee4a0bdb2"
+    },
+    {
+      "entry": "records/vulkan/validation/final3/receipt.json",
+      "bytes": 2626,
+      "sha256": "f2c44fb022a3ac04f143f7e7df1680d5d2b4130153412837847e6ed8f3003e4b"
+    },
+    {
+      "entry": "records/vulkan/validation/final3/runtime-environment.json",
+      "bytes": 8265,
+      "sha256": "31b793f62a5310d02178e16b38342034577bcbd1f136c0ada0ee69968f9979d9"
+    },
+    {
+      "entry": "records/vulkan/validation/final3/tests.command.json",
+      "bytes": 473,
+      "sha256": "5115a9528d5737309d8dce18301858e8615d68cf148a92afd33d760392ca47e8"
+    },
+    {
+      "entry": "records/vulkan/validation/final3/tests.result.json",
+      "bytes": 544,
+      "sha256": "ea391ae562290c9961af11c671ddc95b21f89380e509af9ba9f687aee4a0bdb2"
+    },
+    {
+      "entry": "records/vulkan/validation/final3/tests.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "entry": "records/vulkan/validation/final3/tests.stdout.log",
+      "bytes": 655,
+      "sha256": "5b6668a3e007fc70dcd7355e08152db14dabdd9753d98627fe45d6abc9d491f8"
+    },
+    {
+      "entry": "records/vulkan/validation/final3/tests.xml",
+      "bytes": 1733,
+      "sha256": "bd7fcf3d4d370ed64f699038cda79355dee1b3fedab81d1f359b1953f24422da"
+    },
+    {
+      "entry": "records/windows/build-report.json",
+      "bytes": 14449,
+      "sha256": "13d9bee3941357effe86e3160bdcd6ee52502dd4c4d09c1e1b5a6182f509c776"
+    },
+    {
+      "entry": "records/windows/build.py",
+      "bytes": 5941,
+      "sha256": "ed4f367faeafecd509772c5a99f316cd0a7be1cbef20ce37192db0316100846d"
+    },
+    {
+      "entry": "records/windows/freeze.py",
+      "bytes": 8559,
+      "sha256": "5328aa9e60c8ded451fdfa161c9beacb3ac273599621a60616e2effee04714ca"
+    },
+    {
+      "entry": "records/windows/leaf-source-review.json",
+      "bytes": 6688,
+      "sha256": "534b76d3759d8d44805de7f67b7a876f58d8d75c83de973a42407a02cd75ca5b"
+    },
+    {
+      "entry": "records/windows/preparation.json",
+      "bytes": 2649,
+      "sha256": "527c435d4e225254d6afcc950c2fe6470c79e3cbf3a3612643bf39141b6767d0"
+    },
+    {
+      "entry": "records/windows/private-module-staging-proof.json",
+      "bytes": 1264,
+      "sha256": "c1caccfaf47b5ece9d338132bbb881323814d7eba01cd19081c99014890c04b6"
+    },
+    {
+      "entry": "records/windows/ready-for-root-run-cpu.json",
+      "bytes": 1669,
+      "sha256": "56dc35fbeb25b95d7bdbb282bb01103199a477c9cb845ab737fba222fd92f6de"
+    },
+    {
+      "entry": "records/windows/ready-for-root-run-cuda-vulkan.json",
+      "bytes": 2694,
+      "sha256": "61b57fb8e2d7782965b99a70887dcbb2779292728d3f01ad075d44b5d6f042e6"
+    },
+    {
+      "entry": "records/windows/ready-for-root-run.json",
+      "bytes": 3712,
+      "sha256": "e50eab94986e061f8757bdf1f5d56003417f709095ee6a30b89b06db12fda613"
+    },
+    {
+      "entry": "records/windows/revisions/before-bounded-output-arena/build-report.json",
+      "bytes": 7006,
+      "sha256": "b8e1915169ee1548e440c4210e948936a31ac37c22d5961e48485453e5d44228"
+    },
+    {
+      "entry": "records/windows/revisions/before-bounded-output-arena/ready-for-root-run.json",
+      "bytes": 3700,
+      "sha256": "1572de18c3c7b00e12b949f6b4406c82df44a76c23c9d78f4cf48c6f529eb38a"
+    },
+    {
+      "entry": "records/windows/revisions/before-bounded-output-arena/source-dependency-audit.json",
+      "bytes": 78264,
+      "sha256": "67cdf6a933126106532b1ea2265d99d295804959f6dd469f83fce16206b08f57"
+    },
+    {
+      "entry": "records/windows/revisions/before-bounded-output-arena/source-freeze.json",
+      "bytes": 7508,
+      "sha256": "ee617733d981aad8d293a46ad42cb1f586f503f3b886248c095fc6aade0f8687"
+    },
+    {
+      "entry": "records/windows/revisions/before-material-output/build-report.json",
+      "bytes": 4892,
+      "sha256": "1ec01b4cccf7c6cd195ddb6c9ac93e39f7565fb0a08d5744032aa36e5f8dd5c3"
+    },
+    {
+      "entry": "records/windows/revisions/before-material-output/material-output.diff",
+      "bytes": 2819,
+      "sha256": "e9618edc8db61165b03d5ac84c3d45aae3dd0533747718208e6824aa22b365cc"
+    },
+    {
+      "entry": "records/windows/revisions/before-material-output/source-dependency-audit.json",
+      "bytes": 78264,
+      "sha256": "32f6fff5090be0867192139713aabf912b6ed56c2d823d3d61ba5f4ca769fc14"
+    },
+    {
+      "entry": "records/windows/revisions/before-material-output/source-freeze.json",
+      "bytes": 7428,
+      "sha256": "8368e3f9dece5a17998e828b1c885709ec45fb7a5acf63c106c9322d3e64d08f"
+    },
+    {
+      "entry": "records/windows/revisions/first-compile-before-borrow-fix/build-report.json",
+      "bytes": 2802,
+      "sha256": "aa910537483654a20e6969813d1f896193ee2a9f83b86ebd833c7deda188ae39"
+    },
+    {
+      "entry": "records/windows/revisions/first-compile-before-borrow-fix/source-dependency-audit.json",
+      "bytes": 78264,
+      "sha256": "7017b3d5bf038f91c2e54af6b13a7b6660913e78588e69562cbdd33add10b8c0"
+    },
+    {
+      "entry": "records/windows/revisions/first-compile-before-borrow-fix/source-freeze.json",
+      "bytes": 7380,
+      "sha256": "1406997238d80f42cfde698ced033fff4ce7015860f72ddb41fd80e83cb4b8d3"
+    },
+    {
+      "entry": "records/windows/source-bounded-output-arena/tests/compute_models/ga_mhc_fixture.h",
+      "bytes": 20903,
+      "sha256": "b009de629bbc21a9bbbcba6f24f1f83411012abdb0fcc00e6b525e1562829770"
+    },
+    {
+      "entry": "records/windows/source-bounded-output-arena/tests/compute_models/ga_mhc_reference_fixture.h",
+      "bytes": 18759,
+      "sha256": "561ba98a37ef5632690802c338046448e4b14548dbd7a68192509656732c9422"
+    },
+    {
+      "entry": "records/windows/source-bounded-output-arena/tests/graph_route_cpu/CMakeLists.txt",
+      "bytes": 4443,
+      "sha256": "a1c4dadcd491f55e0cb5669ed0e709539cc07ee925f4e3bdca4f718af4d35b5d"
+    },
+    {
+      "entry": "records/windows/source-bounded-output-arena/tests/graph_route_cpu/ga_mhc_test.cc",
+      "bytes": 1011,
+      "sha256": "6b2b5e43d64da8495de2203790db5fa513802c22a76d961230b26538031d06a3"
+    },
+    {
+      "entry": "records/windows/source-bounded-output-arena/tests/graph_route_cuda/CMakeLists.txt",
+      "bytes": 3518,
+      "sha256": "40cfed13c328e72aa5edec2e80c7c9277d1ed74142444aa96c51b69fa5ced9cd"
+    },
+    {
+      "entry": "records/windows/source-bounded-output-arena/tests/graph_route_cuda/ga_mhc_test.cc",
+      "bytes": 1291,
+      "sha256": "77d86ad87083394fefd2f53296c16629db9c73641a7f86bb2555d292e81317ce"
+    },
+    {
+      "entry": "records/windows/source-bounded-output-arena/tests/graph_route_vulkan/CMakeLists.txt",
+      "bytes": 6691,
+      "sha256": "61eaaf9e208a7ce84d102c93a4ed225ba61dd81cb9c1ae894c312acd6263b0cf"
+    },
+    {
+      "entry": "records/windows/source-bounded-output-arena/tests/graph_route_vulkan/ga_mhc_test.cc",
+      "bytes": 3205,
+      "sha256": "8dd00c9ec9693a641d24ba3c2015008a61c728443fbbc08a42e40643e8c3b55f"
+    },
+    {
+      "entry": "records/windows/source-dependency-audit.json",
+      "bytes": 78264,
+      "sha256": "c4a57ed27fddbb7bae01469376939da954c8ef6e5cbacc6ed53c036736d13902"
+    },
+    {
+      "entry": "records/windows/source-final/tests/compute_models/ga_mhc_fixture.h",
+      "bytes": 20304,
+      "sha256": "f013269093cb51d5b10273564dfc5a7db44d4cd14c53252e4421a624adc07c0a"
+    },
+    {
+      "entry": "records/windows/source-final/tests/compute_models/ga_mhc_reference_fixture.h",
+      "bytes": 18759,
+      "sha256": "561ba98a37ef5632690802c338046448e4b14548dbd7a68192509656732c9422"
+    },
+    {
+      "entry": "records/windows/source-final/tests/graph_route_cpu/CMakeLists.txt",
+      "bytes": 4443,
+      "sha256": "a1c4dadcd491f55e0cb5669ed0e709539cc07ee925f4e3bdca4f718af4d35b5d"
+    },
+    {
+      "entry": "records/windows/source-final/tests/graph_route_cpu/ga_mhc_test.cc",
+      "bytes": 1011,
+      "sha256": "6b2b5e43d64da8495de2203790db5fa513802c22a76d961230b26538031d06a3"
+    },
+    {
+      "entry": "records/windows/source-final/tests/graph_route_cuda/CMakeLists.txt",
+      "bytes": 3518,
+      "sha256": "40cfed13c328e72aa5edec2e80c7c9277d1ed74142444aa96c51b69fa5ced9cd"
+    },
+    {
+      "entry": "records/windows/source-final/tests/graph_route_cuda/ga_mhc_test.cc",
+      "bytes": 1291,
+      "sha256": "77d86ad87083394fefd2f53296c16629db9c73641a7f86bb2555d292e81317ce"
+    },
+    {
+      "entry": "records/windows/source-final/tests/graph_route_vulkan/CMakeLists.txt",
+      "bytes": 6691,
+      "sha256": "61eaaf9e208a7ce84d102c93a4ed225ba61dd81cb9c1ae894c312acd6263b0cf"
+    },
+    {
+      "entry": "records/windows/source-final/tests/graph_route_vulkan/ga_mhc_test.cc",
+      "bytes": 3205,
+      "sha256": "8dd00c9ec9693a641d24ba3c2015008a61c728443fbbc08a42e40643e8c3b55f"
+    },
+    {
+      "entry": "records/windows/source-freeze.json",
+      "bytes": 7548,
+      "sha256": "f04dfa70ad7d1c4ede961ba67626e93cbe3ee65c8074c0fbff4183c715a5efb9"
+    },
+    {
+      "entry": "records/windows/source-material-output/tests/compute_models/ga_mhc_fixture.h",
+      "bytes": 20436,
+      "sha256": "cd631cf0354daa8abbd4f20d372db9a6ca3345c103b9cc3d4c35fe09d35609f8"
+    },
+    {
+      "entry": "records/windows/source-material-output/tests/compute_models/ga_mhc_reference_fixture.h",
+      "bytes": 18759,
+      "sha256": "561ba98a37ef5632690802c338046448e4b14548dbd7a68192509656732c9422"
+    },
+    {
+      "entry": "records/windows/source-material-output/tests/graph_route_cpu/CMakeLists.txt",
+      "bytes": 4443,
+      "sha256": "a1c4dadcd491f55e0cb5669ed0e709539cc07ee925f4e3bdca4f718af4d35b5d"
+    },
+    {
+      "entry": "records/windows/source-material-output/tests/graph_route_cpu/ga_mhc_test.cc",
+      "bytes": 1011,
+      "sha256": "6b2b5e43d64da8495de2203790db5fa513802c22a76d961230b26538031d06a3"
+    },
+    {
+      "entry": "records/windows/source-material-output/tests/graph_route_cuda/CMakeLists.txt",
+      "bytes": 3518,
+      "sha256": "40cfed13c328e72aa5edec2e80c7c9277d1ed74142444aa96c51b69fa5ced9cd"
+    },
+    {
+      "entry": "records/windows/source-material-output/tests/graph_route_cuda/ga_mhc_test.cc",
+      "bytes": 1291,
+      "sha256": "77d86ad87083394fefd2f53296c16629db9c73641a7f86bb2555d292e81317ce"
+    },
+    {
+      "entry": "records/windows/source-material-output/tests/graph_route_vulkan/CMakeLists.txt",
+      "bytes": 6691,
+      "sha256": "61eaaf9e208a7ce84d102c93a4ed225ba61dd81cb9c1ae894c312acd6263b0cf"
+    },
+    {
+      "entry": "records/windows/source-material-output/tests/graph_route_vulkan/ga_mhc_test.cc",
+      "bytes": 3205,
+      "sha256": "8dd00c9ec9693a641d24ba3c2015008a61c728443fbbc08a42e40643e8c3b55f"
+    },
+    {
+      "entry": "records/windows/source/tests/compute_models/ga_mhc_fixture.h",
+      "bytes": 19666,
+      "sha256": "192ee08b823e019a39d5f60f32013f14e069925e5080563ef34468fc8a97e42b"
+    },
+    {
+      "entry": "records/windows/source/tests/compute_models/ga_mhc_reference_fixture.h",
+      "bytes": 18759,
+      "sha256": "561ba98a37ef5632690802c338046448e4b14548dbd7a68192509656732c9422"
+    },
+    {
+      "entry": "records/windows/source/tests/graph_route_cpu/CMakeLists.txt",
+      "bytes": 4443,
+      "sha256": "a1c4dadcd491f55e0cb5669ed0e709539cc07ee925f4e3bdca4f718af4d35b5d"
+    },
+    {
+      "entry": "records/windows/source/tests/graph_route_cpu/ga_mhc_test.cc",
+      "bytes": 1011,
+      "sha256": "6b2b5e43d64da8495de2203790db5fa513802c22a76d961230b26538031d06a3"
+    },
+    {
+      "entry": "records/windows/source/tests/graph_route_cuda/CMakeLists.txt",
+      "bytes": 3518,
+      "sha256": "40cfed13c328e72aa5edec2e80c7c9277d1ed74142444aa96c51b69fa5ced9cd"
+    },
+    {
+      "entry": "records/windows/source/tests/graph_route_cuda/ga_mhc_test.cc",
+      "bytes": 1291,
+      "sha256": "77d86ad87083394fefd2f53296c16629db9c73641a7f86bb2555d292e81317ce"
+    },
+    {
+      "entry": "records/windows/source/tests/graph_route_vulkan/CMakeLists.txt",
+      "bytes": 6691,
+      "sha256": "61eaaf9e208a7ce84d102c93a4ed225ba61dd81cb9c1ae894c312acd6263b0cf"
+    },
+    {
+      "entry": "records/windows/source/tests/graph_route_vulkan/ga_mhc_test.cc",
+      "bytes": 3205,
+      "sha256": "8dd00c9ec9693a641d24ba3c2015008a61c728443fbbc08a42e40643e8c3b55f"
+    },
+    {
+      "entry": "records/windows/source_review.py",
+      "bytes": 4349,
+      "sha256": "59231bd42624054738c75fdaebb640635a74dbf991ac70a7e5e9186d2c08f168"
+    },
+    {
+      "entry": "source/docs/developer/current-work.md",
+      "bytes": 36857,
+      "sha256": "475d81737a684cbbb0d66641575f6da7edabac69941aa9b1618fdd4fbf2dfb8a"
+    },
+    {
+      "entry": "source/docs/implementation/model-operators.md",
+      "bytes": 79479,
+      "sha256": "582d6b08c51df4f6b6862700d50f46262150e6ab33499cddc09c88e2c56d4998"
+    },
+    {
+      "entry": "source/docs/implementation/model-quantizations.json",
+      "bytes": 560459,
+      "sha256": "12b2b04e91ca74a79d0661671064aaea4f899cb7e3d496cc7ae62152fbb230d3"
+    },
+    {
+      "entry": "source/docs/user/graph.md",
+      "bytes": 89012,
+      "sha256": "b51d8e16b860e9f014d29afb1c32eef79514f9e886a1dc3be990e46a52d7d692"
+    },
+    {
+      "entry": "source/include/hyle/compute/model_ops.h",
+      "bytes": 75341,
+      "sha256": "d3315100def9904a604dd3a1386000641cb03c2e8d36485ef3e55b98e4dde3e5"
+    },
+    {
+      "entry": "source/include/hyle/compute/operation.h",
+      "bytes": 28108,
+      "sha256": "35b7c862143839e4b8ce0c9a49753b7add2f325ec424bf5f91a1afeec0101506"
+    },
+    {
+      "entry": "source/include/hyle/compute/resource_leases.h",
+      "bytes": 8660,
+      "sha256": "4e5681ebfa7c2f2ad51e5788c8316f4b993883f595c04b33fe594d7294dab85b"
+    },
+    {
+      "entry": "source/include/hyle/compute/state_versions.h",
+      "bytes": 8553,
+      "sha256": "a09cb66a216b56a0651f515f18d8a97772b0e6d281c171a82b8a6630b3e1c7d7"
+    },
+    {
+      "entry": "source/include/hyle/graph/executable.h",
+      "bytes": 49762,
+      "sha256": "6305dd557606b26119fc60de9dbb68c979a1f8fe54755a191378c49742ef4714"
+    },
+    {
+      "entry": "source/include/hyle/graph/result.h",
+      "bytes": 1646,
+      "sha256": "90861eafec4f3a0aa73014416bd2817dfe3892ac001ea206bebf907e1d3cf182"
+    },
+    {
+      "entry": "source/src/compute/resource_leases.cc",
+      "bytes": 27124,
+      "sha256": "6cb990cd573939c9de8a36cdcbac6530ca09dd7081f71c86c593282896d0a281"
+    },
+    {
+      "entry": "source/src/compute_provider_ggml/ggml_cpu_provider.cc",
+      "bytes": 114228,
+      "sha256": "657e91177bd8270082ed9e71b40b0be598fc6776347e426204c1c6d0fc7797fd"
+    },
+    {
+      "entry": "source/src/compute_provider_ggml_cuda/tensor_program.cc",
+      "bytes": 54758,
+      "sha256": "6edcfe378983d4f371cede7a0ec463ae17c2e11f307b81ab8f61a0c0d917a4b2"
+    },
+    {
+      "entry": "source/src/compute_provider_ggml_metal/native_program.cc",
+      "bytes": 28817,
+      "sha256": "29eba24896a30711c4fbc699f157bb9307fecdc64a3a7721b5ddfd171d82bc68"
+    },
+    {
+      "entry": "source/src/compute_provider_ggml_vulkan/region.cc",
+      "bytes": 105872,
+      "sha256": "d76fd202636a65774bb63e8a2a27cbd636c8fa36c070768c09bbefbb9e001bd3"
+    },
+    {
+      "entry": "source/src/compute_state/state_versions.cc",
+      "bytes": 41194,
+      "sha256": "1d344d6c0c37cd1e18b7ee765a56bb58e1ab9aa24095208f453a4c3065b5fe99"
+    },
+    {
+      "entry": "source/src/graph/executable.cc",
+      "bytes": 462934,
+      "sha256": "7817d7e80752912a3daac41cd87511e15a2df3beeb0651c91f1b73d666b2674e"
+    },
+    {
+      "entry": "source/src/graph/resources.cc",
+      "bytes": 70350,
+      "sha256": "40f38a4b5d2d5e316fe9cae57b2360cd1598446a31acee63740ba297990fa57c"
+    },
+    {
+      "entry": "source/tests/compute_models/ga_indexer_state_fixture.h",
+      "bytes": 26486,
+      "sha256": "c2055b3920c8ebc93ed30d2596d4eba049790e148b8dd3d59128e1ffda48ab84"
+    },
+    {
+      "entry": "source/tests/compute_models/ga_mhc_fixture.h",
+      "bytes": 20903,
+      "sha256": "b009de629bbc21a9bbbcba6f24f1f83411012abdb0fcc00e6b525e1562829770"
+    },
+    {
+      "entry": "source/tests/compute_models/ga_mhc_reference_fixture.h",
+      "bytes": 18759,
+      "sha256": "561ba98a37ef5632690802c338046448e4b14548dbd7a68192509656732c9422"
+    },
+    {
+      "entry": "source/tests/compute_models/nvfp4_reference_fixture.h",
+      "bytes": 22482,
+      "sha256": "cc94ec1f443511722ff4fc227b065af27b82573443735250951cdce934faa4d3"
+    },
+    {
+      "entry": "source/tests/graph_route_apple/CMakeLists.txt",
+      "bytes": 7204,
+      "sha256": "8b46bad3af6427c7f02f3b60f6831734bd352fdac2020eb1a71b0a37a3d60d97"
+    },
+    {
+      "entry": "source/tests/graph_route_apple/ga_mhc_test.cc",
+      "bytes": 1450,
+      "sha256": "a806766fe5a3c02b3a1aa1a4055318c0d0985bf2a6865e59cf8d25e170f224c5"
+    },
+    {
+      "entry": "source/tests/graph_route_cpu/CMakeLists.txt",
+      "bytes": 4443,
+      "sha256": "a1c4dadcd491f55e0cb5669ed0e709539cc07ee925f4e3bdca4f718af4d35b5d"
+    },
+    {
+      "entry": "source/tests/graph_route_cpu/ga_mhc_test.cc",
+      "bytes": 1011,
+      "sha256": "6b2b5e43d64da8495de2203790db5fa513802c22a76d961230b26538031d06a3"
+    },
+    {
+      "entry": "source/tests/graph_route_cuda/CMakeLists.txt",
+      "bytes": 3518,
+      "sha256": "40cfed13c328e72aa5edec2e80c7c9277d1ed74142444aa96c51b69fa5ced9cd"
+    },
+    {
+      "entry": "source/tests/graph_route_cuda/ga_mhc_test.cc",
+      "bytes": 1291,
+      "sha256": "77d86ad87083394fefd2f53296c16629db9c73641a7f86bb2555d292e81317ce"
+    },
+    {
+      "entry": "source/tests/graph_route_vulkan/CMakeLists.txt",
+      "bytes": 6691,
+      "sha256": "61eaaf9e208a7ce84d102c93a4ed225ba61dd81cb9c1ae894c312acd6263b0cf"
+    },
+    {
+      "entry": "source/tests/graph_route_vulkan/ga_mhc_test.cc",
+      "bytes": 3205,
+      "sha256": "8dd00c9ec9693a641d24ba3c2015008a61c728443fbbc08a42e40643e8c3b55f"
+    }
+  ]
+}

@@ -10,5 +10,5 @@
 同一事实只在所属位置维护，其它页面链接引用。具体 API 签名与局部约束以公开头为准，
 教程解释选择与组合，架构说明设计原因。
 
-工作区约定见 [AGENTS.md](../AGENTS.md)，当前任务见[工作主线](developer/current-work.md)。
+工作区约定见 [AGENTS.md](../AGENTS.md)。
 原始实验源码、日志与数据见 [evidence](evidence/README.md)。

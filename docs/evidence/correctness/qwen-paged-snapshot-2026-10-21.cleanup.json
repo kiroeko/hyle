@@ -1,0 +1,78 @@
+{
+  "scope": "Superseded host test images and reproducible linker maps/import metadata only; retain current paged Qwen, current CPU tests, dense/performance baselines, sources and objects",
+  "files": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\link1\\qwen.exp",
+      "bytes": 24979,
+      "sha256": "c240c1a63998b920ae1f336c24216f853cb2351da9859ce0dfce5f3dffcc22ee"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\link1\\qwen.lib",
+      "bytes": 41384,
+      "sha256": "339d3ce297534ebac8825c27a011f2f4f9dfe366c657ebfc45dbbfdc8412a2cb"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\link1\\qwen.map",
+      "bytes": 58170086,
+      "sha256": "adc4f2c52769e4e0e3e59c8ad6df621e52affc1b58291b52ad9a872802ddc384"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\unbind-tests\\link1\\unbind-host.exe",
+      "bytes": 139218432,
+      "sha256": "1f4fd1814afc9892de5b0c51bb257bf8c27e3e17ca82ace770d092eec50fe620"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\unbind-tests\\link1\\unbind-host.exp",
+      "bytes": 25005,
+      "sha256": "d1a699fa408a48568b143a4b6c518a914a1aeb864b7a9ac0239a2fa80554333e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\unbind-tests\\link1\\unbind-host.lib",
+      "bytes": 42002,
+      "sha256": "ce67cd6ed3282cf2a88e370c1f99ca362ce037d049beb7776afbd8218433bfd8"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\unbind-tests\\link1\\unbind-host.map",
+      "bytes": 57585226,
+      "sha256": "e46dc62d202045cffb01c95edcb8b9f5f64c5bbc60094a12fd4b198f582d2176"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\unbind-tests\\link2\\unbind-host.exe",
+      "bytes": 139218432,
+      "sha256": "d877030a5cc0dae41c279c32a5023e49ec8989e24245f5c19270d0f99b2a6e87"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\unbind-tests\\link2\\unbind-host.exp",
+      "bytes": 25005,
+      "sha256": "8fe00658f283892284efb9f03734843e76f5388c8da53f76760f2183977f4fe1"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\unbind-tests\\link2\\unbind-host.lib",
+      "bytes": 42002,
+      "sha256": "ce67cd6ed3282cf2a88e370c1f99ca362ce037d049beb7776afbd8218433bfd8"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\unbind-tests\\link2\\unbind-host.map",
+      "bytes": 57584542,
+      "sha256": "5dc6d304186c315e3eaf40854caa979e517ce40567a6cccc1244a453b0b7dd0e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\unbind-tests\\link3\\unbind-host.exp",
+      "bytes": 25005,
+      "sha256": "6f5b87e260208122ed9a00d6ab1b506d09eef4f94df90fa30c8355e9fffe87cb"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\unbind-tests\\link3\\unbind-host.lib",
+      "bytes": 42002,
+      "sha256": "ce67cd6ed3282cf2a88e370c1f99ca362ce037d049beb7776afbd8218433bfd8"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\paged-append-20261021\\qwen-snapshot\\unbind-tests\\link3\\unbind-host.map",
+      "bytes": 57585182,
+      "sha256": "fa5546b55f74525becaff220b558bf6979da5b50da1e3f1dcaa049d3c56bb31d"
+    }
+  ],
+  "deleted_files": 14,
+  "removed_payload_bytes": 509629284.0,
+  "completed_utc": "2026-10-21T09:52:15.4524559Z"
+}

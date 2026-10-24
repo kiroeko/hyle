@@ -1,0 +1,111 @@
+{
+  "completed": true,
+  "windows_removed": 6,
+  "windows_bytes": 356669999.0,
+  "windows_kept_objects": 5,
+  "mac": {
+    "removed": 2,
+    "bytes": 20833816,
+    "kept_objects": 2
+  },
+  "evidence_sha256": "4d3a33aadf97992d005751ba04f3c672e419cb89f41498087a9d7953bd81cbb6",
+  "archive_sha256": "3b2f886e01946682b9cda5054fb60ae7d747d591403479ebe48bdb204f0b4f5f",
+  "exact_plan": {
+    "allowed_windows": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\e8m0-block128-import-reference",
+    "allowed_mac": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/e8m0-block128-import-reference/apple",
+    "remove_windows": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\e8m0-block128-import-reference\\cpu\\checks\\link1\\cpu.exe",
+        "bytes": 28619776,
+        "sha256": "b489e943d8b8d51f15000a6fcad39871c9f121608cac84071f5b44ac56800b8c"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\e8m0-block128-import-reference\\cpu\\checks\\link1\\cpu.map",
+        "bytes": 45271186,
+        "sha256": "b1aab08ecca3412a11f26b6c937a754d344f3908bc9713288082c5fd26c9cd1e"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\e8m0-block128-import-reference\\cuda\\checks\\link1\\cuda.exe",
+        "bytes": 123535360,
+        "sha256": "05540169a8ab38271f82e7fe053a6a1a653e95baa6dc2efee7d1356e30808e3e"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\e8m0-block128-import-reference\\cuda\\checks\\link1\\cuda.map",
+        "bytes": 48391141,
+        "sha256": "6a9aff5eaeb343c4ebb14da74663562c3d74552b6f9a60e621cfa59df7ab066b"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\e8m0-block128-import-reference\\vulkan\\checks\\link1\\vulkan.exe",
+        "bytes": 70087168,
+        "sha256": "ac0c110a7acefb15c2919cdcbab960ce9abf8baf29be0756227ce5991e25a48b"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\e8m0-block128-import-reference\\vulkan\\checks\\link1\\vulkan.map",
+        "bytes": 40765368,
+        "sha256": "a92aba7831e49bc5348cbc5769e9235b752b097d519b43f06bba264f643daaf1"
+      }
+    ],
+    "keep_windows": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\e8m0-block128-import-reference\\cpu\\checks\\attempt1\\import-consumer.obj",
+        "bytes": 1546495,
+        "sha256": "16f5153bda0b8754589b0ee18767fd1bc325ed8747f74908f46d39bf3a6e8cd2"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\e8m0-block128-import-reference\\cpu\\checks\\attempt1\\weight-import-test.obj",
+        "bytes": 634841,
+        "sha256": "0bf0244faf9e40e116673115cce60f255602f64946748640201cd4b56a848ede"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\e8m0-block128-import-reference\\cpu\\checks\\attempt2\\weight-import.obj",
+        "bytes": 82635,
+        "sha256": "a3b627d966244973cfccde3a6eab4bca1e815be501984a5a2f005108c7105848"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\e8m0-block128-import-reference\\cuda\\checks\\attempt1\\import-consumer.obj",
+        "bytes": 1799704,
+        "sha256": "563d6e44a206d45e1f3f098b39c0afe2e55a3a0ed06d719bcbc38a9abb0a7bb5"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\e8m0-block128-import-reference\\vulkan\\checks\\attempt2\\import-consumer.obj",
+        "bytes": 1746609,
+        "sha256": "67aa6559474f4503a01c47a106b759d13544c9867c142d23b6420bf92b5a1da1"
+      }
+    ],
+    "remove_mac": [
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/e8m0-block128-import-reference/apple/e8m0-weight-import",
+        "bytes": 16056800,
+        "sha256": "ae8b139a551ca72d5ba15b107bdd74e27b99a6f1a098cd780efd97b8425d170a"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/e8m0-block128-import-reference/apple/e8m0-weight-import.map",
+        "bytes": 4777016,
+        "sha256": "8ba3e98d69b8314d7951b7d385371213f7fcb50d98581c21afe0bca85ff8b3d6"
+      }
+    ],
+    "keep_mac": [
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/e8m0-block128-import-reference/apple/objects/src--compute--weight_import.cc.o",
+        "bytes": 16000,
+        "sha256": "3eb058f5c83ca4af162a33ae003e50518e0227dc83f52931c9c17c322c5deb91"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/e8m0-block128-import-reference/apple/objects/tests--graph_route_apple--e8m0_weight_import_test.cc.o",
+        "bytes": 144144,
+        "sha256": "423d5cefafc8763752c75fd05de1ad3ae3aaf95b4e3216c9c5dda7caab1e4bbd"
+      }
+    ],
+    "evidence": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\e8m0-block128-import-reference-2026-10-21.json",
+      "bytes": 46792,
+      "sha256": "4d3a33aadf97992d005751ba04f3c672e419cb89f41498087a9d7953bd81cbb6"
+    },
+    "archive": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\e8m0-block128-import-reference-2026-10-21.zip",
+      "bytes": 838415,
+      "sha256": "3b2f886e01946682b9cda5054fb60ae7d747d591403479ebe48bdb204f0b4f5f"
+    }
+  },
+  "source_script": "# Exact E8M0 block128 import test-artifact cleanup. No recursive directory removal.\r\n$ErrorActionPreference = 'Stop'\r\n$plan = Get-Content -LiteralPath 'C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\e8m0-block128-import-reference\\root\\cleanup-plan.json' -Raw | ConvertFrom-Json\r\n$separator = [IO.Path]::DirectorySeparatorChar\r\n$allowed = [IO.Path]::GetFullPath($plan.allowed_windows).TrimEnd($separator) + $separator\r\nfunction Assert-Identity($row) {\r\n  $file = Get-Item -LiteralPath $row.path -ErrorAction Stop\r\n  if ($file.PSIsContainer -or ($file.Attributes -band [IO.FileAttributes]::ReparsePoint)) { throw \"Not a regular file: $($row.path)\" }\r\n  if ($file.Length -ne $row.bytes -or (Get-FileHash -LiteralPath $row.path -Algorithm SHA256).Hash.ToLowerInvariant() -ne $row.sha256) { throw \"Identity changed: $($row.path)\" }\r\n}\r\nAssert-Identity $plan.evidence\r\nAssert-Identity $plan.archive\r\nforeach ($row in $plan.remove_windows) {\r\n  $full = [IO.Path]::GetFullPath($row.path)\r\n  if (-not $full.StartsWith($allowed, [StringComparison]::OrdinalIgnoreCase) -or [IO.Path]::GetExtension($full) -notin '.exe','.map') { throw \"Outside exact artifact scope: $full\" }\r\n  Assert-Identity $row\r\n}\r\nforeach ($row in $plan.keep_windows) { Assert-Identity $row }\r\n$active = @(Get-CimInstance Win32_Process | Where-Object { $_.ExecutablePath -and $_.ExecutablePath.StartsWith($allowed, [StringComparison]::OrdinalIgnoreCase) })\r\nif ($active.Count) { throw 'A test executable in this exact workspace is still running' }\r\nforeach ($row in $plan.remove_windows) { Remove-Item -LiteralPath $row.path -Force }\r\nforeach ($row in $plan.keep_windows) { Assert-Identity $row }\r\n$macProgram = @'\r\nimport pathlib,hashlib,json,subprocess\r\nplan=json.loads('{\"allowed_mac\": \"/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/e8m0-block128-import-reference/apple\", \"remove_mac\": [{\"path\": \"/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/e8m0-block128-import-reference/apple/e8m0-weight-import\", \"bytes\": 16056800, \"sha256\": \"ae8b139a551ca72d5ba15b107bdd74e27b99a6f1a098cd780efd97b8425d170a\"}, {\"path\": \"/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/e8m0-block128-import-reference/apple/e8m0-weight-import.map\", \"bytes\": 4777016, \"sha256\": \"8ba3e98d69b8314d7951b7d385371213f7fcb50d98581c21afe0bca85ff8b3d6\"}], \"keep_mac\": [{\"path\": \"/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/e8m0-block128-import-reference/apple/objects/src--compute--weight_import.cc.o\", \"bytes\": 16000, \"sha256\": \"3eb058f5c83ca4af162a33ae003e50518e0227dc83f52931c9c17c322c5deb91\"}, {\"path\": \"/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/e8m0-block128-import-reference/apple/objects/tests--graph_route_apple--e8m0_weight_import_test.cc.o\", \"bytes\": 144144, \"sha256\": \"423d5cefafc8763752c75fd05de1ad3ae3aaf95b4e3216c9c5dda7caab1e4bbd\"}]}')\r\nbase=pathlib.Path(plan['allowed_mac']); assert base.is_dir() and not base.is_symlink()\r\ndef verify(row):\r\n p=pathlib.Path(row['path']); assert p.is_absolute() and not p.is_symlink() and p.resolve().is_relative_to(base.resolve())\r\n assert p.is_file() and p.stat().st_size==row['bytes'] and hashlib.sha256(p.read_bytes()).hexdigest()==row['sha256'],str(p)\r\n return p\r\npaths=[verify(x) for x in plan['remove_mac']]\r\nfor row in plan['keep_mac']:verify(row)\r\nactive=subprocess.check_output(['ps','-axo','command='],text=True)\r\nassert not any(str(p) in command for p in paths for command in active.splitlines() if not command.startswith('python3 -')), 'test executable is running'\r\nfor p in paths:p.unlink()\r\nfor row in plan['keep_mac']:verify(row)\r\nprint(json.dumps(dict(removed=len(paths),bytes=sum(x['bytes'] for x in plan['remove_mac']),kept_objects=len(plan['keep_mac']))))\r\n'@\r\n$macResult = $macProgram | & ssh kiro@172.22.10.198 python3 -\r\nif ($LASTEXITCODE -ne 0) { throw 'Mac exact-file cleanup failed; do not report both platforms completed' }\r\n$result = [ordered]@{\r\n  completed = $true\r\n  windows_removed = @($plan.remove_windows).Count\r\n  windows_bytes = ($plan.remove_windows | Measure-Object -Property bytes -Sum).Sum\r\n  windows_kept_objects = @($plan.keep_windows).Count\r\n  mac = ($macResult | ConvertFrom-Json)\r\n  evidence_sha256 = $plan.evidence.sha256\r\n  archive_sha256 = $plan.archive.sha256\r\n  exact_plan = $plan\r\n  source_script = (Get-Content -LiteralPath $PSCommandPath -Raw)\r\n}\r\n$result | ConvertTo-Json -Depth 18 | Set-Content -LiteralPath 'C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\e8m0-block128-import-reference-2026-10-21.cleanup.json' -Encoding utf8\r\n[pscustomobject]$result | Select-Object completed,windows_removed,windows_bytes,windows_kept_objects,mac | ConvertTo-Json -Depth 5\r\n"
+}

@@ -1,0 +1,4540 @@
+{
+  "date": "2026-10-23",
+  "stage": "BG",
+  "goal_complete": false,
+  "conclusion": "Actual lease-backed Q27/Q24 one-block draft state and formal Flash full-vocabulary shared roles now execute; remaining target/original/quant scopes are not closed.",
+  "successful_unique_tests": 14,
+  "selected_cases": [
+    {
+      "name": "Qwen27OriginalMtpInput.CudaPrimaryQ6KRolesKeepOrderAndPriorResults",
+      "attempt": 1,
+      "attributes": {
+        "name": "CudaPrimaryQ6KRolesKeepOrderAndPriorResults",
+        "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\qwen27_original_mtp_input_test.cc",
+        "line": "251",
+        "status": "run",
+        "result": "completed",
+        "time": "0.506",
+        "timestamp": "2026-10-23T02:00:51.191",
+        "classname": "Qwen27OriginalMtpInput"
+      },
+      "properties": {
+        "scope": "original Q27 primary main-GGUF blk64 Q6_K EH plus two F32 norms; generated F32 input boundary only, not complete MTP model/state",
+        "backend": "ordinary CUDA Graph",
+        "actual_submissions": "3",
+        "original_role_bytes": "43048960",
+        "eh_proj_sha256": "5e72ecfbdff8f87139874ff85031dc18bc275fcd1639a3b124690c73ca3b9e07",
+        "enorm_sha256": "d96abe72c938e866b5a8bdaa8aa9f8590577f55bef6281c2e9fce892db518d97",
+        "hnorm_sha256": "e9247e9fc08ebd0ca8f14a610cfd1046a0115143f6967de9d520647149890ac2"
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-state-20261023\\tests-link1\\qwen-state-checks.exe",
+        "bytes": 140382720,
+        "sha256": "bfdb2fab13fed14fa883bbcdcb940d19dc3960070d5339f7ce5700ae116d965e"
+      },
+      "xml": {
+        "path": ".scratch\\qwen-mtp-state-20261023\\checks1\\results.xml",
+        "bytes": 4996,
+        "sha256": "6c08293811a4dfec87f86c9ad964da5c43d40a79514802950c8bd105ea863201"
+      }
+    },
+    {
+      "name": "Qwen27OriginalMtpInput.CpuPrimaryQ6KRolesKeepOrderAndPriorResults",
+      "attempt": 1,
+      "attributes": {
+        "name": "CpuPrimaryQ6KRolesKeepOrderAndPriorResults",
+        "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\qwen27_original_mtp_input_test.cc",
+        "line": "260",
+        "status": "run",
+        "result": "completed",
+        "time": "0.418",
+        "timestamp": "2026-10-23T02:00:51.698",
+        "classname": "Qwen27OriginalMtpInput"
+      },
+      "properties": {
+        "scope": "original Q27 primary main-GGUF blk64 Q6_K EH plus two F32 norms; generated F32 input boundary only, not complete MTP model/state",
+        "backend": "ordinary CPU Graph",
+        "actual_submissions": "3",
+        "original_role_bytes": "43048960",
+        "eh_proj_sha256": "5e72ecfbdff8f87139874ff85031dc18bc275fcd1639a3b124690c73ca3b9e07",
+        "enorm_sha256": "d96abe72c938e866b5a8bdaa8aa9f8590577f55bef6281c2e9fce892db518d97",
+        "hnorm_sha256": "e9247e9fc08ebd0ca8f14a610cfd1046a0115143f6967de9d520647149890ac2"
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-state-20261023\\tests-link1\\qwen-state-checks.exe",
+        "bytes": 140382720,
+        "sha256": "bfdb2fab13fed14fa883bbcdcb940d19dc3960070d5339f7ce5700ae116d965e"
+      },
+      "xml": {
+        "path": ".scratch\\qwen-mtp-state-20261023\\checks1\\results.xml",
+        "bytes": 4996,
+        "sha256": "6c08293811a4dfec87f86c9ad964da5c43d40a79514802950c8bd105ea863201"
+      }
+    },
+    {
+      "name": "Qwen24OriginalMtpKv.CudaOriginalPackedKvSelectsWholePrefixAndContinues",
+      "attempt": 1,
+      "attributes": {
+        "name": "CudaOriginalPackedKvSelectsWholePrefixAndContinues",
+        "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\qwen24_original_mtp_kv_test.cc",
+        "line": "395",
+        "status": "run",
+        "result": "completed",
+        "time": "0.139",
+        "timestamp": "2026-10-23T02:00:52.200",
+        "classname": "Qwen24OriginalMtpKv"
+      },
+      "properties": {
+        "scope": "original Q24 primary blk92 K/V Q5_K and K-norm F32; normalized-H one-layer KV prefix boundary only, not complete MTP model",
+        "backend": "ordinary CUDA Graph",
+        "actual_submissions": "3",
+        "prefix_protocol": "cap6/valid2/pos37; T2 selector1 -> actualhead T1 freshH2 -> oldbase originalT2(H0,H2); K/V/position atomic",
+        "original_role_bytes": "11535360",
+        "key_sha256": "a75fa3037cd5ae6b6747e9f886f698661698c61eb11b3873aa3eddce232f3fb5",
+        "value_sha256": "0d2b7efd67d8cfbf3a42ef9a7553c3d3a01ce690f91e97e08770c96eb2c4174e",
+        "knorm_sha256": "815bc7300aad77fecbbb494b15e70949ecb0e43b8ccaf2958a40afdc39737125"
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-state-20261023\\tests-link1\\qwen-state-checks.exe",
+        "bytes": 140382720,
+        "sha256": "bfdb2fab13fed14fa883bbcdcb940d19dc3960070d5339f7ce5700ae116d965e"
+      },
+      "xml": {
+        "path": ".scratch\\qwen-mtp-state-20261023\\checks1\\results.xml",
+        "bytes": 4996,
+        "sha256": "6c08293811a4dfec87f86c9ad964da5c43d40a79514802950c8bd105ea863201"
+      }
+    },
+    {
+      "name": "Qwen24OriginalMtpKv.CpuOriginalPackedKvSelectsWholePrefixAndContinues",
+      "attempt": 1,
+      "attributes": {
+        "name": "CpuOriginalPackedKvSelectsWholePrefixAndContinues",
+        "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\qwen24_original_mtp_kv_test.cc",
+        "line": "403",
+        "status": "run",
+        "result": "completed",
+        "time": "0.133",
+        "timestamp": "2026-10-23T02:00:52.339",
+        "classname": "Qwen24OriginalMtpKv"
+      },
+      "properties": {
+        "scope": "original Q24 primary blk92 K/V Q5_K and K-norm F32; normalized-H one-layer KV prefix boundary only, not complete MTP model",
+        "backend": "ordinary CPU Graph",
+        "actual_submissions": "3",
+        "prefix_protocol": "cap6/valid2/pos37; T2 selector1 -> actualhead T1 freshH2 -> oldbase originalT2(H0,H2); K/V/position atomic",
+        "original_role_bytes": "11535360",
+        "key_sha256": "a75fa3037cd5ae6b6747e9f886f698661698c61eb11b3873aa3eddce232f3fb5",
+        "value_sha256": "0d2b7efd67d8cfbf3a42ef9a7553c3d3a01ce690f91e97e08770c96eb2c4174e",
+        "knorm_sha256": "815bc7300aad77fecbbb494b15e70949ecb0e43b8ccaf2958a40afdc39737125"
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-state-20261023\\tests-link1\\qwen-state-checks.exe",
+        "bytes": 140382720,
+        "sha256": "bfdb2fab13fed14fa883bbcdcb940d19dc3960070d5339f7ce5700ae116d965e"
+      },
+      "xml": {
+        "path": ".scratch\\qwen-mtp-state-20261023\\checks1\\results.xml",
+        "bytes": 4996,
+        "sha256": "6c08293811a4dfec87f86c9ad964da5c43d40a79514802950c8bd105ea863201"
+      }
+    },
+    {
+      "name": "CpuGraphC5Parameters.Qwen24OriginalMtpCodecNormOrderAndCarry",
+      "attempt": 3,
+      "attributes": {
+        "name": "Qwen24OriginalMtpCodecNormOrderAndCarry",
+        "file": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_cpu\\../compute_models/cpu_c5_parameter_tests.h",
+        "line": "83",
+        "status": "run",
+        "result": "completed",
+        "time": "0.147",
+        "timestamp": "2026-10-23T02:13:41.764",
+        "classname": "CpuGraphC5Parameters"
+      },
+      "properties": {},
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-state-20261023\\tests-link2\\qwen-state-checks.exe",
+        "bytes": 142341632,
+        "sha256": "d53c125dff2dc359b30f00cfb7b59b788849c8e9b5299cd6dc87a70cec305d4a"
+      },
+      "xml": {
+        "path": ".scratch\\qwen-mtp-state-20261023\\checks3\\results.xml",
+        "bytes": 97765,
+        "sha256": "0f1cb0d5ac7af3b57da07452eb40894f07899d1ef935ab333b36218663bcbf64"
+      }
+    },
+    {
+      "name": "CpuGraphC5Parameters.Qwen24CompleteNextNUsesMixedRolesCacheMoeAndFullHead",
+      "attempt": 3,
+      "attributes": {
+        "name": "Qwen24CompleteNextNUsesMixedRolesCacheMoeAndFullHead",
+        "file": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_cpu\\../compute_models/cpu_c5_parameter_tests.h",
+        "line": "91",
+        "status": "run",
+        "result": "completed",
+        "time": "4.106",
+        "timestamp": "2026-10-23T02:13:41.911",
+        "classname": "CpuGraphC5Parameters"
+      },
+      "properties": {},
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-state-20261023\\tests-link2\\qwen-state-checks.exe",
+        "bytes": 142341632,
+        "sha256": "d53c125dff2dc359b30f00cfb7b59b788849c8e9b5299cd6dc87a70cec305d4a"
+      },
+      "xml": {
+        "path": ".scratch\\qwen-mtp-state-20261023\\checks3\\results.xml",
+        "bytes": 97765,
+        "sha256": "0f1cb0d5ac7af3b57da07452eb40894f07899d1ef935ab333b36218663bcbf64"
+      }
+    },
+    {
+      "name": "DSparkOriginalState.CpuEncodedMainHistoryFeedsFullDraftAndAtomicAcceptedState",
+      "attempt": 4,
+      "attributes": {
+        "name": "CpuEncodedMainHistoryFeedsFullDraftAndAtomicAcceptedState",
+        "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_original_state_consumer_test.cc",
+        "line": "598",
+        "status": "run",
+        "result": "completed",
+        "time": "56.149",
+        "timestamp": "2026-10-23T02:18:43.088",
+        "classname": "DSparkOriginalState"
+      },
+      "properties": {
+        "actual_submissions": "25",
+        "original_role_count": "11",
+        "original_role_bytes": "192576000",
+        "encoded_draft_inputs": "6",
+        "semantic_draft_outputs": "7",
+        "test_boundary_outputs": "18",
+        "proposal_numerics": "all3 original M5 wkv/norm independent Q8 decode + compensated F64 dot/norm gate on actual activation; actual postnorm BF16 then independent RoPE gate; exact actual-F32->BF16 bits; exact actual-BF16->584B codes/scales; independent actual committed/proposal carrier reader equals prepared attention F32 keys byte-for-byte",
+        "scope": "full three-stage draft HC/attention/MoE plus natural original Markov/confidence; original fc/norm and three original wkv/norm share readonly roles with accepted encoded history; prefix0/1/2, wrap, rejection, own-head continuation and retained results. Generated shared LM/embedding/other stage parameters and generated target-capture/verifier boundary, not trained target/full model or measured natural acceptance."
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-state-20261023\\tests-link3\\qwen-state-checks.exe",
+        "bytes": 140798464,
+        "sha256": "8f96e373d065761c94d5dbdc80b717b0619fb7b84b826de79db1afdb4b4a1aa1"
+      },
+      "xml": {
+        "path": ".scratch\\qwen-mtp-state-20261023\\checks4\\results.xml",
+        "bytes": 10826,
+        "sha256": "8c7d8276d6751f3c70f121539187c1f75ac9e911382415a0083babbea4318a0d"
+      }
+    },
+    {
+      "name": "DSparkOriginalState.CudaEncodedMainHistoryFeedsFullDraftAndAtomicAcceptedState",
+      "attempt": 4,
+      "attributes": {
+        "name": "CudaEncodedMainHistoryFeedsFullDraftAndAtomicAcceptedState",
+        "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_original_state_consumer_test.cc",
+        "line": "610",
+        "status": "run",
+        "result": "completed",
+        "time": "4.782",
+        "timestamp": "2026-10-23T02:20:17.803",
+        "classname": "DSparkOriginalState"
+      },
+      "properties": {
+        "actual_submissions": "25",
+        "original_role_count": "11",
+        "original_role_bytes": "192576000",
+        "encoded_draft_inputs": "6",
+        "semantic_draft_outputs": "7",
+        "test_boundary_outputs": "18",
+        "proposal_numerics": "all3 original M5 wkv/norm independent Q8 decode + compensated F64 dot/norm gate on actual activation; actual postnorm BF16 then independent RoPE gate; exact actual-F32->BF16 bits; exact actual-BF16->584B codes/scales; independent actual committed/proposal carrier reader equals prepared attention F32 keys byte-for-byte",
+        "scope": "full three-stage draft HC/attention/MoE plus natural original Markov/confidence; original fc/norm and three original wkv/norm share readonly roles with accepted encoded history; prefix0/1/2, wrap, rejection, own-head continuation and retained results. Generated shared LM/embedding/other stage parameters and generated target-capture/verifier boundary, not trained target/full model or measured natural acceptance."
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-state-20261023\\tests-link3\\qwen-state-checks.exe",
+        "bytes": 140798464,
+        "sha256": "8f96e373d065761c94d5dbdc80b717b0619fb7b84b826de79db1afdb4b4a1aa1"
+      },
+      "xml": {
+        "path": ".scratch\\qwen-mtp-state-20261023\\checks4\\results.xml",
+        "bytes": 10826,
+        "sha256": "8c7d8276d6751f3c70f121539187c1f75ac9e911382415a0083babbea4318a0d"
+      }
+    },
+    {
+      "name": "QwenMtpStateConsumer.CudaQ27WholeNextNPrefixPublishesAndContinues",
+      "attempt": 5,
+      "attributes": {
+        "name": "CudaQ27WholeNextNPrefixPublishesAndContinues",
+        "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\qwen_mtp_state_consumer_test.cc",
+        "line": "408",
+        "status": "run",
+        "result": "completed",
+        "time": "1.536",
+        "timestamp": "2026-10-23T02:23:31.853",
+        "classname": "QwenMtpStateConsumer"
+      },
+      "properties": {
+        "backend": "ordinary CUDA Graph",
+        "actual_submissions": "5",
+        "quantized_reference": "existing original-native CUDA integration oracle with matching activation codec; independent original-role F64/decoded and strict F32 local gates retained",
+        "complete_draft_resources": "6",
+        "full_vocabulary": "248320",
+        "head_shards": "61",
+        "original_role_bytes": "43048960",
+        "scope": "Q27 MAIN UD-Q4_K_M original blk64 EH/enorm/hnorm inside complete generated-parameter dense NextN; generated embedding and distinct-codec fullVhead; actual pending/hidden/fullKV/cursor/position prefix0/1/2 and eachhead continuation; no complete64-layer target or natural acceptance claim",
+        "original_native_reference_submissions": "40"
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-state-20261023\\tests-link4\\qwen-state-checks.exe",
+        "bytes": 142354944,
+        "sha256": "ac2601fcb49f89f535918408b5f455d3cdd29b28ffec3f54010ac06c658cffa9"
+      },
+      "xml": {
+        "path": ".scratch\\qwen-mtp-state-20261023\\checks5\\results.xml",
+        "bytes": 2982,
+        "sha256": "77a40c4fef2168a3c945dc90b463bb435cd265e9a71d8a99369630ac21ad589b"
+      }
+    },
+    {
+      "name": "QwenMtpStateConsumer.CudaQ24WholeNextNPrefixPublishesAndContinues",
+      "attempt": 5,
+      "attributes": {
+        "name": "CudaQ24WholeNextNPrefixPublishesAndContinues",
+        "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\qwen_mtp_state_consumer_test.cc",
+        "line": "414",
+        "status": "run",
+        "result": "completed",
+        "time": "0.984",
+        "timestamp": "2026-10-23T02:23:33.389",
+        "classname": "QwenMtpStateConsumer"
+      },
+      "properties": {
+        "backend": "ordinary CUDA Graph",
+        "actual_submissions": "5",
+        "quantized_reference": "existing original-native CUDA integration oracle with matching activation codec; independent original-role F64/decoded and strict F32 local gates retained",
+        "complete_draft_resources": "6",
+        "full_vocabulary": "248320",
+        "head_shards": "61",
+        "original_role_bytes": "11535360",
+        "scope": "Q24 MAIN UD-IQ4_XS original blk92 K/V/knorm inside complete generated-parameter MoE NextN; generated8-resident expert mapping,shared embedding/head; actual pending/hidden/fullKV/cursor/position prefix0/1/2 and eachhead continuation; no original512-expert target or natural acceptance claim",
+        "original_native_reference_submissions": "185"
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-state-20261023\\tests-link4\\qwen-state-checks.exe",
+        "bytes": 142354944,
+        "sha256": "ac2601fcb49f89f535918408b5f455d3cdd29b28ffec3f54010ac06c658cffa9"
+      },
+      "xml": {
+        "path": ".scratch\\qwen-mtp-state-20261023\\checks5\\results.xml",
+        "bytes": 2982,
+        "sha256": "77a40c4fef2168a3c945dc90b463bb435cd265e9a71d8a99369630ac21ad589b"
+      }
+    },
+    {
+      "name": "QwenMtpStateConsumer.CpuQ27WholeNextNPrefixPublishesAndContinues",
+      "attempt": 6,
+      "attributes": {
+        "name": "CpuQ27WholeNextNPrefixPublishesAndContinues",
+        "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\qwen_mtp_state_consumer_test.cc",
+        "line": "394",
+        "status": "run",
+        "result": "completed",
+        "time": "1.862",
+        "timestamp": "2026-10-23T02:23:57.724",
+        "classname": "QwenMtpStateConsumer"
+      },
+      "properties": {
+        "backend": "ordinary CPU Graph",
+        "actual_submissions": "5",
+        "quantized_reference": "unchanged CPU C5 native-codec dots; independent original-role F64/decoded and strict F32 local gates retained",
+        "complete_draft_resources": "6",
+        "full_vocabulary": "248320",
+        "head_shards": "61",
+        "original_role_bytes": "43048960",
+        "scope": "Q27 MAIN UD-Q4_K_M original blk64 EH/enorm/hnorm inside complete generated-parameter dense NextN; generated embedding and distinct-codec fullVhead; actual pending/hidden/fullKV/cursor/position prefix0/1/2 and eachhead continuation; no complete64-layer target or natural acceptance claim",
+        "original_native_reference_submissions": "0"
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-state-20261023\\tests-link4\\qwen-state-checks.exe",
+        "bytes": 142354944,
+        "sha256": "ac2601fcb49f89f535918408b5f455d3cdd29b28ffec3f54010ac06c658cffa9"
+      },
+      "xml": {
+        "path": ".scratch\\qwen-mtp-state-20261023\\checks6\\results.xml",
+        "bytes": 2884,
+        "sha256": "429620ebd08a733ca823184650391391a26e1a684b0a60f623b3f7bbac00c545"
+      }
+    },
+    {
+      "name": "QwenMtpStateConsumer.CpuQ24WholeNextNPrefixPublishesAndContinues",
+      "attempt": 6,
+      "attributes": {
+        "name": "CpuQ24WholeNextNPrefixPublishesAndContinues",
+        "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\qwen_mtp_state_consumer_test.cc",
+        "line": "400",
+        "status": "run",
+        "result": "completed",
+        "time": "1.427",
+        "timestamp": "2026-10-23T02:23:59.587",
+        "classname": "QwenMtpStateConsumer"
+      },
+      "properties": {
+        "backend": "ordinary CPU Graph",
+        "actual_submissions": "5",
+        "quantized_reference": "unchanged CPU C5 native-codec dots; independent original-role F64/decoded and strict F32 local gates retained",
+        "complete_draft_resources": "6",
+        "full_vocabulary": "248320",
+        "head_shards": "61",
+        "original_role_bytes": "11535360",
+        "scope": "Q24 MAIN UD-IQ4_XS original blk92 K/V/knorm inside complete generated-parameter MoE NextN; generated8-resident expert mapping,shared embedding/head; actual pending/hidden/fullKV/cursor/position prefix0/1/2 and eachhead continuation; no original512-expert target or natural acceptance claim",
+        "original_native_reference_submissions": "0"
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-state-20261023\\tests-link4\\qwen-state-checks.exe",
+        "bytes": 142354944,
+        "sha256": "ac2601fcb49f89f535918408b5f455d3cdd29b28ffec3f54010ac06c658cffa9"
+      },
+      "xml": {
+        "path": ".scratch\\qwen-mtp-state-20261023\\checks6\\results.xml",
+        "bytes": 2884,
+        "sha256": "429620ebd08a733ca823184650391391a26e1a684b0a60f623b3f7bbac00c545"
+      }
+    },
+    {
+      "name": "DSparkOriginalState.CpuOriginalSharedVocabularyFeedsFullDraftAndAtomicAcceptedState",
+      "attempt": 7,
+      "attributes": {
+        "name": "CpuOriginalSharedVocabularyFeedsFullDraftAndAtomicAcceptedState",
+        "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_original_state_consumer_test.cc",
+        "line": "605",
+        "status": "run",
+        "result": "completed",
+        "time": "38.61",
+        "timestamp": "2026-10-23T02:27:34.712",
+        "classname": "DSparkOriginalState"
+      },
+      "properties": {
+        "actual_submissions": "25",
+        "original_role_count": "13",
+        "original_role_bytes": "2310699520",
+        "encoded_draft_inputs": "6",
+        "semantic_draft_outputs": "7",
+        "test_boundary_outputs": "20",
+        "proposal_numerics": "all3 original M5 wkv/norm independent Q8 decode + compensated F64 dot/norm gate on actual activation; actual postnorm BF16 then independent RoPE gate; exact actual-F32->BF16 bits; exact actual-BF16->584B codes/scales; independent actual committed/proposal carrier reader equals prepared attention F32 keys byte-for-byte",
+        "full_vocabulary_lm_values_checked": "646400",
+        "lm_reference_episodes": "1",
+        "confidence_numerics": "every-episode independent original BF16 coefficients and actual widened-BF16 rawhidden/actualBF16 Markov dot; exact-F32-product/nonFTZ/overflow preconditions; analytic gamma4352(F32)+F64 absolute-product bound; old relative-gate exceedances/error/sumabs/maxratio in stdout, generated gate unchanged",
+        "shared_vocabulary": "formal Flash0731 BF16 full embedding/head, target-owned immutable banks; no dense F32 LM weight shadow",
+        "scope": "original shared BF16 full-V embedding/head plus original Q8 DSpark eleven roles, complete three-stage generated remainder and generated target-capture/verifier boundary; all-V greedy and exact actual embedding rows, first-episode independent full-V F64 LM/error propagation, unchanged Markov cancellation/IDs gates, independent actual-input4352-term confidence error bound; prefix0/1/2, wrap, own-head continuation, old results and collection. Not main UD-Q4 vocabulary, full official BF16 target/stages, natural acceptance or throughput."
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-state-20261023\\tests-link5\\qwen-state-checks.exe",
+        "bytes": 142596608,
+        "sha256": "b905c23ba4674e8ea611c51f6d453b1e4cebc85adc6946c0210a42402c133e0e"
+      },
+      "xml": {
+        "path": ".scratch\\qwen-mtp-state-20261023\\checks7\\results.xml",
+        "bytes": 5028,
+        "sha256": "161ff5ac54e6bfe0b2330acf14d494423745271330b3dc8a417e91f1ed52bb0e"
+      }
+    },
+    {
+      "name": "DSparkOriginalState.CudaOriginalSharedVocabularyFeedsFullDraftAndAtomicAcceptedState",
+      "attempt": 7,
+      "attributes": {
+        "name": "CudaOriginalSharedVocabularyFeedsFullDraftAndAtomicAcceptedState",
+        "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_original_state_consumer_test.cc",
+        "line": "617",
+        "status": "run",
+        "result": "completed",
+        "time": "9.141",
+        "timestamp": "2026-10-23T02:28:13.323",
+        "classname": "DSparkOriginalState"
+      },
+      "properties": {
+        "actual_submissions": "25",
+        "original_role_count": "13",
+        "original_role_bytes": "2310699520",
+        "encoded_draft_inputs": "6",
+        "semantic_draft_outputs": "7",
+        "test_boundary_outputs": "20",
+        "proposal_numerics": "all3 original M5 wkv/norm independent Q8 decode + compensated F64 dot/norm gate on actual activation; actual postnorm BF16 then independent RoPE gate; exact actual-F32->BF16 bits; exact actual-BF16->584B codes/scales; independent actual committed/proposal carrier reader equals prepared attention F32 keys byte-for-byte",
+        "full_vocabulary_lm_values_checked": "646400",
+        "lm_reference_episodes": "1",
+        "confidence_numerics": "every-episode independent original BF16 coefficients and actual widened-BF16 rawhidden/actualBF16 Markov dot; exact-F32-product/nonFTZ/overflow preconditions; analytic gamma4352(F32)+F64 absolute-product bound; old relative-gate exceedances/error/sumabs/maxratio in stdout, generated gate unchanged",
+        "shared_vocabulary": "formal Flash0731 BF16 full embedding/head, target-owned immutable banks; no dense F32 LM weight shadow",
+        "scope": "original shared BF16 full-V embedding/head plus original Q8 DSpark eleven roles, complete three-stage generated remainder and generated target-capture/verifier boundary; all-V greedy and exact actual embedding rows, first-episode independent full-V F64 LM/error propagation, unchanged Markov cancellation/IDs gates, independent actual-input4352-term confidence error bound; prefix0/1/2, wrap, own-head continuation, old results and collection. Not main UD-Q4 vocabulary, full official BF16 target/stages, natural acceptance or throughput."
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-state-20261023\\tests-link5\\qwen-state-checks.exe",
+        "bytes": 142596608,
+        "sha256": "b905c23ba4674e8ea611c51f6d453b1e4cebc85adc6946c0210a42402c133e0e"
+      },
+      "xml": {
+        "path": ".scratch\\qwen-mtp-state-20261023\\checks7\\results.xml",
+        "bytes": 5028,
+        "sha256": "161ff5ac54e6bfe0b2330acf14d494423745271330b3dc8a417e91f1ed52bb0e"
+      }
+    }
+  ],
+  "counted_model_graph_submissions": 132,
+  "graph_count_scope": "Only12 cases record actual_submissions; the two passed legacyC5 cases do not publish a count and are excluded from132. Not a count of every successful/failed exploratory submission.",
+  "extra_original_native_CUDA_reference_submissions": 225,
+  "references": "225 raw original-native integration references check generated GPU codec wiring; not independent math kernels and not consumer Graph submissions. Original-role decoded/F64 and local F32 gates remain separate.",
+  "complete_runs": [
+    {
+      "process": {
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-state-20261023\\tests-link1\\qwen-state-checks.exe",
+          "--gtest_filter=*",
+          "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-state-20261023\\checks1\\results.xml"
+        ],
+        "cwd": "C:\\public\\project-hyle\\hyle",
+        "started": 1792692050.6874623,
+        "timeout_seconds": 900,
+        "throughput_evidence": false,
+        "memory_evidence": false,
+        "trace": false,
+        "profiler": false,
+        "pid": 4600,
+        "exit": 0,
+        "timed_out": false,
+        "finished": 1792692052.6168873,
+        "process_wall_seconds": 1.9288994000016828
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-state-20261023\\tests-link1\\qwen-state-checks.exe",
+        "bytes": 140382720,
+        "sha256": "bfdb2fab13fed14fa883bbcdcb940d19dc3960070d5339f7ce5700ae116d965e"
+      },
+      "throughput_evidence": false,
+      "physical_memory_evidence": false,
+      "whole_original_model": false,
+      "tests": 4,
+      "failures": 0,
+      "errors": 0,
+      "disabled": 0,
+      "skips": 0,
+      "cases": [
+        {
+          "attributes": {
+            "name": "CudaPrimaryQ6KRolesKeepOrderAndPriorResults",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\qwen27_original_mtp_input_test.cc",
+            "line": "251",
+            "status": "run",
+            "result": "completed",
+            "time": "0.506",
+            "timestamp": "2026-10-23T02:00:51.191",
+            "classname": "Qwen27OriginalMtpInput"
+          },
+          "properties": {
+            "scope": "original Q27 primary main-GGUF blk64 Q6_K EH plus two F32 norms; generated F32 input boundary only, not complete MTP model/state",
+            "backend": "ordinary CUDA Graph",
+            "actual_submissions": "3",
+            "original_role_bytes": "43048960",
+            "eh_proj_sha256": "5e72ecfbdff8f87139874ff85031dc18bc275fcd1639a3b124690c73ca3b9e07",
+            "enorm_sha256": "d96abe72c938e866b5a8bdaa8aa9f8590577f55bef6281c2e9fce892db518d97",
+            "hnorm_sha256": "e9247e9fc08ebd0ca8f14a610cfd1046a0115143f6967de9d520647149890ac2"
+          }
+        },
+        {
+          "attributes": {
+            "name": "CpuPrimaryQ6KRolesKeepOrderAndPriorResults",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\qwen27_original_mtp_input_test.cc",
+            "line": "260",
+            "status": "run",
+            "result": "completed",
+            "time": "0.418",
+            "timestamp": "2026-10-23T02:00:51.698",
+            "classname": "Qwen27OriginalMtpInput"
+          },
+          "properties": {
+            "scope": "original Q27 primary main-GGUF blk64 Q6_K EH plus two F32 norms; generated F32 input boundary only, not complete MTP model/state",
+            "backend": "ordinary CPU Graph",
+            "actual_submissions": "3",
+            "original_role_bytes": "43048960",
+            "eh_proj_sha256": "5e72ecfbdff8f87139874ff85031dc18bc275fcd1639a3b124690c73ca3b9e07",
+            "enorm_sha256": "d96abe72c938e866b5a8bdaa8aa9f8590577f55bef6281c2e9fce892db518d97",
+            "hnorm_sha256": "e9247e9fc08ebd0ca8f14a610cfd1046a0115143f6967de9d520647149890ac2"
+          }
+        },
+        {
+          "attributes": {
+            "name": "CudaOriginalPackedKvSelectsWholePrefixAndContinues",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\qwen24_original_mtp_kv_test.cc",
+            "line": "395",
+            "status": "run",
+            "result": "completed",
+            "time": "0.139",
+            "timestamp": "2026-10-23T02:00:52.200",
+            "classname": "Qwen24OriginalMtpKv"
+          },
+          "properties": {
+            "scope": "original Q24 primary blk92 K/V Q5_K and K-norm F32; normalized-H one-layer KV prefix boundary only, not complete MTP model",
+            "backend": "ordinary CUDA Graph",
+            "actual_submissions": "3",
+            "prefix_protocol": "cap6/valid2/pos37; T2 selector1 -> actualhead T1 freshH2 -> oldbase originalT2(H0,H2); K/V/position atomic",
+            "original_role_bytes": "11535360",
+            "key_sha256": "a75fa3037cd5ae6b6747e9f886f698661698c61eb11b3873aa3eddce232f3fb5",
+            "value_sha256": "0d2b7efd67d8cfbf3a42ef9a7553c3d3a01ce690f91e97e08770c96eb2c4174e",
+            "knorm_sha256": "815bc7300aad77fecbbb494b15e70949ecb0e43b8ccaf2958a40afdc39737125"
+          }
+        },
+        {
+          "attributes": {
+            "name": "CpuOriginalPackedKvSelectsWholePrefixAndContinues",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\qwen24_original_mtp_kv_test.cc",
+            "line": "403",
+            "status": "run",
+            "result": "completed",
+            "time": "0.133",
+            "timestamp": "2026-10-23T02:00:52.339",
+            "classname": "Qwen24OriginalMtpKv"
+          },
+          "properties": {
+            "scope": "original Q24 primary blk92 K/V Q5_K and K-norm F32; normalized-H one-layer KV prefix boundary only, not complete MTP model",
+            "backend": "ordinary CPU Graph",
+            "actual_submissions": "3",
+            "prefix_protocol": "cap6/valid2/pos37; T2 selector1 -> actualhead T1 freshH2 -> oldbase originalT2(H0,H2); K/V/position atomic",
+            "original_role_bytes": "11535360",
+            "key_sha256": "a75fa3037cd5ae6b6747e9f886f698661698c61eb11b3873aa3eddce232f3fb5",
+            "value_sha256": "0d2b7efd67d8cfbf3a42ef9a7553c3d3a01ce690f91e97e08770c96eb2c4174e",
+            "knorm_sha256": "815bc7300aad77fecbbb494b15e70949ecb0e43b8ccaf2958a40afdc39737125"
+          }
+        }
+      ]
+    },
+    {
+      "process": {
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-state-20261023\\tests-link2\\qwen-state-checks.exe",
+          "--gtest_filter=QwenMtpStateConsumer.CpuQ27WholeNextNPrefixPublishesAndContinues",
+          "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-state-20261023\\checks2\\results.xml"
+        ],
+        "cwd": "C:\\public\\project-hyle\\hyle",
+        "started": 1792692801.9520278,
+        "timeout_seconds": 900,
+        "throughput_evidence": false,
+        "memory_evidence": false,
+        "trace": false,
+        "profiler": false,
+        "pid": 38736,
+        "exit": 0,
+        "timed_out": false,
+        "finished": 1792692804.5245392,
+        "process_wall_seconds": 2.571107799998572
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-state-20261023\\tests-link2\\qwen-state-checks.exe",
+        "bytes": 142341632,
+        "sha256": "d53c125dff2dc359b30f00cfb7b59b788849c8e9b5299cd6dc87a70cec305d4a"
+      },
+      "throughput_evidence": false,
+      "physical_memory_evidence": false,
+      "whole_original_model": false,
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "disabled": 0,
+      "skips": 0,
+      "cases": [
+        {
+          "attributes": {
+            "name": "CpuQ27WholeNextNPrefixPublishesAndContinues",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\qwen_mtp_state_consumer_test.cc",
+            "line": "367",
+            "status": "run",
+            "result": "completed",
+            "time": "1.919",
+            "timestamp": "2026-10-23T02:13:22.463",
+            "classname": "QwenMtpStateConsumer"
+          },
+          "properties": {
+            "backend": "ordinary CPU Graph",
+            "actual_submissions": "5",
+            "complete_draft_resources": "6",
+            "full_vocabulary": "248320",
+            "head_shards": "61",
+            "original_role_bytes": "43048960",
+            "scope": "Q27 MAIN UD-Q4_K_M original blk64 EH/enorm/hnorm inside complete generated-parameter dense NextN; generated embedding and distinct-codec fullVhead; actual pending/hidden/fullKV/cursor/position prefix0/1/2 and eachhead continuation; no complete64-layer target or natural acceptance claim"
+          }
+        }
+      ]
+    },
+    {
+      "process": {
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-state-20261023\\tests-link2\\qwen-state-checks.exe",
+          "--gtest_filter=QwenMtpStateConsumer.CpuQ24WholeNextNPrefixPublishesAndContinues:QwenMtpStateConsumer.Cuda*:*Qwen24OriginalMtpCodecNormOrderAndCarry*:*Qwen24CompleteNextNUsesMixedRolesCacheMoeAndFullHead*",
+          "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-state-20261023\\checks3\\results.xml"
+        ],
+        "cwd": "C:\\public\\project-hyle\\hyle",
+        "started": 1792692817.9713125,
+        "timeout_seconds": 900,
+        "throughput_evidence": false,
+        "memory_evidence": false,
+        "trace": false,
+        "profiler": false,
+        "pid": 42576,
+        "exit": 1,
+        "timed_out": false,
+        "finished": 1792692826.2250292,
+        "process_wall_seconds": 8.25382449999961
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-state-20261023\\tests-link2\\qwen-state-checks.exe",
+        "bytes": 142341632,
+        "sha256": "d53c125dff2dc359b30f00cfb7b59b788849c8e9b5299cd6dc87a70cec305d4a"
+      },
+      "throughput_evidence": false,
+      "physical_memory_evidence": false,
+      "whole_original_model": false,
+      "tests": 5,
+      "failures": 2,
+      "errors": 0,
+      "disabled": 0,
+      "skips": 0,
+      "cases": [
+        {
+          "attributes": {
+            "name": "CpuQ24WholeNextNPrefixPublishesAndContinues",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\qwen_mtp_state_consumer_test.cc",
+            "line": "373",
+            "status": "run",
+            "result": "completed",
+            "time": "1.469",
+            "timestamp": "2026-10-23T02:13:38.460",
+            "classname": "QwenMtpStateConsumer"
+          },
+          "properties": {
+            "backend": "ordinary CPU Graph",
+            "actual_submissions": "5",
+            "complete_draft_resources": "6",
+            "full_vocabulary": "248320",
+            "head_shards": "61",
+            "original_role_bytes": "11535360",
+            "scope": "Q24 MAIN UD-IQ4_XS original blk92 K/V/knorm inside complete generated-parameter MoE NextN; generated8-resident expert mapping,shared embedding/head; actual pending/hidden/fullKV/cursor/position prefix0/1/2 and eachhead continuation; no original512-expert target or natural acceptance claim"
+          }
+        },
+        {
+          "attributes": {
+            "name": "CudaQ27WholeNextNPrefixPublishesAndContinues",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\qwen_mtp_state_consumer_test.cc",
+            "line": "381",
+            "status": "run",
+            "result": "completed",
+            "time": "1.088",
+            "timestamp": "2026-10-23T02:13:39.929",
+            "classname": "QwenMtpStateConsumer"
+          },
+          "properties": {}
+        },
+        {
+          "attributes": {
+            "name": "CudaQ24WholeNextNPrefixPublishesAndContinues",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\qwen_mtp_state_consumer_test.cc",
+            "line": "387",
+            "status": "run",
+            "result": "completed",
+            "time": "0.744",
+            "timestamp": "2026-10-23T02:13:41.018",
+            "classname": "QwenMtpStateConsumer"
+          },
+          "properties": {}
+        },
+        {
+          "attributes": {
+            "name": "Qwen24OriginalMtpCodecNormOrderAndCarry",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_cpu\\../compute_models/cpu_c5_parameter_tests.h",
+            "line": "83",
+            "status": "run",
+            "result": "completed",
+            "time": "0.147",
+            "timestamp": "2026-10-23T02:13:41.764",
+            "classname": "CpuGraphC5Parameters"
+          },
+          "properties": {}
+        },
+        {
+          "attributes": {
+            "name": "Qwen24CompleteNextNUsesMixedRolesCacheMoeAndFullHead",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_cpu\\../compute_models/cpu_c5_parameter_tests.h",
+            "line": "91",
+            "status": "run",
+            "result": "completed",
+            "time": "4.106",
+            "timestamp": "2026-10-23T02:13:41.911",
+            "classname": "CpuGraphC5Parameters"
+          },
+          "properties": {}
+        }
+      ]
+    },
+    {
+      "process": {
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-state-20261023\\tests-link3\\qwen-state-checks.exe",
+          "--gtest_filter=DSparkOriginalState.*",
+          "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-state-20261023\\checks4\\results.xml"
+        ],
+        "cwd": "C:\\public\\project-hyle\\hyle",
+        "started": 1792693121.9870503,
+        "timeout_seconds": 900,
+        "throughput_evidence": false,
+        "memory_evidence": false,
+        "trace": false,
+        "profiler": false,
+        "pid": 34652,
+        "exit": 1,
+        "timed_out": false,
+        "finished": 1792693231.7508812,
+        "process_wall_seconds": 109.76335990000007
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-state-20261023\\tests-link3\\qwen-state-checks.exe",
+        "bytes": 140798464,
+        "sha256": "8f96e373d065761c94d5dbdc80b717b0619fb7b84b826de79db1afdb4b4a1aa1"
+      },
+      "throughput_evidence": false,
+      "physical_memory_evidence": false,
+      "whole_original_model": false,
+      "tests": 4,
+      "failures": 1,
+      "errors": 0,
+      "disabled": 0,
+      "skips": 0,
+      "cases": [
+        {
+          "attributes": {
+            "name": "CpuEncodedMainHistoryFeedsFullDraftAndAtomicAcceptedState",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_original_state_consumer_test.cc",
+            "line": "598",
+            "status": "run",
+            "result": "completed",
+            "time": "56.149",
+            "timestamp": "2026-10-23T02:18:43.088",
+            "classname": "DSparkOriginalState"
+          },
+          "properties": {
+            "actual_submissions": "25",
+            "original_role_count": "11",
+            "original_role_bytes": "192576000",
+            "encoded_draft_inputs": "6",
+            "semantic_draft_outputs": "7",
+            "test_boundary_outputs": "18",
+            "proposal_numerics": "all3 original M5 wkv/norm independent Q8 decode + compensated F64 dot/norm gate on actual activation; actual postnorm BF16 then independent RoPE gate; exact actual-F32->BF16 bits; exact actual-BF16->584B codes/scales; independent actual committed/proposal carrier reader equals prepared attention F32 keys byte-for-byte",
+            "scope": "full three-stage draft HC/attention/MoE plus natural original Markov/confidence; original fc/norm and three original wkv/norm share readonly roles with accepted encoded history; prefix0/1/2, wrap, rejection, own-head continuation and retained results. Generated shared LM/embedding/other stage parameters and generated target-capture/verifier boundary, not trained target/full model or measured natural acceptance."
+          }
+        },
+        {
+          "attributes": {
+            "name": "CpuOriginalSharedVocabularyFeedsFullDraftAndAtomicAcceptedState",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_original_state_consumer_test.cc",
+            "line": "602",
+            "status": "run",
+            "result": "completed",
+            "time": "38.564",
+            "timestamp": "2026-10-23T02:19:39.238",
+            "classname": "DSparkOriginalState"
+          },
+          "properties": {
+            "actual_submissions": "25",
+            "original_role_count": "13",
+            "original_role_bytes": "2310699520",
+            "encoded_draft_inputs": "6",
+            "semantic_draft_outputs": "7",
+            "test_boundary_outputs": "20",
+            "proposal_numerics": "all3 original M5 wkv/norm independent Q8 decode + compensated F64 dot/norm gate on actual activation; actual postnorm BF16 then independent RoPE gate; exact actual-F32->BF16 bits; exact actual-BF16->584B codes/scales; independent actual committed/proposal carrier reader equals prepared attention F32 keys byte-for-byte",
+            "full_vocabulary_lm_values_checked": "646400",
+            "lm_reference_episodes": "1",
+            "shared_vocabulary": "formal Flash0731 BF16 full embedding/head, target-owned immutable banks; no dense F32 LM weight shadow",
+            "scope": "original shared BF16 full-V embedding/head plus original Q8 DSpark eleven roles, complete three-stage generated remainder and generated target-capture/verifier boundary; all-V greedy and exact actual embedding rows, first-episode independent full-V F64 LM/error propagation, unchanged Markov cancellation/confidence/IDs gates; prefix0/1/2, wrap, own-head continuation, old results and collection. Not main UD-Q4 vocabulary, full official BF16 target/stages, natural acceptance or throughput."
+          }
+        },
+        {
+          "attributes": {
+            "name": "CudaEncodedMainHistoryFeedsFullDraftAndAtomicAcceptedState",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_original_state_consumer_test.cc",
+            "line": "610",
+            "status": "run",
+            "result": "completed",
+            "time": "4.782",
+            "timestamp": "2026-10-23T02:20:17.803",
+            "classname": "DSparkOriginalState"
+          },
+          "properties": {
+            "actual_submissions": "25",
+            "original_role_count": "11",
+            "original_role_bytes": "192576000",
+            "encoded_draft_inputs": "6",
+            "semantic_draft_outputs": "7",
+            "test_boundary_outputs": "18",
+            "proposal_numerics": "all3 original M5 wkv/norm independent Q8 decode + compensated F64 dot/norm gate on actual activation; actual postnorm BF16 then independent RoPE gate; exact actual-F32->BF16 bits; exact actual-BF16->584B codes/scales; independent actual committed/proposal carrier reader equals prepared attention F32 keys byte-for-byte",
+            "scope": "full three-stage draft HC/attention/MoE plus natural original Markov/confidence; original fc/norm and three original wkv/norm share readonly roles with accepted encoded history; prefix0/1/2, wrap, rejection, own-head continuation and retained results. Generated shared LM/embedding/other stage parameters and generated target-capture/verifier boundary, not trained target/full model or measured natural acceptance."
+          }
+        },
+        {
+          "attributes": {
+            "name": "CudaOriginalSharedVocabularyFeedsFullDraftAndAtomicAcceptedState",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_original_state_consumer_test.cc",
+            "line": "614",
+            "status": "run",
+            "result": "completed",
+            "time": "8.87",
+            "timestamp": "2026-10-23T02:20:22.585",
+            "classname": "DSparkOriginalState"
+          },
+          "properties": {
+            "actual_submissions": "25",
+            "original_role_count": "13",
+            "original_role_bytes": "2310699520",
+            "encoded_draft_inputs": "6",
+            "semantic_draft_outputs": "7",
+            "test_boundary_outputs": "20",
+            "proposal_numerics": "all3 original M5 wkv/norm independent Q8 decode + compensated F64 dot/norm gate on actual activation; actual postnorm BF16 then independent RoPE gate; exact actual-F32->BF16 bits; exact actual-BF16->584B codes/scales; independent actual committed/proposal carrier reader equals prepared attention F32 keys byte-for-byte",
+            "full_vocabulary_lm_values_checked": "646400",
+            "lm_reference_episodes": "1",
+            "shared_vocabulary": "formal Flash0731 BF16 full embedding/head, target-owned immutable banks; no dense F32 LM weight shadow",
+            "scope": "original shared BF16 full-V embedding/head plus original Q8 DSpark eleven roles, complete three-stage generated remainder and generated target-capture/verifier boundary; all-V greedy and exact actual embedding rows, first-episode independent full-V F64 LM/error propagation, unchanged Markov cancellation/confidence/IDs gates; prefix0/1/2, wrap, own-head continuation, old results and collection. Not main UD-Q4 vocabulary, full official BF16 target/stages, natural acceptance or throughput."
+          }
+        }
+      ]
+    },
+    {
+      "process": {
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-state-20261023\\tests-link4\\qwen-state-checks.exe",
+          "--gtest_filter=QwenMtpStateConsumer.Cuda*",
+          "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-state-20261023\\checks5\\results.xml"
+        ],
+        "cwd": "C:\\public\\project-hyle\\hyle",
+        "started": 1792693411.344552,
+        "timeout_seconds": 900,
+        "throughput_evidence": false,
+        "memory_evidence": false,
+        "trace": false,
+        "profiler": false,
+        "pid": 18836,
+        "exit": 0,
+        "timed_out": false,
+        "finished": 1792693414.5375903,
+        "process_wall_seconds": 3.19237559999965
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-state-20261023\\tests-link4\\qwen-state-checks.exe",
+        "bytes": 142354944,
+        "sha256": "ac2601fcb49f89f535918408b5f455d3cdd29b28ffec3f54010ac06c658cffa9"
+      },
+      "throughput_evidence": false,
+      "physical_memory_evidence": false,
+      "whole_original_model": false,
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "disabled": 0,
+      "skips": 0,
+      "cases": [
+        {
+          "attributes": {
+            "name": "CudaQ27WholeNextNPrefixPublishesAndContinues",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\qwen_mtp_state_consumer_test.cc",
+            "line": "408",
+            "status": "run",
+            "result": "completed",
+            "time": "1.536",
+            "timestamp": "2026-10-23T02:23:31.853",
+            "classname": "QwenMtpStateConsumer"
+          },
+          "properties": {
+            "backend": "ordinary CUDA Graph",
+            "actual_submissions": "5",
+            "quantized_reference": "existing original-native CUDA integration oracle with matching activation codec; independent original-role F64/decoded and strict F32 local gates retained",
+            "complete_draft_resources": "6",
+            "full_vocabulary": "248320",
+            "head_shards": "61",
+            "original_role_bytes": "43048960",
+            "scope": "Q27 MAIN UD-Q4_K_M original blk64 EH/enorm/hnorm inside complete generated-parameter dense NextN; generated embedding and distinct-codec fullVhead; actual pending/hidden/fullKV/cursor/position prefix0/1/2 and eachhead continuation; no complete64-layer target or natural acceptance claim",
+            "original_native_reference_submissions": "40"
+          }
+        },
+        {
+          "attributes": {
+            "name": "CudaQ24WholeNextNPrefixPublishesAndContinues",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\qwen_mtp_state_consumer_test.cc",
+            "line": "414",
+            "status": "run",
+            "result": "completed",
+            "time": "0.984",
+            "timestamp": "2026-10-23T02:23:33.389",
+            "classname": "QwenMtpStateConsumer"
+          },
+          "properties": {
+            "backend": "ordinary CUDA Graph",
+            "actual_submissions": "5",
+            "quantized_reference": "existing original-native CUDA integration oracle with matching activation codec; independent original-role F64/decoded and strict F32 local gates retained",
+            "complete_draft_resources": "6",
+            "full_vocabulary": "248320",
+            "head_shards": "61",
+            "original_role_bytes": "11535360",
+            "scope": "Q24 MAIN UD-IQ4_XS original blk92 K/V/knorm inside complete generated-parameter MoE NextN; generated8-resident expert mapping,shared embedding/head; actual pending/hidden/fullKV/cursor/position prefix0/1/2 and eachhead continuation; no original512-expert target or natural acceptance claim",
+            "original_native_reference_submissions": "185"
+          }
+        }
+      ]
+    },
+    {
+      "process": {
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-state-20261023\\tests-link4\\qwen-state-checks.exe",
+          "--gtest_filter=QwenMtpStateConsumer.Cpu*",
+          "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-state-20261023\\checks6\\results.xml"
+        ],
+        "cwd": "C:\\public\\project-hyle\\hyle",
+        "started": 1792693437.237737,
+        "timeout_seconds": 900,
+        "throughput_evidence": false,
+        "memory_evidence": false,
+        "trace": false,
+        "profiler": false,
+        "pid": 39024,
+        "exit": 0,
+        "timed_out": false,
+        "finished": 1792693441.1731517,
+        "process_wall_seconds": 3.9348969999991823
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-state-20261023\\tests-link4\\qwen-state-checks.exe",
+        "bytes": 142354944,
+        "sha256": "ac2601fcb49f89f535918408b5f455d3cdd29b28ffec3f54010ac06c658cffa9"
+      },
+      "throughput_evidence": false,
+      "physical_memory_evidence": false,
+      "whole_original_model": false,
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "disabled": 0,
+      "skips": 0,
+      "cases": [
+        {
+          "attributes": {
+            "name": "CpuQ27WholeNextNPrefixPublishesAndContinues",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\qwen_mtp_state_consumer_test.cc",
+            "line": "394",
+            "status": "run",
+            "result": "completed",
+            "time": "1.862",
+            "timestamp": "2026-10-23T02:23:57.724",
+            "classname": "QwenMtpStateConsumer"
+          },
+          "properties": {
+            "backend": "ordinary CPU Graph",
+            "actual_submissions": "5",
+            "quantized_reference": "unchanged CPU C5 native-codec dots; independent original-role F64/decoded and strict F32 local gates retained",
+            "complete_draft_resources": "6",
+            "full_vocabulary": "248320",
+            "head_shards": "61",
+            "original_role_bytes": "43048960",
+            "scope": "Q27 MAIN UD-Q4_K_M original blk64 EH/enorm/hnorm inside complete generated-parameter dense NextN; generated embedding and distinct-codec fullVhead; actual pending/hidden/fullKV/cursor/position prefix0/1/2 and eachhead continuation; no complete64-layer target or natural acceptance claim",
+            "original_native_reference_submissions": "0"
+          }
+        },
+        {
+          "attributes": {
+            "name": "CpuQ24WholeNextNPrefixPublishesAndContinues",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\qwen_mtp_state_consumer_test.cc",
+            "line": "400",
+            "status": "run",
+            "result": "completed",
+            "time": "1.427",
+            "timestamp": "2026-10-23T02:23:59.587",
+            "classname": "QwenMtpStateConsumer"
+          },
+          "properties": {
+            "backend": "ordinary CPU Graph",
+            "actual_submissions": "5",
+            "quantized_reference": "unchanged CPU C5 native-codec dots; independent original-role F64/decoded and strict F32 local gates retained",
+            "complete_draft_resources": "6",
+            "full_vocabulary": "248320",
+            "head_shards": "61",
+            "original_role_bytes": "11535360",
+            "scope": "Q24 MAIN UD-IQ4_XS original blk92 K/V/knorm inside complete generated-parameter MoE NextN; generated8-resident expert mapping,shared embedding/head; actual pending/hidden/fullKV/cursor/position prefix0/1/2 and eachhead continuation; no original512-expert target or natural acceptance claim",
+            "original_native_reference_submissions": "0"
+          }
+        }
+      ]
+    },
+    {
+      "process": {
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-state-20261023\\tests-link5\\qwen-state-checks.exe",
+          "--gtest_filter=DSparkOriginalState.*OriginalSharedVocabulary*",
+          "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-state-20261023\\checks7\\results.xml"
+        ],
+        "cwd": "C:\\public\\project-hyle\\hyle",
+        "started": 1792693653.6022356,
+        "timeout_seconds": 900,
+        "throughput_evidence": false,
+        "memory_evidence": false,
+        "trace": false,
+        "profiler": false,
+        "pid": 28588,
+        "exit": 0,
+        "timed_out": false,
+        "finished": 1792693702.7561483,
+        "process_wall_seconds": 49.15286769999875
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-state-20261023\\tests-link5\\qwen-state-checks.exe",
+        "bytes": 142596608,
+        "sha256": "b905c23ba4674e8ea611c51f6d453b1e4cebc85adc6946c0210a42402c133e0e"
+      },
+      "throughput_evidence": false,
+      "physical_memory_evidence": false,
+      "whole_original_model": false,
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "disabled": 0,
+      "skips": 0,
+      "cases": [
+        {
+          "attributes": {
+            "name": "CpuOriginalSharedVocabularyFeedsFullDraftAndAtomicAcceptedState",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_original_state_consumer_test.cc",
+            "line": "605",
+            "status": "run",
+            "result": "completed",
+            "time": "38.61",
+            "timestamp": "2026-10-23T02:27:34.712",
+            "classname": "DSparkOriginalState"
+          },
+          "properties": {
+            "actual_submissions": "25",
+            "original_role_count": "13",
+            "original_role_bytes": "2310699520",
+            "encoded_draft_inputs": "6",
+            "semantic_draft_outputs": "7",
+            "test_boundary_outputs": "20",
+            "proposal_numerics": "all3 original M5 wkv/norm independent Q8 decode + compensated F64 dot/norm gate on actual activation; actual postnorm BF16 then independent RoPE gate; exact actual-F32->BF16 bits; exact actual-BF16->584B codes/scales; independent actual committed/proposal carrier reader equals prepared attention F32 keys byte-for-byte",
+            "full_vocabulary_lm_values_checked": "646400",
+            "lm_reference_episodes": "1",
+            "confidence_numerics": "every-episode independent original BF16 coefficients and actual widened-BF16 rawhidden/actualBF16 Markov dot; exact-F32-product/nonFTZ/overflow preconditions; analytic gamma4352(F32)+F64 absolute-product bound; old relative-gate exceedances/error/sumabs/maxratio in stdout, generated gate unchanged",
+            "shared_vocabulary": "formal Flash0731 BF16 full embedding/head, target-owned immutable banks; no dense F32 LM weight shadow",
+            "scope": "original shared BF16 full-V embedding/head plus original Q8 DSpark eleven roles, complete three-stage generated remainder and generated target-capture/verifier boundary; all-V greedy and exact actual embedding rows, first-episode independent full-V F64 LM/error propagation, unchanged Markov cancellation/IDs gates, independent actual-input4352-term confidence error bound; prefix0/1/2, wrap, own-head continuation, old results and collection. Not main UD-Q4 vocabulary, full official BF16 target/stages, natural acceptance or throughput."
+          }
+        },
+        {
+          "attributes": {
+            "name": "CudaOriginalSharedVocabularyFeedsFullDraftAndAtomicAcceptedState",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_original_state_consumer_test.cc",
+            "line": "617",
+            "status": "run",
+            "result": "completed",
+            "time": "9.141",
+            "timestamp": "2026-10-23T02:28:13.323",
+            "classname": "DSparkOriginalState"
+          },
+          "properties": {
+            "actual_submissions": "25",
+            "original_role_count": "13",
+            "original_role_bytes": "2310699520",
+            "encoded_draft_inputs": "6",
+            "semantic_draft_outputs": "7",
+            "test_boundary_outputs": "20",
+            "proposal_numerics": "all3 original M5 wkv/norm independent Q8 decode + compensated F64 dot/norm gate on actual activation; actual postnorm BF16 then independent RoPE gate; exact actual-F32->BF16 bits; exact actual-BF16->584B codes/scales; independent actual committed/proposal carrier reader equals prepared attention F32 keys byte-for-byte",
+            "full_vocabulary_lm_values_checked": "646400",
+            "lm_reference_episodes": "1",
+            "confidence_numerics": "every-episode independent original BF16 coefficients and actual widened-BF16 rawhidden/actualBF16 Markov dot; exact-F32-product/nonFTZ/overflow preconditions; analytic gamma4352(F32)+F64 absolute-product bound; old relative-gate exceedances/error/sumabs/maxratio in stdout, generated gate unchanged",
+            "shared_vocabulary": "formal Flash0731 BF16 full embedding/head, target-owned immutable banks; no dense F32 LM weight shadow",
+            "scope": "original shared BF16 full-V embedding/head plus original Q8 DSpark eleven roles, complete three-stage generated remainder and generated target-capture/verifier boundary; all-V greedy and exact actual embedding rows, first-episode independent full-V F64 LM/error propagation, unchanged Markov cancellation/IDs gates, independent actual-input4352-term confidence error bound; prefix0/1/2, wrap, own-head continuation, old results and collection. Not main UD-Q4 vocabulary, full official BF16 target/stages, natural acceptance or throughput."
+          }
+        }
+      ]
+    }
+  ],
+  "implementation": {
+    "qwen": "Ordinary Graph shared input/QKV/GQA builder, distinct dense/MoE tails, real pendingID->fullVembedding->normalizedhidden/KV->fullVhead->pending. Six resources atomically selected after prefix0/1/2; retained heads continue; exact NaN tail preservation. Pool-root bytes, not only logical state extents, are budgeted. Primary MAIN Q27 EH/norms and Q24 KV/norm roles injected once through shared owner/ReadLease supplier. Other roles generated.",
+    "dspark": "Formal Flash originalBF16 fullV embedding/head supplied through target-owned ReadonlyRoles and one existing cold construction path; same coefficients retainBF16 storage for mature BFloatLinearF32. Arbitrary legal actual IDs read original rows. Combined13originalroles2310699520B, original encoded main history/full three-stage draft and accepted-state journey. No full F32 LM weight bank is generated in supplied mode."
+  },
+  "repaired_observation_contracts": {
+    "cuda_quant": "Failed original CPU Q8_K activation reference was being applied to CUDA Q8_1/32. Runtime-only reference selection now uses the established native CUDA integration oracle; CPU/Graph/input/provider/fusion/tolerances unchanged. Original independent input/KV and F32 gates retained.",
+    "confidence": "Original realCPU4352-term F32 reduction differed from independentF64 by1.0789022781e-5. Former fixed relative tolerance was4.4507639408e-6. Source confirms identical actualBF16 rawhidden/Markov and BF16 coefficient values. Newreal-only analytic gamma4352F32/F64 absolute-product bound with finite/exactproduct/normalquantum/nooverflow checks; oldgenerated projection_equal unchanged. Observed firstcase sumabs26.9373978496,bound0.0069893582670,ratio0.001543635677. Graph/math/precision/greedy/IDs unchanged."
+  },
+  "numerical_observations": {
+    "original_lm_values_per_backend": 646400,
+    "CPU_LM_max_absolute_error": 8.566072210669518e-06,
+    "CUDA_LM_max_absolute_error": 0.0005308911204338074,
+    "CPU_LM_max_bound_ratio": 6.123581126772892e-05,
+    "CUDA_LM_max_bound_ratio": 0.00427271797429853,
+    "source": "checks7/stdout.log; bounded actual inputs, no cross-backend/full-model quality claim"
+  },
+  "original_payload_acquisition": {
+    "repository": "deepseek-ai/DeepSeek-V4-Flash-0731",
+    "revision": "7872f01b1d1fe23eabc4c98b48bffcef5a386062",
+    "full_model_download": false,
+    "roles": {
+      "embed.weight": {
+        "file": "model-00001-of-00048.safetensors",
+        "url": "https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash-0731/resolve/7872f01b1d1fe23eabc4c98b48bffcef5a386062/model-00001-of-00048.safetensors",
+        "dtype": "BF16",
+        "shape": [
+          129280,
+          4096
+        ],
+        "header_bytes": 88,
+        "header_sha256": "7bdd252c75d1e8975a69b8399b226f0129ce119b23da7bd68deac4ba4b1a4a40",
+        "first": 96,
+        "last": 1059061855,
+        "bytes": 1059061760,
+        "file_bytes": 1059061856,
+        "etag": "\"9f888e9926c8800db60f94d5e89b381b88747e0b9b5ca43dd1873f15e65748f9\"",
+        "chunks": [
+          {
+            "offset": 0,
+            "bytes": 16777216,
+            "sha256": "63236a009aafa905543a616117af590cc8e449d18faa6063f5e932ced50031f2"
+          },
+          {
+            "offset": 16777216,
+            "bytes": 16777216,
+            "sha256": "db2bcd1a527b83a9a2db1e8a27f803601cef3c41f974e08f7da1093c52bdae7e"
+          },
+          {
+            "offset": 33554432,
+            "bytes": 16777216,
+            "sha256": "026e00b82cab64aab98b3fc050dcda9614bf79ea0e82096e2ff8c4c6e593e8ea"
+          },
+          {
+            "offset": 50331648,
+            "bytes": 16777216,
+            "sha256": "8fd05cc57ff0498c01382add5f8ddc949ab737cf0f6daaf88f59595977fa7734"
+          },
+          {
+            "offset": 67108864,
+            "bytes": 16777216,
+            "sha256": "567ec759241e545bf4a4780983efef49e10ce225a3989c745563fee1c1f04eff"
+          },
+          {
+            "offset": 83886080,
+            "bytes": 16777216,
+            "sha256": "bd93ebc76da4ee32999cb5cf2c2871da4a33c62fc7facde862ddc4c3c3d3b92d"
+          },
+          {
+            "offset": 100663296,
+            "bytes": 16777216,
+            "sha256": "b40918dc6a7dc1c926d4a3494e2a114d65357cabc21a7cc5fc9d253ea50e8fa4"
+          },
+          {
+            "offset": 117440512,
+            "bytes": 16777216,
+            "sha256": "806d84b4cb02cc299aef2ee1076f3f0f53f66abc2eac00129bc17aff4d5653de"
+          },
+          {
+            "offset": 134217728,
+            "bytes": 16777216,
+            "sha256": "fd4f7e25ef92668ea421535c22c0103fdea002211bb3c2110db252d86281e5d8"
+          },
+          {
+            "offset": 150994944,
+            "bytes": 16777216,
+            "sha256": "0517a0f3ab139df54b9b3023d4d3cccac2dbb48b6ef932c345a23f6ab778f389"
+          },
+          {
+            "offset": 167772160,
+            "bytes": 16777216,
+            "sha256": "bbeb3a37fc2f93ee0feb0f944b0addc350bd2bede2ffa211a897ff20598625d3"
+          },
+          {
+            "offset": 184549376,
+            "bytes": 16777216,
+            "sha256": "9e494e3acc103161f979ddba242d6b35ac3140c57c9498777e513e154773b5ce"
+          },
+          {
+            "offset": 201326592,
+            "bytes": 16777216,
+            "sha256": "c30f440cbf7ca2f4636e59c31d80849ee9df3556b482c23f7fbcfb4981827438"
+          },
+          {
+            "offset": 218103808,
+            "bytes": 16777216,
+            "sha256": "c69ecb849246e046542b658c3fd1ec61d35f9a31c0c4d29800a27ea9e2006bda"
+          },
+          {
+            "offset": 234881024,
+            "bytes": 16777216,
+            "sha256": "4533840697b10dcfdbec86cc752d2ca3c3ab20f7b113cc3088a054efc4f4b8d4"
+          },
+          {
+            "offset": 251658240,
+            "bytes": 16777216,
+            "sha256": "5599ddbcf56df3a8760ea458ccf355e741f112d552409b771b0ba9988dd1564b"
+          },
+          {
+            "offset": 268435456,
+            "bytes": 16777216,
+            "sha256": "8c751c25249b0d3f3019093bce566f0600d977e7a816986b2db22b3f28f7c973"
+          },
+          {
+            "offset": 285212672,
+            "bytes": 16777216,
+            "sha256": "6ef4e007b214ab835b7e995aeb54cbe0cf3940d1d6f4c6d31cf5bcc45be3f9d3"
+          },
+          {
+            "offset": 301989888,
+            "bytes": 16777216,
+            "sha256": "01f366be4572bbb887f69e8592a2fffb875b10ee7c3d8ee25b04384bee46bc03"
+          },
+          {
+            "offset": 318767104,
+            "bytes": 16777216,
+            "sha256": "a6989330983650000f12325beecbf24c67194ca211ab8db92910ddf05239a5ca"
+          },
+          {
+            "offset": 335544320,
+            "bytes": 16777216,
+            "sha256": "ae923d688bb0878b74e46d9390491d52147a3a5a240ae14611af6eb7bc917a92"
+          },
+          {
+            "offset": 352321536,
+            "bytes": 16777216,
+            "sha256": "4058a9997bfe99ba8c0f50beccdf105cc760e5354130c0790e463a6bfb89bfd3"
+          },
+          {
+            "offset": 369098752,
+            "bytes": 16777216,
+            "sha256": "21941f97e3bd026abd3c67d7ca298b723876c68f12a7cc2e95665cf944dce72f"
+          },
+          {
+            "offset": 385875968,
+            "bytes": 16777216,
+            "sha256": "45f6080c078ca925e7db23beeb89f33c22db666b7ac16769be1d3c57e96c2c2c"
+          },
+          {
+            "offset": 402653184,
+            "bytes": 16777216,
+            "sha256": "0d11a88fd8a9438c3f7e17cb3d0b4d3e8341860d10e5df0f90537cac15e3e732"
+          },
+          {
+            "offset": 419430400,
+            "bytes": 16777216,
+            "sha256": "f5acd462de531ed7d4d2e9b5908e85170a38b8d113a6ce7db98e4bb951688c0b"
+          },
+          {
+            "offset": 436207616,
+            "bytes": 16777216,
+            "sha256": "6ba0bb28675d1915f91d9a25c17050767732efef28b36a8cd9445fc86ea2f478"
+          },
+          {
+            "offset": 452984832,
+            "bytes": 16777216,
+            "sha256": "4f411142f1cbb32de06c884402358a2d8d92ace45a6d5c402785b0b3d801c812"
+          },
+          {
+            "offset": 469762048,
+            "bytes": 16777216,
+            "sha256": "5afff9076aeb5c8a8f4f4c7c0d0c23fadbb8485bc38c11822f7f6b8e19877468"
+          },
+          {
+            "offset": 486539264,
+            "bytes": 16777216,
+            "sha256": "5d3d02df4c7038125da13521141b1865b0f225e6d12a314819b76890462f96d4"
+          },
+          {
+            "offset": 503316480,
+            "bytes": 16777216,
+            "sha256": "3e5d15741e1915926acff504d8b95aa28b624bd2777890eb70c96662491cc7c5"
+          },
+          {
+            "offset": 520093696,
+            "bytes": 16777216,
+            "sha256": "304f6e9f91288ebfa5eb149120c51a38a78f5953a0d53d1997baf7528faf2c68"
+          },
+          {
+            "offset": 536870912,
+            "bytes": 16777216,
+            "sha256": "62d94c07ba2b123f8cd629c0bc3a527c0d3e42f255670df3527c6afd8675c16d"
+          },
+          {
+            "offset": 553648128,
+            "bytes": 16777216,
+            "sha256": "e68969d75c9d0dd866dfa309ace083e35fda9fac04b31a7f85c229d7c8d318f6"
+          },
+          {
+            "offset": 570425344,
+            "bytes": 16777216,
+            "sha256": "f021f94055bc5862ac7783d67b7a08f5a6acb03125b4b8e5bae45459bdb1fe45"
+          },
+          {
+            "offset": 587202560,
+            "bytes": 16777216,
+            "sha256": "bf1b3ecb51f3418bd3d2fde13f5fd4a1873efefef750f805d568a7f3e73e7a04"
+          },
+          {
+            "offset": 603979776,
+            "bytes": 16777216,
+            "sha256": "6def1d82e65e0d88256a17c2c1ad538207215b9489da67ff81bd5e103f6a5852"
+          },
+          {
+            "offset": 620756992,
+            "bytes": 16777216,
+            "sha256": "7b9f736e27ae4fc576ea5cf666a4efd2d609f00d0cd0aacbb59ae092c42da4f3"
+          },
+          {
+            "offset": 637534208,
+            "bytes": 16777216,
+            "sha256": "b195d499ec4739933c19c7e6b12c1194658bca4b51ced708c6fea2e4ce666e30"
+          },
+          {
+            "offset": 654311424,
+            "bytes": 16777216,
+            "sha256": "5fc8106e3b4e3aad892c3afbc1cdeec8f6546a6a87483bf772f1ccd4dd4736e7"
+          },
+          {
+            "offset": 671088640,
+            "bytes": 16777216,
+            "sha256": "8e830327d2c22f90947d30319fd6e44ae1a8d8a3313c303ed1e796358f76dc23"
+          },
+          {
+            "offset": 687865856,
+            "bytes": 16777216,
+            "sha256": "3cdc1bc81b265c8781447ed6f159c7b3ced3e3f8257d3ddc1fb324032fbc64e0"
+          },
+          {
+            "offset": 704643072,
+            "bytes": 16777216,
+            "sha256": "cab54febe37cafe4a37f0b6a266b28628e54cb975e0008f3a86ff3f490383efd"
+          },
+          {
+            "offset": 721420288,
+            "bytes": 16777216,
+            "sha256": "63f1519400fddb983599b25e1ca5bbdf0e38477c1b63c77fcd917335f07620b2"
+          },
+          {
+            "offset": 738197504,
+            "bytes": 16777216,
+            "sha256": "f911836a90e5bf484050f0caab6f837b0c81d25315d72dca56c176ce5f1d9ced"
+          },
+          {
+            "offset": 754974720,
+            "bytes": 16777216,
+            "sha256": "6dd651730857c7127cfcb4ac1577ac4ff0c9c7c144a8803eeaf0d4f6cb9462f2"
+          },
+          {
+            "offset": 771751936,
+            "bytes": 16777216,
+            "sha256": "501177d395d3f8a242932b2dcc2784f4ae0b2e13ee2511efc88a0949e8bb5ace"
+          },
+          {
+            "offset": 788529152,
+            "bytes": 16777216,
+            "sha256": "72a1c74f2ba9e61f750a650c7d91da5ae6a86a2c072a4886e0af115150c7e612"
+          },
+          {
+            "offset": 805306368,
+            "bytes": 16777216,
+            "sha256": "a0ea0f9595dfb019940732dc77406ca473c4ce225efc85e28b4d00622b8d61e9"
+          },
+          {
+            "offset": 822083584,
+            "bytes": 16777216,
+            "sha256": "9df4ba08d8995db308ad3e7e8da496bcefefc9f250c9c1dbd9b1e16214880dd3"
+          },
+          {
+            "offset": 838860800,
+            "bytes": 16777216,
+            "sha256": "2addf280ad50b2db078b5918639d38b2e6a07a9f9f67a87c265b79d43b084f7c"
+          },
+          {
+            "offset": 855638016,
+            "bytes": 16777216,
+            "sha256": "13c881b506a8f8dea27a41ac7601051fac30c00709245944bc4453c1e5e91cbb"
+          },
+          {
+            "offset": 872415232,
+            "bytes": 16777216,
+            "sha256": "071bfac22385c830fde11f00fdfee6df3db8707190f2a50cc3031337146b07b3"
+          },
+          {
+            "offset": 889192448,
+            "bytes": 16777216,
+            "sha256": "837c138ed1e9f3183fcf0fa17d2efaf01533f0265ba4510836083e861ac5bc0c"
+          },
+          {
+            "offset": 905969664,
+            "bytes": 16777216,
+            "sha256": "7848b52f9a79bcd5e8eb33359144f0f0809b0974c53e6d1f0587d6a6d94812be"
+          },
+          {
+            "offset": 922746880,
+            "bytes": 16777216,
+            "sha256": "e66c11a2f14ab8a019926e68e56344709c1f252a5e3001466bdc21beeaf0302c"
+          },
+          {
+            "offset": 939524096,
+            "bytes": 16777216,
+            "sha256": "a235888fb392c7a29b3f89cc66429b162427d06ad0f4a1765f569407c95e0254"
+          },
+          {
+            "offset": 956301312,
+            "bytes": 16777216,
+            "sha256": "9f282c8fc00695747e7b4c596b0963a640003b258aa2bfbafc4b9075f17c4cda"
+          },
+          {
+            "offset": 973078528,
+            "bytes": 16777216,
+            "sha256": "e70479bd84ae1073ed1976f0a7f86e95d6b31b7034314eb0ae904fc4777b9832"
+          },
+          {
+            "offset": 989855744,
+            "bytes": 16777216,
+            "sha256": "c9711267a469d9c076bf4a17deaad82e8c8d851ad9d33a4e8d39ad2867126dc1"
+          },
+          {
+            "offset": 1006632960,
+            "bytes": 16777216,
+            "sha256": "d9f602747389ab1d4d3182e5516ead3ad3cb5a5302e3ccac8a261fd731658b44"
+          },
+          {
+            "offset": 1023410176,
+            "bytes": 16777216,
+            "sha256": "16d9a5c802e40c6c1c2ab1159f401669efc2b5e677e1de6e4cf4a349158e39b8"
+          },
+          {
+            "offset": 1040187392,
+            "bytes": 16777216,
+            "sha256": "1e3a8cbf33641ed0e821ffbd357d5f923e451628173802c2edbb1002f158db67"
+          },
+          {
+            "offset": 1056964608,
+            "bytes": 2097152,
+            "sha256": "be54b2a6e909342f7f03781799d58fd0f74b2341fa7577ea6c646043e70ac75e"
+          }
+        ],
+        "complete": true,
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-state-20261023\\original-dspark-vocabulary\\embed.weight.bf16",
+        "sha256": "c05019ecf9435fa47cdcbb35df74c8ade6c4ceedd6ebe75db9ea7a607f6ad2ef"
+      },
+      "head.weight": {
+        "file": "model-00045-of-00048.safetensors",
+        "url": "https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash-0731/resolve/7872f01b1d1fe23eabc4c98b48bffcef5a386062/model-00045-of-00048.safetensors",
+        "dtype": "BF16",
+        "shape": [
+          129280,
+          4096
+        ],
+        "header_bytes": 392,
+        "header_sha256": "76d10bb3b022bad26446539ebaf16c9245fdcf835b28fd55a75052e0b0bb60b8",
+        "first": 262564,
+        "last": 1059324323,
+        "bytes": 1059061760,
+        "file_bytes": 1059332516,
+        "etag": "\"4eac8a30189eb52d150bd80861ca98c6c66de02b1f00ce2915b1d0c5baebbba3\"",
+        "chunks": [
+          {
+            "offset": 0,
+            "bytes": 16777216,
+            "sha256": "ffea7576694ec56e8969850909303e656cdb9910d9524f034ee588444df97804"
+          },
+          {
+            "offset": 16777216,
+            "bytes": 16777216,
+            "sha256": "124f915aa4634d8106b37df8a91ae03d48c4c5baaf1ea19e35113601591b87fe"
+          },
+          {
+            "offset": 33554432,
+            "bytes": 16777216,
+            "sha256": "9a07be382345b879e671410bdd654bc64569e18d9342b6d7a6a2fed5501628c7"
+          },
+          {
+            "offset": 50331648,
+            "bytes": 16777216,
+            "sha256": "9ddf80668d3adb39de38b19201aca715b5e0b3181558735b58df12ecb4c5927d"
+          },
+          {
+            "offset": 67108864,
+            "bytes": 16777216,
+            "sha256": "70cdefebd7f2699a6a1d711bd6d989ab44f2c4bd5e69758feb1717f37a75d4a2"
+          },
+          {
+            "offset": 83886080,
+            "bytes": 16777216,
+            "sha256": "e20fc58d0cd34fc2a079501859876f5456962be458829e5e4f81e02f3e95729a"
+          },
+          {
+            "offset": 100663296,
+            "bytes": 16777216,
+            "sha256": "e7c3c3ec05ad7ce404ccad66bde710adc67e523ef2badbb05377d5f8ebc003b0"
+          },
+          {
+            "offset": 117440512,
+            "bytes": 16777216,
+            "sha256": "e85ad4888ecc460f0112f0d51b00aa600880c3da78306bdc4b8b851bed8421f5"
+          },
+          {
+            "offset": 134217728,
+            "bytes": 16777216,
+            "sha256": "f17b4fb4fc10d9f2d9b14271bcfa72d262aaaf812957e1dc4945f7994ec37c23"
+          },
+          {
+            "offset": 150994944,
+            "bytes": 16777216,
+            "sha256": "27f384e34628587cfb7168afd63164d37d0c0a330395c3ae7810f376828b68b0"
+          },
+          {
+            "offset": 167772160,
+            "bytes": 16777216,
+            "sha256": "d2013e4e7fa089452169d11b66d0acbe5b894c55309dc5c86e27f7e73d553ed9"
+          },
+          {
+            "offset": 184549376,
+            "bytes": 16777216,
+            "sha256": "328faba2fae24535d79cf9b1e35a030038bff7cb6461a1b94d973223c157eed6"
+          },
+          {
+            "offset": 201326592,
+            "bytes": 16777216,
+            "sha256": "85cd5b2603a27180fa9dfae57540ef33adcd37d5f00426920472ad3dacc309b6"
+          },
+          {
+            "offset": 218103808,
+            "bytes": 16777216,
+            "sha256": "68a7a3115df491856e900c86b7a67d446e2d4e3663099e1fa2c942497fab03d5"
+          },
+          {
+            "offset": 234881024,
+            "bytes": 16777216,
+            "sha256": "a7262a0fe82c589905b3122a9dde21005c1c9d5e87b7c3009c483b42d5856cbf"
+          },
+          {
+            "offset": 251658240,
+            "bytes": 16777216,
+            "sha256": "d160035f5cf9c0782c306105d963ab797442e92715764f28947f3099f491fa66"
+          },
+          {
+            "offset": 268435456,
+            "bytes": 16777216,
+            "sha256": "74c26af48b0f7a09c830fbb595b98cb84be78eb54363ec11bd8dc87927353dcd"
+          },
+          {
+            "offset": 285212672,
+            "bytes": 16777216,
+            "sha256": "76db881fa641962dd4654c21673f0c406aa44ff3c09c19031d5a1eebc216c855"
+          },
+          {
+            "offset": 301989888,
+            "bytes": 16777216,
+            "sha256": "79a99ff62a92895f3b3e21e809ce5d84bcb06f21b9e97de4ff64af61218ac571"
+          },
+          {
+            "offset": 318767104,
+            "bytes": 16777216,
+            "sha256": "39e0c162a77b1c6e518648d9a35fcfdf1aed5f6679303a2433c7170c9d15c7bf"
+          },
+          {
+            "offset": 335544320,
+            "bytes": 16777216,
+            "sha256": "fc879e4db49572132230f1d19c75da84b47d522c6ee791d43d11805f3e052456"
+          },
+          {
+            "offset": 352321536,
+            "bytes": 16777216,
+            "sha256": "9de0e9dd148e35b4ccaea168a4e2b3490e89c6d34fbda220b25e84af49bc7e74"
+          },
+          {
+            "offset": 369098752,
+            "bytes": 16777216,
+            "sha256": "872771715c29c274d87fe9a2d346dd57912dd1312ea58a6273ab2839fd9182d6"
+          },
+          {
+            "offset": 385875968,
+            "bytes": 16777216,
+            "sha256": "d43a3c58d7d61dc6234ee3f4d08de11cd036aa934c109702f99016116fa69dfa"
+          },
+          {
+            "offset": 402653184,
+            "bytes": 16777216,
+            "sha256": "15597e62e9b5ed813b04a1776d7341f201bea871d1b459e5b3991d42c15b027c"
+          },
+          {
+            "offset": 419430400,
+            "bytes": 16777216,
+            "sha256": "0546e9889a910256b7f5282d7b8b3f753a383632844ca09f2eb6976c092f47de"
+          },
+          {
+            "offset": 436207616,
+            "bytes": 16777216,
+            "sha256": "6b2b3eb74e0d8b23e0e00e53395449bb929a43e9ed23456d93d8f11d907f7675"
+          },
+          {
+            "offset": 452984832,
+            "bytes": 16777216,
+            "sha256": "67e94da9d1a9bbb72695c78c1a896d271e5c5afc8d09389d6069442f16581e85"
+          },
+          {
+            "offset": 469762048,
+            "bytes": 16777216,
+            "sha256": "ee243338bec9f6e0bb22fc9d554542f6b566ea1cc6d2710d88b5c76a49219d6a"
+          },
+          {
+            "offset": 486539264,
+            "bytes": 16777216,
+            "sha256": "babd5723693df3c3abf4dc6f76b366fb72048e7825b6207a742d07e92f4c5e30"
+          },
+          {
+            "offset": 503316480,
+            "bytes": 16777216,
+            "sha256": "31f869ae89139ce507aeb4b4b1e5443593896bbdd84a3aed336f815899950288"
+          },
+          {
+            "offset": 520093696,
+            "bytes": 16777216,
+            "sha256": "55022f108fc678c302fd43e8f971891ed8e9b0069e361e23a1d5fbb97a21553d"
+          },
+          {
+            "offset": 536870912,
+            "bytes": 16777216,
+            "sha256": "5c98e857ceec0d4a34f766d64d41f4b802b513e3b2f3e2b68c4e1a908dc99bff"
+          },
+          {
+            "offset": 553648128,
+            "bytes": 16777216,
+            "sha256": "c57bb88c2fa83e30658c1c04e74df22a4782319e28ad24ff18ddc87772070308"
+          },
+          {
+            "offset": 570425344,
+            "bytes": 16777216,
+            "sha256": "677ae37e056714d87fafe23561393f66f47c1d8b9f4ffadf7b84477500c6d44b"
+          },
+          {
+            "offset": 587202560,
+            "bytes": 16777216,
+            "sha256": "b1f74c5a5d666aa803e7028b21e62117a34176b5465113cdecc164ba32471a18"
+          },
+          {
+            "offset": 603979776,
+            "bytes": 16777216,
+            "sha256": "69414642ee19adc278606aff0718c48f88df4908676e08b56d52c6bd743906e1"
+          },
+          {
+            "offset": 620756992,
+            "bytes": 16777216,
+            "sha256": "1515b12ef4e68fcbe0a46a906574b24ab5dc0001cccec2958bed07e3c43ab890"
+          },
+          {
+            "offset": 637534208,
+            "bytes": 16777216,
+            "sha256": "8aaee6a543c9b2fb4deeec451d312ca1295094fad1b4548d127c98494a5916c4"
+          },
+          {
+            "offset": 654311424,
+            "bytes": 16777216,
+            "sha256": "9b8215eb273de8c8f7b3078c58b14320d6b60e8d40c131a668db15acdd7717cc"
+          },
+          {
+            "offset": 671088640,
+            "bytes": 16777216,
+            "sha256": "a978e2f0044ca2827b8493cb4dc333c3a4742ec207c31c41a33a8a65f56f82df"
+          },
+          {
+            "offset": 687865856,
+            "bytes": 16777216,
+            "sha256": "de2099b52460600a88cbb3213848ef66485327950de307be8b0f79947835afdd"
+          },
+          {
+            "offset": 704643072,
+            "bytes": 16777216,
+            "sha256": "29b856d8086440ffcbcc8b8411982505e20857d08467f3509bf70913297b4ff6"
+          },
+          {
+            "offset": 721420288,
+            "bytes": 16777216,
+            "sha256": "1af2d3fcb4639814716b55863cfb21c91206905a461c896a724c45e4f0226b9c"
+          },
+          {
+            "offset": 738197504,
+            "bytes": 16777216,
+            "sha256": "4353c697cd20599acd699ba55a0ecf61d54f3d51bead5d5490458bb1d378777c"
+          },
+          {
+            "offset": 754974720,
+            "bytes": 16777216,
+            "sha256": "23e5cf20441263203270ec53f18dc2664a3fe972311b0fc74058e361514764d6"
+          },
+          {
+            "offset": 771751936,
+            "bytes": 16777216,
+            "sha256": "b479d5ebf024007b84671ab538565a7c6af260c8fd1badc65f64958ddf204538"
+          },
+          {
+            "offset": 788529152,
+            "bytes": 16777216,
+            "sha256": "20729edece706d152cba469239d3e1ba00029751964a19c5074c7dbcc1a784ea"
+          },
+          {
+            "offset": 805306368,
+            "bytes": 16777216,
+            "sha256": "e9a2236432a5e927eb9dc3673106154e5758a1986afc2b5f35d4842849aac76c"
+          },
+          {
+            "offset": 822083584,
+            "bytes": 16777216,
+            "sha256": "b0cddae0db42c43b8c36e77f1b79a96a6fcfe660b07fd650214444e1ecebaaf3"
+          },
+          {
+            "offset": 838860800,
+            "bytes": 16777216,
+            "sha256": "80d7a2ed7bd36dc6159224daa0cb8a3b44f16c35cb20d4f4a46b73c4adb71090"
+          },
+          {
+            "offset": 855638016,
+            "bytes": 16777216,
+            "sha256": "1c9255d818b00697e09c6520ceaaf3575f9541007ad28627a9a1e83e9aea08dc"
+          },
+          {
+            "offset": 872415232,
+            "bytes": 16777216,
+            "sha256": "f709bf8d75599c5c2d3bf281aba5dba07bf48944eff93bc6892f840dc04f24f3"
+          },
+          {
+            "offset": 889192448,
+            "bytes": 16777216,
+            "sha256": "41273a15b891ce25abbcc4895af36986efeec6541309337c42804b7c343d75b4"
+          },
+          {
+            "offset": 905969664,
+            "bytes": 16777216,
+            "sha256": "3249fd6ce9d0d27c30ab29a7d86b51ad07bb3d42db72d8a49e878f9371a307fe"
+          },
+          {
+            "offset": 922746880,
+            "bytes": 16777216,
+            "sha256": "d83ec4e86007dda35f3dadf0bc1c44a608f1349cd5d4a2273da976ed0bb28c80"
+          },
+          {
+            "offset": 939524096,
+            "bytes": 16777216,
+            "sha256": "88ef35943fa4244908d7dc17a77e36c6725a36d84eb65ebfa591f376a5a44070"
+          },
+          {
+            "offset": 956301312,
+            "bytes": 16777216,
+            "sha256": "6082fee37d33b08e844d303a01367908662345fc6d99c8778a6d6b207f049279"
+          },
+          {
+            "offset": 973078528,
+            "bytes": 16777216,
+            "sha256": "d6b9ec8c622673ab2846664f7a9942d4c5f8ab5add7e90650ee6f02f950e0931"
+          },
+          {
+            "offset": 989855744,
+            "bytes": 16777216,
+            "sha256": "9cd471995c28ccc67b07087e771aedd8a10610a07740e191e546976c1d375ec1"
+          },
+          {
+            "offset": 1006632960,
+            "bytes": 16777216,
+            "sha256": "0eaee33db661f11b55404e1921c51563b15a08fd5c2f2092abeda172773e89a5"
+          },
+          {
+            "offset": 1023410176,
+            "bytes": 16777216,
+            "sha256": "3c02ebc51142aa7d9128b928cd98c5a2f353169d5cef220b5ece3c8c71cf53af"
+          },
+          {
+            "offset": 1040187392,
+            "bytes": 16777216,
+            "sha256": "411f443cde6c4c498b8621955d9174c10c463f18ebf8a3294363549b2f9df399"
+          },
+          {
+            "offset": 1056964608,
+            "bytes": 2097152,
+            "sha256": "85418f90994a00c433a2b8024c54edeaef2dc04d6d68a38b7fd8c8c3f3eb90f6"
+          }
+        ],
+        "complete": true,
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-state-20261023\\original-dspark-vocabulary\\head.weight.bf16",
+        "sha256": "029e3c5293b29cc426e21d87795e15efa4d363f27b2bc4a9e3aef7d79f047919"
+      }
+    },
+    "requests": [
+      {
+        "first": 0,
+        "last": 7,
+        "requested_bytes": 8,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 0-7/1059061856",
+        "etag": "\"9f888e9926c8800db60f94d5e89b381b88747e0b9b5ca43dd1873f15e65748f9\"",
+        "sha256": "f42ba14217e1949bb569920b87aefd4ebd5d172374fcc775fb8c074247384488"
+      },
+      {
+        "first": 8,
+        "last": 95,
+        "requested_bytes": 88,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 8-95/1059061856",
+        "etag": "\"9f888e9926c8800db60f94d5e89b381b88747e0b9b5ca43dd1873f15e65748f9\"",
+        "sha256": "7bdd252c75d1e8975a69b8399b226f0129ce119b23da7bd68deac4ba4b1a4a40"
+      },
+      {
+        "first": 0,
+        "last": 7,
+        "requested_bytes": 8,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 0-7/1059332516",
+        "etag": "\"4eac8a30189eb52d150bd80861ca98c6c66de02b1f00ce2915b1d0c5baebbba3\"",
+        "sha256": "de47cca160a2b51502eb242eebc050072a692d6e3bbecf91de2258c4fb4ef5e9"
+      },
+      {
+        "first": 8,
+        "last": 399,
+        "requested_bytes": 392,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 8-399/1059332516",
+        "etag": "\"4eac8a30189eb52d150bd80861ca98c6c66de02b1f00ce2915b1d0c5baebbba3\"",
+        "sha256": "76d10bb3b022bad26446539ebaf16c9245fdcf835b28fd55a75052e0b0bb60b8"
+      },
+      {
+        "first": 96,
+        "last": 16777311,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 96-16777311/1059061856",
+        "etag": "\"9f888e9926c8800db60f94d5e89b381b88747e0b9b5ca43dd1873f15e65748f9\"",
+        "sha256": "63236a009aafa905543a616117af590cc8e449d18faa6063f5e932ced50031f2"
+      },
+      {
+        "first": 16777312,
+        "last": 33554527,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 16777312-33554527/1059061856",
+        "etag": "\"9f888e9926c8800db60f94d5e89b381b88747e0b9b5ca43dd1873f15e65748f9\"",
+        "sha256": "db2bcd1a527b83a9a2db1e8a27f803601cef3c41f974e08f7da1093c52bdae7e"
+      },
+      {
+        "first": 33554528,
+        "last": 50331743,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 33554528-50331743/1059061856",
+        "etag": "\"9f888e9926c8800db60f94d5e89b381b88747e0b9b5ca43dd1873f15e65748f9\"",
+        "sha256": "026e00b82cab64aab98b3fc050dcda9614bf79ea0e82096e2ff8c4c6e593e8ea"
+      },
+      {
+        "first": 50331744,
+        "last": 67108959,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 50331744-67108959/1059061856",
+        "etag": "\"9f888e9926c8800db60f94d5e89b381b88747e0b9b5ca43dd1873f15e65748f9\"",
+        "sha256": "8fd05cc57ff0498c01382add5f8ddc949ab737cf0f6daaf88f59595977fa7734"
+      },
+      {
+        "first": 67108960,
+        "last": 83886175,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 67108960-83886175/1059061856",
+        "etag": "\"9f888e9926c8800db60f94d5e89b381b88747e0b9b5ca43dd1873f15e65748f9\"",
+        "sha256": "567ec759241e545bf4a4780983efef49e10ce225a3989c745563fee1c1f04eff"
+      },
+      {
+        "first": 83886176,
+        "last": 100663391,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 83886176-100663391/1059061856",
+        "etag": "\"9f888e9926c8800db60f94d5e89b381b88747e0b9b5ca43dd1873f15e65748f9\"",
+        "sha256": "bd93ebc76da4ee32999cb5cf2c2871da4a33c62fc7facde862ddc4c3c3d3b92d"
+      },
+      {
+        "first": 100663392,
+        "last": 117440607,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 100663392-117440607/1059061856",
+        "etag": "\"9f888e9926c8800db60f94d5e89b381b88747e0b9b5ca43dd1873f15e65748f9\"",
+        "sha256": "b40918dc6a7dc1c926d4a3494e2a114d65357cabc21a7cc5fc9d253ea50e8fa4"
+      },
+      {
+        "first": 117440608,
+        "last": 134217823,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 117440608-134217823/1059061856",
+        "etag": "\"9f888e9926c8800db60f94d5e89b381b88747e0b9b5ca43dd1873f15e65748f9\"",
+        "sha256": "806d84b4cb02cc299aef2ee1076f3f0f53f66abc2eac00129bc17aff4d5653de"
+      },
+      {
+        "first": 134217824,
+        "last": 150995039,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 134217824-150995039/1059061856",
+        "etag": "\"9f888e9926c8800db60f94d5e89b381b88747e0b9b5ca43dd1873f15e65748f9\"",
+        "sha256": "fd4f7e25ef92668ea421535c22c0103fdea002211bb3c2110db252d86281e5d8"
+      },
+      {
+        "first": 150995040,
+        "last": 167772255,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 150995040-167772255/1059061856",
+        "etag": "\"9f888e9926c8800db60f94d5e89b381b88747e0b9b5ca43dd1873f15e65748f9\"",
+        "sha256": "0517a0f3ab139df54b9b3023d4d3cccac2dbb48b6ef932c345a23f6ab778f389"
+      },
+      {
+        "first": 167772256,
+        "last": 184549471,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 167772256-184549471/1059061856",
+        "etag": "\"9f888e9926c8800db60f94d5e89b381b88747e0b9b5ca43dd1873f15e65748f9\"",
+        "sha256": "bbeb3a37fc2f93ee0feb0f944b0addc350bd2bede2ffa211a897ff20598625d3"
+      },
+      {
+        "first": 184549472,
+        "last": 201326687,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 184549472-201326687/1059061856",
+        "etag": "\"9f888e9926c8800db60f94d5e89b381b88747e0b9b5ca43dd1873f15e65748f9\"",
+        "sha256": "9e494e3acc103161f979ddba242d6b35ac3140c57c9498777e513e154773b5ce"
+      },
+      {
+        "first": 201326688,
+        "last": 218103903,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 201326688-218103903/1059061856",
+        "etag": "\"9f888e9926c8800db60f94d5e89b381b88747e0b9b5ca43dd1873f15e65748f9\"",
+        "sha256": "c30f440cbf7ca2f4636e59c31d80849ee9df3556b482c23f7fbcfb4981827438"
+      },
+      {
+        "first": 218103904,
+        "last": 234881119,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 218103904-234881119/1059061856",
+        "etag": "\"9f888e9926c8800db60f94d5e89b381b88747e0b9b5ca43dd1873f15e65748f9\"",
+        "sha256": "c69ecb849246e046542b658c3fd1ec61d35f9a31c0c4d29800a27ea9e2006bda"
+      },
+      {
+        "first": 234881120,
+        "last": 251658335,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 234881120-251658335/1059061856",
+        "etag": "\"9f888e9926c8800db60f94d5e89b381b88747e0b9b5ca43dd1873f15e65748f9\"",
+        "sha256": "4533840697b10dcfdbec86cc752d2ca3c3ab20f7b113cc3088a054efc4f4b8d4"
+      },
+      {
+        "first": 251658336,
+        "last": 268435551,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 251658336-268435551/1059061856",
+        "etag": "\"9f888e9926c8800db60f94d5e89b381b88747e0b9b5ca43dd1873f15e65748f9\"",
+        "sha256": "5599ddbcf56df3a8760ea458ccf355e741f112d552409b771b0ba9988dd1564b"
+      },
+      {
+        "first": 268435552,
+        "last": 285212767,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 268435552-285212767/1059061856",
+        "etag": "\"9f888e9926c8800db60f94d5e89b381b88747e0b9b5ca43dd1873f15e65748f9\"",
+        "sha256": "8c751c25249b0d3f3019093bce566f0600d977e7a816986b2db22b3f28f7c973"
+      },
+      {
+        "first": 285212768,
+        "last": 301989983,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 285212768-301989983/1059061856",
+        "etag": "\"9f888e9926c8800db60f94d5e89b381b88747e0b9b5ca43dd1873f15e65748f9\"",
+        "sha256": "6ef4e007b214ab835b7e995aeb54cbe0cf3940d1d6f4c6d31cf5bcc45be3f9d3"
+      },
+      {
+        "first": 301989984,
+        "last": 318767199,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 301989984-318767199/1059061856",
+        "etag": "\"9f888e9926c8800db60f94d5e89b381b88747e0b9b5ca43dd1873f15e65748f9\"",
+        "sha256": "01f366be4572bbb887f69e8592a2fffb875b10ee7c3d8ee25b04384bee46bc03"
+      },
+      {
+        "first": 318767200,
+        "last": 335544415,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 318767200-335544415/1059061856",
+        "etag": "\"9f888e9926c8800db60f94d5e89b381b88747e0b9b5ca43dd1873f15e65748f9\"",
+        "sha256": "a6989330983650000f12325beecbf24c67194ca211ab8db92910ddf05239a5ca"
+      },
+      {
+        "first": 335544416,
+        "last": 352321631,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 335544416-352321631/1059061856",
+        "etag": "\"9f888e9926c8800db60f94d5e89b381b88747e0b9b5ca43dd1873f15e65748f9\"",
+        "sha256": "ae923d688bb0878b74e46d9390491d52147a3a5a240ae14611af6eb7bc917a92"
+      },
+      {
+        "first": 352321632,
+        "last": 369098847,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 352321632-369098847/1059061856",
+        "etag": "\"9f888e9926c8800db60f94d5e89b381b88747e0b9b5ca43dd1873f15e65748f9\"",
+        "sha256": "4058a9997bfe99ba8c0f50beccdf105cc760e5354130c0790e463a6bfb89bfd3"
+      },
+      {
+        "first": 369098848,
+        "last": 385876063,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 369098848-385876063/1059061856",
+        "etag": "\"9f888e9926c8800db60f94d5e89b381b88747e0b9b5ca43dd1873f15e65748f9\"",
+        "sha256": "21941f97e3bd026abd3c67d7ca298b723876c68f12a7cc2e95665cf944dce72f"
+      },
+      {
+        "first": 385876064,
+        "last": 402653279,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 385876064-402653279/1059061856",
+        "etag": "\"9f888e9926c8800db60f94d5e89b381b88747e0b9b5ca43dd1873f15e65748f9\"",
+        "sha256": "45f6080c078ca925e7db23beeb89f33c22db666b7ac16769be1d3c57e96c2c2c"
+      },
+      {
+        "first": 402653280,
+        "last": 419430495,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 402653280-419430495/1059061856",
+        "etag": "\"9f888e9926c8800db60f94d5e89b381b88747e0b9b5ca43dd1873f15e65748f9\"",
+        "sha256": "0d11a88fd8a9438c3f7e17cb3d0b4d3e8341860d10e5df0f90537cac15e3e732"
+      },
+      {
+        "first": 419430496,
+        "last": 436207711,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 419430496-436207711/1059061856",
+        "etag": "\"9f888e9926c8800db60f94d5e89b381b88747e0b9b5ca43dd1873f15e65748f9\"",
+        "sha256": "f5acd462de531ed7d4d2e9b5908e85170a38b8d113a6ce7db98e4bb951688c0b"
+      },
+      {
+        "first": 436207712,
+        "last": 452984927,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 436207712-452984927/1059061856",
+        "etag": "\"9f888e9926c8800db60f94d5e89b381b88747e0b9b5ca43dd1873f15e65748f9\"",
+        "sha256": "6ba0bb28675d1915f91d9a25c17050767732efef28b36a8cd9445fc86ea2f478"
+      },
+      {
+        "first": 452984928,
+        "last": 469762143,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 452984928-469762143/1059061856",
+        "etag": "\"9f888e9926c8800db60f94d5e89b381b88747e0b9b5ca43dd1873f15e65748f9\"",
+        "sha256": "4f411142f1cbb32de06c884402358a2d8d92ace45a6d5c402785b0b3d801c812"
+      },
+      {
+        "first": 469762144,
+        "last": 486539359,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 469762144-486539359/1059061856",
+        "etag": "\"9f888e9926c8800db60f94d5e89b381b88747e0b9b5ca43dd1873f15e65748f9\"",
+        "sha256": "5afff9076aeb5c8a8f4f4c7c0d0c23fadbb8485bc38c11822f7f6b8e19877468"
+      },
+      {
+        "first": 486539360,
+        "last": 503316575,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 486539360-503316575/1059061856",
+        "etag": "\"9f888e9926c8800db60f94d5e89b381b88747e0b9b5ca43dd1873f15e65748f9\"",
+        "sha256": "5d3d02df4c7038125da13521141b1865b0f225e6d12a314819b76890462f96d4"
+      },
+      {
+        "first": 503316576,
+        "last": 520093791,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 503316576-520093791/1059061856",
+        "etag": "\"9f888e9926c8800db60f94d5e89b381b88747e0b9b5ca43dd1873f15e65748f9\"",
+        "sha256": "3e5d15741e1915926acff504d8b95aa28b624bd2777890eb70c96662491cc7c5"
+      },
+      {
+        "first": 520093792,
+        "last": 536871007,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 520093792-536871007/1059061856",
+        "etag": "\"9f888e9926c8800db60f94d5e89b381b88747e0b9b5ca43dd1873f15e65748f9\"",
+        "sha256": "304f6e9f91288ebfa5eb149120c51a38a78f5953a0d53d1997baf7528faf2c68"
+      },
+      {
+        "first": 536871008,
+        "last": 553648223,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 536871008-553648223/1059061856",
+        "etag": "\"9f888e9926c8800db60f94d5e89b381b88747e0b9b5ca43dd1873f15e65748f9\"",
+        "sha256": "62d94c07ba2b123f8cd629c0bc3a527c0d3e42f255670df3527c6afd8675c16d"
+      },
+      {
+        "first": 553648224,
+        "last": 570425439,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 553648224-570425439/1059061856",
+        "etag": "\"9f888e9926c8800db60f94d5e89b381b88747e0b9b5ca43dd1873f15e65748f9\"",
+        "sha256": "e68969d75c9d0dd866dfa309ace083e35fda9fac04b31a7f85c229d7c8d318f6"
+      },
+      {
+        "first": 570425440,
+        "last": 587202655,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 570425440-587202655/1059061856",
+        "etag": "\"9f888e9926c8800db60f94d5e89b381b88747e0b9b5ca43dd1873f15e65748f9\"",
+        "sha256": "f021f94055bc5862ac7783d67b7a08f5a6acb03125b4b8e5bae45459bdb1fe45"
+      },
+      {
+        "first": 587202656,
+        "last": 603979871,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 587202656-603979871/1059061856",
+        "etag": "\"9f888e9926c8800db60f94d5e89b381b88747e0b9b5ca43dd1873f15e65748f9\"",
+        "sha256": "bf1b3ecb51f3418bd3d2fde13f5fd4a1873efefef750f805d568a7f3e73e7a04"
+      },
+      {
+        "first": 603979872,
+        "last": 620757087,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 603979872-620757087/1059061856",
+        "etag": "\"9f888e9926c8800db60f94d5e89b381b88747e0b9b5ca43dd1873f15e65748f9\"",
+        "sha256": "6def1d82e65e0d88256a17c2c1ad538207215b9489da67ff81bd5e103f6a5852"
+      },
+      {
+        "first": 620757088,
+        "last": 637534303,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 620757088-637534303/1059061856",
+        "etag": "\"9f888e9926c8800db60f94d5e89b381b88747e0b9b5ca43dd1873f15e65748f9\"",
+        "sha256": "7b9f736e27ae4fc576ea5cf666a4efd2d609f00d0cd0aacbb59ae092c42da4f3"
+      },
+      {
+        "first": 637534304,
+        "last": 654311519,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 637534304-654311519/1059061856",
+        "etag": "\"9f888e9926c8800db60f94d5e89b381b88747e0b9b5ca43dd1873f15e65748f9\"",
+        "sha256": "b195d499ec4739933c19c7e6b12c1194658bca4b51ced708c6fea2e4ce666e30"
+      },
+      {
+        "first": 654311520,
+        "last": 671088735,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 654311520-671088735/1059061856",
+        "etag": "\"9f888e9926c8800db60f94d5e89b381b88747e0b9b5ca43dd1873f15e65748f9\"",
+        "sha256": "5fc8106e3b4e3aad892c3afbc1cdeec8f6546a6a87483bf772f1ccd4dd4736e7"
+      },
+      {
+        "first": 671088736,
+        "last": 687865951,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 671088736-687865951/1059061856",
+        "etag": "\"9f888e9926c8800db60f94d5e89b381b88747e0b9b5ca43dd1873f15e65748f9\"",
+        "sha256": "8e830327d2c22f90947d30319fd6e44ae1a8d8a3313c303ed1e796358f76dc23"
+      },
+      {
+        "first": 687865952,
+        "last": 704643167,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 687865952-704643167/1059061856",
+        "etag": "\"9f888e9926c8800db60f94d5e89b381b88747e0b9b5ca43dd1873f15e65748f9\"",
+        "sha256": "3cdc1bc81b265c8781447ed6f159c7b3ced3e3f8257d3ddc1fb324032fbc64e0"
+      },
+      {
+        "first": 704643168,
+        "last": 721420383,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 704643168-721420383/1059061856",
+        "etag": "\"9f888e9926c8800db60f94d5e89b381b88747e0b9b5ca43dd1873f15e65748f9\"",
+        "sha256": "cab54febe37cafe4a37f0b6a266b28628e54cb975e0008f3a86ff3f490383efd"
+      },
+      {
+        "first": 721420384,
+        "last": 738197599,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 721420384-738197599/1059061856",
+        "etag": "\"9f888e9926c8800db60f94d5e89b381b88747e0b9b5ca43dd1873f15e65748f9\"",
+        "sha256": "63f1519400fddb983599b25e1ca5bbdf0e38477c1b63c77fcd917335f07620b2"
+      },
+      {
+        "first": 738197600,
+        "last": 754974815,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 738197600-754974815/1059061856",
+        "etag": "\"9f888e9926c8800db60f94d5e89b381b88747e0b9b5ca43dd1873f15e65748f9\"",
+        "sha256": "f911836a90e5bf484050f0caab6f837b0c81d25315d72dca56c176ce5f1d9ced"
+      },
+      {
+        "first": 754974816,
+        "last": 771752031,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 754974816-771752031/1059061856",
+        "etag": "\"9f888e9926c8800db60f94d5e89b381b88747e0b9b5ca43dd1873f15e65748f9\"",
+        "sha256": "6dd651730857c7127cfcb4ac1577ac4ff0c9c7c144a8803eeaf0d4f6cb9462f2"
+      },
+      {
+        "first": 771752032,
+        "last": 788529247,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 771752032-788529247/1059061856",
+        "etag": "\"9f888e9926c8800db60f94d5e89b381b88747e0b9b5ca43dd1873f15e65748f9\"",
+        "sha256": "501177d395d3f8a242932b2dcc2784f4ae0b2e13ee2511efc88a0949e8bb5ace"
+      },
+      {
+        "first": 788529248,
+        "last": 805306463,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 788529248-805306463/1059061856",
+        "etag": "\"9f888e9926c8800db60f94d5e89b381b88747e0b9b5ca43dd1873f15e65748f9\"",
+        "sha256": "72a1c74f2ba9e61f750a650c7d91da5ae6a86a2c072a4886e0af115150c7e612"
+      },
+      {
+        "first": 805306464,
+        "last": 822083679,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 805306464-822083679/1059061856",
+        "etag": "\"9f888e9926c8800db60f94d5e89b381b88747e0b9b5ca43dd1873f15e65748f9\"",
+        "sha256": "a0ea0f9595dfb019940732dc77406ca473c4ce225efc85e28b4d00622b8d61e9"
+      },
+      {
+        "first": 822083680,
+        "last": 838860895,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 822083680-838860895/1059061856",
+        "etag": "\"9f888e9926c8800db60f94d5e89b381b88747e0b9b5ca43dd1873f15e65748f9\"",
+        "sha256": "9df4ba08d8995db308ad3e7e8da496bcefefc9f250c9c1dbd9b1e16214880dd3"
+      },
+      {
+        "first": 838860896,
+        "last": 855638111,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 838860896-855638111/1059061856",
+        "etag": "\"9f888e9926c8800db60f94d5e89b381b88747e0b9b5ca43dd1873f15e65748f9\"",
+        "sha256": "2addf280ad50b2db078b5918639d38b2e6a07a9f9f67a87c265b79d43b084f7c"
+      },
+      {
+        "first": 855638112,
+        "last": 872415327,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 855638112-872415327/1059061856",
+        "etag": "\"9f888e9926c8800db60f94d5e89b381b88747e0b9b5ca43dd1873f15e65748f9\"",
+        "sha256": "13c881b506a8f8dea27a41ac7601051fac30c00709245944bc4453c1e5e91cbb"
+      },
+      {
+        "first": 872415328,
+        "last": 889192543,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 872415328-889192543/1059061856",
+        "etag": "\"9f888e9926c8800db60f94d5e89b381b88747e0b9b5ca43dd1873f15e65748f9\"",
+        "sha256": "071bfac22385c830fde11f00fdfee6df3db8707190f2a50cc3031337146b07b3"
+      },
+      {
+        "first": 889192544,
+        "last": 905969759,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 889192544-905969759/1059061856",
+        "etag": "\"9f888e9926c8800db60f94d5e89b381b88747e0b9b5ca43dd1873f15e65748f9\"",
+        "sha256": "837c138ed1e9f3183fcf0fa17d2efaf01533f0265ba4510836083e861ac5bc0c"
+      },
+      {
+        "first": 905969760,
+        "last": 922746975,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 905969760-922746975/1059061856",
+        "etag": "\"9f888e9926c8800db60f94d5e89b381b88747e0b9b5ca43dd1873f15e65748f9\"",
+        "sha256": "7848b52f9a79bcd5e8eb33359144f0f0809b0974c53e6d1f0587d6a6d94812be"
+      },
+      {
+        "first": 922746976,
+        "last": 939524191,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 922746976-939524191/1059061856",
+        "etag": "\"9f888e9926c8800db60f94d5e89b381b88747e0b9b5ca43dd1873f15e65748f9\"",
+        "sha256": "e66c11a2f14ab8a019926e68e56344709c1f252a5e3001466bdc21beeaf0302c"
+      },
+      {
+        "first": 939524192,
+        "last": 956301407,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 939524192-956301407/1059061856",
+        "etag": "\"9f888e9926c8800db60f94d5e89b381b88747e0b9b5ca43dd1873f15e65748f9\"",
+        "sha256": "a235888fb392c7a29b3f89cc66429b162427d06ad0f4a1765f569407c95e0254"
+      },
+      {
+        "first": 956301408,
+        "last": 973078623,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 956301408-973078623/1059061856",
+        "etag": "\"9f888e9926c8800db60f94d5e89b381b88747e0b9b5ca43dd1873f15e65748f9\"",
+        "sha256": "9f282c8fc00695747e7b4c596b0963a640003b258aa2bfbafc4b9075f17c4cda"
+      },
+      {
+        "first": 973078624,
+        "last": 989855839,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 973078624-989855839/1059061856",
+        "etag": "\"9f888e9926c8800db60f94d5e89b381b88747e0b9b5ca43dd1873f15e65748f9\"",
+        "sha256": "e70479bd84ae1073ed1976f0a7f86e95d6b31b7034314eb0ae904fc4777b9832"
+      },
+      {
+        "first": 989855840,
+        "last": 1006633055,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 989855840-1006633055/1059061856",
+        "etag": "\"9f888e9926c8800db60f94d5e89b381b88747e0b9b5ca43dd1873f15e65748f9\"",
+        "sha256": "c9711267a469d9c076bf4a17deaad82e8c8d851ad9d33a4e8d39ad2867126dc1"
+      },
+      {
+        "first": 1006633056,
+        "last": 1023410271,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 1006633056-1023410271/1059061856",
+        "etag": "\"9f888e9926c8800db60f94d5e89b381b88747e0b9b5ca43dd1873f15e65748f9\"",
+        "sha256": "d9f602747389ab1d4d3182e5516ead3ad3cb5a5302e3ccac8a261fd731658b44"
+      },
+      {
+        "first": 1023410272,
+        "last": 1040187487,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 1023410272-1040187487/1059061856",
+        "etag": "\"9f888e9926c8800db60f94d5e89b381b88747e0b9b5ca43dd1873f15e65748f9\"",
+        "sha256": "16d9a5c802e40c6c1c2ab1159f401669efc2b5e677e1de6e4cf4a349158e39b8"
+      },
+      {
+        "first": 1040187488,
+        "last": 1056964703,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 1040187488-1056964703/1059061856",
+        "etag": "\"9f888e9926c8800db60f94d5e89b381b88747e0b9b5ca43dd1873f15e65748f9\"",
+        "sha256": "1e3a8cbf33641ed0e821ffbd357d5f923e451628173802c2edbb1002f158db67"
+      },
+      {
+        "first": 1056964704,
+        "last": 1059061855,
+        "requested_bytes": 2097152,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 1056964704-1059061855/1059061856",
+        "etag": "\"9f888e9926c8800db60f94d5e89b381b88747e0b9b5ca43dd1873f15e65748f9\"",
+        "sha256": "be54b2a6e909342f7f03781799d58fd0f74b2341fa7577ea6c646043e70ac75e"
+      },
+      {
+        "first": 262564,
+        "last": 17039779,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 262564-17039779/1059332516",
+        "etag": "\"4eac8a30189eb52d150bd80861ca98c6c66de02b1f00ce2915b1d0c5baebbba3\"",
+        "sha256": "ffea7576694ec56e8969850909303e656cdb9910d9524f034ee588444df97804"
+      },
+      {
+        "first": 17039780,
+        "last": 33816995,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 17039780-33816995/1059332516",
+        "etag": "\"4eac8a30189eb52d150bd80861ca98c6c66de02b1f00ce2915b1d0c5baebbba3\"",
+        "sha256": "124f915aa4634d8106b37df8a91ae03d48c4c5baaf1ea19e35113601591b87fe"
+      },
+      {
+        "first": 33816996,
+        "last": 50594211,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 33816996-50594211/1059332516",
+        "etag": "\"4eac8a30189eb52d150bd80861ca98c6c66de02b1f00ce2915b1d0c5baebbba3\"",
+        "sha256": "9a07be382345b879e671410bdd654bc64569e18d9342b6d7a6a2fed5501628c7"
+      },
+      {
+        "first": 50594212,
+        "last": 67371427,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 50594212-67371427/1059332516",
+        "etag": "\"4eac8a30189eb52d150bd80861ca98c6c66de02b1f00ce2915b1d0c5baebbba3\"",
+        "sha256": "9ddf80668d3adb39de38b19201aca715b5e0b3181558735b58df12ecb4c5927d"
+      },
+      {
+        "first": 67371428,
+        "last": 84148643,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 67371428-84148643/1059332516",
+        "etag": "\"4eac8a30189eb52d150bd80861ca98c6c66de02b1f00ce2915b1d0c5baebbba3\"",
+        "sha256": "70cdefebd7f2699a6a1d711bd6d989ab44f2c4bd5e69758feb1717f37a75d4a2"
+      },
+      {
+        "first": 84148644,
+        "last": 100925859,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 84148644-100925859/1059332516",
+        "etag": "\"4eac8a30189eb52d150bd80861ca98c6c66de02b1f00ce2915b1d0c5baebbba3\"",
+        "sha256": "e20fc58d0cd34fc2a079501859876f5456962be458829e5e4f81e02f3e95729a"
+      },
+      {
+        "first": 100925860,
+        "last": 117703075,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 100925860-117703075/1059332516",
+        "etag": "\"4eac8a30189eb52d150bd80861ca98c6c66de02b1f00ce2915b1d0c5baebbba3\"",
+        "sha256": "e7c3c3ec05ad7ce404ccad66bde710adc67e523ef2badbb05377d5f8ebc003b0"
+      },
+      {
+        "first": 117703076,
+        "last": 134480291,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 117703076-134480291/1059332516",
+        "etag": "\"4eac8a30189eb52d150bd80861ca98c6c66de02b1f00ce2915b1d0c5baebbba3\"",
+        "sha256": "e85ad4888ecc460f0112f0d51b00aa600880c3da78306bdc4b8b851bed8421f5"
+      },
+      {
+        "first": 134480292,
+        "last": 151257507,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 134480292-151257507/1059332516",
+        "etag": "\"4eac8a30189eb52d150bd80861ca98c6c66de02b1f00ce2915b1d0c5baebbba3\"",
+        "sha256": "f17b4fb4fc10d9f2d9b14271bcfa72d262aaaf812957e1dc4945f7994ec37c23"
+      },
+      {
+        "first": 151257508,
+        "last": 168034723,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 151257508-168034723/1059332516",
+        "etag": "\"4eac8a30189eb52d150bd80861ca98c6c66de02b1f00ce2915b1d0c5baebbba3\"",
+        "sha256": "27f384e34628587cfb7168afd63164d37d0c0a330395c3ae7810f376828b68b0"
+      },
+      {
+        "first": 168034724,
+        "last": 184811939,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 168034724-184811939/1059332516",
+        "etag": "\"4eac8a30189eb52d150bd80861ca98c6c66de02b1f00ce2915b1d0c5baebbba3\"",
+        "sha256": "d2013e4e7fa089452169d11b66d0acbe5b894c55309dc5c86e27f7e73d553ed9"
+      },
+      {
+        "first": 184811940,
+        "last": 201589155,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 184811940-201589155/1059332516",
+        "etag": "\"4eac8a30189eb52d150bd80861ca98c6c66de02b1f00ce2915b1d0c5baebbba3\"",
+        "sha256": "328faba2fae24535d79cf9b1e35a030038bff7cb6461a1b94d973223c157eed6"
+      },
+      {
+        "first": 201589156,
+        "last": 218366371,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 201589156-218366371/1059332516",
+        "etag": "\"4eac8a30189eb52d150bd80861ca98c6c66de02b1f00ce2915b1d0c5baebbba3\"",
+        "sha256": "85cd5b2603a27180fa9dfae57540ef33adcd37d5f00426920472ad3dacc309b6"
+      },
+      {
+        "first": 218366372,
+        "last": 235143587,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 218366372-235143587/1059332516",
+        "etag": "\"4eac8a30189eb52d150bd80861ca98c6c66de02b1f00ce2915b1d0c5baebbba3\"",
+        "sha256": "68a7a3115df491856e900c86b7a67d446e2d4e3663099e1fa2c942497fab03d5"
+      },
+      {
+        "first": 235143588,
+        "last": 251920803,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 235143588-251920803/1059332516",
+        "etag": "\"4eac8a30189eb52d150bd80861ca98c6c66de02b1f00ce2915b1d0c5baebbba3\"",
+        "sha256": "a7262a0fe82c589905b3122a9dde21005c1c9d5e87b7c3009c483b42d5856cbf"
+      },
+      {
+        "first": 251920804,
+        "last": 268698019,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 251920804-268698019/1059332516",
+        "etag": "\"4eac8a30189eb52d150bd80861ca98c6c66de02b1f00ce2915b1d0c5baebbba3\"",
+        "sha256": "d160035f5cf9c0782c306105d963ab797442e92715764f28947f3099f491fa66"
+      },
+      {
+        "first": 268698020,
+        "last": 285475235,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 268698020-285475235/1059332516",
+        "etag": "\"4eac8a30189eb52d150bd80861ca98c6c66de02b1f00ce2915b1d0c5baebbba3\"",
+        "sha256": "74c26af48b0f7a09c830fbb595b98cb84be78eb54363ec11bd8dc87927353dcd"
+      },
+      {
+        "first": 285475236,
+        "last": 302252451,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 285475236-302252451/1059332516",
+        "etag": "\"4eac8a30189eb52d150bd80861ca98c6c66de02b1f00ce2915b1d0c5baebbba3\"",
+        "sha256": "76db881fa641962dd4654c21673f0c406aa44ff3c09c19031d5a1eebc216c855"
+      },
+      {
+        "first": 302252452,
+        "last": 319029667,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 302252452-319029667/1059332516",
+        "etag": "\"4eac8a30189eb52d150bd80861ca98c6c66de02b1f00ce2915b1d0c5baebbba3\"",
+        "sha256": "79a99ff62a92895f3b3e21e809ce5d84bcb06f21b9e97de4ff64af61218ac571"
+      },
+      {
+        "first": 319029668,
+        "last": 335806883,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 319029668-335806883/1059332516",
+        "etag": "\"4eac8a30189eb52d150bd80861ca98c6c66de02b1f00ce2915b1d0c5baebbba3\"",
+        "sha256": "39e0c162a77b1c6e518648d9a35fcfdf1aed5f6679303a2433c7170c9d15c7bf"
+      },
+      {
+        "first": 335806884,
+        "last": 352584099,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 335806884-352584099/1059332516",
+        "etag": "\"4eac8a30189eb52d150bd80861ca98c6c66de02b1f00ce2915b1d0c5baebbba3\"",
+        "sha256": "fc879e4db49572132230f1d19c75da84b47d522c6ee791d43d11805f3e052456"
+      },
+      {
+        "first": 352584100,
+        "last": 369361315,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 352584100-369361315/1059332516",
+        "etag": "\"4eac8a30189eb52d150bd80861ca98c6c66de02b1f00ce2915b1d0c5baebbba3\"",
+        "sha256": "9de0e9dd148e35b4ccaea168a4e2b3490e89c6d34fbda220b25e84af49bc7e74"
+      },
+      {
+        "first": 369361316,
+        "last": 386138531,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 369361316-386138531/1059332516",
+        "etag": "\"4eac8a30189eb52d150bd80861ca98c6c66de02b1f00ce2915b1d0c5baebbba3\"",
+        "sha256": "872771715c29c274d87fe9a2d346dd57912dd1312ea58a6273ab2839fd9182d6"
+      },
+      {
+        "first": 386138532,
+        "last": 402915747,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 386138532-402915747/1059332516",
+        "etag": "\"4eac8a30189eb52d150bd80861ca98c6c66de02b1f00ce2915b1d0c5baebbba3\"",
+        "sha256": "d43a3c58d7d61dc6234ee3f4d08de11cd036aa934c109702f99016116fa69dfa"
+      },
+      {
+        "first": 402915748,
+        "last": 419692963,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 402915748-419692963/1059332516",
+        "etag": "\"4eac8a30189eb52d150bd80861ca98c6c66de02b1f00ce2915b1d0c5baebbba3\"",
+        "sha256": "15597e62e9b5ed813b04a1776d7341f201bea871d1b459e5b3991d42c15b027c"
+      },
+      {
+        "first": 419692964,
+        "last": 436470179,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 419692964-436470179/1059332516",
+        "etag": "\"4eac8a30189eb52d150bd80861ca98c6c66de02b1f00ce2915b1d0c5baebbba3\"",
+        "sha256": "0546e9889a910256b7f5282d7b8b3f753a383632844ca09f2eb6976c092f47de"
+      },
+      {
+        "first": 436470180,
+        "last": 453247395,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 436470180-453247395/1059332516",
+        "etag": "\"4eac8a30189eb52d150bd80861ca98c6c66de02b1f00ce2915b1d0c5baebbba3\"",
+        "sha256": "6b2b3eb74e0d8b23e0e00e53395449bb929a43e9ed23456d93d8f11d907f7675"
+      },
+      {
+        "first": 453247396,
+        "last": 470024611,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 453247396-470024611/1059332516",
+        "etag": "\"4eac8a30189eb52d150bd80861ca98c6c66de02b1f00ce2915b1d0c5baebbba3\"",
+        "sha256": "67e94da9d1a9bbb72695c78c1a896d271e5c5afc8d09389d6069442f16581e85"
+      },
+      {
+        "first": 470024612,
+        "last": 486801827,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 470024612-486801827/1059332516",
+        "etag": "\"4eac8a30189eb52d150bd80861ca98c6c66de02b1f00ce2915b1d0c5baebbba3\"",
+        "sha256": "ee243338bec9f6e0bb22fc9d554542f6b566ea1cc6d2710d88b5c76a49219d6a"
+      },
+      {
+        "first": 486801828,
+        "last": 503579043,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 486801828-503579043/1059332516",
+        "etag": "\"4eac8a30189eb52d150bd80861ca98c6c66de02b1f00ce2915b1d0c5baebbba3\"",
+        "sha256": "babd5723693df3c3abf4dc6f76b366fb72048e7825b6207a742d07e92f4c5e30"
+      },
+      {
+        "first": 503579044,
+        "last": 520356259,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 503579044-520356259/1059332516",
+        "etag": "\"4eac8a30189eb52d150bd80861ca98c6c66de02b1f00ce2915b1d0c5baebbba3\"",
+        "sha256": "31f869ae89139ce507aeb4b4b1e5443593896bbdd84a3aed336f815899950288"
+      },
+      {
+        "first": 520356260,
+        "last": 537133475,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 520356260-537133475/1059332516",
+        "etag": "\"4eac8a30189eb52d150bd80861ca98c6c66de02b1f00ce2915b1d0c5baebbba3\"",
+        "sha256": "55022f108fc678c302fd43e8f971891ed8e9b0069e361e23a1d5fbb97a21553d"
+      },
+      {
+        "first": 537133476,
+        "last": 553910691,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 537133476-553910691/1059332516",
+        "etag": "\"4eac8a30189eb52d150bd80861ca98c6c66de02b1f00ce2915b1d0c5baebbba3\"",
+        "sha256": "5c98e857ceec0d4a34f766d64d41f4b802b513e3b2f3e2b68c4e1a908dc99bff"
+      },
+      {
+        "first": 553910692,
+        "last": 570687907,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 553910692-570687907/1059332516",
+        "etag": "\"4eac8a30189eb52d150bd80861ca98c6c66de02b1f00ce2915b1d0c5baebbba3\"",
+        "sha256": "c57bb88c2fa83e30658c1c04e74df22a4782319e28ad24ff18ddc87772070308"
+      },
+      {
+        "first": 570687908,
+        "last": 587465123,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 570687908-587465123/1059332516",
+        "etag": "\"4eac8a30189eb52d150bd80861ca98c6c66de02b1f00ce2915b1d0c5baebbba3\"",
+        "sha256": "677ae37e056714d87fafe23561393f66f47c1d8b9f4ffadf7b84477500c6d44b"
+      },
+      {
+        "first": 587465124,
+        "last": 604242339,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 587465124-604242339/1059332516",
+        "etag": "\"4eac8a30189eb52d150bd80861ca98c6c66de02b1f00ce2915b1d0c5baebbba3\"",
+        "sha256": "b1f74c5a5d666aa803e7028b21e62117a34176b5465113cdecc164ba32471a18"
+      },
+      {
+        "first": 604242340,
+        "last": 621019555,
+        "requested_bytes": 16777216,
+        "complete": false
+      },
+      {
+        "first": 604242340,
+        "last": 621019555,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 604242340-621019555/1059332516",
+        "etag": "\"4eac8a30189eb52d150bd80861ca98c6c66de02b1f00ce2915b1d0c5baebbba3\"",
+        "sha256": "69414642ee19adc278606aff0718c48f88df4908676e08b56d52c6bd743906e1"
+      },
+      {
+        "first": 621019556,
+        "last": 637796771,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 621019556-637796771/1059332516",
+        "etag": "\"4eac8a30189eb52d150bd80861ca98c6c66de02b1f00ce2915b1d0c5baebbba3\"",
+        "sha256": "1515b12ef4e68fcbe0a46a906574b24ab5dc0001cccec2958bed07e3c43ab890"
+      },
+      {
+        "first": 637796772,
+        "last": 654573987,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 637796772-654573987/1059332516",
+        "etag": "\"4eac8a30189eb52d150bd80861ca98c6c66de02b1f00ce2915b1d0c5baebbba3\"",
+        "sha256": "8aaee6a543c9b2fb4deeec451d312ca1295094fad1b4548d127c98494a5916c4"
+      },
+      {
+        "first": 654573988,
+        "last": 671351203,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 654573988-671351203/1059332516",
+        "etag": "\"4eac8a30189eb52d150bd80861ca98c6c66de02b1f00ce2915b1d0c5baebbba3\"",
+        "sha256": "9b8215eb273de8c8f7b3078c58b14320d6b60e8d40c131a668db15acdd7717cc"
+      },
+      {
+        "first": 671351204,
+        "last": 688128419,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 671351204-688128419/1059332516",
+        "etag": "\"4eac8a30189eb52d150bd80861ca98c6c66de02b1f00ce2915b1d0c5baebbba3\"",
+        "sha256": "a978e2f0044ca2827b8493cb4dc333c3a4742ec207c31c41a33a8a65f56f82df"
+      },
+      {
+        "first": 688128420,
+        "last": 704905635,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 688128420-704905635/1059332516",
+        "etag": "\"4eac8a30189eb52d150bd80861ca98c6c66de02b1f00ce2915b1d0c5baebbba3\"",
+        "sha256": "de2099b52460600a88cbb3213848ef66485327950de307be8b0f79947835afdd"
+      },
+      {
+        "first": 704905636,
+        "last": 721682851,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 704905636-721682851/1059332516",
+        "etag": "\"4eac8a30189eb52d150bd80861ca98c6c66de02b1f00ce2915b1d0c5baebbba3\"",
+        "sha256": "29b856d8086440ffcbcc8b8411982505e20857d08467f3509bf70913297b4ff6"
+      },
+      {
+        "first": 721682852,
+        "last": 738460067,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 721682852-738460067/1059332516",
+        "etag": "\"4eac8a30189eb52d150bd80861ca98c6c66de02b1f00ce2915b1d0c5baebbba3\"",
+        "sha256": "1af2d3fcb4639814716b55863cfb21c91206905a461c896a724c45e4f0226b9c"
+      },
+      {
+        "first": 738460068,
+        "last": 755237283,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 738460068-755237283/1059332516",
+        "etag": "\"4eac8a30189eb52d150bd80861ca98c6c66de02b1f00ce2915b1d0c5baebbba3\"",
+        "sha256": "4353c697cd20599acd699ba55a0ecf61d54f3d51bead5d5490458bb1d378777c"
+      },
+      {
+        "first": 755237284,
+        "last": 772014499,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 755237284-772014499/1059332516",
+        "etag": "\"4eac8a30189eb52d150bd80861ca98c6c66de02b1f00ce2915b1d0c5baebbba3\"",
+        "sha256": "23e5cf20441263203270ec53f18dc2664a3fe972311b0fc74058e361514764d6"
+      },
+      {
+        "first": 772014500,
+        "last": 788791715,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 772014500-788791715/1059332516",
+        "etag": "\"4eac8a30189eb52d150bd80861ca98c6c66de02b1f00ce2915b1d0c5baebbba3\"",
+        "sha256": "b479d5ebf024007b84671ab538565a7c6af260c8fd1badc65f64958ddf204538"
+      },
+      {
+        "first": 788791716,
+        "last": 805568931,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 788791716-805568931/1059332516",
+        "etag": "\"4eac8a30189eb52d150bd80861ca98c6c66de02b1f00ce2915b1d0c5baebbba3\"",
+        "sha256": "20729edece706d152cba469239d3e1ba00029751964a19c5074c7dbcc1a784ea"
+      },
+      {
+        "first": 805568932,
+        "last": 822346147,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 805568932-822346147/1059332516",
+        "etag": "\"4eac8a30189eb52d150bd80861ca98c6c66de02b1f00ce2915b1d0c5baebbba3\"",
+        "sha256": "e9a2236432a5e927eb9dc3673106154e5758a1986afc2b5f35d4842849aac76c"
+      },
+      {
+        "first": 822346148,
+        "last": 839123363,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 822346148-839123363/1059332516",
+        "etag": "\"4eac8a30189eb52d150bd80861ca98c6c66de02b1f00ce2915b1d0c5baebbba3\"",
+        "sha256": "b0cddae0db42c43b8c36e77f1b79a96a6fcfe660b07fd650214444e1ecebaaf3"
+      },
+      {
+        "first": 839123364,
+        "last": 855900579,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 839123364-855900579/1059332516",
+        "etag": "\"4eac8a30189eb52d150bd80861ca98c6c66de02b1f00ce2915b1d0c5baebbba3\"",
+        "sha256": "80d7a2ed7bd36dc6159224daa0cb8a3b44f16c35cb20d4f4a46b73c4adb71090"
+      },
+      {
+        "first": 855900580,
+        "last": 872677795,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 855900580-872677795/1059332516",
+        "etag": "\"4eac8a30189eb52d150bd80861ca98c6c66de02b1f00ce2915b1d0c5baebbba3\"",
+        "sha256": "1c9255d818b00697e09c6520ceaaf3575f9541007ad28627a9a1e83e9aea08dc"
+      },
+      {
+        "first": 872677796,
+        "last": 889455011,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 872677796-889455011/1059332516",
+        "etag": "\"4eac8a30189eb52d150bd80861ca98c6c66de02b1f00ce2915b1d0c5baebbba3\"",
+        "sha256": "f709bf8d75599c5c2d3bf281aba5dba07bf48944eff93bc6892f840dc04f24f3"
+      },
+      {
+        "first": 889455012,
+        "last": 906232227,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 889455012-906232227/1059332516",
+        "etag": "\"4eac8a30189eb52d150bd80861ca98c6c66de02b1f00ce2915b1d0c5baebbba3\"",
+        "sha256": "41273a15b891ce25abbcc4895af36986efeec6541309337c42804b7c343d75b4"
+      },
+      {
+        "first": 906232228,
+        "last": 923009443,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 906232228-923009443/1059332516",
+        "etag": "\"4eac8a30189eb52d150bd80861ca98c6c66de02b1f00ce2915b1d0c5baebbba3\"",
+        "sha256": "3249fd6ce9d0d27c30ab29a7d86b51ad07bb3d42db72d8a49e878f9371a307fe"
+      },
+      {
+        "first": 923009444,
+        "last": 939786659,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 923009444-939786659/1059332516",
+        "etag": "\"4eac8a30189eb52d150bd80861ca98c6c66de02b1f00ce2915b1d0c5baebbba3\"",
+        "sha256": "d83ec4e86007dda35f3dadf0bc1c44a608f1349cd5d4a2273da976ed0bb28c80"
+      },
+      {
+        "first": 939786660,
+        "last": 956563875,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 939786660-956563875/1059332516",
+        "etag": "\"4eac8a30189eb52d150bd80861ca98c6c66de02b1f00ce2915b1d0c5baebbba3\"",
+        "sha256": "88ef35943fa4244908d7dc17a77e36c6725a36d84eb65ebfa591f376a5a44070"
+      },
+      {
+        "first": 956563876,
+        "last": 973341091,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 956563876-973341091/1059332516",
+        "etag": "\"4eac8a30189eb52d150bd80861ca98c6c66de02b1f00ce2915b1d0c5baebbba3\"",
+        "sha256": "6082fee37d33b08e844d303a01367908662345fc6d99c8778a6d6b207f049279"
+      },
+      {
+        "first": 973341092,
+        "last": 990118307,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 973341092-990118307/1059332516",
+        "etag": "\"4eac8a30189eb52d150bd80861ca98c6c66de02b1f00ce2915b1d0c5baebbba3\"",
+        "sha256": "d6b9ec8c622673ab2846664f7a9942d4c5f8ab5add7e90650ee6f02f950e0931"
+      },
+      {
+        "first": 990118308,
+        "last": 1006895523,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 990118308-1006895523/1059332516",
+        "etag": "\"4eac8a30189eb52d150bd80861ca98c6c66de02b1f00ce2915b1d0c5baebbba3\"",
+        "sha256": "9cd471995c28ccc67b07087e771aedd8a10610a07740e191e546976c1d375ec1"
+      },
+      {
+        "first": 1006895524,
+        "last": 1023672739,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 1006895524-1023672739/1059332516",
+        "etag": "\"4eac8a30189eb52d150bd80861ca98c6c66de02b1f00ce2915b1d0c5baebbba3\"",
+        "sha256": "0eaee33db661f11b55404e1921c51563b15a08fd5c2f2092abeda172773e89a5"
+      },
+      {
+        "first": 1023672740,
+        "last": 1040449955,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 1023672740-1040449955/1059332516",
+        "etag": "\"4eac8a30189eb52d150bd80861ca98c6c66de02b1f00ce2915b1d0c5baebbba3\"",
+        "sha256": "3c02ebc51142aa7d9128b928cd98c5a2f353169d5cef220b5ece3c8c71cf53af"
+      },
+      {
+        "first": 1040449956,
+        "last": 1057227171,
+        "requested_bytes": 16777216,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 1040449956-1057227171/1059332516",
+        "etag": "\"4eac8a30189eb52d150bd80861ca98c6c66de02b1f00ce2915b1d0c5baebbba3\"",
+        "sha256": "411f443cde6c4c498b8621955d9174c10c463f18ebf8a3294363549b2f9df399"
+      },
+      {
+        "first": 1057227172,
+        "last": 1059324323,
+        "requested_bytes": 2097152,
+        "complete": true,
+        "http_status": 206,
+        "content_range": "bytes 1057227172-1059324323/1059332516",
+        "etag": "\"4eac8a30189eb52d150bd80861ca98c6c66de02b1f00ce2915b1d0c5baebbba3\"",
+        "sha256": "85418f90994a00c433a2b8024c54edeaef2dc04d6d68a38b7fd8c8c3f3eb90f6"
+      }
+    ]
+  },
+  "new_payload_bytes": 2118123520,
+  "payload_archived": false,
+  "original_role_inventory": {
+    "source_only": true,
+    "native_build_run_download_ssh": false,
+    "conclusion": "Current omissions primarily require original coefficient supply and actual target producer wiring. No new common MTP loader or executor is demonstrated necessary. Existing generated complete graphs prove only their declared graph/state boundaries, not trained-model quality.",
+    "source_identities": [
+      {
+        "path": ".scratch/model-scope-2026-10-19/flash-0731/inference-model.py",
+        "bytes": 45118,
+        "sha256": "c0c19e6c9fa439bac7fbb1c5bc1868232dfd5aa2f439a548d0e33dcc2a9edd3f"
+      },
+      {
+        "path": ".scratch/validation/cpu-quant-mtp-c1/headers.json",
+        "bytes": 26636221,
+        "sha256": "bded8af0909a524f3516e3a53ba77996ba664793fe815c58c16e4fbbe18460d0"
+      },
+      {
+        "path": ".scratch/validation/cpu-quant-mtp-c1/safetensors-headers.json",
+        "bytes": 33807055,
+        "sha256": "c866df769511d449c116eb84cbb63c6f7dfc9f7c222baaef6cb8d6532e3b5062"
+      },
+      {
+        "path": ".scratch/official-weight-audit.json",
+        "bytes": 310200781,
+        "sha256": "b2733128b42afd8e24722c20514bc3ff1a3fa33f8bfbe6da5e7a6c866663d7ff"
+      },
+      {
+        "path": ".scratch/gguf-weight-audit.json",
+        "bytes": 4823061,
+        "sha256": "cc69c6fbb4e41f10d7d0135bb1fcb7748776e0b491b5f66009fcb0b6f17b8555"
+      },
+      {
+        "path": "tests/compute_models/d5_glm_remaining_facts.json",
+        "bytes": 146229,
+        "sha256": "4cc3ef5b1902a0d0cd2c1b8d87937f3561d5cb0762073290c6cf313d113c3a03"
+      }
+    ],
+    "fixed_sglang": {
+      "revision": "06992c92ad4494fe9f9636e75be3e35040512447",
+      "manifest": ".scratch/glm-encoded-state-20261023/review/fixed-source/manifest.json",
+      "precision_review": ".scratch/glm-encoded-state-20261023/review/target43-assembly-next.json",
+      "precision": "Raw key/compression-gate rings BF16, completed K4 pools E4M3FN+F32 power-of-two scales; query BF16/Hadamard/BF16 exactly once. weights_proj is F32 at dsa_indexer_kpool.py135-164; widen original BF16 coefficients exactly, preserve ordered rawweights*nheads^-0.5*queryscale*head_dim^-0.5 and never inherit compression-gate rounding."
+    },
+    "dspark": {
+      "formal_source": {
+        "repository": "deepseek-ai/DeepSeek-V4-Flash-0731",
+        "revision": "7872f01b1d1fe23eabc4c98b48bffcef5a386062",
+        "anchors": "ParallelHead719-740; Transformer892-904 shares target embed/head with all draft stages; forward913-926 captures block40/41/42 outputs before target final headnorm."
+      },
+      "sidecar_identity": {
+        "repository": "unsloth/DeepSeek-V4-Flash-0731-GGUF",
+        "revision": "fbbb5b93fb787c21338159b0af3318bb3f4d9768",
+        "file": "dspark-DeepSeek-V4-Flash-0731-Q8_0.gguf",
+        "tensor_count": 81,
+        "tensor_data_offset": "5253152",
+        "tensor_table_sha256": "44f30d92e3be1e3737b92dddcb737e6d85944b60804a7a7a810a2ac60c79de5f"
+      },
+      "original_role_supply": {
+        "before_BG_count": 11,
+        "before_BG_bytes": 192576000,
+        "new_BG_shared_roles": 2,
+        "new_BG_bytes": 2118123520,
+        "remaining_sidecar_roles": 70,
+        "remaining_sidecar_payload_bytes": 10698228124
+      },
+      "shared_vocabulary": {
+        "each_bank": "BF16[129280,4096],1059061760B",
+        "acquisition": ".scratch/qwen-mtp-state-20261023/original-dspark-vocabulary/acquisition.json",
+        "hook_freeze": ".scratch/qwen-mtp-state-20261023/dspark-shared-source/freeze.json",
+        "real_test_freeze": ".scratch/qwen-mtp-state-20261023/dspark-shared-source/real-test-freeze2.json",
+        "status": "Source frozen, parent owns native results. Exact SHA-authenticated full banks bind ordinary target-owned readonly owner+lease; no per-stage duplicate, generated1GBplaceholder or denseF32weightshadow in real mode. Formal BF16 vocabulary+Q8 sidecar is a declared mixed artifact, not mainUDQ4 or complete target.",
+        "prior_native_status": "Parent checks4: oldCPU,oldCUDA,newrealCUDA passed; newrealCPU confidence relative gate failed. Source revision2 adds independent actual-input4352dot bound; parent focused rerun pending."
+      },
+      "remaining_group_inventory": {
+        "expert": {
+          "count": 9,
+          "bytes": 10267656192,
+          "roles": [
+            {
+              "name": "blk.0.ffn_gate_exps.weight",
+              "codec": "MXFP4",
+              "gguf_dimensions": [
+                4096,
+                2048,
+                256
+              ],
+              "payload_bytes": 1140850688,
+              "absolute_range_inclusive": [
+                5253152,
+                1146103839
+              ]
+            },
+            {
+              "name": "blk.0.ffn_down_exps.weight",
+              "codec": "MXFP4",
+              "gguf_dimensions": [
+                2048,
+                4096,
+                256
+              ],
+              "payload_bytes": 1140850688,
+              "absolute_range_inclusive": [
+                1146103840,
+                2286954527
+              ]
+            },
+            {
+              "name": "blk.0.ffn_up_exps.weight",
+              "codec": "MXFP4",
+              "gguf_dimensions": [
+                4096,
+                2048,
+                256
+              ],
+              "payload_bytes": 1140850688,
+              "absolute_range_inclusive": [
+                2286954528,
+                3427805215
+              ]
+            },
+            {
+              "name": "blk.1.ffn_gate_exps.weight",
+              "codec": "MXFP4",
+              "gguf_dimensions": [
+                4096,
+                2048,
+                256
+              ],
+              "payload_bytes": 1140850688,
+              "absolute_range_inclusive": [
+                3427805216,
+                4568655903
+              ]
+            },
+            {
+              "name": "blk.1.ffn_down_exps.weight",
+              "codec": "MXFP4",
+              "gguf_dimensions": [
+                2048,
+                4096,
+                256
+              ],
+              "payload_bytes": 1140850688,
+              "absolute_range_inclusive": [
+                4568655904,
+                5709506591
+              ]
+            },
+            {
+              "name": "blk.1.ffn_up_exps.weight",
+              "codec": "MXFP4",
+              "gguf_dimensions": [
+                4096,
+                2048,
+                256
+              ],
+              "payload_bytes": 1140850688,
+              "absolute_range_inclusive": [
+                5709506592,
+                6850357279
+              ]
+            },
+            {
+              "name": "blk.2.ffn_gate_exps.weight",
+              "codec": "MXFP4",
+              "gguf_dimensions": [
+                4096,
+                2048,
+                256
+              ],
+              "payload_bytes": 1140850688,
+              "absolute_range_inclusive": [
+                6850357280,
+                7991207967
+              ]
+            },
+            {
+              "name": "blk.2.ffn_down_exps.weight",
+              "codec": "MXFP4",
+              "gguf_dimensions": [
+                2048,
+                4096,
+                256
+              ],
+              "payload_bytes": 1140850688,
+              "absolute_range_inclusive": [
+                7991207968,
+                9132058655
+              ]
+            },
+            {
+              "name": "blk.2.ffn_up_exps.weight",
+              "codec": "MXFP4",
+              "gguf_dimensions": [
+                4096,
+                2048,
+                256
+              ],
+              "payload_bytes": 1140850688,
+              "absolute_range_inclusive": [
+                9132058656,
+                10272909343
+              ]
+            }
+          ]
+        },
+        "attention_sink": {
+          "count": 3,
+          "bytes": 768,
+          "roles": [
+            {
+              "name": "blk.0.attn_sinks.weight",
+              "codec": "F32",
+              "gguf_dimensions": [
+                64
+              ],
+              "payload_bytes": 256,
+              "absolute_range_inclusive": [
+                10272909344,
+                10272909599
+              ]
+            },
+            {
+              "name": "blk.1.attn_sinks.weight",
+              "codec": "F32",
+              "gguf_dimensions": [
+                64
+              ],
+              "payload_bytes": 256,
+              "absolute_range_inclusive": [
+                10472064544,
+                10472064799
+              ]
+            },
+            {
+              "name": "blk.2.attn_sinks.weight",
+              "codec": "F32",
+              "gguf_dimensions": [
+                64
+              ],
+              "payload_bytes": 256,
+              "absolute_range_inclusive": [
+                10617725984,
+                10617726239
+              ]
+            }
+          ]
+        },
+        "normalization": {
+          "count": 10,
+          "bytes": 126976,
+          "roles": [
+            {
+              "name": "blk.0.attn_q_a_norm.weight",
+              "codec": "F32",
+              "gguf_dimensions": [
+                1024
+              ],
+              "payload_bytes": 4096,
+              "absolute_range_inclusive": [
+                10272911648,
+                10272915743
+              ]
+            },
+            {
+              "name": "blk.0.attn_norm.weight",
+              "codec": "F32",
+              "gguf_dimensions": [
+                4096
+              ],
+              "payload_bytes": 16384,
+              "absolute_range_inclusive": [
+                10386555168,
+                10386571551
+              ]
+            },
+            {
+              "name": "blk.0.ffn_norm.weight",
+              "codec": "F32",
+              "gguf_dimensions": [
+                4096
+              ],
+              "payload_bytes": 16384,
+              "absolute_range_inclusive": [
+                10415408416,
+                10415424799
+              ]
+            },
+            {
+              "name": "blk.1.attn_q_a_norm.weight",
+              "codec": "F32",
+              "gguf_dimensions": [
+                1024
+              ],
+              "payload_bytes": 4096,
+              "absolute_range_inclusive": [
+                10472066848,
+                10472070943
+              ]
+            },
+            {
+              "name": "blk.1.attn_norm.weight",
+              "codec": "F32",
+              "gguf_dimensions": [
+                4096
+              ],
+              "payload_bytes": 16384,
+              "absolute_range_inclusive": [
+                10585710368,
+                10585726751
+              ]
+            },
+            {
+              "name": "blk.1.ffn_norm.weight",
+              "codec": "F32",
+              "gguf_dimensions": [
+                4096
+              ],
+              "payload_bytes": 16384,
+              "absolute_range_inclusive": [
+                10614563616,
+                10614579999
+              ]
+            },
+            {
+              "name": "blk.2.attn_q_a_norm.weight",
+              "codec": "F32",
+              "gguf_dimensions": [
+                1024
+              ],
+              "payload_bytes": 4096,
+              "absolute_range_inclusive": [
+                10617728288,
+                10617732383
+              ]
+            },
+            {
+              "name": "blk.2.attn_norm.weight",
+              "codec": "F32",
+              "gguf_dimensions": [
+                4096
+              ],
+              "payload_bytes": 16384,
+              "absolute_range_inclusive": [
+                10731371808,
+                10731388191
+              ]
+            },
+            {
+              "name": "blk.2.ffn_norm.weight",
+              "codec": "F32",
+              "gguf_dimensions": [
+                4096
+              ],
+              "payload_bytes": 16384,
+              "absolute_range_inclusive": [
+                10760233760,
+                10760250143
+              ]
+            },
+            {
+              "name": "output_norm.weight",
+              "codec": "F32",
+              "gguf_dimensions": [
+                4096
+              ],
+              "payload_bytes": 16384,
+              "absolute_range_inclusive": [
+                10896041056,
+                10896057439
+              ]
+            }
+          ]
+        },
+        "attention_projection": {
+          "count": 12,
+          "bytes": 334233600,
+          "roles": [
+            {
+              "name": "blk.0.attn_output_a.weight",
+              "codec": "Q8_0",
+              "gguf_dimensions": [
+                4096,
+                8192
+              ],
+              "payload_bytes": 35651584,
+              "absolute_range_inclusive": [
+                10275143968,
+                10310795551
+              ]
+            },
+            {
+              "name": "blk.0.attn_output_b.weight",
+              "codec": "Q8_0",
+              "gguf_dimensions": [
+                8192,
+                4096
+              ],
+              "payload_bytes": 35651584,
+              "absolute_range_inclusive": [
+                10310795552,
+                10346447135
+              ]
+            },
+            {
+              "name": "blk.0.attn_q_a.weight",
+              "codec": "Q8_0",
+              "gguf_dimensions": [
+                4096,
+                1024
+              ],
+              "payload_bytes": 4456448,
+              "absolute_range_inclusive": [
+                10346447136,
+                10350903583
+              ]
+            },
+            {
+              "name": "blk.0.attn_q_b.weight",
+              "codec": "Q8_0",
+              "gguf_dimensions": [
+                1024,
+                32768
+              ],
+              "payload_bytes": 35651584,
+              "absolute_range_inclusive": [
+                10350903584,
+                10386555167
+              ]
+            },
+            {
+              "name": "blk.1.attn_output_a.weight",
+              "codec": "Q8_0",
+              "gguf_dimensions": [
+                4096,
+                8192
+              ],
+              "payload_bytes": 35651584,
+              "absolute_range_inclusive": [
+                10474299168,
+                10509950751
+              ]
+            },
+            {
+              "name": "blk.1.attn_output_b.weight",
+              "codec": "Q8_0",
+              "gguf_dimensions": [
+                8192,
+                4096
+              ],
+              "payload_bytes": 35651584,
+              "absolute_range_inclusive": [
+                10509950752,
+                10545602335
+              ]
+            },
+            {
+              "name": "blk.1.attn_q_a.weight",
+              "codec": "Q8_0",
+              "gguf_dimensions": [
+                4096,
+                1024
+              ],
+              "payload_bytes": 4456448,
+              "absolute_range_inclusive": [
+                10545602336,
+                10550058783
+              ]
+            },
+            {
+              "name": "blk.1.attn_q_b.weight",
+              "codec": "Q8_0",
+              "gguf_dimensions": [
+                1024,
+                32768
+              ],
+              "payload_bytes": 35651584,
+              "absolute_range_inclusive": [
+                10550058784,
+                10585710367
+              ]
+            },
+            {
+              "name": "blk.2.attn_output_a.weight",
+              "codec": "Q8_0",
+              "gguf_dimensions": [
+                4096,
+                8192
+              ],
+              "payload_bytes": 35651584,
+              "absolute_range_inclusive": [
+                10619960608,
+                10655612191
+              ]
+            },
+            {
+              "name": "blk.2.attn_output_b.weight",
+              "codec": "Q8_0",
+              "gguf_dimensions": [
+                8192,
+                4096
+              ],
+              "payload_bytes": 35651584,
+              "absolute_range_inclusive": [
+                10655612192,
+                10691263775
+              ]
+            },
+            {
+              "name": "blk.2.attn_q_a.weight",
+              "codec": "Q8_0",
+              "gguf_dimensions": [
+                4096,
+                1024
+              ],
+              "payload_bytes": 4456448,
+              "absolute_range_inclusive": [
+                10691263776,
+                10695720223
+              ]
+            },
+            {
+              "name": "blk.2.attn_q_b.weight",
+              "codec": "Q8_0",
+              "gguf_dimensions": [
+                1024,
+                32768
+              ],
+              "payload_bytes": 35651584,
+              "absolute_range_inclusive": [
+                10695720224,
+                10731371807
+              ]
+            }
+          ]
+        },
+        "router_bias": {
+          "count": 3,
+          "bytes": 3072,
+          "roles": [
+            {
+              "name": "blk.0.exp_probs_b.bias",
+              "codec": "F32",
+              "gguf_dimensions": [
+                256
+              ],
+              "payload_bytes": 1024,
+              "absolute_range_inclusive": [
+                10386571552,
+                10386572575
+              ]
+            },
+            {
+              "name": "blk.1.exp_probs_b.bias",
+              "codec": "F32",
+              "gguf_dimensions": [
+                256
+              ],
+              "payload_bytes": 1024,
+              "absolute_range_inclusive": [
+                10585726752,
+                10585727775
+              ]
+            },
+            {
+              "name": "blk.2.exp_probs_b.bias",
+              "codec": "F32",
+              "gguf_dimensions": [
+                256
+              ],
+              "payload_bytes": 1024,
+              "absolute_range_inclusive": [
+                10731396896,
+                10731397919
+              ]
+            }
+          ]
+        },
+        "router": {
+          "count": 3,
+          "bytes": 6291456,
+          "roles": [
+            {
+              "name": "blk.0.ffn_gate_inp.weight",
+              "codec": "BF16",
+              "gguf_dimensions": [
+                4096,
+                256
+              ],
+              "payload_bytes": 2097152,
+              "absolute_range_inclusive": [
+                10386572576,
+                10388669727
+              ]
+            },
+            {
+              "name": "blk.1.ffn_gate_inp.weight",
+              "codec": "BF16",
+              "gguf_dimensions": [
+                4096,
+                256
+              ],
+              "payload_bytes": 2097152,
+              "absolute_range_inclusive": [
+                10585727776,
+                10587824927
+              ]
+            },
+            {
+              "name": "blk.2.ffn_gate_inp.weight",
+              "codec": "BF16",
+              "gguf_dimensions": [
+                4096,
+                256
+              ],
+              "payload_bytes": 2097152,
+              "absolute_range_inclusive": [
+                10731397920,
+                10733495071
+              ]
+            }
+          ]
+        },
+        "shared_expert": {
+          "count": 9,
+          "bytes": 80216064,
+          "roles": [
+            {
+              "name": "blk.0.ffn_gate_shexp.weight",
+              "codec": "Q8_0",
+              "gguf_dimensions": [
+                4096,
+                2048
+              ],
+              "payload_bytes": 8912896,
+              "absolute_range_inclusive": [
+                10388669728,
+                10397582623
+              ]
+            },
+            {
+              "name": "blk.0.ffn_down_shexp.weight",
+              "codec": "Q8_0",
+              "gguf_dimensions": [
+                2048,
+                4096
+              ],
+              "payload_bytes": 8912896,
+              "absolute_range_inclusive": [
+                10397582624,
+                10406495519
+              ]
+            },
+            {
+              "name": "blk.0.ffn_up_shexp.weight",
+              "codec": "Q8_0",
+              "gguf_dimensions": [
+                4096,
+                2048
+              ],
+              "payload_bytes": 8912896,
+              "absolute_range_inclusive": [
+                10406495520,
+                10415408415
+              ]
+            },
+            {
+              "name": "blk.1.ffn_gate_shexp.weight",
+              "codec": "Q8_0",
+              "gguf_dimensions": [
+                4096,
+                2048
+              ],
+              "payload_bytes": 8912896,
+              "absolute_range_inclusive": [
+                10587824928,
+                10596737823
+              ]
+            },
+            {
+              "name": "blk.1.ffn_down_shexp.weight",
+              "codec": "Q8_0",
+              "gguf_dimensions": [
+                2048,
+                4096
+              ],
+              "payload_bytes": 8912896,
+              "absolute_range_inclusive": [
+                10596737824,
+                10605650719
+              ]
+            },
+            {
+              "name": "blk.1.ffn_up_shexp.weight",
+              "codec": "Q8_0",
+              "gguf_dimensions": [
+                4096,
+                2048
+              ],
+              "payload_bytes": 8912896,
+              "absolute_range_inclusive": [
+                10605650720,
+                10614563615
+              ]
+            },
+            {
+              "name": "blk.2.ffn_gate_shexp.weight",
+              "codec": "Q8_0",
+              "gguf_dimensions": [
+                4096,
+                2048
+              ],
+              "payload_bytes": 8912896,
+              "absolute_range_inclusive": [
+                10733495072,
+                10742407967
+              ]
+            },
+            {
+              "name": "blk.2.ffn_down_shexp.weight",
+              "codec": "Q8_0",
+              "gguf_dimensions": [
+                2048,
+                4096
+              ],
+              "payload_bytes": 8912896,
+              "absolute_range_inclusive": [
+                10742407968,
+                10751320863
+              ]
+            },
+            {
+              "name": "blk.2.ffn_up_shexp.weight",
+              "codec": "Q8_0",
+              "gguf_dimensions": [
+                4096,
+                2048
+              ],
+              "payload_bytes": 8912896,
+              "absolute_range_inclusive": [
+                10751320864,
+                10760233759
+              ]
+            }
+          ]
+        },
+        "hyperconnection": {
+          "count": 21,
+          "bytes": 9699996,
+          "roles": [
+            {
+              "name": "blk.0.hc_attn_base.weight",
+              "codec": "F32",
+              "gguf_dimensions": [
+                24
+              ],
+              "payload_bytes": 96,
+              "absolute_range_inclusive": [
+                10415424800,
+                10415424895
+              ]
+            },
+            {
+              "name": "blk.0.hc_attn_fn.weight",
+              "codec": "F32",
+              "gguf_dimensions": [
+                16384,
+                24
+              ],
+              "payload_bytes": 1572864,
+              "absolute_range_inclusive": [
+                10415424896,
+                10416997759
+              ]
+            },
+            {
+              "name": "blk.0.hc_attn_scale.weight",
+              "codec": "F32",
+              "gguf_dimensions": [
+                3
+              ],
+              "payload_bytes": 12,
+              "absolute_range_inclusive": [
+                10416997760,
+                10416997771
+              ]
+            },
+            {
+              "name": "blk.0.hc_ffn_base.weight",
+              "codec": "F32",
+              "gguf_dimensions": [
+                24
+              ],
+              "payload_bytes": 96,
+              "absolute_range_inclusive": [
+                10416997792,
+                10416997887
+              ]
+            },
+            {
+              "name": "blk.0.hc_ffn_fn.weight",
+              "codec": "F32",
+              "gguf_dimensions": [
+                16384,
+                24
+              ],
+              "payload_bytes": 1572864,
+              "absolute_range_inclusive": [
+                10416997888,
+                10418570751
+              ]
+            },
+            {
+              "name": "blk.0.hc_ffn_scale.weight",
+              "codec": "F32",
+              "gguf_dimensions": [
+                3
+              ],
+              "payload_bytes": 12,
+              "absolute_range_inclusive": [
+                10418570752,
+                10418570763
+              ]
+            },
+            {
+              "name": "blk.1.hc_attn_base.weight",
+              "codec": "F32",
+              "gguf_dimensions": [
+                24
+              ],
+              "payload_bytes": 96,
+              "absolute_range_inclusive": [
+                10614580000,
+                10614580095
+              ]
+            },
+            {
+              "name": "blk.1.hc_attn_fn.weight",
+              "codec": "F32",
+              "gguf_dimensions": [
+                16384,
+                24
+              ],
+              "payload_bytes": 1572864,
+              "absolute_range_inclusive": [
+                10614580096,
+                10616152959
+              ]
+            },
+            {
+              "name": "blk.1.hc_attn_scale.weight",
+              "codec": "F32",
+              "gguf_dimensions": [
+                3
+              ],
+              "payload_bytes": 12,
+              "absolute_range_inclusive": [
+                10616152960,
+                10616152971
+              ]
+            },
+            {
+              "name": "blk.1.hc_ffn_base.weight",
+              "codec": "F32",
+              "gguf_dimensions": [
+                24
+              ],
+              "payload_bytes": 96,
+              "absolute_range_inclusive": [
+                10616152992,
+                10616153087
+              ]
+            },
+            {
+              "name": "blk.1.hc_ffn_fn.weight",
+              "codec": "F32",
+              "gguf_dimensions": [
+                16384,
+                24
+              ],
+              "payload_bytes": 1572864,
+              "absolute_range_inclusive": [
+                10616153088,
+                10617725951
+              ]
+            },
+            {
+              "name": "blk.1.hc_ffn_scale.weight",
+              "codec": "F32",
+              "gguf_dimensions": [
+                3
+              ],
+              "payload_bytes": 12,
+              "absolute_range_inclusive": [
+                10617725952,
+                10617725963
+              ]
+            },
+            {
+              "name": "blk.2.hc_attn_base.weight",
+              "codec": "F32",
+              "gguf_dimensions": [
+                24
+              ],
+              "payload_bytes": 96,
+              "absolute_range_inclusive": [
+                10760250144,
+                10760250239
+              ]
+            },
+            {
+              "name": "blk.2.hc_attn_fn.weight",
+              "codec": "F32",
+              "gguf_dimensions": [
+                16384,
+                24
+              ],
+              "payload_bytes": 1572864,
+              "absolute_range_inclusive": [
+                10760250240,
+                10761823103
+              ]
+            },
+            {
+              "name": "blk.2.hc_attn_scale.weight",
+              "codec": "F32",
+              "gguf_dimensions": [
+                3
+              ],
+              "payload_bytes": 12,
+              "absolute_range_inclusive": [
+                10761823104,
+                10761823115
+              ]
+            },
+            {
+              "name": "blk.2.hc_ffn_base.weight",
+              "codec": "F32",
+              "gguf_dimensions": [
+                24
+              ],
+              "payload_bytes": 96,
+              "absolute_range_inclusive": [
+                10761823136,
+                10761823231
+              ]
+            },
+            {
+              "name": "blk.2.hc_ffn_fn.weight",
+              "codec": "F32",
+              "gguf_dimensions": [
+                16384,
+                24
+              ],
+              "payload_bytes": 1572864,
+              "absolute_range_inclusive": [
+                10761823232,
+                10763396095
+              ]
+            },
+            {
+              "name": "blk.2.hc_ffn_scale.weight",
+              "codec": "F32",
+              "gguf_dimensions": [
+                3
+              ],
+              "payload_bytes": 12,
+              "absolute_range_inclusive": [
+                10763396096,
+                10763396107
+              ]
+            },
+            {
+              "name": "output_hc_base.weight",
+              "codec": "F32",
+              "gguf_dimensions": [
+                4
+              ],
+              "payload_bytes": 16,
+              "absolute_range_inclusive": [
+                10763396128,
+                10763396143
+              ]
+            },
+            {
+              "name": "output_hc_fn.weight",
+              "codec": "F32",
+              "gguf_dimensions": [
+                16384,
+                4
+              ],
+              "payload_bytes": 262144,
+              "absolute_range_inclusive": [
+                10763396160,
+                10763658303
+              ]
+            },
+            {
+              "name": "output_hc_scale.weight",
+              "codec": "F32",
+              "gguf_dimensions": [
+                1
+              ],
+              "payload_bytes": 4,
+              "absolute_range_inclusive": [
+                10763658304,
+                10763658307
+              ]
+            }
+          ]
+        }
+      },
+      "smallest_next_supply": {
+        "batch1": "10 normalization+3sink+3routerbias F32 roles",
+        "batch1_count": 16,
+        "batch1_bytes": 130816,
+        "batch2": "21 F32 hyperconnection roles",
+        "batch2_bytes": 9699996,
+        "implementation": "Model-local ready-role parameter callback to existing complete stage/head constants with preserved source math/layout; no new common op/loader is required merely to replace these coefficients."
+      },
+      "experts": "Nine remaining expert banks are actual MXFP4 despite the Q8_0 file name, total10267656192B. ggml native_grouped_bank source special case indexes quant blocks and accepts this canonical geometry; current generated7expert test does not measure full256expert resident resource behavior or trained output.",
+      "target_taps": {
+        "existing_interface": "dspark_target_binding::TargetTap +CaptureFrame +Projection::qualify -> make_projection original fc/norm -> accepted-history catchup",
+        "exact_boundary": "F32[rows,4,4096] actual block40/41/42 output leases, explicitly zero-based (GGUF one-based41/42/43 convention)",
+        "still_missing": "Current target_captures is a generated actual-ID/position continuation Graph; finite verifier head is generated17-way. Real trained target capture/verifier producers remain unsupplied; do not substitute host-reconstructed values or claim natural acceptance."
+      }
+    },
+    "glm_flash_next": {
+      "repository": "zai-org/GLM-5.3-Flash",
+      "revision": "eb9eb208eb0d988989d07a6a12d0fdeb5f52574a",
+      "existing_original_prefix": "glm_original_mtp_chain_test.cc has original7roles73429504B ending qnormBF16 -> generatedBF16 indexwq_b. Complete encoded state consumer still uses generated projection coefficients.",
+      "minimal_single_role": {
+        "name": "model.language_model.layers.45.self_attn.indexer.wq_b.weight",
+        "codec": "BF16[4096,1536]",
+        "bytes": 12582912,
+        "slot": "Replace generated wq_b at glm_original_mtp_chain_test.cc192, preserving actual BF16 qnorm predecessor."
+      },
+      "complete_indexer_batch": [
+        {
+          "name": "model.language_model.layers.45.self_attn.indexer.index_kpool_compress_ape",
+          "dtype": "BF16",
+          "shape": [
+            4,
+            128
+          ],
+          "data_offsets": [
+            3635248,
+            3636272
+          ],
+          "shard": "model-00002-of-00062.safetensors",
+          "payload_bytes": 1024,
+          "absolute_range_inclusive": [
+            3796112,
+            3797135
+          ]
+        },
+        {
+          "name": "model.language_model.layers.45.self_attn.indexer.index_kpool_compress_gate",
+          "dtype": "BF16",
+          "shape": [
+            128,
+            4096
+          ],
+          "data_offsets": [
+            3636272,
+            4684848
+          ],
+          "shard": "model-00002-of-00062.safetensors",
+          "payload_bytes": 1048576,
+          "absolute_range_inclusive": [
+            3797136,
+            4845711
+          ]
+        },
+        {
+          "name": "model.language_model.layers.45.self_attn.indexer.k_norm.bias",
+          "dtype": "BF16",
+          "shape": [
+            128
+          ],
+          "data_offsets": [
+            4684848,
+            4685104
+          ],
+          "shard": "model-00002-of-00062.safetensors",
+          "payload_bytes": 256,
+          "absolute_range_inclusive": [
+            4845712,
+            4845967
+          ]
+        },
+        {
+          "name": "model.language_model.layers.45.self_attn.indexer.k_norm.weight",
+          "dtype": "BF16",
+          "shape": [
+            128
+          ],
+          "data_offsets": [
+            4685104,
+            4685360
+          ],
+          "shard": "model-00002-of-00062.safetensors",
+          "payload_bytes": 256,
+          "absolute_range_inclusive": [
+            4845968,
+            4846223
+          ]
+        },
+        {
+          "name": "model.language_model.layers.45.self_attn.indexer.weights_proj.weight",
+          "dtype": "BF16",
+          "shape": [
+            32,
+            4096
+          ],
+          "data_offsets": [
+            4685360,
+            4947504
+          ],
+          "shard": "model-00002-of-00062.safetensors",
+          "payload_bytes": 262144,
+          "absolute_range_inclusive": [
+            4846224,
+            5108367
+          ]
+        },
+        {
+          "name": "model.language_model.layers.45.self_attn.indexer.wk.weight",
+          "dtype": "BF16",
+          "shape": [
+            128,
+            4096
+          ],
+          "data_offsets": [
+            4947504,
+            5996080
+          ],
+          "shard": "model-00002-of-00062.safetensors",
+          "payload_bytes": 1048576,
+          "absolute_range_inclusive": [
+            5108368,
+            6156943
+          ]
+        },
+        {
+          "name": "model.language_model.layers.45.self_attn.indexer.wq_b.weight",
+          "dtype": "BF16",
+          "shape": [
+            4096,
+            1536
+          ],
+          "data_offsets": [
+            5996080,
+            18578992
+          ],
+          "shard": "model-00002-of-00062.safetensors",
+          "payload_bytes": 12582912,
+          "absolute_range_inclusive": [
+            6156944,
+            18739855
+          ]
+        }
+      ],
+      "complete_indexer_bytes": 14943744,
+      "cached_header": {
+        "path": ".scratch/glm-mtp-carry-20261022/original-glm-q-a/header.json",
+        "sha256": "4727368ca83ad19ddfea0bfcb0fbf4427087b5b0bf648968b863962454e85c15",
+        "bytes": 160856,
+        "data_base": 160864,
+        "file": "model-00002-of-00062.safetensors"
+      },
+      "next_wiring": "Add original parameter bindings to existing model-local indexer graph while preserving actual key/query/pool state; then incrementally original MLA E4/F32/BF16 projections via existing typed operations. No missing common primitive follows merely from generated weights.",
+      "shared_vocabulary_each": "BF16[154880,4096],1268776960B",
+      "route_size_caution": "ggml_cuda tensor_program.cc145 generic count cap536870655 rejects full634388480element BF16 head (DSpark529530880 fits). This is route-local, not demonstrated Hyle missing capability: cublas already accepts direct dense BFloatLinearF32 with size_t byte-span checks/noF32copy; existing vocabulary fixtures also have16384row shards. Use normal route planning or row subleases if needed, never blindly relax all integer bounds."
+    },
+    "other_geometries": [
+      {
+        "model": "GLM-5.3",
+        "revision": "aca966e4e02791568aa6a4ced368624b3d897f42",
+        "shared_bank_each": "BF16[154880,6144],1903165440B",
+        "remaining": "NextN78/queryrank2048/latent512+RoPE64/noK4pool; current Flash4096 geometry is not Pro support. Existing Float8 block import ceil(N/128) already handles N576 and is not a new gap."
+      },
+      {
+        "model": "DeepSeek-V4-Pro-0813",
+        "revision": "72e1d3230f6c080a530b0a1d46f8eb4602340597",
+        "shared_bank_each": "BF16[129280,7168],1853358080B",
+        "remaining": "Markov512,heads128,groups16,target blocks58/59/60. Fixed original headers exist but H4096/Markov256 Flash consumer cannot be relabeled Pro; model-local layout/parameter/state wiring remains."
+      }
+    ],
+    "identity_cautions": [
+      "Old unversioned DeepSeek official-weight-audit rows are preview, excluded in favor of formal C1 headers/indexes.",
+      "Selected GLMFlash GGUF revision621d456e93e926e4b52f85cff5f634358c1828f9 differs from C1extra a38483c8cd5df544f53d70fb281afe97369d5ab6; never mix their offsets/tables.",
+      "Some first-shard C1 GGUF records have zero tensors, metadata-only does not certify complete inventory."
+    ],
+    "not_claimed": [
+      "No new native result by this source agent.",
+      "Not full official GLM/DSpark target/stage weights, natural acceptance, throughput or end-to-end quality.",
+      "BF43->44->NextN actual generated combination already passed; this audit does not reopen it."
+    ]
+  },
+  "next": "Resolve ggml CUDA encoded MatMul RHS generic F32 element cap, then validate one full vocabulary head with this same bank; exact smaller GLM indexer/DSpark norm/HC suppliers next. Full target taps/Pro geometry and remaining confirmed quantization remain.",
+  "limitations": [
+    "WindowsCPU/CUDA only this round; no Linux,Apple,Vulkan model run",
+    "Q27/Q24 complete draft continuation only; original target/recurrent trunk remains explicit external boundary",
+    "Qwen other weights/vocabulary and8resident Q24 expert mapping generated; no full64/92-layer/original512expert model",
+    "DSpark original sharedvocabulary plus Q8sidecar eleven roles is an explicit mixed-role consumer, not mainUDQ4 vocabulary or fullofficialBF16target/stages; headnorm/otherstage coefficients and targetcapture/verifier generated",
+    "Manual accepted0/1/2 verifies state mechanism; not natural fullmodel acceptance or generation quality",
+    "Scoped cases passed in separate images/runs; only the changed realDSpark numerical checks rerun after confidence oracle revision. All prior failures retained.",
+    "CMake source wiring updated, no fullconfigure/SDK/thirdparty/NVCC/shader rebuild",
+    "No newTPS/loading/physicalCPU-GPUpeak sample; preserve AV latest complete performance table"
+  ],
+  "final_image": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-state-20261023\\tests-link5\\qwen-state-checks.exe",
+    "bytes": 142596608,
+    "sha256": "b905c23ba4674e8ea611c51f6d453b1e4cebc85adc6946c0210a42402c133e0e"
+  },
+  "source_identities": [
+    {
+      "path": "docs\\developer\\current-work.md",
+      "bytes": 23913,
+      "sha256": "dd2e38a418e074b2ada5cd5a4ee995fb2ed79f66266b40825f446cf27fb3ecf8"
+    },
+    {
+      "path": "docs\\implementation\\model-operators.md",
+      "bytes": 92829,
+      "sha256": "4f6f382b932879ddc4996dcd12ff6d9b4894ce23931a578e35558d10bfe82987"
+    },
+    {
+      "path": "test.ps1",
+      "bytes": 3405,
+      "sha256": "ea32d2e80bd7948d352143a1d790b9d2f1d3a5dc1706f75a506aaa348e7cd4da"
+    },
+    {
+      "path": "tests\\compute_models\\cpu_c4_model_branches.h",
+      "bytes": 34694,
+      "sha256": "df61b214f0b7f4693a0e4e65fba6a17b238744e78c6aff50f9b980b5f856fcff"
+    },
+    {
+      "path": "tests\\compute_models\\cpu_c5_qwen_nextn.h",
+      "bytes": 18271,
+      "sha256": "b4f646571ef3a38ff6c7a5a7750659e943b80eeb9063ccb11ba12d2c503cfb03"
+    },
+    {
+      "path": "tests\\compute_models\\dspark_complete_graph_fixture.h",
+      "bytes": 10915,
+      "sha256": "6899a9698be5071e6c5d5c5fc3488fdad8ab87abef8cb4ad7256717c5b81b007"
+    },
+    {
+      "path": "tests\\compute_models\\dspark_original_lm_reference.h",
+      "bytes": 8875,
+      "sha256": "1ceb67951e514404e8c5670f54c88d026d1a7be8ed31b285c74077cc6242805c"
+    },
+    {
+      "path": "tests\\compute_models\\dspark_original_state_consumer.h",
+      "bytes": 8979,
+      "sha256": "9b6ade8fb52db25070b286fa220e339de1f0619591061fbd3ed42d7fff8e84d4"
+    },
+    {
+      "path": "tests\\compute_models\\dspark_original_state_consumer_test.cc",
+      "bytes": 42277,
+      "sha256": "acaeb9a788606468feaedc42e8f8e3b813cb236f3486c87f0e06059a58144d96"
+    },
+    {
+      "path": "tests\\compute_models\\dspark_shared_target_roles.h",
+      "bytes": 3805,
+      "sha256": "3aa38a2ec52606a0b7872987c442c87647da5cb87fd2f2da51bd41135400160a"
+    },
+    {
+      "path": "tests\\compute_models\\qwen24_original_mtp_kv_test.cc",
+      "bytes": 26938,
+      "sha256": "eb5c973a3a6273cf8130f1ae50f65d63289a481fb0769ac2adb5a8b9c069bd0e"
+    },
+    {
+      "path": "tests\\compute_models\\qwen27_original_mtp_input_test.cc",
+      "bytes": 14425,
+      "sha256": "914dc79e296f36a586f7b8ba0e66d4cd789d4eab78d902ce2de66243169e72b5"
+    },
+    {
+      "path": "tests\\compute_models\\qwen_mtp_state_consumer.h",
+      "bytes": 21129,
+      "sha256": "f5ae52bb4a65a48cbdaceb79456a789456c133108b49c65192d96a8c60d41801"
+    },
+    {
+      "path": "tests\\compute_models\\qwen_mtp_state_consumer_test.cc",
+      "bytes": 28340,
+      "sha256": "76d2ff22265987389767f6200bc74d15b749fe2ce9bace4719192ac0eefdef5e"
+    },
+    {
+      "path": "tests\\compute_models\\qwen_original_mtp_roles.h",
+      "bytes": 12336,
+      "sha256": "da0090bed51b96c6737b115235cf3503b9b90b45e5255e0ad779e37b1ef90a73"
+    },
+    {
+      "path": "tests\\graph_route_cpu\\CMakeLists.txt",
+      "bytes": 11341,
+      "sha256": "4996eb9e0449fa36b6b27bc1bec09fb1f484c9b4c5b4a0bc95ac65dfebe6d3d4"
+    },
+    {
+      "path": "tests\\graph_route_cuda\\CMakeLists.txt",
+      "bytes": 12706,
+      "sha256": "8e5450870747e9ac7d5043f95cd545da220c4af879d17afe2337ee37c972aaec"
+    }
+  ],
+  "cleanup": {
+    "Removed": [
+      {
+        "Relative": ".scratch/qwen-mtp-state-20261023/tests-link1/qwen-state-checks.exe",
+        "Bytes": 140382720
+      },
+      {
+        "Relative": ".scratch/qwen-mtp-state-20261023/tests-link1/qwen-state-checks.map",
+        "Bytes": 58280627
+      },
+      {
+        "Relative": ".scratch/qwen-mtp-state-20261023/tests-link2/qwen-state-checks.exe",
+        "Bytes": 142341632
+      },
+      {
+        "Relative": ".scratch/qwen-mtp-state-20261023/tests-link2/qwen-state-checks.map",
+        "Bytes": 62835859
+      },
+      {
+        "Relative": ".scratch/qwen-mtp-state-20261023/tests-link3/qwen-state-checks.exe",
+        "Bytes": 140798464
+      },
+      {
+        "Relative": ".scratch/qwen-mtp-state-20261023/tests-link3/qwen-state-checks.map",
+        "Bytes": 59001220
+      },
+      {
+        "Relative": ".scratch/qwen-mtp-state-20261023/tests-link4/qwen-state-checks.exe",
+        "Bytes": 142354944
+      },
+      {
+        "Relative": ".scratch/qwen-mtp-state-20261023/tests-link4/qwen-state-checks.map",
+        "Bytes": 62886597
+      }
+    ],
+    "RemovedPathBytes": 808882063.0,
+    "ProtectedImagesRetained": [
+      true,
+      true,
+      true,
+      true
+    ],
+    "Retained": "All objects, source, commands, data and runtime DLLs; current BG and BF CPU/CUDA, previous Vulkan and AV performance images"
+  },
+  "archive": {
+    "path": "docs\\evidence\\correctness\\mtp-shared-vocabulary-state-2026-10-23.zip",
+    "bytes": 1086050,
+    "sha256": "b0adf2c58ded23f0a0f74e5208a92724f754cce4587684d361b2d93f124ed556"
+  },
+  "archive_items": 261
+}

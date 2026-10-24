@@ -1,0 +1,1 @@
+hyle_add_module(compute_stream_cpu SOURCES file_stream.cc)

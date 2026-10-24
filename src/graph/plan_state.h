@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <atomic>
 #include <cstddef>
 #include <cstdint>
@@ -7,12 +8,15 @@
 #include <utility>
 
 #include "constant_artifact.h"
+#include "execution_source_internal.h"
 #include "graph_state.h"
 #include "hyle/compute/detail/command_capture.h"
 #include "hyle/compute/detail/completion_access.h"
 #include "hyle/compute/detail/context_ref.h"
 #include "hyle/compute/detail/provider_extension.h"
+#include "hyle/compute/detail/queue_ref.h"
 #include "hyle/compute/detail/queue_sequence.h"
+#include "hyle/compute/detail/retained_completion.h"
 #include "hyle/compute/prepared_operation.h"
 #include "hyle/container/small_vector.h"
 #include "hyle/graph/executable.h"
@@ -21,6 +25,10 @@
 #include "hyle/util/ref_counted.h"
 #include "hyle/util/spin_lock.h"
 #include "storage_budget.h"
+#include "resource_episode.h"
+#include "submission_lifetime.h"
+#include "progress_internal.h"
+#include "input_sources.h"
 
 namespace hyle::graph::detail {
 
@@ -38,6 +46,7 @@ inline constexpr std::uint8_t kConstant = 1u << 2;
 inline constexpr std::uint8_t kInvocationOwnedOutput = 1u << 3;
 inline constexpr std::uint8_t kRetainedOutputRoot = 1u << 4;
 inline constexpr std::uint8_t kSourceAliasedOutput = 1u << 5;
+inline constexpr std::uint8_t kGeneratedOutput = 1u << 6;
 
 class PreparedRegion;
 
@@ -56,6 +65,12 @@ public:
   ~RegionInvocation();
 
   bool valid() const noexcept { return prepared_ != nullptr; }
+  Result<RegionValue> output_value(std::size_t port) const noexcept;
+  RegionOutputReference output_reference(std::size_t port) const noexcept;
+  Status prepare_bindings(std::span<const RegionValue>,
+      std::span<const compute::TensorView>) const noexcept;
+  Status seal_bindings() const noexcept;
+  Result<compute::ReadLease> output_lease(std::size_t port) const noexcept;
   compute::detail::EnqueueResult
   enqueue_prevalidated(compute::detail::QueueSequence &sequence,
                        std::span<const compute::ConstTensorView> inputs,
@@ -88,15 +103,15 @@ private:
 class PreparedRegion final {
 public:
   PreparedRegion() noexcept = default;
-  PreparedRegion(compute::detail::ProviderExtensionRef extension,
+  PreparedRegion(GraphRegionSource source,
                  ProviderRegionPrepared prepared,
                  mem::AllocatorRef allocator) noexcept
-      : extension_(std::move(extension)), prepared_(prepared),
+      : source_(std::move(source)), prepared_(prepared),
         allocator_(allocator) {}
   PreparedRegion(const PreparedRegion &) = delete;
   PreparedRegion &operator=(const PreparedRegion &) = delete;
   PreparedRegion(PreparedRegion &&other) noexcept
-      : extension_(std::move(other.extension_)), prepared_(other.prepared_),
+      : source_(std::move(other.source_)), prepared_(other.prepared_),
         allocator_(other.allocator_) {
     other.prepared_ = {};
     other.allocator_ = {};
@@ -104,7 +119,7 @@ public:
   PreparedRegion &operator=(PreparedRegion &&other) noexcept {
     if (this != &other) {
       reset();
-      extension_ = std::move(other.extension_);
+      source_ = std::move(other.source_);
       prepared_ = other.prepared_;
       allocator_ = other.allocator_;
       other.prepared_ = {};
@@ -115,16 +130,21 @@ public:
   ~PreparedRegion() { reset(); }
 
   bool valid() const noexcept {
-    return extension_.valid() && prepared_.vtable != nullptr;
+    return source_.valid() && prepared_.vtable != nullptr;
   }
   compute::ProviderIdentity provider() const noexcept {
-    return extension_.provider();
+    return source_.provider();
   }
   compute::ProviderInstanceId provider_instance_id() const noexcept {
-    return extension_.provider_instance_id();
+    return source_.provider_instance_id();
   }
   RegionArtifactProperties properties() const noexcept {
     return prepared_.properties;
+  }
+  bool matches_artifact(const ProviderRegionPreparedVTable *implementation,
+                        const void *state) const noexcept {
+    return valid() && prepared_.vtable == implementation &&
+           prepared_.state == state;
   }
   Result<compute::AliasSupport>
   alias_support(std::size_t output_index,
@@ -135,6 +155,58 @@ public:
     }
     return prepared_.vtable->alias_support(prepared_.state, output_index,
                                            input_index);
+  }
+
+  RegionOutputContract output_contract(std::size_t port) const noexcept {
+    return prepared_.vtable->output_contract
+        ? prepared_.vtable->output_contract(prepared_.state, port)
+        : RegionOutputContract{};
+  }
+  RegionOutputKind output_kind(std::size_t port) const noexcept {
+    return output_contract(port).kind;
+  }
+  bool prepares_bindings() const noexcept {
+    return prepared_.vtable->prepare_bindings != nullptr;
+  }
+  bool seals_bindings() const noexcept {
+    return prepared_.vtable->seal_bindings != nullptr;
+  }
+  RegionOutputReference output_reference(void *invocation, std::size_t port) const noexcept {
+    return {prepared_.vtable, prepared_.state, invocation, port};
+  }
+  Result<RegionValue> output_value(void *invocation, std::size_t port) const noexcept {
+    if (!prepared_.vtable->output_value)
+      return std::unexpected(Status::Unimplemented("region has no generated output projection"));
+    // Projection only borrows the retained original slot. It grants neither
+    // ready permission nor admission to new device work, including after close.
+    return prepared_.vtable->output_value(prepared_.state, invocation, port);
+  }
+  Status prepare_bindings(void *invocation, std::span<const RegionValue> inputs,
+      std::span<const compute::TensorView> outputs) const noexcept {
+    if (!prepares_bindings()) return Status::Ok();
+    struct Call final {
+      const PreparedRegion *region; void *invocation;
+      std::span<const RegionValue> inputs;
+      std::span<const compute::TensorView> outputs;
+    } call{this, invocation, inputs, outputs};
+    return source_.call([](void *, const void *, void *opaque) noexcept {
+      auto &c = *static_cast<Call *>(opaque);
+      return c.region->prepared_.vtable->prepare_bindings(
+          c.region->prepared_.state, c.invocation, c.inputs, c.outputs);
+    }, &call);
+  }
+  Status seal_bindings(void *invocation) const noexcept {
+    if (!prepared_.vtable->seal_bindings) return Status::Ok();
+    struct Call final { const PreparedRegion *region; void *invocation; } call{this, invocation};
+    return source_.call([](void *, const void *, void *opaque) noexcept {
+      auto &c = *static_cast<Call *>(opaque);
+      return c.region->prepared_.vtable->seal_bindings(c.region->prepared_.state, c.invocation);
+    }, &call);
+  }
+  Result<compute::ReadLease> output_lease(void *invocation, std::size_t port) const noexcept {
+    if (!prepared_.vtable->output_lease)
+      return std::unexpected(Status::Unimplemented("native output has no storage lease projection"));
+    return prepared_.vtable->output_lease(prepared_.state, invocation, port);
   }
 
   Result<RegionInvocation>
@@ -167,10 +239,27 @@ private:
     prepared_ = {};
   }
 
-  compute::detail::ProviderExtensionRef extension_{};
+  GraphRegionSource source_{};
   ProviderRegionPrepared prepared_{};
   mem::AllocatorRef allocator_{};
 };
+
+inline Result<RegionValue> RegionInvocation::output_value(std::size_t port) const noexcept {
+  return prepared_->output_value(state_, port);
+}
+inline RegionOutputReference RegionInvocation::output_reference(std::size_t port) const noexcept {
+  return prepared_->output_reference(state_, port);
+}
+inline Status RegionInvocation::prepare_bindings(std::span<const RegionValue> inputs,
+    std::span<const compute::TensorView> outputs) const noexcept {
+  return prepared_->prepare_bindings(state_, inputs, outputs);
+}
+inline Status RegionInvocation::seal_bindings() const noexcept {
+  return prepared_->seal_bindings(state_);
+}
+inline Result<compute::ReadLease> RegionInvocation::output_lease(std::size_t port) const noexcept {
+  return prepared_->output_lease(state_, port);
+}
 
 inline RegionInvocation &
 RegionInvocation::operator=(RegionInvocation &&other) noexcept {
@@ -242,8 +331,7 @@ inline Result<RegionInvocation> PreparedRegion::create_invocation(
     mem::AllocatorRef allocator{};
     void *state = nullptr;
   } episode{this, workspace, allocator, nullptr};
-  const Status status = compute::detail::ProviderExtensionAccess::call(
-      extension_,
+  const Status status = source_.call(
       +[](void *, const void *, void *opaque) noexcept -> Status {
         auto &call = *static_cast<Episode *>(opaque);
         return call.region->prepared_.vtable->create_invocation(
@@ -281,7 +369,7 @@ inline compute::detail::EnqueueResult PreparedRegion::enqueue_prevalidated(
   // extension still owns the provider lifetime, so replay needs only the
   // already-bound region call, not another per-port resource validation.
   return prepared_.vtable->shared_submit(prepared_.state, invocation,
-                                        sequence.queue(), inputs, outputs);
+                                        sequence, inputs, outputs);
 }
 
 inline compute::detail::CompletionEndpoint
@@ -297,8 +385,7 @@ PreparedRegion::delegated_endpoint(void *invocation) const noexcept {
     void *invocation = nullptr;
     compute::detail::CompletionEndpoint endpoint{};
   } episode{this, invocation, {}};
-  const Status status = compute::detail::ProviderExtensionAccess::call(
-      extension_,
+  const Status status = source_.call(
       +[](void *, const void *, void *opaque) noexcept -> Status {
         auto &call = *static_cast<Episode *>(opaque);
         call.endpoint = call.region->prepared_.vtable->endpoint(
@@ -325,8 +412,7 @@ inline bool PreparedRegion::can_import_endpoint(
     compute::detail::CompletionEndpoint source{};
     bool accepted = false;
   } episode{this, invocation, source, false};
-  const Status status = compute::detail::ProviderExtensionAccess::call(
-      extension_,
+  const Status status = source_.call(
       +[](void *, const void *, void *opaque) noexcept -> Status {
         auto &call = *static_cast<Episode *>(opaque);
         call.accepted = call.region->prepared_.vtable->can_import_endpoint(
@@ -359,8 +445,7 @@ inline Result<compute::Completion> PreparedRegion::submit_delegated(
     std::span<const compute::TensorView> outputs{};
     Result<compute::Completion> *submitted = nullptr;
   } episode{this, invocation, dependencies, inputs, outputs, &submitted};
-  const Status status = compute::detail::ProviderExtensionAccess::call(
-      extension_,
+  const Status status = source_.call(
       +[](void *, const void *, void *opaque) noexcept -> Status {
         auto &call = *static_cast<Episode *>(opaque);
         *call.submitted = call.region->prepared_.vtable->delegated_submit(
@@ -446,21 +531,21 @@ struct PlanStep final {
   PlanStep &operator=(PlanStep &&) noexcept = default;
 
   compute::ProviderIdentity provider() const noexcept {
-    if (kind == PlanStepKind::kRegion)
+    if (region.valid())
       return region.provider();
     if (kind == PlanStepKind::kOperation)
       return operation.provider();
     return {};
   }
   compute::ProviderInstanceId provider_instance_id() const noexcept {
-    if (kind == PlanStepKind::kRegion)
+    if (region.valid())
       return region.provider_instance_id();
     if (kind == PlanStepKind::kOperation)
       return operation.provider_instance_id();
     return {};
   }
   compute::WorkspaceRequirement workspace_requirement() const noexcept {
-    if (kind == PlanStepKind::kRegion &&
+    if (region.valid() &&
         region.properties().runtime.workspace_owner ==
             compute::ProviderWorkspaceOwner::kCaller)
       return region.properties().workspace;
@@ -471,29 +556,32 @@ struct PlanStep final {
     return {};
   }
   compute::WorkspaceRequirement reported_workspace_requirement() const noexcept {
-    if (kind == PlanStepKind::kRegion)
+    if (region.valid())
       return region.properties().workspace;
     if (kind == PlanStepKind::kOperation)
       return operation.workspace_requirement();
     return {};
   }
-  // Output storage and execution are separate concerns. View is the one
-  // built-in metadata-only operation: it derives an alias during binding
-  // preparation and never enters a Queue. Custom operations may legally have
-  // no outputs (for example an external side effect), so materializes must
-  // never be used as a proxy for whether the provider has work to submit.
-  bool emits_command() const noexcept { return kind != PlanStepKind::kView; }
+  // Views derive aliases during binding preparation. A compiled region may
+  // also have no commands, but only after compilation validates its complete
+  // ready, owned output bindings and absence of runtime work/effects. Keep
+  // that region in the logical dependency graph. In particular, output count
+  // and materializes say nothing about execution of a side-effecting step.
+  bool emits_command() const noexcept {
+    return kind != PlanStepKind::kView &&
+        !(region.valid() && region.properties().dispatch_count == 0);
+  }
   bool capture_compatible() const noexcept {
     if (!emits_command())
       return true;
+    if (region.valid())
+      return region.properties().runtime.capture_compatible;
     if (kind == PlanStepKind::kCopy)
       return true;
-    if (kind == PlanStepKind::kRegion)
-      return region.properties().runtime.capture_compatible;
     return operation.capture_compatible();
   }
   compute::ProviderRuntimeProperties runtime_properties() const noexcept {
-    if (kind == PlanStepKind::kRegion) {
+    if (region.valid()) {
       return region.properties().runtime;
     }
     if (kind == PlanStepKind::kOperation)
@@ -542,8 +630,19 @@ struct PlanSegment final {
   std::uint32_t step_count = 0;
   std::uint32_t dependency_begin = 0;
   std::uint32_t dependency_count = 0;
+  std::uint32_t successor_begin = 0;
+  std::uint32_t successor_count = 0;
+  // Selected provider capability only. Actual immediate transfers may also
+  // block the host and are checked against this episode's bindings.
+  bool blocks_host = false;
 };
 using PlanSegments = container::SmallVector<PlanSegment, 4, mem::AllocatorRef>;
+struct PlanCaptureRange final {
+  std::uint32_t segment = 0;
+  std::uint32_t step_begin = 0;
+  std::uint32_t step_count = 0;
+  std::uint32_t command_count = 0;
+};
 using ValueIds = container::SmallVector<ValueId, 8, mem::AllocatorRef>;
 using NodeIds = container::SmallVector<NodeId, 8, mem::AllocatorRef>;
 using TensorDescriptions =
@@ -552,6 +651,12 @@ using ValueOrdinals =
     container::SmallVector<std::uint32_t, 16, mem::AllocatorRef>;
 using BindingRoles =
     container::SmallVector<std::uint8_t, 16, mem::AllocatorRef>;
+struct ExternalInputConsumer final {
+  std::uint32_t value;
+  std::uint32_t instance;
+  std::uint32_t step;
+  std::uint32_t port;
+};
 struct StepInvocation final {
   compute::OperationInvocation operation{};
   RegionInvocation region{};
@@ -574,10 +679,11 @@ using ShapeBindings =
 struct StorageDomainRecord final {
   mem::MemoryResourceRef resource{};
   std::size_t workspace_budget_bytes = SIZE_MAX;
+  compute::StorageOwner owner{};
 };
 
 struct ExecutionTargetRecord final {
-  compute::detail::ContextRef context{};
+  ExecutionSource source;
   StorageDomainId default_storage{};
 };
 
@@ -629,41 +735,32 @@ inline void release(SignatureState *state) noexcept {
     state->decref();
 }
 
-// Created only when a compiled family shares owned canonical constants. There
-// is no Plan back-pointer: an exact child may outlive the parent table.
-struct SharedConstants final : util::RefCounted<SharedConstants> {
-  explicit SharedConstants(mem::AllocatorRef owner) noexcept
-      : allocator(owner), charges(owner), buffers(owner) {}
-  void destroy() noexcept {
-    const auto owner = allocator;
-    this->~SharedConstants();
-    owner.deallocate(this, sizeof(SharedConstants), alignof(SharedConstants));
-  }
-  mem::AllocatorRef allocator;
-  container::SmallVector<StorageCharge, 0, mem::AllocatorRef>
-      charges;
-  container::SmallVector<mem::Buffer, 0, mem::AllocatorRef> buffers;
-};
-
 struct PlanState final : util::RefCounted<PlanState> {
   PlanState(mem::AllocatorRef allocator_value,
             std::uint64_t generation_value) noexcept
       : allocator(allocator_value), generation(generation_value),
         storage_domains(allocator_value), targets(allocator_value),
-        lanes(allocator_value), constant_charges(allocator_value),
-        artifact_charges(allocator_value),
-        materialized_constants(allocator_value),
-        constant_artifacts(allocator_value), steps(allocator_value),
+        lanes(allocator_value), artifact_charges(allocator_value),
+        canonical_constants(allocator_value),
+        constant_artifacts(allocator_value), prepared_values(allocator_value),
+        immutable_alias_order(allocator_value),
+        steps(allocator_value),
         exact_variants(allocator_value), variant_order(allocator_value),
-        segments(allocator_value), segment_dependencies(allocator_value),
+        segments(allocator_value), capture_ranges(allocator_value),
+        seal_binding_steps(allocator_value), copy_steps(allocator_value),
+        segment_dependencies(allocator_value),
+        segment_successors(allocator_value),
         serialization_edges(allocator_value), step_segments(allocator_value),
         terminal_segments(allocator_value),
         completion_segments(allocator_value),
         lane_segment_counts(allocator_value), input_ids(allocator_value),
         constant_ids(allocator_value), output_ids(allocator_value),
-        constant_bindings(allocator_value), effect_bindings(allocator_value),
+        constant_bindings(allocator_value), constant_owners(allocator_value),
+        constant_leases(allocator_value), effect_bindings(allocator_value),
         descriptions(allocator_value), instance_descriptions(allocator_value),
         instance_values(allocator_value), instance_storage(allocator_value),
+        instance_output_contracts(allocator_value), instance_producer_targets(allocator_value),
+        instance_constant_owners(allocator_value),
         instance_alignments(allocator_value),
         instance_roles(allocator_value), external_instances(allocator_value),
         external_storage(allocator_value), node_inputs(allocator_value),
@@ -674,27 +771,45 @@ struct PlanState final : util::RefCounted<PlanState> {
         workspace_resources(allocator_value),
         workspace_storage(allocator_value), node_steps(allocator_value),
         value_materialized(allocator_value), alias_sources(allocator_value),
-        alias_offsets(allocator_value), binding_roles(allocator_value) {}
+        alias_offsets(allocator_value), binding_roles(allocator_value),
+        external_input_aliases(allocator_value),
+        external_input_consumers(allocator_value) {}
 
   void destroy() noexcept {
     const mem::AllocatorRef owner = allocator;
+    const auto retained = metadata_owner;
     this->~PlanState();
     owner.deallocate(this, sizeof(PlanState), alignof(PlanState));
   }
 
   const mem::Buffer *owned_constant(std::size_t slot) const noexcept {
-    const auto &buffers =
-        shared_constants ? shared_constants->buffers : materialized_constants;
-    return slot < buffers.size() && buffers[slot].valid() ? &buffers[slot]
-                                                          : nullptr;
+    if (slot >= constant_ids.size() ||
+        constant_ids[slot].ordinal() >= external_instances.size())
+      return nullptr;
+    return owned_instance_constant(external_instances[constant_ids[slot].ordinal()]);
+  }
+
+  const mem::Buffer *owned_instance_constant(std::size_t instance) const noexcept {
+    if (instance >= instance_constant_owners.size())
+      return nullptr;
+    const auto index = instance_constant_owners[instance];
+    if (index >= canonical_constants.size())
+      return nullptr;
+    const auto &owner = canonical_constants[index];
+    return owner && owner->ready && owner->buffer.valid() ? &owner->buffer
+                                                         : nullptr;
   }
 
   mem::AllocatorRef allocator{};
+  compute::StorageOwner metadata_owner{};
   std::uint64_t generation = 0;
   compute::WorkloadContext workload{};
   // Empty on the exact path. A domain retains its immutable shape program and
   // specs once; concrete Invocations share this Plan and its concurrency gate.
   Graph domain_graph{};
+  // A cold finite shape index only: every actual slot belongs to an exact
+  // child. This parent has no general steps/workspace or result ownership.
+  bool finite_only = false;
   // One opt-in owner shared by general/exact Plans; no mutable run data in
   // Plan.
   util::Ref<StorageBudgetState> invocation_storage;
@@ -708,16 +823,28 @@ struct PlanState final : util::RefCounted<PlanState> {
   // Declared before the actual owners: return charges only after their storage
   // is destroyed. Empty/no allocation on ordinary unbudgeted compilation.
   container::SmallVector<StorageCharge, 0, mem::AllocatorRef>
-      constant_charges, artifact_charges;
+      artifact_charges;
   // Declared before steps: artifacts die before the constants they may borrow,
   // and buffers die before the retained Context/resource backend leases.
-  // Empty on the default borrow path; otherwise one slot per logical constant.
-  container::SmallVector<mem::Buffer, 0, mem::AllocatorRef>
-      materialized_constants;
-  util::Ref<SharedConstants> shared_constants;
+  // Each selected immutable allocation appears exactly once. Physical roots
+  // refer to this arena through instance_constant_owners; a replica never
+  // replaces the logical constant's primary allocation.
+  container::SmallVector<util::Ref<CanonicalConstantState>, 0,
+                         mem::AllocatorRef>
+      canonical_constants;
   container::SmallVector<util::Ref<ConstantArtifactState>, 0, mem::AllocatorRef>
       constant_artifacts;
-  // Subset already owned by an earlier selected Plan in this compiled family.
+  struct PreparedValue final {
+    std::uint32_t instance;
+    compute::ConstTensorView binding;
+  };
+  // Read-only physical roots; constant_artifacts owns their payloads. Declared
+  // after that owner so borrowed bindings disappear first during destruction.
+  container::SmallVector<PreparedValue, 0, mem::AllocatorRef> prepared_values;
+  // Cold allocation-key order into constant_bindings then prepared_values.
+  // No dynamic native outputs, extra payload owners or permission cache.
+  container::SmallVector<std::size_t, 0, mem::AllocatorRef> immutable_alias_order;
+  // Canonical and packed storage already retained by an earlier selected Plan.
   CompiledStorageReport shared_artifact_storage{};
   PlanSteps steps;
   container::SmallVector<Executable, 0, mem::AllocatorRef> exact_variants;
@@ -726,7 +853,22 @@ struct PlanState final : util::RefCounted<PlanState> {
   container::SmallVector<std::uint32_t, 0, mem::AllocatorRef> variant_order;
   std::optional<std::size_t> exact_variant_index{};
   PlanSegments segments;
+  // Selected command capabilities and segment boundaries are immutable. These
+  // are candidate intervals only; each Invocation still owns/validates actual
+  // Queue recordings and their physical bindings.
+  container::SmallVector<PlanCaptureRange, 4, mem::AllocatorRef> capture_ranges;
+  // Final scheduled-step indices, rebuilt with segments after every reorder.
+  // These classify immutable artifacts; they do not cache binding readiness,
+  // transfer routes, permissions or Queue ownership.
+  container::SmallVector<std::uint32_t, 0, mem::AllocatorRef> seal_binding_steps;
+  container::SmallVector<std::uint32_t, 0, mem::AllocatorRef> copy_steps;
+  std::uint32_t command_count = 0;
+  std::uint32_t capture_command_count = 0;
   ValueOrdinals segment_dependencies;
+  // CSR transpose of segment_dependencies, indexed by each segment's range.
+  // This is a traversal index over the same final data/control/reuse edges.
+  ValueOrdinals segment_successors;
+  bool has_parallel_targets = false;
   // Packed stable step identities: source in the high word, destination in
   // the low word. These are explicit memory-for-concurrency tradeoff edges.
   container::SmallVector<std::uint64_t, 4, mem::AllocatorRef>
@@ -746,6 +888,8 @@ struct PlanState final : util::RefCounted<PlanState> {
   ValueIds constant_ids;
   ValueIds output_ids;
   ReadableBindings constant_bindings;
+  container::SmallVector<compute::StorageOwner, 0, mem::AllocatorRef> constant_owners;
+  container::SmallVector<compute::ReadLease, 0, mem::AllocatorRef> constant_leases;
   container::SmallVector<EffectResourceBinding, 0, mem::AllocatorRef>
       effect_bindings;
   // Public ValueId metadata is logical. Plan step ports address physical
@@ -755,6 +899,12 @@ struct PlanState final : util::RefCounted<PlanState> {
   TensorDescriptions instance_descriptions;
   ValueOrdinals instance_values;
   ValueOrdinals instance_storage;
+  // Cold physical carrier facts. Producer indices borrow the already-retained
+  // targets; views inherit their actual root instead of inventing a source.
+  container::SmallVector<RegionOutputContract, 16, mem::AllocatorRef>
+      instance_output_contracts;
+  ValueOrdinals instance_producer_targets;
+  ValueOrdinals instance_constant_owners;
   container::SmallVector<std::size_t, 16, mem::AllocatorRef>
       instance_alignments;
   BindingRoles instance_roles;
@@ -795,6 +945,13 @@ struct PlanState final : util::RefCounted<PlanState> {
   bool supports_concurrent_invocations = true;
   std::atomic<bool> exclusive_in_flight{false};
   SpecializationSignature specialization{};
+  // Sparse facts over the final selected physical topology, ordered by logical
+  // input then step/port. Replicas remain consumers of the same logical input.
+  // These contain no invocation addresses, leases, readiness or permissions.
+  container::SmallVector<std::uint32_t, 0, mem::AllocatorRef>
+      external_input_aliases;
+  container::SmallVector<ExternalInputConsumer, 0, mem::AllocatorRef>
+      external_input_consumers;
 };
 
 inline void retain(PlanState *state) noexcept {
@@ -873,6 +1030,7 @@ struct ReportState final : util::RefCounted<ReportState> {
   bool mixed_providers = false;
   bool mixed_backends = false;
   bool is_shape_domain = false;
+  bool finite_only = false;
   CompileSearchReport search{};
   CompileSearchReport total_search{};
   SpecializationSignature specialization{};
@@ -908,6 +1066,7 @@ using CompletionDependencies =
                            mem::AllocatorRef>;
 using ConcreteDescriptions =
     container::SmallVector<compute::TensorDesc, 0, mem::AllocatorRef>;
+using RegionValues = container::SmallVector<RegionValue, 0, mem::AllocatorRef>;
 
 // Preallocated mutable state for a public Completion that represents several
 // independent terminal Queue segments. It is activated only while an
@@ -923,16 +1082,95 @@ struct AggregateCompletionState final {
   compute::detail::CompletionLifetime outer_lifetime{};
 };
 
+struct SegmentProgress final {
+  std::uint32_t remaining = 0;
+  std::uint32_t next = kNoNode;
+  // Mutable only by the original cursor: blocked, ready, claimed, committed.
+  std::uint8_t state = 0;
+  std::uint64_t accepted_order = 0;
+};
+
+struct LaneProgress final {
+  std::uint32_t head = kNoNode;
+  std::uint32_t tail = kNoNode;
+  // First logical lane sharing this exact Queue owner, or this delegated lane.
+  std::uint32_t producer_group = kNoNode;
+  bool claimed = false;
+};
+
+struct CapturedStepRange final {
+  std::uint32_t step_begin = 0;
+  std::uint32_t step_count = 0;
+  compute::detail::CapturedCommands commands{};
+};
+struct CaptureBindingVariant final {
+  explicit CaptureBindingVariant(mem::AllocatorRef allocator) noexcept
+      : bindings(allocator) {}
+  compute::detail::CapturedCommands commands{};
+  container::SmallVector<compute::ConstTensorView, 4, mem::AllocatorRef> bindings;
+  bool key_valid = false;
+};
+struct CaptureRebuildRange final {
+  CaptureRebuildRange(std::uint32_t begin, std::uint32_t count,
+                      mem::AllocatorRef allocator) noexcept
+      : step_begin(begin), step_count(count),
+        variants{CaptureBindingVariant{allocator}, CaptureBindingVariant{allocator}} {}
+  std::uint32_t step_begin = 0;
+  std::uint32_t step_count = 0;
+  compute::detail::CaptureRebuildStorage storage{};
+  // At most two retained variants, including the one in captured_ranges.
+  // Native update rejection may transiently need a third executable while
+  // fresh instantiation replaces a nonlaunchable seed; its bytes are unknown.
+  // These are borrowed argument keys, never page/lease admission owners.
+  std::array<CaptureBindingVariant, 2> variants;
+  std::uint8_t active_variant = 2;
+  std::uint8_t last_used = 0;
+  bool qualification_valid = false;
+  bool preserves_private_arguments = false;
+};
+struct SegmentCaptureSpan final {
+  std::size_t begin = 0;
+  std::size_t count = 0;
+};
+struct StepBindingState final {
+  // Configuration changes invalidate before touching the original slot. A
+  // successful cold binding records that revision, independently of leases or
+  // data written into unchanged physical arguments.
+  std::uint64_t revision = 1;
+  std::uint64_t prepared_revision = 0;
+  bool native_inputs = false;
+  // Learned from this original Queue's actual capture implementation, never
+  // inferred from an opaque MemoryResource allocation token.
+  bool stable_binding_identity = false;
+};
+
+// One membership in the original input_ids/output_ids lists. These links only
+// narrow physical alias candidates; they never own storage or permissions.
+struct ExternalAliasEntry final {
+  std::size_t bucket = SIZE_MAX;
+  std::uint32_t next = kNoNode;
+  std::uint32_t previous = kNoNode;
+  std::uint32_t same_instance_next = kNoNode;
+};
+
 struct InvocationState final : util::RefCounted<InvocationState> {
   InvocationState(PlanState *plan_value, mem::PlannedBuffers workspace_value,
                   mem::AllocatorRef allocator_value) noexcept
       : allocator(allocator_value), plan(plan_value),
         concrete_descriptions(allocator), readable(allocator),
         writable(allocator), bound(allocator),
+        external_alias_heads(allocator), external_alias_entries(allocator),
+        external_alias_instances(allocator),
+        native_values(allocator), native_inputs(allocator),
+        queues(allocator), candidate_queues(allocator),
         workspace(std::move(workspace_value)), invocations(allocator),
         submission_inputs(allocator), submission_outputs(allocator),
-        queues(allocator), queue_seen(allocator),
-        segment_completions(allocator), captured_segments(allocator),
+        step_bindings(allocator),
+        queue_seen(allocator),
+        segment_completions(allocator), captured_ranges(allocator), capture_rebuilds(allocator),
+        capture_spans(allocator),
+        segment_progress(allocator), lane_progress(allocator),
+        segment_blocks_host(allocator), candidate_segment_blocks_host(allocator),
         dependency_routes(allocator), candidate_dependency_routes(allocator),
         lane_endpoints(allocator), candidate_lane_endpoints(allocator),
         completion_dependencies(allocator), aggregate_segments(allocator),
@@ -977,19 +1215,60 @@ struct InvocationState final : util::RefCounted<InvocationState> {
   ReadableBindings readable;
   WritableBindings writable;
   BindingRoles bound;
+  // Two halves of allocation-hash buckets retain input/output list order.
+  // All storage is allocated with the Invocation's original budget allocator.
+  ValueOrdinals external_alias_heads;
+  container::SmallVector<ExternalAliasEntry, 0, mem::AllocatorRef>
+      external_alias_entries;
+  ValueOrdinals external_alias_instances;
+  bool external_alias_dirty = true;
+  // Allocated only for a selected artifact requiring physical native values.
+  // Port records borrow original step slots, which remain in this Invocation.
+  RegionValues native_values;
+  RegionValues native_inputs;
+  // Actual Queue owners outlive provider slots, command captures and resource
+  // payload cleanup. The second vector is reusable cold transaction scratch.
+  container::SmallVector<compute::detail::QueueRef, 2, mem::AllocatorRef> queues;
+  container::SmallVector<compute::detail::QueueRef, 2, mem::AllocatorRef>
+      candidate_queues;
+  // Optional scheduling assembly owns only its task/notification controls.
+  // Active tasks retain this slot through its common submission guards.
+  ProgressOwner progress{};
+  // Optional common run guards outlive resource/payload cleanup and provider
+  // slots. Idle ownership never retains this Invocation back through itself.
+  SubmissionLifetimeOwner submission_lifetime{};
+  // Immutable external input owners coexist with typed page/resource payloads
+  // and outlive all provider slots borrowing their physical storage.
+  InputSourcesOwner input_sources{};
+  // External resource/payload owners outlive every borrowing provider slot.
+  ResourceEpisodeOwner resources{};
   // Provider invocation state may borrow its assigned view until destruction,
   // so backing storage must be declared first and therefore destroyed last.
   mem::PlannedBuffers workspace{};
   StepInvocations invocations;
   ReadableBindings submission_inputs;
   WritableBindings submission_outputs;
-  container::SmallVector<compute::Queue *, 2, mem::AllocatorRef> queues;
+  container::SmallVector<StepBindingState, 4, mem::AllocatorRef> step_bindings;
   BindingRoles queue_seen;
   container::SmallVector<compute::Completion, 4, mem::AllocatorRef>
       segment_completions;
-  container::SmallVector<compute::detail::CapturedCommands, 4,
-                         mem::AllocatorRef>
-      captured_segments;
+  // Cold maximal compatible ranges remain inside their original segment and
+  // QueueSequence. Reset may retain them dormant; only a successful preparation
+  // publishes spans. Gaps execute commands without new Completion cells.
+  container::SmallVector<CapturedStepRange, 4, mem::AllocatorRef> captured_ranges;
+  container::SmallVector<CaptureRebuildRange, 4, mem::AllocatorRef> capture_rebuilds;
+  container::SmallVector<SegmentCaptureSpan, 4, mem::AllocatorRef> capture_spans;
+  // Sized once at cold slot creation; warm cursor advancement never allocates.
+  container::SmallVector<SegmentProgress, 4, mem::AllocatorRef> segment_progress;
+  container::SmallVector<LaneProgress, 2, mem::AllocatorRef> lane_progress;
+  // Cold preparation facts, including actual bound immediate transfers. The
+  // running frontier is reset per run; these facts survive strict replay.
+  container::SmallVector<std::uint8_t, 4, mem::AllocatorRef> segment_blocks_host;
+  container::SmallVector<std::uint8_t, 4, mem::AllocatorRef>
+      candidate_segment_blocks_host;
+  // Only asynchronous assembly observes/imports source Completion cells from
+  // different threads. This protects those short operations, never math.
+  util::SpinLock completion_observation_lock;
   // The active vector is immutable throughout every warm submit. Preparation
   // writes a preallocated candidate vector and commits it only after all Queue,
   // transfer and completion-capacity checks succeed.
@@ -1001,7 +1280,14 @@ struct InvocationState final : util::RefCounted<InvocationState> {
   ValueOrdinals aggregate_segments;
   AggregateChildStates aggregate_children;
   AggregateCompletionState aggregate_completion{};
-  compute::detail::CompletionLifetime completion_lifetime{};
+  compute::detail::CompletionRetention completion_retention{};
+  // One cold preparation sentinel plus its current native retirement guard.
+  // The last release returns the original nonconcurrent artifact admission.
+  std::atomic<std::size_t> preparation_uses{0};
+  Status completion_terminal{};
+  compute::detail::RetainedCompletion observation{};
+  std::atomic<std::size_t> results{0};
+  bool closed = false;
   // Only one run may use mutable bindings/provider invocation state at a time.
   // A Completion attachment publishes idle only after success, failed after
   // failure, and retains the state if the public Invocation is released.
@@ -1014,6 +1300,15 @@ struct InvocationState final : util::RefCounted<InvocationState> {
   bool transfers_prepared = false;
   bool dependencies_prepared = false;
 };
+
+// Original cold/idle mutation seam. Destroy covering commands before changing
+// a selected invocation's configuration or resources, including failed changes.
+HYLE_GRAPH_API void invalidate_step_recording(
+    InvocationState &, std::uint32_t selected_step) noexcept;
+// Ordinary stable TensorView rebinding may recycle one idle native allocation;
+// it never preserves launch authority, permissions or configuration identity.
+HYLE_GRAPH_API void recycle_step_recording(
+    InvocationState &, std::uint32_t selected_step) noexcept;
 
 static_assert(alignof(InvocationState) >=
               alignof(InvocationState::Reservation));
@@ -1029,6 +1324,11 @@ inline void release(InvocationState *state) noexcept {
   if (state != nullptr)
     state->decref();
 }
+
+// Readonly projection after the original successful Completion. Deferred
+// producers are queried lazily; no admission, binding or device work occurs.
+HYLE_GRAPH_API Result<compute::ConstTensorView> output_tensor(
+    const InvocationState &, std::uint32_t instance) noexcept;
 
 struct ExecutableAccess final {
   static Executable adopt(PlanState *state) noexcept {
@@ -1049,7 +1349,8 @@ struct CompileReportAccess final {
 };
 
 struct InvocationAccess final {
-  static HYLE_GRAPH_API void retire(Invocation &invocation, const Status &terminal) noexcept;
+  static HYLE_GRAPH_API void retire(InvocationState &, const Status &,
+                                    bool accepted) noexcept;
   static Invocation adopt(InvocationState *state) noexcept {
     return Invocation(state);
   }

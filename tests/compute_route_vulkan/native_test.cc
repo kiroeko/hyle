@@ -1,7 +1,9 @@
 #include "hyle/compute/vulkan.h"
+#include "hyle/compute/vulkan_memory.h"
 
 #include <array>
 #include <cmath>
+#include <cstdio>
 #include <memory>
 #include <span>
 #include <vector>
@@ -9,6 +11,7 @@
 #include <gtest/gtest.h>
 
 #include "fixture.h"
+#include "../../src/compute_route_vulkan/vulkan_program_internal.h"
 
 namespace {
 namespace c = hyle::compute;
@@ -68,6 +71,131 @@ TEST(VulkanNative, NativeOwnersTransfersAndQuota) {
   ASSERT_FALSE(refused);
   EXPECT_TRUE(refused.error().IsResourceExhausted());
   EXPECT_EQ(empty.used(), 0u);
+}
+
+TEST(VulkanNative, InvocationBudgetUsesActualResourcesAndFollowsEscapedBacking) {
+  auto context = t::context().value();
+  auto other = t::context().value();
+  auto device = v::MemoryResource::create(context, v::MemoryKind::kDevice).value();
+  auto staging = v::MemoryResource::create(context, v::MemoryKind::kStaging).value();
+  auto foreign = v::MemoryResource::create(other, v::MemoryKind::kDevice).value();
+  const auto description = t::dense({4});
+  const auto program = v::prepare(context, c::Unary{c::UnaryKind::kNeg}, description).value();
+  const auto &native = *v::detail::Access::program(program);
+  std::size_t managed_capacity = 0;
+  for (const auto bytes : native.block_bytes) {
+    ASSERT_LE(bytes, static_cast<VkDeviceSize>(SIZE_MAX - managed_capacity));
+    managed_capacity += static_cast<std::size_t>(bytes);
+  }
+  ASSERT_GT(managed_capacity, 0U);
+  const std::array limits{
+      c::ResourceBudgetLimit{hyle::mem::system_resource(), SIZE_MAX},
+      c::ResourceBudgetLimit{device.ref(), managed_capacity},
+      c::ResourceBudgetLimit{staging.ref(), 4}};
+  const auto budget = c::ResourceBudget::create({.limits = limits, .allow_unattributed = true}).value();
+  const auto allocator = hyle::mem::system_allocator();
+  for (const auto invalid : {hyle::mem::system_resource(), staging.ref(), foreign.ref()}) {
+    const auto rejected = program.create_invocation(allocator,
+        {.resource_budget = budget, .device = invalid});
+    ASSERT_FALSE(rejected);
+    EXPECT_TRUE(rejected.error().IsInvalidArgument());
+  }
+  EXPECT_FALSE(program.create_invocation(allocator,
+      {.resource_budget = budget, .device = device.ref(), .staging = device.ref()}));
+
+  const std::array tiny_limits{
+      c::ResourceBudgetLimit{hyle::mem::system_resource(), SIZE_MAX},
+      c::ResourceBudgetLimit{device.ref(), 0}};
+  const auto tiny = c::ResourceBudget::create({.limits = tiny_limits, .allow_unattributed = true}).value();
+  const auto rejected = program.create_invocation(allocator,
+      {.resource_budget = tiny, .device = device.ref()});
+  ASSERT_FALSE(rejected);
+  EXPECT_TRUE(rejected.error().IsResourceExhausted());
+  EXPECT_EQ(tiny.usage(device.ref())->live_bytes, 0U);
+
+  // The actual plan may need storage beyond its logical output: this Unary
+  // currently copies an external input of unknown byte origin before entering
+  // its managed region. Retain the original 16B rejection when that plan needs
+  // more, and always test the exact declared allocation boundary below.
+  for (const auto capacity : {std::size_t{16}, managed_capacity - 1}) {
+    if (capacity >= managed_capacity) continue;
+    if (capacity == 16) {
+      for (std::size_t index = 0; index < native.aliases.size(); ++index)
+        std::fprintf(stderr, "native budget alias[%zu]: root=%u offset=%llu\n", index,
+            native.aliases[index].root,
+            static_cast<unsigned long long>(native.aliases[index].byte_offset));
+      for (std::size_t index = 0; index < native.dispatches.size(); ++index) {
+        const auto &dispatch = native.dispatches[index];
+        std::fprintf(stderr, "native budget dispatch[%zu]: managed=%d iree=%d values=", index,
+            int(bool(dispatch.region)), int(bool(dispatch.iree)));
+        for (const auto value : dispatch.values) std::fprintf(stderr, "%u,", value);
+        std::fprintf(stderr, "\n");
+      }
+    }
+    const std::array insufficient_limits{
+        c::ResourceBudgetLimit{hyle::mem::system_resource(), SIZE_MAX},
+        c::ResourceBudgetLimit{device.ref(), capacity}};
+    const auto insufficient = c::ResourceBudget::create(
+        {.limits = insufficient_limits, .allow_unattributed = true}).value();
+    const auto refused = program.create_invocation(allocator,
+        {.resource_budget = insufficient, .device = device.ref()});
+    ASSERT_FALSE(refused);
+    EXPECT_TRUE(refused.error().IsResourceExhausted());
+    EXPECT_EQ(insufficient.usage(device.ref())->live_bytes, 0U);
+  }
+
+  const std::array<float, 4> values{1.0F, -2.0F, 0.5F, 4.0F};
+  const auto uploaded = t::upload(context, description, values).value();
+  v::Tensor escaped;
+  {
+    auto invocation = program.create_invocation(allocator,
+        {.resource_budget = budget, .device = device.ref()});
+    if (!invocation) {
+      std::fprintf(stderr,
+          "native budget diagnostic: values=%zu inputs=%zu outputs=%zu blocks=%zu dispatches=%zu status=%d requires_staging=%d\n",
+          native.values.size(), native.inputs.size(), native.outputs.size(),
+          native.block_bytes.size(), native.dispatches.size(),
+          int(native.status_value.has_value()), int(v::detail::requires_staging(native)));
+      for (std::size_t index = 0; index < native.block_bytes.size(); ++index)
+        std::fprintf(stderr, "native budget block[%zu]=%llu\n", index,
+            static_cast<unsigned long long>(native.block_bytes[index]));
+      for (std::size_t index = 0; index < native.values.size(); ++index) {
+        const auto bytes = native.values[index].description.required_bytes();
+        std::fprintf(stderr, "native budget value[%zu]: block=%u bytes=%zu constant=%d\n",
+            index, native.storage_blocks[index], bytes ? *bytes : SIZE_MAX,
+            int(native.values[index].constant.valid()));
+      }
+      const auto print_usage = [&](const char *name, hyle::mem::MemoryResourceRef resource) {
+        const auto usage = budget.usage(resource);
+        if (usage)
+          std::fprintf(stderr, "native budget %s: live=%zu peak=%zu limit=%zu\n",
+              name, usage->live_bytes, usage->peak_bytes, usage->limit_bytes);
+        else
+          std::fprintf(stderr, "native budget %s: usage unavailable\n", name);
+      };
+      print_usage("device", device.ref());
+      print_usage("staging", staging.ref());
+      print_usage("host", hyle::mem::system_resource());
+    }
+    ASSERT_TRUE(invocation) << invocation.error().message();
+    EXPECT_EQ(budget.usage(device.ref())->live_bytes, managed_capacity);
+    EXPECT_GT(budget.unattributed_usage().unknown_private_owners, 0U);
+    ASSERT_TRUE(invocation->bind(uploaded).ok());
+    auto submitted = invocation->submit().value();
+    auto result = submitted.wait();
+    ASSERT_TRUE(result) << result.error().message();
+    escaped = result->get()->tensors()[0];
+    const auto actual = t::read(context, escaped).value();
+    for (std::size_t index = 0; index < values.size(); ++index)
+      EXPECT_EQ(actual[index], -values[index]);
+  }
+  EXPECT_EQ(budget.usage(device.ref())->live_bytes, 16U);
+  {
+    const auto alias = escaped;
+    escaped = {};
+    EXPECT_EQ(budget.usage(device.ref())->live_bytes, 16U);
+  }
+  EXPECT_EQ(budget.usage(device.ref())->live_bytes, 0U);
 }
 
 TEST(VulkanTyped, MatMulDenseConstantChangingAndTransposedRhs) {

@@ -1,5 +1,9 @@
 #include "collectives_test_support.h"
 
+#include <atomic>
+#include <chrono>
+#include <thread>
+
 namespace {
 using namespace cccl_test;
 Context context() {
@@ -60,9 +64,8 @@ TEST(CudaCcclGather, CheckedFailurePreservesAllOutputAndFreshSlotRecovers) {
   auto program = prepare(owner, Gather{}, desc, idesc, memory.ref()).value();
   Tensor output(program.output_description().value(), memory.ref());
   auto scratch = workspace(program, memory.ref());
-  EXPECT_FALSE(program.create_invocation());
-  EXPECT_FALSE(program.create_invocation(
-      scratch.view().subview(0, scratch.size() - 1).value()));
+  EXPECT_EQ(program.workspace_requirement().size, 0u);
+  EXPECT_TRUE(program.create_invocation());
   for (auto invalid : {std::int64_t{-1}, std::int64_t{4},
                        std::numeric_limits<std::int64_t>::max(),
                        std::numeric_limits<std::int64_t>::min()}) {
@@ -88,6 +91,79 @@ TEST(CudaCcclGather, CheckedFailurePreservesAllOutputAndFreshSlotRecovers) {
   EXPECT_EQ(output.read<std::uint64_t>(),
             (std::vector<std::uint64_t>{10, 11, 12, 4, 5, 6}));
   output.guard();
+}
+
+TEST(CudaCcclGather, CheckedSubmitStaysPendingBehindProducerAndReportsDeviceError) {
+  auto owner = context();
+  auto memory =
+      cuda::MemoryResource::create(owner, cuda::MemoryKind::kDevice).value();
+  auto queue = owner.create_queue().value();
+  ASSERT_TRUE(queue.reserve_completions(4).ok());
+  const auto desc =
+      TensorDesc::dense(DataType::kInt32, std::array<std::int64_t, 2>{4, 3})
+          .value();
+  const auto idesc =
+      TensorDesc::dense(DataType::kInt32, std::array<std::int64_t, 1>{2})
+          .value();
+  Tensor input(desc, memory.ref()), indices(idesc, memory.ref());
+  input.write<std::int32_t>(std::array{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12});
+  indices.write<std::int32_t>(std::array{3, 1});
+  auto program = prepare(owner, Gather{}, desc, idesc, memory.ref()).value();
+  EXPECT_FALSE(program.runtime_properties().blocks_host);
+  Tensor output(program.output_description().value(), memory.ref());
+  auto scratch = workspace(program, memory.ref());
+  // Resolve native lazy loading before holding the producer gate.
+  {
+    auto warm = program.create_invocation(scratch.view()).value();
+    ASSERT_TRUE(warm.submit(queue, input.view.as_const(), indices.view.as_const(),
+                            output.view)->wait().ok());
+  }
+  for (bool invalid : {false, true}) {
+    indices.write<std::int32_t>(std::array{3, invalid ? 4 : 1});
+    output.write<std::int32_t>(std::array{-1, -2, -3, -4, -5, -6});
+    auto slot = program.create_invocation(scratch.view()).value();
+    struct Gate {
+      std::atomic<bool> released{false}, timed_out{false};
+      static void CUDART_CB wait(void *raw) {
+        auto &gate = *static_cast<Gate *>(raw);
+        const auto deadline =
+            std::chrono::steady_clock::now() + std::chrono::seconds(5);
+        while (!gate.released.load(std::memory_order_acquire)) {
+          if (std::chrono::steady_clock::now() >= deadline) {
+            gate.timed_out = true;
+            return;
+          }
+          std::this_thread::yield();
+        }
+      }
+    } gate;
+    const auto stream = cuda::stream(queue).value();
+    struct Release {
+      Gate &gate;
+      cudaStream_t stream;
+      ~Release() {
+        gate.released.store(true, std::memory_order_release);
+        (void)cudaStreamSynchronize(stream);
+      }
+    } release{gate, stream};
+    ASSERT_EQ(cudaLaunchHostFunc(stream, &Gate::wait, &gate), cudaSuccess);
+    auto done = slot.submit(queue, input.view.as_const(), indices.view.as_const(),
+                            output.view);
+    ASSERT_TRUE(done) << done.error().message();
+    const auto polled = done->poll();
+    ASSERT_TRUE(polled) << polled.error().message();
+    EXPECT_EQ(*polled, CompletionPoll::kPending);
+    EXPECT_FALSE(gate.timed_out.load());
+    // The original accepted-command completion retains prepared handles.
+    slot = {};
+    gate.released.store(true, std::memory_order_release);
+    const auto terminal = done->wait();
+    EXPECT_TRUE(invalid ? terminal.IsOutOfRange() : terminal.ok());
+    EXPECT_EQ(output.read<std::int32_t>(), invalid
+        ? (std::vector{-1, -2, -3, -4, -5, -6})
+        : (std::vector{10, 11, 12, 4, 5, 6}));
+    output.guard();
+  }
 }
 
 TEST(CudaCcclGather, EmptyUncheckedAndAliasesUseThePublicContract) {

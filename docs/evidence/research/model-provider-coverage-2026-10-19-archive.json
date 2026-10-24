@@ -1,0 +1,11 @@
+{
+  "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\research\\model-provider-coverage-2026-10-19.zip",
+  "bytes": 371997,
+  "sha256": "aa6ee1df48dda6e11db19c93d6bb872d57720b2d96beb5255c5243bf922c7ddd",
+  "payloads": 51,
+  "CRC_and_every_payload_SHA_verified": true,
+  "source_reviews": 33,
+  "artifact_execution_verified": false,
+  "new_GPU_runs": 0,
+  "new_builds": 0
+}

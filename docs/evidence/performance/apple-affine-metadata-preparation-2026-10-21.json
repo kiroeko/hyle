@@ -1,0 +1,293 @@
+{
+  "schema_version": 1,
+  "status": "finite_native_graph_diagnostic_completed",
+  "date": "2026-10-21",
+  "scope": "Nonproduct validation-copy observers only; original GLM32 consumer plus tiny captured Graph constants comparison. This report does not implement a materialization cache.",
+  "archive": {
+    "path": "docs/evidence/performance/apple-affine-metadata-preparation-2026-10-21.zip",
+    "bytes": 193834,
+    "sha256": "b6ad66d513c9a7ddedb74caaaa8af6e1d8e362586f6e3fa70c3d95e6208988a0"
+  },
+  "members": 46,
+  "canonical_sources_unchanged": true,
+  "actual": {
+    "tests": 2,
+    "passed": 2,
+    "skipped": 0,
+    "successful_submissions": 7,
+    "expected_failed_submissions": 1,
+    "successful_weight_generations": 3,
+    "weight_slots": 2,
+    "CXX_translation_units": 2,
+    "CXX_exit_codes": [
+      0,
+      0
+    ],
+    "link_exit": 0,
+    "run_exit": 0,
+    "actual_unique_project_files": 96,
+    "actual_project_dependency_references": 134,
+    "actual_total_dependency_references": 2307,
+    "explicit_nonproduct_source_overrides": 2,
+    "accidental_source_drift": 0
+  },
+  "findings": [
+    "Every actual X compiled call retained twelve reachable F16-to-F32 metadata AsType results in unscheduled state, while their original F16 inputs were available. This includes a second successful call of slot0 generation2 after the expected failed-ID call.",
+    "The twelve F32 result shapes total 31,457,280 logical bytes per actual dynamic graph. This is not a measurement of live/resident memory or allocations.",
+    "The tiny captured Graph constants control retained two unscheduled F16-to-F32 metadata casts on each of its three submissions. Original F16 constant array ids remained identical across those calls; this native compiled path did not expose folded ready-F32 metadata.",
+    "Two BF16-to-F32 activation casts in the full X graph and one in the tiny control are dynamic arithmetic inputs; they are reported separately from immutable metadata."
+  ],
+  "observation": {
+    "dynamic_actual_calls": 5,
+    "constants_actual_calls": 3,
+    "dynamic_F16_metadata_pending_casts_per_call": 12,
+    "dynamic_F32_metadata_logical_bytes_per_call": 31457280,
+    "constants_F16_metadata_pending_casts_per_call": 2,
+    "constants_source_array_ids_stable": true,
+    "physical_dispatches": null,
+    "physical_allocations": null,
+    "physical_resident_bytes": null,
+    "throughput_delta": null
+  },
+  "boundaries": [
+    "Observation is after compiled(inputs), before async_eval. It proves reachable pending conversion nodes, not physical GPU dispatches, actual allocation counts, bytes moved or latency.",
+    "Original X helper creates a fresh Invocation for each execute call while reusing the compiled program and bound WeightBatch generations; this proves repeated compiled-call graphs, not same-Invocation replay.",
+    "Array ids and program addresses are transient diagnostic identities, may be recycled and are not payload generation keys. Generation ordinals are observer tags for successful slot uploads, not ReadLease generation().",
+    "Compiled fused primitive interiors were not traversed. F16 metadata casts were explicit reachable AsType primitives outside those fused interiors.",
+    "No cache implementation or expanded product design is proposed or signed by this experiment."
+  ],
+  "design_decision": {
+    "status": "read_only_proposal_pending_implementation",
+    "first_step": "Reuse original Plan.prepared_casts cold owner for deduplicated immutable Graph constant SF/bias F16/BF16-to-F32 operands. Preserve logical dtypes and public output/explicit Cast contracts; use original Runtime/Job.",
+    "dynamic": "Current RegionValue lacks immutable producer identity/content-epoch handoff; do not cache raw mutable borrow, buffer addresses or ReadLease allocation generations.",
+    "accounting": "Known derived logical bytes and compile peak must remain visible/charged; opaque private storage is additional unknown, not an excuse to hide the known part.",
+    "details": "apple/minimal-product-design.json"
+  },
+  "cleanup": {
+    "remote_root": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-immutable-materialization-2026-10-21/apple",
+    "remote_root_is_symlink": false,
+    "deletable_files": [
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-immutable-materialization-2026-10-21/apple/immutable-materialization-diagnostic",
+        "bytes": 15466168,
+        "sha256": "d5ebf618a673be8b23817ec8d1fd7c62781476ea16dac2c2f6a41469e3590f48",
+        "symlink": false,
+        "resolved": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-immutable-materialization-2026-10-21/apple/immutable-materialization-diagnostic"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-immutable-materialization-2026-10-21/apple/immutable-materialization-diagnostic.map",
+        "bytes": 4530635,
+        "sha256": "ff264455ea664a2101fa83cb4768881364e24b1d839cc1719e75cf7f78501265",
+        "symlink": false,
+        "resolved": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-immutable-materialization-2026-10-21/apple/immutable-materialization-diagnostic.map"
+      }
+    ],
+    "retained_objects": [
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-immutable-materialization-2026-10-21/apple/objects/src--compute_route_apple--apple_context.cc.o",
+        "bytes": 317672,
+        "sha256": "cab2c6c98a53b63e95cc26aadf549bfbf4d2c0df685834bdc1007bec396aa0a6",
+        "symlink": false,
+        "resolved": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-immutable-materialization-2026-10-21/apple/objects/src--compute_route_apple--apple_context.cc.o"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-immutable-materialization-2026-10-21/apple/objects/tests--graph_route_apple--glm_flash_mixed_mlx_test.cc.o",
+        "bytes": 318752,
+        "sha256": "e9e7898e98b9c57de559510b1bd5f917fe4aa3dabfff1f774e86804aecd9bf20",
+        "symlink": false,
+        "resolved": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-immutable-materialization-2026-10-21/apple/objects/tests--graph_route_apple--glm_flash_mixed_mlx_test.cc.o"
+      }
+    ],
+    "active_lsof": [],
+    "lsof_exit": 1,
+    "map_owner_check": {
+      "map": {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-immutable-materialization-2026-10-21/apple/immutable-materialization-diagnostic.map",
+        "bytes": 4530635,
+        "sha256": "ff264455ea664a2101fa83cb4768881364e24b1d839cc1719e75cf7f78501265",
+        "symlink": false,
+        "resolved": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-immutable-materialization-2026-10-21/apple/immutable-materialization-diagnostic.map"
+      },
+      "matching_object_rows": [
+        "[  1] /Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-immutable-materialization-2026-10-21/apple/objects/tests--graph_route_apple--glm_flash_mixed_mlx_test.cc.o",
+        "[ 83] /Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-immutable-materialization-2026-10-21/apple/objects/src--compute_route_apple--apple_context.cc.o",
+        "[ 87] /Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-compact-fp8-scales-2026-10-21/apple/objects/src--compute_route_apple--apple_mature_float.cc.o"
+      ],
+      "old_context_archive_members": [],
+      "observer_symbol_rows": [
+        "0x1001A7318\t0x00000BB0\t[ 83] __ZN4hyle7compute5apple6detail16diagnostic_graphEPKvPKcRKNSt3__16vectorIN3mlx4core5arrayENS7_9allocatorISB_EEEESG_",
+        "0x100C14AF8\t0x00000008\t[ 83] __ZZN4hyle7compute5apple6detail16diagnostic_graphEPKvPKcRKNSt3__16vectorIN3mlx4core5arrayENS7_9allocatorISB_EEEESG_E8sequence"
+      ]
+    },
+    "sdk_status": {
+      "identity": {
+        "path": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/include/mlx/array.h",
+        "bytes": 17893,
+        "sha256": "5c90807aa44226c557c5bda740bdc1732109810e8862697ad5d374092669db65",
+        "symlink": false,
+        "resolved": "/Users/kiro/hyle-scratch/g09-air-direct-20261017/final-1dbfce9a0/apple-sdk/include/mlx/array.h"
+      },
+      "excerpts": [
+        {
+          "line": 387,
+          "text": "  enum Status {"
+        },
+        {
+          "line": 388,
+          "text": "    // The output of a computation which has not been scheduled."
+        },
+        {
+          "line": 389,
+          "text": "    // For example, the status of `x` in `auto x = a + b`."
+        },
+        {
+          "line": 390,
+          "text": "    unscheduled,"
+        },
+        {
+          "line": 391,
+          "text": ""
+        },
+        {
+          "line": 392,
+          "text": "    // The array's `eval_*` function has been run, but the computation is not"
+        },
+        {
+          "line": 393,
+          "text": "    // necessarily complete. The array will have memory allocated and if it is"
+        },
+        {
+          "line": 394,
+          "text": "    // not a tracer then it will be detached from the graph."
+        },
+        {
+          "line": 395,
+          "text": "    evaluated,"
+        },
+        {
+          "line": 396,
+          "text": ""
+        },
+        {
+          "line": 397,
+          "text": "    // If the array is the output of a computation then the computation"
+        },
+        {
+          "line": 398,
+          "text": "    // is complete. Constant arrays are always available (e.g. `array({1, 2,"
+        },
+        {
+          "line": 399,
+          "text": "    // 3})`)"
+        },
+        {
+          "line": 400,
+          "text": "    available"
+        },
+        {
+          "line": 401,
+          "text": "  };"
+        },
+        {
+          "line": 402,
+          "text": ""
+        },
+        {
+          "line": 403,
+          "text": "  // Check if the array is safe to read."
+        },
+        {
+          "line": 404,
+          "text": "  bool is_available() const;"
+        },
+        {
+          "line": 405,
+          "text": ""
+        }
+      ]
+    }
+  },
+  "source_freeze": {
+    "diagnostic_nonproduct": true,
+    "canonical_unchanged": true,
+    "overrides": [
+      {
+        "canonical": {
+          "path": "tests/graph_route_apple/glm_flash_mixed_mlx_test.cc",
+          "bytes": 2463,
+          "sha256": "7767b65c06e398607f3456635153840a9ed480360896d15a4d64243a3dfb69e9"
+        },
+        "diagnostic": {
+          "path": ".scratch/architecture-refactor-2026-10-18/apple-immutable-materialization-2026-10-21/diagnostic/tests/graph_route_apple/glm_flash_mixed_mlx_test.cc",
+          "bytes": 8570,
+          "sha256": "de9e88718a7b57c48dc8b29895f7801e785dd9a61544a7a510dc5c355ceb9792"
+        }
+      },
+      {
+        "canonical": {
+          "path": "src/compute_route_apple/apple_context.cc",
+          "bytes": 69922,
+          "sha256": "7115214b54144d45b67a5cb9c267b8e50f331c64b5428dbc165107e5ffbba404"
+        },
+        "diagnostic": {
+          "path": ".scratch/architecture-refactor-2026-10-18/apple-immutable-materialization-2026-10-21/diagnostic/src/compute_route_apple/apple_context.cc",
+          "bytes": 73781,
+          "sha256": "00942b4fef70dd0e0070bf0c56f24decbf2e7d51c99c618d78e8eb927a428ee6"
+        }
+      }
+    ],
+    "actual_dependency_audit": {
+      "path": ".scratch/architecture-refactor-2026-10-18/apple-immutable-materialization-2026-10-21/apple/actual-dependencies-audit.json",
+      "bytes": 639397,
+      "sha256": "926a6c39266d7f4c296d7ccbfba073a803f6bf15b2e2abe256e14cbd9c423f1e"
+    },
+    "linked_inputs": {
+      "path": ".scratch/architecture-refactor-2026-10-18/apple-immutable-materialization-2026-10-21/apple/mac/final/results/link-inputs.json",
+      "bytes": 44588,
+      "sha256": "9e2753284a47a1055eaecd173ac943d8bbb6b3665e8a4f12f90edc6df2760dfe"
+    },
+    "baseline_resolved_link": "AA/apple/mac/final/results/link.command.json;all old test objects excluded;current AA mature and Z CPU retained",
+    "SDK_rebuilt": false,
+    "normal_compile_flags_preserved": true
+  },
+  "cases": [
+    {
+      "name": "AppleGlmFlashMixedMlx.OriginalRolesKeepTypedPromotionAndWeightGeneration",
+      "properties": {
+        "device": "Apple M4",
+        "successful_submissions": "4",
+        "expected_failed_submissions": "1",
+        "successful_weight_generations": "3",
+        "native_weight_slots": "2",
+        "original_fragments_per_generation": "92",
+        "metadata_bf16_counterfactual_words": "8192",
+        "early_bf16_counterfactual_words": "8192",
+        "softmax_counterfactual_words": "8192",
+        "maximum_peak_normalized_error": "2.57513703e-07",
+        "maximum_relative_l2_error": "1.93228959e-07",
+        "wrong_policy0_peak_error": "0.0106710978",
+        "wrong_policy0_relative_l2": "0.0039310051",
+        "wrong_policy1_peak_error": "0.000456803483",
+        "wrong_policy1_relative_l2": "0.000406376603",
+        "wrong_policy2_peak_error": "0.0620040351",
+        "wrong_policy2_relative_l2": "0.0537358805",
+        "scope": "GLM32 ordinary BF16A/F16metadata g64 routed4/4/5+shared6;D4096/H2048,E288Top8,resident9;synthetic stored-format bytes,no checkpoint/model/quality/performance claim"
+      }
+    },
+    {
+      "name": "AppleImmutableMetadataDiagnostic.GraphConstantsKeepMetadataReadyAcrossThreeSubmissions",
+      "properties": {
+        "device": "Apple M4",
+        "successful_submissions": "3",
+        "scope": "tiny Graph compile constants;BF16 A/F16 SF+bias;original GLM SF bit pattern;3 actual dynamic A submits"
+      }
+    }
+  ],
+  "evidence": {
+    "raw_observer_log": "apple/mac/final/results/run.stderr.log",
+    "actual_commands": "apple/mac/final/results/*command.json",
+    "actual_project_dependencies": "apple/actual-project-dependencies.json",
+    "sdk_API_status": "apple/status-definition.json",
+    "hardware": "apple/mac/final/hardware.json"
+  }
+}

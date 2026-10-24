@@ -40,5 +40,7 @@ Status propose_torch_cpu(
 ProviderPrepareOutcome prepare_torch_cpu(
     const detail::ProviderPrepareRequest &request, mem::AllocatorRef allocator,
     detail::ProviderPrepared *prepared) noexcept;
+bool inspect_torch_cpu_access(const detail::ProviderPrepared &,
+                             detail::OperationPreparedAccess &) noexcept;
 
 } // namespace hyle::compute::native::internal

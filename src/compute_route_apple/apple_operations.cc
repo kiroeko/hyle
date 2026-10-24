@@ -10,7 +10,10 @@
 #include <mlx/ops.h>
 
 #include "apple_internal.h"
+#include "apple_carrier.h"
+#include "../compute_provider_ggml_metal/native_program.h"
 #include "apple_tensor.h"
+#include "apple_static_fp8.h"
 #include "hyle/compute/low_precision.h"
 #include "hyle/compute/route_policy.h"
 
@@ -77,27 +80,6 @@ Result<TensorDesc> float_description(const mx::array &input) noexcept {
   // Native MLX owns any stride handling. This description validates logical
   // operation semantics; it does not import a HYLE buffer or claim zero copy.
   return TensorDesc::dense(DataType::kFloat32, {shape.data(), input.ndim()});
-}
-
-bool fixed_ggml_model_operation(const Operation &operation) noexcept {
-  return operation.get_if<GatedDeltaNet>() ||
-         operation.custom_as<model_ops::RecurrentGatedDeltaNet>() ||
-         operation.custom_as<model_ops::Clamp>() ||
-         operation.custom_as<model_ops::GroupedMatMul>() ||
-         operation.custom_as<model_ops::BFloatLinearF32>() ||
-         operation.custom_as<model_ops::HyperConnectionCombine>() ||
-         operation.custom_as<model_ops::HyperConnectionPre>() ||
-         operation.custom_as<model_ops::HyperConnectionPost>() ||
-         operation.custom_as<model_ops::LightningIndexer>();
-}
-
-bool ggml_model_operation(const Operation &operation,
-                          std::span<const TensorDesc> inputs) noexcept {
-  return fixed_ggml_model_operation(operation) ||
-         (operation.get_if<MatMul>() && inputs.size() == 2 &&
-          gguf_quantized_type(inputs[1].storage_format()).has_value()) ||
-         (operation.get_if<Gather>() && inputs.size() == 2 &&
-          gguf_quantized_type(inputs[0].storage_format()).has_value());
 }
 
 Result<DataType> logical_type(mx::Dtype type) noexcept {
@@ -197,6 +179,13 @@ Result<InputSpec> input_spec(const TensorDesc &description) noexcept {
     result.dtype = mx::bool_;
     break;
   case DataType::kUInt8:
+    result.dtype = mx::uint8;
+    break;
+  case DataType::kFloat8E4M3FN:
+    // Logical FP8 remains explicit. Its qualified typed consumer decodes the
+    // original bytes; an MLX uint8 carrier does not change its numerical type.
+    if (!description.is_plain() || !description.is_dense())
+      return std::unexpected(Status::Unimplemented("Apple E4M3 carrier requires plain dense bytes"));
     result.dtype = mx::uint8;
     break;
   case DataType::kUInt32:
@@ -374,42 +363,67 @@ bool detail::is_mlx_attention_blocks(const Operation &operation,
   }
 }
 
+Result<detail::RegionKind> detail::analyze_native_carrier(
+    const Operation &operation, std::span<const TensorDesc> inputs) noexcept {
+  // Gather preserves the original E4 code bytes through the MLX U8 carrier.
+  // It performs no floating decode, and retains the ordinary checked-ID path.
+  const bool float8_gather = operation.get_if<Gather>() && inputs.size() == 2 &&
+      inputs[0].is_plain() && inputs[0].data_type() == DataType::kFloat8E4M3FN;
+  if (!operation.custom_as<model_ops::Mxfp4Linear>() &&
+      !operation.custom_as<model_ops::GroupedMxfp4Linear>() &&
+      !operation.custom_as<model_ops::Nvfp4Linear>() &&
+      !operation.custom_as<model_ops::GroupedNvfp4Linear>() &&
+      !operation.custom_as<model_ops::LocalNvfp4Linear>() &&
+      !operation.custom_as<model_ops::GroupedLocalNvfp4Linear>() &&
+      !operation.custom_as<packed::internal::StaticFloat8Linear>() &&
+      !is_mlx_float8_cast(operation, inputs) &&
+      !float8_gather &&
+      std::ranges::any_of(inputs, [](const auto &input) {
+        return input.data_type() == DataType::kFloat8E4M3FN;
+      }))
+    return std::unexpected(Status::Unimplemented(
+        "Apple logical E4M3 storage needs a floating Cast or qualified typed consumer"));
+  if (float8_gather || is_mlx_float8_cast(operation, inputs) || is_mlx_exact_binary(operation, inputs) ||
+      operation.custom_as<packed::internal::StaticFloat8Linear>())
+    return RegionKind::kMlx;
+  // The exact embedding path has a different dtype/GET_ROWS domain from
+  // ggml's F32 carrier and deliberately keeps its original MLX implementation.
+  if (is_mlx_exact_gguf_gather(operation, inputs)) return RegionKind::kMlx;
+  if (is_mlx_attention_blocks(operation, inputs)) return RegionKind::kAttentionBlocks;
+  const auto native = ggml_metal::NativeProgram::validate(operation, inputs);
+  if (native.ok()) return RegionKind::kGgml;
+  if (!native.IsUnimplemented()) return std::unexpected(native);
+  return RegionKind::kMlx;
+}
+
 Result<Program>
 Context::prepare(const Operation &operation,
                  std::span<const mx::array> examples,
   const WorkloadContext &workload) const noexcept {
   try {
-    bool attention_blocks = false;
-    if (operation.get_if<ScaledDotProductAttention>() &&
-        (examples.size() == 3 || examples.size() == 4)) {
-      std::array<TensorDesc, 4> descriptions;
-      bool described = true;
-      for (std::size_t i = 0; i < examples.size(); ++i) {
-        const auto &input = examples[i];
-        if (input.ndim() > kMaxTensorRank) { described = false; break; }
-        const auto type = logical_type(input.dtype());
-        if (!type) { described = false; break; }
-        std::array<std::int64_t, kMaxTensorRank> shape{};
-        std::copy(input.shape().begin(), input.shape().end(), shape.begin());
-        auto description = TensorDesc::dense(*type, {shape.data(), input.ndim()});
-        if (!description) { described = false; break; }
-        descriptions[i] = std::move(*description);
-      }
-      attention_blocks = described && detail::is_mlx_attention_blocks(operation,
-          std::span<const TensorDesc>(descriptions.data(), examples.size()));
+    std::vector<InputSpec> specs;
+    std::vector<TensorDesc> descriptions;
+    specs.reserve(examples.size());
+    descriptions.reserve(examples.size());
+    bool described = true;
+    for (const auto &input : examples) {
+      InputSpec spec{input.shape(), input.dtype()};
+      auto description = logical_description(spec);
+      if (!description) { described = false; break; }
+      specs.push_back(std::move(spec));
+      descriptions.push_back(std::move(*description));
     }
-    if (attention_blocks || operation.custom_as<model_ops::SinkAttention>() ||
-        fixed_ggml_model_operation(operation) ||
-        detail::is_mlx_float_operation(operation, {})) {
-      std::vector<InputSpec> specs;
-      specs.reserve(examples.size());
-      for (const auto &input : examples) {
-        if (input.status() != mx::array::available)
-          return std::unexpected(Status::FailedPrecondition(
-              "Apple examples must be ready arrays"));
-        specs.push_back({input.shape(), input.dtype()});
+    if (described) {
+      HYLE_ASSIGN_OR_RETURN(auto carrier,
+          detail::analyze_native_carrier(operation, descriptions));
+      if (carrier != detail::RegionKind::kMlx ||
+          detail::is_mlx_float_operation(operation, descriptions)) {
+        for (const auto &input : examples)
+          if (input.status() != mx::array::available)
+            return std::unexpected(Status::FailedPrecondition(
+                "Apple examples must be ready arrays"));
+        return prepare(operation, specs, workload);
       }
-      return prepare(operation, specs, workload);
     }
     return compile(
         [operation, workload](const auto &inputs, mx::Stream stream) {
@@ -431,21 +445,25 @@ Context::prepare(const Operation &operation, std::span<const InputSpec> inputs,
       HYLE_ASSIGN_OR_RETURN(auto description, logical_description(input));
       descriptions.push_back(std::move(description));
     }
+    HYLE_ASSIGN_OR_RETURN(auto carrier,
+        detail::analyze_native_carrier(operation, descriptions));
     if (detail::is_mlx_exact_gguf_gather(operation, descriptions))
       return compile([operation, descriptions](const auto &values, mx::Stream stream) {
         return detail::lower_mlx_exact_gguf_gather(operation, descriptions, values, stream);
       }, inputs, workload);
-    if (detail::is_mlx_float_operation(operation, descriptions))
-      return compile(
+    if (detail::is_mlx_float_operation(operation, descriptions)) {
+      const auto bank = detail::mlx_row_bank_input(operation);
+      return detail::ContextAccess::compile(state_,
           [operation, descriptions](const auto &values, mx::Stream stream) {
             return detail::lower_mlx_float(operation, descriptions, values, stream);
-          }, inputs, workload);
-    const bool attention_blocks=detail::is_mlx_attention_blocks(operation,descriptions);
-    if (attention_blocks || ggml_model_operation(operation, descriptions)) {
+          }, inputs, workload, bank ? std::span<const std::size_t>(&*bank, 1)
+                                   : std::span<const std::size_t>{});
+    }
+    if (carrier != detail::RegionKind::kMlx) {
       detail::RegionPlan plan;
       plan.workload = workload;
       detail::Region region;
-      region.kind = attention_blocks ? detail::RegionKind::kAttentionBlocks : detail::RegionKind::kGgml;
+      region.kind = carrier;
       region.operation = operation;
       for (std::size_t i = 0; i < inputs.size(); ++i) {
         region.native_inputs.push_back(descriptions[i]);

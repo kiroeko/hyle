@@ -1,0 +1,180 @@
+{
+  "deleted_files": 20,
+  "reclaimed_bytes": 615728995,
+  "recursive": false,
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\inference-foundation-review-2026-10-18\\cold-constant-retirement.zip",
+    "exists": true,
+    "bytes": 15792181,
+    "mtime_ns": 1792387208996317800,
+    "mtime_utc": "2026-10-19T13:20:08.996318+08:00",
+    "sha256": "8c3da3d91bf2d0bb9a3c22c63ba158fb8ec0c7aa5e762f838d9285e3d1e8dfc2",
+    "payload_files": 431,
+    "CRC_and_SHA256_verified": true
+  },
+  "targets": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cold-constant-retirement\\checks\\20261019T051111-0efa7c58\\cold-tests.exe",
+      "exists": true,
+      "bytes": 68770304,
+      "mtime_ns": 1792386710374488600,
+      "mtime_utc": "2026-10-19T13:11:50.374489+08:00",
+      "sha256": "1f755514c9951b6d00f9a40e44f9c58c58fa5b55c1b4d0a0628bb67ee65793ff"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cold-constant-retirement\\checks\\20261019T051111-0efa7c58\\cold-tests.exp",
+      "exists": true,
+      "bytes": 25039,
+      "mtime_ns": 1792386709646463600,
+      "mtime_utc": "2026-10-19T13:11:49.646464+08:00",
+      "sha256": "b424a4bd64eb7a23efdb3248204c34ff58ddd932fa5c75c3b387e020f4c6342f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cold-constant-retirement\\checks\\20261019T051111-0efa7c58\\cold-tests.lib",
+      "exists": true,
+      "bytes": 41912,
+      "mtime_ns": 1792386709649464100,
+      "mtime_utc": "2026-10-19T13:11:49.649464+08:00",
+      "sha256": "6cea9032be3e0be5afd28777243d84b623372d77b7f717dba6342d36f4d17eb9"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cold-constant-retirement\\checks\\20261019T051111-0efa7c58\\cold-tests.map",
+      "exists": true,
+      "bytes": 35652621,
+      "mtime_ns": 1792386710390487500,
+      "mtime_utc": "2026-10-19T13:11:50.390487+08:00",
+      "sha256": "0740e3ea5b74441dde9d500ed75dd9bbb60aff3f5e72d655e3ef071737fbaef7"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cold-constant-retirement\\checks\\20261019T051232-8e1188d0\\cold-tests.exe",
+      "exists": true,
+      "bytes": 68777984,
+      "mtime_ns": 1792386791843602300,
+      "mtime_utc": "2026-10-19T13:13:11.843602+08:00",
+      "sha256": "1149fde55371527e191ceb51e4a252eecd0310bd3d5d78e44b7bcd3360d48323"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cold-constant-retirement\\checks\\20261019T051232-8e1188d0\\cold-tests.exp",
+      "exists": true,
+      "bytes": 25039,
+      "mtime_ns": 1792386791124140300,
+      "mtime_utc": "2026-10-19T13:13:11.12414+08:00",
+      "sha256": "67fc08560b1978d86671d8985d6312f9521887a57af844cd63ea2b73a1d3849b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cold-constant-retirement\\checks\\20261019T051232-8e1188d0\\cold-tests.lib",
+      "exists": true,
+      "bytes": 41912,
+      "mtime_ns": 1792386791126140200,
+      "mtime_utc": "2026-10-19T13:13:11.12614+08:00",
+      "sha256": "6cea9032be3e0be5afd28777243d84b623372d77b7f717dba6342d36f4d17eb9"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cold-constant-retirement\\checks\\20261019T051232-8e1188d0\\cold-tests.map",
+      "exists": true,
+      "bytes": 35673560,
+      "mtime_ns": 1792386791860538000,
+      "mtime_utc": "2026-10-19T13:13:11.860538+08:00",
+      "sha256": "9ff311430ffc55b27c1887f5423b63011c01abb7bcf058caa83fb613b013ec0d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cold-constant-retirement\\checks\\20261019T051551-0faed8bc\\cold-tests.exe",
+      "exists": true,
+      "bytes": 68786176,
+      "mtime_ns": 1792386965935414900,
+      "mtime_utc": "2026-10-19T13:16:05.935415+08:00",
+      "sha256": "e2adcbb761aec7b25041a6dc4181af411d3e828f1afd073484064b288e0b3ef9"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cold-constant-retirement\\checks\\20261019T051551-0faed8bc\\cold-tests.exp",
+      "exists": true,
+      "bytes": 25039,
+      "mtime_ns": 1792386965176090600,
+      "mtime_utc": "2026-10-19T13:16:05.176091+08:00",
+      "sha256": "19a0bff3ea345e481e406f4ea242efe44657de9e6b6d3ee9f0b07c8cbb57d49e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cold-constant-retirement\\checks\\20261019T051551-0faed8bc\\cold-tests.lib",
+      "exists": true,
+      "bytes": 41912,
+      "mtime_ns": 1792386965178090500,
+      "mtime_utc": "2026-10-19T13:16:05.178091+08:00",
+      "sha256": "6cea9032be3e0be5afd28777243d84b623372d77b7f717dba6342d36f4d17eb9"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cold-constant-retirement\\checks\\20261019T051551-0faed8bc\\cold-tests.map",
+      "exists": true,
+      "bytes": 35680368,
+      "mtime_ns": 1792386965951886600,
+      "mtime_utc": "2026-10-19T13:16:05.951887+08:00",
+      "sha256": "bd4337dada0ede83490a23d47a7989eab2579c5b0642df4ee3cfc6f070c6dc88"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cold-constant-retirement\\cuda-checks\\20261019T051553-817e50eb\\candidate.exe",
+      "exists": true,
+      "bytes": 116132352,
+      "mtime_ns": 1792386976777845500,
+      "mtime_utc": "2026-10-19T13:16:16.777845+08:00",
+      "sha256": "4ab10723aff775f2ccec4b7e78afd5d05d53bf3765d387d954aae7b5751839be"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cold-constant-retirement\\cuda-checks\\20261019T051553-817e50eb\\candidate.exp",
+      "exists": true,
+      "bytes": 25041,
+      "mtime_ns": 1792386976379961600,
+      "mtime_utc": "2026-10-19T13:16:16.379961+08:00",
+      "sha256": "15e1d957797be1774acbd84c64fc12ec1881e069d04b9e47c630f6043c642dfd"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cold-constant-retirement\\cuda-checks\\20261019T051553-817e50eb\\candidate.lib",
+      "exists": true,
+      "bytes": 41826,
+      "mtime_ns": 1792386976381959400,
+      "mtime_utc": "2026-10-19T13:16:16.381959+08:00",
+      "sha256": "a17fe4c1ccde457403d9126a084aa4f236618e410d072f5513aca0806f2713a6"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cold-constant-retirement\\cuda-checks\\20261019T051553-817e50eb\\candidate.map",
+      "exists": true,
+      "bytes": 33577271,
+      "mtime_ns": 1792386976802673600,
+      "mtime_utc": "2026-10-19T13:16:16.802674+08:00",
+      "sha256": "4d772586c367c27265b6f2339a2fdaf194ffac8267452f82e93292db2113739f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cold-constant-retirement\\cuda-test-checks\\20261019T051728-35c9113e\\fusion-tests.exe",
+      "exists": true,
+      "bytes": 116921856,
+      "mtime_ns": 1792387061671538000,
+      "mtime_utc": "2026-10-19T13:17:41.671538+08:00",
+      "sha256": "f22e8af8c39d7772b3132e61aa931ea15625e9e40ea97f2fe4daf9b62f01ceca"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cold-constant-retirement\\cuda-test-checks\\20261019T051728-35c9113e\\fusion-tests.exp",
+      "exists": true,
+      "bytes": 25053,
+      "mtime_ns": 1792387061261289900,
+      "mtime_utc": "2026-10-19T13:17:41.26129+08:00",
+      "sha256": "b784767027e4bd02c9ff6e146209e6a65147ae5aa8e13e7cf6030fb0d05e6ccf"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cold-constant-retirement\\cuda-test-checks\\20261019T051728-35c9113e\\fusion-tests.lib",
+      "exists": true,
+      "bytes": 42166,
+      "mtime_ns": 1792387061263288800,
+      "mtime_utc": "2026-10-19T13:17:41.263289+08:00",
+      "sha256": "bc8a9121fabe065864b9d7b3f9b377d169ff3d0bf416946436dda717b60ec12f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cold-constant-retirement\\cuda-test-checks\\20261019T051728-35c9113e\\fusion-tests.map",
+      "exists": true,
+      "bytes": 35421564,
+      "mtime_ns": 1792387061696626100,
+      "mtime_utc": "2026-10-19T13:17:41.696626+08:00",
+      "sha256": "bed119f41e3331d1864372cfc42411cb92d1ccfb88d7a69dd642daa167610139"
+    }
+  ],
+  "objects_retained": true,
+  "native_SDK_retained": true,
+  "raw_vectors_retained": true
+}

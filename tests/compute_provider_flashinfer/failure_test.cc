@@ -161,6 +161,33 @@ TEST(Flashinfer, UnqualifiedSemanticsDeclineDuringPrepare) {
   EXPECT_TRUE(grouped.error().IsUnimplemented());
 }
 
+TEST(Flashinfer, NonPositiveQkScalesDeclineBeforeNativeSoftmax) {
+  auto context=compute::Context::create(cuda::device(0).value(),
+      compute::flashinfer::provider()).value();
+  auto memory=cuda::MemoryResource::create(context,cuda::MemoryKind::kDevice).value();
+  const auto type=compute::DataType::kFloat16;
+  const auto q=compute::TensorDesc::dense(type,std::array<std::int64_t,4>{1,2,8,256}).value();
+  const auto kv=compute::TensorDesc::dense(type,std::array<std::int64_t,4>{1,3,2,256}).value();
+  const compute::BatchCapacity capacity{
+      .storage=compute::BatchStorage::kRagged,.query_type=type,.output_type=type,
+      .key_storage=compute::CacheStorage::plain(type).value(),
+      .value_storage=compute::CacheStorage::plain(type).value(),
+      .max_requests=1,.max_query_rows=2,.max_kv_rows=3,.max_pages=0,.max_page_refs=0,
+      .query_heads=1,.kv_heads=1,.qk_head_dim=64,.value_head_dim=64,.page_size=1};
+  auto schema=compute::BatchSchema::create(capacity).value();
+  for(float scale:{0.F,-.5F}) {
+    SCOPED_TRACE(scale);
+    const auto ordinary=compute::prepare(context,
+        compute::Operation(compute::ScaledDotProductAttention{.scale=scale,.causal=true}),
+        std::array{q,kv,kv},std::array{q},memory.ref());
+    ASSERT_FALSE(ordinary);EXPECT_TRUE(ordinary.error().IsUnimplemented());
+    const auto batch=compute::BatchProgram::prepare(context,schema,
+        {.resource=memory.ref(),.max_float_workspace_bytes=1u<<20,
+         .max_int_workspace_bytes=16384,.scale=scale});
+    ASSERT_FALSE(batch);EXPECT_TRUE(batch.error().IsUnimplemented());
+  }
+}
+
 #if defined(HYLE_FLASHINFER_FAULT_INJECTION)
 void batch_capture_fault(bool encoded,bool launch_failure,bool artifact_oom=false) {
   MetadataAllocator allocator;

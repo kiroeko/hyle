@@ -1,0 +1,832 @@
+{
+  "date": "2026-10-23",
+  "round": "BE",
+  "scope": "Generic dynamic Float8BlockQuantize actual outputs and GLM Flash default UE8M0 logical cache",
+  "complete_MTP": false,
+  "whole_original_model": false,
+  "throughput_evidence": false,
+  "physical_memory_evidence": false,
+  "implementation": {
+    "operation": "model_ops::Float8BlockQuantize",
+    "input": "dense plain finite F32/BF16 [M,K], M,K>0 and K%128=0",
+    "outputs": [
+      "plain E4M3FN actual codes [M,K]",
+      "plain F32 actual group scales [M,K/128]"
+    ],
+    "defaults": "Divide, absmax_floor=1e-10F; GLM chooses explicit PowerOfTwo, floor=1e-4F",
+    "policies": [
+      "F32(max/f448), x/scale",
+      "F32(max*F32recip448), ceil power2, x/scale",
+      "F32(max*F32recip448), F32(1/scale), F32(x*reciprocal)"
+    ],
+    "rounding": "F32 named boundaries; E4 SATFINITE/RNE with signed zero; finite input check fails Completion and exposes no successful outputs",
+    "resources": "ordinary immutable provider plans, independent Invocation, two typed no-alias outputs, shared queue/status/retirement mechanisms; no cache shadow or new executor",
+    "cuda": "one warp per contiguous group128; explicit RN scale/normalization; native CUDA E4 conversion",
+    "portable": "Apple existing integer IEEE helpers; Vulkan integer normalization for visible bytes, six added typed exports, two ordinary native outputs followed by finite flag; old ProgramSpecV4 and enum values retained"
+  },
+  "glm": {
+    "source": "SGLang 06992c92ad4494fe9f9636e75be3e35040512447 default scale_fmt=ue8m0",
+    "replaced": "Prior optional scale_fmt=None component replaced by default PowerOfTwo actual output primitive, no duplicate compatibility path",
+    "chain": "F32 pooled -> BF16 -> normalized Hadamard128 -> BF16 -> E4+F32scale; matching query -> scorer -> TopK512 -> I32 2048 tokens -> MLA",
+    "state": "one StateHead codes/scales/cursor/IDs/attention; accept A, reject B, continue C and independent base, stale/cancel/old readonly leases",
+    "checks": "CPU and CUDA each 12 Graph submissions, unchanged layered Hadamard math/BF16 and exact code/scale gates",
+    "limits": "generated raw K4/query/headweight/latent boundaries and complete closed pools; logical cache, not vendor page/footer ABI, original full GLM model, natural acceptance or throughput"
+  },
+  "validation": {
+    "executed_test_instances": 23,
+    "unique_test_names": 21,
+    "graph_submission_attempts": 266,
+    "inherited_related_model_state_attempts": 234,
+    "new_quantization": {
+      "successful": 24,
+      "intentional_nonfinite_failed_Completions": 8,
+      "coverage": "four backends each two M2/K256 Graphs F32/BF16; three policies floor1e-4 plus Divide default1e-10, eight actual outputs; two generations, NaN failure, fresh recovery; exact independent code/scale oracle, no alias and retained old outputs"
+    },
+    "windows_cpu_cuda": {
+      "process": {
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\fp8-quant-output-20261023\\tests-link1\\fp8-quant-output-checks.exe",
+          "--gtest_filter=*",
+          "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\fp8-quant-output-20261023\\checks1\\results.xml"
+        ],
+        "cwd": "C:\\public\\project-hyle\\hyle",
+        "started": 1792687532.415895,
+        "timeout_seconds": 600,
+        "throughput_evidence": false,
+        "memory_evidence": false,
+        "trace": false,
+        "profiler": false,
+        "pid": 22052,
+        "exit": 0,
+        "timed_out": false,
+        "finished": 1792687610.253767,
+        "process_wall_seconds": 77.83682829999998
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\fp8-quant-output-20261023\\tests-link1\\fp8-quant-output-checks.exe",
+        "bytes": 141158400,
+        "sha256": "5854e0cfa463c5f88a6c4031d050a6f970f96f284e82bd7712ca55d20fa4caf4"
+      },
+      "throughput_evidence": false,
+      "physical_memory_evidence": false,
+      "whole_original_model": false,
+      "tests": 19,
+      "failures": 0,
+      "errors": 0,
+      "disabled": 0,
+      "skips": 0,
+      "cases": [
+        {
+          "attributes": {
+            "name": "ContractRejectsInvalidDescriptionsAndParameters",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\float8_quantize_output_test.cc",
+            "line": "322",
+            "status": "run",
+            "result": "completed",
+            "time": "0.",
+            "timestamp": "2026-10-23T00:45:32.715",
+            "classname": "Float8QuantizeOutput"
+          },
+          "properties": {}
+        },
+        {
+          "attributes": {
+            "name": "CpuCodesScalesAndLifetimes",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\float8_quantize_output_test.cc",
+            "line": "345",
+            "status": "run",
+            "result": "completed",
+            "time": "0.021",
+            "timestamp": "2026-10-23T00:45:32.715",
+            "classname": "Float8QuantizeOutput"
+          },
+          "properties": {
+            "successful_submissions": "6",
+            "failed_submissions": "2",
+            "scope": "two dense M2/K256 Graphs:F32/BF16;four policies,eight real outputs;two generations,NaN Completion,fresh recovery,retained readonly results;not throughput/fullmodel"
+          }
+        },
+        {
+          "attributes": {
+            "name": "CudaCodesScalesAndLifetimes",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\float8_quantize_output_test.cc",
+            "line": "358",
+            "status": "run",
+            "result": "completed",
+            "time": "0.087",
+            "timestamp": "2026-10-23T00:45:32.736",
+            "classname": "Float8QuantizeOutput"
+          },
+          "properties": {
+            "successful_submissions": "6",
+            "failed_submissions": "2",
+            "scope": "two dense M2/K256 Graphs:F32/BF16;four policies,eight real outputs;two generations,NaN Completion,fresh recovery,retained readonly results;not throughput/fullmodel"
+          }
+        },
+        {
+          "attributes": {
+            "name": "CudaEncodedLeaseSelectsAndPublishesMlaPrefix",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_official_index_cache_test.cc",
+            "line": "343",
+            "status": "run",
+            "result": "completed",
+            "time": "1.114",
+            "timestamp": "2026-10-23T00:45:32.823",
+            "classname": "GlmOfficialIndexCache"
+          },
+          "properties": {
+            "actual_submissions": "12",
+            "persistent_index_bytes": "67848",
+            "f32_index_comparison_bytes": "263168",
+            "peak_state_backing_bytes": "2721536",
+            "reader": "fixed SGLang06992 default ue8m0; K4 pooledF32->BF16->normalizedHadamard128->BF16; explicit Float8BlockQuantize PowerOfTwo/floor1e-4; F32 reciprocal448 raw-scale then ceil-power-of-two, divide normalization; real E4 RNE codes plus F32 scales; matching rounded query and TileLang scorer logical math",
+            "journey": "actual encoded lease->scorer->TopK512 I32->2048-token MLA; one StateHead code/scale/cursor/IDs/MLA; acceptA,rejectB,continueC,independent base recomputation,stale CAS,cancel,old readonly versions",
+            "scope": "generated raw K4/query/headweights/latent boundary; complete closed-pool chunks; logical E4+F32scale storage,not vendor pagefooter ABI; partial raw tails covered separately; no original/full model,natural token acceptance,or throughput claim"
+          }
+        },
+        {
+          "attributes": {
+            "name": "CpuEncodedLeaseSelectsAndPublishesMlaPrefix",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_official_index_cache_test.cc",
+            "line": "352",
+            "status": "run",
+            "result": "completed",
+            "time": "1.098",
+            "timestamp": "2026-10-23T00:45:33.938",
+            "classname": "GlmOfficialIndexCache"
+          },
+          "properties": {
+            "actual_submissions": "12",
+            "persistent_index_bytes": "67848",
+            "f32_index_comparison_bytes": "263168",
+            "peak_state_backing_bytes": "2721536",
+            "reader": "fixed SGLang06992 default ue8m0; K4 pooledF32->BF16->normalizedHadamard128->BF16; explicit Float8BlockQuantize PowerOfTwo/floor1e-4; F32 reciprocal448 raw-scale then ceil-power-of-two, divide normalization; real E4 RNE codes plus F32 scales; matching rounded query and TileLang scorer logical math",
+            "journey": "actual encoded lease->scorer->TopK512 I32->2048-token MLA; one StateHead code/scale/cursor/IDs/MLA; acceptA,rejectB,continueC,independent base recomputation,stale CAS,cancel,old readonly versions",
+            "scope": "generated raw K4/query/headweights/latent boundary; complete closed-pool chunks; logical E4+F32scale storage,not vendor pagefooter ABI; partial raw tails covered separately; no original/full model,natural token acceptance,or throughput claim"
+          }
+        },
+        {
+          "attributes": {
+            "name": "CudaWholeNextNPrefixPublishesAndContinuesWithoutRejectedTail",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_mtp_state_consumer_test.cc",
+            "line": "1291",
+            "status": "run",
+            "result": "completed",
+            "time": "4.083",
+            "timestamp": "2026-10-23T00:45:35.036",
+            "classname": "GlmMtpStateConsumer"
+          },
+          "properties": {
+            "actual_submissions": "7",
+            "backend": "ordinary CUDA Graph",
+            "component_schema": "16 native resources plus explicit iteration policy; complete NextN/indexer state and bounded nx journal/lag count",
+            "scope": "generated primary GGUF/F32 single complete NextN component; fresh K4 closepool->actual I32 sparse MLA/MoE; same-epoch entire-indexer skip; no original checkpoint/full target/KDA/mHC/official FP8cache/natural acceptance",
+            "prefixes": "0 retained;1 corrected-pending atomic publish and independent base recomputation;2 independent branch; rejected tail/cancel/stale publish/old readonly ownership",
+            "uncovered": "this case is single-epoch; cross-epoch catchup is covered by the separate AcceptedJournal cases; target KDA/conv/mHC, original encodings and vocabulary/natural acceptance remain separate"
+          }
+        },
+        {
+          "attributes": {
+            "name": "CudaAcceptedJournalCatchesUpAndReseedsNextIteration",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_mtp_state_consumer_test.cc",
+            "line": "1297",
+            "status": "run",
+            "result": "completed",
+            "time": "7.894",
+            "timestamp": "2026-10-23T00:45:39.120",
+            "classname": "GlmMtpStateConsumer"
+          },
+          "properties": {
+            "actual_submissions": "14",
+            "fresh_submissions": "8",
+            "skip_submissions": "3",
+            "catchup_submissions": "2",
+            "policy_submissions": "1",
+            "backend": "ordinary CUDA Graph",
+            "journal": "actual nx[2,4096] with I32 valid lag count; selected StateVersion determines accepted input; no eager indexer during skip",
+            "journey": "base2054 tail2; accept1 rejects B and fresh2055 closes pool; accept2 catches actual accepted B2055 then fresh2056 appends tail1; independent actual nx direct-input reference",
+            "scope": "generated selected GGUF/F32 NextN cross-epoch accepted-feature catchup and fresh seed; no target KDA/conv/mHC, original FP8cache or natural acceptance claim"
+          }
+        },
+        {
+          "attributes": {
+            "name": "CudaTargetPrefixAndNextNPublishAndReseedTogether",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_mtp_state_consumer_test.cc",
+            "line": "1303",
+            "status": "run",
+            "result": "completed",
+            "time": "9.482",
+            "timestamp": "2026-10-23T00:45:47.015",
+            "classname": "GlmMtpStateConsumer"
+          },
+          "properties": {
+            "actual_submissions": "26",
+            "target_submissions": "12",
+            "state_budget_bytes": "536870912",
+            "peak_state_backing_bytes": "127777004",
+            "target_output_generations": "10",
+            "backend": "ordinary CUDA Graph",
+            "component_schema": "16 NextN/indexer resources plus epoch metadata and4 target resources: raw QKV history,KDA matrix,finalnorm tap,I32 cursor; one StateStore/Head/Draft",
+            "journey": "actual target warmup->A/B verify pending->accept1/2->accepted journal catchup->epoch8 real target-tap reseed; independent base recomputation/direct nx catchup; rejected tail,stale CAS,cancellation,old readonly leases",
+            "scope": "generated primary GGUF/F32 layer44 KDA/conv/two mHC branches/sparse FFN/finalnorm target tap composed with complete NextN; upper-layer4H remains generated; no full45-layer original model,natural acceptance,official FP8cache or throughput claim"
+          }
+        },
+        {
+          "attributes": {
+            "name": "CudaDraftExtendLastAcceptedSeedSkipsDecodeStepZero",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_mtp_state_consumer_test.cc",
+            "line": "1309",
+            "status": "run",
+            "result": "completed",
+            "time": "14.932",
+            "timestamp": "2026-10-23T00:45:56.497",
+            "classname": "GlmMtpStateConsumer"
+          },
+          "properties": {
+            "actual_submissions": "24",
+            "draft_extend_submissions": "11",
+            "skip_submissions": "8",
+            "catchup_submissions": "4",
+            "policy_submissions": "1",
+            "backend": "ordinary CUDA Graph",
+            "journey": "draft-extend A2054/B2055->last accepted row1/2 actual hidden+full2051IDs->step0 immediately skips entire indexer->accepted nx catchup->actual epoch8 extend->step0 skip; independent accepted-only base execution/direct nx reference",
+            "scope": "generated selected Flash primary GGUF/F32 sequential M1 draft-extend seed protocol; generated per-position target-hidden boundary; no target43 MLA/indexer composition,batched vendor extend kernel,full target,original weights,official FP8cache,natural acceptance or throughput claim"
+          }
+        },
+        {
+          "attributes": {
+            "name": "CpuWholeNextNPrefixPublishesAndContinuesWithoutRejectedTail",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_mtp_state_consumer_test.cc",
+            "line": "1318",
+            "status": "run",
+            "result": "completed",
+            "time": "3.962",
+            "timestamp": "2026-10-23T00:46:11.430",
+            "classname": "GlmMtpStateConsumer"
+          },
+          "properties": {
+            "actual_submissions": "7",
+            "backend": "ordinary CPU Graph",
+            "component_schema": "16 native resources plus explicit iteration policy; complete NextN/indexer state and bounded nx journal/lag count",
+            "scope": "generated primary GGUF/F32 single complete NextN component; fresh K4 closepool->actual I32 sparse MLA/MoE; same-epoch entire-indexer skip; no original checkpoint/full target/KDA/mHC/official FP8cache/natural acceptance",
+            "prefixes": "0 retained;1 corrected-pending atomic publish and independent base recomputation;2 independent branch; rejected tail/cancel/stale publish/old readonly ownership",
+            "uncovered": "this case is single-epoch; cross-epoch catchup is covered by the separate AcceptedJournal cases; target KDA/conv/mHC, original encodings and vocabulary/natural acceptance remain separate"
+          }
+        },
+        {
+          "attributes": {
+            "name": "CpuAcceptedJournalCatchesUpAndReseedsNextIteration",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_mtp_state_consumer_test.cc",
+            "line": "1323",
+            "status": "run",
+            "result": "completed",
+            "time": "7.802",
+            "timestamp": "2026-10-23T00:46:15.393",
+            "classname": "GlmMtpStateConsumer"
+          },
+          "properties": {
+            "actual_submissions": "14",
+            "fresh_submissions": "8",
+            "skip_submissions": "3",
+            "catchup_submissions": "2",
+            "policy_submissions": "1",
+            "backend": "ordinary CPU Graph",
+            "journal": "actual nx[2,4096] with I32 valid lag count; selected StateVersion determines accepted input; no eager indexer during skip",
+            "journey": "base2054 tail2; accept1 rejects B and fresh2055 closes pool; accept2 catches actual accepted B2055 then fresh2056 appends tail1; independent actual nx direct-input reference",
+            "scope": "generated selected GGUF/F32 NextN cross-epoch accepted-feature catchup and fresh seed; no target KDA/conv/mHC, original FP8cache or natural acceptance claim"
+          }
+        },
+        {
+          "attributes": {
+            "name": "CpuTargetPrefixAndNextNPublishAndReseedTogether",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_mtp_state_consumer_test.cc",
+            "line": "1328",
+            "status": "run",
+            "result": "completed",
+            "time": "9.83",
+            "timestamp": "2026-10-23T00:46:23.196",
+            "classname": "GlmMtpStateConsumer"
+          },
+          "properties": {
+            "actual_submissions": "26",
+            "target_submissions": "12",
+            "state_budget_bytes": "536870912",
+            "peak_state_backing_bytes": "127777004",
+            "target_output_generations": "10",
+            "backend": "ordinary CPU Graph",
+            "component_schema": "16 NextN/indexer resources plus epoch metadata and4 target resources: raw QKV history,KDA matrix,finalnorm tap,I32 cursor; one StateStore/Head/Draft",
+            "journey": "actual target warmup->A/B verify pending->accept1/2->accepted journal catchup->epoch8 real target-tap reseed; independent base recomputation/direct nx catchup; rejected tail,stale CAS,cancellation,old readonly leases",
+            "scope": "generated primary GGUF/F32 layer44 KDA/conv/two mHC branches/sparse FFN/finalnorm target tap composed with complete NextN; upper-layer4H remains generated; no full45-layer original model,natural acceptance,official FP8cache or throughput claim"
+          }
+        },
+        {
+          "attributes": {
+            "name": "CpuDraftExtendLastAcceptedSeedSkipsDecodeStepZero",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_mtp_state_consumer_test.cc",
+            "line": "1333",
+            "status": "run",
+            "result": "completed",
+            "time": "14.984",
+            "timestamp": "2026-10-23T00:46:33.027",
+            "classname": "GlmMtpStateConsumer"
+          },
+          "properties": {
+            "actual_submissions": "24",
+            "draft_extend_submissions": "11",
+            "skip_submissions": "8",
+            "catchup_submissions": "4",
+            "policy_submissions": "1",
+            "backend": "ordinary CPU Graph",
+            "journey": "draft-extend A2054/B2055->last accepted row1/2 actual hidden+full2051IDs->step0 immediately skips entire indexer->accepted nx catchup->actual epoch8 extend->step0 skip; independent accepted-only base execution/direct nx reference",
+            "scope": "generated selected Flash primary GGUF/F32 sequential M1 draft-extend seed protocol; generated per-position target-hidden boundary; no target43 MLA/indexer composition,batched vendor extend kernel,full target,original weights,official FP8cache,natural acceptance or throughput claim"
+          }
+        },
+        {
+          "attributes": {
+            "name": "CpuThreeOriginalStagesPublishPhysicalAcceptedHistoryAndContinue",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_main_history_test.cc",
+            "line": "522",
+            "status": "run",
+            "result": "completed",
+            "time": "0.161",
+            "timestamp": "2026-10-23T00:46:48.236",
+            "classname": "DSparkMainHistory"
+          },
+          "properties": {
+            "actual_submissions": "16",
+            "original_role_count": "8",
+            "original_role_bytes": "60184576",
+            "physical_ring_row_bytes": "584",
+            "numerical_checks": "original decoded Q8/F32 independent dot/norm with established profile gate; actual postnorm -> BF16/last64 RoPE F32 gate; actual joined F32 -> exact BF16 bits; actual BF16 entry -> exact584B row and selected ring; exact old-ring preservation; actual carrier -> independent attention oracle",
+            "scope": "original Flash0731 Q8 fc/norm + three distinct stage wkv/norm; generated HC -> original main projection lease -> F32 norm -> BF16 -> last64 RoPE -> BF16 -> group64 QDQ physical128x584 three-rings -> actual gather-decode/attention; artificial prefix0/1/2 and fresh own-head/old-branch continuation; not original target, full official BF16 arithmetic or full DSpark MTP"
+          }
+        },
+        {
+          "attributes": {
+            "name": "CudaThreeOriginalStagesPublishPhysicalAcceptedHistoryAndContinue",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_main_history_test.cc",
+            "line": "528",
+            "status": "run",
+            "result": "completed",
+            "time": "0.158",
+            "timestamp": "2026-10-23T00:46:48.397",
+            "classname": "DSparkMainHistory"
+          },
+          "properties": {
+            "actual_submissions": "16",
+            "original_role_count": "8",
+            "original_role_bytes": "60184576",
+            "physical_ring_row_bytes": "584",
+            "numerical_checks": "original decoded Q8/F32 independent dot/norm with established profile gate; actual postnorm -> BF16/last64 RoPE F32 gate; actual joined F32 -> exact BF16 bits; actual BF16 entry -> exact584B row and selected ring; exact old-ring preservation; actual carrier -> independent attention oracle",
+            "scope": "original Flash0731 Q8 fc/norm + three distinct stage wkv/norm; generated HC -> original main projection lease -> F32 norm -> BF16 -> last64 RoPE -> BF16 -> group64 QDQ physical128x584 three-rings -> actual gather-decode/attention; artificial prefix0/1/2 and fresh own-head/old-branch continuation; not original target, full official BF16 arithmetic or full DSpark MTP"
+          }
+        },
+        {
+          "attributes": {
+            "name": "CpuActualCaptureLeasesReachSameStageMainKv",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_target_binding_test.cc",
+            "line": "352",
+            "status": "run",
+            "result": "completed",
+            "time": "0.261",
+            "timestamp": "2026-10-23T00:46:48.557",
+            "classname": "DSparkTargetBinding"
+          },
+          "properties": {
+            "actual_submissions": "9",
+            "scope": "formal Flash0731 selected Q8 role types, generated parameters; actual raw HC producer leases -> mean/concat/main projection/norm -> same stage0 wkv/norm 512-wide pre-RoPE; no trained payload/physical ring/full-model claim",
+            "backend": "ordinary CPU Graph"
+          }
+        },
+        {
+          "attributes": {
+            "name": "CudaActualCaptureLeasesReachSameStageMainKv",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_target_binding_test.cc",
+            "line": "364",
+            "status": "run",
+            "result": "completed",
+            "time": "0.262",
+            "timestamp": "2026-10-23T00:46:48.819",
+            "classname": "DSparkTargetBinding"
+          },
+          "properties": {
+            "actual_submissions": "9",
+            "scope": "formal Flash0731 selected Q8 role types, generated parameters; actual raw HC producer leases -> mean/concat/main projection/norm -> same stage0 wkv/norm 512-wide pre-RoPE; no trained payload/physical ring/full-model claim",
+            "backend": "ordinary CUDA Graph"
+          }
+        },
+        {
+          "attributes": {
+            "name": "CpuOriginalCaptureProjectionFeedsSameStageMainKv",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_target_binding_test.cc",
+            "line": "357",
+            "status": "run",
+            "result": "completed",
+            "time": "0.32",
+            "timestamp": "2026-10-23T00:46:49.291",
+            "classname": "DSparkOriginalTargetBinding"
+          },
+          "properties": {
+            "actual_submissions": "9",
+            "scope": "formal Flash0731 four original Q8/F32 roles; generated raw HC producer leases -> original main projection/norm -> original stage0 wkv/norm 512-wide pre-RoPE; no original target captures/physical ring/full-model claim",
+            "original_role_count": "4",
+            "original_role_bytes": "55724032",
+            "fc_sha256": "4516df35cd05ecd36b93e73ac2ae74c524ec6edda13b634a7895b7eabe0c8c04",
+            "main_norm_sha256": "0f99d64b4fa46264c9bd2efdffcb66d3ec0cdd0ca61109f929ed958bcb843f0b",
+            "wkv_sha256": "a52e49dc69f4eff1c8287b3887123dd7a583bdaee7d42efe55310f035bafd35f",
+            "kv_norm_sha256": "edbbd17729cfb3c0852c8b6cdb8c1044eb9f501d8864c7ef4444c568e56fc966",
+            "backend": "ordinary CPU Graph"
+          }
+        },
+        {
+          "attributes": {
+            "name": "CudaOriginalCaptureProjectionFeedsSameStageMainKv",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_target_binding_test.cc",
+            "line": "370",
+            "status": "run",
+            "result": "completed",
+            "time": "0.323",
+            "timestamp": "2026-10-23T00:46:49.612",
+            "classname": "DSparkOriginalTargetBinding"
+          },
+          "properties": {
+            "actual_submissions": "9",
+            "scope": "formal Flash0731 four original Q8/F32 roles; generated raw HC producer leases -> original main projection/norm -> original stage0 wkv/norm 512-wide pre-RoPE; no original target captures/physical ring/full-model claim",
+            "original_role_count": "4",
+            "original_role_bytes": "55724032",
+            "fc_sha256": "4516df35cd05ecd36b93e73ac2ae74c524ec6edda13b634a7895b7eabe0c8c04",
+            "main_norm_sha256": "0f99d64b4fa46264c9bd2efdffcb66d3ec0cdd0ca61109f929ed958bcb843f0b",
+            "wkv_sha256": "a52e49dc69f4eff1c8287b3887123dd7a583bdaee7d42efe55310f035bafd35f",
+            "kv_norm_sha256": "edbbd17729cfb3c0852c8b6cdb8c1044eb9f501d8864c7ef4444c568e56fc966",
+            "backend": "ordinary CUDA Graph"
+          }
+        }
+      ]
+    },
+    "windows_vulkan": {
+      "process": {
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\fp8-quant-output-20261023\\vulkan-build\\link1\\fp8-quant-vulkan-checks.exe",
+          "--gtest_filter=Float8QuantizeOutput.*",
+          "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\fp8-quant-output-20261023\\vulkan-build\\run1\\results.xml"
+        ],
+        "cwd": "C:\\public\\project-hyle\\hyle",
+        "started": 1792687902.173267,
+        "timeout_seconds": 600,
+        "throughput_evidence": false,
+        "memory_evidence": false,
+        "trace": false,
+        "profiler": false,
+        "pid": 30068,
+        "exit": 0,
+        "timed_out": false,
+        "finished": 1792687903.3410654,
+        "process_wall_seconds": 1.1668694999989384
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\fp8-quant-output-20261023\\vulkan-build\\link1\\fp8-quant-vulkan-checks.exe",
+        "bytes": 68272640,
+        "sha256": "61af50529e972749cde1cd1522ee4f99d4ca6bc1b82a95fae00377a9fbf1298e"
+      },
+      "throughput_evidence": false,
+      "physical_memory_evidence": false,
+      "whole_original_model": false,
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "disabled": 0,
+      "skips": 0,
+      "cases": [
+        {
+          "attributes": {
+            "name": "ContractRejectsInvalidDescriptionsAndParameters",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\float8_quantize_output_test.cc",
+            "line": "322",
+            "status": "run",
+            "result": "completed",
+            "time": "0.",
+            "timestamp": "2026-10-23T00:51:42.340",
+            "classname": "Float8QuantizeOutput"
+          },
+          "properties": {}
+        },
+        {
+          "attributes": {
+            "name": "VulkanCodesScalesAndLifetimes",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\float8_quantize_output_test.cc",
+            "line": "385",
+            "status": "run",
+            "result": "completed",
+            "time": "0.921",
+            "timestamp": "2026-10-23T00:51:42.340",
+            "classname": "Float8QuantizeOutput"
+          },
+          "properties": {
+            "successful_submissions": "6",
+            "failed_submissions": "2",
+            "scope": "two dense M2/K256 Graphs:F32/BF16;four policies,eight real outputs;two generations,NaN Completion,fresh recovery,retained readonly results;not throughput/fullmodel"
+          }
+        }
+      ]
+    },
+    "apple": {
+      "result": {
+        "records": [
+          {
+            "tag": "run",
+            "argv": [
+              "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/fp8-quant-output-20261023/attempt1/fp8-quant-output-checks",
+              "--gtest_filter=Float8QuantizeOutput.*",
+              "--gtest_output=xml:/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/fp8-quant-output-20261023/attempt1/tests.xml"
+            ],
+            "cwd": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/build",
+            "started": 1792687960.8912551,
+            "pid": 4387,
+            "state": "terminal",
+            "exit": 0,
+            "seconds": 2.059048891067505
+          }
+        ],
+        "all_exit_zero": true,
+        "tests": 2,
+        "failed": [],
+        "skipped": [],
+        "passed": true,
+        "stdout": "Running main() from /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6/googletest/src/gtest_main.cc\nNote: Google Test filter = Float8QuantizeOutput.*\n[==========] Running 2 tests from 1 test suite.\n[----------] Global test environment set-up.\n[----------] 2 tests from Float8QuantizeOutput\n[ RUN      ] Float8QuantizeOutput.ContractRejectsInvalidDescriptionsAndParameters\n[       OK ] Float8QuantizeOutput.ContractRejectsInvalidDescriptionsAndParameters (0 ms)\n[ RUN      ] Float8QuantizeOutput.AppleCodesScalesAndLifetimes\n[       OK ] Float8QuantizeOutput.AppleCodesScalesAndLifetimes (1580 ms)\n[----------] 2 tests from Float8QuantizeOutput (1580 ms total)\n\n[----------] Global test environment tear-down\n[==========] 2 tests from 1 test suite ran. (1580 ms total)\n[  PASSED  ] 2 tests.\n"
+      },
+      "cases": [
+        {
+          "attributes": {
+            "name": "ContractRejectsInvalidDescriptionsAndParameters",
+            "file": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/fp8-quant-output-20261023/attempt1/source/tests/compute_models/float8_quantize_output_test.cc",
+            "line": "322",
+            "status": "run",
+            "result": "completed",
+            "time": "0.",
+            "timestamp": "2026-10-23T00:52:41.367",
+            "classname": "Float8QuantizeOutput"
+          },
+          "properties": {}
+        },
+        {
+          "attributes": {
+            "name": "AppleCodesScalesAndLifetimes",
+            "file": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/fp8-quant-output-20261023/attempt1/source/tests/compute_models/float8_quantize_output_test.cc",
+            "line": "372",
+            "status": "run",
+            "result": "completed",
+            "time": "1.58",
+            "timestamp": "2026-10-23T00:52:41.367",
+            "classname": "Float8QuantizeOutput"
+          },
+          "properties": {
+            "successful_submissions": "6",
+            "failed_submissions": "2",
+            "scope": "two dense M2/K256 Graphs:F32/BF16;four policies,eight real outputs;two generations,NaN Completion,fresh recovery,retained readonly results;not throughput/fullmodel"
+          }
+        }
+      ],
+      "hardware": "Mac16,12",
+      "actual_artifacts": [
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/fp8-quant-output-20261023/attempt1/mature.o",
+          "bytes": 158096,
+          "sha256": "455502fcbff2a8e3a48162d1ee4469e284dccc3f590c537d3f62e5b38f65ff4a"
+        },
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/fp8-quant-output-20261023/attempt1/test.o",
+          "bytes": 161312,
+          "sha256": "178f52c6059a0aa8cab79b6bd8737fcb1ba55dd2d8b8eac0afadf7b5a70bc3d7"
+        },
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/fp8-quant-output-20261023/attempt1/mature.o.d",
+          "bytes": 7350,
+          "sha256": "1b377b37f02a99bc7704b9e5bef8f9ee5177cf1dbc00a9e24c7b70da6fe432ab"
+        },
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/fp8-quant-output-20261023/attempt1/test.o.d",
+          "bytes": 9651,
+          "sha256": "e7f3ad1e50126840100b3e5f9d906fe2967f21041bb727c1a996e6f98d6075e6"
+        },
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/fp8-quant-output-20261023/attempt1/fp8-quant-output-checks",
+          "bytes": 12590600,
+          "sha256": "18a7ed50a0f9b39340908ac6f603d98fdcfe6132bd4313c9b3a0f5c4112e874c"
+        },
+        {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/fp8-quant-output-20261023/attempt1/fp8-quant-output-checks.map",
+          "bytes": 4040206,
+          "sha256": "5836ff0dc6fae49b05325761ce1e58544a137379bf98de17288014b942f6bc05"
+        }
+      ]
+    },
+    "build": "Windows 5 host TUs+1 small NVCC TU; Vulkan 7 product host TUs+1 test TU+existing fixed offline compiler; Apple 2 TUs. Existing SDK, native workers and libraries reused; no download/CI/full SDK rebuild",
+    "limitations": [
+      "No Linux run",
+      "New-op finite bounded fixtures do not certify every shape/input or physical device memory peak",
+      "New primitive passed Apple/Vulkan; GLM full state-cache consumer here remains CPU/CUDA only",
+      "No ordinary/MTP end-to-end performance rerun"
+    ],
+    "scoped_git_diff_check_exit": 0
+  },
+  "reproducibility": {
+    "stage": ".scratch/fp8-quant-output-20261023",
+    "archive": {
+      "path": "docs/evidence/correctness/fp8-quantize-output-2026-10-23.zip",
+      "bytes": 3191868,
+      "sha256": "177e6ea0125784be93630b1c0948b15e4c4886621f74327d7bca9391b09e97bb"
+    },
+    "sources": [
+      {
+        "path": "include/hyle/compute/model_ops.h",
+        "bytes": 78969,
+        "sha256": "9654a9973b1c5ae56ed9295e348d2706b60cc9ebc1708e169fb5eba62a597b1b"
+      },
+      {
+        "path": "src/compute_provider_native/torch_cpu_program.cc",
+        "bytes": 44776,
+        "sha256": "6ad77ec9c79d711bbc4ee63ec894ce7a8504d1c8e4c12f7a1eb143dd47eaaf3d"
+      },
+      {
+        "path": "src/compute_provider_cuda/CMakeLists.txt",
+        "bytes": 6281,
+        "sha256": "a5d20b5068a4fb50341fef185164216f82b3024649ef375b052f07cdbf943e6d"
+      },
+      {
+        "path": "src/compute_provider_cuda/cuda_provider.cc",
+        "bytes": 22060,
+        "sha256": "c41b8e2809bab626271a1ecf6f8796e26e2f855b5d48fe89c415fb2bfb2357f4"
+      },
+      {
+        "path": "src/compute_provider_cuda/float8_quantize_kernel.cu",
+        "bytes": 3871,
+        "sha256": "4369a0a280099ef83f3682a9835b3e59eda1f1ee3d9590340a85ed76cc7f8841"
+      },
+      {
+        "path": "src/compute_provider_cuda/float8_quantize_kernel.h",
+        "bytes": 527,
+        "sha256": "7f923316191cb01990ca10ebc7e828e0e5fb445bf3b4ef86647ae73ab0498515"
+      },
+      {
+        "path": "src/compute_provider_cuda/float8_quantize_provider.cc",
+        "bytes": 8284,
+        "sha256": "116587eb8e16cb9276439eaaeec0a56b4c2a0d8fede15cb80168a112e52ce3f6"
+      },
+      {
+        "path": "src/compute_provider_cuda/float8_quantize_provider.h",
+        "bytes": 661,
+        "sha256": "aa6633214140000ea10e43aea0aa003a6cc8814379dc2767102f5e74bd0002e6"
+      },
+      {
+        "path": "src/compute_route_apple/apple_mature_float.cc",
+        "bytes": 43286,
+        "sha256": "771e437981f1db75c5b39e4506961c0bc537aee55c9c133afb4ce96c9cd9a20e"
+      },
+      {
+        "path": "src/compute_route_vulkan/vulkan_official.cc",
+        "bytes": 11846,
+        "sha256": "a37f6f118c4796d11babd4ee5b88b899895b19dadc54e7575a44829efe91298a"
+      },
+      {
+        "path": "src/compute_route_vulkan/vulkan_iree.cc",
+        "bytes": 32994,
+        "sha256": "34e2823f68acd8a8aac9f555e54f18fba30921957d3a34e5b6c1be34505917fe"
+      },
+      {
+        "path": "src/compute_route_vulkan/vulkan_iree.h",
+        "bytes": 1245,
+        "sha256": "789d750bbb0ba7673ff480418a8e78e0f98c08da017b0f0668d226cf8941d3cb"
+      },
+      {
+        "path": "src/compute_route_vulkan/vulkan_program.cc",
+        "bytes": 70622,
+        "sha256": "1399885e8bddc65ef6463f811305dfbf735d5fdea5566830e42ddddae56eef26"
+      },
+      {
+        "path": "src/compute_provider_iree_vulkan/native_program.h",
+        "bytes": 9503,
+        "sha256": "2befa8cafa191cf9661660388610624b8405cfdd69a2d408bc1cc246f6a104a3"
+      },
+      {
+        "path": "src/compute_provider_iree_vulkan/native_program.cc",
+        "bytes": 58677,
+        "sha256": "9ce144fec2c56c06bcb90e4d744fa31a9e4e59461371a76ee1b82ee02c6d17b1"
+      },
+      {
+        "path": "src/compute_provider_iree_vulkan/prepare_source.py",
+        "bytes": 6752,
+        "sha256": "6d05a563aae2cb9f6781e5b5f2aca8fc06ebd712059bb6fba67c08b43c5ebaa4"
+      },
+      {
+        "path": "third_party/iree_vulkan_runtime/programs/generate_official.py",
+        "bytes": 49759,
+        "sha256": "2188677162ababb12e4a0dfe095af74d9b9c2296905454cc77aa31801a15c18c"
+      },
+      {
+        "path": "third_party/iree_vulkan_runtime/programs/compile_official.py",
+        "bytes": 4890,
+        "sha256": "ce7512b29b2d308be52379e6fd82976bb84f581a2051f6372c6df85d04d21392"
+      },
+      {
+        "path": "third_party/iree_vulkan_runtime/programs/official.mlir",
+        "bytes": 97178,
+        "sha256": "a2fba1bd6d55d67f1f8e54d4a3bcb179890ddfe81e6d87b29f1c2e7e8f0a20f2"
+      },
+      {
+        "path": "third_party/iree_vulkan_runtime/programs/official.vmfb.b64",
+        "bytes": 331644,
+        "sha256": "35489e70d858252df7eafa65baa3dd73915cabf2d6d6cb9d7bd889dac4c2356d"
+      },
+      {
+        "path": "third_party/iree_vulkan_runtime/programs/manifest.json",
+        "bytes": 9043,
+        "sha256": "50d2de24e199dbfa4b23672418cf12ded9f2d18fd1f6bbd3c952ed558b8e3ea9"
+      },
+      {
+        "path": "third_party/iree_vulkan_runtime/programs/compilation.json",
+        "bytes": 93756,
+        "sha256": "84cbde26efd6429c0cc05f36a962b16380a6558ea1a0b60b758ad593e19284b6"
+      },
+      {
+        "path": "tests/compute_models/float8_quantize_output_test.cc",
+        "bytes": 24448,
+        "sha256": "fad89ea95c080ec359e718b3da84af4848c66ff1a96ffa4f5c6a7cea3b8fe5f4"
+      },
+      {
+        "path": "tests/compute_models/glm_official_index_cache.h",
+        "bytes": 16542,
+        "sha256": "1fb72db10dd60c4a05ffd4d1d156d40f7997e102359e0e4a16d79f3ee47382ae"
+      },
+      {
+        "path": "tests/compute_models/glm_official_index_cache_test.cc",
+        "bytes": 24068,
+        "sha256": "0877f497b54f1ccdb4cef53fb810d0371883ac5dfffa8b46b9c6342f61591156"
+      },
+      {
+        "path": "tests/graph_route_cpu/CMakeLists.txt",
+        "bytes": 10079,
+        "sha256": "0bc13f638b2126bbe6788ef37dd2551d024ddc15899d03c4bcc225d019742b61"
+      },
+      {
+        "path": "tests/graph_route_cuda/CMakeLists.txt",
+        "bytes": 11458,
+        "sha256": "e1822ff55215e95fddc742a7a01797a29024e1b6953f780109977a90e92d531f"
+      },
+      {
+        "path": "tests/graph_route_vulkan/CMakeLists.txt",
+        "bytes": 8910,
+        "sha256": "95aa0f0519216aa06176605f22f399b05dc48b767053669c3b881e47532b3b29"
+      },
+      {
+        "path": "tests/graph_route_apple/CMakeLists.txt",
+        "bytes": 8459,
+        "sha256": "f249e45f1bcc42cfdc00ceadf4d62941b42f5fffd83c10b56fcacbd67e9b32f8"
+      }
+    ],
+    "windows_command": "python .scratch/fp8-quant-output-20261023/build.py torch-cpu cuda-provider quant-provider quant-kernel quant-test glm-cache link run --attempt NEW",
+    "vulkan_command": "python .scratch/fp8-quant-output-20261023/vulkan_build.py native-program embedded iree official program region vulkan-run test link run --attempt NEW",
+    "apple_command": "apple_build.py: plan/prepare/compile --job mature/compile --job test/link/run; see recorded attempt1 plan and receipts",
+    "harness_corrections": [
+      "After successful first NVCC compile, corrected only its evidence local status-header path and generated identity without recompiling",
+      "Renamed Vulkan product tag run to vulkan-run after detecting collision with the test action; reused six successful compiles and resumed remaining two"
+    ]
+  },
+  "remaining": [
+    "GLM target43 MLA/index history -> target44 and default encoded cache -> complete NextN state",
+    "DSpark encoded main history with complete draft state, actual trained target taps and shared LM roles; applicable Pro roles",
+    "Q27/Q24 applicable original roles, complete state composition and confirmed MTP quantized artifacts",
+    "Necessary final correctness checks and ordinary/MTP performance comparison before image projection"
+  ],
+  "cleanup": {
+    "Removed": [
+      {
+        "Path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mtp-seed-cache-20261022\\tests-link8\\mtp-seed-cache-checks.exe",
+        "Bytes": 141045760
+      },
+      {
+        "Path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mtp-seed-cache-20261022\\tests-link8\\mtp-seed-cache-checks.map",
+        "Bytes": 59602899
+      }
+    ],
+    "RemovedPathBytes": 200648659.0,
+    "ProtectedImagesRetained": [
+      true,
+      true,
+      true
+    ],
+    "Retained": "All compiled objects, runtime hardlinks, source/commands/data; current CPU/CUDA and Vulkan checks and AV performance image"
+  },
+  "documentation": [
+    {
+      "path": "docs/developer/current-work.md",
+      "bytes": 23364,
+      "sha256": "23fe76a5217c1ea38db122013a26e1c0f5367ec992e920feb7fb1584830fe51a"
+    },
+    {
+      "path": "docs/implementation/model-operators.md",
+      "bytes": 94131,
+      "sha256": "74fa4e0011cbc43948e5837c242366d1931a0f246c98bf0690a597d5797407de"
+    }
+  ],
+  "performance_table_unchanged_sha256": "80b8672315911a74039a14cd137659bc67289273dc9c3707cd267b2d06de2551"
+}

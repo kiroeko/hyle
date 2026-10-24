@@ -1,0 +1,78 @@
+#include "../compute_models/compact_mla_e4_fixture.h"
+#include "../compute_route_vulkan/fixture.h"
+#include "hyle/graph/vulkan.h"
+#include "../../src/compute_route_vulkan/vulkan_memory_internal.h"
+
+namespace {
+template<class Run> void run_vulkan(Run run) {
+  namespace f = compact_mla_e4_test;
+  namespace v = f::c::vulkan;
+  auto context = f::take(vulkan_test::context(), "Vulkan context");
+  ::testing::Test::RecordProperty("device", context.environment().device_name);
+  auto device = f::take(v::MemoryResource::create(context, v::MemoryKind::kDevice), "Vulkan device memory");
+  auto staging = f::take(v::MemoryResource::create(context, v::MemoryKind::kStaging), "Vulkan staging memory");
+  constexpr std::size_t capacity = 1024U * 1024U;
+  auto transfer = f::take(v::TransferSlot::create(context, staging, capacity), "Vulkan transfer slot");
+  auto host = f::take(f::m::Buffer::create(f::m::system_resource(), capacity, 64), "transfer host bytes");
+  const auto description = [](std::size_t size) {
+    return f::c::TensorDesc::dense(f::Type::kUInt8,
+        std::array<std::int64_t, 1>{static_cast<std::int64_t>(size)});
+  };
+  const auto write = [&](f::m::BufferView destination,
+                         std::span<const std::byte> bytes) -> hyle::Status {
+    HYLE_ASSIGN_OR_RETURN(auto desc, description(bytes.size()));
+    HYLE_ASSIGN_OR_RETURN(auto source_bytes, host.view().subview(0, bytes.size()));
+    HYLE_RETURN_IF_ERROR(source_bytes.write(bytes));
+    HYLE_ASSIGN_OR_RETURN(auto target, f::c::ConstTensorView::create(desc, destination));
+    HYLE_ASSIGN_OR_RETURN(auto native, v::detail::MemoryAccess::tensor_view(
+        v::detail::Access::runtime(context), target, f::m::system_allocator()));
+    HYLE_ASSIGN_OR_RETURN(auto source, f::c::ConstTensorView::create(desc, source_bytes));
+    HYLE_ASSIGN_OR_RETURN(auto done, transfer.upload(native, source));
+    return done.wait();
+  };
+  const auto read = [&](f::m::ConstBufferView source,
+                        std::span<std::byte> bytes) -> hyle::Status {
+    HYLE_ASSIGN_OR_RETURN(auto desc, description(bytes.size()));
+    HYLE_ASSIGN_OR_RETURN(auto view, f::c::ConstTensorView::create(desc, source));
+    HYLE_ASSIGN_OR_RETURN(auto native, v::detail::MemoryAccess::tensor_view(
+        v::detail::Access::runtime(context), view, f::m::system_allocator()));
+    // A persistent TransferSlot retains its last Tensor after completion.
+    // A synchronous one-shot read leaves no unrelated output observer behind.
+    return context.download(native, bytes);
+  };
+  const std::array domains{f::g::StorageDomain{device.ref()},f::g::StorageDomain{staging.ref()}};
+  const std::array targets{f::g::ExecutionTarget{
+      f::take(f::g::vulkan::execution_source(context), "Vulkan execution source"), f::g::StorageDomainId{0}}};
+  run(device.ref(), std::span<const f::g::QueueBinding>{},
+      [&](const f::g::Graph &graph, f::g::CompileOptions options) {
+        return f::g::batch::compile(graph, {.storage_domains = domains, .targets = targets}, std::move(options));
+      }, write, read,
+      [](f::g::Invocation &invocation, std::span<const f::g::QueueBinding> queues) {
+        return invocation.prepare_replay(queues);
+      });
+}
+} // namespace
+
+TEST(VulkanCompactMlaE4, PagedRope64SharesScaleAndOldResults) {
+  run_vulkan([](auto resource,auto queues,auto compile,auto write,auto read,auto) {
+    compact_mla_e4_test::run(resource,queues,compile,write,read,576,true,false);
+  });
+}
+
+TEST(VulkanCompactMlaE4, RaggedNoPeSharesScaleAndOldResults) {
+  run_vulkan([](auto resource,auto queues,auto compile,auto write,auto read,auto) {
+    compact_mla_e4_test::run(resource,queues,compile,write,read,512,false,false);
+  });
+}
+
+TEST(VulkanCompactMlaE4, PagedNoPeQ1GrowsThroughOriginalPlan) {
+  run_vulkan([](auto resource,auto queues,auto compile,auto write,auto read,auto) {
+    compact_mla_e4_test::run(resource,queues,compile,write,read,512,true,true);
+  });
+}
+
+TEST(VulkanCompactMlaE4, RaggedRope64Q1GrowthMatchesFreshInvocation) {
+  run_vulkan([](auto resource,auto queues,auto compile,auto write,auto read,auto) {
+    compact_mla_e4_test::run(resource,queues,compile,write,read,576,false,true);
+  });
+}

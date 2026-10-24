@@ -11,7 +11,10 @@ Result<n::Program> page_reference_program(const n::Context& context,
     const c::WorkloadContext& workload){
   if(!recipe.valid() || !recipe.schema().owns(layout))return std::unexpected(Status::InvalidArgument("page peer schema"));
   std::array<n::InputSpec,4> specs;
-  for(unsigned i=0;i<4;++i){HYLE_ASSIGN_OR_RETURN(specs[i],n::input_spec(recipe.descriptions()[i]));}
+  for(unsigned i=0;i<4;++i){
+    HYLE_ASSIGN_OR_RETURN(auto description,recipe.input_description(layout,i));
+    HYLE_ASSIGN_OR_RETURN(specs[i],n::input_spec(description));
+  }
   return n::detail::PagedBatchAccess::prepare_runtime_program(context,layout,specs,
       [recipe](const c::BatchLayoutVersion& layout,const std::vector<mx::array>& inputs,mx::Stream stream)->Result<std::vector<mx::array>>{
     const auto cap=recipe.schema().capacity();const auto host=layout.host();std::vector<mx::array> outputs;

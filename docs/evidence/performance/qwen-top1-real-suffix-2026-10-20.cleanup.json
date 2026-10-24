@@ -1,0 +1,140 @@
+{
+  "status": "completed",
+  "files": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-bf16-top1\\real-suffix\\checks\\retry1\\bench.exe",
+      "bytes": 117336576,
+      "sha256": "091cde10a6760be086ce2f867c0654294f7841d6e255092cb57f23697b0e08e3"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-bf16-top1\\real-suffix\\checks\\retry1\\bench.map",
+      "bytes": 33850607,
+      "sha256": "2b382594d94f0e4b5e0aede7078ad3419117d63d695d1ed6d6d3fe55196e4187"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-bf16-top1\\real-suffix\\checks\\retry1\\bench.exp",
+      "bytes": 25014,
+      "sha256": "f0a26e4b64e2d0d976e4039c35907ade51ef5eb7342e8332b58afd9c6187d5ac"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-bf16-top1\\real-suffix\\checks\\retry1\\bench.lib",
+      "bytes": 41474,
+      "sha256": "27cdb6be1460526883fa852ffafbbf8ac127b19a78373c6e95b58f14eb1bc3e8"
+    }
+  ],
+  "bytes": 151253671.0,
+  "protected": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tools\\qwen35_text\\main.cc",
+      "bytes": 57917,
+      "sha256": "33a3e3de91050ad752935b81d1b5bb82fa9e09a8868ca04b0a028dd832b66a6c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-prepare-cost\\candidate\\qwen.exe",
+      "bytes": 117832192,
+      "sha256": "6e09735e395e86412d4588cf67507fe5902d149e3e03f674b688ddde5cddf1f8"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-bf16-top1\\real-suffix\\checks\\retry1\\bench.obj",
+      "bytes": 1536983,
+      "sha256": "39e4dcf8e6fc0a5a95b197067217f09649710d733d9af7b0464cd1a71cbca910"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-bf16-top1\\real-suffix\\real_suffix_bench.cc",
+      "bytes": 18359,
+      "sha256": "21ed233581ea19cf4e491eacc324b6f1335a96c6642949cc92d4974fc4233f47"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-bf16-top1\\real-suffix\\source-freeze.json",
+      "bytes": 5434,
+      "sha256": "ef75e1d89875eb1aec73b0e39d17ff9472137a990a9f1d2a14a585e2350a0b83"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-bf16-top1\\checks\\main.obj",
+      "bytes": 3085490,
+      "sha256": "1f0c623d3f1acb4c36f67ee1bd7e88833b8f3a783056019df35aeb76b4f08cb9"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-bf16-top1\\real-suffix\\structure\\capture.sqlite",
+      "bytes": 1122304,
+      "sha256": "0e9d76519ef5862cef012717fef2831c4f11c52024444f49d7b1afb4ccb18c3d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-bf16-top1\\real-suffix\\structure\\capture.nsys-rep",
+      "bytes": 438287,
+      "sha256": "cdfea16df6e4737050a5cea26045b4beee7c44b9efcb5bfe5019f9371b5980e0"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-bf16-top1\\consumer\\before\\tools\\qwen35_text\\main.cc",
+      "bytes": 57917,
+      "sha256": "33a3e3de91050ad752935b81d1b5bb82fa9e09a8868ca04b0a028dd832b66a6c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-bf16-top1\\consumer\\after\\tools\\qwen35_text\\main.cc",
+      "bytes": 58940,
+      "sha256": "96dcbeca56ad9b1158ab6e99189b58f2cb08199520993f66e3c8d11424b7e798"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\qwen-gpu-comparison\\128-prefill\\inputs\\weights.tsv",
+      "bytes": 27889,
+      "sha256": "bb8900a6ebe1572f97f02121c83e807ea9ba140d18fe6ee15f20815aa4a73890"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode7\\hidden.bf16",
+      "bytes": 4096,
+      "sha256": "db84650d85f3c3fea8e4c3d4bf891b1fc01a65aad3f7807e8eef53315f7723f2"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode7\\logits.f32",
+      "bytes": 993280,
+      "sha256": "8c90db2481c2110453c52633a8b3153fe37391085de09fb4e5a0943adfe396c1"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-bf16-top1\\real-suffix\\observations\\process-01\\data\\samples.jsonl",
+      "bytes": 28066,
+      "sha256": "452959f48d89cbcb58f10e0d16a418bd7ca56cfd78b1f213916f903d1f7bd132"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-bf16-top1\\real-suffix\\observations\\process-02\\data\\samples.jsonl",
+      "bytes": 28076,
+      "sha256": "4df549dd351ea78d9e8586a21fe403b9a6025f51aec33e7cfc39d67bd7c76445"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-bf16-top1\\real-suffix\\observations\\process-03\\data\\samples.jsonl",
+      "bytes": 28064,
+      "sha256": "156e93b03493a1a01077a935c9d8f01a764454d65b58b2ebb08c98e9eace58a7"
+    }
+  ],
+  "proofs": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\qwen-top1-real-suffix-2026-10-20.json",
+      "bytes": 392957,
+      "sha256": "e61a64c9dcbb41453eaa6c28240bb096866d7a3e8d6c3ca227d381a6108bdb5e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\qwen-top1-real-suffix-2026-10-20.zip",
+      "bytes": 266315,
+      "sha256": "fc406f106cc3a925cddd4d79d01e021a598ef94339c85eaededc241a4e0979cf"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-bf16-top1\\real-suffix\\decision.json",
+      "bytes": 2551,
+      "sha256": "9e53ffb922f63b1ee50773c37feb832f2affb312061b54d019e18fff4d259724"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-bf16-top1\\real-suffix\\observations\\summary.json",
+      "bytes": 40912,
+      "sha256": "325844f49ea5ddcb425ad3c5ae45c7bcd5a352e087578d04c121d628bced1a36"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-bf16-top1\\real-suffix\\independent-review.json",
+      "bytes": 1954,
+      "sha256": "68f984ae35f536a9be70665bfd86274425c46bdd5168c7a855c46c1139c670b9"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-bf16-top1\\real-suffix\\structure\\attribution.json",
+      "bytes": 300818,
+      "sha256": "130f87c80180d93ef17889f7e2153dc8c19a531d3ed63998a60d55f50410a635"
+    }
+  ]
+}

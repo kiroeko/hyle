@@ -1,5 +1,6 @@
 #include "native_program.h"
 
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <condition_variable>
@@ -9,6 +10,7 @@
 #include <span>
 
 #include "runtime_internal.h"
+#include "iree/hal/drivers/vulkan/syms.h"
 
 namespace hyle::compute::iree_vulkan {
 namespace {
@@ -31,6 +33,52 @@ Result<View> allocate_view(iree_hal_device_t *device,
   HYLE_RETURN_IF_ERROR(
       detail::consume_status(iree_hal_allocator_allocate_buffer(
           iree_hal_device_allocator(device), params, bytes, &buffer)));
+  detail::Owner<iree_hal_buffer_t, iree_hal_buffer_release> owner(buffer);
+  iree_hal_buffer_view_t *view = nullptr;
+  HYLE_RETURN_IF_ERROR(detail::consume_status(iree_hal_buffer_view_create(
+      buffer, shape.size(), shape.data(), type,
+      IREE_HAL_ENCODING_TYPE_DENSE_ROW_MAJOR, iree_allocator_system(), &view)));
+  return View(view);
+}
+
+Result<View> borrowed_view(iree_hal_device_t *hal, VkDevice device,
+                           const iree_hal_vulkan_device_syms_t &syms,
+                           const VkPhysicalDeviceLimits &limits,
+                           const BorrowedInput &input,
+                           std::span<const iree_hal_dim_t> shape,
+                           iree_hal_element_type_t type) {
+  iree_device_size_t bytes = 0;
+  HYLE_RETURN_IF_ERROR(detail::consume_status(iree_hal_buffer_compute_view_size(
+      shape.size(), shape.data(), type, IREE_HAL_ENCODING_TYPE_DENSE_ROW_MAJOR,
+      &bytes)));
+  const auto alignment = (std::max)(VkDeviceSize{64},
+      limits.minStorageBufferOffsetAlignment);
+  if (!input.owner || input.device != device ||
+      input.storage.buffer == VK_NULL_HANDLE || bytes == 0 ||
+      input.storage.offset % alignment || input.storage.offset % 4 ||
+      bytes > limits.maxStorageBufferRange || bytes > input.storage.bytes ||
+      input.storage.offset > input.buffer_bytes ||
+      input.storage.bytes > input.buffer_bytes - input.storage.offset)
+    return std::unexpected(Status::InvalidArgument("IREE borrowed constant range/device/alignment"));
+  auto retained = std::make_unique<std::shared_ptr<const void>>(input.owner);
+  iree_hal_buffer_placement_t placement = {};
+  placement.device = hal;
+  placement.queue_affinity = IREE_HAL_QUEUE_AFFINITY_ANY;
+  iree_hal_buffer_release_callback_t release = {};
+  release.user_data = retained.get();
+  release.fn = [](void *owner, iree_hal_buffer_t *) noexcept {
+    delete static_cast<std::shared_ptr<const void> *>(owner);
+  };
+  iree_hal_buffer_t *buffer = nullptr;
+  HYLE_RETURN_IF_ERROR(detail::consume_status(iree_hal_vulkan_buffer_create_borrowed(
+      &syms, device, placement, IREE_HAL_MEMORY_TYPE_DEVICE_LOCAL,
+      IREE_HAL_MEMORY_ACCESS_READ,
+      IREE_HAL_BUFFER_USAGE_TRANSFER | IREE_HAL_BUFFER_USAGE_DISPATCH_STORAGE,
+      input.buffer_bytes, input.storage.offset, bytes,
+      VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, limits.nonCoherentAtomSize,
+      VK_NULL_HANDLE, nullptr, input.storage.buffer, 0, release,
+      iree_allocator_system(), &buffer)));
+  retained.release(); // Successful HAL creation owns the callback cookie.
   detail::Owner<iree_hal_buffer_t, iree_hal_buffer_release> owner(buffer);
   iree_hal_buffer_view_t *view = nullptr;
   HYLE_RETURN_IF_ERROR(detail::consume_status(iree_hal_buffer_view_create(
@@ -82,12 +130,15 @@ const char *artifact_entry(const ProgramSpec &spec) noexcept {
                            "module.awq_f32_bf16"};
   constexpr std::array ct{"module.ct_f32_f32", "module.ct_f32_f16",
                           "module.ct_f32_bf16"};
+  constexpr std::array asymmetric{"module.ct_asym_f32_f32", "module.ct_asym_f32_f16",
+                                  "module.ct_asym_f32_bf16"};
   const auto scale = static_cast<std::size_t>(spec.scale_type);
   const auto output = static_cast<std::size_t>(spec.output_type);
   if (scale >= 3 || output >= 3)
     return nullptr;
   if ((spec.kind == ProgramKind::AwqDecode ||
-       spec.kind == ProgramKind::Symmetric4Decode) &&
+       spec.kind == ProgramKind::Symmetric4Decode ||
+       spec.kind == ProgramKind::Asymmetric4Decode) &&
       spec.scale_type != ArtifactScalar::Float32 && scale != output)
     return nullptr; // Typed source result; final Cast is a qualified route fragment.
   switch (spec.kind) {
@@ -101,6 +152,9 @@ const char *artifact_entry(const ProgramSpec &spec) noexcept {
   case ProgramKind::Symmetric4Decode:
     return scale == 1 ? "module.ct_f16_f16"
            : scale == 2 ? "module.ct_bf16_bf16" : ct[output];
+  case ProgramKind::Asymmetric4Decode:
+    return scale == 1 ? "module.ct_asym_f16_f16"
+           : scale == 2 ? "module.ct_asym_bf16_bf16" : asymmetric[output];
   default:
     return nullptr;
   }
@@ -120,6 +174,41 @@ iree_hal_element_type_t artifact_scalar(ArtifactScalar type) noexcept {
 const char *mlx_entry(const ProgramSpec &spec) noexcept {
   const auto type = static_cast<std::size_t>(spec.output_type);
   if (type >= 3 || !mlx_program(spec.kind)) return nullptr;
+  const auto activation = static_cast<std::size_t>(spec.activation_type);
+  const auto scale = static_cast<std::size_t>(spec.scale_type);
+  if (mlx_as_stored(spec.kind)) {
+    if (activation >= 3 || scale >= 3 ||
+        type != (activation == scale ? activation : 0)) return nullptr;
+    constexpr std::array<std::array<const char *, 3>, 3> linear{{
+        {"module.affine_linear_as_stored_f32", "module.affine_linear_as_stored_f32_f16", "module.affine_linear_as_stored_f32_bf16"},
+        {"module.affine_linear_as_stored_f16_f32", "module.affine_linear_as_stored_f16", "module.affine_linear_as_stored_f16_bf16"},
+        {"module.affine_linear_as_stored_bf16_f32", "module.affine_linear_as_stored_bf16_f16", "module.affine_linear_as_stored_bf16"}}};
+    constexpr std::array<std::array<const char *, 3>, 3> grouped{{
+        {"module.affine_grouped_as_stored_f32", "module.affine_grouped_as_stored_f32_f16", "module.affine_grouped_as_stored_f32_bf16"},
+        {"module.affine_grouped_as_stored_f16_f32", "module.affine_grouped_as_stored_f16", "module.affine_grouped_as_stored_f16_bf16"},
+        {"module.affine_grouped_as_stored_bf16_f32", "module.affine_grouped_as_stored_bf16_f16", "module.affine_grouped_as_stored_bf16"}}};
+    return mlx_grouped(spec.kind) ? grouped[activation][scale] : linear[activation][scale];
+  }
+  if (spec.kind == ProgramKind::MlxAffineLinear ||
+      spec.kind == ProgramKind::MlxAffineGrouped) {
+    if (activation >= 3 || scale >= 3) return nullptr;
+    if (activation != scale) {
+      if (spec.output_type != ArtifactScalar::Float32) return nullptr;
+      constexpr std::array<std::array<const char *, 3>, 3> linear{{
+          {nullptr, "module.affine_linear_f32_f16", "module.affine_linear_f32_bf16"},
+          {"module.affine_linear_f16_f32", nullptr, "module.affine_linear_f16_bf16"},
+          {"module.affine_linear_bf16_f32", "module.affine_linear_bf16_f16", nullptr}}};
+      constexpr std::array<std::array<const char *, 3>, 3> grouped{{
+          {nullptr, "module.affine_grouped_f32_f16", "module.affine_grouped_f32_bf16"},
+          {"module.affine_grouped_f16_f32", nullptr, "module.affine_grouped_f16_bf16"},
+          {"module.affine_grouped_bf16_f32", "module.affine_grouped_bf16_f16", nullptr}}};
+      return spec.kind == ProgramKind::MlxAffineGrouped
+                 ? grouped[activation][scale] : linear[activation][scale];
+    }
+    if (type != activation) return nullptr;
+  } else if (spec.kind == ProgramKind::MlxAffineEmbedding) {
+    if (type != scale) return nullptr;
+  } else if (type != activation) return nullptr;
   constexpr std::array<std::array<const char *, 3>, 7> names{{
       {"module.affine_linear_f32", "module.affine_linear_f16", "module.affine_linear_bf16"},
       {"module.affine_grouped_f32", "module.affine_grouped_f16", "module.affine_grouped_bf16"},
@@ -132,7 +221,24 @@ const char *mlx_entry(const ProgramSpec &spec) noexcept {
                static_cast<std::size_t>(ProgramKind::MlxAffineLinear)][type];
 }
 
-const char *official_entry(ProgramKind kind) noexcept {
+const char *official_entry(const ProgramSpec &spec) noexcept {
+  const auto kind = spec.kind;
+  if (official_quantize(kind)) {
+    constexpr std::array f32{"module.quantize_normal_f32", "module.quantize_power_f32",
+                              "module.quantize_reciprocal_f32"};
+    constexpr std::array bf16{"module.quantize_normal_bf16", "module.quantize_power_bf16",
+                               "module.quantize_reciprocal_bf16"};
+    const auto policy = static_cast<std::size_t>(kind) -
+        static_cast<std::size_t>(ProgramKind::OfficialQuantizeDivide);
+    if (spec.activation_type == ArtifactScalar::Float32) return f32[policy];
+    return spec.activation_type == ArtifactScalar::BFloat16 ? bf16[policy] : nullptr;
+  }
+  if (kind == ProgramKind::OfficialGrouped8PowerF32)
+    return "module.grouped8_power_f32";
+  if (kind == ProgramKind::OfficialLinearReciprocalF32)
+    return "module.linear_reciprocal_f32";
+  if (kind == ProgramKind::OfficialGrouped8ReciprocalF32)
+    return "module.grouped8_reciprocal_f32";
   constexpr std::array names{
       "module.weight_decode_f32", "module.weight_decode_bf16",
       "module.fp8_roundtrip_64", "module.fp8_roundtrip_128", "module.fp4_roundtrip_32",
@@ -375,6 +481,12 @@ NativeProgram::~NativeProgram() {
 
 Result<std::unique_ptr<NativeProgram>>
 NativeProgram::create(NativeDevice device, ProgramSpec spec) noexcept {
+  return create(std::move(device), spec, {});
+}
+
+Result<std::unique_ptr<NativeProgram>> NativeProgram::create(
+    NativeDevice device, ProgramSpec spec,
+    std::span<const BorrowedInput> borrowed) noexcept {
   if (!device || spec.rows <= 0 || spec.columns <= 0)
     return std::unexpected(Status::InvalidArgument(
         "IREE program owner and positive shape required"));
@@ -421,10 +533,11 @@ NativeProgram::create(NativeDevice device, ProgramSpec spec) noexcept {
   const bool embedding = spec.kind == ProgramKind::MlxAffineEmbedding;
   const bool mx8 = spec.kind == ProgramKind::MlxMx8Linear ||
                    spec.kind == ProgramKind::MlxMx8Grouped;
-  const bool affine = spec.kind == ProgramKind::MlxAffineLinear ||
-                      spec.kind == ProgramKind::MlxAffineGrouped || embedding;
+  const bool affine = mlx_affine(spec.kind);
   if (mlx && (!mlx_entry(spec) || spec.experts <= 0 || spec.depth <= 0 ||
               spec.group_size == 0 || spec.depth % spec.group_size ||
+              (affine ? (spec.bits != 4 && spec.bits != 5 && spec.bits != 6 &&
+                         spec.bits != 8) : spec.bits != (mx8 ? 8U : 4U)) ||
               (!affine && spec.group_size != 32) ||
               (affine && spec.group_size != 32 && spec.group_size != 64 &&
                spec.group_size != 128)))
@@ -434,7 +547,10 @@ NativeProgram::create(NativeDevice device, ProgramSpec spec) noexcept {
     return std::unexpected(Status::Unimplemented("MLX requires enabled original numeric features"));
   const bool official_decode = spec.kind == ProgramKind::OfficialWeightDecodeF32 ||
                                spec.kind == ProgramKind::OfficialWeightDecodeBf16;
-  if (official && (spec.depth <= 0 || spec.selection_slots <= 0 ||
+  if (official && ((official_quantize(spec.kind) &&
+                    (!official_entry(spec) || spec.depth != spec.columns ||
+                     spec.output_type != ArtifactScalar::Float32)) ||
+                   spec.depth <= 0 || spec.selection_slots <= 0 ||
                    spec.selection_slots > INT32_MAX || spec.activation_slots <= 0 ||
                    spec.activation_slots > INT32_MAX || spec.experts <= 0 ||
                    spec.depth % (official_roundtrip(spec.kind)
@@ -466,7 +582,8 @@ NativeProgram::create(NativeDevice device, ProgramSpec spec) noexcept {
   // allocation.
   constexpr std::int64_t max_elements =
       std::numeric_limits<std::int32_t>::max() / 8;
-  if (spec.rows > max_elements / spec.columns ||
+  const auto result_columns = mlx ? mlx_output_columns(spec) : spec.columns;
+  if (spec.rows > max_elements / result_columns ||
       (!scan && !precision && !artifact && !mlx && !official && !iq1 &&
        (spec.rows > max_elements / spec.depth ||
         spec.columns > max_elements / spec.depth)))
@@ -485,11 +602,16 @@ NativeProgram::create(NativeDevice device, ProgramSpec spec) noexcept {
     const auto fits = [](std::int64_t x, std::int64_t y) {
       return x > 0 && y > 0 && x <= limit / y;
     };
-    if ((embedding ? !fits(spec.experts, spec.depth / 8)
-                   : (!fits(spec.rows, spec.depth) ||
+    const auto words = (spec.depth / 32) * spec.bits;
+    if ((embedding ? !fits(spec.experts, words)
+                   : ((mlx_grouped(spec.kind) ? mlx_activation_elements(spec) == 0
+                                              : !fits(spec.rows, mlx_input_depth(spec))) ||
                       !fits(spec.experts, spec.columns) ||
-                      !fits(spec.experts * spec.columns, spec.depth / (mx8 ? 4 : 8)) ||
-                      !fits(spec.rows * spec.columns, spec.group_size))))
+                      !fits(spec.experts * spec.columns, words) ||
+                      (mlx_as_stored(spec.kind)
+                           ? (!fits(spec.rows, spec.group_size) ||
+                              !fits(spec.rows * spec.group_size, (std::min)(spec.columns, std::int64_t{64})))
+                           : !fits(spec.rows * spec.columns, spec.group_size)))))
       return std::unexpected(Status::OutOfRange("MLX original tensor index/workspace domain"));
   }
   if (official) {
@@ -498,17 +620,82 @@ NativeProgram::create(NativeDevice device, ProgramSpec spec) noexcept {
       return x > 0 && y > 0 && x <= limit / y;
     };
     if (official_decode ? !fits(spec.rows, spec.columns)
-        : official_roundtrip(spec.kind) ? !fits(spec.rows, spec.columns)
+        : (official_roundtrip(spec.kind) || official_quantize(spec.kind))
+            ? !fits(spec.rows, spec.columns)
         : (!fits(spec.rows, spec.depth) || !fits(spec.experts, spec.columns) ||
-           !fits(spec.experts * spec.columns, spec.depth) ||
+           (!official_grouped(spec.kind) &&
+            !fits(spec.experts * spec.columns, spec.depth)) ||
            !fits(spec.rows * spec.columns, spec.kind == ProgramKind::OfficialGrouped4F32 ? 32 : 128)))
       return std::unexpected(Status::OutOfRange("official float original tensor index/workspace domain"));
+    if (official_grouped(spec.kind)) {
+      const bool four = spec.kind == ProgramKind::OfficialGrouped4F32;
+      const auto word_columns = spec.depth / (four ? 8 : 4);
+      if (spec.experts * spec.columns > INT32_MAX / word_columns)
+        return std::unexpected(Status::OutOfRange("official grouped word index domain"));
+      if (!features.get_instance_proc_addr)
+        return std::unexpected(Status::Unavailable("Vulkan physical properties loader unavailable"));
+      const auto get_properties = reinterpret_cast<PFN_vkGetPhysicalDeviceProperties>(
+          features.get_instance_proc_addr(features.instance,
+                                           "vkGetPhysicalDeviceProperties"));
+      if (!get_properties)
+        return std::unexpected(Status::Unavailable("Vulkan physical properties unavailable"));
+      VkPhysicalDeviceProperties properties{};
+      get_properties(features.physical, &properties);
+      const auto maximum_bytes = std::uint64_t{properties.limits.maxStorageBufferRange};
+      const auto code_bytes = static_cast<std::uint64_t>(spec.experts) *
+          spec.columns * word_columns * 4;
+      const auto scale_rows = four ? spec.columns : (spec.columns + 127) / 128;
+      const auto scale_columns = spec.depth / (four ? 32 : 128);
+      const auto scale_limit = maximum_bytes / 4;
+      if (static_cast<std::uint64_t>(spec.experts) > scale_limit / scale_rows ||
+          static_cast<std::uint64_t>(spec.experts) * scale_rows >
+              scale_limit / scale_columns)
+        return std::unexpected(Status::OutOfRange("official grouped scale index domain"));
+      const auto scale_bytes = static_cast<std::uint64_t>(spec.experts) *
+          scale_rows * scale_columns * 4;
+      if (code_bytes > maximum_bytes || scale_bytes > maximum_bytes - code_bytes)
+        return std::unexpected(Status::OutOfRange("official grouped descriptor byte domain"));
+    }
+  }
+  for (std::size_t i = 0; i < borrowed.size(); ++i) {
+    const auto port = borrowed[i].index;
+    const std::size_t mlx_first = spec.kind == ProgramKind::MlxAffineEmbedding ? 0 : 1;
+    const std::size_t mlx_end = mlx_affine(spec.kind) && !embedding ? 4 : 3;
+    if (!((official_grouped(spec.kind) && (port == 1 || port == 2)) ||
+          (mlx && port >= mlx_first && port < mlx_end)))
+      return std::unexpected(Status::InvalidArgument("IREE borrowed constant port"));
+    for (std::size_t j = 0; j < i; ++j)
+      if (borrowed[j].index == borrowed[i].index)
+        return std::unexpected(Status::InvalidArgument("duplicate IREE borrowed constant port"));
   }
   try {
     auto state = std::make_unique<State>();
     state->device = std::move(device);
     state->spec = spec;
     auto &owner = *state->device.state_;
+    iree_hal_vulkan_device_syms_t device_syms = {};
+    VkPhysicalDeviceProperties2 properties{};
+    properties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+    if (!borrowed.empty()) {
+      iree_hal_vulkan_instance_syms_t instance_syms = {};
+      const auto &vk = owner.native.native();
+      HYLE_RETURN_IF_ERROR(detail::consume_status(
+          iree_hal_vulkan_libvulkan_load_instance_syms(
+              &owner.syms->libvulkan, vk.instance, &instance_syms)));
+      HYLE_RETURN_IF_ERROR(detail::consume_status(
+          iree_hal_vulkan_libvulkan_load_device_syms(
+              &instance_syms, vk.device, &device_syms)));
+      instance_syms.vkGetPhysicalDeviceProperties2(vk.physical, &properties);
+    }
+    const auto input_view = [&](std::size_t port,
+        std::span<const iree_hal_dim_t> shape,
+        iree_hal_element_type_t type) -> Result<View> {
+      for (const auto &input : borrowed)
+        if (input.index == port)
+          return borrowed_view(owner.device.get(), owner.native.native().device,
+              device_syms, properties.properties.limits, input, shape, type);
+      return allocate_view(owner.device.get(), shape, type);
+    };
     iree_hal_fence_t *retired = nullptr;
     HYLE_RETURN_IF_ERROR(detail::consume_status(iree_hal_fence_create_at(
         owner.retired.get(), 1, iree_allocator_system(), &retired)));
@@ -555,6 +742,7 @@ NativeProgram::create(NativeDevice device, ProgramSpec spec) noexcept {
     case ProgramKind::Nf4NestedDecode:
     case ProgramKind::AwqDecode:
     case ProgramKind::Symmetric4Decode:
+    case ProgramKind::Asymmetric4Decode:
       name = artifact_entry(spec);
       break;
     case ProgramKind::MlxAffineLinear:
@@ -564,6 +752,8 @@ NativeProgram::create(NativeDevice device, ProgramSpec spec) noexcept {
     case ProgramKind::MlxMx8Linear:
     case ProgramKind::MlxMx8Grouped:
     case ProgramKind::MlxAffineEmbedding:
+    case ProgramKind::MlxAffineLinearAsStored:
+    case ProgramKind::MlxAffineGroupedAsStored:
       name = mlx_entry(spec);
       break;
     case ProgramKind::OfficialWeightDecodeF32:
@@ -576,7 +766,13 @@ NativeProgram::create(NativeDevice device, ProgramSpec spec) noexcept {
     case ProgramKind::OfficialGrouped8F32:
     case ProgramKind::OfficialGrouped4F32:
     case ProgramKind::OfficialEncodedBlock128:
-      name = official_entry(spec.kind);
+    case ProgramKind::OfficialGrouped8PowerF32:
+    case ProgramKind::OfficialLinearReciprocalF32:
+    case ProgramKind::OfficialGrouped8ReciprocalF32:
+    case ProgramKind::OfficialQuantizeDivide:
+    case ProgramKind::OfficialQuantizePower:
+    case ProgramKind::OfficialQuantizeReciprocal:
+      name = official_entry(spec);
       break;
     case ProgramKind::Iq1XsGrouped:
       name = "module.iq1_xs";
@@ -595,11 +791,11 @@ NativeProgram::create(NativeDevice device, ProgramSpec spec) noexcept {
             context, iree_make_cstring_view(name), &state->function)));
     iree_vm_list_t *inputs = nullptr, *outputs = nullptr;
     HYLE_RETURN_IF_ERROR(detail::consume_status(
-        iree_vm_list_create(iree_vm_make_undefined_type_def(), 9,
+        iree_vm_list_create(iree_vm_make_undefined_type_def(), 10,
                             iree_allocator_system(), &inputs)));
     state->inputs.reset(inputs);
     HYLE_RETURN_IF_ERROR(detail::consume_status(
-        iree_vm_list_create(iree_vm_make_undefined_type_def(), 2,
+        iree_vm_list_create(iree_vm_make_undefined_type_def(), 3,
                             iree_allocator_system(), &outputs)));
     state->outputs.reset(outputs);
     auto *hal = owner.device.get();
@@ -621,7 +817,12 @@ NativeProgram::create(NativeDevice device, ProgramSpec spec) noexcept {
       const auto k = static_cast<iree_hal_dim_t>(spec.depth);
       const auto e = static_cast<iree_hal_dim_t>(spec.experts);
       const auto type = artifact_scalar(spec.output_type);
-      if (official_roundtrip(spec.kind)) {
+      if (official_quantize(spec.kind)) {
+        const std::array<iree_hal_dim_t, 2> a{r, n};
+        HYLE_ASSIGN_OR_RETURN(state->views[0], allocate_view(hal, a,
+            artifact_scalar(spec.activation_type)));
+        state->count = 1;
+      } else if (official_roundtrip(spec.kind)) {
         const std::array<iree_hal_dim_t, 2> a{r, n};
         HYLE_ASSIGN_OR_RETURN(state->views[0], allocate_view(hal, a, IREE_HAL_ELEMENT_TYPE_SINT_16));
         state->count = 1;
@@ -636,7 +837,8 @@ NativeProgram::create(NativeDevice device, ProgramSpec spec) noexcept {
         const bool four = spec.kind == ProgramKind::OfficialGrouped4F32;
         const auto a_rows = grouped ? r / spec.selection_slots * spec.activation_slots : r;
         const std::array<iree_hal_dim_t, 2> a{a_rows, k}, a_scale{r, k / 128};
-        const std::array<iree_hal_dim_t, 3> codes{e, n, four ? k / 2 : k},
+        const std::array<iree_hal_dim_t, 3> codes{
+            e, n, grouped ? k / (four ? 8 : 4) : k},
             w_scale{e, four ? n : (n + 127) / 128, k / (four ? 32 : 128)};
         HYLE_ASSIGN_OR_RETURN(state->views[0], allocate_view(hal, a,
             encoded ? static_cast<iree_hal_element_type_t>(IREE_HAL_ELEMENT_TYPE_SINT_8) : type));
@@ -645,9 +847,10 @@ NativeProgram::create(NativeDevice device, ProgramSpec spec) noexcept {
           HYLE_ASSIGN_OR_RETURN(state->views[port], allocate_view(hal, a_scale, IREE_HAL_ELEMENT_TYPE_FLOAT_32));
           ++port;
         }
-        HYLE_ASSIGN_OR_RETURN(state->views[port], allocate_view(hal, codes, IREE_HAL_ELEMENT_TYPE_SINT_8));
+        HYLE_ASSIGN_OR_RETURN(state->views[port], input_view(port, codes,
+            grouped ? IREE_HAL_ELEMENT_TYPE_SINT_32 : IREE_HAL_ELEMENT_TYPE_SINT_8));
         ++port;
-        HYLE_ASSIGN_OR_RETURN(state->views[port], allocate_view(hal, w_scale, IREE_HAL_ELEMENT_TYPE_FLOAT_32));
+        HYLE_ASSIGN_OR_RETURN(state->views[port], input_view(port, w_scale, IREE_HAL_ELEMENT_TYPE_FLOAT_32));
         ++port;
         if (grouped) {
           const std::array<iree_hal_dim_t, 1> ids{r};
@@ -662,26 +865,33 @@ NativeProgram::create(NativeDevice device, ProgramSpec spec) noexcept {
       const auto depth = static_cast<iree_hal_dim_t>(spec.depth);
       const auto experts = static_cast<iree_hal_dim_t>(spec.experts);
       const auto type = artifact_scalar(spec.output_type);
+      const auto activation_type = artifact_scalar(spec.activation_type);
+      const auto scale_type = artifact_scalar(spec.scale_type);
       if (embedding) {
-        const std::array<iree_hal_dim_t, 2> words{experts, depth / 8},
+        const std::array<iree_hal_dim_t, 2> words{experts, (depth / 32) * spec.bits},
             scales{experts, depth / spec.group_size};
         const std::array<iree_hal_dim_t, 1> ids{rows};
-        HYLE_ASSIGN_OR_RETURN(state->views[0], allocate_view(hal, words, IREE_HAL_ELEMENT_TYPE_SINT_32));
-        HYLE_ASSIGN_OR_RETURN(state->views[1], allocate_view(hal, scales, type));
-        HYLE_ASSIGN_OR_RETURN(state->views[2], allocate_view(hal, scales, type));
+        HYLE_ASSIGN_OR_RETURN(state->views[0], input_view(0, words, IREE_HAL_ELEMENT_TYPE_SINT_32));
+        HYLE_ASSIGN_OR_RETURN(state->views[1], input_view(1, scales, type));
+        HYLE_ASSIGN_OR_RETURN(state->views[2], input_view(2, scales, type));
         HYLE_ASSIGN_OR_RETURN(state->views[3], allocate_view(hal, ids, IREE_HAL_ELEMENT_TYPE_SINT_32));
         state->count = 4;
       } else {
-        const std::array<iree_hal_dim_t, 2> activation{rows, depth};
-        const std::array<iree_hal_dim_t, 3> words{experts, columns, depth / (mx8 ? 4 : 8)},
+        const std::array<iree_hal_dim_t, 2> activation{rows, static_cast<iree_hal_dim_t>(mlx_input_depth(spec))};
+        const std::array<iree_hal_dim_t, 3> words{experts, columns, (depth / 32) * spec.bits},
             scales{experts, columns, depth / spec.group_size};
-        HYLE_ASSIGN_OR_RETURN(state->views[0], allocate_view(hal, activation, type));
-        HYLE_ASSIGN_OR_RETURN(state->views[1], allocate_view(hal, words, IREE_HAL_ELEMENT_TYPE_SINT_32));
-        HYLE_ASSIGN_OR_RETURN(state->views[2], allocate_view(hal, scales,
-            affine ? type : static_cast<iree_hal_element_type_t>(IREE_HAL_ELEMENT_TYPE_SINT_8)));
+        if (mlx_grouped(spec.kind)) {
+          const std::array<iree_hal_dim_t, 1> physical{static_cast<iree_hal_dim_t>(mlx_activation_elements(spec))};
+          HYLE_ASSIGN_OR_RETURN(state->views[0], allocate_view(hal, physical, activation_type));
+        } else {
+          HYLE_ASSIGN_OR_RETURN(state->views[0], allocate_view(hal, activation, activation_type));
+        }
+        HYLE_ASSIGN_OR_RETURN(state->views[1], input_view(1, words, IREE_HAL_ELEMENT_TYPE_SINT_32));
+        HYLE_ASSIGN_OR_RETURN(state->views[2], input_view(2, scales,
+            affine ? scale_type : static_cast<iree_hal_element_type_t>(IREE_HAL_ELEMENT_TYPE_SINT_8)));
         state->count = 3;
         if (affine) {
-          HYLE_ASSIGN_OR_RETURN(state->views[3], allocate_view(hal, scales, type));
+          HYLE_ASSIGN_OR_RETURN(state->views[3], input_view(3, scales, scale_type));
           state->count = 4;
         }
         if (mlx_grouped(spec.kind)) {
@@ -699,6 +909,7 @@ NativeProgram::create(NativeDevice device, ProgramSpec spec) noexcept {
       const bool nf4 = spec.kind == ProgramKind::Nf4Decode ||
                        spec.kind == ProgramKind::Nf4NestedDecode;
       const bool awq = spec.kind == ProgramKind::AwqDecode;
+      const bool asymmetric = spec.kind == ProgramKind::Asymmetric4Decode;
       const std::array<iree_hal_dim_t, 2> packed{
           awq ? k : n, awq ? n / 8 : k / (nf4 ? 2 : 8)};
       HYLE_ASSIGN_OR_RETURN(
@@ -731,14 +942,16 @@ NativeProgram::create(NativeDevice device, ProgramSpec spec) noexcept {
       } else {
         const std::array<iree_hal_dim_t, 2> scales{
             awq ? k / spec.group_size : n, awq ? n : k / spec.group_size};
-        if (awq) {
-          const std::array<iree_hal_dim_t, 2> zeros{k / spec.group_size, n / 8};
+        if (awq || asymmetric) {
+          const std::array<iree_hal_dim_t, 2> zeros{
+              awq ? k / spec.group_size : n / 8 + (n % 8 != 0),
+              awq ? n / 8 : k / spec.group_size};
           HYLE_ASSIGN_OR_RETURN(state->views[1],
               allocate_view(hal, zeros, IREE_HAL_ELEMENT_TYPE_SINT_32));
         }
-        HYLE_ASSIGN_OR_RETURN(state->views[awq ? 2 : 1],
+        HYLE_ASSIGN_OR_RETURN(state->views[awq || asymmetric ? 2 : 1],
             allocate_view(hal, scales, artifact_scalar(spec.scale_type)));
-        state->count = awq ? 3 : 2;
+        state->count = awq || asymmetric ? 3 : 2;
       }
     } else if (precision) {
       const std::array<iree_hal_dim_t, 1> shape{
@@ -829,6 +1042,20 @@ WorkState NativeProgram::invoke(CompletionNotify notify,
           static_cast<std::int32_t>(state.spec.group_size));
       HYLE_RETURN_IF_ERROR(detail::consume_status(
           iree_vm_list_push_value(state.inputs.get(), &group)));
+    }
+    if (mlx_affine(state.spec.kind)) {
+      const auto bits = iree_vm_value_make_i32(
+          static_cast<std::int32_t>(state.spec.bits));
+      HYLE_RETURN_IF_ERROR(detail::consume_status(
+          iree_vm_list_push_value(state.inputs.get(), &bits)));
+    }
+    if (mlx_grouped(state.spec.kind)) {
+      const auto stride = state.spec.activation_token_stride ? state.spec.activation_token_stride
+          : state.spec.activation_slots * mlx_input_depth(state.spec);
+      for (const auto scalar : {state.spec.selection_slots, state.spec.activation_slots, stride}) {
+        const auto value = iree_vm_value_make_i32(static_cast<std::int32_t>(scalar));
+        HYLE_RETURN_IF_ERROR(detail::consume_status(iree_vm_list_push_value(state.inputs.get(), &value)));
+      }
     }
     if (iq1_program(state.spec.kind)) {
       const auto n = iree_vm_value_make_i32(static_cast<std::int32_t>(state.spec.columns));

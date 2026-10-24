@@ -1,0 +1,27 @@
+{
+  "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\view-projection-reuse-2026-10-20.zip",
+  "bytes": 1149581,
+  "sha256": "0c976e475c542e168ae2a8be1865d08f33b5c833b992d18e9cf4c90d489063f5",
+  "entries": 273,
+  "payload_bytes": 5841039,
+  "CRC_and_every_payload_SHA_verified": true,
+  "crc_verified": true,
+  "payload_sha256_verified": true,
+  "verification_passes": 1,
+  "build_plan": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\view-projection-reuse\\checks\\20261019T191627\\plan.json",
+    "bytes": 135344,
+    "sha256": "66925a44ba68022688fe4af31a7c4919e44247fe328e0a153b30a8797f8885c7"
+  },
+  "host_TUs": 2,
+  "native_TUs": 0,
+  "CPU_cases": 14,
+  "equal_finite_vectors": 64,
+  "diagnostic_processes": 6,
+  "model_rotation_processes": 9,
+  "native_profile_run": false,
+  "total_prepare_speedup_claim": false,
+  "cleanup_executed": false,
+  "archive_scope": "archive-scope.json",
+  "payload_manifest": "payload-sha256.json"
+}

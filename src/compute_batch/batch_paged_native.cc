@@ -1,4 +1,5 @@
 #include "hyle/compute/batch_paged_native.h"
+#include "hyle/compute/detail/batch_provider.h"
 
 #include <algorithm>
 #include <cmath>
@@ -23,7 +24,7 @@ struct NativePagedBatchProgramData final : util::RefCounted<NativePagedBatchProg
   BatchSchema schema;
   NativePagedBatchOptions options;
   mem::AllocatorRef allocator;
-  std::array<TensorDesc, 4> descriptions;
+  std::array<TensorDesc, 3> fixed_descriptions;
   NativePagedBatchCosts costs;
 };
 struct NativePagedBatchVersionOwner final {
@@ -62,6 +63,7 @@ NativePagedBatchProgram &NativePagedBatchProgram::operator=(NativePagedBatchProg
 NativePagedBatchProgram::~NativePagedBatchProgram() { if (data_) data_->decref(); }
 Result<NativePagedBatchProgram> NativePagedBatchProgram::prepare(
     BatchSchema schema, NativePagedBatchOptions options) noexcept {
+  if(detail::BatchLayoutAccess::is_row_cache(schema))return std::unexpected(Status::InvalidArgument("row cache is not a native attention recipe"));
   if (!schema.valid() || !options.allocator.valid() || !options.max_host_metadata_bytes ||
       !std::isfinite(options.scale))
     return std::unexpected(Status::InvalidArgument("native page recipe needs schema/allocator/finite budget/scale"));
@@ -83,10 +85,10 @@ Result<NativePagedBatchProgram> NativePagedBatchProgram::prepare(
   auto *data = allocator.construct<detail::NativePagedBatchProgramData>(schema, std::move(options), allocator);
   if (!data) return std::unexpected(Status::ResourceExhausted("native page recipe metadata"));
   NativePagedBatchProgram result(data);
-  HYLE_ASSIGN_OR_RETURN(data->descriptions[0],batch_query_description(capacity));
-  HYLE_ASSIGN_OR_RETURN(data->descriptions[1],batch_cache_description(capacity,BatchCacheRole::kKey));
-  HYLE_ASSIGN_OR_RETURN(data->descriptions[2],batch_cache_description(capacity,BatchCacheRole::kValue));
-  HYLE_ASSIGN_OR_RETURN(data->descriptions[3], TensorDesc::dense(DataType::kInt32,
+  const bool mla=schema.mla_layout()!=MlaCacheLayout::kNone;
+  HYLE_ASSIGN_OR_RETURN(data->fixed_descriptions[0],batch_cache_description(schema,mla?BatchCacheRole::kMla:BatchCacheRole::kKey));
+  if(!mla){HYLE_ASSIGN_OR_RETURN(data->fixed_descriptions[1],batch_cache_description(schema,BatchCacheRole::kValue));}
+  HYLE_ASSIGN_OR_RETURN(data->fixed_descriptions[mla?1:2], TensorDesc::dense(DataType::kInt32,
       std::array<std::int64_t, 1>{capacity.max_page_refs}));
   data->costs.index_bytes = bytes;
   return result;
@@ -95,8 +97,20 @@ BatchSchema NativePagedBatchProgram::schema() const noexcept { return data_ ? da
 float NativePagedBatchProgram::scale() const noexcept { return data_ ? data_->options.scale : 1.0F; }
 bool NativePagedBatchProgram::causal() const noexcept { return data_ ? data_->options.causal : true; }
 std::int32_t NativePagedBatchProgram::window_left() const noexcept { return data_ ? data_->options.window_left : -1; }
-std::span<const TensorDesc> NativePagedBatchProgram::descriptions() const noexcept {
-  return data_ ? std::span<const TensorDesc>(data_->descriptions) : std::span<const TensorDesc>{};
+std::size_t NativePagedBatchProgram::input_count() const noexcept {
+  return data_ ? (data_->schema.mla_layout()==MlaCacheLayout::kNone?4:3) : 0;
+}
+Result<TensorDesc> NativePagedBatchProgram::input_description(
+    const BatchLayoutVersion &layout, std::size_t port) const noexcept {
+  if (!data_)
+    return std::unexpected(Status::FailedPrecondition("native page recipe is empty"));
+  if (!data_->schema.owns(layout) || port >= input_count())
+    return std::unexpected(Status::InvalidArgument("native page input needs its owned layout and valid port"));
+  if (port != 0)
+    return data_->fixed_descriptions[port-1];
+  const auto capacity = data_->schema.capacity();
+  return TensorDesc::dense(capacity.query_type, std::array<std::int64_t,3>{
+      layout.facts().query_rows, capacity.query_heads, capacity.qk_head_dim});
 }
 NativePagedBatchCosts NativePagedBatchProgram::costs() const noexcept { return data_ ? data_->costs : NativePagedBatchCosts{}; }
 Result<NativePagedBatchVersion> NativePagedBatchProgram::version(BatchLayoutVersion layout) const noexcept {

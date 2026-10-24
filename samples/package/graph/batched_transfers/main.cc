@@ -1,7 +1,7 @@
 #include <hyle/compute/batch_transfer.h>
 #include <hyle/compute/leased_operation.h>
 #include <hyle/compute/low_precision.h>
-#include <hyle/graph/leased_invocation.h>
+#include <hyle/graph/executable.h>
 #include <hyle/mem/stats.h>
 
 #if defined(HYLE_COMPUTE_CPU)
@@ -151,14 +151,14 @@ Status consume(c::Context &context, c::Queue &queue,
     HYLE_RETURN_IF_ERROR(builder.publish(y));
     HYLE_ASSIGN_OR_RETURN(auto graph, std::move(builder).finish());
     HYLE_ASSIGN_OR_RETURN(auto compiled, compile(graph));
-    HYLE_ASSIGN_OR_RETURN(auto invocation, g::LeasedInvocation::create(compiled.executable));
+    HYLE_ASSIGN_OR_RETURN(auto invocation, compiled.executable.create_invocation({.resources = g::ResourceOptions{}}));
     HYLE_RETURN_IF_ERROR(invocation.bind(a, desc[offset], ready[offset]));
     HYLE_RETURN_IF_ERROR(invocation.bind(b, desc[offset + 1], ready[offset + 1]));
     HYLE_ASSIGN_OR_RETURN(auto graph_output, pool.allocate(*out_desc.required_bytes()));
     HYLE_RETURN_IF_ERROR(invocation.bind(y, out_desc, std::move(graph_output)));
     HYLE_ASSIGN_OR_RETURN(auto graph_done, invocation.submit(queue));
     HYLE_RETURN_IF_ERROR(graph_done.wait());
-    HYLE_ASSIGN_OR_RETURN(auto result, invocation.output(y));
+    HYLE_ASSIGN_OR_RETURN(auto result, invocation.result(y));
     HYLE_ASSIGN_OR_RETURN(auto lease, result.storage_lease());
     HYLE_RETURN_IF_ERROR(check(lease, out_desc.data_type(), lane, group));
   }

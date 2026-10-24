@@ -1,0 +1,70 @@
+{
+  "schema": 1,
+  "date": "2026-10-22",
+  "result": "EXACT_LEAVES_REMOVED",
+  "Windows_leaves": 540,
+  "Apple_leaves": 271,
+  "unlinked_logical_bytes": 876136454,
+  "note": "Sum of unlinked file sizes, not a filesystem free-space measurement. No recursive deletion. Exact identities/replacement payloads and executed script are in the evidence archive.",
+  "retained": "Final Windows cuda-link3, Apple revision4 image/main and revision3 Copy archive/object, baseline CUDA raw and final Apple raw, reusable full model and original caches.",
+  "executed_test_script": {
+    "path": "test.ps1",
+    "bytes": 1783,
+    "sha256": "6706bd1827d3eac7eccccf9a556640d639e4ae1f5bc203d5db5f9b815dbb31b4"
+  },
+  "evidence_archive": {
+    "path": "docs/evidence/correctness/qwen-native-assembly-2026-10-22-logs.zip",
+    "bytes": 1425505,
+    "sha256": "8a5b91e514b4f9b141b5edccfc98fdeb9ffa53e5970855b4396a7bc8bf8fb97f"
+  },
+  "cleanup_records": [
+    {
+      "archive_path": "cleanup/test.ps1",
+      "path": "test.ps1",
+      "bytes": 1783,
+      "sha256": "6706bd1827d3eac7eccccf9a556640d639e4ae1f5bc203d5db5f9b815dbb31b4"
+    },
+    {
+      "archive_path": "cleanup/before-test.ps1",
+      "path": ".scratch/qwen-native-assembly-20261022/before/test.ps1",
+      "bytes": 4893,
+      "sha256": "34b125058de73d8029a709154defa5bf6f65a4af1f825abf1e527a5b072fff88"
+    },
+    {
+      "archive_path": "cleanup/cleanup-plan.json",
+      "path": ".scratch/qwen-native-assembly-20261022/cleanup-plan.json",
+      "bytes": 463363,
+      "sha256": "a6c552c56100fdef74529149c3d9dd97f8cf86e7c103f929749e92c9409076bb"
+    },
+    {
+      "archive_path": "cleanup/cleanup-windows.json",
+      "path": ".scratch/qwen-native-assembly-20261022/cleanup-windows.json",
+      "bytes": 293808,
+      "sha256": "670113a3d3c578007a13e10120824aeb46de7392611469e95c38353dcfc10459"
+    },
+    {
+      "archive_path": "cleanup/cleanup-apple.json",
+      "path": ".scratch/qwen-native-assembly-20261022/cleanup-apple.json",
+      "bytes": 168875,
+      "sha256": "0313b61929ec93cff460bbe965e9ebfd1e87b7a2da189d5b95ed38f8d106a0bd"
+    },
+    {
+      "archive_path": "cleanup/prepare_cleanup.py",
+      "path": ".scratch/qwen-native-assembly-20261022/prepare_cleanup.py",
+      "bytes": 4890,
+      "sha256": "da918b9b0ba33aca408b99abbfc3f8e09da6b36953b7365011e25009d726320d"
+    },
+    {
+      "archive_path": "cleanup/delete_native_leaves.py",
+      "path": ".scratch/qwen-native-assembly-20261022/delete_native_leaves.py",
+      "bytes": 1425,
+      "sha256": "7258600affd210294053d87dadfac79d12397131cfb2b665939fdf1157168e70"
+    },
+    {
+      "archive_path": "cleanup/finalize_cleanup.py",
+      "path": ".scratch/qwen-native-assembly-20261022/finalize_cleanup.py",
+      "bytes": 2983,
+      "sha256": "ef58eb3287f196a2a01b1a6939a956f2d023c5c2c0312c1ff1640b7945faadd2"
+    }
+  ]
+}

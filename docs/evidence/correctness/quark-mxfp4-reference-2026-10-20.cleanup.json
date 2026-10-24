@@ -1,0 +1,167 @@
+{
+  "status": "complete",
+  "removed_files": 16,
+  "removed_bytes": 415341817,
+  "targets": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\quark-mxfp4-reference\\common-cpu\\checks\\attempt1\\cpu.exe",
+      "bytes": 27732480,
+      "sha256": "e02f775c8f737554e6f5b8edf22da80b3fb238863c88541949ae40aa7f33f85d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\quark-mxfp4-reference\\common-cpu\\checks\\attempt1\\cpu.exp",
+      "bytes": 25016,
+      "sha256": "5e2819de2791886a5a479324e599f1550ebca169e6aa103087735761688680bb"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\quark-mxfp4-reference\\common-cpu\\checks\\attempt1\\cpu.lib",
+      "bytes": 41298,
+      "sha256": "1a72c22d3a6dec39cca5118fd99aa738ff5f4202c029fc8a48afb6c3d20e909d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\quark-mxfp4-reference\\common-cpu\\checks\\attempt1\\cpu.map",
+      "bytes": 42650546,
+      "sha256": "f8b072f2cef52989e3fe615c795284f18360b03543cd06d070d6183ee56c5dcf"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\quark-mxfp4-reference\\common-cpu\\checks\\attempt2\\cpu.exe",
+      "bytes": 27732480,
+      "sha256": "141eaeb6c6845a54e0541717f2b8186aa71126de8a2e2c5ddcab1b2de19f3131"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\quark-mxfp4-reference\\common-cpu\\checks\\attempt2\\cpu.exp",
+      "bytes": 25016,
+      "sha256": "34184bb3741b510abedc5df212b4dc37e51284192fe75d23aef295fe8df05543"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\quark-mxfp4-reference\\common-cpu\\checks\\attempt2\\cpu.lib",
+      "bytes": 41298,
+      "sha256": "1a72c22d3a6dec39cca5118fd99aa738ff5f4202c029fc8a48afb6c3d20e909d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\quark-mxfp4-reference\\common-cpu\\checks\\attempt2\\cpu.map",
+      "bytes": 42650713,
+      "sha256": "4bc3fc5da4b063cfd04f843e4b0c55e1225591dcfe0f9e0e72876a0b5a891b84"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\quark-mxfp4-reference\\cuda\\tests\\mxfp4.exe",
+      "bytes": 123076096,
+      "sha256": "efb5effe85db2c5f6959e70625bac5afa4452a3afbc5c92e01f7f14fe28d39d6"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\quark-mxfp4-reference\\cuda\\tests\\mxfp4.exp",
+      "bytes": 25004,
+      "sha256": "83f96f8b0ff3003eaeabe7e2c75183927e051c732b5ec7e4af1adb8d483fe75e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\quark-mxfp4-reference\\cuda\\tests\\mxfp4.lib",
+      "bytes": 41474,
+      "sha256": "0ce67a121002e35485bee9257bab562ed0caed9f4f4b8e5e245b3b702eade02f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\quark-mxfp4-reference\\cuda\\tests\\mxfp4.map",
+      "bytes": 45736916,
+      "sha256": "0e52303406e29890013aa7bd6c8fd5f0fe758a92bed341f2f1e6354c91ed1788"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\quark-mxfp4-reference\\vulkan\\checks\\mxfp4-reference-test.exe",
+      "bytes": 68876800,
+      "sha256": "1009b9540f247a8754ed4a707299c9b8f5b88166e727a863b7e0e88ee66ac8a4"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\quark-mxfp4-reference\\vulkan\\checks\\mxfp4-reference-test.exp",
+      "bytes": 25038,
+      "sha256": "7cfd06ccc615a582c74917f6cbe115f4183c9162a4481474250c6c89a8bec73c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\quark-mxfp4-reference\\vulkan\\checks\\mxfp4-reference-test.lib",
+      "bytes": 42878,
+      "sha256": "bc181dc959b6eac094ab525bcbe838eb372a22c016daff7b49f7d52fac626480"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\quark-mxfp4-reference\\vulkan\\checks\\mxfp4-reference-test.map",
+      "bytes": 36618764,
+      "sha256": "df5e3f74835fd505807cdac41191de6459feae64fa7921e404061c00c0127468"
+    }
+  ],
+  "protected": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\quark-mxfp4-reference\\common-cpu\\checks\\attempt1\\native-provider.obj",
+      "bytes": 739636,
+      "sha256": "30400dbfe0e44b53fb2ae9b3bdc366961041de2657ffa8f46e50d221b90e8c72"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\quark-mxfp4-reference\\common-cpu\\checks\\attempt1\\nvfp4.obj",
+      "bytes": 295322,
+      "sha256": "c08f7c7f4d909f483a83263e2c5bdc28e0e07c56a2c42402e5610f2e545b1642"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\quark-mxfp4-reference\\common-cpu\\checks\\attempt1\\test.obj",
+      "bytes": 2620007,
+      "sha256": "c8322684593b680427d50f8e7845cdb23287ab38c3f49fe0687523180cf31753"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\quark-mxfp4-reference\\common-cpu\\checks\\attempt1\\weight-decode.obj",
+      "bytes": 106658,
+      "sha256": "9beb037886d3f280471b9d5785c7c4dc73743c5963582908a0f8f2c1c103a47e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\quark-mxfp4-reference\\common-cpu\\checks\\attempt2\\test.obj",
+      "bytes": 2620497,
+      "sha256": "58bafea27bb86ade2d05ae897062360e70cc68aca1e4834af4094dca56e9b11a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\quark-mxfp4-reference\\cuda\\checks\\attempt1\\cuda-provider.obj",
+      "bytes": 697623,
+      "sha256": "7a9dfeb053af3477d46c1b56be0b801875a33fa6be8f955bb30f6afb257c2018"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\quark-mxfp4-reference\\cuda\\checks\\attempt1\\nvfp4-kernel.obj",
+      "bytes": 530915,
+      "sha256": "fdee415c7655f191135ca0aa15520c601f7293868cc71eff88a9734d778ecc17"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\quark-mxfp4-reference\\cuda\\checks\\attempt1\\nvfp4-provider.obj",
+      "bytes": 126496,
+      "sha256": "1ca04ea6fec2ed4bfc22458109ec246e0e143f1136745e7d9d8741c45d27ef7c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\quark-mxfp4-reference\\cuda\\checks\\test\\mxfp4-test.obj",
+      "bytes": 2576055,
+      "sha256": "97c3facde73f87a1fd57aab89a0f7e29a4d3cd92fb624ab4d3d685ba6d55c762"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\quark-mxfp4-reference\\vulkan\\checks\\mxfp4-test.obj",
+      "bytes": 2543208,
+      "sha256": "5fcdf715b38e465363f9c0830dd575fd8b0bebd3f4ce489bb178d3cc50b0914f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\quark-mxfp4-reference\\vulkan\\checks\\vulkan_nvfp4.obj",
+      "bytes": 268553,
+      "sha256": "0b50ef7d893260d8c88622aa0d0270e9b7a313225d6218509386aa0e6006b5ac"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\quark-mxfp4-reference\\vulkan\\checks\\vulkan_operations.obj",
+      "bytes": 265737,
+      "sha256": "7ac30727d5a3ce52682210b1a15a7f65fab8dddfbe8b50d0612beaf21b6406ff"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\quark-mxfp4-reference\\vulkan\\checks\\vulkan_shaders.obj",
+      "bytes": 624444,
+      "sha256": "4fadf3f918fc369042536e59b1474ece3e68b32de43c633d54edd939d89818e4"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-prepare-cost\\candidate\\qwen.exe",
+      "bytes": 117832192,
+      "sha256": "6e09735e395e86412d4588cf67507fe5902d149e3e03f674b688ddde5cddf1f8"
+    }
+  ],
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\quark-mxfp4-reference-2026-10-20.zip",
+    "bytes": 3881337,
+    "sha256": "a32df778f451ccab190e38730914558dafa0f8105cc2adf684759ccf323a9f64"
+  },
+  "cleanup_script_sha256": "da1fd607bc3e355a10accb1e93583dd7b5c6d11970126d0f9a74ec0f01abae68",
+  "cleanup_script": "$ErrorActionPreference = 'Stop'\r\n$workspaceRoot = 'C:\\public\\project-hyle\\hyle'\r\n$planPath = Join-Path $workspaceRoot '.scratch\\architecture-refactor-2026-10-18\\quark-mxfp4-reference\\root\\cleanup-plan.json'\r\n$receiptPath = Join-Path $workspaceRoot 'docs\\evidence\\correctness\\quark-mxfp4-reference-2026-10-20.cleanup.json'\r\nif (Test-Path -LiteralPath $receiptPath) { throw 'This exact cleanup already has a receipt; do not rerun.' }\r\n$plan = Get-Content -LiteralPath $planPath -Raw | ConvertFrom-Json\r\n$allowedRoot = (Resolve-Path -LiteralPath $plan.root).ProviderPath.TrimEnd('\\') + '\\'\r\n$expectedRoot = (Join-Path $workspaceRoot '.scratch\\architecture-refactor-2026-10-18\\quark-mxfp4-reference').TrimEnd('\\') + '\\'\r\nif ($allowedRoot -ine $expectedRoot) { throw 'Unexpected cleanup root.' }\r\nfunction Assert-Identity($entry) {\r\n    $item = Get-Item -LiteralPath $entry.path\r\n    if ($item.PSIsContainer -or ($item.Attributes -band [IO.FileAttributes]::ReparsePoint)) { throw 'Expected an ordinary exact file.' }\r\n    if ($item.Length -ne $entry.bytes) { throw \"Size changed: $($entry.path)\" }\r\n    if ((Get-FileHash -LiteralPath $entry.path -Algorithm SHA256).Hash -ine $entry.sha256) { throw \"Hash changed: $($entry.path)\" }\r\n}\r\nAssert-Identity $plan.artifact\r\nforeach ($entry in $plan.protected) { Assert-Identity $entry }\r\nforeach ($entry in $plan.targets) {\r\n    $resolved = (Resolve-Path -LiteralPath $entry.path).ProviderPath\r\n    if (-not $resolved.StartsWith($allowedRoot, [StringComparison]::OrdinalIgnoreCase)) { throw 'Target escapes the exact batch directory.' }\r\n    if ([IO.Path]::GetExtension($resolved) -notin @('.exe','.map','.lib','.exp')) { throw 'Unexpected deletion extension.' }\r\n    Assert-Identity $entry\r\n}\r\nforeach ($entry in $plan.targets) { Remove-Item -LiteralPath $entry.path -Force }\r\nforeach ($entry in $plan.protected) { Assert-Identity $entry }\r\nforeach ($entry in $plan.targets) { if (Test-Path -LiteralPath $entry.path) { throw 'Deletion incomplete.' } }\r\n$receipt = [ordered]@{\r\n    status = 'complete'\r\n    removed_files = @($plan.targets).Count\r\n    removed_bytes = $plan.reclaim_bytes\r\n    targets = $plan.targets\r\n    protected = $plan.protected\r\n    archive = $plan.artifact\r\n    cleanup_script_sha256 = (Get-FileHash -LiteralPath $PSCommandPath -Algorithm SHA256).Hash.ToLowerInvariant()\r\n    cleanup_script = Get-Content -LiteralPath $PSCommandPath -Raw\r\n    scope = $plan.scope\r\n}\r\n$receipt | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath $receiptPath -Encoding utf8\r\nWrite-Output \"Removed $(@($plan.targets).Count) exact rebuildable files, $($plan.reclaim_bytes) bytes; all protected objects and current Qwen consumer remain unchanged.\"\r\n",
+  "scope": "Only this batch16 rebuildable Windows images/link sideproducts. Product sources, all objects, SDK caches and current Qwen consumer are protected. Mac26MB coherent cache retained for subsequent incremental work."
+}

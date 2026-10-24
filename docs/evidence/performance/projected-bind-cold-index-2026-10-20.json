@@ -1,0 +1,2871 @@
+{
+  "date": "2026-10-20",
+  "scope": "Common Graph strict projected/row-input topology admission; actual Windows CPU and CUDA regressions, no new throughput test.",
+  "change": {
+    "created_utc": "2026-10-20T01:56:31.614093+00:00",
+    "kind": "source-review-and-implementation-proof; not actual build/test/performance",
+    "context": [
+      "docs/developer/current-work.md",
+      "docs/evidence/correctness/inference-foundation-review-2026-10-18/README.md"
+    ],
+    "finding": {
+      "scope": "Ready/pending strict projected paged-input binding and strict row projection resource admission",
+      "trigger": [
+        "src/graph_batch/batch.cc:996 ready frame calls RegionAccess::bind_projected",
+        "src/graph_batch/batch.cc:1029 pending frame calls RegionAccess::bind_pending_projected",
+        "src/graph/resources.cc RegionAccess::projection_resource is also called for each strict row projection bind"
+      ],
+      "before": "Both strict common admission paths repeatedly scanned all physical aliases and all selected step inputs for immutable topology belonging to one logical external input. This is a real repeated-work complexity cost, not a demonstrated correctness bypass or a measured throughput loss.",
+      "source_before": [
+        "before/src/graph/resources.cc:314-363",
+        "before/src/graph/resources.cc:530-548"
+      ],
+      "cross_platform": "Common Graph Plan and resource code; no device/provider/model selector was introduced. Typed batch frame epoch/layout validation remains in the caller."
+    },
+    "implemented": {
+      "files": [
+        "src/graph/plan_state.h",
+        "src/graph/executable.cc",
+        "src/graph/resources.cc",
+        "tests/graph/region_provider_test.cc"
+      ],
+      "cold_generation": "compile_plan after successful final prepare_placed_steps, before returning/adopting the exact executable. No generation on failed route candidates.",
+      "facts": [
+        "Sorted unique logical external-input IDs whose actual external root has a non-self direct physical alias child. A descendant necessarily has such a direct child; no lease/address is cached.",
+        "Sorted records {logical value, actual physical instance, selected final step, input port} for ALL step inputs whose logical value has kExternalInput. Includes copy steps and other-storage physical replicas, not just uses of external_instances[value].",
+        "Root stays in existing external_instances. No descriptor, lease, prepared implementation, per-invocation permission or readiness table is copied."
+      ],
+      "lookup": "Binary lookup plus only this logical input's consumer records replaces the two whole-Plan scans. Step kind, selected artifact and current requested readers are still checked from the original Plan/runtime.",
+      "finite": "Finite-only shell returns before physical placement/index creation. Executable::create_invocation resolves a matched exact variant and delegates; each child goes through ordinary final compile_plan index creation. General symbolic Plan also builds its static selected topology once.",
+      "lifetime": "Metadata uses plan.allocator and is declared on PlanState. No mutable global state/executor/hot cache. Its destruction occurs inside normal PlanState destruction while metadata_owner and allocator are still retained.",
+      "allocation_failure": "Only try_push_back growth can allocate in the new builder. Any false return reaches existing plan_allocation_failure/release(plan) failure path; no partial executable is published. Existing local CompileReport/constant preparation owners unwind normally.",
+      "unchanged_live_checks": [
+        "resource_control_ready close/failure/running/results/observation/preparation-use guard",
+        "exact graph/input identity and current tensor layout/capacity validation",
+        "selected artifact identity, prepared pointer, physical input port and reader uniqueness",
+        "selected invocation's actual empty-footprint inspector and pending admission",
+        "each current page resource/native handle/byte offset/span and actual leases",
+        "ordinary invocation.bind validation and recording invalidation; all rejecting checks precede projected guard commit",
+        "batch frame layout/version/epoch, source readiness and ready/pending permissions"
+      ],
+      "unchanged_errors": "Alias descendant, foreign reader step, wrong selected artifact/port, duplicate proof, unqualified physical reader, no reader, and foreign native-capacity page messages/order are retained within each strict entry point."
+    },
+    "complexity": {
+      "symbols": {
+        "I": "all physical instances/alias entries",
+        "P": "all selected step input ports",
+        "A": "direct children of external physical roots before deduplication",
+        "C": "all external-logical-input consumer ports",
+        "c_v": "consumer ports for this logical input",
+        "R": "requested projected readers"
+      },
+      "before_topology_per_bind": "O(I + P + c_v*R); separate live reader duplicate check remains O(R^2).",
+      "after_topology_per_bind": "O(log A + log C + c_v*R); projection_resource uses O(log A + log C + c_v). Empty metadata is checked without binary-searching null SmallVector storage.",
+      "cold_generation": "O(I + P + A log A + C log C), once per selected physical Plan.",
+      "storage": "Two zero-inline allocator-owned SmallVectors: O(A + C) capacity, unique logical alias IDs (4 bytes payload each) and four-u32 consumer records (16 bytes payload each), plus vector metadata/capacity slack. No allocation when their payloads are empty.",
+      "limit": "This optimizes the identified strict topology scans only. invocation.bind, recording invalidation, page checking and the more general alias-allowing ReadProjection API retain their own existing costs. No end-to-end speed claim."
+    },
+    "regression": {
+      "test": "GraphRouteBoundary.ProjectedInputRetainsAllReadersAndLivePageGuards",
+      "owner": "tests/graph/region_provider_test.cc",
+      "cases": [
+        "Two real selected singleton region readers of one logical bank with 64 unrelated CPU unary nodes; omitting either reader is rejected.",
+        "Complete reader proof does not admit pages from another actual lease allocation. Correct page leases then bind and the two negations plus unrelated even-length chain execute with exact expected floats.",
+        "Same public graph on a real CPU Context with two HostResources forces a genuine copy/physical replica (nonzero compile report copy bytes). Supplying the external root region alone remains rejected as an unqualified physical reader."
+      ],
+      "nearby_existing": "GraphRouteBoundary.ProjectedRegionRequiresItsSelectedArtifactAndPhysicalPort retains wrong artifact/prepared/port, duplicate proof, empty-footprint, rebinding and suffix/reset permission checks.",
+      "execution": "Root reports original 10-TU/3-link build and CPU20 passed, including initial fixture copy rejection. This fixture-only deterministic-resource correction awaits root incremental test-TU/CPU20 rerun. This agent did not build or run tests/GPU.",
+      "fixture_determinism": "Copy variant explicitly requires the root reader input/output to use system_resource and the replica reader to use the second HostResource. This prevents a future valid placement from changing the expected rejection order."
+    },
+    "ownership": {
+      "header": "src/graph/plan_state.h private layout changed; all actual linked owners must be refreshed. Do not infer ABI reuse merely because fields were appended.",
+      "direct_source_include_inventory": [
+        "src/graph/input_sources.cc",
+        "src/graph/resource_report.cc",
+        "src/graph_progress/progress.cc",
+        "src/graph/resources.cc",
+        "src/graph/executable.cc",
+        "src/graph/constant_artifact.cc",
+        "src/graph/region_access.cc",
+        "src/graph/submission.cc",
+        "tests/graph/constant_artifact_cache_test.cc",
+        "tests/graph/region_provider_test.cc",
+        "tests/graph/aggregate_native_retirement_test.cc"
+      ],
+      "current_link_closure": "Parent reports sourceDependencies/object intersection for current three-arm closure has 10 owners, excluding aggregate_native_retirement_test.cc. This agent independently verified the 11 direct include inventory, but did not independently recreate the parent's object receipt scan."
+    },
+    "scope_limit": [
+      "No new concrete cross-platform permission bypass was found in this bounded source follow-up. This does not claim all cross-platform/model call chains have been exhausted.",
+      "No public API, Provider/native/vendor source, docs, root test.ps1, build recipe or GPU execution was modified/run.",
+      "Previously passed foundation checks remain historical evidence; this new product delta still requires actual validation."
+    ],
+    "freeze_sha256": "7291e8706b7d67b8c98f272db86f30cb845e19acf15ec08a64ccf706ce13feca",
+    "fixture_correction": {
+      "before_evidence": "before-fixture-resource-correction/",
+      "product_files_unchanged": true,
+      "new_assertions_or_weakened_checks": false
+    }
+  },
+  "source_freeze": {
+    "created_utc": "2026-10-20T01:58:24.485790+00:00",
+    "scope": "Sparse final-Plan external-input topology for strict projected binding; no execution/provider/public API changes",
+    "files": [
+      {
+        "path": "src/graph/plan_state.h",
+        "before_sha256": "1f0f3e1e6d5d35320306f262ac8f4267c0bb3d023d71e16e2f08790b584b0697",
+        "after_sha256": "e7c7347c8c6e84ea1420ea393a7998236ae59a662e81d07f368170496489cafa",
+        "bytes": 57378,
+        "snapshot": ".scratch/architecture-refactor-2026-10-18/cross-platform-followup/source/src/graph/plan_state.h"
+      },
+      {
+        "path": "src/graph/executable.cc",
+        "before_sha256": "15cbad733164b1f7e9c005466e7f4cc7d2af49c06993f400f95a7468c43f26af",
+        "after_sha256": "4e0e14f8855bf215e359a701706278530b949dfc8228b0776ad388d004d9431b",
+        "bytes": 459244,
+        "snapshot": ".scratch/architecture-refactor-2026-10-18/cross-platform-followup/source/src/graph/executable.cc"
+      },
+      {
+        "path": "src/graph/resources.cc",
+        "before_sha256": "ca2f1c0391ac84931ac0c15b1205b24551a0a860b18feacb94337ee2d34605e4",
+        "after_sha256": "0c6af3c86b9f36e7a702ab8f21eeebcf985e31b02cbc097fd99fabc66a430b52",
+        "bytes": 63780,
+        "snapshot": ".scratch/architecture-refactor-2026-10-18/cross-platform-followup/source/src/graph/resources.cc"
+      },
+      {
+        "path": "tests/graph/region_provider_test.cc",
+        "before_sha256": "e80b4a2526cb692fbe6bfe3dc997a25c18b322e37d17e70a7e83030290bb6079",
+        "after_sha256": "5fb34cc0bc4e9b3858530261c24c6bc53efaaddc6ababf24905fa3a3b39956fb",
+        "bytes": 576611,
+        "snapshot": ".scratch/architecture-refactor-2026-10-18/cross-platform-followup/source/tests/graph/region_provider_test.cc"
+      }
+    ],
+    "diff_sha256": "fcd8f9074d852da317eb51de6497fdf46146bae546489ffea6db8f31014e59ff",
+    "build_run": false,
+    "gpu_run": false,
+    "supersedes_fixture_only": {
+      "previous_freeze_sha256": "719fddf370e0bf35de9948451a6dbbf1a1a0b4cf812622b19588f5f99e3f291b",
+      "preserved": "before-fixture-resource-correction/",
+      "delta": "Only test root_reader region_input_resource and region_output_resource explicitly set to system_resource; product source unchanged."
+    }
+  },
+  "independent_review": {
+    "observed_on": "2026-10-20",
+    "reviewer": "/root/typed_gating_native",
+    "status": "Final read-only source review; no blocker found in frozen4files. No build/test/GPU by reviewer.",
+    "scope": "Cold external-input topology index and the two strict projected-binding readers, selected finite/exact ownership, allocation failure cleanup, live permission checks, fixture API/resource shape and current10-owner private PlanState ABI closure. No product edits or expanded validation.",
+    "freeze": {
+      "path": ".scratch\\architecture-refactor-2026-10-18\\cross-platform-followup\\product-source-freeze.json",
+      "bytes": 2224,
+      "sha256": "7291e8706b7d67b8c98f272db86f30cb845e19acf15ec08a64ccf706ce13feca"
+    },
+    "findings": [],
+    "cold_consumer_equivalence": {
+      "old_predicate": "For the queried logical input L, enumerate every final Plan step/input port and retain those whose plan.instance_values[input]==L.",
+      "new_predicate": "build_external_input_topology enumerates exactly the same final Plan steps/ports. It stores {value=L, instance=input, step, port} for every logical external input, selecting by logical binding_roles, not physical instance_roles or external-root identity.",
+      "replicas_and_transfers": "Copy step input_count is1 and it enters this same enumeration. Other-storage replicas retain the original logical instance_values mapping and are therefore included even though their physical instance differs from external_instances[L]. No copy/non-region consumer is silently filtered.",
+      "runtime": "The binary lookup returns the complete contiguous L group, ordered by step/port. bind_projected_impl still requires every recorded consumer to be the actual external physical root, a Region, and covered by a supplied exact selected-artifact/port proof. projection_resource still restricts it to the exact decoder step and bank port, with original operation/region kinds. Empty consumer groups still reject.",
+      "proof_scope": "Valid queried L is an actual graph input: find_binding compares full ValueId/generation and the fixed input record, or projection_resource explicitly requires the logical external-input role. Thus filtering the cold table to external logical inputs does not lose any old eligible query.",
+      "stability": "Construction is called once after prepare_placed_steps succeeds, after physical replica/copy insertion, alias/workspace choices and final step scheduling. Runtime preparation does not mutate those final Plan arrays. Existing build_segments rejects exhausted step identity space before uint32 step storage."
+    },
+    "alias_equivalence": {
+      "old": "Reject queried root P=external_instances[L] iff there exists i!=P with alias_sources[i]==P.",
+      "new": "For each nonself alias child i with parent P, record instance_values[P] only if P is exactly that external logical input's external_instances entry. Sort/unique the resulting L values and binary-search L at the old rejection site.",
+      "iff": "The root mapping invariant instance_values[external_instances[L]]==L makes each old direct-child witness insert L; conversely every inserted L names an actual old direct-child witness of its external root. Self aliases are skipped in both versions.",
+      "descendants": "The existing validated physical alias DAG has a finite parent chain. Any descendant chain contains a direct child of P. No new recursive walk or assumptions about logical View aliases are introduced. A direct child of a replica is not mistaken for a child of the external root; replica readers are separately retained by the consumer table."
+    },
+    "finite_and_exact": {
+      "finite_shell": "compile_plan finite_shell returns the semantic parent before general physical metadata and before the new build call. Its two zero-inline vectors remain empty and own no payload. projection_resource rejects an unselected shell through its existing absent physical input metadata checks.",
+      "selected_child": "Each actual exact child is independently built by compile_plan(...finite_shell=false), so it gets its own final topology table. create_invocation dispatches a matching finite/exact shape to that child before constructing actual resources or exposing a runnable invocation.",
+      "declared_domain": "A general declared-domain Plan also builds its immutable final topology once. Per-invocation concrete descriptions/bindings do not change the physical step/input/alias topology. No parent table is reused as a child's proof."
+    },
+    "OOM_and_cleanup": {
+      "storage": "Both new SmallVector<T,0,AllocatorRef> members use the original Plan allocator, including its metadata owner/compilation-budget wrapper when selected. Records contain only four uint32 values or one uint32 alias value, with no owner/payload references.",
+      "failure": "Every push uses try_push_back and returns plan_allocation_failure on allocation failure. The caller follows its existing !status.ok release(plan) path. A partially filled alias/consumer vector remains owned by the unpublished Plan and is destroyed; no Invocation or external work has been admitted.",
+      "lifetime": "The vectors are declared at the end of PlanState, so their storage is destroyed before the earlier allocator/budget/metadata-owner members. PlanState::destroy retains metadata_owner locally through destructor and deallocation. No new transfer/lease cleanup policy is introduced.",
+      "nonthrowing_operations": "The entries and alias values are trivial; sorting/unique/erase requires no element-owned allocation or throwing user comparator. Empty-table guards avoid null iterator subtraction/sort ranges. The constructor initializes both containers with the same valid allocator.",
+      "scope_limit": "No new explicit index-only OOM test was authored by this reviewer. Root's selected20-case run includes EveryMetadataAllocationFailureIsFatalAndReclaimsPlans, but this source review does not claim that its fault schedule necessarily hits every newly added allocation site."
+    },
+    "live_permission_and_failure_contract": {
+      "not_cached": "Neither table contains native addresses, memory resources, tensors, ReadLease/WriteLease, readiness, page bounds, provider invocation state or permissions. The tables are immutable topology facts only.",
+      "unchanged_dynamic_checks": [
+        "resource_control_ready still rejects running/closed/failed/preparing/result-held/retained-observation invocations.",
+        "Current reader proofs still verify step bounds, actual selected artifact identity, exact input port and physical root. Duplicate supplied physical ports are still rejected.",
+        "Empty-footprint inspectors still run against the current actual region invocation when the current bind supplies no pages.",
+        "Every actual page view is checked against current tensor resource/native_handle/offset/capacity. Metadata cannot authorize a foreign or missing current page.",
+        "Permission capacity and current ordinary Invocation::bind checks precede the unchanged commit. Failed checks preserve prior binding/permissions; successful bind invalidates replay and replaces actual current guards through the original path.",
+        "The original result lease, resource episode, completion/retirement and pending-footprint behavior is unchanged."
+      ],
+      "other_projection_paths": "The general bind_read_projection alias-aware path is unchanged. This is not a new blanket cache of all projection admission or a claim that every binding scan has disappeared."
+    },
+    "complexity": {
+      "cold": "Let I=physical instances, E=all final step input ports, C=direct external-root alias witnesses and Eext=ports reading external logical inputs. One cold pass costs O(I+E+C log C+Eext log Eext). Resident vector capacity is O(C+Eext); duplicate alias size is reduced but capacity need not shrink.",
+      "strict_region_bind": "The previous O(I+E) whole-Plan scans become O(log U+log Eext+E_L*R), where U=unique aliased input roots, E_L=actual consumer ports of this logical input and R=supplied proofs. Existing O(R^2) duplicate-proof checks, live page validation and fixed resource-episode scans remain.",
+      "row_resource_lookup": "Its previous whole-Plan alias/consumer scans become O(log U+log Eext+E_L), in addition to the unchanged selected-access-node inspection and resource checks.",
+      "limit": "No measured performance gain or complete O(1) bind claim. No per-bind index allocation or mutation; no hash map or secondary live permission state."
+    },
+    "test_review": {
+      "new_case": "GraphRouteBoundary.ProjectedInputRetainsAllReadersAndLivePageGuards",
+      "what_it_proves": "A logical input has two actual selected singleton region readers separated by64 unrelated steps. A proof for only one rejects; a page outside the real tensor footprint rejects; complete current page proofs succeed and all three outputs are checked. A second compile uses the same real CPU Context with two addressable HostResource identities and an actual boundary copy, then checks that a root-reader proof cannot authorize copied physical readers.",
+      "API": "Existing builder.add descriptor overload, region visit, resource factory, LeasePool/ReadLease and exact-resource fixture APIs are used. make_context uses real cpu::device(), unlike an opaque backend lacking native context. No new custom public operation is required.",
+      "fixture_correction": "Final test explicitly fixes root_reader input/output resource to system_resource and replica_reader to alternate HostResource, matching the declared bank/root contract. This makes the targeted unqualified-copy-reader rejection independent of a legal alternative placement. Three product files are byte-identical to the first frozen version.",
+      "correction_evidence": {
+        "path": ".scratch\\architecture-refactor-2026-10-18\\cross-platform-followup\\fixture-resource-correction.diff",
+        "bytes": 618,
+        "sha256": "e6fa3b897234f101c320f5db6e0f18411bf2086791d7ab6dee336077f7f6ad83"
+      },
+      "coverage_limit": "The new case directly covers strict region projected bind, not every row decoder/finite variant/OOM path. Existing selected neighbors cover those surrounding contracts to the extent their actual root-run selection states. No unrun coverage is called passed."
+    },
+    "ABI_closure": {
+      "evidence": {
+        "path": ".scratch\\architecture-refactor-2026-10-18\\cross-platform-followup\\abi-owner-review.json",
+        "bytes": 10200,
+        "sha256": "3b000980881df5eae53e30877e484fe0b98bf723b9e44bd28fdfaaa70c1398ee"
+      },
+      "source_scan": "11 direct source includes exist globally:8 product TUs and3 test TUs. Current cpu/tests/qwen linked-object and actual compiler-dependency intersection contains10.",
+      "actual10": [
+        "src/graph/input_sources.cc",
+        "src/graph/resource_report.cc",
+        "src/graph_progress/progress.cc",
+        "src/graph/resources.cc",
+        "src/graph/executable.cc",
+        "src/graph/constant_artifact.cc",
+        "src/graph/region_access.cc",
+        "src/graph/submission.cc",
+        "tests/graph/constant_artifact_cache_test.cc",
+        "tests/graph/region_provider_test.cc"
+      ],
+      "verification": "Read all10 root-produced compiler receipts; each records the same final PlanState header SHA e7c7347c8c6e84ea1420ea393a7998236ae59a662e81d07f368170496489cafa. Root driver replaces actual old objects for each of the3 selected arms from source/dependency metadata; no native/SDK refresh is involved.",
+      "excluded": "tests/graph/aggregate_native_retirement_test.cc is not linked in the3 selected images. No compile or runtime result is claimed for it. A future image including it must honor the header dependency as usual.",
+      "fixture_only_retry": "The final2-line test resource correction needs only a later region_provider_test TU refresh. Header and all3 product files are unchanged, so it does not invalidate the other9 refreshed owners. Actual final rerun is root-owned."
+    },
+    "root_observation_at_review": {
+      "initial_build_summary": {
+        "path": ".scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\checks\\host1\\summary.json",
+        "bytes": 112,
+        "sha256": "5e36ea70cd8a3c358c208c2fb9ecdd06e8bf8d9a31f28a2fca4e970c27ff6cf9"
+      },
+      "initial_CPU20_summary": {
+        "path": ".scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\tests\\summary.json",
+        "bytes": 1930,
+        "sha256": "8d771b60ec5870b27a384f6c3a16c3dddbc03f8c610529838a4b3c4a1ea97c5c"
+      },
+      "facts": "Root actual first10host owners and3links completed, CPU20passed/zero skipped. Parent then requested one fixture-only TU refresh and repeated CPU20/GPU5/consumer64; this report does not sign those pending final runs.",
+      "reviewer_action": "Read source/freezes/compiler receipts and retained summaries only; no compilation, process inference, GPU or test execution."
+    },
+    "source_identity_check": [
+      {
+        "product": "src/graph/plan_state.h",
+        "actual": {
+          "path": "src\\graph\\plan_state.h",
+          "bytes": 57378,
+          "sha256": "e7c7347c8c6e84ea1420ea393a7998236ae59a662e81d07f368170496489cafa"
+        },
+        "snapshot": {
+          "path": ".scratch\\architecture-refactor-2026-10-18\\cross-platform-followup\\source\\src\\graph\\plan_state.h",
+          "bytes": 57378,
+          "sha256": "e7c7347c8c6e84ea1420ea393a7998236ae59a662e81d07f368170496489cafa"
+        },
+        "before": {
+          "path": ".scratch\\architecture-refactor-2026-10-18\\cross-platform-followup\\before\\src\\graph\\plan_state.h",
+          "bytes": 56713,
+          "sha256": "1f0f3e1e6d5d35320306f262ac8f4267c0bb3d023d71e16e2f08790b584b0697"
+        },
+        "matches_freeze": true
+      },
+      {
+        "product": "src/graph/executable.cc",
+        "actual": {
+          "path": "src\\graph\\executable.cc",
+          "bytes": 459244,
+          "sha256": "4e0e14f8855bf215e359a701706278530b949dfc8228b0776ad388d004d9431b"
+        },
+        "snapshot": {
+          "path": ".scratch\\architecture-refactor-2026-10-18\\cross-platform-followup\\source\\src\\graph\\executable.cc",
+          "bytes": 459244,
+          "sha256": "4e0e14f8855bf215e359a701706278530b949dfc8228b0776ad388d004d9431b"
+        },
+        "before": {
+          "path": ".scratch\\architecture-refactor-2026-10-18\\cross-platform-followup\\before\\src\\graph\\executable.cc",
+          "bytes": 457184,
+          "sha256": "15cbad733164b1f7e9c005466e7f4cc7d2af49c06993f400f95a7468c43f26af"
+        },
+        "matches_freeze": true
+      },
+      {
+        "product": "src/graph/resources.cc",
+        "actual": {
+          "path": "src\\graph\\resources.cc",
+          "bytes": 63780,
+          "sha256": "0c6af3c86b9f36e7a702ab8f21eeebcf985e31b02cbc097fd99fabc66a430b52"
+        },
+        "snapshot": {
+          "path": ".scratch\\architecture-refactor-2026-10-18\\cross-platform-followup\\source\\src\\graph\\resources.cc",
+          "bytes": 63780,
+          "sha256": "0c6af3c86b9f36e7a702ab8f21eeebcf985e31b02cbc097fd99fabc66a430b52"
+        },
+        "before": {
+          "path": ".scratch\\architecture-refactor-2026-10-18\\cross-platform-followup\\before\\src\\graph\\resources.cc",
+          "bytes": 63343,
+          "sha256": "ca2f1c0391ac84931ac0c15b1205b24551a0a860b18feacb94337ee2d34605e4"
+        },
+        "matches_freeze": true
+      },
+      {
+        "product": "tests/graph/region_provider_test.cc",
+        "actual": {
+          "path": "tests\\graph\\region_provider_test.cc",
+          "bytes": 576611,
+          "sha256": "5fb34cc0bc4e9b3858530261c24c6bc53efaaddc6ababf24905fa3a3b39956fb"
+        },
+        "snapshot": {
+          "path": ".scratch\\architecture-refactor-2026-10-18\\cross-platform-followup\\source\\tests\\graph\\region_provider_test.cc",
+          "bytes": 576611,
+          "sha256": "5fb34cc0bc4e9b3858530261c24c6bc53efaaddc6ababf24905fa3a3b39956fb"
+        },
+        "before": {
+          "path": ".scratch\\architecture-refactor-2026-10-18\\cross-platform-followup\\before\\tests\\graph\\region_provider_test.cc",
+          "bytes": 569969,
+          "sha256": "e80b4a2526cb692fbe6bfe3dc997a25c18b322e37d17e70a7e83030290bb6079"
+        },
+        "matches_freeze": true
+      }
+    ],
+    "compiled_by_reviewer": false,
+    "tests_run_by_reviewer": false,
+    "GPU_run_by_reviewer": false
+  },
+  "build": {
+    "passed": true,
+    "host_TUs": 10,
+    "native_TUs": 0,
+    "SDK_rebuild": false,
+    "main_reused": true
+  },
+  "actual_images": {
+    "cpu": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\checks\\host1\\cpu.exe",
+      "bytes": 25554944,
+      "sha256": "8f5a10b3fd98a70740e009bff3fb1d834865ded766faad5f2dd834252bd81112"
+    },
+    "tests": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\checks\\host1\\tests.exe",
+      "bytes": 119241216,
+      "sha256": "7ea82c6a8534eb61bdca32e6c30fc881f47410a8592b5f56edc497277f8adfa9"
+    },
+    "qwen": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\checks\\host1\\qwen.exe",
+      "bytes": 117290496,
+      "sha256": "b3d26fda0ae4eb65c3769e431de4c428b603c46f50cf57fd8d085a43c0063049"
+    }
+  },
+  "CPU_tests": {
+    "passed": true,
+    "cases": 20,
+    "skipped": 0,
+    "failures": [],
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\checks\\host1\\cpu.exe",
+      "bytes": 25554944,
+      "sha256": "8f5a10b3fd98a70740e009bff3fb1d834865ded766faad5f2dd834252bd81112"
+    },
+    "actual": [
+      "CanonicalConstantCache.PhysicalReplicasKeepPrimaryAndShareEachOwnerOnce",
+      "GraphRegions.ExactShapeSpecializationKeepsResourceIdentityAndBinding",
+      "GraphRegions.InvocationRetainsItsCompiledRegionAndWorkspaceOwner",
+      "GraphRegions.RawBindingsAndOwnedResultsUseTheSameInvocationGate",
+      "GraphRegions.OwnedNativeInputsKeepFirstCoveringPermissionAcrossRetryAndRebind",
+      "GraphRules.EveryMetadataAllocationFailureIsFatalAndReclaimsPlans",
+      "GraphRouteBoundary.CapabilityAdapterKeepsOriginalRegionsAndOnePlan",
+      "GraphRouteBoundary.CapabilityAdaptersShareTheOriginalProviderProposalCap",
+      "GraphRouteBoundary.CapabilityAdapterRequiresExactContextAndInstance",
+      "GraphRouteBoundary.ProjectedRegionRequiresItsSelectedArtifactAndPhysicalPort",
+      "GraphRouteBoundary.ProjectedInputRetainsAllReadersAndLivePageGuards",
+      "GraphRouteBoundary.ContextRoutesKeepExactOwnersAndResourceChecks",
+      "GraphRouteBoundary.DifferentDevicesUseTheSelectedSourceCapabilities",
+      "GraphResources.FixedBindingIndexKeepsRebindGenerationAndResultLeaseGuards",
+      "GraphPacking.ExactVariantsShareWeightsAndSurviveParentAndSource",
+      "SubmissionFrontier.PendingHostDependencyDoesNotHideAnIndependentLane",
+      "SubmissionFrontier.SameQueueKeepsTheLatestAcceptedPrefixAfterReordering",
+      "SubmissionFrontier.ClaimedQueueGroupWaitsForOutcomeAndCancellationCollectsIt",
+      "SubmissionLifetime.UnacceptedFailureKeepsAdmissionUntilTheOriginalOwnerExits",
+      "GraphViews.NestedProjectionsReuseCanonicalSpansAcrossResetAndRejectedBind"
+    ]
+  },
+  "CUDA_neighbors": {
+    "passed": true,
+    "cases": 5,
+    "skipped": 0,
+    "failures": [],
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\checks\\host1\\tests.exe",
+      "bytes": 119241216,
+      "sha256": "7ea82c6a8534eb61bdca32e6c30fc881f47410a8592b5f56edc497277f8adfa9"
+    },
+    "actual": [
+      "GgmlCudaPairedProjection.PublishedReverseOutputsAndOutsideReaderRetainOriginalConstantBanks",
+      "GgmlCudaPairedProjection.TwoOwnedSlotsRebindBothOutputsAndRespectOldResultLeases",
+      "GgmlCudaPairedProjection.OriginalLeavesAndIndependentMathCoverCancellationSubnormalAndNonfinite",
+      "GgmlCudaPairedProjection.DistinctLogicalActivationGeometryAndControlReentryKeepOrdinaryLeaves",
+      "GgmlCudaPairedProjection.CompletePrivateFfnRemainsTheEarlierFullCandidate"
+    ]
+  },
+  "model": {
+    "passed": true,
+    "equal_vectors": 64,
+    "single_outer_range_32_phases": true,
+    "quality_acceptance": false,
+    "throughput_claim": false
+  },
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\projected-bind-cold-index-2026-10-20.zip",
+    "bytes": 875221,
+    "sha256": "e6cc42b7bedea1d0c445b9ea4e72b38668010f42524f3b63e5adfea01c6d8f4a"
+  },
+  "payloads": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\build.py",
+      "bytes": 5807,
+      "sha256": "5a3186a8d6b5adef190fbd6d88483c8479807d14a22f52315ce98ffa60c3901a",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/build.py"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\cleanup-plan.json",
+      "bytes": 81585,
+      "sha256": "3e54f42e7a8151cf1953637efebfb683553cc04d3add362fbf1c98b963625ddb",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/cleanup-plan.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\latest-plan.json",
+      "bytes": 147,
+      "sha256": "1cee45cd395a72965152c25c599da8b9105bef06bb01ee506df1e3ff6764c951",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/latest-plan.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\prepare_cleanup.py",
+      "bytes": 4661,
+      "sha256": "61a9fa837624fd71d0ba8f82e627bd309079a94fc61934b39d27b7e7a8fab6ac",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/prepare_cleanup.py"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\publish.py",
+      "bytes": 3289,
+      "sha256": "622865833811733b9d5737156ba099f278ebede7794340754791e3719ba4b40f",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/publish.py"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\run_gpu_neighbors.py",
+      "bytes": 1591,
+      "sha256": "9551ebe48bcf07a8428407cba2b59d0d438f92276c96383911452e1f6473634f",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/run_gpu_neighbors.py"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\run_model.py",
+      "bytes": 382,
+      "sha256": "1a02ea0508c3456c0ce5089c4dd8e84f248e6fcdc2e4266fca6706390166e41f",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/run_model.py"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\run_tests.py",
+      "bytes": 3393,
+      "sha256": "70f1ca9c593f8f2a64b9eef40689083ae9d4aa46b2b40160c3ca43fffd6e86d8",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/run_tests.py"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\test-before-projected-index-reclaim.ps1",
+      "bytes": 1967,
+      "sha256": "d9bb41957309764b9a47d539078bbd4b893176183d24e4879f06892e75e453b0",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/test-before-projected-index-reclaim.ps1"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\analysis.json",
+      "bytes": 106675,
+      "sha256": "4d142167e7f2c417a981be40ea89768be614e9682158e012f1242b4b4db6f191",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/correctness/analysis.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\inputs.json",
+      "bytes": 21231,
+      "sha256": "217cb9cbb1ff04025be89559e3ce4751158ba3c9ccf09d4c65d0fd8dc3161db9",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/correctness/inputs.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\live.json",
+      "bytes": 954,
+      "sha256": "cdd4ece80d0371cc43e14f443cdf6efc9c1115e657085efeb0ab196d49827fd5",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/correctness/live.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\qwen.command.json",
+      "bytes": 884,
+      "sha256": "bff3157fe5a19e17074ac553949c17b44db423834a3e7a8f43f7aa1070ef8744",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/correctness/qwen.command.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\qwen.result.json",
+      "bytes": 954,
+      "sha256": "cdd4ece80d0371cc43e14f443cdf6efc9c1115e657085efeb0ab196d49827fd5",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/correctness/qwen.result.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\qwen.stderr.log",
+      "bytes": 7834,
+      "sha256": "302aa5afaafee41d72ae597d0debb0400838ea4717a716ec60d5166f533dec26",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/correctness/qwen.stderr.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\qwen.stdout.log",
+      "bytes": 478,
+      "sha256": "58dd34b7b6029330f4447507901336eb770484a64b7fba87ad9f40be531d8f6c",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/correctness/qwen.stdout.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\runtime-environment.json",
+      "bytes": 20217,
+      "sha256": "0e777d8f2e14e395844f0590d58f97d13c0b2f986d43ba5138c502a5a32b94c5",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/correctness/runtime-environment.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\summary.json",
+      "bytes": 112724,
+      "sha256": "dcb9c5b5bb504d4bcc99f49164d006e7e9c847e9e215e31714f6ce31e764c503",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/correctness/summary.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\gpu-neighbors\\inputs.json",
+      "bytes": 1045,
+      "sha256": "e371972b70d0270fa5e8584388371866fa809a6681df53d58a8767f45b5aecb5",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/gpu-neighbors/inputs.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\gpu-neighbors\\live.json",
+      "bytes": 553,
+      "sha256": "df75155977da02802d5ae5b83ca20fffd51af233d3c33756cc0a9a03d9f6a508",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/gpu-neighbors/live.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\gpu-neighbors\\results.xml",
+      "bytes": 2221,
+      "sha256": "a72099670383137bae88873ffd0b9e8b429ebd60b6bb62807098e32662fa3c3f",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/gpu-neighbors/results.xml"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\gpu-neighbors\\summary.json",
+      "bytes": 843,
+      "sha256": "3f88ccf9a285971b7a2e655d36e6c6cda1325a6f11589d698f90206dadda6185",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/gpu-neighbors/summary.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\gpu-neighbors\\tests.command.json",
+      "bytes": 483,
+      "sha256": "47eba37ff9b0d05ce1f654a48c8ae6e82d9dce67bad45e42c98e1732f3b896bf",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/gpu-neighbors/tests.command.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\gpu-neighbors\\tests.result.json",
+      "bytes": 553,
+      "sha256": "df75155977da02802d5ae5b83ca20fffd51af233d3c33756cc0a9a03d9f6a508",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/gpu-neighbors/tests.result.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\gpu-neighbors\\tests.stderr.log",
+      "bytes": 151,
+      "sha256": "88dd5e35d67fb5c0c371390a98a66a5e061e4c0bef2d890a7b74781363216092",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/gpu-neighbors/tests.stderr.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\gpu-neighbors\\tests.stdout.log",
+      "bytes": 1598,
+      "sha256": "a2d751fa4ff433c99d8e2b2d5b412d749b8d1ced965f7620b3fc493ee45b473e",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/gpu-neighbors/tests.stdout.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\test-inventory\\list.command.json",
+      "bytes": 372,
+      "sha256": "48d5051c5898a88383ff527fb28ea16757cb65bbd99d6af16ad62b6b282ca0e6",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/test-inventory/list.command.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\test-inventory\\list.result.json",
+      "bytes": 441,
+      "sha256": "feff018c116666e2e253aaf9d3f4c01b8a8abe90106c559d9f0642636b41e550",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/test-inventory/list.result.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\test-inventory\\list.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/test-inventory/list.stderr.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\test-inventory\\list.stdout.log",
+      "bytes": 642,
+      "sha256": "fae216eb7689f9792a3ed19673ca352208409adb3c81e04a644aaddc9c460f9e",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/test-inventory/list.stdout.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\test-inventory\\live.json",
+      "bytes": 441,
+      "sha256": "feff018c116666e2e253aaf9d3f4c01b8a8abe90106c559d9f0642636b41e550",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/test-inventory/live.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\tests\\inputs.json",
+      "bytes": 3409,
+      "sha256": "153ccbed0c7223edebe41a1b7e956d99e5b5c26a890d27d3e2f52fa0dced96d1",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/tests/inputs.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\tests\\live.json",
+      "bytes": 1922,
+      "sha256": "dd60fbf75f2d12f6bf624228e0c2c252772f7589e03631ffb7181ab947d54e55",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/tests/live.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\tests\\results.xml",
+      "bytes": 6998,
+      "sha256": "eb7869aeca00b0bd1783112393ad4f53d284ab13747b866b65a95cc95a25670d",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/tests/results.xml"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\tests\\summary.json",
+      "bytes": 1930,
+      "sha256": "8d771b60ec5870b27a384f6c3a16c3dddbc03f8c610529838a4b3c4a1ea97c5c",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/tests/summary.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\tests\\tests.command.json",
+      "bytes": 1852,
+      "sha256": "0296a8e59fb3a184cd3be0c0c120462fd1d58f8c396d21b31c64f8dfbfccdc1e",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/tests/tests.command.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\tests\\tests.result.json",
+      "bytes": 1922,
+      "sha256": "dd60fbf75f2d12f6bf624228e0c2c252772f7589e03631ffb7181ab947d54e55",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/tests/tests.result.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\tests\\tests.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/tests/tests.stderr.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\tests\\tests.stdout.log",
+      "bytes": 6214,
+      "sha256": "b0b322f5f1236ff192d0c13dc7eab6f874c0fd13d23463c88658c9299d2501b0",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/tests/tests.stdout.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\tests-final\\inputs.json",
+      "bytes": 3409,
+      "sha256": "b3233665f6d0eef5b493a2cdd9d11b3765aa020e2d12f8e20542c12d1cb605cc",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/tests-final/inputs.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\tests-final\\live.json",
+      "bytes": 1929,
+      "sha256": "dcbc2f9042c3da11010b53ff5506576715559a5c77a2a8f45e961e5e80877e15",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/tests-final/live.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\tests-final\\results.xml",
+      "bytes": 6998,
+      "sha256": "eaf04bdaa888d58853319e4a47734bbd6fb40b92b5ad98601283df2e7b30b2b8",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/tests-final/results.xml"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\tests-final\\summary.json",
+      "bytes": 1930,
+      "sha256": "fe2f7f5bf9d5fe1d431a4fc3b718274130fc336d480c1755894cf41b8c7d2fd3",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/tests-final/summary.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\tests-final\\tests.command.json",
+      "bytes": 1858,
+      "sha256": "462d6019ad4425cf27f8aa3d610a9d12f97e369e1142ad8d06b45fc86e27c1d8",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/tests-final/tests.command.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\tests-final\\tests.result.json",
+      "bytes": 1929,
+      "sha256": "dcbc2f9042c3da11010b53ff5506576715559a5c77a2a8f45e961e5e80877e15",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/tests-final/tests.result.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\tests-final\\tests.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/tests-final/tests.stderr.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\tests-final\\tests.stdout.log",
+      "bytes": 6214,
+      "sha256": "1d714a1031b2cdb3cbef4750f57ae541041d32f6c7a9775a5b04bf365c64c435",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/tests-final/tests.stdout.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\checks\\host1\\00-graph-constant_artifact_cache_test-compile.command.json",
+      "bytes": 2229,
+      "sha256": "ba80253aee3833b879e0ed0b2532865bb8bdecaa7dca0fd9190f7e2cfd6b0c81",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/checks/host1/00-graph-constant_artifact_cache_test-compile.command.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\checks\\host1\\00-graph-constant_artifact_cache_test-compile.result.json",
+      "bytes": 2299,
+      "sha256": "f89d7b39a6f90e00cd63b46a705ab12d5856ed056c1894e95a494e558a03886f",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/checks/host1/00-graph-constant_artifact_cache_test-compile.result.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\checks\\host1\\00-graph-constant_artifact_cache_test-compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/checks/host1/00-graph-constant_artifact_cache_test-compile.stderr.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\checks\\host1\\00-graph-constant_artifact_cache_test-compile.stdout.log",
+      "bytes": 33,
+      "sha256": "1656246ef768ba94971a3b2aea82aa9befe8195abb219be21cda4074b7791579",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/checks/host1/00-graph-constant_artifact_cache_test-compile.stdout.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\checks\\host1\\00-graph-constant_artifact_cache_test-deps.json",
+      "bytes": 32283,
+      "sha256": "69134e6dcd480f515cd08563e11da3f4a9c0b4d08576d4b21ddb86a4976111a2",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/checks/host1/00-graph-constant_artifact_cache_test-deps.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\checks\\host1\\00-graph-constant_artifact_cache_test-identity.json",
+      "bytes": 68932,
+      "sha256": "5f7dd95f3095fced93e75dae0a7022fe5e1519b3e38549e2eb7f5def53fadff8",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/checks/host1/00-graph-constant_artifact_cache_test-identity.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\checks\\host1\\01-graph-region_provider_test-compile.command.json",
+      "bytes": 2189,
+      "sha256": "35b7fcc9631ae7403b0c6969e3e23388c7e1693db10abb1c3b68a9c1e5be30b9",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/checks/host1/01-graph-region_provider_test-compile.command.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\checks\\host1\\01-graph-region_provider_test-compile.result.json",
+      "bytes": 2259,
+      "sha256": "f0609ac52940a83c0ab9c6c40a8cb54fe6d11a337e76d5f43a865c36e384d61a",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/checks/host1/01-graph-region_provider_test-compile.result.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\checks\\host1\\01-graph-region_provider_test-compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/checks/host1/01-graph-region_provider_test-compile.stderr.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\checks\\host1\\01-graph-region_provider_test-compile.stdout.log",
+      "bytes": 25,
+      "sha256": "d9c2de6704012da4ff0e7bc64b2d398fe2980e12672b04d8f83f50f7b788a5f7",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/checks/host1/01-graph-region_provider_test-compile.stdout.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\checks\\host1\\01-graph-region_provider_test-deps.json",
+      "bytes": 33497,
+      "sha256": "8b69ef929ec2047c92cae45148a966973f083ae8d36759427e5c7ae804744656",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/checks/host1/01-graph-region_provider_test-deps.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\checks\\host1\\01-graph-region_provider_test-identity.json",
+      "bytes": 71823,
+      "sha256": "5fc3e993cfbf3010d21fbf19cbcaa96a91ed5c4e29db681846f341fd767cfd77",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/checks/host1/01-graph-region_provider_test-identity.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\checks\\host1\\02-graph-input_sources-compile.command.json",
+      "bytes": 2293,
+      "sha256": "8cddc9107b1e4c0de4b2c8f1bc19e6167e9deb1998e209d7c214132f98a45958",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/checks/host1/02-graph-input_sources-compile.command.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\checks\\host1\\02-graph-input_sources-compile.result.json",
+      "bytes": 2363,
+      "sha256": "fa314b0983712d8ea95120ac2ffea31a442523eb2afca807b0ab622c0498745d",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/checks/host1/02-graph-input_sources-compile.result.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\checks\\host1\\02-graph-input_sources-compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/checks/host1/02-graph-input_sources-compile.stderr.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\checks\\host1\\02-graph-input_sources-compile.stdout.log",
+      "bytes": 18,
+      "sha256": "fe7692e8f7e342f21df1837084ddfed0f3dd3a2bb8a02adec922e47d92d51ed9",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/checks/host1/02-graph-input_sources-compile.stdout.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\checks\\host1\\02-graph-input_sources-deps.json",
+      "bytes": 22444,
+      "sha256": "9d8f100ef9feeda0b9e1c24d135dc6f8137020d3e7e802bb6d48a3e75ef6593f",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/checks/host1/02-graph-input_sources-deps.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\checks\\host1\\02-graph-input_sources-identity.json",
+      "bytes": 50245,
+      "sha256": "bfe6c2c8652c55eb54a7fd1d50234bbddebc98d4967250385c6fdf3705d32791",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/checks/host1/02-graph-input_sources-identity.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\checks\\host1\\03-graph-resource_report-compile.command.json",
+      "bytes": 2162,
+      "sha256": "a8939a80aa59e71ee09ccb00694e91b4dbd29c7def6b88a00bdb7b4789393b1e",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/checks/host1/03-graph-resource_report-compile.command.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\checks\\host1\\03-graph-resource_report-compile.result.json",
+      "bytes": 2232,
+      "sha256": "25c1f2e34b014d27affb7d233d6a3e4a767934bfbee00dbe68e65acf9ac8f629",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/checks/host1/03-graph-resource_report-compile.result.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\checks\\host1\\03-graph-resource_report-compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/checks/host1/03-graph-resource_report-compile.stderr.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\checks\\host1\\03-graph-resource_report-compile.stdout.log",
+      "bytes": 20,
+      "sha256": "3c61755d7e1a2503ea76aa2c9f605af6e61180748033f945bd1c7037d01bde55",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/checks/host1/03-graph-resource_report-compile.stdout.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\checks\\host1\\03-graph-resource_report-deps.json",
+      "bytes": 22187,
+      "sha256": "dd235552f2c3ad84679f78ad91e51f9723d7a06ee4572f402942f24f24ffe7ac",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/checks/host1/03-graph-resource_report-deps.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\checks\\host1\\03-graph-resource_report-identity.json",
+      "bytes": 49488,
+      "sha256": "263438dd0d04fbf1a07ebacfe6674bd4984b2923098aa8d7cf2242140fa00417",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/checks/host1/03-graph-resource_report-identity.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\checks\\host1\\04-graph_progress-progress-compile.command.json",
+      "bytes": 2172,
+      "sha256": "1c38592ab26004a7da587012b86f4a37c05b13a9c883cc95252de89dfa829fa4",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/checks/host1/04-graph_progress-progress-compile.command.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\checks\\host1\\04-graph_progress-progress-compile.result.json",
+      "bytes": 2242,
+      "sha256": "eaee80c9bdc51bc1ac1313039c5f4e805cfc0ac41257741c6a5c59a0a3983c81",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/checks/host1/04-graph_progress-progress-compile.result.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\checks\\host1\\04-graph_progress-progress-compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/checks/host1/04-graph_progress-progress-compile.stderr.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\checks\\host1\\04-graph_progress-progress-compile.stdout.log",
+      "bytes": 13,
+      "sha256": "5c256c7a0a53ff6c789f3a1c67534ce72c51786e976ea65adcc2ab6a92d08c43",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/checks/host1/04-graph_progress-progress-compile.stdout.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\checks\\host1\\04-graph_progress-progress-deps.json",
+      "bytes": 29067,
+      "sha256": "b657aba5b15332dcdc2c8d78d5f42cd56ad745d7f792132778acf314f42e2d61",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/checks/host1/04-graph_progress-progress-deps.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\checks\\host1\\04-graph_progress-progress-identity.json",
+      "bytes": 64039,
+      "sha256": "8607611904fc300906b4c4f2cc40e4afb7cdc911fc01d129bf151c44da3263e2",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/checks/host1/04-graph_progress-progress-identity.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\checks\\host1\\05-graph-resources-compile.command.json",
+      "bytes": 2273,
+      "sha256": "1214f5007c2eea2b9da3600baa4f11bfd24da288c1023adf95c2b3c7a1a59a12",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/checks/host1/05-graph-resources-compile.command.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\checks\\host1\\05-graph-resources-compile.result.json",
+      "bytes": 2343,
+      "sha256": "34a0be49a28d2e2d6b8cee0d76c2061923bd548bb889a37940dc4f397534c779",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/checks/host1/05-graph-resources-compile.result.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\checks\\host1\\05-graph-resources-compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/checks/host1/05-graph-resources-compile.stderr.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\checks\\host1\\05-graph-resources-compile.stdout.log",
+      "bytes": 14,
+      "sha256": "672f8debd5dcc4a361c440145e99c21bf022590cbfb43129aa89acf894aac842",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/checks/host1/05-graph-resources-compile.stdout.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\checks\\host1\\05-graph-resources-deps.json",
+      "bytes": 23497,
+      "sha256": "4905aba36ce1fd976491bc2c5a1eed6b06d8e64e9cfb6938171df18d030ba17a",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/checks/host1/05-graph-resources-deps.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\checks\\host1\\05-graph-resources-identity.json",
+      "bytes": 52383,
+      "sha256": "968ac7b85b658cc1c87e005c2f517037d4a9a01c650fdcef5b0f9b8318c0f072",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/checks/host1/05-graph-resources-identity.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\checks\\host1\\06-graph-executable-compile.command.json",
+      "bytes": 2278,
+      "sha256": "c47e6df058930733b3e10b688a012da7b806dc02c57911437724432018368b10",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/checks/host1/06-graph-executable-compile.command.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\checks\\host1\\06-graph-executable-compile.result.json",
+      "bytes": 2348,
+      "sha256": "4bc9e879360165f69e871a02224795e4fa84b60a2d99276bc31c9b88de43281e",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/checks/host1/06-graph-executable-compile.result.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\checks\\host1\\06-graph-executable-compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/checks/host1/06-graph-executable-compile.stderr.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\checks\\host1\\06-graph-executable-compile.stdout.log",
+      "bytes": 15,
+      "sha256": "e7f3ca2d037330ccc61c3339535287ba36312762361a62ef5c649884d8973e34",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/checks/host1/06-graph-executable-compile.stdout.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\checks\\host1\\06-graph-executable-deps.json",
+      "bytes": 23878,
+      "sha256": "a2c4e6da4abb8f56e9f798e97f68903bd55fd390f067521e9a9867bfdde6740b",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/checks/host1/06-graph-executable-deps.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\checks\\host1\\06-graph-executable-identity.json",
+      "bytes": 53388,
+      "sha256": "ae18d71fa3fed2cf1c110dc2422af03bacbbf27cb5e3b737cf4becd80c8dbe2a",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/checks/host1/06-graph-executable-identity.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\checks\\host1\\07-graph-constant_artifact-compile.command.json",
+      "bytes": 2172,
+      "sha256": "dca520eb83bb19a3df1a7adb1ec1c78813cd81cc0f1390a2607347d316f950e7",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/checks/host1/07-graph-constant_artifact-compile.command.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\checks\\host1\\07-graph-constant_artifact-compile.result.json",
+      "bytes": 2242,
+      "sha256": "55b6e8a15cbd23e80bc5360dc66bb775e3da02f5399c806c1399b2e8d7fd779c",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/checks/host1/07-graph-constant_artifact-compile.result.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\checks\\host1\\07-graph-constant_artifact-compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/checks/host1/07-graph-constant_artifact-compile.stderr.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\checks\\host1\\07-graph-constant_artifact-compile.stdout.log",
+      "bytes": 22,
+      "sha256": "f17f371ac712127872977e59233ea90b47c61406a9d24f95122f4797c98342b0",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/checks/host1/07-graph-constant_artifact-compile.stdout.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\checks\\host1\\07-graph-constant_artifact-deps.json",
+      "bytes": 22189,
+      "sha256": "267c59e0fe60546e20201c95cca4bb3dd428496588fd1c3881aebe729dfd214f",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/checks/host1/07-graph-constant_artifact-deps.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\checks\\host1\\07-graph-constant_artifact-identity.json",
+      "bytes": 49504,
+      "sha256": "9554a1dc383b821242f0fba3eee1d72e96984933107cb998a31060fe97238e48",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/checks/host1/07-graph-constant_artifact-identity.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\checks\\host1\\08-graph-region_access-compile.command.json",
+      "bytes": 2293,
+      "sha256": "81da0091b136fb5c6782fca80e49da9efded0564380a88512ab276a31e86db24",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/checks/host1/08-graph-region_access-compile.command.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\checks\\host1\\08-graph-region_access-compile.result.json",
+      "bytes": 2363,
+      "sha256": "cc22ae49a32e12719015a948a534dcd29350c32fe9dc5bbca31e49ebf113d4db",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/checks/host1/08-graph-region_access-compile.result.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\checks\\host1\\08-graph-region_access-compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/checks/host1/08-graph-region_access-compile.stderr.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\checks\\host1\\08-graph-region_access-compile.stdout.log",
+      "bytes": 18,
+      "sha256": "2137f633d07202d58063434dcfc083ec899aad459d97604a2f638ff3ea54113f",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/checks/host1/08-graph-region_access-compile.stdout.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\checks\\host1\\08-graph-region_access-deps.json",
+      "bytes": 22445,
+      "sha256": "5220b5a5573217d618667f1520c54c1677a343da2563b80fc07fecb723875042",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/checks/host1/08-graph-region_access-deps.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\checks\\host1\\08-graph-region_access-identity.json",
+      "bytes": 50246,
+      "sha256": "7e0de9ac84e9e24147f6ab464def679d4c8d146dea4440e0870abc1f671ee087",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/checks/host1/08-graph-region_access-identity.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\checks\\host1\\09-graph-submission-compile.command.json",
+      "bytes": 2135,
+      "sha256": "4d0b7ef4c4a2705c26b598a84fbff9209738b17c7a37b0e7274cce1763460ca4",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/checks/host1/09-graph-submission-compile.command.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\checks\\host1\\09-graph-submission-compile.result.json",
+      "bytes": 2205,
+      "sha256": "65b7b2a4321b0a2b26dc5355929a268fecc90e91f0240cd5b8e6562f4019a1e3",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/checks/host1/09-graph-submission-compile.result.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\checks\\host1\\09-graph-submission-compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/checks/host1/09-graph-submission-compile.stderr.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\checks\\host1\\09-graph-submission-compile.stdout.log",
+      "bytes": 15,
+      "sha256": "3ff5f092b8c864db986945a7bbf58261f81c1a261f713a4ef7777af143b30be4",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/checks/host1/09-graph-submission-compile.stdout.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\checks\\host1\\09-graph-submission-deps.json",
+      "bytes": 23405,
+      "sha256": "c22cbd742e0ef8c24dcac7bf242631deeaa9e6c80e7a3f070b3ee757b1f01441",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/checks/host1/09-graph-submission-deps.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\checks\\host1\\09-graph-submission-identity.json",
+      "bytes": 52031,
+      "sha256": "d5ea9b81c189f4c30190dee2c32a3679199d7f49d6675f28b7b9f55972520d5e",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/checks/host1/09-graph-submission-identity.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\checks\\host1\\compile-summary.json",
+      "bytes": 41,
+      "sha256": "7c153ec7e6eb2583c3f5d8a64feeab13c02e8cdc343aae47fa4ddb1c1ce1896e",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/checks/host1/compile-summary.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\checks\\host1\\cpu-image.json",
+      "bytes": 248,
+      "sha256": "30fd096e4cfba4d93fd3cf83c171a46ae593cbfb75219cf884a6fb843e614847",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/checks/host1/cpu-image.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\checks\\host1\\cpu-link-plan.json",
+      "bytes": 49111,
+      "sha256": "af4298364ae794a7c6496a2f6ea95f24d0406c9bd5f8145efac123ff932d9fef",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/checks/host1/cpu-link-plan.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\checks\\host1\\cpu-link.command.json",
+      "bytes": 17365,
+      "sha256": "5431d25ddb15e276b36beee05e35bf5c928f0d9fad52ba32488fa43276f78da0",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/checks/host1/cpu-link.command.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\checks\\host1\\cpu-link.result.json",
+      "bytes": 17435,
+      "sha256": "670391b765e98f4c198f98c30b4d89a3baef58b82ad76f5bef44bfb683068548",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/checks/host1/cpu-link.result.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\checks\\host1\\cpu-link.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/checks/host1/cpu-link.stderr.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\checks\\host1\\cpu-link.stdout.log",
+      "bytes": 266,
+      "sha256": "f50af88a5151ee707ddd4aaf573ab5ae76c039cea97447ed0ea0e112bb5d390b",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/checks/host1/cpu-link.stdout.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\checks\\host1\\live.json",
+      "bytes": 17435,
+      "sha256": "670391b765e98f4c198f98c30b4d89a3baef58b82ad76f5bef44bfb683068548",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/checks/host1/live.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\checks\\host1\\plan.json",
+      "bytes": 214546,
+      "sha256": "2682d33b15a26394d725f474b07ff30a5b16c79987c26ab9389cf13d3ddb0b11",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/checks/host1/plan.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\checks\\host1\\qwen-image.json",
+      "bytes": 250,
+      "sha256": "909fc94ffaac26b64f7583bb7ad840713d59de8e0e8535269b1a40d3cf4ca5a7",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/checks/host1/qwen-image.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\checks\\host1\\qwen-link-plan.json",
+      "bytes": 57944,
+      "sha256": "ed2a845b2f9b90f852b1305683b2313de7ded1d8c346ca83198b319e544fb693",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/checks/host1/qwen-link-plan.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\checks\\host1\\qwen-link.command.json",
+      "bytes": 20568,
+      "sha256": "a30edee18665d843f2650223186d28b4e785fb1855b64fce74d64f50cd8b4a82",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/checks/host1/qwen-link.command.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\checks\\host1\\qwen-link.result.json",
+      "bytes": 20637,
+      "sha256": "0ffa5b763a1617cebfc604de809c2fdcff9548da28bba7d1256b8321f7371c92",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/checks/host1/qwen-link.result.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\checks\\host1\\qwen-link.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/checks/host1/qwen-link.stderr.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\checks\\host1\\qwen-link.stdout.log",
+      "bytes": 268,
+      "sha256": "7c9d180a47dad160d4530088b8f2a4c69d2234616b7989b35ed8edfc077b64a3",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/checks/host1/qwen-link.stdout.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\checks\\host1\\runtime-environment.json",
+      "bytes": 6402,
+      "sha256": "82837dd32145092a32d006817af7f7a1169f85a6ac87a884e5be96f41b25e3f6",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/checks/host1/runtime-environment.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\checks\\host1\\summary.json",
+      "bytes": 112,
+      "sha256": "5e36ea70cd8a3c358c208c2fb9ecdd06e8bf8d9a31f28a2fca4e970c27ff6cf9",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/checks/host1/summary.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\checks\\host1\\tests-image.json",
+      "bytes": 251,
+      "sha256": "3d630f1002253114536572f333d24eaf116a9f77bc89b4d864789986c4a9837a",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/checks/host1/tests-image.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\checks\\host1\\tests-link-plan.json",
+      "bytes": 63375,
+      "sha256": "5eb63393d58c05649c11de0bf934f2500272ec1eaf21d80b413f6e5a5ae3aec1",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/checks/host1/tests-link-plan.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\checks\\host1\\tests-link.command.json",
+      "bytes": 22417,
+      "sha256": "9c22d67a2c2b496b21648b4afe7f4b372e444df4a35711fdc43f9badc1e2cbb9",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/checks/host1/tests-link.command.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\checks\\host1\\tests-link.result.json",
+      "bytes": 22487,
+      "sha256": "2431cab0ed0ea8799d68b6d38de3d63cc080b7f9480a9f309845652314bbb715",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/checks/host1/tests-link.result.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\checks\\host1\\tests-link.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/checks/host1/tests-link.stderr.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\checks\\host1\\tests-link.stdout.log",
+      "bytes": 270,
+      "sha256": "09bd5094a938cff6f009fe59df0fd1fb5a9735e26828d536f8e9d07c86e80397",
+      "member": ".scratch/architecture-refactor-2026-10-18/projected-bind-cold-index/checks/host1/tests-link.stdout.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cross-platform-followup\\abi-owner-review.json",
+      "bytes": 10200,
+      "sha256": "3b000980881df5eae53e30877e484fe0b98bf723b9e44bd28fdfaaa70c1398ee",
+      "member": ".scratch/architecture-refactor-2026-10-18/cross-platform-followup/abi-owner-review.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cross-platform-followup\\changes.diff",
+      "bytes": 17309,
+      "sha256": "fcd8f9074d852da317eb51de6497fdf46146bae546489ffea6db8f31014e59ff",
+      "member": ".scratch/architecture-refactor-2026-10-18/cross-platform-followup/changes.diff"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cross-platform-followup\\fixture-resource-correction.diff",
+      "bytes": 618,
+      "sha256": "e6fa3b897234f101c320f5db6e0f18411bf2086791d7ab6dee336077f7f6ad83",
+      "member": ".scratch/architecture-refactor-2026-10-18/cross-platform-followup/fixture-resource-correction.diff"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cross-platform-followup\\independent-review.json",
+      "bytes": 16338,
+      "sha256": "19aabfe66a2fedbfcf980824b822db45b0927bf4b5e67626436ee260288fb4f0",
+      "member": ".scratch/architecture-refactor-2026-10-18/cross-platform-followup/independent-review.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cross-platform-followup\\product-source-freeze.json",
+      "bytes": 2224,
+      "sha256": "7291e8706b7d67b8c98f272db86f30cb845e19acf15ec08a64ccf706ce13feca",
+      "member": ".scratch/architecture-refactor-2026-10-18/cross-platform-followup/product-source-freeze.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cross-platform-followup\\review.json",
+      "bytes": 8899,
+      "sha256": "a630f3d3e7fecfc6bac02135047fa566bfc19d1642f1a8bdeb63ae441a3a83ad",
+      "member": ".scratch/architecture-refactor-2026-10-18/cross-platform-followup/review.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cross-platform-followup\\source-before.json",
+      "bytes": 1256,
+      "sha256": "f81cb3067e0f390234bb8d6396e0fcd17c15b374d46acc7e6430cf53381faf4d",
+      "member": ".scratch/architecture-refactor-2026-10-18/cross-platform-followup/source-before.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cross-platform-followup\\source-check.json",
+      "bytes": 946,
+      "sha256": "5e8cca8d6f4e78800627b646695901be138cabfe1e6a21770af1110f5c609bad",
+      "member": ".scratch/architecture-refactor-2026-10-18/cross-platform-followup/source-check.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cross-platform-followup\\before-fixture-resource-correction\\changes.diff",
+      "bytes": 17194,
+      "sha256": "230575f7d6898825f7808d3ea08887eeb5c984781935dbf41c9730dedf8594ab",
+      "member": ".scratch/architecture-refactor-2026-10-18/cross-platform-followup/before-fixture-resource-correction/changes.diff"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cross-platform-followup\\before-fixture-resource-correction\\correction-context.json",
+      "bytes": 532,
+      "sha256": "a8e1b992c6e163c72382497cfc738111d04726c4217b941dd5bd2450d92cd0de",
+      "member": ".scratch/architecture-refactor-2026-10-18/cross-platform-followup/before-fixture-resource-correction/correction-context.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cross-platform-followup\\before-fixture-resource-correction\\product-source-freeze.json",
+      "bytes": 1882,
+      "sha256": "719fddf370e0bf35de9948451a6dbbf1a1a0b4cf812622b19588f5f99e3f291b",
+      "member": ".scratch/architecture-refactor-2026-10-18/cross-platform-followup/before-fixture-resource-correction/product-source-freeze.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cross-platform-followup\\before-fixture-resource-correction\\review.json",
+      "bytes": 8323,
+      "sha256": "cc89dfee77646fce3b6ceea0dbda626cb062b8e01ebe3e3638ea50127ce9d35b",
+      "member": ".scratch/architecture-refactor-2026-10-18/cross-platform-followup/before-fixture-resource-correction/review.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cross-platform-followup\\before-fixture-resource-correction\\source-check.json",
+      "bytes": 910,
+      "sha256": "c64f35308dcd87163c2268106f2599dfcf92041ea718aa6a6fbe45b0e4954af6",
+      "member": ".scratch/architecture-refactor-2026-10-18/cross-platform-followup/before-fixture-resource-correction/source-check.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cross-platform-followup\\before\\src\\graph\\executable.cc",
+      "bytes": 457184,
+      "sha256": "15cbad733164b1f7e9c005466e7f4cc7d2af49c06993f400f95a7468c43f26af",
+      "member": ".scratch/architecture-refactor-2026-10-18/cross-platform-followup/before/src/graph/executable.cc"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cross-platform-followup\\before\\src\\graph\\plan_state.h",
+      "bytes": 56713,
+      "sha256": "1f0f3e1e6d5d35320306f262ac8f4267c0bb3d023d71e16e2f08790b584b0697",
+      "member": ".scratch/architecture-refactor-2026-10-18/cross-platform-followup/before/src/graph/plan_state.h"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cross-platform-followup\\before\\src\\graph\\resources.cc",
+      "bytes": 63343,
+      "sha256": "ca2f1c0391ac84931ac0c15b1205b24551a0a860b18feacb94337ee2d34605e4",
+      "member": ".scratch/architecture-refactor-2026-10-18/cross-platform-followup/before/src/graph/resources.cc"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cross-platform-followup\\before\\tests\\graph\\region_provider_test.cc",
+      "bytes": 569969,
+      "sha256": "e80b4a2526cb692fbe6bfe3dc997a25c18b322e37d17e70a7e83030290bb6079",
+      "member": ".scratch/architecture-refactor-2026-10-18/cross-platform-followup/before/tests/graph/region_provider_test.cc"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cross-platform-followup\\before-fixture-resource-correction\\source\\tests\\graph\\region_provider_test.cc",
+      "bytes": 576498,
+      "sha256": "089699cd13c92ad5ab12b8ad6a55100be23c7596ffa17b6e9142f87dd6915d17",
+      "member": ".scratch/architecture-refactor-2026-10-18/cross-platform-followup/before-fixture-resource-correction/source/tests/graph/region_provider_test.cc"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cross-platform-followup\\source\\src\\graph\\executable.cc",
+      "bytes": 459244,
+      "sha256": "4e0e14f8855bf215e359a701706278530b949dfc8228b0776ad388d004d9431b",
+      "member": ".scratch/architecture-refactor-2026-10-18/cross-platform-followup/source/src/graph/executable.cc"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cross-platform-followup\\source\\src\\graph\\plan_state.h",
+      "bytes": 57378,
+      "sha256": "e7c7347c8c6e84ea1420ea393a7998236ae59a662e81d07f368170496489cafa",
+      "member": ".scratch/architecture-refactor-2026-10-18/cross-platform-followup/source/src/graph/plan_state.h"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cross-platform-followup\\source\\src\\graph\\resources.cc",
+      "bytes": 63780,
+      "sha256": "0c6af3c86b9f36e7a702ab8f21eeebcf985e31b02cbc097fd99fabc66a430b52",
+      "member": ".scratch/architecture-refactor-2026-10-18/cross-platform-followup/source/src/graph/resources.cc"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cross-platform-followup\\source\\tests\\graph\\region_provider_test.cc",
+      "bytes": 576611,
+      "sha256": "5fb34cc0bc4e9b3858530261c24c6bc53efaaddc6ababf24905fa3a3b39956fb",
+      "member": ".scratch/architecture-refactor-2026-10-18/cross-platform-followup/source/tests/graph/region_provider_test.cc"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\test.ps1",
+      "bytes": 2204,
+      "sha256": "6ace8689e48d1a9642e133a8dd8c89078e6dda2c5b8739a8a7129aa2a32565a1",
+      "member": "test.ps1"
+    }
+  ],
+  "archive_verified": {
+    "CRC": true,
+    "all_payload_SHA256": true
+  },
+  "cleanup": {
+    "prepared": {
+      "root": "C:\\public\\project-hyle\\hyle",
+      "script": {
+        "path": "C:\\public\\project-hyle\\hyle\\test.ps1",
+        "bytes": 2204,
+        "sha256": "6ace8689e48d1a9642e133a8dd8c89078e6dda2c5b8739a8a7129aa2a32565a1"
+      },
+      "targets": [
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\quant-route-followup\\checks\\host1\\qwen.exe",
+          "bytes": 117223936,
+          "sha256": "b1803abbdb3fc1ed6f30fdb3902bf02b783dc8a8bd6ed83a8af1943416058564"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\quant-route-followup\\checks\\host1\\qwen.map",
+          "bytes": 34392306,
+          "sha256": "87c7086229894d264a6eafc3a2a1bd678c84f5062cf962050f9e4f83ff118d91"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\quant-route-followup\\checks\\host1\\qwen.lib",
+          "bytes": 41384,
+          "sha256": "339d3ce297534ebac8825c27a011f2f4f9dfe366c657ebfc45dbbfdc8412a2cb"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\quant-route-followup\\checks\\host1\\qwen.exp",
+          "bytes": 25004,
+          "sha256": "b9b34627d83586c698a34cc04b68aecb6d1374927d71fdb7c3c9762e24a904ec"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\paired-projection-route\\checks\\native1\\cpu.exe",
+          "bytes": 25519104,
+          "sha256": "d8f9875a9a1608900e8e5b37f06f386de03145c5370c2d9af90b17c14cc07fa0"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\paired-projection-route\\checks\\native1\\cpu.map",
+          "bytes": 35095298,
+          "sha256": "eb5c94c055287bef7244c1cd1e925ae5c72e15b21b06cc60ebe00c47a9d984a3"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\paired-projection-route\\checks\\native1\\cpu.lib",
+          "bytes": 41298,
+          "sha256": "1a72c22d3a6dec39cca5118fd99aa738ff5f4202c029fc8a48afb6c3d20e909d"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\paired-projection-route\\checks\\native1\\cpu.exp",
+          "bytes": 25006,
+          "sha256": "e96d227f9de870f4f5739ef1978dc0f761139fa267152668758629a360d4a25d"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\paired-projection-route\\checks\\native1\\tests.exe",
+          "bytes": 119234560,
+          "sha256": "256097270b4530682e56f8d0dceaeb01f42d11a85c316d9b006df31d55b79608"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\paired-projection-route\\checks\\native1\\tests.map",
+          "bytes": 38647176,
+          "sha256": "0bd3aba19455b90001bc77f0048f948e29c13e182818661253cdb99c6f0d922c"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\paired-projection-route\\checks\\native1\\tests.lib",
+          "bytes": 41474,
+          "sha256": "eb94a4b61486dd914abc7fea7de972f2f36d30506b483ec4765f2d276d689b15"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\paired-projection-route\\checks\\native1\\tests.exp",
+          "bytes": 25010,
+          "sha256": "9ea85f502cab90eb6a1380d097568f3031933614860f6d3509fd02ad9ab22b1c"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode1\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "e40060187d8c6376d00e58794643dd3f444dceefe29eb675c6ee2b0899131210"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode1\\logits.f32",
+          "bytes": 993280,
+          "sha256": "54999d39e6a46f665fe6f7fc5d22b5136eb5e9b73ae179e5b908b33d7009f326"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode10\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "14f67a52e0c149e904e363021efe444ddabc3de5c45c16e9fb3f4a4c533f8ba9"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode10\\logits.f32",
+          "bytes": 993280,
+          "sha256": "bcc503ff8585699e10eda6c4eb899a900aca16db9f348e3ca1ecba3899e0f4dc"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode11\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "025d250c3511f106ae4dc6f11d659262e917fd545c94c8e18da3253437af50d9"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode11\\logits.f32",
+          "bytes": 993280,
+          "sha256": "a695e7dd458fc3eb5d5e4301d1ca4548bd5d9c38bfe3fed8e05203e2b7f7d43a"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode12\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "f7b6685cf738390474f1fa85320df313e39eb469bf0af22dea10c3c016edc06c"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode12\\logits.f32",
+          "bytes": 993280,
+          "sha256": "372a79e6f28a730945c45b223bb2a7958ea0d1967e57b8586ff08b4804d54eed"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode13\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "a9d03c31ab0682e9cb017af1eba6e9872778715bea080c5bad77122e4b50a2d6"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode13\\logits.f32",
+          "bytes": 993280,
+          "sha256": "534e20e20dfc7419d234026daa156c0ea2a8cd7d0b81d7394562679b931932b4"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode14\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "25d9877095a26bb7e6c6c2419cb0e182a01b6cd9e40f0bb769c42fcb34fc2dfb"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode14\\logits.f32",
+          "bytes": 993280,
+          "sha256": "52722aedd166038381d5c6732855b3c73804e7f32db14403edaa1fe619ab8e71"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode15\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "be0704805ca7c78aa081b4ac85dd9a017010c913b9260fb1d2f591f0994370e7"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode15\\logits.f32",
+          "bytes": 993280,
+          "sha256": "6c804d67822906c715a8238c52507f61ffa0c62057eb7bac124253ab56b57f84"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode16\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "db38845e211bf589a3a41f9beee7610a37538b9d015df79d7a86744a245b5d09"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode16\\logits.f32",
+          "bytes": 993280,
+          "sha256": "65abecf3cc29af92f817b3cd91cbccd155362a92e779be9c81e77341d9709ea0"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode17\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "ee49ec44b74f98a437c9df25aa3add98bc3247475b2605f16efa8b964c5451f6"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode17\\logits.f32",
+          "bytes": 993280,
+          "sha256": "ad8067b76a35214374e5e585c9671654c547c9a4f4e79bb6b4b589bdfa83b845"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode18\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "d1336e9f037dea6d1a28d519b2300686825b1666ccad9972d9667b91769a97f5"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode18\\logits.f32",
+          "bytes": 993280,
+          "sha256": "500ce9be766ecde9d75c2ed2f7ac0f9b6401806288bd9e545f4227e27c9795a2"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode19\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "72de0d12d75275391252ae195d2b2b19f4d3a234095e2e988ba12455fbe3cf7c"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode19\\logits.f32",
+          "bytes": 993280,
+          "sha256": "35be9bd7e307d44e2929605be12977d985b8818af81fcdd59259163b7a748002"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode2\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "f6d075ad86e2e0550617e6dfd6201ae335228ee6808ab8ae8bb3681159663424"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode2\\logits.f32",
+          "bytes": 993280,
+          "sha256": "772199ca4b0550c00635c25bd8036a9b5334cb0c22bb79ce86f6fbd81520df67"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode20\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "43c03820fa5f5b838cd5992205b52f44f12fd82c5585698eb08197f48713cb6f"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode20\\logits.f32",
+          "bytes": 993280,
+          "sha256": "aa2082864e5999cce1e72d98d71f1a34f0b59bfbf9a728aba621cce2e25b644f"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode21\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "f8188e3da86374d7e412e99e95ebbeb5b542392318adad6c4fe4be6849dbb026"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode21\\logits.f32",
+          "bytes": 993280,
+          "sha256": "d10c058ee22da65190fb9d9c04997754b8484607f6202283f3b89416be4d2580"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode22\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "d6ae658866d9358580e704e5374fec7acf9f66eddb5895a4d09917a7f7f20022"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode22\\logits.f32",
+          "bytes": 993280,
+          "sha256": "96a33dcc9a7b11ab9fa4720a945007c5dac2c4f660cfb04cbcaa77d9fcaf0e9f"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode23\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "eb27d0449a834afd98899067feb7ceb33f37f1819e21ff63ac668654c90a8d5a"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode23\\logits.f32",
+          "bytes": 993280,
+          "sha256": "dc53f76f793be5e01854f437be46a71985a53861042b08220a8b1e49528b21a0"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode24\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "1b55a229ef3ada9232b7f590977fce3c3b2b7ee56932ceadd8c16f05201a35a1"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode24\\logits.f32",
+          "bytes": 993280,
+          "sha256": "04903c42456b5d223ce673d73794e0aa88a5da810bd58f054cdff7db57bc354c"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode25\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "386adc36e11cae2a75fbb2e3fe8b66dfe37d9a6b4d5fd5e73c67f287625b34bd"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode25\\logits.f32",
+          "bytes": 993280,
+          "sha256": "079091277422cd9c20aee9d03a3672ac7223d48ffb8f9fb0869b5434740f244b"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode26\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "9ad10d1bc33b02b2ee0bf1df056087f84eb510871bfe4af278e895b3eede0419"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode26\\logits.f32",
+          "bytes": 993280,
+          "sha256": "0ddbec9ca8cb287be9d9dd415e4d7baf53175d100d309a4d3014eb690430270e"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode27\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "11126f85e99889de5700986061d56f2759ff5b0eea94bb2636a36707ae2df606"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode27\\logits.f32",
+          "bytes": 993280,
+          "sha256": "ea0c1a5585e84ee37096cf8fb2c531784c352bf43e270bf80bd954bd60e459ef"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode28\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "5b81866d1c8c9d4e282e45025e1b4d4010878e4f367b14ef2d6a08fc27c85c6e"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode28\\logits.f32",
+          "bytes": 993280,
+          "sha256": "75083b3b88af9047012de440d3e42c05eb1baa96763f888eddd134da287b8538"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode29\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "b92b40b4fd571a637b2ef95b1634470d63d1ea628f45ce0a117c7a32afe76eb8"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode29\\logits.f32",
+          "bytes": 993280,
+          "sha256": "10e0712c92ed33298e2dd4a5919bd714cef9bb74cb53b19780dbfd2856c791e0"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode3\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "227c7e6548e2159393ddf350d7dfbd1dda87040994ade315075c005ce7798889"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode3\\logits.f32",
+          "bytes": 993280,
+          "sha256": "aff61c4c7ec366a0b25cf583427df267859aca70ab3c9e264268a30f2d45f3d4"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode30\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "ca725572fbf8c186b9bc0c5662173d8ad7dae136b179587657ea87029eb1349f"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode30\\logits.f32",
+          "bytes": 993280,
+          "sha256": "42d688f93ec3ae1e4c920fa3a22b1169f1050d0eec291e5b69aa51b54b24e11d"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode31\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "886b6f71fcbbcf3f95dc61f7873e43f245f40a4d967d0c2401205fbba52bd95e"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode31\\logits.f32",
+          "bytes": 993280,
+          "sha256": "6619c64b58de04545169513c926b852f92822fb64ae0b22fc7efbd9cf8842887"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode4\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "f7d8474a362ca19268b3481791345307fee1026f0a4c871e1227ce3315e7021e"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode4\\logits.f32",
+          "bytes": 993280,
+          "sha256": "0ab4e55caa9276fd56d4353c36121014f07342989b570eb9c3f7dfddc21a2bba"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode5\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "850b8196a3ee12fb1ef0f4f71a37155b3b4b394053b616603d33457b3d0c8a19"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode5\\logits.f32",
+          "bytes": 993280,
+          "sha256": "ebb26764856c828fae8d95a751837b1af2fc6101e9207cfa3bdaa0fdea3c7a1e"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode6\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "1f04b58f50a488b9599eabf6b360ede1b3e3205fe9f1fd44b2d86dd25adf4484"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode6\\logits.f32",
+          "bytes": 993280,
+          "sha256": "cbda8781111c0ca4ad618ae56c2d840974152770d2d5474c43498bd0e81e2a84"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode7\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "db84650d85f3c3fea8e4c3d4bf891b1fc01a65aad3f7807e8eef53315f7723f2"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode7\\logits.f32",
+          "bytes": 993280,
+          "sha256": "8c90db2481c2110453c52633a8b3153fe37391085de09fb4e5a0943adfe396c1"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode8\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "4ba5e0f90d2c22025d9136092d03307914b18795082217cd34d4aec5c85dfdd6"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode8\\logits.f32",
+          "bytes": 993280,
+          "sha256": "db08f2c1bdd302459dd6151dea7de3d6f37b431d7dfaf3cf191b9ada82858745"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode9\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "e9852a023ec1982b1258a0042712d1abd868575fc9f968798be75da2cd9fdc5a"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode9\\logits.f32",
+          "bytes": 993280,
+          "sha256": "e19784e9cb938d33e1a6508bacca54fb44b8807c41f091cdf8b401c161da6cb9"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\prefill\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "441f8e0eea6b8deea8b640bb76efc9dcc1267f3ee4de9e936bcc9fa9110a8ee1"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\prefill\\logits.f32",
+          "bytes": 993280,
+          "sha256": "3f9f6f36cbefdeae7dc1e5e89b8af0729c2d9d6f59dab28e040a4771d9609b43"
+        }
+      ],
+      "protected": [
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\checks\\host1\\cpu.exe",
+          "bytes": 25554944,
+          "sha256": "8f5a10b3fd98a70740e009bff3fb1d834865ded766faad5f2dd834252bd81112"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\checks\\host1\\tests.exe",
+          "bytes": 119241216,
+          "sha256": "7ea82c6a8534eb61bdca32e6c30fc881f47410a8592b5f56edc497277f8adfa9"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\checks\\host1\\qwen.exe",
+          "bytes": 117290496,
+          "sha256": "b3d26fda0ae4eb65c3769e431de4c428b603c46f50cf57fd8d085a43c0063049"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\paired-projection-route\\checks\\native1\\qwen.exe",
+          "bytes": 117283328,
+          "sha256": "654d5bd5d9cca683efaa8d404275990833d2128bd8b56f5c52829680be742da4"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-explicit-rope\\performance-prepared\\peer.exe",
+          "bytes": 35814400,
+          "sha256": "fb169f0282f2a834a61b3e887edaba92d8699814558b0c5f1a13aaf07e0de969"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode1\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "e40060187d8c6376d00e58794643dd3f444dceefe29eb675c6ee2b0899131210"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode1\\logits.f32",
+          "bytes": 993280,
+          "sha256": "54999d39e6a46f665fe6f7fc5d22b5136eb5e9b73ae179e5b908b33d7009f326"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode10\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "14f67a52e0c149e904e363021efe444ddabc3de5c45c16e9fb3f4a4c533f8ba9"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode10\\logits.f32",
+          "bytes": 993280,
+          "sha256": "bcc503ff8585699e10eda6c4eb899a900aca16db9f348e3ca1ecba3899e0f4dc"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode11\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "025d250c3511f106ae4dc6f11d659262e917fd545c94c8e18da3253437af50d9"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode11\\logits.f32",
+          "bytes": 993280,
+          "sha256": "a695e7dd458fc3eb5d5e4301d1ca4548bd5d9c38bfe3fed8e05203e2b7f7d43a"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode12\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "f7b6685cf738390474f1fa85320df313e39eb469bf0af22dea10c3c016edc06c"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode12\\logits.f32",
+          "bytes": 993280,
+          "sha256": "372a79e6f28a730945c45b223bb2a7958ea0d1967e57b8586ff08b4804d54eed"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode13\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "a9d03c31ab0682e9cb017af1eba6e9872778715bea080c5bad77122e4b50a2d6"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode13\\logits.f32",
+          "bytes": 993280,
+          "sha256": "534e20e20dfc7419d234026daa156c0ea2a8cd7d0b81d7394562679b931932b4"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode14\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "25d9877095a26bb7e6c6c2419cb0e182a01b6cd9e40f0bb769c42fcb34fc2dfb"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode14\\logits.f32",
+          "bytes": 993280,
+          "sha256": "52722aedd166038381d5c6732855b3c73804e7f32db14403edaa1fe619ab8e71"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode15\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "be0704805ca7c78aa081b4ac85dd9a017010c913b9260fb1d2f591f0994370e7"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode15\\logits.f32",
+          "bytes": 993280,
+          "sha256": "6c804d67822906c715a8238c52507f61ffa0c62057eb7bac124253ab56b57f84"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode16\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "db38845e211bf589a3a41f9beee7610a37538b9d015df79d7a86744a245b5d09"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode16\\logits.f32",
+          "bytes": 993280,
+          "sha256": "65abecf3cc29af92f817b3cd91cbccd155362a92e779be9c81e77341d9709ea0"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode17\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "ee49ec44b74f98a437c9df25aa3add98bc3247475b2605f16efa8b964c5451f6"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode17\\logits.f32",
+          "bytes": 993280,
+          "sha256": "ad8067b76a35214374e5e585c9671654c547c9a4f4e79bb6b4b589bdfa83b845"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode18\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "d1336e9f037dea6d1a28d519b2300686825b1666ccad9972d9667b91769a97f5"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode18\\logits.f32",
+          "bytes": 993280,
+          "sha256": "500ce9be766ecde9d75c2ed2f7ac0f9b6401806288bd9e545f4227e27c9795a2"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode19\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "72de0d12d75275391252ae195d2b2b19f4d3a234095e2e988ba12455fbe3cf7c"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode19\\logits.f32",
+          "bytes": 993280,
+          "sha256": "35be9bd7e307d44e2929605be12977d985b8818af81fcdd59259163b7a748002"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode2\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "f6d075ad86e2e0550617e6dfd6201ae335228ee6808ab8ae8bb3681159663424"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode2\\logits.f32",
+          "bytes": 993280,
+          "sha256": "772199ca4b0550c00635c25bd8036a9b5334cb0c22bb79ce86f6fbd81520df67"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode20\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "43c03820fa5f5b838cd5992205b52f44f12fd82c5585698eb08197f48713cb6f"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode20\\logits.f32",
+          "bytes": 993280,
+          "sha256": "aa2082864e5999cce1e72d98d71f1a34f0b59bfbf9a728aba621cce2e25b644f"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode21\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "f8188e3da86374d7e412e99e95ebbeb5b542392318adad6c4fe4be6849dbb026"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode21\\logits.f32",
+          "bytes": 993280,
+          "sha256": "d10c058ee22da65190fb9d9c04997754b8484607f6202283f3b89416be4d2580"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode22\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "d6ae658866d9358580e704e5374fec7acf9f66eddb5895a4d09917a7f7f20022"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode22\\logits.f32",
+          "bytes": 993280,
+          "sha256": "96a33dcc9a7b11ab9fa4720a945007c5dac2c4f660cfb04cbcaa77d9fcaf0e9f"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode23\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "eb27d0449a834afd98899067feb7ceb33f37f1819e21ff63ac668654c90a8d5a"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode23\\logits.f32",
+          "bytes": 993280,
+          "sha256": "dc53f76f793be5e01854f437be46a71985a53861042b08220a8b1e49528b21a0"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode24\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "1b55a229ef3ada9232b7f590977fce3c3b2b7ee56932ceadd8c16f05201a35a1"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode24\\logits.f32",
+          "bytes": 993280,
+          "sha256": "04903c42456b5d223ce673d73794e0aa88a5da810bd58f054cdff7db57bc354c"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode25\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "386adc36e11cae2a75fbb2e3fe8b66dfe37d9a6b4d5fd5e73c67f287625b34bd"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode25\\logits.f32",
+          "bytes": 993280,
+          "sha256": "079091277422cd9c20aee9d03a3672ac7223d48ffb8f9fb0869b5434740f244b"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode26\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "9ad10d1bc33b02b2ee0bf1df056087f84eb510871bfe4af278e895b3eede0419"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode26\\logits.f32",
+          "bytes": 993280,
+          "sha256": "0ddbec9ca8cb287be9d9dd415e4d7baf53175d100d309a4d3014eb690430270e"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode27\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "11126f85e99889de5700986061d56f2759ff5b0eea94bb2636a36707ae2df606"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode27\\logits.f32",
+          "bytes": 993280,
+          "sha256": "ea0c1a5585e84ee37096cf8fb2c531784c352bf43e270bf80bd954bd60e459ef"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode28\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "5b81866d1c8c9d4e282e45025e1b4d4010878e4f367b14ef2d6a08fc27c85c6e"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode28\\logits.f32",
+          "bytes": 993280,
+          "sha256": "75083b3b88af9047012de440d3e42c05eb1baa96763f888eddd134da287b8538"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode29\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "b92b40b4fd571a637b2ef95b1634470d63d1ea628f45ce0a117c7a32afe76eb8"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode29\\logits.f32",
+          "bytes": 993280,
+          "sha256": "10e0712c92ed33298e2dd4a5919bd714cef9bb74cb53b19780dbfd2856c791e0"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode3\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "227c7e6548e2159393ddf350d7dfbd1dda87040994ade315075c005ce7798889"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode3\\logits.f32",
+          "bytes": 993280,
+          "sha256": "aff61c4c7ec366a0b25cf583427df267859aca70ab3c9e264268a30f2d45f3d4"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode30\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "ca725572fbf8c186b9bc0c5662173d8ad7dae136b179587657ea87029eb1349f"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode30\\logits.f32",
+          "bytes": 993280,
+          "sha256": "42d688f93ec3ae1e4c920fa3a22b1169f1050d0eec291e5b69aa51b54b24e11d"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode31\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "886b6f71fcbbcf3f95dc61f7873e43f245f40a4d967d0c2401205fbba52bd95e"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode31\\logits.f32",
+          "bytes": 993280,
+          "sha256": "6619c64b58de04545169513c926b852f92822fb64ae0b22fc7efbd9cf8842887"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode4\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "f7d8474a362ca19268b3481791345307fee1026f0a4c871e1227ce3315e7021e"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode4\\logits.f32",
+          "bytes": 993280,
+          "sha256": "0ab4e55caa9276fd56d4353c36121014f07342989b570eb9c3f7dfddc21a2bba"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode5\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "850b8196a3ee12fb1ef0f4f71a37155b3b4b394053b616603d33457b3d0c8a19"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode5\\logits.f32",
+          "bytes": 993280,
+          "sha256": "ebb26764856c828fae8d95a751837b1af2fc6101e9207cfa3bdaa0fdea3c7a1e"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode6\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "1f04b58f50a488b9599eabf6b360ede1b3e3205fe9f1fd44b2d86dd25adf4484"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode6\\logits.f32",
+          "bytes": 993280,
+          "sha256": "cbda8781111c0ca4ad618ae56c2d840974152770d2d5474c43498bd0e81e2a84"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode7\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "db84650d85f3c3fea8e4c3d4bf891b1fc01a65aad3f7807e8eef53315f7723f2"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode7\\logits.f32",
+          "bytes": 993280,
+          "sha256": "8c90db2481c2110453c52633a8b3153fe37391085de09fb4e5a0943adfe396c1"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode8\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "4ba5e0f90d2c22025d9136092d03307914b18795082217cd34d4aec5c85dfdd6"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode8\\logits.f32",
+          "bytes": 993280,
+          "sha256": "db08f2c1bdd302459dd6151dea7de3d6f37b431d7dfaf3cf191b9ada82858745"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode9\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "e9852a023ec1982b1258a0042712d1abd868575fc9f968798be75da2cd9fdc5a"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode9\\logits.f32",
+          "bytes": 993280,
+          "sha256": "e19784e9cb938d33e1a6508bacca54fb44b8807c41f091cdf8b401c161da6cb9"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\prefill\\hidden.bf16",
+          "bytes": 4096,
+          "sha256": "441f8e0eea6b8deea8b640bb76efc9dcc1267f3ee4de9e936bcc9fa9110a8ee1"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\prefill\\logits.f32",
+          "bytes": 993280,
+          "sha256": "3f9f6f36cbefdeae7dc1e5e89b8af0729c2d9d6f59dab28e040a4771d9609b43"
+        }
+      ],
+      "vectors": [
+        {
+          "duplicate": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode1\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "e40060187d8c6376d00e58794643dd3f444dceefe29eb675c6ee2b0899131210"
+          },
+          "accepted": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode1\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "e40060187d8c6376d00e58794643dd3f444dceefe29eb675c6ee2b0899131210"
+          }
+        },
+        {
+          "duplicate": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode1\\logits.f32",
+            "bytes": 993280,
+            "sha256": "54999d39e6a46f665fe6f7fc5d22b5136eb5e9b73ae179e5b908b33d7009f326"
+          },
+          "accepted": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode1\\logits.f32",
+            "bytes": 993280,
+            "sha256": "54999d39e6a46f665fe6f7fc5d22b5136eb5e9b73ae179e5b908b33d7009f326"
+          }
+        },
+        {
+          "duplicate": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode10\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "14f67a52e0c149e904e363021efe444ddabc3de5c45c16e9fb3f4a4c533f8ba9"
+          },
+          "accepted": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode10\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "14f67a52e0c149e904e363021efe444ddabc3de5c45c16e9fb3f4a4c533f8ba9"
+          }
+        },
+        {
+          "duplicate": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode10\\logits.f32",
+            "bytes": 993280,
+            "sha256": "bcc503ff8585699e10eda6c4eb899a900aca16db9f348e3ca1ecba3899e0f4dc"
+          },
+          "accepted": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode10\\logits.f32",
+            "bytes": 993280,
+            "sha256": "bcc503ff8585699e10eda6c4eb899a900aca16db9f348e3ca1ecba3899e0f4dc"
+          }
+        },
+        {
+          "duplicate": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode11\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "025d250c3511f106ae4dc6f11d659262e917fd545c94c8e18da3253437af50d9"
+          },
+          "accepted": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode11\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "025d250c3511f106ae4dc6f11d659262e917fd545c94c8e18da3253437af50d9"
+          }
+        },
+        {
+          "duplicate": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode11\\logits.f32",
+            "bytes": 993280,
+            "sha256": "a695e7dd458fc3eb5d5e4301d1ca4548bd5d9c38bfe3fed8e05203e2b7f7d43a"
+          },
+          "accepted": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode11\\logits.f32",
+            "bytes": 993280,
+            "sha256": "a695e7dd458fc3eb5d5e4301d1ca4548bd5d9c38bfe3fed8e05203e2b7f7d43a"
+          }
+        },
+        {
+          "duplicate": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode12\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "f7b6685cf738390474f1fa85320df313e39eb469bf0af22dea10c3c016edc06c"
+          },
+          "accepted": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode12\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "f7b6685cf738390474f1fa85320df313e39eb469bf0af22dea10c3c016edc06c"
+          }
+        },
+        {
+          "duplicate": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode12\\logits.f32",
+            "bytes": 993280,
+            "sha256": "372a79e6f28a730945c45b223bb2a7958ea0d1967e57b8586ff08b4804d54eed"
+          },
+          "accepted": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode12\\logits.f32",
+            "bytes": 993280,
+            "sha256": "372a79e6f28a730945c45b223bb2a7958ea0d1967e57b8586ff08b4804d54eed"
+          }
+        },
+        {
+          "duplicate": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode13\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "a9d03c31ab0682e9cb017af1eba6e9872778715bea080c5bad77122e4b50a2d6"
+          },
+          "accepted": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode13\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "a9d03c31ab0682e9cb017af1eba6e9872778715bea080c5bad77122e4b50a2d6"
+          }
+        },
+        {
+          "duplicate": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode13\\logits.f32",
+            "bytes": 993280,
+            "sha256": "534e20e20dfc7419d234026daa156c0ea2a8cd7d0b81d7394562679b931932b4"
+          },
+          "accepted": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode13\\logits.f32",
+            "bytes": 993280,
+            "sha256": "534e20e20dfc7419d234026daa156c0ea2a8cd7d0b81d7394562679b931932b4"
+          }
+        },
+        {
+          "duplicate": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode14\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "25d9877095a26bb7e6c6c2419cb0e182a01b6cd9e40f0bb769c42fcb34fc2dfb"
+          },
+          "accepted": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode14\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "25d9877095a26bb7e6c6c2419cb0e182a01b6cd9e40f0bb769c42fcb34fc2dfb"
+          }
+        },
+        {
+          "duplicate": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode14\\logits.f32",
+            "bytes": 993280,
+            "sha256": "52722aedd166038381d5c6732855b3c73804e7f32db14403edaa1fe619ab8e71"
+          },
+          "accepted": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode14\\logits.f32",
+            "bytes": 993280,
+            "sha256": "52722aedd166038381d5c6732855b3c73804e7f32db14403edaa1fe619ab8e71"
+          }
+        },
+        {
+          "duplicate": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode15\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "be0704805ca7c78aa081b4ac85dd9a017010c913b9260fb1d2f591f0994370e7"
+          },
+          "accepted": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode15\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "be0704805ca7c78aa081b4ac85dd9a017010c913b9260fb1d2f591f0994370e7"
+          }
+        },
+        {
+          "duplicate": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode15\\logits.f32",
+            "bytes": 993280,
+            "sha256": "6c804d67822906c715a8238c52507f61ffa0c62057eb7bac124253ab56b57f84"
+          },
+          "accepted": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode15\\logits.f32",
+            "bytes": 993280,
+            "sha256": "6c804d67822906c715a8238c52507f61ffa0c62057eb7bac124253ab56b57f84"
+          }
+        },
+        {
+          "duplicate": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode16\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "db38845e211bf589a3a41f9beee7610a37538b9d015df79d7a86744a245b5d09"
+          },
+          "accepted": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode16\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "db38845e211bf589a3a41f9beee7610a37538b9d015df79d7a86744a245b5d09"
+          }
+        },
+        {
+          "duplicate": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode16\\logits.f32",
+            "bytes": 993280,
+            "sha256": "65abecf3cc29af92f817b3cd91cbccd155362a92e779be9c81e77341d9709ea0"
+          },
+          "accepted": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode16\\logits.f32",
+            "bytes": 993280,
+            "sha256": "65abecf3cc29af92f817b3cd91cbccd155362a92e779be9c81e77341d9709ea0"
+          }
+        },
+        {
+          "duplicate": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode17\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "ee49ec44b74f98a437c9df25aa3add98bc3247475b2605f16efa8b964c5451f6"
+          },
+          "accepted": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode17\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "ee49ec44b74f98a437c9df25aa3add98bc3247475b2605f16efa8b964c5451f6"
+          }
+        },
+        {
+          "duplicate": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode17\\logits.f32",
+            "bytes": 993280,
+            "sha256": "ad8067b76a35214374e5e585c9671654c547c9a4f4e79bb6b4b589bdfa83b845"
+          },
+          "accepted": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode17\\logits.f32",
+            "bytes": 993280,
+            "sha256": "ad8067b76a35214374e5e585c9671654c547c9a4f4e79bb6b4b589bdfa83b845"
+          }
+        },
+        {
+          "duplicate": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode18\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "d1336e9f037dea6d1a28d519b2300686825b1666ccad9972d9667b91769a97f5"
+          },
+          "accepted": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode18\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "d1336e9f037dea6d1a28d519b2300686825b1666ccad9972d9667b91769a97f5"
+          }
+        },
+        {
+          "duplicate": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode18\\logits.f32",
+            "bytes": 993280,
+            "sha256": "500ce9be766ecde9d75c2ed2f7ac0f9b6401806288bd9e545f4227e27c9795a2"
+          },
+          "accepted": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode18\\logits.f32",
+            "bytes": 993280,
+            "sha256": "500ce9be766ecde9d75c2ed2f7ac0f9b6401806288bd9e545f4227e27c9795a2"
+          }
+        },
+        {
+          "duplicate": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode19\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "72de0d12d75275391252ae195d2b2b19f4d3a234095e2e988ba12455fbe3cf7c"
+          },
+          "accepted": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode19\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "72de0d12d75275391252ae195d2b2b19f4d3a234095e2e988ba12455fbe3cf7c"
+          }
+        },
+        {
+          "duplicate": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode19\\logits.f32",
+            "bytes": 993280,
+            "sha256": "35be9bd7e307d44e2929605be12977d985b8818af81fcdd59259163b7a748002"
+          },
+          "accepted": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode19\\logits.f32",
+            "bytes": 993280,
+            "sha256": "35be9bd7e307d44e2929605be12977d985b8818af81fcdd59259163b7a748002"
+          }
+        },
+        {
+          "duplicate": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode2\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "f6d075ad86e2e0550617e6dfd6201ae335228ee6808ab8ae8bb3681159663424"
+          },
+          "accepted": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode2\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "f6d075ad86e2e0550617e6dfd6201ae335228ee6808ab8ae8bb3681159663424"
+          }
+        },
+        {
+          "duplicate": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode2\\logits.f32",
+            "bytes": 993280,
+            "sha256": "772199ca4b0550c00635c25bd8036a9b5334cb0c22bb79ce86f6fbd81520df67"
+          },
+          "accepted": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode2\\logits.f32",
+            "bytes": 993280,
+            "sha256": "772199ca4b0550c00635c25bd8036a9b5334cb0c22bb79ce86f6fbd81520df67"
+          }
+        },
+        {
+          "duplicate": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode20\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "43c03820fa5f5b838cd5992205b52f44f12fd82c5585698eb08197f48713cb6f"
+          },
+          "accepted": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode20\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "43c03820fa5f5b838cd5992205b52f44f12fd82c5585698eb08197f48713cb6f"
+          }
+        },
+        {
+          "duplicate": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode20\\logits.f32",
+            "bytes": 993280,
+            "sha256": "aa2082864e5999cce1e72d98d71f1a34f0b59bfbf9a728aba621cce2e25b644f"
+          },
+          "accepted": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode20\\logits.f32",
+            "bytes": 993280,
+            "sha256": "aa2082864e5999cce1e72d98d71f1a34f0b59bfbf9a728aba621cce2e25b644f"
+          }
+        },
+        {
+          "duplicate": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode21\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "f8188e3da86374d7e412e99e95ebbeb5b542392318adad6c4fe4be6849dbb026"
+          },
+          "accepted": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode21\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "f8188e3da86374d7e412e99e95ebbeb5b542392318adad6c4fe4be6849dbb026"
+          }
+        },
+        {
+          "duplicate": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode21\\logits.f32",
+            "bytes": 993280,
+            "sha256": "d10c058ee22da65190fb9d9c04997754b8484607f6202283f3b89416be4d2580"
+          },
+          "accepted": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode21\\logits.f32",
+            "bytes": 993280,
+            "sha256": "d10c058ee22da65190fb9d9c04997754b8484607f6202283f3b89416be4d2580"
+          }
+        },
+        {
+          "duplicate": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode22\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "d6ae658866d9358580e704e5374fec7acf9f66eddb5895a4d09917a7f7f20022"
+          },
+          "accepted": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode22\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "d6ae658866d9358580e704e5374fec7acf9f66eddb5895a4d09917a7f7f20022"
+          }
+        },
+        {
+          "duplicate": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode22\\logits.f32",
+            "bytes": 993280,
+            "sha256": "96a33dcc9a7b11ab9fa4720a945007c5dac2c4f660cfb04cbcaa77d9fcaf0e9f"
+          },
+          "accepted": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode22\\logits.f32",
+            "bytes": 993280,
+            "sha256": "96a33dcc9a7b11ab9fa4720a945007c5dac2c4f660cfb04cbcaa77d9fcaf0e9f"
+          }
+        },
+        {
+          "duplicate": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode23\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "eb27d0449a834afd98899067feb7ceb33f37f1819e21ff63ac668654c90a8d5a"
+          },
+          "accepted": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode23\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "eb27d0449a834afd98899067feb7ceb33f37f1819e21ff63ac668654c90a8d5a"
+          }
+        },
+        {
+          "duplicate": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode23\\logits.f32",
+            "bytes": 993280,
+            "sha256": "dc53f76f793be5e01854f437be46a71985a53861042b08220a8b1e49528b21a0"
+          },
+          "accepted": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode23\\logits.f32",
+            "bytes": 993280,
+            "sha256": "dc53f76f793be5e01854f437be46a71985a53861042b08220a8b1e49528b21a0"
+          }
+        },
+        {
+          "duplicate": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode24\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "1b55a229ef3ada9232b7f590977fce3c3b2b7ee56932ceadd8c16f05201a35a1"
+          },
+          "accepted": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode24\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "1b55a229ef3ada9232b7f590977fce3c3b2b7ee56932ceadd8c16f05201a35a1"
+          }
+        },
+        {
+          "duplicate": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode24\\logits.f32",
+            "bytes": 993280,
+            "sha256": "04903c42456b5d223ce673d73794e0aa88a5da810bd58f054cdff7db57bc354c"
+          },
+          "accepted": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode24\\logits.f32",
+            "bytes": 993280,
+            "sha256": "04903c42456b5d223ce673d73794e0aa88a5da810bd58f054cdff7db57bc354c"
+          }
+        },
+        {
+          "duplicate": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode25\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "386adc36e11cae2a75fbb2e3fe8b66dfe37d9a6b4d5fd5e73c67f287625b34bd"
+          },
+          "accepted": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode25\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "386adc36e11cae2a75fbb2e3fe8b66dfe37d9a6b4d5fd5e73c67f287625b34bd"
+          }
+        },
+        {
+          "duplicate": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode25\\logits.f32",
+            "bytes": 993280,
+            "sha256": "079091277422cd9c20aee9d03a3672ac7223d48ffb8f9fb0869b5434740f244b"
+          },
+          "accepted": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode25\\logits.f32",
+            "bytes": 993280,
+            "sha256": "079091277422cd9c20aee9d03a3672ac7223d48ffb8f9fb0869b5434740f244b"
+          }
+        },
+        {
+          "duplicate": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode26\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "9ad10d1bc33b02b2ee0bf1df056087f84eb510871bfe4af278e895b3eede0419"
+          },
+          "accepted": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode26\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "9ad10d1bc33b02b2ee0bf1df056087f84eb510871bfe4af278e895b3eede0419"
+          }
+        },
+        {
+          "duplicate": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode26\\logits.f32",
+            "bytes": 993280,
+            "sha256": "0ddbec9ca8cb287be9d9dd415e4d7baf53175d100d309a4d3014eb690430270e"
+          },
+          "accepted": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode26\\logits.f32",
+            "bytes": 993280,
+            "sha256": "0ddbec9ca8cb287be9d9dd415e4d7baf53175d100d309a4d3014eb690430270e"
+          }
+        },
+        {
+          "duplicate": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode27\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "11126f85e99889de5700986061d56f2759ff5b0eea94bb2636a36707ae2df606"
+          },
+          "accepted": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode27\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "11126f85e99889de5700986061d56f2759ff5b0eea94bb2636a36707ae2df606"
+          }
+        },
+        {
+          "duplicate": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode27\\logits.f32",
+            "bytes": 993280,
+            "sha256": "ea0c1a5585e84ee37096cf8fb2c531784c352bf43e270bf80bd954bd60e459ef"
+          },
+          "accepted": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode27\\logits.f32",
+            "bytes": 993280,
+            "sha256": "ea0c1a5585e84ee37096cf8fb2c531784c352bf43e270bf80bd954bd60e459ef"
+          }
+        },
+        {
+          "duplicate": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode28\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "5b81866d1c8c9d4e282e45025e1b4d4010878e4f367b14ef2d6a08fc27c85c6e"
+          },
+          "accepted": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode28\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "5b81866d1c8c9d4e282e45025e1b4d4010878e4f367b14ef2d6a08fc27c85c6e"
+          }
+        },
+        {
+          "duplicate": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode28\\logits.f32",
+            "bytes": 993280,
+            "sha256": "75083b3b88af9047012de440d3e42c05eb1baa96763f888eddd134da287b8538"
+          },
+          "accepted": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode28\\logits.f32",
+            "bytes": 993280,
+            "sha256": "75083b3b88af9047012de440d3e42c05eb1baa96763f888eddd134da287b8538"
+          }
+        },
+        {
+          "duplicate": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode29\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "b92b40b4fd571a637b2ef95b1634470d63d1ea628f45ce0a117c7a32afe76eb8"
+          },
+          "accepted": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode29\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "b92b40b4fd571a637b2ef95b1634470d63d1ea628f45ce0a117c7a32afe76eb8"
+          }
+        },
+        {
+          "duplicate": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode29\\logits.f32",
+            "bytes": 993280,
+            "sha256": "10e0712c92ed33298e2dd4a5919bd714cef9bb74cb53b19780dbfd2856c791e0"
+          },
+          "accepted": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode29\\logits.f32",
+            "bytes": 993280,
+            "sha256": "10e0712c92ed33298e2dd4a5919bd714cef9bb74cb53b19780dbfd2856c791e0"
+          }
+        },
+        {
+          "duplicate": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode3\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "227c7e6548e2159393ddf350d7dfbd1dda87040994ade315075c005ce7798889"
+          },
+          "accepted": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode3\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "227c7e6548e2159393ddf350d7dfbd1dda87040994ade315075c005ce7798889"
+          }
+        },
+        {
+          "duplicate": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode3\\logits.f32",
+            "bytes": 993280,
+            "sha256": "aff61c4c7ec366a0b25cf583427df267859aca70ab3c9e264268a30f2d45f3d4"
+          },
+          "accepted": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode3\\logits.f32",
+            "bytes": 993280,
+            "sha256": "aff61c4c7ec366a0b25cf583427df267859aca70ab3c9e264268a30f2d45f3d4"
+          }
+        },
+        {
+          "duplicate": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode30\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "ca725572fbf8c186b9bc0c5662173d8ad7dae136b179587657ea87029eb1349f"
+          },
+          "accepted": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode30\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "ca725572fbf8c186b9bc0c5662173d8ad7dae136b179587657ea87029eb1349f"
+          }
+        },
+        {
+          "duplicate": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode30\\logits.f32",
+            "bytes": 993280,
+            "sha256": "42d688f93ec3ae1e4c920fa3a22b1169f1050d0eec291e5b69aa51b54b24e11d"
+          },
+          "accepted": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode30\\logits.f32",
+            "bytes": 993280,
+            "sha256": "42d688f93ec3ae1e4c920fa3a22b1169f1050d0eec291e5b69aa51b54b24e11d"
+          }
+        },
+        {
+          "duplicate": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode31\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "886b6f71fcbbcf3f95dc61f7873e43f245f40a4d967d0c2401205fbba52bd95e"
+          },
+          "accepted": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode31\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "886b6f71fcbbcf3f95dc61f7873e43f245f40a4d967d0c2401205fbba52bd95e"
+          }
+        },
+        {
+          "duplicate": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode31\\logits.f32",
+            "bytes": 993280,
+            "sha256": "6619c64b58de04545169513c926b852f92822fb64ae0b22fc7efbd9cf8842887"
+          },
+          "accepted": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode31\\logits.f32",
+            "bytes": 993280,
+            "sha256": "6619c64b58de04545169513c926b852f92822fb64ae0b22fc7efbd9cf8842887"
+          }
+        },
+        {
+          "duplicate": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode4\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "f7d8474a362ca19268b3481791345307fee1026f0a4c871e1227ce3315e7021e"
+          },
+          "accepted": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode4\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "f7d8474a362ca19268b3481791345307fee1026f0a4c871e1227ce3315e7021e"
+          }
+        },
+        {
+          "duplicate": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode4\\logits.f32",
+            "bytes": 993280,
+            "sha256": "0ab4e55caa9276fd56d4353c36121014f07342989b570eb9c3f7dfddc21a2bba"
+          },
+          "accepted": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode4\\logits.f32",
+            "bytes": 993280,
+            "sha256": "0ab4e55caa9276fd56d4353c36121014f07342989b570eb9c3f7dfddc21a2bba"
+          }
+        },
+        {
+          "duplicate": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode5\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "850b8196a3ee12fb1ef0f4f71a37155b3b4b394053b616603d33457b3d0c8a19"
+          },
+          "accepted": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode5\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "850b8196a3ee12fb1ef0f4f71a37155b3b4b394053b616603d33457b3d0c8a19"
+          }
+        },
+        {
+          "duplicate": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode5\\logits.f32",
+            "bytes": 993280,
+            "sha256": "ebb26764856c828fae8d95a751837b1af2fc6101e9207cfa3bdaa0fdea3c7a1e"
+          },
+          "accepted": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode5\\logits.f32",
+            "bytes": 993280,
+            "sha256": "ebb26764856c828fae8d95a751837b1af2fc6101e9207cfa3bdaa0fdea3c7a1e"
+          }
+        },
+        {
+          "duplicate": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode6\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "1f04b58f50a488b9599eabf6b360ede1b3e3205fe9f1fd44b2d86dd25adf4484"
+          },
+          "accepted": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode6\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "1f04b58f50a488b9599eabf6b360ede1b3e3205fe9f1fd44b2d86dd25adf4484"
+          }
+        },
+        {
+          "duplicate": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode6\\logits.f32",
+            "bytes": 993280,
+            "sha256": "cbda8781111c0ca4ad618ae56c2d840974152770d2d5474c43498bd0e81e2a84"
+          },
+          "accepted": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode6\\logits.f32",
+            "bytes": 993280,
+            "sha256": "cbda8781111c0ca4ad618ae56c2d840974152770d2d5474c43498bd0e81e2a84"
+          }
+        },
+        {
+          "duplicate": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode7\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "db84650d85f3c3fea8e4c3d4bf891b1fc01a65aad3f7807e8eef53315f7723f2"
+          },
+          "accepted": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode7\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "db84650d85f3c3fea8e4c3d4bf891b1fc01a65aad3f7807e8eef53315f7723f2"
+          }
+        },
+        {
+          "duplicate": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode7\\logits.f32",
+            "bytes": 993280,
+            "sha256": "8c90db2481c2110453c52633a8b3153fe37391085de09fb4e5a0943adfe396c1"
+          },
+          "accepted": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode7\\logits.f32",
+            "bytes": 993280,
+            "sha256": "8c90db2481c2110453c52633a8b3153fe37391085de09fb4e5a0943adfe396c1"
+          }
+        },
+        {
+          "duplicate": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode8\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "4ba5e0f90d2c22025d9136092d03307914b18795082217cd34d4aec5c85dfdd6"
+          },
+          "accepted": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode8\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "4ba5e0f90d2c22025d9136092d03307914b18795082217cd34d4aec5c85dfdd6"
+          }
+        },
+        {
+          "duplicate": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode8\\logits.f32",
+            "bytes": 993280,
+            "sha256": "db08f2c1bdd302459dd6151dea7de3d6f37b431d7dfaf3cf191b9ada82858745"
+          },
+          "accepted": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode8\\logits.f32",
+            "bytes": 993280,
+            "sha256": "db08f2c1bdd302459dd6151dea7de3d6f37b431d7dfaf3cf191b9ada82858745"
+          }
+        },
+        {
+          "duplicate": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode9\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "e9852a023ec1982b1258a0042712d1abd868575fc9f968798be75da2cd9fdc5a"
+          },
+          "accepted": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode9\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "e9852a023ec1982b1258a0042712d1abd868575fc9f968798be75da2cd9fdc5a"
+          }
+        },
+        {
+          "duplicate": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\decode9\\logits.f32",
+            "bytes": 993280,
+            "sha256": "e19784e9cb938d33e1a6508bacca54fb44b8807c41f091cdf8b401c161da6cb9"
+          },
+          "accepted": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\decode9\\logits.f32",
+            "bytes": 993280,
+            "sha256": "e19784e9cb938d33e1a6508bacca54fb44b8807c41f091cdf8b401c161da6cb9"
+          }
+        },
+        {
+          "duplicate": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\prefill\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "441f8e0eea6b8deea8b640bb76efc9dcc1267f3ee4de9e936bcc9fa9110a8ee1"
+          },
+          "accepted": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\prefill\\hidden.bf16",
+            "bytes": 4096,
+            "sha256": "441f8e0eea6b8deea8b640bb76efc9dcc1267f3ee4de9e936bcc9fa9110a8ee1"
+          }
+        },
+        {
+          "duplicate": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\projected-bind-cold-index\\correctness\\trace\\prefill\\logits.f32",
+            "bytes": 993280,
+            "sha256": "3f9f6f36cbefdeae7dc1e5e89b8af0729c2d9d6f59dab28e040a4771d9609b43"
+          },
+          "accepted": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\batch-graph-capture\\correctness-final\\trace\\prefill\\logits.f32",
+            "bytes": 993280,
+            "sha256": "3f9f6f36cbefdeae7dc1e5e89b8af0729c2d9d6f59dab28e040a4771d9609b43"
+          }
+        }
+      ],
+      "removed_bytes": 402227588,
+      "description": "Superseded images and duplicate verified vectors only. Keep all objects/libraries, current three images, immediate paired baseline, peer and original64."
+    },
+    "executed": true,
+    "actual": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\projected-bind-cold-index-2026-10-20.cleanup.json",
+      "bytes": 63269,
+      "sha256": "c6095a5970501454606763cec87a08517b837217b7efa216f2aae9743833b60e"
+    },
+    "removed_bytes": 402227588
+  },
+  "limits": [
+    "Static topology scan complexity was removed; whole-bind/page/lease checks retain their live costs.",
+    "No new throughput, model-quality, Linux/macOS runtime or overall architecture-completion claim.",
+    "Private PlanState ABI owners were refreshed only for the actual three linked images; all SDK/native kernels and consumer main were reused."
+  ]
+}

@@ -1,0 +1,277 @@
+{
+  "created_at": "2026-10-23T20:12:00.617478+00:00",
+  "identity": {
+    "id": "Q09",
+    "repository": "cyankiwi/Qwen3.8-27B-AWQ-INT4",
+    "revision": "6e134bae811fb5adac50ee042ae5f029ac6779aa",
+    "variant": "compressed-tensors-asymmetric4-group32"
+  },
+  "scope": "Original target63/global norm, BF16 NextN64 and own untied original full vocabulary; same K1/12-resource StateHead and actual accepted-prefix repair/pending continuation.",
+  "original_roles": 50,
+  "original_bytes": 6150228080,
+  "executions": [
+    {
+      "backend": "cpu",
+      "case": "QwenMtpStateConsumer.CpuQ09OriginalCtAsymmetricTargetAndBFloatNextNFullVocabularyVerifierPublishesRepairedPrefix",
+      "tests": 1,
+      "failures": 0,
+      "skips": 0,
+      "graphs": 23,
+      "properties": {
+        "target_layer": "63",
+        "target_group_size": "32",
+        "target_shape_metadata_roles": "7",
+        "original_manifest_sha256": "91a0458cd7a7242bcb515cdbffe85edbc85c06704109cf1f76326dcab697d3e5",
+        "original_acquisition_sha256": "60d72be81d2598cf5f1f660627d457f303b803269ff5f1acbcfd4941b8f4d7e4",
+        "target_projection_contract": "original CT asymmetric codes/Z/BF16 SF; no GPTQ zero+1/F16 store or AWQ-GEMM4 layout; BF16 A/F32 accumulation/BF16 result; seven three-node packed contractions required",
+        "vocabulary_binding": "two original untied BF16 banks; actual embedding for Gather and independent original head for draft/target fullV logits",
+        "artifact_repository": "cyankiwi/Qwen3.8-27B-AWQ-INT4",
+        "artifact_revision": "6e134bae811fb5adac50ee042ae5f029ac6779aa",
+        "artifact_variant": "compressed-tensors-asymmetric4-group32",
+        "original_role_count": "50",
+        "original_role_bytes": "6150228080",
+        "full_head_provider": "ggml-cpu",
+        "full_head_encoded_bytes": "2542796800",
+        "target_packed_contractions": "7",
+        "target_packed_recipe_nodes": "3",
+        "target_dense_weight_materializations": "0",
+        "actual_submissions": "23",
+        "target_submissions": "10",
+        "nextn_submissions": "10",
+        "target_verifier_submissions": "3",
+        "accepted_target_conditioned_repairs": "1",
+        "actual_accepted_kv_repair_submissions": "1",
+        "accepted_zero_drafts": "2",
+        "accepted_one_draft": "1",
+        "actual_pending_embedding_feedback_checks": "10",
+        "whole_state_publications": "6",
+        "cancelled_unpublished_drafts": "3",
+        "rejected_stale_publishes": "3",
+        "actual_target_reseed_checks": "7",
+        "original_native_reference_submissions": "0",
+        "natural_k1_trials": "1",
+        "controlled_matching_trials": "1",
+        "controlled_rejection_trials": "1",
+        "natural_accepted_drafts": "0",
+        "natural_proposal": "5",
+        "complete_target_draft_resources": "12",
+        "original_target_roles": "26",
+        "original_target_source_bytes": "215235584",
+        "first_full_target_projection_values": "59392",
+        "first_full_target_verifier_values": "496640",
+        "target_verifier_full_vocabulary": "248320",
+        "target_verifier_matmuls": "1",
+        "target_verifier_rows": "2",
+        "target_verifier_provider": "ggml-cpu",
+        "first_full_nextn_head_values": "248320",
+        "state_budget_bytes": "28248320",
+        "peak_state_backing_bytes": "28191748",
+        "scope": "original CompressedTensors asymmetric4 target layer and complete BF16 NextN with explicitly supplied original BF16 vocabulary roles; upstream target input/history fixture,not a full trained trunk; original BF16 scale/product, BF16 A/F32 accumulation/BF16 return; seven three-node packed recipes without whole-W materialization; original I64 shape metadata checked separately; draft/target use their explicitly supplied original vocabulary contracts; targettap follows globalnorm and shifts to next-token NextN input; one M2 verifier,natural K1 and separate actualTop1/Top2 controls; accept0 keeps aftercurrent,accept1 repairs recursive draft KV with actualtargettap before12member sameHead publication; no full-model quality,natural acceptance-rate or TPS claim"
+      },
+      "summary": {
+        "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q09/native-integration/checks1/summary.json",
+        "bytes": 9754,
+        "sha256": "a0c9cc7a86e32157b6e2d5e1805a800654fd7af301fa6fa4d28ee68f7b1e6fde"
+      },
+      "xml": {
+        "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q09/native-integration/checks1/results.xml",
+        "bytes": 5176,
+        "sha256": "f53b055299eb54db9da4b3b5122e6c03766102de1a6d06c0a782ce235d340acd"
+      },
+      "process": {
+        "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q09/native-integration/checks1/run/process.json",
+        "bytes": 848,
+        "sha256": "721100a4045cce0c2bfe878f4a651541667b3a0b54f467d933e3bbee5c316082"
+      },
+      "cleanup": {
+        "process_terminal_exit": 0,
+        "timed_out": false,
+        "driver": null,
+        "external_supplier": false,
+        "resource_peak_measurement": false
+      }
+    },
+    {
+      "backend": "cuda",
+      "case": "QwenMtpStateConsumer.CudaQ09OriginalCtAsymmetricTargetAndBFloatNextNFullVocabularyVerifierPublishesRepairedPrefix",
+      "tests": 1,
+      "failures": 0,
+      "skips": 0,
+      "graphs": 23,
+      "properties": {
+        "target_layer": "63",
+        "target_group_size": "32",
+        "target_shape_metadata_roles": "7",
+        "original_manifest_sha256": "91a0458cd7a7242bcb515cdbffe85edbc85c06704109cf1f76326dcab697d3e5",
+        "original_acquisition_sha256": "60d72be81d2598cf5f1f660627d457f303b803269ff5f1acbcfd4941b8f4d7e4",
+        "target_projection_contract": "original CT asymmetric codes/Z/BF16 SF; no GPTQ zero+1/F16 store or AWQ-GEMM4 layout; BF16 A/F32 accumulation/BF16 result; seven three-node packed contractions required",
+        "vocabulary_binding": "two original untied BF16 banks; actual embedding for Gather and independent original head for draft/target fullV logits",
+        "artifact_repository": "cyankiwi/Qwen3.8-27B-AWQ-INT4",
+        "artifact_revision": "6e134bae811fb5adac50ee042ae5f029ac6779aa",
+        "artifact_variant": "compressed-tensors-asymmetric4-group32",
+        "original_role_count": "50",
+        "original_role_bytes": "6150228080",
+        "full_head_provider": "cublasLt",
+        "full_head_encoded_bytes": "2542796800",
+        "target_packed_contractions": "7",
+        "target_packed_recipe_nodes": "3",
+        "target_dense_weight_materializations": "0",
+        "actual_submissions": "23",
+        "target_submissions": "10",
+        "nextn_submissions": "10",
+        "target_verifier_submissions": "3",
+        "accepted_target_conditioned_repairs": "1",
+        "actual_accepted_kv_repair_submissions": "1",
+        "accepted_zero_drafts": "2",
+        "accepted_one_draft": "1",
+        "actual_pending_embedding_feedback_checks": "10",
+        "whole_state_publications": "6",
+        "cancelled_unpublished_drafts": "3",
+        "rejected_stale_publishes": "3",
+        "actual_target_reseed_checks": "7",
+        "original_native_reference_submissions": "0",
+        "natural_k1_trials": "1",
+        "controlled_matching_trials": "1",
+        "controlled_rejection_trials": "1",
+        "natural_accepted_drafts": "0",
+        "natural_proposal": "5",
+        "complete_target_draft_resources": "12",
+        "original_target_roles": "26",
+        "original_target_source_bytes": "215235584",
+        "first_full_target_projection_values": "59392",
+        "first_full_target_verifier_values": "496640",
+        "target_verifier_full_vocabulary": "248320",
+        "target_verifier_matmuls": "1",
+        "target_verifier_rows": "2",
+        "target_verifier_provider": "cublasLt",
+        "first_full_nextn_head_values": "248320",
+        "state_budget_bytes": "28248320",
+        "peak_state_backing_bytes": "28191748",
+        "scope": "original CompressedTensors asymmetric4 target layer and complete BF16 NextN with explicitly supplied original BF16 vocabulary roles; upstream target input/history fixture,not a full trained trunk; original BF16 scale/product, BF16 A/F32 accumulation/BF16 return; seven three-node packed recipes without whole-W materialization; original I64 shape metadata checked separately; draft/target use their explicitly supplied original vocabulary contracts; targettap follows globalnorm and shifts to next-token NextN input; one M2 verifier,natural K1 and separate actualTop1/Top2 controls; accept0 keeps aftercurrent,accept1 repairs recursive draft KV with actualtargettap before12member sameHead publication; no full-model quality,natural acceptance-rate or TPS claim"
+      },
+      "summary": {
+        "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q09/native-integration/checks2/summary.json",
+        "bytes": 9758,
+        "sha256": "e18c33031f7c5a81700662e929196914d48340683975030c74150efa8d55a450"
+      },
+      "xml": {
+        "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q09/native-integration/checks2/results.xml",
+        "bytes": 5177,
+        "sha256": "2a672b03bc185a809cedf82e642b52083f98b93288c1d5f20102febcc2fb38b4"
+      },
+      "process": {
+        "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q09/native-integration/checks2/run/process.json",
+        "bytes": 850,
+        "sha256": "74fd8680f3cc4f460c4ced28b78493e986bc518f1f7ed69562ff8f099306eaa5"
+      },
+      "cleanup": {
+        "process_terminal_exit": 0,
+        "timed_out": false,
+        "driver": null,
+        "external_supplier": false,
+        "resource_peak_measurement": false
+      }
+    }
+  ],
+  "cases": 2,
+  "graphs": 46,
+  "failures": 0,
+  "skips": 0,
+  "target_precision": "Original CT asymmetric I32 codes/zeros, BF16 scales and authenticated I64(N,K); no zero+1, F16 scale store, g_idx or AWQ-GEMM4 substitution. BF16 A/F32 accumulation/BF16 output.",
+  "target_packed_contractions_each": 7,
+  "target_packed_recipe_nodes": 3,
+  "dense_weight_materializations": 0,
+  "source_plan": {
+    "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q09/roles-plan.json",
+    "bytes": 37084,
+    "sha256": "de024cbff3441dcf45babf8e6a0c088edfbf88a6d63fa6700a61f2fe61651db3"
+  },
+  "acquisition": {
+    "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q09/original-roles/acquisition.json",
+    "bytes": 704654,
+    "sha256": "60d72be81d2598cf5f1f660627d457f303b803269ff5f1acbcfd4941b8f4d7e4"
+  },
+  "manifest": {
+    "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q09/original-roles/manifest.json",
+    "bytes": 26618,
+    "sha256": "91a0458cd7a7242bcb515cdbffe85edbc85c06704109cf1f76326dcab697d3e5"
+  },
+  "actual_pins": {
+    "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q09/generated/qwen_q09_original_pins.json",
+    "bytes": 1110,
+    "sha256": "7549b633be7fb9f8445441292a8c59244b14f72786e1fdcce1d89bd039600646"
+  },
+  "source_partition": {
+    "nextn": {
+      "roles": 15,
+      "bytes": 849398784
+    },
+    "vocabulary": {
+      "roles": 2,
+      "bytes": 5085593600
+    },
+    "target": {
+      "roles": 32,
+      "bytes": 215225456
+    },
+    "target_norm": {
+      "roles": 1,
+      "bytes": 10240
+    }
+  },
+  "original_vocabulary": {
+    "embedding": "model.language_model.embed_tokens.weight",
+    "head": "lm_head.weight",
+    "unique_banks": 2
+  },
+  "original_weight_bodies_rehashed": false,
+  "build": {
+    "consumer_translation_units": 1,
+    "SDK_builds": 0,
+    "NVCC_builds": 0,
+    "product_recompiles": 0,
+    "compiled": {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q09/native-integration/compile1/qwen-state/identity.json",
+      "bytes": 115064,
+      "sha256": "2ea73ee5fc4353514508efbe41b3fb996c41c24da0625ce17fcab2997a9eb853"
+    },
+    "linked": {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q09/native-integration/tests-link1/link-plan.json",
+      "bytes": 99882,
+      "sha256": "c2b25f9e2129b2f7dab06bb52b282a6cfceae5aee579e3ab176b45fb1c6a1890"
+    },
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-bfloat-selected-20261023\\derived\\Q09\\native-integration\\tests-link1\\qwen-derived-checks.exe",
+      "bytes": 141308928,
+      "sha256": "3e4de6290b9829f1fa3b7f683dfaf2cdf459b59a037f10ad53a4afb6d940e7db"
+    },
+    "current_helper": {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/native_build_current.py",
+      "bytes": 12787,
+      "sha256": "fc0bea30eabdf82286447fe29549bcf430204958c886007fb0963237ce764eb8"
+    },
+    "retained_host_records": 131,
+    "native_inputs": {
+      "path": ".scratch/glm-gguf-selected-20261023/B10/native-integration/native-inputs.json",
+      "bytes": 11796,
+      "sha256": "95c04ed7499348ba46922e0c8061734c3c22ef537ed4a0513ae2558f20b46ca0"
+    },
+    "source_family": "Current ABI18 Graph/default-provider closure and correct mixed-owning CPU worker; no old13-host lifecycle"
+  },
+  "transport_metadata": [],
+  "transport_note": "Actual selected Range/SHA receipts are retained; ETag identifies the remote object and is not asserted as whole-file content SHA. No body/shard rehash, no new transfer or SDK copy by publisher.",
+  "limits": [
+    "Upstream layer62 inputs and finite initial histories remain fixtures; not full trained trunk/model task quality.",
+    "Natural K1 trial and controlled match/rejection trials are separate; not an acceptance-rate estimate.",
+    "No new TPS, physical memory peak, all-device, Linux or Apple conclusion."
+  ],
+  "archive": {
+    "path": "docs/evidence/correctness/mtp-qwen27-ct-asymmetric-target-verifier-2026-10-24.zip",
+    "bytes": 647043,
+    "sha256": "6ccc7843d9b69f0494662236888b78a46063eaa05de3151731a485c49cda26e5"
+  },
+  "archived_files": 132,
+  "whole_original_model": false,
+  "throughput_evidence": false,
+  "memory_evidence": false
+}

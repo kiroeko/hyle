@@ -25,6 +25,11 @@ enum class MemoryProperty : std::uint32_t {
   kManaged = 1u << 4,
   kExportable = 1u << 5,
   kPersistent = 1u << 6,
+  // map_host exposes the exact range at a stable canonical process CPU byte
+  // address. The coordinate remains valid while the allocation is alive,
+  // including after unmap; overlapping wrappers/aliases expose overlapping
+  // coordinates. Host accessibility/coherence alone does not prove identity.
+  kHostAddressIdentity = 1u << 7,
 };
 
 constexpr MemoryProperty operator|(MemoryProperty left,

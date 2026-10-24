@@ -125,6 +125,14 @@ class DevelopmentCommandsTest(unittest.TestCase):
             with self.subTest(empty_option=option):
                 self.assertNotEqual(self.invoke("init", option, "", "--dry-run")[0], 0)
 
+    def test_file_service_passes_its_backend_without_full_math_restrictions(self):
+        with patch.object(support, "_host", return_value=("Linux", "aarch64")):
+            self.succeeds("init", "--components", "compute_stream", "--backends", "cuda")
+            cache = support.read_cache(self.selected())
+            self.assertEqual(cache["HYLE_COMPONENTS"], "compute_stream")
+            self.assertEqual(cache["HYLE_COMPUTE_ROUTES"], "cuda")
+            self.assertNotEqual(self.invoke("init", "--components", "compute", "--backends", "cuda")[0], 0)
+
     def test_default_cpu_shared_configuration_reuses_its_directory(self):
         for _ in range(2):
             self.succeeds("init", "--components", "compute,graph")

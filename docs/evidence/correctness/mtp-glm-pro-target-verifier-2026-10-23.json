@@ -1,0 +1,1080 @@
+{
+  "date": "2026-10-23",
+  "stage": "CA-GLM-target77",
+  "goal_complete": false,
+  "conclusion": "Actual Windows CPU/CUDA original target77 to original NextN78/full-V verifier passed; the original78-only CPU/CUDA consumers also passed on the same linked image.",
+  "artifact": {
+    "repository": "zai-org/GLM-5.3",
+    "revision": "aca966e4e02791568aa6a4ced368624b3d897f42",
+    "hf": "https://huggingface.co/zai-org/GLM-5.3/tree/aca966e4e02791568aa6a4ced368624b3d897f42",
+    "target": {
+      "layer": 77,
+      "static_receipt": {
+        "path": ".scratch/glm-pro-target77-20261023/original-static/acquisition.json",
+        "bytes": 27925,
+        "sha256": "0f555407cc4b37ab1997e3a830eb6d59fccf1dddcaeb50cc2ade1ba76977e293"
+      },
+      "moe_receipt": {
+        "path": ".scratch/glm-pro-target77-20261023/original-moe/acquisition.json",
+        "bytes": 88762,
+        "sha256": "862802c063f73cb0a105720ecb05562123d1491937099bcd744e0dc4814879ed"
+      },
+      "static_roles": 15,
+      "static_bytes": 165102016,
+      "moe_roles": 1544,
+      "moe_bytes": 9706940416,
+      "typed_catalog": {
+        "path": ".scratch/glm-pro-target77-20261023/original-moe/catalog.bin",
+        "bytes": 24768,
+        "sha256": "37cb5928d417784b49ce6c5765c3859dbc7f3a7e56a2a347bb5041d98c03d0e7"
+      },
+      "body_sha256": "72c690676eba016d0fdbd84dd31b1fd4d8f0b242aac3d2bfd0b6a3a62b01cd22",
+      "original_roles": 1559,
+      "original_bytes": 9872042432,
+      "vocabulary": [],
+      "weight_bodies_rehashed": false,
+      "weight_bodies_archived": false
+    },
+    "nextn": {
+      "layer": 78,
+      "static_receipt": {
+        "path": ".scratch/glm-pro-nextn-20261023/original-static/acquisition.json",
+        "bytes": 73576,
+        "sha256": "08acbc2f3f2011ff80258d5ffd74cd558f5d18451f5c91910e9c9d228346a33f"
+      },
+      "moe_receipt": {
+        "path": ".scratch/glm-pro-nextn-20261023/original-moe/acquisition.json",
+        "bytes": 88745,
+        "sha256": "d9053f43084d5f381df2d4180cb1cad916c848a39fa300dcef3e327a998b1f89"
+      },
+      "static_roles": 27,
+      "static_bytes": 4132023424,
+      "moe_roles": 1544,
+      "moe_bytes": 9706940416,
+      "typed_catalog": {
+        "path": ".scratch/glm-pro-nextn-20261023/original-moe/catalog.bin",
+        "bytes": 24768,
+        "sha256": "df719ecb84c4e15730b3443cb441ef7947c79e7f1c25eb9bc9b18852d3c9ce85"
+      },
+      "body_sha256": "ae83d49bb595b143e6bd40c9bb2f5a4c5bf3caf8ea4dc77503ed320245462364",
+      "original_roles": 1571,
+      "original_bytes": 13838963840,
+      "vocabulary": [
+        {
+          "name": "model.layers.78.shared_head.norm.weight",
+          "payload": {
+            "path": ".scratch/glm-pro-nextn-20261023/original-static/norm.bf16",
+            "bytes": 12288,
+            "sha256": "85b9f1c8edd878dd20da5223167c455ef941232a3af891e9a48af365ffda6ff0"
+          }
+        },
+        {
+          "name": "model.embed_tokens.weight",
+          "payload": {
+            "path": ".scratch/glm-pro-nextn-20261023/original-static/embedding.bf16",
+            "bytes": 1903165440,
+            "sha256": "89ee5fc32885854e933a4518560cf6192e1b601f4219e0ffae9b2519bf1738a4"
+          }
+        },
+        {
+          "name": "lm_head.weight",
+          "payload": {
+            "path": ".scratch/glm-pro-nextn-20261023/original-static/head.bf16",
+            "bytes": 1903165440,
+            "sha256": "864f488a0074d236062a4f24800940df7ba611dba76238d4f9f847d9659e11cd"
+          }
+        }
+      ],
+      "weight_bodies_rehashed": false,
+      "weight_bodies_archived": false
+    },
+    "hidden": 6144,
+    "vocabulary": 154880,
+    "upstream_shared_index_layer": 74,
+    "target_layer": 77,
+    "nextn_layer": 78,
+    "extra_weight_hash_pass": false
+  },
+  "implementation": {
+    "target": "Distinct original77 MLA and256-domain Top8/no-clip MoE plus independent model.norm. Shared-index77 consumes explicit upstream74 Top2048; no learned77 indexer is invented or borrowed from78. Actual residual rawsum enters RMS and returns a separate BF16 residual.",
+    "vocabulary": "One original untied154880 BF16 embedding/head bank is shared with78. Real current/proposal77 normalized taps enter one ordinary R2 full-V projection with stable TopK; actual I32 row output lease supplies pending and subsequent original embedding lookup.",
+    "state": "Original77 main576/cursor/normalizedtap joins existing11 draft resources and Epoch metadata in the same StateStore/StateHead. Accept0 retains after-current; accept1 recomputes accepted proposal78 KV/journal from actual current77 tap and keeps actual after-proposal target state before atomic publication and accepted lag catchup. Old readers, cancellation, stale publish and budget gates remain.",
+    "numerics": "Independent original-byte/actual-predecessor local FP8 and BF16 certificates; first full target projections/BMM74304 and target head309760 values, later fixed/selected rows, all stores/norms/attention/routing/state seams. No empirical gate widening or extra native-reference executor.",
+    "preparation": "Both original77 and78 use their own global-grid KV_b decode before compact BF16 key/value split. Strong maps/leases preserve canonical source bytes; no persistent full-F32 weight shadow. Existing ordinary two-phase execution and bounded expert supplies are reused.",
+    "build": "One related host TU is incrementally compiled with final actual pins; existing native/product/runtime caches are linked unchanged. No SDK/CPUworker/NVCC/shader rebuild and no new public operation/executor."
+  },
+  "validation": {
+    "tests": 4,
+    "failures": 0,
+    "errors": 0,
+    "skips": 0,
+    "graph_submissions": 140,
+    "graph_submissions_by_case": {
+      "CudaOriginalTarget77AndNextNFullVocabularyVerifier": 46,
+      "CudaOriginalNextNFullVocabularyPublishesAndCatchesUp": 24,
+      "CpuOriginalTarget77AndNextNFullVocabularyVerifier": 46,
+      "CpuOriginalNextNFullVocabularyPublishesAndCatchesUp": 24
+    },
+    "summary": {
+      "path": ".scratch/glm-pro-target77-20261023/checks1/summary.json",
+      "bytes": 16670,
+      "sha256": "b0adeaff5f474b31852ef9cc6423b1e9c17f2f2dba9cbf7503816dadb2a437e0"
+    },
+    "cases": [
+      {
+        "attributes": {
+          "name": "CudaOriginalTarget77AndNextNFullVocabularyVerifier",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_pro_mtp_state_consumer_test.cc",
+          "line": "1374",
+          "status": "run",
+          "result": "completed",
+          "time": "138.377",
+          "timestamp": "2026-10-23T15:10:03.976",
+          "classname": "GlmProMtpStateConsumer"
+        },
+        "properties": {
+          "head_provider": "cublasLt",
+          "original_target_roles": "1559",
+          "original_target_source_bytes": "9872042432",
+          "actual_target_calls": "8",
+          "actual_target_submissions": "16",
+          "actual_target_policy_submissions": "1",
+          "accepted_target_conditioned_repairs": "1",
+          "actual_accepted_kv_repair_submissions": "2",
+          "first_full_target_projection_reference_values": "74304",
+          "original_target_checked_calls": "8",
+          "original_target_expert_domain": "256",
+          "original_target_resident_capacity": "8",
+          "target_cache_members": "3",
+          "source_target_index_policy": "Original shared-index layer77 has no indexer roles. Explicit synthetic upstream74 Top2048 IDs; no appended self/draft-tail or cloned78 indexer.",
+          "actual_submissions": "46",
+          "full_original_nextn_roles": "1571",
+          "full_original_nextn_source_bytes": "13838963840",
+          "actual_nextn_steps": "11",
+          "actual_pending_embedding_feedback_checks": "11",
+          "actual_index_catchup_steps": "1",
+          "actual_skip_steps": "7",
+          "accepted_zero_draft_checkpoints": "2",
+          "accepted_one_draft_checkpoints": "1",
+          "natural_k1_trials": "1",
+          "natural_k1_proposal": "81906",
+          "natural_k1_accepted_drafts": "0",
+          "controlled_matching_trials": "1",
+          "controlled_rejection_trials": "1",
+          "cancelled_unpublished_drafts": "3",
+          "rejected_stale_publishes": "3",
+          "first_full_nextn_head_reference_values": "154880",
+          "target_first_full_reference_values": "309760",
+          "target_verifier_submissions": "3",
+          "state_budget_bytes": "445137152",
+          "state_pool_backing_bound": "440318976",
+          "state_initial_backing_bound": "4801792",
+          "state_metadata_backing_bound": "16384",
+          "peak_state_backing_bytes": "343921092",
+          "ready_non_moe_bank_capacity_bytes": "4146700416",
+          "prepared_kv_capacity_bytes": "29360128",
+          "resident_expert_domain": "256",
+          "resident_expert_capacity": "8",
+          "resident_slot_capacity_bytes": "302064640",
+          "actual_resident_union_sizes": "8,8,8,8,8,8,8,8,8,8,8",
+          "component_schema": "14 resources plus Epoch24: existing11 NextN plus original77 mainF32[2064,576] exactBF16widen, targetcursorI32 and normalizedtapBF16[1,6144]; one StateStore/Head",
+          "pending_policy": "Actual77 target-current/proposal taps enter one R2 full-V projection. Pending is direct stable row[accepted] lease; accept0 retains current; accept1 repairs proposal78 KV/journal from target-current tap and retains actual second target main/cursor/tap. Accepted lag is caught up; current bonus then runs real77+78 with targettap seed; unverified skip0 remains unpublished.",
+          "scope": "Distinct original GLM-5.3 aca966 target77 1559 roles including its model.norm, plus original78 complete1571 roles and the same untied154880 BF16 head/embedding. Shared-index77 uses explicit upstream74 Top2048; target main576/cursor/finalnormalizedtap and draft11 resources share one expected-base StateHead. Actual token leases select original embeddings only as a labelled synthetic layer76 hidden adapter; residual, upstream74 selection and finite initial caches remain fixtures. Warm/current/proposal/bonus real77 MLA and256-domain un-clipped MoE produce true model.norm taps. Natural K1 and real Top1/Top2 controls are separate. Accept0 keeps after-current; accept1 recomputes accepted proposal78 KV/journal with target-current tap before atomic publication and accepted index catchup. Same ordinary two-phase execution and bounded supplies. Not full78-layer target, task quality, vendor fusion-bit equivalence, TPS or measured physical peak."
+        }
+      },
+      {
+        "attributes": {
+          "name": "CudaOriginalNextNFullVocabularyPublishesAndCatchesUp",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_pro_mtp_state_consumer_test.cc",
+          "line": "1381",
+          "status": "run",
+          "result": "completed",
+          "time": "88.635",
+          "timestamp": "2026-10-23T15:12:22.354",
+          "classname": "GlmProMtpStateConsumer"
+        },
+        "properties": {
+          "head_provider": "cublasLt",
+          "actual_submissions": "24",
+          "full_original_nextn_roles": "1571",
+          "full_original_nextn_source_bytes": "13838963840",
+          "actual_nextn_steps": "10",
+          "actual_pending_embedding_feedback_checks": "10",
+          "actual_index_catchup_steps": "1",
+          "actual_skip_steps": "6",
+          "accepted_zero_draft_checkpoints": "2",
+          "accepted_one_draft_checkpoints": "1",
+          "natural_k1_trials": "1",
+          "natural_k1_proposal": "96977",
+          "natural_k1_accepted_drafts": "0",
+          "controlled_matching_trials": "1",
+          "controlled_rejection_trials": "1",
+          "cancelled_unpublished_drafts": "3",
+          "rejected_stale_publishes": "3",
+          "first_full_nextn_head_reference_values": "154880",
+          "target_first_full_reference_values": "309760",
+          "target_verifier_submissions": "1",
+          "state_budget_bytes": "314237952",
+          "state_pool_backing_bound": "309407488",
+          "state_initial_backing_bound": "4814080",
+          "state_metadata_backing_bound": "16384",
+          "peak_state_backing_bytes": "213021868",
+          "ready_non_moe_bank_capacity_bytes": "4146700416",
+          "prepared_kv_capacity_bytes": "29360128",
+          "resident_expert_domain": "256",
+          "resident_expert_capacity": "8",
+          "resident_slot_capacity_bytes": "302064640",
+          "actual_resident_union_sizes": "8,8,8,8,8,8,8,8,8,8",
+          "component_schema": "11 resources plus Epoch24 metadata: mainF32[2064,576] BF16widen CKV512+KPE64, unpooled E4[2064,128]+F32scale, BF16hidden6144, I32pending/cursors/2048absoluteIDs, BF16journal3 and positions/lag; one StateHead",
+          "pending_policy": "Natural K1 uses actual NextN proposal and full-V R2 target-tap head. Controlled match/reject consume real target Top1/Top2 proposal leases in the actual second Graph, separate from natural acceptance. accept0 retains after-current first; accept1 after-proposal second; pending directly retains target row[accepted]. Only accepted lag1 is caught up; next fresh epoch8 publishes before unverified skip0 remains unpublished.",
+          "scope": "Official original GLM-5.3 aca966 Pro layer78 complete1571 roles including untied full154880 BF16 vocabulary. Original H6144 Qrank2048 NoPE192+RoPE64/latent512/value256, unpooled indexTop2048 and non-fused Hadamard/BF16/UE8M0, BF16weights_proj F32acc, original256-domain Top8 MoE with actual selected E4/SF experts, scale2.5 and no Flash clip10. Ordinary two-phase Graphs, same native resource and bounded double-slot supply, direct activation/state leases, all actual store/route/merge/fullV gates. Initial prepared history and previous/final target taps are explicit synthetic external fixtures; not a complete78-layer trained target, vendor physical-cache ABI, quality/natural-acceptance benchmark or TPS. Capacity/upload accounting is not measured physical peak."
+        }
+      },
+      {
+        "attributes": {
+          "name": "CpuOriginalTarget77AndNextNFullVocabularyVerifier",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_pro_mtp_state_consumer_test.cc",
+          "line": "1391",
+          "status": "run",
+          "result": "completed",
+          "time": "100.782",
+          "timestamp": "2026-10-23T15:13:50.990",
+          "classname": "GlmProMtpStateConsumer"
+        },
+        "properties": {
+          "head_provider": "ggml-cpu",
+          "original_target_roles": "1559",
+          "original_target_source_bytes": "9872042432",
+          "actual_target_calls": "8",
+          "actual_target_submissions": "16",
+          "actual_target_policy_submissions": "1",
+          "accepted_target_conditioned_repairs": "1",
+          "actual_accepted_kv_repair_submissions": "2",
+          "first_full_target_projection_reference_values": "74304",
+          "original_target_checked_calls": "8",
+          "original_target_expert_domain": "256",
+          "original_target_resident_capacity": "8",
+          "target_cache_members": "3",
+          "source_target_index_policy": "Original shared-index layer77 has no indexer roles. Explicit synthetic upstream74 Top2048 IDs; no appended self/draft-tail or cloned78 indexer.",
+          "actual_submissions": "46",
+          "full_original_nextn_roles": "1571",
+          "full_original_nextn_source_bytes": "13838963840",
+          "actual_nextn_steps": "11",
+          "actual_pending_embedding_feedback_checks": "11",
+          "actual_index_catchup_steps": "1",
+          "actual_skip_steps": "7",
+          "accepted_zero_draft_checkpoints": "2",
+          "accepted_one_draft_checkpoints": "1",
+          "natural_k1_trials": "1",
+          "natural_k1_proposal": "81906",
+          "natural_k1_accepted_drafts": "0",
+          "controlled_matching_trials": "1",
+          "controlled_rejection_trials": "1",
+          "cancelled_unpublished_drafts": "3",
+          "rejected_stale_publishes": "3",
+          "first_full_nextn_head_reference_values": "154880",
+          "target_first_full_reference_values": "309760",
+          "target_verifier_submissions": "3",
+          "state_budget_bytes": "445137152",
+          "state_pool_backing_bound": "440318976",
+          "state_initial_backing_bound": "4801792",
+          "state_metadata_backing_bound": "16384",
+          "peak_state_backing_bytes": "343921092",
+          "ready_non_moe_bank_capacity_bytes": "4146700416",
+          "prepared_kv_capacity_bytes": "29360128",
+          "resident_expert_domain": "256",
+          "resident_expert_capacity": "8",
+          "resident_slot_capacity_bytes": "302064640",
+          "actual_resident_union_sizes": "8,8,8,8,8,8,8,8,8,8,8",
+          "component_schema": "14 resources plus Epoch24: existing11 NextN plus original77 mainF32[2064,576] exactBF16widen, targetcursorI32 and normalizedtapBF16[1,6144]; one StateStore/Head",
+          "pending_policy": "Actual77 target-current/proposal taps enter one R2 full-V projection. Pending is direct stable row[accepted] lease; accept0 retains current; accept1 repairs proposal78 KV/journal from target-current tap and retains actual second target main/cursor/tap. Accepted lag is caught up; current bonus then runs real77+78 with targettap seed; unverified skip0 remains unpublished.",
+          "scope": "Distinct original GLM-5.3 aca966 target77 1559 roles including its model.norm, plus original78 complete1571 roles and the same untied154880 BF16 head/embedding. Shared-index77 uses explicit upstream74 Top2048; target main576/cursor/finalnormalizedtap and draft11 resources share one expected-base StateHead. Actual token leases select original embeddings only as a labelled synthetic layer76 hidden adapter; residual, upstream74 selection and finite initial caches remain fixtures. Warm/current/proposal/bonus real77 MLA and256-domain un-clipped MoE produce true model.norm taps. Natural K1 and real Top1/Top2 controls are separate. Accept0 keeps after-current; accept1 recomputes accepted proposal78 KV/journal with target-current tap before atomic publication and accepted index catchup. Same ordinary two-phase execution and bounded supplies. Not full78-layer target, task quality, vendor fusion-bit equivalence, TPS or measured physical peak."
+        }
+      },
+      {
+        "attributes": {
+          "name": "CpuOriginalNextNFullVocabularyPublishesAndCatchesUp",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_pro_mtp_state_consumer_test.cc",
+          "line": "1396",
+          "status": "run",
+          "result": "completed",
+          "time": "58.09",
+          "timestamp": "2026-10-23T15:15:31.772",
+          "classname": "GlmProMtpStateConsumer"
+        },
+        "properties": {
+          "head_provider": "ggml-cpu",
+          "actual_submissions": "24",
+          "full_original_nextn_roles": "1571",
+          "full_original_nextn_source_bytes": "13838963840",
+          "actual_nextn_steps": "10",
+          "actual_pending_embedding_feedback_checks": "10",
+          "actual_index_catchup_steps": "1",
+          "actual_skip_steps": "6",
+          "accepted_zero_draft_checkpoints": "2",
+          "accepted_one_draft_checkpoints": "1",
+          "natural_k1_trials": "1",
+          "natural_k1_proposal": "96977",
+          "natural_k1_accepted_drafts": "0",
+          "controlled_matching_trials": "1",
+          "controlled_rejection_trials": "1",
+          "cancelled_unpublished_drafts": "3",
+          "rejected_stale_publishes": "3",
+          "first_full_nextn_head_reference_values": "154880",
+          "target_first_full_reference_values": "309760",
+          "target_verifier_submissions": "1",
+          "state_budget_bytes": "314237952",
+          "state_pool_backing_bound": "309407488",
+          "state_initial_backing_bound": "4814080",
+          "state_metadata_backing_bound": "16384",
+          "peak_state_backing_bytes": "213021868",
+          "ready_non_moe_bank_capacity_bytes": "4146700416",
+          "prepared_kv_capacity_bytes": "29360128",
+          "resident_expert_domain": "256",
+          "resident_expert_capacity": "8",
+          "resident_slot_capacity_bytes": "302064640",
+          "actual_resident_union_sizes": "8,8,8,8,8,8,8,8,8,8",
+          "component_schema": "11 resources plus Epoch24 metadata: mainF32[2064,576] BF16widen CKV512+KPE64, unpooled E4[2064,128]+F32scale, BF16hidden6144, I32pending/cursors/2048absoluteIDs, BF16journal3 and positions/lag; one StateHead",
+          "pending_policy": "Natural K1 uses actual NextN proposal and full-V R2 target-tap head. Controlled match/reject consume real target Top1/Top2 proposal leases in the actual second Graph, separate from natural acceptance. accept0 retains after-current first; accept1 after-proposal second; pending directly retains target row[accepted]. Only accepted lag1 is caught up; next fresh epoch8 publishes before unverified skip0 remains unpublished.",
+          "scope": "Official original GLM-5.3 aca966 Pro layer78 complete1571 roles including untied full154880 BF16 vocabulary. Original H6144 Qrank2048 NoPE192+RoPE64/latent512/value256, unpooled indexTop2048 and non-fused Hadamard/BF16/UE8M0, BF16weights_proj F32acc, original256-domain Top8 MoE with actual selected E4/SF experts, scale2.5 and no Flash clip10. Ordinary two-phase Graphs, same native resource and bounded double-slot supply, direct activation/state leases, all actual store/route/merge/fullV gates. Initial prepared history and previous/final target taps are explicit synthetic external fixtures; not a complete78-layer trained target, vendor physical-cache ABI, quality/natural-acceptance benchmark or TPS. Capacity/upload accounting is not measured physical peak."
+        }
+      }
+    ],
+    "process": {
+      "command": [
+        "C:\\public\\project-hyle\\hyle\\.scratch\\glm-pro-target77-20261023\\tests-link2\\glm-pro-target77-checks.exe",
+        "--gtest_filter=GlmProMtpStateConsumer.*OriginalTarget77AndNextNFullVocabularyVerifier:GlmProMtpStateConsumer.*OriginalNextNFullVocabularyPublishesAndCatchesUp",
+        "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\glm-pro-target77-20261023\\checks1\\results.xml"
+      ],
+      "cwd": "C:\\public\\project-hyle\\hyle",
+      "started": 1792739403.6422958,
+      "timeout_seconds": 900,
+      "throughput_evidence": false,
+      "memory_evidence": false,
+      "trace": false,
+      "profiler": false,
+      "pid": 16652,
+      "exit": 0,
+      "timed_out": false,
+      "finished": 1792739791.0599346,
+      "process_wall_seconds": 387.4174248000054
+    },
+    "linked": {
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-pro-target77-20261023\\tests-link2\\glm-pro-target77-checks.exe",
+        "bytes": 140581376,
+        "sha256": "cde4f57390fd214ca2c34c6507194d68f4cd6c60ea9e2c650c0b9c9a1be79872"
+      },
+      "link_plan": {
+        "path": ".scratch/glm-pro-target77-20261023/tests-link2/link-plan.json",
+        "bytes": 89019,
+        "sha256": "ea8409136a107ff8e6542d0e0d16edb39d7b11d008424dbfd0820e9c9d13d9c6"
+      },
+      "runtime": {
+        "path": ".scratch/glm-pro-target77-20261023/tests-link2/runtime-environment.json",
+        "bytes": 8308,
+        "sha256": "3ec3d2f6ac742d60b6e8406878dc2677ada9ca7e9b4b41e9a44750994059cd66"
+      },
+      "compiled_records": [
+        {
+          "path": ".scratch/glm-pro-target77-20261023/compile2/glm-pro/identity.json",
+          "bytes": 81888,
+          "sha256": "d20901106c0855a2e96e9f8d2d1266cfad23db0c0fbf5f2075d62998fff80a0e"
+        },
+        {
+          "path": ".scratch/dspark-original-target-tail-20261023/compile4/fp4-provider/identity.json",
+          "bytes": 43400,
+          "sha256": "7c6ca980df59164e796fabb2c5f897904abd9469ddaa39d5b16243a451c0fb41"
+        },
+        {
+          "path": ".scratch/dspark-original-target-tail-20261023/compile4/fp4-kernel/identity.json",
+          "bytes": 31187,
+          "sha256": "63d84c2062f516cdaba4da6d8dce7ae88a5f97283465826fd1c91a2df3e22fd8"
+        },
+        {
+          "path": ".scratch/mtp-packed-head-m2-20261023/compile1/tensor-program/identity.json",
+          "bytes": 42177,
+          "sha256": "d69b5db3b51c204a3c15ad611734da16403b7b40a4d6ce2ceaec38f5a2609d17"
+        },
+        {
+          "path": ".scratch/mtp-packed-head-m2-20261023/compile1/ggml-provider/identity.json",
+          "bytes": 52469,
+          "sha256": "ecedd056b8e7e961a254f3d15c86c281f4186d6d976d860f7f064feb49460bc3"
+        },
+        {
+          "path": ".scratch/dspark-original-experts-20261023/compile3/mapping-view/identity.json",
+          "bytes": 46316,
+          "sha256": "a58f5965bb3403678eab1a8eb41f19328a27bf5f5a09e05d2ccd69cf42f57bc5"
+        },
+        {
+          "path": ".scratch/glm-encoded-state-20261023/compile4/tensor-provider/identity.json",
+          "bytes": 42571,
+          "sha256": "47728a20607104de68719324c4de3d822344af5b3f803c773d6f873d4cf7c927"
+        },
+        {
+          "path": ".scratch/glm-encoded-state-20261023/compile4/tensor-kernel/identity.json",
+          "bytes": 3439,
+          "sha256": "03da87de545dfcf6f4cda1fec5d877082756e951cef022aad0618b43152a4944"
+        },
+        {
+          "path": ".scratch/fp8-quant-output-20261023/compile1/torch-cpu/identity.json",
+          "bytes": 1490184,
+          "sha256": "75df3cb0023324e19f38c60689c16607021c739de3103e7183798fafd390eddd"
+        },
+        {
+          "path": ".scratch/fp8-quant-output-20261023/compile1/cuda-provider/identity.json",
+          "bytes": 47448,
+          "sha256": "5e7015229ae941531b1b69518de8965608af82ff70f30b5f14448f263db42dc2"
+        },
+        {
+          "path": ".scratch/fp8-quant-output-20261023/compile1/quant-provider/identity.json",
+          "bytes": 42953,
+          "sha256": "164f1ae19f856c4c76806ca2658c1f74536446e188ffedb1a8d8dc30d40eee5c"
+        },
+        {
+          "path": ".scratch/fp8-quant-output-20261023/compile1/quant-kernel/identity.json",
+          "bytes": 3354,
+          "sha256": "feef1c6653a9ae3dd2e2f6301444dde8f85ba90187d5c62c1b0aa956e80ac46a"
+        }
+      ],
+      "host": [
+        {
+          "record": {
+            "path": ".scratch/glm-pro-target77-20261023/compile2/glm-pro/identity.json",
+            "bytes": 81888,
+            "sha256": "d20901106c0855a2e96e9f8d2d1266cfad23db0c0fbf5f2075d62998fff80a0e"
+          },
+          "source": {
+            "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_pro_mtp_state_consumer_test.cc",
+            "bytes": 91576,
+            "sha256": "26b26816d947d144211c4ac2b35d788f870cfd79049032abfcc1cc08505e3ff1"
+          },
+          "object": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-pro-target77-20261023\\compile2\\glm-pro\\glm-pro.obj",
+            "bytes": 12454164,
+            "sha256": "b32bd1050e1697d8ca66c0988a5634692d3725b75c81e0b09f0a814da0561f43"
+          }
+        }
+      ],
+      "sources": [
+        {
+          "path": ".scratch/validation/cpu-final-f1/mixed-iq1/source/include/ggml.h",
+          "bytes": 116114,
+          "sha256": "bc70d20c63d0b155c8895e4933bc0e084970416ccbed6945e47df91084572940"
+        },
+        {
+          "path": "include/hyle/compute/backends/cpu.h",
+          "bytes": 1814,
+          "sha256": "a0b99762a3620c1b44b6856263c172d12fa6e482282fe9c2fcc06aa7d82a1d4d"
+        },
+        {
+          "path": "include/hyle/compute/backends/cuda.h",
+          "bytes": 9030,
+          "sha256": "8b1eeec880b852f5d35a98464c55a20abb8de0b1db447421dff4b90ba4a13748"
+        },
+        {
+          "path": "include/hyle/compute/batch_transfer.h",
+          "bytes": 11416,
+          "sha256": "7bec296577c0439b0e0b48639ccff6b3bd95d137dba085c608f650dbb69fcd1b"
+        },
+        {
+          "path": "include/hyle/compute/completion.h",
+          "bytes": 1959,
+          "sha256": "98b34b9ee4665e9aedac719504c029a509f304b0a4f566bf6b7f76d88dc2ef34"
+        },
+        {
+          "path": "include/hyle/compute/cpu.h",
+          "bytes": 3070,
+          "sha256": "5573eb9618c4ef2a0db299dfb3bc3f2bf93f0e7005ec31aa7ccd95e25efac21f"
+        },
+        {
+          "path": "include/hyle/compute/cuda.h",
+          "bytes": 1457,
+          "sha256": "308beb0703f01239c106d23792f8ef68a57880630b209d1e772a6cd9958918e7"
+        },
+        {
+          "path": "include/hyle/compute/cuda_weights.h",
+          "bytes": 5065,
+          "sha256": "1e3ca02148c67fc2d6d6744beb5a03ee93dcb7f7a61ffed16aa5b5e49d5a8079"
+        },
+        {
+          "path": "include/hyle/compute/detail/append_lease.h",
+          "bytes": 1944,
+          "sha256": "67b6e87fb0bfbc179d781174c2dc414f1e7487445925cb4c2a4faea579cb7ec5"
+        },
+        {
+          "path": "include/hyle/compute/detail/completion_access.h",
+          "bytes": 4164,
+          "sha256": "8699638e39a1a7d5708cbb6a5e41f191228b3ac571b16b026eadcc1aa6765e34"
+        },
+        {
+          "path": "include/hyle/compute/detail/context_ref.h",
+          "bytes": 2563,
+          "sha256": "b1295a6d21d452b2730e3907891ca49993e512a741f8f3a9689976e56f5af3f1"
+        },
+        {
+          "path": "include/hyle/compute/detail/lease_access.h",
+          "bytes": 6794,
+          "sha256": "1b0ab7b4b05faf25d5e6a87e4638504b47f38a54fcbce5ffeb7e50ff2148c8bc"
+        },
+        {
+          "path": "include/hyle/compute/detail/operation_access.h",
+          "bytes": 992,
+          "sha256": "4bdd60939dea229e91907768308155716b7cd8b78d92150391edc771f2089f34"
+        },
+        {
+          "path": "include/hyle/compute/detail/queue_ref.h",
+          "bytes": 1551,
+          "sha256": "a50579827a0b1554ffa4595c3b2fff68cfcbcc9b75caba25c60f78028d49961b"
+        },
+        {
+          "path": "include/hyle/compute/detail/queue_sequence.h",
+          "bytes": 9214,
+          "sha256": "d8cc25b000e655468f3de3b1da3f5b17c388329f21d3f9d6f1d06d9e54de8a26"
+        },
+        {
+          "path": "include/hyle/compute/detail/resource_budget_access.h",
+          "bytes": 2741,
+          "sha256": "f5cfd7955fed71cf08b9a08e0ddacf70191495a61883dac4224e02ef3cba4871"
+        },
+        {
+          "path": "include/hyle/compute/device.h",
+          "bytes": 7702,
+          "sha256": "f966803f2293e03db1cde9b1327f847a92162f21adb53f69ef37f0c19b16a84a"
+        },
+        {
+          "path": "include/hyle/compute/low_precision.h",
+          "bytes": 10406,
+          "sha256": "0920a5a2faecb2991da60ecede680c496bab73411a305e559461ea41cea309cb"
+        },
+        {
+          "path": "include/hyle/compute/model_ops.h",
+          "bytes": 79485,
+          "sha256": "351978e0a82a28cf9d4f7fbe9b75bf34bb65e03522de6e4f89a395a1975abbda"
+        },
+        {
+          "path": "include/hyle/compute/operation.h",
+          "bytes": 28394,
+          "sha256": "01730da295dde06e2982685b98176c2bdfcebbb0963515b8fbce6e63ad4fe025"
+        },
+        {
+          "path": "include/hyle/compute/ops_visibility.h",
+          "bytes": 43,
+          "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+        },
+        {
+          "path": "include/hyle/compute/prepared_operation.h",
+          "bytes": 20281,
+          "sha256": "03895c56e8665daf2482f66fecf205fd8aacf92046e13c169d9d8ff86fff52d7"
+        },
+        {
+          "path": "include/hyle/compute/provider.h",
+          "bytes": 10281,
+          "sha256": "a9737ca3cf64eec23ce768e20b1112407fc7816a32f8031f0b668b16c49f816a"
+        },
+        {
+          "path": "include/hyle/compute/resource_budget.h",
+          "bytes": 4622,
+          "sha256": "578d440b6fc3f5b58809837506165de27ac0866ae39b2d132763f5dd1786b1ce"
+        },
+        {
+          "path": "include/hyle/compute/resource_leases.h",
+          "bytes": 8660,
+          "sha256": "4e5681ebfa7c2f2ad51e5788c8316f4b993883f595c04b33fe594d7294dab85b"
+        },
+        {
+          "path": "include/hyle/compute/state_versions.h",
+          "bytes": 8553,
+          "sha256": "a09cb66a216b56a0651f515f18d8a97772b0e6d281c171a82b8a6630b3e1c7d7"
+        },
+        {
+          "path": "include/hyle/compute/storage_owner.h",
+          "bytes": 8058,
+          "sha256": "549d881d8d4f96eedbb03c8ef9bd6892ede776e5da90a39025538bc50a0530d9"
+        },
+        {
+          "path": "include/hyle/compute/tensor.h",
+          "bytes": 1980,
+          "sha256": "ac00f221a66d0f9044a2b49a1123a6b99a6c425568790898129c31d81519c538"
+        },
+        {
+          "path": "include/hyle/compute/tensor_desc.h",
+          "bytes": 8700,
+          "sha256": "e5496e00c643bcce2efbb42666773f4172243d10458b756d6f9881b0e677eb9a"
+        },
+        {
+          "path": "include/hyle/compute/visibility.h",
+          "bytes": 43,
+          "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+        },
+        {
+          "path": "include/hyle/compute/weight_assembly.h",
+          "bytes": 2095,
+          "sha256": "c085186c2751371d8e642f29d1b338e53962236e50c9935ea1858a4b188ca3ac"
+        },
+        {
+          "path": "include/hyle/compute/weight_import.h",
+          "bytes": 3487,
+          "sha256": "19479024d3e80a6c7357dd55cc79e59347c20b22b621ce6f2779082afaaab6cb"
+        },
+        {
+          "path": "include/hyle/compute/workload.h",
+          "bytes": 5017,
+          "sha256": "2e7509d99d986e71b06788e4dd1dcb9595799e2ad972df48449ff0b58f0815ad"
+        },
+        {
+          "path": "include/hyle/core/assert.h",
+          "bytes": 16114,
+          "sha256": "5596728bc220ea27696be4f25e2f9eb9cf2705930f8eb0461747c4a862615790"
+        },
+        {
+          "path": "include/hyle/core/compiler.h",
+          "bytes": 4287,
+          "sha256": "e31151f0ed73c532e464c6568483acecd80a2da9c1ee7afc7e081db87d6fb687"
+        },
+        {
+          "path": "include/hyle/core/detail/compiler_attributes.h",
+          "bytes": 1913,
+          "sha256": "263c7691f9984073e198b69328092330bf572195113d3994d1ab54fe4564d88a"
+        },
+        {
+          "path": "include/hyle/core/detail/preprocessor.h",
+          "bytes": 409,
+          "sha256": "1d9872ef98db007dcbed7e0128771244640e1de4092830d52a7a83537f98eb84"
+        },
+        {
+          "path": "include/hyle/core/environment.h",
+          "bytes": 6712,
+          "sha256": "3d289765b1b677499a444b38d1dbe366bb5e99f89fcb7670af2d08106fd958fa"
+        },
+        {
+          "path": "include/hyle/error/result.h",
+          "bytes": 30856,
+          "sha256": "7718409ab2854eb76959215b356bf8077007134d87db1a24f9384a9b5deff2b5"
+        },
+        {
+          "path": "include/hyle/error/status.h",
+          "bytes": 18122,
+          "sha256": "4d6b4b0bfa5628947aad5449320513d4b071e0c84debfac47f7a7d264cecb7f4"
+        },
+        {
+          "path": "include/hyle/graph/compile_report.h",
+          "bytes": 577,
+          "sha256": "c42c30527d581975c49ddfebb182b0ae7928d799eed91172cb631779a2ad5b4f"
+        },
+        {
+          "path": "include/hyle/graph/cpu.h",
+          "bytes": 919,
+          "sha256": "01165b3d6fe8276d4275495d8cb52186d9a81b11749db49a2684856bfbe088e8"
+        },
+        {
+          "path": "include/hyle/graph/cuda.h",
+          "bytes": 2663,
+          "sha256": "658f3dab4eb1a0a90f2dc472652e0c0fa5e694373544abc21331f116adee1373"
+        },
+        {
+          "path": "include/hyle/graph/executable.h",
+          "bytes": 50386,
+          "sha256": "aa3a55ed1869f84149ad0a6a558d6541880d71ba0bf4c6789480724564cdc0b0"
+        },
+        {
+          "path": "include/hyle/graph/execution_source.h",
+          "bytes": 1859,
+          "sha256": "b89de5c6fe8b84192c9618a6a4e4dcee8ac45393e04a9e335f17b5a2d3ecac3f"
+        },
+        {
+          "path": "include/hyle/graph/graph.h",
+          "bytes": 19988,
+          "sha256": "c7a93ccf9fd1c86fb9dec286e7d3345aabcb1810c2fb6793a66093480a5a2136"
+        },
+        {
+          "path": "include/hyle/graph/resources.h",
+          "bytes": 430,
+          "sha256": "c9d3075babb4d863f3543c76576d093fe59f9868df67d50fc492db0aebe7015d"
+        },
+        {
+          "path": "include/hyle/graph/result.h",
+          "bytes": 2146,
+          "sha256": "dc576aa9e523321df6d69ced5717cd9a8e92a9261245a42a431ecc8039a3dd46"
+        },
+        {
+          "path": "include/hyle/graph/visibility.h",
+          "bytes": 43,
+          "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+        },
+        {
+          "path": "include/hyle/graph/weight_binding.h",
+          "bytes": 422,
+          "sha256": "ebcc3eea951953966a3b10b2951872e74d04921af6f0cc8de45ab52ab1ba32bd"
+        },
+        {
+          "path": "include/hyle/mem/allocator.h",
+          "bytes": 11090,
+          "sha256": "0369680d4769a0187bfb77ee8b565b5e8fb53a03909fabf233458d9c1cbcd011"
+        },
+        {
+          "path": "include/hyle/mem/buffer.h",
+          "bytes": 19273,
+          "sha256": "346a4f810babb8c5dacba49faaf57903d998a3cbb49af12b8c62acc85f7be72c"
+        },
+        {
+          "path": "include/hyle/mem/mapping.h",
+          "bytes": 7139,
+          "sha256": "98b1a1ea8c4d85eff4fb8ddeb0fd7a425e7619128c468ae29e11c5e3fbfd05c3"
+        },
+        {
+          "path": "include/hyle/mem/quota_allocator.h",
+          "bytes": 7124,
+          "sha256": "a88fe230dc5358ddde6209de96cc61a59e3f6e60d30b9e7534e986fab10224c9"
+        },
+        {
+          "path": "include/hyle/mem/resource.h",
+          "bytes": 7717,
+          "sha256": "84b0366e658ec63f999b4c9719cf8584ad758f4ff5340baf37f1c3ebd17145cd"
+        },
+        {
+          "path": "include/hyle/mem/visibility.h",
+          "bytes": 43,
+          "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+        },
+        {
+          "path": "include/hyle/platform/fs.h",
+          "bytes": 24891,
+          "sha256": "2af351149fc82762267b89303439ef71626a2eb541d1922ff6f66014136a9ffa"
+        },
+        {
+          "path": "include/hyle/platform/fs_visibility.h",
+          "bytes": 43,
+          "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+        },
+        {
+          "path": "include/hyle/platform/numa.h",
+          "bytes": 8400,
+          "sha256": "e154f229dc7f6f5ceb1c44f20f769204b48bd422e57c5fed1e53c490607b8fde"
+        },
+        {
+          "path": "include/hyle/platform/virtual_memory.h",
+          "bytes": 10485,
+          "sha256": "1b01086d44f330a592a5d3b4946fb213e485095dce904db99bb71103e2a578b8"
+        },
+        {
+          "path": "include/hyle/platform/visibility.h",
+          "bytes": 43,
+          "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+        },
+        {
+          "path": "include/hyle/simd/dtype.h",
+          "bytes": 12143,
+          "sha256": "04dc8a2e0a654250413a0edc4bdc667f98c8aa40d85da25264b6bb2054dd51e5"
+        },
+        {
+          "path": "include/hyle/simd/types.h",
+          "bytes": 1658,
+          "sha256": "e79863029c8036f918f36f93dd0267b8d42857516e0d74678584d75f8926abbd"
+        },
+        {
+          "path": "include/hyle/time/unix_timestamp.h",
+          "bytes": 11791,
+          "sha256": "bcd6bdc860d6ee1e73004ebd15e3b2b2a60ca3dff7a0818deecf9420f95b4496"
+        },
+        {
+          "path": "include/hyle/visibility.h",
+          "bytes": 11701,
+          "sha256": "893fa73589b6e46f00474c2258af74c28d662b52176b57012290c820812ed486"
+        },
+        {
+          "path": "tests/compute/workload_fixture.h",
+          "bytes": 1211,
+          "sha256": "d451c816f7362313b73758d60fc68c49acbaf0e31735db3039d72e80d39b6a5e"
+        },
+        {
+          "path": "tests/compute_models/d5_dynamic_fp8_fragments.h",
+          "bytes": 16239,
+          "sha256": "6e6d323a06331a70666a6ce2a8e26984932d7fbf5732f71ced728a3bc0b68040"
+        },
+        {
+          "path": "tests/compute_models/d5_gguf_test_support.h",
+          "bytes": 13405,
+          "sha256": "4742b35f873bc892213e8721f44a4bde0cfeea9d30da036c454a4d3042bd7898"
+        },
+        {
+          "path": "tests/compute_models/d5_glm_mtp_head_test.h",
+          "bytes": 475,
+          "sha256": "d8267206827f0399423e5500f45492f70ce51e2bb52bad38bbc1b10b9c33b668"
+        },
+        {
+          "path": "tests/compute_models/d5_glm_remaining_fragments.h",
+          "bytes": 54263,
+          "sha256": "12dbf546cb1050470dd6db65fe4d1f0a70364781a22d9df466699e7b10cde742"
+        },
+        {
+          "path": "tests/compute_models/d5_grouped_fp8_fragments.h",
+          "bytes": 8697,
+          "sha256": "100afd9e17c00798ffa5b6f1cb7201dcea93981937321eac4a5afbaa269f2717"
+        },
+        {
+          "path": "tests/compute_models/d5_kda_full_fragments.h",
+          "bytes": 12967,
+          "sha256": "8af401a0982f99b0283199c53f44ec15f6524a35eb0590b850a3c403f4d7e76e"
+        },
+        {
+          "path": "tests/compute_models/d5_kda_projection_cases.h",
+          "bytes": 5583,
+          "sha256": "489e42c858140847b89f4932a5519572aa132f515d96cb9927392ce0266c0feb"
+        },
+        {
+          "path": "tests/compute_models/d5_kimi_remaining_fragments.h",
+          "bytes": 18043,
+          "sha256": "edc6aaeb8d05c1f848447849b45bf3f908b77a737823ce6dfbf737feedeb2218"
+        },
+        {
+          "path": "tests/compute_models/d5_moe_execution_cases.h",
+          "bytes": 4217,
+          "sha256": "8d3dedc2d98d2ba3cd72c1cec165bc53f6472b274da4215509f623511f4321cf"
+        },
+        {
+          "path": "tests/compute_models/d5_moe_execution_fragments.h",
+          "bytes": 29763,
+          "sha256": "ab7857f47f82b87bf2b39b56d2f637a9d3d3068256abfcbd2a69d94ab1b08f3c"
+        },
+        {
+          "path": "tests/compute_models/d5_moe_profile_cases.h",
+          "bytes": 11520,
+          "sha256": "c21f3e73aba1a7ce161b71c9eec135af9b6352e8aba255c3229c9b82f4d93a6d"
+        },
+        {
+          "path": "tests/compute_models/d5_moe_semantic_fragments.h",
+          "bytes": 17811,
+          "sha256": "75b094320cc81125cfdf7b8ab473be5b51238b66b6403e8f142b14fbe00b5131"
+        },
+        {
+          "path": "tests/compute_models/d5_official_fp4_storage.h",
+          "bytes": 4623,
+          "sha256": "3f9d8a651e2d79dcf5f9ab2ac09cca4439a0d5ef2d4a2ea948c1768966e38846"
+        },
+        {
+          "path": "tests/compute_models/d5_official_fp8_fragments.h",
+          "bytes": 5606,
+          "sha256": "c132fe5588268de6ce57506025f754aeda0c6e7698703db77932711bcfb4dd56"
+        },
+        {
+          "path": "tests/compute_models/d5_qwen35_fixture.h",
+          "bytes": 9558,
+          "sha256": "b80a27f10ce671ab5fa3953a0862dd387fd85bb0aa2cfd31670593303b8ab393"
+        },
+        {
+          "path": "tests/compute_models/d5_qwen35_gguf_fragment_support.h",
+          "bytes": 6939,
+          "sha256": "24d8ae62cbb2ed362c4e949db02fdce18505e03ff06adb23cdcfe8b358b61cb1"
+        },
+        {
+          "path": "tests/compute_models/d5_qwen38_24t_fixture.h",
+          "bytes": 7313,
+          "sha256": "b5b12c7030e2fbf2f14e8b8d0be9569ef47c64a49d58e98bc7b333b4256e050f"
+        },
+        {
+          "path": "tests/compute_models/d5_qwen38_24t_full_router.h",
+          "bytes": 22959,
+          "sha256": "7bff099e41ecee6f6dd4dc85a91db2b13a1737bee46699befe27e4d867b6fd04"
+        },
+        {
+          "path": "tests/compute_models/d5_qwen38_24t_moe_profiles.h",
+          "bytes": 11480,
+          "sha256": "ea93064fca5e64b4db7bfb5ded1062d83baf6ab3794f52f962beee2b0fd8a9ee"
+        },
+        {
+          "path": "tests/compute_models/d5_qwen38_24t_semantic_fragments.h",
+          "bytes": 34939,
+          "sha256": "b419ccdab0d23da5ff1db51d6e2c9c504bcae02f83666885cb5bb457b62d2736"
+        },
+        {
+          "path": "tests/compute_models/d5_qwen38_gdn_fixture.h",
+          "bytes": 8553,
+          "sha256": "9a0fb6af064c85209fa478a7021eb399bf1451fff67d43538a655936343bf2ed"
+        },
+        {
+          "path": "tests/compute_models/d5_qwen38_official_fixture.h",
+          "bytes": 5967,
+          "sha256": "61cacc3d6251c1ef2cfc9a9f724412f9ca4615f4692dcbf777a81e790e7a1ff0"
+        },
+        {
+          "path": "tests/compute_models/d5_qwen_gguf_vocabulary_cases.h",
+          "bytes": 2928,
+          "sha256": "8db378b333614ddc594a3ae9364fcbfdded76a2c1226d5cb19b44b24968af655"
+        },
+        {
+          "path": "tests/compute_models/glm_moe_geometry.h",
+          "bytes": 3364,
+          "sha256": "fec9a813d4c482b540c3a4f710e2d91c1442fe1f1080e1466017fe6568240792"
+        },
+        {
+          "path": "tests/compute_models/glm_official_index_cache.h",
+          "bytes": 17011,
+          "sha256": "a454c67796fc456cea071439589826c3d6afc7298209219c7ab8b66ee4111bd3"
+        },
+        {
+          "path": "tests/compute_models/glm_original_attention_reference.h",
+          "bytes": 17681,
+          "sha256": "3624cdd2a598cba9a11a28c547213e51f52e6526d976132a3ad16156a1f2f6c9"
+        },
+        {
+          "path": "tests/compute_models/glm_original_attention_roles.h",
+          "bytes": 13614,
+          "sha256": "0423bcc5be425a61e0fe73b7643816a29f6715bee2e4902352d0f95eb32c9ff5"
+        },
+        {
+          "path": "tests/compute_models/glm_original_indexer_reference.h",
+          "bytes": 11617,
+          "sha256": "b6d4ab20192d490f6f6c63c3ce526c8556322a54300c990ea427afd0eb31ec12"
+        },
+        {
+          "path": "tests/compute_models/glm_original_moe_fragment.h",
+          "bytes": 9013,
+          "sha256": "ef0e2c19a77c0890cc33924118cb1dd082c14e72956df145fcf80417926012eb"
+        },
+        {
+          "path": "tests/compute_models/glm_original_moe_reference.h",
+          "bytes": 16559,
+          "sha256": "31086ba1c893db4efae2640d55bf8163d67aeabf480c82c2e8f460787ad3ddaa"
+        },
+        {
+          "path": "tests/compute_models/glm_original_moe_resident_weights.h",
+          "bytes": 10896,
+          "sha256": "ab1ee196bf3b9425cd45018de29514ff4bc53291c89529ff918226f5e092c419"
+        },
+        {
+          "path": "tests/compute_models/glm_original_moe_roles.h",
+          "bytes": 15637,
+          "sha256": "55b976307f45b1e43a7125e631119b13856680c8db0aa3b5d20d86be15b1bdef"
+        },
+        {
+          "path": "tests/compute_models/glm_original_mtp_roles.h",
+          "bytes": 17100,
+          "sha256": "e5ddf53e5dd7b2b88a0a4e8532ed9215164879d1693285d105a069d7864f0938"
+        },
+        {
+          "path": "tests/compute_models/glm_pro_mtp_fragment.h",
+          "bytes": 20814,
+          "sha256": "9fb398590f711e0b652efd21a2c70393238ea3673ec8655f5d5202ae6f0d2784"
+        },
+        {
+          "path": "tests/compute_models/glm_pro_mtp_reference.h",
+          "bytes": 25067,
+          "sha256": "c99e8ba4e9996d83e21adeeaa1ae82481b26196286df60f2d638941eae7eb1bf"
+        },
+        {
+          "path": "tests/compute_models/glm_pro_mtp_state_consumer_test.cc",
+          "bytes": 91576,
+          "sha256": "26b26816d947d144211c4ac2b35d788f870cfd79049032abfcc1cc08505e3ff1"
+        },
+        {
+          "path": "tests/compute_models/glm_pro_original_roles.h",
+          "bytes": 17348,
+          "sha256": "445e105d7f8727bb2657aff9129d150d46b62be0beeb6c4a07b94db58f5277f8"
+        },
+        {
+          "path": "tests/compute_models/glm_pro_target_fragment.h",
+          "bytes": 3920,
+          "sha256": "8dde97b6405386c09715a3206d5d7327239c51ca51a1c5408852e3120564dbdc"
+        },
+        {
+          "path": "tests/compute_models/glm_pro_target_reference.h",
+          "bytes": 7432,
+          "sha256": "0ba924ab6187547ba3db11c0d37e629ba344e08126bf04487afbfffa9ab43591"
+        },
+        {
+          "path": "tests/compute_models/glm_pro_target_roles.h",
+          "bytes": 13902,
+          "sha256": "e981b64a009b9eda778ed64e7ad5726f1bb87db9edb009c30c6f795371dbe640"
+        },
+        {
+          "path": "tests/compute_models/glm_shared_vocabulary.h",
+          "bytes": 13861,
+          "sha256": "930b11d95b8826c6a65d18dac34746d67238d0f4ab67a3909a024c182555c525"
+        },
+        {
+          "path": "tests/compute_models/glm_shared_vocabulary_reference.h",
+          "bytes": 14905,
+          "sha256": "f091ff25783e12b28ac6e233fa2aca7c84702b8feefc5a6afaebf9f4ca75e446"
+        },
+        {
+          "path": "tests/compute_models/glm_target_verifier_fragment.h",
+          "bytes": 4975,
+          "sha256": "0a8761c481fd8770053c380a5b41866b2ac6899649e85f592317c3ffb821e5d9"
+        },
+        {
+          "path": "tests/compute_models/model_graph_run.h",
+          "bytes": 3467,
+          "sha256": "53510f8b1dfde6fbed87685e56ee1a5b0bcbedf3e76357a904df46831cb663f5"
+        },
+        {
+          "path": "tests/compute_models/model_resident_fragment.h",
+          "bytes": 8672,
+          "sha256": "138deaba975edb57d7c29622fef0df737b22f924db43846d3c5bd6d1001fe0cd"
+        },
+        {
+          "path": "tests/compute_models/original_role_input.h",
+          "bytes": 7051,
+          "sha256": "ef769dc0479128b1ab6d727abe76b47fc96023e80ff6592e7442c40703932617"
+        },
+        {
+          "path": "tests/compute_provider_native/half_test_support.h",
+          "bytes": 4399,
+          "sha256": "5f6d8f7b70d07e44600bb6d6d592f66af5dac9970a730695956a1afcfc3cd0b8"
+        }
+      ]
+    },
+    "host_translation_units": 1,
+    "SDK_builds": 0,
+    "native_CPU_builds": 0,
+    "NVCC_builds": 0,
+    "shaders": 0
+  },
+  "acquisition_processes": {
+    "metadata": {
+      "path": ".scratch/glm-pro-target77-20261023/acquisition-processes.json",
+      "bytes": 641,
+      "sha256": "f0a9c116d0241621ddd393dc59d2cdb28ddd3fac0fdb6ebd7b58e88e8df24309"
+    },
+    "failed_attempts_retained": [
+      {
+        "session_id": 67609,
+        "exit_code": 1,
+        "terminal": true,
+        "error": "One exact134217728B range ended early;9,572,722,688B verified retained. Resume same canonical bundle, overwrite only missing exact interval.",
+        "receipt": ".scratch/glm-pro-target77-20261023/original-moe/acquisition.json"
+      }
+    ],
+    "failures_are_not_relabelled_success": true
+  },
+  "limitations": [
+    "Upstream74 Top2048 IDs, layer76 hidden/residual adapter and finite initial history are explicit synthetic fixture boundaries; this is not a complete78-layer prompt-to-output target engine.",
+    "Natural one-fixture K1 and controlled Top1/Top2 match/reject trials are separate; they do not establish natural acceptance rate or task quality.",
+    "Explicit preparedBF16BMM/non-fused index paths are not a claim of vendor fusion-bit identity.",
+    "No new loading/TPS comparison or measured physical memory/VRAM peak. The protected AV comparison/Q35 image are unchanged; the overall MTP goal is not declared complete."
+  ],
+  "protection": {
+    "performance_tail_sha256": "80b8672315911a74039a14cd137659bc67289273dc9c3707cd267b2d06de2551",
+    "qwen_image": {
+      "path": ".scratch/qwen-mtp-next-20261022/hyle-link4/qwen.exe",
+      "bytes": 140411392,
+      "sha256": "9dce4f40d2edb8004c0d79c58e20de6ca6cdc5d1477db3773d26b40d7a05d883"
+    },
+    "anchor": {
+      "path": "docs/evidence/correctness/mtp-dspark-target-verifier-2026-10-23.json",
+      "bytes": 79406,
+      "sha256": "a175d76b116890529659e462495d8b23a3647f24c4d25c2657fb7d4272e2ac30"
+    }
+  },
+  "reused_nextn_evidence": {
+    "path": "docs/evidence/correctness/mtp-glm-pro-nextn-2026-10-23.json",
+    "bytes": 236252,
+    "sha256": "e2d357ab828b39afecd6d24d5e04c8672fba2b32a5c8bf01d7404c57cde0a16a"
+  },
+  "archive": {
+    "path": "docs/evidence/correctness/mtp-glm-pro-target-verifier-2026-10-23.zip",
+    "bytes": 1538147,
+    "sha256": "493e71947c05f30429e697fe79dadad42e9d12750e6b0f55d3b5a027a9e9943f"
+  },
+  "archive_items": 214
+}

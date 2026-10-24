@@ -4,16 +4,21 @@
 #include <cstdint>
 #include <optional>
 #include <span>
+#include <vector>
 
 #include "hyle/compute/completion.h"
 #include "hyle/compute/device.h"
 #include "hyle/compute/prepared_operation.h"
 #include "hyle/compute/provider.h"
 #include "hyle/compute/resource_budget.h"
+#include "hyle/compute/storage_owner.h"
 #include "hyle/compute/tensor.h"
 #include "hyle/error/result.h"
 #include "hyle/graph/compile_report.h"
+#include "hyle/graph/execution_source.h"
 #include "hyle/graph/graph.h"
+#include "hyle/graph/resources.h"
+#include "hyle/graph/result.h"
 #include "hyle/graph/visibility.h"
 #include "hyle/mem/buffer.h"
 #include "hyle/mem/resource.h"
@@ -32,6 +37,11 @@ struct SpecializationSignatureAccess;
 } // namespace detail
 
 class Invocation;
+
+struct InvocationOptions final {
+  std::span<const ShapeBinding> shape{};
+  std::optional<ResourceOptions> resources{};
+};
 
 class ExecutionTargetId final {
 public:
@@ -85,15 +95,17 @@ private:
 };
 
 // Borrowed cold compile inputs. Contexts are retained by the emitted plan;
-// MemoryResource providers remain caller-owned and must outlive the
-// Executable, its Invocations, and every submitted Completion.
+// An optional StorageOwner retains the actual allocation domain. Otherwise
+// resources remain caller-owned through Executables/Invocations/Completions.
 struct StorageDomain final {
   mem::MemoryResourceRef resource{};
   std::size_t workspace_budget_bytes = SIZE_MAX;
+  // Optional actual allocation-domain owner, copied into emitted plans.
+  compute::StorageOwner owner{};
 };
 
 struct ExecutionTarget final {
-  const compute::Context *context = nullptr;
+  ExecutionSource source;
   StorageDomainId default_storage{};
 };
 
@@ -108,8 +120,9 @@ struct ExecutionLane final {
   ExecutionLaneRole role = ExecutionLaneRole::kCompute;
 };
 
-// All compute targets belong to the same Device. Multiple Contexts, Providers,
-// lanes and host/device storage domains are allowed within that device route.
+// Targets retain their actual execution endpoints. Selection qualifies each
+// source's real storage, computation and transfer capabilities; backend names
+// or a shared Device alone never admit a route.
 struct CompileEnvironment final {
   std::span<const StorageDomain> storage_domains{};
   std::span<const ExecutionTarget> targets{};
@@ -209,6 +222,31 @@ struct ReplayReport final {
   std::size_t synchronous_source_dependency_count = 0;
   std::size_t device_wait_dependency_count = 0;
   std::size_t host_wait_dependency_count = 0;
+  // Successful cold preparation only; Commands reports zero for both counts.
+  std::size_t recorded_capture_range_count = 0;
+  std::size_t reused_capture_range_count = 0;
+};
+
+// Cold facts for retained immutable input producers. Counts describe routes,
+// not a promise that every replay records a native wait for an already-ready input.
+struct InputSourceReport final {
+  std::size_t source_count = 0;
+  std::size_t device_wait_count = 0;
+  std::size_t host_wait_count = 0;
+};
+
+struct DomainResourceReport final {
+  mem::MemoryResourceRef resource{};
+  compute::ResourceBudgetUsage usage{};
+  std::size_t boundary_view_bytes = 0;
+};
+// Shared budget scope and borrowed boundary ranges, in StorageDomain order.
+// Boundaries may already be charged; do not add them blindly to live bytes.
+struct InvocationResourceReport final {
+  std::vector<DomainResourceReport> storage;
+  compute::UnattributedStorageUsage unattributed{};
+  std::size_t other_resource_count = 0, other_live_bytes = 0;
+  bool has_unknown_graph_storage_history = false;
 };
 
 // Exact, self-contained identity of one Graph specialization. The hash is an
@@ -248,6 +286,17 @@ private:
       : state_(state) {}
   detail::SignatureState *state_ = nullptr;
 };
+
+// Cold concrete snapshot. Value/node/resource identities remain those of the
+// logical Graph; binding uses its guards, expressions and operation inference.
+struct ExactGraph final {
+  Graph graph;
+  SpecializationSignature signature;
+};
+
+HYLE_GRAPH_API Result<ExactGraph>
+specialize_exact(const Graph &graph, std::span<const ShapeBinding> shape = {},
+                 mem::AllocatorRef allocator = mem::system_allocator()) noexcept;
 
 enum class CompileStepKind : std::uint8_t {
   kOperationFallback = 0,
@@ -317,7 +366,8 @@ struct CompileStepReport final {
 
 struct CompileTargetReport final {
   ExecutionTargetId target{};
-  compute::Device device{};
+  compute::BackendId backend{};
+  compute::DeviceClass device_class = compute::DeviceClass::kUnknown;
   StorageDomainId default_storage{};
 };
 
@@ -444,11 +494,14 @@ enum class ConstantPolicy : std::uint8_t {
 
 struct CompileConstantReport final {
   ValueId value{};
+  // Policy and storage describe the primary binding. Additional storage
+  // replicas are immutable Executable allocations, including for kBorrow.
   ConstantPolicy policy = ConstantPolicy::kBorrow;
   StorageDomainId storage{};
   compute::TensorDesc description{};
-  // Canonical allocation owned by the Executable, not provider packing or
-  // invocation workspace. The report does not retain this allocation.
+  // All canonical allocations for this logical constant, counted once per
+  // actual owner; excludes provider packing and Invocation workspace.
+  // The report does not retain these allocations.
   std::size_t materialized_bytes = 0;
 };
 
@@ -549,8 +602,12 @@ public:
   HYLE_GRAPH_API compute::BackendId backend() const noexcept;
   HYLE_GRAPH_API compute::ProviderIdentity provider() const noexcept;
   HYLE_GRAPH_API CompileSearchReport search() const noexcept;
-  // Counts/limits across the general route and every requested exact route.
+  // Counts/limits across every retained route, including a general route when
+  // one was requested. A finite-exact family has no single execution route:
+  // search/workspace/steps/compiled_storage describe an empty parent, and
+  // total_* plus exact_variant() describe its prepared children.
   HYLE_GRAPH_API CompileSearchReport total_search() const noexcept;
+  HYLE_GRAPH_API bool has_execution_route() const noexcept;
   HYLE_GRAPH_API std::size_t exact_variant_count() const noexcept;
   HYLE_GRAPH_API Result<CompileReport>
   exact_variant(std::size_t index) const noexcept;
@@ -605,8 +662,9 @@ public:
   HYLE_GRAPH_API bool supports_concurrent_invocations() const noexcept;
   HYLE_GRAPH_API bool mixed_providers() const noexcept;
   HYLE_GRAPH_API bool mixed_backends() const noexcept;
-  // Domain reports contain conservative descriptor/workspace envelopes, not
-  // an executable exact point. specialization() is invalid for such reports.
+  // Shape-domain reports have no exact specialization. A declared-domain
+  // route has conservative descriptor/workspace envelopes; a finite-exact
+  // parent has no route or envelope. Query its selected child's report.
   HYLE_GRAPH_API bool is_shape_domain() const noexcept;
   HYLE_GRAPH_API SpecializationSignature specialization() const noexcept;
   HYLE_GRAPH_API Result<CompileTargetReport>
@@ -640,12 +698,17 @@ private:
 // Borrowed by default, through every Executable/Invocation/Completion lifetime.
 // Materialize explicitly requests an Executable-owned canonical copy instead;
 // the source must be ready and immutable only for the duration of compile().
-// Aggregate provider packing never shortens a borrow. Resources themselves
-// remain caller-owned even when Graph owns the allocation within them.
+// Aggregate provider packing never shortens a borrow. Optional owner/lease
+// fields retain actual resources and immutable bytes; otherwise those owners
+// remain caller-owned even when Graph owns allocations within them.
 struct ConstantBinding final {
   ValueId value{};
   compute::ConstTensorView tensor{};
   ConstantPolicy policy = ConstantPolicy::kBorrow;
+  // Optional ready immutable allocation and its actual resource/allocator.
+  // The view must be contained in this lease and use this owner's resource.
+  compute::StorageOwner owner{};
+  compute::ReadLease lease{};
 };
 
 // Borrowed access footprint, not an execution argument or ownership transfer.
@@ -746,6 +809,9 @@ enum class CompileShapePolicy : std::uint8_t {
   // dynamic node needs a Provider that proves and prepares the whole domain.
   // Exact-only implementations cannot stand in for an unproved domain.
   kDeclaredDomain,
+  // Prepare only the nonempty exact_variants table. Valid but unlisted points
+  // are rejected; no general route, JIT, padding or growing cache is created.
+  kFiniteExact,
 };
 
 struct ExactShapeVariant final {
@@ -757,12 +823,14 @@ struct ExactShapeVariant final {
 struct CompileOptions final {
   // Exactly one value per independent GraphBuilder dimension, in any order.
   // Derived IDs must not be bound. Empty is valid with no independent inputs.
-  // Must be empty for kDeclaredDomain; bind at create_invocation() instead.
+  // Must be empty for a declared domain or finite-exact family; bind at
+  // create_invocation() instead.
   std::span<const ShapeBinding> shape{};
   CompileShapePolicy shape_policy = CompileShapePolicy::kExact;
-  // Only with kDeclaredDomain. Prepare every exact route now; unmatched valid
-  // points use the complete general route. No lazy compilation or implicit
-  // cache. Duplicate points and any unpreparable requested route fail compile.
+  // With kDeclaredDomain, unmatched valid points use the complete general
+  // route. With kFiniteExact this table must be nonempty and unmatched points
+  // are rejected. No lazy compilation or implicit cache. Duplicate points and
+  // any unpreparable requested route fail compile.
   // All cumulative search/preparation caps below cover the whole family, not
   // each route separately. Workspace budgets remain per-route/per-Invocation.
   std::span<const ExactShapeVariant> exact_variants{};
@@ -873,14 +941,19 @@ public:
   HYLE_GRAPH_API std::size_t workspace_backing_count() const noexcept;
   HYLE_GRAPH_API bool supports_concurrent_invocations() const noexcept;
   HYLE_GRAPH_API bool is_shape_domain() const noexcept;
+  // False for a finite-exact parent (and an invalid handle). Its route counts,
+  // workspace and required queues are zero; query a child or the Invocation's
+  // executable for actual route requirements. No parent slot is constructed.
+  HYLE_GRAPH_API bool has_execution_route() const noexcept;
   HYLE_GRAPH_API std::size_t exact_variant_count() const noexcept;
   // nullopt if no budget was requested (or this handle is invalid). Individual
   // counters may observe different instants during concurrent create/free;
   // admission itself never exceeds the shared hard limit.
   HYLE_GRAPH_API std::optional<InvocationStorageUsage>
   invocation_storage_usage() const noexcept;
-  // An independently owning route handle. Top-level plan queries describe the
-  // general route; query a child for its exact workspace/ownership contract.
+  // An independently owning route handle. A declared-domain parent's queries
+  // describe its general route. A finite-exact parent has no execution route;
+  // query a child for its workspace/queues/ownership contract.
   HYLE_GRAPH_API Result<Executable>
   exact_variant(std::size_t index) const noexcept;
   // Invalid for a domain; the concrete signature belongs to its Invocation.
@@ -890,14 +963,14 @@ public:
   output_id(std::size_t index = 0) const noexcept;
   HYLE_GRAPH_API Result<OutputOwnership>
   output_ownership(std::size_t index = 0) const noexcept;
-  HYLE_GRAPH_API Result<Invocation> create_invocation() const noexcept;
-  // Cold binding of all independent dimensions for a declared domain. Selects
-  // a precompiled exact variant if present, otherwise the general route. Does
-  // not recompile or select Providers. Query the returned Invocation's actual
+  // Cold binding of all independent dimensions for a shape domain. Selects a
+  // precompiled exact variant if present; only kDeclaredDomain has a general
+  // route for unlisted points. Does not recompile or select Providers. Query
+  // the returned Invocation's actual
   // executable for its workspace/queue contract. Exact executables accept
-  // only an empty span.
+  // only an empty shape. Resource preparation belongs to that selected slot.
   HYLE_GRAPH_API Result<Invocation>
-  create_invocation(std::span<const ShapeBinding> shape) const noexcept;
+  create_invocation(InvocationOptions options = {}) const noexcept;
 
 private:
   friend struct detail::ExecutableAccess;
@@ -906,7 +979,8 @@ private:
 };
 
 // Exclusive mutable run state: external bindings plus one Mem lifetime-plan
-// instance. Creation may allocate; bind/reset/submit never grow metadata,
+// instance. Creation and explicit resource preparation may allocate;
+// bind/reset/submit never grow metadata,
 // search a provider, JIT, pack weights, or allocate workspace. bind() checks
 // the candidate against already-bound external outputs (and, for a new output,
 // external inputs), so all bindings together cost O(inputs*outputs+outputs^2)
@@ -917,6 +991,9 @@ private:
 // reset and prepare_replay then reject it. Create another Invocation from the
 // Executable; a provider/device failure may additionally require rebuilding
 // its owners. Rejection before any accepted work leaves the slot reusable.
+// Control calls and public Completion observation are externally serialized.
+// GraphOutput copies retain the original slot and prevent mutation/replay;
+// raw external TensorViews remain borrowed through their actual consumers.
 class Invocation final {
 public:
   Invocation() noexcept = default;
@@ -940,6 +1017,22 @@ public:
                              compute::ConstTensorView tensor) noexcept;
   HYLE_GRAPH_API Status bind(ValueId value,
                              compute::TensorView tensor) noexcept;
+  // Explicit cold preparation, also available through InvocationOptions.
+  // Owned bindings and typed page adapters share this original slot.
+  HYLE_GRAPH_API Status prepare_resources(ResourceOptions options = {}) noexcept;
+  HYLE_GRAPH_API Status bind(ValueId value, compute::TensorDesc description,
+                             compute::ReadLease lease) noexcept;
+  // Transfers exclusive ownership only on success.
+  HYLE_GRAPH_API Status bind(ValueId value, compute::TensorDesc description,
+                             compute::WriteLease &&lease) noexcept;
+  // Withdraw caller ports after actual retirement. Requires prepare_resources
+  // (also available in InvocationOptions). All ports and native releases are
+  // validated before mutation; constants, fixed outputs, configuration/page
+  // controls and retained observations/results reject. No allocation or wait.
+  // Other caller ports remain bound. Dependent native imports are released;
+  // stable unaffected recordings may be reused after ordinary prepare_replay.
+  HYLE_GRAPH_API Status unbind(std::span<const ValueId> values) noexcept;
+  Status unbind(ValueId value) noexcept { return unbind(std::span(&value, 1)); }
   HYLE_GRAPH_API bool in_flight() const noexcept;
   HYLE_GRAPH_API Status reset() noexcept;
   HYLE_GRAPH_API Status prepare_replay(std::span<const QueueBinding> queues,
@@ -953,6 +1046,8 @@ public:
   // Exact route selected by the latest successful preparation. This exposes
   // all host-blocking dependency sites before the first steady submission.
   HYLE_GRAPH_API Result<ReplayReport> replay_report() const noexcept;
+  HYLE_GRAPH_API Result<InputSourceReport> input_source_report() const noexcept;
+  HYLE_GRAPH_API Result<InvocationResourceReport> resource_report() const noexcept;
   HYLE_GRAPH_API Result<ReplayDependencyRoute>
   dependency_route(std::size_t segment_index,
                    std::size_t dependency_index) const noexcept;
@@ -961,11 +1056,16 @@ public:
   // until reset, the next submit, or Invocation destruction.
   HYLE_GRAPH_API Result<compute::ConstTensorView>
   output(ValueId value) const noexcept;
+  HYLE_GRAPH_API Result<GraphOutput> result(ValueId value) noexcept;
   HYLE_GRAPH_API Result<compute::Completion> submit() noexcept;
   HYLE_GRAPH_API Result<compute::Completion>
   submit(compute::Queue &queue) noexcept;
   HYLE_GRAPH_API Result<compute::Completion>
   submit(std::span<const QueueBinding> queues) noexcept;
+  // Stops new admission. Existing results keep their original backing alive.
+  HYLE_GRAPH_API Status close() noexcept;
+  // Closes admission and waits for actual retirement, preserving errors.
+  HYLE_GRAPH_API Status drain() noexcept;
 
 private:
   friend struct detail::InvocationAccess;

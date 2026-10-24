@@ -12,7 +12,7 @@
 
 #include "hyle/core/compiler.h"
 
-// Intrusive reference counting (clay ref_counted). The count lives INSIDE the
+// Intrusive reference counting. The count lives inside the
 // object (CRTP base), so a Ref<T> is one pointer with no separate control block.
 // This is a native same-toolchain C++ ownership type; its object layout is not
 // a cross-runtime contract.
@@ -21,15 +21,11 @@
 // existing one). ThreadUnsafeRefCounted is an explicit type-level opt-in for a
 // complete reference lifetime confined to one thread.
 //
-// Divergences from clay (deliberate):
-//  - clay's decref calls unqualified `destroy()`, which name-resolves to the
-//    BASE's destroy -- a subclass override is never reached. We dispatch via
-//    static_cast<Sub*>(this)->destroy(), so custom teardown actually works.
-//  - dropped clay's process-global `total_refcounted_objects` atomic: it adds a
-//    contended RMW to every construct/destruct (perf-hostile). Leaks are caught
-//    by ASan instead.
-//  - Ref has no implicit `operator T*` (clay had one): it invites `delete ref`
-//    and silent decays. Matches std::unique_ptr/shared_ptr -- use get().
+// Ownership rules:
+//  - Final release dispatches through static_cast<Sub*>(this)->destroy(), so
+//    subclass teardown runs rather than an unqualified base destroy().
+//  - There is no process-global object counter on the construct/destruct path.
+//  - Ref has no implicit operator T*: use get() for a borrowed raw pointer.
 
 namespace hyle::util {
 
@@ -219,8 +215,7 @@ concept RefCompatible =
 // Intrusive owning smart pointer. Copy = share (incref); move = steal. Holds a
 // strong reference for its lifetime. Construct via make_ref<T>()/adopt_ref()/
 // retain_ref() -- the raw-pointer constructor is intentionally absent to keep
-// "adopt vs retain" explicit at the call site (clay's implicit Ref(T*) adopted
-// silently, a known footgun its own comments warned about).
+// "adopt vs retain" explicit at the call site.
 template <RefCompatible T>
 class Ref {
  public:

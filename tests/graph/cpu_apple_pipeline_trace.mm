@@ -228,7 +228,7 @@ Status exercise() {
   HYLE_ASSIGN_OR_RETURN(auto cpu, g::cpu::create_context({.executor = c::ParallelExecutorRef{&phase, 1, &cpu_parallel}}));
   HYLE_ASSIGN_OR_RETURN(auto native, n::Context::create());
   HYLE_ASSIGN_OR_RETURN(auto memory, n::MemoryResource::create(native));
-  const b::Environment environment{.cpu = &cpu, .apple = &native, .native = &memory};
+  const PipelineResources environment{cpu,native,memory};
   HYLE_RETURN_IF_ERROR(branches(environment, true, 2, true, 9, 1, &observe, true));
   phase_base = 100;
   HYLE_RETURN_IF_ERROR(branches(environment, false, 2, true, 9, 1, &observe, true));

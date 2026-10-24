@@ -117,7 +117,12 @@ TEST(CudaDefaultGraph,
                                      resource.ref());
       ASSERT_TRUE(direct.has_value()) << direct.error().message();
       EXPECT_EQ(direct->provider().id, compute::ggml_cuda::kProviderId);
-      auto direct_slot = direct->create_invocation().value();
+      const auto requirement = direct->workspace_requirement();
+      auto workspace = requirement.size == 0
+          ? mem::Buffer{}
+          : mem::Buffer::create(resource.ref(), requirement.size,
+                                requirement.alignment).value();
+      auto direct_slot = direct->create_invocation(workspace.view()).value();
       Tensor direct_output(output_desc, resource.ref());
       ASSERT_TRUE(queues[0].reserve_completions(2).ok());
       const auto before = stats.snapshot();

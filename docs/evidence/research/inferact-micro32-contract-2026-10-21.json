@@ -1,0 +1,63 @@
+{
+  "schema_version": 1,
+  "observed_on": "2026-10-21",
+  "status": "Research complete; explicit finite BF16 W4A16 deployment reference selected. Product execution evidence is separate.",
+  "artifact_execution_verified": false,
+  "artifact": {
+    "catalog_index": 19,
+    "repository": "Inferact/Qwen3.8-2.4T-A95B-MXFP4",
+    "revision": "98b8fd6c5dec37c28ff28e7a0f577677ccbdc49f"
+  },
+  "scope": {
+    "model_numeric_payload_bytes": 0,
+    "Hyle_builds_in_research": 0,
+    "Hyle_operation_tests_in_research": 0,
+    "GPU_processes_in_research": 0
+  },
+  "key_findings": [
+    "Sampled expert W is U8[N,K/2] with original F32SF[N,K/32]. Fixed reader expects adjacent even-low/odd-high E2M1; fused gate_up rows and scales are loaded as contiguous gate then up.",
+    "Fixed vLLM numerically casts F32SF to E8M0. Fixed PyTorch GRS-RNE is not ceil, reinterpret or raw F32 multiplication:1.25->1,1.5->2,tinypositive->2^-127. The selected import rejects nonpositive/nonfinite source SF and rounded code255 before ready publication.",
+    "Selected runtime reference keeps finite BF16 A unchanged. Decode signed E2M1 times BF16 E8scale to BF16 W before F32 dot and BF16 output; never substitute activation FP4 QDQ or MLX post-dot group scaling.",
+    "Fixed deployment reader ignores micro/macro/OAS fields; its selected reference needs no macro math port. Original Inferact exporter, OAS generation and actual stored numeric scale values remain unverified.",
+    "Cached Quark0.12.post1 decoder is a real dependency of the selected vLLM EMULATION reference, not evidence that Inferact was produced by Quark. SF255 and optional backend extremes are outside the selected equivalence."
+  ],
+  "exact_reference_domain": "Positive finite original F32SF -> GRS-RNE E8 codes0..254 cold; finite BF16 A, unchanged adjacent E2M1 weights; selected SF255 and nonfinite A fail. Legal finite decoded-W/dot overflow retains IEEE results. No hardware FP4 or universal reduction-bit equivalence.",
+  "minimum_next_implementation": "Extend existing Mxfp4Linear/GroupedMxfp4Linear with explicit BF16 activation mode and cold F32-to-E8 scale import; reuse bounded selected-expert row/group decode and original resource/Invocation/status/capture chain. No new executor or E*N*K floating bank.",
+  "not_verified": [
+    "original Inferact exporter/OAS mathematical equivalence",
+    "actual numeric payload/calibration values",
+    "whole artifact import or model execution",
+    "quality",
+    "hardware native FP4 GEMM",
+    "throughput"
+  ],
+  "sources": [
+    "https://huggingface.co/Inferact/Qwen3.8-2.4T-A95B-MXFP4/blob/98b8fd6c5dec37c28ff28e7a0f577677ccbdc49f/config.json",
+    "https://github.com/vllm-project/vllm/blob/7b569ec8953cf8099638a6d2ee1e915b75867c3a/vllm/model_executor/layers/quantization/mxfp4.py",
+    "https://github.com/pytorch/pytorch/blob/cf30153c4c131c8164ee7798e5022d810682e2cb/torch/headeronly/util/Float8_e8m0fnu.h"
+  ],
+  "detail_members": [
+    "design-review.json",
+    "runtime/routed_experts.py",
+    "runtime/moe_mxfp4.py",
+    "runtime/torch-Float8_e8m0fnu-fixed.h",
+    "artifact/assessment.json"
+  ],
+  "archive": {
+    "path": "docs/evidence/research/inferact-micro32-contract-2026-10-21.zip",
+    "bytes": 197804,
+    "sha256": "e2c08e8d6fe32e45f2cb0cbcb2e666b60048b466809cb9d359ea003fbd25aea1"
+  },
+  "archive_manifest": {
+    "member": "archive-manifest.json",
+    "bytes": 20061,
+    "sha256": "27cf891c132c06de4e0f2bca9854db3d7fd8f1866e6c84027dd7c86d6b154322"
+  },
+  "member_count": 60,
+  "source_count": 17,
+  "verification": {
+    "CRC_all_members": true,
+    "SHA256_all_payloads": true,
+    "safe_unique_member_paths": true
+  }
+}

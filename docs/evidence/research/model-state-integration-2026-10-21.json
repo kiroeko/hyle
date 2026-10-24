@@ -1,0 +1,464 @@
+{
+  "schema": "hyle.model-state-integration-review.v1",
+  "date": "2026-10-21",
+  "answer": "A model needs an accurate continuation-state description/adapter when first integrated, not a new cache manager for every model, quantized repository or backend. Models in the same state family can share a parameterized adapter. New state mathematics or storage representation may still require a real primitive/reader extension; existing operators alone do not prove the model adapter works.",
+  "scope": {
+    "models": [
+      "qwen35_2b",
+      "qwen38_27b",
+      "qwen38_24t",
+      "kimi_k3",
+      "glm53",
+      "glm53_flash",
+      "deepseek_v4_pro_0813",
+      "deepseek_v4_flash_0731"
+    ],
+    "authority": "The existing eight-model current_scope and model-operators table only; preview DeepSeek and all newer/unlisted models are excluded.",
+    "network_requests": 0,
+    "product_or_doc_edits": 0,
+    "builds": 0,
+    "gpu_runs": 0,
+    "model_runs": 0
+  },
+  "sources": {
+    "inventory": {
+      "path": "docs/implementation/model-operators.md",
+      "bytes": 85903,
+      "sha256": "05f9360c68e1d7849953726e26a73e990e41f048bd100d9ed9662a20440f71fa"
+    },
+    "scope": {
+      "path": "docs/implementation/tasks/compute/llm-moe-provider-demand-matrix.json",
+      "bytes": 25575,
+      "sha256": "3a803704977def58bba3202652f27380e0a72197752ff3989eab42b2d68a1fd3"
+    },
+    "qwen_actual": {
+      "path": "tools/qwen35_text/main.cc",
+      "bytes": 91984,
+      "sha256": "d47b4247610e55259259b40c1e5fc3b4dcabe70d7767b0ea58ebea43a41fe306"
+    },
+    "directory": {
+      "path": "tools/qwen35_text/session_cache.h",
+      "bytes": 7287,
+      "sha256": "f5f6a16e9aee3668cc9692933c25e092983657d678295d3faf0ed1f0598c4000"
+    },
+    "state": {
+      "path": "include/hyle/compute/state_versions.h",
+      "bytes": 8553,
+      "sha256": "a09cb66a216b56a0651f515f18d8a97772b0e6d281c171a82b8a6630b3e1c7d7"
+    },
+    "clone": {
+      "path": "include/hyle/compute/state_clone.h",
+      "bytes": 14637,
+      "sha256": "5117445bbb250a62443587d8d9f64a733970af7f430183f0cc2ef1e52abc2704"
+    },
+    "arena": {
+      "path": "include/hyle/compute/paged_arena.h",
+      "bytes": 10384,
+      "sha256": "b476c09d1c3c7635e11eaf228c5da7f6a5bfb8bb9b44bd13b60dc70209a85850"
+    },
+    "math": {
+      "path": "include/hyle/compute/model_ops.h",
+      "bytes": 75815,
+      "sha256": "91ef5991618307e1be23c4d36f8b07aca09d9ff41473098b3d50ada4feb6b5cb"
+    },
+    "gdn_infer": {
+      "path": "src/compute_ops/operation.cc",
+      "bytes": 64429,
+      "sha256": "21b665ce7df5e6bfcfe25dea3f302044ae9c536a6b9203d4ec335bd898b615c4"
+    },
+    "kda_fragment": {
+      "path": "tests/compute_models/d5_kda_full_fragments.h",
+      "bytes": 12036,
+      "sha256": "fab310b39195f960106d61e9d5a5ea03a31c56b81d83fa32608592f31ffa2cb0"
+    },
+    "kimi_fragment": {
+      "path": "tests/compute_models/d5_kimi_remaining_fragments.h",
+      "bytes": 18043,
+      "sha256": "edc6aaeb8d05c1f848447849b45bf3f908b77a737823ce6dfbf737feedeb2218"
+    },
+    "glm_fragment": {
+      "path": "tests/compute_models/d5_glm_remaining_fragments.h",
+      "bytes": 54263,
+      "sha256": "12dbf546cb1050470dd6db65fe4d1f0a70364781a22d9df466699e7b10cde742"
+    },
+    "glm_reader": {
+      "path": ".scratch/architecture-refactor-2026-10-18/precise-role-consumers-2026-10-21/apple/producer/vlm-glm5-next-language.py",
+      "bytes": 43767,
+      "sha256": "478b285c862e09a6c2c9289af702e5644f50445a2aea3a1c5de086455f1c0d9c"
+    },
+    "glm_reader_revision": {
+      "path": ".scratch/architecture-refactor-2026-10-18/precise-role-consumers-2026-10-21/apple/producer/revisions.json",
+      "bytes": 238,
+      "sha256": "b9fcf7ee0febf65994e30a7804c3d3294fe49e4b0d0d973e83ec0d48d427d483"
+    },
+    "official_configs": {
+      "path": "docs/evidence/research/llm-moe-d5-residual-contract-audit/official-config-extract.json.gz",
+      "bytes": 9823,
+      "sha256": "ab5c279d83b5bf126cab6bc1ceb48b8617229c9bfb06bd955e1eb4c35fb72cc9"
+    },
+    "ga_index_research": {
+      "path": "docs/evidence/research/ga-indexer-gap-2026-10-20.json",
+      "bytes": 17781,
+      "sha256": "80ebe7b60e5c627295ed8a1b269c0648db740a43dc14f021247a6b10533bd28f"
+    },
+    "ga_ratio_proof": {
+      "path": "docs/evidence/correctness/ga-ratio4-producer-reference-2026-10-21.json",
+      "bytes": 186571,
+      "sha256": "05251ec6e315cf770bfc3970cbeb5ae268eb1bed82a23d8e3740729054834e79"
+    },
+    "mla_proof": {
+      "path": "docs/evidence/correctness/compact-mla-e4-reference-2026-10-21.json",
+      "bytes": 186219,
+      "sha256": "6954334f7a4883a547487f0acc9db7c0381836012f566d6691f4f2e72c2a28e1"
+    },
+    "append_proof": {
+      "path": "docs/evidence/correctness/paged-append-graph-2026-10-21.json",
+      "bytes": 486867,
+      "sha256": "6c7fb88b45e16dd7038636b7c5f1e15b9c0de9ce3100443b48a4076839da8924"
+    }
+  },
+  "archive_members": {
+    "kimi_config": {
+      "archive": "docs/evidence/research/model-quantization-discovery-2026-10-19.zip",
+      "member": "qwen-kimi/amd--Kimi-K3-Quark-MXFP4-AttnFP8/config.json",
+      "bytes": 64318,
+      "sha256": "3d6cf6007f5b77d7da77a81e26c2ff0f0f006c0937421712d2b2e2532faa74d9"
+    },
+    "q27_config": {
+      "archive": "docs/evidence/research/model-quantization-discovery-2026-10-19.zip",
+      "member": "qwen-kimi/nvidia--Qwen3.8-27B-NVFP4/config.json",
+      "bytes": 87506,
+      "sha256": "71fa01bb64de20971045cd82a82c0ebb25a54e1b0a3f09ef23cf5479e9c54df8"
+    },
+    "q24_config": {
+      "archive": "docs/evidence/research/model-quantization-discovery-2026-10-19.zip",
+      "member": "qwen-kimi/nvidia--Qwen3.8-2.4T-A95B-NVFP4/config.json",
+      "bytes": 105754,
+      "sha256": "0477eb951389a6247322314af2de966232290e6c16ad2a46933c9b86cd16a88b"
+    },
+    "ga_flash_source": {
+      "archive": "docs/evidence/research/deepseek-v4-ga-2026-10-19.zip",
+      "member": "flash-0731/inference-model.py",
+      "bytes": 45118,
+      "sha256": "c0c19e6c9fa439bac7fbb1c5bc1868232dfd5aa2f439a548d0e33dcc2a9edd3f"
+    },
+    "ga_pro_source": {
+      "archive": "docs/evidence/research/deepseek-v4-ga-2026-10-19.zip",
+      "member": "pro-0813/current/inference/model.py",
+      "bytes": 45118,
+      "sha256": "c0c19e6c9fa439bac7fbb1c5bc1868232dfd5aa2f439a548d0e33dcc2a9edd3f"
+    },
+    "ga_flash_config": {
+      "archive": "docs/evidence/research/deepseek-v4-ga-2026-10-19.zip",
+      "member": "flash-0731/inference-config.json",
+      "bytes": 1162,
+      "sha256": "c90861f3d10a9e4ef5954f8f1a34c529d480da1c5799f84660028f4e38e14e71"
+    },
+    "ga_pro_config": {
+      "archive": "docs/evidence/research/deepseek-v4-ga-2026-10-19.zip",
+      "member": "pro-0813/current/inference/config.json",
+      "bytes": 1240,
+      "sha256": "801bc719d08cd5be57cddc185cac621417522810e29d0314849c939bf0176ee7"
+    }
+  },
+  "source_notes": [
+    "Archive members from model-quantization-discovery are already cached fixed descendant artifact configs; their architecture fields are used as recorded evidence, not proof of upstream latest state, checkpoint numeric values or Hyle execution.",
+    "GLM official config extraction preserves repository/revision identity. The additional MLX reader is pinned by glm_reader_revision (mlx-vlm f1a9b7bac6f2b95f588ffc9343495a3c61c6e328) and is distinguished from the official publisher implementation.",
+    "Formal Pro/Flash source members have identical SHA c0c19e6c9fa439bac7fbb1c5bc1868232dfd5aa2f439a548d0e33dcc2a9edd3f; the separate GA configs, layer schedules and TopK differ.",
+    "Anchors use source IDs above with line ranges or exact JSON pointers. This is a source/cached-evidence review, not a new model-support status."
+  ],
+  "common_boundary": [
+    {
+      "owner": "Shared immutable model",
+      "contract": "Weights, immutable Executable/family children and model state schema are shared. Session index is not a provider identity and each session has its own mutable Invocation/bindings and committed position/state."
+    },
+    {
+      "owner": "Generic state/page machinery",
+      "contract": "StateSchema/Store/Version/Head hold fixed typed resource members and copied host metadata; ReadLease/StateWriter/CloneTicket enforce original ownership and native retirement. PagedArena holds exact ready/pending page guards. Their logic is reused across state families; it does not infer model semantics."
+    },
+    {
+      "owner": "Model adapter",
+      "contract": "Declare every persistent tensor and metadata field, shape/dtype/codec, query/history update ports, per-token/chunk ordering, valid lengths/positions, and one successful whole-model publication boundary. A prefix fork must preserve the full model state at that boundary. Replaying omitted history is an explicit charged fallback, not an implicit KV-only restoration."
+    },
+    {
+      "owner": "Engine directory/admission",
+      "contract": "SessionCache handles resident count and owner-reported requested bytes at admission/idle boundaries. Engine decides active windows, LRU/prefix identity and eviction; exact page/shared backing budgets and in-flight retirement remain in the resource owners. Erasing a directory does not free retained native storage."
+    },
+    {
+      "owner": "Backend",
+      "contract": "An existing typed state update/reader runs through its original backend and Execution/Invocation/Queue lifetime. Bind actual resource/representation and qualify geometry/numerics; no per-model backend allowlist or second executor is implied."
+    }
+  ],
+  "models": [
+    {
+      "id": "qwen35_2b",
+      "model": "Qwen3.5-2B",
+      "state_family": "Ordinary GQA KV + short-convolution history + scalar-gated GDN recurrence",
+      "retained_state": "Six attention layers retain BF16 K and V [capacity,512]. Eighteen linear layers retain BF16 conv history [1,3,6144] and F32 recurrence [1,16,128,128]; current consumer uses two ping-pong buffers. Also retain exact logical token/position history and committed length; parity selects execution slots, not user identity.",
+      "anchors": [
+        "inventory:151",
+        "qwen_actual:174-208",
+        "qwen_actual:574-598",
+        "qwen_actual:831-867",
+        "qwen_actual:1358-1398"
+      ],
+      "reuse": [
+        "ordinary paged/ragged readers",
+        "CausalConv1d + RecurrentGatedDeltaNet/GatedDeltaNet",
+        "StateVersion/Head and original lease/Invocation lifetimes",
+        "shared SessionCache and ResourceBudget"
+      ],
+      "actual_status": "Real current text CUDA consumer shares one weight/family owner across independent sessions; two/four-session isolation and bounded eviction/reconstruction have actual evidence. Existing Qwen common-core regression retains dense Scatter/Ragged math.",
+      "adapter_work_or_unknown": "Whole immutable KV+conv/GDN+position snapshot/paged-prefix integration is being implemented separately; do not claim it completed from append micro-consumers. Arbitrary-token prefix rewind, image/video state and MTP are outside that proof.",
+      "locked_official_identity": {
+        "repository": "Qwen/Qwen3.5-2B",
+        "revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+        "variant": "official-bf16",
+        "formats": [
+          "BF16",
+          "F32 recurrent"
+        ]
+      }
+    },
+    {
+      "id": "qwen38_27b",
+      "model": "Qwen3.8-27B",
+      "state_family": "Same hybrid KV + conv/GDN family, different geometry",
+      "retained_state": "Locked descendant config records 64 layers, full-attention interval4, conv kernel4, key/value head dimensions128 and linear head counts16/48. Retain actual per-layer K/V, conv and F32 recurrent states plus positions; do not copy Qwen2B state sizes.",
+      "anchors": [
+        "inventory:151",
+        "member:q27_config#/text_config/layer_types",
+        "member:q27_config#/text_config/linear_num_key_heads",
+        "member:q27_config#/text_config/linear_num_value_heads"
+      ],
+      "reuse": [
+        "same ordinary KV/page and GDN/conv primitives",
+        "same generic version/clone/page budgets and idle directory"
+      ],
+      "actual_status": "Existing model-role/fragment requirements and mechanisms; no complete Q27 multi-session consumer established by this review.",
+      "adapter_work_or_unknown": "A parameterized hybrid model state description must bind exact head mapping, shapes/dtypes, update ports and atomic publication. Descendant quantized config is local architecture evidence, not a new proof of official payload/cache execution; profile-specific MTP needs separate state description.",
+      "locked_official_identity": {
+        "repository": "Qwen/Qwen3.8-27B",
+        "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+        "variant": "official-bf16",
+        "formats": [
+          "BF16",
+          "F32 recurrent"
+        ]
+      }
+    },
+    {
+      "id": "qwen38_24t",
+      "model": "Qwen3.8-2.4T-A95B",
+      "state_family": "Hybrid KV + conv/GDN; MoE does not itself create a second continuation-cache system",
+      "retained_state": "Locked descendant config records92 layers, full-attention interval4, conv kernel4, linear key/value heads16/128 and dimensions128. Per-session state includes all attention and linear recurrence/history plus logical positions. Expert weights/routing bank residency are shared resource concerns rather than token-history state.",
+      "anchors": [
+        "inventory:152",
+        "member:q24_config#/layer_types",
+        "member:q24_config#/linear_num_key_heads",
+        "member:q24_config#/linear_num_value_heads"
+      ],
+      "reuse": [
+        "parameterized hybrid state descriptors and existing GDN/conv/KV math",
+        "same WeightSlots for readonly expert working sets, distinct from Session state",
+        "same StateStore/PagedArena/lease retirement"
+      ],
+      "actual_status": "Finite role/FFN/GDN fragments exist; this is not a full 2.4T model or multi-session execution claim.",
+      "adapter_work_or_unknown": "Bind model-specific hidden/head sizes, head mapping, layer schedule and all actual cache ports. MTP/draft state and selected quantized artifact math remain distinct checks; no per-artifact LRU implementation is required.",
+      "locked_official_identity": {
+        "repository": "Qwen/Qwen3.8-2.4T-A95B",
+        "revision": "207bd685a7e3696cfaff12ded7c6a7ea0f88c996",
+        "variant": "official-bf16",
+        "formats": [
+          "BF16",
+          "F32 recurrent/router"
+        ]
+      }
+    },
+    {
+      "id": "kimi_k3",
+      "model": "Kimi-K3",
+      "state_family": "MLA history + short-convolution/KDA recurrent state",
+      "retained_state": "Cached Kimi config records MLA latent rank512, RoPE64, KDA96 heads脳128, short-conv kernel4, and separate KDA/full-attention layer sets. KDA needs its Q/K/V conv tail and per-channel-gated recurrent matrix. MLA fragment retains combined latent+position rows (576) with V sharing latent prefix512. Token positions/counters belong to the same model snapshot.",
+      "anchors": [
+        "inventory:153",
+        "member:kimi_config#/text_config/linear_attn_config",
+        "member:kimi_config#/text_config/kv_lora_rank",
+        "kda_fragment:79-176",
+        "kimi_fragment:169-205"
+      ],
+      "reuse": [
+        "PagedMlaAttention and exact page frames for compatible representation",
+        "CausalConv1d and per-channel GatedDeltaNet schema/ordinary graph",
+        "same fixed resource versions and leases"
+      ],
+      "actual_status": "Model-specific finite KDA/MLA graphs exist; complete source-bound multi-session adapter is not established here.",
+      "adapter_work_or_unknown": "KDA per-channel decay must not be replaced by the scalar raw-gate RecurrentGatedDeltaNet helper merely because both use a recurrent matrix. Native geometry/numerics and all cache dtypes remain actual-route qualifications. AttnRes is intra-forward cross-layer computation; this review does not infer a new persistent cross-token cache for it.",
+      "locked_official_identity": {
+        "repository": "moonshotai/Kimi-K3",
+        "revision": "f831ab66814297da540d832a5235f8e904f29d06",
+        "variant": "official-mxfp4",
+        "formats": [
+          "MXFP4 packed expert",
+          "UE8M0 scale",
+          "BF16",
+          "F32"
+        ]
+      }
+    },
+    {
+      "id": "glm53",
+      "model": "GLM-5.3",
+      "state_family": "MLA/DSA KV + index-key history and selection reuse/carry",
+      "retained_state": "Fixed official config:78 layers, latent rank512, RoPE64, H32/D128 indexer, Top2048 with configured index selection reuse. Snapshot needs actual attention storage, index-key cache, positions/validity and any cross-layer/MTP selection carry required by the chosen source graph; a plain KV-only snapshot is insufficient.",
+      "anchors": [
+        "inventory:154",
+        "official_configs#/glm53/config",
+        "glm_fragment:389-440",
+        "glm_fragment:619-678"
+      ],
+      "reuse": [
+        "compact MLA paged/ragged readers for matching plain/uniform E4 representation",
+        "ordinary projection/score/TopK/Gather and I32 mapping",
+        "StateVersion metadata/resources and exact page guards"
+      ],
+      "actual_status": "Finite MLA/index/typed readers are present, including bounded compact E4 reference; no full GLM53 state adapter/multi-session proof follows.",
+      "adapter_work_or_unknown": "Bind the actual deployment representation: expanded K/V QDQ, uniform compact latent cache and mixed scaled-DSA rows are different contracts. Existing H64 GA row-cache scorer is not an automatic H32 GLM replacement; index reuse and MTP carry must follow this model source.",
+      "locked_official_identity": {
+        "repository": "zai-org/GLM-5.3",
+        "revision": "aca966e4e02791568aa6a4ced368624b3d897f42",
+        "variant": "official-fp8",
+        "formats": [
+          "FP8 E4M3 block128",
+          "BF16",
+          "F32"
+        ]
+      }
+    },
+    {
+      "id": "glm53_flash",
+      "model": "GLM-5.3-Flash",
+      "state_family": "KDA + NoPE MLA/DSA + pooled index and unpooled tail",
+      "retained_state": "Fixed official text_config records45 layers:34 KDA/conv layers and11 DSA layers, KDA64脳128/kernel4; latent512 NoPE cache; H32/D128 indexer with K4 pooling and always-selected tail. Snapshot must preserve conv/recurrent resources, attention cache, index keys/gates, completed pool cache, unpooled window/tail, offsets/validity and any selection carry.",
+      "anchors": [
+        "inventory:155",
+        "official_configs#/glm53_flash/config/text_config/linear_attn_config",
+        "official_configs#/glm53_flash/config/text_config/index_kpool",
+        "glm_reader:131-218",
+        "glm_reader:389-431",
+        "glm_reader:931-946",
+        "glm_fragment:389-497"
+      ],
+      "reuse": [
+        "same KDA/conv and MLA primitives",
+        "ordinary pooling/reduction/selection graph with explicit state ports",
+        "shared page/version/clone/retirement and cache directory"
+      ],
+      "actual_status": "Finite KDA/MLA/pooling/MoE role consumers exist. The cached pinned MLX reader explicitly distinguishes ArraysCache and several KV/PoolingCache owners; it is source evidence, not Hyle model-serving completion.",
+      "adapter_work_or_unknown": "A full hybrid adapter must bundle pooled and raw-tail state with KDA/MLA. mHC coefficients/residuals are graph phase state when required, not a reason to build another cache manager. Fixed producer/backend versions and exact storage dtype still matter.",
+      "locked_official_identity": {
+        "repository": "zai-org/GLM-5.3-Flash",
+        "revision": "eb9eb208eb0d988989d07a6a12d0fdeb5f52574a",
+        "variant": "official-fp8",
+        "formats": [
+          "FP8 E4M3 block128",
+          "BF16",
+          "F32"
+        ]
+      }
+    },
+    {
+      "id": "deepseek_v4_pro_0813",
+      "model": "DeepSeek-V4-Pro-0813 formal GA",
+      "state_family": "SWA ring + ratio4/128 compressor windows/cache + independent BF16-QAT index cache",
+      "retained_state": "Formal GA source allocates attention row cache covering window128 plus compressed history, F32 compressor kv_state and score_state (including overlap for ratio4), and separate post-QAT BF16 index history with H64/D128/Top1024. Retain ring position, compression phase, logical lengths and candidate mappings. Source main layers61; DSpark adds3 stages with distinct draft/verify state.",
+      "anchors": [
+        "inventory:75-79",
+        "member:ga_pro_source:285-382",
+        "member:ga_pro_source:386-438",
+        "member:ga_pro_source:442-538",
+        "member:ga_pro_source:750-784",
+        "member:ga_pro_config#/compress_ratios"
+      ],
+      "reuse": [
+        "ordinary graph BF16 score/TopK/I32 map",
+        "ratio4 producer window/cache StateVersion reference",
+        "SinkAttention and exact typed row/page access for compatible codec",
+        "generic leases/StateHead/clone/page retirement"
+      ],
+      "actual_status": "Source-pinned finite ratio4 producer鈫抯core/selection鈫抳ersion journey and mHC/FFN fragments have evidence; not full GA model, ratio128 whole producer or model-wide prefix integration.",
+      "adapter_work_or_unknown": "Do not call this ordinary separate K/V or assume uniform CKV512+KPE64 encoding. Original GA index cache is decoded BF16 QAT, while Hyle packed row storage is an independent carrier choice. Whole snapshot must include compressor pending windows/score state, not just emitted rows. DSpark accepted-prefix state is not inherited from old one-layer MTP tests.",
+      "locked_official_identity": {
+        "repository": "deepseek-ai/DeepSeek-V4-Pro-0813",
+        "revision": "72e1d3230f6c080a530b0a1d46f8eb4602340597",
+        "config_sha256": "9dd2a89255469e120b333668ef5a169b7ae46c00f6bbab786bf0be457546aec0",
+        "variant": "official-fp4-fp8-dspark",
+        "formats": [
+          "packed FP4 expert",
+          "FP8 E4M3",
+          "UE8M0 scale",
+          "BF16",
+          "F32",
+          "I64"
+        ],
+        "model_card_url": "https://huggingface.co/deepseek-ai/DeepSeek-V4-Pro-0813/blob/72e1d3230f6c080a530b0a1d46f8eb4602340597/README.md"
+      }
+    },
+    {
+      "id": "deepseek_v4_flash_0731",
+      "model": "DeepSeek-V4-Flash-0731 formal GA",
+      "state_family": "Same GA SWA/compressor/index family, distinct layer schedule and sizes",
+      "retained_state": "Formal GA source is byte-identical to Pro model source but config differs:43 main layers, ratio0/4/128 schedule, window128 and H64/D128/Top512. The same F32 compressor window/score and BF16-QAT index state categories apply, plus ring/compression/position metadata. Three DSpark stages have separate cache/acceptance requirements.",
+      "anchors": [
+        "inventory:75-79",
+        "member:ga_flash_source:285-438",
+        "member:ga_flash_source:442-538",
+        "member:ga_flash_config#/compress_ratios",
+        "ga_ratio_proof#/scope",
+        "ga_ratio_proof#/ownership"
+      ],
+      "reuse": [
+        "same generic GA state description family parameterized by config",
+        "existing finite BF16 index/ratio4/state primitives",
+        "same common cache and retirement infrastructure"
+      ],
+      "actual_status": "Current finite GA index/ratio4/mHC/full-FFN role evidence includes Flash geometry; no full source-payload model or multi-session prefix proof.",
+      "adapter_work_or_unknown": "Parameterize the exact emitted-row schedule and unfinished-window state; Pro/Flash config and DSpark stages cannot be interchanged by model-family name. ratio128, full graph and draft accepted-prefix integration remain independent unknowns.",
+      "locked_official_identity": {
+        "repository": "deepseek-ai/DeepSeek-V4-Flash-0731",
+        "revision": "7872f01b1d1fe23eabc4c98b48bffcef5a386062",
+        "config_sha256": "6c8f3d2d3b48707541b88f32f22ef3f0f8a6b57d8523281e2b8d3cdb0ae9a023",
+        "variant": "official-fp4-fp8-dspark",
+        "formats": [
+          "packed FP4 expert",
+          "FP8 E4M3",
+          "UE8M0 scale",
+          "BF16",
+          "F32",
+          "I64"
+        ],
+        "model_card_url": "https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash-0731/blob/7872f01b1d1fe23eabc4c98b48bffcef5a386062/README.md"
+      }
+    }
+  ],
+  "quantization_and_prefix_identity": {
+    "principle": "Quantization is part of the compatibility identity, not a reason to implement another LRU/cache system.",
+    "include_in_identity": [
+      "exact model/weights revision and adapter parameters",
+      "actual token prefix, positions and RoPE/config semantics",
+      "cache representation/dtype/codec and any fixed/dynamic scale interpretation",
+      "quantized model/activation math and rounding policy that generated the state",
+      "compatible physical resource/layout and original owner/generation when sharing backing"
+    ],
+    "must_not_assume": "Same base model name, same bit width, equal tensor shape or weight quantization label does not prove state values/codec are shareable. A change limited to a genuinely identical cache-format adapter may reuse machinery, but must not reuse incompatible state bytes."
+  },
+  "remaining_global_boundaries": [
+    "Current proven real multi-session model consumer is Qwen3.5-2B text. Do not promote the other seven from finite operator/role tests to complete model adapters.",
+    "Model-wide immutable snapshots must publish all KV/conv/GDN/KDA/compressor/index members and position metadata together; a ready page and a separate successful state head are not automatically an atomic whole-model state.",
+    "StateVersion has fixed resource/metadata members; variable PagedArenaRead page lists remain typed owning frames in an engine snapshot aggregate, not serialized owning C++ handles in metadata bytes.",
+    "New paged append proof covers original shared CPU/CUDA plain F16/BF16 fresh/COW writes, selected artifacts and explicit DAG edges. Native Apple/Vulkan/encoded writers and exclusive in-place append are separate scopes. The symbolic-rows work in progress is not signed by earlier fixed-row tests.",
+    "Prefix reuse at a saved complete-state boundary can share immutable owners. Arbitrary token cuts/rollback and MTP/DSpark accepted-prefix commit need complete saved state or explicit source-correct replay; no automatic generic proof exists.",
+    "Do not retain every mathematical output as continuation cache: AttnRes/mHC residuals and coefficients and cross-layer TopK reuse can be intra-forward scratch. Persist them only where the selected model actually carries them across the saved continuation/draft boundary."
+  ],
+  "decision": "Keep one common cache/resource lifecycle. Implement or parameterize model state descriptions by these families, then run a real full-state continuation/prefix journey per adapter. Extend a primitive only for a proven math/representation gap, not because the model has another name."
+}

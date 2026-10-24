@@ -104,7 +104,7 @@ Status make_request(Slot &slot,std::int32_t nq,std::int32_t nk,std::int32_t qsta
   s.vbytes=std::size_t(nk)*value_row;s.obytes=std::size_t(nq)*cap.query_heads*cap.value_head_dim*2;
   slot.known+=s.known;slot.requests.push_back(std::move(request));return Status::Ok();
 }
-d::EnqueueResult plan(void *p,c::Queue &,const c::BatchLayoutVersion &layout,d::BatchWorkspaceViews,c::BatchPlanReport *r)noexcept{
+d::EnqueueResult plan(void *p,d::QueueSequence &,const c::BatchLayoutVersion &layout,d::BatchWorkspaceViews,c::BatchPlanReport *r)noexcept{
   auto &s=*static_cast<Slot *>(p);s.requests.clear();s.layout={};s.known=0;
   try{const auto h=layout.host();const auto fixed=s.data->layout.host();const auto eq=[](auto a,auto b){return a.size()==b.size()&&std::equal(a.begin(),a.end(),b.begin());};if(!s.data->layout.schema().owns(layout)||!eq(h.query_indptr,fixed.query_indptr)||!eq(h.kv_indptr,fixed.kv_indptr)||!eq(h.page_indices,fixed.page_indices)||!eq(h.last_page_lengths,fixed.last_page_lengths))return d::EnqueueResult::rejected(Status::Unimplemented("original peer immutable topology"));for(unsigned i=0;i<layout.facts().requests;++i){const auto nq=h.query_indptr[i+1]-h.query_indptr[i],refs=h.kv_indptr[i+1]-h.kv_indptr[i];const auto nk=refs?(refs-1)*static_cast<std::int32_t>(s.capacity.page_size)+h.last_page_lengths[i]:0;if(!nq)continue;
     if(!nk||(s.options.causal&&nk<nq))return d::EnqueueResult::rejected(Status::Unimplemented("original ragged empty/short KV"));
@@ -113,7 +113,7 @@ d::EnqueueResult plan(void *p,c::Queue &,const c::BatchLayoutVersion &layout,d::
     s.layout=layout;*r=report(s);return d::EnqueueResult::accepted_command();
   }catch(const std::bad_alloc &){s.requests.clear();return d::EnqueueResult::rejected(Status::ResourceExhausted("original ragged cold allocations"));}
 }
-d::EnqueueResult run(void *p,c::Queue &,std::span<const c::ConstTensorView> inputs,d::BatchWorkspaceViews workspace)noexcept{
+d::EnqueueResult run(void *p,d::QueueSequence &,std::span<const c::ConstTensorView> inputs,d::BatchWorkspaceViews workspace)noexcept{
   auto &slot=*static_cast<Slot *>(p);bool accepted=false;
   for(unsigned port=1;port<3;++port){
     auto pinned=d::PagedArenaAccess::tensor(port==1?slot.data->keys:slot.data->values);

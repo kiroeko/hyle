@@ -1,0 +1,513 @@
+{
+  "date": "2026-10-20",
+  "scope": "Independent native SDK feasibility and numeric-contract diagnosis; no Hyle FP8 GEMM product route was added.",
+  "conclusion": "Seven actual Windows SM89 shapes execute and capture/replay, but all violate the existing strict F32 coded-dot reference error bound. Do not replace the public FP8 Cast/Cast/F32 MatMul subgraph with this carrier.",
+  "actual": {
+    "api_execution_passed": true,
+    "strict_f32_passed": false,
+    "source": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fp8-codedot-carrier\\smoke.cc",
+      "bytes": 10155,
+      "sha256": "6d74201a7c4e0e9257baae38189ea0d0cca7e3701126fbc7e96b217c7aed7771"
+    },
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fp8-codedot-carrier\\smoke\\smoke.exe",
+      "bytes": 39936,
+      "sha256": "d1ec57049e8db071a2e5b0a09dc2956bce88f0a9909f5d5104b713052aeac417"
+    },
+    "rows": [
+      {
+        "device": "NVIDIA GeForce RTX 4070",
+        "sm": 89,
+        "cuda_runtime": 13040,
+        "cuda_driver": 13040
+      },
+      {
+        "cublasLt_version": 130600
+      },
+      {
+        "m": 1,
+        "k": 128,
+        "n": 64,
+        "workspace_bytes": 0,
+        "graph_nodes": 1,
+        "seeds": 3,
+        "oracle_comparisons": 192,
+        "max_absolute_error": 611.63910675,
+        "max_error_over_sum_abs": 0.00173949074148,
+        "api_execution_passed": true,
+        "strict_f32_mismatches": 128,
+        "strict_f32_passed": false
+      },
+      {
+        "m": 17,
+        "k": 128,
+        "n": 64,
+        "workspace_bytes": 0,
+        "graph_nodes": 1,
+        "seeds": 3,
+        "oracle_comparisons": 3264,
+        "max_absolute_error": 675.63910675,
+        "max_error_over_sum_abs": 0.00189664987378,
+        "api_execution_passed": true,
+        "strict_f32_mismatches": 2176,
+        "strict_f32_passed": false
+      },
+      {
+        "m": 128,
+        "k": 128,
+        "n": 64,
+        "workspace_bytes": 0,
+        "graph_nodes": 1,
+        "seeds": 3,
+        "oracle_comparisons": 24576,
+        "max_absolute_error": 675.63910675,
+        "max_error_over_sum_abs": 0.00189664987378,
+        "api_execution_passed": true,
+        "strict_f32_mismatches": 16384,
+        "strict_f32_passed": false
+      },
+      {
+        "m": 1,
+        "k": 2048,
+        "n": 16,
+        "workspace_bytes": 0,
+        "graph_nodes": 1,
+        "seeds": 3,
+        "oracle_comparisons": 48,
+        "max_absolute_error": 7246.49481964,
+        "max_error_over_sum_abs": 0.00131755138261,
+        "api_execution_passed": true,
+        "strict_f32_mismatches": 32,
+        "strict_f32_passed": false
+      },
+      {
+        "m": 17,
+        "k": 2048,
+        "n": 16,
+        "workspace_bytes": 0,
+        "graph_nodes": 1,
+        "seeds": 3,
+        "oracle_comparisons": 816,
+        "max_absolute_error": 9614.31771851,
+        "max_error_over_sum_abs": 0.00168704018661,
+        "api_execution_passed": true,
+        "strict_f32_mismatches": 544,
+        "strict_f32_passed": false
+      },
+      {
+        "m": 1,
+        "k": 2048,
+        "n": 512,
+        "workspace_bytes": 0,
+        "graph_nodes": 1,
+        "seeds": 3,
+        "oracle_comparisons": 1536,
+        "max_absolute_error": 8494.3981781,
+        "max_error_over_sum_abs": 0.00151123115896,
+        "api_execution_passed": true,
+        "strict_f32_mismatches": 1024,
+        "strict_f32_passed": false
+      },
+      {
+        "m": 1,
+        "k": 6144,
+        "n": 2048,
+        "workspace_bytes": 0,
+        "graph_nodes": 1,
+        "seeds": 3,
+        "oracle_comparisons": 6144,
+        "max_absolute_error": 25038.4398117,
+        "max_error_over_sum_abs": 0.00147414678515,
+        "api_execution_passed": true,
+        "strict_f32_mismatches": 4096,
+        "strict_f32_passed": false
+      }
+    ],
+    "loaded_modules": [
+      {
+        "path": "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\bin\\x64\\cublasLt64_13.dll",
+        "bytes": 463655536,
+        "sha256": "e323abd89e0f03c1db91a09d7aeb1928de08e1f86192cc713b335fefe3e368a9"
+      }
+    ],
+    "limitations": [
+      "Independent cuBLASLt feasibility, not an installed Hyle route or selected model execution.",
+      "No scale quantization policy, throughput/peak-memory/quality acceptance or cross-platform claim.",
+      "Numerical oracle allows FP32 accumulation reassociation; no unrelated F32 GEMM bitwise promise."
+    ]
+  },
+  "decision": {
+    "ordinary_F32_MatMul_fusion": "withdrawn",
+    "FP8_native_scaled_contract": "requires explicit design and numerical validation",
+    "quantization": "CT Python QDQ and deployment token-scale recipes differ; channel/token metadata is not block128."
+  },
+  "independent_review": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\channel-token-fp8-review\\corrected-review.json",
+    "bytes": 13289,
+    "sha256": "4741d5dbbee43eb5eb82b76229c7c1b9c52b61d190278a26aaae53e1bc48d126"
+  },
+  "oracle": {
+    "command": [
+      "C:\\Program Files\\Python312\\python.exe",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\channel-token-fp8-review\\rational_oracle.py",
+      "--observed",
+      "250992"
+    ],
+    "exit_code": 0,
+    "stdout": "{\n  \"m\": 1,\n  \"k\": 128,\n  \"n\": 64,\n  \"seed\": 0,\n  \"row\": 0,\n  \"column\": 0,\n  \"expected\": {\n    \"numerator\": 2057661549,\n    \"denominator\": 8192,\n    \"display_float_only\": 251179.38830566406\n  },\n  \"sum_abs\": {\n    \"numerator\": 2057661549,\n    \"denominator\": 8192,\n    \"display_float_only\": 251179.38830566406\n  },\n  \"observed\": {\n    \"numerator\": 250992,\n    \"denominator\": 1,\n    \"display_float_only\": 250992.0\n  },\n  \"absolute_error\": {\n    \"numerator\": 1535085,\n    \"denominator\": 8192,\n    \"display_float_only\": 187.3883056640625\n  },\n  \"f32_gamma128_bound\": {\n    \"numerator\": 2057661549,\n    \"denominator\": 1073733632,\n    \"display_float_only\": 1.9163612721781635\n  },\n  \"original_smoke_bound\": {\n    \"numerator\": 6172984647,\n    \"denominator\": 3200000000,\n    \"display_float_only\": 1.9290577021875\n  },\n  \"violates_f32_bound\": true,\n  \"violates_original_smoke_bound\": true,\n  \"cpu_only\": true,\n  \"weight_payload_read\": false,\n  \"limitation\": \"Verifies the supplied observed scalar against an exact oracle; does not execute or identify GPU arithmetic.\"\n}\n",
+    "stderr": "",
+    "result": {
+      "m": 1,
+      "k": 128,
+      "n": 64,
+      "seed": 0,
+      "row": 0,
+      "column": 0,
+      "expected": {
+        "numerator": 2057661549,
+        "denominator": 8192,
+        "display_float_only": 251179.38830566406
+      },
+      "sum_abs": {
+        "numerator": 2057661549,
+        "denominator": 8192,
+        "display_float_only": 251179.38830566406
+      },
+      "observed": {
+        "numerator": 250992,
+        "denominator": 1,
+        "display_float_only": 250992.0
+      },
+      "absolute_error": {
+        "numerator": 1535085,
+        "denominator": 8192,
+        "display_float_only": 187.3883056640625
+      },
+      "f32_gamma128_bound": {
+        "numerator": 2057661549,
+        "denominator": 1073733632,
+        "display_float_only": 1.9163612721781635
+      },
+      "original_smoke_bound": {
+        "numerator": 6172984647,
+        "denominator": 3200000000,
+        "display_float_only": 1.9290577021875
+      },
+      "violates_f32_bound": true,
+      "violates_original_smoke_bound": true,
+      "cpu_only": true,
+      "weight_payload_read": false,
+      "limitation": "Verifies the supplied observed scalar against an exact oracle; does not execute or identify GPU arithmetic."
+    },
+    "scope": "CPU standard-library exact-rational computation only; no SDK/compiler/GPU/weight payload"
+  },
+  "primary_sources": [
+    {
+      "url": "https://docs.nvidia.com/cuda/cublas/index.html#cublasltmatmuldescattributes-t",
+      "fact": "FAST_ACCUM controls periodic higher-precision promotion; the flag is not a proof of ordinary F32 dot equivalence."
+    },
+    {
+      "url": "https://docs.nvidia.com/cuda/parallel-thread-execution/index.html#warp-level-matrix-instructions-mma",
+      "fact": "FP8 MMA order, rounding and subnormal handling are not an IEEE per-FMA promise."
+    }
+  ],
+  "limits": [
+    "No new FP8 model inference, accuracy, throughput or whole-model peak-memory claim.",
+    "No fixed internal accumulation bit width or vendor-bug attribution is inferred from the numeric witness.",
+    "The probe exit2 is the recorded strict-math failure, not a passed implementation test."
+  ],
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\cuda-fp8-codedot-feasibility-2026-10-20.zip",
+    "bytes": 75352,
+    "sha256": "03b6efe937cebea50f8fee4f44df3bc7acb5645cf5018fbb48104225dc0cd68c"
+  },
+  "payloads": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fp8-codedot-carrier\\actual-compile-closure.json",
+      "bytes": 61360,
+      "sha256": "de95755211f28f1efb7f719e3714781327f375d7f71b01368ad4520eb1574ded",
+      "member": "fp8-codedot-carrier/actual-compile-closure.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fp8-codedot-carrier\\publish.py",
+      "bytes": 5149,
+      "sha256": "186560ff7e823c98970b90645585c535485d944406edf59c4331c4ec7ae8018a",
+      "member": "fp8-codedot-carrier/publish.py"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fp8-codedot-carrier\\run_smoke.py",
+      "bytes": 3028,
+      "sha256": "8e843f2f7d48b5aeabe94cd3c47cbddad8ea91bae9d61f6eaa1fbf7a1944c23a",
+      "member": "fp8-codedot-carrier/run_smoke.py"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fp8-codedot-carrier\\smoke-plan.json",
+      "bytes": 3643,
+      "sha256": "b44d5151202738cf3e66146237981fd9fe2869d6c54cfc6afa50ac1733c30173",
+      "member": "fp8-codedot-carrier/smoke-plan.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fp8-codedot-carrier\\smoke-summary.json",
+      "bytes": 3990,
+      "sha256": "1faa5873ea4ed16c066aeeeb3dabf8b9640f7ab3fd823ec619b76506a2d15f1f",
+      "member": "fp8-codedot-carrier/smoke-summary.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fp8-codedot-carrier\\smoke.cc",
+      "bytes": 10155,
+      "sha256": "6d74201a7c4e0e9257baae38189ea0d0cca7e3701126fbc7e96b217c7aed7771",
+      "member": "fp8-codedot-carrier/smoke.cc"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fp8-codedot-carrier\\diagnosed-numerical-mismatch\\run.command.json",
+      "bytes": 259,
+      "sha256": "04a2061fb6640444ba2611d6f332e32b2fd7343d8d239bfb77ba9f2e3f34f779",
+      "member": "fp8-codedot-carrier/diagnosed-numerical-mismatch/run.command.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fp8-codedot-carrier\\diagnosed-numerical-mismatch\\run.result.json",
+      "bytes": 329,
+      "sha256": "fcf534ef902ce6501108079e8ae0981a93497c2526550784fedf934cee77be50",
+      "member": "fp8-codedot-carrier/diagnosed-numerical-mismatch/run.result.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fp8-codedot-carrier\\diagnosed-numerical-mismatch\\run.stderr.log",
+      "bytes": 223,
+      "sha256": "9be957dc2d6244dddcf2a907b6ad319e0ed008e1620167bb515409bd4d71d64a",
+      "member": "fp8-codedot-carrier/diagnosed-numerical-mismatch/run.stderr.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fp8-codedot-carrier\\diagnosed-numerical-mismatch\\run.stdout.log",
+      "bytes": 87,
+      "sha256": "aed5529caf2c457eb36ff443be01d219a9d858f8d622f57bf4bcbb49ef26fbcc",
+      "member": "fp8-codedot-carrier/diagnosed-numerical-mismatch/run.stdout.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fp8-codedot-carrier\\diagnosed-numerical-mismatch\\smoke-plan.json",
+      "bytes": 3642,
+      "sha256": "3b67ab96efc3d3189c0b2d81d256486d8cc074d8a1cd5b2f68fecfc68dd32e8d",
+      "member": "fp8-codedot-carrier/diagnosed-numerical-mismatch/smoke-plan.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fp8-codedot-carrier\\diagnosed-numerical-mismatch\\smoke.cc",
+      "bytes": 9580,
+      "sha256": "6dd646e83130046d568e5fd2465bca968701994e4d811d4ab3d8097eb403a56c",
+      "member": "fp8-codedot-carrier/diagnosed-numerical-mismatch/smoke.cc"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fp8-codedot-carrier\\first-numerical-mismatch\\run.command.json",
+      "bytes": 259,
+      "sha256": "8ddf1f00c7e676e157201cfa7d7eda7f84f6ddf31067ced111a5dec93214216c",
+      "member": "fp8-codedot-carrier/first-numerical-mismatch/run.command.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fp8-codedot-carrier\\first-numerical-mismatch\\run.result.json",
+      "bytes": 329,
+      "sha256": "80433ca8b7b7c4756c4f5ce444d16fd7d70d564d058368bee75264beb6d880b3",
+      "member": "fp8-codedot-carrier/first-numerical-mismatch/run.result.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fp8-codedot-carrier\\first-numerical-mismatch\\run.stderr.log",
+      "bytes": 57,
+      "sha256": "545d9a578cc2374a63c05fc18e1c664e2082af27509f431cda04324f2487f348",
+      "member": "fp8-codedot-carrier/first-numerical-mismatch/run.stderr.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fp8-codedot-carrier\\first-numerical-mismatch\\run.stdout.log",
+      "bytes": 87,
+      "sha256": "aed5529caf2c457eb36ff443be01d219a9d858f8d622f57bf4bcbb49ef26fbcc",
+      "member": "fp8-codedot-carrier/first-numerical-mismatch/run.stdout.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fp8-codedot-carrier\\first-numerical-mismatch\\smoke-plan.json",
+      "bytes": 3642,
+      "sha256": "216b9eaee9c81355180dd03ffe5c6d2fbdb0e329cdc456975e2f2a5d942037cc",
+      "member": "fp8-codedot-carrier/first-numerical-mismatch/smoke-plan.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fp8-codedot-carrier\\first-numerical-mismatch\\smoke.cc",
+      "bytes": 9342,
+      "sha256": "5f35733f8a60afa7e90d4801b90c8e9561e3b4a4432141e5efb0ef62101252c6",
+      "member": "fp8-codedot-carrier/first-numerical-mismatch/smoke.cc"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fp8-codedot-carrier\\same-stream-numerical-mismatch\\run.command.json",
+      "bytes": 260,
+      "sha256": "93d0767c3ee20ec7d10ccd6b6a92cd68eb79058183405cbf9452919d4633f7af",
+      "member": "fp8-codedot-carrier/same-stream-numerical-mismatch/run.command.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fp8-codedot-carrier\\same-stream-numerical-mismatch\\run.result.json",
+      "bytes": 329,
+      "sha256": "f77fc88d62eccee5ca8ec3302805025742fc37d3cc6af489433b1736c8c7c33f",
+      "member": "fp8-codedot-carrier/same-stream-numerical-mismatch/run.result.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fp8-codedot-carrier\\same-stream-numerical-mismatch\\run.stderr.log",
+      "bytes": 223,
+      "sha256": "9be957dc2d6244dddcf2a907b6ad319e0ed008e1620167bb515409bd4d71d64a",
+      "member": "fp8-codedot-carrier/same-stream-numerical-mismatch/run.stderr.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fp8-codedot-carrier\\same-stream-numerical-mismatch\\run.stdout.log",
+      "bytes": 87,
+      "sha256": "aed5529caf2c457eb36ff443be01d219a9d858f8d622f57bf4bcbb49ef26fbcc",
+      "member": "fp8-codedot-carrier/same-stream-numerical-mismatch/run.stdout.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fp8-codedot-carrier\\same-stream-numerical-mismatch\\smoke-plan.json",
+      "bytes": 3642,
+      "sha256": "b64411907dc78852de746173405d6ca1cb9a50cebff3db02b0451e102047d9e3",
+      "member": "fp8-codedot-carrier/same-stream-numerical-mismatch/smoke-plan.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fp8-codedot-carrier\\same-stream-numerical-mismatch\\smoke.cc",
+      "bytes": 9610,
+      "sha256": "ca59a1f0eec0e3f6bd3e9f7b7e60a10121d440f7456af4812562344865a5a7a1",
+      "member": "fp8-codedot-carrier/same-stream-numerical-mismatch/smoke.cc"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fp8-codedot-carrier\\smoke\\compile.command.json",
+      "bytes": 1972,
+      "sha256": "86742ebed295f132c5d4ecbdeffd7c91efb0b04bc1ea7d608349ae472b7e19e6",
+      "member": "fp8-codedot-carrier/smoke/compile.command.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fp8-codedot-carrier\\smoke\\compile.result.json",
+      "bytes": 2042,
+      "sha256": "6ca7f1e1d3842886b377977dfbaac340f12a460e1a7067a9eac6a42c7f274b28",
+      "member": "fp8-codedot-carrier/smoke/compile.result.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fp8-codedot-carrier\\smoke\\compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "member": "fp8-codedot-carrier/smoke/compile.stderr.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fp8-codedot-carrier\\smoke\\compile.stdout.log",
+      "bytes": 10,
+      "sha256": "6bf30434ae40f9f9acad0f2026221faf1203af26271ddf1d38f006e3fcd2162a",
+      "member": "fp8-codedot-carrier/smoke/compile.stdout.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fp8-codedot-carrier\\smoke\\image.json",
+      "bytes": 233,
+      "sha256": "7ca6d87e35406f5259af75176ce668e013248fc5051553b92ce022cb1fd05283",
+      "member": "fp8-codedot-carrier/smoke/image.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fp8-codedot-carrier\\smoke\\link.command.json",
+      "bytes": 910,
+      "sha256": "b4e1984b3568ed4f6ef6758c0786c6a34dd42839fda218eb81c9a830b39b74ca",
+      "member": "fp8-codedot-carrier/smoke/link.command.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fp8-codedot-carrier\\smoke\\link.result.json",
+      "bytes": 980,
+      "sha256": "a6864aab468931e955678caa13353a72534dee55417861b0e49f11f9721ed959",
+      "member": "fp8-codedot-carrier/smoke/link.result.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fp8-codedot-carrier\\smoke\\link.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "member": "fp8-codedot-carrier/smoke/link.stderr.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fp8-codedot-carrier\\smoke\\link.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "member": "fp8-codedot-carrier/smoke/link.stdout.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fp8-codedot-carrier\\smoke\\live.json",
+      "bytes": 329,
+      "sha256": "0d6bab96faffd4601dc43fad9f69319c25aa937807afcae6e03a1add4ba151f3",
+      "member": "fp8-codedot-carrier/smoke/live.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fp8-codedot-carrier\\smoke\\run.command.json",
+      "bytes": 258,
+      "sha256": "40c6e7bc93eb5b056d2a912a078c1e1d938b1f56d115ba91008787c9d6f1ebb8",
+      "member": "fp8-codedot-carrier/smoke/run.command.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fp8-codedot-carrier\\smoke\\run.result.json",
+      "bytes": 329,
+      "sha256": "0d6bab96faffd4601dc43fad9f69319c25aa937807afcae6e03a1add4ba151f3",
+      "member": "fp8-codedot-carrier/smoke/run.result.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fp8-codedot-carrier\\smoke\\run.stderr.log",
+      "bytes": 1181,
+      "sha256": "e61a7062401aa0cd0a4642f73df692cb84b99986b0984e78293b31a8caa11800",
+      "member": "fp8-codedot-carrier/smoke/run.stderr.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fp8-codedot-carrier\\smoke\\run.stdout.log",
+      "bytes": 2007,
+      "sha256": "496b1c5a6a4a1fd988ecb72dbd3f9b74f1cb3fc12a0e3a65e214c42c70d0efe2",
+      "member": "fp8-codedot-carrier/smoke/run.stdout.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fp8-codedot-carrier\\smoke\\smoke-deps.json",
+      "bytes": 36587,
+      "sha256": "4866f2c84820a6f521fe0dcadcdb0d91fa81035320d6f9745dddc9d9df603d64",
+      "member": "fp8-codedot-carrier/smoke/smoke-deps.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fp8-codedot-carrier\\smoke\\first-link-missing-tmp\\link.command.json",
+      "bytes": 910,
+      "sha256": "70e2f9d7938d79dab4befd4f774d88e3a74f433042dfda30913697a1a9e3dede",
+      "member": "fp8-codedot-carrier/smoke/first-link-missing-tmp/link.command.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fp8-codedot-carrier\\smoke\\first-link-missing-tmp\\link.result.json",
+      "bytes": 983,
+      "sha256": "0bddf1a3a0d28c2e783c33c0371968f9dd213d651eaf0e44fc423a86688002c1",
+      "member": "fp8-codedot-carrier/smoke/first-link-missing-tmp/link.result.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fp8-codedot-carrier\\smoke\\first-link-missing-tmp\\link.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "member": "fp8-codedot-carrier/smoke/first-link-missing-tmp/link.stderr.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fp8-codedot-carrier\\smoke\\first-link-missing-tmp\\link.stdout.log",
+      "bytes": 194,
+      "sha256": "fd49b480095dda4f2aa8974f57ff0b2b0341f1c2b3f7345874a7583b8dc72725",
+      "member": "fp8-codedot-carrier/smoke/first-link-missing-tmp/link.stdout.log"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\channel-token-fp8-review\\corrected-review.json",
+      "bytes": 13289,
+      "sha256": "4741d5dbbee43eb5eb82b76229c7c1b9c52b61d190278a26aaae53e1bc48d126",
+      "member": "channel-token-fp8-review/corrected-review.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\channel-token-fp8-review\\design-review.json",
+      "bytes": 32894,
+      "sha256": "46bfca1466179217b6c91ea5cbb28ab6b119a45c361122e7354985c6a4c53e9e",
+      "member": "channel-token-fp8-review/design-review.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\channel-token-fp8-review\\rational-oracle-result.json",
+      "bytes": 2772,
+      "sha256": "4f90b1140033e466fab6985bc159106f15867aa27153f246f46c3d31af524c6a",
+      "member": "channel-token-fp8-review/rational-oracle-result.json"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\channel-token-fp8-review\\rational_oracle.py",
+      "bytes": 3018,
+      "sha256": "e336eb4749a8d6ba67e89eb46b9a42adaa39212dc63bb4ffb8a1ac57ff0d9273",
+      "member": "channel-token-fp8-review/rational_oracle.py"
+    }
+  ],
+  "archive_verified": {
+    "CRC": true,
+    "all_payload_SHA256": true
+  }
+}

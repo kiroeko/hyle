@@ -1,0 +1,204 @@
+{
+  "recursive": false,
+  "objects_retained": true,
+  "targets": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-normalization-review\\performance\\baseline.exe",
+      "bytes": 116165632,
+      "sha256": "40378c79d135783fed3cb07a8a148875e8a09446064ff6d2cc3571c74adf0f71"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-normalization-review\\performance\\baseline.exp",
+      "bytes": 25016,
+      "sha256": "a272e1356d0ac5a0802c72eeceab18909b794e82961f8d887272b58942ad054f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-normalization-review\\performance\\baseline.lib",
+      "bytes": 41736,
+      "sha256": "716c7bf4e9533f251a02b7669470b23b4e893859b4ada256dc3b7d54f4554a1f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-normalization-review\\performance\\baseline.map",
+      "bytes": 33594624,
+      "sha256": "28c90867d58bbb14ff0d95d9551d5f888f24da1922774b58b056888d4617d7e7"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-normalization-review\\checks\\20261019T060757-4cda26e4\\cpu.exp",
+      "bytes": 25025,
+      "sha256": "be9bae0e766e4eccb3c00cafa4f1893cddb2b7ecad13030676356480b5913371"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-normalization-review\\checks\\20261019T060757-4cda26e4\\cpu.lib",
+      "bytes": 41298,
+      "sha256": "1a72c22d3a6dec39cca5118fd99aa738ff5f4202c029fc8a48afb6c3d20e909d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-normalization-review\\checks\\20261019T060757-4cda26e4\\cpu.map",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-normalization-review\\checks\\20261019T060757-4cda26e4\\cuda.exe",
+      "bytes": 117097984,
+      "sha256": "f88661ea0ede71e95eb595e9a62bb2c65705f4c4b9ca237e92e0825d6699e33a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-normalization-review\\checks\\20261019T060757-4cda26e4\\cuda.exp",
+      "bytes": 25028,
+      "sha256": "03aabb0bac0e3891204b0de881c421ff4c387e8dc8bb6ac9d358855a28d0329b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-normalization-review\\checks\\20261019T060757-4cda26e4\\cuda.lib",
+      "bytes": 41384,
+      "sha256": "097299e17e955c077a99f65f363d3484d564c016359baeb643f4e47c6b737d59"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-normalization-review\\checks\\20261019T060757-4cda26e4\\cuda.map",
+      "bytes": 35731554,
+      "sha256": "c477a44d5dfae1c5bfb328d95d28805e388cc124ab767dd8d0f765f4f7ff11e4"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-normalization-review\\checks\\20261019T060757-4cda26e4\\qwen.exe",
+      "bytes": 116199936,
+      "sha256": "6d8a9af4e1f243f499fd6dd6281d6847b9b40f2c037824d4ab2370340534fbc5"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-normalization-review\\checks\\20261019T060757-4cda26e4\\qwen.exp",
+      "bytes": 25028,
+      "sha256": "0c8acc7491689680bc3a8b7ef6ea1117dc5de218b4f5dafc0591259337d6993a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-normalization-review\\checks\\20261019T060757-4cda26e4\\qwen.lib",
+      "bytes": 41384,
+      "sha256": "339d3ce297534ebac8825c27a011f2f4f9dfe366c657ebfc45dbbfdc8412a2cb"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-normalization-review\\checks\\20261019T060757-4cda26e4\\qwen.map",
+      "bytes": 33686225,
+      "sha256": "6e427de38d60e438031b25c4434e77dae91b52b90c2bbac89645abe9e4770ef9"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-normalization-review\\checks\\20261019T061047-d197f686\\cpu.exp",
+      "bytes": 25025,
+      "sha256": "124df965efe8e322943d80d33e85a884da616f078220161bba868045dc110eb5"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-normalization-review\\checks\\20261019T061047-d197f686\\cpu.lib",
+      "bytes": 41298,
+      "sha256": "1a72c22d3a6dec39cca5118fd99aa738ff5f4202c029fc8a48afb6c3d20e909d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-normalization-review\\checks\\20261019T061047-d197f686\\cpu.map",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-normalization-review\\checks\\20261019T061047-d197f686\\cuda.exe",
+      "bytes": 117098496,
+      "sha256": "2e10a46f114af303d560678cbc67c016a1eeb8b57c33c48fd0e3ca731dade981"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-normalization-review\\checks\\20261019T061047-d197f686\\cuda.exp",
+      "bytes": 25028,
+      "sha256": "6a0f36abcf6a1c1eb87060ff8767b4b39a1e66669d8003602c15f8c1356b5921"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-normalization-review\\checks\\20261019T061047-d197f686\\cuda.lib",
+      "bytes": 41384,
+      "sha256": "097299e17e955c077a99f65f363d3484d564c016359baeb643f4e47c6b737d59"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-normalization-review\\checks\\20261019T061047-d197f686\\cuda.map",
+      "bytes": 35732290,
+      "sha256": "6bf57519011c3e8ff33148e9b88d34ecfcb56aa9ca0975c3a7ceb72817f9d06c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-normalization-review\\checks\\20261019T061131-593edeaf\\cpu.exp",
+      "bytes": 25025,
+      "sha256": "998e719876e53d593b18e3724f411444f65b874f0b844ae4eeeaffb20563c380"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-normalization-review\\checks\\20261019T061131-593edeaf\\cpu.lib",
+      "bytes": 41298,
+      "sha256": "1a72c22d3a6dec39cca5118fd99aa738ff5f4202c029fc8a48afb6c3d20e909d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-normalization-review\\checks\\20261019T061131-593edeaf\\cpu.map",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-normalization-review\\checks\\20261019T061224-1bdf98d3\\cpu.exe",
+      "bytes": 23270400,
+      "sha256": "7e5ed7b5eefdd2c115e8f4255a1b7694e9385fcc1bec3b810f69748c308dcd1d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-normalization-review\\checks\\20261019T061224-1bdf98d3\\cpu.exp",
+      "bytes": 25025,
+      "sha256": "86bfec1fa89af40f4642717feef15511b25b6e607d343953e2a0b58c7f6e8823"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-normalization-review\\checks\\20261019T061224-1bdf98d3\\cpu.lib",
+      "bytes": 41298,
+      "sha256": "1a72c22d3a6dec39cca5118fd99aa738ff5f4202c029fc8a48afb6c3d20e909d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-normalization-review\\checks\\20261019T061224-1bdf98d3\\cpu.map",
+      "bytes": 31010249,
+      "sha256": "7bdf0dfe96fa4f42c57259641ea190c99d4b084839bbc630937e60e015eeb518"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-normalization-review\\checks\\20261019T061424-1fb66e89\\cuda.exe",
+      "bytes": 117100032,
+      "sha256": "6e6ec47b54ec22fe3233a3d2226f2fb34d69c5416eefe53519e3a996858f1c84"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-normalization-review\\checks\\20261019T061424-1fb66e89\\cuda.exp",
+      "bytes": 25028,
+      "sha256": "dfde117fc205c37584f835fb03b16423683ce2673d566c9ad565b0d816875e5e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-normalization-review\\checks\\20261019T061424-1fb66e89\\cuda.lib",
+      "bytes": 41384,
+      "sha256": "097299e17e955c077a99f65f363d3484d564c016359baeb643f4e47c6b737d59"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-normalization-review\\checks\\20261019T061424-1fb66e89\\cuda.map",
+      "bytes": 35732422,
+      "sha256": "d0114a0428d975c85c58935ca05e63148577a1ee2e8c422fce036964c5c15831"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-normalization-review\\checks\\20261019T061424-1fb66e89\\qwen.exe",
+      "bytes": 116202496,
+      "sha256": "3aedcac5e85fbd39b7d1f9aef67b52448ce05309e38fc59f9ff4c08258229367"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-normalization-review\\checks\\20261019T061424-1fb66e89\\qwen.exp",
+      "bytes": 25028,
+      "sha256": "35e2152871556569c0d03ef0510d0937339a78dbf8aa9a20bf707784c6dc6fe2"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-normalization-review\\checks\\20261019T061424-1fb66e89\\qwen.lib",
+      "bytes": 41384,
+      "sha256": "339d3ce297534ebac8825c27a011f2f4f9dfe366c657ebfc45dbbfdc8412a2cb"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-normalization-review\\checks\\20261019T061424-1fb66e89\\qwen.map",
+      "bytes": 33684761,
+      "sha256": "6134e32a912b7183ec9812cf534bb34aec965ecf2be4eb8f61583f2c78c926ce"
+    }
+  ],
+  "raw_vectors_retained": true,
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\qwen35-full-cuda-2026-10-19\\cuda-constant-expressions.zip",
+    "bytes": 19624311,
+    "sha256": "b0c8a22d636b618cf65553433c801361e72b86bf9978e2e11b2ede8d7eaebca3",
+    "entries": 622,
+    "CRC_and_payload_SHA_verified": true,
+    "reclaim_manifest": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-normalization-review\\reclaim-targets.json",
+      "bytes": 10172,
+      "sha256": "7ca71e5f86b9f628a9c64dde3353b745dd714b646ce6ae82858f55a97cdd8738"
+    }
+  }
+}

@@ -4,12 +4,14 @@
 #include <hyle/compute/paged_arena.h>
 #include <hyle/compute/model_ops.h>
 #include <hyle/graph/batch.h>
+#include <hyle/graph/cpu.h>
 #if defined(HYLE_ENCODED_CUDA)
+#include <hyle/graph/cuda.h>
 #include <hyle/graph/cpu_cuda.h>
 #include <hyle/compute/backends/cuda.h>
 #include <hyle/compute/providers/flashinfer.h>
 #endif
-#include "../compute_provider_native/half_test_support.h"
+#include "encoded_page_codec_oracle.h"
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -34,39 +36,13 @@ Status require(bool condition, const char *message) {
   return condition ? Status::Ok() : Status::Internal(message);
 }
 
-// A separate byte oracle, independent of the device encoder and its results.
-std::vector<std::uint8_t> constant_q8(float value, std::size_t elements,[[maybe_unused]] bool is_value=false) {
+using encoded_page_test::Codec;
+using encoded_page_test::CodecOracle;
 #if defined(HYLE_ENCODED_CUDA)
-  const float target=value/(is_value?2.F:.5F);
-  unsigned selected=0;double error=std::numeric_limits<double>::infinity();
-  for(unsigned code=0;code<=126;++code){const auto e=code>>3,m=code&7;
-    const double decoded=e?std::ldexp(1.+double(m)/8.,int(e)-7):std::ldexp(double(m)/8.,-6);
-    const auto delta=std::abs(std::abs(target)-decoded);
-    if(delta<error||(delta==error&&!(code&1))){error=delta;selected=code;}}
-  return std::vector<std::uint8_t>(elements,std::uint8_t(selected|(std::signbit(target)?128:0)));
+constexpr auto default_codec=Codec::kE4M3;
 #else
-  const float scale = std::abs(value) / 127.F;
-  const auto bits = half_test::encode<F16>(scale).bits;
-  const auto code = std::uint8_t(int(std::round(value * (scale ? 1.F / scale : 0.F))));
-  std::vector<std::uint8_t> bytes(elements / 32 * 34);
-  for (std::size_t block = 0; block < elements / 32; ++block) {
-    bytes[block * 34] = std::uint8_t(bits);
-    bytes[block * 34 + 1] = std::uint8_t(bits >> 8);
-    std::fill_n(bytes.begin() + block * 34 + 2, 32, code);
-  }
-  return bytes;
+constexpr auto default_codec=Codec::kQ8;
 #endif
-}
-double decoded_constant(float value,[[maybe_unused]] bool is_value=false) {
-#if defined(HYLE_ENCODED_CUDA)
-  const auto code=constant_q8(value,1,is_value)[0];const auto e=(code&127)>>3,m=code&7;
-  return (code&128?-1:1)*(e?std::ldexp(1.+double(m)/8.,int(e)-7):std::ldexp(double(m)/8.,-6))*(is_value?2:.5);
-#else
-  const float scale = std::abs(value) / 127.F;
-  const auto code = std::round(value * (scale ? 1.F / scale : 0.F));
-  return half_test::decode(half_test::encode<F16>(scale)) * code;
-#endif
-}
 
 Status read_bytes([[maybe_unused]] c::Context &context, [[maybe_unused]] hyle::mem::MemoryResourceRef resource,
                   const c::ReadLease &source,std::span<std::uint8_t> bytes){
@@ -88,12 +64,14 @@ Result<Encoder> encoder(c::Context &context,hyle::mem::MemoryResourceRef resourc
   }
   HYLE_ASSIGN_OR_RETURN(auto graph,std::move(builder).finish());
   const std::array domains{g::StorageDomain{resource}};
-  const std::array targets{g::ExecutionTarget{&context,g::StorageDomainId{0}}};
+  HYLE_ASSIGN_OR_RETURN(auto target_source_0, hyle::graph::ExecutionSource::acquire(context));
+  const std::array targets{g::ExecutionTarget{target_source_0,g::StorageDomainId{0}}};
   HYLE_ASSIGN_OR_RETURN(result.compiled,g::compile(graph,{.storage_domains=domains,.targets=targets},
       {}));
   HYLE_ASSIGN_OR_RETURN(result.invocation,result.compiled.executable.create_invocation());return result;
 }
-Status episode(unsigned dk,unsigned dv,unsigned mode,bool invalid=false,bool paired_failure=false,bool single=false,bool bf16=false){
+Status episode(unsigned dk,unsigned dv,unsigned mode,bool invalid=false,bool paired_failure=false,bool single=false,bool bf16=false,Codec codec=default_codec){
+  const CodecOracle oracle{codec};
   const bool combined=mode!=0;
 #if defined(HYLE_ENCODED_CUDA)
   const bool cpu_graph=mode==2;
@@ -101,12 +79,12 @@ Status episode(unsigned dk,unsigned dv,unsigned mode,bool invalid=false,bool pai
   const bool cpu_graph=combined;
 #endif
   const unsigned requests=single?1u:2u,query_rows=single?1u:18u;
+  const auto key_storage=codec==Codec::kE4M3?c::CacheStorage::float8(.5F).value():c::CacheStorage::q8_0().value();
+  const auto value_storage=codec==Codec::kE4M3?c::CacheStorage::float8(2.F).value():key_storage;
 #if defined(HYLE_ENCODED_CUDA)
-  const auto key_storage=c::CacheStorage::float8(.5F).value(),value_storage=c::CacheStorage::float8(2.F).value();
   const auto base=c::flashinfer::provider();
   HYLE_ASSIGN_OR_RETURN(auto device_id,c::cuda::device(0));
 #else
-  const auto key_storage=c::CacheStorage::q8_0().value(),value_storage=key_storage;
   const auto base=c::ggml_cpu::provider({.native_threads=2});
   const auto device_id=c::cpu::device();
 #endif
@@ -126,9 +104,7 @@ Status episode(unsigned dk,unsigned dv,unsigned mode,bool invalid=false,bool pai
 #if !defined(HYLE_ENCODED_CUDA)
   options.resource=hyle::mem::system_resource();
 #endif
-  HYLE_ASSIGN_OR_RETURN(auto wrapped,gb::provider(base,schema,options));
-  const std::array providers{c::ProviderBinding{base,10},c::ProviderBinding{wrapped,0}};
-  HYLE_ASSIGN_OR_RETURN(auto context,c::Context::create(device_id,c::ContextOptions{.providers=providers}));
+  HYLE_ASSIGN_OR_RETURN(auto context,c::Context::create(device_id,base));
   HYLE_ASSIGN_OR_RETURN(auto queue,context.create_queue());
   struct Close final {c::Context &context;~Close(){context.drain().IgnoreError();}}close{context};
 #if defined(HYLE_ENCODED_CUDA)
@@ -149,11 +125,9 @@ Status episode(unsigned dk,unsigned dv,unsigned mode,bool invalid=false,bool pai
   HYLE_ASSIGN_OR_RETURN(auto keys, c::PagedArena::create(schema,c::BatchCacheRole::kKey,resource,{.max_backing_bytes=1<<20}));
   HYLE_ASSIGN_OR_RETURN(auto values, c::PagedArena::create(schema,c::BatchCacheRole::kValue,resource,{.max_backing_bytes=1<<20}));
   const auto kb=keys.page_bytes(), vb=values.page_bytes(), krb=kb/16, vrb=vb/16;
-  #if defined(HYLE_ENCODED_CUDA)
-  HYLE_RETURN_IF_ERROR(require(krb==2*dk && vrb==2*dv,"FP8 byte geometry differs"));
-#else
-  HYLE_RETURN_IF_ERROR(require(krb==2*dk/32*34 && vrb==2*dv/32*34,"Q8 byte geometry differs"));
-#endif
+  HYLE_RETURN_IF_ERROR(require(codec==Codec::kE4M3?
+      (krb==2*dk && vrb==2*dv):(krb==2*dk/32*34 && vrb==2*dv/32*34),
+      "encoded K/V byte geometry differs"));
   const auto maximum=std::max(kb,vb);
   HYLE_ASSIGN_OR_RETURN(auto pool,c::LeasePool::create(host_resource,maximum+64));
   const std::array init_specs{c::CopyResourceSpec{host_resource,maximum},c::CopyResourceSpec{resource,maximum}};
@@ -161,7 +135,7 @@ Status episode(unsigned dk,unsigned dv,unsigned mode,bool invalid=false,bool pai
   HYLE_ASSIGN_OR_RETURN(auto init,c::CopyBatchInvocation::create(init_program,queue));
   const auto fill=[&](c::PagedArena &arena,unsigned page,float value,unsigned depth)->Result<c::ReadLease>{
     HYLE_ASSIGN_OR_RETURN(auto writer,arena.acquire(page));
-    auto bytes=constant_q8(value,16*2*depth,&arena==&values);
+    auto bytes=oracle.bytes(value,16*2*depth,&arena==&values);
     HYLE_RETURN_IF_ERROR(init.reset());
     HYLE_ASSIGN_OR_RETURN(auto host_writer,pool.allocate(bytes.size(),64));
     HYLE_RETURN_IF_ERROR(host_writer.view()->write(std::as_bytes(std::span(bytes))));
@@ -184,7 +158,7 @@ Status episode(unsigned dk,unsigned dv,unsigned mode,bool invalid=false,bool pai
   HYLE_ASSIGN_OR_RETURN(auto old_key,keys.read(old_layout,std::span(old_kr).first(1+requests)));
   HYLE_ASSIGN_OR_RETURN(auto old_value,values.read(old_layout,std::span(old_vr).first(1+requests)));
   HYLE_RETURN_IF_ERROR(require(!keys.acquire(kr[1]) && kr[1].valid(),"old reader allowed mutable acquisition"));
-  HYLE_ASSIGN_OR_RETURN(auto query_desc,c::batch_query_description(capacity));
+  HYLE_ASSIGN_OR_RETURN(auto query_desc,recipe.input_description(layout,0));
   std::vector<std::uint16_t> query_words(*query_desc.element_count(),bf16?0x3e00:0x3000);
   HYLE_ASSIGN_OR_RETURN(auto query_pool,c::LeasePool::create(resource,query_words.size()*2+64));
   HYLE_ASSIGN_OR_RETURN(auto query_writer,query_pool.allocate(query_words.size()*2,64));
@@ -223,8 +197,10 @@ Status episode(unsigned dk,unsigned dv,unsigned mode,bool invalid=false,bool pai
   HYLE_ASSIGN_OR_RETURN(auto host_read,host_writer.publish());
   HYLE_ASSIGN_OR_RETURN(auto builder,g::GraphBuilder::create());
   HYLE_ASSIGN_OR_RETURN(auto qi,builder.input(host_desc));
-  HYLE_ASSIGN_OR_RETURN(auto ki,builder.input(recipe.descriptions()[1]));
-  HYLE_ASSIGN_OR_RETURN(auto vi,builder.input(recipe.descriptions()[2]));
+  HYLE_ASSIGN_OR_RETURN(auto key_description,recipe.input_description(layout,1));
+  HYLE_ASSIGN_OR_RETURN(auto value_description,recipe.input_description(layout,2));
+  HYLE_ASSIGN_OR_RETURN(auto ki,builder.input(key_description));
+  HYLE_ASSIGN_OR_RETURN(auto vi,builder.input(value_description));
   HYLE_ASSIGN_OR_RETURN(auto md,schema.metadata_description());
   HYLE_ASSIGN_OR_RETURN(auto mi,builder.input(md));
   std::vector<g::NodePlacement> placements;
@@ -251,30 +227,38 @@ Status episode(unsigned dk,unsigned dv,unsigned mode,bool invalid=false,bool pai
         {.node_placements=placements,.external_resources=external}));
   }else
 #endif
-  {const std::array domains{g::StorageDomain{resource}};const std::array targets{g::ExecutionTarget{&context,g::StorageDomainId{0}}};
-    HYLE_ASSIGN_OR_RETURN(compiled,g::compile(graph,{.storage_domains=domains,.targets=targets},{}));}
-  std::vector<gb::LaneBinding> lanes{{g::ExecutionLaneId{0},&context,&queue,host_resource}};
+  {const std::array domains{g::StorageDomain{resource}};HYLE_ASSIGN_OR_RETURN(auto target_source_1, hyle::graph::ExecutionSource::acquire(context));
+  const std::array targets{g::ExecutionTarget{target_source_1,g::StorageDomainId{0}}};
 #if defined(HYLE_ENCODED_CUDA)
-  if(cpu_graph)lanes.push_back({g::ExecutionLaneId{1},&cpu,&cpu_queue,hyle::mem::system_resource()});
+    HYLE_ASSIGN_OR_RETURN(compiled,g::cuda::compile(graph,{.storage_domains=domains,.targets=targets},{}));}
+#else
+    HYLE_ASSIGN_OR_RETURN(compiled,g::cpu::compile(graph,{.storage_domains=domains,.targets=targets},{}));}
 #endif
-  HYLE_ASSIGN_OR_RETURN(auto graph_native,gb::Invocation::create(compiled.executable,lanes));
-  HYLE_ASSIGN_OR_RETURN(auto joint_slot,gb::PendingInvocation::create(std::move(graph_native),4));
+  std::vector<g::QueueBinding> lanes{{g::ExecutionLaneId{0},&queue}};
+#if defined(HYLE_ENCODED_CUDA)
+  if(cpu_graph)lanes.push_back({g::ExecutionLaneId{1},&cpu_queue});
+#endif
+  HYLE_ASSIGN_OR_RETURN(auto graph_native,compiled.executable.create_invocation({.resources=g::ResourceOptions{}}));
+  auto joint_slot = std::move(graph_native);
+  const gb::PrepareOptions preparation{.host_workspace=host_resource,.max_float_workspace_bytes=options.max_float_workspace_bytes,.max_int_workspace_bytes=options.max_int_workspace_bytes,.max_source_completions=4};
   const std::array versions{gb::NodeLayout{node,layout}};
   HYLE_ASSIGN_OR_RETURN(auto out_desc,c::TensorDesc::dense(cpu_graph?c::DataType::kFloat32:qtype,
       std::array<std::int64_t,3>{query_rows,8,dv}));
-  HYLE_ASSIGN_OR_RETURN(auto output_pool,c::LeasePool::create(graph_resource,*out_desc.required_bytes()+64));
+  // The invocation retains the preceding caller-owned output until binding
+  // the newly allocated writer succeeds. Both original buffers coexist here.
+  HYLE_ASSIGN_OR_RETURN(auto output_pool,c::LeasePool::create(graph_resource,2*(*out_desc.required_bytes())+128,{.max_blocks=2}));
   c::ReadLease previous_output;
 
-  const auto failed_result=[&](c::Completion &done,auto &slot,c::CopyBatchUpdate &update,auto confirm_no_output)->Status{
+  const auto failed_result=[&](c::Completion &done,auto recover,c::CopyBatchUpdate &update,auto confirm_no_output)->Status{
     HYLE_RETURN_IF_ERROR(require(done.wait().IsInvalidArgument(),"encoded source completion lost numeric error"));
     HYLE_RETURN_IF_ERROR(confirm_no_output());
-    done={};HYLE_ASSIGN_OR_RETURN(update,slot.take_update());
+    done={};HYLE_ASSIGN_OR_RETURN(update,recover());
     for(unsigned port=2;port<2+2*requests;++port)HYLE_RETURN_IF_ERROR(require(!update.take_mutable({port}),"failed encoder source published a page writer"));
     std::vector<std::uint8_t> bytes(vb);HYLE_RETURN_IF_ERROR(read_bytes(context,resource,vr[1],bytes));
-    return require(bytes==constant_q8(.125F,16*2*dv,true),"failed new-page update changed old reader bytes");
+    return require(bytes==oracle.bytes(.125F,16*2*dv,true),"failed new-page update changed old reader bytes");
   };
   for(unsigned step=0;step<(invalid?1u:6u);++step){
-    if(combined)HYLE_RETURN_IF_ERROR(joint_slot.prepare_batch(versions));
+    if(combined)HYLE_RETURN_IF_ERROR(gb::prepare(joint_slot, lanes, versions, preparation));
     else HYLE_RETURN_IF_ERROR(receiver.prepare_batch(layout));
     HYLE_RETURN_IF_ERROR(copy.reset());previous_output={};
     std::array<c::PagedPageWriter,2> kw,vw;
@@ -318,20 +302,53 @@ Status episode(unsigned dk,unsigned dv,unsigned mode,bool invalid=false,bool pai
       HYLE_ASSIGN_OR_RETURN(auto writing,uses.begin());HYLE_RETURN_IF_ERROR(writing.write(writer));
       HYLE_ASSIGN_OR_RETURN(auto done,encoder.invocation.submit(queue));HYLE_RETURN_IF_ERROR(writing.attach(done));return done;
     };
-    const auto synchronous_rejection=[&](Status status,Encoder &producer)->Status{
+    const auto synchronous_rejection=[&](Status status,Encoder &producer,const char *stage,c::Completion *accepted_key=nullptr,c::Completion *rejected_owner=nullptr)->Status{
 #if defined(HYLE_ENCODED_CUDA)
-      (void)producer;return status;
+      (void)producer;(void)stage;(void)accepted_key;(void)rejected_owner;return status;
 #else
       HYLE_RETURN_IF_ERROR(require(invalid && status.IsInvalidArgument(),"unexpected synchronous encoder rejection"));
-      HYLE_RETURN_IF_ERROR(require(!producer.invocation.output(producer.outputs.back()) && !copy.in_flight() &&
-          copy.report().phase_completions==0 && uses.active_batches()==0,"synchronous error published output, accepted F2, or retained worker guards"));
+      const bool output_visible=bool(producer.invocation.output(producer.outputs.back()));
+      const bool copy_in_flight=copy.in_flight();
+      const auto phases=copy.report().phase_completions;
+      const auto active_uses=uses.active_batches();
+      std::fprintf(stderr,"CPU mode%u synchronous %s rejection diagnostics: stage=%s output=%d copy_in_flight=%d phases=%llu active_uses=%u key_pointer=%d key_valid=%d rejected_pointer=%d rejected_valid=%d\n",
+          mode,paired_failure?"paired":"independent second",stage,int(output_visible),int(copy_in_flight),
+          static_cast<unsigned long long>(phases),unsigned(active_uses),int(accepted_key!=nullptr),
+          int(accepted_key && accepted_key->valid()),int(rejected_owner!=nullptr),int(rejected_owner && rejected_owner->valid()));
+      HYLE_RETURN_IF_ERROR(require(!output_visible,"synchronous error published the failed producer output"));
+      HYLE_RETURN_IF_ERROR(require(!copy_in_flight,"synchronous error accepted in-flight F2 copy work"));
+      HYLE_RETURN_IF_ERROR(require(phases==0,"synchronous error accepted an F2 phase"));
+      if(rejected_owner){
+        HYLE_RETURN_IF_ERROR(require(rejected_owner->valid(),"failed producer admission consumed its original completion"));
+        const auto terminal=rejected_owner->wait();
+        HYLE_RETURN_IF_ERROR(require(terminal.IsInvalidArgument() && terminal.message()==status.message(),
+            "original failed encoder completion lost its numeric error"));
+        *rejected_owner={};
+      }
+      if(accepted_key){
+        if(accepted_key->valid()){
+          HYLE_RETURN_IF_ERROR(accepted_key->wait());
+          *accepted_key={};
+        }else{
+          // K was admitted before the original V rejection. With no accepted
+          // F2 phase, withdrawal must nonblockingly observe that same producer
+          // and return its successful writer, rather than replacing its owner.
+          HYLE_ASSIGN_OR_RETURN(auto key_writer,copy.unbind_mutable({0}));
+          HYLE_ASSIGN_OR_RETURN(auto key_view,key_writer.view());
+          HYLE_RETURN_IF_ERROR(require(key_view.size()==kbytes,"withdrawal did not return the original K writer"));
+        }
+      }
+      std::fprintf(stderr,"CPU mode%u synchronous rejection retired original producers: active_uses=%u\n",
+          mode,unsigned(uses.active_batches()));
+      HYLE_RETURN_IF_ERROR(require(uses.active_batches()==0,"synchronous error retained worker guards after original producer observation"));
+      HYLE_RETURN_IF_ERROR(require(!producer.invocation.output(producer.outputs.back()),"failed producer published output after retirement"));
       for(unsigned request=0;request<requests;++request){
         HYLE_ASSIGN_OR_RETURN(kw[request].lease(),copy.unbind_mutable({2+2*request}));
         HYLE_ASSIGN_OR_RETURN(vw[request].lease(),copy.unbind_mutable({3+2*request}));
         HYLE_RETURN_IF_ERROR(require(kw[request].initialized_rows()==0 && vw[request].initialized_rows()==0,"synchronous error initialized pending pages"));
       }
       std::vector<std::uint8_t> bytes(vb);HYLE_RETURN_IF_ERROR(read_bytes(context,resource,vr[1],bytes));
-      HYLE_RETURN_IF_ERROR(require(bytes==constant_q8(.125F,16*2*dv,true),"synchronous encoder rejection changed old reader bytes"));
+      HYLE_RETURN_IF_ERROR(require(bytes==oracle.bytes(.125F,16*2*dv,true),"synchronous encoder rejection changed old reader bytes"));
       std::fprintf(stderr,"CPU mode%u synchronous %s Graph numeric error refused before F2 submission: no output, all writers withdrawn, original guards retired PASS\n",mode,paired_failure?"paired":"independent second");
       return Status::Ok();
 #endif
@@ -339,21 +356,21 @@ Status episode(unsigned dk,unsigned dv,unsigned mode,bool invalid=false,bool pai
     if(invalid?paired_failure:step%2==0){
       HYLE_ASSIGN_OR_RETURN(auto writer,source_pool.allocate(kbytes+vbytes,64));
       auto submitted=submit_encoder(pe,std::array{kt,vt},std::array{kc,vc},writer);
-      if(!submitted)return synchronous_rejection(submitted.error(),pe);
+      if(!submitted)return synchronous_rejection(submitted.error(),pe,"paired submit");
       auto done=std::move(*submitted);
-      const auto bound=copy.bind_mutable({0},std::move(writer));if(!bound.ok())return synchronous_rejection(bound,pe);
-      const auto admitted=copy.bind_producer({0},std::move(done));if(!admitted.ok())return synchronous_rejection(admitted,pe);
+      const auto bound=copy.bind_mutable({0},std::move(writer));if(!bound.ok())return synchronous_rejection(bound,pe,"paired bind_mutable",nullptr,&done);
+      const auto admitted=copy.bind_producer({0},std::move(done));if(!admitted.ok())return synchronous_rejection(admitted,pe,"paired bind_producer",nullptr,&done);
       HYLE_RETURN_IF_ERROR(require(!writer.valid() && !done.valid(),"paired encoder storage/completion was not retained"));
     }else{
       HYLE_ASSIGN_OR_RETURN(auto kwriter,source_pool.allocate(kbytes,64));HYLE_ASSIGN_OR_RETURN(auto vwriter,source_pool.allocate(vbytes,64));
       HYLE_ASSIGN_OR_RETURN(auto kdone,submit_encoder(ke,std::array{kt},std::array{kc},kwriter));
       auto submitted=submit_encoder(ve,std::array{vt},std::array{vc},vwriter);
-      if(!submitted)return synchronous_rejection(submitted.error(),ve);
+      if(!submitted)return synchronous_rejection(submitted.error(),ve,"V submit",&kdone);
       auto vdone=std::move(*submitted);
       HYLE_RETURN_IF_ERROR(copy.bind_mutable({0},std::move(kwriter)));
-      const auto bound=copy.bind_mutable({1},std::move(vwriter));if(!bound.ok())return synchronous_rejection(bound,ve);
+      const auto bound=copy.bind_mutable({1},std::move(vwriter));if(!bound.ok())return synchronous_rejection(bound,ve,"V bind_mutable",&kdone,&vdone);
       HYLE_RETURN_IF_ERROR(copy.bind_producer({0},std::move(kdone)));
-      const auto admitted=copy.bind_producer({1},std::move(vdone));if(!admitted.ok())return synchronous_rejection(admitted,ve);
+      const auto admitted=copy.bind_producer({1},std::move(vdone));if(!admitted.ok())return synchronous_rejection(admitted,ve,"V bind_producer",&kdone,&vdone);
       HYLE_RETURN_IF_ERROR(require(!kdone.valid() && !vdone.valid(),"independent original completions were not retained"));
     }
     const std::array<c::CopyPhase,2> phases{{{}, {.dependency_mask=1}}};
@@ -369,8 +386,8 @@ Status episode(unsigned dk,unsigned dv,unsigned mode,bool invalid=false,bool pai
         for(unsigned row=0;row<nq;++row){
           const unsigned position=18-nq+row,first=position>16?position-16:0;
           double sum=0,denominator=0;for(unsigned j=first;j<=position;++j){
-            const double weight=std::exp(.125*dk*.125*(j==17?decoded_constant(key_incoming[request],false):0));
-            sum+=weight*decoded_constant(j<16?.0625F:j==16?(request?.25F:.125F):incoming[request],true);denominator+=weight;
+            const double weight=std::exp(.125*dk*.125*(j==17?oracle.decoded(key_incoming[request],false):0));
+            sum+=weight*oracle.decoded(j<16?.0625F:j==16?(request?.25F:.125F):incoming[request],true);denominator+=weight;
           }
           const double expected=(cpu_graph?-1:1)*sum/denominator;
           for(unsigned i=0;i<8*dv;++i){const auto x=actual[(qp[request]+row)*8*dv+i];
@@ -383,24 +400,34 @@ Status episode(unsigned dk,unsigned dv,unsigned mode,bool invalid=false,bool pai
     std::vector<float> actual(query_rows*8*dv);
     Status mathematical_status;
     if(combined){
-      HYLE_RETURN_IF_ERROR(joint_slot.bind(qi,host_desc,host_read));HYLE_RETURN_IF_ERROR(joint_slot.bind(ki,kframe));HYLE_RETURN_IF_ERROR(joint_slot.bind(vi,vframe));
-      HYLE_ASSIGN_OR_RETURN(auto writer,output_pool.allocate(*out_desc.required_bytes(),64));
-      HYLE_RETURN_IF_ERROR(joint_slot.bind(output,out_desc,std::move(writer)));
-      HYLE_ASSIGN_OR_RETURN(auto done,joint_slot.submit(std::move(update)));
-      if(invalid){HYLE_RETURN_IF_ERROR(require(!joint_slot.output(output),"failed source exposed Graph output"));
-        HYLE_RETURN_IF_ERROR(failed_result(done,joint_slot,update,[&]{
-          return require(!joint_slot.output(output),"failed Graph result became visible after final source error");}));return Status::Ok();}
+      HYLE_RETURN_IF_ERROR(joint_slot.bind(qi, host_desc, host_read));HYLE_RETURN_IF_ERROR(gb::bind(joint_slot, ki, kframe));HYLE_RETURN_IF_ERROR(gb::bind(joint_slot, vi, vframe));
+      auto allocated=output_pool.allocate(*out_desc.required_bytes(),64);
+      if(!allocated){
+        const auto stats=output_pool.stats();
+        const auto &error=allocated.error();
+        std::fprintf(stderr,"%s mode%u step%u stage=output_pool.allocate code=%u message=%.*s requested=%llu capacity=%llu allocated=%llu live_blocks=%u\n",
+            route,mode,step,unsigned(error.code()),int(error.message().size()),error.message().empty()?"":error.message().data(),
+            static_cast<unsigned long long>(*out_desc.required_bytes()),static_cast<unsigned long long>(stats.capacity_bytes),
+            static_cast<unsigned long long>(stats.allocated_bytes),unsigned(stats.live_blocks));
+        return error;
+      }
+      auto writer=std::move(*allocated);
+      HYLE_RETURN_IF_ERROR(joint_slot.bind(output, out_desc, std::move(writer)));
+      HYLE_RETURN_IF_ERROR(joint_slot.prepare_replay(lanes));HYLE_ASSIGN_OR_RETURN(auto done,gb::submit(joint_slot,lanes,std::move(update)));
+      if(invalid){HYLE_RETURN_IF_ERROR(require(!joint_slot.result(output),"failed source exposed Graph output"));
+        HYLE_RETURN_IF_ERROR(failed_result(done,[&]{return gb::take_update(joint_slot);},update,[&]{
+          return require(!joint_slot.result(output),"failed Graph result became visible after final source error");}));return Status::Ok();}
       HYLE_RETURN_IF_ERROR(done.wait());
-      {HYLE_ASSIGN_OR_RETURN(auto result,joint_slot.output(output));HYLE_ASSIGN_OR_RETURN(previous_output,result.storage_lease());
+      {HYLE_ASSIGN_OR_RETURN(auto result,joint_slot.result(output));HYLE_ASSIGN_OR_RETURN(previous_output,result.storage_lease());
         if(cpu_graph)HYLE_RETURN_IF_ERROR(previous_output.view()->read(std::as_writable_bytes(std::span(actual))));
         else {std::vector<std::uint16_t> words(actual.size());HYLE_RETURN_IF_ERROR(previous_output.view()->read(std::as_writable_bytes(std::span(words))));
           for(std::size_t i=0;i<words.size();++i)actual[i]=float(decode_word(words[i]));}
-        mathematical_status=check(actual);HYLE_RETURN_IF_ERROR(require(!joint_slot.prepare_batch(versions).ok(),"retained Graph output allowed overwrite"));}
-      done={};HYLE_ASSIGN_OR_RETURN(update,joint_slot.take_update());
+        mathematical_status=check(actual);HYLE_RETURN_IF_ERROR(require(!gb::prepare(joint_slot, lanes, versions, preparation).ok(),"retained Graph output allowed overwrite"));}
+      done={};HYLE_ASSIGN_OR_RETURN(update,gb::take_update(joint_slot));
     }else{
       HYLE_ASSIGN_OR_RETURN(auto done,receiver.submit(query,kframe,vframe,std::move(update)));
       if(invalid){HYLE_RETURN_IF_ERROR(require(!receiver.output(),"failed source exposed Direct output"));
-        HYLE_RETURN_IF_ERROR(failed_result(done,receiver,update,[&]{const auto result=receiver.output();return require(!result && result.error().IsInvalidArgument(),"failed Direct result became visible or lost terminal source error");}));return Status::Ok();}
+        HYLE_RETURN_IF_ERROR(failed_result(done,[&]{return receiver.take_update();},update,[&]{const auto result=receiver.output();return require(!result && result.error().IsInvalidArgument(),"failed Direct result became visible or lost terminal source error");}));return Status::Ok();}
       HYLE_RETURN_IF_ERROR(done.wait());
       {HYLE_ASSIGN_OR_RETURN(auto result,receiver.output());std::vector<std::uint16_t> words(actual.size());
         HYLE_RETURN_IF_ERROR(result.view()->read(std::as_writable_bytes(std::span(words))));
@@ -413,11 +440,11 @@ Status episode(unsigned dk,unsigned dv,unsigned mode,bool invalid=false,bool pai
     for(unsigned request=0;request<requests;++request){
       HYLE_ASSIGN_OR_RETURN(kw[request].lease(),update.take_mutable({2+2*request}));HYLE_ASSIGN_OR_RETURN(vw[request].lease(),update.take_mutable({3+2*request}));
       HYLE_ASSIGN_OR_RETURN(kr[3+request],kw[request].publish(2));HYLE_ASSIGN_OR_RETURN(vr[3+request],vw[request].publish(2));
-      auto expected=constant_q8(request?.25F:.125F,16*2*dv,true),dirty=constant_q8(incoming[request],2*dv,true);
+      auto expected=oracle.bytes(request?.25F:.125F,16*2*dv,true),dirty=oracle.bytes(incoming[request],2*dv,true);
       std::copy(dirty.begin(),dirty.end(),expected.begin()+vrb);std::vector<std::uint8_t> bytes(vb);
       HYLE_RETURN_IF_ERROR(read_bytes(context,resource,vr[3+request],bytes));
       HYLE_RETURN_IF_ERROR(require(bytes==expected,"dirty encoded append changed untouched tail bytes"));
-      expected=constant_q8(0.F,16*2*dk);dirty=constant_q8(key_incoming[request],2*dk);
+      expected=oracle.bytes(0.F,16*2*dk);dirty=oracle.bytes(key_incoming[request],2*dk);
       std::copy(dirty.begin(),dirty.end(),expected.begin()+krb);bytes.resize(kb);
       HYLE_RETURN_IF_ERROR(read_bytes(context,resource,kr[3+request],bytes));
       HYLE_RETURN_IF_ERROR(require(bytes==expected,"dirty encoded key append changed codes or untouched bytes"));
@@ -436,8 +463,8 @@ Status episode(unsigned dk,unsigned dv,unsigned mode,bool invalid=false,bool pai
     HYLE_RETURN_IF_ERROR(result.view()->read(std::as_writable_bytes(std::span(words))));
     for(unsigned request=0;request<requests;++request){const unsigned nq=unsigned(qp[request+1]-qp[request]);
       for(unsigned row=0;row<nq;++row){const unsigned position=17-nq+row;
-        const double expected=(position*decoded_constant(.0625F,true)+decoded_constant(request?.25F:.125F,true))/(position+1);
-        const double visible=position==16?expected:decoded_constant(.0625F,true);
+        const double expected=(position*oracle.decoded(.0625F,true)+oracle.decoded(request?.25F:.125F,true))/(position+1);
+        const double visible=position==16?expected:oracle.decoded(.0625F,true);
         for(unsigned i=0;i<8*dv;++i)HYLE_RETURN_IF_ERROR(require(std::abs(decode_word(words[(qp[request]+row)*8*dv+i])-visible)<tolerance,"old reader math changed across new version"));
       }
     }
@@ -445,12 +472,12 @@ Status episode(unsigned dk,unsigned dv,unsigned mode,bool invalid=false,bool pai
   HYLE_RETURN_IF_ERROR(old_done.wait());old_done={};
   HYLE_RETURN_IF_ERROR(require(!keys.acquire(kr[1]) && kr[1].valid(),"old reader became writable after new updates"));
   std::vector<std::uint8_t> bytes(vb);HYLE_RETURN_IF_ERROR(read_bytes(context,resource,vr[0],bytes));
-  HYLE_RETURN_IF_ERROR(require(bytes==constant_q8(.0625F,16*2*dv,true),"shared clean page changed"));
+  HYLE_RETURN_IF_ERROR(require(bytes==oracle.bytes(.0625F,16*2*dv,true),"shared clean page changed"));
   HYLE_RETURN_IF_ERROR(read_bytes(context,resource,vr[1],bytes));
-  HYLE_RETURN_IF_ERROR(require(bytes==constant_q8(.125F,16*2*dv,true),"old page changed across clone/update"));
+  HYLE_RETURN_IF_ERROR(require(bytes==oracle.bytes(.125F,16*2*dv,true),"old page changed across clone/update"));
   HYLE_RETURN_IF_ERROR(copy.close());HYLE_RETURN_IF_ERROR(init.close());
   HYLE_RETURN_IF_ERROR(receiver.close());HYLE_RETURN_IF_ERROR(joint_slot.close());HYLE_RETURN_IF_ERROR(old_slot.close());
-  std::fprintf(stderr,"%s %s encoded delta D%u/%u PASS: %u requests, six updates, paired/separate Graph encoders, final-only pending consumption, exact dirty bytes, old reader and shared/history bytes\n",route,mode==2?"CPU+CUDA":combined?"Graph":"Direct",dk,dv,requests);
+  std::fprintf(stderr,"%s %s %s delta D%u/%u PASS: %u requests, six updates, paired/separate Graph encoders, final-only pending consumption, exact dirty bytes, old reader and shared/history bytes\n",route,mode==2?"CPU+CUDA":combined?"Graph":"Direct",oracle.name(),dk,dv,requests);
   return Status::Ok();
 }
 } // namespace
@@ -462,18 +489,21 @@ TEST(EncodedCommonPages, TwoNativeAttentionNodesShareUploadBeforePreparation){
   auto schema=c::BatchSchema::create(cap).value();const std::array<std::int32_t,2> qptr{0,1},kptr{0,1};
   const std::array<std::int32_t,1> ids{1},tail{2};auto layout=schema.version({qptr,kptr,ids,tail}).value();
   c::BatchProgramOptions options{.resource=hyle::mem::system_resource(),.max_float_workspace_bytes=1u<<20,.max_int_workspace_bytes=4096,.scale=.125F};
-  auto wrapped=gb::provider(c::ggml_cpu::provider({.native_threads=2}),schema,options).value();
-  auto context=c::Context::create(c::cpu::device(),wrapped).value();auto queue=context.create_queue().value();
+  const auto native_provider=c::ggml_cpu::provider({.native_threads=2});
+  auto context=c::Context::create(c::cpu::device(),native_provider).value();auto queue=context.create_queue().value();
   struct Drain{c::Context&context;~Drain(){context.drain().IgnoreError();}}drain{context};
   auto builder=g::GraphBuilder::create().value();const std::array descriptions{c::batch_query_description(cap).value(),c::batch_cache_description(cap,c::BatchCacheRole::kKey).value(),c::batch_cache_description(cap,c::BatchCacheRole::kValue).value(),schema.metadata_description().value()};
   std::array<g::ValueId,4> inputs;for(unsigned i=0;i<4;++i)inputs[i]=builder.input(descriptions[i]).value();
   auto first=builder.add_node(c::Operation::custom(c::PagedAttention{cap,.125F}),inputs).value();auto a=builder.result(first).value();
   auto second=builder.add_node(c::Operation::custom(c::PagedAttention{cap,.125F}),std::array{a,inputs[1],inputs[2],inputs[3]}).value();auto b=builder.result(second).value();
   ASSERT_TRUE(builder.publish(a).ok());ASSERT_TRUE(builder.publish(b).ok());auto graph=std::move(builder).finish().value();
-  const std::array domains{g::StorageDomain{hyle::mem::system_resource()}};const std::array targets{g::ExecutionTarget{&context,g::StorageDomainId{0}}};
-  auto compiled=g::compile(graph,{.storage_domains=domains,.targets=targets},{.operation_fallback=g::OperationFallbackPolicy::kReject}).value();
-  const std::array lanes{gb::LaneBinding{g::ExecutionLaneId{0},&context,&queue,hyle::mem::system_resource()}};
-  auto invocation=gb::Invocation::create(compiled.executable,lanes).value();
+  const std::array domains{g::StorageDomain{hyle::mem::system_resource()}};
+  auto target_source_2=hyle::graph::ExecutionSource::acquire(context);ASSERT_TRUE(target_source_2)<<target_source_2.error().message();
+  const std::array targets{g::ExecutionTarget{*target_source_2,g::StorageDomainId{0}}};
+  auto compiled=g::cpu::compile(graph,{.storage_domains=domains,.targets=targets},{.operation_fallback=g::OperationFallbackPolicy::kReject}).value();
+  const std::array lanes{g::QueueBinding{g::ExecutionLaneId{0}, &queue}};
+  auto invocation=compiled.executable.create_invocation({.resources=g::ResourceOptions{}}).value();
+  const gb::PrepareOptions preparation{.host_workspace=hyle::mem::system_resource(),.max_float_workspace_bytes=options.max_float_workspace_bytes,.max_int_workspace_bytes=options.max_int_workspace_bytes};
   auto pool=c::LeasePool::create(hyle::mem::system_resource(),65536).value();std::array<c::ReadLease,3> reads;
   for(unsigned i=0;i<3;++i){const auto bytes=descriptions[i].required_bytes().value();auto writer=pool.allocate(bytes).value();
     std::vector<F16> words(bytes/2,half_test::encode<F16>(i==2?.25F:0.F));ASSERT_TRUE(writer.view()->write(std::as_bytes(std::span(words))).ok());reads[i]=writer.publish().value();}
@@ -482,18 +512,18 @@ TEST(EncodedCommonPages, TwoNativeAttentionNodesShareUploadBeforePreparation){
     // Deliberately reverse the input list: source selection follows stable IR
     // bindings, not caller order, so the owner's mirror identity remains stable.
     const std::array versions{gb::NodeLayout{second,layout},gb::NodeLayout{first,layout}};
-    auto prepared=invocation.prepare_batch(versions);ASSERT_TRUE(prepared.ok())<<prepared.message();
-    const auto one=invocation.report(first).value(),two=invocation.report(second).value();
+    auto prepared=gb::prepare(invocation, lanes, versions, preparation);ASSERT_TRUE(prepared.ok())<<prepared.message();
+    const auto one=gb::report(invocation, first).value(),two=gb::report(invocation, second).value();
     EXPECT_EQ(two.metadata_upload.logical_bytes,0u);EXPECT_EQ(two.metadata_staging_bytes,0u);
     if(episode==0){EXPECT_GT(one.metadata_upload.logical_bytes,0u);EXPECT_EQ(one.host_waits,2u);EXPECT_EQ(two.host_waits,1u);}
     else{EXPECT_TRUE(one.reused_native_plan);EXPECT_TRUE(two.reused_native_plan);EXPECT_EQ(two.host_waits,0u);
       if(episode==1){EXPECT_EQ(one.metadata_upload.logical_bytes,0u);EXPECT_EQ(one.host_waits,0u);}
       else{EXPECT_GT(one.metadata_upload.logical_bytes,0u);EXPECT_LE(one.metadata_upload.logical_bytes,8u);EXPECT_EQ(one.host_waits,1u);}}
-    for(unsigned i=0;i<3;++i)ASSERT_TRUE(invocation.bind(inputs[i],descriptions[i],reads[i]).ok());
+    for(unsigned i=0;i<3;++i)ASSERT_TRUE(invocation.bind(inputs[i], descriptions[i], reads[i]).ok());
     auto wa=pool.allocate(descriptions[0].required_bytes().value()).value(),wb=pool.allocate(descriptions[0].required_bytes().value()).value();
-    ASSERT_TRUE(invocation.bind(a,descriptions[0],std::move(wa)).ok());ASSERT_TRUE(invocation.bind(b,descriptions[0],std::move(wb)).ok());
-    auto done=invocation.submit();ASSERT_TRUE(done)<<done.error().message();ASSERT_TRUE(done->wait().ok());
-    for(auto output:{a,b}){auto result=invocation.output(output).value();auto storage=result.storage_lease().value();
+    ASSERT_TRUE(invocation.bind(a, descriptions[0], std::move(wa)).ok());ASSERT_TRUE(invocation.bind(b, descriptions[0], std::move(wb)).ok());
+    ASSERT_TRUE(invocation.prepare_replay(lanes).ok());auto done=invocation.submit(lanes);ASSERT_TRUE(done)<<done.error().message();ASSERT_TRUE(done->wait().ok());
+    for(auto output:{a,b}){auto result=invocation.result(output).value();auto storage=result.storage_lease().value();
       std::array<F16,8*64> actual;ASSERT_TRUE(storage.view()->subview(0,sizeof(actual))->read(std::as_writable_bytes(std::span(actual))).ok());
       for(auto value:actual)EXPECT_EQ(value.bits,half_test::encode<F16>(.25F).bits);}
   }
@@ -540,4 +570,32 @@ TEST(EncodedCommonPages, BFloat16IncrementalAndFailureConsumers){
     const auto status=episode(64,128,mode,true,paired,false,true);
     ASSERT_TRUE(status.ok())<<status.message();
   }
+}
+
+TEST(EncodedCommonPages, Float8PairedPendingConsumers){
+#if defined(HYLE_ENCODED_CUDA)
+  constexpr unsigned modes=3;
+#else
+  constexpr unsigned modes=2;
+#endif
+  // One explicit E4 geometry. CUDA already uses E4 by default; this is its
+  // finite paired-pending regression, while CPU keeps its existing Q8 cases.
+  for(unsigned mode=0;mode<modes;++mode){
+    SCOPED_TRACE(::testing::Message()<<"E4 BF16 mode="<<mode);
+    auto status=episode(64,128,mode,false,false,false,true,Codec::kE4M3);
+    ASSERT_TRUE(status.ok())<<status.message();
+    for(bool paired:{false,true}){
+      SCOPED_TRACE(::testing::Message()<<"invalid V paired="<<paired);
+      status=episode(64,128,mode,true,paired,false,true,Codec::kE4M3);
+      ASSERT_TRUE(status.ok())<<status.message();
+    }
+  }
+  RecordProperty("codec","E4M3FN");
+  RecordProperty("key_scale","0.5");
+  RecordProperty("value_scale","2");
+  RecordProperty("modes",int(modes));
+  RecordProperty("success_episodes",int(modes));
+  RecordProperty("expected_failure_episodes",2*int(modes));
+  RecordProperty("update_rounds",6*int(modes));
+  RecordProperty("update_rounds_per_episode",6);
 }

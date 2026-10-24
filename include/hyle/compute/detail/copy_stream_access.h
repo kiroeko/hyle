@@ -3,6 +3,7 @@
 #include "hyle/compute/batch_transfer.h"
 #include "hyle/compute/detail/copy_ranges.h"
 #include "hyle/compute/detail/completion_access.h"
+#include "hyle/compute/detail/context_ref.h"
 
 namespace hyle::compute::detail {
 
@@ -20,6 +21,10 @@ struct CopyUpdateInput final {
   CopyPhaseId last_write;
 };
 struct CopyStreamAccess final {
+  // Same cold preparation as public Context callers, with the exact retained
+  // owner. No temporary Context handle may close that shared owner on release.
+  static HYLE_COMPUTE_API Result<CopyBatchProgram> prepare(
+      const ContextRef &, std::span<const CopyResourceSpec>, CopyBatchOptions) noexcept;
   // Borrow original completions for an opt-in actual-retirement observer.
   // Empty output queries capacity. A nonempty insufficient span is untouched.
   // Accepted phases and only their used producer bindings are included; no

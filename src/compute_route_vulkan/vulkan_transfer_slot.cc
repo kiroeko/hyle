@@ -43,14 +43,15 @@ Status visibility(const detail::Buffer &buffer, bool flush) noexcept {
                                flush ? "vkFlushMappedMemoryRanges" : "vkInvalidateMappedMemoryRanges");
 }
 Status record(detail::TransferState &slot, const Tensor &tensor, bool upload,
-              std::size_t selected_bytes = SIZE_MAX) noexcept {
+              std::size_t selected_bytes = SIZE_MAX,
+              bool staged_device_copy = false) noexcept {
   auto &device = *slot.runtime->device;
   const auto &staging = detail::Access::buffer(slot.staging);
   const auto &native = detail::Access::buffer(tensor);
   HYLE_ASSIGN_OR_RETURN(auto bytes, tensor.description().required_bytes());
   if (selected_bytes != SIZE_MAX) bytes = selected_bytes;
   HYLE_ASSIGN_OR_RETURN(auto padded, detail::buffer_capacity(bytes));
-  slot.run->transfer_submission = upload && native->transfer_eligible && staging->transfer_eligible &&
+  slot.run->transfer_submission = upload && !staged_device_copy && native->transfer_eligible && staging->transfer_eligible &&
       slot.run->transfer_command != VK_NULL_HANDLE;
   const auto command = slot.run->transfer_submission ? slot.run->transfer_command : slot.run->command;
   VkCommandBufferBeginInfo begin{};
@@ -65,10 +66,12 @@ Status record(detail::TransferState &slot, const Tensor &tensor, bool upload,
   barrier.buffer = upload ? staging->handle : native->handle;
   barrier.offset = upload ? 0 : native->offset;
   barrier.size = padded;
-  barrier.srcAccessMask = upload ? VK_ACCESS_HOST_WRITE_BIT : VK_ACCESS_SHADER_WRITE_BIT;
+  barrier.srcAccessMask = upload ? (staged_device_copy ? VK_ACCESS_TRANSFER_WRITE_BIT : VK_ACCESS_HOST_WRITE_BIT)
+                                : VK_ACCESS_MEMORY_WRITE_BIT;
   barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
   device.fn.CmdPipelineBarrier(command,
-      upload ? VK_PIPELINE_STAGE_HOST_BIT : VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+      upload ? (staged_device_copy ? VK_PIPELINE_STAGE_TRANSFER_BIT : VK_PIPELINE_STAGE_HOST_BIT)
+             : VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
       VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 1, &barrier, 0, nullptr);
   if (bytes != 0) {
     VkBufferCopy copy{upload ? 0 : native->offset, upload ? native->offset : 0, padded};
@@ -137,12 +140,28 @@ Result<TransferSlot> TransferSlot::create(const Context &context, const MemoryRe
   if (options.resource_budget) {
     HYLE_ASSIGN_OR_RETURN(allocator, options.resource_budget.metadata_allocator());
   }
+  HYLE_ASSIGN_OR_RETURN(auto tensor, staging.allocate(shape, options));
+  return detail::TransferAccess::create(runtime, std::move(tensor), capacity, allocator);
+}
+Result<TransferSlot> detail::TransferAccess::create(const std::shared_ptr<Runtime> &runtime,
+    Tensor staging, std::size_t capacity, mem::AllocatorRef allocator) noexcept {
+  if (!runtime || !staging.valid() || !allocator.valid() || !capacity)
+    return std::unexpected(Status::InvalidArgument("invalid Vulkan transfer staging/owner"));
+  const auto &buffer = Access::buffer(staging);
+  HYLE_ASSIGN_OR_RETURN(auto padded, buffer_capacity(capacity));
+  if (buffer->device != runtime->device || !buffer->mapped || buffer->offset != 0 ||
+      padded > buffer->bytes)
+    return std::unexpected(Status::InvalidArgument("Vulkan transfer staging capacity/device differs"));
+  std::lock_guard lock(runtime->mutex);
+  if (runtime->closed)
+    return std::unexpected(Status::FailedPrecondition("Vulkan Context is closed"));
+  HYLE_RETURN_IF_ERROR(runtime->failure);
   try {
     TransferSlot slot;
     slot.state_ = std::allocate_shared<detail::TransferState>(mem::StdAllocator<detail::TransferState>(allocator));
     slot.state_->runtime = runtime;
     slot.state_->capacity = capacity;
-    HYLE_ASSIGN_OR_RETURN(slot.state_->staging, staging.allocate(shape, options));
+    slot.state_->staging = std::move(staging);
     HYLE_ASSIGN_OR_RETURN(slot.state_->run, detail::create_run(runtime, allocator));
     slot.state_->run->retained_buffers.resize(2);
     HYLE_RETURN_IF_ERROR(create_transfer_commands(*slot.state_->run));
@@ -160,7 +179,8 @@ Result<Completion> TransferSlot::upload(const Tensor &destination, ConstTensorVi
   HYLE_ASSIGN_OR_RETURN(auto bytes, destination.description().required_bytes());
   const auto &buffer = *detail::Access::buffer(state_->staging);
   auto *data = static_cast<std::byte *>(buffer.mapped);
-  HYLE_RETURN_IF_ERROR(source.storage().read({data, bytes}));
+  HYLE_ASSIGN_OR_RETURN(auto source_range, source.storage().subview(0, bytes));
+  HYLE_RETURN_IF_ERROR(source_range.read({data, bytes}));
   HYLE_ASSIGN_OR_RETURN(auto padded, detail::buffer_capacity(bytes));
   std::fill(data + bytes, data + padded, std::byte{});
   HYLE_RETURN_IF_ERROR(visibility(buffer, true));
@@ -182,7 +202,8 @@ Status detail::TransferAccess::retain(TransferSlot &slot, const Tensor &tensor) 
 }
 Result<Completion> detail::TransferAccess::upload(
     TransferSlot &slot, const Tensor &destination, std::span<const UploadPart> parts,
-    std::size_t used) noexcept {
+    std::size_t used, compute::WeightUploadReport *report,
+    bool check_source_aliases) noexcept {
   if (!slot.state_) return std::unexpected(Status::FailedPrecondition("empty Vulkan transfer slot"));
   auto &state = *slot.state_;
   std::lock_guard lock(state.runtime->mutex);
@@ -199,15 +220,49 @@ Result<Completion> detail::TransferAccess::upload(
       return std::unexpected(Status::OutOfRange("Vulkan fragment range exceeds selected upload"));
   }
   HYLE_ASSIGN_OR_RETURN(auto padded, buffer_capacity(used));
+  if (check_source_aliases) {
+    // Source ranges must not alias the private mapped staging that is about
+    // to be cleared. This is a host mapping check, not device transfer or an
+    // interpretation of an arbitrary provider's opaque native handle.
+    const auto staging_address = reinterpret_cast<std::uintptr_t>(pointer);
+    if (!pointer || staging.bytes > UINTPTR_MAX - staging_address)
+      return std::unexpected(Status::OutOfRange("Vulkan upload staging address overflows"));
+    for (const auto &part : parts) {
+      HYLE_ASSIGN_OR_RETURN(auto bytes, part.source.description().required_bytes());
+      if (bytes == 0) continue;
+      HYLE_ASSIGN_OR_RETURN(auto range, part.source.storage().subview(0, bytes));
+      HYLE_ASSIGN_OR_RETURN(auto mapping, range.map_host());
+      const auto address = reinterpret_cast<std::uintptr_t>(mapping.bytes().data());
+      Status status;
+      if (!mapping.bytes().data() || bytes > UINTPTR_MAX - address)
+        status = Status::OutOfRange("Vulkan upload source address overflows");
+      else if (address < staging_address + staging.bytes && staging_address < address + bytes)
+        status = Status::InvalidArgument("Vulkan upload source aliases private staging");
+      status.Update(mapping.close());
+      if (!status.ok()) return std::unexpected(std::move(status));
+    }
+  }
   std::fill(pointer, pointer + padded, std::byte{});
   for (const auto &part : parts) {
     HYLE_ASSIGN_OR_RETURN(auto bytes, part.source.description().required_bytes());
-    HYLE_RETURN_IF_ERROR(part.source.storage().read({pointer + part.offset, bytes}));
+    HYLE_ASSIGN_OR_RETURN(auto source_range, part.source.storage().subview(0, bytes));
+    const auto status = source_range.read({pointer + part.offset, bytes});
+    if (!status.ok()) {
+      if (report) report->copied_bytes_unknown = true;
+      return std::unexpected(status);
+    }
+    if (report) report->staged_bytes += bytes;
   }
   HYLE_RETURN_IF_ERROR(visibility(staging, true));
   HYLE_RETURN_IF_ERROR(record(state, destination, true, used));
   auto completion = submit_locked(state.run);
-  if (completion) state.submitted = true;
+  if (completion) {
+    state.submitted = true;
+    if (report) {
+      report->submitted_bytes = padded;
+      report->copied_bytes_unknown = padded != 0;
+    }
+  } else if (report) report->copied_bytes_unknown = true;
   return completion;
 }
 Result<Completion> TransferSlot::download(const Tensor &source) noexcept {
@@ -217,6 +272,28 @@ Result<Completion> TransferSlot::download(const Tensor &source) noexcept {
   HYLE_RETURN_IF_ERROR(record(*state_, source, false));
   auto completion = detail::submit_locked(state_->run);
   if (completion) state_->submitted = true;
+  return completion;
+}
+Result<Completion> detail::TransferAccess::copy(TransferSlot &slot,
+    const Tensor &source, const Tensor &destination) noexcept {
+  if (!slot.state_ || !source.valid() || !destination.valid() ||
+      source.description() != destination.description())
+    return std::unexpected(Status::InvalidArgument("Vulkan staged constant copy descriptions differ"));
+  {
+    std::lock_guard lock(slot.state_->runtime->mutex);
+    HYLE_RETURN_IF_ERROR(validate_slot(*slot.state_, source));
+    HYLE_RETURN_IF_ERROR(validate_slot(*slot.state_, destination));
+  }
+  {
+    HYLE_ASSIGN_OR_RETURN(auto completed, slot.download(source));
+    HYLE_RETURN_IF_ERROR(completed.wait());
+  }
+  auto &state = *slot.state_;
+  std::lock_guard lock(state.runtime->mutex);
+  HYLE_RETURN_IF_ERROR(validate_slot(state, destination));
+  HYLE_RETURN_IF_ERROR(record(state, destination, true, SIZE_MAX, true));
+  auto completion = submit_locked(state.run);
+  if (completion) state.submitted = true;
   return completion;
 }
 Status TransferSlot::read(TensorView destination) const noexcept {

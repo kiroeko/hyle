@@ -1,0 +1,691 @@
+{
+  "status": "completed",
+  "task": "static-fp8-reference-2026-10-20",
+  "local": {
+    "files": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\static-fp8-reference\\common-cpu\\checks\\attempt1\\cpu.exe",
+        "bytes": 27560960,
+        "sha256": "d92315e95cd911160e9185bb3851c8c79908ac4ff70da2a1fc903c4805d86dd0"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\static-fp8-reference\\common-cpu\\checks\\attempt1\\cpu.exp",
+        "bytes": 25015,
+        "sha256": "4e46bcb5c07b5d0e98309fd0da7b675035c25e2d9c32caf94add081a6d3c2429"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\static-fp8-reference\\common-cpu\\checks\\attempt1\\cpu.lib",
+        "bytes": 41298,
+        "sha256": "1a72c22d3a6dec39cca5118fd99aa738ff5f4202c029fc8a48afb6c3d20e909d"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\static-fp8-reference\\common-cpu\\checks\\attempt1\\cpu.map",
+        "bytes": 41608309,
+        "sha256": "2398d379b3ba81bbc435c8a8cfd58468e34b5a69aeeac02dbae28958e58ad4bd"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\static-fp8-reference\\common-cpu\\checks\\forced-native-provider\\cpu.exe",
+        "bytes": 27562496,
+        "sha256": "bcf38805f3ec64aaf533ffc586dd0fee65601d384566167d987359c9bb9ae321"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\static-fp8-reference\\common-cpu\\checks\\forced-native-provider\\cpu.exp",
+        "bytes": 25029,
+        "sha256": "b8a5f33cb1b5b5258412c545d5edebf00e519ee1b48517c6fc7c247a0f35e84f"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\static-fp8-reference\\common-cpu\\checks\\forced-native-provider\\cpu.lib",
+        "bytes": 41298,
+        "sha256": "1a72c22d3a6dec39cca5118fd99aa738ff5f4202c029fc8a48afb6c3d20e909d"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\static-fp8-reference\\common-cpu\\checks\\forced-native-provider\\cpu.map",
+        "bytes": 41626318,
+        "sha256": "332c8a47c6f9402208399f3a6a79889bb9c70a6901b980bb2804e52b515ebdd7"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\static-fp8-reference\\common-cpu\\diagnostic\\cpu.exe",
+        "bytes": 27570176,
+        "sha256": "72e09d69c17e4f8c8420261624d28b5f5743046559f5da62adc30f965b0cef1c"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\static-fp8-reference\\common-cpu\\diagnostic\\cpu.exp",
+        "bytes": 25010,
+        "sha256": "07cee327b929b92592909f5efd8fe6a818739f173746b5d3bcf5629cab624ba3"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\static-fp8-reference\\common-cpu\\diagnostic\\cpu.lib",
+        "bytes": 41298,
+        "sha256": "1a72c22d3a6dec39cca5118fd99aa738ff5f4202c029fc8a48afb6c3d20e909d"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\static-fp8-reference\\common-cpu\\diagnostic\\cpu.map",
+        "bytes": 41627176,
+        "sha256": "ec8fdc352949108f5c988b0353e869acf08f13bff6766c57bd4772d062e104d1"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\static-fp8-reference\\cuda\\scalar-fixed\\static-fp8.exe",
+        "bytes": 122647552,
+        "sha256": "4230ff32db070d3c1dfe1dc036b697ab371d1471e7c61b8051326a5d9b2c40d0"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\static-fp8-reference\\cuda\\scalar-fixed\\static-fp8.exp",
+        "bytes": 25021,
+        "sha256": "c50957340ed0d716c8c71c25aaca116ccd8fc591d4adfc7e9cd17e42caf2b1f8"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\static-fp8-reference\\cuda\\scalar-fixed\\static-fp8.lib",
+        "bytes": 41912,
+        "sha256": "492cc0407cf804248e469c4704fc69a83836bc4335e7f7074dd68650ba39c540"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\static-fp8-reference\\cuda\\scalar-fixed\\static-fp8.map",
+        "bytes": 44610916,
+        "sha256": "3fe484818193662d22541673c5657d127369fb226e95cc635a0dee4e29a5ec67"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\static-fp8-reference\\cuda\\scalar-probe-before\\static-fp8.exe",
+        "bytes": 122674688,
+        "sha256": "366752902cf138c666c8e604e4b034dded1fafe638bc7ee5b020b189f3fafdc8"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\static-fp8-reference\\cuda\\scalar-probe-before\\static-fp8.exp",
+        "bytes": 25028,
+        "sha256": "5465602cba608490c569b52975896115ef7f79b18b7f53766863bdb977a8bd6a"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\static-fp8-reference\\cuda\\scalar-probe-before\\static-fp8.lib",
+        "bytes": 41912,
+        "sha256": "492cc0407cf804248e469c4704fc69a83836bc4335e7f7074dd68650ba39c540"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\static-fp8-reference\\cuda\\scalar-probe-before\\static-fp8.map",
+        "bytes": 44687199,
+        "sha256": "7a168043ac964acd3f680d9b4b9e9d030fca1e7effb7d7143b9924f116ef7cde"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\static-fp8-reference\\cuda\\scalar-probe-before-v2\\static-fp8.exe",
+        "bytes": 122675200,
+        "sha256": "22f53286b4aff460c14951226286be0054bb38e35c520edb94d1bd047c6ab18e"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\static-fp8-reference\\cuda\\scalar-probe-before-v2\\static-fp8.exp",
+        "bytes": 25031,
+        "sha256": "8c60894f9cde777b29d4acd88529c99a9ddf7264b19ed258d8ed801f398962c5"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\static-fp8-reference\\cuda\\scalar-probe-before-v2\\static-fp8.lib",
+        "bytes": 41912,
+        "sha256": "492cc0407cf804248e469c4704fc69a83836bc4335e7f7074dd68650ba39c540"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\static-fp8-reference\\cuda\\scalar-probe-before-v2\\static-fp8.map",
+        "bytes": 44687378,
+        "sha256": "4613d2d1463251ffdbd82d9b663fa1f01fe7a3719dfd6a8452332797e95d0515"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\static-fp8-reference\\cuda\\scalar-probe-final\\static-fp8.exe",
+        "bytes": 122674688,
+        "sha256": "8ca8e86e2007a6b4fe1bede9987e3563a79f35bc26cf3a492a995e0481014a7e"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\static-fp8-reference\\cuda\\scalar-probe-final\\static-fp8.exp",
+        "bytes": 25027,
+        "sha256": "753b18bd49c77c7b519be26cc0ed588615868031d9767fc5650c15349a88c0d9"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\static-fp8-reference\\cuda\\scalar-probe-final\\static-fp8.lib",
+        "bytes": 41912,
+        "sha256": "492cc0407cf804248e469c4704fc69a83836bc4335e7f7074dd68650ba39c540"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\static-fp8-reference\\cuda\\scalar-probe-final\\static-fp8.map",
+        "bytes": 44684519,
+        "sha256": "5ef5a4a31723c26b54349b3949eff7ec0228ce1f948161411fcb6212e64f2e5b"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\static-fp8-reference\\cuda\\scalar-probe-final-v2\\static-fp8.exe",
+        "bytes": 122675712,
+        "sha256": "46b953ad39359cae0f8606424eb495d2ac47fdf13479fb3e294d888b196e29cf"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\static-fp8-reference\\cuda\\scalar-probe-final-v2\\static-fp8.exp",
+        "bytes": 25030,
+        "sha256": "ebc599117ebecb67e5691f3a1bdffd522c7396a8f001b21b12a97e562eef2793"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\static-fp8-reference\\cuda\\scalar-probe-final-v2\\static-fp8.lib",
+        "bytes": 41912,
+        "sha256": "492cc0407cf804248e469c4704fc69a83836bc4335e7f7074dd68650ba39c540"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\static-fp8-reference\\cuda\\scalar-probe-final-v2\\static-fp8.map",
+        "bytes": 44684698,
+        "sha256": "be7f1d4163cfd9d85713f3a25760667cfeff696aa59bab4b56b2d3694bb0ddf2"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\static-fp8-reference\\cuda\\tests-final\\static-fp8.exe",
+        "bytes": 122647552,
+        "sha256": "b37fd7191a1fb32ab3e65cc0cece1aad8dd82f54bc209c70a654e7a0d8321b4e"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\static-fp8-reference\\cuda\\tests-final\\static-fp8.exp",
+        "bytes": 25020,
+        "sha256": "b467da874922f9e7c83397a74beeb04f3d35b742730b06eb38a854a4322f5107"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\static-fp8-reference\\cuda\\tests-final\\static-fp8.lib",
+        "bytes": 41912,
+        "sha256": "492cc0407cf804248e469c4704fc69a83836bc4335e7f7074dd68650ba39c540"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\static-fp8-reference\\cuda\\tests-final\\static-fp8.map",
+        "bytes": 44613596,
+        "sha256": "4c7f76f6a4eae5e01f0e05e9ca6ebd15427a44697e9dfb08965dec8303f93f89"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\static-fp8-reference\\vulkan\\checks\\static-fp8-test.exe",
+        "bytes": 68594688,
+        "sha256": "f03876cc29080c8ccee7c93bdaae0a0d1d60f027863470030a29e75165471b68"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\static-fp8-reference\\vulkan\\checks\\static-fp8-test.exp",
+        "bytes": 25026,
+        "sha256": "29d81013473c75cfdd2fdc5a4c76cbb7193293b3f30f258a082a52772f1f3287"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\static-fp8-reference\\vulkan\\checks\\static-fp8-test.lib",
+        "bytes": 42434,
+        "sha256": "c30b8a79e5aa07c3a7b34aea4c488e51847d63673e55538c19172e32d48a6126"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\static-fp8-reference\\vulkan\\checks\\static-fp8-test.map",
+        "bytes": 35531650,
+        "sha256": "71d75e64f7090a7dfa2e0f14946f0e141a913fcae15218e05f664035d9bbef4a"
+      }
+    ],
+    "bytes": 1316313508.0
+  },
+  "remote": {
+    "status": "completed",
+    "files": [
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/static-fp8-reference/apple/static-fp8-reference",
+        "bytes": 15013992,
+        "sha256": "4de635ccec04f496c9e94e42682674d0b6adbb3ae5ab6cbf5c9982e6c09e33e9"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/static-fp8-reference/apple/static-fp8-reference.map",
+        "bytes": 4414420,
+        "sha256": "f3d6157e9e62950c42219fc62ab2ff377d67ec3edd896bbde78c3375471921a4"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/static-fp8-reference/apple/probe/ieee-before",
+        "bytes": 15036472,
+        "sha256": "3e1efc7deabe1e677cb4d5c79b3e052121a8ebdddc69e9c806b764d9ca56d674"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/static-fp8-reference/apple/probe/ieee-before.map",
+        "bytes": 4423010,
+        "sha256": "599c850cb60722a93787524c291061b28f839d7a6758b406f0e937c35cd68169"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/static-fp8-reference/apple/ieee-binary-v2/static-fp8-reference",
+        "bytes": 15037272,
+        "sha256": "d925372de05d4e07d8fc1f632a478ed25a77330eee318e4a8db276239661d46b"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/static-fp8-reference/apple/ieee-binary-v2/static-fp8-reference.map",
+        "bytes": 4424931,
+        "sha256": "316e7764f5d6610c26c2bc6bc2a0eaa89770b48c81b2563889cf250499e1fb53"
+      }
+    ],
+    "bytes": 58350097,
+    "protected": [
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/static-fp8-reference/apple/ieee-binary-v2/objects/src--compute_route_apple--apple_mature_float.cc.o",
+        "bytes": 135000,
+        "sha256": "9915adbcbef27fe853f715e76a97d0b9449df7f7fd84250db3e5278b57742cfe"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/static-fp8-reference/apple/ieee-binary-v2/objects/src--compute_route_apple--apple_operations.cc.o",
+        "bytes": 171448,
+        "sha256": "7b739cd4f10721ddcbc4ebcf55b017e95fe0802212c2154808b03578009bd5e3"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/static-fp8-reference/apple/ieee-binary-v2/objects/src--compute_route_apple--apple_static_fp8.cc.o",
+        "bytes": 51160,
+        "sha256": "418b02d3346582e0caa117d91f126478275d373e22bc92ab997bcc60045f679e"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/static-fp8-reference/apple/objects/src--compute_route_apple--apple_mature_float.cc.o",
+        "bytes": 133624,
+        "sha256": "ca4b3705baa941bdb835382457053058e886f0483d7a3e811f429097a4f7744c"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/static-fp8-reference/apple/objects/src--compute_route_apple--apple_operations.cc.o",
+        "bytes": 171248,
+        "sha256": "a22071fec7f682f092a0a3818c2cfeb08516241a2ecce1f9c2deb6b6f0829a90"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/static-fp8-reference/apple/objects/src--compute_route_apple--apple_static_fp8.cc.o",
+        "bytes": 43320,
+        "sha256": "c8538e366ce44d7e845c17f34c3dc5970d8bdcca208a28df4ec669d6a96eb5d0"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/static-fp8-reference/apple/objects/src--graph_route_apple--apple_lowering.cc.o",
+        "bytes": 299240,
+        "sha256": "427399e1846b982f9348305175819f556beaed8ef2052e191579ecebbcdc369f"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/static-fp8-reference/apple/objects/src--graph_route_apple--native_region.cc.o",
+        "bytes": 188256,
+        "sha256": "ec20dc77401517afc18b126d28927fb86c0661056d50174bfdcf20a5a6e1e42d"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/static-fp8-reference/apple/objects/tests--graph_route_apple--static_fp8_reference_test.cc.o",
+        "bytes": 223512,
+        "sha256": "2bf3e2255e91a13637d79ec3942b7fb0593fe693fa255a92009da2e4cec70275"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/static-fp8-reference/apple/probe/static_fp8_test.o",
+        "bytes": 249760,
+        "sha256": "cdc08bfca124920ba3462e7be4b884cd24269d828b2d19cec8297d33c3395a8d"
+      }
+    ]
+  },
+  "proofs": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\static-fp8-reference-2026-10-20.json",
+      "bytes": 28396,
+      "sha256": "44569db47d219dcaead58f5a79c2f059401a899273969d64bf5d448f5700f8eb"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\static-fp8-reference-2026-10-20.zip",
+      "bytes": 1306374,
+      "sha256": "bf7bd8c3f770c6ee631898150c96d6933fa9228197623f45ce3759e31a12e472"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\static-fp8-reference\\root\\archive-independent-check.json",
+      "bytes": 755,
+      "sha256": "b6e8d9f0908c2af1fbbf8b1f7fb744fe09583bf093ce5cd4a161443f0564b1bb"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\static-fp8-reference\\root\\final-source-freeze.json",
+      "bytes": 12254,
+      "sha256": "e98d56d00cd38d13dde59ab4c6a3d1f19094f5610885f901f70d169d407c98a6"
+    }
+  ],
+  "protected": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_packed_shared\\static_fp8_linear.h",
+      "bytes": 2480,
+      "sha256": "91646bdb2e9ff0444eee81213673f172fb3166aec17b9cf2b3574d695a8b85cd"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\closed_region.h",
+      "bytes": 4100,
+      "sha256": "10808caf4bd8aa36bf397a09b92c187b377af899f04f314c822f1659726889a4"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\static_fp8_region.h",
+      "bytes": 6346,
+      "sha256": "0200630b90f89bdf1ce50fdb63fb55f72cd398d3c7b7a2010e16395eb92df8c0"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\mapped_pattern_region.h",
+      "bytes": 10781,
+      "sha256": "3835efcf4d597c940d6d9a14cdea8bb66440fc7d837c86cf7aaa67bfb2734ad4"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\artifact_packed_region.h",
+      "bytes": 6383,
+      "sha256": "7ea54da10ca9151c54032968de49d53417debc46dba8ca70c0257f6513c95d91"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph_route_cpu\\ct_packed_linear_region.cc",
+      "bytes": 712,
+      "sha256": "5204a2818a5e4e4e57e5a112aff69bedabb800f4ae8bd7e4f3884c3e52116062"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph_route_cuda\\ct_packed_linear_region.cc",
+      "bytes": 925,
+      "sha256": "2831bcd063ec1bdc88379ec622afc472b39629db45c2abe04db88c6dae2d5ecc"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_torch_cuda\\artifact_provider.cc",
+      "bytes": 37668,
+      "sha256": "f32b22287c3ae218b097a60d2db8d2748bd69aed499c6d41c9581056128893fb"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_torch_cuda\\mlx_packed_kernel.h",
+      "bytes": 1885,
+      "sha256": "fbb782a8bdb8aa4b603d4d0edd1d49dc30f4795437938f9e88ef4865f8bf3bc3"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_torch_cuda\\mlx_packed_kernel.cu",
+      "bytes": 18991,
+      "sha256": "f3db31f3c90cdf2adfe780793d3a9c3e78bc6eb4c730801fd8d36b0f0aa225e9"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_native\\static_fp8.cc",
+      "bytes": 8045,
+      "sha256": "bd7fd8858dcaafba55a58ac77cddcaea2fd6327a2254078eddd8dc6524e143ab"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_native\\native_plan.h",
+      "bytes": 10808,
+      "sha256": "f64b23ca54f2fe05a050f6a86880fc6bf354204f07d1225568cccc8a31b9939e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_native\\native_provider.cc",
+      "bytes": 40134,
+      "sha256": "d5299a5bd3d09814231e9b098476418d035d68049e8f33c57e9d0acd7e87e2eb"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_native\\cast.cc",
+      "bytes": 10391,
+      "sha256": "13b161de4c74956bd0c467ce0d55efb9b49abe7aeb050893a8e2fd95ddb2d6a3"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_native\\CMakeLists.txt",
+      "bytes": 4840,
+      "sha256": "661736ffaff7fa191a0e92809b13a92686161439d7faac7404368909c8a2fa1b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\static_fp8_reference_fixture.h",
+      "bytes": 19426,
+      "sha256": "dc298ec180013d0af1ec97d8a3f19d1f42e1c8467776e50d8721422ecab903f4"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_cpu\\static_fp8_reference_test.cc",
+      "bytes": 4700,
+      "sha256": "afa1a6dd6116fe54decdeceffbab4cba87faaf2c086267cabfb4c3f7777a42d8"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_cpu\\CMakeLists.txt",
+      "bytes": 3268,
+      "sha256": "c3bc56e7cbf8598e9c148f18e406333d1ca280511094839544023ee8e9806203"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_route_apple\\apple_operations.cc",
+      "bytes": 21872,
+      "sha256": "0ae4987c14350e9c4c597b323970262ee3e5192c364752ecb13d7b55921ba373"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_route_apple\\apple_mature_float.cc",
+      "bytes": 35137,
+      "sha256": "d571303e9965cdfc54a8fb67eaa9af7ad45aa0449e0120b09bc8851032cf7f32"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_route_apple\\CMakeLists.txt",
+      "bytes": 6000,
+      "sha256": "61dbeef5bc449d2449de82b43153246117ff58a8e308e7ec79418519f8501529"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph_route_apple\\native_region.cc",
+      "bytes": 48044,
+      "sha256": "a8b2ef570424d2084bc316eed4d9178b5bbf8d34d5e0410a6cfc7c3bd0c58cef"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph_route_apple\\native_region.h",
+      "bytes": 1204,
+      "sha256": "2bcbd1874eece2152f2e9c10329f4a103ea6dfcc80322be3d5c8e5290aa2e955"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph_route_apple\\apple_lowering.cc",
+      "bytes": 35828,
+      "sha256": "61b8b177167f9719addea6e7a61690d144a0b7cdd95227ecd1d48cc662980918"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_apple\\CMakeLists.txt",
+      "bytes": 6193,
+      "sha256": "e7557d5ebfc0bb67bb57236b85a46ab08e25e8773c1ee82b20b087c4f6a84925"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_route_apple\\apple_static_fp8.h",
+      "bytes": 864,
+      "sha256": "ad9156e08b30b46527efc37bd18d759a113d04a6bdc4d5ab042540a2220d671b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_route_apple\\apple_static_fp8.cc",
+      "bytes": 12802,
+      "sha256": "7d39f5d161aa7efa5ccaee57969b4533f562b890338771bf269e0ebf447cd9bb"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_apple\\static_fp8_reference_test.cc",
+      "bytes": 8534,
+      "sha256": "b26078c581333372781995b3f7c72ff803ba80582379eb4418368b4e321c6941"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_route_vulkan\\vulkan_program.cc",
+      "bytes": 55174,
+      "sha256": "bbabbf6da570347b632375a0818a2b41062ba8d40340587c1c9f465f2952356d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_route_vulkan\\vulkan_tensor.cc",
+      "bytes": 26025,
+      "sha256": "56ba53f2184ed2d7951eaf9d4e882057c4702518d70cd7a0099b9a37ed7989c5"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_route_vulkan\\shaders\\tensor.comp",
+      "bytes": 30312,
+      "sha256": "7fcf1c2d3ab034057ac39a66d225c3bfb7d6f8ccde50d42928446b4f7fd67ef4"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_route_vulkan\\vulkan_operations.cc",
+      "bytes": 5436,
+      "sha256": "aedfe3958f094be9fe32554e0c8845c2216475be5c5a67da7440880f88f9cad9"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_route_vulkan\\vulkan_tensor.h",
+      "bytes": 1755,
+      "sha256": "8e94102f6ec5457fc197f3276f711a83056d13fe2a392f148afb669b9d50726c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_route_vulkan\\build_shaders.py",
+      "bytes": 6557,
+      "sha256": "c4bb891dcb26f22b7f8ab49e767eb51e881dc1569ca30f21d64c6473cfb952af"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_route_vulkan\\CMakeLists.txt",
+      "bytes": 3225,
+      "sha256": "e8b3040ac6fa805a7fc463280610a03fb3c5ee352dfeb90863f9772b3c039a8b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph_route_vulkan\\native_region.cc",
+      "bytes": 48939,
+      "sha256": "61f51fcde86d288003c38dc2aa0efccfdba315488102525a7c760a1aed9b57a1"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_vulkan\\CMakeLists.txt",
+      "bytes": 5539,
+      "sha256": "4c121a224f69bfd5b53ed56c9f39126fd9c17f3149eefe7fe425324245485031"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_route_vulkan\\vulkan_static_fp8.cc",
+      "bytes": 3485,
+      "sha256": "ae3936cb968fc13a470250d792b72c9b6f9ebde71089bf7028f86ef476a3614e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_route_vulkan\\shaders\\static_fp8.comp",
+      "bytes": 3922,
+      "sha256": "d05b896427ad5b40eb3ac52ca5bbf4a1078c89466af732fd0aa5686f59d3600c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_route_vulkan\\shaders\\fp8_storage.glsl",
+      "bytes": 1623,
+      "sha256": "6eef9d3182dc3fbd8d35404678cd5f38f2fa9aeabd2048e74b8eb1e10eba0a93"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_vulkan\\static_fp8_reference_test.cc",
+      "bytes": 10656,
+      "sha256": "607b39b54ec25a2fb77a2c3a8d0b76e61aa9ae8f314fb30193e94cc91c8a64a7"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_shader_shared\\nvfp4_f32.h",
+      "bytes": 4845,
+      "sha256": "bcb1534ec5072993166944e8a6085a10078a61ec85fe2d88fc1e7dd659822c43"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_shader_shared\\ct_packed.h",
+      "bytes": 2374,
+      "sha256": "33a6001ae830c9649e5ab15ee2b6335456438b41486cf7965ce3e9bcc55d5459"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_cuda\\static_fp8_reference_test.cc",
+      "bytes": 2672,
+      "sha256": "0a81731df20118c7a6f53e7cbec9aac259aa36aac7bd1ad7d3aa969cf2a5934d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_route_cuda\\default_policy.cc",
+      "bytes": 7172,
+      "sha256": "2e47bb3456470b9f51dda885291d36f330006fad3af3e3faeed37e73420f328f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_cuda\\scalar_float_test.cc",
+      "bytes": 7371,
+      "sha256": "16b5fdc3eac967db1b5f77e170c9e807c60c368629f5171722834b619326a532"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\providers\\torch_cuda.h",
+      "bytes": 1825,
+      "sha256": "771fd3936cda0eb93780da2bb69426dbb0f8cd03ff5070723f7cece4d3ac8f62"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_cuda\\CMakeLists.txt",
+      "bytes": 2382,
+      "sha256": "90859827c21eda8863e1b962ff4507dcff621302d66bc9c4d8a21d3d0ccc2b44"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_torch_shared\\storage_cast.h",
+      "bytes": 4506,
+      "sha256": "95290c3163180cd6cf04a8a6f6e9e0750ed74d058c8f311525214827ee0250c0"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\simd\\dtype.h",
+      "bytes": 12143,
+      "sha256": "04dc8a2e0a654250413a0edc4bdc667f98c8aa40d85da25264b6bb2054dd51e5"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\static-fp8-reference\\common-cpu\\diagnostic\\pattern-test.obj",
+      "bytes": 1098468,
+      "sha256": "0c228716516c1448c14e60686c9dbc9f5cbeb9cde552a043054040f457de872a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\static-fp8-reference\\common-cpu\\checks\\attempt1\\cast.obj",
+      "bytes": 222831,
+      "sha256": "152b58017cad9e10d5528b19874720bafcc94558734ef6c13c2634b4f812ceb8"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\static-fp8-reference\\common-cpu\\checks\\attempt1\\cpu-region.obj",
+      "bytes": 1106340,
+      "sha256": "7ddeed960692c329d7482ad4974526b7b375646c630bb347098501d30c93eaab"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\static-fp8-reference\\common-cpu\\checks\\attempt1\\native-provider.obj",
+      "bytes": 728156,
+      "sha256": "7c8222b989473d1ec9beface13a76c963e5df553ee481f0f3ff9fc12f87ba501"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\static-fp8-reference\\common-cpu\\checks\\attempt1\\static-fp8.obj",
+      "bytes": 320468,
+      "sha256": "9a59f20981311e695e5e80a750b1132767287ca029feb1bef3a0468d8a987284"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\static-fp8-reference\\common-cpu\\checks\\attempt1\\test.obj",
+      "bytes": 2370908,
+      "sha256": "362000fdcb7a0063208989474cf10b3910630ab51d26f15825fc8cde3b29b6f3"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\static-fp8-reference\\common-cpu\\checks\\forced-native-provider\\test.obj",
+      "bytes": 2415338,
+      "sha256": "9fec61d576a7bb3079fd421050f2bb1bb043348cfa2c2afa0f6ca6ca12c1ddea"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\static-fp8-reference\\cuda\\checks\\attempt1\\artifact-kernel.obj",
+      "bytes": 693371,
+      "sha256": "6561cae4d8fcf49c98dc584b119a2f7c32f6c3d86ed3d9a44778f21aed17241d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\static-fp8-reference\\cuda\\checks\\attempt1\\artifact-provider.obj",
+      "bytes": 1374753,
+      "sha256": "b2bb4da2246ab439e2bd9050e08f8236b325ed8135676d4930f9e98a7d1a0364"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\static-fp8-reference\\cuda\\checks\\attempt1\\cuda-region.obj",
+      "bytes": 1106768,
+      "sha256": "1c7365f9af130a10c7447236facb3cf33b4f103aeea722ecad462b3672a23638"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\static-fp8-reference\\cuda\\checks\\final\\artifact-provider.obj",
+      "bytes": 1374468,
+      "sha256": "4bf79a6865607bdf15e946a9cd2ab003fff8da9a6fc1153cd07f8d334c6880d6"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\static-fp8-reference\\cuda\\checks\\final\\static-test.obj",
+      "bytes": 2290108,
+      "sha256": "496e6b43caec01e000fdabbc77c58df4f5274a9b228058f1209afdfcde0364db"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\static-fp8-reference\\cuda\\checks\\selection\\static-test.obj",
+      "bytes": 2295246,
+      "sha256": "0bb30159281270a6d5267d1e57bbe3ea9d0eecfe96480aafdc91c8ff2e8bbcbc"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\static-fp8-reference\\cuda-scalar-bridge\\checks\\default-policy.obj",
+      "bytes": 641322,
+      "sha256": "7bb55c0079a203e361bf71aa00420c07c812199fe47ad4f98dfe0b91ebd2de48"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\static-fp8-reference\\cuda-scalar-bridge\\checks\\scalar-test.obj",
+      "bytes": 1213338,
+      "sha256": "045730e4a4c5125862a65b55e370385ee67b5fc1ac8d3bda4bfbbb5dc62a60f8"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\static-fp8-reference\\cuda-scalar-bridge\\checks\\testattempt2\\scalar-test.obj",
+      "bytes": 1219961,
+      "sha256": "56f2d80dc5e6bf50bed9128ef67670c3c0e7e48b27970cf470cafaa49c526819"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\static-fp8-reference\\vulkan\\checks\\native_region.obj",
+      "bytes": 2594675,
+      "sha256": "d5db9cdf4cc239f8ac4af7f80e1fb643849a9998f698c5da2f75fe18ff4eb398"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\static-fp8-reference\\vulkan\\checks\\static-test.obj",
+      "bytes": 2501613,
+      "sha256": "5a82af4f2ea880fb8b858f2e0461573f2f740c908e7aac5f466d4cec6e731246"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\static-fp8-reference\\vulkan\\checks\\vulkan_operations.obj",
+      "bytes": 254223,
+      "sha256": "fdcff131e9ef23f4da1dd719649a0ff21656bbb93abf3673e5a0a99237cc0de9"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\static-fp8-reference\\vulkan\\checks\\vulkan_program.obj",
+      "bytes": 2446128,
+      "sha256": "4c9663b0d9afe5432b7609144473965c6eed9c72eee9a4fb31c64c567a22f2a6"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\static-fp8-reference\\vulkan\\checks\\vulkan_shaders.obj",
+      "bytes": 486504,
+      "sha256": "ba85d5e556f0005c4b24ea47d378af4b0b89c0b3b187c1068b9783b73053145a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\static-fp8-reference\\vulkan\\checks\\vulkan_static_fp8.obj",
+      "bytes": 187648,
+      "sha256": "deec7268984f2f3cb7cf48017d734c84d098145d494dd7f22e0d3e6907787315"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\static-fp8-reference\\vulkan\\checks\\vulkan_tensor.obj",
+      "bytes": 1311089,
+      "sha256": "24a02dad160b61d21eea5ff1e85bfd0b8190165b043192ffe46d631327ea9a45"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\decode-prepare-cost\\candidate\\qwen.exe",
+      "bytes": 117832192,
+      "sha256": "6e09735e395e86412d4588cf67507fe5902d149e3e03f674b688ddde5cddf1f8"
+    }
+  ]
+}

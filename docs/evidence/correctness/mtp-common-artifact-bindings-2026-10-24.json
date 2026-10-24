@@ -1,0 +1,379 @@
+{
+  "status": "Common test-consumer source applied and compiled; existing Q01 CPU/CUDA original regression passed",
+  "changes": {
+    "qwen": "One cold packed-MoE role view for primary Q24 and B07 actual descriptor/selected-expert sources; same Recipe/Program/StateHead/K1. Dense Q01/Q03/B04/Q14 paths retained.",
+    "glm": "Shared cold packed projection hooks, original negative-exp KDA rate, explicit pooled scale/order and shared clamp; same pooled builders and sixteen-state shape."
+  },
+  "checks": [
+    {
+      "backend": "cpu",
+      "summary": {
+        "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q01/abi18-regression/checks1/summary.json",
+        "bytes": 8353,
+        "sha256": "4638b8e2b2a9b92b5ce0e8efe6292f7780d37c3d80bd8a9d70a9c9563deaf943"
+      },
+      "graphs": 23,
+      "properties": {
+        "original_manifest_sha256": "8e769399627fbb5a1ad5fb5394f99a22aacbbc52a0936ad1d4f4bcef5eb105f5",
+        "original_acquisition_sha256": "f59aba7a4aa6d819345590e3fc06ad9305ecfc1b6bd7e8cf5e9dbfebde414c97",
+        "target_projection_contract": "original GPTQ-v1 Q/Z/F16 SF/g_idx; F16 scale product then BF16 W, BF16 A/F32 dot/BF16 return; seven packed contractions required",
+        "vocabulary_binding": "one original tied BF16 bank, same readonly lease for Gather and draft/target fullV heads",
+        "artifact_repository": "Vishva007/Qwen3.5-2B-W4A16-AutoRound-GPTQ",
+        "artifact_revision": "8ec79a3b08636bc68fd40d69df80e97ff1263995",
+        "artifact_variant": "GPTQ-v1-int4-group32",
+        "original_role_count": "49",
+        "original_role_bytes": "1169172480",
+        "full_head_provider": "ggml-cpu",
+        "full_head_encoded_bytes": "1017118720",
+        "target_packed_contractions": "7",
+        "target_packed_recipe_nodes": "4",
+        "target_dense_weight_materializations": "0",
+        "actual_submissions": "23",
+        "target_submissions": "10",
+        "nextn_submissions": "10",
+        "target_verifier_submissions": "3",
+        "accepted_target_conditioned_repairs": "1",
+        "actual_accepted_kv_repair_submissions": "1",
+        "accepted_zero_drafts": "2",
+        "accepted_one_draft": "1",
+        "actual_pending_embedding_feedback_checks": "10",
+        "whole_state_publications": "6",
+        "cancelled_unpublished_drafts": "3",
+        "rejected_stale_publishes": "3",
+        "actual_target_reseed_checks": "7",
+        "original_native_reference_submissions": "0",
+        "natural_k1_trials": "1",
+        "controlled_matching_trials": "1",
+        "controlled_rejection_trials": "1",
+        "natural_accepted_drafts": "0",
+        "natural_proposal": "61",
+        "complete_target_draft_resources": "12",
+        "original_target_roles": "33",
+        "original_target_source_bytes": "30397440",
+        "first_full_target_projection_values": "21504",
+        "first_full_target_verifier_values": "496640",
+        "target_verifier_full_vocabulary": "248320",
+        "target_verifier_matmuls": "1",
+        "target_verifier_rows": "2",
+        "target_verifier_provider": "ggml-cpu",
+        "first_full_nextn_head_values": "248320",
+        "state_budget_bytes": "21815552",
+        "peak_state_backing_bytes": "21789700",
+        "scope": "original GPTQ-v1 target layer and complete BF16 NextN with explicitly supplied original vocabulary roles; upstream target input/history fixture,not a full trained trunk; original F16 scale product then BF16 W and BF16 A/F32 dot/BF16 result; all seven public recipes contract without whole-W materialization; draft/target use their explicitly supplied original vocabulary contracts; targettap follows globalnorm and shifts to next-token NextN input; one M2 verifier,natural K1 and separate actualTop1/Top2 controls; accept0 keeps aftercurrent,accept1 repairs recursive draft KV with actualtargettap before12member sameHead publication; no full-model quality,natural acceptance-rate or TPS claim"
+      }
+    },
+    {
+      "backend": "cuda",
+      "summary": {
+        "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q01/abi18-regression/checks2/summary.json",
+        "bytes": 8357,
+        "sha256": "2c89e6a929275ea657621d29595ecf14b25a9d83cff7fb6b2687bda34ea27e48"
+      },
+      "graphs": 23,
+      "properties": {
+        "original_manifest_sha256": "8e769399627fbb5a1ad5fb5394f99a22aacbbc52a0936ad1d4f4bcef5eb105f5",
+        "original_acquisition_sha256": "f59aba7a4aa6d819345590e3fc06ad9305ecfc1b6bd7e8cf5e9dbfebde414c97",
+        "target_projection_contract": "original GPTQ-v1 Q/Z/F16 SF/g_idx; F16 scale product then BF16 W, BF16 A/F32 dot/BF16 return; seven packed contractions required",
+        "vocabulary_binding": "one original tied BF16 bank, same readonly lease for Gather and draft/target fullV heads",
+        "artifact_repository": "Vishva007/Qwen3.5-2B-W4A16-AutoRound-GPTQ",
+        "artifact_revision": "8ec79a3b08636bc68fd40d69df80e97ff1263995",
+        "artifact_variant": "GPTQ-v1-int4-group32",
+        "original_role_count": "49",
+        "original_role_bytes": "1169172480",
+        "full_head_provider": "cublasLt",
+        "full_head_encoded_bytes": "1017118720",
+        "target_packed_contractions": "7",
+        "target_packed_recipe_nodes": "4",
+        "target_dense_weight_materializations": "0",
+        "actual_submissions": "23",
+        "target_submissions": "10",
+        "nextn_submissions": "10",
+        "target_verifier_submissions": "3",
+        "accepted_target_conditioned_repairs": "1",
+        "actual_accepted_kv_repair_submissions": "1",
+        "accepted_zero_drafts": "2",
+        "accepted_one_draft": "1",
+        "actual_pending_embedding_feedback_checks": "10",
+        "whole_state_publications": "6",
+        "cancelled_unpublished_drafts": "3",
+        "rejected_stale_publishes": "3",
+        "actual_target_reseed_checks": "7",
+        "original_native_reference_submissions": "0",
+        "natural_k1_trials": "1",
+        "controlled_matching_trials": "1",
+        "controlled_rejection_trials": "1",
+        "natural_accepted_drafts": "0",
+        "natural_proposal": "61",
+        "complete_target_draft_resources": "12",
+        "original_target_roles": "33",
+        "original_target_source_bytes": "30397440",
+        "first_full_target_projection_values": "21504",
+        "first_full_target_verifier_values": "496640",
+        "target_verifier_full_vocabulary": "248320",
+        "target_verifier_matmuls": "1",
+        "target_verifier_rows": "2",
+        "target_verifier_provider": "cublasLt",
+        "first_full_nextn_head_values": "248320",
+        "state_budget_bytes": "21815552",
+        "peak_state_backing_bytes": "21789700",
+        "scope": "original GPTQ-v1 target layer and complete BF16 NextN with explicitly supplied original vocabulary roles; upstream target input/history fixture,not a full trained trunk; original F16 scale product then BF16 W and BF16 A/F32 dot/BF16 result; all seven public recipes contract without whole-W materialization; draft/target use their explicitly supplied original vocabulary contracts; targettap follows globalnorm and shifts to next-token NextN input; one M2 verifier,natural K1 and separate actualTop1/Top2 controls; accept0 keeps aftercurrent,accept1 repairs recursive draft KV with actualtargettap before12member sameHead publication; no full-model quality,natural acceptance-rate or TPS claim"
+      }
+    }
+  ],
+  "original_regression_cases": 2,
+  "original_regression_graphs": 46,
+  "failures": 0,
+  "skips": 0,
+  "new_GLM_pure_builder_compilation": {
+    "path": ".scratch/glm-gguf-selected-20261023/flash-leaf-proposal/compile1/identity.json",
+    "bytes": 75687,
+    "sha256": "e51b5ffa231524dab671236a664802d72502d2d19adbf15ae12331f67b5733a1"
+  },
+  "new_B07_original_execution": false,
+  "new_B12_B13_original_execution": false,
+  "limits": "Q01 verifies its own dense GPTQ/BF16 path. It does not validate original B07 MoE or GLM Flash quantized data. These still require their own real headers, payloads, observers and state runs.",
+  "throughput_evidence": false,
+  "physical_memory_evidence": false,
+  "archive": {
+    "path": "docs/evidence/correctness/mtp-common-artifact-bindings-2026-10-24.zip",
+    "bytes": 227008,
+    "sha256": "1385873fa9d337c69dce90877809408f9a073138fd4af131960768232baa63e9"
+  },
+  "files": [
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q01/abi18-regression/publish.py",
+      "bytes": 3328,
+      "sha256": "6ef00a7f0ca45dabcb3ba4c6ba10346f3ebf38437e4a0c72ecf65914e5d4a81c"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q01/abi18-regression/build.py",
+      "bytes": 788,
+      "sha256": "8544e3bfd418f8f550d274c821202a7f6b991a2d02f016404d30dfb600117fb9"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q01/abi18-regression/tests-link1/ready.json",
+      "bytes": 4395,
+      "sha256": "05de646a14bc508aa532c879b2a52f607c9bdd0af68ea35a7c6dd29bd4b5d8a2"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q01/abi18-regression/tests-link1/runtime-environment.json",
+      "bytes": 8782,
+      "sha256": "1fd6631cc955fd6041ec1656c8214e187270f6b0f712c31161300a88dee8f336"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q01/abi18-regression/compile1/qwen-state/identity.json",
+      "bytes": 113950,
+      "sha256": "53a8936102b199fb8dde6579e6199ab47c4ae0af8bee5e09a47056e0f7cad6c2"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q01/abi18-regression/checks1/summary.json",
+      "bytes": 8353,
+      "sha256": "4638b8e2b2a9b92b5ce0e8efe6292f7780d37c3d80bd8a9d70a9c9563deaf943"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q01/abi18-regression/checks1/results.xml",
+      "bytes": 4848,
+      "sha256": "f7a27456dd51831bbb149ff259e253fca0228a32fa03935a6fbf73714b0365e0"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q01/abi18-regression/checks1/plan.json",
+      "bytes": 11072,
+      "sha256": "a018c7aa5213859a1fcf40f19323bcfc9d354dd340a90790ba601c916e6d067f"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q01/abi18-regression/checks1/run/command.json",
+      "bytes": 700,
+      "sha256": "b8dbd46464afdd6428a136e43090daf4dbeb7c7e5988353c175cb63b82eeed2b"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q01/abi18-regression/checks1/run/process.json",
+      "bytes": 836,
+      "sha256": "7e3ffc77b4a9596e812c33f095996657da891e9298b1be18a79da95bd8dbbcea"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q01/abi18-regression/checks1/run/stdout.log",
+      "bytes": 864,
+      "sha256": "372c68dd275bc8a4901aa129e769ee1abf82d2be7fb40a9a9c3b0f5d9cd04fd9"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q01/abi18-regression/checks1/run/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q01/abi18-regression/checks2/summary.json",
+      "bytes": 8357,
+      "sha256": "2c89e6a929275ea657621d29595ecf14b25a9d83cff7fb6b2687bda34ea27e48"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q01/abi18-regression/checks2/results.xml",
+      "bytes": 4849,
+      "sha256": "565aca92e212b52231211e33394a12d2b3855c8907e9326548b12f6e1612b3d4"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q01/abi18-regression/checks2/plan.json",
+      "bytes": 11074,
+      "sha256": "20eaee3158699015551753d6e6631736cbb0128ec7c41074edd6fb2d80b1fb7b"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q01/abi18-regression/checks2/run/command.json",
+      "bytes": 702,
+      "sha256": "53edfedbbc544920a453da9357ab44868426159693d280655c067cf45bc19bb8"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q01/abi18-regression/checks2/run/process.json",
+      "bytes": 838,
+      "sha256": "f84c03a655686864544703e8bfa66254f0f9f9dba1c400f70ae8ac0a8318f0c0"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q01/abi18-regression/checks2/run/stdout.log",
+      "bytes": 867,
+      "sha256": "173641eea2c92eae8e85c6fada81dc0fefef3a6ba6d45221705c9c433c8f62c7"
+    },
+    {
+      "path": ".scratch/qwen-bfloat-selected-20261023/derived/Q01/abi18-regression/checks2/run/stderr.log",
+      "bytes": 14445,
+      "sha256": "644d13e3792dcc680ed0f4b32deeffcf45c48270f4f777ba226df727d40fd530"
+    },
+    {
+      "path": ".scratch/qwen-gguf-selected-20261023/B07/consumer-proposal/source.patch",
+      "bytes": 88256,
+      "sha256": "5fa12d1a1f862e2817fbfe38941b1668b3aeeb676ed3bbd627c2339fa0bc8ab5"
+    },
+    {
+      "path": ".scratch/qwen-gguf-selected-20261023/B07/consumer-proposal/ready.json",
+      "bytes": 1651,
+      "sha256": "1081d5f61c9d0427b73cf6c8f877373eb2f743c9a37b5f11534ac0d447c21c69"
+    },
+    {
+      "path": ".scratch/qwen-gguf-selected-20261023/B07/consumer-proposal/applied.json",
+      "bytes": 2627,
+      "sha256": "b55a8f44b7274fa4c8fb312bd8c7e12ee8e7ae4edfa3837d1a6479809b2d5d84"
+    },
+    {
+      "path": ".scratch/glm-gguf-selected-20261023/flash-leaf-proposal/source.patch",
+      "bytes": 46191,
+      "sha256": "a1642fca2097a9725e1dc57d3d753b8055a6c483acbcf092b8f877a7ef66a48b"
+    },
+    {
+      "path": ".scratch/glm-gguf-selected-20261023/flash-leaf-proposal/ready.json",
+      "bytes": 2944,
+      "sha256": "2b1354703c78192857613d0d78b24a8435673b0d1c6d34e8aa4c342a21f48090"
+    },
+    {
+      "path": ".scratch/glm-gguf-selected-20261023/flash-leaf-proposal/applied.json",
+      "bytes": 2720,
+      "sha256": "482d2bbcaf0e2e8ea76b283fca522ebc4573bb75276e316e1001cf170bbb6ea2"
+    },
+    {
+      "path": ".scratch/qwen-gguf-selected-20261023/B07/consumer-proposal/source-facts.json",
+      "bytes": 3997,
+      "sha256": "18f64d6cbcf34f4a2e0562dd5db3f77dc423174638de09a5c627fad1228b7f21"
+    },
+    {
+      "path": "tests/compute_models/qwen24_original_target_reference.h",
+      "bytes": 2974,
+      "sha256": "3aa8f4a6be3eece2ff84b6972143f7b3ea81bdc92118e50b13eefc9486b14ba6"
+    },
+    {
+      "path": "tests/compute_models/qwen_gguf_q24_artifacts.h",
+      "bytes": 5696,
+      "sha256": "d8cb13fa5e2b9c8a29a6dedbfa972344bb45bc4573702c4709c69552b4674fc8"
+    },
+    {
+      "path": "tests/compute_models/qwen_gguf_selected_experts.h",
+      "bytes": 15785,
+      "sha256": "1200e678158cf21e42d95172c3367837702c443729ccf2212ff992241fa481b0"
+    },
+    {
+      "path": "tests/compute_models/qwen_mtp_state_consumer.h",
+      "bytes": 39614,
+      "sha256": "e6954ceadc8b051ffda9b5e081fc1c418646edbe14f3965ca094b511736f6056"
+    },
+    {
+      "path": "tests/compute_models/qwen_mtp_state_consumer_test.cc",
+      "bytes": 279070,
+      "sha256": "24c49b4a891571bb6efa56a9f982486a49f68c1a55abdc1d4caa89d4b69c313e"
+    },
+    {
+      "path": "tests/compute_models/qwen_original_mtp_roles.h",
+      "bytes": 12145,
+      "sha256": "e3315e8a0acbe5142efba3a02266bc3bac9b0dc5c2fbe67fcfcf9c9a7edbf356"
+    },
+    {
+      "path": "tests/compute_models/qwen_packed_moe_roles.h",
+      "bytes": 10427,
+      "sha256": "daf7e5de124c381e5d14d0b8be0201d68ab29dd362a03c51881dde9675dffbe0"
+    },
+    {
+      "path": "tests/compute_models/glm_hyper_connection_fragment.h",
+      "bytes": 9063,
+      "sha256": "99a7a0ca24d6881f3359e4a28619308e48521f1db90e694a5d2667c10108875c"
+    },
+    {
+      "path": "tests/compute_models/glm_gguf_named_parameters.h",
+      "bytes": 13321,
+      "sha256": "f893729118b05a36c8a302c737f0f09348b1724875cf5cdf1e4c341a540c7cb1"
+    },
+    {
+      "path": "tests/compute_models/original_named_role_source.h",
+      "bytes": 11638,
+      "sha256": "22f951ce766d6a54c97a3d4ff5e93120e35b388426dad7a3ebc537d9a7eda1d4"
+    },
+    {
+      "path": "tests/compute_models/glm_original_target44_fragment.h",
+      "bytes": 17977,
+      "sha256": "b8cef2bd7709bfdd48336981cbe2e7f3bc2b6fc13b2d6905b06ed91e8d636b27"
+    },
+    {
+      "path": "tests/compute_models/glm_mlx_mtp_fragment.h",
+      "bytes": 22568,
+      "sha256": "88265a60e471d6eba75ab7d7d23a625603d6344db7ff5e13c413c15fb0b6af27"
+    },
+    {
+      "path": "tests/compute_models/glm_gguf_mtp_fragment.h",
+      "bytes": 13794,
+      "sha256": "8face58f8bc695c425976c9c9ada2f6c8c0efc650e6416cf75a540756049b364"
+    },
+    {
+      "path": "tests/compute_models/glm_gguf_flash_fragment.h",
+      "bytes": 16206,
+      "sha256": "2cba3239e1b01adb8706d895ba8b6eb1ba0248f3711dfeb17e287a2f758964e0"
+    },
+    {
+      "path": ".scratch/glm-gguf-selected-20261023/flash-leaf-proposal/compile_current.py",
+      "bytes": 2273,
+      "sha256": "b17634b944baf89669063fbf4997d5c00f74aa60951ba3e454e9c62390bff83f"
+    },
+    {
+      "path": ".scratch/glm-gguf-selected-20261023/flash-leaf-proposal/compile1/identity.json",
+      "bytes": 75687,
+      "sha256": "e51b5ffa231524dab671236a664802d72502d2d19adbf15ae12331f67b5733a1"
+    },
+    {
+      "path": ".scratch/glm-gguf-selected-20261023/flash-leaf-proposal/compile1/packed-flash-headers.cc",
+      "bytes": 38,
+      "sha256": "9852210a1de39a3464baac6f575ad91720038f7b581228fc1332dc1ce878060b"
+    },
+    {
+      "path": ".scratch/glm-gguf-selected-20261023/flash-leaf-proposal/compile1/run/process.json",
+      "bytes": 3547,
+      "sha256": "6fe52af2db5c29de8fed670aa2b22933b12939c7de82b11d2bb0eb1e2f69cce0"
+    },
+    {
+      "path": ".scratch/glm-gguf-selected-20261023/flash-leaf-proposal/compile1/run/command.json",
+      "bytes": 3413,
+      "sha256": "5d47852ea3ea8d545386cb8dbcbd3caa6243ee5f21877648377d64472b827e4e"
+    },
+    {
+      "path": ".scratch/glm-gguf-selected-20261023/flash-leaf-proposal/compile1/run/stdout.log",
+      "bytes": 25,
+      "sha256": "91fe767f459b58153a9a8c863946034281802fdcdfe13aaf524a3e449a693600"
+    },
+    {
+      "path": ".scratch/glm-gguf-selected-20261023/flash-leaf-proposal/compile1/run/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ]
+}

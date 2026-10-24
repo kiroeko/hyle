@@ -1,5 +1,6 @@
 #include "../compute_stream/native_journey.h"
 #include "hyle/compute/cuda.h"
+#include "hyle/compute/cuda_file_stream.h"
 #include "hyle/compute/backends/cuda.h"
 #include <chrono>
 #include <thread>

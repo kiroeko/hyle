@@ -13,6 +13,12 @@ adapted stable-tail formula and -infinity limiting value for HYLE's ordinary
 Unary contract. Unary input/output restrict qualifiers are removed to permit
 the documented exact in-place alias. See provenance.json for source hashes.
 
+The two sqrt-softplus routing adapters normalize selected unbiased scores
+by their actual sum, with no epsilon or zero-sum fallback. This explicitly
+adapts SGLang normalization to the official DeepSeek V4 Gate formula; an
+all-zero score row produces NaN weights. Selection, reduction, table order,
+bounds checks and launch policy are retained.
+
 D5-F37 additionally retains the unchanged group128 quantizer and block128
 FP8 GEMM Python source bodies for offline AOT. Only the original GEMM's
 SM89 cubin is embedded in the native HYLE Provider. Triton 3.8.0 generated
@@ -38,8 +44,29 @@ artifacts retain their qualified identities. See fp8/cuda-quant-compilation.json
 D5-F39 adds the original grouped FP8 GEMM bodies and the original CUDA
 small/generic expert alignment programs. The alignment adapter checks all
 expert IDs before expert-indexed memory access and reports the existing
-device error code; valid sorting/scan/GEMM arithmetic is unchanged. Four
+device error code; valid sorting/scan arithmetic is unchanged. Two
 offline GEMM variants and one checked alignment cubin are embedded. The
 original default tile and host small/generic selection are retained; no
 per-expert host loop, runtime JIT or search is added. See fp8/grouped/ for
 source identities, launch ABI records and maintainer-only regeneration.
+
+The grouped FP8 indexing adapter makes the original top_k divisor a runtime
+I32 argument, supplied from the actual prepared activation/ID shape. Shared
+inputs pass the selected slot count; distinct per-slot inputs pass 1.
+The numeric adapter scales each F32 code dot by its activation scale, then
+its weight scale, with two explicit mul.rn.f32 operations before the original
+F32 accumulation. It avoids an overflowing As*Bs and NaN for finite zero
+weights, matching the CPU scaling order. The original quantizer, dot, output
+conversion, tiles and checked alignment are retained. The pinned Python body
+is unchanged; source.json records and hashes both offline-only adaptations.
+No Top-K or model-name whitelist, activation replication or runtime compiler
+is required.
+
+The block128 scale-policy extension adds compile-time F32/BF16 quantizer
+variants for amax multiplied by the exact F32 reciprocal of 448, followed
+by explicit F32 RN reciprocal and multiply normalization. The original
+Divide branch, vector traversal and scale layout are retained; the separate
+PowerOfTwo quantizer and GEMM artifacts are unchanged. This portable RN
+reference is not AMD rcpf instruction emulation. The four actual quantizer
+entry symbols and adapted-source identities are recorded in
+fp8/cuda-quant-compilation.json.

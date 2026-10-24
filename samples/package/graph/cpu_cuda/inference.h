@@ -5,7 +5,7 @@
 inline hyle::Status inference_case(const compute::Context &cpu,
     const compute::Context &cuda, const compute::cuda::MemoryResource &host,
     const compute::cuda::MemoryResource &device,
-    hyle::sched::Scheduler &scheduler) noexcept {
+    hyle::sched::Scheduler &scheduler, hyle::sched::BlockingPool &workers) noexcept {
   HYLE_ASSIGN_OR_RETURN(auto workload, sample_workload::create());
   HYLE_ASSIGN_OR_RETURN(auto x_desc, compute::TensorDesc::dense(
       compute::DataType::kFloat32, std::array<std::int64_t, 2>{1, 128}));
@@ -59,36 +59,37 @@ inline hyle::Status inference_case(const compute::Context &cpu,
   std::array<graph::NodePlacement, 6> placement;
   for (std::size_t i = 0; i < placement.size(); ++i) {
     HYLE_ASSIGN_OR_RETURN(auto node, logical.node_id(i));
-    placement[i] = {node, i < 2 || i == 5 ? bridge::kCpuTarget : bridge::kCudaTarget,
+    placement[i] = {node, i < 2 || i == 5 ? kCpuTarget : kCudaTarget,
                     graph::PlacementStrength::kRequired};
   }
   const std::array external{
-      graph::ExternalResourceContract{x, bridge::kHostStorage},
-      graph::ExternalResourceContract{scale, bridge::kHostStorage},
-      graph::ExternalResourceContract{gate, bridge::kDeviceStorage},
-      graph::ExternalResourceContract{down, bridge::kDeviceStorage},
-      graph::ExternalResourceContract{y, bridge::kHostStorage}};
+      graph::ExternalResourceContract{x, kHostStorage},
+      graph::ExternalResourceContract{scale, kHostStorage},
+      graph::ExternalResourceContract{gate, kDeviceStorage},
+      graph::ExternalResourceContract{down, kDeviceStorage},
+      graph::ExternalResourceContract{y, kHostStorage}};
   HYLE_ASSIGN_OR_RETURN(auto compiled,
-      bridge::compile(logical, {&cpu, &cuda, mem::system_resource(), &host, &device},
+      compile_mixed(logical, cpu, cuda, host, device,
           {.node_placements = placement, .external_resources = external,
            .workload = workload}));
-  HYLE_ASSIGN_OR_RETURN(auto native, compiled.executable.create_invocation());
+  HYLE_ASSIGN_OR_RETURN(auto invocation, compiled.executable.create_invocation());
   HYLE_ASSIGN_OR_RETURN(auto gpu_queue, cuda.create_queue());
   HYLE_ASSIGN_OR_RETURN(auto cpu_queue, cpu.create_queue());
   const std::array queues{
       graph::QueueBinding{graph::ExecutionLaneId{0}, &gpu_queue},
       graph::QueueBinding{graph::ExecutionLaneId{1}, &cpu_queue}};
-  HYLE_ASSIGN_OR_RETURN(auto invocation,
-      bridge::Invocation::create(std::move(native), scheduler, queues));
+  HYLE_RETURN_IF_ERROR(graph::prepare_progress(invocation, scheduler, workers));
   HYLE_RETURN_IF_ERROR(invocation.bind(x, x_buffer.view.as_const()));
   HYLE_RETURN_IF_ERROR(invocation.bind(scale, norm_buffer.view.as_const()));
-  HYLE_RETURN_IF_ERROR(invocation.bind(gate, weights, 101));
-  HYLE_RETURN_IF_ERROR(invocation.bind(down, weights, 102));
+  HYLE_RETURN_IF_ERROR(graph::cuda::bind(invocation, gate, weights, 101));
+  HYLE_RETURN_IF_ERROR(graph::cuda::bind(invocation, down, weights, 102));
   HYLE_RETURN_IF_ERROR(invocation.bind(y, out_buffer.view));
-  HYLE_RETURN_IF_ERROR(invocation.prepare_replay());
+  HYLE_RETURN_IF_ERROR(invocation.prepare_replay(queues));
   Drain drain{scheduler};
-  HYLE_ASSIGN_OR_RETURN(auto result, invocation.run());
-  HYLE_ASSIGN_OR_RETURN(auto output, result->output(y));
+  HYLE_ASSIGN_OR_RETURN(auto completion, invocation.submit(queues));
+  HYLE_RETURN_IF_ERROR(completion.wait());
+  HYLE_ASSIGN_OR_RETURN(auto result, invocation.result(y));
+  HYLE_ASSIGN_OR_RETURN(auto output, result.tensor());
   std::array<float, 64> actual;
   HYLE_RETURN_IF_ERROR(output.storage().read(std::as_writable_bytes(std::span(actual))));
   const float intermediate = __half2float(__float2half(4.0f / (1 + std::exp(-4.0f)) * 8.0f));

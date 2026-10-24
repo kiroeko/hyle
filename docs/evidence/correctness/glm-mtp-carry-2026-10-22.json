@@ -1,0 +1,1248 @@
+{
+  "date": "2026-10-22",
+  "status": "GLM_ACTUAL_INDEX_CARRY_AND_ORIGINAL_INPUT_QUERY_CHAIN_PASS",
+  "goal_complete": false,
+  "changes": [
+    {
+      "path": "tests/compute_models/glm_mtp_index_carry_test.cc",
+      "bytes": 23146,
+      "sha256": "c0e55aacc0a36120308eed5501d1cd8b2227ac2032669e631a3310c65b6fb622"
+    },
+    {
+      "path": "tests/compute_models/glm_original_mtp_chain_test.cc",
+      "bytes": 29464,
+      "sha256": "6cf070c3b1a5336f18f3beac0f16a884eb97ff51e988af1628f38d532958dbd5"
+    },
+    {
+      "path": "tests/compute_models/original_role_input.h",
+      "bytes": 6332,
+      "sha256": "271f194b4544b8f4401f098070b3364d825a133c80c40b0bb2d7845e3596b05a"
+    },
+    {
+      "path": "tests/graph_route_cuda/fp8_shared_prologue_test.cc",
+      "bytes": 15783,
+      "sha256": "73d25fa31990101bc9d4b8b30a6741849afc49ac79e1868cb40089d22d1bedc1"
+    },
+    {
+      "path": "src/compute_provider_cuda/fp8_provider.cc",
+      "bytes": 18900,
+      "sha256": "0e0579bc802070e898da6e7dabff1af041c9242d7ed7ab2a45dea28f1e4cf3c9"
+    },
+    {
+      "path": "third_party/sglang_activation/fp8/original_kernels.py",
+      "bytes": 5749,
+      "sha256": "45e8867045ec54eddd5bbe91bc7229214148f8f0f1adb66a35253324e6ff145b"
+    },
+    {
+      "path": "third_party/sglang_activation/fp8/rebuild.py",
+      "bytes": 6952,
+      "sha256": "dbf0832a177ce101b77633c84be592f711f4398ee783a538c7d112f9a5e12f1e"
+    },
+    {
+      "path": "third_party/sglang_activation/fp8/source.json",
+      "bytes": 1476,
+      "sha256": "6f4af732d0654fe337e4b9bcadfa0c0e1942ee0349df830b03675a53fafff921"
+    },
+    {
+      "path": "third_party/sglang_activation/fp8/compilation.json",
+      "bytes": 5445,
+      "sha256": "73266d091c21285e061a6d4e241d4eb8c8a709f97033c4340aabaf1c5ee2c74a"
+    },
+    {
+      "path": "third_party/sglang_activation/fp8/dynamic-compilation.json",
+      "bytes": 7629,
+      "sha256": "f4bc5e476e5df9c0525640a94daa69a67e9c270da5f44b9305eb3243e6ff8564"
+    },
+    {
+      "path": "third_party/sglang_activation/fp8/sglang_fp8_sm89.h",
+      "bytes": 1970983,
+      "sha256": "9957b3ca8c97cc08c2d2f8285d283e77571e5f9911ee5e1e4e17539ae01db188"
+    },
+    {
+      "path": "third_party/sglang_activation/fp8/sglang_fp8_dynamic_sm89.h",
+      "bytes": 2041225,
+      "sha256": "54295c9e04da1222c1009f40fdc6617c06f238d1f83d2f0ad657995a96b2add9"
+    },
+    {
+      "path": "tests/graph_route_cpu/CMakeLists.txt",
+      "bytes": 7727,
+      "sha256": "15488445d6ff2c5192ad22803ea9d88528005f454cc245e641381dd9d20bced1"
+    },
+    {
+      "path": "tests/graph_route_cuda/CMakeLists.txt",
+      "bytes": 8983,
+      "sha256": "8a46f9351aa4450e025e88bc5612fa6cf2ac00c030146ee9d919e916653403fa"
+    },
+    {
+      "path": "docs/developer/current-work.md",
+      "bytes": 21694,
+      "sha256": "7486079d41caae3b97710a0e0fd586074d1225880988ede5a3401bc555951dda"
+    },
+    {
+      "path": "docs/implementation/model-operators.md",
+      "bytes": 92019,
+      "sha256": "a73dfc94b1650aeb7a355f2b2b3fd51894f5c4407658799ad19a71caf64b6b74"
+    }
+  ],
+  "carry_checks": {
+    "process": {
+      "command": [
+        "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mtp-carry-20261022\\tests-link1\\glm-carry-checks.exe",
+        "--gtest_filter=*",
+        "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\glm-mtp-carry-20261022\\checks1\\results.xml"
+      ],
+      "cwd": "C:\\public\\project-hyle\\hyle",
+      "started": 1792672217.9609401,
+      "timeout_seconds": 600,
+      "throughput_evidence": false,
+      "memory_evidence": false,
+      "trace": false,
+      "profiler": false,
+      "pid": 102020,
+      "exit": 0,
+      "timed_out": false,
+      "finished": 1792672220.3305151,
+      "process_wall_seconds": 2.3686128000263125
+    },
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mtp-carry-20261022\\tests-link1\\glm-carry-checks.exe",
+      "bytes": 139981312,
+      "sha256": "343dfe265711c6a70394f7377cdbeb31881828fa08201337edacbc6c6d4b40e5"
+    },
+    "throughput_evidence": false,
+    "memory_evidence": false,
+    "whole_original_model": false,
+    "tests": 2,
+    "failures": 0,
+    "errors": 0,
+    "disabled": 0,
+    "skips": 0,
+    "cases": [
+      {
+        "attributes": {
+          "name": "CudaActualI32LeaseSurvivesSkipAndObeysEpoch",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_mtp_index_carry_test.cc",
+          "line": "385",
+          "status": "run",
+          "result": "completed",
+          "time": "0.98",
+          "timestamp": "2026-10-22T20:30:18.262",
+          "classname": "GlmMtpIndexCarry"
+        },
+        "properties": {
+          "actual_submissions": "7",
+          "indexer_submissions": "3",
+          "skip_indexer_submissions": "4",
+          "scope": "single-layer GLM Flash generated-weight index carry; actual I32 ReadLease -> skip Gather/SDPA -> StateHead; no full model/original parameter claim",
+          "epoch_policy": "default-clear, keep-only-real-seed, finally-clear-and-disable, old-version-readonly-but-not-reusable",
+          "backend": "ordinary CUDA Graph"
+        }
+      },
+      {
+        "attributes": {
+          "name": "CpuActualI32LeaseSurvivesSkipAndObeysEpoch",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_mtp_index_carry_test.cc",
+          "line": "394",
+          "status": "run",
+          "result": "completed",
+          "time": "0.906",
+          "timestamp": "2026-10-22T20:30:19.243",
+          "classname": "GlmMtpIndexCarry"
+        },
+        "properties": {
+          "actual_submissions": "7",
+          "indexer_submissions": "3",
+          "skip_indexer_submissions": "4",
+          "scope": "single-layer GLM Flash generated-weight index carry; actual I32 ReadLease -> skip Gather/SDPA -> StateHead; no full model/original parameter claim",
+          "epoch_policy": "default-clear, keep-only-real-seed, finally-clear-and-disable, old-version-readonly-but-not-reusable",
+          "backend": "ordinary CPU Graph"
+        }
+      }
+    ]
+  },
+  "original_chain_checks": {
+    "process": {
+      "command": [
+        "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mtp-carry-20261022\\chain-link4\\glm-original-chain-checks.exe",
+        "--gtest_filter=*",
+        "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\glm-mtp-carry-20261022\\chain-checks4\\results.xml"
+      ],
+      "cwd": "C:\\public\\project-hyle\\hyle",
+      "started": 1792677891.9824166,
+      "timeout_seconds": 600,
+      "throughput_evidence": false,
+      "memory_evidence": false,
+      "trace": false,
+      "profiler": false,
+      "pid": 21524,
+      "exit": 0,
+      "timed_out": false,
+      "finished": 1792677893.7172341,
+      "process_wall_seconds": 1.7344080000002577
+    },
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mtp-carry-20261022\\chain-link4\\glm-original-chain-checks.exe",
+      "bytes": 140168704,
+      "sha256": "30bc9f3e15e480dfac81c97d432df23f0e3d2e145e301384aad609e7b01abb49"
+    },
+    "throughput_evidence": false,
+    "memory_evidence": false,
+    "whole_original_model": false,
+    "tests": 7,
+    "failures": 0,
+    "errors": 0,
+    "disabled": 0,
+    "skips": 0,
+    "cases": [
+      {
+        "attributes": {
+          "name": "CudaOriginalInputFeedsFp8QueryAndActualIndexerLease",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_original_mtp_chain_test.cc",
+          "line": "498",
+          "status": "run",
+          "result": "completed",
+          "time": "0.523",
+          "timestamp": "2026-10-22T22:04:52.610",
+          "classname": "GlmOriginalMtpChain"
+        },
+        "properties": {
+          "scope": "original layer45 NextN input->inputnorm->dynamic128 q_a->qnorm; actual qnorm lease->generated BF16 indexer wq_b; no full-model/indexer/cache/natural-acceptance claim",
+          "backend": "ordinary CUDA Graph",
+          "actual_submissions": "6",
+          "original_role_count": "7",
+          "original_role_bytes": "73429504",
+          "q_a_sha256": "615e317d19a83114b756e4634599ebba333c95241f3e775c77cc1633802d8be6",
+          "q_a_scale_sha256": "c93393c24ed2c12f5458fbf88a257df91e22f586acc58436b861465c56f4d3fb",
+          "input_norm_sha256": "34ebd6b797e89011997e3f8fa674e4d0b9bc322d88bee17a91fe0a5421263e0c",
+          "q_a_norm_sha256": "33fec4645dc799a2a96b870b48012fcd096e66c2003c528881d98cd397afa96a",
+          "producer_output_pool": "two generations;14 blocks;110592 bytes",
+          "successor_output_pool": "two generations;2 blocks;16384 bytes"
+        }
+      },
+      {
+        "attributes": {
+          "name": "CpuOriginalInputFeedsFp8QueryAndActualIndexerLease",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\glm_original_mtp_chain_test.cc",
+          "line": "507",
+          "status": "run",
+          "result": "completed",
+          "time": "0.36",
+          "timestamp": "2026-10-22T22:04:53.133",
+          "classname": "GlmOriginalMtpChain"
+        },
+        "properties": {
+          "scope": "original layer45 NextN input->inputnorm->dynamic128 q_a->qnorm; actual qnorm lease->generated BF16 indexer wq_b; no full-model/indexer/cache/natural-acceptance claim",
+          "backend": "ordinary CPU Graph",
+          "actual_submissions": "6",
+          "original_role_count": "7",
+          "original_role_bytes": "73429504",
+          "q_a_sha256": "615e317d19a83114b756e4634599ebba333c95241f3e775c77cc1633802d8be6",
+          "q_a_scale_sha256": "c93393c24ed2c12f5458fbf88a257df91e22f586acc58436b861465c56f4d3fb",
+          "input_norm_sha256": "34ebd6b797e89011997e3f8fa674e4d0b9bc322d88bee17a91fe0a5421263e0c",
+          "q_a_norm_sha256": "33fec4645dc799a2a96b870b48012fcd096e66c2003c528881d98cd397afa96a",
+          "producer_output_pool": "two generations;14 blocks;110592 bytes",
+          "successor_output_pool": "two generations;2 blocks;16384 bytes"
+        }
+      },
+      {
+        "attributes": {
+          "name": "FloatSiblingsKeepBothOriginalLinearResultsAcrossCapturedSlots",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_cuda\\fp8_shared_prologue_test.cc",
+          "line": "270",
+          "status": "run",
+          "result": "completed",
+          "time": "0.014",
+          "timestamp": "2026-10-22T22:04:53.496",
+          "classname": "CudaFp8SharedPrologue"
+        },
+        "properties": {}
+      },
+      {
+        "attributes": {
+          "name": "BfloatSiblingsKeepBothOriginalLinearResultsAcrossCapturedSlots",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_cuda\\fp8_shared_prologue_test.cc",
+          "line": "273",
+          "status": "run",
+          "result": "completed",
+          "time": "0.008",
+          "timestamp": "2026-10-22T22:04:53.510",
+          "classname": "CudaFp8SharedPrologue"
+        },
+        "properties": {}
+      },
+      {
+        "attributes": {
+          "name": "PowerOfTwoBfloatSiblingsKeepTheirOriginalScaleLayoutAcrossCapturedSlots",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_cuda\\fp8_shared_prologue_test.cc",
+          "line": "276",
+          "status": "run",
+          "result": "completed",
+          "time": "0.007",
+          "timestamp": "2026-10-22T22:04:53.519",
+          "classname": "CudaFp8SharedPrologue"
+        },
+        "properties": {}
+      },
+      {
+        "attributes": {
+          "name": "MultiplyReciprocalBfloatSiblingsKeepTheirOriginalQuantizerAcrossCapturedSlots",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_cuda\\fp8_shared_prologue_test.cc",
+          "line": "279",
+          "status": "run",
+          "result": "completed",
+          "time": "0.006",
+          "timestamp": "2026-10-22T22:04:53.527",
+          "classname": "CudaFp8SharedPrologue"
+        },
+        "properties": {}
+      },
+      {
+        "attributes": {
+          "name": "DifferentContractsOrValueIdsAndPackedSingleLinearStayStandalone",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_cuda\\fp8_shared_prologue_test.cc",
+          "line": "282",
+          "status": "run",
+          "result": "completed",
+          "time": "0.009",
+          "timestamp": "2026-10-22T22:04:53.534",
+          "classname": "CudaFp8SharedPrologue"
+        },
+        "properties": {}
+      }
+    ]
+  },
+  "actual_carry_graph_submissions": 14,
+  "actual_original_chain_graph_submissions": 12,
+  "actual_new_consumer_cases": 4,
+  "existing_shared_FP8_neighbor_cases": 5,
+  "carry": {
+    "scope": "Generated GLM Flash single-layer indexer -> actual I32 ReadLease -> skip Gather/SDPA -> atomic StateHead.",
+    "state": "IDs, actual next index-key and gate, epoch/provenance. Four-member complete carry boundary only, not complete model state.",
+    "reuse": "Each backend actually executes3 original indexer Graphs and4 skip Graphs. Skip contains no indexer/TopK/projection; host reads are oracle only, not rebuilt execution inputs.",
+    "epoch": "Default begin clears even a real seed; explicit keep with a real seed qualifies it for the new epoch; keep without seed clears. Normal/exception RAII finally disables reuse. Old snapshots stay readonly/readable, but cannot nominate a live head in another epoch.",
+    "limits": "Query and512-wide attention cache for skip are still generated external inputs. Retained key/gate are not fed to a subsequent indexer update; no target/MLA/pool-tail/accepted-prefix completeness claim.",
+    "resources": "Finite output pools and StateStore; observed versions/drafts/live output blocks/active uses return to0."
+  },
+  "original_parameters": {
+    "input_roles": {
+      "repository": "zai-org/GLM-5.3-Flash",
+      "revision": "eb9eb208eb0d988989d07a6a12d0fdeb5f52574a",
+      "shard": "model-00001-of-00062.safetensors",
+      "url": "https://huggingface.co/zai-org/GLM-5.3-Flash/resolve/eb9eb208eb0d988989d07a6a12d0fdeb5f52574a/model-00001-of-00062.safetensors",
+      "requests": [
+        {
+          "first": 0,
+          "last": 7,
+          "bytes": 8,
+          "complete": true,
+          "http_status": 206,
+          "content_range": "bytes 0-7/5365306704",
+          "etag": "\"8d515c191fd1c42528efb3f407033580a62ba6430ae55e9c7c9c9cec41a4755e\"",
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-natural-journey-20261022\\original-glm-input\\header-length.bin",
+          "sha256": "7171ffc351896bf67e7591b13f7d26bbd80424c8ebf1780bc6a36b089b015562"
+        },
+        {
+          "first": 8,
+          "last": 93519,
+          "bytes": 93512,
+          "complete": true,
+          "http_status": 206,
+          "content_range": "bytes 8-93519/5365306704",
+          "etag": "\"8d515c191fd1c42528efb3f407033580a62ba6430ae55e9c7c9c9cec41a4755e\"",
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-natural-journey-20261022\\original-glm-input\\header.json",
+          "sha256": "e18e7ff23ee5bfbd2cf7bf9c931ad99972b50e7c9184babdff42db46ccaf8ab2"
+        },
+        {
+          "first": 2538321232,
+          "last": 2605430095,
+          "bytes": 67108864,
+          "complete": true,
+          "http_status": 206,
+          "content_range": "bytes 2538321232-2605430095/5365306704",
+          "etag": "\"8d515c191fd1c42528efb3f407033580a62ba6430ae55e9c7c9c9cec41a4755e\"",
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-natural-journey-20261022\\original-glm-input\\eh_proj.weight.bf16",
+          "sha256": "17af8402a6b674a462f2847612b2477e76c0de7dfc5ff9fba50ead1e5c88d649"
+        },
+        {
+          "first": 2605430096,
+          "last": 2605438287,
+          "bytes": 8192,
+          "complete": true,
+          "http_status": 206,
+          "content_range": "bytes 2605430096-2605438287/5365306704",
+          "etag": "\"8d515c191fd1c42528efb3f407033580a62ba6430ae55e9c7c9c9cec41a4755e\"",
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-natural-journey-20261022\\original-glm-input\\enorm.weight.bf16",
+          "sha256": "187f2b4efe991b8c69a1a0365ded195b7fd463d50a7facd0d7196402a66dcc54"
+        },
+        {
+          "first": 2605438288,
+          "last": 2605446479,
+          "bytes": 8192,
+          "complete": true,
+          "http_status": 206,
+          "content_range": "bytes 2605438288-2605446479/5365306704",
+          "etag": "\"8d515c191fd1c42528efb3f407033580a62ba6430ae55e9c7c9c9cec41a4755e\"",
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-natural-journey-20261022\\original-glm-input\\hnorm.weight.bf16",
+          "sha256": "3fbc01762fea938ae24e94ece075b03dd5cb44cbe218884712b35d865b820501"
+        }
+      ],
+      "roles": [
+        {
+          "name": "model.language_model.layers.45.eh_proj.weight",
+          "dtype": "BF16",
+          "shape": [
+            4096,
+            8192
+          ],
+          "relative_offsets": [
+            2538227712,
+            2605336576
+          ],
+          "payload": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-natural-journey-20261022\\original-glm-input\\eh_proj.weight.bf16",
+            "bytes": 67108864,
+            "sha256": "17af8402a6b674a462f2847612b2477e76c0de7dfc5ff9fba50ead1e5c88d649"
+          }
+        },
+        {
+          "name": "model.language_model.layers.45.enorm.weight",
+          "dtype": "BF16",
+          "shape": [
+            4096
+          ],
+          "relative_offsets": [
+            2605336576,
+            2605344768
+          ],
+          "payload": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-natural-journey-20261022\\original-glm-input\\enorm.weight.bf16",
+            "bytes": 8192,
+            "sha256": "187f2b4efe991b8c69a1a0365ded195b7fd463d50a7facd0d7196402a66dcc54"
+          }
+        },
+        {
+          "name": "model.language_model.layers.45.hnorm.weight",
+          "dtype": "BF16",
+          "shape": [
+            4096
+          ],
+          "relative_offsets": [
+            2605344768,
+            2605352960
+          ],
+          "payload": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\dspark-natural-journey-20261022\\original-glm-input\\hnorm.weight.bf16",
+            "bytes": 8192,
+            "sha256": "3fbc01762fea938ae24e94ece075b03dd5cb44cbe218884712b35d865b820501"
+          }
+        }
+      ],
+      "complete": true,
+      "whole_shard_allowed": false,
+      "shard_bytes": 5365306704,
+      "data_start": 93520
+    },
+    "query_pair": {
+      "repository": "zai-org/GLM-5.3-Flash",
+      "revision": "eb9eb208eb0d988989d07a6a12d0fdeb5f52574a",
+      "file": "model-00002-of-00062.safetensors",
+      "url": "https://huggingface.co/zai-org/GLM-5.3-Flash/resolve/eb9eb208eb0d988989d07a6a12d0fdeb5f52574a/model-00002-of-00062.safetensors",
+      "requests": [
+        {
+          "first": 0,
+          "last": 7,
+          "bytes": 8,
+          "complete": true,
+          "http_status": 206,
+          "content_range": "bytes 0-7/5320647824",
+          "etag": "\"3b634445603c457deae3497697213cdf620af6560dd1c33d64048ba4d710340d\"",
+          "payload": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mtp-carry-20261022\\original-glm-q-a\\header-length.bin",
+            "bytes": 8,
+            "sha256": "005cf4fa3bfec7eb4c81719443e09a63c828cd45bde72d34317d018d83edbb19"
+          }
+        },
+        {
+          "first": 8,
+          "last": 160863,
+          "bytes": 160856,
+          "complete": true,
+          "http_status": 206,
+          "content_range": "bytes 8-160863/5320647824",
+          "etag": "\"3b634445603c457deae3497697213cdf620af6560dd1c33d64048ba4d710340d\"",
+          "payload": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mtp-carry-20261022\\original-glm-q-a\\header.json",
+            "bytes": 160856,
+            "sha256": "4727368ca83ad19ddfea0bfcb0fbf4427087b5b0bf648968b863962454e85c15"
+          }
+        },
+        {
+          "first": 4987200656,
+          "last": 4993492111,
+          "bytes": 6291456,
+          "complete": true,
+          "http_status": 206,
+          "content_range": "bytes 4987200656-4993492111/5320647824",
+          "etag": "\"3b634445603c457deae3497697213cdf620af6560dd1c33d64048ba4d710340d\"",
+          "payload": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mtp-carry-20261022\\original-glm-q-a\\q_a.weight.e4m3",
+            "bytes": 6291456,
+            "sha256": "615e317d19a83114b756e4634599ebba333c95241f3e775c77cc1633802d8be6"
+          }
+        },
+        {
+          "first": 1280736,
+          "last": 1282271,
+          "bytes": 1536,
+          "complete": true,
+          "http_status": 206,
+          "content_range": "bytes 1280736-1282271/5320647824",
+          "etag": "\"3b634445603c457deae3497697213cdf620af6560dd1c33d64048ba4d710340d\"",
+          "payload": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mtp-carry-20261022\\original-glm-q-a\\q_a.weight_scale.f32",
+            "bytes": 1536,
+            "sha256": "c93393c24ed2c12f5458fbf88a257df91e22f586acc58436b861465c56f4d3fb"
+          }
+        }
+      ],
+      "roles": [
+        {
+          "name": "model.language_model.layers.45.self_attn.q_a_proj.weight",
+          "dtype": "F8_E4M3",
+          "shape": [
+            1536,
+            4096
+          ],
+          "data_relative_offsets": [
+            4987039792,
+            4993331248
+          ],
+          "payload": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mtp-carry-20261022\\original-glm-q-a\\q_a.weight.e4m3",
+            "bytes": 6291456,
+            "sha256": "615e317d19a83114b756e4634599ebba333c95241f3e775c77cc1633802d8be6"
+          }
+        },
+        {
+          "name": "model.language_model.layers.45.self_attn.q_a_proj.weight_scale_inv",
+          "dtype": "F32",
+          "shape": [
+            12,
+            32
+          ],
+          "data_relative_offsets": [
+            1119872,
+            1121408
+          ],
+          "payload": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mtp-carry-20261022\\original-glm-q-a\\q_a.weight_scale.f32",
+            "bytes": 1536,
+            "sha256": "c93393c24ed2c12f5458fbf88a257df91e22f586acc58436b861465c56f4d3fb"
+          }
+        }
+      ],
+      "complete": true,
+      "whole_shard_allowed": false,
+      "file_bytes": 5320647824,
+      "etag": "\"3b634445603c457deae3497697213cdf620af6560dd1c33d64048ba4d710340d\"",
+      "data_start": 160864
+    },
+    "qnorm": {
+      "repository": "zai-org/GLM-5.3-Flash",
+      "revision": "eb9eb208eb0d988989d07a6a12d0fdeb5f52574a",
+      "file": "model-00002-of-00062.safetensors",
+      "url": "https://huggingface.co/zai-org/GLM-5.3-Flash/resolve/eb9eb208eb0d988989d07a6a12d0fdeb5f52574a/model-00002-of-00062.safetensors",
+      "role": "model.language_model.layers.45.self_attn.q_a_layernorm.weight",
+      "dtype": "BF16",
+      "shape": [
+        1536
+      ],
+      "data_relative_offsets": [
+        52134448,
+        52137520
+      ],
+      "first": 52295312,
+      "last": 52298383,
+      "complete": true,
+      "http_status": 206,
+      "content_range": "bytes 52295312-52298383/5320647824",
+      "etag": "\"3b634445603c457deae3497697213cdf620af6560dd1c33d64048ba4d710340d\"",
+      "payload": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mtp-carry-20261022\\original-glm-q-a\\q_a_layernorm.weight.bf16",
+        "bytes": 3072,
+        "sha256": "33fec4645dc799a2a96b870b48012fcd096e66c2003c528881d98cd397afa96a"
+      }
+    },
+    "inputnorm": {
+      "repository": "zai-org/GLM-5.3-Flash",
+      "revision": "eb9eb208eb0d988989d07a6a12d0fdeb5f52574a",
+      "file": "model-00001-of-00062.safetensors",
+      "url": "https://huggingface.co/zai-org/GLM-5.3-Flash/resolve/eb9eb208eb0d988989d07a6a12d0fdeb5f52574a/model-00001-of-00062.safetensors",
+      "role": "model.language_model.layers.45.input_layernorm.weight",
+      "dtype": "BF16",
+      "shape": [
+        4096
+      ],
+      "data_relative_offsets": [
+        2605352960,
+        2605361152
+      ],
+      "first": 2605446480,
+      "last": 2605454671,
+      "complete": true,
+      "http_status": 206,
+      "content_range": "bytes 2605446480-2605454671/5365306704",
+      "etag": "\"8d515c191fd1c42528efb3f407033580a62ba6430ae55e9c7c9c9cec41a4755e\"",
+      "payload": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mtp-carry-20261022\\original-glm-q-a\\input_layernorm.weight.bf16",
+        "bytes": 8192,
+        "sha256": "34ebd6b797e89011997e3f8fa674e4d0b9bc322d88bee17a91fe0a5421263e0c"
+      }
+    },
+    "role_count": 7,
+    "bytes": 73429504,
+    "acquisition": "Only exact HTTP206 role ranges plus bounded authenticated headers. Query pair6,292,992B and both norms11,264B newly acquired. Prior67,125,248B input roles reused; no full weight shard downloaded."
+  },
+  "original_chain": {
+    "scope": "Original NextN BF16 input norms/EH -> decoder input RMSNorm -> original E4 q_a with raw original F32 scale -> original query RMSNorm -> actual output lease consumed by existing generated BF16 indexer wq_b projection.",
+    "precision": "BF16 norm/activation boundaries; original scale bits retained, not inverted because the field is named weight_scale_inv. Explicit existing dynamic block128 Divide/floor1e-10, F32 accumulation/BF16 output contract.",
+    "reader_limit": "Fixed-source SGLang has multiple activation scale/quantization arithmetic paths; this chosen Divide contract is not a claim of byte equality with its current CUDA JIT or every native reader.",
+    "limits": "Generated wq_b remains labelled. Neither this query chain nor the separate carry test is a complete original GLM attention/MoE/head/target or natural MTP acceptance journey."
+  },
+  "source_audit": {
+    "status": "read-only source and existing-result audit; no build, download or native execution by this audit",
+    "date": "2026-10-22",
+    "model": {
+      "repository": "zai-org/GLM-5.3-Flash",
+      "revision": "eb9eb208eb0d988989d07a6a12d0fdeb5f52574a",
+      "configuration_source": ".scratch/official-weight-audit.json:10839846-10840140",
+      "configuration_facts": {
+        "text_hidden_size": 4096,
+        "q_lora_rank": 1536,
+        "rms_norm_eps": 1e-05,
+        "dtype": "bfloat16",
+        "activation_scheme": "dynamic",
+        "fmt": "e4m3"
+      },
+      "scope": "One NextN input/q-latent chain and existing independent DSA carry component, not a full original GLM model or complete accepted-prefix state."
+    },
+    "original_roles": [
+      {
+        "name": "model.language_model.layers.45.input_layernorm.weight",
+        "file": "model-00001-of-00062.safetensors",
+        "dtype": "BF16",
+        "shape": [
+          4096
+        ],
+        "data_section_base": 93520,
+        "data_relative_offsets": [
+          2605352960,
+          2605361152
+        ],
+        "absolute_half_open_range": [
+          2605446480,
+          2605454672
+        ],
+        "bytes": 8192,
+        "receipt": "original-glm-q-a/inputnorm-acquisition.json",
+        "sha256": "34ebd6b797e89011997e3f8fa674e4d0b9bc322d88bee17a91fe0a5421263e0c"
+      },
+      {
+        "name": "model.language_model.layers.45.self_attn.q_a_proj.weight",
+        "file": "model-00002-of-00062.safetensors",
+        "dtype": "F8_E4M3",
+        "shape": [
+          1536,
+          4096
+        ],
+        "data_section_base": 160864,
+        "data_relative_offsets": [
+          4987039792,
+          4993331248
+        ],
+        "bytes": 6291456,
+        "receipt": "original-glm-q-a/acquisition.json",
+        "sha256": "615e317d19a83114b756e4634599ebba333c95241f3e775c77cc1633802d8be6"
+      },
+      {
+        "name": "model.language_model.layers.45.self_attn.q_a_proj.weight_scale_inv",
+        "file": "model-00002-of-00062.safetensors",
+        "dtype": "F32",
+        "shape": [
+          12,
+          32
+        ],
+        "data_relative_offsets": [
+          1119872,
+          1121408
+        ],
+        "bytes": 1536,
+        "receipt": "original-glm-q-a/acquisition.json",
+        "sha256": "c93393c24ed2c12f5458fbf88a257df91e22f586acc58436b861465c56f4d3fb",
+        "arithmetic": "Preserve the original F32 bits as the dequantization scale. Never take a reciprocal merely because the checkpoint field is named weight_scale_inv."
+      },
+      {
+        "name": "model.language_model.layers.45.self_attn.q_a_layernorm.weight",
+        "file": "model-00002-of-00062.safetensors",
+        "dtype": "BF16",
+        "shape": [
+          1536
+        ],
+        "data_section_base": 160864,
+        "data_relative_offsets": [
+          52134448,
+          52137520
+        ],
+        "absolute_half_open_range": [
+          52295312,
+          52298384
+        ],
+        "bytes": 3072,
+        "receipt": "original-glm-q-a/qnorm-acquisition.json",
+        "sha256": "33fec4645dc799a2a96b870b48012fcd096e66c2003c528881d98cd397afa96a"
+      }
+    ],
+    "source_sequence": {
+      "reference_revision": "SGLang 06992c92ad4494fe9f9636e75be3e35040512447",
+      "references": [
+        "python/sglang/srt/models/deepseek_nextn.py:198-240",
+        "python/sglang/srt/models/deepseek_v2.py:2475-2505,2621-2695,2737-2770",
+        "python/sglang/srt/models/deepseek_common/attention_forward_methods/forward_mla.py:337-379,448-455",
+        "python/sglang/srt/layers/layernorm.py:RMSNorm",
+        "python/sglang/srt/layers/attention/index_topk_share.py:mtp_iteration"
+      ],
+      "ordered_chain": [
+        "enorm(token_embedding), hnorm(previous_target_hidden), each with original BF16 gamma and eps1e-5",
+        "Concatenate embedding first and hidden second, then original BF16 EH projection",
+        "Decoder input_layernorm with original BF16[4096] gamma and eps1e-5",
+        "q_a projection from normalized decoder input, using original E4[1536,4096] and original F32[12,32] scale grid",
+        "q_a_layernorm with original BF16[1536] gamma and eps1e-5",
+        "The normalized q_a value is q_lora passed to the DSA indexer; wq_b projects q_lora. It must not consume the pre-norm q_a result."
+      ],
+      "minimal_composition_recommendation": "Use ordinary Graph for original input norms/EH, decoder norm, q_a and qnorm. Publish actual qnorm ReadLease, then bind that exact lease to the existing wq_b MatMul/reshape consumer. No observed qnorm copied to host and rebuilt as consumer input. A full indexer/MLA/MoE loop is a separate scope and is not required to establish this real producer-consumer edge.",
+      "boundaries": [
+        "Original BF16 activations/gamma and projection operands; RMSNorm uses F32 arithmetic through gamma multiplication and one final BF16 store for the selected CUDA contract.",
+        "EH and q_a retain BF16 activation/result boundaries and F32 accumulation; do not insert an extra BF16 normalization store before gamma multiplication.",
+        "Safetensors E4 matrix is stored row-major [N,K]. import_float8_block128_weight creates the canonical encoded [K,N] carrier while preserving all E4 and F32 scale bits, without dense expansion or activation quantization.",
+        "The original scale is indexed by [output_row/128,input_col/128]; source F32[12,32] is not an activation scale and is not transposed/inverted by its name.",
+        "Ordinary float8_block_linear has an explicit chosen group128 activation policy, F32 accumulation and BF16/F32 result matching activation dtype."
+      ]
+    },
+    "activation_policy_fidelity": {
+      "chosen_existing_hyle_contract": "Float8ScalePolicy::kDivide, absmax_floor=1e-10, group128 E4M3FN, saturated nearest-even code conversion; preserve original weight scales.",
+      "chosen_hyle_references": [
+        "tests/compute_models/d5_dynamic_fp8_fragments.h:quantized,operation,ModelLinear",
+        "include/hyle/compute/model_ops.h:Float8BlockLinear",
+        "include/hyle/compute/weight_import.h:import_float8_block128_weight"
+      ],
+      "important_source_qualification": "Checkpoint FP8 format alone does not identify one exact runtime rounding policy. Do not describe all SGLang kernels or all devices as byte-identical to the selected Hyle kDivide reader.",
+      "fixed_sglang_variants_observed": [
+        "fp8_kernel.py:_per_token_group_quant_8bit_colmajor: F32 scale=amax/448, code from x/scale; this is the explicit divide reference.",
+        "fp8_kernel.py:_per_token_group_quant_8bit: F32 scale=amax/448, code from x*F32(1/scale).",
+        "The present CUDA sglang_per_token_group_quant_fp8 dispatches to the JIT gemm/per_token_group_quant.cuh. For ordinary F32 scales that kernel uses raw_scale=amax*F32(1/448) and quant_scale=F32(448/amax), then x*quant_scale. It is neither proof of the divide reference nor automatically the Quark two-stage reciprocal policy.",
+        "All cited branches clamp absmax at1e-10 for this ordinary E4 path; UE8M0/power-of-two branches are distinct options."
+      ],
+      "jit_reference": "python/sglang/kernels/jit/csrc/gemm/per_token_group_quant.cuh:QuantTrait::run_packed16,run_fp32",
+      "review_action": "Keep the explicit already selected Hyle policy for this component; record its boundary accurately. No policy change, threshold change, expanded regression or inference-speed claim follows from this audit."
+    },
+    "existing_carry_audit": {
+      "source": "tests/compute_models/glm_mtp_index_carry_test.cc",
+      "source_sha256": "c0e55aacc0a36120308eed5501d1cd8b2227ac2032669e631a3310c65b6fb622",
+      "actual_result": ".scratch/glm-mtp-carry-20261022/checks1/summary.json",
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0,
+      "per_backend": {
+        "graph_submissions": 7,
+        "indexer": 3,
+        "skip_indexer": 4
+      },
+      "backend_scope": [
+        "ordinary CUDA Graph",
+        "ordinary CPU Graph"
+      ],
+      "verified_from_source": [
+        "The real indexer producer I32 ReadLease is imported into generic StateStore, not recreated from host-observed IDs.",
+        "The skip graph contains Gather and SDPA, without MatMul/TopK/indexer recomputation; first2049 valid IDs feed the cache Gather while all2051 IDs preserve order/padding.",
+        "Producer/current-version/consumer share resource, handle, offset, extent and generation; each skip publishes its actual output through StateDraft and StateHead.",
+        "Default begin clears old carry, explicit keep_seed requires an actual seed, keep=true without a seed still clears. Normal and exceptional iteration exit clear head and disable live reuse.",
+        "Historical versions remain readable/readonly; qualify rejects an old epoch/head before Graph prepare/submit. A changed history runs a fresh actual indexer and changes selected membership.",
+        "State publication includes carried IDs, retained index-key/gate leases and explicit epoch/producer/use metadata. Retained old state bytes remain unchanged.",
+        "One original Invocation per program is prepared/submitted/waited/reset per use; stale submit after reset fails. Final versions/drafts/pool uses/blocks return to zero."
+      ],
+      "coverage_limits": [
+        "One-layer generated Q8_0 Flash DSA component with external generated query and MLA cache, not original q_a/indexer weights or full original decoder.",
+        "Index-key/gate leases are retained in the complete local carry, but not fed into a subsequent indexer update in this fixture.",
+        "Epoch/provenance metadata is explicit engine policy around generic immutable state; the base library does not globally revoke old readable versions.",
+        "No natural MTP acceptance, complete target KDA/conv state, whole-model selected-prefix publication, TPS or memory-peak result is established by these2 cases."
+      ],
+      "hard_source_issue_found": false
+    },
+    "product_edits": 0,
+    "builds": 0,
+    "downloads": 0,
+    "native_executions": 0,
+    "new_original_chain_runtime_result": null,
+    "new_original_chain_source_audit": {
+      "status": "source-only quick review; native first run belongs to root",
+      "source": "tests/compute_models/glm_original_mtp_chain_test.cc",
+      "frozen_source_sha256": "b25a56b12f6e166c160795287f9cf80b40ada00fdb095e6f928b6bcefa071efb",
+      "hard_issue_found": false,
+      "original_roles": 7,
+      "original_role_bytes": 73429504,
+      "reviewed": [
+        "All original role length/SHA and finite checks precede device creation; both norm gamma roles are original BF16 and epsilon is1e-5.",
+        "Canonical E4 carrier is byte-compared with original code bytes followed by the original F32 scale bytes; no reciprocal, transpose or dense weight expansion is inferred from the source field name.",
+        "The Graph follows E,H norm/concat/EH, decoder input norm, explicit kDivide/floor1e-10 q_a, q_a norm. The exact qnorm ReadLease is the successor input after producer Invocation reset.",
+        "The existing generated BF16 wq_b recipe has matching seed239, dimensions and one sparse coefficient per output row; its F32 accumulator is explicitly stored BF16 before query reshape and caller output Copy.",
+        "Two complete output generations per Graph suffice while retaining the oldest generation and releasing each later generation at the loop boundary. Inputs, parameter leases and storage owners remain live through Completion; stale submit after reset is rejected.",
+        "Three distinct input generations include an all-zero generation, old result byte checks, unchanged parameter bytes and final output-pool use/block checks.",
+        "Independent normalization/projection checks use the actual preceding BF16 boundary, preventing one upstream discrepancy from being mistaken for another operator defect."
+      ],
+      "numerical_limits": [
+        "The q_a oracle independently enumerates E4 codes and dynamic group128 quantization, uses compensated FP64 code-domain dot then explicit F32 block-scale accumulation. CPU separate multiply/add versus CUDA FMA is fixed by backend before observing results.",
+        "Actual native F32 within-block dot reductions may differ from the high-precision reference, especially near cancellation. The existing original BF16 gate0.008rel+0.0001 has not been relaxed; the root native first run must establish whether the implementation meets it.",
+        "The source review is not numerical/runtime evidence, a full indexer, a full decoder, original target-hidden provenance or natural MTP acceptance."
+      ]
+    }
+  },
+  "CUDA_FP8_repair": {
+    "failure": "Original complete CPU input/query component passed. Original CUDA gen0 q_a row25 was -0.0020904541015625 vs independent -0.0022125244140625, beyond unchanged0.008*abs(ref)+0.0001 gate; all preceding original norm/EH/inputnorm boundaries matched.",
+    "discrimination": "Actual4096 CUDA E4 codes and32 F32 scale bits equal independent oracle. Direct original F32 GEMM rounds to the entire actual BF16 Graph output.3 same-shape one-hot-scale launches extract32 raw row25 K128 dots;20 exceed the predeclared IEEE F32 gamma127*sumabs diagnostic bound, with no E4 subnormals. Exact F32 mul/FMA composition from all32 actual dots reproduces the full GEMM row25 bit-for-bit.",
+    "original_probe": {
+      "path": ".scratch/glm-mtp-carry-20261022/diagnostics2/native-quant-probe1/result.json",
+      "bytes": 16859,
+      "sha256": "d06d02ba5945887283f82ea587865b2510ae7b091fb45f0966348571feea2459"
+    },
+    "raw_dot_probe": {
+      "path": ".scratch/glm-mtp-carry-20261022/diagnostics2/native-quant-probe2/result.json",
+      "bytes": 35808,
+      "sha256": "6ea5c333fabea6e0f356f75b82dcdca0537d607d61c9e978e3acb405a2eec605"
+    },
+    "composition": {
+      "scope": "offline exact composition of32 actual selector raw dots with unchanged original scales",
+      "method": "exact Fraction arithmetic, direct F32 RN-even after dot*activation_scale and after fused scaled_dot*weight_scale+accumulator",
+      "native_raw_dots_source": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mtp-carry-20261022\\diagnostics2\\native-quant-probe2\\result.json",
+      "native_complete_gemm_source": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mtp-carry-20261022\\diagnostics2\\native-quant-probe1\\result.json",
+      "reconstructed": -0.0020957174710929394,
+      "reconstructed_f32_bits": "4e5809bb",
+      "complete_native_f32": -0.0020957174710929394,
+      "complete_native_f32_bits": "4e5809bb",
+      "bit_identical": true,
+      "stages": [
+        {
+          "group": 0,
+          "native_raw_dot": 1724.0,
+          "activation_scale": 0.0009722028626129031,
+          "weight_scale": 0.000244140625,
+          "rounded_f32_scaled_dot": 1.6760777235031128,
+          "exactly_rounded_fma_accumulator": 0.00040919866296462715
+        },
+        {
+          "group": 1,
+          "native_raw_dot": 99872.0,
+          "activation_scale": 0.0022059848997741938,
+          "weight_scale": 0.000244140625,
+          "rounded_f32_scaled_dot": 220.3161163330078,
+          "exactly_rounded_fma_accumulator": 0.05419731140136719
+        },
+        {
+          "group": 2,
+          "native_raw_dot": -105168.0,
+          "activation_scale": 0.0009591238922439516,
+          "weight_scale": 0.000244140625,
+          "rounded_f32_scaled_dot": -100.869140625,
+          "exactly_rounded_fma_accumulator": 0.029571056365966797
+        },
+        {
+          "group": 3,
+          "native_raw_dot": 242048.0,
+          "activation_scale": 0.0010899135377258062,
+          "weight_scale": 0.000244140625,
+          "rounded_f32_scaled_dot": 263.8114013671875,
+          "exactly_rounded_fma_accumulator": 0.09397813677787781
+        },
+        {
+          "group": 4,
+          "native_raw_dot": 61144.0,
+          "activation_scale": 0.0010288783814758062,
+          "weight_scale": 0.000244140625,
+          "rounded_f32_scaled_dot": 62.90974044799805,
+          "exactly_rounded_fma_accumulator": 0.1093369573354721
+        },
+        {
+          "group": 5,
+          "native_raw_dot": 57136.0,
+          "activation_scale": 0.0009242466767318547,
+          "weight_scale": 0.000244140625,
+          "rounded_f32_scaled_dot": 52.80775833129883,
+          "exactly_rounded_fma_accumulator": 0.12222947925329208
+        },
+        {
+          "group": 6,
+          "native_raw_dot": -76464.0,
+          "activation_scale": 0.0015345981810241938,
+          "weight_scale": 0.000244140625,
+          "rounded_f32_scaled_dot": -117.34151458740234,
+          "exactly_rounded_fma_accumulator": 0.09358164668083191
+        },
+        {
+          "group": 7,
+          "native_raw_dot": 80744.0,
+          "activation_scale": 0.0008065360016189516,
+          "weight_scale": 0.000244140625,
+          "rounded_f32_scaled_dot": 65.12294006347656,
+          "exactly_rounded_fma_accumulator": 0.10948079824447632
+        },
+        {
+          "group": 8,
+          "native_raw_dot": 205056.0,
+          "activation_scale": 0.000885009765625,
+          "weight_scale": 0.000244140625,
+          "rounded_f32_scaled_dot": 181.4765625,
+          "exactly_rounded_fma_accumulator": 0.15378659963607788
+        },
+        {
+          "group": 9,
+          "native_raw_dot": -84320.0,
+          "activation_scale": 0.0017613002564758062,
+          "weight_scale": 0.000244140625,
+          "rounded_f32_scaled_dot": -148.51283264160156,
+          "exactly_rounded_fma_accumulator": 0.11752858757972717
+        },
+        {
+          "group": 10,
+          "native_raw_dot": 53344.0,
+          "activation_scale": 0.0009504045592620969,
+          "weight_scale": 0.000244140625,
+          "rounded_f32_scaled_dot": 50.69837951660156,
+          "exactly_rounded_fma_accumulator": 0.12990611791610718
+        },
+        {
+          "group": 11,
+          "native_raw_dot": 47408.0,
+          "activation_scale": 0.0009547642548568547,
+          "weight_scale": 0.00048828125,
+          "rounded_f32_scaled_dot": 45.26346206665039,
+          "exactly_rounded_fma_accumulator": 0.15200741589069366
+        },
+        {
+          "group": 12,
+          "native_raw_dot": 57160.0,
+          "activation_scale": 0.0011945451842620969,
+          "weight_scale": 0.000244140625,
+          "rounded_f32_scaled_dot": 68.28020477294922,
+          "exactly_rounded_fma_accumulator": 0.16867738962173462
+        },
+        {
+          "group": 13,
+          "native_raw_dot": 84432.0,
+          "activation_scale": 0.0011945451842620969,
+          "weight_scale": 0.000244140625,
+          "rounded_f32_scaled_dot": 100.85784149169922,
+          "exactly_rounded_fma_accumulator": 0.19330088794231415
+        },
+        {
+          "group": 14,
+          "native_raw_dot": 25696.0,
+          "activation_scale": 0.000885009765625,
+          "weight_scale": 0.000244140625,
+          "rounded_f32_scaled_dot": 22.7412109375,
+          "exactly_rounded_fma_accumulator": 0.19885294139385223
+        },
+        {
+          "group": 15,
+          "native_raw_dot": -317536.0,
+          "activation_scale": 0.0010637555969879031,
+          "weight_scale": 0.000244140625,
+          "rounded_f32_scaled_dot": -337.78070068359375,
+          "exactly_rounded_fma_accumulator": 0.11638695001602173
+        },
+        {
+          "group": 16,
+          "native_raw_dot": 27824.0,
+          "activation_scale": 0.0010593959596008062,
+          "weight_scale": 0.000244140625,
+          "rounded_f32_scaled_dot": 29.476633071899414,
+          "exactly_rounded_fma_accumulator": 0.12358339130878448
+        },
+        {
+          "group": 17,
+          "native_raw_dot": 199392.0,
+          "activation_scale": 0.0009373255888931453,
+          "weight_scale": 0.000244140625,
+          "rounded_f32_scaled_dot": 186.8952178955078,
+          "exactly_rounded_fma_accumulator": 0.16921210289001465
+        },
+        {
+          "group": 18,
+          "native_raw_dot": -311680.0,
+          "activation_scale": 0.0008632115204818547,
+          "weight_scale": 0.000244140625,
+          "rounded_f32_scaled_dot": -269.0457763671875,
+          "exactly_rounded_fma_accumulator": 0.10352709889411926
+        },
+        {
+          "group": 19,
+          "native_raw_dot": 245792.0,
+          "activation_scale": 0.0009896414121612906,
+          "weight_scale": 0.000244140625,
+          "rounded_f32_scaled_dot": 243.24594116210938,
+          "exactly_rounded_fma_accumulator": 0.16291332244873047
+        },
+        {
+          "group": 20,
+          "native_raw_dot": -239024.0,
+          "activation_scale": 0.00103759765625,
+          "weight_scale": 0.000244140625,
+          "rounded_f32_scaled_dot": -248.0107421875,
+          "exactly_rounded_fma_accumulator": 0.10236382484436035
+        },
+        {
+          "group": 21,
+          "native_raw_dot": 543680.0,
+          "activation_scale": 0.0009722028626129031,
+          "weight_scale": 0.000244140625,
+          "rounded_f32_scaled_dot": 528.5672607421875,
+          "exactly_rounded_fma_accumulator": 0.23140856623649597
+        },
+        {
+          "group": 22,
+          "native_raw_dot": -191232.0,
+          "activation_scale": 0.0009504045592620969,
+          "weight_scale": 0.000244140625,
+          "rounded_f32_scaled_dot": -181.74777221679688,
+          "exactly_rounded_fma_accumulator": 0.18703654408454895
+        },
+        {
+          "group": 23,
+          "native_raw_dot": 345600.0,
+          "activation_scale": 0.0010724748717620969,
+          "weight_scale": 0.000244140625,
+          "rounded_f32_scaled_dot": 370.6473083496094,
+          "exactly_rounded_fma_accumulator": 0.2775266170501709
+        },
+        {
+          "group": 24,
+          "native_raw_dot": -272384.0,
+          "activation_scale": 0.00091552734375,
+          "weight_scale": 0.000244140625,
+          "rounded_f32_scaled_dot": -249.375,
+          "exactly_rounded_fma_accumulator": 0.2166440486907959
+        },
+        {
+          "group": 25,
+          "native_raw_dot": -47064.0,
+          "activation_scale": 0.0009373255888931453,
+          "weight_scale": 0.000244140625,
+          "rounded_f32_scaled_dot": -44.11429214477539,
+          "exactly_rounded_fma_accumulator": 0.20587395131587982
+        },
+        {
+          "group": 26,
+          "native_raw_dot": -41704.0,
+          "activation_scale": 0.0013689313782379031,
+          "weight_scale": 0.000244140625,
+          "rounded_f32_scaled_dot": -57.08991241455078,
+          "exactly_rounded_fma_accumulator": 0.19193598628044128
+        },
+        {
+          "group": 27,
+          "native_raw_dot": 37280.0,
+          "activation_scale": 0.0011160714784637094,
+          "weight_scale": 0.000244140625,
+          "rounded_f32_scaled_dot": 41.60714340209961,
+          "exactly_rounded_fma_accumulator": 0.2020939737558365
+        },
+        {
+          "group": 28,
+          "native_raw_dot": -189184.0,
+          "activation_scale": 0.0010593959596008062,
+          "weight_scale": 0.00048828125,
+          "rounded_f32_scaled_dot": -200.42076110839844,
+          "exactly_rounded_fma_accumulator": 0.10423227399587631
+        },
+        {
+          "group": 29,
+          "native_raw_dot": -363744.0,
+          "activation_scale": 0.0010855539003387094,
+          "weight_scale": 0.000244140625,
+          "rounded_f32_scaled_dot": -394.86370849609375,
+          "exactly_rounded_fma_accumulator": 0.007830001413822174
+        },
+        {
+          "group": 30,
+          "native_raw_dot": -3060.0,
+          "activation_scale": 0.0010245187440887094,
+          "weight_scale": 0.000244140625,
+          "rounded_f32_scaled_dot": -3.1350274085998535,
+          "exactly_rounded_fma_accumulator": 0.007064613979309797
+        },
+        {
+          "group": 31,
+          "native_raw_dot": -40596.0,
+          "activation_scale": 0.0009242466767318547,
+          "weight_scale": 0.000244140625,
+          "rounded_f32_scaled_dot": -37.52071762084961,
+          "exactly_rounded_fma_accumulator": -0.0020957174710929394
+        }
+      ],
+      "native_calls": 0,
+      "threshold_changes": 0
+    },
+    "source_repair_review": {
+      "status": "source review plus authorized offline exact arithmetic; no build or native run by this review",
+      "localization": {
+        "quantizer": "Native4096 E4 codes and32 F32 scale bits equal the independent Divide/RNE oracle.",
+        "full_gemm": "Existing F32-output GEMM rounded to BF16 equals all1536 outputs from the Graph BF16-output GEMM.",
+        "raw_dot_probe": "Three launches of one unchanged M1/N1536/K4096 shape isolate32 K128 dots for original row25 using diagnostic one-hot scale selectors. All32 have nonzero exact-dot error,20 exceed the predeclared IEEE F32 gamma127*sumabs discriminator; all128 duplicated rows per tile are bit-identical.",
+        "subnormal": "No E4 subnormal operands in these32 groups. Every nonzero finite E4*E4 product is at least2^-18, so F32-product FTZ cannot explain this case.",
+        "proof_selector_matches_original": {
+          "result": ".scratch/glm-mtp-carry-20261022/diagnostics2/raw-dot-composition.json",
+          "source": ".scratch/glm-mtp-carry-20261022/review/reconstruct_raw_dots.py",
+          "method": "Exact rational dyadic multiplication and fused add, with direct binary32 round-to-nearest-even after each native mul/FMA boundary; no intermediate F64 rounding.",
+          "reconstructed_f32": -0.0020957174710929394,
+          "original_complete_native_f32": -0.0020957174710929394,
+          "bit_identical": true,
+          "conclusion": "The one-hot diagnostic reproduces the original GEMM discrepancy when recomposed with unchanged original scales. It did not create an unrelated discrepancy."
+        }
+      },
+      "triton_3_8_local_source": {
+        "wheel": ".scratch/tools/d5-triton/wheel.json",
+        "semantic": ".scratch/tools/d5-triton/unpacked/triton/language/semantic.py:1516-1528",
+        "semantic_fact": "Source explicitly states max_num_imprecise_acc only applies to fp8->fp32 dot on sm_90. It forwards the setting as a dot attribute; setting0 on SM89 does not by itself select a newly strict operation.",
+        "backend": ".scratch/tools/d5-triton/unpacked/triton/backends/nvidia/compiler.py:214",
+        "backend_fact": "max_num_imprecise_acc_default is2**30 only for capability90, otherwise0. The current SM89 metadata already records0 and actual PTX still emits native .f32.e4m3.e4m3.f32 MMA.",
+        "bf16_semantic": ".scratch/tools/d5-triton/unpacked/triton/language/semantic.py:1435-1450,1494-1502",
+        "bf16_fact": "Matching BF16 operands are supported, and BF16 operands select a F32 accumulator/result. Explicit BF16 conversion before dot is an available way to change the arithmetic instruction family without changing the encoded source storage.",
+        "limitation": "The wheel does not include the complete C++ lowering source. The semantic source, metadata and actual PTX are sufficient to reject setting0 alone as an evidence-backed fix; no claim about uninspected compiler internals is made."
+      },
+      "minimal_repair_direction": {
+        "source": "third_party/sglang_activation/fp8/original_kernels.py:_w8a8_block_fp8_matmul",
+        "change": "Explicitly convert each already loaded E4 a/b tile to tl.bfloat16 at the tl.dot operands and request out_dtype=tl.float32; preserve original K128 grouping, scale multiplication/FMA order and output conversion.",
+        "mathematical_reason": "All finite E4M3FN values, including its subnormals, are exactly representable in BF16. This retains the original FP8 code values rather than lowering their precision. The existing encoded weight bank and activation quantizer are unchanged; only local arithmetic tile storage changes.",
+        "scope": "Modify the existing shared AOT GEMM body, not a model-specific branch, new provider, new public precision flag, dense persistent weight expansion or host executor.",
+        "must_verify_after_generation": [
+          "Generated PTX must actually contain BF16-input/F32-accumulator MMA, with the old E4-input MMA absent from these two GEMM units.",
+          "CUBIN metadata.shared and launch-resource facts must be checked; fp8_provider.cc currently hardcodes24576 dynamic shared bytes. If changed, emit the actual per-GEMM shared-byte constant beside the generated cubin and consume it at launch.",
+          "Original encoded source and actual quantized codes/scales must remain unchanged.",
+          "Use the existing failing real original-chain case and the finite32-dot discriminator; do not compensate by enlarging a tolerance."
+        ]
+      },
+      "cache_and_source_impact": {
+        "regenerate": [
+          "matmul: F32-output _w8a8_block_fp8_matmul -> kSglangFp8Sm89",
+          "matmul_bf16: BF16-output _w8a8_block_fp8_matmul -> kSglangFp8MatmulBf16"
+        ],
+        "retain_exact": [
+          "Ordinary CUDA Divide/MultiplyReciprocal quantizer cubin8f871453...",
+          "Unchanged PowerOfTwo activation quantizer unit in the dynamic header",
+          "Original model payloads, E4 scales, test math/gates and SDK caches"
+        ],
+        "host_recompile": "The C++ fp8_provider.cc embedding translation unit must pick up regenerated cubins and any actual shared-byte metadata; no NVCC/provider SDK rebuild is required. Update provider build identity if it participates in persisted executable cache invalidation.",
+        "provenance": "Update exact-source/adaptation metadata and generated-header unchanged-source comments to describe the explicit exact E4-to-BF16 tile adaptation. Do not label the adapted body byte-identical to upstream.",
+        "followup_scope": "Separate grouped FP8 GEMM uses its own AOT body and must not be silently claimed fixed by these two ordinary GEMM units. Record that consumer separately rather than expanding this first-run repair into a full matrix."
+      },
+      "product_changes_by_review": 0,
+      "native_runs_by_review": 0,
+      "offline_arithmetic_runs": 1,
+      "threshold_changes": 0,
+      "repair_implemented_or_verified": false
+    },
+    "candidate_probe": {
+      "path": ".scratch/glm-mtp-carry-20261022/diagnostics2/native-quant-probe3-bf16-tile/result.json",
+      "bytes": 68218,
+      "sha256": "684957da218aedc110f5a708b0bcaa51776867ee3f0a530b0ad39c96847695c1"
+    },
+    "repair": "Keep original FP8 storage, activation quantizer/code/scale bits and K128 scale/order/output boundaries. Exact finite E4->BF16 register-tile casts before the same F32 dot avoid this observed SM89 E4-MMA loss. Candidate32 dots all lie within the existing diagnostic bound, and row25 equals the independent F32 reference.",
+    "shipped": "Both existing GEMM AOT images regenerated. Shared memory16384B is emitted with each image and used by the existing Provider instead of24576B literal. No new provider, public option, executor, dense weight expansion or resident BF16 shadow bank.",
+    "identity": "Maintainer --gemm-only regeneration produces exactly the two installed candidate cubin SHAs; vendor original module unchanged, adaptation explicitly recorded, ordinary/pow2 quantizer images unchanged.",
+    "metadata": {
+      "path": ".scratch/glm-mtp-carry-20261022/maintainer-regeneration/compilation.json",
+      "bytes": 8324,
+      "sha256": "c2c3fbffa407436350516de30f64aef958d85da31c0ad030dcae2b34259c68a4"
+    },
+    "source_gate_or_tolerance_changed": false,
+    "limits": "Finite SM89 single/block128 routes only; grouped FP8 has a different AOT and is not certified by this fix. No inference TPS or physical memory performance claim."
+  },
+  "validation": {
+    "SDK_builds": 0,
+    "NVCC_builds": 0,
+    "shader_builds": 0,
+    "regenerated_GEMM_AOT_images": 2,
+    "method": "Related host test TUs and one host FP8-provider TU incrementally compiled/linked on existing matched CPU/CUDA closure; cached Triton3.8 offline regeneration of two small GEMMs. No SDK/full-tree/platform matrix.",
+    "throughput_evidence": false,
+    "memory_evidence": false
+  },
+  "cleanup": {
+    "Removed": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen24-original-mtp-20261022\\tests-link1\\qwen24-kv-checks.exe",
+        "bytes": 139825664,
+        "sha256": "623981c4c9ca3183327293227fa74b9e6b89c2e0e9db5e7f6bf5adde6d3c1fd8"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen24-original-mtp-20261022\\tests-link1\\qwen24-kv-checks.map",
+        "bytes": 58069932,
+        "sha256": "d762d79abf040e58581a9efd84012866f898990e3bbefbb7b5125108319a9781"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mtp-carry-20261022\\tests-link1\\glm-carry-checks.exe",
+        "bytes": 139981312,
+        "sha256": "343dfe265711c6a70394f7377cdbeb31881828fa08201337edacbc6c6d4b40e5"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mtp-carry-20261022\\tests-link1\\glm-carry-checks.map",
+        "bytes": 58235293,
+        "sha256": "857dd39bcb6a32660794d6a6a5477c1933d3334a32758775636f979ac8dbfeb5"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mtp-carry-20261022\\chain-link1\\glm-original-chain-checks.exe",
+        "bytes": 139872768,
+        "sha256": "3def61950ada3b367c8233ef4cdf313a3d4e187a850d9b5cdedef6523a94c028"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mtp-carry-20261022\\chain-link1\\glm-original-chain-checks.map",
+        "bytes": 58028216,
+        "sha256": "e974403295dcd80c8c037b55999ababb7faa8585d09b32a4384535dbf9c5f382"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mtp-carry-20261022\\chain-link2\\glm-original-chain-checks.exe",
+        "bytes": 139904512,
+        "sha256": "a90b72aca0356236138f8734c36c5f461fd7118f30091a374d8b4323a01515fa"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mtp-carry-20261022\\chain-link2\\glm-original-chain-checks.map",
+        "bytes": 58095975,
+        "sha256": "5d507567f54caa5a75d95a8a789876c307bb669dcc81f89002c97db67863c706"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mtp-carry-20261022\\chain-link3\\glm-original-chain-checks.exe",
+        "bytes": 140070400,
+        "sha256": "7fa5068c26a06d94d5b6c5a62ecb3ba7e0999146c9f7868de2216708e4be6e85"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mtp-carry-20261022\\chain-link3\\glm-original-chain-checks.map",
+        "bytes": 58095943,
+        "sha256": "4c8e52449f235689290f68a102e7c47304bd53caf9dff8a4b3588f3ba6bfda32"
+      }
+    ],
+    "Bytes": 990180015,
+    "CurrentImageRetained": true,
+    "CurrentMapRetained": true,
+    "PriorReproductionInputsRetained": "Current final chain+5-neighbor image/map, all sources/frozen objects/link inputs/link plans/DLLs/original roles, and actual AV Qwen benchmark image/map remain."
+  },
+  "limits": [
+    "Windows CPU/CUDA only for this batch; no new Apple/Vulkan/Linux run.",
+    "No new TPS or physical CPU/GPU memory measurement; AV remains latest full four-arm table.",
+    "GLM complete target/draft MLA/index/pool-tail/position and accepted-prefix state composition remains; other applicable original model roles/codecs remain."
+  ],
+  "next": "Compose actual GLM target/draft continuation state and applicable original role/codec bindings with existing Graph/State mechanisms; finish DSpark original stage/LM/target hidden provenance separately.",
+  "sources_commands_and_results": {
+    "path": "docs/evidence/correctness/glm-mtp-carry-2026-10-22.logs.zip",
+    "bytes": 1393168,
+    "sha256": "71ea95e8d9c91bccde1c6f04f36cd914fad706b2b5dc814836afd5c4d0888ced"
+  },
+  "large_original_payloads_archived": false
+}

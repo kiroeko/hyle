@@ -1,0 +1,200 @@
+{
+  "status": "Validation assembly corrected; existing four CPU checks passed. Original Q30 run remains pending.",
+  "root_cause": "Manual incremental validation paired mixed-revision ggml-base constructors with the newer ffa4 AVX2 CPU implementation. That HCpre implementation reads scale from op_params[0], while the mixed constructor leaves that slot zero. Normal project CMake derives baseline and AVX2 sources from the same owning ggml-cpu target.",
+  "correction": "Recompiled two small owning mixed-family CPU translation units and linked with its own cached objects/base. Kept the exact same Flash executable, model graph, reference math and numerical bounds; replaced only its native CPU module.",
+  "failed_attempt": {
+    "native": {
+      "command": [
+        "C:\\public\\project-hyle\\hyle\\.scratch\\glm-quark-selected-20261024\\Q30\\graph-integration-preparation\\tests-link1\\glm-flash-checks.exe",
+        "--gtest_filter=GlmMtpStateConsumer.CpuQuarkOriginalTarget43And44AndNextNFullVocabularyVerifier",
+        "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\glm-quark-selected-20261024\\Q30\\graph-integration-preparation\\checks1-cpu\\results.xml"
+      ],
+      "pid": 41788,
+      "started": 1792782334.6597598,
+      "exit": 4294967295,
+      "finished": 1792782784.824799,
+      "stopped_by_driver": false
+    },
+    "finished_bounded_fetches": 4,
+    "reason": "Stopped the invalid native run after observing HC collapse zero; waited for the active approved fetch to finish before stopping. Does not establish a product HC or Q30 numerical defect."
+  },
+  "checks": {
+    "cases": 4,
+    "failures": 0,
+    "skips": 0,
+    "fixture": "Existing target43->44->NextN finite Graph journey: 41 NextN plus 12 target44 and 12 target43 submissions; generated inputs, not original Q30 identity.",
+    "gdn": "Three existing direct CPU explicit/default output-scale and state-snapshot checks."
+  },
+  "archive": {
+    "path": "docs/evidence/correctness/mtp-cpu-native-family-2026-10-24.zip",
+    "bytes": 163328,
+    "sha256": "3d90d2e32bf07bc66e243512b7b0526f798700444cfd614f27d93d895e49c9ba"
+  },
+  "files": [
+    {
+      "path": ".scratch/glm-quark-selected-20261024/Q30/graph-integration-preparation/mixed-native-preparation/native-plan.json",
+      "bytes": 70875,
+      "sha256": "90bf7b729f098f81f698730c8851a7384f8f7eab4e0671c1773c2bf1d218d38d"
+    },
+    {
+      "path": ".scratch/glm-quark-selected-20261024/Q30/graph-integration-preparation/mixed-native-preparation/compile-native.cmd",
+      "bytes": 6349,
+      "sha256": "46859f4ca4bda574534af8447d0593e79c8c4a0761cf1a7e01e8281f0b31bd2a"
+    },
+    {
+      "path": ".scratch/glm-quark-selected-20261024/Q30/graph-integration-preparation/native-mixed1/root-build-result.json",
+      "bytes": 647,
+      "sha256": "183fee68d5ae0dc981c8ca4afe7d3043989ca18a4144b7836a90316585942ffb"
+    },
+    {
+      "path": ".scratch/glm-quark-selected-20261024/Q30/graph-integration-preparation/native-mixed1/cpu-avx2-mixed-deps.json",
+      "bytes": 13810,
+      "sha256": "ece919901db524a3d1ebe4a0b156fd584aa35d256fd1df73fdb658e1fa4baccf"
+    },
+    {
+      "path": ".scratch/glm-quark-selected-20261024/Q30/graph-integration-preparation/native-mixed1/cpu-program-export-mixed-deps.json",
+      "bytes": 10193,
+      "sha256": "4444f7bb648dc56d50f2463a4129f785f6d6b67c78c58c91cb352287e27b272b"
+    },
+    {
+      "path": ".scratch/glm-quark-selected-20261024/Q30/graph-integration-preparation/tests-link1/ready.json",
+      "bytes": 1231,
+      "sha256": "6501ca9de2deaa54192ebc29aaf29075693e27d6a31a8e2df21790f6d97cde2b"
+    },
+    {
+      "path": ".scratch/glm-quark-selected-20261024/Q30/graph-integration-preparation/tests-link1/runtime-environment.json",
+      "bytes": 8068,
+      "sha256": "71d9f2fa5d2839affc563363d5a08ccc0f56ebdbe614f9e96792456ba584b3aa"
+    },
+    {
+      "path": ".scratch/glm-quark-selected-20261024/Q30/graph-integration-preparation/tests-link2/ready.json",
+      "bytes": 1238,
+      "sha256": "126c8fca6116e7cb6069f07e62b99099a54b246eb6fa93da0f6f4fe7ea8735c0"
+    },
+    {
+      "path": ".scratch/glm-quark-selected-20261024/Q30/graph-integration-preparation/tests-link2/runtime-environment.json",
+      "bytes": 8683,
+      "sha256": "736419366b51a2171a01e49af5284fbe8a8b38c05a38e82080c0123893e5f3d4"
+    },
+    {
+      "path": ".scratch/glm-quark-selected-20261024/Q30/graph-integration-preparation/checks1-cpu/frontier.driver.json",
+      "bytes": 5416,
+      "sha256": "422686573bb442efe8a8843da3fc702530422a8de686fbe2a5a6b9293223c672"
+    },
+    {
+      "path": ".scratch/glm-quark-selected-20261024/Q30/graph-integration-preparation/checks1-cpu/run/process.json",
+      "bytes": 1136,
+      "sha256": "77cf1c06fdc153f87d3a918f12e1b7f26c1ede319b065c51f14482ef14431b37"
+    },
+    {
+      "path": ".scratch/glm-quark-selected-20261024/Q30/graph-integration-preparation/checks1-cpu/run/stdout.log",
+      "bytes": 49493,
+      "sha256": "f8545afe82b6dfdf4f860073739155d3239e3e0ce9bd22b17a8b4060f729de24"
+    },
+    {
+      "path": ".scratch/glm-quark-selected-20261024/Q30/graph-integration-preparation/publish_native_family_fix.py",
+      "bytes": 4015,
+      "sha256": "be45de45b3edd929dab47966851556f9925e437e67b9c86c8b5a2d3515e6496e"
+    },
+    {
+      "path": ".scratch/glm-quark-selected-20261024/Q30/graph-integration-preparation/run_runtime_checks.py",
+      "bytes": 2282,
+      "sha256": "eefb7d767a6800d9369c27e201e2e72b05225df0808ed5d29c01376c67426a51"
+    },
+    {
+      "path": "src/compute_ggml_runtime/CMakeLists.txt",
+      "bytes": 19442,
+      "sha256": "10b92ea56bbe4dc30a9e84bba6bbc8870e5695da4fb7494a889a4c55021d889d"
+    },
+    {
+      "path": "src/compute_ggml_runtime/cpu_program.cmake",
+      "bytes": 3433,
+      "sha256": "255bf04a9fe0e73e30e1aae28d30c4870ccfba948dac39412263243d97daa91e"
+    },
+    {
+      "path": "src/compute_ggml_runtime/cpu_program_export.cc",
+      "bytes": 830,
+      "sha256": "4cb536ef1769baac6f16a35996014ae01dfd803c7a7184586ed1427ab5d9567d"
+    },
+    {
+      "path": "src/compute_ggml_runtime/gated_delta_scale.h",
+      "bytes": 1991,
+      "sha256": "53a26f36b92f63ed52f250e1e29c5173e541d6a4ad45bc3114dbc8c6a6f861d4"
+    },
+    {
+      "path": ".scratch/glm-mlx-flash-original-20261024/gdn-output-scale-proposal/native-after/cpu-mixed/src/ggml-cpu/ops.cpp",
+      "bytes": 418040,
+      "sha256": "f9da47ed013172ee48973c5a012bd88fce90930680bcbdf39268f72d33a4aa68"
+    },
+    {
+      "path": ".scratch/glm-mlx-flash-original-20261024/gdn-output-scale-proposal/native-after/cpu-current-avx2/src/ggml-cpu/ops.cpp",
+      "bytes": 430487,
+      "sha256": "789cc155803b1e8e4074c5458ddd2448506b9179afe5421113006fe67cab874f"
+    },
+    {
+      "path": ".scratch/glm-quark-selected-20261024/Q30/graph-integration-preparation/runtime-checks2/fixture-hc/summary.json",
+      "bytes": 733,
+      "sha256": "74980545835154d85a9878322662059f34aec499a0b8975187ec0f0ba08a22bd"
+    },
+    {
+      "path": ".scratch/glm-quark-selected-20261024/Q30/graph-integration-preparation/runtime-checks2/fixture-hc/results.xml",
+      "bytes": 2113,
+      "sha256": "e317a2416e3fb44f7a11d76b3341330fb42bc4e05cf3d3a5421b0d0d9626ac88"
+    },
+    {
+      "path": ".scratch/glm-quark-selected-20261024/Q30/graph-integration-preparation/runtime-checks2/fixture-hc/run/process.json",
+      "bytes": 816,
+      "sha256": "1523eaf054cb7e45d71ae3ac38a221ec6adda16b86d725b387523bbbeba82e38"
+    },
+    {
+      "path": ".scratch/glm-quark-selected-20261024/Q30/graph-integration-preparation/runtime-checks2/fixture-hc/run/stdout.log",
+      "bytes": 736,
+      "sha256": "4713d45fe63f6014bfb1a8d2328a8700740fdc46a1c71154138bbe2b3659a9fd"
+    },
+    {
+      "path": ".scratch/glm-quark-selected-20261024/Q30/graph-integration-preparation/runtime-checks2/fixture-hc/run/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".scratch/glm-quark-selected-20261024/Q30/graph-integration-preparation/runtime-checks2/fixture-hc/run/command.json",
+      "bytes": 680,
+      "sha256": "8b99a9cc85305b68882fc797017bf13636a739e6708fbdce0e6449a092f9abb4"
+    },
+    {
+      "path": ".scratch/glm-quark-selected-20261024/Q30/graph-integration-preparation/runtime-checks2/focused-gdn/summary.json",
+      "bytes": 731,
+      "sha256": "731e048aaabfdcc2bdb3455f8e832fea389146141769c991d988ebb905b00286"
+    },
+    {
+      "path": ".scratch/glm-quark-selected-20261024/Q30/graph-integration-preparation/runtime-checks2/focused-gdn/results.xml",
+      "bytes": 1191,
+      "sha256": "2aa91f7d5001e24653614f345187c721da18f1013b94898aba0fc31b8d524110"
+    },
+    {
+      "path": ".scratch/glm-quark-selected-20261024/Q30/graph-integration-preparation/runtime-checks2/focused-gdn/run/process.json",
+      "bytes": 771,
+      "sha256": "66ccfbcb8f69e21cb9141a94442b971d154e939d2ef7a03401ef1b0fae125320"
+    },
+    {
+      "path": ".scratch/glm-quark-selected-20261024/Q30/graph-integration-preparation/runtime-checks2/focused-gdn/run/stdout.log",
+      "bytes": 1013,
+      "sha256": "7c9ff750566d77e477ffe639c1d12b70ac929ff326526eceb67ee6eed076ed8c"
+    },
+    {
+      "path": ".scratch/glm-quark-selected-20261024/Q30/graph-integration-preparation/runtime-checks2/focused-gdn/run/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".scratch/glm-quark-selected-20261024/Q30/graph-integration-preparation/runtime-checks2/focused-gdn/run/command.json",
+      "bytes": 635,
+      "sha256": "bee0afbe618c3c7f016b7f9b1607b7b91df65a407b4b9594a183498d893c2bd8"
+    }
+  ],
+  "full_model_quality": false,
+  "throughput_evidence": false,
+  "physical_memory_evidence": false,
+  "original_Q30_complete": false,
+  "product_source_changes_for_this_correction": 0
+}

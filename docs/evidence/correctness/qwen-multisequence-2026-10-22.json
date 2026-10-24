@@ -1,0 +1,353 @@
+{
+  "date": "2026-10-22",
+  "created_utc": "2026-10-21T16:27:43.014027+00:00",
+  "status": "Unified single/batched Model execution and finite actual B2/T1 correctness/lifetime consumer implemented; CLI batching and performance remain pending.",
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\qwen-multisequence-2026-10-22.part01.zip",
+    "bytes": 93982882,
+    "sha256": "6c45a153fb2b0f9875a4f3be529df53a59c4b1e78f0a82c8d4a1b4224090dd17"
+  },
+  "archive_files": 792,
+  "final_records": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-multisequence-20261021\\finalrecords\\final.json",
+    "bytes": 442915,
+    "sha256": "1d588ec4191390ebc59a7c870395e303ee7308e404ae7aea2f2541b3027e79f1"
+  },
+  "compiled": {
+    "qwen": {
+      "ready": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-multisequence-20261021\\qwen-ready-attempt3.json",
+        "bytes": 976,
+        "sha256": "e8c6266337f5eda49750e4bfc85e1b7580255bb2de5e07d83a3599daafeed382"
+      },
+      "identity": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-multisequence-20261021\\compile4\\qwen\\identity.json",
+        "bytes": 70417,
+        "sha256": "18e26f57c13ef9e0c6ec0761a5e9b781439e5b5399a3305a268f272c6cca8955"
+      },
+      "compile_result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-multisequence-20261021\\compile4\\qwen\\compile.result.json",
+        "bytes": 2200,
+        "sha256": "36baa9f96ad49a85b7a886200f230fe076c14cdabcda196c1fc1d2cc85db4c93"
+      },
+      "source": {
+        "path": "C:\\public\\project-hyle\\hyle\\tools\\qwen35_text\\main.cc",
+        "bytes": 141291,
+        "sha256": "9fe44673c74d5453c08ded73649181e5f03600d5c89439fbba23d195ad969249"
+      },
+      "object": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-multisequence-20261021\\compile4\\qwen\\qwen.obj",
+        "bytes": 4853102,
+        "sha256": "9a50321cbc3986ce5d32bf85249331142a6f4085433af09cecd09d1f8ed399e1"
+      },
+      "model_dependencies": [
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\tools\\qwen35_text\\main.cc",
+          "bytes": 141291,
+          "sha256": "9fe44673c74d5453c08ded73649181e5f03600d5c89439fbba23d195ad969249"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\tools\\qwen35_text\\session_state.h",
+          "bytes": 8471,
+          "sha256": "4cf1293d48cfc1d95e0f41fdbc694644fc1e75028b504845eefe7bfe3cb86843"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\tools\\qwen35_text\\prefix_cache.h",
+          "bytes": 18627,
+          "sha256": "ed1bd7f444fbc54a0182717785b967a35a8d40fc555bf434b5ce86d71a337baa"
+        }
+      ]
+    },
+    "probe": {
+      "ready": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-multisequence-20261021\\probe-ready-attempt2.json",
+        "bytes": 991,
+        "sha256": "1bf1c5fce441f75e6c2608f2509a1868df73d2cca432098e56667a1277e5784b"
+      },
+      "identity": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-multisequence-20261021\\compile2\\probe\\identity.json",
+        "bytes": 72012,
+        "sha256": "94707547fb06c206e81fb1e7f9be4df97b76bd977bb21393f0ecf6ac91f3d5b9"
+      },
+      "compile_result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-multisequence-20261021\\compile2\\probe\\compile.result.json",
+        "bytes": 2218,
+        "sha256": "865292fe41cbadbb98e79338feebb1bedc717dad32c77c8d725f2eefdc68eac0"
+      },
+      "source": {
+        "path": "C:\\public\\project-hyle\\hyle\\tools\\qwen35_text\\retirement_probe.cc",
+        "bytes": 19083,
+        "sha256": "c2ded62293f564a9f6dabedce74481bf5eece9cd659b64e8bc6d4ce3d27349d4"
+      },
+      "object": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-multisequence-20261021\\compile2\\probe\\probe.obj",
+        "bytes": 5084772,
+        "sha256": "7aefbae2748e78288d0189b3d8412781cd92252abcea8063426aed440a925a27"
+      },
+      "model_dependencies": [
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\tools\\qwen35_text\\main.cc",
+          "bytes": 141291,
+          "sha256": "9fe44673c74d5453c08ded73649181e5f03600d5c89439fbba23d195ad969249"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\tools\\qwen35_text\\session_state.h",
+          "bytes": 8471,
+          "sha256": "4cf1293d48cfc1d95e0f41fdbc694644fc1e75028b504845eefe7bfe3cb86843"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\tools\\qwen35_text\\prefix_cache.h",
+          "bytes": 18627,
+          "sha256": "ed1bd7f444fbc54a0182717785b967a35a8d40fc555bf434b5ce86d71a337baa"
+        }
+      ]
+    },
+    "batch-probe": {
+      "ready": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-multisequence-20261021\\batch-probe-ready-attempt2.json",
+        "bytes": 1010,
+        "sha256": "ce85f1ae29b13c88014d3223a7e86aa3675421f1aa348aee5746e99a8fdfe177"
+      },
+      "identity": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-multisequence-20261021\\compile2\\batch-probe\\identity.json",
+        "bytes": 72045,
+        "sha256": "c4fd1fa46205ba99ea8e6e5500c96c0688ea1e0779bb331e2830f83b4eb68e3d"
+      },
+      "compile_result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-multisequence-20261021\\compile2\\batch-probe\\compile.result.json",
+        "bytes": 2249,
+        "sha256": "87eeb99c1fe083df695cb67ffda4f0dfec9fe14de85e47acb8a39e51173ee9a5"
+      },
+      "source": {
+        "path": "C:\\public\\project-hyle\\hyle\\tools\\qwen35_text\\batch_probe.cc",
+        "bytes": 26728,
+        "sha256": "c90fddc477e8aa7105846ae0040d67c6562a202f587def9ab3e2ae466a4ffd01"
+      },
+      "object": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-multisequence-20261021\\compile2\\batch-probe\\batch-probe.obj",
+        "bytes": 5181695,
+        "sha256": "38e9a78c19b71bfd4fb19ff6736116776e18e2b76e298dc92a0665a62aa36372"
+      },
+      "model_dependencies": [
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\tools\\qwen35_text\\main.cc",
+          "bytes": 141291,
+          "sha256": "9fe44673c74d5453c08ded73649181e5f03600d5c89439fbba23d195ad969249"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\tools\\qwen35_text\\session_state.h",
+          "bytes": 8471,
+          "sha256": "4cf1293d48cfc1d95e0f41fdbc694644fc1e75028b504845eefe7bfe3cb86843"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\tools\\qwen35_text\\prefix_cache.h",
+          "bytes": 18627,
+          "sha256": "ed1bd7f444fbc54a0182717785b967a35a8d40fc555bf434b5ce86d71a337baa"
+        }
+      ]
+    },
+    "prefix-tests": {
+      "ready": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-multisequence-20261021\\prefix-tests-ready-attempt1.json",
+        "bytes": 1019,
+        "sha256": "c75a7531db6533f2ae9e762b1b72179c5e6758cbcd3ae7a74e740168f27bcb80"
+      },
+      "identity": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-multisequence-20261021\\compile1\\prefix-tests\\identity.json",
+        "bytes": 59956,
+        "sha256": "335564e3f7bd1d0e697602ed609c5989991a16a292efb54111d19eee5981d571"
+      },
+      "compile_result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-multisequence-20261021\\compile1\\prefix-tests\\compile.result.json",
+        "bytes": 1935,
+        "sha256": "5856689ca948f720460ac16b335c7d433fb3ae148cfa40c6b8f1518a441e1fc1"
+      },
+      "source": {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_prefix_cache_test.cc",
+        "bytes": 13740,
+        "sha256": "65afb0849d52743c74955276450f9bbd33d474356417a72c53a7a667d2bed283"
+      },
+      "object": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-multisequence-20261021\\compile1\\prefix-tests\\prefix-tests.obj",
+        "bytes": 737011,
+        "sha256": "d0d2a0744b00bccad58fccc5cecd77e943573a5a0573e3ac44ad04f57999e459"
+      },
+      "model_dependencies": [
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\tools\\qwen35_text\\prefix_cache.h",
+          "bytes": 18627,
+          "sha256": "ed1bd7f444fbc54a0182717785b967a35a8d40fc555bf434b5ce86d71a337baa"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\tools\\qwen35_text\\session_state.h",
+          "bytes": 8471,
+          "sha256": "4cf1293d48cfc1d95e0f41fdbc694644fc1e75028b504845eefe7bfe3cb86843"
+        }
+      ]
+    }
+  },
+  "current_image": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-multisequence-20261021\\qwen-link3\\qwen.exe",
+    "bytes": 139817984,
+    "sha256": "3234402ccf600b0ed102ac0ab55ddcb19deb69456781210ee8a43b1c312aad96"
+  },
+  "state_header": {
+    "path": "C:\\public\\project-hyle\\hyle\\tools\\qwen35_text\\session_state.h",
+    "bytes": 8471,
+    "sha256": "4cf1293d48cfc1d95e0f41fdbc694644fc1e75028b504845eefe7bfe3cb86843"
+  },
+  "docs": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tools\\qwen35_text\\README.md",
+      "bytes": 18918,
+      "sha256": "50c7032fe48a1fa97f6dbc5f2fbad667eab059cddc389b6440cbc85054b0b9c8"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\developer\\current-work.md",
+      "bytes": 26795,
+      "sha256": "8f7e825f622d0508835be652ef2cd4b148fe57d32527aaceacfd1f825e722b55"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\architecture\\compute-design.md",
+      "bytes": 114439,
+      "sha256": "4ec423273fbe01597c5189c1979cb3a6ef9e66ad4abf0a2e3420ab8a64183478"
+    }
+  ],
+  "reviews": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-multisequence-20261021\\review\\episode-final-review.json",
+      "bytes": 5914,
+      "sha256": "0d1761152e4e7f8c93ce0405dbce69f3edd8d9a7fd180e1dec4676aaef7a18b7"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-multisequence-20261021\\review\\runtime-comparison-final.json",
+      "bytes": 18701,
+      "sha256": "148f4b4790295b0f8e3d8b900a301f5b578b82fb35e2d06a94a9127a04ce412e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-multisequence-20261021\\review\\runtime-comparison.json",
+      "bytes": 47247,
+      "sha256": "3035b66c8471dc2ce00d1be61260e21eb039bb704f5522653d056a91cad3f458"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-multisequence-20261021\\review\\session-episode-review.json",
+      "bytes": 5270,
+      "sha256": "2519ccebc75c5aacb684326e4a8f19ea29b58a0afa97cecdbd3a5b3f8c165dca"
+    }
+  ],
+  "prior_typed_frame_manifest": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\paged-frame-reframe-2026-10-21.json",
+    "bytes": 15995,
+    "sha256": "64e7b61b6617724a5bcce649eb329bb6a7dc8c086220f2721156d8e610389de4"
+  },
+  "R1": {
+    "decision_vectors": 142,
+    "all_byte_equal": true,
+    "reference": "Same partitions, original S run2 and Q run2 raw bytes.",
+    "independent_review": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-multisequence-20261021\\review\\runtime-comparison-final.json",
+      "bytes": 18701,
+      "sha256": "148f4b4790295b0f8e3d8b900a301f5b578b82fb35e2d06a94a9127a04ce412e"
+    },
+    "finite": "Final raw matches the independently finite-checked Q run2 vectors; no second numeric decode in publisher."
+  },
+  "B2": {
+    "pair_metrics": 152,
+    "byte_equal_pairs": 1,
+    "non_byte_equal_pairs": 151,
+    "observation": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-multisequence-20261021\\batch-probe-run2\\data\\observation.json",
+      "bytes": 92951,
+      "sha256": "ea47495bcd71ab19618b44137fc4e09ed52619dd736903107d6277717804140e"
+    },
+    "result": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-multisequence-20261021\\batch-probe-run2\\result.json",
+      "bytes": 964,
+      "sha256": "2a9c0e57868095ea8cfc0ffbb1d45f9ca22ef95581c6e889470c268e2ae94a0f"
+    },
+    "greedy_ids": [
+      279,
+      1472,
+      7022,
+      7022
+    ],
+    "retry_ids": [
+      279,
+      1472
+    ],
+    "all_finite": true,
+    "numerical_tolerance_policy": null,
+    "hidden_max_abs": 0.25,
+    "logits_max_abs": 0.140625,
+    "native_cancel": "One member stops the shared B2 episode, drops its live Completion, retains both candidates/heads/backing while Queue blocked, actual retirement4\u21922versions, same R2 carrier slot retries.",
+    "version_counts": [
+      2,
+      4,
+      2
+    ],
+    "managed_backing_bytes": 220938288,
+    "no_native_preemption": true
+  },
+  "original_retirement": {
+    "result": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-multisequence-20261021\\probe-run2\\result.json",
+      "bytes": 1061,
+      "sha256": "446e8dedde4d0e357fd2d071c8ed94ab1d74c180dc0afc8749949d3bad67841f"
+    },
+    "observation": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-multisequence-20261021\\probe-run2\\observation.json",
+      "bytes": 1124,
+      "sha256": "0e266e74b6ae2d58f0cb1a5e1e75904a801dd906e74746af5f5cffc94fa835a1"
+    }
+  },
+  "prefix_host_tests": {
+    "result": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-multisequence-20261021\\prefix-tests-run1\\result.json",
+      "bytes": 864,
+      "sha256": "b5fdd0de4e3dd3cc2236bdd5731cc2ff0c51d8f8837d064b55857752db47acf5"
+    },
+    "xml": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-multisequence-20261021\\prefix-tests-run1\\gtest.xml",
+      "bytes": 1719,
+      "sha256": "63f48372b16109e01c3f0d64019215dc14da4c5e09e68cded316b2cc7c2fda33"
+    },
+    "tests": 5
+  },
+  "history": "All original commands, failed compilations, parser false alarms, raw logs and older reviews are retained unchanged; old run2 R1 and B2run1 claims are not relabeled as final.",
+  "raw_storage": {
+    "final_R1_vectors": 142,
+    "final_B2_vectors": 304,
+    "old_equal_raw_aliases": 446,
+    "reference_map": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-multisequence-20261021\\finalrecords\\final.json",
+      "bytes": 442915,
+      "sha256": "1d588ec4191390ebc59a7c870395e303ee7308e404ae7aea2f2541b3027e79f1"
+    }
+  },
+  "reproduction": "Use archived source/before/diffs/compile sourceDependencies and exact command/link/runtime records with the fixed retained compiler/SDK/object/native-DLL caches. SDKs, objects, models and executables are not duplicated.",
+  "cleanup": "prepare_cleanup.py only prepares exact image/map/import/export leaf identities; it never deletes or writes root test.ps1.",
+  "limits": [
+    "B2 compares actual hidden/logits/36 state vectors, but 151 pairs differ bitwise. Finite values/equal greedy IDs do not approve a full-model cross-batch numeric tolerance or quality policy.",
+    "The non-timing native B2 probe is one finite CUDA B2/T1 case plus one real blocked cancel/drop/retire/retry case, not concurrent throughput, all models/quantization, CLI scheduling or other native backend coverage.",
+    "R1 byte equality applies to142decision vectors, not every hidden state byte or a new performance result.",
+    "No build/inference/device query or deletion is performed by publication. Existing outputs and revision records are never overwritten."
+  ],
+  "archives": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\qwen-multisequence-2026-10-22.part01.zip",
+      "bytes": 93982882,
+      "sha256": "6c45a153fb2b0f9875a4f3be529df53a59c4b1e78f0a82c8d4a1b4224090dd17"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\qwen-multisequence-2026-10-22.part02.zip",
+      "bytes": 90593859,
+      "sha256": "15650218e78839df69d5b8de3ff93ff7db5674d12e114a1b7feb5de63975cd83"
+    }
+  ],
+  "archive_layout": "Extract every part ZIP into the same directory. Original evidence entries and all raw bytes are retained; only physical archive layout changed.",
+  "superseded_single_archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\qwen-multisequence-2026-10-22.zip",
+    "bytes": 184566457,
+    "sha256": "90b31230948c01daf9bee84f85dd947b2ef37166e01b9d1a780a9cbe13f51149"
+  }
+}

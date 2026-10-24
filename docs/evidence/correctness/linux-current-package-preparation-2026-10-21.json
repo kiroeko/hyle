@@ -1,0 +1,296 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-21",
+  "scope": "Current Linux CPU+CUDA graph/graph_progress static package preparation only: source synchronization, real configuration and Ninja dry-run.",
+  "status": "configured_and_dry_run_only",
+  "current_installed_sdk_verified": false,
+  "installed_consumer_executed": false,
+  "product_builds": 0,
+  "native_sdk_builds": 0,
+  "gpu_compute_runs": 0,
+  "dependency_downloads": 0,
+  "configuration": {
+    "command": [
+      "cmake",
+      "-S",
+      "/root/hyle-scratch/active-cpu-z/source",
+      "-B",
+      "/root/hyle-scratch/active-cpu-z/build",
+      "-G",
+      "Ninja",
+      "-UHYLE_COMPUTE_CPU",
+      "-UHYLE_COMPUTE_CUDA",
+      "-UHYLE_COMPUTE_APPLE",
+      "-UHYLE_COMPUTE_VULKAN",
+      "-UHYLE_COMPUTE_ONEDNN",
+      "-UHYLE_COMPUTE_TORCH_CPU",
+      "-DHYLE_COMPONENTS=graph;graph_progress",
+      "-DHYLE_COMPUTE_ROUTES=cpu;cuda",
+      "-DHYLE_STATIC=ON",
+      "-DHYLE_INSTALL=ON",
+      "-DHYLE_BUILD_TESTS=OFF",
+      "-DHYLE_BUILD_BENCH=OFF",
+      "-DFETCHCONTENT_FULLY_DISCONNECTED=ON",
+      "-DFETCHCONTENT_UPDATES_DISCONNECTED=ON",
+      "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+      "-DCMAKE_INSTALL_PREFIX=/root/hyle-scratch/active-cpu-z/delivery1-linux-current-2026-10-21/static-sdk-installed"
+    ],
+    "exit_code": 0,
+    "seconds": 60.64659667015076,
+    "attempts": 9,
+    "failed_attempts": 8,
+    "products": [
+      "graph",
+      "graph_progress"
+    ],
+    "routes": [
+      "cpu",
+      "cuda"
+    ],
+    "static": true
+  },
+  "environment": {
+    "wsl_distribution": "Ubuntu-24.04",
+    "cpu": "Intel Core i9-13900K",
+    "gpu_read_only_query": "NVIDIA GeForce RTX 4070, driver 617.14, 12282 MiB",
+    "cxx": "GCC 14.2.0",
+    "cuda": "13.3.73",
+    "cuda_host": "GCC 13.3.0",
+    "cmake": "3.28.3",
+    "ninja": "1.11.1",
+    "linux_free_bytes": 839480406016
+  },
+  "sync": {
+    "destination": "/root/hyle-scratch/active-cpu-z/source",
+    "backup": "/root/hyle-scratch/active-cpu-z/delivery1-linux-current-2026-10-21/before-overlay",
+    "initial_changed_files": 558,
+    "initial_copied_bytes": 10888708,
+    "validation_conflicts_preserved": 20,
+    "selected_files": 1147,
+    "selected_bytes": 25917452,
+    "selected_current_sha_drift": 0,
+    "extra_public_headers": 0,
+    "deleted_files": 0,
+    "reverse_sync": false,
+    "complete_repo_or_sdk_copy": false,
+    "modules": [
+      "compute",
+      "compute_backend_cpu",
+      "compute_backend_cuda",
+      "compute_batch",
+      "compute_ggml_runtime",
+      "compute_ops",
+      "compute_provider_cublas",
+      "compute_provider_cuda",
+      "compute_provider_flashinfer",
+      "compute_provider_ggml",
+      "compute_provider_ggml_cuda",
+      "compute_provider_native",
+      "compute_provider_onednn",
+      "compute_provider_torch_cuda",
+      "compute_route_cpu",
+      "compute_route_cuda",
+      "container",
+      "container_intrusive",
+      "container_queue",
+      "core",
+      "error",
+      "graph",
+      "graph_batch",
+      "graph_progress",
+      "graph_provider_ggml_cuda",
+      "graph_provider_onednn",
+      "graph_route_cpu",
+      "graph_route_cpu_cuda",
+      "graph_route_cuda",
+      "math",
+      "mem",
+      "mem_vm",
+      "platform",
+      "platform_fs",
+      "platform_thread",
+      "sched",
+      "simd",
+      "time",
+      "timer_queue",
+      "util_core"
+    ]
+  },
+  "fixes": [
+    "Assign batch_output_extent.h to compute_batch rather than creating a reverse compute dependency.",
+    "Declare actual implementation-only edges: compute->container, graph_route_cpu/cuda->compute, compute_provider_cublas/ggml_cuda->container.",
+    "Correct only mlx_cpu_quant tree identity to official CMake case-sensitive relative-path ordering; vendor bytes, upstream revision and license identities unchanged.",
+    "Register shared mlx_cuda_quant license metadata once through existing foundation/CONSUMER_COMPONENTS; preserve both implementations and both audits."
+  ],
+  "source_changes": [
+    {
+      "path": "CMakeLists.txt",
+      "before_sha256": "a49ccf177a183ce1c5d262f410e39c1190522b48349eb39c8915a35440c1edfe",
+      "current_sha256": "7631afef6c1eb58fb4036c2c3bdef67649226ab1692ca998fbcdf19284836ba0",
+      "bytes": 23335
+    },
+    {
+      "path": "cmake/HyleComponents.cmake",
+      "before_sha256": "2b9498651c25392b238a13a4b07c854647791b94e75f37c7ef3e87b426b595f1",
+      "current_sha256": "4b5a1702e8931c0645a821ea029a1fcd5234f723037f2d037600aa37fc9233e4",
+      "bytes": 51790
+    },
+    {
+      "path": "cmake/HyleDependencyLock.json",
+      "before_sha256": "6dd8481b3f0c3cec0eec1d484ecf6944ed23fdc448ab3844fb914dbbcb35ecf2",
+      "current_sha256": "88d6abfd8da5f71eb0e76cd167bf2056d3c4a15d9af1765ac022cce80b9abe65",
+      "bytes": 77554
+    },
+    {
+      "path": "src/compute_provider_cuda/CMakeLists.txt",
+      "before_sha256": "2a5890fc9de9874640cb1370f3f8fc7d1a3bfa5411c45c9392919ab31de6337a",
+      "current_sha256": "e310c6c9c7db9a7356b429bac8a208b1e8f1713dd318b9c6fa01bd6c8326fda3",
+      "bytes": 6223
+    },
+    {
+      "path": "src/compute_provider_torch_cuda/CMakeLists.txt",
+      "before_sha256": "85660235d73040165206933b336dd057fffa5b516c7924e06b0d1329256a36d0",
+      "current_sha256": "5fc9ed8d9a38d81048a5494541f3200a9c8a1fe1f3483509c770d783230e5f26",
+      "bytes": 5374
+    }
+  ],
+  "registry_probe": {
+    "configure_exit_code": 0,
+    "language": "NONE",
+    "cases": [
+      "only native CUDA",
+      "only Torch CUDA",
+      "both",
+      "neither"
+    ],
+    "checks": "Exactly one dependency for either consumer, zero for neither; original two license destinations retained.",
+    "sdk_builds": 0
+  },
+  "generated_package_projection": {
+    "index": {
+      "path": "/root/hyle-scratch/active-cpu-z/build/HylePackageIndex.cmake",
+      "sha256": "d6ae1633f3b0b0b180d8bfe2da77cf9a0955154a6c5784cd171127facc040a38"
+    },
+    "install_script": {
+      "path": "/root/hyle-scratch/active-cpu-z/build/cmake_install.cmake",
+      "sha256": "152fd24b41b2ae0b939b9933a60b382f72e18e248dd31a381fab7e5dc9b8998e"
+    },
+    "mlx_group_count": 1,
+    "graph_mlx_group_count": 1,
+    "graph_has_both_consumers": true,
+    "license_install_lines": [
+      {
+        "line": 2916,
+        "text": "  file(INSTALL DESTINATION \"${CMAKE_INSTALL_PREFIX}/share/licenses/Hyle\" TYPE FILE RENAME \"mlx_cuda_quant-LICENSE\" FILES \"/root/hyle-scratch/active-cpu-z/source/third_party/mlx_cuda_quant/LICENSE\")"
+      },
+      {
+        "line": 2920,
+        "text": "  file(INSTALL DESTINATION \"${CMAKE_INSTALL_PREFIX}/share/licenses/Hyle\" TYPE FILE RENAME \"mlx_cuda_quant-NOTICE.md\" FILES \"/root/hyle-scratch/active-cpu-z/source/third_party/mlx_cuda_quant/NOTICE.md\")"
+      }
+    ],
+    "build_ninja_sha256": "7e533f1d6c85e1c7aadb325cb3889a74d5cd23cffbd7b5f358462ef6c4ae5824",
+    "disk_free_bytes": 839480406016,
+    "installed_current_sdk_verified": false
+  },
+  "dry_run": {
+    "canonical_command": [
+      "ninja",
+      "-C",
+      "/root/hyle-scratch/active-cpu-z/build",
+      "-n",
+      "hyle_graph",
+      "hyle_graph_progress"
+    ],
+    "canonical_result": "exit0; schedules glob verification and CMake regeneration only",
+    "snapshot_command": [
+      "ninja",
+      "-C",
+      "/root/hyle-scratch/active-cpu-z/build",
+      "-f",
+      "/root/hyle-scratch/active-cpu-z/delivery1-linux-current-2026-10-21/build-current.snapshot.ninja",
+      "-n",
+      "all"
+    ],
+    "snapshot_manifest_sha256": "7e533f1d6c85e1c7aadb325cb3889a74d5cd23cffbd7b5f358462ef6c4ae5824",
+    "snapshot_byte_identical": true,
+    "reason": "Canonical ninja -n only schedules glob verification and CMake regeneration; a byte-identical generated-manifest snapshot selects the same targets and cached build log without executing generator checks.",
+    "scope": "all targets in current selected static SDK; graph core alone omits route libraries",
+    "planned_jobs": 475,
+    "counts": {
+      "CXX": 255,
+      "C": 10,
+      "CUDA": 170,
+      "link": 40
+    },
+    "owner_counts": {
+      "Hyle": {
+        "CXX": 218,
+        "CUDA": 24,
+        "link": 32
+      },
+      "ggml": {
+        "CUDA": 146,
+        "C": 6,
+        "CXX": 20,
+        "link": 4
+      },
+      "ggml_cpu_program": {
+        "C": 3,
+        "CXX": 13,
+        "link": 1
+      },
+      "mimalloc": {
+        "C": 1,
+        "link": 1
+      },
+      "oneDNN": {
+        "CXX": 4,
+        "link": 2
+      }
+    }
+  },
+  "dependency_cache": {
+    "root": "/root/.cache/hyle/dependencies/v1",
+    "producer_build": "/root/hyle-scratch/active-cpu-z/build",
+    "old_selected_graph": "Only relocated SDKs and consumer builds remain; the old producer build directories are absent.",
+    "torch_cpu": "Reuse locked Linux-8dea5bcf.../libtorch",
+    "torch_cuda": "Reuse locked Linux-02c7258e...-fab2a30375b0b92c",
+    "native_source_comparison": {
+      "before": "/root/hyle-scratch/active-cpu-z/build/src/compute_ggml_runtime/source-f99368c68335266b",
+      "current": "/root/hyle-scratch/active-cpu-z/build/src/compute_ggml_runtime/source-b9efc57d68f92646",
+      "same_files": 2241,
+      "changed_files": 22,
+      "normalized_changed_files": 22
+    },
+    "conclusion": "Not merely ordinary Hyle object work. The current Ninja plan schedules 146 ggml CUDA units and original CPU units; 22 native source files truly differ, including common CUDA headers. Do not silently relabel this as a small SDK-free build. Most existing oneDNN and the locked Torch runtime caches remain reusable."
+  },
+  "next_step": {
+    "executed": false,
+    "decision": "Root must explicitly choose the necessary current ggml/native rebuild scope before the mixed installed consumer can be claimed current.",
+    "build_command": [
+      "cmake",
+      "--build",
+      "/root/hyle-scratch/active-cpu-z/build",
+      "--parallel",
+      "2"
+    ],
+    "install_command": [
+      "cmake",
+      "--install",
+      "/root/hyle-scratch/active-cpu-z/build"
+    ],
+    "consumer_source": "/root/hyle-scratch/active-cpu-z/source/samples/package/graph/cpu_cuda",
+    "consumer_steps": [
+      "After a complete current build, install into the configured fixed-workroot prefix.",
+      "Relocate that installed prefix within the same fixed workroot, without copying a complete SDK cache.",
+      "Configure the existing graph/cpu_cuda consumer with CMAKE_PREFIX_PATH at the relocated prefix; build and execute only when root schedules CUDA."
+    ]
+  },
+  "limitations": [
+    "No current installed SDK, relocation, linked consumer or Linux numerical result is claimed.",
+    "This validation source copy has no .git; the source-package target is unavailable here. Windows remains the product source authority.",
+    "The four-case registry probe checks package metadata only, not GPU execution.",
+    "The native source comparison does not prove that old binary objects are reusable for changed headers or commands."
+  ],
+  "evidence_archive": "linux-current-package-preparation-2026-10-21.zip"
+}

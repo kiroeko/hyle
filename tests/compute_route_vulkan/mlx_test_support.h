@@ -2,6 +2,8 @@
 
 #include "hyle/compute/model_ops.h"
 #include "tensor_test_support.h"
+#include "../compute_models/mlx_affine_bitstream.h"
+#include "../compute_models/mlx_grouped_shared_fixture.h"
 
 namespace vulkan_mlx_test {
 namespace c = hyle::compute;
@@ -24,6 +26,7 @@ inline float fp8(std::uint8_t code) {
 struct Inputs final {
   Format format;
   Kind kind;
+  unsigned bits;
   int n, k, group, experts, rows;
   c::DataType activation_type, scale_type, dtype;
   c::Operation operation;
@@ -35,19 +38,23 @@ struct Inputs final {
   std::vector<std::int32_t> ids;
 
   Inputs(Format fmt, Kind mode, c::DataType type, int g = 32, int seed = 0,
-         c::DataType scale = c::DataType::kUnknown, int width = 0)
-      : format(fmt), kind(mode), n(mode == Kind::kEmbedding ? 7 : 5),
+         c::DataType scale = c::DataType::kUnknown, int width = 0,
+         unsigned bit_width = 4)
+      : format(fmt), kind(mode),
+        bits(fmt == Format::kMxfp8 ? 8U : fmt == Format::kMxfp4 ? 4U : bit_width),
+        n(mode == Kind::kEmbedding ? 7 : 5),
         k(width ? width : 3 * g), group(g), experts(mode == Kind::kGrouped ? 3 : 1),
         rows(mode == Kind::kGrouped ? 4 : mode == Kind::kEmbedding ? 3 : 2),
         activation_type(type), scale_type(scale == c::DataType::kUnknown ? type : scale),
         dtype(mode == Kind::kEmbedding ? scale_type
-              : fmt == Format::kAffine4 && type != scale_type ? c::DataType::kFloat32 : type),
-        operation(c::Operation::custom(c::model_ops::MlxQuantized{fmt, mode, static_cast<std::uint32_t>(g)})) {
+              : fmt == Format::kAffine && type != scale_type ? c::DataType::kFloat32 : type),
+        operation(c::Operation::custom(c::model_ops::MlxQuantized{
+            fmt, mode, bits, static_cast<std::uint32_t>(g)})) {
     const auto add = [&](c::TensorDesc desc, std::span<const std::uint64_t> raw) {
       descriptions.push_back(desc);payloads.push_back(t::payload(desc, raw));
     };
     const bool embedding = kind == Kind::kEmbedding, grouped = kind == Kind::kGrouped;
-    const bool affine = format == Format::kAffine4;
+    const bool affine = format == Format::kAffine;
     if (!embedding) {
       activation.resize(rows * k);std::vector<std::uint64_t> raw(activation.size());
       for (std::size_t i = 0; i < raw.size(); ++i) {
@@ -56,16 +63,18 @@ struct Inputs final {
       }
       add(grouped ? t::dense(type, {2, 2, k}) : t::dense(type, {rows, k}), raw);
     }
-    const auto bits = format == Format::kMxfp8 ? 8 : 4, pack = 32 / bits;
-    codes.resize(experts * n * k);std::vector<std::uint64_t> words(codes.size() / pack, 0);
+    codes.resize(experts * n * k);
     constexpr std::array<std::uint8_t, 8> fp8_codes{0x30, 0x38, 0x40, 0xb0, 0xb8, 0xc0, 0x00, 0x80};
     for (std::size_t i = 0; i < codes.size(); ++i) {
-      codes[i] = bits == 8 ? fp8_codes[(i * 3 + seed) % fp8_codes.size()]
-                           : static_cast<std::uint8_t>((i * 7 + i / k * 3 + seed * 5) % 16);
-      words[i / pack] |= static_cast<std::uint64_t>(codes[i]) << (bits * (i % pack));
+      codes[i] = format == Format::kMxfp8 ? fp8_codes[(i * 3 + seed) % fp8_codes.size()]
+          : static_cast<std::uint8_t>((i * 7 + i / k * 3 + seed * 5) % (std::size_t{1} << bits));
     }
-    add(grouped ? t::dense(c::DataType::kUInt32, {experts, n, k / pack})
-                : t::dense(c::DataType::kUInt32, {n, k / pack}), words);
+    const std::vector<std::uint32_t> logical(codes.begin(), codes.end());
+    const auto packed = mlx_affine_test::pack(logical, experts * n, k, bits);
+    const std::vector<std::uint64_t> words(packed.begin(), packed.end());
+    const auto word_columns = std::int64_t(k / 32) * bits;
+    add(grouped ? t::dense(c::DataType::kUInt32, {experts, n, word_columns})
+                : t::dense(c::DataType::kUInt32, {n, word_columns}), words);
     const auto count = experts * n * (k / group);
     std::vector<std::uint64_t> scale_raw(count), bias_raw(count);
     if (affine) {
@@ -97,7 +106,7 @@ struct Inputs final {
 
   void calculate() {
     constexpr std::array<float, 16> fp4{0, .5, 1, 1.5, 2, 3, 4, 6, -0.0f, -.5, -1, -1.5, -2, -3, -4, -6};
-    const bool affine = format == Format::kAffine4, embedding = kind == Kind::kEmbedding;
+    const bool affine = format == Format::kAffine, embedding = kind == Kind::kEmbedding;
     expected.assign(rows * (embedding ? k : n), 0);
     for (int r = 0; r < rows; ++r) {
       const auto expert = kind == Kind::kGrouped ? ids[r] : 0;
@@ -138,6 +147,14 @@ struct Inputs final {
     }
   }
 
+  void repack() {
+    const std::vector<std::uint32_t> logical(codes.begin(), codes.end());
+    const auto packed = mlx_affine_test::pack(logical, experts * n, k, bits);
+    const std::vector<std::uint64_t> words(packed.begin(), packed.end());
+    const auto port = kind == Kind::kEmbedding ? 0U : 1U;
+    payloads[port] = t::payload(descriptions[port], words);
+  }
+
   std::vector<v::Tensor> upload(const v::Context &context) const {
     std::vector<v::Tensor> result;
     for (std::size_t i = 0; i < descriptions.size(); ++i)
@@ -156,16 +173,65 @@ struct Inputs final {
 };
 
 template <class Prepare>
+void affine_widths(Prepare prepare) {
+  auto context = vulkan_test::context().value();
+  unsigned width_index = 0;
+  for (unsigned bits : {4U, 5U, 6U, 8U}) {
+    unsigned kind_index = 0;
+    for (auto kind : {Kind::kLinear, Kind::kGrouped, Kind::kEmbedding}) {
+      const auto type = types[(width_index + kind_index) % types.size()];
+      constexpr std::array groups{32, 64, 128};
+      const int group = groups[(width_index + 2 * kind_index) % groups.size()];
+      SCOPED_TRACE(::testing::Message() << "bits=" << bits << " kind=" << int(kind)
+          << " type=" << int(type) << " group=" << group);
+      Inputs first(Format::kAffine, kind, type, group, 0,
+                   c::DataType::kUnknown, 0, bits);
+      Inputs second(Format::kAffine, kind, type, group, 1,
+                    c::DataType::kUnknown, 0, bits);
+      EXPECT_NE(std::find(first.codes.begin(), first.codes.end(),
+                          static_cast<std::uint8_t>((1U << bits) - 1)), first.codes.end());
+      auto program = prepare(context, first.operation, first.descriptions);
+      ASSERT_TRUE(program) << program.error().message();
+      auto slot = program->create_invocation().value();
+      ASSERT_TRUE(slot.bind(first.upload(context)).ok());
+      { auto done = slot.submit().value();auto result = done.wait();
+        ASSERT_TRUE(result) << result.error().message();
+        first.check(context, result->get()->tensors()[0]); }
+      ASSERT_TRUE(slot.bind(second.upload(context)).ok());
+      { auto done = slot.submit().value();auto result = done.wait();
+        ASSERT_TRUE(result) << result.error().message();
+        second.check(context, result->get()->tensors()[0]); }
+      if (kind != Kind::kLinear) {
+        auto inputs = second.upload(context);
+        auto ids = second.ids;ids.front() = -1;
+        inputs.back() = context.upload(second.descriptions.back(),
+                                      std::as_bytes(std::span(ids))).value();
+        ASSERT_TRUE(slot.bind(inputs).ok());
+        { auto done = slot.submit().value();auto result = done.wait();
+          ASSERT_FALSE(result);EXPECT_TRUE(result.error().IsOutOfRange()); }
+        auto recovered = program->create_invocation().value();
+        ASSERT_TRUE(recovered.bind(first.upload(context)).ok());
+        { auto done = recovered.submit().value();auto result = done.wait();
+          ASSERT_TRUE(result) << result.error().message();
+          first.check(context, result->get()->tensors()[0]); }
+      }
+      ++kind_index;
+    }
+    ++width_index;
+  }
+}
+
+template <class Prepare>
 void batch(Prepare prepare) {
   hyle::mem::QuotaAllocator quota(hyle::mem::system_allocator(), 384 * 1024 * 1024);
   {
     auto context = vulkan_test::context(&quota).value();
-    for (auto format : {Format::kAffine4, Format::kMxfp4, Format::kMxfp8})
+    for (auto format : {Format::kAffine, Format::kMxfp4, Format::kMxfp8})
       for (auto kind : {Kind::kLinear, Kind::kGrouped, Kind::kEmbedding}) {
-        if (kind == Kind::kEmbedding && format != Format::kAffine4) continue;
+        if (kind == Kind::kEmbedding && format != Format::kAffine) continue;
         for (auto dtype : types)
           for (int group : {32, 64, 128}) {
-            if (format != Format::kAffine4 && group != 32) continue;
+            if (format != Format::kAffine && group != 32) continue;
             SCOPED_TRACE(::testing::Message() << static_cast<int>(format) << '/' << static_cast<int>(kind)
                 << '/' << static_cast<int>(dtype) << '/' << group);
             Inputs a(format, kind, dtype, group), b(format, kind, dtype, group, 1);
@@ -206,11 +272,15 @@ void batch(Prepare prepare) {
       }
     for (auto a : types) for (auto s : types) {
       if (a == s) continue;
-      Inputs data(Format::kAffine4, Kind::kGrouped, a, 64, 1, s);
-      auto program = prepare(context, data.operation, data.descriptions).value();
-      auto slot = program.create_invocation().value();ASSERT_TRUE(slot.bind(data.upload(context)).ok());
-      auto done = slot.submit().value();auto result = done.wait();ASSERT_TRUE(result) << result.error().message();
-      data.check(context, result->get()->tensors()[0]);
+      for (auto kind : {Kind::kLinear, Kind::kGrouped}) {
+        SCOPED_TRACE(::testing::Message() << static_cast<int>(kind) << '/'
+            << static_cast<int>(a) << '/' << static_cast<int>(s));
+        Inputs data(Format::kAffine, kind, a, 64, 1, s);
+        auto program = prepare(context, data.operation, data.descriptions).value();
+        auto slot = program.create_invocation().value();ASSERT_TRUE(slot.bind(data.upload(context)).ok());
+        auto done = slot.submit().value();auto result = done.wait();ASSERT_TRUE(result) << result.error().message();
+        data.check(context, result->get()->tensors()[0]);
+      }
     }
     EXPECT_TRUE(context.close().ok());
   }
@@ -220,8 +290,8 @@ void batch(Prepare prepare) {
 template <class Prepare>
 void constants(Prepare prepare) {
   auto context = vulkan_test::context().value();
-  Inputs a(Format::kAffine4, Kind::kGrouped, c::DataType::kBFloat16, 64);
-  Inputs b(Format::kAffine4, Kind::kGrouped, c::DataType::kBFloat16, 64, 1);
+  Inputs a(Format::kAffine, Kind::kGrouped, c::DataType::kBFloat16, 64);
+  Inputs b(Format::kAffine, Kind::kGrouped, c::DataType::kBFloat16, 64, 1);
   b.codes = a.codes;b.scales = a.scales;b.biases = a.biases;b.calculate();
   const auto resident = a.upload(context), changed = b.upload(context);
   auto program = prepare(context, a.operation, resident);
@@ -239,6 +309,49 @@ void constants(Prepare prepare) {
     auto work = second.submit().value();auto result = work.wait();ASSERT_TRUE(result) << result.error().message();
     (pass % 2 ? a : b).check(context, result->get()->tensors()[0]);a.check(context, retained);
     EXPECT_EQ(t::bytes(context, resident[1]), a.payloads[1]);
+  }
+}
+
+template<class Prepare>
+void grouped_shared_activation(Prepare prepare) {
+  auto context = vulkan_test::context().value();
+  for (const auto type : {c::DataType::kFloat32, c::DataType::kBFloat16}) {
+    for (const bool zero_slot : {false, true}) {
+      SCOPED_TRACE(static_cast<int>(type));
+      SCOPED_TRACE(zero_slot);
+      mlx_grouped_shared_test::Case data(type, zero_slot);
+      auto prepared = prepare(context, data.operation, data.descriptions);
+      ASSERT_TRUE(prepared) << prepared.error().message();
+      auto slot = prepared->create_invocation().value();
+      std::vector<v::Tensor> inputs;
+      for (std::size_t port = 0; port < data.payloads.size(); ++port)
+        inputs.push_back(context.upload(data.descriptions[port], data.payloads[port]).value());
+      for (int pass = 0; pass < 2; ++pass) {
+        if (pass) {
+          std::vector<float> changed(zero_slot ? 144 : 128, -777.F);
+          std::fill_n(changed.begin(), 64, 2.F);
+          std::fill_n(changed.begin() + (zero_slot ? 80 : 64), 64, 4.F);
+          const auto raw = mlx_grouped_shared_test::floating(type, changed);
+          inputs[0] = context.upload(data.descriptions[0], raw).value();
+        }
+        ASSERT_TRUE(slot.bind(inputs).ok());
+        auto work = slot.submit().value();
+        auto result = work.wait();
+        ASSERT_TRUE(result) << result.error().message();
+        const auto actual = t::values(context, result->get()->tensors()[0]);
+        ASSERT_EQ(actual.size(), data.expected.size());
+        for (std::size_t i = 0; i < actual.size(); ++i)
+          EXPECT_EQ(actual[i], data.expected[i] * float(pass + 1));
+      }
+      const std::array<std::int32_t, 6> invalid{-1, 0, 2, 1, 1, 0};
+      inputs.back() = context.upload(data.descriptions.back(), std::as_bytes(std::span(invalid))).value();
+      ASSERT_TRUE(slot.bind(inputs).ok());
+      auto work = slot.submit().value();
+      auto failed = work.wait();
+      ASSERT_FALSE(failed);
+      EXPECT_TRUE(failed.error().IsOutOfRange());
+      EXPECT_FALSE(slot.submit());
+    }
   }
 }
 } // namespace vulkan_mlx_test

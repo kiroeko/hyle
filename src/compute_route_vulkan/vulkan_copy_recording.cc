@@ -24,6 +24,8 @@ struct CopyRecording final {
   std::shared_ptr<Run> run;
   CopyBatchOptions limits;
   CopyBatchReport report;
+  CopyRecordingMode mode = CopyRecordingMode::kOnce;
+  Status replay_failure;
   bool prepared = false;
   bool prefix_marker = false;
   CopyArray<cd::PhysicalCopyResource> physical;
@@ -44,6 +46,7 @@ std::uint64_t key(VkBuffer buffer) noexcept {
 Status mutable_recording(const CopyRecording &recording) noexcept {
   if (recording.runtime->closed) return Status::FailedPrecondition("Vulkan copy Context is closed");
   if (!recording.runtime->failure.ok()) return recording.runtime->failure;
+  if (!recording.replay_failure.ok()) return recording.replay_failure;
   const auto &run = *recording.run;
   if (run.pending || run.completion_owner || run.observers || run.retiring)
     return Status::Unavailable("Vulkan copy phase is retained");
@@ -70,7 +73,8 @@ Result<std::shared_ptr<CopyRecording>> prepare_copy_recording(const Context &con
   return prepare_copy_recording_runtime(Access::runtime(context), capacity, allocator);
 }
 Result<std::shared_ptr<CopyRecording>> prepare_copy_recording_runtime(const std::shared_ptr<Runtime> &runtime,
-    std::uint32_t capacity, mem::AllocatorRef allocator, std::size_t max_bytes) noexcept {
+    std::uint32_t capacity, mem::AllocatorRef allocator, std::size_t max_bytes,
+    CopyRecordingMode mode) noexcept {
   if (!runtime || !allocator.valid() || capacity == 0 || capacity > UINT32_MAX / 2 || max_bytes == 0)
     return std::unexpected(Status::InvalidArgument("Vulkan copy capacity/allocator is invalid"));
   std::lock_guard lock(runtime->mutex);
@@ -79,6 +83,7 @@ Result<std::shared_ptr<CopyRecording>> prepare_copy_recording_runtime(const std:
   try {
     auto recording = std::allocate_shared<CopyRecording>(mem::StdAllocator<CopyRecording>(allocator), allocator);
     recording->runtime = runtime;
+    recording->mode = mode;
     recording->limits.max_resources = capacity * 2; recording->limits.max_copies = capacity;
     recording->limits.max_phases = 1;
     recording->limits.max_bytes = max_bytes;
@@ -154,7 +159,8 @@ Status bind_copy_recording(CopyRecording &recording,
   }
   const auto command = run.transfer_submission ? run.transfer_command : run.command;
   VkCommandBufferBeginInfo begin{}; begin.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-  begin.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+  begin.flags = recording.mode == CopyRecordingMode::kOnce
+      ? VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT : 0;
   HYLE_RETURN_IF_ERROR(native_status(device.fn.BeginCommandBuffer(command, &begin), "vkBeginCommandBuffer(batch copy)"));
   for (std::size_t index = 0; index < active.size(); ++index) {
     const auto &pair = active[index];
@@ -195,16 +201,45 @@ Result<Completion> submit_copy_recording(CopyRecording &recording) noexcept {
   std::lock_guard lock(recording.runtime->mutex);
   HYLE_RETURN_IF_ERROR(mutable_recording(recording));
   if (!recording.prepared) return std::unexpected(Status::FailedPrecondition("Vulkan copy ranges are not prepared"));
-  recording.prepared = false;
+  if (recording.mode == CopyRecordingMode::kOnce) recording.prepared = false;
   if (recording.report.active_copies == 0 && !recording.prefix_marker) return Completion::completed();
+  // Native retirement may release episode pins. The recording keeps the real
+  // backing owners, and these pre-sized slots need no allocation on replay.
+  for (std::size_t index = 0; index < recording.report.active_copies; ++index) {
+    recording.run->retained_buffers[2 * index] = recording.pairs[index].source;
+    recording.run->retained_buffers[2 * index + 1] = recording.pairs[index].destination;
+  }
   auto completion = submit_locked(recording.run);
   if (completion) ++recording.report.phase_completions;
+  else if (recording.mode == CopyRecordingMode::kReplayable)
+    recording.replay_failure = completion.error();
   return completion;
 }
 CopyBatchReport copy_recording_report(const CopyRecording &recording) noexcept { return recording.report; }
+Status copy_recording_reuse_gate(const CopyRecording &recording) noexcept {
+  std::lock_guard lock(recording.runtime->mutex);
+  return mutable_recording(recording);
+}
 Status copy_recording_terminal_hint(const CopyRecording &recording) noexcept {
   std::lock_guard lock(recording.runtime->mutex);
+  if (!recording.replay_failure.ok()) return recording.replay_failure;
   return recording.run->submission_failure;
+}
+Status copy_recording_write_status(const CopyRecording &recording) noexcept {
+  std::lock_guard lock(recording.runtime->mutex);
+  if (!recording.replay_failure.ok()) return recording.replay_failure;
+  const auto &run = *recording.run;
+  HYLE_RETURN_IF_ERROR(run.submission_failure);
+  HYLE_RETURN_IF_ERROR(run.observation_error);
+  HYLE_RETURN_IF_ERROR(run.terminal);
+  HYLE_RETURN_IF_ERROR(recording.runtime->failure);
+  return run.pending && run.cancelled ? Status::Cancelled("Vulkan append writer was cancelled") : Status::Ok();
+}
+Status copy_recording_retired_gate(const CopyRecording &recording) noexcept {
+  std::lock_guard lock(recording.runtime->mutex);
+  const auto &run = *recording.run;
+  return run.pending || run.completion_owner || run.observers || run.retiring
+      ? Status::Unavailable("Vulkan append recording still has actual work") : Status::Ok();
 }
 Result<CompletionPoll> poll_copy_recording(const CopyRecording &recording) noexcept { return poll_native(recording.run); }
 Status clear_copy_recording(CopyRecording &recording) noexcept {

@@ -82,6 +82,7 @@ public:
   bool valid() const noexcept { return data_ != nullptr; }
   HYLE_COMPUTE_ROUTE_VULKAN_API Status prepare_batch(BatchLayoutVersion) noexcept;
   HYLE_COMPUTE_ROUTE_VULKAN_API Status bind(ReadLease, PagedArenaRead, PagedArenaRead) noexcept;
+  HYLE_COMPUTE_ROUTE_VULKAN_API Status bind(ReadLease, PagedArenaRead) noexcept;
   HYLE_COMPUTE_ROUTE_VULKAN_API Result<OwnedResult<Results>> submit() noexcept;
   HYLE_COMPUTE_ROUTE_VULKAN_API NativePagedBatchReport report() const noexcept;
   HYLE_COMPUTE_ROUTE_VULKAN_API Status close() noexcept;

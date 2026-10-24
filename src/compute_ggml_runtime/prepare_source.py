@@ -29,15 +29,22 @@ def prepare(source, output, manifests):
             raise ValueError("unsafe patch path")
         if relative.as_posix() in edited:
             raise ValueError("duplicate patch path across manifests")
-        # Git checkouts may have CRLF; archive identities are checked by CMake.
-        data = (source / relative).read_bytes().replace(b"\r\n", b"\n")
-        if digest(data) != patch["before_sha256"]:
-            raise ValueError(f"upstream patch identity differs: {relative}")
-        for edit in patch["edits"]:
-            before, after = edit["before"].encode(), edit["after"].encode()
-            if data.count(before) != 1:
-                raise ValueError(f"patch context is not unique: {relative}")
-            data = data.replace(before, after, 1)
+        original = source / relative
+        if "content" in patch:
+            if (patch["before_sha256"] is not None or "edits" in patch or
+                    original.exists() or original.is_symlink()):
+                raise ValueError(f"created patch file already exists or has edits: {relative}")
+            data = patch["content"].encode()
+        else:
+            # Git checkouts may have CRLF; archive identities are checked by CMake.
+            data = original.read_bytes().replace(b"\r\n", b"\n")
+            if digest(data) != patch["before_sha256"]:
+                raise ValueError(f"upstream patch identity differs: {relative}")
+            for edit in patch["edits"]:
+                before, after = edit["before"].encode(), edit["after"].encode()
+                if data.count(before) != 1:
+                    raise ValueError(f"patch context is not unique: {relative}")
+                data = data.replace(before, after, 1)
         if digest(data) != patch["after_sha256"]:
             raise ValueError(f"patch result identity differs: {relative}")
         edited[relative.as_posix()] = data
@@ -81,6 +88,22 @@ def prepare(source, output, manifests):
         else:
             destination.parent.mkdir(parents=True, exist_ok=True)
             destination.write_bytes(data)
+    for name, data in edited.items():
+        if name in expected:
+            continue
+        destination = output / name
+        for parent in destination.parents:
+            if parent == output:
+                break
+            if parent.is_symlink():
+                raise ValueError(f"build-local directory is a symlink: {parent}")
+        if destination.exists() or destination.is_symlink():
+            if destination.is_symlink() or destination.read_bytes() != data:
+                raise ValueError(f"build-local source was modified: {destination}")
+        else:
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            destination.write_bytes(data)
+        expected.add(name)
     actual = {p.relative_to(output).as_posix() for p in output.rglob("*")
               if p.is_file() or p.is_symlink()}
     if actual != expected:

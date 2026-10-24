@@ -96,6 +96,30 @@ TEST_F(MapTest, ReadOnlyMapsContent) {
   EXPECT_EQ(mapped_bytes(m).size(), std::strlen(msg));
   EXPECT_EQ(std::memcmp(mapped_bytes(m).data(), msg, std::strlen(msg)), 0);
   EXPECT_TRUE(m.writable_bytes().error().IsPermissionDenied());
+  auto view = m.view();
+  ASSERT_TRUE(view.has_value()) << view.error().message();
+  EXPECT_TRUE(view->resource().properties().has(
+      hyle::mem::MemoryProperty::kHostAddressIdentity));
+  auto host = view->map_host();
+  ASSERT_TRUE(host.has_value()) << host.error().message();
+  EXPECT_EQ(host->bytes().data(), mapped_bytes(m).data());
+  EXPECT_TRUE(host->writable_bytes().error().IsPermissionDenied());
+  ASSERT_TRUE(host->close().ok());
+
+  // Both view forms keep the same process-address coordinates after unmap.
+  auto direct = m.view(2, 5);
+  auto nested = view->subview(2, 5);
+  ASSERT_TRUE(direct.has_value()) << direct.error().message();
+  ASSERT_TRUE(nested.has_value()) << nested.error().message();
+  auto direct_host = direct->map_host();
+  auto nested_host = nested->map_host();
+  ASSERT_TRUE(direct_host.has_value()) << direct_host.error().message();
+  ASSERT_TRUE(nested_host.has_value()) << nested_host.error().message();
+  EXPECT_EQ(direct_host->bytes().data(), mapped_bytes(m).data() + 2);
+  EXPECT_EQ(nested_host->bytes().data(), direct_host->bytes().data());
+  EXPECT_EQ(direct_host->bytes().size(), 5u);
+  ASSERT_TRUE(direct_host->close().ok());
+  ASSERT_TRUE(nested_host->close().ok());
   static_assert(std::is_same_v<decltype(m.address()), hyle::Result<const void*>>);
 }
 

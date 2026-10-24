@@ -8,6 +8,7 @@
 namespace hyle::compute::detail {
 
 struct ContextState;
+class ContextRef;
 struct BackendExtensionAccess;
 
 // Copyable internal capability that retains the exact Context whose backend
@@ -53,7 +54,15 @@ struct BackendExtensionAccess final {
   HYLE_COMPUTE_API static Result<BackendExtensionRef>
   query(const Context &context, BackendExtensionId id) noexcept;
   HYLE_COMPUTE_API static Result<BackendExtensionRef>
+  query(const ContextRef &context, BackendExtensionId id) noexcept;
+  HYLE_COMPUTE_API static Result<BackendExtensionRef>
   query(const Queue &queue, BackendExtensionId id) noexcept;
+  HYLE_COMPUTE_API static Result<BackendExtensionRef>
+  query(const QueueRef &queue, BackendExtensionId id) noexcept;
+  // The original sequence already holds both admission gates. A later close
+  // cannot revoke its accepted commands or require a second admission.
+  HYLE_COMPUTE_API static Result<BackendExtensionRef>
+  query_admitted(const QueueSequence &sequence, BackendExtensionId id) noexcept;
 
   HYLE_COMPUTE_API static Status call(const BackendExtensionRef &extension,
                                       BackendExtensionCallFn function,
@@ -63,16 +72,14 @@ struct BackendExtensionAccess final {
   submit(const BackendExtensionRef &extension, Queue &queue,
          BackendExtensionEnqueueFn function, void *call_context) noexcept;
 
-  // Trusted provider/Graph callback only: caller already owns this Queue's
-  // original admitted sequence and records the returned accepted prefix there.
+  // The caller records this result in the same original admitted sequence.
   // Does not open admission, begin a nested sequence or create a Completion.
-  HYLE_COMPUTE_API static EnqueueResult enqueue_borrowed(
-      const BackendExtensionRef &extension, Queue &queue,
-      BackendExtensionEnqueueFn function, void *call_context) noexcept;
-
   HYLE_COMPUTE_API static EnqueueResult enqueue_admitted(
       const BackendExtensionRef &extension, QueueSequence &sequence,
       BackendExtensionEnqueueFn function, void *call_context) noexcept;
+private:
+  static Result<BackendExtensionRef>
+  query_queue(QueueState *, BackendExtensionId, bool admitted) noexcept;
 };
 
 } // namespace hyle::compute::detail

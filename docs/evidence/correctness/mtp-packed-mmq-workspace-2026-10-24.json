@@ -1,0 +1,1665 @@
+{
+  "schema": "hyle-focused-correctness-v1",
+  "date": "2026-10-24",
+  "status": "passed",
+  "scope": "One generated nonuniform Q6_K/D4 M16 K512 N3 ordinary default MMQ workspace fixture, three packed descriptor-bound cases, and three small Q8 numeric tail regressions on RTX 4070.",
+  "tests": {
+    "total": 7,
+    "passed": 7,
+    "failures": 0,
+    "skipped": 0,
+    "descriptor": 3,
+    "mmq": 1,
+    "tail": 3
+  },
+  "cases": [
+    "GgmlCudaPackedBounds.EncodedAndLogicalLimitsKeepOtherPortsBounded",
+    "GgmlCudaPackedBounds.FullVocabularySmallBatchPreparesWithoutWeightStorage",
+    "GgmlCudaPackedBounds.LargeHeadsDeclineFallbackAndPaddedLayouts",
+    "GgmlCudaPackedMmqWorkspace.OriginalQ6KD4UsesMeasuredCallerWorkspace",
+    "GgmlCudaPackedTail.Q8K512N1M1",
+    "GgmlCudaPackedTail.Q8K512N3M1",
+    "GgmlCudaPackedTail.Q8K512N3M2"
+  ],
+  "properties": {
+    "workspace_alias_rejections": "3",
+    "workspace_unused_tail_ports": "same allocation, disjoint used prefix",
+    "workspace_bytes": "3026431",
+    "native_mmq_scratch_upper_bytes": "3026431",
+    "native_mmq_activation_bytes": "11520",
+    "native_mmq_fixup_upper_bytes": "3014656",
+    "d4_non_half_scale_groups": "256",
+    "wrong_half_scale_disjoint_outputs": "42",
+    "scope": "Actual default Q6_K MMQ M16 K512 N3; independent D4 reciprocal/multiply/round/F32-store interval and measured caller workspace. Conditional fast-division envelope; no Orin execution, all-codec, real-weight or memcheck claim"
+  },
+  "hardware": {
+    "device": "NVIDIA GeForce RTX 4070",
+    "compute_capability": "8.9",
+    "source": {
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/checks-focused1/run/stderr.log",
+      "bytes": 151,
+      "sha256": "88dd5e35d67fb5c0c371390a98a66a5e061e4c0bef2d890a7b74781363216092"
+    }
+  },
+  "execution": {
+    "summary": {
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/checks-focused2/summary.json",
+      "bytes": 4744,
+      "sha256": "11f0d2084e7f99000c2ea3080590c0085f624dd674f125bfb21722d4d3bb37ed"
+    },
+    "XML": {
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/checks-focused2/results.xml",
+      "bytes": 4628,
+      "sha256": "19b7e234bae95cfa7ea2b505768c462f03b420ec0e1455742b7706b6245526b8"
+    },
+    "process": {
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/checks-focused2/run/process.json",
+      "bytes": 818,
+      "sha256": "0cfd8b613fe3b9c89d4d448c9908135eb27c4255a8d4d112e0e7b2eb102f6a31"
+    },
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\orin-proposal\\mmq-query-proposal\\focused-link2\\packed-mmq-workspace-checks.exe",
+      "bytes": 139486720,
+      "sha256": "ce16db1f87af15f0ed2a9bcd956f010f62b667d3c689b7c8a8d93f0d618bc503"
+    },
+    "runtime": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\orin-proposal\\mmq-query-proposal\\focused-link2\\runtime-environment.json",
+      "bytes": 11215,
+      "sha256": "7ece711823261b74f380217a912d94aea353c85e0bcc1e03a19a225f554173b0"
+    }
+  },
+  "product": {
+    "patch": {
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/combined-source.patch",
+      "bytes": 68252,
+      "sha256": "3cadf7a3b963f1c4ad8af7fe4b8b25469fc1c4862706d73193355a32338cb748"
+    },
+    "changed_files": [
+      {
+        "path": "third_party/ggml_cuda_runtime/iq1-patches.json",
+        "before": {
+          "bytes": 124717,
+          "sha256": "c02728377f3abb0df44d6d9558215f980dc68c57168e244536e9b53017bfa595"
+        },
+        "after": {
+          "bytes": 145419,
+          "sha256": "ad961828f5aa9cf03138a52d5cd165fc0d078761c9d36202d21bbc2ff73e203e"
+        }
+      },
+      {
+        "path": "src/compute_provider_ggml_cuda/packed_matmul_native.h",
+        "before": null,
+        "after": {
+          "bytes": 3157,
+          "sha256": "2f4e16030b51c48dfed7a4fda66ee7b1ed129ab994ce675c2dc91da08968eb85"
+        }
+      },
+      {
+        "path": "src/compute_provider_ggml_cuda/tensor_program.h",
+        "before": {
+          "bytes": 3615,
+          "sha256": "215f2982aaaae8a4915048e1b3b21a6b451430e341a3027592bedba8cc340cc6"
+        },
+        "after": {
+          "bytes": 3017,
+          "sha256": "8d98c70d15dddd2cd9e21a9515f87006776ad372df00c1dc49e164f53d1027fd"
+        }
+      },
+      {
+        "path": "src/compute_provider_ggml_cuda/tensor_program.cc",
+        "before": {
+          "bytes": 62210,
+          "sha256": "1acd1421bc179e10d7d31f9f87a530316de58dc10479c7e887b64ac1bf883825"
+        },
+        "after": {
+          "bytes": 62112,
+          "sha256": "7d9d9b3e5af1843118e65e69f8f43bb9fa3d2d331c3073122175de6d6d0d2e76"
+        }
+      },
+      {
+        "path": "src/compute_provider_ggml_cuda/ggml_cuda_provider.cc",
+        "before": {
+          "bytes": 76973,
+          "sha256": "43876efb87d792fcf5a60e9526c8a5e7eb4a474f0766e87a1f2eca4634607eb2"
+        },
+        "after": {
+          "bytes": 82474,
+          "sha256": "ff8a364ba191350d57be3224792bada1501b6665427aaf6a9e159896e084febc"
+        },
+        "initial_after": {
+          "bytes": 82470,
+          "sha256": "96542bf0d45c5ca50de7c58963e17e28d5b43bf2cdbc485f6496a35fc7d99563"
+        }
+      },
+      {
+        "path": "tests/compute_provider_ggml_cuda/packed_matmul_bounds_test.cc",
+        "before": {
+          "bytes": 8210,
+          "sha256": "bae262a7b9d90fc55b028392697b8bfcbd151e8c01e4ca6c199d735c2a82410e"
+        },
+        "after": {
+          "bytes": 8687,
+          "sha256": "4219476a2b8909b3e5b3644488592b42dec2e235b46519e9234b201161661c52"
+        }
+      },
+      {
+        "path": "tests/compute_provider_ggml_cuda/CMakeLists.txt",
+        "before": {
+          "bytes": 1709,
+          "sha256": "dfd8d31b8988561a35b073a2d9057e67b75883b550abd461dcbc86a1c95f5660"
+        },
+        "after": {
+          "bytes": 1794,
+          "sha256": "5344ae238f9cd6cc2d9458aa1b7a17ec8873192fd6eefc5f148122a95eb84388"
+        }
+      },
+      {
+        "path": "cmake/HyleDependencyLock.json",
+        "before": {
+          "bytes": 77554,
+          "sha256": "3fecd2998c011e492e97672b01a2169c38ef9f4d9be3fef9899dbf42c11b7320"
+        },
+        "after": {
+          "bytes": 77554,
+          "sha256": "8f50e27033776b64def7deeae5f7177925913d0b643278a6d622f390e7cad05e"
+        }
+      },
+      {
+        "path": "tests/compute_models/mmq_q6k_reference.h",
+        "before": null,
+        "after": {
+          "bytes": 9821,
+          "sha256": "4f18633f09cd605f1f574f9d6202e757167a953fe8bab0094146c29eb7569e0e"
+        }
+      },
+      {
+        "path": "tests/compute_provider_ggml_cuda/packed_mmq_workspace_test.cc",
+        "before": null,
+        "after": {
+          "bytes": 9554,
+          "sha256": "ccf4f184388b0135fc9c7e74853e5099a89691735e0e75fa32068682e197a212"
+        }
+      }
+    ],
+    "workspace": "Original native AQ sizing and bounded stream-K fixup upper bounds enter the existing caller NativeWorkspace. One maximum arena per actually used native stream; per-node signatures retain metadata only.",
+    "alias_guard": "Before enqueue, compare only the used workspace prefix against actual immutable/port pointer spans with view offsets; zero spans skip, subtraction avoids endpoint overflow and disjoint same-allocation views remain legal.",
+    "admission": "Actual nominated native selectors/configurations; large-bank M1..4 domain retained. UINT32 encoded bytes is MMVQ-only; covered MMQ retains signed-I32 encoded/index bounds.",
+    "subsequent_source_patch": {
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/default-init-revision/source.patch",
+      "bytes": 504,
+      "sha256": "ad94f5dcd94ab979d675ebb0bba2db61b7a5dfb75d4d18c86d037041df4c1da7"
+    }
+  },
+  "independent_reference": {
+    "path": {
+      "path": "tests/compute_models/mmq_q6k_reference.h",
+      "bytes": 9821,
+      "sha256": "4f18633f09cd605f1f574f9d6202e757167a953fe8bab0094146c29eb7569e0e"
+    },
+    "contract": {
+      "AQ": "maxabs32 -> F32 reciprocal 127/amax -> RN32(A*reciprocal) -> roundf ties away -> separate F32 reciprocal 1/reciprocal -> D4 F32 store. This does not call/reuse MMVQ AQ.",
+      "division_assumption": "Existing fast_divide conditional CUDA published 2ULP envelope expanded to four F32 neighbours; observed source envelope, not universal CUDA formal guarantee.",
+      "weight_decode": "Only original independent qwen27 detail::weight(Q6_K) and F16 scalar decode reused; integer centered scale16 combinations exact below2^24.",
+      "native_bound": "G=K/32=16; H=K/64=8 (DP4A64 and TuringMMA128 subdots); B=K/256=2 nonempty stream-K partitions. At most 2G+2H+B+1=51 F32 product/add/fixup operations. gamma51 times outward absolute scaled group components plus separate activation code/scale ambiguity and independent F64 oracle bound.",
+      "normal_domain": "Actual A is zero or finite normal with abs in [2^-16,2^8], maxabs32 in [2^-8,2^8]; D4 scale interval constrained [2^-17,2^3]; original F16 d6 zero or abs in [2^-8,2^8]. All F32 intermediates lie on a grid at least2^-58 and sumabs<2^40; no FTZ/overflow in this stated domain.",
+      "storage_discrimination": "Before native submission, require at least one disjoint interval between correct D4 F32 d and intentionally wrong F16 d store with the same MMQ codes. Wrong store never becomes an accepted oracle."
+    },
+    "generated_fixture": {
+      "A": [
+        16,
+        512
+      ],
+      "W": [
+        3,
+        512
+      ],
+      "Y": [
+        16,
+        3
+      ],
+      "original_packed_weight_bytes": 1260
+    }
+  },
+  "compile": {
+    "result": {
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/build-result.json",
+      "bytes": 9327,
+      "sha256": "935ad9d9de5134b80bcb2194aa42c8f9eb72c62f883672b6ac126f5c260b60dd"
+    },
+    "host_TUs": 2,
+    "new_test_TUs": 2,
+    "reused_tail_test_TUs": 1,
+    "NVCC_commands": 2,
+    "successful_native_TUs": 1,
+    "SDK_builds": 0,
+    "retained_failure": "First NVCC attempt lacked the unchanged leaf mmid.cuh in the sparse cached header subset. Same-revision fallback was appended after patched includes; actual deps show only mmid.cuh came from raw fallback.",
+    "current_revision": {
+      "Windows_provider_TUs": 1,
+      "Windows_NVCC_commands": 0,
+      "Linux_host_compile_attempts": 3,
+      "Linux_successful_host_TUs": 2,
+      "Linux_NVCC_commands": 1,
+      "Linux_link_or_native_execution": 0
+    }
+  },
+  "link": {
+    "ready": {
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/focused-link2/ready.json",
+      "bytes": 2693,
+      "sha256": "239ace1bc555e0ca0b148c1e9d0740f434afa25bf03bbcdc7db3683de853dbca"
+    },
+    "plan": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\orin-proposal\\mmq-query-proposal\\focused-link2\\link-plan.json",
+      "bytes": 121114,
+      "sha256": "ed8dec9936eec0ee3bc05019d6a07c4d04249ab11d5ee84ab9afae2c6559ab1a"
+    },
+    "MAP": {
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/focused-link2/packed-mmq-workspace-checks.map",
+      "bytes": 57213507,
+      "sha256": "16b46325618d5e256a0ec48a7d74b314563bfd1585bf9b47f77c40ec6f4e5bdc"
+    },
+    "excerpt": {
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/focused-link2/mmq-map-excerpt.txt",
+      "bytes": 760,
+      "sha256": "254c1c5bbc285c02e6b9d364aa8b914508d0116a968cd6eddc9f8047a7278cf9"
+    },
+    "host_records": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\orin-proposal\\mmq-query-proposal\\focused-link2\\host-records.json",
+      "bytes": 39850,
+      "sha256": "a85b9d611f8632153dfba37e0fad4319033a36d9821923b2d712a3cd6ae16474"
+    },
+    "native_records": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\orin-proposal\\mmq-query-proposal\\focused-link2\\native-records.json",
+      "bytes": 13825,
+      "sha256": "b83e15732e6d45c13aae6b5c50298a2e18e3082f5b00c168a494a7f91d3505bc"
+    },
+    "old_mmq_archive_member_selected": false,
+    "flat_closure_entry": {
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/current_closure.py",
+      "bytes": 4291,
+      "sha256": "3749aa7a5767faad27653b133aad83994a13126db2b4cd17ea4452780f4a973d"
+    }
+  },
+  "limitations": [
+    "Only the recorded RTX4070 fixture executed; Orin hardware remains unverified.",
+    "No full model, original-model weight, throughput, physical-memory peak or memcheck claim.",
+    "The D4 Q6_K certificate does not certify all MMQ codecs, Q4/Q5 minimum compensation or Q2 D2S6.",
+    "Ordinary uncovered/batched/MMVQ native private allocations remain outside this owned-MMQ migration; invocation_private_bytes remains unknown where it was unknown.",
+    "The seven cases do not exhaust capture replay, forced allocation-failure retirement, multistream or parallel-Invocation behavior.",
+    "Linux GCC14/NVCC13.3 compiled only against current product headers and the exact cached native family; no Linux ABI18 image was linked or executed."
+  ],
+  "Orin_native_verified": false,
+  "model_inference": false,
+  "memcheck": false,
+  "TPS": false,
+  "HTTP": 0,
+  "prior_shared_evidence": [
+    {
+      "path": "docs/evidence/correctness/mtp-gdn-output-scale-2026-10-24.json",
+      "bytes": 3773,
+      "sha256": "fe4ca9d1d3e15dcf2bde69dbcffdf1d32cab5405f86150db9482aa985d071de5"
+    },
+    {
+      "path": "docs/evidence/correctness/mtp-packed-head-current-2026-10-24.json",
+      "bytes": 6470,
+      "sha256": "036aabf539e40e9a49fe79aa3266748fe53eb4cd416c4e854a2ebc6830d8d383"
+    },
+    {
+      "path": "docs/evidence/correctness/mtp-packed-mmvq-tail-read-2026-10-24.json",
+      "bytes": 13096,
+      "sha256": "06c075f0ca65020854d1997bdda7b95660bb8cc923e4626160dc7a95165cd7fa"
+    },
+    {
+      "path": "docs/evidence/correctness/mtp-packed-mmvq-tail-integration-2026-10-24.json",
+      "bytes": 19332,
+      "sha256": "44fd2ee0b12afb343291a4f47359469c31258677a7079d8e7f7a08539ddca189"
+    }
+  ],
+  "archive": {
+    "path": "docs/evidence/correctness/mtp-packed-mmq-workspace-2026-10-24.zip",
+    "bytes": 805503,
+    "sha256": "88ffaefb744a4835966f1a1b9e56becaedc674b77623b8a640821da70be76926"
+  },
+  "files": [
+    {
+      "archive_path": ".scratch/glm-gguf-selected-20261023/flash-consumer-proposal/compile2/flash-state/source/tests/compute_models/glm_mtp_state_consumer_test.cc",
+      "path": ".scratch/glm-gguf-selected-20261023/flash-consumer-proposal/compile2/flash-state/source/tests/compute_models/glm_mtp_state_consumer_test.cc",
+      "bytes": 377689,
+      "sha256": "f232fa3bf2d2aa5ca83853b1bcb1adfbae9d9040f8e5c2928ba3c041441d47da"
+    },
+    {
+      "archive_path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/before/src/compute_provider_ggml_cuda/ggml_cuda_provider.cc",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/before/src/compute_provider_ggml_cuda/ggml_cuda_provider.cc",
+      "bytes": 76973,
+      "sha256": "43876efb87d792fcf5a60e9526c8a5e7eb4a474f0766e87a1f2eca4634607eb2"
+    },
+    {
+      "archive_path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/before/src/compute_provider_ggml_cuda/tensor_program.cc",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/before/src/compute_provider_ggml_cuda/tensor_program.cc",
+      "bytes": 62210,
+      "sha256": "1acd1421bc179e10d7d31f9f87a530316de58dc10479c7e887b64ac1bf883825"
+    },
+    {
+      "archive_path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/build-result.json",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/build-result.json",
+      "bytes": 9327,
+      "sha256": "935ad9d9de5134b80bcb2194aa42c8f9eb72c62f883672b6ac126f5c260b60dd"
+    },
+    {
+      "archive_path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/build_delta.py",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/build_delta.py",
+      "bytes": 7301,
+      "sha256": "686ccc9ce2ccd1cd52536a512f7741aca4e2546c5a1ee2dcc3bb85397632e096"
+    },
+    {
+      "archive_path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/build_focused.py",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/build_focused.py",
+      "bytes": 12953,
+      "sha256": "65cda89dfc454eb19c37026858dee14afd0c0a77f85c40a66a6fd3962e840848"
+    },
+    {
+      "archive_path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/checks-focused1/results.xml",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/checks-focused1/results.xml",
+      "bytes": 4628,
+      "sha256": "f1089bd82763cf268e1f204e42373cc8a1403f73aad7bd7a7a082f888a9748b0"
+    },
+    {
+      "archive_path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/checks-focused1/run/command.json",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/checks-focused1/run/command.json",
+      "bytes": 682,
+      "sha256": "1da5fe4e8b5402336ff75c202962d5219cd203005fff96715310ad7bddd62fe6"
+    },
+    {
+      "archive_path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/checks-focused1/run/live.json",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/checks-focused1/run/live.json",
+      "bytes": 699,
+      "sha256": "df208dbf07ae7e51c1f4b31b11164a7a844a2b1fd78983469f236de4b63613bd"
+    },
+    {
+      "archive_path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/checks-focused1/run/process.json",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/checks-focused1/run/process.json",
+      "bytes": 818,
+      "sha256": "288f593f921a3dd0d91297512204f5001dcc6b982729a3dd6c8d5593d78962d2"
+    },
+    {
+      "archive_path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/checks-focused1/run/stderr.log",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/checks-focused1/run/stderr.log",
+      "bytes": 151,
+      "sha256": "88dd5e35d67fb5c0c371390a98a66a5e061e4c0bef2d890a7b74781363216092"
+    },
+    {
+      "archive_path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/checks-focused1/run/stdout.log",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/checks-focused1/run/stdout.log",
+      "bytes": 1785,
+      "sha256": "9cc536025ea724a335fdaf82f875d0f7dab70bee2c8ceb232b6f57f83eccf7c6"
+    },
+    {
+      "archive_path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/checks-focused1/summary.json",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/checks-focused1/summary.json",
+      "bytes": 4744,
+      "sha256": "10e9a33259c4d6c770bb14d4aa122b53472be3307fd0ea4cb967c4cb9e5c872c"
+    },
+    {
+      "archive_path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/closure-header.h",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/closure-header.h",
+      "bytes": 3157,
+      "sha256": "2f4e16030b51c48dfed7a4fda66ee7b1ed129ab994ce675c2dc91da08968eb85"
+    },
+    {
+      "archive_path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/closure-native.inc",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/closure-native.inc",
+      "bytes": 17619,
+      "sha256": "55d616bd6908f0d814d0522ee6b93fb878036b78d2a23b1d0b8bbc99a760c9c2"
+    },
+    {
+      "archive_path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/closure-provider.py",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/closure-provider.py",
+      "bytes": 8560,
+      "sha256": "cbbbe068b68ed0315ecf2948fb1ea239fa4817be9060792b96e89753faf073ad"
+    },
+    {
+      "archive_path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/combined-ready.json",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/combined-ready.json",
+      "bytes": 5810,
+      "sha256": "9989006ff56487dd425d9e7c27b77a73f4f5a4baac97d60584268dd9a55a9bbd"
+    },
+    {
+      "archive_path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/combined-source.patch",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/combined-source.patch",
+      "bytes": 68252,
+      "sha256": "3cadf7a3b963f1c4ad8af7fe4b8b25469fc1c4862706d73193355a32338cb748"
+    },
+    {
+      "archive_path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/compile-commands.json",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/compile-commands.json",
+      "bytes": 17550,
+      "sha256": "431a65b69a7e35538d08f5b362616f3c8deef571c95399efedbff91386204090"
+    },
+    {
+      "archive_path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/compile1/provider/dependencies.json",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/compile1/provider/dependencies.json",
+      "bytes": 29718,
+      "sha256": "a89401b80c804c124d8b4a491bf06c090185bbbb1b94a08d782ce6c24974a236"
+    },
+    {
+      "archive_path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/compile1/provider/identity.json",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/compile1/provider/identity.json",
+      "bytes": 18455,
+      "sha256": "de1199d6286593bcf44701d61b82c548ef946f166de6c63c8c6c86317288a727"
+    },
+    {
+      "archive_path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/compile1/provider/plan.json",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/compile1/provider/plan.json",
+      "bytes": 3919,
+      "sha256": "3f1b4b1b35fbf1c4b6e8f23eb941192096fe0d0b13769b349020be527eed2083"
+    },
+    {
+      "archive_path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/compile1/provider/provider-deps.json",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/compile1/provider/provider-deps.json",
+      "bytes": 25193,
+      "sha256": "ae2c13d37445bd4fdb583be2fbebd1ffb877829daae4ea1c888b78dce4e287a2"
+    },
+    {
+      "archive_path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/compile1/provider/run/command.json",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/compile1/provider/run/command.json",
+      "bytes": 3414,
+      "sha256": "dde02ba0f6b7a4dc86d34cacff9c88be34558bf5f3db24593af9775810b050ee"
+    },
+    {
+      "archive_path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/compile1/provider/run/live.json",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/compile1/provider/run/live.json",
+      "bytes": 3431,
+      "sha256": "cb3495bdd6f2831bd28372ff84385d11cff82849c39e99f4613fbb564e6dd720"
+    },
+    {
+      "archive_path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/compile1/provider/run/process.json",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/compile1/provider/run/process.json",
+      "bytes": 3548,
+      "sha256": "9209302f9ff67a998f7032821ec9110e2736bb7a680a30e0a80586df7a307152"
+    },
+    {
+      "archive_path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/compile1/provider/run/stderr.log",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/compile1/provider/run/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "archive_path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/compile1/provider/run/stdout.log",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/compile1/provider/run/stdout.log",
+      "bytes": 23,
+      "sha256": "c5c3c8aa094b49a053c42b65acff15c18229cc1b2ba492ba6b6fd563e05e40c4"
+    },
+    {
+      "archive_path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/compile1/tensor-program/dependencies.json",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/compile1/tensor-program/dependencies.json",
+      "bytes": 23522,
+      "sha256": "691ae7304578072e946fb442f26be2afa5833d3feb80daf2d57b1d2182643cda"
+    },
+    {
+      "archive_path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/compile1/tensor-program/identity.json",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/compile1/tensor-program/identity.json",
+      "bytes": 14417,
+      "sha256": "bce110b55560e0f61f76ad6c192ea2b8cf69a77a81dd6c6e97d5574346f3a76d"
+    },
+    {
+      "archive_path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/compile1/tensor-program/plan.json",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/compile1/tensor-program/plan.json",
+      "bytes": 3561,
+      "sha256": "c9838c0b8f9e91ae4f1ffd9ca056a5692b3d5253dc78930942cb50f76d3a9c63"
+    },
+    {
+      "archive_path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/compile1/tensor-program/run/command.json",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/compile1/tensor-program/run/command.json",
+      "bytes": 3042,
+      "sha256": "1523ee4b346093968e6695e631ad4d4b91d147926364660cce29ac6d2af7e45c"
+    },
+    {
+      "archive_path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/compile1/tensor-program/run/live.json",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/compile1/tensor-program/run/live.json",
+      "bytes": 3059,
+      "sha256": "0cf1aa125e71f8769dbd0176dbbc18e1de41161beedc760ab45f81108c91e047"
+    },
+    {
+      "archive_path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/compile1/tensor-program/run/process.json",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/compile1/tensor-program/run/process.json",
+      "bytes": 3178,
+      "sha256": "c1c68b86add0c0a033e2439e3a9fd005795ada935ef48f6acedd95e2d5f1dac7"
+    },
+    {
+      "archive_path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/compile1/tensor-program/run/stderr.log",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/compile1/tensor-program/run/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "archive_path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/compile1/tensor-program/run/stdout.log",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/compile1/tensor-program/run/stdout.log",
+      "bytes": 19,
+      "sha256": "af0441dbee37064a856a700771d091789232bba62895a6d69a27732cb5b7db99"
+    },
+    {
+      "archive_path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/compile1/tensor-program/tensor-program-deps.json",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/compile1/tensor-program/tensor-program-deps.json",
+      "bytes": 18783,
+      "sha256": "03b09fea4218dc8a5a737acf7605806adb9cf124c8693c5ec9e0893f01517c94"
+    },
+    {
+      "archive_path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/compiled-source/.scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/generated/src/ggml-cuda/mmq.cu",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/compiled-source/.scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/generated/src/ggml-cuda/mmq.cu",
+      "bytes": 34767,
+      "sha256": "9c94a8aa997e6ed523f992adc35eb4ee0f95d48ce517263eb5cc0e8f74e656d9"
+    },
+    {
+      "archive_path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/compiled-source/src/compute_provider_ggml_cuda/ggml_cuda_provider.cc",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/compiled-source/src/compute_provider_ggml_cuda/ggml_cuda_provider.cc",
+      "bytes": 82470,
+      "sha256": "96542bf0d45c5ca50de7c58963e17e28d5b43bf2cdbc485f6496a35fc7d99563"
+    },
+    {
+      "archive_path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/compiled-source/src/compute_provider_ggml_cuda/packed_matmul_native.h",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/compiled-source/src/compute_provider_ggml_cuda/packed_matmul_native.h",
+      "bytes": 3157,
+      "sha256": "2f4e16030b51c48dfed7a4fda66ee7b1ed129ab994ce675c2dc91da08968eb85"
+    },
+    {
+      "archive_path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/compiled-source/src/compute_provider_ggml_cuda/tensor_program.cc",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/compiled-source/src/compute_provider_ggml_cuda/tensor_program.cc",
+      "bytes": 62112,
+      "sha256": "7d9d9b3e5af1843118e65e69f8f43bb9fa3d2d331c3073122175de6d6d0d2e76"
+    },
+    {
+      "archive_path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/compiled-source/src/compute_provider_ggml_cuda/tensor_program.h",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/compiled-source/src/compute_provider_ggml_cuda/tensor_program.h",
+      "bytes": 3017,
+      "sha256": "8d98c70d15dddd2cd9e21a9515f87006776ad372df00c1dc49e164f53d1027fd"
+    },
+    {
+      "archive_path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/current_closure.py",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/current_closure.py",
+      "bytes": 4291,
+      "sha256": "817288601c12ff28e870b69cb314f70f2cb734ebd319eba5bd5bbd72aafb31e9"
+    },
+    {
+      "archive_path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/focused-link1/host-records.json",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/focused-link1/host-records.json",
+      "bytes": 39850,
+      "sha256": "3bb3f09c22c2503c25cd573fe5a9b2e48a5d23e98ab86d051db7251e171cdcfe"
+    },
+    {
+      "archive_path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/focused-link1/link-plan.json",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/focused-link1/link-plan.json",
+      "bytes": 121114,
+      "sha256": "6e1c7f0b6f0c8aad2319f38ec0aaa2560fae4d8806a68b2c11ac32e63d24ccc1"
+    },
+    {
+      "archive_path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/focused-link1/link-verified.json",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/focused-link1/link-verified.json",
+      "bytes": 1433,
+      "sha256": "a51d0d27d3c8c67428f7c1797dec4a32aa2880d3a2b8d9e39a74e9cb10ca1b87"
+    },
+    {
+      "archive_path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/focused-link1/link/command.json",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/focused-link1/link/command.json",
+      "bytes": 33545,
+      "sha256": "70856f0aeaca3672fc240e355e1a79991a05e78b6ce3e466034818c6496dcc87"
+    },
+    {
+      "archive_path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/focused-link1/link/live.json",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/focused-link1/link/live.json",
+      "bytes": 33562,
+      "sha256": "592b0506f1312a2afb50debd7b03ef77f7f2376762edd9692e6452f1c5af455d"
+    },
+    {
+      "archive_path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/focused-link1/link/process.json",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/focused-link1/link/process.json",
+      "bytes": 33681,
+      "sha256": "260eaf05a0eed6f96fa0c8a3687785c9b023282f1ab8bdd7302ceb9d51c6ba75"
+    },
+    {
+      "archive_path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/focused-link1/link/stderr.log",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/focused-link1/link/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "archive_path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/focused-link1/link/stdout.log",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/focused-link1/link/stdout.log",
+      "bytes": 314,
+      "sha256": "f34043c2f72eb63c0a61616fc9d291271a296267d96465f6af4fcbadc423288e"
+    },
+    {
+      "archive_path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/focused-link1/mmq-map-excerpt.txt",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/focused-link1/mmq-map-excerpt.txt",
+      "bytes": 6060,
+      "sha256": "21fc109848d31d8a8c9ece211ab65fa2e2d851ab305abd6ca387e47d4a67707b"
+    },
+    {
+      "archive_path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/focused-link1/native-records.json",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/focused-link1/native-records.json",
+      "bytes": 13825,
+      "sha256": "b83e15732e6d45c13aae6b5c50298a2e18e3082f5b00c168a494a7f91d3505bc"
+    },
+    {
+      "archive_path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/focused-link1/ready.json",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/focused-link1/ready.json",
+      "bytes": 2693,
+      "sha256": "bd32083f0fcaf2bb3ad69b3f56ec3a45653621ba8ada9da151ed6817cc049607"
+    },
+    {
+      "archive_path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/focused-link1/runtime-environment.json",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/focused-link1/runtime-environment.json",
+      "bytes": 11215,
+      "sha256": "0fa0d8865e06bb65c36c134de7a6b03b33950954801369d4d355f426c84978f2"
+    },
+    {
+      "archive_path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/generated/src/ggml-cuda/mmq.cu",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/generated/src/ggml-cuda/mmq.cu",
+      "bytes": 34767,
+      "sha256": "9c94a8aa997e6ed523f992adc35eb4ee0f95d48ce517263eb5cc0e8f74e656d9"
+    },
+    {
+      "archive_path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/link-replacements-ready.json",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/link-replacements-ready.json",
+      "bytes": 4685,
+      "sha256": "4b73a295bfa49f00bb21e4fe479e9d1b9c9c47528b2234af45f7c58eab729573"
+    },
+    {
+      "archive_path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/native-before/src/ggml-cuda/mmq.cu",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/native-before/src/ggml-cuda/mmq.cu",
+      "bytes": 16622,
+      "sha256": "7026731f24cd4c66c8313ae5b35ca891a58f2e42b9d355910bef72d30b13e9f3"
+    },
+    {
+      "archive_path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/native.diff",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/native.diff",
+      "bytes": 20983,
+      "sha256": "448bc3b7e7eee2364f1c0a9433f93003eb2e05c67e57c28b23853c950fa9169c"
+    },
+    {
+      "archive_path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/native1/compile-commands-before.json",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/native1/compile-commands-before.json",
+      "bytes": 16284,
+      "sha256": "53743100efa777c4a128a399824cd65fd30647d7cb16b496873963e4d2219730"
+    },
+    {
+      "archive_path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/native1/run/command.json",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/native1/run/command.json",
+      "bytes": 4193,
+      "sha256": "35a0b20ef51d7c9aaa7e46c339b08331e255e3a16110efe5476436289f7fd3d3"
+    },
+    {
+      "archive_path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/native1/run/live.json",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/native1/run/live.json",
+      "bytes": 4210,
+      "sha256": "9d9de9fcdba1f60f55f834e1734249bd5f4a36629c13207429e717cfd255bfb7"
+    },
+    {
+      "archive_path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/native1/run/process.json",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/native1/run/process.json",
+      "bytes": 4329,
+      "sha256": "5d36e6d0564a823ba97e216806852a5bbebb0908d764d4313cf381855d9ae30b"
+    },
+    {
+      "archive_path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/native1/run/stderr.log",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/native1/run/stderr.log",
+      "bytes": 13747,
+      "sha256": "fec24e1eab5a256f28ae5d020957de872d26428d8b90878f42faf5f5dd99b0bd"
+    },
+    {
+      "archive_path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/native1/run/stdout.log",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/native1/run/stdout.log",
+      "bytes": 8,
+      "sha256": "233a3c250c067b63084d41678a60227aa8a633e3f04e2bbc68f3f22cf0cdaff1"
+    },
+    {
+      "archive_path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/native2/dependencies.json",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/native2/dependencies.json",
+      "bytes": 29883,
+      "sha256": "96debb895e5b05816a7eefe3c03f2544bf002bfecf84b44440e7d8b0b921a6f1"
+    },
+    {
+      "archive_path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/native2/identity.json",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/native2/identity.json",
+      "bytes": 14440,
+      "sha256": "b7c913884fed40dbb3ee22c743364065073702ca2edad3ea9908539ed8120a64"
+    },
+    {
+      "archive_path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/native2/mmq.d",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/native2/mmq.d",
+      "bytes": 24977,
+      "sha256": "ef3e3fb57d72b743e2801310dc7d064151a806f2fb65bb878e6ce6e50cb0c4bc"
+    },
+    {
+      "archive_path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/native2/plan.json",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/native2/plan.json",
+      "bytes": 4807,
+      "sha256": "e2383340dae985abb8cd05d1e1afacffc897d3a2640572402e7cee29d1dcfec0"
+    },
+    {
+      "archive_path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/native2/run/command.json",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/native2/run/command.json",
+      "bytes": 4305,
+      "sha256": "b057c2d5e9e943b4b6e2140cf47ae0b8203165dbec89348e6510cae7cbc1c739"
+    },
+    {
+      "archive_path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/native2/run/live.json",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/native2/run/live.json",
+      "bytes": 4322,
+      "sha256": "b2343a0e9ced0642c2b938415fc14b6343c38e7e60b3e8a48e9ac4e0f26b61c9"
+    },
+    {
+      "archive_path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/native2/run/process.json",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/native2/run/process.json",
+      "bytes": 4439,
+      "sha256": "43d82e2298d6aba5e58459dfad2d1363a3c23b7466b908b712f76125a54c25b1"
+    },
+    {
+      "archive_path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/native2/run/stderr.log",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/native2/run/stderr.log",
+      "bytes": 22566,
+      "sha256": "7c85a7288d80c23fd3f0196590b0e748a9e8ed0a6f8537e0a2a5cf20c957540b"
+    },
+    {
+      "archive_path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/native2/run/stdout.log",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/native2/run/stdout.log",
+      "bytes": 52,
+      "sha256": "31e3e828aab6fb7eb8c894a6562c6638416a9b0153b2d77452f81c3b92fba5c0"
+    },
+    {
+      "archive_path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/prepare.py",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/prepare.py",
+      "bytes": 15357,
+      "sha256": "20236edfbf3c617aeb8e0e1ed782b3e3905ffe6fa79ac1074e8088adace16706"
+    },
+    {
+      "archive_path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/publish.py",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/publish.py",
+      "bytes": 10497,
+      "sha256": "fd48165b0706c75597dc0bc8cd9b419444095762a26ce6acd0748dba8a26a2f4"
+    },
+    {
+      "archive_path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/reference-proposal/ready.json",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/reference-proposal/ready.json",
+      "bytes": 6377,
+      "sha256": "be142a637f7182d9dabe845a4f5df2bb1c7a52eb2004433de2f6dafaaf6c7fb4"
+    },
+    {
+      "archive_path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/run_focused.py",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/run_focused.py",
+      "bytes": 2324,
+      "sha256": "220dd2c5f95625009be5eced0345cefb2fcce3ee1caad4a958158675e65c8b0b"
+    },
+    {
+      "archive_path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/test-compile1/bounds-test/identity.json",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/test-compile1/bounds-test/identity.json",
+      "bytes": 64770,
+      "sha256": "d95d4d9aad64772b3548cf42aa0b87bd15f4944e1f53c397c2bc08f166791b36"
+    },
+    {
+      "archive_path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/test-compile1/bounds-test/plan.json",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/test-compile1/bounds-test/plan.json",
+      "bytes": 3188,
+      "sha256": "35f4af8c9f907ab52c5767a664c1b3f327109fc63ac9c9feebce9bc62e84b17b"
+    },
+    {
+      "archive_path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/test-compile1/bounds-test/run/command.json",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/test-compile1/bounds-test/run/command.json",
+      "bytes": 2973,
+      "sha256": "7b878c180129da8a062c238a21b527a4cd2ec690aa59109ac5f98d0007782711"
+    },
+    {
+      "archive_path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/test-compile1/bounds-test/run/live.json",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/test-compile1/bounds-test/run/live.json",
+      "bytes": 2990,
+      "sha256": "5d334c63fb1d21fd5e3b49eb3893b1f38a49883ee73c7194d309a079bad5776a"
+    },
+    {
+      "archive_path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/test-compile1/bounds-test/run/process.json",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/test-compile1/bounds-test/run/process.json",
+      "bytes": 3108,
+      "sha256": "b1f0a3a3a3fa50c78fb6bfb5539ac19c2975bdb51eb377769637cd38ebe4259b"
+    },
+    {
+      "archive_path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/test-compile1/bounds-test/run/stderr.log",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/test-compile1/bounds-test/run/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "archive_path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/test-compile1/bounds-test/run/stdout.log",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/test-compile1/bounds-test/run/stdout.log",
+      "bytes": 30,
+      "sha256": "72e8132c7e572ca6220364174412d16f39534a9568b98a7cf2f4cb989eac1617"
+    },
+    {
+      "archive_path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/test-compile1/bounds-test/source-deps.json",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/test-compile1/bounds-test/source-deps.json",
+      "bytes": 32252,
+      "sha256": "fdaf4e45710f4ccffb52a8263f39611e686e54a56a759ac4be56fe18cc0efc39"
+    },
+    {
+      "archive_path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/test-compile1/mmq-test/identity.json",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/test-compile1/mmq-test/identity.json",
+      "bytes": 68302,
+      "sha256": "6753f293ca1df9e5736397d6eff4ec14711035880529a32f3ef0a0eee7c94631"
+    },
+    {
+      "archive_path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/test-compile1/mmq-test/plan.json",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/test-compile1/mmq-test/plan.json",
+      "bytes": 3173,
+      "sha256": "8ab4fdf2925a5b6a0d4eb5afdb4ea6a3da5d2de837a63d3841b70fb2e1f84bd2"
+    },
+    {
+      "archive_path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/test-compile1/mmq-test/run/command.json",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/test-compile1/mmq-test/run/command.json",
+      "bytes": 2958,
+      "sha256": "644373178e00a9efa7c54d5fe24b7e5455a54349b6cd44a6134b91b8c18171de"
+    },
+    {
+      "archive_path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/test-compile1/mmq-test/run/live.json",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/test-compile1/mmq-test/run/live.json",
+      "bytes": 2975,
+      "sha256": "b7639a8e461932a8ad511b5b47c40c8963c861a7bafb5d8833e22fa52032825b"
+    },
+    {
+      "archive_path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/test-compile1/mmq-test/run/process.json",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/test-compile1/mmq-test/run/process.json",
+      "bytes": 3094,
+      "sha256": "49f5707f61763a88e608a4a777204c1d458eb1c2ae358f58d820c90d4213b952"
+    },
+    {
+      "archive_path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/test-compile1/mmq-test/run/stderr.log",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/test-compile1/mmq-test/run/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "archive_path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/test-compile1/mmq-test/run/stdout.log",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/test-compile1/mmq-test/run/stdout.log",
+      "bytes": 30,
+      "sha256": "1f007e099ba3e96787a1060c2ccced91cf3b64be7517189d4ba811c7d827e193"
+    },
+    {
+      "archive_path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/test-compile1/mmq-test/source-deps.json",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/test-compile1/mmq-test/source-deps.json",
+      "bytes": 34030,
+      "sha256": "92d00720076f8503ab805ce555006c3bd635305813f08312c83ed27523a7b686"
+    },
+    {
+      "archive_path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/test-compile1/ready.json",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/test-compile1/ready.json",
+      "bytes": 668,
+      "sha256": "246eae370574a5c1a496313e73e258c6d01294070e7b6f720c98e27658ed0ff0"
+    },
+    {
+      "archive_path": ".scratch/mtp-packed-head-20261024/tail-read-proposal/test1/identity.json",
+      "path": ".scratch/mtp-packed-head-20261024/tail-read-proposal/test1/identity.json",
+      "bytes": 62414,
+      "sha256": "1bd1eadc74a6b05bc5bf6c93b5e2f8248ef879c249148ef48143749ccfc2fba2"
+    },
+    {
+      "archive_path": "cmake/HyleDependencyLock.json",
+      "path": "cmake/HyleDependencyLock.json",
+      "bytes": 77554,
+      "sha256": "8f50e27033776b64def7deeae5f7177925913d0b643278a6d622f390e7cad05e"
+    },
+    {
+      "archive_path": "docs/evidence/correctness/mtp-gdn-output-scale-2026-10-24.json",
+      "path": "docs/evidence/correctness/mtp-gdn-output-scale-2026-10-24.json",
+      "bytes": 3773,
+      "sha256": "fe4ca9d1d3e15dcf2bde69dbcffdf1d32cab5405f86150db9482aa985d071de5"
+    },
+    {
+      "archive_path": "docs/evidence/correctness/mtp-packed-head-current-2026-10-24.json",
+      "path": "docs/evidence/correctness/mtp-packed-head-current-2026-10-24.json",
+      "bytes": 6470,
+      "sha256": "036aabf539e40e9a49fe79aa3266748fe53eb4cd416c4e854a2ebc6830d8d383"
+    },
+    {
+      "archive_path": "docs/evidence/correctness/mtp-packed-mmvq-tail-integration-2026-10-24.json",
+      "path": "docs/evidence/correctness/mtp-packed-mmvq-tail-integration-2026-10-24.json",
+      "bytes": 19332,
+      "sha256": "44fd2ee0b12afb343291a4f47359469c31258677a7079d8e7f7a08539ddca189"
+    },
+    {
+      "archive_path": "docs/evidence/correctness/mtp-packed-mmvq-tail-read-2026-10-24.json",
+      "path": "docs/evidence/correctness/mtp-packed-mmvq-tail-read-2026-10-24.json",
+      "bytes": 13096,
+      "sha256": "06c075f0ca65020854d1997bdda7b95660bb8cc923e4626160dc7a95165cd7fa"
+    },
+    {
+      "archive_path": "src/compute_provider_ggml_cuda/ggml_cuda_provider.cc",
+      "path": "src/compute_provider_ggml_cuda/ggml_cuda_provider.cc",
+      "bytes": 82470,
+      "sha256": "96542bf0d45c5ca50de7c58963e17e28d5b43bf2cdbc485f6496a35fc7d99563"
+    },
+    {
+      "archive_path": "src/compute_provider_ggml_cuda/packed_matmul_native.h",
+      "path": "src/compute_provider_ggml_cuda/packed_matmul_native.h",
+      "bytes": 3157,
+      "sha256": "2f4e16030b51c48dfed7a4fda66ee7b1ed129ab994ce675c2dc91da08968eb85"
+    },
+    {
+      "archive_path": "src/compute_provider_ggml_cuda/tensor_program.cc",
+      "path": "src/compute_provider_ggml_cuda/tensor_program.cc",
+      "bytes": 62112,
+      "sha256": "7d9d9b3e5af1843118e65e69f8f43bb9fa3d2d331c3073122175de6d6d0d2e76"
+    },
+    {
+      "archive_path": "src/compute_provider_ggml_cuda/tensor_program.h",
+      "path": "src/compute_provider_ggml_cuda/tensor_program.h",
+      "bytes": 3017,
+      "sha256": "8d98c70d15dddd2cd9e21a9515f87006776ad372df00c1dc49e164f53d1027fd"
+    },
+    {
+      "archive_path": "tests/compute_models/dspark_original_shared_reference.h",
+      "path": "tests/compute_models/dspark_original_shared_reference.h",
+      "bytes": 16279,
+      "sha256": "f3a68f4bf5758818585c0e6e9e640137f88a751486036a7fd884889994252dff"
+    },
+    {
+      "archive_path": "tests/compute_models/mmq_q6k_reference.h",
+      "path": "tests/compute_models/mmq_q6k_reference.h",
+      "bytes": 9821,
+      "sha256": "4f18633f09cd605f1f574f9d6202e757167a953fe8bab0094146c29eb7569e0e"
+    },
+    {
+      "archive_path": "tests/compute_models/qwen27_original_nextn_reference.h",
+      "path": "tests/compute_models/qwen27_original_nextn_reference.h",
+      "bytes": 18076,
+      "sha256": "ec31701bcfd76197978b1462c683f4f2381ec78872d0fe81b73d3beb1b64c166"
+    },
+    {
+      "archive_path": "tests/compute_provider_ggml_cuda/CMakeLists.txt",
+      "path": "tests/compute_provider_ggml_cuda/CMakeLists.txt",
+      "bytes": 1794,
+      "sha256": "5344ae238f9cd6cc2d9458aa1b7a17ec8873192fd6eefc5f148122a95eb84388"
+    },
+    {
+      "archive_path": "tests/compute_provider_ggml_cuda/packed_matmul_bounds_test.cc",
+      "path": "tests/compute_provider_ggml_cuda/packed_matmul_bounds_test.cc",
+      "bytes": 8687,
+      "sha256": "4219476a2b8909b3e5b3644488592b42dec2e235b46519e9234b201161661c52"
+    },
+    {
+      "archive_path": "tests/compute_provider_ggml_cuda/packed_matmul_tail_test.cc",
+      "path": "tests/compute_provider_ggml_cuda/packed_matmul_tail_test.cc",
+      "bytes": 4531,
+      "sha256": "aeee5adbdcb140d52c651a11aa00d14586a57a17a14dd97f7cee70c00e3337da"
+    },
+    {
+      "archive_path": "tests/compute_provider_ggml_cuda/packed_mmq_workspace_test.cc",
+      "path": "tests/compute_provider_ggml_cuda/packed_mmq_workspace_test.cc",
+      "bytes": 9554,
+      "sha256": "ccf4f184388b0135fc9c7e74853e5099a89691735e0e75fa32068682e197a212"
+    },
+    {
+      "archive_path": "third_party/ggml_cuda_runtime/LICENSE",
+      "path": "third_party/ggml_cuda_runtime/LICENSE",
+      "bytes": 1078,
+      "sha256": "94f29bbed6a22c35b992c5c6ebf0e7c92f13b836b90f36f461c9cf2f0f1d010d"
+    },
+    {
+      "archive_path": "third_party/ggml_cuda_runtime/iq1-patches.json",
+      "path": "third_party/ggml_cuda_runtime/iq1-patches.json",
+      "bytes": 145419,
+      "sha256": "ad961828f5aa9cf03138a52d5cd165fc0d078761c9d36202d21bbc2ff73e203e"
+    },
+    {
+      "archive_path": "current-revision/.scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/build_focused.py",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/build_focused.py",
+      "bytes": 13753,
+      "sha256": "bfd72d64ddf05136998173643c7e7d2c49f70de4e25fe1d75332dd8cede1750a"
+    },
+    {
+      "archive_path": "current-revision/.scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/checks-focused2/results.xml",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/checks-focused2/results.xml",
+      "bytes": 4628,
+      "sha256": "19b7e234bae95cfa7ea2b505768c462f03b420ec0e1455742b7706b6245526b8"
+    },
+    {
+      "archive_path": "current-revision/.scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/checks-focused2/run/command.json",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/checks-focused2/run/command.json",
+      "bytes": 682,
+      "sha256": "dc17773cc630e1a6612b1ff6275a6d44aea422cb5f6088ec8e12f173faa4eb4c"
+    },
+    {
+      "archive_path": "current-revision/.scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/checks-focused2/run/live.json",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/checks-focused2/run/live.json",
+      "bytes": 699,
+      "sha256": "1cf884198bfb5ab4c83021ba844f835cb198633485d48bf2c1a6b751a2dfaeb0"
+    },
+    {
+      "archive_path": "current-revision/.scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/checks-focused2/run/process.json",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/checks-focused2/run/process.json",
+      "bytes": 818,
+      "sha256": "0cfd8b613fe3b9c89d4d448c9908135eb27c4255a8d4d112e0e7b2eb102f6a31"
+    },
+    {
+      "archive_path": "current-revision/.scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/checks-focused2/run/stderr.log",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/checks-focused2/run/stderr.log",
+      "bytes": 151,
+      "sha256": "88dd5e35d67fb5c0c371390a98a66a5e061e4c0bef2d890a7b74781363216092"
+    },
+    {
+      "archive_path": "current-revision/.scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/checks-focused2/run/stdout.log",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/checks-focused2/run/stdout.log",
+      "bytes": 1785,
+      "sha256": "0939a3ba38baacbda038b5931b4fc3f09779b9d8c075a86ac7fe76026b001338"
+    },
+    {
+      "archive_path": "current-revision/.scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/checks-focused2/summary.json",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/checks-focused2/summary.json",
+      "bytes": 4744,
+      "sha256": "11f0d2084e7f99000c2ea3080590c0085f624dd674f125bfb21722d4d3bb37ed"
+    },
+    {
+      "archive_path": "current-revision/.scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/compile2/provider/compile.command.json",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/compile2/provider/compile.command.json",
+      "bytes": 3322,
+      "sha256": "abe93b9045d0945e486a2a4fae3211b5c2cb271edaaea3b2072946e9d69062e7"
+    },
+    {
+      "archive_path": "current-revision/.scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/compile2/provider/compile.result.json",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/compile2/provider/compile.result.json",
+      "bytes": 3392,
+      "sha256": "57e638a2bbeba52795feb07cf21781d4be38254533a5a8217a0473d4f6acdf58"
+    },
+    {
+      "archive_path": "current-revision/.scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/compile2/provider/compile.stderr.log",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/compile2/provider/compile.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "archive_path": "current-revision/.scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/compile2/provider/compile.stdout.log",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/compile2/provider/compile.stdout.log",
+      "bytes": 23,
+      "sha256": "c5c3c8aa094b49a053c42b65acff15c18229cc1b2ba492ba6b6fd563e05e40c4"
+    },
+    {
+      "archive_path": "current-revision/.scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/compile2/provider/identity.json",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/compile2/provider/identity.json",
+      "bytes": 52965,
+      "sha256": "50deb14f93157919fa3ae10a3f5a8cc87788f3a477b6c855699ee843d5188bc8"
+    },
+    {
+      "archive_path": "current-revision/.scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/compile2/provider/live.json",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/compile2/provider/live.json",
+      "bytes": 3392,
+      "sha256": "57e638a2bbeba52795feb07cf21781d4be38254533a5a8217a0473d4f6acdf58"
+    },
+    {
+      "archive_path": "current-revision/.scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/compile2/provider/plan.json",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/compile2/provider/plan.json",
+      "bytes": 3761,
+      "sha256": "a26dde520278e99847d11adcca1d3b2917a325af3b5f57d7c668999e7bf7b6d8"
+    },
+    {
+      "archive_path": "current-revision/.scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/compile2/provider/provider-deps.json",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/compile2/provider/provider-deps.json",
+      "bytes": 25193,
+      "sha256": "ae2c13d37445bd4fdb583be2fbebd1ffb877829daae4ea1c888b78dce4e287a2"
+    },
+    {
+      "archive_path": "current-revision/.scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/compile2/provider/source/src/compute_provider_ggml_cuda/ggml_cuda_provider.cc",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/compile2/provider/source/src/compute_provider_ggml_cuda/ggml_cuda_provider.cc",
+      "bytes": 82474,
+      "sha256": "ff8a364ba191350d57be3224792bada1501b6665427aaf6a9e159896e084febc"
+    },
+    {
+      "archive_path": "current-revision/.scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/current_closure.py",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/current_closure.py",
+      "bytes": 4291,
+      "sha256": "3749aa7a5767faad27653b133aad83994a13126db2b4cd17ea4452780f4a973d"
+    },
+    {
+      "archive_path": "current-revision/.scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/default-init-revision/before/build_focused.py",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/default-init-revision/before/build_focused.py",
+      "bytes": 12953,
+      "sha256": "65cda89dfc454eb19c37026858dee14afd0c0a77f85c40a66a6fd3962e840848"
+    },
+    {
+      "archive_path": "current-revision/.scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/default-init-revision/before/current_closure.py",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/default-init-revision/before/current_closure.py",
+      "bytes": 4291,
+      "sha256": "817288601c12ff28e870b69cb314f70f2cb734ebd319eba5bd5bbd72aafb31e9"
+    },
+    {
+      "archive_path": "current-revision/.scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/default-init-revision/before/mtp-packed-mmq-workspace-2026-10-24.json",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/default-init-revision/before/mtp-packed-mmq-workspace-2026-10-24.json",
+      "bytes": 53024,
+      "sha256": "5c5638ee549c2c53d9adc2ad6940a8812918c51c4323c206ba71a8cc0d4bb52f"
+    },
+    {
+      "archive_path": "current-revision/.scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/default-init-revision/before/run_focused.py",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/default-init-revision/before/run_focused.py",
+      "bytes": 2324,
+      "sha256": "220dd2c5f95625009be5eced0345cefb2fcce3ee1caad4a958158675e65c8b0b"
+    },
+    {
+      "archive_path": "current-revision/.scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/default-init-revision/linux/compile1/mmq/dependencies.d",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/default-init-revision/linux/compile1/mmq/dependencies.d",
+      "bytes": 21877,
+      "sha256": "802cc4df796f61affbf40d6dc91f23d9f873762cb6a78a5dd26882b207197b97"
+    },
+    {
+      "archive_path": "current-revision/.scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/default-init-revision/linux/compile1/mmq/dependency-record.json",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/default-init-revision/linux/compile1/mmq/dependency-record.json",
+      "bytes": 26380,
+      "sha256": "4ceee47073e781a11c2e32a2fe0e6fdc5946f75c63a4d899a412aa72bea0d167"
+    },
+    {
+      "archive_path": "current-revision/.scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/default-init-revision/linux/compile1/mmq/identity.json",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/default-init-revision/linux/compile1/mmq/identity.json",
+      "bytes": 12692,
+      "sha256": "5346db9b851a90600de14f19e5a950c32a1abb18ed8a2b8fb61873dbd55e8236"
+    },
+    {
+      "archive_path": "current-revision/.scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/default-init-revision/linux/compile1/mmq/live.json",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/default-init-revision/linux/compile1/mmq/live.json",
+      "bytes": 3297,
+      "sha256": "eefdf3b99756fdef804c3143aa4551025b1d9d1c7950eace557b5c834fb3828a"
+    },
+    {
+      "archive_path": "current-revision/.scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/default-init-revision/linux/compile1/mmq/plan.json",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/default-init-revision/linux/compile1/mmq/plan.json",
+      "bytes": 6816,
+      "sha256": "933824a2e65ca230877b8ab5873a0ff271ba4d41fce00a9b58811b59e45781d4"
+    },
+    {
+      "archive_path": "current-revision/.scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/default-init-revision/linux/compile1/mmq/process.json",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/default-init-revision/linux/compile1/mmq/process.json",
+      "bytes": 3440,
+      "sha256": "fa2ead3714db327eb7ed4a81e114ba3ff8ac9055cfc84cb7ffebcbb0b37edf18"
+    },
+    {
+      "archive_path": "current-revision/.scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/default-init-revision/linux/compile1/mmq/source/.scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/generated/src/ggml-cuda/mmq.cu",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/default-init-revision/linux/compile1/mmq/source/.scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/generated/src/ggml-cuda/mmq.cu",
+      "bytes": 34767,
+      "sha256": "9c94a8aa997e6ed523f992adc35eb4ee0f95d48ce517263eb5cc0e8f74e656d9"
+    },
+    {
+      "archive_path": "current-revision/.scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/default-init-revision/linux/compile1/mmq/stderr.log",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/default-init-revision/linux/compile1/mmq/stderr.log",
+      "bytes": 974,
+      "sha256": "7accbea4a76696a909b80d778ba76124321b5d3f2a0553164a8e3b78c1f2519d"
+    },
+    {
+      "archive_path": "current-revision/.scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/default-init-revision/linux/compile1/mmq/stdout.log",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/default-init-revision/linux/compile1/mmq/stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "archive_path": "current-revision/.scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/default-init-revision/linux/compile1/provider/dependencies.d",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/default-init-revision/linux/compile1/provider/dependencies.d",
+      "bytes": 20958,
+      "sha256": "cb0cdf1ebdfc4a49bb67af27dec69b243d23bb5c6a2d3afe0b1f61ef8c6a1520"
+    },
+    {
+      "archive_path": "current-revision/.scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/default-init-revision/linux/compile1/provider/live.json",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/default-init-revision/linux/compile1/provider/live.json",
+      "bytes": 1479,
+      "sha256": "a85457436db56e951a9913a3ac7f230256ee9f927ebf323b61a3f1b879ee541b"
+    },
+    {
+      "archive_path": "current-revision/.scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/default-init-revision/linux/compile1/provider/plan.json",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/default-init-revision/linux/compile1/provider/plan.json",
+      "bytes": 3563,
+      "sha256": "981905d0fdc7197fe8f8399d8e8bbd9b89c7db1b48af5fba6531509a1fc6e86b"
+    },
+    {
+      "archive_path": "current-revision/.scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/default-init-revision/linux/compile1/provider/process.json",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/default-init-revision/linux/compile1/provider/process.json",
+      "bytes": 1621,
+      "sha256": "57af6460d8158ef1d64a513840d3b723dd04cfc0e16b9283bf436ec61089e11f"
+    },
+    {
+      "archive_path": "current-revision/.scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/default-init-revision/linux/compile1/provider/source/src/compute_provider_ggml_cuda/ggml_cuda_provider.cc",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/default-init-revision/linux/compile1/provider/source/src/compute_provider_ggml_cuda/ggml_cuda_provider.cc",
+      "bytes": 82470,
+      "sha256": "96542bf0d45c5ca50de7c58963e17e28d5b43bf2cdbc485f6496a35fc7d99563"
+    },
+    {
+      "archive_path": "current-revision/.scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/default-init-revision/linux/compile1/provider/stderr.log",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/default-init-revision/linux/compile1/provider/stderr.log",
+      "bytes": 913,
+      "sha256": "00de39382528f69a95cd2df3d7d8b80aa92b3c70fcae7d18b1e04fd61308647f"
+    },
+    {
+      "archive_path": "current-revision/.scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/default-init-revision/linux/compile1/provider/stdout.log",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/default-init-revision/linux/compile1/provider/stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "archive_path": "current-revision/.scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/default-init-revision/linux/compile1/result.json",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/default-init-revision/linux/compile1/result.json",
+      "bytes": 1262,
+      "sha256": "b1c9a169d7b16d1ba4ecc591e96e23b5cc320d5abce21c2beb42d9d3c7e4b7d3"
+    },
+    {
+      "archive_path": "current-revision/.scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/default-init-revision/linux/compile1/tensor-program/dependencies.d",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/default-init-revision/linux/compile1/tensor-program/dependencies.d",
+      "bytes": 17564,
+      "sha256": "582e2200a230f56f4a3a9f444b733bb6aa7d768ae8dd363ede0e1d98fff3ebed"
+    },
+    {
+      "archive_path": "current-revision/.scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/default-init-revision/linux/compile1/tensor-program/dependency-record.json",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/default-init-revision/linux/compile1/tensor-program/dependency-record.json",
+      "bytes": 25176,
+      "sha256": "266fad03ec22e4e4ab4850fd0f2ad02307c31573b30eeede2d04a43193f67cca"
+    },
+    {
+      "archive_path": "current-revision/.scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/default-init-revision/linux/compile1/tensor-program/identity.json",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/default-init-revision/linux/compile1/tensor-program/identity.json",
+      "bytes": 12333,
+      "sha256": "1c93eea9b846f2ddc9dcc5429dae609cb4c887ed2326cb57da0a2c9c90e82fc1"
+    },
+    {
+      "archive_path": "current-revision/.scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/default-init-revision/linux/compile1/tensor-program/live.json",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/default-init-revision/linux/compile1/tensor-program/live.json",
+      "bytes": 1494,
+      "sha256": "7ec37252e75f2898cee9e0d240f7accab78896c626d678870314f685bb475f1c"
+    },
+    {
+      "archive_path": "current-revision/.scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/default-init-revision/linux/compile1/tensor-program/plan.json",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/default-init-revision/linux/compile1/tensor-program/plan.json",
+      "bytes": 3557,
+      "sha256": "e3a61a0e9f3c46edb9a418d94f45ba8f38af195d7cbaaee07ab249efd7caaefa"
+    },
+    {
+      "archive_path": "current-revision/.scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/default-init-revision/linux/compile1/tensor-program/process.json",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/default-init-revision/linux/compile1/tensor-program/process.json",
+      "bytes": 1636,
+      "sha256": "873e51c552e559aacbcfa59e215a5353b881617e24d4467c5c202a9f3f022dd8"
+    },
+    {
+      "archive_path": "current-revision/.scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/default-init-revision/linux/compile1/tensor-program/source/src/compute_provider_ggml_cuda/tensor_program.cc",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/default-init-revision/linux/compile1/tensor-program/source/src/compute_provider_ggml_cuda/tensor_program.cc",
+      "bytes": 62112,
+      "sha256": "7d9d9b3e5af1843118e65e69f8f43bb9fa3d2d331c3073122175de6d6d0d2e76"
+    },
+    {
+      "archive_path": "current-revision/.scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/default-init-revision/linux/compile1/tensor-program/stderr.log",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/default-init-revision/linux/compile1/tensor-program/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "archive_path": "current-revision/.scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/default-init-revision/linux/compile1/tensor-program/stdout.log",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/default-init-revision/linux/compile1/tensor-program/stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "archive_path": "current-revision/.scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/default-init-revision/linux/compile2/provider/dependencies.d",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/default-init-revision/linux/compile2/provider/dependencies.d",
+      "bytes": 20958,
+      "sha256": "60ea0aafaabd24900f2b5b290f283a93e3fa0a689fe449000546665f00e2a6b3"
+    },
+    {
+      "archive_path": "current-revision/.scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/default-init-revision/linux/compile2/provider/dependency-record.json",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/default-init-revision/linux/compile2/provider/dependency-record.json",
+      "bytes": 30613,
+      "sha256": "0c761ead35315b6d5138d3dd1391459b9428afc03d58b5c643a2551343e6f932"
+    },
+    {
+      "archive_path": "current-revision/.scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/default-init-revision/linux/compile2/provider/identity.json",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/default-init-revision/linux/compile2/provider/identity.json",
+      "bytes": 15802,
+      "sha256": "423183ce87d6006765bd9118a9f0c0694fffc5d0183b0174c47288d2b9cb76f4"
+    },
+    {
+      "archive_path": "current-revision/.scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/default-init-revision/linux/compile2/provider/plan.json",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/default-init-revision/linux/compile2/provider/plan.json",
+      "bytes": 3332,
+      "sha256": "b14a8815ab23e1eae42b97690b9d2f66eaccc371a6bb7f3b4f3d18b9e458d0c9"
+    },
+    {
+      "archive_path": "current-revision/.scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/default-init-revision/linux/compile2/provider/process.json",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/default-init-revision/linux/compile2/provider/process.json",
+      "bytes": 1599,
+      "sha256": "872c1b80eec7c5aa76958794a20b1f726f887fa144d2ec0a7619f8e2a5d1deee"
+    },
+    {
+      "archive_path": "current-revision/.scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/default-init-revision/linux/compile2/provider/source/src/compute_provider_ggml_cuda/ggml_cuda_provider.cc",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/default-init-revision/linux/compile2/provider/source/src/compute_provider_ggml_cuda/ggml_cuda_provider.cc",
+      "bytes": 82474,
+      "sha256": "ff8a364ba191350d57be3224792bada1501b6665427aaf6a9e159896e084febc"
+    },
+    {
+      "archive_path": "current-revision/.scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/default-init-revision/linux/compile2/provider/stderr.log",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/default-init-revision/linux/compile2/provider/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "archive_path": "current-revision/.scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/default-init-revision/linux/compile2/provider/stdout.log",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/default-init-revision/linux/compile2/provider/stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "archive_path": "current-revision/.scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/default-init-revision/linux/inventory.json",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/default-init-revision/linux/inventory.json",
+      "bytes": 1732,
+      "sha256": "19d0b0755875828c94f241e4a8e1d673148a8aca016a32fa1685653bdf4efc51"
+    },
+    {
+      "archive_path": "current-revision/.scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/default-init-revision/linux/result.json",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/default-init-revision/linux/result.json",
+      "bytes": 1066,
+      "sha256": "df9401e681ec58e8b93af66a67f38f169ba68f59ba79f07ca3d091d64b02fa57"
+    },
+    {
+      "archive_path": "current-revision/.scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/default-init-revision/linux-files.json",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/default-init-revision/linux-files.json",
+      "bytes": 13605,
+      "sha256": "b818421e2830d08d3b9b5bad279c82fb22c5ff9b538069a5b2f1ef93bfa8f6fb"
+    },
+    {
+      "archive_path": "current-revision/.scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/default-init-revision/source.patch",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/default-init-revision/source.patch",
+      "bytes": 504,
+      "sha256": "ad94f5dcd94ab979d675ebb0bba2db61b7a5dfb75d4d18c86d037041df4c1da7"
+    },
+    {
+      "archive_path": "current-revision/.scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/focused-link2/host-records.json",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/focused-link2/host-records.json",
+      "bytes": 39850,
+      "sha256": "a85b9d611f8632153dfba37e0fad4319033a36d9821923b2d712a3cd6ae16474"
+    },
+    {
+      "archive_path": "current-revision/.scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/focused-link2/link/command.json",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/focused-link2/link/command.json",
+      "bytes": 33545,
+      "sha256": "fead141a90e74d07a8bdfd38818f35f056a09fbf7aa99ecff1cf00c9ee45792f"
+    },
+    {
+      "archive_path": "current-revision/.scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/focused-link2/link/live.json",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/focused-link2/link/live.json",
+      "bytes": 33562,
+      "sha256": "bd3b90b2641e42eef303e02c88f27b396cd44bdbf9776d4412ff1ee9c0a9e118"
+    },
+    {
+      "archive_path": "current-revision/.scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/focused-link2/link/process.json",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/focused-link2/link/process.json",
+      "bytes": 33678,
+      "sha256": "308cbe8d0c517106ca37a88c52a573aca484ff3975db29d4de5683fa673bc94c"
+    },
+    {
+      "archive_path": "current-revision/.scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/focused-link2/link/stderr.log",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/focused-link2/link/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "archive_path": "current-revision/.scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/focused-link2/link/stdout.log",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/focused-link2/link/stdout.log",
+      "bytes": 314,
+      "sha256": "8f2b19f247fd708b862f031cf5918ecd0c296b3d0085e2dbc45f17fc75b7a2eb"
+    },
+    {
+      "archive_path": "current-revision/.scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/focused-link2/link-plan.json",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/focused-link2/link-plan.json",
+      "bytes": 121114,
+      "sha256": "ed8dec9936eec0ee3bc05019d6a07c4d04249ab11d5ee84ab9afae2c6559ab1a"
+    },
+    {
+      "archive_path": "current-revision/.scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/focused-link2/mmq-map-excerpt.txt",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/focused-link2/mmq-map-excerpt.txt",
+      "bytes": 760,
+      "sha256": "254c1c5bbc285c02e6b9d364aa8b914508d0116a968cd6eddc9f8047a7278cf9"
+    },
+    {
+      "archive_path": "current-revision/.scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/focused-link2/native-records.json",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/focused-link2/native-records.json",
+      "bytes": 13825,
+      "sha256": "b83e15732e6d45c13aae6b5c50298a2e18e3082f5b00c168a494a7f91d3505bc"
+    },
+    {
+      "archive_path": "current-revision/.scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/focused-link2/ready.json",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/focused-link2/ready.json",
+      "bytes": 2693,
+      "sha256": "239ace1bc555e0ca0b148c1e9d0740f434afa25bf03bbcdc7db3683de853dbca"
+    },
+    {
+      "archive_path": "current-revision/.scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/focused-link2/runtime-environment.json",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/focused-link2/runtime-environment.json",
+      "bytes": 11215,
+      "sha256": "7ece711823261b74f380217a912d94aea353c85e0bcc1e03a19a225f554173b0"
+    },
+    {
+      "archive_path": "current-revision/.scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/run_focused.py",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/run_focused.py",
+      "bytes": 2523,
+      "sha256": "ac15babb457ee4143a503a2d8fac084715b1997d4b0a359509168e007ce5847d"
+    },
+    {
+      "archive_path": "current-revision/.scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/update_current_proof.py",
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/update_current_proof.py",
+      "bytes": 8931,
+      "sha256": "3efe1f801559a251e06314acd83cef34d9b9bef115d67decaed229bd370a16d9"
+    },
+    {
+      "archive_path": "current-revision/src/compute_provider_ggml_cuda/ggml_cuda_provider.cc",
+      "path": "src/compute_provider_ggml_cuda/ggml_cuda_provider.cc",
+      "bytes": 82474,
+      "sha256": "ff8a364ba191350d57be3224792bada1501b6665427aaf6a9e159896e084febc"
+    }
+  ],
+  "initial_revision": {
+    "proof_snapshot": {
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/default-init-revision/before/mtp-packed-mmq-workspace-2026-10-24.json",
+      "bytes": 53024,
+      "sha256": "5c5638ee549c2c53d9adc2ad6940a8812918c51c4323c206ba71a8cc0d4bb52f"
+    },
+    "archive_before_append": {
+      "path": "docs/evidence/correctness/mtp-packed-mmq-workspace-2026-10-24.zip",
+      "bytes": 529930,
+      "sha256": "d86a63bf49f72a872785868c375ff7a4f67acbdad7a8fd211d5775c118a59252"
+    },
+    "execution": {
+      "summary": {
+        "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/checks-focused1/summary.json",
+        "bytes": 4744,
+        "sha256": "10e9a33259c4d6c770bb14d4aa122b53472be3307fd0ea4cb967c4cb9e5c872c"
+      },
+      "XML": {
+        "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/checks-focused1/results.xml",
+        "bytes": 4628,
+        "sha256": "f1089bd82763cf268e1f204e42373cc8a1403f73aad7bd7a7a082f888a9748b0"
+      },
+      "process": {
+        "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/checks-focused1/run/process.json",
+        "bytes": 818,
+        "sha256": "288f593f921a3dd0d91297512204f5001dcc6b982729a3dd6c8d5593d78962d2"
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\orin-proposal\\mmq-query-proposal\\focused-link1\\packed-mmq-workspace-checks.exe",
+        "bytes": 139486720,
+        "sha256": "5a4b116e6036be705047b38a610c40859f5463b707b9a8eddcb1fe6857cdc1b0"
+      },
+      "runtime": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\orin-proposal\\mmq-query-proposal\\focused-link1\\runtime-environment.json",
+        "bytes": 11215,
+        "sha256": "0fa0d8865e06bb65c36c134de7a6b03b33950954801369d4d355f426c84978f2"
+      }
+    },
+    "link": {
+      "ready": {
+        "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/focused-link1/ready.json",
+        "bytes": 2693,
+        "sha256": "bd32083f0fcaf2bb3ad69b3f56ec3a45653621ba8ada9da151ed6817cc049607"
+      },
+      "plan": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\orin-proposal\\mmq-query-proposal\\focused-link1\\link-plan.json",
+        "bytes": 121114,
+        "sha256": "6e1c7f0b6f0c8aad2319f38ec0aaa2560fae4d8806a68b2c11ac32e63d24ccc1"
+      },
+      "MAP": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\orin-proposal\\mmq-query-proposal\\focused-link1\\packed-mmq-workspace-checks.map",
+        "bytes": 57213507,
+        "sha256": "e8d113b122acf6e76a4c3430dd224b9ffd366022c1cc3940058f0d87175b4d5f"
+      },
+      "excerpt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\orin-proposal\\mmq-query-proposal\\focused-link1\\mmq-map-excerpt.txt",
+        "bytes": 6060,
+        "sha256": "21fc109848d31d8a8c9ece211ab65fa2e2d851ab305abd6ca387e47d4a67707b"
+      },
+      "host_records": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\orin-proposal\\mmq-query-proposal\\focused-link1\\host-records.json",
+        "bytes": 39850,
+        "sha256": "3bb3f09c22c2503c25cd573fe5a9b2e48a5d23e98ab86d051db7251e171cdcfe"
+      },
+      "native_records": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\orin-proposal\\mmq-query-proposal\\focused-link1\\native-records.json",
+        "bytes": 13825,
+        "sha256": "b83e15732e6d45c13aae6b5c50298a2e18e3082f5b00c168a494a7f91d3505bc"
+      },
+      "old_mmq_archive_member_selected": false,
+      "flat_closure_entry": {
+        "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/current_closure.py",
+        "bytes": 4291,
+        "sha256": "817288601c12ff28e870b69cb314f70f2cb734ebd319eba5bd5bbd72aafb31e9"
+      }
+    },
+    "note": "Initial focused1 facts and source payloads remain in the existing archive entries; this container appends the current revision without a second SDK/binary archive."
+  },
+  "current_revision": {
+    "source_patch": {
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/default-init-revision/source.patch",
+      "bytes": 504,
+      "sha256": "ad94f5dcd94ab979d675ebb0bba2db61b7a5dfb75d4d18c86d037041df4c1da7"
+    },
+    "reason": "GCC14 -Werror requires explicit defaults for new aggregate vector fields; only packed_nodes{} and packed_arenas{} were added. No ABI/math change.",
+    "source": {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_ggml_cuda\\ggml_cuda_provider.cc",
+      "bytes": 82474,
+      "sha256": "ff8a364ba191350d57be3224792bada1501b6665427aaf6a9e159896e084febc"
+    },
+    "windows": {
+      "provider_record": {
+        "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/compile2/provider/identity.json",
+        "bytes": 52965,
+        "sha256": "50deb14f93157919fa3ae10a3f5a8cc87788f3a477b6c855699ee843d5188bc8"
+      },
+      "provider_TUs": 1,
+      "NVCC_commands": 0,
+      "other_host_native_and_test_objects_reused": true,
+      "execution": {
+        "summary": {
+          "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/checks-focused2/summary.json",
+          "bytes": 4744,
+          "sha256": "11f0d2084e7f99000c2ea3080590c0085f624dd674f125bfb21722d4d3bb37ed"
+        },
+        "XML": {
+          "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/checks-focused2/results.xml",
+          "bytes": 4628,
+          "sha256": "19b7e234bae95cfa7ea2b505768c462f03b420ec0e1455742b7706b6245526b8"
+        },
+        "process": {
+          "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/checks-focused2/run/process.json",
+          "bytes": 818,
+          "sha256": "0cfd8b613fe3b9c89d4d448c9908135eb27c4255a8d4d112e0e7b2eb102f6a31"
+        },
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\orin-proposal\\mmq-query-proposal\\focused-link2\\packed-mmq-workspace-checks.exe",
+          "bytes": 139486720,
+          "sha256": "ce16db1f87af15f0ed2a9bcd956f010f62b667d3c689b7c8a8d93f0d618bc503"
+        },
+        "runtime": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\orin-proposal\\mmq-query-proposal\\focused-link2\\runtime-environment.json",
+          "bytes": 11215,
+          "sha256": "7ece711823261b74f380217a912d94aea353c85e0bcc1e03a19a225f554173b0"
+        }
+      },
+      "link_ready": {
+        "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/focused-link2/ready.json",
+        "bytes": 2693,
+        "sha256": "239ace1bc555e0ca0b148c1e9d0740f434afa25bf03bbcdc7db3683de853dbca"
+      },
+      "link_plan": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\orin-proposal\\mmq-query-proposal\\focused-link2\\link-plan.json",
+        "bytes": 121114,
+        "sha256": "ed8dec9936eec0ee3bc05019d6a07c4d04249ab11d5ee84ab9afae2c6559ab1a"
+      },
+      "MAP": {
+        "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/focused-link2/packed-mmq-workspace-checks.map",
+        "bytes": 57213507,
+        "sha256": "16b46325618d5e256a0ec48a7d74b314563bfd1585bf9b47f77c40ec6f4e5bdc"
+      },
+      "MAP_excerpt": {
+        "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/focused-link2/mmq-map-excerpt.txt",
+        "bytes": 760,
+        "sha256": "254c1c5bbc285c02e6b9d364aa8b914508d0116a968cd6eddc9f8047a7278cf9"
+      },
+      "same_seven_cases_passed": true
+    },
+    "linux": {
+      "scope": "Current product 2 host + 1 native compile-only; no link or focused/model execution",
+      "copied_records": {
+        "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/default-init-revision/linux/result.json",
+        "bytes": 1066,
+        "sha256": "df9401e681ec58e8b93af66a67f38f169ba68f59ba79f07ca3d091d64b02fa57"
+      },
+      "original_result": {
+        "status": "PASS current Linux compile-only, 2 host + 1 native",
+        "records": [
+          {
+            "path": "/root/hyle-scratch/compute-unified/mtp-packed-mmq-20261024/compile2/provider/identity.json",
+            "bytes": 15802,
+            "sha256": "423183ce87d6006765bd9118a9f0c0694fffc5d0183b0174c47288d2b9cb76f4"
+          },
+          {
+            "path": "/root/hyle-scratch/compute-unified/mtp-packed-mmq-20261024/compile1/tensor-program/identity.json",
+            "bytes": 12333,
+            "sha256": "1c93eea9b846f2ddc9dcc5429dae609cb4c887ed2326cb57da0a2c9c90e82fc1"
+          },
+          {
+            "path": "/root/hyle-scratch/compute-unified/mtp-packed-mmq-20261024/compile1/mmq/identity.json",
+            "bytes": 12692,
+            "sha256": "5346db9b851a90600de14f19e5a950c32a1abb18ed8a2b8fb61873dbd55e8236"
+          }
+        ],
+        "retained_failure": {
+          "path": "/root/hyle-scratch/compute-unified/mtp-packed-mmq-20261024/compile1/provider/process.json",
+          "bytes": 1621,
+          "sha256": "57af6460d8158ef1d64a513840d3b723dd04cfc0e16b9283bf436ec61089e11f"
+        },
+        "link": 0,
+        "native_runs": 0,
+        "SDK_builds": 0,
+        "HTTP": 0
+      },
+      "inventory": {
+        "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/default-init-revision/linux/inventory.json",
+        "bytes": 1732,
+        "sha256": "19d0b0755875828c94f241e4a8e1d673148a8aca016a32fa1685653bdf4efc51"
+      },
+      "first_provider_failure": {
+        "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/default-init-revision/linux/compile1/provider/process.json",
+        "bytes": 1621,
+        "sha256": "57af6460d8158ef1d64a513840d3b723dd04cfc0e16b9283bf436ec61089e11f"
+      },
+      "first_provider_stderr": {
+        "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/default-init-revision/linux/compile1/provider/stderr.log",
+        "bytes": 913,
+        "sha256": "00de39382528f69a95cd2df3d7d8b80aa92b3c70fcae7d18b1e04fd61308647f"
+      },
+      "no_ABI17_product_headers": true,
+      "old_Linux_host_closure_not_linked": true,
+      "SDK_rebuilds": 0,
+      "HTTP": 0
+    },
+    "flat_closure_entry": {
+      "path": ".scratch/mtp-packed-head-20261024/orin-proposal/mmq-query-proposal/current_closure.py",
+      "bytes": 4291,
+      "sha256": "3749aa7a5767faad27653b133aad83994a13126db2b4cd17ea4452780f4a973d"
+    },
+    "Orin_native_verified": false,
+    "TPS": false
+  }
+}

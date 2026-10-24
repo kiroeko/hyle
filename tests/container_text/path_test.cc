@@ -72,7 +72,7 @@ TEST(Path, Directory) {
   EXPECT_TRUE(directory(""_sv) == "."_sv);
   EXPECT_TRUE(directory("/foo"_sv) == "/"_sv);     // parent is root
   EXPECT_TRUE(directory("/"_sv) == "/"_sv);
-  EXPECT_TRUE(directory("//foo"_sv) == "/"_sv);    // clay read OOB here
+  EXPECT_TRUE(directory("//foo"_sv) == "/"_sv);    // All-separator parent prefix.
   EXPECT_TRUE(directory("a/b/c"_sv) == "a/b"_sv);
 }
 
@@ -195,7 +195,7 @@ TEST(Path, ReplaceExtension) {
   EXPECT_EQ(replace_extension("test.jpg"_sv, ".png"_sv, output), 8u);
   EXPECT_STREQ(output, "test.png");
 
-  // No existing extension: ext is appended (clay returned null; HYLE appends).
+  // No existing extension: ext is appended.
   EXPECT_EQ(replace_extension("test"_sv, ".png"_sv, output), 8u);
   EXPECT_STREQ(output, "test.png");
   EXPECT_EQ(replace_extension("test"_sv, ".png"_sv, std::span<char>{}), 8u);

@@ -1,0 +1,46 @@
+{
+  "status": "PASS",
+  "product_source_and_kept_image_hashes_unchanged": true,
+  "checked": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cublas-scores-20261022\\qwen-link1\\qwen.exe",
+      "bytes": 140355072,
+      "sha256": "18932968a05db1f13fbf6c1579d1783eac60b1426ef6ca28d4018a09128fff15"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-window-20261022\\peer\\checks\\attempt1\\peer.exe",
+      "bytes": 35795456,
+      "sha256": "f353371459d63d168ee88e4e57115ba9af4258b871f5adf02dd289e34cd2b421"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tools\\qwen35_text\\main.cc",
+      "bytes": 271868,
+      "sha256": "f2e1c6002042d8ccf08eaed3d2204fe7c459a2e9a37ae74d13c2ff93e3714131"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_cublas\\cublas_provider.cc",
+      "bytes": 29894,
+      "sha256": "ae713f4e21ec4a3d5e77493a9f3aa06e02d54736606b0697601719357bb28c1c"
+    }
+  ],
+  "link_closures": {
+    "qwen": {
+      "inputs": 195,
+      "all_paths_and_sizes_retained": true
+    },
+    "tests": {
+      "inputs": 198,
+      "all_paths_and_sizes_retained": true
+    }
+  },
+  "final_doc_hashes_match_published_snapshots": true,
+  "public_archive_hashes_unchanged": true,
+  "cleanup": {
+    "removed_files": 10,
+    "removed_logical_bytes": 413591305,
+    "all_targets_absent": true
+  },
+  "root_test_script_matches_executed_copy": true,
+  "no_additional_model_or_build_processes": true,
+  "goal_complete": false
+}

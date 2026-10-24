@@ -1,0 +1,1956 @@
+{
+  "status": "PASS_LIMITED_SERIAL_CARRIER_AND_NATIVE_MULTI_SESSION",
+  "date": "2026-10-22",
+  "change": "Consumer already admits one Graph batch through native retirement and final readback. Remove global parity and duplicate per-shape Invocation slots; keep one serial slot for all backends. Four permanent probes use actual slot identity without compatibility names.",
+  "math_and_lifetime": "Original weights, BF16/F32 policy, full state/candidate budgets, readonly leases, whole-block output rotation, capture identity invalidation, cancellation and actual native retirement unchanged.",
+  "source_freeze": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\vulkan-native-memory-20261022\\consumer-single-slot\\source-freeze.json",
+    "bytes": 2551,
+    "sha256": "00866018d1dd1554e8d24dd4186eb3ffa420dcbe71f8138e5c2679ba2702ecdc"
+  },
+  "sources": [
+    {
+      "path": "tools/qwen35_text/main.cc",
+      "before": "4375293aeaf846cb7c7567065d42652716e6e3460fdc0e7d90ab64237a60202e",
+      "current": "551e3d24d82aeaa1cd4b88f01c13ddb13f5273e39f0f5a84cd01beb077d9a0c3"
+    },
+    {
+      "path": "tools/qwen35_text/batch_probe.cc",
+      "before": "1b27701e8ff3da3c897fc2fb6ae6b9cc48ac775f977d07c258ec7d1bcabe2aab",
+      "current": "990ee770965988227e91094b1615dbad12f8331933b268587b45a69920c65a60"
+    },
+    {
+      "path": "tools/qwen35_text/mtp_session_probe.cc",
+      "before": "0aec529ec5bb43e4a282586abb8dca20333111150765698ea6f262c068b889e9",
+      "current": "1f79b9822f878a163ee69a26c93b9f86e079e189e98ed15b01a5ce9652d980d7"
+    },
+    {
+      "path": "tools/qwen35_text/retained_budget_probe.cc",
+      "before": "8a8f87f390787a586c946608c33a9ba16bed4df679cce6fa0209831dea238f03",
+      "current": "0173abfc1d60d98cc70542893eca1ba4da6852de404a68a8ef14788923d0c85a"
+    },
+    {
+      "path": "tools/qwen35_text/retirement_probe.cc",
+      "before": "e1d96a723334df64ec33badd10116d278d39463c105cef28ff7b2e70cc3a1aa9",
+      "current": "c04940a2b8986fdbda131923e7c493146e1e74a841f1e298796ef258e1ffbb0f"
+    }
+  ],
+  "diagnostic_observations": {
+    "status": "ACTUAL_FAILURE_DIAGNOSTICS",
+    "attempts": [
+      {
+        "result": {
+          "command": [
+            "C:\\public\\project-hyle\\hyle\\.scratch\\vulkan-native-memory-20261022\\diagnostic-link1\\qwen.exe",
+            "--inputs",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-native-assembly-20261022\\inputs\\mtp",
+            "--mtp",
+            "on",
+            "--capacity",
+            "64",
+            "--session-schedules",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-20261022\\fixtures\\sessions.txt",
+            "--max-sessions",
+            "2",
+            "--active-sequences",
+            "2",
+            "--cache-bytes",
+            "auto",
+            "--prefix-cache",
+            "off",
+            "--progress",
+            "direct",
+            "--replay",
+            "commands"
+          ],
+          "cwd": "C:\\public\\project-hyle\\hyle",
+          "image": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\vulkan-native-memory-20261022\\diagnostic-link1\\qwen.exe",
+            "bytes": 68985856,
+            "sha256": "2397b72abc91e25f0ee335461c8df21ce9e98cb1f8558cc4ad746d5f77845951"
+          },
+          "fixtures": [
+            {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-20261022\\fixtures\\sessions.txt",
+              "bytes": 32,
+              "sha256": "b6dd6cc1769d2e135feb43561920b14c0cf60d6ede18777430b7295fc19aed7e"
+            },
+            {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-20261022\\fixtures\\a-long.txt",
+              "bytes": 56,
+              "sha256": "5337c980bd52a6296dbf4dc795ce75dab88a51e66db95dbfede1779e71073d01"
+            },
+            {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-20261022\\fixtures\\b.txt",
+              "bytes": 55,
+              "sha256": "809bb9c24a9a553d97a72a15444e49613f95476f1176403aa8569929701f95c7"
+            },
+            {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-20261022\\fixtures\\c.txt",
+              "bytes": 56,
+              "sha256": "54e70c1f592b353dd93892b990b89a5149e0f040b8a1e63622795f9d9d20e580"
+            },
+            {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-20261022\\fixtures\\p15.ids",
+              "bytes": 70,
+              "sha256": "f57af71846ab496f90f1e09a089a8f4651570e975e115bc162084cba74a98868"
+            },
+            {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-20261022\\fixtures\\p23.ids",
+              "bytes": 113,
+              "sha256": "0459156ffd8f318a1e1e2049e18a063c1b760fed77013afa689584fcc1d20d30"
+            },
+            {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-20261022\\fixtures\\u1.ids",
+              "bytes": 8,
+              "sha256": "c1a3954da0b521ad1a53c596aaf03e6aa79d9881a6f54aab59fcdd5aabd4d175"
+            },
+            {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-20261022\\fixtures\\u8.ids",
+              "bytes": 38,
+              "sha256": "09e9bcf99e844541c359b9fa14aca67a9a4a2202a9446614df71f98cb2a6afc9"
+            },
+            {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-20261022\\fixtures\\u24.ids",
+              "bytes": 120,
+              "sha256": "eb5cc8bc4c2e3190a0852886081224de2c6a0d942553bbe32d013df5f5a605bd"
+            }
+          ],
+          "started": 1792644673.0663855,
+          "performance_comparison": false,
+          "pid": 97944,
+          "state": "terminal",
+          "exit": 1,
+          "seconds": 21.12755298614502
+        },
+        "stderr": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\vulkan-native-memory-20261022\\qwen-N2R2-run1\\stderr.log",
+          "bytes": 1619865,
+          "sha256": "aa37151002037ea2c636e36aab650d6601fd93ed0f55f610a09259f22374f591"
+        },
+        "failure_line": 26806,
+        "failure": "ggml_vulkan: Device memory allocation of size 1024 failed.",
+        "last_batch": "mtp_batch requests=2 T=2 role=3 full_hit=0",
+        "successful_region_graph_allocations": 13336,
+        "positive_region_graph_allocations": 10541,
+        "cumulative_successful_region_graph_requested_capacity_bytes": 1594108032,
+        "last_region": [
+          13336,
+          49152
+        ],
+        "heap_snapshots": [
+          {
+            "region": 1,
+            "heap": 0,
+            "size": 12593397760,
+            "flags": 1,
+            "usage": 4050563072,
+            "budget": 11788091392
+          },
+          {
+            "region": 1,
+            "heap": 1,
+            "size": 34211250176,
+            "flags": 0,
+            "usage": 83251200,
+            "budget": 50437324800
+          }
+        ],
+        "native_logger_last_report_before_failure": null,
+        "native_requested_allocations_before_failure": [],
+        "caveats": [
+          "Graph capacity is cumulative across constructions, not live/peak physical memory or VkDeviceMemory allocation count.",
+          "Heap usage/budget are Vulkan implementation estimates at observed instants; do not sum distinct heaps as one fungible pool.",
+          "Original ggml memory logger prints requested sizes rounded to two decimals and excludes Hyle-owned allocations and driver internal costs.",
+          "Failure callback may run after failed local temporary cleanup; it is not the exact maximum before allocation.",
+          "No new throughput, quality, or full multi-session success claim."
+        ]
+      },
+      {
+        "result": {
+          "command": [
+            "C:\\public\\project-hyle\\hyle\\.scratch\\vulkan-native-memory-20261022\\diagnostic-link2\\qwen.exe",
+            "--inputs",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-native-assembly-20261022\\inputs\\mtp",
+            "--mtp",
+            "on",
+            "--capacity",
+            "64",
+            "--session-schedules",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-20261022\\fixtures\\sessions.txt",
+            "--max-sessions",
+            "2",
+            "--active-sequences",
+            "2",
+            "--cache-bytes",
+            "auto",
+            "--prefix-cache",
+            "off",
+            "--progress",
+            "direct",
+            "--replay",
+            "commands"
+          ],
+          "cwd": "C:\\public\\project-hyle\\hyle",
+          "image": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\vulkan-native-memory-20261022\\diagnostic-link2\\qwen.exe",
+            "bytes": 68985856,
+            "sha256": "7a0761b4bcf89673756fc31f5a8238420b64ee1fda439408536ecea05089c51f"
+          },
+          "fixtures": [
+            {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-20261022\\fixtures\\sessions.txt",
+              "bytes": 32,
+              "sha256": "b6dd6cc1769d2e135feb43561920b14c0cf60d6ede18777430b7295fc19aed7e"
+            },
+            {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-20261022\\fixtures\\a-long.txt",
+              "bytes": 56,
+              "sha256": "5337c980bd52a6296dbf4dc795ce75dab88a51e66db95dbfede1779e71073d01"
+            },
+            {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-20261022\\fixtures\\b.txt",
+              "bytes": 55,
+              "sha256": "809bb9c24a9a553d97a72a15444e49613f95476f1176403aa8569929701f95c7"
+            },
+            {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-20261022\\fixtures\\c.txt",
+              "bytes": 56,
+              "sha256": "54e70c1f592b353dd93892b990b89a5149e0f040b8a1e63622795f9d9d20e580"
+            },
+            {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-20261022\\fixtures\\p15.ids",
+              "bytes": 70,
+              "sha256": "f57af71846ab496f90f1e09a089a8f4651570e975e115bc162084cba74a98868"
+            },
+            {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-20261022\\fixtures\\p23.ids",
+              "bytes": 113,
+              "sha256": "0459156ffd8f318a1e1e2049e18a063c1b760fed77013afa689584fcc1d20d30"
+            },
+            {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-20261022\\fixtures\\u1.ids",
+              "bytes": 8,
+              "sha256": "c1a3954da0b521ad1a53c596aaf03e6aa79d9881a6f54aab59fcdd5aabd4d175"
+            },
+            {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-20261022\\fixtures\\u8.ids",
+              "bytes": 38,
+              "sha256": "09e9bcf99e844541c359b9fa14aca67a9a4a2202a9446614df71f98cb2a6afc9"
+            },
+            {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-20261022\\fixtures\\u24.ids",
+              "bytes": 120,
+              "sha256": "eb5cc8bc4c2e3190a0852886081224de2c6a0d942553bbe32d013df5f5a605bd"
+            }
+          ],
+          "started": 1792644799.667802,
+          "performance_comparison": false,
+          "pid": 95752,
+          "state": "terminal",
+          "exit": 1,
+          "seconds": 25.842854738235474
+        },
+        "stderr": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\vulkan-native-memory-20261022\\qwen-N2R2-run2\\stderr.log",
+          "bytes": 16938442,
+          "sha256": "2c8d5b6177a531a37642ca04c6bbb295c1d42224fa884f476e2fe713f469f21f"
+        },
+        "failure_line": 108625,
+        "failure": "ggml_vulkan: Device memory allocation of size 33024 failed.",
+        "last_batch": "mtp_batch requests=2 T=2 role=3 full_hit=0",
+        "successful_region_graph_allocations": 13336,
+        "positive_region_graph_allocations": 10541,
+        "cumulative_successful_region_graph_requested_capacity_bytes": 1594108032,
+        "last_region": [
+          13336,
+          49152
+        ],
+        "heap_snapshots": [
+          {
+            "region": 1,
+            "heap": 0,
+            "size": 12593397760,
+            "flags": 1,
+            "usage": 4050563072,
+            "budget": 11788091392
+          },
+          {
+            "region": 1,
+            "heap": 1,
+            "size": 34211250176,
+            "flags": 0,
+            "usage": 83251200,
+            "budget": 50437324800
+          },
+          {
+            "region": 512,
+            "heap": 0,
+            "size": 12593397760,
+            "flags": 1,
+            "usage": 4205162496,
+            "budget": 11788091392
+          },
+          {
+            "region": 512,
+            "heap": 1,
+            "size": 34211250176,
+            "flags": 0,
+            "usage": 150360064,
+            "budget": 50437324800
+          },
+          {
+            "region": 1024,
+            "heap": 0,
+            "size": 12593397760,
+            "flags": 1,
+            "usage": 4368216064,
+            "budget": 11788091392
+          },
+          {
+            "region": 1024,
+            "heap": 1,
+            "size": 34211250176,
+            "flags": 0,
+            "usage": 238440448,
+            "budget": 50437324800
+          },
+          {
+            "region": 1536,
+            "heap": 0,
+            "size": 12593397760,
+            "flags": 1,
+            "usage": 4510363648,
+            "budget": 11788091392
+          },
+          {
+            "region": 1536,
+            "heap": 1,
+            "size": 34211250176,
+            "flags": 0,
+            "usage": 318132224,
+            "budget": 50437324800
+          },
+          {
+            "region": 2048,
+            "heap": 0,
+            "size": 12593397760,
+            "flags": 1,
+            "usage": 4640911360,
+            "budget": 11788091392
+          },
+          {
+            "region": 2048,
+            "heap": 1,
+            "size": 34211250176,
+            "flags": 0,
+            "usage": 389435392,
+            "budget": 50437324800
+          },
+          {
+            "region": 2560,
+            "heap": 0,
+            "size": 12593397760,
+            "flags": 1,
+            "usage": 4854362112,
+            "budget": 11788091392
+          },
+          {
+            "region": 2560,
+            "heap": 1,
+            "size": 34211250176,
+            "flags": 0,
+            "usage": 475418624,
+            "budget": 50437324800
+          },
+          {
+            "region": 3072,
+            "heap": 0,
+            "size": 12593397760,
+            "flags": 1,
+            "usage": 4980846592,
+            "budget": 11788091392
+          },
+          {
+            "region": 3072,
+            "heap": 1,
+            "size": 34211250176,
+            "flags": 0,
+            "usage": 540430336,
+            "budget": 50437324800
+          },
+          {
+            "region": 3584,
+            "heap": 0,
+            "size": 12593397760,
+            "flags": 1,
+            "usage": 5129220096,
+            "budget": 11788091392
+          },
+          {
+            "region": 3584,
+            "heap": 1,
+            "size": 34211250176,
+            "flags": 0,
+            "usage": 626413568,
+            "budget": 50437324800
+          },
+          {
+            "region": 4096,
+            "heap": 0,
+            "size": 12593397760,
+            "flags": 1,
+            "usage": 5269139456,
+            "budget": 11788091392
+          },
+          {
+            "region": 4096,
+            "heap": 1,
+            "size": 34211250176,
+            "flags": 0,
+            "usage": 708202496,
+            "budget": 50437324800
+          },
+          {
+            "region": 4608,
+            "heap": 0,
+            "size": 12593397760,
+            "flags": 1,
+            "usage": 5550747648,
+            "budget": 11788091392
+          },
+          {
+            "region": 4608,
+            "heap": 1,
+            "size": 34211250176,
+            "flags": 0,
+            "usage": 773214208,
+            "budget": 50437324800
+          },
+          {
+            "region": 5120,
+            "heap": 0,
+            "size": 12593397760,
+            "flags": 1,
+            "usage": 6197129216,
+            "budget": 11788091392
+          },
+          {
+            "region": 5120,
+            "heap": 1,
+            "size": 34211250176,
+            "flags": 0,
+            "usage": 1115054080,
+            "budget": 50437324800
+          },
+          {
+            "region": 5632,
+            "heap": 0,
+            "size": 12593397760,
+            "flags": 1,
+            "usage": 6407565312,
+            "budget": 11788091392
+          },
+          {
+            "region": 5632,
+            "heap": 1,
+            "size": 34211250176,
+            "flags": 0,
+            "usage": 1182162944,
+            "budget": 50437324800
+          },
+          {
+            "region": 6144,
+            "heap": 0,
+            "size": 12593397760,
+            "flags": 1,
+            "usage": 7082848256,
+            "budget": 11788091392
+          },
+          {
+            "region": 6144,
+            "heap": 1,
+            "size": 34211250176,
+            "flags": 0,
+            "usage": 1785094144,
+            "budget": 50437324800
+          },
+          {
+            "region": 6656,
+            "heap": 0,
+            "size": 12593397760,
+            "flags": 1,
+            "usage": 7185870848,
+            "budget": 11788091392
+          },
+          {
+            "region": 6656,
+            "heap": 1,
+            "size": 34211250176,
+            "flags": 0,
+            "usage": 1858494464,
+            "budget": 50437324800
+          },
+          {
+            "region": 7168,
+            "heap": 0,
+            "size": 12593397760,
+            "flags": 1,
+            "usage": 7744827392,
+            "budget": 9955139584
+          },
+          {
+            "region": 7168,
+            "heap": 1,
+            "size": 34211250176,
+            "flags": 0,
+            "usage": 2433114112,
+            "budget": 50437324800
+          },
+          {
+            "region": 7680,
+            "heap": 0,
+            "size": 12593397760,
+            "flags": 1,
+            "usage": 9135173632,
+            "budget": 9791057920
+          },
+          {
+            "region": 7680,
+            "heap": 1,
+            "size": 34211250176,
+            "flags": 0,
+            "usage": 3282460672,
+            "budget": 50437324800
+          },
+          {
+            "region": 8192,
+            "heap": 0,
+            "size": 12593397760,
+            "flags": 1,
+            "usage": 9241997312,
+            "budget": 10017009664
+          },
+          {
+            "region": 8192,
+            "heap": 1,
+            "size": 34211250176,
+            "flags": 0,
+            "usage": 3364249600,
+            "budget": 50437324800
+          },
+          {
+            "region": 8704,
+            "heap": 0,
+            "size": 12593397760,
+            "flags": 1,
+            "usage": 9538678784,
+            "budget": 10448560128
+          },
+          {
+            "region": 8704,
+            "heap": 1,
+            "size": 34211250176,
+            "flags": 0,
+            "usage": 3685113856,
+            "budget": 50437324800
+          },
+          {
+            "region": 9216,
+            "heap": 0,
+            "size": 12593397760,
+            "flags": 1,
+            "usage": 9835360256,
+            "budget": 10409439232
+          },
+          {
+            "region": 9216,
+            "heap": 1,
+            "size": 34211250176,
+            "flags": 0,
+            "usage": 4014366720,
+            "budget": 50437324800
+          },
+          {
+            "region": 9728,
+            "heap": 0,
+            "size": 12593397760,
+            "flags": 1,
+            "usage": 10061459456,
+            "budget": 10608209920
+          },
+          {
+            "region": 9728,
+            "heap": 1,
+            "size": 34211250176,
+            "flags": 0,
+            "usage": 4094058496,
+            "budget": 50437324800
+          },
+          {
+            "region": 10240,
+            "heap": 0,
+            "size": 12593397760,
+            "flags": 1,
+            "usage": 10391236608,
+            "budget": 10608209920
+          },
+          {
+            "region": 10240,
+            "heap": 1,
+            "size": 34211250176,
+            "flags": 0,
+            "usage": 4408631296,
+            "budget": 50437324800
+          },
+          {
+            "region": 10752,
+            "heap": 0,
+            "size": 12593397760,
+            "flags": 1,
+            "usage": 10499764224,
+            "budget": 10516852736
+          },
+          {
+            "region": 10752,
+            "heap": 1,
+            "size": 34211250176,
+            "flags": 0,
+            "usage": 4490420224,
+            "budget": 50437324800
+          },
+          {
+            "region": 11264,
+            "heap": 0,
+            "size": 12593397760,
+            "flags": 1,
+            "usage": 10862374912,
+            "budget": 10608209920
+          },
+          {
+            "region": 11264,
+            "heap": 1,
+            "size": 34211250176,
+            "flags": 0,
+            "usage": 4809187328,
+            "budget": 50437324800
+          },
+          {
+            "region": 11776,
+            "heap": 0,
+            "size": 12593397760,
+            "flags": 1,
+            "usage": 11282591744,
+            "budget": 10574786560
+          },
+          {
+            "region": 11776,
+            "heap": 1,
+            "size": 34211250176,
+            "flags": 0,
+            "usage": 5188771840,
+            "budget": 50437324800
+          },
+          {
+            "region": 12288,
+            "heap": 0,
+            "size": 12593397760,
+            "flags": 1,
+            "usage": 11580518400,
+            "budget": 10636656640
+          },
+          {
+            "region": 12288,
+            "heap": 1,
+            "size": 34211250176,
+            "flags": 0,
+            "usage": 5270560768,
+            "budget": 50437324800
+          },
+          {
+            "region": 12800,
+            "heap": 0,
+            "size": 12593397760,
+            "flags": 1,
+            "usage": 12076036096,
+            "budget": 10543853568
+          },
+          {
+            "region": 12800,
+            "heap": 1,
+            "size": 34211250176,
+            "flags": 0,
+            "usage": 5585133568,
+            "budget": 50437324800
+          },
+          {
+            "region": 13312,
+            "heap": 0,
+            "size": 12593397760,
+            "flags": 1,
+            "usage": 12286799872,
+            "budget": 10137042944
+          },
+          {
+            "region": 13312,
+            "heap": 1,
+            "size": 34211250176,
+            "flags": 0,
+            "usage": 5652242432,
+            "budget": 50437324800
+          },
+          {
+            "region": 0,
+            "heap": 0,
+            "size": 12593397760,
+            "flags": 1,
+            "usage": 12442644480,
+            "budget": 10610561024
+          },
+          {
+            "region": 0,
+            "heap": 1,
+            "size": 34211250176,
+            "flags": 0,
+            "usage": 5845180416,
+            "budget": 50437324800
+          }
+        ],
+        "native_logger_last_report_before_failure": "ggml_vulkan memory: Vulkan0: +1.00 KiB device at 000001E22F5CD750. Total device: 1.50 GiB, total host: 0 B",
+        "native_requested_allocations_before_failure": [
+          {
+            "size": "1.00 KiB",
+            "kind": "device",
+            "count": 12216,
+            "net_count": 12216
+          },
+          {
+            "size": "16.00 KiB",
+            "kind": "device",
+            "count": 1221,
+            "net_count": 1221
+          },
+          {
+            "size": "32.00 KiB",
+            "kind": "device",
+            "count": 1074,
+            "net_count": 1074
+          },
+          {
+            "size": "64.00 KiB",
+            "kind": "device",
+            "count": 744,
+            "net_count": 744
+          },
+          {
+            "size": "24.00 KiB",
+            "kind": "device",
+            "count": 470,
+            "net_count": 470
+          },
+          {
+            "size": "48.00 KiB",
+            "kind": "device",
+            "count": 389,
+            "net_count": 389
+          },
+          {
+            "size": "120.00 KiB",
+            "kind": "device",
+            "count": 348,
+            "net_count": 348
+          },
+          {
+            "size": "8.00 KiB",
+            "kind": "device",
+            "count": 339,
+            "net_count": 339
+          },
+          {
+            "size": "240.00 KiB",
+            "kind": "device",
+            "count": 288,
+            "net_count": 288
+          },
+          {
+            "size": "128.00 KiB",
+            "kind": "device",
+            "count": 282,
+            "net_count": 282
+          },
+          {
+            "size": "256 B",
+            "kind": "device",
+            "count": 252,
+            "net_count": 252
+          },
+          {
+            "size": "96.00 KiB",
+            "kind": "device",
+            "count": 244,
+            "net_count": 244
+          }
+        ],
+        "caveats": [
+          "Graph capacity is cumulative across constructions, not live/peak physical memory or VkDeviceMemory allocation count.",
+          "Heap usage/budget are Vulkan implementation estimates at observed instants; do not sum distinct heaps as one fungible pool.",
+          "Original ggml memory logger prints requested sizes rounded to two decimals and excludes Hyle-owned allocations and driver internal costs.",
+          "Failure callback may run after failed local temporary cleanup; it is not the exact maximum before allocation.",
+          "No new throughput, quality, or full multi-session success claim."
+        ]
+      }
+    ]
+  },
+  "builds": {
+    "vulkan-main": {
+      "source": {
+        "path": "C:\\public\\project-hyle\\hyle\\tools\\qwen35_text\\main.cc",
+        "bytes": 279543,
+        "sha256": "551e3d24d82aeaa1cd4b88f01c13ddb13f5273e39f0f5a84cd01beb077d9a0c3"
+      },
+      "object": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\vulkan-native-memory-20261022\\compile1\\vulkan-main\\vulkan-main.obj",
+        "bytes": 7749962,
+        "sha256": "55551c888ff4f6d41570082e660ddae8de8e24a17d24df454ae7974cd79d298d"
+      },
+      "compile": {
+        "tag": "compile",
+        "command": [
+          "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\cl.exe",
+          "-IC:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-grouped-space\\vulkan\\shaders",
+          "-IC:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\static-fp8-reference\\vulkan\\shaders",
+          "-IC:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gptq-reference\\vulkan\\shaders",
+          "-IC:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-packed-vulkan\\shaders",
+          "/IC:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\paged-row-scorer\\validation\\windows-current\\shaders",
+          "-IC:\\public\\project-hyle\\hyle\\include",
+          "-IC:\\public\\project-hyle\\hyle\\src\\compute_route_vulkan",
+          "-IC:\\public\\project-hyle\\hyle\\src\\compute_route_vulkan\\..\\compute",
+          "-IC:\\public\\project-hyle\\hyle\\.scratch\\bench-api-runtime\\vulkan\\build\\native\\hyle\\src\\compute_route_vulkan",
+          "-IC:\\public\\project-hyle\\hyle\\.scratch\\bench-api-runtime\\vulkan\\build\\native\\hyle\\src\\compute_route_vulkan\\shaders",
+          "-external:IC:\\public\\tools\\hyle-dependencies\\v1\\sources\\vulkan_headers-e3b1eec08173-69d6adc9001f\\include",
+          "/IC:\\public\\project-hyle\\hyle\\.scratch\\inference-foundation-review-2026-10-18\\row-cache-paged-native\\shaders",
+          "/IC:\\public\\project-hyle\\hyle\\.scratch\\inference-foundation-review-2026-10-18\\row-cache-vulkan\\shaders",
+          "/nologo",
+          "/c",
+          "/std:c++latest",
+          "/EHsc",
+          "/Zc:preprocessor",
+          "/Zc:__cplusplus",
+          "/utf-8",
+          "/O2",
+          "/Ob2",
+          "/MD",
+          "/DNDEBUG",
+          "/permissive-",
+          "/bigobj",
+          "/DHYLE_STATIC",
+          "/DNOMINMAX",
+          "/IC:\\public\\project-hyle\\hyle\\include",
+          "/IC:\\public\\project-hyle\\hyle\\src\\compute",
+          "/IC:\\public\\project-hyle\\hyle\\src\\compute_provider_ggml",
+          "/IC:\\public\\project-hyle\\hyle\\src\\compute_provider_ggml_vulkan",
+          "/IC:\\public\\project-hyle\\hyle\\src\\compute_ggml_runtime",
+          "/external:IC:\\public\\project-hyle\\hyle\\.scratch\\bench-api-runtime\\vulkan\\build\\native\\hyle\\src\\compute_ggml_runtime\\source-bdb6226828f5304e\\include",
+          "/external:IC:\\public\\project-hyle\\hyle\\.scratch\\bench-api-runtime\\vulkan\\build\\native\\hyle\\src\\compute_ggml_runtime\\source-bdb6226828f5304e\\src",
+          "/external:IC:\\Users\\kiro\\AppData\\Local\\hyle\\dependencies\\v1\\sources\\googletest-063de7e9578f-162765170ae6\\googletest\\include",
+          "/external:IC:\\public\\tools\\hyle-dependencies\\v1\\sources\\vulkan_headers-e3b1eec08173-69d6adc9001f\\include",
+          "/external:W0",
+          "/DHYLE_COMPUTE_VULKAN=1",
+          "/IC:\\public\\project-hyle\\hyle\\src\\compute_route_vulkan",
+          "/W4",
+          "/WX",
+          "/wd4324",
+          "/IC:\\public\\project-hyle\\hyle",
+          "/IC:\\public\\project-hyle\\hyle\\src\\graph_route_cpu_vulkan",
+          "/W4",
+          "/WX",
+          "/W4",
+          "/WX",
+          "/W4",
+          "/WX",
+          "/W4",
+          "/WX",
+          "/sourceDependencies",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\vulkan-native-memory-20261022\\compile1\\vulkan-main\\vulkan-main-deps.json",
+          "C:\\public\\project-hyle\\hyle\\tools\\qwen35_text\\main.cc",
+          "/FoC:\\public\\project-hyle\\hyle\\.scratch\\vulkan-native-memory-20261022\\compile1\\vulkan-main\\vulkan-main.obj",
+          "/FdC:\\public\\project-hyle\\hyle\\.scratch\\vulkan-native-memory-20261022\\compile1\\vulkan-main\\vulkan-main.pdb"
+        ],
+        "cwd": "C:\\public\\project-hyle\\hyle",
+        "started": 1792645115.7442646,
+        "exit": 0,
+        "pid": 96316,
+        "finished": 1792645125.356387,
+        "terminal": true
+      }
+    },
+    "cuda-main": {
+      "source": {
+        "path": "C:\\public\\project-hyle\\hyle\\tools\\qwen35_text\\main.cc",
+        "bytes": 279543,
+        "sha256": "551e3d24d82aeaa1cd4b88f01c13ddb13f5273e39f0f5a84cd01beb077d9a0c3"
+      },
+      "object": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\vulkan-native-memory-20261022\\compile1\\cuda-main\\cuda-main.obj",
+        "bytes": 7841739,
+        "sha256": "d518a0bfce7937152d50686189ee3ad99f00b7b369740856c3332472b9159cf5"
+      },
+      "compile": {
+        "tag": "compile",
+        "command": [
+          "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\cl.exe",
+          "/DHYLE_IO_HAS_COROUTINE_TRANSPORT=1",
+          "/nologo",
+          "/c",
+          "/std:c++latest",
+          "/EHsc",
+          "/Zc:preprocessor",
+          "/Zc:__cplusplus",
+          "/utf-8",
+          "/O2",
+          "/Ob2",
+          "/MD",
+          "/DNDEBUG",
+          "/permissive-",
+          "/bigobj",
+          "/W4",
+          "/WX",
+          "/wd4324",
+          "/wd4702",
+          "/DHYLE_STATIC",
+          "/DNOMINMAX",
+          "/DGGML_USE_CUDA",
+          "/DHYLE_COMPUTE_CUDA=1",
+          "/DHYLE_COMPUTE_GGML_CUDA=1",
+          "/IC:\\public\\project-hyle\\hyle\\include",
+          "/IC:\\public\\project-hyle\\hyle\\src\\compute",
+          "/IC:\\public\\project-hyle\\hyle\\src\\compute_provider_ggml_cuda",
+          "/IC:\\public\\project-hyle\\hyle\\src\\compute_ggml_runtime",
+          "/IC:\\public\\project-hyle\\hyle\\src\\compute_backend_cuda",
+          "/IC:\\public\\project-hyle\\hyle\\tests\\compute_state",
+          "/external:IC:\\public\\project-hyle\\hyle\\.scratch\\validation\\cuda-final-u3-delivery\\reference-windows\\include",
+          "/external:IC:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\include",
+          "/external:IC:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\include\\cccl",
+          "/external:IC:\\Users\\kiro\\AppData\\Local\\hyle\\dependencies\\v1\\sources\\googletest-063de7e9578f-162765170ae6\\googletest\\include",
+          "/external:W0",
+          "/IC:\\public\\project-hyle\\hyle",
+          "/external:IC:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\extras\\CUPTI\\include",
+          "/sourceDependencies",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\vulkan-native-memory-20261022\\compile1\\cuda-main\\cuda-main-deps.json",
+          "C:\\public\\project-hyle\\hyle\\tools\\qwen35_text\\main.cc",
+          "/FoC:\\public\\project-hyle\\hyle\\.scratch\\vulkan-native-memory-20261022\\compile1\\cuda-main\\cuda-main.obj",
+          "/FdC:\\public\\project-hyle\\hyle\\.scratch\\vulkan-native-memory-20261022\\compile1\\cuda-main\\cuda-main.pdb"
+        ],
+        "cwd": "C:\\public\\project-hyle\\hyle",
+        "started": 1792645205.348019,
+        "exit": 0,
+        "pid": 96268,
+        "finished": 1792645215.756068,
+        "terminal": true
+      }
+    },
+    "retirement": {
+      "source": {
+        "path": "C:\\public\\project-hyle\\hyle\\tools\\qwen35_text\\retirement_probe.cc",
+        "bytes": 39852,
+        "sha256": "c04940a2b8986fdbda131923e7c493146e1e74a841f1e298796ef258e1ffbb0f"
+      },
+      "object": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\vulkan-native-memory-20261022\\compile1\\retirement\\retirement.obj",
+        "bytes": 8236748,
+        "sha256": "cfef851d09117fd085c50281d380db6c17e2e25ed3bd025129ee8069790f11dd"
+      },
+      "compile": {
+        "tag": "compile",
+        "command": [
+          "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\cl.exe",
+          "/DHYLE_IO_HAS_COROUTINE_TRANSPORT=1",
+          "/nologo",
+          "/c",
+          "/std:c++latest",
+          "/EHsc",
+          "/Zc:preprocessor",
+          "/Zc:__cplusplus",
+          "/utf-8",
+          "/O2",
+          "/Ob2",
+          "/MD",
+          "/DNDEBUG",
+          "/permissive-",
+          "/bigobj",
+          "/W4",
+          "/WX",
+          "/wd4324",
+          "/wd4702",
+          "/DHYLE_STATIC",
+          "/DNOMINMAX",
+          "/DGGML_USE_CUDA",
+          "/DHYLE_COMPUTE_CUDA=1",
+          "/DHYLE_COMPUTE_GGML_CUDA=1",
+          "/IC:\\public\\project-hyle\\hyle\\include",
+          "/IC:\\public\\project-hyle\\hyle\\src\\compute",
+          "/IC:\\public\\project-hyle\\hyle\\src\\compute_provider_ggml_cuda",
+          "/IC:\\public\\project-hyle\\hyle\\src\\compute_ggml_runtime",
+          "/IC:\\public\\project-hyle\\hyle\\src\\compute_backend_cuda",
+          "/IC:\\public\\project-hyle\\hyle\\tests\\compute_state",
+          "/external:IC:\\public\\project-hyle\\hyle\\.scratch\\validation\\cuda-final-u3-delivery\\reference-windows\\include",
+          "/external:IC:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\include",
+          "/external:IC:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\include\\cccl",
+          "/external:IC:\\Users\\kiro\\AppData\\Local\\hyle\\dependencies\\v1\\sources\\googletest-063de7e9578f-162765170ae6\\googletest\\include",
+          "/external:W0",
+          "/IC:\\public\\project-hyle\\hyle",
+          "/external:IC:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\extras\\CUPTI\\include",
+          "/sourceDependencies",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\vulkan-native-memory-20261022\\compile1\\retirement\\retirement-deps.json",
+          "C:\\public\\project-hyle\\hyle\\tools\\qwen35_text\\retirement_probe.cc",
+          "/FoC:\\public\\project-hyle\\hyle\\.scratch\\vulkan-native-memory-20261022\\compile1\\retirement\\retirement.obj",
+          "/FdC:\\public\\project-hyle\\hyle\\.scratch\\vulkan-native-memory-20261022\\compile1\\retirement\\retirement.pdb"
+        ],
+        "cwd": "C:\\public\\project-hyle\\hyle",
+        "started": 1792645225.0358272,
+        "exit": 0,
+        "pid": 89800,
+        "finished": 1792645236.4894395,
+        "terminal": true
+      }
+    },
+    "batch": {
+      "source": {
+        "path": "C:\\public\\project-hyle\\hyle\\tools\\qwen35_text\\batch_probe.cc",
+        "bytes": 27170,
+        "sha256": "990ee770965988227e91094b1615dbad12f8331933b268587b45a69920c65a60"
+      },
+      "object": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\vulkan-native-memory-20261022\\compile1\\batch\\batch.obj",
+        "bytes": 8171037,
+        "sha256": "18780868566f37d6f2a62ab5b70a47c58ac5b9ec7cac69183ed5b2b118932d0e"
+      },
+      "compile": {
+        "tag": "compile",
+        "command": [
+          "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\cl.exe",
+          "/DHYLE_IO_HAS_COROUTINE_TRANSPORT=1",
+          "/nologo",
+          "/c",
+          "/std:c++latest",
+          "/EHsc",
+          "/Zc:preprocessor",
+          "/Zc:__cplusplus",
+          "/utf-8",
+          "/O2",
+          "/Ob2",
+          "/MD",
+          "/DNDEBUG",
+          "/permissive-",
+          "/bigobj",
+          "/W4",
+          "/WX",
+          "/wd4324",
+          "/wd4702",
+          "/DHYLE_STATIC",
+          "/DNOMINMAX",
+          "/DGGML_USE_CUDA",
+          "/DHYLE_COMPUTE_CUDA=1",
+          "/DHYLE_COMPUTE_GGML_CUDA=1",
+          "/IC:\\public\\project-hyle\\hyle\\include",
+          "/IC:\\public\\project-hyle\\hyle\\src\\compute",
+          "/IC:\\public\\project-hyle\\hyle\\src\\compute_provider_ggml_cuda",
+          "/IC:\\public\\project-hyle\\hyle\\src\\compute_ggml_runtime",
+          "/IC:\\public\\project-hyle\\hyle\\src\\compute_backend_cuda",
+          "/IC:\\public\\project-hyle\\hyle\\tests\\compute_state",
+          "/external:IC:\\public\\project-hyle\\hyle\\.scratch\\validation\\cuda-final-u3-delivery\\reference-windows\\include",
+          "/external:IC:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\include",
+          "/external:IC:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\include\\cccl",
+          "/external:IC:\\Users\\kiro\\AppData\\Local\\hyle\\dependencies\\v1\\sources\\googletest-063de7e9578f-162765170ae6\\googletest\\include",
+          "/external:W0",
+          "/IC:\\public\\project-hyle\\hyle",
+          "/external:IC:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\extras\\CUPTI\\include",
+          "/sourceDependencies",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\vulkan-native-memory-20261022\\compile1\\batch\\batch-deps.json",
+          "C:\\public\\project-hyle\\hyle\\tools\\qwen35_text\\batch_probe.cc",
+          "/FoC:\\public\\project-hyle\\hyle\\.scratch\\vulkan-native-memory-20261022\\compile1\\batch\\batch.obj",
+          "/FdC:\\public\\project-hyle\\hyle\\.scratch\\vulkan-native-memory-20261022\\compile1\\batch\\batch.pdb"
+        ],
+        "cwd": "C:\\public\\project-hyle\\hyle",
+        "started": 1792645244.9716122,
+        "exit": 0,
+        "pid": 99776,
+        "finished": 1792645256.0731776,
+        "terminal": true
+      }
+    },
+    "mtp_session": {
+      "source": {
+        "path": "C:\\public\\project-hyle\\hyle\\tools\\qwen35_text\\mtp_session_probe.cc",
+        "bytes": 111020,
+        "sha256": "1f79b9822f878a163ee69a26c93b9f86e079e189e98ed15b01a5ce9652d980d7"
+      },
+      "object": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\vulkan-native-memory-20261022\\compile1\\mtp_session\\mtp_session.obj",
+        "bytes": 8840311,
+        "sha256": "33a3b663b682e0870cea0a7e808671716d75b948606d318f4d98df26fc4e5ff0"
+      },
+      "compile": {
+        "tag": "compile",
+        "command": [
+          "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\cl.exe",
+          "/DHYLE_IO_HAS_COROUTINE_TRANSPORT=1",
+          "/nologo",
+          "/c",
+          "/std:c++latest",
+          "/EHsc",
+          "/Zc:preprocessor",
+          "/Zc:__cplusplus",
+          "/utf-8",
+          "/O2",
+          "/Ob2",
+          "/MD",
+          "/DNDEBUG",
+          "/permissive-",
+          "/bigobj",
+          "/W4",
+          "/WX",
+          "/wd4324",
+          "/wd4702",
+          "/DHYLE_STATIC",
+          "/DNOMINMAX",
+          "/DGGML_USE_CUDA",
+          "/DHYLE_COMPUTE_CUDA=1",
+          "/DHYLE_COMPUTE_GGML_CUDA=1",
+          "/IC:\\public\\project-hyle\\hyle\\include",
+          "/IC:\\public\\project-hyle\\hyle\\src\\compute",
+          "/IC:\\public\\project-hyle\\hyle\\src\\compute_provider_ggml_cuda",
+          "/IC:\\public\\project-hyle\\hyle\\src\\compute_ggml_runtime",
+          "/IC:\\public\\project-hyle\\hyle\\src\\compute_backend_cuda",
+          "/IC:\\public\\project-hyle\\hyle\\tests\\compute_state",
+          "/external:IC:\\public\\project-hyle\\hyle\\.scratch\\validation\\cuda-final-u3-delivery\\reference-windows\\include",
+          "/external:IC:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\include",
+          "/external:IC:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\include\\cccl",
+          "/external:IC:\\Users\\kiro\\AppData\\Local\\hyle\\dependencies\\v1\\sources\\googletest-063de7e9578f-162765170ae6\\googletest\\include",
+          "/external:W0",
+          "/IC:\\public\\project-hyle\\hyle",
+          "/external:IC:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\extras\\CUPTI\\include",
+          "/sourceDependencies",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\vulkan-native-memory-20261022\\compile1\\mtp_session\\mtp_session-deps.json",
+          "C:\\public\\project-hyle\\hyle\\tools\\qwen35_text\\mtp_session_probe.cc",
+          "/FoC:\\public\\project-hyle\\hyle\\.scratch\\vulkan-native-memory-20261022\\compile1\\mtp_session\\mtp_session.obj",
+          "/FdC:\\public\\project-hyle\\hyle\\.scratch\\vulkan-native-memory-20261022\\compile1\\mtp_session\\mtp_session.pdb"
+        ],
+        "cwd": "C:\\public\\project-hyle\\hyle",
+        "started": 1792645258.276837,
+        "exit": 0,
+        "pid": 85972,
+        "finished": 1792645269.917799,
+        "terminal": true
+      }
+    },
+    "retained_budget": {
+      "source": {
+        "path": "C:\\public\\project-hyle\\hyle\\tools\\qwen35_text\\retained_budget_probe.cc",
+        "bytes": 19613,
+        "sha256": "0173abfc1d60d98cc70542893eca1ba4da6852de404a68a8ef14788923d0c85a"
+      },
+      "object": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\vulkan-native-memory-20261022\\compile1\\retained_budget\\retained_budget.obj",
+        "bytes": 8032762,
+        "sha256": "3e6b7981a676e3a807600a905b85eb2ec68215ac8f7d8bbe934811325cd3ea61"
+      },
+      "compile": {
+        "tag": "compile",
+        "command": [
+          "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\cl.exe",
+          "/DHYLE_IO_HAS_COROUTINE_TRANSPORT=1",
+          "/nologo",
+          "/c",
+          "/std:c++latest",
+          "/EHsc",
+          "/Zc:preprocessor",
+          "/Zc:__cplusplus",
+          "/utf-8",
+          "/O2",
+          "/Ob2",
+          "/MD",
+          "/DNDEBUG",
+          "/permissive-",
+          "/bigobj",
+          "/W4",
+          "/WX",
+          "/wd4324",
+          "/wd4702",
+          "/DHYLE_STATIC",
+          "/DNOMINMAX",
+          "/DGGML_USE_CUDA",
+          "/DHYLE_COMPUTE_CUDA=1",
+          "/DHYLE_COMPUTE_GGML_CUDA=1",
+          "/IC:\\public\\project-hyle\\hyle\\include",
+          "/IC:\\public\\project-hyle\\hyle\\src\\compute",
+          "/IC:\\public\\project-hyle\\hyle\\src\\compute_provider_ggml_cuda",
+          "/IC:\\public\\project-hyle\\hyle\\src\\compute_ggml_runtime",
+          "/IC:\\public\\project-hyle\\hyle\\src\\compute_backend_cuda",
+          "/IC:\\public\\project-hyle\\hyle\\tests\\compute_state",
+          "/external:IC:\\public\\project-hyle\\hyle\\.scratch\\validation\\cuda-final-u3-delivery\\reference-windows\\include",
+          "/external:IC:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\include",
+          "/external:IC:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\include\\cccl",
+          "/external:IC:\\Users\\kiro\\AppData\\Local\\hyle\\dependencies\\v1\\sources\\googletest-063de7e9578f-162765170ae6\\googletest\\include",
+          "/external:W0",
+          "/IC:\\public\\project-hyle\\hyle",
+          "/external:IC:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\extras\\CUPTI\\include",
+          "/sourceDependencies",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\vulkan-native-memory-20261022\\compile1\\retained_budget\\retained_budget-deps.json",
+          "C:\\public\\project-hyle\\hyle\\tools\\qwen35_text\\retained_budget_probe.cc",
+          "/FoC:\\public\\project-hyle\\hyle\\.scratch\\vulkan-native-memory-20261022\\compile1\\retained_budget\\retained_budget.obj",
+          "/FdC:\\public\\project-hyle\\hyle\\.scratch\\vulkan-native-memory-20261022\\compile1\\retained_budget\\retained_budget.pdb"
+        ],
+        "cwd": "C:\\public\\project-hyle\\hyle",
+        "started": 1792645272.001396,
+        "exit": 0,
+        "pid": 87664,
+        "finished": 1792645283.1215155,
+        "terminal": true
+      }
+    }
+  },
+  "actual_multi_session": {
+    "cuda": {
+      "result": {
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\vulkan-native-memory-20261022\\cuda-main-link1\\qwen.exe",
+          "--inputs",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-native-assembly-20261022\\inputs\\mtp",
+          "--mtp",
+          "on",
+          "--capacity",
+          "64",
+          "--session-schedules",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-20261022\\fixtures\\sessions.txt",
+          "--max-sessions",
+          "2",
+          "--active-sequences",
+          "2",
+          "--cache-bytes",
+          "auto",
+          "--prefix-cache",
+          "off",
+          "--progress",
+          "direct",
+          "--replay",
+          "commands"
+        ],
+        "cwd": "C:\\public\\project-hyle\\hyle",
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\vulkan-native-memory-20261022\\cuda-main-link1\\qwen.exe",
+          "bytes": 140396544,
+          "sha256": "181852c91f093fbd3be133be79e321af0152a4d2261dc34c0ce44c51287efec9"
+        },
+        "fixtures": [
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-20261022\\fixtures\\sessions.txt",
+            "bytes": 32,
+            "sha256": "b6dd6cc1769d2e135feb43561920b14c0cf60d6ede18777430b7295fc19aed7e"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-20261022\\fixtures\\a-long.txt",
+            "bytes": 56,
+            "sha256": "5337c980bd52a6296dbf4dc795ce75dab88a51e66db95dbfede1779e71073d01"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-20261022\\fixtures\\b.txt",
+            "bytes": 55,
+            "sha256": "809bb9c24a9a553d97a72a15444e49613f95476f1176403aa8569929701f95c7"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-20261022\\fixtures\\c.txt",
+            "bytes": 56,
+            "sha256": "54e70c1f592b353dd93892b990b89a5149e0f040b8a1e63622795f9d9d20e580"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-20261022\\fixtures\\p15.ids",
+            "bytes": 70,
+            "sha256": "f57af71846ab496f90f1e09a089a8f4651570e975e115bc162084cba74a98868"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-20261022\\fixtures\\p23.ids",
+            "bytes": 113,
+            "sha256": "0459156ffd8f318a1e1e2049e18a063c1b760fed77013afa689584fcc1d20d30"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-20261022\\fixtures\\u1.ids",
+            "bytes": 8,
+            "sha256": "c1a3954da0b521ad1a53c596aaf03e6aa79d9881a6f54aab59fcdd5aabd4d175"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-20261022\\fixtures\\u8.ids",
+            "bytes": 38,
+            "sha256": "09e9bcf99e844541c359b9fa14aca67a9a4a2202a9446614df71f98cb2a6afc9"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-20261022\\fixtures\\u24.ids",
+            "bytes": 120,
+            "sha256": "eb5cc8bc4c2e3190a0852886081224de2c6a0d942553bbe32d013df5f5a605bd"
+          }
+        ],
+        "started": 1792645291.4636605,
+        "performance_comparison": false,
+        "pid": 65440,
+        "state": "terminal",
+        "exit": 0,
+        "seconds": 5.151469707489014
+      },
+      "comparison": {
+        "reference": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-retained-budget-20261022\\apple-N2R2-run1.json",
+          "bytes": 238658,
+          "sha256": "6d8ac0ff38938a9f8c7480341bdee107be1dcc602b21e2f348b59471a566f9cc"
+        },
+        "fields": {
+          "actual_graph_calls": true,
+          "generated_tokens": true,
+          "restore_count": true,
+          "restored_graph_calls": true,
+          "restored_target_rows": true,
+          "restored_draft_rows": true,
+          "normalized_lag_rows": true,
+          "recomputed_decision_changes": true,
+          "idle_evictions": true,
+          "all_session_output_ids": true
+        },
+        "work": {
+          "actual_graph_calls": 26,
+          "generated_tokens": 26,
+          "restore_count": 3,
+          "restored_graph_calls": 10,
+          "restored_target_rows": 64,
+          "restored_draft_rows": 64,
+          "normalized_lag_rows": 1,
+          "recomputed_decision_changes": 0,
+          "idle_evictions": 3
+        },
+        "session_ids": [
+          {
+            "session_id": "A",
+            "ids": [
+              198,
+              248045,
+              74455,
+              271,
+              248068,
+              271,
+              248069,
+              271,
+              846,
+              198,
+              5328,
+              10724
+            ]
+          },
+          {
+            "session_id": "B",
+            "ids": [
+              198,
+              248045,
+              74455,
+              271,
+              74455,
+              271,
+              248068,
+              271
+            ]
+          },
+          {
+            "session_id": "C",
+            "ids": [
+              20,
+              248046,
+              220,
+              18,
+              13,
+              21134
+            ]
+          }
+        ],
+        "cache": {
+          "cache_budget_scope": "shared_pools_and_retained_output_backing",
+          "cache_shared_backing_bytes": 119554099,
+          "cache_retained_output_backing_bytes": 0,
+          "cache_live_requested_bytes": 119554099,
+          "cache_peak_requested_bytes": 119554099,
+          "cache_requested_byte_limit": 119554099
+        },
+        "quality_pass": false,
+        "performance_comparison": false
+      }
+    },
+    "vulkan": {
+      "result": {
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\vulkan-native-memory-20261022\\vulkan-main-link1\\qwen.exe",
+          "--inputs",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-native-assembly-20261022\\inputs\\mtp",
+          "--mtp",
+          "on",
+          "--capacity",
+          "64",
+          "--session-schedules",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-20261022\\fixtures\\sessions.txt",
+          "--max-sessions",
+          "2",
+          "--active-sequences",
+          "2",
+          "--cache-bytes",
+          "auto",
+          "--prefix-cache",
+          "off",
+          "--progress",
+          "direct",
+          "--replay",
+          "commands"
+        ],
+        "cwd": "C:\\public\\project-hyle\\hyle",
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\vulkan-native-memory-20261022\\vulkan-main-link1\\qwen.exe",
+          "bytes": 68982272,
+          "sha256": "d9d03cfa9e982ef8721493db36669f8f1de60b8fbbee30ef4efccbfa03dff5ab"
+        },
+        "fixtures": [
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-20261022\\fixtures\\sessions.txt",
+            "bytes": 32,
+            "sha256": "b6dd6cc1769d2e135feb43561920b14c0cf60d6ede18777430b7295fc19aed7e"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-20261022\\fixtures\\a-long.txt",
+            "bytes": 56,
+            "sha256": "5337c980bd52a6296dbf4dc795ce75dab88a51e66db95dbfede1779e71073d01"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-20261022\\fixtures\\b.txt",
+            "bytes": 55,
+            "sha256": "809bb9c24a9a553d97a72a15444e49613f95476f1176403aa8569929701f95c7"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-20261022\\fixtures\\c.txt",
+            "bytes": 56,
+            "sha256": "54e70c1f592b353dd93892b990b89a5149e0f040b8a1e63622795f9d9d20e580"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-20261022\\fixtures\\p15.ids",
+            "bytes": 70,
+            "sha256": "f57af71846ab496f90f1e09a089a8f4651570e975e115bc162084cba74a98868"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-20261022\\fixtures\\p23.ids",
+            "bytes": 113,
+            "sha256": "0459156ffd8f318a1e1e2049e18a063c1b760fed77013afa689584fcc1d20d30"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-20261022\\fixtures\\u1.ids",
+            "bytes": 8,
+            "sha256": "c1a3954da0b521ad1a53c596aaf03e6aa79d9881a6f54aab59fcdd5aabd4d175"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-20261022\\fixtures\\u8.ids",
+            "bytes": 38,
+            "sha256": "09e9bcf99e844541c359b9fa14aca67a9a4a2202a9446614df71f98cb2a6afc9"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-batch-20261022\\fixtures\\u24.ids",
+            "bytes": 120,
+            "sha256": "eb5cc8bc4c2e3190a0852886081224de2c6a0d942553bbe32d013df5f5a605bd"
+          }
+        ],
+        "started": 1792645162.386188,
+        "performance_comparison": false,
+        "pid": 102928,
+        "state": "terminal",
+        "exit": 0,
+        "seconds": 20.895574808120728
+      },
+      "comparison": {
+        "reference": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-retained-budget-20261022\\apple-N2R2-run1.json",
+          "bytes": 238658,
+          "sha256": "6d8ac0ff38938a9f8c7480341bdee107be1dcc602b21e2f348b59471a566f9cc"
+        },
+        "fields": {
+          "actual_graph_calls": true,
+          "generated_tokens": true,
+          "restore_count": true,
+          "restored_graph_calls": true,
+          "restored_target_rows": true,
+          "restored_draft_rows": true,
+          "normalized_lag_rows": true,
+          "recomputed_decision_changes": true,
+          "idle_evictions": true,
+          "all_session_output_ids": true
+        },
+        "work": {
+          "actual_graph_calls": 26,
+          "generated_tokens": 26,
+          "restore_count": 3,
+          "restored_graph_calls": 10,
+          "restored_target_rows": 64,
+          "restored_draft_rows": 64,
+          "normalized_lag_rows": 1,
+          "recomputed_decision_changes": 0,
+          "idle_evictions": 3
+        },
+        "session_ids": [
+          {
+            "session_id": "A",
+            "ids": [
+              198,
+              248045,
+              74455,
+              271,
+              248068,
+              271,
+              248069,
+              271,
+              846,
+              198,
+              5328,
+              10724
+            ]
+          },
+          {
+            "session_id": "B",
+            "ids": [
+              198,
+              248045,
+              74455,
+              271,
+              74455,
+              271,
+              248068,
+              271
+            ]
+          },
+          {
+            "session_id": "C",
+            "ids": [
+              20,
+              248046,
+              220,
+              18,
+              13,
+              21134
+            ]
+          }
+        ],
+        "cache": {
+          "cache_budget_scope": "shared_pools_and_retained_output_backing",
+          "cache_shared_backing_bytes": 41377843,
+          "cache_retained_output_backing_bytes": 0,
+          "cache_live_requested_bytes": 41377843,
+          "cache_peak_requested_bytes": 248590387,
+          "cache_requested_byte_limit": null
+        },
+        "quality_pass": false,
+        "performance_comparison": false
+      }
+    },
+    "apple": {
+      "result": {
+        "command": [
+          "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/qwen-serial-slot-20261022/consumer1/qwen",
+          "--inputs",
+          "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/qwen-native-assembly-20261022/inputs/mtp",
+          "--mtp",
+          "on",
+          "--capacity",
+          "64",
+          "--prefix-cache",
+          "off",
+          "--progress",
+          "direct",
+          "--replay",
+          "commands",
+          "--session-schedules",
+          "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/native-state-ownership-20261022/fixtures/sessions.txt",
+          "--max-sessions",
+          "2",
+          "--active-sequences",
+          "2",
+          "--cache-bytes",
+          "auto"
+        ],
+        "cwd": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/qwen-serial-slot-20261022/consumer1",
+        "image": {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/qwen-serial-slot-20261022/consumer1/qwen",
+          "bytes": 12727656,
+          "sha256": "21d3393f29029792420eac2e4dede7e516ab0d45400c8b92342b3be201d51424"
+        },
+        "started": 1792645408.8024168,
+        "performance_comparison": false,
+        "pid": 2866,
+        "state": "terminal",
+        "exit": 0,
+        "seconds": 24.5421302318573
+      },
+      "comparison": {
+        "fields": {
+          "actual_graph_calls": true,
+          "generated_tokens": true,
+          "restore_count": true,
+          "restored_graph_calls": true,
+          "restored_target_rows": true,
+          "restored_draft_rows": true,
+          "normalized_lag_rows": true,
+          "recomputed_decision_changes": true,
+          "idle_evictions": true,
+          "session_ids": true
+        },
+        "cache": {
+          "cache_budget_scope": "shared_pools_and_retained_output_backing",
+          "cache_shared_backing_bytes": 41377843,
+          "cache_retained_output_backing_bytes": 0,
+          "cache_live_requested_bytes": 41377843,
+          "cache_peak_requested_bytes": 124579891,
+          "cache_requested_byte_limit": null
+        },
+        "performance_comparison": false
+      }
+    }
+  },
+  "actual_cuda_retirement": {
+    "status": "PASS",
+    "mtp": true,
+    "weight_tensors": 335,
+    "capacity": 64,
+    "resident_snapshot_limit": 2,
+    "candidate_capacity": 3,
+    "actual_graph_submissions": 6,
+    "natural_lag1_seed": true,
+    "old_target_tokens": 17,
+    "old_draft_frontier": 16,
+    "pending_target_query_rows": 2,
+    "writer_only_draft": false,
+    "pending_draft_query_rows": 2,
+    "bound_append_banks": 14,
+    "cancelled_candidate_target_tokens": 19,
+    "cancelled_candidate_draft_frontier": 18,
+    "busy_prepare_rejections": 3,
+    "collector_calls": 6,
+    "dropped_live_public_completion": true,
+    "managed_bytes_while_native_pending": 80240691,
+    "managed_backing_bytes": 80240691,
+    "old_prefix_logical_lease_bytes": 19972096,
+    "all14_native_permissions_retained_until_actual_retirement": true,
+    "same_slot_rebuilt_after_close": true,
+    "old_target_and_draft_kv_bytes_unchanged": true,
+    "old_recurrent_resources_byte_unchanged": 36,
+    "old_carry_and_prior_bytes_unchanged": true,
+    "selector_failed_after_successful_terminal": true,
+    "selector_failure_published_head": false,
+    "selector_abort_reclaimed_all14_dirty_banks": true,
+    "retry_target_tokens": 18,
+    "final_target_tokens": 18,
+    "final_draft_frontier": 18,
+    "native_error_injected": false,
+    "host_policy_error_injected": true,
+    "cancel_means_native_preemption": false,
+    "timing_comparison": false
+  },
+  "actual_vulkan_prefix": {
+    "full": {
+      "status": "PASS_LIMITED_PREFIX_CLI",
+      "case": "full",
+      "expected": {
+        "prefix_hits": 2,
+        "prefix_misses": 2,
+        "prefix_full_hits": 2,
+        "reused_tokens": 30,
+        "prefill_target_rows": 30,
+        "prefill_draft_rows": 30,
+        "prefill_graph_calls": 1
+      },
+      "work": {
+        "actual_graph_calls": 1,
+        "generated_tokens": 4,
+        "prefill_target_rows": 30,
+        "prefill_draft_rows": 30
+      },
+      "sessions": [
+        {
+          "id": "A",
+          "ids": [
+            198
+          ],
+          "prefill_target_rows": 15,
+          "prefill_draft_rows": 15
+        },
+        {
+          "id": "B",
+          "ids": [
+            198
+          ],
+          "prefill_target_rows": 15,
+          "prefill_draft_rows": 15
+        },
+        {
+          "id": "C",
+          "ids": [
+            198
+          ],
+          "prefill_target_rows": 0,
+          "prefill_draft_rows": 0
+        },
+        {
+          "id": "D",
+          "ids": [
+            198
+          ],
+          "prefill_target_rows": 0,
+          "prefill_draft_rows": 0
+        }
+      ],
+      "cache": {
+        "cache_budget_scope": "shared_pools_and_retained_output_backing",
+        "cache_shared_backing_bytes": 41377843,
+        "cache_retained_output_backing_bytes": 40067072,
+        "cache_live_requested_bytes": 81444915,
+        "cache_peak_requested_bytes": 130953267,
+        "cache_requested_byte_limit": 268435456
+      },
+      "old_full_state_bytes_checked": false,
+      "quality_pass": false,
+      "performance_comparison": false
+    },
+    "staged_partial": {
+      "status": "PASS_LIMITED_PREFIX_CLI",
+      "case": "staged",
+      "expected": {
+        "prefix_hits": 2,
+        "prefix_misses": 3,
+        "prefix_full_hits": 0,
+        "reused_tokens": 30,
+        "prefill_target_rows": 54,
+        "prefill_draft_rows": 54,
+        "prefill_graph_calls": 5
+      },
+      "work": {
+        "actual_graph_calls": 8,
+        "generated_tokens": 9,
+        "prefill_target_rows": 54,
+        "prefill_draft_rows": 54
+      },
+      "sessions": [
+        {
+          "id": "A",
+          "ids": [
+            198
+          ],
+          "prefill_target_rows": 15,
+          "prefill_draft_rows": 15
+        },
+        {
+          "id": "B",
+          "ids": [
+            198
+          ],
+          "prefill_target_rows": 15,
+          "prefill_draft_rows": 15
+        },
+        {
+          "id": "E",
+          "ids": [
+            198
+          ],
+          "prefill_target_rows": 15,
+          "prefill_draft_rows": 15
+        },
+        {
+          "id": "C",
+          "ids": [
+            74455,
+            271,
+            248068,
+            271
+          ],
+          "prefill_target_rows": 1,
+          "prefill_draft_rows": 1
+        },
+        {
+          "id": "D",
+          "ids": [
+            20,
+            248046
+          ],
+          "prefill_target_rows": 8,
+          "prefill_draft_rows": 8
+        }
+      ],
+      "cache": {
+        "cache_budget_scope": "shared_pools_and_retained_output_backing",
+        "cache_shared_backing_bytes": 61607987,
+        "cache_retained_output_backing_bytes": 27803648,
+        "cache_live_requested_bytes": 89411635,
+        "cache_peak_requested_bytes": 154462259,
+        "cache_requested_byte_limit": 268435456
+      },
+      "old_full_state_bytes_checked": false,
+      "quality_pass": false,
+      "performance_comparison": false
+    }
+  },
+  "unsuccessful_setup_and_expectation_checks": [
+    {
+      "record": "retirement-run1/result.json",
+      "meaning": "Root supplied AJ short prompt to an existing probe fixed to the older P15 fixture. Same source/weights; corrected only runner input to original fixture; retirement-run2 passed."
+    },
+    {
+      "record": "vulkan-prefix-partial-run1/result.json",
+      "meaning": "Native process exited zero; host expected two hits from an old CLI window. Current all-active-wave lookup happens before any publication, so all three correctly missed. No product change; staged composition establishes the required publication-before-lookup order."
+    },
+    {
+      "record": "vulkan-prefix-staged-run1/result.json",
+      "meaning": "Explicit --steps conflicted with existing generate 1 in warmup schedule; parser rejected before loading model. Removed explicit --steps, leaving original default4 for suffix schedules, and staged-run2 passed."
+    }
+  ],
+  "limitations": [
+    "Selected short finite workloads only; no full quality or cross-shape bitwise equivalence acceptance.",
+    "Prefix CLI does not export all old KV/recurrent/carry payload bytes; complete COW old-state and Apple/Vulkan native cancellation combinations remain.",
+    "One slot removes unnecessary consumer duplication. Per-region native backend context/scratch and driver costs remain a library resource-convergence item; no context pool has been implemented.",
+    "The failed Vulkan heap snapshot and requested region/logger sizes have different semantics. No exact physical memory savings are inferred from them.",
+    "No new complete prefill/decode/TPS or GPU/CPU memory benchmark; current-work final table remains the pre-change four-arm window.",
+    "Other selected applicable model/quantization MTP artifacts, quality, image projection and overall architecture/performance goal remain incomplete."
+  ],
+  "reused_caches": {
+    "SDK_rebuilds": 0,
+    "shaders": 0,
+    "NVCC": 0,
+    "Windows_host_product_TUs": 6,
+    "Windows_host_diagnostic_TUs": 2,
+    "Apple_host_product_TUs": 1
+  },
+  "cleanup": {
+    "status": "executed_once",
+    "removed_files": 19,
+    "removed_logical_bytes": 562926166.0,
+    "physical_free_space_change_unknown": true,
+    "targets": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\vulkan-native-memory-20261022\\cuda-main-link1\\qwen.exp",
+        "bytes": 24983,
+        "sha256": "49265e15c0f9e09b106e9c4b97285194a44cced4929161951fd42b1070c20d40"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\vulkan-native-memory-20261022\\cuda-main-link1\\qwen.lib",
+        "bytes": 41384,
+        "sha256": "339d3ce297534ebac8825c27a011f2f4f9dfe366c657ebfc45dbbfdc8412a2cb"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\vulkan-native-memory-20261022\\cuda-main-link1\\qwen.map",
+        "bytes": 59065448,
+        "sha256": "a39bb7f0999c77cb2b16091add7f50d99201141ca7c5091f856bb7034823bdbf"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\vulkan-native-memory-20261022\\diagnostic-link1\\qwen.exp",
+        "bytes": 24984,
+        "sha256": "9d9d29740b4782c9426547b5bf2cc0d4a2cf29a39025e9ff6ef86abb4a2017dc"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\vulkan-native-memory-20261022\\diagnostic-link1\\qwen.lib",
+        "bytes": 41384,
+        "sha256": "339d3ce297534ebac8825c27a011f2f4f9dfe366c657ebfc45dbbfdc8412a2cb"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\vulkan-native-memory-20261022\\diagnostic-link1\\qwen.map",
+        "bytes": 32549279,
+        "sha256": "de10a38c5f2cf03c1f038bd87fde105217c6fbfcee8aadf5945ea5ee66239014"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\vulkan-native-memory-20261022\\diagnostic-link2\\qwen.exp",
+        "bytes": 24984,
+        "sha256": "7337020c798866c156a56fce5b36afb65f4b565533f214164ffc27cea861cebb"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\vulkan-native-memory-20261022\\diagnostic-link2\\qwen.lib",
+        "bytes": 41384,
+        "sha256": "339d3ce297534ebac8825c27a011f2f4f9dfe366c657ebfc45dbbfdc8412a2cb"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\vulkan-native-memory-20261022\\diagnostic-link2\\qwen.map",
+        "bytes": 32549487,
+        "sha256": "2609d0f8d0d8a2d7e457de8610f96413c3eb95277ab3bdb987901f43bdf36e34"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\vulkan-native-memory-20261022\\retirement-link1\\qwen.exp",
+        "bytes": 24984,
+        "sha256": "326ba6450faf4833e79b3392dc8608d389996b6c6ad58e521240395b967bd979"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\vulkan-native-memory-20261022\\retirement-link1\\qwen.lib",
+        "bytes": 41384,
+        "sha256": "339d3ce297534ebac8825c27a011f2f4f9dfe366c657ebfc45dbbfdc8412a2cb"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\vulkan-native-memory-20261022\\retirement-link1\\qwen.map",
+        "bytes": 58654224,
+        "sha256": "1c3c72c55e8fbee394ecbf7c9235d685eca11861fb9cae9acbf0cd14db3da4a4"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\vulkan-native-memory-20261022\\vulkan-main-link1\\qwen.exp",
+        "bytes": 24985,
+        "sha256": "8951bb268367990e64f287e4b6e7b0b058803add702d5e83453a498d6ea07c92"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\vulkan-native-memory-20261022\\vulkan-main-link1\\qwen.lib",
+        "bytes": 41384,
+        "sha256": "339d3ce297534ebac8825c27a011f2f4f9dfe366c657ebfc45dbbfdc8412a2cb"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\vulkan-native-memory-20261022\\vulkan-main-link1\\qwen.map",
+        "bytes": 32591248,
+        "sha256": "3de5ffade746928b2cbf232b135597e1ade9e79df86c55c0a713cb23d25c054a"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\vulkan-native-memory-20261022\\diagnostic-link1\\qwen.exe",
+        "bytes": 68985856,
+        "sha256": "2397b72abc91e25f0ee335461c8df21ce9e98cb1f8558cc4ad746d5f77845951"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\vulkan-native-memory-20261022\\diagnostic-link2\\qwen.exe",
+        "bytes": 68985856,
+        "sha256": "7a0761b4bcf89673756fc31f5a8238420b64ee1fda439408536ecea05089c51f"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\vulkan-native-memory-20261022\\retirement-link1\\qwen.exe",
+        "bytes": 140230144,
+        "sha256": "97ffd1e43c9aebbef8166b27971ad4b62f75e9b3a7e4fe9033f4eb8e5370ba36"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\vulkan-retained-paged-20261022\\qwen-link2\\qwen.exe",
+        "bytes": 68982784,
+        "sha256": "118bd52eab44664f35d1b1f8b3b4aacdc4b163b5c71afe3fddfafca267a3daa6"
+      }
+    ]
+  },
+  "documents": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\developer\\current-work.md",
+      "bytes": 48229,
+      "sha256": "2b47b2b1245e043da8e04888b2b145028bfd5e21abe15c02c4b0ce178ff03de0"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\developer\\performance\\decode.md",
+      "bytes": 42174,
+      "sha256": "4f4144387ff024980c53c565687dc1e8f6005ea80ffa830a03e90b95d369e12c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\architecture\\compute-design.md",
+      "bytes": 117259,
+      "sha256": "1928f01856b4b1e1e0914bf148257f37ec4ad88717282696fd8e754216b7ccde"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tools\\qwen35_text\\README.md",
+      "bytes": 36418,
+      "sha256": "54f60d87f91b4a0524f226bc5898627f2c122ed385b725859661e78313117a08"
+    }
+  ],
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\qwen-serial-carrier-2026-10-22-logs.zip",
+    "bytes": 1668952,
+    "sha256": "24c130f4a4db9dd68381a529367fdce407cb3f08122af4a311371269e83e9dab"
+  }
+}

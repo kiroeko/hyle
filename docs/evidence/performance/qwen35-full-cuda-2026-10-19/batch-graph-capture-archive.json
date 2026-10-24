@@ -1,0 +1,14 @@
+{
+  "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\qwen35-full-cuda-2026-10-19\\batch-graph-capture.zip",
+  "bytes": 6792231,
+  "sha256": "57bf5e9077e5163f739b3dbc6b4d95d47432291dc765c2feaeaad97cd0e6688c",
+  "payloads": 531,
+  "crc_verified": true,
+  "payload_sha256_verified": true,
+  "CPU_tests": 12,
+  "CUDA_capture_tests": 1,
+  "equal_vectors": 64,
+  "equal_greedy_ids": 32,
+  "unprofiled_processes": 9,
+  "raw_duplicate_vectors_omitted": true
+}

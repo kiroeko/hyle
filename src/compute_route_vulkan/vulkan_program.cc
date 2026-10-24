@@ -1,9 +1,12 @@
 #include "../compute_ops/view_alias.h"
 #include "vulkan_iree.h"
 #include "vulkan_program_internal.h"
+#include "vulkan_carrier.h"
 #include "vulkan_iq1.h"
 #include "vulkan_policy.h"
 #include "vulkan_tensor.h"
+#include "../compute_batch/row_cache_map.h"
+#include "../compute_packed_shared/static_fp8_linear.h"
 #include "vulkan_memory_internal.h"
 #include "vulkan_composition_access.h"
 #include "hyle/compute/detail/vulkan_batch_access.h"
@@ -14,10 +17,12 @@
 #include "hyle/obs/trace.h"
 
 #include <algorithm>
+#include <array>
 #include <functional>
 #include <limits>
 #include <new>
 #include <numeric>
+#include <unordered_map>
 #include <utility>
 
 namespace hyle::compute::vulkan::detail {
@@ -103,7 +108,7 @@ Status allocate_values(const ProgramState &program, Run &run) noexcept {
     for (const auto bytes : program.block_bytes) {
       auto buffer = allocate_buffer(program.runtime->device, bytes, false, false,
           {.budget = run.allocation.resource_budget,
-           .resource = run.allocation.device != nullptr ? run.allocation.device->ref() : mem::MemoryResourceRef{}});
+           .resource = run.allocation.device});
       if (!buffer)
         return std::move(buffer).error();
       blocks.push_back(std::move(*buffer));
@@ -115,7 +120,7 @@ Status allocate_values(const ProgramState &program, Run &run) noexcept {
             run.retained_buffers[value],
             allocate_buffer(program.runtime->device, 4, true, true,
                 {.budget = run.allocation.resource_budget,
-                 .resource = run.allocation.staging != nullptr ? run.allocation.staging->ref() : mem::MemoryResourceRef{}}));
+                 .resource = run.allocation.staging}));
       } else if (program.values[value].constant)
         run.retained_buffers[value] =
             Access::buffer(program.values[value].constant);
@@ -139,14 +144,185 @@ Status allocate_values(const ProgramState &program, Run &run) noexcept {
   }
 }
 
+namespace {
+Result<std::uint32_t> owned_output_block(const ProgramState &program,
+    const Run &run, std::uint32_t output) noexcept {
+  const auto root = program.aliases[output].root;
+  const auto none = (std::numeric_limits<std::uint32_t>::max)();
+  const auto block = program.storage_blocks[root];
+  const auto &buffer = run.retained_buffers[root];
+  if (block == none || block >= program.block_bytes.size() ||
+      program.values[root].constant ||
+      std::ranges::find(program.inputs, root) != program.inputs.end() ||
+      !buffer || buffer->device != program.runtime->device || buffer->is_view ||
+      buffer->external_owner || buffer->memory == VK_NULL_HANDLE || buffer->offset ||
+      buffer->bytes != program.block_bytes[block])
+    return std::unexpected(Status::Unimplemented(
+        "Vulkan retained output has no original owned storage block"));
+  return block;
+}
+
+bool official_word_storage(const TensorDesc &description) noexcept {
+  if (description.rank() != 3)
+    return false;
+  const auto shape = description.dimensions();
+  const auto fp8 = float8_grouped_weight_description(shape[0], shape[1], shape[2]);
+  const auto fp4 = float4_grouped_weight_description(shape[0], shape[1], shape[2]);
+  const auto lanes = fp8 && *fp8 == description ? 4
+                     : fp4 && *fp4 == description ? 8 : 0;
+  if (lanes == 0 || shape[2] / lanes == 0 ||
+      shape[0] > INT32_MAX / shape[1])
+    return false;
+  return shape[0] * shape[1] <= INT32_MAX / (shape[2] / lanes);
+}
+Status prepare_constant_casts(const std::shared_ptr<Runtime> &runtime,
+                              ProgramState &program,
+                              const Plan &plan,
+                              std::vector<bool> &prepared) {
+  std::vector<bool> published(program.values.size(), false);
+  for (const auto output : plan.outputs) published[output] = true;
+  for (auto node = plan.steps.rbegin(); node != plan.steps.rend(); ++node)
+    if (node->operation.get_if<View>() && published[node->outputs[0]])
+      published[node->inputs[0]] = true;
+  std::vector<bool> derived;
+  std::vector<Tensor> converted;
+  for (std::size_t index = 0; index < plan.steps.size(); ++index) {
+    const auto &step = plan.steps[index];
+    if (const auto *view = step.operation.get_if<View>();
+        view && !derived.empty() && derived[step.inputs[0]]) {
+      HYLE_ASSIGN_OR_RETURN(auto value,
+          program.values[step.inputs[0]].constant.view(*view));
+      program.values[step.outputs[0]].constant = std::move(value);
+      derived[step.outputs[0]] = true;
+      continue;
+    }
+    const auto *cast = step.operation.get_if<Cast>();
+    if (!cast || cast->output_type != DataType::kFloat32 ||
+        step.inputs.size() != 1 || step.outputs.size() != 1)
+      continue;
+    const auto source = step.inputs[0], output = step.outputs[0];
+    const auto &from = program.values[source].description;
+    const auto &to = program.values[output].description;
+    const auto constant = program.values[source].constant;
+    if (!constant || published[output] || !from.is_plain() || !from.is_dense() ||
+        from.rank() != 2 || from.data_type() != DataType::kBFloat16 ||
+        !to.is_plain() || !to.is_dense())
+      continue;
+    if (converted.empty()) {
+      converted.resize(program.values.size());
+      derived.resize(program.values.size(), false);
+      prepared.resize(plan.steps.size(), false);
+    }
+    if (!converted[source]) {
+      const std::array arguments{Argument(constant)};
+      HYLE_ASSIGN_OR_RETURN(auto cast_program,
+          prepare_operation(runtime, step.operation, arguments));
+      HYLE_ASSIGN_OR_RETURN(auto invocation, cast_program.create_invocation());
+      HYLE_ASSIGN_OR_RETURN(auto work, invocation.submit());
+      HYLE_ASSIGN_OR_RETURN(auto result, work.wait());
+      converted[source] = result.get()->tensors()[0];
+    }
+    program.values[output].constant = converted[source];
+    derived[output] = prepared[index] = true;
+  }
+  return Status::Ok();
+}
+
+Status pack_matrix_constants(const std::shared_ptr<Runtime> &runtime,
+                             ProgramState &program,
+                             const Plan &source_plan, Plan &packed_plan) {
+  // The same immutable source can have native and promoted consumers. Their
+  // physical packs have different dtypes and cannot share a replacement.
+  std::array<std::vector<std::uint32_t>, 2> replacements;
+  for (std::size_t index = 0; index < source_plan.steps.size(); ++index) {
+    const auto &step = source_plan.steps[index];
+    if (!step.operation.get_if<MatMul>() || step.inputs.size() != 2 ||
+        !matches_mature_default(program, step, DefaultCarrier::kGgml) ||
+        (!managed_operation(program, step) && !bfloat_region_operation(program, step)))
+      continue;
+    const auto source = step.inputs[1];
+    const auto description = program.values[source].description;
+    const auto constant = program.values[source].constant;
+    const bool bfloat = description.data_type() == DataType::kBFloat16;
+    const bool promote = bfloat && bfloat_region_operation(program, step);
+    if (!constant || !description.is_plain() || !description.is_dense() ||
+        (description.data_type() != DataType::kFloat32 &&
+         description.data_type() != DataType::kFloat16 && !bfloat))
+      continue;
+    HYLE_ASSIGN_OR_RETURN(auto transposed, description.transposed());
+    if (transposed.is_dense() && !promote) continue; // No hot conversion to remove.
+    if (replacements[0].empty()) {
+      for (auto &cache : replacements)
+        cache.resize(program.values.size(), UINT32_MAX);
+      packed_plan.steps = source_plan.steps;
+      packed_plan.outputs = source_plan.outputs;
+    }
+    auto &replacement = replacements[promote ? 1 : 0][source];
+    if (replacement == UINT32_MAX) {
+      std::array<std::int32_t, kMaxTensorRank> axes{};
+      std::iota(axes.begin(), axes.end(), 0);
+      std::swap(axes[description.rank() - 1], axes[description.rank() - 2]);
+      HYLE_ASSIGN_OR_RETURN(auto transpose,
+          View::permute(std::span(axes).first(description.rank())));
+      auto source_tensor = constant;
+      if (promote) {
+        // Reuse the original widening primitive before the physical pack.
+        // Keep its owned result alive until the cold Copy has retired.
+        const std::array arguments{Argument(constant)};
+        HYLE_ASSIGN_OR_RETURN(auto cast,
+            prepare_operation(runtime, Operation(Cast{DataType::kFloat32}),
+                              arguments));
+        HYLE_ASSIGN_OR_RETURN(auto slot, cast.create_invocation());
+        HYLE_ASSIGN_OR_RETURN(auto work, slot.submit());
+        HYLE_ASSIGN_OR_RETURN(auto ready, work.wait());
+        source_tensor = ready.get()->tensors()[0];
+      }
+      HYLE_ASSIGN_OR_RETURN(auto view, source_tensor.view(transpose));
+      // Existing byte-addressed Copy owns the cold materialization and its
+      // accepted-prefix retirement. Only immutable captures enter this path.
+      const std::array arguments{Argument(view)};
+      HYLE_ASSIGN_OR_RETURN(auto copy,
+          prepare_operation(runtime, Operation(Copy{}), arguments));
+      HYLE_ASSIGN_OR_RETURN(auto slot, copy.create_invocation());
+      HYLE_ASSIGN_OR_RETURN(auto work, slot.submit());
+      HYLE_ASSIGN_OR_RETURN(auto ready, work.wait());
+      HYLE_ASSIGN_OR_RETURN(auto packed,
+          ready.get()->tensors()[0].view(transpose));
+      const auto id = static_cast<std::uint32_t>(program.values.size());
+      program.values.push_back({packed.description(), std::move(packed)});
+      program.aliases.push_back({id, 0});
+      replacement = id;
+    }
+    packed_plan.steps[index].inputs[1] = replacement;
+  }
+  return Status::Ok();
+}
+} // namespace
+
 Result<Program> prepare_plan(const Context &context, const Plan &plan,
                              PlanFacts *facts) noexcept {
+  return prepare_plan(Access::runtime(context), plan, facts, {});
+}
+
+Result<Program> prepare_plan(const Context &context, const Plan &plan,
+                             PlanFacts *facts, ColdCustomResolver resolver) noexcept {
+  return prepare_plan(Access::runtime(context), plan, facts, resolver);
+}
+
+Result<Program> prepare_plan(const std::shared_ptr<Runtime> &runtime,
+                             const Plan &plan, PlanFacts *facts,
+                             ColdCustomResolver resolver) noexcept {
+  return prepare_plan(runtime, plan, PlanQueuePolicy::kMayDelegate, facts, resolver);
+}
+
+Result<Program> prepare_plan(const std::shared_ptr<Runtime> &runtime,
+                             const Plan &plan, PlanQueuePolicy queue_policy,
+                             PlanFacts *facts, ColdCustomResolver resolver) noexcept {
   HYLE_TRACE_ZONE_NAMED("hyle.vulkan.prepare");
   if (facts != nullptr)
     *facts = {};
   if (!plan.workload.valid())
     return std::unexpected(Status::InvalidArgument("invalid Vulkan workload"));
-  const auto &runtime = Access::runtime(context);
   if (!runtime || plan.values.empty() || plan.steps.empty() ||
       plan.outputs.empty() ||
       plan.values.size() > (std::numeric_limits<std::uint32_t>::max)() / 2 ||
@@ -175,7 +351,8 @@ Result<Program> prepare_plan(const Context &context, const Plan &plan,
           !bytes ||
           *bytes > runtime->device->properties.limits.maxStorageBufferRange ||
           !elements || (*elements > (std::numeric_limits<std::int32_t>::max)() &&
-                        !iq1_storage_description(description)))
+                        !iq1_storage_description(description) &&
+                        !official_word_storage(description)))
         return std::unexpected(Status::Unimplemented(
             "Vulkan plan requires supported plain or named compressed "
             "storage within device limits"));
@@ -203,21 +380,49 @@ Result<Program> prepare_plan(const Context &context, const Plan &plan,
           (traits.alias == AliasPolicy::kMustAliasInput0 &&
            step.operation.kind() != OperationKind::kView) ||
           traits.outputs == 0 || traits.outputs != step.outputs.size() ||
-          !traits.inputs.accepts(step.inputs.size()) ||
-          (step.operation.kind() == OperationKind::kCustom &&
-           step.outputs.size() != 1 &&
-           !(step.outputs.size() == 2 &&
-             (step.operation.custom_as<model_ops::RecurrentGatedDeltaNet>() ||
-              step.operation.custom_as<sampling_ops::Categorical>()))))
+          !traits.inputs.accepts(step.inputs.size()))
         return std::unexpected(Status::Unimplemented(
             "Vulkan requires pure SSA operations with supported arity"));
       std::vector<TensorDesc> descriptions;
       descriptions.reserve(step.inputs.size());
-      for (const auto input : step.inputs) {
+      for (std::size_t port = 0; port < step.inputs.size(); ++port) {
+        const auto input = step.inputs[port];
         if (input >= available.size() || !available[input])
           return std::unexpected(Status::InvalidArgument(
               "Vulkan plan is not topologically ordered"));
-        descriptions.push_back(plan.values[input].description);
+        const auto &description = plan.values[input].description;
+        if (description.data_type() == DataType::kFloat8E4M3FN) {
+          const bool scale = port == 2 &&
+              (step.operation.custom_as<model_ops::Nvfp4Linear>() ||
+               step.operation.custom_as<model_ops::GroupedNvfp4Linear>() ||
+               step.operation.custom_as<model_ops::LocalNvfp4Linear>() ||
+               step.operation.custom_as<model_ops::GroupedLocalNvfp4Linear>());
+          const bool static_weight = port == 1 &&
+              step.operation.custom_as<packed::internal::StaticFloat8Linear>().has_value();
+          const bool storage = step.operation.kind() == OperationKind::kCopy ||
+                               step.operation.kind() == OperationKind::kView ||
+                               step.operation.kind() == OperationKind::kCast;
+          // Gather's checked row adapter copies raw words. Only its data
+          // port carries E4 bytes; it neither decodes nor computes in FP8.
+          const bool gathered_storage = port == 0 &&
+              step.operation.kind() == OperationKind::kGather;
+          const auto paged = step.operation.custom_as<ggml_vulkan::detail::PagedAttentionRead>();
+          const bool cache = paged && (paged->paged || paged->compact_mla) && paged->float8_cache &&
+                             (port == 1 || (!paged->compact_mla && port == 2));
+          if (!scale && !storage && !gathered_storage && !static_weight && !cache)
+            return std::unexpected(Status::Unimplemented(
+                "Vulkan E4M3 requires a typed storage or scale consumer"));
+        }
+        // This carrier exception does not widen ordinary tensor/shader
+        // indexing. Large banks enter only the checked word-based consumer.
+        if (*description.element_count() > INT32_MAX &&
+            official_word_storage(description) &&
+            (port != 0 ||
+             (!step.operation.custom_as<model_ops::GroupedFloat8Linear>() &&
+              !step.operation.custom_as<model_ops::GroupedFloat4Linear>())))
+          return std::unexpected(Status::Unimplemented(
+              "large official word banks require a grouped weight port"));
+        descriptions.push_back(description);
       }
       std::vector<TensorDesc> inferred(step.outputs.size());
       HYLE_RETURN_IF_ERROR(
@@ -228,6 +433,19 @@ Result<Program> prepare_plan(const Context &context, const Plan &plan,
             inferred[port] != plan.values[output].description)
           return std::unexpected(Status::InvalidArgument(
               "Vulkan plan output violates SSA or operation schema"));
+        if (inferred[port].data_type() == DataType::kFloat8E4M3FN &&
+            step.operation.kind() != OperationKind::kCopy &&
+            step.operation.kind() != OperationKind::kView &&
+            step.operation.kind() != OperationKind::kCast &&
+            step.operation.kind() != OperationKind::kGather &&
+            !step.operation.custom_as<model_ops::CacheEncode>() &&
+            !step.operation.custom_as<model_ops::Float8BlockQuantize>())
+          return std::unexpected(Status::Unimplemented(
+              "Vulkan E4M3 outputs require Cast or a storage copy/gather"));
+        if (*inferred[port].element_count() > INT32_MAX &&
+            official_word_storage(inferred[port]))
+          return std::unexpected(Status::Unimplemented(
+              "large official word banks must be external readonly values"));
         available[output] = true;
         produced[output] = true;
       }
@@ -251,21 +469,41 @@ Result<Program> prepare_plan(const Context &context, const Plan &plan,
       program->input_descriptions.push_back(plan.values[input].description);
     for (const auto output : plan.outputs)
       program->output_descriptions.push_back(plan.values[output].description);
-    std::vector<std::size_t> last_uses(plan.values.size(), 0);
-    for (std::size_t index = 0; index < plan.steps.size(); ++index)
-      for (const auto input : plan.steps[index].inputs)
+    std::vector<bool> prepared_casts;
+    HYLE_RETURN_IF_ERROR(prepare_constant_casts(runtime, *program, plan, prepared_casts));
+    Plan packed_plan;
+    HYLE_RETURN_IF_ERROR(pack_matrix_constants(runtime, *program, plan, packed_plan));
+    const auto &lowered = packed_plan.steps.empty() ? plan : packed_plan;
+    std::vector<RowCacheAccessFacts> row_cache_accesses;
+    std::vector<std::size_t> last_uses(program->values.size(), 0);
+    for (std::size_t index = 0; index < lowered.steps.size(); ++index)
+      for (const auto input : lowered.steps[index].inputs)
         last_uses[input] = index;
-    for (const auto &step : plan.steps)
+    for (const auto &step : lowered.steps)
       if (step.preserve_outputs)
         for (const auto output : step.outputs)
-          last_uses[output] = plan.steps.size();
-    for (std::size_t index = 0; index < plan.steps.size();) {
-      const auto &step = plan.steps[index];
+          last_uses[output] = lowered.steps.size();
+    for (std::size_t index = 0; index < lowered.steps.size();) {
+      const auto &step = lowered.steps[index];
+      if (!prepared_casts.empty() && prepared_casts[index]) {
+        ++index; // Keep the original logical step as a managed-region boundary.
+        continue;
+      }
       if(step.operation.custom_as<model_ops::CacheEncode>()){
         HYLE_RETURN_IF_ERROR(lower_cache_encoder(*program,step,last_uses));++index;continue;
       }
+      if (queue_policy == PlanQueuePolicy::kRuntimeQueueOnly &&
+          step.operation.get_if<Cast>()) {
+        // The existing typed shader preserves Cast's rounding and byte-origin
+        // contract on the original queue. Unconstrained plans keep defaults.
+        HYLE_RETURN_IF_ERROR(lower_tensor(*program, step));
+        ++index;
+        continue;
+      }
       if (matches_mature_default(*program, step, DefaultCarrier::kIree) &&
           iree_operation(*program, step)) {
+        if (queue_policy == PlanQueuePolicy::kRuntimeQueueOnly)
+          return std::unexpected(Status::Unimplemented("Vulkan ordered plan needs an original-queue implementation"));
         HYLE_RETURN_IF_ERROR(lower_iree(*program, step));
         ++index;
         continue;
@@ -287,20 +525,21 @@ Result<Program> prepare_plan(const Context &context, const Plan &plan,
             return false;
           // Only reshape an output already produced inside this region.
           // External capacity aliases retain the ordinary Plan view path.
-          const auto &producer = plan.steps[end - 1];
+          const auto &producer = lowered.steps[end - 1];
           return std::ranges::find(producer.outputs, next.inputs[0]) !=
                      producer.outputs.end() &&
                  managed_operation(*program, next);
         };
-        while (!step.control_boundary && end < plan.steps.size() &&
-               !plan.steps[end].control_boundary &&
-               ((!plan.steps[end].operation.get_if<View>() &&
-                 matches_mature_default(*program, plan.steps[end], DefaultCarrier::kGgml) &&
-                 managed_operation(*program, plan.steps[end])) ||
-                internal_reshape(plan.steps[end])))
+        while (!step.control_boundary && end < lowered.steps.size() &&
+               (prepared_casts.empty() || !prepared_casts[end]) &&
+               !lowered.steps[end].control_boundary &&
+               ((!lowered.steps[end].operation.get_if<View>() &&
+                 matches_mature_default(*program, lowered.steps[end], DefaultCarrier::kGgml) &&
+                 managed_operation(*program, lowered.steps[end])) ||
+                internal_reshape(lowered.steps[end])))
           ++end;
         HYLE_RETURN_IF_ERROR(
-            lower_region(*program, plan, index, end, last_uses));
+            lower_region(*program, lowered, index, end, last_uses));
         index = end;
         continue;
       }
@@ -342,10 +581,19 @@ Result<Program> prepare_plan(const Context &context, const Plan &plan,
         }
         continue;
       }
-      auto status = lower_operation(*program, step);
+      RowCacheAccessFacts access;
+      auto status = lower_operation(*program, step, resolver,
+                                    facts ? &access : nullptr);
       if (!status.ok())
         return std::unexpected(status);
+      if (facts && access.kind != RowCacheAccessKind::kNone) {
+        access.step = index - 1;
+        row_cache_accesses.push_back(access);
+      }
     }
+    if (queue_policy == PlanQueuePolicy::kRuntimeQueueOnly &&
+        std::ranges::any_of(program->dispatches, [](const auto &dispatch) { return dispatch.iree.has_value(); }))
+      return std::unexpected(Status::Unimplemented("Vulkan ordered plan contains an asynchronous carrier"));
     while (program->aliases.size() < program->values.size()) {
       const auto index = static_cast<std::uint32_t>(program->aliases.size());
       program->aliases.push_back({index, 0});
@@ -367,6 +615,73 @@ Result<Program> prepare_plan(const Context &context, const Plan &plan,
       return std::unexpected(status);
     if (facts != nullptr) {
       PlanFacts snapshot;
+      if (!row_cache_accesses.empty()) {
+        // Qualify the final native bank path, including hidden dispatches and
+        // aliases introduced during lowering. Binding a native descriptor is
+        // permitted; importing/copying/converting the whole bank is not.
+        // The index contains only sparse access-bearing banks, not another DAG.
+        std::unordered_map<std::uint32_t, std::size_t> bank_accesses;
+        std::vector<bool> qualified(row_cache_accesses.size(), true);
+        std::vector<bool> boundary(row_cache_accesses.size(), false);
+        for (std::size_t i = 0; i < row_cache_accesses.size(); ++i) {
+          const auto bank = row_cache_accesses[i].bank_value;
+          if (bank == UINT32_MAX) continue;
+          const auto [position, inserted] = bank_accesses.emplace(bank, i);
+          if (!inserted) {
+            qualified[i] = false;
+            if (position->second != SIZE_MAX)
+              qualified[position->second] = false;
+            position->second = SIZE_MAX;
+          }
+        }
+        const auto find_bank = [&](std::uint32_t value) {
+          const auto found = bank_accesses.find(program->aliases[value].root);
+          return found == bank_accesses.end() ? SIZE_MAX : found->second;
+        };
+        for (const auto input : program->inputs) {
+          const auto i = find_bank(input);
+          if (i != SIZE_MAX) boundary[i] = true;
+        }
+        for (std::size_t value = 0; value < program->aliases.size(); ++value) {
+          const auto i = find_bank(static_cast<std::uint32_t>(value));
+          if (i != SIZE_MAX && value != row_cache_accesses[i].bank_value)
+            qualified[i] = false;
+        }
+        for (std::size_t step_index = 0; step_index < lowered.steps.size(); ++step_index) {
+          const auto &native_step = lowered.steps[step_index];
+          for (std::size_t port = 0; port < native_step.inputs.size(); ++port) {
+            const auto i = find_bank(native_step.inputs[port]);
+            if (i != SIZE_MAX &&
+                (step_index != row_cache_accesses[i].step ||
+                 port != row_cache_accesses[i].bank_input))
+              qualified[i] = false;
+          }
+        }
+        for (std::size_t dispatch_index = 0;
+             dispatch_index < program->dispatches.size(); ++dispatch_index) {
+          const auto &dispatch = program->dispatches[dispatch_index];
+          for (const auto value : dispatch.values) {
+            const auto i = find_bank(value);
+            if (i == SIZE_MAX) continue;
+            const auto &access = row_cache_accesses[i];
+            if (dispatch_index < access.dispatch_begin ||
+                dispatch_index >= access.dispatch_end ||
+                !dispatch.pipeline || dispatch.region || dispatch.iree ||
+                !dispatch.checked_status ||
+                access.bank_binding >= dispatch.values.size() ||
+                dispatch.values[access.bank_binding] != access.bank_value)
+              qualified[i] = false;
+          }
+        }
+        for (const auto output : program->outputs) {
+          const auto i = find_bank(output);
+          if (i != SIZE_MAX) qualified[i] = false;
+        }
+        for (std::size_t i = 0; i < row_cache_accesses.size(); ++i)
+          if (qualified[i] &&
+              (row_cache_accesses[i].bank_value == UINT32_MAX || boundary[i]))
+            snapshot.row_cache_accesses.push_back(row_cache_accesses[i]);
+      }
       for (const auto &dispatch : program->dispatches)
         if (dispatch.region || dispatch.iree)
           ++snapshot.managed_region_count;
@@ -429,6 +744,14 @@ namespace hyle::compute::vulkan {
 Result<Program> prepare(const Context &context, const Operation &operation,
                         std::span<const Argument> arguments,
                         const WorkloadContext &workload) noexcept {
+  return detail::prepare_operation(detail::Access::runtime(context), operation,
+                                   arguments, workload);
+}
+
+Result<Program> detail::prepare_operation(
+    const std::shared_ptr<Runtime> &runtime, const Operation &operation,
+    std::span<const Argument> arguments,
+    const WorkloadContext &workload) noexcept {
   if (!workload.valid())
     return std::unexpected(Status::InvalidArgument("invalid Vulkan workload"));
   const auto output_count = operation_traits(operation).outputs;
@@ -460,7 +783,7 @@ Result<Program> prepare(const Context &context, const Operation &operation,
       plan.outputs.push_back(id);
     }
     plan.steps.push_back(std::move(step));
-    return detail::prepare_plan(context, plan);
+    return detail::prepare_plan(runtime, plan);
   } catch (const std::bad_alloc &) {
     return std::unexpected(
         Status::ResourceExhausted("Vulkan argument preparation"));
@@ -489,13 +812,16 @@ Program::create_invocation(mem::AllocatorRef allocator, InvocationAllocation all
     return std::unexpected(Status::InvalidArgument("invalid Vulkan program"));
   compute::ResourceBudget::Reservation private_storage;
   if (allocation.resource_budget) {
-    if (allocation.device == nullptr || allocation.staging == nullptr ||
-        !allocation.device->valid() || !allocation.staging->valid() ||
-        detail::MemoryAccess::runtime(*allocation.device) != state_->runtime ||
-        detail::MemoryAccess::runtime(*allocation.staging) != state_->runtime ||
-        allocation.device->ref().properties().has(mem::MemoryProperty::kHostAccessible) ||
-        !allocation.staging->ref().properties().has(mem::MemoryProperty::kHostAccessible))
-      return std::unexpected(Status::InvalidArgument("Vulkan invocation budget needs same-Device device/staging resources"));
+    HYLE_RETURN_IF_ERROR(detail::MemoryAccess::validate_resource(state_->runtime, allocation.device));
+    if (allocation.device.properties().has(mem::MemoryProperty::kHostAccessible))
+      return std::unexpected(Status::InvalidArgument("Vulkan invocation budget needs device storage"));
+    if (allocation.staging.valid()) {
+      HYLE_RETURN_IF_ERROR(detail::MemoryAccess::validate_resource(state_->runtime, allocation.staging));
+      if (!allocation.staging.properties().has(mem::MemoryProperty::kHostAccessible))
+        return std::unexpected(Status::InvalidArgument("Vulkan invocation budget needs mapped staging storage"));
+    } else if (detail::requires_staging(*state_)) {
+      return std::unexpected(Status::InvalidArgument("checked Vulkan invocation budget needs staging storage"));
+    }
     HYLE_ASSIGN_OR_RETURN(allocator, allocation.resource_budget.metadata_allocator());
     // Native region/control vectors retain their original owner allocations.
     // Their unknown private cost is explicit, never silently counted as zero.
@@ -573,8 +899,153 @@ Program::create_invocation(mem::AllocatorRef allocator, InvocationAllocation all
   }
 }
 
+Status detail::CompositionAccess::prepare_bindings(Invocation &invocation) noexcept {
+  if (!invocation.state_)
+    return Status::FailedPrecondition("empty Vulkan cold composition slot");
+  auto &state = *invocation.state_;
+  // Only Graph output preparation opts in. Original Direct/materialized
+  // callers retain their exact exported-owner admission gate.
+  if (!state.retained_output_reuse)
+    return detail::PagedBatchAccess::reuse_gate(invocation);
+  auto &run = *state.run;
+  const auto &program = *state.program;
+  std::lock_guard lock(program.runtime->mutex);
+  if (program.runtime->closed || !program.runtime->failure.ok() ||
+      !run.submission_failure.ok())
+    return Status::FailedPrecondition("Vulkan cold composition slot is closed/failed");
+  if (run.pending || run.observers || run.retiring || run.completion_owner)
+    return Status::Unavailable("Vulkan cold composition slot is still in use");
+  HYLE_RETURN_IF_ERROR(detail::cd::can_detach_retired(state.slot));
+  for (const auto output : program.outputs) {
+    if (program.values[program.aliases[output].root].constant) continue;
+    HYLE_ASSIGN_OR_RETURN(auto block, detail::owned_output_block(program, run, output));
+    (void)block;
+  }
+  // Reverse unbind can already have removed private downstream imports.
+  // Do not infer escape deltas from that count or establish a new baseline.
+  // An unpublished preparation/retry keeps its already selected epoch.
+  if (state.composition_sealed && !state.composition_preparing)
+    state.output_rearm_required = true;
+  state.bound = false;
+  state.composition_preparing = true;
+  return Status::Ok();
+}
+
+Status detail::CompositionAccess::prepare_outputs(Invocation &invocation,
+    bool *refresh) noexcept {
+  if (!invocation.state_ || !refresh)
+    return Status::InvalidArgument("Vulkan retained output preparation is empty");
+  *refresh = false;
+  auto &state = *invocation.state_;
+  auto &run = *state.run;
+  const auto &program = *state.program;
+  std::lock_guard lock(program.runtime->mutex);
+  if (program.runtime->closed || !program.runtime->failure.ok() ||
+      !run.submission_failure.ok())
+    return Status::FailedPrecondition("Vulkan retained output slot is closed/failed");
+  if (run.pending || run.observers || run.retiring || run.completion_owner)
+    return Status::Unavailable("Vulkan retained output slot is still in use");
+  HYLE_RETURN_IF_ERROR(detail::cd::can_detach_retired(state.slot));
+  const bool prepared = state.retained_output_reuse &&
+      state.composition_preparing && !state.output_rearm_required;
+  state.bound = false;
+  state.composition_preparing = true;
+  // A failed caller export/bind may retry this same unpublished epoch. Its
+  // changing private references must not become an old-reader baseline.
+  if (state.output_epoch_pending || prepared) {
+    state.bound = false;
+    state.composition_preparing = true;
+    *refresh = state.output_epoch_pending;
+    return Status::Ok();
+  }
+  const bool rearm = state.output_rearm_required;
+  // Until selection has succeeded, a failed allocation/layout check must not
+  // look like an already prepared no-rotation epoch on retry.
+  state.output_rearm_required = true;
+  try {
+    if (!state.retained_output_reuse) {
+      state.output_spares.resize(program.block_bytes.size());
+      state.retained_output_reuse = true;
+    }
+    std::vector<bool> rotate(program.block_bytes.size(), false);
+    bool changed = false;
+    for (std::size_t i = 0; i < program.outputs.size(); ++i) {
+      const auto output = program.outputs[i];
+      if (!rearm) {
+        const auto count = run.retained_buffers[output].use_count();
+        if (count < state.output_owner_counts[i])
+          return Status::Unavailable("Vulkan retained output private owners changed");
+        if (count == state.output_owner_counts[i]) continue;
+      } else if (program.values[program.aliases[output].root].constant) {
+        continue; // Immutable constants are never a new output writer.
+      }
+      HYLE_ASSIGN_OR_RETURN(auto block, detail::owned_output_block(program, run, output));
+      rotate[block] = true;
+      changed = true;
+    }
+    if (changed) {
+      // All fallible backing/view preparation precedes selection. Keeping one
+      // spare is bounded; an escaped spare is never overwritten or made free.
+      auto prospective = run.retained_buffers;
+      std::vector<std::shared_ptr<detail::Buffer>> blocks(program.block_bytes.size());
+      std::vector<std::shared_ptr<detail::Buffer>> old_blocks(program.block_bytes.size());
+      for (std::size_t value = 0; value < program.values.size(); ++value) {
+        const auto block = program.storage_blocks[value];
+        if (program.aliases[value].root == value && block < rotate.size() && rotate[block])
+          old_blocks[block] = run.retained_buffers[value];
+      }
+      for (std::size_t block = 0; block < rotate.size(); ++block) {
+        if (!rotate[block]) continue;
+        const auto &spare = state.output_spares[block];
+        if (spare && spare.use_count() == 1) {
+          blocks[block] = spare;
+        } else {
+          HYLE_ASSIGN_OR_RETURN(blocks[block], detail::allocate_buffer(
+              program.runtime->device, program.block_bytes[block], false, false,
+              {.budget = run.allocation.resource_budget, .resource = run.allocation.device}));
+        }
+      }
+      for (std::size_t value = 0; value < program.values.size(); ++value) {
+        const auto alias = program.aliases[value];
+        const auto block = program.storage_blocks[alias.root];
+        if (block >= rotate.size() || !rotate[block]) continue;
+        if (alias.root == value) {
+          prospective[value] = blocks[block];
+        } else {
+          if (alias.byte_offset > blocks[block]->bytes)
+            return Status::InvalidArgument("Vulkan retained output alias exceeds its block");
+          auto view = std::make_shared<detail::Buffer>();
+          view->device = program.runtime->device;
+          detail::bind_view_buffer(*view, blocks[block], alias.byte_offset);
+          prospective[value] = std::move(view);
+        }
+      }
+      state.bound = false;
+      state.composition_preparing = true;
+      state.output_epoch_pending = true;
+      run.retained_buffers.swap(prospective);
+      for (std::size_t block = 0; block < rotate.size(); ++block)
+        if (rotate[block]) state.output_spares[block] = std::move(old_blocks[block]);
+      for (std::size_t i = 0; i < program.outputs.size(); ++i)
+        state.results->tensors[i] = detail::Access::tensor(
+            program.output_descriptions[i], run.retained_buffers[program.outputs[i]]);
+      *refresh = true;
+    }
+    // Explicit preparation revokes direct submit even if no physical block
+    // needed changing. Only the subsequent full bind and seal may restore it.
+    state.bound = false;
+    state.composition_preparing = true;
+    state.output_rearm_required = changed;
+    detail::cd::discard_retired_payload(state.slot);
+    return Status::Ok();
+  } catch (const std::bad_alloc &) {
+    return Status::ResourceExhausted("Vulkan retained output epoch metadata");
+  }
+}
+
 Result<Tensor> detail::CompositionAccess::output(Invocation &invocation, std::size_t index) noexcept {
-  if (!invocation.state_ || invocation.state_->composition_sealed ||
+  if (!invocation.state_ ||
+      (invocation.state_->composition_sealed && !invocation.state_->composition_preparing) ||
       index >= invocation.state_->results->tensors.size())
     return std::unexpected(Status::InvalidArgument("invalid cold Vulkan composition output"));
   std::lock_guard lock(invocation.state_->program->runtime->mutex);
@@ -590,10 +1061,14 @@ Status detail::CompositionAccess::seal(Invocation &invocation) noexcept {
   std::lock_guard lock(state.program->runtime->mutex);
   if (state.run->pending || state.run->completion_owner || state.run->observers)
     return Status::FailedPrecondition("Vulkan composition references cannot change after admission");
+  if (state.retained_output_reuse && !state.bound)
+    return Status::FailedPrecondition("Vulkan retained output epoch is not rebound");
   for (std::size_t i = 0; i < state.program->outputs.size(); ++i)
     state.output_owner_counts[i] = state.run->retained_buffers[state.program->outputs[i]].use_count();
   state.composition_sealed = true;
   state.composition_preparing = false;
+  state.output_epoch_pending = false;
+  state.output_rearm_required = false;
   return Status::Ok();
 }
 
@@ -603,11 +1078,33 @@ Status detail::PagedBatchAccess::reuse_gate(Invocation&invocation)noexcept{
   std::lock_guard lock(runtime.mutex);
   if(runtime.closed || !runtime.failure.ok() || !run.submission_failure.ok())return Status::FailedPrecondition("Vulkan batch native slot closed/failed");
   if(run.pending || run.observers || run.retiring || run.completion_owner)return Status::Unavailable("Vulkan batch native slot in use");
+  if(state->retained_output_reuse && state->composition_preparing)
+    return Status::FailedPrecondition("Vulkan retained output epoch needs complete cold binding/seal");
   for(std::size_t i=0;i<state->program->outputs.size();++i){const auto output=state->program->outputs[i];if(run.retained_buffers[output].use_count()!=state->output_owner_counts[i])return Status::Unavailable("Vulkan batch native output retained");}
   HYLE_ASSIGN_OR_RETURN(auto writer,state->slot.begin());return Status::Ok();
 }
+Status detail::PagedBatchAccess::reseal_composition(Invocation& invocation) noexcept {
+  auto* state=invocation.state_.get();
+  if(!state || !state->composition_sealed)
+    return Status::FailedPrecondition("Vulkan batch composition is not sealed");
+  auto& run=*state->run;
+  std::lock_guard lock(state->program->runtime->mutex);
+  if(state->program->runtime->closed || !state->program->runtime->failure.ok() ||
+     !run.submission_failure.ok() || run.pending || run.observers || run.retiring || run.completion_owner)
+    return Status::FailedPrecondition("Vulkan batch composition is not idle");
+  if (state->retained_output_reuse && !state->bound)
+    return Status::FailedPrecondition("Vulkan retained output epoch is not rebound");
+  // The enclosing Graph owns its result writer and checked the prior baseline
+  // before adding these internal references. Public result admission stays exact.
+  for(std::size_t i=0;i<state->program->outputs.size();++i)
+    state->output_owner_counts[i]=run.retained_buffers[state->program->outputs[i]].use_count();
+  state->composition_preparing = false;
+  state->output_epoch_pending = false;
+  state->output_rearm_required = false;
+  return Status::Ok();
+}
 Status detail::PagedBatchAccess::release_inputs(Invocation&invocation)noexcept{
-  HYLE_RETURN_IF_ERROR(reuse_gate(invocation));auto&state=*invocation.state_;auto&run=*state.run;
+  HYLE_RETURN_IF_ERROR(detail::CompositionAccess::prepare_bindings(invocation));auto&state=*invocation.state_;auto&run=*state.run;
   Status status;
   {
     std::lock_guard lock(state.program->runtime->mutex);state.bound=false;
@@ -628,19 +1125,100 @@ Status detail::PagedBatchAccess::release_inputs(Invocation&invocation)noexcept{
   }
   for(auto&input:state.old_inputs)input.reset();return status;
 }
+Status detail::PagedBatchAccess::can_detach_inputs(const Invocation &invocation,
+    const cd::ResultStorageOwner &result) noexcept {
+  auto *state = invocation.state_.get();
+  if (!state) return Status::FailedPrecondition("empty Vulkan native slot");
+  auto &run = *state->run;
+  std::lock_guard lock(state->program->runtime->mutex);
+  if (run.pending || run.observers || run.retiring || run.completion_owner)
+    return Status::Unavailable("Vulkan native inputs are still in use");
+  for (std::size_t i = 0; i < state->program->outputs.size(); ++i) {
+    const auto output = state->program->outputs[i];
+    if (!state->output_epoch_pending && !state->output_rearm_required) {
+      const auto count = run.retained_buffers[output].use_count();
+      if (count < state->output_owner_counts[i])
+        return Status::Unavailable("Vulkan native private output owners changed");
+      if (count != state->output_owner_counts[i]) {
+        if (!state->retained_output_reuse)
+          return Status::Unavailable("Vulkan native output retained");
+        // This only permits retracting retired imports. The old readonly
+        // backing remains retained and cannot be submitted as a new writer.
+        HYLE_ASSIGN_OR_RETURN(auto block,
+            detail::owned_output_block(*state->program, run, output));
+        (void)block;
+      }
+    }
+    if (std::ranges::find(state->program->inputs, state->program->aliases[output].root) !=
+        state->program->inputs.end())
+      return Status::Unimplemented("Vulkan input-alias output cannot detach its fixed carrier");
+    if (state->retained_output_reuse &&
+        !state->program->values[state->program->aliases[output].root].constant) {
+      HYLE_ASSIGN_OR_RETURN(auto block,
+          detail::owned_output_block(*state->program, run, output));
+      (void)block;
+    }
+  }
+  for (const auto &stage : run.stages)
+    if (stage.managed) HYLE_RETURN_IF_ERROR(stage.managed->can_detach_bindings());
+  // Native retirement, not Source admission: a closed/failed runtime is legal.
+  return cd::can_detach_retired(state->slot, result);
+}
+void detail::PagedBatchAccess::detach_inputs(Invocation &invocation) noexcept {
+  auto &state = *invocation.state_;
+  auto &run = *state.run;
+  {
+    std::lock_guard lock(state.program->runtime->mutex);
+    cd::discard_retired_payload(state.slot);
+    state.bound = false;
+    if (state.retained_output_reuse) {
+      state.composition_preparing = true;
+      state.output_rearm_required = true;
+    }
+    const auto is_input = [&](std::uint32_t value) {
+      return std::ranges::find(state.program->inputs, state.program->aliases[value].root) !=
+          state.program->inputs.end();
+    };
+    for (std::size_t i = 0; i < state.program->inputs.size(); ++i)
+      state.old_inputs[i] = std::move(run.retained_buffers[state.program->inputs[i]]);
+    for (std::size_t value = 0; value < state.program->aliases.size(); ++value) {
+      const auto alias = state.program->aliases[value];
+      if (alias.root != value && is_input(std::uint32_t(value)))
+        detail::bind_view_buffer(*run.retained_buffers[value], {}, alias.byte_offset);
+    }
+    for (auto &stage : run.stages) {
+      if (stage.managed) {
+        stage.managed->detach_bindings();
+        for (auto &binding : stage.bindings) binding = {};
+      } else if (stage.native) {
+        for (std::size_t port = 0; port < stage.values.size(); ++port)
+          if (is_input(stage.values[port])) stage.native->retained_buffers[port].reset();
+      }
+    }
+    // Other Graph slots can already have dropped internal references during
+    // reverse release. Never infer an escaped delta from that changed count.
+    // Opt-in output blocks must be replaced/reclaimed before the next seal.
+    if (!state.retained_output_reuse)
+      for (std::size_t i = 0; i < state.program->outputs.size(); ++i)
+        state.output_owner_counts[i] =
+            run.retained_buffers[state.program->outputs[i]].use_count();
+  }
+  // External tokens may destroy resource controls; release outside queue lock.
+  for (auto &input : state.old_inputs) input.reset();
+}
 Status detail::PagedBatchAccess::update_layout(Invocation& invocation,
     const BatchLayoutVersion& layout) noexcept {
-  HYLE_RETURN_IF_ERROR(reuse_gate(invocation));
+  HYLE_RETURN_IF_ERROR(detail::CompositionAccess::prepare_bindings(invocation));
   auto& state=*invocation.state_;const auto host=layout.host();
   std::lock_guard lock(state.program->runtime->mutex);
   for(auto& stage:state.run->stages)
     if(stage.managed)HYLE_RETURN_IF_ERROR(stage.managed->update_batch_layout(host.kv_indptr,host.last_page_lengths));
   return Status::Ok();
 }
-Result<Program> detail::PagedBatchAccess::prepare_ragged_program(const Context& context,
+Result<Program> detail::PagedBatchAccess::prepare_ragged_program(const std::shared_ptr<Runtime>& runtime,
     const Plan& plan,BatchLayoutVersion initial,bool causal,std::int32_t window_left) noexcept {
   try {
-    HYLE_ASSIGN_OR_RETURN(auto program,prepare_plan(context,plan));
+    HYLE_ASSIGN_OR_RETURN(auto program,prepare_plan(runtime,plan));
     program.state_->ragged=std::make_shared<const RaggedContract>(
         RaggedContract{std::move(initial),causal,window_left});
     return program;
@@ -659,7 +1237,7 @@ Status detail::PagedBatchAccess::update_ragged(Invocation& invocation,
       !std::equal(a.query_indptr.begin(),a.query_indptr.end(),b.query_indptr.begin()))
     return Status::InvalidArgument("Vulkan ragged update schema/Q topology differs");
   HYLE_RETURN_IF_ERROR(validate_batch_attention_layout(layout,contract.causal,contract.window_left));
-  HYLE_RETURN_IF_ERROR(reuse_gate(invocation));
+  HYLE_RETURN_IF_ERROR(detail::CompositionAccess::prepare_bindings(invocation));
   auto& runtime=*state->program->runtime;auto& run=*state->run;
   {
     std::lock_guard lock(runtime.mutex);
@@ -790,7 +1368,9 @@ Status Invocation::bind(std::span<const Tensor> inputs) noexcept {
                                               &binding.write, 0, nullptr);
     }
     if (!run.stages.empty())
-      status = detail::bind_regions(run);
+      status = detail::bind_regions(run, state_->output_epoch_pending ? state_->program.get() : nullptr);
+    else if (state_->output_epoch_pending)
+      status = detail::rebind_descriptors(run, state_->program->values, state_->program->dispatches);
     else if (detail::origins_changed(run, state_->program->dispatches))
       status = detail::encode_commands(run, state_->program->dispatches);
     state_->bound = status.ok();

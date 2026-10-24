@@ -1,0 +1,801 @@
+﻿{
+    "status":  "completed; do not rerun",
+    "recursive":  false,
+    "removed_files":  109,
+    "removed_logical_bytes":  948309323,
+    "kept_images":  [
+                        {
+                            "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\qwen-link1\\qwen.exe",
+                            "bytes":  140236800,
+                            "sha256":  "7272f512ae273ba3bec73e28c549571b10f1f6b08bab8a4e9d7ec683015d2109"
+                        },
+                        {
+                            "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\peer\\checks\\attempt2\\peer.exe",
+                            "bytes":  35784192,
+                            "sha256":  "cea15cde6a80793aae9ba9ab9b33bbbb8a157652a80e639a6ba26e62dba33005"
+                        }
+                    ],
+    "model_cache_untouched":  {
+                                  "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\llama-matched-consumer\\Qwen3.5-2B-text-MTP-BF16.gguf",
+                                  "bytes":  3897387936,
+                                  "sha256":  "8c744017e119657f75d2d154350104ce5291500b0f9f0a115374d5bfe482642d"
+                              },
+    "verified_archives":  [
+                              {
+                                  "path":  "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\qwen-mtp-retirement-2026-10-22.data.zip",
+                                  "bytes":  42061032,
+                                  "sha256":  "e01c58f92d59344d33b34f876c2886e9e7b2a3ac9aaae2a26ae7eb6cb70c24c0"
+                              }
+                          ],
+    "removed":  [
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\peer\\checks\\attempt1\\peer.exe",
+                        "bytes":  35783168,
+                        "sha256":  "781c3744057990142e24c724a8ac18a84ccc542ae51ca127df57719b6cf5d26d",
+                        "kind":  "rebuildable obsolete image/link output"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\peer\\checks\\attempt1\\peer.map",
+                        "bytes":  22552055,
+                        "sha256":  "ef7398c7831e7166457b6fd9463546a0236a6ee7fa3e2450b6519e5846299279",
+                        "kind":  "rebuildable obsolete image/link output"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\peer\\checks\\attempt2\\peer.map",
+                        "bytes":  22558731,
+                        "sha256":  "f0d02505d4f28537ad0f625088cb4d2c972da81a885231c09c5fd5523e4ddf3b",
+                        "kind":  "rebuildable obsolete image/link output"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\qwen-link1\\qwen.exp",
+                        "bytes":  24977,
+                        "sha256":  "944d852bc616b68e28af4d74df6bc6e00569b3ffe2a1e3cf8abfacf9757b3518",
+                        "kind":  "rebuildable obsolete image/link output"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\qwen-link1\\qwen.lib",
+                        "bytes":  41384,
+                        "sha256":  "339d3ce297534ebac8825c27a011f2f4f9dfe366c657ebfc45dbbfdc8412a2cb",
+                        "kind":  "rebuildable obsolete image/link output"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\qwen-link1\\qwen.map",
+                        "bytes":  58678909,
+                        "sha256":  "66af710a0aa8dd700c97a9d98fb9f900b4e8bead9b4c092ea5e4c2a91a25d5fa",
+                        "kind":  "rebuildable obsolete image/link output"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\qwen-run1\\trace\\mtp1\\hidden.bf16",
+                        "bytes":  8192,
+                        "sha256":  "697fe40c878b672f5e7d1a7375f8f030ab981e8ef46ba226f10b38a58e4b20d6",
+                        "kind":  "verified archived raw vector",
+                        "archive_entry":  ".scratch/qwen-mtp-retirement-20261022/qwen-run1/trace/mtp1/hidden.bf16"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\qwen-run1\\trace\\mtp1\\layer0.conv.bf16",
+                        "bytes":  36864,
+                        "sha256":  "ecaf11a3a11920860b10cd173e9c08c1722cd6762168f76dd2fc5e7f7ff9eeb4",
+                        "kind":  "verified archived raw vector",
+                        "archive_entry":  ".scratch/qwen-mtp-retirement-20261022/qwen-run1/trace/mtp1/layer0.conv.bf16"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\qwen-run1\\trace\\mtp1\\layer0.gdn.f32",
+                        "bytes":  1048576,
+                        "sha256":  "942fa08d2a5e657ea81f143fba66363884b85b860d0c6ef91320b09c39e7f6e0",
+                        "kind":  "verified archived raw vector",
+                        "archive_entry":  ".scratch/qwen-mtp-retirement-20261022/qwen-run1/trace/mtp1/layer0.gdn.f32"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\qwen-run1\\trace\\mtp1\\layer1.conv.bf16",
+                        "bytes":  36864,
+                        "sha256":  "4b64133e905600f7f8e5c1a51a76e5d21b251cfcb708313f4c3367404aad2b19",
+                        "kind":  "verified archived raw vector",
+                        "archive_entry":  ".scratch/qwen-mtp-retirement-20261022/qwen-run1/trace/mtp1/layer1.conv.bf16"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\qwen-run1\\trace\\mtp1\\layer1.gdn.f32",
+                        "bytes":  1048576,
+                        "sha256":  "b999f3bf8d6b1ad3193d298a9cac5d8c2b6d5e941a50226e3e51324901302d9c",
+                        "kind":  "verified archived raw vector",
+                        "archive_entry":  ".scratch/qwen-mtp-retirement-20261022/qwen-run1/trace/mtp1/layer1.gdn.f32"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\qwen-run1\\trace\\mtp1\\layer10.conv.bf16",
+                        "bytes":  36864,
+                        "sha256":  "f4f5d455df17833a9f911058ff600db184937e0e8fd060b56d55fc6000f9862e",
+                        "kind":  "verified archived raw vector",
+                        "archive_entry":  ".scratch/qwen-mtp-retirement-20261022/qwen-run1/trace/mtp1/layer10.conv.bf16"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\qwen-run1\\trace\\mtp1\\layer10.gdn.f32",
+                        "bytes":  1048576,
+                        "sha256":  "4a491ea7219181a4b48007637b1a348076859337a15f45f155fec6c05596c37c",
+                        "kind":  "verified archived raw vector",
+                        "archive_entry":  ".scratch/qwen-mtp-retirement-20261022/qwen-run1/trace/mtp1/layer10.gdn.f32"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\qwen-run1\\trace\\mtp1\\layer12.conv.bf16",
+                        "bytes":  36864,
+                        "sha256":  "ecbde911ed5ac8035bbdc08b22b9e30228972dd2455cb0e62ff2c49a99005384",
+                        "kind":  "verified archived raw vector",
+                        "archive_entry":  ".scratch/qwen-mtp-retirement-20261022/qwen-run1/trace/mtp1/layer12.conv.bf16"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\qwen-run1\\trace\\mtp1\\layer12.gdn.f32",
+                        "bytes":  1048576,
+                        "sha256":  "8942cd9de651cbec6a9960fd81da60852c1bff85f5ee8a995bcf37550b7b802f",
+                        "kind":  "verified archived raw vector",
+                        "archive_entry":  ".scratch/qwen-mtp-retirement-20261022/qwen-run1/trace/mtp1/layer12.gdn.f32"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\qwen-run1\\trace\\mtp1\\layer13.conv.bf16",
+                        "bytes":  36864,
+                        "sha256":  "08a6770dac237f1dbe91f922f479fa7bd513bb4591cfe1d595ddb3933950d1ba",
+                        "kind":  "verified archived raw vector",
+                        "archive_entry":  ".scratch/qwen-mtp-retirement-20261022/qwen-run1/trace/mtp1/layer13.conv.bf16"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\qwen-run1\\trace\\mtp1\\layer13.gdn.f32",
+                        "bytes":  1048576,
+                        "sha256":  "ad134fd11476f905f34409fccdc91f6a1ed551c19000d829a811c40c6aac85f8",
+                        "kind":  "verified archived raw vector",
+                        "archive_entry":  ".scratch/qwen-mtp-retirement-20261022/qwen-run1/trace/mtp1/layer13.gdn.f32"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\qwen-run1\\trace\\mtp1\\layer14.conv.bf16",
+                        "bytes":  36864,
+                        "sha256":  "86ad5e70609f457a9a42cc33c4f30790a1fd0f9e12919c45eab85476d994180b",
+                        "kind":  "verified archived raw vector",
+                        "archive_entry":  ".scratch/qwen-mtp-retirement-20261022/qwen-run1/trace/mtp1/layer14.conv.bf16"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\qwen-run1\\trace\\mtp1\\layer14.gdn.f32",
+                        "bytes":  1048576,
+                        "sha256":  "5a54be6af67242822ba31aee129ba777ab1eed4e050032592a0dab3f02d8be9b",
+                        "kind":  "verified archived raw vector",
+                        "archive_entry":  ".scratch/qwen-mtp-retirement-20261022/qwen-run1/trace/mtp1/layer14.gdn.f32"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\qwen-run1\\trace\\mtp1\\layer16.conv.bf16",
+                        "bytes":  36864,
+                        "sha256":  "d691edb8a829a3c33c5a72258ff9fc20e8a91978965ecb558a7ed901efc32050",
+                        "kind":  "verified archived raw vector",
+                        "archive_entry":  ".scratch/qwen-mtp-retirement-20261022/qwen-run1/trace/mtp1/layer16.conv.bf16"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\qwen-run1\\trace\\mtp1\\layer16.gdn.f32",
+                        "bytes":  1048576,
+                        "sha256":  "441db092cadbf73e3fd32b3ef58fa85d8549d53e07cf65497d0b92e6ef8103f0",
+                        "kind":  "verified archived raw vector",
+                        "archive_entry":  ".scratch/qwen-mtp-retirement-20261022/qwen-run1/trace/mtp1/layer16.gdn.f32"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\qwen-run1\\trace\\mtp1\\layer17.conv.bf16",
+                        "bytes":  36864,
+                        "sha256":  "1403bd86a02adafc9de800613a8284c181fc71527e063c453f09f7142cfafccd",
+                        "kind":  "verified archived raw vector",
+                        "archive_entry":  ".scratch/qwen-mtp-retirement-20261022/qwen-run1/trace/mtp1/layer17.conv.bf16"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\qwen-run1\\trace\\mtp1\\layer17.gdn.f32",
+                        "bytes":  1048576,
+                        "sha256":  "9c61c62746f8dc44c9970bde4b3f1297fc88bcc548851616e65599e5634bbcfa",
+                        "kind":  "verified archived raw vector",
+                        "archive_entry":  ".scratch/qwen-mtp-retirement-20261022/qwen-run1/trace/mtp1/layer17.gdn.f32"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\qwen-run1\\trace\\mtp1\\layer18.conv.bf16",
+                        "bytes":  36864,
+                        "sha256":  "fcf9f1d2070739e5a37473d801aa2bba7654ebf8f83102eb2852158e6586530e",
+                        "kind":  "verified archived raw vector",
+                        "archive_entry":  ".scratch/qwen-mtp-retirement-20261022/qwen-run1/trace/mtp1/layer18.conv.bf16"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\qwen-run1\\trace\\mtp1\\layer18.gdn.f32",
+                        "bytes":  1048576,
+                        "sha256":  "94fd0b96c485503750014c232a3c865b86fb891047e9a5ea0670a025a6829cca",
+                        "kind":  "verified archived raw vector",
+                        "archive_entry":  ".scratch/qwen-mtp-retirement-20261022/qwen-run1/trace/mtp1/layer18.gdn.f32"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\qwen-run1\\trace\\mtp1\\layer2.conv.bf16",
+                        "bytes":  36864,
+                        "sha256":  "65f62f4b1c6dffdb8ef0bfd8ed53d349974637a222d1d2e70fc3c8c8388dbb92",
+                        "kind":  "verified archived raw vector",
+                        "archive_entry":  ".scratch/qwen-mtp-retirement-20261022/qwen-run1/trace/mtp1/layer2.conv.bf16"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\qwen-run1\\trace\\mtp1\\layer2.gdn.f32",
+                        "bytes":  1048576,
+                        "sha256":  "1e55150875e8eb87f3e5053fe7cae13c1a28e0a0678ace24fe161efe8f197ae0",
+                        "kind":  "verified archived raw vector",
+                        "archive_entry":  ".scratch/qwen-mtp-retirement-20261022/qwen-run1/trace/mtp1/layer2.gdn.f32"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\qwen-run1\\trace\\mtp1\\layer20.conv.bf16",
+                        "bytes":  36864,
+                        "sha256":  "88689fee031ed45fa65ae2ffd7c9218987b518bb52be249fff09b62617294395",
+                        "kind":  "verified archived raw vector",
+                        "archive_entry":  ".scratch/qwen-mtp-retirement-20261022/qwen-run1/trace/mtp1/layer20.conv.bf16"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\qwen-run1\\trace\\mtp1\\layer20.gdn.f32",
+                        "bytes":  1048576,
+                        "sha256":  "b21b2596f956d7ebecee4acb144525ae2ec2228b0391bf719acf1dca67abeedb",
+                        "kind":  "verified archived raw vector",
+                        "archive_entry":  ".scratch/qwen-mtp-retirement-20261022/qwen-run1/trace/mtp1/layer20.gdn.f32"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\qwen-run1\\trace\\mtp1\\layer21.conv.bf16",
+                        "bytes":  36864,
+                        "sha256":  "57b3b459ad26b75f02b4fb49f02214e12a6e1f2b0de8c7c64d7f18eab04b52b1",
+                        "kind":  "verified archived raw vector",
+                        "archive_entry":  ".scratch/qwen-mtp-retirement-20261022/qwen-run1/trace/mtp1/layer21.conv.bf16"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\qwen-run1\\trace\\mtp1\\layer21.gdn.f32",
+                        "bytes":  1048576,
+                        "sha256":  "795f4d528bbaa382c453d1843e0d13758f0c8dffd741b222d24dd99e24ea6806",
+                        "kind":  "verified archived raw vector",
+                        "archive_entry":  ".scratch/qwen-mtp-retirement-20261022/qwen-run1/trace/mtp1/layer21.gdn.f32"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\qwen-run1\\trace\\mtp1\\layer22.conv.bf16",
+                        "bytes":  36864,
+                        "sha256":  "5a5befed7b0c5f037c56e669ac41f628e90e8c1d07ded0d165f5bc9fe91d20bd",
+                        "kind":  "verified archived raw vector",
+                        "archive_entry":  ".scratch/qwen-mtp-retirement-20261022/qwen-run1/trace/mtp1/layer22.conv.bf16"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\qwen-run1\\trace\\mtp1\\layer22.gdn.f32",
+                        "bytes":  1048576,
+                        "sha256":  "050827bc1b6f1131c99463294d1b4854bf5118bdb9d61fa007adee6a6cc30e57",
+                        "kind":  "verified archived raw vector",
+                        "archive_entry":  ".scratch/qwen-mtp-retirement-20261022/qwen-run1/trace/mtp1/layer22.gdn.f32"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\qwen-run1\\trace\\mtp1\\layer4.conv.bf16",
+                        "bytes":  36864,
+                        "sha256":  "ee93ceb38c981218feb4b67d3732f6789ec5ba76db546e663d3adf0c1e6fd526",
+                        "kind":  "verified archived raw vector",
+                        "archive_entry":  ".scratch/qwen-mtp-retirement-20261022/qwen-run1/trace/mtp1/layer4.conv.bf16"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\qwen-run1\\trace\\mtp1\\layer4.gdn.f32",
+                        "bytes":  1048576,
+                        "sha256":  "849b1f67fd308b3de4ee89520e933845c6842a1a0f963fa02c2aa15ba1414841",
+                        "kind":  "verified archived raw vector",
+                        "archive_entry":  ".scratch/qwen-mtp-retirement-20261022/qwen-run1/trace/mtp1/layer4.gdn.f32"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\qwen-run1\\trace\\mtp1\\layer5.conv.bf16",
+                        "bytes":  36864,
+                        "sha256":  "f8ab357f0e03194b1e0b881db731896a1463bde109f307ac0771db791eafbe94",
+                        "kind":  "verified archived raw vector",
+                        "archive_entry":  ".scratch/qwen-mtp-retirement-20261022/qwen-run1/trace/mtp1/layer5.conv.bf16"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\qwen-run1\\trace\\mtp1\\layer5.gdn.f32",
+                        "bytes":  1048576,
+                        "sha256":  "1b47293ffd45b82eae29b682206f482e2ef26d331977712256c6f78ccd5cc824",
+                        "kind":  "verified archived raw vector",
+                        "archive_entry":  ".scratch/qwen-mtp-retirement-20261022/qwen-run1/trace/mtp1/layer5.gdn.f32"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\qwen-run1\\trace\\mtp1\\layer6.conv.bf16",
+                        "bytes":  36864,
+                        "sha256":  "e564fd76654f46dd4e2fd1e24ad631632fab75533f84f3ed15dd28a49d9ce24a",
+                        "kind":  "verified archived raw vector",
+                        "archive_entry":  ".scratch/qwen-mtp-retirement-20261022/qwen-run1/trace/mtp1/layer6.conv.bf16"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\qwen-run1\\trace\\mtp1\\layer6.gdn.f32",
+                        "bytes":  1048576,
+                        "sha256":  "7cb195729e86030c67d163bcb645c8dfb1535aa7e9cf76bc5d870feb14c5e80f",
+                        "kind":  "verified archived raw vector",
+                        "archive_entry":  ".scratch/qwen-mtp-retirement-20261022/qwen-run1/trace/mtp1/layer6.gdn.f32"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\qwen-run1\\trace\\mtp1\\layer8.conv.bf16",
+                        "bytes":  36864,
+                        "sha256":  "ad03e60cf62dffd09c1131f197866a5deaee71026f68b9262f15f75865174b6e",
+                        "kind":  "verified archived raw vector",
+                        "archive_entry":  ".scratch/qwen-mtp-retirement-20261022/qwen-run1/trace/mtp1/layer8.conv.bf16"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\qwen-run1\\trace\\mtp1\\layer8.gdn.f32",
+                        "bytes":  1048576,
+                        "sha256":  "b3dcc75c405139ae61c681e57339d17e7f55cc92a678a59e65311a0c72615231",
+                        "kind":  "verified archived raw vector",
+                        "archive_entry":  ".scratch/qwen-mtp-retirement-20261022/qwen-run1/trace/mtp1/layer8.gdn.f32"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\qwen-run1\\trace\\mtp1\\layer9.conv.bf16",
+                        "bytes":  36864,
+                        "sha256":  "e2c577153601d6e57cae26e0e17d3d0c784484ad467d036865cd5904203c3ebe",
+                        "kind":  "verified archived raw vector",
+                        "archive_entry":  ".scratch/qwen-mtp-retirement-20261022/qwen-run1/trace/mtp1/layer9.conv.bf16"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\qwen-run1\\trace\\mtp1\\layer9.gdn.f32",
+                        "bytes":  1048576,
+                        "sha256":  "bef6bd5ebfb299572c50f1453b9cacef6b3d04bfb5b4652d049ce48c1a6958e2",
+                        "kind":  "verified archived raw vector",
+                        "archive_entry":  ".scratch/qwen-mtp-retirement-20261022/qwen-run1/trace/mtp1/layer9.gdn.f32"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\qwen-run1\\trace\\mtp1\\logits.f32",
+                        "bytes":  1986560,
+                        "sha256":  "652cab3ca7f1ad7aa368e7444d086cd8ccd6e90f4df03bb6f1799a7d992d71fa",
+                        "kind":  "verified archived raw vector",
+                        "archive_entry":  ".scratch/qwen-mtp-retirement-20261022/qwen-run1/trace/mtp1/logits.f32"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\qwen-run1\\trace\\prefill\\hidden.bf16",
+                        "bytes":  4096,
+                        "sha256":  "bffc65306a5860672aa995d82eb382177b2f4ed66aa1cf966a64c44202f93f20",
+                        "kind":  "verified archived raw vector",
+                        "archive_entry":  ".scratch/qwen-mtp-retirement-20261022/qwen-run1/trace/prefill/hidden.bf16"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\qwen-run1\\trace\\prefill\\layer0.conv.bf16",
+                        "bytes":  36864,
+                        "sha256":  "c2825a7183549fff11403c61eee63d6e0e11f0d3a49997e2ac9788424c6c70cf",
+                        "kind":  "verified archived raw vector",
+                        "archive_entry":  ".scratch/qwen-mtp-retirement-20261022/qwen-run1/trace/prefill/layer0.conv.bf16"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\qwen-run1\\trace\\prefill\\layer0.gdn.f32",
+                        "bytes":  1048576,
+                        "sha256":  "9d96886a81039b30fd17383ca063bbd6f8dac1f6ec7deab0ec585dca0119c087",
+                        "kind":  "verified archived raw vector",
+                        "archive_entry":  ".scratch/qwen-mtp-retirement-20261022/qwen-run1/trace/prefill/layer0.gdn.f32"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\qwen-run1\\trace\\prefill\\layer1.conv.bf16",
+                        "bytes":  36864,
+                        "sha256":  "8866e12a1985b02fbf0c5233c728fc503624ff9b0e322afe6084d18feb49ee08",
+                        "kind":  "verified archived raw vector",
+                        "archive_entry":  ".scratch/qwen-mtp-retirement-20261022/qwen-run1/trace/prefill/layer1.conv.bf16"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\qwen-run1\\trace\\prefill\\layer1.gdn.f32",
+                        "bytes":  1048576,
+                        "sha256":  "c0604a5ddd8f7213e284ea8f87371f13bf88881d13298b780409cbf8af050935",
+                        "kind":  "verified archived raw vector",
+                        "archive_entry":  ".scratch/qwen-mtp-retirement-20261022/qwen-run1/trace/prefill/layer1.gdn.f32"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\qwen-run1\\trace\\prefill\\layer10.conv.bf16",
+                        "bytes":  36864,
+                        "sha256":  "38c16489863c66c735de6381869475a9ce141c775e6d63c27d246e22703cb59a",
+                        "kind":  "verified archived raw vector",
+                        "archive_entry":  ".scratch/qwen-mtp-retirement-20261022/qwen-run1/trace/prefill/layer10.conv.bf16"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\qwen-run1\\trace\\prefill\\layer10.gdn.f32",
+                        "bytes":  1048576,
+                        "sha256":  "6f4e7f051321d8e9c21998f58273f88faabfe793ef6defab842be1ac995e31bf",
+                        "kind":  "verified archived raw vector",
+                        "archive_entry":  ".scratch/qwen-mtp-retirement-20261022/qwen-run1/trace/prefill/layer10.gdn.f32"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\qwen-run1\\trace\\prefill\\layer12.conv.bf16",
+                        "bytes":  36864,
+                        "sha256":  "d9f846f8580daa200770d52f0930bdf7d0aec97cd4050c27dadbb85a68f15c85",
+                        "kind":  "verified archived raw vector",
+                        "archive_entry":  ".scratch/qwen-mtp-retirement-20261022/qwen-run1/trace/prefill/layer12.conv.bf16"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\qwen-run1\\trace\\prefill\\layer12.gdn.f32",
+                        "bytes":  1048576,
+                        "sha256":  "b32f4f741e91206d817da7368e6a3c108cf24a2ca38f9488691a8d9a21f9a6e3",
+                        "kind":  "verified archived raw vector",
+                        "archive_entry":  ".scratch/qwen-mtp-retirement-20261022/qwen-run1/trace/prefill/layer12.gdn.f32"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\qwen-run1\\trace\\prefill\\layer13.conv.bf16",
+                        "bytes":  36864,
+                        "sha256":  "08ac5d6b2df0ffddc052772ca1267a7d7344af1e824d084ee17917bd99e31682",
+                        "kind":  "verified archived raw vector",
+                        "archive_entry":  ".scratch/qwen-mtp-retirement-20261022/qwen-run1/trace/prefill/layer13.conv.bf16"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\qwen-run1\\trace\\prefill\\layer13.gdn.f32",
+                        "bytes":  1048576,
+                        "sha256":  "e8fd4dd8a1f6a86dcaf4c4059d9b818ba438142e4b644a7907be8685f7ba3db4",
+                        "kind":  "verified archived raw vector",
+                        "archive_entry":  ".scratch/qwen-mtp-retirement-20261022/qwen-run1/trace/prefill/layer13.gdn.f32"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\qwen-run1\\trace\\prefill\\layer14.conv.bf16",
+                        "bytes":  36864,
+                        "sha256":  "9a483a8241db48a514359e04d6173b231b5921fa5c669d5c35050319cfde6517",
+                        "kind":  "verified archived raw vector",
+                        "archive_entry":  ".scratch/qwen-mtp-retirement-20261022/qwen-run1/trace/prefill/layer14.conv.bf16"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\qwen-run1\\trace\\prefill\\layer14.gdn.f32",
+                        "bytes":  1048576,
+                        "sha256":  "1cbfc897216323b3eef0f6b237a59b63b273f2f7e4d70426d258503312ffcf14",
+                        "kind":  "verified archived raw vector",
+                        "archive_entry":  ".scratch/qwen-mtp-retirement-20261022/qwen-run1/trace/prefill/layer14.gdn.f32"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\qwen-run1\\trace\\prefill\\layer16.conv.bf16",
+                        "bytes":  36864,
+                        "sha256":  "4df703e84118cfcfa26840ed56f557a9d076b680e870979ce3d3c7ef56b5ebfc",
+                        "kind":  "verified archived raw vector",
+                        "archive_entry":  ".scratch/qwen-mtp-retirement-20261022/qwen-run1/trace/prefill/layer16.conv.bf16"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\qwen-run1\\trace\\prefill\\layer16.gdn.f32",
+                        "bytes":  1048576,
+                        "sha256":  "57181522b8fc60b7dcf8137e0a3c09db5aad122a06ae29cca1011c5beb27cc99",
+                        "kind":  "verified archived raw vector",
+                        "archive_entry":  ".scratch/qwen-mtp-retirement-20261022/qwen-run1/trace/prefill/layer16.gdn.f32"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\qwen-run1\\trace\\prefill\\layer17.conv.bf16",
+                        "bytes":  36864,
+                        "sha256":  "173c537c891116f3b22c674bd654e74d359cd6a34a5e67e6c94e474153f16d02",
+                        "kind":  "verified archived raw vector",
+                        "archive_entry":  ".scratch/qwen-mtp-retirement-20261022/qwen-run1/trace/prefill/layer17.conv.bf16"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\qwen-run1\\trace\\prefill\\layer17.gdn.f32",
+                        "bytes":  1048576,
+                        "sha256":  "8dcbea4d7c0d6ba60e4648e3527cc5bd350300df7d3d4bd76c9fe786a92a1d16",
+                        "kind":  "verified archived raw vector",
+                        "archive_entry":  ".scratch/qwen-mtp-retirement-20261022/qwen-run1/trace/prefill/layer17.gdn.f32"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\qwen-run1\\trace\\prefill\\layer18.conv.bf16",
+                        "bytes":  36864,
+                        "sha256":  "2858fe3e327adc5e7ac1adf1bb18796f2e023bcc6ce59b20f0204043758d5b8e",
+                        "kind":  "verified archived raw vector",
+                        "archive_entry":  ".scratch/qwen-mtp-retirement-20261022/qwen-run1/trace/prefill/layer18.conv.bf16"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\qwen-run1\\trace\\prefill\\layer18.gdn.f32",
+                        "bytes":  1048576,
+                        "sha256":  "31dce30190b07d99d81112cbd04ca41d0ca886530be1dbe789f4427f7de1c6ad",
+                        "kind":  "verified archived raw vector",
+                        "archive_entry":  ".scratch/qwen-mtp-retirement-20261022/qwen-run1/trace/prefill/layer18.gdn.f32"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\qwen-run1\\trace\\prefill\\layer2.conv.bf16",
+                        "bytes":  36864,
+                        "sha256":  "408b2c90ece867240b9fb1a76ee5a4f315c4cb320e7c1ab119a8acbc32cc9608",
+                        "kind":  "verified archived raw vector",
+                        "archive_entry":  ".scratch/qwen-mtp-retirement-20261022/qwen-run1/trace/prefill/layer2.conv.bf16"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\qwen-run1\\trace\\prefill\\layer2.gdn.f32",
+                        "bytes":  1048576,
+                        "sha256":  "4a0abd3f0afa2d7be4957ad8d6f786c9a08cfbe412bedd17bbe64154d85d3c0e",
+                        "kind":  "verified archived raw vector",
+                        "archive_entry":  ".scratch/qwen-mtp-retirement-20261022/qwen-run1/trace/prefill/layer2.gdn.f32"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\qwen-run1\\trace\\prefill\\layer20.conv.bf16",
+                        "bytes":  36864,
+                        "sha256":  "7556f34347d5553df7089c4736dbbac31748e03f5a94ee2f4e469e1a2afbd9c5",
+                        "kind":  "verified archived raw vector",
+                        "archive_entry":  ".scratch/qwen-mtp-retirement-20261022/qwen-run1/trace/prefill/layer20.conv.bf16"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\qwen-run1\\trace\\prefill\\layer20.gdn.f32",
+                        "bytes":  1048576,
+                        "sha256":  "b3ca8dd33130e6bc18a3e2835ca4481aee1e74eb47140f48e98f4c9fa1613567",
+                        "kind":  "verified archived raw vector",
+                        "archive_entry":  ".scratch/qwen-mtp-retirement-20261022/qwen-run1/trace/prefill/layer20.gdn.f32"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\qwen-run1\\trace\\prefill\\layer21.conv.bf16",
+                        "bytes":  36864,
+                        "sha256":  "c307583ab536968a58a2ff5b65cdc03dbc102d83203ec5672429c58d8c29524f",
+                        "kind":  "verified archived raw vector",
+                        "archive_entry":  ".scratch/qwen-mtp-retirement-20261022/qwen-run1/trace/prefill/layer21.conv.bf16"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\qwen-run1\\trace\\prefill\\layer21.gdn.f32",
+                        "bytes":  1048576,
+                        "sha256":  "adb61b0384c1ffe5fa355affc7a6505b3bbf69816c103f3890f1ff582568300a",
+                        "kind":  "verified archived raw vector",
+                        "archive_entry":  ".scratch/qwen-mtp-retirement-20261022/qwen-run1/trace/prefill/layer21.gdn.f32"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\qwen-run1\\trace\\prefill\\layer22.conv.bf16",
+                        "bytes":  36864,
+                        "sha256":  "e95c8dd3c438ca223fc4423fdb0a617e23b960b432531664dc1797792cb12078",
+                        "kind":  "verified archived raw vector",
+                        "archive_entry":  ".scratch/qwen-mtp-retirement-20261022/qwen-run1/trace/prefill/layer22.conv.bf16"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\qwen-run1\\trace\\prefill\\layer22.gdn.f32",
+                        "bytes":  1048576,
+                        "sha256":  "90bf8800e7d484b700aee5b2699dab8e3153cb59a9983e505a9cf614ead2207e",
+                        "kind":  "verified archived raw vector",
+                        "archive_entry":  ".scratch/qwen-mtp-retirement-20261022/qwen-run1/trace/prefill/layer22.gdn.f32"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\qwen-run1\\trace\\prefill\\layer4.conv.bf16",
+                        "bytes":  36864,
+                        "sha256":  "e6ce9a5df55b9adaebb056a59b3f94142b95a71bd8323381ee5d31891b296163",
+                        "kind":  "verified archived raw vector",
+                        "archive_entry":  ".scratch/qwen-mtp-retirement-20261022/qwen-run1/trace/prefill/layer4.conv.bf16"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\qwen-run1\\trace\\prefill\\layer4.gdn.f32",
+                        "bytes":  1048576,
+                        "sha256":  "958ebdadac105bf7f4c56b1551a054bd66cb9f33ccf6cef8fd1928504b708e82",
+                        "kind":  "verified archived raw vector",
+                        "archive_entry":  ".scratch/qwen-mtp-retirement-20261022/qwen-run1/trace/prefill/layer4.gdn.f32"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\qwen-run1\\trace\\prefill\\layer5.conv.bf16",
+                        "bytes":  36864,
+                        "sha256":  "61083484119210f1d68438ea9d0e62e6eda739cc3a91c70ed316cdb4f1c40a04",
+                        "kind":  "verified archived raw vector",
+                        "archive_entry":  ".scratch/qwen-mtp-retirement-20261022/qwen-run1/trace/prefill/layer5.conv.bf16"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\qwen-run1\\trace\\prefill\\layer5.gdn.f32",
+                        "bytes":  1048576,
+                        "sha256":  "fdd33adb0591ba06f90aea5638c131e254fcc81f144ade1e8687b5c1de3872e1",
+                        "kind":  "verified archived raw vector",
+                        "archive_entry":  ".scratch/qwen-mtp-retirement-20261022/qwen-run1/trace/prefill/layer5.gdn.f32"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\qwen-run1\\trace\\prefill\\layer6.conv.bf16",
+                        "bytes":  36864,
+                        "sha256":  "eb80d7b94f4d5598692578d221ca1cfd4ffa64c3b31660691db632261d32ba15",
+                        "kind":  "verified archived raw vector",
+                        "archive_entry":  ".scratch/qwen-mtp-retirement-20261022/qwen-run1/trace/prefill/layer6.conv.bf16"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\qwen-run1\\trace\\prefill\\layer6.gdn.f32",
+                        "bytes":  1048576,
+                        "sha256":  "c39f43265cfe58b1688c6eb7a6cd7edc8972cb749911a0ba37e193fe9e78be2d",
+                        "kind":  "verified archived raw vector",
+                        "archive_entry":  ".scratch/qwen-mtp-retirement-20261022/qwen-run1/trace/prefill/layer6.gdn.f32"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\qwen-run1\\trace\\prefill\\layer8.conv.bf16",
+                        "bytes":  36864,
+                        "sha256":  "0230407e13be20405f192247980afe251a99df901500bf43ae559987ce040cff",
+                        "kind":  "verified archived raw vector",
+                        "archive_entry":  ".scratch/qwen-mtp-retirement-20261022/qwen-run1/trace/prefill/layer8.conv.bf16"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\qwen-run1\\trace\\prefill\\layer8.gdn.f32",
+                        "bytes":  1048576,
+                        "sha256":  "041fdc4c3046d7f3c0eb11689d068a26b8eea29c7192ce6b78e86badd8653880",
+                        "kind":  "verified archived raw vector",
+                        "archive_entry":  ".scratch/qwen-mtp-retirement-20261022/qwen-run1/trace/prefill/layer8.gdn.f32"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\qwen-run1\\trace\\prefill\\layer9.conv.bf16",
+                        "bytes":  36864,
+                        "sha256":  "2f521db5397b309ceeea9b7186ab24af5c78ac386f364aad00e66201a9e77f37",
+                        "kind":  "verified archived raw vector",
+                        "archive_entry":  ".scratch/qwen-mtp-retirement-20261022/qwen-run1/trace/prefill/layer9.conv.bf16"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\qwen-run1\\trace\\prefill\\layer9.gdn.f32",
+                        "bytes":  1048576,
+                        "sha256":  "23da05f15b122eb932e80a9a63b08d0026c6d83e35aee81cd8f945d4964eb62d",
+                        "kind":  "verified archived raw vector",
+                        "archive_entry":  ".scratch/qwen-mtp-retirement-20261022/qwen-run1/trace/prefill/layer9.gdn.f32"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\qwen-run1\\trace\\prefill\\logits.f32",
+                        "bytes":  993280,
+                        "sha256":  "19dffc6bd131e0d1bd1dd70dfb8b62c3edc80d79014ec823c253c6e28a422e82",
+                        "kind":  "verified archived raw vector",
+                        "archive_entry":  ".scratch/qwen-mtp-retirement-20261022/qwen-run1/trace/prefill/logits.f32"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\reference\\output-run1\\final_carry_hidden.bf16",
+                        "bytes":  4096,
+                        "sha256":  "362ce4b6b704a4dc7f77b123bd19b2431438cdf041e66c1f0ae7b9faf4241032",
+                        "kind":  "verified archived raw vector",
+                        "archive_entry":  ".scratch/qwen-mtp-retirement-20261022/reference/output-run1/final_carry_hidden.bf16"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\reference\\output-run1\\final_draft_key.bf16",
+                        "bytes":  18432,
+                        "sha256":  "a8aab0f44a6f97a4e97155e869322e01d72d33678bd739841456be36ab484414",
+                        "kind":  "verified archived raw vector",
+                        "archive_entry":  ".scratch/qwen-mtp-retirement-20261022/reference/output-run1/final_draft_key.bf16"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\reference\\output-run1\\final_draft_value.bf16",
+                        "bytes":  18432,
+                        "sha256":  "a4262b691663204a176f449b7069725e79a51228bfc6b526a0885300afecd659",
+                        "kind":  "verified archived raw vector",
+                        "archive_entry":  ".scratch/qwen-mtp-retirement-20261022/reference/output-run1/final_draft_value.bf16"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\reference\\output-run1\\prefill_shifted_hidden.bf16",
+                        "bytes":  61440,
+                        "sha256":  "aaf906ab74fd37a5c648edb0973fa7683b149c4863451b876e3306c0bfc1b2d3",
+                        "kind":  "verified archived raw vector",
+                        "archive_entry":  ".scratch/qwen-mtp-retirement-20261022/reference/output-run1/prefill_shifted_hidden.bf16"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\reference\\output-run1\\prefill_target_hidden.bf16",
+                        "bytes":  61440,
+                        "sha256":  "abc8d3c9e609006faf2b5ab9310a5c91fbe7e59555e8f32a2249b4b788763088",
+                        "kind":  "verified archived raw vector",
+                        "archive_entry":  ".scratch/qwen-mtp-retirement-20261022/reference/output-run1/prefill_target_hidden.bf16"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\reference\\output-run1\\prefill_target_logits.f32",
+                        "bytes":  993280,
+                        "sha256":  "bd69c8ed503b7378b7d3b7da3e234ab59133e1f04a4fee5aea72ee463e302622",
+                        "kind":  "verified archived raw vector",
+                        "archive_entry":  ".scratch/qwen-mtp-retirement-20261022/reference/output-run1/prefill_target_logits.f32"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\reference\\output-run1\\round0_carry_hidden.bf16",
+                        "bytes":  4096,
+                        "sha256":  "ba3876240e7579b51fab4b826b4726f3ee42c349629150374ea6e629fdd00a38",
+                        "kind":  "verified archived raw vector",
+                        "archive_entry":  ".scratch/qwen-mtp-retirement-20261022/reference/output-run1/round0_carry_hidden.bf16"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\reference\\output-run1\\round0_draft_logits.f32",
+                        "bytes":  993280,
+                        "sha256":  "bc4f02f0e96dd4036957117503d3fdf3ab67729d98b017b0d345401bdd9b84cf",
+                        "kind":  "verified archived raw vector",
+                        "archive_entry":  ".scratch/qwen-mtp-retirement-20261022/reference/output-run1/round0_draft_logits.f32"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\reference\\output-run1\\round0_draft_shifted_hidden.bf16",
+                        "bytes":  4096,
+                        "sha256":  "217be6a86b6736cd85461a560f26b62b428453a7deb606e2a60677a128d944f1",
+                        "kind":  "verified archived raw vector",
+                        "archive_entry":  ".scratch/qwen-mtp-retirement-20261022/reference/output-run1/round0_draft_shifted_hidden.bf16"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\reference\\output-run1\\round0_prior_hidden.bf16",
+                        "bytes":  4096,
+                        "sha256":  "f045e9b203db99ca08dfe59eab1be6e36fbc71c031dfb39cf79e4a11598bc3ee",
+                        "kind":  "verified archived raw vector",
+                        "archive_entry":  ".scratch/qwen-mtp-retirement-20261022/reference/output-run1/round0_prior_hidden.bf16"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\reference\\output-run1\\round0_target_hidden.bf16",
+                        "bytes":  8192,
+                        "sha256":  "fc0e11e6fc98f5f888152e5b19b1772bd60bd1e0b7b5fba45dd3f798a896748f",
+                        "kind":  "verified archived raw vector",
+                        "archive_entry":  ".scratch/qwen-mtp-retirement-20261022/reference/output-run1/round0_target_hidden.bf16"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\reference\\output-run1\\round0_target_ids.i32",
+                        "bytes":  8,
+                        "sha256":  "4897fcc78e1f582e1bfc53c4827c5fe3cd57618cee981d5f5077e48fa3dae695",
+                        "kind":  "verified archived raw vector",
+                        "archive_entry":  ".scratch/qwen-mtp-retirement-20261022/reference/output-run1/round0_target_ids.i32"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\reference\\output-run1\\round0_target_logits.f32",
+                        "bytes":  1986560,
+                        "sha256":  "54d89c3a817d08ed6a81f68f6d66c403f3b868615e0e6c9b48a4f65eaf3f25b9",
+                        "kind":  "verified archived raw vector",
+                        "archive_entry":  ".scratch/qwen-mtp-retirement-20261022/reference/output-run1/round0_target_logits.f32"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\reference\\output-run1\\round1_carry_hidden.bf16",
+                        "bytes":  4096,
+                        "sha256":  "362ce4b6b704a4dc7f77b123bd19b2431438cdf041e66c1f0ae7b9faf4241032",
+                        "kind":  "verified archived raw vector",
+                        "archive_entry":  ".scratch/qwen-mtp-retirement-20261022/reference/output-run1/round1_carry_hidden.bf16"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\reference\\output-run1\\round1_draft_logits.f32",
+                        "bytes":  993280,
+                        "sha256":  "7be68ad53a68b7cc5be62ad9046891e15bc466c16369db107f3d8b7705594c0c",
+                        "kind":  "verified archived raw vector",
+                        "archive_entry":  ".scratch/qwen-mtp-retirement-20261022/reference/output-run1/round1_draft_logits.f32"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\reference\\output-run1\\round1_draft_shifted_hidden.bf16",
+                        "bytes":  8192,
+                        "sha256":  "fc0e11e6fc98f5f888152e5b19b1772bd60bd1e0b7b5fba45dd3f798a896748f",
+                        "kind":  "verified archived raw vector",
+                        "archive_entry":  ".scratch/qwen-mtp-retirement-20261022/reference/output-run1/round1_draft_shifted_hidden.bf16"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\reference\\output-run1\\round1_target_hidden.bf16",
+                        "bytes":  8192,
+                        "sha256":  "34075bd2de0ddf5795b04f84c07f2d5b4bf3a2b04f2cd82665fae9a59830aa87",
+                        "kind":  "verified archived raw vector",
+                        "archive_entry":  ".scratch/qwen-mtp-retirement-20261022/reference/output-run1/round1_target_hidden.bf16"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\reference\\output-run1\\round1_target_ids.i32",
+                        "bytes":  8,
+                        "sha256":  "ba674aba70fc3caeb8bb07b840402cdf4708a4c88eb3fc3b77401791833fd9f5",
+                        "kind":  "verified archived raw vector",
+                        "archive_entry":  ".scratch/qwen-mtp-retirement-20261022/reference/output-run1/round1_target_ids.i32"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\reference\\output-run1\\round1_target_logits.f32",
+                        "bytes":  1986560,
+                        "sha256":  "e100b508fc2561a6edaa98a63e8f06214abebda48bc7184105cf75ed43907860",
+                        "kind":  "verified archived raw vector",
+                        "archive_entry":  ".scratch/qwen-mtp-retirement-20261022/reference/output-run1/round1_target_logits.f32"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\retirement-link1\\retirement.exe",
+                        "bytes":  140158464,
+                        "sha256":  "1ee43249df88c0345a0260f06e256d472a2c2f781334ef64578e398c440e0141",
+                        "kind":  "rebuildable obsolete image/link output"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\retirement-link1\\retirement.exp",
+                        "bytes":  24995,
+                        "sha256":  "4dfca362ff1a309bb578a74e074ca58a851e64130dc5b547b2b9b4109bc2886c",
+                        "kind":  "rebuildable obsolete image/link output"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\retirement-link1\\retirement.lib",
+                        "bytes":  41912,
+                        "sha256":  "4bdce5b3aff8b1d2ea67ae4ae90de5589678b48d6088fd5fc658fea029732525",
+                        "kind":  "rebuildable obsolete image/link output"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-retirement-20261022\\retirement-link1\\retirement.map",
+                        "bytes":  58538536,
+                        "sha256":  "b0a5a253b33eecb6e2dbe2e20d5f8dff321869d052946796adbe46cbb450193a",
+                        "kind":  "rebuildable obsolete image/link output"
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-topone-prepared-20261022\\qwen-link1\\qwen.exe",
+                        "bytes":  140143616,
+                        "sha256":  "1c61a3b247d90dc5e946306250c8054818d96f8f478467864aad2550c08a477f",
+                        "kind":  "superseded rebuildable Hyle consumer image; object closure retained",
+                        "ready_record":  {
+                                             "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-topone-prepared-20261022\\qwen-ready-attempt1.json",
+                                             "bytes":  1246,
+                                             "sha256":  "71df206d19d9cc8dadf65734b4cc36ebc0956bd5da5bacd4e8a06840569ece3e"
+                                         }
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\qwen-link1\\qwen.exe",
+                        "bytes":  140145664,
+                        "sha256":  "e8283218fb196876c51a9142b8f095519e0baa6b185637b4a689b63a7872ff04",
+                        "kind":  "superseded rebuildable Hyle consumer image; object closure retained",
+                        "ready_record":  {
+                                             "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-weights-20261022\\qwen-ready-attempt1.json",
+                                             "bytes":  1180,
+                                             "sha256":  "3f7b16686fb706d9bd857ba94e5bf5e2110a02f8f8efa845c7022579f711316f"
+                                         }
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-graph-20261022\\qwen-link2\\qwen.exe",
+                        "bytes":  140155904,
+                        "sha256":  "c82043b3cbb6126601356ea68fbb0232bb027c1f83e195adf48767af8c9ff009",
+                        "kind":  "superseded rebuildable Hyle consumer image; object closure retained",
+                        "ready_record":  {
+                                             "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-graph-20261022\\qwen-ready-attempt2.json",
+                                             "bytes":  1174,
+                                             "sha256":  "9b70a789ff7521d1ead781a3909ec398a60e73bc5f007d78312889802383ef79"
+                                         }
+                    },
+                    {
+                        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-round-20261022\\qwen-link4\\qwen.exe",
+                        "bytes":  140235264,
+                        "sha256":  "c05c949785ff1940a4e2449bc353c4df02d4f824048d86c8b7ded26e77c66298",
+                        "kind":  "superseded rebuildable Hyle consumer image; object closure retained",
+                        "ready_record":  {
+                                             "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-round-20261022\\qwen-ready-attempt4.json",
+                                             "bytes":  973,
+                                             "sha256":  "24ae3d553cd2aeb8bd93164693c983a16cc5d72b1d47693cd29fc54c7ec06b87"
+                                         }
+                    }
+                ]
+}

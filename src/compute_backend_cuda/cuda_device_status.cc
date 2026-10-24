@@ -103,8 +103,9 @@ acquire_device_status(QueueState *queue, unsigned **device_word) noexcept {
 }
 
 compute::detail::EnqueueResult
-acquire_device_status(Queue &queue, unsigned **device_word) noexcept {
-  if (queue.device().backend_id() != kBackendId) {
+acquire_device_status(compute::detail::QueueSequence &sequence, unsigned **device_word) noexcept {
+  const auto *original = compute::detail::ContextAccess::state(sequence);
+  if (!original || original->context->device.backend_id() != kBackendId) {
     if (device_word != nullptr)
       *device_word = nullptr;
     return compute::detail::EnqueueResult::rejected(
@@ -112,7 +113,7 @@ acquire_device_status(Queue &queue, unsigned **device_word) noexcept {
   }
   return acquire_device_status(
       static_cast<QueueState *>(
-          compute::detail::ContextAccess::backend_queue(queue)),
+          compute::detail::ContextAccess::backend_queue(sequence)),
       device_word);
 }
 } // namespace hyle::compute::cuda::detail

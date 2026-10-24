@@ -1,0 +1,49 @@
+{
+  "latest_qwen_cuda_and_shared_peer_retained": true,
+  "recursive": false,
+  "objects_retained": true,
+  "targets": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\recurrent-gdn-schema\\checks\\20261019T113131\\qwen.exe",
+      "bytes": 116344832,
+      "sha256": "dc2150e1f262d9233997919e34216bbf1cc62fbf27cf0d4fb785ecec3814d68d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\recurrent-gdn-schema\\checks\\20261019T113131\\cuda.exe",
+      "bytes": 118504960,
+      "sha256": "8e95b986bef8199992badb67994f370eefcf8e400ff9368de7f16f8263fa74a0"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-fusion-allocation\\checks\\20261019T115201\\cuda.map",
+      "bytes": 38343066,
+      "sha256": "e8e0af7fdaf7163ca43fd6812c082251bf9c47a151526602efe1de2f75d09359"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-fusion-allocation\\checks\\20261019T115201\\cuda.lib",
+      "bytes": 41384,
+      "sha256": "097299e17e955c077a99f65f363d3484d564c016359baeb643f4e47c6b737d59"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-fusion-allocation\\checks\\20261019T115201\\cuda.exp",
+      "bytes": 25016,
+      "sha256": "05cf6e82eef9910755815671a5fb4dc821a086facd0ef8222bdd67b9de508cfd"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-fusion-allocation\\checks\\20261019T115201\\qwen.map",
+      "bytes": 33817907,
+      "sha256": "b9c0e0d628217f136cf46a98d436c4fd8158b3b870bd34113504f8c942a50a94"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-fusion-allocation\\checks\\20261019T115201\\qwen.lib",
+      "bytes": 41384,
+      "sha256": "339d3ce297534ebac8825c27a011f2f4f9dfe366c657ebfc45dbbfdc8412a2cb"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\cuda-fusion-allocation\\checks\\20261019T115201\\qwen.exp",
+      "bytes": 25016,
+      "sha256": "9b625b9fe671973aa663c1e6ca7883c485081b8e64f41275332e64126ba998c7"
+    }
+  ],
+  "old_baseline_relinkable": true,
+  "bytes": 307143565.0
+}

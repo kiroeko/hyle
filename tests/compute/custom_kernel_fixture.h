@@ -112,7 +112,7 @@ struct alignas(64) Kernel final {
     return {output == 0 && input == 0, 0};
   }
   KernelCommandResult
-  enqueue(Invocation &invocation, Queue &,
+  enqueue(Invocation &invocation, detail::QueueSequence &,
           std::span<const ConstTensorView> inputs,
           std::span<const TensorView> outputs) const noexcept {
     if (config->probe->fault == Fault::kRejected)

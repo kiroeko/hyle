@@ -26,7 +26,6 @@ using compute::DataType;
 using compute::Operation;
 using compute::ParallelExecutorRef;
 using compute::Provider;
-using compute::Queue;
 using compute::TensorDesc;
 using compute::TensorView;
 
@@ -129,10 +128,13 @@ struct NormPattern final {
   }
 };
 
+template<class Allowed>
 Status match_norm(const Graph &graph, NodeId node,
                   std::span<const ValueUse> uses, ParallelExecutorRef executor,
-                  NormPattern &pattern) noexcept {
+                  NormPattern &pattern, Allowed allowed) noexcept {
   pattern = {};
+  if (!allowed(node))
+    return Status::Ok();
   auto operation = graph.operation(node);
   if (!operation)
     return std::move(operation).error();
@@ -179,6 +181,8 @@ Status match_norm(const Graph &graph, NodeId node,
     auto consumer = graph.node_id(use.consumer);
     if (!consumer)
       return std::move(consumer).error();
+    if (!allowed(*consumer))
+      break;
     auto next_operation = graph.operation(*consumer);
     if (!next_operation)
       return std::move(next_operation).error();
@@ -221,15 +225,19 @@ Status match_norm(const Graph &graph, NodeId node,
   return Status::Ok();
 }
 
-Status propose_norms(const Graph &graph, std::span<const ValueUse> uses,
+Status propose_norms(const RegionDiscoveryRequest &request, std::span<const ValueUse> uses,
                      ParallelExecutorRef executor, mem::AllocatorRef allocator,
                      RegionProposalWriter &writer) noexcept {
+  const auto &graph = request.graph;
   for (std::size_t index = 0; index < graph.node_count(); ++index) {
     auto node = graph.node_id(index);
     if (!node)
       return std::move(node).error();
     NormPattern pattern;
-    Status status = match_norm(graph, *node, uses, executor, pattern);
+    Status status = match_norm(graph, *node, uses, executor, pattern,
+        [&](NodeId candidate) noexcept {
+          return request.allowed_nodes.empty() || request.allowed_nodes[candidate.ordinal()] != 0;
+        });
     if (!status.ok())
       return status;
     if (pattern.node_count < 2)
@@ -262,17 +270,20 @@ Status propose_norms(const Graph &graph, std::span<const ValueUse> uses,
   return Status::Ok();
 }
 
-Status propose_regions(void *context_value, const Graph &graph,
+Status propose_regions(void *context_value, const RegionDiscoveryRequest &request,
                        mem::AllocatorRef allocator,
                        RegionProposalWriter &writer) noexcept {
   if (context_value == nullptr || !allocator.valid())
     return Status::Internal("oneDNN region context is invalid");
+  const auto &graph = request.graph;
+  if (!request.allowed_nodes.empty() && request.allowed_nodes.size() != graph.node_count())
+    return Status::InvalidArgument("oneDNN discovery mask size differs");
   UseTable table;
   Status status = build_use_table(graph, allocator, &table);
   if (!status.ok())
     return status;
   const std::span<const ValueUse> uses(table.values, table.count);
-  return propose_norms(graph, uses,
+  return propose_norms(request, uses,
                        static_cast<RegionContext *>(context_value)->executor,
                        allocator, writer);
 }
@@ -309,7 +320,7 @@ Status create_norm_invocation(void *value, mem::AllocatorRef allocator,
 // The primitive owns the invocation. Its destroy function is copied into the
 // immutable region vtable; a region needs no additional invocation wrapper.
 compute::detail::EnqueueResult
-submit_norm(void *value, void *invocation, Queue &queue,
+submit_norm(void *value, void *invocation, compute::detail::QueueSequence &sequence,
             std::span<const ConstTensorView> inputs,
             std::span<const TensorView> outputs) noexcept {
   auto &plan = *static_cast<NormRegionPlan *>(value);
@@ -320,7 +331,7 @@ submit_norm(void *value, void *invocation, Queue &queue,
   for (std::size_t index = 0; index < plan.input_count; ++index)
     ordered[index] = inputs[plan.inputs[index]];
   return plan.primitive.vtable->shared_submit(
-      plan.primitive.state, invocation, queue,
+      plan.primitive.state, invocation, sequence,
       std::span(ordered).first(plan.input_count), outputs);
 }
 
@@ -347,7 +358,9 @@ compile_norm(RegionContext &context, const RegionCompileRequest &request,
   NormPattern pattern;
   status = match_norm(*request.graph, request.nodes.front(),
                       std::span(table.values, table.count), context.executor,
-                      pattern);
+                      pattern, [&](NodeId candidate) noexcept {
+                        return std::ranges::find(request.nodes, candidate) != request.nodes.end();
+                      });
   if (!status.ok())
     return compute::ProviderPrepareOutcome::error(std::move(status));
   if (pattern.node_count < 2 ||
@@ -380,7 +393,7 @@ compile_norm(RegionContext &context, const RegionCompileRequest &request,
       allocator.allocate(sizeof(NormRegionPlan), alignof(NormRegionPlan));
   if (storage == nullptr) {
     primitive.vtable->destroy_prepared(primitive.state, allocator);
-    return compute::ProviderPrepareOutcome::resource_declined(
+    return compute::ProviderPrepareOutcome::error(
         Status::ResourceExhausted(
             "oneDNN norm region wrapper allocation failed"));
   }
@@ -406,8 +419,8 @@ compile_norm(RegionContext &context, const RegionCompileRequest &request,
 
 Status propose_region_resources(
     void *context_value, const RegionCompileRequest &request, mem::AllocatorRef,
-    std::span<compute::detail::ResourceBindingRequirement> input_requirements,
-    std::span<compute::detail::ResourceBindingRequirement> output_requirements,
+    std::span<RegionInputRequirement> input_requirements,
+    std::span<RegionOutputRequirement> output_requirements,
     RegionResourceProposal *proposal) noexcept {
   if (request.route == kNormalizationRoute) {
     if (context_value == nullptr || request.graph == nullptr ||
@@ -423,16 +436,16 @@ Status propose_region_resources(
           request.graph->value_description(request.inputs[index]);
       if (!description)
         return std::move(description).error();
-      input_requirements[index] = {
+      input_requirements[index] = {.resource = {
           .required_properties = mem::MemoryProperty::kHostAccessible,
-          .minimum_alignment = description->required_alignment()};
+          .minimum_alignment = description->required_alignment()}};
     }
     auto description = request.graph->value_description(request.outputs[0]);
     if (!description)
       return std::move(description).error();
-    output_requirements[0] = {
+    output_requirements[0] = {.resource = {
         .required_properties = mem::MemoryProperty::kHostAccessible,
-        .minimum_alignment = description->required_alignment()};
+        .minimum_alignment = description->required_alignment()}};
     *proposal = {
         .runtime = norm::kNormRuntime,
         .workspace_resource = {

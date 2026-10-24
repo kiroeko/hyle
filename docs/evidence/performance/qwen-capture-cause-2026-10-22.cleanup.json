@@ -1,0 +1,62 @@
+{
+  "status": "completed; do not rerun",
+  "recursive": false,
+  "script": {
+    "path": "C:\\public\\project-hyle\\hyle\\test.ps1",
+    "bytes": 3182,
+    "sha256": "415357409020a83a98af2cfacc570a31cae021e2062abf4801f5948d48c48a05"
+  },
+  "script_copy": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\cleanup_script.ps1",
+    "bytes": 3182,
+    "sha256": "415357409020a83a98af2cfacc570a31cae021e2062abf4801f5948d48c48a05"
+  },
+  "script_text": "# Exact verified leaves only. No recursion. Do not rerun after completion.\r\n$ErrorActionPreference = 'Stop'\r\n$taskRoot = 'C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022'\r\n$planFile = Join-Path $taskRoot 'cleanup-plan.json'\r\n$resultFile = Join-Path $taskRoot 'cleanup-result.json'\r\nif (Test-Path -LiteralPath $resultFile) { throw 'Completed cleanup; do not rerun test.ps1.' }\r\n$plan = Get-Content -LiteralPath $planFile -Raw | ConvertFrom-Json\r\n$scope = [IO.Path]::GetFullPath($plan.scope).TrimEnd('\\') + '\\'\r\n$batch = [IO.Path]::GetFullPath($plan.batch_scope).TrimEnd('\\') + '\\'\r\nif ($scope -cne 'C:\\public\\project-hyle\\hyle\\.scratch\\' -or $batch -cne ($taskRoot + '\\')) { throw 'Unexpected cleanup scope' }\r\nfunction Confirm-Identity($record) {\r\n $item = Get-Item -LiteralPath $record.path -Force -ErrorAction Stop\r\n if ($item.PSIsContainer -or $item.Length -ne $record.bytes) { throw ('File identity differs: ' + $record.path) }\r\n if ((Get-FileHash -LiteralPath $record.path -Algorithm SHA256).Hash.ToLowerInvariant() -cne $record.sha256) { throw ('File hash differs: ' + $record.path) }\r\n}\r\nConfirm-Identity $plan.script\r\nConfirm-Identity $plan.script_copy\r\nConfirm-Identity $plan.published.manifest\r\nforeach ($archive in $plan.published.archives) { Confirm-Identity $archive }\r\n$protected = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)\r\nforeach ($record in $plan.keep_images) { Confirm-Identity $record; [void]$protected.Add([IO.Path]::GetFullPath($record.path)) }\r\n$allowOld = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)\r\nforeach ($path in $plan.historical_image_allowlist) { [void]$allowOld.Add([IO.Path]::GetFullPath($path)) }\r\n$seen = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)\r\nforeach ($target in $plan.targets) {\r\n $absolute = [IO.Path]::GetFullPath($target.path)\r\n if (-not $absolute.StartsWith($scope,[StringComparison]::OrdinalIgnoreCase) -or\r\n     (-not $absolute.StartsWith($batch,[StringComparison]::OrdinalIgnoreCase) -and -not $allowOld.Contains($absolute)) -or\r\n     $protected.Contains($absolute) -or -not $seen.Add($absolute)) { throw ('Unsafe cleanup target: ' + $absolute) }\r\n Confirm-Identity $target\r\n}\r\n$scriptText = Get-Content -LiteralPath $plan.script_copy.path -Raw\r\n$removed = [Collections.Generic.List[object]]::new()\r\nforeach ($target in $plan.targets) { Remove-Item -LiteralPath $target.path -Force -ErrorAction Stop; $removed.Add($target) }\r\n$result = [ordered]@{status='completed; do not rerun';recursive=$false;script=$plan.script;script_copy=$plan.script_copy;script_text=$scriptText;removed_files=$removed.Count;removed_logical_bytes=$plan.logical_bytes;kept_images=$plan.keep_images;verified_archives=$plan.published.archives;removed=$removed}\r\n$result | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath $resultFile -Encoding utf8\r\nCopy-Item -LiteralPath $resultFile -Destination 'C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\qwen-capture-cause-2026-10-22.cleanup.json'\r\nWrite-Output ('Removed ' + $removed.Count + ' exact leaves / ' + $plan.logical_bytes + ' logical bytes. Completed; do not rerun.')\r\n",
+  "removed_files": 4,
+  "removed_logical_bytes": 199385813,
+  "kept_images": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cublas-scores-20261022\\qwen-link1\\qwen.exe",
+      "bytes": 140355072,
+      "sha256": "18932968a05db1f13fbf6c1579d1783eac60b1426ef6ca28d4018a09128fff15"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-window-20261022\\peer\\checks\\attempt1\\peer.exe",
+      "bytes": 35795456,
+      "sha256": "f353371459d63d168ee88e4e57115ba9af4258b871f5adf02dd289e34cd2b421"
+    }
+  ],
+  "verified_archives": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\qwen-capture-cause-2026-10-22.data.zip",
+      "bytes": 601493,
+      "sha256": "04d316e185a56ea71001f4f6432d6aa43b5ce1410c8a42d9f99c27991ac3e846"
+    }
+  ],
+  "removed": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\qwen-link1\\qwen.exe",
+      "bytes": 140366336,
+      "sha256": "1478ac8e35bb04840412727f5e1a57f36a3a2598a157947ff55680cf3a23468f",
+      "kind": "rebuildable probe/link output"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\qwen-link1\\qwen.exp",
+      "bytes": 24976,
+      "sha256": "f9d2dc8d396080022e0a2594d651e7beb58ad446c791d252ced623e70a96bef8",
+      "kind": "rebuildable probe/link output"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\qwen-link1\\qwen.lib",
+      "bytes": 41384,
+      "sha256": "339d3ce297534ebac8825c27a011f2f4f9dfe366c657ebfc45dbbfdc8412a2cb",
+      "kind": "rebuildable probe/link output"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-capture-cause-20261022\\qwen-link1\\qwen.map",
+      "bytes": 58953117,
+      "sha256": "3816dabc2daf5fb7f8b46121d55f21565c30c982fc60aea6729b243b7cb1b2c8",
+      "kind": "rebuildable probe/link output"
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\qwen35-full-cuda-2026-10-19\\decode-resource-binding-index.zip",
+  "bytes": 1904963,
+  "sha256": "8a9a73c68c336265d3162e6b030836f2e8389a44a6cd953e8424e809bb5bff36",
+  "CRC_and_every_payload_SHA_verified": true,
+  "payloads": 410,
+  "entries_including_manifest": 411,
+  "uncompressed_payload_bytes": 10677796,
+  "CPU_tests": 5,
+  "exact_model_vectors": 64,
+  "repeated_vector_payloads_omitted": true,
+  "throughput_claim": false,
+  "original_trace_archive_referenced_not_duplicated": true,
+  "source_sha256": "360c50b8777206413a5d781192e59ca026830ea3986120cbab692ce6b14c9fab",
+  "reclaim_targets_count": 46,
+  "reclaim_bytes": 1237247098
+}

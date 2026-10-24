@@ -1,0 +1,208 @@
+{
+  "status": "completed",
+  "time_utc": "2026-10-21T16:32:08.7256975Z",
+  "deleted_files": 32,
+  "deleted_bytes": 1627257046,
+  "targets": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-multisequence-20261021\\batch-probe-link1\\batch-probe.exe",
+      "bytes": 139755520,
+      "sha256": "0737718f6bfac6564b4bc7db1b7d751925b5b6d2d44ca7d30e5d90308ca76aee"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-multisequence-20261021\\batch-probe-link1\\batch-probe.map",
+      "bytes": 58304949,
+      "sha256": "a7282ffad6b8cdf8019735ff4636f6cc9184dec1a505e5774d7c64744e4bf231"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-multisequence-20261021\\batch-probe-link1\\batch-probe.lib",
+      "bytes": 42002,
+      "sha256": "11af80d3b3034fe663b94a95a9d325fd911105a2a3c695aca291da63a6e080ee"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-multisequence-20261021\\batch-probe-link1\\batch-probe.exp",
+      "bytes": 24996,
+      "sha256": "8bb1d8808ef1b32bc648cfce928d4ce919261665e6fbd59bb04c02882f3f4df7"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-multisequence-20261021\\batch-probe-link2\\batch-probe.exe",
+      "bytes": 139768320,
+      "sha256": "0181f7543b7c2e63c280744877f72b93a264ec957b2fb28921233f5053a26fc8"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-multisequence-20261021\\batch-probe-link2\\batch-probe.map",
+      "bytes": 58324655,
+      "sha256": "ff9551b8c643f12d135512d2fb14b55e876fa6da6e3e99f585e798cce4d3c322"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-multisequence-20261021\\batch-probe-link2\\batch-probe.lib",
+      "bytes": 42002,
+      "sha256": "11af80d3b3034fe663b94a95a9d325fd911105a2a3c695aca291da63a6e080ee"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-multisequence-20261021\\batch-probe-link2\\batch-probe.exp",
+      "bytes": 24996,
+      "sha256": "76460bf69a29fdbead942120f6b2ceda0cf270707e17ef3b6097049d98dfbb18"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-multisequence-20261021\\prefix-tests-link1\\prefix-tests.exe",
+      "bytes": 138543616,
+      "sha256": "53a0b355edc9f3d8f9f362dd3b0a64828dafa00b200113c67f73f06c84ec7a5d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-multisequence-20261021\\prefix-tests-link1\\prefix-tests.map",
+      "bytes": 56560245,
+      "sha256": "02d6cadf760cbf546bf87708edf7e201240000abaca4b6a93eed6f9e4e45ed1f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-multisequence-20261021\\prefix-tests-link1\\prefix-tests.lib",
+      "bytes": 42166,
+      "sha256": "d57f5d644c20ec56e02e06432f803b8b154d41b3259d803a9d3a486e1181a764"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-multisequence-20261021\\prefix-tests-link1\\prefix-tests.exp",
+      "bytes": 25000,
+      "sha256": "dd5f7b17c8352464620e7c14ef71b8c53f8b7c0057162db53b19a7a9d8556c5d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-multisequence-20261021\\probe-link1\\probe.exe",
+      "bytes": 139758592,
+      "sha256": "06068fb0c1283e58ef380876f570ba464be3b4100c421d63ad4d37b7af6db0da"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-multisequence-20261021\\probe-link1\\probe.map",
+      "bytes": 58296254,
+      "sha256": "7a1c9baaf73aa71ac1d04f73fa90e35dc2d44368a2d55bd4f0cc2a336dbfc86e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-multisequence-20261021\\probe-link1\\probe.lib",
+      "bytes": 41474,
+      "sha256": "d97664b9bfac874c565d303c78aaddedc46408bb52d748c1e55eff080d46dac2"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-multisequence-20261021\\probe-link1\\probe.exp",
+      "bytes": 24978,
+      "sha256": "1313f06b9c53687ef4224df4aabb3e2306b216a7c14cb9faee655d883e120e66"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-multisequence-20261021\\probe-link2\\probe.exe",
+      "bytes": 139758592,
+      "sha256": "60640f1796a2e2825580a8a505e38a2d9bb9c2f145e95db3809ad86bfbf30d1c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-multisequence-20261021\\probe-link2\\probe.map",
+      "bytes": 58296252,
+      "sha256": "4e257073f8292eaf23c6eae00d63baf769b5f8acdb36092d9dac4f0869b4591d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-multisequence-20261021\\probe-link2\\probe.lib",
+      "bytes": 41474,
+      "sha256": "d97664b9bfac874c565d303c78aaddedc46408bb52d748c1e55eff080d46dac2"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-multisequence-20261021\\probe-link2\\probe.exp",
+      "bytes": 24978,
+      "sha256": "d0848d117fdfce98a96760353216654c7335fe82c33fd86b043573a63d75421c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-multisequence-20261021\\qwen-link1\\qwen.exe",
+      "bytes": 139813376,
+      "sha256": "7e2c448477eff1d160319399f20995dee8565761de12747316b259d1fa4104da"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-multisequence-20261021\\qwen-link1\\qwen.map",
+      "bytes": 58382568,
+      "sha256": "421fec00ddfa25c524067a6e77fb8c0287d87c0695f8f4176f78288aecc3e3b9"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-multisequence-20261021\\qwen-link1\\qwen.lib",
+      "bytes": 41384,
+      "sha256": "339d3ce297534ebac8825c27a011f2f4f9dfe366c657ebfc45dbbfdc8412a2cb"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-multisequence-20261021\\qwen-link1\\qwen.exp",
+      "bytes": 24976,
+      "sha256": "6b3a23aa9ae91a23c434b096ffb6d5a87d291476f72d92e92b44b74543ed7745"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-multisequence-20261021\\qwen-link2\\qwen.exe",
+      "bytes": 139817472,
+      "sha256": "c3391a595f40a6f3af641dffbcd95e4983ec6de36a23ef81aebb7cd0309f7b88"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-multisequence-20261021\\qwen-link2\\qwen.map",
+      "bytes": 58388617,
+      "sha256": "5640b68e32b8ba623c1743d9f54339136313ede661d3c6ca4636f6bf9eda8ea1"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-multisequence-20261021\\qwen-link2\\qwen.lib",
+      "bytes": 41384,
+      "sha256": "339d3ce297534ebac8825c27a011f2f4f9dfe366c657ebfc45dbbfdc8412a2cb"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-multisequence-20261021\\qwen-link2\\qwen.exp",
+      "bytes": 24976,
+      "sha256": "647fa835d8aa9e8000fa7c97eb3628846db8c5db6f5e36d27be1128b29b11e4b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-multisequence-20261021\\qwen-link3\\qwen.map",
+      "bytes": 58388415,
+      "sha256": "e7645e4d65b214f093d7f01f72eedd7b1f325d7bc505281cb15e8192378649ba"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-multisequence-20261021\\qwen-link3\\qwen.lib",
+      "bytes": 41384,
+      "sha256": "339d3ce297534ebac8825c27a011f2f4f9dfe366c657ebfc45dbbfdc8412a2cb"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-multisequence-20261021\\qwen-link3\\qwen.exp",
+      "bytes": 24976,
+      "sha256": "125ba01c3ed1828949588a48c646449b1c2c3fd2dbadc39969aacce770c2b15f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\qwen-multisequence-2026-10-22.zip",
+      "bytes": 184566457,
+      "sha256": "90b31230948c01daf9bee84f85dd947b2ef37166e01b9d1a780a9cbe13f51149",
+      "kind": "superseded-evidence-archive"
+    }
+  ],
+  "publication": {
+    "manifest": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\qwen-multisequence-2026-10-22.json",
+      "bytes": 16501,
+      "sha256": "25d63a9c480ef34e4df36a672897368906c728e7c2c6ca1bedd819fe211ea6ee"
+    },
+    "archive": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\qwen-multisequence-2026-10-22.part01.zip",
+      "bytes": 93982882,
+      "sha256": "6c45a153fb2b0f9875a4f3be529df53a59c4b1e78f0a82c8d4a1b4224090dd17"
+    },
+    "final_records": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-multisequence-20261021\\finalrecords\\final.json",
+      "bytes": 442915,
+      "sha256": "1d588ec4191390ebc59a7c870395e303ee7308e404ae7aea2f2541b3027e79f1"
+    },
+    "archives": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\qwen-multisequence-2026-10-22.part01.zip",
+        "bytes": 93982882,
+        "sha256": "6c45a153fb2b0f9875a4f3be529df53a59c4b1e78f0a82c8d4a1b4224090dd17"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\qwen-multisequence-2026-10-22.part02.zip",
+        "bytes": 90593859,
+        "sha256": "15650218e78839df69d5b8de3ff93ff7db5674d12e114a1b7feb5de63975cd83"
+      }
+    ],
+    "superseded_single_archive": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\qwen-multisequence-2026-10-22.zip",
+      "bytes": 184566457,
+      "sha256": "90b31230948c01daf9bee84f85dd947b2ef37166e01b9d1a780a9cbe13f51149"
+    }
+  },
+  "kept": "Keep qwen-link3/qwen.exe, every object, runtimeDLL, source, command, recipe, metadata, log, review, vector, archive and fixed dependency/SDK cache.",
+  "recursive_delete": false,
+  "plan_sha256": "327cf031997b29c29824cd9b8d0e9fa98122ec100c93d6377989f8a5faf38ed9",
+  "script_sha256": "a97c82819e403fdb9b72094ea12e3d3f4b1ea6ff0cfc490ce8b9f179e0bcded5",
+  "script_text": "$ErrorActionPreference = 'Stop'\n$repoRoot = 'C:\\public\\project-hyle\\hyle'\n$stageRoot = [IO.Path]::GetFullPath((Join-Path $repoRoot '.scratch\\qwen-multisequence-20261021'))\n$stagePrefix = $stageRoot + '\\'\n$planPath = Join-Path $stageRoot 'cleanup-plan-final.json'\n$receiptPath = Join-Path $repoRoot 'docs\\evidence\\correctness\\qwen-multisequence-2026-10-22.cleanup.json'\nif (Test-Path -LiteralPath $receiptPath) { throw 'This cleanup has already completed.' }\n$plan = Get-Content -LiteralPath $planPath -Raw -Encoding utf8 | ConvertFrom-Json\nfunction Assert-Identity($row) {\n    $item = Get-Item -LiteralPath $row.path\n    if ($item.PSIsContainer -or $item.Length -ne $row.bytes) { throw \"Size/type mismatch: $($row.path)\" }\n    if ((Get-FileHash -LiteralPath $row.path -Algorithm SHA256).Hash.ToLowerInvariant() -ne $row.sha256) { throw \"Changed file: $($row.path)\" }\n}\nif ([IO.Path]::GetFullPath($plan.allowed_root) -ne $stageRoot -or $plan.target_count -ne 32) { throw 'Unexpected cleanup plan.' }\nAssert-Identity $plan.publication.manifest\nAssert-Identity $plan.publication.final_records\nforeach ($row in $plan.publication.archives) { Assert-Identity $row }\nAssert-Identity $plan.keep_latest_image\n$keptImage = [IO.Path]::GetFullPath($plan.keep_latest_image.path)\n$oldArchive = Join-Path $repoRoot 'docs\\evidence\\correctness\\qwen-multisequence-2026-10-22.zip'\nif ([IO.Path]::GetFullPath($plan.allowed_superseded_archive.path) -ne $oldArchive) { throw 'Unexpected old archive.' }\n$running = @(Get-CimInstance Win32_Process | Where-Object { $_.ExecutablePath -and $_.ExecutablePath.StartsWith($stagePrefix, [StringComparison]::OrdinalIgnoreCase) })\nif ($running.Count) { throw 'A native process from this stage is still running.' }\n$seen = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)\nforeach ($row in $plan.targets) {\n    $resolved = [IO.Path]::GetFullPath($row.path)\n    if (-not $seen.Add($resolved) -or $resolved -eq $keptImage) { throw \"Duplicate/protected target: $resolved\" }\n    $isOldArchive = $resolved -eq $oldArchive -and $row.kind -eq 'superseded-evidence-archive'\n    if ($isOldArchive) {\n        if ($row.sha256 -ne $plan.allowed_superseded_archive.sha256) { throw 'Wrong old archive identity.' }\n        $boundary = [IO.Path]::GetDirectoryName($oldArchive)\n    } else {\n        if (-not $resolved.StartsWith($stagePrefix, [StringComparison]::OrdinalIgnoreCase) -or [IO.Path]::GetExtension($resolved) -notin @('.exe','.map','.lib','.exp')) { throw \"Outside/type mismatch: $resolved\" }\n        $boundary = $stageRoot\n    }\n    $at = Get-Item -LiteralPath $resolved\n    while ($null -ne $at) {\n        if (($at.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) { throw \"Reparse path: $resolved\" }\n        if ($at.FullName -eq $boundary) { break }\n        $at = if ($at.PSIsContainer) { $at.Parent } else { $at.Directory }\n    }\n    Assert-Identity $row\n}\nforeach ($row in $plan.targets) {\n    Remove-Item -LiteralPath $row.path -Force\n    if (Test-Path -LiteralPath $row.path) { throw \"Target remains: $($row.path)\" }\n}\n$receipt = [ordered]@{status='completed';time_utc=[DateTime]::UtcNow.ToString('o');deleted_files=$plan.target_count;deleted_bytes=$plan.total_bytes;targets=$plan.targets;publication=$plan.publication;kept=$plan.keep;recursive_delete=$false;plan_sha256=(Get-FileHash -LiteralPath $planPath -Algorithm SHA256).Hash.ToLowerInvariant();script_sha256=(Get-FileHash -LiteralPath $PSCommandPath -Algorithm SHA256).Hash.ToLowerInvariant();script_text=(Get-Content -LiteralPath $PSCommandPath -Raw -Encoding utf8)}\n$receipt | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath $receiptPath -Encoding utf8\nWrite-Output \"Removed $($receipt.deleted_files) exact files, $($receipt.deleted_bytes) bytes; kept current Qwen image, all source/objects/raw data and both evidence volumes.\"\n"
+}

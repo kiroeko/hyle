@@ -1,0 +1,28 @@
+{
+  "archives": {
+    "architecture": {
+      "path": "docs/evidence/correctness/inference-foundation-review-2026-10-18/cold-planning-progress.zip",
+      "bytes": 670664,
+      "sha256": "514c0162df7ca09e4a0c6cff8bd6441cf3e6d6f56af2b8731490bcc4bbb427d1"
+    },
+    "numerical": {
+      "path": "docs/evidence/correctness/inference-foundation-review-2026-10-18/qwen-norm-reduction.zip",
+      "bytes": 1089198,
+      "sha256": "247799090333336221296e12ae050877509db54339bd1774da8a7d753654994c"
+    }
+  },
+  "cleanup": {
+    "windows": {
+      "bytes": 544975045.0,
+      "files": 16,
+      "retained_current_objects": 8
+    },
+    "archive_verified": true,
+    "mac": {
+      "files": 2,
+      "bytes": 17847625,
+      "retained_current_objects": 4
+    },
+    "other_cache_and_trace_retained": true
+  }
+}

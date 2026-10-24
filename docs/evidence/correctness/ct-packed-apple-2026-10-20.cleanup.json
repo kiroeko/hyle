@@ -1,0 +1,92 @@
+{
+  "reason": "Archived, superseded focused test/performance images and maps only; latest images, every object, SDK and metallib retained.",
+  "scope": "Mac fixed Hyle workspace",
+  "deleted": [
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/ct-packed-apple-20261020/cpu-ct-tests",
+      "bytes": 15872912,
+      "sha256": "3dc382a7877389e8f1e62912cd4019012e5d43e83aa51556edf8bb356457df7a"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/ct-packed-apple-20261020/cpu-ct-tests.map",
+      "bytes": 4673767,
+      "sha256": "968511f3231311d1b74ca58b9e9c9babb67d00e8bc5ed3e993d66ae044fccc48"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/ct-packed-apple-20261020/after-artifact-closure/cpu-ct-tests",
+      "bytes": 15873104,
+      "sha256": "f561a2650f9b7d476e6924441edc490f58e9b40fae7644cfd182e14f64eeab50"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/ct-packed-apple-20261020/after-artifact-closure/cpu-ct-tests.map",
+      "bytes": 4674780,
+      "sha256": "dd557c53af869664bfb331cb9c15c66b3cc2e0d4ee639e727acaf62f996a4e0d"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/ct-packed-apple-20261020/after-artifact-closure/source-round-comparison/cpu-ct-tests",
+      "bytes": 15874608,
+      "sha256": "baa00d68b2f51fa9b722ba0d8a8e52206e7f6effd8b12572fc3358453eaef776"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/ct-packed-apple-20261020/after-artifact-closure/source-round-comparison/cpu-ct-tests.map",
+      "bytes": 4676800,
+      "sha256": "21db41e86ef772e0bc03f47380b0baf89413b890003282917a05c3c92cf1d1a4"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/ct-packed-apple-20261020/after-artifact-closure/source-round-comparison/bf16-pointwise/cpu-ct-tests",
+      "bytes": 15874992,
+      "sha256": "f084710bdf76a197abb3836c224e3897b691a2f518c653a58d3076635ac13e6e"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/ct-packed-apple-20261020/after-artifact-closure/source-round-comparison/bf16-pointwise/cpu-ct-tests.map",
+      "bytes": 4678760,
+      "sha256": "ae1a3f2986edac9b4cbb4b1a9fb9ffeaafcd4597d44d76854cb55b0482a7c8a7"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/ct-packed-apple-20261020/after-artifact-closure/source-round-comparison/bf16-pointwise/performance/benchmark",
+      "bytes": 15893832,
+      "sha256": "818f710df2263e2a40284c82266c10d9fb11256bafe6a1670c3eeda65b10afea"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/ct-packed-apple-20261020/after-artifact-closure/source-round-comparison/bf16-pointwise/performance/benchmark.map",
+      "bytes": 4683253,
+      "sha256": "b18c001471a4cf2ee6654f781ee0042edec72ba061bcb14ee3823a044ae85f6f"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/ct-packed-apple-20261020/after-artifact-closure/source-round-comparison/performance/benchmark",
+      "bytes": 15893464,
+      "sha256": "a996fa109925433be6c48c43b3dae3433ae1114e19d7972728747520836b4f44"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/ct-packed-apple-20261020/after-artifact-closure/source-round-comparison/performance/benchmark.map",
+      "bytes": 4681236,
+      "sha256": "a06572323ad6cc24df00666c738720b230bf74728bfa35985d622d1d8d71cbe2"
+    }
+  ],
+  "bytes": 123351508,
+  "protected_verified": 1,
+  "proofs": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\ct-packed-vulkan-2026-10-20.json",
+      "bytes": 23591,
+      "sha256": "9b3a955b479a54e2ebb4e7f4ab25277dcfdcb52972d1b78ac10c30a174094ee3"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\ct-packed-vulkan-2026-10-20.zip",
+      "bytes": 248795,
+      "sha256": "6d608533564f89f435aa254f63f09e428880fff48e82e71667c8e6f50c1f4033"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\ct-packed-apple-2026-10-20.json",
+      "bytes": 99805,
+      "sha256": "39b3c92f999e5fc89e0ef18c2bc6199f6fbb1bb35b12ba6e9c2aa1a30daeebba"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\ct-packed-apple-2026-10-20.zip",
+      "bytes": 2564359,
+      "sha256": "889c4c71678771c8888d1fb919e0e471b1a38345ae472b2ac36f256e6e6f1161"
+    }
+  ],
+  "script": "test.ps1",
+  "current_images_all_objects_and_SDK_retained": true
+}

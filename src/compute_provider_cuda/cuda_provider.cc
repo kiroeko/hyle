@@ -9,18 +9,27 @@
 #include <utility>
 
 #include "concat_provider.h"
+#include "blockwise_w4a8_provider.h"
 #include "fp8_provider.h"
+#include "float8_quantize_provider.h"
+#include "fp8_shared_linear.h"
 #include "grouped_fp8_provider.h"
 #include "native_context.h"
 #include "native_kernel.h"
 #include "norm_provider.h"
+#include "nvfp4_provider.h"
 #include "provider_internal.h"
 #include "reduction_provider.h"
 #include "router_provider.h"
+#include "row_cache_provider.h"
+#include "row_cache_indexer_provider.h"
+#include "dense_bfloat_scores.h"
+#include "../compute_batch/row_cache_map.h"
+#include "../compute_batch/row_cache_planning.h"
+#include "../compute/operation_cold.h"
 #include "scatter_provider.h"
 #include "sampling_provider.h"
 #include "tensor_provider.h"
-#include "qualified_prepare.h"
 
 namespace hyle::compute::cuda_native {
 namespace {
@@ -146,7 +155,8 @@ Status propose(void *state, const detail::ProviderOperationRequest &request,
     if (request.operation.custom_as<model_ops::GroupedFloat8Linear>())
       return grouped_fp8::propose(state, request, inputs, outputs, proposal);
     if (request.operation.kind() == OperationKind::kMatMul ||
-        request.operation.custom_as<model_ops::Float8BlockLinear>())
+        request.operation.custom_as<model_ops::Float8BlockLinear>() ||
+        request.operation.custom_as<internal::Float8BlockLinearPair>())
       return fp8::propose(state, request, inputs, outputs, proposal);
     if (request.operation.custom_as<model_ops::SqrtSoftplusRouting>() ||
         request.operation.custom_as<model_ops::SqrtSoftplusHashRouting>())
@@ -155,6 +165,28 @@ Status propose(void *state, const detail::ProviderOperationRequest &request,
       return normalization::sglang_propose(request, inputs, outputs, proposal);
   }
   if constexpr (!Sglang) {
+    if (request.operation.custom_as<model_ops::Float8BlockQuantize>())
+      return float8_quantize::propose(request, inputs, outputs, proposal);
+    if (request.operation.custom_as<model_ops::BlockwiseW4A8Linear>() ||
+        request.operation.custom_as<model_ops::GroupedBlockwiseW4A8Linear>())
+      return blockwise_w4a8::propose(request, inputs, outputs, proposal);
+    if (request.operation.custom_as<model_ops::Nvfp4Linear>() ||
+        request.operation.custom_as<model_ops::GroupedNvfp4Linear>() ||
+        request.operation.custom_as<model_ops::LocalNvfp4Linear>() ||
+        request.operation.custom_as<model_ops::GroupedLocalNvfp4Linear>() ||
+        request.operation.custom_as<model_ops::Mxfp4Linear>() ||
+        request.operation.custom_as<model_ops::GroupedMxfp4Linear>())
+      return nvfp4::propose(request, inputs, outputs, proposal);
+    if (request.operation.custom_as<internal::DenseBfloatScores>() ||
+        request.operation.custom_as<model_ops::RowCacheIndexerScores>() ||
+        request.operation.custom_as<detail::RowCachePagedIndexerScores>())
+      return row_cache_indexer::propose(request, inputs, outputs, proposal);
+    if (request.operation.custom_as<model_ops::RowCacheEncode>() ||
+        request.operation.custom_as<model_ops::RowCacheGatherDecode>() ||
+        request.operation.custom_as<model_ops::RowCacheGatherDecodePadded>() ||
+        request.operation.custom_as<detail::RowCacheMap>() ||
+        request.operation.custom_as<detail::RowCachePaddedMap>())
+      return row_cache::propose(request, inputs, outputs, proposal);
     if (request.operation.custom_as<sampling_ops::RandomBits>() ||
         request.operation.custom_as<sampling_ops::Categorical>())
       return sampling::propose(request, inputs, outputs, proposal);
@@ -231,13 +263,13 @@ AliasSupport alias_support(void *, std::size_t output,
 }
 
 template <bool Sglang, bool Unary = false>
-detail::EnqueueResult submit(void *state, void *, Queue &queue,
+detail::EnqueueResult submit(void *state, void *, detail::QueueSequence &sequence,
                              std::span<const ConstTensorView> inputs,
                              std::span<const TensorView> outputs) noexcept {
   const auto &prepared = *static_cast<Prepared *>(state);
   if (prepared.program.elements == 0)
     return detail::EnqueueResult::no_op();
-  auto stream = cuda::stream(queue);
+  auto stream = cuda::stream(sequence);
   if (!stream)
     return detail::EnqueueResult::rejected(std::move(stream).error());
   auto first =
@@ -295,7 +327,8 @@ ProviderPrepareOutcome prepare(void *state,
   if constexpr (Sglang) {
     if (request.route == grouped_fp8::kRoute)
       return grouped_fp8::prepare(state, request, allocator, output);
-    if (request.route == fp8::kRoute || request.route == fp8::kLinearRoute)
+    if (request.route == fp8::kRoute || request.route == fp8::kLinearRoute ||
+        request.route == fp8::kPairRoute)
       return fp8::prepare(state, request, allocator, output);
     if (request.operation.custom_as<model_ops::SqrtSoftplusRouting>() ||
         request.operation.custom_as<model_ops::SqrtSoftplusHashRouting>())
@@ -304,6 +337,17 @@ ProviderPrepareOutcome prepare(void *state,
       return normalization::sglang_prepare(state, request, allocator, output);
   }
   if constexpr (!Sglang) {
+    if (request.route == float8_quantize::kRoute)
+      return float8_quantize::prepare(state, request, allocator, output);
+    if (request.route == blockwise_w4a8::kRoute)
+      return blockwise_w4a8::prepare(state, request, allocator, output);
+    if (request.route == nvfp4::kRoute)
+      return nvfp4::prepare(state, request, allocator, output);
+    if (request.route == row_cache_indexer::kRoute ||
+        request.route == row_cache_indexer::kDenseRoute)
+      return row_cache_indexer::prepare(state, request, allocator, output);
+    if (request.route == row_cache::kRoute)
+      return row_cache::prepare(state, request, allocator, output);
     if (request.route == sampling::kRoute)
       return sampling::prepare(state, request, allocator, output);
     if (request.route == scattering::kRoute && request.shape.exact())
@@ -379,7 +423,7 @@ ProviderPrepareOutcome prepare(void *state,
     return ProviderPrepareOutcome::error(cuda::status(configured));
   void *storage = allocator.allocate(sizeof(Prepared), alignof(Prepared));
   if (storage == nullptr)
-    return ProviderPrepareOutcome::resource_declined(
+    return ProviderPrepareOutcome::error(
         Status::ResourceExhausted("CUDA kernel prepared allocation failed"));
   auto *prepared = ::new (storage) Prepared{
       primary, program, Sglang ? 16 : data_type_size(description.data_type())};
@@ -394,6 +438,20 @@ ProviderPrepareOutcome prepare(void *state,
 }
 
 Status drain_context(void *) noexcept { return Status::Ok(); }
+Status inspect_access(const detail::ProviderPrepared &prepared,
+                      detail::OperationPreparedAccess *access) noexcept {
+  if (!access) return Status::InvalidArgument("CUDA prepared access output is null");
+  if (row_cache::inspect_access(prepared, *access) ||
+      row_cache_indexer::inspect_access(prepared, *access)) return Status::Ok();
+  return Status::Unimplemented("selected CUDA implementation has no projected access");
+}
+template<bool Sglang>
+const void *query_extension(void *,ProviderExtensionId id)noexcept{
+  static constexpr detail::OperationAccessVTable access{
+      .inspect=&inspect_access,.configure=&row_cache_indexer::configure_access};
+  if constexpr(!Sglang)if(id==detail::kRowCacheColdPlanningId)return &access;
+  return nullptr;
+}
 template <bool Sglang>
 const detail::ProviderVTable kProviderVTable{
     .identity = {.id = Sglang ? kSglangProviderId : kProviderId,
@@ -404,6 +462,7 @@ const detail::ProviderVTable kProviderVTable{
     .propose = &propose<Sglang>,
     .prepare = &prepare<Sglang>,
     .drain_context = &drain_context,
+    .query_extension = &query_extension<Sglang>,
 };
 
 } // namespace
@@ -414,20 +473,6 @@ Provider provider() noexcept {
 
 Provider sglang_provider() noexcept {
   return detail::ProviderAccess::make(&kProviderVTable<true>, std::uint8_t{0});
-}
-
-ProviderPrepareOutcome internal::prepare_qualified(void *context,
-    const detail::ProviderPrepareRequest &request, mem::AllocatorRef allocator,
-    detail::ProviderPrepared *output) noexcept {
-  auto result = prepare<false>(context, request, allocator, output);
-  if (output->state) {
-    if (request.operation.kind() == OperationKind::kRmsNorm ||
-        request.operation.kind() == OperationKind::kLayerNorm)
-      normalization::require_alignment(*output, 256);
-    else
-      tensor::require_alignment(*output, 256);
-  }
-  return result;
 }
 
 } // namespace hyle::compute::cuda_native

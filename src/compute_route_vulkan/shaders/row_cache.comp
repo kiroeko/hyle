@@ -1,0 +1,214 @@
+#version 450
+
+// The public carrier is bytes; U32 loads/stores need no optional shader type.
+layout(local_size_x = 128) in;
+layout(binding = 0) readonly buffer Source { uint a[]; };
+layout(binding = 1) readonly buffer Indices { uint b[]; };
+layout(binding = 2) buffer Status { uint c[]; };
+layout(binding = 3) writeonly buffer Output { uint d[]; };
+layout(push_constant) uniform Origins { uint a; uint b; uint c; } origin;
+layout(constant_id = 0) const uint phase = 0; // finite, encode, IDs, decode
+layout(constant_id = 1) const uint format = 0; // FP8+BF16 tail, FP4
+layout(constant_id = 2) const uint rows = 0;
+layout(constant_id = 3) const uint selected = 0;
+layout(constant_id = 4) const uint checked = 1;
+layout(constant_id = 5) const uint query_offset = 0;
+layout(constant_id = 6) const uint kv_offset = 0;
+layout(constant_id = 7) const uint page_offset = 0;
+layout(constant_id = 8) const uint tail_offset = 0;
+layout(constant_id = 9) const uint page_size = 1;
+layout(constant_id = 10) const uint max_pages = 0;
+layout(constant_id = 11) const uint max_requests = 0;
+layout(constant_id = 12) const uint max_refs = 0;
+layout(constant_id = 13) const uint padded = 0;
+
+shared uint magnitudes[512];
+shared int powers[8];
+
+uint load_bytes(uint port, uint offset, uint size) {
+  uint at = offset / 4u, shift = (offset & 3u) * 8u;
+  uint value = (port == 0 ? a[at] : b[at]) >> shift;
+  if (shift + size * 8u > 32u)
+    value |= (port == 0 ? a[at + 1u] : b[at + 1u]) << (32u - shift);
+  return size == 4u ? value : value & ((1u << (size * 8u)) - 1u);
+}
+
+// BF16 max/cap has only seven fraction bits. Derive the exact ceil power
+// without an approximate divide/log2 near a power-of-two boundary.
+int group_power(uint maximum, bool four) {
+  int exponent = int(maximum >> 7u) - 127;
+  uint mantissa = 128u + (maximum & 127u);
+  return four ? max(-126, exponent - 2 + int(mantissa > 192u))
+              : max(-22, exponent - 8 + int(mantissa > 224u));
+}
+
+float normalized(uint raw, int scale, int minimum_exponent) {
+  uint magnitude = raw & 0x7fffu;
+  if (magnitude == 0u) return 0.0;
+  uint exponent = magnitude >> 7u;
+  uint mantissa = (magnitude & 127u) + (exponent == 0u ? 0u : 128u);
+  int power = exponent == 0u ? -133 : int(exponent) - 134;
+  // Values below the first rounding midpoint become zero. All remaining
+  // arithmetic is normal F32, even when the source BF16 was subnormal.
+  if (findMSB(mantissa) + power - scale < minimum_exponent) return 0.0;
+  return ldexp(float(mantissa), power - scale);
+}
+
+uint fp8_code(uint raw, int scale) {
+  float value = normalized(raw, scale, -10);
+  uint code;
+  if (value < 0.015625) {
+    code = uint(roundEven(value * 512.0));
+  } else {
+    uint bits = floatBitsToUint(value);
+    uint high = bits >> 20u, low = bits & 0xfffffu;
+    high += uint(low > 0x80000u || (low == 0x80000u && (high & 1u) != 0u));
+    code = min(high - 960u, 126u);
+  }
+  return code | ((raw >> 8u) & 128u);
+}
+
+uint fp4_code(uint raw, int scale) {
+  const float values[8] = float[8](0.0, 0.5, 1.0, 1.5, 2.0, 3.0, 4.0, 6.0);
+  float value = normalized(raw, scale, -2);
+  uint code = 0u;
+  for (uint i = 0u; i < 7u; ++i) {
+    float midpoint = (values[i] + values[i + 1u]) * 0.5;
+    if (value < midpoint || (value == midpoint && (i & 1u) == 0u)) break;
+    code = i + 1u;
+  }
+  return code | ((raw >> 12u) & 8u);
+}
+
+uint encode_byte(uint row, uint byte, bool four) {
+  uint depth = four ? 128u : 512u;
+  if (four) {
+    if (byte >= 64u) return uint(powers[byte - 64u] + 127);
+    uint first = byte * 2u;
+    uint lo = load_bytes(0u, origin.a + (row * depth + first) * 2u, 2u);
+    uint hi = load_bytes(0u, origin.a + (row * depth + first + 1u) * 2u, 2u);
+    return fp4_code(lo, powers[first / 32u]) |
+           (fp4_code(hi, powers[(first + 1u) / 32u]) << 4u);
+  }
+  if (byte < 448u) {
+    uint raw = load_bytes(0u, origin.a + (row * depth + byte) * 2u, 2u);
+    return fp8_code(raw, powers[byte / 64u]);
+  }
+  if (byte < 576u)
+    return load_bytes(0u, origin.a + row * depth * 2u + 896u + byte - 448u, 1u);
+  return byte < 583u ? uint(powers[byte - 576u] + 127) : 0u;
+}
+
+// Encode an exact short mantissa * 2^power to BF16, including subnormal
+// ties and finite-to-Inf overflow. No F32 denormal mode changes the bytes.
+uint bfloat_dyadic(uint mantissa, int power, uint sign_bit) {
+  if (mantissa == 0u) return sign_bit;
+  int top = findMSB(mantissa), exponent = top + power;
+  if (exponent > 127) return sign_bit | 0x7f80u;
+  if (exponent >= -126)
+    return sign_bit | (uint(exponent + 127) << 7u) |
+           ((mantissa << uint(7 - top)) & 127u);
+  int shift = power + 133;
+  uint value;
+  if (shift >= 0) {
+    value = mantissa << uint(shift);
+  } else if (shift <= -32) {
+    value = 0u;
+  } else {
+    uint right = uint(-shift), high = mantissa >> right;
+    uint low = mantissa & ((1u << right) - 1u), midpoint = 1u << (right - 1u);
+    value = high + uint(low > midpoint || (low == midpoint && (high & 1u) != 0u));
+  }
+  return sign_bit | value;
+}
+
+uint decode_value(uint base, uint channel, bool four) {
+  if (!four && channel >= 448u)
+    return load_bytes(0u, base + 448u + (channel - 448u) * 2u, 2u);
+  uint code = load_bytes(0u, base + (four ? channel / 2u : channel), 1u);
+  if (four) code = (code >> ((channel & 1u) * 4u)) & 15u;
+  uint magnitude = code & (four ? 7u : 127u);
+  uint sign_bit = four ? (code & 8u) << 12u : (code & 128u) << 8u;
+  uint scale = load_bytes(0u, base + (four ? 64u : 576u) +
+                         channel / (four ? 32u : 64u), 1u);
+  if (scale == 255u || (!four && magnitude == 127u)) return sign_bit | 0x7fc0u;
+  int power = int(scale) - 127;
+  if (four) {
+    const uint mantissas[8] = uint[8](0u, 1u, 2u, 3u, 4u, 6u, 8u, 12u);
+    return bfloat_dyadic(mantissas[magnitude], power - 1, sign_bit);
+  }
+  uint exponent = magnitude >> 3u;
+  return bfloat_dyadic((magnitude & 7u) + (exponent == 0u ? 0u : 8u),
+                       power + (exponent == 0u ? -9 : int(exponent) - 10), sign_bit);
+}
+
+void main() {
+  uint group = gl_WorkGroupID.y * gl_NumWorkGroups.x + gl_WorkGroupID.x;
+  uint lane = gl_LocalInvocationID.x, work = group * 128u + lane;
+  if(phase==4u){
+    if(work>=selected)return;
+    uint requests=load_bytes(1u,origin.b+16u,4u),query_rows=load_bytes(1u,origin.b+20u,4u),refs=load_bytes(1u,origin.b+28u,4u);
+    bool valid=requests<=max_requests && query_rows==rows && refs<=max_refs;
+    uint row=work/(selected/rows),lo=0u,hi=requests;
+    if(valid)while(lo<hi){uint mid=lo+(hi-lo)/2u;int next=int(load_bytes(1u,origin.b+(query_offset+mid+1u)*4u,4u));if(next<=int(row))lo=mid+1u;else hi=mid;}
+    bool request_ok=valid && lo<requests;
+    if(request_ok)request_ok=int(load_bytes(1u,origin.b+(query_offset+lo)*4u,4u))<=int(row) && int(load_bytes(1u,origin.b+(query_offset+lo+1u)*4u,4u))>int(row);
+    int first=request_ok?int(load_bytes(1u,origin.b+(kv_offset+lo)*4u,4u)):0;
+    int end=request_ok?int(load_bytes(1u,origin.b+(kv_offset+lo+1u)*4u,4u)):0;
+    int tail=request_ok?int(load_bytes(1u,origin.b+(tail_offset+lo)*4u,4u)):0;
+    bool span_ok=request_ok && first>=0 && end>=first && uint(end)<=refs && ((end==first && tail==0) || (end>first && tail>0 && uint(tail)<=page_size));
+    uint length=span_ok && end>first?uint(end-first-1)*page_size+uint(tail):0u;
+    int id=int(load_bytes(0u,origin.a+work*4u,4u)),physical=-1;
+    if(span_ok && id>=0 && uint(id)<length){int page=int(load_bytes(1u,origin.b+(page_offset+uint(first)+uint(id)/page_size)*4u,4u));
+      if(page>=0 && uint(page)<max_pages)physical=int(uint(page)*page_size+uint(id)%page_size);}
+    d[work]=uint(physical);return;
+  }
+  bool four = format == 1u;
+  uint depth = four ? 128u : 512u, width = four ? 68u : 584u;
+  if (phase == 0u) {
+    if (work < rows * depth &&
+        (load_bytes(0u, origin.a + work * 2u, 2u) & 0x7f80u) == 0x7f80u)
+      atomicOr(c[0], 4u);
+    return;
+  }
+  if (phase == 2u) {
+    if (work < selected) {
+      int id = int(load_bytes(1u, origin.b + work * 4u, 4u));
+      if ((id < 0 || uint(id) >= rows) && !(padded!=0u && id==-1)) atomicOr(c[0], 1u);
+    }
+    return;
+  }
+  if (checked != 0u && c[0] != 0u) return;
+  if (phase == 1u) {
+    uint row = group;
+    if (row >= rows) return;
+    uint group_size = four ? 32u : 64u, groups = four ? 4u : 7u;
+    for (uint i = lane; i < depth; i += 128u)
+      magnitudes[i] = load_bytes(0u, origin.a + (row * depth + i) * 2u, 2u) & 0x7fffu;
+    barrier();
+    for (uint stride = group_size / 2u; stride != 0u; stride /= 2u) {
+      for (uint i = lane; i < depth; i += 128u)
+        if (i % group_size < stride)
+          magnitudes[i] = max(magnitudes[i], magnitudes[i + stride]);
+      barrier();
+    }
+    if (lane < groups) powers[lane] = group_power(magnitudes[lane * group_size], four);
+    barrier();
+    for (uint word = lane; word < width / 4u; word += 128u) {
+      uint bits = 0u;
+      for (uint byte = 0u; byte < 4u; ++byte)
+        bits |= encode_byte(row, word * 4u + byte, four) << (byte * 8u);
+      d[row * (width / 4u) + word] = bits;
+    }
+    return;
+  }
+  if (work >= selected * (depth / 2u)) return;
+  uint output_row = work / (depth / 2u), channel = (work % (depth / 2u)) * 2u;
+  int id = int(load_bytes(1u, origin.b + output_row * 4u, 4u));
+  if(padded!=0u && id==-1){d[work]=0u;return;}
+  // Unchecked requires valid IDs too; do not form an address outside the bank.
+  if (id < 0 || uint(id) >= rows) return;
+  uint base = origin.a + uint(id) * width;
+  d[work] = decode_value(base, channel, four) |
+            (decode_value(base, channel + 1u, four) << 16u);
+}

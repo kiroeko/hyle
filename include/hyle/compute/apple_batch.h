@@ -6,7 +6,8 @@
 #include "hyle/compute/batch_paged_native.h"
 #include "hyle/compute/apple_memory.h"
 namespace hyle::compute::apple {
-// Cold immutable host-known ragged layout, F16/BF16 D64/128/256. Three original
+// Cold immutable host-known ragged layout, F16/BF16 D64/128/256 and plain
+// 512/576-to-512. Three original
 // packed-capacity Q/K/V ports and one active packed Q output. Original MLX
 // views/SDPA/Program own execution; another Q topology needs explicit prepare.
 // Native metadata/private storage remain unknown; no paged/capture claim.
@@ -60,7 +61,8 @@ private:
   explicit MaterializedBatchInvocation(detail::MaterializedInvocationData*p)noexcept:data_(p){}
   detail::MaterializedInvocationData*data_=nullptr;
 };
-// Exact-frame native page16 attention, F16/BF16 D64/128/256. Preparation
+// Exact-frame native page16 attention, F16/BF16 D64/128/256 and plain
+// 512/576-to-512. Preparation
 // uploads one owned I32 table and cold-prepares the original MLX topology.
 // Context/resources/allocator keep stable addresses and outlive all work and
 // results. Control is externally serialized; old results prevent reuse.
@@ -82,6 +84,7 @@ public:
   bool valid() const noexcept { return data_ != nullptr; }
   HYLE_COMPUTE_ROUTE_APPLE_API Status prepare_batch(BatchLayoutVersion) noexcept;
   HYLE_COMPUTE_ROUTE_APPLE_API Status bind(ReadLease, PagedArenaRead, PagedArenaRead) noexcept;
+  HYLE_COMPUTE_ROUTE_APPLE_API Status bind(ReadLease, PagedArenaRead) noexcept;
   HYLE_COMPUTE_ROUTE_APPLE_API Result<OwnedResult<Results>> submit() noexcept;
   HYLE_COMPUTE_ROUTE_APPLE_API NativePagedBatchReport report() const noexcept;
   HYLE_COMPUTE_ROUTE_APPLE_API Status close() noexcept;

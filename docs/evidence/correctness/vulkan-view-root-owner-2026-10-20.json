@@ -1,0 +1,285 @@
+{
+  "date": "2026-10-20",
+  "status": "executed",
+  "problem": "Four native is_view buffers stored opaque permission owners where the existing storage report expects a typed Buffer parent; following them can read the wrong object type.",
+  "fix": "Aliasing shared_ptr retains the existing lease/page/weight control block while exposing the original Buffer parent pointer. No payload, permissions, reference-count policy or object layout changed.",
+  "scope": [
+    "MemoryAccess::lease_tensor",
+    "paged_binding template",
+    "WeightAccess::binding",
+    "WeightBatch::binding"
+  ],
+  "actual": {
+    "status": "passed_scope_only",
+    "source_freeze": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\vulkan-view-root-owner\\source-freeze.json",
+      "bytes": 668,
+      "sha256": "644feb994806a57c09cab80e03841ed1d284ac5fc0b9783adf6328494b08e464"
+    },
+    "source_diff": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\vulkan-view-root-owner\\source.diff",
+      "bytes": 11157,
+      "sha256": "e3a6761ba5bab1bb54604d856184718269ac18d95e8f8c065449a7f4f924cc7b"
+    },
+    "before": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\vulkan-view-root-owner\\before.json",
+      "bytes": 575,
+      "sha256": "ae4d3637e1eeda4e3d25dd6f256a9bf1da81199ba0fef6bc7551e08a6cc7aef7"
+    },
+    "independent_design_review": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\vulkan-view-root-owner\\independent-review.json",
+      "bytes": 6153,
+      "sha256": "5462468a130ff7759010b6819cd5d7e770f04cfcd21f7524ef1c06fd3d849902"
+    },
+    "design": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\vulkan-view-root-owner\\design.json",
+      "bytes": 481,
+      "sha256": "9cbc1801f527e6ed5c7e926581df9eee0e38a949352e479bab392edfe6900b08"
+    },
+    "build_script": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\vulkan-view-root-owner\\build.py",
+      "bytes": 3948,
+      "sha256": "5016561acc81d33cade51dfad831fd974bc1cf64dfbdd469a770b3d4c87ffc3c"
+    },
+    "groups": {
+      "reproduction": {
+        "xml": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\vulkan-view-root-owner\\reproduction\\tests.xml",
+          "bytes": 2506,
+          "sha256": "d920b59768feb383092c4ff5ab046dc59d70689578c3e485717846978a44d0a6"
+        },
+        "result": {
+          "tests": 3,
+          "failures": 3,
+          "errors": 0,
+          "disabled": 0,
+          "skipped": 0,
+          "cases": [
+            {
+              "name": "VulkanWeightBinding.LeaseViewExposesBufferParentAndKeepsOriginalLease",
+              "passed": false
+            },
+            {
+              "name": "VulkanWeightBinding.PagedViewExposesBufferParentAndRetainsExactPage",
+              "passed": false
+            },
+            {
+              "name": "VulkanWeightBinding.WeightViewsExposeBufferParentAndRetainSelection",
+              "passed": false
+            }
+          ]
+        },
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\vulkan-view-root-owner\\reproduction\\vulkan.exe",
+          "bytes": 68043776,
+          "sha256": "fd1cb281aabff60a631cd2fd375da4a1600a1a203778a9f23dee24d81e66c6e5"
+        },
+        "link_plan": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\vulkan-view-root-owner\\reproduction\\link-plan.json",
+          "bytes": 69794,
+          "sha256": "6f33c763306a31bfb77b434b7472d8fe6c7457a495f3ac86f31b709052af7579"
+        },
+        "host_summary": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\vulkan-view-root-owner\\reproduction\\host-summary.json",
+          "bytes": 558,
+          "sha256": "b45bb03d10a3a998ffd1aafbc8e3556a65334dbb5adc0e6e6cb19c3989887b21"
+        },
+        "stdout": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\vulkan-view-root-owner\\reproduction\\tests.stdout.log",
+          "bytes": 2090,
+          "sha256": "304be7b34deef4955f1dd7c411a388e6e26b24958993ef5a2f84c77cfa9de84c"
+        }
+      },
+      "reproduction-final": {
+        "xml": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\vulkan-view-root-owner\\reproduction-final\\tests.xml",
+          "bytes": 3280,
+          "sha256": "5c4ea58c5ccf2e3b34e2baef1e8ce998ffcc5e58a410bc9aa622d8099a2578de"
+        },
+        "result": {
+          "tests": 3,
+          "failures": 3,
+          "errors": 0,
+          "disabled": 0,
+          "skipped": 0,
+          "cases": [
+            {
+              "name": "VulkanWeightBinding.LeaseViewExposesBufferParentAndKeepsOriginalLease",
+              "passed": false
+            },
+            {
+              "name": "VulkanWeightBinding.PagedViewExposesBufferParentAndRetainsExactPage",
+              "passed": false
+            },
+            {
+              "name": "VulkanWeightBinding.WeightViewsExposeBufferParentAndRetainSelection",
+              "passed": false
+            }
+          ]
+        },
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\vulkan-view-root-owner\\reproduction-final\\vulkan.exe",
+          "bytes": 68042752,
+          "sha256": "412f9a1adf7237a8d697e3862e906c71ec51e32b181901f4f55e44eea414acf1"
+        },
+        "link_plan": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\vulkan-view-root-owner\\reproduction-final\\link-plan.json",
+          "bytes": 69824,
+          "sha256": "cd315d18ec0074c8db0f0fd7f2b1776a3769547eeab216d1019dd415a92c87da"
+        },
+        "host_summary": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\vulkan-view-root-owner\\reproduction-final\\host-summary.json",
+          "bytes": 564,
+          "sha256": "1b7aa996d2506f9d78a64025ce8ba04e72d0040b126fec82be5edcac9a556ba6"
+        },
+        "stdout": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\vulkan-view-root-owner\\reproduction-final\\tests.stdout.log",
+          "bytes": 2449,
+          "sha256": "13c0c1026c79b0b13195ca37f59ccc11ea33e25acc2df70dd9504fb5e8ce5652"
+        }
+      },
+      "checks": {
+        "xml": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\vulkan-view-root-owner\\checks\\tests.xml",
+          "bytes": 1899,
+          "sha256": "1141c60c9a347bcd1f9e9af8e0481bbb668b71ea96ee47b0c6eaab456612d00e"
+        },
+        "result": {
+          "tests": 5,
+          "failures": 0,
+          "errors": 0,
+          "disabled": 0,
+          "skipped": 0,
+          "cases": [
+            {
+              "name": "VulkanWeightBinding.LeaseViewExposesBufferParentAndKeepsOriginalLease",
+              "passed": true
+            },
+            {
+              "name": "VulkanWeightBinding.PagedViewExposesBufferParentAndRetainsExactPage",
+              "passed": true
+            },
+            {
+              "name": "VulkanWeightBinding.WeightViewsExposeBufferParentAndRetainSelection",
+              "passed": true
+            },
+            {
+              "name": "VulkanWeightBinding.OriginalInvocationRetainsRealSelectionAndDeduplicatesOwner",
+              "passed": true
+            },
+            {
+              "name": "VulkanWeightBinding.PendingNativeUploadUsesOriginalProgressAndExplicitHostWait",
+              "passed": true
+            }
+          ]
+        },
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\vulkan-view-root-owner\\checks\\vulkan.exe",
+          "bytes": 68043264,
+          "sha256": "e5611ffd73b1842a88b674d98308736963ca24263ff0d6dcad28409689077bb8"
+        },
+        "link_plan": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\vulkan-view-root-owner\\checks\\link-plan.json",
+          "bytes": 69580,
+          "sha256": "d19eaf8fcefceb1a707ddb1acb84f5b14b42817859697d4056c616dfd01b4fd7"
+        },
+        "host_summary": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\vulkan-view-root-owner\\checks\\host-summary.json",
+          "bytes": 988,
+          "sha256": "9f072b7921345f49467b3bf6e90a8c859bdd0dea82bebf05c8cda9f228eb7c3d"
+        },
+        "stdout": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\vulkan-view-root-owner\\checks\\tests.stdout.log",
+          "bytes": 1441,
+          "sha256": "d837510c472dde1e8e94362e804b30645ff513191b19a91c64eed252b4836c14"
+        }
+      }
+    },
+    "actual_counts": {
+      "product_CXX": 2,
+      "test_CXX": 2,
+      "total_CXX": 4,
+      "links": 3,
+      "GPU_processes": 3,
+      "SDK_builds": 0,
+      "NVCC": 0
+    },
+    "red": {
+      "arm": "reproduction-final",
+      "cases": 3,
+      "failures": 3,
+      "skips": 0,
+      "structural_pointer_failures": 4,
+      "unsafe_report_path_entered": false,
+      "note": "Initial reproduction also retained: lease+weight structural red, page fixture invalid F32-cache setup failed; final reproduction uses legal initialized F16 page and all four pointer checks fail safely."
+    },
+    "green": {
+      "arm": "checks",
+      "cases": 5,
+      "failures": 0,
+      "skips": 0,
+      "final_test_object_reused_byte_identical_to_final_red": true,
+      "all_final_link_input_hashes_checked": true,
+      "compile_report_executions": 4,
+      "retained_constant_owners_per_report": 1
+    },
+    "contract": {
+      "fix": "Aliasing shared_ptr<const void>(originalOwner, actualBufferParent.get()) at four existing overwrites, preserving owner control blocks and direct Buffer parent invariant.",
+      "ABI": "No layout/API/ABI change",
+      "lifetime": [
+        "Lease view keeps original allocation and readonly lease owner; actual payload roundtrip after caller owner release, final release proven by weak_ptr expiry.",
+        "Paged F16 single-page view keeps exact page read permission; acquisition rejected while native view retains page then succeeds after view release.",
+        "Public and internal WeightAccess views share actual Buffer parent and exact WeightState control block; dropping caller batch/binding does not allow slot reuse until both native views retire.",
+        "Two original existing weight tests retain their numerical, invocation/source and pending upload progress assertions."
+      ],
+      "report": "Each new path reaches the actual native CompileReport root walk after structural safety checks; dedup owner count1 and actual root byte/allocation capacities checked."
+    },
+    "limits": [
+      "Windows actual Vulkan device only; no Mac/CPU/CUDA run required by this backend-local change.",
+      "Paged ready frame instantiation exercised; pending/row instantiations share the same patched paged_binding template but not independently executed here.",
+      "New report helper compiles and reports its Binary Add constants without submitting that synthetic program; ordinary actual math/progress kept in the two original executed weight neighbors; lease payload independently downloaded and checked.",
+      "No whole-suite/model/throughput qualification or zero-copy claim; MLX typed-bank allocation/borrowing unchanged."
+    ],
+    "receipts": {
+      "test": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\vulkan-view-root-owner\\reproduction-final\\weight-test-identity.json",
+        "bytes": 77536,
+        "sha256": "d3d8bcebda4e1d6eb689b266fff60d23d1c5933555dac3b38cb159990afb3dde"
+      },
+      "product_memory": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\vulkan-view-root-owner\\checks\\vulkan_memory-identity.json",
+        "bytes": 54062,
+        "sha256": "e823f177ea672fdfc3f1d49fddb60de59efe9ae4dc35ea2160e436e4b071142f"
+      },
+      "product_weights": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\vulkan-view-root-owner\\checks\\vulkan_weights-identity.json",
+        "bytes": 51392,
+        "sha256": "e0e57ec3f766a0ad18513b797370b02727791a8aa220d3206e5cd074462c1c9f"
+      }
+    }
+  },
+  "source_freeze": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\vulkan-view-root-owner\\source-freeze.json",
+    "bytes": 668,
+    "sha256": "644feb994806a57c09cab80e03841ed1d284ac5fc0b9783adf6328494b08e464"
+  },
+  "independent_review": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\vulkan-view-root-owner\\independent-review.json",
+    "bytes": 6153,
+    "sha256": "5462468a130ff7759010b6819cd5d7e770f04cfcd21f7524ef1c06fd3d849902"
+  },
+  "limits": [
+    "Windows actual Vulkan device only; no Mac/CPU/CUDA run required by this backend-local change.",
+    "Paged ready frame instantiation exercised; pending/row instantiations share the same patched paged_binding template but not independently executed here.",
+    "New report helper compiles and reports its Binary Add constants without submitting that synthetic program; ordinary actual math/progress kept in the two original executed weight neighbors; lease payload independently downloaded and checked.",
+    "No whole-suite/model/throughput qualification or zero-copy claim; MLX typed-bank allocation/borrowing unchanged."
+  ],
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\vulkan-view-root-owner-2026-10-20.zip",
+    "bytes": 263749,
+    "sha256": "d4897c03e4933d1ac7eb8be67a4d1f81473508531fc085d7a8002f1acd6719dd",
+    "payloads": 86,
+    "CRC_checked": true,
+    "all_payload_SHA256_checked": true
+  }
+}

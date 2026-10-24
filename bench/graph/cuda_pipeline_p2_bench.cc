@@ -284,9 +284,9 @@ private:
         StorageDomain{.resource = device_resource_.ref()},
     };
     const std::array targets{
-        ExecutionTarget{.context = &cpu_context_,
+        ExecutionTarget{.source = take_or_abort(hyle::graph::ExecutionSource::acquire(cpu_context_), "execution source"),
                         .default_storage = StorageDomainId{0}},
-        ExecutionTarget{.context = &cuda_context_,
+        ExecutionTarget{.source = take_or_abort(hyle::graph::ExecutionSource::acquire(cuda_context_), "execution source"),
                         .default_storage = StorageDomainId{1}},
     };
     const std::array lanes{

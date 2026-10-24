@@ -158,7 +158,7 @@ template <class Kernel>
 concept CustomKernelType =
     std::is_nothrow_destructible_v<Kernel> &&
     requires(const Kernel &kernel, typename Kernel::Invocation &invocation,
-             Queue &queue, mem::BufferView workspace,
+             detail::QueueSequence &sequence, mem::BufferView workspace,
              mem::AllocatorRef allocator,
              std::span<const ConstTensorView> inputs,
              std::span<const TensorView> outputs) {
@@ -169,7 +169,7 @@ concept CustomKernelType =
         kernel.create_invocation(workspace, allocator)
       } noexcept -> std::same_as<Result<typename Kernel::Invocation>>;
       {
-        kernel.enqueue(invocation, queue, inputs, outputs)
+        kernel.enqueue(invocation, sequence, inputs, outputs)
       } noexcept -> std::same_as<KernelCommandResult>;
     };
 
@@ -232,12 +232,12 @@ template <class Kernel> struct CustomKernelStorage final {
                                    alignof(Invocation));
             },
         .shared_submit =
-            [](void *prepared, void *state, Queue &queue,
+            [](void *prepared, void *state, QueueSequence &sequence,
                std::span<const ConstTensorView> inputs,
                std::span<const TensorView> outputs) noexcept -> EnqueueResult {
           const auto &kernel =
               static_cast<CustomKernelStorage *>(prepared)->kernel_value;
-          auto result = kernel.enqueue(*static_cast<Invocation *>(state), queue,
+          auto result = kernel.enqueue(*static_cast<Invocation *>(state), sequence,
                                        inputs, outputs);
           return {result.accepted, std::move(result.status)};
         },
